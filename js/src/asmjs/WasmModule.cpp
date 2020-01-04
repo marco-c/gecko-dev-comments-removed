@@ -18,6 +18,7 @@
 
 #include "asmjs/WasmModule.h"
 
+#include "mozilla/Atomics.h"
 #include "mozilla/BinarySearch.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/PodOperations.h"
@@ -49,6 +50,7 @@
 using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
+using mozilla::Atomic;
 using mozilla::BinarySearch;
 using mozilla::MakeEnumeratedRange;
 using mozilla::PodCopy;
@@ -56,18 +58,26 @@ using mozilla::PodZero;
 using mozilla::Swap;
 using JS::GenericNaN;
 
+
+
+
+static Atomic<uint32_t> wasmCodeAllocations(0);
+static const uint32_t MaxWasmCodeAllocations = 16384;
+
 UniqueCodePtr
 wasm::AllocateCode(ExclusiveContext* cx, size_t bytes)
 {
     
-    
-    
     unsigned permissions =
         ExecutableAllocator::initialProtectionFlags(ExecutableAllocator::Writable);
 
-    void* p = AllocateExecutableMemory(nullptr, bytes, permissions, "asm-js-code", gc::SystemPageSize());
-    if (!p)
+    void* p = nullptr;
+    if (wasmCodeAllocations++ < MaxWasmCodeAllocations)
+        p = AllocateExecutableMemory(nullptr, bytes, permissions, "asm-js-code", gc::SystemPageSize());
+    if (!p) {
+        wasmCodeAllocations--;
         ReportOutOfMemory(cx);
+    }
 
     return UniqueCodePtr((uint8_t*)p, CodeDeleter(bytes));
 }
@@ -75,6 +85,9 @@ wasm::AllocateCode(ExclusiveContext* cx, size_t bytes)
 void
 CodeDeleter::operator()(uint8_t* p)
 {
+    MOZ_ASSERT(wasmCodeAllocations > 0);
+    wasmCodeAllocations--;
+
     MOZ_ASSERT(bytes_ != 0);
     DeallocateExecutableMemory(p, bytes_, gc::SystemPageSize());
 }
