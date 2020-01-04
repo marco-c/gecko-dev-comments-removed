@@ -2250,6 +2250,9 @@ nsNavHistory::AddObserver(nsINavHistoryObserver* aObserver, bool aOwnsWeak)
   NS_ASSERTION(NS_IsMainThread(), "This can only be called on the main thread");
   NS_ENSURE_ARG(aObserver);
 
+  if (NS_WARN_IF(!mCanNotify))
+    return NS_ERROR_UNEXPECTED;
+
   return mObservers.AppendWeakElement(aObserver, aOwnsWeak);
 }
 
@@ -3087,9 +3090,10 @@ nsNavHistory::Observe(nsISupports *aSubject, const char *aTopic,
   }
 
   else if (strcmp(aTopic, TOPIC_PLACES_CONNECTION_CLOSED) == 0) {
-      
-      
-      mCanNotify = false;
+    
+    
+    mCanNotify = false;
+    mObservers.Clear();
   }
 
 #ifdef MOZ_XUL

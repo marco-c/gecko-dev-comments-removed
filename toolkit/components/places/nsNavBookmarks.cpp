@@ -2522,6 +2522,10 @@ nsNavBookmarks::AddObserver(nsINavBookmarkObserver* aObserver,
                             bool aOwnsWeak)
 {
   NS_ENSURE_ARG(aObserver);
+
+  if (NS_WARN_IF(!mCanNotify))
+    return NS_ERROR_UNEXPECTED;
+
   return mObservers.AppendWeakElement(aObserver, aOwnsWeak);
 }
 
@@ -2634,6 +2638,7 @@ nsNavBookmarks::Observe(nsISupports *aSubject, const char *aTopic,
     
     
     mCanNotify = false;
+    mObservers.Clear();
   }
 
   return NS_OK;
