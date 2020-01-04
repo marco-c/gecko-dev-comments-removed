@@ -2212,6 +2212,7 @@ class AssemblerX86Shared : public AssemblerShared
     void vcmpps(uint8_t order, Operand src1, FloatRegister src0, FloatRegister dest) {
         MOZ_ASSERT(HasSSE2());
         
+        
         if (!HasAVX() && !src0.aliases(dest)) {
             if (src1.kind() == Operand::FPREG &&
                 dest.aliases(FloatRegister::FromCode(src1.fpu())))

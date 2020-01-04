@@ -24,13 +24,14 @@ ICCompare_Int32::Compiler::generateStubCode(MacroAssembler& masm)
     masm.branchTestInt32(Assembler::NotEqual, R1, &failure);
 
     
+    ScratchRegisterScope scratch(masm);
     Assembler::Condition cond = JSOpToCondition(op, true);
-    masm.mov(ImmWord(0), ScratchReg);
+    masm.mov(ImmWord(0), scratch);
     masm.cmp32(R0.valueReg(), R1.valueReg());
-    masm.setCC(cond, ScratchReg);
+    masm.setCC(cond, scratch);
 
     
-    masm.boxValue(JSVAL_TYPE_BOOLEAN, ScratchReg, R0.valueReg());
+    masm.boxValue(JSVAL_TYPE_BOOLEAN, scratch, R0.valueReg());
     EmitReturnFromIC(masm);
 
     
@@ -49,6 +50,9 @@ ICBinaryArith_Int32::Compiler::generateStubCode(MacroAssembler& masm)
     Label failure;
     masm.branchTestInt32(Assembler::NotEqual, R0, &failure);
     masm.branchTestInt32(Assembler::NotEqual, R1, &failure);
+
+    
+    mozilla::Maybe<ScratchRegisterScope> scratch;
 
     Label revertRegister, maybeNegZero;
     switch(op_) {
@@ -159,8 +163,10 @@ ICBinaryArith_Int32::Compiler::generateStubCode(MacroAssembler& masm)
         masm.boxValue(JSVAL_TYPE_INT32, ExtractTemp0, R0.valueReg());
         break;
       case JSOP_URSH:
-        if (!allowDouble_)
-            masm.movq(R0.valueReg(), ScratchReg);
+        if (!allowDouble_) {
+            scratch.emplace(masm);
+            masm.movq(R0.valueReg(), *scratch);
+        }
 
         masm.unboxInt32(R0, ExtractTemp0);
         masm.unboxInt32(R1, ecx); 
@@ -176,8 +182,9 @@ ICBinaryArith_Int32::Compiler::generateStubCode(MacroAssembler& masm)
             EmitReturnFromIC(masm);
 
             masm.bind(&toUint);
-            masm.convertUInt32ToDouble(ExtractTemp0, ScratchDoubleReg);
-            masm.boxDouble(ScratchDoubleReg, R0);
+            ScratchDoubleScope scratchDouble(masm);
+            masm.convertUInt32ToDouble(ExtractTemp0, scratchDouble);
+            masm.boxDouble(scratchDouble, R0);
         } else {
             masm.j(Assembler::Signed, &revertRegister);
             masm.boxValue(JSVAL_TYPE_INT32, ExtractTemp0, R0.valueReg());
@@ -194,9 +201,12 @@ ICBinaryArith_Int32::Compiler::generateStubCode(MacroAssembler& masm)
         masm.bind(&maybeNegZero);
 
         
-        masm.movl(R0.valueReg(), ScratchReg);
-        masm.orl(R1.valueReg(), ScratchReg);
-        masm.j(Assembler::Signed, &failure);
+        {
+            ScratchRegisterScope scratch(masm);
+            masm.movl(R0.valueReg(), scratch);
+            masm.orl(R1.valueReg(), scratch);
+            masm.j(Assembler::Signed, &failure);
+        }
 
         
         masm.moveValue(Int32Value(0), R0);
@@ -205,9 +215,10 @@ ICBinaryArith_Int32::Compiler::generateStubCode(MacroAssembler& masm)
 
     
     if (op_ == JSOP_URSH && !allowDouble_) {
+        
         masm.bind(&revertRegister);
         
-        masm.movq(ScratchReg, R0.valueReg());
+        masm.movq(*scratch, R0.valueReg());
         
     }
     

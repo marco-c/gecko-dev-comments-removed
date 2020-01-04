@@ -72,19 +72,21 @@ EmitChangeICReturnAddress(MacroAssembler& masm, Register reg)
 inline void
 EmitBaselineTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t argSize)
 {
-    
-    masm.movq(BaselineFrameReg, ScratchReg);
-    masm.addq(Imm32(BaselineFrame::FramePointerOffset), ScratchReg);
-    masm.subq(BaselineStackReg, ScratchReg);
+    ScratchRegisterScope scratch(masm);
 
     
-    masm.movq(ScratchReg, rdx);
+    masm.movq(BaselineFrameReg, scratch);
+    masm.addq(Imm32(BaselineFrame::FramePointerOffset), scratch);
+    masm.subq(BaselineStackReg, scratch);
+
+    
+    masm.movq(scratch, rdx);
     masm.subq(Imm32(argSize), rdx);
     masm.store32(rdx, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
 
     
-    masm.makeFrameDescriptor(ScratchReg, JitFrame_BaselineJS);
-    masm.push(ScratchReg);
+    masm.makeFrameDescriptor(scratch, JitFrame_BaselineJS);
+    masm.push(scratch);
     masm.push(ICTailCallReg);
     masm.jmp(target);
 }
@@ -92,13 +94,15 @@ EmitBaselineTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t argSize)
 inline void
 EmitIonTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t stackSize)
 {
-    masm.movq(Operand(esp, stackSize), ScratchReg);
-    masm.shrq(Imm32(FRAMESIZE_SHIFT), ScratchReg);
-    masm.addq(Imm32(stackSize + JitStubFrameLayout::Size() - sizeof(intptr_t)), ScratchReg);
+    ScratchRegisterScope scratch(masm);
+
+    masm.movq(Operand(esp, stackSize), scratch);
+    masm.shrq(Imm32(FRAMESIZE_SHIFT), scratch);
+    masm.addq(Imm32(stackSize + JitStubFrameLayout::Size() - sizeof(intptr_t)), scratch);
 
     
-    masm.makeFrameDescriptor(ScratchReg, JitFrame_IonJS);
-    masm.push(ScratchReg);
+    masm.makeFrameDescriptor(scratch, JitFrame_IonJS);
+    masm.push(scratch);
     masm.push(ICTailCallReg);
     masm.jmp(target);
 }
@@ -118,8 +122,9 @@ EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm, Register reg)
 inline void
 EmitBaselineCallVM(JitCode* target, MacroAssembler& masm)
 {
-    EmitBaselineCreateStubFrameDescriptor(masm, ScratchReg);
-    masm.push(ScratchReg);
+    ScratchRegisterScope scratch(masm);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
+    masm.push(scratch);
     masm.call(target);
 }
 
@@ -147,19 +152,21 @@ EmitBaselineEnterStubFrame(MacroAssembler& masm, Register)
 {
     EmitRestoreTailCallReg(masm);
 
-    
-    masm.movq(BaselineFrameReg, ScratchReg);
-    masm.addq(Imm32(BaselineFrame::FramePointerOffset), ScratchReg);
-    masm.subq(BaselineStackReg, ScratchReg);
-
-    masm.store32(ScratchReg, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
+    ScratchRegisterScope scratch(masm);
 
     
+    masm.movq(BaselineFrameReg, scratch);
+    masm.addq(Imm32(BaselineFrame::FramePointerOffset), scratch);
+    masm.subq(BaselineStackReg, scratch);
+
+    masm.store32(scratch, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
+
+    
     
 
     
-    masm.makeFrameDescriptor(ScratchReg, JitFrame_BaselineJS);
-    masm.push(ScratchReg);
+    masm.makeFrameDescriptor(scratch, JitFrame_BaselineJS);
+    masm.push(scratch);
     masm.push(ICTailCallReg);
 
     
@@ -184,9 +191,10 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
     
     
     if (calledIntoIon) {
-        masm.pop(ScratchReg);
-        masm.shrq(Imm32(FRAMESIZE_SHIFT), ScratchReg);
-        masm.addq(ScratchReg, BaselineStackReg);
+        ScratchRegisterScope scratch(masm);
+        masm.pop(scratch);
+        masm.shrq(Imm32(FRAMESIZE_SHIFT), scratch);
+        masm.addq(scratch, BaselineStackReg);
     } else {
         masm.mov(BaselineFrameReg, BaselineStackReg);
     }
