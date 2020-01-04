@@ -2514,6 +2514,14 @@ public class BrowserApp extends GeckoApp
             if (panelId == null) {
                 
                 
+                
+                
+                
+                
+                
+                
+                
+                
                 panelId = tab.getMostRecentHomePanel();
                 panelRestoreData = tab.getMostRecentHomePanelData();
             }
