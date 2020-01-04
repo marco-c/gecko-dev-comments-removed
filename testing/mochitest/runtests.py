@@ -87,7 +87,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 
-MOZ_LOG_MODULES = ""
+
+
+MOZ_LOG = ""
 
 
 
@@ -1236,9 +1238,9 @@ toolbar#nav-bar {
 
         
         
-        self.mozLogs = MOZ_LOG_MODULES and "MOZ_UPLOAD_DIR" in os.environ
+        self.mozLogs = MOZ_LOG and "MOZ_UPLOAD_DIR" in os.environ
         if self.mozLogs:
-            browserEnv["MOZ_LOG_MODULES"] = MOZ_LOG_MODULES
+            browserEnv["MOZ_LOG"] = MOZ_LOG
 
         if debugger and not options.slowscript:
             browserEnv["JS_DISABLE_SLOW_SCRIPT_SIGNALS"] = "1"
