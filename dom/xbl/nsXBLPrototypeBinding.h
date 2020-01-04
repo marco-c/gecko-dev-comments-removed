@@ -18,6 +18,7 @@
 #include "nsXBLProtoImplMethod.h"
 #include "nsXBLPrototypeHandler.h"
 #include "nsXBLPrototypeResources.h"
+#include "mozilla/WeakPtr.h"
 
 class nsIAtom;
 class nsIContent;
@@ -36,9 +37,12 @@ class CSSStyleSheet;
 
 
 
-class nsXBLPrototypeBinding final
+class nsXBLPrototypeBinding final :
+  public mozilla::SupportsWeakPtr<nsXBLPrototypeBinding>
 {
 public:
+  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsXBLPrototypeBinding)
+
   nsIContent* GetBindingElement() const { return mBinding; }
   void SetBindingElement(nsIContent* aElement);
 
@@ -290,7 +294,8 @@ protected:
   nsXBLProtoImpl* mImplementation; 
                                    
 
-  nsXBLPrototypeBinding* mBaseBinding; 
+  
+  mozilla::WeakPtr<nsXBLPrototypeBinding> mBaseBinding;
   bool mInheritStyle;
   bool mCheckedBaseProto;
   bool mKeyHandlersRegistered;
