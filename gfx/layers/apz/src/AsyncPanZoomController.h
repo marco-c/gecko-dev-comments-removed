@@ -754,11 +754,6 @@ protected:
 
     PAN_MOMENTUM,             
 
-    CROSS_SLIDING_X,          
-
-
-    CROSS_SLIDING_Y,          
-
     PINCHING,                 
     ANIMATING_ZOOM,           
     OVERSCROLL_ANIMATION,     
