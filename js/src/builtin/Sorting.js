@@ -236,7 +236,6 @@ function MergeSort(array, len, comparefn) {
     
     
     
-    
     if (IsPossiblyWrappedTypedArray(array)) {
         return TypedArraySort.call(array, comparefn);
     }
