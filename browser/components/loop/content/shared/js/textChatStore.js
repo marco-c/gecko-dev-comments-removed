@@ -162,9 +162,14 @@ loop.store.TextChatStore = (function() {
       
       
       if (actionData.roomName) {
+        var roomName = actionData.roomName;
+        if (!roomName && actionData.roomContextUrls && actionData.roomContextUrls.length) {
+          roomName = actionData.roomContextUrls[0].description ||
+                     actionData.roomContextUrls[0].url;
+        }
         this._appendTextChatMessage(CHAT_MESSAGE_TYPES.SPECIAL, {
           contentType: CHAT_CONTENT_TYPES.ROOM_NAME,
-          message: actionData.roomName
+          message: roomName
         });
       }
 
