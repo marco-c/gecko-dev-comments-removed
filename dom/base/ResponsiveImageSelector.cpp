@@ -132,14 +132,6 @@ ResponsiveImageSelector::SetCandidatesFromSourceSet(const nsAString & aSrcSet)
     return false;
   }
 
-  
-  uint32_t prevNumCandidates = mCandidates.Length();
-  nsString defaultURLString;
-  if (prevNumCandidates && (mCandidates[prevNumCandidates - 1].Type() ==
-                            ResponsiveImageCandidate::eCandidateType_Default)) {
-    defaultURLString = mCandidates[prevNumCandidates - 1].URLString();
-  }
-
   mCandidates.Clear();
 
   nsAString::const_iterator iter, end;
@@ -187,9 +179,7 @@ ResponsiveImageSelector::SetCandidatesFromSourceSet(const nsAString & aSrcSet)
   bool parsedCandidates = mCandidates.Length() > 0;
 
   
-  if (!defaultURLString.IsEmpty()) {
-    AppendDefaultCandidate(defaultURLString);
-  }
+  MaybeAppendDefaultCandidate();
 
   return parsedCandidates;
 }
@@ -233,10 +223,10 @@ ResponsiveImageSelector::SetDefaultSource(const nsAString& aURLString)
     mCandidates.RemoveElementAt(candidates - 1);
   }
 
+  mDefaultSourceURL = aURLString;
+
   
-  if (!aURLString.IsEmpty()) {
-    AppendDefaultCandidate(aURLString);
-  }
+  MaybeAppendDefaultCandidate();
 }
 
 void
@@ -286,13 +276,29 @@ ResponsiveImageSelector::AppendCandidateIfUnique(const ResponsiveImageCandidate 
 }
 
 void
-ResponsiveImageSelector::AppendDefaultCandidate(const nsAString& aURLString)
+ResponsiveImageSelector::MaybeAppendDefaultCandidate()
 {
-  NS_ENSURE_TRUE(!aURLString.IsEmpty(), );
+  NS_ENSURE_TRUE(!mDefaultSourceURL.IsEmpty(), );
+
+  int numCandidates = mCandidates.Length();
+
+  
+  
+  
+  
+  
+  
+  for (int i = 0; i < numCandidates; i++) {
+    if (mCandidates[i].IsComputedFromWidth()) {
+      return;
+    } else if (mCandidates[i].Density(this) == 1.0) {
+      return;
+    }
+  }
 
   ResponsiveImageCandidate defaultCandidate;
   defaultCandidate.SetParameterDefault();
-  defaultCandidate.SetURLSpec(aURLString);
+  defaultCandidate.SetURLSpec(mDefaultSourceURL);
   
   
   mCandidates.AppendElement(defaultCandidate);
@@ -372,14 +378,6 @@ ResponsiveImageSelector::SelectImage(bool aReselect)
       ComputeFinalWidthForCurrentViewport(&computedWidth);
     MOZ_ASSERT(computeResult,
                "Computed candidates not allowed without sizes data");
-
-    
-    
-    
-    if (numCandidates > 1 && mCandidates[numCandidates - 1].Type() ==
-        ResponsiveImageCandidate::eCandidateType_Default) {
-      numCandidates--;
-    }
   }
 
   int bestIndex = -1;

@@ -88,7 +88,7 @@ private:
 
   
   
-  void AppendDefaultCandidate(const nsAString& aURLString);
+  void MaybeAppendDefaultCandidate();
 
   
   int GetSelectedCandidateIndex();
@@ -105,6 +105,8 @@ private:
   bool ComputeFinalWidthForCurrentViewport(int32_t *aWidth);
 
   nsCOMPtr<nsINode> mOwnerNode;
+  
+  nsString mDefaultSourceURL;
   
   
   nsTArray<ResponsiveImageCandidate> mCandidates;
