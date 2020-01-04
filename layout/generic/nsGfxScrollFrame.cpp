@@ -215,15 +215,19 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
 
   
   nsOverflowAreas mContentsOverflowAreas;
+  MOZ_INIT_OUTSIDE_CTOR
   bool mReflowedContentsWithHScrollbar;
+  MOZ_INIT_OUTSIDE_CTOR
   bool mReflowedContentsWithVScrollbar;
 
   
   
   nsSize mInsideBorderSize;
   
+  MOZ_INIT_OUTSIDE_CTOR
   bool mShowHScrollbar;
   
+  MOZ_INIT_OUTSIDE_CTOR
   bool mShowVScrollbar;
 
   ScrollReflowInput(nsIScrollableFrame* aFrame,
