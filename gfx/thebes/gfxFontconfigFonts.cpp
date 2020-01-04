@@ -135,7 +135,7 @@ protected:
 
     
     
-    AutoFallibleTArray<nsCountedRef<FcPattern>,1> mPatterns;
+    AutoTArray<nsCountedRef<FcPattern>,1> mPatterns;
 
     static cairo_user_data_key_t sFontEntryKey;
 };
