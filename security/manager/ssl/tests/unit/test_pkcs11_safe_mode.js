@@ -7,15 +7,14 @@
 
 
 
-
-
 var { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 
+function run_test() {
+  do_get_profile();
 
-
-function registerXULRuntime() {
+  
   let xulRuntime = {
-    inSafeMode: false,
+    inSafeMode: true,
     logConsoleErrors: true,
     OS: "XPCShell",
     XPCOMABI: "noarch-spidermonkey",
@@ -39,62 +38,20 @@ function registerXULRuntime() {
   const XULRUNTIME_CID = Components.ID("{f0f0b230-5525-4127-98dc-7bca39059e70}");
   registrar.registerFactory(XULRUNTIME_CID, "XULRuntime", XULRUNTIME_CONTRACTID,
                             xulRuntimeFactory);
-  return xulRuntime;
-}
 
-
-function loadTestModule() {
+  
   let pkcs11 = Cc["@mozilla.org/security/pkcs11;1"].getService(Ci.nsIPKCS11);
   let libraryName = ctypes.libraryName("pkcs11testmodule");
   let libraryFile = Services.dirsvc.get("CurWorkD", Ci.nsILocalFile);
   libraryFile.append("pkcs11testmodule");
   libraryFile.append(libraryName);
   ok(libraryFile.exists(), "The pkcs11testmodule file should exist");
-  pkcs11.addModule("PKCS11 Test Module", libraryFile.path, 0, 0);
-}
-
-
-
-function testFindTestModule(shouldSucceed) {
-  let pkcs11ModuleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"]
-                         .getService(Ci.nsIPKCS11ModuleDB);
+  let exceptionCaught = false;
   try {
-    let module = pkcs11ModuleDB.findModuleByName("PKCS11 Test Module");
-    ok(shouldSucceed, "Success expected: findModuleByName should not throw");
-    ok(module, "module should be non-null");
+    pkcs11.addModule("PKCS11 Test Module", libraryFile.path, 0, 0);
+    ok(false, "addModule should have thrown an exception");
   } catch (e) {
-    ok(!shouldSucceed, "Failure expected: findModuleByName should throw");
+    exceptionCaught = true;
   }
-}
-
-function simulateShutdown() {
-  let psmComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsIObserver);
-  psmComponent.observe(null, "profile-before-change", null);
-  psmComponent.observe(null, "xpcom-shutdown", null);
-}
-
-function simulateStartup() {
-  let psmComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsIObserver);
-  psmComponent.observe(null, "profile-do-change", null);
-}
-
-function run_test() {
-  do_get_profile();
-  let xulRuntime = registerXULRuntime();
-  loadTestModule();
-
-  
-  testFindTestModule(true);
-  simulateShutdown();
-  simulateStartup();
-  
-  
-  testFindTestModule(true);
-
-  simulateShutdown();
-  
-  xulRuntime.inSafeMode = true;
-  simulateStartup();
-  
-  testFindTestModule(false);
+  ok(exceptionCaught, "addModule should have thrown an exception");
 }
