@@ -13,7 +13,6 @@
 #include "StreamBuffer.h"
 #include "nsIDOMWindow.h"
 #include "nsIPrincipal.h"
-#include "mozilla/PeerIdentity.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "PrincipalChangeObserver.h"
 
@@ -449,19 +448,6 @@ public:
   nsIPrincipal* GetVideoPrincipal() { return mVideoPrincipal; }
 
   
-
-
-
-
-  PeerIdentity* GetPeerIdentity() const { return mPeerIdentity; }
-  void SetPeerIdentity(PeerIdentity* aPeerIdentity)
-  {
-    mPeerIdentity = aPeerIdentity;
-  }
-
-
-
-  
   void PrincipalChanged(MediaStreamTrack* aTrack) override;
 
   
@@ -690,9 +676,6 @@ private:
   
   nsCOMPtr<nsIPrincipal> mVideoPrincipal;
   nsTArray<dom::PrincipalChangeObserver<DOMMediaStream>*> mPrincipalChangeObservers;
-  
-  
-  RefPtr<PeerIdentity> mPeerIdentity;
   CORSMode mCORSMode;
 };
 
