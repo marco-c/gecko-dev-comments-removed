@@ -1966,6 +1966,9 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
                                          !isCrossSite);
     NS_ENSURE_SUCCESS(rv, rv);
 
+    
+    mResponseXML->SetReferrer(NS_LITERAL_CSTRING(""));
+
     mXMLParserStreamListener = listener;
     rv = mXMLParserStreamListener->OnStartRequest(request, ctxt);
     NS_ENSURE_SUCCESS(rv, rv);

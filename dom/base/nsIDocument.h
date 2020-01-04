@@ -344,6 +344,10 @@ public:
     return mUpgradeInsecureRequests;
   }
 
+  void SetReferrer(const nsACString& aReferrer) {
+    mReferrer = aReferrer;
+  }
+
   
 
 
