@@ -1,7 +1,6 @@
 
 
 load(libdir + "asserts.js");
-load(libdir + "class.js");
 
 function testSyntaxError(source) {
     assertThrowsInstanceOf(function () {

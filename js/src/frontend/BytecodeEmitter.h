@@ -480,8 +480,6 @@ struct BytecodeEmitter
     bool emitPropOp(ParseNode* pn, JSOp op);
     bool emitPropIncDec(ParseNode* pn);
 
-    bool emitAsyncWrapper(unsigned index, bool isMethod);
-
     bool emitComputedPropertyName(ParseNode* computedPropName);
 
     
