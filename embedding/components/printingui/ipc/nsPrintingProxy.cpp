@@ -75,21 +75,18 @@ nsPrintingProxy::ShowPrintDialog(mozIDOMWindowProxy *parent,
 
   
   
-  
   nsCOMPtr<nsPIDOMWindowOuter> pwin = nsPIDOMWindowOuter::From(parent);
   NS_ENSURE_STATE(pwin);
   nsCOMPtr<nsIDocShell> docShell = pwin->GetDocShell();
   NS_ENSURE_STATE(docShell);
-  nsCOMPtr<nsIDocShellTreeOwner> owner;
-  nsresult rv = docShell->GetTreeOwner(getter_AddRefs(owner));
-  NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsITabChild> tabchild = do_GetInterface(owner);
+  nsCOMPtr<nsITabChild> tabchild = docShell->GetTabChild();
   NS_ENSURE_STATE(tabchild);
 
   TabChild* pBrowser = static_cast<TabChild*>(tabchild.get());
 
   
+  nsresult rv = NS_OK;
   nsCOMPtr<nsIPrintOptions> po =
     do_GetService("@mozilla.org/gfx/printsettings-service;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -136,15 +133,11 @@ nsPrintingProxy::ShowProgress(mozIDOMWindowProxy*      parent,
 
   
   
-  
   nsCOMPtr<nsPIDOMWindowOuter> pwin = nsPIDOMWindowOuter::From(parent);
   NS_ENSURE_STATE(pwin);
   nsCOMPtr<nsIDocShell> docShell = pwin->GetDocShell();
   NS_ENSURE_STATE(docShell);
-  nsCOMPtr<nsIDocShellTreeOwner> owner;
-  nsresult rv = docShell->GetTreeOwner(getter_AddRefs(owner));
-  NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsITabChild> tabchild = do_GetInterface(owner);
+  nsCOMPtr<nsITabChild> tabchild = docShell->GetTabChild();
   TabChild* pBrowser = static_cast<TabChild*>(tabchild.get());
 
   RefPtr<PrintProgressDialogChild> dialogChild =
@@ -152,6 +145,7 @@ nsPrintingProxy::ShowProgress(mozIDOMWindowProxy*      parent,
 
   SendPPrintProgressDialogConstructor(dialogChild);
 
+  nsresult rv = NS_OK;
   mozilla::Unused << SendShowProgress(pBrowser, dialogChild,
                                       isForPrinting, notifyOnOpen, &rv);
   if (NS_FAILED(rv)) {

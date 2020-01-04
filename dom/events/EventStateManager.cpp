@@ -981,7 +981,9 @@ EventStateManager::ExecuteAccessKey(nsTArray<uint32_t>& aAccessCharCodes,
         if (focusChanged && aIsTrustedEvent) {
           
           
-          nsCOMPtr<nsITabChild> child = do_GetInterface(mPresContext->GetDocShell());
+          nsIDocShell* docShell = mPresContext->GetDocShell();
+          nsCOMPtr<nsITabChild> child =
+            docShell ? docShell->GetTabChild() : nullptr;
           if (child) {
             child->SendRequestFocus(false);
           }

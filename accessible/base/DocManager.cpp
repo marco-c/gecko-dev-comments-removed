@@ -499,7 +499,7 @@ DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
     if (IPCAccessibilityActive()) {
       nsIDocShell* docShell = aDocument->GetDocShell();
       if (docShell) {
-        nsCOMPtr<nsITabChild> tabChild = do_GetInterface(docShell);
+        nsCOMPtr<nsITabChild> tabChild = docShell->GetTabChild();
 
         
         

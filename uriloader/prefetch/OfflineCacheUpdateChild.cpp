@@ -379,18 +379,13 @@ OfflineCacheUpdateChild::Schedule()
     NS_ASSERTION(mWindow, "Window must be provided to the offline cache update child");
 
     nsCOMPtr<nsPIDOMWindowInner> window = mWindow.forget();
-    nsIDocShell *docshell = window->GetDocShell();
-
-    nsCOMPtr<nsIDocShellTreeItem> item = do_QueryInterface(docshell);
-    if (!item) {
+    nsCOMPtr<nsIDocShell >docshell = window->GetDocShell();
+    if (!docshell) {
       NS_WARNING("doc shell tree item is null");
       return NS_ERROR_FAILURE;
     }
 
-    nsCOMPtr<nsIDocShellTreeOwner> owner;
-    item->GetTreeOwner(getter_AddRefs(owner));
-
-    nsCOMPtr<nsITabChild> tabchild = do_GetInterface(owner);
+    nsCOMPtr<nsITabChild> tabchild = docshell->GetTabChild();
     
     
     TabChild* child = tabchild ? static_cast<TabChild*>(tabchild.get()) : nullptr;
