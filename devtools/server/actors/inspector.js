@@ -53,13 +53,10 @@
 const {Cc, Ci, Cu} = require("chrome");
 const Services = require("Services");
 const protocol = require("devtools/shared/protocol");
-const {Arg, Option, method, RetVal, types} = protocol;
 const {LongStringActor} = require("devtools/server/actors/string");
 const promise = require("promise");
 const {Task} = require("devtools/shared/task");
-const object = require("sdk/util/object");
 const events = require("sdk/event/core");
-const {Class} = require("sdk/core/heritage");
 const {WalkerSearch} = require("devtools/server/actors/utils/walker-search");
 const {PageStyleActor, getFontPreviewData} = require("devtools/server/actors/styles");
 const {
@@ -76,8 +73,7 @@ const {
   isShadowAnonymous,
   getFrameElement
 } = require("devtools/shared/layout/utils");
-const {getLayoutChangesObserver, releaseLayoutChangesObserver} =
-  require("devtools/server/actors/layout");
+const {getLayoutChangesObserver, releaseLayoutChangesObserver} = require("devtools/server/actors/layout");
 const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
 
 loader.lazyRequireGetter(this, "CSS", "CSS");
@@ -444,7 +440,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   getEventListeners: function (node) {
     let parsers = this._eventParsers;
     let dbg = this.parent().tabActor.makeDebugger();
-    let events = [];
+    let listeners = [];
 
     for (let [, {getListeners, normalizeHandler}] of parsers) {
       try {
@@ -459,7 +455,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
             eventInfo.normalizeHandler = normalizeHandler;
           }
 
-          this.processHandlerForEvent(node, events, dbg, eventInfo);
+          this.processHandlerForEvent(node, listeners, dbg, eventInfo);
         }
       } catch (e) {
         
@@ -467,11 +463,11 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       }
     }
 
-    events.sort((a, b) => {
+    listeners.sort((a, b) => {
       return a.type.localeCompare(b.type);
     });
 
-    return events;
+    return listeners;
   },
 
   
@@ -503,7 +499,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
 
-  processHandlerForEvent: function (node, events, dbg, eventInfo) {
+  processHandlerForEvent: function (node, listeners, dbg, eventInfo) {
     let type = eventInfo.type || "";
     let handler = eventInfo.handler;
     let tags = eventInfo.tags || "";
@@ -594,7 +590,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       hide: hide
     };
 
-    events.push(eventObj);
+    listeners.push(eventObj);
 
     dbg.removeDebuggee(globalDO);
   },
@@ -1300,8 +1296,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     
     
-    let getFilteredWalker = node => {
-      return this.getDocumentWalker(node, options.whatToShow);
+    let getFilteredWalker = documentWalkerNode => {
+      return this.getDocumentWalker(documentWalkerNode, options.whatToShow);
     };
 
     
@@ -2109,7 +2105,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     if (isNodeDead(node) ||
         isNodeDead(parent) ||
         (sibling && isNodeDead(sibling))) {
-      return null;
+      return;
     }
 
     let rawNode = node.rawNode;
@@ -2124,7 +2120,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
                                                 null;
 
       if (rawNode === rawSibling || currentNextSibling === rawSibling) {
-        return null;
+        return;
       }
     }
 
@@ -2152,8 +2148,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     } catch (x) {
       
       
-      return Promise.reject(new Error("Could not change node's tagName to " +
-        tagName));
+      return Promise.reject(new Error("Could not change node's tagName to " + tagName));
     }
 
     let attrs = oldNode.attributes;
@@ -2168,6 +2163,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     oldNode.remove();
+    return null;
   },
 
   
@@ -2582,7 +2578,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-var InspectorActor = exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
+exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
@@ -2825,6 +2821,7 @@ function nodeDocshell(node) {
     return win.QueryInterface(Ci.nsIInterfaceRequestor)
               .getInterface(Ci.nsIDocShell);
   }
+  return null;
 }
 
 function isNodeDead(node) {
@@ -3030,7 +3027,7 @@ function ensureImageLoaded(image, timeout) {
   });
 
   
-  let onAbort = new promise(() => {});
+  let onAbort = new Promise(() => {});
 
   if (!DevToolsUtils.testing) {
     
