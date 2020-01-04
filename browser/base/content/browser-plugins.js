@@ -85,14 +85,6 @@ var gPluginHandler = {
     }
   },
 
-#ifdef MOZ_CRASHREPORTER
-  get CrashSubmit() {
-    delete this.CrashSubmit;
-    Cu.import("resource://gre/modules/CrashSubmit.jsm", this);
-    return this.CrashSubmit;
-  },
-#endif
-
   
   managePlugins: function () {
     BrowserOpenAddonsMgr("addons://list/plugin");
