@@ -1934,14 +1934,6 @@ HTMLFormElement::CheckValidFormSubmission()
 
   
   
-  
-  nsIDocument* doc = GetComposedDoc();
-  if (doc && (doc->GetSandboxFlags() & SANDBOXED_FORMS)) {
-    return true;
-  }
-
-  
-  
   nsCOMPtr<nsIObserverService> service =
     mozilla::services::GetObserverService();
   if (!service) {
@@ -2025,6 +2017,41 @@ One should be implemented!");
   }
 
   return true;
+}
+
+bool
+HTMLFormElement::SubmissionCanProceed(Element* aSubmitter)
+{
+#ifdef DEBUG
+  if (aSubmitter) {
+    nsCOMPtr<nsIFormControl> fc = do_QueryInterface(aSubmitter);
+    MOZ_ASSERT(fc);
+
+    uint32_t type = fc->GetType();
+    MOZ_ASSERT(type == NS_FORM_INPUT_SUBMIT ||
+               type == NS_FORM_INPUT_IMAGE ||
+               type == NS_FORM_BUTTON_SUBMIT,
+               "aSubmitter is not a submit control?");
+  }
+#endif
+
+  
+  
+  
+  if (OwnerDoc()->GetSandboxFlags() & SANDBOXED_FORMS) {
+    return false;
+  }
+
+  if (HasAttr(kNameSpaceID_None, nsGkAtoms::novalidate)) {
+    return true;
+  }
+
+  if (aSubmitter &&
+      aSubmitter->HasAttr(kNameSpaceID_None, nsGkAtoms::formnovalidate)) {
+    return true;
+  }
+
+  return CheckValidFormSubmission();
 }
 
 void
