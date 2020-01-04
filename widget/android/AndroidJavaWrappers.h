@@ -608,7 +608,6 @@ public:
         NOOP = 15,
         APZ_INPUT_EVENT = 17, 
         VIEWPORT = 20,
-        VISITED = 21,
         NETWORK_CHANGED = 22,
         THUMBNAIL = 25,
         SCREENORIENTATION_CHANGED = 27,
