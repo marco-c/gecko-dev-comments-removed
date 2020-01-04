@@ -91,6 +91,48 @@ this.ReaderMode = {
 
 
 
+  enterReaderMode: function(docShell, win) {
+    let url = win.document.location.href;
+    let readerURL = "about:reader?url=" + encodeURIComponent(url);
+    let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
+    let sh = webNav.sessionHistory;
+    if (webNav.canGoForward) {
+      let forwardEntry = sh.getEntryAtIndex(sh.index + 1, false);
+      let forwardURL = forwardEntry.URI.spec;
+      if (forwardURL && (forwardURL == readerURL || !readerURL)) {
+        webNav.goForward();
+        return;
+      }
+    }
+
+    win.document.location = readerURL;
+  },
+
+  
+
+
+
+  leaveReaderMode: function(docShell, win) {
+    let url = win.document.location.href;
+    let originalURL = this.getOriginalUrl(url);
+    let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
+    let sh = webNav.sessionHistory;
+    if (webNav.canGoBack) {
+      let prevEntry = sh.getEntryAtIndex(sh.index - 1, false);
+      let prevURL = prevEntry.URI.spec;
+      if (prevURL && (prevURL == originalURL || !originalURL)) {
+        webNav.goBack();
+        return;
+      }
+    }
+
+    win.document.location = originalURL;
+  },
+
+  
+
+
+
 
 
 
