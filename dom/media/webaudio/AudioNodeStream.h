@@ -44,23 +44,29 @@ public:
   typedef nsAutoTArray<AudioChunk, 1> OutputChunks;
 
   
-  
-  
-  enum AudioNodeStreamKind { SOURCE_STREAM, INTERNAL_STREAM, EXTERNAL_STREAM };
+  typedef unsigned Flags;
+  enum : Flags {
+    NO_STREAM_FLAGS = 0U,
+    NEED_MAIN_THREAD_FINISHED = 1U << 0,
+    NEED_MAIN_THREAD_CURRENT_TIME = 1U << 1,
+    
+    
+    
+    EXTERNAL_OUTPUT = 1U << 2,
+  };
   
 
 
 
   static already_AddRefed<AudioNodeStream>
-  Create(MediaStreamGraph* aGraph, AudioNodeEngine* aEngine,
-         AudioNodeStreamKind aKind);
+  Create(MediaStreamGraph* aGraph, AudioNodeEngine* aEngine, Flags aKind);
 
 protected:
   
 
 
   AudioNodeStream(AudioNodeEngine* aEngine,
-                  AudioNodeStreamKind aKind,
+                  Flags aFlags,
                   TrackRate aSampleRate,
                   AudioContext::AudioContextId aContextId);
 
@@ -123,9 +129,8 @@ public:
   }
   virtual bool MainThreadNeedsUpdates() const override
   {
-    
-    return (mKind == SOURCE_STREAM && mFinished) ||
-           mKind == EXTERNAL_STREAM;
+    return ((mFlags & NEED_MAIN_THREAD_FINISHED) && mFinished) ||
+      (mFlags & NEED_MAIN_THREAD_CURRENT_TIME);
   }
   virtual bool IsIntrinsicallyConsumed() const override
   {
@@ -186,7 +191,7 @@ protected:
   
   const AudioContext::AudioContextId mAudioContextId;
   
-  const AudioNodeStreamKind mKind;
+  const Flags mFlags;
   
   uint32_t mNumberOfInputChannels;
   

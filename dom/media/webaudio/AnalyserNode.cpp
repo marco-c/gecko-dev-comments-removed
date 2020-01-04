@@ -87,7 +87,7 @@ AnalyserNode::AnalyserNode(AudioContext* aContext)
 {
   mStream = AudioNodeStream::Create(aContext->Graph(),
                                     new AnalyserNodeEngine(this),
-                                    AudioNodeStream::INTERNAL_STREAM);
+                                    AudioNodeStream::NO_STREAM_FLAGS);
 
   
   
