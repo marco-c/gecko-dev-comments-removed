@@ -178,69 +178,60 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
       );
     }
   };
-  let healthReporter = {
-    name: "healthreporter", 
+  let telemetry = {
+    name: "telemetry", 
     type: types.OTHERDATA,
     migrate: aCallback => {
-      
-      
+      let createSubDir = (name) => {
+        let dir = currentProfileDir.clone();
+        dir.append(name);
+        dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+        return dir;
+      };
 
       
-      const DEFAULT_DATABASE_NAME = "healthreport.sqlite";
-      let path = OS.Path.join(sourceProfileDir.path, DEFAULT_DATABASE_NAME);
-      let sqliteFile = FileUtils.File(path);
-      if (sqliteFile.exists()) {
-        sqliteFile.copyTo(currentProfileDir, "");
-      }
-      
-      
-      
-      
-      
-      
-      
-      
-      path = OS.Path.join(sourceProfileDir.path, DEFAULT_DATABASE_NAME + "-wal");
-      let sqliteWal = FileUtils.File(path);
-      if (sqliteWal.exists()) {
-        sqliteWal.copyTo(currentProfileDir, "");
-      }
-
-      
-      let subdir = this._getFileObject(sourceProfileDir, "healthreport");
+      let haveStateFile = false;
+      let subdir = this._getFileObject(sourceProfileDir, "datareporting");
       if (subdir && subdir.isDirectory()) {
         
-        let dest = currentProfileDir.clone();
-        dest.append("healthreport");
-        dest.create(Components.interfaces.nsIFile.DIRECTORY_TYPE,
-                    FileUtils.PERMS_DIRECTORY);
+        let toCopy = ["state.json", "session-state.json"];
+
+        let dest = createSubDir("datareporting");
         let enumerator = subdir.directoryEntries;
         while (enumerator.hasMoreElements()) {
-          let file = enumerator.getNext().QueryInterface(Components.interfaces.nsIFile);
-          if (file.isDirectory()) {
+          let file = enumerator.getNext().QueryInterface(Ci.nsIFile);
+          if (file.isDirectory() || toCopy.indexOf(file.leafName) == -1) {
             continue;
+          }
+
+          if (file.leafName == "state.json") {
+            haveStateFile = true;
           }
           file.copyTo(dest, "");
         }
       }
-      
-      subdir = this._getFileObject(sourceProfileDir, "datareporting");
-      if (subdir && subdir.isDirectory()) {
-        let stateFile = this._getFileObject(subdir, "state.json");
-        if (stateFile) {
-          let dest = currentProfileDir.clone();
-          dest.append("datareporting");
-          dest.create(Components.interfaces.nsIFile.DIRECTORY_TYPE,
-                      FileUtils.PERMS_DIRECTORY);
-          stateFile.copyTo(dest, "");
+
+      if (!haveStateFile) {
+        
+        
+        
+        
+        let subdir = this._getFileObject(sourceProfileDir, "healthreport");
+        if (subdir && subdir.isDirectory()) {
+          let stateFile = this._getFileObject(subdir, "state.json");
+          if (stateFile) {
+            let dest = createSubDir("healthreport");
+            stateFile.copyTo(dest, "");
+          }
         }
       }
+
       aCallback(true);
     }
   }
 
   return [places, cookies, passwords, formData, dictionary, bookmarksBackups,
-          session, times, healthReporter].filter(r => r);
+          session, times, telemetry].filter(r => r);
 };
 
 Object.defineProperty(FirefoxProfileMigrator.prototype, "startupOnlyMigrator", {
