@@ -1149,20 +1149,14 @@ nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
     return false;
   }
 
-  nsRect oldDisplayPort;
-  bool hadDisplayPort = GetDisplayPort(aContent, &oldDisplayPort);
+  if (currentData && currentData->mMargins == aMargins) {
+    return true;
+  }
 
   aContent->SetProperty(nsGkAtoms::DisplayPortMargins,
                         new DisplayPortMarginsPropertyData(
                             aMargins, aPriority),
                         nsINode::DeleteProperty<DisplayPortMarginsPropertyData>);
-
-  nsRect newDisplayPort;
-  DebugOnly<bool> hasDisplayPort = GetDisplayPort(aContent, &newDisplayPort);
-  MOZ_ASSERT(hasDisplayPort);
-
-  bool changed = !hadDisplayPort ||
-        !oldDisplayPort.IsEqualEdges(newDisplayPort);
 
   if (gfxPrefs::LayoutUseContainersForRootFrames()) {
     nsIFrame* rootScrollFrame = aPresShell->GetRootScrollFrame();
@@ -1177,7 +1171,7 @@ nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
     }
   }
 
-  if (changed && aRepaintMode == RepaintMode::Repaint) {
+  if (aRepaintMode == RepaintMode::Repaint) {
     nsIFrame* frame = aContent->GetPrimaryFrame();
     if (frame) {
       frame->SchedulePaint();
@@ -1194,8 +1188,12 @@ nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
 
   
   
-  hadDisplayPort =
+  nsRect oldDisplayPort;
+  bool hadDisplayPort =
     scrollableFrame->GetDisplayPortAtLastImageVisibilityUpdate(&oldDisplayPort);
+
+  nsRect newDisplayPort;
+  Unused << GetDisplayPort(aContent, &newDisplayPort);
 
   bool needImageVisibilityUpdate = !hadDisplayPort;
   
