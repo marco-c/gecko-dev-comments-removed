@@ -63,6 +63,8 @@ CancelChannelRunnable::Run()
 
 FetchEvent::FetchEvent(EventTarget* aOwner)
   : ExtendableEvent(aOwner)
+  , mPreventDefaultLineNumber(0)
+  , mPreventDefaultColumnNumber(0)
   , mIsReload(false)
   , mWaitToRespond(false)
 {
@@ -563,6 +565,45 @@ FetchEvent::RespondWith(JSContext* aCx, Promise& aArg, ErrorResult& aRv)
   aArg.AppendNativeHandler(handler);
 
   WaitUntil(aArg, aRv);
+}
+
+void
+FetchEvent::PreventDefault(JSContext* aCx)
+{
+  MOZ_ASSERT(aCx);
+
+  if (mPreventDefaultScriptSpec.IsEmpty()) {
+    
+    
+    
+    
+    
+    nsJSUtils::GetCallingLocation(aCx, mPreventDefaultScriptSpec,
+                                  &mPreventDefaultLineNumber,
+                                  &mPreventDefaultColumnNumber);
+  }
+
+  Event::PreventDefault(aCx);
+}
+
+void
+FetchEvent::ReportCanceled()
+{
+  MOZ_ASSERT(!mPreventDefaultScriptSpec.IsEmpty());
+
+  RefPtr<InternalRequest> ir = mRequest->GetInternalRequest();
+  nsAutoCString url;
+  ir->GetURL(url);
+
+  
+  
+  NS_ConvertUTF8toUTF16 requestURL(url);
+  
+  
+
+  ::AsyncLog(mChannel.get(), mPreventDefaultScriptSpec,
+             mPreventDefaultLineNumber, mPreventDefaultColumnNumber,
+             NS_LITERAL_CSTRING("InterceptionCanceledWithURL"), &requestURL);
 }
 
 NS_IMPL_ADDREF_INHERITED(FetchEvent, ExtendableEvent)

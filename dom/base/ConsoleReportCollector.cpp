@@ -41,10 +41,15 @@ ConsoleReportCollector::FlushConsoleReports(nsIDocument* aDocument)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  MutexAutoLock lock(mMutex);
+  nsTArray<PendingReport> reports;
 
-  for (uint32_t i = 0; i < mPendingReports.Length(); ++i) {
-    PendingReport& report = mPendingReports[i];
+  {
+    MutexAutoLock lock(mMutex);
+    mPendingReports.SwapElements(reports);
+  }
+
+  for (uint32_t i = 0; i < reports.Length(); ++i) {
+    PendingReport& report = reports[i];
 
     
     
@@ -56,24 +61,22 @@ ConsoleReportCollector::FlushConsoleReports(nsIDocument* aDocument)
 
     
     
-    UniquePtr<char16_t*> params;
+    UniquePtr<const char16_t*[]> params;
     uint32_t paramsLength = report.mStringParams.Length();
     if (paramsLength > 0) {
-      params.reset(new char16_t*[paramsLength]);
+      params = MakeUnique<const char16_t*[]>(paramsLength);
       for (uint32_t j = 0; j < paramsLength; ++j) {
-        params.get()[j] = const_cast<char16_t*>(report.mStringParams[j].get());
+        params[j] = report.mStringParams[j].get();
       }
     }
 
     nsContentUtils::ReportToConsole(report.mErrorFlags, report.mCategory,
                                     aDocument, report.mPropertiesFile,
                                     report.mMessageName.get(),
-                                    const_cast<const char16_t**>(params.get()),
+                                    params.get(),
                                     paramsLength, uri, EmptyString(),
                                     report.mLineNumber, report.mColumnNumber);
   }
-
-  mPendingReports.Clear();
 }
 
 ConsoleReportCollector::~ConsoleReportCollector()
