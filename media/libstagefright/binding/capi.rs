@@ -5,30 +5,48 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std;
 use std::io::Cursor;
-use byteorder;
 
 
 use MediaContext;
 use read_box;
+use Error;
 
 
 #[no_mangle]
 pub extern "C" fn mp4parse_new() -> *mut MediaContext {
     let context = Box::new(MediaContext::new());
-    unsafe {
-        
-        std::mem::transmute(context)
-    }
+    Box::into_raw(context)
 }
 
 
 #[no_mangle]
 pub unsafe extern "C" fn mp4parse_free(context: *mut MediaContext) {
     assert!(!context.is_null());
-    let _: Box<MediaContext> = std::mem::transmute(context);
+    let _ = Box::from_raw(context);
 }
+
+
+
+
 
 
 #[no_mangle]
@@ -52,7 +70,7 @@ pub unsafe extern "C" fn mp4parse_read(context: *mut MediaContext, buffer: *cons
         loop {
             match read_box(&mut c, &mut context) {
                 Ok(_) => {},
-                Err(byteorder::Error::UnexpectedEOF) => { break },
+                Err(Error::UnexpectedEOF) => { break },
                 Err(e) => { panic!(e); },
             }
         }
@@ -92,7 +110,7 @@ fn arg_validation() {
         assert_eq!(-1, mp4parse_read(context, null_buffer, 0));
     }
 
-    for size in (0..buffer.len()) {
+    for size in 0..buffer.len() {
         println!("testing buffer length {}", size);
         unsafe {
             assert_eq!(-1, mp4parse_read(context, buffer.as_ptr(), size));
