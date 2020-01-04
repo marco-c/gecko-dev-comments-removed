@@ -20,7 +20,7 @@ public class ReaderModeUtils {
 
 
 
-    public static String getUrlFromAboutReader(String aboutReaderUrl) {
+    private static String getUrlFromAboutReader(String aboutReaderUrl) {
         return StringUtils.getQueryParameter(aboutReaderUrl, "url");
     }
 
