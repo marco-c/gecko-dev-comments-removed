@@ -18,8 +18,9 @@ extern LazyLogModule gMediaDecoderLog;
 NS_IMPL_ISUPPORTS(MediaShutdownManager, nsIObserver)
 
 MediaShutdownManager::MediaShutdownManager()
-  : mIsObservingShutdown(false),
-    mIsDoingXPCOMShutDown(false)
+  : mIsObservingShutdown(false)
+  , mIsDoingXPCOMShutDown(false)
+  , mCompletedShutdown(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_COUNT_CTOR(MediaShutdownManager);
@@ -114,9 +115,33 @@ MediaShutdownManager::Shutdown()
 
   
   
+  nsTArray<RefPtr<ShutdownPromise>> promises;
   for (auto iter = mDecoders.Iter(); !iter.Done(); iter.Next()) {
-    iter.Get()->GetKey()->Shutdown();
+    promises.AppendElement(iter.Get()->GetKey()->Shutdown()->Then(
+      
+      
+      
+      
+      
+      AbstractThread::MainThread(), __func__,
+      []() -> RefPtr<ShutdownPromise> {
+        return ShutdownPromise::CreateAndResolve(true, __func__);
+      },
+      []() -> RefPtr<ShutdownPromise> {
+        return ShutdownPromise::CreateAndResolve(true, __func__);
+      })->CompletionPromise());
     iter.Remove();
+  }
+
+  if (!promises.IsEmpty()) {
+    ShutdownPromise::All(AbstractThread::MainThread(), promises)
+      ->Then(AbstractThread::MainThread(), __func__, this,
+             &MediaShutdownManager::FinishShutdown,
+             &MediaShutdownManager::FinishShutdown);
+    
+    while (!mCompletedShutdown) {
+      NS_ProcessNextEvent(NS_GetCurrentThread(), true);
+    }
   }
 
   
@@ -130,6 +155,13 @@ MediaShutdownManager::Shutdown()
   sInstance = nullptr;
 
   DECODER_LOG(LogLevel::Debug, ("MediaShutdownManager::Shutdown() end."));
+}
+
+void
+MediaShutdownManager::FinishShutdown()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  mCompletedShutdown = true;
 }
 
 } 

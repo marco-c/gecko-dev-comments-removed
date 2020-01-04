@@ -346,7 +346,7 @@ public:
 
   
   
-  virtual void Shutdown();
+  virtual RefPtr<ShutdownPromise> Shutdown();
 
   
   
@@ -803,7 +803,7 @@ private:
     SetMediaSeekable(false);
   }
 
-  void FinishShutdown();
+  RefPtr<ShutdownPromise> FinishShutdown();
 
   MediaEventProducer<void> mDataArrivedEvent;
 

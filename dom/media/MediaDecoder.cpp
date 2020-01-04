@@ -595,14 +595,14 @@ MediaDecoder::MediaDecoder(MediaDecoderOwner* aOwner)
   MediaShutdownManager::Instance().Register(this);
 }
 
-void
+RefPtr<ShutdownPromise>
 MediaDecoder::Shutdown()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (mShuttingDown)
-    return;
-
+  if (mShuttingDown) {
+    return ShutdownPromise::CreateAndResolve(true, __func__);
+  }
   mShuttingDown = true;
 
   mResourceCallback->Disconnect();
@@ -614,6 +614,7 @@ MediaDecoder::Shutdown()
   
   
   
+  RefPtr<ShutdownPromise> shutdown;
   if (mDecoderStateMachine) {
     mTimedMetadataListener.Disconnect();
     mMetadataLoadedListener.Disconnect();
@@ -622,9 +623,11 @@ MediaDecoder::Shutdown()
     mOnSeekingStart.Disconnect();
     mOnMediaNotSeekable.Disconnect();
 
-    mDecoderStateMachine->BeginShutdown()->Then(
-      AbstractThread::MainThread(), __func__, this,
-      &MediaDecoder::FinishShutdown, &MediaDecoder::FinishShutdown);
+    shutdown = mDecoderStateMachine->BeginShutdown()
+        ->Then(AbstractThread::MainThread(), __func__, this,
+               &MediaDecoder::FinishShutdown,
+               &MediaDecoder::FinishShutdown)
+        ->CompletionPromise();
   }
 
   
@@ -638,6 +641,8 @@ MediaDecoder::Shutdown()
   ChangeState(PLAY_STATE_SHUTDOWN);
 
   MediaShutdownManager::Instance().Unregister(this);
+
+  return shutdown ? shutdown : ShutdownPromise::CreateAndResolve(true, __func__);
 }
 
 MediaDecoder::~MediaDecoder()
@@ -671,12 +676,13 @@ MediaDecoder::OnPlaybackEvent(MediaEventType aEvent)
   }
 }
 
-void
+RefPtr<ShutdownPromise>
 MediaDecoder::FinishShutdown()
 {
   MOZ_ASSERT(NS_IsMainThread());
   mDecoderStateMachine->BreakCycles();
   SetStateMachine(nullptr);
+  return ShutdownPromise::CreateAndResolve(true, __func__);
 }
 
 MediaResourceCallback*
