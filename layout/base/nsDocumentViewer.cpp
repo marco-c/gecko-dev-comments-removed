@@ -3691,7 +3691,11 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
   if (GetIsPrinting()) {
     
     rv = NS_ERROR_NOT_AVAILABLE;
-    nsPrintEngine::ShowPrintErrorDialog(rv);
+
+    if (mPrintEngine) {
+      mPrintEngine->FirePrintingErrorEvent(rv);
+    }
+
     return rv;
   }
 

@@ -11,6 +11,7 @@
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/CustomEvent.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsPIDOMWindow.h"
 #include "nsIDocShell.h"
@@ -121,6 +122,7 @@ static const char kPrintingPromptService[] = "@mozilla.org/embedcomp/printingpro
 #include "nsContentList.h"
 #include "nsIChannel.h"
 #include "xpcpublic.h"
+#include "nsVariant.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -414,8 +416,9 @@ nsPrintEngine::CommonPrint(bool                    aIsPrintPreview,
     }
     if (mProgressDialogIsShown)
       CloseProgressDialog(aWebProgressListener);
-    if (rv != NS_ERROR_ABORT && rv != NS_ERROR_OUT_OF_MEMORY)
-      ShowPrintErrorDialog(rv, !aIsPrintPreview);
+    if (rv != NS_ERROR_ABORT && rv != NS_ERROR_OUT_OF_MEMORY) {
+      FirePrintingErrorEvent(rv);
+    }
     delete mPrt;
     mPrt = nullptr;
   }
@@ -783,7 +786,7 @@ nsPrintEngine::PrintPreview(nsIPrintSettings* aPrintSettings,
   if (NS_FAILED(docShell->GetBusyFlags(&busyFlags)) ||
       busyFlags != nsIDocShell::BUSY_FLAGS_NONE) {
     CloseProgressDialog(aWebProgressListener);
-    ShowPrintErrorDialog(NS_ERROR_GFX_PRINTER_DOC_IS_BUSY, false);
+    FirePrintingErrorEvent(NS_ERROR_GFX_PRINTER_DOC_IS_BUSY);
     return NS_ERROR_FAILURE;
   }
 
@@ -1505,7 +1508,7 @@ nsresult nsPrintEngine::CleanupOnFailure(nsresult aResult, bool aIsPrinting)
 
 
   if (aResult != NS_ERROR_ABORT) {
-    ShowPrintErrorDialog(aResult, aIsPrinting);
+    FirePrintingErrorEvent(aResult);
   }
 
   FirePrintCompletionEvent();
@@ -1516,81 +1519,28 @@ nsresult nsPrintEngine::CleanupOnFailure(nsresult aResult, bool aIsPrinting)
 
 
 void
-nsPrintEngine::ShowPrintErrorDialog(nsresult aPrintError, bool aIsPrinting)
+nsPrintEngine::FirePrintingErrorEvent(nsresult aPrintError)
 {
-  nsAutoCString stringName;
-  nsXPIDLString msg, title;
-  nsresult rv = NS_OK;
+  nsCOMPtr<nsIContentViewer> cv = do_QueryInterface(mDocViewerPrint);
+  nsCOMPtr<nsIDocument> doc = cv->GetDocument();
+  nsCOMPtr<nsIDOMCustomEvent> event =
+    NS_NewDOMCustomEvent(doc, nullptr, nullptr);
 
-  switch(aPrintError)
-  {
-#define ENTITY_FOR_ERROR(label) \
-    case NS_ERROR_##label: stringName.AssignLiteral("PERR_" #label); break
-
-    ENTITY_FOR_ERROR(GFX_PRINTER_NO_PRINTER_AVAILABLE);
-    ENTITY_FOR_ERROR(GFX_PRINTER_NAME_NOT_FOUND);
-    ENTITY_FOR_ERROR(GFX_PRINTER_COULD_NOT_OPEN_FILE);
-    ENTITY_FOR_ERROR(GFX_PRINTER_STARTDOC);
-    ENTITY_FOR_ERROR(GFX_PRINTER_ENDDOC);
-    ENTITY_FOR_ERROR(GFX_PRINTER_STARTPAGE);
-    ENTITY_FOR_ERROR(GFX_PRINTER_DOC_IS_BUSY);
-
-    ENTITY_FOR_ERROR(ABORT);
-    ENTITY_FOR_ERROR(NOT_AVAILABLE);
-    ENTITY_FOR_ERROR(NOT_IMPLEMENTED);
-    ENTITY_FOR_ERROR(OUT_OF_MEMORY);
-    ENTITY_FOR_ERROR(UNEXPECTED);
-
-    default:
-    ENTITY_FOR_ERROR(FAILURE);
-
-#undef ENTITY_FOR_ERROR
-  }
-
-  if (!aIsPrinting) {
-    
-    stringName.AppendLiteral("_PP");
-    rv = nsContentUtils::GetLocalizedString(
-             nsContentUtils::ePRINTING_PROPERTIES, stringName.get(), msg);
-    if (NS_FAILED(rv)) {
-      stringName.Truncate(stringName.Length() - 3);
-    }
-  }
-  if (aIsPrinting || NS_FAILED(rv)) {
-    rv = nsContentUtils::GetLocalizedString(
-             nsContentUtils::ePRINTING_PROPERTIES, stringName.get(), msg);
-  }
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  rv = nsContentUtils::GetLocalizedString(
-           nsContentUtils::ePRINTING_PROPERTIES,
-           aIsPrinting ? "print_error_dialog_title"
-                       : "printpreview_error_dialog_title",
-           title);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  nsCOMPtr<nsIWindowWatcher> wwatch =
-    do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  nsCOMPtr<nsIDOMWindow> active;
-  wwatch->GetActiveWindow(getter_AddRefs(active));
-
-  nsCOMPtr<nsIPrompt> dialog;
+  MOZ_ASSERT(event);
+  nsCOMPtr<nsIWritableVariant> resultVariant = new nsVariant();
   
+  
+  
+  resultVariant->SetAsDouble(static_cast<double>(aPrintError));
 
-  wwatch->GetNewPrompter(active, getter_AddRefs(dialog));
-  if (!dialog) {
-    return;
-  }
+  event->InitCustomEvent(NS_LITERAL_STRING("PrintingError"), false, false,
+                         resultVariant);
+  event->SetTrusted(true);
 
-  dialog->Alert(title.get(), msg.get());
+  nsRefPtr<AsyncEventDispatcher> asyncDispatcher =
+    new AsyncEventDispatcher(doc, event);
+  asyncDispatcher->mOnlyChromeDispatch = true;
+  asyncDispatcher->RunDOMEventWhenSafe();
 }
 
 
@@ -2696,7 +2646,7 @@ nsPrintEngine::PrePrintPage()
     
     
     if (rv != NS_ERROR_ABORT) {
-      ShowPrintErrorDialog(rv);
+      FirePrintingErrorEvent(rv);
       mPrt->mIsAborted = true;
     }
     done = true;
@@ -2715,7 +2665,7 @@ nsPrintEngine::PrintPage(nsPrintObject*    aPO,
   
   
   if (!mPrt || !aPO || !mPageSeqFrame) {
-    ShowPrintErrorDialog(NS_ERROR_FAILURE);
+    FirePrintingErrorEvent(NS_ERROR_FAILURE);
     return true; 
   }
 
@@ -2777,7 +2727,7 @@ nsPrintEngine::PrintPage(nsPrintObject*    aPO,
   nsresult rv = mPageSeqFrame->PrintNextPage();
   if (NS_FAILED(rv)) {
     if (rv != NS_ERROR_ABORT) {
-      ShowPrintErrorDialog(rv);
+      FirePrintingErrorEvent(rv);
       mPrt->mIsAborted = true;
     }
     return true;
