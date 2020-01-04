@@ -15,6 +15,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
+#include "mozilla/dom/nsCSPService.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -1555,16 +1556,21 @@ WebSocketImpl::Init(JSContext* aCx,
     }
 
     
-    int16_t shouldLoad = nsIContentPolicy::ACCEPT;
-    aRv = NS_CheckContentLoadPolicy(nsIContentPolicy::TYPE_WEBSOCKET,
-                                    uri,
-                                    aPrincipal,
-                                    originDoc,
-                                    EmptyCString(),
-                                    nullptr,
-                                    &shouldLoad,
-                                    nsContentUtils::GetContentPolicy(),
-                                    nsContentUtils::GetSecurityManager());
+    
+    
+    
+    
+    nsCOMPtr<nsIContentPolicy> cspService = do_GetService(CSPSERVICE_CONTRACTID);
+    int16_t shouldLoad = nsIContentPolicy::REJECT_REQUEST;
+    aRv = cspService->ShouldLoad(nsIContentPolicy::TYPE_WEBSOCKET,
+                                 uri,
+                                 nullptr, 
+                                 originDoc,
+                                 EmptyCString(), 
+                                 nullptr, 
+                                 aPrincipal,
+                                 &shouldLoad);
+
     if (NS_WARN_IF(aRv.Failed())) {
       return;
     }
@@ -1772,6 +1778,7 @@ WebSocketImpl::AsyncOpen(nsIPrincipal* aPrincipal, uint64_t aInnerWindowID,
 
   aRv = mChannel->AsyncOpen(uri, asciiOrigin, aInnerWindowID, this, nullptr);
   if (NS_WARN_IF(aRv.Failed())) {
+    aRv.Throw(NS_ERROR_CONTENT_BLOCKED);
     return;
   }
 
@@ -1842,7 +1849,7 @@ WebSocketImpl::InitializeConnection(nsIPrincipal* aPrincipal)
   wsChannel->InitLoadInfo(doc ? doc->AsDOMNode() : nullptr,
                           doc ? doc->NodePrincipal() : aPrincipal,
                           aPrincipal,
-                          nsILoadInfo::SEC_NORMAL,
+                          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                           nsIContentPolicy::TYPE_WEBSOCKET);
 
   if (!mRequestedProtocolList.IsEmpty()) {
