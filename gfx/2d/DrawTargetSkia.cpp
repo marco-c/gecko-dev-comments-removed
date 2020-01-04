@@ -636,7 +636,9 @@ DrawTargetSkia::FillGlyphs(ScaledFont *aFont,
     
     paint.mPaint.setSubpixelText(true);
 
-    if (aFont->GetType() == FontType::MAC && shouldLCDRenderText) {
+    if (aFont->GetType() == FontType::MAC) {
+      
+      
       
       paint.mPaint.setHinting(SkPaint::kNo_Hinting);
     } else {
