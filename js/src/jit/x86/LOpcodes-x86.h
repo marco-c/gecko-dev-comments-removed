@@ -15,6 +15,8 @@
     _(SimdValueInt32x4)         \
     _(SimdValueFloat32x4)       \
     _(UDivOrMod)                \
-    _(UDivOrModConstant)
+    _(UDivOrModConstant)        \
+    _(UDivOrModI64)             \
+    _(DivOrModI64)
 
 #endif 
