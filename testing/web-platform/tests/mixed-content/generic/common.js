@@ -107,10 +107,21 @@ function createElement(tagName, attrs, parent, doBindEvents) {
 
   
   
-  setAttributes(element, attrs);
+  
+  
+  
+  
+  
+  
+  var isImg = (tagName == "img");
+  if (!isImg)
+    setAttributes(element, attrs);
 
   if (parent)
     parent.appendChild(element);
+
+  if (isImg)
+    setAttributes(element, attrs);
 
   return element;
 }
