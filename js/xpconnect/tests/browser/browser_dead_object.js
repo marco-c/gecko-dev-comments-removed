@@ -3,22 +3,19 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
 
-  let tab = gBrowser.addTab("http://example.com");
-  let tabBrowser = tab.linkedBrowser;
 
-  tabBrowser.addEventListener("load", function loadListener(aEvent) {
-    tabBrowser.removeEventListener("load", loadListener, true);
-
-    let contentWindow = tab.linkedBrowser.contentWindow;
-    gBrowser.removeTab(tab);
-
-    SimpleTest.executeSoon(function() {
-      ok(Components.utils.isDeadWrapper(contentWindow),
-         'Window should be dead.');
-      finish();
-    });
-  }, true);
-}
+add_task(function* test() {
+  const url = "http://mochi.test:8888/browser/js/xpconnect/tests/browser/browser_deadObjectOnUnload.html";
+  let newTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  let browser = gBrowser.selectedBrowser;
+  let contentDocDead = yield ContentTask.spawn(browser,{}, function*(browser){
+    let doc = content.document;
+    let promise = ContentTaskUtils.waitForEvent(this, "DOMContentLoaded", true);
+    content.location = "about:home";
+    yield promise;
+    return Components.utils.isDeadWrapper(doc);
+  });
+  is(contentDocDead, true, "wrapper is dead");
+  yield BrowserTestUtils.removeTab(newTab); 
+});
