@@ -9,85 +9,47 @@
 #include "nsIEffectiveTLDService.h"
 
 #include "nsIMemoryReporter.h"
-#include "nsTHashtable.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/BinarySearch.h"
 #include "mozilla/MemoryReporting.h"
 
 class nsIIDNService;
 
-#define ETLD_ENTRY_N_INDEX_BITS 30
-
 
 struct ETLDEntry {
+  friend class nsEffectiveTLDService;
+
+public:
+  bool IsNormal()    const { return wild || !exception; }
+  bool IsException() const { return exception; }
+  bool IsWild()      const { return wild; }
+
+  const char* GetEffectiveTLDName() const
+  {
+    return strings.strtab + strtab_index;
+  }
+
+  static const ETLDEntry* GetEntry(const char* aDomain);
+
+  static const size_t ETLD_ENTRY_N_INDEX_BITS = 30;
+
+  
   uint32_t strtab_index : ETLD_ENTRY_N_INDEX_BITS;
   uint32_t exception : 1;
   uint32_t wild : 1;
-};
-
-
-
-class nsDomainEntry : public PLDHashEntryHdr
-{
-  friend class nsEffectiveTLDService;
-public:
-  
-  typedef const char* KeyType;
-  typedef const char* KeyTypePointer;
-
-  explicit nsDomainEntry(KeyTypePointer aEntry)
-  {
-  }
-
-  nsDomainEntry(const nsDomainEntry& toCopy)
-  {
-    
-    
-    NS_NOTREACHED("nsDomainEntry copy constructor is forbidden!");
-  }
-
-  ~nsDomainEntry()
-  {
-  }
-
-  KeyType GetKey() const
-  {
-    return GetEffectiveTLDName(mData.strtab_index);
-  }
-
-  bool KeyEquals(KeyTypePointer aKey) const
-  {
-    return !strcmp(GetKey(), aKey);
-  }
-
-  static KeyTypePointer KeyToPointer(KeyType aKey)
-  {
-    return aKey;
-  }
-
-  static PLDHashNumber HashKey(KeyTypePointer aKey)
-  {
-    
-    
-    return PLDHashTable::HashStringKey(nullptr, aKey);
-  }
-
-  enum { ALLOW_MEMMOVE = true };
-
-  void SetData(ETLDEntry entry) { mData = entry; }
-
-  bool IsNormal() { return mData.wild || !mData.exception; }
-  bool IsException() { return mData.exception; }
-  bool IsWild() { return mData.wild; }
-
-  static const char *GetEffectiveTLDName(size_t idx)
-  {
-    return strings.strtab + idx;
-  }
 
 private:
-  ETLDEntry mData;
+  struct Cmp {
+    int operator()(const ETLDEntry aEntry) const
+    {
+      return strcmp(mName, aEntry.GetEffectiveTLDName());
+    }
+    explicit Cmp(const char* aName) : mName(aName) {}
+    const char* mName;
+  };
+
 #define ETLD_STR_NUM_1(line) str##line
 #define ETLD_STR_NUM(line) ETLD_STR_NUM_1(line)
   struct etld_string_list {
@@ -95,11 +57,17 @@ private:
 #include "etld_data.inc"
 #undef ETLD_ENTRY
   };
+
+  
   static const union etld_strings {
     struct etld_string_list list;
     char strtab[1];
   } strings;
+
+  
+  
   static const ETLDEntry entries[];
+
   void FuncForStaticAsserts(void);
 #undef ETLD_STR_NUM
 #undef ETLD_STR_NUM1
@@ -124,7 +92,6 @@ private:
   nsresult NormalizeHostname(nsCString &aHostname);
   ~nsEffectiveTLDService();
 
-  nsTHashtable<nsDomainEntry> mHash;
   nsCOMPtr<nsIIDNService>     mIDNService;
 };
 
