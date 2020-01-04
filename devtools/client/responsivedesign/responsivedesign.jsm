@@ -525,7 +525,7 @@ ResponsiveUI.prototype = {
     this.closebutton = this.chromeDoc.createElement("toolbarbutton");
     this.closebutton.setAttribute("tabindex", "0");
     this.closebutton.className = "devtools-responsiveui-toolbarbutton devtools-responsiveui-close";
-    this.closebutton.setAttribute("tooltiptext", this.strings.GetStringFromName("responsiveUI.close"));
+    this.closebutton.setAttribute("tooltiptext", this.strings.GetStringFromName("responsiveUI.close1"));
     this.closebutton.addEventListener("command", this.bound_close, true);
 
     this.toolbar.appendChild(this.closebutton);
@@ -762,7 +762,7 @@ ResponsiveUI.prototype = {
     let h = this.customPreset.height;
     let newName = {};
 
-    let title = this.strings.GetStringFromName("responsiveUI.customNamePromptTitle");
+    let title = this.strings.GetStringFromName("responsiveUI.customNamePromptTitle1");
     let message = this.strings.formatStringFromName("responsiveUI.customNamePromptMsg", [w, h], 2);
     let promptOk = Services.prompt.prompt(null, title, message, newName, null, {});
 
