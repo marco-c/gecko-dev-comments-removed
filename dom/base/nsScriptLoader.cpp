@@ -437,98 +437,20 @@ CSPAllowsInlineScript(nsIScriptElement *aElement, nsIDocument *aDocument)
   }
 
   
-  
-  
-  
-  
-  
-  bool allowInlineScript = true;
-  nsAutoTArray<unsigned short, 3> violations;
-
-  bool reportInlineViolation = false;
-  rv = csp->GetAllowsInlineScript(&reportInlineViolation, &allowInlineScript);
-  NS_ENSURE_SUCCESS(rv, false);
-  if (reportInlineViolation) {
-    violations.AppendElement(static_cast<unsigned short>(
-          nsIContentSecurityPolicy::VIOLATION_TYPE_INLINE_SCRIPT));
-  }
-
+  nsCOMPtr<nsIContent> scriptContent = do_QueryInterface(aElement);
   nsAutoString nonce;
-  if (!allowInlineScript) {
-    nsCOMPtr<nsIContent> scriptContent = do_QueryInterface(aElement);
-    bool foundNonce = scriptContent->GetAttr(kNameSpaceID_None,
-                                             nsGkAtoms::nonce, nonce);
-    if (foundNonce) {
-      bool reportNonceViolation;
-      rv = csp->GetAllowsNonce(nonce, nsIContentPolicy::TYPE_SCRIPT,
-                               &reportNonceViolation, &allowInlineScript);
-      NS_ENSURE_SUCCESS(rv, false);
-      if (reportNonceViolation) {
-        violations.AppendElement(static_cast<unsigned short>(
-              nsIContentSecurityPolicy::VIOLATION_TYPE_NONCE_SCRIPT));
-      }
-    }
-  }
-
-  if (!allowInlineScript) {
-    bool reportHashViolation;
-    nsAutoString scriptText;
-    aElement->GetScriptText(scriptText);
-    rv = csp->GetAllowsHash(scriptText, nsIContentPolicy::TYPE_SCRIPT,
-                            &reportHashViolation, &allowInlineScript);
-    NS_ENSURE_SUCCESS(rv, false);
-    if (reportHashViolation) {
-      violations.AppendElement(static_cast<unsigned short>(
-            nsIContentSecurityPolicy::VIOLATION_TYPE_HASH_SCRIPT));
-    }
-  }
+  scriptContent->GetAttr(kNameSpaceID_None, nsGkAtoms::nonce, nonce);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!violations.IsEmpty()) {
-    MOZ_ASSERT(violations[0] == nsIContentSecurityPolicy::VIOLATION_TYPE_INLINE_SCRIPT,
-               "How did we get any violations without an initial inline script violation?");
-    
-    nsIURI* uri = aDocument->GetDocumentURI();
-    nsAutoCString asciiSpec;
-    uri->GetAsciiSpec(asciiSpec);
-    nsAutoString scriptText;
-    aElement->GetScriptText(scriptText);
-    nsAutoString scriptSample(scriptText);
+  nsAutoString scriptText;
+  aElement->GetScriptText(scriptText);
 
-    
-    if (scriptSample.Length() > 40) {
-      scriptSample.Truncate(40);
-      scriptSample.AppendLiteral("...");
-    }
-
-    for (uint32_t i = 0; i < violations.Length(); i++) {
-      
-      
-      if (i > 0 || violations.Length() == 1) {
-        csp->LogViolationDetails(violations[i], NS_ConvertUTF8toUTF16(asciiSpec),
-                                 scriptSample, aElement->GetScriptLineNumber(),
-                                 nonce, scriptText);
-      }
-    }
-  }
-
-  if (!allowInlineScript) {
-    NS_ASSERTION(!violations.IsEmpty(),
-        "CSP blocked inline script but is not reporting a violation");
-   return false;
-  }
-  return true;
+  bool allowInlineScript = false;
+  rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
+                            nonce, scriptText,
+                            aElement->GetScriptLineNumber(),
+                            &allowInlineScript);
+  return allowInlineScript;
 }
 
 bool

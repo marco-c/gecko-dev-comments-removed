@@ -722,42 +722,37 @@ EventListenerManager::SetEventHandler(nsIAtom* aName,
       return NS_ERROR_DOM_SECURITY_ERR;
     }
 
+    
     nsCOMPtr<nsIContentSecurityPolicy> csp;
     rv = doc->NodePrincipal()->GetCsp(getter_AddRefs(csp));
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (csp) {
-      bool inlineOK = true;
-      bool reportViolations = false;
-      rv = csp->GetAllowsInlineScript(&reportViolations, &inlineOK);
+      
+      
+      
+      nsAutoString scriptSample, attr, tagName(NS_LITERAL_STRING("UNKNOWN"));
+      aName->ToString(attr);
+      nsCOMPtr<nsIDOMNode> domNode(do_QueryInterface(mTarget));
+      if (domNode) {
+        domNode->GetNodeName(tagName);
+      }
+      
+      scriptSample.Assign(attr);
+      scriptSample.AppendLiteral(" attribute on ");
+      scriptSample.Append(tagName);
+      scriptSample.AppendLiteral(" element");
+
+      bool allowsInlineScript = true;
+      rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
+                                EmptyString(), 
+                                scriptSample,
+                                0,             
+                                &allowsInlineScript);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      if (reportViolations) {
-        
-        nsIURI* uri = doc->GetDocumentURI();
-        nsAutoCString asciiSpec;
-        if (uri)
-          uri->GetAsciiSpec(asciiSpec);
-        nsAutoString scriptSample, attr, tagName(NS_LITERAL_STRING("UNKNOWN"));
-        aName->ToString(attr);
-        nsCOMPtr<nsIDOMNode> domNode(do_QueryInterface(mTarget));
-        if (domNode)
-          domNode->GetNodeName(tagName);
-        
-        scriptSample.Assign(attr);
-        scriptSample.AppendLiteral(" attribute on ");
-        scriptSample.Append(tagName);
-        scriptSample.AppendLiteral(" element");
-        csp->LogViolationDetails(nsIContentSecurityPolicy::VIOLATION_TYPE_INLINE_SCRIPT,
-                                 NS_ConvertUTF8toUTF16(asciiSpec),
-                                 scriptSample,
-                                 0,
-                                 EmptyString(),
-                                 EmptyString());
-      }
-
       
-      if (!inlineOK) {
+      if (!allowsInlineScript) {
         return NS_OK;
       }
     }
