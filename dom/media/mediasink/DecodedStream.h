@@ -61,9 +61,6 @@ public:
   bool IsStarted() const override;
   bool IsPlaying() const override;
 
-  
-  void SetSameOrigin(bool aSameOrigin);
-
 protected:
   virtual ~DecodedStream();
 
