@@ -621,7 +621,7 @@ function verifyTestsRan() {
 
 function setupFiles() {
   
-  let baseAppDir = getAppBaseDir();
+  let baseAppDir = getGREDir();
   let updateSettingsIni = baseAppDir.clone();
   updateSettingsIni.append(FILE_UPDATE_SETTINGS_INI);
   if (updateSettingsIni.exists()) {
@@ -776,7 +776,7 @@ function setupPrefs() {
 
 function resetFiles() {
   
-  let baseAppDir = getAppBaseDir();
+  let baseAppDir = getGREDir();
   let updateSettingsIni = baseAppDir.clone();
   updateSettingsIni.append(FILE_UPDATE_SETTINGS_INI_BAK);
   if (updateSettingsIni.exists()) {
