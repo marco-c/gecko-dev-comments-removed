@@ -1668,7 +1668,11 @@ void nsDragService::SetDragIcon(GdkDragContext* aContext)
 
     
     
-    if (mDragPopup) {
+    
+    
+    
+    
+    if (mDragPopup && gtk_check_version(3, 19, 4)) {
         GtkWidget* gtkWidget = nullptr;
         nsIFrame* frame = mDragPopup->GetPrimaryFrame();
         if (frame) {
