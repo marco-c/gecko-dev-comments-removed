@@ -14,18 +14,21 @@
 #include "nsICryptoHash.h"
 #include "nsIPackagedAppVerifier.h"
 #include "mozilla/LinkedList.h"
+#include "nsIPackagedAppUtils.h"
 
 namespace mozilla {
 namespace net {
 
 class PackagedAppVerifier final
   : public nsIPackagedAppVerifier
+  , public nsIVerificationCallback
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIPACKAGEDAPPVERIFIER
+  NS_DECL_NSIVERIFICATIONCALLBACK
 
 public:
   enum EState {
@@ -121,14 +124,19 @@ private:
   void ProcessResourceCache(const ResourceCacheInfo* aInfo);
 
   
+  static NS_METHOD WriteManifest(nsIInputStream* aStream,
+                                void* aManifest,
+                                const char* aFromRawSegment,
+                                uint32_t aToOffset,
+                                uint32_t aCount,
+                                uint32_t* aWriteCount);
+
+  
   void VerifyManifest(const ResourceCacheInfo* aInfo);
   void VerifyResource(const ResourceCacheInfo* aInfo);
 
   void OnManifestVerified(bool aSuccess);
   void OnResourceVerified(bool aSuccess);
-
-  
-  void FireVerifiedEvent(bool aForManifest, bool aSuccess);
 
   
   nsCOMPtr<nsIPackagedAppVerifierListener> mListener;
@@ -141,6 +149,12 @@ private:
 
   
   nsCString mSignature;
+
+  
+  nsCString mManifest;
+
+  
+  bool mIsFirstResource;
 
   
   bool mIsPackageSigned;
@@ -158,6 +172,9 @@ private:
   
   
   nsCString mLastComputedResourceHash;
+
+  
+  nsCOMPtr<nsIPackagedAppUtils> mPackagedAppUtils;
 
   
   mozilla::LinkedList<ResourceCacheInfo> mPendingResourceCacheInfoList;

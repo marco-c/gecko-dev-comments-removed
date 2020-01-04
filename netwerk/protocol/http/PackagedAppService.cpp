@@ -225,15 +225,12 @@ CreateSharedStringStream(const char* aData, uint32_t aCount)
 static bool
 GetOriginalResponseHeader(nsIRequest* aRequest, nsACString& aHeader)
 {
-  
-  
+  nsCOMPtr<nsIMultiPartChannel> multiPartChannel(do_QueryInterface(aRequest));
+  if (!multiPartChannel) {
+    return false;
+  }
 
-  nsCOMPtr<nsIResponseHeadProvider> headerProvider(do_QueryInterface(aRequest));
-  nsHttpResponseHead *responseHead = headerProvider->GetResponseHead();
-  NS_ENSURE_TRUE(responseHead, false);
-
-  responseHead->Flatten(aHeader, true);
-  aHeader.Append("\r\n");
+  multiPartChannel->GetOriginalResponseHeader(aHeader);
 
   return true;
 }
