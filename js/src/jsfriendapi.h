@@ -19,6 +19,7 @@
 #include "js/CallArgs.h"
 #include "js/CallNonGenericMethod.h"
 #include "js/Class.h"
+#include "js/Utility.h"
 
 #if JS_STACK_GROWTH_DIRECTION > 0
 # define JS_CHECK_STACK_SIZE(limit, sp) (MOZ_LIKELY((uintptr_t)(sp) < (limit)))
@@ -2673,7 +2674,12 @@ struct AllocationMetadataBuilder {
     
     
     
-    virtual JSObject* build(JSContext *cx, JS::HandleObject obj) const { return nullptr; }
+    
+    virtual JSObject* build(JSContext* cx, JS::HandleObject obj,
+                            AutoEnterOOMUnsafeRegion& oomUnsafe) const
+    {
+        return nullptr;
+    }
 };
 
 

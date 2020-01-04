@@ -182,7 +182,8 @@ class SavedStacks {
     
     
     class MetadataBuilder : public AllocationMetadataBuilder {
-        virtual JSObject* build(JSContext *cx, HandleObject obj) const override;
+        virtual JSObject* build(JSContext *cx, HandleObject obj,
+                                AutoEnterOOMUnsafeRegion& oomUnsafe) const override;
     };
 
     static const MetadataBuilder metadataBuilder;
