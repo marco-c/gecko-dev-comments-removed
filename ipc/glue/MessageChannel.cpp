@@ -680,7 +680,7 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
         if (aMsg.seqno() == mTimedOutMessageSeqno) {
             
             IPC_LOG("Received reply to timedout message; igoring; xid=%d", mTimedOutMessageSeqno);
-            mTimedOutMessageSeqno = 0;
+            EndTimeout();
             return;
         }
 
@@ -1294,6 +1294,37 @@ MessageChannel::DequeueOne(Message *recvd)
 
     if (!mDeferred.empty())
         MaybeUndeferIncall();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mTimedOutMessageSeqno) {
+        for (MessageQueue::iterator it = mPending.begin(); it != mPending.end(); it++) {
+            Message &msg = *it;
+            if (msg.priority() > mTimedOutMessagePriority ||
+                (msg.priority() == mTimedOutMessagePriority
+                 && msg.transaction_id() == mTimedOutMessageSeqno))
+            {
+                *recvd = Move(msg);
+                mPending.erase(it);
+                return true;
+            }
+        }
+        return false;
+    }
 
     if (mPending.empty())
         return false;
@@ -2072,6 +2103,24 @@ MessageChannel::GetTopmostMessageRoutingId() const
 }
 
 void
+MessageChannel::EndTimeout()
+{
+    mMonitor->AssertCurrentThreadOwns();
+
+    IPC_LOG("Ending timeout of seqno=%d", mTimedOutMessageSeqno);
+    mTimedOutMessageSeqno = 0;
+    mTimedOutMessagePriority = 0;
+
+    for (size_t i = 0; i < mPending.size(); i++) {
+        
+        
+        
+        
+        mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
+    }
+}
+
+void
 MessageChannel::CancelTransaction(int transaction)
 {
     mMonitor->AssertCurrentThreadOwns();
@@ -2124,7 +2173,7 @@ MessageChannel::CancelTransaction(int transaction)
     
     if (transaction == mTimedOutMessageSeqno) {
         IPC_LOG("Cancelled timed out message %d", mTimedOutMessageSeqno);
-        mTimedOutMessageSeqno = 0;
+        EndTimeout();
 
         
         
