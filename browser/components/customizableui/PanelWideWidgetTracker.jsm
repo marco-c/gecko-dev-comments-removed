@@ -97,9 +97,9 @@ var PanelWideWidgetTracker = {
     
     
     
-    let compareFn = aMoveForwards ? (function(a, b) a < b) : (function(a, b) a > b)
-    widgetsAffected.sort(function(a, b) compareFn(gPanelPlacements.indexOf(a),
-                                                  gPanelPlacements.indexOf(b)));
+    let compareFn = aMoveForwards ? ((a, b) => a < b) : ((a, b) => a > b);
+    widgetsAffected.sort((a, b) => compareFn(gPanelPlacements.indexOf(a),
+                                             gPanelPlacements.indexOf(b)));
     for (let widget of widgetsAffected) {
       this.adjustPosition(widget, aMoveForwards);
     }
