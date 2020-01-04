@@ -366,17 +366,22 @@ public:
     return region;
   }
 
-  const Maybe<ParentLayerIntRect>& GetClipRect() const
+  Maybe<ParentLayerIntRect> GetClipRect() const
   {
     MOZ_ASSERT(IsValid());
 
-    static const Maybe<ParentLayerIntRect> sNoClipRect = Nothing();
+    Maybe<ParentLayerIntRect> result;
 
+    
+    
     if (AtBottomLayer()) {
-      return mLayer->GetClipRect();
+      result = mLayer->GetClipRect();
     }
 
-    return sNoClipRect;
+    
+    result = IntersectMaybeRects(result, Metadata().GetClipRect());
+
+    return result;
   }
 
   float GetPresShellResolution() const
