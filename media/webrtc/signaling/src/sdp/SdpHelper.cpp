@@ -634,8 +634,7 @@ SdpHelper::GetProtocolForMediaType(SdpMediaSection::MediaType type)
     return SdpMediaSection::kDtlsSctp;
   }
 
-  
-  return SdpMediaSection::kRtpSavpf;
+  return SdpMediaSection::kUdpTlsRtpSavpf;
 }
 
 void
