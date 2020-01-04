@@ -185,10 +185,13 @@ gfxCoreTextShaper::ShapeText(gfxContext      *aContext,
             if (font1 != font2) {
                 
                 
-                if (range.length == 1 &&
-                    gfxFontUtils::IsVarSelector(aText[range.location -
-                                                      startOffset])) {
-                    continue;
+                
+                if (range.length == 1) {
+                    char16_t ch = aText[range.location - startOffset];
+                    if (gfxFontUtils::IsJoinControl(ch) ||
+                        gfxFontUtils::IsVarSelector(ch)) {
+                        continue;
+                    }
                 }
                 NS_WARNING("unexpected font fallback in Core Text");
                 success = false;
