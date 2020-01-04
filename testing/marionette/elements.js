@@ -5,12 +5,6 @@
 let {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("chrome://marionette/content/error.js");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, 'setInterval',
-  'resource://gre/modules/Timer.jsm');
-XPCOMUtils.defineLazyModuleGetter(this, 'clearInterval',
-  'resource://gre/modules/Timer.jsm');
 
 
 
@@ -30,7 +24,6 @@ XPCOMUtils.defineLazyModuleGetter(this, 'clearInterval',
 
 
 this.EXPORTED_SYMBOLS = [
-  "Accessibility",
   "elements",
   "ElementManager",
   "CLASS_NAME",
@@ -47,8 +40,8 @@ this.EXPORTED_SYMBOLS = [
 
 const DOCUMENT_POSITION_DISCONNECTED = 1;
 
-const uuidGen = Components.classes["@mozilla.org/uuid-generator;1"]
-    .getService(Components.interfaces.nsIUUIDGenerator);
+const uuidGen = Cc["@mozilla.org/uuid-generator;1"]
+    .getService(Ci.nsIUUIDGenerator);
 
 this.CLASS_NAME = "class name";
 this.SELECTOR = "css selector";
@@ -60,192 +53,6 @@ this.TAG = "tag name";
 this.XPATH = "xpath";
 this.ANON= "anon";
 this.ANON_ATTRIBUTE = "anon attribute";
-
-this.Accessibility = function Accessibility() {
-  
-  
-  this.strict = false;
-  
-  
-  Object.defineProperty(this, 'accessibleRetrieval', {
-    configurable: true,
-    get: function() {
-      delete this.accessibleRetrieval;
-      this.accessibleRetrieval = Components.classes[
-        '@mozilla.org/accessibleRetrieval;1'].getService(
-          Components.interfaces.nsIAccessibleRetrieval);
-      return this.accessibleRetrieval;
-    }
-  });
-};
-
-Accessibility.prototype = {
-
-  
-
-
-
-
-
-  GET_ACCESSIBLE_ATTEMPTS: 100,
-
-  
-
-
-
-
-  GET_ACCESSIBLE_ATTEMPT_INTERVAL: 10,
-
-  
-
-
-
-  actionableRoles: new Set([
-    'pushbutton',
-    'checkbutton',
-    'combobox',
-    'key',
-    'link',
-    'menuitem',
-    'check menu item',
-    'radio menu item',
-    'option',
-    'listbox option',
-    'listbox rich option',
-    'check rich option',
-    'combobox option',
-    'radiobutton',
-    'rowheader',
-    'switch',
-    'slider',
-    'spinbutton',
-    'pagetab',
-    'entry',
-    'outlineitem'
-  ]),
-
-  
-
-
-
-
-
-
-  getAccessibleObject(element, mustHaveAccessible = false) {
-    return new Promise((resolve, reject) => {
-      let acc = this.accessibleRetrieval.getAccessibleFor(element);
-
-      if (acc || !mustHaveAccessible) {
-        
-        
-        resolve(acc);
-      } else {
-        
-        
-        let attempts = this.GET_ACCESSIBLE_ATTEMPTS;
-        let intervalId = setInterval(() => {
-          let acc = this.accessibleRetrieval.getAccessibleFor(element);
-          if (acc || --attempts <= 0) {
-            clearInterval(intervalId);
-            if (acc) { resolve(acc); }
-            else { reject(); }
-          }
-        }, this.GET_ACCESSIBLE_ATTEMPT_INTERVAL);
-      }
-    }).catch(() => this.handleErrorMessage(
-      'Element does not have an accessible object', element));
-  },
-
-  
-
-
-
-
-  isActionableRole(accessible) {
-    return this.actionableRoles.has(
-      this.accessibleRetrieval.getStringRole(accessible.role));
-  },
-
-  
-
-
-
-
-  hasActionCount(accessible) {
-    return accessible.actionCount > 0;
-  },
-
-  
-
-
-
-
-  hasValidName(accessible) {
-    return accessible.name && accessible.name.trim();
-  },
-
-  
-
-
-
-
-
-  hasHiddenAttribute(accessible) {
-    let hidden;
-    try {
-      hidden = accessible.attributes.getStringProperty('hidden');
-    } finally {
-      
-      return hidden && hidden === 'true';
-    }
-  },
-
-  
-
-
-
-
-
-  matchState(accessible, stateName) {
-    let stateToMatch = Components.interfaces.nsIAccessibleStates[stateName];
-    let state = {};
-    accessible.getState(state, {});
-    return !!(state.value & stateToMatch);
-  },
-
-  
-
-
-
-
-  isHidden(accessible) {
-    while (accessible) {
-      if (this.hasHiddenAttribute(accessible)) {
-        return true;
-      }
-      accessible = accessible.parent;
-    }
-    return false;
-  },
-
-  
-
-
-
-
-  handleErrorMessage(message, element) {
-    if (!message) {
-      return;
-    }
-    if (element) {
-      message += ` -> id: ${element.id}, tagName: ${element.tagName}, className: ${element.className}\n`;
-    }
-    if (this.strict) {
-      throw new ElementNotAccessibleError(message);
-    }
-    dump(Date.now() + " Marionette: " + message);
-  }
-};
 
 this.ElementManager = function ElementManager(notSupported) {
   this.seenItems = {};
@@ -291,7 +98,7 @@ ElementManager.prototype = {
       }
     }
     let id = elements.generateUUID();
-    this.seenItems[id] = Components.utils.getWeakReference(element);
+    this.seenItems[id] = Cu.getWeakReference(element);
     return id;
   },
 
@@ -562,7 +369,7 @@ ElementManager.prototype = {
                                                    on_success, on_error,
                                                    command_id),
                                     100,
-                                    Components.interfaces.nsITimer.TYPE_ONE_SHOT);
+                                    Ci.nsITimer.TYPE_ONE_SHOT);
       }
     } else {
       if (isArrayLike) {
@@ -598,7 +405,7 @@ ElementManager.prototype = {
 
   findByXPath: function EM_findByXPath(root, value, node) {
     return root.evaluate(value, node, null,
-            Components.interfaces.nsIDOMXPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+            Ci.nsIDOMXPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
   },
 
   
@@ -616,7 +423,7 @@ ElementManager.prototype = {
 
   findByXPathAll: function EM_findByXPathAll(root, value, node) {
     let values = root.evaluate(value, node, null,
-                      Components.interfaces.nsIDOMXPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+                      Ci.nsIDOMXPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
     let elements = [];
     let element = values.iterateNext();
     while (element) {
