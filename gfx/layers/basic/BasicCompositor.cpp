@@ -507,7 +507,8 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
   if (mTarget) {
     
     
-    mDrawTarget = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+    
+    mDrawTarget = mTarget;
   } else {
     
     mDrawTarget = mWidget->StartRemoteDrawingInRegion(mInvalidRegion, &bufferMode);
