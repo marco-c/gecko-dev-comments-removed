@@ -2589,7 +2589,7 @@ pref("dom.ipc.plugins.asyncInit.enabled", true);
 #endif
 
 
-pref("dom.ipc.plugins.asyncdrawing.enabled", false);
+pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 
 pref("dom.ipc.processCount", 1);
 
@@ -3172,9 +3172,6 @@ pref("plugin.scan.WindowsMediaPlayer", "7.0");
 
 
 pref("plugin.scan.plid.all", true);
-
-
-pref("plugin.allow.asyncdrawing", false);
 
 
 
