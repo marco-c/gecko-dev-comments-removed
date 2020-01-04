@@ -332,6 +332,23 @@ this.PlacesUtils = {
 
 
 
+
+
+
+  mozActionURI(type, params) {
+    let encodedParams = {};
+    for (let key in params) {
+      encodedParams[key] = encodeURIComponent(params[key]);
+    }
+    return "moz-action:" + type + "," + JSON.stringify(encodedParams);
+  },
+
+  
+
+
+
+
+
   nodeIsFolder: function PU_nodeIsFolder(aNode) {
     return (aNode.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER ||
             aNode.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT);

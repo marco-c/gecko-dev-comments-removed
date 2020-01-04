@@ -327,10 +327,18 @@ function promiseSearchComplete(win = window) {
   });
 }
 
-function promiseAutocompleteResultPopup(inputText, win = window) {
+function promiseAutocompleteResultPopup(inputText,
+                                        win = window,
+                                        fireInputEvent = false) {
   waitForFocus(() => {
     win.gURLBar.focus();
     win.gURLBar.value = inputText;
+    if (fireInputEvent) {
+      
+      let event = document.createEvent("Events");
+      event.initEvent("input", true, true);
+      win.gURLBar.dispatchEvent(event);
+    }
     win.gURLBar.controller.startSearch(inputText);
   }, win);
 

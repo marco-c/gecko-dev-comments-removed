@@ -23,6 +23,12 @@ add_task(function* prepare() {
     gURLBar.blur();
     Assert.ok(!gURLBar.popup.popupOpen, "popup should be closed");
   });
+  
+  
+  yield new Promise(resolve => {
+    EventUtils.synthesizeNativeMouseMove(window.document.documentElement, 0, 0,
+                                         resolve);
+  });
 });
 
 add_task(function* heuristicResult() {

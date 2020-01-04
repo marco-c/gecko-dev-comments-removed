@@ -581,24 +581,6 @@ function stripHttpAndTrim(spec) {
 
 
 
-
-
-
-
-function makeActionURL(action, params) {
-  let encodedParams = {};
-  for (let key in params) {
-    encodedParams[key] = encodeURIComponent(params[key]);
-  }
-  return "moz-action:" + action + "," + JSON.stringify(encodedParams);
-}
-
-
-
-
-
-
-
 function makeKeyForURL(actionUrl) {
   
   if (!actionUrl.startsWith("moz-action:")) {
@@ -1132,8 +1114,10 @@ Search.prototype = {
     let escapedURL = entry.url.href.replace("%s", queryString);
 
     let style = (this._enableActions ? "action " : "") + "keyword";
-    let actionURL = makeActionURL("keyword", { url: escapedURL,
-                                               input: this._originalSearchString });
+    let actionURL = PlacesUtils.mozActionURI("keyword", {
+      url: escapedURL,
+      input: this._originalSearchString,
+    });
     let value = this._enableActions ? actionURL : escapedURL;
     
     let comment = entry.url.host;
@@ -1231,7 +1215,7 @@ Search.prototype = {
     if (match.engineAlias) {
       actionURLParams.alias = match.engineAlias;
     }
-    let value = makeActionURL("searchengine", actionURLParams);
+    let value = PlacesUtils.mozActionURI("searchengine", actionURLParams);
 
     this._addMatch({
       value: value,
@@ -1263,7 +1247,7 @@ Search.prototype = {
       let match = {
         
         
-        value: makeActionURL("remotetab", { url, deviceName }),
+        value: PlacesUtils.mozActionURI("remotetab", { url, deviceName }),
         comment: title || url,
         style: "action remotetab",
         
@@ -1323,7 +1307,7 @@ Search.prototype = {
     let escapedURL = uri.spec;
     let displayURL = textURIService.unEscapeURIForUI("UTF-8", uri.spec);
 
-    let value = makeActionURL("visiturl", {
+    let value = PlacesUtils.mozActionURI("visiturl", {
       url: escapedURL,
       input: this._originalSearchString,
     });
@@ -1392,7 +1376,7 @@ Search.prototype = {
     }
 
     
-    match.value = makeActionURL("searchengine", {
+    match.value = PlacesUtils.mozActionURI("searchengine", {
       engineName: parseResult.engineName,
       input: parseResult.terms,
       searchQuery: parseResult.terms,
@@ -1564,7 +1548,7 @@ Search.prototype = {
     let url = escapedURL;
     let action = null;
     if (this._enableActions && openPageCount > 0 && this.hasBehavior("openpage")) {
-      url = makeActionURL("switchtab", {url: escapedURL});
+      url = PlacesUtils.mozActionURI("switchtab", {url: escapedURL});
       action = "switchtab";
     }
 
