@@ -122,6 +122,8 @@ public:
   virtual void Resume() = 0;
   
   virtual void Revive() = 0;
+  
+  virtual void RemoveCallback() = 0;
   void Shutdown();
   
 
@@ -270,6 +272,7 @@ public:
   void Stop() override;
   void Resume() override;
   void Revive() override;
+  void RemoveCallback() override;
   
 
 
@@ -381,6 +384,7 @@ public:
   void Stop() override;
   void Resume() override;
   void Revive() override;
+  void RemoveCallback() override;
   void WaitForNextIteration() override;
   void WakeUp() override;
 
@@ -513,6 +517,9 @@ private:
   nsAutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
   
   dom::AudioChannel mAudioChannel;
+  
+  bool mAddedMixer;
+
   
 
   Atomic<bool> mInCallback;
