@@ -784,7 +784,6 @@ PresShell::PresShell()
 #endif
   mRenderFlags = 0;
   mResolution = 1.0;
-  mViewportOverridden = false;
 
   mScrollPositionClampingScrollPortSizeSet = false;
 
@@ -1767,34 +1766,8 @@ PresShell::AsyncResizeEventCallback(nsITimer* aTimer, void* aPresShell)
 }
 
 nsresult
-PresShell::ResizeReflowOverride(nscoord aWidth, nscoord aHeight)
-{
-  mViewportOverridden = true;
-
-  if (mMobileViewportManager) {
-    
-    
-    
-    
-    
-    
-    
-    mMobileViewportManager->Destroy();
-    mMobileViewportManager = nullptr;
-  }
-
-  return ResizeReflowIgnoreOverride(aWidth, aHeight);
-}
-
-nsresult
 PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight)
 {
-  if (mViewportOverridden) {
-    
-    
-    return NS_OK;
-  }
-
   if (mZoomConstraintsClient) {
     
     
