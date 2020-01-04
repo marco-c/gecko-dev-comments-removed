@@ -93,7 +93,6 @@ public:
   PackagedAppVerifier();
 
   PackagedAppVerifier(nsIPackagedAppVerifierListener* aListener,
-                      const nsACString& aPackageOrigin,
                       const nsACString& aSignature,
                       nsICacheEntry* aPackageCacheEntry);
 
@@ -109,14 +108,14 @@ public:
     return mIsPackageSigned;
   }
 
-  const nsACString& GetPackageOrigin() const
+  const nsACString& GetPackageIdentifier() const
   {
-    return mPackageOrigin;
+    return mPackageIdentifer;
   }
 
   bool WouldVerify() const;
 
-  static const char* kSignedPakOriginMetadataKey;
+  static const char* kSignedPakIdMetadataKey;
 
 private:
   virtual ~PackagedAppVerifier();
@@ -193,6 +192,8 @@ private:
 
   
   nsClassHashtable<nsCStringHashKey, nsCString> mResourceHashStore;
+
+  nsCString mPackageIdentifer;
 }; 
 
 } 
