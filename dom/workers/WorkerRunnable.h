@@ -150,9 +150,13 @@ protected:
   
   
   
+  
+  
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) = 0;
 
+  
+  
   
   
   

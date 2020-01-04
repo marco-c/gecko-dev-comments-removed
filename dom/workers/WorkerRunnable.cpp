@@ -312,9 +312,6 @@ WorkerRunnable::Run()
   
   
   
-  
-  
-  
   Maybe<mozilla::dom::AutoJSAPI> jsapi;
   Maybe<mozilla::dom::AutoEntryScript> aes;
   JSContext* cx;
@@ -379,13 +376,24 @@ WorkerRunnable::Run()
 
   
   
-  if (targetIsWorkerThread && !aes && DefaultGlobalObject()) {
-    aes.emplace(DefaultGlobalObject(), "worker runnable",
-                false, GetCurrentThreadJSContext());
-    cx = aes->cx();
-  }
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   PostRun(cx, mWorkerPrivate, result);
+  MOZ_ASSERT(!JS_IsExceptionPending(cx));
 
   return result ? NS_OK : NS_ERROR_FAILURE;
 }
