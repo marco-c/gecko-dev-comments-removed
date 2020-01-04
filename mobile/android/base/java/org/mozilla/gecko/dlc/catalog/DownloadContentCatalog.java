@@ -234,6 +234,12 @@ public class DownloadContentCatalog {
             
             loadedContent = DownloadContentBootstrap.createInitialDownloadContentList();
             hasCatalogChanged = true; 
+        } catch (NullPointerException e) {
+            
+            Log.w(LOGTAG, "Unable to parse catalog JSON. Re-creating catalog.", e);
+            
+            loadedContent = DownloadContentBootstrap.createInitialDownloadContentList();
+            hasCatalogChanged = true; 
         } catch (UnsupportedEncodingException e) {
             AssertionError error = new AssertionError("Should not happen: This device does not speak UTF-8");
             error.initCause(e);
