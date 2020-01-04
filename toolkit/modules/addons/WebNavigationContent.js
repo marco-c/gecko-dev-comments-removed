@@ -25,6 +25,19 @@ addMessageListener("Extension:DisableWebNavigation", () => {
 
 var WebProgressListener = {
   init: function() {
+    
+    
+    this.previousURIMap = new WeakMap();
+
+    
+    for (let currentDocShell of WebNavigationFrames.iterateDocShellTree(docShell)) {
+      let win = currentDocShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                               .getInterface(Ci.nsIDOMWindow);
+      let {currentURI} = currentDocShell.QueryInterface(Ci.nsIWebNavigation);
+
+      this.previousURIMap.set(win, currentURI);
+    }
+
     let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIWebProgress);
     webProgress.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
@@ -48,6 +61,7 @@ var WebProgressListener = {
       status,
       stateFlags,
     };
+
     sendAsyncMessage("Extension:StateChange", data);
 
     if (webProgress.DOMWindow.top != webProgress.DOMWindow) {
@@ -56,24 +70,51 @@ var WebProgressListener = {
         
         
         
-        let data = {
-          location: request.QueryInterface(Ci.nsIChannel).URI.spec,
-          windowId: webProgress.DOMWindowID,
-          parentWindowId: WebNavigationFrames.getParentWindowId(webProgress.DOMWindow),
-          flags: 0,
-        };
-        sendAsyncMessage("Extension:LocationChange", data);
+        this.onLocationChange(webProgress, request, request.QueryInterface(Ci.nsIChannel).URI, 0);
       }
     }
   },
 
   onLocationChange: function onLocationChange(webProgress, request, locationURI, flags) {
+    let {DOMWindow, loadType} = webProgress;
+
+    
+    let previousURI = this.previousURIMap.get(DOMWindow);
+
+    
+    this.previousURIMap.set(DOMWindow, locationURI);
+
+    let isSameDocument = (flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
+    let isHistoryStateUpdated = false;
+    let isReferenceFragmentUpdated = false;
+
+    if (isSameDocument) {
+      let pathChanged = !(previousURI && locationURI.equalsExceptRef(previousURI));
+      let hashChanged = !(previousURI && previousURI.ref == locationURI.ref);
+
+      
+      
+      
+      
+      
+      
+
+      if (!pathChanged && hashChanged) {
+        isReferenceFragmentUpdated = true;
+      } else if (loadType & Ci.nsIDocShell.LOAD_CMD_PUSHSTATE) {
+        isHistoryStateUpdated = true;
+      } else if (loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY) {
+        isHistoryStateUpdated = true;
+      }
+    }
+
     let data = {
+      isHistoryStateUpdated, isReferenceFragmentUpdated,
       location: locationURI ? locationURI.spec : "",
       windowId: webProgress.DOMWindowID,
       parentWindowId: WebNavigationFrames.getParentWindowId(webProgress.DOMWindow),
-      flags,
     };
+
     sendAsyncMessage("Extension:LocationChange", data);
   },
 
