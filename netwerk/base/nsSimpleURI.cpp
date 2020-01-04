@@ -196,11 +196,9 @@ nsSimpleURI::SetSpec(const nsACString &aSpec)
 {
     NS_ENSURE_STATE(mMutable);
     
-    const nsAFlatCString& flat = PromiseFlatCString(aSpec);
-
     
     nsAutoCString filteredSpec;
-    net_FilterURIString(flat, filteredSpec);
+    net_FilterURIString(aSpec, filteredSpec);
     const char* specPtr = filteredSpec.get();
     int32_t specLen = filteredSpec.Length();
 
