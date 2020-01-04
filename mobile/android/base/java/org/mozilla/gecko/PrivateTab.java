@@ -13,6 +13,11 @@ import org.mozilla.gecko.db.BrowserDB;
 public class PrivateTab extends Tab {
     public PrivateTab(Context context, int id, String url, boolean external, int parentId, String title) {
         super(context, id, url, external, parentId, title);
+
+        
+        
+        final int bgColor = ContextCompat.getColor(context, R.color.tabs_tray_grey_pressed);
+        setBackgroundColor(bgColor);
     }
 
     @Override

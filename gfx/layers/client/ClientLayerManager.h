@@ -155,6 +155,22 @@ public:
   
   virtual bool ShouldAvoidComponentAlphaLayers() override { return !IsCompositingCheap(); }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool ProgressiveUpdateCallback(bool aHasPendingNewThebesContent,
+                                 FrameMetrics& aMetrics,
+                                 bool aDrawingCritical);
+
   bool InConstruction() { return mPhase == PHASE_CONSTRUCTION; }
 #ifdef DEBUG
   bool InDrawing() { return mPhase == PHASE_DRAWING; }

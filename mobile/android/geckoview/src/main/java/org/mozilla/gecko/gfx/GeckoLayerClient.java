@@ -89,6 +89,8 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
     private volatile ImmutableViewportMetrics mViewportMetrics;
 
+    private ZoomConstraints mZoomConstraints;
+
     private volatile boolean mGeckoIsReady;
 
     private final PanZoomController mPanZoomController;
@@ -123,8 +125,11 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
         mViewportMetrics = new ImmutableViewportMetrics(displayMetrics)
                            .setViewportSize(view.getWidth(), view.getHeight());
+        mZoomConstraints = new ZoomConstraints(false);
+
         Tab tab = Tabs.getInstance().getSelectedTab();
         if (tab != null) {
+            mZoomConstraints = tab.getZoomConstraints();
             mViewportMetrics = mViewportMetrics.setIsRTL(tab.getIsRTL());
         }
 
@@ -176,6 +181,24 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         mToolbarAnimator.destroy();
         mDrawListeners.clear();
         mGeckoIsReady = false;
+    }
+
+    
+
+
+
+    private boolean getRedrawHint() {
+        if (mForceRedraw) {
+            mForceRedraw = false;
+            return true;
+        }
+
+        if (!mPanZoomController.getRedrawHint()) {
+            return false;
+        }
+
+        return DisplayPortCalculator.aboutToCheckerboard(mViewportMetrics,
+                mPanZoomController.getVelocityVector(), mDisplayPort);
     }
 
     public LayerView getView() {
@@ -295,9 +318,22 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         post(new Runnable() {
             @Override
             public void run() {
+                mPanZoomController.pageRectUpdated();
                 mView.requestRender();
             }
         });
+    }
+
+    
+    private void abortPanZoomAnimation() {
+        if (mPanZoomController != null) {
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    mPanZoomController.abortAnimation();
+                }
+            });
+        }
     }
 
     
@@ -310,6 +346,57 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         PAGE_SIZE     
     }
 
+    
+    private DisplayPortMetrics handleViewportMessage(ImmutableViewportMetrics messageMetrics, ViewportMessageType type) {
+        synchronized (getLock()) {
+            ImmutableViewportMetrics newMetrics;
+            ImmutableViewportMetrics oldMetrics = getViewportMetrics();
+
+            switch (type) {
+            default:
+            case UPDATE:
+                
+                newMetrics = messageMetrics.setViewportSize(oldMetrics.viewportRectWidth, oldMetrics.viewportRectHeight);
+                if (mToolbarAnimator.isResizing()) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    newMetrics = newMetrics.setViewportOrigin(oldMetrics.viewportRectLeft, oldMetrics.viewportRectTop);
+                    break;
+                }
+                if (!oldMetrics.fuzzyEquals(newMetrics)) {
+                    abortPanZoomAnimation();
+                }
+                break;
+            case PAGE_SIZE:
+                
+                
+                
+                float scaleFactor = oldMetrics.zoomFactor / messageMetrics.zoomFactor;
+                newMetrics = oldMetrics.setPageRect(RectUtils.scale(messageMetrics.getPageRect(), scaleFactor), messageMetrics.getCssPageRect());
+                break;
+            }
+
+            
+            
+            final ImmutableViewportMetrics geckoMetrics = newMetrics.clamp();
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    mGeckoViewport = geckoMetrics;
+                }
+            });
+
+            setViewportMetrics(newMetrics, type == ViewportMessageType.UPDATE);
+            mDisplayPort = DisplayPortCalculator.calculate(getViewportMetrics(), null);
+        }
+        return mDisplayPort;
+    }
+
     @WrapForJNI(calledFrom = "gecko")
     void contentDocumentChanged() {
         mContentDocumentIsDisplayed = false;
@@ -318,6 +405,112 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     @WrapForJNI(calledFrom = "gecko")
     boolean isContentDocumentDisplayed() {
         return mContentDocumentIsDisplayed;
+    }
+
+    
+    
+    
+    
+    
+    @WrapForJNI
+    public ProgressiveUpdateData progressiveUpdateCallback(boolean aHasPendingNewThebesContent,
+                                                           float x, float y, float width, float height,
+                                                           float resolution, boolean lowPrecision) {
+        
+        
+        if (lowPrecision && !mLastProgressiveUpdateWasLowPrecision) {
+            
+            if (!mProgressiveUpdateWasInDanger) {
+                mProgressiveUpdateData.abort = true;
+                return mProgressiveUpdateData;
+            }
+            mProgressiveUpdateWasInDanger = false;
+        }
+        mLastProgressiveUpdateWasLowPrecision = lowPrecision;
+
+        
+        
+        DisplayPortMetrics displayPort = mDisplayPort;
+        ImmutableViewportMetrics viewportMetrics = mViewportMetrics;
+        mProgressiveUpdateData.setViewport(viewportMetrics);
+        mProgressiveUpdateData.abort = false;
+
+        
+        
+        if (!FloatUtils.fuzzyEquals(resolution, viewportMetrics.zoomFactor)) {
+            Log.d(LOGTAG, "Aborting draw due to resolution change: " + resolution + " != " + viewportMetrics.zoomFactor);
+            mProgressiveUpdateData.abort = true;
+            return mProgressiveUpdateData;
+        }
+
+        
+        
+        if (!lowPrecision) {
+            if (!FloatUtils.fuzzyEquals(resolution, mProgressiveUpdateDisplayPort.resolution) ||
+                !FloatUtils.fuzzyEquals(x, mProgressiveUpdateDisplayPort.getLeft()) ||
+                !FloatUtils.fuzzyEquals(y, mProgressiveUpdateDisplayPort.getTop()) ||
+                !FloatUtils.fuzzyEquals(x + width, mProgressiveUpdateDisplayPort.getRight()) ||
+                !FloatUtils.fuzzyEquals(y + height, mProgressiveUpdateDisplayPort.getBottom())) {
+                mProgressiveUpdateDisplayPort =
+                    new DisplayPortMetrics(x, y, x + width, y + height, resolution);
+            }
+        }
+
+        
+        
+        if (!lowPrecision && !mProgressiveUpdateWasInDanger) {
+            if (DisplayPortCalculator.aboutToCheckerboard(viewportMetrics,
+                  mPanZoomController.getVelocityVector(), mProgressiveUpdateDisplayPort)) {
+                mProgressiveUpdateWasInDanger = true;
+            }
+        }
+
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        if (Math.abs(displayPort.getLeft() - mProgressiveUpdateDisplayPort.getLeft()) <= 2 &&
+            Math.abs(displayPort.getTop() - mProgressiveUpdateDisplayPort.getTop()) <= 2 &&
+            Math.abs(displayPort.getBottom() - mProgressiveUpdateDisplayPort.getBottom()) <= 2 &&
+            Math.abs(displayPort.getRight() - mProgressiveUpdateDisplayPort.getRight()) <= 2) {
+            return mProgressiveUpdateData;
+        }
+
+        
+        
+        
+        
+        
+        if (Math.max(viewportMetrics.viewportRectLeft, viewportMetrics.pageRectLeft) + 1 < x ||
+            Math.max(viewportMetrics.viewportRectTop, viewportMetrics.pageRectTop) + 1 < y ||
+            Math.min(viewportMetrics.viewportRectRight(), viewportMetrics.pageRectRight) - 1 > x + width ||
+            Math.min(viewportMetrics.viewportRectBottom(), viewportMetrics.pageRectBottom) - 1 > y + height) {
+            Log.d(LOGTAG, "Aborting update due to viewport not in display-port");
+            mProgressiveUpdateData.abort = true;
+
+            
+            
+            mProgressiveUpdateWasInDanger = true;
+
+            return mProgressiveUpdateData;
+        }
+
+        
+        
+        if (lowPrecision && !aHasPendingNewThebesContent) {
+          mProgressiveUpdateData.abort = true;
+        }
+        return mProgressiveUpdateData;
+    }
+
+    void setZoomConstraints(ZoomConstraints constraints) {
+        mZoomConstraints = constraints;
     }
 
     void setIsRTL(boolean aIsRTL) {
@@ -361,6 +554,20 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
             });
 
             setViewportMetrics(newMetrics);
+
+            if (tab != null) {
+                mView.setBackgroundColor(tab.getBackgroundColor());
+                setZoomConstraints(tab.getZoomConstraints());
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            abortPanZoomAnimation();
 
             
             
@@ -703,6 +910,12 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     @Override
     public ImmutableViewportMetrics getViewportMetrics() {
         return mViewportMetrics;
+    }
+
+    
+    @Override
+    public ZoomConstraints getZoomConstraints() {
+        return mZoomConstraints;
     }
 
     

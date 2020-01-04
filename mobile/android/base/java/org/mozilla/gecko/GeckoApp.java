@@ -367,6 +367,14 @@ public abstract class GeckoApp
                     mFormAssistPopup.hide();
                 break;
 
+            case LOADED:
+                
+                
+                LayerView layerView = mLayerView;
+                if (layerView != null && Tabs.getInstance().isSelectedTab(tab))
+                    layerView.setBackgroundColor(tab.getBackgroundColor());
+                break;
+
             case DESKTOP_MODE_CHANGE:
                 if (Tabs.getInstance().isSelectedTab(tab))
                     invalidateOptionsMenu();
