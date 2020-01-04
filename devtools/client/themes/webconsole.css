@@ -380,6 +380,9 @@ a {
 }
 
 .jsterm-input-node {
+  
+
+  max-height: calc(90vh - 24px);
   background-image: -moz-image-rect(url("chrome://devtools/skin/themes/images/commandline-icon.png"), 0, 32, 16, 16);
   background-repeat: no-repeat;
   background-size: 16px 16px;
