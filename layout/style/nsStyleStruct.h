@@ -518,7 +518,7 @@ struct nsStyleImageLayers {
   struct Layer;
   friend struct Layer;
   struct Layer {
-   nsStyleImage   mImage;         
+    nsStyleImage  mImage;         
     Position      mPosition;      
     Size          mSize;          
     uint8_t       mClip;          

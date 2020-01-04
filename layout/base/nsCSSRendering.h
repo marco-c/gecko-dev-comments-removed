@@ -532,21 +532,21 @@ struct nsCSSRendering {
                            bool& aDrawBackgroundColor);
 
   static nsRect
-  ComputeBackgroundPositioningArea(nsPresContext* aPresContext,
+  ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
                                    nsIFrame* aForFrame,
                                    const nsRect& aBorderArea,
                                    const nsStyleImageLayers::Layer& aLayer,
                                    nsIFrame** aAttachedToFrame);
 
   static nsBackgroundLayerState
-  PrepareBackgroundLayer(nsPresContext* aPresContext,
-                         nsIFrame* aForFrame,
-                         uint32_t aFlags,
-                         const nsRect& aBorderArea,
-                         const nsRect& aBGClipRect,
-                         const nsStyleImageLayers::Layer& aLayer);
+  PrepareImageLayer(nsPresContext* aPresContext,
+                    nsIFrame* aForFrame,
+                    uint32_t aFlags,
+                    const nsRect& aBorderArea,
+                    const nsRect& aBGClipRect,
+                    const nsStyleImageLayers::Layer& aLayer);
 
-  struct BackgroundClipState {
+  struct ImageLayerClipState {
     nsRect mBGClipArea;  
     nsRect mAdditionalBGClipArea;  
     nsRect mDirtyRect;
@@ -563,11 +563,11 @@ struct nsCSSRendering {
   };
 
   static void
-  GetBackgroundClip(const nsStyleImageLayers::Layer& aLayer,
-                    nsIFrame* aForFrame, const nsStyleBorder& aBorder, const nsRect& aBorderArea,
-                    const nsRect& aCallerDirtyRect, bool aWillPaintBorder,
-                    nscoord aAppUnitsPerPixel,
-                     BackgroundClipState* aClipState);
+  GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
+                    nsIFrame* aForFrame, const nsStyleBorder& aBorder,
+                    const nsRect& aBorderArea, const nsRect& aCallerDirtyRect,
+                    bool aWillPaintBorder, nscoord aAppUnitsPerPixel,
+                     ImageLayerClipState* aClipState);
 
   
 
