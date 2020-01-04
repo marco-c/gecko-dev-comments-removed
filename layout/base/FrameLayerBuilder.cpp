@@ -2197,7 +2197,7 @@ ContainerState::GetLayerCreationHint(AnimatedGeometryRoot* aAnimatedGeometryRoot
   
   
   for (AnimatedGeometryRoot* agr = aAnimatedGeometryRoot;
-       agr != mContainerAnimatedGeometryRoot;
+       agr && agr != mContainerAnimatedGeometryRoot;
        agr = agr->mParentAGR) {
     nsIFrame* fParent = nsLayoutUtils::GetCrossDocParentFrame(*agr);
     if (!fParent) {
