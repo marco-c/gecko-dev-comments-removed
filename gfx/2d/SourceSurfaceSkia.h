@@ -39,14 +39,15 @@ public:
                       SurfaceFormat aFormat,
                       DrawTargetSkia* aOwner);
 
+#ifdef USE_SKIA_GPU
   
 
 
 
-  bool InitFromTexture(DrawTargetSkia* aOwner,
-                       unsigned int aTexture,
-                       const IntSize &aSize,
-                       SurfaceFormat aFormat);
+  bool InitFromGrTexture(GrTexture* aTexture,
+                         const IntSize &aSize,
+                         SurfaceFormat aFormat);
+#endif
 
   virtual unsigned char *GetData();
 
