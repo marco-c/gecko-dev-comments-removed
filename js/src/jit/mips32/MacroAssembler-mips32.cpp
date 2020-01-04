@@ -312,14 +312,11 @@ MacroAssemblerMIPSCompat::inc64(AbsoluteAddress dest)
 }
 
 void
-MacroAssemblerMIPS::ma_li(Register dest, AbsoluteLabel* label)
+MacroAssemblerMIPS::ma_li(Register dest, CodeOffset* label)
 {
-    MOZ_ASSERT(!label->bound());
-    
-    
     BufferOffset bo = m_buffer.nextOffset();
-    ma_liPatchable(dest, Imm32(label->prev()));
-    label->setPrev(bo.getOffset());
+    ma_liPatchable(dest, ImmWord( 0));
+    label->bind(bo.getOffset());
 }
 
 void

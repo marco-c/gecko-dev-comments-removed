@@ -62,7 +62,7 @@ CodeGeneratorMIPS::visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool)
     MTableSwitch* mir = ool->mir();
 
     masm.haltingAlign(sizeof(void*));
-    masm.bind(ool->jumpLabel()->src());
+    masm.bind(ool->jumpLabel()->target());
     masm.addCodeLabel(*ool->jumpLabel());
 
     for (size_t i = 0; i < mir->numCases(); i++) {
@@ -73,9 +73,9 @@ CodeGeneratorMIPS::visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool)
         
         
         CodeLabel cl;
-        masm.ma_li(ScratchRegister, cl.dest());
+        masm.ma_li(ScratchRegister, cl.patchAt());
         masm.branch(ScratchRegister);
-        cl.src()->bind(caseoffset);
+        cl.target()->bind(caseoffset);
         masm.addCodeLabel(cl);
     }
 }
@@ -101,7 +101,7 @@ CodeGeneratorMIPS::emitTableSwitchDispatch(MTableSwitch* mir, Register index,
     addOutOfLineCode(ool, mir);
 
     
-    masm.ma_li(address, ool->jumpLabel()->dest());
+    masm.ma_li(address, ool->jumpLabel()->patchAt());
     masm.lshiftPtr(Imm32(4), index);
     masm.addPtr(index, address);
 
