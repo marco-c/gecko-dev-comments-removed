@@ -3,7 +3,135 @@
 
 
 #include "nsPrintSettingsWin.h"
+
+#include "mozilla/ArrayUtils.h"
 #include "nsCRT.h"
+
+
+
+
+const short kPaperSizeUnits[] = {
+  nsIPrintSettings::kPaperSizeMillimeters, 
+                                           
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeInches,      
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+  nsIPrintSettings::kPaperSizeMillimeters, 
+};
 
 NS_IMPL_ISUPPORTS_INHERITED(nsPrintSettingsWin, 
                             nsPrintSettings, 
@@ -186,21 +314,26 @@ nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode)
 
   if (aDevMode->dmFields & DM_PAPERSIZE) {
     mPaperData = aDevMode->dmPaperSize;
+    
+    if (mPaperData > 0 &&
+        mPaperData < int32_t(mozilla::ArrayLength(kPaperSizeUnits))) {
+      mPaperSizeUnit = kPaperSizeUnits[mPaperData];
+    }
   } else {
     mPaperData = -1;
   }
 
   
-  
-  mPaperSizeUnit = kPaperSizeMillimeters;
+  double sizeUnitToTenthsOfAmm =
+    10L * (mPaperSizeUnit == kPaperSizeInches ? MM_PER_INCH_FLOAT : 1L);
   if (aDevMode->dmFields & DM_PAPERLENGTH) {
-    mPaperHeight = aDevMode->dmPaperLength / 10l;
+    mPaperHeight = aDevMode->dmPaperLength / sizeUnitToTenthsOfAmm;
   } else {
     mPaperHeight = -1l;
   }
 
   if (aDevMode->dmFields & DM_PAPERWIDTH) {
-    mPaperWidth = aDevMode->dmPaperWidth / 10l;
+    mPaperWidth = aDevMode->dmPaperWidth / sizeUnitToTenthsOfAmm;
   } else {
     mPaperWidth = -1l;
   }
@@ -242,29 +375,22 @@ nsPrintSettingsWin::CopyToNative(DEVMODEW* aDevMode)
     aDevMode->dmFields &= ~DM_PAPERSIZE;
   }
 
-  double paperHeight;
-  double paperWidth;
-  if (mPaperSizeUnit == kPaperSizeMillimeters) {
-    paperHeight = mPaperHeight;
-    paperWidth = mPaperWidth;
-  } else {
-    paperHeight = mPaperHeight * MM_PER_INCH_FLOAT;
-    paperWidth = mPaperWidth * MM_PER_INCH_FLOAT;
-  }
+  
+  double sizeUnitToTenthsOfAmm =
+    10L * (mPaperSizeUnit == kPaperSizeInches ? MM_PER_INCH_FLOAT : 1L);
 
   
   
-  if (paperHeight > 0) {
-    
-    aDevMode->dmPaperLength = paperHeight * 10l;
+  if (mPaperHeight > 0) {
+    aDevMode->dmPaperLength = mPaperHeight * sizeUnitToTenthsOfAmm;
     aDevMode->dmFields |= DM_PAPERLENGTH;
   } else {
     aDevMode->dmPaperLength = 0;
     aDevMode->dmFields &= ~DM_PAPERLENGTH;
   }
 
-  if (paperWidth > 0) {
-    aDevMode->dmPaperWidth = paperWidth * 10l;
+  if (mPaperWidth > 0) {
+    aDevMode->dmPaperWidth = mPaperWidth * sizeUnitToTenthsOfAmm;
     aDevMode->dmFields |= DM_PAPERWIDTH;
   } else {
     aDevMode->dmPaperWidth = 0;
