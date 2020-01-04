@@ -300,6 +300,16 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
   
   if (!aDriverInfo.Length()) {
     
+    
+    if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS &&
+        (mIsLlvmpipe || mIsOldSwrast))
+    {
+      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+      aFailureId = "FEATURE_FAILURE_SOFTWARE_GL";
+      return NS_OK;
+    }
+
+    
     if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS ||
         aFeature == nsIGfxInfo::FEATURE_WEBGL_OPENGL ||
         aFeature == nsIGfxInfo::FEATURE_WEBGL_MSAA) {
