@@ -2937,12 +2937,6 @@ public:
   virtual nsresult XULDumpBox(FILE* out)=0;
 #endif
 
-  
-
-
-
-  virtual bool HasSignificantTerminalNewline() const;
-
   static bool AddXULPrefSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth, bool& aHeightSet);
   static bool AddXULMinSize(nsBoxLayoutState& aState, nsIFrame* aBox,
                             nsSize& aSize, bool& aWidth, bool& aHeightSet);
@@ -2952,6 +2946,12 @@ public:
   
   
   
+
+  
+
+
+
+  virtual bool HasSignificantTerminalNewline() const;
 
   struct CaretPosition {
     CaretPosition();
