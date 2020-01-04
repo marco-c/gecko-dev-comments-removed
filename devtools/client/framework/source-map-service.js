@@ -19,6 +19,7 @@ const { LocationStore, serialize, deserialize } = require("./location-store");
 function SourceMapService(target) {
   this._target = target;
   this._locationStore = new LocationStore();
+  this._isNotSourceMapped = new Map();
 
   EventEmitter.decorate(this);
 
@@ -41,6 +42,7 @@ function SourceMapService(target) {
 
 SourceMapService.prototype.reset = function () {
   this._locationStore.clear();
+  this._isNotSourceMapped.clear();
 };
 
 SourceMapService.prototype.destroy = function () {
@@ -49,7 +51,7 @@ SourceMapService.prototype.destroy = function () {
   this._target.off("navigate", this.reset);
   this._target.off("will-navigate", this.reset);
   this._target.off("close", this.destroy);
-  this._target = this._locationStore = null;
+  this._target = this._locationStore = this._isNotSourceMapped = null;
 };
 
 
@@ -57,7 +59,16 @@ SourceMapService.prototype.destroy = function () {
 
 
 
+
 SourceMapService.prototype.subscribe = function (location, callback) {
+  
+  
+  
+  
+  
+  if (!location.url || !location.line || this._isNotSourceMapped.get(location.url)) {
+    return;
+  }
   this.on(serialize(location), callback);
   this._locationStore.set(location);
   this._resolveAndUpdate(location);
@@ -102,24 +113,21 @@ SourceMapService.prototype._resolveAndUpdate = function (location) {
 
 
 
-
-
 SourceMapService.prototype._resolveLocation = Task.async(function* (location) {
-  
-  if (!location.url || !location.line) {
-    return null;
-  }
+  let resolvedLocation;
   const cachedLocation = this._locationStore.get(location);
   if (cachedLocation) {
-    return cachedLocation;
+    resolvedLocation = cachedLocation;
   } else {
     const promisedLocation = resolveLocation(this._target, location);
     if (promisedLocation) {
       this._locationStore.set(location, promisedLocation);
-      return promisedLocation;
+      resolvedLocation = promisedLocation;
     }
   }
+  return resolvedLocation;
 });
+
 
 
 
@@ -131,11 +139,16 @@ SourceMapService.prototype._resolveLocation = Task.async(function* (location) {
 
 SourceMapService.prototype._onSourceUpdated = function (_, sourceEvent) {
   let { type, source } = sourceEvent;
+
   
   
   
   
-  if (!source.url || type === "newSource" && !source.isSourceMapped) {
+  
+  const isNotSourceMapped = !(source.sourceMapURL ||
+    source.isSourceMapped || source.isPrettyPrinted);
+  if (type === "newSource" && isNotSourceMapped) {
+    this._isNotSourceMapped.set(source.url, true);
     return;
   }
   let sourceUrl = null;
