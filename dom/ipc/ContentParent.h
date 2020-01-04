@@ -386,6 +386,8 @@ public:
     return mSubprocess;
   }
 
+  int32_t Pid() const;
+
   ContentParent* Opener() const
   {
     return mOpener;
@@ -588,8 +590,6 @@ public:
 
   virtual bool
   RecvUnstoreAndBroadcastBlobURLUnregistration(const nsCString& aURI) override;
-
-  virtual int32_t Pid() const override;
 
 protected:
   void OnChannelConnected(int32_t pid) override;
@@ -958,6 +958,7 @@ private:
 
   virtual bool RecvSetClipboard(const IPCDataTransfer& aDataTransfer,
                                 const bool& aIsPrivateData,
+                                const IPC::Principal& aRequestingPrincipal,
                                 const int32_t& aWhichClipboard) override;
 
   virtual bool RecvGetClipboard(nsTArray<nsCString>&& aTypes,
