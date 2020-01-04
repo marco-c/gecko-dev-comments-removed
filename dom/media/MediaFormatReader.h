@@ -111,7 +111,6 @@ private:
   
   
   bool EnsureDecodersInitialized();
-  bool EnsureDecoderInitialized(TrackType aTrack);
 
   
   
@@ -250,8 +249,6 @@ private:
     }
 
     
-    
-    MozPromiseRequestHolder<MediaDataDecoder::InitPromise> mInitPromise;
     
     bool mDecoderInitialized;
     bool mDecodingRequested;
