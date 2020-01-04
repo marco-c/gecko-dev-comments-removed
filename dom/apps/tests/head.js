@@ -9,19 +9,6 @@ function runAll(steps) {
   SimpleTest.waitForExplicitFinish();
 
   
-
-
-
-
-
-
-
-
-
-
-  SpecialPowers.setAllAppsLaunchable(true);
-
-  
   steps = steps.concat();
   function next() {
     if (steps.length) {

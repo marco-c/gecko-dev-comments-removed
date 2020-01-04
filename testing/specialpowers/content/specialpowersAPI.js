@@ -1131,15 +1131,6 @@ SpecialPowersAPI.prototype = {
   },
 
   
-  
-  setAllAppsLaunchable: function(launchable) {
-    this._sendSyncMessage("SPWebAppService", {
-      op: "set-launchable",
-      launchable: launchable
-    });
-  },
-
-  
   allowUnsignedAddons: function() {
     this._sendSyncMessage("SPWebAppService", {
       op: "allow-unsigned-addons"
@@ -1151,14 +1142,6 @@ SpecialPowersAPI.prototype = {
     this._sendSyncMessage("SPWebAppService", {
       op: "debug-customizations",
       value: value
-    });
-  },
-
-  
-  flushAllAppsLaunchable: function() {
-    this._sendSyncMessage("SPWebAppService", {
-      op: "set-launchable",
-      launchable: false
     });
   },
 
