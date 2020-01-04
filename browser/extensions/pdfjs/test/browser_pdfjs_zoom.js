@@ -28,7 +28,6 @@ const TESTS = [
   {
     action: {
       keyboard: true,
-      keyCode: 61,
       event: "+"
     },
     expectedZoom: 1, 
@@ -38,7 +37,6 @@ const TESTS = [
   {
     action: {
       keyboard: true,
-      keyCode: 109,
       event: "-"
     },
     expectedZoom: -1, 
@@ -56,7 +54,11 @@ const TESTS = [
   }
 ];
 
-add_task(function* test() {
+var initialWidth; 
+var previousWidth; 
+
+function test() {
+  var tab;
   let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"]
                        .getService(Ci.nsIHandlerService);
   let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
@@ -70,83 +72,114 @@ add_task(function* test() {
 
   info('Pref action: ' + handlerInfo.preferredAction);
 
-  yield BrowserTestUtils.withNewTab({ gBrowser, url: TESTROOT + "file_pdfjs_test.pdf" + "#zoom=100" },
-    function* (newTabBrowser) {
-      yield waitForPdfJS(newTabBrowser);
+  waitForExplicitFinish();
+  registerCleanupFunction(function() {
+    gBrowser.removeTab(tab);
+  });
 
-      yield ContentTask.spawn(newTabBrowser, TESTS, function* (TESTS) {
-        let document = content.document;
+  tab = gBrowser.selectedTab = gBrowser.addTab(TESTROOT + "file_pdfjs_test.pdf");
+  var newTabBrowser = gBrowser.getBrowserForTab(tab);
 
-        function waitForRender() {
-          return new Promise((resolve) => {
-            document.addEventListener("pagerendered", function onPageRendered(e) {
-              if(e.detail.pageNumber !== 1) {
-                return;
-              }
+  newTabBrowser.addEventListener("load", function eventHandler() {
+    newTabBrowser.removeEventListener("load", eventHandler, true);
 
-              document.removeEventListener("pagerendered", onPageRendered, true);
-              resolve();
-            }, true);
-          });
-        }
+    var document = newTabBrowser.contentDocument,
+        window = newTabBrowser.contentWindow;
 
-        
-        ok(content.document.querySelector('div#viewer'), "document content has viewer UI");
-        ok('PDFJS' in content.wrappedJSObject, "window content has PDFJS object");
-
-        let initialWidth, previousWidth;
-        initialWidth = previousWidth =
-          parseInt(content.document.querySelector("div#pageContainer1").style.width);
-
-        for (let test of TESTS) {
-          
-          var ev;
-          if (test.action.selector) {
-            
-            var el = document.querySelector(test.action.selector);
-            ok(el, "Element '" + test.action.selector + "' has been found");
-
-            if (test.action.index){
-              el.selectedIndex = test.action.index;
-            }
-
-            
-            ev = new Event(test.action.event);
-          }
-          
-          else {
-            
-            ev = new content.KeyboardEvent("keydown",
-                                           { key: test.action.event,
-                                             keyCode: test.action.keyCode,
-                                             ctrlKey: true });
-            el = content;
-          }
-
-          el.dispatchEvent(ev);
-          yield waitForRender();
-
-          var pageZoomScale = content.document.querySelector('select#scaleSelect');
-
-          
-          var zoomValue = pageZoomScale.options[pageZoomScale.selectedIndex].innerHTML;
-
-          let pageContainer = content.document.querySelector('div#pageContainer1');
-          let actualWidth = parseInt(pageContainer.style.width);
-
-          
-          let computedZoomValue = parseInt(((actualWidth/initialWidth).toFixed(2))*100) + "%";
-          is(computedZoomValue, zoomValue, "Content has correct zoom");
-
-          
-          let zoom = (actualWidth - previousWidth) * test.expectedZoom;
-          ok(zoom > 0, test.message);
-
-          previousWidth = actualWidth;
-        }
-
-        var viewer = content.wrappedJSObject.PDFViewerApplication;
-        yield viewer.close();
+    
+    window.addEventListener("documentload", function() {
+      initialWidth = parseInt(document.querySelector("div#pageContainer1").style.width);
+      previousWidth = initialWidth;
+      runTests(document, window, function () {
+        closePDFViewer(window, finish);
       });
-    });
-});
+    }, false, true);
+  }, true);
+}
+
+function runTests(document, window, callback) {
+  
+  ok(document.querySelector('div#viewer'), "document content has viewer UI");
+  ok('PDFJS' in window.wrappedJSObject, "window content has PDFJS object");
+
+  
+  waitForDocumentLoad(document).then(function () {
+    zoomPDF(document, window, TESTS.shift(), callback);
+  });
+}
+
+function waitForDocumentLoad(document) {
+  var deferred = Promise.defer();
+  var interval = setInterval(function () {
+    if (document.querySelector("div#pageContainer1") != null){
+      clearInterval(interval);
+      deferred.resolve();
+    }
+  }, 500);
+
+  return deferred.promise;
+}
+
+function zoomPDF(document, window, test, endCallback) {
+  var renderedPage;
+
+  document.addEventListener("pagerendered", function onPageRendered(e) {
+    if(e.detail.pageNumber !== 1) {
+      return;
+    }
+
+    document.removeEventListener("pagerendered", onPageRendered, true);
+
+    var pageZoomScale = document.querySelector('select#scaleSelect');
+
+    
+    var zoomValue = pageZoomScale.options[pageZoomScale.selectedIndex].innerHTML;
+
+    let pageContainer = document.querySelector('div#pageContainer1');
+    let actualWidth  = parseInt(pageContainer.style.width);
+
+    
+    let computedZoomValue = parseInt(((actualWidth/initialWidth).toFixed(2))*100) + "%";
+    is(computedZoomValue, zoomValue, "Content has correct zoom");
+
+    
+    let zoom = (actualWidth - previousWidth) * test.expectedZoom;
+    ok(zoom > 0, test.message);
+
+    
+    var nextTest = TESTS.shift();
+    if (nextTest) {
+      previousWidth = actualWidth;
+      zoomPDF(document, window, nextTest, endCallback);
+    }
+    else
+      endCallback();
+  }, true);
+
+  
+  if (test.action.selector) {
+    
+    var el = document.querySelector(test.action.selector);
+    ok(el, "Element '" + test.action.selector + "' has been found");
+
+    if (test.action.index){
+      el.selectedIndex = test.action.index;
+    }
+
+    
+    el.dispatchEvent(new Event(test.action.event));
+  }
+  
+  else {
+    
+    EventUtils.synthesizeKey(test.action.event, { ctrlKey: true });
+  }
+}
+
+
+
+
+function closePDFViewer(window, callback) {
+  var viewer = window.wrappedJSObject.PDFViewerApplication;
+  viewer.close().then(callback);
+}
