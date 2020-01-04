@@ -16,6 +16,7 @@
 #include "mozilla/Services.h"
 #include "prprf.h"
 
+#include "gfxCrashReporterUtils.h"
 #include "gfxPlatform.h"
 #include "gfxPrefs.h"
 #include "gfxEnv.h"
@@ -518,6 +519,44 @@ gfxPlatform::Init()
 
     auto fwd = new CrashStatsLogForwarder("GraphicsCriticalError");
     fwd->SetCircularBufferSize(gfxPrefs::GfxLoggingCrashLength());
+
+    
+    
+    
+    
+    {
+      nsAutoCString forcedPrefs;
+      
+      forcedPrefs.AppendPrintf("FP(D%d%d%d",
+                               gfxPrefs::Direct2DDisabled(),
+                               gfxPrefs::Direct2DForceEnabled(),
+                               gfxPrefs::DirectWriteFontRenderingForceEnabled());
+      
+      forcedPrefs.AppendPrintf("-L%d%d%d%d%d%d",
+                               gfxPrefs::LayersAMDSwitchableGfxEnabled(),
+                               gfxPrefs::LayersAccelerationDisabled(),
+                               gfxPrefs::LayersAccelerationForceEnabled(),
+                               gfxPrefs::LayersD3D11DisableWARP(),
+                               gfxPrefs::LayersD3D11ForceWARP(),
+                               gfxPrefs::LayersOffMainThreadCompositionForceEnabled());
+      
+      forcedPrefs.AppendPrintf("-W%d%d%d%d%d%d%d%d",
+                               gfxPrefs::WebGLANGLEForceD3D11(),
+                               gfxPrefs::WebGLANGLEForceWARP(),
+                               gfxPrefs::WebGLDisabled(),
+                               gfxPrefs::WebGLDisableANGLE(),
+                               gfxPrefs::WebGLDXGLEnabled(),
+                               gfxPrefs::WebGLForceEnabled(),
+                               gfxPrefs::WebGLForceLayersReadback(),
+                               gfxPrefs::WebGLForceMSAA());
+      
+      forcedPrefs.AppendPrintf("-T%d%d%d%d) ",
+                               gfxPrefs::AndroidRGB16Force(),
+                               gfxPrefs::CanvasAzureAccelerated(),
+                               gfxPrefs::DisableGralloc(),
+                               gfxPrefs::ForceShmemTiles());
+      ScopedGfxFeatureReporter::AppNote(forcedPrefs);
+    }
 
     mozilla::gfx::Config cfg;
     cfg.mLogForwarder = fwd;
