@@ -585,7 +585,7 @@ FinderHighlighter.prototype = {
       
       
       let el = this._getDWU(currWin).containerElement;
-      currWin = window.parent;
+      currWin = currWin.parent;
       dwu = this._getDWU(currWin);
       let parentRect = Rect.fromRect(dwu.getBoundsWithoutFlushing(el));
 
