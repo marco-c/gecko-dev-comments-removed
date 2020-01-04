@@ -556,8 +556,13 @@ class NativeObject : public JSObject
     bool shadowingShapeChange(ExclusiveContext* cx, const Shape& shape);
     bool clearFlag(ExclusiveContext* cx, BaseShape::Flag flag);
 
+    
+    
+    
+    static const uint32_t MAX_SLOTS_COUNT = (1 << 28) - 1;
+
     static void slotsSizeMustNotOverflow() {
-        static_assert((NativeObject::NELEMENTS_LIMIT - 1) <= INT32_MAX / sizeof(JS::Value),
+        static_assert(NativeObject::MAX_SLOTS_COUNT <= INT32_MAX / sizeof(JS::Value),
                       "every caller of this method requires that a slot "
                       "number (or slot count) count multiplied by "
                       "sizeof(Value) can't overflow uint32_t (and sometimes "
@@ -883,10 +888,18 @@ class NativeObject : public JSObject
     
 
     
-    static const uint32_t NELEMENTS_LIMIT = JS_BIT(28);
+    
+    
+    
+    
+    static const uint32_t MAX_DENSE_ELEMENTS_ALLOCATION = (1 << 28) - 1;
+
+    
+    static const uint32_t MAX_DENSE_ELEMENTS_COUNT =
+        MAX_DENSE_ELEMENTS_ALLOCATION - ObjectElements::VALUES_PER_HEADER;
 
     static void elementsSizeMustNotOverflow() {
-        static_assert((NativeObject::NELEMENTS_LIMIT - 1) <= INT32_MAX / sizeof(JS::Value),
+        static_assert(NativeObject::MAX_DENSE_ELEMENTS_COUNT <= INT32_MAX / sizeof(JS::Value),
                       "every caller of this method require that an element "
                       "count multiplied by sizeof(Value) can't overflow "
                       "uint32_t (and sometimes int32_t ,too)");
@@ -904,7 +917,7 @@ class NativeObject : public JSObject
         return true;
     }
 
-    static uint32_t goodAllocated(uint32_t n, uint32_t length);
+    static uint32_t goodElementsAllocationAmount(uint32_t n, uint32_t length);
     bool growElements(ExclusiveContext* cx, uint32_t newcap);
     void shrinkElements(ExclusiveContext* cx, uint32_t cap);
     void setDynamicElements(ObjectElements* header) {
