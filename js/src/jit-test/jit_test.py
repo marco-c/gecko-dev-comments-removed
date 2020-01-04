@@ -144,9 +144,6 @@ def main(argv):
     test_args = args[1:]
     test_environment = get_environment_overlay(js_shell)
 
-    if not (os.path.isfile(js_shell) and os.access(js_shell, os.X_OK)):
-        op.error('shell is not executable')
-
     if jittests.stdio_might_be_broken():
         
         
