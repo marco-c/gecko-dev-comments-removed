@@ -602,9 +602,21 @@ MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg)
             }
             return true;
         } else if (CANCEL_MESSAGE_TYPE == aMsg.type()) {
-            CancelCurrentTransactionInternal();
-            NotifyWorkerThread();
-            return true;
+            IPC_LOG("Cancel from message");
+
+            if (aMsg.transaction_id() == mTimedOutMessageSeqno) {
+                
+                
+                
+                mTimedOutMessageSeqno = 0;
+                return true;
+            } else {
+                MOZ_RELEASE_ASSERT(mCurrentTransaction == aMsg.transaction_id());
+                CancelCurrentTransactionInternal();
+                NotifyWorkerThread();
+                IPC_LOG("Notified");
+                return true;
+            }
         }
     }
     return false;
