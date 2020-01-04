@@ -335,6 +335,9 @@ public:
   void
   SetContentPolicyType(nsContentPolicyType aContentPolicyType);
 
+  void
+  OverrideContentPolicyType(nsContentPolicyType aContentPolicyType);
+
   RequestContext
   Context() const
   {
@@ -428,6 +431,12 @@ public:
   void
   MaybeSkipCacheIfPerformingRevalidation();
 
+  bool
+  IsContentPolicyTypeOverridden() const
+  {
+    return mContentPolicyTypeOverridden;
+  }
+
   static RequestMode
   MapChannelToRequestMode(nsIChannel* aChannel);
 
@@ -481,6 +490,10 @@ private:
   
   
   bool mCreatedByFetchEvent = false;
+  
+  
+  
+  bool mContentPolicyTypeOverridden = false;
 };
 
 } 

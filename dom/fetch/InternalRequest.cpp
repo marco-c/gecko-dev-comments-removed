@@ -39,12 +39,15 @@ InternalRequest::GetRequestConstructorCopy(nsIGlobalObject* aGlobal, ErrorResult
   
   copy->mReferrerPolicy = mReferrerPolicy;
 
-  copy->mContentPolicyType = nsIContentPolicy::TYPE_FETCH;
+  copy->mContentPolicyType = mContentPolicyTypeOverridden ?
+                             mContentPolicyType :
+                             nsIContentPolicy::TYPE_FETCH;
   copy->mMode = mMode;
   copy->mCredentialsMode = mCredentialsMode;
   copy->mCacheMode = mCacheMode;
   copy->mRedirectMode = mRedirectMode;
   copy->mCreatedByFetchEvent = mCreatedByFetchEvent;
+  copy->mContentPolicyTypeOverridden = mContentPolicyTypeOverridden;
   return copy.forget();
 }
 
@@ -93,6 +96,7 @@ InternalRequest::InternalRequest(const InternalRequest& aOther)
   , mUnsafeRequest(aOther.mUnsafeRequest)
   , mUseURLCredentials(aOther.mUseURLCredentials)
   , mCreatedByFetchEvent(aOther.mCreatedByFetchEvent)
+  , mContentPolicyTypeOverridden(aOther.mContentPolicyTypeOverridden)
 {
   
 }
@@ -105,6 +109,13 @@ void
 InternalRequest::SetContentPolicyType(nsContentPolicyType aContentPolicyType)
 {
   mContentPolicyType = aContentPolicyType;
+}
+
+void
+InternalRequest::OverrideContentPolicyType(nsContentPolicyType aContentPolicyType)
+{
+  SetContentPolicyType(aContentPolicyType);
+  mContentPolicyTypeOverridden = true;
 }
 
 

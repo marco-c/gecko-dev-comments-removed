@@ -154,6 +154,14 @@ FetchRequest(nsIGlobalObject* aGlobal, const RequestOrUSVString& aInput,
     return nullptr;
   }
 
+  
+  
+  
+  
+  MOZ_ASSERT_IF(aInput.IsRequest() &&
+                aInput.GetAsRequest().IsContentPolicyTypeOverridden(),
+                nsContentUtils::IsCallerChrome());
+
   AutoJSAPI jsapi;
   jsapi.Init(aGlobal);
   JSContext* cx = jsapi.cx();
