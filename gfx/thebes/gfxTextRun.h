@@ -576,8 +576,6 @@ public:
     
     void CopyGlyphDataFrom(gfxTextRun *aSource, Range aRange, uint32_t aDest);
 
-    nsExpirationState *GetExpirationState() { return &mExpirationState; }
-
     
     
     
@@ -747,7 +745,6 @@ private:
     gfxFontGroup     *mFontGroup; 
                                   
     gfxSkipChars      mSkipChars;
-    nsExpirationState mExpirationState;
 
     bool              mSkipDrawing; 
                                     
