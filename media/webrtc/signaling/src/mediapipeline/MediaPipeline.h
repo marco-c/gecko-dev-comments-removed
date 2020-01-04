@@ -166,7 +166,6 @@ class MediaPipeline : public sigslot::has_slots<> {
         : pipeline_(pipeline),
           sts_thread_(pipeline->sts_thread_) {}
 
-    void Attach(MediaPipeline *pipeline) { pipeline_ = pipeline; }
     void Detach() { pipeline_ = nullptr; }
     MediaPipeline *pipeline() const { return pipeline_; }
 
@@ -343,6 +342,7 @@ public:
   
   class PipelineListener;
   class VideoFrameFeeder;
+  class PipelineVideoSink;
 
  protected:
   ~MediaPipelineTransmit();
@@ -353,6 +353,7 @@ public:
   RefPtr<VideoFrameFeeder> feeder_;
   RefPtr<VideoFrameConverter> converter_;
 #endif
+  RefPtr<PipelineVideoSink> video_sink_;
   dom::MediaStreamTrack* domtrack_;
 };
 
