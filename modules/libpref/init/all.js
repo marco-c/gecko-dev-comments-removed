@@ -1981,6 +1981,12 @@ pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", false)
 #endif
 
 
+
+
+
+pref("intl.ime.remove_placeholder_character_at_commit", false);
+
+
 pref("intl.uidirection.ar", "rtl");
 pref("intl.uidirection.he", "rtl");
 pref("intl.uidirection.fa", "rtl");

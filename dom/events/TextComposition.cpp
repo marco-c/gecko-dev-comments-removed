@@ -267,7 +267,10 @@ TextComposition::DispatchCompositionEvent(
     aCompositionEvent->mRanges = nullptr;
     NS_ASSERTION(aCompositionEvent->mData.IsEmpty(),
                  "mData of eCompositionCommitAsIs should be empty string");
-    if (mLastData == IDEOGRAPHIC_SPACE) {
+    bool removePlaceholderCharacter =
+      Preferences::GetBool("intl.ime.remove_placeholder_character_at_commit",
+                           false);
+    if (removePlaceholderCharacter && mLastData == IDEOGRAPHIC_SPACE) {
       
       
       
