@@ -545,6 +545,10 @@
 
   
 
+  ERROR(NS_ERROR_DOM_DOMEXCEPTION,                 FAILURE(1017)),
+
+  
+
 
 
   ERROR(NS_SUCCESS_DOM_NO_OPERATION,               SUCCESS(1)),

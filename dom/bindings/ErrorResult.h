@@ -76,20 +76,23 @@ struct StringArrayAppender
 
 class ErrorResult {
 public:
-  ErrorResult() {
-    mResult = NS_OK;
-
+  ErrorResult()
+    : mResult(NS_OK)
 #ifdef DEBUG
-    mMightHaveUnreportedJSException = false;
-    mHasMessage = false;
+    , mMightHaveUnreportedJSException(false)
+    , mHasMessage(false)
+    , mHasDOMExceptionInfo(false)
 #endif
+  {
   }
 
 #ifdef DEBUG
   ~ErrorResult() {
     MOZ_ASSERT_IF(IsErrorWithMessage(), !mMessage);
+    MOZ_ASSERT_IF(IsDOMException(), !mDOMExceptionInfo);
     MOZ_ASSERT(!mMightHaveUnreportedJSException);
     MOZ_ASSERT(!mHasMessage);
+    MOZ_ASSERT(!mHasDOMExceptionInfo);
   }
 #endif
 
@@ -159,6 +162,15 @@ public:
 
   
   
+  
+  
+  
+  void ThrowDOMException(nsresult rv, const nsACString& message = EmptyCString());
+  void ReportDOMException(JSContext* cx);
+  bool IsDOMException() const { return ErrorCode() == NS_ERROR_DOM_DOMEXCEPTION; }
+
+  
+  
   void ReportGenericError(JSContext* cx);
 
   
@@ -221,6 +233,9 @@ private:
   void SerializeMessage(IPC::Message* aMsg) const;
   bool DeserializeMessage(const IPC::Message* aMsg, void** aIter);
 
+  void SerializeDOMExceptionInfo(IPC::Message* aMsg) const;
+  bool DeserializeDOMExceptionInfo(const IPC::Message* aMsg, void** aIter);
+
   
   
   nsTArray<nsString>& CreateErrorMessageHelper(const dom::ErrNum errorNumber, nsresult errorType);
@@ -249,12 +264,16 @@ private:
     MOZ_ASSERT(!IsErrorWithMessage(), "Don't overwrite errors with message");
     MOZ_ASSERT(aRv != NS_ERROR_DOM_JS_EXCEPTION, "Use ThrowJSException()");
     MOZ_ASSERT(!IsJSException(), "Don't overwrite JS exceptions");
+    MOZ_ASSERT(aRv != NS_ERROR_DOM_DOMEXCEPTION, "Use ThrowDOMException()");
+    MOZ_ASSERT(!IsDOMException(), "Don't overwrite DOM exceptions");
     MOZ_ASSERT(aRv != NS_ERROR_XPC_NOT_ENOUGH_ARGS, "May need to bring back ThrowNotEnoughArgsError");
     mResult = aRv;
   }
 
   void ClearMessage();
+  void ClearDOMExceptionInfo();
 
+  
   
   
   
@@ -262,8 +281,18 @@ private:
   
   void ClearUnionData();
 
+  
+  
+  
+  
+  
+  
   nsresult mResult;
+
   struct Message;
+  struct DOMExceptionInfo;
+  
+  
   
   
   
@@ -271,6 +300,7 @@ private:
   union {
     Message* mMessage; 
     JS::Value mJSException; 
+    DOMExceptionInfo* mDOMExceptionInfo; 
   };
 
 #ifdef DEBUG
@@ -281,6 +311,11 @@ private:
   
   
   bool mHasMessage;
+  
+  
+  
+  
+  bool mHasDOMExceptionInfo;
 #endif
 
   
