@@ -25,7 +25,6 @@ class nsIPrincipal;
 namespace mozilla {
 namespace dom {
 
-class AnyCallback;
 class ConsoleCallData;
 class ConsoleRunnable;
 class ConsoleCallDataRunnable;
@@ -43,8 +42,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(Console, nsIObserver)
   NS_DECL_NSIOBSERVER
 
-  static already_AddRefed<Console>
-  Create(nsPIDOMWindowInner* aWindow, ErrorResult& aRv);
+  explicit Console(nsPIDOMWindowInner* aWindow);
 
   
   nsPIDOMWindowInner* GetParentObject() const
@@ -118,25 +116,7 @@ public:
   void
   NoopMethod();
 
-  void
-  RetrieveConsoleEvents(JSContext* aCx, nsTArray<JS::Value>& aEvents,
-                        ErrorResult& aRv);
-
-  void
-  SetConsoleEventHandler(AnyCallback& aHandler);
-
-  void
-  ClearStorage();
-
-  void
-  Shutdown();
-
 private:
-  explicit Console(nsPIDOMWindowInner* aWindow);
-
-  void
-  Initialize(ErrorResult& aRv);
-
   enum MethodName
   {
     MethodLog,
@@ -167,29 +147,6 @@ private:
   ProcessCallData(ConsoleCallData* aData,
                   JS::Handle<JSObject*> aGlobal,
                   const Sequence<JS::Value>& aArguments);
-
-  void
-  StoreCallData(ConsoleCallData* aData);
-
-  void
-  UnstoreCallData(ConsoleCallData* aData);
-
-  
-  void
-  ReleaseCallData(ConsoleCallData* aCallData);
-
-  void
-  NotifyHandler(JSContext* aCx,
-                JS::Handle<JSObject*> aGlobal,
-                const Sequence<JS::Value>& aArguments,
-                ConsoleCallData* aData) const;
-
-  bool
-  PopulateEvent(JSContext* aCx,
-                JS::Handle<JSObject*> aGlobal,
-                const Sequence<JS::Value>& aArguments,
-                JS::MutableHandle<JS::Value> aValue,
-                ConsoleCallData* aData) const;
 
   
   
@@ -280,6 +237,7 @@ private:
   
   
   
+  
   JS::Value
   CreateStopTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
                        double aTimerDuration,
@@ -325,6 +283,12 @@ private:
   GetOrCreateSandbox(JSContext* aCx, nsIPrincipal* aPrincipal);
 
   void
+  RegisterConsoleCallData(ConsoleCallData* aData);
+
+  void
+  UnregisterConsoleCallData(ConsoleCallData* aData);
+
+  void
   AssertIsOnOwningThread() const;
 
   
@@ -336,20 +300,9 @@ private:
   nsDataHashtable<nsStringHashKey, DOMHighResTimeStamp> mTimerRegistry;
   nsDataHashtable<nsStringHashKey, uint32_t> mCounterRegistry;
 
-  nsTArray<RefPtr<ConsoleCallData>> mCallDataStorage;
-
   
   
-  
-  
-  
-  
-  
-  
-  
-  nsTArray<RefPtr<ConsoleCallData>> mCallDataStoragePending;
-
-  RefPtr<AnyCallback> mConsoleEventHandler;
+  nsTArray<ConsoleCallData*> mConsoleCallDataArray;
 
 #ifdef DEBUG
   PRThread* mOwningThread;
@@ -357,12 +310,6 @@ private:
 
   uint64_t mOuterID;
   uint64_t mInnerID;
-
-  enum {
-    eUnknown,
-    eInitialized,
-    eShuttingDown
-  } mStatus;
 
   friend class ConsoleCallData;
   friend class ConsoleRunnable;
