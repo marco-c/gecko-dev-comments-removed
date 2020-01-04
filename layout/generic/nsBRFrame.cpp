@@ -140,6 +140,7 @@ BRFrame::Reflow(nsPresContext* aPresContext,
       
       
       
+      
       finalSize.ISize(wm) = 1;
     }
 
@@ -179,6 +180,8 @@ BRFrame::AddInlinePrefISize(nsRenderingContext *aRenderingContext,
                             nsIFrame::InlinePrefISizeData *aData)
 {
   if (!GetParent()->StyleContext()->ShouldSuppressLineBreak()) {
+    
+    aData->currentLine += 1;
     aData->ForceBreak();
   }
 }
