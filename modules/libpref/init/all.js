@@ -2433,6 +2433,8 @@ pref("layout.css.vertical-text.enabled", true);
 
 pref("layout.css.text-combine-upright.enabled", false);
 
+pref("layout.css.text-combine-upright-digits.enabled", false);
+
 
 pref("layout.css.object-fit-and-position.enabled", true);
 
