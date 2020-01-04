@@ -251,6 +251,8 @@ void
 PathBuilderD2D::Arc(const Point &aOrigin, Float aRadius, Float aStartAngle,
                  Float aEndAngle, bool aAntiClockwise)
 {
+  MOZ_ASSERT(aRadius >= 0);
+
   if (aAntiClockwise && aStartAngle < aEndAngle) {
     
     
