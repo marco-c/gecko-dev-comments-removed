@@ -226,10 +226,6 @@ LogManager.prototype = {
     return ["weave", "logs"];
   },
 
-  get sawError() {
-    return this._fileAppender.sawError;
-  },
-
   
   SUCCESS_LOG_WRITTEN: "success-log-written",
   ERROR_LOG_WRITTEN: "error-log-written",
