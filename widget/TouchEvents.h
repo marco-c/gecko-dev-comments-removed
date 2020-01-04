@@ -101,7 +101,7 @@ public:
     , mAllowedDirections(0)
     , mDirection(0)
     , mClickCount(0)
-    , delta(0.0)
+    , mDelta(0.0)
   {
   }
 
@@ -111,7 +111,7 @@ public:
     , mAllowedDirections(aOther.mAllowedDirections)
     , mDirection(aOther.mDirection)
     , mClickCount(0)
-    , delta(aOther.delta)
+    , mDelta(aOther.mDelta)
   {
   }
 
@@ -134,7 +134,7 @@ public:
   
   uint32_t mClickCount;
   
-  double delta;
+  double mDelta;
 
   
   void AssignSimpleGestureEventData(const WidgetSimpleGestureEvent& aEvent,
@@ -144,7 +144,7 @@ public:
 
     
     mDirection = aEvent.mDirection;
-    delta = aEvent.delta;
+    mDelta = aEvent.mDelta;
     mClickCount = aEvent.mClickCount;
   }
 };
