@@ -166,8 +166,7 @@ public:
 
                        nsDocViewerSelectionListener()
                        : mDocViewer(nullptr)
-                       , mGotSelectionState(false)
-                       , mSelectionWasCollapsed(false)
+                       , mSelectionWasCollapsed(true)
                        {
                        }
 
@@ -177,8 +176,7 @@ protected:
 
   virtual              ~nsDocViewerSelectionListener() {}
 
-  nsDocumentViewer*  mDocViewer;
-  bool                 mGotSelectionState;
+  nsDocumentViewer*    mDocViewer;
   bool                 mSelectionWasCollapsed;
 
 };
@@ -3575,10 +3573,10 @@ NS_IMETHODIMP nsDocViewerSelectionListener::NotifySelectionChanged(nsIDOMDocumen
   
   
   
-  if (!mGotSelectionState || mSelectionWasCollapsed != selectionCollapsed)
+  
+  if (mSelectionWasCollapsed != selectionCollapsed)
   {
     domWindow->UpdateCommands(NS_LITERAL_STRING("select"), selection, aReason);
-    mGotSelectionState = true;
     mSelectionWasCollapsed = selectionCollapsed;
   }
 
