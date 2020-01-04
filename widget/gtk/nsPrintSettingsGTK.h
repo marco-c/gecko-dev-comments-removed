@@ -141,7 +141,6 @@ protected:
   GtkPageSetup* mPageSetup;
   GtkPrintSettings* mPrintSettings;
   GtkPrinter* mGTKPrinter;
-  GtkPaperSize* mPaperSize;
 
   bool mPrintSelectionOnly;
 };
