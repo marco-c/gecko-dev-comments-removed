@@ -410,13 +410,21 @@ HyperTextAccessible::OffsetToDOMPoint(int32_t aOffset)
 
   
   if (child->IsTextLeaf()) {
-    nsIContent* content = child->GetContent();
-    int32_t idx = 0;
-    if (NS_FAILED(RenderedToContentOffset(content->GetPrimaryFrame(),
-                                          innerOffset, &idx)))
-      return DOMPoint();
+    
+    
+    if (aOffset < GetChildOffset(childIdx + 1)) {
+      nsIContent* content = child->GetContent();
+      int32_t idx = 0;
+      if (NS_FAILED(RenderedToContentOffset(content->GetPrimaryFrame(),
+                                            innerOffset, &idx)))
+        return DOMPoint();
 
-    return DOMPoint(content, idx);
+      return DOMPoint(content, idx);
+    }
+
+    
+    MOZ_ASSERT(static_cast<uint32_t>(aOffset) == CharacterCount());
+    innerOffset = 1;
   }
 
   
