@@ -582,8 +582,8 @@ LIRGenerator::visitApplyArray(MApplyArray* apply)
     MOZ_ASSERT(CallTempReg2 != JSReturnReg_Data);
 
     LApplyArrayGeneric* lir = new(alloc()) LApplyArrayGeneric(
-        useFixed(apply->getFunction(), CallTempReg3),
-        useFixed(apply->getElements(), CallTempReg0),
+        useFixedAtStart(apply->getFunction(), CallTempReg3),
+        useFixedAtStart(apply->getElements(), CallTempReg0),
         tempFixed(CallTempReg1),  
         tempFixed(CallTempReg2)); 
 
