@@ -7,13 +7,6 @@
 #ifndef jit_mips64_Assembler_mips64_h
 #define jit_mips64_Assembler_mips64_h
 
-
-
-#define CALL_TEMP_NON_ARG_REGS  \
-    { t0, t1, t2, t3 };
-
-#define NUM_INT_ARG_REGS        8;
-
 #include "jit/mips-shared/Assembler-mips-shared.h"
 
 #include "jit/mips64/Architecture-mips64.h"
@@ -23,6 +16,9 @@ namespace jit {
 
 static MOZ_CONSTEXPR_VAR Register CallTempReg4 = a4;
 static MOZ_CONSTEXPR_VAR Register CallTempReg5 = a5;
+
+static MOZ_CONSTEXPR_VAR Register CallTempNonArgRegs[] = { t0, t1, t2, t3 };
+static const uint32_t NumCallTempNonArgRegs = mozilla::ArrayLength(CallTempNonArgRegs);
 
 class ABIArgGenerator
 {
@@ -161,7 +157,18 @@ class Assembler : public AssemblerMIPSShared
     static int64_t ExtractCodeLabelOffset(uint8_t* code);
 }; 
 
+static const uint32_t NumIntArgRegs = 8;
 static const uint32_t NumFloatArgRegs = NumIntArgRegs;
+
+static inline bool
+GetIntArgReg(uint32_t usedArgSlots, Register* out)
+{
+    if (usedArgSlots < NumIntArgRegs) {
+        *out = Register::FromCode(a0.code() + usedArgSlots);
+        return true;
+    }
+    return false;
+}
 
 static inline bool
 GetFloatArgReg(uint32_t usedArgSlots, FloatRegister* out)
@@ -171,6 +178,30 @@ GetFloatArgReg(uint32_t usedArgSlots, FloatRegister* out)
         return true;
     }
     return false;
+}
+
+
+
+
+
+
+static inline bool
+GetTempRegForIntArg(uint32_t usedIntArgs, uint32_t usedFloatArgs, Register* out)
+{
+    
+    
+    MOZ_ASSERT(usedFloatArgs == 0);
+
+    if (GetIntArgReg(usedIntArgs, out))
+        return true;
+    
+    
+    
+    usedIntArgs -= NumIntArgRegs;
+    if (usedIntArgs >= NumCallTempNonArgRegs)
+        return false;
+    *out = CallTempNonArgRegs[usedIntArgs];
+    return true;
 }
 
 static inline uint32_t

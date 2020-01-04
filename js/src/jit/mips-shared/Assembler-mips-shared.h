@@ -95,8 +95,6 @@ static MOZ_CONSTEXPR_VAR Register IntArgReg6 = a6;
 static MOZ_CONSTEXPR_VAR Register IntArgReg7 = a7;
 static MOZ_CONSTEXPR_VAR Register GlobalReg = s6; 
 static MOZ_CONSTEXPR_VAR Register HeapReg = s7; 
-static MOZ_CONSTEXPR_VAR Register CallTempNonArgRegs[] = CALL_TEMP_NON_ARG_REGS;
-static const uint32_t NumCallTempNonArgRegs = mozilla::ArrayLength(CallTempNonArgRegs);
 
 static MOZ_CONSTEXPR_VAR Register PreBarrierReg = a1;
 
@@ -1316,42 +1314,6 @@ class InstJump : public Instruction
         return extractBitField(Imm26Shift + Imm26Bits - 1, Imm26Shift);
     }
 };
-
-static const uint32_t NumIntArgRegs = NUM_INT_ARG_REGS;
-
-static inline bool
-GetIntArgReg(uint32_t usedArgSlots, Register* out)
-{
-    if (usedArgSlots < NumIntArgRegs) {
-        *out = Register::FromCode(a0.code() + usedArgSlots);
-        return true;
-    }
-    return false;
-}
-
-
-
-
-
-
-static inline bool
-GetTempRegForIntArg(uint32_t usedIntArgs, uint32_t usedFloatArgs, Register* out)
-{
-    
-    
-    MOZ_ASSERT(usedFloatArgs == 0);
-
-    if (GetIntArgReg(usedIntArgs, out))
-        return true;
-    
-    
-    
-    usedIntArgs -= NumIntArgRegs;
-    if (usedIntArgs >= NumCallTempNonArgRegs)
-        return false;
-    *out = CallTempNonArgRegs[usedIntArgs];
-    return true;
-}
 
 } 
 } 
