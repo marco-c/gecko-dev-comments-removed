@@ -12,6 +12,12 @@
 
 
 add_task(function*() {
+  yield new Promise(resolve => {
+    SpecialPowers.pushPrefEnv({"set": [
+      ["dom.animations-api.core.enabled", true]
+    ]}, resolve);
+  });
+
   yield addTab(TEST_URL_ROOT + "doc_modify_playbackRate.html");
 
   let {panel} = yield openAnimationInspector();
