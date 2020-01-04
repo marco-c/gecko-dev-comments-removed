@@ -222,14 +222,16 @@ public:
   
   
   
-  static NSRect GeckoRectToCocoaRect(const nsIntRect &geckoRect);
+  
+  static NSRect GeckoRectToCocoaRect(const mozilla::DesktopIntRect &geckoRect);
 
   
-  static NSRect GeckoRectToCocoaRectDevPix(const nsIntRect &aGeckoRect,
-                                           CGFloat aBackingScale);
+  static NSRect
+  GeckoRectToCocoaRectDevPix(const mozilla::LayoutDeviceIntRect &aGeckoRect,
+                             CGFloat aBackingScale);
 
   
-  static nsIntRect CocoaRectToGeckoRect(const NSRect &cocoaRect);
+  static mozilla::DesktopIntRect CocoaRectToGeckoRect(const NSRect &cocoaRect);
 
   static mozilla::LayoutDeviceIntRect CocoaRectToGeckoRectDevPix(
     const NSRect& aCocoaRect, CGFloat aBackingScale);
