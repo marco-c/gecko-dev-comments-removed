@@ -11,12 +11,12 @@ import org.mozilla.gecko.Locales;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.db.BrowserContract;
-import org.mozilla.gecko.mozglue.SafeIntentUtils;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import org.mozilla.gecko.util.SafeIntent;
 
 
 
@@ -40,7 +40,7 @@ public class TabQueueDispatcher extends Locales.LocaleAwareActivity {
         int flags = intent.getFlags() & ~Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS;
         intent.setFlags(flags);
 
-        SafeIntentUtils.SafeIntent safeIntent = new SafeIntentUtils.SafeIntent(intent);
+        SafeIntent safeIntent = new SafeIntent(intent);
 
         
         
