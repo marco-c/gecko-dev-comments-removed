@@ -135,7 +135,6 @@ class GlobalObject : public NativeObject
 
     enum WarnOnceFlag : int32_t {
         WARN_WATCH_DEPRECATED                   = 1 << 0,
-        WARN_STRING_CONTAINS_DEPRECATED         = 1 << 1,
     };
 
     
@@ -709,12 +708,6 @@ class GlobalObject : public NativeObject
         
         
         return true;
-    }
-
-    
-    static bool warnOnceAboutStringContains(JSContext* cx, HandleObject strContains) {
-        return warnOnceAbout(cx, strContains, WARN_STRING_CONTAINS_DEPRECATED,
-                             JSMSG_DEPRECATED_STRING_CONTAINS);
     }
 
     static bool getOrCreateEval(JSContext* cx, Handle<GlobalObject*> global,
