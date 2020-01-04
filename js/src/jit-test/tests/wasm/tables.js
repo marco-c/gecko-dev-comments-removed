@@ -7,12 +7,6 @@ const Instance = WebAssembly.Instance;
 const Table = WebAssembly.Table;
 const Memory = WebAssembly.Memory;
 
-
-
-const textToBinary = str => wasmTextToBinary(str, 'new-format');
-
-const evalText = (str, imports) => new Instance(new Module(textToBinary(str)), imports);
-
 var callee = i => `(func $f${i} (result i32) (i32.const ${i}))`;
 
 assertErrorMessage(() => new Module(textToBinary(`(module (elem (i32.const 0) $f0) ${callee(0)})`)), TypeError, /table index out of range/);

@@ -1,10 +1,6 @@
 load(libdir + 'wasm.js');
 load(libdir + 'asserts.js');
 
-
-
-const textToBinary = str => wasmTextToBinary(str, 'new-format');
-
 const emptyModule = textToBinary('(module)');
 
 
