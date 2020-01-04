@@ -30,7 +30,10 @@ function appUpdater()
 
   
   
-  if (Services.wm.getMostRecentWindow("Update:Wizard")) {
+  
+  
+  if (Services.wm.getMostRecentWindow("Update:Wizard") &&
+      !this.isApplied) {
     this.updateDeck.hidden = true;
     return;
   }
