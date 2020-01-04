@@ -481,16 +481,6 @@ MediaSource::DurationChange(double aOldDuration, double aNewDuration)
 }
 
 void
-MediaSource::NotifyEvicted(double aStart, double aEnd)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("NotifyEvicted(aStart=%f, aEnd=%f)", aStart, aEnd);
-  
-  
-  mSourceBuffers->Evict(aStart, aEnd);
-}
-
-void
 MediaSource::GetMozDebugReaderData(nsAString& aString)
 {
   mDecoder->GetMozDebugReaderData(aString);

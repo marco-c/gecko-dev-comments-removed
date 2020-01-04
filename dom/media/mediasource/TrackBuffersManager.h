@@ -44,7 +44,6 @@ public:
   enum class EvictDataResult : int8_t
   {
     NO_DATA_EVICTED,
-    DATA_EVICTED,
     CANT_EVICT,
     BUFFER_FULL,
   };
@@ -97,9 +96,6 @@ public:
   EvictData(media::TimeUnit aPlaybackTime,
             int64_t aThresholdReduct,
             media::TimeUnit* aBufferStartTime);
-
-  
-  void EvictBefore(media::TimeUnit aTime);
 
   
   

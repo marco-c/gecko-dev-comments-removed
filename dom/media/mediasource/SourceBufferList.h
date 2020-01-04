@@ -72,9 +72,6 @@ public:
   void Ended();
 
   
-  void Evict(double aStart, double aEnd);
-
-  
   double GetHighestBufferedEndTime();
 
   
