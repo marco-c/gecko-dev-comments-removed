@@ -9,6 +9,18 @@
 
 assertEq(f(), 4);
 
+
+{
+  assertEq(f(), 4);
+  function f() { return 3; }
+  assertEq(f(), 4);
+  l: function f() { return 4; }
+  assertEq(f(), 4);
+}
+
+
+assertEq(f(), 4);
+
 function test() {
   {
     assertEq(f(), 2);
