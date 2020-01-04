@@ -858,6 +858,10 @@ or run without that action (ie: --no-{action})"
         
         if c.get('enable_release_promotion'):
             env['ENABLE_RELEASE_PROMOTION'] = "1"
+            update_channel = c.get('update_channel', self.branch)
+            self.info("Release promotion update channel: %s"
+                      % (update_channel,))
+            env["MOZ_UPDATE_CHANNEL"] = update_channel
 
         
         
