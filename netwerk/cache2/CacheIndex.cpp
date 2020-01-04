@@ -347,13 +347,15 @@ CacheIndex::PreShutdown()
   nsCOMPtr<nsIRunnable> event;
   event = NS_NewRunnableMethod(index, &CacheIndex::PreShutdownInternal);
 
-  nsCOMPtr<nsIEventTarget> ioTarget = CacheFileIOManager::IOTarget();
-  MOZ_ASSERT(ioTarget);
+  RefPtr<CacheIOThread> ioThread = CacheFileIOManager::IOThread();
+  MOZ_ASSERT(ioThread);
 
   
   
   
-  rv = ioTarget->Dispatch(event, nsIEventTarget::DISPATCH_NORMAL);
+  
+  
+  rv = ioThread->Dispatch(event, CacheIOThread::WRITE);
   if (NS_FAILED(rv)) {
     NS_WARNING("CacheIndex::PreShutdown() - Can't dispatch event");
     LOG(("CacheIndex::PreShutdown() - Can't dispatch event" ));
