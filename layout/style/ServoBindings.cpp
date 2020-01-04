@@ -224,12 +224,23 @@ void
 Gecko_StoreStyleDifference(RawGeckoNode* aNode, nsChangeHint aChangeHintToStore)
 {
 #ifdef MOZ_STYLO
-  
-  
   MOZ_ASSERT(aNode->IsContent());
+  MOZ_ASSERT(aNode->IsDirtyForServo(),
+             "Change hint stored in a not-dirty node");
 
-  nsIContent* aContent = aNode->AsContent();
-  nsIFrame* primaryFrame = aContent->GetPrimaryFrame();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Element* aElement =
+    aNode->IsElement() ? aNode->AsElement() : aNode->GetParentElement();
+
+  nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
   if (!primaryFrame) {
     
     
