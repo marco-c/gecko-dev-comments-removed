@@ -3496,12 +3496,23 @@ LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins)
 {
     MOZ_ASSERT(ins->object()->type() == MIRType_Object);
 
+    MDefinition* id = ins->idval();
+    MOZ_ASSERT(id->type() == MIRType_String ||
+               id->type() == MIRType_Symbol ||
+               id->type() == MIRType_Int32 ||
+               id->type() == MIRType_Value);
+
+    
+    
+    bool useConstId = id->type() == MIRType_String || id->type() == MIRType_Symbol;
+
     
     
     
     gen->setPerformsCall();
 
     LInstruction* lir = new(alloc()) LSetPropertyCache(useRegister(ins->object()), temp());
+    useBoxOrTypedOrConstant(lir, LSetPropertyCache::Id, id, useConstId);
     useBoxOrTypedOrConstant(lir, LSetPropertyCache::Value, ins->value(),  true);
 
     add(lir, ins);
