@@ -93,6 +93,7 @@
 #include "MediaDecoderOwner.h"
 #include "MediaEventSource.h"
 #include "MediaMetadataManager.h"
+#include "MediaStatistics.h"
 #include "MediaTimer.h"
 #include "ImageContainer.h"
 
@@ -207,6 +208,8 @@ private:
   void StartBuffering();
 
   bool CanPlayThrough();
+
+  MediaStatistics GetStatistics();
 
 public:
   void DispatchStartBuffering()
@@ -980,6 +983,9 @@ private:
   int64_t mDecodedVideoEndTime;
 
   
+  int64_t mPlaybackOffset;
+
+  
   double mPlaybackRate;
 
   
@@ -1282,6 +1288,15 @@ private:
   
   
   Mirror<bool> mSameOriginMedia;
+
+  
+  Mirror<double> mPlaybackBytesPerSecond;
+
+  
+  Mirror<bool> mPlaybackRateReliable;
+
+  
+  Mirror<int64_t> mDecoderPosition;
 
   
   
