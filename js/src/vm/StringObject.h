@@ -29,6 +29,7 @@ class StringObject : public NativeObject
 
 
     static inline StringObject* create(JSContext* cx, HandleString str,
+                                       HandleObject proto = nullptr,
                                        NewObjectKind newKind = GenericObject);
 
     
