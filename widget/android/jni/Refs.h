@@ -26,43 +26,6 @@ template<class Cls> class DependentRef;
 
 
 
-enum class ExceptionMode
-{
-    
-    ABORT,
-    
-    IGNORE,
-    
-    NSRESULT,
-};
-
-
-enum class CallingThread
-{
-    
-    ANY,
-    
-    GECKO,
-    
-    UI,
-};
-
-
-enum class DispatchTarget
-{
-    
-    CURRENT,
-    
-    
-    
-    PROXY,
-    
-    
-    GECKO,
-};
-
-
-
 
 
 template<typename...>

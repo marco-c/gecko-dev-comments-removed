@@ -3,13 +3,58 @@
 
 #include <jni.h>
 
+#include "mozilla/UniquePtr.h"
+
 #if defined(DEBUG) || !defined(RELEASE_BUILD)
+#define MOZ_CHECK_JNI
+#endif
+
+#ifdef MOZ_CHECK_JNI
+#include <pthread.h>
 #include "mozilla/Assertions.h"
+#include "APKOpen.h"
 #include "MainThreadUtils.h"
 #endif
 
 namespace mozilla {
 namespace jni {
+
+
+enum class ExceptionMode
+{
+    
+    ABORT,
+    
+    IGNORE,
+    
+    NSRESULT,
+};
+
+
+enum class CallingThread
+{
+    
+    ANY,
+    
+    GECKO,
+    
+    UI,
+};
+
+
+enum class DispatchTarget
+{
+    
+    CURRENT,
+    
+    
+    
+    PROXY,
+    
+    
+    GECKO,
+};
+
 
 extern JNIEnv* sGeckoThreadEnv;
 
@@ -20,13 +65,9 @@ inline bool IsAvailable()
 
 inline JNIEnv* GetGeckoThreadEnv()
 {
-#if defined(DEBUG) || !defined(RELEASE_BUILD)
-    if (!NS_IsMainThread()) {
-        MOZ_CRASH("Not on main thread");
-    }
-    if (!sGeckoThreadEnv) {
-        MOZ_CRASH("Don't have a JNIEnv");
-    }
+#ifdef MOZ_CHECK_JNI
+    MOZ_RELEASE_ASSERT(NS_IsMainThread(), "Must be on Gecko thread");
+    MOZ_RELEASE_ASSERT(sGeckoThreadEnv, "Must have a JNIEnv");
 #endif
     return sGeckoThreadEnv;
 }
@@ -34,6 +75,21 @@ inline JNIEnv* GetGeckoThreadEnv()
 void SetGeckoThreadEnv(JNIEnv* aEnv);
 
 JNIEnv* GetEnvForThread();
+
+#ifdef MOZ_CHECK_JNI
+#define MOZ_ASSERT_JNI_THREAD(thread) \
+    do { \
+        if ((thread) == mozilla::jni::CallingThread::GECKO) { \
+            MOZ_RELEASE_ASSERT(::NS_IsMainThread()); \
+        } else if ((thread) == mozilla::jni::CallingThread::UI) { \
+            const bool isOnUiThread = ::pthread_equal(::pthread_self(), \
+                                                      ::getJavaUiThread()); \
+            MOZ_RELEASE_ASSERT(isOnUiThread); \
+        } \
+    } while (0)
+#else
+#define MOZ_ASSERT_JNI_THREAD(thread) do {} while (0)
+#endif
 
 bool ThrowException(JNIEnv *aEnv, const char *aClass,
                     const char *aMessage);
@@ -62,11 +118,21 @@ bool HandleUncaughtException(JNIEnv* aEnv);
         } \
     } while (0)
 
+
 uintptr_t GetNativeHandle(JNIEnv* env, jobject instance);
 
 void SetNativeHandle(JNIEnv* env, jobject instance, uintptr_t handle);
 
 jclass GetClassGlobalRef(JNIEnv* aEnv, const char* aClassName);
+
+
+struct AbstractCall
+{
+    virtual ~AbstractCall() {}
+    virtual void operator()() = 0;
+};
+
+void DispatchToGeckoThread(UniquePtr<AbstractCall>&& aCall);
 
 } 
 } 

@@ -208,17 +208,6 @@ using namespace detail;
 
 
 
-
-struct UsesNativeCallProxy
-{
-    template<class Functor>
-    static void OnNativeCall(Functor&& call)
-    {
-        
-        call();
-    }
-};
-
 namespace detail {
 
 template<class Traits, class Impl, class Args, bool IsStatic, bool IsVoid>
@@ -264,15 +253,11 @@ template<> struct ProxyArg<StringParam> : ProxyArg<String::Ref> {};
 template<class C> struct ProxyArg<LocalRef<C>> : ProxyArg<typename C::Ref> {};
 
 
-
 template<class Impl, class Owner, bool IsStatic,
          bool HasThisArg ,
          typename... Args>
-class ProxyNativeCall
+class ProxyNativeCall : public AbstractCall
 {
-    template<class T, class I, class A, bool S, bool V>
-    friend class detail::NativeStubImpl;
-
     
     
     
@@ -297,15 +282,6 @@ class ProxyNativeCall
     typename ThisArgClass::GlobalRef mThisArg;
     
     mozilla::Tuple<typename ProxyArg<Args>::Type...> mArgs;
-
-    ProxyNativeCall(NativeCallType nativeCall,
-                    JNIEnv* env,
-                    ThisArgJNIType thisArg,
-                    typename ProxyArg<Args>::JNIType... args)
-        : mNativeCall(nativeCall)
-        , mThisArg(env, ThisArgClass::Ref::From(thisArg))
-        , mArgs(ProxyArg<Args>::From(env, args)...)
-    {}
 
     
     
@@ -363,6 +339,15 @@ public:
 
     static const bool isStatic = IsStatic;
 
+    ProxyNativeCall(NativeCallType nativeCall,
+                    JNIEnv* env,
+                    ThisArgJNIType thisArg,
+                    typename ProxyArg<Args>::JNIType... args)
+        : mNativeCall(nativeCall)
+        , mThisArg(env, ThisArgClass::Ref::From(thisArg))
+        , mArgs(ProxyArg<Args>::From(env, args)...)
+    {}
+
     ProxyNativeCall(ProxyNativeCall&&) = default;
     ProxyNativeCall(const ProxyNativeCall&) = default;
 
@@ -381,7 +366,7 @@ public:
     void SetTarget(NativeCallType call) { mNativeCall = call; }
     template<typename T> void SetTarget(T&&) const { MOZ_CRASH(); }
 
-    void operator()()
+    void operator()() override
     {
         JNIEnv* const env = GetEnvForThread();
         typename ThisArgClass::LocalRef thisArg(env, mThisArg);
@@ -397,22 +382,28 @@ public:
     }
 };
 
-
-
-
-
-
-
-
-template<class Impl, class O, bool S, bool V, typename... A>
-typename mozilla::EnableIf<
-        mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value, void>::Type
-Dispatch(ProxyNativeCall<Impl, O, S, V, A...>&& call)
+template<class Traits, class Impl, class O, bool S, bool V, typename... A>
+typename mozilla::EnableIf<Traits::dispatchTarget == DispatchTarget::PROXY,
+                           void>::Type
+Dispatch(UniquePtr<ProxyNativeCall<Impl, O, S, V, A...>>&& call)
 {
-    Impl::OnNativeCall(mozilla::Move(call));
+    Impl::OnNativeCall(Move(*call));
 }
 
-template<typename T>
+template<class Traits, class Impl, class O, bool S, bool V, typename... A>
+typename mozilla::EnableIf<Traits::dispatchTarget == DispatchTarget::GECKO,
+                           void>::Type
+Dispatch(UniquePtr<ProxyNativeCall<Impl, O, S, V, A...>>&& call)
+{
+    DispatchToGeckoThread(Move(call));
+}
+
+
+
+
+
+
+template<class Traits, typename T>
 void Dispatch(const T&) {}
 
 } 
@@ -452,8 +443,9 @@ public:
     static MOZ_JNICALL ReturnJNIType Wrap(JNIEnv* env,
             jobject instance, typename TypeAdapter<Args>::JNIType... args)
     {
-        static_assert(!mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value,
-                      "Native call proxy only supports void return type");
+        MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
+        static_assert(Traits::dispatchTarget == DispatchTarget::CURRENT,
+                      "Dispatched calls must have void return type");
 
         Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
@@ -468,8 +460,9 @@ public:
     static MOZ_JNICALL ReturnJNIType Wrap(JNIEnv* env,
             jobject instance, typename TypeAdapter<Args>::JNIType... args)
     {
-        static_assert(!mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value,
-                      "Native call proxy only supports void return type");
+        MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
+        static_assert(Traits::dispatchTarget == DispatchTarget::CURRENT,
+                      "Dispatched calls must have void return type");
 
         Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
@@ -496,10 +489,12 @@ public:
     static MOZ_JNICALL void Wrap(JNIEnv* env,
             jobject instance, typename TypeAdapter<Args>::JNIType... args)
     {
-        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
-            Dispatch(ProxyNativeCall<
+        MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
+
+        if (Traits::dispatchTarget != DispatchTarget::CURRENT) {
+            Dispatch<Traits>(MakeUnique<ProxyNativeCall<
                      Impl, Owner,  false,  false,
-                     Args...>(Method, env, instance, args...));
+                     Args...>>(Method, env, instance, args...));
             return;
         }
         Impl* const impl = NativePtr<Impl>::Get(env, instance);
@@ -514,10 +509,12 @@ public:
     static MOZ_JNICALL void Wrap(JNIEnv* env,
             jobject instance, typename TypeAdapter<Args>::JNIType... args)
     {
-        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
-            Dispatch(ProxyNativeCall<
+        MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
+
+        if (Traits::dispatchTarget != DispatchTarget::CURRENT) {
+            Dispatch<Traits>(MakeUnique<ProxyNativeCall<
                      Impl, Owner,  false,  true,
-                     Args...>(Method, env, instance, args...));
+                     Args...>>(Method, env, instance, args...));
             return;
         }
         Impl* const impl = NativePtr<Impl>::Get(env, instance);
@@ -533,11 +530,14 @@ public:
     template<void (*DisposeNative) (const typename Owner::LocalRef&)>
     static MOZ_JNICALL void Wrap(JNIEnv* env, jobject instance)
     {
-        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
+        MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
+
+        if (Traits::dispatchTarget != DispatchTarget::CURRENT) {
             auto cls = Class::LocalRef::Adopt(
                     env, env->GetObjectClass(instance));
-            Dispatch(ProxyNativeCall<Impl, Owner,  true,
-                     false, const typename Owner::LocalRef&>(
+            Dispatch<Traits>(MakeUnique<ProxyNativeCall<
+                    Impl, Owner,  true,  false,
+                    const typename Owner::LocalRef&>>(
                     DisposeNative, env, cls.Get(), instance));
             return;
         }
@@ -561,8 +561,9 @@ public:
     static MOZ_JNICALL ReturnJNIType Wrap(JNIEnv* env,
             jclass, typename TypeAdapter<Args>::JNIType... args)
     {
-        static_assert(!mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value,
-                      "Native call proxy only supports void return type");
+        MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
+        static_assert(Traits::dispatchTarget == DispatchTarget::CURRENT,
+                      "Dispatched calls must have void return type");
 
         return TypeAdapter<ReturnType>::FromNative(env,
                 (*Method)(TypeAdapter<Args>::ToNative(env, args)...));
@@ -573,8 +574,9 @@ public:
     static MOZ_JNICALL ReturnJNIType Wrap(JNIEnv* env,
             jclass cls, typename TypeAdapter<Args>::JNIType... args)
     {
-        static_assert(!mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value,
-                      "Native call proxy only supports void return type");
+        MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
+        static_assert(Traits::dispatchTarget == DispatchTarget::CURRENT,
+                      "Dispatched calls must have void return type");
 
         auto clazz = Class::LocalRef::Adopt(env, cls);
         const auto res = TypeAdapter<ReturnType>::FromNative(env,
@@ -597,10 +599,12 @@ public:
     static MOZ_JNICALL void Wrap(JNIEnv* env,
             jclass cls, typename TypeAdapter<Args>::JNIType... args)
     {
-        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
-            Dispatch(ProxyNativeCall<
+        MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
+
+        if (Traits::dispatchTarget != DispatchTarget::CURRENT) {
+            Dispatch<Traits>(MakeUnique<ProxyNativeCall<
                     Impl, Owner,  true,  false,
-                    Args...>(Method, env, cls, args...));
+                    Args...>>(Method, env, cls, args...));
             return;
         }
         (*Method)(TypeAdapter<Args>::ToNative(env, args)...);
@@ -611,10 +615,12 @@ public:
     static MOZ_JNICALL void Wrap(JNIEnv* env,
             jclass cls, typename TypeAdapter<Args>::JNIType... args)
     {
-        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
-            Dispatch(ProxyNativeCall<
+        MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
+
+        if (Traits::dispatchTarget != DispatchTarget::CURRENT) {
+            Dispatch<Traits>(MakeUnique<ProxyNativeCall<
                     Impl, Owner,  true,  true,
-                    Args...>(Method, env, cls, args...));
+                    Args...>>(Method, env, cls, args...));
             return;
         }
         auto clazz = Class::LocalRef::Adopt(env, cls);

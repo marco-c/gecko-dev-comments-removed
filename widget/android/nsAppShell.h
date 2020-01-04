@@ -224,18 +224,5 @@ protected:
     nsInterfaceHashtable<nsStringHashKey, nsIObserver> mObserversHash;
 };
 
-
-
-
-class UsesGeckoThreadProxy : public mozilla::jni::UsesNativeCallProxy
-{
-public:
-    template<class Functor>
-    static void OnNativeCall(Functor&& call)
-    {
-        nsAppShell::PostEvent(mozilla::Move(call));
-    }
-};
-
 #endif 
 
