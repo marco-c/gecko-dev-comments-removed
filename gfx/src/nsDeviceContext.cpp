@@ -38,10 +38,6 @@
 #include "nsThreadUtils.h"              
 #include "mozilla/gfx/Logging.h"
 
-#if !XP_MACOSX
-#include "gfxPDFSurface.h"
-#endif
-
 using namespace mozilla;
 using namespace mozilla::gfx;
 using mozilla::services::GetObserverService;
