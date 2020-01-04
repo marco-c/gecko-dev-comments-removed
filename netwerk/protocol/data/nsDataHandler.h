@@ -31,11 +31,10 @@ public:
     
     
     static nsresult ParseURI(nsCString& spec,
-                                         nsCString& contentType,
-                                         nsCString& contentCharset,
-                                         bool&    isBase64,
-                                         nsCString& dataBuffer,
-                                         nsCString& hashRef);
+                             nsCString& contentType,
+                             nsCString& contentCharset,
+                             bool& isBase64,
+                             nsCString& dataBuffer);
 };
 
 #endif 
