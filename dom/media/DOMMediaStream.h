@@ -517,13 +517,19 @@ public:
 
 
 
+  void AddTrackInternal(MediaStreamTrack* aTrack);
+
+  
 
 
 
 
-  MediaStreamTrack* CreateDOMTrack(TrackID aTrackID, MediaSegment::Type aType,
-      MediaStreamTrackSource* aSource,
-      const MediaTrackConstraints& aConstraints = MediaTrackConstraints());
+
+
+  already_AddRefed<MediaStreamTrack> CreateDOMTrack(TrackID aTrackID,
+                                                    MediaSegment::Type aType,
+                                                    MediaStreamTrackSource* aSource,
+                                                    const MediaTrackConstraints& aConstraints = MediaTrackConstraints());
 
   
 
