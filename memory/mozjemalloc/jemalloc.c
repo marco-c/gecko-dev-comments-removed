@@ -536,7 +536,7 @@ static const bool isthreaded = true;
 
 #define	CHUNK_2POW_DEFAULT	20
 
-#define	DIRTY_MAX_DEFAULT	(1U << 10)
+#define	DIRTY_MAX_DEFAULT	(1U << 8)
 
 
 
