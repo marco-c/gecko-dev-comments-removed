@@ -2635,6 +2635,7 @@ SpdySession31::SetNeedsCleanup()
 
   
   MOZ_ASSERT(!mNeedsCleanup, "mNeedsCleanup unexpectedly set");
+  mInputFrameDataStream->SetResponseIsComplete();
   mNeedsCleanup = mInputFrameDataStream;
   ResetDownstreamState();
 }
