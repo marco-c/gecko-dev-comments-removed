@@ -67,8 +67,8 @@ var ActionBarHandler = {
     if (this._selectionID) {
       if (!this._selectionHasChanged()) {
         
-        if (e.reason == 'visibilitychange' || e.reason == 'presscaret' ||
-            e.reason == 'scroll' ) {
+        if (e.reason == 'presscaret' || e.reason == 'scroll') {
+          
           
           this._updateVisibility();
         } else {
