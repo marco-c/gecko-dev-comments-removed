@@ -19,6 +19,28 @@ import platform
 here = os.path.dirname(os.path.realpath(__file__))
 
 
+def _get_platform():
+    
+    
+    
+    if platform.system() == "Linux":
+        return 'linux_'
+    elif platform.system() in ("Windows", "Microsoft"):
+        if '5.1' in platform.version():  
+            return 'win_'
+        elif '6.1' in platform.version():  
+            return 'w7_'
+        elif '6.2' in platform.version():  
+            return 'w8_'
+        else:
+            raise TalosError('unsupported windows version')
+    elif platform.system() == "Darwin":
+        return 'mac_'
+
+
+PLATFORM_TYPE = _get_platform()
+
+
 class Timer(object):
     def __init__(self):
         self._start_time = 0

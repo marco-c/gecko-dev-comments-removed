@@ -1,5 +1,6 @@
 
 
+
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 Cu.import("resource:///modules/NewTabURL.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -302,9 +303,13 @@ function handleFile(win, file) {
 
   let testURLs = [];
   let server = Services.prefs.getCharPref("addon.test.tabswitch.webserver");
+  let maxurls = Services.prefs.getIntPref("addon.test.tabswitch.maxurls");
   let parent = server + "/tests/";
   let lines = req.responseText.split('<a href=\"');
   testURLs = [];
+  if (maxurls && maxurls > 0) {
+    lines.splice(maxurls, lines.length);
+  }
   lines.forEach(function(a) {
     if (a.split('\"')[0] != "") {
       testURLs.push(parent + "tp5n/" + a.split('\"')[0]);
