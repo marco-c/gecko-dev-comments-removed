@@ -2657,6 +2657,12 @@ public:
   
 
 
+  static bool WantDisplayPort(const nsDisplayListBuilder* aBuilder,
+                              nsIFrame* aScrollFrame);
+
+  
+
+
 
 
 
