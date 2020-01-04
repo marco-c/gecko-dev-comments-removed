@@ -457,12 +457,11 @@ private:
 
 
 
-
-class PreciseRefreshDriverTimer :
+class StartupRefreshDriverTimer :
     public SimpleTimerBasedRefreshDriverTimer
 {
 public:
-  explicit PreciseRefreshDriverTimer(double aRate)
+  explicit StartupRefreshDriverTimer(double aRate)
     : SimpleTimerBasedRefreshDriverTimer(aRate)
   {
   }
@@ -472,52 +471,9 @@ protected:
   {
     
     
-    
-    int numElapsedIntervals = static_cast<int>((aNowTime - mTargetTime) / mRateDuration);
-
-    if (numElapsedIntervals < 0) {
-      
-      
-      
-      numElapsedIntervals = 0;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    TimeStamp newTarget = mTargetTime + mRateDuration * (numElapsedIntervals + 1);
-
-    
+    TimeStamp newTarget = aNowTime + mRateDuration;
     uint32_t delay = static_cast<uint32_t>((newTarget - aNowTime).ToMilliseconds());
-
-    
-    
-    
-#if 0
-    if (numElapsedIntervals > 0) {
-      
-      newTarget = aNowTime;
-      delay = 0;
-    }
-#endif
-
-    
-    LOG("[%p] precise timer last tick late by %f ms, next tick in %d ms",
-        this,
-        (aNowTime - mTargetTime).ToMilliseconds(),
-        delay);
-#ifndef ANDROID  
-    Telemetry::Accumulate(Telemetry::FX_REFRESH_DRIVER_FRAME_DELAY_MS, (aNowTime - mTargetTime).ToMilliseconds());
-#endif
-
-    
-    LOG("[%p] scheduling callback for %d ms (2)", this, delay);
     mTimer->InitWithFuncCallback(TimerTick, this, delay, nsITimer::TYPE_ONE_SHOT);
-
     mTargetTime = newTarget;
   }
 };
@@ -887,7 +843,7 @@ nsRefreshDriver::ChooseTimer() const
     CreateVsyncRefreshTimer();
 
     if (!sRegularRateTimer) {
-      sRegularRateTimer = new PreciseRefreshDriverTimer(rate);
+      sRegularRateTimer = new StartupRefreshDriverTimer(rate);
     }
   }
   return sRegularRateTimer;
