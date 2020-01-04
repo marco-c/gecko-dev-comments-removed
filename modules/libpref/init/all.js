@@ -144,9 +144,6 @@ pref("dom.workers.maxPerDomain", 50);
 pref("dom.serviceWorkers.enabled", false);
 
 
-pref("dom.serviceWorkers.interception.enabled", false);
-
-
 pref("dom.serviceWorkers.interception.opaque.enabled", true);
 
 

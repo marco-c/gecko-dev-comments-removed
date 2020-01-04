@@ -14158,11 +14158,6 @@ nsDocShell::ShouldPrepareForIntercept(nsIURI* aURI, bool aIsNonSubresourceReques
 {
   *aShouldIntercept = false;
   
-  if (!nsContentUtils::ServiceWorkerInterceptionEnabled()) {
-    return NS_OK;
-  }
-
-  
   if (mInPrivateBrowsing) {
     return NS_OK;
   }
