@@ -59,7 +59,7 @@ public:
 
     
     aDT->PushClipRect(snapped);
-    FillRectWithMask(aDT, aDeviceOffset, snapped, ToColor(mColor),
+    FillRectWithMask(aDT, aDeviceOffset, snapped, mColor,
                      DrawOptions(GetEffectiveOpacity(), GetEffectiveOperator(this)),
                      aMaskLayer);
     aDT->PopClip();
