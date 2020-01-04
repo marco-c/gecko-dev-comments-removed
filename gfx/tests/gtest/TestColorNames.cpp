@@ -73,7 +73,8 @@ void RunColorTests() {
     char cbuf[50];
     snprintf_literal(cbuf, "%02x%02x%02x", r, g, b);
     nscolor hexrgb;
-    ASSERT_TRUE(NS_HexToRGB(NS_ConvertASCIItoUTF16(cbuf), &hexrgb)) <<
+    ASSERT_TRUE(NS_HexToRGBA(NS_ConvertASCIItoUTF16(cbuf),
+                             nsHexColorType::NoAlpha, &hexrgb)) <<
       "hex conversion to color of '" << cbuf << "'";
     ASSERT_TRUE(hexrgb == rgb);
   }

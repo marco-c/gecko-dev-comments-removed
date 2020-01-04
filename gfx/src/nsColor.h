@@ -45,10 +45,16 @@ typedef uint32_t nscolor;
     target = ((tmp_ << 8) + tmp_ + 255) >> 16;     \
   PR_END_MACRO
 
+enum class nsHexColorType : uint8_t {
+  NoAlpha, 
+  AllowAlpha, 
+};
 
 
 
-bool NS_HexToRGB(const nsAString& aBuf, nscolor* aResult);
+
+bool
+NS_HexToRGBA(const nsAString& aBuf, nsHexColorType aType, nscolor* aResult);
 
 
 
