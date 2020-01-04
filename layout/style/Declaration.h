@@ -23,9 +23,15 @@
 #include "nsCSSDataBlock.h"
 #include "nsCSSProperty.h"
 #include "nsCSSProps.h"
+#include "nsIStyleRule.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 #include <stdio.h>
+
+
+#define NS_CSS_DECLARATION_IMPL_CID \
+{ 0xfeec07b8, 0x3fe6, 0x491e, \
+  { 0x90, 0xd5, 0xcc, 0x93, 0xf8, 0x53, 0xe0, 0x48 } }
 
 namespace mozilla {
 namespace css {
@@ -38,7 +44,7 @@ namespace css {
 
 
 
-class Declaration {
+class Declaration final : public nsIStyleRule {
 public:
   
 
@@ -49,12 +55,21 @@ public:
 
   Declaration(const Declaration& aCopy);
 
-  NS_INLINE_DECL_REFCOUNTING(Declaration)
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_CSS_DECLARATION_IMPL_CID)
+
+  NS_DECL_ISUPPORTS
 
 private:
   ~Declaration();
 
 public:
+
+  
+  virtual void MapRuleInfoInto(nsRuleData *aRuleData) override;
+#ifdef DEBUG
+  virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
+#endif
+
   
 
 
@@ -170,17 +185,6 @@ public:
     aExpandedData->Expand(mData.forget(), mImportantData.forget());
   }
 
-  
-
-
-
-  void MapNormalRuleInfoInto(nsRuleData *aRuleData) const {
-    MOZ_ASSERT(mData, "called while expanded");
-    mData->MapRuleInfoInto(aRuleData);
-    if (mVariables) {
-      mVariables->MapRuleInfoInto(aRuleData);
-    }
-  }
   void MapImportantRuleInfoInto(nsRuleData *aRuleData) const {
     MOZ_ASSERT(mData, "called while expanded");
     MOZ_ASSERT(mImportantData || mImportantVariables,
@@ -276,10 +280,6 @@ public:
     mVariableOrder.Clear();
   }
 
-#ifdef DEBUG
-  void List(FILE* out = stdout, int32_t aIndent = 0) const;
-#endif
-
 private:
   Declaration& operator=(const Declaration& aCopy) = delete;
   bool operator==(const Declaration& aCopy) const = delete;
@@ -359,6 +359,8 @@ private:
   
   mutable bool mImmutable;
 };
+
+NS_DEFINE_STATIC_IID_ACCESSOR(Declaration, NS_CSS_DECLARATION_IMPL_CID)
 
 } 
 } 
