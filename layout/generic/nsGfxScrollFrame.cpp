@@ -2744,7 +2744,18 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
   if (mOuter->ChildrenHavePerspective()) {
     
     
+
+    
+    
+    
     mOuter->RecomputePerspectiveChildrenOverflow(mOuter);
+
+    
+    
+    mScrolledFrame->UpdateOverflow();
+
+    
+    mOuter->UpdateOverflow();
   }
 
   ScheduleSyntheticMouseMove();
