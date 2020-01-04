@@ -233,6 +233,9 @@ public:
     bool IsTOCPresent() const;
 
     
+    bool IsValid() const;
+
+    
     
     int64_t Offset(float aDurationFac) const;
 
