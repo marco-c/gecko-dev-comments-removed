@@ -325,22 +325,30 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
 {
     MOZ_ASSERT(!rt->mainThread.suppressGC);
 
-    
     {
-        gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTERS);
+        gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_STACK);
 
+        
+        MarkInterpreterActivations(rt, trc);
+        jit::MarkJitActivations(rt, trc);
+
+        
         AutoGCRooter::traceAll(trc);
-
-        MarkExactStackRoots(rt, trc);
-        rt->markSelfHostingGlobal(trc);
 
         for (RootRange r = rootsHash.all(); !r.empty(); r.popFront()) {
             const RootEntry& entry = r.front();
             TraceRoot(trc, entry.key(), entry.value());
         }
 
-        MarkPersistentRooted(rt, trc);
+        
+        MarkExactStackRoots(rt, trc);
     }
+
+    
+    MarkPersistentRooted(rt, trc);
+
+    
+    rt->markSelfHostingGlobal(trc);
 
     
     if (!rt->isHeapMinorCollecting()) {
@@ -366,10 +374,6 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
     
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
         c->traceRoots(trc, traceOrMark);
-
-    
-    MarkInterpreterActivations(rt, trc);
-    jit::MarkJitActivations(rt, trc);
 
     
     rt->spsProfiler.trace(trc);
