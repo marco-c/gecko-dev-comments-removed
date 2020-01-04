@@ -67,6 +67,8 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 pref("devtools.inspector.mdnDocsTooltip.enabled", true);
 
 
+pref("devtools.markup.collapseAttributes", true);
+
 
 pref("devtools.markup.collapseAttributeLength", 120);
 
