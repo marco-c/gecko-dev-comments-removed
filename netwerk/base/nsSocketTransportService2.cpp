@@ -747,6 +747,12 @@ nsSocketTransportService::CreateUnixDomainTransport(nsIFile *aPath,
 NS_IMETHODIMP
 nsSocketTransportService::OnDispatchedEvent(nsIThreadInternal *thread)
 {
+#ifndef XP_WIN
+    
+    
+    
+    
+    
     if (PR_GetCurrentThread() == gSocketThread) {
         
         
@@ -755,6 +761,7 @@ nsSocketTransportService::OnDispatchedEvent(nsIThreadInternal *thread)
         SOCKET_LOG(("OnDispatchedEvent Same Thread Skip Signal\n"));
         return NS_OK;
     }
+#endif
 
     MutexAutoLock lock(mLock);
     if (mPollableEvent) {
