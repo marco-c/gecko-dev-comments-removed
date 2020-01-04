@@ -271,8 +271,20 @@ PropertyDescriptor::trace(JSTracer* trc)
 }
 
 void
-js::gc::GCRuntime::markRuntime(JSTracer* trc, TraceOrMarkRuntime traceOrMark,
-                               AutoLockForExclusiveAccess& lock)
+js::gc::GCRuntime::markRuntime(JSTracer* trc, AutoLockForExclusiveAccess& lock)
+{
+    markRuntimeInner(trc, MarkRuntime, lock);
+}
+
+void
+js::gc::GCRuntime::traceRuntime(JSTracer* trc, AutoLockForExclusiveAccess& lock)
+{
+    markRuntimeInner(trc, TraceRuntime, lock);
+}
+
+void
+js::gc::GCRuntime::markRuntimeInner(JSTracer* trc, TraceOrMarkRuntime traceOrMark,
+                                    AutoLockForExclusiveAccess& lock)
 {
     gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTS);
 
@@ -280,11 +292,13 @@ js::gc::GCRuntime::markRuntime(JSTracer* trc, TraceOrMarkRuntime traceOrMark,
 
     MOZ_ASSERT(!rt->mainThread.suppressGC);
 
+    
     if (traceOrMark == MarkRuntime) {
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_CCWS);
         JSCompartment::traceIncomingCrossCompartmentEdgesForZoneGC(trc);
     }
 
+    
     {
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTERS);
 
@@ -303,6 +317,7 @@ js::gc::GCRuntime::markRuntime(JSTracer* trc, TraceOrMarkRuntime traceOrMark,
         MarkPersistentRooted(rt, trc);
     }
 
+    
     if (!rt->isBeingDestroyed() && !rt->isHeapMinorCollecting()) {
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_RUNTIME_DATA);
 
@@ -314,20 +329,27 @@ js::gc::GCRuntime::markRuntime(JSTracer* trc, TraceOrMarkRuntime traceOrMark,
         }
     }
 
+    
     if (rt->isHeapMinorCollecting())
         jit::JitRuntime::MarkJitcodeGlobalTableUnconditionally(trc);
 
+    
+    
     rt->contextFromMainThread()->mark(trc);
 
+    
+    
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
         c->traceRoots(trc, traceOrMark);
 
+    
     MarkInterpreterActivations(rt, trc);
-
     jit::MarkJitActivations(rt, trc);
 
+    
     rt->spsProfiler.trace(trc);
 
+    
     if (!rt->isHeapMinorCollecting()) {
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_EMBEDDING);
 
