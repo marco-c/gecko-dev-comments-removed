@@ -1815,22 +1815,7 @@ NS_IMETHODIMP nsXULWindow::SizeShellTo(nsIDocShellTreeItem* aShellItem,
   int32_t height = 0;
   shellAsWin->GetSize(&width, &height);
 
-  int32_t widthDelta = aCX - width;
-  int32_t heightDelta = aCY - height;
-
-  if (widthDelta || heightDelta) {
-    int32_t winCX = 0;
-    int32_t winCY = 0;
-
-    GetSize(&winCX, &winCY);
-    
-    
-    
-    
-    winCX = std::max(winCX + widthDelta, aCX);
-    winCY = std::max(winCY + heightDelta, aCY);
-    SetSize(winCX, winCY, true);
-  }
+  SizeShellToWithLimit(aCX, aCY, width, height);
 
   return NS_OK;
 }
@@ -2194,6 +2179,27 @@ NS_IMETHODIMP nsXULWindow::SetXULBrowserWindow(nsIXULBrowserWindow * aXULBrowser
 {
   mXULBrowserWindow = aXULBrowserWindow;
   return NS_OK;
+}
+
+void nsXULWindow::SizeShellToWithLimit(int32_t aCX, int32_t aCY,
+                                       int32_t shellItemCx, int32_t shellItemCy)
+{
+  int32_t widthDelta = aCX - shellItemCx;
+  int32_t heightDelta = aCY - shellItemCy;
+
+  if (widthDelta || heightDelta) {
+    int32_t winCX = 0;
+    int32_t winCY = 0;
+
+    GetSize(&winCX, &winCY);
+    
+    
+    
+    
+    winCX = std::max(winCX + widthDelta, aCX);
+    winCY = std::max(winCY + heightDelta, aCY);
+    SetSize(winCX, winCY, true);
+  }
 }
 
 
