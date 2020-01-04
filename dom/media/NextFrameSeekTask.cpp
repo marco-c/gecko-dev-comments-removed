@@ -58,7 +58,7 @@ NextFrameSeekTask::NextFrameSeekTask(const void* aDecoderID,
   MOZ_ASSERT(HasVideo());
 
   
-  SetMediaDecoderReaderWrapperCallback();
+  SetCallbacks();
 }
 
 NextFrameSeekTask::~NextFrameSeekTask()
@@ -93,7 +93,7 @@ NextFrameSeekTask::Discard()
   RejectIfExist(__func__);
 
   
-  CancelMediaDecoderReaderWrapperCallback();
+  CancelCallbacks();
 
   mIsDiscarded = true;
 }
@@ -411,7 +411,7 @@ NextFrameSeekTask::OnVideoNotDecoded(MediaDecoderReader::NotDecodedReason aReaso
 }
 
 void
-NextFrameSeekTask::SetMediaDecoderReaderWrapperCallback()
+NextFrameSeekTask::SetCallbacks()
 {
   AssertOwnerThread();
 
@@ -451,7 +451,7 @@ NextFrameSeekTask::SetMediaDecoderReaderWrapperCallback()
 }
 
 void
-NextFrameSeekTask::CancelMediaDecoderReaderWrapperCallback()
+NextFrameSeekTask::CancelCallbacks()
 {
   AssertOwnerThread();
   mAudioCallback.Disconnect();

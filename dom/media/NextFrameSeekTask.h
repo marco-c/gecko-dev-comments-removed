@@ -69,9 +69,9 @@ private:
 
   void OnVideoNotDecoded(MediaDecoderReader::NotDecodedReason aReason);
 
-  void SetMediaDecoderReaderWrapperCallback();
+  void SetCallbacks();
 
-  void CancelMediaDecoderReaderWrapperCallback();
+  void CancelCallbacks();
 
   
   
