@@ -1422,10 +1422,21 @@ nsDisplayListBuilder::IsBuildingLayerEventRegions()
   if (mMode == PAINTING) {
     
     
+    
     return gfxPrefs::LayoutEventRegionsEnabledDoNotUseDirectly() ||
            mAsyncPanZoomEnabled;
   }
   return false;
+}
+
+ bool
+nsDisplayListBuilder::LayerEventRegionsEnabled()
+{
+  
+  
+  
+  return gfxPrefs::LayoutEventRegionsEnabledDoNotUseDirectly() ||
+         gfxPlatform::AsyncPanZoomEnabled();
 }
 
 void nsDisplayListSet::MoveTo(const nsDisplayListSet& aDestination) const
