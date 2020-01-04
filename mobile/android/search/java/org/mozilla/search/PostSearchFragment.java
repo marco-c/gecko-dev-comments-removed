@@ -150,6 +150,9 @@ public class PostSearchFragment extends Fragment {
             return false;
         }
 
+        
+        
+        @SuppressWarnings("deprecation")
         @Override
         public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
             Log.e(LOG_TAG, "Error loading search results: " + description);
