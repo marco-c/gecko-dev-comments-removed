@@ -21,7 +21,7 @@
 
 #include "mozilla/Attributes.h"
 
-#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
+#if defined(XP_DARWIN)
 # include <mach/mach.h>
 #endif
 #include "threading/Thread.h"
@@ -44,15 +44,10 @@ EnsureSignalHandlers(JSRuntime* rt);
 
 
 
-
 bool
 HaveSignalHandlers();
 
-
-void
-SuppressSignalHandlersForTesting(bool suppress);
-
-#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
+#if defined(XP_DARWIN)
 
 
 

@@ -226,7 +226,7 @@ DefaultJitOptions::DefaultJitOptions()
 
     
     
-    SET_DEFAULT(wasmExplicitBoundsChecks, false);
+    SET_DEFAULT(ionInterruptWithoutSignals, false);
 }
 
 bool

@@ -148,9 +148,14 @@ for (let [type, ext] of [
     assertErrorMessage(() => badStoreModule(type, ext), TypeError, /can't touch memory/);
 }
 
-for (var ind = 0; ind < 2; ind++) {
-    if (ind == 1)
-        setJitCompilerOption('wasm.explicit-bounds-checks', 1);
+for (var ind = 0; ind < 1; ind++) {
+    
+
+
+
+
+
+
 
     testLoad('i32', '', 0, 0, 0, 0x03020100);
     testLoad('i32', '', 1, 0, 1, 0x04030201);

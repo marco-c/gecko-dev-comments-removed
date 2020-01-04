@@ -938,6 +938,8 @@ enum class SymbolicAddress
     TruncateDoubleToUint64,
     Uint64ToFloatingPoint,
     Int64ToFloatingPoint,
+    GrowMemory,
+    CurrentMemory,
     Limit
 };
 
@@ -999,24 +1001,8 @@ typedef EnumeratedArray<JumpTarget, JumpTarget::Limit, Uint32Vector> JumpSiteArr
 
 
 
-struct SignalUsage
-{
-    
-    bool forOOB;
-    bool forInterrupt;
-
-    SignalUsage();
-    bool operator==(SignalUsage rhs) const;
-    bool operator!=(SignalUsage rhs) const { return !(*this == rhs); }
-};
-
-
-
-
-
 struct Assumptions
 {
-    SignalUsage           usesSignal;
     uint32_t              cpuId;
     JS::BuildIdCharVector buildId;
     bool                  newFormat;
@@ -1073,7 +1059,9 @@ WASM_DECLARE_POD_VECTOR(TableDesc, TableDescVector)
 class CalleeDesc
 {
   public:
-    enum Which { Internal, Import, WasmTable, AsmJSTable, Builtin };
+    
+    
+    enum Which { Internal, Import, WasmTable, AsmJSTable, Builtin, BuiltinInstanceMethod };
 
   private:
     Which which_;
@@ -1123,6 +1111,12 @@ class CalleeDesc
         c.u.builtin_ = callee;
         return c;
     }
+    static CalleeDesc builtinInstanceMethod(SymbolicAddress callee) {
+        CalleeDesc c;
+        c.which_ = BuiltinInstanceMethod;
+        c.u.builtin_ = callee;
+        return c;
+    }
     Which which() const {
         return which_;
     }
@@ -1154,7 +1148,7 @@ class CalleeDesc
         return u.table.sigId_;
     }
     SymbolicAddress builtin() const {
-        MOZ_ASSERT(which_ == Builtin);
+        MOZ_ASSERT(which_ == Builtin || which_ == BuiltinInstanceMethod);
         return u.builtin_;
     }
 };
@@ -1252,10 +1246,15 @@ struct ExternalTableElem
 
 static const unsigned PageSize = 64 * 1024;
 
-#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB
+#ifdef JS_CODEGEN_X64
+#define WASM_HUGE_MEMORY
 static const uint64_t Uint32Range = uint64_t(UINT32_MAX) + 1;
 static const uint64_t MappedSize = 2 * Uint32Range + PageSize;
 #endif
+
+bool IsValidARMLengthImmediate(uint32_t length);
+uint32_t RoundUpToNextValidARMLengthImmediate(uint32_t length);
+size_t LegalizeMapLength(size_t requestedSize);
 
 static const unsigned NaN64GlobalDataOffset       = 0;
 static const unsigned NaN32GlobalDataOffset       = NaN64GlobalDataOffset + sizeof(double);
