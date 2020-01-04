@@ -3119,6 +3119,14 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       if (pluginFrame) {
         MOZ_ASSERT(pluginFrame->WantsToHandleWheelEventAsDefaultAction());
         action = WheelPrefs::ACTION_SEND_TO_PLUGIN;
+      } else if (nsLayoutUtils::IsScrollFrameWithSnapping(frameToScroll)) {
+        
+        
+        
+        if (wheelEvent->mFlags.mHandledByAPZ) {
+          wheelEvent->mFlags.mDefaultPrevented = true;
+        }
+        action = WheelPrefs::GetInstance()->ComputeActionFor(wheelEvent);
       } else if (wheelEvent->mFlags.mHandledByAPZ) {
         action = WheelPrefs::ACTION_NONE;
       } else {

@@ -2773,6 +2773,12 @@ public:
 
 
   static nsRect GetSelectionBoundingRect(mozilla::dom::Selection* aSel);
+
+  
+
+
+  static bool IsScrollFrameWithSnapping(nsIFrame* aFrame);
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
