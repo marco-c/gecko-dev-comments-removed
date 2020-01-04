@@ -765,25 +765,17 @@ ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy, AutoIdV
         return props.appendAll(trapResult);
 
     
+    
+    
     Rooted<GCHashSet<jsid>> uncheckedResultKeys(cx, GCHashSet<jsid>(cx));
     if (!uncheckedResultKeys.init(trapResult.length()))
         return false;
 
-    bool foundDuplicate = false;
     for (size_t i = 0, len = trapResult.length(); i < len; i++) {
         MOZ_ASSERT(!JSID_IS_VOID(trapResult[i]));
 
-        
-        
-        
-        
-        auto ptr = uncheckedResultKeys.lookupForAdd(trapResult[i]);
-        if (!ptr) {
-            if (!uncheckedResultKeys.add(ptr, trapResult[i]))
-                return false;
-        } else {
-            foundDuplicate = true;
-        }
+        if (!uncheckedResultKeys.put(trapResult[i]))
+            return false;
     }
 
     
@@ -823,7 +815,7 @@ ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy, AutoIdV
     }
 
     
-    if (!uncheckedResultKeys.empty() || foundDuplicate) {
+    if (!uncheckedResultKeys.empty()) {
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_NEW);
         return false;
     }
