@@ -276,14 +276,19 @@ public:
 
 
 
-  void SuspendOrResumeStreams(dom::AudioContextOperation aAudioContextOperation,
-                              const nsTArray<MediaStream*>& aStreamSet);
+  void IncrementSuspendCount(MediaStream* aStream);
+  
+
+
+
+  void DecrementSuspendCount(MediaStream* aStream);
 
   
 
 
 
-  void ResetVisitedStreamState();
+  void SuspendOrResumeStreams(dom::AudioContextOperation aAudioContextOperation,
+                              const nsTArray<MediaStream*>& aStreamSet);
 
   
 
