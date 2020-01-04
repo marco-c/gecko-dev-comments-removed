@@ -24,7 +24,7 @@ import org.mozilla.gecko.home.HomeScreen;
 import org.mozilla.gecko.home.SimpleCursorLoader;
 import org.mozilla.gecko.home.activitystream.topsites.TopSitesPagerAdapter;
 
-public class ActivityStream extends FrameLayout implements HomeScreen {
+public class ActivityStream extends FrameLayout {
     private StreamRecyclerAdapter adapter;
 
     private static final int LOADER_ID_HIGHLIGHTS = 0;
@@ -36,42 +36,7 @@ public class ActivityStream extends FrameLayout implements HomeScreen {
         inflate(context, R.layout.as_content, this);
     }
 
-    @Override
-    public boolean isVisible() {
-        
-        
-        return true;
-    }
-
-    @Override
-    public void onToolbarFocusChange(boolean hasFocus) {
-        
-    }
-
-    @Override
-    public void showPanel(String panelId, Bundle restoreData) {
-        
-        
-    }
-
-    @Override
-    public void setOnPanelChangeListener(OnPanelChangeListener listener) {
-        
-    }
-
-    @Override
-    public void setPanelStateChangeListener(HomeFragment.PanelStateChangeListener listener) {
-        
-    }
-
-    @Override
-    public void setBanner(HomeBanner banner) {
-        
-    }
-
-    @Override
-    public void load(LoaderManager lm, FragmentManager fm, String panelId, Bundle restoreData,
-                     PropertyAnimator animator) {
+    public void load(LoaderManager lm) {
         
         RecyclerView rv = (RecyclerView) findViewById(R.id.activity_stream_main_recyclerview);
 
@@ -87,7 +52,6 @@ public class ActivityStream extends FrameLayout implements HomeScreen {
         lm.initLoader(LOADER_ID_TOPSITES, null, callbacks);
     }
 
-    @Override
     public void unload() {
         adapter.swapHighlightsCursor(null);
         adapter.swapTopSitesCursor(null);
