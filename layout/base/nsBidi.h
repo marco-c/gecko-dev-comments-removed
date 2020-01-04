@@ -119,28 +119,26 @@ enum nsBidiDirection {
   NSBIDI_MIXED
 };
 
+typedef enum nsBidiDirection nsBidiDirection;
 
 
 
-#define GETDIRPROPSMEMORY(length) nsBidi::GetMemory((void **)&mDirPropsMemory, \
-                                                    &mDirPropsSize, \
-                                                    (length))
 
-#define GETLEVELSMEMORY(length) nsBidi::GetMemory((void **)&mLevelsMemory, \
-                                                  &mLevelsSize, \
-                                                  (length))
+#define GETDIRPROPSMEMORY(length) \
+                                  GetMemory((void **)&mDirPropsMemory, &mDirPropsSize, \
+                                  (length))
 
-#define GETRUNSMEMORY(length) nsBidi::GetMemory((void **)&mRunsMemory, \
-                                                &mRunsSize, \
-                                                (length)*sizeof(Run))
+#define GETLEVELSMEMORY(length) \
+                                GetMemory((void **)&mLevelsMemory, &mLevelsSize, \
+                                (length))
 
-#define GETISOLATESMEMORY(length) nsBidi::GetMemory((void **)&mIsolatesMemory, \
-                                                    &mIsolatesSize, \
-                                                    (length)*sizeof(Isolate))
+#define GETRUNSMEMORY(length) \
+                              GetMemory((void **)&mRunsMemory, &mRunsSize, \
+                              (length)*sizeof(Run))
 
-#define GETOPENINGSMEMORY(length) nsBidi::GetMemory((void **)&mOpeningsMemory, \
-                                                    &mOpeningsSize, \
-                                                    (length)*sizeof(Opening))
+#define GETISOLATESMEMORY(length) \
+                                  GetMemory((void **)&mIsolatesMemory, &mIsolatesSize, \
+                                  (length)*sizeof(Isolate))
 
 
 
@@ -193,13 +191,19 @@ typedef uint8_t DirProp;
 
 
 
+
+#define IGNORE_CC 0x40
+
+#define PURE_DIRPROP(prop) ((prop)&~IGNORE_CC)
+
+
+
+
+
 #define ISOLATE 0x0100
 
 
 #define SIMPLE_ISOLATES_SIZE 5
-
-
-#define SIMPLE_OPENINGS_COUNT 8
 
 
 
@@ -339,32 +343,6 @@ struct Isolate {
   int16_t stateImp;
   int16_t state;
 };
-
-
-
-#define FOUND_L DIRPROP_FLAG(L)
-#define FOUND_R DIRPROP_FLAG(R)
-
-struct Opening {
-  int32_t position;                   
-  int32_t match;                      
-  int32_t contextPos;                 
-  uint16_t flags;                     
-  DirProp contextDir;                 
-  uint8_t filler;                     
-};
-
-struct IsoRun {
-  int32_t  contextPos;                
-  uint16_t start;                     
-  uint16_t limit;                     
-  nsBidiLevel level;                  
-  DirProp lastStrong;                 
-  DirProp lastBase;                   
-  DirProp contextDir;                 
-};
-
-class nsBidi;
 
 
 
@@ -657,45 +635,6 @@ public:
 protected:
   friend class nsBidiPresUtils;
 
-  class BracketData {
-  public:
-    explicit BracketData(const nsBidi* aBidi);
-    ~BracketData();
-
-    void ProcessBoundary(int32_t aLastDirControlCharPos,
-                         nsBidiLevel aContextLevel,
-                         nsBidiLevel aEmbeddingLevel,
-                         const DirProp* aDirProps);
-    void ProcessLRI_RLI(nsBidiLevel aLevel);
-    void ProcessPDI();
-    bool AddOpening(char16_t aMatch, int32_t aPosition);
-    void FixN0c(int32_t aOpeningIndex, int32_t aNewPropPosition,
-                DirProp aNewProp, DirProp* aDirProps);
-    DirProp ProcessClosing(int32_t aOpenIdx, int32_t aPosition,
-                           DirProp* aDirProps);
-    bool ProcessChar(int32_t aPosition, char16_t aCh, DirProp* aDirProps,
-                     nsBidiLevel* aLevels);
-
-  private:
-    
-    
-    Opening  mSimpleOpenings[SIMPLE_OPENINGS_COUNT];
-    Opening* mOpenings;      
-                             
-
-    Opening* mOpeningsMemory;
-    size_t   mOpeningsSize;
-
-    
-    
-    
-    
-    IsoRun  mIsoRuns[NSBIDI_MAX_EXPLICIT_LEVEL+2];
-    int32_t mIsoRunLast;     
-
-    int32_t mOpeningsCount;  
-  };
-
   
   int32_t mLength;
 
@@ -747,13 +686,13 @@ private:
 
   void Init();
 
-  static bool GetMemory(void **aMemory, size_t* aSize, size_t aSizeNeeded);
+  bool GetMemory(void **aMemory, size_t* aSize, size_t aSizeNeeded);
 
   void Free();
 
   void GetDirProps(const char16_t *aText);
 
-  void ResolveExplicitLevels(nsBidiDirection *aDirection, const char16_t *aText);
+  void ResolveExplicitLevels(nsBidiDirection *aDirection);
 
   nsBidiDirection DirectionFromFlags(Flags aFlags);
 
