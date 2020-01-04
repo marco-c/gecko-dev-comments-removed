@@ -704,7 +704,6 @@ class GlobalObject : public NativeObject
     
     static bool initArrayIteratorProto(JSContext* cx, Handle<GlobalObject*> global);
     static bool initStringIteratorProto(JSContext* cx, Handle<GlobalObject*> global);
-    static bool initIteratorClasses(JSContext* cx, Handle<GlobalObject*> global);
 
     
     static bool initGeneratorClasses(JSContext* cx, Handle<GlobalObject*> global);
