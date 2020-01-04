@@ -14,6 +14,7 @@
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeOwner.h"
 #include "nsIPrintingPromptService.h"
+#include "nsIPrintSession.h"
 #include "nsPIDOMWindow.h"
 #include "nsPrintOptionsImpl.h"
 #include "nsServiceManagerUtils.h"
@@ -149,14 +150,29 @@ nsPrintingProxy::ShowProgress(mozIDOMWindowProxy*      parent,
 
   SendPPrintProgressDialogConstructor(dialogChild);
 
+  
+  RefPtr<mozilla::layout::RemotePrintJobChild> remotePrintJob;
+  if (printSettings) {
+    nsCOMPtr<nsIPrintSession> printSession;
+    nsresult rv = printSettings->GetPrintSession(getter_AddRefs(printSession));
+    if (NS_SUCCEEDED(rv) && printSession) {
+      printSession->GetRemotePrintJob(getter_AddRefs(remotePrintJob));
+    }
+  }
+
   nsresult rv = NS_OK;
-  mozilla::Unused << SendShowProgress(pBrowser, dialogChild,
+  mozilla::Unused << SendShowProgress(pBrowser, dialogChild, remotePrintJob,
                                       isForPrinting, notifyOnOpen, &rv);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  NS_ADDREF(*webProgressListener = dialogChild);
+  
+  
+  
+  if (!remotePrintJob) {
+    NS_ADDREF(*webProgressListener = dialogChild);
+  }
   NS_ADDREF(*printProgressParams = dialogChild);
 
   return NS_OK;

@@ -612,6 +612,13 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
           if (mPrt->mPrintSettings) {
             
             mPrt->mPrintSettings->GetShrinkToFit(&mPrt->mShrinkToFit);
+
+            
+            RefPtr<mozilla::layout::RemotePrintJobChild> remotePrintJob;
+            printSession->GetRemotePrintJob(getter_AddRefs(remotePrintJob));
+            if (NS_SUCCEEDED(rv) && remotePrintJob) {
+              mPrt->mPrintProgressListeners.AppendElement(remotePrintJob);
+            }
           }
         } else if (rv == NS_ERROR_NOT_IMPLEMENTED) {
           
@@ -1531,6 +1538,9 @@ nsPrintEngine::FirePrintingErrorEvent(nsresult aPrintError)
     new AsyncEventDispatcher(doc, event);
   asyncDispatcher->mOnlyChromeDispatch = true;
   asyncDispatcher->RunDOMEventWhenSafe();
+
+  
+  mPrt->DoOnStatusChange(aPrintError);
 }
 
 
