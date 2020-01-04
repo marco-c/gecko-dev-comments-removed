@@ -610,30 +610,33 @@ var pktApi = (function() {
 
 
     function getSignupPanelTabTestVariant() {
-        return getSimpleTestOption('panelTab', 0.1, 'tab');
+        return getMultipleTestOption('panelSignUp', {control: 2, v1: 7, v2: 1 })
     }
 
-    function getSimpleTestOption(testName, threshold, testOptionName) {
+    function getMultipleTestOption(testName, testOptions) {
         
         var settingName = 'test.' + testName;
         var assignedValue = getSetting(settingName);
+        var valArray = [];
 
         
         if (!assignedValue)
         {
-            if (Math.random() <= threshold) {
-                assignedValue = testOptionName;
-            }
-            else {
-                assignedValue = 'control';
-            }
+            
+            Object.keys(testOptions).forEach(function(key) {
+              for (var i = 0; i < testOptions[key]; i++) {
+                valArray.push(key);
+              }
+            });
 
-            setSetting('test.'+testName, assignedValue);
+            
+            assignedValue = valArray[Math.floor(Math.random() * valArray.length)];
+            setSetting(settingName, assignedValue);
         }
 
         return assignedValue;
-    }
 
+    }
 
     
 
