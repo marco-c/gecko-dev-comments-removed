@@ -938,7 +938,7 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 
   public:
     
-    Node statement(YieldHandling yieldHandling, bool canHaveDirectives = false);
+    Node statement(YieldHandling yieldHandling);
     Node statementListItem(YieldHandling yieldHandling, bool canHaveDirectives = false);
 
     bool maybeParseDirective(Node list, Node pn, bool* cont);
@@ -1053,7 +1053,13 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     Node ifStatement(YieldHandling yieldHandling);
     Node consequentOrAlternative(YieldHandling yieldHandling);
 
+    
+    
+    
+    bool nextTokenContinuesLetDeclaration(TokenKind next, YieldHandling yieldHandling);
+
     Node lexicalDeclaration(YieldHandling yieldHandling, bool isConst);
+
     Node importDeclaration();
     Node exportDeclaration();
     Node expressionStatement(YieldHandling yieldHandling,
@@ -1246,15 +1252,6 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     bool finishFunctionScopes();
     bool finishFunction();
     bool leaveInnerFunction(ParseContext* outerpc);
-
-    
-    bool shouldParseLetDeclaration(bool* parseDeclOut);
-
-    
-    
-    
-    
-    bool peekShouldParseLetDeclaration(bool* parseDeclOut, TokenStream::Modifier modifier);
 
   public:
     enum FunctionCallBehavior {

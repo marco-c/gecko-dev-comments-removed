@@ -4868,16 +4868,13 @@ Parser<ParseHandler>::consequentOrAlternative(YieldHandling yieldHandling)
         return null();
 
     if (next == TOK_FUNCTION) {
-        tokenStream.consumeKnownToken(next, TokenStream::Operand);
-
         
         
-        if (!pc->sc()->strict())
+        
+        if (!pc->sc()->strict()) {
+            tokenStream.consumeKnownToken(next, TokenStream::Operand);
             return functionStmt(yieldHandling, NameRequired);
-
-        
-        report(ParseError, false, null(), JSMSG_FUNCTION_AS_IFELSE_KID);
-        return null();
+        }
     }
 
     return statement(yieldHandling);
@@ -5081,13 +5078,24 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
         parsingLexicalDeclaration = true;
         tokenStream.consumeKnownToken(tt, TokenStream::Operand);
     } else if (tt == TOK_NAME && tokenStream.nextName() == context->names().let) {
+        MOZ_ASSERT(!pc->sc()->strict(),
+                   "should parse |let| as TOK_LET in strict mode code");
+
         
         
         
-        if (!peekShouldParseLetDeclaration(&parsingLexicalDeclaration, TokenStream::Operand))
+        
+        tokenStream.consumeKnownToken(TOK_NAME, TokenStream::Operand);
+
+        TokenKind next;
+        if (!tokenStream.peekToken(&next))
             return false;
 
-        letIsIdentifier = !parsingLexicalDeclaration;
+        parsingLexicalDeclaration = nextTokenContinuesLetDeclaration(next, yieldHandling);
+        if (!parsingLexicalDeclaration) {
+            tokenStream.ungetToken();
+            letIsIdentifier = true;
+        }
     }
 
     if (parsingLexicalDeclaration) {
@@ -6395,72 +6403,54 @@ Parser<SyntaxParseHandler>::classDefinition(YieldHandling yieldHandling,
     return SyntaxParseHandler::NodeFailure;
 }
 
-template <typename ParseHandler>
+template <class ParseHandler>
 bool
-Parser<ParseHandler>::shouldParseLetDeclaration(bool* parseDeclOut)
+Parser<ParseHandler>::nextTokenContinuesLetDeclaration(TokenKind next, YieldHandling yieldHandling)
 {
-    TokenKind tt;
-    if (!tokenStream.peekToken(&tt))
-        return false;
-
-    if (tt == TOK_NAME) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        *parseDeclOut = true;
-    } else if (tt == TOK_LB || tt == TOK_LC) {
-        *parseDeclOut = true;
-    } else {
-        
-        
-        *parseDeclOut = false;
-    }
-
-    return true;
-}
-
-template <typename ParseHandler>
-bool
-Parser<ParseHandler>::peekShouldParseLetDeclaration(bool* parseDeclOut,
-                                                    TokenStream::Modifier modifier)
-{
-    
-    MOZ_ASSERT(!pc->sc()->strict());
-
-    *parseDeclOut = false;
+    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_NAME),
+               "TOK_LET should have been summarily considered a "
+               "LexicalDeclaration");
+    MOZ_ASSERT(tokenStream.currentName() == context->names().let);
 
 #ifdef DEBUG
-    TokenKind tt;
-    if (!tokenStream.peekToken(&tt, modifier))
-        return false;
-    MOZ_ASSERT(tt == TOK_NAME && tokenStream.nextName() == context->names().let);
+    TokenKind verify;
+    MOZ_ALWAYS_TRUE(tokenStream.peekToken(&verify));
+    MOZ_ASSERT(next == verify);
 #endif
 
-    tokenStream.consumeKnownToken(TOK_NAME, modifier);
-    if (!shouldParseLetDeclaration(parseDeclOut))
-        return false;
+    
+    if (next == TOK_LB || next == TOK_LC)
+        return true;
 
     
-    if (!*parseDeclOut)
-        tokenStream.ungetToken();
+    if (next == TOK_NAME) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (tokenStream.nextName() != context->names().yield)
+            return true;
+    } else if (next != TOK_YIELD) {
+        return false;
+    }
 
-    return true;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return yieldHandling == YieldIsName;
 }
 
 template <typename ParseHandler>
@@ -6477,7 +6467,7 @@ Parser<ParseHandler>::variableStatement(YieldHandling yieldHandling)
 
 template <typename ParseHandler>
 typename ParseHandler::Node
-Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirectives)
+Parser<ParseHandler>::statement(YieldHandling yieldHandling)
 {
     MOZ_ASSERT(checkOptionsCalled);
 
@@ -6501,17 +6491,6 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirecti
         return handler.newEmptyStatement(pos());
 
       
-      
-      
-      
-      case TOK_STRING:
-        if (!canHaveDirectives && tokenStream.currentToken().atom() == context->names().useAsm) {
-            if (!abortIfSyntaxParser())
-                return null();
-            if (!report(ParseWarning, false, null(), JSMSG_USE_ASM_DIRECTIVE_FAIL))
-                return null();
-        }
-        return expressionStatement(yieldHandling);
 
       case TOK_YIELD: {
         
@@ -6534,29 +6513,58 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirecti
       }
 
       case TOK_NAME: {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (tokenStream.currentName() == context->names().let) {
-            bool parseDecl;
-            if (!shouldParseLetDeclaration(&parseDecl))
-                return null();
-
-            if (parseDecl)
-                return lexicalDeclaration(yieldHandling,  false);
-        }
-
         TokenKind next;
         if (!tokenStream.peekToken(&next))
             return null();
+
+#ifdef DEBUG
+        if (tokenStream.currentName() == context->names().let) {
+            MOZ_ASSERT(!pc->sc()->strict(),
+                       "observing |let| as TOK_NAME and not TOK_LET implies "
+                       "non-strict code (and the edge case of 'use strict' "
+                       "immediately followed by |let| on a new line only "
+                       "applies to StatementListItems, not to Statements)");
+        }
+#endif
+
+        
+        if ((next == TOK_LB || next == TOK_LC || next == TOK_NAME) &&
+            tokenStream.currentName() == context->names().let)
+        {
+            bool forbiddenLetDeclaration = false;
+            if (next == TOK_LB) {
+                
+                forbiddenLetDeclaration = true;
+            } else {
+                
+                
+                
+                
+                
+                
+                TokenKind nextSameLine;
+                if (!tokenStream.peekTokenSameLine(&nextSameLine))
+                    return null();
+
+                MOZ_ASSERT(nextSameLine == TOK_NAME ||
+                           nextSameLine == TOK_LC ||
+                           nextSameLine == TOK_EOL);
+
+                forbiddenLetDeclaration = nextSameLine != TOK_EOL;
+            }
+
+            if (forbiddenLetDeclaration) {
+                report(ParseError, false, null(), JSMSG_FORBIDDEN_AS_STATEMENT,
+                       "lexical declarations");
+                return null();
+            }
+        }
+
+        
+        
         if (next == TOK_COLON)
             return labeledStatement(yieldHandling);
+
         return expressionStatement(yieldHandling);
       }
 
@@ -6626,23 +6634,16 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirecti
         return debuggerStatement();
 
       
+      
+      
       case TOK_FUNCTION:
-        return functionStmt(yieldHandling, NameRequired);
+        report(ParseError, false, null(), JSMSG_FORBIDDEN_AS_STATEMENT, "function declarations");
+        return null();
 
       
       case TOK_CLASS:
-        if (!abortIfSyntaxParser())
-            return null();
-        return classDefinition(yieldHandling, ClassStatement, NameRequired);
-
-      
-      case TOK_LET:
-      case TOK_CONST:
-        if (!abortIfSyntaxParser())
-            return null();
-        
-        
-        return lexicalDeclaration(yieldHandling,  tt == TOK_CONST);
+        report(ParseError, false, null(), JSMSG_FORBIDDEN_AS_STATEMENT, "classes");
+        return null();
 
       
       case TOK_IMPORT:
@@ -6663,12 +6664,21 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirecti
         return null();
 
       
+      
+      
+      
+      case TOK_LET:
+        report(ParseError, false, null(), JSMSG_FORBIDDEN_AS_STATEMENT, "let declarations");
+        return null();
+
+      
     }
 }
 
 template <typename ParseHandler>
 typename ParseHandler::Node
-Parser<ParseHandler>::statementListItem(YieldHandling yieldHandling, bool canHaveDirectives)
+Parser<ParseHandler>::statementListItem(YieldHandling yieldHandling,
+                                        bool canHaveDirectives )
 {
     MOZ_ASSERT(checkOptionsCalled);
 
@@ -6725,29 +6735,32 @@ Parser<ParseHandler>::statementListItem(YieldHandling yieldHandling, bool canHav
       }
 
       case TOK_NAME: {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (tokenStream.currentName() == context->names().let) {
-            bool parseDecl;
-            if (!shouldParseLetDeclaration(&parseDecl))
-                return null();
-
-            if (parseDecl)
-                return lexicalDeclaration(yieldHandling,  false);
-        }
-
         TokenKind next;
         if (!tokenStream.peekToken(&next))
             return null();
+
+        if (tokenStream.currentName() == context->names().let) {
+            if (nextTokenContinuesLetDeclaration(next, yieldHandling))
+                return lexicalDeclaration(yieldHandling,  false);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            if (pc->sc()->strict()) {
+                report(ParseError, false, null(), JSMSG_UNEXPECTED_TOKEN,
+                       "declaration pattern", TokenKindToDesc(next));
+                return null();
+            }
+        }
+
         if (next == TOK_COLON)
             return labeledStatement(yieldHandling);
+
         return expressionStatement(yieldHandling);
       }
 
@@ -6817,6 +6830,8 @@ Parser<ParseHandler>::statementListItem(YieldHandling yieldHandling, bool canHav
         return debuggerStatement();
 
       
+
+      
       case TOK_FUNCTION:
         return functionStmt(yieldHandling, NameRequired);
 
@@ -6826,6 +6841,7 @@ Parser<ParseHandler>::statementListItem(YieldHandling yieldHandling, bool canHav
             return null();
         return classDefinition(yieldHandling, ClassStatement, NameRequired);
 
+      
       
       case TOK_LET:
       case TOK_CONST:
