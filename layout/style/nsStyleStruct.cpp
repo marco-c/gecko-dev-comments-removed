@@ -2335,7 +2335,7 @@ nsStyleImage::PurgeCacheForViewportChange(
 
 
 
-const nsCSSPropertyID nsStyleImageLayers::kBackgroundLayerTable[] = {
+const nsCSSProperty nsStyleImageLayers::kBackgroundLayerTable[] = {
   eCSSProperty_background,                
   eCSSProperty_background_color,          
   eCSSProperty_background_image,          
@@ -2351,7 +2351,7 @@ const nsCSSPropertyID nsStyleImageLayers::kBackgroundLayerTable[] = {
 };
 
 #ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
-const nsCSSPropertyID nsStyleImageLayers::kMaskLayerTable[] = {
+const nsCSSProperty nsStyleImageLayers::kMaskLayerTable[] = {
   eCSSProperty_mask,                      
   eCSSProperty_UNKNOWN,                   
   eCSSProperty_mask_image,                
@@ -2917,7 +2917,7 @@ StyleTransition::SetInitialValues()
 }
 
 void
-StyleTransition::SetUnknownProperty(nsCSSPropertyID aProperty,
+StyleTransition::SetUnknownProperty(nsCSSProperty aProperty,
                                              const nsAString& aPropertyString)
 {
   MOZ_ASSERT(nsCSSProps::LookupProperty(aPropertyString,

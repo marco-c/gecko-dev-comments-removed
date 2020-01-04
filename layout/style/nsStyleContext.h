@@ -174,7 +174,7 @@ public:
   
 
 
-  nsCSSPropertyID GetTextFillColorProp() {
+  nsCSSProperty GetTextFillColorProp() {
     return StyleText()->mWebkitTextFillColorForeground
            ? eCSSProperty_color : eCSSProperty__webkit_text_fill_color;
   }
@@ -426,7 +426,7 @@ public:
 
 
 
-  nscolor GetVisitedDependentColor(nsCSSPropertyID aProperty);
+  nscolor GetVisitedDependentColor(nsCSSProperty aProperty);
 
   
 

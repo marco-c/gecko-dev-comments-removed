@@ -4,13 +4,13 @@
 
 
 
-#ifndef nsCSSPropertyIDSet_h__
-#define nsCSSPropertyIDSet_h__
+#ifndef nsCSSPropertySet_h__
+#define nsCSSPropertySet_h__
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/PodOperations.h"
 
-#include "nsCSSPropertyID.h"
+#include "nsCSSProperty.h"
 #include <limits.h> 
 
 
@@ -18,12 +18,12 @@
 
 
 
-class nsCSSPropertyIDSet {
+class nsCSSPropertySet {
 public:
-    nsCSSPropertyIDSet() { Empty(); }
+    nsCSSPropertySet() { Empty(); }
     
 
-    void AssertInSetRange(nsCSSPropertyID aProperty) const {
+    void AssertInSetRange(nsCSSProperty aProperty) const {
         NS_ASSERTION(0 <= aProperty &&
                      aProperty < eCSSProperty_COUNT_no_shorthands,
                      "out of bounds");
@@ -32,21 +32,21 @@ public:
     
     
 
-    void AddProperty(nsCSSPropertyID aProperty) {
+    void AddProperty(nsCSSProperty aProperty) {
         AssertInSetRange(aProperty);
         size_t p = aProperty;
         mProperties[p / kBitsInChunk] |=
           property_set_type(1) << (p % kBitsInChunk);
     }
 
-    void RemoveProperty(nsCSSPropertyID aProperty) {
+    void RemoveProperty(nsCSSProperty aProperty) {
         AssertInSetRange(aProperty);
         size_t p = aProperty;
         mProperties[p / kBitsInChunk] &=
             ~(property_set_type(1) << (p % kBitsInChunk));
     }
 
-    bool HasProperty(nsCSSPropertyID aProperty) const {
+    bool HasProperty(nsCSSProperty aProperty) const {
         AssertInSetRange(aProperty);
         size_t p = aProperty;
         return (mProperties[p / kBitsInChunk] &
@@ -63,7 +63,7 @@ public:
         }
     }
 
-    bool Equals(const nsCSSPropertyIDSet& aOther) const {
+    bool Equals(const nsCSSPropertySet& aOther) const {
       return mozilla::PodEqual(mProperties, aOther.mProperties);
     }
 
@@ -87,8 +87,8 @@ public:
     bool HasPropertyAt(size_t aChunk, size_t aBit) const {
         return (mProperties[aChunk] & (property_set_type(1) << aBit)) != 0;
     }
-    static nsCSSPropertyID CSSPropertyAt(size_t aChunk, size_t aBit) {
-        return nsCSSPropertyID(aChunk * kBitsInChunk + aBit);
+    static nsCSSProperty CSSPropertyAt(size_t aChunk, size_t aBit) {
+        return nsCSSProperty(aChunk * kBitsInChunk + aBit);
     }
 
 private:

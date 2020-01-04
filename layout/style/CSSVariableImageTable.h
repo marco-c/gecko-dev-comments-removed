@@ -9,7 +9,7 @@
 #define mozilla_CSSVariableImageTable_h
 
 #include "nsClassHashtable.h"
-#include "nsCSSPropertyID.h"
+#include "nsCSSProperty.h"
 #include "nsCSSValue.h"
 #include "nsStyleContext.h"
 #include "nsTArray.h"
@@ -44,7 +44,7 @@ namespace CSSVariableImageTable {
 namespace detail {
 
 typedef nsTArray<RefPtr<css::ImageValue>> ImageValueArray;
-typedef nsClassHashtable<nsGenericHashKey<nsCSSPropertyID>, ImageValueArray>
+typedef nsClassHashtable<nsGenericHashKey<nsCSSProperty>, ImageValueArray>
         PerPropertyImageHashtable;
 typedef nsClassHashtable<nsPtrHashKey<nsStyleContext>, PerPropertyImageHashtable>
         CSSVariableImageHashtable;
@@ -77,7 +77,7 @@ inline bool& IsReplacing()
 
 template <typename Lambda>
 inline void ReplaceAll(nsStyleContext* aContext,
-                       nsCSSPropertyID aProp,
+                       nsCSSProperty aProp,
                        Lambda aFunc)
 {
   MOZ_ASSERT(aContext);
@@ -134,7 +134,7 @@ inline void ReplaceAll(nsStyleContext* aContext,
 
 
 inline void
-Add(nsStyleContext* aContext, nsCSSPropertyID aProp, css::ImageValue* aValue)
+Add(nsStyleContext* aContext, nsCSSProperty aProp, css::ImageValue* aValue)
 {
   MOZ_ASSERT(aValue);
   MOZ_ASSERT(aContext);

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef __inCSSValueSearch_h__
 #define __inCSSValueSearch_h__
@@ -33,7 +33,7 @@ protected:
   nsCOMPtr<inISearchObserver> mObserver;
   nsCOMPtr<nsIDOMDocument> mDocument;
   nsTArray<nsAutoString *>* mResults;
-  nsCSSPropertyID* mProperties;
+  nsCSSProperty* mProperties;
   nsString mLastResult;
   nsString mBaseURL;
   nsString mTextCriteria;
@@ -53,8 +53,8 @@ protected:
   nsresult EqualizeURL(nsAutoString* aURL);
 };
 
-
+// {4D977F60-FBE7-4583-8CB7-F5ED882293EF}
 #define IN_CSSVALUESEARCH_CID \
 { 0x4d977f60, 0xfbe7, 0x4583, { 0x8c, 0xb7, 0xf5, 0xed, 0x88, 0x22, 0x93, 0xef } }
 
-#endif 
+#endif // __inCSSValueSearch_h__

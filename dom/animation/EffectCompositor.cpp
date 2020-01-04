@@ -18,7 +18,7 @@
 #include "mozilla/RestyleManagerHandle.h"
 #include "mozilla/RestyleManagerHandleInlines.h"
 #include "nsComputedDOMStyle.h" 
-#include "nsCSSPropertyIDSet.h"
+#include "nsCSSPropertySet.h"
 #include "nsCSSProps.h"
 #include "nsIPresShell.h"
 #include "nsLayoutUtils.h"
@@ -61,7 +61,7 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(EffectCompositor, Release)
 
 bool
 FindAnimationsForCompositor(const nsIFrame* aFrame,
-                            nsCSSPropertyID aProperty,
+                            nsCSSProperty aProperty,
                             nsTArray<RefPtr<dom::Animation>>* aMatches )
 {
   MOZ_ASSERT(!aMatches || aMatches->IsEmpty(),
@@ -433,14 +433,14 @@ EffectCompositor::AddStyleUpdatesTo(RestyleTracker& aTracker)
 
  bool
 EffectCompositor::HasAnimationsForCompositor(const nsIFrame* aFrame,
-                                             nsCSSPropertyID aProperty)
+                                             nsCSSProperty aProperty)
 {
   return FindAnimationsForCompositor(aFrame, aProperty, nullptr);
 }
 
  nsTArray<RefPtr<dom::Animation>>
 EffectCompositor::GetAnimationsForCompositor(const nsIFrame* aFrame,
-                                             nsCSSPropertyID aProperty)
+                                             nsCSSProperty aProperty)
 {
   nsTArray<RefPtr<dom::Animation>> result;
 
@@ -456,7 +456,7 @@ EffectCompositor::GetAnimationsForCompositor(const nsIFrame* aFrame,
 
  void
 EffectCompositor::ClearIsRunningOnCompositor(const nsIFrame *aFrame,
-                                             nsCSSPropertyID aProperty)
+                                             nsCSSProperty aProperty)
 {
   EffectSet* effects = EffectSet::GetEffectSet(aFrame);
   if (!effects) {
@@ -598,7 +598,7 @@ EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
   
   
   
-  nsCSSPropertyIDSet properties;
+  nsCSSPropertySet properties;
 
   for (KeyframeEffectReadOnly* effect : Reversed(sortedEffectList)) {
     effect->GetAnimation()->ComposeStyle(animationRule, properties);
@@ -613,12 +613,12 @@ EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
  void
 EffectCompositor::GetOverriddenProperties(nsStyleContext* aStyleContext,
                                           EffectSet& aEffectSet,
-                                          nsCSSPropertyIDSet&
+                                          nsCSSPropertySet&
                                             aPropertiesOverridden)
 {
-  AutoTArray<nsCSSPropertyID, LayerAnimationInfo::kRecords> propertiesToTrack;
+  AutoTArray<nsCSSProperty, LayerAnimationInfo::kRecords> propertiesToTrack;
   {
-    nsCSSPropertyIDSet propertiesToTrackAsSet;
+    nsCSSPropertySet propertiesToTrackAsSet;
     for (KeyframeEffectReadOnly* effect : aEffectSet) {
       for (const AnimationProperty& property : effect->Properties()) {
         if (nsCSSProps::PropHasFlags(property.mProperty,
@@ -670,13 +670,13 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
   
   
   
-  nsCSSPropertyIDSet overriddenProperties;
+  nsCSSPropertySet overriddenProperties;
   if (aStyleContext) {
     GetOverriddenProperties(aStyleContext, aEffectSet, overriddenProperties);
   }
 
   bool changed = false;
-  nsCSSPropertyIDSet animatedProperties;
+  nsCSSPropertySet animatedProperties;
 
   
   for (KeyframeEffectReadOnly* effect : Reversed(sortedEffectList)) {
@@ -748,7 +748,7 @@ EffectCompositor::GetPresContext(Element* aElement)
  void
 EffectCompositor::SetPerformanceWarning(
   const nsIFrame *aFrame,
-  nsCSSPropertyID aProperty,
+  nsCSSProperty aProperty,
   const AnimationPerformanceWarning& aWarning)
 {
   EffectSet* effects = EffectSet::GetEffectSet(aFrame);

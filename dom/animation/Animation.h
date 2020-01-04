@@ -18,7 +18,7 @@
 #include "mozilla/DOMEventTargetHelper.h" 
 #include "mozilla/dom/KeyframeEffect.h" 
 #include "mozilla/dom/Promise.h" 
-#include "nsCSSPropertyID.h" 
+#include "nsCSSProperty.h" 
 #include "nsIGlobalObject.h"
 
 
@@ -33,7 +33,7 @@
 #endif
 
 struct JSContext;
-class nsCSSPropertyIDSet;
+class nsCSSPropertySet;
 class nsIDocument;
 class nsPresContext;
 
@@ -313,7 +313,7 @@ public:
 
 
   void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
-                    nsCSSPropertyIDSet& aSetProperties);
+                    nsCSSPropertySet& aSetProperties);
 
   void NotifyEffectTimingUpdated();
 

@@ -8,7 +8,7 @@
 #define mozilla_dom_KeyframeEffect_h
 
 #include "nsChangeHint.h"
-#include "nsCSSPropertyID.h"
+#include "nsCSSProperty.h"
 #include "nsCSSValue.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
@@ -32,7 +32,7 @@
 #include "mozilla/dom/Nullable.h"
 
 struct JSContext;
-class nsCSSPropertyIDSet;
+class nsCSSPropertySet;
 class nsIContent;
 class nsIDocument;
 class nsIFrame;
@@ -59,7 +59,7 @@ struct AnimationPropertyDetails;
 
 struct PropertyValuePair
 {
-  nsCSSPropertyID mProperty;
+  nsCSSProperty mProperty;
   
   
   
@@ -134,7 +134,7 @@ struct AnimationPropertySegment
 
 struct AnimationProperty
 {
-  nsCSSPropertyID mProperty = eCSSProperty_UNKNOWN;
+  nsCSSProperty mProperty = eCSSProperty_UNKNOWN;
 
   
   
@@ -290,8 +290,8 @@ public:
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     nsStyleContext* aStyleContext);
   const AnimationProperty*
-  GetAnimationOfProperty(nsCSSPropertyID aProperty) const;
-  bool HasAnimationOfProperty(nsCSSPropertyID aProperty) const {
+  GetAnimationOfProperty(nsCSSProperty aProperty) const;
+  bool HasAnimationOfProperty(nsCSSProperty aProperty) const {
     return GetAnimationOfProperty(aProperty) != nullptr;
   }
   const InfallibleTArray<AnimationProperty>& Properties() const {
@@ -310,10 +310,10 @@ public:
   
   
   void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
-                    nsCSSPropertyIDSet& aSetProperties);
+                    nsCSSPropertySet& aSetProperties);
   
   bool IsRunningOnCompositor() const;
-  void SetIsRunningOnCompositor(nsCSSPropertyID aProperty, bool aIsRunning);
+  void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
   void ResetIsRunningOnCompositor();
 
   
@@ -338,7 +338,7 @@ public:
   
   
   void SetPerformanceWarning(
-    nsCSSPropertyID aProperty,
+    nsCSSProperty aProperty,
     const AnimationPerformanceWarning& aWarning);
 
   
@@ -434,7 +434,7 @@ private:
   static bool CanAnimateTransformOnCompositor(
     const nsIFrame* aFrame,
     AnimationPerformanceWarning::Type& aPerformanceWarning);
-  static bool IsGeometricProperty(const nsCSSPropertyID aProperty);
+  static bool IsGeometricProperty(const nsCSSProperty aProperty);
 
   static const TimeDuration OverflowRegionRefreshInterval();
 };

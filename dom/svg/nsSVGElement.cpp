@@ -1200,7 +1200,7 @@ MappedAttrParser::ParseMappedAttrValue(nsIAtom* aMappedAttrName,
   }
 
   
-  nsCSSPropertyID propertyID =
+  nsCSSProperty propertyID =
     nsCSSProps::LookupProperty(nsDependentAtomString(aMappedAttrName),
                                CSSEnabledState::eForAllContent);
   if (propertyID != eCSSProperty_UNKNOWN) {
@@ -2558,7 +2558,7 @@ nsSVGElement::GetAnimatedAttr(int32_t aNamespaceID, nsIAtom* aName)
 
     
     if (IsAttributeMapped(aName)) {
-      nsCSSPropertyID prop =
+      nsCSSProperty prop =
         nsCSSProps::LookupProperty(nsDependentAtomString(aName),
                                    CSSEnabledState::eForAllContent);
       

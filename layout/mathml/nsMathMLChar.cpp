@@ -2124,7 +2124,7 @@ nsMathMLChar::PaintForeground(nsPresContext* aPresContext,
   RefPtr<gfxContext> thebesContext = aRenderingContext.ThebesContext();
 
   
-  nsCSSPropertyID colorProp = styleContext->GetTextFillColorProp();
+  nsCSSProperty colorProp = styleContext->GetTextFillColorProp();
   nscolor fgColor = styleContext->GetVisitedDependentColor(colorProp);
   if (aIsSelected) {
     

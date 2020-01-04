@@ -12,7 +12,7 @@
 #include "mozilla/Attributes.h"
 #include "nsISMILAttr.h"
 #include "nsIAtom.h"
-#include "nsCSSPropertyID.h"
+#include "nsCSSProperty.h"
 #include "nsCSSValue.h"
 
 namespace mozilla {
@@ -34,7 +34,7 @@ public:
 
 
 
-  nsSMILCSSProperty(nsCSSPropertyID aPropID, mozilla::dom::Element* aElement);
+  nsSMILCSSProperty(nsCSSProperty aPropID, mozilla::dom::Element* aElement);
 
   
   virtual nsresult ValueFromString(const nsAString& aStr,
@@ -53,10 +53,10 @@ public:
 
 
 
-  static bool IsPropertyAnimatable(nsCSSPropertyID aPropID);
+  static bool IsPropertyAnimatable(nsCSSProperty aPropID);
 
 protected:
-  nsCSSPropertyID mPropID;
+  nsCSSProperty mPropID;
   
   
   

@@ -617,7 +617,7 @@ public:
   #undef STYLE_STRUCT
 
   
-  nscolor GetVisitedDependentColor(nsCSSPropertyID aProperty)
+  nscolor GetVisitedDependentColor(nsCSSProperty aProperty)
     { return mStyleContext->GetVisitedDependentColor(aProperty); }
 
   

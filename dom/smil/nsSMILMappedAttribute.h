@@ -36,7 +36,7 @@ public:
 
 
 
-  nsSMILMappedAttribute(nsCSSPropertyID aPropID, mozilla::dom::Element* aElement) :
+  nsSMILMappedAttribute(nsCSSProperty aPropID, mozilla::dom::Element* aElement) :
     nsSMILCSSProperty(aPropID, aElement) {}
 
   

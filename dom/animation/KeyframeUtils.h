@@ -98,7 +98,7 @@ public:
 
   static void ApplySpacing(nsTArray<Keyframe>& aKeyframes,
                            SpacingMode aSpacingMode,
-                           nsCSSPropertyID aProperty,
+                           nsCSSProperty aProperty,
                            nsTArray<ComputedKeyframeValues>& aComputedValues);
 
   
@@ -137,7 +137,7 @@ public:
 
 
 
-  static bool IsAnimatableProperty(nsCSSPropertyID aProperty);
+  static bool IsAnimatableProperty(nsCSSProperty aProperty);
 };
 
 } 

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/EventStates.h"
@@ -55,7 +55,7 @@ using namespace mozilla;
 using namespace mozilla::css;
 using namespace mozilla::dom;
 
-
+///////////////////////////////////////////////////////////////////////////////
 
 inDOMUtils::inDOMUtils()
 {
@@ -67,8 +67,8 @@ inDOMUtils::~inDOMUtils()
 
 NS_IMPL_ISUPPORTS(inDOMUtils, inIDOMUtils)
 
-
-
+///////////////////////////////////////////////////////////////////////////////
+// inIDOMUtils
 
 NS_IMETHODIMP
 inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
@@ -81,12 +81,12 @@ inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
   nsCOMPtr<nsIDocument> document = do_QueryInterface(aDocument);
   MOZ_ASSERT(document);
 
-  
+  // Get the agent, then user and finally xbl sheets in the style set.
   nsIPresShell* presShell = document->GetShell();
 
   if (presShell && presShell->StyleSet()->IsServo()) {
-    
-    
+    // XXXheycam ServoStyleSets don't have the ability to expose their
+    // sheets in a script-accessible way yet.
     NS_ERROR("stylo: ServoStyleSets cannot expose their sheets to script yet");
     return NS_ERROR_FAILURE;
   }
@@ -104,7 +104,7 @@ inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
     AutoTArray<CSSStyleSheet*, 32> xblSheetArray;
     styleSet->AppendAllXBLStyleSheets(xblSheetArray);
 
-    
+    // The XBL stylesheet array will quite often be full of duplicates. Cope:
     nsTHashtable<nsPtrHashKey<CSSStyleSheet>> sheetSet;
     for (CSSStyleSheet* sheet : xblSheetArray) {
       if (!sheetSet.Contains(sheet)) {
@@ -114,10 +114,10 @@ inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
     }
   }
 
-  
+  // Get the document sheets.
   for (int32_t i = 0; i < document->GetNumberOfStyleSheets(); i++) {
-    
-    
+    // XXXheycam ServoStyleSets don't have the ability to expose their
+    // sheets in a script-accessible way yet.
     sheets.AppendElement(document->GetStyleSheetAt(i)->AsGecko());
   }
 
@@ -151,15 +151,15 @@ inDOMUtils::IsIgnorableWhitespace(nsIDOMCharacterData *aDataNode,
     return NS_OK;
   }
 
-  
-  
+  // Okay.  We have only white space.  Let's check the white-space
+  // property now and make sure that this isn't preformatted text...
   nsIFrame* frame = content->GetPrimaryFrame();
   if (frame) {
     const nsStyleText* text = frame->StyleText();
     *aReturn = !text->WhiteSpaceIsSignificant();
   }
   else {
-    
+    // empty inter-tag text node without frame, e.g., in between <table>\n<tr>
     *aReturn = true;
   }
 
@@ -173,7 +173,7 @@ inDOMUtils::GetParentForNode(nsIDOMNode* aNode,
 {
   NS_ENSURE_ARG_POINTER(aNode);
 
-  
+  // First do the special cases -- document nodes and anonymous content
   nsCOMPtr<nsIDocument> doc(do_QueryInterface(aNode));
   nsCOMPtr<nsIDOMNode> parent;
 
@@ -188,7 +188,7 @@ inDOMUtils::GetParentForNode(nsIDOMNode* aNode,
   }
 
   if (!parent) {
-    
+    // Ok, just get the normal DOM parent node
     aNode->GetParentNode(getter_AddRefs(parent));
   }
 
@@ -241,8 +241,8 @@ inDOMUtils::GetCSSStyleRules(nsIDOMElement *aElement,
   RefPtr<nsStyleContext> styleContext;
   GetRuleNodeForElement(element, pseudoElt, getter_AddRefs(styleContext), &ruleNode);
   if (!ruleNode) {
-    
-    
+    // This can fail for elements that are not in the document or
+    // if the document they're in doesn't have a presshell.  Bail out.
     return NS_OK;
   }
 
@@ -392,7 +392,7 @@ GetSelectorAtIndex(nsIDOMCSSStyleRule* aRule, uint32_t aIndex, ErrorResult& rv)
     }
   }
 
-  
+  // Ran out of selectors
   rv.Throw(NS_ERROR_INVALID_ARG);
   return nullptr;
 }
@@ -446,19 +446,19 @@ inDOMUtils::SelectorMatchesElement(nsIDOMElement* aElement,
     return rv.StealNSResult();
   }
 
-  
+  // We want just the one list item, not the whole list tail
   nsAutoPtr<nsCSSSelectorList> sel(tail->Clone(false));
 
-  
-  
+  // Do not attempt to match if a pseudo element is requested and this is not
+  // a pseudo element selector, or vice versa.
   if (aPseudo.IsEmpty() == sel->mSelectors->IsPseudoElement()) {
     *aMatches = false;
     return NS_OK;
   }
 
   if (!aPseudo.IsEmpty()) {
-    
-    
+    // We need to make sure that the requested pseudo element type
+    // matches the selector pseudo element type before proceeding.
     nsCOMPtr<nsIAtom> pseudoElt = NS_Atomize(aPseudo);
     if (sel->mSelectors->PseudoType() != nsCSSPseudoElements::
           GetPseudoType(pseudoElt, CSSEnabledState::eIgnoreEnabledState)) {
@@ -466,14 +466,14 @@ inDOMUtils::SelectorMatchesElement(nsIDOMElement* aElement,
       return NS_OK;
     }
 
-    
-    
-    
+    // We have a matching pseudo element, now remove it so we can compare
+    // directly against |element| when proceeding into SelectorListMatches.
+    // It's OK to do this - we just cloned sel and nothing else is using it.
     sel->RemoveRightmostSelector();
   }
 
   element->OwnerDoc()->FlushPendingLinkUpdates();
-  
+  // XXXbz what exactly should we do with visited state here?
   TreeMatchContext matchingContext(false,
                                    nsRuleWalker::eRelevantLinkUnvisited,
                                    element->OwnerDoc(),
@@ -486,7 +486,7 @@ inDOMUtils::SelectorMatchesElement(nsIDOMElement* aElement,
 NS_IMETHODIMP
 inDOMUtils::IsInheritedProperty(const nsAString &aPropertyName, bool *_retval)
 {
-  nsCSSPropertyID prop = nsCSSProps::
+  nsCSSProperty prop = nsCSSProps::
     LookupProperty(aPropertyName, CSSEnabledState::eIgnoreEnabledState);
   if (prop == eCSSProperty_UNKNOWN) {
     *_retval = false;
@@ -513,8 +513,8 @@ NS_IMETHODIMP
 inDOMUtils::GetCSSPropertyNames(uint32_t aFlags, uint32_t* aCount,
                                 char16_t*** aProps)
 {
-  
-  
+  // maxCount is the largest number of properties we could have; our actual
+  // number might be smaller because properties might be disabled.
   uint32_t maxCount;
   if (aFlags & EXCLUDE_SHORTHANDS) {
     maxCount = eCSSProperty_COUNT_no_shorthands;
@@ -531,7 +531,7 @@ inDOMUtils::GetCSSPropertyNames(uint32_t aFlags, uint32_t* aCount,
 
 #define DO_PROP(_prop)                                                      \
   PR_BEGIN_MACRO                                                            \
-    nsCSSPropertyID cssProp = nsCSSPropertyID(_prop);                           \
+    nsCSSProperty cssProp = nsCSSProperty(_prop);                           \
     if (nsCSSProps::IsEnabled(cssProp, CSSEnabledState::eForAllContent)) {  \
       props[propCount] =                                                    \
         ToNewUnicode(nsDependentCString(kCSSRawProperties[_prop]));         \
@@ -539,11 +539,11 @@ inDOMUtils::GetCSSPropertyNames(uint32_t aFlags, uint32_t* aCount,
     }                                                                       \
   PR_END_MACRO
 
-  
-  
+  // prop is the property id we're considering; propCount is how many properties
+  // we've put into props so far.
   uint32_t prop = 0, propCount = 0;
   for ( ; prop < eCSSProperty_COUNT_no_shorthands; ++prop) {
-    if (nsCSSProps::PropertyParseType(nsCSSPropertyID(prop)) !=
+    if (nsCSSProps::PropertyParseType(nsCSSProperty(prop)) !=
         CSS_PROPERTY_PARSE_INACCESSIBLE) {
       DO_PROP(prop);
     }
@@ -551,9 +551,9 @@ inDOMUtils::GetCSSPropertyNames(uint32_t aFlags, uint32_t* aCount,
 
   if (!(aFlags & EXCLUDE_SHORTHANDS)) {
     for ( ; prop < eCSSProperty_COUNT; ++prop) {
-      
+      // Some shorthands are also aliases
       if ((aFlags & INCLUDE_ALIASES) ||
-          !nsCSSProps::PropHasFlags(nsCSSPropertyID(prop),
+          !nsCSSProps::PropHasFlags(nsCSSProperty(prop),
                                     CSS_PROPERTY_IS_ALIAS)) {
         DO_PROP(prop);
       }
@@ -584,11 +584,11 @@ static void InsertNoDuplicates(nsTArray<nsString>& aArray,
   aArray.InsertElementAt(i, aString);
 }
 
-static void GetKeywordsForProperty(const nsCSSPropertyID aProperty,
+static void GetKeywordsForProperty(const nsCSSProperty aProperty,
                                    nsTArray<nsString>& aArray)
 {
   if (nsCSSProps::IsShorthand(aProperty)) {
-    
+    // Shorthand props have no keywords.
     return;
   }
   const nsCSSProps::KTableEntry* keywordTable =
@@ -606,8 +606,8 @@ static void GetColorsForProperty(const uint32_t aParserVariant,
                                  nsTArray<nsString>& aArray)
 {
   if (aParserVariant & VARIANT_COLOR) {
-    
-    
+    // GetKeywordsForProperty and GetOtherValuesForProperty assume aArray is sorted,
+    // and if aArray is not empty here, then it's not going to be sorted coming out.
     MOZ_ASSERT(aArray.Length() == 0);
     size_t size;
     const char * const *allColorNames = NS_AllColorNames(&size);
@@ -675,7 +675,7 @@ inDOMUtils::GetSubpropertiesForCSSProperty(const nsAString& aProperty,
                                            uint32_t* aLength,
                                            char16_t*** aValues)
 {
-  nsCSSPropertyID propertyID =
+  nsCSSProperty propertyID =
     nsCSSProps::LookupProperty(aProperty, CSSEnabledState::eForAllContent);
 
   if (propertyID == eCSSProperty_UNKNOWN) {
@@ -696,9 +696,9 @@ inDOMUtils::GetSubpropertiesForCSSProperty(const nsAString& aProperty,
     return NS_OK;
   }
 
-  
+  // Count up how many subproperties we have.
   size_t subpropCount = 0;
-  for (const nsCSSPropertyID *props = nsCSSProps::SubpropertyEntryFor(propertyID);
+  for (const nsCSSProperty *props = nsCSSProps::SubpropertyEntryFor(propertyID);
        *props != eCSSProperty_UNKNOWN; ++props) {
     ++subpropCount;
   }
@@ -706,7 +706,7 @@ inDOMUtils::GetSubpropertiesForCSSProperty(const nsAString& aProperty,
   *aValues =
     static_cast<char16_t**>(moz_xmalloc(subpropCount * sizeof(char16_t*)));
   *aLength = subpropCount;
-  for (const nsCSSPropertyID *props = nsCSSProps::SubpropertyEntryFor(propertyID),
+  for (const nsCSSProperty *props = nsCSSProps::SubpropertyEntryFor(propertyID),
                            *props_start = props;
        *props != eCSSProperty_UNKNOWN; ++props) {
     (*aValues)[props-props_start] = ToNewUnicode(nsCSSProps::GetStringValue(*props));
@@ -717,7 +717,7 @@ inDOMUtils::GetSubpropertiesForCSSProperty(const nsAString& aProperty,
 NS_IMETHODIMP
 inDOMUtils::CssPropertyIsShorthand(const nsAString& aProperty, bool *_retval)
 {
-  nsCSSPropertyID propertyID =
+  nsCSSProperty propertyID =
     nsCSSProps::LookupProperty(aProperty, CSSEnabledState::eForAllContent);
   if (propertyID == eCSSProperty_UNKNOWN) {
     return NS_ERROR_FAILURE;
@@ -731,19 +731,19 @@ inDOMUtils::CssPropertyIsShorthand(const nsAString& aProperty, bool *_retval)
   return NS_OK;
 }
 
-
-
+// A helper function that determines whether the given property
+// supports the given type.
 static bool
-PropertySupportsVariant(nsCSSPropertyID aPropertyID, uint32_t aVariant)
+PropertySupportsVariant(nsCSSProperty aPropertyID, uint32_t aVariant)
 {
   if (nsCSSProps::IsShorthand(aPropertyID)) {
-    
-    
+    // We need a special case for border here, because while it resets
+    // border-image, it can't actually parse an image.
     if (aPropertyID == eCSSProperty_border) {
       return (aVariant & (VARIANT_COLOR | VARIANT_LENGTH)) != 0;
     }
 
-    for (const nsCSSPropertyID* props = nsCSSProps::SubpropertyEntryFor(aPropertyID);
+    for (const nsCSSProperty* props = nsCSSProps::SubpropertyEntryFor(aPropertyID);
          *props != eCSSProperty_UNKNOWN; ++props) {
       if (PropertySupportsVariant(*props, aVariant)) {
         return true;
@@ -752,11 +752,11 @@ PropertySupportsVariant(nsCSSPropertyID aPropertyID, uint32_t aVariant)
     return false;
   }
 
-  
-  
+  // Properties that are parsed by functions must have their
+  // attributes hand-maintained here.
   if (nsCSSProps::PropHasFlags(aPropertyID, CSS_PROPERTY_VALUE_PARSER_FUNCTION) ||
       nsCSSProps::PropertyParseType(aPropertyID) == CSS_PROPERTY_PARSE_FUNCTION) {
-    
+    // These must all be special-cased.
     uint32_t supported;
     switch (aPropertyID) {
       case eCSSProperty_border_image_slice:
@@ -864,7 +864,7 @@ NS_IMETHODIMP
 inDOMUtils::CssPropertySupportsType(const nsAString& aProperty, uint32_t aType,
                                     bool *_retval)
 {
-  nsCSSPropertyID propertyID =
+  nsCSSProperty propertyID =
     nsCSSProps::LookupProperty(aProperty, CSSEnabledState::eForAllContent);
   if (propertyID == eCSSProperty_UNKNOWN) {
     return NS_ERROR_FAILURE;
@@ -908,11 +908,11 @@ inDOMUtils::CssPropertySupportsType(const nsAString& aProperty, uint32_t aType,
     variant = VARIANT_IMAGE_RECT;
     break;
   case TYPE_NUMBER:
-    
+    // Include integers under "number"?
     variant = VARIANT_NUMBER | VARIANT_INTEGER;
     break;
   default:
-    
+    // Unknown type
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -925,31 +925,31 @@ inDOMUtils::GetCSSValuesForProperty(const nsAString& aProperty,
                                     uint32_t* aLength,
                                     char16_t*** aValues)
 {
-  nsCSSPropertyID propertyID = nsCSSProps::
+  nsCSSProperty propertyID = nsCSSProps::
     LookupProperty(aProperty, CSSEnabledState::eForAllContent);
   if (propertyID == eCSSProperty_UNKNOWN) {
     return NS_ERROR_FAILURE;
   }
 
   nsTArray<nsString> array;
-  
-  
+  // We start collecting the values, BUT colors need to go in first, because array
+  // needs to stay sorted, and the colors are sorted, so we just append them.
   if (propertyID == eCSSPropertyExtra_variable) {
-    
+    // No other values we can report.
   } else if (!nsCSSProps::IsShorthand(propertyID)) {
-    
+    // Property is longhand.
     uint32_t propertyParserVariant = nsCSSProps::ParserVariant(propertyID);
-    
+    // Get colors first.
     GetColorsForProperty(propertyParserVariant, array);
     if (propertyParserVariant & VARIANT_KEYWORD) {
       GetKeywordsForProperty(propertyID, array);
     }
     GetOtherValuesForProperty(propertyParserVariant, array);
   } else {
-    
+    // Property is shorthand.
     CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subproperty, propertyID,
                                          CSSEnabledState::eForAllContent) {
-      
+      // Get colors (once) first.
       uint32_t propertyParserVariant = nsCSSProps::ParserVariant(*subproperty);
       if (propertyParserVariant & VARIANT_COLOR) {
         GetColorsForProperty(propertyParserVariant, array);
@@ -965,7 +965,7 @@ inDOMUtils::GetCSSValuesForProperty(const nsAString& aProperty,
       GetOtherValuesForProperty(propertyParserVariant, array);
     }
   }
-  
+  // All CSS properties take initial, inherit and unset.
   InsertNoDuplicates(array, NS_LITERAL_STRING("initial"));
   InsertNoDuplicates(array, NS_LITERAL_STRING("inherit"));
   InsertNoDuplicates(array, NS_LITERAL_STRING("unset"));
@@ -1060,7 +1060,7 @@ inDOMUtils::CssPropertyIsValid(const nsAString& aPropertyName,
                                const nsAString& aPropertyValue,
                                bool *_retval)
 {
-  nsCSSPropertyID propertyID = nsCSSProps::
+  nsCSSProperty propertyID = nsCSSProps::
     LookupProperty(aPropertyName, CSSEnabledState::eIgnoreEnabledState);
 
   if (propertyID == eCSSProperty_UNKNOWN) {
@@ -1073,7 +1073,7 @@ inDOMUtils::CssPropertyIsValid(const nsAString& aPropertyName,
     return NS_OK;
   }
 
-  
+  // Get a parser, parse the property.
   nsCSSParser parser;
   *_retval = parser.IsValueValidForProperty(propertyID, aPropertyValue);
 
@@ -1147,13 +1147,13 @@ inDOMUtils::GetContentState(nsIDOMElement* aElement,
   nsCOMPtr<nsIContent> content = do_QueryInterface(aElement);
   NS_ENSURE_ARG_POINTER(content);
 
-  
-  
+  // NOTE: if this method is removed,
+  // please remove GetInternalValue from EventStates
   *aState = content->AsElement()->State().GetInternalValue();
   return NS_OK;
 }
 
- nsresult
+/* static */ nsresult
 inDOMUtils::GetRuleNodeForElement(dom::Element* aElement,
                                   nsIAtom* aPseudo,
                                   nsStyleContext** aStyleContext,
@@ -1194,8 +1194,8 @@ inDOMUtils::GetUsedFontFaces(nsIDOMRange* aRange,
 static EventStates
 GetStatesForPseudoClass(const nsAString& aStatePseudo)
 {
-  
-  
+  // An array of the states that are relevant for various pseudoclasses.
+  // XXXbz this duplicates code in nsCSSRuleProcessor
   static const EventStates sPseudoClassStates[] = {
 #define CSS_PSEUDO_CLASS(_name, _value, _flags, _pref) \
     EventStates(),
@@ -1205,8 +1205,8 @@ GetStatesForPseudoClass(const nsAString& aStatePseudo)
 #undef CSS_STATE_PSEUDO_CLASS
 #undef CSS_PSEUDO_CLASS
 
-    
-    
+    // Add more entries for our fake values to make sure we can't
+    // index out of bounds into this array no matter what.
     EventStates(),
     EventStates()
   };
@@ -1218,14 +1218,14 @@ GetStatesForPseudoClass(const nsAString& aStatePseudo)
   CSSPseudoClassType type = nsCSSPseudoClasses::
     GetPseudoType(atom, CSSEnabledState::eIgnoreEnabledState);
 
-  
-  
+  // Ignore :any-link so we don't give the element simultaneous
+  // visited and unvisited style state
   if (type == CSSPseudoClassType::anyLink ||
       type == CSSPseudoClassType::mozAnyLink) {
     return EventStates();
   }
-  
-  
+  // Our array above is long enough that indexing into it with
+  // NotPseudo is ok.
   return sPseudoClassStates[static_cast<CSSPseudoClassTypeBase>(type)];
 }
 

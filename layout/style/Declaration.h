@@ -21,7 +21,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "CSSVariableDeclarations.h"
 #include "nsCSSDataBlock.h"
-#include "nsCSSPropertyID.h"
+#include "nsCSSProperty.h"
 #include "nsCSSProps.h"
 #include "nsIStyleRule.h"
 #include "nsStringFwd.h"
@@ -116,19 +116,19 @@ public:
 
 
 
-  void ValueAppended(nsCSSPropertyID aProperty);
+  void ValueAppended(nsCSSProperty aProperty);
 
-  void RemoveProperty(nsCSSPropertyID aProperty);
+  void RemoveProperty(nsCSSProperty aProperty);
 
-  bool HasProperty(nsCSSPropertyID aProperty) const;
+  bool HasProperty(nsCSSProperty aProperty) const;
 
-  void GetValue(nsCSSPropertyID aProperty, nsAString& aValue) const;
-  void GetAuthoredValue(nsCSSPropertyID aProperty, nsAString& aValue) const;
+  void GetValue(nsCSSProperty aProperty, nsAString& aValue) const;
+  void GetAuthoredValue(nsCSSProperty aProperty, nsAString& aValue) const;
 
   bool HasImportantData() const {
     return mImportantData || mImportantVariables;
   }
-  bool GetValueIsImportant(nsCSSPropertyID aProperty) const;
+  bool GetValueIsImportant(nsCSSProperty aProperty) const;
   bool GetValueIsImportant(const nsAString& aProperty) const;
 
   
@@ -242,7 +242,7 @@ public:
 
 
 
-  bool TryReplaceValue(nsCSSPropertyID aProperty, bool aIsImportant,
+  bool TryReplaceValue(nsCSSProperty aProperty, bool aIsImportant,
                          nsCSSExpandedDataBlock& aFromBlock,
                          bool* aChanged)
   {
@@ -271,7 +271,7 @@ public:
     return block->TryReplaceValue(aProperty, aFromBlock, aChanged);
   }
 
-  bool HasNonImportantValueFor(nsCSSPropertyID aProperty) const {
+  bool HasNonImportantValueFor(nsCSSProperty aProperty) const {
     MOZ_ASSERT(!nsCSSProps::IsShorthand(aProperty), "must be longhand");
     return !!mData->ValueFor(aProperty);
   }
@@ -357,16 +357,16 @@ private:
   Declaration& operator=(const Declaration& aCopy) = delete;
   bool operator==(const Declaration& aCopy) const = delete;
 
-  void GetValue(nsCSSPropertyID aProperty, nsAString& aValue,
+  void GetValue(nsCSSProperty aProperty, nsAString& aValue,
                 nsCSSValue::Serialization aValueSerialization) const;
 
   static void AppendImportanceToString(bool aIsImportant, nsAString& aString);
   
-  bool AppendValueToString(nsCSSPropertyID aProperty, nsAString& aResult) const;
-  bool AppendValueToString(nsCSSPropertyID aProperty, nsAString& aResult,
+  bool AppendValueToString(nsCSSProperty aProperty, nsAString& aResult) const;
+  bool AppendValueToString(nsCSSProperty aProperty, nsAString& aResult,
                            nsCSSValue::Serialization aValueSerialization) const;
   
-  void AppendPropertyAndValueToString(nsCSSPropertyID aProperty,
+  void AppendPropertyAndValueToString(nsCSSProperty aProperty,
                                       nsAutoString& aValue,
                                       nsAString& aResult) const;
   
@@ -377,12 +377,12 @@ private:
   void GetImageLayerValue(nsCSSCompressedDataBlock *data,
                           nsAString& aValue,
                           nsCSSValue::Serialization aSerialization,
-                          const nsCSSPropertyID aTable[]) const;
+                          const nsCSSProperty aTable[]) const;
 
   void GetImageLayerPositionValue(nsCSSCompressedDataBlock *data,
                                   nsAString& aValue,
                                   nsCSSValue::Serialization aSerialization,
-                                  const nsCSSPropertyID aTable[]) const;
+                                  const nsCSSProperty aTable[]) const;
 
 public:
   
@@ -390,12 +390,12 @@ public:
 
 
 
-  nsCSSPropertyID GetPropertyAt(uint32_t aIndex) const {
+  nsCSSProperty GetPropertyAt(uint32_t aIndex) const {
     uint32_t value = mOrder[aIndex];
     if (value >= eCSSProperty_COUNT) {
       return eCSSPropertyExtra_variable;
     }
-    return nsCSSPropertyID(value);
+    return nsCSSProperty(value);
   }
 
   

@@ -18,7 +18,7 @@
 #include "nsIPrincipal.h"
 #include "FrameMetrics.h"
 #include "nsIWidget.h"
-#include "nsCSSPropertyID.h"
+#include "nsCSSProperty.h"
 #include "nsStyleCoord.h"
 #include "nsStyleConsts.h"
 #include "nsGkAtoms.h"
@@ -1556,7 +1556,7 @@ public:
                                     nsRenderingContext* aRenderingContext);
 
   
-  static nscolor GetColor(nsIFrame* aFrame, nsCSSPropertyID aProperty);
+  static nscolor GetColor(nsIFrame* aFrame, nsCSSProperty aProperty);
 
   
   static gfxFloat GetSnappedBaselineY(nsIFrame* aFrame, gfxContext* aContext,
@@ -2236,7 +2236,7 @@ public:
 
 
   static bool HasCurrentAnimationOfProperty(const nsIFrame* aFrame,
-                                            nsCSSPropertyID aProperty);
+                                            nsCSSProperty aProperty);
 
   
 
@@ -2251,7 +2251,7 @@ public:
 
 
   static bool HasRelevantAnimationOfProperty(const nsIFrame* aFrame,
-                                             nsCSSPropertyID aProperty);
+                                             nsCSSProperty aProperty);
 
   
 

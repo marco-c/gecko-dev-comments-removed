@@ -156,13 +156,13 @@ protected:
   static void GetCSSParsingEnvironmentForRule(mozilla::css::Rule* aRule,
                                               CSSParsingEnvironment& aCSSParseEnv);
 
-  nsresult ParsePropertyValue(const nsCSSPropertyID aPropID,
+  nsresult ParsePropertyValue(const nsCSSProperty aPropID,
                               const nsAString& aPropValue,
                               bool aIsImportant);
 
   
   
-  nsresult RemoveProperty(const nsCSSPropertyID aPropID);
+  nsresult RemoveProperty(const nsCSSProperty aPropID);
 
   void GetCustomPropertyValue(const nsAString& aPropertyName, nsAString& aValue);
   nsresult RemoveCustomProperty(const nsAString& aPropertyName);

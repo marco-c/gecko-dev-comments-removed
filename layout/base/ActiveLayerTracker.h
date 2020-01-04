@@ -5,7 +5,7 @@
 #ifndef ACTIVELAYERTRACKER_H_
 #define ACTIVELAYERTRACKER_H_
 
-#include "nsCSSPropertyID.h"
+#include "nsCSSProperty.h"
 
 class nsIFrame;
 class nsIContent;
@@ -38,7 +38,7 @@ public:
 
 
 
-  static void NotifyRestyle(nsIFrame* aFrame, nsCSSPropertyID aProperty);
+  static void NotifyRestyle(nsIFrame* aFrame, nsCSSProperty aProperty);
   
 
 
@@ -51,14 +51,14 @@ public:
 
 
 
-  static void NotifyAnimated(nsIFrame* aFrame, nsCSSPropertyID aProperty,
+  static void NotifyAnimated(nsIFrame* aFrame, nsCSSProperty aProperty,
                              const nsAString& aNewValue,
                              nsDOMCSSDeclaration* aDOMCSSDecl);
   
 
 
 
-  static void NotifyAnimatedFromScrollHandler(nsIFrame* aFrame, nsCSSPropertyID aProperty,
+  static void NotifyAnimatedFromScrollHandler(nsIFrame* aFrame, nsCSSProperty aProperty,
                                               nsIFrame* aScrollFrame);
   
 
@@ -68,20 +68,20 @@ public:
 
 
 
-  static void NotifyInlineStyleRuleModified(nsIFrame* aFrame, nsCSSPropertyID aProperty,
+  static void NotifyInlineStyleRuleModified(nsIFrame* aFrame, nsCSSProperty aProperty,
                                             const nsAString& aNewValue,
                                             nsDOMCSSDeclaration* aDOMCSSDecl);
   
 
 
 
-  static bool IsStyleMaybeAnimated(nsIFrame* aFrame, nsCSSPropertyID aProperty);
+  static bool IsStyleMaybeAnimated(nsIFrame* aFrame, nsCSSProperty aProperty);
   
 
 
 
   static bool IsStyleAnimated(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                              nsCSSPropertyID aProperty);
+                              nsCSSProperty aProperty);
   
 
 
