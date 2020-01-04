@@ -199,11 +199,19 @@ BluetoothProfileController::SetupProfiles(bool aAssignServiceClass)
   }
 
   
-  
-  
-  if (hasRendering || (isPeripheral && isRemoteControl)) {
+  if (hasRendering) {
     AddProfile(BluetoothA2dpManager::Get());
-    AddProfile(BluetoothAvrcpManager::Get()); 
+  }
+
+  
+  
+  
+  if ((isPeripheral && isRemoteControl)) {
+    if (hasRendering) {
+      AddProfile(BluetoothAvrcpManager::Get());
+    } else {
+      AddProfile(BluetoothHidManager::Get());
+    }
   }
 
   
