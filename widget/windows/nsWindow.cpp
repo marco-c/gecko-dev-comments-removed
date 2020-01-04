@@ -1908,11 +1908,11 @@ nsWindow::SetSizeMode(nsSizeMode aMode)
 
 
 
-NS_IMETHODIMP nsWindow::ConstrainPosition(bool aAllowSlop,
-                                          int32_t *aX, int32_t *aY)
+void
+nsWindow::ConstrainPosition(bool aAllowSlop, int32_t *aX, int32_t *aY)
 {
   if (!mIsTopWidgetWindow) 
-    return NS_OK;
+    return;
 
   double dpiScale = GetDesktopToDeviceScale().scale;
 
@@ -1927,7 +1927,7 @@ NS_IMETHODIMP nsWindow::ConstrainPosition(bool aAllowSlop,
 
   nsCOMPtr<nsIScreenManager> screenmgr = do_GetService(sScreenManagerContractID);
   if (!screenmgr) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return;
   }
   nsCOMPtr<nsIScreen> screen;
   int32_t left, top, width, height;
@@ -1938,13 +1938,13 @@ NS_IMETHODIMP nsWindow::ConstrainPosition(bool aAllowSlop,
     
     nsresult rv = screen->GetAvailRectDisplayPix(&left, &top, &width, &height);
     if (NS_FAILED(rv)) {
-      return rv;
+      return;
     }
   } else {
     
     nsresult rv = screen->GetRectDisplayPix(&left, &top, &width, &height);
     if (NS_FAILED(rv)) {
-      return rv;
+      return;
     }
   }
   screenRect.left = left;
@@ -1975,8 +1975,6 @@ NS_IMETHODIMP nsWindow::ConstrainPosition(bool aAllowSlop,
     else if (*aY >= screenRect.bottom - logHeight)
       *aY = screenRect.bottom - logHeight;
   }
-
-  return NS_OK;
 }
 
 

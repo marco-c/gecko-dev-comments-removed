@@ -83,10 +83,10 @@ public:
   virtual bool IsVisible() const override
   { return mVisible; }
 
-  NS_IMETHOD ConstrainPosition(bool     ,
-                               int32_t* aX,
-                               int32_t* aY) override
-  { *aX = kMaxDimension;  *aY = kMaxDimension;  return NS_OK; }
+  virtual void ConstrainPosition(bool     ,
+                                 int32_t* aX,
+                                 int32_t* aY) override
+  { *aX = kMaxDimension; *aY = kMaxDimension; }
 
   
   NS_IMETHOD Move(double aX, double aY) override

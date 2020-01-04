@@ -680,10 +680,9 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD ConstrainPosition(bool aAllowSlop,
-                                 int32_t *aX,
-                                 int32_t *aY) = 0;
+    virtual void ConstrainPosition(bool aAllowSlop,
+                                   int32_t *aX,
+                                   int32_t *aY) = 0;
 
     
 
