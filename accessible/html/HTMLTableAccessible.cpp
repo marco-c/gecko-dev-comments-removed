@@ -393,24 +393,14 @@ NS_IMPL_ISUPPORTS_INHERITED0(HTMLTableAccessible, Accessible)
 
 
 
-void
-HTMLTableAccessible::CacheChildren()
+bool
+HTMLTableAccessible::InsertChildAt(uint32_t aIndex, Accessible* aChild)
 {
   
   
   
   
-  TreeWalker walker(this, mContent);
-
-  Accessible* child = nullptr;
-  while ((child = walker.Next())) {
-    if (child->Role() == roles::CAPTION) {
-      InsertChildAt(0, child);
-      while ((child = walker.Next()) && AppendChild(child));
-      break;
-    }
-    AppendChild(child);
-  }
+  return Accessible::InsertChildAt(aChild->IsHTMLCaption() ? 0 : aIndex, aChild);
 }
 
 role
