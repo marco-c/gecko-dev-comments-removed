@@ -1616,13 +1616,29 @@ nsBlockFrame::ComputeFinalSize(const nsHTMLReflowState& aReflowState,
     }
   }
 
-  if (IS_TRUE_OVERFLOW_CONTAINER(this) &&
-      NS_FRAME_IS_NOT_COMPLETE(aState.mReflowStatus)) {
+  if (IS_TRUE_OVERFLOW_CONTAINER(this)) {
+    if (NS_FRAME_IS_NOT_COMPLETE(aState.mReflowStatus)) {
+      
+      
+      NS_ASSERTION(finalSize.BSize(wm) == 0,
+                   "overflow containers must be zero-block-size");
+      NS_FRAME_SET_OVERFLOW_INCOMPLETE(aState.mReflowStatus);
+    }
+  } else if (aReflowState.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
+             !NS_INLINE_IS_BREAK_BEFORE(aState.mReflowStatus) &&
+             NS_FRAME_IS_COMPLETE(aState.mReflowStatus)) {
     
     
-    NS_ASSERTION(finalSize.BSize(wm) == 0,
-                 "overflow containers must be zero-block-size");
-    NS_FRAME_SET_OVERFLOW_INCOMPLETE(aState.mReflowStatus);
+    
+    
+    
+    
+    
+    bool found;
+    nscoord bSize = Properties().Get(FragStretchBSizeProperty(), &found);
+    if (found) {
+      finalSize.BSize(wm) = std::max(bSize, finalSize.BSize(wm));
+    }
   }
 
   
