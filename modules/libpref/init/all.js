@@ -5073,3 +5073,5 @@ pref("media.useAudioChannelAPI", false);
 
 
 pref("dom.requestcontext.enabled", false);
+
+pref("dom.mozKillSwitch.enabled", false);
