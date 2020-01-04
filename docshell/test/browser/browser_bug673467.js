@@ -22,28 +22,30 @@ function test() {
   let tab = gBrowser.addTab(doc);
   let tabBrowser = tab.linkedBrowser;
 
-  tabBrowser.addEventListener('load', function(aEvent) {
-    tabBrowser.removeEventListener('load', arguments.callee, true);
+  BrowserTestUtils.browserLoaded(tab.linkedBrowser).then(() => {
+    return ContentTask.spawn(tab.linkedBrowser, null, () => {
+      return new Promise(resolve => {
+        
+        let iframe = content.document.getElementById('iframe');
+        iframe.addEventListener('load', function listener(aEvent) {
 
-    
-    let iframe = tabBrowser.contentWindow.document.getElementById('iframe');
-    iframe.addEventListener('load', function(aEvent) {
+          
+          if (!iframe.src)
+            return;
 
-      
-      if (!iframe.src)
-        return;
+          iframe.removeEventListener('load', listener, true);
+          let shistory = content
+                          .QueryInterface(Ci.nsIInterfaceRequestor)
+                          .getInterface(Ci.nsIWebNavigation)
+                          .sessionHistory;
 
-      iframe.removeEventListener('load', arguments.callee, true);
-      let shistory = tabBrowser.contentWindow
-                      .QueryInterface(Ci.nsIInterfaceRequestor)
-                      .getInterface(Ci.nsIWebNavigation)
-                      .sessionHistory;
-
-      is(shistory.count, 1, 'shistory count should be 1.');
-
-      gBrowser.removeTab(tab);
-      finish();
-
-    }, true);
-  }, true);
+          is(shistory.count, 1, 'shistory count should be 1.');
+          resolve();
+        }, true);
+      });
+    });
+  }).then(() => {
+    gBrowser.removeTab(tab);
+    finish();
+  });
 }

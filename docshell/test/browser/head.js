@@ -60,3 +60,40 @@ function timelineTestOpenUrl(url) {
 
   return Promise.all([tabSwitchPromise, loadPromise]).then(([_, tab]) => tab);
 }
+
+
+
+
+
+
+
+
+
+
+function runCharsetTest(url, check1, charset, check2) {
+  waitForExplicitFinish();
+
+  BrowserTestUtils.openNewForegroundTab(gBrowser, url, true).then(afterOpen);
+
+  function afterOpen() {
+    if (charset) {
+      BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(afterChangeCharset);
+
+      ContentTask.spawn(gBrowser.selectedBrowser, null, check1).then(() => {
+        BrowserSetForcedCharacterSet(charset);
+      });
+    } else {
+      ContentTask.spawn(gBrowser.selectedBrowser, null, check1).then(() => {
+        gBrowser.removeCurrentTab();
+        finish();
+      });
+    }
+  }
+
+  function afterChangeCharset() {
+    ContentTask.spawn(gBrowser.selectedBrowser, null, check2).then(() => {
+      gBrowser.removeCurrentTab();
+      finish();
+    });
+  }
+}
