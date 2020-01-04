@@ -712,7 +712,7 @@ var gEditItemOverlay = {
       this._folderMenuList.selectedItem = item;
       
       
-      setTimeout(function(self) self.toggleFolderTreeVisibility(), 100, this);
+      setTimeout(() => this.toggleFolderTreeVisibility(), 100);
       return;
     }
 
@@ -906,7 +906,7 @@ var gEditItemOverlay = {
     let tags = this._element("tagsField").value;
     return tags.trim()
                .split(/\s*,\s*/) 
-               .filter(function (tag) tag.length > 0); 
+               .filter(tag => tag.length > 0); 
   },
 
   newFolder: Task.async(function* () {
