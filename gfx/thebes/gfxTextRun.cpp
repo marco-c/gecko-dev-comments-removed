@@ -838,6 +838,7 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
                                 PropertyProvider *aProvider,
                                 SuppressBreak aSuppressBreak,
                                 gfxFloat *aTrimWhitespace,
+                                bool aWhitespaceCanHang,
                                 Metrics *aMetrics,
                                 gfxFont::BoundingBoxType aBoundingBoxType,
                                 DrawTarget* aRefDrawTarget,
@@ -951,7 +952,7 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
         }
         
         advance += charAdvance;
-        if (aTrimWhitespace) {
+        if (aTrimWhitespace || aWhitespaceCanHang) {
             if (mCharacterGlyphs[i].CharIsSpace()) {
                 ++trimmableChars;
                 trimmableAdvance += charAdvance;
@@ -985,13 +986,26 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
 
     if (aMetrics) {
         auto fitEnd = aStart + charsFit;
-        *aMetrics = MeasureText(Range(aStart, fitEnd), aBoundingBoxType,
-                                aRefDrawTarget, aProvider);
-        if (trimmableChars) {
-            Metrics trimMetrics =
-                MeasureText(Range(fitEnd - trimmableChars, fitEnd),
-                            aBoundingBoxType, aRefDrawTarget, aProvider);
-            aMetrics->mAdvanceWidth -= trimMetrics.mAdvanceWidth;
+        if (aTrimWhitespace || trimmableChars == 0) {
+            
+            *aMetrics = MeasureText(Range(aStart, fitEnd - trimmableChars),
+                                    aBoundingBoxType, aRefDrawTarget,
+                                    aProvider);
+        } else {
+            
+            *aMetrics = MeasureText(Range(aStart, fitEnd),
+                                    aBoundingBoxType, aRefDrawTarget,
+                                    aProvider);
+        	
+            if (aWhitespaceCanHang && aMetrics->mAdvanceWidth > aWidth) {
+                
+                Metrics hangMetrics =
+                    MeasureText(Range(fitEnd - trimmableChars, fitEnd),
+                                aBoundingBoxType, aRefDrawTarget,
+                                aProvider);
+                aMetrics->mAdvanceWidth = std::max(aWidth,
+                    aMetrics->mAdvanceWidth - hangMetrics.mAdvanceWidth);
+            }
         }
     }
     if (aTrimWhitespace) {
