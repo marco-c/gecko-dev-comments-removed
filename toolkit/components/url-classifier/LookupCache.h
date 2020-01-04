@@ -24,7 +24,8 @@ namespace safebrowsing {
 
 class LookupResult {
 public:
-  LookupResult() : mComplete(false), mNoise(false), mFresh(false), mProtocolConfirmed(false) {}
+  LookupResult() : mComplete(false), mNoise(false),
+                   mFresh(false), mProtocolConfirmed(false) {}
 
   
   union {
@@ -32,8 +33,13 @@ public:
     Completion complete;
   } hash;
 
-  const Prefix &PrefixHash() { return hash.prefix; }
-  const Completion &CompleteHash() { return hash.complete; }
+  const Prefix &PrefixHash() {
+    return hash.prefix;
+  }
+  const Completion &CompleteHash() {
+    MOZ_ASSERT(!mNoise);
+    return hash.complete;
+  }
 
   bool Confirmed() const { return (mComplete && mFresh) || mProtocolConfirmed; }
   bool Complete() const { return mComplete; }
@@ -41,6 +47,9 @@ public:
   
   bool mComplete;
 
+  
+  
+  
   
   
   bool mNoise;
@@ -78,13 +87,6 @@ public:
   
   static nsresult GetHostKeys(const nsACString& aSpec,
                               nsTArray<nsCString>* aHostKeys);
-  
-  
-  
-  
-  
-  static nsresult GetKey(const nsACString& aSpec, Completion* aHash,
-                         nsCOMPtr<nsICryptoHash>& aCryptoHash);
 
   LookupCache(const nsACString& aTableName, nsIFile* aStoreFile);
   ~LookupCache();
