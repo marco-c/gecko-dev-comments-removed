@@ -44,7 +44,6 @@ public:
   void LinkRemoved();
 
   void UpdateImport();
-  void UpdatePreconnect();
 
   
   virtual nsresult PreHandleEvent(EventChainPreVisitor& aVisitor) override;
@@ -173,8 +172,6 @@ protected:
   
   virtual void GetItemValueText(DOMString& text) override;
   virtual void SetItemValueText(const nsAString& text) override;
-
-  bool HasDNSPrefetchRel();
 
   RefPtr<nsDOMTokenList > mRelList;
 private:
