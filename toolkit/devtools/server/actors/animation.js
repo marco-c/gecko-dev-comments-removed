@@ -270,10 +270,20 @@ var AnimationPlayerActor = ActorClass({
     
     
     
+    
+    
+    if (this.player.startTime) {
+      this.previousStartTime = this.player.startTime;
+    }
+
+    
+    
+    
     let newState = {
       type: this.getType(),
       
       startTime: this.player.startTime,
+      previousStartTime: this.previousStartTime,
       currentTime: this.player.currentTime,
       playState: this.player.playState,
       playbackRate: this.player.playbackRate,
@@ -443,6 +453,7 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
     return {
       type: this._form.type,
       startTime: this._form.startTime,
+      previousStartTime: this._form.previousStartTime,
       currentTime: this._form.currentTime,
       playState: this._form.playState,
       playbackRate: this._form.playbackRate,
@@ -519,11 +530,14 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
 
 
 
-  refreshState: Task.async(function*() {
+
+
+
+  refreshState: Task.async(function*(forceRefresh) {
     let data = yield this.getCurrentState();
 
     
-    if (!this.autoRefreshTimer) {
+    if (!this.autoRefreshTimer && !forceRefresh) {
       return;
     }
 
