@@ -22,47 +22,49 @@ class nsIDOMEvent;
 class nsISimpleEnumerator;
 class nsITransferable;
 class nsRange;
+
 namespace mozilla {
 template <class T> class OwningNonNull;
+
 namespace dom {
 class Selection;
 } 
-} 
 
 
 
 
 
-class MOZ_RAII nsAutoPlaceHolderBatch
+class MOZ_RAII AutoPlaceHolderBatch
 {
-  private:
-    nsCOMPtr<nsIEditor> mEd;
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-  public:
-    nsAutoPlaceHolderBatch(nsIEditor *aEd, nsIAtom *atom MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mEd(do_QueryInterface(aEd))
-    {
-      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-      if (mEd) {
-        mEd->BeginPlaceHolderTransaction(atom);
-      }
+private:
+  nsCOMPtr<nsIEditor> mEditor;
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+
+public:
+  AutoPlaceHolderBatch(nsIEditor* aEditor,
+                       nsIAtom* aAtom
+                       MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    : mEditor(aEditor)
+  {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+    if (mEditor) {
+      mEditor->BeginPlaceHolderTransaction(aAtom);
     }
-    ~nsAutoPlaceHolderBatch()
-    {
-      if (mEd) {
-        mEd->EndPlaceHolderTransaction();
-      }
+  }
+  ~AutoPlaceHolderBatch()
+  {
+    if (mEditor) {
+      mEditor->EndPlaceHolderTransaction();
     }
+  }
 };
 
-namespace mozilla {
 
 
 
 
 
-
-class MOZ_RAII AutoEditBatch final : public nsAutoPlaceHolderBatch
+class MOZ_RAII AutoEditBatch final : public AutoPlaceHolderBatch
 {
 private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -70,7 +72,7 @@ private:
 public:
   explicit AutoEditBatch(nsIEditor* aEditor
                          MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : nsAutoPlaceHolderBatch(aEditor, nullptr)
+    : AutoPlaceHolderBatch(aEditor, nullptr)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
