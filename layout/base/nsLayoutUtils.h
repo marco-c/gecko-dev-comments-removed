@@ -168,7 +168,13 @@ public:
   
 
 
+
   static bool GetDisplayPort(nsIContent* aContent, nsRect *aResult);
+
+  
+
+
+  static bool GetDisplayPortRelativeToScrollFrame(nsIContent* aContent, nsRect *aResult);
 
   
 

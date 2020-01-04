@@ -851,6 +851,21 @@ GetDisplayPortFromRectData(nsIContent* aContent,
   return ApplyRectMultiplier(aRectData->mRect, aMultiplier);
 }
 
+nsIFrame*
+GetScrollFrameFromContent(nsIContent* aContent)
+{
+  nsIFrame* frame = aContent->GetPrimaryFrame();
+  if (frame && aContent->OwnerDoc()->GetRootElement() == aContent) {
+    
+    
+    if (nsIFrame* rootScrollFrame =
+          frame->PresContext()->PresShell()->GetRootScrollFrame()) {
+      frame = rootScrollFrame;
+    }
+  }
+  return frame;
+}
+
 static nsRect
 GetDisplayPortFromMarginsData(nsIContent* aContent,
                               DisplayPortMarginsPropertyData* aMarginsData,
@@ -869,7 +884,7 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
     
   }
 
-  nsIFrame* frame = aContent->GetPrimaryFrame();
+  nsIFrame* frame = GetScrollFrameFromContent(aContent);
   if (!frame) {
     
     
@@ -881,13 +896,6 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
 
   bool isRoot = false;
   if (aContent->OwnerDoc()->GetRootElement() == aContent) {
-    
-    
-    if (nsIFrame* rootScrollFrame =
-          frame->PresContext()->PresShell()->GetRootScrollFrame()) {
-      frame = rootScrollFrame;
-    }
-
     isRoot = true;
   }
 
@@ -1076,6 +1084,19 @@ nsLayoutUtils::GetDisplayPort(nsIContent* aContent, nsRect *aResult)
     return GetDisplayPortImpl(aContent, aResult, 1.0f / gfxPrefs::LowPrecisionResolution());
   }
   return GetDisplayPortImpl(aContent, aResult, 1.0f);
+}
+
+bool
+nsLayoutUtils::GetDisplayPortRelativeToScrollFrame(nsIContent* aContent, nsRect *aResult)
+{
+  MOZ_ASSERT(aResult);
+  bool usingDisplayPort = GetDisplayPort(aContent, aResult);
+  nsIFrame* frame = GetScrollFrameFromContent(aContent);
+  nsIScrollableFrame* scrollableFrame = frame ? frame->GetScrollTargetFrame() : nullptr;
+  if (usingDisplayPort && scrollableFrame) {
+    *aResult += scrollableFrame->GetScrollPortRect().TopLeft();
+  }
+  return usingDisplayPort;
 }
 
 bool
