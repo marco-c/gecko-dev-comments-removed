@@ -81,6 +81,33 @@ class MessageListener
         MOZ_CRASH("Intentional IPDL crash");
     }
 
+    
+    
+#ifdef DEBUG
+    
+    
+    
+    
+    virtual bool ArtificialTimeout() {
+        return false;
+    }
+
+    
+    
+    virtual bool NeedArtificialSleep() {
+        return false;
+    }
+
+    
+    
+    
+    virtual void ArtificialSleep() {}
+#else
+    bool ArtificialTimeout() { return false; }
+    bool NeedArtificialSleep() { return false; }
+    void ArtificialSleep() {}
+#endif
+
     virtual void OnEnteredCxxStack() {
         NS_RUNTIMEABORT("default impl shouldn't be invoked");
     }
