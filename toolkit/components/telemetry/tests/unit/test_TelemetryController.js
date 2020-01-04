@@ -441,6 +441,35 @@ add_task(function* test_optoutSampling() {
   }
 });
 
+add_task(function* test_telemetryEnabledUnexpectedValue(){
+  
+  
+  let defaultPrefBranch = Services.prefs.getDefaultBranch(null);
+  defaultPrefBranch.deleteBranch(PREF_ENABLED);
+
+  
+  Preferences.set(PREF_ENABLED, "false");
+  
+  yield TelemetryController.reset();
+  Assert.equal(Telemetry.canRecordExtended, false,
+               "Invalid values must not enable Telemetry recording.");
+
+  
+  defaultPrefBranch.deleteBranch(PREF_ENABLED);
+
+  
+  Preferences.set(PREF_ENABLED, true);
+  yield TelemetryController.reset();
+  Assert.equal(Telemetry.canRecordExtended, true,
+               "True must enable Telemetry recording.");
+
+  
+  Preferences.set(PREF_ENABLED, false);
+  yield TelemetryController.reset();
+  Assert.equal(Telemetry.canRecordExtended, false,
+               "False must disable Telemetry recording.");
+});
+
 add_task(function* stopServer(){
   yield PingServer.stop();
   do_test_finished();
