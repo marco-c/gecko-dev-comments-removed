@@ -196,12 +196,6 @@ var interfaceNamesInGlobalScope =
 
     "TextEncoder",
 
-    "XMLHttpRequest",
-
-    "XMLHttpRequestEventTarget",
-
-    "XMLHttpRequestUpload",
-
     "URL",
 
     "URLSearchParams",
