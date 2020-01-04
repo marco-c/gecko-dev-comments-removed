@@ -1559,9 +1559,6 @@ TypeAnalyzer::insertConversions()
         
         
         for (MInstructionIterator iter(block->begin()); iter != block->end(); iter++) {
-            if (!alloc().ensureBallast())
-                return false;
-
             if (!adjustInputs(*iter))
                 return false;
         }
