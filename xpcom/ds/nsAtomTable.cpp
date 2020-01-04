@@ -522,7 +522,18 @@ NS_SizeOfAtomTablesIncludingThis(MallocSizeOf aMallocSizeOf,
            : 0;
 }
 
-#define ATOM_HASHTABLE_INITIAL_LENGTH  2048
+
+
+
+
+
+
+
+
+
+
+
+#define ATOM_HASHTABLE_INITIAL_LENGTH  4096
 
 static inline void
 EnsureTableExists()
