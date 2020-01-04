@@ -370,8 +370,18 @@ class TypedArrayObjectTemplate : public TypedArrayObject
             
             
             if (!IsInsideNursery(obj) && cx->runtime()->gc.nursery.isInside(buffer->dataPointerEither())) {
-                MOZ_ASSERT(!isSharedMemory);
-                cx->runtime()->gc.storeBuffer.putWholeCell(obj);
+                
+                
+                
+                
+                
+                if (isSharedMemory) {
+                    MOZ_ASSERT(buffer->byteLength() == 0 &&
+                               cx->runtime()->gc.nursery.start() ==
+                                   buffer->dataPointerEither().unwrapValue());
+                } else {
+                    cx->runtime()->gc.storeBuffer.putWholeCell(obj);
+                }
             }
         } else {
             void* data = obj->fixedData(FIXED_DATA_START);
