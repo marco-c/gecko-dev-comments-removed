@@ -3,6 +3,7 @@
 
 
 
+
 #include "nsXULPrototypeCache.h"
 
 #include "plstr.h"
@@ -238,56 +239,33 @@ nsXULPrototypeCache::PutXBLDocumentInfo(nsXBLDocumentInfo* aDocumentInfo)
     return NS_OK;
 }
 
-static PLDHashOperator
-FlushSkinXBL(nsIURI* aKey, RefPtr<nsXBLDocumentInfo>& aDocInfo, void* aClosure)
-{
-  nsAutoCString str;
-  aKey->GetPath(str);
-
-  PLDHashOperator ret = PL_DHASH_NEXT;
-
-  if (!strncmp(str.get(), "/skin", 5)) {
-    ret = PL_DHASH_REMOVE;
-  }
-
-  return ret;
-}
-
-static PLDHashOperator
-FlushSkinSheets(nsIURI* aKey, RefPtr<CSSStyleSheet>& aSheet, void* aClosure)
-{
-  nsAutoCString str;
-  aSheet->GetSheetURI()->GetPath(str);
-
-  PLDHashOperator ret = PL_DHASH_NEXT;
-
-  if (!strncmp(str.get(), "/skin", 5)) {
-    
-    ret = PL_DHASH_REMOVE;
-  }
-  return ret;
-}
-
-static PLDHashOperator
-FlushScopedSkinStylesheets(nsIURI* aKey, RefPtr<nsXBLDocumentInfo> &aDocInfo, void* aClosure)
-{
-  aDocInfo->FlushSkinStylesheets();
-  return PL_DHASH_NEXT;
-}
-
 void
 nsXULPrototypeCache::FlushSkinFiles()
 {
   
-  mXBLDocTable.Enumerate(FlushSkinXBL, nullptr);
+  for (auto iter = mXBLDocTable.Iter(); !iter.Done(); iter.Next()) {
+    nsAutoCString str;
+    iter.Key()->GetPath(str);
+    if (strncmp(str.get(), "/skin", 5) == 0) {
+      iter.Remove();
+    }
+  }
 
   
-  mStyleSheetTable.Enumerate(FlushSkinSheets, nullptr);
+  for (auto iter = mStyleSheetTable.Iter(); !iter.Done(); iter.Next()) {
+    nsAutoCString str;
+    iter.Data()->GetSheetURI()->GetPath(str);
+    if (strncmp(str.get(), "/skin", 5) == 0) {
+      iter.Remove();
+    }
+  }
 
   
   
   
-  mXBLDocTable.Enumerate(FlushScopedSkinStylesheets, nullptr);
+  for (auto iter = mXBLDocTable.Iter(); !iter.Done(); iter.Next()) {
+    iter.Data()->FlushSkinStylesheets();
+  }
 }
 
 void
