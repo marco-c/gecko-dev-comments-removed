@@ -922,14 +922,14 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   
   
   mGraphImpl->NotifyOutputData(aOutputBuffer, static_cast<size_t>(aFrames),
-                               ChannelCount);
+                               mSampleRate, ChannelCount);
 
   
   if (aInputBuffer) {
     if (mAudioInput) { 
       mAudioInput->NotifyInputData(mGraphImpl, aInputBuffer,
                                    static_cast<size_t>(aFrames),
-                                   ChannelCount);
+                                   mSampleRate, ChannelCount);
     }
   }
 

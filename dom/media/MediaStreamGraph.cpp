@@ -1059,10 +1059,10 @@ MediaStreamGraphImpl::CloseAudioInput(AudioDataListener *aListener)
 
 void
 MediaStreamGraph::NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
-                                   uint32_t aChannels)
+                                   TrackRate aRate, uint32_t aChannels)
 {
   for (auto& listener : mAudioInputs) {
-    listener->NotifyOutputData(this, aBuffer, aFrames, aChannels);
+    listener->NotifyOutputData(this, aBuffer, aFrames, aRate, aChannels);
   }
 }
 
