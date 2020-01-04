@@ -1,5 +1,6 @@
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
+gUseRealCertChecks = true;
 
 const DATA = "data/signing_checks/";
 const ID = "test@tests.mozilla.org";
@@ -54,6 +55,7 @@ function run_test() {
 
 
 add_task(function*() {
+  Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, false);
   startupManager();
 
   
