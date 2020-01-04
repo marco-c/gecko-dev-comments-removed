@@ -706,10 +706,12 @@ StripURIForReporting(nsIURI* aURI,
   
   
   
-  bool isHttp =
-    (NS_SUCCEEDED(aURI->SchemeIs("http", &isHttp)) && isHttp) ||
-    (NS_SUCCEEDED(aURI->SchemeIs("https", &isHttp)) && isHttp);
-  if (!isHttp) {
+  bool isHttpOrFtp =
+    (NS_SUCCEEDED(aURI->SchemeIs("http", &isHttpOrFtp)) && isHttpOrFtp) ||
+    (NS_SUCCEEDED(aURI->SchemeIs("https", &isHttpOrFtp)) && isHttpOrFtp) ||
+    (NS_SUCCEEDED(aURI->SchemeIs("ftp", &isHttpOrFtp)) && isHttpOrFtp);
+
+  if (!isHttpOrFtp) {
     
     
     
