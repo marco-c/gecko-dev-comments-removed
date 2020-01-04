@@ -567,8 +567,7 @@ protected:
   
   
   bool MaybeFinishDecodeFirstFrame();
-  
-  bool IsDecodingFirstFrame();
+
   void FinishDecodeFirstFrame();
 
   
@@ -884,10 +883,6 @@ private:
 
   
   MozPromiseRequestHolder<MediaDecoderReader::BufferedUpdatePromise> mBufferedUpdateRequest;
-
-  
-  
-  bool mDecodingFirstFrame;
 
   
   
