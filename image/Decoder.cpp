@@ -22,6 +22,34 @@ using mozilla::gfx::SurfaceFormat;
 namespace mozilla {
 namespace image {
 
+class MOZ_STACK_CLASS AutoRecordDecoderTelemetry final
+{
+public:
+  AutoRecordDecoderTelemetry(Decoder* aDecoder, uint32_t aByteCount)
+    : mDecoder(aDecoder)
+  {
+    MOZ_ASSERT(mDecoder);
+
+    
+    mStartTime = TimeStamp::Now();
+    mDecoder->mChunkCount++;
+
+    
+    mDecoder->mBytesDecoded += aByteCount;
+
+  }
+
+  ~AutoRecordDecoderTelemetry()
+  {
+    
+    mDecoder->mDecodeTime += (TimeStamp::Now() - mStartTime);
+  }
+
+private:
+  Decoder* mDecoder;
+  TimeStamp mStartTime;
+};
+
 Decoder::Decoder(RasterImage* aImage)
   : mImageData(nullptr)
   , mImageDataLength(0)
@@ -142,18 +170,10 @@ Decoder::Write(const char* aBuffer, uint32_t aCount)
   MOZ_ASSERT(aBuffer);
   MOZ_ASSERT(aCount > 0);
 
-  
-  TimeStamp start = TimeStamp::Now();
-  mChunkCount++;
-
-  
-  mBytesDecoded += aCount;
+  AutoRecordDecoderTelemetry telemetry(this, aCount);
 
   
   WriteInternal(aBuffer, aCount);
-
-  
-  mDecodeTime += (TimeStamp::Now() - start);
 }
 
 void
