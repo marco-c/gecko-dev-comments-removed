@@ -1205,6 +1205,15 @@ MediaFormatReader::Update(TrackType aTrack)
         LOGV("Nothing more to do");
         return;
       }
+    } else if (decoder.mDemuxEOS && !decoder.mNeedDraining &&
+               !decoder.mDraining && !decoder.mDrainComplete &&
+               decoder.mQueuedSamples.IsEmpty()) {
+      
+      
+      
+      
+      LOG("Rejecting %s promise: EOS", TrackTypeToStr(aTrack));
+      decoder.RejectPromise(END_OF_STREAM, __func__);
     }
   }
 
