@@ -319,7 +319,7 @@ class WinArtifactJob(ArtifactJob):
         'firefox/dependentlibs.list',
         'firefox/platform.ini',
         'firefox/application.ini',
-        'firefox/*.dll',
+        'firefox/**/*.dll',
         'firefox/*.exe',
     }
     
@@ -341,7 +341,8 @@ class WinArtifactJob(ArtifactJob):
                 if not any(mozpath.match(f.filename, p) for p in self.package_artifact_patterns):
                     continue
 
-                basename = mozpath.basename(f.filename)
+                
+                basename = mozpath.relpath(f.filename, "firefox")
                 self.log(logging.INFO, 'artifact',
                     {'basename': basename},
                     'Adding {basename} to processed archive')
