@@ -453,6 +453,13 @@ public:
 
 
   virtual bool GetDisplayPortAtLastImageVisibilityUpdate(nsRect* aDisplayPort) = 0;
+
+  
+
+
+
+
+  virtual void TriggerDisplayPortExpiration() = 0;
 };
 
 #endif

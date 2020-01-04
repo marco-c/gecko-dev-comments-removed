@@ -245,6 +245,11 @@ public:
   
 
 
+  static void RemoveDisplayPort(nsIContent* aContent);
+
+  
+
+
 
   static mozilla::layout::FrameChildListID GetChildListNameFor(nsIFrame* aChildFrame);
 

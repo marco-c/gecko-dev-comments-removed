@@ -1175,14 +1175,16 @@ nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
     }
   }
 
-  
-  
   nsIFrame* frame = GetScrollFrameFromContent(aContent);
   nsIScrollableFrame* scrollableFrame = frame ? frame->GetScrollTargetFrame() : nullptr;
   if (!scrollableFrame) {
     return true;
   }
 
+  scrollableFrame->TriggerDisplayPortExpiration();
+
+  
+  
   nsRect oldDisplayPort;
   bool hadDisplayPort =
     scrollableFrame->GetDisplayPortAtLastImageVisibilityUpdate(&oldDisplayPort);
@@ -1247,6 +1249,13 @@ bool
 nsLayoutUtils::HasCriticalDisplayPort(nsIContent* aContent)
 {
   return GetCriticalDisplayPort(aContent, nullptr);
+}
+
+void
+nsLayoutUtils::RemoveDisplayPort(nsIContent* aContent)
+{
+  aContent->DeleteProperty(nsGkAtoms::DisplayPort);
+  aContent->DeleteProperty(nsGkAtoms::DisplayPortMargins);
 }
 
 nsContainerFrame*

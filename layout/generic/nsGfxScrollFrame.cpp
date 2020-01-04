@@ -1909,6 +1909,10 @@ ScrollFrameHelper::~ScrollFrameHelper()
     mScrollActivityTimer->Cancel();
     mScrollActivityTimer = nullptr;
   }
+  if (mDisplayPortExpiryTimer) {
+    mDisplayPortExpiryTimer->Cancel();
+    mDisplayPortExpiryTimer = nullptr;
+  }
 }
 
 
@@ -2332,6 +2336,39 @@ bool ScrollFrameHelper::IsAlwaysActive() const
           styles.mVertical != NS_STYLE_OVERFLOW_HIDDEN);
 }
 
+ void
+RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure)
+{
+  ScrollFrameHelper* helper = static_cast<ScrollFrameHelper*>(aClosure);
+
+  
+  
+  
+  MOZ_ASSERT(helper->mDisplayPortExpiryTimer);
+  helper->mDisplayPortExpiryTimer = nullptr;
+
+  if (helper->IsAlwaysActive() || helper->mIsScrollParent) {
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsLayoutUtils::RemoveDisplayPort(helper->mOuter->GetContent());
+  helper->mOuter->SchedulePaint();
+}
+
 void ScrollFrameHelper::MarkNotRecentlyScrolled()
 {
   if (!mHasBeenScrolledRecently)
@@ -2355,6 +2392,36 @@ void ScrollFrameHelper::MarkRecentlyScrolled()
     }
     gScrollFrameActivityTracker->AddObject(this);
   }
+
+  
+  
+  ResetDisplayPortExpiryTimer();
+}
+
+void ScrollFrameHelper::ResetDisplayPortExpiryTimer()
+{
+  if (mDisplayPortExpiryTimer) {
+    mDisplayPortExpiryTimer->InitWithFuncCallback(
+      RemoveDisplayPortCallback, this,
+      gfxPrefs::APZDisplayPortExpiryTime(), nsITimer::TYPE_ONE_SHOT);
+  }
+}
+
+void ScrollFrameHelper::TriggerDisplayPortExpiration()
+{
+  if (IsAlwaysActive()) {
+    return;
+  }
+
+  if (!gfxPrefs::APZDisplayPortExpiryTime()) {
+    
+    return;
+  }
+
+  if (!mDisplayPortExpiryTimer) {
+    mDisplayPortExpiryTimer = do_CreateInstance("@mozilla.org/timer;1");
+  }
+  ResetDisplayPortExpiryTimer();
 }
 
 void ScrollFrameHelper::ScrollVisual()
