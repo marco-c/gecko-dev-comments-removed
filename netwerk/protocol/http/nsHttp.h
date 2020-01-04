@@ -86,6 +86,10 @@ typedef uint8_t nsHttpVersion;
 
 
 
+#define NS_HTTP_ERROR_SOFTLY         (1<<10)
+
+
+
 
 
 #define NS_HTTP_DEFAULT_PORT  80

@@ -874,6 +874,8 @@ nsHttpChannel::SetupTransaction()
     
     mTransaction = new nsHttpTransaction();
     LOG(("nsHttpChannel %p created nsHttpTransaction %p\n", this, mTransaction.get()));
+    mTransaction->SetTransactionObserver(mTransactionObserver);
+    mTransactionObserver = nullptr;
 
     
     if (mLoadFlags & LOAD_ANONYMOUS)
@@ -5734,7 +5736,7 @@ nsHttpChannel::BeginConnect()
     NS_GetOriginAttributes(this, originAttributes);
 
     RefPtr<AltSvcMapping> mapping;
-    if (mAllowAltSvc && 
+    if (!mConnectionInfo && mAllowAltSvc && 
         (scheme.Equals(NS_LITERAL_CSTRING("http")) ||
          scheme.Equals(NS_LITERAL_CSTRING("https"))) &&
         (!proxyInfo || proxyInfo->IsDirect()) &&
@@ -5778,6 +5780,9 @@ nsHttpChannel::BeginConnect()
         mapping->GetConnectionInfo(getter_AddRefs(mConnectionInfo), proxyInfo, originAttributes);
         Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, true);
         Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC_OE, !isHttps);
+    } else if (mConnectionInfo) {
+        LOG(("nsHttpChannel %p Using channel supplied connection info", this));
+        Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, false);
     } else {
         LOG(("nsHttpChannel %p Using default connection info", this));
 
@@ -7788,6 +7793,12 @@ nsHttpChannel::SetCouldBeSynthesized()
 {
   MOZ_ASSERT(!BypassServiceWorker());
   mResponseCouldBeSynthesized = true;
+}
+
+void
+nsHttpChannel::SetConnectionInfo(nsHttpConnectionInfo *aCI)
+{
+    mConnectionInfo = aCI ? aCI->Clone() : nullptr;
 }
 
 NS_IMETHODIMP
