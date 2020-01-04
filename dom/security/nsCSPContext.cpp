@@ -730,7 +730,7 @@ nsCSPContext::logToConsole(const char16_t* aName,
 
 void
 StripURIForReporting(nsIURI* aURI,
-                     nsIPrincipal* aProtectedResourcePrincipal,
+                     nsIURI* aSelfURI,
                      nsACString& outStrippedURI)
 {
   
@@ -751,9 +751,7 @@ StripURIForReporting(nsIURI* aURI,
 
   
   
-  bool sameOrigin =
-    NS_SUCCEEDED(aProtectedResourcePrincipal->CheckMayLoad(aURI, false, false));
-  if (!sameOrigin) {
+  if (!NS_SecurityCompareURIs(aSelfURI, aURI, false)) {
     
     
     aURI->GetPrePath(outStrippedURI);
@@ -810,7 +808,7 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
     nsCOMPtr<nsIURI> uri = do_QueryInterface(aBlockedContentSource);
     
     if (uri) {
-      StripURIForReporting(uri, mLoadingPrincipal, reportBlockedURI);
+      StripURIForReporting(uri, mSelfURI, reportBlockedURI);
     } else {
       nsCOMPtr<nsISupportsCString> cstr = do_QueryInterface(aBlockedContentSource);
       if (cstr) {
@@ -827,7 +825,7 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
 
   
   nsAutoCString reportDocumentURI;
-  StripURIForReporting(mSelfURI, mLoadingPrincipal, reportDocumentURI);
+  StripURIForReporting(mSelfURI, mSelfURI, reportDocumentURI);
   report.mCsp_report.mDocument_uri = NS_ConvertUTF8toUTF16(reportDocumentURI);
 
   
