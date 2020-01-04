@@ -21,6 +21,7 @@
 #include "nsRegion.h"
 #include <vector>
 #include "mozilla/WidgetUtils.h"
+#include "CompositorWidgetProxy.h"
 
 
 

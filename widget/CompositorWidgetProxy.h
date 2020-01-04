@@ -8,6 +8,11 @@
 #include "nsISupports.h"
 #include "mozilla/RefPtr.h"
 #include "Units.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/layers/LayersTypes.h"
+
+class nsIWidget;
+class nsBaseWidget;
 
 namespace mozilla {
 namespace layers {
@@ -27,6 +32,8 @@ namespace widget {
 class CompositorWidgetProxy
 {
 public:
+  NS_INLINE_DECL_REFCOUNTING(mozilla::widget::CompositorWidgetProxy)
+
   
 
 
@@ -75,7 +82,7 @@ public:
 
 
 
-  virtual already_AddRefed<gfx::DrawTarget> StartRemoteDrawing() = 0;
+  virtual already_AddRefed<gfx::DrawTarget> StartRemoteDrawing();
   virtual already_AddRefed<gfx::DrawTarget>
   StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
                              layers::BufferMode* aBufferMode)
@@ -103,24 +110,8 @@ public:
 
 
 
-
-  virtual void CleanupRemoteDrawing() = 0;
-
-  
-
-
-
-
   virtual void CleanupWindowEffects()
   {}
-
-  
-
-
-  virtual already_AddRefed<gfx::DrawTarget>
-  CreateBackBufferDrawTarget(gfx::DrawTarget* aScreenTarget,
-                             const LayoutDeviceIntRect& aRect,
-                             const LayoutDeviceIntRect& aClearRect) = 0;
 
   
 
@@ -144,9 +135,7 @@ public:
 
 
 
-  virtual uint32_t GetGLFrameBufferFormat() {
-    return 0; 
-  }
+  virtual uint32_t GetGLFrameBufferFormat();
 
   
 
@@ -164,8 +153,64 @@ public:
 
 
   virtual nsIWidget* RealWidget() = 0;
+
+  
+
+
+
+
+
+  virtual void CleanupRemoteDrawing();
+
+  
+
+
+  virtual already_AddRefed<gfx::DrawTarget>
+  CreateBackBufferDrawTarget(gfx::DrawTarget* aScreenTarget,
+                             const LayoutDeviceIntRect& aRect,
+                             const LayoutDeviceIntRect& aClearRect);
+
+protected:
+  virtual ~CompositorWidgetProxy();
+
+private:
+  
+  RefPtr<gfx::DrawTarget> mLastBackBuffer;
 };
 
+
+
+class CompositorWidgetProxyWrapper : public CompositorWidgetProxy
+{
+public:
+  explicit CompositorWidgetProxyWrapper(nsBaseWidget* aWidget);
+
+  virtual bool PreRender(layers::LayerManagerComposite* aManager) override;
+  virtual void PostRender(layers::LayerManagerComposite* aManager) override;
+  virtual void DrawWindowUnderlay(layers::LayerManagerComposite* aManager,
+                                  LayoutDeviceIntRect aRect) override;
+  virtual void DrawWindowOverlay(layers::LayerManagerComposite* aManager,
+                                 LayoutDeviceIntRect aRect) override;
+  virtual already_AddRefed<gfx::DrawTarget> StartRemoteDrawing() override;
+  virtual already_AddRefed<gfx::DrawTarget>
+  StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
+                             layers::BufferMode* aBufferMode) override;
+  virtual void EndRemoteDrawing() override;
+  virtual void EndRemoteDrawingInRegion(gfx::DrawTarget* aDrawTarget,
+                                        LayoutDeviceIntRegion& aInvalidRegion) override;
+  virtual void CleanupRemoteDrawing() override;
+  virtual void CleanupWindowEffects() override;
+  virtual bool InitCompositor(layers::Compositor* aCompositor) override;
+  virtual LayoutDeviceIntSize GetClientSize() override;
+  virtual uint32_t GetGLFrameBufferFormat() override;
+  virtual layers::Composer2D* GetComposer2D() override;
+
+  
+  nsIWidget* RealWidget() override;
+
+private:
+  nsBaseWidget* mWidget;
+};
 
 } 
 } 
