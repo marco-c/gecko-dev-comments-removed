@@ -691,38 +691,23 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
     }
     if (containerDisp->IsFlexOrGridDisplayType() &&
         GetPseudo() != nsCSSAnonBoxes::mozNonElement) {
+      
+      
+      
+      
+      
+      
       uint8_t displayVal = disp->mDisplay;
-      
-      
-      
-      
-      
-      if (NS_STYLE_DISPLAY_TABLE_CAPTION      != displayVal &&
-          NS_STYLE_DISPLAY_TABLE_ROW_GROUP    != displayVal &&
-          NS_STYLE_DISPLAY_TABLE_HEADER_GROUP != displayVal &&
-          NS_STYLE_DISPLAY_TABLE_FOOTER_GROUP != displayVal &&
-          NS_STYLE_DISPLAY_TABLE_COLUMN_GROUP != displayVal &&
-          NS_STYLE_DISPLAY_TABLE_COLUMN       != displayVal &&
-          NS_STYLE_DISPLAY_TABLE_ROW          != displayVal &&
-          NS_STYLE_DISPLAY_TABLE_CELL         != displayVal) {
-
-        
-        
-        
-        
-        
-        
-        nsRuleNode::EnsureBlockDisplay(displayVal);
-        if (displayVal != disp->mDisplay) {
-          NS_ASSERTION(!disp->IsAbsolutelyPositionedStyle(),
-                       "We shouldn't be changing the display value of "
-                       "positioned content (and we should have already "
-                       "converted its display value to be block-level...)");
-          nsStyleDisplay* mutable_display =
-            static_cast<nsStyleDisplay*>(GetUniqueStyleData(eStyleStruct_Display));
-          disp = mutable_display;
-          mutable_display->mDisplay = displayVal;
-        }
+      nsRuleNode::EnsureBlockDisplay(displayVal);
+      if (displayVal != disp->mDisplay) {
+        NS_ASSERTION(!disp->IsAbsolutelyPositionedStyle(),
+                     "We shouldn't be changing the display value of "
+                     "positioned content (and we should have already "
+                     "converted its display value to be block-level...)");
+        nsStyleDisplay* mutable_display =
+          static_cast<nsStyleDisplay*>(GetUniqueStyleData(eStyleStruct_Display));
+        disp = mutable_display;
+        mutable_display->mDisplay = displayVal;
       }
     }
   }
