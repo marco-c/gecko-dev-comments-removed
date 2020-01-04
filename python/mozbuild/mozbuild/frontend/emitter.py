@@ -26,7 +26,6 @@ from .data import (
     AndroidExtraPackages,
     AndroidExtraResDirs,
     AndroidResDirs,
-    BaseSources,
     BrandingFiles,
     ChromeManifestEntry,
     ConfigFileSubstitution,
@@ -60,7 +59,6 @@ from .data import (
     PreprocessedTestWebIDLFile,
     PreprocessedWebIDLFile,
     Program,
-    RustRlibLibrary,
     SdkFiles,
     SharedLibrary,
     SimpleProgram,
@@ -195,7 +193,7 @@ class TreeMetadataEmitter(LoggingMixin):
     def _emit_libs_derived(self, contexts):
         
         for lib in (l for libs in self._libs.values() for l in libs):
-            if not isinstance(lib, (StaticLibrary, RustRlibLibrary)) or not lib.link_into:
+            if not isinstance(lib, StaticLibrary) or not lib.link_into:
                 continue
             if lib.link_into not in self._libs:
                 raise SandboxValidationError(
@@ -597,7 +595,6 @@ class TreeMetadataEmitter(LoggingMixin):
         if not has_linkables:
             return
 
-        rust_sources = []
         sources = defaultdict(list)
         gen_sources = defaultdict(list)
         all_flags = {}
@@ -693,41 +690,7 @@ class TreeMetadataEmitter(LoggingMixin):
                     if (variable.startswith('UNIFIED_') and
                             'FILES_PER_UNIFIED_FILE' in context):
                         arglist.append(context['FILES_PER_UNIFIED_FILE'])
-                    obj = cls(*arglist)
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    if canonical_suffix == '.rs':
-                        if not final_lib:
-                            raise SandboxValidationError(
-                                'Rust sources must be destined for a FINAL_LIBRARY')
-                        
-                        
-                        
-                        
-                        if libname and shared_lib:
-                            raise SandboxValidationError(
-                                'No Rust sources permitted as an immediate input of %s: %s' % (shlib, files))
-                        rust_sources.append(obj)
-                    yield obj
-
-        
-        
-        if libname and static_lib:
-            for s in rust_sources:
-                for f in s.files:
-                    (base, _) = mozpath.splitext(mozpath.basename(f))
-                    crate_name = context.relsrcdir.replace('/', '_') + '_' + base
-                    rlib_filename = 'lib' + base + '.rlib'
-                    lib = RustRlibLibrary(context, libname, crate_name,
-                                          rlib_filename, final_lib)
-                    self._libs[libname].append(lib)
-                    self._linkage.append((context, lib, 'USE_LIBS'))
+                    yield cls(*arglist)
 
         for f, flags in all_flags.iteritems():
             if flags.flags:
