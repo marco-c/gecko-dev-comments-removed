@@ -183,6 +183,9 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "nlsp.dll", MAKE_VERSION(6, 23, 2012, 19) },
 
+  
+  { "am32-34121.dll", MAKE_VERSION(4, 73, 0, 30530) },
+
   { nullptr, 0 }
 };
 
