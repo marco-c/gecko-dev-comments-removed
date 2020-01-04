@@ -20,7 +20,7 @@ enum pType {
 
 
 
-extern mozilla::LazyLogModule gNegotiateLog;
+extern PRLogModuleInfo* gNegotiateLog;
 
 #define LOG(args) MOZ_LOG(gNegotiateLog, mozilla::LogLevel::Debug, args)
 

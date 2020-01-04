@@ -39,7 +39,7 @@
 
 #define VACUUM_INTERVAL_SECONDS 30 * 86400 // 30 days.
 
-extern mozilla::LazyLogModule gStorageLog;
+extern PRLogModuleInfo *gStorageLog;
 
 namespace mozilla {
 namespace storage {
