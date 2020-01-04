@@ -93,13 +93,7 @@ function run_test() {
   
   expected_fail("www.1\u05DE\u05D9\u05E5.com");
   
-  expected_fail("www.!\u05DE\u05D9\u05E5.com");
-  
-  expected_fail("www.\u05DE\u05D9\u05E5!.com");
-
-  
-  
-
+  expected_fail("www.\u05DE\u05D9\u05E51.com");
   
   expected_pass("www.\u05DE\u05D9\u05E51\u05E4\u05D8\u05DC.com");
 }

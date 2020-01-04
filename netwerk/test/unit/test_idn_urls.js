@@ -12,15 +12,8 @@ const testcases = [
     
     ["I♥NY",     "xn--iny-zx5a",                     false, false, false],
 
-
-
-
-
-
-
-
-
-
+    
+    ["حلا\u061cل", "xn--bgbvr6gc",                    false, false, false],
 
     
     ["乾燥肌・石けん", "xn--08j4gylj12hz80b0uhfup",     false, true,  true],

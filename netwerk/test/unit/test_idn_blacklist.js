@@ -144,25 +144,19 @@ function run_test() {
 	} catch(e) {
 	    result = ".com";
 	}
-        
-        
-        
-        if (result != "xn--zn7c.com") {
+        if (punycodeURL.substr(0, 4) == "xn--") {
+            
+            
+            do_check_eq(escape(result), escape(punycodeURL));
 
-            if (punycodeURL.substr(0, 4) == "xn--") {
-                
-                
-                equal(escape(result), escape(punycodeURL));
-
-                result = idnService.convertToDisplayIDN(punycodeURL, isASCII);
-                equal(escape(result), escape(punycodeURL));
-            } else {
-                
-                
-                
-                
-                equal(escape(result), escape(punycodeURL));
-            }
+            result = idnService.convertToDisplayIDN(punycodeURL, isASCII);
+            do_check_eq(escape(result), escape(punycodeURL));
+        } else {
+            
+            
+            
+            
+            do_check_eq(escape(result), escape(punycodeURL));
         }
     }
     pbi.setBoolPref("network.IDN.whitelist.com", oldWhitelistCom);
