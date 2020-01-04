@@ -12,6 +12,7 @@
 #include "nsCOMPtr.h"
 #include "nsStringFwd.h"
 #include "mozilla/Logging.h"
+#include "mozilla/BasePrincipal.h"
 #include "ARefBase.h"
 
 
@@ -39,6 +40,7 @@ public:
                          const nsACString &npnToken,
                          const nsACString &username,
                          nsProxyInfo *proxyInfo,
+                         const NeckoOriginAttributes &originAttributes,
                          bool endToEndSSL = false);
 
     
@@ -49,6 +51,7 @@ public:
                          const nsACString &npnToken,
                          const nsACString &username,
                          nsProxyInfo *proxyInfo,
+                         const NeckoOriginAttributes &originAttributes,
                          const nsACString &routedHost,
                          int32_t routedPort);
 
@@ -120,6 +123,8 @@ public:
     const nsCString &GetNPNToken() { return mNPNToken; }
     const nsCString &GetUsername() { return mUsername; }
 
+    const NeckoOriginAttributes &GetOriginAttributes() { return mOriginAttributes; }
+
     
     bool UsingProxy();
 
@@ -147,6 +152,7 @@ private:
               const nsACString &npnToken,
               const nsACString &username,
               nsProxyInfo* proxyInfo,
+              const NeckoOriginAttributes &originAttributes,
               bool EndToEndSSL);
     void SetOriginServer(const nsACString &host, int32_t port);
 
@@ -164,6 +170,7 @@ private:
     bool                   mEndToEndSSL;
     bool                   mUsingConnect;  
     nsCString              mNPNToken;
+    NeckoOriginAttributes  mOriginAttributes;
 
 
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo)
