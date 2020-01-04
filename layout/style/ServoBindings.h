@@ -226,6 +226,11 @@ void Gecko_StoreStyleDifference(RawGeckoNode* node, nsChangeHint change);
 void Gecko_EnsureTArrayCapacity(void* array, size_t capacity, size_t elem_size);
 
 
+
+
+
+void Gecko_ClearPODTArray(void* array, size_t elem_size, size_t elem_align);
+
 void Gecko_EnsureImageLayersLength(nsStyleImageLayers* layers, size_t len);
 
 void Gecko_InitializeImageLayer(nsStyleImageLayers::Layer* layer,
@@ -236,11 +241,6 @@ void Gecko_ResetStyleCoord(nsStyleUnit* unit, nsStyleUnion* value);
 
 
 void Gecko_SetStyleCoordCalcValue(nsStyleUnit* unit, nsStyleUnion* value, nsStyleCoord::CalcValue calc);
-
-void Gecko_CopyClipPathValueFrom(mozilla::StyleClipPath* dst, const mozilla::StyleClipPath* src);
-
-void Gecko_DestroyClipPath(mozilla::StyleClipPath* clip);
-mozilla::StyleBasicShape* Gecko_NewBasicShape(mozilla::StyleBasicShapeType type);
 
 NS_DECL_THREADSAFE_FFI_REFCOUNTING(nsStyleCoord::Calc, Calc);
 

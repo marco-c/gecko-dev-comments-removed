@@ -709,8 +709,22 @@ Gecko_CreateGradient(uint8_t aShape,
 void
 Gecko_EnsureTArrayCapacity(void* aArray, size_t aCapacity, size_t aElemSize)
 {
-  auto base = reinterpret_cast<nsTArray_base<nsTArrayInfallibleAllocator, nsTArray_CopyWithMemutils> *>(aArray);
+  auto base =
+    reinterpret_cast<nsTArray_base<nsTArrayInfallibleAllocator,
+                                   nsTArray_CopyWithMemutils> *>(aArray);
+
   base->EnsureCapacity<nsTArrayInfallibleAllocator>(aCapacity, aElemSize);
+}
+
+void
+Gecko_ClearPODTArray(void* aArray, size_t aElementSize, size_t aElementAlign)
+{
+  auto base =
+    reinterpret_cast<nsTArray_base<nsTArrayInfallibleAllocator,
+                                   nsTArray_CopyWithMemutils> *>(aArray);
+
+  base->template ShiftData<nsTArrayInfallibleAllocator>(0, base->Length(), 0,
+                                                        aElementSize, aElementAlign);
 }
 
 void
@@ -744,28 +758,6 @@ Gecko_SetStyleCoordCalcValue(nsStyleUnit* aUnit, nsStyleUnion* aValue, nsStyleCo
   *aUnit = nsStyleUnit::eStyleUnit_Calc;
   aValue->mPointer = calcRef;
   calcRef->AddRef();
-}
-
-void
-Gecko_CopyClipPathValueFrom(mozilla::StyleClipPath* aDst, const mozilla::StyleClipPath* aSrc)
-{
-  MOZ_ASSERT(aDst);
-  MOZ_ASSERT(aSrc);
-
-  *aDst = *aSrc;
-}
-
-void
-Gecko_DestroyClipPath(mozilla::StyleClipPath* aClip)
-{
-  aClip->~StyleClipPath();
-}
-
-mozilla::StyleBasicShape*
-Gecko_NewBasicShape(mozilla::StyleBasicShapeType aType)
-{
-  RefPtr<StyleBasicShape> ptr = new mozilla::StyleBasicShape(aType);
-  return ptr.forget().take();
 }
 
 NS_IMPL_THREADSAFE_FFI_REFCOUNTING(nsStyleCoord::Calc, Calc);
