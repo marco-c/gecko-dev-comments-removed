@@ -3249,7 +3249,8 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
     
     MOZ_ASSERT(content->GetProperty(nsGkAtoms::DisplayPortBase));
     nsRect displayPort;
-    usingDisplayPort = nsLayoutUtils::GetDisplayPortRelativeToScrollFrame(content, &displayPort);
+    usingDisplayPort =
+      nsLayoutUtils::GetDisplayPort(content, &displayPort, RelativeTo::ScrollFrame);
 
     
     if (usingDisplayPort) {
@@ -3346,7 +3347,8 @@ ScrollFrameHelper::IsRectNearlyVisible(const nsRect& aRect) const
 {
   
   nsRect displayPort;
-  bool usingDisplayport = nsLayoutUtils::GetDisplayPortRelativeToScrollFrame(mOuter->GetContent(), &displayPort);
+  bool usingDisplayport =
+    nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &displayPort, RelativeTo::ScrollFrame);
   return aRect.Intersects(ExpandRectToNearlyVisible(usingDisplayport ? displayPort : mScrollPort));
 }
 

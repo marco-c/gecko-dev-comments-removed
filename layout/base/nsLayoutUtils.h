@@ -110,6 +110,12 @@ struct DisplayPortMarginsPropertyData {
 } 
 
 
+enum class RelativeTo {
+  ScrollPort,
+  ScrollFrame
+};
+
+
 
 
 
@@ -169,12 +175,8 @@ public:
 
 
 
-  static bool GetDisplayPort(nsIContent* aContent, nsRect *aResult);
-
-  
-
-
-  static bool GetDisplayPortRelativeToScrollFrame(nsIContent* aContent, nsRect *aResult);
+  static bool GetDisplayPort(nsIContent* aContent, nsRect *aResult,
+    RelativeTo aRelativeTo = RelativeTo::ScrollPort);
 
   
 
@@ -188,10 +190,10 @@ public:
 
 
 
-
-  static bool GetDisplayPortRelativeToScrollFrameForVisibilityTesting(
+  static bool GetDisplayPortForVisibilityTesting(
     nsIContent* aContent,
-    nsRect* aResult);
+    nsRect* aResult,
+    RelativeTo aRelativeTo = RelativeTo::ScrollPort);
 
   enum class RepaintMode : uint8_t {
     Repaint,
