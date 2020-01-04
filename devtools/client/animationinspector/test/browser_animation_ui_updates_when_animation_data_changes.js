@@ -9,12 +9,8 @@
 
 add_task(function*() {
   yield addTab(TEST_URL_ROOT + "doc_simple_animation.html");
+  let {panel, controller, inspector} = yield openAnimationInspector();
 
-  let ui = yield openAnimationInspector();
-  yield testDataUpdates(ui);
-});
-
-function* testDataUpdates({panel, controller, inspector}) {
   info("Select the test node");
   yield selectNode(".animated", inspector);
 
@@ -28,15 +24,14 @@ function* testDataUpdates({panel, controller, inspector}) {
 
   
   let expectedTotalDuration = 1695 * 1000;
-  let timeRatio = expectedTotalDuration / timeBlockEl.offsetWidth;
 
   
   
   
   let delayWidth = parseFloat(timeBlockEl.querySelector(".delay").style.width);
-  is(Math.round(delayWidth * timeRatio), 45 * 1000,
+  is(Math.round(delayWidth * expectedTotalDuration / 100), 45 * 1000,
     "The timeline has the right delay");
-}
+});
 
 function* setStyle(animation, panel, name, value) {
   info("Change the animation style via the content DOM. Setting " +
