@@ -11,14 +11,12 @@
 #include "nsAtomicContainerFrame.h"
 #include "nsDisplayList.h"
 
-typedef nsAtomicContainerFrame nsFormControlFrameSuper;
 
 
 
 
 
-
-class nsFormControlFrame : public nsFormControlFrameSuper,
+class nsFormControlFrame : public nsAtomicContainerFrame,
                            public nsIFormControlFrame
 {
 public:
@@ -33,7 +31,7 @@ public:
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
-    return nsFormControlFrameSuper::IsFrameOfType(aFlags &
+    return nsAtomicContainerFrame::IsFrameOfType(aFlags &
       ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
   }
 
@@ -72,7 +70,7 @@ public:
 
 
 
-  virtual nsresult HandleEvent(nsPresContext* aPresContext, 
+  virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus) override;
 
