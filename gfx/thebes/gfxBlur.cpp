@@ -815,8 +815,27 @@ ComputeRectsForInsetBoxShadow(IntSize aBlurRadius,
                                     ceil(cornerWidth) + rectBufferSize.width);
   aOutPathMargins = innerMargin;
 
-  IntSize minInnerSize(innerMargin.LeftRight() + 1,
-                       innerMargin.TopBottom() + 1);
+  
+  
+  
+  IntSize minBlurSize(std::abs(aSpreadRadius.width) + std::abs(aBlurRadius.width),
+                      std::abs(aSpreadRadius.height) + std::abs(aBlurRadius.height));
+
+  IntMargin minInnerMargins = IntMargin(ceil(cornerHeight) + minBlurSize.height,
+                                        ceil(cornerWidth) + minBlurSize.width,
+                                        ceil(cornerHeight) + minBlurSize.height,
+                                        ceil(cornerWidth) + minBlurSize.width);
+
+  IntSize minInnerSize(minInnerMargins.LeftRight() + 1,
+                       minInnerMargins.TopBottom() + 1);
+
+  if (aShadowClipRect.height < minInnerSize.height) {
+    minInnerSize.height = aShadowClipRect.height;
+  }
+
+  if (aShadowClipRect.width < minInnerSize.width) {
+    minInnerSize.width = aShadowClipRect.width;
+  }
 
   
   IntSize minOuterSize(minInnerSize);
