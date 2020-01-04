@@ -979,12 +979,12 @@ MediaDecoderStateMachine::OnVideoPopped(const RefPtr<MediaData>& aSample)
 
 void
 MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
-                                       MediaDecoderReader::NotDecodedReason aReason)
+                                       const MediaResult& aError)
 {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(mState != DECODER_STATE_SEEKING);
 
-  SAMPLE_LOG("OnNotDecoded (aType=%u, aReason=%u)", aType, aReason);
+  SAMPLE_LOG("OnNotDecoded (aType=%u, aError=%u)", aType, aError.Code());
   bool isAudio = aType == MediaData::AUDIO_DATA;
   MOZ_ASSERT_IF(!isAudio, aType == MediaData::VIDEO_DATA);
 
@@ -994,14 +994,8 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
   }
 
   
-  if (aReason == MediaDecoderReader::DECODE_ERROR) {
-    DecodeError();
-    return;
-  }
-
   
-  
-  if (aReason == MediaDecoderReader::WAITING_FOR_DATA) {
+  if (aError == NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA) {
     MOZ_ASSERT(mReader->IsWaitForDataSupported(),
                "Readers that send WAITING_FOR_DATA need to implement WaitForData");
     mReader->WaitForData(aType);
@@ -1017,7 +1011,7 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
     return;
   }
 
-  if (aReason == MediaDecoderReader::CANCELED) {
+  if (aError == NS_ERROR_DOM_MEDIA_CANCELED) {
     if (isAudio) {
       EnsureAudioDecodeTaskQueued();
     } else {
@@ -1027,8 +1021,13 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
   }
 
   
+  if (aError != NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
+    DecodeError();
+    return;
+  }
+
   
-  MOZ_ASSERT(aReason == MediaDecoderReader::END_OF_STREAM);
+  
   if (isAudio) {
     AudioQueue().Finish();
     StopPrerollingAudio();
@@ -1219,7 +1218,7 @@ MediaDecoderStateMachine::SetMediaDecoderReaderWrapperCallback()
     if (aData.is<MediaData*>()) {
       OnAudioDecoded(aData.as<MediaData*>());
     } else {
-      OnNotDecoded(MediaData::AUDIO_DATA, aData.as<MediaDecoderReader::NotDecodedReason>());
+      OnNotDecoded(MediaData::AUDIO_DATA, aData.as<MediaResult>());
     }
   });
 
@@ -1230,7 +1229,7 @@ MediaDecoderStateMachine::SetMediaDecoderReaderWrapperCallback()
       auto&& v = aData.as<Type>();
       OnVideoDecoded(Get<0>(v), Get<1>(v));
     } else {
-      OnNotDecoded(MediaData::VIDEO_DATA, aData.as<MediaDecoderReader::NotDecodedReason>());
+      OnNotDecoded(MediaData::VIDEO_DATA, aData.as<MediaResult>());
     }
   });
 
