@@ -1180,6 +1180,23 @@ protected:
 
 
 
+enum class BlockingMode
+{
+  
+
+
+
+  CREATION,
+  
+
+
+
+  END_EXISTING,
+};
+
+
+
+
 
 
 
@@ -1258,16 +1275,39 @@ public:
 
 
 
-  already_AddRefed<media::Pledge<bool, nsresult>> BlockSourceTrackId(TrackID aTrackId);
+  already_AddRefed<media::Pledge<bool, nsresult>> BlockSourceTrackId(TrackID aTrackId,
+                                                                     BlockingMode aBlockingMode);
 private:
-  void BlockSourceTrackIdImpl(TrackID aTrackId);
+  void BlockSourceTrackIdImpl(TrackID aTrackId, BlockingMode aBlockingMode);
 
 public:
   
   
   bool PassTrackThrough(TrackID aTrackId) {
-    return !mBlockedTracks.Contains(aTrackId) &&
-           (mSourceTrack == TRACK_ANY || mSourceTrack == aTrackId);
+    bool blocked = false;
+    for (auto pair : mBlockedTracks) {
+      if (pair.first() == aTrackId &&
+          (pair.second() == BlockingMode::CREATION ||
+           pair.second() == BlockingMode::END_EXISTING)) {
+        blocked = true;
+        break;
+      }
+    }
+    return !blocked && (mSourceTrack == TRACK_ANY || mSourceTrack == aTrackId);
+  }
+
+  
+  
+  bool AllowCreationOf(TrackID aTrackId) {
+    bool blocked = false;
+    for (auto pair : mBlockedTracks) {
+      if (pair.first() == aTrackId &&
+          pair.second() == BlockingMode::CREATION) {
+        blocked = true;
+        break;
+      }
+    }
+    return !blocked && (mSourceTrack == TRACK_ANY || mSourceTrack == aTrackId);
   }
 
   uint16_t InputNumber() const { return mInputNumber; }
@@ -1322,7 +1362,9 @@ private:
   
   const uint16_t mInputNumber;
   const uint16_t mOutputNumber;
-  nsTArray<TrackID> mBlockedTracks;
+
+  typedef Pair<TrackID, BlockingMode> BlockedTrack;
+  nsTArray<BlockedTrack> mBlockedTracks;
 
   
   MediaStreamGraphImpl* mGraph;
