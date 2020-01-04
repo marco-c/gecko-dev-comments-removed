@@ -1446,7 +1446,7 @@ pref("security.cert_pinning.enforcement_level", 1);
 
 
 
-pref("security.pki.sha1_enforcement_level", 3);
+pref("security.pki.sha1_enforcement_level", 0);
 
 
 

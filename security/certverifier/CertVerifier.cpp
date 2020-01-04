@@ -484,7 +484,7 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
       
       
       
-      if (sha1ModeResult && mSHA1Mode == SHA1Mode::ImportedRoot) {
+      if (sha1ModeResult && mSHA1Mode == SHA1Mode::Allowed) {
         *sha1ModeResult = SHA1ModeResult::Failed;
       }
 
