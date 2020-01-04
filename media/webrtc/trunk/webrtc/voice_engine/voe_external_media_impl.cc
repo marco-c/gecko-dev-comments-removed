@@ -383,16 +383,23 @@ int VoEExternalMediaImpl::ExternalPlayoutGetData(
 
     AudioFrame audioFrame;
 
+    uint32_t channels = shared_->output_mixer()->GetOutputChannelCount();
+    
+    
+    if (channels == 0) {
+      channels = 1;
+    }
+
     
     shared_->output_mixer()->MixActiveChannels();
     shared_->output_mixer()->DoOperationsOnCombinedSignal(true);
-    shared_->output_mixer()->GetMixedAudio(samplingFreqHz, 1, &audioFrame);
+    shared_->output_mixer()->GetMixedAudio(samplingFreqHz, channels, &audioFrame);
 
     
     memcpy(speechData10ms,
            audioFrame.data_,
-           sizeof(int16_t)*(audioFrame.samples_per_channel_));
-    lengthSamples = audioFrame.samples_per_channel_;
+           sizeof(int16_t)*audioFrame.samples_per_channel_*channels);
+    lengthSamples = audioFrame.samples_per_channel_ * channels;
 
     
     playout_delay_ms_ = current_delay_ms;

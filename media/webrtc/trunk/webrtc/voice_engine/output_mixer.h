@@ -117,6 +117,8 @@ public:
     
     void APMAnalyzeReverseStream(AudioFrame &audioFrame);
 
+    int GetOutputChannelCount();
+
 private:
     OutputMixer(uint32_t instanceId);
     int InsertInbandDtmfTone();
