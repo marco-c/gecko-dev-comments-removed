@@ -388,6 +388,20 @@ function isInvalidCachedGuidError(error) {
 
 
 
+var GUIDMissing = Task.async(function* (guid) {
+  try {
+    yield PlacesUtils.promiseItemId(guid);
+    return false;
+  } catch (ex) {
+    if (ex.message == "no item found for the given GUID") {
+      return true;
+    }
+    throw ex;
+  }
+});
+
+
+
 
 var updateTagQueryFolder = Task.async(function* (item) {
   if (item.kind != BookmarkSyncUtils.KINDS.QUERY || !item.folder || !item.url ||
@@ -462,10 +476,10 @@ var reparentOrphans = Task.async(function* (item) {
 
 var insertSyncBookmark = Task.async(function* (insertInfo) {
   let requestedParentGuid = insertInfo.parentGuid;
-  let parent = yield PlacesUtils.bookmarks.fetch(requestedParentGuid);
+  let isOrphan = yield GUIDMissing(insertInfo.parentGuid);
 
   
-  if (parent) {
+  if (!isOrphan) {
     BookmarkSyncLog.debug(`insertSyncBookmark: Item ${
       insertInfo.guid} is not an orphan`);
   } else {
@@ -481,7 +495,7 @@ var insertSyncBookmark = Task.async(function* (insertInfo) {
 
   let newItem;
   if (insertInfo.kind == BookmarkSyncUtils.KINDS.LIVEMARK) {
-    newItem = yield insertSyncLivemark(parent, insertInfo);
+    newItem = yield insertSyncLivemark(insertInfo);
   } else {
     let item = yield PlacesUtils.bookmarks.insert(insertInfo);
     let newId = yield PlacesUtils.promiseItemId(item.guid);
@@ -493,7 +507,7 @@ var insertSyncBookmark = Task.async(function* (insertInfo) {
   }
 
   
-  if (!parent) {
+  if (isOrphan) {
     yield annotateOrphan(newItem, requestedParentGuid);
   }
 
@@ -504,7 +518,7 @@ var insertSyncBookmark = Task.async(function* (insertInfo) {
 });
 
 
-var insertSyncLivemark = Task.async(function* (requestedParent, insertInfo) {
+var insertSyncLivemark = Task.async(function* (insertInfo) {
   let parentId = yield PlacesUtils.promiseItemId(insertInfo.parentGuid);
   let parentIsLivemark = PlacesUtils.annotations.itemHasAnnotation(parentId,
     PlacesUtils.LMANNO_FEEDURI);
@@ -693,8 +707,8 @@ var updateSyncBookmark = Task.async(function* (updateInfo) {
       if (PlacesUtils.isRootItem(oldId)) {
         throw new Error(`Cannot move Places root ${oldId}`);
       }
-      let parent = yield PlacesUtils.bookmarks.fetch(requestedParentGuid);
-      if (parent) {
+      isOrphan = yield GUIDMissing(requestedParentGuid);
+      if (!isOrphan) {
         BookmarkSyncLog.debug(`updateSyncBookmark: Item ${
           updateInfo.guid} is not an orphan`);
       } else {
@@ -704,7 +718,6 @@ var updateSyncBookmark = Task.async(function* (updateInfo) {
         BookmarkSyncLog.trace(`updateSyncBookmark: Item ${
           updateInfo.guid} is an orphan: could not find parent ${
           requestedParentGuid}`);
-        isOrphan = true;
         delete updateInfo.parentGuid;
       }
       
