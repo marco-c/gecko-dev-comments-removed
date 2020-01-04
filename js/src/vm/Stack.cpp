@@ -356,33 +356,17 @@ InterpreterFrame::popWith(JSContext* cx)
 }
 
 void
-InterpreterFrame::mark(JSTracer* trc)
+InterpreterFrame::trace(JSTracer* trc, Value* sp, jsbytecode* pc)
 {
-    
+    TraceRoot(trc, &scopeChain_, "scope chain");
+    TraceRoot(trc, &script_, "script");
 
-
-
-
-    TraceManuallyBarrieredEdge(trc, &scopeChain_, "scope chain");
     if (flags_ & HAS_ARGS_OBJ)
-        TraceManuallyBarrieredEdge(trc, &argsObj_, "arguments");
-    TraceManuallyBarrieredEdge(trc, &script_, "script");
-    if (trc->isMarkingTracer())
-        script()->compartment()->zone()->active = true;
+        TraceRoot(trc, &argsObj_, "arguments");
+
     if (hasReturnValue())
-        TraceManuallyBarrieredEdge(trc, &rval_, "rval");
-}
+        TraceRoot(trc, &rval_, "rval");
 
-void
-InterpreterFrame::markValues(JSTracer* trc, unsigned start, unsigned end)
-{
-    if (start < end)
-        TraceRootRange(trc, end - start, slots() + start, "vm_stack");
-}
-
-void
-InterpreterFrame::markValues(JSTracer* trc, Value* sp, jsbytecode* pc)
-{
     MOZ_ASSERT(sp >= slots());
 
     if (hasArgs()) {
@@ -405,18 +389,28 @@ InterpreterFrame::markValues(JSTracer* trc, Value* sp, jsbytecode* pc)
 
     if (nfixed == nlivefixed) {
         
-        markValues(trc, 0, sp - slots());
+        traceValues(trc, 0, sp - slots());
     } else {
         
-        markValues(trc, nfixed, sp - slots());
+        traceValues(trc, nfixed, sp - slots());
 
         
         while (nfixed > nlivefixed)
             unaliasedLocal(--nfixed).setMagic(JS_UNINITIALIZED_LEXICAL);
 
         
-        markValues(trc, 0, nlivefixed);
+        traceValues(trc, 0, nlivefixed);
     }
+
+    if (trc->isMarkingTracer())
+        script->compartment()->zone()->active = true;
+}
+
+void
+InterpreterFrame::traceValues(JSTracer* trc, unsigned start, unsigned end)
+{
+    if (start < end)
+        TraceRootRange(trc, end - start, slots() + start, "vm_stack");
 }
 
 static void
@@ -424,8 +418,7 @@ MarkInterpreterActivation(JSTracer* trc, InterpreterActivation* act)
 {
     for (InterpreterFrameIterator frames(act); !frames.done(); ++frames) {
         InterpreterFrame* fp = frames.frame();
-        fp->markValues(trc, frames.sp(), frames.pc());
-        fp->mark(trc);
+        fp->trace(trc, frames.sp(), frames.pc());
     }
 }
 

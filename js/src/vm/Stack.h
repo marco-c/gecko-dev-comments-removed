@@ -785,9 +785,8 @@ class InterpreterFrame
     }
 
   public:
-    void mark(JSTracer* trc);
-    void markValues(JSTracer* trc, unsigned start, unsigned end);
-    void markValues(JSTracer* trc, Value* sp, jsbytecode* pc);
+    void trace(JSTracer* trc, Value* sp, jsbytecode* pc);
+    void traceValues(JSTracer* trc, unsigned start, unsigned end);
 
     
     bool runningInJit() const {
