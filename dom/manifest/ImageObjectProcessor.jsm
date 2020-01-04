@@ -128,9 +128,9 @@ ImageObjectProcessor.prototype.process = function(
       
       value.split(/\s+/)
         .filter(isValidSizeValue)
-        .forEach(size => sizes.add(size));
+        .reduce((collector, size) => collector.add(size), sizes);
     }
-    return sizes;
+    return (sizes.size) ? Array.from(sizes).join(" ") : undefined;
     
     function isValidSizeValue(aSize) {
       const size = aSize.toLowerCase();
