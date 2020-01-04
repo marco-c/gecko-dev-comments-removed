@@ -4657,19 +4657,6 @@ pref("dom.push.pingInterval", 1800000);
 
 
 pref("dom.push.requestTimeout", 10000);
-pref("dom.push.pingInterval.default", 180000);
-pref("dom.push.pingInterval.mobile", 180000); 
-pref("dom.push.pingInterval.wifi", 180000);  
-
-
-pref("dom.push.adaptive.enabled", false);
-pref("dom.push.adaptive.lastGoodPingInterval", 180000);
-pref("dom.push.adaptive.lastGoodPingInterval.mobile", 180000);
-pref("dom.push.adaptive.lastGoodPingInterval.wifi", 180000);
-
-pref("dom.push.adaptive.gap", 60000); 
-
-pref("dom.push.adaptive.upperLimit", 1740000); 
 
 
 pref("dom.push.udp.wakeupEnabled", false);

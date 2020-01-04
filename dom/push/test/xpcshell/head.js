@@ -141,23 +141,12 @@ function setPrefs(prefs = {}) {
     userAgentID: '',
     enabled: true,
     
-    
-    'adaptive.enabled': false,
     'udp.wakeupEnabled': false,
     
     requestTimeout: 10000,
     retryBaseInterval: 5000,
     pingInterval: 30 * 60 * 1000,
-    'pingInterval.default': 3 * 60 * 1000,
-    'pingInterval.mobile': 3 * 60 * 1000,
-    'pingInterval.wifi': 3 * 60 * 1000,
-    'adaptive.lastGoodPingInterval': 3 * 60 * 1000,
-    'adaptive.lastGoodPingInterval.mobile': 3 * 60 * 1000,
-    'adaptive.lastGoodPingInterval.wifi': 3 * 60 * 1000,
-    'adaptive.gap': 60000,
-    'adaptive.upperLimit': 29 * 60 * 1000,
     
-    'adaptive.mobile': '',
     'http2.maxRetries': 2,
     'http2.retryInterval': 500,
     'http2.reset_retry_count_after_ms': 60000,
@@ -329,58 +318,6 @@ MockWebSocket.prototype = {
   },
 };
 
-
-
-
-
-
-function MockDesktopNetworkInfo() {}
-
-MockDesktopNetworkInfo.prototype = {
-  getNetworkInformation() {
-    return {mcc: '', mnc: '', ip: ''};
-  },
-
-  getNetworkState(callback) {
-    callback({mcc: '', mnc: '', ip: '', netid: ''});
-  },
-
-  getNetworkStateChangeEventName() {
-    return 'network:offline-status-changed';
-  }
-};
-
-
-
-
-
-
-
-
-
-
-function MockMobileNetworkInfo(info = {}) {
-  this._info = info;
-}
-
-MockMobileNetworkInfo.prototype = {
-  _info: null,
-
-  getNetworkInformation() {
-    let {mcc, mnc, ip} = this._info;
-    return {mcc, mnc, ip};
-  },
-
-  getNetworkState(callback) {
-    let {mcc, mnc, ip, netid} = this._info;
-    callback({mcc, mnc, ip, netid});
-  },
-
-  getNetworkStateChangeEventName() {
-    return 'network-active-changed';
-  }
-};
-
 var setUpServiceInParent = Task.async(function* (service, db) {
   if (!isParent) {
     return;
@@ -424,7 +361,6 @@ var setUpServiceInParent = Task.async(function* (service, db) {
 
   service.init({
     serverURI: 'wss://push.example.org/',
-    networkInfo: new MockDesktopNetworkInfo(),
     db: makeStub(db, {
       put(prev, record) {
         if (record.scope == 'https://example.com/sub/fail') {

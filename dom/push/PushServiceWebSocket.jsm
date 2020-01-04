@@ -24,18 +24,11 @@ const {
   getCryptoParams,
 } = Cu.import("resource://gre/modules/PushCrypto.jsm");
 
-XPCOMUtils.defineLazyServiceGetter(this, "gDNSService",
-                                   "@mozilla.org/network/dns-service;1",
-                                   "nsIDNSService");
-
 if (AppConstants.MOZ_B2G) {
   XPCOMUtils.defineLazyServiceGetter(this, "gPowerManagerService",
                                      "@mozilla.org/power/powermanagerservice;1",
                                      "nsIPowerManagerService");
 }
-
-var threadManager = Cc["@mozilla.org/thread-manager;1"]
-                      .getService(Ci.nsIThreadManager);
 
 const kPUSHWSDB_DB_NAME = "pushapi";
 const kPUSHWSDB_DB_VERSION = 5; 
@@ -301,41 +294,6 @@ this.PushServiceWebSocket = {
   _willBeWokenUpByUDP: false,
 
   
-
-
-
-
-
-  _adaptiveEnabled: false,
-
-  
-
-
-
-
-
-
-  _recalculatePing: true,
-
-  
-
-
-
-
-
-  _pingIntervalRetryTimes: {},
-
-  
-
-
-  _lastGoodPingInterval: 0,
-
-  
-
-
-  _upperLimit: 0,
-
-  
   _dataEnabled: false,
 
   
@@ -389,14 +347,7 @@ this.PushServiceWebSocket = {
       this._makeUDPSocket = options.makeUDPSocket;
     }
 
-    this._networkInfo = options.networkInfo;
-    if (!this._networkInfo) {
-      this._networkInfo = PushNetworkInfo;
-    }
-
     this._requestTimeout = prefs.get("requestTimeout");
-    this._adaptiveEnabled = prefs.get('adaptive.enabled');
-    this._upperLimit = prefs.get('adaptive.upperLimit');
 
     return Promise.resolve();
   },
@@ -477,8 +428,6 @@ this.PushServiceWebSocket = {
 
   _startBackoffTimer() {
     console.debug("startBackoffTimer()");
-    
-    this._calculateAdaptivePing(true );
 
     
     let retryTimeout = prefs.get("retryBaseInterval") *
@@ -527,156 +476,6 @@ this.PushServiceWebSocket = {
     }
     this._pingTimer.init(this, prefs.get("pingInterval"),
                          Ci.nsITimer.TYPE_ONE_SHOT);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _calculateAdaptivePing: function(wsWentDown) {
-    console.debug("_calculateAdaptivePing()");
-    if (!this._adaptiveEnabled) {
-      console.debug("calculateAdaptivePing: Adaptive ping is disabled");
-      return;
-    }
-
-    if (this._retryFailCount > 0) {
-      console.warn("calculateAdaptivePing: Push has failed to connect to the",
-        "Push Server", this._retryFailCount, "times. Do not calculate a new",
-        "pingInterval now");
-      return;
-    }
-
-    if (!this._recalculatePing && !wsWentDown) {
-      console.debug("calculateAdaptivePing: We do not need to recalculate the",
-        "ping now, based on previous data");
-      return;
-    }
-
-    
-    let ns = this._networkInfo.getNetworkInformation();
-
-    if (ns.ip) {
-      
-      console.debug("calculateAdaptivePing: mobile");
-      let oldNetwork = prefs.get('adaptive.mobile');
-      let newNetwork = 'mobile-' + ns.mcc + '-' + ns.mnc;
-
-      
-      if (oldNetwork !== newNetwork) {
-        
-        console.debug("calculateAdaptivePing: Mobile networks differ. Old",
-          "network is", oldNetwork, "and new is", newNetwork);
-        prefs.set('adaptive.mobile', newNetwork);
-        
-        this._recalculatePing = true;
-        this._pingIntervalRetryTimes = {};
-
-        
-        let defaultPing = prefs.get('pingInterval.default');
-        prefs.set('pingInterval', defaultPing);
-        this._lastGoodPingInterval = defaultPing;
-
-      } else {
-        
-        prefs.set('pingInterval', prefs.get('pingInterval.mobile'));
-        this._lastGoodPingInterval = prefs.get('adaptive.lastGoodPingInterval.mobile');
-      }
-
-    } else {
-      
-      console.debug("calculateAdaptivePing: wifi");
-      prefs.set('pingInterval', prefs.get('pingInterval.wifi'));
-      this._lastGoodPingInterval = prefs.get('adaptive.lastGoodPingInterval.wifi');
-    }
-
-    let nextPingInterval;
-    let lastTriedPingInterval = prefs.get('pingInterval');
-
-    if (wsWentDown) {
-      console.debug("calculateAdaptivePing: The WebSocket was disconnected.",
-        "Calculating next ping");
-
-      
-      this._pingIntervalRetryTimes[lastTriedPingInterval] =
-           (this._pingIntervalRetryTimes[lastTriedPingInterval] || 0) + 1;
-
-       
-       
-       if (this._pingIntervalRetryTimes[lastTriedPingInterval] < 2) {
-         console.debug("calculateAdaptivePing: pingInterval=",
-          lastTriedPingInterval, "tried only",
-          this._pingIntervalRetryTimes[lastTriedPingInterval], "times");
-         return;
-       }
-
-       
-       nextPingInterval = Math.floor(lastTriedPingInterval / 2);
-
-      
-      
-      if (nextPingInterval - this._lastGoodPingInterval <
-          prefs.get('adaptive.gap')) {
-        console.debug("calculateAdaptivePing: We have reached the gap, we",
-          "have finished the calculation. nextPingInterval=", nextPingInterval,
-          "lastGoodPing=", this._lastGoodPingInterval);
-        nextPingInterval = this._lastGoodPingInterval;
-        this._recalculatePing = false;
-      } else {
-        console.debug("calculateAdaptivePing: We need to calculate next time");
-        this._recalculatePing = true;
-      }
-
-    } else {
-      console.debug("calculateAdaptivePing: The WebSocket is still up");
-      this._lastGoodPingInterval = lastTriedPingInterval;
-      nextPingInterval = Math.floor(lastTriedPingInterval * 1.5);
-    }
-
-    
-    if (this._upperLimit < nextPingInterval) {
-      console.debug("calculateAdaptivePing: Next ping will be bigger than the",
-        "configured upper limit, capping interval");
-      this._recalculatePing = false;
-      this._lastGoodPingInterval = lastTriedPingInterval;
-      nextPingInterval = lastTriedPingInterval;
-    }
-
-    console.debug("calculateAdaptivePing: Setting the pingInterval to",
-      nextPingInterval);
-    prefs.set('pingInterval', nextPingInterval);
-
-    
-    if (ns.ip) {
-      prefs.set('pingInterval.mobile', nextPingInterval);
-      prefs.set('adaptive.lastGoodPingInterval.mobile',
-                this._lastGoodPingInterval);
-    } else {
-      prefs.set('pingInterval.wifi', nextPingInterval);
-      prefs.set('adaptive.lastGoodPingInterval.wifi',
-                this._lastGoodPingInterval);
-    }
   },
 
   _makeWebSocket: function(uri) {
@@ -1194,27 +993,8 @@ this.PushServiceWebSocket = {
       data.uaid = this._UAID;
     }
 
-    this._networkInfo.getNetworkState((networkState) => {
-      if (networkState.ip) {
-        
-        this._listenForUDPWakeup();
-
-        
-        data.wakeup_hostport = {
-          ip: networkState.ip,
-          port: this._udpServer && this._udpServer.port
-        };
-
-        data.mobilenetwork = {
-          mcc: networkState.mcc,
-          mnc: networkState.mnc,
-          netid: networkState.netid
-        };
-      }
-
-      this._wsSendMessage(data);
-      this._currentState = STATE_WAITING_FOR_HELLO;
-    });
+    this._wsSendMessage(data);
+    this._currentState = STATE_WAITING_FOR_HELLO;
   },
 
   
@@ -1255,7 +1035,6 @@ this.PushServiceWebSocket = {
     
     
     this._retryFailCount = 0;
-    this._pingIntervalRetryTimes = {};
 
     let doNotHandle = false;
     if ((message === '{}') ||
@@ -1263,7 +1042,6 @@ this.PushServiceWebSocket = {
         (reply.messageType === "ping") ||
         (typeof reply.messageType != "string")) {
       console.debug("wsOnMessageAvailable: Pong received");
-      this._calculateAdaptivePing(false);
       doNotHandle = true;
     }
 
@@ -1387,131 +1165,6 @@ this.PushServiceWebSocket = {
     this._udpServer = undefined;
     this._beginWSSetup();
   },
-};
-
-var PushNetworkInfo = {
-  
-
-
-  getNetworkInformation: function() {
-    console.debug("PushNetworkInfo: getNetworkInformation()");
-
-    try {
-      if (!prefs.get("udp.wakeupEnabled")) {
-        console.debug("getNetworkInformation: UDP support disabled, we do not",
-          "send any carrier info");
-        throw new Error("UDP disabled");
-      }
-
-      let nm = Cc["@mozilla.org/network/manager;1"]
-                 .getService(Ci.nsINetworkManager);
-      if (nm.activeNetworkInfo &&
-          nm.activeNetworkInfo.type == Ci.nsINetworkInfo.NETWORK_TYPE_MOBILE) {
-        let iccService = Cc["@mozilla.org/icc/iccservice;1"]
-                           .getService(Ci.nsIIccService);
-        
-        
-        
-        
-        
-        let clientId = 0;
-        let icc = iccService.getIccByServiceId(clientId);
-        let iccInfo = icc && icc.iccInfo;
-        if (iccInfo) {
-          console.debug("getNetworkInformation: Running on mobile data");
-
-          let ips = {};
-          let prefixLengths = {};
-          nm.activeNetworkInfo.getAddresses(ips, prefixLengths);
-
-          return {
-            mcc: iccInfo.mcc,
-            mnc: iccInfo.mnc,
-            ip:  ips.value[0]
-          };
-        }
-      }
-    } catch (e) {
-      console.error("getNetworkInformation: Error recovering mobile network",
-        "information", e);
-    }
-
-    console.debug("getNetworkInformation: Running on wifi");
-    return {
-      mcc: 0,
-      mnc: 0,
-      ip: undefined
-    };
-  },
-
-  
-
-
-
-
-  getNetworkState: function(callback) {
-    console.debug("PushNetworkInfo: getNetworkState()");
-
-    if (typeof callback !== 'function') {
-      throw new Error("No callback method. Aborting push agent !");
-    }
-
-    var networkInfo = this.getNetworkInformation();
-
-    if (networkInfo.ip) {
-      this._getMobileNetworkId(networkInfo, function(netid) {
-        console.debug("getNetworkState: Recovered netID", netid);
-        callback({
-          mcc: networkInfo.mcc,
-          mnc: networkInfo.mnc,
-          ip:  networkInfo.ip,
-          netid: netid
-        });
-      });
-    } else {
-      callback(networkInfo);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  _getMobileNetworkId: function(networkInfo, callback) {
-    console.debug("PushNetworkInfo: getMobileNetworkId()");
-    if (typeof callback !== 'function') {
-      return;
-    }
-
-    function queryDNSForDomain(domain) {
-      console.debug("queryDNSForDomain: Querying DNS for", domain);
-      let netIDDNSListener = {
-        onLookupComplete: function(aRequest, aRecord, aStatus) {
-          if (aRecord) {
-            let netid = aRecord.getNextAddrAsString();
-            console.debug("queryDNSForDomain: NetID found", netid);
-            callback(netid);
-          } else {
-            console.debug("queryDNSForDomain: NetID not found");
-            callback(null);
-          }
-        }
-      };
-      gDNSService.asyncResolve(domain, 0, netIDDNSListener,
-        threadManager.currentThread);
-      return [];
-    }
-
-    console.debug("getMobileNetworkId: Getting mobile network ID");
-
-    let netidAddress = "wakeup.mnc" + ("00" + networkInfo.mnc).slice(-3) +
-      ".mcc" + ("00" + networkInfo.mcc).slice(-3) + ".3gppnetwork.org";
-    queryDNSForDomain(netidAddress, callback);
-  }
 };
 
 function PushRecordWebSocket(record) {
