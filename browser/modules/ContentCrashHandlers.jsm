@@ -7,6 +7,7 @@
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
+var Cr = Components.results;
 
 this.EXPORTED_SYMBOLS = [ "TabCrashHandler",
                           "PluginCrashReporter",
@@ -38,6 +39,8 @@ XPCOMUtils.defineLazyGetter(this, "gNavigatorBundle", function() {
 
 
 const PENDING_CRASH_REPORT_DAYS = 28;
+const DAY = 24 * 60 * 60 * 1000; 
+const DAYS_TO_SUPPRESS = 30;
 
 this.TabCrashHandler = {
   _crashedTabCount: 0,
@@ -344,6 +347,23 @@ this.TabCrashHandler = {
 
 
 this.UnsubmittedCrashHandler = {
+  get prefs() {
+    delete this.prefs;
+    return this.prefs =
+      Services.prefs.getBranch("browser.crashReports.unsubmittedCheck.");
+  },
+
+  
+  
+  
+  showingNotification: false,
+  
+  
+  
+  
+  
+  suppressed: false,
+
   init() {
     if (this.initialized) {
       return;
@@ -351,22 +371,71 @@ this.UnsubmittedCrashHandler = {
 
     this.initialized = true;
 
-    let pref = "browser.crashReports.unsubmittedCheck.enabled";
-    let shouldCheck = Services.prefs.getBoolPref(pref);
+    let shouldCheck = this.prefs.getBoolPref("enabled");
 
     if (shouldCheck) {
+      if (this.prefs.prefHasUserValue("suppressUntilDate")) {
+        if (this.prefs.getCharPref("suppressUntilDate") > this.dateString()) {
+          
+          
+          this.suppressed = true;
+          return;
+        }
+
+        
+        this.prefs.clearUserPref("suppressUntilDate");
+      }
+
       Services.obs.addObserver(this, "browser-delayed-startup-finished",
+                               false);
+      Services.obs.addObserver(this, "profile-before-change",
                                false);
     }
   },
 
-  observe(subject, topic, data) {
-    if (topic != "browser-delayed-startup-finished") {
+  uninit() {
+    if (!this.initialized) {
       return;
     }
 
-    Services.obs.removeObserver(this, topic);
-    this.checkForUnsubmittedCrashReports();
+    this.initialized = false;
+
+    if (this.suppressed) {
+      this.suppressed = false;
+      
+      return;
+    }
+
+    if (this.showingNotification) {
+      this.prefs.setBoolPref("shutdownWhileShowing", true);
+      this.showingNotification = false;
+    }
+
+    try {
+      Services.obs.removeObserver(this, "browser-delayed-startup-finished");
+    } catch (e) {
+      
+      
+      if (e.result != Cr.NS_ERROR_FAILURE) {
+        throw e;
+      }
+    }
+
+    Services.obs.removeObserver(this, "profile-before-change");
+  },
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "browser-delayed-startup-finished": {
+        Services.obs.removeObserver(this, topic);
+        this.checkForUnsubmittedCrashReports();
+        break;
+      }
+      case "profile-before-change": {
+        this.uninit();
+        break;
+      }
+    }
   },
 
   
@@ -395,12 +464,60 @@ this.UnsubmittedCrashHandler = {
     if (reportIDs.length) {
       if (CrashNotificationBar.autoSubmit) {
         CrashNotificationBar.submitReports(reportIDs);
-      } else {
+      } else if (this.shouldShowPendingSubmissionsNotification()) {
         return this.showPendingSubmissionsNotification(reportIDs);
       }
     }
     return null;
   }),
+
+  
+
+
+
+
+
+
+
+
+
+  shouldShowPendingSubmissionsNotification() {
+    if (!this.prefs.prefHasUserValue("shutdownWhileShowing")) {
+      return true;
+    }
+
+    let shutdownWhileShowing = this.prefs.getBoolPref("shutdownWhileShowing");
+    this.prefs.clearUserPref("shutdownWhileShowing");
+
+    if (!this.prefs.prefHasUserValue("lastShownDate")) {
+      
+      
+      return true;
+    }
+
+    let lastShownDate = this.prefs.getCharPref("lastShownDate");
+    if (this.dateString() > lastShownDate && shutdownWhileShowing) {
+      
+      
+      
+      
+      
+      
+      let chances = this.prefs.getIntPref("chancesUntilSuppress");
+      if (--chances < 0) {
+        
+        this.prefs.clearUserPref("chancesUntilSuppress");
+        
+        let suppressUntil =
+          this.dateString(new Date(Date.now() + (DAY * DAYS_TO_SUPPRESS)));
+        this.prefs.setCharPref("suppressUntilDate", suppressUntil);
+        return false;
+      }
+      this.prefs.setIntPref("chancesUntilSuppress", chances);
+    }
+
+    return true;
+  },
 
   
 
@@ -421,11 +538,34 @@ this.UnsubmittedCrashHandler = {
 
     let message = PluralForm.get(count, messageTemplate).replace("#1", count);
 
-    return CrashNotificationBar.show({
+    let notification = CrashNotificationBar.show({
       notificationID: "pending-crash-reports",
       message,
       reportIDs,
+      onAction: () => {
+        this.showingNotification = false;
+      },
     });
+
+    if (notification) {
+      this.showingNotification = true;
+      this.prefs.setCharPref("lastShownDate", this.dateString());
+    }
+
+    return notification;
+  },
+
+  
+
+
+
+
+
+
+
+
+  dateString(someDate = new Date()) {
+    return someDate.toLocaleFormat("%Y%m%d");
   },
 };
 
@@ -454,7 +594,13 @@ this.CrashNotificationBar = {
 
 
 
-  show({ notificationID, message, reportIDs }) {
+
+
+
+
+
+
+  show({ notificationID, message, reportIDs, onAction }) {
     let chromeWin = RecentWindow.getMostRecentBrowserWindow();
     if (!chromeWin) {
       
@@ -473,6 +619,9 @@ this.CrashNotificationBar = {
       label: gNavigatorBundle.GetStringFromName("pendingCrashReports.send"),
       callback: () => {
         this.submitReports(reportIDs);
+        if (onAction) {
+          onAction();
+        }
       },
     },
     {
@@ -480,6 +629,9 @@ this.CrashNotificationBar = {
       callback: () => {
         this.autoSubmit = true;
         this.submitReports(reportIDs);
+        if (onAction) {
+          onAction();
+        }
       },
     },
     {
@@ -499,6 +651,9 @@ this.CrashNotificationBar = {
         reportIDs.forEach(function(reportID) {
           CrashSubmit.ignore(reportID);
         });
+        if (onAction) {
+          onAction();
+        }
       }
     };
 
