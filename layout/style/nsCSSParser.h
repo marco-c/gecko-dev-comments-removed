@@ -11,7 +11,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/css/Loader.h"
 
-#include "nsCSSProperty.h"
+#include "nsCSSPropertyID.h"
 #include "nsCSSScanner.h"
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
@@ -113,7 +113,7 @@ public:
   
   
   
-  void ParseProperty(const nsCSSProperty aPropID,
+  void ParseProperty(const nsCSSPropertyID aPropID,
                      const nsAString&    aPropValue,
                      nsIURI*             aSheetURL,
                      nsIURI*             aBaseURL,
@@ -126,7 +126,7 @@ public:
   
   
   
-  void ParseLonghandProperty(const nsCSSProperty aPropID,
+  void ParseLonghandProperty(const nsCSSPropertyID aPropID,
                              const nsAString&    aPropValue,
                              nsIURI*             aSheetURL,
                              nsIURI*             aBaseURL,
@@ -285,8 +285,8 @@ public:
 
 
   void ParsePropertyWithVariableReferences(
-                                   nsCSSProperty aPropertyID,
-                                   nsCSSProperty aShorthandPropertyID,
+                                   nsCSSPropertyID aPropertyID,
+                                   nsCSSPropertyID aShorthandPropertyID,
                                    const nsAString& aValue,
                                    const mozilla::CSSVariableValues* aVariables,
                                    nsRuleData* aRuleData,
@@ -316,7 +316,7 @@ public:
                                nsCSSValue& aValue);
 
   
-  bool IsValueValidForProperty(const nsCSSProperty aPropID,
+  bool IsValueValidForProperty(const nsCSSPropertyID aPropID,
                                const nsAString&    aPropValue);
 
   

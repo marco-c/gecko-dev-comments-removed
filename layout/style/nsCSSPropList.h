@@ -334,7 +334,7 @@ CSS_PROP_POSITION(
     VARIANT_HK,
     kAutoCompletionAlignJustifyContent,
     CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    eStyleAnimType_None)
 CSS_PROP_POSITION(
     align-items,
     align_items,
@@ -344,7 +344,7 @@ CSS_PROP_POSITION(
     VARIANT_HK,
     kAutoCompletionAlignItems,
     CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    eStyleAnimType_None)
 CSS_PROP_POSITION(
     align-self,
     align_self,
@@ -354,7 +354,7 @@ CSS_PROP_POSITION(
     VARIANT_HK,
     kAutoCompletionAlignJustifySelf,
     CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    eStyleAnimType_None)
 CSS_PROP_SHORTHAND(
     all,
     all,
@@ -1434,8 +1434,8 @@ CSS_PROP_SVG(
     "",
     VARIANT_HK,
     kFillRuleKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVG, mClipRule),
+    eStyleAnimType_EnumU8)
 CSS_PROP_COLOR(
     color,
     color,
@@ -1468,8 +1468,8 @@ CSS_PROP_SVG(
     "",
     VARIANT_HK,
     kColorInterpolationKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVG, mColorInterpolation),
+    eStyleAnimType_EnumU8)
 CSS_PROP_SVG(
     color-interpolation-filters,
     color_interpolation_filters,
@@ -1478,8 +1478,8 @@ CSS_PROP_SVG(
     "",
     VARIANT_HK,
     kColorInterpolationKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVG, mColorInterpolationFilters),
+    eStyleAnimType_EnumU8)
 CSS_PROP_COLUMN(
     -moz-column-count,
     _moz_column_count,
@@ -1673,8 +1673,8 @@ CSS_PROP_SVGRESET(
     "",
     VARIANT_HK,
     kDominantBaselineKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVGReset, mDominantBaseline),
+    eStyleAnimType_EnumU8)
 CSS_PROP_TABLEBORDER(
     empty-cells,
     empty_cells,
@@ -1713,8 +1713,8 @@ CSS_PROP_SVG(
     "",
     VARIANT_HK,
     kFillRuleKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVG, mFillRule),
+    eStyleAnimType_EnumU8)
 CSS_PROP_EFFECTS(
     filter,
     filter,
@@ -1756,8 +1756,8 @@ CSS_PROP_POSITION(
     "",
     VARIANT_HK,
     kFlexDirectionKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStylePosition, mFlexDirection),
+    eStyleAnimType_EnumU8)
 CSS_PROP_SHORTHAND(
     flex-flow,
     flex_flow,
@@ -1800,8 +1800,8 @@ CSS_PROP_POSITION(
     "",
     VARIANT_HK,
     kFlexWrapKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStylePosition, mFlexWrap),
+    eStyleAnimType_EnumU8)
 CSS_PROP_DISPLAY(
     float,
     float,
@@ -1950,8 +1950,8 @@ CSS_PROP_FONT(
     "",
     VARIANT_HK | VARIANT_SYSFONT,
     kFontStyleKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleFont, mFont.style),
+    eStyleAnimType_EnumU8)
 CSS_PROP_FONT(
     font-synthesis,
     font_synthesis,
@@ -2308,8 +2308,8 @@ CSS_PROP_VISIBILITY(
     "",
     VARIANT_HK,
     kImageRenderingKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleVisibility, mImageRendering),
+    eStyleAnimType_EnumU8)
 CSS_PROP_UIRESET(
     ime-mode,
     ime_mode,
@@ -2358,7 +2358,7 @@ CSS_PROP_POSITION(
     VARIANT_HK,
     kAutoCompletionAlignJustifyContent,
     CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    eStyleAnimType_None)
 CSS_PROP_POSITION(
     justify-items,
     justify_items,
@@ -2369,7 +2369,7 @@ CSS_PROP_POSITION(
     
     kAutoCompletionAlignJustifySelf,
     CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    eStyleAnimType_None)
 CSS_PROP_POSITION(
     justify-self,
     justify_self,
@@ -2379,7 +2379,7 @@ CSS_PROP_POSITION(
     VARIANT_HK,
     kAutoCompletionAlignJustifySelf,
     CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    eStyleAnimType_None)
 #ifndef CSS_PROP_LIST_ONLY_COMPONENTS_OF_ALL_SHORTHAND
 #ifndef CSS_PROP_LIST_EXCLUDE_INTERNAL
 CSS_PROP_FONT(
@@ -2809,8 +2809,8 @@ CSS_PROP_SVGRESET(
     "layout.css.masking.enabled",
     VARIANT_HK,
     kMaskTypeKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVGReset, mMaskType),
+    eStyleAnimType_EnumU8)
 #ifndef CSS_PROP_LIST_ONLY_COMPONENTS_OF_ALL_SHORTHAND
 #ifndef CSS_PROP_LIST_EXCLUDE_INTERNAL
 CSS_PROP_FONT(
@@ -3508,8 +3508,8 @@ CSS_PROP_USERINTERFACE(
     "",
     VARIANT_HK,
     kPointerEventsKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleUserInterface, mPointerEvents),
+    eStyleAnimType_EnumU8)
 CSS_PROP_DISPLAY(
     position,
     position,
@@ -3568,8 +3568,8 @@ CSS_PROP_TEXT(
     "",
     VARIANT_HK,
     kRubyAlignKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleText, mRubyAlign),
+    eStyleAnimType_EnumU8)
 CSS_PROP_TEXT(
     ruby-position,
     ruby_position,
@@ -3578,8 +3578,8 @@ CSS_PROP_TEXT(
     "",
     VARIANT_HK,
     kRubyPositionKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleText, mRubyPosition),
+    eStyleAnimType_EnumU8)
 #ifndef CSS_PROP_LIST_ONLY_COMPONENTS_OF_ALL_SHORTHAND
 #ifndef CSS_PROP_LIST_EXCLUDE_INTERNAL
 CSS_PROP_FONT(
@@ -3729,8 +3729,8 @@ CSS_PROP_SVG(
     "",
     VARIANT_HK,
     kShapeRenderingKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVG, mShapeRendering),
+    eStyleAnimType_EnumU8)
 #ifndef CSS_PROP_LIST_ONLY_COMPONENTS_OF_ALL_SHORTHAND
 #ifndef CSS_PROP_LIST_EXCLUDE_INTERNAL
 CSS_PROP_TABLE(
@@ -3818,8 +3818,8 @@ CSS_PROP_SVG(
     "",
     VARIANT_HK,
     kStrokeLinecapKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVG, mStrokeLinecap),
+    eStyleAnimType_EnumU8)
 CSS_PROP_SVG(
     stroke-linejoin,
     stroke_linejoin,
@@ -3828,8 +3828,8 @@ CSS_PROP_SVG(
     "",
     VARIANT_HK,
     kStrokeLinejoinKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVG, mStrokeLinejoin),
+    eStyleAnimType_EnumU8)
 CSS_PROP_SVG(
     stroke-miterlimit,
     stroke_miterlimit,
@@ -3930,8 +3930,8 @@ CSS_PROP_SVG(
     "",
     VARIANT_HK,
     kTextAnchorKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVG, mTextAnchor),
+    eStyleAnimType_EnumU8)
 CSS_PROP_TEXT(
     text-combine-upright,
     text_combine_upright,
@@ -3941,8 +3941,8 @@ CSS_PROP_TEXT(
     "layout.css.text-combine-upright.enabled",
     0,
     kTextCombineUprightKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleText, mTextCombineUpright),
+    eStyleAnimType_EnumU8)
 CSS_PROP_SHORTHAND(
     text-decoration,
     text_decoration,
@@ -3973,8 +3973,8 @@ CSS_PROP_TEXTRESET(
     "",
     0,
     kTextDecorationLineKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleTextReset, mTextDecorationLine),
+    eStyleAnimType_EnumU8)
 CSS_PROP_TEXTRESET(
     text-decoration-style,
     text_decoration_style,
@@ -4061,8 +4061,8 @@ CSS_PROP_VISIBILITY(
     "layout.css.vertical-text.enabled",
     VARIANT_HK,
     kTextOrientationKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleVisibility, mTextOrientation),
+    eStyleAnimType_EnumU8)
 CSS_PROP_TEXTRESET(
     text-overflow,
     text_overflow,
@@ -4083,8 +4083,8 @@ CSS_PROP_TEXT(
     "",
     VARIANT_HK,
     kTextRenderingKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleText, mTextRendering),
+    eStyleAnimType_EnumU8)
 CSS_PROP_TEXT(
     text-shadow,
     text_shadow,
@@ -4374,8 +4374,8 @@ CSS_PROP_SVGRESET(
     "",
     VARIANT_HK,
     kVectorEffectKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleSVGReset, mVectorEffect),
+    eStyleAnimType_EnumU8)
 
 
 
@@ -4402,8 +4402,8 @@ CSS_PROP_VISIBILITY(
     "",
     VARIANT_HK,
     kVisibilityKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)  
+    offsetof(nsStyleVisibility, mVisible),
+    eStyleAnimType_EnumU8)  
 CSS_PROP_TEXT(
     white-space,
     white_space,
@@ -4473,8 +4473,8 @@ CSS_PROP_TEXT(
     "",
     VARIANT_HK,
     kWordBreakKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleText, mWordBreak),
+    eStyleAnimType_EnumU8)
 CSS_PROP_TEXT(
     word-spacing,
     word_spacing,
@@ -4508,8 +4508,8 @@ CSS_PROP_VISIBILITY(
     "layout.css.vertical-text.enabled",
     VARIANT_HK,
     kWritingModeKTable,
-    CSS_PROP_NO_OFFSET,
-    eStyleAnimType_Discrete)
+    offsetof(nsStyleVisibility, mWritingMode),
+    eStyleAnimType_EnumU8)
 CSS_PROP_POSITION(
     z-index,
     z_index,

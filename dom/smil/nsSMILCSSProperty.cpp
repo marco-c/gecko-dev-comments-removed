@@ -22,7 +22,7 @@ using namespace mozilla::dom;
 
 static bool
 GetCSSComputedValue(Element* aElem,
-                    nsCSSProperty aPropID,
+                    nsCSSPropertyID aPropID,
                     nsAString& aResult)
 {
   MOZ_ASSERT(!nsCSSProps::IsShorthand(aPropID),
@@ -52,7 +52,7 @@ GetCSSComputedValue(Element* aElem,
 }
 
 
-nsSMILCSSProperty::nsSMILCSSProperty(nsCSSProperty aPropID,
+nsSMILCSSProperty::nsSMILCSSProperty(nsCSSPropertyID aPropID,
                                      Element* aElement)
   : mPropID(aPropID), mElement(aElement)
 {
@@ -186,7 +186,7 @@ nsSMILCSSProperty::ClearAnimValue()
 
 
 bool
-nsSMILCSSProperty::IsPropertyAnimatable(nsCSSProperty aPropID)
+nsSMILCSSProperty::IsPropertyAnimatable(nsCSSPropertyID aPropID)
 {
   
   

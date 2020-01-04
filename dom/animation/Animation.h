@@ -18,7 +18,7 @@
 #include "mozilla/DOMEventTargetHelper.h" 
 #include "mozilla/dom/KeyframeEffect.h" 
 #include "mozilla/dom/Promise.h" 
-#include "nsCSSProperty.h" 
+#include "nsCSSPropertyID.h" 
 #include "nsIGlobalObject.h"
 
 

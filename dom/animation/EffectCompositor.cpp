@@ -61,7 +61,7 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(EffectCompositor, Release)
 
 bool
 FindAnimationsForCompositor(const nsIFrame* aFrame,
-                            nsCSSProperty aProperty,
+                            nsCSSPropertyID aProperty,
                             nsTArray<RefPtr<dom::Animation>>* aMatches )
 {
   MOZ_ASSERT(!aMatches || aMatches->IsEmpty(),
@@ -433,14 +433,14 @@ EffectCompositor::AddStyleUpdatesTo(RestyleTracker& aTracker)
 
  bool
 EffectCompositor::HasAnimationsForCompositor(const nsIFrame* aFrame,
-                                             nsCSSProperty aProperty)
+                                             nsCSSPropertyID aProperty)
 {
   return FindAnimationsForCompositor(aFrame, aProperty, nullptr);
 }
 
  nsTArray<RefPtr<dom::Animation>>
 EffectCompositor::GetAnimationsForCompositor(const nsIFrame* aFrame,
-                                             nsCSSProperty aProperty)
+                                             nsCSSPropertyID aProperty)
 {
   nsTArray<RefPtr<dom::Animation>> result;
 
@@ -456,7 +456,7 @@ EffectCompositor::GetAnimationsForCompositor(const nsIFrame* aFrame,
 
  void
 EffectCompositor::ClearIsRunningOnCompositor(const nsIFrame *aFrame,
-                                             nsCSSProperty aProperty)
+                                             nsCSSPropertyID aProperty)
 {
   EffectSet* effects = EffectSet::GetEffectSet(aFrame);
   if (!effects) {
@@ -616,7 +616,7 @@ EffectCompositor::GetOverriddenProperties(nsStyleContext* aStyleContext,
                                           nsCSSPropertySet&
                                             aPropertiesOverridden)
 {
-  AutoTArray<nsCSSProperty, LayerAnimationInfo::kRecords> propertiesToTrack;
+  AutoTArray<nsCSSPropertyID, LayerAnimationInfo::kRecords> propertiesToTrack;
   {
     nsCSSPropertySet propertiesToTrackAsSet;
     for (KeyframeEffectReadOnly* effect : aEffectSet) {
@@ -748,7 +748,7 @@ EffectCompositor::GetPresContext(Element* aElement)
  void
 EffectCompositor::SetPerformanceWarning(
   const nsIFrame *aFrame,
-  nsCSSProperty aProperty,
+  nsCSSPropertyID aProperty,
   const AnimationPerformanceWarning& aWarning)
 {
   EffectSet* effects = EffectSet::GetEffectSet(aFrame);

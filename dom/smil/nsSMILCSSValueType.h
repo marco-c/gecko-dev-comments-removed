@@ -10,7 +10,7 @@
 #define NS_SMILCSSVALUETYPE_H_
 
 #include "nsISMILType.h"
-#include "nsCSSProperty.h"
+#include "nsCSSPropertyID.h"
 #include "mozilla/Attributes.h"
 
 class nsAString;
@@ -78,7 +78,7 @@ public:
 
 
 
-  static void ValueFromString(nsCSSProperty aPropID,
+  static void ValueFromString(nsCSSPropertyID aPropID,
                               Element* aTargetElement,
                               const nsAString& aString,
                               nsSMILValue& aValue,
@@ -106,7 +106,7 @@ public:
 
 
 
-  static nsCSSProperty PropertyFromValue(const nsSMILValue& aValue);
+  static nsCSSPropertyID PropertyFromValue(const nsSMILValue& aValue);
 
 private:
   

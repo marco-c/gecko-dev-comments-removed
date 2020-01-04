@@ -53,7 +53,7 @@ public:
 
 
 
-  static bool Add(nsCSSProperty aProperty, StyleAnimationValue& aDest,
+  static bool Add(nsCSSPropertyID aProperty, StyleAnimationValue& aDest,
                   const StyleAnimationValue& aValueToAdd, uint32_t aCount) {
     return AddWeighted(aProperty, 1.0, aDest, aCount, aValueToAdd, aDest);
   }
@@ -76,7 +76,7 @@ public:
 
 
 
-  static bool ComputeDistance(nsCSSProperty aProperty,
+  static bool ComputeDistance(nsCSSPropertyID aProperty,
                               const StyleAnimationValue& aStartValue,
                               const StyleAnimationValue& aEndValue,
                               double& aDistance);
@@ -97,7 +97,7 @@ public:
 
 
 
-  static bool Interpolate(nsCSSProperty aProperty,
+  static bool Interpolate(nsCSSPropertyID aProperty,
                           const StyleAnimationValue& aStartValue,
                           const StyleAnimationValue& aEndValue,
                           double aPortion,
@@ -120,7 +120,7 @@ public:
 
 
 
-  static bool AddWeighted(nsCSSProperty aProperty,
+  static bool AddWeighted(nsCSSPropertyID aProperty,
                           double aCoeff1, const StyleAnimationValue& aValue1,
                           double aCoeff2, const StyleAnimationValue& aValue2,
                           StyleAnimationValue& aResultValue);
@@ -157,7 +157,7 @@ public:
 
 
 
-  static bool ComputeValue(nsCSSProperty aProperty,
+  static bool ComputeValue(nsCSSPropertyID aProperty,
                            mozilla::dom::Element* aTargetElement,
                            nsStyleContext* aStyleContext,
                            const nsAString& aSpecifiedValue,
@@ -175,7 +175,7 @@ public:
 
 
 
-  static bool ComputeValues(nsCSSProperty aProperty,
+  static bool ComputeValues(nsCSSPropertyID aProperty,
                             mozilla::CSSEnabledState aEnabledState,
                             mozilla::dom::Element* aTargetElement,
                             nsStyleContext* aStyleContext,
@@ -187,7 +187,7 @@ public:
 
 
 
-  static bool ComputeValues(nsCSSProperty aProperty,
+  static bool ComputeValues(nsCSSPropertyID aProperty,
                             mozilla::CSSEnabledState aEnabledState,
                             mozilla::dom::Element* aTargetElement,
                             nsStyleContext* aStyleContext,
@@ -212,13 +212,13 @@ public:
 
 
 
-  static bool UncomputeValue(nsCSSProperty aProperty,
+  static bool UncomputeValue(nsCSSPropertyID aProperty,
                              const StyleAnimationValue& aComputedValue,
                              nsCSSValue& aSpecifiedValue);
-  static bool UncomputeValue(nsCSSProperty aProperty,
+  static bool UncomputeValue(nsCSSPropertyID aProperty,
                              StyleAnimationValue&& aComputedValue,
                              nsCSSValue& aSpecifiedValue);
-  static bool UncomputeValue(nsCSSProperty aProperty,
+  static bool UncomputeValue(nsCSSPropertyID aProperty,
                              const StyleAnimationValue& aComputedValue,
                              nsAString& aSpecifiedValue);
 
@@ -236,7 +236,7 @@ public:
 
 
 
-  static bool ExtractComputedValue(nsCSSProperty aProperty,
+  static bool ExtractComputedValue(nsCSSPropertyID aProperty,
                                    nsStyleContext* aStyleContext,
                                    StyleAnimationValue& aComputedValue);
 
@@ -277,7 +277,6 @@ public:
     eUnit_ObjectPosition, 
                           
     eUnit_URL, 
-    eUnit_DiscreteCSSValue, 
     eUnit_CSSValuePair, 
     eUnit_CSSValueTriplet, 
     eUnit_CSSRect, 
@@ -478,8 +477,7 @@ private:
   static bool IsCSSValueUnit(Unit aUnit) {
     return aUnit == eUnit_Calc ||
            aUnit == eUnit_ObjectPosition ||
-           aUnit == eUnit_URL ||
-           aUnit == eUnit_DiscreteCSSValue;
+           aUnit == eUnit_URL;
   }
   static bool IsCSSValuePairUnit(Unit aUnit) {
     return aUnit == eUnit_CSSValuePair;
@@ -511,7 +509,7 @@ private:
 
 struct PropertyStyleAnimationValuePair
 {
-  nsCSSProperty mProperty;
+  nsCSSPropertyID mProperty;
   StyleAnimationValue mValue;
 };
 

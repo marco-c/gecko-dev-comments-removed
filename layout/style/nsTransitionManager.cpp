@@ -141,7 +141,7 @@ CSSTransition::GetTransitionProperty(nsString& aRetVal) const
   
   MOZ_ASSERT(mEffect && mEffect->AsTransition(),
              "Transitions should have a transition effect");
-  nsCSSProperty prop = mEffect->AsTransition()->TransitionProperty();
+  nsCSSPropertyID prop = mEffect->AsTransition()->TransitionProperty();
   aRetVal = NS_ConvertUTF8toUTF16(nsCSSProps::GetStringValue(prop));
 }
 
@@ -209,7 +209,7 @@ CSSTransition::Tick()
   QueueEvents();
 }
 
-nsCSSProperty
+nsCSSPropertyID
 CSSTransition::TransitionProperty() const
 {
   
@@ -282,17 +282,6 @@ NS_IMPL_CYCLE_COLLECTION(nsTransitionManager, mEventDispatcher)
 
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(nsTransitionManager, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsTransitionManager, Release)
-
-static inline bool
-ExtractNonDiscreteComputedValue(nsCSSProperty aProperty,
-                                nsStyleContext* aStyleContext,
-                                StyleAnimationValue& aComputedValue)
-{
-  return (nsCSSProps::kAnimTypeTable[aProperty] != eStyleAnimType_Discrete ||
-          aProperty == eCSSProperty_visibility) &&
-         StyleAnimationValue::ExtractComputedValue(aProperty, aStyleContext,
-                                                   aComputedValue);
-}
 
 void
 nsTransitionManager::StyleContextChanged(dom::Element *aElement,
@@ -479,15 +468,15 @@ nsTransitionManager::UpdateTransitions(
       
       
       
-      nsCSSProperty property = t.GetProperty();
+      nsCSSPropertyID property = t.GetProperty();
       if (property == eCSSPropertyExtra_no_properties ||
           property == eCSSPropertyExtra_variable ||
           property == eCSSProperty_UNKNOWN) {
         
       } else if (property == eCSSPropertyExtra_all_properties) {
-        for (nsCSSProperty p = nsCSSProperty(0);
+        for (nsCSSPropertyID p = nsCSSPropertyID(0);
              p < eCSSProperty_COUNT_no_shorthands;
-             p = nsCSSProperty(p + 1)) {
+             p = nsCSSPropertyID(p + 1)) {
           ConsiderStartingTransition(p, t, aElement, aElementTransitions,
                                      aOldStyleContext, aNewStyleContext,
                                      &startedAny, &whichStarted);
@@ -526,15 +515,15 @@ nsTransitionManager::UpdateTransitions(
         const StyleTransition& t = aDisp->mTransitions[i];
         
         
-        nsCSSProperty property = t.GetProperty();
+        nsCSSPropertyID property = t.GetProperty();
         if (property == eCSSPropertyExtra_no_properties ||
             property == eCSSPropertyExtra_variable ||
             property == eCSSProperty_UNKNOWN) {
           
         } else if (property == eCSSPropertyExtra_all_properties) {
-          for (nsCSSProperty p = nsCSSProperty(0);
+          for (nsCSSPropertyID p = nsCSSPropertyID(0);
                p < eCSSProperty_COUNT_no_shorthands;
-               p = nsCSSProperty(p + 1)) {
+               p = nsCSSPropertyID(p + 1)) {
             allTransitionProperties.AddProperty(p);
           }
         } else if (nsCSSProps::IsShorthand(property)) {
@@ -563,8 +552,9 @@ nsTransitionManager::UpdateTransitions(
           
           
           
-          !ExtractNonDiscreteComputedValue(anim->TransitionProperty(),
-                                           aNewStyleContext, currentValue) ||
+          !StyleAnimationValue::ExtractComputedValue(anim->TransitionProperty(),
+                                                     aNewStyleContext,
+                                                     currentValue) ||
           currentValue != anim->ToValue()) {
         
         if (anim->HasCurrentEffect()) {
@@ -591,7 +581,7 @@ nsTransitionManager::UpdateTransitions(
 
 void
 nsTransitionManager::ConsiderStartingTransition(
-  nsCSSProperty aProperty,
+  nsCSSPropertyID aProperty,
   const StyleTransition& aTransition,
   dom::Element* aElement,
   CSSTransitionCollection*& aElementTransitions,
@@ -629,8 +619,12 @@ nsTransitionManager::ConsiderStartingTransition(
 
   StyleAnimationValue startValue, endValue, dummyValue;
   bool haveValues =
-    ExtractNonDiscreteComputedValue(aProperty, aOldStyleContext, startValue) &&
-    ExtractNonDiscreteComputedValue(aProperty, aNewStyleContext, endValue);
+    StyleAnimationValue::ExtractComputedValue(aProperty,
+                                              aOldStyleContext,
+                                              startValue) &&
+    StyleAnimationValue::ExtractComputedValue(aProperty,
+                                              aNewStyleContext,
+                                              endValue);
 
   bool haveChange = startValue != endValue;
 
@@ -868,7 +862,7 @@ nsTransitionManager::ConsiderStartingTransition(
 }
 
 static Keyframe&
-AppendKeyframe(double aOffset, nsCSSProperty aProperty,
+AppendKeyframe(double aOffset, nsCSSPropertyID aProperty,
                StyleAnimationValue&& aValue, nsTArray<Keyframe>& aKeyframes)
 {
   Keyframe& frame = *aKeyframes.AppendElement();
@@ -885,7 +879,7 @@ AppendKeyframe(double aOffset, nsCSSProperty aProperty,
 nsTArray<Keyframe>
 nsTransitionManager::GetTransitionKeyframes(
     nsStyleContext* aStyleContext,
-    nsCSSProperty aProperty,
+    nsCSSPropertyID aProperty,
     StyleAnimationValue&& aStartValue,
     StyleAnimationValue&& aEndValue,
     const nsTimingFunction& aTimingFunction)
@@ -935,8 +929,9 @@ nsTransitionManager::PruneCompletedTransitions(mozilla::dom::Element* aElement,
     
     
     StyleAnimationValue currentValue;
-    if (!ExtractNonDiscreteComputedValue(anim->TransitionProperty(),
-                                         aNewStyleContext, currentValue) ||
+    if (!StyleAnimationValue::ExtractComputedValue(anim->TransitionProperty(),
+                                                   aNewStyleContext,
+                                                   currentValue) ||
         currentValue != anim->ToValue()) {
       anim->CancelFromStyle();
       animations.RemoveElementAt(i);

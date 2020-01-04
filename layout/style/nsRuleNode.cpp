@@ -1315,7 +1315,6 @@ struct SetEnumValueHelper
   }
 
   DEFINE_ENUM_CLASS_SETTER(StyleBoxSizing, Content, Border)
-  DEFINE_ENUM_CLASS_SETTER(StyleFillRule, NonZero, EvenOdd)
   DEFINE_ENUM_CLASS_SETTER(StyleFloat, None_, InlineEnd)
   DEFINE_ENUM_CLASS_SETTER(StyleFloatEdge, ContentBox, MarginBox)
   DEFINE_ENUM_CLASS_SETTER(StyleUserFocus, None_, SelectMenu)
@@ -5179,7 +5178,7 @@ nsRuleNode::ComputeUIResetData(void* aStartStruct,
 
 
 struct TransitionPropInfo {
-  nsCSSProperty property;
+  nsCSSPropertyID property;
   
   uint32_t nsStyleDisplay::* sdCount;
 };
@@ -5352,7 +5351,7 @@ nsRuleNode::ComputeTimingFunction(const nsCSSValue& aValue,
 }
 
 static uint8_t
-GetWillChangeBitFieldFromPropFlags(const nsCSSProperty& aProp)
+GetWillChangeBitFieldFromPropFlags(const nsCSSPropertyID& aProp)
 {
   uint8_t willChangeBitField = 0;
   if (nsCSSProps::PropHasFlags(aProp, CSS_PROPERTY_CREATES_STACKING_CONTEXT)) {
@@ -5495,7 +5494,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       if (val.GetUnit() == eCSSUnit_Ident) {
         nsDependentString
           propertyStr(property.list->mValue.GetStringBufferValue());
-        nsCSSProperty prop =
+        nsCSSPropertyID prop =
           nsCSSProps::LookupProperty(propertyStr,
                                      CSSEnabledState::eForAllContent);
         if (prop == eCSSProperty_UNKNOWN ||
@@ -6295,14 +6294,14 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
           display->mWillChangeBitField |= NS_STYLE_WILL_CHANGE_SCROLL;
         }
 
-        nsCSSProperty prop =
+        nsCSSPropertyID prop =
           nsCSSProps::LookupProperty(buffer, CSSEnabledState::eForAllContent);
         if (prop != eCSSProperty_UNKNOWN &&
             prop != eCSSPropertyExtra_variable) {
           
           
           if (nsCSSProps::IsShorthand(prop)) {
-            for (const nsCSSProperty* shorthands =
+            for (const nsCSSPropertyID* shorthands =
                    nsCSSProps::SubpropertyEntryFor(prop);
                  *shorthands != eCSSProperty_UNKNOWN; ++shorthands) {
               display->mWillChangeBitField |= GetWillChangeBitFieldFromPropFlags(*shorthands);
@@ -7336,7 +7335,7 @@ nsRuleNode::ComputeMarginData(void* aStartStruct,
   COMPUTE_START_RESET(Margin, margin, parentMargin)
 
   
-  const nsCSSProperty* subprops =
+  const nsCSSPropertyID* subprops =
     nsCSSProps::SubpropertyEntryFor(eCSSProperty_margin);
   nsStyleCoord coord;
   NS_FOR_CSS_SIDES(side) {
@@ -7450,7 +7449,7 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
   
   nsStyleCoord coord;
   {
-    const nsCSSProperty* subprops =
+    const nsCSSPropertyID* subprops =
       nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_width);
     NS_FOR_CSS_SIDES(side) {
       const nsCSSValue& value = *aRuleData->ValueFor(subprops[side]);
@@ -7497,7 +7496,7 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
 
   
   {
-    const nsCSSProperty* subprops =
+    const nsCSSPropertyID* subprops =
       nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_style);
     NS_FOR_CSS_SIDES(side) {
       const nsCSSValue& value = *aRuleData->ValueFor(subprops[side]);
@@ -7522,7 +7521,7 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
   nscolor borderColor;
   nscolor unused = NS_RGB(0,0,0);
 
-  static const nsCSSProperty borderColorsProps[] = {
+  static const nsCSSPropertyID borderColorsProps[] = {
     eCSSProperty_border_top_colors,
     eCSSProperty_border_right_colors,
     eCSSProperty_border_bottom_colors,
@@ -7581,7 +7580,7 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
 
   
   {
-    const nsCSSProperty* subprops =
+    const nsCSSPropertyID* subprops =
       nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_color);
     bool foreground;
     NS_FOR_CSS_SIDES(side) {
@@ -7627,7 +7626,7 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
 
   
   {
-    const nsCSSProperty* subprops =
+    const nsCSSPropertyID* subprops =
       nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_radius);
     NS_FOR_CSS_FULL_CORNERS(corner) {
       int cx = NS_FULL_TO_HALF_CORNER(corner, false);
@@ -7757,7 +7756,7 @@ nsRuleNode::ComputePaddingData(void* aStartStruct,
   COMPUTE_START_RESET(Padding, padding, parentPadding)
 
   
-  const nsCSSProperty* subprops =
+  const nsCSSPropertyID* subprops =
     nsCSSProps::SubpropertyEntryFor(eCSSProperty_padding);
   nsStyleCoord coord;
   NS_FOR_CSS_SIDES(side) {
@@ -7845,7 +7844,7 @@ nsRuleNode::ComputeOutlineData(void* aStartStruct,
 
   
   {
-    const nsCSSProperty* subprops =
+    const nsCSSPropertyID* subprops =
       nsCSSProps::SubpropertyEntryFor(eCSSProperty__moz_outline_radius);
     NS_FOR_CSS_FULL_CORNERS(corner) {
       int cx = NS_FULL_TO_HALF_CORNER(corner, false);
@@ -8387,7 +8386,7 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
   COMPUTE_START_RESET(Position, pos, parentPos)
 
   
-  static const nsCSSProperty offsetProps[] = {
+  static const nsCSSPropertyID offsetProps[] = {
     eCSSProperty_top,
     eCSSProperty_right,
     eCSSProperty_bottom,
@@ -9372,7 +9371,7 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
            svg->mClipRule, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INHERIT,
            parentSVG->mClipRule,
-           StyleFillRule::NonZero);
+           NS_STYLE_FILL_RULE_NONZERO);
 
   
   SetValue(*aRuleData->ValueForColorInterpolation(),
@@ -9406,7 +9405,7 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
            svg->mFillRule, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INHERIT,
            parentSVG->mFillRule,
-           StyleFillRule::NonZero);
+           NS_STYLE_FILL_RULE_NONZERO);
 
   
   const nsCSSValue* markerEndValue = aRuleData->ValueForMarkerEnd();
@@ -9638,9 +9637,7 @@ GetStyleBasicShapeFromCSSValue(const nsCSSValue& aValue,
                "polygon has wrong number of arguments");
     size_t j = 1;
     if (shapeFunction->Item(j).GetUnit() == eCSSUnit_Enumerated) {
-      StyleFillRule rule;
-      SetEnumValueHelper::SetEnumeratedValue(rule, shapeFunction->Item(j));
-      basicShape->SetFillRule(rule);
+      basicShape->SetFillRule(shapeFunction->Item(j).GetIntValue());
       ++j;
     }
     const int32_t mask = SETCOORD_PERCENT | SETCOORD_LENGTH |
@@ -10364,21 +10361,6 @@ nsRuleNode::GetStyleData(nsStyleStructID aSID,
   return data;
 }
 
-void
-nsRuleNode::GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
-                                          nsCSSValue* aValue)
-{
-  for (nsRuleNode* node = this; node; node = node->GetParent()) {
-    nsIStyleRule* rule = node->GetRule();
-    if (!rule) {
-      continue;
-    }
-    if (rule->GetDiscretelyAnimatedCSSValue(aProperty, aValue)) {
-      return;
-    }
-  }
-}
-
  bool
 nsRuleNode::HasAuthorSpecifiedRules(nsStyleContext* aStyleContext,
                                     uint32_t ruleTypeMask,
@@ -10449,12 +10431,12 @@ nsRuleNode::HasAuthorSpecifiedRules(nsStyleContext* aStyleContext,
     ruleData.mValueOffsets[eStyleStruct_Text] = textShadowOffset;
   }
 
-  static const nsCSSProperty backgroundValues[] = {
+  static const nsCSSPropertyID backgroundValues[] = {
     eCSSProperty_background_color,
     eCSSProperty_background_image,
   };
 
-  static const nsCSSProperty borderValues[] = {
+  static const nsCSSPropertyID borderValues[] = {
     eCSSProperty_border_top_color,
     eCSSProperty_border_top_style,
     eCSSProperty_border_top_width,
@@ -10473,14 +10455,14 @@ nsRuleNode::HasAuthorSpecifiedRules(nsStyleContext* aStyleContext,
     eCSSProperty_border_bottom_left_radius,
   };
 
-  static const nsCSSProperty paddingValues[] = {
+  static const nsCSSPropertyID paddingValues[] = {
     eCSSProperty_padding_top,
     eCSSProperty_padding_right,
     eCSSProperty_padding_bottom,
     eCSSProperty_padding_left,
   };
 
-  static const nsCSSProperty textShadowValues[] = {
+  static const nsCSSPropertyID textShadowValues[] = {
     eCSSProperty_text_shadow
   };
 
@@ -10492,7 +10474,7 @@ nsRuleNode::HasAuthorSpecifiedRules(nsStyleContext* aStyleContext,
                      MOZ_ARRAY_LENGTH(paddingValues) +
                      MOZ_ARRAY_LENGTH(textShadowValues)];
 
-  nsCSSProperty properties[MOZ_ARRAY_LENGTH(backgroundValues) +
+  nsCSSPropertyID properties[MOZ_ARRAY_LENGTH(backgroundValues) +
                            MOZ_ARRAY_LENGTH(borderValues) +
                            MOZ_ARRAY_LENGTH(paddingValues) +
                            MOZ_ARRAY_LENGTH(textShadowValues)];
@@ -10616,7 +10598,7 @@ nsRuleNode::HasAuthorSpecifiedRules(nsStyleContext* aStyleContext,
 
  void
 nsRuleNode::ComputePropertiesOverridingAnimation(
-                              const nsTArray<nsCSSProperty>& aProperties,
+                              const nsTArray<nsCSSPropertyID>& aProperties,
                               nsStyleContext* aStyleContext,
                               nsCSSPropertySet& aPropertiesOverridden)
 {
@@ -10629,7 +10611,7 @@ nsRuleNode::ComputePropertiesOverridingAnimation(
   size_t offsets[nsStyleStructID_Length];
   for (size_t propIdx = 0, propEnd = aProperties.Length();
        propIdx < propEnd; ++propIdx) {
-    nsCSSProperty prop = aProperties[propIdx];
+    nsCSSPropertyID prop = aProperties[propIdx];
     nsStyleStructID sid = nsCSSProps::kSIDTable[prop];
     uint32_t bit = nsCachedStyleData::GetBitForSID(sid);
     if (!(structBits & bit)) {
@@ -10690,7 +10672,7 @@ nsRuleNode::ComputePropertiesOverridingAnimation(
 
   for (size_t propIdx = 0, propEnd = aProperties.Length();
        propIdx < propEnd; ++propIdx) {
-    nsCSSProperty prop = aProperties[propIdx];
+    nsCSSPropertyID prop = aProperties[propIdx];
     if (ruleData.ValueFor(prop)->GetUnit() != eCSSUnit_Null) {
       aPropertiesOverridden.AddProperty(prop);
     }

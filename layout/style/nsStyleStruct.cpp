@@ -957,10 +957,10 @@ nsStyleSVG::nsStyleSVG(StyleStructContext aContext)
   , mFillOpacity(1.0f)
   , mStrokeMiterlimit(4.0f)
   , mStrokeOpacity(1.0f)
-  , mClipRule(StyleFillRule::NonZero)
+  , mClipRule(NS_STYLE_FILL_RULE_NONZERO)
   , mColorInterpolation(NS_STYLE_COLOR_INTERPOLATION_SRGB)
   , mColorInterpolationFilters(NS_STYLE_COLOR_INTERPOLATION_LINEARRGB)
-  , mFillRule(StyleFillRule::NonZero)
+  , mFillRule(NS_STYLE_FILL_RULE_NONZERO)
   , mPaintOrder(NS_STYLE_PAINT_ORDER_NORMAL)
   , mShapeRendering(NS_STYLE_SHAPE_RENDERING_AUTO)
   , mStrokeLinecap(NS_STYLE_STROKE_LINECAP_BUTT)
@@ -2335,7 +2335,7 @@ nsStyleImage::PurgeCacheForViewportChange(
 
 
 
-const nsCSSProperty nsStyleImageLayers::kBackgroundLayerTable[] = {
+const nsCSSPropertyID nsStyleImageLayers::kBackgroundLayerTable[] = {
   eCSSProperty_background,                
   eCSSProperty_background_color,          
   eCSSProperty_background_image,          
@@ -2351,7 +2351,7 @@ const nsCSSProperty nsStyleImageLayers::kBackgroundLayerTable[] = {
 };
 
 #ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
-const nsCSSProperty nsStyleImageLayers::kMaskLayerTable[] = {
+const nsCSSPropertyID nsStyleImageLayers::kMaskLayerTable[] = {
   eCSSProperty_mask,                      
   eCSSProperty_UNKNOWN,                   
   eCSSProperty_mask_image,                
@@ -2917,7 +2917,7 @@ StyleTransition::SetInitialValues()
 }
 
 void
-StyleTransition::SetUnknownProperty(nsCSSProperty aProperty,
+StyleTransition::SetUnknownProperty(nsCSSPropertyID aProperty,
                                              const nsAString& aPropertyString)
 {
   MOZ_ASSERT(nsCSSProps::LookupProperty(aPropertyString,
