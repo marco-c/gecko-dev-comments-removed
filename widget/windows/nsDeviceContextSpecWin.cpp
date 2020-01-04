@@ -31,6 +31,7 @@
 #include "nsIWindowWatcher.h"
 #include "nsIDOMWindow.h"
 #include "mozilla/Services.h"
+#include "nsWindowsHelpers.h"
 
 
 #include "nsNativeCharsetUtils.h"
@@ -371,6 +372,20 @@ nsDeviceContextSpecWin::GetDataFromPrinter(char16ptr_t aName, nsIPrintSettings* 
       dwRet = ::DocumentPropertiesW(nullptr, hPrinter, name,
                                    pDevMode, pDevMode,
                                    DM_IN_BUFFER | DM_OUT_BUFFER);
+
+      
+      
+      if (dwRet == IDOK) {
+        
+        nsAutoHDC printerDC(::CreateICW(kDriverName, aName, nullptr, pDevMode));
+        if (NS_WARN_IF(!printerDC)) {
+          ::HeapFree(::GetProcessHeap(), 0, pDevMode);
+          ::ClosePrinter(hPrinter);
+          return NS_ERROR_FAILURE;
+        }
+
+        psWin->CopyFromNative(printerDC, pDevMode);
+      }
     }
 
     if (dwRet != IDOK) {
