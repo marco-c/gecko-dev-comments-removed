@@ -652,6 +652,8 @@ nsPluginFrame::CallSetWindow(bool aCheckIsHidden)
   window->width = intBounds.width / intScaleFactor;
   window->height = intBounds.height / intScaleFactor;
 
+  mInstanceOwner->ResolutionMayHaveChanged();
+
   
   
   
