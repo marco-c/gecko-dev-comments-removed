@@ -945,61 +945,94 @@ exports.method = function(fn, spec={}) {
 
 
 
-
-var actorProto = function(actorProto) {
-  if (actorProto._actorSpec) {
-    throw new Error("actorProto called twice on the same actor prototype!");
-  }
-
-  let protoSpec = {
-    methods: [],
+var generateActorSpec = function(actorDesc) {
+  let actorSpec = {
+    typeName: actorDesc.typeName,
+    methods: []
   };
 
   
-  for (let name of Object.getOwnPropertyNames(actorProto)) {
-    let desc = Object.getOwnPropertyDescriptor(actorProto, name);
+  for (let name of Object.getOwnPropertyNames(actorDesc)) {
+    let desc = Object.getOwnPropertyDescriptor(actorDesc, name);
     if (!desc.value) {
       continue;
     }
 
     if (name.startsWith("formType")) {
       if (typeof(desc.value) === "string") {
-        protoSpec[name] = types.getType(desc.value);
+        actorSpec[name] = types.getType(desc.value);
       } else if (desc.value.name && registeredTypes.has(desc.value.name)) {
-        protoSpec[name] = desc.value;
+        actorSpec[name] = desc.value;
       } else {
         
-        protoSpec[name] = types.addDictType(actorProto.typeName + "__" + name, desc.value);
+        actorSpec[name] = types.addDictType(actorDesc.typeName + "__" + name, desc.value);
       }
     }
 
     if (desc.value._methodSpec) {
-      let frozenSpec = desc.value._methodSpec;
+      let methodSpec = desc.value._methodSpec;
       let spec = {};
-      spec.name = frozenSpec.name || name;
-      spec.request = Request(object.merge({type: spec.name}, frozenSpec.request || undefined));
-      spec.response = Response(frozenSpec.response || undefined);
-      spec.telemetry = frozenSpec.telemetry;
-      spec.release = frozenSpec.release;
-      spec.oneway = frozenSpec.oneway;
+      spec.name = methodSpec.name || name;
+      spec.request = Request(object.merge({type: spec.name}, methodSpec.request || undefined));
+      spec.response = Response(methodSpec.response || undefined);
+      spec.telemetry = methodSpec.telemetry;
+      spec.release = methodSpec.release;
+      spec.oneway = methodSpec.oneway;
 
-      protoSpec.methods.push(spec);
+      actorSpec.methods.push(spec);
     }
   }
 
   
-  if (actorProto.events) {
-    protoSpec.events = new Map();
-    for (let name in actorProto.events) {
-      let eventRequest = actorProto.events[name];
-      Object.freeze(eventRequest);
-      protoSpec.events.set(name, Request(object.merge({type: name}, eventRequest)));
+  if (actorDesc.methods) {
+    for (let name in actorDesc.methods) {
+      let methodSpec = actorDesc.methods[name];
+      let spec = {};
+
+      spec.name = methodSpec.name || name;
+      spec.request = Request(object.merge({type: spec.name}, methodSpec.request || undefined));
+      spec.response = Response(methodSpec.response || undefined);
+      spec.telemetry = methodSpec.telemetry;
+      spec.release = methodSpec.release;
+      spec.oneway = methodSpec.oneway;
+
+      actorSpec.methods.push(spec);
     }
   }
+
+  
+  if (actorDesc.events) {
+    actorSpec.events = new Map();
+    for (let name in actorDesc.events) {
+      let eventRequest = actorDesc.events[name];
+      Object.freeze(eventRequest);
+      actorSpec.events.set(name, Request(object.merge({type: name}, eventRequest)));
+    }
+  }
+
+  if (!registeredTypes.has(actorSpec.typeName)) {
+    types.addActorType(actorSpec.typeName);
+  }
+  registeredTypes.get(actorSpec.typeName).actorSpec = actorSpec;
+
+  return actorSpec;
+};
+exports.generateActorSpec = generateActorSpec;
+
+
+
+
+
+var generateRequestHandlers = function(actorSpec, actorProto) {
+  if (actorProto._actorSpec) {
+    throw new Error("actorProto called twice on the same actor prototype!");
+  }
+
+  actorProto.typeName = actorSpec.typeName;
 
   
   actorProto.requestTypes = Object.create(null);
-  protoSpec.methods.forEach(spec => {
+  actorSpec.methods.forEach(spec => {
     let handler = function(packet, conn) {
       try {
         let args;
@@ -1055,7 +1088,8 @@ var actorProto = function(actorProto) {
     actorProto.requestTypes[spec.request.type] = handler;
   });
 
-  actorProto._actorSpec = protoSpec;
+  actorProto._actorSpec = actorSpec;
+
   return actorProto;
 }
 
@@ -1066,19 +1100,30 @@ var actorProto = function(actorProto) {
 
 
 
-exports.ActorClass = function(proto) {
-  if (!proto.typeName) {
-    throw Error("Actor prototype must have a typeName member.");
-  }
-  proto.extends = Actor;
-  if (!registeredTypes.has(proto.typeName)) {
-    types.addActorType(proto.typeName);
-  }
-  let cls = Class(actorProto(proto));
+exports.ActorClass = function (actorProto) {
+  return ActorClassWithSpec(generateActorSpec(actorProto), actorProto);
+};
 
-  registeredTypes.get(proto.typeName).actorSpec = proto._actorSpec;
+
+
+
+
+
+
+
+
+
+var ActorClassWithSpec = function(actorSpec, actorProto) {
+  if (!actorSpec.typeName) {
+    throw Error("Actor specification must have a typeName member.");
+  }
+
+  actorProto.extends = Actor;
+  let cls = Class(generateRequestHandlers(actorSpec, actorProto));
+
   return cls;
 };
+exports.ActorClassWithSpec = ActorClassWithSpec;
 
 
 
@@ -1273,23 +1318,22 @@ function prototypeOf(obj) {
 
 
 
-var frontProto = function(proto) {
-  let actorType = prototypeOf(proto.actorType);
-  if (proto._actorSpec) {
+var generateRequestMethods = function(actorSpec, frontProto) {
+  if (frontProto._actorSpec) {
     throw new Error("frontProto called twice on the same front prototype!");
   }
-  proto._actorSpec = actorType._actorSpec;
-  proto.typeName = actorType.typeName;
+
+  frontProto.typeName = actorSpec.typeName;
 
   
-  let methods = proto._actorSpec.methods;
+  let methods = actorSpec.methods;
   methods.forEach(spec => {
     let name = spec.name;
 
     
     
-    if (name in proto) {
-      let custom = proto[spec.name]._customFront;
+    if (name in frontProto) {
+      let custom = frontProto[spec.name]._customFront;
       if (custom === undefined) {
         throw Error("Existing method for " + spec.name + " not marked customFront while processing " + actorType.typeName + ".");
       }
@@ -1300,7 +1344,7 @@ var frontProto = function(proto) {
       name = custom.impl;
     }
 
-    proto[name] = function(...args) {
+    frontProto[name] = function(...args) {
       let histogram, startTime;
       if (spec.telemetry) {
         if (spec.oneway) {
@@ -1354,8 +1398,8 @@ var frontProto = function(proto) {
 
     
     if (spec.release) {
-      let fn = proto[name];
-      proto[name] = function(...args) {
+      let fn = frontProto[name];
+      frontProto[name] = function(...args) {
         return fn.apply(this, args).then(result => {
           this.destroy();
           return result;
@@ -1366,14 +1410,14 @@ var frontProto = function(proto) {
 
 
   
-  proto._clientSpec = {};
+  frontProto._clientSpec = {};
 
-  let events = proto._actorSpec.events;
+  let events = actorSpec.events;
   if (events) {
     
     let preHandlers = new Map();
-    for (let name of Object.getOwnPropertyNames(proto)) {
-      let desc = Object.getOwnPropertyDescriptor(proto, name);
+    for (let name of Object.getOwnPropertyNames(frontProto)) {
+      let desc = Object.getOwnPropertyDescriptor(frontProto, name);
       if (!desc.value) {
         continue;
       }
@@ -1391,17 +1435,20 @@ var frontProto = function(proto) {
       }
     }
 
-    proto._clientSpec.events = new Map();
+    frontProto._clientSpec.events = new Map();
 
     for (let [name, request] of events) {
-      proto._clientSpec.events.set(request.type, {
+      frontProto._clientSpec.events.set(request.type, {
         name: name,
         request: request,
         pre: preHandlers.get(name)
       });
     }
   }
-  return proto;
+
+  frontProto._actorSpec = actorSpec;
+
+  return frontProto;
 }
 
 
@@ -1413,14 +1460,31 @@ var frontProto = function(proto) {
 
 
 
-exports.FrontClass = function(actorType, proto) {
-  proto.actorType = actorType;
-  proto.extends = Front;
-  let cls = Class(frontProto(proto));
-  registeredTypes.get(cls.prototype.typeName).frontClass = cls;
+exports.FrontClass = function(actorType, frontProto) {
+  return FrontClassWithSpec(prototypeOf(actorType)._actorSpec, frontProto);
+}
+
+
+
+
+
+
+
+
+
+
+var FrontClassWithSpec = function(actorSpec, frontProto) {
+  frontProto.extends = Front;
+  let cls = Class(generateRequestMethods(actorSpec, frontProto));
+
+  if (!registeredTypes.has(actorSpec.typeName)) {
+    types.addActorType(actorSpec.typeName);
+  }
+  registeredTypes.get(actorSpec.typeName).frontClass = cls;
+
   return cls;
 }
-
+exports.FrontClassWithSpec = FrontClassWithSpec;
 
 exports.dumpActorSpec = function(type) {
   let actorSpec = type.actorSpec;
