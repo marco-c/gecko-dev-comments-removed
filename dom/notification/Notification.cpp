@@ -2710,7 +2710,7 @@ Notification::ShowPersistentNotification(JSContext* aCx,
   
   
   
-  p->MaybeResolve(JS::UndefinedHandleValue);
+  p->MaybeResolveWithUndefined();
 
   RefPtr<Notification> notification =
     CreateAndShow(aCx, aGlobal, aTitle, aOptions, aScope, aRv);
