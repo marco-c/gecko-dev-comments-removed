@@ -685,6 +685,9 @@ private:
   
   void NotifyTabContextUpdated();
 
+  
+  void UpdateFrameType();
+
   void ActorDestroy(ActorDestroyReason why) override;
 
   enum FrameScriptLoading { DONT_LOAD_SCRIPTS, DEFAULT_LOAD_SCRIPTS };

@@ -879,12 +879,20 @@ TabChild::NotifyTabContextUpdated()
     return;
   }
 
-  docShell->SetFrameType(IsMozBrowserElement() ?
-                           nsIDocShell::FRAME_TYPE_BROWSER :
-                           HasOwnApp() ?
-                             nsIDocShell::FRAME_TYPE_APP :
-                             nsIDocShell::FRAME_TYPE_REGULAR);
+  UpdateFrameType();
   nsDocShell::Cast(docShell)->SetOriginAttributes(OriginAttributesRef());
+}
+
+void
+TabChild::UpdateFrameType()
+{
+  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+  MOZ_ASSERT(docShell);
+
+  
+  docShell->SetFrameType(IsMozBrowserElement() ? nsIDocShell::FRAME_TYPE_BROWSER :
+                           HasOwnApp() ? nsIDocShell::FRAME_TYPE_APP :
+                             nsIDocShell::FRAME_TYPE_REGULAR);
 }
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(TabChild)
@@ -2365,7 +2373,11 @@ TabChild::RecvSwappedWithOtherRemoteLoader(const IPCTabContext& aContext)
   if (!UpdateTabContextAfterSwap(maybeContext.GetTabContext())) {
     MOZ_CRASH("Update to TabContext after swap was denied.");
   }
-  NotifyTabContextUpdated();
+
+  
+  
+  
+  UpdateFrameType();
 
   
   mTriedBrowserInit = true;
