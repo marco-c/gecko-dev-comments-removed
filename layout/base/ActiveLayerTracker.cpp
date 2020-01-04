@@ -5,7 +5,9 @@
 #include "ActiveLayerTracker.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/gfx/Matrix.h"
+#include "mozilla/EffectSet.h"
 #include "mozilla/PodOperations.h"
 #include "nsExpirationTracker.h"
 #include "nsContainerFrame.h"
@@ -451,17 +453,13 @@ ActiveLayerTracker::IsOffsetOrMarginStyleAnimated(nsIFrame* aFrame)
 
 
 static bool
-ContainsAnimatedScale(AnimationCollection* aCollection, nsIFrame* aFrame)
+ContainsAnimatedScale(EffectSet& aEffects, nsIFrame* aFrame)
 {
-  if (!aCollection) {
-    return false;
-  }
-
-  for (dom::Animation* anim : aCollection->mAnimations) {
-    if (!anim->HasCurrentEffect()) {
+  for (dom::KeyframeEffectReadOnly* effect : aEffects) {
+    if (!effect->IsCurrent()) {
       continue;
     }
-    KeyframeEffectReadOnly* effect = anim->GetEffect();
+
     for (const AnimationProperty& prop : effect->Properties()) {
       if (prop.mProperty != eCSSProperty_transform) {
         continue;
@@ -491,27 +489,10 @@ ActiveLayerTracker::IsScaleSubjectToAnimation(nsIFrame* aFrame)
     return true;
   }
 
-  nsIContent* content = aFrame->GetContent();
-  if (!content || !content->IsElement()) {
-    return false;
-  }
-
-  nsCSSPseudoElements::Type pseudoType =
-    aFrame->StyleContext()->GetPseudoType();
-
   
-  AnimationCollection* transitions =
-    aFrame->PresContext()->TransitionManager()->GetAnimations(
-      content->AsElement(), pseudoType, false );
-  if (ContainsAnimatedScale(transitions, aFrame)) {
-    return true;
-  }
-
   
-  AnimationCollection* animations =
-    aFrame->PresContext()->AnimationManager()->GetAnimations(
-      content->AsElement(), pseudoType, false );
-  if (ContainsAnimatedScale(animations, aFrame)) {
+  EffectSet* effects = EffectSet::GetEffectSet(aFrame);
+  if (effects && ContainsAnimatedScale(*effects, aFrame)) {
     return true;
   }
 
