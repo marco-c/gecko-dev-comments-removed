@@ -376,10 +376,6 @@ this.FxAccountsClient.prototype = {
 
 
 
-
-
-
-
   registerDevice(sessionTokenHex, name, type, options = {}) {
     let path = "/account/device";
 
@@ -389,19 +385,11 @@ this.FxAccountsClient.prototype = {
     if (options.pushCallback) {
       body.pushCallback = options.pushCallback;
     }
-    if (options.pushPublicKey && options.pushAuthKey) {
-      body.pushPublicKey = options.pushPublicKey;
-      body.pushAuthKey = options.pushAuthKey;
-    }
 
     return this._request(path, "POST", creds, body);
   },
 
   
-
-
-
-
 
 
 
@@ -429,10 +417,6 @@ this.FxAccountsClient.prototype = {
     let body = { id, name };
     if (options.pushCallback) {
       body.pushCallback = options.pushCallback;
-    }
-    if (options.pushPublicKey && options.pushAuthKey) {
-      body.pushPublicKey = options.pushPublicKey;
-      body.pushAuthKey = options.pushAuthKey;
     }
 
     return this._request(path, "POST", creds, body);
