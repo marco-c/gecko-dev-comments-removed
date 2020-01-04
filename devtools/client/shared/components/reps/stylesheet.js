@@ -11,9 +11,8 @@ define(function (require, exports, module) {
   const React = require("devtools/client/shared/vendor/react");
 
   
-  const { createFactories, isGrip } = require("./rep-utils");
+  const { createFactories, isGrip, getFileName } = require("./rep-utils");
   const { ObjectBox } = createFactories(require("./object-box"));
-  const { getFileName } = require("./url");
 
   
   const DOM = React.DOM;
