@@ -1,66 +1,7 @@
 
 
 
-const TEST_URI = "http://example.com/browser/dom/tests/browser/test-console-api.html";
 const TEST_URI_NAV = "http://example.com/browser/dom/tests/browser/";
-
-var ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"]
-                          .getService(Ci.nsIConsoleAPIStorage);
-
-var apiCallCount;
-
-var ConsoleObserver = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
-
-  init: function CO_init()
-  {
-    Services.obs.addObserver(this, "console-storage-cache-event", false);
-    apiCallCount = 0;
-  },
-
-  observe: function CO_observe(aSubject, aTopic, aData)
-  {
-    if (aTopic == "console-storage-cache-event") {
-      apiCallCount ++;
-      if (apiCallCount == 4) {
-        Services.obs.removeObserver(this, "console-storage-cache-event");
-
-        try {
-        let tab = gBrowser.selectedTab;
-        let browser = gBrowser.selectedBrowser;
-        let win = browser.contentWindow;
-        let windowID = getWindowId(win);
-        let messages = ConsoleAPIStorage.getEvents(windowID);
-        ok(messages.length >= 4, "Some messages found in the storage service");
-
-        ConsoleAPIStorage.clearEvents();
-        messages = ConsoleAPIStorage.getEvents(windowID);
-        is(messages.length, 0, "Cleared Storage");
-
-        
-        
-        win.console.log("adding a new event");
-        
-        gBrowser.removeTab(tab, {animate: false});
-        
-        SpecialPowers.DOMWindowUtils.garbageCollect();
-        
-        
-        executeSoon(function () {
-          
-          messages = ConsoleAPIStorage.getEvents(windowID);
-          is(messages.length, 0, "tab close is clearing the cache");
-          finish();
-        });
-        } catch (ex) {
-          dump(ex + "\n\n\n");
-          dump(ex.stack + "\n\n\n");
-          ok(false, "We got an unexpected exception");
-        }
-      }
-    }
-  }
-};
 
 function tearDown()
 {
@@ -68,7 +9,7 @@ function tearDown()
     gBrowser.removeCurrentTab();
 }
 
-function test()
+add_task(function*()
 {
   
   Services.prefs.setIntPref("browser.tabs.max_tabs_undo", 0);
@@ -78,26 +19,86 @@ function test()
 
   registerCleanupFunction(tearDown);
 
-  ConsoleObserver.init();
+  
+  
+  var keepaliveTab = gBrowser.addTab("about:blank");
 
-  waitForExplicitFinish();
-
-  var tab = gBrowser.addTab(TEST_URI);
+  
+  var tab = gBrowser.addTab("about:blank");
   gBrowser.selectedTab = tab;
   var browser = gBrowser.selectedBrowser;
+
+  let observerPromise = ContentTask.spawn(browser, null, function(opt) {
+    const TEST_URI = "http://example.com/browser/dom/tests/browser/test-console-api.html";
+    let ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"]
+          .getService(Ci.nsIConsoleAPIStorage);
+
+    return new Promise(resolve => {
+      let apiCallCount = 0;
+      let ConsoleObserver = {
+        QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
+
+        observe: function(aSubject, aTopic, aData) {
+          if (aTopic == "console-storage-cache-event") {
+            apiCallCount++;
+            if (apiCallCount == 4) {
+              let windowId = content.window.QueryInterface(Ci.nsIInterfaceRequestor)
+                    .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+
+              Services.obs.removeObserver(this, "console-storage-cache-event");
+              Assert.ok(ConsoleAPIStorage.getEvents(windowId).length >= 4, "Some messages found in the storage service");
+              ConsoleAPIStorage.clearEvents();
+              Assert.equal(ConsoleAPIStorage.getEvents(windowId).length, 0, "Cleared Storage");
+
+              resolve(windowId);
+            }
+          }
+        }
+      };
+
+      Services.obs.addObserver(ConsoleObserver, "console-storage-cache-event", false);
+
+      
+      content.window.location = TEST_URI;
+    });
+  });
+
+  let win;
   browser.addEventListener("DOMContentLoaded", function onLoad(event) {
     browser.removeEventListener("DOMContentLoaded", onLoad, false);
     executeSoon(function test_executeSoon() {
-      let win = browser.contentWindow;
+      win = browser.contentWindow;
       win.console.log("this", "is", "a", "log message");
       win.console.info("this", "is", "a", "info message");
       win.console.warn("this", "is", "a", "warn message");
       win.console.error("this", "is", "a", "error message");
     });
   }, false);
-}
 
-function getWindowId(aWindow)
-{
-  return SpecialPowers.getDOMWindowUtils(aWindow).currentInnerWindowID;
-}
+  let windowId = yield observerPromise;
+  
+  
+  win.console.log("adding a new event");
+
+  
+  gBrowser.removeTab(tab, {animate: false});
+  
+  SpecialPowers.DOMWindowUtils.garbageCollect();
+
+  
+  gBrowser.selectedTab = keepaliveTab;
+  browser = gBrowser.selectedBrowser;
+
+  
+  
+  
+  yield ContentTask.spawn(browser, null, function() {
+    yield new Promise(resolve => setTimeout(resolve, 0));
+  });
+
+  yield ContentTask.spawn(browser, windowId, function(windowId) {
+    var ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"]
+          .getService(Ci.nsIConsoleAPIStorage);
+    Assert.equal(ConsoleAPIStorage.getEvents(windowId).length, 0, "tab close is clearing the cache");
+  });
+});
