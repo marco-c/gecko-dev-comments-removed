@@ -33,9 +33,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "loadExtScriptInScope",
-                                  "resource://gre/modules/ExtensionGlobalScope.jsm");
-
 function getConsole() {
   return new ConsoleAPI({
     maxLogLevelPref: "extensions.webextensions.log.level",
@@ -1640,6 +1637,8 @@ class SchemaAPIManager extends EventEmitter {
   constructor(processType) {
     super();
     this.processType = processType;
+    this.global = this._createExtGlobal();
+    this._scriptScopes = [];
     this._schemaApis = {
       addon_parent: [],
       addon_child: [],
@@ -1648,8 +1647,46 @@ class SchemaAPIManager extends EventEmitter {
     };
   }
 
+  
+
+
+
+
+
+  _createExtGlobal() {
+    let global = Cu.Sandbox(Services.scriptSecurityManager.getSystemPrincipal(), {
+      wantXrays: false,
+      sandboxName: `Namespace of ext-*.js scripts for ${this.processType}`,
+    });
+    Object.defineProperty(global, "console", {get() { return console; }});
+    global.extensions = this;
+    global.global = global;
+    global.Cc = Cc;
+    global.Ci = Ci;
+    global.Cu = Cu;
+    global.Cr = Cr;
+    XPCOMUtils.defineLazyModuleGetter(global, "require",
+                                      "resource://devtools/shared/Loader.jsm");
+    global.XPCOMUtils = XPCOMUtils;
+    return global;
+  }
+
+  
+
+
+
+
+
+
   loadScript(scriptUrl) {
-    loadExtScriptInScope(scriptUrl, this);
+    
+    
+    let scope = this.global.Object.create(null);
+
+    Services.scriptloader.loadSubScript(scriptUrl, scope, "UTF-8");
+
+    
+    this._scriptScopes.push(scope);
   }
 
   
