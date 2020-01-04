@@ -1218,7 +1218,8 @@ GeckoDriver.prototype.get = function(cmd, resp) {
   switch (this.context) {
     case Context.CONTENT:
       let get = this.listener.get({url: url, pageTimeout: this.pageTimeout});
-      let id = this.listener.curId;
+      
+      let id = this.listener.activeMessageId;
 
       
       

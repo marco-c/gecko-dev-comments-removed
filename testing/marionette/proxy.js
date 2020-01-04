@@ -6,17 +6,12 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("chrome://marionette/content/modal.js");
 
 this.EXPORTED_SYMBOLS = ["proxy"];
 
-const MARIONETTE_OK = "Marionette:ok";
-const MARIONETTE_DONE = "Marionette:done";
-const MARIONETTE_ERROR = "Marionette:error";
-
-const logger = Log.repository.getLogger("Marionette");
-const uuidgen = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+const uuidgen = Cc["@mozilla.org/uuid-generator;1"]
+    .getService(Ci.nsIUUIDGenerator);
 
 
 
@@ -48,9 +43,8 @@ this.proxy = {};
 
 
 
-
 proxy.toListener = function(mmFn, sendAsyncFn) {
-  let sender = new AsyncContentSender(mmFn, sendAsyncFn);
+  let sender = new proxy.AsyncContentSender(mmFn, sendAsyncFn);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
 
@@ -63,24 +57,19 @@ proxy.toListener = function(mmFn, sendAsyncFn) {
 
 
 
-
-
-
-this.AsyncContentSender = class {
+proxy.AsyncContentSender = class {
   constructor(mmFn, sendAsyncFn) {
-    this.curId = null;
     this.sendAsync = sendAsyncFn;
+    
+    this.activeMessageId = null;
+
     this.mmFn_ = mmFn;
-    this._listeners = [];
+    this.listeners_ = new Map();
+    this.dialogueObserver_ = null;
   }
 
   get mm() {
     return this.mmFn_();
-  }
-
-  removeListeners() {
-    this._listeners.map(l => this.mm.removeMessageListener(l[0], l[1]));
-    this._listeners = [];
   }
 
   
@@ -98,59 +87,68 @@ this.AsyncContentSender = class {
 
 
 
-  send(name, args) {
-    if (this._listeners[0]) {
-      
-      
-      logger.warn("A previous failed command left content listeners behind!");
-      this.removeListeners();
-    }
+  send(name, args = []) {
+    let uuid = uuidgen.generateUUID().toString();
+    
+    this.activeMessageId = uuid;
 
-    this.curId = uuidgen.generateUUID().toString();
-
-    let proxy = new Promise((resolve, reject) => {
-      let removeListeners = (n, fn) => {
-        let rmFn = msg => {
-          if (this.curId !== msg.json.command_id) {
-            logger.warn("Skipping out-of-sync response from listener: " +
-                `Expected response to ${name} with ID ${this.curId}, ` +
-                "but got: " + msg.name + msg.json.toSource());
-            return;
-          }
-
-          this.removeListeners();
-          modal.removeHandler(handleDialog);
-
-          fn(msg);
-          this.curId = null;
-        };
-
-        this._listeners.push([n, rmFn]);
-        return rmFn;
+    return new Promise((resolve, reject) => {
+      let path = proxy.AsyncContentSender.makeReplyPath(uuid);
+      let cb = msg => {
+        this.activeMessageId = null;
+        if ("error" in msg.json) {
+          reject(msg.objects.error);
+        } else {
+          resolve(msg.json.value);
+        }
       };
-
-      let okListener = () => resolve();
-      let valListener = msg => resolve(msg.json.value);
-      let errListener = msg => reject(msg.objects.error);
-
-      let handleDialog = (subject, topic) => {
-        this.removeListeners()
-        modal.removeHandler(handleDialog);
-        this.sendAsync("cancelRequest");
+      this.dialogueObserver_ = (subject, topic) => {
+        this.cancelAll();
         resolve();
       };
 
       
       
-      this.mm.addMessageListener(MARIONETTE_OK, removeListeners(MARIONETTE_OK, okListener));
-      this.mm.addMessageListener(MARIONETTE_DONE, removeListeners(MARIONETTE_DONE, valListener));
-      this.mm.addMessageListener(MARIONETTE_ERROR, removeListeners(MARIONETTE_ERROR, errListener));
-      modal.addHandler(handleDialog);
+      this.addListener_(path, cb);
+      modal.addHandler(this.dialogueObserver_);
 
-      this.sendAsync(name, marshal(args), this.curId);
+      this.sendAsync(name, marshal(args), uuid);
     });
+  }
 
-    return proxy;
+  cancelAll() {
+    this.removeAllListeners_();
+    modal.removeHandler(this.dialogueObserver_);
+    this.sendAsync("cancelRequest");
+  }
+
+  addListener_(path, callback) {
+    let autoRemover = msg => {
+      this.removeListener_(path);
+      modal.removeHandler(this.dialogueObserver_);
+      callback(msg);
+    };
+
+    this.mm.addMessageListener(path, autoRemover);
+    this.listeners_.set(path, autoRemover);
+  }
+
+  removeListener_(path) {
+    let l = this.listeners_.get(path);
+    this.mm.removeMessageListener(path, l[1]);
+    return this.listeners_.delete(path);
+  }
+
+  removeAllListeners_() {
+    let ok = true;
+    for (let [p, cb] of this.listeners_) {
+      ok |= this.removeListener_(p);
+    }
+    return ok;
+  }
+
+  static makeReplyPath(uuid) {
+    return "Marionette:asyncReply:" + uuid;
   }
 };
 
@@ -170,7 +168,7 @@ this.AsyncContentSender = class {
 
 
 proxy.toChrome = function(sendSyncMessageFn) {
-  let sender = new SyncChromeSender(sendSyncMessageFn);
+  let sender = new proxy.SyncChromeSender(sendSyncMessageFn);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
 
@@ -183,7 +181,7 @@ proxy.toChrome = function(sendSyncMessageFn) {
 
 
 
-this.SyncChromeSender = class {
+proxy.SyncChromeSender = class {
   constructor(sendSyncMessage) {
     this.sendSyncMessage_ = sendSyncMessage;
   }

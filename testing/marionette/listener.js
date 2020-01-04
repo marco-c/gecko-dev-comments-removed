@@ -404,28 +404,35 @@ function deleteSession(msg) {
 
 
 
-function sendToServer(name, data, objs, id) {
-  if (!data) {
-    data = {}
-  }
+function sendToServer(path, data = {}, objs, id) {
   if (id) {
     data.command_id = id;
   }
-  sendAsyncMessage(name, data, objs);
+  sendAsyncMessage(path, data, objs);
 }
 
 
 
 
-function sendResponse(value, command_id) {
-  sendToServer("Marionette:done", value, null, command_id);
+function sendResponse(value, id) {
+  let path = proxy.AsyncContentSender.makeReplyPath(id);
+  sendToServer(path, value, null, id);
 }
 
 
 
 
-function sendOk(command_id) {
-  sendToServer("Marionette:ok", null, null, command_id);
+function sendOk(id) {
+  let path = proxy.AsyncContentSender.makeReplyPath(id);
+  sendToServer(path, {}, null, id);
+}
+
+
+
+
+function sendError(err, id) {
+  let path = proxy.AsyncContentSender.makeReplyPath(id);
+  sendToServer(path, {error: null}, {error: err}, id);
 }
 
 
@@ -433,13 +440,6 @@ function sendOk(command_id) {
 
 function sendLog(msg) {
   sendToServer("Marionette:log", {message: msg});
-}
-
-
-
-
-function sendError(err, cmdId) {
-  sendToServer("Marionette:error", null, {error: err}, cmdId);
 }
 
 
