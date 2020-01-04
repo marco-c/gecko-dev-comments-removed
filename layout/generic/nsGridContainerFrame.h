@@ -139,10 +139,12 @@ protected:
   
 
 
-  void ReflowChildren(GridReflowState&     aState,
-                      const LogicalRect&   aContentArea,
-                      nsHTMLReflowMetrics& aDesiredSize,
-                      nsReflowStatus&      aStatus);
+
+
+  nscoord ReflowChildren(GridReflowState&     aState,
+                         const LogicalRect&   aContentArea,
+                         nsHTMLReflowMetrics& aDesiredSize,
+                         nsReflowStatus&      aStatus);
 
   
 
@@ -182,6 +184,28 @@ private:
 
   Maybe<nsGridContainerFrame::Fragmentainer>
     GetNearestFragmentainer(const GridReflowState& aState) const;
+
+  
+  nscoord ReflowInFragmentainer(GridReflowState&     aState,
+                                const LogicalRect&   aContentArea,
+                                nsHTMLReflowMetrics& aDesiredSize,
+                                nsReflowStatus&      aStatus,
+                                Fragmentainer&       aFragmentainer,
+                                const nsSize&        aContainerSize);
+
+  
+  
+  nscoord ReflowRowsInFragmentainer(GridReflowState&     aState,
+                                    const LogicalRect&   aContentArea,
+                                    nsHTMLReflowMetrics& aDesiredSize,
+                                    nsReflowStatus&      aStatus,
+                                    Fragmentainer&       aFragmentainer,
+                                    const nsSize&        aContainerSize,
+                                    const nsTArray<const GridItemInfo*>& aItems,
+                                    uint32_t             aStartRow,
+                                    uint32_t             aEndRow,
+                                    nscoord              aBSize,
+                                    nscoord              aAvailableSize);
 
   
   void ReflowInFlowChild(nsIFrame*              aChild,
