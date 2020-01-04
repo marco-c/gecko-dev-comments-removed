@@ -37,6 +37,7 @@
 #include "nsIStringBundle.h"
 #include "nsIConsoleService.h"
 #include "mozilla/dom/CloseEvent.h"
+#include "mozilla/net/WebSocketEventService.h"
 #include "nsICryptoHash.h"
 #include "nsJSUtils.h"
 #include "nsIScriptError.h"
@@ -239,6 +240,8 @@ public:
   
   mozilla::Mutex mMutex;
   bool mWorkerShuttingDown;
+
+  RefPtr<WebSocketEventService> mService;
 
 private:
   ~WebSocketImpl()
@@ -630,11 +633,8 @@ WebSocketImpl::Disconnect()
   
   RefPtr<WebSocketImpl> kungfuDeathGrip = this;
 
-  nsCOMPtr<nsIThread> mainThread;
-  if (NS_FAILED(NS_GetMainThread(getter_AddRefs(mainThread))) ||
-      NS_FAILED(NS_ProxyRelease(mainThread, mChannel))) {
-    NS_WARNING("Failed to proxy release of channel, leaking instead!");
-  }
+  NS_ReleaseOnMainThread(mChannel);
+  NS_ReleaseOnMainThread(static_cast<nsIWebSocketEventService*>(mService.forget().take()));
 
   mWebSocket->DontKeepAliveAnyMore();
   mWebSocket->mImpl = nullptr;
@@ -768,6 +768,11 @@ WebSocketImpl::OnStart(nsISupports* aContext)
   UpdateURI();
 
   mWebSocket->SetReadyState(WebSocket::OPEN);
+
+  mService->WebSocketOpened(mChannel->Serial(),mInnerWindowID,
+                            mWebSocket->mEffectiveURL,
+                            mWebSocket->mEstablishedProtocol,
+                            mWebSocket->mEstablishedExtensions);
 
   
   
@@ -1359,6 +1364,12 @@ WebSocket::Constructor(const GlobalObject& aGlobal,
     return nullptr;
   }
 
+  
+  webSocket->mImpl->mService->WebSocketCreated(webSocket->mImpl->mChannel->Serial(),
+                                               webSocket->mImpl->mInnerWindowID,
+                                               webSocket->mURI,
+                                               webSocket->mImpl->mRequestedProtocolList);
+
   cws.Done();
   return webSocket.forget();
 }
@@ -1443,6 +1454,8 @@ WebSocketImpl::Init(JSContext* aCx,
 {
   AssertIsOnMainThread();
   MOZ_ASSERT(aPrincipal);
+
+  mService = WebSocketEventService::GetOrCreate();
 
   
   
@@ -1658,6 +1671,8 @@ WebSocketImpl::AsyncOpen(nsIPrincipal* aPrincipal, uint64_t aInnerWindowID,
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
+
+  mInnerWindowID = aInnerWindowID;
 }
 
 
@@ -1883,10 +1898,14 @@ WebSocket::CreateAndDispatchMessageEvent(JSContext* aCx,
 nsresult
 WebSocket::CreateAndDispatchCloseEvent(bool aWasClean,
                                        uint16_t aCode,
-                                       const nsAString &aReason)
+                                       const nsAString& aReason)
 {
   MOZ_ASSERT(mImpl);
   AssertIsOnTargetThread();
+
+  mImpl->mService->WebSocketClosed(mImpl->mChannel->Serial(),
+                                   mImpl->mInnerWindowID,
+                                   aWasClean, aCode, aReason);
 
   nsresult rv = CheckInnerWindowCorrectness();
   if (NS_FAILED(rv)) {
