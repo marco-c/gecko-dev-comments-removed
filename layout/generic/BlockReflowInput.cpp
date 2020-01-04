@@ -6,7 +6,7 @@
 
 
 
-#include "nsBlockReflowState.h"
+#include "BlockReflowInput.h"
 
 #include "LayoutLogging.h"
 #include "nsBlockFrame.h"

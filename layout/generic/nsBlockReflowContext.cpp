@@ -7,7 +7,7 @@
 
 
 #include "nsBlockReflowContext.h"
-#include "nsBlockReflowState.h"
+#include "BlockReflowInput.h"
 #include "nsFloatManager.h"
 #include "nsColumnSetFrame.h"
 #include "nsContainerFrame.h"
