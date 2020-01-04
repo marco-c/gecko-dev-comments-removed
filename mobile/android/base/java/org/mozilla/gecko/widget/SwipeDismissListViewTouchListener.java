@@ -16,9 +16,6 @@
 
 package org.mozilla.gecko.widget;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -28,6 +25,13 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AbsListView.RecyclerListener;
 import android.widget.ListView;
+
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
+import android.view.ViewPropertyAnimator;
+
+import org.mozilla.gecko.R;
 
 
 
@@ -70,8 +74,6 @@ import android.widget.ListView;
 
 
 public class SwipeDismissListViewTouchListener implements View.OnTouchListener {
-    private static final int TAG_ORIGINAL_HEIGHT = SwipeDismissListViewTouchListener.class.hashCode();
-
     
     private final int mSlop;
     private final int mMinFlingVelocity;
@@ -165,7 +167,7 @@ public class SwipeDismissListViewTouchListener implements View.OnTouchListener {
         return new AbsListView.RecyclerListener() {
             @Override
             public void onMovedToScrapHeap(View view) {
-                final Object tag = view.getTag(TAG_ORIGINAL_HEIGHT);
+                final Object tag = view.getTag(R.id.original_height);
 
                 
                 
@@ -175,7 +177,7 @@ public class SwipeDismissListViewTouchListener implements View.OnTouchListener {
                     final ViewGroup.LayoutParams lp = view.getLayoutParams();
                     lp.height = (int) tag;
                     view.setLayoutParams(lp);
-                    view.setTag(TAG_ORIGINAL_HEIGHT, null);
+                    view.setTag(R.id.original_height, null);
                 }
             }
         };
@@ -334,7 +336,7 @@ public class SwipeDismissListViewTouchListener implements View.OnTouchListener {
                 
                 
                 
-                dismissView.setTag(TAG_ORIGINAL_HEIGHT, originalHeight);
+                dismissView.setTag(R.id.original_height, originalHeight);
 
                 mCallback.onDismiss(mListView, dismissPosition);
                 mDismissing = false;
