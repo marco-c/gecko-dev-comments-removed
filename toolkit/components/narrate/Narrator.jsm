@@ -66,14 +66,20 @@ Narrator.prototype = {
             return nf.FILTER_REJECT;
           }
 
+          if (!/\S/.test(node.textContent)) {
+            
+            return nf.FILTER_REJECT;
+          }
+
           let bb = wu.getBoundsWithoutFlushing(node);
           if (!bb.width || !bb.height) {
+            
             
             return nf.FILTER_SKIP;
           }
 
           for (let c = node.firstChild; c; c = c.nextSibling) {
-            if (c.nodeType == c.TEXT_NODE && !!c.textContent.match(/\S/)) {
+            if (c.nodeType == c.TEXT_NODE && /\S/.test(c.textContent)) {
               
               this._matches.add(node);
               return nf.FILTER_ACCEPT;
