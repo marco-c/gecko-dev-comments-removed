@@ -1116,6 +1116,13 @@ MacroAssemblerMIPSCompat::branchDouble(DoubleCondition cond, FloatRegister lhs,
     ma_bc1d(lhs, rhs, label, cond);
 }
 
+void
+MacroAssemblerMIPSCompat::branchFloat(DoubleCondition cond, FloatRegister lhs,
+                                      FloatRegister rhs, Label* label)
+{
+    ma_bc1s(lhs, rhs, label, cond);
+}
+
 
 Operand
 MacroAssemblerMIPSCompat::ToPayload(Operand base)
