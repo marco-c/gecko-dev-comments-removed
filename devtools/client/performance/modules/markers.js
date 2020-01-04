@@ -35,14 +35,6 @@ const { Formatters, labelForProperty } = require("devtools/client/performance/mo
 
 
 
-
-
-
-
-
-
-
-
 const TIMELINE_BLUEPRINT = {
   
 
