@@ -28,7 +28,7 @@ public:
                                     const gfxPoint& aPoint);
 private:
   explicit nsCSSClipPathInstance(nsIFrame* aFrame,
-                                 const StyleClipPath aClipPathStyle)
+                                 const nsStyleClipPath aClipPathStyle)
     : mTargetFrame(aFrame)
     , mClipPathStyle(aClipPathStyle)
   {
@@ -49,7 +49,7 @@ private:
 
 
   nsIFrame* mTargetFrame;
-  StyleClipPath mClipPathStyle;
+  nsStyleClipPath mClipPathStyle;
 };
 
 } 
