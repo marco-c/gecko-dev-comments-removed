@@ -1,106 +1,84 @@
+let testURL = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
 
+add_task(function*() {
+  let normalWindow = yield BrowserTestUtils.openNewBrowserWindow();
+  let privateWindow = yield BrowserTestUtils.openNewBrowserWindow({private: true});
+  yield runTest(normalWindow, privateWindow, false);
+  yield BrowserTestUtils.closeWindow(normalWindow);
+  yield BrowserTestUtils.closeWindow(privateWindow);
 
+  normalWindow = yield BrowserTestUtils.openNewBrowserWindow();
+  privateWindow = yield BrowserTestUtils.openNewBrowserWindow({private: true});
+  yield runTest(privateWindow, normalWindow, false);
+  yield BrowserTestUtils.closeWindow(normalWindow);
+  yield BrowserTestUtils.closeWindow(privateWindow);
 
+  privateWindow = yield BrowserTestUtils.openNewBrowserWindow({private: true});
+  yield runTest(privateWindow, privateWindow, false);
+  yield BrowserTestUtils.closeWindow(privateWindow);
 
-function test() {
-  waitForExplicitFinish();
+  normalWindow = yield BrowserTestUtils.openNewBrowserWindow();
+  yield runTest(normalWindow, normalWindow, true);
+  yield BrowserTestUtils.closeWindow(normalWindow);
+});
 
-  let testURL = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
+function* runTest(aSourceWindow, aDestWindow, aExpectSwitch, aCallback) {
+  let baseTab = yield BrowserTestUtils.openNewForegroundTab(aSourceWindow.gBrowser, testURL);
+  let testTab = yield BrowserTestUtils.openNewForegroundTab(aDestWindow.gBrowser);
 
-  function testOnWindow(aOptions, aCallback) {
-    whenNewWindowLoaded(aOptions, function(aWin) {
-      
-      
-      
-      executeSoon(() => aCallback(aWin));
-    });
-  };
+  info("waiting for focus on the window");
+  yield promiseWaitForFocus(aDestWindow);
+  info("got focus on the window");
 
-  testOnWindow({}, function(aNormalWindow) {
-    testOnWindow({private: true}, function(aPrivateWindow) {
-      runTest(aNormalWindow, aPrivateWindow, false, function() {
-        aNormalWindow.close();
-        aPrivateWindow.close();
-        testOnWindow({}, function(aNormalWindow) {
-          testOnWindow({private: true}, function(aPrivateWindow) {
-            runTest(aPrivateWindow, aNormalWindow, false, function() {
-              aNormalWindow.close();
-              aPrivateWindow.close();
-              testOnWindow({private: true}, function(aPrivateWindow) {
-                runTest(aPrivateWindow, aPrivateWindow, false, function() {
-                  aPrivateWindow.close();
-                  testOnWindow({}, function(aNormalWindow) {
-                    runTest(aNormalWindow, aNormalWindow, true, function() {
-                      aNormalWindow.close();
-                      finish();
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
+  
+  aDestWindow.gBrowser.selectedTab = testTab;
+
+  
+  let sessionHistoryCount = yield new Promise(resolve => {
+    SessionStore.getSessionHistory(gBrowser.selectedTab, function(sessionHistory) {
+      resolve(sessionHistory.entries.length);
     });
   });
 
-  function runTest(aSourceWindow, aDestWindow, aExpectSwitch, aCallback) {
+  ok(sessionHistoryCount < 2,
+     `The test tab has 1 or fewer history entries. sessionHistoryCount=${sessionHistoryCount}`);
+  
+  is(testTab.linkedBrowser.currentURI.spec, "about:blank",
+     "The test tab is on about:blank");
+  
+  yield ContentTask.spawn(testTab.linkedBrowser, null, function*() {
+    ok(!content.document.body.hasChildNodes(),
+       "The test tab has no child nodes");
+  });
+  ok(!testTab.hasAttribute("busy"),
+     "The test tab doesn't have the busy attribute");
+
+  
+  yield promiseAutocompleteResultPopup(testURL, aDestWindow);
+
+  info(`awesomebar popup appeared. aExpectSwitch: ${aExpectSwitch}`);
+  
+  let {controller, popup} = aDestWindow.gURLBar;
+  while (popup.selectedIndex < controller.matchCount - 1) {
+    info("handling key navigation for DOM_VK_DOWN key");
+    controller.handleKeyNavigation(KeyEvent.DOM_VK_DOWN);
+  }
+
+  let awaitTabSwitch;
+  if (aExpectSwitch) {
+    awaitTabSwitch = BrowserTestUtils.removeTab(testTab, {dontRemove: true})
+  }
+
+  
+  controller.handleEnter(true);
+  info("sent Enter command to the controller");
+
+  if (aExpectSwitch) {
     
-    let baseTab = aSourceWindow.gBrowser.addTab(testURL);
-    baseTab.linkedBrowser.addEventListener("load", function() {
-      
-      if (baseTab.linkedBrowser.currentURI.spec == "about:blank")
-        return;
-      baseTab.linkedBrowser.removeEventListener("load", arguments.callee, true);
-
-      let testTab = aDestWindow.gBrowser.addTab();
-
-      waitForFocus(function() {
-        
-        aDestWindow.gBrowser.selectedTab = testTab;
-
-        
-        ok(testTab.linkedBrowser.sessionHistory.count < 2,
-           "The test tab has 1 or less history entries");
-        
-        is(testTab.linkedBrowser.currentURI.spec, "about:blank",
-           "The test tab is on about:blank");
-        
-        ok(!testTab.linkedBrowser.contentDocument.body.hasChildNodes(),
-           "The test tab has no child nodes");
-        ok(!testTab.hasAttribute("busy"),
-           "The test tab doesn't have the busy attribute");
-
-        
-        promiseAutocompleteResultPopup(testURL, aDestWindow).then(() => {
-          if (aExpectSwitch) {
-            
-            
-            let tabContainer = aDestWindow.gBrowser.tabContainer;
-            tabContainer.addEventListener("TabClose", function onClose(event) {
-              if (event.target == testTab) {
-                tabContainer.removeEventListener("TabClose", onClose);
-                executeSoon(aCallback);
-              }
-            });
-          } else {
-            
-            testTab.addEventListener("load", function onLoad() {
-              testTab.removeEventListener("load", onLoad, true);
-              executeSoon(aCallback);
-            }, true);
-          }
-
-          
-          let {controller, popup} = aDestWindow.gURLBar;
-          while (popup.selectedIndex < controller.matchCount - 1) {
-            controller.handleKeyNavigation(KeyEvent.DOM_VK_DOWN);
-          }
-
-          
-          controller.handleEnter(true);
-        });
-      }, aDestWindow);
-    }, true);
+    
+    yield awaitTabSwitch;
+  } else {
+    
+    yield BrowserTestUtils.browserLoaded(testTab.linkedBrowser);
   }
 }
