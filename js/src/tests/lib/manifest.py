@@ -91,6 +91,10 @@ class XULInfoTester:
         if ans is None:
             cmd = [
                 self.js_bin,
+                
+                
+                
+                '--no-baseline',
                 '-e', self.js_prologue,
                 '-e', 'print(!!({}))'.format(cond)
             ]
