@@ -56,6 +56,10 @@ public:
     ePending,       
                     
                     
+    eUserAction,    
+                    
+                    
+                    
 
     eSentinel       
   };
@@ -244,6 +248,11 @@ public:
     mScrollOffset = aInfo.mScrollOffset;
     mScrollGeneration = aInfo.mScrollGeneration;
     mScrollUpdateType = ePending;
+  }
+
+  void SetRepaintDrivenByUserAction(bool aUserAction)
+  {
+    mScrollUpdateType = aUserAction ? eUserAction : eNone;
   }
 
 public:

@@ -66,15 +66,23 @@ RecenterDisplayPort(mozilla::layers::FrameMetrics& aFrameMetrics)
 }
 
 static CSSPoint
-ScrollFrameTo(nsIScrollableFrame* aFrame, const CSSPoint& aPoint, bool& aSuccessOut)
+ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aSuccessOut)
 {
   aSuccessOut = false;
+  CSSPoint targetScrollPosition = aMetrics.GetScrollOffset();
 
   if (!aFrame) {
-    return aPoint;
+    return targetScrollPosition;
   }
 
-  CSSPoint targetScrollPosition = aPoint;
+  CSSPoint geckoScrollPosition = CSSPoint::FromAppUnits(aFrame->GetScrollPosition());
+
+  
+  
+  
+  if (!aMetrics.GetScrollOffsetUpdated()) {
+    return geckoScrollPosition;
+  }
 
   
   
@@ -83,7 +91,6 @@ ScrollFrameTo(nsIScrollableFrame* aFrame, const CSSPoint& aPoint, bool& aSuccess
   
   
   
-  CSSPoint geckoScrollPosition = CSSPoint::FromAppUnits(aFrame->GetScrollPosition());
   if (aFrame->GetScrollbarStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN) {
     targetScrollPosition.y = geckoScrollPosition.y;
   }
@@ -129,7 +136,7 @@ ScrollFrame(nsIContent* aContent,
   }
   bool scrollUpdated = false;
   CSSPoint apzScrollOffset = aMetrics.GetScrollOffset();
-  CSSPoint actualScrollOffset = ScrollFrameTo(sf, apzScrollOffset, scrollUpdated);
+  CSSPoint actualScrollOffset = ScrollFrameTo(sf, aMetrics, scrollUpdated);
 
   if (scrollUpdated) {
     if (aMetrics.IsScrollInfoLayer()) {

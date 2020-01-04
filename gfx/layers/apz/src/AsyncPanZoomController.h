@@ -584,7 +584,7 @@ protected:
 
 
 
-  void RequestContentRepaint();
+  void RequestContentRepaint(bool aUserAction = true);
 
   
 
