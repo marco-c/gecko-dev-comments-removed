@@ -2696,8 +2696,7 @@ nsHTMLEditRules::JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
     nsCOMPtr<Element> brNode =
       CheckForInvisibleBR(*leftBlock, BRLocation::beforeBlock, leftOffset);
     if (mergeLists) {
-      res = MoveContents(GetAsDOMNode(rightList), GetAsDOMNode(leftList),
-                         &leftOffset);
+      res = MoveContents(*rightList, *leftList, &leftOffset);
     } else {
       
       
@@ -2814,14 +2813,14 @@ nsHTMLEditRules::MoveBlock(Element& aLeftBlock, Element& aRightBlock,
     
     if (IsBlockNode(arrayOfNodes[i])) {
       
-      res = MoveContents(arrayOfNodes[i]->AsDOMNode(), aLeftBlock.AsDOMNode(),
+      res = MoveContents(*arrayOfNodes[i]->AsElement(), aLeftBlock,
                          &aLeftOffset);
       NS_ENSURE_SUCCESS(res, res);
       NS_ENSURE_STATE(mHTMLEditor);
       res = mHTMLEditor->DeleteNode(arrayOfNodes[i]);
     } else {
       
-      res = MoveNodeSmart(arrayOfNodes[i]->AsDOMNode(), aLeftBlock.AsDOMNode(),
+      res = MoveNodeSmart(*arrayOfNodes[i]->AsContent(), aLeftBlock,
                           &aLeftOffset);
     }
   }
@@ -2836,33 +2835,32 @@ nsHTMLEditRules::MoveBlock(Element& aLeftBlock, Element& aRightBlock,
 
 
 
-
-
-
 nsresult
-nsHTMLEditRules::MoveNodeSmart(nsIDOMNode *aSource, nsIDOMNode *aDest, int32_t *aOffset)
+nsHTMLEditRules::MoveNodeSmart(nsIContent& aNode, Element& aDestElement,
+                               int32_t* aInOutDestOffset)
 {
-  nsCOMPtr<nsIContent> source = do_QueryInterface(aSource);
-  nsCOMPtr<nsINode> dest = do_QueryInterface(aDest);
-  NS_ENSURE_TRUE(source && dest && aOffset, NS_ERROR_NULL_POINTER);
+  MOZ_ASSERT(aInOutDestOffset);
 
-  nsresult res;
-  
   NS_ENSURE_STATE(mHTMLEditor);
-  if (mHTMLEditor->CanContain(*dest, *source)) {
+  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
+  nsresult res;
+
+  
+  if (mHTMLEditor->CanContain(aDestElement, aNode)) {
     
-    NS_ENSURE_STATE(mHTMLEditor);
-    res = mHTMLEditor->MoveNode(source, dest, *aOffset);
+    res = mHTMLEditor->MoveNode(&aNode, &aDestElement, *aInOutDestOffset);
     NS_ENSURE_SUCCESS(res, res);
-    if (*aOffset != -1) ++(*aOffset);
-  }
-  else
-  {
+    if (*aInOutDestOffset != -1) {
+      (*aInOutDestOffset)++;
+    }
+  } else {
     
-    res = MoveContents(aSource, aDest, aOffset);
-    NS_ENSURE_SUCCESS(res, res);
-    NS_ENSURE_STATE(mHTMLEditor);
-    res = mHTMLEditor->DeleteNode(aSource);
+    if (aNode.IsElement()) {
+      res = MoveContents(*aNode.AsElement(), aDestElement, aInOutDestOffset);
+      NS_ENSURE_SUCCESS(res, res);
+    }
+
+    res = mHTMLEditor->DeleteNode(&aNode);
     NS_ENSURE_SUCCESS(res, res);
   }
   return NS_OK;
@@ -2873,26 +2871,18 @@ nsHTMLEditRules::MoveNodeSmart(nsIDOMNode *aSource, nsIDOMNode *aDest, int32_t *
 
 
 
-
-
-
 nsresult
-nsHTMLEditRules::MoveContents(nsIDOMNode *aSource, nsIDOMNode *aDest, int32_t *aOffset)
+nsHTMLEditRules::MoveContents(Element& aElement, Element& aDestElement,
+                              int32_t* aInOutDestOffset)
 {
-  NS_ENSURE_TRUE(aSource && aDest && aOffset, NS_ERROR_NULL_POINTER);
-  if (aSource == aDest) return NS_ERROR_ILLEGAL_VALUE;
-  NS_ENSURE_STATE(mHTMLEditor);
-  NS_ASSERTION(!mHTMLEditor->IsTextNode(aSource), "#text does not have contents");
+  MOZ_ASSERT(aInOutDestOffset);
 
-  nsCOMPtr<nsIDOMNode> child;
-  nsAutoString tag;
-  nsresult res;
-  aSource->GetFirstChild(getter_AddRefs(child));
-  while (child)
-  {
-    res = MoveNodeSmart(child, aDest, aOffset);
+  NS_ENSURE_TRUE(&aElement != &aDestElement, NS_ERROR_ILLEGAL_VALUE);
+
+  while (aElement.GetFirstChild()) {
+    nsresult res = MoveNodeSmart(*aElement.GetFirstChild(), aDestElement,
+                                 aInOutDestOffset);
     NS_ENSURE_SUCCESS(res, res);
-    aSource->GetFirstChild(getter_AddRefs(child));
   }
   return NS_OK;
 }
