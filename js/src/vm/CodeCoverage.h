@@ -15,8 +15,12 @@
 
 struct JSCompartment;
 class JSScript;
+class JSObject;
 
 namespace js {
+
+class ScriptSourceObject;
+
 namespace coverage {
 
 class LCovCompartment;
@@ -24,7 +28,12 @@ class LCovCompartment;
 class LCovSource
 {
   public:
-    explicit LCovSource(LifoAlloc* alloc);
+    explicit LCovSource(LifoAlloc* alloc, JSObject* sso);
+
+    
+    bool match(JSObject* sso) {
+        return sso == source_;
+    }
 
     
     
@@ -38,10 +47,10 @@ class LCovSource
     
     void exportInto(GenericPrinter& out) const;
 
-  private:
     
-    bool writeSourceFilename(LSprinter& out, JSScript* script);
+    bool writeSourceFilename(ScriptSourceObject* sso);
 
+  private:
     
     bool writeScriptName(LSprinter& out, JSScript* script);
 
@@ -50,6 +59,9 @@ class LCovSource
     bool writeScript(JSScript* script);
 
   private:
+    
+    JSObject *source_;
+
     
     LSprinter outSF_;
 
@@ -77,7 +89,10 @@ class LCovCompartment
     LCovCompartment();
 
     
-    void collectCodeCoverageInfo(JSCompartment* comp, JSScript* topLevel);
+    void collectCodeCoverageInfo(JSCompartment* comp, JSObject* sso, JSScript* topLevel);
+
+    
+    void collectSourceFile(JSCompartment* comp, ScriptSourceObject* sso);
 
     
     
@@ -86,6 +101,9 @@ class LCovCompartment
   private:
     
     bool writeCompartmentName(JSCompartment* comp);
+
+    
+    LCovSource* lookup(JSObject* sso);
 
   private:
     typedef Vector<LCovSource, 16, LifoAllocPolicy<Fallible>> LCovSourceVector;

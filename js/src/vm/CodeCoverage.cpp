@@ -62,8 +62,9 @@
 namespace js {
 namespace coverage {
 
-LCovSource::LCovSource(LifoAlloc* alloc)
-  : outSF_(alloc),
+LCovSource::LCovSource(LifoAlloc* alloc, JSObject* sso)
+  : source_(sso),
+    outSF_(alloc),
     outFN_(alloc),
     outFNDA_(alloc),
     numFunctionsFound_(0),
@@ -102,9 +103,6 @@ bool
 LCovSource::writeTopLevelScript(JSScript* script)
 {
     MOZ_ASSERT(script->isTopLevel());
-
-    if (!writeSourceFilename(outSF_, script))
-        return false;
 
     Vector<JSScript*, 8, SystemAllocPolicy> queue;
     if (!queue.append(script))
@@ -151,10 +149,10 @@ LCovSource::writeTopLevelScript(JSScript* script)
 }
 
 bool
-LCovSource::writeSourceFilename(LSprinter& out, JSScript* script)
+LCovSource::writeSourceFilename(ScriptSourceObject* sso)
 {
-    out.printf("SF:%s\n", script->filename());
-    return !out.hadOutOfMemory();
+    outSF_.printf("SF:%s\n", sso->source()->filename());
+    return !outSF_.hadOutOfMemory();
 }
 
 bool
@@ -288,7 +286,31 @@ LCovCompartment::LCovCompartment()
 }
 
 void
-LCovCompartment::collectCodeCoverageInfo(JSCompartment* comp, JSScript* topLevel)
+LCovCompartment::collectCodeCoverageInfo(JSCompartment* comp, JSObject* sso,
+                                         JSScript* topLevel)
+{
+    
+    if (outTN_.hadOutOfMemory())
+        return;
+
+    
+    if (!sources_)
+        return;
+
+    
+    LCovSource* source = lookup(sso);
+    if (!source)
+        return;
+
+    
+    if (!source->writeTopLevelScript(topLevel)) {
+        outTN_.reportOutOfMemory();
+        return;
+    }
+}
+
+void
+LCovCompartment::collectSourceFile(JSCompartment* comp, ScriptSourceObject* sso)
 {
     
     if (outTN_.hadOutOfMemory())
@@ -310,16 +332,31 @@ LCovCompartment::collectCodeCoverageInfo(JSCompartment* comp, JSScript* topLevel
     }
 
     
-    if (!sources_->append(Move(LCovSource(&alloc_)))) {
+    if (!sources_->append(Move(LCovSource(&alloc_, sso)))) {
         outTN_.reportOutOfMemory();
         return;
     }
 
     
-    if (!sources_->back().writeTopLevelScript(topLevel)) {
+    if (!sources_->back().writeSourceFilename(sso)) {
         outTN_.reportOutOfMemory();
         return;
     }
+}
+
+LCovSource*
+LCovCompartment::lookup(JSObject* sso)
+{
+    if (!sources_)
+        return nullptr;
+
+    
+    for (LCovSource& source : *sources_) {
+        if (source.match(sso))
+            return &source;
+    }
+
+    return nullptr;
 }
 
 void
