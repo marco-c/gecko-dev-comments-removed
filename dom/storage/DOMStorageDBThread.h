@@ -301,14 +301,14 @@ private:
   
   nsTHashtable<nsCStringHashKey> mScopesHavingData;
 
-  StatementCache mWorkerStatements;
-  StatementCache mReaderStatements;
-
   
   nsCOMPtr<mozIStorageConnection> mWorkerConnection;
 
   
   nsCOMPtr<mozIStorageConnection> mReaderConnection;
+
+  StatementCache mWorkerStatements;
+  StatementCache mReaderStatements;
 
   
   
