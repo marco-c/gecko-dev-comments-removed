@@ -206,17 +206,17 @@ nsGIFDecoder2::BeginGIF()
   PostSize(mGIFStruct.screen_width, mGIFStruct.screen_height);
 }
 
-void
+bool
 nsGIFDecoder2::CheckForTransparency(IntRect aFrameRect)
 {
   
   if (mGIFStruct.is_transparent) {
     PostHasTransparency();
-    return;
+    return true;
   }
 
   if (mGIFStruct.images_decoded > 0) {
-    return;  
+    return false;  
   }
 
   
@@ -224,7 +224,11 @@ nsGIFDecoder2::CheckForTransparency(IntRect aFrameRect)
   IntRect imageRect(0, 0, mGIFStruct.screen_width, mGIFStruct.screen_height);
   if (!imageRect.IsEqualEdges(aFrameRect)) {
     PostHasTransparency();
+    mSawTransparency = true;  
+    return true;
   }
+
+  return false;
 }
 
 
@@ -233,31 +237,23 @@ nsGIFDecoder2::BeginImageFrame(uint16_t aDepth)
 {
   MOZ_ASSERT(HasSize());
 
-  gfx::SurfaceFormat format;
-  if (mGIFStruct.is_transparent) {
-    format = gfx::SurfaceFormat::B8G8R8A8;
-  } else {
-    format = gfx::SurfaceFormat::B8G8R8X8;
-  }
-
   IntRect frameRect(mGIFStruct.x_offset, mGIFStruct.y_offset,
                     mGIFStruct.width, mGIFStruct.height);
 
-  CheckForTransparency(frameRect);
+  bool hasTransparency = CheckForTransparency(frameRect);
+  gfx::SurfaceFormat format = hasTransparency ? SurfaceFormat::B8G8R8A8
+                                              : SurfaceFormat::B8G8R8X8;
 
   
   MOZ_ASSERT_IF(mDownscaler, !GetImageMetadata().HasAnimation());
 
+  
+  
+  
   IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
                                    : GetSize();
-
-  
-  IntRect targetFrameRect = frameRect;
-  if (mDownscaler) {
-    IntSize originalSize = GetSize();
-    targetFrameRect.ScaleRoundOut(double(targetSize.width) / originalSize.width,
-                                  double(targetSize.height) / originalSize.height);
-  }
+  IntRect targetFrameRect = mDownscaler ? IntRect(IntPoint(), targetSize)
+                                        : frameRect;
 
   
   
@@ -279,8 +275,8 @@ nsGIFDecoder2::BeginImageFrame(uint16_t aDepth)
   }
 
   if (mDownscaler) {
-    rv = mDownscaler->BeginFrame(frameRect.Size(), Nothing(), mImageData,
-                                 mGIFStruct.is_transparent);
+    rv = mDownscaler->BeginFrame(GetSize(), Some(frameRect), mImageData,
+                                 hasTransparency);
   }
 
   return rv;
@@ -318,7 +314,7 @@ nsGIFDecoder2::EndImageFrame()
     
     
     
-    if (!mGIFStruct.is_transparent || !mSawTransparency) {
+    if (!mGIFStruct.is_transparent && !mSawTransparency) {
       opacity = Opacity::OPAQUE;
     }
   }
