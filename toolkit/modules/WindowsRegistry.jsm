@@ -65,9 +65,11 @@ var WindowsRegistry = {
 
 
 
+
   removeRegKey: function(aRoot, aPath, aKey, aRegistryNode=0) {
     let registry = Cc["@mozilla.org/windows-registry-key;1"].
                    createInstance(Ci.nsIWindowsRegKey);
+    let result = false;
     try {
       let mode = Ci.nsIWindowsRegKey.ACCESS_QUERY_VALUE |
                  Ci.nsIWindowsRegKey.ACCESS_SET_VALUE |
@@ -75,10 +77,14 @@ var WindowsRegistry = {
       registry.open(aRoot, aPath, mode);
       if (registry.hasValue(aKey)) {
         registry.removeValue(aKey);
+        result = !registry.hasValue(aKey);
+      } else {
+        result = true;
       }
     } catch (ex) {
     } finally {
       registry.close();
+      return result;
     }
   }
 };
