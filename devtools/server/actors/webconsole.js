@@ -1515,11 +1515,9 @@ WebConsoleActor.prototype =
 
 
 
-
-
-  onNetworkEvent: function WCA_onNetworkEvent(aEvent, aChannel)
+  onNetworkEvent: function WCA_onNetworkEvent(aEvent)
   {
-    let actor = this.getNetworkEventActor(aChannel);
+    let actor = this.getNetworkEventActor(aEvent.channelId);
     actor.init(aEvent);
 
     let packet = {
@@ -1542,16 +1540,15 @@ WebConsoleActor.prototype =
 
 
 
-  getNetworkEventActor: function WCA_getNetworkEventActor(aChannel) {
-    let actor = this._netEvents.get(aChannel);
+  getNetworkEventActor: function WCA_getNetworkEventActor(channelId) {
+    let actor = this._netEvents.get(channelId);
     if (actor) {
       
-      this._netEvents.delete(aChannel);
-      actor.channel = null;
+      this._netEvents.delete(channelId);
       return actor;
     }
 
-    actor = new NetworkEventActor(aChannel, this);
+    actor = new NetworkEventActor(this);
     this._actorPool.addActor(actor);
     return actor;
   },
@@ -1575,10 +1572,11 @@ WebConsoleActor.prototype =
     }
     request.send(details.body);
 
-    let actor = this.getNetworkEventActor(request.channel);
+    let channel = request.channel.QueryInterface(Ci.nsIHttpChannel);
+    let actor = this.getNetworkEventActor(channel.channelId);
 
     
-    this._netEvents.set(request.channel, actor);
+    this._netEvents.set(channel.channelId, actor);
 
     return {
       from: this.actorID,
@@ -1805,13 +1803,9 @@ exports.WebConsoleActor = WebConsoleActor;
 
 
 
-
-
-function NetworkEventActor(aChannel, aWebConsoleActor)
-{
-  this.parent = aWebConsoleActor;
+function NetworkEventActor(webConsoleActor) {
+  this.parent = webConsoleActor;
   this.conn = this.parent.conn;
-  this.channel = aChannel;
 
   this._request = {
     method: null,
