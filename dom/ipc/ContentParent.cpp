@@ -2514,18 +2514,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
         chromeRegistry->SendRegisteredChrome(this);
     }
 
-    if (gAppData) {
-        nsCString version(gAppData->version);
-        nsCString buildID(gAppData->buildID);
-        nsCString name(gAppData->name);
-        nsCString UAName(gAppData->UAName);
-        nsCString ID(gAppData->ID);
-        nsCString vendor(gAppData->vendor);
-
-        
-        unused << SendAppInfo(version, buildID, name, UAName, ID, vendor);
-    }
-
     
     
     mMessageManager->InitWithCallback(this);
@@ -2537,6 +2525,18 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
     
     
     ProcessPriorityManager::SetProcessPriority(this, aInitialPriority);
+
+    if (gAppData) {
+        nsCString version(gAppData->version);
+        nsCString buildID(gAppData->buildID);
+        nsCString name(gAppData->name);
+        nsCString UAName(gAppData->UAName);
+        nsCString ID(gAppData->ID);
+        nsCString vendor(gAppData->vendor);
+
+        
+        unused << SendAppInfo(version, buildID, name, UAName, ID, vendor);
+    }
 
     if (aSetupOffMainThreadCompositing) {
         
@@ -4567,7 +4567,7 @@ ContentParent::DoLoadMessageManagerScript(const nsAString& aURL,
     return SendLoadProcessScript(nsString(aURL));
 }
 
-bool
+nsresult
 ContentParent::DoSendAsyncMessage(JSContext* aCx,
                                   const nsAString& aMessage,
                                   StructuredCloneData& aHelper,
@@ -4576,18 +4576,21 @@ ContentParent::DoSendAsyncMessage(JSContext* aCx,
 {
     ClonedMessageData data;
     if (!BuildClonedMessageDataForParent(this, aHelper, data)) {
-        return false;
+        return NS_ERROR_DOM_DATA_CLONE_ERR;
     }
     InfallibleTArray<CpowEntry> cpows;
     jsipc::CPOWManager* mgr = GetCPOWManager();
     if (aCpows && (!mgr || !mgr->Wrap(aCx, aCpows, &cpows))) {
-        return false;
+        return NS_ERROR_UNEXPECTED;
     }
     if (IsReadyNuwaProcess()) {
         
-        return true;
+        return NS_OK;
     }
-    return SendAsyncMessage(nsString(aMessage), data, cpows, Principal(aPrincipal));
+    if (!SendAsyncMessage(nsString(aMessage), data, cpows, Principal(aPrincipal))) {
+        return NS_ERROR_UNEXPECTED;
+    }
+    return NS_OK;
 }
 
 bool

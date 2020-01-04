@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsFrameMessageManager_h__
 #define nsFrameMessageManager_h__
@@ -73,13 +73,13 @@ public:
     return true;
   }
 
-  virtual bool DoSendAsyncMessage(JSContext* aCx,
-                                  const nsAString& aMessage,
-                                  StructuredCloneData& aData,
-                                  JS::Handle<JSObject*> aCpows,
-                                  nsIPrincipal* aPrincipal)
+  virtual nsresult DoSendAsyncMessage(JSContext* aCx,
+                                      const nsAString& aMessage,
+                                      StructuredCloneData& aData,
+                                      JS::Handle<JSObject*> aCpows,
+                                      nsIPrincipal* aPrincipal)
   {
-    return true;
+    return NS_OK;
   }
 
   virtual bool CheckPermission(const nsAString& aPermission)
@@ -104,7 +104,7 @@ public:
 
   virtual bool KillChild()
   {
-    // By default, does nothing.
+    
     return false;
   }
 
@@ -123,9 +123,9 @@ void UnpackClonedMessageDataForParent(const ClonedMessageData& aClonedData,
 void UnpackClonedMessageDataForChild(const ClonedMessageData& aClonedData,
                                      StructuredCloneData& aData);
 
-} // namespace ipc
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
 
 struct nsMessageListenerInfo
 {
@@ -134,7 +134,7 @@ struct nsMessageListenerInfo
     return &aOther == this;
   }
 
-  // Exactly one of mStrongListener and mWeakListener must be non-null.
+  
   nsCOMPtr<nsIMessageListener> mStrongListener;
   nsWeakPtr mWeakListener;
   bool mListenWhenClosed;
@@ -167,7 +167,7 @@ class nsFrameMessageManager final : public nsIContentFrameMessageManager,
 public:
   nsFrameMessageManager(mozilla::dom::ipc::MessageManagerCallback* aCallback,
                         nsFrameMessageManager* aParentManager,
-                        /* mozilla::dom::ipc::MessageManagerFlags */ uint32_t aFlags);
+                         uint32_t aFlags);
 
 private:
   ~nsFrameMessageManager();
@@ -274,18 +274,18 @@ private:
 
 protected:
   friend class MMListenerRemover;
-  // We keep the message listeners as arrays in a hastable indexed by the
-  // message name. That gives us fast lookups in ReceiveMessage().
+  
+  
   nsClassHashtable<nsStringHashKey,
                    nsAutoTObserverArray<nsMessageListenerInfo, 1>> mListeners;
   nsCOMArray<nsIContentFrameMessageManager> mChildManagers;
-  bool mChrome;     // true if we're in the chrome process
-  bool mGlobal;     // true if we're the global frame message manager
-  bool mIsProcessManager; // true if the message manager belongs to the process realm
-  bool mIsBroadcaster; // true if the message manager is a broadcaster
+  bool mChrome;     
+  bool mGlobal;     
+  bool mIsProcessManager; 
+  bool mIsBroadcaster; 
   bool mOwnsCallback;
   bool mHandlingMessage;
-  bool mClosed;    // true if we can no longer send messages
+  bool mClosed;    
   bool mDisconnected;
   mozilla::dom::ipc::MessageManagerCallback* mCallback;
   nsAutoPtr<mozilla::dom::ipc::MessageManagerCallback> mOwnedCallback;
@@ -312,33 +312,37 @@ private:
                                  bool* aValid);
 };
 
-/* A helper class for taking care of many details for async message sending
-   within a single process.  Intended to be used like so:
 
-   class MyAsyncMessage : public nsSameProcessAsyncMessageBase, public nsRunnable
-   {
-     // Initialize nsSameProcessAsyncMessageBase...
 
-     NS_IMETHOD Run() {
-       ReceiveMessage(..., ...);
-       return NS_OK;
-     }
-   };
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class nsSameProcessAsyncMessageBase
 {
 public:
   typedef mozilla::dom::ipc::StructuredCloneData StructuredCloneData;
 
-  nsSameProcessAsyncMessageBase(JSContext* aCx,
-                                const nsAString& aMessage,
-                                StructuredCloneData& aData,
-                                JS::Handle<JSObject*> aCpows,
-                                nsIPrincipal* aPrincipal);
+  nsSameProcessAsyncMessageBase(JSContext* aCx, JS::Handle<JSObject*> aCpows);
+  nsresult Init(JSContext* aCx,
+                const nsAString& aMessage,
+                StructuredCloneData& aData,
+                nsIPrincipal* aPrincipal);
 
   void ReceiveMessage(nsISupports* aTarget, nsIFrameLoader* aTargetFrameLoader,
                       nsFrameMessageManager* aManager);
-
 private:
   nsSameProcessAsyncMessageBase(const nsSameProcessAsyncMessageBase&);
 
