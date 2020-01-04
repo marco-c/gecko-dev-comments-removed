@@ -1479,14 +1479,6 @@ MediaStreamGraphImpl::ForceShutDown(ShutdownTicket* aShutdownTicket)
     MonitorAutoLock lock(mMonitor);
     mForceShutDown = true;
     mForceShutdownTicket = aShutdownTicket;
-    if (mLifecycleState == LIFECYCLE_THREAD_NOT_STARTED) {
-      
-      
-      
-      RefPtr<GraphDriver> driver = CurrentDriver();
-      MonitorAutoUnlock unlock(mMonitor);
-      driver->Start();
-    }
     EnsureNextIterationLocked();
   }
 }
