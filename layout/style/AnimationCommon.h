@@ -30,9 +30,13 @@ namespace dom {
 class Element;
 }
 
+template <class AnimationType>
 class CommonAnimationManager {
 public:
-  explicit CommonAnimationManager(nsPresContext *aPresContext);
+  explicit CommonAnimationManager(nsPresContext *aPresContext)
+    : mPresContext(aPresContext)
+  {
+  }
 
   
   nsPresContext* PresContext() const { return mPresContext; }
@@ -40,7 +44,13 @@ public:
   
 
 
-  void Disconnect();
+  void Disconnect()
+  {
+    
+    RemoveAllElementCollections();
+
+    mPresContext = nullptr;
+  }
 
   static bool ExtractComputedValueForTransition(
                   nsCSSProperty aProperty,
@@ -48,10 +58,22 @@ public:
                   StyleAnimationValue& aComputedValue);
 
 protected:
-  virtual ~CommonAnimationManager();
+  virtual ~CommonAnimationManager()
+  {
+    MOZ_ASSERT(!mPresContext, "Disconnect should have been called");
+  }
 
-  void AddElementCollection(AnimationCollection* aCollection);
-  void RemoveAllElementCollections();
+  void AddElementCollection(AnimationCollection<AnimationType>* aCollection)
+  {
+    mElementCollections.insertBack(aCollection);
+  }
+  void RemoveAllElementCollections()
+  {
+    while (AnimationCollection<AnimationType>* head =
+           mElementCollections.getFirst()) {
+      head->Destroy(); 
+    }
+  }
 
   virtual nsIAtom* GetAnimationsAtom() = 0;
   virtual nsIAtom* GetAnimationsBeforeAtom() = 0;
@@ -60,7 +82,7 @@ protected:
 public:
   
   
-  AnimationCollection*
+  AnimationCollection<AnimationType>*
   GetAnimationCollection(dom::Element *aElement,
                          CSSPseudoElementType aPseudoType,
                          bool aCreateIfNeeded);
@@ -68,13 +90,106 @@ public:
   
   
   
-  AnimationCollection*
+  AnimationCollection<AnimationType>*
   GetAnimationCollection(const nsIFrame* aFrame);
 
 protected:
-  LinkedList<AnimationCollection> mElementCollections;
+  LinkedList<AnimationCollection<AnimationType>> mElementCollections;
   nsPresContext *mPresContext; 
 };
+
+template <class AnimationType>
+AnimationCollection<AnimationType>*
+CommonAnimationManager<AnimationType>::GetAnimationCollection(
+  dom::Element *aElement,
+  CSSPseudoElementType aPseudoType,
+  bool aCreateIfNeeded)
+{
+  if (!aCreateIfNeeded && !aElement->MayHaveAnimations()) {
+    
+    return nullptr;
+  }
+
+  nsIAtom *propName;
+  if (aPseudoType == CSSPseudoElementType::NotPseudo) {
+    propName = GetAnimationsAtom();
+  } else if (aPseudoType == CSSPseudoElementType::before) {
+    propName = GetAnimationsBeforeAtom();
+  } else if (aPseudoType == CSSPseudoElementType::after) {
+    propName = GetAnimationsAfterAtom();
+  } else {
+    NS_ASSERTION(!aCreateIfNeeded,
+                 "should never try to create transitions for pseudo "
+                 "other than :before or :after");
+    return nullptr;
+  }
+  
+  AnimationCollection<AnimationType>* collection =
+    static_cast<AnimationCollection<AnimationType>*>(
+      aElement->GetProperty(propName));
+  if (!collection && aCreateIfNeeded) {
+    
+    collection = new AnimationCollection<AnimationType>(aElement, propName);
+    nsresult rv =
+      aElement->SetProperty(propName, collection,
+                            &AnimationCollection<AnimationType>::PropertyDtor,
+                            false);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("SetProperty failed");
+      
+      
+      AnimationCollection<AnimationType>::PropertyDtor(aElement, propName,
+                                                       collection, nullptr);
+      return nullptr;
+    }
+
+    aElement->SetMayHaveAnimations();
+
+    AddElementCollection(collection);
+  }
+
+  return collection;
+}
+
+template <class AnimationType>
+AnimationCollection<AnimationType>*
+CommonAnimationManager<AnimationType>::GetAnimationCollection(
+  const nsIFrame* aFrame)
+{
+  Maybe<Pair<dom::Element*, CSSPseudoElementType>> pseudoElement =
+    EffectCompositor::GetAnimationElementAndPseudoForFrame(aFrame);
+  if (!pseudoElement) {
+    return nullptr;
+  }
+
+  if (!pseudoElement->first()->MayHaveAnimations()) {
+    return nullptr;
+  }
+
+  return GetAnimationCollection(pseudoElement->first(),
+                                pseudoElement->second(),
+                                false );
+}
+
+template <class AnimationType>
+ bool
+CommonAnimationManager<AnimationType>::ExtractComputedValueForTransition(
+  nsCSSProperty aProperty,
+  nsStyleContext* aStyleContext,
+  StyleAnimationValue& aComputedValue)
+{
+  bool result = StyleAnimationValue::ExtractComputedValue(aProperty,
+                                                          aStyleContext,
+                                                          aComputedValue);
+  if (aProperty == eCSSProperty_visibility) {
+    MOZ_ASSERT(aComputedValue.GetUnit() ==
+                 StyleAnimationValue::eUnit_Enumerated,
+               "unexpected unit");
+    aComputedValue.SetIntValue(aComputedValue.GetIntValue(),
+                               StyleAnimationValue::eUnit_Visibility);
+  }
+  return result;
+}
 
 
 

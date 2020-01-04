@@ -48,7 +48,8 @@ struct AnimationEventInfo {
     
     mEvent.animationName = aAnimationName;
     mEvent.elapsedTime = aElapsedTime.ToSeconds();
-    mEvent.pseudoElement = AnimationCollection::PseudoTypeAsString(aPseudoType);
+    mEvent.pseudoElement =
+      AnimationCollection<dom::CSSAnimation>::PseudoTypeAsString(aPseudoType);
   }
 
   
@@ -268,16 +269,21 @@ protected:
 } 
 
 class nsAnimationManager final
-  : public mozilla::CommonAnimationManager
+  : public mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation>
 {
 public:
   explicit nsAnimationManager(nsPresContext *aPresContext)
-    : mozilla::CommonAnimationManager(aPresContext)
+    : mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation>(aPresContext)
   {
   }
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(nsAnimationManager)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(nsAnimationManager)
+
+  typedef mozilla::AnimationCollection<mozilla::dom::CSSAnimation>
+    CSSAnimationCollection;
+  typedef nsTArray<RefPtr<mozilla::dom::CSSAnimation>>
+    OwningCSSAnimationPtrArray;
 
   
 
@@ -338,8 +344,8 @@ protected:
 private:
   void BuildAnimations(nsStyleContext* aStyleContext,
                        mozilla::dom::Element* aTarget,
-                       mozilla::AnimationCollection* aCollection,
-                       mozilla::AnimationPtrArray& aAnimations);
+                       CSSAnimationCollection* aCollection,
+                       OwningCSSAnimationPtrArray& aAnimations);
 };
 
 #endif 

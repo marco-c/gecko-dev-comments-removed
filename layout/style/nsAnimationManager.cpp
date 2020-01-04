@@ -305,7 +305,7 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsAnimationManager, Release)
 
 static already_AddRefed<CSSAnimation>
 PopExistingAnimation(const nsAString& aName,
-                     AnimationCollection* aCollection)
+                     nsAnimationManager::CSSAnimationCollection* aCollection)
 {
   if (!aCollection) {
     return nullptr;
@@ -317,10 +317,7 @@ PopExistingAnimation(const nsAString& aName,
   
   for (size_t idx = 0, length = aCollection->mAnimations.Length();
        idx != length; ++ idx) {
-    CSSAnimation* cssAnim = aCollection->mAnimations[idx]->AsCSSAnimation();
-    MOZ_ASSERT(cssAnim,
-               "All animations stored by the animation manager should "
-               "be CSSAnimation objects");
+    CSSAnimation* cssAnim = aCollection->mAnimations[idx];
     if (cssAnim->AnimationName() == aName) {
       RefPtr<CSSAnimation> match = cssAnim;
       aCollection->mAnimations.RemoveElementAt(idx);
@@ -394,7 +391,7 @@ nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
   
 
   const nsStyleDisplay* disp = aStyleContext->StyleDisplay();
-  AnimationCollection* collection =
+  CSSAnimationCollection* collection =
     GetAnimationCollection(aElement,
                            aStyleContext->GetPseudoType(),
                            false );
@@ -408,7 +405,7 @@ nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
 
   
   
-  AnimationPtrArray newAnimations;
+  OwningCSSAnimationPtrArray newAnimations;
   if (!aStyleContext->IsInDisplayNoneSubtree()) {
     BuildAnimations(aStyleContext, aElement, collection, newAnimations);
   }
@@ -462,7 +459,7 @@ nsAnimationManager::StopAnimationsForElement(
   mozilla::CSSPseudoElementType aPseudoType)
 {
   MOZ_ASSERT(aElement);
-  AnimationCollection* collection =
+  CSSAnimationCollection* collection =
     GetAnimationCollection(aElement, aPseudoType, false );
   if (!collection) {
     return;
@@ -535,7 +532,7 @@ class MOZ_STACK_CLASS CSSAnimationBuilder final {
 public:
   CSSAnimationBuilder(nsStyleContext* aStyleContext,
                       dom::Element* aTarget,
-                      AnimationCollection* aCollection)
+                      nsAnimationManager::CSSAnimationCollection* aCollection)
     : mStyleContext(aStyleContext)
     , mTarget(aTarget)
     , mCollection(aCollection)
@@ -588,7 +585,7 @@ private:
   ResolvedStyleCache mResolvedStyles;
   RefPtr<nsStyleContext> mStyleWithoutAnimation;
   
-  AnimationCollection* mCollection;
+  nsAnimationManager::CSSAnimationCollection* mCollection;
 };
 
 already_AddRefed<CSSAnimation>
@@ -654,7 +651,7 @@ CSSAnimationBuilder::Build(nsPresContext* aPresContext,
   
   
   
-  animation->AsCSSAnimation()->QueueEvents();
+  animation->QueueEvents();
 
   return animation.forget();
 }
@@ -835,12 +832,10 @@ CSSAnimationBuilder::BuildSegment(InfallibleTArray<AnimationPropertySegment>&
                                   float aToKey, nsStyleContext* aToContext)
 {
   StyleAnimationValue fromValue, toValue, dummyValue;
-  if (!CommonAnimationManager::ExtractComputedValueForTransition(aProperty,
-                                                                 aFromContext,
-                                                                 fromValue) ||
-      !CommonAnimationManager::ExtractComputedValueForTransition(aProperty,
-                                                                 aToContext,
-                                                                 toValue) ||
+  if (!CommonAnimationManager<CSSAnimation>::ExtractComputedValueForTransition(
+        aProperty, aFromContext, fromValue) ||
+      !CommonAnimationManager<CSSAnimation>::ExtractComputedValueForTransition(
+        aProperty, aToContext, toValue) ||
       
       
       
@@ -874,8 +869,8 @@ CSSAnimationBuilder::BuildSegment(InfallibleTArray<AnimationPropertySegment>&
 void
 nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
                                     dom::Element* aTarget,
-                                    AnimationCollection* aCollection,
-                                    AnimationPtrArray& aAnimations)
+                                    CSSAnimationCollection* aCollection,
+                                    OwningCSSAnimationPtrArray& aAnimations)
 {
   MOZ_ASSERT(aAnimations.IsEmpty(), "expect empty array");
 
