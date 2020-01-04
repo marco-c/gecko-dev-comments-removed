@@ -252,7 +252,11 @@ function get_sync_test_telemetry() {
 }
 
 function assert_valid_ping(record) {
-  if (record) {
+  
+  
+  
+  
+  if (record && (record.why != "shutdown" || record.syncs.length != 0)) {
     if (!SyncPingValidator(record)) {
       deepEqual([], SyncPingValidator.errors, "Sync telemetry ping validation failed");
     }
