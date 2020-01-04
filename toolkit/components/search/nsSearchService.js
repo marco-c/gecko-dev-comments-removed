@@ -1280,7 +1280,13 @@ function Engine(aLocation, aIsReadOnly) {
   if (typeof aLocation == "string") {
     this._shortName = aLocation;
   } else if (aLocation instanceof Ci.nsILocalFile) {
-    
+    if (!aIsReadOnly) {
+      
+      
+      
+      
+      this._filePath = aLocation.persistentDescriptor;
+    }
     file = aLocation;
   } else if (aLocation instanceof Ci.nsIURI) {
     switch (aLocation.scheme) {
@@ -2061,21 +2067,18 @@ Engine.prototype = {
     this._shortName = aJson._shortName;
     this._loadPath = aJson._loadPath;
     this._description = aJson.description;
-    if (aJson._hasPreferredIcon == undefined)
-      this._hasPreferredIcon = true;
-    else
-      this._hasPreferredIcon = false;
+    this._hasPreferredIcon = aJson._hasPreferredIcon == undefined;
     this._queryCharset = aJson.queryCharset || DEFAULT_QUERY_CHARSET;
     this.__searchForm = aJson.__searchForm;
     this._updateInterval = aJson._updateInterval || null;
     this._updateURL = aJson._updateURL || null;
     this._iconUpdateURL = aJson._iconUpdateURL || null;
-    if (aJson._readOnly == undefined)
-      this._readOnly = true;
-    else
-      this._readOnly = false;
+    this._readOnly = aJson._readOnly == undefined;
     this._iconURI = makeURI(aJson._iconURL);
     this._iconMapObj = aJson._iconMapObj;
+    if (aJson.filePath) {
+      this._filePath = aJson.filePath;
+    }
     if (aJson.extensionID) {
       this._extensionID = aJson.extensionID;
     }
@@ -2118,25 +2121,14 @@ Engine.prototype = {
       json.queryCharset = this.queryCharset;
     if (!this._readOnly)
       json._readOnly = this._readOnly;
+    if (this._filePath) {
+      json.filePath = this._filePath;
+    }
     if (this._extensionID) {
       json.extensionID = this._extensionID;
     }
 
     return json;
-  },
-
-  
-
-
-
-
-  _remove: function SRCH_ENG_remove() {
-    if (this._readOnly)
-      FAIL("Can't remove read only engine!", Cr.NS_ERROR_FAILURE);
-    if (!this._file || !this._file.exists())
-      FAIL("Can't remove engine: file doesn't exist!", Cr.NS_ERROR_FILE_NOT_FOUND);
-
-    this._file.remove(false);
   },
 
   
@@ -3879,11 +3871,14 @@ SearchService.prototype = {
       engineToRemove.alias = null;
     } else {
       
-      
-      if (engineToRemove._file &&
-          engineToRemove._file.exists())
-        engineToRemove._remove();
-      engineToRemove._file = null;
+      if (engineToRemove._filePath) {
+        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+        file.persistentDescriptor = engineToRemove._filePath;
+        if (file.exists()) {
+          file.remove(false);
+        }
+        engineToRemove._filePath = null;
+      }
 
       
       var index = this._sortedEngines.indexOf(engineToRemove);
