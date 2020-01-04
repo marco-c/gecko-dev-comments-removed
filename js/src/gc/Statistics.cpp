@@ -194,13 +194,13 @@ static ExtraPhaseInfo phaseExtra[PHASE_LIMIT] = { { 0, 0 } };
 
 
 
-static mozilla::Vector<Phase, 0, SystemAllocPolicy> dagDescendants[Statistics::NumTimingArrays];
+static mozilla::Vector<Phase> dagDescendants[Statistics::NumTimingArrays];
 
 struct AllPhaseIterator {
     int current;
     int baseLevel;
     size_t activeSlot;
-    mozilla::Vector<Phase, 0, SystemAllocPolicy>::Range descendants;
+    mozilla::Vector<Phase>::Range descendants;
 
     explicit AllPhaseIterator(const Statistics::PhaseTimeTable table)
       : current(0)
@@ -829,7 +829,7 @@ Statistics::initialize()
 
     
     
-    mozilla::Vector<Phase, 0, SystemAllocPolicy> stack;
+    mozilla::Vector<Phase> stack;
     if (!stack.append(PHASE_LIMIT)) 
         return false;
     for (int i = 0; i < PHASE_LIMIT; i++) {

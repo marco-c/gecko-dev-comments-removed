@@ -19,6 +19,8 @@
 
 namespace js {
 
+typedef mozilla::Vector<RefPtr<js::PerformanceGroup>> GroupVector;
+
 
 
 
@@ -41,7 +43,7 @@ struct PerformanceGroupHolder {
 
 
 
-    const PerformanceGroupVector* getGroups(JSContext*);
+    const GroupVector* getGroups(JSContext*);
 
     explicit PerformanceGroupHolder(JSRuntime* runtime)
       : runtime_(runtime)
@@ -57,7 +59,7 @@ struct PerformanceGroupHolder {
 
     
     
-    PerformanceGroupVector groups_;
+    GroupVector groups_;
 };
 
 
@@ -290,7 +292,7 @@ struct PerformanceMonitoring {
     
 
 
-    PerformanceGroupVector recentGroups_;
+    GroupVector recentGroups_;
 
     
 
@@ -342,7 +344,7 @@ class AutoStopwatch final {
     
     cpuid_t cpuStart_;
 
-    PerformanceGroupVector groups_;
+    mozilla::Vector<RefPtr<js::PerformanceGroup>> groups_;
 
   public:
     
