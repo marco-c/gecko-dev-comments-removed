@@ -56,13 +56,17 @@ typedef struct nsID nsID;
 
 
 struct XPTHeader {
-    uint8_t                     magic[16];
+    
+    
+    
+
+    
     uint8_t                     major_version;
     uint8_t                     minor_version;
     uint16_t                    num_interfaces;
-    uint32_t                    file_length;
+    
     XPTInterfaceDirectoryEntry  *interface_directory;
-    uint32_t                    data_pool;
+    
 };
 
 #define XPT_MAGIC "XPCOM\nTypeLib\r\n\032"
@@ -70,7 +74,6 @@ struct XPTHeader {
 #define XPT_MAGIC_STRING "XPCOM\\nTypeLib\\r\\n\\032"
 #define XPT_MAJOR_VERSION 0x01
 #define XPT_MINOR_VERSION 0x02
-
 
 
 
