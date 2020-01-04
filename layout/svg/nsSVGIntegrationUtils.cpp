@@ -23,6 +23,7 @@
 #include "FrameLayerBuilder.h"
 #include "BasicLayers.h"
 #include "mozilla/gfx/Point.h"
+#include "nsCSSRendering.h"
 
 using namespace mozilla;
 using namespace mozilla::layers;
@@ -152,8 +153,11 @@ nsSVGIntegrationUtils::UsingEffectsForFrame(const nsIFrame* aFrame)
   
   
   const nsStyleSVGReset *style = aFrame->StyleSVGReset();
-  return (style->HasFilters() ||
-          style->mClipPath.GetType() != NS_STYLE_CLIP_PATH_NONE || style->mMask);
+  bool hasValidLayers = style->mLayers.HasLayerWithImage();
+
+  return (style->HasFilters() || style->mMask ||
+          (style->mClipPath.GetType() != NS_STYLE_CLIP_PATH_NONE) ||
+          hasValidLayers);
 }
 
 
@@ -409,6 +413,7 @@ void
 nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
                                               nsIFrame* aFrame,
                                               const nsRect& aDirtyRect,
+                                              const nsRect& aBorderArea,
                                               nsDisplayListBuilder* aBuilder,
                                               LayerManager *aLayerManager)
 {
@@ -464,10 +469,6 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
 
   bool isOK = effectProperties.HasNoFilterOrHasValidFilter();
   nsSVGClipPathFrame *clipPathFrame = effectProperties.GetClipPathFrame(&isOK);
-  nsSVGMaskFrame *maskFrame = effectProperties.GetMaskFrame(&isOK);
-  if (!isOK) {
-    return; 
-  }
 
   bool isTrivialClip = clipPathFrame ? clipPathFrame->IsTrivial() : true;
 
@@ -510,7 +511,13 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
 
   gfxMatrix cssPxToDevPxMatrix = GetCSSPxToDevPxMatrix(aFrame);
 
+  const nsStyleSVGReset *svgReset = firstFrame->StyleSVGReset();
+  
+  
+  nsSVGMaskFrame *svgMaskFrame = effectProperties.GetMaskFrame(&isOK);
+
   bool complexEffects = false;
+  bool hasValidLayers = svgReset->mLayers.HasLayerWithImage();
 
   
   RefPtr<gfxContext> target = &aContext;
@@ -518,20 +525,10 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
 
   
 
-  if (opacity != 1.0f || maskFrame || (clipPathFrame && !isTrivialClip)
-      || aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
+  if (opacity != 1.0f ||  (clipPathFrame && !isTrivialClip)
+      || aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL
+      || svgMaskFrame || hasValidLayers) {
     complexEffects = true;
-
-    Matrix maskTransform;
-    RefPtr<SourceSurface> maskSurface =
-      maskFrame ? maskFrame->GetMaskForMaskedFrame(&aContext,
-                                                    aFrame, cssPxToDevPxMatrix, opacity, &maskTransform)
-                : nullptr;
-
-    if (maskFrame && !maskSurface) {
-      
-      return;
-    }
 
     aContext.Save();
     nsRect clipRect =
@@ -539,6 +536,60 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
     aContext.Clip(NSRectToSnappedRect(clipRect,
                                   aFrame->PresContext()->AppUnitsPerDevPixel(),
                                   *drawTarget));
+
+    Matrix maskTransform;
+    RefPtr<SourceSurface> maskSurface;
+    if (svgMaskFrame) {
+      maskSurface = svgMaskFrame->GetMaskForMaskedFrame(&aContext,
+                                                     aFrame,
+                                                     cssPxToDevPxMatrix,
+                                                     opacity,
+                                                     &maskTransform);
+    } else if (hasValidLayers) {
+      gfxRect clipRect = aContext.GetClipExtents();
+      {
+        gfxContextMatrixAutoSaveRestore matRestore(&aContext);
+
+        aContext.SetMatrix(gfxMatrix());
+        clipRect = aContext.GetClipExtents();
+      }
+      IntRect drawRect = RoundedOut(ToRect(clipRect));
+      RefPtr<DrawTarget> targetDT = aContext.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(), SurfaceFormat::A8);
+      if (!targetDT) {
+        aContext.Restore();
+        return;
+      }
+
+      RefPtr<gfxContext> target = new gfxContext(targetDT);
+      target->SetMatrix(matrixAutoSaveRestore.Matrix() * gfxMatrix::Translation(-drawRect.TopLeft()));
+
+      
+      uint32_t flags = aBuilder->GetBackgroundPaintFlags() |
+                       nsCSSRendering::PAINTBG_MASK_IMAGE;
+      nsRenderingContext rc(target);
+      nsCSSRendering::PaintBackgroundWithSC(aFrame->PresContext(),
+                                            rc,
+                                            aFrame,
+                                            aDirtyRect,
+                                            aBorderArea,
+                                            firstFrame->StyleContext(),
+                                            *aFrame->StyleBorder(),
+                                            flags,
+                                            nullptr,
+                                            -1);
+      maskSurface = targetDT->Snapshot();
+
+      
+      Matrix mat = ToMatrix(aContext.CurrentMatrix());
+      mat.Invert();
+      maskTransform = Matrix::Translation(drawRect.x, drawRect.y) * mat;
+    }
+
+    if ((svgMaskFrame || hasValidLayers) && !maskSurface) {
+      
+      aContext.Restore();
+      return;
+    }
 
     if (aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
       
@@ -554,6 +605,10 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
       IntRect drawRect = RoundedOut(ToRect(clipRect));
 
       RefPtr<DrawTarget> targetDT = aContext.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(), SurfaceFormat::B8G8R8A8);
+      if (!targetDT) {
+        aContext.Restore();
+        return;
+      }
       target = new gfxContext(targetDT);
       target->SetMatrix(aContext.CurrentMatrix() * gfxMatrix::Translation(-drawRect.TopLeft()));
       targetOffset = drawRect.TopLeft();
@@ -570,7 +625,8 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
       }
     }
 
-    if (opacity != 1.0f || maskFrame || (clipPathFrame && !isTrivialClip)) {
+    if (opacity != 1.0f || svgMaskFrame  || hasValidLayers ||
+        (clipPathFrame && !isTrivialClip)) {
       target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity, maskSurface, maskTransform);
     }
   }
@@ -610,7 +666,8 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
     return;
   }
 
-  if (opacity != 1.0f || maskFrame || (clipPathFrame && !isTrivialClip)) {
+  if (opacity != 1.0f || svgMaskFrame || hasValidLayers ||
+      (clipPathFrame && !isTrivialClip)) {
     target->PopGroupAndBlend();
   }
 
