@@ -187,6 +187,19 @@ const DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC = "distribution-customization-co
 
 
 
+
+
+function enforceBoolean(aValue) {
+  if (typeof(aValue) !== "number" && typeof(aValue) !== "boolean") {
+    return null;
+  }
+  return (new Boolean(aValue)).valueOf();
+}
+
+
+
+
+
 function getBrowserLocale() {
   try {
     return Cc["@mozilla.org/chrome/chrome-registry;1"].
@@ -530,12 +543,12 @@ EnvironmentAddonBuilder.prototype = {
           blocklisted: (addon.blocklistState !== Ci.nsIBlocklistService.STATE_NOT_BLOCKED),
           description: limitStringToLength(addon.description, MAX_ADDON_STRING_LENGTH),
           name: limitStringToLength(addon.name, MAX_ADDON_STRING_LENGTH),
-          userDisabled: addon.userDisabled,
+          userDisabled: enforceBoolean(addon.userDisabled),
           appDisabled: addon.appDisabled,
           version: limitStringToLength(addon.version, MAX_ADDON_STRING_LENGTH),
           scope: addon.scope,
           type: addon.type,
-          foreignInstall: addon.foreignInstall,
+          foreignInstall: enforceBoolean(addon.foreignInstall),
           hasBinaryComponents: addon.hasBinaryComponents,
           installDay: Utils.millisecondsToDays(installDate.getTime()),
           updateDay: Utils.millisecondsToDays(updateDate.getTime()),
@@ -576,11 +589,11 @@ EnvironmentAddonBuilder.prototype = {
         blocklisted: (theme.blocklistState !== Ci.nsIBlocklistService.STATE_NOT_BLOCKED),
         description: limitStringToLength(theme.description, MAX_ADDON_STRING_LENGTH),
         name: limitStringToLength(theme.name, MAX_ADDON_STRING_LENGTH),
-        userDisabled: theme.userDisabled,
+        userDisabled: enforceBoolean(theme.userDisabled),
         appDisabled: theme.appDisabled,
         version: limitStringToLength(theme.version, MAX_ADDON_STRING_LENGTH),
         scope: theme.scope,
-        foreignInstall: theme.foreignInstall,
+        foreignInstall: enforceBoolean(theme.foreignInstall),
         hasBinaryComponents: theme.hasBinaryComponents,
         installDay: Utils.millisecondsToDays(installDate.getTime()),
         updateDay: Utils.millisecondsToDays(updateDate.getTime()),
@@ -649,7 +662,7 @@ EnvironmentAddonBuilder.prototype = {
       try {
         activeGMPlugins[plugin.id] = {
           version: plugin.version,
-          userDisabled: plugin.userDisabled,
+          userDisabled: enforceBoolean(plugin.userDisabled),
           applyBackgroundUpdates: plugin.applyBackgroundUpdates,
         };
       } catch (ex) {
