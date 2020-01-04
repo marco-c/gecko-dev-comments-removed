@@ -29,12 +29,24 @@ def main(argv):
 
 def config_status(config):
     
+    
+    
+    
+    def sanitized_bools(v):
+        if v is True:
+            return '1'
+        if v is False:
+            return ''
+        return v
+
     sanitized_config = {}
     sanitized_config['substs'] = {
-        k: v for k, v in config.iteritems()
+        k: sanitized_bools(v) for k, v in config.iteritems()
         if k not in ('DEFINES', 'non_global_defines', 'TOPSRCDIR', 'TOPOBJDIR')
     }
-    sanitized_config['defines'] = config['DEFINES']
+    sanitized_config['defines'] = {
+        k: sanitized_bools(v) for k, v in config['DEFINES'].iteritems()
+    }
     sanitized_config['non_global_defines'] = config['non_global_defines']
     sanitized_config['topsrcdir'] = config['TOPSRCDIR']
     sanitized_config['topobjdir'] = config['TOPOBJDIR']
