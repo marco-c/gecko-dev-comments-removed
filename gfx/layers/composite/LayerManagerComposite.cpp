@@ -226,7 +226,11 @@ LayerManagerComposite::ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaque
   LayerComposite *composite = aLayer->AsLayerComposite();
   if (!localOpaque.IsEmpty()) {
     nsIntRegion visible = composite->GetShadowVisibleRegion();
-    visible.Sub(visible, localOpaque);
+    nsIntRegion afterCulling;
+    afterCulling.Sub(visible, localOpaque);
+    
+    
+    visible.AndWith(afterCulling.GetBounds());
     composite->SetShadowVisibleRegion(visible);
   }
 
