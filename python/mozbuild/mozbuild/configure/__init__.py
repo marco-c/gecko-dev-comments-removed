@@ -490,7 +490,10 @@ class ConfigureSandbox(dict):
             import_line += 'import %s' % _import
             if _as:
                 import_line += ' as %s' % _as
-            exec(import_line, {}, glob)
+            
+            
+            
+            exec import_line in {}, glob
 
     def _resolve_and_set(self, data, name, value):
         
