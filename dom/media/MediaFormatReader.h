@@ -436,13 +436,6 @@ private:
 
   nsRefPtr<SharedDecoderManager> mSharedDecoderManager;
 
-  
-  
-  
-  nsRefPtr<MediaDataDemuxer> mMainThreadDemuxer;
-  nsRefPtr<MediaTrackDemuxer> mAudioTrackDemuxer;
-  nsRefPtr<MediaTrackDemuxer> mVideoTrackDemuxer;
-
 #if defined(READER_DORMANT_HEURISTIC)
   const bool mDormantEnabled;
 #endif
