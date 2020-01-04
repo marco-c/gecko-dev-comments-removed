@@ -48,7 +48,7 @@ assertEq(Object.keys(offsets).length, 2);
 
 doSingleStep = false;
 g.eval('t(0, 0, 0)');
-assertEq(Object.keys(offsets).length, 6);
+assertEq(Object.keys(offsets).length, 7);
 doSingleStep = true;
 
 
