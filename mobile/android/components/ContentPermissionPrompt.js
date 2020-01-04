@@ -18,14 +18,12 @@ const kEntities = {
   "device-storage:sdcard": "deviceStorageSdcard",
   "device-storage:videos": "deviceStorageVideos",
   "geolocation": "geolocation",
-  "flyweb-publish-server": "flyWebPublishServer",
 };
 
 
 const PROMPT_FOR_UNKNOWN = [
   "desktop-notification",
   "geolocation",
-  "flyweb-publish-server",
 ];
 
 function ContentPermissionPrompt() {}
