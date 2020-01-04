@@ -3117,7 +3117,7 @@ nsHTMLEditRules::WillMakeList(Selection* aSelection,
                               listType, itemType);
         NS_ENSURE_SUCCESS(res, res);
         NS_ENSURE_STATE(mHTMLEditor);
-        res = mHTMLEditor->RemoveBlockContainer(GetAsDOMNode(newBlock));
+        res = mHTMLEditor->RemoveBlockContainer(*newBlock);
         NS_ENSURE_SUCCESS(res, res);
       } else {
         
@@ -4016,7 +4016,7 @@ nsHTMLEditRules::WillOutdent(Selection& aSelection,
           lastBQChild = nullptr;
           curBlockQuoteIsIndentedWithCSS = false;
         }
-        res = mHTMLEditor->RemoveBlockContainer(GetAsDOMNode(curNode));
+        res = mHTMLEditor->RemoveBlockContainer(curNode);
         NS_ENSURE_SUCCESS(res, res);
         continue;
       }
@@ -4128,7 +4128,7 @@ nsHTMLEditRules::WillOutdent(Selection& aSelection,
           
           if (nsHTMLEditUtils::IsList(curNode)) {
             
-            res = mHTMLEditor->RemoveBlockContainer(GetAsDOMNode(curNode));
+            res = mHTMLEditor->RemoveBlockContainer(curNode);
             NS_ENSURE_SUCCESS(res, res);
           }
           
@@ -4155,7 +4155,7 @@ nsHTMLEditRules::WillOutdent(Selection& aSelection,
             child = curNode->GetLastChild();
           }
           
-          res = mHTMLEditor->RemoveBlockContainer(GetAsDOMNode(curNode));
+          res = mHTMLEditor->RemoveBlockContainer(curNode);
           NS_ENSURE_SUCCESS(res, res);
         } else if (useCSS) {
           nsCOMPtr<Element> element;
@@ -4227,7 +4227,7 @@ nsHTMLEditRules::RemovePartOfBlock(Element& aBlock,
   
 
   NS_ENSURE_STATE(mHTMLEditor);
-  nsresult res = mHTMLEditor->RemoveBlockContainer(aBlock.AsDOMNode());
+  nsresult res = mHTMLEditor->RemoveBlockContainer(aBlock);
   NS_ENSURE_SUCCESS(res, res);
 
   return NS_OK;
@@ -4291,6 +4291,8 @@ nsHTMLEditRules::OutdentPartOfBlock(Element& aBlock,
   SplitBlock(aBlock, aStartChild, aEndChild, aOutLeftNode, aOutRightNode,
              getter_AddRefs(middleNode));
 
+  NS_ENSURE_STATE(middleNode);
+
   if (aIsBlockIndentedWithCSS) {
     nsresult res =
       RelativeChangeIndentationOfElementNode(GetAsDOMNode(middleNode), -1);
@@ -4298,7 +4300,7 @@ nsHTMLEditRules::OutdentPartOfBlock(Element& aBlock,
   } else {
     NS_ENSURE_STATE(mHTMLEditor);
     nsresult res =
-      mHTMLEditor->RemoveBlockContainer(GetAsDOMNode(middleNode));
+      mHTMLEditor->RemoveBlockContainer(*middleNode);
     NS_ENSURE_SUCCESS(res, res);
   }
 
@@ -6673,7 +6675,7 @@ nsHTMLEditRules::RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
         firstNode = lastNode = curBlock = nullptr;
       }
       
-      res = mHTMLEditor->RemoveBlockContainer(curNode->AsDOMNode());
+      res = mHTMLEditor->RemoveBlockContainer(*curNode->AsContent());
       NS_ENSURE_SUCCESS(res, res);
     } else if (curNode->IsAnyOfHTMLElements(nsGkAtoms::table,
                                             nsGkAtoms::tr,
@@ -7805,7 +7807,7 @@ nsHTMLEditRules::PopListItem(nsIDOMNode *aListItem, bool *aOutOfList)
   if (!nsHTMLEditUtils::IsList(curParPar) &&
       nsHTMLEditUtils::IsListItem(listItem)) {
     NS_ENSURE_STATE(mHTMLEditor);
-    res = mHTMLEditor->RemoveBlockContainer(GetAsDOMNode(listItem));
+    res = mHTMLEditor->RemoveBlockContainer(*listItem);
     NS_ENSURE_SUCCESS(res, res);
     *aOutOfList = true;
   }
@@ -7840,7 +7842,7 @@ nsHTMLEditRules::RemoveListStructure(Element& aList)
   }
 
   
-  res = mHTMLEditor->RemoveBlockContainer(aList.AsDOMNode());
+  res = mHTMLEditor->RemoveBlockContainer(aList);
   NS_ENSURE_SUCCESS(res, res);
 
   return NS_OK;

@@ -3786,15 +3786,9 @@ nsHTMLEditor::SetSelectionAtDocumentStart(Selection* aSelection)
 
 
 
-
 nsresult
-nsHTMLEditor::RemoveBlockContainer(nsIDOMNode *inNode)
+nsHTMLEditor::RemoveBlockContainer(nsIContent& aNode)
 {
-  nsCOMPtr<nsIContent> node = do_QueryInterface(inNode);
-  NS_ENSURE_TRUE(node, NS_ERROR_NULL_POINTER);
-  nsresult res;
-  nsCOMPtr<nsIDOMNode> sibling, child, unused;
-
   
   
   
@@ -3803,25 +3797,21 @@ nsHTMLEditor::RemoveBlockContainer(nsIDOMNode *inNode)
   
   
 
-  child = GetAsDOMNode(GetFirstEditableChild(*node));
+  nsCOMPtr<nsIContent> child = GetFirstEditableChild(aNode);
 
-  if (child)  
-  {
+  if (child) {
     
     
     
     
     
 
-    res = GetPriorHTMLSibling(inNode, address_of(sibling));
-    NS_ENSURE_SUCCESS(res, res);
-    if (sibling && !IsBlockNode(sibling) && !nsTextEditUtils::IsBreak(sibling))
-    {
-      if (!IsBlockNode(child)) {
-        
-        res = CreateBR(inNode, 0, address_of(unused));
-        NS_ENSURE_SUCCESS(res, res);
-      }
+    nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(&aNode);
+    if (sibling && !IsBlockNode(sibling) &&
+        !sibling->IsHTMLElement(nsGkAtoms::br) && !IsBlockNode(child)) {
+      
+      nsCOMPtr<Element> br = CreateBR(&aNode, 0);
+      NS_ENSURE_STATE(br);
     }
 
     
@@ -3830,47 +3820,41 @@ nsHTMLEditor::RemoveBlockContainer(nsIDOMNode *inNode)
     
     
 
-    res = GetNextHTMLSibling(inNode, address_of(sibling));
-    NS_ENSURE_SUCCESS(res, res);
-    if (sibling && !IsBlockNode(sibling))
-    {
-      child = GetAsDOMNode(GetLastEditableChild(*node));
-      if (child && !IsBlockNode(child) && !nsTextEditUtils::IsBreak(child))
-      {
+    sibling = GetNextHTMLSibling(&aNode);
+    if (sibling && !IsBlockNode(sibling)) {
+      child = GetLastEditableChild(aNode);
+      MOZ_ASSERT(child, "aNode has first editable child but not last?");
+      if (!IsBlockNode(child) && !child->IsHTMLElement(nsGkAtoms::br)) {
         
-        uint32_t len;
-        res = GetLengthOfDOMNode(inNode, len);
-        NS_ENSURE_SUCCESS(res, res);
-        res = CreateBR(inNode, (int32_t)len, address_of(unused));
-        NS_ENSURE_SUCCESS(res, res);
+        nsCOMPtr<Element> br = CreateBR(&aNode, aNode.Length());
+        NS_ENSURE_STATE(br);
       }
     }
-  }
-  else  
-  {
+  } else {
     
     
     
     
     
     
-    res = GetPriorHTMLSibling(inNode, address_of(sibling));
-    NS_ENSURE_SUCCESS(res, res);
-    if (sibling && !IsBlockNode(sibling) && !nsTextEditUtils::IsBreak(sibling))
-    {
-      res = GetNextHTMLSibling(inNode, address_of(sibling));
-      NS_ENSURE_SUCCESS(res, res);
-      if (sibling && !IsBlockNode(sibling) && !nsTextEditUtils::IsBreak(sibling))
-      {
+    nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(&aNode);
+    if (sibling && !IsBlockNode(sibling) &&
+        !sibling->IsHTMLElement(nsGkAtoms::br)) {
+      sibling = GetNextHTMLSibling(&aNode);
+      if (sibling && !IsBlockNode(sibling) &&
+          !sibling->IsHTMLElement(nsGkAtoms::br)) {
         
-        res = CreateBR(inNode, 0, address_of(unused));
-        NS_ENSURE_SUCCESS(res, res);
+        nsCOMPtr<Element> br = CreateBR(&aNode, 0);
+        NS_ENSURE_STATE(br);
       }
     }
   }
 
   
-  return RemoveContainer(node);
+  nsresult res = RemoveContainer(&aNode);
+  NS_ENSURE_SUCCESS(res, res);
+
+  return NS_OK;
 }
 
 
