@@ -25,7 +25,7 @@ public class DynamicToolbar {
     
     private final boolean forceDisabled;
 
-    private final int prefObserverId;
+    private final PrefsHelper.PrefHandler prefObserver;
     private final EnumSet<PinReason> pinFlags = EnumSet.noneOf(PinReason.class);
     private LayerView layerView;
     private OnEnabledChangedListener enabledChangedListener;
@@ -54,7 +54,8 @@ public class DynamicToolbar {
 
     public DynamicToolbar() {
         
-        prefObserverId = PrefsHelper.getPref(CHROME_PREF, new PrefHandler());
+        prefObserver = new PrefHandler();
+        PrefsHelper.addObserver(new String[] { CHROME_PREF }, prefObserver);
         forceDisabled = isForceDisabled();
         if (forceDisabled) {
             Log.i(LOGTAG, "Force-disabling dynamic toolbar for " + Build.MODEL + " (" + Build.DEVICE + "/" + Build.PRODUCT + ")");
@@ -73,7 +74,7 @@ public class DynamicToolbar {
     }
 
     public void destroy() {
-        PrefsHelper.removeObserver(prefObserverId);
+        PrefsHelper.removeObserver(prefObserver);
     }
 
     public void setLayerView(LayerView layerView) {
@@ -218,13 +219,6 @@ public class DynamicToolbar {
                     }
                 }
             });
-        }
-
-        @Override
-        public boolean isObserver() {
-            
-            
-            return true;
         }
     }
 }

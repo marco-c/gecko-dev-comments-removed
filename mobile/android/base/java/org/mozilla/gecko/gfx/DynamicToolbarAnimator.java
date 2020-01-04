@@ -60,7 +60,7 @@ public class DynamicToolbarAnimator {
 
     private float SCROLL_TOOLBAR_THRESHOLD = 0.20f;
     
-    private Integer mPrefObserverId;
+    private final PrefsHelper.PrefHandler mPrefObserver;
 
     
 
@@ -92,24 +92,17 @@ public class DynamicToolbarAnimator {
         mInterpolator = new DecelerateInterpolator();
 
         
-        mPrefObserverId = PrefsHelper.getPref(PREF_SCROLL_TOOLBAR_THRESHOLD, new PrefsHelper.PrefHandlerBase() {
+        mPrefObserver = new PrefsHelper.PrefHandlerBase() {
             @Override
             public void prefValue(String pref, int value) {
                 SCROLL_TOOLBAR_THRESHOLD = value / 100.0f;
             }
-
-            @Override
-            public boolean isObserver() {
-                return true;
-            }
-        });
+        };
+        PrefsHelper.addObserver(new String[] { PREF_SCROLL_TOOLBAR_THRESHOLD }, mPrefObserver);
     }
 
     public void destroy() {
-        if (mPrefObserverId != null) {
-            PrefsHelper.removeObserver(mPrefObserverId);
-            mPrefObserverId = null;
-        }
+        PrefsHelper.removeObserver(mPrefObserver);
     }
 
     public void addTranslationListener(LayerView.DynamicToolbarListener aListener) {
