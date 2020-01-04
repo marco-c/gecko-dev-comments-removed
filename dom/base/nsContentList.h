@@ -249,7 +249,6 @@ public:
 
 
 
-
   
   nsContentList(nsINode* aRootNode,
                 nsContentListMatchFunc aFunc,
