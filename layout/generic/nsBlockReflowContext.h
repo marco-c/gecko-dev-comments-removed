@@ -75,7 +75,7 @@ public:
 
 
 
-  bool ComputeCollapsedBStartMargin(const ReflowInput& aRS,
+  bool ComputeCollapsedBStartMargin(const ReflowInput& aRI,
                                     nsCollapsingMargin* aMargin,
                                     nsIFrame* aClearanceFrame,
                                     bool* aMayNeedRetry,

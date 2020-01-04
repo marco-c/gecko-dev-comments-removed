@@ -9167,7 +9167,7 @@ nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   
   
   
-  UnionAdditionalOverflow(presContext, aLineLayout.LineContainerRS()->mFrame,
+  UnionAdditionalOverflow(presContext, aLineLayout.LineContainerRI()->mFrame,
                           provider, &aMetrics.VisualOverflow(), false);
 
   

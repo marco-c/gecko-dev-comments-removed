@@ -9085,16 +9085,16 @@ nsFrame::BoxReflow(nsBoxLayoutState&        aState,
     const ReflowInput *outerReflowInput = aState.OuterReflowInput();
     NS_ASSERTION(!outerReflowInput || outerReflowInput->mFrame != this,
                  "in and out of XUL on a single frame?");
-    const ReflowInput* parentRS;
+    const ReflowInput* parentRI;
     if (outerReflowInput && outerReflowInput->mFrame == parentFrame) {
       
       
       
       
       
-      parentRS = outerReflowInput;
+      parentRI = outerReflowInput;
     } else {
-      parentRS = &parentReflowInput;
+      parentRI = &parentReflowInput;
     }
 
     
@@ -9102,14 +9102,14 @@ nsFrame::BoxReflow(nsBoxLayoutState&        aState,
     WritingMode wm = GetWritingMode();
     LogicalSize logicalSize(wm, nsSize(aWidth, aHeight));
     logicalSize.BSize(wm) = NS_INTRINSICSIZE;
-    ReflowInput reflowInput(aPresContext, *parentRS, this,
+    ReflowInput reflowInput(aPresContext, *parentRI, this,
                                   logicalSize, nullptr,
                                   ReflowInput::DUMMY_PARENT_REFLOW_STATE);
 
     
     
     
-    reflowInput.mCBReflowInput = parentRS;
+    reflowInput.mCBReflowInput = parentRI;
 
     reflowInput.mReflowDepth = aState.GetReflowDepth();
 
@@ -10223,8 +10223,8 @@ DR_FrameTreeNode* DR_State::CreateTreeNode(nsIFrame*                aFrame,
   
   nsIFrame* parentFrame;
   if (aReflowInput) {
-    const ReflowInput* parentRS = aReflowInput->mParentReflowInput;
-    parentFrame = (parentRS) ? parentRS->mFrame : nullptr;
+    const ReflowInput* parentRI = aReflowInput->mParentReflowInput;
+    parentFrame = (parentRI) ? parentRI->mFrame : nullptr;
   } else {
     parentFrame = aFrame->GetParent();
   }

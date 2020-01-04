@@ -250,7 +250,7 @@ nsTableWrapperFrame::InitChildReflowInput(nsPresContext&     aPresContext,
 
 void
 nsTableWrapperFrame::GetChildMargin(nsPresContext*           aPresContext,
-                                    const ReflowInput& aOuterRS,
+                                    const ReflowInput& aOuterRI,
                                     nsIFrame*                aChildFrame,
                                     nscoord                  aAvailISize,
                                     LogicalMargin&           aMargin)
@@ -263,20 +263,20 @@ nsTableWrapperFrame::GetChildMargin(nsPresContext*           aPresContext,
 
   
   
-  WritingMode wm = aOuterRS.GetWritingMode();
-  LogicalSize availSize(wm, aAvailISize, aOuterRS.AvailableSize(wm).BSize(wm));
-  ReflowInput childRS(aPresContext, aOuterRS, aChildFrame, availSize,
+  WritingMode wm = aOuterRI.GetWritingMode();
+  LogicalSize availSize(wm, aAvailISize, aOuterRI.AvailableSize(wm).BSize(wm));
+  ReflowInput childRI(aPresContext, aOuterRI, aChildFrame, availSize,
                             nullptr, ReflowInput::CALLER_WILL_INIT);
-  InitChildReflowInput(*aPresContext, childRS);
+  InitChildReflowInput(*aPresContext, childRI);
 
-  aMargin = childRS.ComputedLogicalMargin();
+  aMargin = childRI.ComputedLogicalMargin();
 }
 
 static nsSize
-GetContainingBlockSize(const ReflowInput& aOuterRS)
+GetContainingBlockSize(const ReflowInput& aOuterRI)
 {
   nsSize size(0,0);
-  const ReflowInput* containRS = aOuterRS.mCBReflowInput;
+  const ReflowInput* containRS = aOuterRI.mCBReflowInput;
 
   if (containRS) {
     size.width = containRS->ComputedWidth();
@@ -732,20 +732,20 @@ nsTableWrapperFrame::GetInnerOrigin(uint32_t             aCaptionSide,
 void
 nsTableWrapperFrame::OuterBeginReflowChild(nsPresContext*            aPresContext,
                                            nsIFrame*                 aChildFrame,
-                                           const ReflowInput&  aOuterRS,
-                                           Maybe<ReflowInput>& aChildRS,
+                                           const ReflowInput&  aOuterRI,
+                                           Maybe<ReflowInput>& aChildRI,
                                            nscoord                   aAvailISize)
 {
   
   WritingMode wm = aChildFrame->GetWritingMode();
-  LogicalSize outerSize = aOuterRS.AvailableSize(wm);
+  LogicalSize outerSize = aOuterRI.AvailableSize(wm);
   nscoord availBSize = outerSize.BSize(wm);
   if (NS_UNCONSTRAINEDSIZE != availBSize) {
     if (mCaptionFrames.FirstChild() == aChildFrame) {
       availBSize = NS_UNCONSTRAINEDSIZE;
     } else {
       LogicalMargin margin(wm);
-      GetChildMargin(aPresContext, aOuterRS, aChildFrame,
+      GetChildMargin(aPresContext, aOuterRI, aChildFrame,
                      outerSize.ISize(wm), margin);
 
       NS_ASSERTION(NS_UNCONSTRAINEDSIZE != margin.BStart(wm),
@@ -760,17 +760,17 @@ nsTableWrapperFrame::OuterBeginReflowChild(nsPresContext*            aPresContex
   LogicalSize availSize(wm, aAvailISize, availBSize);
   
   
-  aChildRS.emplace(aPresContext, aOuterRS, aChildFrame, availSize,
+  aChildRI.emplace(aPresContext, aOuterRI, aChildFrame, availSize,
                   nullptr, ReflowInput::CALLER_WILL_INIT);
-  InitChildReflowInput(*aPresContext, *aChildRS);
+  InitChildReflowInput(*aPresContext, *aChildRI);
 
   
-  if (aChildRS->mFlags.mIsTopOfPage &&
+  if (aChildRI->mFlags.mIsTopOfPage &&
       mCaptionFrames.FirstChild() == aChildFrame) {
     uint8_t captionSide = GetCaptionSide();
     if (captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM ||
         captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE) {
-      aChildRS->mFlags.mIsTopOfPage = false;
+      aChildRI->mFlags.mIsTopOfPage = false;
     }
   }
 }
@@ -778,7 +778,7 @@ nsTableWrapperFrame::OuterBeginReflowChild(nsPresContext*            aPresContex
 void
 nsTableWrapperFrame::OuterDoReflowChild(nsPresContext*             aPresContext,
                                         nsIFrame*                  aChildFrame,
-                                        const ReflowInput&   aChildRS,
+                                        const ReflowInput&   aChildRI,
                                         ReflowOutput&       aMetrics,
                                         nsReflowStatus&            aStatus)
 {
@@ -787,7 +787,7 @@ nsTableWrapperFrame::OuterDoReflowChild(nsPresContext*             aPresContext,
   
   
   const nsSize zeroCSize;
-  WritingMode wm = aChildRS.GetWritingMode();
+  WritingMode wm = aChildRI.GetWritingMode();
 
   
   LogicalPoint childPt = aChildFrame->GetLogicalPosition(wm, zeroCSize);
@@ -802,7 +802,7 @@ nsTableWrapperFrame::OuterDoReflowChild(nsPresContext*             aPresContext,
     flags |= NS_FRAME_NO_DELETE_NEXT_IN_FLOW_CHILD;
   }
 
-  ReflowChild(aChildFrame, aPresContext, aMetrics, aChildRS,
+  ReflowChild(aChildFrame, aPresContext, aMetrics, aChildRI,
               wm, childPt, zeroCSize, flags, aStatus);
 }
 
@@ -819,12 +819,12 @@ nsTableWrapperFrame::UpdateOverflowAreas(ReflowOutput& aMet)
 void
 nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
                             ReflowOutput&     aDesiredSize,
-                            const ReflowInput& aOuterRS,
+                            const ReflowInput& aOuterRI,
                             nsReflowStatus&          aStatus)
 {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsTableWrapperFrame");
-  DISPLAY_REFLOW(aPresContext, this, aOuterRS, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aOuterRI, aDesiredSize, aStatus);
 
   
   aDesiredSize.ClearSize();
@@ -836,8 +836,8 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
     MoveOverflowToChildList();
   }
 
-  Maybe<ReflowInput> captionRS;
-  Maybe<ReflowInput> innerRS;
+  Maybe<ReflowInput> captionRI;
+  Maybe<ReflowInput> innerRI;
 
   nsRect origInnerRect = InnerTableFrame()->GetRect();
   nsRect origInnerVisualOverflow = InnerTableFrame()->GetVisualOverflowRect();
@@ -855,25 +855,25 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
   }
   
   
-  WritingMode wm = aOuterRS.GetWritingMode();
+  WritingMode wm = aOuterRI.GetWritingMode();
   uint8_t captionSide = GetCaptionSide();
   WritingMode captionWM = wm; 
 
   if (captionSide == NO_SIDE) {
     
-    OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRS,
-                          innerRS, aOuterRS.ComputedSize(wm).ISize(wm));
+    OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI,
+                          innerRI, aOuterRI.ComputedSize(wm).ISize(wm));
   } else if (captionSide == NS_STYLE_CAPTION_SIDE_LEFT ||
              captionSide == NS_STYLE_CAPTION_SIDE_RIGHT) {
     
     
-    OuterBeginReflowChild(aPresContext, mCaptionFrames.FirstChild(), aOuterRS,
-                          captionRS, aOuterRS.ComputedSize(wm).ISize(wm));
-    captionWM = captionRS->GetWritingMode();
-    nscoord innerAvailISize = aOuterRS.ComputedSize(wm).ISize(wm) -
-      captionRS->ComputedSizeWithMarginBorderPadding(wm).ISize(wm);
-    OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRS,
-                          innerRS, innerAvailISize);
+    OuterBeginReflowChild(aPresContext, mCaptionFrames.FirstChild(), aOuterRI,
+                          captionRI, aOuterRI.ComputedSize(wm).ISize(wm));
+    captionWM = captionRI->GetWritingMode();
+    nscoord innerAvailISize = aOuterRI.ComputedSize(wm).ISize(wm) -
+      captionRI->ComputedSizeWithMarginBorderPadding(wm).ISize(wm);
+    OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI,
+                          innerRI, innerAvailISize);
   } else if (captionSide == NS_STYLE_CAPTION_SIDE_TOP ||
              captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM) {
     
@@ -884,18 +884,18 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
     
     
     
-    OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRS,
-                          innerRS, aOuterRS.ComputedSize(wm).ISize(wm));
+    OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI,
+                          innerRI, aOuterRI.ComputedSize(wm).ISize(wm));
     
     
     
     
     
     nscoord innerBorderISize =
-      innerRS->ComputedSizeWithBorderPadding(wm).ISize(wm);
-    OuterBeginReflowChild(aPresContext, mCaptionFrames.FirstChild(), aOuterRS,
-                          captionRS, innerBorderISize);
-    captionWM = captionRS->GetWritingMode();
+      innerRI->ComputedSizeWithBorderPadding(wm).ISize(wm);
+    OuterBeginReflowChild(aPresContext, mCaptionFrames.FirstChild(), aOuterRI,
+                          captionRI, innerBorderISize);
+    captionWM = captionRI->GetWritingMode();
   } else {
     NS_ASSERTION(captionSide == NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE ||
                  captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE,
@@ -903,10 +903,10 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
     
     captionWM = mCaptionFrames.FirstChild()->GetWritingMode();
     OuterBeginReflowChild(aPresContext, mCaptionFrames.FirstChild(),
-                          aOuterRS, captionRS,
-                          aOuterRS.ComputedSize(captionWM).ISize(captionWM));
-    OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRS,
-                          innerRS, aOuterRS.ComputedSize(wm).ISize(wm));
+                          aOuterRI, captionRI,
+                          aOuterRI.ComputedSize(captionWM).ISize(captionWM));
+    OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI,
+                          innerRI, aOuterRI.ComputedSize(wm).ISize(wm));
   }
 
   
@@ -917,15 +917,15 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
     captionMet.emplace(wm);
     nsReflowStatus capStatus; 
     OuterDoReflowChild(aPresContext, mCaptionFrames.FirstChild(),
-                       *captionRS, *captionMet, capStatus);
+                       *captionRI, *captionMet, capStatus);
     captionSize.ISize(wm) = captionMet->ISize(wm);
     captionSize.BSize(wm) = captionMet->BSize(wm);
     captionMargin =
-      captionRS->ComputedLogicalMargin().ConvertTo(wm, captionWM);
+      captionRI->ComputedLogicalMargin().ConvertTo(wm, captionWM);
     
     
     
-    if (NS_UNCONSTRAINEDSIZE != aOuterRS.AvailableBSize()) {
+    if (NS_UNCONSTRAINEDSIZE != aOuterRI.AvailableBSize()) {
       nscoord captionBSize = 0;
       switch (captionSide) {
         case NS_STYLE_CAPTION_SIDE_TOP:
@@ -935,20 +935,20 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
           captionBSize = captionSize.BSize(wm) + captionMargin.BStartEnd(wm);
           break;
       }
-      innerRS->AvailableBSize() =
-        std::max(0, innerRS->AvailableBSize() - captionBSize);
+      innerRI->AvailableBSize() =
+        std::max(0, innerRI->AvailableBSize() - captionBSize);
     }
   }
 
   
   
-  ReflowOutput innerMet(innerRS->GetWritingMode());
-  OuterDoReflowChild(aPresContext, InnerTableFrame(), *innerRS,
+  ReflowOutput innerMet(innerRI->GetWritingMode());
+  OuterDoReflowChild(aPresContext, InnerTableFrame(), *innerRI,
                      innerMet, aStatus);
   LogicalSize innerSize(wm, innerMet.ISize(wm), innerMet.BSize(wm));
-  LogicalMargin innerMargin = innerRS->ComputedLogicalMargin();
+  LogicalMargin innerMargin = innerRI->ComputedLogicalMargin();
 
-  LogicalSize containSize(wm, GetContainingBlockSize(aOuterRS));
+  LogicalSize containSize(wm, GetContainingBlockSize(aOuterRI));
 
   
   
@@ -972,8 +972,8 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
     GetCaptionOrigin(captionSide, containSize, innerSize, innerMargin,
                      captionSize, captionMargin, captionOrigin, wm);
     FinishReflowChild(mCaptionFrames.FirstChild(), aPresContext, *captionMet,
-                      captionRS.ptr(), wm, captionOrigin, containerSize, 0);
-    captionRS.reset();
+                      captionRI.ptr(), wm, captionOrigin, containerSize, 0);
+    captionRI.reset();
   }
   
   
@@ -981,9 +981,9 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
   LogicalPoint innerOrigin(wm);
   GetInnerOrigin(captionSide, containSize, captionSize, captionMargin,
                  innerSize, innerMargin, innerOrigin, wm);
-  FinishReflowChild(InnerTableFrame(), aPresContext, innerMet, innerRS.ptr(),
+  FinishReflowChild(InnerTableFrame(), aPresContext, innerMet, innerRI.ptr(),
                     wm, innerOrigin, containerSize, 0);
-  innerRS.reset();
+  innerRI.reset();
 
   nsTableFrame::InvalidateTableFrame(InnerTableFrame(), origInnerRect,
                                      origInnerVisualOverflow,
@@ -998,16 +998,16 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
   UpdateOverflowAreas(aDesiredSize);
 
   if (GetPrevInFlow()) {
-    ReflowOverflowContainerChildren(aPresContext, aOuterRS,
+    ReflowOverflowContainerChildren(aPresContext, aOuterRI,
                                     aDesiredSize.mOverflowAreas, 0,
                                     aStatus);
   }
 
-  FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize, aOuterRS, aStatus);
+  FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize, aOuterRI, aStatus);
 
   
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aOuterRS, aDesiredSize);
+  NS_FRAME_SET_TRUNCATION(aStatus, aOuterRI, aDesiredSize);
 }
 
 nsIAtom*

@@ -1188,7 +1188,7 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   ReflowInput
-    childRS(aPresContext, aParentReflowInput, aChildFrame,
+    childRI(aPresContext, aParentReflowInput, aChildFrame,
             aParentReflowInput.ComputedSize(aChildFrame->GetWritingMode()));
 
   
@@ -1202,19 +1202,19 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
     flexShrink = stylePos->mFlexShrink;
   }
 
-  WritingMode childWM = childRS.GetWritingMode();
+  WritingMode childWM = childRI.GetWritingMode();
 
   
   
   nscoord flexBaseSize = GET_MAIN_COMPONENT_LOGICAL(aAxisTracker, childWM,
-                                                    childRS.ComputedISize(),
-                                                    childRS.ComputedBSize());
+                                                    childRI.ComputedISize(),
+                                                    childRI.ComputedBSize());
   nscoord mainMinSize = GET_MAIN_COMPONENT_LOGICAL(aAxisTracker, childWM,
-                                                   childRS.ComputedMinISize(),
-                                                   childRS.ComputedMinBSize());
+                                                   childRI.ComputedMinISize(),
+                                                   childRI.ComputedMinBSize());
   nscoord mainMaxSize = GET_MAIN_COMPONENT_LOGICAL(aAxisTracker, childWM,
-                                                   childRS.ComputedMaxISize(),
-                                                   childRS.ComputedMaxBSize());
+                                                   childRI.ComputedMaxISize(),
+                                                   childRI.ComputedMaxBSize());
   
   MOZ_ASSERT(mainMinSize <= mainMaxSize, "min size is larger than max size");
 
@@ -1225,16 +1225,16 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
   
   nscoord tentativeCrossSize =
     GET_CROSS_COMPONENT_LOGICAL(aAxisTracker, childWM,
-                                childRS.ComputedISize(),
-                                childRS.ComputedBSize());
+                                childRI.ComputedISize(),
+                                childRI.ComputedBSize());
   nscoord crossMinSize =
     GET_CROSS_COMPONENT_LOGICAL(aAxisTracker, childWM,
-                                childRS.ComputedMinISize(),
-                                childRS.ComputedMinBSize());
+                                childRI.ComputedMinISize(),
+                                childRI.ComputedMinBSize());
   nscoord crossMaxSize =
     GET_CROSS_COMPONENT_LOGICAL(aAxisTracker, childWM,
-                                childRS.ComputedMaxISize(),
-                                childRS.ComputedMaxBSize());
+                                childRI.ComputedMaxISize(),
+                                childRI.ComputedMaxBSize());
 
   
   
@@ -1259,7 +1259,7 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
 
     
     
-    nsMargin& bp = childRS.ComputedPhysicalBorderPadding();
+    nsMargin& bp = childRI.ComputedPhysicalBorderPadding();
     widgetMainMinSize = std::max(widgetMainMinSize -
                                  aAxisTracker.GetMarginSizeInMainAxis(bp), 0);
     widgetCrossMinSize = std::max(widgetCrossMinSize -
@@ -1287,7 +1287,7 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
   }
 
   
-  auto item = MakeUnique<FlexItem>(childRS,
+  auto item = MakeUnique<FlexItem>(childRI,
                                    flexGrow, flexShrink, flexBaseSize,
                                    mainMinSize, mainMaxSize,
                                    tentativeCrossSize,
@@ -1304,7 +1304,7 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   ResolveAutoFlexBasisAndMinSize(aPresContext, *item,
-                                 childRS, aAxisTracker);
+                                 childRI, aAxisTracker);
   return item;
 }
 
@@ -1518,16 +1518,16 @@ nsFlexContainerFrame::
   
   
   
-  const ReflowInput* flexContainerRS = aItemReflowInput.mParentReflowInput;
-  MOZ_ASSERT(flexContainerRS,
+  const ReflowInput* flexContainerRI = aItemReflowInput.mParentReflowInput;
+  MOZ_ASSERT(flexContainerRI,
              "flex item's reflow state should have ptr to container's state");
-  if (NS_STYLE_FLEX_WRAP_NOWRAP == flexContainerRS->mStylePosition->mFlexWrap) {
+  if (NS_STYLE_FLEX_WRAP_NOWRAP == flexContainerRI->mStylePosition->mFlexWrap) {
     
     
     nscoord containerCrossSize =
       GET_CROSS_COMPONENT_LOGICAL(aAxisTracker, aAxisTracker.GetWritingMode(),
-                                  flexContainerRS->ComputedISize(),
-                                  flexContainerRS->ComputedBSize());
+                                  flexContainerRI->ComputedISize(),
+                                  flexContainerRI->ComputedBSize());
     
     
     
@@ -1594,7 +1594,7 @@ nsFlexContainerFrame::
       nscoord contentHeight =
         MeasureFlexItemContentHeight(aPresContext, aFlexItem,
                                      forceVerticalResizeForMeasuringReflow,
-                                     *flexContainerRS);
+                                     *flexContainerRI);
       if (minSizeNeedsToMeasureContent) {
         resolvedMinSize = std::min(resolvedMinSize, contentHeight);
       }
@@ -1621,26 +1621,26 @@ nsFlexContainerFrame::
   LogicalSize availSize = aParentReflowInput.ComputedSize(wm);
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   ReflowInput
-    childRSForMeasuringHeight(aPresContext, aParentReflowInput,
+    childRIForMeasuringHeight(aPresContext, aParentReflowInput,
                               aFlexItem.Frame(), availSize,
                               nullptr, ReflowInput::CALLER_WILL_INIT);
-  childRSForMeasuringHeight.mFlags.mIsFlexContainerMeasuringHeight = true;
-  childRSForMeasuringHeight.Init(aPresContext);
+  childRIForMeasuringHeight.mFlags.mIsFlexContainerMeasuringHeight = true;
+  childRIForMeasuringHeight.Init(aPresContext);
 
   if (aFlexItem.IsStretched()) {
-    childRSForMeasuringHeight.SetComputedWidth(aFlexItem.GetCrossSize());
-    childRSForMeasuringHeight.SetHResize(true);
+    childRIForMeasuringHeight.SetComputedWidth(aFlexItem.GetCrossSize());
+    childRIForMeasuringHeight.SetHResize(true);
   }
 
   if (aForceVerticalResizeForMeasuringReflow) {
-    childRSForMeasuringHeight.SetVResize(true);
+    childRIForMeasuringHeight.SetVResize(true);
   }
 
-  ReflowOutput childDesiredSize(childRSForMeasuringHeight);
+  ReflowOutput childDesiredSize(childRIForMeasuringHeight);
   nsReflowStatus childReflowStatus;
   const uint32_t flags = NS_FRAME_NO_MOVE_FRAME;
   ReflowChild(aFlexItem.Frame(), aPresContext,
-              childDesiredSize, childRSForMeasuringHeight,
+              childDesiredSize, childRIForMeasuringHeight,
               0, 0, flags, childReflowStatus);
 
   MOZ_ASSERT(NS_FRAME_IS_COMPLETE(childReflowStatus),
@@ -1648,7 +1648,7 @@ nsFlexContainerFrame::
              "should be complete");
 
   FinishReflowChild(aFlexItem.Frame(), aPresContext,
-                    childDesiredSize, &childRSForMeasuringHeight,
+                    childDesiredSize, &childRIForMeasuringHeight,
                     0, 0, flags);
 
   aFlexItem.SetHadMeasuringReflow();
@@ -1664,7 +1664,7 @@ nsFlexContainerFrame::
   
   
   nscoord childDesiredHeight = childDesiredSize.Height() -
-    childRSForMeasuringHeight.ComputedPhysicalBorderPadding().TopBottom();
+    childRIForMeasuringHeight.ComputedPhysicalBorderPadding().TopBottom();
 
   return std::max(0, childDesiredHeight);
 }

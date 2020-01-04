@@ -1875,8 +1875,8 @@ GetBlockMarginBorderPadding(const ReflowInput* aReflowInput)
 static nscoord
 CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
 {
-  const ReflowInput* firstAncestorRS = nullptr; 
-  const ReflowInput* secondAncestorRS = nullptr; 
+  const ReflowInput* firstAncestorRI = nullptr; 
+  const ReflowInput* secondAncestorRI = nullptr; 
   
   
   
@@ -1894,8 +1894,8 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
 #endif
         nsGkAtoms::scrollFrame == frameType) {
 
-      secondAncestorRS = firstAncestorRS;
-      firstAncestorRS = rs;
+      secondAncestorRI = firstAncestorRI;
+      firstAncestorRI = rs;
 
       
       
@@ -1934,20 +1934,20 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
     if ((nsGkAtoms::canvasFrame == frameType) || 
         (nsGkAtoms::pageContentFrame == frameType)) {
 
-      result -= GetBlockMarginBorderPadding(firstAncestorRS);
-      result -= GetBlockMarginBorderPadding(secondAncestorRS);
+      result -= GetBlockMarginBorderPadding(firstAncestorRI);
+      result -= GetBlockMarginBorderPadding(secondAncestorRI);
 
 #ifdef DEBUG
       
-      if (firstAncestorRS) {
-        nsIContent* frameContent = firstAncestorRS->mFrame->GetContent();
+      if (firstAncestorRI) {
+        nsIContent* frameContent = firstAncestorRI->mFrame->GetContent();
         if (frameContent) {
           NS_ASSERTION(frameContent->IsHTMLElement(nsGkAtoms::html),
                        "First ancestor is not HTML");
         }
       }
-      if (secondAncestorRS) {
-        nsIContent* frameContent = secondAncestorRS->mFrame->GetContent();
+      if (secondAncestorRI) {
+        nsIContent* frameContent = secondAncestorRI->mFrame->GetContent();
         if (frameContent) {
           NS_ASSERTION(frameContent->IsHTMLElement(nsGkAtoms::body),
                        "Second ancestor is not BODY");
@@ -1962,7 +1962,7 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
              nsGkAtoms::canvasFrame ==
                rs->mParentReflowInput->mFrame->GetType()) {
       
-      result -= GetBlockMarginBorderPadding(secondAncestorRS);
+      result -= GetBlockMarginBorderPadding(secondAncestorRI);
     }
     break;
   }
@@ -1976,13 +1976,13 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
 LogicalSize
 ReflowInput::ComputeContainingBlockRectangle(
                      nsPresContext*           aPresContext,
-                     const ReflowInput* aContainingBlockRS) const
+                     const ReflowInput* aContainingBlockRI) const
 {
   
   
-  LogicalSize cbSize = aContainingBlockRS->ComputedSize();
+  LogicalSize cbSize = aContainingBlockRI->ComputedSize();
 
-  WritingMode wm = aContainingBlockRS->GetWritingMode();
+  WritingMode wm = aContainingBlockRI->GetWritingMode();
 
   
   
@@ -1991,7 +1991,7 @@ ReflowInput::ComputeContainingBlockRectangle(
        mFrame->IsAbsolutelyPositioned() &&
        (mFrame->GetParent()->GetStateBits() & NS_FRAME_OUT_OF_FLOW))) {
     
-    if (NS_FRAME_GET_TYPE(aContainingBlockRS->mFrameType) == NS_CSS_FRAME_TYPE_INLINE) {
+    if (NS_FRAME_GET_TYPE(aContainingBlockRI->mFrameType) == NS_CSS_FRAME_TYPE_INLINE) {
       
       
       
@@ -2000,13 +2000,13 @@ ReflowInput::ComputeContainingBlockRectangle(
       
 
       LogicalMargin computedBorder =
-        aContainingBlockRS->ComputedLogicalBorderPadding() -
-        aContainingBlockRS->ComputedLogicalPadding();
-      cbSize.ISize(wm) = aContainingBlockRS->mFrame->ISize(wm) -
+        aContainingBlockRI->ComputedLogicalBorderPadding() -
+        aContainingBlockRI->ComputedLogicalPadding();
+      cbSize.ISize(wm) = aContainingBlockRI->mFrame->ISize(wm) -
                          computedBorder.IStartEnd(wm);
       NS_ASSERTION(cbSize.ISize(wm) >= 0,
                    "Negative containing block isize!");
-      cbSize.BSize(wm) = aContainingBlockRS->mFrame->BSize(wm) -
+      cbSize.BSize(wm) = aContainingBlockRI->mFrame->BSize(wm) -
                          computedBorder.BStartEnd(wm);
       NS_ASSERTION(cbSize.BSize(wm) >= 0,
                    "Negative containing block bsize!");
@@ -2014,9 +2014,9 @@ ReflowInput::ComputeContainingBlockRectangle(
       
       
       cbSize.ISize(wm) +=
-        aContainingBlockRS->ComputedLogicalPadding().IStartEnd(wm);
+        aContainingBlockRI->ComputedLogicalPadding().IStartEnd(wm);
       cbSize.BSize(wm) +=
-        aContainingBlockRS->ComputedLogicalPadding().BStartEnd(wm);
+        aContainingBlockRI->ComputedLogicalPadding().BStartEnd(wm);
     }
   } else {
     
@@ -2027,7 +2027,7 @@ ReflowInput::ComputeContainingBlockRectangle(
         NS_AUTOHEIGHT == cbSize.BSize(wm)) {
       if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
           mStylePosition->mHeight.GetUnit() == eStyleUnit_Percent) {
-        cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(aContainingBlockRS);
+        cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(aContainingBlockRI);
       }
     }
   }

@@ -231,13 +231,13 @@ protected:
   
   void OuterBeginReflowChild(nsPresContext*                     aPresContext,
                              nsIFrame*                          aChildFrame,
-                             const ReflowInput&           aOuterRS,
-                             mozilla::Maybe<ReflowInput>& aChildRS,
+                             const ReflowInput&           aOuterRI,
+                             mozilla::Maybe<ReflowInput>& aChildRI,
                              nscoord                            aAvailISize);
 
   void OuterDoReflowChild(nsPresContext*           aPresContext,
                           nsIFrame*                aChildFrame,
-                          const ReflowInput& aChildRS,
+                          const ReflowInput& aChildRI,
                           ReflowOutput&     aMetrics,
                           nsReflowStatus&          aStatus);
 
@@ -246,7 +246,7 @@ protected:
 
   
   void GetChildMargin(nsPresContext*           aPresContext,
-                      const ReflowInput& aOuterRS,
+                      const ReflowInput& aOuterRI,
                       nsIFrame*                aChildFrame,
                       nscoord                  aAvailableWidth,
                       mozilla::LogicalMargin&  aMargin);

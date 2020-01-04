@@ -739,7 +739,7 @@ public:
 
   mozilla::LogicalSize ComputeContainingBlockRectangle(
          nsPresContext*           aPresContext,
-         const ReflowInput* aContainingBlockRS) const;
+         const ReflowInput* aContainingBlockRI) const;
 
   
 
