@@ -58,20 +58,20 @@ public:
   HasEverBeenRead() const override;
 
   
-  NS_METHOD
+  nsresult
   Close();
 
-  NS_METHOD
+  nsresult
   Available(uint64_t *aNumAvailableOut);
 
-  NS_METHOD
+  nsresult
   Read(char *aBuf, uint32_t aCount, uint32_t *aNumReadOut);
 
-  NS_METHOD
+  nsresult
   ReadSegments(nsWriteSegmentFun aWriter, void *aClosure, uint32_t aCount,
                uint32_t *aNumReadOut);
 
-  NS_METHOD
+  nsresult
   IsNonBlocking(bool *aNonBlockingOut);
 
 private:
@@ -266,7 +266,7 @@ ReadStream::Inner::HasEverBeenRead() const
   return mHasEverBeenRead;
 }
 
-NS_IMETHODIMP
+nsresult
 ReadStream::Inner::Close()
 {
   
@@ -275,7 +275,7 @@ ReadStream::Inner::Close()
   return rv;
 }
 
-NS_IMETHODIMP
+nsresult
 ReadStream::Inner::Available(uint64_t* aNumAvailableOut)
 {
   
@@ -288,7 +288,7 @@ ReadStream::Inner::Available(uint64_t* aNumAvailableOut)
   return rv;
 }
 
-NS_IMETHODIMP
+nsresult
 ReadStream::Inner::Read(char* aBuf, uint32_t aCount, uint32_t* aNumReadOut)
 {
   
@@ -306,7 +306,7 @@ ReadStream::Inner::Read(char* aBuf, uint32_t aCount, uint32_t* aNumReadOut)
   return rv;
 }
 
-NS_IMETHODIMP
+nsresult
 ReadStream::Inner::ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
                                 uint32_t aCount, uint32_t* aNumReadOut)
 {
@@ -336,7 +336,7 @@ ReadStream::Inner::ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
   return rv;
 }
 
-NS_IMETHODIMP
+nsresult
 ReadStream::Inner::IsNonBlocking(bool* aNonBlockingOut)
 {
   
