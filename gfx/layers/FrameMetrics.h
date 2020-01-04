@@ -30,6 +30,15 @@ namespace layers {
 
 
 
+struct ScrollUpdateInfo {
+  uint32_t mScrollGeneration;
+  CSSPoint mScrollOffset;
+};
+
+
+
+
+
 
 
 struct FrameMetrics {
@@ -44,6 +53,9 @@ public:
   enum ScrollOffsetUpdateType : uint8_t {
     eNone,          
     eMainThread,    
+    ePending,       
+                    
+                    
 
     eSentinel       
   };
@@ -241,6 +253,13 @@ public:
     mDoSmoothScroll = aOther.mDoSmoothScroll;
   }
 
+  void UpdatePendingScrollInfo(const ScrollUpdateInfo& aInfo)
+  {
+    mScrollOffset = aInfo.mScrollOffset;
+    mScrollGeneration = aInfo.mScrollGeneration;
+    mScrollUpdateType = ePending;
+  }
+
   void UpdateScrollInfo(uint32_t aScrollGeneration, const CSSPoint& aScrollOffset)
   {
     mScrollOffset = aScrollOffset;
@@ -378,6 +397,11 @@ public:
   {
     mDoSmoothScroll = true;
     mScrollGeneration = aScrollGeneration;
+  }
+
+  ScrollOffsetUpdateType GetScrollUpdateType() const
+  {
+    return mScrollUpdateType;
   }
 
   bool GetScrollOffsetUpdated() const
