@@ -16,6 +16,7 @@
 #include "nsProxyInfo.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
+#include "ClosingService.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "plstr.h"
@@ -1194,7 +1195,7 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
         if (NS_FAILED(rv)) {
             SOCKET_LOG(("  error pushing io layer [%u:%s rv=%x]\n", i, mTypes[i], rv));
             if (fd) {
-                CloseSocket(fd, mSocketTransportService->IsTelemetryEnabled());
+                PR_Close(fd);
             }
         }
     }
@@ -1322,6 +1323,9 @@ nsSocketTransport::InitiateSocket()
     
     mozilla::net::NetworkActivityMonitor::AttachIOLayer(fd);
 
+    
+    ClosingService::AttachIOLayer(fd);
+
     PRStatus status;
 
     
@@ -1358,7 +1362,7 @@ nsSocketTransport::InitiateSocket()
     
     rv = mSocketTransportService->AttachSocket(fd, this);
     if (NS_FAILED(rv)) {
-        CloseSocket(fd, mSocketTransportService->IsTelemetryEnabled());
+        PR_Close(fd);
         return rv;
     }
     mAttached = true;
@@ -1698,8 +1702,7 @@ public:
 
   NS_IMETHOD Run()
   {
-    nsSocketTransport::CloseSocket(mFD,
-      gSocketTransportService->IsTelemetryEnabled());
+    PR_Close(mFD);
     return NS_OK;
   }
 private:
@@ -1731,7 +1734,7 @@ nsSocketTransport::ReleaseFD_Locked(PRFileDesc *fd)
     if (--mFDref == 0) {
         if (PR_GetCurrentThread() == gSocketThread) {
             SOCKET_LOG(("nsSocketTransport: calling PR_Close [this=%p]\n", this));
-            CloseSocket(mFD, mSocketTransportService->IsTelemetryEnabled());
+            PR_Close(mFD);
         } else {
             
             STS_PRCloseOnSocketTransport(mFD);
@@ -3037,29 +3040,6 @@ nsSocketTransport::PRFileDescAutoLock::SetKeepaliveVals(bool aEnabled,
                "called on unsupported platform!");
     return NS_ERROR_UNEXPECTED;
 #endif
-}
-
-void
-nsSocketTransport::CloseSocket(PRFileDesc *aFd, bool aTelemetryEnabled) {
-
-    
-    
-    
-    PRIntervalTime closeStarted;
-    if (aTelemetryEnabled) {
-        closeStarted = PR_IntervalNow();
-    }
-
-    PR_Close(aFd);
-
-    if (aTelemetryEnabled) {
-        SendPRBlockingTelemetry(closeStarted,
-            Telemetry::PRCLOSE_BLOCKING_TIME_NORMAL,
-            Telemetry::PRCLOSE_BLOCKING_TIME_SHUTDOWN,
-            Telemetry::PRCLOSE_BLOCKING_TIME_CONNECTIVITY_CHANGE,
-            Telemetry::PRCLOSE_BLOCKING_TIME_LINK_CHANGE,
-            Telemetry::PRCLOSE_BLOCKING_TIME_OFFLINE);
-    }
 }
 
 void
