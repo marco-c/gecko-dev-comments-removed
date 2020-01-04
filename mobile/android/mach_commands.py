@@ -57,7 +57,17 @@ class MachCommands(MachCommandBase):
         
         self.log_manager.terminal_handler.setLevel(logging.CRITICAL)
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
         return self.run_process([self.substs['GRADLE']] + args,
+            append_env={'GRADLE_OPTS': '-Dfile.encoding=utf-8'},
             pass_thru=True, 
             ensure_exit_code=False, 
             cwd=mozpath.join(self.topsrcdir))
