@@ -549,7 +549,7 @@ TabChild::Create(nsIContentChild* aManager,
 {
     if (sPreallocatedTab &&
         sPreallocatedTab->mChromeFlags == aChromeFlags &&
-        aContext.IsBrowserOrApp()) {
+        aContext.IsMozBrowserOrApp()) {
 
         RefPtr<TabChild> child = sPreallocatedTab.get();
         sPreallocatedTab = nullptr;
@@ -865,11 +865,9 @@ TabChild::NotifyTabContextUpdated()
     if (docShell) {
         
         
-        if (IsBrowserElement()) {
+        if (IsMozBrowserElement()) {
           docShell->SetIsBrowserInsideApp(BrowserOwnerAppId());
-          
-          
-          docShell->SetIsInIsolatedMozBrowserElement(IsBrowserElement());
+          docShell->SetIsInIsolatedMozBrowserElement(IsIsolatedMozBrowserElement());
         } else {
           docShell->SetIsApp(OwnAppId());
         }
@@ -1506,7 +1504,7 @@ TabChild::ApplyShowInfo(const ShowInfo& aInfo)
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
   if (docShell) {
     nsCOMPtr<nsIDocShellTreeItem> item = do_GetInterface(docShell);
-    if (IsBrowserOrApp()) {
+    if (IsMozBrowserOrApp()) {
       
       
       
@@ -1543,7 +1541,7 @@ TabChild::MaybeRequestPreinitCamera()
 {
     
     
-    if (IsBrowserElement()) {
+    if (IsIsolatedMozBrowserElement()) {
       return;
     }
 
@@ -2528,7 +2526,7 @@ TabChild::InitTabChildGlobal(FrameScriptLoading aScriptLoading)
     mTriedBrowserInit = true;
     
     
-    if (IsBrowserOrApp()) {
+    if (IsMozBrowserOrApp()) {
       RecvLoadRemoteScript(BROWSER_ELEMENT_CHILD_SCRIPT, true);
     }
   }

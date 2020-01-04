@@ -243,7 +243,7 @@ private:
   
   uint32_t mAppId;
   
-  bool mInBrowser;
+  bool mInIsolatedMozBrowser;
   
   nsCOMPtr<nsINetworkInfo> mActiveNetworkInfo;
 #endif

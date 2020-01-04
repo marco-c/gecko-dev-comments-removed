@@ -97,7 +97,7 @@ nsIContentParent::CanOpenBrowser(const IPCTabContext& aContext)
     
     
     
-    if (!popupContext.isBrowserElement() && opener->IsBrowserElement()) {
+    if (!popupContext.isMozBrowserElement() && opener->IsMozBrowserElement()) {
       ASSERT_UNLESS_FUZZING("Child trying to escalate privileges!  Aborting AllocPBrowserParent.");
       return false;
     }

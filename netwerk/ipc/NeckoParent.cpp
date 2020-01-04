@@ -128,7 +128,7 @@ NeckoParent::GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
     uint32_t appId = tabContext.OwnOrContainingAppId();
     bool inBrowserElement = aSerialized.IsNotNull() ?
                               aSerialized.mOriginAttributes.mInIsolatedMozBrowser :
-                              tabContext.IsBrowserElement();
+                              tabContext.IsIsolatedMozBrowserElement();
 
     if (appId == NECKO_UNKNOWN_APP_ID) {
       continue;
@@ -138,7 +138,7 @@ NeckoParent::GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
       if (tabContext.HasOwnApp()) {
         continue;
       }
-      if (UsingNeckoIPCSecurity() && tabContext.IsBrowserElement()) {
+      if (UsingNeckoIPCSecurity() && tabContext.IsIsolatedMozBrowserElement()) {
         
         
         

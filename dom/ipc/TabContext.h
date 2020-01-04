@@ -51,15 +51,29 @@ public:
 
 
 
-  bool IsBrowserElement() const;
+
+
+  bool IsMozBrowserElement() const;
 
   
 
 
 
-  bool IsBrowserOrApp() const;
+
+
+
+
+  bool IsIsolatedMozBrowserElement() const;
 
   
+
+
+
+
+  bool IsMozBrowserOrApp() const;
+
+  
+
 
 
 
@@ -140,7 +154,8 @@ protected:
 
 
 
-  bool SetTabContext(mozIApplication* aOwnApp,
+  bool SetTabContext(bool aIsMozBrowserElement,
+                     mozIApplication* aOwnApp,
                      mozIApplication* aAppFrameOwnerApp,
                      const DocShellOriginAttributes& aOriginAttributes,
                      const nsACString& aSignedPkgOriginNoSuffix);
@@ -150,6 +165,14 @@ private:
 
 
   bool mInitialized;
+
+  
+
+
+
+
+
+  bool mIsMozBrowserElement;
 
   
 
@@ -197,12 +220,14 @@ public:
   }
 
   bool
-  SetTabContext(mozIApplication* aOwnApp,
+  SetTabContext(bool aIsMozBrowserElement,
+                mozIApplication* aOwnApp,
                 mozIApplication* aAppFrameOwnerApp,
                 const DocShellOriginAttributes& aOriginAttributes,
                 const nsACString& aSignedPkgOriginNoSuffix = EmptyCString())
   {
-    return TabContext::SetTabContext(aOwnApp,
+    return TabContext::SetTabContext(aIsMozBrowserElement,
+                                     aOwnApp,
                                      aAppFrameOwnerApp,
                                      aOriginAttributes,
                                      aSignedPkgOriginNoSuffix);
