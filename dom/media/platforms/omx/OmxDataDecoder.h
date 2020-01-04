@@ -163,7 +163,7 @@ protected:
   Atomic<bool> mFlushing;
 
   
-  Atomic<bool> mShutdown;
+  Atomic<bool> mShuttingDown;
 
   
   bool mCheckingInputExhausted;
