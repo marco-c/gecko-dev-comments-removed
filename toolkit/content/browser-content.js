@@ -719,6 +719,8 @@ var AudioPlaybackListener = {
 
   init() {
     Services.obs.addObserver(this, "audio-playback", false);
+    Services.obs.addObserver(this, "AudioFocusChanged", false);
+
     addMessageListener("AudioPlaybackMute", this);
     addEventListener("unload", () => {
       AudioPlaybackListener.uninit();
@@ -727,6 +729,8 @@ var AudioPlaybackListener = {
 
   uninit() {
     Services.obs.removeObserver(this, "audio-playback");
+    Services.obs.removeObserver(this, "AudioFocusChanged");
+
     removeMessageListener("AudioPlaybackMute", this);
   },
 
@@ -736,6 +740,21 @@ var AudioPlaybackListener = {
         let name = "AudioPlayback:";
         name += (data === "active") ? "Start" : "Stop";
         sendAsyncMessage(name);
+      }
+    } else if (topic == "AudioFocusChanged") {
+      let utils = global.content.QueryInterface(Ci.nsIInterfaceRequestor)
+                                .getInterface(Ci.nsIDOMWindowUtils);
+      switch (data) {
+        
+        
+        
+        case "Loss":
+        case "LossTransient":
+          utils.mediaSuspended = true;
+          break;
+        case "Gain":
+          utils.mediaSuspended = false;
+          break;
       }
     }
   },

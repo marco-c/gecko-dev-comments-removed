@@ -384,7 +384,8 @@ AudioChannelService::GetState(nsPIDOMWindowOuter* aWindow, uint32_t aAudioChanne
     }
 
     *aVolume *= window->GetAudioVolume();
-    *aMuted = *aMuted || window->GetAudioMuted();
+    
+    *aMuted = *aMuted || window->GetMediaSuspended() || window->GetAudioMuted();
 
     nsCOMPtr<nsPIDOMWindowOuter> win = window->GetScriptableParent();
     if (window == win) {

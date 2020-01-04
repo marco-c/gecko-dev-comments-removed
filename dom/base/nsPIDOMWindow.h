@@ -649,6 +649,7 @@ protected:
   
   bool                   mIsBackground;
 
+  bool                   mMediaSuspended;
   bool                   mAudioMuted;
   float                  mAudioVolume;
 
@@ -855,6 +856,9 @@ public:
   }
 
   
+  bool GetMediaSuspended() const;
+  void SetMediaSuspended(bool aSuspended);
+
   bool GetAudioMuted() const;
   void SetAudioMuted(bool aMuted);
 
