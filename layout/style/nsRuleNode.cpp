@@ -1259,13 +1259,25 @@ static void SetStyleImage(nsStyleContext* aStyleContext,
     case eCSSUnit_Unset:
     case eCSSUnit_None:
       break;
-    default:
+    case eCSSUnit_URL:
+    {
+#ifdef DEBUG
+      nsIDocument* currentDoc = aStyleContext->PresContext()->Document();
+      nsIURI* docURI = currentDoc->GetDocumentURI();
+      nsIURI* imageURI = aValue.GetURLValue();
+      bool isEqualExceptRef = false;
+      imageURI->EqualsExceptRef(docURI, &isEqualExceptRef);
       
       
       
-      NS_ASSERTION(aStyleContext->IsStyleIfVisited() &&
-                   aValue.GetUnit() == eCSSUnit_URL,
+      NS_ASSERTION(aStyleContext->IsStyleIfVisited() || isEqualExceptRef,
                    "unexpected unit; maybe nsCSSValue::Image::Image() failed?");
+#endif
+
+      break;
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected Unit type.");
       break;
   }
 }
@@ -6575,7 +6587,8 @@ struct BackgroundItemComputer<nsCSSValueList, nsCOMPtr<nsIURI> >
                            nsCOMPtr<nsIURI>& aComputedValue,
                            RuleNodeCacheConditions& aConditions)
   {
-    if (eCSSUnit_Image == aSpecifiedValue->mValue.GetUnit()) {
+    if (eCSSUnit_Image == aSpecifiedValue->mValue.GetUnit() ||
+        eCSSUnit_URL == aSpecifiedValue->mValue.GetUnit()) {
       aComputedValue = aSpecifiedValue->mValue.GetURLValue();
     } else if (eCSSUnit_Null != aSpecifiedValue->mValue.GetUnit()) {
       aComputedValue = nullptr;
