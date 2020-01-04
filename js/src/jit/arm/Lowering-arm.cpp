@@ -592,7 +592,8 @@ LIRGeneratorARM::visitAtomicTypedArrayElementBinop(MAtomicTypedArrayElementBinop
 
     if (!ins->hasUses()) {
         LAtomicTypedArrayElementBinopForEffect* lir =
-            new(alloc()) LAtomicTypedArrayElementBinopForEffect(elements, index, value);
+            new(alloc()) LAtomicTypedArrayElementBinopForEffect(elements, index, value,
+                                                                 temp());
         add(lir, ins);
         return;
     }
@@ -603,19 +604,17 @@ LIRGeneratorARM::visitAtomicTypedArrayElementBinop(MAtomicTypedArrayElementBinop
     
     
     
-    
-    
-    
 
-    LDefinition tempDef1 = LDefinition::BogusTemp();
-    LDefinition tempDef2 = LDefinition::BogusTemp();
+    LDefinition flagTemp = temp();
+    LDefinition outTemp = LDefinition::BogusTemp();
 
     if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type()))
-        tempDef1 = temp();
+        outTemp = temp();
+
+    
 
     LAtomicTypedArrayElementBinop* lir =
-        new(alloc()) LAtomicTypedArrayElementBinop(elements, index, value, tempDef1, tempDef2);
-
+        new(alloc()) LAtomicTypedArrayElementBinop(elements, index, value, flagTemp, outTemp);
     define(lir, ins);
 }
 
@@ -712,7 +711,8 @@ LIRGeneratorARM::visitAsmJSAtomicBinopHeap(MAsmJSAtomicBinopHeap* ins)
     if (!ins->hasUses()) {
         LAsmJSAtomicBinopHeapForEffect* lir =
             new(alloc()) LAsmJSAtomicBinopHeapForEffect(useRegister(ptr),
-                                                        useRegister(ins->value()));
+                                                        useRegister(ins->value()),
+                                                         temp());
         add(lir, ins);
         return;
     }
@@ -720,8 +720,8 @@ LIRGeneratorARM::visitAsmJSAtomicBinopHeap(MAsmJSAtomicBinopHeap* ins)
     LAsmJSAtomicBinopHeap* lir =
         new(alloc()) LAsmJSAtomicBinopHeap(useRegister(ptr),
                                            useRegister(ins->value()),
-                                           LDefinition::BogusTemp());
-
+                                            LDefinition::BogusTemp(),
+                                            temp());
     define(lir, ins);
 }
 
