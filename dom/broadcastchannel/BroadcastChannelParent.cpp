@@ -89,14 +89,6 @@ BroadcastChannelParent::CheckAndDeliver(const ClonedMessageData& aData,
       aChannel == mChannel &&
       aPrivateBrowsing == mPrivateBrowsing) {
     
-    
-    if (aData.blobsParent().IsEmpty() ||
-        static_cast<BlobParent*>(aData.blobsParent()[0])->GetBackgroundManager() == Manager()) {
-      unused << SendNotify(aData);
-      return;
-    }
-
-    
     ClonedMessageData newData(aData);
 
     
