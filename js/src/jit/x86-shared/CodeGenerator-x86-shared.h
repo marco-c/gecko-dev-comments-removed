@@ -91,10 +91,27 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared
         }
     };
 
+  private:
+    MOZ_WARN_UNUSED_RESULT uint32_t
+    emitAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* mir, const MInstruction* ins,
+                               Register ptr, Label* fail);
+
+  public:
     
-    MOZ_WARN_UNUSED_RESULT
-    uint32_t emitAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* mir, const MInstruction* ins,
-                                        Register ptr, Label* fail);
+    MOZ_WARN_UNUSED_RESULT uint32_t
+    maybeEmitThrowingAsmJSBoundsCheck(const MAsmJSHeapAccess* mir, const MInstruction* ins,
+                                      const LAllocation* ptr);
+
+    
+    MOZ_WARN_UNUSED_RESULT uint32_t
+    maybeEmitAsmJSLoadBoundsCheck(const MAsmJSLoadHeap* mir, LAsmJSLoadHeap* ins,
+                                  OutOfLineLoadTypedArrayOutOfBounds** ool);
+
+    
+    MOZ_WARN_UNUSED_RESULT uint32_t
+    maybeEmitAsmJSStoreBoundsCheck(const MAsmJSStoreHeap* mir, LAsmJSStoreHeap* ins,
+                                   Label** rejoin);
+
     void cleanupAfterAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* mir, Register ptr);
 
     NonAssertingLabel deoptLabel_;
