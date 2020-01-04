@@ -2,6 +2,8 @@
 
 
 
+var test = `
+
 var Promise = ShellPromise;
 
 class X {
@@ -54,3 +56,10 @@ Promise.all([
   if (typeof reportCompare === "function")
       reportCompare(true, true);
 });
+
+`;
+
+if (classesEnabled() && asyncFunctionsEnabled())
+    eval(test);
+else if (typeof reportCompare === 'function')
+    reportCompare(0,0,"OK");
