@@ -2501,6 +2501,15 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
       aResult->height = GetSystemMetrics(SM_CYCAPTION);
       aResult->height += GetSystemMetrics(SM_CYFRAME);
       aResult->height += GetSystemMetrics(SM_CXPADDEDBORDER);
+      
+      
+      
+      
+      
+      
+      if (IsWin10OrLater()) {
+        ScaleForFrameDPI(aResult, aFrame);
+      }
       *aIsOverridable = false;
       return rv;
 
