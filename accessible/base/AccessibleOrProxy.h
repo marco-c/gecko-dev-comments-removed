@@ -60,6 +60,19 @@ public:
     return AsAccessible()->ChildCount();
   }
 
+  
+
+
+
+  AccessibleOrProxy ChildAt(uint32_t aIdx)
+  {
+    if (IsProxy()) {
+      return AsProxy()->ChildAt(aIdx);
+    }
+
+    return AsAccessible()->GetChildAt(aIdx);
+  }
+
   role Role() const
   {
     if (IsProxy()) {
