@@ -12,6 +12,7 @@ const INTEGER = /^[1-9]\d*$/;
 
 var {
   EventManager,
+  instanceOf,
 } = ExtensionUtils;
 
 
@@ -38,7 +39,13 @@ global.IconDetails = {
       if (details.imageData) {
         let imageData = details.imageData;
 
-        if (imageData instanceof Cu.getGlobalForObject(imageData).ImageData) {
+        
+        
+        
+        
+        
+        let global = Cu.getGlobalForObject(imageData);
+        if (instanceOf(imageData, "ImageData")) {
           imageData = {"19": imageData};
         }
 
@@ -46,7 +53,6 @@ global.IconDetails = {
           if (!INTEGER.test(size)) {
             throw new Error(`Invalid icon size ${size}, must be an integer`);
           }
-
           result[size] = this.convertImageDataToPNG(imageData[size], context);
         }
       }
