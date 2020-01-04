@@ -705,6 +705,16 @@ TextInputProcessor::OnRemovedFrom(TextEventDispatcher* aTextEventDispatcher)
   UnlinkFromTextEventDispatcher();
 }
 
+NS_IMETHODIMP_(void)
+TextInputProcessor::WillDispatchKeyboardEvent(
+                      TextEventDispatcher* aTextEventDispatcher,
+                      WidgetKeyboardEvent& aKeyboardEvent,
+                      uint32_t aIndexOfKeypress,
+                      void* aData)
+{
+  
+}
+
 nsresult
 TextInputProcessor::PrepareKeyboardEventToDispatch(
                       WidgetKeyboardEvent& aKeyboardEvent,

@@ -36,6 +36,48 @@ public:
 
   NS_IMETHOD_(void) OnRemovedFrom(
                       TextEventDispatcher* aTextEventDispatcher) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  NS_IMETHOD_(void) WillDispatchKeyboardEvent(
+                      TextEventDispatcher* aTextEventDispatcher,
+                      WidgetKeyboardEvent& aKeyboardEvent,
+                      uint32_t aIndexOfKeypress,
+                      void* aData) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(TextEventDispatcherListener,
