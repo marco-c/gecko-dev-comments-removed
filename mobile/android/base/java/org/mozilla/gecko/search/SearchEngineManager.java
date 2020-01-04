@@ -574,9 +574,13 @@ public class SearchEngineManager implements SharedPreferences.OnSharedPreference
             String identifier;
             while ((identifier = br.readLine()) != null) {
                 final InputStream pluginIn = getInputStreamFromSearchPluginsJar(identifier + ".xml");
-                final SearchEngine engine = createEngineFromInputStream(identifier, pluginIn);
-                if (engine != null && engine.getName().equals(name)) {
-                    return engine;
+                
+                
+                if (pluginIn != null) {
+                  final SearchEngine engine = createEngineFromInputStream(identifier, pluginIn);
+                  if (engine != null && engine.getName().equals(name)) {
+                      return engine;
+                  }
                 }
             }
         } catch (IOException e) {
