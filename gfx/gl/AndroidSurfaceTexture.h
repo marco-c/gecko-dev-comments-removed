@@ -58,19 +58,19 @@ public:
 
   
   
-  bool CanDetach() { return mCanDetach; }
+  bool CanDetach() const { return mCanDetach; }
 
-  GLContext* GetAttachedContext() { return mAttachedContext; }
+  GLContext* AttachedContext() const { return mAttachedContext; }
 
-  AndroidNativeWindow* NativeWindow() {
+  AndroidNativeWindow* NativeWindow() const {
     return mNativeWindow;
   }
 
   
   void UpdateTexImage();
 
-  void GetTransformMatrix(mozilla::gfx::Matrix4x4& aMatrix);
-  int ID() { return mID; }
+  void GetTransformMatrix(mozilla::gfx::Matrix4x4& aMatrix) const;
+  int ID() const { return mID; }
 
   void SetDefaultSize(mozilla::gfx::IntSize size);
 
@@ -82,8 +82,8 @@ public:
   
   void NotifyFrameAvailable();
 
-  GLuint Texture() { return mTexture; }
-  const widget::sdk::Surface::Ref& JavaSurface() { return mSurface; }
+  GLuint Texture() const { return mTexture; }
+  const widget::sdk::Surface::Ref& JavaSurface() const { return mSurface; }
 
 private:
   AndroidSurfaceTexture();
@@ -96,13 +96,14 @@ private:
   widget::sdk::SurfaceTexture::GlobalRef mSurfaceTexture;
   widget::sdk::Surface::GlobalRef mSurface;
 
-  Monitor mMonitor;
   GLContext* mAttachedContext;
   bool mCanDetach;
 
   RefPtr<AndroidNativeWindow> mNativeWindow;
   int mID;
   nsCOMPtr<nsIRunnable> mFrameAvailableCallback;
+
+  mutable Monitor mMonitor;
 };
 
 }
