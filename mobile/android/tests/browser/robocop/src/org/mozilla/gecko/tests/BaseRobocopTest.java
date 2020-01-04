@@ -183,6 +183,23 @@ public abstract class BaseRobocopTest extends ActivityInstrumentationTestCase2<A
     }
 
     @Override
+    protected void runTest() throws Throwable {
+        try {
+            super.runTest();
+        } catch (Throwable t) {
+            
+            
+            mSolo.takeScreenshot("robocop-screenshot-"+getClass().getName());
+            if (mAsserter != null) {
+                mAsserter.dumpLog("Exception caught during test!", t);
+                mAsserter.ok(false, "Exception caught", t.toString());
+            }
+            
+            throw t;
+        }
+    }
+
+    @Override
     public void tearDown() throws Exception {
         try {
             mAsserter.endTest();
