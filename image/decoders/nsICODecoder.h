@@ -70,7 +70,7 @@ public:
   
   size_t FirstResourceOffset() const;
 
-  void DoDecode(const char* aBuffer, size_t aLength) override;
+  Maybe<TerminalState> DoDecode(const char* aBuffer, size_t aLength) override;
   virtual void FinishInternal() override;
   virtual void FinishWithErrorInternal() override;
 
