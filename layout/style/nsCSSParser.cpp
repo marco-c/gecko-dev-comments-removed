@@ -12063,16 +12063,13 @@ CSSParserImpl::ParseImageLayersItem(
         
         
 
-#ifdef DEBUG
-        for (size_t i = 0; nsCSSProps::kImageLayerOriginKTable[i].mValue != -1; i++) {
-          
-          
-          MOZ_ASSERT(nsCSSProps::kImageLayerOriginKTable[i].mKeyword ==
-                     nsCSSProps::kBackgroundClipKTable[i].mKeyword);
-          MOZ_ASSERT(nsCSSProps::kImageLayerOriginKTable[i].mValue ==
-                     nsCSSProps::kBackgroundClipKTable[i].mValue);
-        }
-#endif
+        
+        MOZ_ASSERT(nsCSSProps::kKeywordTableTable[
+                     aTable[nsStyleImageLayers::origin]] ==
+                   nsCSSProps::kImageLayerOriginKTable);
+        MOZ_ASSERT(nsCSSProps::kKeywordTableTable[
+                     aTable[nsStyleImageLayers::clip]] ==
+                   nsCSSProps::kImageLayerOriginKTable);
         static_assert(NS_STYLE_IMAGELAYER_CLIP_BORDER ==
                       NS_STYLE_IMAGELAYER_ORIGIN_BORDER &&
                       NS_STYLE_IMAGELAYER_CLIP_PADDING ==

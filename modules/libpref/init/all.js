@@ -2423,9 +2423,6 @@ pref("layout.css.scope-pseudo.enabled", true);
 pref("layout.css.background-blend-mode.enabled", true);
 
 
-pref("layout.css.background-clip-text.enabled", false);
-
-
 pref("layout.css.vertical-text.enabled", true);
 
 
