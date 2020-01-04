@@ -1066,26 +1066,26 @@ EnsureMIMEOfScript(nsIURI* aURI, nsHttpResponseHead* aResponseHead, nsILoadInfo*
 
     if (nsContentUtils::IsJavascriptMIMEType(typeString)) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 1);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 1);
         return NS_OK;
     }
 
     bool block = false;
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("image/"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 2);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 2);
         block = true;
     } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("audio/"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 3);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 3);
         block = true;
     } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("video/"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 4);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 4);
         block = true;
     } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/csv"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 6);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 6);
         block = true;
     }
 
@@ -1111,42 +1111,42 @@ EnsureMIMEOfScript(nsIURI* aURI, nsHttpResponseHead* aResponseHead, nsILoadInfo*
 
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/plain"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 5);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 5);
         return NS_OK;
     }
 
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/xml"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 7);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 7);
         return NS_OK;
     }
 
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("application/octet-stream"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 8);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 8);
         return NS_OK;
     }
 
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("application/xml"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 9);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 9);
         return NS_OK;
     }
 
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/html"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 10);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 10);
         return NS_OK;
     }
 
     if (contentType.IsEmpty()) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 11);
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 11);
         return NS_OK;
     }
 
     
-    Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 0);
+    Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_INCORRECT_MIME, 0);
     return NS_OK;
 }
 
