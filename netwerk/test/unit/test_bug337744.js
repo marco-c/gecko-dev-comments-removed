@@ -1,6 +1,8 @@
 
 
 
+Cu.import("resource://gre/modules/NetUtil.jsm");
+
 const specs = [
   "resource:////",
   "resource:///http://www.mozilla.org/",
@@ -11,27 +13,43 @@ const specs = [
   "resource:///..%5c"
 ];
 
+var ssm = Cc["@mozilla.org/scriptsecuritymanager;1"]
+            .getService(Ci.nsIScriptSecurityManager);
+
+
+var uri = NetUtil.newURI("http://www.example.com", null, null);
+var principal = ssm.createCodebasePrincipal(uri, {});
+
 function check_for_exception(spec)
 {
-  var ios =
-    Cc["@mozilla.org/network/io-service;1"].
-    getService(Ci.nsIIOService);
+  var channelURI = NetUtil.newURI(spec, null, null);
+
+  var channel = NetUtil.newChannel({
+    uri: NetUtil.newURI(spec, null, null),
+    loadingPrincipal: principal,
+    securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER
+  });
 
   try {
-    var channel = ios.newChannel2(spec,
-                                  null,
-                                  null,
-                                  null,      
-                                  Services.scriptSecurityManager.getSystemPrincipal(),
-                                  null,      
-                                  Ci.nsILoadInfo.SEC_NORMAL,
-                                  Ci.nsIContentPolicy.TYPE_OTHER);
+    channel.asyncOpen2(null);
+    do_check_true(false, "asyncOpen2() of URI: " + spec + "should throw");
   }
   catch (e) {
-    return;
+    
+    
+    do_check_eq(e.code, 1012);
   }
 
-  do_throw("Successfully opened invalid URI: '" + spec + "'");
+  try {
+    channel.open2();
+    do_check_true(false, "Open2() of uri: " + spec + "should throw");
+  }
+  catch (e) {
+    
+    
+    do_check_eq(e.code, 1012);
+  }
 }
 
 function run_test() {
