@@ -2245,10 +2245,7 @@ ContentParent::NotifyTabDestroyed(const TabId& aTabId,
 
     
     for (auto& permissionRequestParent : parentArray) {
-        nsTArray<PermissionChoice> emptyChoices;
-        Unused << PContentPermissionRequestParent::Send__delete__(permissionRequestParent,
-                                                                  false,
-                                                                  emptyChoices);
+        Unused << PContentPermissionRequestParent::Send__delete__(permissionRequestParent);
     }
 
     
