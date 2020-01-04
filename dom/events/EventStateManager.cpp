@@ -4347,9 +4347,6 @@ EventStateManager::SetPointerLock(nsIWidget* aWidget,
       sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
 
     
-    nsIPresShell::SetCapturingContent(aElement, CAPTURE_POINTERLOCK);
-
-    
     if (dragService) {
       dragService->Suppress();
     }
@@ -4366,9 +4363,6 @@ EventStateManager::SetPointerLock(nsIWidget* aWidget,
       aWidget->SynthesizeNativeMouseMove(
         mPreLockPoint + aWidget->WidgetToScreenOffset(), nullptr);
     }
-
-    
-    nsIPresShell::SetCapturingContent(nullptr, CAPTURE_POINTERLOCK);
 
     
     if (dragService) {
