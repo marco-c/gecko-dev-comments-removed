@@ -4,8 +4,45 @@ const MAX_CONCURRENT_TABS = "browser.engagement.max_concurrent_tab_count";
 const TAB_EVENT_COUNT = "browser.engagement.tab_open_event_count";
 const MAX_CONCURRENT_WINDOWS = "browser.engagement.max_concurrent_window_count";
 const WINDOW_OPEN_COUNT = "browser.engagement.window_open_event_count";
+const TOTAL_URI_COUNT = "browser.engagement.total_uri_count";
+const UNIQUE_DOMAINS_COUNT = "browser.engagement.unique_domains_count";
 
 const TELEMETRY_SUBSESSION_TOPIC = "internal-telemetry-after-subsession-split";
+
+
+
+
+
+
+
+
+
+
+
+function browserLocationChanged(browser) {
+  return new Promise(resolve => {
+    let wpl = {
+      onStateChange() {},
+      onSecurityChange() {},
+      onStatusChange() {},
+      onLocationChange(aWebProgress, aRequest, aURI, aFlags) {
+        if (!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE)) {
+          browser.webProgress.removeProgressListener(filter);
+          filter.removeProgressListener(wpl);
+          resolve();
+        };
+      },
+      QueryInterface: XPCOMUtils.generateQI([
+        Ci.nsIWebProgressListener,
+        Ci.nsIWebProgressListener2,
+      ]),
+    };
+    const filter = Cc["@mozilla.org/appshell/component/browser-status-filter;1"]
+                     .createInstance(Ci.nsIWebProgress);
+    filter.addProgressListener(wpl, Ci.nsIWebProgress.NOTIFY_ALL);
+    browser.webProgress.addProgressListener(filter, Ci.nsIWebProgress.NOTIFY_ALL);
+  });
+};
 
 
 
@@ -22,7 +59,7 @@ let checkScalar = (scalars, scalarName, value, msg) => {
 
 
 
-let checkScalars = (maxTabs, tabOpenCount, maxWindows, windowsOpenCount) => {
+let checkScalars = (maxTabs, tabOpenCount, maxWindows, windowsOpenCount, totalURIs, domainCount) => {
   const scalars =
     Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
 
@@ -35,6 +72,10 @@ let checkScalars = (maxTabs, tabOpenCount, maxWindows, windowsOpenCount) => {
               "The maximum window count must match the expected value.");
   checkScalar(scalars, WINDOW_OPEN_COUNT, windowsOpenCount,
               "The number of window open event count must match the expected value.");
+  checkScalar(scalars, TOTAL_URI_COUNT, totalURIs,
+              "The total URI count must match the expected value.");
+  checkScalar(scalars, UNIQUE_DOMAINS_COUNT, domainCount,
+              "The unique domains count must match the expected value.");
 };
 
 add_task(function* test_tabsAndWindows() {
@@ -51,14 +92,14 @@ add_task(function* test_tabsAndWindows() {
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   expectedTabOpenCount = 1;
   expectedMaxTabs = 2;
-  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount);
+  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount, 0, 0);
 
   
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   expectedTabOpenCount += 2;
   expectedMaxTabs += 2;
-  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount);
+  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount, 0, 0);
 
   
   let win = yield BrowserTestUtils.openNewBrowserWindow();
@@ -73,7 +114,7 @@ add_task(function* test_tabsAndWindows() {
 
   
   yield BrowserTestUtils.removeTab(openedTabs.pop());
-  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount);
+  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount, 0, 0);
 
   
   for (let tab of openedTabs) {
@@ -82,7 +123,7 @@ add_task(function* test_tabsAndWindows() {
   yield BrowserTestUtils.closeWindow(win);
 
   
-  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount);
+  checkScalars(expectedMaxTabs, expectedTabOpenCount, expectedMaxWins, expectedWinOpenCount, 0, 0);
 });
 
 add_task(function* test_subsessionSplit() {
@@ -94,10 +135,11 @@ add_task(function* test_subsessionSplit() {
   let openedTabs = [];
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
   openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
+  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "http://www.example.com"));
 
   
-  checkScalars(5 , 4 , 2 , 1 );
+  checkScalars(5 , 4 , 2 , 1 ,
+               1 , 1 );
 
   
   yield BrowserTestUtils.removeTab(openedTabs.pop());
@@ -111,13 +153,94 @@ add_task(function* test_subsessionSplit() {
   
   
   
-  checkScalars(4 , 0 , 2 , 0 );
+  checkScalars(4 , 0 , 2 , 0 ,
+               0 , 0 );
 
   
   for (let tab of openedTabs) {
     yield BrowserTestUtils.removeTab(tab);
   }
   yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* test_URIAndDomainCounts() {
+  
+  Services.telemetry.clearScalars();
+
+  let checkCounts = (URICount, domainCount) => {
+    
+    const scalars =
+      Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
+    checkScalar(scalars, TOTAL_URI_COUNT, URICount,
+                "The URI scalar must contain the expected value.");
+    checkScalar(scalars, UNIQUE_DOMAINS_COUNT, domainCount,
+                "The unique domains scalar must contain the expected value.");
+  };
+
+  
+  let firstTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
+  checkCounts(0, 0);
+
+  
+  yield BrowserTestUtils.loadURI(firstTab.linkedBrowser, "http://example.com/");
+  yield BrowserTestUtils.browserLoaded(firstTab.linkedBrowser);
+  checkCounts(1, 1);
+
+  
+  let secondTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
+  yield BrowserTestUtils.switchTab(gBrowser, firstTab);
+  checkCounts(1, 1);
+  yield BrowserTestUtils.removeTab(secondTab);
+
+  
+  let newWin = yield BrowserTestUtils.openNewBrowserWindow();
+  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://example.com/");
+  yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
+  checkCounts(2, 1);
+
+  
+  const XHR_URL = "http://example.com/r";
+  yield ContentTask.spawn(newWin.gBrowser.selectedBrowser, XHR_URL, function(url) {
+    return new Promise(resolve => {
+      var xhr = new content.window.XMLHttpRequest();
+      xhr.open("GET", url);
+      xhr.onload = () => resolve();
+      xhr.send();
+    });
+  });
+  checkCounts(2, 1);
+
+  
+  let loadingStopped = browserLocationChanged(newWin.gBrowser.selectedBrowser);
+  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://example.com/#2");
+  yield loadingStopped;
+  checkCounts(3, 1);
+
+  
+  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://test1.example.com/");
+  yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
+  checkCounts(4, 1);
+
+  
+  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "https://example.org/");
+  yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
+  checkCounts(5, 2);
+
+  
+  
+  yield ContentTask.spawn(newWin.gBrowser.selectedBrowser, null, function* () {
+    let doc = content.document;
+    let iframe = doc.createElement("iframe");
+    let promiseIframeLoaded = ContentTaskUtils.waitForEvent(iframe, "load", false);
+    iframe.src = "https://example.org/test";
+    doc.body.insertBefore(iframe, doc.body.firstChild);
+    yield promiseIframeLoaded;
+  });
+  checkCounts(5, 2);
+
+  
+  yield BrowserTestUtils.removeTab(firstTab);
+  yield BrowserTestUtils.closeWindow(newWin);
 });
 
 add_task(function* test_privateMode() {
@@ -133,6 +256,8 @@ add_task(function* test_privateMode() {
   const scalars =
     Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
 
+  ok(!(TOTAL_URI_COUNT in scalars), "We should not track URIs in private mode.");
+  ok(!(UNIQUE_DOMAINS_COUNT in scalars), "We should not track unique domains in private mode.");
   is(scalars[TAB_EVENT_COUNT], 1, "The number of open tab event count must match the expected value.");
   is(scalars[MAX_CONCURRENT_TABS], 2, "The maximum tab count must match the expected value.");
   is(scalars[WINDOW_OPEN_COUNT], 1, "The number of window open event count must match the expected value.");
