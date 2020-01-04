@@ -441,11 +441,6 @@ public:
 private:
   friend class SheetLoadData;
 
-  static PLDHashOperator
-  RemoveEntriesWithURI(URIPrincipalReferrerPolicyAndCORSModeHashKey* aKey,
-                       RefPtr<CSSStyleSheet>& aSheet,
-                       void* aUserData);
-
   
   
   
