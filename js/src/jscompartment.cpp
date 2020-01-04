@@ -1193,12 +1193,25 @@ AutoSetNewObjectMetadata::~AutoSetNewObjectMetadata()
         return;
 
     if (!cx_->isExceptionPending() && cx_->compartment()->hasObjectPendingMetadata()) {
-        RootedObject obj(cx_, cx_->compartment()->objectMetadataState.as<PendingMetadata>());
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        AutoSuppressGC autoSuppressGC(cx_);
+
+        JSObject* obj = cx_->compartment()->objectMetadataState.as<PendingMetadata>();
+
         
         
         
         
         cx_->compartment()->objectMetadataState = prevState_;
+
         obj = SetNewObjectMetadata(cx_, obj);
     } else {
         cx_->compartment()->objectMetadataState = prevState_;

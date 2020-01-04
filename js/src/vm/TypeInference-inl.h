@@ -283,17 +283,20 @@ struct AutoEnterAnalysis
     
     RecompileInfoVector pendingRecompiles;
 
+    
+    js::AutoSuppressObjectMetadataCallback suppressMetadata;
+
     FreeOp* freeOp;
     Zone* zone;
 
     explicit AutoEnterAnalysis(ExclusiveContext* cx)
-      : suppressGC(cx), oom(cx->zone())
+      : suppressGC(cx), oom(cx->zone()), suppressMetadata(cx)
     {
         init(cx->defaultFreeOp(), cx->zone());
     }
 
     AutoEnterAnalysis(FreeOp* fop, Zone* zone)
-      : suppressGC(zone->runtimeFromMainThread()), oom(zone)
+      : suppressGC(zone->runtimeFromMainThread()), oom(zone), suppressMetadata(zone)
     {
         init(fop, zone);
     }

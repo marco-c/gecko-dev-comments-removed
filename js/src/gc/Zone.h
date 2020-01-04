@@ -279,6 +279,17 @@ struct Zone : public JS::shadow::Zone,
     DebuggerVector* getDebuggers() const { return debuggers; }
     DebuggerVector* getOrCreateDebuggers(JSContext* cx);
 
+    
+
+
+
+
+
+
+
+
+    bool suppressObjectMetadataCallback;
+
     js::gc::ArenaLists arenas;
 
     js::TypeZone types;

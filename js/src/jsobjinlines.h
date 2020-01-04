@@ -294,11 +294,10 @@ SetNewObjectMetadata(ExclusiveContext* cxArg, JSObject* obj)
     
     if (JSContext* cx = cxArg->maybeJSContext()) {
         if (MOZ_UNLIKELY((size_t)cx->compartment()->hasObjectMetadataCallback()) &&
-            !cx->zone()->types.activeAnalysis)
+            !cx->zone()->suppressObjectMetadataCallback)
         {
             
-            
-            AutoEnterAnalysis enter(cx);
+            AutoSuppressObjectMetadataCallback suppressMetadata(cx);
 
             RootedObject rooted(cx, obj);
             cx->compartment()->setNewObjectMetadata(cx, rooted);
@@ -365,6 +364,11 @@ JSObject::create(js::ExclusiveContext* cx, js::gc::AllocKind kind, js::gc::Initi
         size_t size =
             kind == js::gc::AllocKind::FUNCTION ? sizeof(JSFunction) : sizeof(js::FunctionExtended);
         memset(obj->as<JSFunction>().fixedSlots(), 0, size - sizeof(js::NativeObject));
+        if (kind == js::gc::AllocKind::FUNCTION_EXTENDED) {
+            
+            
+            obj->as<JSFunction>().setFlags(JSFunction::EXTENDED);
+        }
     }
 
     if (group->clasp()->shouldDelayMetadataCallback())
