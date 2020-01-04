@@ -1645,27 +1645,25 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
       Redraw();
     }
 
-    if (!mBufferProvider->PreservesDrawingState() || mBufferProvider != oldBufferProvider) {
+    
+    mTarget->SetTransform(Matrix());
+
+    if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
       
-      mTarget->SetTransform(Matrix());
+      
+      
+      
+      
+      
+      mTarget->PushClipRect(canvasRect);
+    }
 
-      if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
-        
-        
-        
-        
-        
-        
-        mTarget->PushClipRect(canvasRect);
-      }
-
-      for (const auto& style : mStyleStack) {
-        for (const auto& clipOrTransform : style.clipsAndTransforms) {
-          if (clipOrTransform.IsClip()) {
-            mTarget->PushClip(clipOrTransform.clip);
-          } else {
-            mTarget->SetTransform(clipOrTransform.transform);
-          }
+    for (const auto& style : mStyleStack) {
+      for (const auto& clipOrTransform : style.clipsAndTransforms) {
+        if (clipOrTransform.IsClip()) {
+          mTarget->PushClip(clipOrTransform.clip);
+        } else {
+          mTarget->SetTransform(clipOrTransform.transform);
         }
       }
     }
@@ -1778,20 +1776,18 @@ CanvasRenderingContext2D::ReturnTarget()
 {
   if (mTarget && mBufferProvider && mTarget != sErrorTarget) {
     CurrentState().transform = mTarget->GetTransform();
-    if (!mBufferProvider->PreservesDrawingState()) {
-      for (const auto& style : mStyleStack) {
-        for (const auto& clipOrTransform : style.clipsAndTransforms) {
-          if (clipOrTransform.IsClip()) {
-            mTarget->PopClip();
-          }
+    for (const auto& style : mStyleStack) {
+      for (const auto& clipOrTransform : style.clipsAndTransforms) {
+        if (clipOrTransform.IsClip()) {
+          mTarget->PopClip();
         }
       }
+    }
 
-      if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
-        
-        
-        mTarget->PopClip();
-      }
+    if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
+      
+      
+      mTarget->PopClip();
     }
 
     mBufferProvider->ReturnDrawTarget(mTarget.forget());

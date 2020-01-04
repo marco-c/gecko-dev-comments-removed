@@ -65,14 +65,6 @@ public:
   virtual void OnShutdown() {}
 
   virtual bool SetForwarder(CompositableForwarder* aFwd) { return true; }
-
-  
-
-
-
-
-
-  virtual bool PreservesDrawingState() const = 0;
 };
 
 
@@ -96,7 +88,6 @@ public:
 
   virtual void ReturnSnapshot(already_AddRefed<gfx::SourceSurface> aSnapshot) override;
 
-  virtual bool PreservesDrawingState() const override { return true; }
 private:
   ~PersistentBufferProviderBasic();
 
@@ -137,7 +128,6 @@ public:
 
   virtual bool SetForwarder(CompositableForwarder* aFwd) override;
 
-  virtual bool PreservesDrawingState() const override { return false; }
 protected:
   PersistentBufferProviderShared(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
                                  CompositableForwarder* aFwd,
