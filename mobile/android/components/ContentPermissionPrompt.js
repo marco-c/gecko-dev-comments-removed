@@ -12,7 +12,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 const kEntities = {
   "contacts": "contacts",
-  "desktop-notification": "desktopNotification",
+  "desktop-notification": "desktopNotification2",
   "device-storage:music": "deviceStorageMusic",
   "device-storage:pictures": "deviceStoragePictures",
   "device-storage:sdcard": "deviceStorageSdcard",
@@ -102,7 +102,7 @@ ContentPermissionPrompt.prototype = {
       label: browserBundle.GetStringFromName(entityName + ".dontAllow"),
       callback: function(aChecked) {
         
-        if (aChecked)
+        if (aChecked || entityName == "desktopNotification2")
           Services.perms.addFromPrincipal(request.principal, access, Ci.nsIPermissionManager.DENY_ACTION);
 
         request.cancel();
@@ -112,9 +112,9 @@ ContentPermissionPrompt.prototype = {
       label: browserBundle.GetStringFromName(entityName + ".allow"),
       callback: function(aChecked) {
         
-        if (aChecked) {
+        if (aChecked || entityName == "desktopNotification2") {
           Services.perms.addFromPrincipal(request.principal, access, Ci.nsIPermissionManager.ALLOW_ACTION);
-        } else if (isApp || entityName == "desktopNotification") {
+        } else if (isApp) {
           
           Services.perms.addFromPrincipal(request.principal, access, Ci.nsIPermissionManager.ALLOW_ACTION, Ci.nsIPermissionManager.EXPIRE_SESSION);
         }
@@ -126,7 +126,18 @@ ContentPermissionPrompt.prototype = {
 
     let requestor = chromeWin.BrowserApp.manifest ? "'" + chromeWin.BrowserApp.manifest.name + "'" : request.principal.URI.host;
     let message = browserBundle.formatStringFromName(entityName + ".ask", [requestor], 1);
-    let options = { checkbox: browserBundle.GetStringFromName(entityName + ".dontAskAgain") };
+    
+    let options;
+    if (entityName == "desktopNotification2") {
+      options = {
+        link: {
+          label: browserBundle.GetStringFromName("doorhanger.learnMore"),
+          url: "https://www.mozilla.org/firefox/push/"
+        }
+      };
+    } else {
+      options = { checkbox: browserBundle.GetStringFromName(entityName + ".dontAskAgain") };
+    }
 
     chromeWin.NativeWindow.doorhanger.show(message, entityName + request.principal.URI.host, buttons, tab.id, options, entityName.toUpperCase());
   }

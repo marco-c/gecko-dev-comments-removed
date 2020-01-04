@@ -34,7 +34,8 @@ public abstract class DoorHanger extends LinearLayout {
         return new DefaultDoorHanger(context, config, type);
     }
 
-    public static enum Type { DEFAULT, LOGIN, TRACKING, GEOLOCATION }
+    
+    public static enum Type { DEFAULT, LOGIN, TRACKING, GEOLOCATION, DESKTOPNOTIFICATION2 }
 
     public interface OnButtonClickListener {
         public void onButtonClick(JSONObject response, DoorHanger doorhanger);
