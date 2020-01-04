@@ -59,9 +59,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "loadExtScriptInScope",
-                                  "resource://gre/modules/ExtensionGlobalScope.jsm");
-
 XPCOMUtils.defineLazyGetter(this, "require", () => {
   let obj = {};
   Cu.import("resource://devtools/shared/Loader.jsm", obj);
@@ -89,6 +86,7 @@ Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   BaseContext,
   EventEmitter,
+  SchemaAPIManager,
   LocaleData,
   Messenger,
   instanceOf,
@@ -115,16 +113,11 @@ const COMMENT_REGEXP = new RegExp(String.raw`
 var ExtensionContext, GlobalManager;
 
 
-var Management = {
-  initialized: null,
-  scopes: [],
-  schemaApis: {
-    addon_parent: [],
-    addon_child: [],
-    content_parent: [],
-    content_child: [],
-  },
-  emitter: new EventEmitter(),
+var Management = new class extends SchemaAPIManager {
+  constructor() {
+    super("main");
+    this.initialized = null;
+  }
 
   
   lazyInit() {
@@ -146,89 +139,25 @@ var Management = {
     });
 
     for (let [, value] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCRIPTS)) {
-      loadExtScriptInScope(value, this);
+      this.loadScript(value);
     }
 
     this.initialized = promise;
     return this.initialized;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  }
 
   registerSchemaAPI(namespace, envType, getAPI) {
-    this.schemaApis[envType].push({namespace, getAPI});
+    if (envType == "addon_parent" || envType == "content_parent") {
+      super.registerSchemaAPI(namespace, envType, getAPI);
+    }
     if (envType === "addon_child") {
       
       
       
       
-      this.schemaApis.addon_parent.push({namespace, getAPI});
+      super.registerSchemaAPI(namespace, "addon_parent", getAPI);
     }
-  },
-
-  
-  generateAPIs(context, apis, obj) {
-    
-    function copy(dest, source) {
-      for (let prop in source) {
-        let desc = Object.getOwnPropertyDescriptor(source, prop);
-        if (typeof(desc.value) == "object") {
-          if (!(prop in dest)) {
-            dest[prop] = {};
-          }
-          copy(dest[prop], source[prop]);
-        } else {
-          Object.defineProperty(dest, prop, desc);
-        }
-      }
-    }
-
-    for (let api of apis) {
-      if (api.permission) {
-        if (!context.extension.hasPermission(api.permission)) {
-          continue;
-        }
-      }
-
-      api = api.getAPI(context);
-      copy(obj, api);
-    }
-  },
-
-  
-  on(hook, callback) {
-    this.emitter.on(hook, callback);
-  },
-
-  
-  emit(hook, ...args) {
-    return this.emitter.emit(hook, ...args);
-  },
-
-  off(hook, callback) {
-    this.emitter.off(hook, callback);
-  },
+  }
 };
 
 
@@ -633,8 +562,8 @@ GlobalManager = {
     let apis = {
       extensionTypes: {},
     };
-    Management.generateAPIs(context, Management.schemaApis[context.envType], apis);
-    Management.generateAPIs(context, context.extension.apis, apis);
+    Management.generateAPIs(context, apis);
+    SchemaAPIManager.generateAPIs(context, context.extension.apis, apis);
 
     let schemaWrapper = {
       get principal() {

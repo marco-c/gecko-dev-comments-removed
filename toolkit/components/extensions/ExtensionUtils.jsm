@@ -33,6 +33,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "loadExtScriptInScope",
+                                  "resource://gre/modules/ExtensionGlobalScope.jsm");
+
 function getConsole() {
   return new ConsoleAPI({
     maxLogLevelPref: "extensions.webextensions.log.level",
@@ -1570,6 +1573,108 @@ class ChildAPIManager {
 
 
 
+class SchemaAPIManager extends EventEmitter {
+  
+
+
+
+
+
+  constructor(processType) {
+    super();
+    this.processType = processType;
+    this._schemaApis = {
+      addon_parent: [],
+      addon_child: [],
+      content_parent: [],
+      content_child: [],
+    };
+  }
+
+  loadScript(scriptUrl) {
+    loadExtScriptInScope(scriptUrl, this);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  registerSchemaAPI(namespace, envType, getAPI) {
+    this._schemaApis[envType].push({namespace, getAPI});
+  }
+
+  
+
+
+
+
+
+
+  generateAPIs(context, obj) {
+    let apis = this._schemaApis[context.envType];
+    if (!apis) {
+      Cu.reportError(`No APIs have been registered for ${context.envType}`);
+      return;
+    }
+    SchemaAPIManager.generateAPIs(context, apis, obj);
+  }
+
+  
+
+
+
+
+
+
+
+  static generateAPIs(context, apis, obj) {
+    
+    function copy(dest, source) {
+      for (let prop in source) {
+        let desc = Object.getOwnPropertyDescriptor(source, prop);
+        if (typeof(desc.value) == "object") {
+          if (!(prop in dest)) {
+            dest[prop] = {};
+          }
+          copy(dest[prop], source[prop]);
+        } else {
+          Object.defineProperty(dest, prop, desc);
+        }
+      }
+    }
+
+    for (let api of apis) {
+      api = api.getAPI(context);
+      copy(obj, api);
+    }
+  }
+}
+
+
+
+
+
+
+
 
 
 
@@ -1610,4 +1715,5 @@ this.ExtensionUtils = {
   SingletonEventManager,
   SpreadArgs,
   ChildAPIManager,
+  SchemaAPIManager,
 };
