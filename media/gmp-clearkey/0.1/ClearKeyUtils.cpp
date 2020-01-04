@@ -411,10 +411,6 @@ ParseKeyObject(ParserContext& aCtx, KeyIdPair& aOutKey)
       if (!GetNextLabel(aCtx, value)) return false;
       
       if (value != "oct") return false;
-    } else if (label == "alg") {
-      if (!GetNextLabel(aCtx, value)) return false;
-      
-      if (value != "A128KW") return false;
     } else if (label == "k" && PeekSymbol(aCtx) == '"') {
       
       if (!GetNextLabel(aCtx, key)) return false;
