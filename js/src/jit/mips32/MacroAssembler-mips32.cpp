@@ -77,51 +77,6 @@ MacroAssemblerMIPSCompat::convertUInt32ToDouble(Register src, FloatRegister dest
     as_addd(dest, dest, SecondScratchDoubleReg);
 }
 
-void
-MacroAssemblerMIPSCompat::mul64(Imm64 imm, const Register64& dest)
-{
-    
-    
-    
-    
-
-    
-    ma_li(ScratchRegister, Imm32(imm.value & LOW_32_MASK));
-    as_multu(dest.high, ScratchRegister);
-    as_mflo(dest.high);
-
-    
-    as_multu(dest.low, ScratchRegister);
-
-    
-    as_mfhi(ScratchRegister);
-    as_addu(dest.high, dest.high, ScratchRegister);
-
-    if (((imm.value >> 32) & LOW_32_MASK) == 5) {
-        
-
-        
-        as_sll(ScratchRegister, dest.low, 2);
-        as_addu(ScratchRegister, ScratchRegister, dest.low);
-        as_addu(dest.high, dest.high, ScratchRegister);
-
-        
-        as_mflo(dest.low);
-    } else {
-        
-        as_mflo(SecondScratchReg);
-
-        
-        ma_li(ScratchRegister, Imm32((imm.value >> 32) & LOW_32_MASK));
-        as_multu(dest.low, ScratchRegister);
-        as_mflo(ScratchRegister);
-        as_addu(dest.high, dest.high, ScratchRegister);
-
-        
-        ma_move(dest.low, SecondScratchReg);
-    }
-}
-
 static const double TO_DOUBLE_HIGH_SCALE = 0x100000000;
 
 void
