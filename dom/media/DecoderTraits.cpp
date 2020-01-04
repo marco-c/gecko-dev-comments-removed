@@ -178,6 +178,7 @@ static char const *const gHttpLiveStreamingTypes[] = {
   
   "application/vnd.apple.mpegurl",
   
+  "application/x-mpegurl",
   "audio/x-mpegurl",
   nullptr
 };
