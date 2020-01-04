@@ -129,6 +129,11 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     
     
     
+    AutoSuppressDebuggeeNoExecuteChecks suppressNX(cx);
+
+    
+    
+    
     
     ClassInitializerOp init = protoTable[key].init;
     if (init == InitViaClassSpec)

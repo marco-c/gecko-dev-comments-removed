@@ -191,6 +191,30 @@ class LeaveDebuggeeNoExecute;
 
 
 
+class AutoSuppressDebuggeeNoExecuteChecks
+{
+    EnterDebuggeeNoExecute** stack_;
+    EnterDebuggeeNoExecute* prev_;
+
+  public:
+    explicit AutoSuppressDebuggeeNoExecuteChecks(JSContext* cx) {
+        stack_ = &cx->runtime()->noExecuteDebuggerTop;
+        prev_ = *stack_;
+        *stack_ = nullptr;
+    }
+
+    ~AutoSuppressDebuggeeNoExecuteChecks() {
+        MOZ_ASSERT(!*stack_);
+        *stack_ = prev_;
+    }
+};
+
+
+
+
+
+
+
 typedef JSObject Env;
 
 class Debugger : private mozilla::LinkedListElement<Debugger>
