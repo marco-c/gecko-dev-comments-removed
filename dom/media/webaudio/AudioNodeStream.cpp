@@ -40,6 +40,7 @@ AudioNodeStream::AudioNodeStream(AudioNodeEngine* aEngine,
     mPassThrough(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  mSuspendedCount = !(mIsActive || mFlags & EXTERNAL_OUTPUT);
   mChannelCountMode = ChannelCountMode::Max;
   mChannelInterpretation = ChannelInterpretation::Speakers;
   
@@ -695,6 +696,9 @@ AudioNodeStream::SetActive()
   }
 
   mIsActive = true;
+  if (!(mFlags & EXTERNAL_OUTPUT)) {
+    GraphImpl()->DecrementSuspendCount(this);
+  }
   if (IsAudioParamStream()) {
     
     
@@ -745,6 +749,9 @@ AudioNodeStream::CheckForInactive()
   mInputChunks.Clear(); 
   for (auto& chunk : mLastChunks) {
     chunk.SetNull(WEBAUDIO_BLOCK_SIZE);
+  }
+  if (!(mFlags & EXTERNAL_OUTPUT)) {
+    GraphImpl()->IncrementSuspendCount(this);
   }
   if (IsAudioParamStream()) {
     return;
