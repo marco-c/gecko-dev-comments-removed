@@ -4,9 +4,10 @@
 
 
 
-#include "nsQueryContentEventResult.h"
 #include "nsIWidget.h"
 #include "nsPoint.h"
+#include "nsQueryContentEventResult.h"
+#include "mozilla/Move.h"
 #include "mozilla/TextEvents.h"
 
 using namespace mozilla;
@@ -222,7 +223,7 @@ nsQueryContentEventResult::GetCharacterRect(int32_t aOffset,
 
 void
 nsQueryContentEventResult::SetEventResult(nsIWidget* aWidget,
-                                          const WidgetQueryContentEvent &aEvent)
+                                          WidgetQueryContentEvent &aEvent)
 {
   mEventMessage = aEvent.mMessage;
   mSucceeded = aEvent.mSucceeded;
@@ -231,7 +232,9 @@ nsQueryContentEventResult::SetEventResult(nsIWidget* aWidget,
   mOffset = aEvent.mReply.mOffset;
   mTentativeCaretOffset = aEvent.mReply.mTentativeCaretOffset;
   mString = aEvent.mReply.mString;
-  mRectArray = aEvent.mReply.mRectArray;
+  mRectArray = mozilla::Move(aEvent.mReply.mRectArray);
+  
+  aEvent.mSucceeded = false;
 
   if (!IsRectRelatedPropertyAvailable(mEventMessage) ||
       !aWidget || !mSucceeded) {
