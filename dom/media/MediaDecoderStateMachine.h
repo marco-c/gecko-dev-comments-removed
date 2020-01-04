@@ -232,10 +232,6 @@ public:
   
   bool IsRealTime() const { return mRealTime; }
 
-  
-  
-  bool OnTaskQueue() const;
-
   size_t SizeOfVideoQueue() {
     if (mReader) {
       return mReader->SizeOfVideoQueueInBytes();
@@ -251,6 +247,10 @@ public:
   }
 
 private:
+  
+  
+  bool OnTaskQueue() const;
+
   
   
   
