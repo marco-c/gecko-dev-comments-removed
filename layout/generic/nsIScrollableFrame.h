@@ -422,6 +422,14 @@ public:
   
 
 
+
+
+
+  virtual void SetScrollableByAPZ(bool aScrollable) = 0;
+
+  
+
+
   virtual void SetZoomableByAPZ(bool aZoomable) = 0;
 
   
