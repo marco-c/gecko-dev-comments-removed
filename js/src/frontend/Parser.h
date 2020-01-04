@@ -127,8 +127,6 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
     bool isLegacyGenerator() const { return generatorKind() == LegacyGenerator; }
     bool isStarGenerator() const { return generatorKind() == StarGenerator; }
 
-    bool isAsync() const { return sc->isFunctionBox() && sc->asFunctionBox()->isAsync(); }
-
     bool isArrowFunction() const {
         return sc->isFunctionBox() && sc->asFunctionBox()->function()->isArrow();
     }
@@ -365,7 +363,6 @@ enum class PropertyType {
     SetterNoExpressionClosure,
     Method,
     GeneratorMethod,
-    AsyncMethod,
     Constructor,
     DerivedConstructor
 };
@@ -507,26 +504,22 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     ObjectBox* newObjectBox(JSObject* obj);
     FunctionBox* newFunctionBox(Node fn, JSFunction* fun, ParseContext<ParseHandler>* outerpc,
                                 Directives directives, GeneratorKind generatorKind,
-                                FunctionAsyncKind asyncKind,
                                 JSObject* enclosingStaticScope);
 
     
     FunctionBox* newFunctionBox(Node fn, HandleFunction fun, Directives directives,
-                                GeneratorKind generatorKind,
-                                FunctionAsyncKind asyncKind,
-                                HandleObject enclosingStaticScope)
+                                GeneratorKind generatorKind, HandleObject enclosingStaticScope)
     {
         return newFunctionBox(fn, fun, nullptr, directives, generatorKind,
-                              asyncKind, enclosingStaticScope);
+                              enclosingStaticScope);
     }
 
     
     FunctionBox* newFunctionBox(Node fn, HandleFunction fun, ParseContext<ParseHandler>* outerpc,
-                                Directives directives, GeneratorKind generatorKind,
-                                FunctionAsyncKind asyncKind)
+                                Directives directives, GeneratorKind generatorKind)
     {
         RootedObject enclosing(context, outerpc->innermostStaticScope());
-        return newFunctionBox(fn, fun, outerpc, directives, generatorKind, asyncKind, enclosing);
+        return newFunctionBox(fn, fun, outerpc, directives, generatorKind, enclosing);
     }
 
     ModuleBox* newModuleBox(Node pn, HandleModuleObject module);
@@ -536,7 +529,7 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
 
 
     JSFunction* newFunction(HandleAtom atom, FunctionSyntaxKind kind, GeneratorKind generatorKind,
-                            FunctionAsyncKind asyncKind, HandleObject proto);
+                            HandleObject proto);
 
     bool generateBlockId(JSObject* staticScope, uint32_t* blockIdOut) {
         if (blockScopes.length() == StmtInfoPC::BlockIdLimit) {
@@ -575,7 +568,7 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
                                         TokenKind* ttp);
 
     inline Node newName(PropertyName* name);
-    inline Node newYieldExpression(uint32_t begin, Node expr, bool isYieldStar = false, bool isAsync = false);
+    inline Node newYieldExpression(uint32_t begin, Node expr, bool isYieldStar = false);
 
     inline bool abortIfSyntaxParser();
 
@@ -596,14 +589,13 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     
     
     Node standaloneFunctionBody(HandleFunction fun, Handle<PropertyNameVector> formals,
-                                GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
+                                GeneratorKind generatorKind,
                                 Directives inheritedDirectives, Directives* newDirectives,
                                 HandleObject enclosingStaticScope);
 
     
     
-    Node standaloneLazyFunction(HandleFunction fun, bool strict, GeneratorKind generatorKind,
-                                FunctionAsyncKind asyncKind);
+    Node standaloneLazyFunction(HandleFunction fun, bool strict, GeneratorKind generatorKind);
 
     
 
@@ -655,10 +647,8 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
 
 
 
-    Node functionStmt(YieldHandling yieldHandling,
-        DefaultHandling defaultHandling, FunctionAsyncKind asyncKind);
-    Node functionExpr(InvokedPrediction invoked = PredictUninvoked,
-        FunctionAsyncKind asyncKind = SyncFunction);
+    Node functionStmt(YieldHandling yieldHandling, DefaultHandling defaultHandling);
+    Node functionExpr(InvokedPrediction invoked = PredictUninvoked);
     Node statements(YieldHandling yieldHandling);
 
     Node blockStatement(YieldHandling yieldHandling);
@@ -691,7 +681,7 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
               InvokedPrediction invoked = PredictUninvoked);
     Node assignExpr(InHandling inHandling, YieldHandling yieldHandling,
                     InvokedPrediction invoked = PredictUninvoked);
-    Node assignExprWithoutYieldAndAwait(YieldHandling yieldHandling, unsigned err);
+    Node assignExprWithoutYield(YieldHandling yieldHandling, unsigned err);
     Node yieldExpression(InHandling inHandling);
     Node condExpr1(InHandling inHandling, YieldHandling yieldHandling,
                    InvokedPrediction invoked = PredictUninvoked);
@@ -715,13 +705,13 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
 
 
     bool functionArguments(YieldHandling yieldHandling, FunctionSyntaxKind kind,
-                           FunctionAsyncKind asyncKind, Node funcpn, bool* hasRest);
+                           Node funcpn, bool* hasRest);
 
     Node functionDef(InHandling inHandling, YieldHandling uieldHandling, HandlePropertyName name,
-                     FunctionSyntaxKind kind, GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
+                     FunctionSyntaxKind kind, GeneratorKind generatorKind,
                      InvokedPrediction invoked = PredictUninvoked);
     bool functionArgsAndBody(InHandling inHandling, Node pn, HandleFunction fun,
-                             FunctionSyntaxKind kind, GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
+                             FunctionSyntaxKind kind, GeneratorKind generatorKind,
                              Directives inheritedDirectives, Directives* newDirectives);
 
     Node unaryOpExpr(YieldHandling yieldHandling, ParseNodeKind kind, JSOp op, uint32_t begin);
@@ -831,7 +821,6 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
 
     
     bool checkDestructuringPattern(BindData<ParseHandler>* data, Node pattern);
-
 
     
     

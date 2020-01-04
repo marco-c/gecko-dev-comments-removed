@@ -1294,7 +1294,7 @@
 
 
  \
-    macro(JSOP_DEFFUN,    127,"deffun",     NULL,         1,  1,  0,  JOF_BYTE) \
+    macro(JSOP_DEFFUN,    127,"deffun",     NULL,         5,  0,  0,  JOF_OBJECT) \
     
 
 
@@ -1983,6 +1983,7 @@
 
  \
     macro(JSOP_TOSTRING,    228, "tostring",       NULL,  1,  1,  1,  JOF_BYTE)
+
 
 
 
