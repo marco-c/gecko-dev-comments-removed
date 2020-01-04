@@ -1111,11 +1111,6 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
     else
         MOZ_RELEASE_ASSERT(signum == SIGBUS);
 
-    if (signal == Signal::SegFault && info->si_code != SEGV_ACCERR)
-        return false;
-    if (signal == Signal::BusError && info->si_code != BUS_ADRALN)
-        return false;
-
     CONTEXT* context = (CONTEXT*)ctx;
     uint8_t** ppc = ContextToPC(context);
     uint8_t* pc = *ppc;
@@ -1138,8 +1133,22 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
 
     
     
-    if (!IsHeapAccessAddress(*instance, faultingAddress))
+    
+    if (!faultingAddress) {
+        
+        
+        
+        
+#ifdef SI_KERNEL
+        if (info->si_code != SI_KERNEL)
+            return false;
+#else
         return false;
+#endif
+    } else {
+        if (!IsHeapAccessAddress(*instance, faultingAddress))
+            return false;
+    }
 
 #ifdef WASM_HUGE_MEMORY
     return HugeMemoryAccess(context, pc, faultingAddress, *instance, ppc);
