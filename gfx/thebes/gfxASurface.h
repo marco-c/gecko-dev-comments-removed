@@ -104,6 +104,12 @@ public:
     
 
 
+
+    static bool CheckSurfaceSize(const mozilla::gfx::IntSize& sz, int32_t limit = 0);
+
+    
+
+
     static int32_t FormatStrideForWidth(gfxImageFormat format, int32_t width);
 
     static gfxContentType ContentFromFormat(gfxImageFormat format);
