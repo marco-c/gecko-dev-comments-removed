@@ -397,6 +397,10 @@ GlobalManager = {
             return findPath(path)[name](...args);
           },
 
+          callFunctionNoReturn(path, name, args) {
+            return findPath(path)[name](...args);
+          },
+
           callAsyncFunction(path, name, args, callback) {
             
             
