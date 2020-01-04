@@ -44,9 +44,6 @@
 #ifdef XP_WIN
 #include "mozilla/widget/AudioSession.h"
 #include <windows.h>
-#if defined(MOZ_SANDBOX)
-#include "SandboxBroker.h"
-#endif
 #endif
 
 
@@ -1521,14 +1518,6 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
         
         
         AutoAudioSession audioSession;
-
-#if defined(MOZ_SANDBOX)
-        
-        if (!SandboxBroker::Initialize()) {
-          NS_WARNING("Failed to initialize broker services, sandboxed "
-                     "processes will fail to start.");
-        }
-#endif
 #endif
 
         {
