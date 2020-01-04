@@ -1656,7 +1656,7 @@ public:
     gfxGlyphExtents *GetOrCreateGlyphExtents(int32_t aAppUnitsPerDevUnit);
 
     
-    virtual void SetupGlyphExtents(gfxContext *aContext, uint32_t aGlyphID,
+    virtual void SetupGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphID,
                                    bool aNeedTight, gfxGlyphExtents *aExtents);
 
     
