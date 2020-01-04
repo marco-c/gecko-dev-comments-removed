@@ -1,60 +1,66 @@
 
 
 
+"use strict";
 
 
 
 
-function test() {
-  initNetMonitor(JSON_LONG_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test... ");
 
-    let { L10N, NetMonitorView } = aMonitor.panelWin;
-    let { RequestsMenu } = NetMonitorView;
+add_task(function* () {
+  let [tab, , monitor] = yield initNetMonitor(JSON_LONG_URL);
+  info("Starting test... ");
 
-    RequestsMenu.lazyUpdate = false;
+  let { L10N, NetMonitorView } = monitor.panelWin;
+  let { RequestsMenu } = NetMonitorView;
 
-    function verifyRequest(aOffset) {
-      verifyRequestItemTarget(RequestsMenu.getItemAtIndex(aOffset),
-        "GET", CONTENT_TYPE_SJS + "?fmt=json-long", {
-          status: 200,
-          statusText: "OK",
-          type: "json",
-          fullMimeType: "text/json; charset=utf-8",
-          size: L10N.getFormatStr("networkMenu.sizeKB", L10N.numberWithDecimals(85975 / 1024, 2)),
-          time: true
-        });
-    }
+  RequestsMenu.lazyUpdate = false;
 
-    waitForNetworkEvents(aMonitor, 1).then(() => {
-      verifyRequest(0);
-
-      aMonitor._toolbox.once("webconsole-selected", () => {
-        aMonitor._toolbox.once("netmonitor-selected", () => {
-
-          waitForNetworkEvents(aMonitor, 1).then(() => {
-            waitForNetworkEvents(aMonitor, 1).then(() => {
-              verifyRequest(1);
-              teardown(aMonitor).then(finish);
-            });
-
-            
-            aDebuggee.performRequests();
-          });
-
-          
-          aDebuggee.location.reload();
-        });
-
-        
-        aMonitor._toolbox.selectTool("netmonitor");
-      });
-
-      
-      aMonitor._toolbox.selectTool("webconsole");
-    });
-
-    
-    aDebuggee.performRequests();
+  
+  let wait = waitForNetworkEvents(monitor, 1);
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+    content.wrappedJSObject.performRequests();
   });
-}
+  yield wait;
+
+  verifyRequest(0);
+
+  
+  let onWebConsole = monitor._toolbox.once("webconsole-selected");
+  monitor._toolbox.selectTool("webconsole");
+  yield onWebConsole;
+
+  
+  let onNetMonitor = monitor._toolbox.once("netmonitor-selected");
+  monitor._toolbox.selectTool("netmonitor");
+  yield onNetMonitor;
+
+  
+  wait = waitForNetworkEvents(monitor, 1);
+  tab.linkedBrowser.reload();
+  yield wait;
+
+  
+  wait = waitForNetworkEvents(monitor, 1);
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+    content.wrappedJSObject.performRequests();
+  });
+  yield wait;
+
+  verifyRequest(1);
+
+  return teardown(monitor);
+
+  function verifyRequest(offset) {
+    verifyRequestItemTarget(RequestsMenu.getItemAtIndex(offset),
+      "GET", CONTENT_TYPE_SJS + "?fmt=json-long", {
+        status: 200,
+        statusText: "OK",
+        type: "json",
+        fullMimeType: "text/json; charset=utf-8",
+        size: L10N.getFormatStr("networkMenu.sizeKB",
+          L10N.numberWithDecimals(85975 / 1024, 2)),
+        time: true
+      });
+  }
+});

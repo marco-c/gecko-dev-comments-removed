@@ -16,7 +16,7 @@ add_task(function* () {
     "localhost": "security-state-local",
   };
 
-  let [tab, debuggee, monitor] = yield initNetMonitor(CUSTOM_GET_URL);
+  let [tab, , monitor] = yield initNetMonitor(CUSTOM_GET_URL);
   let { $, EVENTS, NetMonitorView } = monitor.panelWin;
   let { RequestsMenu } = NetMonitorView;
   RequestsMenu.lazyUpdate = false;
@@ -37,7 +37,7 @@ add_task(function* () {
     ok(classes.contains(expectedClass), "Icon contained the correct class name.");
   }
 
-  yield teardown(monitor);
+  return teardown(monitor);
 
   
 
@@ -48,12 +48,18 @@ add_task(function* () {
 
 
   function* performRequests() {
+    function executeRequests(count, url) {
+      return ContentTask.spawn(tab.linkedBrowser, {count, url}, function* (args) {
+        content.wrappedJSObject.performRequests(args.count, args.url);
+      });
+    }
+
     
     
     let done = waitForSecurityBrokenNetworkEvent();
 
     info("Requesting a resource that has a certificate problem.");
-    debuggee.performRequests(1, "https://nocert.example.com");
+    yield executeRequests(1, "https://nocert.example.com");
 
     
     
@@ -64,17 +70,17 @@ add_task(function* () {
     
     done = waitForNetworkEvents(monitor, 1);
     info("Requesting a resource over HTTP.");
-    debuggee.performRequests(1, "http://test1.example.com" + CORS_SJS_PATH);
+    yield executeRequests(1, "http://test1.example.com" + CORS_SJS_PATH);
     yield done;
 
     done = waitForNetworkEvents(monitor, 1);
     info("Requesting a resource over HTTPS.");
-    debuggee.performRequests(1, "https://example.com" + CORS_SJS_PATH);
+    yield executeRequests(1, "https://example.com" + CORS_SJS_PATH);
     yield done;
 
     done = waitForSecurityBrokenNetworkEvent(true);
     info("Requesting a resource over HTTP to localhost.");
-    debuggee.performRequests(1, "http://localhost" + CORS_SJS_PATH);
+    yield executeRequests(1, "http://localhost" + CORS_SJS_PATH);
     yield done;
 
     const expectedCount = Object.keys(EXPECTED_SECURITY_STATES).length;
@@ -101,7 +107,7 @@ add_task(function* () {
     
     
     if (networkError) {
-      awaitedEvents.splice(4, 1);
+      awaitedEvents = awaitedEvents.filter(e => e !== "STARTED_RECEIVING_RESPONSE");
     }
 
     let promises = awaitedEvents.map((event) => {

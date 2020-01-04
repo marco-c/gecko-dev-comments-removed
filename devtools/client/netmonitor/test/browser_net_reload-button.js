@@ -1,31 +1,25 @@
 
 
 
+"use strict";
 
 
 
 
-function test() {
-  let monitor, reqMenu;
-  initNetMonitor(SINGLE_GET_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test... ");
 
-    monitor = aMonitor;
-    let { document, NetMonitorView } = aMonitor.panelWin;
-    let { RequestsMenu } = NetMonitorView;
-    reqMenu = RequestsMenu;
+add_task(function* () {
+  let [,, monitor] = yield initNetMonitor(SINGLE_GET_URL);
+  info("Starting test... ");
 
-    let button = document.querySelector("#requests-menu-reload-notice-button");
-    button.click();
-  })
-  .then(() => {
-    return waitForNetworkEvents(monitor, 2);
-  })
-  .then(() => {
-    is(reqMenu.itemCount, 2,
-      "The request menu should have two items after reloading");
-  })
-  .then(() => {
-    return teardown(monitor).then(finish);
-  });
-}
+  let { document, NetMonitorView } = monitor.panelWin;
+  let { RequestsMenu } = NetMonitorView;
+
+  let wait = waitForNetworkEvents(monitor, 2);
+  let button = document.querySelector("#requests-menu-reload-notice-button");
+  button.click();
+  yield wait;
+
+  is(RequestsMenu.itemCount, 2, "The request menu should have two items after reloading");
+
+  return teardown(monitor);
+});

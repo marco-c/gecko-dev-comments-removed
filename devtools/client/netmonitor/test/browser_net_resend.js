@@ -1,178 +1,162 @@
 
 
 
-var gPanelWin;
-var gPanelDoc;
+"use strict";
+
+
+
+
 
 const ADD_QUERY = "t1=t2";
 const ADD_HEADER = "Test-header: true";
-const ADD_POSTDATA = "t3=t4";
+const ADD_POSTDATA = "&t3=t4";
 
+add_task(function* () {
+  let [tab, , monitor] = yield initNetMonitor(POST_DATA_URL);
+  info("Starting test... ");
 
+  let { panelWin } = monitor;
+  let { document, EVENTS, NetMonitorView } = panelWin;
+  let { RequestsMenu } = NetMonitorView;
 
+  RequestsMenu.lazyUpdate = false;
 
-
-function test() {
-  initNetMonitor(POST_DATA_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test... ");
-
-    gPanelWin = aMonitor.panelWin;
-    gPanelDoc = gPanelWin.document;
-
-    let { NetMonitorView } = gPanelWin;
-    let { RequestsMenu } = NetMonitorView;
-    let TAB_UPDATED = aMonitor.panelWin.EVENTS.TAB_UPDATED;
-    let CUSTOMREQUESTVIEW_POPULATED = aMonitor.panelWin.EVENTS.CUSTOMREQUESTVIEW_POPULATED;
-
-    RequestsMenu.lazyUpdate = false;
-
-    waitForNetworkEvents(aMonitor, 0, 2).then(() => {
-      let origItem = RequestsMenu.getItemAtIndex(0);
-      RequestsMenu.selectedItem = origItem;
-
-      waitFor(aMonitor.panelWin, TAB_UPDATED).then(() => {
-        
-        RequestsMenu.cloneSelectedRequest();
-        return waitFor(aMonitor.panelWin, CUSTOMREQUESTVIEW_POPULATED);
-      }).then(() => {
-        testCustomForm(origItem.attachment);
-
-        let customItem = RequestsMenu.selectedItem;
-        testCustomItem(customItem, origItem);
-
-        
-        editCustomForm(() => {
-          testCustomItemChanged(customItem, origItem);
-
-          waitForNetworkEvents(aMonitor, 0, 1).then(() => {
-            let sentItem = RequestsMenu.selectedItem;
-            testSentRequest(sentItem.attachment, origItem.attachment);
-            finishUp(aMonitor);
-          });
-          
-          RequestsMenu.sendCustomRequest();
-        });
-      });
-    });
-
-    aDebuggee.performRequests();
+  let wait = waitForNetworkEvents(monitor, 0, 2);
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+    content.wrappedJSObject.performRequests();
   });
-}
+  yield wait;
 
-function testCustomItem(aItem, aOrigItem) {
-  let method = aItem.target.querySelector(".requests-menu-method").value;
-  let origMethod = aOrigItem.target.querySelector(".requests-menu-method").value;
-  is(method, origMethod, "menu item is showing the same method as original request");
+  let origItem = RequestsMenu.getItemAtIndex(0);
 
-  let file = aItem.target.querySelector(".requests-menu-file").value;
-  let origFile = aOrigItem.target.querySelector(".requests-menu-file").value;
-  is(file, origFile, "menu item is showing the same file name as original request");
+  let onTabUpdated = panelWin.once(EVENTS.TAB_UPDATED);
+  RequestsMenu.selectedItem = origItem;
+  yield onTabUpdated;
 
-  let domain = aItem.target.querySelector(".requests-menu-domain").value;
-  let origDomain = aOrigItem.target.querySelector(".requests-menu-domain").value;
-  is(domain, origDomain, "menu item is showing the same domain as original request");
-}
+  
+  let onPopulated = panelWin.once(EVENTS.CUSTOMREQUESTVIEW_POPULATED);
+  RequestsMenu.cloneSelectedRequest();
+  yield onPopulated;
 
-function testCustomItemChanged(aItem, aOrigItem) {
-  let file = aItem.target.querySelector(".requests-menu-file").value;
-  let expectedFile = aOrigItem.target.querySelector(".requests-menu-file").value + "&" + ADD_QUERY;
+  testCustomForm(origItem.attachment);
 
-  is(file, expectedFile, "menu item is updated to reflect url entered in form");
-}
+  let customItem = RequestsMenu.selectedItem;
+  testCustomItem(customItem, origItem);
 
+  
+  yield editCustomForm();
+  testCustomItemChanged(customItem, origItem);
 
+  
+  wait = waitForNetworkEvents(monitor, 0, 1);
+  RequestsMenu.sendCustomRequest();
+  yield wait;
 
+  let sentItem = RequestsMenu.selectedItem;
+  testSentRequest(sentItem.attachment, origItem.attachment);
 
-function testCustomForm(aData) {
-  is(gPanelDoc.getElementById("custom-method-value").value, aData.method,
-     "new request form showing correct method");
+  return teardown(monitor);
 
-  is(gPanelDoc.getElementById("custom-url-value").value, aData.url,
-     "new request form showing correct url");
+  function testCustomItem(item, orig) {
+    let method = item.target.querySelector(".requests-menu-method").value;
+    let origMethod = orig.target.querySelector(".requests-menu-method").value;
+    is(method, origMethod, "menu item is showing the same method as original request");
 
-  let query = gPanelDoc.getElementById("custom-query-value");
-  is(query.value, "foo=bar\nbaz=42\ntype=urlencoded",
-     "new request form showing correct query string");
+    let file = item.target.querySelector(".requests-menu-file").value;
+    let origFile = orig.target.querySelector(".requests-menu-file").value;
+    is(file, origFile, "menu item is showing the same file name as original request");
 
-  let headers = gPanelDoc.getElementById("custom-headers-value").value.split("\n");
-  for (let {name, value} of aData.requestHeaders.headers) {
-    ok(headers.indexOf(name + ": " + value) >= 0, "form contains header from request");
+    let domain = item.target.querySelector(".requests-menu-domain").value;
+    let origDomain = orig.target.querySelector(".requests-menu-domain").value;
+    is(domain, origDomain, "menu item is showing the same domain as original request");
   }
 
-  let postData = gPanelDoc.getElementById("custom-postdata-value");
-  is(postData.value, aData.requestPostData.postData.text,
-     "new request form showing correct post data");
-}
+  function testCustomItemChanged(item, orig) {
+    let file = item.target.querySelector(".requests-menu-file").value;
+    let expectedFile = orig.target.querySelector(".requests-menu-file").value +
+      "&" + ADD_QUERY;
+
+    is(file, expectedFile, "menu item is updated to reflect url entered in form");
+  }
+
+  
 
 
+  function testCustomForm(data) {
+    is(document.getElementById("custom-method-value").value, data.method,
+       "new request form showing correct method");
+
+    is(document.getElementById("custom-url-value").value, data.url,
+       "new request form showing correct url");
+
+    let query = document.getElementById("custom-query-value");
+    is(query.value, "foo=bar\nbaz=42\ntype=urlencoded",
+       "new request form showing correct query string");
+
+    let headers = document.getElementById("custom-headers-value").value.split("\n");
+    for (let {name, value} of data.requestHeaders.headers) {
+      ok(headers.indexOf(name + ": " + value) >= 0, "form contains header from request");
+    }
+
+    let postData = document.getElementById("custom-postdata-value");
+    is(postData.value, data.requestPostData.postData.text,
+       "new request form showing correct post data");
+  }
+
+  
 
 
-function editCustomForm(callback) {
-  gPanelWin.focus();
+  function* editCustomForm() {
+    panelWin.focus();
 
-  let query = gPanelDoc.getElementById("custom-query-value");
-  query.addEventListener("focus", function onFocus() {
-    query.removeEventListener("focus", onFocus, false);
+    let query = document.getElementById("custom-query-value");
+    let queryFocus = once(query, "focus", false);
+    
+    
+    executeSoon(() => query.focus());
+    yield queryFocus;
 
     
     type(["VK_RETURN"]);
     type(ADD_QUERY);
 
-    let headers = gPanelDoc.getElementById("custom-headers-value");
-    headers.addEventListener("focus", function onFocus() {
-      headers.removeEventListener("focus", onFocus, false);
-
-      
-      type(["VK_RETURN"]);
-      type(ADD_HEADER);
-
-      let postData = gPanelDoc.getElementById("custom-postdata-value");
-      postData.addEventListener("focus", function onFocus() {
-        postData.removeEventListener("focus", onFocus, false);
-
-        
-        type(ADD_POSTDATA);
-        callback();
-      }, false);
-      postData.focus();
-    }, false);
+    let headers = document.getElementById("custom-headers-value");
+    let headersFocus = once(headers, "focus", false);
     headers.focus();
-  }, false);
+    yield headersFocus;
 
-  
-  
-  executeSoon(() => {
-    query.focus();
-  });
-}
+    
+    type(["VK_RETURN"]);
+    type(ADD_HEADER);
 
+    let postData = document.getElementById("custom-postdata-value");
+    let postFocus = once(postData, "focus", false);
+    postData.focus();
+    yield postFocus;
 
-
-
-function testSentRequest(aData, aOrigData) {
-  is(aData.method, aOrigData.method, "correct method in sent request");
-  is(aData.url, aOrigData.url + "&" + ADD_QUERY, "correct url in sent request");
-
-  let hasHeader = aData.requestHeaders.headers.some((header) => {
-    return (header.name + ": " + header.value) == ADD_HEADER;
-  });
-  ok(hasHeader, "new header added to sent request");
-
-  is(aData.requestPostData.postData.text,
-     aOrigData.requestPostData.postData.text + ADD_POSTDATA,
-     "post data added to sent request");
-}
-
-
-function type(aString) {
-  for (let ch of aString) {
-    EventUtils.synthesizeKey(ch, {}, gPanelWin);
+    
+    type(ADD_POSTDATA);
   }
-}
 
-function finishUp(aMonitor) {
-  gPanelWin = null;
-  gPanelDoc = null;
+  
 
-  teardown(aMonitor).then(finish);
-}
+
+  function testSentRequest(data, origData) {
+    is(data.method, origData.method, "correct method in sent request");
+    is(data.url, origData.url + "&" + ADD_QUERY, "correct url in sent request");
+
+    let { headers } = data.requestHeaders;
+    let hasHeader = headers.some(h => `${h.name}: ${h.value}` == ADD_HEADER);
+    ok(hasHeader, "new header added to sent request");
+
+    is(data.requestPostData.postData.text,
+       origData.requestPostData.postData.text + ADD_POSTDATA,
+       "post data added to sent request");
+  }
+
+  function type(string) {
+    for (let ch of string) {
+      EventUtils.synthesizeKey(ch, {}, panelWin);
+    }
+  }
+});

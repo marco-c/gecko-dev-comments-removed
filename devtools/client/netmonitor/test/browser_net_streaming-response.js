@@ -1,65 +1,69 @@
 
 
 
+"use strict";
 
 
 
 
 
-function test() {
-  Task.spawn(function* () {
-    let [tab, debuggee, monitor] = yield initNetMonitor(CUSTOM_GET_URL);
 
-    info("Starting test... ");
-    let { panelWin } = monitor;
-    let { document, Editor, NetMonitorView } = panelWin;
-    let { RequestsMenu } = NetMonitorView;
+add_task(function* () {
+  let [tab, , monitor] = yield initNetMonitor(CUSTOM_GET_URL);
 
-    const REQUESTS = [
-      [ "hls-m3u8", /^#EXTM3U/, Editor.modes.text ],
-      [ "mpeg-dash", /^<\?xml/, Editor.modes.html ]
-    ];
+  info("Starting test... ");
+  let { panelWin } = monitor;
+  let { document, Editor, NetMonitorView } = panelWin;
+  let { RequestsMenu } = NetMonitorView;
 
-    RequestsMenu.lazyUpdate = false;
+  const REQUESTS = [
+    [ "hls-m3u8", /^#EXTM3U/, Editor.modes.text ],
+    [ "mpeg-dash", /^<\?xml/, Editor.modes.html ]
+  ];
 
-    REQUESTS.forEach(([ fmt ]) => {
-      debuggee.performRequests(1, CONTENT_TYPE_SJS + "?fmt=" + fmt);
+  RequestsMenu.lazyUpdate = false;
+
+  let wait = waitForNetworkEvents(monitor, REQUESTS.length);
+  for (let [fmt] of REQUESTS) {
+    let url = CONTENT_TYPE_SJS + "?fmt=" + fmt;
+    yield ContentTask.spawn(tab.linkedBrowser, { url }, function* (args) {
+      content.wrappedJSObject.performRequests(1, args.url);
     });
+  }
+  yield wait;
 
-    yield waitForNetworkEvents(monitor, REQUESTS.length);
-
-    REQUESTS.forEach(([ fmt ], i) => {
-      verifyRequestItemTarget(RequestsMenu.getItemAtIndex(i),
-        "GET", CONTENT_TYPE_SJS + "?fmt=" + fmt, {
-          status: 200,
-          statusText: "OK"
-        });
-    });
-
-    EventUtils.sendMouseEvent({ type: "mousedown" },
-      document.getElementById("details-pane-toggle"));
-    EventUtils.sendMouseEvent({ type: "mousedown" },
-      document.querySelectorAll("#details-pane tab")[3]);
-
-    yield panelWin.once(panelWin.EVENTS.RESPONSE_BODY_DISPLAYED);
-    let editor = yield NetMonitorView.editor("#response-content-textarea");
-
-    testEditorContent(editor, REQUESTS[0]); 
-
-    RequestsMenu.selectedIndex = 1;
-    yield panelWin.once(panelWin.EVENTS.TAB_UPDATED);
-    yield panelWin.once(panelWin.EVENTS.RESPONSE_BODY_DISPLAYED);
-
-    testEditorContent(editor, REQUESTS[1]); 
-
-    yield teardown(monitor);
-    finish();
+  REQUESTS.forEach(([ fmt ], i) => {
+    verifyRequestItemTarget(RequestsMenu.getItemAtIndex(i),
+      "GET", CONTENT_TYPE_SJS + "?fmt=" + fmt, {
+        status: 200,
+        statusText: "OK"
+      });
   });
 
-  function testEditorContent(editor, [ fmt, textRe, mode ]) {
-    ok(editor.getText().match(textRe),
-      "The text shown in the source editor for " + fmt + " is incorrect.");
-    is(editor.getMode(), mode,
-      "The mode active in the source editor for " + fmt + " is incorrect.");
+  EventUtils.sendMouseEvent({ type: "mousedown" },
+    document.getElementById("details-pane-toggle"));
+  EventUtils.sendMouseEvent({ type: "mousedown" },
+    document.querySelectorAll("#details-pane tab")[3]);
+
+  yield panelWin.once(panelWin.EVENTS.RESPONSE_BODY_DISPLAYED);
+  let editor = yield NetMonitorView.editor("#response-content-textarea");
+
+  
+  testEditorContent(editor, REQUESTS[0]);
+
+  RequestsMenu.selectedIndex = 1;
+  yield panelWin.once(panelWin.EVENTS.TAB_UPDATED);
+  yield panelWin.once(panelWin.EVENTS.RESPONSE_BODY_DISPLAYED);
+
+  
+  testEditorContent(editor, REQUESTS[1]);
+
+  return teardown(monitor);
+
+  function testEditorContent(e, [ fmt, textRe, mode ]) {
+    ok(e.getText().match(textRe),
+      "The text shown in the source editor for " + fmt + " is correct.");
+    is(e.getMode(), mode,
+      "The mode active in the source editor for " + fmt + " is correct.");
   }
-}
+});
