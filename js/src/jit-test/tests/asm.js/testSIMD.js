@@ -1222,6 +1222,9 @@ for (var i = 1; i < 10; ++i) {
 }
 
 
+assertAsmTypeFail(USE_ASM + B32 + 'var x = b4(0, 0, 0, 0); frd(x);');
+
+
 
 function isone(x) { return (x===1)|0 }
 var f = asmLink(asmCompile('glob', 'ffi', USE_ASM + B32 + CB32 + ANYB4 + 'var isone=ffi.isone; function f(i) { i=cb4(i); return isone(anyt(i)|0)|0; } return f'), this, {isone:isone});
