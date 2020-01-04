@@ -146,7 +146,6 @@ public:
 
   
   enum State {
-    DECODER_STATE_DECODING_NONE,
     DECODER_STATE_DECODING_METADATA,
     DECODER_STATE_WAIT_FOR_CDM,
     DECODER_STATE_DORMANT,
@@ -267,6 +266,8 @@ private:
 
   void SetAudioCaptured(bool aCaptured);
 
+  void ReadMetadata();
+
   RefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
 
   RefPtr<ShutdownPromise> Shutdown();
@@ -322,17 +323,7 @@ private:
   TaskQueue* OwnerThread() const { return mTaskQueue; }
 
   
-  
-  
-  
-  
   void ScheduleStateMachine();
-  void ScheduleStateMachineCrossThread()
-  {
-    nsCOMPtr<nsIRunnable> task =
-      NS_NewRunnableMethod(this, &MediaDecoderStateMachine::RunStateMachine);
-    OwnerThread()->Dispatch(task.forget());
-  }
 
   
   
