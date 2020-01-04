@@ -9,7 +9,7 @@
 
 add_task(function*() {
   yield addTab(TEST_URL_ROOT + "doc_simple_animation.html");
-  let {inspector, panel} = yield openAnimationInspectorNewUI();
+  let {inspector, panel} = yield openAnimationInspector();
 
   info("Selecting the test node");
   yield selectNode(".delayed", inspector);

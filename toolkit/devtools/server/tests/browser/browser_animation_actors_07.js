@@ -11,7 +11,7 @@ const {AnimationsFront} = require("devtools/server/actors/animation");
 const {InspectorFront} = require("devtools/server/actors/inspector");
 
 add_task(function*() {
-  let doc = yield addTab(MAIN_DOMAIN + "animation.html");
+  yield addTab(MAIN_DOMAIN + "animation.html");
 
   initDebuggerServer();
   let client = new DebuggerClient(DebuggerServer.connectPipe());
@@ -37,10 +37,11 @@ function* playerHasCompleteStateAtAllTimes(walker, front) {
   
   
   
-  for (let i = 0; i < 10; i ++) {
+  for (let i = 0; i < 10; i++) {
     let state = yield player.getCurrentState();
     keys.forEach(key => {
-      ok(typeof state[key] !== "undefined", "The state retrieved has key " + key);
+      ok(typeof state[key] !== "undefined",
+         "The state retrieved has key " + key);
     });
   }
 }

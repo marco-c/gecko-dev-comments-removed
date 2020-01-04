@@ -28,17 +28,12 @@
 const {Cu} = require("chrome");
 const promise = require("promise");
 const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
-const {setInterval, clearInterval} = require("sdk/timers");
 const protocol = require("devtools/server/protocol");
 const {ActorClass, Actor, FrontClass, Front,
        Arg, method, RetVal, types} = protocol;
 
 const {NodeActor} = require("devtools/server/actors/inspector");
 const events = require("sdk/event/core");
-
-
-
-const PLAYER_DEFAULT_AUTO_REFRESH_TIMEOUT = 500;
 
 
 const ANIMATION_TYPES = {
@@ -423,8 +418,6 @@ var AnimationPlayerActor = ActorClass({
 });
 
 var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
-  AUTO_REFRESH_EVENT: "updated-state",
-
   initialize: function(conn, form, detail, ctx) {
     Front.prototype.initialize.call(this, conn, form, detail, ctx);
 
@@ -441,7 +434,6 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
   },
 
   destroy: function() {
-    this.stopAutoRefresh();
     Front.prototype.destroy.call(this);
   },
 
@@ -476,74 +468,13 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
   }),
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
 
 
 
-
-  startAutoRefresh: function(interval=PLAYER_DEFAULT_AUTO_REFRESH_TIMEOUT) {
-    if (this.autoRefreshTimer) {
-      return;
-    }
-
-    this.autoRefreshTimer = setInterval(() => {
-      
-      
-      
-      
-      
-      this.pendingRefreshStatePromise = this.refreshState();
-      this.pendingRefreshStatePromise.then(() => {
-        this.pendingRefreshStatePromise = null;
-      });
-    }, interval);
-  },
-
-  
-
-
-  stopAutoRefresh: function() {
-    if (!this.autoRefreshTimer) {
-      return;
-    }
-
-    clearInterval(this.autoRefreshTimer);
-    this.autoRefreshTimer = null;
-  },
-
-  
-
-
-
-
-
-
-  refreshState: Task.async(function*(forceRefresh) {
+  refreshState: Task.async(function*() {
     let data = yield this.getCurrentState();
-
-    
-    if (!this.autoRefreshTimer && !forceRefresh) {
-      return;
-    }
-
     if (this.currentStateHasChanged) {
       this.state = data;
-      events.emit(this, this.AUTO_REFRESH_EVENT, this.state);
     }
   }),
 

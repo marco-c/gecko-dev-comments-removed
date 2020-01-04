@@ -86,13 +86,6 @@ function addTab(url) {
 
 
 
-function enableNewUI() {
-  Services.prefs.setBoolPref(NEW_UI_PREF, true);
-}
-
-
-
-
 function reloadTab() {
   return executeInContent("devtools:test:reload", {}, {}, false);
 }
@@ -147,15 +140,9 @@ var selectNode = Task.async(function*(data, inspector, reason="test") {
 
 
 function assertAnimationsDisplayed(panel, nbAnimations, msg="") {
-  let isNewUI = Services.prefs.getBoolPref(NEW_UI_PREF);
   msg = msg || `There are ${nbAnimations} animations in the panel`;
-  if (isNewUI) {
-    is(panel.animationsTimelineComponent.animationsEl.childNodes.length,
-       nbAnimations, msg);
-  } else {
-    is(panel.playersEl.querySelectorAll(".player-widget").length,
-       nbAnimations, msg);
-  }
+  is(panel.animationsTimelineComponent.animationsEl.childNodes.length,
+     nbAnimations, msg);
 }
 
 
@@ -233,37 +220,9 @@ var openAnimationInspector = Task.async(function*() {
 
 
 
-
-function openAnimationInspectorNewUI() {
-  enableNewUI();
-  return openAnimationInspector();
-}
-
-
-
-
-
 var closeAnimationInspector = Task.async(function*() {
   let target = TargetFactory.forTab(gBrowser.selectedTab);
   yield gDevTools.closeToolbox(target);
-});
-
-
-
-
-
-
-
-
-
-
-var closeAnimationInspectorAndRestartWithNewUI = Task.async(function*(reload) {
-  info("Close the toolbox and test again with the new UI");
-  yield closeAnimationInspector();
-  if (reload) {
-    yield reloadTab();
-  }
-  return yield openAnimationInspectorNewUI();
 });
 
 
@@ -481,13 +440,7 @@ function isNodeVisible(node) {
 
 
 var waitForAllAnimationTargets = Task.async(function*(panel) {
-  let targets = [];
-  if (panel.animationsTimelineComponent) {
-    targets = targets.concat(panel.animationsTimelineComponent.targetNodes);
-  }
-  if (panel.playerWidgets) {
-    targets = targets.concat(panel.playerWidgets.map(w => w.targetNodeComponent));
-  }
+  let targets = panel.animationsTimelineComponent.targetNodes;
   yield promise.all(targets.map(t => {
     if (!t.nodeFront) {
       return t.once("target-retrieved");

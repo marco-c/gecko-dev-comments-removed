@@ -1381,8 +1381,6 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.mdnDocsTooltip.enabled", true);
 
-pref("devtools.inspector.animationInspectorV3", false);
-
 
 pref("devtools.defaultColorUnit", "hex");
 
@@ -1836,10 +1834,6 @@ pref("ui.key.menuAccessKeyFocuses", true);
 
 pref("media.eme.enabled", true);
 pref("media.eme.apiVisible", true);
-
-
-
-pref("media.gmp.trial-create.enabled", true);
 
 #ifdef MOZ_ADOBE_EME
 pref("browser.eme.ui.enabled", true);

@@ -12,47 +12,33 @@ add_task(function*() {
 
   let ui = yield openAnimationInspector();
   yield testDataUpdates(ui);
-
-  info("Close the toolbox, reload the tab, and try again with the new UI");
-  ui = yield closeAnimationInspectorAndRestartWithNewUI(true);
-  yield testDataUpdates(ui, true);
 });
 
-function* testDataUpdates({panel, controller, inspector}, isNewUI=false) {
+function* testDataUpdates({panel, controller, inspector}) {
   info("Select the test node");
   yield selectNode(".animated", inspector);
 
   let animation = controller.animationPlayers[0];
-  yield setStyle(animation, panel, "animationDuration", "5.5s", isNewUI);
-  yield setStyle(animation, panel, "animationIterationCount", "300", isNewUI);
-  yield setStyle(animation, panel, "animationDelay", "45s", isNewUI);
+  yield setStyle(animation, panel, "animationDuration", "5.5s");
+  yield setStyle(animation, panel, "animationIterationCount", "300");
+  yield setStyle(animation, panel, "animationDelay", "45s");
 
-  if (isNewUI) {
-    let animationsEl = panel.animationsTimelineComponent.animationsEl;
-    let timeBlockEl = animationsEl.querySelector(".time-block");
+  let animationsEl = panel.animationsTimelineComponent.animationsEl;
+  let timeBlockEl = animationsEl.querySelector(".time-block");
 
-    
-    let expectedTotalDuration = 1695 * 1000;
-    let timeRatio = expectedTotalDuration / timeBlockEl.offsetWidth;
+  
+  let expectedTotalDuration = 1695 * 1000;
+  let timeRatio = expectedTotalDuration / timeBlockEl.offsetWidth;
 
-    
-    
-    
-    let delayWidth = parseFloat(timeBlockEl.querySelector(".delay").style.width);
-    is(Math.round(delayWidth * timeRatio), 45 * 1000,
-      "The timeline has the right delay");
-  } else {
-    let widget = panel.playerWidgets[0];
-    is(widget.metaDataComponent.durationValue.textContent, "5.50s",
-      "The widget shows the new duration");
-    is(widget.metaDataComponent.iterationValue.textContent, "300",
-      "The widget shows the new iteration count");
-    is(widget.metaDataComponent.delayValue.textContent, "45s",
-      "The widget shows the new delay");
-  }
+  
+  
+  
+  let delayWidth = parseFloat(timeBlockEl.querySelector(".delay").style.width);
+  is(Math.round(delayWidth * timeRatio), 45 * 1000,
+    "The timeline has the right delay");
 }
 
-function* setStyle(animation, panel, name, value, isNewUI=false) {
+function* setStyle(animation, panel, name, value) {
   info("Change the animation style via the content DOM. Setting " +
     name + " to " + value);
 
@@ -67,10 +53,4 @@ function* setStyle(animation, panel, name, value, isNewUI=false) {
   
   
   yield waitForAllAnimationTargets(panel);
-
-  
-  
-  if (!isNewUI) {
-    yield once(animation, animation.AUTO_REFRESH_EVENT);
-  }
 }

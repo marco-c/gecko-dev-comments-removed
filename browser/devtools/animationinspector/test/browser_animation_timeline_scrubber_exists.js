@@ -8,7 +8,7 @@
 
 add_task(function*() {
   yield addTab(TEST_URL_ROOT + "doc_simple_animation.html");
-  let {panel} = yield openAnimationInspectorNewUI();
+  let {panel} = yield openAnimationInspector();
 
   let timeline = panel.animationsTimelineComponent;
   let scrubberEl = timeline.scrubberEl;

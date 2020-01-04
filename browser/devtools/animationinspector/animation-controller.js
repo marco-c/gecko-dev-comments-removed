@@ -23,7 +23,6 @@ loader.lazyRequireGetter(this, "AnimationsFront",
 
 const STRINGS_URI = "chrome://browser/locale/devtools/animationinspector.properties";
 const L10N = new ViewHelpers.L10N(STRINGS_URI);
-const V3_UI_PREF = "devtools.inspector.animationInspectorV3";
 
 
 var gToolbox, gInspector;
@@ -99,14 +98,8 @@ var getServerTraits = Task.async(function*(target) {
     traits[name] = yield target.actorHasMethod(actor, method);
   }
 
-  
-  traits.isNewUI = Services.prefs.getBoolPref(V3_UI_PREF);
-
   return traits;
 });
-
-
-
 
 
 
@@ -206,9 +199,6 @@ var AnimationsController = {
   onPanelVisibilityChange: Task.async(function*() {
     if (this.isPanelVisible()) {
       this.onNewNodeFront();
-      this.startAllAutoRefresh();
-    } else {
-      this.stopAllAutoRefresh();
     }
   }),
 
@@ -304,7 +294,6 @@ var AnimationsController = {
 
     this.animationPlayers = yield this.animationsFront
                                       .getAnimationPlayersForNode(nodeFront);
-    this.startAllAutoRefresh();
 
     
     
@@ -320,15 +309,9 @@ var AnimationsController = {
     for (let {type, player} of changes) {
       if (type === "added") {
         this.animationPlayers.push(player);
-        if (!this.traits.isNewUI) {
-          player.startAutoRefresh();
-        }
       }
 
       if (type === "removed") {
-        if (!this.traits.isNewUI) {
-          player.stopAutoRefresh();
-        }
         yield player.release();
         let index = this.animationPlayers.indexOf(player);
         this.animationPlayers.splice(index, 1);
@@ -358,26 +341,6 @@ var AnimationsController = {
     return time;
   },
 
-  startAllAutoRefresh: function() {
-    if (this.traits.isNewUI) {
-      return;
-    }
-
-    for (let front of this.animationPlayers) {
-      front.startAutoRefresh();
-    }
-  },
-
-  stopAllAutoRefresh: function() {
-    if (this.traits.isNewUI) {
-      return;
-    }
-
-    for (let front of this.animationPlayers) {
-      front.stopAutoRefresh();
-    }
-  },
-
   destroyAnimationPlayers: Task.async(function*() {
     
     
@@ -385,7 +348,7 @@ var AnimationsController = {
     if (this.traits.hasMutationEvents) {
       yield this.animationsFront.stopAnimationPlayerUpdates();
     }
-    this.stopAllAutoRefresh();
+
     for (let front of this.animationPlayers) {
       yield front.release();
     }
