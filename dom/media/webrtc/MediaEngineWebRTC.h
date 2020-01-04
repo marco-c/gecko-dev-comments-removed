@@ -282,7 +282,7 @@ private:
         } else {
           
           mDeviceIndexes->AppendElement(i);
-          mDeviceNames->AppendElement(strdup(devices->device[i]->device_id));
+          mDeviceNames->AppendElement(devices->device[i]->device_id);
         }
       }
     }
