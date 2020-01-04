@@ -1374,6 +1374,21 @@ UnicodeCharacterClassEscapeAtom(LifoAlloc* alloc, char16_t char_class, bool igno
     return UnicodeRangesAtom(alloc, ranges, lead_ranges, trail_ranges, wide_ranges, false, false);
 }
 
+static inline RegExpTree*
+UnicodeBackReferenceAtom(LifoAlloc* alloc, RegExpTree* atom)
+{
+    
+    
+    
+    RegExpBuilder* builder = alloc->newInfallible<RegExpBuilder>(alloc);
+
+    builder->AddAtom(atom);
+    builder->AddAssertion(alloc->newInfallible<RegExpAssertion>(
+        RegExpAssertion::NOT_IN_SURROGATE_PAIR));
+
+    return builder->ToRegExp();
+}
+
 
 
 
@@ -1575,7 +1590,10 @@ RegExpParser<CharT>::ParseDisjunction()
                         break;
                     }
                     RegExpTree* atom = alloc->newInfallible<RegExpBackReference>(capture);
-                    builder->AddAtom(atom);
+                    if (unicode_)
+                        builder->AddAtom(UnicodeBackReferenceAtom(alloc, atom));
+                    else
+                        builder->AddAtom(atom);
                     break;
                 }
                 if (unicode_)

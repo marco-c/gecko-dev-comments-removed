@@ -2182,6 +2182,8 @@ RegExpAssertion::ToNode(RegExpCompiler* compiler,
       }
       case NOT_AFTER_LEAD_SURROGATE:
         return AssertionNode::NotAfterLeadSurrogate(on_success);
+      case NOT_IN_SURROGATE_PAIR:
+        return AssertionNode::NotInSurrogatePair(on_success);
       default:
         MOZ_CRASH("Bad assertion type");
     }
@@ -2995,6 +2997,40 @@ EmitNotAfterLeadSurrogate(RegExpCompiler* compiler, RegExpNode* on_success, Trac
 }
 
 
+
+static void
+EmitNotInSurrogatePair(RegExpCompiler* compiler, RegExpNode* on_success, Trace* trace)
+{
+    RegExpMacroAssembler* assembler = compiler->macro_assembler();
+
+    jit::Label ok;
+    assembler->CheckPosition(trace->cp_offset(), &ok);
+
+    
+    
+    Trace new_trace(*trace);
+    new_trace.InvalidateCurrentCharacter();
+
+    if (new_trace.cp_offset() == 0)
+        assembler->CheckAtStart(&ok);
+
+    
+    assembler->LoadCurrentCharacter(new_trace.cp_offset(), new_trace.backtrack(), false);
+    assembler->CheckCharacterNotInRange(unicode::TrailSurrogateMin, unicode::TrailSurrogateMax,
+                                        &ok);
+
+    
+    
+    
+    assembler->LoadCurrentCharacter(new_trace.cp_offset() - 1, new_trace.backtrack(), false);
+    assembler->CheckCharacterInRange(unicode::LeadSurrogateMin, unicode::LeadSurrogateMax,
+                                     new_trace.backtrack());
+
+    assembler->Bind(&ok);
+    on_success->Emit(compiler, &new_trace);
+}
+
+
 static void
 EmitWordCheck(RegExpMacroAssembler* assembler,
               jit::Label* word, jit::Label* non_word, bool fall_through_on_word)
@@ -3149,6 +3185,9 @@ AssertionNode::Emit(RegExpCompiler* compiler, Trace* trace)
       }
       case NOT_AFTER_LEAD_SURROGATE:
         EmitNotAfterLeadSurrogate(compiler, on_success(), trace);
+        return;
+      case NOT_IN_SURROGATE_PAIR:
+        EmitNotInSurrogatePair(compiler, on_success(), trace);
         return;
     }
     on_success()->Emit(compiler, trace);
