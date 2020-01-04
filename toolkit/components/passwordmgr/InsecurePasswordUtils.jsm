@@ -13,6 +13,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "devtools",
                                   "resource://gre/modules/devtools/shared/Loader.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "LoginManagerContent",
+                                  "resource://gre/modules/LoginManagerContent.jsm");
 
 Object.defineProperty(this, "WebConsoleUtils", {
   get: function() {
@@ -59,57 +61,13 @@ this.InsecurePasswordUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _checkIfURIisSecure : function(uri) {
-    let isSafe = false;
-    let netutil = Cc["@mozilla.org/network/util;1"].getService(Ci.nsINetUtil);
-    let ph = Ci.nsIProtocolHandler;
-
-    if (netutil.URIChainHasFlags(uri, ph.URI_IS_LOCAL_RESOURCE) ||
-        netutil.URIChainHasFlags(uri, ph.URI_DOES_NOT_RETURN_DATA) ||
-        netutil.URIChainHasFlags(uri, ph.URI_INHERITS_SECURITY_CONTEXT) ||
-        netutil.URIChainHasFlags(uri, ph.URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT)) {
-
-      isSafe = true;
-    }
-
-    return isSafe;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
   _checkForInsecureNestedDocuments : function(domDoc) {
     let uri = domDoc.documentURIObject;
     if (domDoc.defaultView == domDoc.defaultView.parent) {
       
       return false;
     }
-    if (!this._checkIfURIisSecure(uri)) {
+    if (!LoginManagerContent.checkIfURIisSecure(uri)) {
       
       return true;
     }
@@ -127,7 +85,7 @@ this.InsecurePasswordUtils = {
   checkForInsecurePasswords : function (aForm) {
     var domDoc = aForm.ownerDocument;
     let pageURI = domDoc.defaultView.top.document.documentURIObject;
-    let isSafePage = this._checkIfURIisSecure(pageURI);
+    let isSafePage = LoginManagerContent.checkIfURIisSecure(pageURI);
 
     if (!isSafePage) {
       this._sendWebConsoleMessage("InsecurePasswordsPresentOnPage", domDoc);

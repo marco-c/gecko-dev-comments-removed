@@ -415,6 +415,18 @@ var LoginManagerContent = {
     };
 
     
+    let hasInsecureLoginForms = (thisWindow, parentIsInsecure) => {
+      let doc = thisWindow.document;
+      let isInsecure =
+          parentIsInsecure ||
+          !this.checkIfURIisSecure(doc.documentURIObject);
+      let hasLoginForm = !!this.stateForDocument(doc).loginForm;
+      return (hasLoginForm && isInsecure) ||
+             Array.some(thisWindow.frames,
+                        frame => hasInsecureLoginForms(frame, isInsecure));
+    };
+
+    
     let topState = this.stateForDocument(topWindow.document);
     topState.loginFormForFill = getFirstLoginForm(topWindow);
 
@@ -423,6 +435,7 @@ var LoginManagerContent = {
     messageManager.sendAsyncMessage("RemoteLogins:updateLoginFormPresence", {
       loginFormOrigin,
       loginFormPresent: !!topState.loginFormForFill,
+      hasInsecureLoginForms: hasInsecureLoginForms(topWindow, false),
     });
   },
 
@@ -1089,6 +1102,49 @@ var LoginManagerContent = {
     };
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  checkIfURIisSecure : function(uri) {
+    let isSafe = false;
+    let netutil = Cc["@mozilla.org/network/util;1"].getService(Ci.nsINetUtil);
+    let ph = Ci.nsIProtocolHandler;
+
+    if (netutil.URIChainHasFlags(uri, ph.URI_IS_LOCAL_RESOURCE) ||
+        netutil.URIChainHasFlags(uri, ph.URI_DOES_NOT_RETURN_DATA) ||
+        netutil.URIChainHasFlags(uri, ph.URI_INHERITS_SECURITY_CONTEXT) ||
+        netutil.URIChainHasFlags(uri, ph.URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT)) {
+
+      isSafe = true;
+    }
+
+    return isSafe;
+  },
 };
 
 var LoginUtils = {
