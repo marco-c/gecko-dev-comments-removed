@@ -291,14 +291,11 @@ nsICODecoder::SniffResource(const char* aData)
                        PNGSIGNATURESIZE);
   if (isPNG) {
     
-    mContainedDecoder = new nsPNGDecoder(mImage);
-    mContainedDecoder->SetMetadataDecode(IsMetadataDecode());
-    mContainedDecoder->SetDecoderFlags(GetDecoderFlags());
-    mContainedDecoder->SetSurfaceFlags(GetSurfaceFlags());
-    if (mDownscaler) {
-      mContainedDecoder->SetTargetSize(mDownscaler->TargetSize());
-    }
-    mContainedDecoder->Init();
+    mContainedSourceBuffer = new SourceBuffer();
+    mContainedDecoder =
+      DecoderFactory::CreateDecoderForICOResource(DecoderType::PNG,
+                                                  WrapNotNull(mContainedSourceBuffer),
+                                                  WrapNotNull(this));
 
     if (!WriteToContainedDecoder(aData, PNGSIGNATURESIZE)) {
       return Transition::TerminateFailure();
@@ -371,15 +368,14 @@ nsICODecoder::ReadBIH(const char* aData)
 
   
   
-  RefPtr<nsBMPDecoder> bmpDecoder = new nsBMPDecoder(mImage, dataOffset);
-  mContainedDecoder = bmpDecoder;
-  mContainedDecoder->SetMetadataDecode(IsMetadataDecode());
-  mContainedDecoder->SetDecoderFlags(GetDecoderFlags());
-  mContainedDecoder->SetSurfaceFlags(GetSurfaceFlags());
-  if (mDownscaler) {
-    mContainedDecoder->SetTargetSize(mDownscaler->TargetSize());
-  }
-  mContainedDecoder->Init();
+  mContainedSourceBuffer = new SourceBuffer();
+  mContainedDecoder =
+    DecoderFactory::CreateDecoderForICOResource(DecoderType::BMP,
+                                                WrapNotNull(mContainedSourceBuffer),
+                                                WrapNotNull(this),
+                                                Some(dataOffset));
+  RefPtr<nsBMPDecoder> bmpDecoder =
+    static_cast<nsBMPDecoder*>(mContainedDecoder.get());
 
   
   

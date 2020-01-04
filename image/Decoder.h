@@ -114,7 +114,14 @@ public:
 
 
 
-  nsresult SetTargetSize(const nsIntSize& aSize);
+  nsresult SetTargetSize(const gfx::IntSize& aSize);
+
+  
+
+
+
+
+  Maybe<gfx::IntSize> GetTargetSize();
 
   
 
@@ -249,7 +256,15 @@ public:
   
 
 
+
   RasterImage* GetImage() const { MOZ_ASSERT(mImage); return mImage.get(); }
+
+  
+
+
+
+
+  RasterImage* GetImageMaybeNull() const { return mImage.get(); }
 
   RawAccessFrameRef GetCurrentFrameRef()
   {

@@ -20,6 +20,7 @@ namespace image {
 
 class Decoder;
 class IDecodingTask;
+class nsICODecoder;
 class RasterImage;
 class SourceBuffer;
 
@@ -118,6 +119,29 @@ public:
                         NotNull<RasterImage*> aImage,
                         NotNull<SourceBuffer*> aSourceBuffer,
                         int aSampleSize);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<Decoder>
+  CreateDecoderForICOResource(DecoderType aType,
+                              NotNull<SourceBuffer*> aSourceBuffer,
+                              NotNull<nsICODecoder*> aICODecoder,
+                              const Maybe<uint32_t>& aDataOffset = Nothing());
 
   
 

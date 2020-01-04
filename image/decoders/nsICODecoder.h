@@ -112,6 +112,7 @@ private:
 
   StreamingLexer<ICOState, 32> mLexer; 
   RefPtr<Decoder> mContainedDecoder; 
+  RefPtr<SourceBuffer> mContainedSourceBuffer;  
   UniquePtr<uint8_t[]> mMaskBuffer;    
   char mBIHraw[bmp::InfoHeaderLength::WIN_ICO]; 
   IconDirEntry mDirEntry;              
