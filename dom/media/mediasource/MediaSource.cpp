@@ -27,6 +27,7 @@
 #include "nsThreadUtils.h"
 #include "mozilla/Logging.h"
 #include "nsServiceManagerUtils.h"
+#include "gfxPlatform.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #include "AndroidBridge.h"
@@ -81,7 +82,8 @@ IsWebMForced()
 {
   bool mp4supported =
     DecoderTraits::IsMP4TypeAndEnabled(NS_LITERAL_CSTRING("video/mp4"));
-  return !mp4supported;
+  bool hwsupported = gfxPlatform::GetPlatform()->CanUseHardwareVideoDecoding();
+  return !mp4supported || !hwsupported;
 }
 
 static nsresult
