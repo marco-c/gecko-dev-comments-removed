@@ -114,7 +114,7 @@ this.TabGroupsMigrator = {
             let title = (groupInfo[group] && groupInfo[group].title) || "";
             groupData = {
               tabs: [],
-              title,
+              tabGroupsMigrationTitle: title,
             };
             if (!title) {
               groupData.anonGroupID = ++globalAnonGroupID;
@@ -215,8 +215,6 @@ this.TabGroupsMigrator = {
         for (let groupID of hiddenGroupIDs) {
           let group = groupInfoForWindow.get("" + groupID);
           if (group) {
-            group.tabGroupsMigrationTitle = group.title;
-            delete group.title;
             stateToReturn.windows.push(group);
           }
         }
