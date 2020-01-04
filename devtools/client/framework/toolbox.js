@@ -108,6 +108,7 @@ const ToolboxButtons = exports.ToolboxButtons = [
 
 function Toolbox(target, selectedTool, hostType, hostOptions) {
   this._target = target;
+  this._win = null;
   this._toolPanels = new Map();
   this._telemetry = new Telemetry();
   if (Services.prefs.getBoolPref("devtools.sourcemap.locations.enabled")) {
@@ -275,22 +276,15 @@ Toolbox.prototype = {
   
 
 
-  get frame() {
-    return this._host.frame;
-  },
-
-  
-
-
   get win() {
-    return this.frame.contentWindow;
+    return this._win;
   },
 
   
 
 
   get doc() {
-    return this.frame.contentDocument;
+    return this.win.document;
   },
 
   
@@ -359,6 +353,8 @@ Toolbox.prototype = {
   open: function () {
     return Task.spawn(function* () {
       let iframe = yield this._host.create();
+      this._win = iframe.contentWindow;
+
       let domReady = defer();
 
       
@@ -1838,7 +1834,7 @@ Toolbox.prototype = {
     return newHost.create().then(iframe => {
       
       iframe.QueryInterface(Ci.nsIFrameLoaderOwner);
-      iframe.swapFrameLoaders(this.frame);
+      iframe.swapFrameLoaders(this._host.frame);
 
       this._host.off("window-closed", this.destroy);
       this.destroyHost();
@@ -2143,6 +2139,8 @@ Toolbox.prototype = {
         .then(() => this.destroyHost())
         .catch(console.error)
         .then(() => {
+          this._win = null;
+
           
           
           
