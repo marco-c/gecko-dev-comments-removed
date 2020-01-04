@@ -438,7 +438,9 @@ public:
 
 
 
-  bool UpdateSlopState(const MultiTouchInput& aInput);
+
+  bool UpdateSlopState(const MultiTouchInput& aInput,
+                       bool aApzcCanConsumeEvents);
 
   bool HasEvents() const override;
   void DropEvents() override;
