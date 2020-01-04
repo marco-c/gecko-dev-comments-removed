@@ -156,6 +156,7 @@ bool ResolveRegistryName(base::string16 name, base::string16* resolved_name) {
 
 
 
+
 DWORD IsReparsePoint(const base::string16& full_path, bool* result) {
   
   if (IsPipe(full_path)) {
@@ -171,18 +172,25 @@ DWORD IsReparsePoint(const base::string16& full_path, bool* result) {
   if (!has_drive && !is_device_path && !nt_path)
     return ERROR_INVALID_NAME;
 
-  bool added_implied_device = false;
   if (!has_drive) {
-      path = base::string16(kNTDotPrefix) + path;
-      added_implied_device = true;
+    
+    path.insert(0, kNTDotPrefix);
   }
 
-  base::string16::size_type last_pos = base::string16::npos;
-  bool passed_once = false;
+  
+  wchar_t vol_path[MAX_PATH];
+  if (!::GetVolumePathNameW(path.c_str(), vol_path, MAX_PATH)) {
+    return ERROR_INVALID_NAME;
+  }
+  size_t vol_path_len = wcslen(vol_path);
+  if (!EqualPath(path, vol_path, vol_path_len)) {
+    return ERROR_INVALID_NAME;
+  }
+
+  
+  --vol_path_len;
 
   do {
-    path = path.substr(0, last_pos);
-
     DWORD attributes = ::GetFileAttributes(path.c_str());
     if (INVALID_FILE_ATTRIBUTES == attributes) {
       DWORD error = ::GetLastError();
@@ -190,10 +198,6 @@ DWORD IsReparsePoint(const base::string16& full_path, bool* result) {
           error != ERROR_PATH_NOT_FOUND &&
           error != ERROR_INVALID_NAME) {
         
-        if (passed_once && added_implied_device &&
-            (path.rfind(L'\\') == kNTDotPrefixLen - 1)) {
-          break;
-        }
         NOTREACHED_NT();
         return error;
       }
@@ -203,9 +207,8 @@ DWORD IsReparsePoint(const base::string16& full_path, bool* result) {
       return ERROR_SUCCESS;
     }
 
-    passed_once = true;
-    last_pos = path.rfind(L'\\');
-  } while (last_pos > 2);  
+    path.resize(path.rfind(L'\\'));
+  } while (path.size() > vol_path_len);  
 
   *result = false;
   return ERROR_SUCCESS;
@@ -226,9 +229,9 @@ bool SameObject(HANDLE handle, const wchar_t* full_path) {
   DCHECK_NT(!path.empty());
 
   
-  const wchar_t kBackslash = '\\';
-  if (path[path.length() - 1] == kBackslash)
-    path = path.substr(0, path.length() - 1);
+  if (path.back() == L'\\') {
+    path.pop_back();
+  }
 
   
   if (EqualPath(actual_path, path))
@@ -239,40 +242,44 @@ bool SameObject(HANDLE handle, const wchar_t* full_path) {
 
   if (!has_drive && nt_path) {
     base::string16 simple_actual_path;
-    if (!IsDevicePath(actual_path, &simple_actual_path))
-      return false;
-
-    
-    return (EqualPath(simple_actual_path, path));
+    if (IsDevicePath(path, &path)) {
+      if (IsDevicePath(actual_path, &simple_actual_path)) {
+        
+        return (EqualPath(simple_actual_path, path));
+      } else {
+        return false;
+      }
+    } else {
+      
+      path.insert(0, kNTDotPrefix);
+    }
   }
 
-  if (!has_drive)
+  
+  wchar_t vol_path[MAX_PATH];
+  if (!::GetVolumePathName(path.c_str(), vol_path, MAX_PATH)) {
     return false;
-
-  
-  wchar_t drive[4] = {0};
-  wchar_t vol_name[MAX_PATH];
-  memcpy(drive, &path[0], 2 * sizeof(*drive));
-
-  
-  DWORD vol_length = ::QueryDosDeviceW(drive, vol_name, MAX_PATH);
-  if (vol_length < 2 || vol_length == MAX_PATH)
+  }
+  size_t vol_path_len = wcslen(vol_path);
+  base::string16 nt_vol;
+  if (!GetNtPathFromWin32Path(vol_path, &nt_vol)) {
     return false;
+  }
 
   
-  vol_length = static_cast<DWORD>(wcslen(vol_name));
-
-  
-  if (vol_length + path.size() - 2 != actual_path.size())
+  if (nt_vol.size() + path.size() - vol_path_len != actual_path.size()) {
     return false;
+  }
 
   
-  if (!EqualPath(actual_path, vol_name, vol_length))
+  if (!EqualPath(actual_path, nt_vol.c_str(), nt_vol.size())) {
     return false;
+  }
 
   
-  if (!EqualPath(actual_path, vol_length, path, 2))
+  if (!EqualPath(actual_path, nt_vol.size(), path, vol_path_len)) {
     return false;
+  }
 
   return true;
 }
