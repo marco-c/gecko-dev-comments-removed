@@ -524,6 +524,14 @@ nsXULPopupManager::PopupResized(nsIFrame* aFrame, LayoutDeviceIntSize aSize)
   if (curDevSize.width == aSize.width && curDevSize.height == aSize.height)
     return;
 
+  nsIContent* popup = menuPopupFrame->GetContent();
+
+  
+  if (!popup->HasAttr(kNameSpaceID_None, nsGkAtoms::width) ||
+      !popup->HasAttr(kNameSpaceID_None, nsGkAtoms::height)) {
+    return;
+  }
+
   
   
   nsPresContext* presContext = menuPopupFrame->PresContext();
@@ -531,7 +539,6 @@ nsXULPopupManager::PopupResized(nsIFrame* aFrame, LayoutDeviceIntSize aSize)
   CSSIntSize newCSS(presContext->DevPixelsToIntCSSPixels(aSize.width),
                     presContext->DevPixelsToIntCSSPixels(aSize.height));
 
-  nsIContent* popup = menuPopupFrame->GetContent();
   nsAutoString width, height;
   width.AppendInt(newCSS.width);
   height.AppendInt(newCSS.height);
