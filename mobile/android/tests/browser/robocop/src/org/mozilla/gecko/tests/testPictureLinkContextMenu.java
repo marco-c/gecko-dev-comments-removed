@@ -9,8 +9,9 @@ public class testPictureLinkContextMenu extends ContentContextMenuTest {
     
     private static String PICTURE_PAGE_URL;
     private static String BLANK_PAGE_URL;
+    private static String PICTURE_URL;
     private static final String tabs [] = { "Image", "Link" };
-    private static final String photoMenuItems [] = { "Copy Image Location", "Share Image", "Set Image As", "Save Image" };
+    private static final String photoMenuItems [] = { "Copy Image Location", "Share Image", "View Image", "Set Image As", "Save Image" };
     private static final String imageTitle = "^Image$";
 
     public void testPictureLinkContextMenu() {
@@ -21,6 +22,7 @@ public class testPictureLinkContextMenu extends ContentContextMenuTest {
 
         PICTURE_PAGE_URL=getAbsoluteUrl(mStringHelper.ROBOCOP_PICTURE_LINK_URL);
         BLANK_PAGE_URL=getAbsoluteUrl(mStringHelper.ROBOCOP_BLANK_PAGE_02_URL);
+        PICTURE_URL=getAbsoluteUrl(mStringHelper.ROBOCOP_PICTURE_URL);
         loadAndPaint(PICTURE_PAGE_URL);
         verifyUrlInContentDescription(PICTURE_PAGE_URL);
 
@@ -31,6 +33,8 @@ public class testPictureLinkContextMenu extends ContentContextMenuTest {
         verifyCopyOption(photoMenuItems[0], "Firefox.jpg"); 
         switchTabs(imageTitle);
         verifyShareOption(photoMenuItems[1], PICTURE_PAGE_TITLE); 
+        switchTabs(imageTitle);
+        verifyViewImageOption(photoMenuItems[2], PICTURE_URL, PICTURE_PAGE_TITLE); 
 
         verifyContextMenuItems(linkMenuItems);
         openTabFromContextMenu(linkMenuItems[0],2); 

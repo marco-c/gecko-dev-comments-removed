@@ -89,6 +89,9 @@ public class StringHelper {
     private final String ROBOCOP_JS_HARNESS_URL = "/robocop/robocop_javascript.html";
 
     
+    public final String ROBOCOP_PICTURE_URL = "/robocop/Firefox.jpg";
+
+    
     public final String ROBOCOP_BIG_LINK_TITLE = "Big Link";
     public final String ROBOCOP_BIG_MAILTO_TITLE = "Big Mailto";
     public final String ROBOCOP_BLANK_PAGE_01_TITLE = "Browser Blank Page 01";
