@@ -988,10 +988,6 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
   ScreenRect screenRect = LayoutDeviceRect::FromAppUnits(base, auPerDevPixel)
                         * parentRes;
 
-  nsRect expandedScrollableRect =
-    nsLayoutUtils::CalculateExpandedScrollableRect(frame);
-
-
   
   
   
@@ -1079,13 +1075,6 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
   screenRect = ScreenRect(x, y, w, h);
   screenRect -= scrollPosScreen;
 
-  ScreenRect screenExpScrollableRect =
-    LayoutDeviceRect::FromAppUnits(expandedScrollableRect,
-                                   auPerDevPixel) * res;
-
-  
-  screenRect = screenRect.ForceInside(screenExpScrollableRect - scrollPosScreen);
-
   
   nsRect result = LayoutDeviceRect::ToAppUnits(screenRect / res, auPerDevPixel);
 
@@ -1093,7 +1082,9 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
   result = ApplyRectMultiplier(result, aMultiplier);
 
   
-  result = expandedScrollableRect.Intersect(result + scrollPos) - scrollPos;
+  nsRect expandedScrollableRect =
+    nsLayoutUtils::CalculateExpandedScrollableRect(frame);
+  result = result.ForceInside(expandedScrollableRect - scrollPos);
 
   return result;
 }
