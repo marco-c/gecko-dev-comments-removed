@@ -130,6 +130,9 @@ public:
 
   bool NotifyOwnerDocumentActivityChangedInternal() override;
 
+  
+  FrameStatistics* GetFrameStatistics();
+
   already_AddRefed<VideoPlaybackQuality> GetVideoPlaybackQuality();
 
 protected:
