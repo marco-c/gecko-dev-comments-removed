@@ -710,7 +710,7 @@ DebugEpilogue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc, bool ok)
     
     
     
-    ok = Debugger::onLeaveFrame(cx, frame, ok);
+    ok = Debugger::onLeaveFrame(cx, frame, pc, ok);
 
     
     

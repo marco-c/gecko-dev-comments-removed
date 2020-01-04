@@ -479,10 +479,13 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
     JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac, bool callHook);
-    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac, MutableHandleValue vp, bool callHook);
+    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac, MutableHandleValue vp, bool callHook,
+                                         const mozilla::Maybe<HandleValue>& thisVForCheck = mozilla::Nothing(),
+                                         AbstractFramePtr frame = NullFramePtr());
 
     JSTrapStatus handleUncaughtExceptionHelper(mozilla::Maybe<AutoCompartment>& ac,
-                                               MutableHandleValue* vp, bool callHook);
+                                               MutableHandleValue* vp, bool callHook,
+                                               const mozilla::Maybe<HandleValue>& thisVForCheck, AbstractFramePtr frame);
 
     
 
@@ -509,8 +512,24 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSTrapStatus parseResumptionValue(mozilla::Maybe<AutoCompartment>& ac, bool ok, const Value& rv,
+    JSTrapStatus parseResumptionValue(mozilla::Maybe<AutoCompartment>& ac, bool OK, const Value& rv,
+                                      AbstractFramePtr frame, jsbytecode* pc, MutableHandleValue vp,
+                                      bool callHook = true);
+
+    
+
+
+
+
+
+
+    JSTrapStatus parseResumptionValue(mozilla::Maybe<AutoCompartment>& ac, bool OK, const Value& rv,
+                                      const Value& thisVForCheck, AbstractFramePtr frame,
                                       MutableHandleValue vp, bool callHook = true);
+
+    JSTrapStatus parseResumptionValueHelper(mozilla::Maybe<AutoCompartment>& ac, bool ok, const Value& rv,
+                                            const mozilla::Maybe<HandleValue>& thisVForCheck, AbstractFramePtr frame,
+                                            MutableHandleValue vp, bool callHook);
 
     GlobalObject* unwrapDebuggeeArgument(JSContext* cx, const Value& v);
 
@@ -617,7 +636,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
     static bool slowPathCheckNoExecute(JSContext* cx, HandleScript script);
     static JSTrapStatus slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame);
-    static bool slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, bool ok);
+    static bool slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc, bool ok);
     static JSTrapStatus slowPathOnDebuggerStatement(JSContext* cx, AbstractFramePtr frame);
     static JSTrapStatus slowPathOnExceptionUnwind(JSContext* cx, AbstractFramePtr frame);
     static void slowPathOnNewScript(JSContext* cx, HandleScript script);
@@ -785,7 +804,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    static inline bool onLeaveFrame(JSContext* cx, AbstractFramePtr frame, bool ok);
+    static inline bool onLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc, bool ok);
 
     static inline void onNewScript(JSContext* cx, HandleScript script);
     static inline void onNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global);
