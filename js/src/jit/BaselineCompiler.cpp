@@ -97,8 +97,10 @@ BaselineCompiler::compile()
     
     
     
-    if (!script->hasScriptCounts() && cx->compartment()->collectCoverage())
-        script->initScriptCounts(cx);
+    if (!script->hasScriptCounts() && cx->compartment()->collectCoverage()) {
+        if (!script->initScriptCounts(cx))
+            return Method_Error;
+    }
 
     
     AutoEnterAnalysis autoEnterAnalysis(cx);
