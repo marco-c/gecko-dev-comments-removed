@@ -1516,6 +1516,11 @@ private:
 
   
   bool mFirstFrameLoaded;
+
+  
+  
+  
+  double mDefaultPlaybackStartPosition;
 };
 
 } 
