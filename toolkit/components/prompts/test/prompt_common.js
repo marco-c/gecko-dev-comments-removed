@@ -118,6 +118,10 @@ function PrompterProxy(chromeScript) {
             outParams = [ 5];
             break;
           }
+          case "promptAuth": {
+            outParams = [];
+            break;
+          }
           case "promptPassword": {
             outParams = [ 4];
             break;
@@ -140,6 +144,12 @@ function PrompterProxy(chromeScript) {
         for (let outParam of outParams) {
           
           args[outParam].value = result.args[outParam].value;
+        }
+
+        if (prop == "promptAuth") {
+          args[2].username = result.args[2].username;
+          args[2].password = result.args[2].password;
+          args[2].domain = result.args[2].domain;
         }
 
         return result.rv;
