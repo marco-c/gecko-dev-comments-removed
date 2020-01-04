@@ -24,6 +24,7 @@
 #include "mozilla/dom/bluetooth/BluetoothTypes.h"
 #include "mozilla/dom/ipc/BlobChild.h"
 #include "mozilla/dom/ipc/BlobParent.h"
+#include "nsAutoPtr.h"
 #include "nsContentUtils.h"
 #include "nsIObserverService.h"
 #include "nsISettingsService.h"
@@ -303,7 +304,12 @@ BluetoothService::UnregisterAllSignalHandlers(BluetoothSignalObserver* aHandler)
   for (auto iter = mBluetoothSignalObserverTable.Iter();
        !iter.Done();
        iter.Next()) {
+
+    
+    
+    
     nsAutoPtr<BluetoothSignalObserverList>& ol = iter.Data();
+
     ol->RemoveObserver(aHandler);
     
     

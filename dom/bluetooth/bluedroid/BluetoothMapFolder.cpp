@@ -3,8 +3,9 @@
 
 
 
-#include "base/basictypes.h"
+
 #include "BluetoothMapFolder.h"
+#include "base/basictypes.h"
 
 BEGIN_BLUETOOTH_NAMESPACE
 

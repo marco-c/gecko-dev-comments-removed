@@ -12,6 +12,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h" 
 #include "nsXULAppAPI.h"
+#include "mozilla/unused.h"
 
 using namespace mozilla::ipc;
 
@@ -104,7 +105,7 @@ private:
   
 
 
-  nsAutoPtr<BluetoothUnixSocketConnector> mConnector;
+  UniquePtr<BluetoothUnixSocketConnector> mConnector;
 
   
 
@@ -130,7 +131,7 @@ private:
   
 
 
-  nsAutoPtr<UnixSocketRawData> mBuffer;
+  UniquePtr<UnixSocketRawData> mBuffer;
 };
 
 BluetoothSocket::BluetoothSocketIO::BluetoothSocketIO(
@@ -395,7 +396,7 @@ BluetoothSocket::BluetoothSocketIO::QueryReceiveBuffer(
   MOZ_ASSERT(aBuffer);
 
   if (!mBuffer) {
-    mBuffer = new UnixSocketRawData(MAX_READ_SIZE);
+    mBuffer = MakeUnique<UnixSocketRawData>(MAX_READ_SIZE);
   }
   *aBuffer = mBuffer.get();
 
@@ -434,14 +435,14 @@ public:
   }
 
 private:
-  nsAutoPtr<UnixSocketBuffer> mBuffer;
+  UniquePtr<UnixSocketBuffer> mBuffer;
 };
 
 void
 BluetoothSocket::BluetoothSocketIO::ConsumeBuffer()
 {
   GetConsumerThread()->PostTask(FROM_HERE,
-                                new ReceiveTask(this, mBuffer.forget()));
+                                new ReceiveTask(this, mBuffer.release()));
 }
 
 void
@@ -586,11 +587,11 @@ BluetoothSocket::Connect(const BluetoothAddress& aDeviceAddress,
 {
   MOZ_ASSERT(!aDeviceAddress.IsCleared());
 
-  nsAutoPtr<BluetoothUnixSocketConnector> connector(
-    new BluetoothUnixSocketConnector(aDeviceAddress, aType, aChannel,
-                                     aAuth, aEncrypt));
+  UniquePtr<BluetoothUnixSocketConnector> connector =
+    MakeUnique<BluetoothUnixSocketConnector>(aDeviceAddress, aType, aChannel,
+                                             aAuth, aEncrypt);
 
-  nsresult rv = Connect(connector);
+  nsresult rv = Connect(connector.get());
   if (NS_FAILED(rv)) {
     BluetoothAddress address;
     GetAddress(address);
@@ -602,7 +603,7 @@ BluetoothSocket::Connect(const BluetoothAddress& aDeviceAddress,
            __FUNCTION__, NS_ConvertUTF16toUTF8(addressStr).get());
     return rv;
   }
-  connector.forget();
+  Unused << connector.release();
 
   return NS_OK;
 }
@@ -614,11 +615,11 @@ BluetoothSocket::Listen(const nsAString& aServiceName,
                         int aChannel,
                         bool aAuth, bool aEncrypt)
 {
-  nsAutoPtr<BluetoothUnixSocketConnector> connector(
-    new BluetoothUnixSocketConnector(BluetoothAddress::ANY(), aType,
-                                     aChannel, aAuth, aEncrypt));
+  UniquePtr<BluetoothUnixSocketConnector> connector =
+    MakeUnique<BluetoothUnixSocketConnector>(BluetoothAddress::ANY(), aType,
+                                             aChannel, aAuth, aEncrypt);
 
-  nsresult rv = Listen(connector);
+  nsresult rv = Listen(connector.get());
   if (NS_FAILED(rv)) {
     BluetoothAddress address;
     GetAddress(address);
@@ -630,13 +631,13 @@ BluetoothSocket::Listen(const nsAString& aServiceName,
            __FUNCTION__, NS_ConvertUTF16toUTF8(addressStr).get());
     return rv;
   }
-  connector.forget();
+  Unused << connector.release();
 
   return NS_OK;
 }
 
 void
-BluetoothSocket::ReceiveSocketData(nsAutoPtr<UnixSocketBuffer>& aBuffer)
+BluetoothSocket::ReceiveSocketData(UniquePtr<UnixSocketBuffer>& aBuffer)
 {
   MOZ_ASSERT(mObserver);
 
