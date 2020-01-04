@@ -229,10 +229,14 @@ HTMLTooltip.prototype = {
   },
 
   _isInTooltipContainer: function (node) {
-    let contentWindow = this.panel.ownerDocument.defaultView;
+    let tooltipWindow = this.panel.ownerDocument.defaultView;
     let win = node.ownerDocument.defaultView;
 
-    if (win === contentWindow) {
+    if (this.arrow && this.arrow === node) {
+      return true;
+    }
+
+    if (win === tooltipWindow) {
       
       
       return this.panel.contains(node);
@@ -241,10 +245,11 @@ HTMLTooltip.prototype = {
     
     while (win.parent && win.parent != win) {
       win = win.parent;
-      if (win === contentWindow) {
-        return true;
+      if (win === tooltipWindow) {
+        return this.panel.contains(win.frameElement);
       }
     }
+
     return false;
   },
 
