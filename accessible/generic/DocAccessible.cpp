@@ -1348,12 +1348,12 @@ DocAccessible::ProcessInvalidationList()
   
   for (uint32_t idx = 0; idx < mARIAOwnsInvalidationList.Length(); idx++) {
     Accessible* owner = mARIAOwnsInvalidationList[idx].mOwner;
-    if (owner->IsDefunct()) { 
+    if (!owner->IsInDocument()) { 
       continue;
     }
 
     Accessible* child = GetAccessible(mARIAOwnsInvalidationList[idx].mChild);
-    if (!child) {
+    if (!child || !child->IsInDocument()) {
       continue;
     }
 
