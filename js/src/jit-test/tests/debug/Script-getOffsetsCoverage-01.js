@@ -158,6 +158,20 @@ checkGetOffsetsCoverage(function () {
   var l = ",".split(','); 
   if (l.length == 3)      
     l.push('');           
+  l.pop();                
+});
+
+checkGetOffsetsCoverage(function () { 
+  var l = ",".split(','); 
+  if (l.length == 2)      
+    l.push('');           
+  l.pop();                
+});
+
+checkGetOffsetsCoverage(function () { 
+  var l = ",".split(','); 
+  if (l.length == 3)      
+    l.push('');           
   else
     l.pop();              
 });
