@@ -7030,7 +7030,12 @@ nsHTMLEditRules::ReapplyCachedStyles()
   
   NS_ENSURE_STATE(mHTMLEditor);
   RefPtr<Selection> selection = mHTMLEditor->GetSelection();
-  MOZ_ASSERT(selection);
+  if (!selection) {
+    
+    
+    
+    return NS_OK;
+  }
   if (!selection->RangeCount()) {
     
     return NS_OK;
