@@ -3747,10 +3747,6 @@ XPCJSRuntime::BeforeProcessTask(bool aMightBlock)
     
     js::ResetPerformanceMonitoring(Get()->Runtime());
 
-    
-    
-    PushNullJSContext();
-
     CycleCollectedJSRuntime::BeforeProcessTask(aMightBlock);
 }
 
@@ -3769,8 +3765,6 @@ XPCJSRuntime::AfterProcessTask(uint32_t aNewRecursionDepth)
     
     
     js::FlushPerformanceMonitoring(Get()->Runtime());
-
-    PopNullJSContext();
 }
 
 
