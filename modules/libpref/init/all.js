@@ -685,7 +685,7 @@ pref("gfx.content.azure.backends", "direct2d1.1,direct2d,cairo");
 pref("gfx.content.azure.backends", "cg");
 pref("gfx.canvas.azure.backends", "skia");
 
-pref("gfx.canvas.azure.accelerated", true);
+pref("gfx.canvas.azure.accelerated", false);
 #else
 pref("gfx.canvas.azure.backends", "cairo");
 pref("gfx.content.azure.backends", "cairo");
@@ -893,10 +893,6 @@ pref("devtools.commands.dir", "");
 
 
 pref("devtools.telemetry.supported_performance_marks", "contentInteractive,navigationInteractive,navigationLoaded,visuallyLoaded,fullyLoaded,mediaEnumerated,scanEnd");
-
-
-
-pref("devtools.migration.warnings", false);
 
 
 pref("view_source.syntax_highlight", true);

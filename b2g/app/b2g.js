@@ -954,7 +954,7 @@ pref("devtools.debugger.unix-domain-socket", "/data/local/debugger-socket");
 
 #ifdef MOZ_WIDGET_GONK
 pref("gfx.canvas.azure.backends", "skia");
-pref("gfx.canvas.azure.accelerated", true);
+pref("gfx.canvas.azure.accelerated", false);
 #endif
 
 
