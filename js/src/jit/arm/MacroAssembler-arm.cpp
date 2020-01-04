@@ -4808,6 +4808,9 @@ MacroAssembler::repatchThunk(uint8_t* code, uint32_t u32Offset, uint32_t targetO
 CodeOffset
 MacroAssembler::nopPatchableToNearJump()
 {
+    
+    AutoForbidPools afp(this, 1);
+
     CodeOffset offset(currentOffset());
     ma_nop();
     return offset;

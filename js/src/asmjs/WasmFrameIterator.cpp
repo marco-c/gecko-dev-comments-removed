@@ -382,14 +382,7 @@ wasm::GenerateFunctionEpilogue(MacroAssembler& masm, unsigned framePushed, FuncO
 
     
     
-    {
-#if defined(JS_CODEGEN_ARM)
-        
-        
-        AutoForbidPools afp(&masm, 1);
-#endif
-        offsets->profilingJump = masm.nopPatchableToNearJump().offset();
-    }
+    offsets->profilingJump = masm.nopPatchableToNearJump().offset();
 
     
     masm.addToStackPtr(Imm32(framePushed + AsmJSFrameBytesAfterReturnAddress));
