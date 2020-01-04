@@ -779,7 +779,8 @@ nsPluginFrame::SetScrollVisibility(bool aState)
     mIsHiddenDueToScroll = aState;
     
     
-    if (changed) {
+    if (changed && mInstanceOwner) {
+      mInstanceOwner->UpdateScrollState(mIsHiddenDueToScroll);
       SchedulePaint();
     }
   }
