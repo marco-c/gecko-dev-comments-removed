@@ -114,18 +114,11 @@ PROT_ListManager.prototype.registerTable = function(tableName,
   
   if (!this.needsUpdate_[updateUrl]) {
     this.needsUpdate_[updateUrl] = {};
+
     
-    var backoffInterval = 30 * 60 * 1000;
-    backoffInterval += Math.floor(Math.random() * (30 * 60 * 1000));
-
-    log("Creating request backoff for " + updateUrl);
-    this.requestBackoffs_[updateUrl] = new RequestBackoff(2 ,
-                                      60*1000 ,
+    this.requestBackoffs_[updateUrl] = new RequestBackoffV4(
                                             4 ,
-                                   60*60*1000 ,
-                              backoffInterval ,
-                                 8*60*60*1000 );
-
+                                   60*60*1000 );
   }
   this.needsUpdate_[updateUrl][tableName] = false;
 
