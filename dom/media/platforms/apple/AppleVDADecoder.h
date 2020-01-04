@@ -146,6 +146,7 @@ private:
 
   
   virtual nsresult ProcessDecode(MediaRawData* aSample);
+  nsresult DoDecode(MediaRawData* aSample);
   CFDictionaryRef CreateDecoderSpecification();
 };
 

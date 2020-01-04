@@ -44,6 +44,7 @@ private:
 
   
   nsresult ProcessDecode(MediaRawData* aSample) override;
+  nsresult DoDecode(MediaRawData* aSample);
   
   nsresult InitializeSession();
   nsresult WaitForAsynchronousFrames();
