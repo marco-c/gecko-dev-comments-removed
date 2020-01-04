@@ -39,7 +39,8 @@ namespace mozilla {
 
 
 
-enum class CSSPseudoElementType : uint8_t {
+typedef uint8_t CSSPseudoElementTypeBase;
+enum class CSSPseudoElementType : CSSPseudoElementTypeBase {
   
   
 #define CSS_PSEUDO_ELEMENT(_name, _value_, _flags) \
