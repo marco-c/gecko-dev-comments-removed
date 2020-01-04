@@ -271,7 +271,9 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
       
       return result;
     }
-    activeTime = result.mActiveDuration;
+    activeTime = std::max(std::min(result.mActiveDuration,
+                                   result.mActiveDuration + aTiming.mEndDelay),
+                          zeroDuration);
   } else if (localTime <
                std::min(StickyTimeDuration(aTiming.mDelay), result.mEndTime)) {
     result.mPhase = ComputedTiming::AnimationPhase::Before;
@@ -321,9 +323,19 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
 
   
   
+  
+  
+  
   if (result.mPhase == ComputedTiming::AnimationPhase::After &&
       progress == 0.0 &&
-      result.mIterations != 0.0) {
+      result.mIterations != 0.0 &&
+      (activeTime != zeroDuration || result.mDuration == zeroDuration)) {
+    
+    
+    
+    
+    MOZ_ASSERT(result.mCurrentIteration != 0,
+               "Should not have zero current iteration");
     progress = 1.0;
     if (result.mCurrentIteration != UINT64_MAX) {
       result.mCurrentIteration--;
