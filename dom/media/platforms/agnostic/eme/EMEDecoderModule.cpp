@@ -91,6 +91,13 @@ public:
       }
     } else {
       MOZ_ASSERT(!mIsShutdown);
+      
+      
+      
+      
+      
+      UniquePtr<MediaRawDataWriter> writer(aDecrypted.mSample->CreateWriter());
+      writer->mCrypto = CryptoSample();
       nsresult rv = mDecoder->Input(aDecrypted.mSample);
       Unused << NS_WARN_IF(NS_FAILED(rv));
     }
