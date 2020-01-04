@@ -315,17 +315,7 @@ public:
 
   Declaration* GetDeclaration() const { return mDeclaration; }
 
-  
-
-
-
-
-
-
-
-
-  already_AddRefed<StyleRule>
-  DeclarationChanged(Declaration* aDecl, bool aHandleContainer);
+  void SetDeclaration(Declaration* aDecl);
 
   
   void GetCssText(nsAString& aCssText);

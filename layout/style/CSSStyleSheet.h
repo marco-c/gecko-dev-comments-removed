@@ -313,6 +313,12 @@ public:
   }
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
+  
+  
+  
+  void WillDirty();
+  void DidDirty();
+
 private:
   CSSStyleSheet(const CSSStyleSheet& aCopy,
                 CSSStyleSheet* aParentToUse,
@@ -327,9 +333,6 @@ protected:
   virtual ~CSSStyleSheet();
 
   void ClearRuleCascades();
-
-  void     WillDirty();
-  void     DidDirty();
 
   
   
