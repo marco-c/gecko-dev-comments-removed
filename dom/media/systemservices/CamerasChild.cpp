@@ -5,7 +5,6 @@
 
 
 #include "CamerasChild.h"
-#include "CamerasUtils.h"
 
 #include "webrtc/video_engine/include/vie_capture.h"
 #undef FF
@@ -487,14 +486,14 @@ Shutdown(void)
 class ShutdownRunnable : public Runnable {
 public:
   explicit
-  ShutdownRunnable(RefPtr<Runnable> aReplyEvent)
+  ShutdownRunnable(already_AddRefed<Runnable>&& aReplyEvent)
     : mReplyEvent(aReplyEvent) {};
 
   NS_IMETHOD Run() override {
     LOG(("Closing BackgroundChild"));
     ipc::BackgroundChild::CloseForCurrentThread();
 
-    NS_DispatchToMainThread(mReplyEvent);
+    NS_DispatchToMainThread(mReplyEvent.forget());
 
     return NS_OK;
   }
@@ -544,10 +543,10 @@ CamerasChild::ShutdownChild()
     LOG(("PBackground thread exists, dispatching close"));
     
     
-    RefPtr<Runnable> event =
-      new ThreadDestructor(CamerasSingleton::Thread());
-    RefPtr<ShutdownRunnable> runnable = new ShutdownRunnable(event);
-    CamerasSingleton::Thread()->Dispatch(runnable, NS_DISPATCH_NORMAL);
+    RefPtr<ShutdownRunnable> runnable =
+      new ShutdownRunnable(NewRunnableMethod(CamerasSingleton::Thread(),
+                                             &nsIThread::Shutdown));
+    CamerasSingleton::Thread()->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
   } else {
     LOG(("Shutdown called without PBackground thread"));
   }
