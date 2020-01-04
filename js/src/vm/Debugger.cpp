@@ -749,7 +749,7 @@ Debugger::getScriptFrameWithIter(JSContext* cx, AbstractFramePtr referent,
         RootedNativeObject debugger(cx, object);
 
         RootedDebuggerFrame frame(cx, DebuggerFrame::create(cx, proto, referent, maybeIter,
-                                                               debugger));
+                                                            debugger));
         if (!frame)
             return false;
 
@@ -6189,10 +6189,12 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
     auto removeFromDebuggerFramesOnExit = MakeScopeExit([&] {
         
         
-        Debugger::forEachDebuggerFrame(from, [&](NativeObject* frameobj) {
-            frameobj->setPrivate(nullptr);
-            Debugger::fromChildJSObject(frameobj)->frames.remove(from);
-        });
+        
+        
+        
+        
+        MOZ_ASSERT_IF(inFrameMaps(to), !inFrameMaps(from));
+        removeFromFrameMapsAndClearBreakpointsIn(cx, from);
 
         
         
@@ -6201,8 +6203,13 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
 
     
     Rooted<DebuggerFrameVector> frames(cx, DebuggerFrameVector(cx));
-    if (!getDebuggerFrames(from, &frames))
+    if (!getDebuggerFrames(from, &frames)) {
+        
+        
+        
+        
         return false;
+    }
 
     
     
@@ -6219,8 +6226,18 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
         
         DebuggerFrame_freeScriptFrameIterData(cx->runtime()->defaultFreeOp(), frameobj);
         ScriptFrameIter::Data* data = iter.copyData();
-        if (!data)
+        if (!data) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
             return false;
+        }
         frameobj->setPrivate(data);
 
         
@@ -6228,6 +6245,17 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
 
         
         if (!dbg->frames.putNew(to, frameobj)) {
+            
+            
+            
+            
+            
+            
+            
+            FreeOp* fop = cx->runtime()->defaultFreeOp();
+            DebuggerFrame_freeScriptFrameIterData(fop, frameobj);
+            DebuggerFrame_maybeDecrementFrameScriptStepModeCount(fop, to, frameobj);
+
             ReportOutOfMemory(cx);
             return false;
         }
