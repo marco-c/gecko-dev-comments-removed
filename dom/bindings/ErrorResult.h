@@ -182,7 +182,6 @@ public:
                                        Forward<Ts>(messageArgs)...);
   }
 
-  void ReportErrorWithMessage(JSContext* cx);
   bool IsErrorWithMessage() const { return ErrorCode() == NS_ERROR_TYPE_ERR || ErrorCode() == NS_ERROR_RANGE_ERR; }
 
   
@@ -196,7 +195,6 @@ public:
   
   
   void ThrowJSException(JSContext* cx, JS::Handle<JS::Value> exn);
-  void ReportJSException(JSContext* cx);
   bool IsJSException() const { return ErrorCode() == NS_ERROR_DOM_JS_EXCEPTION; }
 
   
@@ -205,7 +203,6 @@ public:
   
   
   void ThrowDOMException(nsresult rv, const nsACString& message = EmptyCString());
-  void ReportDOMException(JSContext* cx);
   bool IsDOMException() const { return ErrorCode() == NS_ERROR_DOM_DOMEXCEPTION; }
 
   
@@ -218,10 +215,6 @@ public:
   bool IsJSContextException() {
     return ErrorCode() == NS_ERROR_DOM_EXCEPTION_ON_JSCONTEXT;
   }
-
-  
-  
-  void ReportGenericError(JSContext* cx);
 
   
   void ThrowUncatchableException() {
@@ -346,6 +339,13 @@ private:
   
   
   void SetPendingException(JSContext* cx);
+
+  
+  void SetPendingExceptionWithMessage(JSContext* cx);
+  void SetPendingJSException(JSContext* cx);
+  void SetPendingDOMException(JSContext* cx);
+  void SetPendingGenericErrorException(JSContext* cx);
+
 
   
   
