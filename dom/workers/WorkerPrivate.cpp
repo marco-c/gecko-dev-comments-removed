@@ -467,6 +467,14 @@ public:
     mIncrease(aIncrease)
   { }
 
+  
+  
+  bool
+  Dispatch()
+  {
+    return WorkerControlRunnable::Dispatch(nullptr);
+  }
+
 private:
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
@@ -5101,7 +5109,7 @@ WorkerPrivate::ModifyBusyCountFromWorker(JSContext* aCx, bool aIncrease)
 
   RefPtr<ModifyBusyCountRunnable> runnable =
     new ModifyBusyCountRunnable(this, aIncrease);
-  return runnable->Dispatch(aCx);
+  return runnable->Dispatch();
 }
 
 bool
