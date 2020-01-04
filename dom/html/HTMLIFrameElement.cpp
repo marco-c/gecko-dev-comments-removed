@@ -242,17 +242,10 @@ HTMLIFrameElement::GetSandboxFlags()
   const nsAttrValue* sandboxAttr = GetParsedAttr(nsGkAtoms::sandbox);
   
   if (!sandboxAttr) {
-    return 0;
+    return SANDBOXED_NONE;
   }
 
-  
-  uint32_t out = SANDBOX_ALL_FLAGS;
-
-
-#define SANDBOX_KEYWORD(string, atom, flags)                             \
-  if (sandboxAttr->Contains(nsGkAtoms::atom, eIgnoreCase)) { out &= ~(flags); }
-#include "IframeSandboxKeywordList.h"
-#undef SANDBOX_KEYWORD
+  uint32_t out = nsContentUtils::ParseSandboxAttributeToFlags(sandboxAttr);
 
   if (GetParsedAttr(nsGkAtoms::allowfullscreen) ||
       GetParsedAttr(nsGkAtoms::mozallowfullscreen)) {

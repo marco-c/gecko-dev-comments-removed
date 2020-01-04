@@ -92,8 +92,8 @@ static const char* CSPStrDirectives[] = {
   "upgrade-insecure-requests", 
   "child-src",                 
   "block-all-mixed-content",   
-  "require-sri-for"            
-
+  "require-sri-for",           
+  "sandbox"                    
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir)
@@ -336,6 +336,20 @@ class nsCSPReportURI : public nsCSPBaseSrc {
 
 
 
+class nsCSPSandboxFlags : public nsCSPBaseSrc {
+  public:
+    explicit nsCSPSandboxFlags(const nsAString& aFlags);
+    virtual ~nsCSPSandboxFlags();
+
+    bool visit(nsCSPSrcVisitor* aVisitor) const;
+    void toString(nsAString& outStr) const;
+
+  private:
+    nsString mFlags;
+};
+
+
+
 class nsCSPSrcVisitor {
   public:
     virtual bool visitSchemeSrc(const nsCSPSchemeSrc& src) = 0;
@@ -557,6 +571,8 @@ class nsCSPPolicy {
                                           nsAString& outDirective) const;
 
     void getDirectiveAsString(CSPDirective aDir, nsAString& outDirective) const;
+
+    uint32_t getSandboxFlags() const;
 
     bool requireSRIForType(nsContentPolicyType aContentType);
 

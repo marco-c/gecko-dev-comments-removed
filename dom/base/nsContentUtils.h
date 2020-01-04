@@ -920,6 +920,24 @@ public:
   
 
 
+
+
+
+
+
+  static uint32_t ParseSandboxAttributeToFlags(const nsAttrValue* aSandboxAttr);
+
+  
+
+
+
+
+
+  static bool IsValidSandboxFlag(const nsAString& aFlag);
+
+  
+
+
   static nsresult GenerateUUIDInPlace(nsID& aUUID);
 
   static bool PrefetchEnabled(nsIDocShell* aDocShell);

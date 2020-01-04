@@ -4,6 +4,8 @@
 
 
 
+#include "nsAttrValue.h"
+#include "nsContentUtils.h"
 #include "nsCSPUtils.h"
 #include "nsDebug.h"
 #include "nsIConsoleService.h"
@@ -13,6 +15,7 @@
 #include "nsIStringBundle.h"
 #include "nsIURL.h"
 #include "nsReadableUtils.h"
+#include "nsSandboxFlags.h"
 
 static mozilla::LogModule*
 GetCspUtilsLog()
@@ -794,6 +797,29 @@ nsCSPReportURI::toString(nsAString& outStr) const
 
 
 
+nsCSPSandboxFlags::nsCSPSandboxFlags(const nsAString& aFlags)
+  : mFlags(aFlags)
+{
+}
+
+nsCSPSandboxFlags::~nsCSPSandboxFlags()
+{
+}
+
+bool
+nsCSPSandboxFlags::visit(nsCSPSrcVisitor* aVisitor) const
+{
+  return false;
+}
+
+void
+nsCSPSandboxFlags::toString(nsAString& outStr) const
+{
+  outStr.Append(mFlags);
+}
+
+
+
 nsCSPDirective::nsCSPDirective(CSPDirective aDirective)
 {
   mDirective = aDirective;
@@ -951,6 +977,11 @@ nsCSPDirective::toDomCSPStruct(mozilla::dom::CSP& outCSP) const
     case nsIContentSecurityPolicy::CHILD_SRC_DIRECTIVE:
       outCSP.mChild_src.Construct();
       outCSP.mChild_src.Value() = mozilla::Move(srcs);
+      return;
+
+    case nsIContentSecurityPolicy::SANDBOX_DIRECTIVE:
+      outCSP.mSandbox.Construct();
+      outCSP.mSandbox.Value() = mozilla::Move(srcs);
       return;
 
     
@@ -1342,6 +1373,33 @@ nsCSPPolicy::getDirectiveAsString(CSPDirective aDir, nsAString& outDirective) co
       return;
     }
   }
+}
+
+
+
+
+
+
+uint32_t
+nsCSPPolicy::getSandboxFlags() const
+{
+  for (uint32_t i = 0; i < mDirectives.Length(); i++) {
+    if (mDirectives[i]->equals(nsIContentSecurityPolicy::SANDBOX_DIRECTIVE)) {
+      nsAutoString flags;
+      mDirectives[i]->toString(flags);
+
+      if (flags.IsEmpty()) {
+        return SANDBOX_ALL_FLAGS;
+      }
+
+      nsAttrValue attr;
+      attr.ParseAtomArray(flags);
+
+      return nsContentUtils::ParseSandboxAttributeToFlags(&attr);
+    }
+  }
+
+  return SANDBOXED_NONE;
 }
 
 void
