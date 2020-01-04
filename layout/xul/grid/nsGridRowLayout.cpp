@@ -182,7 +182,7 @@ nsGridRowLayout::GetTotalMargin(nsIFrame* aBox, bool aIsHorizontal)
     
   
   nsMargin ourMargin;
-  aBox->GetMargin(ourMargin);
+  aBox->GetXULMargin(ourMargin);
   margin += ourMargin;
 
   return margin;

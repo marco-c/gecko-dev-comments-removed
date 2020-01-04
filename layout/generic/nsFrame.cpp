@@ -8964,7 +8964,7 @@ nsFrame::BoxReflow(nsBoxLayoutState&        aState,
     
     
     nsMargin margin(0,0,0,0);
-    GetMargin(margin);
+    GetXULMargin(margin);
 
     nsSize parentSize(aWidth, aHeight);
     if (parentSize.height != NS_INTRINSICSIZE)

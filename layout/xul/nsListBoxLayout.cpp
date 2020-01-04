@@ -145,7 +145,7 @@ nsListBoxLayout::LayoutInternal(nsIFrame* aBox, nsBoxLayoutState& aState)
     
     
     nsRect childRect(box->GetRect());
-    box->GetMargin(margin);
+    box->GetXULMargin(margin);
     
     
     

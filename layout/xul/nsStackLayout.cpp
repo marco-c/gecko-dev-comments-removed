@@ -149,7 +149,7 @@ nsStackLayout::GetAscent(nsIFrame* aBox, nsBoxLayoutState& aState)
   while (child) {  
     nscoord ascent = child->GetXULBoxAscent(aState);
     nsMargin margin;
-    child->GetMargin(margin);
+    child->GetXULMargin(margin);
     ascent += margin.top;
     if (ascent > vAscent)
       vAscent = ascent;
@@ -266,7 +266,7 @@ nsStackLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState)
     while (child) 
     {  
       nsMargin margin;
-      child->GetMargin(margin);
+      child->GetXULMargin(margin);
       nsRect childRect(clientRect);
       childRect.Deflate(margin);
 
@@ -283,7 +283,7 @@ nsStackLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState)
       if (sizeChanged || NS_SUBTREE_DIRTY(child)) {
           
           nsMargin margin;
-          child->GetMargin(margin);
+          child->GetXULMargin(margin);
 
           
           nsMargin offset;
