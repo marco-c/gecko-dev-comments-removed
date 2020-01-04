@@ -3,7 +3,7 @@
 
 
 
-#include "DrawTargetD2D.h"
+#include "DrawTargetD2D1.h"
 #include "ScaledFontDWrite.h"
 #include "PathD2D.h"
 
@@ -120,7 +120,7 @@ ScaledFontDWrite::GetSkTypeface()
 {
   MOZ_ASSERT(mFont);
   if (!mTypeface) {
-    IDWriteFactory *factory = DrawTargetD2D::GetDWriteFactory();
+    IDWriteFactory *factory = DrawTargetD2D1::GetDWriteFactory();
     mTypeface = SkCreateTypefaceFromDWriteFont(factory, mFontFace, mFont, mFontFamily);
   }
   return mTypeface;
