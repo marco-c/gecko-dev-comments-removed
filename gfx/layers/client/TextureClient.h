@@ -467,6 +467,12 @@ public:
 
 
 
+  void CancelWaitForCompositorRecycle();
+
+  
+
+
+
 
   bool IsImmutable() const { return !!(mFlags & TextureFlags::IMMUTABLE); }
 
