@@ -74,9 +74,6 @@ class ChildProcessHost :
   void SetHandle(base::ProcessHandle handle);
 
   
-  void InstanceCreated();
-
-  
   virtual void OnMessageReceived(IPC::Message&& msg) { }
   virtual void OnChannelConnected(int32_t peer_pid) { }
   virtual void OnChannelError() { }
