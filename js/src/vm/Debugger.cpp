@@ -5875,6 +5875,14 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
     if (!getDebuggerFrames(from, &frames))
         return false;
 
+    
+    
+    
+    
+    auto removeToDebuggerFramesOnExit = MakeScopeExit([&] {
+        removeFromFrameMapsAndClearBreakpointsIn(cx, to);
+    });
+
     for (size_t i = 0; i < frames.length(); i++) {
         HandleNativeObject frameobj = frames[i];
         Debugger* dbg = Debugger::fromChildJSObject(frameobj);
@@ -5895,6 +5903,9 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
             return false;
         }
     }
+
+    
+    removeToDebuggerFramesOnExit.release();
 
     return true;
 }
