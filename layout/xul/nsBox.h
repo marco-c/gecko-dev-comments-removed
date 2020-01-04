@@ -79,7 +79,7 @@ public:
 
   static nsIFrame* GetChildXULBox(const nsIFrame* aFrame);
   static nsIFrame* GetNextXULBox(const nsIFrame* aFrame);
-  static nsIFrame* GetParentBox(const nsIFrame* aFrame);
+  static nsIFrame* GetParentXULBox(const nsIFrame* aFrame);
 
 protected:
 

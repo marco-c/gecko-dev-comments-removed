@@ -1092,13 +1092,13 @@ nsGrid::GetRowFlex(int32_t aIndex, bool aIsHorizontal)
     
 
     box = GetScrollBox(box);
-    nsIFrame* parent = nsBox::GetParentBox(box);
+    nsIFrame* parent = nsBox::GetParentXULBox(box);
     nsIFrame* parentsParent=nullptr;
 
     while(parent)
     {
       parent = GetScrollBox(parent);
-      parentsParent = nsBox::GetParentBox(parent);
+      parentsParent = nsBox::GetParentXULBox(parent);
 
       
       
@@ -1225,7 +1225,7 @@ nsGrid::GetScrollBox(nsIFrame* aChild)
     return nullptr;
 
   
-  nsIFrame* parent = nsBox::GetParentBox(aChild);
+  nsIFrame* parent = nsBox::GetParentXULBox(aChild);
 
   
   
@@ -1242,7 +1242,7 @@ nsGrid::GetScrollBox(nsIFrame* aChild)
     if (parentGridRow) 
       break;
 
-    parent = nsBox::GetParentBox(parent);
+    parent = nsBox::GetParentXULBox(parent);
   }
 
   return aChild;
