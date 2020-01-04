@@ -2077,6 +2077,7 @@ nsHttpChannel::OpenRedirectChannel(nsresult rv)
     AutoRedirectVetoNotifier notifier(this);
 
     
+    
     mRedirectChannel->SetOriginalURI(mOriginalURI);
 
     
@@ -2156,6 +2157,7 @@ nsHttpChannel::ContinueDoReplaceWithProxy(nsresult rv)
 
     NS_PRECONDITION(mRedirectChannel, "No redirect channel?");
 
+    
     
     mRedirectChannel->SetOriginalURI(mOriginalURI);
 
@@ -2823,6 +2825,7 @@ nsHttpChannel::ContinueProcessFallback(nsresult rv)
 
     NS_PRECONDITION(mRedirectChannel, "No redirect channel?");
 
+    
     
     mRedirectChannel->SetOriginalURI(mOriginalURI);
 
@@ -4765,6 +4768,7 @@ nsHttpChannel::ContinueProcessRedirection(nsresult rv)
 
     NS_PRECONDITION(mRedirectChannel, "No redirect channel?");
 
+    
     
     mRedirectChannel->SetOriginalURI(mOriginalURI);
 
