@@ -109,6 +109,13 @@ public class testInputConnection extends UITest {
 
             ic.deleteSurroundingText(3, 0);
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
+
+            
+            ic.commitText("\u3000", 1);
+            assertTextAndSelectionAt("Can commit ideographic space", ic, "\u3000", 1);
+
+            ic.deleteSurroundingText(1, 0);
+            assertTextAndSelectionAt("Can clear text", ic, "", 0);
         }
     }
 }
