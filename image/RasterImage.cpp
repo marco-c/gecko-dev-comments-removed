@@ -1562,7 +1562,8 @@ RasterImage::NotifyProgress(Progress aProgress,
 }
 
 void
-RasterImage::FinalizeDecoder(Decoder* aDecoder)
+RasterImage::FinalizeDecoder(Decoder* aDecoder,
+                             const ImageMetadata& aMetadata)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aDecoder);
@@ -1576,7 +1577,7 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder)
   }
 
   
-  bool metadataOK = SetMetadata(aDecoder->GetImageMetadata(), wasMetadata);
+  bool metadataOK = SetMetadata(aMetadata, wasMetadata);
   if (!metadataOK) {
     
     
@@ -1588,7 +1589,7 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder)
     return;
   }
 
-  MOZ_ASSERT(mError || mHasSize || !aDecoder->HasSize(),
+  MOZ_ASSERT(mError || mHasSize || !aMetadata.HasSize(),
              "SetMetadata should've gotten a size");
 
   if (!wasMetadata && aDecoder->GetDecodeDone() && !aDecoder->WasAborted()) {

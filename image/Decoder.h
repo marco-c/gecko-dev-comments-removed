@@ -320,7 +320,8 @@ public:
 
   virtual Telemetry::ID SpeedHistogram();
 
-  ImageMetadata& GetImageMetadata() { return mImageMetadata; }
+  
+  const ImageMetadata& GetImageMetadata() { return mImageMetadata; }
 
   
 
