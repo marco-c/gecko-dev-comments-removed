@@ -136,11 +136,7 @@ pref("dom.fileHandle.enabled", true);
 pref("dom.manifest.oninstall", false);
 
 
-#ifdef NIGHTLY_BUILD
 pref("dom.select_events.enabled", true);
-#else
-pref("dom.select_events.enabled", false);
-#endif
 
 
 pref("dom.workers.enabled", true);
