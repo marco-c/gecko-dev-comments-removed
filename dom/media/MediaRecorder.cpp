@@ -388,7 +388,25 @@ public:
     LOG(LogLevel::Debug, ("Session.Start %p", this));
     MOZ_ASSERT(NS_IsMainThread());
 
-    SetupStreams();
+    
+    MediaStreamGraph* gm = mRecorder->GetSourceMediaStream()->Graph();
+    mTrackUnionStream = gm->CreateTrackUnionStream(nullptr);
+    MOZ_ASSERT(mTrackUnionStream, "CreateTrackUnionStream failed");
+
+    mTrackUnionStream->SetAutofinish(true);
+
+    
+    mInputPort = mTrackUnionStream->AllocateInputPort(mRecorder->GetSourceMediaStream());
+
+    DOMMediaStream* domStream = mRecorder->Stream();
+    if (domStream) {
+      
+      TracksAvailableCallback* tracksAvailableCallback = new TracksAvailableCallback(this);
+      domStream->OnTracksAvailable(tracksAvailableCallback);
+    } else {
+      
+      InitEncoder(ContainerWriter::CREATE_AUDIO_TRACK);
+    }
   }
 
   void Stop()
@@ -533,32 +551,6 @@ private:
       } else {
         mLastBlobTimeStamp = TimeStamp::Now();
       }
-    }
-  }
-
-  
-  void SetupStreams()
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    
-    MediaStreamGraph* gm = mRecorder->GetSourceMediaStream()->Graph();
-    mTrackUnionStream = gm->CreateTrackUnionStream(nullptr);
-    MOZ_ASSERT(mTrackUnionStream, "CreateTrackUnionStream failed");
-
-    mTrackUnionStream->SetAutofinish(true);
-
-    
-    mInputPort = mTrackUnionStream->AllocateInputPort(mRecorder->GetSourceMediaStream());
-
-    DOMMediaStream* domStream = mRecorder->Stream();
-    if (domStream) {
-      
-      TracksAvailableCallback* tracksAvailableCallback = new TracksAvailableCallback(this);
-      domStream->OnTracksAvailable(tracksAvailableCallback);
-    } else {
-      
-      InitEncoder(ContainerWriter::CREATE_AUDIO_TRACK);
     }
   }
 
