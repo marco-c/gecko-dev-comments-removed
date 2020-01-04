@@ -1880,6 +1880,9 @@ pref("privacy.trackingprotection.ui.enabled", false);
 pref("privacy.trackingprotection.introCount", 0);
 pref("privacy.trackingprotection.introURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/tracking-protection/start/");
 
+
+pref("privacy.userContext.enabled", false);
+
 #ifndef RELEASE_BUILD
 
 
