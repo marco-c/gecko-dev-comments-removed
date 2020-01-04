@@ -33,6 +33,13 @@ public:
   
   static bool IsOpus(const nsACString& aMimeType);
 
+  
+  
+  
+  
+  
+  static void AppendCodecDelay(MediaByteBuffer* config, uint64_t codecDelayUS);
+
 private:
   enum DecodeError {
     DECODE_SUCCESS,
