@@ -504,20 +504,6 @@ ServiceWorkerRegistrationInfo::GetActiveWorker(nsIServiceWorkerInfo **aResult)
 }
 
 NS_IMETHODIMP
-ServiceWorkerRegistrationInfo::GetWorkerByID(uint64_t aID, nsIServiceWorkerInfo **aResult)
-{
-  AssertIsOnMainThread();
-  MOZ_ASSERT(aResult);
-
-  RefPtr<ServiceWorkerInfo> info = GetServiceWorkerInfoById(aID);
-  if (NS_WARN_IF(!info)) {
-    return NS_ERROR_FAILURE;
-  }
-  info.forget(aResult);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 ServiceWorkerRegistrationInfo::AddListener(
                             nsIServiceWorkerRegistrationInfoListener *aListener)
 {
@@ -1196,6 +1182,7 @@ public:
     mRegistration->mWaitingWorker = mRegistration->mInstallingWorker.forget();
     mRegistration->mWaitingWorker->UpdateState(ServiceWorkerState::Installed);
     mRegistration->NotifyListenersOnChange();
+    swm->StoreRegistration(mPrincipal, mRegistration);
     swm->InvalidateServiceWorkerRegistrationWorker(mRegistration,
                                                    WhichServiceWorker::INSTALLING_WORKER | WhichServiceWorker::WAITING_WORKER);
 
@@ -1275,7 +1262,6 @@ public:
         mRegistration->mPendingUninstall = false;
         RefPtr<ServiceWorkerInfo> newest = mRegistration->Newest();
         if (newest && mScriptSpec.Equals(newest->ScriptSpec())) {
-          swm->StoreRegistration(mPrincipal, mRegistration);
           Succeed();
 
           
@@ -1291,8 +1277,6 @@ public:
       } else {
         mRegistration = swm->CreateNewRegistration(mScope, mPrincipal);
       }
-
-      swm->StoreRegistration(mPrincipal, mRegistration);
     } else {
       MOZ_ASSERT(mJobType == UpdateJob);
 
@@ -4083,30 +4067,6 @@ ServiceWorkerManager::GetRegistration(nsIPrincipal* aPrincipal,
   }
 
   return GetRegistration(scopeKey, aScope);
-}
-
-NS_IMETHODIMP
-ServiceWorkerManager::GetRegistrationByPrincipal(nsIPrincipal* aPrincipal,
-                                                 const nsAString& aScope,
-                                                 nsIServiceWorkerRegistrationInfo** aInfo)
-{
-  MOZ_ASSERT(aPrincipal);
-  MOZ_ASSERT(aInfo);
-
-  nsCOMPtr<nsIURI> scopeURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(scopeURI), aScope, nullptr, nullptr);
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  RefPtr<ServiceWorkerRegistrationInfo> info =
-    GetServiceWorkerRegistrationInfo(aPrincipal, scopeURI);
-  if (!info) {
-    return NS_ERROR_FAILURE;
-  }
-  info.forget(aInfo);
-
-  return NS_OK;
 }
 
 already_AddRefed<ServiceWorkerRegistrationInfo>
