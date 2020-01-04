@@ -113,7 +113,7 @@ ProgressTracker::GetImageStatus() const
 }
 
 
-class AsyncNotifyRunnable : public nsRunnable
+class AsyncNotifyRunnable : public Runnable
 {
   public:
     AsyncNotifyRunnable(ProgressTracker* aTracker,
@@ -193,7 +193,7 @@ ProgressTracker::Notify(IProgressObserver* aObserver)
 
 
 
-class AsyncNotifyCurrentStateRunnable : public nsRunnable
+class AsyncNotifyCurrentStateRunnable : public Runnable
 {
   public:
     AsyncNotifyCurrentStateRunnable(ProgressTracker* aProgressTracker,

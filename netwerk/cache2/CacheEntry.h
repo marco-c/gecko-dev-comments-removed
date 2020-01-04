@@ -181,7 +181,7 @@ private:
 
   
   
-  class AvailableCallbackRunnable : public nsRunnable
+  class AvailableCallbackRunnable : public Runnable
   {
   public:
     AvailableCallbackRunnable(CacheEntry* aEntry,
@@ -203,7 +203,7 @@ private:
 
   
   
-  class DoomCallbackRunnable : public nsRunnable
+  class DoomCallbackRunnable : public Runnable
   {
   public:
     DoomCallbackRunnable(CacheEntry* aEntry, nsresult aRv)
@@ -393,7 +393,7 @@ private:
 };
 
 
-class CacheOutputCloseListener final : public nsRunnable
+class CacheOutputCloseListener final : public Runnable
 {
 public:
   void OnOutputClosed();

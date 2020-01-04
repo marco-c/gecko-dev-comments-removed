@@ -27,7 +27,7 @@ namespace {
 
 
 
-class WatchedErrorEvent final : public nsRunnable
+class WatchedErrorEvent final : public Runnable
 {
 public:
   
@@ -65,7 +65,7 @@ public:
 
 
 
-class WatchedSuccessEvent final : public nsRunnable
+class WatchedSuccessEvent final : public Runnable
 {
 public:
   
@@ -103,7 +103,7 @@ public:
 
 
 
-class WatchedChangeEvent final : public nsRunnable
+class WatchedChangeEvent final : public Runnable
 {
 public:
   
@@ -224,7 +224,7 @@ struct PathRunnablesParametersWrapper {
 
 
 
-class NativeWatcherIOShutdownTask : public nsRunnable
+class NativeWatcherIOShutdownTask : public Runnable
 {
 public:
   NativeWatcherIOShutdownTask()
@@ -255,7 +255,7 @@ private:
 
 
 
-class NativeFileWatcherIOTask : public nsRunnable
+class NativeFileWatcherIOTask : public Runnable
 {
 public:
   NativeFileWatcherIOTask(HANDLE aIOCompletionPort)

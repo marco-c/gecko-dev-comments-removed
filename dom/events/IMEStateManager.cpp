@@ -890,7 +890,7 @@ IMEStateManager::GetNewIMEState(nsPresContext* aPresContext,
 }
 
 
-class IMEEnabledStateChangedEvent : public nsRunnable {
+class IMEEnabledStateChangedEvent : public Runnable {
 public:
   explicit IMEEnabledStateChangedEvent(uint32_t aState)
     : mState(aState)

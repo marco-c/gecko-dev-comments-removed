@@ -289,7 +289,7 @@ nsDownloadScanner::ScannerThreadFunction(void *p)
 
 
 
-class ReleaseDispatcher : public nsRunnable {
+class ReleaseDispatcher : public mozilla::Runnable {
 public:
   ReleaseDispatcher(nsISupports *ptr)
     : mPtr(ptr) {}

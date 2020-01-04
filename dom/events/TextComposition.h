@@ -380,7 +380,7 @@ private:
 
 
 
-  class CompositionEventDispatcher : public nsRunnable
+  class CompositionEventDispatcher : public Runnable
   {
   public:
     CompositionEventDispatcher(TextComposition* aTextComposition,

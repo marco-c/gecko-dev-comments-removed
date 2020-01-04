@@ -26,7 +26,7 @@ namespace dom {
 
 
 
-class SurfaceHelper : public nsRunnable {
+class SurfaceHelper : public Runnable {
 public:
   explicit SurfaceHelper(already_AddRefed<layers::Image> aImage) : mImage(aImage) {}
 
@@ -135,7 +135,7 @@ private:
   bool mFailed;
 };
 
-class EncodingRunnable : public nsRunnable
+class EncodingRunnable : public Runnable
 {
   virtual ~EncodingRunnable() {}
 
@@ -236,7 +236,7 @@ private:
   bool mUsingCustomOptions;
 };
 
-NS_IMPL_ISUPPORTS_INHERITED0(EncodingRunnable, nsRunnable);
+NS_IMPL_ISUPPORTS_INHERITED0(EncodingRunnable, Runnable);
 
 StaticRefPtr<nsIThreadPool> ImageEncoder::sThreadPool;
 

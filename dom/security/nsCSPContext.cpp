@@ -988,7 +988,7 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
 
 
 
-class CSPReportSenderRunnable final : public nsRunnable
+class CSPReportSenderRunnable final : public Runnable
 {
   public:
     CSPReportSenderRunnable(nsISupports* aBlockedContentSource,

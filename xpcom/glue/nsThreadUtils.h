@@ -219,22 +219,24 @@ extern nsIThread* NS_GetCurrentThread();
 
 #ifndef XPCOM_GLUE_AVOID_NSPR
 
+namespace mozilla {
 
-class nsRunnable : public nsIRunnable
+
+class Runnable : public nsIRunnable
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIRUNNABLE
 
-  nsRunnable() {}
+  Runnable() {}
 
 protected:
-  virtual ~nsRunnable() {}
+  virtual ~Runnable() {}
 };
 
 
-class CancelableRunnable : public nsRunnable,
-                             public nsICancelableRunnable
+class CancelableRunnable : public Runnable,
+                           public nsICancelableRunnable
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -247,11 +249,13 @@ protected:
   virtual ~CancelableRunnable() {}
 };
 
+} 
+
 
 
 
 template<typename Function>
-class nsRunnableFunction : public nsRunnable
+class nsRunnableFunction : public mozilla::Runnable
 {
 public:
   explicit nsRunnableFunction(const Function& aFunction)
@@ -280,7 +284,7 @@ nsRunnableFunction<Function>* NS_NewRunnableFunction(const Function& aFunction)
 template<class ClassType,
          typename ReturnType = void,
          bool Owning = true>
-class nsRunnableMethod : public nsRunnable
+class nsRunnableMethod : public mozilla::Runnable
 {
 public:
   virtual void Revoke() = 0;

@@ -17,7 +17,7 @@ class nsIThread;
 
 
 
-class nsShutdownThread : public nsRunnable {
+class nsShutdownThread : public mozilla::Runnable {
 public:
   explicit nsShutdownThread(nsIThread *aThread);
   ~nsShutdownThread();

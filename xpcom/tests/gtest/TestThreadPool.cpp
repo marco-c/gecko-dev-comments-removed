@@ -69,11 +69,11 @@ TEST(ThreadPool, Parallelism)
   EXPECT_TRUE(pool);
 
   
-  nsCOMPtr<nsIRunnable> r0 = new nsRunnable();
+  nsCOMPtr<nsIRunnable> r0 = new Runnable();
   pool->Dispatch(r0, NS_DISPATCH_SYNC);
   PR_Sleep(PR_SecondsToInterval(2));
 
-  class Runnable1 : public nsRunnable {
+  class Runnable1 : public Runnable {
   public:
     Runnable1(Monitor& aMonitor, bool& aDone)
       : mMonitor(aMonitor), mDone(aDone) {}
@@ -93,7 +93,7 @@ TEST(ThreadPool, Parallelism)
     bool& mDone;
   };
 
-  class Runnable2 : public nsRunnable {
+  class Runnable2 : public Runnable {
   public:
     Runnable2(Monitor& aMonitor, bool& aDone)
       : mMonitor(aMonitor), mDone(aDone) {}

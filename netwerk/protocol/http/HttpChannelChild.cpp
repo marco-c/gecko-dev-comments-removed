@@ -1500,7 +1500,7 @@ HttpChannelChild::CompleteRedirectSetup(nsIStreamListener *listener,
 
 
 
-class OverrideRunnable : public nsRunnable {
+class OverrideRunnable : public Runnable {
   RefPtr<HttpChannelChild> mChannel;
   RefPtr<HttpChannelChild> mNewChannel;
   RefPtr<InterceptStreamListener> mListener;

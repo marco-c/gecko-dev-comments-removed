@@ -167,7 +167,7 @@ protected:
   
   bool mIsFlushing;
 
-  class Runner : public nsRunnable {
+  class Runner : public Runnable {
   public:
     explicit Runner(TaskQueue* aQueue)
       : mQueue(aQueue)

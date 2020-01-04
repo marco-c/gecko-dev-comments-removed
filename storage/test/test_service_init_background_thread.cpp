@@ -16,7 +16,7 @@
 
 
 
-class ServiceInitializer : public nsRunnable
+class ServiceInitializer : public mozilla::Runnable
 {
 public:
   NS_IMETHOD Run()

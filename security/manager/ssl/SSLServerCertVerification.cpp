@@ -231,7 +231,7 @@ LogInvalidCertError(nsNSSSocketInfo* socketInfo,
 
 
 
-class SSLServerCertVerificationResult : public nsRunnable
+class SSLServerCertVerificationResult : public Runnable
 {
 public:
   NS_DECL_NSIRUNNABLE
@@ -704,7 +704,7 @@ CreateCertErrorRunnable(CertVerifier& certVerifier,
 
 
 
-class CertErrorRunnableRunnable : public nsRunnable
+class CertErrorRunnableRunnable : public Runnable
 {
 public:
   explicit CertErrorRunnableRunnable(CertErrorRunnable* certErrorRunnable)
@@ -726,7 +726,7 @@ private:
   RefPtr<CertErrorRunnable> mCertErrorRunnable;
 };
 
-class SSLServerCertVerificationJob : public nsRunnable
+class SSLServerCertVerificationJob : public Runnable
 {
 public:
   

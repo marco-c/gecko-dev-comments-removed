@@ -41,7 +41,8 @@ private:
   NS_DECL_OWNINGTHREAD
   DeviceStorageParams mParams;
 
-  class CancelableRunnable : public nsRunnable
+  
+  class CancelableRunnable : public Runnable
   {
   public:
     explicit CancelableRunnable(DeviceStorageRequestParent* aParent)

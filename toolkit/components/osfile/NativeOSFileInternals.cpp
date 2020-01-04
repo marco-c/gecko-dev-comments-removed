@@ -390,7 +390,7 @@ TypedArrayResult::GetCacheableResult(JSContext* cx, JS::MutableHandle<JS::Value>
 
 
 
-class ErrorEvent final : public nsRunnable {
+class ErrorEvent final : public Runnable {
 public:
   
 
@@ -448,7 +448,7 @@ public:
 
 
 
-class SuccessEvent final : public nsRunnable {
+class SuccessEvent final : public Runnable {
 public:
   
 
@@ -499,7 +499,7 @@ public:
 
 
 
-class AbstractDoEvent: public nsRunnable {
+class AbstractDoEvent: public Runnable {
 public:
   AbstractDoEvent(nsMainThreadPtrHandle<nsINativeOSFileSuccessCallback>& aOnSuccess,
                   nsMainThreadPtrHandle<nsINativeOSFileErrorCallback>& aOnError)

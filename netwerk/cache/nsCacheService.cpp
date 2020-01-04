@@ -222,7 +222,7 @@ NS_IMPL_ISUPPORTS(nsSetDiskSmartSizeCallback, nsITimerCallback)
 
 
 
-class nsSetSmartSizeEvent: public nsRunnable 
+class nsSetSmartSizeEvent: public Runnable 
 {
 public:
     explicit nsSetSmartSizeEvent(int32_t smartSize)
@@ -259,7 +259,7 @@ private:
 
 
 
-class nsGetSmartSizeEvent: public nsRunnable
+class nsGetSmartSizeEvent: public Runnable
 {
 public:
     nsGetSmartSizeEvent(const nsAString& cachePath, uint32_t currentSize,
@@ -287,7 +287,7 @@ private:
     bool     mShouldUseOldMaxSmartSize;
 };
 
-class nsBlockOnCacheThreadEvent : public nsRunnable {
+class nsBlockOnCacheThreadEvent : public Runnable {
 public:
     nsBlockOnCacheThreadEvent()
     {
@@ -966,7 +966,7 @@ nsCacheProfilePrefObserver::CacheCompressionLevel()
 
 
 
-class nsProcessRequestEvent : public nsRunnable {
+class nsProcessRequestEvent : public Runnable {
 public:
     explicit nsProcessRequestEvent(nsCacheRequest *aRequest)
     {
@@ -1004,7 +1004,7 @@ private:
 
 
 
-class nsDoomEvent : public nsRunnable {
+class nsDoomEvent : public Runnable {
 public:
     nsDoomEvent(nsCacheSession *session,
                 const nsACString &key,
@@ -1321,7 +1321,7 @@ nsCacheService::EvictEntriesForSession(nsCacheSession * session)
 
 namespace {
 
-class EvictionNotifierRunnable : public nsRunnable
+class EvictionNotifierRunnable : public Runnable
 {
 public:
     explicit EvictionNotifierRunnable(nsISupports* aSubject)
@@ -1638,7 +1638,7 @@ nsCacheService::CreateDiskDevice()
 }
 
 
-class nsDisableOldMaxSmartSizePrefEvent: public nsRunnable
+class nsDisableOldMaxSmartSizePrefEvent: public Runnable
 {
 public:
     nsDisableOldMaxSmartSizePrefEvent() {}
@@ -1848,7 +1848,7 @@ nsCacheService::CreateRequest(nsCacheSession *   session,
 }
 
 
-class nsCacheListenerEvent : public nsRunnable
+class nsCacheListenerEvent : public Runnable
 {
 public:
     nsCacheListenerEvent(nsICacheListener *listener,

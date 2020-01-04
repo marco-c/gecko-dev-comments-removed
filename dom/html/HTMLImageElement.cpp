@@ -77,7 +77,7 @@ namespace dom {
 
 
 
-class ImageLoadTask : public nsRunnable
+class ImageLoadTask : public Runnable
 {
 public:
   ImageLoadTask(HTMLImageElement *aElement, bool aAlwaysLoad)

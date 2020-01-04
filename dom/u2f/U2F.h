@@ -28,12 +28,6 @@ struct RegisteredKey;
 class U2FRegisterCallback;
 class U2FSignCallback;
 
-} 
-} 
-
-namespace mozilla {
-namespace dom {
-
 
 
 
@@ -46,7 +40,7 @@ enum class ErrorCode {
   TIMEOUT = 5
 };
 
-class U2FTask : public nsRunnable
+class U2FTask : public Runnable
 {
 public:
   U2FTask(const nsAString& aOrigin,

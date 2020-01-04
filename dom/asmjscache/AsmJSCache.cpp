@@ -238,7 +238,7 @@ EvictEntries(nsIFile* aDirectory, const nsACString& aGroup,
 
 
 
-class FileDescriptorHolder : public nsRunnable
+class FileDescriptorHolder : public Runnable
 {
 public:
   FileDescriptorHolder()

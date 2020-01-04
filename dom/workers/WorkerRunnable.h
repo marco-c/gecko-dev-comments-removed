@@ -424,7 +424,7 @@ protected:
 
 
 
-class WorkerMainThreadRunnable : public nsRunnable
+class WorkerMainThreadRunnable : public Runnable
 {
 protected:
   WorkerPrivate* mWorkerPrivate;

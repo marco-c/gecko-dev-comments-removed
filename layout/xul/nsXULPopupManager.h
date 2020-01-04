@@ -183,7 +183,7 @@ public:
 };
 
 
-class nsXULPopupShowingEvent : public nsRunnable
+class nsXULPopupShowingEvent : public mozilla::Runnable
 {
 public:
   nsXULPopupShowingEvent(nsIContent *aPopup,
@@ -205,7 +205,7 @@ private:
 };
 
 
-class nsXULPopupHidingEvent : public nsRunnable
+class nsXULPopupHidingEvent : public mozilla::Runnable
 {
 public:
   nsXULPopupHidingEvent(nsIContent *aPopup,
@@ -237,7 +237,7 @@ private:
 };
 
 
-class nsXULMenuCommandEvent : public nsRunnable
+class nsXULMenuCommandEvent : public mozilla::Runnable
 {
 public:
   nsXULMenuCommandEvent(nsIContent *aMenu,

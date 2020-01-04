@@ -421,7 +421,7 @@ private:
   
   void DoError();
 
-  class HandleErrorWorker : public nsRunnable
+  class HandleErrorWorker : public Runnable
   {
   public:
     

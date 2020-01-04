@@ -106,7 +106,7 @@ ReadCRLF (StreamType* aStream, nsLineBuffer<CharT> * aBuffer,
 
 
 
-class ServeResourceEvent : public nsRunnable {
+class ServeResourceEvent : public Runnable {
 private:
   
   nsCOMPtr<nsIInputStream> mInput;

@@ -140,7 +140,7 @@ InActiveDocument(nsIContent *aContent)
 
 
 
-class nsAsyncInstantiateEvent : public nsRunnable {
+class nsAsyncInstantiateEvent : public Runnable {
 public:
   explicit nsAsyncInstantiateEvent(nsObjectLoadingContent* aContent)
   : mContent(aContent) {}
@@ -173,7 +173,7 @@ nsAsyncInstantiateEvent::Run()
 
 
 
-class CheckPluginStopEvent : public nsRunnable {
+class CheckPluginStopEvent : public Runnable {
 public:
   explicit CheckPluginStopEvent(nsObjectLoadingContent* aContent)
   : mContent(aContent) {}
@@ -248,7 +248,7 @@ CheckPluginStopEvent::Run()
 
 
 
-class nsSimplePluginEvent : public nsRunnable {
+class nsSimplePluginEvent : public Runnable {
 public:
   nsSimplePluginEvent(nsIContent* aTarget, const nsAString &aEvent)
     : mTarget(aTarget)
@@ -301,7 +301,7 @@ nsSimplePluginEvent::Run()
 
 
 
-class nsPluginCrashedEvent : public nsRunnable {
+class nsPluginCrashedEvent : public Runnable {
 public:
   nsCOMPtr<nsIContent> mContent;
   nsString mPluginDumpID;
@@ -360,7 +360,7 @@ nsPluginCrashedEvent::Run()
   return NS_OK;
 }
 
-class nsStopPluginRunnable : public nsRunnable, public nsITimerCallback
+class nsStopPluginRunnable : public Runnable, public nsITimerCallback
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -389,7 +389,7 @@ private:
   nsCOMPtr<nsIObjectLoadingContent> mContent;
 };
 
-NS_IMPL_ISUPPORTS_INHERITED(nsStopPluginRunnable, nsRunnable, nsITimerCallback)
+NS_IMPL_ISUPPORTS_INHERITED(nsStopPluginRunnable, Runnable, nsITimerCallback)
 
 NS_IMETHODIMP
 nsStopPluginRunnable::Notify(nsITimer *aTimer)

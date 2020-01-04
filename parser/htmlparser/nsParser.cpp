@@ -108,7 +108,7 @@ using mozilla::dom::EncodingUtils;
 
 
 
-class nsParserContinueEvent : public nsRunnable
+class nsParserContinueEvent : public Runnable
 {
 public:
   RefPtr<nsParser> mParser;

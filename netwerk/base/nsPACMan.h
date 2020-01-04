@@ -50,7 +50,7 @@ public:
                                const nsCString &newPACURL) = 0;
 };
 
-class PendingPACQuery final : public nsRunnable,
+class PendingPACQuery final : public mozilla::Runnable,
                               public mozilla::LinkedListElement<PendingPACQuery>
 {
 public:

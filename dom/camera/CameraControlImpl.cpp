@@ -26,7 +26,7 @@ CameraControlImpl::CameraControlImpl()
   DOM_CAMERA_LOGT("%s:%d : this=%p\n", __func__, __LINE__, this);
   mCurrentConfiguration.mMode = ICameraControl::kUnspecifiedMode;
 
-  class Delegate : public nsRunnable
+  class Delegate : public Runnable
   {
   public:
     NS_IMETHOD
@@ -329,7 +329,7 @@ CameraControlImpl::OnSystemError(CameraControlListener::SystemContext aContext,
 
 
 
-class CameraControlImpl::ControlMessage : public nsRunnable
+class CameraControlImpl::ControlMessage : public Runnable
 {
 public:
   ControlMessage(CameraControlImpl* aCameraControl,

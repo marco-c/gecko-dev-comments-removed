@@ -378,7 +378,7 @@ ImportLoader::RemoveLinkElement(nsINode* aNode)
 
 
 
-class AsyncEvent : public nsRunnable {
+class AsyncEvent : public Runnable {
 public:
   AsyncEvent(nsINode* aNode, bool aSuccess)
     : mNode(aNode)

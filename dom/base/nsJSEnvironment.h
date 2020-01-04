@@ -186,7 +186,7 @@ nsScriptNameSpaceManager* GetNameSpaceManager();
 nsScriptNameSpaceManager* PeekNameSpaceManager();
 
 
-class AsyncErrorReporter final : public nsRunnable
+class AsyncErrorReporter final : public mozilla::Runnable
 {
 public:
   

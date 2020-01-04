@@ -130,7 +130,8 @@ class nsView;
 class nsMenuPopupFrame;
 
 
-class nsXULPopupShownEvent : public nsRunnable, public nsIDOMEventListener
+class nsXULPopupShownEvent : public mozilla::Runnable,
+                             public nsIDOMEventListener
 {
 public:
   nsXULPopupShownEvent(nsIContent *aPopup, nsPresContext* aPresContext)

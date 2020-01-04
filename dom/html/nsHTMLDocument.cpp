@@ -2524,7 +2524,7 @@ nsHTMLDocument::EndUpdate(nsUpdateType aUpdateType)
 
 
 
-class DeferredContentEditableCountChangeEvent : public nsRunnable
+class DeferredContentEditableCountChangeEvent : public Runnable
 {
 public:
   DeferredContentEditableCountChangeEvent(nsHTMLDocument *aDoc,

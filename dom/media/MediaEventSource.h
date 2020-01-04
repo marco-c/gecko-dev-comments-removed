@@ -133,7 +133,7 @@ class ListenerHelper {
   
   
   template <typename... Ts>
-  class R : public nsRunnable {
+  class R : public Runnable {
   public:
     template <typename... Us>
     R(RevocableToken* aToken, const Function& aFunction, Us&&... aEvents)

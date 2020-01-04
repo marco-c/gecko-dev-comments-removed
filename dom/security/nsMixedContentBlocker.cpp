@@ -57,7 +57,7 @@ bool nsMixedContentBlocker::sBlockMixedDisplay = false;
 
 
 
-class nsMixedContentEvent : public nsRunnable
+class nsMixedContentEvent : public Runnable
 {
 public:
   nsMixedContentEvent(nsISupports *aContext, MixedContentTypes aType, bool aRootHasSecureConnection)

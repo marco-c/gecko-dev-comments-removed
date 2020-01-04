@@ -759,7 +759,7 @@ protected:
 
 public:
   
-  class RestorePresentationEvent : public nsRunnable
+  class RestorePresentationEvent : public mozilla::Runnable
   {
   public:
     NS_DECL_NSIRUNNABLE

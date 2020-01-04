@@ -155,7 +155,7 @@ CaptureTask::PostTrackEndEvent()
   mImageGrabbedOrTrackEnd = true;
 
   
-  class TrackEndRunnable : public nsRunnable
+  class TrackEndRunnable : public Runnable
   {
   public:
     explicit TrackEndRunnable(CaptureTask* aTask)

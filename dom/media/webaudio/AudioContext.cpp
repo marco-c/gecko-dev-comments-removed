@@ -757,7 +757,7 @@ StateChangeTask::Run()
 }
 
 
-class OnStateChangeTask final : public nsRunnable
+class OnStateChangeTask final : public Runnable
 {
 public:
   explicit OnStateChangeTask(AudioContext* aAudioContext)

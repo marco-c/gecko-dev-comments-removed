@@ -71,7 +71,7 @@ ShutdownThread(nsCOMPtr<nsIThread>& aThread)
 
 
 
-class MediaCodecOutputDrain : public nsRunnable
+class MediaCodecOutputDrain : public Runnable
 {
 public:
   void Start() {

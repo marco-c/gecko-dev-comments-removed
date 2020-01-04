@@ -23,7 +23,7 @@
 
 
 
-class nsAsyncDoomEvent : public nsRunnable {
+class nsAsyncDoomEvent : public mozilla::Runnable {
 public:
     nsAsyncDoomEvent(nsCacheEntryDescriptor *descriptor,
                      nsICacheListener *listener)

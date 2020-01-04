@@ -76,7 +76,7 @@ class FilePickerParent : public PFilePickerParent
   bool CreateFilePicker();
 
   
-  class IORunnable : public nsRunnable
+  class IORunnable : public Runnable
   {
     FilePickerParent* mFilePickerParent;
     nsTArray<nsCOMPtr<nsIFile>> mFiles;

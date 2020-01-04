@@ -24,7 +24,7 @@ namespace dom {
 
 
 
-class PostMessageEvent final : public nsRunnable
+class PostMessageEvent final : public Runnable
                              , public StructuredCloneHolder
 {
 public:

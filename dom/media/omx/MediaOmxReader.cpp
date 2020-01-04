@@ -66,7 +66,7 @@ private:
 
 
 
-class MediaOmxReader::NotifyDataArrivedRunnable : public nsRunnable
+class MediaOmxReader::NotifyDataArrivedRunnable : public Runnable
 {
 public:
   NotifyDataArrivedRunnable(MediaOmxReader* aOmxReader,

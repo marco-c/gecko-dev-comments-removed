@@ -118,7 +118,7 @@ using namespace mozilla::dom;
 
 
 
-class nsAutoFocusEvent : public nsRunnable
+class nsAutoFocusEvent : public Runnable
 {
 public:
   explicit nsAutoFocusEvent(nsGenericHTMLFormElement* aElement) : mElement(aElement) {}

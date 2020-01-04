@@ -307,7 +307,7 @@ AudioNode::Disconnect(uint32_t aOutput, ErrorResult& aRv)
   
   
   
-  class RunnableRelease final : public nsRunnable
+  class RunnableRelease final : public Runnable
   {
   public:
     explicit RunnableRelease(already_AddRefed<AudioNode> aNode)

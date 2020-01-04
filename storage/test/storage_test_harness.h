@@ -318,7 +318,7 @@ void watch_for_mutex_use_on_this_thread()
 
 
 
-class ThreadWedger : public nsRunnable
+class ThreadWedger : public mozilla::Runnable
 {
 public:
   explicit ThreadWedger(nsIEventTarget *aTarget)

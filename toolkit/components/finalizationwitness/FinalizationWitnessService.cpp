@@ -32,7 +32,7 @@ namespace {
 
 
 
-class FinalizationEvent final: public nsRunnable
+class FinalizationEvent final: public Runnable
 {
 public:
   FinalizationEvent(const char* aTopic,

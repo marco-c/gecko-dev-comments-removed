@@ -1456,7 +1456,7 @@ private:
 
 
 class BlobParent::OpenStreamRunnable final
-  : public nsRunnable
+  : public Runnable
 {
   friend class nsRevocableEventPtr<OpenStreamRunnable>;
 
@@ -1685,7 +1685,7 @@ private:
   }
 };
 
-NS_IMPL_ISUPPORTS_INHERITED0(BlobParent::OpenStreamRunnable, nsRunnable)
+NS_IMPL_ISUPPORTS_INHERITED0(BlobParent::OpenStreamRunnable, Runnable)
 
 
 
@@ -1824,7 +1824,7 @@ protected:
 };
 
 class BlobChild::RemoteBlobImpl::CreateStreamHelper final
-  : public nsRunnable
+  : public Runnable
 {
   Monitor mMonitor;
   RefPtr<RemoteBlobImpl> mRemoteBlobImpl;
@@ -2428,7 +2428,7 @@ CreateStreamHelper::RunInternal(RemoteBlobImpl* aBaseRemoteBlobImpl,
 }
 
 NS_IMPL_ISUPPORTS_INHERITED0(BlobChild::RemoteBlobImpl::CreateStreamHelper,
-                             nsRunnable)
+                             Runnable)
 
 NS_IMETHODIMP
 BlobChild::RemoteBlobImpl::

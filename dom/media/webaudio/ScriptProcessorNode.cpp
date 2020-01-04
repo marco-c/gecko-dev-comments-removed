@@ -368,7 +368,7 @@ private:
     
     double playbackTime = mDestination->StreamTimeToSeconds(playbackTick);
 
-    class Command final : public nsRunnable
+    class Command final : public Runnable
     {
     public:
       Command(AudioNodeStream* aStream,

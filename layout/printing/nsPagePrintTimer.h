@@ -18,7 +18,7 @@ class nsPrintEngine;
 
 
 
-class nsPagePrintTimer final : public nsRunnable,
+class nsPagePrintTimer final : public mozilla::Runnable,
                                public nsITimerCallback
 {
 public:

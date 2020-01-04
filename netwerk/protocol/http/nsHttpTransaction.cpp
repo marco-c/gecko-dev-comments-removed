@@ -869,7 +869,7 @@ nsHttpTransaction::SaveNetworkStats(bool enforce)
 
     
     
-    RefPtr<nsRunnable> event =
+    RefPtr<Runnable> event =
         new SaveNetworkStatsEvent(mAppId, mIsInIsolatedMozBrowser, mActiveNetworkInfo,
                                   mCountRecv, mCountSent, false);
     NS_DispatchToMainThread(event);
@@ -2081,7 +2081,7 @@ nsHttpTransaction::GetResponseEnd()
 
 
 
-class DeleteHttpTransaction : public nsRunnable {
+class DeleteHttpTransaction : public Runnable {
 public:
     explicit DeleteHttpTransaction(nsHttpTransaction *trans)
         : mTrans(trans)

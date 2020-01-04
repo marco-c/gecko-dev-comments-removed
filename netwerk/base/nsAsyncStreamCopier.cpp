@@ -25,7 +25,7 @@ static LazyLogModule gStreamCopierLog("nsStreamCopier");
 
 
 
-class AsyncApplyBufferingPolicyEvent final: public nsRunnable
+class AsyncApplyBufferingPolicyEvent final: public Runnable
 {
 public:
     

@@ -542,7 +542,7 @@ nsGIOInputStream::DoRead(char *aBuf, uint32_t aCount, uint32_t *aCountRead)
 
 
 
-class nsGIOSetContentTypeEvent : public nsRunnable
+class nsGIOSetContentTypeEvent : public mozilla::Runnable
 {
   public:
     nsGIOSetContentTypeEvent(nsIChannel *channel, const char *contentType)

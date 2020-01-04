@@ -2002,7 +2002,7 @@ namespace {
 
 
 
-struct DelayedDeleteContentParentTask : public nsRunnable
+struct DelayedDeleteContentParentTask : public Runnable
 {
   explicit DelayedDeleteContentParentTask(ContentParent* aObj) : mObj(aObj) { }
 

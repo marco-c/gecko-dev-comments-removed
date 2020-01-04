@@ -49,7 +49,7 @@ protected:
 
 
 
-class ArchiveReaderEvent : public nsRunnable
+class ArchiveReaderEvent : public Runnable
 {
 public:
   NS_DECL_NSIRUNNABLE

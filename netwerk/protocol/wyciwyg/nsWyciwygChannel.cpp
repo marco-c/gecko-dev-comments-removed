@@ -34,7 +34,7 @@
 typedef mozilla::net::LoadContextInfo LoadContextInfo;
 
 
-class nsWyciwygAsyncEvent : public nsRunnable {
+class nsWyciwygAsyncEvent : public mozilla::Runnable {
 public:
   explicit nsWyciwygAsyncEvent(nsWyciwygChannel *aChannel) : mChannel(aChannel) {}
 

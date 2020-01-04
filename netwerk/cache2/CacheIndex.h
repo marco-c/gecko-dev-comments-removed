@@ -1038,7 +1038,7 @@ private:
   
   bool mAsyncGetDiskConsumptionBlocked;
 
-  class DiskConsumptionObserver : public nsRunnable
+  class DiskConsumptionObserver : public Runnable
   {
   public:
     static DiskConsumptionObserver* Init(nsICacheStorageConsumptionObserver* aObserver)

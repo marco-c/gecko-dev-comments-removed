@@ -398,7 +398,7 @@ private:
 
 
 template<class SuccessCallbackType>
-class ErrorCallbackRunnable : public nsRunnable
+class ErrorCallbackRunnable : public Runnable
 {
 public:
   ErrorCallbackRunnable(
@@ -449,7 +449,7 @@ private:
 };
 
 
-class GetUserMediaListenerRemove: public nsRunnable
+class GetUserMediaListenerRemove: public Runnable
 {
 public:
   GetUserMediaListenerRemove(uint64_t aWindowID,
@@ -734,7 +734,7 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(FakeTrackSourceGetter,
 
 
 
-class GetUserMediaStreamRunnable : public nsRunnable
+class GetUserMediaStreamRunnable : public Runnable
 {
 public:
   GetUserMediaStreamRunnable(
@@ -1295,7 +1295,7 @@ private:
 };
 
 #if defined(ANDROID) && !defined(MOZ_WIDGET_GONK)
-class GetUserMediaRunnableWrapper : public nsRunnable
+class GetUserMediaRunnableWrapper : public Runnable
 {
 public:
   
@@ -2620,7 +2620,7 @@ MediaManager::Shutdown()
   {
   public:
     ShutdownTask(MediaManager* aManager,
-                 nsRunnable* aReply)
+                 Runnable* aReply)
       : mManager(aManager)
       , mReply(aReply) {}
   private:
@@ -2644,7 +2644,7 @@ MediaManager::Shutdown()
       }
     }
     RefPtr<MediaManager> mManager;
-    RefPtr<nsRunnable> mReply;
+    RefPtr<Runnable> mReply;
   };
 
   

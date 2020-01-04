@@ -21,7 +21,7 @@ namespace storage {
 
 
 
-class AsyncStatementFinalizer : public nsRunnable
+class AsyncStatementFinalizer : public Runnable
 {
 public:
   
@@ -62,7 +62,7 @@ private:
 
 
 
-class LastDitchSqliteStatementFinalizer : public nsRunnable
+class LastDitchSqliteStatementFinalizer : public Runnable
 {
 public:
   

@@ -444,7 +444,7 @@ private:
 
 
 
-class DataChannelOnMessageAvailable : public nsRunnable
+class DataChannelOnMessageAvailable : public Runnable
 {
 public:
   enum {

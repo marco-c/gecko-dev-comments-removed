@@ -622,7 +622,7 @@ NS_IMPL_ISUPPORTS_INHERITED(
 
 
 
-class NotifyVisitObservers : public nsRunnable
+class NotifyVisitObservers : public Runnable
 {
 public:
   NotifyVisitObservers(VisitData& aPlace,
@@ -687,7 +687,7 @@ private:
 
 
 
-class NotifyTitleObservers : public nsRunnable
+class NotifyTitleObservers : public Runnable
 {
 public:
   
@@ -733,7 +733,7 @@ private:
 
 
 
-class NotifyPlaceInfoCallback : public nsRunnable
+class NotifyPlaceInfoCallback : public Runnable
 {
 public:
   NotifyPlaceInfoCallback(const nsMainThreadPtrHandle<mozIVisitInfoCallback>& aCallback,
@@ -803,7 +803,7 @@ private:
 
 
 
-class NotifyCompletion : public nsRunnable
+class NotifyCompletion : public Runnable
 {
 public:
   explicit NotifyCompletion(const nsMainThreadPtrHandle<mozIVisitInfoCallback>& aCallback)
@@ -871,7 +871,7 @@ CanAddURI(nsIURI* aURI,
 
 
 
-class InsertVisitedURIs final: public nsRunnable
+class InsertVisitedURIs final: public Runnable
 {
 public:
   
@@ -1320,7 +1320,7 @@ private:
   RefPtr<History> mHistory;
 };
 
-class GetPlaceInfo final : public nsRunnable {
+class GetPlaceInfo final : public Runnable {
 public:
   
 
@@ -1380,7 +1380,7 @@ private:
 
 
 
-class SetPageTitle : public nsRunnable
+class SetPageTitle : public Runnable
 {
 public:
   
@@ -1594,7 +1594,7 @@ NS_IMPL_ISUPPORTS(
 
 
 
-class NotifyRemoveVisits : public nsRunnable
+class NotifyRemoveVisits : public Runnable
 {
 public:
 
@@ -1679,7 +1679,7 @@ private:
 
 
 
-class RemoveVisits : public nsRunnable
+class RemoveVisits : public Runnable
 {
 public:
   

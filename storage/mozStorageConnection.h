@@ -373,7 +373,7 @@ private:
 
 
 
-class CallbackComplete final : public nsRunnable
+class CallbackComplete final : public Runnable
 {
 public:
   

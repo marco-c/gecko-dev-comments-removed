@@ -37,7 +37,7 @@ class MediaResource;
 
 
 
-class AndroidMediaResourceServer : public nsRunnable
+class AndroidMediaResourceServer : public Runnable
 {
 private:
   

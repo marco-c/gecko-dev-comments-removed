@@ -54,7 +54,7 @@ using namespace workers;
 
 #ifndef SPIDERMONKEY_PROMISE
 
-class PromiseReactionJob final : public nsRunnable
+class PromiseReactionJob final : public Runnable
 {
 public:
   PromiseReactionJob(Promise* aPromise,
@@ -180,7 +180,7 @@ GetPromise(JSContext* aCx, JS::Handle<JSObject*> aFunc)
 
 
 
-class PromiseResolveThenableJob final : public nsRunnable
+class PromiseResolveThenableJob final : public Runnable
 {
 public:
   PromiseResolveThenableJob(Promise* aPromise,

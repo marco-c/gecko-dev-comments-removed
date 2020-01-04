@@ -186,7 +186,7 @@ private:
 
 
 template<typename OnRunType>
-class LambdaRunnable : public nsRunnable
+class LambdaRunnable : public Runnable
 {
 public:
   explicit LambdaRunnable(OnRunType&& aOnRun) : mOnRun(Move(aOnRun)) {}

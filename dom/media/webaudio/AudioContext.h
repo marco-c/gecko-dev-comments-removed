@@ -91,7 +91,7 @@ private:
 
 
 
-class StateChangeTask final : public nsRunnable
+class StateChangeTask final : public Runnable
 {
 public:
   

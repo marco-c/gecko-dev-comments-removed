@@ -169,7 +169,7 @@ PRTime RoundedPRNow();
 
 
 template<typename StatementType>
-class FinalizeStatementCacheProxy : public nsRunnable
+class FinalizeStatementCacheProxy : public Runnable
 {
 public:
   
@@ -230,7 +230,7 @@ bool GetHiddenState(bool aIsRedirect,
 
 
 
-class PlacesEvent : public nsRunnable
+class PlacesEvent : public Runnable
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED

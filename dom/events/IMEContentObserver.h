@@ -195,7 +195,7 @@ private:
 
 
 
-  class AChangeEvent: public nsRunnable
+  class AChangeEvent: public Runnable
   {
   protected:
     enum ChangeEventType

@@ -175,7 +175,7 @@ namespace {
 
 
 
-class WalkCacheRunnable : public nsRunnable
+class WalkCacheRunnable : public Runnable
                         , public CacheStorageService::EntryInfoCallback
 {
 protected:
@@ -357,7 +357,7 @@ public:
 private:
   
   
-  class OnCacheEntryInfoRunnable : public nsRunnable
+  class OnCacheEntryInfoRunnable : public Runnable
   {
   public:
     explicit OnCacheEntryInfoRunnable(WalkDiskCacheRunnable* aWalker)
@@ -526,7 +526,7 @@ void CacheStorageService::DropPrivateBrowsingEntries()
 
 namespace {
 
-class CleaupCacheDirectoriesRunnable : public nsRunnable
+class CleaupCacheDirectoriesRunnable : public Runnable
 {
 public:
   NS_DECL_NSIRUNNABLE
@@ -1704,7 +1704,7 @@ CacheStorageService::DoomStorageEntry(CacheStorage const* aStorage,
     return NS_OK;
   }
 
-  class Callback : public nsRunnable
+  class Callback : public Runnable
   {
   public:
     explicit Callback(nsICacheEntryDoomCallback* aCallback) : mCallback(aCallback) { }
@@ -1717,7 +1717,7 @@ CacheStorageService::DoomStorageEntry(CacheStorage const* aStorage,
   };
 
   if (aCallback) {
-    RefPtr<nsRunnable> callback = new Callback(aCallback);
+    RefPtr<Runnable> callback = new Callback(aCallback);
     return NS_DispatchToMainThread(callback);
   }
 
@@ -1828,7 +1828,7 @@ CacheStorageService::DoomStorageEntries(nsCSubstring const& aContextKey,
   
   
   
-  class Callback : public nsRunnable
+  class Callback : public Runnable
   {
   public:
     explicit Callback(nsICacheEntryDoomCallback* aCallback) : mCallback(aCallback) { }
@@ -1841,7 +1841,7 @@ CacheStorageService::DoomStorageEntries(nsCSubstring const& aContextKey,
   };
 
   if (aCallback) {
-    RefPtr<nsRunnable> callback = new Callback(aCallback);
+    RefPtr<Runnable> callback = new Callback(aCallback);
     return NS_DispatchToMainThread(callback);
   }
 

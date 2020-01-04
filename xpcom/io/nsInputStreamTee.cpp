@@ -57,7 +57,7 @@ private:
   bool                      mSinkIsValid; 
 };
 
-class nsInputStreamTeeWriteEvent : public nsRunnable
+class nsInputStreamTeeWriteEvent : public Runnable
 {
 public:
   

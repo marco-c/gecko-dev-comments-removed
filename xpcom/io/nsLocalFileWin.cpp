@@ -78,7 +78,7 @@ using namespace mozilla;
 
 
 
-class AsyncLocalFileWinDone : public nsRunnable
+class AsyncLocalFileWinDone : public Runnable
 {
 public:
   AsyncLocalFileWinDone() :
@@ -107,7 +107,7 @@ private:
 
 
 
-class AsyncLocalFileWinOperation : public nsRunnable
+class AsyncLocalFileWinOperation : public Runnable
 {
 public:
   enum FileOp { RevealOp, LaunchOp };

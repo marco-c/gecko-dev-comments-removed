@@ -50,7 +50,7 @@ namespace mozilla {
 
 
 
-class FileBlockCache : public nsRunnable {
+class FileBlockCache : public Runnable {
 public:
   enum {
     BLOCK_SIZE = MediaCacheStream::BLOCK_SIZE

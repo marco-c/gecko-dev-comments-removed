@@ -36,7 +36,7 @@ namespace {
 
 
 
-class DoomCallbackSynchronizer : public nsRunnable
+class DoomCallbackSynchronizer : public Runnable
 {
 public:
   explicit DoomCallbackSynchronizer(nsICacheEntryDoomCallback* cb) : mCB(cb)
@@ -301,7 +301,7 @@ nsresult _OldGetDiskConsumption::Get(nsICacheStorageConsumptionObserver* aCallba
 }
 
 NS_IMPL_ISUPPORTS_INHERITED(_OldGetDiskConsumption,
-                            nsRunnable,
+                            Runnable,
                             nsICacheVisitor)
 
 _OldGetDiskConsumption::_OldGetDiskConsumption(
@@ -653,7 +653,7 @@ GetCacheSession(nsCSubstring const &aScheme,
 } 
 
 
-NS_IMPL_ISUPPORTS_INHERITED(_OldCacheLoad, nsRunnable, nsICacheListener)
+NS_IMPL_ISUPPORTS_INHERITED(_OldCacheLoad, Runnable, nsICacheListener)
 
 _OldCacheLoad::_OldCacheLoad(nsCSubstring const& aScheme,
                              nsCSubstring const& aCacheKey,

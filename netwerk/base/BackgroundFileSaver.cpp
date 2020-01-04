@@ -62,7 +62,7 @@ static LazyLogModule prlog("BackgroundFileSaver");
 
 
 
-class NotifyTargetChangeRunnable final : public nsRunnable
+class NotifyTargetChangeRunnable final : public Runnable
 {
 public:
   NotifyTargetChangeRunnable(BackgroundFileSaver *aSaver, nsIFile *aTarget)

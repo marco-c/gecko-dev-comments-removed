@@ -25,7 +25,7 @@
 
 
 
-class SaveProfileTask : public nsRunnable {
+class SaveProfileTask : public mozilla::Runnable {
 public:
   SaveProfileTask() {}
 

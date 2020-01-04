@@ -32,7 +32,7 @@ HANDLE sEventHandle = nullptr;
 
 
 
-class HWNDGetter : public nsRunnable {
+class HWNDGetter : public mozilla::Runnable {
 public:
   HWNDGetter() : hidden_window_hwnd(nullptr) {
     MOZ_COUNT_CTOR(HWNDGetter);

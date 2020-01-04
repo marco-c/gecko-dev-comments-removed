@@ -166,7 +166,7 @@ class MediaRecorder::Session: public nsIObserver,
 
   
   
-  class PushBlobRunnable : public nsRunnable
+  class PushBlobRunnable : public Runnable
   {
   public:
     explicit PushBlobRunnable(Session* aSession)
@@ -196,7 +196,7 @@ class MediaRecorder::Session: public nsIObserver,
   };
 
   
-  class EncoderErrorNotifierRunnable : public nsRunnable
+  class EncoderErrorNotifierRunnable : public Runnable
   {
   public:
     explicit EncoderErrorNotifierRunnable(Session* aSession)
@@ -224,7 +224,7 @@ class MediaRecorder::Session: public nsIObserver,
   };
 
   
-  class DispatchStartEventRunnable : public nsRunnable
+  class DispatchStartEventRunnable : public Runnable
   {
   public:
     DispatchStartEventRunnable(Session* aSession, const nsAString & aEventName)
@@ -253,7 +253,7 @@ class MediaRecorder::Session: public nsIObserver,
 
   
   
-  class ExtractRunnable : public nsRunnable
+  class ExtractRunnable : public Runnable
   {
   public:
     explicit ExtractRunnable(Session* aSession)
@@ -353,7 +353,7 @@ class MediaRecorder::Session: public nsIObserver,
   };
   
   
-  class DestroyRunnable : public nsRunnable
+  class DestroyRunnable : public Runnable
   {
   public:
     explicit DestroyRunnable(Session* aSession)

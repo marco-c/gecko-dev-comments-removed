@@ -190,7 +190,7 @@ NS_IMPL_CI_INTERFACE_GETTER(nsThread, nsIThread, nsIThreadInternal,
 
 
 
-class nsThreadStartupEvent : public nsRunnable
+class nsThreadStartupEvent : public Runnable
 {
 public:
   nsThreadStartupEvent()
@@ -254,15 +254,13 @@ struct nsThreadShutdownContext
 
 
 
-class nsThreadShutdownAckEvent : public nsRunnable,
-                                 public nsICancelableRunnable
+class nsThreadShutdownAckEvent : public CancelableRunnable
 {
 public:
   explicit nsThreadShutdownAckEvent(nsThreadShutdownContext* aCtx)
     : mShutdownContext(aCtx)
   {
   }
-  NS_DECL_ISUPPORTS_INHERITED
   NS_IMETHOD Run() override
   {
     mShutdownContext->terminatingThread->ShutdownComplete(mShutdownContext);
@@ -278,11 +276,8 @@ private:
   nsThreadShutdownContext* mShutdownContext;
 };
 
-NS_IMPL_ISUPPORTS_INHERITED(nsThreadShutdownAckEvent, nsRunnable,
-                            nsICancelableRunnable)
 
-
-class nsThreadShutdownEvent : public nsRunnable
+class nsThreadShutdownEvent : public Runnable
 {
 public:
   nsThreadShutdownEvent(nsThread* aThr, nsThreadShutdownContext* aCtx)

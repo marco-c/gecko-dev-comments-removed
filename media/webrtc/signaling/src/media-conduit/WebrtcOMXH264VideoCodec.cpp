@@ -128,7 +128,7 @@ ShutdownThread(nsCOMPtr<nsIThread>& aThread)
 
 
 
-class OMXOutputDrain : public nsRunnable
+class OMXOutputDrain : public Runnable
 {
 public:
   void Start() {

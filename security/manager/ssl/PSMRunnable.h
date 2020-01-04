@@ -15,7 +15,7 @@ namespace mozilla { namespace psm {
 
 
 
-class SyncRunnableBase : public nsRunnable
+class SyncRunnableBase : public Runnable
 {
 public:
   NS_DECL_NSIRUNNABLE
@@ -27,7 +27,7 @@ private:
   mozilla::Monitor monitor;
 };
 
-class NotifyObserverRunnable : public nsRunnable
+class NotifyObserverRunnable : public Runnable
 {
 public:
   NotifyObserverRunnable(nsIObserver * observer,

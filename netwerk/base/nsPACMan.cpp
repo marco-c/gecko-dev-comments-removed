@@ -61,7 +61,7 @@ HttpRequestSucceeded(nsIStreamLoader *loader)
 
 
 
-class ExecuteCallback final : public nsRunnable
+class ExecuteCallback final : public Runnable
 {
 public:
   ExecuteCallback(nsPACManCallback *aCallback,
@@ -101,7 +101,7 @@ private:
 
 
 
-class ShutdownThread final : public nsRunnable
+class ShutdownThread final : public Runnable
 {
 public:
   explicit ShutdownThread(nsIThread *thread)
@@ -122,7 +122,7 @@ private:
 
 
 
-class WaitForThreadShutdown final : public nsRunnable
+class WaitForThreadShutdown final : public Runnable
 {
 public:
   explicit WaitForThreadShutdown(nsPACMan *aPACMan)
@@ -150,7 +150,7 @@ private:
 
 
 
-class PACLoadComplete final : public nsRunnable
+class PACLoadComplete final : public Runnable
 {
 public:
   explicit PACLoadComplete(nsPACMan *aPACMan)
@@ -176,7 +176,7 @@ private:
 
 
 
-class ExecutePACThreadAction final : public nsRunnable
+class ExecutePACThreadAction final : public Runnable
 {
 public:
   

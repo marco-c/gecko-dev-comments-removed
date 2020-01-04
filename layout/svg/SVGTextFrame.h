@@ -127,7 +127,7 @@ private:
 
 
 
-class GlyphMetricsUpdater : public nsRunnable {
+class GlyphMetricsUpdater : public Runnable {
 public:
   NS_DECL_NSIRUNNABLE
   explicit GlyphMetricsUpdater(SVGTextFrame* aFrame) : mFrame(aFrame) { }

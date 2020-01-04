@@ -50,7 +50,7 @@ typedef AsyncExecuteStatements::StatementDataArray StatementDataArray;
 
 
 
-class CallbackResultNotifier : public nsRunnable
+class CallbackResultNotifier : public Runnable
 {
 public:
   CallbackResultNotifier(mozIStorageStatementCallback *aCallback,
@@ -88,7 +88,7 @@ private:
 
 
 
-class ErrorNotifier : public nsRunnable
+class ErrorNotifier : public Runnable
 {
 public:
   ErrorNotifier(mozIStorageStatementCallback *aCallback,
@@ -125,7 +125,7 @@ private:
 
 
 
-class CompletionNotifier : public nsRunnable
+class CompletionNotifier : public Runnable
 {
 public:
   

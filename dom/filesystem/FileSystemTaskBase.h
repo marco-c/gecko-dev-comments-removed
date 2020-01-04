@@ -207,7 +207,7 @@ private:
 
 
 
-class FileSystemTaskParentBase : public nsRunnable
+class FileSystemTaskParentBase : public Runnable
 {
 public:
   

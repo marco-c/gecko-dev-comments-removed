@@ -64,7 +64,7 @@ LocalFileToDirectoryOrBlob(nsPIDOMWindowInner* aWindow,
 
 
 
-class AsyncShowFilePicker : public nsRunnable
+class AsyncShowFilePicker : public mozilla::Runnable
 {
 public:
   AsyncShowFilePicker(nsIFilePicker *aFilePicker,
