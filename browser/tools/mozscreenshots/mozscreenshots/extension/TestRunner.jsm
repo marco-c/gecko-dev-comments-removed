@@ -13,8 +13,10 @@ const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironmen
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/osfile.jsm");
+
 Cu.import("chrome://mozscreenshots/content/Screenshot.jsm");
 
 
@@ -146,9 +148,15 @@ this.TestRunner = {
 
     function changeConfig(config) {
       log.debug("calling " + config.name);
-      let promise = config.applyConfig();
+      let promise = Promise.resolve(config.applyConfig());
       log.debug("called " + config.name);
-      return promise;
+      
+      
+      return promise.then(() => {
+        return new Promise((resolve) => {
+          setTimeout(resolve, 500);
+        });
+      });
     }
 
     try {
