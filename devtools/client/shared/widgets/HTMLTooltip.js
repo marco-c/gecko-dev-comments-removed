@@ -117,7 +117,8 @@ HTMLTooltip.prototype = {
 
 
 
-  setContent: function (content, width, height) {
+
+  setContent: function (content, width, height = Infinity) {
     let themeHeight = EXTRA_HEIGHT[this.type] + 2 * EXTRA_BORDER[this.type];
     let themeWidth = 2 * EXTRA_BORDER[this.type];
 
