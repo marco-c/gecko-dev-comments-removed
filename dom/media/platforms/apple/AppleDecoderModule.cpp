@@ -11,6 +11,7 @@
 #include "AppleVDALinker.h"
 #include "AppleVTDecoder.h"
 #include "AppleVTLinker.h"
+#include "MacIOSurfaceImage.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Logging.h"
@@ -18,6 +19,7 @@
 namespace mozilla {
 
 bool AppleDecoderModule::sInitialized = false;
+bool AppleDecoderModule::sIsCoreMediaAvailable = false;
 bool AppleDecoderModule::sIsVTAvailable = false;
 bool AppleDecoderModule::sIsVTHWAvailable = false;
 bool AppleDecoderModule::sIsVDAAvailable = false;
@@ -46,21 +48,22 @@ AppleDecoderModule::Init()
 
   
   MacIOSurfaceLib::LoadLibrary();
+  const bool loaded = MacIOSurfaceLib::isInit();
 
   
-  sIsVDAAvailable = AppleVDALinker::Link();
+  sIsVDAAvailable = loaded && AppleVDALinker::Link();
 
   
-  bool haveCoreMedia = AppleCMLinker::Link();
+  sIsCoreMediaAvailable = AppleCMLinker::Link();
   
   
   
-  bool haveVideoToolbox = AppleVTLinker::Link();
-  sIsVTAvailable = haveCoreMedia && haveVideoToolbox;
+  bool haveVideoToolbox = loaded && AppleVTLinker::Link();
+  sIsVTAvailable = sIsCoreMediaAvailable && haveVideoToolbox;
 
   sIsVTHWAvailable = AppleVTLinker::skPropEnableHWAccel != nullptr;
 
-  sCanUseHardwareVideoDecoder =
+  sCanUseHardwareVideoDecoder = loaded &&
     gfxPlatform::GetPlatform()->CanUseHardwareVideoDecoding();
 
   sInitialized = true;
@@ -116,10 +119,12 @@ AppleDecoderModule::CreateAudioDecoder(const AudioInfo& aConfig,
 bool
 AppleDecoderModule::SupportsMimeType(const nsACString& aMimeType)
 {
-  return aMimeType.EqualsLiteral("audio/mpeg") ||
-    aMimeType.EqualsLiteral("audio/mp4a-latm") ||
-    aMimeType.EqualsLiteral("video/mp4") ||
-    aMimeType.EqualsLiteral("video/avc");
+  return (sIsCoreMediaAvailable &&
+          (aMimeType.EqualsLiteral("audio/mpeg") ||
+           aMimeType.EqualsLiteral("audio/mp4a-latm"))) ||
+    ((sIsVTAvailable || sIsVDAAvailable) &&
+     (aMimeType.EqualsLiteral("video/mp4") ||
+      aMimeType.EqualsLiteral("video/avc")));
 }
 
 PlatformDecoderModule::ConversionRequired
