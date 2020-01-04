@@ -897,7 +897,7 @@ public:
   virtual void DoUpdate() override
   {
     if (!mContext) {
-      MOZ_CRASH("This should never be called without a context");
+      MOZ_CRASH("GFX: This should never be called without a context");
     }
     
     
@@ -2357,7 +2357,7 @@ GetFontStyleContext(Element* aElement, const nsAString& aFont,
   }
 
   MOZ_RELEASE_ASSERT(parentContext,
-                     "GetFontParentStyleContext should have returned an error if it couldn't get a parent context.");
+                     "GFX: GetFontParentStyleContext should have returned an error if it couldn't get a parent context.");
 
   MOZ_ASSERT(!aPresShell->IsDestroying(),
              "GetFontParentStyleContext should have returned an error if the presshell is being destroyed.");
@@ -4017,7 +4017,7 @@ CanvasRenderingContext2D::DrawOrMeasureText(const nsAString& aRawText,
     baselineAnchor = -fontMetrics.emDescent;
     break;
   default:
-    MOZ_CRASH("unexpected TextBaseline");
+    MOZ_CRASH("GFX: unexpected TextBaseline");
   }
 
   

@@ -66,12 +66,12 @@ struct JoinTestSanityCheck : public SanityChecker {
   {
     
     if (aCmdId == 0) {
-      MOZ_RELEASE_ASSERT(!mSpecialJobHasRun);
+      MOZ_RELEASE_ASSERT(!mSpecialJobHasRun, "GFX: A special task has been executed.");
       mSpecialJobHasRun = true;
       for (auto advancement : mAdvancements) {
         
         
-        MOZ_RELEASE_ASSERT(advancement == 1);
+        MOZ_RELEASE_ASSERT(advancement == 1, "GFX: task buffer has not run task 1.");
       }
     } else {
       
@@ -79,7 +79,7 @@ struct JoinTestSanityCheck : public SanityChecker {
     }
 
     if (aCmdId == 2) {
-      MOZ_RELEASE_ASSERT(mSpecialJobHasRun);
+      MOZ_RELEASE_ASSERT(mSpecialJobHasRun, "GFX: Special job has not run.");
     }
   }
 };

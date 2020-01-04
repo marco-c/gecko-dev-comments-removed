@@ -19,7 +19,7 @@ WebGLVertexArrayObject::Create(WebGLContext* webgl)
   
   
   bool vaoSupport = webgl->GL()->IsSupported(gl::GLFeature::vertex_array_object);
-  MOZ_RELEASE_ASSERT(vaoSupport, "Vertex Array Objects aren't supported.");
+  MOZ_RELEASE_ASSERT(vaoSupport, "GFX: Vertex Array Objects aren't supported.");
   if (vaoSupport)
     return new WebGLVertexArrayObject(webgl);
 
