@@ -257,7 +257,7 @@ wasmEval(moduleWithSections([sigSection([v2vSig]), declSection([0]), bodySection
 
 var tooBigNameSection = {
     name: nameId,
-    body: [...varU32(2**31)] 
+    body: [...varU32(Math.pow(2, 31))] 
 };
 wasmEval(moduleWithSections([tooBigNameSection]));
 

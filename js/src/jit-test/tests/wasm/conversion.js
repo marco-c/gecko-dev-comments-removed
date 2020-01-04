@@ -225,50 +225,51 @@ if (hasI64()) {
 
 
 
+var p = Math.pow;
 testConversion('i32', 'trunc_s', 'f32', 40.1, 40);
-testConversion('i32', 'trunc_s', 'f32', 2**31 - 128, 2**31 - 128); 
-testConversion('i32', 'trunc_s', 'f32', -2**31, -2**31); 
+testConversion('i32', 'trunc_s', 'f32', p(2, 31) - 128, p(2, 31) - 128); 
+testConversion('i32', 'trunc_s', 'f32', -p(2, 31), -p(2,31)); 
 
 testTrap('i32', 'trunc_s', 'f32', 'nan');
 testTrap('i32', 'trunc_s', 'f32', 'infinity');
 testTrap('i32', 'trunc_s', 'f32', '-infinity');
-testTrap('i32', 'trunc_s', 'f32', 2**31);
-testTrap('i32', 'trunc_s', 'f32', -(2**31) - 256);
+testTrap('i32', 'trunc_s', 'f32', p(2, 31));
+testTrap('i32', 'trunc_s', 'f32', -p(2,31) - 256);
 
 testConversion('i32', 'trunc_s', 'f64', 40.1, 40);
-testConversion('i32', 'trunc_s', 'f64', 2**31 - 0.001, 2**31 - 1); 
-testConversion('i32', 'trunc_s', 'f64', -2**31 - 0.999, -2**31); 
+testConversion('i32', 'trunc_s', 'f64', p(2,31) - 0.001, p(2,31) - 1); 
+testConversion('i32', 'trunc_s', 'f64', -p(2,31) - 0.999, -p(2,31)); 
 
 
 testTrap('i32', 'trunc_s', 'f64', 'nan');
 testTrap('i32', 'trunc_s', 'f64', 'infinity');
 testTrap('i32', 'trunc_s', 'f64', '-infinity');
-testTrap('i32', 'trunc_s', 'f64', 2**31);
-testTrap('i32', 'trunc_s', 'f64', -(2**31) - 1);
+testTrap('i32', 'trunc_s', 'f64', p(2,31));
+testTrap('i32', 'trunc_s', 'f64', -p(2,31) - 1);
 
 
 
 testConversion('i32', 'trunc_u', 'f32', 40.1, 40);
-testConversion('i32', 'trunc_u', 'f32', 2**31, (2**31)|0);
-testConversion('i32', 'trunc_u', 'f32', 2**32 - 256, (2**32 - 256)|0); 
+testConversion('i32', 'trunc_u', 'f32', p(2,31), p(2,31)|0);
+testConversion('i32', 'trunc_u', 'f32', p(2,32) - 256, (p(2,32) - 256)|0); 
 testConversion('i32', 'trunc_u', 'f32', -0.99, 0); 
 
 testTrap('i32', 'trunc_u', 'f32', 'nan');
 testTrap('i32', 'trunc_u', 'f32', 'infinity');
 testTrap('i32', 'trunc_u', 'f32', '-infinity');
 testTrap('i32', 'trunc_u', 'f32', -1);
-testTrap('i32', 'trunc_u', 'f32', 2**32);
+testTrap('i32', 'trunc_u', 'f32', p(2,32));
 
 
 testConversion('i32', 'trunc_u', 'f64', 40.1, 40);
-testConversion('i32', 'trunc_u', 'f64', 2**32 - 0.001, (2**32 - 1)|0); 
+testConversion('i32', 'trunc_u', 'f64', p(2,32) - 0.001, (p(2,32) - 1)|0); 
 testConversion('i32', 'trunc_u', 'f64', -0.99999, 0); 
 
 testTrap('i32', 'trunc_u', 'f32', 'nan');
 testTrap('i32', 'trunc_u', 'f32', 'infinity');
 testTrap('i32', 'trunc_u', 'f32', '-infinity');
 testTrap('i32', 'trunc_u', 'f32', -1);
-testTrap('i32', 'trunc_u', 'f32', 2**32);
+testTrap('i32', 'trunc_u', 'f32', p(2,32));
 
 
 testConversion('i32', 'reinterpret', 'f32', 40.1, 1109419622);
