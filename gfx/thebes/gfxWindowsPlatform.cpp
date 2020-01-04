@@ -2796,12 +2796,19 @@ public:
 
           
           
-          WinUtils::dwmFlushProcPtr();
-          HRESULT hr = WinUtils::dwmGetCompositionTimingInfoPtr(0, &vblankTime);
-          vsync = TimeStamp::Now();
-          if (SUCCEEDED(hr)) {
-            vsync = GetAdjustedVsyncTimeStamp(frequency, vblankTime.qpcVBlank);
+          HRESULT hr = WinUtils::dwmFlushProcPtr();
+          if (!SUCCEEDED(hr)) {
+            
+            
+            
+            ScheduleSoftwareVsync(TimeStamp::Now());
+            return;
           }
+
+          hr = WinUtils::dwmGetCompositionTimingInfoPtr(0, &vblankTime);
+          vsync = SUCCEEDED(hr) ?
+                    GetAdjustedVsyncTimeStamp(frequency, vblankTime.qpcVBlank) :
+                    TimeStamp::Now();
         } 
       }
 
