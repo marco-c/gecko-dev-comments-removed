@@ -3329,7 +3329,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset
            nsChangeHint_ClearAncestorIntrinsics;
   }
 
-  mozilla::StyleUserSelect mUserSelect;   
+  uint8_t   mUserSelect;      
   uint8_t   mForceBrokenImageIcon; 
   uint8_t   mIMEMode;         
   uint8_t   mWindowDragging;  

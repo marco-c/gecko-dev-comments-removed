@@ -3128,7 +3128,7 @@ nsFrame::GetDataForTableSelection(const nsFrameSelection* aFrameSelection,
 }
 
 nsresult
-nsFrame::IsSelectable(bool* aSelectable, StyleUserSelect* aSelectStyle) const
+nsFrame::IsSelectable(bool* aSelectable, uint8_t* aSelectStyle) const
 {
   if (!aSelectable) 
     return NS_ERROR_NULL_POINTER;
@@ -3154,18 +3154,18 @@ nsFrame::IsSelectable(bool* aSelectable, StyleUserSelect* aSelectStyle) const
   
   
   
-  StyleUserSelect selectStyle  = StyleUserSelect::Auto;
-  nsIFrame* frame              = const_cast<nsFrame*>(this);
-  bool containsEditable        = false;
+  uint8_t selectStyle  = NS_STYLE_USER_SELECT_AUTO;
+  nsIFrame* frame      = const_cast<nsFrame*>(this);
+  bool containsEditable = false;
 
   while (frame) {
     const nsStyleUIReset* userinterface = frame->StyleUIReset();
     switch (userinterface->mUserSelect) {
-      case StyleUserSelect::All:
-      case StyleUserSelect::MozAll:
+      case NS_STYLE_USER_SELECT_ALL:
+      case NS_STYLE_USER_SELECT_MOZ_ALL:
       {
         
-        if (selectStyle != StyleUserSelect::MozText) {
+        if (selectStyle != NS_STYLE_USER_SELECT_MOZ_TEXT) {
           selectStyle = userinterface->mUserSelect;
         }
         nsIContent* frameContent = frame->GetContent();
@@ -3175,7 +3175,7 @@ nsFrame::IsSelectable(bool* aSelectable, StyleUserSelect* aSelectStyle) const
       }
       default:
         
-        if (selectStyle == StyleUserSelect::Auto) {
+        if (selectStyle == NS_STYLE_USER_SELECT_AUTO) {
           selectStyle = userinterface->mUserSelect;
         }
         break;
@@ -3184,31 +3184,28 @@ nsFrame::IsSelectable(bool* aSelectable, StyleUserSelect* aSelectStyle) const
   }
 
   
-  if (selectStyle == StyleUserSelect::Auto ||
-      selectStyle == StyleUserSelect::MozText) {
-    selectStyle = StyleUserSelect::Text;
-  } else if (selectStyle == StyleUserSelect::MozAll) {
-    selectStyle = StyleUserSelect::All;
-  }
+  if (selectStyle == NS_STYLE_USER_SELECT_AUTO ||
+      selectStyle == NS_STYLE_USER_SELECT_MOZ_TEXT)
+    selectStyle = NS_STYLE_USER_SELECT_TEXT;
+  else
+  if (selectStyle == NS_STYLE_USER_SELECT_MOZ_ALL)
+    selectStyle = NS_STYLE_USER_SELECT_ALL;
 
   
   
   bool allowSelection = true;
-  if (selectStyle == StyleUserSelect::All) {
+  if (selectStyle == NS_STYLE_USER_SELECT_ALL) {
     allowSelection = !containsEditable;
   }
 
   
-  if (aSelectStyle) {
+  if (aSelectStyle)
     *aSelectStyle = selectStyle;
-  }
-
-  if (mState & NS_FRAME_GENERATED_CONTENT) {
+  if (mState & NS_FRAME_GENERATED_CONTENT)
     *aSelectable = false;
-  } else {
-    *aSelectable = allowSelection && (selectStyle != StyleUserSelect::None_);
-  }
-
+  else
+    *aSelectable = allowSelection &&
+      (selectStyle != NS_STYLE_USER_SELECT_NONE);
   return NS_OK;
 }
 
@@ -3267,7 +3264,7 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
   
   
   bool    selectable;
-  StyleUserSelect selectStyle;
+  uint8_t selectStyle;
   rv = IsSelectable(&selectable, &selectStyle);
   if (NS_FAILED(rv)) return rv;
   
@@ -3277,7 +3274,7 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
 
   
   
-  bool useFrameSelection = (selectStyle == StyleUserSelect::Text);
+  bool useFrameSelection = (selectStyle == NS_STYLE_USER_SELECT_TEXT);
 
   
   
@@ -3922,11 +3919,11 @@ static bool SelfIsSelectable(nsIFrame* aFrame, uint32_t aFlags)
     return false;
   }
   return !aFrame->IsGeneratedContentFrame() &&
-    aFrame->StyleUIReset()->mUserSelect != StyleUserSelect::None_;
+    aFrame->StyleUIReset()->mUserSelect != NS_STYLE_USER_SELECT_NONE;
 }
 
 static bool SelectionDescendToKids(nsIFrame* aFrame) {
-  StyleUserSelect style = aFrame->StyleUIReset()->mUserSelect;
+  uint8_t style = aFrame->StyleUIReset()->mUserSelect;
   nsIFrame* parent = aFrame->GetParent();
   
   
@@ -3937,8 +3934,8 @@ static bool SelectionDescendToKids(nsIFrame* aFrame) {
   
   
   return !aFrame->IsGeneratedContentFrame() &&
-         style != StyleUserSelect::All  &&
-         style != StyleUserSelect::None_ &&
+         style != NS_STYLE_USER_SELECT_ALL  &&
+         style != NS_STYLE_USER_SELECT_NONE &&
          ((parent->GetStateBits() & NS_FRAME_INDEPENDENT_SELECTION) ||
           !(aFrame->GetStateBits() & NS_FRAME_INDEPENDENT_SELECTION));
 }
@@ -4212,13 +4209,13 @@ static nsIFrame* AdjustFrameForSelectionStyles(nsIFrame* aFrame) {
   {
     
     
-    StyleUserSelect userSelect = frame->StyleUIReset()->mUserSelect;
-    if (userSelect == StyleUserSelect::MozText) {
+    uint8_t userSelect = frame->StyleUIReset()->mUserSelect;
+    if (userSelect == NS_STYLE_USER_SELECT_MOZ_TEXT) {
       
       
       break;
     }
-    if (userSelect == StyleUserSelect::All ||
+    if (userSelect == NS_STYLE_USER_SELECT_ALL ||
         frame->IsGeneratedContentFrame()) {
       adjustedFrame = frame;
     }
@@ -4245,7 +4242,7 @@ nsIFrame::ContentOffsets nsIFrame::GetContentOffsetsFromPoint(nsPoint aPoint,
     
     
     if (adjustedFrame && adjustedFrame->StyleUIReset()->mUserSelect ==
-        StyleUserSelect::All) {
+        NS_STYLE_USER_SELECT_ALL) {
       nsPoint adjustedPoint = aPoint + this->GetOffsetTo(adjustedFrame);
       return OffsetsForSingleFrame(adjustedFrame, adjustedPoint);
     }

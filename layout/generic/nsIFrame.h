@@ -2689,8 +2689,7 @@ public:
 
 
 
-  virtual nsresult IsSelectable(bool* aIsSelectable,
-                            mozilla::StyleUserSelect* aSelectStyle) const = 0;
+  virtual nsresult  IsSelectable(bool* aIsSelectable, uint8_t* aSelectStyle) const = 0;
 
   
 
