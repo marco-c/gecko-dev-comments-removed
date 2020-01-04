@@ -7,16 +7,17 @@ package org.mozilla.gecko.telemetry;
 
 import android.content.Context;
 import android.os.Build;
-import java.io.IOException;
-import java.util.Locale;
 
 import com.keepsafe.switchboard.SwitchBoard;
-import org.json.JSONArray;
+
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.Locales;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
 import org.mozilla.gecko.telemetry.TelemetryConstants.CorePing;
 import org.mozilla.gecko.util.StringUtils;
+
+import java.io.IOException;
+import java.util.Locale;
 
 
 
@@ -87,7 +88,7 @@ public class TelemetryPingGenerator {
         ping.put(CorePing.OS_VERSION, Integer.toString(Build.VERSION.SDK_INT)); 
         ping.put(CorePing.SEQ, seq);
         if (AppConstants.MOZ_SWITCHBOARD) {
-            ping.put(CorePing.EXPERIMENTS, getActiveExperiments(context));
+            ping.putArray(CorePing.EXPERIMENTS, SwitchBoard.getActiveExperiments(context));
         }
         
         
@@ -96,12 +97,5 @@ public class TelemetryPingGenerator {
             ping.put(CorePing.PROFILE_CREATION_DATE, profileCreationDate);
         }
         return ping;
-    }
-
-    private static JSONArray getActiveExperiments(final Context context) {
-        if (!AppConstants.MOZ_SWITCHBOARD) {
-            throw new IllegalStateException("This method should not be called with switchboard disabled");
-        }
-        return new JSONArray(SwitchBoard.getActiveExperiments(context));
     }
 }

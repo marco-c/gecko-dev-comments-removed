@@ -300,6 +300,14 @@ public class ExtendedJSONObject {
     this.putRaw(key, value);
   }
 
+  @SuppressWarnings("unchecked")
+  public void putArray(String key, List<String> value) {
+    
+    final JSONArray jsonArray = new JSONArray();
+    jsonArray.addAll(value);
+    this.putRaw(key, jsonArray);
+  }
+
   
 
 
