@@ -175,7 +175,9 @@ protected:
   
   
   nsresult GetURI(nsIURI** aURL, bool aGetInnermostURI = false);
-  nsresult GetWritableURI(nsIURI** aURL);
+  nsresult GetWritableURI(nsIURI** aURL,
+                          
+                          const nsACString* aNewRef = nullptr);
   nsresult SetURI(nsIURI* aURL, bool aReplace = false);
   nsresult SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
                            bool aReplace);
