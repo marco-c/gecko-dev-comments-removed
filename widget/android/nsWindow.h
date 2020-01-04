@@ -49,6 +49,9 @@ public:
     
     
     mozilla::UniquePtr<Natives> mNatives;
+    
+    
+    mozilla::widget::GeckoEditable::GlobalRef mEditable;
 
     static void OnGlobalAndroidEvent(mozilla::AndroidGeckoEvent *ae);
     static mozilla::gfx::IntSize GetAndroidScreenBounds();
