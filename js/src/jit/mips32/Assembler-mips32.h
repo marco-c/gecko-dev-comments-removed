@@ -62,13 +62,13 @@ static MOZ_CONSTEXPR_VAR Register SecondScratchReg = t8;
 
 struct ScratchRegisterScope : public AutoRegisterScope
 {
-    ScratchRegisterScope(MacroAssembler& masm)
+    explicit ScratchRegisterScope(MacroAssembler& masm)
       : AutoRegisterScope(masm, ScratchRegister)
     { }
 };
 struct SecondScratchRegisterScope : public AutoRegisterScope
 {
-    SecondScratchRegisterScope(MacroAssembler& masm)
+    explicit SecondScratchRegisterScope(MacroAssembler& masm)
       : AutoRegisterScope(masm, SecondScratchReg)
     { }
 };
