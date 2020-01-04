@@ -604,13 +604,76 @@ function createOneShotEventWrapper(wrapper, obj, event) {
 
 
 
-function haveEvent(target, name, cancelPromise) {
+
+
+
+function haveEvents(target, name, count, cancelPromise) {
   var listener;
-  var p = Promise.race([
-    (cancelPromise || new Promise()).then(e => Promise.reject(e)),
-    new Promise(resolve => target.addEventListener(name, listener = resolve))
-  ]);
-  return p.then(event => (target.removeEventListener(name, listener), event));
+  var counter = count || 1;
+  return Promise.race([
+    (cancelPromise || new Promise(() => {})).then(e => Promise.reject(e)),
+    new Promise(resolve =>
+        target.addEventListener(name, listener = e => (--counter < 1 && resolve(e))))
+  ])
+  .then(e => (target.removeEventListener(name, listener), e));
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function haveEvent(target, name, cancelPromise) {
+  return haveEvents(target, name, 1, cancelPromise);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function haveNoEvent(target, name, timeoutPromise) {
+  return haveEvent(target, name, timeoutPromise || wait(0))
+    .then(() => Promise.reject(new Error("Too many " + name + " events")),
+          () => {});
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function haveEventsButNoMore(target, name, count, cancelPromise) {
+  return haveEvents(target, name, count, cancelPromise)
+    .then(e => haveNoEvent(target, name).then(() => e));
 };
 
 
