@@ -788,7 +788,7 @@ TouchCaret::HandleEvent(WidgetEvent* aEvent)
     case eKeyPress:
     case eWheel:
     case eWheelOperationStart:
-    case NS_WHEEL_STOP:
+    case eWheelOperationEnd:
       
       TOUCHCARET_LOG("Receive key/wheel event %d", aEvent->mMessage);
       SetVisibility(false);

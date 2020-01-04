@@ -389,7 +389,10 @@ NS_EVENT_MESSAGE(eWheel,                 eWheelEventFirst)
 
 
 NS_EVENT_MESSAGE(eWheelOperationStart,   eWheelEventFirst + 1)
-NS_EVENT_MESSAGE(NS_WHEEL_STOP,          eWheelEventFirst + 2)
+
+
+
+NS_EVENT_MESSAGE(eWheelOperationEnd,     eWheelEventFirst + 2)
 
 
 NS_EVENT_MESSAGE(NS_MOZ_TIME_CHANGE_EVENT, 5500)
