@@ -29,8 +29,11 @@ module.exports = createClass({
     
     return dom.div(
       {
-        className: "viewport",
+        className: "viewport"
       },
+      dom.div({
+        className: "viewport-header",
+      }),
       Browser({
         location,
         width: viewport.width,
