@@ -712,13 +712,6 @@ mozJSComponentLoader::ObjectForLocation(ComponentLoaderInfo& aInfo,
         
         
         
-        AutoSaveContextOptions asco(cx);
-        if (aPropagateExceptions)
-            ContextOptionsRef(cx).setDontReportUncaught(true);
-
-        
-        
-        
         
         
         CompileOptions options(cx);
@@ -938,9 +931,6 @@ mozJSComponentLoader::ObjectForLocation(ComponentLoaderInfo& aInfo,
         dom::AutoEntryScript aes(CurrentGlobalOrNull(cx),
                                  "component loader load module");
         JSContext* aescx = aes.cx();
-        AutoSaveContextOptions asco(aescx);
-        if (aPropagateExceptions)
-            ContextOptionsRef(aescx).setDontReportUncaught(true);
         bool ok;
         if (script) {
             ok = JS_ExecuteScript(aescx, script);

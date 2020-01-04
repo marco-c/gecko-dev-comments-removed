@@ -1766,8 +1766,6 @@ xpc::EvalInSandbox(JSContext* cx, HandleObject sandboxArg, const nsAString& sour
         
         mozilla::dom::AutoEntryScript aes(priv, "XPConnect sandbox evaluation");
         JSContext* sandcx = aes.cx();
-        AutoSaveContextOptions savedOptions(sandcx);
-        JS::ContextOptionsRef(sandcx).setDontReportUncaught(true);
         JSAutoCompartment ac(sandcx, sandbox);
 
         JS::CompileOptions options(sandcx);
