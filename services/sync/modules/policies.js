@@ -18,6 +18,8 @@ Cu.import("resource://services-common/async.js");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Status",
                                   "resource://services-sync/status.js");
+XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
+                                  "resource://gre/modules/AddonManager.jsm");
 
 this.SyncScheduler = function SyncScheduler(service) {
   this.service = service;
@@ -686,6 +688,27 @@ ErrorHandler.prototype = {
     Utils.nextTick(this.service.sync, this.service);
   },
 
+  _dumpAddons: function _dumpAddons() {
+    
+    
+    let addonPromise = new Promise(resolve => {
+      try {
+        AddonManager.getAddonsByTypes(["extension"], resolve);
+      } catch (e) {
+        this._log.warn("Failed to dump addons", e)
+        resolve([])
+      }
+    });
+
+    return addonPromise.then(addons => {
+      let relevantAddons = addons.filter(x => x.isActive && !x.hidden);
+      this._log.debug("Addons installed", relevantAddons.length);
+      for (let addon of relevantAddons) {
+        this._log.debug(" - ${name}, version ${version}, id ${id}", addon);
+      }
+    });
+  },
+
   
 
 
@@ -698,9 +721,19 @@ ErrorHandler.prototype = {
         Cu.reportError("Sync encountered an error - see about:sync-log for the log file.");
       }
     };
+
+    
+    let beforeResetLog;
+    if (this._logManager.sawError) {
+      beforeResetLog = this._dumpAddons();
+    } else {
+      beforeResetLog = Promise.resolve();
+    }
     
     
-    this._logManager.resetFileLog().then(onComplete, onComplete);
+    beforeResetLog
+      .then(() => this._logManager.resetFileLog())
+      .then(onComplete, onComplete);
   },
 
   
