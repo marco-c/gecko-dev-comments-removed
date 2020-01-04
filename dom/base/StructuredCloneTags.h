@@ -17,7 +17,6 @@ namespace dom {
 enum StructuredCloneTags {
   SCTAG_BASE = JS_SCTAG_USER_MIN,
 
-  
   SCTAG_DOM_BLOB,
 
   
@@ -52,6 +51,8 @@ enum StructuredCloneTags {
   SCTAG_DOM_CANVAS,
 
   SCTAG_DOM_EXPANDED_PRINCIPAL,
+
+  SCTAG_DOM_DIRECTORY,
 
   SCTAG_DOM_MAX
 };
