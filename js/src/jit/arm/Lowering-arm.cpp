@@ -65,7 +65,7 @@ LIRGeneratorARM::visitBox(MBox* box)
     }
 
     if (inner->isConstant()) {
-        defineBox(new(alloc()) LValue(inner->toConstant()->value()), box);
+        defineBox(new(alloc()) LValue(inner->toConstant()->toJSValue()), box);
         return;
     }
 
@@ -243,7 +243,7 @@ LIRGeneratorARM::lowerDivI(MDiv* div)
     
     
     if (div->rhs()->isConstant()) {
-        int32_t rhs = div->rhs()->toConstant()->value().toInt32();
+        int32_t rhs = div->rhs()->toConstant()->toInt32();
         
         
         
@@ -292,7 +292,7 @@ LIRGeneratorARM::lowerModI(MMod* mod)
     }
 
     if (mod->rhs()->isConstant()) {
-        int32_t rhs = mod->rhs()->toConstant()->value().toInt32();
+        int32_t rhs = mod->rhs()->toConstant()->toInt32();
         int32_t shift = FloorLog2(rhs);
         if (rhs > 0 && 1 << shift == rhs) {
             LModPowTwoI* lir = new(alloc()) LModPowTwoI(useRegister(mod->lhs()), shift);
@@ -468,8 +468,8 @@ LIRGeneratorARM::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins)
     
     if (ptr->isConstant() && !ins->needsBoundsCheck()) {
         
-        MOZ_ASSERT(ptr->toConstant()->value().toInt32() >= 0);
-        ptrAlloc = LAllocation(ptr->toConstant()->vp());
+        MOZ_ASSERT(ptr->toConstant()->toInt32() >= 0);
+        ptrAlloc = LAllocation(ptr->toConstant());
     } else {
         ptrAlloc = useRegisterAtStart(ptr);
     }
@@ -485,8 +485,8 @@ LIRGeneratorARM::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins)
     LAllocation ptrAlloc;
 
     if (ptr->isConstant() && !ins->needsBoundsCheck()) {
-        MOZ_ASSERT(ptr->toConstant()->value().toInt32() >= 0);
-        ptrAlloc = LAllocation(ptr->toConstant()->vp());
+        MOZ_ASSERT(ptr->toConstant()->toInt32() >= 0);
+        ptrAlloc = LAllocation(ptr->toConstant());
     } else {
         ptrAlloc = useRegisterAtStart(ptr);
     }

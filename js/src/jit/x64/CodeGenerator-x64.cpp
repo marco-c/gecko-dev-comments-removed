@@ -151,7 +151,7 @@ CodeGeneratorX64::visitCompareB(LCompareB* lir)
     
     ScratchRegisterScope scratch(masm);
     if (rhs->isConstant())
-        masm.moveValue(*rhs->toConstant(), scratch);
+        masm.moveValue(rhs->toConstant()->toJSValue(), scratch);
     else
         masm.boxValue(JSVAL_TYPE_BOOLEAN, ToRegister(rhs), scratch);
 
@@ -173,7 +173,7 @@ CodeGeneratorX64::visitCompareBAndBranch(LCompareBAndBranch* lir)
     
     ScratchRegisterScope scratch(masm);
     if (rhs->isConstant())
-        masm.moveValue(*rhs->toConstant(), scratch);
+        masm.moveValue(rhs->toConstant()->toJSValue(), scratch);
     else
         masm.boxValue(JSVAL_TYPE_BOOLEAN, ToRegister(rhs), scratch);
 

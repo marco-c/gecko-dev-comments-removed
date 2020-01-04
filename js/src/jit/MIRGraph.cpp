@@ -618,7 +618,7 @@ MBasicBlock::linkOsrValues(MStart* start)
                 cloneRp = def->toOsrReturnValue();
         } else if (info().hasArguments() && i == info().argsObjSlot()) {
             MOZ_ASSERT(def->isConstant() || def->isOsrArgumentsObject());
-            MOZ_ASSERT_IF(def->isConstant(), def->toConstant()->value() == UndefinedValue());
+            MOZ_ASSERT_IF(def->isConstant(), def->toConstant()->type() == MIRType_Undefined);
             if (def->isOsrArgumentsObject())
                 cloneRp = def->toOsrArgumentsObject();
         } else {
@@ -628,7 +628,7 @@ MBasicBlock::linkOsrValues(MStart* start)
             
             
             
-            MOZ_ASSERT_IF(def->isConstant(), def->toConstant()->value() == UndefinedValue());
+            MOZ_ASSERT_IF(def->isConstant(), def->toConstant()->type() == MIRType_Undefined);
 
             if (def->isOsrValue())
                 cloneRp = def->toOsrValue();

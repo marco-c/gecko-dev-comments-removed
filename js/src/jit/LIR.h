@@ -108,9 +108,9 @@ class LAllocation : public TempObject
     }
 
     
-    explicit LAllocation(const Value* vp) {
-        MOZ_ASSERT(vp);
-        bits_ = uintptr_t(vp);
+    explicit LAllocation(const MConstant* c) {
+        MOZ_ASSERT(c);
+        bits_ = uintptr_t(c);
         MOZ_ASSERT((bits_ & (KIND_MASK << KIND_SHIFT)) == 0);
         bits_ |= CONSTANT_VALUE << KIND_SHIFT;
     }
@@ -166,9 +166,9 @@ class LAllocation : public TempObject
     inline const LConstantIndex* toConstantIndex() const;
     inline AnyRegister toRegister() const;
 
-    const Value* toConstant() const {
+    const MConstant* toConstant() const {
         MOZ_ASSERT(isConstantValue());
-        return reinterpret_cast<const Value*>(bits_ & ~(KIND_MASK << KIND_SHIFT));
+        return reinterpret_cast<const MConstant*>(bits_ & ~(KIND_MASK << KIND_SHIFT));
     }
 
     bool operator ==(const LAllocation& other) const {
