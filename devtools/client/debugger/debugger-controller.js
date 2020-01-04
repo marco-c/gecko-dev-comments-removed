@@ -1168,7 +1168,7 @@ StackFrames.prototype = {
               
               
               
-              aString.replace(/"/g, "\\$&") + "\" + " + "'\\n'" + " + \"" +
+              aString.replace(/\\/g, "\\\\").replace(/"/g, "\\$&") + "\" + " + "'\\n'" + " + \"" +
             "} catch (e) {" +
               "e.name + ': ' + e.message;" + 
             "}" +
