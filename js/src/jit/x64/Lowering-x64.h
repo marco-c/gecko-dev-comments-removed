@@ -35,6 +35,7 @@ class LIRGeneratorX64 : public LIRGeneratorX86Shared
     
     
     LAllocation useByteOpRegister(MDefinition* mir);
+    LAllocation useByteOpRegisterAtStart(MDefinition* mir);
     LAllocation useByteOpRegisterOrNonDoubleConstant(MDefinition* mir);
     LDefinition tempByteOpRegister();
 
