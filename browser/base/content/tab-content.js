@@ -691,6 +691,38 @@ DOMFullscreenHandler.init();
 var RefreshBlocker = {
   PREF: "accessibility.blockautorefresh",
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  blockedWindows: new WeakMap(),
+
   init() {
     if (Services.prefs.getBoolPref(this.PREF)) {
       this.enable();
@@ -720,11 +752,11 @@ var RefreshBlocker = {
   enable() {
     this._filter = Cc["@mozilla.org/appshell/component/browser-status-filter;1"]
                      .createInstance(Ci.nsIWebProgress);
-    this._filter.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_REFRESH);
+    this._filter.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_ALL);
 
     let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIWebProgress);
-    webProgress.addProgressListener(this._filter, Ci.nsIWebProgress.NOTIFY_REFRESH);
+    webProgress.addProgressListener(this._filter, Ci.nsIWebProgress.NOTIFY_ALL);
 
     addMessageListener("RefreshBlocker:Refresh", this);
   },
@@ -740,19 +772,69 @@ var RefreshBlocker = {
     removeMessageListener("RefreshBlocker:Refresh", this);
   },
 
+  send(data) {
+    sendAsyncMessage("RefreshBlocker:Blocked", data);
+  },
+
+  
+
+
+
+
+  onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
+    if (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW &&
+        aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
+      this.blockedWindows.delete(aWebProgress.DOMWindow);
+    }
+  },
+
+  
+
+
+
+
+  onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
+    let win = aWebProgress.DOMWindow;
+    if (this.blockedWindows.has(win)) {
+      let data = this.blockedWindows.get(win);
+      if (data) {
+        
+        
+        this.send(data);
+      }
+    } else {
+      this.blockedWindows.set(win, null);
+    }
+  },
+
+  
+
+
+
+
   onRefreshAttempted(aWebProgress, aURI, aDelay, aSameURI) {
     let win = aWebProgress.DOMWindow;
     let outerWindowID = win.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIDOMWindowUtils)
                            .outerWindowID;
 
-    sendAsyncMessage("RefreshBlocker:Blocked", {
+    let data = {
       URI: aURI.spec,
       originCharset: aURI.originCharset,
       delay: aDelay,
       sameURI: aSameURI,
       outerWindowID,
-    });
+    };
+
+    if (this.blockedWindows.has(win)) {
+      
+      
+      this.send(data);
+    } else {
+      
+      
+      this.blockedWindows.set(win, data);
+    }
 
     return false;
   },
