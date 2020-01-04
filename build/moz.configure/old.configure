@@ -155,7 +155,6 @@ def old_configure_options(*options):
 
 @old_configure_options(
     '--cache-file',
-    '--datadir',
     '--enable-accessibility',
     '--enable-address-sanitizer',
     '--enable-alsa',
@@ -261,8 +260,6 @@ def old_configure_options(*options):
     '--enable-webspeechtestbackend',
     '--enable-xul',
     '--enable-zipwriter',
-    '--includedir',
-    '--libdir',
     '--no-create',
     '--prefix',
     '--with-adjust-sdk-keyfile',
@@ -287,7 +284,6 @@ def old_configure_options(*options):
     '--with-float-abi',
     '--with-fpu',
     '--with-google-api-keyfile',
-    '--with-google-oauth-api-keyfile',
     '--with-intl-api',
     '--with-ios-sdk',
     '--with-jitreport-granularity',
