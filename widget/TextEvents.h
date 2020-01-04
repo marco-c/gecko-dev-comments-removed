@@ -74,6 +74,26 @@ struct AlternativeCharCode
 
 
 
+
+
+struct ShortcutKeyCandidate
+{
+  ShortcutKeyCandidate(uint32_t aCharCode, bool aIgnoreShift)
+    : mCharCode(aCharCode)
+    , mIgnoreShift(aIgnoreShift)
+  {
+  }
+  
+  uint32_t mCharCode;
+  
+  
+  bool mIgnoreShift;
+};
+
+
+
+
+
 class WidgetKeyboardEvent : public WidgetInputEvent
 {
 private:
@@ -210,6 +230,22 @@ public:
   {
     return GetModifierForKeyName(mKeyNameIndex) != MODIFIER_NONE;
   }
+
+  
+
+
+
+
+
+  void GetShortcutKeyCandidates(ShortcutKeyCandidateArray& aCandidates);
+
+  
+
+
+
+
+
+  void GetAccessKeyCandidates(nsTArray<uint32_t>& aCandidates);
 
   static void Shutdown();
 

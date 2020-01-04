@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#include "nsTArray.h"
+
 
 
 
@@ -139,6 +141,10 @@ class WidgetEventTime;
 
 
 struct AlternativeCharCode;
+struct ShortcutKeyCandidate;
+
+typedef nsTArray<ShortcutKeyCandidate> ShortcutKeyCandidateArray;
+typedef AutoTArray<ShortcutKeyCandidate, 10> AutoShortcutKeyCandidateArray;
 
 
 struct TextRangeStyle;

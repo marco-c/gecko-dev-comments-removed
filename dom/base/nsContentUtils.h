@@ -171,15 +171,6 @@ struct EventNameMapping
   mozilla::EventClassID mEventClassID;
 };
 
-struct nsShortcutCandidate {
-  nsShortcutCandidate(uint32_t aCharCode, bool aIgnoreShift) :
-    mCharCode(aCharCode), mIgnoreShift(aIgnoreShift)
-  {
-  }
-  uint32_t mCharCode;
-  bool     mIgnoreShift;
-};
-
 typedef void (*CallOnRemoteChildFunction) (mozilla::dom::TabParent* aTabParent,
                                            void* aArg);
 
@@ -1510,27 +1501,6 @@ public:
 
 
   static const nsDependentString GetLocalizedEllipsis();
-
-  
-
-
-
-
-
-
-  static void GetAccelKeyCandidates(nsIDOMKeyEvent* aDOMKeyEvent,
-                                    nsTArray<nsShortcutCandidate>& aCandidates);
-
-  
-
-
-
-
-
-
-  static void GetAccessKeyCandidates(
-                mozilla::WidgetKeyboardEvent* aNativeKeyEvent,
-                nsTArray<uint32_t>& aCandidates);
 
   
 
