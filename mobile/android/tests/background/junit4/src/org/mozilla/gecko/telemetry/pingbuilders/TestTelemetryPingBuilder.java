@@ -4,7 +4,7 @@
 
 
 
-package org.mozilla.gecko.telemetry;
+package org.mozilla.gecko.telemetry.pingbuilders;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

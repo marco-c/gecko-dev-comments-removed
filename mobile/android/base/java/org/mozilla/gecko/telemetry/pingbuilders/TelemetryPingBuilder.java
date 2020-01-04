@@ -4,10 +4,11 @@
 
 
 
-package org.mozilla.gecko.telemetry;
+package org.mozilla.gecko.telemetry.pingbuilders;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
+import org.mozilla.gecko.telemetry.TelemetryPing;
 
 import java.util.Set;
 import java.util.UUID;
@@ -20,7 +21,7 @@ import java.util.UUID;
 
 
 
-public abstract class TelemetryPingBuilder {
+abstract class TelemetryPingBuilder {
     
     private static final String SERVER_INITIAL_PATH = "submit/telemetry";
 

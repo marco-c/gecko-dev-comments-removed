@@ -8,7 +8,7 @@ package org.mozilla.gecko.telemetry;
 
 import android.content.Context;
 import android.util.Log;
-import org.mozilla.gecko.telemetry.core.TelemetryCorePingBuilder;
+import org.mozilla.gecko.telemetry.pingbuilders.TelemetryCorePingBuilder;
 import org.mozilla.gecko.telemetry.schedulers.TelemetryUploadScheduler;
 import org.mozilla.gecko.telemetry.schedulers.TelemetryUploadAllPingsImmediatelyScheduler;
 import org.mozilla.gecko.telemetry.stores.TelemetryJSONFilePingStore;
