@@ -1447,6 +1447,15 @@ MediaFormatReader::OnVideoSkipFailed(MediaTrackDemuxer::SkipFailureHolder aFailu
       NotifyEndOfStream(TrackType::kVideoTrack);
       break;
     case DemuxerFailureReason::WAITING_FOR_DATA:
+      
+      
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(!mVideo.mDecodingRequested,
+                            "Reset must have been called");
+      if (!mVideo.mWaitingForData) {
+        mVideo.mNeedDraining = true;
+      }
       NotifyWaitingForData(TrackType::kVideoTrack);
       break;
     case DemuxerFailureReason::CANCELED:
