@@ -4676,11 +4676,7 @@ pref("dom.browserElement.maxScreenshotDelayMS", 2000);
 pref("dom.placeholder.show_on_focus", true);
 
 
-#ifdef RELEASE_BUILD
 pref("dom.vr.enabled", false);
-#else
-pref("dom.vr.enabled", true);
-#endif
 
 pref("dom.vr.oculus.enabled", true);
 
@@ -4688,7 +4684,7 @@ pref("dom.vr.oculus050.enabled", true);
 
 pref("dom.vr.cardboard.enabled", false);
 
-pref("dom.vr.add-test-devices", 0);
+pref("dom.vr.add-test-devices", 1);
 
 
 pref("gfx.vr.mirror-textures", false);
