@@ -10,7 +10,7 @@ Array.prototype.push = () => { throw 42; };
 
 var arr = Intl.getCanonicalLocales(["en-US"]);
 
-assertShallowArray(arr, ["en-US"]);
+assertEqArray(arr, ["en-US"]);
 
 if (typeof reportCompare === 'function')
     reportCompare(0, 0);
