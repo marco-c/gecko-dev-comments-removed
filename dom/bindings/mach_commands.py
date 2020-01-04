@@ -42,6 +42,9 @@ class WebIDLProvider(MachCommandBase):
         
         os.chdir(self.topobjdir)
 
+        if kwargs["verbose"] is None:
+            kwargs["verbose"] = False
+
         
         
         
