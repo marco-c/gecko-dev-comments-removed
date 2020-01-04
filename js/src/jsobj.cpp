@@ -2468,6 +2468,15 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
         return result.fail(JSMSG_CANT_SET_PROTO);
 
     
+    
+    
+    if (obj->is<GlobalObject>()) {
+        Rooted<GlobalObject*> global(cx, &obj->as<GlobalObject>());
+        if (!GlobalObject::ensureConstructor(cx, global, JSProto_Object))
+            return false;
+    }
+
+    
 
 
 
