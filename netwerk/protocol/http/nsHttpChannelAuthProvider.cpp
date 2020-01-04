@@ -41,19 +41,16 @@ namespace net {
 #define HTTP_AUTH_DIALOG_CROSS_ORIGIN_SUBRESOURCE 2
 
 static void
-GetAppIdAndBrowserStatus(nsIChannel* aChan, uint32_t* aAppId, bool* aInBrowserElem)
+GetOriginAttributesSuffix(nsIChannel* aChan, nsACString &aSuffix)
 {
-    nsCOMPtr<nsILoadContext> loadContext;
+    OriginAttributes oa;
+
+    
     if (aChan) {
-        NS_QueryNotificationCallbacks(aChan, loadContext);
+        NS_GetOriginAttributes(aChan, oa);
     }
-    if (!loadContext) {
-        *aAppId = NECKO_NO_APP_ID;
-        *aInBrowserElem = false;
-    } else {
-        loadContext->GetAppId(aAppId);
-        loadContext->GetIsInBrowserElement(aInBrowserElem);
-    }
+
+    oa.CreateSuffix(aSuffix);
 }
 
 nsHttpChannelAuthProvider::nsHttpChannelAuthProvider()
@@ -402,9 +399,8 @@ nsHttpChannelAuthProvider::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
     nsHttpAuthCache *authCache = gHttpHandler->AuthCache(mIsPrivate);
 
     nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);
-    uint32_t appId;
-    bool isInBrowserElement;
-    GetAppIdAndBrowserStatus(chan, &appId, &isInBrowserElement);
+    nsAutoCString suffix;
+    GetOriginAttributesSuffix(chan, suffix);
 
     
     
@@ -415,7 +411,7 @@ nsHttpChannelAuthProvider::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
     rv = authCache->SetAuthEntry(scheme, host, port, directory, realm,
                                  saveCreds ? *result : nullptr,
                                  saveChallenge ? challenge : nullptr,
-                                 appId, isInBrowserElement,
+                                 suffix,
                                  saveIdentity ? &ident : nullptr,
                                  sessionState);
     return rv;
@@ -678,9 +674,8 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
     }
 
     nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);
-    uint32_t appId;
-    bool isInBrowserElement;
-    GetAppIdAndBrowserStatus(chan, &appId, &isInBrowserElement);
+    nsAutoCString suffix;
+    GetOriginAttributesSuffix(chan, suffix);
 
     
     
@@ -690,8 +685,7 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
     
     nsHttpAuthEntry *entry = nullptr;
     authCache->GetAuthEntryForDomain(scheme.get(), host, port,
-                                     realm.get(), appId,
-                                     isInBrowserElement, &entry);
+                                     realm.get(), suffix, &entry);
 
     
     
@@ -722,7 +716,7 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
                     
                     authCache->ClearAuthEntry(scheme.get(), host,
                                               port, realm.get(),
-                                              appId, isInBrowserElement);
+                                              suffix);
                     entry = nullptr;
                     ident->Clear();
                 }
@@ -1125,15 +1119,13 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthAvailable(nsISupports *aContext,
     ParseRealm(mCurrentChallenge.get(), realm);
 
     nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);
-    uint32_t appId;
-    bool isInBrowserElement;
-    GetAppIdAndBrowserStatus(chan, &appId, &isInBrowserElement);
+    nsAutoCString suffix;
+    GetOriginAttributesSuffix(chan, suffix);
 
     nsHttpAuthCache *authCache = gHttpHandler->AuthCache(mIsPrivate);
     nsHttpAuthEntry *entry = nullptr;
     authCache->GetAuthEntryForDomain(scheme.get(), host, port,
-                                     realm.get(), appId,
-                                     isInBrowserElement,
+                                     realm.get(), suffix,
                                      &entry);
 
     nsCOMPtr<nsISupports> sessionStateGrip;
@@ -1356,12 +1348,11 @@ nsHttpChannelAuthProvider::SetAuthorizationHeader(nsHttpAuthCache    *authCache,
     }
 
     nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);
-    uint32_t appId;
-    bool isInBrowserElement;
-    GetAppIdAndBrowserStatus(chan, &appId, &isInBrowserElement);
+    nsAutoCString suffix;
+    GetOriginAttributesSuffix(chan, suffix);
 
     rv = authCache->GetAuthEntryForPath(scheme, host, port, path,
-                                        appId, isInBrowserElement, &entry);
+                                        suffix, &entry);
     if (NS_SUCCEEDED(rv)) {
         
         
