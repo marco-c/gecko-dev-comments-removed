@@ -285,11 +285,6 @@ class FileCopier(FileRegistry):
         
 
         required_dirs = set([destination])
-        dest_files = set()
-
-        for p, f in self:
-            dest_files.add(os.path.normpath(os.path.join(destination, p)))
-
         required_dirs |= set(os.path.normpath(os.path.join(destination, d))
             for d in self.required_directories())
 
@@ -377,10 +372,12 @@ class FileCopier(FileRegistry):
                     existing_files.add(os.path.normpath(os.path.join(root, f)))
 
         
+        dest_files = set()
 
         
         for p, f in self:
             destfile = os.path.normpath(os.path.join(destination, p))
+            dest_files.add(destfile)
             if f.copy(destfile, skip_if_older):
                 result.updated_files.add(destfile)
             else:
@@ -412,20 +409,19 @@ class FileCopier(FileRegistry):
         
         
         if not remove_unaccounted:
+            parents = set()
+            pathsep = os.path.sep
             for f in existing_files:
-                parent = f
-                previous = ''
-                parents = set()
+                path = f
                 while True:
-                    parent = os.path.dirname(parent)
-                    parents.add(parent)
-
-                    if previous == parent:
+                    
+                    
+                    dirname = path.rpartition(pathsep)[0]
+                    if dirname in parents:
                         break
-
-                    previous = parent
-
-                remove_dirs -= parents
+                    parents.add(dirname)
+                    path = dirname
+            remove_dirs -= parents
 
         
         for d in sorted(remove_dirs, key=len, reverse=True):
