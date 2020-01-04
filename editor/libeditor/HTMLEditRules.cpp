@@ -1325,7 +1325,7 @@ HTMLEditRules::WillInsertText(EditAction aAction,
     
     
     
-    nsAutoLockListener lockit(&mListenerEnabled);
+    AutoLockListener lockit(&mListenerEnabled);
 
     
     NS_ENSURE_STATE(mHTMLEditor);

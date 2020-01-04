@@ -324,17 +324,15 @@ protected:
   TextEditRules* mRules;
 };
 
-} 
 
 
 
-
-class nsAutoLockListener
+class MOZ_STACK_CLASS AutoLockListener final
 {
 public:
-
-  explicit nsAutoLockListener(bool *enabled)
-    : mEnabled(enabled), mOldState(false)
+  explicit AutoLockListener(bool* aEnabled)
+    : mEnabled(aEnabled)
+    , mOldState(false)
   {
     if (mEnabled) {
       mOldState = *mEnabled;
@@ -342,7 +340,7 @@ public:
     }
   }
 
-  ~nsAutoLockListener()
+  ~AutoLockListener()
   {
     if (mEnabled) {
       *mEnabled = mOldState;
@@ -350,8 +348,10 @@ public:
   }
 
 protected:
-  bool *mEnabled;
+  bool* mEnabled;
   bool mOldState;
 };
+
+} 
 
 #endif 
