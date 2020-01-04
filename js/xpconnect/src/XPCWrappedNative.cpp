@@ -988,7 +988,6 @@ XPCWrappedNative::SystemIsBeingShutDown()
     }
 
     
-
     XPCWrappedNativeTearOffChunk* chunk;
     for (chunk = &mFirstChunk; chunk; chunk = chunk->mNextChunk) {
         XPCWrappedNativeTearOff* to = &chunk->mTearOff;
@@ -1000,11 +999,6 @@ XPCWrappedNative::SystemIsBeingShutDown()
         
         Unused << to->TakeNative().take();
         to->SetInterface(nullptr);
-    }
-
-    if (mFirstChunk.mNextChunk) {
-        delete mFirstChunk.mNextChunk;
-        mFirstChunk.mNextChunk = nullptr;
     }
 }
 
