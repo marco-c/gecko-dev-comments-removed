@@ -141,9 +141,11 @@ ServoStyleSet::ResolveStyleForText(nsIContent* aTextNode,
 already_AddRefed<nsStyleContext>
 ServoStyleSet::ResolveStyleForOtherNonElement(nsStyleContext* aParentContext)
 {
-  RefPtr<ServoComputedValues> computedValues =
-    Servo_InheritComputedValues(
-      aParentContext->StyleSource().AsServoComputedValues());
+  
+  
+  ServoComputedValues* parent =
+    aParentContext ? aParentContext->StyleSource().AsServoComputedValues() : nullptr;
+  RefPtr<ServoComputedValues> computedValues = Servo_InheritComputedValues(parent);
   MOZ_ASSERT(computedValues);
 
   return GetContext(computedValues.forget(), aParentContext,
