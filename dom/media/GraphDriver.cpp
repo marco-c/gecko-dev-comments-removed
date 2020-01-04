@@ -398,21 +398,31 @@ SystemClockDriver::WaitForNextIteration()
 
   PRIntervalTime timeout = PR_INTERVAL_NO_TIMEOUT;
   TimeStamp now = TimeStamp::Now();
-  if (mGraphImpl->mNeedAnotherIteration) {
+
+  
+  bool another = mGraphImpl->mNeedAnotherIteration; 
+  if (!another) {
+    mGraphImpl->mGraphDriverAsleep = true; 
+    mWaitState = WAITSTATE_WAITING_INDEFINITELY;
+  }
+  
+  
+  
+  
+  if (another || mGraphImpl->mNeedAnotherIteration) { 
     int64_t timeoutMS = MEDIA_GRAPH_TARGET_PERIOD_MS -
       int64_t((now - mCurrentTimeStamp).ToMilliseconds());
     
     
     timeoutMS = std::max<int64_t>(0, std::min<int64_t>(timeoutMS, 60*1000));
     timeout = PR_MillisecondsToInterval(uint32_t(timeoutMS));
-    STREAM_LOG(LogLevel::Verbose, ("Waiting for next iteration; at %f, timeout=%f", (now - mInitialTimeStamp).ToSeconds(), timeoutMS/1000.0));
+    STREAM_LOG(LogLevel::Verbose,
+               ("Waiting for next iteration; at %f, timeout=%f",
+                (now - mInitialTimeStamp).ToSeconds(), timeoutMS/1000.0));
     if (mWaitState == WAITSTATE_WAITING_INDEFINITELY) {
       mGraphImpl->mGraphDriverAsleep = false; 
     }
     mWaitState = WAITSTATE_WAITING_FOR_NEXT_ITERATION;
-  } else {
-    mGraphImpl->mGraphDriverAsleep = true; 
-    mWaitState = WAITSTATE_WAITING_INDEFINITELY;
   }
   if (timeout > 0) {
     mGraphImpl->GetMonitor().Wait(timeout);
@@ -424,13 +434,19 @@ SystemClockDriver::WaitForNextIteration()
   if (mWaitState == WAITSTATE_WAITING_INDEFINITELY) {
     mGraphImpl->mGraphDriverAsleep = false; 
   }
+  
+  
+  
   mWaitState = WAITSTATE_RUNNING;
-  mGraphImpl->mNeedAnotherIteration = false;
+  mGraphImpl->mNeedAnotherIteration = false; 
 }
 
 void SystemClockDriver::WakeUp()
 {
   mGraphImpl->GetMonitor().AssertCurrentThreadOwns();
+  
+  
+  
   mWaitState = WAITSTATE_WAKING_UP;
   mGraphImpl->mGraphDriverAsleep = false; 
   mGraphImpl->GetMonitor().Notify();

@@ -522,6 +522,8 @@ public:
   void EnsureNextIteration()
   {
     mNeedAnotherIteration = true; 
+    
+    
     if (mGraphDriverAsleep) { 
       MonitorAutoLock mon(mMonitor);
       CurrentDriver()->WakeUp(); 
