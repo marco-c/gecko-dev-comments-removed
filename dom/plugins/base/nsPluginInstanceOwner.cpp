@@ -372,6 +372,7 @@ nsPluginInstanceOwner::nsPluginInstanceOwner()
 #ifdef XP_WIN
   mGotCompositionData = false;
   mSentStartComposition = false;
+  mPluginDidNotHandleIMEComposition = false;
 #endif
 }
 
@@ -1827,6 +1828,47 @@ nsPluginInstanceOwner::GetTextComposition()
 
   return composition.forget();
 }
+
+void
+nsPluginInstanceOwner::HandleNoConsumedCompositionMessage(
+  WidgetCompositionEvent* aCompositionEvent,
+  const NPEvent* aPluginEvent)
+{
+  nsCOMPtr<nsIWidget> widget = GetContainingWidgetIfOffset();
+  if (!widget) {
+    widget = GetRootWidgetForPluginFrame(mPluginFrame);
+    if (NS_WARN_IF(!widget)) {
+      return;
+    }
+  }
+
+  NPEvent npevent;
+  if (aPluginEvent->lParam & GCS_RESULTSTR) {
+    
+    for (size_t i = 0; i < aCompositionEvent->mData.Length(); i++) {
+      WidgetPluginEvent charEvent(true, ePluginInputEvent, widget);
+      npevent.event = WM_CHAR;
+      npevent.wParam = aCompositionEvent->mData[i];
+      npevent.lParam = 0;
+      charEvent.mPluginEvent.Copy(npevent);
+      ProcessEvent(charEvent);
+    }
+    return;
+  }
+  if (!mSentStartComposition) {
+    
+    
+    WidgetPluginEvent startEvent(true, ePluginInputEvent, widget);
+    npevent.event = WM_IME_STARTCOMPOSITION;
+    npevent.wParam = 0;
+    npevent.lParam = 0;
+    startEvent.mPluginEvent.Copy(npevent);
+    CallDefaultProc(&startEvent);
+    mSentStartComposition = true;
+  }
+
+  CallDefaultProc(aCompositionEvent);
+}
 #endif
 
 nsresult
@@ -1853,6 +1895,24 @@ nsPluginInstanceOwner::DispatchCompositionToPlugin(nsIDOMEvent* aEvent)
       compositionChangeEventHandlingMarker(composition, compositionEvent);
   }
 
+  const NPEvent* pPluginEvent =
+    static_cast<const NPEvent*>(compositionEvent->mPluginEvent);
+  if (pPluginEvent && pPluginEvent->event == WM_IME_COMPOSITION &&
+      mPluginDidNotHandleIMEComposition) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    HandleNoConsumedCompositionMessage(compositionEvent, pPluginEvent);
+    aEvent->StopImmediatePropagation();
+    return NS_OK;
+  }
+
   
   
   
@@ -1864,8 +1924,7 @@ nsPluginInstanceOwner::DispatchCompositionToPlugin(nsIDOMEvent* aEvent)
   aEvent->StopImmediatePropagation();
 
   
-  const NPEvent* pPluginEvent =
-    static_cast<const NPEvent*>(compositionEvent->mPluginEvent);
+
   if (NS_WARN_IF(!pPluginEvent)) {
     return NS_OK;
   }
@@ -1880,6 +1939,7 @@ nsPluginInstanceOwner::DispatchCompositionToPlugin(nsIDOMEvent* aEvent)
     } else {
       mSentStartComposition = false;
     }
+    mPluginDidNotHandleIMEComposition = false;
     return NS_OK;
   }
 
@@ -1892,38 +1952,11 @@ nsPluginInstanceOwner::DispatchCompositionToPlugin(nsIDOMEvent* aEvent)
   }
 
   if (pPluginEvent->event == WM_IME_COMPOSITION && !mGotCompositionData) {
-    nsCOMPtr<nsIWidget> widget = GetContainingWidgetIfOffset();
-    if (!widget) {
-      widget = GetRootWidgetForPluginFrame(mPluginFrame);
-    }
+    
+    
+    mPluginDidNotHandleIMEComposition = true;
 
-    if (pPluginEvent->lParam & GCS_RESULTSTR) {
-      
-      for (size_t i = 0; i < compositionEvent->mData.Length(); i++) {
-        WidgetPluginEvent charEvent(true, ePluginInputEvent, widget);
-        NPEvent event;
-        event.event = WM_CHAR;
-        event.wParam = compositionEvent->mData[i];
-        event.lParam = 0;
-        charEvent.mPluginEvent.Copy(event);
-        ProcessEvent(charEvent);
-      }
-      return NS_OK;
-    }
-    if (!mSentStartComposition) {
-      
-      
-      WidgetPluginEvent event(true, ePluginInputEvent, widget);
-      NPEvent npevent;
-      npevent.event = WM_IME_STARTCOMPOSITION;
-      npevent.wParam = 0;
-      npevent.lParam = 0;
-      event.mPluginEvent.Copy(npevent);
-      CallDefaultProc(&event);
-      mSentStartComposition = true;
-    }
-
-    CallDefaultProc(compositionEvent);
+    HandleNoConsumedCompositionMessage(compositionEvent, pPluginEvent);
   }
 #endif 
   return NS_OK;
