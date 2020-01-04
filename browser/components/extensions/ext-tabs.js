@@ -546,11 +546,11 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
 
         let destinationWindow = null;
         if (moveProperties.windowId !== null) {
-           destinationWindow = WindowManager.getWindow(moveProperties.windowId);
-           
-           if (!destinationWindow) {
-             return;
-           }
+          destinationWindow = WindowManager.getWindow(moveProperties.windowId);
+          
+          if (!destinationWindow) {
+            return;
+          }
         }
 
         
@@ -587,11 +587,12 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
           if (WindowManager.getId(tab.ownerDocument.defaultView) !== windowId) {
             
             
-            let newTab = gBrowser.addTab('about:blank');
+            let newTab = gBrowser.addTab("about:blank");
             let newBrowser = gBrowser.getBrowserForTab(newTab);
             gBrowser.updateBrowserRemotenessByURL(newBrowser, tab.linkedBrowser.currentURI.spec);
             newBrowser.stop();
-            newBrowser.docShell;
+            
+            void newBrowser.docShell;
 
             if (tab.pinned) {
               gBrowser.pinTab(newTab);
