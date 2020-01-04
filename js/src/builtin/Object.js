@@ -22,7 +22,7 @@ function ObjectStaticAssign(target, firstSource) {
         var from = ToObject(nextSource);
 
         
-        var keys = OwnPropertyKeys(from);
+        var keys = OwnPropertyKeys(from, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS);
 
         
         for (var nextIndex = 0, len = keys.length; nextIndex < len; nextIndex++) {
@@ -134,3 +134,48 @@ function ObjectLookupGetter(name) {
     } while (object !== null);
 }
 
+
+function ObjectValues(O) {
+    
+    var object = ToObject(O);
+
+    
+    
+    var keys = OwnPropertyKeys(object, JSITER_OWNONLY | JSITER_HIDDEN);
+    var values = [];
+    var valuesCount = 0;
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (!callFunction(std_Object_propertyIsEnumerable, object, key))
+            continue;
+
+        var value = object[key];
+        _DefineDataProperty(values, valuesCount++, value);
+    }
+
+    
+    return values;
+}
+
+
+function ObjectEntries(O) {
+    
+    var object = ToObject(O);
+
+    
+    
+    var keys = OwnPropertyKeys(object, JSITER_OWNONLY | JSITER_HIDDEN);
+    var entries = [];
+    var entriesCount = 0;
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (!callFunction(std_Object_propertyIsEnumerable, object, key))
+            continue;
+
+        var value = object[key];
+        _DefineDataProperty(entries, entriesCount++, [key, value]);
+    }
+
+    
+    return entries;
+}
