@@ -2742,6 +2742,13 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
 
   
   
+  
+  if (aBuilder->IsPaintingToWindow() && child->TrackingVisibility()) {
+    child->PresContext()->PresShell()->EnsureFrameInApproximatelyVisibleList(child);
+  }
+
+  
+  
   const nsStyleDisplay* disp = child->StyleDisplay();
   const nsStyleEffects* effects = child->StyleEffects();
   const nsStylePosition* pos = child->StylePosition();
