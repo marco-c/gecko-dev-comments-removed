@@ -46,7 +46,7 @@ addEventListener("Social:Notification", function(event) {
 
 
 
-SocialErrorListener = {
+const SocialErrorListener = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIDOMEventListener,
                                          Ci.nsIWebProgressListener,
                                          Ci.nsISupportsWeakReference,
