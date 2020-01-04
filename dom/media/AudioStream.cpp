@@ -593,19 +593,12 @@ AudioStream::GetPosition()
   return mAudioClock.GetPositionUnlocked();
 }
 
-
-#ifdef _MSC_VER
-#pragma optimize("", off)
-#endif
 int64_t
 AudioStream::GetPositionInFrames()
 {
   MonitorAutoLock mon(mMonitor);
   return mAudioClock.GetPositionInFrames();
 }
-#ifdef _MSC_VER
-#pragma optimize("", on)
-#endif
 
 int64_t
 AudioStream::GetPositionInFramesUnlocked()
