@@ -247,6 +247,14 @@ public:
   }
 
   
+
+
+
+  bool ValueNeedsReparsingEverySample() const {
+    return mValueNeedsReparsingEverySample;
+  }
+
+  
   class Comparator {
     public:
       bool Equals(const nsSMILAnimationFunction* aElem1,

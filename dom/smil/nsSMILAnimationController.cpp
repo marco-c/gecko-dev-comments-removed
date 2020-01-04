@@ -319,12 +319,13 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
     return;
   }
 
+  bool isStyleFlushNeeded = mResampleNeeded;
   mResampleNeeded = false;
   
   
   AutoRestore<bool> autoRestoreRunningSample(mRunningSample);
   mRunningSample = true;
-  
+
   
   
   
@@ -378,7 +379,9 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
   for (auto iter = mAnimationElementTable.Iter(); !iter.Done(); iter.Next()) {
     SVGAnimationElement* animElem = iter.Get()->GetKey();
     SampleTimedElement(animElem, &activeContainers);
-    AddAnimationToCompositorTable(animElem, currentCompositorTable);
+    AddAnimationToCompositorTable(animElem,
+                                  currentCompositorTable,
+                                  isStyleFlushNeeded);
   }
   activeContainers.Clear();
 
@@ -422,7 +425,9 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
   }
 
   nsCOMPtr<nsIDocument> kungFuDeathGrip(mDocument);  
-  mDocument->FlushPendingNotifications(Flush_Style);
+  if (isStyleFlushNeeded) {
+    mDocument->FlushPendingNotifications(Flush_Style);
+  }
 
   
   
@@ -434,13 +439,14 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
   
   
   
+  bool mightHavePendingStyleUpdates = false;
   for (auto iter = currentCompositorTable->Iter(); !iter.Done(); iter.Next()) {
-    iter.Get()->ComposeAttribute();
+    iter.Get()->ComposeAttribute(mightHavePendingStyleUpdates);
   }
 
   
   mLastCompositorTable = currentCompositorTable.forget();
-  mMightHavePendingStyleUpdates = true;
+  mMightHavePendingStyleUpdates = mightHavePendingStyleUpdates;
 
   NS_ASSERTION(!mResampleNeeded, "Resample dirty flag set during sample!");
 }
@@ -596,7 +602,9 @@ nsSMILAnimationController::SampleTimedElement(
 
  void
 nsSMILAnimationController::AddAnimationToCompositorTable(
-  SVGAnimationElement* aElement, nsSMILCompositorTable* aCompositorTable)
+  SVGAnimationElement* aElement,
+  nsSMILCompositorTable* aCompositorTable,
+  bool& aStyleFlushNeeded)
 {
   
   nsSMILTargetIdentifier key;
@@ -629,6 +637,7 @@ nsSMILAnimationController::AddAnimationToCompositorTable(
     
     func.ClearHasChanged();
   }
+  aStyleFlushNeeded |= func.ValueNeedsReparsingEverySample();
 }
 
 static inline bool

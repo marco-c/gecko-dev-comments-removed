@@ -49,7 +49,7 @@ nsSMILCompositor::AddAnimationFunction(nsSMILAnimationFunction* aFunc)
 }
 
 void
-nsSMILCompositor::ComposeAttribute()
+nsSMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates)
 {
   if (!mKey.mElement)
     return;
@@ -65,6 +65,8 @@ nsSMILCompositor::ComposeAttribute()
     
     
     smilAttr->ClearAnimValue();
+    
+    aMightHavePendingStyleUpdates = true;
     return;
   }
 
@@ -88,6 +90,7 @@ nsSMILCompositor::ComposeAttribute()
   }
 
   
+  aMightHavePendingStyleUpdates = true;
   uint32_t length = mAnimationFunctions.Length();
   for (uint32_t i = firstFuncToCompose; i < length; ++i) {
     mAnimationFunctions[i]->ComposeResult(*smilAttr, sandwichResultValue);

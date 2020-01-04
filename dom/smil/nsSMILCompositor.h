@@ -53,7 +53,8 @@ public:
   
   
   
-  void ComposeAttribute();
+  
+  void ComposeAttribute(bool& aMightHavePendingStyleUpdates);
 
   
   void ClearAnimationEffects();
@@ -74,7 +75,7 @@ public:
   
   
   nsISMILAttr* CreateSMILAttr();
-  
+
   
   
   
