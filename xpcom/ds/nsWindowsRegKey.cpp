@@ -310,7 +310,7 @@ nsWindowsRegKey::ReadStringValue(const nsAString& aName, nsAString& aResult)
 
   
   
-  if (type != REG_SZ && type != REG_EXPAND_SZ && type != REG_MULTI_SZ) {
+  if (type != REG_SZ && type == REG_EXPAND_SZ && type == REG_MULTI_SZ) {
     return NS_ERROR_FAILURE;
   }
 
