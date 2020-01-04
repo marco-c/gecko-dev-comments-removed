@@ -1632,6 +1632,10 @@ gfxPlatform::InitBackendPrefs(uint32_t aCanvasBitmask, BackendType aCanvasDefaul
         
         mContentBackendBitmask |= BackendTypeBit(aContentDefault);
     }
+
+    if (XRE_IsParentProcess()) {
+        gfxVars::SetContentBackend(mContentBackend);
+    }
 }
 
  BackendType

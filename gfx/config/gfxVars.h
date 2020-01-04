@@ -23,6 +23,7 @@ class gfxVarReceiver;
 
 #define GFX_VARS_LIST(_)
       \
+  _(ContentBackend,             BackendType,      BackendType::NONE)    \
   _(TileSize,                   IntSize,          IntSize(-1, -1))      \
   /* Add new entries above this line. */
 
