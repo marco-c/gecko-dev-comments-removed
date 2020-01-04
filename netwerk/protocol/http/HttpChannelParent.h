@@ -181,6 +181,10 @@ protected:
   nsresult ReportSecurityMessage(const nsAString& aMessageTag,
                                  const nsAString& aMessageCategory) override;
 
+  
+  
+  bool DoSendDeleteSelf();
+
 private:
   void UpdateAndSerializeSecurityInfo(nsACString& aSerializedSecurityInfoOut);
 
