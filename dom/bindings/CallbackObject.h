@@ -193,6 +193,10 @@ protected:
     }
   }
 
+  
+  
+  
+  
   JS::Heap<JSObject*> mCallback;
   JS::Heap<JSObject*> mCreationStack;
   
