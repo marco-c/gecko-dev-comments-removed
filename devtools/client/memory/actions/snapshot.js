@@ -3,10 +3,8 @@
 
 "use strict";
 
-
-
-
-const { getSnapshot, breakdownEquals, createSnapshot, assert } = require("../utils");
+const { assert } = require("devtools/shared/DevToolsUtils");
+const { getSnapshot, breakdownEquals, createSnapshot } = require("../utils");
 const { actions, snapshotState: states } = require("../constants");
 
 
@@ -67,7 +65,6 @@ const takeSnapshot = exports.takeSnapshot = function (front) {
 
 const readSnapshot = exports.readSnapshot = function readSnapshot (heapWorker, snapshot) {
   return function *(dispatch, getState) {
-    
     assert(snapshot.state === states.SAVED,
       "Should only read a snapshot once");
 
@@ -87,15 +84,15 @@ const readSnapshot = exports.readSnapshot = function readSnapshot (heapWorker, s
 
 const takeCensus = exports.takeCensus = function (heapWorker, snapshot) {
   return function *(dispatch, getState) {
-    
     assert([states.READ, states.SAVED_CENSUS].includes(snapshot.state),
       "Can only take census of snapshots in READ or SAVED_CENSUS state");
 
     let census;
+    let inverted = getState().inverted;
     let breakdown = getState().breakdown;
 
     
-    if (breakdownEquals(breakdown, snapshot.breakdown)) {
+    if (inverted === snapshot.inverted && breakdownEquals(breakdown, snapshot.breakdown)) {
       return;
     }
 
@@ -103,12 +100,37 @@ const takeCensus = exports.takeCensus = function (heapWorker, snapshot) {
     
     
     do {
+      inverted = getState().inverted;
       breakdown = getState().breakdown;
-      dispatch({ type: actions.TAKE_CENSUS_START, snapshot, breakdown });
-      census = yield heapWorker.takeCensus(snapshot.path, { breakdown }, { asTreeNode: true });
-    } while (!breakdownEquals(breakdown, getState().breakdown));
+      dispatch({ type: actions.TAKE_CENSUS_START, snapshot, inverted, breakdown });
+      let opts = inverted ? { asInvertedTreeNode: true } : { asTreeNode: true };
+      census = yield heapWorker.takeCensus(snapshot.path, { breakdown }, opts);
+    } while (inverted !== getState().inverted ||
+             !breakdownEquals(breakdown, getState().breakdown));
 
-    dispatch({ type: actions.TAKE_CENSUS_END, snapshot, breakdown, census });
+    dispatch({ type: actions.TAKE_CENSUS_END, snapshot, breakdown, inverted, census });
+  };
+};
+
+
+
+
+
+
+
+const refreshSelectedCensus = exports.refreshSelectedCensus = function (heapWorker) {
+  return function*(dispatch, getState) {
+    let snapshot = getState().snapshots.find(s => s.selected);
+
+    
+    
+    
+    
+    
+    
+    if (snapshot && snapshot.state === states.SAVED_CENSUS) {
+      yield dispatch(takeCensus(heapWorker, snapshot));
+    }
   };
 };
 

@@ -3,25 +3,16 @@
 
 "use strict";
 
-
-
-
-const { breakdownEquals, createSnapshot, assert } = require("../utils");
+const { assert } = require("devtools/shared/DevToolsUtils");
+const { breakdownEquals, createSnapshot } = require("../utils");
 const { actions, snapshotState: states } = require("../constants");
-const { takeCensus } = require("./snapshot");
+const { refreshSelectedCensus } = require("./snapshot");
 
 const setBreakdownAndRefresh = exports.setBreakdownAndRefresh = function (heapWorker, breakdown) {
   return function *(dispatch, getState) {
     
-    
     dispatch(setBreakdown(breakdown));
-    let snapshot = getState().snapshots.find(s => s.selected);
-
-    
-    
-    if (snapshot && !breakdownEquals(snapshot.breakdown, breakdown)) {
-      yield dispatch(takeCensus(heapWorker, snapshot));
-    }
+    yield dispatch(refreshSelectedCensus(heapWorker));
   };
 };
 
@@ -32,7 +23,6 @@ const setBreakdownAndRefresh = exports.setBreakdownAndRefresh = function (heapWo
 
 
 const setBreakdown = exports.setBreakdown = function (breakdown) {
-  
   assert(typeof breakdown === "object" && breakdown.by,
     `Breakdowns must be an object with a \`by\` property, attempted to set: ${uneval(breakdown)}`);
 
