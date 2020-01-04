@@ -25,8 +25,6 @@
 namespace mozilla {
 namespace layers {
 
-static std::map<uint64_t, RefPtr<RemoteContentController>> sDestroyedControllers;
-
 RemoteContentController::RemoteContentController(uint64_t aLayersId,
                                                  dom::TabParent* aBrowserParent)
   : mUILoop(MessageLoop::current())
@@ -39,6 +37,9 @@ RemoteContentController::RemoteContentController(uint64_t aLayersId,
 
 RemoteContentController::~RemoteContentController()
 {
+  if (mBrowserParent) {
+    Unused << PAPZParent::Send__delete__(this);
+  }
 }
 
 void
@@ -298,20 +299,17 @@ RemoteContentController::ActorDestroy(ActorDestroyReason aWhy)
     mApzcTreeManager = nullptr;
   }
   mBrowserParent = nullptr;
+}
 
-  
-  
-  
-  
-  
-  if (aWhy != ActorDestroyReason::AbnormalShutdown) {
-    uint64_t key = mLayersId;
-    NS_DispatchToMainThread(NS_NewRunnableFunction([key]() {
-      
-      
-      sDestroyedControllers.erase(key);
-    }));
-  }
+
+
+
+
+
+static void
+DeletePAPZParent(PAPZParent* aPAPZ)
+{
+  Unused << PAPZParent::Send__delete__(aPAPZ);
 }
 
 void
@@ -320,15 +318,7 @@ RemoteContentController::Destroy()
   RefPtr<RemoteContentController> controller = this;
   NS_DispatchToMainThread(NS_NewRunnableFunction([controller] {
     if (controller->CanSend()) {
-      
-      
-      
-      
-      
-      uint64_t key = controller->mLayersId;
-      MOZ_ASSERT(sDestroyedControllers.find(key) == sDestroyedControllers.end());
-      sDestroyedControllers[key] = controller;
-      Unused << controller->SendDestroy();
+      DeletePAPZParent(controller);
     }
   }));
 }
