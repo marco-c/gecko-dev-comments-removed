@@ -194,7 +194,11 @@ function safePrefGetter(aPrefBranch, aName, aDefault) {
   if (!type) {
     throw "Unknown type!";
   }
+
   
+  if (aPrefBranch.getPrefType(aName) == Ci.nsIPrefBranch.PREF_INVALID) {
+    return aDefault;
+  }
   try {
     return aPrefBranch["get" + type + "Pref"](aName);
   }
