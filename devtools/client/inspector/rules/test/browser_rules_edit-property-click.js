@@ -30,13 +30,13 @@ function* testEditPropertyAndCancel(inspector, view) {
   info("Test editor is created when clicking on property name");
   yield focusEditableField(view, propEditor.nameSpan);
   ok(propEditor.nameSpan.inplaceEditor, "Editor created for property name");
-  yield sendCharsAndWaitForFocus(view, ruleEditor.element, ["VK_ESCAPE"]);
+  yield sendKeysAndWaitForFocus(view, ruleEditor.element, ["ESCAPE"]);
 
   info("Test editor is created when clicking on ':' next to property name");
   let nameRect = propEditor.nameSpan.getBoundingClientRect();
   yield focusEditableField(view, propEditor.nameSpan, nameRect.width + 1);
   ok(propEditor.nameSpan.inplaceEditor, "Editor created for property name");
-  yield sendCharsAndWaitForFocus(view, ruleEditor.element, ["VK_ESCAPE"]);
+  yield sendKeysAndWaitForFocus(view, ruleEditor.element, ["ESCAPE"]);
 
   info("Test editor is created when clicking on property value");
   yield focusEditableField(view, propEditor.valueSpan);
@@ -45,7 +45,7 @@ function* testEditPropertyAndCancel(inspector, view) {
   
   
   let onRuleviewChanged = view.once("ruleview-changed");
-  yield sendCharsAndWaitForFocus(view, ruleEditor.element, ["VK_ESCAPE"]);
+  yield sendKeysAndWaitForFocus(view, ruleEditor.element, ["ESCAPE"]);
   yield onRuleviewChanged;
 
   info("Test editor is created when clicking on ';' next to property value");
@@ -56,14 +56,6 @@ function* testEditPropertyAndCancel(inspector, view) {
   
   
   onRuleviewChanged = view.once("ruleview-changed");
-  yield sendCharsAndWaitForFocus(view, ruleEditor.element, ["VK_ESCAPE"]);
+  yield sendKeysAndWaitForFocus(view, ruleEditor.element, ["ESCAPE"]);
   yield onRuleviewChanged;
-}
-
-function* sendCharsAndWaitForFocus(view, element, chars) {
-  let onFocus = once(element, "focus", true);
-  for (let ch of chars) {
-    EventUtils.sendChar(ch, view.styleWindow);
-  }
-  yield onFocus;
 }

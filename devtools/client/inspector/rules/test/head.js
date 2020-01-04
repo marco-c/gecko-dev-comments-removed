@@ -877,3 +877,24 @@ function* addNewRule(inspector, view) {
   info("Waiting for rule view to change");
   yield view.once("ruleview-changed");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function* sendKeysAndWaitForFocus(view, element, keys) {
+  let onFocus = once(element, "focus", true);
+  for (let key of keys) {
+    EventUtils.sendKey(key, view.styleWindow);
+  }
+  yield onFocus;
+}
