@@ -712,6 +712,9 @@ private:
                                  const std::string& streamId,
                                  const std::string& trackId);
 
+  nsresult SetupIceRestart();
+  nsresult RollbackIceRestart();
+
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
   static void GetStatsForPCObserver_s(
       const std::string& pcHandle,
@@ -804,6 +807,8 @@ private:
   
   mozilla::UniquePtr<PCUuidGenerator> mUuidGen;
   mozilla::UniquePtr<mozilla::JsepSession> mJsepSession;
+  std::string mPreviousIceUfrag; 
+  std::string mPreviousIcePwd; 
 
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
   

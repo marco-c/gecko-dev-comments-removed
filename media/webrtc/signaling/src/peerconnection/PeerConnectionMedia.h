@@ -295,14 +295,15 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   void SelfDestruct();
 
-  RefPtr<NrIceCtxHandler> ice_ctx() const { return mIceCtx; }
+  RefPtr<NrIceCtxHandler> ice_ctx_hdlr() const { return mIceCtxHdlr; }
+  RefPtr<NrIceCtx> ice_ctx() const { return mIceCtxHdlr->ctx(); }
 
   RefPtr<NrIceMediaStream> ice_media_stream(size_t i) const {
-    return mIceCtx->GetStream(i);
+    return mIceCtxHdlr->ctx()->GetStream(i);
   }
 
   size_t num_ice_media_streams() const {
-    return mIceCtx->GetStreamCount();
+    return mIceCtxHdlr->ctx()->GetStreamCount();
   }
 
   
@@ -314,6 +315,14 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   void StartIceChecks(const JsepSession& session);
+
+  
+  void BeginIceRestart(const std::string& ufrag,
+                       const std::string& pwd);
+  
+  void FinalizeIceRestart();
+  
+  void RollbackIceRestart();
 
   
   void AddIceCandidate(const std::string& candidate, const std::string& mid,
@@ -507,6 +516,13 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                         bool aIsIceLite,
                         const std::vector<std::string>& aIceOptionsList);
 
+  void BeginIceRestart_s(RefPtr<NrIceCtx> new_ctx);
+  void FinalizeIceRestart_s();
+  void RollbackIceRestart_s();
+  bool GetPrefDefaultAddressOnly() const;
+
+  void ConnectSignals(NrIceCtx *aCtx, NrIceCtx *aOldCtx=nullptr);
+
   
   void AddIceCandidate_s(const std::string& aCandidate, const std::string& aMid,
                          uint32_t aMLine);
@@ -565,7 +581,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   std::map<size_t, std::pair<bool, RefPtr<MediaSessionConduit>>> mConduits;
 
   
-  RefPtr<NrIceCtxHandler> mIceCtx;
+  RefPtr<NrIceCtxHandler> mIceCtxHdlr;
 
   
   RefPtr<NrIceResolver> mDNSResolver;

@@ -5,30 +5,48 @@
 
 namespace mozilla {
 
-class NrIceCtxHandler : public NrIceCtx {
+class NrIceCtxHandler {
 public:
   
   static RefPtr<NrIceCtxHandler> Create(const std::string& name,
-                                 bool offerer,
-                                 bool allow_loopback = false,
-                                 bool tcp_enabled = true,
-                                 bool allow_link_local = false,
-                                 bool hide_non_default = false,
-                                 Policy policy = ICE_POLICY_ALL);
+                                        bool offerer,
+                                        bool allow_loopback = false,
+                                        bool tcp_enabled = true,
+                                        bool allow_link_local = false,
+                                        bool hide_non_default = false,
+                                        NrIceCtx::Policy policy =
+                                          NrIceCtx::ICE_POLICY_ALL);
 
-  
   RefPtr<NrIceMediaStream> CreateStream(const std::string& name,
                                         int components);
+  
+  
+  RefPtr<NrIceCtx> CreateCtx(bool hide_non_default = false) const; 
+  RefPtr<NrIceCtx> CreateCtx(const std::string& ufrag,
+                             const std::string& pwd,
+                             bool hide_non_default) const;
 
-protected:
+  RefPtr<NrIceCtx> ctx() { return current_ctx; }
+
+  bool BeginIceRestart(RefPtr<NrIceCtx> new_ctx);
+  bool IsRestarting() const { return (old_ctx != nullptr); }
+  void FinalizeIceRestart();
+  void RollbackIceRestart();
+
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrIceCtxHandler)
+
+private:
   NrIceCtxHandler(const std::string& name,
                   bool offerer,
-                  Policy policy)
-  : NrIceCtx(name, offerer, policy)
-    {}
+                  NrIceCtx::Policy policy);
+  NrIceCtxHandler() = delete;
+  ~NrIceCtxHandler() {}
+  DISALLOW_COPY_ASSIGN(NrIceCtxHandler);
 
-  NrIceCtxHandler(); 
-  virtual ~NrIceCtxHandler();
+  RefPtr<NrIceCtx> current_ctx;
+  RefPtr<NrIceCtx> old_ctx; 
+  int restart_count; 
 };
 
 } 

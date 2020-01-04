@@ -91,6 +91,11 @@ public:
       mOfferToReceiveVideo = mozilla::Some(value);
     }
   }
+  void setBoolOption(const char* namePtr, bool value) {
+    if (!strcmp(namePtr, "IceRestart")) {
+      mIceRestart = mozilla::Some(value);
+    }
+  }
 private:
 };
 
@@ -2533,12 +2538,6 @@ TEST_P(SignalingTest, RenegotiationAnswererReplacesTrack)
 
 TEST_P(SignalingTest, BundleRenegotiation)
 {
-  if (UseBundle()) {
-    
-    
-    return;
-  }
-
   OfferOptions options;
   OfferAnswer(options, OFFER_AV | ANSWER_AV);
 
@@ -3438,6 +3437,17 @@ TEST_P(SignalingTest, AudioOnlyG722Rejected)
 
   CheckPipelines();
   CheckStreams();
+
+  CloseStreams();
+}
+
+TEST_P(SignalingTest, RestartIce)
+{
+  OfferOptions options;
+  OfferAnswer(options, OFFER_AV | ANSWER_AV);
+
+  options.setBoolOption("IceRestart", true);
+  OfferAnswer(options, OFFER_NONE);
 
   CloseStreams();
 }
