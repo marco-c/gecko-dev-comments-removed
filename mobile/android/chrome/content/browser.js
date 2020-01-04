@@ -4086,9 +4086,15 @@ Tab.prototype = {
         break;
       }
 
-      case "DOMAudioPlaybackStarted":
-      case "DOMAudioPlaybackStopped":
       case "TabPreZombify": {
+        if (!this.playingAudio) {
+          return;
+        }
+        
+        
+      }
+      case "DOMAudioPlaybackStarted":
+      case "DOMAudioPlaybackStopped": {
         if (!Services.prefs.getBoolPref("browser.tabs.showAudioPlayingIcon") ||
             !aEvent.isTrusted) {
           return;
