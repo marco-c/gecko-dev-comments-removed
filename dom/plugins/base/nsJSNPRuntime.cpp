@@ -25,7 +25,8 @@
 #include "nsIContent.h"
 #include "nsPluginInstanceOwner.h"
 #include "nsWrapperCacheInlines.h"
-#include "js/HashTable.h"
+#include "js/GCHashTable.h"
+#include "js/TracingAPI.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/plugins/PluginAsyncSurrogate.h"
@@ -42,20 +43,32 @@ using namespace mozilla;
 using mozilla::plugins::PluginScriptableObjectParent;
 using mozilla::plugins::ParentNPObject;
 
-struct JSObjWrapperHasher : public js::DefaultHasher<nsJSObjWrapperKey>
+struct JSObjWrapperHasher
 {
   typedef nsJSObjWrapperKey Key;
   typedef Key Lookup;
 
   static uint32_t hash(const Lookup &l) {
-    return HashGeneric(l.mJSObj, l.mNpp);
+    return js::MovableCellHasher<JS::Heap<JSObject*>>::hash(l.mJSObj) ^
+           HashGeneric(l.mNpp);
   }
 
-  static void rekey(Key &k, const Key& newKey) {
-    MOZ_ASSERT(k.mNpp == newKey.mNpp);
-    k.mJSObj = newKey.mJSObj;
+  static bool match(const Key& k, const Lookup &l) {
+      return js::MovableCellHasher<JS::Heap<JSObject*>>::match(k.mJSObj, l.mJSObj) &&
+             k.mNpp == l.mNpp;
   }
 };
+
+namespace js {
+template <>
+struct DefaultGCPolicy<nsJSObjWrapper*> {
+    static void trace(JSTracer* trc, nsJSObjWrapper** wrapper, const char* name) {
+        MOZ_ASSERT(wrapper);
+        MOZ_ASSERT(*wrapper);
+        (*wrapper)->trace(trc);
+    }
+};
+} 
 
 class NPObjWrapperHashEntry : public PLDHashEntryHdr
 {
@@ -72,10 +85,10 @@ public:
 
 
 
-typedef js::HashMap<nsJSObjWrapperKey,
-                    nsJSObjWrapper*,
-                    JSObjWrapperHasher,
-                    js::SystemAllocPolicy> JSObjWrapperTable;
+typedef js::GCHashMap<nsJSObjWrapperKey,
+                      nsJSObjWrapper*,
+                      JSObjWrapperHasher,
+                      js::SystemAllocPolicy> JSObjWrapperTable;
 static JSObjWrapperTable sJSObjWrappers;
 
 
@@ -278,20 +291,8 @@ OnWrapperDestroyed();
 static void
 TraceJSObjWrappers(JSTracer *trc, void *data)
 {
-  if (!sJSObjWrappers.initialized()) {
-    return;
-  }
-
-  
-  
-  for (JSObjWrapperTable::Enum e(sJSObjWrappers); !e.empty(); e.popFront()) {
-    nsJSObjWrapperKey key = e.front().key();
-    JS::UnsafeTraceRoot(trc, &key.mJSObj, "sJSObjWrappers key object");
-    nsJSObjWrapper *wrapper = e.front().value();
-    JS::TraceEdge(trc, &wrapper->mJSObj, "sJSObjWrappers wrapper object");
-    if (key != e.front().key()) {
-      e.rekeyFront(key);
-    }
+  if (sJSObjWrappers.initialized()) {
+    sJSObjWrappers.trace(trc);
   }
 }
 
@@ -1082,33 +1083,6 @@ nsJSObjWrapper::NP_Construct(NPObject *npobj, const NPVariant *args,
 
 
 
-
-
-
-
-
-
-static void
-JSObjWrapperKeyMarkCallback(JSTracer *trc, JSObject *obj, void *data) {
-  NPP npp = static_cast<NPP>(data);
-  MOZ_ASSERT(sJSObjWrappersAccessible);
-  if (!sJSObjWrappers.initialized())
-    return;
-
-  JSObject *prior = obj;
-  nsJSObjWrapperKey oldKey(prior, npp);
-  JSObjWrapperTable::Ptr p = sJSObjWrappers.lookup(oldKey);
-  if (!p)
-    return;
-
-  js::UnsafeTraceManuallyBarrieredEdge(trc, &obj, "sJSObjWrappers key object");
-  nsJSObjWrapperKey newKey(obj, npp);
-  sJSObjWrappers.rekeyIfMoved(oldKey, newKey);
-}
-
-
-
-
 NPObject *
 nsJSObjWrapper::GetNewOrUsed(NPP npp, JSContext *cx, JS::Handle<JSObject*> obj)
 {
@@ -1197,9 +1171,6 @@ nsJSObjWrapper::GetNewOrUsed(NPP npp, JSContext *cx, JS::Handle<JSObject*> obj)
     _releaseobject(wrapper);
     return nullptr;
   }
-
-  
-  JS_StoreObjectPostBarrierCallback(cx, JSObjWrapperKeyMarkCallback, obj, wrapper->mNpp);
 
   return wrapper;
 }
