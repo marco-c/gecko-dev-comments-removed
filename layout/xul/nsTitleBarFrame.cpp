@@ -169,6 +169,5 @@ void
 nsTitleBarFrame::MouseClicked(WidgetMouseEvent* aEvent)
 {
   
-  nsContentUtils::DispatchXULCommand(mContent,
-                                     aEvent && aEvent->mFlags.mIsTrusted);
+  nsContentUtils::DispatchXULCommand(mContent, aEvent && aEvent->IsTrusted());
 }

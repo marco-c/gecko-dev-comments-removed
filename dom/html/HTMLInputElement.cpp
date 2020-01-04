@@ -3338,8 +3338,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
     }
   }
 
-  if (mType == NS_FORM_INPUT_NUMBER &&
-      aVisitor.mEvent->mFlags.mIsTrusted) {
+  if (mType == NS_FORM_INPUT_NUMBER && aVisitor.mEvent->IsTrusted()) {
     if (mNumberControlSpinnerIsSpinning) {
       
       
@@ -3424,7 +3423,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   
   
   if (mType == NS_FORM_INPUT_NUMBER &&
-      aVisitor.mEvent->mFlags.mIsTrusted  &&
+      aVisitor.mEvent->IsTrusted()  &&
       aVisitor.mEvent->originalTarget != this) {
     
     
@@ -3873,7 +3872,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
     WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
     if (mType ==  NS_FORM_INPUT_NUMBER &&
         keyEvent && keyEvent->mMessage == eKeyPress &&
-        aVisitor.mEvent->mFlags.mIsTrusted &&
+        aVisitor.mEvent->IsTrusted() &&
         (keyEvent->keyCode == NS_VK_UP || keyEvent->keyCode == NS_VK_DOWN) &&
         !(keyEvent->IsShift() || keyEvent->IsControl() ||
           keyEvent->IsAlt() || keyEvent->IsMeta() ||
@@ -3951,7 +3950,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
               case NS_FORM_INPUT_IMAGE: 
               case NS_FORM_INPUT_COLOR:
               {
-                DispatchSimulatedClick(this, aVisitor.mEvent->mFlags.mIsTrusted,
+                DispatchSimulatedClick(this, aVisitor.mEvent->IsTrusted(),
                                        aVisitor.mPresContext);
                 aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
               } 
@@ -3980,7 +3979,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
                   rv = selectedRadioButton->Focus();
                   if (NS_SUCCEEDED(rv)) {
                     rv = DispatchSimulatedClick(selectedRadioButton,
-                                                aVisitor.mEvent->mFlags.mIsTrusted,
+                                                aVisitor.mEvent->IsTrusted(),
                                                 aVisitor.mPresContext);
                     if (NS_SUCCEEDED(rv)) {
                       aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
@@ -4092,8 +4091,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
               }
             }
           }
-          if (mType == NS_FORM_INPUT_NUMBER &&
-              aVisitor.mEvent->mFlags.mIsTrusted) {
+          if (mType == NS_FORM_INPUT_NUMBER && aVisitor.mEvent->IsTrusted()) {
             if (mouseEvent->button == WidgetMouseEvent::eLeftButton &&
                 !(mouseEvent->IsShift() || mouseEvent->IsControl() ||
                   mouseEvent->IsAlt() || mouseEvent->IsMeta() ||
