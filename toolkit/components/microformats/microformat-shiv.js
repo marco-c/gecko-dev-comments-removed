@@ -2410,7 +2410,7 @@ var Microformats;
 
 
         getDOMParser: function () {
-            if (typeof DOMParser === undefined) {
+            if (typeof DOMParser === "undefined") {
                 try {
                     return Components.classes["@mozilla.org/xmlextras/domparser;1"]
                         .createInstance(Components.interfaces.nsIDOMParser);
