@@ -231,6 +231,9 @@ public:
   size_t size(mozilla::MallocSizeOf mallocSizeof) const override;
   const char* jsObjectClassName() const override { return get().jsObjectClassName.get(); }
 
+  bool hasAllocationStack() const override { return get().allocationStack.isSome(); }
+  StackFrame allocationStack() const override;
+
   
   
   UniquePtr<EdgeRange> edges(JSContext* cx, bool) const override;
