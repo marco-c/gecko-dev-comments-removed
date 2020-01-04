@@ -288,8 +288,7 @@ public:
 
 
   bool HasCachedDependentStyleData(nsStyleStructID aSID) {
-    return (mBits & nsCachedStyleData::GetBitForSID(aSID)) &&
-           GetCachedStyleData(aSID);
+    return mBits & nsCachedStyleData::GetBitForSID(aSID);
   }
 
   nsRuleNode* RuleNode() { return mRuleNode; }
@@ -613,7 +612,6 @@ private:
   
   nsRuleNode* const       mRuleNode;
 
-  
   
   
   
