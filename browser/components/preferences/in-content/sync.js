@@ -164,8 +164,11 @@ var gSyncPane = {
     document.getElementById("fxaSyncComputerName").blur();
   },
 
-  _focusChangeDeviceNameButton: function() {
-    document.getElementById("fxaChangeDeviceName").focus();
+  _focusAfterComputerNameTextbox: function() {
+    
+    Services.focus.moveFocus(window,
+                             document.getElementById("fxaSyncComputerName"),
+                             Services.focus.MOVEFOCUS_FORWARD, 0);
   },
 
   _updateComputerNameValue: function(save) {
@@ -228,16 +231,20 @@ var gSyncPane = {
     });
     setEventListener("fxaCancelChangeDeviceName", "command", function () {
       
+      
+      
+      
       this._blurComputerNameTextbox();
       this._toggleComputerNameControls(false);
       this._updateComputerNameValue(false);
-      this._focusChangeDeviceNameButton();
+      this._focusAfterComputerNameTextbox();
     });
     setEventListener("fxaSaveChangeDeviceName", "command", function () {
+      
       this._blurComputerNameTextbox();
       this._toggleComputerNameControls(false);
       this._updateComputerNameValue(true);
-      this._focusChangeDeviceNameButton();
+      this._focusAfterComputerNameTextbox();
     });
     setEventListener("unlinkDevice", "click", function () {
       gSyncPane.startOver(true);
