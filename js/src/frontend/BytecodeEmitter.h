@@ -437,8 +437,10 @@ struct BytecodeEmitter
     
     
     
-    bool emitLoadFromTopScope(BindingIter& bi);
-    bool emitStoreToTopScope(BindingIter& bi);
+    bool emitLoadFromEnclosingFunctionScope(BindingIter& bi);
+    bool emitStoreToEnclosingFunctionScope(BindingIter& bi);
+
+    uint32_t computeHopsToEnclosingFunction();
 
     bool emitJump(JSOp op, ptrdiff_t off, ptrdiff_t* jumpOffset = nullptr);
     bool emitCall(JSOp op, uint16_t argc, ParseNode* pn = nullptr);
