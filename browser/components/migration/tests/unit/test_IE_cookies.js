@@ -8,13 +8,10 @@ add_task(function* () {
 
   const BOOL = ctypes.bool;
   const LPCTSTR = ctypes.char16_t.ptr;
+  const DWORD = ctypes.uint32_t;
+  const LPDWORD = DWORD.ptr;
 
   let wininet = ctypes.open("Wininet");
-  do_register_cleanup(() => {
-    try {
-      wininet.close();
-    } catch (ex) {}
-  });
 
   
 
@@ -30,24 +27,69 @@ add_task(function* () {
                                     LPCTSTR,
                                     LPCTSTR);
 
-  let expiry = new Date();
-  expiry.setDate(expiry.getDate() + 7);
+  
+
+
+
+
+
+
+
+  let getIECookie = wininet.declare("InternetGetCookieW",
+                                    ctypes.default_abi,
+                                    BOOL,
+                                    LPCTSTR,
+                                    LPCTSTR,
+                                    LPCTSTR,
+                                    LPDWORD);
+
+  
+  
+  let date = (new Date()).getDate();
   const COOKIE = {
-    host: "mycookietest.com",
+    get host() {
+      return new URL(this.href).host;
+    },
+    href: `http://mycookietest.${Math.random()}.com`,
     name: "testcookie",
     value: "testvalue",
-    expiry
+    expiry: new Date(new Date().setDate(date + 2))
   };
+  let data = ctypes.char16_t.array()(256);
+  let sizeRef = DWORD(256).address();
+
+  do_register_cleanup(() => {
+    
+    try {
+      let expired = new Date(new Date().setDate(date - 2));
+      let rv = setIECookie(COOKIE.href, COOKIE.name,
+                           `; expires=${expired.toUTCString()}`);
+      Assert.ok(rv, "Expired the IE cookie");
+      Assert.ok(!getIECookie(COOKIE.href, COOKIE.name, data, sizeRef),
+      "The cookie has been properly removed");
+    } catch (ex) {}
+
+    
+    try {
+      wininet.close();
+    } catch (ex) {}
+  });
+
+  
+  let value = `${COOKIE.value}; expires=${COOKIE.expiry.toUTCString()}`;
+  let rv = setIECookie(COOKIE.href, COOKIE.name, value);
+  Assert.ok(rv, "Added a persistent IE cookie: " + value);
+
+  
+  Assert.ok(getIECookie(COOKIE.href, COOKIE.name, data, sizeRef),
+            "Found the added persistent IE cookie");
+  do_print("Found cookie: " + data.readString());
+  Assert.equal(data.readString(), `${COOKIE.name}=${COOKIE.value}`,
+            "Found the expected cookie");
 
   
   Assert.equal(Services.cookies.countCookiesFromHost(COOKIE.host), 0,
                "There are no cookies initially");
-
-  
-  let value = COOKIE.name + " = " + COOKIE.value +"; expires = " +
-              COOKIE.expiry.toUTCString();
-  let rv = setIECookie(new URL("http://" + COOKIE.host).href, null, value);
-  Assert.ok(rv, "Added a persistent IE cookie");
 
   
   yield promiseMigration(migrator, MigrationUtils.resourceTypes.COOKIES);
