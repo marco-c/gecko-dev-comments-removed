@@ -472,9 +472,6 @@ protected:
   void DecodeFirstFrame();
 
   
-  void StartDecoding();
-
-  
   
   
   

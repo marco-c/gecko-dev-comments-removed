@@ -1645,34 +1645,6 @@ MediaDecoderStateMachine::DecodeFirstFrame()
   DispatchDecodeTasksIfNeeded();
 }
 
-void
-MediaDecoderStateMachine::StartDecoding()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  
-  MOZ_ASSERT(mSentFirstFrameLoadedEvent);
-  MOZ_ASSERT(mState == DECODER_STATE_DECODING);
-  
-  
-  MOZ_ASSERT(!mQueuedSeek.Exists());
-
-  if (CheckIfDecodeComplete()) {
-    SetState(DECODER_STATE_COMPLETED);
-    return;
-  }
-
-  mDecodeStartTime = TimeStamp::Now();
-
-  
-  mIsAudioPrerolling = !DonePrerollingAudio() && !mReader->IsWaitingAudioData();
-  mIsVideoPrerolling = !DonePrerollingVideo() && !mReader->IsWaitingVideoData();
-
-  
-  DispatchDecodeTasksIfNeeded();
-
-  ScheduleStateMachine();
-}
-
 void MediaDecoderStateMachine::PlayStateChanged()
 {
   MOZ_ASSERT(OnTaskQueue());
