@@ -530,6 +530,10 @@ private:
   virtual MediaDecoderOwner::NextFrameStatus NextFrameStatus() { return mNextFrameStatus; }
   virtual MediaDecoderOwner::NextFrameStatus NextFrameBufferedStatus();
 
+  
+  
+  virtual void GetMozDebugReaderData(nsAString& aString) {}
+
 protected:
   virtual ~MediaDecoder();
 

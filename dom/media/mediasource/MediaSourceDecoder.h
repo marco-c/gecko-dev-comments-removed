@@ -74,7 +74,7 @@ public:
 
   
   
-  void GetMozDebugReaderData(nsAString& aString);
+  void GetMozDebugReaderData(nsAString& aString) override;
 
   void AddSizeOfResources(ResourceSizes* aSizes) override;
 
