@@ -6,12 +6,21 @@
 #ifndef mozilla_image_test_gtest_Common_h
 #define mozilla_image_test_gtest_Common_h
 
+#include "gtest/gtest.h"
+
+#include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
+#include "Decoder.h"
+#include "gfxColor.h"
 #include "nsCOMPtr.h"
+#include "SurfacePipe.h"
+#include "SurfacePipeFactory.h"
 
 class nsIInputStream;
 
 namespace mozilla {
+namespace image {
 
 
 
@@ -54,6 +63,10 @@ struct BGRAColor
   { }
 
   static BGRAColor Green() { return BGRAColor(0x00, 0xFF, 0x00, 0xFF); }
+  static BGRAColor Red()   { return BGRAColor(0x00, 0x00, 0xFF, 0xFF); }
+  static BGRAColor Transparent() { return BGRAColor(0x00, 0x00, 0x00, 0x00); }
+
+  uint32_t AsPixel() const { return gfxPackedPixel(mAlpha, mRed, mGreen, mBlue); }
 
   uint8_t mBlue;
   uint8_t mGreen;
@@ -75,9 +88,203 @@ already_AddRefed<nsIInputStream> LoadFile(const char* aRelativePath);
 
 
 
+
 bool IsSolidColor(gfx::SourceSurface* aSurface,
                   BGRAColor aColor,
-                  bool aFuzzy = false);
+                  uint8_t aFuzz = 0);
+
+
+
+
+
+
+
+
+
+bool RowsAreSolidColor(gfx::SourceSurface* aSurface,
+                       int32_t aStartRow,
+                       int32_t aRowCount,
+                       BGRAColor aColor,
+                       uint8_t aFuzz = 0);
+
+
+
+
+
+
+
+
+bool RectIsSolidColor(gfx::SourceSurface* aSurface,
+                      const gfx::IntRect& aRect,
+                      BGRAColor aColor,
+                      uint8_t aFuzz = 0);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+already_AddRefed<Decoder> CreateTrivialDecoder();
+
+
+
+
+
+
+
+
+
+
+template <typename Func, typename... Configs>
+void WithFilterPipeline(Decoder* aDecoder, Func aFunc, Configs... aConfigs)
+{
+  auto pipe = MakeUnique<typename detail::FilterPipeline<Configs...>::Type>();
+  nsresult rv = pipe->Configure(aConfigs...);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  aFunc(aDecoder, pipe.get());
+
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  if (currentFrame) {
+    currentFrame->Finish();
+  }
+}
+
+
+
+
+
+
+
+
+
+template <typename... Configs>
+void AssertConfiguringPipelineFails(Decoder* aDecoder, Configs... aConfigs)
+{
+  auto pipe = MakeUnique<typename detail::FilterPipeline<Configs...>::Type>();
+  nsresult rv = pipe->Configure(aConfigs...);
+
+  
+  ASSERT_TRUE(NS_FAILED(rv));
+
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  if (currentFrame) {
+    currentFrame->Finish();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+void AssertCorrectPipelineFinalState(SurfaceFilter* aFilter,
+                                     const gfx::IntRect& aInputSpaceRect,
+                                     const gfx::IntRect& aOutputSpaceRect);
+
+
+
+
+
+
+
+
+
+
+
+
+
+void CheckGeneratedImage(Decoder* aDecoder,
+                         const gfx::IntRect& aRect,
+                         uint8_t aFuzz = 0);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void CheckWritePixels(Decoder* aDecoder,
+                      SurfaceFilter* aFilter,
+                      Maybe<gfx::IntRect> aOutputRect = Nothing(),
+                      Maybe<gfx::IntRect> aInputRect = Nothing(),
+                      Maybe<gfx::IntRect> aInputWriteRect = Nothing(),
+                      Maybe<gfx::IntRect> aOutputWriteRect = Nothing(),
+                      uint8_t aFuzz = 0);
+
+
+
+
+
+
+void CheckWriteRows(Decoder* aDecoder,
+                    SurfaceFilter* aFilter,
+                    Maybe<gfx::IntRect> aOutputRect = Nothing(),
+                    Maybe<gfx::IntRect> aInputRect = Nothing(),
+                    Maybe<gfx::IntRect> aInputWriteRect = Nothing(),
+                    Maybe<gfx::IntRect> aOutputWriteRect = Nothing(),
+                    uint8_t aFuzz = 0);
+
+
+
+
+
+
+void CheckPalettedWritePixels(Decoder* aDecoder,
+                              SurfaceFilter* aFilter,
+                              Maybe<gfx::IntRect> aOutputRect = Nothing(),
+                              Maybe<gfx::IntRect> aInputRect = Nothing(),
+                              Maybe<gfx::IntRect> aInputWriteRect = Nothing(),
+                              Maybe<gfx::IntRect> aOutputWriteRect = Nothing(),
+                              uint8_t aFuzz = 0);
+
+
+
+
+
+
+void CheckPalettedWriteRows(Decoder* aDecoder,
+                            SurfaceFilter* aFilter,
+                            Maybe<gfx::IntRect> aOutputRect = Nothing(),
+                            Maybe<gfx::IntRect> aInputRect = Nothing(),
+                            Maybe<gfx::IntRect> aInputWriteRect = Nothing(),
+                            Maybe<gfx::IntRect> aOutputWriteRect = Nothing(),
+                            uint8_t aFuzz = 0);
 
 
 
@@ -105,6 +312,7 @@ ImageTestCase TransparentBMPWhenBMPAlphaEnabledTestCase();
 ImageTestCase RLE4BMPTestCase();
 ImageTestCase RLE8BMPTestCase();
 
+} 
 } 
 
 #endif 
