@@ -29,8 +29,17 @@ namespace wasm {
 
 
 
+struct CompileArgs
+{
+    Assumptions assumptions;
+    UniqueChars filename;
+    bool alwaysBaseline;
+
+    CompileArgs() : alwaysBaseline(false) {}
+};
+
 UniqueModule
-Compile(JSContext* cx, UniqueChars filename, Assumptions&& assumptions, Bytes&& code);
+Compile(JSContext* cx, Bytes&& code, CompileArgs&& compileArgs);
 
 }  
 }  

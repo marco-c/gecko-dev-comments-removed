@@ -39,7 +39,7 @@ namespace wasm {
   class FuncIR;
   class FunctionCompileResults;
   class IonCompileTask;
-  typedef Vector<IonCompileTask*, 0, SystemAllocPolicy> IonCompileTaskVector;
+  typedef Vector<IonCompileTask*, 0, SystemAllocPolicy> IonCompileTaskPtrVector;
 } 
 
 enum class ParseTaskKind
@@ -78,7 +78,7 @@ class GlobalHelperThreadState
     IonBuilderVector ionWorklist_, ionFinishedList_;
 
     
-    wasm::IonCompileTaskVector wasmWorklist_, wasmFinishedList_;
+    wasm::IonCompileTaskPtrVector wasmWorklist_, wasmFinishedList_;
 
   public:
     
@@ -157,11 +157,11 @@ class GlobalHelperThreadState
         return ionFinishedList_;
     }
 
-    wasm::IonCompileTaskVector& wasmWorklist() {
+    wasm::IonCompileTaskPtrVector& wasmWorklist() {
         MOZ_ASSERT(isLocked());
         return wasmWorklist_;
     }
-    wasm::IonCompileTaskVector& wasmFinishedList() {
+    wasm::IonCompileTaskPtrVector& wasmFinishedList() {
         MOZ_ASSERT(isLocked());
         return wasmFinishedList_;
     }
@@ -392,7 +392,7 @@ PauseCurrentHelperThread();
 
 
 bool
-StartOffThreadWasmCompile(ExclusiveContext* cx, wasm::IonCompileTask* task);
+StartOffThreadWasmCompile(wasm::IonCompileTask* task);
 
 
 
