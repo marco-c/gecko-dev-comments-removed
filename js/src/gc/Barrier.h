@@ -168,6 +168,8 @@
 
 
 
+
+
 class JSAtom;
 struct JSCompartment;
 class JSFlatString;
@@ -302,45 +304,71 @@ struct InternalGCMethods<jsid>
     static void postBarrier(jsid* idp, jsid prev, jsid next) {}
 };
 
+
+
+
 template <typename T>
 class BarrieredBaseMixins {};
 
 
-
-
-template <class T>
+template <typename T>
 class BarrieredBase : public BarrieredBaseMixins<T>
 {
   protected:
+    
+    explicit BarrieredBase(T v) : value(v) {
+#ifdef DEBUG
+        assertTypeConstraints();
+#endif
+    }
+
+    
+    
+    
+    
     T value;
 
-    explicit BarrieredBase(T v) : value(v) {}
+  private:
+#ifdef DEBUG
+    
+    
+    void assertTypeConstraints() const;
+#endif
+};
+
+
+template <class T>
+class WriteBarrieredBase : public BarrieredBase<T>
+{
+  protected:
+    
+    explicit WriteBarrieredBase(T v) : BarrieredBase<T>(v) {}
 
   public:
     DECLARE_POINTER_COMPARISON_OPS(T);
     DECLARE_POINTER_CONSTREF_OPS(T);
 
     
-    const T& get() const { return value; }
+    const T& get() const { return this->value; }
 
     
 
 
 
-    T* unsafeGet() { return &value; }
-    const T* unsafeGet() const { return &value; }
-    void unsafeSet(T v) { value = v; }
+    T* unsafeGet() { return &this->value; }
+    const T* unsafeGet() const { return &this->value; }
+    void unsafeSet(T v) { this->value = v; }
 
     
     static void writeBarrierPre(const T& v) { InternalGCMethods<T>::preBarrier(v); }
 
   protected:
-    void pre() { InternalGCMethods<T>::preBarrier(value); }
-    void post(T prev, T next) { InternalGCMethods<T>::postBarrier(&value, prev, next); }
+    void pre() { InternalGCMethods<T>::preBarrier(this->value); }
+    void post(T prev, T next) { InternalGCMethods<T>::postBarrier(&this->value, prev, next); }
 };
 
 template <>
-class BarrieredBaseMixins<JS::Value> : public ValueOperations<BarrieredBase<JS::Value> >
+class BarrieredBaseMixins<JS::Value> : public ValueOperations<WriteBarrieredBase<JS::Value>>
 {};
 
 
@@ -350,15 +378,15 @@ class BarrieredBaseMixins<JS::Value> : public ValueOperations<BarrieredBase<JS::
 
 
 template <class T>
-class PreBarriered : public BarrieredBase<T>
+class PreBarriered : public WriteBarrieredBase<T>
 {
   public:
-    PreBarriered() : BarrieredBase<T>(GCMethods<T>::initial()) {}
+    PreBarriered() : WriteBarrieredBase<T>(GCMethods<T>::initial()) {}
     
 
 
-    MOZ_IMPLICIT PreBarriered(T v) : BarrieredBase<T>(v) {}
-    explicit PreBarriered(const PreBarriered<T>& v) : BarrieredBase<T>(v.value) {}
+    MOZ_IMPLICIT PreBarriered(T v) : WriteBarrieredBase<T>(v) {}
+    explicit PreBarriered(const PreBarriered<T>& v) : WriteBarrieredBase<T>(v.value) {}
     ~PreBarriered() { this->pre(); }
 
     void init(T v) {
@@ -395,14 +423,14 @@ class PreBarriered : public BarrieredBase<T>
 
 
 template <class T>
-class HeapPtr : public BarrieredBase<T>
+class HeapPtr : public WriteBarrieredBase<T>
 {
   public:
-    HeapPtr() : BarrieredBase<T>(GCMethods<T>::initial()) {}
-    explicit HeapPtr(T v) : BarrieredBase<T>(v) {
+    HeapPtr() : WriteBarrieredBase<T>(GCMethods<T>::initial()) {}
+    explicit HeapPtr(T v) : WriteBarrieredBase<T>(v) {
         this->post(GCMethods<T>::initial(), v);
     }
-    explicit HeapPtr(const HeapPtr<T>& v) : BarrieredBase<T>(v) {
+    explicit HeapPtr(const HeapPtr<T>& v) : WriteBarrieredBase<T>(v) {
         this->post(GCMethods<T>::initial(), v);
     }
 #ifdef DEBUG
@@ -447,11 +475,11 @@ class HeapPtr : public BarrieredBase<T>
 
 
 template <class T>
-class RelocatablePtr : public BarrieredBase<T>
+class RelocatablePtr : public WriteBarrieredBase<T>
 {
   public:
-    RelocatablePtr() : BarrieredBase<T>(GCMethods<T>::initial()) {}
-    explicit RelocatablePtr(T v) : BarrieredBase<T>(v) {
+    RelocatablePtr() : WriteBarrieredBase<T>(GCMethods<T>::initial()) {}
+    explicit RelocatablePtr(T v) : WriteBarrieredBase<T>(v) {
         this->post(GCMethods<T>::initial(), this->value);
     }
 
@@ -461,7 +489,7 @@ class RelocatablePtr : public BarrieredBase<T>
 
 
 
-    RelocatablePtr(const RelocatablePtr<T>& v) : BarrieredBase<T>(v) {
+    RelocatablePtr(const RelocatablePtr<T>& v) : WriteBarrieredBase<T>(v) {
         this->post(GCMethods<T>::initial(), this->value);
     }
 
@@ -542,7 +570,7 @@ class ReadBarriered
 
 
 
-class HeapSlot : public BarrieredBase<Value>
+class HeapSlot : public WriteBarrieredBase<Value>
 {
   public:
     enum Kind {
@@ -553,13 +581,13 @@ class HeapSlot : public BarrieredBase<Value>
     explicit HeapSlot() = delete;
 
     explicit HeapSlot(NativeObject* obj, Kind kind, uint32_t slot, const Value& v)
-      : BarrieredBase<Value>(v)
+      : WriteBarrieredBase<Value>(v)
     {
         post(obj, kind, slot, v);
     }
 
     explicit HeapSlot(NativeObject* obj, Kind kind, uint32_t slot, const HeapSlot& s)
-      : BarrieredBase<Value>(s.value)
+      : WriteBarrieredBase<Value>(s.value)
     {
         post(obj, kind, slot, s);
     }

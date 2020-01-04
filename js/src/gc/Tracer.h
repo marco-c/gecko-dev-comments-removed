@@ -54,7 +54,7 @@ namespace js {
 
 template <typename T>
 void
-TraceEdge(JSTracer* trc, BarrieredBase<T>* thingp, const char* name);
+TraceEdge(JSTracer* trc, WriteBarrieredBase<T>* thingp, const char* name);
 
 
 
@@ -79,7 +79,7 @@ TraceManuallyBarrieredEdge(JSTracer* trc, T* thingp, const char* name);
 
 template <typename T>
 void
-TraceRange(JSTracer* trc, size_t len, BarrieredBase<T>* vec, const char* name);
+TraceRange(JSTracer* trc, size_t len, WriteBarrieredBase<T>* vec, const char* name);
 
 
 template <typename T>
@@ -90,7 +90,7 @@ TraceRootRange(JSTracer* trc, size_t len, T* vec, const char* name);
 
 template <typename T>
 void
-TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src, BarrieredBase<T>* dst,
+TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src, WriteBarrieredBase<T>* dst,
                           const char* name);
 
 
