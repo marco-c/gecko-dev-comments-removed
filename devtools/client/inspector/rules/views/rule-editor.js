@@ -348,8 +348,11 @@ RuleEditor.prototype = {
 
 
 
-  addProperty: function(name, value, priority, siblingProp) {
-    let prop = this.rule.createProperty(name, value, priority, siblingProp);
+
+
+  addProperty: function(name, value, priority, enabled, siblingProp) {
+    let prop = this.rule.createProperty(name, value, priority, enabled,
+      siblingProp);
     let index = this.rule.textProps.indexOf(prop);
     let editor = new TextPropertyEditor(this, prop);
 
@@ -386,7 +389,10 @@ RuleEditor.prototype = {
 
     let lastProp = siblingProp;
     for (let p of properties) {
-      lastProp = this.addProperty(p.name, p.value, p.priority, lastProp);
+      let isCommented = Boolean(p.commentOffsets);
+      let enabled = !isCommented;
+      lastProp = this.addProperty(p.name, p.value, p.priority, enabled,
+        lastProp);
     }
 
     
@@ -455,7 +461,7 @@ RuleEditor.prototype = {
     
     
     this.multipleAddedProperties =
-      parseDeclarations(value).filter(d => d.name);
+      parseDeclarations(value, true).filter(d => d.name);
 
     
     

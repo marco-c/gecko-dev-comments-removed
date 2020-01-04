@@ -180,8 +180,10 @@ Rule.prototype = {
 
 
 
-  createProperty: function(name, value, priority, siblingProp) {
-    let prop = new TextProperty(this, name, value, priority);
+
+
+  createProperty: function(name, value, priority, enabled, siblingProp) {
+    let prop = new TextProperty(this, name, value, priority, enabled);
 
     let ind;
     if (siblingProp) {
