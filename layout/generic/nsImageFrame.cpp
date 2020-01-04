@@ -1711,7 +1711,9 @@ nsDisplayImage::ConfigureLayer(ImageLayer* aLayer,
   
   
   
-  IntSize containerSize = aLayer->GetContainer()->GetCurrentSize();
+  IntSize containerSize = aLayer->GetContainer()
+                        ? aLayer->GetContainer()->GetCurrentSize()
+                        : IntSize(imageWidth, imageHeight);
 
   const LayoutDevicePoint p = destRect.TopLeft();
   Matrix transform = Matrix::Translation(p.x, p.y);
