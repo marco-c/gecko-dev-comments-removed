@@ -168,8 +168,6 @@ private:
   void InitializationTask();
 
   void SetAudioCaptured(bool aCaptured);
-  void DispatchAudioCaptured();
-  void DispatchAudioUncaptured();
 
   void Shutdown();
 public:
@@ -502,10 +500,6 @@ protected:
   
   void StartMediaSink();
 
-  void StopDecodedStream();
-
-  void StartDecodedStream();
-
   
   void PlayStateChanged();
 
@@ -657,10 +651,6 @@ private:
 
   
   void OnMediaSinkError();
-
-  void OnDecodedStreamFinish();
-
-  void OnDecodedStreamError();
 
   
   
@@ -1274,7 +1264,6 @@ private:
   nsRefPtr<MediaResource> mResource;
 
   MozPromiseRequestHolder<GenericPromise> mMediaSinkPromise;
-  MozPromiseRequestHolder<GenericPromise> mDecodedStreamPromise;
 
   MediaEventListener mAudioQueueListener;
   MediaEventListener mVideoQueueListener;
