@@ -16,24 +16,6 @@
 
 package org.mozilla.gecko.background.fxa;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-import java.security.GeneralSecurityException;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.mozilla.gecko.background.sync.AndroidSyncTestCaseWithAccounts;
-import org.mozilla.gecko.background.sync.TestSyncAccounts;
-import org.mozilla.gecko.fxa.AccountLoader;
-import org.mozilla.gecko.fxa.FirefoxAccounts;
-import org.mozilla.gecko.fxa.FxAccountConstants;
-import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
-import org.mozilla.gecko.fxa.login.Separated;
-import org.mozilla.gecko.fxa.login.State;
-import org.mozilla.gecko.sync.SyncConstants;
-import org.mozilla.gecko.sync.setup.SyncAccounts;
-import org.mozilla.gecko.sync.setup.SyncAccounts.SyncAccountParameters;
-
 import android.accounts.Account;
 import android.content.Context;
 import android.os.AsyncTask;
@@ -42,6 +24,20 @@ import android.os.Looper;
 import android.os.Message;
 import android.support.v4.content.Loader;
 import android.support.v4.content.Loader.OnLoadCompleteListener;
+
+import org.mozilla.gecko.background.sync.AndroidSyncTestCaseWithAccounts;
+import org.mozilla.gecko.fxa.AccountLoader;
+import org.mozilla.gecko.fxa.FirefoxAccounts;
+import org.mozilla.gecko.fxa.FxAccountConstants;
+import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
+import org.mozilla.gecko.fxa.login.Separated;
+import org.mozilla.gecko.fxa.login.State;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 
@@ -145,32 +141,11 @@ public class TestAccountLoader extends AndroidSyncTestCaseWithAccounts {
     final Context context = getApplicationContext();
     final AccountLoader loader = new AccountLoader(context);
 
-    final boolean syncAccountsExist = SyncAccounts.syncAccountsExist(context);
     final boolean firefoxAccountsExist = FirefoxAccounts.firefoxAccountsExist(context);
 
     if (firefoxAccountsExist) {
       assertFirefoxAccount(getLoaderResultSynchronously(loader));
       return;
-    }
-
-    if (syncAccountsExist) {
-      assertSyncAccount(getLoaderResultSynchronously(loader));
-      return;
-    }
-
-    
-    
-    Account syncAccount = null;
-    try {
-      final SyncAccountParameters syncAccountParameters =
-          new SyncAccountParameters(context, null, TEST_USERNAME, TEST_SYNCKEY, TEST_SYNCPASSWORD, null);
-      syncAccount = SyncAccounts.createSyncAccount(syncAccountParameters, false);
-      assertNotNull(syncAccount);
-      assertSyncAccount(getLoaderResultSynchronously(loader));
-    } finally {
-      if (syncAccount != null) {
-        TestSyncAccounts.deleteAccount(this, accountManager, syncAccount);
-      }
     }
 
     
@@ -185,10 +160,5 @@ public class TestAccountLoader extends AndroidSyncTestCaseWithAccounts {
   protected void assertFirefoxAccount(Account account) {
     assertNotNull(account);
     assertEquals(FxAccountConstants.ACCOUNT_TYPE, account.type);
-  }
-
-  protected void assertSyncAccount(Account account) {
-    assertNotNull(account);
-    assertEquals(SyncConstants.ACCOUNTTYPE_SYNC, account.type);
   }
 }

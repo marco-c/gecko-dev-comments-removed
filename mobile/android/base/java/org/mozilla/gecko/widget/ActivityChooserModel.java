@@ -1310,8 +1310,7 @@ public class ActivityChooserModel extends DataSetObservable {
     private boolean hasOtherSyncClients() {
         
         
-        if (!FirefoxAccounts.firefoxAccountsExist(mContext) &&
-                !SyncAccounts.syncAccountsExist(mContext))  {
+        if (!FirefoxAccounts.firefoxAccountsExist(mContext)) {
             return false;
         }
 
