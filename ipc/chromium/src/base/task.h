@@ -63,7 +63,7 @@ void DispatchTupleToFunction(Function function, mozilla::Tuple<Args...>& arg)
 class Task : public tracked_objects::Tracked {
  public:
   Task() {}
-  virtual  B2G_ACL_EXPORT ~Task() {}
+  virtual ~Task() {}
 
   
   virtual void Run() = 0;

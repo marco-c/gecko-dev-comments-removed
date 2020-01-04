@@ -94,8 +94,8 @@ class Births;
 
 class Tracked {
  public:
-  B2G_ACL_EXPORT Tracked();
-  B2G_ACL_EXPORT virtual ~Tracked();
+  Tracked();
+  virtual ~Tracked();
 
   
   void SetBirthPlace(const Location& from_here);

@@ -315,13 +315,13 @@ public:
 
 
 
-  bool NS_FASTCALL B2G_ACL_EXPORT EqualsASCII(const char* aData, size_type aLen) const;
+  bool NS_FASTCALL EqualsASCII(const char* aData, size_type aLen) const;
   
 
 
 
 
-  bool NS_FASTCALL B2G_ACL_EXPORT EqualsASCII(const char* aData) const;
+  bool NS_FASTCALL EqualsASCII(const char* aData) const;
 
   
   
@@ -948,7 +948,7 @@ protected:
 
 
 
-  void NS_FASTCALL B2G_ACL_EXPORT Finalize();
+  void NS_FASTCALL Finalize();
 
   
 

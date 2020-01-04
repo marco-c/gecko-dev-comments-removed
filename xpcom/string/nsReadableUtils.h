@@ -112,7 +112,7 @@ char* ToNewCString(const nsACString& aSource);
 
 
 
-B2G_ACL_EXPORT char* ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count = nullptr);
+char* ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count = nullptr);
 
 
 

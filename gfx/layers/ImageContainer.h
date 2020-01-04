@@ -564,7 +564,7 @@ private:
   typedef mozilla::ReentrantMonitor ReentrantMonitor;
 
   
-  B2G_ACL_EXPORT ~ImageContainer();
+  ~ImageContainer();
 
   void SetCurrentImageInternal(const nsTArray<NonOwningImage>& aImages);
 

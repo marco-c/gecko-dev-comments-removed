@@ -67,7 +67,7 @@ class GonkNativeWindow: public GonkConsumerBase
     
     
     
-    B2G_ACL_EXPORT GonkNativeWindow(int bufferCount = GonkBufferQueue::MIN_UNDEQUEUED_BUFFERS);
+    GonkNativeWindow(int bufferCount = GonkBufferQueue::MIN_UNDEQUEUED_BUFFERS);
     GonkNativeWindow(const sp<GonkBufferQueue>& bq, uint32_t consumerUsage,
             int bufferCount = GonkBufferQueue::MIN_UNDEQUEUED_BUFFERS,
             bool controlledByApp = false);
@@ -112,7 +112,7 @@ class GonkNativeWindow: public GonkConsumerBase
     status_t setDefaultBufferFormat(uint32_t defaultFormat);
 
     
-    B2G_ACL_EXPORT already_AddRefed<TextureClient> getCurrentBuffer();
+    already_AddRefed<TextureClient> getCurrentBuffer();
 
     
     
@@ -120,7 +120,7 @@ class GonkNativeWindow: public GonkConsumerBase
 
     already_AddRefed<TextureClient> getTextureClientFromBuffer(ANativeWindowBuffer* buffer);
 
-    B2G_ACL_EXPORT void setNewFrameCallback(GonkNativeWindowNewFrameCallback* callback);
+    void setNewFrameCallback(GonkNativeWindowNewFrameCallback* callback);
 
     static void RecycleCallback(TextureClient* client, void* closure);
 

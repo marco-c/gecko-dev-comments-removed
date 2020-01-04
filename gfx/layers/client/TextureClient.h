@@ -603,7 +603,7 @@ private:
 
 
 
-  B2G_ACL_EXPORT void Finalize() {}
+  void Finalize() {}
 
   friend class AtomicRefCountedWithFinalize<TextureClient>;
   friend class gl::SharedSurface_Gralloc;

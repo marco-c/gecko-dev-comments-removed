@@ -225,7 +225,7 @@ public:
 
   
   
-  B2G_ACL_EXPORT virtual VideoFrameContainer* GetVideoFrameContainer() final override;
+  virtual VideoFrameContainer* GetVideoFrameContainer() final override;
   layers::ImageContainer* GetImageContainer();
 
   

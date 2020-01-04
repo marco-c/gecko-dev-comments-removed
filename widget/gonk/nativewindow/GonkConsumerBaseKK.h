@@ -69,7 +69,7 @@ public:
 
     
     
-    B2G_ACL_EXPORT sp<GonkBufferQueue> getBufferQueue() const;
+    sp<GonkBufferQueue> getBufferQueue() const;
 
     
     
