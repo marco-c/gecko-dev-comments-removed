@@ -577,7 +577,7 @@ HTMLSelectElement::Add(nsGenericHTMLElement& aElement,
 
   
   
-  nsINode* parent = aBefore->Element::GetParentNode();
+  nsCOMPtr<nsINode> parent = aBefore->Element::GetParentNode();
   if (!parent || !nsContentUtils::ContentIsDescendantOf(parent, this)) {
     
     
