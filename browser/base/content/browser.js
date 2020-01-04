@@ -230,11 +230,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
 XPCOMUtils.defineLazyModuleGetter(this, "gWebRTCUI",
   "resource:///modules/webrtcUI.jsm", "webrtcUI");
 
-XPCOMUtils.defineLazyModuleGetter(this, "TabCrashHandler",
-  "resource:///modules/ContentCrashHandlers.jsm");
 #ifdef MOZ_CRASHREPORTER
+XPCOMUtils.defineLazyModuleGetter(this, "TabCrashReporter",
+  "resource:///modules/ContentCrashReporters.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PluginCrashReporter",
-  "resource:///modules/ContentCrashHandlers.jsm");
+  "resource:///modules/ContentCrashReporters.jsm");
 #endif
 
 XPCOMUtils.defineLazyModuleGetter(this, "FormValidationHandler",
@@ -916,7 +916,6 @@ function _loadURIWithFlags(browser, uri, params) {
     
     
     
-    Cu.reportError(e);
     gBrowser.updateBrowserRemotenessByURL(browser, uri);
     browser.webNavigation.loadURIWithOptions(uri, flags, referrer, referrerPolicy,
                                              postData, null, null);
@@ -1145,15 +1144,56 @@ var gBrowserInit = {
     });
 
     gBrowser.addEventListener("AboutTabCrashedLoad", function(event) {
+      let browser = gBrowser.getBrowserForDocument(event.target);
+#ifdef MOZ_CRASHREPORTER
+      TabCrashReporter.onAboutTabCrashedLoad(browser, {
+        crashedTabCount: SessionStore.crashedTabCount,
+      });
+#endif
+
+      
+      ZoomManager.setZoomForBrowser(browser, 1);
+    }, false, true);
+
+    gBrowser.addEventListener("AboutTabCrashedMessage", function(event) {
       let ownerDoc = event.originalTarget;
 
       if (!ownerDoc.documentURI.startsWith("about:tabcrashed")) {
         return;
       }
 
-      let browser = gBrowser.getBrowserForDocument(event.target);
-      
-      ZoomManager.setZoomForBrowser(browser, 1);
+      let isTopFrame = (ownerDoc.defaultView.parent === ownerDoc.defaultView);
+      if (!isTopFrame) {
+        return;
+      }
+
+      let browser = gBrowser.getBrowserForDocument(ownerDoc);
+#ifdef MOZ_CRASHREPORTER
+      if (event.detail.sendCrashReport) {
+        TabCrashReporter.submitCrashReport(browser, {
+          comments: event.detail.comments,
+          email: event.detail.email,
+          emailMe: event.detail.emailMe,
+          includeURL: event.detail.includeURL,
+          URL: event.detail.URL,
+        });
+      } else {
+        TabCrashReporter.dontSubmitCrashReport();
+      }
+#endif
+
+      let tab = gBrowser.getTabForBrowser(browser);
+      switch (event.detail.message) {
+      case "closeTab":
+        gBrowser.removeTab(tab, { animate: true });
+        break;
+      case "restoreTab":
+        SessionStore.reviveCrashedTab(tab);
+        break;
+      case "restoreAll":
+        SessionStore.reviveAllCrashedTabs();
+        break;
+      }
     }, false, true);
 
     gBrowser.addEventListener("InsecureLoginFormsStateChange", function() {
@@ -2958,10 +2998,16 @@ var BrowserOnClick = {
   onAboutBlocked: function (elementId, reason, isTopFrame, location) {
     
     
-    let bucketName = "WARNING_PHISHING_PAGE_";
+    let bucketName = "";
+    let sendTelemetry = false;
     if (reason === 'malware') {
+      sendTelemetry = true;
       bucketName = "WARNING_MALWARE_PAGE_";
+    } else if (reason === 'phishing') {
+      sendTelemetry = true;
+      bucketName = "WARNING_PHISHING_PAGE_";
     } else if (reason === 'unwanted') {
+      sendTelemetry = true;
       bucketName = "WARNING_UNWANTED_PAGE_";
     }
     let secHistogram = Services.telemetry.getHistogramById("SECURITY_UI");
@@ -2969,7 +3015,9 @@ var BrowserOnClick = {
     bucketName += isTopFrame ? "TOP_" : "FRAME_";
     switch (elementId) {
       case "getMeOutButton":
-        secHistogram.add(nsISecTel[bucketName + "GET_ME_OUT_OF_HERE"]);
+        if (sendTelemetry) {
+          secHistogram.add(nsISecTel[bucketName + "GET_ME_OUT_OF_HERE"]);
+        }
         getMeOutOfHere();
         break;
 
@@ -2979,13 +3027,16 @@ var BrowserOnClick = {
 
         
         
-        secHistogram.add(nsISecTel[bucketName + "WHY_BLOCKED"]);
-
+        if (sendTelemetry) {
+          secHistogram.add(nsISecTel[bucketName + "WHY_BLOCKED"]);
+        }
         openHelpLink("phishing-malware", false, "current");
         break;
 
       case "ignoreWarningButton":
-        secHistogram.add(nsISecTel[bucketName + "IGNORE_WARNING"]);
+        if (sendTelemetry) {
+          secHistogram.add(nsISecTel[bucketName + "IGNORE_WARNING"]);
+        }
         this.ignoreWarningButton(reason);
         break;
     }
@@ -3054,6 +3105,8 @@ var BrowserOnClick = {
       title = gNavigatorBundle.getString("safebrowsing.reportedUnwantedSite");
       
       
+    } else {
+      return; 
     }
 
     let notificationBox = gBrowser.getNotificationBox();

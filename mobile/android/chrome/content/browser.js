@@ -5287,6 +5287,8 @@ var ErrorPageEventHandler = {
             bucketName = "WARNING_MALWARE_PAGE_";
           } else if (errorDoc.documentURI.contains("e=unwantedBlocked")) {
             bucketName = "WARNING_UNWANTED_PAGE_";
+          } else if (errorDoc.documentURI.contains("e=forbiddenBlocked")) {
+            return; 
           }
           let nsISecTel = Ci.nsISecurityUITelemetry;
           let isIframe = (errorDoc.defaultView.parent === errorDoc.defaultView);
