@@ -122,6 +122,9 @@ const HELPER_SLEEP_TIMEOUT = 180;
 
 const APP_TIMER_TIMEOUT = 120000;
 
+
+
+const FILE_IN_USE_MAX_TIMEOUT_RUNS = 60;
 const FILE_IN_USE_TIMEOUT_MS = 1000;
 
 const PIPE_TO_NULL = IS_WIN ? ">nul" : "> /dev/null 2>&1";
@@ -174,6 +177,7 @@ var gUseTestAppDir = true;
 var gStagingRemovedUpdate = false;
 
 var gTimeoutRuns = 0;
+var gFileInUseTimeoutRuns = 0;
 
 
 var gShouldResetEnv = undefined;
@@ -3335,6 +3339,10 @@ function checkFilesAfterUpdateCommon(aGetFileFunc, aStageDirExists,
 
 function checkCallbackLog() {
   if (IS_SERVICE_TEST) {
+    
+    
+    Assert.ok(!!gServiceLaunchedCallbackLog,
+              "gServiceLaunchedCallbackLog should be defined");
     checkCallbackServiceLog();
   } else {
     checkCallbackAppLog();
@@ -3452,9 +3460,6 @@ function checkPostUpdateAppLog() {
 
 
 function checkCallbackServiceLog() {
-  Assert.ok(!!gServiceLaunchedCallbackLog,
-            "gServiceLaunchedCallbackLog should be defined");
-
   let expectedLogContents = gServiceLaunchedCallbackArgs.join("\n") + "\n";
   let logFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
   logFile.initWithPath(gServiceLaunchedCallbackLog);
@@ -3465,29 +3470,27 @@ function checkCallbackServiceLog() {
   
   
   if (logContents != expectedLogContents) {
-    gTimeoutRuns++;
-    if (gTimeoutRuns > MAX_TIMEOUT_RUNS) {
-      logTestInfo("callback service log contents are not correct");
-      let aryLog = logContents.split("\n");
-      let aryCompare = expectedLogContents.split("\n");
-      
-      
-      aryLog.push("");
-      aryCompare.push("");
-      
-      
-      for (let i = 0; i < aryLog.length; ++i) {
-        if (aryLog[i] != aryCompare[i]) {
-          logTestInfo("the first incorrect line in the service callback log " +
-                      "is: " + aryLog[i]);
-          Assert.equal(aryLog[i], aryCompare[i],
-                       "the service callback log contents" + MSG_SHOULD_EQUAL);
+    gFileInUseTimeoutRuns++;
+    if (gFileInUseTimeoutRuns > FILE_IN_USE_MAX_TIMEOUT_RUNS) {
+      if (logContents == null) {
+        if (logFile.exists()) {
+          logTestInfo("callback service log exists but readFile returned null");
+        } else {
+          logTestInfo("callback service log does not exist");
+        }
+      } else {
+        logTestInfo("callback service log contents are not correct");
+        let aryLog = logContents.split("\n");
+        
+        logTestInfo("contents of " + logFile.path + ":");
+        for (let i = 0; i < aryLog.length; ++i) {
+          logTestInfo(aryLog[i]);
         }
       }
       
       do_throw("Unable to find incorrect service callback log contents!");
     }
-    do_execute_soon(checkCallbackServiceLog);
+    do_timeout(FILE_IN_USE_TIMEOUT_MS, checkCallbackServiceLog);
     return;
   }
   Assert.ok(true, "the callback service log contents" + MSG_SHOULD_EQUAL);
