@@ -120,6 +120,20 @@ var Accounts = Object.freeze({
 
 
 
+
+
+  notifyFirefoxAccountProfileChanged: function () {
+    Messaging.sendRequest({
+      type: "Accounts:ProfileUpdated",
+    });
+  },
+
+  
+
+
+
+
+
   getFirefoxAccount: function () {
     return Messaging.sendRequestForResult({
       type: "Accounts:Exist",

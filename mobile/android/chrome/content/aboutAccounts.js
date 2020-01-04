@@ -256,6 +256,16 @@ function init() {
         wrapper.init(getURLForAction("signup", urlParams));
       }
       break;
+    case "avatar":
+      if (user) {
+        show("spinner");
+        urlParams.set("email", user.email); 
+        wrapper.init(getURLForAction("settings/avatar/change", urlParams));
+      } else {
+        show("spinner");
+        wrapper.init(getURLForAction("signup", urlParams));
+      }
+      break;
     default:
       
       if (action) {
