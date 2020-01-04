@@ -261,6 +261,11 @@ class RemoteReftest(RefTest):
         prefs["gfx.canvas.azure.accelerated"] = False
 
         
+        if mozinfo.info['debug'] and self._devicemanager.shellCheckOutput(['getprop', 'ro.product.name']) == 'pandaboard':
+            prefs["layers.tiles.adjust"] = False
+            prefs["layers.single-tile.enabled"] = False
+
+        
         profile.set_preferences(prefs)
 
         try:
