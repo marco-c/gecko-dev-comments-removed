@@ -6556,8 +6556,7 @@ var IdentityHandler = {
       this._IDNService = Cc["@mozilla.org/network/idn-service;1"]
                          .getService(Ci.nsIIDNService);
     try {
-      let baseDomain = Services.eTLD.getBaseDomainFromHost(this._lastLocation.hostname);
-      return this._IDNService.convertToDisplayIDN(baseDomain, {});
+      return this._IDNService.convertToDisplayIDN(this._uri.host, {});
     } catch (e) {
       
       

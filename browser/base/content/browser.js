@@ -6985,14 +6985,12 @@ var gIdentityHandler = {
   
 
 
-  getEffectiveHost : function() {
+  getEffectiveHost: function() {
     if (!this._IDNService)
       this._IDNService = Cc["@mozilla.org/network/idn-service;1"]
                          .getService(Ci.nsIIDNService);
     try {
-      let baseDomain =
-        Services.eTLD.getBaseDomainFromHost(this._uri.host);
-      return this._IDNService.convertToDisplayIDN(baseDomain, {});
+      return this._IDNService.convertToDisplayIDN(this._uri.host, {});
     } catch (e) {
       
       
@@ -7162,6 +7160,7 @@ var gIdentityHandler = {
     let verifier = "";
     let host = "";
     let owner = "";
+    let crop = "start";
 
     try {
       host = this.getEffectiveHost();
@@ -7181,6 +7180,8 @@ var gIdentityHandler = {
 
     
     if (isEV) {
+      crop = "end";
+
       let iData = this.getIdentityData();
       host = owner = iData.subjectOrg;
       verifier = this._identityBox.tooltipText;
@@ -7200,6 +7201,7 @@ var gIdentityHandler = {
     
     
     
+    this._identityPopupContentHost.setAttribute("crop", crop);
     this._identityPopupContentHost.setAttribute("value", host);
     this._identityPopupContentOwner.textContent = owner;
     this._identityPopupContentSupp.textContent = supplemental;
