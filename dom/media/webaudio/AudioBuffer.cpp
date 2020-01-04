@@ -114,6 +114,8 @@ AudioBuffer::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 bool
 AudioBuffer::RestoreJSChannelData(JSContext* aJSContext)
 {
+  
+  
   if (mSharedChannels) {
     for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
       const float* data = mSharedChannels->GetData(i);
@@ -217,14 +219,27 @@ AudioBuffer::GetChannelData(JSContext* aJSContext, uint32_t aChannel,
   aRetval.set(mJSChannels[aChannel]);
 }
 
-static already_AddRefed<ThreadSharedFloatArrayBufferList>
-StealJSArrayDataIntoThreadSharedFloatArrayBufferList(JSContext* aJSContext,
-                                                     const nsTArray<JSObject*>& aJSArrays)
+already_AddRefed<ThreadSharedFloatArrayBufferList>
+AudioBuffer::StealJSArrayDataIntoSharedChannels(JSContext* aJSContext)
 {
+  
+  
+  
+  for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
+    if (mLength != JS_GetTypedArrayLength(mJSChannels[i])) {
+      
+      return nullptr;
+    }
+  }
+
+  
+  
+  
+  
   nsRefPtr<ThreadSharedFloatArrayBufferList> result =
-    new ThreadSharedFloatArrayBufferList(aJSArrays.Length());
-  for (uint32_t i = 0; i < aJSArrays.Length(); ++i) {
-    JS::Rooted<JSObject*> arrayBufferView(aJSContext, aJSArrays[i]);
+    new ThreadSharedFloatArrayBufferList(mJSChannels.Length());
+  for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
+    JS::Rooted<JSObject*> arrayBufferView(aJSContext, mJSChannels[i]);
     JS::Rooted<JSObject*> arrayBuffer(aJSContext,
                                       JS_GetArrayBufferViewBuffer(aJSContext, arrayBufferView));
     auto stolenData = arrayBuffer
@@ -234,6 +249,7 @@ StealJSArrayDataIntoThreadSharedFloatArrayBufferList(JSContext* aJSContext,
     if (stolenData) {
       result->SetData(i, stolenData, js_free, stolenData);
     } else {
+      NS_ASSERTION(i == 0, "some channels lost when contents not acquired");
       return nullptr;
     }
   }
@@ -244,15 +260,7 @@ ThreadSharedFloatArrayBufferList*
 AudioBuffer::GetThreadSharedChannelsForRate(JSContext* aJSContext)
 {
   if (!mSharedChannels) {
-    for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
-      if (mLength != JS_GetTypedArrayLength(mJSChannels[i])) {
-        
-        return nullptr;
-      }
-    }
-
-    mSharedChannels =
-      StealJSArrayDataIntoThreadSharedFloatArrayBufferList(aJSContext, mJSChannels);
+    mSharedChannels = StealJSArrayDataIntoSharedChannels(aJSContext);
   }
 
   return mSharedChannels;
