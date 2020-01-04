@@ -1258,7 +1258,6 @@ var Impl = {
       simpleMeasurements: simpleMeasurements,
       histograms: protect(() => this.getHistograms(isSubsession, clearSubsession)),
       keyedHistograms: protect(() => this.getKeyedHistograms(isSubsession, clearSubsession)),
-      scalars: protect(() => this.getScalars(isSubsession, clearSubsession)),
     };
 
     
@@ -1272,6 +1271,13 @@ var Impl = {
     if (Utils.isContentProcess) {
       return payloadObj;
     }
+
+    
+    payloadObj.processes = {
+      parent: {
+        scalars: protect(() => this.getScalars(isSubsession, clearSubsession)),
+      }
+    };
 
     
     payloadObj.info = info;
