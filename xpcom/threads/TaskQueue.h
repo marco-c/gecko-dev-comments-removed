@@ -15,14 +15,12 @@
 
 #include <queue>
 
-#include "mozilla/SharedThreadPool.h"
 #include "nsThreadUtils.h"
 
+class nsIEventTarget;
 class nsIRunnable;
 
 namespace mozilla {
-
-class SharedThreadPool;
 
 typedef MozPromise<bool, bool, false> ShutdownPromise;
 
@@ -33,7 +31,8 @@ typedef MozPromise<bool, bool, false> ShutdownPromise;
 
 class TaskQueue : public AbstractThread {
 public:
-  explicit TaskQueue(already_AddRefed<SharedThreadPool> aPool, bool aSupportsTailDispatch = false);
+  explicit TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
+                     bool aSupportsTailDispatch = false);
 
   TaskDispatcher& TailDispatcher() override;
 
@@ -98,11 +97,11 @@ protected:
     mQueueMonitor.AssertCurrentThreadOwns();
     if (mIsShutdown && !mIsRunning) {
       mShutdownPromise.ResolveIfExists(true, __func__);
-      mPool = nullptr;
+      mTarget = nullptr;
     }
   }
 
-  RefPtr<SharedThreadPool> mPool;
+  nsCOMPtr<nsIEventTarget> mTarget;
 
   
   Monitor mQueueMonitor;
