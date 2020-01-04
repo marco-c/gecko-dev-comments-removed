@@ -37,9 +37,19 @@ function prefillAlertInfo() {
   
   
   
+  
 
   switch (window.arguments.length) {
     default:
+    case 12: {
+      if (window.arguments[11]) {
+        let alertBox = document.getElementById("alertBox");
+        alertBox.setAttribute("hasIcon", true);
+
+        let icon = document.getElementById("alertIcon");
+        icon.src = window.arguments[11];
+      }
+    }
     case 11: {
       if (window.arguments[10]) {
         let alertBox = document.getElementById("alertBox");
