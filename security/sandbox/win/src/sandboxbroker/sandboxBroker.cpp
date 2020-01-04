@@ -53,6 +53,21 @@ SandboxBroker::LaunchApp(const wchar_t *aPath,
     mozilla::sandboxing::ApplyLoggingPolicy(*mPolicy);
   }
 
+#if defined(DEBUG)
+  
+  
+  
+  wchar_t tempPath[MAX_PATH + 2];
+  uint32_t pathLen = ::GetTempPathW(MAX_PATH + 1, tempPath);
+  if (pathLen > 0) {
+    
+    tempPath[pathLen] = L'*';
+    tempPath[pathLen + 1] = L'\0';
+    mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
+                     sandbox::TargetPolicy::FILES_ALLOW_ANY, tempPath);
+  }
+#endif
+
   
   PROCESS_INFORMATION targetInfo = {0};
   sandbox::ResultCode result;
