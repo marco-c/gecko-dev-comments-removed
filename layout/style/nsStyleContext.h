@@ -453,6 +453,28 @@ public:
   int32_t& LoggingDepth();
 #endif
 
+  
+
+
+
+
+
+
+  const void* GetCachedStyleData(nsStyleStructID aSID)
+  {
+    const void* cachedData;
+    if (nsCachedStyleData::IsReset(aSID)) {
+      if (mCachedResetData) {
+        cachedData = mCachedResetData->mStyleStructs[aSID];
+      } else {
+        cachedData = nullptr;
+      }
+    } else {
+      cachedData = mCachedInheritedData.mStyleStructs[aSID];
+    }
+    return cachedData;
+  }
+
 private:
   
   ~nsStyleContext();
@@ -468,10 +490,6 @@ private:
   
   static bool ListContainsStyleContextThatUsesGrandancestorStyle(
                                                    const nsStyleContext* aHead);
-
-  
-  
-  inline const void* GetCachedStyleData(nsStyleStructID aSID);
 
 #ifdef DEBUG
   struct AutoCheckDependency {
