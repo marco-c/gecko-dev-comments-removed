@@ -151,7 +151,10 @@ public:
     gfx::Matrix mMaskTransform;
   };
 
-  PushedGroup PushGroupForLayer(gfxContext* aContext, Layer* aLayerContext, const nsIntRegion& aRegion);
+  
+  
+  
+  bool PushGroupForLayer(gfxContext* aContext, Layer* aLayerContext, const nsIntRegion& aRegion, PushedGroup& aGroupResult);
 
   void PopGroupForLayer(PushedGroup& aGroup);
 
