@@ -197,9 +197,9 @@ const PREF_INPUT_HISTORY_COUNT = "devtools.webconsole.inputHistoryCount";
 
 
 
-function WebConsoleFrame(aWebConsoleOwner)
+function WebConsoleFrame(webConsoleOwner)
 {
-  this.owner = aWebConsoleOwner;
+  this.owner = webConsoleOwner;
   this.hudId = this.owner.hudId;
   this.window = this.owner.iframeWindow;
 
@@ -390,13 +390,13 @@ WebConsoleFrame.prototype = {
     ];
 
     
-    this.webConsoleClient.getPreferences(toGet, aResponse => {
-      if (!aResponse.error) {
-        this._saveRequestAndResponseBodies = aResponse.preferences[toGet[0]];
+    this.webConsoleClient.getPreferences(toGet, response => {
+      if (!response.error) {
+        this._saveRequestAndResponseBodies = response.preferences[toGet[0]];
         deferred.resolve(this._saveRequestAndResponseBodies);
       }
       else {
-        deferred.reject(aResponse.error);
+        deferred.reject(response.error);
       }
     });
 
@@ -410,26 +410,26 @@ WebConsoleFrame.prototype = {
 
 
   setSaveRequestAndResponseBodies:
-  function WCF_setSaveRequestAndResponseBodies(aValue) {
+  function WCF_setSaveRequestAndResponseBodies(value) {
     if (!this.webConsoleClient) {
       
       return promise.resolve(null);
     }
 
     let deferred = promise.defer();
-    let newValue = !!aValue;
+    let newValue = !!value;
     let toSet = {
       "NetworkMonitor.saveRequestAndResponseBodies": newValue,
     };
 
     
-    this.webConsoleClient.setPreferences(toSet, aResponse => {
-      if (!aResponse.error) {
+    this.webConsoleClient.setPreferences(toSet, response => {
+      if (!response.error) {
         this._saveRequestAndResponseBodies = newValue;
-        deferred.resolve(aResponse);
+        deferred.resolve(response);
       }
       else {
-        deferred.reject(aResponse.error);
+        deferred.reject(response.error);
       }
     });
 
@@ -495,11 +495,11 @@ WebConsoleFrame.prototype = {
 
     this.proxy.connect().then(() => { 
       this._initDefer.resolve(this);
-    }, (aReason) => { 
+    }, (reason) => { 
       let node = this.createMessageNode(CATEGORY_JS, SEVERITY_ERROR,
-                                        aReason.error + ": " + aReason.message);
-      this.outputMessage(CATEGORY_JS, node, [aReason]);
-      this._initDefer.reject(aReason);
+                                        reason.error + ": " + reason.message);
+      this.outputMessage(CATEGORY_JS, node, [reason]);
+      this._initDefer.reject(reason);
     });
 
     return this._initDefer.promise;
@@ -560,17 +560,17 @@ WebConsoleFrame.prototype = {
     
     this._updateCharSize();
 
-    let updateSaveBodiesPrefUI = (aElement) => {
-      this.getSaveRequestAndResponseBodies().then(aValue => {
-        aElement.setAttribute("checked", aValue);
+    let updateSaveBodiesPrefUI = (element) => {
+      this.getSaveRequestAndResponseBodies().then(value => {
+        element.setAttribute("checked", value);
         this.emit("save-bodies-ui-toggled");
       });
     }
 
-    let reverseSaveBodiesPref = ({ target: aElement }) => {
-      this.getSaveRequestAndResponseBodies().then(aValue => {
-        this.setSaveRequestAndResponseBodies(!aValue);
-        aElement.setAttribute("checked", aValue);
+    let reverseSaveBodiesPref = ({ target: element }) => {
+      this.getSaveRequestAndResponseBodies().then(value => {
+        this.setSaveRequestAndResponseBodies(!value);
+        element.setAttribute("checked", value);
         this.emit("save-bodies-pref-reversed");
       });
     }
@@ -675,14 +675,14 @@ WebConsoleFrame.prototype = {
 
 
   _updateReflowActivityListener:
-    function WCF__updateReflowActivityListener(aCallback)
+    function WCF__updateReflowActivityListener(callback)
   {
     if (this.webConsoleClient) {
       let pref = this._filterPrefsPrefix + "csslog";
       if (Services.prefs.getBoolPref(pref)) {
-        this.webConsoleClient.startListeners(["ReflowActivity"], aCallback);
+        this.webConsoleClient.startListeners(["ReflowActivity"], callback);
       } else {
-        this.webConsoleClient.stopListeners(["ReflowActivity"], aCallback);
+        this.webConsoleClient.stopListeners(["ReflowActivity"], callback);
       }
     }
   },
@@ -697,7 +697,7 @@ WebConsoleFrame.prototype = {
 
 
   _updateServerLoggingListener:
-    function WCF__updateServerLoggingListener(aCallback)
+    function WCF__updateServerLoggingListener(callback)
   {
     if (!this.webConsoleClient) {
       return;
@@ -713,9 +713,9 @@ WebConsoleFrame.prototype = {
     }
 
     if (startListener) {
-      this.webConsoleClient.startListeners(["ServerLogging"], aCallback);
+      this.webConsoleClient.startListeners(["ServerLogging"], callback);
     } else {
-      this.webConsoleClient.stopListeners(["ServerLogging"], aCallback);
+      this.webConsoleClient.stopListeners(["ServerLogging"], callback);
     }
   },
 
@@ -755,25 +755,25 @@ WebConsoleFrame.prototype = {
   {
     let categories = this.document
                      .querySelectorAll(".webconsole-filter-button[category]");
-    Array.forEach(categories, function(aButton) {
-      aButton.addEventListener("contextmenu", (aEvent) => {
-        aButton.open = true;
+    Array.forEach(categories, function(button) {
+      button.addEventListener("contextmenu", (event) => {
+        button.open = true;
       }, false);
-      aButton.addEventListener("click", this._toggleFilter, false);
+      button.addEventListener("click", this._toggleFilter, false);
 
       let someChecked = false;
-      let severities = aButton.querySelectorAll("menuitem[prefKey]");
-      Array.forEach(severities, function(aMenuItem) {
-        aMenuItem.addEventListener("command", this._toggleFilter, false);
+      let severities = button.querySelectorAll("menuitem[prefKey]");
+      Array.forEach(severities, function(menuItem) {
+        menuItem.addEventListener("command", this._toggleFilter, false);
 
-        let prefKey = aMenuItem.getAttribute("prefKey");
+        let prefKey = menuItem.getAttribute("prefKey");
         let checked = this.filterPrefs[prefKey];
-        aMenuItem.setAttribute("checked", checked);
+        menuItem.setAttribute("checked", checked);
         someChecked = someChecked || checked;
       }, this);
 
-      aButton.setAttribute("checked", someChecked);
-      aButton.setAttribute("aria-pressed", someChecked);
+      button.setAttribute("checked", someChecked);
+      button.setAttribute("aria-pressed", someChecked);
     }, this);
 
     if (!this.owner._browserConsole) {
@@ -804,7 +804,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  changeFontSize: function WCF_changeFontSize(aSize)
+  changeFontSize: function WCF_changeFontSize(size)
   {
     let fontSize = this.window
                    .getComputedStyle(this.outputNode, null)
@@ -814,10 +814,10 @@ WebConsoleFrame.prototype = {
       fontSize = this.outputNode.style.fontSize.replace("px", "");
     }
 
-    if (aSize == "+" || aSize == "-") {
+    if (size == "+" || size == "-") {
       fontSize = parseInt(fontSize, 10);
 
-      if (aSize == "+") {
+      if (size == "+") {
         fontSize += 1;
       }
       else {
@@ -879,19 +879,19 @@ WebConsoleFrame.prototype = {
 
 
 
-  _toggleFilter: function WCF__toggleFilter(aEvent)
+  _toggleFilter: function WCF__toggleFilter(event)
   {
-    let target = aEvent.target;
+    let target = event.target;
     let tagName = target.tagName;
     
-    let isRightClick = (aEvent.button === 2); 
-    if (tagName != aEvent.currentTarget.tagName || isRightClick) {
+    let isRightClick = (event.button === 2); 
+    if (tagName != event.currentTarget.tagName || isRightClick) {
       return;
     }
 
     switch (tagName) {
       case "toolbarbutton": {
-        let originalTarget = aEvent.originalTarget;
+        let originalTarget = event.originalTarget;
         let classes = originalTarget.classList;
 
         if (originalTarget.localName !== "toolbarbutton") {
@@ -912,7 +912,7 @@ WebConsoleFrame.prototype = {
         
         
         let state = target.getAttribute("checked") !== "true";
-        if (aEvent.getModifierState("Alt")) {
+        if (event.getModifierState("Alt")) {
           let buttons = this.document
                         .querySelectorAll(".webconsole-filter-button");
           Array.forEach(buttons, (button) => {
@@ -990,13 +990,13 @@ WebConsoleFrame.prototype = {
 
 
 
-  _setMenuState: function WCF__setMenuState(aTarget, aState)
+  _setMenuState: function WCF__setMenuState(target, state)
   {
-    let menuItems = aTarget.querySelectorAll("menuitem");
+    let menuItems = target.querySelectorAll("menuitem");
     Array.forEach(menuItems, (item) => {
-      item.setAttribute("checked", aState);
+      item.setAttribute("checked", state);
       let prefKey = item.getAttribute("prefKey");
-      this.setFilterState(prefKey, aState);
+      this.setFilterState(prefKey, state);
     });
   },
 
@@ -1007,12 +1007,12 @@ WebConsoleFrame.prototype = {
 
 
 
-  setFilterState: function WCF_setFilterState(aToggleType, aState)
+  setFilterState: function WCF_setFilterState(toggleType, state)
   {
-    this.filterPrefs[aToggleType] = aState;
-    this.adjustVisibilityForMessageType(aToggleType, aState);
+    this.filterPrefs[toggleType] = state;
+    this.adjustVisibilityForMessageType(toggleType, state);
 
-    Services.prefs.setBoolPref(this._filterPrefsPrefix + aToggleType, aState);
+    Services.prefs.setBoolPref(this._filterPrefsPrefix + toggleType, state);
 
     if (this._updateListenersTimeout) {
       Timers.clearTimeout(this._updateListenersTimeout);
@@ -1028,9 +1028,9 @@ WebConsoleFrame.prototype = {
 
 
 
-  getFilterState: function WCF_getFilterState(aToggleType)
+  getFilterState: function WCF_getFilterState(toggleType)
   {
-    return this.filterPrefs[aToggleType];
+    return this.filterPrefs[toggleType];
   },
 
   
@@ -1051,14 +1051,14 @@ WebConsoleFrame.prototype = {
 
 
 
-  stringMatchesFilters: function WCF_stringMatchesFilters(aString, aFilter)
+  stringMatchesFilters: function WCF_stringMatchesFilters(str, filter)
   {
-    if (!aFilter || !aString) {
+    if (!filter || !str) {
       return true;
     }
 
-    let searchStr = aString.toLowerCase();
-    let filterStrings = aFilter.toLowerCase().split(/\s+/);
+    let searchStr = str.toLowerCase();
+    let filterStrings = filter.toLowerCase().split(/\s+/);
     return !filterStrings.some(function (f) {
       return searchStr.indexOf(f) == -1;
     });
@@ -1077,7 +1077,7 @@ WebConsoleFrame.prototype = {
 
 
   adjustVisibilityForMessageType:
-  function WCF_adjustVisibilityForMessageType(aPrefKey, aState)
+  function WCF_adjustVisibilityForMessageType(prefKey, state)
   {
     let outputNode = this.outputNode;
     let doc = this.document;
@@ -1086,16 +1086,16 @@ WebConsoleFrame.prototype = {
     
     
 
-    let attribute = WORKERTYPES_PREFKEYS.indexOf(aPrefKey) == -1
+    let attribute = WORKERTYPES_PREFKEYS.indexOf(prefKey) == -1
                       ? 'filter' : 'workerType';
 
     let xpath = ".//*[contains(@class, 'message') and " +
-      "@" + attribute + "='" + aPrefKey + "']";
+      "@" + attribute + "='" + prefKey + "']";
     let result = doc.evaluate(xpath, outputNode, null,
       Ci.nsIDOMXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
     for (let i = 0; i < result.snapshotLength; i++) {
       let node = result.snapshotItem(i);
-      if (aState) {
+      if (state) {
         node.classList.remove("filtered-by-type");
       }
       else {
@@ -1139,36 +1139,36 @@ WebConsoleFrame.prototype = {
 
 
 
-  filterMessageNode: function WCF_filterMessageNode(aNode)
+  filterMessageNode: function WCF_filterMessageNode(node)
   {
     let isFiltered = false;
 
     
-    let prefKey = MESSAGE_PREFERENCE_KEYS[aNode.category][aNode.severity];
+    let prefKey = MESSAGE_PREFERENCE_KEYS[node.category][node.severity];
     if (prefKey && !this.getFilterState(prefKey)) {
       
-      aNode.classList.add("filtered-by-type");
+      node.classList.add("filtered-by-type");
       isFiltered = true;
     }
 
     
-    if ("workerType" in aNode && !this.getFilterState(aNode.workerType)) {
-      aNode.classList.add("filtered-by-type");
+    if ("workerType" in node && !this.getFilterState(node.workerType)) {
+      node.classList.add("filtered-by-type");
       isFiltered = true;
     }
 
     
     let search = this.filterBox.value;
-    let text = aNode.clipboardText;
+    let text = node.clipboardText;
 
     
     if (!this.stringMatchesFilters(text, search)) {
-      aNode.classList.add("filtered-by-string");
+      node.classList.add("filtered-by-string");
       isFiltered = true;
     }
 
-    if (isFiltered && aNode.classList.contains("inlined-variables-view")) {
-      aNode.classList.add("hidden-message");
+    if (isFiltered && node.classList.contains("inlined-variables-view")) {
+      node.classList.add("hidden-message");
     }
 
     return isFiltered;
@@ -1184,9 +1184,9 @@ WebConsoleFrame.prototype = {
 
 
   mergeFilteredMessageNode:
-  function WCF_mergeFilteredMessageNode(aOriginal, aFiltered)
+  function WCF_mergeFilteredMessageNode(original, filtered)
   {
-    let repeatNode = aOriginal.getElementsByClassName("message-repeats")[0];
+    let repeatNode = original.getElementsByClassName("message-repeats")[0];
     if (!repeatNode) {
       return; 
     }
@@ -1209,9 +1209,9 @@ WebConsoleFrame.prototype = {
 
 
 
-  _filterRepeatedMessage: function WCF__filterRepeatedMessage(aNode)
+  _filterRepeatedMessage: function WCF__filterRepeatedMessage(node)
   {
-    let repeatNode = aNode.getElementsByClassName("message-repeats")[0];
+    let repeatNode = node.getElementsByClassName("message-repeats")[0];
     if (!repeatNode) {
       return null;
     }
@@ -1219,17 +1219,17 @@ WebConsoleFrame.prototype = {
     let uid = repeatNode._uid;
     let dupeNode = null;
 
-    if (aNode.category == CATEGORY_CSS ||
-        aNode.category == CATEGORY_SECURITY) {
+    if (node.category == CATEGORY_CSS ||
+        node.category == CATEGORY_SECURITY) {
       dupeNode = this._repeatNodes[uid];
       if (!dupeNode) {
-        this._repeatNodes[uid] = aNode;
+        this._repeatNodes[uid] = node;
       }
     }
-    else if ((aNode.category == CATEGORY_WEBDEV ||
-              aNode.category == CATEGORY_JS) &&
-             aNode.category != CATEGORY_NETWORK &&
-             !aNode.classList.contains("inlined-variables-view")) {
+    else if ((node.category == CATEGORY_WEBDEV ||
+              node.category == CATEGORY_JS) &&
+             node.category != CATEGORY_NETWORK &&
+             !node.classList.contains("inlined-variables-view")) {
       let lastMessage = this.outputNode.lastChild;
       if (!lastMessage) {
         return null;
@@ -1242,7 +1242,7 @@ WebConsoleFrame.prototype = {
     }
 
     if (dupeNode) {
-      this.mergeFilteredMessageNode(dupeNode, aNode);
+      this.mergeFilteredMessageNode(dupeNode, node);
       return dupeNode;
     }
 
@@ -1257,29 +1257,29 @@ WebConsoleFrame.prototype = {
 
 
 
-  displayCachedMessages: function WCF_displayCachedMessages(aRemoteMessages)
+  displayCachedMessages: function WCF_displayCachedMessages(remoteMessages)
   {
-    if (!aRemoteMessages.length) {
+    if (!remoteMessages.length) {
       return;
     }
 
-    aRemoteMessages.forEach(function(aMessage) {
-      switch (aMessage._type) {
+    remoteMessages.forEach(function(message) {
+      switch (message._type) {
         case "PageError": {
-          let category = Utils.categoryForScriptError(aMessage);
+          let category = Utils.categoryForScriptError(message);
           this.outputMessage(category, this.reportPageError,
-                             [category, aMessage]);
+                             [category, message]);
           break;
         }
         case "LogMessage":
-          this.handleLogMessage(aMessage);
+          this.handleLogMessage(message);
           break;
         case "ConsoleAPI":
           this.outputMessage(CATEGORY_WEBDEV, this.logConsoleAPIMessage,
-                             [aMessage]);
+                             [message]);
           break;
         case "NetworkEvent":
-          this.outputMessage(CATEGORY_NETWORK, this.logNetEvent, [aMessage]);
+          this.outputMessage(CATEGORY_NETWORK, this.logNetEvent, [message]);
           break;
       }
     }, this);
@@ -1294,21 +1294,21 @@ WebConsoleFrame.prototype = {
 
 
 
-  logConsoleAPIMessage: function WCF_logConsoleAPIMessage(aMessage)
+  logConsoleAPIMessage: function WCF_logConsoleAPIMessage(message)
   {
     let body = null;
     let clipboardText = null;
-    let sourceURL = aMessage.filename;
-    let sourceLine = aMessage.lineNumber;
-    let level = aMessage.level;
-    let args = aMessage.arguments;
+    let sourceURL = message.filename;
+    let sourceLine = message.lineNumber;
+    let level = message.level;
+    let args = message.arguments;
     let objectActors = new Set();
     let node = null;
 
     
-    args.forEach((aValue) => {
-      if (WebConsoleUtils.isActorGrip(aValue)) {
-        objectActors.add(aValue.actor);
+    args.forEach((value) => {
+      if (WebConsoleUtils.isActorGrip(value)) {
+        objectActors.add(value.actor);
       }
     });
 
@@ -1320,37 +1320,37 @@ WebConsoleFrame.prototype = {
       case "exception":
       case "assert":
       case "debug": {
-        let msg = new Messages.ConsoleGeneric(aMessage);
+        let msg = new Messages.ConsoleGeneric(message);
         node = msg.init(this.output).render().element;
         break;
       }
       case "table": {
-        let msg = new Messages.ConsoleTable(aMessage);
+        let msg = new Messages.ConsoleTable(message);
         node = msg.init(this.output).render().element;
         break;
       }
       case "trace": {
-        let msg = new Messages.ConsoleTrace(aMessage);
+        let msg = new Messages.ConsoleTrace(message);
         node = msg.init(this.output).render().element;
         break;
       }
       case "dir": {
         body = { arguments: args };
         let clipboardArray = [];
-        args.forEach((aValue) => {
-          clipboardArray.push(VariablesView.getString(aValue));
+        args.forEach((value) => {
+          clipboardArray.push(VariablesView.getString(value));
         });
         clipboardText = clipboardArray.join(" ");
         break;
       }
       case "dirxml": {
         
-        aMessage.level = "log";
-        return WCF_logConsoleAPIMessage.call(this, aMessage);
+        message.level = "log";
+        return WCF_logConsoleAPIMessage.call(this, message);
       }
       case "group":
       case "groupCollapsed":
-        clipboardText = body = aMessage.groupName;
+        clipboardText = body = message.groupName;
         this.groupDepth++;
         break;
 
@@ -1361,7 +1361,7 @@ WebConsoleFrame.prototype = {
         break;
 
       case "time": {
-        let timer = aMessage.timer;
+        let timer = message.timer;
         if (!timer) {
           return null;
         }
@@ -1375,7 +1375,7 @@ WebConsoleFrame.prototype = {
       }
 
       case "timeEnd": {
-        let timer = aMessage.timer;
+        let timer = message.timer;
         if (!timer) {
           return null;
         }
@@ -1386,7 +1386,7 @@ WebConsoleFrame.prototype = {
       }
 
       case "count": {
-        let counter = aMessage.counter;
+        let counter = message.counter;
         if (!counter) {
           return null;
         }
@@ -1394,7 +1394,7 @@ WebConsoleFrame.prototype = {
           Cu.reportError(l10n.getStr(counter.error));
           return null;
         }
-        let msg = new Messages.ConsoleGeneric(aMessage);
+        let msg = new Messages.ConsoleGeneric(message);
         node = msg.init(this.output).render().element;
         break;
       }
@@ -1431,8 +1431,8 @@ WebConsoleFrame.prototype = {
     if (!node) {
       node = this.createMessageNode(CATEGORY_WEBDEV, LEVELS[level], body,
                                     sourceURL, sourceLine, clipboardText,
-                                    level, aMessage.timeStamp);
-      if (aMessage.private) {
+                                    level, message.timeStamp);
+      if (message.private) {
         node.setAttribute("private", true);
       }
     }
@@ -1446,7 +1446,7 @@ WebConsoleFrame.prototype = {
       }
     }
 
-    let workerTypeID = CONSOLE_WORKER_IDS.indexOf(aMessage.workerType);
+    let workerTypeID = CONSOLE_WORKER_IDS.indexOf(message.workerType);
     if (workerTypeID != -1) {
       node.workerType = WORKERTYPES_PREFKEYS[workerTypeID];
       node.setAttribute('workerType', WORKERTYPES_PREFKEYS[workerTypeID]);
@@ -1462,9 +1462,9 @@ WebConsoleFrame.prototype = {
 
 
 
-  handleConsoleAPICall: function WCF_handleConsoleAPICall(aMessage)
+  handleConsoleAPICall: function WCF_handleConsoleAPICall(message)
   {
-    this.outputMessage(CATEGORY_WEBDEV, this.logConsoleAPIMessage, [aMessage]);
+    this.outputMessage(CATEGORY_WEBDEV, this.logConsoleAPIMessage, [message]);
   },
 
   
@@ -1475,24 +1475,26 @@ WebConsoleFrame.prototype = {
 
 
 
-  reportPageError: function WCF_reportPageError(aCategory, aScriptError)
+  reportPageError: function WCF_reportPageError(category, scriptError)
   {
     
     
     let severity = 'error';
-    if (aScriptError.warning || aScriptError.strict) {
+    if (scriptError.warning || scriptError.strict) {
       severity = 'warning';
-    } else if (aScriptError.info) {
+    } else if (scriptError.info) {
       severity = 'log';
     }
 
-    let category = 'js';
-    switch(aCategory) {
+    switch(category) {
       case CATEGORY_CSS:
         category = 'css';
         break;
       case CATEGORY_SECURITY:
         category = 'security';
+        break;
+      default:
+        category = "js";
         break;
     }
 
@@ -1500,24 +1502,24 @@ WebConsoleFrame.prototype = {
 
     
     for (let prop of ["errorMessage", "lineText"]) {
-      let grip = aScriptError[prop];
+      let grip = scriptError[prop];
       if (WebConsoleUtils.isActorGrip(grip)) {
         objectActors.add(grip.actor);
       }
     }
 
-    let errorMessage = aScriptError.errorMessage;
+    let errorMessage = scriptError.errorMessage;
     if (errorMessage.type && errorMessage.type == "longString") {
       errorMessage = errorMessage.initial;
     }
 
-    let displayOrigin = aScriptError.sourceName;
+    let displayOrigin = scriptError.sourceName;
 
     
     
     
-    if (aScriptError.category && aScriptError.category == "SHA-1 Signature") {
-      let sourceURI = Services.io.newURI(aScriptError.sourceName, null, null).QueryInterface(Ci.nsIURL);
+    if (scriptError.category && scriptError.category == "SHA-1 Signature") {
+      let sourceURI = Services.io.newURI(scriptError.sourceName, null, null).QueryInterface(Ci.nsIURL);
       displayOrigin = sourceURI.prePath;
     }
 
@@ -1525,14 +1527,14 @@ WebConsoleFrame.prototype = {
     let msg = new Messages.Simple(errorMessage, {
       location: {
         url: displayOrigin,
-        line: aScriptError.lineNumber,
-        column: aScriptError.columnNumber
+        line: scriptError.lineNumber,
+        column: scriptError.columnNumber
       },
-      stack: aScriptError.stacktrace,
+      stack: scriptError.stacktrace,
       category: category,
       severity: severity,
-      timestamp: aScriptError.timeStamp,
-      private: aScriptError.private,
+      timestamp: scriptError.timeStamp,
+      private: scriptError.private,
       filterDuplicates: true
     });
 
@@ -1541,7 +1543,7 @@ WebConsoleFrame.prototype = {
     
     let msgBody = node.getElementsByClassName("message-body")[0];
     
-    this.addMoreInfoLink(msgBody, aScriptError);
+    this.addMoreInfoLink(msgBody, scriptError);
 
     if (objectActors.size > 0) {
       node._objectActors = objectActors;
@@ -1557,10 +1559,10 @@ WebConsoleFrame.prototype = {
 
 
 
-  handlePageError: function WCF_handlePageError(aPageError)
+  handlePageError: function WCF_handlePageError(pageError)
   {
-    let category = Utils.categoryForScriptError(aPageError);
-    this.outputMessage(category, this.reportPageError, [category, aPageError]);
+    let category = Utils.categoryForScriptError(pageError);
+    this.outputMessage(category, this.reportPageError, [category, pageError]);
   },
 
   
@@ -1570,10 +1572,10 @@ WebConsoleFrame.prototype = {
 
 
 
-  handleLogMessage: function WCF_handleLogMessage(aPacket)
+  handleLogMessage: function WCF_handleLogMessage(packet)
   {
-    if (aPacket.message) {
-      this.outputMessage(CATEGORY_JS, this._reportLogMessage, [aPacket]);
+    if (packet.message) {
+      this.outputMessage(CATEGORY_JS, this._reportLogMessage, [packet]);
     }
   },
 
@@ -1586,16 +1588,16 @@ WebConsoleFrame.prototype = {
 
 
 
-  _reportLogMessage: function WCF__reportLogMessage(aPacket)
+  _reportLogMessage: function WCF__reportLogMessage(packet)
   {
-    let msg = aPacket.message;
+    let msg = packet.message;
     if (msg.type && msg.type == "longString") {
       msg = msg.initial;
     }
     let node = this.createMessageNode(CATEGORY_JS, SEVERITY_LOG, msg, null,
-                                      null, null, null, aPacket.timeStamp);
-    if (WebConsoleUtils.isActorGrip(aPacket.message)) {
-      node._objectActors = new Set([aPacket.message.actor]);
+                                      null, null, null, packet.timeStamp);
+    if (WebConsoleUtils.isActorGrip(packet.message)) {
+      node._objectActors = new Set([packet.message.actor]);
     }
     return node;
   },
@@ -1691,7 +1693,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  makeMixedContentNode: function WCF_makeMixedContentNode(aLinkNode)
+  makeMixedContentNode: function WCF_makeMixedContentNode(linkNode)
   {
     let mixedContentWarning = "[" + l10n.getStr("webConsoleMixedContentWarning") + "]";
 
@@ -1703,10 +1705,10 @@ WebConsoleFrame.prototype = {
     mixedContentWarningNode.textContent = mixedContentWarning;
     mixedContentWarningNode.draggable = false;
 
-    aLinkNode.appendChild(mixedContentWarningNode);
+    linkNode.appendChild(mixedContentWarningNode);
 
-    this._addMessageLinkCallback(mixedContentWarningNode, (aEvent) => {
-      aEvent.stopPropagation();
+    this._addMessageLinkCallback(mixedContentWarningNode, (event) => {
+      event.stopPropagation();
       this.owner.openLink(MIXED_CONTENT_LEARN_MORE);
     });
   },
@@ -1720,10 +1722,10 @@ WebConsoleFrame.prototype = {
 
 
 
-  addMoreInfoLink: function WCF_addMoreInfoLink(aNode, aScriptError)
+  addMoreInfoLink: function WCF_addMoreInfoLink(node, scriptError)
   {
     let url;
-    switch (aScriptError.category) {
+    switch (scriptError.category) {
       case "Insecure Password Field":
         url = INSECURE_PASSWORDS_LEARN_MORE;
         break;
@@ -1748,7 +1750,7 @@ WebConsoleFrame.prototype = {
         return;
     }
 
-    this.addLearnMoreWarningNode(aNode, url);
+    this.addLearnMoreWarningNode(node, url);
   },
 
   
@@ -1764,23 +1766,23 @@ WebConsoleFrame.prototype = {
 
 
   addLearnMoreWarningNode:
-  function WCF_addLearnMoreWarningNode(aNode, aURL)
+  function WCF_addLearnMoreWarningNode(node, url)
   {
     let moreInfoLabel = "[" + l10n.getStr("webConsoleMoreInfoLabel") + "]";
 
     let warningNode = this.document.createElementNS(XHTML_NS, "a");
-    warningNode.title = aURL;
-    warningNode.href = aURL;
+    warningNode.title = url;
+    warningNode.href = url;
     warningNode.draggable = false;
     warningNode.textContent = moreInfoLabel;
     warningNode.className = "learn-more-link";
 
-    this._addMessageLinkCallback(warningNode, (aEvent) => {
-      aEvent.stopPropagation();
-      this.owner.openLink(aURL);
+    this._addMessageLinkCallback(warningNode, (event) => {
+      event.stopPropagation();
+      this.owner.openLink(url);
     });
 
-    aNode.appendChild(warningNode);
+    node.appendChild(warningNode);
   },
 
   
@@ -1791,20 +1793,20 @@ WebConsoleFrame.prototype = {
 
 
 
-  logFileActivity: function WCF_logFileActivity(aFileURI)
+  logFileActivity: function WCF_logFileActivity(fileURI)
   {
     let urlNode = this.document.createElementNS(XHTML_NS, "a");
-    urlNode.setAttribute("title", aFileURI);
+    urlNode.setAttribute("title", fileURI);
     urlNode.className = "url";
-    urlNode.textContent = aFileURI;
+    urlNode.textContent = fileURI;
     urlNode.draggable = false;
-    urlNode.href = aFileURI;
+    urlNode.href = fileURI;
 
     let outputNode = this.createMessageNode(CATEGORY_NETWORK, SEVERITY_LOG,
-                                            urlNode, null, null, aFileURI);
+                                            urlNode, null, null, fileURI);
 
     this._addMessageLinkCallback(urlNode, () => {
-      this.owner.viewSource(aFileURI);
+      this.owner.viewSource(fileURI);
     });
 
     return outputNode;
@@ -1816,9 +1818,9 @@ WebConsoleFrame.prototype = {
 
 
 
-  handleFileActivity: function WCF_handleFileActivity(aFileURI)
+  handleFileActivity: function WCF_handleFileActivity(fileURI)
   {
-    this.outputMessage(CATEGORY_NETWORK, this.logFileActivity, [aFileURI]);
+    this.outputMessage(CATEGORY_NETWORK, this.logFileActivity, [fileURI]);
   },
 
   
@@ -1827,9 +1829,9 @@ WebConsoleFrame.prototype = {
 
 
 
-  logReflowActivity: function WCF_logReflowActivity(aMessage)
+  logReflowActivity: function WCF_logReflowActivity(message)
   {
-    let {start, end, sourceURL, sourceLine} = aMessage;
+    let {start, end, sourceURL, sourceLine} = message;
     let duration = Math.round((end - start) * 100) / 100;
     let node = this.document.createElementNS(XHTML_NS, "span");
     if (sourceURL) {
@@ -1838,7 +1840,7 @@ WebConsoleFrame.prototype = {
       a.href = "#";
       a.draggable = "false";
       let filename = WebConsoleUtils.abbreviateSourceURL(sourceURL);
-      let functionName = aMessage.functionName || l10n.getStr("stacktrace.anonymousFunction");
+      let functionName = message.functionName || l10n.getStr("stacktrace.anonymousFunction");
       a.textContent = l10n.getFormatStr("reflow.messageLinkText",
                          [functionName, filename, sourceLine]);
       this._addMessageLinkCallback(a, () => {
@@ -1852,9 +1854,9 @@ WebConsoleFrame.prototype = {
   },
 
 
-  handleReflowActivity: function WCF_handleReflowActivity(aMessage)
+  handleReflowActivity: function WCF_handleReflowActivity(message)
   {
-    this.outputMessage(CATEGORY_CSS, this.logReflowActivity, [aMessage]);
+    this.outputMessage(CATEGORY_CSS, this.logReflowActivity, [message]);
   },
 
   
@@ -1916,9 +1918,9 @@ WebConsoleFrame.prototype = {
 
 
 
-  _updateNetMessage: function WCF__updateNetMessage(aActorId)
+  _updateNetMessage: function WCF__updateNetMessage(actorId)
   {
-    let networkInfo = this.webConsoleClient.getNetworkRequest(aActorId);
+    let networkInfo = this.webConsoleClient.getNetworkRequest(actorId);
     if (!networkInfo || !networkInfo.node) {
       return;
     }
@@ -1990,11 +1992,11 @@ WebConsoleFrame.prototype = {
 
 
 
-  onLocationChange: function WCF_onLocationChange(aURI, aTitle)
+  onLocationChange: function WCF_onLocationChange(uri, title)
   {
-    this.contentLocation = aURI;
+    this.contentLocation = uri;
     if (this.owner.onLocationChange) {
-      this.owner.onLocationChange(aURI, aTitle);
+      this.owner.onLocationChange(uri, title);
     }
   },
 
@@ -2006,11 +2008,11 @@ WebConsoleFrame.prototype = {
 
 
 
-  handleTabNavigated: function WCF_handleTabNavigated(aEvent, aPacket)
+  handleTabNavigated: function WCF_handleTabNavigated(event, packet)
   {
-    if (aEvent == "will-navigate") {
+    if (event == "will-navigate") {
       if (this.persistLog) {
-        let marker = new Messages.NavigationMarker(aPacket, Date.now());
+        let marker = new Messages.NavigationMarker(packet, Date.now());
         this.output.addMessage(marker);
       }
       else {
@@ -2018,11 +2020,11 @@ WebConsoleFrame.prototype = {
       }
     }
 
-    if (aPacket.url) {
-      this.onLocationChange(aPacket.url, aPacket.title);
+    if (packet.url) {
+      this.onLocationChange(packet.url, packet.title);
     }
 
-    if (aEvent == "navigate" && !aPacket.nativeConsoleAPI) {
+    if (event == "navigate" && !packet.nativeConsoleAPI) {
       this.logWarningAboutReplacedAPI();
     }
   },
@@ -2047,7 +2049,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  outputMessage: function WCF_outputMessage(aCategory, aMethodOrNode, aArguments)
+  outputMessage: function WCF_outputMessage(category, methodOrNode, args)
   {
     if (!this._outputQueue.length) {
       
@@ -2055,7 +2057,7 @@ WebConsoleFrame.prototype = {
       this._lastOutputFlush = Date.now();
     }
 
-    this._outputQueue.push([aCategory, aMethodOrNode, aArguments]);
+    this._outputQueue.push([category, methodOrNode, args]);
 
     this._initOutputTimer();
   },
@@ -2146,8 +2148,8 @@ WebConsoleFrame.prototype = {
       }
 
       let categories = Object.keys(this._pruneCategoriesQueue);
-      categories.forEach(function _pruneOutput(aCategory) {
-        removedNodes += this.pruneOutputIfNecessary(aCategory);
+      categories.forEach(function _pruneOutput(category) {
+        removedNodes += this.pruneOutputIfNecessary(category);
       }, this);
       this._pruneCategoriesQueue = {};
     }
@@ -2223,9 +2225,9 @@ WebConsoleFrame.prototype = {
 
 
   _outputMessageFromQueue:
-  function WCF__outputMessageFromQueue(aHudIdSupportsString, aItem)
+  function WCF__outputMessageFromQueue(hudIdSupportsString, item)
   {
-    let [category, methodOrNode, args] = aItem;
+    let [category, methodOrNode, args] = item;
 
     
     
@@ -2254,7 +2256,7 @@ WebConsoleFrame.prototype = {
       this._pruneCategoriesQueue[node.category] = true;
 
       let nodeID = node.getAttribute("id");
-      Services.obs.notifyObservers(aHudIdSupportsString,
+      Services.obs.notifyObservers(hudIdSupportsString,
                                    "web-console-message-created", nodeID);
 
     }
@@ -2282,12 +2284,12 @@ WebConsoleFrame.prototype = {
     let nodes = {};
 
     
-    this._outputQueue.forEach(function(aItem, aIndex) {
-      let [category] = aItem;
+    this._outputQueue.forEach(function(item, index) {
+      let [category] = item;
       if (!(category in nodes)) {
         nodes[category] = [];
       }
-      nodes[category].push(aIndex);
+      nodes[category].push(index);
     }, this);
 
     let pruned = 0;
@@ -2318,11 +2320,11 @@ WebConsoleFrame.prototype = {
 
 
 
-  _destroyItem: function WCF__destroyItem(aItem)
+  _destroyItem: function WCF__destroyItem(item)
   {
     
     
-    let [category, methodOrNode, args] = aItem;
+    let [category, methodOrNode, args] = item;
     if (typeof methodOrNode != "function" && methodOrNode._objectActors) {
       for (let actor of methodOrNode._objectActors) {
         this._releaseObject(actor);
@@ -2358,9 +2360,9 @@ WebConsoleFrame.prototype = {
     }
     else if (category == CATEGORY_WEBDEV &&
              methodOrNode == this.logConsoleAPIMessage) {
-      args[0].arguments.forEach((aValue) => {
-        if (WebConsoleUtils.isActorGrip(aValue)) {
-          this._releaseObject(aValue.actor);
+      args[0].arguments.forEach((value) => {
+        if (WebConsoleUtils.isActorGrip(value)) {
+          this._releaseObject(value.actor);
         }
       });
     }
@@ -2391,11 +2393,11 @@ WebConsoleFrame.prototype = {
 
 
 
-  pruneOutputIfNecessary: function WCF_pruneOutputIfNecessary(aCategory)
+  pruneOutputIfNecessary: function WCF_pruneOutputIfNecessary(category)
   {
-    let logLimit = Utils.logLimitForCategory(aCategory);
+    let logLimit = Utils.logLimitForCategory(category);
     let messageNodes = this.outputNode.querySelectorAll(".message[category=" +
-                       CATEGORY_CLASS_FRAGMENTS[aCategory] + "]");
+                       CATEGORY_CLASS_FRAGMENTS[category] + "]");
     let n = Math.max(0, messageNodes.length - logLimit);
     [...messageNodes].slice(0, n).forEach(this.removeOutputMessage, this);
     return n;
@@ -2407,40 +2409,40 @@ WebConsoleFrame.prototype = {
 
 
 
-  removeOutputMessage: function WCF_removeOutputMessage(aNode)
+  removeOutputMessage: function WCF_removeOutputMessage(node)
   {
-    if (aNode._messageObject) {
-      aNode._messageObject.destroy();
+    if (node._messageObject) {
+      node._messageObject.destroy();
     }
 
-    if (aNode._objectActors) {
-      for (let actor of aNode._objectActors) {
+    if (node._objectActors) {
+      for (let actor of node._objectActors) {
         this._releaseObject(actor);
       }
-      aNode._objectActors.clear();
+      node._objectActors.clear();
     }
 
-    if (aNode.category == CATEGORY_CSS ||
-        aNode.category == CATEGORY_SECURITY) {
-      let repeatNode = aNode.getElementsByClassName("message-repeats")[0];
+    if (node.category == CATEGORY_CSS ||
+        node.category == CATEGORY_SECURITY) {
+      let repeatNode = node.getElementsByClassName("message-repeats")[0];
       if (repeatNode && repeatNode._uid) {
         delete this._repeatNodes[repeatNode._uid];
       }
     }
-    else if (aNode._connectionId &&
-             aNode.category == CATEGORY_NETWORK) {
-      this.webConsoleClient.removeNetworkRequest(aNode._connectionId);
-      this._releaseObject(aNode._connectionId);
+    else if (node._connectionId &&
+             node.category == CATEGORY_NETWORK) {
+      this.webConsoleClient.removeNetworkRequest(node._connectionId);
+      this._releaseObject(node._connectionId);
     }
-    else if (aNode.classList.contains("inlined-variables-view")) {
-      let view = aNode._variablesView;
+    else if (node.classList.contains("inlined-variables-view")) {
+      let view = node._variablesView;
       if (view) {
         view.controller.releaseActors();
       }
-      aNode._variablesView = null;
+      node._variablesView = null;
     }
 
-    aNode.remove();
+    node.remove();
   },
 
   
@@ -2472,11 +2474,11 @@ WebConsoleFrame.prototype = {
 
 
   createMessageNode:
-  function WCF_createMessageNode(aCategory, aSeverity, aBody, aSourceURL,
-                                 aSourceLine, aClipboardText, aLevel, aTimeStamp)
+  function WCF_createMessageNode(category, severity, body, sourceURL,
+                                 sourceLine, clipboardText, level, timestamp)
   {
-    if (typeof aBody != "string" && aClipboardText == null && aBody.innerText) {
-      aClipboardText = aBody.innerText;
+    if (typeof body != "string" && clipboardText == null && body.innerText) {
+      clipboardText = body.innerText;
     }
 
     let indentNode = this.document.createElementNS(XHTML_NS, "span");
@@ -2497,53 +2499,53 @@ WebConsoleFrame.prototype = {
     bodyNode.className = "message-body-wrapper message-body devtools-monospace";
 
     
-    let body = aBody;
+    let storedBody = body;
     
     
-    aClipboardText = aClipboardText ||
-                     (aBody + (aSourceURL ? " @ " + aSourceURL : "") +
-                              (aSourceLine ? ":" + aSourceLine : ""));
+    clipboardText = clipboardText ||
+                     (body + (sourceURL ? " @ " + sourceURL : "") +
+                              (sourceLine ? ":" + sourceLine : ""));
 
-    let timestamp = aTimeStamp || Date.now();
+    timestamp = timestamp || Date.now();
 
     
     let node = this.document.createElementNS(XHTML_NS, "div");
     node.id = "console-msg-" + gSequenceId();
     node.className = "message";
-    node.clipboardText = aClipboardText;
+    node.clipboardText = clipboardText;
     node.timestamp = timestamp;
-    this.setMessageType(node, aCategory, aSeverity);
+    this.setMessageType(node, category, severity);
 
-    if (aBody instanceof Ci.nsIDOMNode) {
-      bodyNode.appendChild(aBody);
+    if (body instanceof Ci.nsIDOMNode) {
+      bodyNode.appendChild(body);
     }
     else {
       let str = undefined;
-      if (aLevel == "dir") {
-        str = VariablesView.getString(aBody.arguments[0]);
+      if (level == "dir") {
+        str = VariablesView.getString(body.arguments[0]);
       }
       else {
-        str = aBody;
+        str = body;
       }
 
       if (str !== undefined) {
-        aBody = this.document.createTextNode(str);
-        bodyNode.appendChild(aBody);
+        body = this.document.createTextNode(str);
+        bodyNode.appendChild(body);
       }
     }
 
     
     let repeatNode = null;
-    if (aCategory != CATEGORY_INPUT &&
-        aCategory != CATEGORY_OUTPUT &&
-        aCategory != CATEGORY_NETWORK &&
-        !(aCategory == CATEGORY_CSS && aSeverity == SEVERITY_LOG)) {
+    if (category != CATEGORY_INPUT &&
+        category != CATEGORY_OUTPUT &&
+        category != CATEGORY_NETWORK &&
+        !(category == CATEGORY_CSS && severity == SEVERITY_LOG)) {
       repeatNode = this.document.createElementNS(XHTML_NS, "span");
       repeatNode.setAttribute("value", "1");
       repeatNode.className = "message-repeats";
       repeatNode.textContent = 1;
-      repeatNode._uid = [bodyNode.textContent, aCategory, aSeverity, aLevel,
-                         aSourceURL, aSourceLine].join(":");
+      repeatNode._uid = [bodyNode.textContent, category, severity, level,
+                         sourceURL, sourceLine].join(":");
     }
 
     
@@ -2556,9 +2558,9 @@ WebConsoleFrame.prototype = {
     
     
     let locationNode;
-    if (aSourceURL && IGNORED_SOURCE_URLS.indexOf(aSourceURL) == -1) {
-      locationNode = this.createLocationNode({url: aSourceURL,
-                                              line: aSourceLine});
+    if (sourceURL && IGNORED_SOURCE_URLS.indexOf(sourceURL) == -1) {
+      locationNode = this.createLocationNode({url: sourceURL,
+                                              line: sourceLine});
     }
 
     node.appendChild(timestampNode);
@@ -2566,14 +2568,14 @@ WebConsoleFrame.prototype = {
     node.appendChild(iconContainer);
 
     
-    if (aLevel == "dir") {
+    if (level == "dir") {
       let options = {
-        objectActor: body.arguments[0],
+        objectActor: storedBody.arguments[0],
         targetElement: bodyNode,
         hideFilterInput: true,
       };
-      this.jsterm.openVariablesView(options).then((aView) => {
-        node._variablesView = aView;
+      this.jsterm.openVariablesView(options).then((view) => {
+        node._variablesView = view;
         if (node.classList.contains("hidden-message")) {
           node.classList.remove("hidden-message");
         }
@@ -2607,7 +2609,7 @@ WebConsoleFrame.prototype = {
 
 
   createLocationNode:
-  function WCF_createLocationNode({url, line, column}, aTarget)
+  function WCF_createLocationNode({url, line, column}, target)
   {
     if (!url) {
       url = "";
@@ -2637,8 +2639,8 @@ WebConsoleFrame.prototype = {
 
     locationNode.href = isScratchpad || !fullURL ? "#" : fullURL;
     locationNode.draggable = false;
-    if (aTarget) {
-      locationNode.target = aTarget;
+    if (target) {
+      locationNode.target = target;
     }
     locationNode.setAttribute("title", url);
     locationNode.className = "message-location theme-link devtools-monospace";
@@ -2691,13 +2693,13 @@ WebConsoleFrame.prototype = {
 
 
   setMessageType:
-  function WCF_setMessageType(aMessageNode, aCategory, aSeverity)
+  function WCF_setMessageType(messageNode, category, severity)
   {
-    aMessageNode.category = aCategory;
-    aMessageNode.severity = aSeverity;
-    aMessageNode.setAttribute("category", CATEGORY_CLASS_FRAGMENTS[aCategory]);
-    aMessageNode.setAttribute("severity", SEVERITY_CLASS_FRAGMENTS[aSeverity]);
-    aMessageNode.setAttribute("filter", MESSAGE_PREFERENCE_KEYS[aCategory][aSeverity]);
+    messageNode.category = category;
+    messageNode.severity = severity;
+    messageNode.setAttribute("category", CATEGORY_CLASS_FRAGMENTS[category]);
+    messageNode.setAttribute("severity", SEVERITY_CLASS_FRAGMENTS[severity]);
+    messageNode.setAttribute("filter", MESSAGE_PREFERENCE_KEYS[category][severity]);
   },
 
   
@@ -2709,30 +2711,30 @@ WebConsoleFrame.prototype = {
 
 
 
-  _addMessageLinkCallback: function WCF__addMessageLinkCallback(aNode, aCallback)
+  _addMessageLinkCallback: function WCF__addMessageLinkCallback(node, callback)
   {
-    aNode.addEventListener("mousedown", (aEvent) => {
+    node.addEventListener("mousedown", (event) => {
       this._mousedown = true;
-      this._startX = aEvent.clientX;
-      this._startY = aEvent.clientY;
+      this._startX = event.clientX;
+      this._startY = event.clientY;
     }, false);
 
-    aNode.addEventListener("click", (aEvent) => {
+    node.addEventListener("click", (event) => {
       let mousedown = this._mousedown;
       this._mousedown = false;
 
-      aEvent.preventDefault();
+      event.preventDefault();
 
       
-      if (aEvent.detail != 1 || aEvent.button != 0) {
+      if (event.detail != 1 || event.button != 0) {
         return;
       }
 
       
       
       if (mousedown &&
-          (this._startX != aEvent.clientX) &&
-          (this._startY != aEvent.clientY))
+          (this._startX != event.clientX) &&
+          (this._startY != event.clientY))
       {
         this._startX = this._startY = undefined;
         return;
@@ -2740,24 +2742,24 @@ WebConsoleFrame.prototype = {
 
       this._startX = this._startY = undefined;
 
-      aCallback.call(this, aEvent);
+      callback.call(this, event);
     }, false);
   },
 
-  _addFocusCallback: function WCF__addFocusCallback(aNode, aCallback)
+  _addFocusCallback: function WCF__addFocusCallback(node, callback)
   {
-    aNode.addEventListener("mousedown", (aEvent) => {
+    node.addEventListener("mousedown", (event) => {
       this._mousedown = true;
-      this._startX = aEvent.clientX;
-      this._startY = aEvent.clientY;
+      this._startX = event.clientX;
+      this._startY = event.clientY;
     }, false);
 
-    aNode.addEventListener("click", (aEvent) => {
+    node.addEventListener("click", (event) => {
       let mousedown = this._mousedown;
       this._mousedown = false;
 
       
-      if (aEvent.detail != 1 || aEvent.button != 0) {
+      if (event.detail != 1 || event.button != 0) {
         return;
       }
 
@@ -2766,8 +2768,8 @@ WebConsoleFrame.prototype = {
       
       
       if (mousedown &&
-          (Math.abs(aEvent.clientX - this._startX) >= 2) &&
-          (Math.abs(aEvent.clientY - this._startY) >= 1))
+          (Math.abs(event.clientX - this._startX) >= 2) &&
+          (Math.abs(event.clientY - this._startY) >= 1))
       {
         this._startX = this._startY = undefined;
         return;
@@ -2775,7 +2777,7 @@ WebConsoleFrame.prototype = {
 
       this._startX = this._startY = undefined;
 
-      aCallback.call(this, aEvent);
+      callback.call(this, event);
     }, false);
   },
 
@@ -2790,10 +2792,10 @@ WebConsoleFrame.prototype = {
 
 
 
-  _onToolboxPrefChanged: function WCF__onToolboxPrefChanged(aEvent, aData)
+  _onToolboxPrefChanged: function WCF__onToolboxPrefChanged(event, data)
   {
-    if (aData.pref == PREF_MESSAGE_TIMESTAMP) {
-      if (aData.newValue) {
+    if (data.pref == PREF_MESSAGE_TIMESTAMP) {
+      if (data.newValue) {
         this.outputNode.classList.remove("hideTimestamps");
       }
       else {
@@ -2813,15 +2815,15 @@ WebConsoleFrame.prototype = {
 
 
 
-  copySelectedItems: function WCF_copySelectedItems(aOptions)
+  copySelectedItems: function WCF_copySelectedItems(options)
   {
-    aOptions = aOptions || { linkOnly: false, contextmenu: false };
+    options = options || { linkOnly: false, contextmenu: false };
 
     
     let strings = [];
 
     let children = this.output.getSelectedMessages();
-    if (!children.length && aOptions.contextmenu) {
+    if (!children.length && options.contextmenu) {
       children = [this._contextMenuHandler.lastClickedMessage];
     }
 
@@ -2830,7 +2832,7 @@ WebConsoleFrame.prototype = {
       if (!item.classList.contains("filtered-by-type") &&
           !item.classList.contains("filtered-by-string")) {
         let timestampString = l10n.timestampString(item.timestamp);
-        if (aOptions.linkOnly) {
+        if (options.linkOnly) {
           strings.push(item.url);
         }
         else {
@@ -2852,16 +2854,16 @@ WebConsoleFrame.prototype = {
 
 
   objectPropertiesProvider:
-  function WCF_objectPropertiesProvider(aActor, aCallback)
+  function WCF_objectPropertiesProvider(actor, callback)
   {
-    this.webConsoleClient.inspectObjectProperties(aActor,
-      function(aResponse) {
-        if (aResponse.error) {
+    this.webConsoleClient.inspectObjectProperties(actor,
+      function(response) {
+        if (response.error) {
           Cu.reportError("Failed to retrieve the object properties from the " +
-                         "server. Error: " + aResponse.error);
+                         "server. Error: " + response.error);
           return;
         }
-        aCallback(aResponse.properties);
+        callback(response.properties);
       });
   },
 
@@ -2872,10 +2874,10 @@ WebConsoleFrame.prototype = {
 
 
 
-  _releaseObject: function WCF__releaseObject(aActor)
+  _releaseObject: function WCF__releaseObject(actor)
   {
     if (this.proxy) {
-      this.proxy.releaseActor(aActor);
+      this.proxy.releaseActor(actor);
     }
   },
 
@@ -2964,27 +2966,27 @@ WebConsoleFrame.prototype = {
 
 
 
-function simpleValueEvalMacro(aItem, aCurrentString)
+function simpleValueEvalMacro(item, currentString)
 {
-  return VariablesView.simpleValueEvalMacro(aItem, aCurrentString, "_self");
+  return VariablesView.simpleValueEvalMacro(item, currentString, "_self");
 };
 
 
 
 
 
-function overrideValueEvalMacro(aItem, aCurrentString)
+function overrideValueEvalMacro(item, currentString)
 {
-  return VariablesView.overrideValueEvalMacro(aItem, aCurrentString, "_self");
+  return VariablesView.overrideValueEvalMacro(item, currentString, "_self");
 };
 
 
 
 
 
-function getterOrSetterEvalMacro(aItem, aCurrentString)
+function getterOrSetterEvalMacro(item, currentString)
 {
-  return VariablesView.getterOrSetterEvalMacro(aItem, aCurrentString, "_self");
+  return VariablesView.getterOrSetterEvalMacro(item, currentString, "_self");
 }
 
 
@@ -2998,9 +3000,9 @@ function getterOrSetterEvalMacro(aItem, aCurrentString)
 
 
 
-function JSTerm(aWebConsoleFrame)
+function JSTerm(webConsoleFrame)
 {
-  this.hud = aWebConsoleFrame;
+  this.hud = webConsoleFrame;
   this.hudId = this.hud.hudId;
   this.inputHistoryCount = Services.prefs.getIntPref(PREF_INPUT_HISTORY_COUNT);
 
@@ -3251,19 +3253,19 @@ JSTerm.prototype = {
 
 
   _executeResultCallback:
-  function JST__executeResultCallback(aAfterMessage, aCallback, aResponse)
+  function JST__executeResultCallback(afterMessage, callback, response)
   {
     if (!this.hud) {
       return;
     }
-    if (aResponse.error) {
-      Cu.reportError("Evaluation error " + aResponse.error + ": " +
-                     aResponse.message);
+    if (response.error) {
+      Cu.reportError("Evaluation error " + response.error + ": " +
+                     response.message);
       return;
     }
-    let errorMessage = aResponse.exceptionMessage;
-    let result = aResponse.result;
-    let helperResult = aResponse.helperResult;
+    let errorMessage = response.exceptionMessage;
+    let result = response.result;
+    let helperResult = response.helperResult;
     let helperHasRawOutput = !!(helperResult || {}).rawOutput;
 
     if (helperResult && helperResult.type) {
@@ -3275,11 +3277,11 @@ JSTerm.prototype = {
           this.clearHistory();
           break;
         case "inspectObject":
-          if (aAfterMessage) {
-            if (!aAfterMessage._objectActors) {
-              aAfterMessage._objectActors = new Set();
+          if (afterMessage) {
+            if (!afterMessage._objectActors) {
+              afterMessage._objectActors = new Set();
             }
-            aAfterMessage._objectActors.add(helperResult.object.actor);
+            afterMessage._objectActors.add(helperResult.object.actor);
           }
           this.openVariablesView({
             label: VariablesView.getString(helperResult.object, { concise: true }),
@@ -3307,17 +3309,17 @@ JSTerm.prototype = {
     if (!errorMessage && result && typeof result == "object" &&
         result.type == "undefined" &&
         helperResult && !helperHasRawOutput) {
-      aCallback && aCallback();
+      callback && callback();
       return;
     }
 
-    let msg = new Messages.JavaScriptEvalOutput(aResponse, errorMessage);
+    let msg = new Messages.JavaScriptEvalOutput(response, errorMessage);
     this.hud.output.addMessage(msg);
 
-    if (aCallback) {
+    if (callback) {
       let oldFlushCallback = this.hud._flushCallback;
       this.hud._flushCallback = () => {
-        aCallback(msg.element);
+        callback(msg.element);
         if (oldFlushCallback) {
           oldFlushCallback();
           this.hud._flushCallback = oldFlushCallback;
@@ -3328,11 +3330,11 @@ JSTerm.prototype = {
       };
     }
 
-    msg._afterMessage = aAfterMessage;
+    msg._afterMessage = afterMessage;
     msg._objectActors = new Set();
 
-    if (WebConsoleUtils.isActorGrip(aResponse.exception)) {
-      msg._objectActors.add(aResponse.exception.actor);
+    if (WebConsoleUtils.isActorGrip(response.exception)) {
+      msg._objectActors.add(response.exception.actor);
     }
 
     if (WebConsoleUtils.isActorGrip(result)) {
@@ -3352,19 +3354,19 @@ JSTerm.prototype = {
 
 
 
-  execute: function JST_execute(aExecuteString, aCallback)
+  execute: function JST_execute(executeString, callback)
   {
     let deferred = promise.defer();
-    let callback = function(msg) {
+    let resultCallback = function(msg) {
       deferred.resolve(msg);
-      if (aCallback) {
-        aCallback(msg);
+      if (callback) {
+        callback(msg);
       }
     }
 
     
-    aExecuteString = aExecuteString || this.inputNode.value;
-    if (!aExecuteString) {
+    executeString = executeString || this.inputNode.value;
+    if (!executeString) {
       return;
     }
 
@@ -3374,24 +3376,24 @@ JSTerm.prototype = {
       selectedNodeActor = inspectorSelection.nodeFront.actorID;
     }
 
-    let message = new Messages.Simple(aExecuteString, {
+    let message = new Messages.Simple(executeString, {
       category: "input",
       severity: "log",
     });
     this.hud.output.addMessage(message);
-    let onResult = this._executeResultCallback.bind(this, message, callback);
+    let onResult = this._executeResultCallback.bind(this, message, resultCallback);
 
     let options = {
       frame: this.SELECTED_FRAME,
       selectedNodeActor: selectedNodeActor,
     };
 
-    this.requestEvaluation(aExecuteString, options).then(onResult, onResult);
+    this.requestEvaluation(executeString, options).then(onResult, onResult);
 
     
     
     
-    this.history[this.historyIndex++] = aExecuteString;
+    this.history[this.historyIndex++] = executeString;
     this.historyPlaceHolder = this.history.length;
 
     if (this.history.length > this.inputHistoryCount) {
@@ -3429,32 +3431,32 @@ JSTerm.prototype = {
 
 
 
-  requestEvaluation: function JST_requestEvaluation(aString, aOptions = {})
+  requestEvaluation: function JST_requestEvaluation(str, options = {})
   {
     let deferred = promise.defer();
 
-    function onResult(aResponse) {
-      if (!aResponse.error) {
-        deferred.resolve(aResponse);
+    function onResult(response) {
+      if (!response.error) {
+        deferred.resolve(response);
       }
       else {
-        deferred.reject(aResponse);
+        deferred.reject(response);
       }
     }
 
     let frameActor = null;
-    if ("frame" in aOptions) {
-      frameActor = this.getFrameActor(aOptions.frame);
+    if ("frame" in options) {
+      frameActor = this.getFrameActor(options.frame);
     }
 
     let evalOptions = {
-      bindObjectActor: aOptions.bindObjectActor,
+      bindObjectActor: options.bindObjectActor,
       frameActor: frameActor,
-      selectedNodeActor: aOptions.selectedNodeActor,
-      selectedObjectActor: aOptions.selectedObjectActor,
+      selectedNodeActor: options.selectedNodeActor,
+      selectedObjectActor: options.selectedObjectActor,
     };
 
-    this.webConsoleClient.evaluateJSAsync(aString, onResult, evalOptions);
+    this.webConsoleClient.evaluateJSAsync(str, onResult, evalOptions);
     return deferred.promise;
   },
 
@@ -3466,7 +3468,7 @@ JSTerm.prototype = {
 
 
 
-  getFrameActor: function JST_getFrameActor(aFrame)
+  getFrameActor: function JST_getFrameActor(frame)
   {
     let state = this.hud.owner.getDebuggerFrames();
     if (!state) {
@@ -3474,11 +3476,11 @@ JSTerm.prototype = {
     }
 
     let grip;
-    if (aFrame == this.SELECTED_FRAME) {
+    if (frame == this.SELECTED_FRAME) {
       grip = state.frames[state.selected];
     }
     else {
-      grip = state.frames[aFrame];
+      grip = state.frames[frame];
     }
 
     return grip ? grip.actor : null;
@@ -3505,41 +3507,41 @@ JSTerm.prototype = {
 
 
 
-  openVariablesView: function JST_openVariablesView(aOptions)
+  openVariablesView: function JST_openVariablesView(options)
   {
-    let onContainerReady = (aWindow) => {
-      let container = aWindow.document.querySelector("#variables");
+    let onContainerReady = (window) => {
+      let container = window.document.querySelector("#variables");
       let view = this._variablesView;
-      if (!view || aOptions.targetElement) {
+      if (!view || options.targetElement) {
         let viewOptions = {
           container: container,
-          hideFilterInput: aOptions.hideFilterInput,
+          hideFilterInput: options.hideFilterInput,
         };
         view = this._createVariablesView(viewOptions);
-        if (!aOptions.targetElement) {
+        if (!options.targetElement) {
           this._variablesView = view;
-          aWindow.addEventListener("keypress", this._onKeypressInVariablesView);
+          window.addEventListener("keypress", this._onKeypressInVariablesView);
         }
       }
-      aOptions.view = view;
-      this._updateVariablesView(aOptions);
+      options.view = view;
+      this._updateVariablesView(options);
 
-      if (!aOptions.targetElement && aOptions.autofocus) {
-        aWindow.focus();
+      if (!options.targetElement && options.autofocus) {
+        window.focus();
       }
 
-      this.emit("variablesview-open", view, aOptions);
+      this.emit("variablesview-open", view, options);
       return view;
     };
 
     let openPromise;
-    if (aOptions.targetElement) {
+    if (options.targetElement) {
       let deferred = promise.defer();
       openPromise = deferred.promise;
-      let document = aOptions.targetElement.ownerDocument;
+      let document = options.targetElement.ownerDocument;
       let iframe = document.createElementNS(XHTML_NS, "iframe");
 
-      iframe.addEventListener("load", function onIframeLoad(aEvent) {
+      iframe.addEventListener("load", function onIframeLoad(event) {
         iframe.removeEventListener("load", onIframeLoad, true);
         iframe.style.visibility = "visible";
         deferred.resolve(iframe.contentWindow);
@@ -3548,7 +3550,7 @@ JSTerm.prototype = {
       iframe.flex = 1;
       iframe.style.visibility = "hidden";
       iframe.setAttribute("src", VARIABLES_VIEW_URL);
-      aOptions.targetElement.appendChild(iframe);
+      options.targetElement.appendChild(iframe);
     }
     else {
       if (!this.sidebar) {
@@ -3615,18 +3617,18 @@ JSTerm.prototype = {
 
 
 
-  _onKeypressInVariablesView: function JST__onKeypressInVariablesView(aEvent)
+  _onKeypressInVariablesView: function JST__onKeypressInVariablesView(event)
   {
-    let tag = aEvent.target.nodeName;
-    if (aEvent.keyCode != Ci.nsIDOMKeyEvent.DOM_VK_ESCAPE || aEvent.shiftKey ||
-        aEvent.altKey || aEvent.ctrlKey || aEvent.metaKey ||
+    let tag = event.target.nodeName;
+    if (event.keyCode != Ci.nsIDOMKeyEvent.DOM_VK_ESCAPE || event.shiftKey ||
+        event.altKey || event.ctrlKey || event.metaKey ||
         ["input", "textarea", "select", "textbox"].indexOf(tag) > -1) {
         return;
     }
 
     this._sidebarDestroy();
     this.inputNode.focus();
-    aEvent.stopPropagation();
+    event.stopPropagation();
   },
 
   
@@ -3641,27 +3643,27 @@ JSTerm.prototype = {
 
 
 
-  _createVariablesView: function JST__createVariablesView(aOptions)
+  _createVariablesView: function JST__createVariablesView(options)
   {
-    let view = new VariablesView(aOptions.container);
+    let view = new VariablesView(options.container);
     view.toolbox = gDevTools.getToolbox(this.hud.owner.target);
     view.searchPlaceholder = l10n.getStr("propertiesFilterPlaceholder");
     view.emptyText = l10n.getStr("emptyPropertiesList");
-    view.searchEnabled = !aOptions.hideFilterInput;
+    view.searchEnabled = !options.hideFilterInput;
     view.lazyEmpty = this._lazyVariablesView;
 
     VariablesViewController.attach(view, {
-      getEnvironmentClient: aGrip => {
-        return new EnvironmentClient(this.hud.proxy.client, aGrip);
+      getEnvironmentClient: grip => {
+        return new EnvironmentClient(this.hud.proxy.client, grip);
       },
-      getObjectClient: aGrip => {
-        return new ObjectClient(this.hud.proxy.client, aGrip);
+      getObjectClient: grip => {
+        return new ObjectClient(this.hud.proxy.client, grip);
       },
-      getLongStringClient: aGrip => {
-        return this.webConsoleClient.longString(aGrip);
+      getLongStringClient: grip => {
+        return this.webConsoleClient.longString(grip);
       },
-      releaseActor: aActor => {
-        this.hud._releaseObject(aActor);
+      releaseActor: actor => {
+        this.hud._releaseObject(actor);
       },
       simpleValueEvalMacro: simpleValueEvalMacro,
       overrideValueEvalMacro: overrideValueEvalMacro,
@@ -3669,8 +3671,8 @@ JSTerm.prototype = {
     });
 
     
-    view.on("fetched", (aEvent, aType, aVar) => {
-      this.emit("variablesview-fetched", aVar);
+    view.on("fetched", (event, type, variableObject) => {
+      this.emit("variablesview-fetched", variableObject);
     });
 
     return view;
@@ -3688,24 +3690,24 @@ JSTerm.prototype = {
 
 
 
-  _updateVariablesView: function JST__updateVariablesView(aOptions)
+  _updateVariablesView: function JST__updateVariablesView(options)
   {
-    let view = aOptions.view;
+    let view = options.view;
     view.empty();
 
     
     
-    view.controller.releaseActors(aActor => {
-      return view._consoleLastObjectActor != aActor;
+    view.controller.releaseActors(actor => {
+      return view._consoleLastObjectActor != actor;
     });
 
-    if (aOptions.objectActor &&
+    if (options.objectActor &&
         (!this.hud.owner._browserConsole ||
          Services.prefs.getBoolPref("devtools.chrome.enabled"))) {
       
-      view.eval = this._variablesViewEvaluate.bind(this, aOptions);
-      view.switch = this._variablesViewSwitch.bind(this, aOptions);
-      view.delete = this._variablesViewDelete.bind(this, aOptions);
+      view.eval = this._variablesViewEvaluate.bind(this, options);
+      view.switch = this._variablesViewSwitch.bind(this, options);
+      view.delete = this._variablesViewDelete.bind(this, options);
     }
     else {
       view.eval = null;
@@ -3713,13 +3715,13 @@ JSTerm.prototype = {
       view.delete = null;
     }
 
-    let { variable, expanded } = view.controller.setSingleVariable(aOptions);
+    let { variable, expanded } = view.controller.setSingleVariable(options);
     variable.evaluationMacro = simpleValueEvalMacro;
 
-    if (aOptions.objectActor) {
-      view._consoleLastObjectActor = aOptions.objectActor.actor;
+    if (options.objectActor) {
+      view._consoleLastObjectActor = options.objectActor.actor;
     }
-    else if (aOptions.rawObject) {
+    else if (options.rawObject) {
       view._consoleLastObjectActor = null;
     }
     else {
@@ -3728,7 +3730,7 @@ JSTerm.prototype = {
     }
 
     expanded.then(() => {
-      this.emit("variablesview-updated", view, aOptions);
+      this.emit("variablesview-updated", view, options);
     });
   },
 
@@ -3745,15 +3747,15 @@ JSTerm.prototype = {
 
 
   _variablesViewEvaluate:
-  function JST__variablesViewEvaluate(aOptions, aVar, aValue)
+  function JST__variablesViewEvaluate(options, variableObject, value)
   {
-    let updater = this._updateVariablesView.bind(this, aOptions);
+    let updater = this._updateVariablesView.bind(this, options);
     let onEval = this._silentEvalCallback.bind(this, updater);
-    let string = aVar.evaluationMacro(aVar, aValue);
+    let string = variableObject.evaluationMacro(variableObject, value);
 
     let evalOptions = {
       frame: this.SELECTED_FRAME,
-      bindObjectActor: aOptions.objectActor.actor,
+      bindObjectActor: options.objectActor.actor,
     };
 
     this.requestEvaluation(string, evalOptions).then(onEval, onEval);
@@ -3769,16 +3771,16 @@ JSTerm.prototype = {
 
 
 
-  _variablesViewDelete: function JST__variablesViewDelete(aOptions, aVar)
+  _variablesViewDelete: function JST__variablesViewDelete(options, variableObject)
   {
     let onEval = this._silentEvalCallback.bind(this, null);
 
     let evalOptions = {
       frame: this.SELECTED_FRAME,
-      bindObjectActor: aOptions.objectActor.actor,
+      bindObjectActor: options.objectActor.actor,
     };
 
-    this.requestEvaluation("delete _self" + aVar.symbolicName, evalOptions)
+    this.requestEvaluation("delete _self" + variableObject.symbolicName, evalOptions)
         .then(onEval, onEval);
   },
 
@@ -3795,23 +3797,23 @@ JSTerm.prototype = {
 
 
   _variablesViewSwitch:
-  function JST__variablesViewSwitch(aOptions, aVar, aNewName)
+  function JST__variablesViewSwitch(options, variableObject, newName)
   {
-    let updater = this._updateVariablesView.bind(this, aOptions);
+    let updater = this._updateVariablesView.bind(this, options);
     let onEval = this._silentEvalCallback.bind(this, updater);
 
     let evalOptions = {
       frame: this.SELECTED_FRAME,
-      bindObjectActor: aOptions.objectActor.actor,
+      bindObjectActor: options.objectActor.actor,
     };
 
-    let newSymbolicName = aVar.ownerView.symbolicName + '["' + aNewName + '"]';
-    if (newSymbolicName == aVar.symbolicName) {
+    let newSymbolicName = variableObject.ownerView.symbolicName + '["' + newName + '"]';
+    if (newSymbolicName == variableObject.symbolicName) {
       return;
     }
 
-    let code = "_self" + newSymbolicName + " = _self" + aVar.symbolicName + ";" +
-               "delete _self" + aVar.symbolicName;
+    let code = "_self" + newSymbolicName + " = _self" + variableObject.symbolicName + ";" +
+               "delete _self" + variableObject.symbolicName;
 
     this.requestEvaluation(code, evalOptions).then(onEval, onEval);
   },
@@ -3830,43 +3832,43 @@ JSTerm.prototype = {
 
 
 
-  _silentEvalCallback: function JST__silentEvalCallback(aCallback, aResponse)
+  _silentEvalCallback: function JST__silentEvalCallback(callback, response)
   {
-    if (aResponse.error) {
-      Cu.reportError("Web Console evaluation failed. " + aResponse.error + ":" +
-                     aResponse.message);
+    if (response.error) {
+      Cu.reportError("Web Console evaluation failed. " + response.error + ":" +
+                     response.message);
 
-      aCallback && aCallback(aResponse);
+      callback && callback(response);
       return;
     }
 
-    if (aResponse.exceptionMessage) {
-      let message = new Messages.Simple(aResponse.exceptionMessage, {
+    if (response.exceptionMessage) {
+      let message = new Messages.Simple(response.exceptionMessage, {
         category: "output",
         severity: "error",
-        timestamp: aResponse.timestamp,
+        timestamp: response.timestamp,
       });
       this.hud.output.addMessage(message);
       message._objectActors = new Set();
-      if (WebConsoleUtils.isActorGrip(aResponse.exception)) {
-        message._objectActors.add(aResponse.exception.actor);
+      if (WebConsoleUtils.isActorGrip(response.exception)) {
+        message._objectActors.add(response.exception.actor);
       }
     }
 
-    let helper = aResponse.helperResult || { type: null };
+    let helper = response.helperResult || { type: null };
     let helperGrip = null;
     if (helper.type == "inspectObject") {
       helperGrip = helper.object;
     }
 
-    let grips = [aResponse.result, helperGrip];
+    let grips = [response.result, helperGrip];
     for (let grip of grips) {
       if (WebConsoleUtils.isActorGrip(grip)) {
         this.hud._releaseObject(grip.actor);
       }
     }
 
-    aCallback && aCallback(aResponse);
+    callback && callback(response);
   },
 
 
@@ -3879,7 +3881,7 @@ JSTerm.prototype = {
 
 
 
-  clearOutput: function JST_clearOutput(aClearStorage)
+  clearOutput: function JST_clearOutput(clearStorage)
   {
     let hud = this.hud;
     let outputNode = hud.outputNode;
@@ -3894,7 +3896,7 @@ JSTerm.prototype = {
     this.webConsoleClient.clearNetworkRequests();
     hud._repeatNodes = {};
 
-    if (aClearStorage) {
+    if (clearStorage) {
       this.webConsoleClient.clearMessagesCache();
     }
 
@@ -3946,10 +3948,10 @@ JSTerm.prototype = {
 
 
 
-  setInputValue: function JST_setInputValue(aNewValue)
+  setInputValue: function JST_setInputValue(newValue)
   {
-    this.inputNode.value = aNewValue;
-    this.lastInputValue = aNewValue;
+    this.inputNode.value = newValue;
+    this.lastInputValue = newValue;
     this.completeNode.value = "";
     this.resizeInput();
     this._inputChanged = true;
@@ -3987,13 +3989,13 @@ JSTerm.prototype = {
 
 
 
-  _keyPress: function JST__keyPress(aEvent)
+  _keyPress: function JST__keyPress(event)
   {
     let inputNode = this.inputNode;
     let inputUpdated = false;
 
-    if (aEvent.ctrlKey) {
-      switch (aEvent.charCode) {
+    if (event.ctrlKey) {
+      switch (event.charCode) {
         case 101:
           
           if (Services.appinfo.OS == "WINNT") {
@@ -4011,7 +4013,7 @@ JSTerm.prototype = {
             }
           }
           inputNode.setSelectionRange(lineEndPos, lineEndPos);
-          aEvent.preventDefault();
+          event.preventDefault();
           this.clearCompletion();
           break;
 
@@ -4022,7 +4024,7 @@ JSTerm.prototype = {
           if (Services.appinfo.OS == "Darwin" &&
               this.canCaretGoNext() &&
               this.historyPeruse(HISTORY_FORWARD)) {
-            aEvent.preventDefault();
+            event.preventDefault();
             
             
             
@@ -4038,7 +4040,7 @@ JSTerm.prototype = {
           if (Services.appinfo.OS == "Darwin" &&
               this.canCaretGoPrevious() &&
               this.historyPeruse(HISTORY_BACK)) {
-            aEvent.preventDefault();
+            event.preventDefault();
             
             
             
@@ -4051,24 +4053,24 @@ JSTerm.prototype = {
       }
       return;
     }
-    else if (aEvent.shiftKey &&
-        aEvent.keyCode == Ci.nsIDOMKeyEvent.DOM_VK_RETURN) {
+    else if (event.shiftKey &&
+        event.keyCode == Ci.nsIDOMKeyEvent.DOM_VK_RETURN) {
       
       
       return;
     }
 
-    switch (aEvent.keyCode) {
+    switch (event.keyCode) {
       case Ci.nsIDOMKeyEvent.DOM_VK_ESCAPE:
         if (this.autocompletePopup.isOpen) {
           this.clearCompletion();
-          aEvent.preventDefault();
-          aEvent.stopPropagation();
+          event.preventDefault();
+          event.stopPropagation();
         }
         else if (this.sidebar) {
           this._sidebarDestroy();
-          aEvent.preventDefault();
-          aEvent.stopPropagation();
+          event.preventDefault();
+          event.stopPropagation();
         }
         break;
 
@@ -4082,7 +4084,7 @@ JSTerm.prototype = {
           this.execute();
           this._inputChanged = false;
         }
-        aEvent.preventDefault();
+        event.preventDefault();
         break;
 
       case Ci.nsIDOMKeyEvent.DOM_VK_UP:
@@ -4096,7 +4098,7 @@ JSTerm.prototype = {
           inputUpdated = this.historyPeruse(HISTORY_BACK);
         }
         if (inputUpdated) {
-          aEvent.preventDefault();
+          event.preventDefault();
         }
         break;
 
@@ -4111,7 +4113,7 @@ JSTerm.prototype = {
           inputUpdated = this.historyPeruse(HISTORY_FORWARD);
         }
         if (inputUpdated) {
-          aEvent.preventDefault();
+          event.preventDefault();
         }
         break;
 
@@ -4129,7 +4131,7 @@ JSTerm.prototype = {
               this.hud.outputNode.parentNode.clientHeight
             );
         }
-        aEvent.preventDefault();
+        event.preventDefault();
         break;
 
       case Ci.nsIDOMKeyEvent.DOM_VK_PAGE_DOWN:
@@ -4146,26 +4148,26 @@ JSTerm.prototype = {
               this.hud.outputNode.parentNode.clientHeight
             );
         }
-        aEvent.preventDefault();
+        event.preventDefault();
         break;
 
       case Ci.nsIDOMKeyEvent.DOM_VK_HOME:
         if (this.autocompletePopup.isOpen) {
           this.autocompletePopup.selectedIndex = 0;
-          aEvent.preventDefault();
+          event.preventDefault();
         } else if (this.inputNode.value.length <= 0) {
           this.hud.outputNode.parentNode.scrollTop = 0;
-          aEvent.preventDefault();
+          event.preventDefault();
         }
         break;
 
       case Ci.nsIDOMKeyEvent.DOM_VK_END:
         if (this.autocompletePopup.isOpen) {
           this.autocompletePopup.selectedIndex = this.autocompletePopup.itemCount - 1;
-          aEvent.preventDefault();
+          event.preventDefault();
         } else if (this.inputNode.value.length <= 0) {
           this.hud.outputNode.parentNode.scrollTop = this.hud.outputNode.parentNode.scrollHeight;
-          aEvent.preventDefault();
+          event.preventDefault();
         }
         break;
 
@@ -4187,7 +4189,7 @@ JSTerm.prototype = {
             this.complete(this.COMPLETE_HINT_ONLY) &&
             this.lastCompletion.value &&
             this.acceptProposedCompletion()) {
-          aEvent.preventDefault();
+          event.preventDefault();
         }
         if (this.autocompletePopup.isOpen) {
           this.clearCompletion();
@@ -4199,11 +4201,11 @@ JSTerm.prototype = {
         if (this.complete(this.COMPLETE_HINT_ONLY) &&
             this.lastCompletion &&
             this.acceptProposedCompletion()) {
-          aEvent.preventDefault();
+          event.preventDefault();
         }
         else if (this._inputChanged) {
           this.updateCompleteNode(l10n.getStr("Autocomplete.blank"));
-          aEvent.preventDefault();
+          event.preventDefault();
         }
         break;
       default:
@@ -4229,14 +4231,14 @@ JSTerm.prototype = {
 
 
 
-  historyPeruse: function JST_historyPeruse(aDirection)
+  historyPeruse: function JST_historyPeruse(direction)
   {
     if (!this.history.length) {
       return false;
     }
 
     
-    if (aDirection == HISTORY_BACK) {
+    if (direction == HISTORY_BACK) {
       if (this.historyPlaceHolder <= 0) {
         return false;
       }
@@ -4253,7 +4255,7 @@ JSTerm.prototype = {
       this.setInputValue(inputVal);
     }
     
-    else if (aDirection == HISTORY_FORWARD) {
+    else if (direction == HISTORY_FORWARD) {
       if (this.historyPlaceHolder >= (this.history.length-1)) {
         return false;
       }
@@ -4354,7 +4356,7 @@ JSTerm.prototype = {
 
 
 
-  complete: function JSTF_complete(aType, aCallback)
+  complete: function JSTF_complete(type, callback)
   {
     let inputNode = this.inputNode;
     let inputValue = inputNode.value;
@@ -4363,7 +4365,7 @@ JSTerm.prototype = {
     
     if (!inputValue) {
       this.clearCompletion();
-      aCallback && aCallback(this);
+      callback && callback(this);
       this.emit("autocomplete-updated");
       return false;
     }
@@ -4371,38 +4373,38 @@ JSTerm.prototype = {
     
     if (inputNode.selectionStart != inputNode.selectionEnd) {
       this.clearCompletion();
-      aCallback && aCallback(this);
+      callback && callback(this);
       this.emit("autocomplete-updated");
       return false;
     }
 
     
     if (this.lastCompletion.value != inputValue || frameActor != this._lastFrameActorId) {
-      this._updateCompletionResult(aType, aCallback);
+      this._updateCompletionResult(type, callback);
       return false;
     }
 
     let popup = this.autocompletePopup;
     let accepted = false;
 
-    if (aType != this.COMPLETE_HINT_ONLY && popup.itemCount == 1) {
+    if (type != this.COMPLETE_HINT_ONLY && popup.itemCount == 1) {
       this.acceptProposedCompletion();
       accepted = true;
     }
-    else if (aType == this.COMPLETE_BACKWARD) {
+    else if (type == this.COMPLETE_BACKWARD) {
       popup.selectPreviousItem();
     }
-    else if (aType == this.COMPLETE_FORWARD) {
+    else if (type == this.COMPLETE_FORWARD) {
       popup.selectNextItem();
     }
-    else if (aType == this.COMPLETE_PAGEUP) {
+    else if (type == this.COMPLETE_PAGEUP) {
       popup.selectPreviousPageItem();
     }
-    else if (aType == this.COMPLETE_PAGEDOWN) {
+    else if (type == this.COMPLETE_PAGEDOWN) {
       popup.selectNextPageItem();
     }
 
-    aCallback && aCallback(this);
+    callback && callback(this);
     this.emit("autocomplete-updated");
     return accepted || popup.itemCount > 0;
   },
@@ -4418,7 +4420,7 @@ JSTerm.prototype = {
 
 
   _updateCompletionResult:
-  function JST__updateCompletionResult(aType, aCallback)
+  function JST__updateCompletionResult(type, callback)
   {
     let frameActor = this.getFrameActor(this.SELECTED_FRAME);
     if (this.lastCompletion.value == this.inputNode.value && frameActor == this._lastFrameActorId) {
@@ -4457,12 +4459,12 @@ JSTerm.prototype = {
 
       this.lastCompletion = {
         requestId: null,
-        completionType: aType,
+        completionType: type,
         value: null,
       };
 
       let response = { matches: newList, matchProp: filterBy };
-      this._receiveAutocompleteProperties(null, aCallback, response);
+      this._receiveAutocompleteProperties(null, callback, response);
       return;
     }
 
@@ -4470,14 +4472,14 @@ JSTerm.prototype = {
 
     this.lastCompletion = {
       requestId: requestId,
-      completionType: aType,
+      completionType: type,
       value: null,
     };
 
-    let callback = this._receiveAutocompleteProperties.bind(this, requestId,
-                                                            aCallback);
+    let autocompleteCallback = this._receiveAutocompleteProperties.bind(this, requestId,
+                                                            callback);
 
-    this.webConsoleClient.autocomplete(input, cursor, callback, frameActor);
+    this.webConsoleClient.autocomplete(input, cursor, autocompleteCallback, frameActor);
   },
 
   
@@ -4494,34 +4496,34 @@ JSTerm.prototype = {
 
 
   _receiveAutocompleteProperties:
-  function JST__receiveAutocompleteProperties(aRequestId, aCallback, aMessage)
+  function JST__receiveAutocompleteProperties(requestId, callback, message)
   {
     let inputNode = this.inputNode;
     let inputValue = inputNode.value;
     if (this.lastCompletion.value == inputValue ||
-        aRequestId != this.lastCompletion.requestId) {
+        requestId != this.lastCompletion.requestId) {
       return;
     }
     
     let cursor = inputNode.selectionStart;
     let inputUntilCursor = inputValue.substring(0, cursor);
 
-    if (aRequestId != null && /[a-zA-Z0-9.]$/.test(inputUntilCursor)) {
-      this._autocompleteCache = aMessage.matches;
+    if (requestId != null && /[a-zA-Z0-9.]$/.test(inputUntilCursor)) {
+      this._autocompleteCache = message.matches;
       this._autocompleteQuery = inputUntilCursor;
     }
 
-    let matches = aMessage.matches;
-    let lastPart = aMessage.matchProp;
+    let matches = message.matches;
+    let lastPart = message.matchProp;
     if (!matches.length) {
       this.clearCompletion();
-      aCallback && aCallback(this);
+      callback && callback(this);
       this.emit("autocomplete-updated");
       return;
     }
 
-    let items = matches.reverse().map(function(aMatch) {
-      return { preLabel: lastPart, label: aMatch };
+    let items = matches.reverse().map(function(match) {
+      return { preLabel: lastPart, label: match };
     });
 
     let popup = this.autocompletePopup;
@@ -4561,7 +4563,7 @@ JSTerm.prototype = {
       popup.selectNextItem();
     }
 
-    aCallback && aCallback(this);
+    callback && callback(this);
     this.emit("autocomplete-updated");
   },
 
@@ -4632,11 +4634,11 @@ JSTerm.prototype = {
 
 
 
-  updateCompleteNode: function JSTF_updateCompleteNode(aSuffix)
+  updateCompleteNode: function JSTF_updateCompleteNode(suffix)
   {
     
-    let prefix = aSuffix ? this.inputNode.value.replace(/[\S]/g, " ") : "";
-    this.completeNode.value = prefix + aSuffix;
+    let prefix = suffix ? this.inputNode.value.replace(/[\S]/g, " ") : "";
+    this.completeNode.value = prefix + suffix;
   },
 
 
@@ -4706,9 +4708,9 @@ var Utils = {
 
 
 
-  scrollToVisible: function Utils_scrollToVisible(aNode)
+  scrollToVisible: function Utils_scrollToVisible(node)
   {
-    aNode.scrollIntoView(false);
+    node.scrollIntoView(false);
   },
 
   
@@ -4719,11 +4721,11 @@ var Utils = {
 
 
 
-  isOutputScrolledToBottom: function Utils_isOutputScrolledToBottom(aOutputNode)
+  isOutputScrolledToBottom: function Utils_isOutputScrolledToBottom(outputNode)
   {
-    let lastNodeHeight = aOutputNode.lastChild ?
-                         aOutputNode.lastChild.clientHeight : 0;
-    let scrollNode = aOutputNode.parentNode;
+    let lastNodeHeight = outputNode.lastChild ?
+                         outputNode.lastChild.clientHeight : 0;
+    let scrollNode = outputNode.parentNode;
     return scrollNode.scrollTop + scrollNode.clientHeight >=
            scrollNode.scrollHeight - lastNodeHeight / 2;
   },
@@ -4737,9 +4739,9 @@ var Utils = {
 
 
 
-  categoryForScriptError: function Utils_categoryForScriptError(aScriptError)
+  categoryForScriptError: function Utils_categoryForScriptError(scriptError)
   {
-    let category = aScriptError.category;
+    let category = scriptError.category;
 
     if (/^(?:CSS|Layout)\b/.test(category)) {
       return CATEGORY_CSS;
@@ -4774,12 +4776,12 @@ var Utils = {
 
 
 
-  logLimitForCategory: function Utils_logLimitForCategory(aCategory)
+  logLimitForCategory: function Utils_logLimitForCategory(category)
   {
     let logLimit = DEFAULT_LOG_LIMIT;
 
     try {
-      let prefName = CATEGORY_CLASS_FRAGMENTS[aCategory];
+      let prefName = CATEGORY_CLASS_FRAGMENTS[category];
       logLimit = Services.prefs.getIntPref("devtools.hud.loglimit." + prefName);
       logLimit = Math.max(logLimit, 1);
     }
@@ -4797,9 +4799,9 @@ var Utils = {
 
 
 
-function CommandController(aWebConsole)
+function CommandController(webConsole)
 {
-  this.owner = aWebConsole;
+  this.owner = webConsole;
 }
 
 CommandController.prototype = {
@@ -4832,17 +4834,17 @@ CommandController.prototype = {
     this.owner.copySelectedItems({ linkOnly: false, contextmenu: true });
   },
 
-  supportsCommand: function CommandController_supportsCommand(aCommand)
+  supportsCommand: function CommandController_supportsCommand(command)
   {
     if (!this.owner || !this.owner.output) {
       return false;
     }
-    return this.isCommandEnabled(aCommand);
+    return this.isCommandEnabled(command);
   },
 
-  isCommandEnabled: function CommandController_isCommandEnabled(aCommand)
+  isCommandEnabled: function CommandController_isCommandEnabled(command)
   {
-    switch (aCommand) {
+    switch (command) {
       case "consoleCmd_openURL":
       case "consoleCmd_copyURL": {
         
@@ -4869,9 +4871,9 @@ CommandController.prototype = {
     return false;
   },
 
-  doCommand: function CommandController_doCommand(aCommand)
+  doCommand: function CommandController_doCommand(command)
   {
-    switch (aCommand) {
+    switch (command) {
       case "consoleCmd_openURL":
         this.openURL();
         break;
@@ -4920,10 +4922,10 @@ CommandController.prototype = {
 
 
 
-function WebConsoleConnectionProxy(aWebConsole, aTarget)
+function WebConsoleConnectionProxy(webConsole, target)
 {
-  this.owner = aWebConsole;
-  this.target = aTarget;
+  this.owner = webConsole;
+  this.target = target;
 
   this._onPageError = this._onPageError.bind(this);
   this._onLogMessage = this._onLogMessage.bind(this);
@@ -5093,18 +5095,18 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onAttachConsole: function WCCP__onAttachConsole(aResponse, aWebConsoleClient)
+  _onAttachConsole: function WCCP__onAttachConsole(response, webConsoleClient)
   {
-    if (aResponse.error) {
-      Cu.reportError("attachConsole failed: " + aResponse.error + " " +
-                     aResponse.message);
-      this._connectDefer.reject(aResponse);
+    if (response.error) {
+      Cu.reportError("attachConsole failed: " + response.error + " " +
+                     response.message);
+      this._connectDefer.reject(response);
       return;
     }
 
-    this.webConsoleClient = aWebConsoleClient;
+    this.webConsoleClient = webConsoleClient;
 
-    this._hasNativeConsoleAPI = aResponse.nativeConsoleAPI;
+    this._hasNativeConsoleAPI = response.nativeConsoleAPI;
     this.webConsoleClient.on("networkEvent", this._onNetworkEvent);
     this.webConsoleClient.on("networkEventUpdate", this._onNetworkEventUpdate);
 
@@ -5121,12 +5123,12 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onCachedMessages: function WCCP__onCachedMessages(aResponse)
+  _onCachedMessages: function WCCP__onCachedMessages(response)
   {
-    if (aResponse.error) {
-      Cu.reportError("Web Console getCachedMessages error: " + aResponse.error +
-                     " " + aResponse.message);
-      this._connectDefer.reject(aResponse);
+    if (response.error) {
+      Cu.reportError("Web Console getCachedMessages error: " + response.error +
+                     " " + response.message);
+      this._connectDefer.reject(response);
       return;
     }
 
@@ -5136,7 +5138,7 @@ WebConsoleConnectionProxy.prototype = {
       Cu.reportError("Web Console getCachedMessages error: invalid state.");
     }
 
-    let messages = aResponse.messages.concat(...this.webConsoleClient.getNetworkEvents());
+    let messages = response.messages.concat(...this.webConsoleClient.getNetworkEvents());
     messages.sort((a, b) => a.timeStamp - b.timeStamp);
 
     this.owner.displayCachedMessages(messages);
@@ -5159,10 +5161,10 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onPageError: function WCCP__onPageError(aType, aPacket)
+  _onPageError: function WCCP__onPageError(type, packet)
   {
-    if (this.owner && aPacket.from == this._consoleActor) {
-      this.owner.handlePageError(aPacket.pageError);
+    if (this.owner && packet.from == this._consoleActor) {
+      this.owner.handlePageError(packet.pageError);
     }
   },
 
@@ -5176,10 +5178,10 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onLogMessage: function WCCP__onLogMessage(aType, aPacket)
+  _onLogMessage: function WCCP__onLogMessage(type, packet)
   {
-    if (this.owner && aPacket.from == this._consoleActor) {
-      this.owner.handleLogMessage(aPacket);
+    if (this.owner && packet.from == this._consoleActor) {
+      this.owner.handleLogMessage(packet);
     }
   },
 
@@ -5193,10 +5195,10 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onConsoleAPICall: function WCCP__onConsoleAPICall(aType, aPacket)
+  _onConsoleAPICall: function WCCP__onConsoleAPICall(type, packet)
   {
-    if (this.owner && aPacket.from == this._consoleActor) {
-      this.owner.handleConsoleAPICall(aPacket.message);
+    if (this.owner && packet.from == this._consoleActor) {
+      this.owner.handleConsoleAPICall(packet.message);
     }
   },
 
@@ -5246,17 +5248,17 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onFileActivity: function WCCP__onFileActivity(aType, aPacket)
+  _onFileActivity: function WCCP__onFileActivity(type, packet)
   {
-    if (this.owner && aPacket.from == this._consoleActor) {
-      this.owner.handleFileActivity(aPacket.uri);
+    if (this.owner && packet.from == this._consoleActor) {
+      this.owner.handleFileActivity(packet.uri);
     }
   },
 
-  _onReflowActivity: function WCCP__onReflowActivity(aType, aPacket)
+  _onReflowActivity: function WCCP__onReflowActivity(type, packet)
   {
-    if (this.owner && aPacket.from == this._consoleActor) {
-      this.owner.handleReflowActivity(aPacket);
+    if (this.owner && packet.from == this._consoleActor) {
+      this.owner.handleReflowActivity(packet);
     }
   },
 
@@ -5270,10 +5272,10 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onServerLogCall: function WCCP__onServerLogCall(aType, aPacket)
+  _onServerLogCall: function WCCP__onServerLogCall(type, packet)
   {
-    if (this.owner && aPacket.from == this._consoleActor) {
-      this.owner.handleConsoleAPICall(aPacket.message);
+    if (this.owner && packet.from == this._consoleActor) {
+      this.owner.handleConsoleAPICall(packet.message);
     }
   },
 
@@ -5288,9 +5290,9 @@ WebConsoleConnectionProxy.prototype = {
 
 
   _onLastPrivateContextExited:
-  function WCCP__onLastPrivateContextExited(aType, aPacket)
+  function WCCP__onLastPrivateContextExited(type, packet)
   {
-    if (this.owner && aPacket.from == this._consoleActor) {
+    if (this.owner && packet.from == this._consoleActor) {
       this.owner.jsterm.clearPrivateMessages();
     }
   },
@@ -5305,13 +5307,13 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onTabNavigated: function WCCP__onTabNavigated(aEvent, aPacket)
+  _onTabNavigated: function WCCP__onTabNavigated(event, packet)
   {
     if (!this.owner) {
       return;
     }
 
-    this.owner.handleTabNavigated(aEvent, aPacket);
+    this.owner.handleTabNavigated(event, packet);
   },
 
   
@@ -5320,10 +5322,10 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  releaseActor: function WCCP_releaseActor(aActor)
+  releaseActor: function WCCP_releaseActor(actor)
   {
     if (this.client) {
-      this.client.release(aActor);
+      this.client.release(actor);
     }
   },
 
@@ -5386,9 +5388,9 @@ gSequenceId.n = 0;
 
 
 
-function ConsoleContextMenu(aOwner)
+function ConsoleContextMenu(owner)
 {
-  this.owner = aOwner;
+  this.owner = owner;
   this.popup = this.owner.document.getElementById("output-contextmenu");
   this.build = this.build.bind(this);
   this.popup.addEventListener("popupshowing", this.build);
@@ -5400,9 +5402,9 @@ ConsoleContextMenu.prototype = {
   
 
 
-  build: function CCM_build(aEvent)
+  build: function CCM_build(event)
   {
-    let metadata = this.getSelectionMetadata(aEvent.rangeParent);
+    let metadata = this.getSelectionMetadata(event.rangeParent);
     for (let element of this.popup.children) {
       element.hidden = this.shouldHideMenuItem(element, metadata);
     }
@@ -5416,7 +5418,7 @@ ConsoleContextMenu.prototype = {
 
 
 
-  getSelectionMetadata: function CCM_getSelectionMetadata(aClickElement)
+  getSelectionMetadata: function CCM_getSelectionMetadata(clickElement)
   {
     let metadata = {
       selectionType: "",
@@ -5424,7 +5426,7 @@ ConsoleContextMenu.prototype = {
     };
     let selectedItems = this.owner.output.getSelectedMessages();
     if (!selectedItems.length) {
-      let clickedItem = this.owner.output.getMessageForElement(aClickElement);
+      let clickedItem = this.owner.output.getMessageForElement(clickElement);
       if (clickedItem) {
         this.lastClickedMessage = clickedItem;
         selectedItems = [clickedItem];
@@ -5465,21 +5467,21 @@ ConsoleContextMenu.prototype = {
 
 
 
-  shouldHideMenuItem: function CCM_shouldHideMenuItem(aMenuItem, aMetadata)
+  shouldHideMenuItem: function CCM_shouldHideMenuItem(menuItem, metadata)
   {
-    let selectionType = aMenuItem.getAttribute("selectiontype");
-    if (selectionType && !aMetadata.selectionType == selectionType) {
+    let selectionType = menuItem.getAttribute("selectiontype");
+    if (selectionType && !metadata.selectionType == selectionType) {
       return true;
     }
 
-    let selection = aMenuItem.getAttribute("selection");
+    let selection = menuItem.getAttribute("selection");
     if (!selection) {
       return false;
     }
 
     let shouldHide = true;
     let itemData = selection.split("|");
-    for (let type of aMetadata.selection) {
+    for (let type of metadata.selection) {
       
       if (itemData.indexOf(type) !== -1) {
         shouldHide = false;
