@@ -318,7 +318,8 @@ IsInterfacePrototype(DOMObjectType type)
   return type == eInterfacePrototype || type == eGlobalInterfacePrototype;
 }
 
-typedef JSObject* (*ParentGetter)(JSContext* aCx, JS::Handle<JSObject*> aObj);
+typedef JSObject* (*AssociatedGlobalGetter)(JSContext* aCx,
+                                            JS::Handle<JSObject*> aObj);
 
 typedef JSObject* (*ProtoGetter)(JSContext* aCx);
 
@@ -351,7 +352,10 @@ struct DOMJSClass
 
   const NativePropertyHooks* mNativeHooks;
 
-  ParentGetter mGetParent;
+  
+  
+  
+  AssociatedGlobalGetter mGetAssociatedGlobal;
   ProtoHandleGetter mGetProto;
 
   
