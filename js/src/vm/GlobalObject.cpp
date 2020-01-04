@@ -179,6 +179,13 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
         if (!proto)
             return false;
 
+        
+        
+        
+        
+        
+        MOZ_ASSERT(!global->isStandardClassResolved(key));
+
         global->setPrototype(key, ObjectValue(*proto));
     }
 
