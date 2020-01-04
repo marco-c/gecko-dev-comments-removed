@@ -172,7 +172,6 @@
 
 
 
-#define XPC_CONTEXT_MAP_LENGTH                   8
 #define XPC_JS_MAP_LENGTH                       32
 #define XPC_JS_CLASS_MAP_LENGTH                 32
 
@@ -184,7 +183,6 @@
 #define XPC_NATIVE_SET_MAP_LENGTH               32
 #define XPC_NATIVE_JSCLASS_MAP_LENGTH           16
 #define XPC_THIS_TRANSLATOR_MAP_LENGTH           4
-#define XPC_NATIVE_WRAPPER_MAP_LENGTH            8
 #define XPC_WRAPPER_MAP_LENGTH                   8
 
 
@@ -212,8 +210,6 @@ extern const char XPC_XPCONNECT_CONTRACTID[];
 
 
 #define WRAPPER_FLAGS JSCLASS_HAS_PRIVATE
-
-#define INVALID_OBJECT ((JSObject*)1)
 
 
 
@@ -1243,8 +1239,6 @@ class XPCNativeInterface
 
     void DebugDump(int16_t depth);
 
-#define XPC_NATIVE_IFACE_MARK_FLAG ((uint16_t)JS_BIT(15)) // only high bit of 16 is set
-
     void Mark() {
         mMarked = 1;
     }
@@ -1401,8 +1395,6 @@ class XPCNativeSet
 
     inline bool MatchesSetUpToInterface(const XPCNativeSet* other,
                                           XPCNativeInterface* iface) const;
-
-#define XPC_NATIVE_SET_MARK_FLAG ((uint16_t)JS_BIT(15)) // only high bit of 16 is set
 
     inline void Mark();
 
@@ -2036,7 +2028,6 @@ public:
     }
 
     void TraceSelf(JSTracer* trc) {
-        
         
         
         
