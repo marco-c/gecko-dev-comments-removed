@@ -1379,6 +1379,19 @@ var BookmarkingUI = {
       this._populateRecentBookmarks(aHeaderItem, aExtraCSSClass);
     };
 
+    this._recentlyBookmarkedObserver = {
+      QueryInterface: XPCOMUtils.generateQI([
+        Ci.nsINavBookmarkObserver,
+        Ci.nsISupportsWeakReference
+      ])
+    };
+    this._recentlyBookmarkedObserver.onItemRemoved = () => {
+      
+      
+      
+      this._populateRecentBookmarks(aHeaderItem, aExtraCSSClass);
+    };
+
     let updatePlacesContextMenu = (shouldHidePrefUI = false) => {
       let prefEnabled = !shouldHidePrefUI && Services.prefs.getBoolPref(this.RECENTLY_BOOKMARKED_PREF);
       document.getElementById("placesContext_showRecentlyBookmarked").hidden = shouldHidePrefUI || prefEnabled;
@@ -1402,12 +1415,15 @@ var BookmarkingUI = {
         updatePlacesContextMenu(true);
 
         Services.prefs.removeObserver(this.RECENTLY_BOOKMARKED_PREF, prefObserver, false);
+        PlacesUtils.bookmarks.removeObserver(this._recentlyBookmarkedObserver);
+        this._recentlyBookmarkedObserver = null;
         placesContextMenu.removeEventListener("popupshowing", onPlacesContextMenuShowing);
         bookmarksMenu.removeEventListener("popuphidden", onBookmarksMenuHidden);
       }
     };
 
     Services.prefs.addObserver(this.RECENTLY_BOOKMARKED_PREF, prefObserver, false);
+    PlacesUtils.bookmarks.addObserver(this._recentlyBookmarkedObserver, true);
     placesContextMenu.addEventListener("popupshowing", onPlacesContextMenuShowing);
     bookmarksMenu.addEventListener("popuphidden", onBookmarksMenuHidden);
   },
