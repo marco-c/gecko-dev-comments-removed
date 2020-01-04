@@ -215,11 +215,21 @@ this.UITelemetry = {
     delete this._simpleMeasureFunctions[aName];
   },
 
-  getUIMeasurements: function() {
+  
+
+
+
+
+
+  getUIMeasurements: function(aClear) {
     if (!this.enabled) {
       return [];
     }
 
-    return this._measurements.slice();
+    let measurements = this._measurements.slice();
+    if (aClear) {
+      this._measurements = [];
+    }
+    return measurements;
   }
 };
