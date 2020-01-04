@@ -1432,7 +1432,7 @@ void MediaDecoderStateMachine::InitiateDecodeRecoverySeek(TrackSet aTracks)
   mCurrentSeek = Move(seekJob);
   
   mSeekTask = new AccurateSeekTask(mDecoderID, OwnerThread(),
-                                   mReader.get(), mCurrentSeek,
+                                   mReader.get(), mCurrentSeek.mTarget,
                                    mInfo, Duration(), GetMediaTime());
 
   mOnSeekingStart.Notify(MediaDecoderEventVisibility::Suppressed);
@@ -1637,11 +1637,11 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
   mCurrentSeek = Move(aSeekJob);
   if (mCurrentSeek.mTarget.IsAccurate() || mCurrentSeek.mTarget.IsFast()) {
     mSeekTask = new AccurateSeekTask(mDecoderID, OwnerThread(),
-                                     mReader.get(), mCurrentSeek,
+                                     mReader.get(), mCurrentSeek.mTarget,
                                      mInfo, Duration(), GetMediaTime());
   } else if (mCurrentSeek.mTarget.IsNextFrame()) {
     mSeekTask = new NextFrameSeekTask(mDecoderID, OwnerThread(), mReader.get(),
-                                      mCurrentSeek, mInfo, Duration(),
+                                      mCurrentSeek.mTarget, mInfo, Duration(),
                                       GetMediaTime(), AudioQueue(), VideoQueue());
   } else {
     MOZ_DIAGNOSTIC_ASSERT(false, "Cannot handle this seek task.");
@@ -1651,9 +1651,14 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
   
   
   StopPlayback();
+
+  
+  
+  
+  
   UpdatePlaybackPositionInternal(mSeekTask->GetSeekTarget().GetTime().ToMicroseconds());
 
-  mOnSeekingStart.Notify(mSeekTask->GetSeekTarget().mEventVisibility);
+  mOnSeekingStart.Notify(mCurrentSeek.mTarget.mEventVisibility);
 
   
   if (mSeekTask->NeedToResetMDSM()) { Reset(); }
