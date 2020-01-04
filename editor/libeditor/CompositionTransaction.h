@@ -6,7 +6,7 @@
 #ifndef CompositionTransaction_h
 #define CompositionTransaction_h
 
-#include "EditTransactionBase.h"          
+#include "mozilla/EditTransactionBase.h"  
 #include "nsCycleCollectionParticipant.h" 
 #include "nsString.h"                     
 

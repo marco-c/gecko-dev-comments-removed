@@ -5,11 +5,11 @@
 
 #include "mozilla/TextEditor.h"
 
-#include "EditorUtils.h"  
 #include "InternetCiter.h"
 #include "TextEditUtils.h"
 #include "gfxFontUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/EditorUtils.h" 
 #include "mozilla/mozalloc.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TextEditRules.h"

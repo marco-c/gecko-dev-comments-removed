@@ -6,7 +6,7 @@
 #ifndef SplitNodeTransaction_h
 #define SplitNodeTransaction_h
 
-#include "EditTransactionBase.h"        
+#include "mozilla/EditTransactionBase.h" 
 #include "nsCOMPtr.h"                   
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"            

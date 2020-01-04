@@ -6,7 +6,7 @@
 #ifndef SetDocumentTitleTransaction_h
 #define SetDocumentTitleTransaction_h
 
-#include "EditTransactionBase.h"        
+#include "mozilla/EditTransactionBase.h" 
 #include "nsString.h"                   
 #include "nscore.h"                     
 

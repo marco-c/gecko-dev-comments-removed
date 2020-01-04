@@ -6,8 +6,8 @@
 #ifndef ChangeAttributeTransaction_h
 #define ChangeAttributeTransaction_h
 
-#include "EditTransactionBase.h"          
 #include "mozilla/Attributes.h"           
+#include "mozilla/EditTransactionBase.h"  
 #include "nsCOMPtr.h"                     
 #include "nsCycleCollectionParticipant.h" 
 #include "nsISupportsImpl.h"              

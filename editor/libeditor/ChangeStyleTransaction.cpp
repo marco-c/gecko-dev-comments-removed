@@ -3,7 +3,7 @@
 
 
 
-#include "ChangeStyleTransaction.h"
+#include "mozilla/ChangeStyleTransaction.h"
 
 #include "mozilla/dom/Element.h"        
 #include "nsAString.h"                  

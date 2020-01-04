@@ -4,8 +4,8 @@
 
 
 
-#ifndef EditorUtils_h
-#define EditorUtils_h
+#ifndef mozilla_EditorUtils_h
+#define mozilla_EditorUtils_h
 
 #include "mozilla/EditorBase.h"
 #include "mozilla/GuardObjects.h"

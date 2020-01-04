@@ -3,10 +3,10 @@
 
 
 
-#ifndef CSSEditUtils_h
-#define CSSEditUtils_h
+#ifndef mozilla_CSSEditUtils_h
+#define mozilla_CSSEditUtils_h
 
-#include "ChangeStyleTransaction.h" 
+#include "mozilla/ChangeStyleTransaction.h" 
 #include "nsCOMPtr.h"               
 #include "nsTArray.h"               
 #include "nscore.h"                 

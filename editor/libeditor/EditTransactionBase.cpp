@@ -3,7 +3,7 @@
 
 
 
-#include "EditTransactionBase.h"
+#include "mozilla/EditTransactionBase.h"
 #include "nsError.h"
 #include "nsISupportsBase.h"
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef EditTransactionBase_h
-#define EditTransactionBase_h
+#ifndef mozilla_EditTransactionBase_h
+#define mozilla_EditTransactionBase_h
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"

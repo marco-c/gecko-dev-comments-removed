@@ -3,10 +3,10 @@
 
 
 
-#include "CSSEditUtils.h"
+#include "mozilla/CSSEditUtils.h"
 
-#include "ChangeStyleTransaction.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/ChangeStyleTransaction.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/css/Declaration.h"

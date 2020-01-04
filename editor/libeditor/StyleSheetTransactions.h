@@ -6,7 +6,7 @@
 #ifndef StylesheetTransactions_h
 #define StylesheetTransactions_h
 
-#include "EditTransactionBase.h"        
+#include "mozilla/EditTransactionBase.h" 
 #include "mozilla/StyleSheetHandle.h"   
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"                       

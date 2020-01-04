@@ -3,7 +3,7 @@
 
 
 
-#include "EditorUtils.h"
+#include "mozilla/EditorUtils.h"
 
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/dom/Selection.h"

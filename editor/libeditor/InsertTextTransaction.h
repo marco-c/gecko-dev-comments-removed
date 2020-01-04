@@ -6,7 +6,7 @@
 #ifndef InsertTextTransaction_h
 #define InsertTextTransaction_h
 
-#include "EditTransactionBase.h"        
+#include "mozilla/EditTransactionBase.h"  
 #include "nsCycleCollectionParticipant.h" 
 #include "nsID.h"                       
 #include "nsISupportsImpl.h"            
