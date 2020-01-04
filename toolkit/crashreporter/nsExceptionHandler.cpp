@@ -186,7 +186,7 @@ static char const * const kCrashEventAnnotations[] = {
   "ReleaseChannel",
   "SecondsSinceLastCrash",
   "ShutdownProgress",
-  "StartupCrash"
+  "StartupCrash",
   "TelemetryEnvironment",
   "Version",
   
