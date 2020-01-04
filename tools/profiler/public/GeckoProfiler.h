@@ -215,7 +215,7 @@ static inline void profiler_lock() {}
 
 static inline void profiler_unlock() {}
 
-static inline void profiler_register_thread(const char* name, void* stackTop) {}
+static inline void profiler_register_thread(const char* name, void* guessStackTop) {}
 static inline void profiler_unregister_thread() {}
 
 

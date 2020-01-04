@@ -57,6 +57,7 @@
 #include "PlatformMacros.h"
 #include "v8-support.h"
 #include <vector>
+#include "StackTop.h"
 
 
 
