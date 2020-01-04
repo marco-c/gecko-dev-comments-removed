@@ -17,7 +17,8 @@ def add_libdir_to_path():
 add_libdir_to_path()
 
 import jittests
-from tests import get_jitflags, get_environment_overlay, change_env
+from tests import get_jitflags, get_cpu_count, get_environment_overlay, \
+                  change_env
 
 
 def which(name):
@@ -32,18 +33,8 @@ def which(name):
     return name
 
 def main(argv):
-
-    
-    max_jobs_default = 1
-    if jittests.HAVE_MULTIPROCESSING:
-        try:
-            max_jobs_default = jittests.cpu_count()
-        except NotImplementedError:
-            pass
-
     
     
-
     from optparse import OptionParser
     op = OptionParser(usage='%prog [options] JS_SHELL [TESTS]')
     op.add_option('-s', '--show-cmd', dest='show_cmd', action='store_true',
@@ -112,7 +103,7 @@ def main(argv):
                   help='Run tests with all IonMonkey option combinations'
                   ' (ignores --jitflags)')
     op.add_option('-j', '--worker-count', dest='max_jobs', type=int,
-                  default=max_jobs_default,
+                  default=max(1, get_cpu_count()),
                   help='Number of tests to run in parallel (default %default)')
     op.add_option('--remote', action='store_true',
                   help='Run tests on a remote device')
