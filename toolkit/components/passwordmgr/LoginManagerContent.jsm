@@ -408,7 +408,7 @@ var LoginManagerContent = {
 
 
   _fetchLoginsFromParentAndFillForm(form, window) {
-    this._updateLoginFormPresence(window);
+    this._detectInsecureFormLikes(window);
 
     let messageManager = messageManagerFromWindow(window);
     messageManager.sendAsyncMessage("LoginStats:LoginEncountered");
@@ -423,7 +423,7 @@ var LoginManagerContent = {
   },
 
   onPageShow(event, window) {
-    this._updateLoginFormPresence(window);
+    this._detectInsecureFormLikes(window);
   },
 
   
@@ -451,35 +451,8 @@ var LoginManagerContent = {
 
 
 
-
-  _updateLoginFormPresence(topWindow) {
-    log("_updateLoginFormPresence", topWindow.location.href);
-    
-    
-    
-    let loginFormOrigin =
-        LoginUtils._getPasswordOrigin(topWindow.document.documentURI);
-
-    
-    
-    let getFirstLoginForm = thisWindow => {
-      let loginForms = this.stateForDocument(thisWindow.document).loginFormRootElements;
-      if (loginForms.size) {
-        return [...loginForms][0];
-      }
-      for (let i = 0; i < thisWindow.frames.length; i++) {
-        let frame = thisWindow.frames[i];
-        if (LoginUtils._getPasswordOrigin(frame.document.documentURI) !=
-            loginFormOrigin) {
-          continue;
-        }
-        let loginForm = getFirstLoginForm(frame);
-        if (loginForm) {
-          return loginForm;
-        }
-      }
-      return null;
-    };
+  _detectInsecureFormLikes(topWindow) {
+    log("_detectInsecureFormLikes", topWindow.location.href);
 
     
     let hasInsecureLoginForms = (thisWindow, parentIsInsecure) => {
@@ -491,16 +464,8 @@ var LoginManagerContent = {
                         frame => hasInsecureLoginForms(frame, isInsecure));
     };
 
-    
-    let topState = this.stateForDocument(topWindow.document);
-    topState.loginFormForFill = getFirstLoginForm(topWindow);
-    log("_updateLoginFormPresence: topState.loginFormForFill", topState.loginFormForFill);
-
-    
     let messageManager = messageManagerFromWindow(topWindow);
     messageManager.sendAsyncMessage("RemoteLogins:updateLoginFormPresence", {
-      loginFormOrigin,
-      loginFormPresent: !!topState.loginFormForFill,
       hasInsecureLoginForms: hasInsecureLoginForms(topWindow, false),
     });
   },
@@ -530,10 +495,8 @@ var LoginManagerContent = {
 
 
   fillForm({ topDocument, loginFormOrigin, loginsFound, recipes, inputElement }) {
-    let topState = this.stateForDocument(topDocument);
-    if (!inputElement && !topState.loginFormForFill) {
-      log("fillForm: There is no login form anymore. The form may have been",
-          "removed or the document may have changed.");
+    if (!inputElement) {
+      log("fillForm: No input element specified");
       return;
     }
     if (LoginUtils._getPasswordOrigin(topDocument.documentURI) != loginFormOrigin) {
@@ -546,18 +509,15 @@ var LoginManagerContent = {
         return;
       }
     }
-    let form = topState.loginFormForFill;
+
     let clobberUsername = true;
     let options = {
       inputElement,
     };
 
-    
-    if (inputElement) {
-      form = FormLikeFactory.createFromField(inputElement);
-      if (inputElement.type == "password") {
-        clobberUsername = false;
-      }
+    let form = FormLikeFactory.createFromField(inputElement);
+    if (inputElement.type == "password") {
+      clobberUsername = false;
     }
     this._fillForm(form, true, clobberUsername, true, true, loginsFound, recipes, options);
   },
