@@ -194,8 +194,16 @@ def main(argv):
     read_all = True
 
     
-    options.can_test_also_noasmjs = not options.debugger
-    options.can_test_also_wasm_baseline = not options.debugger
+    
+    
+    
+    
+    test_flags = get_jitflags(options.jitflags)
+    options.can_test_also_noasmjs = True
+    options.can_test_also_wasm_baseline = True
+    if options.debugger or all(['--no-asmjs' in flags for flags in test_flags]):
+        options.can_test_also_noasmjs = False
+        options.can_test_also_wasm_baseline = False
 
     if test_args:
         read_all = False
@@ -258,8 +266,6 @@ def main(argv):
         sys.exit(0)
 
     
-    test_flags = get_jitflags(options.jitflags)
-
     test_list = [_ for test in test_list for _ in test.copy_variants(test_flags)]
 
     job_list = (test for test in test_list)
