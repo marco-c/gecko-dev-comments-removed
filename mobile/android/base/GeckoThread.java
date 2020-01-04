@@ -165,15 +165,8 @@ public class GeckoThread extends Thread implements GeckoEventListener {
     private static void queueNativeCallLocked(final Class<?> cls, final String methodName,
                                               final Object obj, final Object[] args,
                                               final State state) {
-        final ArrayList<Class<?>> argTypes = new ArrayList<>(args.length);
-        final ArrayList<Object> argValues = new ArrayList<>(args.length);
-
+        final Class<?>[] argTypes = new Class<?>[args.length];
         for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof Class) {
-                argTypes.add((Class<?>) args[i]);
-                argValues.add(args[++i]);
-                continue;
-            }
             Class<?> argType = args[i].getClass();
             if (argType == Boolean.class) argType = Boolean.TYPE;
             else if (argType == Byte.class) argType = Byte.TYPE;
@@ -183,28 +176,23 @@ public class GeckoThread extends Thread implements GeckoEventListener {
             else if (argType == Integer.class) argType = Integer.TYPE;
             else if (argType == Long.class) argType = Long.TYPE;
             else if (argType == Short.class) argType = Short.TYPE;
-            argTypes.add(argType);
-            argValues.add(args[i]);
+            argTypes[i] = argType;
         }
         final Method method;
         try {
-            method = cls.getDeclaredMethod(
-                    methodName, argTypes.toArray(new Class<?>[argTypes.size()]));
+            method = cls.getDeclaredMethod(methodName, argTypes);
         } catch (final NoSuchMethodException e) {
             throw new UnsupportedOperationException("Cannot find method", e);
         }
 
         if (QUEUED_CALLS.size() == 0 && isStateAtLeast(state)) {
-            invokeMethod(method, obj, argValues.toArray());
+            invokeMethod(method, obj, args);
             return;
         }
-
-        QUEUED_CALLS.add(new QueuedCall(
-                method, obj, argValues.toArray(), state));
+        QUEUED_CALLS.add(new QueuedCall(method, obj, args, state));
     }
 
     
-
 
 
 
@@ -232,7 +220,6 @@ public class GeckoThread extends Thread implements GeckoEventListener {
     }
 
     
-
 
 
 
