@@ -341,6 +341,8 @@ MessageManagerTunnel.prototype = {
     "InPermitUnload",
     "PermitUnload",
     
+    "contextmenu",
+    
     "Forms:UpdateDropDown",
     
     "PageVisibility:Hide",
