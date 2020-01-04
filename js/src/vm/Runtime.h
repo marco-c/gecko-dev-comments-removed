@@ -1059,6 +1059,9 @@ struct JSRuntime : public JS::shadow::Runtime,
     JSDestroyCompartmentCallback destroyCompartmentCallback;
 
     
+    JSSizeOfIncludingThisCompartmentCallback sizeOfIncludingThisCompartmentCallback;
+
+    
     JSZoneCallback destroyZoneCallback;
 
     
