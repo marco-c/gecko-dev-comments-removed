@@ -78,7 +78,7 @@ class Channel : public Message::Sender {
   
   
   Channel(const std::wstring& channel_id, void* server_pipe,
-	  Mode mode, Listener* listener);
+          Mode mode, Listener* listener);
 # endif
 
   ~Channel();
