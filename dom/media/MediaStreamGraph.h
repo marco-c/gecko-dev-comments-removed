@@ -516,12 +516,6 @@ public:
 
 
   GraphTime StreamTimeToGraphTime(StreamTime aTime);
-  
-
-
-
-
-  GraphTime StreamTimeToGraphTimeWithBlocking(StreamTime aTime);
 
   bool IsFinishedOnGraphThread() { return mFinished; }
   void FinishOnGraphThread();
