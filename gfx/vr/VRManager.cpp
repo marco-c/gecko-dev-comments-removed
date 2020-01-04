@@ -7,6 +7,7 @@
 #include "VRManager.h"
 #include "VRManagerParent.h"
 #include "gfxVR.h"
+#include "gfxVROpenVR.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/VRDisplay.h"
 #include "mozilla/layers/TextureHost.h"
@@ -51,6 +52,20 @@ VRManager::VRManager()
 
   RefPtr<VRDisplayManager> mgr;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 #if defined(XP_WIN)
   
   mgr = VRDisplayManagerOculus::Create();
@@ -61,8 +76,14 @@ VRManager::VRManager()
 
 #if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX)
   
+  mgr = VRDisplayManagerOpenVR::Create();
+  if (mgr) {
+    mManagers.AppendElement(mgr);
+  }
+
+  
   mgr = VRDisplayManagerOSVR::Create();
-  if (mgr){
+  if (mgr) {
       mManagers.AppendElement(mgr);
   }
 #endif
@@ -172,7 +193,15 @@ VRManager::RefreshVRDisplays(bool aMustDispatch)
 {
   nsTArray<RefPtr<gfx::VRDisplayHost> > displays;
 
-  for (uint32_t i = 0; i < mManagers.Length(); ++i) {
+  
+
+
+
+
+
+
+
+  for (uint32_t i = 0; i < mManagers.Length() && displays.Length() == 0; ++i) {
     mManagers[i]->GetHMDs(displays);
   }
 

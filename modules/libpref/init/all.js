@@ -871,11 +871,11 @@ pref("accessibility.typeaheadfind.prefillwithselection", false);
 #else
 pref("accessibility.typeaheadfind.prefillwithselection", true);
 #endif
+pref("accessibility.typeaheadfind.matchesCountTimeout", 100);
 pref("accessibility.typeaheadfind.matchesCountLimit", 1000);
 pref("findbar.highlightAll", false);
 pref("findbar.modalHighlight", false);
 pref("findbar.entireword", false);
-pref("findbar.iteratorTimeout", 100);
 
 
 pref("gfx.use_text_smoothing_setting", false);
@@ -4938,10 +4938,14 @@ pref("dom.vr.oculus.enabled", true);
 
 pref("dom.vr.osvr.enabled", false);
 
+pref("dom.vr.openvr.enabled", false);
+
 
 
 
 pref("dom.vr.poseprediction.enabled", false);
+
+pref("gfx.vr.openvr-runtime", "");
 
 pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");

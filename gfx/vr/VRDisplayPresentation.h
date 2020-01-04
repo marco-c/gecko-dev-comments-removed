@@ -12,9 +12,7 @@
 namespace mozilla {
 namespace gfx {
 class VRDisplayClient;
-namespace vr {
 class VRLayerChild;
-} 
 
 class VRDisplayPresentation final
 {
