@@ -2967,15 +2967,7 @@ JitProfilingFrameIterator::JitProfilingFrameIterator(
             return;
     }
 
-    
-    
-    
-    if (!frameScript()->hasBaselineScript()) {
-        type_ = JitFrame_Entry;
-        fp_ = nullptr;
-        returnAddressToFp_ = nullptr;
-        return;
-    }
+    MOZ_ASSERT(frameScript()->hasBaselineScript());
 
     
     
