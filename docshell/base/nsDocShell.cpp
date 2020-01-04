@@ -11125,7 +11125,10 @@ nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel, nsISupports* aOwner,
                           aLoadType & LOAD_CMD_HISTORY);
 
   
-  bool updateSHistory = updateGHistory && (!(aLoadType & LOAD_CMD_RELOAD));
+  
+  bool updateSHistory = updateGHistory &&
+                        (!(aLoadType & LOAD_CMD_RELOAD) ||
+                         (IsForceReloadType(aLoadType) && IsFrame()));
 
   
   
@@ -11198,9 +11201,9 @@ nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel, nsISupports* aOwner,
 
 
   if (aChannel && IsForceReloadType(aLoadType)) {
-    NS_ASSERTION(!updateSHistory,
-                 "We shouldn't be updating session history for forced"
-                 " reloads!");
+    MOZ_ASSERT(!updateSHistory || IsFrame(),
+               "We shouldn't be updating session history for forced"
+               " reloads unless we're in a newly created iframe!");
 
     nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(aChannel));
     nsCOMPtr<nsISupports> cacheKey;
