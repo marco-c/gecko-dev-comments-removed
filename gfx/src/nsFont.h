@@ -67,6 +67,10 @@ struct nsFont {
   uint16_t variantAlternates;
 
   
+  
+  uint8_t decorations;
+
+  
   uint8_t smoothing;
 
   
@@ -123,11 +127,8 @@ struct nsFont {
     return Equals(aOther);
   }
 
+  bool Equals(const nsFont& aOther) const ;
   
-  bool Equals(const nsFont& aOther) const
-  {
-    return BaseEquals(aOther);
-  }
   bool BaseEquals(const nsFont& aOther) const;
 
   nsFont& operator=(const nsFont& aOther);
