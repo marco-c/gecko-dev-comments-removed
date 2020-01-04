@@ -57,8 +57,31 @@ ValueToCallable(JSContext* cx, HandleValue v, int numToSkip = -1,
 
 
 
+
+
+
+
 extern bool
-Invoke(JSContext* cx, const CallArgs& args, MaybeConstruct construct = NO_CONSTRUCT);
+InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
+                        MaybeConstruct construct);
+
+
+inline bool
+Invoke(JSContext* cx, const AnyInvokeArgs& args)
+{
+    return InternalCallOrConstruct(cx, args, NO_CONSTRUCT);
+}
+
+
+
+
+
+
+inline bool
+InternalInvoke(JSContext* cx, const CallArgs& args)
+{
+    return InternalCallOrConstruct(cx, args, NO_CONSTRUCT);
+}
 
 
 
