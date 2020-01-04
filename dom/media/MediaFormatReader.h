@@ -88,8 +88,6 @@ public:
   bool IsWaitForDataSupported() override { return true; }
   nsRefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) override;
 
-  bool IsWaitingOnCDMResource() override;
-
   bool UseBufferingHeuristics() override
   {
     return mTrackDemuxersMayBlock;
@@ -100,6 +98,8 @@ public:
 #endif
 
 private:
+  bool IsWaitingOnCDMResource();
+
   bool InitDemuxer();
   
   
@@ -397,10 +397,6 @@ private:
   {
     return mIsEncrypted;
   }
-  
-  
-  
-  
   bool mIsEncrypted;
 
   

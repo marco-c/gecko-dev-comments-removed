@@ -99,9 +99,6 @@ public:
   virtual bool IsWaitingMediaResources() { return false; }
   
   
-  virtual bool IsWaitingOnCDMResource() { return false; }
-  
-  
   virtual void ReleaseMediaResources() {};
   
   
