@@ -58,6 +58,7 @@ this.AndroidUtils = {
     let [origin, manifestURL] =
       this.getOriginAndManifestURL(aApp.packagename);
     
+    
     let manifest = {
       name: aApp.name,
       icons: { "96": aApp.icon }

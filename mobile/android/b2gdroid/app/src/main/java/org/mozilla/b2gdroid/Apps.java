@@ -76,17 +76,7 @@ class Apps extends BroadcastReceiver
                 (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0;
 
             obj.put("removable", removable);
-
-            
-            
-            
-            Drawable d = pm.getApplicationIcon(info.packageName);
-            Bitmap bitmap = ((BitmapDrawable)d).getBitmap();
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
-            byte[] byteArray = byteArrayOutputStream.toByteArray();
-            String encoded = Base64.encodeToString(byteArray, Base64.DEFAULT);
-            obj.put("icon", "data:image/png;base64," + encoded);
+            obj.put("icon", "android://icon/" + appInfo.packageName);
         } catch(Exception ex) {
             Log.wtf(LOGTAG, "Error building ActivityInfo JSON", ex);
         }
