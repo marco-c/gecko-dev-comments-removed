@@ -265,12 +265,15 @@ enum StackKind
     StackKindCount
 };
 
+using RootedListHeads = mozilla::EnumeratedArray<JS::RootKind, JS::RootKind::Limit,
+                                                 JS::Rooted<void*>*>;
+
 
 
 class RootLists
 {
     
-    mozilla::EnumeratedArray<JS::RootKind, JS::RootKind::Limit, JS::Rooted<void*>*> stackRoots_;
+    RootedListHeads stackRoots_;
     template <typename T> friend class JS::Rooted;
 
     
