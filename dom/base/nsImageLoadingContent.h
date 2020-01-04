@@ -138,10 +138,8 @@ protected:
 
 
 
-
   nsresult LoadImage(nsIURI* aNewURI, bool aForce, bool aNotify,
-                     ImageLoadType aImageLoadType, bool aLoadStart = true,
-                     nsIDocument* aDocument = nullptr,
+                     ImageLoadType aImageLoadType, nsIDocument* aDocument = nullptr,
                      nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL);
 
   
