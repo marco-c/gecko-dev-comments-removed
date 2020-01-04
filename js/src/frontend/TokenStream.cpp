@@ -42,12 +42,11 @@ using mozilla::UniquePtr;
 struct KeywordInfo {
     const char* chars;         
     TokenKind   tokentype;
-    JSVersion   version;
 };
 
 static const KeywordInfo keywords[] = {
-#define KEYWORD_INFO(keyword, name, type, version) \
-    {js_##keyword##_str, type, version},
+#define KEYWORD_INFO(keyword, name, type) \
+    {js_##keyword##_str, type},
     FOR_EACH_JAVASCRIPT_KEYWORD(KEYWORD_INFO)
 #undef KEYWORD_INFO
 };
@@ -997,24 +996,21 @@ TokenStream::checkForKeyword(const KeywordInfo* kw, TokenKind* ttp)
         return reportError(JSMSG_RESERVED_ID, kw->chars);
     }
 
-    if (kw->tokentype != TOK_STRICT_RESERVED) {
-        if (kw->version <= versionNumber()) {
-            
-            
-            if (kw->tokentype == TOK_LET && !strictMode())
-                return true;
-
-            
-            if (ttp) {
-                *ttp = kw->tokentype;
-                return true;
-            }
-            return reportError(JSMSG_RESERVED_ID, kw->chars);
-        }
-    }
+    if (kw->tokentype == TOK_STRICT_RESERVED)
+        return reportStrictModeError(JSMSG_RESERVED_ID, kw->chars);
 
     
-    return reportStrictModeError(JSMSG_RESERVED_ID, kw->chars);
+    
+    if (kw->tokentype == TOK_LET && !strictMode())
+        return true;
+
+    
+    if (ttp) {
+        *ttp = kw->tokentype;
+        return true;
+    }
+
+    return reportError(JSMSG_RESERVED_ID, kw->chars);
 }
 
 bool
