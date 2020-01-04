@@ -47,30 +47,12 @@ protected:
 
 class D3D9SurfaceImage : public Image {
 public:
-
-  struct Data {
-    Data(IDirect3DSurface9* aSurface,
-         const gfx::IntRect& aRegion,
-         D3D9RecycleAllocator* aAllocator,
-         bool aIsFirstFrame)
-      : mSurface(aSurface)
-      , mRegion(aRegion)
-      , mAllocator(aAllocator)
-      , mIsFirstFrame(aIsFirstFrame)
-    {}
-
-    RefPtr<IDirect3DSurface9> mSurface;
-    gfx::IntRect mRegion;
-    RefPtr<D3D9RecycleAllocator> mAllocator;
-    bool mIsFirstFrame;
-  };
-
-  D3D9SurfaceImage();
+  explicit D3D9SurfaceImage(bool aIsFirstFrame);
   virtual ~D3D9SurfaceImage();
 
-  
-  
-  HRESULT SetData(const Data& aData);
+  HRESULT AllocateAndCopy(D3D9RecycleAllocator* aAllocator,
+                          IDirect3DSurface9* aSurface,
+                          const gfx::IntRect& aRegion);
 
   
   const D3DSURFACE_DESC& GetDesc() const;
