@@ -16,6 +16,7 @@
 #include "nsLookAndFeel.h"
 #include "nsWindow.h"
 #include "WinUtils.h"
+#include "nsIWindowsRegKey.h"
 #include "nsIWindowsUIUtils.h"
 
 #include "shellapi.h"
@@ -535,21 +536,15 @@ IMEHandler::MaybeShowOnScreenKeyboard()
     return;
   }
 
-  if (Preferences::GetBool(kOskRequireTabletMode, true)) {
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIWindowsUIUtils>
-      uiUtils(do_GetService("@mozilla.org/windows-ui-utils;1"));
-    if (uiUtils) {
-      bool isInTabletMode = false;
-      uiUtils->GetInTabletMode(&isInTabletMode);
-      if (!isInTabletMode) {
-        return;
-      }
-    }
+  
+  
+  
+  
+  
+  if (!IsInTabletMode() &&
+      Preferences::GetBool(kOskRequireTabletMode, true) &&
+      !AutoInvokeOnScreenKeyboardInDesktopMode()) {
+    return;
   }
 
  IMEHandler::ShowOnScreenKeyboard();
@@ -706,6 +701,49 @@ IMEHandler::IsKeyboardPresentOnSlate()
     }
   }
   return false;
+}
+
+
+bool
+IMEHandler::IsInTabletMode()
+{
+  nsCOMPtr<nsIWindowsUIUtils>
+    uiUtils(do_GetService("@mozilla.org/windows-ui-utils;1"));
+  if (NS_WARN_IF(!uiUtils)) {
+    return false;
+  }
+  bool isInTabletMode = false;
+  uiUtils->GetInTabletMode(&isInTabletMode);
+  return isInTabletMode;
+}
+
+
+bool
+IMEHandler::AutoInvokeOnScreenKeyboardInDesktopMode()
+{
+  nsresult rv;
+  nsCOMPtr<nsIWindowsRegKey> regKey
+    (do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+  rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
+                    NS_LITERAL_STRING("SOFTWARE\\Microsoft\\TabletTip\\1.7"),
+                    nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+  
+  
+  
+  
+  uint32_t value;
+  rv = regKey->ReadIntValue(NS_LITERAL_STRING("EnableDesktopModeAutoInvoke"),
+                            &value);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+  return !!value;
 }
 
 
