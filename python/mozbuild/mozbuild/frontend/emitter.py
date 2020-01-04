@@ -83,6 +83,7 @@ from ..testing import (
     TEST_MANIFESTS,
     REFTEST_FLAVORS,
     WEB_PLATFORM_TESTS_FLAVORS,
+    convert_support_files,
 )
 
 from .context import (
@@ -1096,63 +1097,23 @@ class TreeMetadataEmitter(LoggingMixin):
                                                         defaults['install-to-subdir'],
                                                         mozpath.basename(path))
 
-
-            
-            
-            
             
             
             
             extras = (('head', set()),
                       ('tail', set()),
-                      ('support-files', set()))
+                      ('support-files', set()),
+                      ('generated-files', set()))
             def process_support_files(test):
-                for thing, seen in extras:
-                    value = test.get(thing, '')
-                    if value in seen:
-                        continue
-                    seen.add(value)
-                    for pattern in value.split():
-                        
-                        
-                        if '*' in pattern and thing == 'support-files':
-                            obj.pattern_installs.append(
-                                (manifest_dir, pattern, out_dir))
-                        
-                        
-                        elif pattern[0] == '/':
-                            full = mozpath.normpath(mozpath.join(manifest_dir,
-                                mozpath.basename(pattern)))
-                            obj.installs[full] = (mozpath.join(install_root,
-                                pattern[1:]), False)
-                        else:
-                            full = mozpath.normpath(mozpath.join(manifest_dir,
-                                pattern))
+                patterns, installs, external = convert_support_files(extras, test,
+                                                                     install_root,
+                                                                     manifest_dir,
+                                                                     out_dir)
 
-                            dest_path = mozpath.join(out_dir, pattern)
-
-                            
-                            
-                            
-                            if not full.startswith(manifest_dir):
-                                
-                                
-                                
-                                
-                                
-                                
-                                if thing == 'support-files':
-                                    dest_path = mozpath.join(out_dir,
-                                        os.path.basename(pattern))
-                                
-                                
-                                
-                                
-                                else:
-                                    continue
-
-                            obj.installs[full] = (mozpath.normpath(dest_path),
-                                False)
+                obj.pattern_installs.extend(patterns)
+                for source, dest in installs:
+                    obj.installs[source] = (dest, False)
+                obj.external_installs |= external
 
             for test in filtered:
                 obj.tests.append(test)
@@ -1185,10 +1146,8 @@ class TreeMetadataEmitter(LoggingMixin):
                     del obj.installs[mozpath.join(manifest_dir, f)]
                 except KeyError:
                     raise SandboxValidationError('Error processing test '
-                        'manifest %s: entry in generated-files not present '
-                        'elsewhere in manifest: %s' % (path, f), context)
-
-                obj.external_installs.add(mozpath.join(out_dir, f))
+                       'manifest %s: entry in generated-files not present '
+                       'elsewhere in manifest: %s' % (path, f), context)
 
             yield obj
         except (AssertionError, Exception):
