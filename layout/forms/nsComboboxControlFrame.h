@@ -163,6 +163,17 @@ public:
   virtual int32_t UpdateRecentIndex(int32_t aIndex) override;
   virtual void OnContentReset() override;
 
+
+  bool IsOpenInParentProcess() override
+  {
+    return mIsOpenInParentProcess;
+  }
+
+  void SetOpenInParentProcess(bool aVal) override
+  {
+    mIsOpenInParentProcess = aVal;
+  }
+
   
   NS_IMETHOD AddOption(int32_t index) override;
   NS_IMETHOD RemoveOption(int32_t index) override;
@@ -302,6 +313,8 @@ protected:
   bool                  mInRedisplayText;
   
   bool                  mDelayedShowDropDown;
+
+  bool                  mIsOpenInParentProcess;
 
   
   
