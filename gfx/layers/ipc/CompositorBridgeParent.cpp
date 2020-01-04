@@ -60,7 +60,6 @@
 #include "nsTArray.h"                   
 #include "nsThreadUtils.h"              
 #include "nsXULAppAPI.h"                
-#include "nsIXULRuntime.h"              
 #ifdef XP_WIN
 #include "mozilla/layers/CompositorD3D11.h"
 #include "mozilla/layers/CompositorD3D9.h"
@@ -1209,7 +1208,7 @@ CompositorBridgeParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRec
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   
   
-  if (!hasRemoteContent && BrowserTabsRemoteAutostart() &&
+  if (!hasRemoteContent && gfxVars::BrowserTabsRemoteAutostart() &&
       mCachedPluginData.Length()) {
     Unused << SendHideAllPlugins(GetWidget()->GetWidgetKey());
     mCachedPluginData.Clear();

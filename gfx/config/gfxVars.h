@@ -23,6 +23,7 @@ class gfxVarReceiver;
 
 #define GFX_VARS_LIST(_)
       \
+  _(BrowserTabsRemoteAutostart, bool,             false)                \
   _(ContentBackend,             BackendType,      BackendType::NONE)    \
   _(TileSize,                   IntSize,          IntSize(-1, -1))      \
   _(UseXRender,                 bool,             false)                \
