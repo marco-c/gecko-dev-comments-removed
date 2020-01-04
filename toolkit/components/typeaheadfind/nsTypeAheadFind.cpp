@@ -315,6 +315,10 @@ nsTypeAheadFind::FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
       return NS_ERROR_FAILURE;
   }
 
+  
+  
+  presShell->FlushPendingNotifications(Flush_Layout);
+
   RefPtr<nsPresContext> presContext = presShell->GetPresContext();
 
   if (!presContext)
