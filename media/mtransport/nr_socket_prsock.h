@@ -61,6 +61,7 @@
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 
+#include "nsITCPSocketCallback.h"
 #include "databuffer.h"
 #include "m_cpp_utils.h"
 #include "mozilla/ReentrantMonitor.h"
@@ -71,6 +72,14 @@
 
 typedef struct nr_socket_vtbl_ nr_socket_vtbl;
 typedef struct nr_socket_ nr_socket;
+
+#if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
+namespace mozilla {
+namespace dom {
+class TCPSocketChild;
+}
+}
+#endif
 
 namespace mozilla {
 
@@ -209,7 +218,22 @@ public:
     NR_CLOSED,
   };
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrSocketIpc, override)
+  NrSocketIpc(nsIEventTarget* aThread);
+
+protected:
+  nsCOMPtr<nsIEventTarget> sts_thread_;
+  
+  
+  const nsCOMPtr<nsIEventTarget> io_thread_;
+  virtual ~NrSocketIpc() {};
+
+private:
+  DISALLOW_COPY_ASSIGN(NrSocketIpc);
+};
+
+class NrUdpSocketIpc : public NrSocketIpc {
+public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrUdpSocketIpc, override)
 
   NS_IMETHODIMP CallListenerError(const nsACString &message,
                                   const nsACString &filename,
@@ -221,7 +245,7 @@ public:
   NS_IMETHODIMP CallListenerOpened();
   NS_IMETHODIMP CallListenerClosed();
 
-  NrSocketIpc();
+  NrUdpSocketIpc();
 
   
   virtual int create(nr_transport_addr *addr) override;
@@ -239,11 +263,9 @@ public:
   virtual int accept(nr_transport_addr *addrp, nr_socket **sockp) override;
 
 private:
-  virtual ~NrSocketIpc();
+  virtual ~NrUdpSocketIpc();
 
-  DISALLOW_COPY_ASSIGN(NrSocketIpc);
-
-  static nsIThread* GetIOThreadAndAddUse_s();
+  DISALLOW_COPY_ASSIGN(NrUdpSocketIpc);
 
   
   void create_i(const nsACString &host, const uint16_t port);
@@ -256,31 +278,117 @@ private:
   
   void recv_callback_s(RefPtr<nr_udp_message> msg);
 
+  ReentrantMonitor monitor_; 
   bool err_;
   NrSocketIpcState state_;
-  std::queue<RefPtr<nr_udp_message> > received_msgs_;
+
+  std::queue<RefPtr<nr_udp_message>> received_msgs_;
 
   nsRefPtr<nsIUDPSocketChild> socket_child_; 
-  nsCOMPtr<nsIEventTarget> sts_thread_;
-  const nsCOMPtr<nsIEventTarget> io_thread_;
-  ReentrantMonitor monitor_;
 };
 
 
 
-class NrSocketIpcProxy : public nsIUDPSocketInternal {
+class NrUdpSocketIpcProxy : public nsIUDPSocketInternal {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIUDPSOCKETINTERNAL
 
-  nsresult Init(const nsRefPtr<NrSocketIpc>& socket);
+  nsresult Init(const nsRefPtr<NrUdpSocketIpc>& socket);
 
 private:
-  virtual ~NrSocketIpcProxy();
+  virtual ~NrUdpSocketIpcProxy();
 
-  nsRefPtr<NrSocketIpc> socket_;
+  nsRefPtr<NrUdpSocketIpc> socket_;
   nsCOMPtr<nsIEventTarget> sts_thread_;
 };
+
+struct nr_tcp_message {
+  explicit nr_tcp_message(nsAutoPtr<DataBuffer> &data)
+    : read_bytes(0)
+    , data(data) {
+  }
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nr_tcp_message);
+
+  const uint8_t *reading_pointer() const {
+    return data->data() + read_bytes;
+  }
+
+  size_t unread_bytes() const {
+    return data->len() - read_bytes;
+  }
+
+  size_t read_bytes;
+
+private:
+  ~nr_tcp_message() {}
+  DISALLOW_COPY_ASSIGN(nr_tcp_message);
+
+  nsAutoPtr<DataBuffer> data;
+};
+
+#if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
+class NrTcpSocketIpc : public NrSocketIpc,
+                       public nsITCPSocketCallback {
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSITCPSOCKETCALLBACK
+
+  explicit NrTcpSocketIpc(nsIThread* aThread);
+
+  
+  virtual int create(nr_transport_addr *addr) override;
+  virtual int sendto(const void *msg, size_t len,
+                     int flags, nr_transport_addr *to) override;
+  virtual int recvfrom(void * buf, size_t maxlen,
+                       size_t *len, int flags,
+                       nr_transport_addr *from) override;
+  virtual int getaddr(nr_transport_addr *addrp) override;
+  virtual void close() override;
+  virtual int connect(nr_transport_addr *addr) override;
+  virtual int write(const void *msg, size_t len, size_t *written) override;
+  virtual int read(void* buf, size_t maxlen, size_t *len) override;
+  virtual int listen(int backlog) override;
+  virtual int accept(nr_transport_addr *addrp, nr_socket **sockp) override;
+
+private:
+  class TcpSocketReadyRunner;
+  DISALLOW_COPY_ASSIGN(NrTcpSocketIpc);
+  virtual ~NrTcpSocketIpc();
+
+  
+  void connect_i(const nsACString &remote_addr,
+                 uint16_t remote_port,
+                 const nsACString &local_addr,
+                 uint16_t local_port);
+  void write_i(nsAutoPtr<InfallibleTArray<uint8_t>> buf,
+               uint32_t tracking_number);
+  void close_i();
+
+  static void release_child_i(dom::TCPSocketChild* aChild, nsCOMPtr<nsIEventTarget> ststhread);
+
+  
+  void message_sent_s(uint32_t bufferedAmount, uint32_t tracking_number);
+  void recv_message_s(nr_tcp_message *msg);
+  void update_state_s(NrSocketIpcState next_state);
+  void maybe_post_socket_ready();
+
+  
+  
+  NrSocketIpcState mirror_state_;
+
+  
+  NrSocketIpcState state_;
+  std::queue<RefPtr<nr_tcp_message>> msg_queue_;
+  uint32_t buffered_bytes_;
+  uint32_t tracking_number_;
+  std::deque<size_t> writes_in_flight_;
+
+  
+  nsRefPtr<dom::TCPSocketChild> socket_child_;
+};
+#endif
 
 int nr_netaddr_to_transport_addr(const net::NetAddr *netaddr,
                                  nr_transport_addr *addr,
