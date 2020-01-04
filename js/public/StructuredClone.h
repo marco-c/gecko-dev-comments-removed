@@ -195,17 +195,20 @@ class JS_PUBLIC_API(JSAutoStructuredCloneBuffer) {
     void clear(const JSStructuredCloneCallbacks* optionalCallbacks=nullptr, void* closure=nullptr);
 
     
-    bool copy(const uint64_t* data, size_t nbytes, uint32_t version=JS_STRUCTURED_CLONE_VERSION);
+    bool copy(const uint64_t* data, size_t nbytes, uint32_t version=JS_STRUCTURED_CLONE_VERSION,
+              const JSStructuredCloneCallbacks* callbacks=nullptr, void* closure=nullptr);
 
     
     
     
-    void adopt(uint64_t* data, size_t nbytes, uint32_t version=JS_STRUCTURED_CLONE_VERSION);
+    void adopt(uint64_t* data, size_t nbytes, uint32_t version=JS_STRUCTURED_CLONE_VERSION,
+               const JSStructuredCloneCallbacks* callbacks=nullptr, void* closure=nullptr);
 
     
     
     
-    void steal(uint64_t** datap, size_t* nbytesp, uint32_t* versionp=nullptr);
+    void steal(uint64_t** datap, size_t* nbytesp, uint32_t* versionp=nullptr,
+               const JSStructuredCloneCallbacks** callbacks=nullptr, void** closure=nullptr);
 
     
     
