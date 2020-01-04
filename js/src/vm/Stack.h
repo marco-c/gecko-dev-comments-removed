@@ -275,56 +275,50 @@ enum MaybeConstruct { NO_CONSTRUCT = false, CONSTRUCT = true };
 class InterpreterFrame
 {
     enum Flags : uint32_t {
-        
+        CONSTRUCTING           =        0x1,  
 
-        CONSTRUCTING           =       0x20,  
-
-        RESUMED_GENERATOR      =       0x40,  
+        RESUMED_GENERATOR      =        0x2,  
 
         
+        HAS_CALL_OBJ           =        0x4,  
+        HAS_ARGS_OBJ           =        0x8,  
 
         
-        HAS_CALL_OBJ           =      0x100,  
-        HAS_ARGS_OBJ           =      0x200,  
+        HAS_RVAL               =       0x10,  
 
         
-        HAS_RVAL               =      0x800,  
-        HAS_SCOPECHAIN         =     0x1000,  
-
-        
-        PREV_UP_TO_DATE        =     0x4000,  
+        PREV_UP_TO_DATE        =       0x20,  
 
         
 
 
 
-        DEBUGGEE               =     0x8000,  
+        DEBUGGEE               =       0x40,  
 
         
-        HAS_PUSHED_SPS_FRAME   =    0x10000, 
-
-
-        
-
-
-
-        RUNNING_IN_JIT         =    0x20000,
+        HAS_PUSHED_SPS_FRAME   =       0x80,  
 
         
-        CREATE_SINGLETON       =    0x40000,   
+
+
+
+        RUNNING_IN_JIT         =      0x100,
+
+        
+        CREATE_SINGLETON       =      0x200,  
 
         
 
 
 
 
-        HAS_CACHED_SAVED_FRAME =    0x80000,
+        HAS_CACHED_SAVED_FRAME =      0x400,
     };
 
     mutable uint32_t    flags_;         
+    uint32_t            nactual_;       
     JSScript*           script_;        
-    unsigned            nactual_;       
-    mutable JSObject*   scopeChain_;    
+    JSObject*           scopeChain_;    
     Value               rval_;          
     ArgumentsObject*    argsObj_;       
 
@@ -696,7 +690,7 @@ class InterpreterFrame
     void resumeGeneratorFrame(JSObject* scopeChain) {
         MOZ_ASSERT(script()->isGenerator());
         MOZ_ASSERT(isFunctionFrame());
-        flags_ |= HAS_CALL_OBJ | HAS_SCOPECHAIN;
+        flags_ |= HAS_CALL_OBJ;
         scopeChain_ = scopeChain;
     }
 
