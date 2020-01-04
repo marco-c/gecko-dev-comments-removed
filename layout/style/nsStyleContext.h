@@ -278,12 +278,6 @@ public:
 
 
 
-  bool HasSameCachedStyleData(nsStyleContext* aOther, nsStyleStructID aSID);
-
-  
-
-
-
   bool HasCachedInheritedStyleData(nsStyleStructID aSID)
     { return mBits & nsCachedStyleData::GetBitForSID(aSID); }
 
