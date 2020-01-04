@@ -364,7 +364,7 @@ private:
   
   
   void OnAudioDecoded(MediaData* aAudioSample);
-  void OnVideoDecoded(MediaData* aVideoSample);
+  void OnVideoDecoded(MediaData* aVideoSample, TimeStamp aDecodeStartTime);
   void OnNotDecoded(MediaData::Type aType, MediaDecoderReader::NotDecodedReason aReason);
   void OnAudioNotDecoded(MediaDecoderReader::NotDecodedReason aReason)
   {
@@ -788,11 +788,6 @@ private:
 
   bool HaveStartTime() { return mStartTimeRendezvous && mStartTimeRendezvous->HaveStartTime(); }
   int64_t StartTime() { return mStartTimeRendezvous->StartTime(); }
-
-  
-  
-  
-  TimeStamp mVideoDecodeStartTime;
 
   
   
