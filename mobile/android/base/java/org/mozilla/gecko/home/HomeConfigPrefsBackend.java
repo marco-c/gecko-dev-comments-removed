@@ -35,7 +35,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
     private static final String LOGTAG = "GeckoHomeConfigBackend";
 
     
-    private static final int VERSION = 5;
+    private static final int VERSION = 6;
 
     
     public static final String PREFS_CONFIG_KEY_OLD = "home_panels";
@@ -76,7 +76,6 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
 
 
         panelConfigs.add(createBuiltinPanelConfig(mContext, PanelType.RECENT_TABS));
-        panelConfigs.add(createBuiltinPanelConfig(mContext, PanelType.READING_LIST));
 
         return new State(panelConfigs, true);
     }
@@ -237,6 +236,48 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
 
 
 
+    private static JSONArray removeReadingListPanel(Context context, JSONArray jsonPanels) throws JSONException {
+        boolean wasDefault = false;
+        int bookmarksIndex = -1;
+
+        
+        
+        final JSONArray newJSONPanels = new JSONArray();
+
+        for (int i = 0; i < jsonPanels.length(); i++) {
+            final JSONObject panelJSON = jsonPanels.getJSONObject(i);
+            final PanelConfig panelConfig = new PanelConfig(panelJSON);
+
+            if (panelConfig.getType() == PanelType.DEPRECATED_READING_LIST) {
+                
+                wasDefault = panelConfig.isDefault();
+            } else {
+                if (panelConfig.getType() == PanelType.BOOKMARKS) {
+                    bookmarksIndex = newJSONPanels.length();
+                }
+
+                newJSONPanels.put(panelJSON);
+            }
+        }
+
+        if (wasDefault) {
+            
+            
+            final JSONObject bookmarksPanelConfig = createBuiltinPanelConfig(context, PanelType.BOOKMARKS, EnumSet.of(PanelConfig.Flags.DEFAULT_PANEL)).toJSON();
+            if (bookmarksIndex != -1) {
+                newJSONPanels.put(bookmarksIndex, bookmarksPanelConfig);
+            } else {
+                newJSONPanels.put(bookmarksPanelConfig);
+            }
+        }
+
+        return newJSONPanels;
+    }
+
+    
+
+
+
 
 
 
@@ -246,7 +287,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
             try {
                 final JSONObject jsonPanelConfig = jsonPanels.getJSONObject(i);
                 final PanelConfig panelConfig = new PanelConfig(jsonPanelConfig);
-                if (panelConfig.getType() == PanelType.READING_LIST) {
+                if (panelConfig.getType() == PanelType.DEPRECATED_READING_LIST) {
                     return true;
                 }
             } catch (Exception e) {
@@ -326,7 +367,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
                     
                     if (!readingListPanelExists(jsonPanels)) {
                         addBuiltinPanelConfig(context, jsonPanels,
-                                PanelType.READING_LIST, Position.BACK, Position.BACK);
+                                PanelType.DEPRECATED_READING_LIST, Position.BACK, Position.BACK);
                     }
                     break;
 
@@ -340,6 +381,10 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
                 case 5:
                     
                     ensureDefaultPanelForV5(context, jsonPanels);
+                    break;
+
+                case 6:
+                    jsonPanels = removeReadingListPanel(context, jsonPanels);
                     break;
             }
         }

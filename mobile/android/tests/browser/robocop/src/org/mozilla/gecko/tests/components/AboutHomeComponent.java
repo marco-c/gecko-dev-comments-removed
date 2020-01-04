@@ -36,7 +36,6 @@ public class AboutHomeComponent extends BaseComponent {
             PanelType.BOOKMARKS,
             PanelType.COMBINED_HISTORY,
             PanelType.RECENT_TABS,
-            PanelType.READING_LIST
     );
 
     
