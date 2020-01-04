@@ -403,7 +403,10 @@ var gSyncUI = {
       
       try {
         let lastSync = new Date(Services.prefs.getCharPref("services.sync.lastSync"));
-        tooltiptext = this.formatLastSyncDate(lastSync);
+        
+        let lastSyncDateString = lastSync.toLocaleDateString(undefined,
+          {weekday: 'long', hour: 'numeric', minute: 'numeric'});
+        tooltiptext = this._stringBundle.formatStringFromName("lastSync2.label", [lastSyncDateString], 1);
       }
       catch (e) {
         
@@ -427,24 +430,6 @@ var gSyncUI = {
       }
     }
   }),
-
-  formatLastSyncDate: function(date) {
-    let dateFormat;
-    let sixDaysAgo = (() => {
-      let date = new Date();
-      date.setDate(date.getDate() - 6);
-      date.setHours(0, 0, 0, 0);
-      return date;
-    })();
-    
-    if (date < sixDaysAgo) {
-      dateFormat = {month: 'long', day: 'numeric'};
-    } else {
-      dateFormat = {weekday: 'long', hour: 'numeric', minute: 'numeric'};
-    }
-    let lastSyncDateString = date.toLocaleDateString(undefined, dateFormat);
-    return this._stringBundle.formatStringFromName("lastSync2.label", [lastSyncDateString], 1);
-  },
 
   onSyncFinish: function SUI_onSyncFinish() {
     let title = this._stringBundle.GetStringFromName("error.sync.title");

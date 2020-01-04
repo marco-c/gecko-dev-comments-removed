@@ -265,13 +265,7 @@ TabStore.prototype = {
 
   create: function (record) {
     this._log.debug("Adding remote tabs from " + record.clientName);
-    this._remoteClients[record.id] = Object.assign({}, record.cleartext, {
-      lastModified: record.modified
-    });
-
-    
-    
-    
+    this._remoteClients[record.id] = record.cleartext;
 
     
     let roundModify = Math.floor(record.modified / 1000);
