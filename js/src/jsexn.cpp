@@ -154,8 +154,6 @@ js::CopyErrorReport(JSContext* cx, JSErrorReport* report)
 
 
 
-
-
     JS_STATIC_ASSERT(sizeof(JSErrorReport) % sizeof(const char*) == 0);
     JS_STATIC_ASSERT(sizeof(const char*) % sizeof(char16_t) == 0);
 
@@ -166,47 +164,20 @@ js::CopyErrorReport(JSContext* cx, JSErrorReport* report)
     if (report->linebuf())
         linebufSize = (report->linebufLength() + 1) * sizeof(char16_t);
     size_t ucmessageSize = 0;
-    size_t argsArraySize = 0;
-    size_t argsCopySize = 0;
-    if (report->ucmessage) {
+    if (report->ucmessage)
         ucmessageSize = JS_CHARS_SIZE(report->ucmessage);
-        if (report->messageArgs) {
-            size_t i = 0;
-            for (; report->messageArgs[i]; ++i)
-                argsCopySize += JS_CHARS_SIZE(report->messageArgs[i]);
-
-            
-            MOZ_ASSERT(i != 0);
-            argsArraySize = (i + 1) * sizeof(const char16_t*);
-        }
-    }
 
     
 
 
 
-    size_t mallocSize = sizeof(JSErrorReport) + argsArraySize + argsCopySize +
-                         ucmessageSize + linebufSize + filenameSize;
+    size_t mallocSize = sizeof(JSErrorReport) + ucmessageSize + linebufSize + filenameSize;
     uint8_t* cursor = cx->pod_calloc<uint8_t>(mallocSize);
     if (!cursor)
         return nullptr;
 
     JSErrorReport* copy = (JSErrorReport*)cursor;
     cursor += sizeof(JSErrorReport);
-
-    if (argsArraySize != 0) {
-        copy->messageArgs = (const char16_t**)cursor;
-        cursor += argsArraySize;
-        size_t i = 0;
-        for (; report->messageArgs[i]; ++i) {
-            copy->messageArgs[i] = (const char16_t*)cursor;
-            size_t argSize = JS_CHARS_SIZE(report->messageArgs[i]);
-            js_memcpy(cursor, report->messageArgs[i], argSize);
-            cursor += argSize;
-        }
-        copy->messageArgs[i] = nullptr;
-        MOZ_ASSERT(cursor == (uint8_t*)copy->messageArgs[0] + argsCopySize);
-    }
 
     if (report->ucmessage) {
         copy->ucmessage = (const char16_t*)cursor;
@@ -674,17 +645,6 @@ ErrorReport::~ErrorReport()
         return;
 
     js_free(ownedMessage);
-    if (ownedReport.messageArgs) {
-        
-
-
-
-
-        size_t i = 0;
-        while (ownedReport.messageArgs[i])
-            js_free(const_cast<char16_t*>(ownedReport.messageArgs[i++]));
-        js_free(ownedReport.messageArgs);
-    }
     js_free(const_cast<char16_t*>(ownedReport.ucmessage));
 }
 
@@ -945,7 +905,7 @@ ErrorReport::populateUncaughtExceptionReportVA(JSContext* cx, va_list ap)
 
     if (!ExpandErrorArgumentsVA(cx, GetErrorMessage, nullptr,
                                 JSMSG_UNCAUGHT_EXCEPTION, &ownedMessage,
-                                ArgumentsAreASCII, &ownedReport, ap)) {
+                                nullptr, ArgumentsAreASCII, &ownedReport, ap)) {
         return false;
     }
 
