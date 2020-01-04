@@ -11,7 +11,12 @@
 
 
 
-const { Visitor, walk } = require("resource://devtools/shared/heapsnapshot/CensusUtils.js");
+const {
+  Visitor,
+  walk,
+  basisTotalBytes,
+  basisTotalCount,
+} = require("resource://devtools/shared/heapsnapshot/CensusUtils.js");
 
 
 let INC = 0;
@@ -294,18 +299,22 @@ CensusTreeNodeVisitor.prototype.enter = function (breakdown, report, edge) {
 
   if (!this._root) {
     this._root = bottom;
-  } else {
-    if (bottom) {
-      addChild(this._nodeStack[this._nodeStack.length - 1], bottom);
-    }
+  } else if (bottom) {
+    addChild(this._nodeStack[this._nodeStack.length - 1], bottom);
   }
 
-  this._cacheStack.push(new CensusTreeNodeCache);
+  this._cacheStack.push(new CensusTreeNodeCache());
   this._nodeStack.push(top);
 };
 
 function values(cache) {
   return Object.keys(cache).map(k => cache[k]);
+}
+
+function isNonEmpty(node) {
+  return (node.children !== undefined && node.children.length)
+      || node.bytes !== 0
+      || node.count !== 0;
 }
 
 
@@ -333,6 +342,9 @@ CensusTreeNodeVisitor.prototype.exit = function (breakdown, report, edge) {
     node.totalBytes = node.bytes;
 
     if (node.children) {
+      
+      node.children = node.children.filter(isNonEmpty);
+
       node.children.sort(compareByTotal);
 
       for (let i = 0, length = node.children.length; i < length; i++) {
@@ -408,10 +420,10 @@ CensusTreeNode.prototype = null;
 
 
 function compareByTotal(node1, node2) {
-  return node2.totalBytes - node1.totalBytes
-      || node2.totalCount - node1.totalCount
-      || node2.bytes      - node1.bytes
-      || node2.count      - node1.count;
+  return Math.abs(node2.totalBytes) - Math.abs(node1.totalBytes)
+      || Math.abs(node2.totalCount) - Math.abs(node1.totalCount)
+      || Math.abs(node2.bytes)      - Math.abs(node1.bytes)
+      || Math.abs(node2.count)      - Math.abs(node1.count);
 }
 
 
@@ -425,10 +437,10 @@ function compareByTotal(node1, node2) {
 
 
 function compareBySelf(node1, node2) {
-  return node2.bytes      - node1.bytes
-      || node2.count      - node1.count
-      || node2.totalBytes - node1.totalBytes
-      || node2.totalCount - node1.totalCount;
+  return Math.abs(node2.bytes)      - Math.abs(node1.bytes)
+      || Math.abs(node2.count)      - Math.abs(node1.count)
+      || Math.abs(node2.totalBytes) - Math.abs(node1.totalBytes)
+      || Math.abs(node2.totalCount) - Math.abs(node1.totalCount);
 }
 
 
@@ -522,6 +534,10 @@ function invert(tree) {
     }
   }(inverted.node));
 
+  
+  inverted.node.totalBytes = tree.totalBytes;
+  inverted.node.totalCount = tree.totalCount;
+
   return inverted.node;
 }
 
@@ -540,10 +556,6 @@ function invert(tree) {
 function filter(tree, predicate) {
   const filtered = new CensusTreeNodeCacheValue();
   filtered.node = new CensusTreeNode(null);
-  filtered.node.count = tree.count;
-  filtered.node.totalCount = tree.totalCount;
-  filtered.node.bytes = tree.bytes;
-  filtered.node.totalBytes = tree.totalBytes;
 
   
   
@@ -580,6 +592,11 @@ function filter(tree, predicate) {
       addMatchingNodes(tree.children[i]);
     }
   }
+
+  filtered.node.count = tree.count;
+  filtered.node.totalCount = tree.totalCount;
+  filtered.node.bytes = tree.bytes;
+  filtered.node.totalBytes = tree.totalBytes;
 
   return filtered.node;
 };
@@ -644,9 +661,23 @@ exports.censusReportToCensusTreeNode = function (breakdown, report,
                                                  }) {
   const visitor = new CensusTreeNodeVisitor();
   walk(breakdown, report, visitor);
-  const root = visitor.root();
-  const result = options.invert ? invert(root) : root;
-  return typeof options.filter === "string"
-    ? filter(result, makeFilterPredicate(options.filter))
-    : result;
+  let result = visitor.root();
+
+  if (options.invert) {
+    result = invert(result);
+  }
+
+  if (typeof options.filter === "string") {
+    result = filter(result, makeFilterPredicate(options.filter));
+  }
+
+  
+  
+  
+  if (typeof report[basisTotalBytes] === "number") {
+    result.totalBytes = report[basisTotalBytes];
+    result.totalCount = report[basisTotalCount];
+  }
+
+  return result;
 };

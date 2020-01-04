@@ -48,6 +48,11 @@ add_task(function* () {
                                                     { breakdown: BREAKDOWN },
                                                     { asInvertedTreeNode: true });
 
+  
+  
+  delta[CensusUtils.basisTotalBytes] = deltaTreeNode.totalBytes;
+  delta[CensusUtils.basisTotalCount] = deltaTreeNode.totalCount;
+
   compareCensusViewData(BREAKDOWN, delta, deltaTreeNode, { invert: true });
 
   client.destroy();

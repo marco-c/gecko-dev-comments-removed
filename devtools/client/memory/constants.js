@@ -4,6 +4,14 @@
 
 "use strict";
 
+
+exports.ALLOCATION_RECORDING_OPTIONS = {
+  probability: 1,
+  maxLogLength: 1
+};
+
+
+
 const actions = exports.actions = {};
 
 
@@ -42,6 +50,17 @@ actions.SELECT_SNAPSHOT = "select-snapshot";
 actions.TOGGLE_INVERTED = "toggle-inverted";
 
 
+actions.TOGGLE_DIFFING = "toggle-diffing";
+
+
+actions.SELECT_SNAPSHOT_FOR_DIFFING = "select-snapshot-for-diffing";
+
+
+actions.TAKE_CENSUS_DIFF_START = "take-census-diff-start";
+actions.TAKE_CENSUS_DIFF_END = "take-census-diff-end";
+actions.DIFFING_ERROR = "diffing-error";
+
+
 actions.SET_BREAKDOWN = "set-breakdown";
 
 
@@ -51,10 +70,6 @@ actions.SNAPSHOT_ERROR = "snapshot-error";
 actions.SET_FILTER_STRING = "set-filter-string";
 
 
-exports.ALLOCATION_RECORDING_OPTIONS = {
-  probability: 1,
-  maxLogLength: 1
-};
 
 const COUNT = { by: "count", count: true, bytes: true };
 const INTERNAL_TYPE = { by: "internalType", then: COUNT };
@@ -93,6 +108,8 @@ const breakdowns = exports.breakdowns = {
   },
 };
 
+
+
 const snapshotState = exports.snapshotState = {};
 
 
@@ -114,3 +131,27 @@ snapshotState.READING = "snapshot-state-reading";
 snapshotState.READ = "snapshot-state-read";
 snapshotState.SAVING_CENSUS = "snapshot-state-saving-census";
 snapshotState.SAVED_CENSUS = "snapshot-state-saved-census";
+
+
+
+
+
+
+
+
+
+
+
+const diffingState = exports.diffingState = Object.create(null);
+
+
+diffingState.SELECTING = "diffing-state-selecting";
+
+
+diffingState.TAKING_DIFF = "diffing-state-taking-diff";
+
+
+diffingState.TOOK_DIFF = "diffing-state-took-diff";
+
+
+diffingState.ERROR = "diffing-state-error";

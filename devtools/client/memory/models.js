@@ -2,10 +2,11 @@
 
 
 
+const { assert } = require("devtools/shared/DevToolsUtils");
 const { MemoryFront } = require("devtools/server/actors/memory");
 const HeapAnalysesClient = require("devtools/shared/heapsnapshot/HeapAnalysesClient");
 const { PropTypes } = require("devtools/client/shared/vendor/react");
-const { snapshotState: states } = require("./constants");
+const { snapshotState: states, diffingState } = require("./constants");
 
 
 
@@ -16,20 +17,9 @@ let breakdownModel = exports.breakdown = PropTypes.shape({
   by: PropTypes.oneOf(["coarseType", "allocationStack", "objectClass", "internalType"]).isRequired,
 });
 
-
-
-
-let stateKeys = Object.keys(states).map(state => states[state]);
-let snapshotModel = exports.snapshot = PropTypes.shape({
+let censusModel = exports.censusModel = PropTypes.shape({
   
-  id: PropTypes.number.isRequired,
-  
-  selected: PropTypes.bool.isRequired,
-  
-  
-  path: PropTypes.string,
-  
-  census: PropTypes.object,
+  report: PropTypes.object,
   
   breakdown: breakdownModel,
   
@@ -37,10 +27,29 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   
   
   filter: PropTypes.string,
+});
+
+
+
+
+let stateKeys = Object.keys(states).map(state => states[state]);
+const snapshotId = PropTypes.number;
+let snapshotModel = exports.snapshot = PropTypes.shape({
+  
+  id: snapshotId.isRequired,
+  
+  selected: PropTypes.bool.isRequired,
+  
+  
+  path: PropTypes.string,
+  
+  census: censusModel,
+  
   
   error: PropTypes.object,
   
   imported: PropTypes.bool.isRequired,
+  
   
   creationTime: PropTypes.number,
   
@@ -57,7 +66,7 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
     if (shouldHavePath.includes(current) && !snapshot.path) {
       throw new Error(`Snapshots in state ${current} must have a snapshot path.`);
     }
-    if (shouldHaveCensus.includes(current) && (!snapshot.census || !snapshot.breakdown)) {
+    if (shouldHaveCensus.includes(current) && (!snapshot.census || !snapshot.census.breakdown)) {
       throw new Error(`Snapshots in state ${current} must have a census and breakdown.`);
     }
     if (shouldHaveCreationTime.includes(current) && !snapshot.creationTime) {
@@ -72,6 +81,51 @@ let allocationsModel = exports.allocations = PropTypes.shape({
   
   
   togglingInProgress: PropTypes.bool.isRequired,
+});
+
+let diffingModel = exports.diffingModel = PropTypes.shape({
+  
+  firstSnapshotId: snapshotId,
+
+  
+  secondSnapshotId: function (diffing, propName) {
+    if (diffing.secondSnapshotId && !diffing.firstSnapshotId) {
+      throw new Error("Cannot have second snapshot without already having " +
+                      "first snapshot");
+    }
+    return snapshotId(diffing, propName);
+  },
+
+  
+  census: censusModel,
+
+  
+  
+  error: PropTypes.object,
+
+  
+  
+  state: function (diffing) {
+    switch (diffing.state) {
+      case diffingState.TOOK_DIFF:
+        assert(diffing.census, "If we took a diff, we should have a census");
+        
+      case diffingState.TAKING_DIFF:
+        assert(diffing.firstSnapshotId, "Should have first snapshot");
+        assert(diffing.secondSnapshotId, "Should have second snapshot");
+        break;
+
+      case diffingState.SELECTING:
+        break;
+
+      case diffingState.ERROR:
+        assert(diffing.error, "Should have error");
+        break;
+
+      default:
+        assert(false, `Bad diffing state: ${diffing.state}`);
+    }
+  }
 });
 
 let appModel = exports.app = {
@@ -91,4 +145,6 @@ let appModel = exports.app = {
   inverted: PropTypes.bool.isRequired,
   
   filter: PropTypes.string,
+  
+  diffing: diffingModel,
 };

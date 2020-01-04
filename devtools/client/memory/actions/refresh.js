@@ -1,0 +1,22 @@
+
+
+
+"use strict";
+
+const { refreshDiffing } = require("./diffing");
+const { refreshSelectedCensus } = require("./snapshot");
+
+
+
+
+
+
+exports.refresh = function (heapWorker) {
+  return function* (dispatch, getState) {
+    if (getState().diffing) {
+      yield dispatch(refreshDiffing(heapWorker));
+    } else {
+      yield dispatch(refreshSelectedCensus(heapWorker));
+    }
+  };
+};

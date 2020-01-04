@@ -4,8 +4,9 @@
 "use strict";
 
 const { assert, reportException } = require("devtools/shared/DevToolsUtils");
-const { getSnapshot, breakdownEquals, createSnapshot } = require("../utils");
+const { censusIsUpToDate, getSnapshot, breakdownEquals, createSnapshot } = require("../utils");
 const { actions, snapshotState: states } = require("../constants");
+const { toggleDiffing } = require("./diffing");
 
 
 
@@ -17,11 +18,14 @@ const { actions, snapshotState: states } = require("../constants");
 
 const takeSnapshotAndCensus = exports.takeSnapshotAndCensus = function (front, heapWorker) {
   return function *(dispatch, getState) {
-    let snapshot = yield dispatch(takeSnapshot(front));
+    const id = yield dispatch(takeSnapshot(front));
+    if (id === null) {
+      return;
+    }
 
-    yield dispatch(readSnapshot(heapWorker, snapshot));
-    if (snapshot.state === states.READ) {
-      yield dispatch(takeCensus(heapWorker, snapshot));
+    yield dispatch(readSnapshot(heapWorker, id));
+    if (getSnapshot(getState(), id).state === states.READ) {
+      yield dispatch(takeCensus(heapWorker, id));
     }
   };
 };
@@ -33,9 +37,13 @@ const takeSnapshotAndCensus = exports.takeSnapshotAndCensus = function (front, h
 
 
 
-const selectSnapshotAndRefresh = exports.selectSnapshotAndRefresh = function (heapWorker, snapshot) {
+const selectSnapshotAndRefresh = exports.selectSnapshotAndRefresh = function (heapWorker, id) {
   return function *(dispatch, getState) {
-    dispatch(selectSnapshot(snapshot));
+    if (getState().diffing) {
+      dispatch(toggleDiffing());
+    }
+
+    dispatch(selectSnapshot(id));
     yield dispatch(refreshSelectedCensus(heapWorker));
   };
 };
@@ -43,23 +51,31 @@ const selectSnapshotAndRefresh = exports.selectSnapshotAndRefresh = function (he
 
 
 
+
+
+
 const takeSnapshot = exports.takeSnapshot = function (front) {
   return function *(dispatch, getState) {
-    let snapshot = createSnapshot();
+    if (getState().diffing) {
+      dispatch(toggleDiffing());
+    }
+
+    const snapshot = createSnapshot();
+    const id = snapshot.id;
     dispatch({ type: actions.TAKE_SNAPSHOT_START, snapshot });
-    dispatch(selectSnapshot(snapshot));
+    dispatch(selectSnapshot(id));
 
     let path;
     try {
       path = yield front.saveHeapSnapshot();
     } catch (error) {
       reportException("takeSnapshot", error);
-      dispatch({ type: actions.SNAPSHOT_ERROR, snapshot, error });
-      return;
+      dispatch({ type: actions.SNAPSHOT_ERROR, id, error });
+      return null;
     }
 
-    dispatch({ type: actions.TAKE_SNAPSHOT_END, snapshot, path });
-    return snapshot;
+    dispatch({ type: actions.TAKE_SNAPSHOT_END, id, path });
+    return snapshot.id;
   };
 };
 
@@ -70,24 +86,25 @@ const takeSnapshot = exports.takeSnapshot = function (front) {
 
 
 
-const readSnapshot = exports.readSnapshot = function readSnapshot (heapWorker, snapshot) {
+const readSnapshot = exports.readSnapshot = function readSnapshot (heapWorker, id) {
   return function *(dispatch, getState) {
+    const snapshot = getSnapshot(getState(), id);
     assert([states.SAVED, states.IMPORTING].includes(snapshot.state),
       `Should only read a snapshot once. Found snapshot in state ${snapshot.state}`);
 
     let creationTime;
 
-    dispatch({ type: actions.READ_SNAPSHOT_START, snapshot });
+    dispatch({ type: actions.READ_SNAPSHOT_START, id });
     try {
       yield heapWorker.readHeapSnapshot(snapshot.path);
       creationTime = yield heapWorker.getCreationTime(snapshot.path);
     } catch (error) {
       reportException("readSnapshot", error);
-      dispatch({ type: actions.SNAPSHOT_ERROR, snapshot, error });
+      dispatch({ type: actions.SNAPSHOT_ERROR, id, error });
       return;
     }
 
-    dispatch({ type: actions.READ_SNAPSHOT_END, snapshot, creationTime });
+    dispatch({ type: actions.READ_SNAPSHOT_END, id, creationTime });
   };
 };
 
@@ -99,20 +116,19 @@ const readSnapshot = exports.readSnapshot = function readSnapshot (heapWorker, s
 
 
 
-const takeCensus = exports.takeCensus = function (heapWorker, snapshot) {
+const takeCensus = exports.takeCensus = function (heapWorker, id) {
   return function *(dispatch, getState) {
+    const snapshot = getSnapshot(getState(), id);
     assert([states.READ, states.SAVED_CENSUS].includes(snapshot.state),
       `Can only take census of snapshots in READ or SAVED_CENSUS state, found ${snapshot.state}`);
 
-    let census;
+    let report;
     let inverted = getState().inverted;
     let breakdown = getState().breakdown;
     let filter = getState().filter;
 
     
-    if (inverted === snapshot.inverted
-        && filter === snapshot.filter
-        && breakdownEquals(breakdown, snapshot.breakdown)) {
+    if (censusIsUpToDate(inverted, filter, breakdown, snapshot.census)) {
       return;
     }
 
@@ -126,7 +142,7 @@ const takeCensus = exports.takeCensus = function (heapWorker, snapshot) {
 
       dispatch({
         type: actions.TAKE_CENSUS_START,
-        snapshot,
+        id,
         inverted,
         filter,
         breakdown
@@ -136,10 +152,10 @@ const takeCensus = exports.takeCensus = function (heapWorker, snapshot) {
       opts.filter = filter || null;
 
       try {
-        census = yield heapWorker.takeCensus(snapshot.path, { breakdown }, opts);
-      } catch(error) {
+        report = yield heapWorker.takeCensus(snapshot.path, { breakdown }, opts);
+      } catch (error) {
         reportException("takeCensus", error);
-        dispatch({ type: actions.SNAPSHOT_ERROR, snapshot, error });
+        dispatch({ type: actions.SNAPSHOT_ERROR, id, error });
         return;
       }
     }
@@ -149,11 +165,11 @@ const takeCensus = exports.takeCensus = function (heapWorker, snapshot) {
 
     dispatch({
       type: actions.TAKE_CENSUS_END,
-      snapshot,
+      id,
       breakdown,
       inverted,
       filter,
-      census
+      report
     });
   };
 };
@@ -175,7 +191,7 @@ const refreshSelectedCensus = exports.refreshSelectedCensus = function (heapWork
     
     
     if (snapshot && snapshot.state === states.SAVED_CENSUS) {
-      yield dispatch(takeCensus(heapWorker, snapshot));
+      yield dispatch(takeCensus(heapWorker, snapshot.id));
     }
   };
 };
@@ -184,9 +200,11 @@ const refreshSelectedCensus = exports.refreshSelectedCensus = function (heapWork
 
 
 
-const selectSnapshot = exports.selectSnapshot = function (snapshot) {
+
+
+const selectSnapshot = exports.selectSnapshot = function (id) {
   return {
     type: actions.SELECT_SNAPSHOT,
-    snapshot
+    id
   };
 };

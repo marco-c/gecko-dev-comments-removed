@@ -183,6 +183,10 @@ function DiffVisitor(otherCensus) {
   this._otherCensus = otherCensus;
 
   
+  this._totalBytes = 0;
+  this._totalCount = 0;
+
+  
   
   this._otherCensusStack = [];
 
@@ -280,6 +284,13 @@ DiffVisitor.prototype.count = function (breakdown, report, edge) {
   const other = this._otherCensusStack[this._otherCensusStack.length - 1];
   const results = this._resultsStack[this._resultsStack.length - 1];
 
+  if (breakdown.count) {
+    this._totalCount += report.count;
+  }
+  if (breakdown.bytes) {
+    this._totalBytes += report.bytes;
+  }
+
   if (other) {
     if (breakdown.count) {
       results.count = other.count - report.count;
@@ -297,6 +308,9 @@ DiffVisitor.prototype.count = function (breakdown, report, edge) {
   }
 };
 
+const basisTotalBytes = exports.basisTotalBytes = Symbol("basisTotalBytes");
+const basisTotalCount = exports.basisTotalCount = Symbol("basisTotalCount");
+
 
 
 
@@ -313,8 +327,14 @@ DiffVisitor.prototype.results = function () {
     throw new Error("Attempt to get results while still computing diff!");
   }
 
+  this._results[basisTotalBytes] = this._totalBytes;
+  this._results[basisTotalCount] = this._totalCount;
+
   return this._results;
 };
+
+
+
 
 
 

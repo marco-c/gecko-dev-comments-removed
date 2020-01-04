@@ -14,7 +14,11 @@ const { assert } = require("devtools/shared/DevToolsUtils");
 const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 const CUSTOM_BREAKDOWN_PREF = "devtools.memory.custom-breakdowns";
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { snapshotState: states, breakdowns } = require("./constants");
+const { snapshotState: states, diffingState, breakdowns } = require("./constants");
+
+exports.immutableUpdate = function (...objs) {
+  return Object.freeze(Object.assign({}, ...objs));
+};
 
 
 
@@ -121,78 +125,46 @@ exports.breakdownNameToSpec = function (name) {
 
 
 
-exports.getSnapshotStatusText = function (snapshot) {
-  assert((snapshot || {}).state,
-    `Snapshot must have expected state, found ${(snapshot || {}).state}.`);
+exports.getStatusText = function (state) {
+  assert(state, "Must have a state");
 
-  switch (snapshot.state) {
+  switch (state) {
+    case diffingState.ERROR:
+      return L10N.getStr("diffing.state.error");
+
     case states.ERROR:
       return L10N.getStr("snapshot.state.error");
+
     case states.SAVING:
       return L10N.getStr("snapshot.state.saving");
+
     case states.IMPORTING:
       return L10N.getStr("snapshot.state.importing");
+
     case states.SAVED:
     case states.READING:
       return L10N.getStr("snapshot.state.reading");
+
     case states.SAVING_CENSUS:
       return L10N.getStr("snapshot.state.saving-census");
+
+    case diffingState.TAKING_DIFF:
+      return L10N.getStr("diffing.state.taking-diff");
+
+    case diffingState.SELECTING:
+      return L10N.getStr("diffing.state.selecting");
+
     
     
+    case diffingState.TOOK_DIFF:
     case states.READ:
     case states.SAVED_CENSUS:
       return "";
-  }
 
-  assert(false, `Snapshot in unexpected state: ${snapshot.state}`);
-  return "";
-}
-
-
-
-
-
-
-
-
-exports.getSnapshotStatusTextFull = function (snapshot) {
-  assert((snapshot || {}).state,
-    `Snapshot must have expected state, found ${(snapshot || {}).state}.`);
-  switch (snapshot.state) {
-    case states.ERROR:
-      return L10N.getStr("snapshot.state.error.full");
-    case states.SAVING:
-      return L10N.getStr("snapshot.state.saving.full");
-    case states.IMPORTING:
-      return L10N.getFormatStr("snapshot.state.importing", OS.Path.basename(snapshot.path));
-    case states.SAVED:
-    case states.READING:
-      return L10N.getStr("snapshot.state.reading.full");
-    case states.SAVING_CENSUS:
-      return L10N.getStr("snapshot.state.saving-census.full");
-    
-    
-    case states.READ:
-    case states.SAVED_CENSUS:
+    default:
+      assert(false, `Unexpected state: ${state}`);
       return "";
   }
-}
-
-
-
-
-
-
-
-
-
-
-exports.getSnapshot = function getSnapshot (snapshots, snapshot) {
-  let found = snapshots.find(s => s.id === snapshot.id);
-  if (!found) {
-    DevToolsUtils.reportException(`No matching snapshot found for ${snapshot.id}`);
-  }
-  return found || null;
 };
 
 
@@ -200,17 +172,94 @@ exports.getSnapshot = function getSnapshot (snapshots, snapshot) {
 
 
 
-let INC_ID = 0;
-exports.createSnapshot = function createSnapshot () {
-  let id = ++INC_ID;
-  return {
-    id,
+
+
+exports.getStatusTextFull = function (state) {
+  assert(!!state, "Must have a state");
+
+  switch (state) {
+    case diffingState.ERROR:
+      return L10N.getStr("diffing.state.error.full");
+
+    case states.ERROR:
+      return L10N.getStr("snapshot.state.error.full");
+
+    case states.SAVING:
+      return L10N.getStr("snapshot.state.saving.full");
+
+    case states.IMPORTING:
+      return L10N.getStr("snapshot.state.importing");
+
+    case states.SAVED:
+    case states.READING:
+      return L10N.getStr("snapshot.state.reading.full");
+
+    case states.SAVING_CENSUS:
+      return L10N.getStr("snapshot.state.saving-census.full");
+
+    case diffingState.TAKING_DIFF:
+      return L10N.getStr("diffing.state.taking-diff.full");
+
+    case diffingState.SELECTING:
+      return L10N.getStr("diffing.state.selecting.full");
+
+    
+    
+    case diffingState.TOOK_DIFF:
+    case states.READ:
+    case states.SAVED_CENSUS:
+      return "";
+
+    default:
+      assert(false, `Unexpected state: ${state}`);
+      return "";
+  }
+};
+
+
+
+
+
+
+
+exports.snapshotIsDiffable = function snapshotIsDiffable(snapshot) {
+  return snapshot.state === states.SAVED_CENSUS
+    || snapshot.state === states.SAVING_CENSUS
+    || snapshot.state === states.SAVED
+    || snapshot.state === states.READ;
+};
+
+
+
+
+
+
+
+
+
+
+exports.getSnapshot = function getSnapshot (state, id) {
+  const found = state.snapshots.find(s => s.id === id);
+  assert(found, `No matching snapshot found for ${id}`);
+  return found;
+};
+
+
+
+
+
+
+let ID_COUNTER = 0;
+exports.createSnapshot = function createSnapshot() {
+  return Object.freeze({
+    id: ++ID_COUNTER,
     state: states.SAVING,
     census: null,
     path: null,
     imported: false,
     selected: false,
-  };
+    error: null,
+  });
 };
 
 
@@ -222,7 +271,7 @@ exports.createSnapshot = function createSnapshot () {
 
 
 
-exports.breakdownEquals = function (obj1, obj2) {
+const breakdownEquals = exports.breakdownEquals = function (obj1, obj2) {
   let type1 = typeof obj1;
   let type2 = typeof obj2;
 
@@ -260,28 +309,35 @@ exports.breakdownEquals = function (obj1, obj2) {
 
 
 
-exports.getSnapshotTotals = function (snapshot) {
-  let bytes, count;
 
-  let census = snapshot.census;
 
-  if (snapshot.inverted) {
-    while (census) {
-      bytes = census.totalBytes;
-      count = census.totalCount;
-      census = census.children && census.children[0];
-    }
-  } else {
-    if (census) {
-      bytes = census.totalBytes;
-      count = census.totalCount;
-    }
+
+
+exports.censusIsUpToDate = function (inverted, filter, breakdown, census) {
+  return census
+      && inverted === census.inverted
+      && filter === census.filter
+      && breakdownEquals(breakdown, census.breakdown);
+};
+
+
+
+
+
+
+
+
+exports.getSnapshotTotals = function (census) {
+  let bytes = 0;
+  let count = 0;
+
+  let report = census.report;
+  if (report) {
+    bytes = report.totalBytes;
+    count = report.totalCount;
   }
 
-  return {
-    bytes: bytes || 0,
-    count: count || 0,
-  };
+  return { bytes, count };
 };
 
 
