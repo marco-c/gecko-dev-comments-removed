@@ -15,6 +15,7 @@
 #include "mozilla/gfx/2D.h"
 #include "Decoder.h"
 #include "gfxColor.h"
+#include "imgITools.h"
 #include "nsCOMPtr.h"
 #include "SurfacePipe.h"
 #include "SurfacePipeFactory.h"
@@ -98,6 +99,23 @@ struct BGRAColor
 
 
 
+
+
+
+
+
+
+
+
+struct AutoInitializeImageLib
+{
+  AutoInitializeImageLib()
+  {
+    
+    nsCOMPtr<imgITools> imgTools = do_CreateInstance("@mozilla.org/image/tools;1");
+    EXPECT_TRUE(imgTools != nullptr);
+  }
+};
 
 
 already_AddRefed<nsIInputStream> LoadFile(const char* aRelativePath);
