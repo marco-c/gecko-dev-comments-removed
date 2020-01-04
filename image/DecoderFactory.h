@@ -123,9 +123,14 @@ public:
 
 
 
+
+
+
+
   static already_AddRefed<Decoder>
   CreateAnonymousDecoder(DecoderType aType,
                          SourceBuffer* aSourceBuffer,
+                         const Maybe<gfx::IntSize>& aTargetSize,
                          SurfaceFlags aSurfaceFlags);
 
   
