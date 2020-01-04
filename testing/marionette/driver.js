@@ -339,7 +339,10 @@ GeckoDriver.prototype.whenBrowserStarted = function(win, isNewSession) {
     }
 
     if (!Preferences.get(CONTENT_LISTENER_PREF) || !isNewSession) {
-      mm.loadFrameScript(FRAME_SCRIPT, true, true);
+      
+      
+      
+      mm.loadFrameScript(FRAME_SCRIPT, true);
       Preferences.set(CONTENT_LISTENER_PREF, true);
     }
   } else {
