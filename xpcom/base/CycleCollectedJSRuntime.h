@@ -372,7 +372,7 @@ public:
   void PrepareWaitingZonesForGC();
 
   
-  virtual void DispatchToMicroTask(nsIRunnable* aRunnable);
+  virtual void DispatchToMicroTask(already_AddRefed<nsIRunnable> aRunnable);
 
   
   
