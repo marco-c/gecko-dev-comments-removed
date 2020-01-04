@@ -1,6 +1,12 @@
 config = {
     "log_name": "aurora_to_beta",
-
+    "version_files": [
+        "browser/config/version.txt",
+        "browser/config/version_display.txt",
+        "config/milestone.txt",
+        "mobile/android/confvars.sh",  
+        "b2g/confvars.sh",
+    ],
     "replacements": [
         
         ("{}/{}".format(d, f),
