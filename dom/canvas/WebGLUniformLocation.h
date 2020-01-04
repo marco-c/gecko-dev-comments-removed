@@ -23,6 +23,7 @@ class WebGLProgram;
 
 namespace webgl {
 struct LinkedProgramInfo;
+struct UniformInfo;
 } 
 
 class WebGLUniformLocation final

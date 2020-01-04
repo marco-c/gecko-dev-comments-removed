@@ -7,13 +7,10 @@
 #define TEX_UNPACK_BLOB_H_
 
 #include "GLContextTypes.h"
-#include "GLTypes.h"
+#include "mozilla/RefPtr.h"
 #include "WebGLStrongTypes.h"
 #include "WebGLTypes.h"
 
-
-template <class T>
-class RefPtr;
 
 namespace mozilla {
 
@@ -29,10 +26,6 @@ class HTMLVideoElement;
 
 namespace gfx {
 class DataSourceSurface;
-} 
-
-namespace gl {
-class GLContext;
 } 
 
 namespace layers {
@@ -112,6 +105,8 @@ public:
     TexUnpackImage(const WebGLContext* webgl, TexImageTarget target, uint32_t width,
                    uint32_t height, uint32_t depth, layers::Image* image,
                    bool isAlphaPremult);
+
+    ~TexUnpackImage(); 
 
     virtual bool TexOrSubImage(bool isSubImage, bool needsRespec, const char* funcName,
                                WebGLTexture* tex, TexImageTarget target, GLint level,

@@ -4,7 +4,9 @@
 
 
 #include "WebGL2Context.h"
+
 #include "GLContext.h"
+#include "WebGLFramebuffer.h"
 
 namespace mozilla {
 

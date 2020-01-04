@@ -16,6 +16,9 @@ typedef int64_t WebGLintptr;
 typedef bool WebGLboolean;
 
 namespace mozilla {
+namespace gl {
+class GLContext; 
+} 
 
 
 
