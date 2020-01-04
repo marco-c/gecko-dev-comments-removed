@@ -98,6 +98,8 @@ public:
     mShutdown = true;
   }
 
+  void NotifyCueUpdated(TextTrackCue *aCue);
+
 private:
   
 

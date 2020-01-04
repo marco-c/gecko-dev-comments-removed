@@ -712,5 +712,12 @@ TextTrackManager::TimeMarchesOn()
   UpdateCueDisplay();
 }
 
+void
+TextTrackManager::NotifyCueUpdated(TextTrackCue *aCue)
+{
+  
+  DispatchTimeMarchesOn();
+}
+
 } 
 } 
