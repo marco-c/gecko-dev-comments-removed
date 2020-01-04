@@ -3956,6 +3956,15 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
       
       LOG_RESTYLE_CONTINUE("the old style context is shared");
       result = eRestyleResult_Continue;
+
+      
+      
+      
+      
+      
+      
+      
+      canStopWithStyleChange = false;
     }
 
     
