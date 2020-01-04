@@ -278,6 +278,12 @@ MATCHER(UniqueIsNull, "") {
   return arg.get() == nullptr;
 }
 
+
+MATCHER_P(EdgeTo, id, "") {
+  return Matcher<const DeserializedEdge&>(Field(&DeserializedEdge::referent, id))
+    .MatchAndExplain(arg, result_listener);
+}
+
 } 
 
 
