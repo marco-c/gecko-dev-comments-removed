@@ -365,6 +365,11 @@ nsWebShellWindow::SizeModeChanged(nsSizeMode sizeMode)
     ourWindow->DispatchCustomEvent(NS_LITERAL_STRING("sizemodechange"));
   }
 
+  nsIPresShell* presShell;
+  if ((presShell = GetPresShell())) {
+    presShell->GetPresContext()->SizeModeChanged(sizeMode);
+  }
+
   
   
   
