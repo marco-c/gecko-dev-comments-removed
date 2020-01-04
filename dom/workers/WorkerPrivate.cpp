@@ -1235,8 +1235,8 @@ private:
     JS::Rooted<JS::Value> callable(aCx, JS::ObjectValue(*mHandler->Callable()));
     JS::HandleValueArray args = JS::HandleValueArray::empty();
     JS::Rooted<JS::Value> rval(aCx);
-    if (!JS_CallFunctionValue(aCx, global, callable, args, &rval) &&
-        !JS_ReportPendingException(aCx)) {
+    if (!JS_CallFunctionValue(aCx, global, callable, args, &rval)) {
+      
       return false;
     }
 
@@ -4673,6 +4673,8 @@ bool
 WorkerPrivate::InterruptCallback(JSContext* aCx)
 {
   AssertIsOnWorkerThread();
+
+  MOZ_ASSERT(!JS_IsExceptionPending(aCx));
 
   bool mayContinue = true;
   bool scheduledIdleGC = false;
