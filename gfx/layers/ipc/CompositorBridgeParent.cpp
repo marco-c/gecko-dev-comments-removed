@@ -76,6 +76,10 @@
 #include "ProfilerMarkers.h"
 #endif
 #include "mozilla/VsyncDispatcher.h"
+#include "mozilla/widget/CompositorWidget.h"
+#ifdef MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
+# include "mozilla/widget/CompositorWidgetParent.h"
+#endif
 
 #ifdef MOZ_WIDGET_GONK
 #include "GeckoTouchDispatcher.h"
@@ -1803,6 +1807,38 @@ CompositorBridgeParent::RequestNotifyLayerTreeCleared(uint64_t aLayersId, Compos
   sIndirectLayerTrees[aLayersId].mLayerTreeClearedObserver = aObserver;
 }
 
+widget::PCompositorWidgetParent*
+CompositorBridgeParent::AllocPCompositorWidgetParent(const CompositorWidgetInitData& aInitData)
+{
+#if defined(MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING)
+  if (mWidget) {
+    
+    return nullptr;
+  }
+
+  widget::CompositorWidgetParent* widget =
+    new widget::CompositorWidgetParent(aInitData);
+  widget->AddRef();
+
+  
+  mWidget = widget;
+  return widget;
+#else
+  return nullptr;
+#endif
+}
+
+bool
+CompositorBridgeParent::DeallocPCompositorWidgetParent(PCompositorWidgetParent* aActor)
+{
+#if defined(MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING)
+  static_cast<widget::CompositorWidgetParent*>(aActor)->Release();
+  return true;
+#else
+  return false;
+#endif
+}
+
 
 
 
@@ -1980,6 +2016,15 @@ public:
   virtual void SendAsyncMessage(const InfallibleTArray<AsyncParentMessageData>& aMessage) override
   {
     Unused << SendParentAsyncMessages(aMessage);
+  }
+
+  PCompositorWidgetParent* AllocPCompositorWidgetParent(const CompositorWidgetInitData& aInitData) override {
+    
+    return nullptr;
+  }
+  bool DeallocPCompositorWidgetParent(PCompositorWidgetParent* aActor) override {
+    
+    return false;
   }
 
   virtual CompositorBridgeParentIPCAllocator* AsCompositorBridgeParentIPCAllocator() override { return this; }

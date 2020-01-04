@@ -3,12 +3,14 @@
 
 
 
-#ifndef _widget_windows_WinCompositorWidget_h__
-#define _widget_windows_WinCompositorWidget_h__
+#ifndef widget_windows_CompositorWidgetParent_h
+#define widget_windows_CompositorWidgetParent_h
 
 #include "CompositorWidget.h"
+#include "gfxASurface.h"
 #include "mozilla/gfx/CriticalSection.h"
 #include "mozilla/gfx/Point.h"
+#include "nsIWidget.h"
 
 class nsWindow;
 
