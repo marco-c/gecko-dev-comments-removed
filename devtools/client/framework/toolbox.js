@@ -382,16 +382,9 @@ Toolbox.prototype = {
         useOnlyShared: true
       }).require;
 
-      this.React = this.browserRequire(
-        "devtools/client/shared/vendor/react");
-      this.ReactDOM = this.browserRequire(
-        "devtools/client/shared/vendor/react-dom");
-
       iframe.setAttribute("aria-label", toolboxStrings("toolbox.label"));
       let domHelper = new DOMHelpers(iframe.contentWindow);
       domHelper.onceDOMReady(() => {
-        
-        this._buildNotificationBox();
         domReady.resolve();
       }, this._URL);
 
@@ -485,6 +478,18 @@ Toolbox.prototype = {
 
       this.emit("ready");
     }.bind(this)).then(null, console.error.bind(console));
+  },
+
+  
+
+
+
+  get React() {
+    return this.browserRequire("devtools/client/shared/vendor/react");
+  },
+
+  get ReactDOM() {
+    return this.browserRequire("devtools/client/shared/vendor/react-dom");
   },
 
   _pingTelemetry: function () {
@@ -814,17 +819,21 @@ Toolbox.prototype = {
   
 
 
-  _buildNotificationBox: function () {
-    let { NotificationBox, PriorityLevels } =
-      this.browserRequire("devtools/client/shared/components/notification-box");
+  get notificationBox() {
+    if (!this._notificationBox) {
+      let { NotificationBox, PriorityLevels } =
+        this.browserRequire(
+          "devtools/client/shared/components/notification-box");
 
-    NotificationBox = this.React.createFactory(NotificationBox);
+      NotificationBox = this.React.createFactory(NotificationBox);
 
-    
-    let box = this.doc.getElementById("toolbox-notificationbox");
-    this.notificationBox = Object.assign(
-      this.ReactDOM.render(NotificationBox({}), box),
-      PriorityLevels);
+      
+      let box = this.doc.getElementById("toolbox-notificationbox");
+      this._notificationBox = Object.assign(
+        this.ReactDOM.render(NotificationBox({}), box),
+        PriorityLevels);
+    }
+    return this._notificationBox;
   },
 
   
@@ -2098,7 +2107,7 @@ Toolbox.prototype = {
       }
     }
 
-    this.React = this.ReactDOM = this.browserRequire = null;
+    this.browserRequire = null;
 
     
     
