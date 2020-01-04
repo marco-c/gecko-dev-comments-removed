@@ -790,15 +790,30 @@ nsImageFrame::EnsureIntrinsicSizeAndRatio()
     } else {
       
       
-      
-      
       if (!(GetStateBits() & NS_FRAME_GENERATED_CONTENT)) {
-        nscoord edgeLengthToUse =
-          nsPresContext::CSSPixelsToAppUnits(
-            ICON_SIZE + (2 * (ICON_PADDING + ALT_BORDER_WIDTH)));
-        mIntrinsicSize.width.SetCoordValue(edgeLengthToUse);
-        mIntrinsicSize.height.SetCoordValue(edgeLengthToUse);
-        mIntrinsicRatio.SizeTo(1, 1);
+        bool imageBroken = false;
+        
+        
+        nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
+        if (imageLoader) {
+          nsCOMPtr<imgIRequest> currentRequest;
+          imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
+                                  getter_AddRefs(currentRequest));
+          uint32_t imageStatus;
+          imageBroken =
+            currentRequest &&
+            NS_SUCCEEDED(currentRequest->GetImageStatus(&imageStatus)) &&
+            (imageStatus & imgIRequest::STATUS_ERROR);
+        }
+        
+        if (imageBroken) {
+          nscoord edgeLengthToUse =
+            nsPresContext::CSSPixelsToAppUnits(
+              ICON_SIZE + (2 * (ICON_PADDING + ALT_BORDER_WIDTH)));
+          mIntrinsicSize.width.SetCoordValue(edgeLengthToUse);
+          mIntrinsicSize.height.SetCoordValue(edgeLengthToUse);
+          mIntrinsicRatio.SizeTo(1, 1);
+        }
       }
     }
   }
