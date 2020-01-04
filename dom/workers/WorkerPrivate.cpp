@@ -107,10 +107,6 @@
 #include "WorkerScope.h"
 #include "WorkerThread.h"
 
-#ifdef XP_WIN
-#undef PostMessage
-#endif
-
 
 #define PERIODIC_GC_TIMER_DELAY_SEC 1
 
