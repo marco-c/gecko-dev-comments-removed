@@ -378,11 +378,6 @@ ReparentFrameViewTo(nsIFrame*       aFrame,
                     nsView*        aNewParentView,
                     nsView*        aOldParentView)
 {
-
-  
-  
-
-  
   if (aFrame->HasView()) {
 #ifdef MOZ_XUL
     if (aFrame->GetType() == nsGkAtoms::menuPopupFrame) {
