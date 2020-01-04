@@ -45,6 +45,7 @@ Cu.import("resource://gre/modules/FxAccountsCommon.js", fxAccountsCommon);
 const OBSERVER_TOPICS = [
   fxAccountsCommon.ONLOGIN_NOTIFICATION,
   fxAccountsCommon.ONLOGOUT_NOTIFICATION,
+  fxAccountsCommon.ON_ACCOUNT_STATE_CHANGE_NOTIFICATION,
 ];
 
 const PREF_SYNC_SHOW_CUSTOMIZATION = "services.sync-setup.ui.showCustomizationDialog";
@@ -306,6 +307,13 @@ this.BrowserIDManager.prototype = {
       Weave.Service.startOver();
       
       
+      break;
+
+    case fxAccountsCommon.ON_ACCOUNT_STATE_CHANGE_NOTIFICATION:
+      
+      this.resetCredentials();
+      this._ensureValidToken().catch(err =>
+        this._log.error("Error while fetching a new token", err));
       break;
     }
   },
@@ -673,12 +681,19 @@ this.BrowserIDManager.prototype = {
       this._log.debug("_ensureValidToken already has one");
       return Promise.resolve();
     }
+    const notifyStateChanged =
+      () => Services.obs.notifyObservers(null, "weave:service:login:change", null);
     
     
     this._token = null;
     return this._fetchTokenForUser().then(
       token => {
         this._token = token;
+        notifyStateChanged();
+      },
+      error => {
+        notifyStateChanged();
+        throw error
       }
     );
   },

@@ -43,24 +43,26 @@ var publicProperties = [
   "getAssertion",
   "getDeviceId",
   "getKeys",
-  "getSignedInUser",
   "getOAuthToken",
+  "getSignedInUser",
   "getSignedInUserProfile",
+  "handleDeviceDisconnection",
   "invalidateCertificate",
   "loadAndPoll",
   "localtimeOffsetMsec",
   "now",
-  "promiseAccountsForceSigninURI",
   "promiseAccountsChangeProfileURI",
+  "promiseAccountsForceSigninURI",
   "promiseAccountsManageURI",
   "removeCachedOAuthToken",
   "resendVerificationEmail",
+  "resetCredentials",
+  "sessionStatus",
   "setSignedInUser",
   "signOut",
-  "updateUserAccountData",
   "updateDeviceRegistration",
-  "handleDeviceDisconnection",
-  "whenVerified"
+  "updateUserAccountData",
+  "whenVerified",
 ];
 
 
@@ -799,6 +801,22 @@ FxAccountsInternal.prototype = {
 
 
 
+  sessionStatus() {
+    return this.getSignedInUser().then(data => {
+      if (!data.sessionToken) {
+        return Promise.reject(new Error(
+          "sessionStatus called without a session token"));
+      }
+      return this.fxAccountsClient.sessionStatus(data.sessionToken);
+    });
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -1507,6 +1525,28 @@ FxAccountsInternal.prototype = {
   },
 
   
+
+
+
+
+  resetCredentials() {
+    
+    
+    let updateData = {};
+    let clearField = field => {
+      if (!FXA_PWDMGR_REAUTH_WHITELIST.has(field)) {
+        updateData[field] = null;
+      }
+    }
+    FXA_PWDMGR_PLAINTEXT_FIELDS.forEach(clearField);
+    FXA_PWDMGR_SECURE_FIELDS.forEach(clearField);
+    FXA_PWDMGR_MEMORY_FIELDS.forEach(clearField);
+
+    let currentState = this.currentAccountState;
+    return currentState.updateUserAccountData(updateData);
+  },
+
+  
   
   
   _registerOrUpdateDevice(signedInUser) {
@@ -1651,22 +1691,8 @@ FxAccountsInternal.prototype = {
         log.info("token invalidated because the account no longer exists");
         return this.signOut(true);
       }
-
-      
-      
       log.info("clearing credentials to handle invalid token error");
-      let updateData = {};
-      let clearField = field => {
-        if (!FXA_PWDMGR_REAUTH_WHITELIST.has(field)) {
-          updateData[field] = null;
-        }
-      }
-      FXA_PWDMGR_PLAINTEXT_FIELDS.forEach(clearField);
-      FXA_PWDMGR_SECURE_FIELDS.forEach(clearField);
-      FXA_PWDMGR_MEMORY_FIELDS.forEach(clearField);
-
-      let currentState = this.currentAccountState;
-      return currentState.updateUserAccountData(updateData);
+      return this.resetCredentials();
     }).then(() => Promise.reject(err));
   },
 };

@@ -190,6 +190,27 @@ this.FxAccountsClient.prototype = {
 
 
 
+
+  sessionStatus: function (sessionTokenHex) {
+    return this._request("/session/status", "GET",
+      deriveHawkCredentials(sessionTokenHex, "sessionToken")).then(
+        () => Promise.resolve(true),
+        error => {
+          if (isInvalidTokenError(error)) {
+            return Promise.resolve(false);
+          }
+          throw error;
+        }
+      );
+  },
+
+  
+
+
+
+
+
+
   signOut: function (sessionTokenHex, options = {}) {
     let path = "/session/destroy";
     if (options.service) {

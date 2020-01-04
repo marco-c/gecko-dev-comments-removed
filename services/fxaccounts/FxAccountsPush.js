@@ -10,6 +10,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://services-sync/util.js");
 Cu.import("resource://gre/modules/FxAccountsCommon.js");
+Cu.import("resource://gre/modules/Task.jsm");
 
 
 
@@ -114,23 +115,24 @@ FxAccountsPushService.prototype = {
 
 
 
-  observe(subject, topic, data) {
+
+  _observe(subject, topic, data) {
     this.log.trace(`observed topic=${topic}, data=${data}, subject=${subject}`);
     switch (topic) {
       case this.pushService.pushTopic:
         if (data === FXA_PUSH_SCOPE_ACCOUNT_UPDATE) {
           let message = subject.QueryInterface(Ci.nsIPushMessage);
-          this._onPushMessage(message);
+          return this._onPushMessage(message);
         }
         break;
       case this.pushService.subscriptionChangeTopic:
         if (data === FXA_PUSH_SCOPE_ACCOUNT_UPDATE) {
-          this._onPushSubscriptionChange();
+          return this._onPushSubscriptionChange();
         }
         break;
       case ONLOGOUT_NOTIFICATION:
         
-        this.unsubscribe().catch(err => {
+        return this.unsubscribe().catch(err => {
           this.log.error("Error during unsubscribe", err);
         });
         break;
@@ -141,19 +143,31 @@ FxAccountsPushService.prototype = {
   
 
 
+  observe(subject, topic, data) {
+    Promise.resolve()
+      .then(() => this._observe(subject, topic, data))
+      .catch(err => this.log.error(err));
+  },
+  
+
+
+
 
 
   _onPushMessage(message) {
     this.log.trace("FxAccountsPushService _onPushMessage");
     if (!message.data) {
       
-      this.fxAccounts.checkVerificationStatus();
-      return;
+      return this.fxAccounts.checkVerificationStatus();
     }
     let payload = message.data.json();
     switch (payload.command) {
       case ON_DEVICE_DISCONNECTED_NOTIFICATION:
-        this.fxAccounts.handleDeviceDisconnection(payload.data.id);
+        return this.fxAccounts.handleDeviceDisconnection(payload.data.id);
+        break;
+      case ON_PASSWORD_CHANGED_NOTIFICATION:
+      case ON_PASSWORD_RESET_NOTIFICATION:
+        return this._onPasswordChanged();
         break;
       default:
         this.log.warn("FxA Push command unrecognized: " + payload.command);
@@ -166,9 +180,24 @@ FxAccountsPushService.prototype = {
 
 
 
+
+  _onPasswordChanged: Task.async(function* () {
+    if (!(yield this.fxAccounts.sessionStatus())) {
+      yield this.fxAccounts.resetCredentials();
+      Services.obs.notifyObservers(null, ON_ACCOUNT_STATE_CHANGE_NOTIFICATION, null);
+    }
+  }),
+  
+
+
+
+
+
+
+
   _onPushSubscriptionChange() {
     this.log.trace("FxAccountsPushService _onPushSubscriptionChange");
-    this.fxAccounts.updateDeviceRegistration();
+    return this.fxAccounts.updateDeviceRegistration();
   },
   
 
@@ -194,8 +223,8 @@ FxAccountsPushService.prototype = {
             this.log.warn("FxAccountsPushService failed to unsubscribe", result);
           }
           return resolve(ok);
-        })
-    })
+        });
+    });
   },
 };
 
