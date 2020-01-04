@@ -13,6 +13,45 @@ richlistitem[type="download"]:not([selected]) button {
   -moz-user-focus: none;
 }
 
+richlistitem[type="download"].download-state[state="1"]:not([exists]) .downloadShow {
+  display: none;
+}
+
+#downloadsSummary:not([inprogress]) > vbox > #downloadsSummaryProgress,
+#downloadsSummary:not([inprogress]) > vbox > #downloadsSummaryDetails,
+#downloadsFooter[showingsummary] > #downloadsHistory,
+#downloadsFooter:not([showingsummary]) > #downloadsSummary {
+  display: none;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+richlistitem.download {
+  -moz-binding: none;
+}
+
+richlistitem.download[active] {
+  -moz-binding: url("chrome://browser/content/downloads/download.xml#download-full-ui");
+}
+
+richlistitem.download button {
+  
+
+
+  -moz-user-focus: none;
+}
+
 
 
 .download-state:-moz-any(     [state="6"], 
@@ -94,17 +133,4 @@ richlistitem[type="download"]:not([selected]) button {
 
 {
   visibility: hidden;
-}
-
-.download-state[state="1"]:not([exists]) .downloadShow
-{
-  display: none;
-}
-
-#downloadsSummary:not([inprogress]) > vbox > #downloadsSummaryProgress,
-#downloadsSummary:not([inprogress]) > vbox > #downloadsSummaryDetails,
-#downloadsFooter[showingsummary] > #downloadsHistory,
-#downloadsFooter:not([showingsummary]) > #downloadsSummary
-{
-  display: none;
 }
