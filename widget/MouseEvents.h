@@ -324,7 +324,7 @@ private:
   friend class mozilla::dom::PBrowserChild;
 protected:
   WidgetDragEvent()
-    : userCancelled(false)
+    : mUserCancelled(false)
     , mDefaultPreventedOnContent(false)
   {
   }
@@ -333,7 +333,7 @@ public:
 
   WidgetDragEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget)
     : WidgetMouseEvent(aIsTrusted, aMessage, aWidget, eDragEventClass, eReal)
-    , userCancelled(false)
+    , mUserCancelled(false)
     , mDefaultPreventedOnContent(false)
   {
     mFlags.mCancelable =
@@ -355,7 +355,7 @@ public:
   nsCOMPtr<dom::DataTransfer> mDataTransfer;
 
   
-  bool userCancelled;
+  bool mUserCancelled;
   
   bool mDefaultPreventedOnContent;
 
@@ -366,7 +366,7 @@ public:
 
     mDataTransfer = aEvent.mDataTransfer;
     
-    userCancelled = false;
+    mUserCancelled = false;
     mDefaultPreventedOnContent = aEvent.mDefaultPreventedOnContent;
   }
 };
