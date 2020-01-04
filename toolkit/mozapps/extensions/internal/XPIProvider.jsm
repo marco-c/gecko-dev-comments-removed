@@ -7547,7 +7547,6 @@ function PrivateWrapper(aAddon) {
 
 PrivateWrapper.prototype = Object.create(AddonWrapper.prototype);
 Object.assign(PrivateWrapper.prototype, {
-
   addonId() {
     return this.id;
   },
@@ -7559,10 +7558,43 @@ Object.assign(PrivateWrapper.prototype, {
 
 
 
-  setDebugGlobal(global) {
+  getDebugGlobal(global) {
     let activeAddon = XPIProvider.activeAddons.get(this.id);
     if (activeAddon) {
-      activeAddon.debugGlobal = global;
+      return activeAddon.debugGlobal;
+    }
+
+    return null;
+  },
+
+  
+
+
+
+
+
+
+  setDebugGlobal(global) {
+    if (!global) {
+      
+      
+      
+      
+      AddonManagerPrivate.callAddonListeners("onPropertyChanged",
+                                             addonFor(this),
+                                             ["debugGlobal"]);
+    } else {
+      let activeAddon = XPIProvider.activeAddons.get(this.id);
+      if (activeAddon) {
+        let globalChanged = activeAddon.debugGlobal != global;
+        activeAddon.debugGlobal = global;
+
+        if (globalChanged) {
+          AddonManagerPrivate.callAddonListeners("onPropertyChanged",
+                                                 addonFor(this),
+                                                 ["debugGlobal"]);
+        }
+      }
     }
   }
 });
