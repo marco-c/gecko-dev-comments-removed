@@ -33,28 +33,9 @@ function checkOriginAttributes(prin, attrs, suffix) {
   } else {
     checkThrows(() => ssm.createCodebasePrincipalFromOrigin(prin.origin));
   }
-}
 
-
-function printAttrs(name, attrs) {
-  do_print(name + " {\n" +
-           "\tappId: " + attrs.appId + ",\n" +
-           "\tuserContextId: " + attrs.userContextId + ",\n" +
-           "\tinBrowser: " + attrs.inBrowser + ",\n" +
-           "\taddonId: '" + attrs.addonId + "',\n" +
-           "\tsignedPkg: '" + attrs.signedPkg + "'\n}");
-}
-
-
-function checkValues(attrs, values) {
-  values = values || {};
-  
-  
-  do_check_eq(attrs.appId, values.appId || 0);
-  do_check_eq(attrs.userContextId, values.userContextId || 0);
-  do_check_eq(attrs.inBrowser, values.inBrowser || false);
-  do_check_eq(attrs.addonId, values.addonId || '');
-  do_check_eq(attrs.signedPkg, values.signedPkg || '');
+  do_check_eq(ChromeUtils.createOriginAttributesWithUserContextId("http://example.org", 2).userContextId, 2);
+  do_check_eq(ChromeUtils.createOriginAttributesWithUserContextId("https://www.example.com:123^userContextId=4", 2).userContextId, 2);
 }
 
 function run_test() {
@@ -196,83 +177,4 @@ function run_test() {
   checkKind(ssm.createCodebasePrincipal(makeURI('http://www.example.com'), {}), 'codebasePrincipal');
   checkKind(ssm.createExpandedPrincipal([ssm.createCodebasePrincipal(makeURI('http://www.example.com'), {})]), 'expandedPrincipal');
   checkKind(ssm.getSystemPrincipal(), 'systemPrincipal');
-
-  
-  
-  
-
-  
-  
-  emptyAttrs = ChromeUtils.createDefaultOriginAttributes();
-  checkValues(emptyAttrs);
-
-  var uri = "http://example.org";
-  var tests = [
-    [ "", {} ],
-    [ "^appId=5", {appId: 5} ],
-    [ "^userContextId=3", {userContextId: 3} ],
-    [ "^addonId=fooBar", {addonId: "fooBar"} ],
-    [ "^inBrowser=1", {inBrowser: true} ],
-    [ "^signedPkg=bazQux", {signedPkg: "bazQux"} ],
-    [ "^appId=3&inBrowser=1&userContextId=6",
-      {appId: 3, userContextId: 6, inBrowser: true} ] ];
-
-  
-  tests.forEach(function(t) {
-    let attrs = ChromeUtils.createOriginAttributesFromOrigin(uri + t[0]);
-    checkValues(attrs, t[1]);
-    do_check_eq(ChromeUtils.originAttributesToSuffix(attrs), t[0]);
-  });
-
-  
-  tests.forEach(function(t) {
-    let attrs = ChromeUtils.createOriginAttributesFromDict(t[1]);
-    checkValues(attrs, t[1]);
-    do_check_eq(ChromeUtils.originAttributesToSuffix(attrs), t[0]);
-  });
-
-  
-  
-  
-  
-  
-  
-  var set_tests = [
-    [ "", {}, {appId: 5}, {appId: 5}, "^appId=5" ],
-    [ "^appId=5", {appId: 5}, {appId: 3}, {appId: 3}, "^appId=3" ],
-    [ "^appId=5", {appId: 5}, {userContextId: 3}, {appId: 5, userContextId: 3}, "^appId=5&userContextId=3" ],
-    [ "^appId=5", {appId: 5}, {appId: 3, userContextId: 7}, {appId: 3, userContextId: 7}, "^appId=3&userContextId=7" ] ];
-
-  
-  set_tests.forEach(function(t) {
-    let orig = ChromeUtils.createOriginAttributesFromOrigin(uri + t[0]);
-    checkValues(orig, t[1]);
-    let mod = orig;
-    for (var key in t[2]) {
-      mod[key] = t[2][key];
-    }
-    checkValues(mod, t[3]);
-    do_check_eq(ChromeUtils.originAttributesToSuffix(mod), t[4]);
-  });
-
-  
-  
-  
-  
-  
-  var dflt_tests = [
-    [ "", {}, {}, "" ],
-    [ "^userContextId=3", {userContextId: 3}, {}, "" ],
-    [ "^appId=5", {appId: 5}, {appId: 5}, "^appId=5" ],
-    [ "^appId=5&userContextId=3", {appId: 5, userContextId: 3}, {appId: 5}, "^appId=5" ] ];
-
-  
-  dflt_tests.forEach(function(t) {
-    let orig = ChromeUtils.createOriginAttributesFromOrigin(uri + t[0]);
-    checkValues(orig, t[1]);
-    let mod = orig;
-    mod['userContextId'] = 0;
-    checkValues(mod, t[2]);
-    do_check_eq(ChromeUtils.originAttributesToSuffix(mod), t[3]);
-  });
 }
