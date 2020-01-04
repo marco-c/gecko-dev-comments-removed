@@ -1222,31 +1222,6 @@ public class GeckoAppShell
             return intent;
         }
 
-        if ("vnd.youtube".equals(scheme) &&
-            !hasHandlersForIntent(intent) &&
-            !TextUtils.isEmpty(uri.getSchemeSpecificPart())) {
-
-            
-            
-            final Class<?> c;
-            final String browserClassName = AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS;
-            try {
-                c = Class.forName(browserClassName);
-            } catch (ClassNotFoundException e) {
-                
-                Log.wtf(LOGTAG, "Class " + browserClassName + " not found!");
-                return null;
-            }
-
-            final Uri youtubeURI = getYouTubeHTML5URI(uri);
-            if (youtubeURI != null) {
-                
-                
-                final Intent view = new Intent(GeckoApp.ACTION_LOAD, youtubeURI, context, c);
-                return view;
-            }
-        }
-
         
         
         if (!"sms".equals(scheme)) {
@@ -1295,30 +1270,6 @@ public class GeckoAppShell
         }
 
         intent.setSelector(null);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    private static Uri getYouTubeHTML5URI(final Uri uri) {
-        if (uri == null) {
-            return null;
-        }
-
-        final String ssp = uri.getSchemeSpecificPart();
-        if (TextUtils.isEmpty(ssp)) {
-            return null;
-        }
-
-        return Uri.parse("https://www.youtube.com/embed/" + ssp);
     }
 
     
