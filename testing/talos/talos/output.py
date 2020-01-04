@@ -279,4 +279,4 @@ class PerfherderOutput(Output):
         return test_results
 
 
-formats = {'datazilla_urls': PerfherderOutput}
+formats = {'output_urls': PerfherderOutput}

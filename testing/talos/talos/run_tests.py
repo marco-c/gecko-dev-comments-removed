@@ -165,11 +165,11 @@ def run_tests(config, browser_config):
         results_urls = dict(
             
             
-            datazilla_urls=['local.json'],
+            output_urls=['local.json'],
         )
     else:
         
-        results_urls = dict(datazilla_urls=[os.path.abspath('local.json')])
+        results_urls = dict(output_urls=[os.path.abspath('local.json')])
     talos_results.check_output_formats(results_urls)
 
     httpd = setup_webserver(browser_config['webserver'])
@@ -215,7 +215,7 @@ def run_tests(config, browser_config):
         talos_results.output(results_urls)
         if browser_config['develop']:
             print ("Thanks for running Talos locally. Results are in %s"
-                   % (results_urls['datazilla_urls']))
+                   % (results_urls['output_urls']))
 
     
     
