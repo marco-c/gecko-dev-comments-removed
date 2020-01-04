@@ -214,7 +214,8 @@ enum GMPSessionType {
 };
 
 
-#define GMP_API_DECRYPTOR "eme-decrypt-v8"
+
+#define GMP_API_DECRYPTOR "eme-decrypt-v9"
 #define GMP_API_DECRYPTOR_BACKWARDS_COMPAT "eme-decrypt-v7"
 
 
@@ -325,6 +326,113 @@ public:
   virtual void DecryptingComplete() = 0;
 
   virtual ~GMPDecryptor() {}
+};
+
+
+
+
+
+class GMPDecryptor7 {
+public:
+
+  
+  
+  virtual void Init(GMPDecryptorCallback* aCallback) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void CreateSession(uint32_t aCreateSessionToken,
+                             uint32_t aPromiseId,
+                             const char* aInitDataType,
+                             uint32_t aInitDataTypeSize,
+                             const uint8_t* aInitData,
+                             uint32_t aInitDataSize,
+                             GMPSessionType aSessionType) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void LoadSession(uint32_t aPromiseId,
+                           const char* aSessionId,
+                           uint32_t aSessionIdLength) = 0;
+
+  
+  
+  virtual void UpdateSession(uint32_t aPromiseId,
+                             const char* aSessionId,
+                             uint32_t aSessionIdLength,
+                             const uint8_t* aResponse,
+                             uint32_t aResponseSize) = 0;
+
+  
+  
+  virtual void CloseSession(uint32_t aPromiseId,
+                            const char* aSessionId,
+                            uint32_t aSessionIdLength) = 0;
+
+  
+  
+  virtual void RemoveSession(uint32_t aPromiseId,
+                             const char* aSessionId,
+                             uint32_t aSessionIdLength) = 0;
+
+  
+  
+  virtual void SetServerCertificate(uint32_t aPromiseId,
+                                    const uint8_t* aServerCert,
+                                    uint32_t aServerCertSize) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void Decrypt(GMPBuffer* aBuffer,
+                       GMPEncryptedBufferMetadata* aMetadata) = 0;
+
+  
+  
+  virtual void DecryptingComplete() = 0;
+
+  virtual ~GMPDecryptor7() {}
 };
 
 #endif 
