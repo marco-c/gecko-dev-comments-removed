@@ -493,7 +493,6 @@ MP3TrackDemuxer::FindNextFrame() {
     
     
     MOZ_ASSERT(foundFrame || bytesToSkip || !reader.Remaining());
-    reader.DiscardRemaining();
 
     if (foundFrame && mParser.FirstFrame().Length() &&
         !VerifyFrameConsistency(mParser.FirstFrame(), mParser.CurrentFrame())) {
@@ -584,7 +583,6 @@ MP3TrackDemuxer::GetNextFrame(const MediaByteRange& aRange) {
     
     ByteReader reader(frame->Data(), frame->Size());
     mParser.ParseVBRHeader(&reader);
-    reader.DiscardRemaining();
     mFirstFrameOffset = frame->mOffset;
   }
 

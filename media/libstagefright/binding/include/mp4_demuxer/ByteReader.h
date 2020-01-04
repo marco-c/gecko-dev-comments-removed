@@ -48,18 +48,11 @@ public:
 
   ~ByteReader()
   {
-    NS_ASSERTION(!mRemaining, "Not all bytes have been processed");
   }
 
   size_t Offset()
   {
     return mLength - mRemaining;
-  }
-
-  
-  void DiscardRemaining()
-  {
-    mRemaining = 0;
   }
 
   size_t Remaining() const { return mRemaining; }
@@ -349,23 +342,6 @@ private:
   const uint8_t* mPtr;
   size_t mRemaining;
   size_t mLength;
-};
-
-
-class MOZ_RAII AutoByteReader : public ByteReader
-{
-public:
-  AutoByteReader(const uint8_t* aData, size_t aSize)
-    : ByteReader(aData, aSize)
-  {
-  }
-  ~AutoByteReader()
-  {
-    ByteReader::DiscardRemaining();
-  }
-
-  
-  void DiscardRemaining() = delete;
 };
 
 } 
