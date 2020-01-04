@@ -62,11 +62,46 @@ nsCSSClipPathInstance::HitTestBasicShapeClip(nsIFrame* aFrame,
   return path->ContainsPoint(ToPoint(aPoint) * pixelRatio, Matrix());
 }
 
+nsRect
+nsCSSClipPathInstance::ComputeSVGReferenceRect()
+{
+  nsRect r;
+
+  
+  
+  switch (mClipPathStyle.GetReferenceBox()) {
+
+    case StyleClipPathGeometryBox::NoBox:
+    case StyleClipPathGeometryBox::Border:
+    case StyleClipPathGeometryBox::Content:
+    case StyleClipPathGeometryBox::Padding:
+    case StyleClipPathGeometryBox::Margin:
+    case StyleClipPathGeometryBox::Fill: {
+      gfxRect bbox = nsSVGUtils::GetBBox(mTargetFrame,
+                                         nsSVGUtils::eBBoxIncludeFill);
+      r = nsLayoutUtils::RoundGfxRectToAppRect(bbox,
+                                         nsPresContext::AppUnitsPerCSSPixel());
+      break;
+    }
+    default:{
+      MOZ_ASSERT_UNREACHABLE("unknown StyleClipPathGeometryBox type");
+      gfxRect bbox = nsSVGUtils::GetBBox(mTargetFrame,
+                                         nsSVGUtils::eBBoxIncludeFill);
+      r = nsLayoutUtils::RoundGfxRectToAppRect(bbox,
+                                         nsPresContext::AppUnitsPerCSSPixel());
+      break;
+    }
+  }
+
+  return r;
+}
 
 nsRect
 nsCSSClipPathInstance::ComputeHTMLReferenceRect()
 {
   nsRect r;
+
+  
   
   switch (mClipPathStyle.GetReferenceBox()) {
     case StyleClipPathGeometryBox::Content:
@@ -78,7 +113,15 @@ nsCSSClipPathInstance::ComputeHTMLReferenceRect()
     case StyleClipPathGeometryBox::Margin:
       r = mTargetFrame->GetMarginRectRelativeToSelf();
       break;
-    default: 
+    case StyleClipPathGeometryBox::NoBox:
+    case StyleClipPathGeometryBox::Border:
+    case StyleClipPathGeometryBox::Fill:
+    case StyleClipPathGeometryBox::Stroke:
+    case StyleClipPathGeometryBox::View:
+      r = mTargetFrame->GetRectRelativeToSelf();
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unknown StyleClipPathGeometryBox type");
       r = mTargetFrame->GetRectRelativeToSelf();
       break;
   }
@@ -89,7 +132,12 @@ nsCSSClipPathInstance::ComputeHTMLReferenceRect()
 already_AddRefed<Path>
 nsCSSClipPathInstance::CreateClipPath(DrawTarget* aDrawTarget)
 {
-  nsRect r = ComputeHTMLReferenceRect();
+  
+  
+  
+  nsRect r = mTargetFrame->IsFrameOfType(nsIFrame::eSVG) &&
+             (mTargetFrame->GetType() != nsGkAtoms::svgOuterSVGFrame)
+             ? ComputeSVGReferenceRect() : ComputeHTMLReferenceRect();
 
   if (mClipPathStyle.GetType() != StyleShapeSourceType::Shape) {
     
