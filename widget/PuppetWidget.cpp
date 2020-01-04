@@ -575,8 +575,7 @@ PuppetWidget::IMEEndComposition(bool aCancel)
 
   nsEventStatus status;
   bool noCompositionEvent = true;
-  WidgetCompositionEvent compositionCommitEvent(true, NS_COMPOSITION_COMMIT,
-                                                this);
+  WidgetCompositionEvent compositionCommitEvent(true, eCompositionCommit, this);
   InitEvent(compositionCommitEvent, nullptr);
   
   

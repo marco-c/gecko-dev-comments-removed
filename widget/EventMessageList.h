@@ -173,7 +173,7 @@ NS_EVENT_MESSAGE(eCompositionCommitAsIs, eCompositionEventFirst + 4)
 
 
 
-NS_EVENT_MESSAGE(NS_COMPOSITION_COMMIT,  eCompositionEventFirst + 5)
+NS_EVENT_MESSAGE(eCompositionCommit,     eCompositionEventFirst + 5)
 
 
 
