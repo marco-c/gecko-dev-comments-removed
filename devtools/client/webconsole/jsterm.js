@@ -308,6 +308,11 @@ JSTerm.prototype = {
       return;
     }
     let errorMessage = response.exceptionMessage;
+    
+    
+    if (typeof(response.exception) === "string") {
+      errorMessage = new Error(errorMessage).toString();
+    }
     let result = response.result;
     let helperResult = response.helperResult;
     let helperHasRawOutput = !!(helperResult || {}).rawOutput;

@@ -1349,7 +1349,7 @@ Messages.JavaScriptEvalOutput = function(evalResponse, errorMessage)
   
   this.response = evalResponse;
 
-  if (errorMessage) {
+  if (typeof(errorMessage) !== "undefined") {
     severity = "error";
     msg = errorMessage;
     quoteStrings = false;
