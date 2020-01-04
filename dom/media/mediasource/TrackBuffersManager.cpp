@@ -1624,6 +1624,12 @@ TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
   intersection.Intersection(aIntervals);
 
   if (intersection.Length()) {
+    if (aSamples[0]->mKeyframe) {
+      
+      
+      
+      trackBuffer.mNextInsertionIndex.reset();
+    }
     RemoveFrames(aIntervals, trackBuffer, trackBuffer.mNextInsertionIndex.refOr(0));
   }
 
