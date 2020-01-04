@@ -84,9 +84,18 @@ nsNSSU2FToken::destructorSafeDestroyNSSReference()
   mWrappingKey = nullptr;
 }
 
+
+
+
+
+
+
+
+
+
 static UniquePK11SymKey
 GetSymKeyByNickname(const UniquePK11SlotInfo& aSlot,
-                    nsCString aNickname,
+                    const nsCString& aNickname,
                     const nsNSSShutDownPreventionLock&)
 {
   MOZ_ASSERT(aSlot);
@@ -97,25 +106,27 @@ GetSymKeyByNickname(const UniquePK11SlotInfo& aSlot,
   MOZ_LOG(gNSSTokenLog, LogLevel::Debug,
           ("Searching for a symmetric key named %s", aNickname.get()));
 
-  PK11SymKey* keyList;
-  keyList = PK11_ListFixedKeysInSlot(aSlot.get(),
-                                     const_cast<char*>(aNickname.get()),
-                                      nullptr);
-  while (keyList) {
-    UniquePK11SymKey freeKey(keyList);
-
-    UniquePORTString freeKeyName(PK11_GetSymKeyNickname(freeKey.get()));
-
-    if (aNickname == freeKeyName.get()) {
-      MOZ_LOG(gNSSTokenLog, LogLevel::Debug, ("Symmetric key found!"));
-      return freeKey;
-    }
-
-    keyList = PK11_GetNextSymKey(keyList);
+  UniquePK11SymKey keyListHead(
+    PK11_ListFixedKeysInSlot(aSlot.get(), const_cast<char*>(aNickname.get()),
+                              nullptr));
+  if (!keyListHead) {
+    MOZ_LOG(gNSSTokenLog, LogLevel::Debug, ("Symmetric key not found."));
+    return nullptr;
   }
 
-  MOZ_LOG(gNSSTokenLog, LogLevel::Debug, ("Symmetric key not found."));
-  return nullptr;
+  
+  
+  MOZ_ASSERT(aNickname ==
+               UniquePORTString(PK11_GetSymKeyNickname(keyListHead.get())).get());
+  MOZ_LOG(gNSSTokenLog, LogLevel::Debug, ("Symmetric key found!"));
+
+  
+  UniquePK11SymKey freeKey(PK11_GetNextSymKey(keyListHead.get()));
+  while (freeKey) {
+    freeKey = UniquePK11SymKey(PK11_GetNextSymKey(freeKey.get()));
+  }
+
+  return keyListHead;
 }
 
 static nsresult
