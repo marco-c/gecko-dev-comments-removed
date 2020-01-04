@@ -958,6 +958,13 @@ var DebuggerServer = {
     
     
     let onSetupInParent = function (msg) {
+      
+      
+      
+      if (!msg.json.prefix.includes(prefix)) {
+        return;
+      }
+
       let { module, setupParent } = msg.json;
       let m, fn;
 
@@ -1741,7 +1748,7 @@ DebuggerServerConnection.prototype = {
 
 
 
-  setupInParent: function({ conn, module, setupParent }) {
+  setupInParent: function({ module, setupParent }) {
     if (!this.parentMessageManager) {
       return false;
     }
@@ -1749,6 +1756,7 @@ DebuggerServerConnection.prototype = {
     let { sendSyncMessage } = this.parentMessageManager;
 
     return sendSyncMessage("debug:setup-in-parent", {
+      prefix: this.prefix,
       module: module,
       setupParent: setupParent
     });
