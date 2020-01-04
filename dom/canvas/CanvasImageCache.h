@@ -33,7 +33,8 @@ public:
                               dom::HTMLCanvasElement* aCanvas,
                               imgIRequest* aRequest,
                               SourceSurface* aSource,
-                              const gfx::IntSize& aSize);
+                              const gfx::IntSize& aSize,
+                              bool aIsAccelerated);
 
   
 
@@ -43,14 +44,16 @@ public:
 
   static SourceSurface* Lookup(dom::Element* aImage,
                                dom::HTMLCanvasElement* aCanvas,
-                               gfx::IntSize* aSize);
+                               gfx::IntSize* aSize,
+                               bool aIsAccelerated);
 
   
 
 
 
 
-  static SourceSurface* SimpleLookup(dom::Element* aImage);
+  static SourceSurface* SimpleLookup(dom::Element* aImage,
+                                     bool aIsAccelerated);
 };
 
 } 
