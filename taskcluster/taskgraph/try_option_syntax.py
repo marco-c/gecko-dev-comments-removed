@@ -27,6 +27,7 @@ BUILD_KINDS = set([
     'artifact-build',
     'hazard',
     'l10n',
+    'upload-symbols',
 ])
 
 
