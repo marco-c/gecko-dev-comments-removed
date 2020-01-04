@@ -44,6 +44,7 @@ AppleVDADecoder::AppleVDADecoder(const VideoInfo& aConfig,
   , mIsShutDown(false)
   , mUseSoftwareImages(false)
   , mIs106(!nsCocoaFeatures::OnLionOrLater())
+  , mQueuedSamples(0)
   , mMonitor("AppleVideoDecoder")
   , mIsFlushing(false)
   , mDecoder(nullptr)
@@ -213,15 +214,13 @@ PlatformCallback(void* decompressionOutputRefCon,
   
   if (status != noErr || !image) {
     NS_WARNING("AppleVDADecoder decoder returned no data");
-    return;
-  }
-  MOZ_ASSERT(CFGetTypeID(image) == CVPixelBufferGetTypeID(),
-             "AppleVDADecoder returned an unexpected image type");
-
-  if (infoFlags & kVDADecodeInfo_FrameDropped)
-  {
+    image = nullptr;
+  } else if (infoFlags & kVDADecodeInfo_FrameDropped) {
     NS_WARNING("  ...frame dropped...");
-    return;
+    image = nullptr;
+  } else {
+    MOZ_ASSERT(image || CFGetTypeID(image) == CVPixelBufferGetTypeID(),
+               "AppleVDADecoder returned an unexpected image type");
   }
 
   AppleVDADecoder* decoder =
@@ -278,6 +277,7 @@ AppleVDADecoder::DrainReorderedFrames()
   while (!mReorderQueue.IsEmpty()) {
     mCallback->Output(mReorderQueue.Pop().get());
   }
+  mQueuedSamples = 0;
 }
 
 void
@@ -286,6 +286,7 @@ AppleVDADecoder::ClearReorderedFrames()
   while (!mReorderQueue.IsEmpty()) {
     mReorderQueue.Pop();
   }
+  mQueuedSamples = 0;
 }
 
 
@@ -307,6 +308,19 @@ AppleVDADecoder::OutputFrame(CFRefPtr<CVPixelBufferRef> aImage,
       aFrameRef.duration.ToMicroseconds(),
       aFrameRef.is_sync_point ? " keyframe" : ""
   );
+
+  if (mQueuedSamples > mMaxRefFrames) {
+    
+    
+    mCallback->InputExhausted();
+  }
+  MOZ_ASSERT(mQueuedSamples);
+  mQueuedSamples--;
+
+  if (!aImage) {
+    
+    return NS_OK;
+  }
 
   
   nsRefPtr<VideoData> data;
@@ -471,6 +485,8 @@ AppleVDADecoder::SubmitFrame(MediaRawData* aSample)
                        &kCFTypeDictionaryKeyCallBacks,
                        &kCFTypeDictionaryValueCallBacks);
 
+  mQueuedSamples++;
+
   OSStatus rv = VDADecoderDecode(mDecoder,
                                  0,
                                  block,
@@ -494,7 +510,7 @@ AppleVDADecoder::SubmitFrame(MediaRawData* aSample)
   }
 
   
-  if (!mInputIncoming) {
+  if (!mInputIncoming && mQueuedSamples <= mMaxRefFrames) {
     LOG("AppleVDADecoder task queue empty; requesting more data");
     mCallback->InputExhausted();
   }
