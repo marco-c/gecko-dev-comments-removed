@@ -5,6 +5,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEventDispatcherListener.h"
 
@@ -1985,9 +1986,10 @@ nsIWidget::SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint, bool aLongTap,
                                mLongTapTouchPoint->mPosition, 0, 0, nullptr);
   }
 
-  mLongTapTouchPoint = new LongTapInfo(pointerId, aPoint,
-                                       TimeDuration::FromMilliseconds(elapse),
-                                       aObserver);
+  mLongTapTouchPoint =
+    MakeUnique<LongTapInfo>(pointerId, aPoint,
+                            TimeDuration::FromMilliseconds(elapse),
+                            aObserver);
   notifier.SkipNotification();  
   return NS_OK;
 }

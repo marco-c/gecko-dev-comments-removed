@@ -1,11 +1,12 @@
 
 
 
+
+#include "mozilla/RefPtr.h"
 #include "nsDeviceContextAndroid.h"
 #include "nsString.h"
 #include "nsIFile.h"
 #include "nsIFileStreams.h"
-#include "nsAutoPtr.h"
 #include "gfxPDFSurface.h"
 #include "nsIPrintSettings.h"
 #include "nsDirectoryServiceDefs.h"
