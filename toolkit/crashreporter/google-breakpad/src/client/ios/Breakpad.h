@@ -197,37 +197,10 @@ void BreakpadRemoveUploadParameter(BreakpadRef ref, NSString *key);
 
 
 
-int BreakpadGetCrashReportCount(BreakpadRef ref);
-
-
-NSDictionary *BreakpadGetNextReportConfiguration(BreakpadRef ref);
+bool BreakpadHasCrashReportToUpload(BreakpadRef ref);
 
 
 void BreakpadUploadNextReport(BreakpadRef ref);
-
-
-
-void BreakpadUploadNextReportWithParameters(BreakpadRef ref,
-                                            NSDictionary *server_parameters);
-
-
-
-
-void BreakpadUploadReportWithParametersAndConfiguration(
-    BreakpadRef ref,
-    NSDictionary *server_parameters,
-    NSDictionary *configuration);
-
-
-
-
-
-
-
-void BreakpadHandleNetworkResponse(BreakpadRef ref,
-                                   NSDictionary *configuration,
-                                   NSData *data,
-                                   NSError *error);
 
 
 

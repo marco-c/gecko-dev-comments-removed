@@ -67,7 +67,6 @@ struct SystemInfo {
   
   
   
-  
   string os_short;
 
   

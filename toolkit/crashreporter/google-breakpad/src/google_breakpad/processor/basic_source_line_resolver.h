@@ -59,7 +59,6 @@ class BasicSourceLineResolver : public SourceLineResolverBase {
   using SourceLineResolverBase::ShouldDeleteMemoryBufferAfterLoadModule;
   using SourceLineResolverBase::UnloadModule;
   using SourceLineResolverBase::HasModule;
-  using SourceLineResolverBase::IsModuleCorrupt;
   using SourceLineResolverBase::FillSourceLineInfo;
   using SourceLineResolverBase::FindWindowsFrameInfo;
   using SourceLineResolverBase::FindCFIFrameInfo;
@@ -79,64 +78,6 @@ class BasicSourceLineResolver : public SourceLineResolverBase {
   
   BasicSourceLineResolver(const BasicSourceLineResolver&);
   void operator=(const BasicSourceLineResolver&);
-};
-
-
-class SymbolParseHelper {
- public:
-  
-  
-  
-  
-  
-  
-  static bool ParseFile(char *file_line,   
-                        long *index,       
-                        char **filename);  
-
-  
-  
-  
-  
-  
-  
-  static bool ParseFunction(char *function_line,     
-                            uint64_t *address,       
-                            uint64_t *size,          
-                            long *stack_param_size,  
-                            char **name);            
-
-  
-  
-  
-  
-  
-  
-  static bool ParseLine(char *line_line,     
-                        uint64_t *address,   
-                        uint64_t *size,      
-                        long *line_number,   
-                        long *source_file);  
-
-  
-  
-  
-  
-  
-  
-  static bool ParsePublicSymbol(char *public_line,       
-                                uint64_t *address,       
-                                long *stack_param_size,  
-                                char **name);            
-
- private:
-  
-  static bool IsValidAfterNumber(char *after_number);
-
-  
-  SymbolParseHelper();
-  SymbolParseHelper(const SymbolParseHelper&);
-  void operator=(const SymbolParseHelper&);
 };
 
 }  

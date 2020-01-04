@@ -29,8 +29,8 @@
 
 
 
-#ifndef COMMON_WINDOWS_GUID_STRING_H_
-#define COMMON_WINDOWS_GUID_STRING_H_
+#ifndef COMMON_WINDOWS_GUID_STRING_H__
+#define COMMON_WINDOWS_GUID_STRING_H__
 
 #include <guiddef.h>
 

@@ -47,7 +47,6 @@
 #include <vector>
 
 #include "common/byte_cursor.h"
-#include "common/mac/super_fat_arch.h"
 
 namespace google_breakpad {
 namespace mach_o {
@@ -94,7 +93,7 @@ class FatReader {
     
     
     virtual void TooShort();
-
+  
    private:
     
     string filename_;
@@ -102,7 +101,7 @@ class FatReader {
 
   
   explicit FatReader(Reporter *reporter) : reporter_(reporter) { }
-
+  
   
   
   
@@ -130,7 +129,7 @@ class FatReader {
   
   
   
-  const SuperFatArch* object_files(size_t *count) const {
+  const struct fat_arch *object_files(size_t *count) const { 
     *count = object_files_.size();
     if (object_files_.size() > 0)
       return &object_files_[0];
@@ -150,7 +149,7 @@ class FatReader {
 
   
   
-  vector<SuperFatArch> object_files_;
+  vector<struct fat_arch> object_files_;
 };
 
 
@@ -178,7 +177,7 @@ struct Segment {
   
   uint32_t maxprot;
   uint32_t initprot;
-
+  
   
   uint32_t nsects;
 
@@ -377,7 +376,7 @@ class Reader {
     return Read(buffer.start,
                 buffer.Size(),
                 expected_cpu_type,
-                expected_cpu_subtype);
+                expected_cpu_subtype); 
   }
 
   

@@ -34,7 +34,6 @@
 
 #include <string>
 
-#include "common/linux/elf_gnu_compat.h"
 #include "common/linux/elfutils.h"
 #include "common/linux/file_id.h"
 #include "common/linux/safe_readlink.h"
@@ -65,9 +64,6 @@ void PopulateSection(Section* section, int size, int prime_number) {
 }
 
 }  
-
-#ifndef __ANDROID__
-
 
 TEST(FileIDStripTest, StripSelf) {
   
@@ -101,7 +97,6 @@ TEST(FileIDStripTest, StripSelf) {
                                     37);
   EXPECT_STREQ(identifier_string1, identifier_string2);
 }
-#endif  
 
 template<typename ElfClass>
 class FileIDTest : public testing::Test {

@@ -42,7 +42,6 @@
 #define GOOGLE_BREAKPAD_PROCESSOR_SOURCE_LINE_RESOLVER_BASE_H__
 
 #include <map>
-#include <set>
 #include <string>
 
 #include "google_breakpad/processor/source_line_resolver_interface.h"
@@ -50,7 +49,6 @@
 namespace google_breakpad {
 
 using std::map;
-using std::set;
 
 
 
@@ -64,9 +62,7 @@ class SourceLineResolverBase : public SourceLineResolverInterface {
   
   
   
-  static bool ReadSymbolFile(const string &file_name,
-                             char **symbol_data,
-                             size_t *symbol_data_size);
+  static bool ReadSymbolFile(char **symbol_data, const string &file_name);
 
  protected:
   
@@ -78,12 +74,10 @@ class SourceLineResolverBase : public SourceLineResolverInterface {
   virtual bool LoadModuleUsingMapBuffer(const CodeModule *module,
                                         const string &map_buffer);
   virtual bool LoadModuleUsingMemoryBuffer(const CodeModule *module,
-                                           char *memory_buffer,
-                                           size_t memory_buffer_size);
+                                           char *memory_buffer);
   virtual bool ShouldDeleteMemoryBufferAfterLoadModule();
   virtual void UnloadModule(const CodeModule *module);
   virtual bool HasModule(const CodeModule *module);
-  virtual bool IsModuleCorrupt(const CodeModule *module);
   virtual void FillSourceLineInfo(StackFrame *frame);
   virtual WindowsFrameInfo *FindWindowsFrameInfo(const StackFrame *frame);
   virtual CFIFrameInfo *FindCFIFrameInfo(const StackFrame *frame);
@@ -102,10 +96,6 @@ class SourceLineResolverBase : public SourceLineResolverInterface {
   
   typedef map<string, Module*, CompareString> ModuleMap;
   ModuleMap *modules_;
-
-  
-  typedef set<string, CompareString> ModuleSet;
-  ModuleSet *corrupt_modules_;
 
   
   typedef std::map<string, char*, CompareString> MemoryMap;

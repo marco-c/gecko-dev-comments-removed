@@ -30,12 +30,14 @@
 #ifndef CLIENT_LINUX_HANDLER_EXCEPTION_HANDLER_H_
 #define CLIENT_LINUX_HANDLER_EXCEPTION_HANDLER_H_
 
+#include <string>
+#include <vector>
+
+#include <pthread.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/ucontext.h>
-
-#include <string>
 
 #include "client/linux/crash_generation/crash_generation_client.h"
 #include "client/linux/handler/minidump_descriptor.h"
@@ -127,7 +129,7 @@ class ExceptionHandler {
   ExceptionHandler(const MinidumpDescriptor& descriptor,
                    FilterCallback filter,
                    MinidumpCallback callback,
-                   void* callback_context,
+                   void *callback_context,
                    bool install_handler,
                    const int server_fd);
   ~ExceptionHandler();
@@ -142,10 +144,6 @@ class ExceptionHandler {
 
   void set_crash_handler(HandlerCallback callback) {
     crash_handler_ = callback;
-  }
-
-  void set_crash_generation_client(CrashGenerationClient* client) {
-    crash_generation_client_.reset(client);
   }
 
   
@@ -192,17 +190,15 @@ class ExceptionHandler {
     siginfo_t siginfo;
     pid_t tid;  
     struct ucontext context;
-#if !defined(__ARM_EABI__) && !defined(__mips__)
+#if !defined(__ARM_EABI__)
     
-    
-    
-    fpstate_t float_state;
+    struct _libc_fpstate float_state;
 #endif
   };
 
   
   bool IsOutOfProcess() const {
-    return crash_generation_client_.get() != NULL;
+      return crash_generation_client_.get() != NULL;
   }
 
   
@@ -226,7 +222,6 @@ class ExceptionHandler {
 
   
   bool HandleSignal(int sig, siginfo_t* info, void* uc);
-
  private:
   
   static bool InstallHandlersLocked();
@@ -251,11 +246,13 @@ class ExceptionHandler {
 
   MinidumpDescriptor minidump_descriptor_;
 
+  HandlerCallback crash_handler_;
+
   
   
   
-  
-  volatile HandlerCallback crash_handler_;
+  static std::vector<ExceptionHandler*> *handler_stack_;
+  static pthread_mutex_t handler_stack_mutex_;
 
   
   

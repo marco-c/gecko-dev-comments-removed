@@ -50,41 +50,39 @@ class CallStack;
 class CodeModules;
 
 enum ExploitabilityRating {
-  EXPLOITABILITY_HIGH,                 
-                                       
-                                       
+  EXPLOITABILITY_HIGH,                    
+                                          
+                                          
 
-  EXPLOITABILITY_MEDIUM,               
-                                       
-                                       
+  EXPLOITABLITY_MEDIUM,                   
+                                          
+                                          
 
-  EXPLOITABLITY_MEDIUM = EXPLOITABILITY_MEDIUM,  
+  EXPLOITABILITY_LOW,                     
+                                          
+                                          
+                                          
+                                          
 
-  EXPLOITABILITY_LOW,                  
-                                       
-                                       
-                                       
-                                       
+  EXPLOITABILITY_INTERESTING,             
+                                          
+                                          
+                                          
 
-  EXPLOITABILITY_INTERESTING,          
-                                       
-                                       
-                                       
+  EXPLOITABILITY_NONE,                    
+                                          
 
-  EXPLOITABILITY_NONE,                 
-                                       
+  EXPLOITABILITY_NOT_ANALYZED,            
+                                          
+                                          
 
-  EXPLOITABILITY_NOT_ANALYZED,         
-                                       
-                                       
+  EXPLOITABILITY_ERR_NOENGINE,            
+                                          
+                                          
 
-  EXPLOITABILITY_ERR_NOENGINE,         
-                                       
-                                       
-
-  EXPLOITABILITY_ERR_PROCESSING        
-                                       
-                                       
+  EXPLOITABILITY_ERR_PROCESSING           
+                                          
+                                          
 };
 
 class ProcessState {
@@ -97,14 +95,13 @@ class ProcessState {
 
   
   uint32_t time_date_stamp() const { return time_date_stamp_; }
-  uint32_t process_create_time() const { return process_create_time_; }
   bool crashed() const { return crashed_; }
   string crash_reason() const { return crash_reason_; }
   uint64_t crash_address() const { return crash_address_; }
   string assertion() const { return assertion_; }
   int requesting_thread() const { return requesting_thread_; }
   const vector<CallStack*>* threads() const { return &threads_; }
-  const vector<MemoryRegion*>* thread_memory_regions() const {
+  const vector<MinidumpMemoryRegion*>* thread_memory_regions() const {
     return &thread_memory_regions_;
   }
   const SystemInfo* system_info() const { return &system_info_; }
@@ -112,22 +109,14 @@ class ProcessState {
   const vector<const CodeModule*>* modules_without_symbols() const {
     return &modules_without_symbols_;
   }
-  const vector<const CodeModule*>* modules_with_corrupt_symbols() const {
-    return &modules_with_corrupt_symbols_;
-  }
   ExploitabilityRating exploitability() const { return exploitability_; }
 
  private:
   
-  
   friend class MinidumpProcessor;
-  friend class MicrodumpProcessor;
 
   
   uint32_t time_date_stamp_;
-
-  
-  uint32_t process_create_time_;
 
   
   
@@ -163,7 +152,7 @@ class ProcessState {
   
   
   vector<CallStack*> threads_;
-  vector<MemoryRegion*> thread_memory_regions_;
+  vector<MinidumpMemoryRegion*> thread_memory_regions_;
 
   
   SystemInfo system_info_;
@@ -174,9 +163,6 @@ class ProcessState {
 
   
   vector<const CodeModule*> modules_without_symbols_;
-
-  
-  vector<const CodeModule*> modules_with_corrupt_symbols_;
 
   
   

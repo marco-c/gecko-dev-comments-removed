@@ -79,8 +79,6 @@
 #ifndef GOOGLE_BREAKPAD_PROCESSOR_MINIDUMP_H__
 #define GOOGLE_BREAKPAD_PROCESSOR_MINIDUMP_H__
 
-#include <stdint.h>
-
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -90,14 +88,11 @@
 #include <string>
 #include <vector>
 
-#include "common/basictypes.h"
 #include "common/using_std_string.h"
+#include "google_breakpad/common/minidump_format.h"
 #include "google_breakpad/processor/code_module.h"
 #include "google_breakpad/processor/code_modules.h"
-#include "google_breakpad/processor/dump_context.h"
-#include "google_breakpad/processor/dump_object.h"
 #include "google_breakpad/processor/memory_region.h"
-#include "google_breakpad/processor/proc_maps_linux.h"
 
 
 namespace google_breakpad {
@@ -113,9 +108,11 @@ template<typename AddressType, typename EntryType> class RangeMap;
 
 
 
-class MinidumpObject : public DumpObject {
+class MinidumpObject {
  public:
   virtual ~MinidumpObject() {}
+
+  bool valid() const { return valid_; }
 
  protected:
   explicit MinidumpObject(Minidump* minidump);
@@ -127,7 +124,14 @@ class MinidumpObject : public DumpObject {
   
   
   Minidump* minidump_;
+
+  
+  
+  
+  
+  bool      valid_;
 };
+
 
 
 
@@ -164,12 +168,49 @@ class MinidumpStream : public MinidumpObject {
 
 
 
-class MinidumpContext : public DumpContext {
+class MinidumpContext : public MinidumpStream {
  public:
   virtual ~MinidumpContext();
 
+  
+  
+  
+  
+  uint32_t GetContextCPU() const;
+
+  
+  
+  bool GetInstructionPointer(uint64_t* ip) const;
+
+  
+  
+  
+  const MDRawContextAMD64* GetContextAMD64() const;
+  const MDRawContextARM*   GetContextARM() const;
+  const MDRawContextPPC*   GetContextPPC() const;
+  const MDRawContextSPARC* GetContextSPARC() const;
+  const MDRawContextX86*   GetContextX86() const;
+
+  
+  void Print();
+
  protected:
   explicit MinidumpContext(Minidump* minidump);
+
+  
+  union {
+    MDRawContextBase*  base;
+    MDRawContextX86*   x86;
+    MDRawContextPPC*   ppc;
+    MDRawContextAMD64* amd64;
+    
+    
+    MDRawContextSPARC* ctx_sparc;
+    MDRawContextARM*   arm;
+  } context_;
+
+  
+  uint32_t context_flags_;
 
  private:
   friend class MinidumpThread;
@@ -178,19 +219,14 @@ class MinidumpContext : public DumpContext {
   bool Read(uint32_t expected_size);
 
   
-  
-  
-  
-  
-  bool CheckAgainstSystemInfo(uint32_t context_cpu_type);
+  void FreeContext();
 
   
   
   
   
   
-  
-  Minidump* minidump_;
+  bool CheckAgainstSystemInfo(uint32_t context_cpu_type);
 };
 
 
@@ -231,7 +267,7 @@ class MinidumpMemoryRegion : public MinidumpObject,
   bool GetMemoryAtAddress(uint64_t address, uint64_t* value) const;
 
   
-  void Print() const;
+  void Print();
 
  protected:
   explicit MinidumpMemoryRegion(Minidump* minidump);
@@ -287,11 +323,6 @@ class MinidumpThread : public MinidumpObject {
 
   
   void Print();
-
-  
-  
-  
-  virtual uint64_t GetStartOfStackMemoryRange() const;
 
  protected:
   explicit MinidumpThread(Minidump* minidump);
@@ -553,14 +584,13 @@ class MinidumpMemoryList : public MinidumpStream {
 
   
   
-  virtual MinidumpMemoryRegion* GetMemoryRegionForAddress(uint64_t address);
+  MinidumpMemoryRegion* GetMemoryRegionForAddress(uint64_t address);
 
   
   void Print();
 
  private:
   friend class Minidump;
-  friend class MockMinidumpMemoryList;
 
   typedef vector<MDMemoryDescriptor>   MemoryDescriptors;
   typedef vector<MinidumpMemoryRegion> MemoryRegions;
@@ -736,7 +766,6 @@ class MinidumpMiscInfo : public MinidumpStream {
 
  private:
   friend class Minidump;
-  friend class TestMinidumpMiscInfo;
 
   static const uint32_t kStreamType = MD_MISC_INFO_STREAM;
 
@@ -745,13 +774,6 @@ class MinidumpMiscInfo : public MinidumpStream {
   bool Read(uint32_t expected_size_);
 
   MDRawMiscInfo misc_info_;
-
-  
-  
-  string standard_name_;
-  string daylight_name_;
-  string build_string_;
-  string dbg_bld_str_;
 };
 
 
@@ -797,7 +819,7 @@ class MinidumpMemoryInfo : public MinidumpObject {
   uint64_t GetBase() const { return valid_ ? memory_info_.base_address : 0; }
 
   
-  uint64_t GetSize() const { return valid_ ? memory_info_.region_size : 0; }
+  uint32_t GetSize() const { return valid_ ? memory_info_.region_size : 0; }
 
   
   bool IsExecutable() const;
@@ -812,7 +834,7 @@ class MinidumpMemoryInfo : public MinidumpObject {
   
   friend class MinidumpMemoryInfoList;
 
-  explicit MinidumpMemoryInfo(Minidump* minidump_);
+  explicit MinidumpMemoryInfo(Minidump* minidump);
 
   
   
@@ -845,7 +867,7 @@ class MinidumpMemoryInfoList : public MinidumpStream {
 
   static const uint32_t kStreamType = MD_MEMORY_INFO_LIST_STREAM;
 
-  explicit MinidumpMemoryInfoList(Minidump* minidump_);
+  explicit MinidumpMemoryInfoList(Minidump* minidump);
 
   bool Read(uint32_t expected_size);
 
@@ -856,99 +878,6 @@ class MinidumpMemoryInfoList : public MinidumpStream {
   uint32_t info_count_;
 };
 
-
-
-class MinidumpLinuxMaps : public MinidumpObject {
- public:
-  
-  uint64_t GetBase() const { return valid_ ? region_.start : 0; }
-  
-  uint64_t GetSize() const { return valid_ ? region_.end - region_.start : 0; }
-
-  
-  bool IsReadable() const {
-    return valid_ ? region_.permissions & MappedMemoryRegion::READ : false;
-  }
-  bool IsWriteable() const {
-    return valid_ ? region_.permissions & MappedMemoryRegion::WRITE : false;
-  }
-  bool IsExecutable() const {
-    return valid_ ? region_.permissions & MappedMemoryRegion::EXECUTE : false;
-  }
-  bool IsPrivate() const {
-    return valid_ ? region_.permissions & MappedMemoryRegion::PRIVATE : false;
-  }
-
-  
-  uint64_t GetOffset() const { return valid_ ? region_.offset : 0; }
-
-  
-  uint8_t GetMajorDevice() const { return valid_ ? region_.major_device : 0; }
-  
-  uint8_t GetMinorDevice() const { return valid_ ? region_.minor_device : 0; }
-
-  
-  uint64_t GetInode() const { return valid_ ? region_.inode : 0; }
-
-  
-  const string GetPathname() const { return valid_ ? region_.path : ""; }
-
-  
-  void Print() const;
-
- private:
-  
-  friend class MinidumpLinuxMapsList;
-
-  
-  explicit MinidumpLinuxMaps(Minidump *minidump);
-
-  
-  MappedMemoryRegion region_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpLinuxMaps);
-};
-
-
-
-
-class MinidumpLinuxMapsList : public MinidumpStream {
- public:
-  virtual ~MinidumpLinuxMapsList();
-
-  
-  unsigned int get_maps_count() const { return valid_ ? maps_count_ : 0; }
-
-  
-  const MinidumpLinuxMaps *GetLinuxMapsForAddress(uint64_t address) const;
-  
-  const MinidumpLinuxMaps *GetLinuxMapsAtIndex(unsigned int index) const;
-
-  
-  void Print() const;
-
- private:
-  friend class Minidump;
-
-  typedef vector<MinidumpLinuxMaps *> MinidumpLinuxMappings;
-
-  static const uint32_t kStreamType = MD_LINUX_MAPS;
-
-  
-  explicit MinidumpLinuxMapsList(Minidump *minidump);
-
-  
-  
-  
-  bool Read(uint32_t expected_size);
-
-  
-  MinidumpLinuxMappings *maps_;
-  
-  uint32_t maps_count_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpLinuxMapsList);
-};
 
 
 
@@ -1000,17 +929,14 @@ class Minidump {
   
   
   virtual MinidumpThreadList* GetThreadList();
-  virtual MinidumpModuleList* GetModuleList();
-  virtual MinidumpMemoryList* GetMemoryList();
-  virtual MinidumpException* GetException();
-  virtual MinidumpAssertion* GetAssertion();
+  MinidumpModuleList* GetModuleList();
+  MinidumpMemoryList* GetMemoryList();
+  MinidumpException* GetException();
+  MinidumpAssertion* GetAssertion();
   virtual MinidumpSystemInfo* GetSystemInfo();
-  virtual MinidumpMiscInfo* GetMiscInfo();
-  virtual MinidumpBreakpadInfo* GetBreakpadInfo();
-  virtual MinidumpMemoryInfoList* GetMemoryInfoList();
-
-  
-  virtual MinidumpLinuxMapsList *GetLinuxMapsList();
+  MinidumpMiscInfo* GetMiscInfo();
+  MinidumpBreakpadInfo* GetBreakpadInfo();
+  MinidumpMemoryInfoList* GetMemoryInfoList();
 
   
   

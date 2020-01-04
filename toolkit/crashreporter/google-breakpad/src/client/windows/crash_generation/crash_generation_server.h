@@ -102,10 +102,6 @@ class CrashGenerationServer {
   
   bool Start();
 
-  void pre_fetch_custom_info(bool do_pre_fetch) {
-    pre_fetch_custom_info_ = do_pre_fetch;
-  }
-
  private:
   
   
@@ -266,10 +262,7 @@ class CrashGenerationServer {
   bool generate_dumps_;
 
   
-  bool pre_fetch_custom_info_;
-
-  
-  const std::wstring dump_path_;
+  scoped_ptr<MinidumpGenerator> dump_generator_;
 
   
   

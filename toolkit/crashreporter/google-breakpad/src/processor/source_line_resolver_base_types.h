@@ -121,15 +121,7 @@ class SourceLineResolverBase::Module {
   
   
   
-  
-  
-  
-  virtual bool LoadMapFromMemory(char *memory_buffer,
-                                 size_t memory_buffer_size) = 0;
-
-  
-  
-  virtual bool IsCorrupt() const = 0;
+  virtual bool LoadMapFromMemory(char *memory_buffer) = 0;
 
   
   

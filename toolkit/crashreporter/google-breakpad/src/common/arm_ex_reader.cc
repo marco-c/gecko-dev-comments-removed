@@ -57,9 +57,9 @@
 
 
 #include "common/arm_ex_reader.h"
+#include "common/logging.h"
 
 #include <assert.h>
-#include <stdio.h>
 
 
 
@@ -116,7 +116,8 @@ using arm_ex_to_module::ARM_EXIDX_VFP_FSTMD;
 using google_breakpad::MemoryRange;
 
 
-static void* Prel31ToAddr(const void* addr) {
+static void* Prel31ToAddr(const void* addr) 
+{
   uint32_t offset32 = *reinterpret_cast<const uint32_t*>(addr);
   
   
@@ -133,10 +134,11 @@ static void* Prel31ToAddr(const void* addr) {
 
 
 
-ExceptionTableInfo::ExExtractResult ExceptionTableInfo::ExtabEntryExtract(
-    const struct exidx_entry* entry,
-    uint8_t* buf, size_t buf_size,
-    size_t* buf_used) {
+ExceptionTableInfo::ExExtractResult
+ExceptionTableInfo::ExtabEntryExtract(const struct exidx_entry* entry,
+                                      uint8_t* buf, size_t buf_size,
+                                      size_t* buf_used)
+{
   MemoryRange mr_out(buf, buf_size);
 
   *buf_used = 0;
@@ -256,7 +258,8 @@ ExceptionTableInfo::ExExtractResult ExceptionTableInfo::ExtabEntryExtract(
 
 
 
-int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size) {
+int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size)
+{
   if (buf == NULL || buf_size == 0)
     return -1;
 
@@ -279,11 +282,13 @@ int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size) {
       
       edata.cmd = ARM_EXIDX_CMD_ADD_TO_VSP;
       edata.data = (((int)op & 0x3f) << 2) + 4;
-    } else if ((op & 0xc0) == 0x40) {
+    }
+    else if ((op & 0xc0) == 0x40) {
       
       edata.cmd = ARM_EXIDX_CMD_SUB_FROM_VSP;
       edata.data = (((int)op & 0x3f) << 2) + 4;
-    } else if ((op & 0xf0) == 0x80) {
+    }
+    else if ((op & 0xf0) == 0x80) {
       uint8_t op2;
       GET_BUF_U8(op2);
       if (op == 0x80 && op2 == 0x00) {
@@ -295,7 +300,8 @@ int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size) {
         edata.data = ((op & 0xf) << 8) | op2;
         edata.data = edata.data << 4;
       }
-    } else if ((op & 0xf0) == 0x90) {
+    }
+    else if ((op & 0xf0) == 0x90) {
       if (op == 0x9d || op == 0x9f) {
         
         
@@ -305,7 +311,8 @@ int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size) {
         edata.cmd = ARM_EXIDX_CMD_REG_TO_SP;
         edata.data = op & 0x0f;
       }
-    } else if ((op & 0xf0) == 0xa0) {
+    }
+    else if ((op & 0xf0) == 0xa0) {
       
       
       unsigned end = (op & 0x07);
@@ -313,11 +320,13 @@ int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size) {
       edata.data = edata.data << 4;
       if (op & 0x08) edata.data |= 1 << 14;
       edata.cmd = ARM_EXIDX_CMD_REG_POP;
-    } else if (op == ARM_EXTBL_OP_FINISH) {
+    }
+    else if (op == ARM_EXTBL_OP_FINISH) {
       
       edata.cmd = ARM_EXIDX_CMD_FINISH;
       buf = end;
-    } else if (op == 0xb1) {
+    }
+    else if (op == 0xb1) {
       uint8_t op2;
       GET_BUF_U8(op2);
       if (op2 == 0 || (op2 & 0xf0)) {
@@ -328,7 +337,8 @@ int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size) {
         edata.cmd = ARM_EXIDX_CMD_REG_POP;
         edata.data = op2 & 0x0f;
       }
-    } else if (op == 0xb2) {
+    }
+    else if (op == 0xb2) {
       
       uint64_t offset = 0;
       uint8_t byte, shift = 0;
@@ -339,7 +349,8 @@ int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size) {
       } while ((byte & 0x80) && buf < end);
       edata.data = offset * 4 + 0x204;
       edata.cmd = ARM_EXIDX_CMD_ADD_TO_VSP;
-    } else if (op == 0xb3 || op == 0xc8 || op == 0xc9) {
+    }
+    else if (op == 0xb3 || op == 0xc8 || op == 0xc9) {
       
       
       
@@ -347,21 +358,25 @@ int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size) {
       GET_BUF_U8(edata.data);
       if (op == 0xc8) edata.data |= ARM_EXIDX_VFP_SHIFT_16;
       if (op != 0xb3) edata.data |= ARM_EXIDX_VFP_FSTMD;
-    } else if ((op & 0xf8) == 0xb8 || (op & 0xf8) == 0xd0) {
+    }
+    else if ((op & 0xf8) == 0xb8 || (op & 0xf8) == 0xd0) {
       
       
       edata.cmd = ARM_EXIDX_CMD_VFP_POP;
       edata.data = 0x80 | (op & 0x07);
       if ((op & 0xf8) == 0xd0) edata.data |= ARM_EXIDX_VFP_FSTMD;
-    } else if (op >= 0xc0 && op <= 0xc5) {
+    }
+    else if (op >= 0xc0 && op <= 0xc5) {
       
       edata.cmd = ARM_EXIDX_CMD_WREG_POP;
       edata.data = 0xa0 | (op & 0x07);
-    } else if (op == 0xc6) {
+    }
+    else if (op == 0xc6) {
       
       edata.cmd = ARM_EXIDX_CMD_WREG_POP;
       GET_BUF_U8(edata.data);
-    } else if (op == 0xc7) {
+    }
+    else if (op == 0xc7) {
       uint8_t op2;
       GET_BUF_U8(op2);
       if (op2 == 0 || (op2 & 0xf0)) {
@@ -372,21 +387,22 @@ int ExceptionTableInfo::ExtabEntryDecode(const uint8_t* buf, size_t buf_size) {
         edata.cmd = ARM_EXIDX_CMD_WCGR_POP;
         edata.data = op2 & 0x0f;
       }
-    } else {
+    }
+    else {
       
       edata.cmd = ARM_EXIDX_CMD_RESERVED;
     }
 
     int ret = handler_->ImproveStackFrame(&edata);
-    if (ret < 0)
-      return ret;
+    if (ret < 0) return ret;
   }
   return 0;
 
 # undef GET_BUF_U8
 }
 
-void ExceptionTableInfo::Start() {
+void ExceptionTableInfo::Start()
+{
   const struct exidx_entry* start
     = reinterpret_cast<const struct exidx_entry*>(mr_exidx_.data());
   const struct exidx_entry* end
@@ -396,15 +412,16 @@ void ExceptionTableInfo::Start() {
   
   
   for (const struct exidx_entry* entry = start; entry < end; ++entry) {
+
     
     
     uint32_t addr = (reinterpret_cast<char*>(Prel31ToAddr(&entry->addr))
                      - mapping_addr_ + loading_addr_) & 0x7fffffff;
     uint32_t next_addr;
-    if (entry < end - 1) {
+    if (entry < end - 1)
       next_addr = (reinterpret_cast<char*>(Prel31ToAddr(&((entry + 1)->addr)))
                    - mapping_addr_ + loading_addr_) & 0x7fffffff;
-    } else {
+    else {
       
       
       
@@ -428,10 +445,10 @@ void ExceptionTableInfo::Start() {
           plausible = true;
         }
       }
-      if (!plausible) {
-        fprintf(stderr, "ExceptionTableInfo: implausible EXIDX last entry size "
-                "%d, using 1 instead.", (int32_t)(text_last_svma_ - addr));
-      }
+      if (!plausible)
+        BPLOG(INFO) << "ExceptionTableInfo: implausible EXIDX last entry size "
+                    << (int32_t)(text_last_svma_ - addr)
+                    << "; using 1 instead.";
     }
 
     
@@ -445,22 +462,22 @@ void ExceptionTableInfo::Start() {
       
       switch (res) {
         case ExInBufOverflow:
-          fprintf(stderr, "ExtabEntryExtract: .exidx/.extab section overrun");
+          BPLOG(INFO) << "ExtabEntryExtract: .exidx/.extab section overrun";
           break;
         case ExOutBufOverflow:
-          fprintf(stderr, "ExtabEntryExtract: bytecode buffer overflow");
+          BPLOG(INFO) << "ExtabEntryExtract: bytecode buffer overflow";
           break;
         case ExCantUnwind:
-          fprintf(stderr, "ExtabEntryExtract: function is marked CANT_UNWIND");
+          BPLOG(INFO) << "ExtabEntryExtract: function is marked CANT_UNWIND";
           break;
         case ExCantRepresent:
-          fprintf(stderr, "ExtabEntryExtract: bytecode can't be represented");
+          BPLOG(INFO) << "ExtabEntryExtract: bytecode can't be represented";
           break;
         case ExInvalid:
-          fprintf(stderr, "ExtabEntryExtract: index table entry is invalid");
+          BPLOG(INFO) << "ExtabEntryExtract: index table entry is invalid";
           break;
         default:
-          fprintf(stderr, "ExtabEntryExtract: unknown error: %d", (int)res);
+          BPLOG(INFO) << "ExtabEntryExtract: unknown error: " << (int)res;
           break;
       }
       continue;
@@ -475,7 +492,7 @@ void ExceptionTableInfo::Start() {
       int ret = ExtabEntryDecode(buf, buf_used);
       if (ret < 0) {
 	handler_->DeleteStackFrame();
-	fprintf(stderr, "ExtabEntryDecode: failed with error code: %d", ret);
+	BPLOG(INFO) << "ExtabEntryDecode: failed with error code: " << ret;
 	continue;
       }
       handler_->SubmitStackFrame();
@@ -484,4 +501,4 @@ void ExceptionTableInfo::Start() {
   } 
 }
 
-}  
+} 

@@ -610,9 +610,7 @@ TEST_F(ExceptionHandlerTest, InstructionPointerMemoryNullPointer) {
     ExceptionHandler eh(tempDir.path(), NULL, MDCallback, &fds[1], true, NULL);
     
     typedef void (*void_function)(void);
-    
-    
-    volatile void_function memory_function =
+    void_function memory_function =
       reinterpret_cast<void_function>(NULL);
     memory_function();
     

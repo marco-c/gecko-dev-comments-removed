@@ -46,7 +46,7 @@
 #include <sstream>
 
 #include "google_breakpad/processor/memory_region.h"
-#include "processor/logging.h"
+#include "common/logging.h"
 
 namespace google_breakpad {
 
@@ -56,13 +56,15 @@ using std::ostringstream;
 
 
 
+template<typename ValueType>
 class AutoStackClearer {
  public:
-  explicit AutoStackClearer(vector<string> *stack) : stack_(stack) {}
+  explicit AutoStackClearer(vector<StackElem<ValueType> > *stack)
+    : stack_(stack) {}
   ~AutoStackClearer() { stack_->clear(); }
 
  private:
-  vector<string> *stack_;
+  vector<StackElem<ValueType> > *stack_;
 };
 
 
@@ -150,7 +152,7 @@ bool PostfixEvaluator<ValueType>::EvaluateToken(
 
     ValueType address;
     if (!PopValue(&address)) {
-      BPLOG(ERROR) << "Could not PopValue to get value to derefence: " <<
+      BPLOG(ERROR) << "Could not PopValue to get value to dereference: " <<
                       expression;
       return false;
     }
@@ -175,28 +177,47 @@ bool PostfixEvaluator<ValueType>::EvaluateToken(
     
     
     
-    string identifier;
+    const UniqueString* identifier;
     if (PopValueOrIdentifier(NULL, &identifier) != POP_RESULT_IDENTIFIER) {
       BPLOG(ERROR) << "PopValueOrIdentifier returned a value, but an "
                       "identifier is needed to assign " <<
                       HexString(value) << ": " << expression;
       return false;
     }
-    if (identifier.empty() || identifier[0] != '$') {
+    if (identifier == ustr__empty() || Index(identifier,0) != '$') {
       BPLOG(ERROR) << "Can't assign " << HexString(value) << " to " <<
                       identifier << ": " << expression;
       return false;
     }
 
-    (*dictionary_)[identifier] = value;
+    dictionary_->set(identifier, value);
     if (assigned)
-      (*assigned)[identifier] = true;
+      assigned->set(identifier, true);
   } else {
     
     
     
     
-    stack_.push_back(token);
+    
+    
+    
+    
+    
+    
+    
+    
+    istringstream token_stream(token);
+    ValueType literal = ValueType();
+    bool negative = false;
+    if (token_stream.peek() == '-') {
+      negative = true;
+      token_stream.get();
+    }
+    if (token_stream >> literal && token_stream.peek() == EOF) {
+      PushValue(negative ? (-literal) : literal);
+    } else {
+      PushIdentifier(ToUniqueString(token));
+    }
   }
   return true;
 }
@@ -231,12 +252,19 @@ bool PostfixEvaluator<ValueType>::EvaluateInternal(
 }
 
 template<typename ValueType>
-bool PostfixEvaluator<ValueType>::Evaluate(const string &expression,
-                                           DictionaryValidityType *assigned) {
+bool PostfixEvaluator<ValueType>::Evaluate(const Module::Expr& expr,
+                                           DictionaryValidityType* assigned) {
   
-  AutoStackClearer clearer(&stack_);
+  
+  if (expr.how_ != Module::kExprPostfix) {
+    BPLOG(ERROR) << "Can't evaluate for side-effects: " << expr;
+    return false;
+  }
 
-  if (!EvaluateInternal(expression, assigned))
+  
+  AutoStackClearer<ValueType> clearer(&stack_);
+
+  if (!EvaluateInternal(expr.postfix_, assigned))
     return false;
 
   
@@ -245,69 +273,93 @@ bool PostfixEvaluator<ValueType>::Evaluate(const string &expression,
   if (stack_.empty())
     return true;
 
-  BPLOG(ERROR) << "Incomplete execution: " << expression;
+  BPLOG(ERROR) << "Incomplete execution: " << expr;
   return false;
 }
 
 template<typename ValueType>
-bool PostfixEvaluator<ValueType>::EvaluateForValue(const string &expression,
-                                                   ValueType *result) {
-  
-  AutoStackClearer clearer(&stack_);
+bool PostfixEvaluator<ValueType>::EvaluateForValue(const Module::Expr& expr,
+                                                   ValueType* result) {
+  switch (expr.how_) {
 
-  if (!EvaluateInternal(expression, NULL))
-    return false;
+    
+    
+    case Module::kExprPostfix: {
+      
+      AutoStackClearer<ValueType> clearer(&stack_);
 
-  
-  if (stack_.size() != 1) {
-    BPLOG(ERROR) << "Expression yielded bad number of results: "
-                 << "'" << expression << "'";
-    return false;
+      if (!EvaluateInternal(expr.postfix_, NULL))
+        return false;
+
+      
+      if (stack_.size() != 1) {
+        BPLOG(ERROR) << "Expression yielded bad number of results: "
+                     << "'" << expr << "'";
+        return false;
+      }
+
+      return PopValue(result);
+    }
+
+    
+    case Module::kExprSimple:
+    case Module::kExprSimpleMem: {
+      
+      bool found = false;
+      ValueType v = dictionary_->get(&found, expr.ident_);
+      if (!found) {
+        
+        
+        static uint64_t n_complaints = 0; 
+        n_complaints++;
+        if (is_power_of_2(n_complaints)) {
+          BPLOG(INFO) << "Identifier " << FromUniqueString(expr.ident_)
+                      << " not in dictionary (kExprSimple{Mem})"
+                      << " (shown " << n_complaints << " times)";
+        }
+        return false;
+      }
+
+      
+      ValueType sum = v + (int64_t)expr.offset_;
+
+      
+      if (expr.how_ == Module::kExprSimpleMem) {
+        ValueType derefd;
+        if (!memory_ || !memory_->GetMemoryAtAddress(sum, &derefd)) {
+          return false;
+        }
+        *result = derefd;
+      } else {
+        *result = sum;
+      }
+      return true;
+    }
+
+    default:
+      return false;
   }
-
-  return PopValue(result);
 }
+
 
 template<typename ValueType>
 typename PostfixEvaluator<ValueType>::PopResult
 PostfixEvaluator<ValueType>::PopValueOrIdentifier(
-    ValueType *value, string *identifier) {
+    ValueType *value, const UniqueString** identifier) {
   
   if (!stack_.size())
     return POP_RESULT_FAIL;
 
-  string token = stack_.back();
+  StackElem<ValueType> el = stack_.back();
   stack_.pop_back();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  istringstream token_stream(token);
-  ValueType literal = ValueType();
-  bool negative;
-  if (token_stream.peek() == '-') {
-    negative = true;
-    token_stream.get();
-  } else {
-    negative = false;
-  }
-  if (token_stream >> literal && token_stream.peek() == EOF) {
-    if (value) {
-      *value = literal;
-    }
-    if (negative)
-      *value = -*value;
+  if (el.isValue) {
+    if (value)
+      *value = el.u.val;
     return POP_RESULT_VALUE;
   } else {
-    if (identifier) {
-      *identifier = token;
-    }
+    if (identifier)
+      *identifier = el.u.ustr;
     return POP_RESULT_IDENTIFIER;
   }
 }
@@ -316,7 +368,7 @@ PostfixEvaluator<ValueType>::PopValueOrIdentifier(
 template<typename ValueType>
 bool PostfixEvaluator<ValueType>::PopValue(ValueType *value) {
   ValueType literal = ValueType();
-  string token;
+  const UniqueString* token;
   PopResult result;
   if ((result = PopValueOrIdentifier(&literal, &token)) == POP_RESULT_FAIL) {
     return false;
@@ -326,16 +378,17 @@ bool PostfixEvaluator<ValueType>::PopValue(ValueType *value) {
   } else {  
     
     
-    typename DictionaryType::const_iterator iterator =
-        dictionary_->find(token);
-    if (iterator == dictionary_->end()) {
+    bool found = false;
+    ValueType v = dictionary_->get(&found, token);
+    if (!found) {
       
       
-      BPLOG(INFO) << "Identifier " << token << " not in dictionary";
+      BPLOG(INFO) << "Identifier " << FromUniqueString(token)
+                  << " not in dictionary";
       return false;
     }
 
-    *value = iterator->second;
+    *value = v;
   }
 
   return true;
@@ -351,9 +404,14 @@ bool PostfixEvaluator<ValueType>::PopValues(ValueType *value1,
 
 template<typename ValueType>
 void PostfixEvaluator<ValueType>::PushValue(const ValueType &value) {
-  ostringstream token_stream;
-  token_stream << value;
-  stack_.push_back(token_stream.str());
+  StackElem<ValueType> el(value);
+  stack_.push_back(el);
+}
+
+template<typename ValueType>
+void PostfixEvaluator<ValueType>::PushIdentifier(const UniqueString* str) {
+  StackElem<ValueType> el(str);
+  stack_.push_back(el);
 }
 
 

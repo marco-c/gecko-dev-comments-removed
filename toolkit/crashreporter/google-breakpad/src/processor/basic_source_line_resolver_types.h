@@ -73,20 +73,12 @@ BasicSourceLineResolver::Function : public SourceLineResolverBase::Function {
 
 class BasicSourceLineResolver::Module : public SourceLineResolverBase::Module {
  public:
-  explicit Module(const string &name) : name_(name), is_corrupt_(false) { }
+  explicit Module(const string &name) : name_(name) { }
   virtual ~Module() { }
 
   
   
-  
-  
-  
-  virtual bool LoadMapFromMemory(char *memory_buffer,
-                                 size_t memory_buffer_size);
-
-  
-  
-  virtual bool IsCorrupt() const { return is_corrupt_; }
+  virtual bool LoadMapFromMemory(char *memory_buffer);
 
   
   
@@ -114,13 +106,6 @@ class BasicSourceLineResolver::Module : public SourceLineResolverBase::Module {
   typedef std::map<int, string> FileMap;
 
   
-  
-  static void LogParseError(
-      const string &message,
-      int line_number,
-      int *num_errors);
-
-  
   bool ParseFile(char *file_line);
 
   
@@ -144,7 +129,6 @@ class BasicSourceLineResolver::Module : public SourceLineResolverBase::Module {
   FileMap files_;
   RangeMap< MemAddr, linked_ptr<Function> > functions_;
   AddressMap< MemAddr, linked_ptr<PublicSymbol> > public_symbols_;
-  bool is_corrupt_;
 
   
   
