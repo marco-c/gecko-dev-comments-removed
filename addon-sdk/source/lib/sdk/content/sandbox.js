@@ -18,7 +18,7 @@ const timer = require('../timers');
 const { URL } = require('../url');
 const { sandbox, evaluate, load } = require('../loader/sandbox');
 const { merge } = require('../util/object');
-const { getTabForContentWindow } = require('../tabs/utils');
+const { getTabForContentWindowNoShim } = require('../tabs/utils');
 const { getInnerId } = require('../window/utils');
 const { PlainTextConsole } = require('../console/plain-text');
 const { data } = require('../self');const { isChildLoader } = require('../remote/core');
@@ -57,7 +57,7 @@ function isWindowInTab(window) {
   }
   else {
     
-    return getTabForContentWindow(window);
+    return getTabForContentWindowNoShim(window);
   }
 }
 

@@ -11,10 +11,11 @@ module.metadata = {
 
 
 
-const { Ci } = require('chrome');
+const { Ci, Cu } = require('chrome');
 const { defer } = require("../lang/functional");
 const { windows, isBrowser } = require('../window/utils');
 const { isPrivateBrowsingSupported } = require('../self');
+const { ShimWaiver } = Cu.import("resource://gre/modules/ShimWaiver.jsm");
 
 
 function getWindows() {
@@ -261,6 +262,16 @@ function getTabForContentWindow(window) {
   return getTabs().find(tab => getTabContentWindow(tab) === window.top) || null;
 }
 exports.getTabForContentWindow = getTabForContentWindow;
+
+
+function getTabForContentWindowNoShim(window) {
+  function getTabContentWindowNoShim(tab) {
+    let browser = getBrowserForTab(tab);
+    return ShimWaiver.getProperty(browser, "contentWindow");
+  }
+  return getTabs().find(tab => getTabContentWindowNoShim(tab) === window.top) || null;
+}
+exports.getTabForContentWindowNoShim = getTabForContentWindowNoShim;
 
 function getTabURL(tab) {
   return String(getBrowserForTab(tab).currentURI.spec);
