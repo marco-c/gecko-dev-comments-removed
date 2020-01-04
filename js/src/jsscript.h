@@ -1247,6 +1247,13 @@ class JSScript : public js::gc::TenuredCell
     
     static bool fullyInitTrivial(js::ExclusiveContext* cx, JS::Handle<JSScript*> script);
 
+#ifdef DEBUG
+  private:
+    
+    void assertLinkedProperties(js::frontend::BytecodeEmitter* bce) const;
+#endif
+
+  public:
     inline JSPrincipals* principals();
 
     JSCompartment* compartment() const { return compartment_; }
