@@ -141,7 +141,7 @@ public:
   void SendWindowFocusChanged(bool aIsActive);
   NPDrawingModel GetDrawingModel();
   bool IsRemoteDrawingCoreAnimation();
-  nsresult ContentsScaleFactorChanged(double aContentsScaleFactor);
+
   NPEventModel GetEventModel();
   static void CARefresh(nsITimer *aTimer, void *aClosure);
   void AddToCARefreshTimer();
@@ -158,6 +158,10 @@ public:
 #endif 
 
   void ResolutionMayHaveChanged();
+#if defined(XP_MACOSX) || defined(XP_WIN)
+  nsresult ContentsScaleFactorChanged(double aContentsScaleFactor);
+#endif
+
   void UpdateDocumentActiveState(bool aIsActive);
 
   void SetFrame(nsPluginFrame *aFrame);
@@ -337,10 +341,10 @@ private:
   bool                                      mSentInitialTopLevelWindowEvent;
   bool                                      mLastWindowIsActive;
   bool                                      mLastContentFocused;
-  double                                    mLastScaleFactor;
   
   bool                                      mShouldBlurOnActivate;
 #endif
+  double                                    mLastScaleFactor;
   double                                    mLastCSSZoomFactor;
   
   

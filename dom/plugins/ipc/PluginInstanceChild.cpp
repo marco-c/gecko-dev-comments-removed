@@ -141,7 +141,7 @@ PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
     , mMode(aMode)
     , mNames(aNames)
     , mValues(aValues)
-#if defined(XP_DARWIN)
+#if defined(XP_DARWIN) || defined (XP_WIN)
     , mContentsScaleFactor(1.0)
 #endif
     , mPostingKeyEvents(0)
@@ -534,7 +534,9 @@ PluginInstanceChild::NPN_GetValue(NPNVariable aVar,
         return NPERR_NO_ERROR;
     }
 #endif 
+#endif 
 
+#if defined(XP_MACOSX) || defined(XP_WIN)
     case NPNVcontentsScaleFactor: {
         *static_cast<double*>(aValue) = mContentsScaleFactor;
         return NPERR_NO_ERROR;
@@ -871,12 +873,6 @@ PluginInstanceChild::AnswerNPP_HandleEvent(const NPRemoteEvent& event,
 #ifdef XP_MACOSX
     
     NPCocoaEvent evcopy = event.event;
-    
-    
-    
-    if (event.contentsScaleFactor > 0) {
-      mContentsScaleFactor = event.contentsScaleFactor;
-    }
 
     
     AutoRestore<const NPCocoaEvent*> savePreviousEvent(mCurrentEvent);
@@ -886,6 +882,15 @@ PluginInstanceChild::AnswerNPP_HandleEvent(const NPRemoteEvent& event,
 #else
     
     NPEvent evcopy = event.event;
+#endif
+
+#if defined(XP_MACOSX) || defined(XP_WIN)
+    
+    
+    
+    if (event.contentsScaleFactor > 0) {
+      mContentsScaleFactor = event.contentsScaleFactor;
+    }
 #endif
 
 #ifdef OS_WIN
@@ -1133,17 +1138,19 @@ PluginInstanceChild::RecvWindowPosChanged(const NPRemoteEvent& event)
 bool
 PluginInstanceChild::RecvContentsScaleFactorChanged(const double& aContentsScaleFactor)
 {
-#ifdef XP_MACOSX
+#if defined(XP_MACOSX) || defined(XP_WIN)
     mContentsScaleFactor = aContentsScaleFactor;
+#if defined(XP_MACOSX)
     if (mShContext) {
         
         
         ::CGContextRelease(mShContext);
         mShContext = nullptr;
     }
+#endif
     return true;
 #else
-    NS_RUNTIMEABORT("ContentsScaleFactorChanged is an OSX-only message");
+    NS_RUNTIMEABORT("ContentsScaleFactorChanged is an Windows or OSX only message");
     return false;
 #endif
 }
@@ -1338,6 +1345,7 @@ PluginInstanceChild::AnswerNPP_SetWindow(const NPRemoteWindow& aWindow)
           mWindow.width = aWindow.width;
           mWindow.height = aWindow.height;
           mWindow.type = aWindow.type;
+          mContentsScaleFactor = aWindow.contentsScaleFactor;
 
           if (mPluginIface->setwindow) {
               SetProp(mPluginWindowHWND, kPluginIgnoreSubclassProperty, (HANDLE)1);
@@ -3329,7 +3337,7 @@ PluginInstanceChild::DoAsyncSetWindow(const gfxSurfaceType& aSurfaceType,
     mWindow.height = aWindow.height;
     mWindow.clipRect = aWindow.clipRect;
     mWindow.type = aWindow.type;
-#ifdef XP_MACOSX
+#if defined(XP_MACOSX) || defined(XP_WIN)
     mContentsScaleFactor = aWindow.contentsScaleFactor;
 #endif
 
