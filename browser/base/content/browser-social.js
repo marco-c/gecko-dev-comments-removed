@@ -537,7 +537,7 @@ SocialShare = {
   populateProviderMenu: function() {
     if (!this.iframe)
       return;
-    let providers = [p for (p of Social.providers) if (p.shareURL)];
+    let providers = Social.providers.filter(p => p.shareURL);
     let hbox = document.getElementById("social-share-provider-buttons");
     
     
@@ -976,7 +976,7 @@ SocialSidebar = {
     
     let sbrowser = document.getElementById("social-sidebar-browser");
     let origin = sbrowser.getAttribute("origin");
-    let providers = [p for (p of Social.providers) if (p.sidebarURL)];
+    let providers = Social.providers.filter(p => p.sidebarURL);
     let provider;
     if (origin)
       provider = Social._getProviderFromOrigin(origin);
@@ -1093,7 +1093,7 @@ SocialSidebar = {
       menu.removeChild(providerMenuSep.previousSibling);
     }
     
-    let providers = [p for (p of Social.providers) if (p.sidebarURL)];
+    let providers = Social.providers.filter(p => p.sidebarURL);
     if (providers.length < 2 && menu.id != "viewSidebarMenu") {
       providerMenuSep.hidden = true;
       return;
@@ -1153,7 +1153,9 @@ ToolbarHelper.prototype = {
   },
 
   clearPalette: function() {
-    [this.removeProviderButton(p.origin) for (p of Social.providers)];
+    for (let p of Social.providers) {
+      this.removeProviderButton(p.origin);
+    }
   },
 
   
@@ -1320,8 +1322,7 @@ var SocialMarksWidgetListener = {
 
 SocialMarks = {
   get nodes() {
-    let providers = [p for (p of Social.providers) if (p.markURL)];
-    for (let p of providers) {
+    for (let p of Social.providers.filter(p => p.markURL)) {
       let widgetId = SocialMarks._toolbarHelper.idFromOrigin(p.origin);
       let widget = CustomizableUI.getWidget(widgetId);
       if (!widget)
@@ -1348,8 +1349,9 @@ SocialMarks = {
     
     
     
-    return [p for (p of Social.providers) if (p.markURL &&
-                                              document.getElementById(this._toolbarHelper.idFromOrigin(p.origin)))];
+    let tbh = this._toolbarHelper;
+    return Social.providers.filter(p => p.markURL &&
+                                        document.getElementById(tbh.idFromOrigin(p.origin)));
   },
 
   populateContextMenu: function() {
@@ -1357,8 +1359,9 @@ SocialMarks = {
     let providers = this.getProviders();
 
     
-    let menus = [m for (m of document.getElementsByClassName("context-socialmarks"))];
-    [m.parentNode.removeChild(m) for (m of menus)];
+    for (let m of document.getElementsByClassName("context-socialmarks")) {
+      m.parentNode.removeChild(m);
+    }
 
     let contextMenus = [
       {
