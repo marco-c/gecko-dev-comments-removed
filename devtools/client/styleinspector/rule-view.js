@@ -26,6 +26,7 @@ const {
   throttle
 } = require("devtools/client/styleinspector/utils");
 const {
+  escapeCSSComment,
   parseDeclarations,
   parseSingleValue,
   parsePseudoClassesAndAttributes,
@@ -1117,7 +1118,7 @@ TextProperty.prototype = {
 
     
     if (!this.enabled) {
-      declaration = "/* " + declaration + " */";
+      declaration = "/* " + escapeCSSComment(declaration) + " */";
     }
 
     return declaration;
