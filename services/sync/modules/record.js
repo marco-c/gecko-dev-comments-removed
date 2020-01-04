@@ -196,7 +196,9 @@ CryptoWrapper.prototype = {
   },
 
   
-  get id() WBORecord.prototype.__lookupGetter__("id").call(this),
+  get id() {
+    return WBORecord.prototype.__lookupGetter__("id").call(this);
+  },
 
   
   set id(val) {
@@ -356,8 +358,9 @@ CollectionKeyManager.prototype = {
   
 
 
-  asWBO: function(collection, id)
-    this._makeWBO(this._collections, this._default),
+  asWBO: function(collection, id) {
+    return this._makeWBO(this._collections, this._default);
+  },
 
   
 
@@ -560,14 +563,14 @@ Collection.prototype = {
   },
 
   
-  get ids() this._ids,
+  get ids() { return this._ids; },
   set ids(value) {
     this._ids = value;
     this._rebuildURL();
   },
 
   
-  get limit() this._limit,
+  get limit() { return this._limit; },
   set limit(value) {
     this._limit = value;
     this._rebuildURL();

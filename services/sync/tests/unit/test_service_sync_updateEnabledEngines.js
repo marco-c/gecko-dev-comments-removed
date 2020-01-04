@@ -41,7 +41,9 @@ function StirlingEngine() {
 StirlingEngine.prototype = {
   __proto__: SteamEngine.prototype,
   
-  get prefName() "steam"
+  get prefName() {
+    return "steam";
+  }
 };
 Service.engineManager.register(StirlingEngine);
 
