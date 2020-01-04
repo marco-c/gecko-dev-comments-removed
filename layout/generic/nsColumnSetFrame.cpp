@@ -83,7 +83,7 @@ nsColumnSetFrame::PaintColumnRule(nsRenderingContext* aCtx,
     return;
 
   nscolor ruleColor =
-    GetVisitedDependentColor(eCSSProperty__moz_column_rule_color);
+    GetVisitedDependentColor(eCSSProperty_column_rule_color);
 
   
   
