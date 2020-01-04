@@ -3720,10 +3720,7 @@ function FillHistoryMenu(aParent) {
         
         aParent.hidePopup();
         return;
-      } else if (aParent.id != "backForwardMenu" && !aParent.parentNode.open) {
-        
-        
-        
+      } else if (!aParent.parentNode.open) {
         
         
         aParent.parentNode.open = true;
@@ -6414,11 +6411,19 @@ var gIdentityHandler = {
   },
 
   get _isSecure() {
-    return this._state & Ci.nsIWebProgressListener.STATE_IS_SECURE;
+    
+    
+    
+    
+    return !this._isURILoadedFromFile && this._state & Ci.nsIWebProgressListener.STATE_IS_SECURE;
   },
 
   get _isEV() {
-    return this._state & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL;
+    
+    
+    
+    
+    return !this._isURILoadedFromFile && this._state & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL;
   },
 
   get _isMixedActiveContentLoaded() {
@@ -6611,6 +6616,7 @@ var gIdentityHandler = {
     let shouldHidePopup = this._uri && (this._uri.spec != uri.spec);
     this._state = state;
     this._uri = uri;
+    this._isURILoadedFromFile = this.isURILoadedFromFile();
 
     
     
@@ -6964,7 +6970,7 @@ var gIdentityHandler = {
     this.updateSitePermissions();
   },
 
-  get _isURILoadedFromFile() {
+  isURILoadedFromFile() {
     
     
     let chanOptions = {uri: this._uri, loadUsingSystemPrincipal: true};
