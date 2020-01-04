@@ -798,6 +798,17 @@ class Decoder
     }
 };
 
+
+
+
+typedef Vector<ValType, 8, SystemAllocPolicy> ValTypeVector;
+
+bool
+EncodeLocalEntries(Encoder& d, const ValTypeVector& locals);
+
+bool
+DecodeLocalEntries(Decoder& d, ValTypeVector* locals);
+
 } 
 } 
 
