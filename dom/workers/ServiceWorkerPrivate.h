@@ -61,7 +61,8 @@ class ServiceWorkerPrivate final : public nsISupports
   friend class KeepAliveToken;
 
 public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(ServiceWorkerPrivate)
 
   explicit ServiceWorkerPrivate(ServiceWorkerInfo* aInfo);
 
@@ -105,6 +106,12 @@ public:
                  nsILoadGroup* aLoadGroup,
                  UniquePtr<ServiceWorkerClientInfo>&& aClientInfo,
                  bool aIsReload);
+
+  void
+  StoreISupports(nsISupports* aSupports);
+
+  void
+  RemoveISupports(nsISupports* aSupports);
 
   
   
@@ -177,6 +184,12 @@ private:
   RefPtr<KeepAliveToken> mKeepAliveToken;
 
   uint64_t mTokenCount;
+
+  
+  
+  
+  
+  nsTArray<nsCOMPtr<nsISupports>> mSupportsArray;
 };
 
 } 
