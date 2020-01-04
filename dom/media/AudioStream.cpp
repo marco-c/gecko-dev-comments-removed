@@ -401,16 +401,10 @@ void
 AudioStream::Start()
 {
   MonitorAutoLock mon(mMonitor);
-  if (mState == INITIALIZED) {
-    
-    
-    
-    mState = STARTED;
-    if (InvokeCubeb(cubeb_stream_start) != CUBEB_OK) {
-      mState = ERRORED;
-    }
-    LOG("started, state %s", mState == STARTED ? "STARTED" : "ERRORED");
-  }
+  MOZ_ASSERT(mState == INITIALIZED);
+  auto r = InvokeCubeb(cubeb_stream_start);
+  mState = r == CUBEB_OK ? STARTED : ERRORED;
+  LOG("started, state %s", mState == STARTED ? "STARTED" : "ERRORED");
 }
 
 void
