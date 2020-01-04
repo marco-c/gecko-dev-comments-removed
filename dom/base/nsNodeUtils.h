@@ -151,6 +151,11 @@ public:
 
   static mozilla::Maybe<mozilla::NonOwningAnimationTarget>
     GetTargetForAnimation(const mozilla::dom::Animation* aAnimation);
+
+  
+
+
+
   static void AnimationAdded(mozilla::dom::Animation* aAnimation);
   static void AnimationChanged(mozilla::dom::Animation* aAnimation);
   static void AnimationRemoved(mozilla::dom::Animation* aAnimation);
@@ -306,6 +311,22 @@ private:
                                 JS::Handle<JSObject*> aReparentScope,
                                 nsCOMArray<nsINode> &aNodesWithProperties,
                                 nsINode *aParent, nsINode **aResult);
+
+  enum class AnimationMutationType
+  {
+    Added,
+    Changed,
+    Removed
+  };
+  
+
+
+
+
+
+  static void AnimationMutated(mozilla::dom::Animation* aAnimation,
+                               AnimationMutationType aMutatedType);
+
 };
 
 #endif 
