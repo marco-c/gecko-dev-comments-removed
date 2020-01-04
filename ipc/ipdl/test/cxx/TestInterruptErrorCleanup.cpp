@@ -44,7 +44,6 @@ void DeleteTheWorld()
     MutexAutoLock lock(mutex);
 
     XRE_GetIOMessageLoop()->PostTask(
-      FROM_HERE,
       NewRunnableFunction(DeleteSubprocess, &mutex, &cvar));
 
     cvar.Wait();
@@ -101,7 +100,7 @@ TestInterruptErrorCleanupParent::Main()
     
 
     MessageLoop::current()->PostTask(
-        FROM_HERE, NewRunnableFunction(DeleteTheWorld));
+        NewRunnableFunction(DeleteTheWorld));
 
     
     if (CallError())
@@ -118,7 +117,7 @@ TestInterruptErrorCleanupParent::Main()
     
     
     
-    MessageLoop::current()->PostTask(FROM_HERE, NewRunnableFunction(Done));
+    MessageLoop::current()->PostTask(NewRunnableFunction(Done));
 }
 
 void

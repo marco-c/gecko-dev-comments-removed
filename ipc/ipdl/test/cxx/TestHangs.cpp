@@ -82,7 +82,7 @@ TestHangsParent::ShouldContinueFromReplyTimeout()
     
     
     MessageLoop::current()->PostTask(
-        FROM_HERE, NewRunnableMethod(this, &TestHangsParent::CleanUp));
+        NewRunnableMethod(this, &TestHangsParent::CleanUp));
 
     GetIPCChannel()->CloseWithTimeout();
 

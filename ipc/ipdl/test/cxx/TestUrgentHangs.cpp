@@ -56,7 +56,6 @@ TestUrgentHangsParent::Main()
 
     
     MessageLoop::current()->PostDelayedTask(
-        FROM_HERE,
         NewRunnableMethod(this, &TestUrgentHangsParent::SecondStage),
         3000);
 }
@@ -75,7 +74,6 @@ TestUrgentHangsParent::SecondStage()
         fail("sending Test4_1");
 
     MessageLoop::current()->PostDelayedTask(
-        FROM_HERE,
         NewRunnableMethod(this, &TestUrgentHangsParent::ThirdStage),
         3000);
 }
@@ -99,7 +97,6 @@ TestUrgentHangsParent::ThirdStage()
 
     
     MessageLoop::current()->PostDelayedTask(
-        FROM_HERE,
         NewRunnableMethod(this, &TestUrgentHangsParent::Close),
         3000);
 }

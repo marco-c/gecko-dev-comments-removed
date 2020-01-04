@@ -29,7 +29,7 @@ namespace _ipdltest {
 
 
 
-const char* const IPDLUnitTestName();
+const char* IPDLUnitTestName();
 
 
 

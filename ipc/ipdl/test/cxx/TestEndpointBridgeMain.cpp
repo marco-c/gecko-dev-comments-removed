@@ -78,11 +78,9 @@ TestEndpointBridgeMainSubParent::ActorDestroy(ActorDestroyReason why)
   
   
   MessageLoop::current()->PostTask(
-    FROM_HERE,
-    new DeleteTask<TestEndpointBridgeMainSubParent>(this));
+    do_AddRef(new DeleteTask<TestEndpointBridgeMainSubParent>(this)));
   XRE_GetIOMessageLoop()->PostTask(
-    FROM_HERE,
-    new DeleteTask<Transport>(GetTransport()));
+    do_AddRef(new DeleteTask<Transport>(GetTransport())));
 }
 
 
@@ -126,8 +124,7 @@ TestEndpointBridgeMainChild::ActorDestroy(ActorDestroyReason why)
   }
   
   XRE_GetIOMessageLoop()->PostTask(
-    FROM_HERE,
-    new DeleteTask<IPDLUnitTestSubprocess>(mSubprocess));
+    do_AddRef(new DeleteTask<IPDLUnitTestSubprocess>(mSubprocess)));
   QuitChild();
 }
 
@@ -174,8 +171,7 @@ TestEndpointBridgeSubParent::ActorDestroy(ActorDestroyReason why)
   
   
   MessageLoop::current()->PostTask(
-    FROM_HERE,
-    new DeleteTask<TestEndpointBridgeSubParent>(this));
+    do_AddRef(new DeleteTask<TestEndpointBridgeSubParent>(this)));
 }
 
 
@@ -238,7 +234,6 @@ TestEndpointBridgeMainSubChild::RecvHi()
   
   
   MessageLoop::current()->PostTask(
-    FROM_HERE,
     NewRunnableMethod(this, &TestEndpointBridgeMainSubChild::Close));
   return true;
 }
@@ -263,11 +258,9 @@ TestEndpointBridgeMainSubChild::ActorDestroy(ActorDestroyReason why)
   
   
   MessageLoop::current()->PostTask(
-    FROM_HERE,
-    new DeleteTask<TestEndpointBridgeMainSubChild>(this));
+    do_AddRef(new DeleteTask<TestEndpointBridgeMainSubChild>(this)));
   XRE_GetIOMessageLoop()->PostTask(
-    FROM_HERE,
-    new DeleteTask<Transport>(GetTransport()));
+    do_AddRef(new DeleteTask<Transport>(GetTransport())));
 }
 
 } 

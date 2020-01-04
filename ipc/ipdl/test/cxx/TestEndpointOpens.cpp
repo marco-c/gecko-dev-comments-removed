@@ -85,7 +85,6 @@ TestEndpointOpensParent::RecvStartSubprotocol(
 
   TestEndpointOpensOpenedParent* a = new TestEndpointOpensOpenedParent();
   gParentThread->message_loop()->PostTask(
-    FROM_HERE,
     NewRunnableFunction(OpenParent, a, mozilla::Move(endpoint)));
 
   return true;
@@ -134,8 +133,7 @@ ShutdownTestEndpointOpensOpenedParent(TestEndpointOpensOpenedParent* parent,
   
   
   XRE_GetIOMessageLoop()->PostTask(
-    FROM_HERE,
-    new DeleteTask<Transport>(transport));
+    do_AddRef(new DeleteTask<Transport>(transport)));
 }
 
 void
@@ -151,7 +149,6 @@ TestEndpointOpensOpenedParent::ActorDestroy(ActorDestroyReason why)
   
   
   gParentThread->message_loop()->PostTask(
-    FROM_HERE,
     NewRunnableFunction(ShutdownTestEndpointOpensOpenedParent,
                         this, GetTransport()));
 }
@@ -208,7 +205,6 @@ TestEndpointOpensChild::RecvStart()
 
   TestEndpointOpensOpenedChild* a = new TestEndpointOpensOpenedChild();
   gChildThread->message_loop()->PostTask(
-    FROM_HERE,
     NewRunnableFunction(OpenChild, a, mozilla::Move(child)));
 
   if (!SendStartSubprotocol(parent)) {
@@ -248,7 +244,6 @@ TestEndpointOpensOpenedChild::RecvHi()
   
   
   MessageLoop::current()->PostTask(
-    FROM_HERE,
     NewRunnableMethod(this, &TestEndpointOpensOpenedChild::Close));
   return true;
 }
@@ -271,12 +266,10 @@ ShutdownTestEndpointOpensOpenedChild(TestEndpointOpensOpenedChild* child,
   
   
   XRE_GetIOMessageLoop()->PostTask(
-    FROM_HERE,
-    new DeleteTask<Transport>(transport));
+    do_AddRef(new DeleteTask<Transport>(transport)));
 
   
   gMainThread->PostTask(
-    FROM_HERE,
     NewRunnableMethod(gOpensChild, &TestEndpointOpensChild::Close));
 }
 
@@ -294,7 +287,6 @@ TestEndpointOpensOpenedChild::ActorDestroy(ActorDestroyReason why)
   
   
   gChildThread->message_loop()->PostTask(
-    FROM_HERE,
     NewRunnableFunction(ShutdownTestEndpointOpensOpenedChild,
                         this, GetTransport()));
 }

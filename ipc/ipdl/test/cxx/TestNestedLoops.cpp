@@ -53,7 +53,6 @@ TestNestedLoopsParent::RecvNonce()
     
     
     MessageLoop::current()->PostTask(
-        FROM_HERE,
         NewRunnableMethod(this, &TestNestedLoopsParent::BreakNestedLoop));
 
     

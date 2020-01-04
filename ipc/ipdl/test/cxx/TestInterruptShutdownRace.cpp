@@ -59,7 +59,6 @@ TestInterruptShutdownRaceParent::RecvStartDeath()
     
     
     MessageLoop::current()->PostTask(
-        FROM_HERE,
         NewRunnableMethod(this,
                           &TestInterruptShutdownRaceParent::StartShuttingDown));
     return true;
@@ -82,12 +81,10 @@ TestInterruptShutdownRaceParent::StartShuttingDown()
     delete static_cast<TestInterruptShutdownRaceParent*>(gParentActor);
     gParentActor = nullptr;
 
-    XRE_GetIOMessageLoop()->PostTask(FROM_HERE,
-                                     NewRunnableFunction(DeleteSubprocess));
+    XRE_GetIOMessageLoop()->PostTask(NewRunnableFunction(DeleteSubprocess));
 
     
-    MessageLoop::current()->PostTask(FROM_HERE,
-                                     NewRunnableFunction(Done));
+    MessageLoop::current()->PostTask(NewRunnableFunction(Done));
 
     
 }

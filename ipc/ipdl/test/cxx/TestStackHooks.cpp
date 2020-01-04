@@ -81,8 +81,7 @@ TestStackHooksChild::RecvStart()
 
     
     
-    MessageLoop::current()->PostTask(FROM_HERE,
-                                     NewRunnableFunction(RunTestsFn));
+    MessageLoop::current()->PostTask(NewRunnableFunction(RunTestsFn));
 
     return true;
 }
