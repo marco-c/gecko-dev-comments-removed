@@ -1021,7 +1021,7 @@ nsWindow::OnLongTapEvent(AndroidGeckoEvent *ae)
     }
 
     
-    WidgetMouseEvent event(true, NS_MOUSE_MOZLONGTAP, this,
+    WidgetMouseEvent event(true, eMouseLongTap, this,
         WidgetMouseEvent::eReal, WidgetMouseEvent::eNormal);
     event.button = WidgetMouseEvent::eLeftButton;
     event.refPoint =
