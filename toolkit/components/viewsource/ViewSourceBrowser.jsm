@@ -186,6 +186,8 @@ ViewSourceBrowser.prototype = {
     }
 
     if (browser) {
+      this.browser.relatedBrowser = browser;
+
       
       
       this.updateBrowserRemoteness(browser.isRemoteBrowser);

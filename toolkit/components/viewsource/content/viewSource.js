@@ -675,12 +675,22 @@ ViewSourceChrome.prototype = {
     let parentNode = this.browser.parentNode;
     let nextSibling = this.browser.nextSibling;
 
+    
+    
+    
+    
+    
+    let relatedBrowser = this.browser.relatedBrowser;
+
     this.browser.remove();
     if (shouldBeRemote) {
       this.browser.setAttribute("remote", "true");
     } else {
       this.browser.removeAttribute("remote");
     }
+
+    this.browser.relatedBrowser = relatedBrowser;
+
     
     
     parentNode.insertBefore(this.browser, nextSibling);
@@ -746,6 +756,10 @@ var PrintPreviewListener = {
     this._ppBrowser.remove();
     gBrowser.collapsed = false;
     document.getElementById("viewSource-toolbox").hidden = false;
+  },
+
+  activateBrowser(browser) {
+    browser.docShellIsActive = true;
   },
 };
 
