@@ -879,7 +879,13 @@ MacroAssembler::branchFloat(DoubleCondition cond, FloatRegister lhs, FloatRegist
 }
 
 void
-MacroAssembler::branchTruncateFloat32(FloatRegister src, Register dest, Label* fail)
+MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src, Register dest, Label* fail)
+{
+    branchTruncateFloat32ToInt32(src, dest, fail);
+}
+
+void
+MacroAssembler::branchTruncateFloat32ToInt32(FloatRegister src, Register dest, Label* fail)
 {
     ScratchFloat32Scope scratch(*this);
     ma_vcvt_F32_I32(src, scratch.sintOverlay());
@@ -913,6 +919,12 @@ MacroAssembler::branchDouble(DoubleCondition cond, FloatRegister lhs, FloatRegis
     ma_b(label, ConditionFromDoubleCondition(cond));
 }
 
+void
+MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src, Register dest, Label* fail)
+{
+    branchTruncateDoubleToInt32(src, dest, fail);
+}
+
 
 
 
@@ -922,7 +934,7 @@ MacroAssembler::branchDouble(DoubleCondition cond, FloatRegister lhs, FloatRegis
 
 
 void
-MacroAssembler::branchTruncateDouble(FloatRegister src, Register dest, Label* fail)
+MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src, Register dest, Label* fail)
 {
     ScratchDoubleScope scratch(*this);
     FloatRegister scratchSIntReg = scratch.sintOverlay();

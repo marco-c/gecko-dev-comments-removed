@@ -764,7 +764,19 @@ MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rh
 }
 
 void
-MacroAssembler::branchTruncateFloat32(FloatRegister src, Register dest, Label* fail)
+MacroAssembler::branchTruncateFloat32ToPtr(FloatRegister src, Register dest, Label* fail)
+{
+    branchTruncateFloat32ToInt32(src, dest, fail);
+}
+
+void
+MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src, Register dest, Label* fail)
+{
+    branchTruncateFloat32ToInt32(src, dest, fail);
+}
+
+void
+MacroAssembler::branchTruncateFloat32ToInt32(FloatRegister src, Register dest, Label* fail)
 {
     vcvttss2si(src, dest);
 
@@ -776,7 +788,21 @@ MacroAssembler::branchTruncateFloat32(FloatRegister src, Register dest, Label* f
 }
 
 void
-MacroAssembler::branchTruncateDouble(FloatRegister src, Register dest, Label* fail)
+MacroAssembler::branchTruncateDoubleToPtr(FloatRegister src, Register dest, Label* fail)
+{
+    branchTruncateDoubleToInt32(src, dest, fail);
+}
+
+void
+MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src, Register dest, Label* fail)
+{
+    
+    
+    branchTruncateDoubleToInt32(src, dest, fail);
+}
+
+void
+MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src, Register dest, Label* fail)
 {
     vcvttsd2si(src, dest);
 
@@ -822,6 +848,65 @@ MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr, JSWhyMag
 {
     branchTestMagic(cond, valaddr, label);
     branch32(cond, ToPayload(valaddr), Imm32(why), label);
+}
+
+
+
+
+void
+MacroAssembler::truncateFloat32ToUInt64(Address src, Address dest, Register temp,
+                                        FloatRegister floatTemp)
+{
+    Label done;
+
+    loadFloat32(src, floatTemp);
+
+    truncateFloat32ToInt64(src, dest, temp);
+
+    
+    load32(Address(dest.base, dest.offset + INT64HIGH_OFFSET), temp);
+    branch32(Assembler::Condition::NotSigned, temp, Imm32(0), &done);
+
+    
+    storeFloat32(floatTemp, dest);
+    loadConstantFloat32(double(int64_t(0x8000000000000000)), floatTemp);
+    vaddss(Operand(dest), floatTemp, floatTemp);
+    storeFloat32(floatTemp, dest);
+    truncateFloat32ToInt64(dest, dest, temp);
+
+    load32(Address(dest.base, dest.offset + INT64HIGH_OFFSET), temp);
+    orl(Imm32(0x80000000), temp);
+    store32(temp, Address(dest.base, dest.offset + INT64HIGH_OFFSET));
+
+    bind(&done);
+}
+
+void
+MacroAssembler::truncateDoubleToUInt64(Address src, Address dest, Register temp,
+                                       FloatRegister floatTemp)
+{
+    Label done;
+
+    loadDouble(src, floatTemp);
+
+    truncateDoubleToInt64(src, dest, temp);
+
+    
+    load32(Address(dest.base, dest.offset + INT64HIGH_OFFSET), temp);
+    branch32(Assembler::Condition::NotSigned, temp, Imm32(0), &done);
+
+    
+    storeDouble(floatTemp, dest);
+    loadConstantDouble(double(int64_t(0x8000000000000000)), floatTemp);
+    vaddsd(Operand(dest), floatTemp, floatTemp);
+    storeDouble(floatTemp, dest);
+    truncateDoubleToInt64(dest, dest, temp);
+
+    load32(Address(dest.base, dest.offset + INT64HIGH_OFFSET), temp);
+    orl(Imm32(0x80000000), temp);
+    store32(temp, Address(dest.base, dest.offset + INT64HIGH_OFFSET));
+
+    bind(&done);
 }
 
 

@@ -17,6 +17,7 @@
     _(UDivOrMod)                \
     _(UDivOrModConstant)        \
     _(UDivOrModI64)             \
-    _(DivOrModI64)
+    _(DivOrModI64)              \
+    _(WasmTruncateToInt64)
 
 #endif 

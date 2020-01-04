@@ -647,19 +647,31 @@ MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rh
 }
 
 void
-MacroAssembler::branchTruncateFloat32(FloatRegister src, Register dest, Label* fail)
+MacroAssembler::branchTruncateFloat32ToPtr(FloatRegister src, Register dest, Label* fail)
 {
     vcvttss2sq(src, dest);
 
     
     cmpPtr(dest, Imm32(1));
     j(Assembler::Overflow, fail);
+}
 
+void
+MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src, Register dest, Label* fail)
+{
+    branchTruncateFloat32ToPtr(src, dest, fail);
     movl(dest, dest); 
 }
 
 void
-MacroAssembler::branchTruncateDouble(FloatRegister src, Register dest, Label* fail)
+MacroAssembler::branchTruncateFloat32ToInt32(FloatRegister src, Register dest, Label* fail)
+{
+    branchTruncateFloat32ToPtr(src, dest, fail);
+    branch32(Assembler::Above, dest, Imm32(0xffffffff), fail);
+}
+
+void
+MacroAssembler::branchTruncateDoubleToPtr(FloatRegister src, Register dest, Label* fail)
 {
     vcvttsd2sq(src, dest);
 
@@ -668,8 +680,20 @@ MacroAssembler::branchTruncateDouble(FloatRegister src, Register dest, Label* fa
     
     cmpPtr(dest, Imm32(1));
     j(Assembler::Overflow, fail);
+}
 
+void
+MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src, Register dest, Label* fail)
+{
+    branchTruncateDoubleToPtr(src, dest, fail);
     movl(dest, dest); 
+}
+
+void
+MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src, Register dest, Label* fail)
+{
+    branchTruncateDoubleToPtr(src, dest, fail);
+    branch32(Assembler::Above, dest, Imm32(0xffffffff), fail);
 }
 
 void
@@ -706,6 +730,64 @@ MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr, JSWhyMag
     uint64_t magic = MagicValue(why).asRawBits();
     cmpPtr(valaddr, ImmWord(magic));
     j(cond, label);
+}
+
+
+
+void
+MacroAssembler::truncateFloat32ToUInt64(Address src, Address dest, Register temp,
+                                        FloatRegister floatTemp)
+{
+    Label done;
+
+    loadFloat32(src, floatTemp);
+
+    truncateFloat32ToInt64(src, dest, temp);
+
+    
+    loadPtr(dest, temp);
+    branch32(Assembler::Condition::NotSigned, temp, Imm32(0), &done);
+
+    
+    storeFloat32(floatTemp, dest);
+    loadConstantFloat32(double(int64_t(0x8000000000000000)), floatTemp);
+    vaddss(Operand(dest), floatTemp, floatTemp);
+    storeFloat32(floatTemp, dest);
+    truncateFloat32ToInt64(dest, dest, temp);
+
+    loadPtr(dest, temp);
+    or64(Imm64(0x8000000000000000), Register64(temp));
+    storePtr(temp, dest);
+
+    bind(&done);
+}
+
+void
+MacroAssembler::truncateDoubleToUInt64(Address src, Address dest, Register temp,
+                                       FloatRegister floatTemp)
+{
+    Label done;
+
+    loadDouble(src, floatTemp);
+
+    truncateDoubleToInt64(src, dest, temp);
+
+    
+    loadPtr(dest, temp);
+    branch32(Assembler::Condition::NotSigned, temp, Imm32(0), &done);
+
+    
+    storeDouble(floatTemp, dest);
+    loadConstantDouble(double(int64_t(0x8000000000000000)), floatTemp);
+    vaddsd(Operand(dest), floatTemp, floatTemp);
+    storeDouble(floatTemp, dest);
+    truncateDoubleToInt64(dest, dest, temp);
+
+    loadPtr(dest, temp);
+    or64(Imm64(0x8000000000000000), Register64(temp));
+    storePtr(temp, dest);
+
+    bind(&done);
 }
 
 
