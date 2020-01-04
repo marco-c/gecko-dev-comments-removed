@@ -522,6 +522,10 @@ public:
         }
     }
 
+    ProcessId OtherPid() const {
+        return mOtherPid;
+    }
+
     
     
     
