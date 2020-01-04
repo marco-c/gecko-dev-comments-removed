@@ -247,17 +247,27 @@ public:
   
 
 
+
+
+
+  enum MatchKind {
+    PrefixMatch,
+    ExactMatch,
+  };
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const char* aPref,
-                                   void* aClosure = nullptr);
+                                   void* aClosure = nullptr,
+                                   MatchKind aMatchKind = PrefixMatch);
   static nsresult UnregisterCallback(PrefChangedFunc aCallback,
                                      const char* aPref,
-                                     void* aClosure = nullptr);
+                                     void* aClosure = nullptr,
+                                     MatchKind aMatchKind = PrefixMatch);
   
   
   static nsresult RegisterCallbackAndCall(PrefChangedFunc aCallback,
                                           const char* aPref,
-                                          void* aClosure = nullptr);
+                                          void* aClosure = nullptr,
+                                          MatchKind aMatchKind = PrefixMatch);
 
   
 
