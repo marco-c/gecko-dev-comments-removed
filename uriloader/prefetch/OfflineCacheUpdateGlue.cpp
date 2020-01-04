@@ -23,7 +23,7 @@
 
 
 
-extern mozilla::LazyLogModule gOfflineCacheUpdateLog;
+extern PRLogModuleInfo *gOfflineCacheUpdateLog;
 
 #undef LOG
 #define LOG(args) MOZ_LOG(gOfflineCacheUpdateLog, mozilla::LogLevel::Debug, args)

@@ -44,7 +44,7 @@ using namespace mozilla;
 
 
 
-static LazyLogModule gPrefetchLog("nsPrefetch");
+static PRLogModuleInfo *gPrefetchLog;
 
 #undef LOG
 #define LOG(args) MOZ_LOG(gPrefetchLog, mozilla::LogLevel::Debug, args)
@@ -333,6 +333,9 @@ nsPrefetchService::~nsPrefetchService()
 nsresult
 nsPrefetchService::Init()
 {
+    if (!gPrefetchLog)
+        gPrefetchLog = PR_NewLogModule("nsPrefetch");
+
     nsresult rv;
 
     

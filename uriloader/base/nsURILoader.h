@@ -51,7 +51,7 @@ protected:
   
 
 
-  static mozilla::LazyLogModule mLog;
+  static PRLogModuleInfo* mLog;
   
   friend class nsDocumentOpenInfo;
 };
