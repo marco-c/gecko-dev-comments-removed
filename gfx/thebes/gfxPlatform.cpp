@@ -777,6 +777,8 @@ gfxPlatform::Init()
     ScrollMetadata::sNullMetadata = new ScrollMetadata();
     ClearOnShutdown(&ScrollMetadata::sNullMetadata);
 
+    InitOpenGLConfig();
+
     if (obs) {
       obs->NotifyObservers(nullptr, "gfx-features-ready", nullptr);
     }
@@ -2351,42 +2353,13 @@ gfxPlatform::PerfWarnings()
   return gfxPrefs::PerfWarnings();
 }
 
-static inline bool
-AllowOpenGL(bool* aWhitelisted)
-{
-  nsCOMPtr<nsIGfxInfo> gfxInfo = do_GetService("@mozilla.org/gfx/info;1");
-  if (gfxInfo) {
-    
-    
-    
-    
-    gfxInfo->GetData();
-
-    int32_t status;
-    nsCString discardFailureId;
-    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_OPENGL_LAYERS, discardFailureId, &status))) {
-      if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
-        *aWhitelisted = true;
-        return true;
-      }
-    }
-  }
-
-  return gfxConfig::IsForcedOnByUser(Feature::HW_COMPOSITING);
-}
-
 void
 gfxPlatform::GetAcceleratedCompositorBackends(nsTArray<LayersBackend>& aBackends)
 {
-  
-  
-  bool whitelisted = false;
-
-  if (AllowOpenGL(&whitelisted)) {
+  if (gfxConfig::IsEnabled(Feature::OPENGL_COMPOSITING)) {
     aBackends.AppendElement(LayersBackend::LAYERS_OPENGL);
   }
-
-  if (!whitelisted) {
+  else {
     static int tell_me_once = 0;
     if (!tell_me_once) {
       NS_WARNING("OpenGL-accelerated layers are not supported on this system");
@@ -2470,4 +2443,54 @@ void
 gfxPlatform::BumpDeviceCounter()
 {
   mDeviceCounter++;
+}
+
+void
+gfxPlatform::InitOpenGLConfig()
+{
+  FeatureState& openGLFeature = gfxConfig::GetFeature(Feature::OPENGL_COMPOSITING);
+
+  
+  if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
+    openGLFeature.DisableByDefault(FeatureStatus::Unavailable, "Hardware compositing is disabled",
+                           NS_LITERAL_CSTRING("FEATURE_FAILURE_OPENGL_NEED_HWCOMP"));
+    return;
+  }
+
+  #ifdef XP_WIN
+  
+  
+  openGLFeature.SetDefaultFromPref(
+    gfxPrefs::GetLayersPreferOpenGLPrefName(),
+    false,
+    gfxPrefs::GetLayersPreferOpenGLPrefDefault());
+  #else
+    openGLFeature.EnableByDefault();
+  #endif
+
+  nsCString message;
+  nsCString failureId;
+  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_OPENGL_LAYERS, &message, failureId)) {
+    openGLFeature.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
+  }
+}
+
+bool
+gfxPlatform::IsGfxInfoStatusOkay(int32_t aFeature, nsCString* aOutMessage, nsCString& aFailureId)
+{
+  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+  if (!gfxInfo) {
+    return true;
+  }
+
+  int32_t status;    
+  if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(aFeature, aFailureId, &status)) &&
+      status != nsIGfxInfo::FEATURE_STATUS_OK)
+  {
+    aOutMessage->AssignLiteral("#BLOCKLIST_");
+    aOutMessage->AppendASCII(aFailureId.get());
+    return false;
+  }
+
+  return true;
 }

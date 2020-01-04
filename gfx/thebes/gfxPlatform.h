@@ -654,6 +654,13 @@ public:
       return mDeviceCounter;
     }
 
+    
+
+
+
+    static bool IsGfxInfoStatusOkay(int32_t aFeature, nsCString* aOutMessage,
+                                    nsCString& aFailureId);
+
 protected:
     gfxPlatform();
     virtual ~gfxPlatform();
@@ -750,6 +757,7 @@ private:
 
     static void Init();
 
+    static void InitOpenGLConfig();
     static void CreateCMSOutputProfile();
 
     static void GetCMSOutputProfileData(void *&mem, size_t &size);
