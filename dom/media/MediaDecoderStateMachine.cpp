@@ -1392,8 +1392,8 @@ void MediaDecoderStateMachine::StartDecoding()
   }
 
   
-  mIsAudioPrerolling = !DonePrerollingAudio();
-  mIsVideoPrerolling = !DonePrerollingVideo();
+  mIsAudioPrerolling = !DonePrerollingAudio() && !mAudioWaitRequest.Exists();
+  mIsVideoPrerolling = !DonePrerollingVideo() && !mVideoWaitRequest.Exists();
 
   
   DispatchDecodeTasksIfNeeded();
