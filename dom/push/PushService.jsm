@@ -54,6 +54,16 @@ const PUSH_SERVICE_RUNNING = 5;
 
 
 
+const kDROP_NOTIFICATION_REASON_KEY_NOT_FOUND = 0;
+
+const kDROP_NOTIFICATION_REASON_NO_HISTORY = 1;
+
+const kDROP_NOTIFICATION_REASON_NO_VERSION_INCREMENT = 2;
+
+const kDROP_NOTIFICATION_REASON_EXPIRED = 3;
+
+
+
 
 
 
@@ -673,6 +683,7 @@ this.PushService = {
       scope: record.scope
     };
 
+    Services.telemetry.getHistogramById("PUSH_API_NOTIFY_REGISTRATION_LOST").add();
     this._notifyListeners('pushsubscriptionchange', data);
   },
 
@@ -724,6 +735,12 @@ this.PushService = {
       .then(record => this._notifySubscriptionChangeObservers(record));
   },
 
+  _recordDidNotNotify: function(reason) {
+    Services.telemetry.
+      getHistogramById("PUSH_API_NOTIFICATION_RECEIVED_BUT_DID_NOT_NOTIFY").
+      add(reason);
+  },
+
   
 
 
@@ -740,10 +757,12 @@ this.PushService = {
 
   receivedPushMessage: function(keyID, message, updateFunc) {
     debug("receivedPushMessage()");
+    Services.telemetry.getHistogramById("PUSH_API_NOTIFICATION_RECEIVED").add();
 
     let shouldNotify = false;
     return this.getByKeyID(keyID).then(record => {
       if (!record) {
+        this._recordDidNotNotify(kDROP_NOTIFICATION_REASON_KEY_NOT_FOUND);
         throw new Error("No record for key ID " + keyID);
       }
       return record.getLastVisit();
@@ -751,15 +770,21 @@ this.PushService = {
       
       
       shouldNotify = isFinite(lastVisit);
+      if (!shouldNotify) {
+          this._recordDidNotNotify(kDROP_NOTIFICATION_REASON_NO_HISTORY);
+      }
       return this._db.update(keyID, record => {
         let newRecord = updateFunc(record);
         if (!newRecord) {
+          this._recordDidNotNotify(kDROP_NOTIFICATION_REASON_NO_VERSION_INCREMENT);
           return null;
         }
+        
         if (newRecord.isExpired()) {
           
           
           debug("receivedPushMessage: Ignoring update for expired key ID " + keyID);
+          this._recordDidNotNotify(kDROP_NOTIFICATION_REASON_EXPIRED);
           return null;
         }
         newRecord.receivedPush(lastVisit);
@@ -825,6 +850,7 @@ this.PushService = {
       scope: aPushRecord.scope
     };
 
+    Services.telemetry.getHistogramById("PUSH_API_NOTIFY").add();
     this._notifyListeners('push', data);
     return true;
   },
