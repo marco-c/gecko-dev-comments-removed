@@ -485,6 +485,22 @@ ImageTestCase CorruptTestCase()
                        TEST_CASE_HAS_ERROR);
 }
 
+ImageTestCase CorruptICOWithBadBMPWidthTestCase()
+{
+  
+  
+  return ImageTestCase("corrupt-with-bad-bmp-width.ico", "image/x-icon",
+                       IntSize(100, 100), TEST_CASE_HAS_ERROR);
+}
+
+ImageTestCase CorruptICOWithBadBMPHeightTestCase()
+{
+  
+  
+  return ImageTestCase("corrupt-with-bad-bmp-height.ico", "image/x-icon",
+                       IntSize(100, 100), TEST_CASE_HAS_ERROR);
+}
+
 ImageTestCase TransparentPNGTestCase()
 {
   return ImageTestCase("transparent.png", "image/png", IntSize(32, 32),
