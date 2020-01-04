@@ -2874,7 +2874,7 @@ RuleEditor.prototype = {
           ruleView.highlightedSelector);
       }
 
-      this._moveSelectorFocus(newRule, direction);
+      editor._moveSelectorFocus(direction);
     }).then(null, err => {
       this.isEditing = false;
       promiseWarn(err);
@@ -2888,16 +2888,13 @@ RuleEditor.prototype = {
 
 
 
-
-
-
-  _moveSelectorFocus: function(rule, direction) {
+  _moveSelectorFocus: function(direction) {
     if (!direction || direction === Ci.nsIFocusManager.MOVEFOCUS_BACKWARD) {
       return;
     }
 
-    if (rule.textProps.length > 0) {
-      rule.textProps[0].editor.nameSpan.click();
+    if (this.rule.textProps.length > 0) {
+      this.rule.textProps[0].editor.nameSpan.click();
     } else {
       this.propertyList.click();
     }
