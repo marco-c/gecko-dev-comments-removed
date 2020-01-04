@@ -117,15 +117,16 @@ loop.store.StoreMixin = (function() {
 
   var _stores = {};
   function StoreMixin(id) {
-    function _getStore() {
-      if (!_stores[id]) {
-        throw new Error("Unavailable store " + id);
-      }
-      return _stores[id];
-    }
     return {
       getStore: function() {
-        return _getStore();
+        
+        if (id in this.props) {
+          return this.props[id];
+        }
+        if (!_stores[id]) {
+          throw new Error("Unavailable store " + id);
+        }
+        return _stores[id];
       },
       getStoreState: function() {
         return this.getStore().getStoreState();
