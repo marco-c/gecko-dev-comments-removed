@@ -22,7 +22,7 @@ class C2 : public RC1 {};
 
 class RC3 : public RC1 {};
 
-class RC4 : public RC3, public C2 {};
+class RC4 : public RC3, public C2 {}; 
 
 class RC5 : public RC1 {};
 
@@ -36,3 +36,14 @@ private:
 };
 
 class Predecl;
+
+class OtherRC {
+public:
+  virtual void AddRef();
+  virtual void Release();
+
+private:
+  int mRefCnt; 
+};
+
+class MultRCSuper : public RC1, public OtherRC {}; 
