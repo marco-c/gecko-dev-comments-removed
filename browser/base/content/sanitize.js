@@ -155,20 +155,26 @@ Sanitizer.prototype = {
     
     
     
-    let promises = [];
+    let handles = [];
     for (let itemName of itemsToClear) {
-      let item = this.items[itemName];
+      
+      let name = itemName;
+      let item = this.items[name];
       try {
         
-        
-        promises.push(item.clear(range)
-                          .then(() => progress[itemName] = "cleared",
-                                ex => annotateError(itemName, ex)));
+        handles.push({ name,
+                       promise: item.clear(range)
+                                    .then(() => progress[name] = "cleared",
+                                          ex => annotateError(name, ex))
+                     });
       } catch (ex) {
-        annotateError(itemName, ex);
+        annotateError(name, ex);
       }
     }
-    yield Promise.all(promises);
+    for (let handle of handles) {
+      progress[handle.name] = "blocking";
+      yield handle.promise;
+    }
 
     
     TelemetryStopwatch.finish("FX_SANITIZE_TOTAL", refObj);
