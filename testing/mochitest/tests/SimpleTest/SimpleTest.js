@@ -977,6 +977,45 @@ SimpleTest.waitForClipboard = function(aExpectedStringOrValidatorFn, aSetupFn,
 
 
 
+
+
+
+
+
+
+
+SimpleTest.waitForCondition = function (aCond, aCallback, aErrorMsg) {
+  var tries = 0;
+  var interval = setInterval(() => {
+    if (tries >= 30) {
+      ok(false, aErrorMsg);
+      moveOn();
+      return;
+    }
+    var conditionPassed;
+    try {
+      conditionPassed = aCond();
+    } catch (e) {
+      ok(false, `${e}\n${e.stack}`);
+      conditionPassed = false;
+    }
+    if (conditionPassed) {
+      moveOn();
+    }
+    tries++;
+  }, 100);
+  var moveOn = () => { clearInterval(interval); aCallback(); };
+};
+SimpleTest.promiseWaitForCondition = function (aCond, aErrorMsg) {
+  return new Promise(resolve => {
+    this.waitForCondition(aCond, resolve, aErrorMsg);
+  });
+};
+
+
+
+
+
 SimpleTest.executeSoon = function(aFunc) {
     if ("SpecialPowers" in window) {
         return SpecialPowers.executeSoon(aFunc, window);
