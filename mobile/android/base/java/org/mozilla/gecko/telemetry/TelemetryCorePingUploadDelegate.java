@@ -44,6 +44,7 @@ public class TelemetryCorePingUploadDelegate extends BrowserAppDelegate {
         
         
         
+        
         final SearchEngineManager searchEngineManager = browserApp.getSearchEngineManager();
         searchEngineManager.getEngine(new UploadTelemetryCorePingCallback(browserApp));
     }
