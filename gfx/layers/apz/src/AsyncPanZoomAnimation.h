@@ -46,8 +46,8 @@ public:
 
 
 
-  void TakeDeferredTasks(Vector<Task*>& aTasks) {
-    mDeferredTasks.swap(aTasks);
+  Vector<Task*> TakeDeferredTasks() {
+    return Move(mDeferredTasks);
   }
 
   
