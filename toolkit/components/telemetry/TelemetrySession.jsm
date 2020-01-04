@@ -221,20 +221,6 @@ function toLocalTimeISOString(date) {
 
 
 
-
-function annotateCrashReport(sessionId) {
-  try {
-    const cr = Cc["@mozilla.org/toolkit/crash-reporter;1"]
-            .getService(Ci.nsICrashReporter);
-    cr.setTelemetrySessionId(sessionId);
-  } catch (e) {
-    
-  }
-}
-
-
-
-
 var processInfo = {
   _initialized: false,
   _IO_COUNTERS: null,
@@ -1384,8 +1370,6 @@ var Impl = {
     
     
     this._sessionStartDate = this._subsessionStartDate;
-
-    annotateCrashReport(this._sessionId);
 
     
     this._thirdPartyCookies = new ThirdPartyCookieProbe();
