@@ -156,6 +156,61 @@ function add_tests() {
                 SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
 
   
+  add_test(function() {
+    clearSessionCache();
+    Services.prefs.setBoolPref("security.ssl.enable_ocsp_must_staple", true);
+    run_next_test();
+  });
+
+  
+  
+  add_ocsp_test("ocsp-stapling-must-staple-ee-with-must-staple-int.example.com",
+                PRErrorCodeSuccess, true);
+
+  
+  add_ocsp_test("ocsp-stapling-plain-ee-with-must-staple-int.example.com",
+                MOZILLA_PKIX_ERROR_REQUIRED_TLS_FEATURE_MISSING, true);
+
+  
+  
+  
+  
+  add_ocsp_test("multi-tls-feature-good.example.com",
+                PRErrorCodeSuccess, false);
+
+  
+  add_ocsp_test("multi-tls-feature-bad.example.com",
+                MOZILLA_PKIX_ERROR_REQUIRED_TLS_FEATURE_MISSING, false);
+
+
+
+  
+  add_ocsp_test("ocsp-stapling-must-staple.example.com",
+                PRErrorCodeSuccess, true);
+
+  add_ocsp_test("ocsp-stapling-must-staple-revoked.example.com",
+                SEC_ERROR_REVOKED_CERTIFICATE, true);
+
+  add_ocsp_test("ocsp-stapling-must-staple-missing.example.com",
+                MOZILLA_PKIX_ERROR_REQUIRED_TLS_FEATURE_MISSING, true);
+
+  add_ocsp_test("ocsp-stapling-must-staple-empty.example.com",
+                SEC_ERROR_OCSP_MALFORMED_RESPONSE, true);
+
+  add_ocsp_test("ocsp-stapling-must-staple-missing.example.com",
+                PRErrorCodeSuccess, false);
+
+  
+  add_test(function() {
+    clearSessionCache();
+    Services.prefs.setBoolPref("security.ssl.enable_ocsp_must_staple", false);
+    run_next_test();
+  });
+
+  add_ocsp_test("ocsp-stapling-must-staple-missing.example.com",
+                PRErrorCodeSuccess, true);
+
+  
   
   
 
@@ -175,13 +230,13 @@ function check_ocsp_stapling_telemetry() {
                     .snapshot();
   equal(histogram.counts[0], 0,
         "Should have 0 connections for unused histogram bucket 0");
-  equal(histogram.counts[1], 5,
+  equal(histogram.counts[1], 7,
         "Actual and expected connections with a good response should match");
-  equal(histogram.counts[2], 18,
+  equal(histogram.counts[2], 22,
         "Actual and expected connections with no stapled response should match");
   equal(histogram.counts[3], 0,
         "Actual and expected connections with an expired response should match");
-  equal(histogram.counts[4], 21,
+  equal(histogram.counts[4], 23,
         "Actual and expected connections with bad responses should match");
   run_next_test();
 }

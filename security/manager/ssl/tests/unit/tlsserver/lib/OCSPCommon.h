@@ -48,6 +48,7 @@ struct OCSPHost
   const char *mHostName;
   OCSPResponseType mORT;
   const char *mAdditionalCertName; 
+  const char *mServerCertName;
 };
 
 SECItemArray *
