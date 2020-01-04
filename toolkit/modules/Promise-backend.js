@@ -56,6 +56,10 @@ if (Cu) {
   XPCOMUtils.defineLazyServiceGetter(this, "FinalizationWitnessService",
                                      "@mozilla.org/toolkit/finalizationwitness;1",
                                      "nsIFinalizationWitnessService");
+
+  
+  
+  Cu.permitCPOWsInScope(this);
 }
 
 const STATUS_PENDING = 0;

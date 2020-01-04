@@ -91,6 +91,10 @@ const Ci = Components.interfaces;
 const Cu = Components.utils;
 const Cr = Components.results;
 
+
+
+Cu.permitCPOWsInScope(this);
+
 Cu.import("resource://gre/modules/Promise.jsm");
 
 
