@@ -248,7 +248,6 @@ function BrowserElementParent() {
   Services.obs.addObserver(this, 'oop-frameloader-crashed',  true);
   Services.obs.addObserver(this, 'copypaste-docommand',  true);
   Services.obs.addObserver(this, 'ask-children-to-execute-copypaste-command',  true);
-  Services.obs.addObserver(this, 'back-docommand',  true);
 
   this.proxyCallHandler = new BrowserElementParentProxyCallHandler();
 }
@@ -386,7 +385,8 @@ BrowserElementParent.prototype = {
       "got-audio-channel-muted": this._gotDOMRequestResult,
       "got-set-audio-channel-muted": this._gotDOMRequestResult,
       "got-is-audio-channel-active": this._gotDOMRequestResult,
-      "got-structured-data": this._gotDOMRequestResult
+      "got-structured-data": this._gotDOMRequestResult,
+      "got-web-manifest": this._gotDOMRequestResult,
     };
 
     let mmSecuritySensitiveCalls = {
@@ -1210,6 +1210,7 @@ BrowserElementParent.prototype = {
 
   getStructuredData: defineDOMRequestMethod('get-structured-data'),
 
+  getWebManifest: defineDOMRequestMethod('get-web-manifest'),
   
 
 
@@ -1284,11 +1285,6 @@ BrowserElementParent.prototype = {
     case 'ask-children-to-execute-copypaste-command':
       if (this._isAlive() && this._frameElement == subject.wrappedJSObject) {
         this._sendAsyncMsg('copypaste-do-command', { command: data });
-      }
-      break;
-    case 'back-docommand':
-      if (this._isAlive() && this._frameLoader.visible) {
-          this.goBack();
       }
       break;
     default:
