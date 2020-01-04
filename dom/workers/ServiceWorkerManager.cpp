@@ -3652,97 +3652,6 @@ HasRootDomain(nsIURI* aURI, const nsACString& aDomain)
   return prevChar == '.';
 }
 
-struct UnregisterIfMatchesUserData final
-{
-  UnregisterIfMatchesUserData(
-    ServiceWorkerManager::RegistrationDataPerPrincipal* aRegistrationData,
-    void* aUserData)
-    : mRegistrationData(aRegistrationData)
-    , mUserData(aUserData)
-  {}
-
-  ServiceWorkerManager::RegistrationDataPerPrincipal* mRegistrationData;
-  void *mUserData;
-};
-
-PLDHashOperator
-UnregisterIfMatchesClearOriginParams(const nsACString& aScope,
-                                     ServiceWorkerRegistrationInfo* aReg,
-                                     void* aPtr)
-{
-  UnregisterIfMatchesUserData* data =
-    static_cast<UnregisterIfMatchesUserData*>(aPtr);
-  MOZ_ASSERT(data);
-
-  if (data->mUserData) {
-    OriginAttributes* params = static_cast<OriginAttributes*>(data->mUserData);
-    MOZ_ASSERT(params);
-    MOZ_ASSERT(aReg);
-    MOZ_ASSERT(aReg->mPrincipal);
-
-    bool equals = false;
-
-    if (params->mInBrowser) {
-      
-      
-      
-      
-      
-      
-      
-      
-      OriginAttributes attrs =
-        mozilla::BasePrincipal::Cast(aReg->mPrincipal)->OriginAttributesRef();
-      equals = attrs == *params;
-    } else {
-      
-      
-      
-      
-      nsCOMPtr<nsIAppsService> appsService =
-        do_GetService(APPS_SERVICE_CONTRACTID);
-      if (NS_WARN_IF(!appsService)) {
-        return PL_DHASH_NEXT;
-      }
-
-      nsCOMPtr<mozIApplication> app;
-      appsService->GetAppByLocalId(params->mAppId, getter_AddRefs(app));
-      if (NS_WARN_IF(!app)) {
-        return PL_DHASH_NEXT;
-      }
-
-      nsCOMPtr<nsIPrincipal> principal;
-      app->GetPrincipal(getter_AddRefs(principal));
-      if (NS_WARN_IF(!principal)) {
-        return PL_DHASH_NEXT;
-      }
-
-      aReg->mPrincipal->Equals(principal, &equals);
-    }
-
-    if (equals) {
-      RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-      swm->ForceUnregister(data->mRegistrationData, aReg);
-    }
-  }
-
-  return PL_DHASH_NEXT;
-}
-
-PLDHashOperator
-UnregisterIfMatchesClearOriginParams(const nsACString& aKey,
-                             ServiceWorkerManager::RegistrationDataPerPrincipal* aData,
-                             void* aUserData)
-{
-  UnregisterIfMatchesUserData data(aData, aUserData);
-  
-  
-  
-  aData->mInfos.EnumerateRead(UnregisterIfMatchesClearOriginParams,
-                              &data);
-  return PL_DHASH_NEXT;
-}
-
 } 
 
 NS_IMPL_ISUPPORTS(ServiceWorkerDataInfo, nsIServiceWorkerInfo)
@@ -3853,7 +3762,6 @@ ServiceWorkerManager::GetAllRegistrations(nsIArray** aResult)
 }
 
 
-
 void
 ServiceWorkerManager::ForceUnregister(RegistrationDataPerPrincipal* aRegistrationData,
                                       ServiceWorkerRegistrationInfo* aRegistration)
@@ -3959,8 +3867,63 @@ ServiceWorkerManager::RemoveAllRegistrations(OriginAttributes* aParams)
 
   MOZ_ASSERT(aParams);
 
-  mRegistrationInfos.EnumerateRead(UnregisterIfMatchesClearOriginParams,
-                                   aParams);
+  for (auto it1 = mRegistrationInfos.Iter(); !it1.Done(); it1.Next()) {
+    ServiceWorkerManager::RegistrationDataPerPrincipal* data = it1.UserData();
+
+    
+    
+    
+    for (auto it2 = data->mInfos.Iter(); !it2.Done(); it2.Next()) {
+      ServiceWorkerRegistrationInfo* reg = it2.UserData();
+
+      MOZ_ASSERT(reg);
+      MOZ_ASSERT(reg->mPrincipal);
+
+      bool equals = false;
+
+      if (aParams->mInBrowser) {
+        
+        
+        
+        
+        
+        
+        
+        
+        OriginAttributes attrs =
+          mozilla::BasePrincipal::Cast(reg->mPrincipal)->OriginAttributesRef();
+        equals = attrs == *aParams;
+      } else {
+        
+        
+        
+        
+        nsCOMPtr<nsIAppsService> appsService = do_GetService(APPS_SERVICE_CONTRACTID);
+        if (NS_WARN_IF(!appsService)) {
+          continue;
+        }
+
+        nsCOMPtr<mozIApplication> app;
+        appsService->GetAppByLocalId(aParams->mAppId, getter_AddRefs(app));
+        if (NS_WARN_IF(!app)) {
+          continue;
+        }
+
+        nsCOMPtr<nsIPrincipal> principal;
+        app->GetPrincipal(getter_AddRefs(principal));
+        if (NS_WARN_IF(!principal)) {
+          continue;
+        }
+
+        reg->mPrincipal->Equals(principal, &equals);
+      }
+
+      if (equals) {
+        RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+        swm->ForceUnregister(data, reg);
+      }
+    }
+  }
 }
 
 NS_IMETHODIMP
