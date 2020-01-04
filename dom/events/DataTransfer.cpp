@@ -1306,7 +1306,8 @@ DataTransfer::CacheExternalData(const char* aFormat, uint32_t aIndex,
 
 
 const char* kFormats[] = { kFileMime, kHTMLMime, kURLMime, kURLDataMime,
-                           kUnicodeMime };
+                           kUnicodeMime, kPNGImageMime, kJPEGImageMime,
+                           kGIFImageMime };
 
 void
 DataTransfer::CacheExternalDragFormats()
@@ -1383,7 +1384,8 @@ DataTransfer::CacheExternalClipboardFormats()
   
   
   const char* formats[] = { kCustomTypesMime, kFileMime, kHTMLMime, kRTFMime,
-                            kURLMime, kURLDataMime, kUnicodeMime };
+                            kURLMime, kURLDataMime, kUnicodeMime, kPNGImageMime,
+                            kJPEGImageMime, kGIFImageMime };
 
   for (uint32_t f = 0; f < mozilla::ArrayLength(formats); ++f) {
     
