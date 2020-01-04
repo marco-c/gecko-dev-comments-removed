@@ -9822,11 +9822,19 @@ IonBuilder::setElemTryCache(bool* emitted, MDefinition* object,
         return true;
     }
 
-    if (PropertyWriteNeedsTypeBarrier(alloc(), constraints(), current,
-                                      &object, nullptr, &value,  true))
-    {
-        trackOptimizationOutcome(TrackedOutcome::NeedsTypeBarrier);
-        return true;
+    bool barrier = true;
+
+    if (index->mightBeType(MIRType_Int32)) {
+        
+        
+        if (PropertyWriteNeedsTypeBarrier(alloc(), constraints(), current,
+                                          &object, nullptr, &value,  true))
+        {
+            trackOptimizationOutcome(TrackedOutcome::NeedsTypeBarrier);
+            return true;
+        }
+        if (index->type() == MIRType_Int32)
+            barrier = false;
     }
 
     
@@ -9845,7 +9853,8 @@ IonBuilder::setElemTryCache(bool* emitted, MDefinition* object,
 
     
     bool strict = JSOp(*pc) == JSOP_STRICTSETELEM;
-    MInstruction* ins = MSetElementCache::New(alloc(), object, index, value, strict, guardHoles);
+    MSetPropertyCache* ins =
+        MSetPropertyCache::New(alloc(), object, index, value, strict, barrier, guardHoles);
     current->add(ins);
     current->push(value);
 
@@ -12475,7 +12484,8 @@ IonBuilder::setPropTryCache(bool* emitted, MDefinition* obj,
     bool strict = IsStrictSetPC(pc);
 
     MConstant* id = constant(StringValue(name));
-    MSetPropertyCache* ins = MSetPropertyCache::New(alloc(), obj, id, value, strict, barrier);
+    MSetPropertyCache* ins = MSetPropertyCache::New(alloc(), obj, id, value, strict, barrier,
+                                                     false);
     current->add(ins);
     current->push(value);
 
