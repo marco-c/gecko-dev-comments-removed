@@ -428,6 +428,8 @@ private:
 
   uint32_t mFrameCount; 
   FrameTimeout mLoopLength;  
+  gfx::IntRect mFirstFrameRefreshArea;  
+                                        
 
   
   TimeDuration mDecodeTime;

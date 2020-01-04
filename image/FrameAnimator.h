@@ -57,7 +57,8 @@ public:
 
 
 
-  void UnionFirstFrameRefreshArea(const nsIntRect& aRect);
+  void SetFirstFrameRefreshArea(const gfx::IntRect& aRefreshArea);
+  gfx::IntRect FirstFrameRefreshArea() const { return mFirstFrameRefreshArea; }
 
   
 
@@ -74,11 +75,6 @@ public:
 
 
   uint32_t GetCurrentAnimationFrameIndex() const;
-
-  
-
-
-  nsIntRect GetFirstFrameRefreshArea() const;
 
   
 

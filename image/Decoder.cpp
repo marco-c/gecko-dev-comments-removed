@@ -342,8 +342,6 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
     }
   }
 
-  nsIntRect refreshArea;
-
   if (aFrameNum == 1) {
     MOZ_ASSERT(aPreviousFrame, "Must provide a previous frame when animated");
     aPreviousFrame->SetRawAccessOnly();
@@ -355,7 +353,7 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
     if (previousFrameData.mDisposalMethod == DisposalMethod::CLEAR ||
         previousFrameData.mDisposalMethod == DisposalMethod::CLEAR_ALL ||
         previousFrameData.mDisposalMethod == DisposalMethod::RESTORE_PREVIOUS) {
-      refreshArea = previousFrameData.mRect;
+      mFirstFrameRefreshArea = previousFrameData.mRect;
     }
   }
 
@@ -364,13 +362,13 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
 
     
     
-    refreshArea.UnionRect(refreshArea, frame->GetRect());
+    mFirstFrameRefreshArea.UnionRect(mFirstFrameRefreshArea, frame->GetRect());
   }
 
   mFrameCount++;
 
   if (mImage) {
-    mImage->OnAddedFrame(mFrameCount, refreshArea);
+    mImage->OnAddedFrame(mFrameCount);
   }
 
   return ref;
@@ -481,8 +479,10 @@ Decoder::PostDecodeDone(int32_t aLoopCount )
   
   
   
+  
   if (!IsFirstFrameDecode()) {
     mImageMetadata.SetLoopLength(mLoopLength);
+    mImageMetadata.SetFirstFrameRefreshArea(mFirstFrameRefreshArea);
   }
 
   mProgress |= FLAG_DECODE_COMPLETE;

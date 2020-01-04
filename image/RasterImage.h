@@ -178,7 +178,7 @@ public:
   
   
 
-  void OnAddedFrame(uint32_t aNewFrameCount, const nsIntRect& aNewRefreshArea);
+  void OnAddedFrame(uint32_t aNewFrameCount);
 
   
 
@@ -274,8 +274,6 @@ private:
                                uint32_t aFlags);
   uint32_t GetCurrentFrameIndex() const;
   uint32_t GetRequestedFrameIndex(uint32_t aWhichFrame) const;
-
-  nsIntRect GetFirstFrameRect();
 
   Pair<DrawResult, RefPtr<layers::Image>>
     GetCurrentImage(layers::ImageContainer* aContainer, uint32_t aFlags);
