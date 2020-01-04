@@ -40,14 +40,12 @@ static Atomic<int32_t>  gGenerator;
 static TimerThread*     gThread = nullptr;
 
 
-PRLogModuleInfo*
+static mozilla::LazyLogModule sTimerLog("nsTimerImpl");
+
+mozilla::LogModule*
 GetTimerLog()
 {
-  static PRLogModuleInfo* sLog;
-  if (!sLog) {
-    sLog = PR_NewLogModule("nsTimerImpl");
-  }
-  return sLog;
+  return sTimerLog;
 }
 
 
@@ -83,14 +81,12 @@ GetTimerLog()
 
 
 
-PRLogModuleInfo*
+static mozilla::LazyLogModule sTimerFiringsLog("TimerFirings");
+
+mozilla::LogModule*
 GetTimerFiringsLog()
 {
-  static PRLogModuleInfo* sLog;
-  if (!sLog) {
-    sLog = PR_NewLogModule("TimerFirings");
-  }
-  return sLog;
+  return sTimerFiringsLog;
 }
 
 #include <math.h>
