@@ -12,6 +12,8 @@
 #include "nsTArray.h"
 #include "nsStringGlue.h"
 
+#include "mozilla/TelemetryHistogramEnums.h"
+
 
 
 
@@ -29,8 +31,6 @@ namespace HangMonitor {
   class HangAnnotations;
 } 
 namespace Telemetry {
-
-#include "mozilla/TelemetryHistogramEnums.h"
 
 enum TimerResolution {
   Millisecond,
