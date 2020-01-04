@@ -15,14 +15,14 @@
 class nsLineBox;
 class nsPresContext;
 namespace mozilla {
-class nsBlockReflowState;
+class BlockReflowInput;
 } 
 
 
 
 
 class nsBlockReflowContext {
-  using nsBlockReflowState = mozilla::nsBlockReflowState;
+  using BlockReflowInput = mozilla::BlockReflowInput;
   using ReflowInput = mozilla::ReflowInput;
 
 public:
@@ -38,7 +38,7 @@ public:
                    nsLineBox*                  aLine,
                    ReflowInput&          aReflowState,
                    nsReflowStatus&             aReflowStatus,
-                   nsBlockReflowState&         aState);
+                   BlockReflowInput&         aState);
 
   bool PlaceBlock(const ReflowInput& aReflowState,
                   bool                     aForceFit,

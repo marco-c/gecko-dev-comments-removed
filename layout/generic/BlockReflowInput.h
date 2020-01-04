@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsBlockReflowState_h
-#define nsBlockReflowState_h
+#ifndef BlockReflowInput_h
+#define BlockReflowInput_h
 
 #include "nsFloatManager.h"
 #include "nsLineBox.h"
@@ -76,11 +76,11 @@ namespace mozilla {
 
 
 
-class nsBlockReflowState {
+class BlockReflowInput {
   using ReflowInput = mozilla::ReflowInput;
 
 public:
-  nsBlockReflowState(const ReflowInput& aReflowState,
+  BlockReflowInput(const ReflowInput& aReflowState,
                      nsPresContext* aPresContext,
                      nsBlockFrame* aFrame,
                      bool aBStartMarginRoot, bool aBEndMarginRoot,
