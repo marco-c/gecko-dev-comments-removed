@@ -494,6 +494,9 @@ public:
   PAPZCTreeManagerParent* AllocPAPZCTreeManagerParent(const uint64_t& aLayersId) override;
   bool DeallocPAPZCTreeManagerParent(PAPZCTreeManagerParent* aActor) override;
 
+  PAPZParent* AllocPAPZParent(const uint64_t& aLayersId) override;
+  bool DeallocPAPZParent(PAPZParent* aActor) override;
+
   bool RecvAsyncPanZoomEnabled(const uint64_t& aLayersId, bool* aHasAPZ) override;
 
   RefPtr<APZCTreeManager> GetAPZCTreeManager();
@@ -527,20 +530,6 @@ private:
   static void RequestNotifyLayerTreeReady(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
   static void RequestNotifyLayerTreeCleared(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
   static void SwapLayerTreeObservers(uint64_t aLayer, uint64_t aOtherLayer);
-
-  
-
-
-
-
-
-
-
-
-  static bool UpdateRemoteContentController(uint64_t aLayersId,
-                                            dom::ContentParent* aContentParent,
-                                            const dom::TabId& aTabId,
-                                            dom::TabParent* aBrowserParent);
 
 protected:
   
