@@ -142,8 +142,8 @@ typedef struct CapturingContentInfo {
 
 
 #define NS_IPRESSHELL_IID \
-{ 0xb07c5323, 0x3061, 0x4ca9, \
-  { 0x95, 0xed, 0x84, 0xcc, 0xcb, 0xff, 0xad, 0xac } }
+{ 0xae50e013, 0xb2f1, 0x4d4e, \
+  { 0x94, 0xc7, 0x77, 0xcb, 0xcd, 0xab, 0x1c, 0x23 } }
 
 
 #define VERIFY_REFLOW_ON                    0x01
@@ -1258,7 +1258,7 @@ public:
     return mObservesMutationsForPrint;
   }
 
-  virtual nsresult SetIsActive(bool aIsActive) = 0;
+  virtual nsresult SetIsActive(bool aIsActive, bool aIsHidden = true) = 0;
 
   bool IsActive()
   {
