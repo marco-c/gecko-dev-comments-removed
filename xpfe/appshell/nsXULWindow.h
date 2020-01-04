@@ -73,6 +73,7 @@ public:
    void LockUntilChromeLoad() { mLockedUntilChromeLoad = true; }
    bool IsLocked() const { return mLockedUntilChromeLoad; }
    void IgnoreXULSizeMode(bool aEnable) { mIgnoreXULSizeMode = aEnable; }
+   void WasRegistered() { mRegistered = true; }
 
 protected:
    enum persistentAttributes {
@@ -151,6 +152,7 @@ protected:
    
    
    bool                    mDestroying;
+   bool                    mRegistered;
    uint32_t                mContextFlags;
    uint32_t                mPersistentAttributesDirty; 
    uint32_t                mPersistentAttributesMask;
