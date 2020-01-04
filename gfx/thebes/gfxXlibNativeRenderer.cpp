@@ -474,7 +474,7 @@ gfxXlibNativeRenderer::Draw(gfxContext* ctx, IntSize size,
     
     bool matrixIsIntegerTranslation = !matrix.HasNonIntegerTranslation();
     bool canDrawOverBackground = matrixIsIntegerTranslation &&
-        ctx->CurrentOperator() == gfxContext::OPERATOR_OVER;
+         ctx->CurrentOp() == CompositionOp::OP_OVER;
 
     
     

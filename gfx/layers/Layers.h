@@ -11,7 +11,7 @@
 #include <sys/types.h>                  
 #include "FrameMetrics.h"               
 #include "Units.h"                      
-#include "gfxContext.h"                 
+#include "gfxContext.h"
 #include "gfxTypes.h"
 #include "gfxColor.h"                   
 #include "GraphicsFilter.h"             
@@ -978,11 +978,6 @@ public:
     }
   }
 
-  void DeprecatedSetMixBlendMode(gfxContext::GraphicsOperator aMixBlendMode)
-  {
-    SetMixBlendMode(gfx::CompositionOpForOp(aMixBlendMode));
-  }
-
   void SetForceIsolatedGroup(bool aForceIsolatedGroup)
   {
     if(mForceIsolatedGroup != aForceIsolatedGroup) {
@@ -1500,7 +1495,6 @@ public:
 
 
   gfx::CompositionOp GetEffectiveMixBlendMode();
-  gfxContext::GraphicsOperator DeprecatedGetEffectiveMixBlendMode();
 
   
 

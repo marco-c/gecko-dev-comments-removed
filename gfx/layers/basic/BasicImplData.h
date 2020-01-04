@@ -104,10 +104,6 @@ public:
   }
 
   gfx::CompositionOp GetOperator() const { return mOperator; }
-  gfxContext::GraphicsOperator DeprecatedGetOperator() const
-  {
-    return gfx::ThebesOp(mOperator);
-  }
 
   
 

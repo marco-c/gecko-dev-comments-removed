@@ -556,7 +556,7 @@ struct BufferAlphaColor {
     {
         
         mContext->PopGroupToSource();
-        mContext->SetOperator(gfxContext::OPERATOR_OVER);
+        mContext->SetOp(CompositionOp::OP_OVER);
         mContext->Paint(mAlpha);
         mContext->Restore();
     }
