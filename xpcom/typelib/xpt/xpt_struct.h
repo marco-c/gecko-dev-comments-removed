@@ -217,17 +217,38 @@ enum XPTTypeDescriptorTags {
 
 struct XPTTypeDescriptor {
     XPTTypeDescriptorPrefix prefix;
-    uint8_t argnum;               
-                                  
 
     
     
-    
-
     union {
-        uint16_t iface;           
-        uint16_t additional_type; 
-    } type;
+        
+        struct {
+            uint8_t argnum;
+        } interface_is;
+
+        
+        struct {
+            uint8_t argnum;
+            
+        } pstring_is;
+
+        
+        struct {
+            uint8_t argnum;
+            
+            uint8_t additional_type;    
+                                        
+        } array;
+
+        
+        struct {
+            
+            
+            
+            uint8_t iface_hi8;
+            uint8_t iface_lo8;
+        } iface;
+    } u;
 };
 
 
