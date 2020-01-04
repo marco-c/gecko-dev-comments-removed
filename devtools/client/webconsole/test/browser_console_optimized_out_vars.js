@@ -21,11 +21,12 @@ function test() {
     yield ensureThreadClientState(panel, "resumed");
 
     let fetchedScopes = panelWin.once(panelWin.EVENTS.FETCHED_SCOPES);
-    let button = content.document.querySelector("button");
-    ok(button, "Button element found");
+
     
-    
-    executeSoon(() => button.click());
+    ContentTask.spawn(gBrowser.selectedBrowser, {}, function*() {
+      let button = content.document.querySelector("button");
+      button.click();
+    });
 
     yield fetchedScopes;
     ok(true, "Scopes were fetched");
