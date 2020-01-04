@@ -1,7 +1,9 @@
 "use strict";
 
 const { interfaces: Ci, utils: Cu } = Components;
+
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+
 var {
   EventManager,
   runSafe,
@@ -30,21 +32,110 @@ function convert(cookie) {
   return result;
 }
 
-function* query(detailsIn, props) {
+function isSubdomain(otherDomain, baseDomain) {
+  return otherDomain == baseDomain || otherDomain.endsWith("." + baseDomain);
+}
+
+
+
+function checkSetCookiePermissions(extension, uri, cookie) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (uri.scheme != "http" && uri.scheme != "https") {
+    return false;
+  }
+
+  if (!extension.whiteListedHosts.matchesIgnoringPath(uri)) {
+    return false;
+  }
+
+  
+  
+  
+  cookie.host = cookie.host.replace(/^\./, "");
+
+  if (cookie.host != uri.host) {
+    
+    let baseDomain;
+    try {
+      baseDomain = Services.eTLD.getBaseDomain(uri);
+    } catch (e) {
+      if (e.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS ||
+          e.result == Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+        
+        
+        
+        return false;
+      }
+      throw e;
+    }
+
+    
+    
+    
+    
+    
+    if (!isSubdomain(cookie.host, baseDomain) ||
+        !isSubdomain(uri.host, cookie.host)) {
+      return false;
+    }
+
+    
+    
+
+    
+    cookie.host = "." + cookie.host;
+  }
+
+  
+  
+  
+
+  return true;
+}
+
+function* query(detailsIn, props, extension) {
   
   
   let details = {};
-  props.map(property => {
+  props.forEach(property => {
     if (detailsIn[property] !== null) {
       details[property] = detailsIn[property];
     }
   });
 
+  if ("domain" in details) {
+    details.domain = details.domain.toLowerCase().replace(/^\./, "");
+  }
+
   
   let enumerator;
+  let uri;
   if ("url" in details) {
     try {
-      let uri = Services.io.newURI(details.url, null, null);
+      uri = NetUtil.newURI(details.url).QueryInterface(Ci.nsIURL);
       enumerator = Services.cookies.getCookiesFromHost(uri.host);
     } catch (ex) {
       
@@ -63,29 +154,25 @@ function* query(detailsIn, props) {
     }
 
     function pathMatches(path) {
-      
-      let length = cookie.path.length;
-      if (cookie.path.endsWith("/")) {
-        length -= 1;
-      }
+      let cookiePath = cookie.path.replace(/\/$/, "");
 
-      
-      if (!path.startsWith(cookie.path.substring(0, length))) {
+      if (!path.startsWith(cookiePath)) {
         return false;
       }
 
-      let pathDelimiter = ["/", "?", "#", ";"];
-      if (path.length > length && !pathDelimiter.includes(path.charAt(length))) {
-        return false;
+      
+      if (path.length == cookiePath.length) {
+        return true;
       }
 
-      return true;
+      
+      
+      let pathDelimiters = ["/", "?", "#", ";"];
+      return pathDelimiters.includes(path[cookiePath.length]);
     }
 
     
-    if ("url" in details) {
-      let uri = Services.io.newURI(details.url, null, null);
-
+    if (uri) {
       if (!domainMatches(uri.host)) {
         return false;
       }
@@ -104,11 +191,8 @@ function* query(detailsIn, props) {
     }
 
     
-    if ("domain" in details) {
-      if (cookie.rawHost != details.domain &&
-         !cookie.rawHost.endsWith("." + details.domain)) {
-        return false;
-      }
+    if ("domain" in details && !isSubdomain(cookie.rawHost, details.domain)) {
+      return false;
     }
 
     
@@ -128,6 +212,11 @@ function* query(detailsIn, props) {
       return false;
     }
 
+    
+    if (!extension.whiteListedHosts.matchesCookie(cookie)) {
+      return false;
+    }
+
     return true;
   }
 
@@ -144,7 +233,7 @@ extensions.registerSchemaAPI("cookies", "cookies", (extension, context) => {
     cookies: {
       get: function(details, callback) {
         
-        for (let cookie of query(details, ["url", "name", "storeId"])) {
+        for (let cookie of query(details, ["url", "name", "storeId"], extension)) {
           runSafe(context, callback, convert(cookie));
           return;
         }
@@ -155,20 +244,17 @@ extensions.registerSchemaAPI("cookies", "cookies", (extension, context) => {
 
       getAll: function(details, callback) {
         let allowed = ["url", "name", "domain", "path", "secure", "session", "storeId"];
-        let result = [];
-        for (let cookie of query(details, allowed)) {
-          result.push(convert(cookie));
-        }
+        let result = Array.from(query(details, allowed, extension), convert);
 
         runSafe(context, callback, result);
       },
 
       set: function(details, callback) {
-        let uri = Services.io.newURI(details.url, null, null);
+        let uri = NetUtil.newURI(details.url).QueryInterface(Ci.nsIURL);
 
         let domain;
         if (details.domain !== null) {
-          domain = "." + details.domain;
+          domain = details.domain.toLowerCase();
         } else {
           domain = uri.host; 
         }
@@ -181,12 +267,7 @@ extensions.registerSchemaAPI("cookies", "cookies", (extension, context) => {
           
           
           
-          let index = uri.path.slice(1).lastIndexOf("/");
-          if (index == -1) {
-            path = "/";
-          } else {
-            path = uri.path.slice(0, index + 1); 
-          }
+          path = uri.directory;
         }
 
         let name = details.name !== null ? details.name : "";
@@ -197,14 +278,23 @@ extensions.registerSchemaAPI("cookies", "cookies", (extension, context) => {
         let expiry = isSession ? 0 : details.expirationDate;
         
 
-        Services.cookies.add(domain, path, name, value, secure, httpOnly, isSession, expiry);
+        let cookieAttrs = { host: domain, path: path, isSecure: secure };
+        if (checkSetCookiePermissions(extension, uri, cookieAttrs)) {
+          
+          
+          
+          
+          Services.cookies.add(cookieAttrs.host, path, name, value,
+                               secure, httpOnly, isSession, expiry);
+        }
+
         if (callback) {
           self.cookies.get(details, callback);
         }
       },
 
       remove: function(details, callback) {
-        for (let cookie of query(details, ["url", "name", "storeId"])) {
+        for (let cookie of query(details, ["url", "name", "storeId"], extension)) {
           Services.cookies.remove(cookie.host, cookie.name, cookie.path, false);
           if (callback) {
             runSafe(context, callback, {
@@ -230,7 +320,11 @@ extensions.registerSchemaAPI("cookies", "cookies", (extension, context) => {
       onChanged: new EventManager(context, "cookies.onChanged", fire => {
         let observer = (subject, topic, data) => {
           let notify = (removed, cookie, cause) => {
-            fire({removed, cookie: convert(cookie.QueryInterface(Ci.nsICookie2)), cause});
+            cookie.QueryInterface(Ci.nsICookie2);
+
+            if (extension.whiteListedHosts.matchesCookie(cookie)) {
+              fire({removed, cookie: convert(cookie), cause});
+            }
           };
 
           
@@ -245,9 +339,10 @@ extensions.registerSchemaAPI("cookies", "cookies", (extension, context) => {
               notify(false, subject, "overwrite");
               break;
             case "batch-deleted":
-              for (let i = 0; i < subject.length; subject++) {
+              subject.QueryInterface(Ci.nsIArray);
+              for (let i = 0; i < subject.length; i++) {
                 let cookie = subject.queryElementAt(i, Ci.nsICookie2);
-                if (!cookie.isSession && cookie.expiry < Date.now()) {
+                if (!cookie.isSession && (cookie.expiry + 1) * 1000 <= Date.now()) {
                   notify(true, cookie, "expired");
                 } else {
                   notify(true, cookie, "evicted");

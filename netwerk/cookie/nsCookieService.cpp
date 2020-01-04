@@ -2968,6 +2968,11 @@ nsCookieService::GetCookieStringInternal(nsIURI *aHostURI,
   
   
   
+  
+
+  
+  
+  
   bool isSecure;
   if (NS_FAILED(aHostURI->SchemeIs("https", &isSecure))) {
     isSecure = false;
@@ -3832,6 +3837,11 @@ nsCookieService::CheckDomain(nsCookieAttributes &aCookieAttributes,
                              const nsCString    &aBaseDomain,
                              bool                aRequireHostMatch)
 {
+  
+  
+  
+  
+
   
   nsAutoCString hostFromURI;
   aHostURI->GetAsciiHost(hostFromURI);
