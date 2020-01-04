@@ -1801,13 +1801,11 @@ static void AddTrackAndListener(MediaStream* source,
       
       segment_->AppendNullData(current_ticks);
       if (segment_->GetType() == MediaSegment::AUDIO) {
-        mStream->AsSourceStream()->AddAudioTrack(track_id_, track_rate_,
-                                                 current_ticks,
+        mStream->AsSourceStream()->AddAudioTrack(track_id_, track_rate_, 0,
                                                  static_cast<AudioSegment*>(segment_.forget()));
       } else {
         NS_ASSERTION(mStream->GraphRate() == track_rate_, "Rate mismatch");
-        mStream->AsSourceStream()->AddTrack(track_id_,
-                                            current_ticks, segment_.forget());
+        mStream->AsSourceStream()->AddTrack(track_id_, 0, segment_.forget());
       }
 
       
