@@ -12826,6 +12826,46 @@ class CGRegisterWorkerBindings(CGAbstractMethod):
         lines.append(CGGeneric("return true;\n"))
         return CGList(lines, "\n").define()
 
+class CGRegisterWorkerDebuggerBindings(CGAbstractMethod):
+    def __init__(self, config):
+        CGAbstractMethod.__init__(self, None, 'RegisterWorkerDebuggerBindings', 'bool',
+                                  [Argument('JSContext*', 'aCx'),
+                                   Argument('JS::Handle<JSObject*>', 'aObj')])
+        self.config = config
+
+    def definition_body(self):
+        
+        
+        
+        
+        descriptors = self.config.getDescriptors(hasInterfaceObject=True,
+                                                 isExposedInWorkerDebugger=True,
+                                                 register=True,
+                                                 skipGen=False,
+                                                 workers=True)
+        workerDescriptorIfaceNames = set(d.interface.identifier.name for
+                                         d in descriptors)
+        descriptors.extend(
+            filter(
+                lambda d: d.interface.identifier.name not in workerDescriptorIfaceNames,
+                self.config.getDescriptors(hasInterfaceObject=True,
+                                           isExposedInWorkerDebugger=True,
+                                           register=True,
+                                           skipGen=False,
+                                           workers=False)))
+        conditions = []
+        for desc in descriptors:
+            bindingNS = toBindingNamespace(desc.name)
+            condition = "!%s::GetConstructorObject(aCx, aObj)" % bindingNS
+            if desc.isExposedConditionally():
+                condition = (
+                    "%s::ConstructorEnabled(aCx, aObj) && " % bindingNS
+                    + condition)
+            conditions.append(condition)
+        lines = [CGIfWrapper(CGGeneric("return false;\n"), condition) for
+                 condition in conditions]
+        lines.append(CGGeneric("return true;\n"))
+        return CGList(lines, "\n").define()
 
 class CGResolveSystemBinding(CGAbstractMethod):
     def __init__(self, config):
@@ -16082,6 +16122,32 @@ class GlobalGenRoots():
         return curr
 
     @staticmethod
+    def RegisterWorkerDebuggerBindings(config):
+
+        curr = CGRegisterWorkerDebuggerBindings(config)
+
+        
+        curr = CGNamespace.build(['mozilla', 'dom'],
+                                 CGWrapper(curr, post='\n'))
+        curr = CGWrapper(curr, post='\n')
+
+        
+        defineIncludes = [CGHeaders.getDeclarationFilename(desc.interface)
+                          for desc in config.getDescriptors(hasInterfaceObject=True,
+                                                            register=True,
+                                                            isExposedInWorkerDebugger=True,
+                                                            skipGen=False)]
+
+        curr = CGHeaders([], [], [], [], [], defineIncludes,
+                         'RegisterWorkerDebuggerBindings', curr)
+
+        
+        curr = CGIncludeGuard('RegisterWorkerDebuggerBindings', curr)
+
+        
+        return curr
+
+    @staticmethod
     def ResolveSystemBinding(config):
 
         curr = CGResolveSystemBinding(config)
@@ -16543,7 +16609,9 @@ class CGEventClass(CGBindingImplClass):
         for m in self.descriptor.interface.members:
             if m.isAttr():
                 name = CGDictionary.makeMemberName(m.identifier.name)
-                if m.type.isAny() or m.type.isObject() or m.type.isSpiderMonkeyInterface():
+                if m.type.isAny():
+                    retVal += "  NS_IMPL_CYCLE_COLLECTION_TRACE_JSVAL_MEMBER_CALLBACK(" + name + ")\n"
+                elif m.type.isObject() or m.type.isSpiderMonkeyInterface():
                     retVal += "  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(" + name + ")\n"
                 elif typeNeedsRooting(m.type):
                     raise TypeError("Need to implement tracing for event "
