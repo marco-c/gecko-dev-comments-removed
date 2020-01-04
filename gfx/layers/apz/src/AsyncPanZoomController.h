@@ -52,7 +52,6 @@ class TouchBlockState;
 class PanGestureBlockState;
 class OverscrollHandoffChain;
 class StateChangeNotificationBlocker;
-class CheckerboardEvent;
 
 
 
@@ -183,8 +182,7 @@ public:
 
 
 
-  void NotifyLayersUpdated(const FrameMetrics& aLayerMetrics, bool aIsFirstPaint,
-                           bool aThisLayerTreeUpdated);
+  void NotifyLayersUpdated(const FrameMetrics& aLayerMetrics, bool aIsFirstPaint);
 
   
 
@@ -596,8 +594,7 @@ protected:
   
 
 
-  void DispatchRepaintRequest(const FrameMetrics& aFrameMetrics,
-                              const ParentLayerPoint& aVelocity);
+  void DispatchRepaintRequest(const FrameMetrics& aFrameMetrics);
 
   
 
@@ -1102,17 +1099,6 @@ private:
   
   
   bool mAsyncTransformAppliedToContent;
-
-
-  
-
-
-
-private:
-  
-  
-  
-  UniquePtr<CheckerboardEvent> mCheckerboardEvent;
 };
 
 } 
