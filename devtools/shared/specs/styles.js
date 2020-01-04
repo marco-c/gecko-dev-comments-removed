@@ -9,7 +9,7 @@ const {
   RetVal,
   generateActorSpec,
   types
-} = require("devtools/shared/protocol.js");
+} = require("devtools/shared/protocol");
 require("devtools/shared/specs/stylesheets");
 
 
