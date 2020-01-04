@@ -879,8 +879,8 @@ gfxPlatform::ShutdownLayersIPC()
         gfx::VRManagerChild::ShutDown();
         
         if (gfxPrefs::ChildProcessShutdown()) {
-          layers::ImageBridgeChild::ShutDown();
           layers::CompositorBridgeChild::ShutDown();
+          layers::ImageBridgeChild::ShutDown();
         }
 
     } else if (XRE_IsParentProcess()) {

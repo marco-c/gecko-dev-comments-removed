@@ -17,6 +17,7 @@
 #include "mozilla/ipc/MessageChannel.h" 
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/Transport.h"      
+#include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/media/MediaSystemResourceManagerParent.h" 
 #include "mozilla/layers/CompositableTransactionParent.h"
 #include "mozilla/layers/CompositorBridgeParent.h"  
@@ -59,6 +60,7 @@ ImageBridgeParent::ImageBridgeParent(MessageLoop* aLoop,
   , mTransport(aTransport)
   , mSetChildThreadPriority(false)
   , mClosed(false)
+  , mSubprocess(nullptr)
 {
   MOZ_ASSERT(NS_IsMainThread());
   sMainLoop = MessageLoop::current();
@@ -99,6 +101,11 @@ ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   
   mClosed = true;
+
+  if (mSubprocess) {
+    mSubprocess->DissociateActor();
+    mSubprocess = nullptr;
+  }
 
   MessageLoop::current()->PostTask(
     FROM_HERE,
@@ -194,10 +201,16 @@ ConnectImageBridgeInParentProcess(ImageBridgeParent* aBridge,
 }
 
  PImageBridgeParent*
-ImageBridgeParent::Create(Transport* aTransport, ProcessId aChildProcessId)
+ImageBridgeParent::Create(Transport* aTransport, ProcessId aChildProcessId, GeckoChildProcessHost* aProcessHost)
 {
   MessageLoop* loop = CompositorBridgeParent::CompositorLoop();
   RefPtr<ImageBridgeParent> bridge = new ImageBridgeParent(loop, aTransport, aChildProcessId);
+
+  if (aProcessHost) {
+    bridge->mSubprocess = aProcessHost;
+    aProcessHost->AssociateActor();
+  }
+
   loop->PostTask(FROM_HERE,
                  NewRunnableFunction(ConnectImageBridgeInParentProcess,
                                      bridge.get(), aTransport, aChildProcessId));
@@ -359,7 +372,7 @@ ImageBridgeParent::CloneToplevel(const InfallibleTArray<ProtocolFdMapping>& aFds
     if (aFds[i].protocolId() == unsigned(GetProtocolId())) {
       Transport* transport = OpenDescriptor(aFds[i].fd(),
                                             Transport::MODE_SERVER);
-      PImageBridgeParent* bridge = Create(transport, base::GetProcId(aPeerProcess));
+      PImageBridgeParent* bridge = Create(transport, base::GetProcId(aPeerProcess), mSubprocess);
       bridge->CloneManagees(this, aCtx);
       bridge->IToplevelProtocol::SetTransport(transport);
       

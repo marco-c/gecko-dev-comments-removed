@@ -48,6 +48,10 @@ namespace gfx {
 class DrawTarget;
 } 
 
+namespace ipc {
+class GeckoChildProcessHost;
+} 
+
 namespace layers {
 
 class APZCTreeManager;
@@ -416,7 +420,7 @@ public:
 
 
   static PCompositorBridgeParent*
-  Create(Transport* aTransport, ProcessId aOtherProcess);
+  Create(Transport* aTransport, ProcessId aOtherProcess, mozilla::ipc::GeckoChildProcessHost* aProcessHost);
 
   struct LayerTreeState {
     LayerTreeState();

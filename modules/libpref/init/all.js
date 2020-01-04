@@ -4505,8 +4505,6 @@ pref("layers.prefer-d3d9", false);
 pref("layers.d3d11.force-warp", false);
 pref("layers.d3d11.disable-warp", true);
 
-
-pref("layers.child-process-shutdown", false);
 #endif
 
 
