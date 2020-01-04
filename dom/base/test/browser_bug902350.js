@@ -38,7 +38,6 @@ function test() {
 
 
 function MixedTest1A() {
-  dump("XYZ\n");
   BrowserTestUtils.browserLoaded(gTestBrowser, true ).then(MixedTest1B);
 }
 
@@ -64,5 +63,4 @@ function MixedTest1C() {
       "Navigating to insecure domain through target='_top' failed.")
   }).then(MixedTestsCompleted);
 }
-
 
