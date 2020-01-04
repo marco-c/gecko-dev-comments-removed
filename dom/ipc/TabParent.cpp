@@ -458,8 +458,28 @@ static void LogChannelRelevantInfo(nsIURI* aURI,
   LOG("Result principal origin: %s\n", resultPrincipalOrigin.get());
 }
 
+
+
+
+static already_AddRefed<nsIPrincipal>
+GetChannelPrincipalWithSingedPkg(nsIChannel* aChannel, const nsACString& aSignedPkg)
+{
+  OriginAttributes attrs;
+  NS_GetOriginAttributes(aChannel, attrs);
+  attrs.mSignedPkg = NS_ConvertUTF8toUTF16(aSignedPkg);
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  nsCOMPtr<nsIPrincipal> principal =
+    BasePrincipal::CreateCodebasePrincipal(uri, attrs);
+
+  return principal.forget();
+}
+
 bool
-TabParent::ShouldSwitchProcess(nsIChannel* aChannel)
+TabParent::ShouldSwitchProcess(nsIChannel* aChannel, const nsACString& aSignedPkg)
 {
   
   
@@ -473,19 +493,18 @@ TabParent::ShouldSwitchProcess(nsIChannel* aChannel)
   NS_ENSURE_TRUE(loadingPrincipal, true);
 
   
-  nsCOMPtr<nsIPrincipal> resultPrincipal;
-  nsContentUtils::GetSecurityManager()->
-    GetChannelResultPrincipal(aChannel, getter_AddRefs(resultPrincipal));
+  nsCOMPtr<nsIPrincipal> channelPrincipal =
+    GetChannelPrincipalWithSingedPkg(aChannel, aSignedPkg);
 
   
   nsCOMPtr<nsIURI> uri;
   aChannel->GetURI(getter_AddRefs(uri));
-  LogChannelRelevantInfo(uri, loadingPrincipal, resultPrincipal,
+  LogChannelRelevantInfo(uri, loadingPrincipal, channelPrincipal,
                          loadInfo->InternalContentPolicyType());
 
   
   bool sameOrigin = false;
-  loadingPrincipal->Equals(resultPrincipal, &sameOrigin);
+  loadingPrincipal->Equals(channelPrincipal, &sameOrigin);
   if (sameOrigin) {
     LOG("Loading singed package from the same origin. Don't switch process.\n");
     return false;
@@ -516,7 +535,7 @@ void
 TabParent::OnStartSignedPackageRequest(nsIChannel* aChannel,
                                        const nsACString& aPackageId)
 {
-  if (!ShouldSwitchProcess(aChannel)) {
+  if (!ShouldSwitchProcess(aChannel, aPackageId)) {
     return;
   }
 
@@ -2344,7 +2363,7 @@ TabParent::RecvStartPluginIME(const WidgetKeyboardEvent& aKeyboardEvent,
     return true;
   }
   widget->StartPluginIME(aKeyboardEvent,
-                         (int32_t&)aPanelX, 
+                         (int32_t&)aPanelX,
                          (int32_t&)aPanelY,
                          *aCommitted);
   return true;

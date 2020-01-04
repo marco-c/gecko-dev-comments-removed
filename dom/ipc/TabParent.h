@@ -496,7 +496,7 @@ protected:
 
     
     
-    bool ShouldSwitchProcess(nsIChannel* aChannel);
+    bool ShouldSwitchProcess(nsIChannel* aChannel, const nsACString& aSignedPkg);
 
     ContentCacheInParent mContentCache;
 
