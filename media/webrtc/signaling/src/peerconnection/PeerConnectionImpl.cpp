@@ -1567,7 +1567,7 @@ PeerConnectionImpl::CreateOffer(const JsepOfferOptions& aOptions)
   CSFLogDebug(logTag, "CreateOffer()");
 
   nsresult nrv;
-  if (restartIce) {
+  if (restartIce && !mJsepSession->GetLocalDescription().empty()) {
     
     
     
