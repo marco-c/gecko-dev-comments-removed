@@ -156,6 +156,8 @@ var interfaceNamesInGlobalScope =
 
     "Notification",
 
+    { name: "OffscreenCanvas", disabled: true },
+
     "Performance",
 
     "PerformanceEntry",
@@ -189,6 +191,26 @@ var interfaceNamesInGlobalScope =
     "URL",
 
     "URLSearchParams",
+
+    { name: "WebGLActiveInfo", disabled: true },
+
+    { name: "WebGLBuffer", disabled: true },
+
+    { name: "WebGLFramebuffer", disabled: true },
+
+    { name: "WebGLProgram", disabled: true },
+
+    { name: "WebGLRenderbuffer", disabled: true },
+
+    { name: "WebGLRenderingContext", disabled: true },
+
+    { name: "WebGLShader", disabled: true },
+
+    { name: "WebGLShaderPrecisionFormat", disabled: true },
+
+    { name: "WebGLTexture", disabled: true },
+
+    { name: "WebGLUniformLocation", disabled: true },
 
     "WebSocket",
 
