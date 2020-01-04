@@ -86,6 +86,7 @@ Animation::SetTimeline(AnimationTimeline* aTimeline)
   
 }
 
+
 void
 Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime)
 {
@@ -162,6 +163,7 @@ Animation::SetCurrentTime(const TimeDuration& aSeekTime)
   PostUpdate();
 }
 
+
 void
 Animation::SetPlaybackRate(double aPlaybackRate)
 {
@@ -171,6 +173,7 @@ Animation::SetPlaybackRate(double aPlaybackRate)
     SetCurrentTime(previousTime.Value());
   }
 }
+
 
 AnimationPlayState
 Animation::PlayState() const
@@ -294,6 +297,7 @@ Animation::Pause(ErrorResult& aRv)
   DoPause(aRv);
   PostUpdate();
 }
+
 
 void
 Animation::Reverse(ErrorResult& aRv)
@@ -477,6 +481,7 @@ Animation::SilentlySetPlaybackRate(double aPlaybackRate)
   }
 }
 
+
 void
 Animation::DoCancel()
 {
@@ -564,7 +569,7 @@ Animation::CanThrottle() const
 }
 
 void
-Animation::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
+Animation::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
                         nsCSSPropertySet& aSetProperties,
                         bool& aNeedsRefreshes)
 {
@@ -848,6 +853,7 @@ Animation::UpdateTiming(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag)
   }
 }
 
+
 void
 Animation::UpdateFinishedState(SeekFlag aSeekFlag,
                                SyncNotifyFlag aSyncNotifyFlag)
@@ -1109,7 +1115,7 @@ Animation::DoFinishNotification(SyncNotifyFlag aSyncNotifyFlag)
   if (aSyncNotifyFlag == SyncNotifyFlag::Sync) {
     DoFinishNotificationImmediately();
   } else if (!mFinishNotificationTask.IsPending()) {
-    RefPtr<nsRunnableMethod<Animation>> runnable =
+    nsRefPtr<nsRunnableMethod<Animation>> runnable =
       NS_NewRunnableMethod(this, &Animation::DoFinishNotificationImmediately);
     Promise::DispatchToMicroTask(runnable);
     mFinishNotificationTask = runnable;
@@ -1158,11 +1164,11 @@ Animation::DispatchPlaybackEvent(const nsAString& aName)
     init.mTimelineTime = mTimeline->GetCurrentTimeAsDouble();
   }
 
-  RefPtr<AnimationPlaybackEvent> event =
+  nsRefPtr<AnimationPlaybackEvent> event =
     AnimationPlaybackEvent::Constructor(this, aName, init);
   event->SetTrusted(true);
 
-  RefPtr<AsyncEventDispatcher> asyncDispatcher =
+  nsRefPtr<AsyncEventDispatcher> asyncDispatcher =
     new AsyncEventDispatcher(this, event);
   asyncDispatcher->PostDOMEvent();
 }
