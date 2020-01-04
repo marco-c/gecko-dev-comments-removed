@@ -194,7 +194,7 @@ ImageBridgeChild::UseTextures(CompositableClient* aCompositable,
                                         readLock,
                                         fence.IsValid() ? MaybeFence(fence) : MaybeFence(null_t()),
                                         t.mTimeStamp, t.mPictureRect,
-                                        t.mFrameID, t.mProducerID, t.mInputFrameID));
+                                        t.mFrameID, t.mProducerID));
 
     
     HoldUntilCompositableRefReleasedIfNecessary(t.mTextureClient);

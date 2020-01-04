@@ -50,16 +50,6 @@ nsBackdropFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  if (GetStateBits() & NS_FRAME_HAS_VR_CONTENT) {
-    return;
-  }
-
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 }
 

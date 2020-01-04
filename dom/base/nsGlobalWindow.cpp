@@ -6308,8 +6308,8 @@ FullscreenTransitionTask::Observer::Observe(nsISupports* aSubject,
 }
 
 static bool
-MakeWidgetFullscreen(nsGlobalWindow* aWindow, gfx::VRDeviceProxy* aHMD,
-                     FullscreenReason aReason, bool aFullscreen)
+MakeWidgetFullscreen(nsGlobalWindow* aWindow, FullscreenReason aReason,
+                     bool aFullscreen)
 {
   nsCOMPtr<nsIWidget> widget = aWindow->GetMainWidget();
   if (!widget) {
@@ -6326,13 +6326,16 @@ MakeWidgetFullscreen(nsGlobalWindow* aWindow, gfx::VRDeviceProxy* aHMD,
         PrepareForFullscreenTransition(getter_AddRefs(transitionData));
     }
   }
-  nsCOMPtr<nsIScreen> screen = aHMD ? aHMD->GetScreen() : nullptr;
+  
+  
+  
+  
   if (!performTransition) {
-    return aWindow->SetWidgetFullscreen(aReason, aFullscreen, widget, screen);
+    return aWindow->SetWidgetFullscreen(aReason, aFullscreen, widget, nullptr);
   } else {
     nsCOMPtr<nsIRunnable> task =
       new FullscreenTransitionTask(duration, aWindow, aFullscreen,
-                                   widget, screen, transitionData);
+                                   widget, nullptr, transitionData);
     task->Run();
     return true;
   }
@@ -6340,8 +6343,7 @@ MakeWidgetFullscreen(nsGlobalWindow* aWindow, gfx::VRDeviceProxy* aHMD,
 
 nsresult
 nsGlobalWindow::SetFullscreenInternal(FullscreenReason aReason,
-                                      bool aFullScreen,
-                                      gfx::VRDeviceProxy* aHMD)
+                                      bool aFullScreen)
 {
   MOZ_ASSERT(IsOuterWindow());
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript(),
@@ -6370,7 +6372,7 @@ nsGlobalWindow::SetFullscreenInternal(FullscreenReason aReason,
   if (!window)
     return NS_ERROR_FAILURE;
   if (rootItem != mDocShell)
-    return window->SetFullscreenInternal(aReason, aFullScreen, aHMD);
+    return window->SetFullscreenInternal(aReason, aFullScreen);
 
   
   
@@ -6421,7 +6423,7 @@ nsGlobalWindow::SetFullscreenInternal(FullscreenReason aReason,
   
   
   if (!Preferences::GetBool("full-screen-api.ignore-widgets", false)) {
-    if (MakeWidgetFullscreen(this, aHMD, aReason, aFullScreen)) {
+    if (MakeWidgetFullscreen(this, aReason, aFullScreen)) {
       
       
       

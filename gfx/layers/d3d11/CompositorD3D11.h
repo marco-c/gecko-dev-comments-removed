@@ -99,13 +99,6 @@ public:
                         const gfx::Rect& aVisibleRect) override;
 
   
-  void DrawVRDistortion(const gfx::Rect &aRect,
-                        const gfx::IntRect &aClipRect,
-                        const EffectChain &aEffectChain,
-                        gfx::Float aOpacity,
-                        const gfx::Matrix4x4 &aTransform);
-
-  
 
 
 

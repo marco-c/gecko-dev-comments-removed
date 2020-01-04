@@ -132,9 +132,6 @@ class CacheStorage;
 } 
 class IDBFactory;
 } 
-namespace gfx {
-class VRDeviceProxy;
-} 
 } 
 
 extern already_AddRefed<nsIScriptTimeoutHandler>
@@ -491,8 +488,7 @@ public:
 
   
   virtual nsresult SetFullscreenInternal(
-    FullscreenReason aReason, bool aIsFullscreen,
-    mozilla::gfx::VRDeviceProxy *aHMD = nullptr) override final;
+    FullscreenReason aReason, bool aIsFullscreen) override final;
   virtual void FinishFullscreenChange(bool aIsFullscreen) override final;
   bool SetWidgetFullscreen(FullscreenReason aReason, bool aIsFullscreen,
                            nsIWidget* aWidget, nsIScreen* aScreen);

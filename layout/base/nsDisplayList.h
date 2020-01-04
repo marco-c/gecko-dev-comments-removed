@@ -56,9 +56,6 @@ class Layer;
 class ImageLayer;
 class ImageContainer;
 } 
-namespace gfx {
-class VRDeviceProxy;
-} 
 } 
 
 
@@ -4383,31 +4380,6 @@ public:
   nscoord mVisIEndEdge;
   
   mutable mozilla::Maybe<bool> mIsFrameSelected;
-};
-
-
-
-
-
-
-class nsDisplayVR : public nsDisplayOwnLayer {
-public:
-  nsDisplayVR(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-              nsDisplayList* aList, mozilla::gfx::VRDeviceProxy* aHMD);
-
-  virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
-                                   LayerManager* aManager,
-                                   const ContainerLayerParameters& aParameters) override
-  {
-    return mozilla::LAYER_ACTIVE;
-  }
-
-  virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
-                                             LayerManager* aManager,
-                                             const ContainerLayerParameters& aContainerParameters) override;
-
-protected:
-  RefPtr<mozilla::gfx::VRDeviceProxy> mHMD;
 };
 
 #endif

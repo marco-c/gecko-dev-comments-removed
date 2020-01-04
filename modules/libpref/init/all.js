@@ -4938,9 +4938,6 @@ pref("dom.vr.add-test-devices", 0);
 
 pref("dom.vr.poseprediction.enabled", false);
 
-
-pref("gfx.vr.mirror-textures", false);
-
 pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");
 pref("gfx.vr.osvr.clientLibPath", "");

@@ -47,7 +47,6 @@
 #include "nscore.h"                     
 #include "mozilla/Logging.h"                      
 #include "nsIWidget.h"                  
-#include "gfxVR.h"
 #include "ImageContainer.h"
 
 class gfxContext;
@@ -1799,20 +1798,6 @@ public:
 #endif
   }
 
-  
-
-
-
-
-
-
-  virtual gfx::Matrix4x4 ReplaceEffectiveTransform(const gfx::Matrix4x4& aNewEffectiveTransform) {
-    gfx::Matrix4x4 old = mEffectiveTransform;
-    mEffectiveTransform = aNewEffectiveTransform;
-    ComputeEffectiveTransformForMaskLayers(mEffectiveTransform);
-    return old;
-  }
-
 protected:
   Layer(LayerManager* aManager, void* aImplData);
 
@@ -2213,39 +2198,6 @@ public:
     return mEventRegionsOverride;
   }
 
-  
-
-
-  void SetVRDeviceID(uint32_t aVRDeviceID) {
-    mVRDeviceID = aVRDeviceID;
-    Mutated();
-  }
-  uint32_t GetVRDeviceID() {
-    return mVRDeviceID;
-  }
-  void SetInputFrameID(int32_t aInputFrameID) {
-    mInputFrameID = aInputFrameID;
-    Mutated();
-  }
-  int32_t GetInputFrameID() {
-    return mInputFrameID;
-  }
-
-  
-
-
-
-
-
-
-  gfx::Matrix4x4 ReplaceEffectiveTransform(const gfx::Matrix4x4& aNewEffectiveTransform) override {
-    gfx::Matrix4x4 old = mEffectiveTransform;
-    mEffectiveTransform = aNewEffectiveTransform;
-    ComputeEffectiveTransformsForChildren(mEffectiveTransform);
-    ComputeEffectiveTransformForMaskLayers(mEffectiveTransform);
-    return old;
-  }
-
 protected:
   friend class ReadbackProcessor;
 
@@ -2305,8 +2257,6 @@ protected:
   
   bool mChildrenChanged;
   EventRegionsOverride mEventRegionsOverride;
-  uint32_t mVRDeviceID;
-  int32_t mInputFrameID;
 };
 
 

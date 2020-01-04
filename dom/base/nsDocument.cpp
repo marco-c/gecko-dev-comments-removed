@@ -243,7 +243,6 @@
 #include "nsLocation.h"
 #include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/dom/BoxObject.h"
-#include "gfxVR.h"
 #include "gfxPrefs.h"
 #include "nsISupportsPrimitives.h"
 #include "mozilla/StyleSetHandle.h"
@@ -11499,8 +11498,6 @@ static void
 ClearFullscreenStateOnElement(Element* aElement)
 {
   
-  aElement->DeleteProperty(nsGkAtoms::vr_state);
-  
   EventStateManager::SetFullScreenState(aElement, false);
   
   if (aElement->IsHTMLElement(nsGkAtoms::iframe)) {
@@ -11669,14 +11666,6 @@ nsDocument::IsUnprefixedFullscreenEnabled(JSContext* aCx, JSObject* aObject)
   MOZ_ASSERT(NS_IsMainThread());
   return nsContentUtils::IsCallerChrome() ||
          nsContentUtils::IsUnprefixedFullscreenApiEnabled();
-}
-
-static void
-ReleaseVRDeviceProxyRef(void *, nsIAtom*, void *aPropertyValue, void *)
-{
-  if (aPropertyValue) {
-    static_cast<gfx::VRDeviceProxy*>(aPropertyValue)->Release();
-  }
 }
 
 static bool
@@ -11959,10 +11948,7 @@ nsDocument::RequestFullScreen(UniquePtr<FullscreenRequest>&& aRequest)
        true,  false,  nullptr);
   } else {
     
-    const FullscreenRequest*
-      lastRequest = PendingFullscreenRequestList::GetLast();
-    rootWin->SetFullscreenInternal(FullscreenReason::ForFullscreenAPI, true,
-                                   lastRequest->mVRHMDDevice);
+    rootWin->SetFullscreenInternal(FullscreenReason::ForFullscreenAPI, true);
   }
 }
 
@@ -12018,13 +12004,6 @@ nsDocument::ApplyFullscreen(const FullscreenRequest& aRequest)
   
   
   UnlockPointer();
-
-  
-  if (aRequest.mVRHMDDevice) {
-    RefPtr<gfx::VRDeviceProxy> hmdRef = aRequest.mVRHMDDevice;
-    elem->SetProperty(nsGkAtoms::vr_state, hmdRef.forget().take(),
-                      ReleaseVRDeviceProxyRef, true);
-  }
 
   
   

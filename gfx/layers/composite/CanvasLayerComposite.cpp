@@ -17,7 +17,6 @@
 #include "mozilla/RefPtr.h"                   
 #include "nsISupportsImpl.h"            
 #include "nsString.h"                   
-#include "gfxVR.h"
 
 namespace mozilla {
 namespace layers {
