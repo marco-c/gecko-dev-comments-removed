@@ -32,7 +32,7 @@
 #include "mozilla/dom/Nullable.h"
 
 struct JSContext;
-class nsCSSPropertySet;
+class nsCSSPropertyIDSet;
 class nsIContent;
 class nsIDocument;
 class nsIFrame;
@@ -310,7 +310,7 @@ public:
   
   
   void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
-                    nsCSSPropertySet& aSetProperties);
+                    nsCSSPropertyIDSet& aSetProperties);
   
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSPropertyID aProperty, bool aIsRunning);

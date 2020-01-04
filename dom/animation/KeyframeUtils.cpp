@@ -592,7 +592,7 @@ KeyframeUtils::GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
   nsTArray<ComputedKeyframeValues> result(len);
 
   for (const Keyframe& frame : aKeyframes) {
-    nsCSSPropertySet propertiesOnThisKeyframe;
+    nsCSSPropertyIDSet propertiesOnThisKeyframe;
     ComputedKeyframeValues* computedValues = result.AppendElement();
     for (const PropertyValuePair& pair :
            PropertyPriorityIterator(frame.mPropertyValues)) {
@@ -1331,9 +1331,9 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
   
   
 
-  nsCSSPropertySet properties;              
-  nsCSSPropertySet propertiesWithFromValue; 
-  nsCSSPropertySet propertiesWithToValue;   
+  nsCSSPropertyIDSet properties;              
+  nsCSSPropertyIDSet propertiesWithFromValue; 
+  nsCSSPropertyIDSet propertiesWithToValue;   
 
   auto addToPropertySets = [&](nsCSSPropertyID aProperty, double aOffset) {
     properties.AddProperty(aProperty);
@@ -1505,7 +1505,7 @@ GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
   
   
   size_t pacedPropertyCount = 0;
-  nsCSSPropertySet pacedPropertySet;
+  nsCSSPropertyIDSet pacedPropertySet;
   bool isShorthand = nsCSSProps::IsShorthand(aPacedProperty);
   if (isShorthand) {
     CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(p, aPacedProperty,

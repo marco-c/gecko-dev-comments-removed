@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCSSPropertySet_h__
-#define nsCSSPropertySet_h__
+#ifndef nsCSSPropertyIDSet_h__
+#define nsCSSPropertyIDSet_h__
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/PodOperations.h"
@@ -18,9 +18,9 @@
 
 
 
-class nsCSSPropertySet {
+class nsCSSPropertyIDSet {
 public:
-    nsCSSPropertySet() { Empty(); }
+    nsCSSPropertyIDSet() { Empty(); }
     
 
     void AssertInSetRange(nsCSSPropertyID aProperty) const {
@@ -63,7 +63,7 @@ public:
         }
     }
 
-    bool Equals(const nsCSSPropertySet& aOther) const {
+    bool Equals(const nsCSSPropertyIDSet& aOther) const {
       return mozilla::PodEqual(mProperties, aOther.mProperties);
     }
 
