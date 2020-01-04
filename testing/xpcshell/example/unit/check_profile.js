@@ -2,7 +2,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci} = Components;
+const {classes: Cc, interfaces: Ci} = Components;
 
 function check_profile_dir(profd)
 {

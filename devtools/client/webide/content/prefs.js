@@ -2,7 +2,7 @@
 
 
 
-var Cu = Components.utils;
+const Cu = Components.utils;
 const {Services} = Cu.import("resource://gre/modules/Services.jsm");
 
 window.addEventListener("load", function onLoad() {

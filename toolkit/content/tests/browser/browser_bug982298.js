@@ -1,7 +1,7 @@
 
 
 
-var Ci = Components.interfaces;
+const Ci = Components.interfaces;
 
 var tab;
 var browser;

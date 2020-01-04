@@ -4,7 +4,7 @@
 
 
 
-var CC = Components.classes;
+const CC = Components.classes;
 const CI = Components.interfaces;
 const CR = Components.results;
 const CU = Components.utils;

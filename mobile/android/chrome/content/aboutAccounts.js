@@ -24,7 +24,7 @@
 
 "use strict";
 
-var {classes: Cc, interfaces: Ci, utils: Cu} = Components; 
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components; 
 
 Cu.import("resource://gre/modules/Accounts.jsm"); 
 Cu.import("resource://gre/modules/PromiseUtils.jsm"); 
@@ -125,7 +125,7 @@ function handleLoadedMessage(message) {
   loadedDeferred.resolve();
 };
 
-var wrapper = {
+let wrapper = {
   iframe: null,
 
   url: null,
@@ -372,7 +372,7 @@ function getBrowserMessageManager() {
 
 
 
-var mm = getBrowserMessageManager();
+let mm = getBrowserMessageManager();
 if (mm) {
   mm.addMessageListener(COMMAND_LOADED, handleLoadedMessage);
 } else {

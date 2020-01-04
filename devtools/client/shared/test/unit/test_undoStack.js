@@ -3,7 +3,7 @@
 
 
 
-var Cu = Components.utils;
+const Cu = Components.utils;
 var {Loader} = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
 
 var loader = new Loader.Loader({

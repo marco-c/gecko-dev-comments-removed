@@ -5,7 +5,7 @@
 
 
 
-var gPanelWinTuples = [];
+let gPanelWinTuples = [];
 
 function* spawnTest() {
   yield testNormalWindow();

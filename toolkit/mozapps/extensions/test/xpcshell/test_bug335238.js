@@ -9,8 +9,8 @@ const PREF_SELECTED_LOCALE = "general.useragent.locale";
 
 Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
-var Ci = Components.interfaces;
-var Cu = Components.utils;
+const Ci = Components.interfaces;
+const Cu = Components.utils;
 
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://testing-common/MockRegistrar.jsm");

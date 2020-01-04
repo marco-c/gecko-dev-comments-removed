@@ -7,7 +7,7 @@
 
 
 
-var { classes: Cc, interfaces: Ci, results: Cr, utils: Cu, Constructor: CC } = Components;
+const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu, Constructor: CC } = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource:///modules/DirectoryLinksProvider.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");

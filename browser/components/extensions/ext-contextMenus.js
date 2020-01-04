@@ -3,7 +3,7 @@ Cu.import("resource://gre/modules/MatchPattern.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-var {
+let {
   EventManager,
   contextMenuItems,
   runSafe
@@ -13,13 +13,13 @@ var {
 
 
 
-var contextMenuMap = new Map();
+let contextMenuMap = new Map();
 
 
-var onClickedCallbacksMap = new WeakMap();
+let onClickedCallbacksMap = new WeakMap();
 
 
-var nextID = 0;
+let nextID = 0;
 
 function contextMenuObserver(subject, topic, data) {
   subject = subject.wrappedJSObject;
@@ -34,7 +34,7 @@ function contextMenuObserver(subject, topic, data) {
 
 
 
-var menuBuilder = {
+let menuBuilder = {
   build: function(contextData) {
     
     let xulMenu = contextData.menu;
@@ -338,7 +338,7 @@ MenuItem.prototype = {
   },
 };
 
-var extCount = 0;
+let extCount = 0;
 extensions.on("startup", (type, extension) => {
   contextMenuMap.set(extension, new Map());
   if (++extCount == 1) {

@@ -4,9 +4,9 @@
 
 
 
-var Cr = Components.results;
-var CC = Components.Constructor;
-var Ci = Components.interfaces;
+const Cr = Components.results;
+const CC = Components.Constructor;
+const Ci = Components.interfaces;
 
 const MAX_TIME_DIFFERENCE = 2500;
 const MILLIS_PER_DAY      = 1000 * 60 * 60 * 24;

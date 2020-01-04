@@ -3,7 +3,7 @@
 
 
 
-var { utils: Cu, interfaces: Ci } = Components;
+const { utils: Cu, interfaces: Ci } = Components;
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 
 var Prompter = {

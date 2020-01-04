@@ -4,7 +4,7 @@
 
 "use strict";
 
-var {results: Cr} = Components;
+const {results: Cr} = Components;
 
 
 add_test(function test_ksm_ok() {

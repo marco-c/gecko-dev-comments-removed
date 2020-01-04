@@ -4,7 +4,7 @@
 
 
 
-var CC = Components.classes;
+const CC = Components.classes;
 const CI = Components.interfaces;
 
 const NS_GFXINFO_CONTRACTID = "@mozilla.org/gfx/info;1";

@@ -2,10 +2,10 @@
 
 
 
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var CC = Components.Constructor;
-var Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cr = Components.results;
+const CC = Components.Constructor;
+const Cc = Components.classes;
 
 
 const data = "0123456789";

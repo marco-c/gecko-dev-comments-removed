@@ -1,7 +1,7 @@
 
 
 
-var { utils: Cu, interfaces: Ci, classes: Cc } = Components;
+const { utils: Cu, interfaces: Ci, classes: Cc } = Components;
 
 function promiseContentResponse(browser, name, message) {
   let mm = browser.messageManager;

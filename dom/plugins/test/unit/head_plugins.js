@@ -3,7 +3,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/Promise.jsm");
 

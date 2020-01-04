@@ -4,10 +4,10 @@
 
 "use strict";
 
-var Cu = Components.utils;
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-var CC = Components.Constructor;
+const Cu = Components.utils;
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+const CC = Components.Constructor;
 
 
 

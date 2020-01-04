@@ -3,7 +3,7 @@
 
 
 const PROMPT_URL = "chrome://global/content/commonDialog.xul";
-var { interfaces: Ci } = Components;
+const { interfaces: Ci } = Components;
 
 function test() {
   waitForExplicitFinish();

@@ -6,9 +6,9 @@
 
 
 
-var Cu = Components.utils;
-var Cc = Components.classes;
-var Ci = Components.interfaces;
+const Cu = Components.utils;
+const Cc = Components.classes;
+const Ci = Components.interfaces;
 const DOMParser = Cc["@mozilla.org/xmlextras/domparser;1"]
                     .createInstance(Ci.nsIDOMParser);
 const { VariablesView } =

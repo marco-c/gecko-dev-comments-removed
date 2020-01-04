@@ -2,7 +2,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 
 const NS_ALERT_HORIZONTAL = 1;

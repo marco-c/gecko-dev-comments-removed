@@ -3,7 +3,7 @@
 
 "use strict";
 
-var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 const { require } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
 const { Task } = require("resource://gre/modules/Task.jsm");
 const { MemoryController } = require("devtools/client/memory/controller");
@@ -11,7 +11,7 @@ const { MemoryController } = require("devtools/client/memory/controller");
 
 
 
-var gToolbox, gTarget, gFront;
+let gToolbox, gTarget, gFront;
 
 
 

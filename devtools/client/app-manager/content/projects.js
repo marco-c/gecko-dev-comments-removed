@@ -2,10 +2,10 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-var Cr = Components.results;
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cu = Components.utils;
+const Cr = Components.results;
 Cu.import("resource:///modules/devtools/client/framework/gDevTools.jsm");
 const {require} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
 const {ConnectionManager, Connection} = require("devtools/shared/client/connection-manager");

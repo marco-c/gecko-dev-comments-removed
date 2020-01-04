@@ -2,8 +2,8 @@
 
 
 
-var Cu = Components.utils;
-var Ci = Components.interfaces;
+const Cu = Components.utils;
+const Ci = Components.interfaces;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource:///modules/devtools/client/framework/gDevTools.jsm");
 

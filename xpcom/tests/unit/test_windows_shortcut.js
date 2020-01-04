@@ -5,11 +5,11 @@
 
 
 
-var Cr = Components.results;
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-var Cu = Components.utils;
-var CC = Components.Constructor;
+const Cr = Components.results;
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+const Cu = Components.utils;
+const CC = Components.Constructor;
 
 const LocalFile = CC("@mozilla.org/file/local;1", "nsILocalFile", "initWithPath");
 

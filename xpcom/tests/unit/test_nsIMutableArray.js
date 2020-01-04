@@ -2,10 +2,10 @@
 
 
 
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var Cc = Components.classes;
-var CC = Components.Constructor;
+const Ci = Components.interfaces;
+const Cr = Components.results;
+const Cc = Components.classes;
+const CC = Components.Constructor;
 
 var MutableArray = CC("@mozilla.org/array;1", "nsIMutableArray");
 var SupportsString = CC("@mozilla.org/supports-string;1", "nsISupportsString");

@@ -3,7 +3,7 @@
 
 "use strict";
 
-var {classes: Cc, interfaces: Ci, manager: Cm, utils: Cu} = Components;
+const {classes: Cc, interfaces: Ci, manager: Cm, utils: Cu} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 
 const VKB_ENTER_KEY = 13;   

@@ -2,7 +2,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
+const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 
 this.EXPORTED_SYMBOLS = ["CryptoUtils"];
 

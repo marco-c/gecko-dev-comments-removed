@@ -2,8 +2,8 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
+const Cc = Components.classes;
+const Ci = Components.interfaces;
 var gProtocols = [];
 var gContainer;
 window.onload = function () {

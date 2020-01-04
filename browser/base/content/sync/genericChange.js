@@ -2,8 +2,8 @@
 
 
 
-var Ci = Components.interfaces;
-var Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cc = Components.classes;
 
 Components.utils.import("resource://services-sync/main.js");
 Components.utils.import("resource://gre/modules/Services.jsm");

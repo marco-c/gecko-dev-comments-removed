@@ -2,7 +2,7 @@
 
 "use strict";
 
-var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 var { require } = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
 var { Services } = Cu.import("resource://gre/modules/Services.jsm", {});

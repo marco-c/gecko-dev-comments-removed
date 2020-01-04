@@ -5,7 +5,7 @@
 
 
 
-var Cu = Components.utils;
+const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");

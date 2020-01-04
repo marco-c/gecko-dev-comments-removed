@@ -4,9 +4,9 @@
 
 
 
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-var Cu = Components.utils;
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+const Cu = Components.utils;
 
 var PlacesUtils = Cu.import("resource://gre/modules/PlacesUtils.jsm").PlacesUtils;
 

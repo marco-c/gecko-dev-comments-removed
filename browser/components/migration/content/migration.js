@@ -2,9 +2,9 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cu = Components.utils;
 
 const kIMig = Ci.nsIBrowserProfileMigrator;
 const kIPStartup = Ci.nsIProfileStartup;

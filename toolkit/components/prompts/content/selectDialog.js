@@ -2,10 +2,10 @@
 
 
 
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var Cc = Components.classes;
-var Cu = Components.utils;
+const Ci = Components.interfaces;
+const Cr = Components.results;
+const Cc = Components.classes;
+const Cu = Components.utils;
 
 var gArgs, listBox;
 

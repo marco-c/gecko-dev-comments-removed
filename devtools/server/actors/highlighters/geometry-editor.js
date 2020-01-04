@@ -19,7 +19,7 @@ const GEOMETRY_LABEL_SIZE = 6;
 
 
 
-var GeoProp = {
+let GeoProp = {
   SIDES: ["top", "right", "bottom", "left"],
   SIZES: ["width", "height"],
 

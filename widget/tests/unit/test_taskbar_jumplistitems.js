@@ -5,8 +5,8 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
+const Cc = Components.classes;
+const Ci = Components.interfaces;
 
 function test_basics()
 {

@@ -3,9 +3,9 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cr = Components.results;
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cr = Components.results;
 
 function run_test()
 {

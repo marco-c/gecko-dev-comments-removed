@@ -5,7 +5,7 @@
 
 "use strict";
 
-var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 const DBG_STRINGS_URI = "chrome://browser/locale/devtools/debugger.properties";
 const NEW_SOURCE_IGNORED_URLS = ["debugger eval code", "XStringBundle"];

@@ -9,7 +9,7 @@
 
 
 
-var { 'classes': Cc, 'interfaces': Ci, 'utils': Cu, 'results': Cr } = Components;
+const { 'classes': Cc, 'interfaces': Ci, 'utils': Cu, 'results': Cr } = Components;
 
 const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 const { FileUtils } = Cu.import("resource://gre/modules/FileUtils.jsm", {});

@@ -3,7 +3,7 @@
 
 'use strict';
 
-var { classes: Cc, interfaces: Ci } = Components;
+const { classes: Cc, interfaces: Ci } = Components;
 
 const systemMessenger = Cc["@mozilla.org/system-message-internal;1"]
                           .getService(Ci.nsISystemMessagesInternal);

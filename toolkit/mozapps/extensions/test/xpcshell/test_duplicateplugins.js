@@ -4,7 +4,7 @@
 
 Components.utils.import("resource://testing-common/MockRegistrar.jsm");
 
-var Ci = Components.interfaces;
+const Ci = Components.interfaces;
 
 
 

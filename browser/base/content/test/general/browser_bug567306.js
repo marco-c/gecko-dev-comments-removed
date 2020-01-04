@@ -2,7 +2,7 @@
 
 
 
-var {Ci: interfaces, Cc: classes} = Components;
+const {Ci: interfaces, Cc: classes} = Components;
 
 var Clipboard = Cc["@mozilla.org/widget/clipboard;1"].getService(Ci.nsIClipboard);
 var HasFindClipboard = Clipboard.supportsFindClipboard();

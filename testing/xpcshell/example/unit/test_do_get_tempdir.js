@@ -5,7 +5,7 @@
 
 
 
-var Ci = Components.interfaces;
+const Ci = Components.interfaces;
 
 function run_test() {
   let tmpd = do_get_tempdir();

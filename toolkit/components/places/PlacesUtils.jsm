@@ -2043,7 +2043,7 @@ XPCOMUtils.defineLazyGetter(this, "bundle", function() {
 
 
 
-var promiseCanCloseConnection = function() {
+let promiseCanCloseConnection = function() {
   let TOPIC = "places-will-close-connection";
   return new Promise(resolve => {
     let observer = function() {

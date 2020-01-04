@@ -50,7 +50,7 @@ exports.isXUL = isXUL;
 
 
 
-var installedHelperSheets = new WeakMap();
+let installedHelperSheets = new WeakMap();
 
 function installHelperSheet(win, source, type = "agent") {
   if (installedHelperSheets.has(win.document)) {

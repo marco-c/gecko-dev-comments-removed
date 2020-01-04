@@ -79,7 +79,7 @@ exports.register = register;
 
 
 
-var HighlighterActor = exports.HighlighterActor = protocol.ActorClass({
+let HighlighterActor = exports.HighlighterActor = protocol.ActorClass({
   typeName: "highlighter",
 
   initialize: function(inspector, autohide) {
@@ -408,7 +408,7 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClass({
   })
 });
 
-var HighlighterFront = protocol.FrontClass(HighlighterActor, {
+let HighlighterFront = protocol.FrontClass(HighlighterActor, {
   
   form: function(json) {
     this.actorID = json.actor;
@@ -421,7 +421,7 @@ var HighlighterFront = protocol.FrontClass(HighlighterActor, {
 
 
 
-var CustomHighlighterActor = exports.CustomHighlighterActor = protocol.ActorClass({
+let CustomHighlighterActor = exports.CustomHighlighterActor = protocol.ActorClass({
   typeName: "customhighlighter",
 
   
@@ -527,7 +527,7 @@ var CustomHighlighterActor = exports.CustomHighlighterActor = protocol.ActorClas
   })
 });
 
-var CustomHighlighterFront = protocol.FrontClass(CustomHighlighterActor, {});
+let CustomHighlighterFront = protocol.FrontClass(CustomHighlighterActor, {});
 
 
 

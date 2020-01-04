@@ -4,10 +4,10 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var CC = Components.Constructor;
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cr = Components.results;
+const CC = Components.Constructor;
 
 var Pipe = CC("@mozilla.org/pipe;1", "nsIPipe", "init");
 

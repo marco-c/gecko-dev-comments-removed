@@ -1,7 +1,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu, manager: Cm} = Components;
+const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu, manager: Cm} = Components;
 
 var gSyncProfile = do_get_profile();
 

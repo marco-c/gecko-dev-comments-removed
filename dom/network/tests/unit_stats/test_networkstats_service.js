@@ -1,7 +1,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 const NETWORK_STATUS_READY   = 0;
 const NETWORK_STATUS_STANDBY = 1;

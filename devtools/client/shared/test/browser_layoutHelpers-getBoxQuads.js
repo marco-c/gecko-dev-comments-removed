@@ -4,8 +4,8 @@
 
 
 
-var {utils: Cu} = Components;
-var {getAdjustedQuads} = require("devtools/shared/layout/utils");
+const {utils: Cu} = Components;
+let {getAdjustedQuads} = require("devtools/shared/layout/utils");
 
 const TEST_URI = TEST_URI_ROOT + "browser_layoutHelpers-getBoxQuads.html";
 
