@@ -74,14 +74,30 @@ nsTSubstring_CharT::MutatePrep(size_type aCapacity, char_type** aOldData,
       mFlags &= ~F_VOIDED;  
       return true;
     }
+  }
 
+  if (curCapacity < aCapacity) {
     
-    size_type temp = curCapacity;
-    while (temp < aCapacity) {
-      temp <<= 1;
+    
+    
+    
+    const size_type slowGrowthThreshold = 8 * 1024 * 1024;
+
+    size_type temp;
+    if (aCapacity >= slowGrowthThreshold) {
+      size_type minNewCapacity = curCapacity + (curCapacity >> 3); 
+      temp = XPCOM_MAX(aCapacity, minNewCapacity);
+
+      
+      const size_t MiB = 1 << 20;
+      temp = MiB * ((temp + MiB - 1) / MiB);
+    } else {
+      
+      temp = mozilla::RoundUpPow2(aCapacity);
     }
-    NS_ASSERTION(XPCOM_MIN(temp, kMaxCapacity) >= aCapacity,
-                 "should have hit the early return at the top");
+
+    MOZ_ASSERT(XPCOM_MIN(temp, kMaxCapacity) >= aCapacity,
+               "should have hit the early return at the top");
     aCapacity = XPCOM_MIN(temp, kMaxCapacity);
   }
 
