@@ -1,5 +1,6 @@
 
 
+import re
 import gdb
 import mozilla.JSString
 import mozilla.prettyprinters as prettyprinters
@@ -20,6 +21,8 @@ class JSObjectTypeCache(object):
 
 
 
+gdb_string_regexp = re.compile(r'(?:0x[0-9a-z]+ )?(?:<.*> )?"(.*)"', re.I)
+
 @ptr_pretty_printer('JSObject')
 class JSObjectPtrOrRef(prettyprinters.Pointer):
     def __init__(self, value, cache):
@@ -31,8 +34,15 @@ class JSObjectPtrOrRef(prettyprinters.Pointer):
     def summary(self):
         group = deref(self.value['group_'])
         classp = group['clasp_']
-        class_name = classp['name'].string()
         non_native = classp['flags'] & self.otc.class_NON_NATIVE
+
+        
+        
+        class_name = str(classp['name'])
+        m = gdb_string_regexp.match(class_name)
+        if m:
+            class_name = m.group(1)
+
         if non_native:
             return '[object {}]'.format(class_name)
         else:
