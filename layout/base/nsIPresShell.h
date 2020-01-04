@@ -367,6 +367,15 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
   void RestyleForCSSRuleChanges();
 
   
