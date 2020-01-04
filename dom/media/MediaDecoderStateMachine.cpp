@@ -223,7 +223,23 @@ public:
 
   
   
-  virtual bool HandleDormant(bool aDormant) { return false; }
+  virtual bool HandleDormant(bool aDormant)
+  {
+    if (!aDormant) {
+      return true;
+    }
+    mMaster->mQueuedSeek.mTarget =
+      SeekTarget(mMaster->mCurrentPosition,
+                 SeekTarget::Accurate,
+                 MediaDecoderEventVisibility::Suppressed);
+    
+    
+    RefPtr<MediaDecoder::SeekPromise> unused =
+      mMaster->mQueuedSeek.mPromise.Ensure(__func__);
+    SetState(DECODER_STATE_DORMANT);
+    return true;
+  }
+
   virtual bool HandleCDMProxyReady() { return false; }
 
 protected:
@@ -1522,30 +1538,7 @@ void
 MediaDecoderStateMachine::SetDormant(bool aDormant)
 {
   MOZ_ASSERT(OnTaskQueue());
-
-  if (mStateObj->HandleDormant(aDormant)) {
-    return;
-  }
-
-  
-  MOZ_ASSERT(mState != DECODER_STATE_DORMANT &&
-             mState != DECODER_STATE_SEEKING);
-
-  
-  if (!aDormant) {
-    return;
-  }
-
-  DECODER_LOG("Enter dormant state");
-
-  mQueuedSeek.mTarget = SeekTarget(mCurrentPosition,
-                                   SeekTarget::Accurate,
-                                   MediaDecoderEventVisibility::Suppressed);
-  
-  
-  RefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
-
-  SetState(DECODER_STATE_DORMANT);
+  mStateObj->HandleDormant(aDormant);
 }
 
 RefPtr<ShutdownPromise>
