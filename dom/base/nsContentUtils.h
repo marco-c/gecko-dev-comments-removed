@@ -131,6 +131,11 @@ class Selection;
 class TabParent;
 } 
 
+namespace ipc {
+class Shmem;
+class IShmemAllocator;
+}
+
 namespace gfx {
 class DataSourceSurface;
 } 
@@ -2451,6 +2456,15 @@ public:
   static mozilla::UniquePtr<char[]> GetSurfaceData(
     mozilla::NotNull<mozilla::gfx::DataSourceSurface*> aSurface,
     size_t* aLength, int32_t* aStride);
+
+  
+
+
+
+  static void GetSurfaceData(mozilla::gfx::DataSourceSurface* aSurface,
+                             size_t* aLength, int32_t* aStride,
+                             mozilla::ipc::IShmemAllocator* aAlloc,
+                             mozilla::ipc::Shmem *aOutShmem);
 
   
   
