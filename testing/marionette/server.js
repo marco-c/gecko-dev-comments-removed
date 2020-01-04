@@ -23,9 +23,7 @@ loader.loadSubScript("resource://devtools/shared/transport/transport.js");
 
 
 var events = {};
-loader.loadSubScript("chrome://marionette/content/EventUtils.js", events);
 loader.loadSubScript("chrome://marionette/content/ChromeUtils.js", events);
-loader.loadSubScript("chrome://marionette/content/frame-manager.js");
 
 const logger = Log.repository.getLogger("Marionette");
 
