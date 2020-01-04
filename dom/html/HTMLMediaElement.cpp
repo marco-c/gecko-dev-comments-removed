@@ -3370,7 +3370,7 @@ void HTMLMediaElement::UpdateSrcMediaStreamPlaying(uint32_t aFlags)
 
   
   
-  NotifyAudibleStateChanged(shouldPlay);
+  SetAudibleState(shouldPlay);
 }
 
 void HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream)
@@ -5625,7 +5625,7 @@ HTMLMediaElement::IsCurrentlyPlaying() const
 }
 
 void
-HTMLMediaElement::NotifyAudibleStateChanged(bool aAudible)
+HTMLMediaElement::SetAudibleState(bool aAudible)
 {
   if (mIsAudioTrackAudible != aAudible) {
     mIsAudioTrackAudible = aAudible;

@@ -450,7 +450,7 @@ public:
 
   
   
-  virtual void NotifyAudibleStateChanged(bool aAudible) final override;
+  virtual void SetAudibleState(bool aAudible) final override;
 
   
   void NotifyAudioPlaybackChanged();
