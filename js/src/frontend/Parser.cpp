@@ -8467,12 +8467,8 @@ Parser<SyntaxParseHandler>::legacyArrayComprehension(Node array)
 
 template <typename ParseHandler>
 typename ParseHandler::Node
-Parser<ParseHandler>::generatorComprehensionLambda(GeneratorKind comprehensionKind,
-                                                   unsigned begin, Node innerExpr)
+Parser<ParseHandler>::generatorComprehensionLambda(unsigned begin)
 {
-    MOZ_ASSERT(comprehensionKind == LegacyGenerator || comprehensionKind == StarGenerator);
-    MOZ_ASSERT(!!innerExpr == (comprehensionKind == LegacyGenerator));
-
     Node genfn = handler.newFunctionDefinition();
     if (!genfn)
         return null();
@@ -8484,21 +8480,19 @@ Parser<ParseHandler>::generatorComprehensionLambda(GeneratorKind comprehensionKi
     
     
     RootedObject proto(context);
-    if (comprehensionKind == StarGenerator) {
-        JSContext* cx = context->maybeJSContext();
-        proto = GlobalObject::getOrCreateStarGeneratorFunctionPrototype(cx, context->global());
-        if (!proto)
-            return null();
-    }
+    JSContext* cx = context->maybeJSContext();
+    proto = GlobalObject::getOrCreateStarGeneratorFunctionPrototype(cx, context->global());
+    if (!proto)
+        return null();
 
     RootedFunction fun(context, newFunction( nullptr, Expression,
-                                            comprehensionKind, proto));
+                                            StarGenerator, proto));
     if (!fun)
         return null();
 
     
     Directives directives( outerpc->sc->strict());
-    FunctionBox* genFunbox = newFunctionBox(genfn, fun, outerpc, directives, comprehensionKind);
+    FunctionBox* genFunbox = newFunctionBox(genfn, fun, outerpc, directives, StarGenerator);
     if (!genFunbox)
         return null();
 
@@ -8519,7 +8513,6 @@ Parser<ParseHandler>::generatorComprehensionLambda(GeneratorKind comprehensionKi
     if (outerpc->sc->isFunctionBox())
         genFunbox->funCxFlags = outerpc->sc->asFunctionBox()->funCxFlags;
 
-    MOZ_ASSERT(genFunbox->generatorKind() == comprehensionKind);
     handler.setBlockId(genfn, genpc.bodyid);
 
     Node generator = newName(context->names().dotGenerator);
@@ -8532,21 +8525,11 @@ Parser<ParseHandler>::generatorComprehensionLambda(GeneratorKind comprehensionKi
     if (!body)
         return null();
 
-    Node comp;
-    if (comprehensionKind == StarGenerator) {
-        comp = comprehension(StarGenerator);
-        if (!comp)
-            return null();
-    } else {
-        MOZ_ASSERT(comprehensionKind == LegacyGenerator);
-        comp = legacyComprehensionTail(innerExpr, outerpc->blockid(), LegacyGenerator,
-                                       outerpc, LegacyComprehensionHeadBlockScopeDepth(outerpc));
-        if (!comp)
-            return null();
-    }
+    Node comp = comprehension(StarGenerator);
+    if (!comp)
+        return null();
 
-    if (comprehensionKind == StarGenerator)
-        MUST_MATCH_TOKEN(TOK_RP, JSMSG_PAREN_IN_PAREN);
+    MUST_MATCH_TOKEN(TOK_RP, JSMSG_PAREN_IN_PAREN);
 
     handler.setBeginPosition(comp, begin);
     handler.setEndPosition(comp, pos().end);
@@ -8575,49 +8558,6 @@ Parser<ParseHandler>::generatorComprehensionLambda(GeneratorKind comprehensionKi
 
     return genfn;
 }
-
-#if JS_HAS_GENERATOR_EXPRS
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <>
-ParseNode*
-Parser<FullParseHandler>::legacyGeneratorExpr(ParseNode* expr)
-{
-    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_FOR));
-
-    
-    ParseNode* genfn = generatorComprehensionLambda(LegacyGenerator, expr->pn_pos.begin, expr);
-    if (!genfn)
-        return null();
-
-    
-    
-    return handler.newList(PNK_GENEXP, genfn, JSOP_CALL);
-}
-
-template <>
-SyntaxParseHandler::Node
-Parser<SyntaxParseHandler>::legacyGeneratorExpr(Node kid)
-{
-    JS_ALWAYS_FALSE(abortIfSyntaxParser());
-    return SyntaxParseHandler::NodeFailure;
-}
-
-#endif 
 
 template <typename ParseHandler>
 typename ParseHandler::Node
@@ -8815,7 +8755,7 @@ Parser<ParseHandler>::generatorComprehension(uint32_t begin)
     if (!abortIfSyntaxParser())
         return null();
 
-    Node genfn = generatorComprehensionLambda(StarGenerator, begin, null());
+    Node genfn = generatorComprehensionLambda(begin);
     if (!genfn)
         return null();
 
@@ -8857,9 +8797,6 @@ Parser<ParseHandler>::argumentList(YieldHandling yieldHandling, Node listNode, b
         return true;
     }
 
-    uint32_t startYieldOffset = pc->lastYieldOffset;
-    bool arg0 = true;
-
     while (true) {
         bool spread = false;
         uint32_t begin = 0;
@@ -8889,34 +8826,6 @@ Parser<ParseHandler>::argumentList(YieldHandling yieldHandling, Node listNode, b
                 return false;
             }
         }
-#if JS_HAS_GENERATOR_EXPRS
-        if (!spread) {
-            if (!tokenStream.matchToken(&matched, TOK_FOR))
-                return false;
-            if (matched) {
-                if (pc->lastYieldOffset != startYieldOffset) {
-                    reportWithOffset(ParseError, false, pc->lastYieldOffset,
-                                     JSMSG_BAD_GENEXP_BODY, js_yield_str);
-                    return false;
-                }
-                argNode = legacyGeneratorExpr(argNode);
-                if (!argNode)
-                    return false;
-                if (!arg0) {
-                    report(ParseError, false, argNode, JSMSG_BAD_GENERATOR_SYNTAX);
-                    return false;
-                }
-                TokenKind tt;
-                if (!tokenStream.peekToken(&tt))
-                    return false;
-                if (tt == TOK_COMMA) {
-                    report(ParseError, false, argNode, JSMSG_BAD_GENERATOR_SYNTAX);
-                    return false;
-                }
-            }
-        }
-#endif
-        arg0 = false;
 
         handler.addList(listNode, argNode);
 
@@ -9890,58 +9799,13 @@ Parser<ParseHandler>::primaryExpr(YieldHandling yieldHandling, TripledotHandling
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::exprInParens(InHandling inHandling, YieldHandling yieldHandling,
                                    TripledotHandling tripledotHandling)
 {
     MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_LP));
-    uint32_t begin = pos().begin;
-    uint32_t startYieldOffset = pc->lastYieldOffset;
-
-    Node pn = expr(inHandling, yieldHandling, tripledotHandling, PredictInvoked);
-    if (!pn)
-        return null();
-
-#if JS_HAS_GENERATOR_EXPRS
-    bool matched;
-    if (!tokenStream.matchToken(&matched, TOK_FOR))
-        return null();
-    if (matched) {
-        if (pc->lastYieldOffset != startYieldOffset) {
-            reportWithOffset(ParseError, false, pc->lastYieldOffset,
-                             JSMSG_BAD_GENEXP_BODY, js_yield_str);
-            return null();
-        }
-        if (handler.isUnparenthesizedCommaExpression(pn)) {
-            report(ParseError, false, null(), JSMSG_BAD_GENERATOR_SYNTAX);
-            return null();
-        }
-        pn = legacyGeneratorExpr(pn);
-        if (!pn)
-            return null();
-        handler.setBeginPosition(pn, begin);
-    }
-#endif 
-
-    return pn;
+    return expr(inHandling, yieldHandling, tripledotHandling, PredictInvoked);
 }
 
 template <typename ParseHandler>
