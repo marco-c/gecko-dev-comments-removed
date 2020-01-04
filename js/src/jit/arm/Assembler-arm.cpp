@@ -2771,6 +2771,13 @@ Assembler::bind(Label* label, BufferOffset boff)
 #ifdef JS_DISASM_ARM
     spewLabel(label);
 #endif
+    if (oom()) {
+        
+        
+        label->bind(0);
+        return;
+    }
+
     if (label->used()) {
         bool more;
         
@@ -2778,13 +2785,6 @@ Assembler::bind(Label* label, BufferOffset boff)
         BufferOffset dest = boff.assigned() ? boff : nextOffset();
         BufferOffset b(label);
         do {
-            
-            if (oom()) {
-                
-                
-                label->bind(0);
-                return;
-            }
             BufferOffset next;
             more = nextLink(b, &next);
             Instruction branch = *editSrc(b);
@@ -2799,6 +2799,7 @@ Assembler::bind(Label* label, BufferOffset boff)
         } while (more);
     }
     label->bind(nextOffset().getOffset());
+    MOZ_ASSERT(!oom());
 }
 
 void
