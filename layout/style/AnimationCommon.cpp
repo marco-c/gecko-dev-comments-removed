@@ -318,7 +318,14 @@ CommonAnimationManager::GetAnimationRule(mozilla::dom::Element* aElement,
   collection->EnsureStyleRuleFor(
     mPresContext->RefreshDriver()->MostRecentRefresh());
 
-  return collection->mStyleRule;
+  EffectSet* effectSet = EffectSet::GetEffectSet(aElement, aPseudoType);
+  if (!effectSet) {
+    return nullptr;
+  }
+
+  return IsAnimationManager() ?
+         effectSet->AnimationRule(EffectCompositor::CascadeLevel::Animations) :
+         effectSet->AnimationRule(EffectCompositor::CascadeLevel::Transitions);
 }
 
 void
@@ -486,6 +493,7 @@ AnimationCollection::EnsureStyleRuleFor(TimeStamp aRefreshTime)
   if (!mStyleRuleRefreshTime.IsNull() &&
       mStyleRuleRefreshTime == aRefreshTime) {
     
+    
     return;
   }
 
@@ -505,8 +513,18 @@ AnimationCollection::EnsureStyleRuleFor(TimeStamp aRefreshTime)
                                               PseudoElementType(),
                                               styleContext);
 
+  EffectSet* effectSet = EffectSet::GetEffectSet(mElement,
+                                                 PseudoElementType());
+  if (!effectSet) {
+    return;
+  }
+
   mStyleRuleRefreshTime = aRefreshTime;
-  mStyleRule = nullptr;
+  RefPtr<AnimValuesStyleRule>& styleRule =
+      IsForAnimations() ?
+      effectSet->AnimationRule(EffectCompositor::CascadeLevel::Animations) :
+      effectSet->AnimationRule(EffectCompositor::CascadeLevel::Transitions);
+  styleRule = nullptr;
   
   mStyleChanging = false;
 
@@ -517,7 +535,7 @@ AnimationCollection::EnsureStyleRuleFor(TimeStamp aRefreshTime)
   nsCSSPropertySet properties;
 
   for (size_t animIdx = mAnimations.Length(); animIdx-- != 0; ) {
-    mAnimations[animIdx]->ComposeStyle(mStyleRule, properties, mStyleChanging);
+    mAnimations[animIdx]->ComposeStyle(styleRule, properties, mStyleChanging);
   }
 }
 

@@ -7,6 +7,9 @@
 #ifndef mozilla_EffectSet_h
 #define mozilla_EffectSet_h
 
+#include "mozilla/EffectCompositor.h"
+#include "mozilla/EnumeratedArray.h"
+#include "AnimationCommon.h" 
 #include "nsCSSPseudoElements.h" 
 #include "nsHashKeys.h" 
 #include "nsTHashtable.h" 
@@ -124,6 +127,12 @@ public:
   }
   bool IsEmpty() const { return mEffects.IsEmpty(); }
 
+  RefPtr<AnimValuesStyleRule>& AnimationRule(EffectCompositor::CascadeLevel
+                                             aCascadeLevel)
+  {
+    return mAnimationRule[aCascadeLevel];
+  }
+
   bool CascadeNeedsUpdate() const { return mCascadeNeedsUpdate; }
   void MarkCascadeNeedsUpdate() { mCascadeNeedsUpdate = true; }
   void MarkCascadeUpdated() { mCascadeNeedsUpdate = false; }
@@ -138,6 +147,16 @@ private:
                                              aPseudoType);
 
   OwningEffectSet mEffects;
+
+  
+  
+  
+  
+  
+  EnumeratedArray<EffectCompositor::CascadeLevel,
+                  EffectCompositor::CascadeLevel(
+                    EffectCompositor::kCascadeLevelCount),
+                  RefPtr<AnimValuesStyleRule>> mAnimationRule;
 
   
   

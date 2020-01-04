@@ -39,6 +39,10 @@ public:
     
     Transitions
   };
+  
+  
+  static const size_t kCascadeLevelCount =
+    static_cast<size_t>(CascadeLevel::Transitions) + 1;
 
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSProperty aProperty);

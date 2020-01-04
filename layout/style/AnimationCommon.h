@@ -332,15 +332,6 @@ public:
   
   
   
-  
-  
-  RefPtr<AnimValuesStyleRule> mStyleRule;
-
-  
-  
-  
-  
-  
   uint64_t mCheckGeneration;
   
   void UpdateCheckGeneration(nsPresContext* aPresContext);
