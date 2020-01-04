@@ -114,6 +114,9 @@ private:
   void OnAudioPopped(const RefPtr<MediaData>& aSample);
   void OnAudioPushed(const RefPtr<MediaData>& aSample);
   void NotifyAudioNeeded();
+  
+  
+  uint32_t DrainConverter(uint32_t aMaxFrames = UINT32_MAX);
   already_AddRefed<AudioData> CreateAudioFromBuffer(AlignedAudioBuffer&& aBuffer,
                                                     AudioData* aReference);
   
@@ -130,6 +133,7 @@ private:
   
   
   int64_t mFramesParsed;
+  Maybe<RefPtr<AudioData>> mLastProcessedPacket;
   int64_t mLastEndTime;
   
   uint32_t mOutputRate;
