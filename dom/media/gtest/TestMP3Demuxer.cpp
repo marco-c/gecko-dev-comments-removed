@@ -227,7 +227,7 @@ TEST_F(MP3DemuxerTest, VBRHeader) {
       
     } else {
       EXPECT_EQ(FrameParser::VBRHeader::NONE, vbr.Type());
-      EXPECT_EQ(-1, vbr.NumFrames());
+      EXPECT_FALSE(vbr.NumAudioFrames());
     }
   }
 }

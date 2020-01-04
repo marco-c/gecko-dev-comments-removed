@@ -6,6 +6,7 @@
 #define MP3_DEMUXER_H_
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "MediaDataDemuxer.h"
 #include "MediaResource.h"
 #include "mp4_demuxer/ByteReader.h"
@@ -205,8 +206,9 @@ public:
   
   class VBRHeader {
   public:
+    
     enum VBRHeaderType {
-      NONE,
+      NONE = 0,
       XING,
       VBRI
     };
@@ -218,7 +220,21 @@ public:
     VBRHeaderType Type() const;
 
     
-    int64_t NumFrames() const;
+    
+    const Maybe<uint32_t>& NumAudioFrames() const;
+
+    
+    const Maybe<uint32_t>& NumBytes() const;
+
+    
+    const Maybe<uint32_t>& Scale() const;
+
+    
+    bool IsTOCPresent() const;
+
+    
+    
+    int64_t Offset(float aDurationFac) const;
 
     
     
@@ -240,7 +256,16 @@ public:
     bool ParseVBRI(mp4_demuxer::ByteReader* aReader);
 
     
-    int64_t mNumFrames;
+    Maybe<uint32_t> mNumAudioFrames;
+
+    
+    Maybe<uint32_t> mNumBytes;
+
+    
+    Maybe<uint32_t> mScale;
+
+    
+    std::vector<int64_t> mTOC;
 
     
     VBRHeaderType mType;
