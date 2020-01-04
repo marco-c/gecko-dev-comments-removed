@@ -18,27 +18,27 @@ namespace workers {
 
 
 
-class ServiceWorkerUpdateJob2 : public ServiceWorkerJob2
+class ServiceWorkerUpdateJob : public ServiceWorkerJob
 {
 public:
   
-  ServiceWorkerUpdateJob2(nsIPrincipal* aPrincipal,
-                          const nsACString& aScope,
-                          const nsACString& aScriptSpec,
-                          nsILoadGroup* aLoadGroup);
+  ServiceWorkerUpdateJob(nsIPrincipal* aPrincipal,
+                         const nsACString& aScope,
+                         const nsACString& aScriptSpec,
+                         nsILoadGroup* aLoadGroup);
 
   already_AddRefed<ServiceWorkerRegistrationInfo>
   GetRegistration() const;
 
 protected:
   
-  ServiceWorkerUpdateJob2(Type aType,
-                          nsIPrincipal* aPrincipal,
-                          const nsACString& aScope,
-                          const nsACString& aScriptSpec,
-                          nsILoadGroup* aLoadGroup);
+  ServiceWorkerUpdateJob(Type aType,
+                         nsIPrincipal* aPrincipal,
+                         const nsACString& aScope,
+                         const nsACString& aScriptSpec,
+                         nsILoadGroup* aLoadGroup);
 
-  virtual ~ServiceWorkerUpdateJob2();
+  virtual ~ServiceWorkerUpdateJob();
 
   
   

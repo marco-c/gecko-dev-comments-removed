@@ -16,13 +16,13 @@ namespace workers {
 
 
 
-class ServiceWorkerRegisterJob2 final : public ServiceWorkerUpdateJob2
+class ServiceWorkerRegisterJob final : public ServiceWorkerUpdateJob
 {
 public:
-  ServiceWorkerRegisterJob2(nsIPrincipal* aPrincipal,
-                            const nsACString& aScope,
-                            const nsACString& aScriptSpec,
-                            nsILoadGroup* aLoadGroup);
+  ServiceWorkerRegisterJob(nsIPrincipal* aPrincipal,
+                           const nsACString& aScope,
+                           const nsACString& aScriptSpec,
+                           nsILoadGroup* aLoadGroup);
 
 private:
   
@@ -30,7 +30,7 @@ private:
   virtual void
   AsyncExecute() override;
 
-  virtual ~ServiceWorkerRegisterJob2();
+  virtual ~ServiceWorkerRegisterJob();
 };
 
 } 

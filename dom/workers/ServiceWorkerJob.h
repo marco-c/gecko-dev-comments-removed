@@ -20,7 +20,7 @@ class ErrorResult;
 namespace dom {
 namespace workers {
 
-class ServiceWorkerJob2
+class ServiceWorkerJob
 {
 public:
   
@@ -31,7 +31,7 @@ public:
     
     
     
-    virtual void JobFinished(ServiceWorkerJob2* aJob, ErrorResult& aStatus) = 0;
+    virtual void JobFinished(ServiceWorkerJob* aJob, ErrorResult& aStatus) = 0;
 
     NS_IMETHOD_(MozExternalRefCountType)
     AddRef(void) = 0;
@@ -72,7 +72,7 @@ public:
   ResultCallbacksInvoked() const;
 
   bool
-  IsEquivalentTo(ServiceWorkerJob2* aJob) const;
+  IsEquivalentTo(ServiceWorkerJob* aJob) const;
 
   
   
@@ -85,7 +85,7 @@ public:
   
   
   void
-  StealResultCallbacksFrom(ServiceWorkerJob2* aJob);
+  StealResultCallbacksFrom(ServiceWorkerJob* aJob);
 
   
   
@@ -100,12 +100,12 @@ public:
   Cancel();
 
 protected:
-  ServiceWorkerJob2(Type aType,
-                    nsIPrincipal* aPrincipal,
-                    const nsACString& aScope,
-                    const nsACString& aScriptSpec);
+  ServiceWorkerJob(Type aType,
+                   nsIPrincipal* aPrincipal,
+                   const nsACString& aScope,
+                   const nsACString& aScriptSpec);
 
-  virtual ~ServiceWorkerJob2();
+  virtual ~ServiceWorkerJob();
 
   
   
@@ -145,7 +145,7 @@ private:
   bool mResultCallbacksInvoked;
 
 public:
-  NS_INLINE_DECL_REFCOUNTING(ServiceWorkerJob2)
+  NS_INLINE_DECL_REFCOUNTING(ServiceWorkerJob)
 };
 
 } 
