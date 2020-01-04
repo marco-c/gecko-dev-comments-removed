@@ -1193,24 +1193,39 @@ nsXMLContentSerializer::AppendToString(const nsAString& aStr,
 
 
 static const uint16_t kGTVal = 62;
-static const char* kEntities[] = {
-  "", "", "", "", "", "", "", "", "", "",
-  "", "", "", "", "", "", "", "", "", "",
-  "", "", "", "", "", "", "", "", "", "",
-  "", "", "", "", "", "", "", "", "&amp;", "",
-  "", "", "", "", "", "", "", "", "", "",
-  "", "", "", "", "", "", "", "", "", "",
-  "&lt;", "", "&gt;"
+
+#define _ 0
+
+
+static const uint8_t kEntities[] = {
+  _, _, _, _, _, _, _, _, _, _,
+  _, _, _, _, _, _, _, _, _, _,
+  _, _, _, _, _, _, _, _, _, _,
+  _, _, _, _, _, _, _, _, 2, _,
+  _, _, _, _, _, _, _, _, _, _,
+  _, _, _, _, _, _, _, _, _, _,
+  3, _, 4
 };
 
-static const char* kAttrEntities[] = {
-  "", "", "", "", "", "", "", "", "", "",
-  "", "", "", "", "", "", "", "", "", "",
-  "", "", "", "", "", "", "", "", "", "",
-  "", "", "", "", "&quot;", "", "", "", "&amp;", "",
-  "", "", "", "", "", "", "", "", "", "",
-  "", "", "", "", "", "", "", "", "", "",
-  "&lt;", "", "&gt;"
+
+static const uint8_t kAttrEntities[] = {
+  _, _, _, _, _, _, _, _, _, _,
+  _, _, _, _, _, _, _, _, _, _,
+  _, _, _, _, _, _, _, _, _, _,
+  _, _, _, _, 1, _, _, _, 2, _,
+  _, _, _, _, _, _, _, _, _, _,
+  _, _, _, _, _, _, _, _, _, _,
+  3, _, 4
+};
+
+#undef _
+
+static const char* const kEntityStrings[] = {
+   nullptr,
+   "&quot;",
+   "&amp;",
+   "&lt;",
+   "&gt;",
 };
 
 bool
@@ -1224,7 +1239,7 @@ nsXMLContentSerializer::AppendAndTranslateEntities(const nsAString& aStr,
   uint32_t advanceLength = 0;
   nsReadingIterator<char16_t> iter;
 
-  const char **entityTable = mInAttribute ? kAttrEntities : kEntities;
+  const uint8_t* entityTable = mInAttribute ? kAttrEntities : kEntities;
 
   for (aStr.BeginReading(iter);
        iter != done_reading;
@@ -1240,8 +1255,8 @@ nsXMLContentSerializer::AppendAndTranslateEntities(const nsAString& aStr,
     
     for (; c < fragmentEnd; c++, advanceLength++) {
       char16_t val = *c;
-      if ((val <= kGTVal) && (entityTable[val][0] != 0)) {
-        entityText = entityTable[val];
+      if ((val <= kGTVal) && entityTable[val]) {
+        entityText = kEntityStrings[entityTable[val]];
         break;
       }
     }
