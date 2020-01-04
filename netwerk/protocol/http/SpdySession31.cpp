@@ -2802,8 +2802,13 @@ SpdySession31::TransactionHasDataToWrite(nsAHttpTransaction *caller)
   LOG3(("SpdySession31::TransactionHasDataToWrite %p ID is 0x%X\n",
         this, stream->StreamID()));
 
-  mReadyForWrite.Push(stream);
-  SetWriteCallbacks();
+  if (!mClosed) {
+    mReadyForWrite.Push(stream);
+    SetWriteCallbacks();
+  } else {
+    LOG3(("SpdySession31::TransactionHasDataToWrite %p closed so not setting Ready4Write\n",
+          this));
+  }
 
   
   

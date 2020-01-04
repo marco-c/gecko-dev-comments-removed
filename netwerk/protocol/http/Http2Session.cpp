@@ -3581,8 +3581,13 @@ Http2Session::TransactionHasDataToWrite(nsAHttpTransaction *caller)
   LOG3(("Http2Session::TransactionHasDataToWrite %p ID is 0x%X\n",
         this, stream->StreamID()));
 
-  mReadyForWrite.Push(stream);
-  SetWriteCallbacks();
+  if (!mClosed) {
+    mReadyForWrite.Push(stream);
+    SetWriteCallbacks();
+  } else {
+    LOG3(("Http2Session::TransactionHasDataToWrite %p closed so not setting Ready4Write\n",
+          this));
+  }
 
   
   
