@@ -185,7 +185,6 @@ TabListView.prototype = {
   
   _attachListListeners() {
     this.list.addEventListener("click", this.onClick.bind(this));
-    this.list.addEventListener("mouseup", this.onMouseUp.bind(this));
     this.list.addEventListener("keydown", this.onKeyDown.bind(this));
   },
 
@@ -264,12 +263,6 @@ TabListView.prototype = {
     }
   },
 
-  onMouseUp(event) {
-    if (event.which == 2) { 
-      this.onClick(event);
-    }
-  },
-
   onClick(event) {
     let itemNode = this._findParentItemNode(event.target);
     if (!itemNode) {
@@ -283,18 +276,7 @@ TabListView.prototype = {
       }
     }
 
-    
-    if (itemNode.classList.contains("client")) {
-      let where = getChromeWindow(this._window).whereToOpenLink(event);
-      if (where != "current") {
-        const tabs = itemNode.querySelector(".item-tabs-list").childNodes;
-        const urls = [...tabs].map(tab => tab.dataset.url);
-        this.props.onOpenTabs(urls, where, {});
-      }
-    }
-
-    if (event.target.classList.contains("item-twisty-container")
-        && event.which != 2) {
+    if (event.target.classList.contains("item-twisty-container")) {
       this.props.onToggleBranch(itemNode.dataset.id);
       return;
     }
