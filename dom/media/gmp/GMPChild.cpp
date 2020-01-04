@@ -137,17 +137,6 @@ GetPluginFile(const nsAString& aPluginPath,
 }
 #endif
 
-static bool
-GetInfoFile(const nsAString& aPluginPath,
-            nsCOMPtr<nsIFile>& aInfoFile)
-{
-  nsAutoString baseName;
-  GetFileBase(aPluginPath, aInfoFile, baseName);
-  nsAutoString infoFileName = baseName + NS_LITERAL_STRING(".info");
-  aInfoFile->AppendRelativePath(infoFileName);
-  return true;
-}
-
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
 static nsCString
 GetNativeTarget(nsIFile* aFile)
@@ -268,14 +257,6 @@ GMPChild::Init(const nsAString& aPluginPath,
   mPluginPath = aPluginPath;
   mSandboxVoucherPath = aVoucherPath;
 
-  nsCOMPtr<nsIFile> infoFile;
-  if (!GetInfoFile(mPluginPath, infoFile) || !infoFile) {
-    return false;
-  }
-  if (!mInfoParser.Init(infoFile)) {
-    return false;
-  }
-
   return true;
 }
 
@@ -300,12 +281,12 @@ GMPChild::GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI)
   return mGMPLoader->GetAPI(aAPIName, aHostAPI, aPluginAPI);
 }
 
-#ifdef XP_WIN
-
-
 bool
-GMPChild::PreLoadLibraries()
+GMPChild::RecvPreloadLibs(const nsCString& aLibs)
 {
+#ifdef XP_WIN
+  
+  
   
   static const char* whitelist[] = {
     "d3d9.dll", 
@@ -319,12 +300,8 @@ GMPChild::PreLoadLibraries()
     "msmpeg2vdec.dll", 
   };
 
-  if (!mInfoParser.Contains(NS_LITERAL_CSTRING("libraries"))) {
-    return false;
-  }
-
   nsTArray<nsCString> libs;
-  SplitAt(", ", mInfoParser.Get(NS_LITERAL_CSTRING("libraries")), libs);
+  SplitAt(", ", aLibs, libs);
   for (nsCString lib : libs) {
     ToLowerCase(lib);
     for (const char* whiteListedLib : whitelist) {
@@ -334,10 +311,9 @@ GMPChild::PreLoadLibraries()
       }
     }
   }
-
+#endif
   return true;
 }
-#endif
 
 bool
 GMPChild::GetUTF8LibPath(nsACString& aOutLibPath)
@@ -373,9 +349,6 @@ GMPChild::AnswerStartPlugin()
 {
   LOGD("%s", __FUNCTION__);
 
-#if defined(XP_WIN)
-  PreLoadLibraries();
-#endif
   if (!PreLoadPluginVoucher()) {
     NS_WARNING("Plugin voucher failed to load!");
     return false;
