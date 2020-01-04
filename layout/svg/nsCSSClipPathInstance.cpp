@@ -71,6 +71,16 @@ nsCSSClipPathInstance::ComputeSVGReferenceRect()
   
   
   switch (mClipPathStyle.GetReferenceBox()) {
+    case StyleClipPathGeometryBox::Stroke: {
+      
+      
+      
+      gfxRect bbox = nsSVGUtils::GetBBox(mTargetFrame,
+                nsSVGUtils::eBBoxIncludeFill | nsSVGUtils::eBBoxIncludeStroke);
+      r = nsLayoutUtils::RoundGfxRectToAppRect(bbox,
+                                         nsPresContext::AppUnitsPerCSSPixel());
+      break;
+    }
     case StyleClipPathGeometryBox::View: {
       nsIContent* content = mTargetFrame->GetContent();
       nsSVGElement* element = static_cast<nsSVGElement*>(content);
