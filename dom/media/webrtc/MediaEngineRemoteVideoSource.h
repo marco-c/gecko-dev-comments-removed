@@ -119,8 +119,8 @@ protected:
 private:
   
   void Init();
-  size_t NumCapabilities() override;
-  void GetCapability(size_t aIndex, webrtc::CaptureCapability& aOut) override;
+  size_t NumCapabilities() const override;
+  void GetCapability(size_t aIndex, webrtc::CaptureCapability& aOut) const override;
 
   dom::MediaSourceEnum mMediaSource; 
   mozilla::camera::CaptureEngine mCapEngine;
