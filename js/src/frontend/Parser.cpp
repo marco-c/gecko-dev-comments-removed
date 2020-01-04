@@ -3945,10 +3945,13 @@ Parser<ParseHandler>::PossibleError::PossibleError(Parser<ParseHandler>& parser)
 }
 
 template <typename ParseHandler>
-void
+bool
 Parser<ParseHandler>::PossibleError::setPending(ParseReportKind kind, unsigned errorNumber,
                                                 bool strict)
 {
+    if (hasError())
+        return false;
+
     
     
     offset_      = parser_.pos().begin;
@@ -3956,6 +3959,8 @@ Parser<ParseHandler>::PossibleError::setPending(ParseReportKind kind, unsigned e
     strict_      = strict;
     errorNumber_ = errorNumber;
     state_       = ErrorState::Pending;
+
+    return true;
 }
 
 template <typename ParseHandler>
@@ -3977,9 +3982,8 @@ bool
 Parser<ParseHandler>::PossibleError::checkForExprErrors()
 {
     bool err = hasError();
-    if (err) {
+    if (err)
         parser_.reportWithOffset(reportKind_, strict_, offset_, errorNumber_);
-    }
     return !err;
 }
 
@@ -7828,7 +7832,6 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
                                  InvokedPrediction invoked)
 {
     JS_CHECK_RECURSION(context, return null());
-    MOZ_ASSERT(!possibleError->hasError());
 
     
     
@@ -9310,8 +9313,13 @@ Parser<ParseHandler>::objectLiteral(YieldHandling yieldHandling, PossibleError* 
                 
                 
                 
-                if (possibleError)
-                    possibleError->setPending(ParseError, JSMSG_BAD_PROP_ID, false);
+                if (possibleError &&
+                    !possibleError->setPending(ParseError, JSMSG_BAD_PROP_ID, false)) {
+
+                    
+                    possibleError->checkForExprErrors();
+                    return null();
+                }
             }
 
         } else {

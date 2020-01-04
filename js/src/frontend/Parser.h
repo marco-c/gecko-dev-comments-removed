@@ -463,7 +463,8 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
           explicit PossibleError(Parser<ParseHandler>& parser);
 
           
-          void setPending(ParseReportKind kind, unsigned errorNumber, bool strict);
+          
+          bool setPending(ParseReportKind kind, unsigned errorNumber, bool strict);
 
           
           void setResolved();
