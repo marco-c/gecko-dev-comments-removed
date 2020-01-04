@@ -318,6 +318,12 @@ private:
   
 
 
+
+  bool IsControlChar(char16_t aChar) const;
+
+  
+
+
   bool IsRepeat() const
   {
     switch (mMsg.message) {

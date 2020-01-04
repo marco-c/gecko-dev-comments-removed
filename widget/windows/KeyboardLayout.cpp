@@ -899,7 +899,7 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
     
     if (NeedsToHandleWithoutFollowingCharMessages()) {
       ComputeInputtingStringWithKeyboardLayout();
-    } else if (mVirtualKeyCode == VK_PACKET) {
+    } else {
       
       
       
@@ -915,7 +915,8 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
       
       MSG followingCharMsg;
       if (GetFollowingCharMessage(followingCharMsg, false) &&
-          followingCharMsg.wParam) {
+          !IsControlChar(static_cast<char16_t>(followingCharMsg.wParam))) {
+        mCommittedCharsAndModifiers.Clear();
         mCommittedCharsAndModifiers.Append(
           static_cast<char16_t>(followingCharMsg.wParam),
           mModKeyState.GetModifiers());
@@ -1026,6 +1027,13 @@ NativeKey::InitWithAppCommand()
   mCodeNameIndex =
     KeyboardLayout::ConvertScanCodeToCodeNameIndex(
       GetScanCodeWithExtendedFlag());
+}
+
+bool
+NativeKey::IsControlChar(char16_t aChar) const
+{
+  static const char16_t U_SPACE = 0x20;
+  return aChar < U_SPACE;
 }
 
 bool
@@ -1672,7 +1680,6 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
   
   
 
-  static const char16_t U_SPACE = 0x20;
   static const char16_t U_EQUAL = 0x3D;
 
   
@@ -1681,7 +1688,7 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
       (mOriginalVirtualKeyCode &&
        !KeyboardLayout::IsPrintableCharKey(mOriginalVirtualKeyCode))) {
     WidgetKeyboardEvent keypressEvent(true, eKeyPress, mWidget);
-    if (aCharMsg.wParam >= U_SPACE) {
+    if (!IsControlChar(static_cast<char16_t>(aCharMsg.wParam))) {
       keypressEvent.charCode = static_cast<uint32_t>(aCharMsg.wParam);
     } else {
       keypressEvent.keyCode = mDOMKeyCode;
@@ -1715,7 +1722,8 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
 
   char16_t uniChar;
   
-  if (mModKeyState.IsControl() && aCharMsg.wParam <= 0x1A) {
+  if (mModKeyState.IsControl() &&
+      IsControlChar(static_cast<char16_t>(aCharMsg.wParam))) {
     
     uniChar = aCharMsg.wParam - 1 + (mModKeyState.IsShift() ? 'A' : 'a');
   } else if (mModKeyState.IsControl() && aCharMsg.wParam <= 0x1F) {
@@ -1724,7 +1732,7 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
     
     
     uniChar = aCharMsg.wParam - 1 + 'A';
-  } else if (aCharMsg.wParam < U_SPACE ||
+  } else if (IsControlChar(static_cast<char16_t>(aCharMsg.wParam)) ||
              (aCharMsg.wParam == U_EQUAL && mModKeyState.IsControl())) {
     uniChar = 0;
   } else {
