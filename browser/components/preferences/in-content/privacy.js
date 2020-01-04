@@ -56,6 +56,21 @@ var gPrivacyPane = {
   
 
 
+  _initBrowserContainers: function () {
+    if (!Services.prefs.getBoolPref("privacy.userContext.ui.enabled")) {
+      return;
+    }
+
+    let link = document.getElementById("browserContainersLearnMore");
+    
+    link.href = Services.urlFormatter.formatURLPref("app.support.baseURL") + "containers";
+
+    document.getElementById("browserContainersbox").hidden = false;
+  },
+
+  
+
+
 
   init: function ()
   {
@@ -73,6 +88,7 @@ var gPrivacyPane = {
     this._initTrackingProtection();
     this._initTrackingProtectionPBM();
     this._initAutocomplete();
+    this._initBrowserContainers();
 
     setEventListener("privacy.sanitize.sanitizeOnShutdown", "change",
                      gPrivacyPane._updateSanitizeSettingsButton);
