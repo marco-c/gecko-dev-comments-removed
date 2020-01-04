@@ -927,7 +927,7 @@ nsDOMClassInfo::Resolve(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
 
   JS::Rooted<JSObject*> global(cx, ::JS_GetGlobalForObject(cx, obj));
 
-  JS::Rooted<JSPropertyDescriptor> desc(cx);
+  JS::Rooted<JS::PropertyDescriptor> desc(cx);
   if (!JS_GetPropertyDescriptor(cx, global, mData->mName, &desc)) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -1029,7 +1029,7 @@ ResolvePrototype(nsIXPConnect *aXPConnect, nsGlobalWindow *aWin, JSContext *cx,
                  const nsGlobalNameStruct *name_struct,
                  nsScriptNameSpaceManager *nameSpaceManager,
                  JSObject *dot_prototype,
-                 JS::MutableHandle<JSPropertyDescriptor> ctorDesc);
+                 JS::MutableHandle<JS::PropertyDescriptor> ctorDesc);
 
 NS_IMETHODIMP
 nsDOMClassInfo::PostCreatePrototype(JSContext * cx, JSObject * aProto)
@@ -1123,7 +1123,7 @@ nsDOMClassInfo::PostCreatePrototype(JSContext * cx, JSObject * aProto)
   nsScriptNameSpaceManager *nameSpaceManager = GetNameSpaceManager();
   NS_ENSURE_TRUE(nameSpaceManager, NS_OK);
 
-  JS::Rooted<JSPropertyDescriptor> desc(cx);
+  JS::Rooted<JS::PropertyDescriptor> desc(cx);
   nsresult rv = ResolvePrototype(sXPConnect, win, cx, global, mData->mNameUTF16,
                                  mData, nullptr, nameSpaceManager, proto,
                                  &desc);
@@ -1506,7 +1506,7 @@ nsDOMConstructor::HasInstance(nsIXPConnectWrappedNative *wrapper,
   if (!name_struct) {
     
     
-    JS::Rooted<JSPropertyDescriptor> desc(cx);
+    JS::Rooted<JS::PropertyDescriptor> desc(cx);
     if (!JS_GetPropertyDescriptor(cx, obj, "prototype", &desc)) {
       return NS_ERROR_UNEXPECTED;
     }
@@ -1715,7 +1715,7 @@ ResolvePrototype(nsIXPConnect *aXPConnect, nsGlobalWindow *aWin, JSContext *cx,
                  const nsGlobalNameStruct *name_struct,
                  nsScriptNameSpaceManager *nameSpaceManager,
                  JSObject* aDot_prototype,
-                 JS::MutableHandle<JSPropertyDescriptor> ctorDesc)
+                 JS::MutableHandle<JS::PropertyDescriptor> ctorDesc)
 {
   JS::Rooted<JSObject*> dot_prototype(cx, aDot_prototype);
   NS_ASSERTION(ci_data ||
@@ -1813,7 +1813,7 @@ ResolvePrototype(nsIXPConnect *aXPConnect, nsGlobalWindow *aWin, JSContext *cx,
     if (class_parent_name) {
       JSAutoCompartment ac(cx, winobj);
 
-      JS::Rooted<JSPropertyDescriptor> desc(cx);
+      JS::Rooted<JS::PropertyDescriptor> desc(cx);
       if (!JS_GetPropertyDescriptor(cx, winobj, CutPrefix(class_parent_name), &desc)) {
         return NS_ERROR_UNEXPECTED;
       }
@@ -1900,7 +1900,7 @@ OldBindingConstructorEnabled(const nsGlobalNameStruct *aStruct,
 static nsresult
 LookupComponentsShim(JSContext *cx, JS::Handle<JSObject*> global,
                      nsPIDOMWindow *win,
-                     JS::MutableHandle<JSPropertyDescriptor> desc);
+                     JS::MutableHandle<JS::PropertyDescriptor> desc);
 
 
 bool
@@ -1937,7 +1937,7 @@ static const JSClass ControllersShimClass = {
 nsresult
 nsWindowSH::GlobalResolve(nsGlobalWindow *aWin, JSContext *cx,
                           JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
-                          JS::MutableHandle<JSPropertyDescriptor> desc)
+                          JS::MutableHandle<JS::PropertyDescriptor> desc)
 {
   if (id == XPCJSRuntime::Get()->GetStringID(XPCJSRuntime::IDX_COMPONENTS)) {
     return LookupComponentsShim(cx, obj, aWin, desc);
@@ -2300,7 +2300,7 @@ const InterfaceShimEntry kInterfaceShimMap[] =
 static nsresult
 LookupComponentsShim(JSContext *cx, JS::Handle<JSObject*> global,
                      nsPIDOMWindow *win,
-                     JS::MutableHandle<JSPropertyDescriptor> desc)
+                     JS::MutableHandle<JS::PropertyDescriptor> desc)
 {
   
   Telemetry::Accumulate(Telemetry::COMPONENTS_SHIM_ACCESSED_BY_CONTENT, true);

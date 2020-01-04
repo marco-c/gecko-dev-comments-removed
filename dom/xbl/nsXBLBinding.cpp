@@ -872,7 +872,7 @@ GetOrCreateClassObjectMap(JSContext *cx, JS::Handle<JSObject*> scope, const char
   MOZ_ASSERT(scope == xpc::GetXBLScopeOrGlobal(cx, scope));
 
   
-  JS::Rooted<JSPropertyDescriptor> desc(cx);
+  JS::Rooted<JS::PropertyDescriptor> desc(cx);
   if (!JS_GetOwnPropertyDescriptor(cx, scope, mapName, &desc)) {
     return nullptr;
   }
@@ -1001,7 +1001,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
   
   
   JS::Rooted<JSObject*> proto(cx);
-  JS::Rooted<JSPropertyDescriptor> desc(cx);
+  JS::Rooted<JS::PropertyDescriptor> desc(cx);
   if (!JS_GetOwnUCPropertyDescriptor(cx, holder, aClassName.get(), &desc)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -1083,7 +1083,7 @@ nsXBLBinding::ResolveAllFields(JSContext *cx, JS::Handle<JSObject*> obj) const
 
 bool
 nsXBLBinding::LookupMember(JSContext* aCx, JS::Handle<jsid> aId,
-                           JS::MutableHandle<JSPropertyDescriptor> aDesc)
+                           JS::MutableHandle<JS::PropertyDescriptor> aDesc)
 {
   
   MOZ_ASSERT(!aDesc.object());
@@ -1138,7 +1138,7 @@ nsXBLBinding::LookupMember(JSContext* aCx, JS::Handle<jsid> aId,
 bool
 nsXBLBinding::LookupMemberInternal(JSContext* aCx, nsString& aName,
                                    JS::Handle<jsid> aNameAsId,
-                                   JS::MutableHandle<JSPropertyDescriptor> aDesc,
+                                   JS::MutableHandle<JS::PropertyDescriptor> aDesc,
                                    JS::Handle<JSObject*> aXBLScope)
 {
   

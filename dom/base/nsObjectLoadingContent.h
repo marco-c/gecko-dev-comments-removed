@@ -168,7 +168,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     
     bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
                    JS::Handle<jsid> aId,
-                   JS::MutableHandle<JSPropertyDescriptor> aDesc);
+                   JS::MutableHandle<JS::PropertyDescriptor> aDesc);
     
     
     static bool MayResolve(jsid aId);

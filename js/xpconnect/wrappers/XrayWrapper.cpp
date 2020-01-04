@@ -2140,7 +2140,7 @@ XrayWrapper<Base, Traits>::get(JSContext* cx, HandleObject wrapper,
 
     
     
-    Rooted<JSPropertyDescriptor> desc(cx);
+    Rooted<PropertyDescriptor> desc(cx);
     if (!getPropertyDescriptor(cx, wrapper, id, &desc))
         return false;
     desc.assertCompleteIfFound();

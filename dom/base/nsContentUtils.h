@@ -105,7 +105,6 @@ class nsITransferable;
 class nsPIWindowRoot;
 class nsIWindowProvider;
 
-struct JSPropertyDescriptor;
 struct JSRuntime;
 
 template<class E> class nsCOMArray;
@@ -239,7 +238,7 @@ public:
 
   static bool LookupBindingMember(JSContext* aCx, nsIContent *aContent,
                                   JS::Handle<jsid> aId,
-                                  JS::MutableHandle<JSPropertyDescriptor> aDesc);
+                                  JS::MutableHandle<JS::PropertyDescriptor> aDesc);
 
   
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell);

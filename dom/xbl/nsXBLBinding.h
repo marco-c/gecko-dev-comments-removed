@@ -76,7 +76,7 @@ public:
 
 
   bool LookupMember(JSContext* aCx, JS::Handle<jsid> aId,
-                    JS::MutableHandle<JSPropertyDescriptor> aDesc);
+                    JS::MutableHandle<JS::PropertyDescriptor> aDesc);
 
   
 
@@ -92,7 +92,7 @@ protected:
 
   bool LookupMemberInternal(JSContext* aCx, nsString& aName,
                             JS::Handle<jsid> aNameAsId,
-                            JS::MutableHandle<JSPropertyDescriptor> aDesc,
+                            JS::MutableHandle<JS::PropertyDescriptor> aDesc,
                             JS::Handle<JSObject*> aXBLScope);
 
 public:
