@@ -85,25 +85,16 @@ public:
     
     
     
-    Time timeSinceReference = aTime - mReferenceTime;
-
     
-    
-    
-    
-    
-    
-    Time timeToNowByTimeStamp =
-      static_cast<int64_t>((roughlyNow - mReferenceTimeStamp).ToMilliseconds());
-    Time deltaFromNow = timeToNowByTimeStamp - timeSinceReference;
+    Time deltaFromNow;
+    bool newer = IsTimeNewerThanTimestamp(aTime, roughlyNow, &deltaFromNow);
 
     
     
     static const Time kTolerance = 30;
 
     
-    
-    if (deltaFromNow > kTimeHalfRange) {
+    if (newer) {
       
       UpdateReferenceTime(aTime, roughlyNow);
 
@@ -164,10 +155,8 @@ public:
     
     
     
-    MOZ_ASSERT(mReferenceTime - aReferenceTime < kTimeHalfRange,
-               "Expected aReferenceTime to be more recent than mReferenceTime");
-    if (aReferenceTime - mReferenceTime
-        > (aLowerBound - mReferenceTimeStamp).ToMilliseconds()) {
+    Time delta;
+    if (IsTimeNewerThanTimestamp(aReferenceTime, aLowerBound, &delta)) {
       return;
     }
 
@@ -200,6 +189,36 @@ private:
                       const TimeStamp& aReferenceTimeStamp) {
     mReferenceTime = aReferenceTime;
     mReferenceTimeStamp = aReferenceTimeStamp;
+  }
+
+  bool
+  IsTimeNewerThanTimestamp(Time aTime, TimeStamp aTimeStamp, Time* aDelta)
+  {
+    Time timeDelta = aTime - mReferenceTime;
+
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(mReferenceTimeStamp <= aTimeStamp,
+               "Got a negative timestamp delta");
+    Time timeStampDelta =
+      static_cast<int64_t>((aTimeStamp - mReferenceTimeStamp).ToMilliseconds());
+
+    Time timeToTimeStamp = timeStampDelta - timeDelta;
+    bool isNewer = false;
+    if (timeToTimeStamp == 0) {
+      *aDelta = 0;
+    } else if (timeToTimeStamp < kTimeHalfRange) {
+      *aDelta = timeToTimeStamp;
+    } else {
+      isNewer = true;
+      *aDelta = timeDelta - timeStampDelta;
+    }
+
+    return isNewer;
   }
 
   Time mReferenceTime;
