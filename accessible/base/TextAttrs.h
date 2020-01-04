@@ -180,13 +180,13 @@ protected:
     
     
     
-    T mNativeValue;
-    bool mIsDefined;
+    MOZ_INIT_OUTSIDE_CTOR T mNativeValue;
+    MOZ_INIT_OUTSIDE_CTOR bool mIsDefined;
 
     
     
-    T mRootNativeValue;
-    bool mIsRootDefined;
+    MOZ_INIT_OUTSIDE_CTOR T mRootNativeValue;
+    MOZ_INIT_OUTSIDE_CTOR bool mIsRootDefined;
   };
 
 
