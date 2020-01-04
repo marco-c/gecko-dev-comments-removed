@@ -15,6 +15,14 @@
 namespace mozilla {
 namespace layers {
 
+class X11TextureSource : public TextureSource
+{
+public:
+  
+  
+  virtual void Updated() = 0;
+};
+
 
 class X11TextureHost : public TextureHost
 {
@@ -43,8 +51,14 @@ public:
 #endif
 
 protected:
+  virtual void UpdatedInternal(const nsIntRegion*) override
+  {
+    if (mTextureSource)
+      mTextureSource->Updated();
+  }
+
   RefPtr<Compositor> mCompositor;
-  RefPtr<TextureSource> mTextureSource;
+  RefPtr<X11TextureSource> mTextureSource;
   RefPtr<gfxXlibSurface> mSurface;
 };
 
