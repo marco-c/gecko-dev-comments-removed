@@ -357,38 +357,22 @@ BytecodeEmitter::emitDupAt(unsigned slotFromTop)
     return true;
 }
 
-
-const char js_with_statement_str[] = "with statement";
-const char js_finally_block_str[]  = "finally block";
-
-static const char * const statementName[] = {
-    "label statement",       
-    "if statement",          
-    "else statement",        
-    "destructuring body",    
-    "switch statement",      
-    "block",                 
-    js_with_statement_str,   
-    "catch block",           
-    "try block",             
-    js_finally_block_str,    
-    js_finally_block_str,    
-    "do loop",               
-    "for loop",              
-    "for/in loop",           
-    "for/of loop",           
-    "while loop",            
-    "spread",                
-};
-
-static_assert(MOZ_ARRAY_LENGTH(statementName) == uint16_t(StmtType::LIMIT),
-              "statementName array and StmtType enum must be consistent");
-
 static const char*
 StatementName(StmtInfoBCE* stmt)
 {
     if (!stmt)
         return js_script_str;
+
+    
+    static const char* const statementName[] = {
+    #define STATEMENT_TYPE_NAME(name, desc) desc,
+        FOR_EACH_STATEMENT_TYPE(STATEMENT_TYPE_NAME)
+    #undef STATEMENT_TYPE_NAME
+    };
+
+    static_assert(MOZ_ARRAY_LENGTH(statementName) == uint16_t(StmtType::LIMIT),
+                  "statementName array and StmtType enum must be consistent");
+
     return statementName[uint16_t(stmt->type)];
 }
 
