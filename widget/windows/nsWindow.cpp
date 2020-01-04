@@ -6882,7 +6882,7 @@ nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width, int32_t height)
   mDefaultScale = -1.0; 
   double newScale = GetDefaultScaleInternal();
 
-  if (mResizeState != RESIZING) {
+  if (mResizeState != RESIZING && mSizeMode == nsSizeMode_Normal) {
     
     
     
@@ -6899,6 +6899,22 @@ nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width, int32_t height)
       width = w;
       height = h;
     }
+
+    
+    nsCOMPtr<nsIScreenManager> sm = do_GetService(sScreenManagerContractID);
+    if (sm) {
+      nsCOMPtr<nsIScreen> screen;
+      sm->ScreenForRect(x, y, width, height, getter_AddRefs(screen));
+      if (screen) {
+        int32_t availLeft, availTop, availWidth, availHeight;
+        screen->GetAvailRect(&availLeft, &availTop, &availWidth, &availHeight);
+        x = std::max(x, availLeft);
+        y = std::max(y, availTop);
+        width = std::min(width, availWidth);
+        height = std::min(height, availHeight);
+      }
+    }
+
     Resize(x, y, width, height, true);
   }
   ChangedDPI();
