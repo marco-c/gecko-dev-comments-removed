@@ -62,6 +62,15 @@ var ContentClick = {
     
 
     
+    
+    
+    
+    try {
+      if (!PrivateBrowsingUtils.isWindowPrivate(window))
+        PlacesUIUtils.markPageAsFollowedLink(json.href);
+    } catch (ex) {  }
+
+    
     var where = window.whereToOpenLink(json);
     if (where == "current")
       return;
@@ -73,14 +82,5 @@ var ContentClick = {
                    referrerPolicy: json.referrerPolicy,
                    noReferrer: json.noReferrer };
     window.openLinkIn(json.href, where, params);
-
-    
-    
-    
-    
-    try {
-      if (!PrivateBrowsingUtils.isWindowPrivate(window))
-        PlacesUIUtils.markPageAsFollowedLink(json.href);
-    } catch (ex) {  }
   }
 };
