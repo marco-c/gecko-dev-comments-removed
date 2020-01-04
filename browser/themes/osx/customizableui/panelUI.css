@@ -2,7 +2,7 @@
 
 
 
-%include ../../shared/customizableui/panelUIOverlay.inc.css
+%include ../../shared/customizableui/panelUI.inc.css
 
 .panel-subviews {
   background-color: hsla(0,0%,100%,.97);
