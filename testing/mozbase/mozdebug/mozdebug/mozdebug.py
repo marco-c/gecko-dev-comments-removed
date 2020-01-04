@@ -8,6 +8,7 @@ import os
 import mozinfo
 from collections import namedtuple
 from distutils.spawn import find_executable
+from subprocess import check_output
 
 __all__ = ['get_debugger_info',
            'get_default_debugger_name',
@@ -80,6 +81,30 @@ def _windbg_installation_paths():
             yield os.path.join(windowsKitsPrefix, version,
                                'Debuggers', 'x86', 'windbg.exe')
 
+def get_debugger_path(debugger):
+    '''
+    Get the full path of the debugger.
+
+    :param debugger: The name of the debugger.
+    '''
+
+    if mozinfo.os == 'mac' and debugger == 'lldb':
+        
+        
+        
+        
+
+        
+        try:
+            path = check_output(['xcrun', '--find', 'lldb']).strip()
+            if path:
+                return path
+        except:
+            
+            pass
+
+    return find_executable(debugger)
+
 def get_debugger_info(debugger, debuggerArgs = None, debuggerInteractive = False):
     '''
     Get the information about the requested debugger.
@@ -105,7 +130,7 @@ def get_debugger_info(debugger, debuggerArgs = None, debuggerInteractive = False
             and not debugger.lower().endswith('.exe')):
             debugger += '.exe'
 
-        debuggerPath = find_executable(debugger)
+        debuggerPath = get_debugger_path(debugger)
 
     if not debuggerPath:
         
