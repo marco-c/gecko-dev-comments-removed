@@ -94,13 +94,13 @@ InputQueue::ReceiveTouchInput(const RefPtr<AsyncPanZoomController>& aTarget,
     bool haveBehaviors = false;
     if (!gfxPrefs::TouchActionEnabled()) {
       haveBehaviors = true;
-    } else if (!mInputBlockQueue.IsEmpty() && CurrentBlock()->AsTouchBlock()) {
-      haveBehaviors = CurrentTouchBlock()->GetAllowedTouchBehaviors(currentBehaviors);
+    } else if (mActiveTouchBlock) {
+      haveBehaviors = mActiveTouchBlock->GetAllowedTouchBehaviors(currentBehaviors);
       
       
       
       
-      haveBehaviors |= CurrentTouchBlock()->IsContentResponseTimerExpired();
+      haveBehaviors |= mActiveTouchBlock->IsContentResponseTimerExpired();
     }
 
     block = StartNewTouchBlock(aTarget, aTargetConfirmed, false);
@@ -132,10 +132,7 @@ InputQueue::ReceiveTouchInput(const RefPtr<AsyncPanZoomController>& aTarget,
 
     MaybeRequestContentResponse(aTarget, block);
   } else {
-    if (!mInputBlockQueue.IsEmpty()) {
-      block = mInputBlockQueue.LastElement().get()->AsTouchBlock();
-    }
-
+    block = mActiveTouchBlock.get();
     if (!block) {
       NS_WARNING("Received a non-start touch event while no touch blocks active!");
       return nsEventStatus_eIgnore;
@@ -189,11 +186,7 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
   
   bool newBlock = DragTracker::StartsDrag(aEvent);
 
-  DragBlockState* block = nullptr;
-  if (!newBlock && !mInputBlockQueue.IsEmpty()) {
-    block = mInputBlockQueue.LastElement()->AsDragBlock();
-  }
-
+  DragBlockState* block = newBlock ? nullptr : mActiveDragBlock.get();
   if (block && block->HasReceivedMouseUp()) {
     block = nullptr;
   }
@@ -252,18 +245,14 @@ InputQueue::ReceiveScrollWheelInput(const RefPtr<AsyncPanZoomController>& aTarge
                                     bool aTargetConfirmed,
                                     const ScrollWheelInput& aEvent,
                                     uint64_t* aOutInputBlockId) {
-  WheelBlockState* block = nullptr;
-  if (!mInputBlockQueue.IsEmpty()) {
-    block = mInputBlockQueue.LastElement()->AsWheelBlock();
-
-    
-    
-    if (block &&
-        (!block->ShouldAcceptNewEvent() ||
-         block->MaybeTimeout(aEvent)))
-    {
-      block = nullptr;
-    }
+  WheelBlockState* block = mActiveWheelBlock.get();
+  
+  
+  if (block &&
+      (!block->ShouldAcceptNewEvent() ||
+       block->MaybeTimeout(aEvent)))
+  {
+    block = nullptr;
   }
 
   MOZ_ASSERT(!block || block->InTransaction());
@@ -327,9 +316,8 @@ InputQueue::ReceivePanGestureInput(const RefPtr<AsyncPanZoomController>& aTarget
   }
 
   PanGestureBlockState* block = nullptr;
-  if (!mInputBlockQueue.IsEmpty() &&
-      aEvent.mType != PanGestureInput::PANGESTURE_START) {
-    block = mInputBlockQueue.LastElement()->AsPanGestureBlock();
+  if (aEvent.mType != PanGestureInput::PANGESTURE_START) {
+    block = mActivePanGestureBlock.get();
   }
 
   PanGestureInput event = aEvent;
@@ -525,10 +513,7 @@ InputQueue::CurrentPanGestureBlock() const
 WheelBlockState*
 InputQueue::GetCurrentWheelTransaction() const
 {
-  if (mInputBlockQueue.IsEmpty()) {
-    return nullptr;
-  }
-  WheelBlockState* block = CurrentBlock()->AsWheelBlock();
+  WheelBlockState* block = mActiveWheelBlock.get();
   if (!block || !block->InTransaction()) {
     return nullptr;
   }
