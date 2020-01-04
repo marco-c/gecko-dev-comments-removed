@@ -68,7 +68,7 @@ nsHTMLCSSStyleSheet::ElementRulesMatching(nsPresContext* aPresContext,
   css::StyleRule* rule = aElement->GetInlineStyleRule();
   if (rule) {
     rule->RuleMatched();
-    aRuleWalker->Forward(rule);
+    aRuleWalker->Forward(rule->GetDeclaration());
   }
 
   rule = aElement->GetSMILOverrideStyleRule();
@@ -78,7 +78,7 @@ nsHTMLCSSStyleSheet::ElementRulesMatching(nsPresContext* aPresContext,
       
       
       rule->RuleMatched();
-      aRuleWalker->Forward(rule);
+      aRuleWalker->Forward(rule->GetDeclaration());
     }
   }
 }
@@ -97,7 +97,7 @@ nsHTMLCSSStyleSheet::PseudoElementRulesMatching(Element* aPseudoElement,
   css::StyleRule* rule = aPseudoElement->GetInlineStyleRule();
   if (rule) {
     rule->RuleMatched();
-    aRuleWalker->Forward(rule);
+    aRuleWalker->Forward(rule->GetDeclaration());
   }
 }
 
