@@ -7763,17 +7763,11 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       
       
       if (popupFrame &&
-          !mPreventPopupRetargeting &&
           !nsContentUtils::ContentIsCrossDocDescendantOf(
              framePresContext->GetPresShell()->GetDocument(),
              popupFrame->GetContent())) {
         frame = popupFrame;
       }
-    }
-
-    if (aEvent->mClass == eMouseEventClass &&
-        aEvent->mMessage == eMouseUp) {
-      mPreventPopupRetargeting = false;
     }
 
     bool captureRetarget = false;
