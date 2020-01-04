@@ -3196,7 +3196,7 @@ convertSheetType(uint32_t aSheetType)
     default:
       NS_ASSERTION(false, "wrong type");
       
-      return nsIDocument::SheetTypeCount;
+      return nsIDocument::AdditionalSheetTypeCount;
   }
 }
 

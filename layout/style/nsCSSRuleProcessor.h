@@ -15,14 +15,15 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/MemoryReporting.h"
-#include "nsIStyleRuleProcessor.h"
-#include "nsIMediaList.h"
-#include "nsTArray.h"
+#include "mozilla/RefCountType.h"
+#include "mozilla/SheetType.h"
+#include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
 #include "nsExpirationTracker.h"
+#include "nsIMediaList.h"
+#include "nsIStyleRuleProcessor.h"
 #include "nsRuleWalker.h"
-#include "mozilla/RefCountType.h"
-#include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
 
 struct CascadeEnumData;
 struct ElementDependentRuleProcessorData;
@@ -63,7 +64,7 @@ public:
   
   
   nsCSSRuleProcessor(const sheet_array_type& aSheets,
-                     uint8_t aSheetType,
+                     mozilla::SheetType aSheetType,
                      mozilla::dom::Element* aScopeElement,
                      nsCSSRuleProcessor* aPreviousCSSRuleProcessor,
                      bool aIsShared = false);
@@ -262,7 +263,7 @@ private:
   MozRefCountType mStyleSetRefCnt;
 
   
-  uint8_t mSheetType;  
+  mozilla::SheetType mSheetType;
 
   const bool mIsShared;
 

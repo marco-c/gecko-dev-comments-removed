@@ -14,7 +14,9 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/CSSStyleSheet.h"
+#include "mozilla/EnumeratedArray.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/SheetType.h"
 
 #include "nsIStyleRuleProcessor.h"
 #include "nsBindingManager.h"
@@ -306,44 +308,26 @@ class nsStyleSet final
 
   
   
-  enum sheetType {
-    eAgentSheet, 
-    eUserSheet, 
-    ePresHintSheet,
-    eSVGAttrAnimationSheet,
-    eDocSheet, 
-    eScopedDocSheet,
-    eStyleAttrSheet,
-    eOverrideSheet, 
-    eAnimationSheet,
-    eTransitionSheet,
-    eSheetTypeCount
-    
-    
-    
-  };
-
-  
-  
-  nsresult AppendStyleSheet(sheetType aType, nsIStyleSheet *aSheet);
-  nsresult PrependStyleSheet(sheetType aType, nsIStyleSheet *aSheet);
-  nsresult RemoveStyleSheet(sheetType aType, nsIStyleSheet *aSheet);
-  nsresult ReplaceSheets(sheetType aType,
+  nsresult AppendStyleSheet(mozilla::SheetType aType, nsIStyleSheet *aSheet);
+  nsresult PrependStyleSheet(mozilla::SheetType aType, nsIStyleSheet *aSheet);
+  nsresult RemoveStyleSheet(mozilla::SheetType aType, nsIStyleSheet *aSheet);
+  nsresult ReplaceSheets(mozilla::SheetType aType,
                          const nsCOMArray<nsIStyleSheet> &aNewSheets);
-  nsresult InsertStyleSheetBefore(sheetType aType, nsIStyleSheet *aNewSheet,
+  nsresult InsertStyleSheetBefore(mozilla::SheetType aType,
+                                  nsIStyleSheet *aNewSheet,
                                   nsIStyleSheet *aReferenceSheet);
 
-  nsresult DirtyRuleProcessors(sheetType aType);
+  nsresult DirtyRuleProcessors(mozilla::SheetType aType);
 
   
   bool GetAuthorStyleDisabled();
   nsresult SetAuthorStyleDisabled(bool aStyleDisabled);
 
-  int32_t SheetCount(sheetType aType) const {
+  int32_t SheetCount(mozilla::SheetType aType) const {
     return mSheets[aType].Count();
   }
 
-  nsIStyleSheet* StyleSheetAt(sheetType aType, int32_t aIndex) const {
+  nsIStyleSheet* StyleSheetAt(mozilla::SheetType aType, int32_t aIndex) const {
     return mSheets[aType].ObjectAt(aIndex);
   }
 
@@ -403,7 +387,7 @@ class nsStyleSet final
 
   nsIStyleRule* InitialStyleRule();
 
-  bool HasRuleProcessorUsedByMultipleStyleSets(sheetType aSheetType);
+  bool HasRuleProcessorUsedByMultipleStyleSets(mozilla::SheetType aSheetType);
 
   
   
@@ -417,7 +401,7 @@ class nsStyleSet final
   void GCRuleTrees();
 
   
-  nsresult GatherRuleProcessors(sheetType aType);
+  nsresult GatherRuleProcessors(mozilla::SheetType aType);
 
   void AddImportantRules(nsRuleNode* aCurrLevelNode,
                          nsRuleNode* aLastPrevLevelNode,
@@ -485,11 +469,13 @@ class nsStyleSet final
   
   
   
-  nsCOMArray<nsIStyleSheet> mSheets[eSheetTypeCount];
+  mozilla::EnumeratedArray<mozilla::SheetType, mozilla::SheetType::Count,
+                           nsCOMArray<nsIStyleSheet>> mSheets;
 
   
   
-  nsCOMPtr<nsIStyleRuleProcessor> mRuleProcessors[eSheetTypeCount];
+  mozilla::EnumeratedArray<mozilla::SheetType, mozilla::SheetType::Count,
+                           nsCOMPtr<nsIStyleRuleProcessor>> mRuleProcessors;
 
   
   nsTArray<nsCOMPtr<nsIStyleRuleProcessor> > mScopedDocSheetRuleProcessors;
@@ -507,7 +493,7 @@ class nsStyleSet final
   unsigned mInReconstruct : 1;
   unsigned mInitFontFeatureValuesLookup : 1;
   unsigned mNeedsRestyleAfterEnsureUniqueInner : 1;
-  unsigned mDirty : 10;  
+  unsigned mDirty : int(mozilla::SheetType::Count);  
 
   uint32_t mUnusedRuleNodeCount; 
   nsTArray<nsStyleContext*> mRoots; 

@@ -232,7 +232,7 @@ private:
   
   struct FontFaceRecord {
     RefPtr<FontFace> mFontFace;
-    uint8_t mSheetType;  
+    SheetType mSheetType;  
 
     
     
@@ -243,7 +243,7 @@ private:
   already_AddRefed<gfxUserFontEntry> FindOrCreateUserFontEntryFromFontFace(
                                                    const nsAString& aFamilyName,
                                                    FontFace* aFontFace,
-                                                   uint8_t aSheetType);
+                                                   SheetType aSheetType);
 
   
   nsCSSFontFaceRule* FindRuleForUserFontEntry(gfxUserFontEntry* aUserFontEntry);
@@ -264,7 +264,7 @@ private:
                       nsresult aStatus);
   void RebuildUserFontSet();
 
-  void InsertRuleFontFace(FontFace* aFontFace, uint8_t aSheetType,
+  void InsertRuleFontFace(FontFace* aFontFace, SheetType aSheetType,
                           nsTArray<FontFaceRecord>& aOldRecords,
                           bool& aFontSetModified);
   void InsertNonRuleFontFace(FontFace* aFontFace, bool& aFontSetModified);
