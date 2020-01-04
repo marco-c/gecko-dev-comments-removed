@@ -325,9 +325,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.10.1"
-#define SQLITE_VERSION_NUMBER 3010001
-#define SQLITE_SOURCE_ID      "2016-01-13 21:41:56 254419c36766225ca542ae873ed38255e3fb8588"
+#define SQLITE_VERSION        "3.10.2"
+#define SQLITE_VERSION_NUMBER 3010002
+#define SQLITE_SOURCE_ID      "2016-01-20 15:27:19 17efb4209f97fb4971656086b138599a91a75ff9"
 
 
 
@@ -49045,7 +49045,7 @@ SQLITE_PRIVATE int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory
         if( rc!=SQLITE_OK ){
           return rc;
         }
-        sqlite3WalExclusiveMode(pPager->pWal, 1);
+        (void)sqlite3WalExclusiveMode(pPager->pWal, 1);
       }
 
       
@@ -50115,7 +50115,11 @@ SQLITE_PRIVATE sqlite3_file *sqlite3PagerFile(Pager *pPager){
 
 
 SQLITE_PRIVATE sqlite3_file *sqlite3PagerJrnlFile(Pager *pPager){
+#if SQLITE_OMIT_WAL
+  return pPager->jfd;
+#else
   return pPager->pWal ? sqlite3WalFile(pPager->pWal) : pPager->jfd;
+#endif
 }
 
 
@@ -100279,7 +100283,7 @@ static int patternCompare(
     }
     c2 = Utf8Read(zString);
     if( c==c2 ) continue;
-    if( noCase && sqlite3Tolower(c)==sqlite3Tolower(c2) ){
+    if( noCase && c<0x80 && c2<0x80 && sqlite3Tolower(c)==sqlite3Tolower(c2) ){
       continue;
     }
     if( c==matchOne && zPattern!=zEscaped && c2!=0 ) continue;
@@ -135026,7 +135030,6 @@ static int openDatabase(
   sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_WAL_AUTOCHECKPOINT);
 
 opendb_out:
-  sqlite3_free(zOpen);
   if( db ){
     assert( db->mutex!=0 || isThreadsafe==0
            || sqlite3GlobalConfig.bFullMutex==0 );
@@ -135063,6 +135066,7 @@ opendb_out:
     }
   }
 #endif
+  sqlite3_free(zOpen);
   return rc & 0xff;
 }
 
@@ -182280,7 +182284,7 @@ static void fts5SourceIdFunc(
   sqlite3_value **apVal           
 ){
   assert( nArg==0 );
-  sqlite3_result_text(pCtx, "fts5: 2016-01-13 21:41:56 254419c36766225ca542ae873ed38255e3fb8588", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2016-01-20 15:27:19 17efb4209f97fb4971656086b138599a91a75ff9", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
