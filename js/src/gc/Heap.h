@@ -520,6 +520,10 @@ class Arena
     static_assert(ArenaShift >= 8 + 1 + 1 + 1,
                   "Arena::auxNextLink packing assumes that ArenaShift has "
                   "enough bits to cover allocKind and hasDelayedMarking.");
+
+    
+    void* extra;
+
     
 
 
@@ -540,6 +544,7 @@ class Arena
         zone = zoneArg;
         allocKind = size_t(kind);
         setAsFullyUnused();
+        extra = nullptr;
     }
 
     
@@ -689,8 +694,11 @@ class Arena
 static_assert(ArenaZoneOffset == offsetof(Arena, zone),
               "The hardcoded API zone offset must match the actual offset.");
 
-static_assert(sizeof(Arena) == ArenaSize, "The hardcoded API header size (ArenaHeaderSize) "
-                                          "must match the actual size of the header fields.");
+static_assert(sizeof(Arena) == ArenaSize,
+              "ArenaSize must match the actual size of the Arena structure.");
+
+static_assert(offsetof(Arena, data) == ArenaHeaderSize,
+              "ArenaHeaderSize must match the actual size of the header fields.");
 
 inline Arena*
 FreeSpan::getArena()
