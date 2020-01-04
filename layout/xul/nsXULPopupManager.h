@@ -778,9 +778,6 @@ protected:
   
   
   nsCOMPtr<nsIContent> mOpeningPopup;
-
-  
-  static bool sDevtoolsDisableAutoHide;
 };
 
 #endif
