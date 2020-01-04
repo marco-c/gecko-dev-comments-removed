@@ -1744,7 +1744,11 @@ nsStylePosition::ComputedJustifyContent(const nsStyleDisplay* aDisplay) const
     case NS_STYLE_DISPLAY_INLINE_FLEX:
       
       
-      if (mJustifyContent == NS_STYLE_JUSTIFY_STRETCH) {
+      
+      
+      
+      if ((mJustifyContent & NS_STYLE_ALIGN_ALL_BITS) ==
+          NS_STYLE_JUSTIFY_STRETCH) {
         return NS_STYLE_JUSTIFY_FLEX_START;
       }
       break;
