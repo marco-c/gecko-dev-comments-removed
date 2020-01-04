@@ -1409,9 +1409,9 @@ nsHTMLEditor::RelativeFontChange(FontSize aDir)
     nsCOMPtr<nsINode> startNode = range->GetStartParent();
     nsCOMPtr<nsINode> endNode = range->GetEndParent();
     if (startNode == endNode && IsTextNode(startNode)) {
-      res = RelativeFontChangeOnTextNode(aDir, *startNode->GetAsText(),
-                                         range->StartOffset(),
-                                         range->EndOffset());
+      res = RelativeFontChangeOnTextNode(aDir == FontSize::incr ? +1 : -1,
+          static_cast<nsIDOMCharacterData*>(startNode->AsDOMNode()),
+          range->StartOffset(), range->EndOffset());
       NS_ENSURE_SUCCESS(res, res);
     } else {
       
@@ -1451,14 +1451,15 @@ nsHTMLEditor::RelativeFontChange(FontSize aDir)
       
       
       if (IsTextNode(startNode) && IsEditable(startNode)) {
-        res = RelativeFontChangeOnTextNode(aDir, *startNode->GetAsText(),
-                                           range->StartOffset(),
-                                           startNode->Length());
+        res = RelativeFontChangeOnTextNode(aDir == FontSize::incr ? +1 : -1,
+            static_cast<nsIDOMCharacterData*>(startNode->AsDOMNode()),
+            range->StartOffset(), startNode->Length());
         NS_ENSURE_SUCCESS(res, res);
       }
       if (IsTextNode(endNode) && IsEditable(endNode)) {
-        res = RelativeFontChangeOnTextNode(aDir, *endNode->GetAsText(), 0,
-                                           range->EndOffset());
+        res = RelativeFontChangeOnTextNode(aDir == FontSize::incr ? +1 : -1,
+            static_cast<nsIDOMCharacterData*>(endNode->AsDOMNode()),
+            0, range->EndOffset());
         NS_ENSURE_SUCCESS(res, res);
       }
     }
@@ -1468,58 +1469,65 @@ nsHTMLEditor::RelativeFontChange(FontSize aDir)
 }
 
 nsresult
-nsHTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
-                                           Text& aTextNode,
-                                           int32_t aStartOffset,
-                                           int32_t aEndOffset)
+nsHTMLEditor::RelativeFontChangeOnTextNode( int32_t aSizeChange,
+                                            nsIDOMCharacterData *aTextNode,
+                                            int32_t aStartOffset,
+                                            int32_t aEndOffset)
 {
   
-  if (aStartOffset == aEndOffset) {
+  if ( !( (aSizeChange==1) || (aSizeChange==-1) ) )
+    return NS_ERROR_ILLEGAL_VALUE;
+  nsCOMPtr<nsIContent> textNode = do_QueryInterface(aTextNode);
+  NS_ENSURE_TRUE(textNode, NS_ERROR_NULL_POINTER);
+
+  
+  if (aStartOffset == aEndOffset) return NS_OK;
+
+  if (!textNode->GetParentNode() ||
+      !CanContainTag(*textNode->GetParentNode(), *nsGkAtoms::big)) {
     return NS_OK;
   }
 
-  if (!aTextNode.GetParentNode() ||
-      !CanContainTag(*aTextNode.GetParentNode(), *nsGkAtoms::big)) {
-    return NS_OK;
-  }
-
-  OwningNonNull<nsIContent> node = aTextNode;
+  nsCOMPtr<nsIDOMNode> tmp;
+  nsCOMPtr<nsIContent> node = do_QueryInterface(aTextNode);
+  NS_ENSURE_STATE(node);
 
   
+  uint32_t textLen;
+  aTextNode->GetLength(&textLen);
 
   
-  if (aEndOffset == -1) {
-    aEndOffset = aTextNode.Length();
-  }
+  if (aEndOffset == -1) aEndOffset = textLen;
 
-  ErrorResult rv;
-  if ((uint32_t)aEndOffset != aTextNode.Length()) {
+  nsresult res = NS_OK;
+  if ( (uint32_t)aEndOffset != textLen )
+  {
     
-    node = SplitNode(node, aEndOffset, rv);
-    NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
-  }
-  if (aStartOffset) {
+    res = SplitNode(GetAsDOMNode(node), aEndOffset, getter_AddRefs(tmp));
+    NS_ENSURE_SUCCESS(res, res);
     
-    SplitNode(node, aStartOffset, rv);
-    NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
+    node = do_QueryInterface(tmp);
+  }
+  if ( aStartOffset )
+  {
+    
+    res = SplitNode(GetAsDOMNode(node), aStartOffset, getter_AddRefs(tmp));
+    NS_ENSURE_SUCCESS(res, res);
   }
 
   
-  nsIAtom* nodeType = aDir == FontSize::incr ? nsGkAtoms::big
-                                             : nsGkAtoms::small;
+  nsIAtom* nodeType = aSizeChange == 1 ? nsGkAtoms::big : nsGkAtoms::small;
   nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(node);
   if (sibling && sibling->IsHTMLElement(nodeType)) {
     
-    nsresult res = MoveNode(node, sibling, -1);
-    NS_ENSURE_SUCCESS(res, res);
-    return NS_OK;
+    res = MoveNode(node, sibling, -1);
+    return res;
   }
   sibling = GetNextHTMLSibling(node);
   if (sibling && sibling->IsHTMLElement(nodeType)) {
     
-    nsresult res = MoveNode(node, sibling, 0);
-    NS_ENSURE_SUCCESS(res, res);
-    return NS_OK;
+    res = MoveNode(node, sibling, 0);
+    return res;
   }
 
   
