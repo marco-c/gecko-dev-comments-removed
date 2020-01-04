@@ -32,11 +32,15 @@ add_task(function* () {
 
   
   let btn = toolbox.doc.getElementById("command-button-frames");
-  let frames = Array.slice(btn.firstChild.querySelectorAll("[data-window-id]"));
+  let menu = toolbox.showFramesMenu({target: btn});
+  yield once(menu, "open");
+
+  
+  let frames = menu.menuitems;
   is(frames.length, 2, "We have both frames in the list");
 
-  let topFrameBtn = frames.filter(b => b.getAttribute("label") == URL)[0];
-  let iframeBtn = frames.filter(b => b.getAttribute("label") == IFRAME_URL)[0];
+  let topFrameBtn = frames.filter(b => b.label == URL)[0];
+  let iframeBtn = frames.filter(b => b.label == IFRAME_URL)[0];
   ok(topFrameBtn, "Got top level document in the list");
   ok(iframeBtn, "Got iframe document in the list");
 
