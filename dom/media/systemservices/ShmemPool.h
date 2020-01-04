@@ -10,6 +10,12 @@
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/Mutex.h"
 
+#undef LOG
+#undef LOG_ENABLED
+extern mozilla::LazyLogModule gCamerasParentLog;
+#define LOG(args) MOZ_LOG(gCamerasParentLog, mozilla::LogLevel::Debug, args)
+#define LOG_ENABLED() MOZ_LOG_TEST(gCamerasParentLog, mozilla::LogLevel::Debug)
+
 namespace mozilla {
 
 class ShmemPool;
@@ -63,12 +69,74 @@ public:
   ~ShmemPool();
   
   
-  template <class T> void Cleanup(T* aInstance);
-  
-  
   ShmemBuffer GetIfAvailable(size_t aSize);
-  template <class T> ShmemBuffer Get(T* aInstance, size_t aSize);
   void Put(ShmemBuffer&& aShmem);
+
+  
+  
+  template <class T>
+  void Cleanup(T* aInstance)
+  {
+    MutexAutoLock lock(mMutex);
+    for (size_t i = 0; i < mShmemPool.Length(); i++) {
+      if (mShmemPool[i].mInitialized) {
+        aInstance->DeallocShmem(mShmemPool[i].Get());
+        mShmemPool[i].mInitialized = false;
+      }
+    }
+  }
+
+  template <class T>
+  ShmemBuffer Get(T* aInstance, size_t aSize)
+  {
+    MutexAutoLock lock(mMutex);
+
+    
+    if (mPoolFree == 0) {
+      
+      return ShmemBuffer();
+    }
+
+    ShmemBuffer& res = mShmemPool[mPoolFree - 1];
+
+    if (!res.mInitialized) {
+      LOG(("Initializing new Shmem in pool"));
+      if (!aInstance->AllocShmem(aSize, ipc::SharedMemory::TYPE_BASIC, &res.mShmem)) {
+        LOG(("Failure allocating new Shmem buffer"));
+        return ShmemBuffer();
+      }
+      res.mInitialized = true;
+    }
+
+    MOZ_ASSERT(res.mShmem.IsWritable(), "Shmem in Pool is not writable?");
+
+    
+    
+    if (res.mShmem.Size<char>() < aSize) {
+      LOG(("Size change/increase in Shmem Pool"));
+      aInstance->DeallocShmem(res.mShmem);
+      res.mInitialized = false;
+      
+      if (!aInstance->AllocShmem(aSize, ipc::SharedMemory::TYPE_BASIC, &res.mShmem)) {
+        LOG(("Failure allocating resized Shmem buffer"));
+        return ShmemBuffer();
+      } else {
+        res.mInitialized = true;
+      }
+    }
+
+    MOZ_ASSERT(res.mShmem.IsWritable(), "Shmem in Pool is not writable post resize?");
+
+    mPoolFree--;
+#ifdef DEBUG
+    size_t poolUse = mShmemPool.Length() - mPoolFree;
+    if (poolUse > mMaxPoolUse) {
+      mMaxPoolUse = poolUse;
+      LOG(("Maximum ShmemPool use increased: %d buffers", mMaxPoolUse));
+    }
+#endif
+    return Move(res);
+  }
 
 private:
   Mutex mMutex;
