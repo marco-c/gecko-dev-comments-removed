@@ -145,7 +145,7 @@ WorkerThread::SetWorker(const WorkerThreadFriendKey& ,
 
 nsresult
 WorkerThread::DispatchPrimaryRunnable(const WorkerThreadFriendKey& ,
-                                      already_AddRefed<nsIRunnable>&& aRunnable)
+                                      already_AddRefed<nsIRunnable> aRunnable)
 {
   nsCOMPtr<nsIRunnable> runnable(aRunnable);
 
@@ -170,7 +170,7 @@ WorkerThread::DispatchPrimaryRunnable(const WorkerThreadFriendKey& ,
 
 nsresult
 WorkerThread::DispatchAnyThread(const WorkerThreadFriendKey& ,
-                       already_AddRefed<WorkerRunnable>&& aWorkerRunnable)
+                       already_AddRefed<WorkerRunnable> aWorkerRunnable)
 {
   
 
@@ -213,7 +213,7 @@ WorkerThread::DispatchFromScript(nsIRunnable* aRunnable, uint32_t aFlags)
 }
 
 NS_IMETHODIMP
-WorkerThread::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable, uint32_t aFlags)
+WorkerThread::Dispatch(already_AddRefed<nsIRunnable> aRunnable, uint32_t aFlags)
 {
   
   nsCOMPtr<nsIRunnable> runnable(aRunnable); 
@@ -299,7 +299,7 @@ WorkerThread::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable, uint32_t aFlag
 }
 
 NS_IMETHODIMP
-WorkerThread::DelayedDispatch(already_AddRefed<nsIRunnable>&&, uint32_t)
+WorkerThread::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
