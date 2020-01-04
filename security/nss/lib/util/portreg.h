@@ -43,13 +43,11 @@
 
 
 
- 
+
 #ifndef SHEXP_H
 #define SHEXP_H
 
 #include "utilrename.h"
-
-
 
 
 

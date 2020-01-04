@@ -18,7 +18,6 @@
 #include "secasn1t.h"
 
 
-
 SEC_BEGIN_PROTOS
 
 
@@ -30,13 +29,13 @@ SEC_BEGIN_PROTOS
 
 
 extern SEC_ASN1DecoderContext *SEC_ASN1DecoderStart(PLArenaPool *pool,
-						    void *dest,
-						    const SEC_ASN1Template *t);
+                                                    void *dest,
+                                                    const SEC_ASN1Template *t);
 
 
 extern SECStatus SEC_ASN1DecoderUpdate(SEC_ASN1DecoderContext *cx,
-				       const char *buf,
-				       unsigned long len);
+                                       const char *buf,
+                                       unsigned long len);
 
 extern SECStatus SEC_ASN1DecoderFinish(SEC_ASN1DecoderContext *cx);
 
@@ -44,20 +43,20 @@ extern SECStatus SEC_ASN1DecoderFinish(SEC_ASN1DecoderContext *cx);
 extern void SEC_ASN1DecoderAbort(SEC_ASN1DecoderContext *cx, int error);
 
 extern void SEC_ASN1DecoderSetFilterProc(SEC_ASN1DecoderContext *cx,
-					 SEC_ASN1WriteProc fn,
-					 void *arg, PRBool no_store);
+                                         SEC_ASN1WriteProc fn,
+                                         void *arg, PRBool no_store);
 
 extern void SEC_ASN1DecoderClearFilterProc(SEC_ASN1DecoderContext *cx);
 
 extern void SEC_ASN1DecoderSetNotifyProc(SEC_ASN1DecoderContext *cx,
-					 SEC_ASN1NotifyProc fn,
-					 void *arg);
+                                         SEC_ASN1NotifyProc fn,
+                                         void *arg);
 
 extern void SEC_ASN1DecoderClearNotifyProc(SEC_ASN1DecoderContext *cx);
 
 extern SECStatus SEC_ASN1Decode(PLArenaPool *pool, void *dest,
-				const SEC_ASN1Template *t,
-				const char *buf, long len);
+                                const SEC_ASN1Template *t,
+                                const char *buf, long len);
 
 
 
@@ -67,26 +66,26 @@ extern SECStatus SEC_ASN1Decode(PLArenaPool *pool, void *dest,
 
 
 extern SECStatus SEC_ASN1DecodeItem(PLArenaPool *pool, void *dest,
-				    const SEC_ASN1Template *t,
-				    const SECItem *src);
+                                    const SEC_ASN1Template *t,
+                                    const SECItem *src);
 
-extern SECStatus SEC_QuickDERDecodeItem(PLArenaPool* arena, void* dest,
-                     const SEC_ASN1Template* templateEntry,
-                     const SECItem* src);
+extern SECStatus SEC_QuickDERDecodeItem(PLArenaPool *arena, void *dest,
+                                        const SEC_ASN1Template *templateEntry,
+                                        const SECItem *src);
 
 
 
 
 
 extern SEC_ASN1EncoderContext *SEC_ASN1EncoderStart(const void *src,
-						    const SEC_ASN1Template *t,
-						    SEC_ASN1WriteProc fn,
-						    void *output_arg);
+                                                    const SEC_ASN1Template *t,
+                                                    SEC_ASN1WriteProc fn,
+                                                    void *output_arg);
 
 
 extern SECStatus SEC_ASN1EncoderUpdate(SEC_ASN1EncoderContext *cx,
-				       const char *buf,
-				       unsigned long len);
+                                       const char *buf,
+                                       unsigned long len);
 
 extern void SEC_ASN1EncoderFinish(SEC_ASN1EncoderContext *cx);
 
@@ -94,8 +93,8 @@ extern void SEC_ASN1EncoderFinish(SEC_ASN1EncoderContext *cx);
 extern void SEC_ASN1EncoderAbort(SEC_ASN1EncoderContext *cx, int error);
 
 extern void SEC_ASN1EncoderSetNotifyProc(SEC_ASN1EncoderContext *cx,
-					 SEC_ASN1NotifyProc fn,
-					 void *arg);
+                                         SEC_ASN1NotifyProc fn,
+                                         void *arg);
 
 extern void SEC_ASN1EncoderClearNotifyProc(SEC_ASN1EncoderContext *cx);
 
@@ -112,8 +111,8 @@ extern void SEC_ASN1EncoderSetTakeFromBuf(SEC_ASN1EncoderContext *cx);
 extern void SEC_ASN1EncoderClearTakeFromBuf(SEC_ASN1EncoderContext *cx);
 
 extern SECStatus SEC_ASN1Encode(const void *src, const SEC_ASN1Template *t,
-				SEC_ASN1WriteProc output_proc,
-				void *output_arg);
+                                SEC_ASN1WriteProc output_proc,
+                                void *output_arg);
 
 
 
@@ -121,18 +120,18 @@ extern SECStatus SEC_ASN1Encode(const void *src, const SEC_ASN1Template *t,
 
 
 
-extern SECItem * SEC_ASN1EncodeItem(PLArenaPool *pool, SECItem *dest,
-				    const void *src, const SEC_ASN1Template *t);
+extern SECItem *SEC_ASN1EncodeItem(PLArenaPool *pool, SECItem *dest,
+                                   const void *src, const SEC_ASN1Template *t);
 
-extern SECItem * SEC_ASN1EncodeInteger(PLArenaPool *pool,
-				       SECItem *dest, long value);
+extern SECItem *SEC_ASN1EncodeInteger(PLArenaPool *pool,
+                                      SECItem *dest, long value);
 
-extern SECItem * SEC_ASN1EncodeUnsignedInteger(PLArenaPool *pool,
-					       SECItem *dest,
-					       unsigned long value);
+extern SECItem *SEC_ASN1EncodeUnsignedInteger(PLArenaPool *pool,
+                                              SECItem *dest,
+                                              unsigned long value);
 
 extern SECStatus SEC_ASN1DecodeInteger(SECItem *src,
-				       unsigned long *value);
+                                       unsigned long *value);
 
 
 
@@ -142,11 +141,11 @@ extern SECStatus SEC_ASN1DecodeInteger(SECItem *src,
 
 
 
-extern int SEC_ASN1LengthLength (unsigned long len);
+extern int SEC_ASN1LengthLength(unsigned long len);
 
 
 
-extern int SEC_ASN1EncodeLength(unsigned char *buf,int value);
+extern int SEC_ASN1EncodeLength(unsigned char *buf, int value);
 
 
 
@@ -160,8 +159,8 @@ extern int SEC_ASN1EncodeLength(unsigned char *buf,int value);
 
 
 extern const SEC_ASN1Template *
-SEC_ASN1GetSubtemplate (const SEC_ASN1Template *inTemplate, void *thing,
-			PRBool encoding);
+SEC_ASN1GetSubtemplate(const SEC_ASN1Template *inTemplate, void *thing,
+                       PRBool encoding);
 
 
 

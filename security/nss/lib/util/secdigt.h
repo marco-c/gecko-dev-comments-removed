@@ -17,9 +17,9 @@
 
 
 struct SGNDigestInfoStr {
-    PLArenaPool *  arena;
+    PLArenaPool* arena;
     SECAlgorithmID digestAlgorithm;
-    SECItem        digest;
+    SECItem digest;
 };
 typedef struct SGNDigestInfoStr SGNDigestInfo;
 

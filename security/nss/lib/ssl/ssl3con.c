@@ -7015,17 +7015,8 @@ static SECStatus
 ssl3_PickServerSignatureScheme(sslSocket *ss)
 {
     sslKeyPair *keyPair = ss->sec.serverCert->serverKeyPair;
-    SECStatus rv;
 
     if (ss->ssl3.hs.numClientSigScheme == 0) {
-        if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_3) {
-            
-
-            (void)SSL3_SendAlert(ss, alert_fatal, missing_extension);
-            PORT_SetError(SSL_ERROR_RX_MALFORMED_CLIENT_HELLO);
-            return SECFailure;
-        }
-
         
 
         switch (SECKEY_GetPublicKeyType(keyPair->pubKey)) {
@@ -7046,16 +7037,11 @@ ssl3_PickServerSignatureScheme(sslSocket *ss)
         return SECSuccess;
     }
 
-    rv = ssl_PickSignatureScheme(ss, keyPair->pubKey,
-                                 ss->ssl3.hs.clientSigSchemes,
-                                 ss->ssl3.hs.numClientSigScheme,
-                                 PR_FALSE);
-    if (rv != SECSuccess) {
-        (void)SSL3_SendAlert(ss, alert_fatal, handshake_failure);
-        
-        return SECFailure;
-    }
-    return SECSuccess;
+    
+    return ssl_PickSignatureScheme(ss, keyPair->pubKey,
+                                   ss->ssl3.hs.clientSigSchemes,
+                                   ss->ssl3.hs.numClientSigScheme,
+                                   PR_FALSE);
 }
 
 static SECStatus
@@ -13115,6 +13101,13 @@ ssl_ConstantTimeEQ8(unsigned char a, unsigned char b)
     return DUPLICATE_MSB_TO_ALL_8(c);
 }
 
+
+static unsigned char
+ssl_constantTimeSelect(unsigned char mask, unsigned char a, unsigned char b)
+{
+    return (mask & a) | (~mask & b);
+}
+
 static SECStatus
 ssl_RemoveSSLv3CBCPadding(sslBuffer *plaintext,
                           unsigned int blockSize,
@@ -13218,11 +13211,12 @@ ssl_CBCExtractMAC(sslBuffer *plaintext,
     
 
     unsigned scanStart = 0;
-    unsigned i, j, divSpoiler;
+    unsigned i, j;
     unsigned char rotateOffset;
 
-    if (originalLength > macSize + 255 + 1)
+    if (originalLength > macSize + 255 + 1) {
         scanStart = originalLength - (macSize + 255 + 1);
+    }
 
     
 
@@ -13231,9 +13225,40 @@ ssl_CBCExtractMAC(sslBuffer *plaintext,
 
 
 
-    divSpoiler = macSize >> 1;
-    divSpoiler <<= (sizeof(divSpoiler) - 1) * 8;
-    rotateOffset = (divSpoiler + macStart - scanStart) % macSize;
+
+
+    rotateOffset = macStart - scanStart;
+    
+    if (macSize == 16) {
+        rotateOffset &= 15;
+    } else if (macSize == 20) {
+        
+
+
+
+        unsigned q = (rotateOffset * 25) >> 9;
+        rotateOffset -= q * 20;
+        rotateOffset -= ssl_constantTimeSelect(ssl_ConstantTimeGE(rotateOffset, 20),
+                                               20, 0);
+    } else if (macSize == 32) {
+        rotateOffset &= 31;
+    } else if (macSize == 48) {
+        
+
+
+
+        unsigned q = (rotateOffset * 10) >> 9;
+        rotateOffset -= q * 48;
+        rotateOffset -= ssl_constantTimeSelect(ssl_ConstantTimeGE(rotateOffset, 48),
+                                               48, 0);
+    } else {
+        
+
+
+
+        PORT_Assert(0);
+        rotateOffset = rotateOffset % macSize;
+    }
 
     memset(rotatedMac, 0, macSize);
     for (i = scanStart; i < originalLength;) {
@@ -13249,12 +13274,16 @@ ssl_CBCExtractMAC(sslBuffer *plaintext,
     
 
     memset(out, 0, macSize);
+    rotateOffset = macSize - rotateOffset;
+    rotateOffset = ssl_constantTimeSelect(ssl_ConstantTimeGE(rotateOffset, macSize),
+                                          0, rotateOffset);
     for (i = 0; i < macSize; i++) {
-        unsigned char offset =
-            (divSpoiler + macSize - rotateOffset + i) % macSize;
         for (j = 0; j < macSize; j++) {
-            out[j] |= rotatedMac[i] & ssl_ConstantTimeEQ8(j, offset);
+            out[j] |= rotatedMac[i] & ssl_ConstantTimeEQ8(j, rotateOffset);
         }
+        rotateOffset++;
+        rotateOffset = ssl_constantTimeSelect(ssl_ConstantTimeGE(rotateOffset, macSize),
+                                              0, rotateOffset);
     }
 }
 

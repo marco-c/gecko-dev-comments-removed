@@ -5,10 +5,12 @@
 var fs = require("fs");
 var path = require("path");
 var merge = require("merge");
-var yaml = require("js-yaml");
 var slugid = require("slugid");
 var flatmap = require("flatmap");
+
+var yaml = require("./yaml");
 var try_syntax = require("./try_syntax");
+var image_builder = require("./image_builder");
 
 
 var TC_OWNER = process.env.TC_OWNER || "{{tc_owner}}";
@@ -17,49 +19,6 @@ var TC_PROJECT = process.env.TC_PROJECT || "{{tc_project}}";
 var TC_COMMENT = process.env.TC_COMMENT || "{{tc_comment}}";
 var NSS_PUSHLOG_ID = process.env.NSS_PUSHLOG_ID || "{{nss_pushlog_id}}";
 var NSS_HEAD_REVISION = process.env.NSS_HEAD_REVISION || "{{nss_head_rev}}";
-
-
-var YAML_SCHEMA = yaml.Schema.create([
-  
-  new yaml.Type('!from_now', {
-    kind: "scalar",
-
-    resolve: function (data) {
-      return true;
-    },
-
-    construct: function (data) {
-      var d = new Date();
-      d.setHours(d.getHours() + (data|0));
-      return d.toJSON();
-    }
-  }),
-
-  
-  new yaml.Type('!env', {
-    kind: "scalar",
-
-    resolve: function (data) {
-      return true;
-    },
-
-    construct: function (data) {
-      return process.env[data] || "{{" + data.toLowerCase() + "}}";
-    }
-  })
-]);
-
-
-function parseYamlFile(file, fallback) {
-  
-  if (!fs.existsSync(file) && fallback) {
-    return fallback;
-  }
-
-  
-  var source = fs.readFileSync(file, "utf-8");
-  return yaml.load(source, {schema: YAML_SCHEMA});
-}
 
 
 function decorateTask(task) {
@@ -78,10 +37,10 @@ function generateBuildTasks(platform, file) {
   var dir = path.join(__dirname, "./" + platform);
 
   
-  var buildBase = parseYamlFile(path.join(dir, "_build_base.yml"), {});
-  var testBase = parseYamlFile(path.join(dir, "_test_base.yml"), {});
+  var buildBase = yaml.parse(path.join(dir, "_build_base.yml"), {});
+  var testBase = yaml.parse(path.join(dir, "_test_base.yml"), {});
 
-  return flatmap(parseYamlFile(path.join(dir, file)), function (task) {
+  return flatmap(yaml.parse(path.join(dir, file)), function (task) {
     
     var tasks = [task = merge.recursive(true, buildBase, task)];
 
@@ -120,7 +79,7 @@ function generateBuildTasks(platform, file) {
 function generateTestTasks(name, base, task) {
   
   var dir = path.join(__dirname, "./tests");
-  var tests = parseYamlFile(path.join(dir, name + ".yml"));
+  var tests = yaml.parse(path.join(dir, name + ".yml"));
 
   return tests.map(function (test) {
     
@@ -146,8 +105,8 @@ function generateTestTasks(name, base, task) {
 
 function generatePlatformTasks(platform) {
   var dir = path.join(__dirname, "./" + platform);
-  var buildBase = parseYamlFile(path.join(dir, "_build_base.yml"), {});
-  var testBase = parseYamlFile(path.join(dir, "_test_base.yml"), {});
+  var buildBase = yaml.parse(path.join(dir, "_build_base.yml"), {});
+  var testBase = yaml.parse(path.join(dir, "_test_base.yml"), {});
 
   
   return flatmap(fs.readdirSync(dir), function (file) {
@@ -180,4 +139,9 @@ if (TC_PROJECT == "nss-try") {
 }
 
 
-process.stdout.write(JSON.stringify(graph, null, 2));
+image_builder.asyncTweakTasks(graph.tasks).then(function (tasks) {
+  graph.tasks = tasks;
+
+  
+  process.stdout.write(JSON.stringify(graph, null, 2));
+});

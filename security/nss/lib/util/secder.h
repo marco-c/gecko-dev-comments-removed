@@ -32,7 +32,7 @@ SEC_BEGIN_PROTOS
 
 
 extern SECStatus DER_Encode(PLArenaPool *arena, SECItem *dest, DERTemplate *t,
-			   void *src);
+                            void *src);
 
 extern SECStatus DER_Lengths(SECItem *item, int *header_len_p,
                              PRUint32 *contents_len_p);
@@ -47,7 +47,7 @@ extern SECStatus DER_Lengths(SECItem *item, int *header_len_p,
 
 
 extern unsigned char *DER_StoreHeader(unsigned char *to, unsigned int code,
-				      PRUint32 encodingLen);
+                                      PRUint32 encodingLen);
 
 
 
@@ -90,9 +90,8 @@ extern unsigned long DER_GetUInteger(SECItem *src);
 
 
 extern SECStatus DER_TimeToUTCTime(SECItem *result, PRTime time);
-extern SECStatus DER_TimeToUTCTimeArena(PLArenaPool* arenaOpt,
+extern SECStatus DER_TimeToUTCTimeArena(PLArenaPool *arenaOpt,
                                         SECItem *dst, PRTime gmttime);
-
 
 
 
@@ -132,7 +131,7 @@ extern char *DER_TimeChoiceDayToAscii(SECItem *timechoice);
 
 
 extern SECStatus DER_TimeToGeneralizedTime(SECItem *dst, PRTime gmttime);
-extern SECStatus DER_TimeToGeneralizedTimeArena(PLArenaPool* arenaOpt,
+extern SECStatus DER_TimeToGeneralizedTimeArena(PLArenaPool *arenaOpt,
                                                 SECItem *dst, PRTime gmttime);
 
 
@@ -146,29 +145,28 @@ extern SECStatus DER_GeneralizedTimeToTime(PRTime *dst, const SECItem *time);
 
 
 
-extern char *CERT_UTCTime2FormattedAscii (PRTime utcTime, char *format);
+extern char *CERT_UTCTime2FormattedAscii(PRTime utcTime, char *format);
 #define CERT_GeneralizedTime2FormattedAscii CERT_UTCTime2FormattedAscii
 
 
 
 
 
-extern char *CERT_GenTime2FormattedAscii (PRTime genTime, char *format);
+extern char *CERT_GenTime2FormattedAscii(PRTime genTime, char *format);
 
 
 
 
 
 
-extern SECStatus DER_DecodeTimeChoice(PRTime* output, const SECItem* input);
+extern SECStatus DER_DecodeTimeChoice(PRTime *output, const SECItem *input);
 
 
 
 
-extern SECStatus DER_EncodeTimeChoice(PLArenaPool* arena, SECItem* output,
-                                       PRTime input);
+extern SECStatus DER_EncodeTimeChoice(PLArenaPool *arena, SECItem *output,
+                                      PRTime input);
 
 SEC_END_PROTOS
 
 #endif 
-

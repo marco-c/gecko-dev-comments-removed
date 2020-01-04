@@ -25,7 +25,7 @@ extern char *BTOA_DataToAscii(const unsigned char *data, unsigned int len);
 
 
 extern unsigned char *ATOB_AsciiToData(const char *string, unsigned int *lenp);
- 
+
 
 
 

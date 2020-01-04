@@ -122,12 +122,12 @@ typedef enum {
     nssILockFreelist = 11,
     nssILockOID = 12,
     nssILockAttribute = 13,
-    nssILockPK11cxt = 14,  
+    nssILockPK11cxt = 14, 
     nssILockRWLock = 15,
     nssILockOther = 16,
     nssILockSelfServ = 17,
     nssILockKeyDB = 18,
-    nssILockLast  
+    nssILockLast 
 } nssILockType;
 
 
@@ -139,7 +139,7 @@ typedef enum {
 
 
 
-typedef enum  {
+typedef enum {
     FlushTT = 0,
     NewLock = 1,
     Lock = 2,
@@ -163,14 +163,14 @@ typedef enum  {
 
 
 struct pzTrace_s {
-    PRUint32        threadID; 
-    nssILockOp      op;       
-    nssILockType    ltype;    
-    PRIntervalTime  callTime; 
-    PRIntervalTime  heldTime; 
-    void            *lock;        
-    PRIntn          line;     
-    char            file[24]; 
+    PRUint32 threadID;       
+    nssILockOp op;           
+    nssILockType ltype;      
+    PRIntervalTime callTime; 
+    PRIntervalTime heldTime; 
+    void *lock;              
+    PRIntn line;             
+    char file[24];           
 };
 
 
@@ -182,10 +182,10 @@ typedef struct pzmonitor_s PZMonitor;
 
 #else 
 
-#define PZLock                  PRLock
-#define PZCondVar               PRCondVar
-#define PZMonitor               PRMonitor
-    
+#define PZLock PRLock
+#define PZCondVar PRCondVar
+#define PZMonitor PRMonitor
+
 #endif 
 
 #endif 

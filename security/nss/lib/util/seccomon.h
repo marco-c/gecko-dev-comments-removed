@@ -16,13 +16,12 @@
 #include "utilrename.h"
 #include "prtypes.h"
 
-
-#ifdef __cplusplus 
-# define SEC_BEGIN_PROTOS extern "C" {
-# define SEC_END_PROTOS }
+#ifdef __cplusplus
+#define SEC_BEGIN_PROTOS extern "C" {
+#define SEC_END_PROTOS }
 #else
-# define SEC_BEGIN_PROTOS
-# define SEC_END_PROTOS
+#define SEC_BEGIN_PROTOS
+#define SEC_END_PROTOS
 #endif
 
 #include "secport.h"

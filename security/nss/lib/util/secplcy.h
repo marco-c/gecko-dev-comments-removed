@@ -19,8 +19,8 @@
 
 #define SEC_CIPHER_NOT_ALLOWED 0
 #define SEC_CIPHER_ALLOWED 1
-#define SEC_CIPHER_RESTRICTED 2 /* cipher is allowed in limited cases 
-				   e.g. step-up */
+#define SEC_CIPHER_RESTRICTED 2 /* cipher is allowed in limited cases \
+                                   e.g. step-up */
 
 
 
@@ -68,22 +68,20 @@
 #endif
 
 
-typedef struct _sec_cp_struct
-{
-  char policy_string[SEC_POLICY_HEADER_LENGTH];
-  long unused; 
-  char num_ciphers;
-  char begin_ciphers;
-  
+typedef struct _sec_cp_struct {
+    char policy_string[SEC_POLICY_HEADER_LENGTH];
+    long unused; 
+    char num_ciphers;
+    char begin_ciphers;
+    
 } secCPStruct;
 
-struct SECCipherFindStr
-{
-  
-  void *policy;
-  void *ciphers;
-  long index;
-  PRBool onlyAllowed;
+struct SECCipherFindStr {
+    
+    void *policy;
+    void *ciphers;
+    long index;
+    PRBool onlyAllowed;
 };
 
 typedef struct SECCipherFindStr SECCipherFind;
@@ -91,13 +89,13 @@ typedef struct SECCipherFindStr SECCipherFind;
 SEC_BEGIN_PROTOS
 
 SECCipherFind *sec_CipherFindInit(PRBool onlyAllowed,
-				  secCPStruct *policy,
-				  long *ciphers);
+                                  secCPStruct *policy,
+                                  long *ciphers);
 
 long sec_CipherFindNext(SECCipherFind *find);
 
 char sec_IsCipherAllowed(long cipher, secCPStruct *policies,
-			 long *ciphers);
+                         long *ciphers);
 
 void sec_CipherFindEnd(SECCipherFind *find);
 

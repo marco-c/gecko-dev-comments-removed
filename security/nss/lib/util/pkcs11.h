@@ -175,11 +175,9 @@ extern "C" {
 
 
 
-
 #include "pkcs11t.h"
 
-#define __PASTE(x,y)      x##y
-
+#define __PASTE(x, y) x##y
 
 
 #include "pkcs11p.h"
@@ -188,9 +186,27 @@ extern "C" {
 
 
 
-#define CK_NEED_ARG_LIST  1
+#define CK_NEED_ARG_LIST 1
 #define CK_PKCS11_FUNCTION_INFO(name) \
-  CK_DECLARE_FUNCTION(CK_RV, name)
+    CK_DECLARE_FUNCTION(CK_RV, name)
+
+
+
+#include "pkcs11f.h"
+
+#undef CK_NEED_ARG_LIST
+#undef CK_PKCS11_FUNCTION_INFO
+
+
+
+
+
+
+
+
+#define CK_NEED_ARG_LIST 1
+#define CK_PKCS11_FUNCTION_INFO(name) \
+    typedef CK_DECLARE_FUNCTION_POINTER(CK_RV, __PASTE(CK_, name))
 
 
 
@@ -207,43 +223,22 @@ extern "C" {
 
 
 
-#define CK_NEED_ARG_LIST  1
-#define CK_PKCS11_FUNCTION_INFO(name) \
-  typedef CK_DECLARE_FUNCTION_POINTER(CK_RV, __PASTE(CK_,name))
-
-
-
-#include "pkcs11f.h"
-
-#undef CK_NEED_ARG_LIST
-#undef CK_PKCS11_FUNCTION_INFO
-
-
-
-
-
-
-
-
-
-
 
 #define CK_PKCS11_FUNCTION_INFO(name) \
-  __PASTE(CK_,name) name;
-  
+    __PASTE(CK_, name)                \
+    name;
+
 struct CK_FUNCTION_LIST {
 
-  CK_VERSION    version;  
+    CK_VERSION version; 
 
 
 
 
-#include "pkcs11f.h" 
-
+#include "pkcs11f.h"
 };
 
 #undef CK_PKCS11_FUNCTION_INFO
-
 
 #undef __PASTE
 

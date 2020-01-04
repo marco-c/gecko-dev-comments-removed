@@ -33,7 +33,7 @@ SEC_BEGIN_PROTOS
 
 
 extern SECItem *SECITEM_AllocItem(PLArenaPool *arena, SECItem *item,
-				  unsigned int len);
+                                  unsigned int len);
 
 
 
@@ -48,9 +48,9 @@ extern SECItem *SECITEM_AllocItem(PLArenaPool *arena, SECItem *item,
 
 
 
-extern SECStatus SECITEM_ReallocItem( 
-				     PLArenaPool *arena, SECItem *item,
-				     unsigned int oldlen, unsigned int newlen);
+extern SECStatus SECITEM_ReallocItem(
+                                     PLArenaPool *arena, SECItem *item,
+                                     unsigned int oldlen, unsigned int newlen);
 
 
 
@@ -61,7 +61,7 @@ extern SECStatus SECITEM_ReallocItem(
 
 
 extern SECStatus SECITEM_ReallocItemV2(PLArenaPool *arena, SECItem *item,
-				       unsigned int newlen);
+                                       unsigned int newlen);
 
 
 
@@ -76,7 +76,7 @@ extern PRBool SECITEM_ItemsAreEqual(const SECItem *a, const SECItem *b);
 
 
 
-extern SECStatus SECITEM_CopyItem(PLArenaPool *arena, SECItem *to, 
+extern SECStatus SECITEM_CopyItem(PLArenaPool *arena, SECItem *to,
                                   const SECItem *from);
 
 
@@ -101,9 +101,9 @@ extern void SECITEM_FreeItem(SECItem *zap, PRBool freeit);
 
 extern void SECITEM_ZfreeItem(SECItem *zap, PRBool freeit);
 
-PLHashNumber PR_CALLBACK SECITEM_Hash ( const void *key);
+PLHashNumber PR_CALLBACK SECITEM_Hash(const void *key);
 
-PRIntn PR_CALLBACK SECITEM_HashCompare ( const void *k1, const void *k2);
+PRIntn PR_CALLBACK SECITEM_HashCompare(const void *k1, const void *k2);
 
 extern SECItemArray *SECITEM_AllocArray(PLArenaPool *arena,
                                         SECItemArray *array,

@@ -27,7 +27,7 @@ SEC_ASN1_CHOOSER_DECLARE(SECOID_AlgorithmIDTemplate)
 
 
 
-extern SECOidData *SECOID_FindOID( const SECItem *oid);
+extern SECOidData *SECOID_FindOID(const SECItem *oid);
 extern SECOidTag SECOID_FindOIDTag(const SECItem *oid);
 extern SECOidData *SECOID_FindOIDByTag(SECOidTag tagnum);
 extern SECOidData *SECOID_FindOIDByMechanism(unsigned long mechanism);
@@ -45,7 +45,7 @@ extern SECOidData *SECOID_FindOIDByMechanism(unsigned long mechanism);
 
 
 extern SECStatus SECOID_SetAlgorithmID(PLArenaPool *arena, SECAlgorithmID *aid,
-				   SECOidTag tag, SECItem *params);
+                                       SECOidTag tag, SECItem *params);
 
 
 
@@ -54,7 +54,7 @@ extern SECStatus SECOID_SetAlgorithmID(PLArenaPool *arena, SECAlgorithmID *aid,
 
 
 extern SECStatus SECOID_CopyAlgorithmID(PLArenaPool *arena, SECAlgorithmID *dest,
-				        const SECAlgorithmID *src);
+                                        const SECAlgorithmID *src);
 
 
 
@@ -73,9 +73,9 @@ extern void SECOID_DestroyAlgorithmID(SECAlgorithmID *aid, PRBool freeit);
 
 
 extern SECComparison SECOID_CompareAlgorithmID(SECAlgorithmID *a,
-					   SECAlgorithmID *b);
+                                               SECAlgorithmID *b);
 
-extern PRBool SECOID_KnownCertExtenOID (SECItem *extenOid);
+extern PRBool SECOID_KnownCertExtenOID(SECItem *extenOid);
 
 
 
@@ -85,7 +85,7 @@ extern const char *SECOID_FindOIDTagDescription(SECOidTag tagnum);
 
 
 
-extern SECOidTag SECOID_AddEntry(const SECOidData * src);
+extern SECOidTag SECOID_AddEntry(const SECOidData *src);
 
 
 
@@ -110,7 +110,7 @@ extern SECStatus SECOID_Shutdown(void);
 
 
 
-extern SECStatus SEC_StringToOID(PLArenaPool *pool, SECItem *to, 
+extern SECStatus SEC_StringToOID(PLArenaPool *pool, SECItem *to,
                                  const char *from, PRUint32 len);
 
 extern void UTIL_SetForkState(PRBool forked);
@@ -134,7 +134,6 @@ extern SECStatus NSS_GetAlgorithmPolicy(SECOidTag tag, PRUint32 *pValue);
 
 extern SECStatus
 NSS_SetAlgorithmPolicy(SECOidTag tag, PRUint32 setBits, PRUint32 clearBits);
-
 
 SEC_END_PROTOS
 

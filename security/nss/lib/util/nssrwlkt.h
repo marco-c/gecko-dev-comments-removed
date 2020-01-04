@@ -16,5 +16,4 @@
 
 typedef struct nssRWLockStr NSSRWLock;
 
-
 #endif 

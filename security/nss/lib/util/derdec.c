@@ -13,57 +13,57 @@ der_indefinite_length(unsigned char *buf, unsigned char *end)
     int dataLenLen;
 
     len = 0;
-    while ( 1 ) {
-	if ((buf + 2) > end) {
-	    return(0);
-	}
-	
-	tag = *buf++;
-	lenCode = *buf++;
-	len += 2;
-	
-	if ( ( tag == 0 ) && ( lenCode == 0 ) ) {
-	    return(len);
-	}
-	
-	if ( lenCode == 0x80 ) {	
-	    ret = der_indefinite_length(buf, end); 
-	    if (ret == 0)
-		return 0;
-	    len += ret;
-	    buf += ret;
-	} else {			
-	    if (lenCode & 0x80) {
-		
-		dataLenLen = lenCode & 0x7f;
-		switch (dataLenLen) {
-		  case 1:
-		    dataLen = buf[0];
-		    break;
-		  case 2:
-		    dataLen = (buf[0]<<8)|buf[1];
-		    break;
-		  case 3:
-		    dataLen = ((unsigned long)buf[0]<<16)|(buf[1]<<8)|buf[2];
-		    break;
-		  case 4:
-		    dataLen = ((unsigned long)buf[0]<<24)|
-			((unsigned long)buf[1]<<16)|(buf[2]<<8)|buf[3];
-		    break;
-		  default:
-		    PORT_SetError(SEC_ERROR_BAD_DER);
-		    return SECFailure;
-		}
-	    } else {
-		
-		dataLen = lenCode;
-		dataLenLen = 0;
-	    }
+    while (1) {
+        if ((buf + 2) > end) {
+            return (0);
+        }
 
-	    
-	    buf = buf + dataLenLen + dataLen;
-	    len = len + dataLenLen + dataLen;
-	}
+        tag = *buf++;
+        lenCode = *buf++;
+        len += 2;
+
+        if ((tag == 0) && (lenCode == 0)) {
+            return (len);
+        }
+
+        if (lenCode == 0x80) {                     
+            ret = der_indefinite_length(buf, end); 
+            if (ret == 0)
+                return 0;
+            len += ret;
+            buf += ret;
+        } else { 
+            if (lenCode & 0x80) {
+                
+                dataLenLen = lenCode & 0x7f;
+                switch (dataLenLen) {
+                    case 1:
+                        dataLen = buf[0];
+                        break;
+                    case 2:
+                        dataLen = (buf[0] << 8) | buf[1];
+                        break;
+                    case 3:
+                        dataLen = ((unsigned long)buf[0] << 16) | (buf[1] << 8) | buf[2];
+                        break;
+                    case 4:
+                        dataLen = ((unsigned long)buf[0] << 24) |
+                                  ((unsigned long)buf[1] << 16) | (buf[2] << 8) | buf[3];
+                        break;
+                    default:
+                        PORT_SetError(SEC_ERROR_BAD_DER);
+                        return SECFailure;
+                }
+            } else {
+                
+                dataLen = lenCode;
+                dataLenLen = 0;
+            }
+
+            
+            buf = buf + dataLenLen + dataLen;
+            len = len + dataLenLen + dataLen;
+        }
     }
 }
 
@@ -73,7 +73,7 @@ der_indefinite_length(unsigned char *buf, unsigned char *end)
 
 static SECStatus
 der_capture(unsigned char *buf, unsigned char *end,
-	    int *header_len_p, PRUint32 *contents_len_p)
+            int *header_len_p, PRUint32 *contents_len_p)
 {
     unsigned char *bp;
     unsigned char whole_tag;
@@ -81,11 +81,11 @@ der_capture(unsigned char *buf, unsigned char *end,
     int tag_number;
 
     if ((buf + 2) > end) {
-	*header_len_p = 0;
-	*contents_len_p = 0;
-	if (buf == end)
-	    return SECSuccess;
-	return SECFailure;
+        *header_len_p = 0;
+        *contents_len_p = 0;
+        if (buf == end)
+            return SECSuccess;
+        return SECFailure;
     }
 
     bp = buf;
@@ -98,32 +98,32 @@ der_capture(unsigned char *buf, unsigned char *end,
 
 
     if (tag_number == DER_HIGH_TAG_NUMBER) {
-	PORT_SetError(SEC_ERROR_BAD_DER);
-	return SECFailure;
+        PORT_SetError(SEC_ERROR_BAD_DER);
+        return SECFailure;
     }
 
     if ((whole_tag & DER_CLASS_MASK) == DER_UNIVERSAL) {
-	
-	switch (tag_number) {
-	  case DER_BOOLEAN:
-	  case DER_INTEGER:
-	  case DER_BIT_STRING:
-	  case DER_OCTET_STRING:
-	  case DER_NULL:
-	  case DER_OBJECT_ID:
-	  case DER_SEQUENCE:
-	  case DER_SET:
-	  case DER_PRINTABLE_STRING:
-	  case DER_T61_STRING:
-	  case DER_IA5_STRING:
-	  case DER_VISIBLE_STRING:
-	  case DER_UTC_TIME:
-	  case 0:			
-	    break;
-	  default:
-	    PORT_SetError(SEC_ERROR_BAD_DER);
-	    return SECFailure;
-	}
+        
+        switch (tag_number) {
+            case DER_BOOLEAN:
+            case DER_INTEGER:
+            case DER_BIT_STRING:
+            case DER_OCTET_STRING:
+            case DER_NULL:
+            case DER_OBJECT_ID:
+            case DER_SEQUENCE:
+            case DER_SET:
+            case DER_PRINTABLE_STRING:
+            case DER_T61_STRING:
+            case DER_IA5_STRING:
+            case DER_VISIBLE_STRING:
+            case DER_UTC_TIME:
+            case 0: 
+                break;
+            default:
+                PORT_SetError(SEC_ERROR_BAD_DER);
+                return SECFailure;
+        }
     }
 
     
@@ -136,43 +136,43 @@ der_capture(unsigned char *buf, unsigned char *end,
 
 
     if (contents_len & 0x80) {
-	int bytes_of_encoded_len;
+        int bytes_of_encoded_len;
 
-	bytes_of_encoded_len = contents_len & 0x7f;
-	contents_len = 0;
+        bytes_of_encoded_len = contents_len & 0x7f;
+        contents_len = 0;
 
-	switch (bytes_of_encoded_len) {
-	  case 4:
-	    contents_len |= *bp++;
-	    contents_len <<= 8;
-	    
-	  case 3:
-	    contents_len |= *bp++;
-	    contents_len <<= 8;
-	    
-	  case 2:
-	    contents_len |= *bp++;
-	    contents_len <<= 8;
-	    
-	  case 1:
-	    contents_len |= *bp++;
-	    break;
+        switch (bytes_of_encoded_len) {
+            case 4:
+                contents_len |= *bp++;
+                contents_len <<= 8;
+            
+            case 3:
+                contents_len |= *bp++;
+                contents_len <<= 8;
+            
+            case 2:
+                contents_len |= *bp++;
+                contents_len <<= 8;
+            
+            case 1:
+                contents_len |= *bp++;
+                break;
 
-	  case 0:
-	    contents_len = der_indefinite_length (bp, end);
-	    if (contents_len)
-		break;
-	    
-	  default:
-	    PORT_SetError(SEC_ERROR_BAD_DER);
-	    return SECFailure;
-	}
+            case 0:
+                contents_len = der_indefinite_length(bp, end);
+                if (contents_len)
+                    break;
+            
+            default:
+                PORT_SetError(SEC_ERROR_BAD_DER);
+                return SECFailure;
+        }
     }
 
     if ((bp + contents_len) > end) {
-	
-	PORT_SetError(SEC_ERROR_BAD_DER);
-	return SECFailure;
+        
+        PORT_SetError(SEC_ERROR_BAD_DER);
+        return SECFailure;
     }
 
     *header_len_p = (int)(bp - buf);
@@ -184,6 +184,6 @@ der_capture(unsigned char *buf, unsigned char *end,
 SECStatus
 DER_Lengths(SECItem *item, int *header_len_p, PRUint32 *contents_len_p)
 {
-    return(der_capture(item->data, &item->data[item->len], header_len_p,
-		       contents_len_p));
+    return (der_capture(item->data, &item->data[item->len], header_len_p,
+                        contents_len_p));
 }

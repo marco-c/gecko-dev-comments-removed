@@ -25,7 +25,7 @@
 #include "prtypes.h"
 #include "nssrwlkt.h"
 
-#define	NSS_RWLOCK_RANK_NONE	0
+#define NSS_RWLOCK_RANK_NONE 0
 
 
 PR_BEGIN_EXTERN_C
@@ -42,7 +42,7 @@ PR_BEGIN_EXTERN_C
 
 
 
-extern NSSRWLock* NSSRWLock_New(PRUint32 lock_rank, const char *lock_name);
+extern NSSRWLock *NSSRWLock_New(PRUint32 lock_rank, const char *lock_name);
 
 
 
@@ -61,9 +61,9 @@ extern NSSRWLock* NSSRWLock_New(PRUint32 lock_rank, const char *lock_name);
 
 
 extern NSSRWLock *
-nssRWLock_AtomicCreate( NSSRWLock  ** prwlock, 
-			PRUint32      lock_rank, 
-			const char *  lock_name);
+nssRWLock_AtomicCreate(NSSRWLock **prwlock,
+                       PRUint32 lock_rank,
+                       const char *lock_name);
 
 
 
