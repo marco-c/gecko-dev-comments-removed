@@ -159,20 +159,6 @@ public:
   
 
 
-  virtual float GetResolution() const = 0;
-  
-
-
-  virtual void SetResolution(float aResolution) = 0;
-  
-
-
-
-
-  virtual void SetResolutionAndScaleTo(float aResolution) = 0;
-  
-
-
 
   virtual nsSize GetLineScrollAmount() const = 0;
   
@@ -359,10 +345,6 @@ public:
 
 
   virtual bool DidHistoryRestore() const = 0;
-  
-
-
-  virtual bool IsResolutionSet() const = 0;
   
 
 

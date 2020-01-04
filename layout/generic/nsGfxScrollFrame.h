@@ -176,9 +176,6 @@ public:
   
   nsRect GetScrollRange(nscoord aWidth, nscoord aHeight) const;
   nsSize GetScrollPositionClampingScrollPortSize() const;
-  float GetResolution() const;
-  void SetResolution(float aResolution);
-  void SetResolutionAndScaleTo(float aResolution);
   void FlingSnap(const mozilla::CSSPoint& aDestination);
   void ScrollSnap(nsIScrollableFrame::ScrollMode aMode = nsIScrollableFrame::SMOOTH_MSD);
   void ScrollSnap(const nsPoint &aDestination,
@@ -454,9 +451,6 @@ public:
   
   nsPoint mLastPos;
 
-  
-  float mResolution;
-
   nsExpirationState mActivityExpirationState;
 
   nsCOMPtr<nsITimer> mScrollActivityTimer;
@@ -528,15 +522,7 @@ public:
 
   
   
-  bool mIsResolutionSet:1;
-
-  
-  
   bool mIgnoreMomentumScroll:1;
-
-  
-  
-  bool mScaleToResolution:1;
 
   
   
@@ -733,15 +719,6 @@ public:
   virtual nsSize GetScrollPositionClampingScrollPortSize() const override {
     return mHelper.GetScrollPositionClampingScrollPortSize();
   }
-  virtual float GetResolution() const override {
-    return mHelper.GetResolution();
-  }
-  virtual void SetResolution(float aResolution) override {
-    return mHelper.SetResolution(aResolution);
-  }
-  virtual void SetResolutionAndScaleTo(float aResolution) override {
-    return mHelper.SetResolutionAndScaleTo(aResolution);
-  }
   virtual nsSize GetLineScrollAmount() const override {
     return mHelper.GetLineScrollAmount();
   }
@@ -823,9 +800,6 @@ public:
   }
   virtual void ResetScrollPositionForLayerPixelAlignment() override {
     mHelper.ResetScrollPositionForLayerPixelAlignment();
-  }
-  virtual bool IsResolutionSet() const override {
-    return mHelper.mIsResolutionSet;
   }
   virtual bool DidHistoryRestore() const override {
     return mHelper.mDidHistoryRestore;
@@ -1145,15 +1119,6 @@ public:
   virtual nsSize GetScrollPositionClampingScrollPortSize() const override {
     return mHelper.GetScrollPositionClampingScrollPortSize();
   }
-  virtual float GetResolution() const override {
-    return mHelper.GetResolution();
-  }
-  virtual void SetResolution(float aResolution) override {
-    return mHelper.SetResolution(aResolution);
-  }
-  virtual void SetResolutionAndScaleTo(float aResolution) override {
-    return mHelper.SetResolutionAndScaleTo(aResolution);
-  }
   virtual nsSize GetLineScrollAmount() const override {
     return mHelper.GetLineScrollAmount();
   }
@@ -1231,9 +1196,6 @@ public:
   }
   virtual void ResetScrollPositionForLayerPixelAlignment() override {
     mHelper.ResetScrollPositionForLayerPixelAlignment();
-  }
-  virtual bool IsResolutionSet() const override {
-    return mHelper.mIsResolutionSet;
   }
   virtual bool DidHistoryRestore() const override {
     return mHelper.mDidHistoryRestore;
