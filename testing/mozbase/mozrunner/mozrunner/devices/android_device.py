@@ -582,6 +582,11 @@ def _find_sdk_exe(substs, exe, tools):
         except KeyError:
             _log_debug("%s not set" % exe.upper())
 
+    
+    
+    if (os.name == 'nt' and not exe.lower().endswith('.exe')):
+        exe += '.exe'
+
     if not found:
         
         try:
