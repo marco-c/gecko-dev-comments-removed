@@ -767,40 +767,35 @@ XPCNativeSet::NewInstance(XPCNativeInterface** array,
 
 
 XPCNativeSet*
-XPCNativeSet::NewInstanceMutate(XPCNativeSet*       otherSet,
+XPCNativeSet::NewInstanceMutate(XPCNativeSet* otherSet,
                                 XPCNativeInterface* newInterface,
-                                uint16_t            position)
+                                uint16_t position)
 {
+    MOZ_ASSERT(otherSet);
+
     if (!newInterface)
         return nullptr;
-    if (otherSet && position > otherSet->mInterfaceCount)
+    if (position > otherSet->mInterfaceCount)
         return nullptr;
 
     
     
     int size = sizeof(XPCNativeSet);
-    if (otherSet)
-        size += otherSet->mInterfaceCount * sizeof(XPCNativeInterface*);
+    size += otherSet->mInterfaceCount * sizeof(XPCNativeInterface*);
     void* place = new char[size];
     XPCNativeSet* obj = new(place) XPCNativeSet();
 
-    if (otherSet) {
-        obj->mMemberCount = otherSet->GetMemberCount() +
-            newInterface->GetMemberCount();
-        obj->mInterfaceCount = otherSet->mInterfaceCount + 1;
+    obj->mMemberCount = otherSet->GetMemberCount() +
+        newInterface->GetMemberCount();
+    obj->mInterfaceCount = otherSet->mInterfaceCount + 1;
 
-        XPCNativeInterface** src = otherSet->mInterfaces;
-        XPCNativeInterface** dest = obj->mInterfaces;
-        for (uint16_t i = 0; i < obj->mInterfaceCount; i++) {
-            if (i == position)
-                *dest++ = newInterface;
-            else
-                *dest++ = *src++;
-        }
-    } else {
-        obj->mMemberCount = newInterface->GetMemberCount();
-        obj->mInterfaceCount = 1;
-        obj->mInterfaces[0] = newInterface;
+    XPCNativeInterface** src = otherSet->mInterfaces;
+    XPCNativeInterface** dest = obj->mInterfaces;
+    for (uint16_t i = 0; i < obj->mInterfaceCount; i++) {
+        if (i == position)
+            *dest++ = newInterface;
+        else
+            *dest++ = *src++;
     }
 
     return obj;
