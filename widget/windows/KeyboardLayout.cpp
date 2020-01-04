@@ -695,6 +695,7 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   , mScanCode(0)
   , mIsExtended(false)
   , mIsDeadKey(false)
+  , mIsFollowedByNonControlCharMessage(false)
   , mFakeCharMsgs(aFakeCharMsgs && aFakeCharMsgs->Length() ?
                     aFakeCharMsgs : nullptr)
 {
@@ -879,7 +880,12 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
 
   mDOMKeyCode =
     keyboardLayout->ConvertNativeKeyCodeToDOMKeyCode(mOriginalVirtualKeyCode);
-  mKeyNameIndex =
+  
+  
+  mIsFollowedByNonControlCharMessage =
+    IsKeyDownMessage() && IsFollowedByNonControlCharMessage();
+  mKeyNameIndex = mIsFollowedByNonControlCharMessage ?
+    KEY_NAME_INDEX_USE_STRING :
     keyboardLayout->ConvertNativeKeyCodeToKeyNameIndex(mOriginalVirtualKeyCode);
   mCodeNameIndex =
     KeyboardLayout::ConvertScanCodeToCodeNameIndex(
@@ -890,7 +896,9 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   mIsDeadKey =
     (IsFollowedByDeadCharMessage() ||
      keyboardLayout->IsDeadKey(mOriginalVirtualKeyCode, mModKeyState));
-  mIsPrintableKey = KeyboardLayout::IsPrintableCharKey(mOriginalVirtualKeyCode);
+  mIsPrintableKey =
+    mKeyNameIndex == KEY_NAME_INDEX_USE_STRING ||
+    KeyboardLayout::IsPrintableCharKey(mOriginalVirtualKeyCode);
 
   if (IsKeyDownMessage()) {
     
@@ -1052,6 +1060,24 @@ NativeKey::IsFollowedByDeadCharMessage() const
     }
   }
   return IsDeadCharMessage(nextMsg);
+}
+
+bool
+NativeKey::IsFollowedByNonControlCharMessage() const
+{
+  MSG nextMsg;
+  if (mFakeCharMsgs) {
+    nextMsg = mFakeCharMsgs->ElementAt(0).GetCharMsg(mMsg.hwnd);
+  } else if (IsKeyMessageOnPlugin()) {
+    return false;
+  } else {
+    if (!WinUtils::PeekMessage(&nextMsg, mMsg.hwnd, WM_KEYFIRST, WM_KEYLAST,
+                               PM_NOREMOVE | PM_NOYIELD)) {
+      return false;
+    }
+  }
+  return nextMsg.message == WM_CHAR &&
+         !IsControlChar(static_cast<char16_t>(nextMsg.wParam));
 }
 
 bool
@@ -1841,6 +1867,13 @@ NativeKey::NeedsToHandleWithoutFollowingCharMessages() const
   
   if (mCommittedCharsAndModifiers.mLength > 1) {
     return true;
+  }
+
+  
+  
+  
+  if (mIsFollowedByNonControlCharMessage) {
+    return false;
   }
 
   

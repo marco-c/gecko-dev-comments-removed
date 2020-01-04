@@ -305,6 +305,10 @@ private:
   
   
   bool    mIsOverridingKeyboardLayout;
+  
+  
+  
+  bool    mIsFollowedByNonControlCharMessage;
 
   nsTArray<FakeCharMsg>* mFakeCharMsgs;
 
@@ -412,6 +416,7 @@ private:
     return (aMessage == WM_SYSCHAR || aMessage == WM_SYSDEADCHAR);
   }
   bool MayBeSameCharMessage(const MSG& aCharMsg1, const MSG& aCharMsg2) const;
+  bool IsFollowedByNonControlCharMessage() const;
   bool IsFollowedByDeadCharMessage() const;
   bool IsKeyMessageOnPlugin() const
   {
