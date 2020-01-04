@@ -328,7 +328,8 @@ var TimeScale = {
     
     let endDelayW = this.durationToDistance(Math.abs(endDelay) / rate);
     
-    let endDelayX = endDelay < 0 ? x + w - endDelayW : x + w;
+    let endDelayX = endDelay < 0 ? x + iterationW - endDelayW
+                                 : x + iterationW;
 
     return {x, w, iterationW, delayX, delayW, negativeDelayW,
             endDelayX, endDelayW};
