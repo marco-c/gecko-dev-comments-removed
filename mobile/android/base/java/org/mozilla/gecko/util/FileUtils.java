@@ -19,11 +19,13 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.Scanner;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.annotation.RobocopTarget;
 
 public class FileUtils {
     private static final String LOGTAG = "GeckoFileUtils";
+
     
 
 
@@ -103,6 +105,21 @@ public class FileUtils {
                 scanner.close();
             }
         }
+    }
+
+    
+
+
+
+
+
+
+    public static JSONObject readJSONObjectFromFile(final File file) throws IOException, JSONException {
+        if (file.length() == 0) {
+            
+            throw new IOException("Given file is empty - the JSON parser cannot create an object from an empty file");
+        }
+        return new JSONObject(readStringFromFile(file));
     }
 
     
