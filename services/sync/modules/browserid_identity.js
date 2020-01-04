@@ -114,12 +114,11 @@ this.BrowserIDManager.prototype = {
     }
   },
 
-  
-  userUID() {
-    if (!this._signedInUser) {
-      throw new Error("userUID(): No signed in user");
+  hashedUID() {
+    if (!this._token) {
+      throw new Error("hashedUID: Don't have token");
     }
-    return this._signedInUser.uid;
+    return this._token.hashed_fxa_uid
   },
 
   initialize: function() {
