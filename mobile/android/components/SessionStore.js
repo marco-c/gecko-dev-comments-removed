@@ -15,6 +15,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm
 XPCOMUtils.defineLazyModuleGetter(this, "Messaging", "resource://gre/modules/Messaging.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils", "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FormData", "resource://gre/modules/FormData.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ScrollPosition", "resource://gre/modules/ScrollPosition.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch", "resource://gre/modules/TelemetryStopwatch.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Log", "resource://gre/modules/AndroidLog.jsm", "AndroidLog");
 XPCOMUtils.defineLazyModuleGetter(this, "SharedPreferences", "resource://gre/modules/SharedPreferences.jsm");
@@ -61,6 +62,7 @@ SessionStore.prototype = {
   _interval: 10000,
   _maxTabsUndo: 5,
   _pendingWrite: 0,
+  _scrollSavePending: null,
 
   
   
@@ -275,13 +277,24 @@ SessionStore.prototype = {
         break;
       }
       case "load": {
-        
-        
-        
         let browser = aEvent.currentTarget;
+
+        
+        if (browser.contentDocument !== aEvent.originalTarget) {
+          return;
+        }
+
+        
+        
+        
         log("load for tab " + window.BrowserApp.getTabForBrowser(browser).id);
-        if (browser.__SS_restore_text_data) {
+        if (browser.__SS_restoreDataOnLoad) {
+          delete browser.__SS_restoreDataOnLoad;
           this._restoreTextData(browser.__SS_data.formdata, browser);
+          this._restoreScrollPosition(browser.__SS_data.scrolldata, browser);
+        } else {
+          
+          this.onTabScroll(window, browser);
         }
         break;
       }
@@ -291,6 +304,21 @@ SessionStore.prototype = {
         let browser = aEvent.currentTarget;
         log("TabInput for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         this.onTabInput(window, browser);
+        break;
+      }
+      case "scroll": {
+        let browser = aEvent.currentTarget;
+        
+        if (loggingEnabled) {
+          log("scroll for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        }
+        if (!this._scrollSavePending) {
+          this._scrollSavePending =
+            window.setTimeout(() => {
+              this._scrollSavePending = null;
+              this.onTabScroll(window, browser);
+            }, 500);
+        }
         break;
       }
     }
@@ -374,6 +402,9 @@ SessionStore.prototype = {
     aBrowser.addEventListener("input", this, true);
     aBrowser.addEventListener("DOMAutoComplete", this, true);
 
+    
+    aBrowser.addEventListener("scroll", this, true);
+
     log("onTabAdd() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id +
         ", aNoNotification = " + aNoNotification);
     if (!aNoNotification) {
@@ -389,6 +420,7 @@ SessionStore.prototype = {
     aBrowser.removeEventListener("change", this, true);
     aBrowser.removeEventListener("input", this, true);
     aBrowser.removeEventListener("DOMAutoComplete", this, true);
+    aBrowser.removeEventListener("scroll", this, true);
 
     let tabId = aWindow.BrowserApp.getTabForBrowser(aBrowser).id;
 
@@ -467,17 +499,20 @@ SessionStore.prototype = {
     let data = { entries: entries, index: index };
 
     let formdata;
+    let scrolldata;
     if (aBrowser.__SS_data) {
       formdata = aBrowser.__SS_data.formdata;
+      scrolldata = aBrowser.__SS_data.scrolldata;
     }
     delete aBrowser.__SS_data;
 
     this._collectTabData(aWindow, aBrowser, data);
-    if (aBrowser.__SS_restore_text_data) {
+    if (aBrowser.__SS_restoreDataOnLoad) {
       
       
       
       aBrowser.__SS_data.formdata = formdata;
+      aBrowser.__SS_data.scrolldata = scrolldata;
     } else {
       
       
@@ -575,6 +610,60 @@ SessionStore.prototype = {
     if (Object.keys(formdata).length) {
       data.formdata = formdata;
       log("onTabInput() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
+      this.saveStateDelayed();
+    }
+  },
+
+  onTabScroll: function ss_onTabScroll(aWindow, aBrowser) {
+    
+    if (this._scrollSavePending) {
+      aWindow.clearTimeout(this._scrollSavePending);
+      this._scrollSavePending = null;
+      log("onTabScroll() clearing pending timeout");
+    }
+
+    
+    if (aBrowser.__SS_restore) {
+      return;
+    }
+
+    
+    let data = aBrowser.__SS_data;
+    if (!data || data.entries.length == 0) {
+      return;
+    }
+
+    
+    if (aBrowser.__SS_restoreDataOnLoad) {
+      return;
+    }
+
+    
+    let content = aBrowser.contentWindow;
+
+    
+    let scrolldata = ScrollPosition.collect(content) || {};
+
+    
+    let children = [];
+    for (let i = 0; i < content.frames.length; i++) {
+      let frame = content.frames[i];
+
+      let result = ScrollPosition.collect(frame);
+      if (result && Object.keys(result).length) {
+        children[i] = result;
+      }
+    }
+
+    
+    if (children.length) {
+      scrolldata.children = children;
+    }
+
+    
+    if (Object.keys(scrolldata).length) {
+      data.scrolldata = scrolldata;
+      log("onTabScroll() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
       this.saveStateDelayed();
     }
   },
@@ -1122,7 +1211,7 @@ SessionStore.prototype = {
 
     
     
-    aBrowser.__SS_restore_text_data = true;
+    aBrowser.__SS_restoreDataOnLoad = true;
   },
 
   
@@ -1167,7 +1256,16 @@ SessionStore.prototype = {
       log("_restoreTextData()");
       FormData.restoreTree(aBrowser.contentWindow, aFormData);
     }
-    delete aBrowser.__SS_restore_text_data;
+  },
+
+  
+
+
+  _restoreScrollPosition: function ss_restoreScrollPosition(aScrollData, aBrowser) {
+    if (aScrollData) {
+      log("_restoreScrollPosition()");
+      ScrollPosition.restoreTree(aBrowser.contentWindow, aScrollData);
+    }
   },
 
   getBrowserState: function ss_getBrowserState() {
