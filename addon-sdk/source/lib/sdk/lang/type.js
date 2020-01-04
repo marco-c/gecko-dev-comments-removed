@@ -218,6 +218,20 @@ exports.isJSON = function (value) {
 
 
 
+const isJSONable = (value) => {
+  try {
+    JSON.parse(JSON.stringify(value));
+  }
+  catch (e) {
+    return false;
+  }
+  return true;
+};
+exports.isJSONable = isJSONable;
+
+
+
+
 
 
 
