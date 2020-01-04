@@ -224,6 +224,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mIsVideoPrerolling(false),
   mAudioCaptured(false, "MediaDecoderStateMachine::mAudioCaptured"),
   mAudioCompleted(false, "MediaDecoderStateMachine::mAudioCompleted"),
+  mVideoCompleted(false, "MediaDecoderStateMachine::mVideoCompleted"),
   mNotifyMetadataBeforeFirstFrame(false),
   mDispatchedEventToDecode(false),
   mQuickBuffering(false),
@@ -355,6 +356,7 @@ MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder)
   mWatchManager.Watch(mBuffered, &MediaDecoderStateMachine::BufferedRangeUpdated);
   mWatchManager.Watch(mState, &MediaDecoderStateMachine::UpdateNextFrameStatus);
   mWatchManager.Watch(mAudioCompleted, &MediaDecoderStateMachine::UpdateNextFrameStatus);
+  mWatchManager.Watch(mVideoCompleted, &MediaDecoderStateMachine::UpdateNextFrameStatus);
   mWatchManager.Watch(mVolume, &MediaDecoderStateMachine::VolumeChanged);
   mWatchManager.Watch(mLogicalPlaybackRate, &MediaDecoderStateMachine::LogicalPlaybackRateChanged);
   mWatchManager.Watch(mPreservesPitch, &MediaDecoderStateMachine::PreservesPitchChanged);
@@ -2352,10 +2354,8 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
       
       
       
-      if (VideoQueue().GetSize() > 1 ||
-          (HasAudio() && !mAudioCompleted) ||
-          (mAudioCaptured && !mStreamSink->IsFinished()))
-      {
+      if ((HasVideo() && !mVideoCompleted) ||
+          (HasAudio() && !mAudioCompleted)) {
         
         MaybeStartPlayback();
         UpdatePlaybackPositionPeriodically();
@@ -2425,6 +2425,7 @@ MediaDecoderStateMachine::Reset()
   mDecodedVideoEndTime = -1;
   mDecodedAudioEndTime = -1;
   mAudioCompleted = false;
+  mVideoCompleted = false;
   AudioQueue().Reset();
   VideoQueue().Reset();
   mFirstVideoFrameAfterSeek = nullptr;
@@ -2836,9 +2837,11 @@ void
 MediaDecoderStateMachine::OnMediaSinkVideoComplete()
 {
   MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(mInfo.HasVideo());
   VERBOSE_LOG("[%s]", __func__);
 
   mMediaSinkVideoPromise.Complete();
+  mVideoCompleted = true;
   ScheduleStateMachine();
 }
 
@@ -2846,9 +2849,11 @@ void
 MediaDecoderStateMachine::OnMediaSinkVideoError()
 {
   MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(mInfo.HasVideo());
   VERBOSE_LOG("[%s]", __func__);
 
   mMediaSinkVideoPromise.Complete();
+  mVideoCompleted = true;
   if (HasAudio()) {
     return;
   }
@@ -2858,11 +2863,11 @@ MediaDecoderStateMachine::OnMediaSinkVideoError()
 void MediaDecoderStateMachine::OnMediaSinkAudioComplete()
 {
   MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(mInfo.HasAudio());
   VERBOSE_LOG("[%s]", __func__);
 
   mMediaSinkAudioPromise.Complete();
-  
-  mAudioCompleted = mInfo.HasAudio();
+  mAudioCompleted = true;
   
   ScheduleStateMachine();
 }
@@ -2870,11 +2875,11 @@ void MediaDecoderStateMachine::OnMediaSinkAudioComplete()
 void MediaDecoderStateMachine::OnMediaSinkAudioError()
 {
   MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(mInfo.HasAudio());
   VERBOSE_LOG("[%s]", __func__);
 
   mMediaSinkAudioPromise.Complete();
-  
-  mAudioCompleted = mInfo.HasAudio();
+  mAudioCompleted = true;
 
   
   if (HasVideo()) {
