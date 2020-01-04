@@ -22,6 +22,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeBinding.h"
 #include "mozilla/dom/Nullable.h"
+#include "mozilla/dom/UnionTypes.h"
 
 
 #ifdef None
@@ -56,14 +57,28 @@ enum class CompositeOperation : uint32_t;
 
 struct AnimationTiming
 {
-  TimeDuration mIterationDuration;
+  dom::OwningUnrestrictedDoubleOrString mDuration;
   TimeDuration mDelay;
   double mIterations; 
   dom::PlaybackDirection mDirection;
   dom::FillMode mFill;
 
   bool operator==(const AnimationTiming& aOther) const {
-    return mIterationDuration == aOther.mIterationDuration &&
+    bool durationEqual;
+    if (mDuration.IsUnrestrictedDouble()) {
+      durationEqual = aOther.mDuration.IsUnrestrictedDouble() &&
+                      (mDuration.GetAsUnrestrictedDouble() ==
+                       aOther.mDuration.GetAsUnrestrictedDouble());
+    } else if (mDuration.IsString()) {
+      durationEqual = aOther.mDuration.IsString() &&
+                      (mDuration.GetAsString() ==
+                       aOther.mDuration.GetAsString());
+    } else {
+      
+      durationEqual = !aOther.mDuration.IsUnrestrictedDouble() &&
+                      !aOther.mDuration.IsString();
+    }
+    return durationEqual &&
            mDelay == aOther.mDelay &&
            mIterations == aOther.mIterations &&
            mDirection == aOther.mDirection &&
@@ -94,6 +109,7 @@ struct ComputedTiming
   
   
   double              mIterations = 1.0;
+  StickyTimeDuration  mDuration;
 
   
   dom::FillMode       mFill = dom::FillMode::None;
@@ -281,9 +297,10 @@ public:
   GetComputedTimingAsDict(ComputedTimingProperties& aRetVal) const override;
 
   
+  
   static StickyTimeDuration
-  ActiveDuration(const AnimationTiming& aTiming,
-                 double aComputedIterations);
+  ActiveDuration(const StickyTimeDuration& aIterationDuration,
+                 double aIterationCount);
 
   bool IsInPlay() const;
   bool IsCurrent() const;
