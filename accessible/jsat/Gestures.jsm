@@ -81,6 +81,10 @@ const EDGE = 0.1;
 const TIMEOUT_MULTIPLIER = 1;
 
 
+const IS_ANDROID = Utils.MozBuildApp === 'mobile/android' &&
+  Utils.AndroidSdkVersion >= 14;
+
+
 
 
 
@@ -202,13 +206,13 @@ this.GestureTracker = {
 
 
 
-  _init: function GestureTracker__init(aDetail, aTimeStamp, aGesture = Tap) {
+  _init: function GestureTracker__init(aDetail, aTimeStamp, aGesture) {
     
     if (aDetail.type !== 'pointerdown') {
       return;
     }
     let points = aDetail.points;
-    let GestureConstructor = aGesture;
+    let GestureConstructor = aGesture || (IS_ANDROID ? DoubleTap : Tap);
     this._create(GestureConstructor);
     this._update(aDetail, aTimeStamp);
   },
