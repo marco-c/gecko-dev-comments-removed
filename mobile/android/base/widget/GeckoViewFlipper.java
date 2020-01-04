@@ -12,6 +12,7 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ViewFlipper;
 
 
@@ -33,7 +34,7 @@ public class GeckoViewFlipper extends ViewFlipper {
         if (Versions.preHC) {
             
             getHitRect(mRect);
-            mRect.offset((int) ViewHelper.getTranslationX(this), (int) ViewHelper.getTranslationY(this));
+            mRect.offset((int) ViewHelper.getTranslationX((View)getParent()), (int) ViewHelper.getTranslationY((View)getParent()));
 
             if (!mRect.contains((int) ev.getX(), (int) ev.getY())) {
                 return false;
