@@ -150,11 +150,6 @@ struct gfxRect :
 
 
     gfxQuad TransformToQuad(const mozilla::gfx::Matrix4x4 &aMatrix) const;
-
-    
-
-
-    void TransformBounds(const mozilla::gfx::Matrix4x4 &aMatrix);
 };
 
 #endif 
