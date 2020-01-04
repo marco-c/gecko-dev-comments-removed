@@ -2816,11 +2816,6 @@ GCRuntime::updatePointersToRelocatedCells(Zone* zone)
     freeLifoAlloc.freeAll();
 
     
-    
-    rt->newObjectCache.purge();
-    rt->nativeIterCache.purge();
-
-    
     callWeakPointerZoneGroupCallbacks();
     for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next())
         callWeakPointerCompartmentCallbacks(comp);
@@ -5753,6 +5748,10 @@ GCRuntime::compactPhase(JS::gcreason::Reason reason, SliceBudget& sliceBudget)
         if (sliceBudget.isOverBudget())
             break;
     }
+
+    
+    rt->newObjectCache.purge();
+    rt->nativeIterCache.purge();
 
 #ifdef DEBUG
     CheckHashTablesAfterMovingGC(rt);
