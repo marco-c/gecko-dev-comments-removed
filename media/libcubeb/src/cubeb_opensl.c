@@ -185,8 +185,8 @@ convert_stream_type_to_sl_stream(cubeb_stream_type stream_type)
 
 static void opensl_destroy(cubeb * ctx);
 
-
 #if defined(__ANDROID__)
+
 
 
 #ifndef MOZ_WIDGET_GONK
@@ -212,8 +212,7 @@ __system_property_get(const char* name, char* value)
   return ret;
 }
 #endif
-
-#endif 
+#endif
 
 static int
 get_android_version(void)
