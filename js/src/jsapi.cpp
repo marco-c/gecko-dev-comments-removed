@@ -3471,19 +3471,27 @@ IsFunctionCloneable(HandleFunction fun)
     
     if (JSObject* scope = fun->nonLazyScript()->enclosingStaticScope()) {
         
-        
-        if (scope->is<StaticNonSyntacticScopeObjects>())
-            return true;
-
-        
         if (IsStaticGlobalLexicalScope(scope))
             return true;
 
         
         
         if (scope->is<StaticBlockObject>()) {
-            if (StaticEvalObject* staticEval = scope->as<StaticBlockObject>().maybeEnclosingEval())
-                return !staticEval->isDirect();
+            StaticBlockObject& block = scope->as<StaticBlockObject>();
+            if (block.needsClone())
+                return false;
+
+            JSObject* enclosing = block.enclosingStaticScope();
+
+            
+            
+            if (enclosing->is<StaticEvalObject>())
+                return !enclosing->as<StaticEvalObject>().isDirect();
+
+            
+            
+            if (enclosing->is<StaticNonSyntacticScopeObjects>())
+                return true;
         }
 
         

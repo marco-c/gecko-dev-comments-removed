@@ -417,10 +417,6 @@ ContainsHoistedDeclaration(ExclusiveContext* cx, ParseNode* node, bool* result)
         MOZ_CRASH("ContainsHoistedDeclaration should have indicated false on "
                   "some parent node without recurring to test this node");
 
-      case PNK_GLOBALCONST:
-        MOZ_CRASH("ContainsHoistedDeclaration is only called on nested nodes where "
-                  "globalconst nodes should never have been generated");
-
       case PNK_LIMIT: 
         MOZ_CRASH("unexpected PNK_LIMIT in node");
     }
@@ -1837,7 +1833,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_TEMPLATE_STRING_LIST:
       case PNK_VAR:
       case PNK_CONST:
-      case PNK_GLOBALCONST:
       case PNK_LET:
       case PNK_ARGSBODY:
       case PNK_CALLSITEOBJ:

@@ -214,15 +214,9 @@
 
  \
     macro(JSOP_DUP2,      13, "dup2",       NULL,         1,  2,  4, JOF_BYTE) \
-    
-
-
-
-
-
-
- \
-    macro(JSOP_SETCONST,  14, "setconst",   NULL,         5,  1,  1, JOF_ATOM|JOF_NAME|JOF_SET) \
+    \
+    macro(JSOP_UNUSED14,  14, "unused14",   NULL,         1,  0,  0, JOF_BYTE) \
+    \
     
 
 
@@ -1303,13 +1297,12 @@
 
 
 
-
-
-
-
  \
     macro(JSOP_DEFCONST,  128,"defconst",   NULL,         5,  0,  0,  JOF_ATOM) \
     
+
+
+
 
 
 
@@ -1655,8 +1648,27 @@
  \
     macro(JSOP_REGEXP,        160,"regexp",   NULL,       5,  0,  1, JOF_REGEXP) \
     \
-    macro(JSOP_UNUSED161,     161,"unused161",  NULL,     1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED162,     162,"unused162",  NULL,     1,  0,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_INITGLEXICAL,  161,"initglexical", NULL,   5,  1,  1,  JOF_ATOM|JOF_NAME|JOF_SET|JOF_GNAME) \
+    \
+    
+
+
+
+
+
+
+
+ \
+    macro(JSOP_DEFLET,        162,"deflet",     NULL,     5,  0,  0,  JOF_ATOM) \
+    \
     macro(JSOP_UNUSED163,     163,"unused163",  NULL,     1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED164,     164,"unused164",  NULL,     1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED165,     165,"unused165",  NULL,     1,  0,  0,  JOF_BYTE) \
