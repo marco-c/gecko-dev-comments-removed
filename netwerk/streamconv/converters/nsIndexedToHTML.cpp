@@ -533,30 +533,6 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
 
     buffer.AppendLiteral("</title>\n");    
 
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (!baseUri.Contains('"'))
-    {
-        
-        
-        
-        buffer.AppendLiteral("<base href=\"");
-        nsAdoptingCString htmlEscapedUri(nsEscapeHTML(baseUri.get()));
-        buffer.Append(htmlEscapedUri);
-        buffer.AppendLiteral("\" />\n");
-    }
-    else
-    {
-        NS_ERROR("broken protocol handler didn't escape double-quote.");
-    }
-
     nsCString direction(NS_LITERAL_CSTRING("ltr"));
     nsCOMPtr<nsIXULChromeRegistry> reg =
       mozilla::services::GetXULChromeRegistryService();
