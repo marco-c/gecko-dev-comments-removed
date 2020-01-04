@@ -39,10 +39,18 @@ define(function (require, exports, module) {
       return object.class || "Object";
     },
 
-    safePropIterator: function (object, max) {
-      max = (typeof max === "undefined") ? 3 : max;
+    longPropIterator: function (object) {
       try {
-        return this.propIterator(object, max);
+        return this.propIterator(object, 100);
+      } catch (err) {
+        console.error(err);
+      }
+      return [];
+    },
+
+    shortPropIterator: function (object) {
+      try {
+        return this.propIterator(object, 3);
       } catch (err) {
         console.error(err);
       }
@@ -55,30 +63,24 @@ define(function (require, exports, module) {
         return (
           type == "boolean" ||
           type == "number" ||
-          type == "string" ||
-          type == "object"
+          (type == "string" && value.length != 0)
         );
       };
 
-      
-      
-      let props = this.getProps(object, max, isInterestingProp);
-
-      if (props.length <= max) {
+      let ownProperties = object.preview ? object.preview.ownProperties : [];
+      let indexes = this.getPropIndexes(ownProperties, max, isInterestingProp);
+      if (indexes.length < max && indexes.length < object.ownPropertyLength) {
         
-        
-        
-        props = props.concat(this.getProps(object, max, (t, value) => {
-          return !isInterestingProp(t, value);
-        }));
+        indexes = indexes.concat(
+          this.getPropIndexes(ownProperties, max - indexes.length, (t, value) => {
+            return !isInterestingProp(t, value);
+          })
+        );
       }
 
-      
-      
-      
-      if (props.length > max) {
-        props.pop();
-
+      let props = this.getProps(ownProperties, indexes);
+      if (props.length < object.ownPropertyLength) {
+        
         let objectLink = this.props.objectLink || span;
 
         props.push(Caption({
@@ -100,52 +102,80 @@ define(function (require, exports, module) {
       return props;
     },
 
-    getProps: function (object, max, filter) {
+    
+
+
+
+
+
+
+    getProps: function (ownProperties, indexes) {
       let props = [];
 
-      max = max || 3;
-      if (!object) {
-        return props;
-      }
+      
+      indexes.sort(function (a, b) {
+        return a - b;
+      });
+
+      indexes.forEach((i) => {
+        let name = Object.keys(ownProperties)[i];
+        let value = ownProperties[name].value;
+        props.push(PropRep(Object.assign({}, this.props, {
+          key: name,
+          mode: "tiny",
+          name: name,
+          object: value,
+          equal: ": ",
+          delim: ", ",
+        })));
+      });
+
+      return props;
+    },
+
+    
+
+
+
+
+
+
+
+    getPropIndexes: function (ownProperties, max, filter) {
+      let indexes = [];
 
       try {
-        let ownProperties = object.preview ? object.preview.ownProperties : [];
+        let i = 0;
         for (let name in ownProperties) {
-          if (props.length > max) {
-            return props;
+          if (indexes.length >= max) {
+            return indexes;
           }
 
           let prop = ownProperties[name];
-          let value = prop.value || {};
+          let value = prop.value;
 
           
           
           let type = (value.class || typeof value);
           type = type.toLowerCase();
 
-          
           if (filter(type, value)) {
-            props.push(PropRep(Object.assign({}, this.props, {
-              key: name,
-              mode: "tiny",
-              name: name,
-              object: value,
-              equal: ": ",
-              delim: ", ",
-            })));
+            indexes.push(i);
           }
+          i++;
         }
       } catch (err) {
         console.error(err);
       }
 
-      return props;
+      return indexes;
     },
 
     render: function () {
       let object = this.props.object;
-      let props = this.safePropIterator(object,
-        (this.props.mode == "long") ? 100 : 3);
+      let props = (this.props.mode == "long") ?
+        this.longPropIterator(object) :
+        this.shortPropIterator(object);
 
       let objectLink = this.props.objectLink || span;
       if (this.props.mode == "tiny" || !props.length) {
