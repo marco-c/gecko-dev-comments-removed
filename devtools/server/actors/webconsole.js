@@ -932,11 +932,12 @@ WebConsoleActor.prototype =
     
     if (frameActorId) {
       let frameActor = this.conn.getActor(frameActorId);
-      if (frameActor) {
+      try {
+        
+        
         let frame = frameActor.frame;
         environment = frame.environment;
-      }
-      else {
+      } catch(e) {
         DevToolsUtils.reportException("onAutocomplete",
           Error("The frame actor was not found: " + frameActorId));
       }
