@@ -70,9 +70,9 @@ var tests = [
 
   
   {
-    loadURL: "http://user:pass@mochi.test:8888/browser/browser/base/content/test/general/authenticate.sjs?user=user&pass=pass",
-    expectedURL: "mochi.test:8888/browser/browser/base/content/test/general/authenticate.sjs?user=user&pass=pass",
-    copyExpected: "http://mochi.test:8888/browser/browser/base/content/test/general/authenticate.sjs?user=user&pass=pass"
+    loadURL: "http://user:pass@mochi.test:8888/browser/browser/base/content/test/urlbar/authenticate.sjs?user=user&pass=pass",
+    expectedURL: "mochi.test:8888/browser/browser/base/content/test/urlbar/authenticate.sjs?user=user&pass=pass",
+    copyExpected: "http://mochi.test:8888/browser/browser/base/content/test/urlbar/authenticate.sjs?user=user&pass=pass"
   },
 
   

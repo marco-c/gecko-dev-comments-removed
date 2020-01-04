@@ -2,7 +2,7 @@
 
 
 
-var testURL = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
+var testURL = "http://example.org/browser/browser/base/content/test/urlbar/dummy_page.html";
 var testActionURL = "moz-action:switchtab," + JSON.stringify({url: testURL});
 testURL = gURLBar.trimValue(testURL);
 var testTab;

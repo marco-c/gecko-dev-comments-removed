@@ -1,7 +1,7 @@
 
 
 
-const REDIRECT_FROM = "https://example.com/browser/browser/base/content/test/general/" +
+const REDIRECT_FROM = "https://example.com/browser/browser/base/content/test/urlbar/" +
                       "redirect_bug623155.sjs";
 
 const REDIRECT_TO = "https://www.bank1.com/"; 
