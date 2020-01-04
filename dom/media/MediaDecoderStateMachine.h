@@ -498,25 +498,19 @@ protected:
   
   RefPtr<MediaDecoder::SeekPromise> InitiateSeek(SeekJob aSeekJob);
 
-  nsresult DispatchAudioDecodeTaskIfNeeded();
+  void DispatchAudioDecodeTaskIfNeeded();
+  void DispatchVideoDecodeTaskIfNeeded();
 
   
+  void EnsureAudioDecodeTaskQueued();
+
   
-  
-  
-  
-  nsresult EnsureAudioDecodeTaskQueued();
+  void EnsureVideoDecodeTaskQueued();
+
   
   
   void RequestAudioData();
 
-  nsresult DispatchVideoDecodeTaskIfNeeded();
-
-  
-  
-  
-  
-  nsresult EnsureVideoDecodeTaskQueued();
   
   
   void RequestVideoData();
@@ -565,9 +559,7 @@ protected:
   bool CheckIfDecodeComplete();
 
   
-  
-  
-  nsresult RunStateMachine();
+  void RunStateMachine();
 
   bool IsStateMachineScheduled() const;
 
