@@ -6,6 +6,7 @@
 
 
 
+#include "mozilla/ServoStyleSet.h"
 #include "nscore.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
@@ -2143,6 +2144,27 @@ nsDocumentViewer::RequestWindowClose(bool* aCanClose)
   return NS_OK;
 }
 
+static StyleBackendType
+StyleBackendTypeForDocument(nsIDocument* aDocument, nsIDocShell* aContainer)
+{
+  MOZ_ASSERT(aDocument);
+
+  
+  
+  
+  
+  
+  
+  
+
+  return nsPresContext::StyloEnabled() &&
+         aDocument->IsHTMLOrXHTML() &&
+         aContainer &&
+         aContainer->ItemType() == nsIDocShell::typeContent ?
+           StyleBackendType::Servo :
+           StyleBackendType::Gecko;
+}
+
 nsresult
 nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument,
                                  StyleSetHandle* aStyleSet)
@@ -2151,7 +2173,16 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument,
 
   
   
-  StyleSetHandle styleSet = new nsStyleSet();
+
+  StyleBackendType backendType =
+    StyleBackendTypeForDocument(aDocument, mContainer);
+
+  StyleSetHandle styleSet;
+  if (backendType == StyleBackendType::Gecko) {
+    styleSet = new nsStyleSet();
+  } else {
+    styleSet = new ServoStyleSet();
+  }
 
   styleSet->BeginUpdate();
   
@@ -2172,7 +2203,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument,
     return NS_OK;
   }
 
-  auto cache = nsLayoutStylesheetCache::For(styleSet->BackendType());
+  auto cache = nsLayoutStylesheetCache::For(backendType);
 
   
   StyleSheetHandle sheet = nullptr;
