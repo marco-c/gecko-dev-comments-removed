@@ -793,7 +793,7 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
 }
 
 void
-MessageChannel::ProcessPendingRequests(int transaction, int prio)
+MessageChannel::ProcessPendingRequests(int seqno, int transaction)
 {
     IPC_LOG("ProcessPendingRequests for seqno=%d, xid=%d", seqno, transaction);
 
@@ -834,19 +834,31 @@ MessageChannel::ProcessPendingRequests(int transaction, int prio)
         
         
         
-        if (WasTransactionCanceled(transaction, prio)) {
+        if (WasTransactionCanceled(transaction)) {
             return;
         }
     }
 }
 
 bool
-MessageChannel::WasTransactionCanceled(int transaction, int prio)
+MessageChannel::WasTransactionCanceled(int transaction)
 {
-    if (transaction == mCurrentTransaction) {
-        return false;
+    if (transaction != mCurrentTransaction) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        mRecvd = nullptr;
+        return true;
     }
-    return true;
+    return false;
 }
 
 bool
@@ -951,22 +963,21 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     int32_t transaction = mCurrentTransaction;
     msg->set_transaction_id(transaction);
 
-    IPC_LOG("Send seqno=%d, xid=%d", seqno, transaction);
-
-    ProcessPendingRequests(transaction, prio);
-    if (WasTransactionCanceled(transaction, prio)) {
-        IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
-        return false;
-    }
+    IPC_LOG("Send seqno=%d, xid=%d, pending=%d", seqno, transaction, prios);
 
     bool handleWindowsMessages = mListener->HandleWindowsMessages(*aMsg);
     mLink->SendMessage(msg.forget());
 
     while (true) {
-        ProcessPendingRequests(transaction, prio);
-        if (WasTransactionCanceled(transaction, prio)) {
+        ProcessPendingRequests(seqno, transaction);
+        if (WasTransactionCanceled(transaction)) {
             IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
             mLastSendError = SyncSendError::CancelledAfterSend;
+            return false;
+        }
+        if (!Connected()) {
+            ReportConnectionError("MessageChannel::Send");
+            mLastSendError = SyncSendError::DisconnectedDuringSend;
             return false;
         }
 
@@ -994,7 +1005,7 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
             return false;
         }
 
-        if (WasTransactionCanceled(transaction, prio)) {
+        if (WasTransactionCanceled(transaction)) {
             IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
             mLastSendError = SyncSendError::CancelledAfterSend;
             return false;
