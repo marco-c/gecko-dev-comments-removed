@@ -2739,7 +2739,8 @@ class OrphanReporter : public JS::ObjectPrivateVisitor
             
             
             nsCOMPtr<nsINode> orphanTree = node->SubtreeRoot();
-            if (!mAlreadyMeasuredOrphanTrees.Contains(orphanTree)) {
+            if (orphanTree &&
+                !mAlreadyMeasuredOrphanTrees.Contains(orphanTree)) {
                 
                 
                 
