@@ -453,7 +453,6 @@ TabWindow.prototype = {
     
     getFaviconAsImage(
       null,
-      null,
       PrivateBrowsingUtils.isWindowPrivate(this.win),
       function (img) {
         
