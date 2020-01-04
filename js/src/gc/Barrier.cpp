@@ -81,13 +81,6 @@ CurrentThreadIsGCSweeping()
     return TlsPerThreadData.get()->gcSweeping;
 }
 
-bool
-CurrentThreadCanSkipPostBarrier(bool inNursery)
-{
-    bool onMainThread = TlsPerThreadData.get()->runtimeIfOnOwnerThread() != nullptr;
-    return !onMainThread && !inNursery;
-}
-
 #endif 
 
 template <typename S>

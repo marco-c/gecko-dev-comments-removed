@@ -1693,6 +1693,33 @@ class MOZ_RAII AutoEnterIonCompilation
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
+namespace gc {
+
+
+struct MOZ_RAII AutoSetThreadIsSweeping
+{
+#ifdef DEBUG
+    AutoSetThreadIsSweeping()
+      : threadData_(js::TlsPerThreadData.get())
+    {
+        MOZ_ASSERT(!threadData_->gcSweeping);
+        threadData_->gcSweeping = true;
+    }
+
+    ~AutoSetThreadIsSweeping() {
+        MOZ_ASSERT(threadData_->gcSweeping);
+        threadData_->gcSweeping = false;
+    }
+
+  private:
+    PerThreadData* threadData_;
+#else
+    AutoSetThreadIsSweeping() {}
+#endif
+};
+
+} 
+
 
 
 
@@ -1709,10 +1736,16 @@ struct GCManagedDeletePolicy
     void operator()(const T* ptr) {
         if (ptr) {
             JSRuntime* rt = TlsPerThreadData.get()->runtimeIfOnOwnerThread();
-            if (rt)
+            if (rt) {
+                
+                
                 rt->gc.callAfterMinorGC(deletePtr, const_cast<T*>(ptr));
-            else
+            } else {
+                
+                
+                gc::AutoSetThreadIsSweeping threadIsSweeping;
                 js_delete(const_cast<T*>(ptr));
+            }
         }
     }
 
