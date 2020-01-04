@@ -41,6 +41,10 @@ namespace dom {
   enum class AudioContextOperation;
 }
 
+namespace media {
+  template<typename V, typename E> class Pledge;
+}
+
 
 
 
@@ -1234,7 +1238,11 @@ public:
   TrackID GetDestinationTrackId() { return mDestTrack; }
 
   
-  void BlockTrackId(TrackID aTrackId);
+
+
+
+
+  already_AddRefed<media::Pledge<bool, nsresult>> BlockTrackId(TrackID aTrackId);
 private:
   void BlockTrackIdImpl(TrackID aTrackId);
 
