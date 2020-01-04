@@ -8,6 +8,8 @@
 
 
 
+const { createEnum } = require("../utils/enum");
+
 createEnum([
 
   
@@ -42,21 +44,18 @@ createEnum([
   "UPDATE_DEVICE_DISPLAYED",
 
   
+  "LOAD_DEVICE_LIST_START",
+
+  
+  "LOAD_DEVICE_LIST_ERROR",
+
+  
+  "LOAD_DEVICE_LIST_END",
+
+  
   "UPDATE_DEVICE_MODAL_OPEN",
 
   
   "UPDATE_TOUCH_SIMULATION_ENABLED",
 
 ], module.exports);
-
-
-
-
-
-
-function createEnum(array, target) {
-  for (let key of array) {
-    target[key] = key;
-  }
-  return target;
-}

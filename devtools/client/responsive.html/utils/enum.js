@@ -1,0 +1,21 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+
+  
+
+
+
+
+  createEnum(array, target = {}) {
+    for (let key of array) {
+      target[key] = key;
+    }
+    return target;
+  }
+
+};

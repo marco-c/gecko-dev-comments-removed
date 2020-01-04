@@ -19,6 +19,7 @@ const addedDevice = {
 };
 
 const TEST_URL = "data:text/html;charset=utf-8,";
+const Types = require("devtools/client/responsive.html/types");
 
 addRDMTask(TEST_URL, function* ({ ui }) {
   let { store, document } = ui.toolWindow;
@@ -27,7 +28,8 @@ addRDMTask(TEST_URL, function* ({ ui }) {
   let submitButton = document.querySelector("#device-submit-button");
 
   
-  yield waitUntilState(store, state => state.viewports.length == 1);
+  yield waitUntilState(store, state => state.viewports.length == 1
+    && state.devices.listState == Types.deviceListState.LOADED);
 
   openDeviceModal(ui);
 
@@ -63,7 +65,7 @@ addRDMTask(TEST_URL, function* ({ ui }) {
     "The device modal is hidden on submit.");
 
   info("Checking that the new device is added to the user preference list.");
-  let preferredDevices = loadPreferredDevices();
+  let preferredDevices = _loadPreferredDevices();
   ok(preferredDevices.added.has(value), value + " in user added list.");
 
   info("Checking new device is added to the device selector.");
@@ -88,7 +90,7 @@ addRDMTask(TEST_URL, function* ({ ui }) {
   submitButton.click();
 
   info("Checking that the device is removed from the user preference list.");
-  preferredDevices = loadPreferredDevices();
+  preferredDevices = _loadPreferredDevices();
   ok(preferredDevices.removed.has(checkedVal), checkedVal + " in removed list");
 
   info("Checking that the device is not in the device selector.");
@@ -123,7 +125,7 @@ addRDMTask(TEST_URL, function* ({ ui }) {
       return subtotal + ((device.os != "fxos" && device.featured) ? 1 : 0);
     }, 0);
   }, 0);
-  let preferredDevices = loadPreferredDevices();
+  let preferredDevices = _loadPreferredDevices();
 
   
   info("Checking new featured device appears in the device selector.");

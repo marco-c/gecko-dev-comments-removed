@@ -5,6 +5,7 @@
 "use strict";
 
 const { PropTypes } = require("devtools/client/shared/vendor/react");
+const { createEnum } = require("./utils/enum");
 
 
 
@@ -43,6 +44,16 @@ const device = {
 
 
 
+exports.deviceListState = createEnum([
+  "INITIALIZED",
+  "LOADING",
+  "LOADED",
+  "ERROR",
+]);
+
+
+
+
 exports.devices = {
 
   
@@ -68,6 +79,9 @@ exports.devices = {
 
   
   isModalOpen: PropTypes.bool,
+
+  
+  listState: PropTypes.oneOf(Object.keys(exports.deviceListState)),
 
 };
 
