@@ -87,12 +87,7 @@ public:
 
 
   static bool IsOffsetOrMarginStyleAnimated(nsIFrame* aFrame);
-  
 
-
-
-  static bool IsBackgroundPositionAnimated(nsDisplayListBuilder* aBuilder,
-                                           nsIFrame* aFrame);
   
 
 
