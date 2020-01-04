@@ -1715,51 +1715,57 @@ nsStandardURL::SetPort(int32_t port)
     }
 
     InvalidateCache();
-
-    if (mPort == -1) {
-        
-        nsAutoCString buf;
-        buf.Assign(':');
-        buf.AppendInt(port);
-        mSpec.Insert(buf, mAuthority.mPos + mAuthority.mLen);
-        mAuthority.mLen += buf.Length();
-        ShiftFromPath(buf.Length());
+    if (port == mDefaultPort) {
+      port = -1;
     }
-    else if (port == -1 || port == mDefaultPort) {
-        
-        port = -1;
 
-        
-        nsAutoCString buf;
-        buf.Assign(':');
-        buf.AppendInt(mPort);
-
-        
-        uint32_t start = mAuthority.mPos + mAuthority.mLen - buf.Length();
-        int32_t lengthToCut = buf.Length();
-        mSpec.Cut(start, lengthToCut);
-        mAuthority.mLen -= lengthToCut;
-        ShiftFromPath(-lengthToCut);
-    }
-    else {
-        
-        nsAutoCString buf;
-        buf.Assign(':');
-        buf.AppendInt(mPort);
-        uint32_t start = mAuthority.mPos + mAuthority.mLen - buf.Length();
-        uint32_t length = buf.Length();
-
-        buf.Assign(':');
-        buf.AppendInt(port);
-        mSpec.Replace(start, length, buf);
-        if (buf.Length() != length) {
-            mAuthority.mLen += buf.Length() - length;
-            ShiftFromPath(buf.Length() - length);
-        }
-    }
+    ReplacePortInSpec(port);
 
     mPort = port;
     return NS_OK;
+}
+
+
+
+
+
+
+
+
+
+void
+nsStandardURL::ReplacePortInSpec(int32_t aNewPort)
+{
+    MOZ_ASSERT(mMutable, "Caller should ensure we're mutable");
+    NS_ASSERTION(aNewPort != mDefaultPort,
+                 "Caller should check its passed-in value and pass -1 instead of "
+                 "mDefaultPort, to avoid encoding default port into mSpec");
+
+    
+    nsAutoCString buf;
+    if (mPort != -1) {
+        buf.Assign(':');
+        buf.AppendInt(mPort);
+    }
+    
+    const uint32_t replacedLen = buf.Length();
+    const uint32_t replacedStart =
+        mAuthority.mPos + mAuthority.mLen - replacedLen;
+
+    
+    if (aNewPort == -1) {
+        buf.Truncate();
+    } else {
+        buf.Assign(':');
+        buf.AppendInt(aNewPort);
+    }
+    
+    mSpec.Replace(replacedStart, replacedLen, buf);
+
+    
+    int32_t shift = buf.Length() - replacedLen;
+    mAuthority.mLen += shift;
+    ShiftFromPath(shift);
 }
 
 NS_IMETHODIMP
