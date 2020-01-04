@@ -416,12 +416,16 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
   
   
   
+  
+  
   bool useCredentials = false;
   if (mRequest->GetCredentialsMode() == RequestCredentials::Include ||
-      (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin && !aCORSFlag)) {
+      (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin && !aCORSFlag &&
+       mRequest->GetResponseTainting() != InternalRequest::RESPONSETAINT_OPAQUE)) {
     useCredentials = true;
   }
 
+  
   
   
   
@@ -583,6 +587,8 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
 
   nsCOMPtr<nsIStreamListener> listener = this;
 
+  MOZ_ASSERT_IF(aCORSFlag, mRequest->Mode() == RequestMode::Cors);
+
   
   
   
@@ -590,10 +596,16 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
     
     
     
+    bool corsCredentials =
+      mRequest->GetCredentialsMode() == RequestCredentials::Include;
+
+    
+    
+    
     
     
     nsRefPtr<nsCORSListenerProxy> corsListener =
-      new nsCORSListenerProxy(this, mPrincipal, useCredentials);
+      new nsCORSListenerProxy(this, mPrincipal, corsCredentials);
     rv = corsListener->Init(chan, DataURIHandling::Allow);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return FailWithNetworkError();
@@ -1086,6 +1098,42 @@ FetchDriver::OnRedirectVerifyCallback(nsresult aResult)
     MOZ_ASSERT(nextOp.mType == BASIC_FETCH || nextOp.mType == HTTP_FETCH);
     MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mType == HTTP_FETCH);
     MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mCORSFlag);
+
+    
+    nsLoadFlags flags;
+    aResult = mNewRedirectChannel->GetLoadFlags(&flags);
+    if (NS_SUCCEEDED(aResult)) {
+      if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
+          mRequest->GetResponseTainting() == InternalRequest::RESPONSETAINT_OPAQUE) {
+        
+        
+        
+        flags |= nsIRequest::LOAD_ANONYMOUS;
+        aResult = mNewRedirectChannel->SetLoadFlags(flags);
+
+      } else if (mRequest->GetCredentialsMode() == RequestCredentials::Omit) {
+        
+        
+        MOZ_ASSERT(flags & nsIRequest::LOAD_ANONYMOUS);
+
+      } else if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
+                 nextOp.mCORSFlag) {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT_IF(mCORSFlagEverSet, flags & nsIRequest::LOAD_ANONYMOUS);
+
+      } else {
+        
+        MOZ_ASSERT(!(flags & nsIRequest::LOAD_ANONYMOUS));
+      }
+    }
+
+    
+    mCORSFlagEverSet = mCORSFlagEverSet || nextOp.mCORSFlag;
   }
 
   mOldRedirectChannel = nullptr;
