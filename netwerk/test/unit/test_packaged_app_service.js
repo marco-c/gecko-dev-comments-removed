@@ -264,6 +264,8 @@ function run_test()
   add_test(test_worse_package_4);
   add_test(test_worse_package_5);
 
+  add_test(test_request_has_ref);
+
   
   run_next_test();
 }
@@ -349,6 +351,13 @@ function test_updated_package() {
   let url = uri + packagePath + "!//index.html";
   paservice.getResource(getChannelForURL(url),
     new packagedResourceListener(testData.content[0].data.replace(/\.\.\./g, 'xxx')));
+}
+
+
+function test_request_has_ref() {
+  packagePath = "/package";
+  let url = uri + packagePath + "!//index.html#Ref";
+  paservice.getResource(getChannelForURL(url), cacheListener);
 }
 
 
