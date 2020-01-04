@@ -321,8 +321,8 @@ loop.shared.actions = (function() {
 
 
     UpdateRoomContext: Action.define("updateRoomContext", {
-      roomToken: String,
-      newRoomName: String
+      roomToken: String
+      
       
       
       

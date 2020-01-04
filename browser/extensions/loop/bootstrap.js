@@ -461,6 +461,10 @@ var WindowListener = {
         if (!this._listeningToTabSelect) {
           gBrowser.tabContainer.addEventListener("TabSelect", this);
           this._listeningToTabSelect = true;
+
+          
+          
+          gBrowser.addEventListener("DOMTitleChanged", this);
         }
 
         this._maybeShowBrowserSharingInfoBar();
@@ -480,6 +484,7 @@ var WindowListener = {
 
         this._hideBrowserSharingInfoBar();
         gBrowser.tabContainer.removeEventListener("TabSelect", this);
+        gBrowser.removeEventListener("DOMTitleChanged", this);
         this._listeningToTabSelect = false;
       },
 
@@ -577,28 +582,38 @@ var WindowListener = {
       
 
 
-      handleEvent: function(event) {
-        
-        if (event.type != "TabSelect") {
-          return;
-        }
-
-        let wasVisible = false;
-        
-        if (event.detail.previousTab) {
-          wasVisible = this._hideBrowserSharingInfoBar(false,
-            event.detail.previousTab.linkedBrowser);
-        }
-
-        
+      _notifyBrowserSwitch() {
+         
         this.LoopAPI.broadcastPushMessage("BrowserSwitch",
           gBrowser.selectedBrowser.outerWindowID);
+      },
 
-        if (wasVisible) {
-          
-          
-          this._maybeShowBrowserSharingInfoBar();
-        }
+      
+
+
+      handleEvent: function(event) {
+        switch(event.type) {
+          case "DOMTitleChanged":
+            
+            this._notifyBrowserSwitch();
+            break;
+          case "TabSelect":
+            let wasVisible = false;
+            
+            if (event.detail.previousTab) {
+              wasVisible = this._hideBrowserSharingInfoBar(false, event.detail.previousTab.linkedBrowser);
+            }
+
+            
+            this._notifyBrowserSwitch();
+
+            if (wasVisible) {
+              
+              
+              this._maybeShowBrowserSharingInfoBar();
+            }
+            break;
+          }
       },
 
       
