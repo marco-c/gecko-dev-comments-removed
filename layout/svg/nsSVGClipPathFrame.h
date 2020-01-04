@@ -130,35 +130,80 @@ public:
 
   gfxMatrix GetClipPathTransform(nsIFrame* aClippedFrame);
 
- private:
-  
-  
-  
-  
-  class MOZ_RAII AutoClipPathReferencer
-  {
-  public:
-    explicit AutoClipPathReferencer(nsSVGClipPathFrame *aFrame
-                                    MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-       : mFrame(aFrame) {
-      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-      NS_ASSERTION(!mFrame->mInUse, "reference loop!");
-      mFrame->mInUse = true;
-    }
-    ~AutoClipPathReferencer() {
-      mFrame->mInUse = false;
-    }
-  private:
-    nsSVGClipPathFrame *mFrame;
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-  };
-
-  gfxMatrix mMatrixForChildren;
-  
-  bool mInUse;
+private:
 
   
   virtual gfxMatrix GetCanvasTM() override;
+
+  
+
+
+
+
+
+
+
+  class MOZ_RAII AutoReferenceLoopDetector
+  {
+  public:
+    explicit AutoReferenceLoopDetector()
+       : mFrame(nullptr)
+#ifdef DEBUG
+       , mMarkAsInUseCalled(false)
+#endif
+    {}
+
+    ~AutoReferenceLoopDetector() {
+      MOZ_ASSERT(mMarkAsInUseCalled,
+                 "Instances of this class are useless if MarkAsInUse() is "
+                 "not called on them");
+      if (mFrame) {
+        mFrame->mInUse = false;
+      }
+    }
+
+    
+
+
+
+    MOZ_WARN_UNUSED_RESULT bool MarkAsInUse(nsSVGClipPathFrame* aFrame) {
+#ifdef DEBUG
+      MOZ_ASSERT(!mMarkAsInUseCalled, "Must only be called once");
+      mMarkAsInUseCalled = true;
+#endif
+      if (aFrame->mInUse) {
+        
+        
+        NS_WARNING("clipPath reference loop!");
+        return false;
+      }
+      aFrame->mInUse = true;
+      mFrame = aFrame;
+      return true;
+    }
+
+  private:
+    nsSVGClipPathFrame* mFrame;
+    DebugOnly<bool> mMarkAsInUseCalled;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  gfxMatrix mMatrixForChildren;
+
+  
+  bool mInUse;
 };
 
 #endif
