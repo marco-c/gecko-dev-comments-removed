@@ -3,7 +3,6 @@
 
 
 
-
 "use strict";
 
 
@@ -319,7 +318,7 @@ var OverviewView = {
   }),
 
   _setGraphVisibilityFromRecordingFeatures: function (recording) {
-    for (let [graphName, requirements] of Iterator(GRAPH_REQUIREMENTS)) {
+    for (let [graphName, requirements] of Object.entries(GRAPH_REQUIREMENTS)) {
       this.graphs.enable(graphName,
                          PerformanceController.isFeatureSupported(requirements.features));
     }

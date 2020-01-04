@@ -59,7 +59,7 @@ var ToolbarView = {
 
 
   _buildMarkersFilterPopup: function () {
-    for (let [markerName, markerDetails] of Iterator(TIMELINE_BLUEPRINT)) {
+    for (let [markerName, markerDetails] of Object.entries(TIMELINE_BLUEPRINT)) {
       let menuitem = document.createElement("menuitem");
       menuitem.setAttribute("closemenu", "none");
       menuitem.setAttribute("type", "checkbox");

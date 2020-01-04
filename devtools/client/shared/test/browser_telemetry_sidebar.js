@@ -52,7 +52,7 @@ function* testSidebar(toolbox) {
 function checkResults(Telemetry) {
   let result = Telemetry.prototype.telemetryInfo;
 
-  for (let [histId, value] of Iterator(result)) {
+  for (let [histId, value] of Object.entries(result)) {
     if (histId.startsWith("DEVTOOLS_INSPECTOR_")) {
       
       
