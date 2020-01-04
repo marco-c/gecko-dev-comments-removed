@@ -1348,6 +1348,26 @@ public:
 
 
 
+
+
+  static nscoord AddPercents(IntrinsicISizeType aType, nscoord aCurrent,
+                             float aPercent)
+  {
+    if (aPercent > 0.0f && aType == nsLayoutUtils::PREF_ISIZE) {
+      
+      
+      return MOZ_UNLIKELY(aPercent >= 1.0f) ? nscoord_MAX
+        : NSToCoordRound(float(aCurrent) / (1.0f - aPercent));
+    }
+    return aCurrent;
+  }
+
+  
+
+
+
+
+
   static nscoord ComputeCBDependentValue(nscoord aPercentBasis,
                                          const nsStyleCoord& aCoord);
 

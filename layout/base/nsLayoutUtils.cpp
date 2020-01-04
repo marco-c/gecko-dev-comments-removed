@@ -4154,21 +4154,6 @@ nsLayoutUtils::IsViewportScrollbarFrame(nsIFrame* aFrame)
            IsProperAncestorFrame(rootScrolledFrame, aFrame));
 }
 
-static nscoord AddPercents(nsLayoutUtils::IntrinsicISizeType aType,
-                           nscoord aCurrent, float aPercent)
-{
-  nscoord result = aCurrent;
-  if (aPercent > 0.0f && aType == nsLayoutUtils::PREF_ISIZE) {
-    
-    
-    if (aPercent >= 1.0f)
-      result = nscoord_MAX;
-    else
-      result = NSToCoordRound(float(result) / (1.0f - aPercent));
-  }
-  return result;
-}
-
 
 
 static bool GetAbsoluteCoord(const nsStyleCoord& aStyle, nscoord& aResult)
@@ -4422,7 +4407,8 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
   if (GetAbsoluteCoord(aStyleSize, size) ||
       GetIntrinsicCoord(aStyleSize, aRenderingContext, aFrame,
                         PROP_WIDTH, size)) {
-    result = AddPercents(aType, size + coordOutsideSize, pctOutsideSize);
+    result = nsLayoutUtils::AddPercents(aType, size + coordOutsideSize,
+                                        pctOutsideSize);
   } else if (aType == nsLayoutUtils::MIN_ISIZE &&
              
              
@@ -4437,14 +4423,15 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
     
     
     
-    result = AddPercents(aType, result, pctTotal);
+    result = nsLayoutUtils::AddPercents(aType, result, pctTotal);
   }
 
   nscoord maxSize = aFixedMaxSize ? *aFixedMaxSize : 0;
   if (aFixedMaxSize ||
       GetIntrinsicCoord(aStyleMaxSize, aRenderingContext, aFrame,
                         PROP_MAX_WIDTH, maxSize)) {
-    maxSize = AddPercents(aType, maxSize + coordOutsideSize, pctOutsideSize);
+    maxSize = nsLayoutUtils::AddPercents(aType, maxSize + coordOutsideSize,
+                                         pctOutsideSize);
     if (result > maxSize) {
       result = maxSize;
     }
@@ -4454,13 +4441,14 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
   if (aFixedMinSize ||
       GetIntrinsicCoord(aStyleMinSize, aRenderingContext, aFrame,
                         PROP_MIN_WIDTH, minSize)) {
-    minSize = AddPercents(aType, minSize + coordOutsideSize, pctOutsideSize);
+    minSize = nsLayoutUtils::AddPercents(aType, minSize + coordOutsideSize,
+                                         pctOutsideSize);
     if (result < minSize) {
       result = minSize;
     }
   }
 
-  min = AddPercents(aType, min, pctTotal);
+  min = nsLayoutUtils::AddPercents(aType, min, pctTotal);
   if (result < min) {
     result = min;
   }
@@ -4477,7 +4465,8 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
                                                      : devSize.width);
     
     themeSize += aOffsets.hMargin;
-    themeSize = AddPercents(aType, themeSize, aOffsets.hPctMargin);
+    themeSize = nsLayoutUtils::AddPercents(aType, themeSize,
+                                           aOffsets.hPctMargin);
 
     if (themeSize > result || !canOverride) {
       result = themeSize;
