@@ -12,7 +12,6 @@
 #include "mozilla/dom/PresentationRequestBinding.h"
 #include "mozilla/dom/PresentationConnectionAvailableEvent.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/Move.h"
 #include "mozIThirdPartyUtil.h"
 #include "nsContentSecurityManager.h"
 #include "nsCycleCollectionParticipant.h"
@@ -66,51 +65,37 @@ PresentationRequest::Constructor(const GlobalObject& aGlobal,
                                  const nsAString& aUrl,
                                  ErrorResult& aRv)
 {
-  Sequence<nsString> urls;
-  urls.AppendElement(aUrl, fallible);
-  return Constructor(aGlobal, urls, aRv);
-}
-
- already_AddRefed<PresentationRequest>
-PresentationRequest::Constructor(const GlobalObject& aGlobal,
-                                 const Sequence<nsString>& aUrls,
-                                 ErrorResult& aRv)
-{
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal.GetAsSupports());
   if (!window) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;
   }
 
-  if (aUrls.IsEmpty()) {
-    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+  
+  if (NS_WARN_IF(aUrl.IsEmpty())) {
+    aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
     return nullptr;
   }
 
   
   nsCOMPtr<nsIURI> baseUri = window->GetDocBaseURI();
-  nsTArray<nsString> urls;
-  for (const auto& url : aUrls) {
-    nsAutoString absoluteUrl;
-    nsresult rv =
-      GetAbsoluteURL(url, baseUri, window->GetExtantDoc(), absoluteUrl);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
-      return nullptr;
-    }
 
-    urls.AppendElement(absoluteUrl);
+  nsAutoString absoluteUrl;
+  nsresult rv = GetAbsoluteURL(aUrl, baseUri, window->GetExtantDoc(), absoluteUrl);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
   }
 
   RefPtr<PresentationRequest> request =
-    new PresentationRequest(window, Move(urls));
+    new PresentationRequest(window, absoluteUrl);
   return NS_WARN_IF(!request->Init()) ? nullptr : request.forget();
 }
 
 PresentationRequest::PresentationRequest(nsPIDOMWindowInner* aWindow,
-                                         nsTArray<nsString>&& aUrls)
+                                         const nsAString& aUrl)
   : DOMEventTargetHelper(aWindow)
-  , mUrls(Move(aUrls))
+  , mUrl(aUrl)
 {
 }
 
@@ -167,7 +152,7 @@ PresentationRequest::StartWithDevice(const nsAString& aDeviceId,
   }
 
   if (IsProhibitMixedSecurityContexts(doc) &&
-      !IsAllURLAuthenticated()) {
+      !IsPrioriAuthenticatedURL(mUrl)) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
   }
@@ -199,9 +184,15 @@ PresentationRequest::StartWithDevice(const nsAString& aDeviceId,
     return promise.forget();
   }
 
+  
+  
+  
+  
+  nsCOMPtr<nsIDOMEventTarget> handler =
+    do_QueryInterface(GetOwner()->GetChromeEventHandler());
   nsCOMPtr<nsIPresentationServiceCallback> callback =
-    new PresentationRequesterCallback(this, id, promise);
-  rv = service->StartSession(mUrls, id, origin, aDeviceId, GetOwner()->WindowID(), callback);
+    new PresentationRequesterCallback(this, mUrl, id, promise);
+  rv = service->StartSession(mUrl, id, origin, aDeviceId, GetOwner()->WindowID(), handler, callback);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     promise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
   }
@@ -231,7 +222,7 @@ PresentationRequest::Reconnect(const nsAString& aPresentationId,
   }
 
   if (IsProhibitMixedSecurityContexts(doc) &&
-      !IsAllURLAuthenticated()) {
+      !IsPrioriAuthenticatedURL(mUrl)) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
   }
@@ -277,7 +268,7 @@ PresentationRequest::FindOrCreatePresentationConnection(
   if (connection) {
     nsAutoString url;
     connection->GetUrl(url);
-    if (mUrls.Contains(url)) {
+    if (url.Equals(mUrl)) {
       switch (connection->State()) {
         case PresentationConnectionState::Closed:
           
@@ -308,12 +299,13 @@ PresentationRequest::FindOrCreatePresentationConnection(
 
   nsCOMPtr<nsIPresentationServiceCallback> callback =
     new PresentationReconnectCallback(this,
+                                      mUrl,
                                       aPresentationId,
                                       aPromise,
                                       connection);
 
   nsresult rv =
-    service->ReconnectSession(mUrls,
+    service->ReconnectSession(mUrl,
                               aPresentationId,
                               nsIPresentationService::ROLE_CONTROLLER,
                               callback);
@@ -325,7 +317,8 @@ PresentationRequest::FindOrCreatePresentationConnection(
 already_AddRefed<Promise>
 PresentationRequest::GetAvailability(ErrorResult& aRv)
 {
-  PRES_DEBUG("%s\n", __func__);
+  PRES_DEBUG("%s:id[%s]\n", __func__,
+             NS_ConvertUTF16toUTF8(mUrl).get());
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(GetOwner());
   if (NS_WARN_IF(!global)) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
@@ -344,7 +337,7 @@ PresentationRequest::GetAvailability(ErrorResult& aRv)
   }
 
   if (IsProhibitMixedSecurityContexts(doc) &&
-      !IsAllURLAuthenticated()) {
+      !IsPrioriAuthenticatedURL(mUrl)) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
   }
@@ -376,12 +369,13 @@ PresentationRequest::FindOrCreatePresentationAvailability(RefPtr<Promise>& aProm
   }
 
   RefPtr<PresentationAvailability> availability =
-    collection->Find(GetOwner()->WindowID(), mUrls);
+    collection->Find(GetOwner()->WindowID(), mUrl);
 
   if (!availability) {
-    availability = PresentationAvailability::Create(GetOwner(), mUrls, aPromise);
+    availability = PresentationAvailability::Create(GetOwner(), mUrl, aPromise);
   } else {
-    PRES_DEBUG(">resolve with same object\n");
+    PRES_DEBUG(">resolve with same object:id[%s]\n",
+               NS_ConvertUTF16toUTF8(mUrl).get());
 
     
     
@@ -485,16 +479,4 @@ PresentationRequest::IsPrioriAuthenticatedURL(const nsAString& aUrl)
   bool isTrustworthyOrigin = false;
   csm->IsOriginPotentiallyTrustworthy(principal, &isTrustworthyOrigin);
   return isTrustworthyOrigin;
-}
-
-bool
-PresentationRequest::IsAllURLAuthenticated()
-{
-  for (const auto& url : mUrls) {
-    if (!IsPrioriAuthenticatedURL(url)) {
-      return false;
-    }
-  }
-
-  return true;
 }

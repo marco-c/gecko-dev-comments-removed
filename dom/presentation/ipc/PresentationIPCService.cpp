@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/PPresentation.h"
+#include "mozilla/dom/TabParent.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "nsGlobalWindow.h"
@@ -52,11 +53,12 @@ PresentationIPCService::~PresentationIPCService()
 }
 
 NS_IMETHODIMP
-PresentationIPCService::StartSession(const nsTArray<nsString>& aUrls,
+PresentationIPCService::StartSession(const nsAString& aUrl,
                                      const nsAString& aSessionId,
                                      const nsAString& aOrigin,
                                      const nsAString& aDeviceId,
                                      uint64_t aWindowId,
+                                     nsIDOMEventTarget* aEventTarget,
                                      nsIPresentationServiceCallback* aCallback)
 {
   if (aWindowId != 0) {
@@ -65,11 +67,16 @@ PresentationIPCService::StartSession(const nsTArray<nsString>& aUrls,
                            nsIPresentationService::ROLE_CONTROLLER);
   }
 
-  return SendRequest(aCallback, StartSessionRequest(aUrls,
+  nsPIDOMWindowInner* window =
+    nsGlobalWindow::GetInnerWindowWithId(aWindowId)->AsInner();
+  TabId tabId = TabParent::GetTabIdFrom(window->GetDocShell());
+
+  return SendRequest(aCallback, StartSessionRequest(nsString(aUrl),
                                                     nsString(aSessionId),
                                                     nsString(aOrigin),
                                                     nsString(aDeviceId),
-                                                    aWindowId));
+                                                    aWindowId,
+                                                    tabId));
 }
 
 NS_IMETHODIMP
@@ -135,7 +142,7 @@ PresentationIPCService::TerminateSession(const nsAString& aSessionId,
 }
 
 NS_IMETHODIMP
-PresentationIPCService::ReconnectSession(const nsTArray<nsString>& aUrls,
+PresentationIPCService::ReconnectSession(const nsAString& aUrl,
                                          const nsAString& aSessionId,
                                          uint8_t aRole,
                                          nsIPresentationServiceCallback* aCallback)
@@ -147,7 +154,7 @@ PresentationIPCService::ReconnectSession(const nsTArray<nsString>& aUrls,
     return NS_ERROR_INVALID_ARG;
   }
 
-  return SendRequest(aCallback, ReconnectSessionRequest(aUrls,
+  return SendRequest(aCallback, ReconnectSessionRequest(nsString(aUrl),
                                                         nsString(aSessionId),
                                                         aRole));
 }

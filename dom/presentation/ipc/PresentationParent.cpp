@@ -5,8 +5,8 @@
 
 
 #include "DCPresentationChannelDescription.h"
+#include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/ipc/InputStreamUtils.h"
-#include "mozilla/Unused.h"
 #include "nsIPresentationDeviceManager.h"
 #include "nsServiceManagerUtils.h"
 #include "PresentationBuilderParent.h"
@@ -36,10 +36,11 @@ PresentationParent::PresentationParent()
 }
 
 bool
-PresentationParent::Init()
+PresentationParent::Init(ContentParentId aContentParentId)
 {
   MOZ_ASSERT(!mService);
   mService = do_GetService(PRESENTATION_SERVICE_CONTRACTID);
+  mChildId = aContentParentId;
   return NS_WARN_IF(!mService) ? false : true;
 }
 
@@ -108,7 +109,7 @@ PresentationParent::AllocPPresentationRequestParent(
   const PresentationIPCRequest& aRequest)
 {
   MOZ_ASSERT(mService);
-  RefPtr<PresentationRequestParent> actor = new PresentationRequestParent(mService);
+  RefPtr<PresentationRequestParent> actor = new PresentationRequestParent(mService, mChildId);
   return actor.forget().take();
 }
 
@@ -310,8 +311,10 @@ PresentationParent::RecvNotifyTransportClosed(const nsString& aSessionId,
 
 NS_IMPL_ISUPPORTS(PresentationRequestParent, nsIPresentationServiceCallback)
 
-PresentationRequestParent::PresentationRequestParent(nsIPresentationService* aService)
+PresentationRequestParent::PresentationRequestParent(nsIPresentationService* aService,
+                                                     ContentParentId aContentParentId)
   : mService(aService)
+  , mChildId(aContentParentId)
 {
   MOZ_COUNT_CTOR(PresentationRequestParent);
 }
@@ -334,9 +337,18 @@ PresentationRequestParent::DoRequest(const StartSessionRequest& aRequest)
   MOZ_ASSERT(mService);
   mNeedRegisterBuilder = true;
   mSessionId = aRequest.sessionId();
-  return mService->StartSession(aRequest.urls(), aRequest.sessionId(),
+
+  nsCOMPtr<nsIDOMEventTarget> eventTarget;
+  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+  RefPtr<TabParent> tp =
+    cpm->GetTopLevelTabParentByProcessAndTabId(mChildId, aRequest.tabId());
+  if (tp) {
+    eventTarget = do_QueryInterface(tp->GetOwnerElement());
+  }
+
+  return mService->StartSession(aRequest.url(), aRequest.sessionId(),
                                 aRequest.origin(), aRequest.deviceId(),
-                                aRequest.windowId(), this);
+                                aRequest.windowId(), eventTarget, this);
 }
 
 nsresult
@@ -348,16 +360,16 @@ PresentationRequestParent::DoRequest(const SendSessionMessageRequest& aRequest)
   
   if (NS_WARN_IF(!static_cast<PresentationService*>(mService.get())->
                   IsSessionAccessible(aRequest.sessionId(), aRequest.role(), OtherPid()))) {
-    return SendResponse(NS_ERROR_DOM_SECURITY_ERR);
+    return NotifyError(NS_ERROR_DOM_SECURITY_ERR);
   }
 
   nsresult rv = mService->SendSessionMessage(aRequest.sessionId(),
                                              aRequest.role(),
                                              aRequest.data());
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return SendResponse(rv);
+    return NotifyError(rv);
   }
-  return SendResponse(NS_OK);
+  return NotifySuccess();
 }
 
 nsresult
@@ -369,16 +381,16 @@ PresentationRequestParent::DoRequest(const CloseSessionRequest& aRequest)
   
   if (NS_WARN_IF(!static_cast<PresentationService*>(mService.get())->
                   IsSessionAccessible(aRequest.sessionId(), aRequest.role(), OtherPid()))) {
-    return SendResponse(NS_ERROR_DOM_SECURITY_ERR);
+    return NotifyError(NS_ERROR_DOM_SECURITY_ERR);
   }
 
   nsresult rv = mService->CloseSession(aRequest.sessionId(),
                                        aRequest.role(),
                                        aRequest.closedReason());
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return SendResponse(rv);
+    return NotifyError(rv);
   }
-  return SendResponse(NS_OK);
+  return NotifySuccess();
 }
 
 nsresult
@@ -390,14 +402,14 @@ PresentationRequestParent::DoRequest(const TerminateSessionRequest& aRequest)
   
   if (NS_WARN_IF(!static_cast<PresentationService*>(mService.get())->
                   IsSessionAccessible(aRequest.sessionId(), aRequest.role(), OtherPid()))) {
-    return SendResponse(NS_ERROR_DOM_SECURITY_ERR);
+    return NotifyError(NS_ERROR_DOM_SECURITY_ERR);
   }
 
   nsresult rv = mService->TerminateSession(aRequest.sessionId(), aRequest.role());
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return SendResponse(rv);
+    return NotifyError(rv);
   }
-  return SendResponse(NS_OK);
+  return NotifySuccess();
 }
 
 nsresult
@@ -412,12 +424,12 @@ PresentationRequestParent::DoRequest(const ReconnectSessionRequest& aRequest)
 
     
     
-    return SendResponse(NS_ERROR_DOM_NOT_FOUND_ERR);
+    return NotifyError(NS_ERROR_DOM_NOT_FOUND_ERR);
   }
 
   mNeedRegisterBuilder = true;
   mSessionId = aRequest.sessionId();
-  return mService->ReconnectSession(aRequest.urls(),
+  return mService->ReconnectSession(aRequest.url(),
                                     aRequest.sessionId(),
                                     aRequest.role(),
                                     this);
@@ -432,18 +444,18 @@ PresentationRequestParent::DoRequest(const BuildTransportRequest& aRequest)
   
   if (NS_WARN_IF(!static_cast<PresentationService*>(mService.get())->
                   IsSessionAccessible(aRequest.sessionId(), aRequest.role(), OtherPid()))) {
-    return SendResponse(NS_ERROR_DOM_SECURITY_ERR);
+    return NotifyError(NS_ERROR_DOM_SECURITY_ERR);
   }
 
   nsresult rv = mService->BuildTransport(aRequest.sessionId(), aRequest.role());
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return SendResponse(rv);
+    return NotifyError(rv);
   }
-  return SendResponse(NS_OK);
+  return NotifySuccess();
 }
 
 NS_IMETHODIMP
-PresentationRequestParent::NotifySuccess(const nsAString& aUrl)
+PresentationRequestParent::NotifySuccess()
 {
   if (mNeedRegisterBuilder) {
     RefPtr<PresentationParent> parent = static_cast<PresentationParent*>(Manager());
@@ -452,7 +464,6 @@ PresentationRequestParent::NotifySuccess(const nsAString& aUrl)
                                       nsIPresentationService::ROLE_CONTROLLER));
   }
 
-  Unused << SendNotifyRequestUrlSelected(nsString(aUrl));
   return SendResponse(NS_OK);
 }
 
