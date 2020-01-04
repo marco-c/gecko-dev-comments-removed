@@ -3337,9 +3337,8 @@ Element::Animate(JSContext* aContext,
 
   Nullable<ElementOrCSSPseudoElement> target;
   target.SetValue().SetAsElement() = this;
-  
-  RefPtr<KeyframeEffectReadOnly> effect =
-    KeyframeEffectReadOnly::Constructor(global, target, frames,
+  RefPtr<KeyframeEffect> effect =
+    KeyframeEffect::Constructor(global, target, frames,
       TimingParams::FromOptionsUnion(aOptions, target), aError);
   if (aError.Failed()) {
     return nullptr;
