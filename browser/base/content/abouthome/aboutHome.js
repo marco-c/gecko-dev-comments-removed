@@ -27,6 +27,10 @@ var searchText;
 var gInitialized = false;
 var gObserver = new MutationObserver(function (mutations) {
   for (let mutation of mutations) {
+    
+    if (mutation.attributeName == "session") {
+      fitToWidth();
+    }
     if (mutation.attributeName == "snippetsVersion") {
       if (!gInitialized) {
         ensureSnippetsMapThen(loadSnippets);
@@ -41,6 +45,7 @@ window.addEventListener("pageshow", function () {
   
   
   window.gObserver.observe(document.documentElement, { attributes: true });
+  window.gObserver.observe(document.getElementById("launcher"), { attributes: true });
   fitToWidth();
   setupSearch();
   window.addEventListener("resize", fitToWidth);
