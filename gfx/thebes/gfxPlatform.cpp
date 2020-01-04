@@ -120,6 +120,7 @@ class mozilla::gl::SkiaGLGlue : public GenericAtomicRefCounted {
 #include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
 
+#include "nsAlgorithm.h"
 #include "nsIGfxInfo.h"
 #include "nsIXULRuntime.h"
 #include "VsyncSource.h"
@@ -1070,8 +1071,7 @@ gfxPlatform::ComputeTileSize()
       
       
       
-      
-      w = h = screenSize.width >= 512 ? 512 : 256;
+      w = h = clamped(NextPowerOfTwo(screenSize.width) / 4, 256, 1024);
     }
 
 #ifdef MOZ_WIDGET_GONK
