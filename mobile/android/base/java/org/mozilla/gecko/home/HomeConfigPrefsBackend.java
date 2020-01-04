@@ -169,7 +169,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
             if (type == PanelType.DEPRECATED_HISTORY) {
                 historyIndex = i;
                 historyFlags = panelConfig.getFlags();
-            } else if (type == PanelType.REMOTE_TABS) {
+            } else if (type == PanelType.DEPRECATED_REMOTE_TABS) {
                 syncIndex = i;
                 syncFlags = panelConfig.getFlags();
             } else if (type == PanelType.COMBINED_HISTORY) {
@@ -314,7 +314,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
                 case 2:
                     
                     addBuiltinPanelConfig(context, jsonPanels,
-                            PanelType.REMOTE_TABS, Position.FRONT, Position.BACK);
+                            PanelType.DEPRECATED_REMOTE_TABS, Position.FRONT, Position.BACK);
                     break;
 
                 case 3:
