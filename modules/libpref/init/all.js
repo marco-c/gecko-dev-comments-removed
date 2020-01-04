@@ -588,6 +588,8 @@ pref("apz.smooth_scroll_repaint_interval", 16);
 pref("apz.pan_repaint_interval", 16);
 pref("apz.x_skate_size_multiplier", "2.5");
 pref("apz.y_skate_size_multiplier", "3.5");
+pref("apz.x_skate_highmem_adjust", "1.0");
+pref("apz.y_skate_highmem_adjust", "2.5");
 #else
 
 pref("apz.fling_repaint_interval", 75);
@@ -595,6 +597,8 @@ pref("apz.smooth_scroll_repaint_interval", 75);
 pref("apz.pan_repaint_interval", 250);
 pref("apz.x_skate_size_multiplier", "1.5");
 pref("apz.y_skate_size_multiplier", "2.5");
+pref("apz.x_skate_highmem_adjust", "0.0");
+pref("apz.y_skate_highmem_adjust", "0.0");
 #endif
 
 
@@ -2389,6 +2393,13 @@ pref("layout.css.scroll-snap.enabled", true);
 
 
 pref("layout.css.font-loading-api.enabled", true);
+
+
+#ifdef RELEASE_BUILD
+pref("layout.css.control-characters.visible", false);
+#else
+pref("layout.css.control-characters.visible", true);
+#endif
 
 
 
