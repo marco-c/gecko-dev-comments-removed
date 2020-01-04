@@ -131,7 +131,7 @@ WeaveCrypto.prototype = {
 
         
         var nsslib;
-        if (AppConstants.MOZ_NATIVE_NSS) {
+        if (AppConstants.MOZ_SYSTEM_NSS) {
             
             this.log("Trying NSS library without path");
             nsslib = ctypes.open(path);

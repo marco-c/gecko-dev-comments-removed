@@ -125,7 +125,7 @@
 
 #include "mozilla/Types.h"
 
-#if !defined(MOZ_NATIVE_JEMALLOC)
+#if !defined(MOZ_SYSTEM_JEMALLOC)
 #  ifdef MOZ_MEMORY_IMPL
 #    if defined(MOZ_JEMALLOC_IMPL) && defined(MOZ_REPLACE_MALLOC) && !defined(MOZ_REPLACE_JEMALLOC)
 #      define mozmem_malloc_impl(a)     je_ ## a
@@ -161,7 +161,7 @@
 #  define je_(a) a
 #endif
 
-#if !defined(MOZ_MEMORY_IMPL) || defined(MOZ_NATIVE_JEMALLOC)
+#if !defined(MOZ_MEMORY_IMPL) || defined(MOZ_SYSTEM_JEMALLOC)
 #  define MOZ_MEMORY_API MFBT_API
 #  define MOZ_JEMALLOC_API MFBT_API
 #endif
