@@ -240,10 +240,10 @@ void MarkIdForBarrier(JSTracer* trc, jsid* idp, const char* name);
 } 
 
 template <typename T>
-struct InternalGCMethods {};
+struct InternalBarrierMethods {};
 
 template <typename T>
-struct InternalGCMethods<T*>
+struct InternalBarrierMethods<T*>
 {
     static bool isMarkable(T* v) { return v != nullptr; }
 
@@ -265,7 +265,7 @@ template <typename S> struct ReadBarrierFunctor : public VoidDefaultAdaptor<S> {
 };
 
 template <>
-struct InternalGCMethods<Value>
+struct InternalBarrierMethods<Value>
 {
     static bool isMarkable(Value v) { return v.isMarkable(); }
     static bool isMarkableTaggedPointer(Value v) { return isMarkable(v); }
@@ -301,7 +301,7 @@ struct InternalGCMethods<Value>
 };
 
 template <>
-struct InternalGCMethods<jsid>
+struct InternalBarrierMethods<jsid>
 {
     static bool isMarkable(jsid id) { return JSID_IS_STRING(id) || JSID_IS_SYMBOL(id); }
     static bool isMarkableTaggedPointer(jsid id) { return isMarkable(id); }
@@ -368,11 +368,11 @@ class WriteBarrieredBase : public BarrieredBase<T>
     void unsafeSet(T v) { this->value = v; }
 
     
-    static void writeBarrierPre(const T& v) { InternalGCMethods<T>::preBarrier(v); }
+    static void writeBarrierPre(const T& v) { InternalBarrierMethods<T>::preBarrier(v); }
 
   protected:
-    void pre() { InternalGCMethods<T>::preBarrier(this->value); }
-    void post(T prev, T next) { InternalGCMethods<T>::postBarrier(&this->value, prev, next); }
+    void pre() { InternalBarrierMethods<T>::preBarrier(this->value); }
+    void post(T prev, T next) { InternalBarrierMethods<T>::postBarrier(&this->value, prev, next); }
 };
 
 
@@ -385,7 +385,7 @@ template <class T>
 class PreBarriered : public WriteBarrieredBase<T>
 {
   public:
-    PreBarriered() : WriteBarrieredBase<T>(GCMethods<T>::initial()) {}
+    PreBarriered() : WriteBarrieredBase<T>(GCPolicy<T>::initial()) {}
     
 
 
@@ -430,12 +430,12 @@ template <class T>
 class HeapPtr : public WriteBarrieredBase<T>
 {
   public:
-    HeapPtr() : WriteBarrieredBase<T>(GCMethods<T>::initial()) {}
+    HeapPtr() : WriteBarrieredBase<T>(GCPolicy<T>::initial()) {}
     explicit HeapPtr(T v) : WriteBarrieredBase<T>(v) {
-        this->post(GCMethods<T>::initial(), v);
+        this->post(GCPolicy<T>::initial(), v);
     }
     explicit HeapPtr(const HeapPtr<T>& v) : WriteBarrieredBase<T>(v) {
-        this->post(GCMethods<T>::initial(), v);
+        this->post(GCPolicy<T>::initial(), v);
     }
 #ifdef DEBUG
     ~HeapPtr() {
@@ -447,7 +447,7 @@ class HeapPtr : public WriteBarrieredBase<T>
 
     void init(T v) {
         this->value = v;
-        this->post(GCMethods<T>::initial(), v);
+        this->post(GCPolicy<T>::initial(), v);
     }
 
     DECLARE_POINTER_ASSIGN_OPS(HeapPtr, T);
@@ -482,11 +482,11 @@ template <class T>
 class RelocatablePtr : public WriteBarrieredBase<T>
 {
   public:
-    RelocatablePtr() : WriteBarrieredBase<T>(GCMethods<T>::initial()) {}
+    RelocatablePtr() : WriteBarrieredBase<T>(GCPolicy<T>::initial()) {}
 
     
     MOZ_IMPLICIT RelocatablePtr(const T& v) : WriteBarrieredBase<T>(v) {
-        this->post(GCMethods<T>::initial(), this->value);
+        this->post(GCPolicy<T>::initial(), this->value);
     }
 
     
@@ -496,17 +496,17 @@ class RelocatablePtr : public WriteBarrieredBase<T>
 
 
     MOZ_IMPLICIT RelocatablePtr(const RelocatablePtr<T>& v) : WriteBarrieredBase<T>(v) {
-        this->post(GCMethods<T>::initial(), this->value);
+        this->post(GCPolicy<T>::initial(), this->value);
     }
 
     ~RelocatablePtr() {
         this->pre();
-        this->post(this->value, GCMethods<T>::initial());
+        this->post(this->value, GCPolicy<T>::initial());
     }
 
     void init(T v) {
         this->value = v;
-        this->post(GCMethods<T>::initial(), this->value);
+        this->post(GCPolicy<T>::initial(), this->value);
     }
 
     DECLARE_POINTER_ASSIGN_OPS(RelocatablePtr, T);
@@ -540,8 +540,8 @@ class ReadBarrieredBase : public BarrieredBase<T>
     explicit ReadBarrieredBase(T v) : BarrieredBase<T>(v) {}
 
   protected:
-    void read() const { InternalGCMethods<T>::readBarrier(this->value); }
-    void post(T prev, T next) { InternalGCMethods<T>::postBarrier(&this->value, prev, next); }
+    void read() const { InternalBarrierMethods<T>::readBarrier(this->value); }
+    void post(T prev, T next) { InternalBarrierMethods<T>::postBarrier(&this->value, prev, next); }
 };
 
 
@@ -561,16 +561,16 @@ template <typename T>
 class ReadBarriered : public ReadBarrieredBase<T>
 {
   public:
-    ReadBarriered() : ReadBarrieredBase<T>(GCMethods<T>::initial()) {}
+    ReadBarriered() : ReadBarrieredBase<T>(GCPolicy<T>::initial()) {}
 
     
     MOZ_IMPLICIT ReadBarriered(const T& v) : ReadBarrieredBase<T>(v) {
-        this->post(GCMethods<T>::initial(), v);
+        this->post(GCPolicy<T>::initial(), v);
     }
 
     
     explicit ReadBarriered(const ReadBarriered& v) : ReadBarrieredBase<T>(v) {
-        this->post(GCMethods<T>::initial(), v.get());
+        this->post(GCPolicy<T>::initial(), v.get());
     }
 
     
@@ -578,11 +578,11 @@ class ReadBarriered : public ReadBarrieredBase<T>
     ReadBarriered(ReadBarriered&& v)
       : ReadBarrieredBase<T>(mozilla::Forward<ReadBarriered<T>>(v))
     {
-        this->post(GCMethods<T>::initial(), v.value);
+        this->post(GCPolicy<T>::initial(), v.value);
     }
 
     ~ReadBarriered() {
-        this->post(this->value, GCMethods<T>::initial());
+        this->post(this->value, GCPolicy<T>::initial());
     }
 
     ReadBarriered& operator=(const ReadBarriered& v) {
@@ -593,8 +593,8 @@ class ReadBarriered : public ReadBarrieredBase<T>
     }
 
     const T get() const {
-        if (!InternalGCMethods<T>::isMarkable(this->value))
-            return GCMethods<T>::initial();
+        if (!InternalBarrierMethods<T>::isMarkable(this->value))
+            return GCPolicy<T>::initial();
         this->read();
         return this->value;
     }
