@@ -346,40 +346,24 @@ private:
   
   
   
-
-  
-  
-  
-  
-  static MOZ_ALWAYS_INLINE void
-  AddRefTraitsAddRefHelper(typename mozilla::RemoveConst<T>::Type* aPtr)
-  {
-    aPtr->AddRef();
-  }
-  static MOZ_ALWAYS_INLINE void
-  AddRefTraitsReleaseHelper(typename mozilla::RemoveConst<T>::Type* aPtr)
-  {
-    aPtr->Release();
-  }
-
   template<class U>
   struct AddRefTraits
   {
     static void AddRef(U* aPtr) {
-      RefPtr<T>::AddRefTraitsAddRefHelper(aPtr);
+      aPtr->AddRef();
     }
     static void Release(U* aPtr) {
-      RefPtr<T>::AddRefTraitsReleaseHelper(aPtr);
+      aPtr->Release();
     }
   };
   template<class U>
   struct AddRefTraits<const U>
   {
     static void AddRef(const U* aPtr) {
-      RefPtr<T>::AddRefTraitsAddRefHelper(const_cast<U*>(aPtr));
+      const_cast<U*>(aPtr)->AddRef();
     }
     static void Release(const U* aPtr) {
-      RefPtr<T>::AddRefTraitsReleaseHelper(const_cast<U*>(aPtr));
+      const_cast<U*>(aPtr)->Release();
     }
   };
 };
