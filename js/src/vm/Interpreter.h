@@ -84,10 +84,6 @@ InternalInvoke(JSContext* cx, const CallArgs& args)
 }
 
 
-
-
-
-
 extern bool
 Invoke(JSContext* cx, const Value& thisv, const Value& fval, unsigned argc, const Value* argv,
        MutableHandleValue rval);
@@ -101,6 +97,21 @@ CallGetter(JSContext* cx, HandleValue thisv, HandleValue getter, MutableHandleVa
 
 extern bool
 CallSetter(JSContext* cx, HandleValue thisv, HandleValue setter, HandleValue rval);
+
+
+
+
+
+
+
+
+extern bool
+Call(JSContext* cx, HandleValue fval, HandleValue thisv, const AnyInvokeArgs& args,
+     MutableHandleValue rval);
+
+
+
+
 
 
 
@@ -123,6 +134,9 @@ Construct(JSContext* cx, HandleValue fval, const AnyConstructArgs& args, HandleV
 
 extern bool
 ConstructFromStack(JSContext* cx, const CallArgs& args);
+
+
+
 
 
 
