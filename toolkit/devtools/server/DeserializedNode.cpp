@@ -97,6 +97,17 @@ DeserializedNode::getEdgeReferent(const DeserializedEdge& edge)
   return JS::ubi::Node(const_cast<DeserializedNode*>(&*ptr));
 }
 
+JS::ubi::StackFrame
+DeserializedStackFrame::getParentStackFrame() const
+{
+  MOZ_ASSERT(parent.isSome());
+  auto ptr = owner->frames.lookup(parent.ref());
+  MOZ_ASSERT(ptr);
+  
+  
+  return JS::ubi::StackFrame(const_cast<DeserializedStackFrame*>(&*ptr));
+}
+
 } 
 } 
 
@@ -178,6 +189,21 @@ Concrete<DeserializedNode>::edges(JSContext* cx, bool) const
     return nullptr;
 
   return UniquePtr<EdgeRange>(range.release());
+}
+
+StackFrame
+ConcreteStackFrame<DeserializedStackFrame>::parent() const
+{
+  return get().parent.isNothing() ? StackFrame() : get().getParentStackFrame();
+}
+
+bool
+ConcreteStackFrame<DeserializedStackFrame>::constructSavedFrameStack(
+  JSContext* cx,
+  MutableHandleObject outSavedFrameStack) const
+{
+  StackFrame f(&get());
+  return ConstructSavedFrameStackSlow(cx, f, outSavedFrameStack);
 }
 
 } 
