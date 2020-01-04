@@ -1741,8 +1741,15 @@ KeyframeEffectReadOnly::CanThrottle() const
 {
   
   
-  MOZ_ASSERT(IsInEffect() && IsCurrent(),
-    "Effect should be in effect and current");
+  MOZ_ASSERT(IsInEffect(), "Effect should be in effect");
+
+  
+  
+  
+  
+  if (!IsCurrent()) {
+    return false;
+  }
 
   nsIFrame* frame = GetAnimationFrame();
   if (!frame) {
