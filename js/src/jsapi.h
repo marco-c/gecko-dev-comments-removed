@@ -537,27 +537,6 @@ struct JSFreeOp {
 
 
 
-typedef enum JSContextOp {
-    JSCONTEXT_NEW,
-    JSCONTEXT_DESTROY
-} JSContextOp;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef bool
-(* JSContextCallback)(JSContext* cx, unsigned contextOp, void* data);
-
 typedef enum JSGCStatus {
     JSGC_BEGIN,
     JSGC_END
@@ -1061,9 +1040,6 @@ class MOZ_RAII JSAutoRequest
     static void operator delete(void*, size_t) { }
 #endif
 };
-
-extern JS_PUBLIC_API(void)
-JS_SetContextCallback(JSRuntime* rt, JSContextCallback cxCallback, void* data);
 
 extern JS_PUBLIC_API(JSContext*)
 JS_NewContext(JSRuntime* rt, size_t stackChunkSize);

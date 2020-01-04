@@ -1108,10 +1108,6 @@ struct JSRuntime : public JS::shadow::Runtime,
     size_t              nativeStackQuota[js::StackKindCount];
 
     
-    JSContextCallback   cxCallback;
-    void*              cxCallbackData;
-
-    
     JSDestroyCompartmentCallback destroyCompartmentCallback;
 
     
