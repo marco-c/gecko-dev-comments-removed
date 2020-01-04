@@ -16,6 +16,7 @@
 #include "mozilla/unused.h"
 
 #include <ctype.h>
+#include <limits>
 #include <string.h>
 
 #include "jsapi.h"
@@ -2723,14 +2724,9 @@ js::str_fromCharCode(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-bool
-js::str_fromCharCode_one_arg(JSContext* cx, HandleValue code, MutableHandleValue rval)
+static inline bool
+CodeUnitToString(JSContext* cx, uint16_t ucode, MutableHandleValue rval)
 {
-    uint16_t ucode;
-
-    if (!ToUint16(cx, code, &ucode))
-        return false;
-
     if (StaticStrings::hasUnit(ucode)) {
         rval.setString(cx->staticStrings().getUnit(ucode));
         return true;
@@ -2745,10 +2741,178 @@ js::str_fromCharCode_one_arg(JSContext* cx, HandleValue code, MutableHandleValue
     return true;
 }
 
+bool
+js::str_fromCharCode_one_arg(JSContext* cx, HandleValue code, MutableHandleValue rval)
+{
+    uint16_t ucode;
+
+    if (!ToUint16(cx, code, &ucode))
+        return false;
+
+    return CodeUnitToString(cx, ucode, rval);
+}
+
+static inline bool
+IsSupplementary(uint32_t codePoint)
+{
+    return codePoint > 0xFFFF;
+}
+
+static inline char16_t
+LeadSurrogate(uint32_t codePoint)
+{
+    return char16_t((codePoint >> 10) + 0xD7C0);
+}
+
+static inline char16_t
+TrailSurrogate(uint32_t codePoint)
+{
+    return char16_t((codePoint & 0x3FF) | 0xDC00);
+}
+
+static inline void
+UTF16Encode(uint32_t codePoint, char16_t* elements, unsigned* index)
+{
+    if (!IsSupplementary(codePoint)) {
+        elements[(*index)++] = char16_t(codePoint);
+    } else {
+        elements[(*index)++] = LeadSurrogate(codePoint);
+        elements[(*index)++] = TrailSurrogate(codePoint);
+    }
+}
+
+static MOZ_ALWAYS_INLINE bool
+ToCodePoint(JSContext* cx, HandleValue code, uint32_t* codePoint)
+{
+    
+    double nextCP;
+    if (!ToNumber(cx, code, &nextCP))
+        return false;
+
+    
+    if (JS::ToInteger(nextCP) != nextCP || nextCP < 0 || nextCP > 0x10FFFF) {
+        ToCStringBuf cbuf;
+        if (char* numStr = NumberToCString(cx, &cbuf, nextCP))
+            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_NOT_A_CODEPOINT, numStr);
+        return false;
+    }
+
+    *codePoint = uint32_t(nextCP);
+    return true;
+}
+
+static bool
+str_fromCodePoint_one_arg(JSContext* cx, HandleValue code, MutableHandleValue rval)
+{
+    
+
+    
+    uint32_t codePoint;
+    if (!ToCodePoint(cx, code, &codePoint))
+        return false;
+
+    
+    if (!IsSupplementary(codePoint))
+        return CodeUnitToString(cx, uint16_t(codePoint), rval);
+
+    char16_t chars[] = { LeadSurrogate(codePoint), TrailSurrogate(codePoint) };
+    JSString* str = NewStringCopyNDontDeflate<CanGC>(cx, chars, 2);
+    if (!str)
+        return false;
+
+    rval.setString(str);
+    return true;
+}
+
+static bool
+str_fromCodePoint_few_args(JSContext* cx, const CallArgs& args)
+{
+    MOZ_ASSERT(args.length() <= JSFatInlineString::MAX_LENGTH_TWO_BYTE / 2);
+
+    
+
+    
+    char16_t elements[JSFatInlineString::MAX_LENGTH_TWO_BYTE];
+
+    
+    unsigned length = 0;
+    for (unsigned nextIndex = 0; nextIndex < args.length(); nextIndex++) {
+        
+        uint32_t codePoint;
+        if (!ToCodePoint(cx, args[nextIndex], &codePoint))
+            return false;
+
+        
+        UTF16Encode(codePoint, elements, &length);
+    }
+
+    
+    JSString* str = NewStringCopyN<CanGC>(cx, elements, length);
+    if (!str)
+        return false;
+
+    args.rval().setString(str);
+    return true;
+}
+
+
+
+static bool
+str_fromCodePoint(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    
+    if (args.length() == 1)
+        return str_fromCodePoint_one_arg(cx, args[0], args.rval());
+
+    
+    
+    
+    
+    
+    if (args.length() <= JSFatInlineString::MAX_LENGTH_TWO_BYTE / 2)
+        return str_fromCodePoint_few_args(cx, args);
+
+    
+
+    
+    static_assert(ARGS_LENGTH_MAX < std::numeric_limits<size_t>::max() / 2,
+                  "|args.length() * 2 + 1| does not overflow");
+    char16_t* elements = cx->pod_malloc<char16_t>(args.length() * 2 + 1);
+    if (!elements)
+        return false;
+
+    
+    unsigned length = 0;
+    for (unsigned nextIndex = 0; nextIndex < args.length(); nextIndex++) {
+        
+        uint32_t codePoint;
+        if (!ToCodePoint(cx, args[nextIndex], &codePoint)) {
+            js_free(elements);
+            return false;
+        }
+
+        
+        UTF16Encode(codePoint, elements, &length);
+    }
+    elements[length] = 0;
+
+    
+    JSString* str = NewString<CanGC>(cx, elements, length);
+    if (!str) {
+        js_free(elements);
+        return false;
+    }
+
+    args.rval().setString(str);
+    return true;
+}
+
 static const JSFunctionSpec string_static_methods[] = {
     JS_INLINABLE_FN("fromCharCode", js::str_fromCharCode, 1, 0, StringFromCharCode),
 
-    JS_SELF_HOSTED_FN("fromCodePoint",   "String_static_fromCodePoint", 1,0),
+    JS_FN("fromCodePoint",               str_fromCodePoint,             1,0),
     JS_SELF_HOSTED_FN("raw",             "String_static_raw",           2,JSFUN_HAS_REST),
     JS_SELF_HOSTED_FN("substring",       "String_static_substring",     3,0),
     JS_SELF_HOSTED_FN("substr",          "String_static_substr",        3,0),

@@ -7,6 +7,7 @@ print(BUGNUMBER + ": " + summary);
 
 
 assertEq(String.fromCodePoint.length, 1);
+assertEq(String.fromCodePoint.name, 'fromCodePoint');
 assertEq(String.propertyIsEnumerable('fromCodePoint'), false);
 
 assertEq(String.fromCodePoint(''), '\0');
@@ -44,5 +45,16 @@ while (--counter >= 0) {
         result.push(0xFFFF + 1); 
 }
 String.fromCodePoint.apply(null, result); 
+
+
+assertEq(String.fromCodePoint(0x31), '1');
+
+
+assertEq(String.fromCodePoint(0x31, 0x32), '12');
+assertEq(String.fromCodePoint(0x31, 0x32, 0x33), '123');
+assertEq(String.fromCodePoint(0x31, 0x32, 0x33, 0x34), '1234');
+assertEq(String.fromCodePoint(0x31, 0x32, 0x33, 0x34, 0x35), '12345');
+
+assertEq(String.fromCodePoint(0x31, 0x32, 0x33, 0x34, 0x35, 0x36), '123456');
 
 reportCompare(0, 0, "ok");
