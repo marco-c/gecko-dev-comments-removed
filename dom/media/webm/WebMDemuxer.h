@@ -220,6 +220,8 @@ private:
   
   Maybe<int64_t> mLastAudioFrameTime;
   Maybe<int64_t> mLastVideoFrameTime;
+  Maybe<uint64_t> mAudioDefaultDuration;
+  Maybe<uint64_t> mVideoDefaultDuration;
 
   
   int mAudioCodec;
