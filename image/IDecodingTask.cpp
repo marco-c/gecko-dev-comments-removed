@@ -92,6 +92,8 @@ DecodingTask::DecodingTask(NotNull<Decoder*> aDecoder)
 {
   MOZ_ASSERT(!mDecoder->IsMetadataDecode(),
              "Use MetadataDecodingTask for metadata decodes");
+  MOZ_ASSERT(mDecoder->IsFirstFrameDecode(),
+             "Use AnimationDecodingTask for animation decodes");
 }
 
 void
@@ -126,6 +128,56 @@ DecodingTask::Run()
 
 bool
 DecodingTask::ShouldPreferSyncRun() const
+{
+  return mDecoder->ShouldSyncDecode(gfxPrefs::ImageMemDecodeBytesAtATime());
+}
+
+
+
+
+
+
+AnimationDecodingTask::AnimationDecodingTask(NotNull<Decoder*> aDecoder)
+  : mDecoder(aDecoder)
+{
+  MOZ_ASSERT(!mDecoder->IsMetadataDecode(),
+             "Use MetadataDecodingTask for metadata decodes");
+  MOZ_ASSERT(!mDecoder->IsFirstFrameDecode(),
+             "Use DecodingTask for single-frame image decodes");
+}
+
+void
+AnimationDecodingTask::Run()
+{
+  while (true) {
+    LexerResult result = mDecoder->Decode(WrapNotNull(this));
+
+    if (result.is<TerminalState>()) {
+      NotifyDecodeComplete(mDecoder);
+      return;  
+    }
+
+    MOZ_ASSERT(result.is<Yield>());
+
+    
+    if (mDecoder->HasProgress()) {
+      NotifyProgress(mDecoder);
+    }
+
+    if (result == LexerResult(Yield::NEED_MORE_DATA)) {
+      
+      
+      
+      return;
+    }
+
+    
+    
+  }
+}
+
+bool
+AnimationDecodingTask::ShouldPreferSyncRun() const
 {
   return mDecoder->ShouldSyncDecode(gfxPrefs::ImageMemDecodeBytesAtATime());
 }
