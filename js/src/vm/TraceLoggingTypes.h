@@ -10,7 +10,6 @@
 #include "jsalloc.h"
 #include "jsstr.h"
 
-
 #define TRACELOGGER_TREE_ITEMS(_)                     \
     _(AnnotateScripts)                                \
     _(Baseline)                                       \
@@ -71,7 +70,6 @@
     _(IonBuilderRestartLoop)                          \
     _(VMSpecific)
 
-
 #define TRACELOGGER_LOG_ITEMS(_)                      \
     _(Bailout)                                        \
     _(Invalidation)                                   \
@@ -109,9 +107,8 @@ TLTextIdString(TraceLoggerTextId id)
 uint32_t
 TLStringToTextId(JSLinearString* str);
 
-
 inline bool
-TLTextIdIsTogglable(uint32_t id)
+TLTextIdIsToggable(uint32_t id)
 {
     if (id == TraceLogger_Error)
         return false;
