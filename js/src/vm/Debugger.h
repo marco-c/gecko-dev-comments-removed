@@ -93,16 +93,6 @@ class DebuggerWeakMap : private WeakMap<PreBarriered<UnbarrieredKey>, Relocatabl
           compartment(cx->compartment())
     { }
 
-    ~DebuggerWeakMap() {
-        
-        
-        
-        
-        
-        if (WeakMapBase::isInList())
-            WeakMapBase::removeWeakMapFromList(this);
-    }
-
   public:
     
 
@@ -210,6 +200,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     friend class DebuggerMemory;
     friend class SavedStacks;
     friend class mozilla::LinkedListElement<Debugger>;
+    friend class mozilla::LinkedList<Debugger>;
     friend bool (::JS_DefineDebuggerObject)(JSContext* cx, JS::HandleObject obj);
     friend bool (::JS::dbg::IsDebugger)(JSObject&);
     friend bool (::JS::dbg::GetDebuggeeGlobals)(JSContext*, JSObject&, AutoObjectVector&);

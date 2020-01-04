@@ -1780,10 +1780,7 @@ ComputePlainObjectLayout(ExclusiveContext* cx, Shape* templateShape,
     
     
     UnboxedLayout* bestExisting = nullptr;
-    for (UnboxedLayout* existing = cx->compartment()->unboxedLayouts.getFirst();
-         existing;
-         existing = existing->getNext())
-    {
+    for (UnboxedLayout* existing : cx->compartment()->unboxedLayouts) {
         if (PropertiesAreSuperset(properties, existing)) {
             if (!bestExisting ||
                 existing->properties().length() > bestExisting->properties().length())
