@@ -46,6 +46,12 @@ inline std::ostream& operator<<(std::ostream& os, sdp::AddrType t)
   MOZ_CRASH("Unknown AddrType");
 }
 
+enum Direction {
+  
+  kSend = 1,
+  kRecv = 2
+};
+
 } 
 
 } 

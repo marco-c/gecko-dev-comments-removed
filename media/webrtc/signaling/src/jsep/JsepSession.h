@@ -19,7 +19,7 @@
 namespace mozilla {
 
 
-struct JsepCodecDescription;
+class JsepCodecDescription;
 class JsepTrack;
 struct JsepTrackPair;
 
