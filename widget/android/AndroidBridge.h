@@ -11,6 +11,8 @@
 #include <cstdlib>
 #include <pthread.h>
 
+#include "APKOpen.h"
+
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
 
@@ -128,12 +130,8 @@ public:
         LAYER_CLIENT_TYPE_GL = 2            
     };
 
-    static void RegisterJavaUiThread() {
-        sJavaUiThread = pthread_self();
-    }
-
     static bool IsJavaUiThread() {
-        return pthread_equal(pthread_self(), sJavaUiThread);
+        return pthread_equal(pthread_self(), ::getJavaUiThread());
     }
 
     static void ConstructBridge();
@@ -258,6 +256,7 @@ public:
     uint16_t GetScreenAngle();
 
     int GetAPIVersion() { return mAPIVersion; }
+    bool IsHoneycomb() { return mAPIVersion >= 11 && mAPIVersion <= 13; }
 
     void InvalidateAndScheduleComposite();
 
@@ -297,7 +296,6 @@ public:
 protected:
     static nsDataHashtable<nsStringHashKey, nsString> sStoragePaths;
 
-    static pthread_t sJavaUiThread;
     static AndroidBridge* sBridge;
     nsTArray<nsCOMPtr<nsIMobileMessageCallback>> mSmsRequests;
     nsTArray<nsCOMPtr<nsIMobileMessageCursorCallback>> mSmsCursorRequests;
@@ -309,6 +307,14 @@ protected:
 
     AndroidBridge();
     ~AndroidBridge();
+
+    bool mOpenedGraphicsLibraries;
+    void OpenGraphicsLibraries();
+    void* GetNativeSurface(JNIEnv* env, jobject surface);
+
+    bool mHasNativeBitmapAccess;
+    bool mHasNativeWindowAccess;
+    bool mHasNativeWindowFallback;
 
     int mAPIVersion;
 
@@ -325,7 +331,20 @@ protected:
     jmethodID jClose;
     jmethodID jAvailable;
 
+    
+    jmethodID jNotifyAppShellReady;
+    jmethodID jGetOutstandingDrawEvents;
+    jmethodID jPostToJavaThread;
+    jmethodID jCreateSurface;
+    jmethodID jShowSurface;
+    jmethodID jHideSurface;
+    jmethodID jDestroySurface;
+
     jmethodID jCalculateLength;
+
+    
+    jclass jSurfaceClass;
+    jfieldID jSurfacePointerField;
 
     
     jclass jStringClass;

@@ -506,7 +506,7 @@ public class GeckoThread extends Thread {
         
         ThreadUtils.postToUiThread(new Runnable() {
             @Override public void run() {
-                GeckoAppShell.registerJavaUiThread();
+                registerUiThread();
             }
         });
 
@@ -679,4 +679,7 @@ public class GeckoThread extends Thread {
                                  String.class, category, String.class, data);
         }
     }
+
+    
+     static native void registerUiThread();
 }

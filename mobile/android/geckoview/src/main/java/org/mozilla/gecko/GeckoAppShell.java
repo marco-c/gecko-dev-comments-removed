@@ -238,9 +238,6 @@ public class GeckoAppShell
     
 
     
-    public static native void registerJavaUiThread();
-
-    
     public static native void onSurfaceTextureFrameAvailable(Object surfaceTexture, int id);
     public static native void dispatchMemoryPressure();
 
