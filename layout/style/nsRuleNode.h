@@ -992,9 +992,15 @@ public:
   
   
   
+  
+  
+  
   static nscoord ComputeComputedCalc(const nsStyleCoord& aCoord,
                                      nscoord aPercentageBasis);
 
+  
+  
+  
   
   
   static nscoord ComputeCoordPercentCalc(const nsStyleCoord& aCoord,
@@ -1052,11 +1058,6 @@ public:
 
   static void ComputeTimingFunction(const nsCSSValue& aValue,
                                     nsTimingFunction& aResult);
-
-  
-  
-  static void FillAllBackgroundLists(nsStyleImageLayers& aLayers,
-                                     uint32_t aMaxItemCount);
 
 private:
 #ifdef DEBUG

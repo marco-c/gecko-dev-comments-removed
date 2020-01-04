@@ -99,6 +99,23 @@ ClampToCSSMaxBSize(nscoord aSize, const ReflowInput* aReflowInput,
   return aSize;
 }
 
+static bool
+IsPercentOfIndefiniteSize(const nsStyleCoord& aCoord, nscoord aPercentBasis)
+{
+  return aPercentBasis == NS_UNCONSTRAINEDSIZE && aCoord.HasPercent();
+}
+
+static nscoord
+ResolveToDefiniteSize(const nsStyleCoord& aCoord, nscoord aPercentBasis)
+{
+  MOZ_ASSERT(aCoord.IsCoordPercentCalcUnit());
+  if (::IsPercentOfIndefiniteSize(aCoord, aPercentBasis)) {
+    return nscoord(0);
+  }
+  return std::max(nscoord(0),
+                  nsRuleNode::ComputeCoordPercentCalc(aCoord, aPercentBasis));
+}
+
 enum class GridLineSide
 {
   eBeforeGridGap,
@@ -164,17 +181,15 @@ nsGridContainerFrame::TrackSize::Initialize(nscoord aPercentageBasis,
   MOZ_ASSERT(mBase == 0 && mLimit == 0 && mState == 0,
              "track size data is expected to be initialized to zero");
   auto minSizeUnit = aMinCoord.GetUnit();
+  if (::IsPercentOfIndefiniteSize(aMinCoord, aPercentageBasis)) {
+    
+    
+    
+    minSizeUnit = eStyleUnit_Auto;
+  }
   auto maxSizeUnit = aMaxCoord.GetUnit();
-  if (aPercentageBasis == NS_UNCONSTRAINEDSIZE) {
-    
-    
-    
-    if (aMinCoord.HasPercent()) {
-      minSizeUnit = eStyleUnit_Auto;
-    }
-    if (aMaxCoord.HasPercent()) {
-      maxSizeUnit = eStyleUnit_Auto;
-    }
+  if (::IsPercentOfIndefiniteSize(aMaxCoord, aPercentageBasis)) {
+    maxSizeUnit = eStyleUnit_Auto;
   }
   
   switch (minSizeUnit) {
@@ -962,7 +977,7 @@ struct nsGridContainerFrame::TrackSizingFunctions
           return 1;
         }
       }
-      nscoord trackSize = nsRuleNode::ComputeCoordPercentCalc(*coord, aSize);
+      nscoord trackSize = ::ResolveToDefiniteSize(*coord, aSize);
       if (i == mRepeatAutoStart) {
         
         if (trackSize < AppUnitsPerCSSPixel()) {
@@ -972,8 +987,7 @@ struct nsGridContainerFrame::TrackSizingFunctions
       }
       sum += trackSize;
     }
-    nscoord gridGap =
-      std::max(nscoord(0), nsRuleNode::ComputeCoordPercentCalc(aGridGap, aSize));
+    nscoord gridGap = ::ResolveToDefiniteSize(aGridGap, aSize);
     if (numTracks > 1) {
       
       sum += gridGap * (numTracks - 1);
@@ -3412,8 +3426,7 @@ nsGridContainerFrame::Tracks::Initialize(
                          aFunctions.MinSizingFor(i),
                          aFunctions.MaxSizingFor(i));
   }
-  auto gap = nsRuleNode::ComputeCoordPercentCalc(aGridGap, aContentBoxSize);
-  mGridGap = std::max(nscoord(0), gap);
+  mGridGap = ::ResolveToDefiniteSize(aGridGap, aContentBoxSize);
   mContentBoxSize = aContentBoxSize;
 }
 
@@ -4809,7 +4822,7 @@ nsGridContainerFrame::ReflowInFragmentainer(GridReflowInput&     aState,
   const uint32_t startRow = aState.mStartRow;
   const uint32_t numRows = aState.mRows.mSizes.Length();
   bool isBDBClone = aState.mReflowInput->mStyleBorder->mBoxDecorationBreak ==
-                      StyleBoxDecorationBreak::Clone;
+                      NS_STYLE_BOX_DECORATION_BREAK_CLONE;
   nscoord bpBEnd = aState.mBorderPadding.BEnd(aState.mWM);
 
   
@@ -4999,7 +5012,7 @@ nsGridContainerFrame::ReflowRowsInFragmentainer(
   FrameHashtable incompleteItems;
   FrameHashtable overflowIncompleteItems;
   bool isBDBClone = aState.mReflowInput->mStyleBorder->mBoxDecorationBreak ==
-                      StyleBoxDecorationBreak::Clone;
+                      NS_STYLE_BOX_DECORATION_BREAK_CLONE;
   bool didGrowRow = false;
   
   
@@ -5614,7 +5627,7 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
   if (!NS_FRAME_IS_COMPLETE(aStatus) &&
       !gridReflowInput.mSkipSides.BEnd() &&
       StyleBorder()->mBoxDecorationBreak !=
-        StyleBoxDecorationBreak::Clone) {
+        NS_STYLE_BOX_DECORATION_BREAK_CLONE) {
     bp.BEnd(wm) = nscoord(0);
   }
 
