@@ -87,7 +87,11 @@ class RemoteXPCShellTestThread(xpcshell.XPCShellTestThread):
         self.log.info("%s | environment: %s" % (name, self.env))
 
     def getHeadAndTailFiles(self, test):
-        """Override parent method to find files on remote device."""
+        """Override parent method to find files on remote device.
+
+        Obtains lists of head- and tail files.  Returns a tuple containing
+        a list of head files and a list of tail files.
+        """
         def sanitize_list(s, kind):
             for f in s.strip().split(' '):
                 f = f.strip()
@@ -99,13 +103,14 @@ class RemoteXPCShellTestThread(xpcshell.XPCShellTestThread):
                 
                 
                 
-
                 yield path
 
         self.remoteHere = self.remoteForLocal(test['here'])
 
-        return (list(sanitize_list(test['head'], 'head')),
-                list(sanitize_list(test['tail'], 'tail')))
+        headlist = test.get('head', '')
+        taillist = test.get('tail', '')
+        return (list(sanitize_list(headlist, 'head')),
+                list(sanitize_list(taillist, 'tail')))
 
     def buildXpcsCmd(self):
         
