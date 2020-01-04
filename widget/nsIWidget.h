@@ -902,11 +902,6 @@ class nsIWidget : public nsISupports
     
 
 
-    NS_IMETHOD GetNonClientMargins(LayoutDeviceIntMargin& aMargins) = 0;
-
-    
-
-
 
 
 
