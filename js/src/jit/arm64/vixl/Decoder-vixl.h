@@ -27,7 +27,9 @@
 #ifndef VIXL_A64_DECODER_A64_H_
 #define VIXL_A64_DECODER_A64_H_
 
-#include <list>
+#include "mozilla/Vector.h"
+
+#include "jsalloc.h"
 
 #include "jit/arm64/vixl/Globals-vixl.h"
 #include "jit/arm64/vixl/Instructions-vixl.h"
@@ -118,9 +120,8 @@ class Decoder {
 
   
   void Decode(const Instruction* instr) {
-    std::list<DecoderVisitor*>::iterator it;
-    for (it = visitors_.begin(); it != visitors_.end(); it++) {
-      VIXL_ASSERT((*it)->IsConstVisitor());
+    for (auto visitor : visitors_) {
+      VIXL_ASSERT(visitor->IsConstVisitor());
     }
     DecodeInstruction(instr);
   }
@@ -154,10 +155,6 @@ class Decoder {
   
   
   
-  
-  
-  
-  
   void InsertVisitorBefore(DecoderVisitor* new_visitor,
                            DecoderVisitor* registered_visitor);
   void InsertVisitorAfter(DecoderVisitor* new_visitor,
@@ -170,9 +167,6 @@ class Decoder {
   #define DECLARE(A) void Visit##A(const Instruction* instr);
   VISITOR_LIST(DECLARE)
   #undef DECLARE
-
-
-  std::list<DecoderVisitor*>* visitors() { return &visitors_; }
 
  private:
   
@@ -231,7 +225,7 @@ class Decoder {
 
  private:
   
-  std::list<DecoderVisitor*> visitors_;
+  mozilla::Vector<DecoderVisitor*, 8, js::SystemAllocPolicy> visitors_;
 };
 
 }  

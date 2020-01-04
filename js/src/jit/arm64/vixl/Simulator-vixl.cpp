@@ -68,13 +68,13 @@ SimSystemRegister SimSystemRegister::DefaultValueFor(SystemRegister id) {
 
 
 Simulator::~Simulator() {
-  delete [] stack_;
+  js_free(stack_);
   
   decoder_->RemoveVisitor(print_disasm_);
-  delete print_disasm_;
+  js_delete(print_disasm_);
 
   decoder_->RemoveVisitor(instrumentation_);
-  delete instrumentation_;
+  js_delete(instrumentation_);
 }
 
 
@@ -2791,7 +2791,7 @@ void Simulator::DoPrintf(const Instruction* instr) {
   const char * format_base = reg<const char *>(0);
   VIXL_ASSERT(format_base != NULL);
   size_t length = strlen(format_base) + 1;
-  char * const format = new char[length + arg_count];
+  char * const format = (char*)js_malloc(length + arg_count);
 
   
   const char * chunks[kPrintfMaxArgCount];
@@ -2867,7 +2867,7 @@ void Simulator::DoPrintf(const Instruction* instr) {
   
   set_lr(pc());
 
-  delete[] format;
+  js_free(format);
 }
 
 }  

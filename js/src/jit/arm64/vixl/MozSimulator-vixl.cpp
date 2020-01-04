@@ -91,14 +91,14 @@ void Simulator::init(Decoder* decoder, FILE* stream) {
   decoder_->AppendVisitor(this);
 
   stream_ = stream;
-  print_disasm_ = new PrintDisassembler(stream_);
+  print_disasm_ = js_new<PrintDisassembler>(stream_);
   set_coloured_trace(false);
   trace_parameters_ = LOG_NONE;
 
   ResetState();
 
   
-  stack_ = new byte[stack_size_];
+  stack_ = (byte*)js_malloc(stack_size_);
   stack_limit_ = stack_ + stack_protection_size_;
   
   
@@ -110,7 +110,7 @@ void Simulator::init(Decoder* decoder, FILE* stream) {
   set_sp(tos);
 
   
-  instrumentation_ = new Instrument("vixl_stats.csv", 10);
+  instrumentation_ = js_new<Instrument>("vixl_stats.csv", 10);
 
   
   
