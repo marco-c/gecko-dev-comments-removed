@@ -105,19 +105,16 @@ bool
 EffectiveAddressAnalysis::tryAddDisplacement(MAsmJSHeapAccessType* ins, int32_t o)
 {
     
-    
-    
-    MOZ_ASSERT(ins->offset() >= 0);
-    int32_t newOffset = uint32_t(ins->offset()) + o;
-    if (newOffset < 0)
+    uint32_t oldOffset = ins->offset();
+    uint32_t newOffset = oldOffset + o;
+    if (o < 0 ? (newOffset >= oldOffset) : (newOffset < oldOffset))
         return false;
 
     
     
-    int32_t newEnd = uint32_t(newOffset) + ins->byteSize();
-    if (newEnd < 0)
+    uint32_t newEnd = newOffset + ins->byteSize();
+    if (newEnd < newOffset)
         return false;
-    MOZ_ASSERT(uint32_t(newEnd) >= uint32_t(newOffset));
 
     
     
