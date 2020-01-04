@@ -1081,13 +1081,17 @@ void nsXULWindow::OnChromeLoaded()
           if (NS_SUCCEEDED(cv->GetContentSize(&width, &height))) {
             treeOwner->SizeShellTo(docShellAsItem, width, height);
             
-            
-            if (positionSet) {
-              LoadPositionFromXUL(width, height);
-            }
+            specWidth = width;
+            specHeight = height;
           }
         }
       }
+    }
+
+    
+    
+    if (positionSet) {
+      LoadPositionFromXUL(specWidth, specHeight);
     }
 
     LoadMiscPersistentAttributesFromXUL();
