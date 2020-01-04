@@ -363,11 +363,13 @@ MediaStreamGraphImpl::UpdateStreamOrder()
   }
   
   
+  
 
   if (!audioTrackPresent && mRealtime &&
       CurrentDriver()->AsAudioCallbackDriver()) {
     MonitorAutoLock mon(mMonitor);
-    if (CurrentDriver()->AsAudioCallbackDriver()->IsStarted()) {
+    if (CurrentDriver()->AsAudioCallbackDriver()->IsStarted() &&
+        !(CurrentDriver()->Switching())) {
       if (mLifecycleState == LIFECYCLE_RUNNING) {
         SystemClockDriver* driver = new SystemClockDriver(this);
         CurrentDriver()->SwitchAtNextIteration(driver);
