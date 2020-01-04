@@ -76,6 +76,30 @@ function testSteps()
     { url: "file://///index.html", dbName: "dbS", dbVersion: 1 },
 
     
+    { url: "resource://fx-share-addon-at-mozilla-dot-org-fx-share-addon-data",
+      dbName: "dbU", dbOptions: { version: 1, storage: "persistent" } },
+
+    
+    
+    
+    { url: "http://localhost:81", dbName: "dbV",
+      dbOptions: { version: 1, storage: "temporary" } },
+
+    
+    
+    
+    { url: "http://localhost:82", dbName: "dbW",
+      dbOptions: { version: 1, storage: "temporary" } },
+
+    
+    { appId: 1007, inIsolatedMozBrowser: false, url: "app://system.gaiamobile.org",
+      dbName: "dbX", dbOptions: { version: 1, storage: "temporary" } },
+
+    
+    { appId: 1007, inIsolatedMozBrowser: true, url: "https://developer.cdn.mozilla.net",
+      dbName: "dbY", dbOptions: { version: 1, storage: "temporary" } },
+
+    
     { url: "http://localhost", dbName: "dbZ",
       dbOptions: { version: 1, storage: "temporary" } }
   ];
