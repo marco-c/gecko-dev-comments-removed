@@ -79,6 +79,13 @@ JS::detail::InitWithFailureDiagnostic(bool isDebugBuild)
 
     PRMJ_NowInit();
 
+    
+    
+    
+    
+    bool ignored;
+    mozilla::TimeStamp::ProcessCreation(ignored);
+
 #ifdef DEBUG
     CheckMessageParameterCounts();
 #endif
