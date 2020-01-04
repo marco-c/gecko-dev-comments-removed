@@ -197,7 +197,8 @@ nsBindingManager::SetWrappedJS(nsIContent* aContent, nsIXPConnectWrappedJS* aWra
 
 void
 nsBindingManager::RemovedFromDocumentInternal(nsIContent* aContent,
-                                              nsIDocument* aOldDocument)
+                                              nsIDocument* aOldDocument,
+                                              DestructorHandling aDestructorHandling)
 {
   NS_PRECONDITION(aOldDocument != nullptr, "no old document");
 
@@ -208,7 +209,7 @@ nsBindingManager::RemovedFromDocumentInternal(nsIContent* aContent,
     
     
     
-    if (!mDestroyed) {
+    if (!mDestroyed && aDestructorHandling == eRunDtor) {
       binding->PrototypeBinding()->BindingDetached(binding->GetBoundElement());
       binding->ChangeDocument(aOldDocument, nullptr);
     }

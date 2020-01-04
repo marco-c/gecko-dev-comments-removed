@@ -1714,7 +1714,8 @@ RemoveFromBindingManagerRunnable::Run()
   
   
   if (!mContent->IsInComposedDoc()) {
-    mManager->RemovedFromDocumentInternal(mContent, mDoc);
+    mManager->RemovedFromDocumentInternal(mContent, mDoc,
+                                          nsBindingManager::eRunDtor);
   }
 
   return NS_OK;

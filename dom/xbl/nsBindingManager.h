@@ -63,14 +63,23 @@ public:
 
 
 
-  void RemovedFromDocument(nsIContent* aContent, nsIDocument* aOldDocument)
+
+
+
+ enum DestructorHandling {
+   eRunDtor,
+   eDoNotRunDtor
+ };
+  void RemovedFromDocument(nsIContent* aContent, nsIDocument* aOldDocument,
+                           DestructorHandling aDestructorHandling)
   {
     if (aContent->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
-      RemovedFromDocumentInternal(aContent, aOldDocument);
+      RemovedFromDocumentInternal(aContent, aOldDocument, aDestructorHandling);
     }
   }
   void RemovedFromDocumentInternal(nsIContent* aContent,
-                                   nsIDocument* aOldDocument);
+                                   nsIDocument* aOldDocument,
+                                   DestructorHandling aDestructorHandling);
 
   nsIAtom* ResolveTag(nsIContent* aContent, int32_t* aNameSpaceID);
 
