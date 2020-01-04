@@ -13,7 +13,7 @@ public interface AdjustHelperInterface {
 
 
 
-    void onCreate(final Context context, final String appToken);
+    void onCreate(final Context context, final String appToken, final AttributionHelperListener listener);
     void onPause();
     void onResume();
 

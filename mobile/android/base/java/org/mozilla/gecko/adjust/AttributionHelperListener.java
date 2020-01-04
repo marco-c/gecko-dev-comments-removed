@@ -1,0 +1,17 @@
+
+
+
+
+
+package org.mozilla.gecko.adjust;
+
+
+
+
+
+
+
+
+public interface AttributionHelperListener {
+    void onCampaignIdChanged(String campaignId);
+}
