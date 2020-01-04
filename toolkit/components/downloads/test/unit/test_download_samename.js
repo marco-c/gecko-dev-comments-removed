@@ -53,7 +53,7 @@ var DownloadListener = {
     } else if (aTopic == "dl-done") {
       
       let file = aSubject.QueryInterface(Ci.nsIDownload).targetFile;
-      for each (let prevFile in this.prevFiles) {
+      for (let prevFile of this.prevFiles) {
         do_check_neq(file.leafName, prevFile.leafName);
       }
       this.prevFiles.push(file);
@@ -93,7 +93,7 @@ var DownloadListener = {
 function runNextTest()
 {
   if (currentTest == tests.length) {
-    for each (var file in DownloadListener.prevFiles) {
+    for (var file of DownloadListener.prevFiles) {
       try {
         file.remove(false);
       } catch (ex) {

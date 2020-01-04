@@ -286,7 +286,7 @@ function check_results(aQuery, aSortBy, aReverseOrder, aShowLocal) {
 
   
   var actualResults = get_actual_results();
-  var actualOrder = [result.name for each(result in actualResults)];
+  var actualOrder = actualResults.map(result => result.name);
 
   
   

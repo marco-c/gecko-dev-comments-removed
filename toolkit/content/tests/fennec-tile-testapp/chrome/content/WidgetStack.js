@@ -551,7 +551,8 @@ WidgetStack.prototype = {
     this.globalOffsetX += x;
     this.globalOffsetY += y;
 
-    for each (let state in this._widgetState) {
+    for (let wid in this._widgetState) {
+      let state = this._widgetState[wid];
       state.rect.x += x;
       state.rect.y += y;
 
@@ -600,7 +601,8 @@ WidgetStack.prototype = {
     
 
     
-    for each (let state in this._widgetState) {
+    for (let wid in this._widgetState) {
+      let state = this._widgetState[wid];
       if (state.vpRelative) {
         
         if (state.vpOffsetXBefore) {
@@ -767,6 +769,8 @@ WidgetStack.prototype = {
     
     
 
+    
+    
     
     
     
@@ -1112,7 +1116,8 @@ WidgetStack.prototype = {
     
     
     
-    for each (let state in this._widgetState) {
+    for (let wid in this._widgetState) {
+      let state = this._widgetState[wid];
       if (!state.ignoreX)
         state.rect.x -= dx;
       if (!state.ignoreY)
@@ -1175,7 +1180,7 @@ WidgetStack.prototype = {
 
     if (w.hasAttribute("constraint")) {
       let cs = w.getAttribute("constraint").split(",");
-      for each (let s in cs) {
+      for (let s of cs) {
         if (s == "ignore-x")
           state.ignoreX = true;
         else if (s == "ignore-y")
@@ -1239,7 +1244,8 @@ WidgetStack.prototype = {
 
     let ofRect = this._viewingRect.clone();
 
-    for each (let state in this._widgetState) {
+    for (let wid in this._widgetState) {
+      let state = this._widgetState[wid];
       if (vp && state.vpRelative) {
         
         if (state.rect.left >= vp.rect.right) {
@@ -1273,7 +1279,8 @@ WidgetStack.prototype = {
 
     let ofRect = new wsRect(0, 0, this._viewingRect.width, this._viewingRect.height);
 
-    for each (let state in this._widgetState) {
+    for (let wid in this._widgetState) {
+      let state = this._widgetState[wid];
       if (vp && state.vpRelative) {
         ofRect.left = Math.min(ofRect.left, state.rect.left);
         ofRect.top = Math.min(ofRect.top, state.rect.top);
@@ -1300,8 +1307,10 @@ WidgetStack.prototype = {
   _widgetBounds: function () {
     let r = new wsRect(0,0,0,0);
 
-    for each (let state in this._widgetState)
+    for (let wid in this._widgetState) {
+      let state = this._widgetState[wid];
       r = r.union(state.rect);
+    }
 
     return r;
   },
@@ -1390,7 +1399,7 @@ WidgetStack.prototype = {
 
     if (el.hasAttribute("constraint")) {
       let cs = el.getAttribute("constraint").split(",");
-      for each (let s in cs) {
+      for (let s of cs) {
         if (s == "ignore-x")
           barrier.ignoreX = true;
         else if (s == "ignore-y")

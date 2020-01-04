@@ -569,7 +569,7 @@ Extensions.prototype = {
   
   
   find: function exts_find(aOptions) {
-    return [e for each (e in this._cache)];
+    return Object.keys(this._cache).map(id => this._cache[id]);
   },
 
   has: function exts_has(aId) {

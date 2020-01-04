@@ -766,7 +766,7 @@ FormHistory.prototype = {
 
         
         query = "UPDATE moz_formhistory SET guid = :guid WHERE id = :id";
-        for each (let id in ids) {
+        for (let id of ids) {
             let params = {
                 id   : id,
                 guid : this.generateGUID()
@@ -844,7 +844,8 @@ FormHistory.prototype = {
 
 
     _dbClose : function FH__dbClose(aBlocking) {
-        for each (let stmt in this.dbStmts) {
+        for (let query in this.dbStmts) {
+            let stmt = this.dbStmts[query];
             stmt.finalize();
         }
         this.dbStmts = {};

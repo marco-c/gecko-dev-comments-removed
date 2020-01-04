@@ -15,7 +15,7 @@ function run_test()
 {
   
   let downloadTimes = {};
-  for each (let time in [1, 30, 60, 3456, 9999])
+  for (let time of [1, 30, 60, 3456, 9999])
     downloadTimes[time] = DownloadUtils.getTimeLeft(time)[0];
 
   
