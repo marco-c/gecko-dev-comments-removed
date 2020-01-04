@@ -400,9 +400,8 @@ protected:
   
   
   
-  
   already_AddRefed<nsStyleContext>
-  GetTargetStyleContext(nsIDocument* aDoc = nullptr);
+  GetTargetStyleContext();
 
   Maybe<OwningAnimationTarget> mTarget;
   RefPtr<Animation> mAnimation;
