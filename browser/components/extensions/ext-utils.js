@@ -268,86 +268,6 @@ TabContext.prototype = {
 };
 
 
-function ExtensionTabManager(extension) {
-  this.extension = extension;
-
-  
-  
-  
-  
-  
-  
-  
-  this.hasTabPermissionFor = new WeakMap();
-}
-
-ExtensionTabManager.prototype = {
-  addActiveTabPermission(tab = TabManager.activeTab) {
-    if (this.extension.hasPermission("activeTab")) {
-      
-      
-      
-      
-      this.hasTabPermissionFor.set(tab, tab.linkedBrowser.innerWindowID);
-    }
-  },
-
-  
-  
-  
-  
-  hasActiveTabPermission(tab) {
-    
-    if (this.extension.hasPermission("activeTab")) {
-      return (this.hasTabPermissionFor.has(tab) &&
-              this.hasTabPermissionFor.get(tab) === tab.linkedBrowser.innerWindowID);
-    }
-    return false;
-  },
-
-  hasTabPermission(tab) {
-    return this.extension.hasPermission("tabs") || this.hasActiveTabPermission(tab);
-  },
-
-  convert(tab) {
-    let window = tab.ownerDocument.defaultView;
-    let windowActive = window == WindowManager.topWindow;
-
-    let result = {
-      id: TabManager.getId(tab),
-      index: tab._tPos,
-      windowId: WindowManager.getId(window),
-      selected: tab.selected,
-      highlighted: tab.selected,
-      active: tab.selected,
-      pinned: tab.pinned,
-      status: TabManager.getStatus(tab),
-      incognito: PrivateBrowsingUtils.isBrowserPrivate(tab.linkedBrowser),
-      width: tab.linkedBrowser.clientWidth,
-      height: tab.linkedBrowser.clientHeight,
-    };
-
-    if (this.hasTabPermission(tab)) {
-      result.url = tab.linkedBrowser.currentURI.spec;
-      if (tab.linkedBrowser.contentTitle) {
-        result.title = tab.linkedBrowser.contentTitle;
-      }
-      let icon = window.gBrowser.getIcon(tab);
-      if (icon) {
-        result.favIconUrl = icon;
-      }
-    }
-
-    return result;
-  },
-
-  getTabs(window) {
-    return Array.from(window.gBrowser.tabs, tab => this.convert(tab));
-  },
-};
-
-
-
 global.TabManager = {
   _tabs: new WeakMap(),
   _nextId: 1,
@@ -402,25 +322,43 @@ global.TabManager = {
   },
 
   convert(extension, tab) {
-    return TabManager.for(extension).convert(tab);
+    let window = tab.ownerDocument.defaultView;
+    let windowActive = window == WindowManager.topWindow;
+    let result = {
+      id: this.getId(tab),
+      index: tab._tPos,
+      windowId: WindowManager.getId(window),
+      selected: tab.selected,
+      highlighted: tab.selected,
+      active: tab.selected,
+      pinned: tab.pinned,
+      status: this.getStatus(tab),
+      incognito: PrivateBrowsingUtils.isBrowserPrivate(tab.linkedBrowser),
+      width: tab.linkedBrowser.clientWidth,
+      height: tab.linkedBrowser.clientHeight,
+    };
+
+    if (extension.hasPermission("tabs")) {
+      result.url = tab.linkedBrowser.currentURI.spec;
+      if (tab.linkedBrowser.contentTitle) {
+        result.title = tab.linkedBrowser.contentTitle;
+      }
+      let icon = window.gBrowser.getIcon(tab);
+      if (icon) {
+        result.favIconUrl = icon;
+      }
+    }
+
+    return result;
+  },
+
+  getTabs(extension, window) {
+    if (!window.gBrowser) {
+      return [];
+    }
+    return Array.map(window.gBrowser.tabs, tab => this.convert(extension, tab));
   },
 };
-
-
-let tabManagers = new WeakMap();
-
-
-
-TabManager.for = function (extension) {
-  if (!tabManagers.has(extension)) {
-    tabManagers.set(extension, new ExtensionTabManager(extension));
-  }
-  return tabManagers.get(extension);
-};
-
-extensions.on("shutdown", (type, extension) => {
-  tabManagers.delete(extension);
-});
 
 
 global.WindowManager = {
@@ -473,7 +411,7 @@ global.WindowManager = {
     };
 
     if (getInfo && getInfo.populate) {
-      results.tabs = TabManager.for(extension).getTabs(window);
+      results.tabs = TabManager.getTabs(extension, window);
     }
 
     return result;
