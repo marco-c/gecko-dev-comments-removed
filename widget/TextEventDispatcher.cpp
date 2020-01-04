@@ -452,12 +452,16 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
   }
   
   keyEvent.mIsComposing = false;
-  
-  
-  keyEvent.mNativeKeyEvent = nullptr;
-  
-  
-  keyEvent.mPluginEvent.Clear();
+  if (mInputTransactionType == eNativeInputTransaction) {
+    
+    
+    keyEvent.mNativeKeyEvent = aKeyboardEvent.mNativeKeyEvent;
+  } else {
+    
+    
+    keyEvent.mNativeKeyEvent = nullptr;
+    keyEvent.mPluginEvent.Clear();
+  }
   
 
   DispatchInputEvent(mWidget, keyEvent, aStatus);
