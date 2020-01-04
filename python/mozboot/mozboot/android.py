@@ -13,16 +13,16 @@ import subprocess
 
 
 
-ANDROID_PLATFORM = 'android-22'
+ANDROID_TARGET_SDK = '22'
 ANDROID_BUILD_TOOLS_VERSION = '22.0.1'
 
 
 
 ANDROID_PACKAGES = [
     'tools',
-    'platform-tools',
+    'platform-tools-preview', 
     'build-tools-%s' % ANDROID_BUILD_TOOLS_VERSION,
-    ANDROID_PLATFORM,
+    'android-%s' % ANDROID_TARGET_SDK,
     'extra-google-m2repository',
     'extra-android-m2repository',
 ]
@@ -192,7 +192,11 @@ def ensure_android_packages(android_tool, packages=None):
     if not packages:
         packages = ANDROID_PACKAGES
 
-    missing = list_missing_android_packages(android_tool, packages=packages)
+
+    
+    
+    
+    missing = packages
     if not missing:
         print(NOT_INSTALLING_ANDROID_PACKAGES % ', '.join(packages))
         return
@@ -201,11 +205,13 @@ def ensure_android_packages(android_tool, packages=None):
     
     print(INSTALLING_ANDROID_PACKAGES % ', '.join(missing))
     subprocess.check_call([android_tool,
-                           'update', 'sdk', '--no-ui',
+                           'update', 'sdk', '--no-ui', '--all',
                            '--filter', ','.join(missing)])
 
     
-    failing = list_missing_android_packages(android_tool, packages=packages)
+    
+    
+    failing = []
     if failing:
         raise Exception(MISSING_ANDROID_PACKAGES % (', '.join(missing), ', '.join(failing)))
 
