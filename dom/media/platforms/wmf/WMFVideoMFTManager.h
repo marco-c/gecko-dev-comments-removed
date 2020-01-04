@@ -66,6 +66,7 @@ private:
   
   VideoInfo mVideoInfo;
   uint32_t mVideoStride;
+  nsIntSize mImageSize;
 
   RefPtr<layers::ImageContainer> mImageContainer;
   nsAutoPtr<DXVA2Manager> mDXVA2Manager;
