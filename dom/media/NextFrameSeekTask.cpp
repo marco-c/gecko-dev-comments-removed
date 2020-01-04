@@ -248,9 +248,8 @@ NextFrameSeekTask::IsAudioSeekComplete()
 
   
   
-  return
-    !HasAudio() ||
-    (Exists() && !mReader->IsRequestingAudioData() && !mReader->IsWaitingAudioData());
+  return !HasAudio() ||
+         (!mReader->IsRequestingAudioData() && !mReader->IsWaitingAudioData());
 }
 
 bool
@@ -260,8 +259,7 @@ NextFrameSeekTask::IsVideoSeekComplete()
   SAMPLE_LOG("IsVideoSeekComplete() curTarVal=%d vqFin=%d vqSz=%d",
       mSeekJob.Exists(), mIsVideoQueueFinished, !!mSeekedVideoData);
 
-  return
-    !HasVideo() || (Exists() && (mIsVideoQueueFinished || mSeekedVideoData));
+  return !HasVideo() || mIsVideoQueueFinished || mSeekedVideoData;
 }
 
 void
@@ -294,6 +292,7 @@ NextFrameSeekTask::OnAudioDecoded(MediaData* aAudioSample)
 {
   AssertOwnerThread();
   MOZ_ASSERT(aAudioSample);
+  MOZ_ASSERT(!mSeekTaskPromise.IsEmpty(), "Seek shouldn't be finished");
 
   
   
@@ -302,11 +301,6 @@ NextFrameSeekTask::OnAudioDecoded(MediaData* aAudioSample)
              aAudioSample->mTime,
              aAudioSample->GetEndTime(),
              aAudioSample->mDiscontinuity);
-
-  if (!Exists()) {
-    
-    return;
-  }
 
   
   mSeekedAudioData = aAudioSample;
@@ -318,12 +312,9 @@ void
 NextFrameSeekTask::OnAudioNotDecoded(MediaDecoderReader::NotDecodedReason aReason)
 {
   AssertOwnerThread();
-  SAMPLE_LOG("OnAudioNotDecoded (aReason=%u)", aReason);
+  MOZ_ASSERT(!mSeekTaskPromise.IsEmpty(), "Seek shouldn't be finished");
 
-  if (!Exists()) {
-    
-    return;
-  }
+  SAMPLE_LOG("OnAudioNotDecoded (aReason=%u)", aReason);
 
   
   
@@ -337,6 +328,7 @@ NextFrameSeekTask::OnVideoDecoded(MediaData* aVideoSample)
 {
   AssertOwnerThread();
   MOZ_ASSERT(aVideoSample);
+  MOZ_ASSERT(!mSeekTaskPromise.IsEmpty(), "Seek shouldn't be finished");
 
   
   
@@ -345,11 +337,6 @@ NextFrameSeekTask::OnVideoDecoded(MediaData* aVideoSample)
              aVideoSample->mTime,
              aVideoSample->GetEndTime(),
              aVideoSample->mDiscontinuity);
-
-  if (!Exists()) {
-    
-    return;
-  }
 
   if (aVideoSample->mTime > mCurrentTimeBeforeSeek) {
     mSeekedVideoData = aVideoSample;
@@ -362,12 +349,9 @@ void
 NextFrameSeekTask::OnVideoNotDecoded(MediaDecoderReader::NotDecodedReason aReason)
 {
   AssertOwnerThread();
-  SAMPLE_LOG("OnVideoNotDecoded (aReason=%u)", aReason);
+  MOZ_ASSERT(!mSeekTaskPromise.IsEmpty(), "Seek shouldn't be finished");
 
-  if (!Exists()) {
-    
-    return;
-  }
+  SAMPLE_LOG("OnVideoNotDecoded (aReason=%u)", aReason);
 
   if (aReason == MediaDecoderReader::DECODE_ERROR) {
     if (mVideoQueue.GetSize() > 0) {
