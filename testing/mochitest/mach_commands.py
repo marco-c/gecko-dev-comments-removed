@@ -648,6 +648,9 @@ class RobocopCommands(MachCommandBase):
         return mochitest.run_robocop_test(self._mach_context, tests, 'robocop', **kwargs)
 
 
+
+
+
 def REMOVED(cls):
     """Command no longer exists! Use |mach mochitest| instead.
 
