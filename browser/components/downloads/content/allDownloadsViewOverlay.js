@@ -1028,7 +1028,8 @@ DownloadsPlacesView.prototype = {
     
     
     let xblFields = new Map();
-    for (let [key, value] in Iterator(this._richlistbox)) {
+    for (let key of Object.getOwnPropertyNames(this._richlistbox)) {
+      let value = this._richlistbox[key];
       xblFields.set(key, value);
     }
 

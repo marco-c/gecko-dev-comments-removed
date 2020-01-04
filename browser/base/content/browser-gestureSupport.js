@@ -125,7 +125,7 @@ var gGestureSupport = {
 
   _setupGesture: function GS__setupGesture(aEvent, aGesture, aPref, aInc, aDec) {
     
-    for (let [pref, def] in Iterator(aPref))
+    for (let [pref, def] of Object.entries(aPref))
       aPref[pref] = this._getPref(aGesture + "." + pref, def);
 
     

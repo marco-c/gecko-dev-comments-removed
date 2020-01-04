@@ -1380,7 +1380,7 @@ this.PlacesUIUtils = {
     else {
       
       
-      for (let [name, id] in Iterator(this.leftPaneQueries)) {
+      for (let [name, id] of Object.entries(this.leftPaneQueries)) {
         if (aItemId == id)
           queryName = name;
       }

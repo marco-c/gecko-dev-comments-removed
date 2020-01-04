@@ -40,7 +40,7 @@ const PREFS = {
 
 function setDefaultPrefs() {
   let branch = Services.prefs.getDefaultBranch(PREF_BRANCH);
-  for (let [key, val] in Iterator(PREFS)) {
+  for (let [key, val] of Object.entries(PREFS)) {
     
     
     if (branch.getPrefType(key) != branch.PREF_INVALID)
