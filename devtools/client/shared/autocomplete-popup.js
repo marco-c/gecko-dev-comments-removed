@@ -61,7 +61,11 @@ function AutocompletePopup(toolbox, options = {}) {
 
   this._list = this._document.createElementNS(HTML_NS, "ul");
   this._list.setAttribute("flex", "1");
-  this._list.setAttribute("seltype", "single");
+
+  
+  
+  this._listClone = this._document.createElementNS(HTML_NS, "ul");
+  this._listClone.className = "devtools-autocomplete-list-aria-clone";
 
   if (options.listId) {
     this._list.setAttribute("id", options.listId);
@@ -122,6 +126,10 @@ AutocompletePopup.prototype = {
   openPopup: function (anchor, xOffset = 0, yOffset = 0, index) {
     this.__maxLabelLength = -1;
     this._updateSize();
+
+    
+    this._activeElement = anchor.ownerDocument.activeElement;
+
     this._tooltip.show(anchor, {
       x: xOffset,
       y: yOffset,
@@ -159,6 +167,9 @@ AutocompletePopup.prototype = {
     this._tooltip.once("hidden", () => {
       this.emit("popup-closed");
     });
+
+    this._clearActiveDescendant();
+    this._activeElement = null;
     this._tooltip.hide();
   },
 
@@ -187,6 +198,7 @@ AutocompletePopup.prototype = {
     }
 
     this._list.remove();
+    this._listClone.remove();
     this._tooltip.destroy();
     this._document = null;
     this._list = null;
@@ -322,6 +334,9 @@ AutocompletePopup.prototype = {
 
       element.classList.add("autocomplete-selected");
       this._scrollElementIntoViewIfNeeded(element);
+      this._setActiveDescendant(element.id);
+    } else {
+      this._clearActiveDescendant();
     }
     this._selectedIndex = index;
 
@@ -350,6 +365,41 @@ AutocompletePopup.prototype = {
     if (index !== -1 && this.isOpen) {
       this.selectedIndex = index;
     }
+  },
+
+  
+
+
+
+
+
+
+  _setActiveDescendant: function (id) {
+    if (!this._activeElement) {
+      return;
+    }
+
+    
+    let anchorDoc = this._activeElement.ownerDocument;
+    if (!this._listClone.parentNode || this._listClone.ownerDocument !== anchorDoc) {
+      anchorDoc.documentElement.appendChild(this._listClone);
+    }
+
+    
+    this._listClone.innerHTML = this._list.innerHTML;
+
+    this._activeElement.setAttribute("aria-activedescendant", id);
+  },
+
+  
+
+
+  _clearActiveDescendant: function () {
+    if (!this._activeElement) {
+      return;
+    }
+
+    this._activeElement.removeAttribute("aria-activedescendant");
   },
 
   
