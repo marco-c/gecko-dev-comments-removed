@@ -116,7 +116,9 @@ void Fake_AudioStreamSource::Periodic() {
                                     0, 
                                     0, 
                                     0, 
-                                    segment);
+                                    segment,
+                                    nullptr, 
+                                    -1);     
   }
 }
 
