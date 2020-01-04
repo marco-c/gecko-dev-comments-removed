@@ -1438,44 +1438,18 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
       break;
     }
 #ifdef MOZ_THUNDERBIRD
-    else if (selContent->IsHTMLElement(nsGkAtoms::body)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      nsAutoString styleVal;
-      if (selContent->GetAttr(kNameSpaceID_None, nsGkAtoms::style, styleVal) &&
-          styleVal.Find(NS_LITERAL_STRING("pre-wrap")) != kNotFound) {
-        mIsTextWidget = true;
-        break;
+    else if (selContent->IsElement()) {
+      RefPtr<nsStyleContext> styleContext =
+        nsComputedDOMStyle::GetStyleContextForElementNoFlush(
+          selContent->AsElement(), nullptr, nullptr);
+      if (styleContext) {
+        const nsStyleText* textStyle = styleContext->StyleText();
+        if (textStyle->mWhiteSpace == NS_STYLE_WHITESPACE_PRE_WRAP) {
+          mIsTextWidget = true;
+        }
       }
     }
+    break;
 #endif
   }
 
