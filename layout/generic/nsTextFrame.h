@@ -390,6 +390,30 @@ public:
     virtual void NotifySelectionDecorationLinePathEmitted() { }
   };
 
+  struct DrawTextRunParams
+  {
+    gfxContext* context;
+    PropertyProvider* provider = nullptr;
+    gfxFloat* advanceWidth = nullptr;
+    gfxTextContextPaint* contextPaint = nullptr;
+    DrawPathCallbacks* callbacks = nullptr;
+    nscolor textColor = NS_RGBA(0, 0, 0, 0);
+    bool drawSoftHyphen = false;
+    explicit DrawTextRunParams(gfxContext* aContext)
+      : context(aContext) {}
+  };
+
+  struct DrawTextParams : DrawTextRunParams
+  {
+    gfxPoint framePt;
+    gfxRect dirtyRect;
+    const nsTextPaintStyle* textStyle = nullptr;
+    const nsCharClipDisplayItem::ClipEdges* clipEdges = nullptr;
+    const nscolor* decorationOverrideColor = nullptr;
+    explicit DrawTextParams(gfxContext* aContext)
+      : DrawTextRunParams(aContext) {}
+  };
+
   
   
   
@@ -445,7 +469,7 @@ public:
                          const gfxPoint& aTextBaselinePt,
                          Range aRange,
                          const nscolor* aDecorationOverrideColor,
-                         PropertyProvider& aProvider);
+                         PropertyProvider* aProvider);
 
   virtual nscolor GetCaretColorAt(int32_t aOffset) override;
 
@@ -694,46 +718,15 @@ protected:
                           TextDecorationColorResolution aColorResolution,
                           TextDecorations& aDecorations);
 
-  void DrawTextRun(gfxContext* const aCtx,
-                   const gfxPoint& aTextBaselinePt,
-                   Range aRange,
-                   PropertyProvider& aProvider,
-                   nscolor aTextColor,
-                   gfxFloat& aAdvanceWidth,
-                   bool aDrawSoftHyphen,
-                   gfxTextContextPaint* aContextPaint,
-                   DrawPathCallbacks* aCallbacks);
+  void DrawTextRun(Range aRange, const gfxPoint& aTextBaselinePt,
+                   const DrawTextRunParams& aParams);
 
-  void DrawTextRunAndDecorations(gfxContext* const aCtx,
-                                 const gfxRect& aDirtyRect,
-                                 const gfxPoint& aFramePt,
-                                 const gfxPoint& aTextBaselinePt,
-                                 Range aRange,
-                                 PropertyProvider& aProvider,
-                                 const nsTextPaintStyle& aTextStyle,
-                                 nscolor aTextColor,
-                             const nsCharClipDisplayItem::ClipEdges& aClipEdges,
-                                 gfxFloat& aAdvanceWidth,
-                                 bool aDrawSoftHyphen,
-                                 const TextDecorations& aDecorations,
-                                 const nscolor* const aDecorationOverrideColor,
-                                 gfxTextContextPaint* aContextPaint,
-                                 DrawPathCallbacks* aCallbacks);
+  void DrawTextRunAndDecorations(Range aRange, const gfxPoint& aTextBaselinePt,
+                                 const DrawTextParams& aParams,
+                                 const TextDecorations& aDecorations);
 
-  void DrawText(gfxContext* const aCtx,
-                const gfxRect& aDirtyRect,
-                const gfxPoint& aFramePt,
-                const gfxPoint& aTextBaselinePt,
-                Range aRange,
-                PropertyProvider& aProvider,
-                const nsTextPaintStyle& aTextStyle,
-                nscolor aTextColor,
-                const nsCharClipDisplayItem::ClipEdges& aClipEdges,
-                gfxFloat& aAdvanceWidth,
-                bool aDrawSoftHyphen,
-                const nscolor* const aDecorationOverrideColor = nullptr,
-                gfxTextContextPaint* aContextPaint = nullptr,
-                DrawPathCallbacks* aCallbacks = nullptr);
+  void DrawText(Range aRange, const gfxPoint& aTextBaselinePt,
+                const DrawTextParams& aParams);
 
   
   
