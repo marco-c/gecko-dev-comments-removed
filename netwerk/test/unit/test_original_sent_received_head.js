@@ -41,7 +41,7 @@ function setup_test() {
   channel = setupChannel(testpath);
 
   
-  channel.asyncOpen(new ChannelListener(checkResponse, channel), null);
+  channel.asyncOpen2(new ChannelListener(checkResponse, channel));
 
   if (dbg) { print("============== setup_test: out"); }
 }
