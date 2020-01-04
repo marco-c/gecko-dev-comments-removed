@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf8,<p>test the JS property provider";

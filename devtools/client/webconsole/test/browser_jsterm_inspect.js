@@ -5,6 +5,7 @@
 
 
 
+
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf8,<p>hello bug 869981";

@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 const INIT_URI = "data:text/plain;charset=utf8,hello world";

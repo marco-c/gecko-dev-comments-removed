@@ -7,9 +7,6 @@
 
 
 
-
-
-
 "use strict";
 
 const EXPECTED_RESULT = "Not supporting directive 'reflected-xss'. Directive " +

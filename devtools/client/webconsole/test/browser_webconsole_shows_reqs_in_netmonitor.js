@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf8,Test that the web console " +

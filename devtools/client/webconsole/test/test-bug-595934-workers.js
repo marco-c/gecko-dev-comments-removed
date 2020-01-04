@@ -3,6 +3,7 @@
 
 
 
+
 onmessage = function() {
   fooBarWorker();
 }

@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 const INIT_URI = "data:text/html;charset=utf-8,Web Console - bug 600183 test";

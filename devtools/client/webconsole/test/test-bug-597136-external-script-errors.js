@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 function f() {
   bogus.g();
 }
