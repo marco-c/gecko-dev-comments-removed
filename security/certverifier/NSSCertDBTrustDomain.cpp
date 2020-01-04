@@ -16,6 +16,7 @@
 #include "cert.h"
 #include "certdb.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/unused.h"
 #include "nsNSSCertificate.h"
 #include "nsServiceManagerUtils.h"
 #include "nss.h"
@@ -1016,16 +1017,16 @@ LoadLoadableRoots( const char* dir, const char* modNameUTF8)
   int modType;
   SECMOD_DeleteModule(modNameUTF8, &modType);
 
-  UniquePtr<char, void(&)(char*)>
-    pkcs11ModuleSpec(PR_smprintf("name=\"%s\" library=\"%s\"", modNameUTF8,
-                                 escapedFullLibraryPath.get()),
-                     PR_smprintf_free);
-  if (!pkcs11ModuleSpec) {
+  nsAutoCString pkcs11ModuleSpec;
+  pkcs11ModuleSpec.AppendPrintf("name=\"%s\" library=\"%s\"", modNameUTF8,
+                                escapedFullLibraryPath.get());
+  if (pkcs11ModuleSpec.IsEmpty()) {
     return SECFailure;
   }
 
-  UniqueSECMODModule rootsModule(SECMOD_LoadUserModule(pkcs11ModuleSpec.get(),
-                                                       nullptr, false));
+  UniqueSECMODModule rootsModule(
+    SECMOD_LoadUserModule(const_cast<char*>(pkcs11ModuleSpec.get()), nullptr,
+                          false));
   if (!rootsModule) {
     return SECFailure;
   }
@@ -1049,66 +1050,66 @@ UnloadLoadableRoots(const char* modNameUTF8)
   }
 }
 
-char*
-DefaultServerNicknameForCert(CERTCertificate* cert)
+nsresult
+DefaultServerNicknameForCert(const CERTCertificate* cert,
+                      nsCString& nickname)
 {
-  char* nickname = nullptr;
-  int count;
-  bool conflict;
-  char* servername = nullptr;
+  MOZ_ASSERT(cert);
+  NS_ENSURE_ARG_POINTER(cert);
 
-  servername = CERT_GetCommonName(&cert->subject);
-  if (!servername) {
-    
-    
-    servername = CERT_GetOrgUnitName(&cert->subject);
-    if (!servername) {
-      servername = CERT_GetOrgName(&cert->subject);
-      if (!servername) {
-        servername = CERT_GetLocalityName(&cert->subject);
-        if (!servername) {
-          servername = CERT_GetStateName(&cert->subject);
-          if (!servername) {
-            servername = CERT_GetCountryName(&cert->subject);
-            if (!servername) {
-              
-              
-              return nullptr;
-            }
-          }
-        }
-      }
-    }
+  UniquePORTString baseName(CERT_GetCommonName(&cert->subject));
+  if (!baseName) {
+    baseName = UniquePORTString(CERT_GetOrgUnitName(&cert->subject));
+  }
+  if (!baseName) {
+    baseName = UniquePORTString(CERT_GetOrgName(&cert->subject));
+  }
+  if (!baseName) {
+    baseName = UniquePORTString(CERT_GetLocalityName(&cert->subject));
+  }
+  if (!baseName) {
+    baseName = UniquePORTString(CERT_GetStateName(&cert->subject));
+  }
+  if (!baseName) {
+    baseName = UniquePORTString(CERT_GetCountryName(&cert->subject));
+  }
+  if (!baseName) {
+    return NS_ERROR_FAILURE;
   }
 
-  count = 1;
-  while (1) {
-    if (count == 1) {
-      nickname = PR_smprintf("%s", servername);
+  
+  
+  
+  
+  static const uint32_t ARBITRARY_LIMIT = 500;
+  for (uint32_t count = 1; count < ARBITRARY_LIMIT; count++) {
+    nickname = baseName.get();
+    if (count != 1) {
+      nickname.AppendPrintf(" #%u", count);
     }
-    else {
-      nickname = PR_smprintf("%s #%d", servername, count);
-    }
-    if (!nickname) {
-      break;
+    if (nickname.IsEmpty()) {
+      return NS_ERROR_FAILURE;
     }
 
-    conflict = SEC_CertNicknameConflict(nickname, &cert->derSubject,
-                                        cert->dbhandle);
+    bool conflict = SEC_CertNicknameConflict(nickname.get(), &cert->derSubject,
+                                             cert->dbhandle);
     if (!conflict) {
-      break;
+      return NS_OK;
     }
-    PR_Free(nickname);
-    count++;
   }
-  PR_FREEIF(servername);
-  return nickname;
+
+  return NS_ERROR_FAILURE;
 }
 
 void
 SaveIntermediateCerts(const UniqueCERTCertList& certList)
 {
   if (!certList) {
+    return;
+  }
+
+  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
+  if (!slot) {
     return;
   }
 
@@ -1133,15 +1134,19 @@ SaveIntermediateCerts(const UniqueCERTCertList& certList)
     }
 
     
-    char* nickname = DefaultServerNicknameForCert(node->cert);
-    if (nickname && *nickname) {
-      UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
-      if (slot) {
-        PK11_ImportCert(slot.get(), node->cert, CK_INVALID_HANDLE,
-                        nickname, false);
-      }
+    nsAutoCString nickname;
+    nsresult rv = DefaultServerNicknameForCert(node->cert, nickname);
+    if (NS_FAILED(rv)) {
+      continue;
     }
-    PR_FREEIF(nickname);
+
+    
+    
+    
+    
+    
+    Unused << PK11_ImportCert(slot.get(), node->cert, CK_INVALID_HANDLE,
+                              nickname.get(), false);
   }
 }
 

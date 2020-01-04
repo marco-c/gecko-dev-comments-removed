@@ -645,10 +645,9 @@ nsPKCS12Blob::nickname_collision(SECItem *oldNick, PRBool *cancel, void *wincx)
     
     
     
+    nickname = nickFromPropC;
     if (count > 1) {
-      nickname.Adopt(PR_smprintf("%s #%d", nickFromPropC.get(), count));
-    } else {
-      nickname = nickFromPropC;
+      nickname.AppendPrintf(" #%d", count);
     }
     CERTCertificate *cert = CERT_FindCertByNickname(CERT_GetDefaultCertDB(),
                                            const_cast<char*>(nickname.get()));

@@ -10,6 +10,7 @@
 #include "CertVerifier.h"
 #include "ScopedNSSTypes.h"
 #include "nsICertBlocklist.h"
+#include "nsString.h"
 #include "pkix/pkixtypes.h"
 #include "secmodt.h"
 
@@ -37,8 +38,8 @@ SECStatus LoadLoadableRoots( const char* dir,
 
 void UnloadLoadableRoots(const char* modNameUTF8);
 
-
-char* DefaultServerNicknameForCert(CERTCertificate* cert);
+nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
+                               nsCString& nickname);
 
 void SaveIntermediateCerts(const UniqueCERTCertList& certList);
 
