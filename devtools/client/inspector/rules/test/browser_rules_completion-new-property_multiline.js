@@ -38,10 +38,19 @@ add_task(function* () {
   let rule = getRuleViewRuleEditor(view, 1).rule;
   let prop = rule.textProps[0];
 
-  info("Focusing the css property editable value");
+  
   let rect = prop.editor.valueSpan.getBoundingClientRect();
-  let editor = yield focusEditableField(view, prop.editor.valueSpan,
-    rect.width / 2, rect.height / 2);
+  let firstQuad = prop.editor.valueSpan.getBoxQuads()[0];
+  
+  
+  
+  let x = firstQuad.bounds.left - rect.left + firstQuad.bounds.width / 2;
+  
+  
+  let y = firstQuad.bounds.height / 2;
+
+  info("Focusing the css property editable value");
+  let editor = yield focusEditableField(view, prop.editor.valueSpan, x, y);
 
   info("Moving the caret next to a number");
   let pos = editor.input.value.indexOf("0deg") + 1;
