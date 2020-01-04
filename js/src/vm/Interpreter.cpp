@@ -1557,6 +1557,7 @@ Interpret(JSContext* cx, RunState& state)
     if (!entryFrame)
         return false;
 
+    ActivationEntryMonitor entryMonitor(cx, entryFrame);
     InterpreterActivation activation(state, cx, entryFrame);
 
     

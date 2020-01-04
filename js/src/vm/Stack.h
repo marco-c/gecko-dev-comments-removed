@@ -1314,6 +1314,30 @@ namespace jit {
     class JitActivation;
 } 
 
+
+
+
+class MOZ_RAII ActivationEntryMonitor
+{
+    JSContext* cx_;
+
+    
+    
+    JS::dbg::AutoEntryMonitor* entryMonitor_;
+
+    explicit ActivationEntryMonitor(JSContext* cx);
+
+    ActivationEntryMonitor(const ActivationEntryMonitor& other) = delete;
+    void operator=(const ActivationEntryMonitor& other) = delete;
+
+    Value asyncStack(JSContext* cx);
+
+  public:
+    ActivationEntryMonitor(JSContext* cx, InterpreterFrame* entryFrame);
+    ActivationEntryMonitor(JSContext* cx, jit::CalleeToken entryToken);
+    inline ~ActivationEntryMonitor();
+};
+
 class Activation
 {
   protected:
@@ -1354,15 +1378,10 @@ class Activation
     
     bool asyncCallIsExplicit_;
 
-    
-    
-    
-    JS::dbg::AutoEntryMonitor* entryMonitor_;
-
     enum Kind { Interpreter, Jit, AsmJS };
     Kind kind_;
 
-    inline Activation(JSContext* cx, Kind kind_);
+    inline Activation(JSContext* cx, Kind kind);
     inline ~Activation();
 
   public:
@@ -1614,11 +1633,7 @@ class JitActivation : public Activation
 #endif
 
   public:
-    
-    
-    
-    
-    explicit JitActivation(JSContext* cx, CalleeToken entryPoint, bool active = true);
+    explicit JitActivation(JSContext* cx, bool active = true);
     ~JitActivation();
 
     bool isActive() const {
