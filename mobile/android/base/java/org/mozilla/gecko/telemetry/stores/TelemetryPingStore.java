@@ -38,6 +38,7 @@ public interface TelemetryPingStore extends Parcelable {
     
 
 
+
     void maybePrunePings();
 
     
