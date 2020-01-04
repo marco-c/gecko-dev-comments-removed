@@ -2212,6 +2212,10 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
         *answer = false;
         return true;
 
+      case PNK_MODULE:
+        *answer = false;
+        return true;
+
       
       case PNK_GENEXP:
         MOZ_ASSERT(pn->isArity(PN_LIST));
@@ -3494,6 +3498,55 @@ BytecodeEmitter::emitFunctionScript(ParseNode* body)
         script->setTreatAsRunOnce();
         MOZ_ASSERT(!script->hasRunOnce());
     }
+
+    tellDebuggerAboutCompiledScript(cx);
+
+    return true;
+}
+
+bool
+BytecodeEmitter::emitModuleScript(ParseNode* body)
+{
+    if (!updateLocalsToFrameSlots())
+        return false;
+
+    
+
+
+
+
+
+
+    ModuleBox* modulebox = sc->asModuleBox();
+
+    
+    
+    JSScript::linkToModuleFromEmitter(cx, script, modulebox);
+
+    if (!emitTree(body))
+        return false;
+
+    
+    
+    if (!emit1(JSOP_RETRVAL))
+        return false;
+
+    
+    
+    
+    
+    if (sc->allLocalsAliased())
+        script->bindings.setAllLocalsAliased();
+
+    if (!JSScript::fullyInitFromEmitter(cx, script, this))
+        return false;
+
+    
+
+
+
+    script->setTreatAsRunOnce();
+    MOZ_ASSERT(!script->hasRunOnce());
 
     tellDebuggerAboutCompiledScript(cx);
 

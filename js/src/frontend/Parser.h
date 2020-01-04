@@ -22,7 +22,9 @@
 
 namespace js {
 
+class ModuleObject;
 class StaticFunctionBoxScopeObject;
+class StaticModuleBoxScopeObject;
 
 namespace frontend {
 
@@ -210,9 +212,18 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
 
 
 
+  private:
+    bool generateBindings(ExclusiveContext* cx, TokenStream& ts, LifoAlloc& alloc,
+                          MutableHandle<Bindings> bindings) const;
+
+  public:
     bool generateFunctionBindings(ExclusiveContext* cx, TokenStream& ts,
                                   LifoAlloc& alloc,
                                   MutableHandle<Bindings> bindings) const;
+
+    bool generateModuleBindings(ExclusiveContext* cx, TokenStream& ts,
+                                LifoAlloc& alloc,
+                                MutableHandle<Bindings> bindings) const;
 
   private:
     ParseContext**  parserPC;     
@@ -300,8 +311,13 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
     
     
     
-    bool atBodyLevel() { return !innermostStmt(); }
-    bool atGlobalLevel() { return atBodyLevel() && !sc->isFunctionBox() && !innermostScopeStmt(); }
+    bool atBodyLevel() {
+        return !innermostStmt();
+    }
+
+    bool atGlobalLevel() {
+        return atBodyLevel() && !sc->isFunctionBox() && !innermostScopeStmt();
+    }
 
     
     
@@ -490,6 +506,8 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
         return newFunctionBox(fn, fun, outerpc, directives, generatorKind, enclosing);
     }
 
+    ModuleBox* newModuleBox(Node pn, HandleModuleObject module);
+
     
 
 
@@ -541,6 +559,8 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     Node statement(YieldHandling yieldHandling, bool canHaveDirectives = false);
 
     bool maybeParseDirective(Node list, Node pn, bool* cont);
+
+    Node standaloneModule(Handle<ModuleObject*> module);
 
     
     

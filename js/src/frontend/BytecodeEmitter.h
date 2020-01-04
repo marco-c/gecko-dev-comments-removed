@@ -321,6 +321,9 @@ struct BytecodeEmitter
     bool emitFunctionScript(ParseNode* body);
 
     
+    bool emitModuleScript(ParseNode* body);
+
+    
     
     void checkTypeSet(JSOp op);
 

@@ -21,11 +21,15 @@ namespace js {
 namespace frontend {
 struct Definition;
 class FunctionBox;
+class ModuleBox;
 }
 
 class StaticWithObject;
 class StaticEvalObject;
 class StaticNonSyntacticScopeObjects;
+
+
+
 
 
 
@@ -78,7 +82,8 @@ class StaticScopeIter
                obj->is<StaticWithObject>() ||
                obj->is<StaticEvalObject>() ||
                obj->is<StaticNonSyntacticScopeObjects>() ||
-               obj->is<JSFunction>();
+               obj->is<JSFunction>() ||
+               obj->is<ModuleObject>();
     }
 
   public:

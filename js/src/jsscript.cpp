@@ -2652,6 +2652,25 @@ JSScript::linkToFunctionFromEmitter(js::ExclusiveContext* cx, JS::Handle<JSScrip
         fun->setScript(script);
 }
 
+ void
+JSScript::linkToModuleFromEmitter(js::ExclusiveContext* cx, JS::Handle<JSScript*> script,
+                                    js::frontend::ModuleBox* modulebox)
+{
+    script->funHasExtensibleScope_ = false;
+    script->funNeedsDeclEnvObject_ = false;
+    script->needsHomeObject_ = false;
+    script->isDerivedClassConstructor_ = false;
+    script->funLength_ = 0;
+
+    script->isGeneratorExp_ = false;
+    script->setGeneratorKind(NotGenerator);
+
+    
+    
+    RootedModuleObject module(cx, modulebox->module());
+    script->setModule(module);
+}
+
  bool
 JSScript::fullyInitFromEmitter(ExclusiveContext* cx, HandleScript script, BytecodeEmitter* bce)
 {
@@ -3594,6 +3613,9 @@ JSScript::traceChildren(JSTracer* trc)
 
     if (functionNonDelazifying())
         TraceEdge(trc, &function_, "function");
+
+    if (module_)
+        TraceEdge(trc, &module_, "module");
 
     if (enclosingStaticScope_)
         TraceEdge(trc, &enclosingStaticScope_, "enclosingStaticScope");
