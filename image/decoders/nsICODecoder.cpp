@@ -235,8 +235,8 @@ nsICODecoder::ReadDirEntry(const char* aData)
     
     
     IntSize desiredSize = mDownscaler->TargetSize();
-    int32_t delta = entrySize.width - desiredSize.width +
-                    entrySize.height - desiredSize.height;
+    int32_t delta = std::min(entrySize.width - desiredSize.width,
+                             entrySize.height - desiredSize.height);
     if (e.mBitCount >= mBestResourceColorDepth &&
         ((mBestResourceDelta < 0 && delta >= mBestResourceDelta) ||
          (delta >= 0 && delta <= mBestResourceDelta))) {
