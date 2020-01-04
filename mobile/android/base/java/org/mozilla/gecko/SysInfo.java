@@ -143,6 +143,9 @@ public final class SysInfo {
 
         
         final byte[] MEMTOTAL = {'M', 'e', 'm', 'T', 'o', 't', 'a', 'l'};
+
+        
+        final StrictMode.ThreadPolicy savedPolicy = StrictMode.allowThreadDiskReads();
         try {
             final byte[] buffer = new byte[MEMINFO_BUFFER_SIZE_BYTES];
             final FileInputStream is = new FileInputStream("/proc/meminfo");
@@ -167,6 +170,8 @@ public final class SysInfo {
             return totalRAM = 0;
         } catch (IOException e) {
             return totalRAM = 0;
+        } finally {
+            StrictMode.setThreadPolicy(savedPolicy);
         }
     }
 
