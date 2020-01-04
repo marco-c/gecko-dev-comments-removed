@@ -2033,40 +2033,6 @@ nsGlobalWindow::TraceGlobalJSObject(JSTracer* aTrc)
   TraceWrapper(aTrc, "active window global");
 }
 
-
-JSObject*
-nsGlobalWindow::OuterObject(JSContext* aCx, JS::Handle<JSObject*> aObj)
-{
-  nsGlobalWindow* origWin = UnwrapDOMObject<nsGlobalWindow>(aObj);
-  nsGlobalWindow* win = origWin->GetOuterWindowInternal();
-
-  if (!win) {
-    
-    
-    
-    
-    
-    NS_WARNING("nsGlobalWindow::OuterObject shouldn't fail!");
-    Throw(aCx, NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  JS::Rooted<JSObject*> winObj(aCx, win->FastGetGlobalJSObject());
-  MOZ_ASSERT(winObj);
-
-  
-  
-  
-  
-  if (!JS_WrapObject(aCx, &winObj)) {
-    NS_WARNING("nsGlobalWindow::OuterObject shouldn't fail!");
-    Throw(aCx, NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  return winObj;
-}
-
 bool
 nsGlobalWindow::WouldReuseInnerWindow(nsIDocument* aNewDocument)
 {
