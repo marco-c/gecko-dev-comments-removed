@@ -124,7 +124,6 @@ private:
   
   
   static bool sIsIMMEnabled;
-  static bool sShowingOnScreenKeyboard;
 
   static bool IsTSFAvailable() { return (sIsInTSFMode && !sPluginHasFocus); }
   static bool IsIMMActive();
@@ -148,6 +147,12 @@ private:
 
 
   static void DismissOnScreenKeyboard();
+
+  
+
+
+
+  static HWND GetOnScreenKeyboardWindow();
 #endif 
 };
 
