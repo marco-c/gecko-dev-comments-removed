@@ -530,10 +530,6 @@ private:
   virtual MediaDecoderOwner::NextFrameStatus NextFrameStatus() { return mNextFrameStatus; }
   virtual MediaDecoderOwner::NextFrameStatus NextFrameBufferedStatus();
 
-  
-  
-  virtual void GetMozDebugReaderData(nsAString& aString) {}
-
 protected:
   virtual ~MediaDecoder();
 
@@ -778,6 +774,9 @@ protected:
   Mirror<int64_t> mPlaybackPosition;
 
   
+  Mirror<bool> mIsAudioDataAudible;
+
+  
   Canonical<double> mVolume;
 
   
@@ -872,6 +871,9 @@ public:
   }
 
 private:
+  
+  void NotifyAudibleStateChanged();
+
   
 
   

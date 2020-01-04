@@ -398,6 +398,9 @@ public:
   virtual void ResetConnectionState() final override;
 
   
+  virtual void NotifyAudibleStateChanged(bool aAudible) final override;
+
+  
   void SetPreload(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::preload, aValue, aRv);
@@ -553,10 +556,6 @@ public:
   }
 
   already_AddRefed<MediaSource> GetMozMediaSourceObject() const;
-  
-  
-  void GetMozDebugReaderData(nsAString& aString);
-
   already_AddRefed<DOMMediaStream> GetSrcObject() const;
   void SetSrcObject(DOMMediaStream& aValue);
   void SetSrcObject(DOMMediaStream* aValue);
@@ -1525,6 +1524,9 @@ private:
   
   
   double mDefaultPlaybackStartPosition;
+
+  
+  bool mIsAudioTrackAudible;
 };
 
 } 

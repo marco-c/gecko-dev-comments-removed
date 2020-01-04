@@ -13,40 +13,41 @@ namespace mozilla
 class MockMediaDecoderOwner : public MediaDecoderOwner
 {
 public:
-  nsresult DispatchAsyncEvent(const nsAString& aName) override
+  virtual nsresult DispatchAsyncEvent(const nsAString& aName) override
   {
     return NS_OK;
   }
-  void FireTimeUpdate(bool aPeriodic) override {}
-  bool GetPaused() override { return false; }
-  void MetadataLoaded(const MediaInfo* aInfo,
-                      nsAutoPtr<const MetadataTags> aTags) override
+  virtual void FireTimeUpdate(bool aPeriodic) override {}
+  virtual bool GetPaused() override { return false; }
+  virtual void MetadataLoaded(const MediaInfo* aInfo,
+                              nsAutoPtr<const MetadataTags> aTags) override
   {
   }
-  void NetworkError() override {}
-  void DecodeError() override {}
-  void LoadAborted() override {}
-  void PlaybackEnded() override {}
-  void SeekStarted() override {}
-  void SeekCompleted() override {}
-  void DownloadProgressed() override {}
-  void UpdateReadyState() override {}
-  void FirstFrameLoaded() override {}
+  virtual void NetworkError() override {}
+  virtual void DecodeError() override {}
+  virtual void LoadAborted() override {}
+  virtual void PlaybackEnded() override {}
+  virtual void SeekStarted() override {}
+  virtual void SeekCompleted() override {}
+  virtual void DownloadProgressed() override {}
+  virtual void UpdateReadyState() override {}
+  virtual void FirstFrameLoaded() override {}
 #ifdef MOZ_EME
-  void DispatchEncrypted(const nsTArray<uint8_t>& aInitData,
-                         const nsAString& aInitDataType) override {}
+  virtual void DispatchEncrypted(const nsTArray<uint8_t>& aInitData,
+                                 const nsAString& aInitDataType) override {}
 #endif 
-  bool IsActive() const override { return true; }
-  bool IsHidden() const override { return false; }
-  void DownloadSuspended() override {}
-  void DownloadResumed(bool aForceNetworkLoading) override {}
-  void NotifySuspendedByCache(bool aIsSuspended) override {}
-  void NotifyDecoderPrincipalChanged() override {}
-  VideoFrameContainer* GetVideoFrameContainer() override
+  virtual bool IsActive() const override { return true; }
+  virtual bool IsHidden() const override { return false; }
+  virtual void DownloadSuspended() override {}
+  virtual void DownloadResumed(bool aForceNetworkLoading) override {}
+  virtual void NotifySuspendedByCache(bool aIsSuspended) override {}
+  virtual void NotifyDecoderPrincipalChanged() override {}
+  virtual VideoFrameContainer* GetVideoFrameContainer() override
   {
     return nullptr;
   }
-  void ResetConnectionState() override {}
+  virtual void ResetConnectionState() override {}
+  virtual void NotifyAudibleStateChanged(bool aAudible) override {};
 };
 }
 
