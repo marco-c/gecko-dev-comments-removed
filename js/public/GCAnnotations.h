@@ -39,6 +39,7 @@
 
 # define JS_HAZ_GC_CALL __attribute__((tag("GC Call")))
 
+
 # define JS_HAZ_GC_SUPPRESSED __attribute__((tag("Suppress GC")))
 
 #else
