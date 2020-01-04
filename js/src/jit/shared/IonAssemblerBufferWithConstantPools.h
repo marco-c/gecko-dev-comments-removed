@@ -518,7 +518,9 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     void markNextAsBranch() {
         
         
-        this->ensureSpace(InstSize);
+        if (!this->ensureSpace(InstSize))
+            return;
+
         MOZ_ASSERT(this->getTail() != nullptr);
         this->getTail()->markNextAsBranch();
     }

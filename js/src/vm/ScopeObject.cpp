@@ -1110,10 +1110,19 @@ ScopeIter::settle()
 {
     
     
-    if (frame_ && frame_.isNonEvalFunctionFrame() &&
-        frame_.fun()->needsCallObject() && !frame_.hasCallObj())
+    if (frame_ && frame_.isNonEvalFunctionFrame() && frame_.fun()->needsCallObject() &&
+        !frame_.hasCallObj())
     {
         MOZ_ASSERT(ssi_.type() == StaticScopeIter<CanGC>::Function);
+        incrementStaticScopeIter();
+    }
+
+    
+    
+    if (frame_ && frame_.isStrictEvalFrame() && !frame_.hasCallObj() && !ssi_.done()) {
+        MOZ_ASSERT(ssi_.type() == StaticScopeIter<CanGC>::Block);
+        incrementStaticScopeIter();
+        MOZ_ASSERT(ssi_.type() == StaticScopeIter<CanGC>::Eval);
         incrementStaticScopeIter();
     }
 
