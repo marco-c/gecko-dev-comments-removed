@@ -287,6 +287,10 @@ nsAndroidHistory::SetURITitle(nsIURI *aURI, const nsAString& aTitle)
     nsAutoCString uri;
     nsresult rv = aURI->GetSpec(uri);
     if (NS_FAILED(rv)) return rv;
+    if (RemovePendingVisitURI(aURI)) {
+      
+      SaveVisitURI(aURI);
+    }
     NS_ConvertUTF8toUTF16 uriString(uri);
     widget::GeckoAppShell::SetURITitle(uriString, aTitle);
   }
