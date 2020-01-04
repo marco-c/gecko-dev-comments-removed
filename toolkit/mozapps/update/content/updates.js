@@ -441,10 +441,6 @@ var gUpdates = {
           return;
         }
 
-        if (this.update.licenseURL) {
-          this.wiz.getPageById(this.updatesFoundPageId).setAttribute("next", "license");
-        }
-
         aCallback(this.updatesFoundPageId);
         return;
       }
@@ -578,12 +574,6 @@ var gCheckingPage = {
           gUpdates.never();
           gUpdates.wiz.goTo("manualUpdate");
           return;
-        }
-
-        if (gUpdates.update.licenseURL) {
-          
-          
-          gUpdates.wiz.getPageById(gUpdates.updatesFoundPageId).setAttribute("next", "license");
         }
 
         gUpdates.wiz.goTo(gUpdates.updatesFoundPageId);
@@ -876,127 +866,6 @@ var gUpdatesFoundBillboardPage = {
     catch (e) {
       LOG("gUpdatesFoundBillboardPage", "onWizardCancel - " +
           "moreInfoContent.stopDownloading() failed: " + e);
-    }
-  }
-};
-
-
-
-
-
-
-var gLicensePage = {
-  
-
-
-  _licenseLoaded: false,
-
-  
-
-
-  onPageShow: function() {
-    gUpdates.setButtons("backButton", null, "acceptTermsButton", false);
-
-    var licenseContent = document.getElementById("licenseContent");
-    if (this._licenseLoaded || licenseContent.getAttribute("state") == "error") {
-      this.onAcceptDeclineRadio();
-      var licenseGroup = document.getElementById("acceptDeclineLicense");
-      licenseGroup.focus();
-      return;
-    }
-
-    gUpdates.wiz.canAdvance = false;
-
-    
-    document.getElementById("acceptDeclineLicense").disabled = true;
-    gUpdates.update.setProperty("licenseAccepted", "false");
-
-    licenseContent.addEventListener("load", gLicensePage.onLicenseLoad, false);
-    
-    
-    
-    licenseContent.update_name = gUpdates.brandName;
-    licenseContent.update_version = gUpdates.update.displayVersion;
-    licenseContent.url = gUpdates.update.licenseURL;
-  },
-
-  
-
-
-  onLicenseLoad: function(aEvent) {
-    var licenseContent = document.getElementById("licenseContent");
-    
-    
-    
-    var state = licenseContent.getAttribute("state");
-    if (state == "loading" || aEvent.originalTarget != licenseContent)
-      return;
-
-    licenseContent.removeEventListener("load", gLicensePage.onLicenseLoad, false);
-
-    if (state == "error") {
-      gUpdates.wiz.goTo("manualUpdate");
-      return;
-    }
-
-    gLicensePage._licenseLoaded = true;
-    document.getElementById("acceptDeclineLicense").disabled = false;
-    gUpdates.wiz.getButton("extra1").disabled = false;
-  },
-
-  
-
-
-  onAcceptDeclineRadio: function() {
-    
-    
-    
-    if (!this._licenseLoaded)
-      return;
-
-    var selectedIndex = document.getElementById("acceptDeclineLicense")
-                                .selectedIndex;
-    
-    var licenseAccepted = (selectedIndex == 0);
-    gUpdates.wiz.canAdvance = licenseAccepted;
-  },
-
-  
-
-
-  onExtra1: function() {
-    gUpdates.wiz.goTo(gUpdates.updatesFoundPageId);
-  },
-
-  
-
-
-  onWizardNext: function() {
-    try {
-      gUpdates.update.setProperty("licenseAccepted", "true");
-      var um = CoC["@mozilla.org/updates/update-manager;1"].
-               getService(CoI.nsIUpdateManager);
-      um.saveUpdates();
-    }
-    catch (e) {
-      LOG("gLicensePage", "onWizardNext - nsIUpdateManager:saveUpdates() " +
-          "failed: " + e);
-    }
-  },
-
-  
-
-
-  onWizardCancel: function() {
-    try {
-      var licenseContent = document.getElementById("licenseContent");
-      
-      if (licenseContent)
-        licenseContent.stopDownloading();
-    }
-    catch (e) {
-      LOG("gLicensePage", "onWizardCancel - " +
-          "licenseContent.stopDownloading() failed: " + e);
     }
   }
 };
