@@ -71,9 +71,6 @@ class MachCommands(MachCommandBase):
             res = self._mach_context.commands.dispatch('package', self._mach_context)
             if res != 0:
                 return 1
-            res = self._mach_context.commands.dispatch('gradle-install', self._mach_context)
-            if res != 0:
-                 return 1
         else:
             
             python = self.virtualenv_manager.python_path
