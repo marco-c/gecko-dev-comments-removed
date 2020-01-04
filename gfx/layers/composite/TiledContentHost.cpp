@@ -4,6 +4,7 @@
 
 
 #include "TiledContentHost.h"
+#include "gfxPrefs.h"                   
 #include "PaintedLayerComposite.h"      
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Matrix.h"         
