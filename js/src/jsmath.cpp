@@ -805,18 +805,18 @@ js::math_round(JSContext* cx, unsigned argc, Value* vp)
 double
 js::math_sin_impl(MathCache* cache, double x)
 {
-#ifdef _WIN64
-    
-    
-    if (IsNegativeZero(x))
-        return -0.0;
-#endif
     return cache->lookup(math_sin_uncached, x, MathCache::Sin);
 }
 
 double
 js::math_sin_uncached(double x)
 {
+#ifdef _WIN64
+    
+    
+    if (IsNegativeZero(x))
+        return -0.0;
+#endif
     return sin(x);
 }
 
