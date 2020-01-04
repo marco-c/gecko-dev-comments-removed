@@ -169,7 +169,7 @@ ScrollFrame(nsIContent* aContent,
   
   
   bool mainThreadScrollChanged =
-    sf && sf->CurrentScrollGeneration() != aMetrics.GetScrollGeneration();
+    sf && sf->CurrentScrollGeneration() != aMetrics.GetScrollGeneration() && nsLayoutUtils::CanScrollOriginClobberApz(sf->LastScrollOrigin());
   if (aContent && !mainThreadScrollChanged) {
     CSSPoint scrollDelta = apzScrollOffset - actualScrollOffset;
     aContent->SetProperty(nsGkAtoms::apzCallbackTransform, new CSSPoint(scrollDelta),
