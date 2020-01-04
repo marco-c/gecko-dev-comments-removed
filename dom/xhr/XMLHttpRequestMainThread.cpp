@@ -2766,7 +2766,12 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
     mChannel->SetNotificationCallbacks(mNotificationCallbacks);
     mChannel = nullptr;
 
-    return rv;
+    mErrorLoad = true;
+
+    
+    if (mFlagSynchronous) {
+      return rv;
+    }
   }
 
   mWaitingForOnStopRequest = true;
@@ -2839,7 +2844,18 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
   }
 
   if (!mChannel) {
-    return NS_ERROR_FAILURE;
+    
+    if (mFlagSynchronous) {
+      return NS_ERROR_FAILURE;
+    } else {
+      
+      
+      NS_DispatchToCurrentThread(
+        NewRunnableMethod<ProgressEventType>(this,
+          &XMLHttpRequestMainThread::CloseRequestWithError,
+          ProgressEventType::error));
+      return NS_OK;
+    }
   }
 
   return rv;
