@@ -34,6 +34,8 @@ module.exports = createClass({
     showEmptyPathAsHost: PropTypes.bool,
     
     showFullSourceUrl: PropTypes.bool,
+    
+    sourceMapService: PropTypes.object,
   },
 
   getDefaultProps() {
@@ -46,16 +48,84 @@ module.exports = createClass({
     };
   },
 
+  componentWillMount() {
+    const sourceMapService = this.props.sourceMapService;
+    if (sourceMapService) {
+      const source = this.getSource();
+      sourceMapService.subscribe(source, this.onSourceUpdated);
+    }
+  },
+
+  componentWillUnmount() {
+    const sourceMapService = this.props.sourceMapService;
+    if (sourceMapService) {
+      const source = this.getSource();
+      sourceMapService.unsubscribe(source, this.onSourceUpdated);
+    }
+  },
+
+  
+
+
+
+
+  onSourceUpdated(event, location, resolvedLocation) {
+    const frame = this.getFrame(resolvedLocation);
+    this.setState({
+      frame,
+      isSourceMapped: true,
+    });
+  },
+
+  
+
+
+
+
+
+  getSource(frame) {
+    frame = frame || this.props.frame;
+    const { source, line, column } = frame;
+    return {
+      url: source,
+      line,
+      column,
+    };
+  },
+
+  
+
+
+
+
+
+  getFrame(source) {
+    const { url, line, column } = source;
+    return {
+      source: url,
+      line,
+      column,
+      functionDisplayName: this.props.frame.functionDisplayName,
+    };
+  },
+
   render() {
+    let frame, isSourceMapped;
     let {
       onClick,
-      frame,
       showFunctionName,
       showAnonymousFunctionName,
       showHost,
       showEmptyPathAsHost,
       showFullSourceUrl
     } = this.props;
+
+    if (this.state && this.state.isSourceMapped) {
+      frame = this.state.frame;
+      isSourceMapped = this.state.isSourceMapped;
+    } else {
+      frame = this.props.frame;
+    }
 
     let source = frame.source ? String(frame.source) : "";
     let line = frame.line != void 0 ? Number(frame.line) : null;
@@ -66,17 +136,24 @@ module.exports = createClass({
     
     
     
-    const isLinkable = !!(isScratchpadScheme(source) || parseURL(source));
+    
+    
+    const isLinkable = !!(isScratchpadScheme(source) || parseURL(source))
+      || isSourceMapped;
     const elements = [];
     const sourceElements = [];
     let sourceEl;
 
     let tooltip = long;
+
+    
+    const shouldDisplayLine = isLinkable && line;
+
     
     
     
     
-    if (isLinkable && line) {
+    if (shouldDisplayLine) {
       tooltip += `:${line}`;
       
       if (column) {
@@ -104,7 +181,16 @@ module.exports = createClass({
     }
 
     let displaySource = showFullSourceUrl ? long : short;
-    if (showEmptyPathAsHost && (displaySource === "" || displaySource === "/")) {
+    
+    
+    
+    
+    
+    if (isSourceMapped) {
+      displaySource = displaySource.lastIndexOf("/") < 0 ?
+        displaySource :
+        displaySource.slice(displaySource.lastIndexOf("/") + 1);
+    } else if (showEmptyPathAsHost && (displaySource === "" || displaySource === "/")) {
       displaySource = host;
     }
 
@@ -113,7 +199,7 @@ module.exports = createClass({
     }, displaySource));
 
     
-    if (isLinkable && line) {
+    if (shouldDisplayLine) {
       let lineInfo = `:${line}`;
       
       attributes["data-line"] = line;
@@ -134,7 +220,7 @@ module.exports = createClass({
       sourceEl = dom.a({
         onClick: e => {
           e.preventDefault();
-          onClick(frame);
+          onClick(this.getSource(frame));
         },
         href: source,
         className: "frame-link-source",
