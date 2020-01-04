@@ -107,9 +107,11 @@ DetailsFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
                                  nsIDOMNode::ELEMENT_NODE);
   mDefaultSummary = new HTMLSummaryElement(nodeInfo);
 
-  
+  nsXPIDLString defaultSummaryText;
+  nsContentUtils::GetLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+                                     "DefaultSummary", defaultSummaryText);
   RefPtr<nsTextNode> description = new nsTextNode(nodeInfoManager);
-  description->SetText(NS_LITERAL_STRING("Details"), false);
+  description->SetText(defaultSummaryText, false);
   mDefaultSummary->AppendChildTo(description, false);
 
   aElements.AppendElement(mDefaultSummary);
