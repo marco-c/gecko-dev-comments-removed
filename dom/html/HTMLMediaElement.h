@@ -443,6 +443,8 @@ public:
   
   virtual void ResetConnectionState() final override;
 
+  void NotifyXPCOMShutdown() final override;
+
   
   
   virtual void SetAudibleState(bool aAudible) final override;
@@ -1193,9 +1195,6 @@ protected:
   bool IsAllowedToPlay();
 
   bool IsAudible() const;
-  bool HaveFailedWithSourceNotSupportedError() const;
-
-  void OpenUnsupportedMediaWithExtenalAppIfNeeded();
 
   class nsAsyncEventRunner;
   using nsGenericHTMLElement::DispatchEvent;

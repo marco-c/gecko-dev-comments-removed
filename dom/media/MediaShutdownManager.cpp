@@ -137,7 +137,12 @@ MediaShutdownManager::BlockShutdown(nsIAsyncShutdownClient*)
 
   
   for (auto iter = mDecoders.Iter(); !iter.Done(); iter.Next()) {
-    iter.Get()->GetKey()->Shutdown();
+    MediaDecoderOwner* owner = iter.Get()->GetKey()->GetOwner();
+    if (owner) {
+      
+      
+      owner->NotifyXPCOMShutdown();
+    }
     
     
     MOZ_ASSERT(mDecoders.Count() == oldCount);
