@@ -1325,7 +1325,7 @@ class nsIWidget : public nsISupports {
 
     virtual already_AddRefed<mozilla::gfx::DrawTarget> CreateBackBufferDrawTarget(mozilla::gfx::DrawTarget* aScreenTarget,
                                                                                   const LayoutDeviceIntRect& aRect,
-                                                                                  const bool aInitModeClear) = 0;
+                                                                                  const LayoutDeviceIntRect& aClearRect) = 0;
 
     
 

@@ -169,7 +169,7 @@ nsBaseWidget::nsBaseWidget()
 , mUpdateCursor(true)
 , mUseAttachedEvents(false)
 , mIMEHasFocus(false)
-#if defined(XP_WIN) || defined(XP_MACOSX)
+#ifdef XP_WIN
 , mAccessibilityInUseFlag(false)
 #endif
 {
@@ -237,7 +237,7 @@ WidgetShutdownObserver::Unregister()
   }
 }
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
+#ifdef XP_WIN
 
 extern const char* kAccessibilityLastRunDatePref;
 
@@ -259,6 +259,12 @@ nsBaseWidget::Shutdown()
     delete sPluginWidgetList;
     sPluginWidgetList = nullptr;
   }
+#if defined(XP_WIN)
+  if (mAccessibilityInUseFlag) {
+    uint32_t now = PRTimeToSeconds(PR_Now());
+    Preferences::SetInt(kAccessibilityLastRunDatePref, now);
+  }
+#endif
 #endif
 }
 
@@ -1364,7 +1370,7 @@ nsBaseWidget::CleanupRemoteDrawing()
 already_AddRefed<mozilla::gfx::DrawTarget>
 nsBaseWidget::CreateBackBufferDrawTarget(mozilla::gfx::DrawTarget* aScreenTarget,
                                          const LayoutDeviceIntRect& aRect,
-                                         const bool aInitModeClear)
+                                         const LayoutDeviceIntRect& aClearRect)
 {
   MOZ_ASSERT(aScreenTarget);
   gfx::SurfaceFormat format = gfx::SurfaceFormat::B8G8R8A8;
@@ -1380,8 +1386,9 @@ nsBaseWidget::CreateBackBufferDrawTarget(mozilla::gfx::DrawTarget* aScreenTarget
       mLastBackBuffer->GetSize() <= clientSize) {
     target = mLastBackBuffer;
     target->SetTransform(gfx::Matrix());
-    if (aInitModeClear) {
-      target->ClearRect(gfx::Rect(0, 0, size.width, size.height));
+    if (!aClearRect.IsEmpty()) {
+      gfx::IntRect clearRect = aClearRect.ToUnknownRect() - aRect.ToUnknownRect().TopLeft();
+      target->ClearRect(gfx::Rect(clearRect.x, clearRect.y, clearRect.width, clearRect.height));
     }
   } else {
     target = aScreenTarget->CreateSimilarDrawTarget(size, format);
@@ -1869,12 +1876,8 @@ nsBaseWidget::GetRootAccessible()
   nsCOMPtr<nsIAccessibilityService> accService =
     services::GetAccessibilityService();
   if (accService) {
-#if defined(XP_WIN) || defined(XP_MACOSX)
-    if (!mAccessibilityInUseFlag) {
-      mAccessibilityInUseFlag = true;
-      uint32_t now = PRTimeToSeconds(PR_Now());
-      Preferences::SetInt(kAccessibilityLastRunDatePref, now);
-    }
+#ifdef XP_WIN
+    mAccessibilityInUseFlag = true;
 #endif
     return accService->GetRootDocumentAccessible(presShell, nsContentUtils::IsSafeToRunScript());
   }
