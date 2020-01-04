@@ -459,6 +459,8 @@ BrowserElementParent.prototype = {
   
   
   
+  
+  
   _handleCaretStateChanged: function(data) {
     let evt = this._createEvent('caretstatechanged', data.json,
                                  false);
