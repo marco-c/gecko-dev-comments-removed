@@ -3,7 +3,7 @@
 
 
 (function() {
-  const SCROLLBARS_URL = "chrome://devtools/skin/floating-scrollbars-light.css";
+  const SCROLLBARS_URL = "chrome://devtools/skin/floating-scrollbars-dark-theme.css";
   let documentElement = document.documentElement;
 
   let os;
