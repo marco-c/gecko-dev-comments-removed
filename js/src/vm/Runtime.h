@@ -1654,7 +1654,7 @@ struct GCManagedDeletePolicy
     void operator()(const T* ptr) {
         if (ptr) {
             JSRuntime* rt = TlsPerThreadData.get()->runtimeIfOnOwnerThread();
-            if (rt) {
+            if (rt && rt->gc.nursery.isEnabled()) {
                 
                 
                 rt->gc.callAfterMinorGC(deletePtr, const_cast<T*>(ptr));
