@@ -359,7 +359,7 @@ class OSXBootstrapper(BaseBootstrapper):
         
         mozbuild_path = os.environ.get('MOZBUILD_STATE_PATH', os.path.expanduser(os.path.join('~', '.mozbuild')))
         self.sdk_path = os.environ.get('ANDROID_SDK_HOME', os.path.join(mozbuild_path, 'android-sdk-macosx'))
-        self.ndk_path = os.environ.get('ANDROID_NDK_HOME', os.path.join(mozbuild_path, 'android-ndk-r10e'))
+        self.ndk_path = os.environ.get('ANDROID_NDK_HOME', os.path.join(mozbuild_path, 'android-ndk-r11b'))
         self.sdk_url = 'https://dl.google.com/android/android-sdk_r24.0.1-macosx.zip'
         is_64bits = sys.maxsize > 2**32
         if is_64bits:
@@ -441,7 +441,7 @@ class OSXBootstrapper(BaseBootstrapper):
         
         mozbuild_path = os.environ.get('MOZBUILD_STATE_PATH', os.path.expanduser(os.path.join('~', '.mozbuild')))
         self.sdk_path = os.environ.get('ANDROID_SDK_HOME', os.path.join(mozbuild_path, 'android-sdk-macosx'))
-        self.ndk_path = os.environ.get('ANDROID_NDK_HOME', os.path.join(mozbuild_path, 'android-ndk-r10e'))
+        self.ndk_path = os.environ.get('ANDROID_NDK_HOME', os.path.join(mozbuild_path, 'android-ndk-r11b'))
         self.sdk_url = 'https://dl.google.com/android/android-sdk_r24.0.1-macosx.zip'
         is_64bits = sys.maxsize > 2**32
         if is_64bits:

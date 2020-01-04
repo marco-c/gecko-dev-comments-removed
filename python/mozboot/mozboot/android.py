@@ -258,13 +258,13 @@ def suggest_mozconfig(sdk_path=None, ndk_path=None, artifact_mode=False):
         print(MOBILE_ANDROID_MOZCONFIG_TEMPLATE % (sdk_path, ndk_path))
 
 
-def android_ndk_url(os_name, ver='r10e'):
+def android_ndk_url(os_name, ver='r11b'):
     
-    base_url = 'https://dl.google.com/android/ndk/android-ndk'
+    base_url = 'https://dl.google.com/android/repository/android-ndk'
 
     if sys.maxsize > 2**32:
         arch = 'x86_64'
     else:
         arch = 'x86'
 
-    return '%s-%s-%s-%s.bin' % (base_url, ver, os_name, arch)
+    return '%s-%s-%s-%s.zip' % (base_url, ver, os_name, arch)
