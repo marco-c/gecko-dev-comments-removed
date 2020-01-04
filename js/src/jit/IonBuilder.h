@@ -317,7 +317,7 @@ class IonBuilder
 
     
     
-    ControlStatus restartLoop(CFGState state);
+    ControlStatus restartLoop(const CFGState& state);
 
     void assertValidLoopHeadOp(jsbytecode* pc);
 
