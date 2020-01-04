@@ -149,7 +149,6 @@ static inline void profiler_resume() {}
 
 
 static inline ProfilerBacktrace* profiler_get_backtrace() { return nullptr; }
-static inline void profiler_get_backtrace_noalloc(char *output, size_t outputSize) { return; }
 
 
 static inline void profiler_free_backtrace(ProfilerBacktrace* aBacktrace) {}

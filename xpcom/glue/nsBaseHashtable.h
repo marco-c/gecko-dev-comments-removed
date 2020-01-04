@@ -297,15 +297,6 @@ public:
     return aMallocSizeOf(this) + ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
-  
-
-
-  void SwapElements(nsBaseHashtable& aOther)
-  {
-    nsTHashtable<EntryType>::SwapElements(aOther);
-  }
-
-
 #ifdef DEBUG
   using nsTHashtable<EntryType>::MarkImmutable;
 #endif
