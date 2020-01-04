@@ -124,7 +124,7 @@ nsICODecoder::FillBitmapFileHeaderBuffer(int8_t* bfh)
   bfh[1] = 'M';
   int32_t dataOffset = 0;
   int32_t fileSize = 0;
-  dataOffset = BMPFILEHEADER::LENGTH + BITMAPINFOSIZE;
+  dataOffset = bmp::FileHeader::LENGTH + BITMAPINFOSIZE;
 
   
   if (mDirEntry.mBitCount <= 8) {

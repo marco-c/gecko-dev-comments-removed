@@ -8,6 +8,74 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include <stdlib.h>
 
 #include "ImageLogging.h"
@@ -24,6 +92,8 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace image {
 
+using namespace bmp;
+
 static PRLogModuleInfo*
 GetBMPLog()
 {
@@ -35,33 +105,29 @@ GetBMPLog()
 }
 
 
-#define LINE(row) ((mBIH.height < 0) ? (-mBIH.height - (row)) : ((row) - 1))
-#define PIXEL_OFFSET(row, col) (LINE(row) * mBIH.width + col)
+static const size_t RLE_SEGMENT_LENGTH = 2;
+static const size_t RLE_DELTA_LENGTH = 2;
 
 nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
   : Decoder(aImage)
-  , mPos(0)
-  , mLOH(BMP_HEADER_LENGTH::WIN_V3)
+  , mLexer(Transition::To(State::FILE_HEADER, FileHeader::LENGTH))
   , mNumColors(0)
   , mColors(nullptr)
-  , mRow(nullptr)
-  , mRowBytes(0)
-  , mCurLine(1)  
-  , mOldLine(1)
-  , mCurPos(0)
-  , mState(eRLEStateInitial)
-  , mStateData(0)
-  , mProcessedHeader(false)
+  , mBytesPerColor(0)
+  , mPreGapLength(0)
+  , mCurrentRow(0)
+  , mCurrentPos(0)
+  , mAbsoluteModeNumPixels(0)
   , mUseAlphaData(false)
   , mHaveAlphaData(false)
-{ }
+{
+  memset(&mBFH, 0, sizeof(mBFH));
+  memset(&mBIH, 0, sizeof(mBIH));
+}
 
 nsBMPDecoder::~nsBMPDecoder()
 {
   delete[] mColors;
-  if (mRow) {
-      free(mRow);
-  }
 }
 
 
@@ -86,6 +152,7 @@ nsBMPDecoder::GetWidth() const
 }
 
 
+
 int32_t
 nsBMPDecoder::GetHeight() const
 {
@@ -104,49 +171,35 @@ int32_t
 nsBMPDecoder::GetCompressedImageSize() const
 {
   
-  if (mBIH.compression != BMPINFOHEADER::RGB) {
-    return mBIH.image_size;
-  }
-
-  
-  
-  
-  uint32_t rowSize = (mBIH.bpp * mBIH.width + 7) / 8; 
-
-  
-  if (rowSize % 4) {
-    rowSize += (4 - (rowSize % 4));
-  }
-
-  
-  
-  int32_t pixelArraySize = rowSize * GetHeight();
-  return pixelArraySize;
+  MOZ_ASSERT(mPixelRowSize != 0);
+  return mBIH.compression == Compression::RGB
+       ? mPixelRowSize * GetHeight()
+       : mBIH.image_size;
 }
 
 void
 nsBMPDecoder::FinishInternal()
 {
-    
-    MOZ_ASSERT(!HasError(), "Can't call FinishInternal on error!");
+  
+  MOZ_ASSERT(!HasError(), "Can't call FinishInternal on error!");
+
+  
+  MOZ_ASSERT(GetFrameCount() <= 1, "Multiple BMP frames?");
+
+  
+  if (!IsMetadataDecode() && HasSize()) {
 
     
-    MOZ_ASSERT(GetFrameCount() <= 1, "Multiple BMP frames?");
+    nsIntRect r(0, 0, mBIH.width, GetHeight());
+    PostInvalidation(r);
 
-    
-    if (!IsMetadataDecode() && HasSize()) {
-
-        
-        nsIntRect r(0, 0, mBIH.width, GetHeight());
-        PostInvalidation(r);
-
-        if (mUseAlphaData && mHaveAlphaData) {
-          PostFrameStop(Opacity::SOME_TRANSPARENCY);
-        } else {
-          PostFrameStop(Opacity::OPAQUE);
-        }
-        PostDecodeDone();
+    if (mUseAlphaData && mHaveAlphaData) {
+      PostFrameStop(Opacity::SOME_TRANSPARENCY);
+    } else {
+      PostFrameStop(Opacity::OPAQUE);
     }
+    PostDecodeDone();
+  }
 }
 
 
@@ -156,848 +209,615 @@ nsBMPDecoder::FinishInternal()
 static void
 calcBitmask(uint32_t aMask, uint8_t& aBegin, uint8_t& aLength)
 {
-    
-    uint8_t pos;
-    bool started = false;
-    aBegin = aLength = 0;
-    for (pos = 0; pos <= 31; pos++) {
-        if (!started && (aMask & (1 << pos))) {
-            aBegin = pos;
-            started = true;
-        } else if (started && !(aMask & (1 << pos))) {
-            aLength = pos - aBegin;
-            break;
-        }
+  
+  uint8_t pos;
+  bool started = false;
+  aBegin = aLength = 0;
+  for (pos = 0; pos <= 31; pos++) {
+    if (!started && (aMask & (1 << pos))) {
+      aBegin = pos;
+      started = true;
+    } else if (started && !(aMask & (1 << pos))) {
+      aLength = pos - aBegin;
+      break;
     }
+  }
 }
 
-NS_METHOD
+void
 nsBMPDecoder::CalcBitShift()
 {
-    uint8_t begin, length;
-    
-    calcBitmask(mBitFields.red, begin, length);
-    mBitFields.redRightShift = begin;
-    mBitFields.redLeftShift = 8 - length;
-    
-    calcBitmask(mBitFields.green, begin, length);
-    mBitFields.greenRightShift = begin;
-    mBitFields.greenLeftShift = 8 - length;
-    
-    calcBitmask(mBitFields.blue, begin, length);
-    mBitFields.blueRightShift = begin;
-    mBitFields.blueLeftShift = 8 - length;
-    return NS_OK;
+  uint8_t begin, length;
+
+  calcBitmask(mBitFields.red, begin, length);
+  mBitFields.redRightShift = begin;
+  mBitFields.redLeftShift = 8 - length;
+
+  calcBitmask(mBitFields.green, begin, length);
+  mBitFields.greenRightShift = begin;
+  mBitFields.greenLeftShift = 8 - length;
+
+  calcBitmask(mBitFields.blue, begin, length);
+  mBitFields.blueRightShift = begin;
+  mBitFields.blueLeftShift = 8 - length;
+}
+
+uint32_t*
+nsBMPDecoder::RowBuffer()
+{
+  if (mDownscaler) {
+    return reinterpret_cast<uint32_t*>(mDownscaler->RowBuffer()) + mCurrentPos;
+  }
+
+  
+  int32_t line = (mBIH.height < 0)
+               ? -mBIH.height - mCurrentRow
+               : mCurrentRow - 1;
+  int32_t offset = line * mBIH.width + mCurrentPos;
+  return reinterpret_cast<uint32_t*>(mImageData) + offset;
+}
+
+void
+nsBMPDecoder::FinishRow()
+{
+  if (mDownscaler) {
+    mDownscaler->CommitRow();
+
+    if (mDownscaler->HasInvalidation()) {
+      DownscalerInvalidRect invalidRect = mDownscaler->TakeInvalidRect();
+      PostInvalidation(invalidRect.mOriginalSizeRect,
+                       Some(invalidRect.mTargetSizeRect));
+    }
+  } else {
+    PostInvalidation(IntRect(0, mCurrentRow, mBIH.width, 1));
+  }
+  mCurrentRow--;
 }
 
 void
 nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 {
   MOZ_ASSERT(!HasError(), "Shouldn't call WriteInternal after error!");
+  MOZ_ASSERT(aBuffer);
+  MOZ_ASSERT(aCount > 0);
 
-  
-  if (!aCount || !mCurLine) {
-      return;
+  Maybe<State> terminalState =
+    mLexer.Lex(aBuffer, aCount, [=](State aState,
+                                    const char* aData, size_t aLength) {
+      switch (aState) {
+        case State::FILE_HEADER:      return ReadFileHeader(aData, aLength);
+        case State::INFO_HEADER_SIZE: return ReadInfoHeaderSize(aData, aLength);
+        case State::INFO_HEADER_REST: return ReadInfoHeaderRest(aData, aLength);
+        case State::BITFIELDS:        return ReadBitfields(aData, aLength);
+        case State::COLOR_TABLE:      return ReadColorTable(aData, aLength);
+        case State::GAP:              return SkipGap();
+        case State::PIXEL_ROW:        return ReadPixelRow(aData);
+        case State::RLE_SEGMENT:      return ReadRLESegment(aData);
+        case State::RLE_DELTA:        return ReadRLEDelta(aData);
+        case State::RLE_ABSOLUTE:     return ReadRLEAbsolute(aData, aLength);
+        default:
+          MOZ_ASSERT_UNREACHABLE("Unknown State");
+          return Transition::Terminate(State::FAILURE);
+      }
+    });
+
+  if (!terminalState) {
+    return;  
   }
 
-  
-  
-  MOZ_ASSERT(sizeof(mRawBuf) == BIH_INTERNAL_LENGTH::WIN_V3);
-  MOZ_ASSERT(sizeof(mRawBuf) >= BMPFILEHEADER::INTERNAL_LENGTH);
-  MOZ_ASSERT(BIH_INTERNAL_LENGTH::OS2 < BIH_INTERNAL_LENGTH::WIN_V3);
-
-  
-  MOZ_ASSERT(sizeof(mRawBuf[0]) == 1);
-
-  if (mPos < BMPFILEHEADER::INTERNAL_LENGTH) { 
-      
-      
-      
-      
-      
-      
-      uint32_t toCopy = BMPFILEHEADER::INTERNAL_LENGTH - mPos;
-      if (toCopy > aCount) {
-          toCopy = aCount;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(mPos < sizeof(mRawBuf));
-
-      
-      
-      
-      
-      
-      MOZ_ASSERT(mPos + toCopy <= sizeof(mRawBuf));
-
-      memcpy(mRawBuf + mPos, aBuffer, toCopy);
-      mPos += toCopy;
-      aCount -= toCopy;
-      aBuffer += toCopy;
-  }
-  if (mPos == BMPFILEHEADER::INTERNAL_LENGTH) {
-      ProcessFileHeader();
-      if (mBFH.signature[0] != 'B' || mBFH.signature[1] != 'M') {
-          PostDataError();
-          return;
-      }
-      if (mBFH.bihsize == BIH_LENGTH::OS2) {
-          mLOH = BMP_HEADER_LENGTH::OS2;
-      }
-  }
-  if (mPos >= BMPFILEHEADER::INTERNAL_LENGTH && mPos < mLOH) { 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      uint32_t toCopy = mLOH - mPos;
-      if (toCopy > aCount) {
-          toCopy = aCount;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      const uint32_t offset = mPos - BMPFILEHEADER::INTERNAL_LENGTH;
-      MOZ_ASSERT(offset < sizeof(mRawBuf));
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(offset + toCopy <= sizeof(mRawBuf));
-
-      memcpy(mRawBuf + offset, aBuffer, toCopy);
-      mPos += toCopy;
-      aCount -= toCopy;
-      aBuffer += toCopy;
+  if (*terminalState == State::FAILURE) {
+    PostDataError();
+    return;
   }
 
-  
-  
-  MOZ_ASSERT(mPos >= mLOH || aCount == 0);
-
-  
-  
-  
-  if (mPos == mLOH && !mProcessedHeader) {
-      mProcessedHeader = true;
-
-      ProcessInfoHeader();
-      MOZ_LOG(GetBMPLog(), LogLevel::Debug,
-             ("BMP is %lix%lix%lu. compression=%lu\n",
-             mBIH.width, mBIH.height, mBIH.bpp, mBIH.compression));
-      
-      if (mBIH.bpp != 1 && mBIH.bpp != 4 && mBIH.bpp != 8 &&
-          mBIH.bpp != 16 && mBIH.bpp != 24 && mBIH.bpp != 32) {
-        PostDataError();
-        return;
-      }
-
-      
-      
-      const int32_t k64KWidth = 0x0000FFFF;
-      if (mBIH.width < 0 || mBIH.width > k64KWidth) {
-        PostDataError();
-        return;
-      }
-
-      if (mBIH.height == INT_MIN) {
-        PostDataError();
-        return;
-      }
-
-      uint32_t real_height = GetHeight();
-
-      
-      PostSize(mBIH.width, real_height);
-      if (HasError()) {
-        
-        return;
-      }
-
-      
-      
-      
-      bool hasTransparency = (mBIH.compression == BMPINFOHEADER::RLE8) ||
-                             (mBIH.compression == BMPINFOHEADER::RLE4) ||
-                             (mBIH.bpp == 32 && mUseAlphaData);
-      if (hasTransparency) {
-        PostHasTransparency();
-      }
-
-      
-      if (IsMetadataDecode()) {
-        return;
-      }
-
-      
-      mOldLine = mCurLine = real_height;
-
-      if (mBIH.bpp <= 8) {
-        mNumColors = 1 << mBIH.bpp;
-        if (mBIH.colors && mBIH.colors < mNumColors) {
-            mNumColors = mBIH.colors;
-        }
-
-        
-        mColors = new colorTable[256];
-        memset(mColors, 0, 256 * sizeof(colorTable));
-      } else if (mBIH.compression != BMPINFOHEADER::BITFIELDS &&
-                 mBIH.bpp == 16) {
-        
-        mBitFields.red   = 0x7C00;
-        mBitFields.green = 0x03E0;
-        mBitFields.blue  = 0x001F;
-        CalcBitShift();
-      }
-
-      
-      
-      if (mBIH.compression != BMPINFOHEADER::RGB &&
-          mBIH.compression != BMPINFOHEADER::RLE8 &&
-          mBIH.compression != BMPINFOHEADER::RLE4 &&
-          mBIH.compression != BMPINFOHEADER::BITFIELDS) {
-        PostDataError();
-        return;
-      }
-
-      
-      
-      if (mBIH.compression == BMPINFOHEADER::RLE8 && mBIH.bpp != 8) {
-        MOZ_LOG(GetBMPLog(), LogLevel::Debug,
-               ("BMP RLE8 compression only supports 8 bits per pixel\n"));
-        PostDataError();
-        return;
-      }
-      if (mBIH.compression == BMPINFOHEADER::RLE4 &&
-          mBIH.bpp != 4 && mBIH.bpp != 1) {
-        MOZ_LOG(GetBMPLog(), LogLevel::Debug,
-               ("BMP RLE4 compression only supports 4 bits per pixel\n"));
-        PostDataError();
-        return;
-      }
-      if (mBIH.compression == BMPINFOHEADER::ALPHABITFIELDS &&
-          mBIH.bpp != 16 && mBIH.bpp != 32) {
-        MOZ_LOG(GetBMPLog(), LogLevel::Debug,
-               ("BMP ALPHABITFIELDS only supports 16 or 32 bits per pixel\n"
-                ));
-        PostDataError();
-        return;
-      }
-
-      if (mBIH.compression != BMPINFOHEADER::RLE8 &&
-          mBIH.compression != BMPINFOHEADER::RLE4 &&
-          mBIH.compression != BMPINFOHEADER::ALPHABITFIELDS) {
-        
-        mRow = (uint8_t*)malloc((mBIH.width * mBIH.bpp) / 8 + 4);
-        
-        
-        
-        if (!mRow) {
-          PostDataError();
-          return;
-        }
-      }
-
-      MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
-      IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
-                                       : GetSize();
-      nsresult rv = AllocateFrame( 0, targetSize,
-                                  IntRect(IntPoint(), targetSize),
-                                  SurfaceFormat::B8G8R8A8);
-      if (NS_FAILED(rv)) {
-          return;
-      }
-
-      MOZ_ASSERT(mImageData, "Should have a buffer now");
-
-      if (mDownscaler) {
-        
-        
-        rv = mDownscaler->BeginFrame(GetSize(), Nothing(),
-                                     mImageData, hasTransparency,
-                                      true);
-        if (NS_FAILED(rv)) {
-          return;
-        }
-      }
-  }
-
-  if (mColors && mPos >= mLOH) {
-    
-    uint8_t bytesPerColor = (mBFH.bihsize == BIH_LENGTH::OS2) ? 3 : 4;
-    if (mPos < (mLOH + mNumColors * bytesPerColor)) {
-      
-      uint32_t colorBytes = mPos - mLOH;
-      
-      uint8_t colorNum = colorBytes / bytesPerColor;
-      uint8_t at = colorBytes % bytesPerColor;
-      while (aCount && (mPos < (mLOH + mNumColors * bytesPerColor))) {
-        switch (at) {
-          case 0:
-            mColors[colorNum].blue = *aBuffer;
-            break;
-          case 1:
-            mColors[colorNum].green = *aBuffer;
-            break;
-          case 2:
-            mColors[colorNum].red = *aBuffer;
-            
-            
-            if (bytesPerColor == 3) {
-              colorNum++;
-            }
-            break;
-          case 3:
-            
-            
-            colorNum++;
-            break;
-        }
-        mPos++; aBuffer++; aCount--;
-        at = (at + 1) % bytesPerColor;
-      }
-    }
-  } else if (aCount &&
-             mBIH.compression == BMPINFOHEADER::BITFIELDS &&
-             mPos < (BMP_HEADER_LENGTH::WIN_V3 + bitFields::LENGTH)) {
-    
-    
-    
-
-    
-    
-    MOZ_ASSERT(mPos >= mLOH);
-    MOZ_ASSERT(mLOH == BMP_HEADER_LENGTH::WIN_V3);
-
-    
-    
-    
-    
-    
-    
-    uint32_t toCopy = (BMP_HEADER_LENGTH::WIN_V3 + bitFields::LENGTH) - mPos;
-    if (toCopy > aCount) {
-      toCopy = aCount;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const uint32_t offset = mPos - BMP_HEADER_LENGTH::WIN_V3;
-    MOZ_ASSERT(offset < sizeof(mRawBuf));
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(offset + toCopy <= sizeof(mRawBuf));
-
-    memcpy(mRawBuf + offset, aBuffer, toCopy);
-    mPos += toCopy;
-    aBuffer += toCopy;
-    aCount -= toCopy;
-  }
-  if (mPos == BMP_HEADER_LENGTH::WIN_V3 + bitFields::LENGTH &&
-      mBIH.compression == BMPINFOHEADER::BITFIELDS) {
-    mBitFields.red = LittleEndian::readUint32(reinterpret_cast<uint32_t*>
-                                              (mRawBuf));
-    mBitFields.green = LittleEndian::readUint32(reinterpret_cast<uint32_t*>
-                                                (mRawBuf + 4));
-    mBitFields.blue = LittleEndian::readUint32(reinterpret_cast<uint32_t*>
-                                               (mRawBuf + 8));
-    CalcBitShift();
-  }
-  while (aCount && (mPos < mBFH.dataoffset)) { 
-                                               
-    mPos++; aBuffer++; aCount--;
-  }
-  if (aCount && ++mPos >= mBFH.dataoffset) {
-    
-    
-    if (!mBIH.compression || mBIH.compression == BMPINFOHEADER::BITFIELDS) {
-        uint32_t rowSize = (mBIH.bpp * mBIH.width + 7) / 8; 
-                                                            
-        if (rowSize % 4) {
-          rowSize += (4 - (rowSize % 4)); 
-        }
-        uint32_t toCopy;
-        do {
-          toCopy = rowSize - mRowBytes;
-          if (toCopy) {
-            if (toCopy > aCount) {
-              toCopy = aCount;
-            }
-            memcpy(mRow + mRowBytes, aBuffer, toCopy);
-            aCount -= toCopy;
-            aBuffer += toCopy;
-            mRowBytes += toCopy;
-        }
-        if (rowSize == mRowBytes) {
-          
-          uint8_t* p = mRow;
-          uint32_t* d = mDownscaler
-                      ? reinterpret_cast<uint32_t*>(mDownscaler->RowBuffer())
-                      : reinterpret_cast<uint32_t*>(mImageData)
-                        + PIXEL_OFFSET(mCurLine, 0);
-          uint32_t lpos = mBIH.width;
-          switch (mBIH.bpp) {
-            case 1:
-              while (lpos > 0) {
-                int8_t bit;
-                uint8_t idx;
-                for (bit = 7; bit >= 0 && lpos > 0; bit--) {
-                  idx = (*p >> bit) & 1;
-                  SetPixel(d, idx, mColors);
-                  --lpos;
-                }
-                ++p;
-              }
-              break;
-            case 4:
-              while (lpos > 0) {
-                Set4BitPixel(d, *p, lpos, mColors);
-                ++p;
-              }
-              break;
-            case 8:
-              while (lpos > 0) {
-                SetPixel(d, *p, mColors);
-                --lpos;
-                ++p;
-              }
-              break;
-            case 16:
-              while (lpos > 0) {
-                uint16_t val = LittleEndian::
-                               readUint16(reinterpret_cast<uint16_t*>(p));
-                SetPixel(d,
-                         (val & mBitFields.red) >>
-                         mBitFields.redRightShift <<
-                         mBitFields.redLeftShift,
-                         (val & mBitFields.green) >>
-                         mBitFields.greenRightShift <<
-                         mBitFields.greenLeftShift,
-                         (val & mBitFields.blue) >>
-                         mBitFields.blueRightShift <<
-                         mBitFields.blueLeftShift);
-                --lpos;
-                p+=2;
-              }
-              break;
-            case 24:
-              while (lpos > 0) {
-                SetPixel(d, p[2], p[1], p[0]);
-                p += 2;
-                --lpos;
-                ++p;
-              }
-              break;
-            case 32:
-              while (lpos > 0) {
-                if (mUseAlphaData) {
-                  if (MOZ_UNLIKELY(!mHaveAlphaData && p[3])) {
-                    PostHasTransparency();
-                    mHaveAlphaData = true;
-                  }
-                  SetPixel(d, p[2], p[1], p[0], p[3]);
-                } else {
-                  SetPixel(d, p[2], p[1], p[0]);
-                }
-                p += 4;
-                --lpos;
-              }
-              break;
-            default:
-              NS_NOTREACHED("Unsupported color depth,"
-                            " but earlier check didn't catch it");
-          }
-
-          if (mDownscaler) {
-            mDownscaler->CommitRow();
-          }
-          
-          mCurLine --;
-          if (mCurLine == 0) { 
-            break;
-          }
-          mRowBytes = 0;
-        }
-      } while (aCount > 0);
-    } else if ((mBIH.compression == BMPINFOHEADER::RLE8) ||
-               (mBIH.compression == BMPINFOHEADER::RLE4)) {
-      if (((mBIH.compression == BMPINFOHEADER::RLE8) && (mBIH.bpp != 8)) ||
-          ((mBIH.compression == BMPINFOHEADER::RLE4) && (mBIH.bpp != 4) &&
-           (mBIH.bpp != 1))) {
-        MOZ_LOG(GetBMPLog(), LogLevel::Debug,
-               ("BMP RLE8/RLE4 compression only supports 8/4 bits per"
-               " pixel\n"));
-        PostDataError();
-        return;
-      }
-
-      while (aCount > 0) {
-        uint8_t byte;
-
-        switch(mState) {
-          case eRLEStateInitial:
-            mStateData = (uint8_t)*aBuffer++;
-            aCount--;
-
-            mState = eRLEStateNeedSecondEscapeByte;
-            continue;
-
-          case eRLEStateNeedSecondEscapeByte:
-            byte = *aBuffer++;
-            aCount--;
-            if (mStateData != RLE::ESCAPE) { 
-              
-              
-              
-              
-              
-              
-              mState = eRLEStateInitial;
-              uint32_t pixelsNeeded = std::min<uint32_t>(mBIH.width - mCurPos,
-                                    mStateData);
-              if (pixelsNeeded) {
-                uint32_t* d = mDownscaler
-                  ? reinterpret_cast<uint32_t*>(mDownscaler->RowBuffer())
-                      + mCurPos
-                  : reinterpret_cast<uint32_t*>(mImageData)
-                      + PIXEL_OFFSET(mCurLine, mCurPos);
-
-                mCurPos += pixelsNeeded;
-                if (mBIH.compression == BMPINFOHEADER::RLE8) {
-                  do {
-                    SetPixel(d, byte, mColors);
-                    pixelsNeeded --;
-                  } while (pixelsNeeded);
-                } else {
-                    do {
-                      Set4BitPixel(d, byte, pixelsNeeded, mColors);
-                  } while (pixelsNeeded);
-                }
-              }
-              continue;
-            }
-
-            switch(byte) {
-              case RLE::ESCAPE_EOL:
-                
-                if (mDownscaler) {
-                  mDownscaler->CommitRow();
-                }
-
-                mCurLine --;
-                mCurPos = 0;
-                mState = eRLEStateInitial;
-                break;
-
-              case RLE::ESCAPE_EOF: 
-                mCurPos = mCurLine = 0;
-                break;
-
-              case RLE::ESCAPE_DELTA:
-                mState = eRLEStateNeedXDelta;
-                continue;
-
-              default : 
-                
-                mStateData = byte;
-                if (mCurPos + mStateData > (uint32_t)mBIH.width) {
-                  
-                  
-                  
-                  mStateData -= mBIH.width & 1;
-                  if (mCurPos + mStateData > (uint32_t)mBIH.width) {
-                      PostDataError();
-                      return;
-                  }
-                }
-
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              if (((mStateData - 1) & mBIH.compression) != 0) {
-                  mState = eRLEStateAbsoluteMode;
-              } else {
-                  mState = eRLEStateAbsoluteModePadded;
-              }
-              continue;
-            }
-            break;
-
-          case eRLEStateNeedXDelta:
-            
-            byte = *aBuffer++;
-            aCount--;
-
-            if (mDownscaler) {
-              
-              
-              mDownscaler->ClearRow( mCurPos);
-            }
-
-            mCurPos += byte;
-
-            
-            
-            if (MOZ_UNLIKELY(!mHaveAlphaData)) {
-                PostHasTransparency();
-                mHaveAlphaData = true;
-            }
-            mUseAlphaData = mHaveAlphaData = true;
-            if (mCurPos > mBIH.width) {
-                mCurPos = mBIH.width;
-            }
-
-            mState = eRLEStateNeedYDelta;
-            continue;
-
-          case eRLEStateNeedYDelta: {
-            
-            byte = *aBuffer++;
-            aCount--;
-            mState = eRLEStateInitial;
-            
-            
-            if (MOZ_UNLIKELY(!mHaveAlphaData)) {
-                PostHasTransparency();
-                mHaveAlphaData = true;
-            }
-            mUseAlphaData = mHaveAlphaData = true;
-
-            int32_t yDelta = std::min<int32_t>(byte, mCurLine);
-            mCurLine -= yDelta;
-
-            if (mDownscaler && yDelta > 0) {
-              
-              mDownscaler->CommitRow();
-
-              
-              for (int32_t line = 1 ; line < yDelta ; ++line) {
-                mDownscaler->ClearRow();
-                mDownscaler->CommitRow();
-              }
-            }
-
-            break;
-          }
-
-          case eRLEStateAbsoluteMode: 
-          case eRLEStateAbsoluteModePadded:
-            if (mStateData) {
-              
-              
-              
-              
-              uint32_t* d = mDownscaler
-                ? reinterpret_cast<uint32_t*>(mDownscaler->RowBuffer())
-                    + mCurPos
-                : reinterpret_cast<uint32_t*>(mImageData)
-                    + PIXEL_OFFSET(mCurLine, mCurPos);
-
-              uint32_t* oldPos = d;
-              if (mBIH.compression == BMPINFOHEADER::RLE8) {
-                  while (aCount > 0 && mStateData > 0) {
-                    byte = *aBuffer++;
-                    aCount--;
-                    SetPixel(d, byte, mColors);
-                    mStateData--;
-                  }
-              } else {
-                  while (aCount > 0 && mStateData > 0) {
-                    byte = *aBuffer++;
-                    aCount--;
-                    Set4BitPixel(d, byte, mStateData, mColors);
-                  }
-              }
-              mCurPos += d - oldPos;
-            }
-
-            if (mStateData == 0) {
-              
-              
-
-              if (mState == eRLEStateAbsoluteMode) {
-                
-                mState = eRLEStateInitial;
-              } else if (aCount > 0) {
-                
-                
-                
-                aBuffer++;
-                aCount--;
-                mState = eRLEStateInitial;
-              }
-            }
-            
-            continue;
-
-          default :
-            MOZ_ASSERT(0, "BMP RLE decompression: unknown state!");
-            PostDecoderError(NS_ERROR_UNEXPECTED);
-            return;
-        }
-        
-        
-        if (mCurLine == 0) {
-          
-          break;
-        }
-      }
-    }
-  }
-
-  const uint32_t rows = mOldLine - mCurLine;
-  if (rows) {
-    
-    if (!mDownscaler) {
-      nsIntRect r(0, mBIH.height < 0 ? -mBIH.height - mOldLine : mCurLine,
-                  mBIH.width, rows);
-      PostInvalidation(r);
-    } else if (mDownscaler->HasInvalidation()) {
-      DownscalerInvalidRect invalidRect = mDownscaler->TakeInvalidRect();
-      PostInvalidation(invalidRect.mOriginalSizeRect,
-                       Some(invalidRect.mTargetSizeRect));
-    }
-
-    mOldLine = mCurLine;
-  }
+  MOZ_ASSERT(*terminalState == State::SUCCESS);
 
   return;
 }
 
-void
-nsBMPDecoder::ProcessFileHeader()
-{
-  memset(&mBFH, 0, sizeof(mBFH));
-  memcpy(&mBFH.signature, mRawBuf, sizeof(mBFH.signature));
-  memcpy(&mBFH.filesize, mRawBuf + 2, sizeof(mBFH.filesize));
-  memcpy(&mBFH.reserved, mRawBuf + 6, sizeof(mBFH.reserved));
-  memcpy(&mBFH.dataoffset, mRawBuf + 10, sizeof(mBFH.dataoffset));
-  memcpy(&mBFH.bihsize, mRawBuf + 14, sizeof(mBFH.bihsize));
 
-  
-  mBFH.filesize = LittleEndian::readUint32(&mBFH.filesize);
-  mBFH.dataoffset = LittleEndian::readUint32(&mBFH.dataoffset);
-  mBFH.bihsize = LittleEndian::readUint32(&mBFH.bihsize);
-}
+static const uint32_t BIHSIZE_FIELD_LENGTH = 4;
 
-void
-nsBMPDecoder::ProcessInfoHeader()
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadFileHeader(const char* aData, size_t aLength)
 {
-  memset(&mBIH, 0, sizeof(mBIH));
-  if (mBFH.bihsize == 12) { 
-    memcpy(&mBIH.width, mRawBuf, 2);
-    memcpy(&mBIH.height, mRawBuf + 2, 2);
-    memcpy(&mBIH.planes, mRawBuf + 4, sizeof(mBIH.planes));
-    memcpy(&mBIH.bpp, mRawBuf + 6, sizeof(mBIH.bpp));
-  } else {
-    memcpy(&mBIH.width, mRawBuf, sizeof(mBIH.width));
-    memcpy(&mBIH.height, mRawBuf + 4, sizeof(mBIH.height));
-    memcpy(&mBIH.planes, mRawBuf + 8, sizeof(mBIH.planes));
-    memcpy(&mBIH.bpp, mRawBuf + 10, sizeof(mBIH.bpp));
-    memcpy(&mBIH.compression, mRawBuf + 12, sizeof(mBIH.compression));
-    memcpy(&mBIH.image_size, mRawBuf + 16, sizeof(mBIH.image_size));
-    memcpy(&mBIH.xppm, mRawBuf + 20, sizeof(mBIH.xppm));
-    memcpy(&mBIH.yppm, mRawBuf + 24, sizeof(mBIH.yppm));
-    memcpy(&mBIH.colors, mRawBuf + 28, sizeof(mBIH.colors));
-    memcpy(&mBIH.important_colors, mRawBuf + 32,
-           sizeof(mBIH.important_colors));
+  mPreGapLength += aLength;
+
+  mBFH.signature[0] = aData[0];
+  mBFH.signature[1] = aData[1];
+  bool signatureOk = mBFH.signature[0] == 'B' && mBFH.signature[1] == 'M';
+  if (!signatureOk) {
+    PostDataError();
+    return Transition::Terminate(State::FAILURE);
   }
 
   
-  mBIH.width = LittleEndian::readUint32(&mBIH.width);
-  mBIH.height = LittleEndian::readUint32(&mBIH.height);
-  mBIH.planes = LittleEndian::readUint16(&mBIH.planes);
-  mBIH.bpp = LittleEndian::readUint16(&mBIH.bpp);
+  
+  
+  mBFH.filesize = LittleEndian::readUint32(aData + 2);
 
-  mBIH.compression = LittleEndian::readUint32(&mBIH.compression);
-  mBIH.image_size = LittleEndian::readUint32(&mBIH.image_size);
-  mBIH.xppm = LittleEndian::readUint32(&mBIH.xppm);
-  mBIH.yppm = LittleEndian::readUint32(&mBIH.yppm);
-  mBIH.colors = LittleEndian::readUint32(&mBIH.colors);
-  mBIH.important_colors = LittleEndian::readUint32(&mBIH.important_colors);
+  mBFH.reserved = 0;
+
+  mBFH.dataoffset = LittleEndian::readUint32(aData + 10);
+
+  return Transition::To(State::INFO_HEADER_SIZE, BIHSIZE_FIELD_LENGTH);
+}
+
+
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadInfoHeaderSize(const char* aData, size_t aLength)
+{
+  mPreGapLength += aLength;
+
+  mBIH.bihsize = LittleEndian::readUint32(aData);
+
+  bool bihsizeOk = mBIH.bihsize == InfoHeaderLength::WIN_V2 ||
+                   mBIH.bihsize == InfoHeaderLength::WIN_V3 ||
+                   mBIH.bihsize == InfoHeaderLength::WIN_V4 ||
+                   mBIH.bihsize == InfoHeaderLength::WIN_V5 ||
+                   (mBIH.bihsize >= InfoHeaderLength::OS2_V2_MIN &&
+                    mBIH.bihsize <= InfoHeaderLength::OS2_V2_MAX);
+  if (!bihsizeOk) {
+    PostDataError();
+    return Transition::Terminate(State::FAILURE);
+  }
+
+  return Transition::To(State::INFO_HEADER_REST,
+                        mBIH.bihsize - BIHSIZE_FIELD_LENGTH);
+}
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
+{
+  mPreGapLength += aLength;
+
+  
+  
+  if (mBIH.bihsize == InfoHeaderLength::WIN_V2) {
+    mBIH.width       = LittleEndian::readUint16(aData + 0);
+    mBIH.height      = LittleEndian::readUint16(aData + 2);
+    mBIH.planes      = LittleEndian::readUint16(aData + 4);
+    mBIH.bpp         = LittleEndian::readUint16(aData + 6);
+  } else {
+    mBIH.width       = LittleEndian::readUint32(aData + 0);
+    mBIH.height      = LittleEndian::readUint32(aData + 4);
+    mBIH.planes      = LittleEndian::readUint16(aData + 8);
+    mBIH.bpp         = LittleEndian::readUint16(aData + 10);
+
+    
+    
+    mBIH.compression = aLength >= 16 ? LittleEndian::readUint32(aData + 12) : 0;
+    mBIH.image_size  = aLength >= 20 ? LittleEndian::readUint32(aData + 16) : 0;
+    mBIH.xppm        = aLength >= 24 ? LittleEndian::readUint32(aData + 20) : 0;
+    mBIH.yppm        = aLength >= 28 ? LittleEndian::readUint32(aData + 24) : 0;
+    mBIH.colors      = aLength >= 32 ? LittleEndian::readUint32(aData + 28) : 0;
+    mBIH.important_colors
+                     = aLength >= 36 ? LittleEndian::readUint32(aData + 32) : 0;
+
+    
+    
+    
+  }
+
+  
+  MOZ_LOG(GetBMPLog(), LogLevel::Debug,
+          ("BMP: bihsize=%u, %d x %d, bpp=%u, compression=%u, colors=%u\n",
+          mBIH.bihsize, mBIH.width, mBIH.height, uint32_t(mBIH.bpp),
+          mBIH.compression, mBIH.colors));
+
+  
+  
+  
+  const int32_t k64KWidth = 0x0000FFFF;
+  bool sizeOk = 0 <= mBIH.width && mBIH.width <= k64KWidth &&
+                mBIH.height != INT_MIN;
+  if (!sizeOk) {
+    PostDataError();
+    return Transition::Terminate(State::FAILURE);
+  }
+
+  
+  bool bppCompressionOk =
+    (mBIH.compression == Compression::RGB &&
+      (mBIH.bpp ==  1 || mBIH.bpp ==  4 || mBIH.bpp ==  8 ||
+       mBIH.bpp == 16 || mBIH.bpp == 24 || mBIH.bpp == 32)) ||
+    (mBIH.compression == Compression::RLE8 && mBIH.bpp == 8) ||
+    (mBIH.compression == Compression::RLE4 && mBIH.bpp == 4) ||
+    (mBIH.compression == Compression::BITFIELDS &&
+      (mBIH.bpp == 16 || mBIH.bpp == 32));
+  if (!bppCompressionOk) {
+    PostDataError();
+    return Transition::Terminate(State::FAILURE);
+  }
+
+  
+  uint32_t realHeight = GetHeight();
+  PostSize(mBIH.width, realHeight);
+
+  
+  
+  
+  mPixelRowSize = (mBIH.bpp * mBIH.width + 7) / 8;
+  uint32_t surplus = mPixelRowSize % 4;
+  if (surplus != 0) {
+    mPixelRowSize += 4 - surplus;
+  }
+
+  
+  
+  
+  bool hasTransparency = (mBIH.compression == Compression::RLE8) ||
+                         (mBIH.compression == Compression::RLE4) ||
+                         (mBIH.bpp == 32 && mUseAlphaData);
+  if (hasTransparency) {
+    PostHasTransparency();
+  }
+
+  
+  if (IsMetadataDecode()) {
+    return Transition::Terminate(State::SUCCESS);
+  }
+
+  
+  mCurrentRow = realHeight;
+
+  
+  if (mBIH.bpp <= 8) {
+    mNumColors = 1 << mBIH.bpp;
+    if (0 < mBIH.colors && mBIH.colors < mNumColors) {
+      mNumColors = mBIH.colors;
+    }
+
+    
+    
+    mColors = new ColorTable[256];
+    memset(mColors, 0, 256 * sizeof(ColorTable));
+
+    
+    mBytesPerColor = (mBIH.bihsize == InfoHeaderLength::WIN_V2) ? 3 : 4;
+  }
+
+  MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
+  IntSize targetSize = mDownscaler ? mDownscaler->TargetSize() : GetSize();
+  nsresult rv = AllocateFrame( 0, targetSize,
+                              IntRect(IntPoint(), targetSize),
+                              SurfaceFormat::B8G8R8A8);
+  if (NS_FAILED(rv)) {
+    return Transition::Terminate(State::FAILURE);
+  }
+  MOZ_ASSERT(mImageData, "Should have a buffer now");
+
+  if (mDownscaler) {
+    
+    
+    rv = mDownscaler->BeginFrame(GetSize(), Nothing(),
+                                 mImageData, hasTransparency,
+                                  true);
+    if (NS_FAILED(rv)) {
+      return Transition::Terminate(State::FAILURE);
+    }
+  }
+
+  size_t bitFieldsLengthStillToRead = 0;
+  if (mBIH.compression == Compression::BITFIELDS) {
+    
+    if (mBIH.bihsize >= InfoHeaderLength::WIN_V4) {
+      
+      
+      DoReadBitfields(aData + 36);
+    } else {
+      
+      
+      bitFieldsLengthStillToRead = BitFields::LENGTH;
+    }
+  } else if (mBIH.bpp == 16) {
+    
+    mBitFields.red   = 0x7C00;
+    mBitFields.green = 0x03E0;
+    mBitFields.blue  = 0x001F;
+    CalcBitShift();
+  }
+
+  return Transition::To(State::BITFIELDS, bitFieldsLengthStillToRead);
+}
+
+void
+nsBMPDecoder::DoReadBitfields(const char* aData)
+{
+  mBitFields.red   = LittleEndian::readUint32(aData + 0);
+  mBitFields.green = LittleEndian::readUint32(aData + 4);
+  mBitFields.blue  = LittleEndian::readUint32(aData + 8);
+  CalcBitShift();
+}
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
+{
+  mPreGapLength += aLength;
+
+  
+  
+  if (aLength != 0) {
+    DoReadBitfields(aData);
+  }
+
+  return Transition::To(State::COLOR_TABLE, mNumColors * mBytesPerColor);
+}
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadColorTable(const char* aData, size_t aLength)
+{
+  MOZ_ASSERT_IF(aLength != 0, mNumColors > 0 && mColors);
+
+  mPreGapLength += aLength;
+
+  for (uint32_t i = 0; i < mNumColors; i++) {
+    
+    mColors[i].blue  = uint8_t(aData[0]);
+    mColors[i].green = uint8_t(aData[1]);
+    mColors[i].red   = uint8_t(aData[2]);
+    aData += mBytesPerColor;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (mPreGapLength > mBFH.dataoffset) {
+    PostDataError();
+    return Transition::Terminate(State::FAILURE);
+  }
+  uint32_t gapLength = mBFH.dataoffset - mPreGapLength;
+  return Transition::To(State::GAP, gapLength);
+}
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::SkipGap()
+{
+  bool hasRLE = mBIH.compression == Compression::RLE8 ||
+                mBIH.compression == Compression::RLE4;
+  return hasRLE
+       ? Transition::To(State::RLE_SEGMENT, RLE_SEGMENT_LENGTH)
+       : Transition::To(State::PIXEL_ROW, mPixelRowSize);
+}
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadPixelRow(const char* aData)
+{
+  MOZ_ASSERT(mCurrentPos == 0);
+
+  const uint8_t* src = reinterpret_cast<const uint8_t*>(aData);
+  uint32_t* dst = RowBuffer();
+  uint32_t lpos = mBIH.width;
+  switch (mBIH.bpp) {
+    case 1:
+      while (lpos > 0) {
+        int8_t bit;
+        uint8_t idx;
+        for (bit = 7; bit >= 0 && lpos > 0; bit--) {
+          idx = (*src >> bit) & 1;
+          SetPixel(dst, idx, mColors);
+          --lpos;
+        }
+        ++src;
+      }
+      break;
+
+    case 4:
+      while (lpos > 0) {
+        Set4BitPixel(dst, *src, lpos, mColors);
+        ++src;
+      }
+      break;
+
+    case 8:
+      while (lpos > 0) {
+        SetPixel(dst, *src, mColors);
+        --lpos;
+        ++src;
+      }
+      break;
+
+    case 16:
+      while (lpos > 0) {
+        uint16_t val = LittleEndian::readUint16(src);
+        SetPixel(dst,
+                 (val & mBitFields.red) >>
+                 mBitFields.redRightShift <<
+                 mBitFields.redLeftShift,
+                 (val & mBitFields.green) >>
+                 mBitFields.greenRightShift <<
+                 mBitFields.greenLeftShift,
+                 (val & mBitFields.blue) >>
+                 mBitFields.blueRightShift <<
+                 mBitFields.blueLeftShift);
+        --lpos;
+        src += 2;
+      }
+      break;
+
+    case 24:
+      while (lpos > 0) {
+        SetPixel(dst, src[2], src[1], src[0]);
+        --lpos;
+        src += 3;
+      }
+      break;
+
+    case 32:
+      while (lpos > 0) {
+        if (mUseAlphaData) {
+          if (MOZ_UNLIKELY(!mHaveAlphaData && src[3])) {
+            PostHasTransparency();
+            mHaveAlphaData = true;
+          }
+          SetPixel(dst, src[2], src[1], src[0], src[3]);
+        } else {
+          SetPixel(dst, src[2], src[1], src[0]);
+        }
+        --lpos;
+        src += 4;
+      }
+      break;
+
+    default:
+      MOZ_CRASH("Unsupported color depth; earlier check didn't catch it?");
+  }
+
+  FinishRow();
+  return mCurrentRow == 0
+       ? Transition::Terminate(State::SUCCESS)
+       : Transition::To(State::PIXEL_ROW, mPixelRowSize);
+}
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadRLESegment(const char* aData)
+{
+  if (mCurrentRow == 0) {
+    return Transition::Terminate(State::SUCCESS);
+  }
+
+  uint8_t byte1 = uint8_t(aData[0]);
+  uint8_t byte2 = uint8_t(aData[1]);
+
+  if (byte1 != RLE::ESCAPE) {
+    
+    
+    
+    
+    
+    uint32_t pixelsNeeded =
+      std::min<uint32_t>(mBIH.width - mCurrentPos, byte1);
+    if (pixelsNeeded) {
+      uint32_t* dst = RowBuffer();
+      mCurrentPos += pixelsNeeded;
+      if (mBIH.compression == Compression::RLE8) {
+        do {
+          SetPixel(dst, byte2, mColors);
+          pixelsNeeded --;
+        } while (pixelsNeeded);
+      } else {
+        do {
+          Set4BitPixel(dst, byte2, pixelsNeeded, mColors);
+        } while (pixelsNeeded);
+      }
+    }
+    return Transition::To(State::RLE_SEGMENT, RLE_SEGMENT_LENGTH);
+  }
+
+  if (byte2 == RLE::ESCAPE_EOL) {
+    mCurrentPos = 0;
+    FinishRow();
+    return mCurrentRow == 0
+         ? Transition::Terminate(State::SUCCESS)
+         : Transition::To(State::RLE_SEGMENT, RLE_SEGMENT_LENGTH);
+  }
+
+  if (byte2 == RLE::ESCAPE_EOF) {
+    return Transition::Terminate(State::SUCCESS);
+  }
+
+  if (byte2 == RLE::ESCAPE_DELTA) {
+    return Transition::To(State::RLE_DELTA, RLE_DELTA_LENGTH);
+  }
+
+  
+  
+  
+  MOZ_ASSERT(mAbsoluteModeNumPixels == 0);
+  mAbsoluteModeNumPixels = byte2;
+  uint32_t length = byte2;
+  if (mBIH.compression == Compression::RLE4) {
+    length = (length + 1) / 2;    
+  }
+  if (length & 1) {
+    length++;
+  }
+  return Transition::To(State::RLE_ABSOLUTE, length);
+}
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadRLEDelta(const char* aData)
+{
+  
+  
+  if (MOZ_UNLIKELY(!mHaveAlphaData)) {
+    PostHasTransparency();
+    mHaveAlphaData = true;
+  }
+  mUseAlphaData = mHaveAlphaData = true;
+
+  if (mDownscaler) {
+    
+    
+    mDownscaler->ClearRow( mCurrentPos);
+  }
+
+  
+  mCurrentPos += uint8_t(aData[0]);
+  if (mCurrentPos > mBIH.width) {
+    mCurrentPos = mBIH.width;
+  }
+
+  
+  int32_t yDelta = std::min<int32_t>(uint8_t(aData[1]), mCurrentRow);
+  mCurrentRow -= yDelta;
+
+  if (mDownscaler && yDelta > 0) {
+    
+    mDownscaler->CommitRow();
+
+    
+    for (int32_t line = 1; line < yDelta; line++) {
+      mDownscaler->ClearRow();
+      mDownscaler->CommitRow();
+    }
+  }
+
+  return mCurrentRow == 0
+       ? Transition::Terminate(State::SUCCESS)
+       : Transition::To(State::RLE_SEGMENT, RLE_SEGMENT_LENGTH);
+}
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadRLEAbsolute(const char* aData, size_t aLength)
+{
+  uint32_t n = mAbsoluteModeNumPixels;
+  mAbsoluteModeNumPixels = 0;
+
+  if (mCurrentPos + n > uint32_t(mBIH.width)) {
+    
+    
+    return Transition::Terminate(State::SUCCESS);
+  }
+
+  
+  
+  uint32_t* dst = RowBuffer();
+  uint32_t iSrc = 0;
+  uint32_t* oldPos = dst;
+  if (mBIH.compression == Compression::RLE8) {
+    while (n > 0) {
+      SetPixel(dst, aData[iSrc], mColors);
+      n--;
+      iSrc++;
+    }
+  } else {
+    while (n > 0) {
+      Set4BitPixel(dst, aData[iSrc], n, mColors);
+      iSrc++;
+    }
+  }
+  mCurrentPos += dst - oldPos;
+
+  
+  MOZ_ASSERT(iSrc == aLength - 1 || iSrc == aLength);
+
+  return Transition::To(State::RLE_SEGMENT, RLE_SEGMENT_LENGTH);
 }
 
 } 

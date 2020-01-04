@@ -10,58 +10,42 @@
 
 namespace mozilla {
 namespace image {
+namespace bmp {
 
 
-
-struct BIH_LENGTH {
+struct InfoHeaderLength {
   enum {
-    OS2 = 12,
+    WIN_V2 = 12,
     WIN_V3 = 40,
-    WIN_V5 = 124
+    WIN_V4 = 108,
+    WIN_V5 = 124,
+
+    
+    OS2_V2_MIN = 16,    
+    OS2_V2_MAX = 64,    
   };
 };
 
-struct BIH_INTERNAL_LENGTH {
-  enum {
-    OS2 = 8,
-    WIN_V3 = 36,
-    WIN_V5 = 120
-  };
-};
-
-struct BMPFILEHEADER {
+struct FileHeader {
   char signature[2];   
-  uint32_t filesize;
+  uint32_t filesize;   
   int32_t reserved;    
   uint32_t dataoffset; 
 
-  uint32_t bihsize;
-
   
   static const size_t LENGTH = 14;
-
-  
-  
-  static const size_t INTERNAL_LENGTH = 18;
 };
 
-struct BMP_HEADER_LENGTH {
-  enum {
-    OS2 = BMPFILEHEADER::INTERNAL_LENGTH + BIH_INTERNAL_LENGTH::OS2,
-    WIN_V3 = BMPFILEHEADER::INTERNAL_LENGTH + BIH_INTERNAL_LENGTH::WIN_V3,
-    WIN_V5 = BMPFILEHEADER::INTERNAL_LENGTH + BIH_INTERNAL_LENGTH::WIN_V5
-  };
-};
-
-struct xyz {
+struct XYZ {
   int32_t x, y, z;
 };
 
-struct xyzTriple {
-  xyz r, g, b;
+struct XYZTriple {
+  XYZ r, g, b;
 };
 
-struct BITMAPV5HEADER {
+struct V5InfoHeader {
+  uint32_t bihsize;          
   int32_t width;             
   int32_t height;            
   uint16_t planes;           
@@ -80,7 +64,7 @@ struct BITMAPV5HEADER {
   uint32_t alpha_mask;       
   uint32_t color_space;      
   
-  xyzTriple white_point;     
+  XYZTriple white_point;     
   uint32_t gamma_red;        
   uint32_t gamma_green;      
   uint32_t gamma_blue;       
@@ -93,13 +77,13 @@ struct BITMAPV5HEADER {
   static const uint32_t COLOR_SPACE_LCS_SRGB = 0x73524742;
 };
 
-struct colorTable {
+struct ColorTable {
   uint8_t red;
   uint8_t green;
   uint8_t blue;
 };
 
-struct bitFields {
+struct BitFields {
   uint32_t red;
   uint32_t green;
   uint32_t blue;
@@ -114,17 +98,12 @@ struct bitFields {
   static const size_t LENGTH = 12;
 };
 
-struct BMPINFOHEADER {
-  
+struct Compression {
   enum {
     RGB = 0,
     RLE8 = 1,
     RLE4 = 2,
-    BITFIELDS = 3,
-
-    
-    
-    ALPHABITFIELDS = 4
+    BITFIELDS = 3
   };
 };
 
@@ -138,18 +117,7 @@ struct RLE {
   };
 };
 
-
-enum ERLEState {
-  eRLEStateInitial,
-  eRLEStateNeedSecondEscapeByte,
-  eRLEStateNeedXDelta,
-  eRLEStateNeedYDelta,        
-  eRLEStateAbsoluteMode,      
-                              
-  eRLEStateAbsoluteModePadded 
-                              
-};
-
+} 
 } 
 } 
 

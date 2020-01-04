@@ -11,6 +11,7 @@
 #include "Decoder.h"
 #include "gfxColor.h"
 #include "nsAutoPtr.h"
+#include "StreamingLexer.h"
 
 namespace mozilla {
 namespace image {
@@ -66,46 +67,66 @@ private:
 
     
     
-    NS_METHOD CalcBitShift();
+    void CalcBitShift();
 
-    uint32_t mPos; 
+    void DoReadBitfields(const char* aData);
 
-    BMPFILEHEADER mBFH;
-    BITMAPV5HEADER mBIH;
-    char mRawBuf[BIH_INTERNAL_LENGTH::WIN_V3]; 
-                                               
+    uint32_t* RowBuffer();
 
-    uint32_t mLOH; 
+    void FinishRow();
 
-    uint32_t mNumColors; 
-                         
-    colorTable* mColors;
+    enum class State {
+        FILE_HEADER,
+        INFO_HEADER_SIZE,
+        INFO_HEADER_REST,
+        BITFIELDS,
+        COLOR_TABLE,
+        GAP,
+        PIXEL_ROW,
+        RLE_SEGMENT,
+        RLE_DELTA,
+        RLE_ABSOLUTE,
+        SUCCESS,
+        FAILURE
+    };
 
-    bitFields mBitFields;
+    LexerTransition<State> ReadFileHeader(const char* aData, size_t aLength);
+    LexerTransition<State> ReadInfoHeaderSize(const char* aData, size_t aLength);
+    LexerTransition<State> ReadInfoHeaderRest(const char* aData, size_t aLength);
+    LexerTransition<State> ReadBitfields(const char* aData, size_t aLength);
+    LexerTransition<State> ReadColorTable(const char* aData, size_t aLength);
+    LexerTransition<State> SkipGap();
+    LexerTransition<State> ReadPixelRow(const char* aData);
+    LexerTransition<State> ReadRLESegment(const char* aData);
+    LexerTransition<State> ReadRLEDelta(const char* aData);
+    LexerTransition<State> ReadRLEAbsolute(const char* aData, size_t aLength);
 
-    uint8_t* mRow;      
-    uint32_t mRowBytes; 
-    int32_t mCurLine;   
-                        
-    int32_t mOldLine;   
-    int32_t mCurPos;    
+    StreamingLexer<State> mLexer;
 
-    ERLEState mState;   
-    uint32_t mStateData;
-                        
+    bmp::FileHeader mBFH;
+    bmp::V5InfoHeader mBIH;
+
+    bmp::BitFields mBitFields;
+
+    uint32_t mNumColors;      
+                              
+    bmp::ColorTable* mColors; 
+    uint32_t mBytesPerColor;  
 
     
     
-    void ProcessFileHeader();
+    uint32_t mPreGapLength;
+
+    uint32_t mPixelRowSize;   
+
+    int32_t mCurrentRow;      
+                              
+    int32_t mCurrentPos;      
+                              
 
     
-    
-    void ProcessInfoHeader();
+    uint32_t mAbsoluteModeNumPixels;
 
-    
-    bool mProcessedHeader;
-
-    
     
     
     
@@ -130,7 +151,7 @@ SetPixel(uint32_t*& aDecoded, uint8_t aRed, uint8_t aGreen,
 }
 
 static inline void
-SetPixel(uint32_t*& aDecoded, uint8_t idx, colorTable* aColors)
+SetPixel(uint32_t*& aDecoded, uint8_t idx, bmp::ColorTable* aColors)
 {
     SetPixel(aDecoded, aColors[idx].red, aColors[idx].green, aColors[idx].blue);
 }
@@ -142,7 +163,7 @@ SetPixel(uint32_t*& aDecoded, uint8_t idx, colorTable* aColors)
 
 inline void
 Set4BitPixel(uint32_t*& aDecoded, uint8_t aData, uint32_t& aCount,
-             colorTable* aColors)
+             bmp::ColorTable* aColors)
 {
     uint8_t idx = aData >> 4;
     SetPixel(aDecoded, idx, aColors);

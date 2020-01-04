@@ -76,8 +76,8 @@ protected:
 
   
   
-  mozilla::image::BMPFILEHEADER mBMPFileHeader;
-  mozilla::image::BITMAPV5HEADER mBMPInfoHeader;
+  mozilla::image::bmp::FileHeader mBMPFileHeader;
+  mozilla::image::bmp::V5InfoHeader mBMPInfoHeader;
 
   
   uint8_t* mImageBufferStart;
