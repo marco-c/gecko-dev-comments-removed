@@ -109,7 +109,7 @@ this.DOMApplicationRegistry = {
 
     
     let list = this.cpmm.sendSyncMessage("Webapps:GetList", { })[0];
-    this.webapps = list ? list.webapps : { };
+    this.webapps = list.webapps;
     
     
     this.localIdIndex = { };
