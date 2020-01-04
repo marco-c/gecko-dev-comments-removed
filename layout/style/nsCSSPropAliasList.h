@@ -296,10 +296,6 @@ CSS_PROP_ALIAS(-webkit-border-bottom-right-radius,
                WebkitBorderBottomRightRadius, 
                WEBKIT_PREFIX_PREF)
 
-CSS_PROP_ALIAS(-webkit-appearance,
-               appearance,
-               WebkitAppearance,
-               WEBKIT_PREFIX_PREF)
 CSS_PROP_ALIAS(-webkit-background-clip,
                background_clip,
                WebkitBackgroundClip,
