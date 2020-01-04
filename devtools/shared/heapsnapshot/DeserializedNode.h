@@ -265,7 +265,7 @@ public:
 
   
   
-  UniquePtr<EdgeRange> edges(JSContext* cx, bool) const override;
+  UniquePtr<EdgeRange> edges(JSRuntime* rt, bool) const override;
 };
 
 template<>

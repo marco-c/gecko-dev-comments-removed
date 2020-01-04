@@ -131,6 +131,11 @@ DuplicateString(ExclusiveContext* cx, const char16_t* s);
 
 
 
+extern mozilla::UniquePtr<char16_t[], JS::FreePolicy>
+DuplicateString(const char16_t* s);
+
+
+
 
 
 template <AllowGC allowGC>
