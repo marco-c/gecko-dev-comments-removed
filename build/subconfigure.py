@@ -206,16 +206,19 @@ def prepare(srcdir, objdir, shell, args):
     
     
     
-    
-    
-    
-    
-    
     input = sys.stdin.read()
     if input:
         data = {a: b for [a, b] in eval(input)}
         environ = {a: b for a, b in data['env']}
-        environ['PATH'] = os.environ['PATH']
+        
+        
+        
+        
+        
+        for var in ('HOME', 'TERM', 'PATH', 'TMPDIR', 'TMP',
+                    'TEMP', 'INCLUDE'):
+            if var in environ and var in os.environ:
+                environ[var] = os.environ[var]
         args = data['args']
     else:
         environ = os.environ
