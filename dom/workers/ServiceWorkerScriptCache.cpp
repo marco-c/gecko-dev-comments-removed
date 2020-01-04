@@ -140,6 +140,10 @@ public:
     if (httpChannel) {
       
       httpChannel->SetRedirectionLimit(0);
+
+      httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Service-Worker"),
+                                    NS_LITERAL_CSTRING("script"),
+                                     false);
     }
 
     nsCOMPtr<nsIStreamLoader> loader;
