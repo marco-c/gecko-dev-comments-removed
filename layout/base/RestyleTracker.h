@@ -240,10 +240,10 @@ public:
     NS_PRECONDITION((mRestyleBits & ELEMENT_PENDING_RESTYLE_FLAGS) !=
                       ELEMENT_PENDING_RESTYLE_FLAGS,
                     "Shouldn't have both restyle flags set");
-    NS_PRECONDITION((mRestyleBits & ~ELEMENT_PENDING_RESTYLE_FLAGS) != 0,
+    NS_PRECONDITION((mRestyleBits & ELEMENT_POTENTIAL_RESTYLE_ROOT_FLAGS) != 0,
                     "Must have root flag");
-    NS_PRECONDITION((mRestyleBits & ~ELEMENT_PENDING_RESTYLE_FLAGS) !=
-                    (ELEMENT_ALL_RESTYLE_FLAGS & ~ELEMENT_PENDING_RESTYLE_FLAGS),
+    NS_PRECONDITION((mRestyleBits & ELEMENT_POTENTIAL_RESTYLE_ROOT_FLAGS) !=
+                    ELEMENT_POTENTIAL_RESTYLE_ROOT_FLAGS,
                     "Shouldn't have both root flags");
   }
 
@@ -284,7 +284,13 @@ public:
 
   
   Element::FlagsType RootBit() const {
-    return mRestyleBits & ~ELEMENT_PENDING_RESTYLE_FLAGS;
+    return mRestyleBits & ELEMENT_POTENTIAL_RESTYLE_ROOT_FLAGS;
+  }
+
+  
+  
+  Element::FlagsType ConditionalDescendantsBit() const {
+    return mRestyleBits & ELEMENT_IS_CONDITIONAL_RESTYLE_ANCESTOR;
   }
 
   struct Hints {
@@ -392,6 +398,7 @@ private:
   
   
   
+  
   Element::FlagsType mRestyleBits;
   RestyleManager* mRestyleManager; 
   
@@ -437,6 +444,13 @@ RestyleTracker::AddPendingRestyleToTable(Element* aElement,
   } else {
     aElement->SetFlags(RestyleBit());
     existingData = nullptr;
+  }
+
+  if (aRestyleHint & eRestyle_SomeDescendants) {
+    NS_ASSERTION(ConditionalDescendantsBit(),
+                 "why are we getting eRestyle_SomeDescendants in an "
+                 "animation-only restyle?");
+    aElement->SetFlags(ConditionalDescendantsBit());
   }
 
   if (!existingData) {

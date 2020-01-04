@@ -138,7 +138,8 @@ CollectRestyles(nsISupports* aElement,
   
   
   element->UnsetFlags(collector->tracker->RestyleBit() |
-                      collector->tracker->RootBit());
+                      collector->tracker->RootBit() |
+                      collector->tracker->ConditionalDescendantsBit());
 
   RestyleEnumerateData** restyleArrayPtr = collector->restyleArrayPtr;
   RestyleEnumerateData* currentRestyle = *restyleArrayPtr;
