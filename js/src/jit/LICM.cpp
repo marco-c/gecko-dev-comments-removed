@@ -123,7 +123,7 @@ static bool
 HasDependencyInLoop(MInstruction* ins, MBasicBlock* header)
 {
     
-    if (MInstruction* dep = ins->dependency())
+    if (MDefinition* dep = ins->dependency())
         return !IsBeforeLoop(dep, header);
     return false;
 }

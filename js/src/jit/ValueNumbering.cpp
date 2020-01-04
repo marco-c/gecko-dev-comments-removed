@@ -757,7 +757,7 @@ ValueNumberer::visitDefinition(MDefinition* def)
 
     
     
-    MInstruction* dep = def->dependency();
+    MDefinition* dep = def->dependency();
     if (dep != nullptr && (dep->isDiscarded() || dep->block()->isDead())) {
         JitSpew(JitSpew_GVN, "      AliasAnalysis invalidated");
         if (updateAliasAnalysis_ && !dependenciesBroken_) {
