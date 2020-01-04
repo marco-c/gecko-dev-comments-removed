@@ -11,6 +11,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -93,7 +94,7 @@ typedef struct {
   unsigned int last_restart_interval; 
 } my_marker_writer;
 
-typedef my_marker_writer * my_marker_ptr;
+typedef my_marker_writer *my_marker_ptr;
 
 
 
@@ -112,7 +113,7 @@ LOCAL(void)
 emit_byte (j_compress_ptr cinfo, int val)
 
 {
-  struct jpeg_destination_mgr * dest = cinfo->dest;
+  struct jpeg_destination_mgr *dest = cinfo->dest;
 
   *(dest->next_output_byte)++ = (JOCTET) val;
   if (--dest->free_in_buffer == 0) {
@@ -149,7 +150,7 @@ emit_dqt (j_compress_ptr cinfo, int index)
 
 
 {
-  JQUANT_TBL * qtbl = cinfo->quant_tbl_ptrs[index];
+  JQUANT_TBL *qtbl = cinfo->quant_tbl_ptrs[index];
   int prec;
   int i;
 
@@ -188,7 +189,7 @@ LOCAL(void)
 emit_dht (j_compress_ptr cinfo, int index, boolean is_ac)
 
 {
-  JHUFF_TBL * htbl;
+  JHUFF_TBL *htbl;
   int length, i;
 
   if (is_ac) {

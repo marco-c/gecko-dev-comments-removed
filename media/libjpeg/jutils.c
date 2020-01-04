@@ -13,6 +13,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -124,7 +125,7 @@ jcopy_block_row (JBLOCKROW input_row, JBLOCKROW output_row,
 
 
 GLOBAL(void)
-jzero_far (void * target, size_t bytestozero)
+jzero_far (void *target, size_t bytestozero)
 
 
 {

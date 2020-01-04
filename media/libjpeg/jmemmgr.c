@@ -26,6 +26,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #define AM_MEMORY_MANAGER
 #include "jinclude.h"
@@ -34,7 +35,7 @@
 
 #ifndef NO_GETENV
 #ifndef HAVE_STDLIB_H           
-extern char * getenv (const char * name);
+extern char *getenv (const char *name);
 #endif
 #endif
 
@@ -96,7 +97,7 @@ round_up_pow2 (size_t a, size_t b)
 
 
 
-typedef struct small_pool_struct * small_pool_ptr;
+typedef struct small_pool_struct *small_pool_ptr;
 
 typedef struct small_pool_struct {
   small_pool_ptr next;  
@@ -104,7 +105,7 @@ typedef struct small_pool_struct {
   size_t bytes_left;            
 } small_pool_hdr;
 
-typedef struct large_pool_struct * large_pool_ptr;
+typedef struct large_pool_struct *large_pool_ptr;
 
 typedef struct large_pool_struct {
   large_pool_ptr next;  
@@ -140,7 +141,7 @@ typedef struct {
   JDIMENSION last_rowsperchunk; 
 } my_memory_mgr;
 
-typedef my_memory_mgr * my_mem_ptr;
+typedef my_memory_mgr *my_mem_ptr;
 
 
 
@@ -266,7 +267,7 @@ alloc_small (j_common_ptr cinfo, int pool_id, size_t sizeofobject)
 {
   my_mem_ptr mem = (my_mem_ptr) cinfo->mem;
   small_pool_ptr hdr_ptr, prev_hdr_ptr;
-  char * data_ptr;
+  char *data_ptr;
   size_t min_request, slop;
 
   
@@ -275,10 +276,16 @@ alloc_small (j_common_ptr cinfo, int pool_id, size_t sizeofobject)
 
 
 
+  if (sizeofobject > MAX_ALLOC_CHUNK) {
+    
+
+    out_of_memory(cinfo, 7);
+  }
   sizeofobject = round_up_pow2(sizeofobject, ALIGN_SIZE);
 
   
-  if ((sizeof(small_pool_hdr) + sizeofobject + ALIGN_SIZE - 1) > MAX_ALLOC_CHUNK)
+  if ((sizeof(small_pool_hdr) + sizeofobject + ALIGN_SIZE - 1) >
+      MAX_ALLOC_CHUNK)
     out_of_memory(cinfo, 1);    
 
   
@@ -356,17 +363,23 @@ alloc_large (j_common_ptr cinfo, int pool_id, size_t sizeofobject)
 {
   my_mem_ptr mem = (my_mem_ptr) cinfo->mem;
   large_pool_ptr hdr_ptr;
-  char * data_ptr;
+  char *data_ptr;
 
   
 
 
 
 
+  if (sizeofobject > MAX_ALLOC_CHUNK) {
+    
+
+    out_of_memory(cinfo, 8);
+  }
   sizeofobject = round_up_pow2(sizeofobject, ALIGN_SIZE);
 
   
-  if ((sizeof(large_pool_hdr) + sizeofobject + ALIGN_SIZE - 1) > MAX_ALLOC_CHUNK)
+  if ((sizeof(large_pool_hdr) + sizeofobject + ALIGN_SIZE - 1) >
+      MAX_ALLOC_CHUNK)
     out_of_memory(cinfo, 3);    
 
   
@@ -378,7 +391,8 @@ alloc_large (j_common_ptr cinfo, int pool_id, size_t sizeofobject)
                                             ALIGN_SIZE - 1);
   if (hdr_ptr == NULL)
     out_of_memory(cinfo, 4);    
-  mem->total_space_allocated += sizeofobject + sizeof(large_pool_hdr) + ALIGN_SIZE - 1;
+  mem->total_space_allocated += sizeofobject + sizeof(large_pool_hdr) +
+                                ALIGN_SIZE - 1;
 
   
   hdr_ptr->next = mem->large_list[pool_id];
@@ -428,7 +442,14 @@ alloc_sarray (j_common_ptr cinfo, int pool_id,
   
   if ((ALIGN_SIZE % sizeof(JSAMPLE)) != 0)
     out_of_memory(cinfo, 5);    
-  samplesperrow = (JDIMENSION)round_up_pow2(samplesperrow, (2 * ALIGN_SIZE) / sizeof(JSAMPLE));
+
+  if (samplesperrow > MAX_ALLOC_CHUNK) {
+    
+
+    out_of_memory(cinfo, 9);
+  }
+  samplesperrow = (JDIMENSION)round_up_pow2(samplesperrow, (2 * ALIGN_SIZE) /
+                                                           sizeof(JSAMPLE));
 
   
   ltemp = (MAX_ALLOC_CHUNK-sizeof(large_pool_hdr)) /
@@ -1133,7 +1154,7 @@ jinit_memory_mgr (j_common_ptr cinfo)
 
 
 #ifndef NO_GETENV
-  { char * memenv;
+  { char *memenv;
 
     if ((memenv = getenv("JPEGMEM")) != NULL) {
       char ch = 'x';

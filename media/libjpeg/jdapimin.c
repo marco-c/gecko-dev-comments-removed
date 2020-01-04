@@ -18,9 +18,11 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
+#include "jdmaster.h"
 
 
 
@@ -82,6 +84,14 @@ jpeg_CreateDecompress (j_decompress_ptr cinfo, int version, size_t structsize)
 
   
   cinfo->global_state = DSTATE_START;
+
+  
+
+
+  cinfo->master = (struct jpeg_decomp_master *)
+      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+                                  sizeof(my_decomp_master));
+  MEMZERO(cinfo->master, sizeof(my_decomp_master));
 }
 
 

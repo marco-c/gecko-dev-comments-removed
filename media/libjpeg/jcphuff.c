@@ -14,6 +14,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -32,9 +33,9 @@ typedef struct {
   
 
 
-  JOCTET * next_output_byte;    
+  JOCTET *next_output_byte;     
   size_t free_in_buffer;        
-  INT32 put_buffer;             
+  size_t put_buffer;            
   int put_bits;                 
   j_compress_ptr cinfo;         
 
@@ -45,7 +46,7 @@ typedef struct {
   int ac_tbl_no;                
   unsigned int EOBRUN;          
   unsigned int BE;              
-  char * bit_buffer;            
+  char *bit_buffer;             
   
 
   unsigned int restarts_to_go;  
@@ -55,13 +56,13 @@ typedef struct {
 
 
 
-  c_derived_tbl * derived_tbls[NUM_HUFF_TBLS];
+  c_derived_tbl *derived_tbls[NUM_HUFF_TBLS];
 
   
-  long * count_ptrs[NUM_HUFF_TBLS];
+  long *count_ptrs[NUM_HUFF_TBLS];
 } phuff_entropy_encoder;
 
-typedef phuff_entropy_encoder * phuff_entropy_ptr;
+typedef phuff_entropy_encoder *phuff_entropy_ptr;
 
 
 
@@ -110,7 +111,7 @@ start_pass_phuff (j_compress_ptr cinfo, boolean gather_statistics)
   phuff_entropy_ptr entropy = (phuff_entropy_ptr) cinfo->entropy;
   boolean is_DC_band;
   int ci, tbl;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
 
   entropy->cinfo = cinfo;
   entropy->gather_statistics = gather_statistics;
@@ -207,7 +208,7 @@ LOCAL(void)
 dump_buffer (phuff_entropy_ptr entropy)
 
 {
-  struct jpeg_destination_mgr * dest = entropy->cinfo->dest;
+  struct jpeg_destination_mgr *dest = entropy->cinfo->dest;
 
   if (! (*dest->empty_output_buffer) (entropy->cinfo))
     ERREXIT(entropy->cinfo, JERR_CANT_SUSPEND);
@@ -230,7 +231,7 @@ emit_bits (phuff_entropy_ptr entropy, unsigned int code, int size)
 
 {
   
-  register INT32 put_buffer = (INT32) code;
+  register size_t put_buffer = (size_t) code;
   register int put_bits = entropy->put_bits;
 
   
@@ -240,7 +241,7 @@ emit_bits (phuff_entropy_ptr entropy, unsigned int code, int size)
   if (entropy->gather_statistics)
     return;                     
 
-  put_buffer &= (((INT32) 1)<<size) - 1; 
+  put_buffer &= (((size_t) 1)<<size) - 1; 
 
   put_bits += size;             
 
@@ -283,7 +284,7 @@ emit_symbol (phuff_entropy_ptr entropy, int tbl_no, int symbol)
   if (entropy->gather_statistics)
     entropy->count_ptrs[tbl_no][symbol]++;
   else {
-    c_derived_tbl * tbl = entropy->derived_tbls[tbl_no];
+    c_derived_tbl *tbl = entropy->derived_tbls[tbl_no];
     emit_bits(entropy, tbl->ehufco[symbol], tbl->ehufsi[symbol]);
   }
 }
@@ -294,7 +295,7 @@ emit_symbol (phuff_entropy_ptr entropy, int tbl_no, int symbol)
 
 
 LOCAL(void)
-emit_buffered_bits (phuff_entropy_ptr entropy, char * bufstart,
+emit_buffered_bits (phuff_entropy_ptr entropy, char *bufstart,
                     unsigned int nbits)
 {
   if (entropy->gather_statistics)
@@ -382,7 +383,7 @@ encode_mcu_DC_first (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
   int blkn, ci;
   int Al = cinfo->Al;
   JBLOCKROW block;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
   ISHIFT_TEMPS
 
   entropy->next_output_byte = cinfo->dest->next_output_byte;
@@ -769,7 +770,7 @@ finish_pass_gather_phuff (j_compress_ptr cinfo)
   phuff_entropy_ptr entropy = (phuff_entropy_ptr) cinfo->entropy;
   boolean is_DC_band;
   int ci, tbl;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
   JHUFF_TBL **htblptr;
   boolean did[NUM_HUFF_TBLS];
 

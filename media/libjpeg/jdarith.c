@@ -15,6 +15,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -25,8 +26,8 @@
 typedef struct {
   struct jpeg_entropy_decoder pub; 
 
-  INT32 c;       
-  INT32 a;               
+  JLONG c;       
+  JLONG a;               
   int ct;     
                                                          
                                                          
@@ -37,14 +38,14 @@ typedef struct {
   unsigned int restarts_to_go;  
 
   
-  unsigned char * dc_stats[NUM_ARITH_TBLS];
-  unsigned char * ac_stats[NUM_ARITH_TBLS];
+  unsigned char *dc_stats[NUM_ARITH_TBLS];
+  unsigned char *ac_stats[NUM_ARITH_TBLS];
 
   
   unsigned char fixed_bin[4];
 } arith_entropy_decoder;
 
-typedef arith_entropy_decoder * arith_entropy_ptr;
+typedef arith_entropy_decoder *arith_entropy_ptr;
 
 
 
@@ -67,7 +68,7 @@ LOCAL(int)
 get_byte (j_decompress_ptr cinfo)
 
 {
-  struct jpeg_source_mgr * src = cinfo->src;
+  struct jpeg_source_mgr *src = cinfo->src;
 
   if (src->bytes_in_buffer == 0)
     if (! (*src->fill_input_buffer) (cinfo))
@@ -109,7 +110,7 @@ arith_decode (j_decompress_ptr cinfo, unsigned char *st)
 {
   register arith_entropy_ptr e = (arith_entropy_ptr) cinfo->entropy;
   register unsigned char nl, nm;
-  register INT32 qe, temp;
+  register JLONG qe, temp;
   register int sv, data;
 
   
@@ -193,7 +194,7 @@ process_restart (j_decompress_ptr cinfo)
 {
   arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
   int ci;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
 
   
   if (! (*cinfo->marker->read_restart_marker) (cinfo))
@@ -202,13 +203,13 @@ process_restart (j_decompress_ptr cinfo)
   
   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
     compptr = cinfo->cur_comp_info[ci];
-    if (! cinfo->progressive_mode || (cinfo->Ss == 0 && cinfo->Ah == 0)) {
+    if (!cinfo->progressive_mode || (cinfo->Ss == 0 && cinfo->Ah == 0)) {
       MEMZERO(entropy->dc_stats[compptr->dc_tbl_no], DC_STAT_BINS);
       
       entropy->last_dc_val[ci] = 0;
       entropy->dc_context[ci] = 0;
     }
-    if (! cinfo->progressive_mode || cinfo->Ss) {
+    if (!cinfo->progressive_mode || cinfo->Ss) {
       MEMZERO(entropy->ac_stats[compptr->ac_tbl_no], AC_STAT_BINS);
     }
   }
@@ -498,7 +499,7 @@ METHODDEF(boolean)
 decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 {
   arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
   JBLOCKROW block;
   unsigned char *st;
   int blkn, ci, tbl, sign, k;
@@ -516,7 +517,7 @@ decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   
 
   for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
-    block = MCU_data[blkn];
+    block = MCU_data ? MCU_data[blkn] : NULL;
     ci = cinfo->MCU_membership[blkn];
     compptr = cinfo->cur_comp_info[ci];
 
@@ -563,7 +564,8 @@ decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
       entropy->last_dc_val[ci] += v;
     }
 
-    (*block)[0] = (JCOEF) entropy->last_dc_val[ci];
+    if (block)
+      (*block)[0] = (JCOEF) entropy->last_dc_val[ci];
 
     
 
@@ -607,7 +609,8 @@ decode_mcu (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
       while (m >>= 1)
         if (arith_decode(cinfo, st)) v |= m;
       v += 1; if (sign) v = -v;
-      (*block)[jpeg_natural_order[k]] = (JCOEF) v;
+      if (block)
+        (*block)[jpeg_natural_order[k]] = (JCOEF) v;
     }
   }
 
@@ -624,7 +627,7 @@ start_pass (j_decompress_ptr cinfo)
 {
   arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
   int ci, tbl;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
 
   if (cinfo->progressive_mode) {
     
@@ -691,7 +694,7 @@ start_pass (j_decompress_ptr cinfo)
   
   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
     compptr = cinfo->cur_comp_info[ci];
-    if (! cinfo->progressive_mode || (cinfo->Ss == 0 && cinfo->Ah == 0)) {
+    if (!cinfo->progressive_mode || (cinfo->Ss == 0 && cinfo->Ah == 0)) {
       tbl = compptr->dc_tbl_no;
       if (tbl < 0 || tbl >= NUM_ARITH_TBLS)
         ERREXIT1(cinfo, JERR_NO_ARITH_TABLE, tbl);
@@ -703,7 +706,7 @@ start_pass (j_decompress_ptr cinfo)
       entropy->last_dc_val[ci] = 0;
       entropy->dc_context[ci] = 0;
     }
-    if (! cinfo->progressive_mode || cinfo->Ss) {
+    if (!cinfo->progressive_mode || cinfo->Ss) {
       tbl = compptr->ac_tbl_no;
       if (tbl < 0 || tbl >= NUM_ARITH_TBLS)
         ERREXIT1(cinfo, JERR_NO_ARITH_TABLE, tbl);

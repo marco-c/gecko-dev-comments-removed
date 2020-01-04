@@ -14,10 +14,12 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jpegcomp.h"
+#include "jconfigint.h"
 
 
 
@@ -37,9 +39,19 @@ typedef struct {
   int total_passes;             
 
   int scan_number;              
+
+  
+
+
+
+
+
+
+  const char *jpeg_version;
+
 } my_comp_master;
 
-typedef my_comp_master * my_master_ptr;
+typedef my_comp_master *my_master_ptr;
 
 
 
@@ -167,12 +179,12 @@ validate_script (j_compress_ptr cinfo)
 
 
 {
-  const jpeg_scan_info * scanptr;
+  const jpeg_scan_info *scanptr;
   int scanno, ncomps, ci, coefi, thisi;
   int Ss, Se, Ah, Al;
   boolean component_sent[MAX_COMPONENTS];
 #ifdef C_PROGRESSIVE_SUPPORTED
-  int * last_bitpos_ptr;
+  int *last_bitpos_ptr;
   int last_bitpos[MAX_COMPONENTS][DCTSIZE2];
   
 #endif
@@ -308,7 +320,7 @@ select_scan_parameters (j_compress_ptr cinfo)
   if (cinfo->scan_info != NULL) {
     
     my_master_ptr master = (my_master_ptr) cinfo->master;
-    const jpeg_scan_info * scanptr = cinfo->scan_info + master->scan_number;
+    const jpeg_scan_info *scanptr = cinfo->scan_info + master->scan_number;
 
     cinfo->comps_in_scan = scanptr->comps_in_scan;
     for (ci = 0; ci < scanptr->comps_in_scan; ci++) {
@@ -602,7 +614,7 @@ jinit_c_master_control (j_compress_ptr cinfo, boolean transcode_only)
     cinfo->num_scans = 1;
   }
 
-  if (cinfo->progressive_mode && !cinfo->arith_code)    
+  if (cinfo->progressive_mode && !cinfo->arith_code)  
     cinfo->optimize_coding = TRUE; 
 
   
@@ -622,4 +634,6 @@ jinit_c_master_control (j_compress_ptr cinfo, boolean transcode_only)
     master->total_passes = cinfo->num_scans * 2;
   else
     master->total_passes = cinfo->num_scans;
+
+  master->jpeg_version = PACKAGE_NAME " version " VERSION " (build " BUILD ")";
 }

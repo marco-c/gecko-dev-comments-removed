@@ -13,15 +13,18 @@
 
 
 
+#include "jconfigint.h"
+
+
 
 
 #define HUFF_LOOKAHEAD  8       /* # of bits of lookahead */
 
 typedef struct {
   
-  INT32 maxcode[18];            
+  JLONG maxcode[18];            
   
-  INT32 valoffset[18];          
+  JLONG valoffset[18];          
   
 
 
@@ -73,12 +76,12 @@ EXTERN(void) jpeg_make_d_derived_tbl
 
 #if SIZEOF_SIZE_T==8 || defined(_WIN64)
 
-typedef size_t bit_buf_type;    
+typedef size_t bit_buf_type;            
 #define BIT_BUF_SIZE  64                /* size of buffer in bits */
 
 #else
 
-typedef INT32 bit_buf_type;     
+typedef unsigned long bit_buf_type;     
 #define BIT_BUF_SIZE  32                /* size of buffer in bits */
 
 #endif
@@ -98,7 +101,7 @@ typedef struct {
 typedef struct {                
   
   
-  const JOCTET * next_input_byte; 
+  const JOCTET *next_input_byte; 
   size_t bytes_in_buffer;       
   
 
@@ -163,7 +166,7 @@ typedef struct {
 
 
 EXTERN(boolean) jpeg_fill_bit_buffer
-        (bitread_working_state * state, register bit_buf_type get_buffer,
+        (bitread_working_state *state, register bit_buf_type get_buffer,
          register int bits_left, int nbits);
 
 
@@ -229,5 +232,5 @@ slowlabel: \
 
 
 EXTERN(int) jpeg_huff_decode
-        (bitread_working_state * state, register bit_buf_type get_buffer,
-         register int bits_left, d_derived_tbl * htbl, int min_bits);
+        (bitread_working_state *state, register bit_buf_type get_buffer,
+         register int bits_left, d_derived_tbl *htbl, int min_bits);

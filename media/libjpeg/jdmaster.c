@@ -15,29 +15,13 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jpegcomp.h"
-
-
-
-
-typedef struct {
-  struct jpeg_decomp_master pub; 
-
-  int pass_number;              
-
-  boolean using_merged_upsample; 
-
-  
-
-
-  struct jpeg_color_quantizer * quantizer_1pass;
-  struct jpeg_color_quantizer * quantizer_2pass;
-} my_decomp_master;
-
-typedef my_decomp_master * my_master_ptr;
+#include "jdmaster.h"
 
 
 
@@ -424,7 +408,7 @@ LOCAL(void)
 prepare_range_limit_table (j_decompress_ptr cinfo)
 
 {
-  JSAMPLE * table;
+  JSAMPLE *table;
   int i;
 
   table = (JSAMPLE *)
@@ -578,6 +562,12 @@ master_selection (j_decompress_ptr cinfo)
   
   (*cinfo->inputctl->start_input_pass) (cinfo);
 
+  
+
+
+  cinfo->master->first_iMCU_col = 0;
+  cinfo->master->last_iMCU_col = cinfo->MCUs_per_row - 1;
+
 #ifdef D_MULTISCAN_FILES_SUPPORTED
   
 
@@ -722,16 +712,13 @@ jpeg_new_colormap (j_decompress_ptr cinfo)
 GLOBAL(void)
 jinit_master_decompress (j_decompress_ptr cinfo)
 {
-  my_master_ptr master;
+  my_master_ptr master = (my_master_ptr) cinfo->master;
 
-  master = (my_master_ptr)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-                                  sizeof(my_decomp_master));
-  cinfo->master = (struct jpeg_decomp_master *) master;
   master->pub.prepare_for_output_pass = prepare_for_output_pass;
   master->pub.finish_output_pass = finish_output_pass;
 
   master->pub.is_dummy_pass = FALSE;
+  master->pub.jinit_upsampler_no_alloc = FALSE;
 
   master_selection(cinfo);
 }

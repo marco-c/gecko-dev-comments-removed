@@ -13,6 +13,8 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -27,7 +29,7 @@ typedef struct {
   boolean inheaders;            
 } my_input_controller;
 
-typedef my_input_controller * my_inputctl_ptr;
+typedef my_input_controller *my_inputctl_ptr;
 
 
 
@@ -104,6 +106,11 @@ initial_setup (j_decompress_ptr cinfo)
     compptr->height_in_blocks = (JDIMENSION)
       jdiv_round_up((long) cinfo->image_height * (long) compptr->v_samp_factor,
                     (long) (cinfo->max_v_samp_factor * DCTSIZE));
+    
+
+
+    cinfo->master->first_MCU_col[ci] = 0;
+    cinfo->master->last_MCU_col[ci] = compptr->width_in_blocks - 1;
     
 
 
@@ -238,7 +245,7 @@ latch_quant_tables (j_decompress_ptr cinfo)
 {
   int ci, qtblno;
   jpeg_component_info *compptr;
-  JQUANT_TBL * qtbl;
+  JQUANT_TBL *qtbl;
 
   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
     compptr = cinfo->cur_comp_info[ci];

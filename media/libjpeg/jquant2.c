@@ -19,6 +19,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -127,11 +128,11 @@ static const int c_scales[3]={R_SCALE, G_SCALE, B_SCALE};
 
 typedef UINT16 histcell;        
 
-typedef histcell * histptr; 
+typedef histcell *histptr; 
 
 typedef histcell hist1d[HIST_C2_ELEMS]; 
-typedef hist1d * hist2d;    
-typedef hist2d * hist3d;        
+typedef hist1d *hist2d;         
+typedef hist2d *hist3d;         
 
 
 
@@ -159,8 +160,8 @@ typedef hist2d * hist3d;
 typedef INT16 FSERROR;          
 typedef int LOCFSERROR;         
 #else
-typedef INT32 FSERROR;          
-typedef INT32 LOCFSERROR;       
+typedef JLONG FSERROR;          
+typedef JLONG LOCFSERROR;       
 #endif
 
 typedef FSERROR *FSERRPTR;      
@@ -183,10 +184,10 @@ typedef struct {
   
   FSERRPTR fserrors;            
   boolean on_odd_row;           
-  int * error_limiter;          
+  int *error_limiter;           
 } my_cquantizer;
 
-typedef my_cquantizer * my_cquantize_ptr;
+typedef my_cquantizer *my_cquantize_ptr;
 
 
 
@@ -239,12 +240,12 @@ typedef struct {
   int c1min, c1max;
   int c2min, c2max;
   
-  INT32 volume;
+  JLONG volume;
   
   long colorcount;
 } box;
 
-typedef box * boxptr;
+typedef box *boxptr;
 
 
 LOCAL(boxptr)
@@ -274,7 +275,7 @@ find_biggest_volume (boxptr boxlist, int numboxes)
 {
   register boxptr boxp;
   register int i;
-  register INT32 maxv = 0;
+  register JLONG maxv = 0;
   boxptr which = NULL;
 
   for (i = 0, boxp = boxlist; i < numboxes; i++, boxp++) {
@@ -297,7 +298,7 @@ update_box (j_decompress_ptr cinfo, boxptr boxp)
   histptr histp;
   int c0,c1,c2;
   int c0min,c0max,c1min,c1max,c2min,c2max;
-  INT32 dist0,dist1,dist2;
+  JLONG dist0,dist1,dist2;
   long ccount;
 
   c0min = boxp->c0min;  c0max = boxp->c0max;
@@ -637,8 +638,8 @@ find_nearby_colors (j_decompress_ptr cinfo, int minc0, int minc1, int minc2,
   int maxc0, maxc1, maxc2;
   int centerc0, centerc1, centerc2;
   int i, x, ncolors;
-  INT32 minmaxdist, min_dist, max_dist, tdist;
-  INT32 mindist[MAXNUMCOLORS];  
+  JLONG minmaxdist, min_dist, max_dist, tdist;
+  JLONG mindist[MAXNUMCOLORS];  
 
   
 
@@ -762,15 +763,15 @@ find_best_colors (j_decompress_ptr cinfo, int minc0, int minc1, int minc2,
 {
   int ic0, ic1, ic2;
   int i, icolor;
-  register INT32 * bptr;        
-  JSAMPLE * cptr;               
-  INT32 dist0, dist1;           
-  register INT32 dist2;         
-  INT32 xx0, xx1;               
-  register INT32 xx2;
-  INT32 inc0, inc1, inc2;       
+  register JLONG *bptr;         
+  JSAMPLE *cptr;                
+  JLONG dist0, dist1;           
+  register JLONG dist2;         
+  JLONG xx0, xx1;               
+  register JLONG xx2;
+  JLONG inc0, inc1, inc2;       
   
-  INT32 bestdist[BOX_C0_ELEMS * BOX_C1_ELEMS * BOX_C2_ELEMS];
+  JLONG bestdist[BOX_C0_ELEMS * BOX_C1_ELEMS * BOX_C2_ELEMS];
 
   
   bptr = bestdist;
@@ -840,7 +841,7 @@ fill_inverse_cmap (j_decompress_ptr cinfo, int c0, int c1, int c2)
   hist3d histogram = cquantize->histogram;
   int minc0, minc1, minc2;      
   int ic0, ic1, ic2;
-  register JSAMPLE * cptr;      
+  register JSAMPLE *cptr;       
   register histptr cachep;      
   
   JSAMPLE colorlist[MAXNUMCOLORS];
@@ -1079,7 +1080,7 @@ init_error_limit (j_decompress_ptr cinfo)
 
 {
   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
-  int * table;
+  int *table;
   int in, out;
 
   table = (int *) (*cinfo->mem->alloc_small)

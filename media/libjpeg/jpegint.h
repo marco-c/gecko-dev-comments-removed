@@ -16,6 +16,8 @@
 
 
 
+
+
 typedef enum {            
   JBUF_PASS_THRU,         
   
@@ -43,15 +45,15 @@ typedef enum {
 
 
 
+typedef long JLONG;
 
 
 
 
-#ifdef __INT32_IS_ACTUALLY_LONG
-#define LEFT_SHIFT(a, b) ((INT32)((unsigned long)(a) << (b)))
-#else
-#define LEFT_SHIFT(a, b) ((INT32)((unsigned int)(a) << (b)))
-#endif
+
+
+
+#define LEFT_SHIFT(a, b) ((JLONG)((unsigned long)(a) << (b)))
 
 
 
@@ -112,7 +114,7 @@ struct jpeg_downsampler {
 struct jpeg_forward_dct {
   void (*start_pass) (j_compress_ptr cinfo);
   
-  void (*forward_DCT) (j_compress_ptr cinfo, jpeg_component_info * compptr,
+  void (*forward_DCT) (j_compress_ptr cinfo, jpeg_component_info *compptr,
                        JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
                        JDIMENSION start_row, JDIMENSION start_col,
                        JDIMENSION num_blocks);
@@ -149,6 +151,13 @@ struct jpeg_decomp_master {
 
   
   boolean is_dummy_pass;        
+
+  
+  JDIMENSION first_iMCU_col;
+  JDIMENSION last_iMCU_col;
+  JDIMENSION first_MCU_col[MAX_COMPS_IN_SCAN];
+  JDIMENSION last_MCU_col[MAX_COMPS_IN_SCAN];
+  boolean jinit_upsampler_no_alloc;
 };
 
 
@@ -222,7 +231,7 @@ struct jpeg_entropy_decoder {
 
 
 typedef void (*inverse_DCT_method_ptr) (j_decompress_ptr cinfo,
-                                        jpeg_component_info * compptr,
+                                        jpeg_component_info *compptr,
                                         JCOEFPTR coef_block,
                                         JSAMPARRAY output_buf,
                                         JDIMENSION output_col);
@@ -281,10 +290,10 @@ struct jpeg_color_quantizer {
 
 
 #ifdef RIGHT_SHIFT_IS_UNSIGNED
-#define SHIFT_TEMPS     INT32 shift_temp;
+#define SHIFT_TEMPS     JLONG shift_temp;
 #define RIGHT_SHIFT(x,shft)  \
         ((shift_temp = (x)) < 0 ? \
-         (shift_temp >> (shft)) | ((~((INT32) 0)) << (32-(shft))) : \
+         (shift_temp >> (shft)) | ((~((JLONG) 0)) << (32-(shft))) : \
          (shift_temp >> (shft)))
 #else
 #define SHIFT_TEMPS
@@ -339,7 +348,7 @@ EXTERN(void) jcopy_sample_rows (JSAMPARRAY input_array, int source_row,
                                 int num_rows, JDIMENSION num_cols);
 EXTERN(void) jcopy_block_row (JBLOCKROW input_row, JBLOCKROW output_row,
                               JDIMENSION num_blocks);
-EXTERN(void) jzero_far (void * target, size_t bytestozero);
+EXTERN(void) jzero_far (void *target, size_t bytestozero);
 
 #if 0                           
 extern const int jpeg_zigzag_order[]; 
@@ -347,7 +356,7 @@ extern const int jpeg_zigzag_order[];
 extern const int jpeg_natural_order[]; 
 
 
-extern const INT32 jpeg_aritab[];
+extern const JLONG jpeg_aritab[];
 
 
 

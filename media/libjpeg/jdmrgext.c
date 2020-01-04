@@ -18,6 +18,7 @@
 
 
 
+
 INLINE
 LOCAL(void)
 h2v1_merged_upsample_internal (j_decompress_ptr cinfo,
@@ -35,8 +36,8 @@ h2v1_merged_upsample_internal (j_decompress_ptr cinfo,
   register JSAMPLE * range_limit = cinfo->sample_range_limit;
   int * Crrtab = upsample->Cr_r_tab;
   int * Cbbtab = upsample->Cb_b_tab;
-  INT32 * Crgtab = upsample->Cr_g_tab;
-  INT32 * Cbgtab = upsample->Cb_g_tab;
+  JLONG * Crgtab = upsample->Cr_g_tab;
+  JLONG * Cbgtab = upsample->Cb_g_tab;
   SHIFT_TEMPS
 
   inptr0 = input_buf[0][in_row_group_ctr];
@@ -108,8 +109,8 @@ h2v2_merged_upsample_internal (j_decompress_ptr cinfo,
   register JSAMPLE * range_limit = cinfo->sample_range_limit;
   int * Crrtab = upsample->Cr_r_tab;
   int * Cbbtab = upsample->Cb_b_tab;
-  INT32 * Crgtab = upsample->Cr_g_tab;
-  INT32 * Cbgtab = upsample->Cb_g_tab;
+  JLONG * Crgtab = upsample->Cr_g_tab;
+  JLONG * Cbgtab = upsample->Cb_g_tab;
   SHIFT_TEMPS
 
   inptr00 = input_buf[0][in_row_group_ctr*2];

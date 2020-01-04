@@ -20,6 +20,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -58,7 +59,7 @@ typedef struct {
   int cur_method[MAX_COMPONENTS];
 } my_idct_controller;
 
-typedef my_idct_controller * my_idct_ptr;
+typedef my_idct_controller *my_idct_ptr;
 
 
 
@@ -100,7 +101,7 @@ start_pass (j_decompress_ptr cinfo)
   jpeg_component_info *compptr;
   int method = 0;
   inverse_DCT_method_ptr method_ptr = NULL;
-  JQUANT_TBL * qtbl;
+  JQUANT_TBL *qtbl;
 
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
@@ -245,7 +246,7 @@ start_pass (j_decompress_ptr cinfo)
         
 
 
-        ISLOW_MULT_TYPE * ismtbl = (ISLOW_MULT_TYPE *) compptr->dct_table;
+        ISLOW_MULT_TYPE *ismtbl = (ISLOW_MULT_TYPE *) compptr->dct_table;
         for (i = 0; i < DCTSIZE2; i++) {
           ismtbl[i] = (ISLOW_MULT_TYPE) qtbl->quantval[i];
         }
@@ -262,7 +263,7 @@ start_pass (j_decompress_ptr cinfo)
 
 
 
-        IFAST_MULT_TYPE * ifmtbl = (IFAST_MULT_TYPE *) compptr->dct_table;
+        IFAST_MULT_TYPE *ifmtbl = (IFAST_MULT_TYPE *) compptr->dct_table;
 #define CONST_BITS 14
         static const INT16 aanscales[DCTSIZE2] = {
           
@@ -279,8 +280,8 @@ start_pass (j_decompress_ptr cinfo)
 
         for (i = 0; i < DCTSIZE2; i++) {
           ifmtbl[i] = (IFAST_MULT_TYPE)
-            DESCALE(MULTIPLY16V16((INT32) qtbl->quantval[i],
-                                  (INT32) aanscales[i]),
+            DESCALE(MULTIPLY16V16((JLONG) qtbl->quantval[i],
+                                  (JLONG) aanscales[i]),
                     CONST_BITS-IFAST_SCALE_BITS);
         }
       }
@@ -294,7 +295,7 @@ start_pass (j_decompress_ptr cinfo)
 
 
 
-        FLOAT_MULT_TYPE * fmtbl = (FLOAT_MULT_TYPE *) compptr->dct_table;
+        FLOAT_MULT_TYPE *fmtbl = (FLOAT_MULT_TYPE *) compptr->dct_table;
         int row, col;
         static const double aanscalefactor[DCTSIZE] = {
           1.0, 1.387039845, 1.306562965, 1.175875602,

@@ -32,6 +32,9 @@
 
 
 
+
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -89,10 +92,10 @@
 
 
 #if CONST_BITS == 8
-#define FIX_1_082392200  ((INT32)  277)         /* FIX(1.082392200) */
-#define FIX_1_414213562  ((INT32)  362)         /* FIX(1.414213562) */
-#define FIX_1_847759065  ((INT32)  473)         /* FIX(1.847759065) */
-#define FIX_2_613125930  ((INT32)  669)         /* FIX(2.613125930) */
+#define FIX_1_082392200  ((JLONG)  277)         /* FIX(1.082392200) */
+#define FIX_1_414213562  ((JLONG)  362)         /* FIX(1.414213562) */
+#define FIX_1_847759065  ((JLONG)  473)         /* FIX(1.847759065) */
+#define FIX_2_613125930  ((JLONG)  669)         /* FIX(2.613125930) */
 #else
 #define FIX_1_082392200  FIX(1.082392200)
 #define FIX_1_414213562  FIX(1.414213562)
@@ -165,7 +168,7 @@
 
 
 GLOBAL(void)
-jpeg_idct_ifast (j_decompress_ptr cinfo, jpeg_component_info * compptr,
+jpeg_idct_ifast (j_decompress_ptr cinfo, jpeg_component_info *compptr,
                  JCOEFPTR coef_block,
                  JSAMPARRAY output_buf, JDIMENSION output_col)
 {
@@ -173,8 +176,8 @@ jpeg_idct_ifast (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   DCTELEM tmp10, tmp11, tmp12, tmp13;
   DCTELEM z5, z10, z11, z12, z13;
   JCOEFPTR inptr;
-  IFAST_MULT_TYPE * quantptr;
-  int * wsptr;
+  IFAST_MULT_TYPE *quantptr;
+  int *wsptr;
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;

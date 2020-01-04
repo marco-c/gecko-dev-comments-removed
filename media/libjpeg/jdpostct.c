@@ -18,6 +18,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -41,7 +42,7 @@ typedef struct {
   JDIMENSION next_row;          
 } my_post_controller;
 
-typedef my_post_controller * my_post_ptr;
+typedef my_post_controller *my_post_ptr;
 
 
 

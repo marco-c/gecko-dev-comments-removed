@@ -16,6 +16,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -69,7 +70,7 @@ typedef struct {
 #endif
 } my_prep_controller;
 
-typedef my_prep_controller * my_prep_ptr;
+typedef my_prep_controller *my_prep_ptr;
 
 
 
@@ -136,7 +137,7 @@ pre_process_data (j_compress_ptr cinfo,
   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
   int numrows, ci;
   JDIMENSION inrows;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
 
   while (*in_row_ctr < in_rows_avail &&
          *out_row_group_ctr < out_row_groups_avail) {
@@ -271,7 +272,7 @@ create_context_buffer (j_compress_ptr cinfo)
   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
   int rgroup_height = cinfo->max_v_samp_factor;
   int ci, i;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
   JSAMPARRAY true_buffer, fake_buffer;
 
   
@@ -318,7 +319,7 @@ jinit_c_prep_controller (j_compress_ptr cinfo, boolean need_full_buffer)
 {
   my_prep_ptr prep;
   int ci;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
 
   if (need_full_buffer)         
     ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);

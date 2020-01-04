@@ -11,6 +11,7 @@
 
 
 
+
 #if JPEG_LIB_VERSION >= 80
 
 #define JVERSION        "8d  15-Jan-2012"
@@ -25,12 +26,24 @@
 
 #endif
 
-#define JCOPYRIGHT      "Copyright (C) 1991-2012 Thomas G. Lane, Guido Vollbeding\n" \
-                        "Copyright (C) 1999-2006 MIYASAKA Masaru\n" \
-                        "Copyright (C) 2009 Pierre Ossman for Cendio AB\n" \
-                        "Copyright (C) 2009-2015 D. R. Commander\n" \
-                        "Copyright (C) 2009-2011 Nokia Corporation and/or its subsidiary(-ies)\n" \
-                        "Copyright (C) 2013-2014 MIPS Technologies, Inc.\n" \
-                        "Copyright (C) 2013 Linaro Limited"
 
-#define JCOPYRIGHT_SHORT "Copyright (C) 1991-2015 The libjpeg-turbo Project and many others"
+
+
+
+
+
+
+
+
+#define JCOPYRIGHT      "Copyright (C) 2009-2016 D. R. Commander\n" \
+                        "Copyright (C) 2011-2016 Siarhei Siamashka\n" \
+                        "Copyright (C) 2015-2016 Matthieu Darbois\n" \
+                        "Copyright (C) 2015 Google, Inc.\n" \
+                        "Copyright (C) 2013-2014 MIPS Technologies, Inc.\n" \
+                        "Copyright (C) 2013 Linaro Limited\n" \
+                        "Copyright (C) 2009-2011 Nokia Corporation and/or its subsidiary(-ies)\n" \
+                        "Copyright (C) 2009 Pierre Ossman for Cendio AB\n" \
+                        "Copyright (C) 1999-2006 MIYASAKA Masaru\n" \
+                        "Copyright (C) 1991-2016 Thomas G. Lane, Guido Vollbeding" \
+
+#define JCOPYRIGHT_SHORT "Copyright (C) 1991-2016 The libjpeg-turbo Project and many others"

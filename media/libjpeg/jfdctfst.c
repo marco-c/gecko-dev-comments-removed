@@ -30,6 +30,9 @@
 
 
 
+
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -76,10 +79,10 @@
 
 
 #if CONST_BITS == 8
-#define FIX_0_382683433  ((INT32)   98)         /* FIX(0.382683433) */
-#define FIX_0_541196100  ((INT32)  139)         /* FIX(0.541196100) */
-#define FIX_0_707106781  ((INT32)  181)         /* FIX(0.707106781) */
-#define FIX_1_306562965  ((INT32)  334)         /* FIX(1.306562965) */
+#define FIX_0_382683433  ((JLONG)   98)         /* FIX(0.382683433) */
+#define FIX_0_541196100  ((JLONG)  139)         /* FIX(0.541196100) */
+#define FIX_0_707106781  ((JLONG)  181)         /* FIX(0.707106781) */
+#define FIX_1_306562965  ((JLONG)  334)         /* FIX(1.306562965) */
 #else
 #define FIX_0_382683433  FIX(0.382683433)
 #define FIX_0_541196100  FIX(0.541196100)
@@ -111,7 +114,7 @@
 
 
 GLOBAL(void)
-jpeg_fdct_ifast (DCTELEM * data)
+jpeg_fdct_ifast (DCTELEM *data)
 {
   DCTELEM tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   DCTELEM tmp10, tmp11, tmp12, tmp13;

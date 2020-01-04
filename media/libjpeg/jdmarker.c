@@ -14,6 +14,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -106,7 +107,7 @@ typedef struct {
   
 } my_marker_reader;
 
-typedef my_marker_reader * my_marker_ptr;
+typedef my_marker_reader *my_marker_ptr;
 
 
 
@@ -119,8 +120,8 @@ typedef my_marker_reader * my_marker_ptr;
 
 
 #define INPUT_VARS(cinfo)  \
-        struct jpeg_source_mgr * datasrc = (cinfo)->src;  \
-        const JOCTET * next_input_byte = datasrc->next_input_byte;  \
+        struct jpeg_source_mgr *datasrc = (cinfo)->src;  \
+        const JOCTET *next_input_byte = datasrc->next_input_byte;  \
         size_t bytes_in_buffer = datasrc->bytes_in_buffer
 
 
@@ -239,9 +240,9 @@ LOCAL(boolean)
 get_sof (j_decompress_ptr cinfo, boolean is_prog, boolean is_arith)
 
 {
-  INT32 length;
+  JLONG length;
   int c, ci;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
   INPUT_VARS(cinfo);
 
   cinfo->progressive_mode = is_prog;
@@ -303,9 +304,9 @@ LOCAL(boolean)
 get_sos (j_decompress_ptr cinfo)
 
 {
-  INT32 length;
+  JLONG length;
   int i, ci, n, c, cc, pi;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
   INPUT_VARS(cinfo);
 
   if (! cinfo->marker->saw_SOF)
@@ -386,7 +387,7 @@ LOCAL(boolean)
 get_dac (j_decompress_ptr cinfo)
 
 {
-  INT32 length;
+  JLONG length;
   int index, val;
   INPUT_VARS(cinfo);
 
@@ -432,7 +433,7 @@ LOCAL(boolean)
 get_dht (j_decompress_ptr cinfo)
 
 {
-  INT32 length;
+  JLONG length;
   UINT8 bits[17];
   UINT8 huffval[256];
   int i, index, count;
@@ -466,7 +467,7 @@ get_dht (j_decompress_ptr cinfo)
     
 
 
-    if (count > 256 || ((INT32) count) > length)
+    if (count > 256 || ((JLONG) count) > length)
       ERREXIT(cinfo, JERR_BAD_HUFF_TABLE);
 
     for (i = 0; i < count; i++)
@@ -506,7 +507,7 @@ LOCAL(boolean)
 get_dqt (j_decompress_ptr cinfo)
 
 {
-  INT32 length;
+  JLONG length;
   int n, i, prec;
   unsigned int tmp;
   JQUANT_TBL *quant_ptr;
@@ -564,7 +565,7 @@ LOCAL(boolean)
 get_dri (j_decompress_ptr cinfo)
 
 {
-  INT32 length;
+  JLONG length;
   unsigned int tmp;
   INPUT_VARS(cinfo);
 
@@ -597,14 +598,14 @@ get_dri (j_decompress_ptr cinfo)
 
 
 LOCAL(void)
-examine_app0 (j_decompress_ptr cinfo, JOCTET * data,
-              unsigned int datalen, INT32 remaining)
+examine_app0 (j_decompress_ptr cinfo, JOCTET *data,
+              unsigned int datalen, JLONG remaining)
 
 
 
 
 {
-  INT32 totallen = (INT32) datalen + remaining;
+  JLONG totallen = (JLONG) datalen + remaining;
 
   if (datalen >= APP0_DATA_LEN &&
       GETJOCTET(data[0]) == 0x4A &&
@@ -638,7 +639,7 @@ examine_app0 (j_decompress_ptr cinfo, JOCTET * data,
                GETJOCTET(data[12]), GETJOCTET(data[13]));
     totallen -= APP0_DATA_LEN;
     if (totallen !=
-        ((INT32)GETJOCTET(data[12]) * (INT32)GETJOCTET(data[13]) * (INT32) 3))
+        ((JLONG)GETJOCTET(data[12]) * (JLONG)GETJOCTET(data[13]) * (JLONG) 3))
       TRACEMS1(cinfo, 1, JTRC_JFIF_BADTHUMBNAILSIZE, (int) totallen);
   } else if (datalen >= 6 &&
       GETJOCTET(data[0]) == 0x4A &&
@@ -673,8 +674,8 @@ examine_app0 (j_decompress_ptr cinfo, JOCTET * data,
 
 
 LOCAL(void)
-examine_app14 (j_decompress_ptr cinfo, JOCTET * data,
-               unsigned int datalen, INT32 remaining)
+examine_app14 (j_decompress_ptr cinfo, JOCTET *data,
+               unsigned int datalen, JLONG remaining)
 
 
 
@@ -707,7 +708,7 @@ METHODDEF(boolean)
 get_interesting_appn (j_decompress_ptr cinfo)
 
 {
-  INT32 length;
+  JLONG length;
   JOCTET b[APPN_DATA_LEN];
   unsigned int i, numtoread;
   INPUT_VARS(cinfo);
@@ -758,8 +759,8 @@ save_marker (j_decompress_ptr cinfo)
   my_marker_ptr marker = (my_marker_ptr) cinfo->marker;
   jpeg_saved_marker_ptr cur_marker = marker->cur_marker;
   unsigned int bytes_read, data_length;
-  JOCTET * data;
-  INT32 length = 0;
+  JOCTET *data;
+  JLONG length = 0;
   INPUT_VARS(cinfo);
 
   if (cur_marker == NULL) {
@@ -861,7 +862,7 @@ METHODDEF(boolean)
 skip_variable (j_decompress_ptr cinfo)
 
 {
-  INT32 length;
+  JLONG length;
   INPUT_VARS(cinfo);
 
   INPUT_2BYTES(cinfo, length, return FALSE);

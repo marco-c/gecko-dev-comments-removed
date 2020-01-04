@@ -36,6 +36,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -55,10 +56,10 @@ typedef struct {
                     JDIMENSION in_row_group_ctr, JSAMPARRAY output_buf);
 
   
-  int * Cr_r_tab;               
-  int * Cb_b_tab;               
-  INT32 * Cr_g_tab;             
-  INT32 * Cb_g_tab;             
+  int *Cr_r_tab;                
+  int *Cb_b_tab;                
+  JLONG *Cr_g_tab;              
+  JLONG *Cb_g_tab;              
 
   
 
@@ -72,11 +73,11 @@ typedef struct {
   JDIMENSION rows_to_go;        
 } my_upsampler;
 
-typedef my_upsampler * my_upsample_ptr;
+typedef my_upsampler *my_upsample_ptr;
 
 #define SCALEBITS       16      /* speediest right-shift on some machines */
-#define ONE_HALF        ((INT32) 1 << (SCALEBITS-1))
-#define FIX(x)          ((INT32) ((x) * (1L<<SCALEBITS) + 0.5))
+#define ONE_HALF        ((JLONG) 1 << (SCALEBITS-1))
+#define FIX(x)          ((JLONG) ((x) * (1L<<SCALEBITS) + 0.5))
 
 
 
@@ -190,7 +191,7 @@ build_ycc_rgb_table (j_decompress_ptr cinfo)
 {
   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
   int i;
-  INT32 x;
+  JLONG x;
   SHIFT_TEMPS
 
   upsample->Cr_r_tab = (int *)
@@ -199,12 +200,12 @@ build_ycc_rgb_table (j_decompress_ptr cinfo)
   upsample->Cb_b_tab = (int *)
     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
                                 (MAXJSAMPLE+1) * sizeof(int));
-  upsample->Cr_g_tab = (INT32 *)
+  upsample->Cr_g_tab = (JLONG *)
     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-                                (MAXJSAMPLE+1) * sizeof(INT32));
-  upsample->Cb_g_tab = (INT32 *)
+                                (MAXJSAMPLE+1) * sizeof(JLONG));
+  upsample->Cb_g_tab = (JLONG *)
     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-                                (MAXJSAMPLE+1) * sizeof(INT32));
+                                (MAXJSAMPLE+1) * sizeof(JLONG));
 
   for (i = 0, x = -CENTERJSAMPLE; i <= MAXJSAMPLE; i++, x++) {
     
@@ -435,12 +436,12 @@ h2v2_merged_upsample (j_decompress_ptr cinfo,
 #define PACK_NEED_ALIGNMENT(ptr)  (((size_t)(ptr)) & 3)
 
 #define WRITE_TWO_PIXELS_LE(addr, pixels) {  \
-  ((INT16*)(addr))[0] = (pixels);  \
-  ((INT16*)(addr))[1] = (pixels) >> 16;  \
+  ((INT16*)(addr))[0] = (INT16)(pixels);  \
+  ((INT16*)(addr))[1] = (INT16)((pixels) >> 16);  \
 }
 #define WRITE_TWO_PIXELS_BE(addr, pixels) {  \
-  ((INT16*)(addr))[1] = (pixels);  \
-  ((INT16*)(addr))[0] = (pixels) >> 16;  \
+  ((INT16*)(addr))[1] = (INT16)(pixels);  \
+  ((INT16*)(addr))[0] = (INT16)((pixels) >> 16);  \
 }
 
 #define DITHER_565_R(r, dither)  ((r) + ((dither) & 0xFF))
@@ -455,8 +456,8 @@ h2v2_merged_upsample (j_decompress_ptr cinfo,
 
 
 #define DITHER_MASK       0x3
-#define DITHER_ROTATE(x)  (((x) << 24) | (((x) >> 8) & 0x00FFFFFF))
-static const INT32 dither_matrix[4] = {
+#define DITHER_ROTATE(x)  ((((x) & 0xFF) << 24) | (((x) >> 8) & 0x00FFFFFF))
+static const JLONG dither_matrix[4] = {
   0x0008020A,
   0x0C040E06,
   0x030B0109,

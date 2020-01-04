@@ -15,6 +15,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -25,10 +26,10 @@
 typedef struct {
   struct jpeg_entropy_encoder pub; 
 
-  INT32 c; 
-  INT32 a;               
-  INT32 sc;        
-  INT32 zc;          
+  JLONG c; 
+  JLONG a;               
+  JLONG sc;        
+  JLONG zc;          
 
   int ct;  
   int buffer;                
@@ -40,14 +41,14 @@ typedef struct {
   int next_restart_num;         
 
   
-  unsigned char * dc_stats[NUM_ARITH_TBLS];
-  unsigned char * ac_stats[NUM_ARITH_TBLS];
+  unsigned char *dc_stats[NUM_ARITH_TBLS];
+  unsigned char *ac_stats[NUM_ARITH_TBLS];
 
   
   unsigned char fixed_bin[4];
 } arith_entropy_encoder;
 
-typedef arith_entropy_encoder * arith_entropy_ptr;
+typedef arith_entropy_encoder *arith_entropy_ptr;
 
 
 
@@ -118,7 +119,7 @@ LOCAL(void)
 emit_byte (int val, j_compress_ptr cinfo)
 
 {
-  struct jpeg_destination_mgr * dest = cinfo->dest;
+  struct jpeg_destination_mgr *dest = cinfo->dest;
 
   *dest->next_output_byte++ = (JOCTET) val;
   if (--dest->free_in_buffer == 0)
@@ -135,7 +136,7 @@ METHODDEF(void)
 finish_pass (j_compress_ptr cinfo)
 {
   arith_entropy_ptr e = (arith_entropy_ptr) cinfo->entropy;
-  INT32 temp;
+  JLONG temp;
 
   
 
@@ -222,7 +223,7 @@ arith_encode (j_compress_ptr cinfo, unsigned char *st, int val)
 {
   register arith_entropy_ptr e = (arith_entropy_ptr) cinfo->entropy;
   register unsigned char nl, nm;
-  register INT32 qe, temp;
+  register JLONG qe, temp;
   register int sv;
 
   
@@ -322,7 +323,7 @@ emit_restart (j_compress_ptr cinfo, int restart_num)
 {
   arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
   int ci;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
 
   finish_pass(cinfo);
 
@@ -682,7 +683,7 @@ METHODDEF(boolean)
 encode_mcu (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 {
   arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
   JBLOCKROW block;
   unsigned char *st;
   int blkn, ci, tbl, k, ke;
@@ -825,7 +826,7 @@ start_pass (j_compress_ptr cinfo, boolean gather_statistics)
 {
   arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
   int ci, tbl;
-  jpeg_component_info * compptr;
+  jpeg_component_info *compptr;
 
   if (gather_statistics)
     

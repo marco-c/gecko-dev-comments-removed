@@ -25,6 +25,7 @@
 
 
 
+
 INLINE
 LOCAL(void)
 ycc_rgb_convert_internal (j_decompress_ptr cinfo,
@@ -41,8 +42,8 @@ ycc_rgb_convert_internal (j_decompress_ptr cinfo,
   register JSAMPLE * range_limit = cinfo->sample_range_limit;
   register int * Crrtab = cconvert->Cr_r_tab;
   register int * Cbbtab = cconvert->Cb_b_tab;
-  register INT32 * Crgtab = cconvert->Cr_g_tab;
-  register INT32 * Cbgtab = cconvert->Cb_g_tab;
+  register JLONG * Crgtab = cconvert->Cr_g_tab;
+  register JLONG * Cbgtab = cconvert->Cb_g_tab;
   SHIFT_TEMPS
 
   while (--num_rows >= 0) {

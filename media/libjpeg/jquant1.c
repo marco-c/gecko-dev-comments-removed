@@ -12,6 +12,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -127,8 +128,8 @@ static const UINT8 base_dither_matrix[ODITHER_SIZE][ODITHER_SIZE] = {
 typedef INT16 FSERROR;          
 typedef int LOCFSERROR;         
 #else
-typedef INT32 FSERROR;          
-typedef INT32 LOCFSERROR;       
+typedef JLONG FSERROR;          
+typedef JLONG LOCFSERROR;       
 #endif
 
 typedef FSERROR *FSERRPTR;  
@@ -163,7 +164,7 @@ typedef struct {
   boolean on_odd_row;           
 } my_cquantizer;
 
-typedef my_cquantizer * my_cquantize_ptr;
+typedef my_cquantizer *my_cquantize_ptr;
 
 
 
@@ -253,7 +254,7 @@ output_value (j_decompress_ptr cinfo, int ci, int j, int maxj)
 
 
 
-  return (int) (((INT32) j * MAXJSAMPLE + maxj/2) / maxj);
+  return (int) (((JLONG) j * MAXJSAMPLE + maxj/2) / maxj);
 }
 
 
@@ -263,7 +264,7 @@ largest_input_value (j_decompress_ptr cinfo, int ci, int j, int maxj)
 
 {
   
-  return (int) (((INT32) (2*j + 1) * MAXJSAMPLE + maxj) / (2*maxj));
+  return (int) (((JLONG) (2*j + 1) * MAXJSAMPLE + maxj) / (2*maxj));
 }
 
 
@@ -399,7 +400,7 @@ make_odither_array (j_decompress_ptr cinfo, int ncolors)
 {
   ODITHER_MATRIX_PTR odither;
   int j,k;
-  INT32 num,den;
+  JLONG num,den;
 
   odither = (ODITHER_MATRIX_PTR)
     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
@@ -409,10 +410,10 @@ make_odither_array (j_decompress_ptr cinfo, int ncolors)
 
 
 
-  den = 2 * ODITHER_CELLS * ((INT32) (ncolors - 1));
+  den = 2 * ODITHER_CELLS * ((JLONG) (ncolors - 1));
   for (j = 0; j < ODITHER_SIZE; j++) {
     for (k = 0; k < ODITHER_SIZE; k++) {
-      num = ((INT32) (ODITHER_CELLS-1 - 2*((int)base_dither_matrix[j][k])))
+      num = ((JLONG) (ODITHER_CELLS-1 - 2*((int)base_dither_matrix[j][k])))
             * MAXJSAMPLE;
       
 
@@ -522,7 +523,7 @@ quantize_ord_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
   register JSAMPROW input_ptr;
   register JSAMPROW output_ptr;
   JSAMPROW colorindex_ci;
-  int * dither;                 
+  int *dither;                  
   int row_index, col_index;     
   int nc = cinfo->out_color_components;
   int ci;
@@ -574,9 +575,9 @@ quantize3_ord_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
   JSAMPROW colorindex0 = cquantize->colorindex[0];
   JSAMPROW colorindex1 = cquantize->colorindex[1];
   JSAMPROW colorindex2 = cquantize->colorindex[2];
-  int * dither0;                
-  int * dither1;
-  int * dither2;
+  int *dither0;                 
+  int *dither1;
+  int *dither2;
   int row_index, col_index;     
   int row;
   JDIMENSION col;

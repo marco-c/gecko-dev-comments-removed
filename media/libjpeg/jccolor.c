@@ -12,6 +12,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -25,10 +26,10 @@ typedef struct {
   struct jpeg_color_converter pub; 
 
   
-  INT32 * rgb_ycc_tab;          
+  JLONG *rgb_ycc_tab;           
 } my_color_converter;
 
-typedef my_color_converter * my_cconvert_ptr;
+typedef my_color_converter *my_cconvert_ptr;
 
 
 
@@ -62,9 +63,9 @@ typedef my_color_converter * my_cconvert_ptr;
 
 
 #define SCALEBITS       16      /* speediest right-shift on some machines */
-#define CBCR_OFFSET     ((INT32) CENTERJSAMPLE << SCALEBITS)
-#define ONE_HALF        ((INT32) 1 << (SCALEBITS-1))
-#define FIX(x)          ((INT32) ((x) * (1L<<SCALEBITS) + 0.5))
+#define CBCR_OFFSET     ((JLONG) CENTERJSAMPLE << SCALEBITS)
+#define ONE_HALF        ((JLONG) 1 << (SCALEBITS-1))
+#define FIX(x)          ((JLONG) ((x) * (1L<<SCALEBITS) + 0.5))
 
 
 
@@ -197,13 +198,13 @@ METHODDEF(void)
 rgb_ycc_start (j_compress_ptr cinfo)
 {
   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
-  INT32 * rgb_ycc_tab;
-  INT32 i;
+  JLONG *rgb_ycc_tab;
+  JLONG i;
 
   
-  cconvert->rgb_ycc_tab = rgb_ycc_tab = (INT32 *)
+  cconvert->rgb_ycc_tab = rgb_ycc_tab = (JLONG *)
     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-                                (TABLE_SIZE * sizeof(INT32)));
+                                (TABLE_SIZE * sizeof(JLONG)));
 
   for (i = 0; i <= MAXJSAMPLE; i++) {
     rgb_ycc_tab[i+R_Y_OFF] = FIX(0.29900) * i;
@@ -381,7 +382,7 @@ cmyk_ycck_convert (j_compress_ptr cinfo,
 {
   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
   register int r, g, b;
-  register INT32 * ctab = cconvert->rgb_ycc_tab;
+  register JLONG *ctab = cconvert->rgb_ycc_tab;
   register JSAMPROW inptr;
   register JSAMPROW outptr0, outptr1, outptr2, outptr3;
   register JDIMENSION col;

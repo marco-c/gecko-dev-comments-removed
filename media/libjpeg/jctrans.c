@@ -13,6 +13,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -20,9 +21,9 @@
 
 
 LOCAL(void) transencode_master_selection
-        (j_compress_ptr cinfo, jvirt_barray_ptr * coef_arrays);
+        (j_compress_ptr cinfo, jvirt_barray_ptr *coef_arrays);
 LOCAL(void) transencode_coef_controller
-        (j_compress_ptr cinfo, jvirt_barray_ptr * coef_arrays);
+        (j_compress_ptr cinfo, jvirt_barray_ptr *coef_arrays);
 
 
 
@@ -38,7 +39,7 @@ LOCAL(void) transencode_coef_controller
 
 
 GLOBAL(void)
-jpeg_write_coefficients (j_compress_ptr cinfo, jvirt_barray_ptr * coef_arrays)
+jpeg_write_coefficients (j_compress_ptr cinfo, jvirt_barray_ptr *coef_arrays)
 {
   if (cinfo->global_state != CSTATE_START)
     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
@@ -66,7 +67,7 @@ GLOBAL(void)
 jpeg_copy_critical_parameters (j_decompress_ptr srcinfo,
                                j_compress_ptr dstinfo)
 {
-  JQUANT_TBL ** qtblptr;
+  JQUANT_TBL **qtblptr;
   jpeg_component_info *incomp, *outcomp;
   JQUANT_TBL *c_quant, *slot_quant;
   int tblno, ci, coefi;
@@ -165,7 +166,7 @@ jpeg_copy_critical_parameters (j_decompress_ptr srcinfo,
 
 LOCAL(void)
 transencode_master_selection (j_compress_ptr cinfo,
-                              jvirt_barray_ptr * coef_arrays)
+                              jvirt_barray_ptr *coef_arrays)
 {
   
 
@@ -227,13 +228,13 @@ typedef struct {
   int MCU_rows_per_iMCU_row;    
 
   
-  jvirt_barray_ptr * whole_image;
+  jvirt_barray_ptr *whole_image;
 
   
   JBLOCKROW dummy_buffer[C_MAX_BLOCKS_IN_MCU];
 } my_coef_controller;
 
-typedef my_coef_controller * my_coef_ptr;
+typedef my_coef_controller *my_coef_ptr;
 
 
 LOCAL(void)
@@ -374,7 +375,7 @@ compress_output (j_compress_ptr cinfo, JSAMPIMAGE input_buf)
 
 LOCAL(void)
 transencode_coef_controller (j_compress_ptr cinfo,
-                             jvirt_barray_ptr * coef_arrays)
+                             jvirt_barray_ptr *coef_arrays)
 {
   my_coef_ptr coef;
   JBLOCKROW buffer;

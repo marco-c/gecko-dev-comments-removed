@@ -15,6 +15,7 @@
 
 
 
+
 LOCAL(void)
 add_huff_table (j_common_ptr cinfo,
                 JHUFF_TBL **htblptr, const UINT8 *bits, const UINT8 *val)

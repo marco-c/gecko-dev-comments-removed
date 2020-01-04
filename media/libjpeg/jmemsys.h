@@ -30,8 +30,9 @@
 
 
 
+
 EXTERN(void *) jpeg_get_small (j_common_ptr cinfo, size_t sizeofobject);
-EXTERN(void) jpeg_free_small (j_common_ptr cinfo, void * object,
+EXTERN(void) jpeg_free_small (j_common_ptr cinfo, void *object,
                               size_t sizeofobject);
 
 
@@ -43,7 +44,7 @@ EXTERN(void) jpeg_free_small (j_common_ptr cinfo, void * object,
 
 
 EXTERN(void *) jpeg_get_large (j_common_ptr cinfo, size_t sizeofobject);
-EXTERN(void) jpeg_free_large (j_common_ptr cinfo, void * object,
+EXTERN(void) jpeg_free_large (j_common_ptr cinfo, void *object,
                               size_t sizeofobject);
 
 
@@ -116,15 +117,15 @@ typedef union {
 #endif 
 
 
-typedef struct backing_store_struct * backing_store_ptr;
+typedef struct backing_store_struct *backing_store_ptr;
 
 typedef struct backing_store_struct {
   
   void (*read_backing_store) (j_common_ptr cinfo, backing_store_ptr info,
-                              void * buffer_address, long file_offset,
+                              void *buffer_address, long file_offset,
                               long byte_count);
   void (*write_backing_store) (j_common_ptr cinfo, backing_store_ptr info,
-                               void * buffer_address, long file_offset,
+                               void *buffer_address, long file_offset,
                                long byte_count);
   void (*close_backing_store) (j_common_ptr cinfo, backing_store_ptr info);
 
@@ -141,7 +142,7 @@ typedef struct backing_store_struct {
   char temp_name[TEMP_NAME_LENGTH]; 
 #else
   
-  FILE * temp_file;             
+  FILE *temp_file;              
   char temp_name[TEMP_NAME_LENGTH]; 
 #endif
 #endif
