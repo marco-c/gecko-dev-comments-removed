@@ -9,6 +9,7 @@
 #ifndef nsGridContainerFrame_h___
 #define nsGridContainerFrame_h___
 
+#include "mozilla/Maybe.h"
 #include "mozilla/TypeTraits.h"
 #include "nsContainerFrame.h"
 #include "nsHashKeys.h"
@@ -46,6 +47,7 @@ public:
   NS_DECL_FRAMEARENA_HELPERS
   NS_DECL_QUERYFRAME_TARGET(nsGridContainerFrame)
   NS_DECL_QUERYFRAME
+  typedef mozilla::ComputedGridTrackInfo ComputedGridTrackInfo;
 
   
   void Reflow(nsPresContext*           aPresContext,
@@ -202,7 +204,7 @@ private:
     bool mIsAutoBSize;
   };
 
-  Maybe<nsGridContainerFrame::Fragmentainer>
+  mozilla::Maybe<nsGridContainerFrame::Fragmentainer>
     GetNearestFragmentainer(const GridReflowState& aState) const;
 
   
