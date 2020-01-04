@@ -58,13 +58,13 @@ public class TelemetryDispatcher {
     private final TelemetryUploadAllPingsImmediatelyScheduler uploadAllPingsImmediatelyScheduler;
 
     @WorkerThread 
-    public TelemetryDispatcher(final String profilePath) {
+    public TelemetryDispatcher(final String profilePath, final String profileName) {
         final String storePath = profilePath + File.separator + STORE_CONTAINER_DIR_NAME;
 
         
         
         
-        coreStore = new TelemetryJSONFilePingStore(new File(storePath, CORE_STORE_DIR_NAME));
+        coreStore = new TelemetryJSONFilePingStore(new File(storePath, CORE_STORE_DIR_NAME), profileName);
 
         uploadAllPingsImmediatelyScheduler = new TelemetryUploadAllPingsImmediatelyScheduler();
     }

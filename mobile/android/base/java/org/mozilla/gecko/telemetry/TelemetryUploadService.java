@@ -7,7 +7,6 @@ package org.mozilla.gecko.telemetry;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.util.Log;
 import ch.boye.httpclientandroidlib.HttpHeaders;
 import ch.boye.httpclientandroidlib.HttpResponse;
@@ -15,7 +14,6 @@ import ch.boye.httpclientandroidlib.client.ClientProtocolException;
 import ch.boye.httpclientandroidlib.client.methods.HttpRequestBase;
 import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 import org.mozilla.gecko.GeckoProfile;
-import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.restrictions.Restrictable;
 import org.mozilla.gecko.restrictions.Restrictions;
@@ -102,7 +100,7 @@ public class TelemetryUploadService extends IntentService {
             return true;
         }
 
-        final String serverSchemeHostPort = getServerSchemeHostPort(context);
+        final String serverSchemeHostPort = TelemetryPreferences.getServerSchemeHostPort(context, store.getProfileName());
         final HashSet<String> successfulUploadIDs = new HashSet<>(pingsToUpload.size()); 
         final PingResultDelegate delegate = new PingResultDelegate(successfulUploadIDs);
         for (final TelemetryPing ping : pingsToUpload) {
@@ -124,14 +122,6 @@ public class TelemetryUploadService extends IntentService {
         }
         store.onUploadAttemptComplete(successfulUploadIDs);
         return wereAllUploadsSuccessful;
-    }
-
-    private static String getServerSchemeHostPort(final Context context) {
-        
-        
-        
-        final SharedPreferences sharedPrefs = GeckoSharedPrefs.forApp(context);
-        return sharedPrefs.getString(TelemetryConstants.PREF_SERVER_URL, TelemetryConstants.DEFAULT_SERVER_URL);
     }
 
     private static void uploadPayload(final String url, final ExtendedJSONObject payload, final ResultDelegate delegate) {

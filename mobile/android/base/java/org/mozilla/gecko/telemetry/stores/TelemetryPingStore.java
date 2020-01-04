@@ -23,12 +23,24 @@ import java.util.Set;
 
 
 
-public interface TelemetryPingStore extends Parcelable {
+public abstract class TelemetryPingStore implements Parcelable {
+    private final String profileName;
+
+    public TelemetryPingStore(final String profileName) {
+        this.profileName = profileName;
+    }
 
     
 
 
-    List<TelemetryPing> getAllPings();
+    public String getProfileName() {
+        return profileName;
+    }
+
+    
+
+
+    public abstract List<TelemetryPing> getAllPings();
 
     
 
@@ -36,13 +48,13 @@ public interface TelemetryPingStore extends Parcelable {
 
 
 
-    void storePing(TelemetryPing ping) throws IOException;
+    public abstract void storePing(TelemetryPing ping) throws IOException;
 
     
 
 
 
-    void maybePrunePings();
+    public abstract void maybePrunePings();
 
     
 
@@ -50,5 +62,5 @@ public interface TelemetryPingStore extends Parcelable {
 
 
 
-    void onUploadAttemptComplete(Set<String> successfulRemoveIDs);
+    public abstract void onUploadAttemptComplete(Set<String> successfulRemoveIDs);
 }
