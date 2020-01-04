@@ -19,7 +19,6 @@ let breakdownModel = exports.breakdown = PropTypes.shape({
 
 
 
-let stateKeys = Object.keys(states).map(state => states[state]);
 let snapshotModel = exports.snapshot = PropTypes.shape({
   
   id: PropTypes.number.isRequired,
@@ -38,18 +37,19 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   error: PropTypes.object,
   
   
-  state: function (snapshot, propName) {
-    let current = snapshot.state;
+  state: function (props, propName) {
+    let stateNames = Object.keys(states);
+    let current = props.state;
     let shouldHavePath = [states.SAVED, states.READ, states.SAVING_CENSUS, states.SAVED_CENSUS];
     let shouldHaveCensus = [states.SAVED_CENSUS];
 
-    if (!stateKeys.includes(current)) {
-      throw new Error(`Snapshot state must be one of ${stateKeys}.`);
+    if (!stateNames.includes(current)) {
+      throw new Error(`Snapshot state must be one of ${stateNames}.`);
     }
-    if (shouldHavePath.includes(current) && !snapshot.path) {
+    if (shouldHavePath.includes(current) && !path) {
       throw new Error(`Snapshots in state ${current} must have a snapshot path.`);
     }
-    if (shouldHaveCensus.includes(current) && (!snapshot.census || !snapshot.breakdown)) {
+    if (shouldHaveCensus.includes(current) && (!props.census || !props.breakdown)) {
       throw new Error(`Snapshots in state ${current} must have a census and breakdown.`);
     }
   },
