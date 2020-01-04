@@ -3253,7 +3253,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   nsCOMPtr<nsIURI> mMarkerEnd;        
   nsCOMPtr<nsIURI> mMarkerMid;        
   nsCOMPtr<nsIURI> mMarkerStart;      
-  nsStyleCoord    *mStrokeDasharray;  
+  nsTArray<nsStyleCoord> mStrokeDasharray;  
 
   nsStyleCoord     mStrokeDashoffset; 
   nsStyleCoord     mStrokeWidth;      
@@ -3262,7 +3262,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   float            mStrokeMiterlimit; 
   float            mStrokeOpacity;    
 
-  uint32_t         mStrokeDasharrayLength;
   uint8_t          mClipRule;         
   uint8_t          mColorInterpolation; 
   uint8_t          mColorInterpolationFilters; 
