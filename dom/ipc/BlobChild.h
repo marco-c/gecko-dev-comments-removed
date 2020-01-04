@@ -220,9 +220,6 @@ private:
 
   virtual bool
   DeallocPBlobStreamChild(PBlobStreamChild* aActor) override;
-
-  virtual bool
-  RecvCreatedFromKnownBlob() override;
 };
 
 
