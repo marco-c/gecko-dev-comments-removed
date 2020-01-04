@@ -42,10 +42,20 @@ using namespace js;
 
 
 
+static inline void* dtoa_malloc(size_t size)
+{
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    void* p = js_malloc(size);
+    if (!p)
+        oomUnsafe.crash("dtoa_malloc");
 
+    return p;
+}
 
-static inline void* dtoa_malloc(size_t size) { return js_malloc(size); }
-static inline void dtoa_free(void* p) { return js_free(p); }
+static inline void dtoa_free(void* p)
+{
+  return js_free(p);
+}
 
 #define NO_GLOBAL_STATE
 #define NO_ERRNO
