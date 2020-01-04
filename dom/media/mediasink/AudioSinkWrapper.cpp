@@ -122,7 +122,6 @@ void
 AudioSinkWrapper::SetPlaybackRate(double aPlaybackRate)
 {
   AssertOwnerThread();
-  mParams.mPlaybackRate = aPlaybackRate;
   if (!mAudioEnded) {
     
     
@@ -133,6 +132,10 @@ AudioSinkWrapper::SetPlaybackRate(double aPlaybackRate)
     mPlayDuration = GetVideoPosition(now);
     mPlayStartTime = now;
   }
+  
+  
+  mParams.mPlaybackRate = aPlaybackRate;
+
   
   
 }
