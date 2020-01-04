@@ -1094,6 +1094,13 @@ public:
 
   
 
+
+
+
+  bool HasPendingAudioTrack();
+
+  
+
   friend class MediaStreamGraphImpl;
 
 protected:
