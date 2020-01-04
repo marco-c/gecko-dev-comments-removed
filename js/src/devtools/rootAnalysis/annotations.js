@@ -3,6 +3,10 @@
 "use strict";
 
 
+
+var GCSuppressionTypes = [];
+
+
 var ignoreIndirectCalls = {
     "mallocSizeOf" : true,
     "aMallocSizeOf" : true,
@@ -186,6 +190,7 @@ var ignoreFunctions = {
     
     "void js::AutoCompartment::~AutoCompartment(int32)" : true,
     "void JSAutoCompartment::~JSAutoCompartment(int32)" : true,
+    "void js::AutoClearTypeInferenceStateOnOOM::~AutoClearTypeInferenceStateOnOOM()" : true,
 
     
     
@@ -322,13 +327,7 @@ function isUnsafeStorage(typeName)
 function isSuppressConstructor(varName)
 {
     
-    return [
-        "AutoSuppressGC",
-        "AutoAssertGCCallback",
-        "AutoEnterAnalysis",
-        "AutoSuppressGCAnalysis",
-        "AutoIgnoreRootingHazards"
-    ].indexOf(varName[1]) != -1;
+    return GCSuppressionTypes.indexOf(varName[1]) != -1;
 }
 
 

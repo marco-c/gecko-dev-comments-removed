@@ -551,7 +551,7 @@ class JS_PUBLIC_API(AutoSuppressGCAnalysis) : public AutoAssertNoAlloc
   public:
     AutoSuppressGCAnalysis() : AutoAssertNoAlloc() {}
     explicit AutoSuppressGCAnalysis(JSRuntime* rt) : AutoAssertNoAlloc(rt) {}
-};
+} JS_HAZ_GC_SUPPRESSED;
 
 
 
