@@ -13,10 +13,10 @@ add_task(function () {
   
   
   const URL = "data:text/html;charset=utf-8," +
-              "<frameset cols=50%25,50%25><frame src=about%3Amozilla>" +
-              "<frame src=about%3Arobots></frameset>" +
+              "<frameset cols=50%25,50%25><frame src='data:text/html,A'>" +
+              "<frame src='data:text/html,B'></frameset>" +
               "<script>var i=document.createElement('iframe');" +
-              "i.setAttribute('src', 'about%3Arights');" +
+              "i.setAttribute('src', 'data:text/html,C');" +
               "document.body.appendChild(i);</script>";
 
   
@@ -29,8 +29,8 @@ add_task(function () {
 
   
   ok(entries[0].url.startsWith("data:text/html"), "correct root url");
-  is(entries[0].children[0].url, "about:mozilla", "correct url for 1st frame");
-  is(entries[0].children[1].url, "about:robots", "correct url for 2nd frame");
+  is(entries[0].children[0].url, "data:text/html,A", "correct url for 1st frame");
+  is(entries[0].children[1].url, "data:text/html,B", "correct url for 2nd frame");
 
   
   is(entries.length, 1, "there is one root entry ...");
@@ -50,10 +50,10 @@ add_task(function () {
   
   
   const URL = "data:text/html;charset=utf-8," +
-              "<iframe name=t src=about%3Amozilla></iframe>" +
-              "<a id=lnk href=about%3Arobots target=t>clickme</a>" +
+              "<iframe name=t src='data:text/html,A'></iframe>" +
+              "<a id=lnk href='data:text/html,B' target=t>clickme</a>" +
               "<script>var i=document.createElement('iframe');" +
-              "i.setAttribute('src', 'about%3Arights');" +
+              "i.setAttribute('src', 'data:text/html,C');" +
               "document.body.appendChild(i);</script>";
 
   
