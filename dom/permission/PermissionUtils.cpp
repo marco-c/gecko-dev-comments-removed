@@ -13,8 +13,7 @@ const char* kPermissionTypes[] = {
   "geo",
   "desktop-notification",
   
-  "desktop-notification",
-  "midi"
+  "desktop-notification"
 };
 
 
