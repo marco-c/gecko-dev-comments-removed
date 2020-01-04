@@ -1,4 +1,12 @@
 
+
+
+
+
+
+#include "ThreadInfo.h"
+#include "ThreadProfile.h"
+
 ThreadInfo::ThreadInfo(const char* aName, int aThreadId,
                        bool aIsMainThread, PseudoStack* aPseudoStack,
                        void* aStackTop)
@@ -13,6 +21,12 @@ ThreadInfo::ThreadInfo(const char* aName, int aThreadId,
 {
 #ifndef SPS_STANDALONE
   mThread = NS_GetCurrentThread();
+#endif
+
+  
+#ifdef XP_MACOSX
+  pthread_t self = pthread_self();
+  mStackTop = pthread_get_stackaddr_np(self);
 #endif
 }
 
