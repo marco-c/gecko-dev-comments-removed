@@ -380,8 +380,6 @@ protected:
   NS_IMETHOD ScrollSelectionIntoView(bool aScrollToAnchor);
 
   
-  bool IsBlockNode(nsIDOMNode* aNode);
-  
   virtual bool IsBlockNode(nsINode* aNode);
 
   
