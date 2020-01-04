@@ -9,7 +9,7 @@
 #ifndef jit_none_AtomicOperations_none_h
 #define jit_none_AtomicOperations_none_h
 
-#include "jit/AtomicOperations.h"
+#include "mozilla/Assertions.h"
 
 
 

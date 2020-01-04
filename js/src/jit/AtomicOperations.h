@@ -7,15 +7,14 @@
 #ifndef jit_AtomicOperations_h
 #define jit_AtomicOperations_h
 
+#include "mozilla/Types.h"
+
 #include "vm/SharedMem.h"
 
 namespace js {
 namespace jit {
 
 class RegionLock;
-
-
-
 
 
 
@@ -275,7 +274,38 @@ class RegionLock
     uint32_t spinlock;
 };
 
+inline bool
+AtomicOperations::isLockfree(int32_t size)
+{
+    
+
+    switch (size) {
+      case 1:
+      case 2:
+      case 4:
+        return true;
+      case 8:
+        return AtomicOperations::isLockfree8();
+      default:
+        return false;
+    }
+}
+
 } 
 } 
+
+#if defined(JS_CODEGEN_ARM)
+# include "jit/arm/AtomicOperations-arm.h"
+#elif defined(JS_CODEGEN_ARM64)
+# include "jit/arm64/AtomicOperations-arm64.h"
+#elif defined(JS_CODEGEN_MIPS32)
+# include "jit/mips-shared/AtomicOperations-mips-shared.h"
+#elif defined(JS_CODEGEN_NONE)
+# include "jit/none/AtomicOperations-none.h"
+#elif defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+# include "jit/x86-shared/AtomicOperations-x86-shared.h"
+#else
+# error "Atomic operations must be defined for this platform"
+#endif
 
 #endif 

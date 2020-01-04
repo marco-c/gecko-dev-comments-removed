@@ -91,8 +91,6 @@
 #include "jsfuninlines.h"
 #include "jsscriptinlines.h"
 
-#include "jit/AtomicOperations-inl.h"
-
 #include "vm/Interpreter-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/String-inl.h"
@@ -334,7 +332,7 @@ IterPerformanceStats(JSContext* cx,
             continue;
         }
         js::AutoCompartment autoCompartment(cx, compartment);
-        RefPtr<PerformanceGroup> group = compartment->performanceMonitoring.getSharedGroup(cx);
+        mozilla::RefPtr<PerformanceGroup> group = compartment->performanceMonitoring.getSharedGroup(cx);
         if (group->data.ticks == 0) {
             
             continue;
@@ -371,12 +369,12 @@ IterPerformanceStats(JSContext* cx,
             continue;
         }
         js::AutoCompartment autoCompartment(cx, compartment);
-        RefPtr<PerformanceGroup> ownGroup = compartment->performanceMonitoring.getOwnGroup();
+        mozilla::RefPtr<PerformanceGroup> ownGroup = compartment->performanceMonitoring.getOwnGroup();
         if (ownGroup->data.ticks == 0) {
             
             continue;
         }
-        RefPtr<PerformanceGroup> sharedGroup = compartment->performanceMonitoring.getSharedGroup(cx);
+        mozilla::RefPtr<PerformanceGroup> sharedGroup = compartment->performanceMonitoring.getSharedGroup(cx);
         if (!(*walker)(cx,
                        ownGroup->data, ownGroup->uid, &sharedGroup->uid,
                        closure)) {
