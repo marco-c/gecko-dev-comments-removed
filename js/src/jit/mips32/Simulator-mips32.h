@@ -34,6 +34,7 @@
 #include "jslock.h"
 
 #include "jit/IonTypes.h"
+#include "threading/Mutex.h"
 
 namespace js {
 namespace jit {
@@ -380,7 +381,7 @@ class Simulator {
     
     
     
-    PRLock* cacheLock_;
+    Mutex cacheLock_;
 #ifdef DEBUG
     PRThread* cacheLockHolder_;
 #endif
