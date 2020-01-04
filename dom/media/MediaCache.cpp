@@ -2461,13 +2461,13 @@ nsresult MediaCacheStream::GetCachedRanges(nsTArray<MediaByteRange>& aRanges)
   
   NS_ASSERTION(mPinCount > 0, "Must be pinned");
 
-  int64_t startOffset = GetNextCachedData(0);
+  int64_t startOffset = GetNextCachedDataInternal(0);
   while (startOffset >= 0) {
-    int64_t endOffset = GetCachedDataEnd(startOffset);
+    int64_t endOffset = GetCachedDataEndInternal(startOffset);
     NS_ASSERTION(startOffset < endOffset, "Buffered range must end after its start");
     
     aRanges.AppendElement(MediaByteRange(startOffset, endOffset));
-    startOffset = GetNextCachedData(endOffset);
+    startOffset = GetNextCachedDataInternal(endOffset);
     NS_ASSERTION(startOffset == -1 || startOffset > endOffset,
       "Must have advanced to start of next range, or hit end of stream");
   }
