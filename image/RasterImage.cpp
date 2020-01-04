@@ -496,10 +496,14 @@ RasterImage::CopyFrame(uint32_t aWhichFrame, uint32_t aFlags)
 
   
   
-
-  IntSize size(mSize.width, mSize.height);
+  
+  
+  
+  
+  
+  
   RefPtr<DataSourceSurface> surf =
-    Factory::CreateDataSourceSurface(size,
+    Factory::CreateDataSourceSurface(frameRef->GetImageSize(),
                                      SurfaceFormat::B8G8R8A8,
                                       true);
   if (NS_WARN_IF(!surf)) {
@@ -515,7 +519,7 @@ RasterImage::CopyFrame(uint32_t aWhichFrame, uint32_t aFlags)
   RefPtr<DrawTarget> target =
     Factory::CreateDrawTargetForData(BackendType::CAIRO,
                                      mapping.mData,
-                                     size,
+                                     frameRef->GetImageSize(),
                                      mapping.mStride,
                                      SurfaceFormat::B8G8R8A8);
   if (!target) {
