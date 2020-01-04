@@ -12,6 +12,7 @@ import java.util.Map;
 
 import org.mozilla.gecko.AboutPages;
 import org.mozilla.gecko.GeckoProfile;
+import org.mozilla.gecko.R;
 import org.mozilla.gecko.db.BrowserContract.Bookmarks;
 import org.mozilla.gecko.db.BrowserContract.Combined;
 import org.mozilla.gecko.db.BrowserContract.FaviconColumns;
@@ -694,21 +695,25 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         final String TABLE_TOPSITES = "topsites";
 
-        final String totalLimit = uri.getQueryParameter(BrowserContract.PARAM_LIMIT);
-        final String suggestedGridLimit = uri.getQueryParameter(BrowserContract.PARAM_SUGGESTEDSITES_LIMIT);
+        final String limitParam = uri.getQueryParameter(BrowserContract.PARAM_LIMIT);
+        final String gridLimitParam = uri.getQueryParameter(BrowserContract.PARAM_SUGGESTEDSITES_LIMIT);
 
-        final String[] suggestedGridLimitArgs = new String[] {
-                suggestedGridLimit
-        };
+        final int totalLimit;
+        final int suggestedGridLimit;
 
-        final String[] totalLimitArgs = new String[] {
-                totalLimit
-        };
+        if (limitParam == null) {
+            totalLimit = 50;
+        } else {
+            totalLimit = Integer.parseInt(limitParam, 10);
+        }
 
-        final String pinnedSitesFromClause = "FROM " + TABLE_BOOKMARKS + " WHERE " + Bookmarks.PARENT + " == ?";
-        final String[] pinnedSitesArgs = new String[] {
-                String.valueOf(Bookmarks.FIXED_PINNED_LIST_ID)
-        };
+        if (gridLimitParam == null) {
+            suggestedGridLimit = getContext().getResources().getInteger(R.integer.number_of_top_sites);
+        } else {
+            suggestedGridLimit = Integer.parseInt(gridLimitParam, 10);
+        }
+
+        final String pinnedSitesFromClause = "FROM " + TABLE_BOOKMARKS + " WHERE " + Bookmarks.PARENT + " == " + Bookmarks.FIXED_PINNED_LIST_ID;
 
         
         
@@ -725,12 +730,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                 " ON numbers.position > free_ids.position" +
                 " GROUP BY numbers.position" +
                 " ORDER BY numbers.position ASC" +
-                " LIMIT ?";
-
-        final String[] freeIDArgs = DBUtils.concatenateSelectionArgs(
-                pinnedSitesArgs,
-                pinnedSitesArgs,
-                suggestedGridLimitArgs);
+                " LIMIT " + suggestedGridLimit;
 
         
         
@@ -739,16 +739,14 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                 " AND " +
                 Combined.URL + " NOT IN (SELECT " +
                 Bookmarks.URL + " FROM bookmarks WHERE " +
-                DBUtils.qualifyColumn("bookmarks", Bookmarks.PARENT) + " < ? AND " +
+                DBUtils.qualifyColumn("bookmarks", Bookmarks.PARENT) + " < " + Bookmarks.FIXED_ROOT_ID + " AND " +
                 DBUtils.qualifyColumn("bookmarks", Bookmarks.IS_DELETED) + " == 0)" +
                 " AND " +
                 "(" + Combined.URL + " NOT LIKE ?)";
 
         final String[] ignoreForTopSitesArgs = new String[] {
-                String.valueOf(Bookmarks.FIXED_ROOT_ID),
                 AboutPages.URL_FILTER
         };
-
 
         
         
@@ -759,7 +757,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         
         
         
-        final Cursor suggestedSitesCursor = suggestedSites.get(Integer.parseInt(suggestedGridLimit));
+        final Cursor suggestedSitesCursor = suggestedSites.get(suggestedGridLimit);
 
         String[] suggestedSiteArgs = new String[0];
 
@@ -792,10 +790,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         
         
         
-        final String suggestedLimitClause = " LIMIT MAX(0, (? - (SELECT COUNT(*) FROM " + TABLE_TOPSITES + ") - (SELECT COUNT(*) " + pinnedSitesFromClause + "))) ";
-
-        final String[] suggestedLimitArgs = DBUtils.concatenateSelectionArgs(suggestedGridLimitArgs,
-                                                                             pinnedSitesArgs);
+        final String suggestedLimitClause = " LIMIT MAX(0, (" + suggestedGridLimit + " - (SELECT COUNT(*) FROM " + TABLE_TOPSITES + ") - (SELECT COUNT(*) " + pinnedSitesFromClause + "))) ";
 
         db.beginTransaction();
         try {
@@ -813,10 +808,9 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                        " FROM " + Combined.VIEW_NAME +
                        " WHERE " + ignoreForTopSitesWhereClause +
                        " ORDER BY " + BrowserContract.getFrecencySortOrder(true, false) +
-                       " LIMIT ?",
+                       " LIMIT " + totalLimit,
 
-                       DBUtils.appendSelectionArgs(ignoreForTopSitesArgs,
-                                                   totalLimitArgs));
+                       ignoreForTopSitesArgs);
 
             if (!hasProcessedAnySuggestedSites) {
                 db.execSQL("INSERT INTO " + TABLE_TOPSITES +
@@ -838,11 +832,17 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                            Bookmarks.URL + " NOT IN (SELECT url " + pinnedSitesFromClause + ")" +
                            suggestedLimitClause + " )",
 
-                           DBUtils.concatenateSelectionArgs(suggestedSiteArgs,
-                                                            pinnedSitesArgs,
-                                                            suggestedLimitArgs));
+                           suggestedSiteArgs);
             }
 
+            
+            
+            
+            
+            
+            
+            
+            
             final SQLiteCursor c = (SQLiteCursor) db.rawQuery(
                         "SELECT " +
                         Bookmarks._ID + ", " +
@@ -850,7 +850,9 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                         TopSites.HISTORY_ID + ", " +
                         Bookmarks.URL + ", " +
                         Bookmarks.TITLE + ", " +
-                        Bookmarks.POSITION + ", " +
+                        "COALESCE(" + Bookmarks.POSITION + ", " +
+                            DBUtils.qualifyColumn(TABLE_TOPSITES, "rowid") + " + " + suggestedGridLimit +
+                        ")" + " AS " + Bookmarks.POSITION + ", " +
                         Combined.HISTORY_ID + ", " +
                         TopSites.TYPE +
                         " FROM " + TABLE_TOPSITES +
@@ -871,12 +873,11 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                         "NULL AS " + Combined.HISTORY_ID + ", " +
                         TopSites.TYPE_PINNED + " as " + TopSites.TYPE +
                         " FROM " + TABLE_BOOKMARKS +
-                        " WHERE " + Bookmarks.PARENT + " == ? " +
+                        " WHERE " + Bookmarks.PARENT + " == " + Bookmarks.FIXED_PINNED_LIST_ID +
 
                         " ORDER BY " + Bookmarks.POSITION,
 
-                         DBUtils.appendSelectionArgs(freeIDArgs,
-                                                     pinnedSitesArgs));
+                        null);
 
             c.setNotificationUri(getContext().getContentResolver(),
                                  BrowserContract.AUTHORITY_URI);
