@@ -1513,6 +1513,9 @@ private:
   
   
   bool mHasUserInteraction;
+
+  
+  bool mFirstFrameLoaded;
 };
 
 } 
