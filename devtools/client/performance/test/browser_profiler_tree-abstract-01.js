@@ -44,11 +44,14 @@ function* spawnTest() {
   
 
   let receivedExpandEvent = treeRoot.once("expand");
+  let receivedInitialFocusEvent = treeRoot.once("focus");
   EventUtils.sendMouseEvent({ type: "mousedown" }, treeRoot.target.querySelector(".arrow"));
 
   let eventItem = yield receivedExpandEvent;
   is(eventItem, treeRoot,
     "The 'expand' event target is correct.");
+
+  yield receivedInitialFocusEvent;
   is(document.commandDispatcher.focusedElement, treeRoot.target,
     "The root node is now focused.");
 
