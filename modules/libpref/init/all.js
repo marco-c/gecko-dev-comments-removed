@@ -3234,6 +3234,9 @@ pref("plugin.scan.WindowsMediaPlayer", "7.0");
 pref("plugin.scan.plid.all", true);
 
 
+pref("plugin.mousewheel.enabled", true);
+
+
 
 pref("network.autodial-helper.enabled", true);
 
