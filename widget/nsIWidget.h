@@ -1024,7 +1024,7 @@ class nsIWidget : public nsISupports {
 
 
     static void UpdateRegisteredPluginWindowVisibility(uintptr_t aOwnerWidget,
-                                                       nsTArray<uintptr_t>& aVisibleList);
+                                                       nsTArray<uintptr_t>& aPluginIds);
 
     
 

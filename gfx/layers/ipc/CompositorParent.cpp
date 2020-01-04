@@ -2002,10 +2002,8 @@ UpdatePluginWindowState(uint64_t aId)
       
       
       
-      nsTArray<uintptr_t> aVisibleIdList;
       uintptr_t parentWidget = (uintptr_t)lts.mParent->GetWidget();
-      unused << lts.mParent->SendUpdatePluginVisibility(parentWidget,
-                                                        aVisibleIdList);
+      unused << lts.mParent->SendHideAllPlugins(parentWidget);
       lts.mUpdatedPluginDataAvailable = false;
       return;
     }
@@ -2032,16 +2030,8 @@ UpdatePluginWindowState(uint64_t aId)
 
   
   if (shouldHidePlugin) {
-    
-    for (uint32_t pluginsIdx = 0; pluginsIdx < lts.mPluginData.Length();
-         pluginsIdx++) {
-      lts.mPluginData[pluginsIdx].visible() = false;
-    }
-    nsIntPoint offset;
-    nsIntRegion region;
-    unused << lts.mParent->SendUpdatePluginConfigurations(offset,
-                                                          region,
-                                                          lts.mPluginData);
+    uintptr_t parentWidget = (uintptr_t)lts.mParent->GetWidget();
+    unused << lts.mParent->SendHideAllPlugins(parentWidget);
     
     
     lts.mPluginData.Clear();

@@ -307,8 +307,6 @@ CompositorChild::RecvUpdatePluginConfigurations(const nsIntPoint& aContentOffset
       
       if (isVisible) {
         
-        gfx::IntRect bounds = aPlugins[pluginsIdx].bounds();
-        gfx::IntRect rect(0, 0, bounds.width, bounds.height);
 #if defined(XP_WIN)
         
         
@@ -330,16 +328,16 @@ CompositorChild::RecvUpdatePluginConfigurations(const nsIntPoint& aContentOffset
 }
 
 bool
-CompositorChild::RecvUpdatePluginVisibility(const uintptr_t& aOwnerWidget,
-                                            nsTArray<uintptr_t>&& aVisibleIdList)
+CompositorChild::RecvHideAllPlugins(const uintptr_t& aParentWidget)
 {
 #if !defined(XP_WIN) && !defined(MOZ_WIDGET_GTK)
-  NS_NOTREACHED("CompositorChild::RecvUpdatePluginVisibility calls "
+  NS_NOTREACHED("CompositorChild::RecvHideAllPlugins calls "
                 "unexpected on this platform.");
   return false;
 #else
   MOZ_ASSERT(NS_IsMainThread());
-  nsIWidget::UpdateRegisteredPluginWindowVisibility(aOwnerWidget, aVisibleIdList);
+  nsTArray<uintptr_t> list;
+  nsIWidget::UpdateRegisteredPluginWindowVisibility(aParentWidget, list);
   return true;
 #endif 
 }
