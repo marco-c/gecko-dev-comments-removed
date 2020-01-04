@@ -205,8 +205,10 @@ private:
   
   
   void StartBuffering();
-public:
 
+  bool CanPlayThrough();
+
+public:
   void DispatchStartBuffering()
   {
     nsCOMPtr<nsIRunnable> runnable =
