@@ -1,36 +1,40 @@
 
 
 
+"use strict";
+
+
+
+
+
+
 
 
 function test() {
   
   waitForExplicitFinish();
-  let aboutNewTabService = Components.classes["@mozilla.org/browser/aboutnewtab-service;1"]
-                                     .getService(Components.interfaces.nsIAboutNewTabService);
 
   let windowsToClose = [];
-  let newTab;
   let newTabURL;
   let mode;
 
   function doTest(aIsPrivateMode, aWindow, aCallback) {
-    whenNewTabLoaded(aWindow, function () {
+    whenNewTabLoaded(aWindow, function() {
       if (aIsPrivateMode) {
         mode = "per window private browsing";
         newTabURL = "about:privatebrowsing";
       } else {
         mode = "normal";
-        newTabURL = aboutNewTabService.newTabURL;
+        newTabURL = "about:newtab";
       }
 
       is(aWindow.gBrowser.currentURI.spec, newTabURL,
         "URL of NewTab should be " + newTabURL + " in " + mode +  " mode");
 
       aWindow.gBrowser.removeTab(aWindow.gBrowser.selectedTab);
-      aCallback()
+      aCallback();
     });
-  };
+  }
 
   function testOnWindow(aOptions, aCallback) {
     whenNewWindowLoaded(aOptions, function(aWin) {
@@ -40,9 +44,9 @@ function test() {
       
       executeSoon(() => aCallback(aWin));
     });
-  };
+  }
 
-   
+  
   registerCleanupFunction(function() {
     windowsToClose.forEach(function(aWin) {
       aWin.close();

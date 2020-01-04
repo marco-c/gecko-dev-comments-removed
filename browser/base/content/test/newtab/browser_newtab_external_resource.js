@@ -9,12 +9,18 @@
 
 
 
-const ABOUT_NEWTAB_URI = "about:newtab";
-const PREF_URI = "http://example.com/browser/browser/base/content/test/newtab/external_newtab.html";
+
+
+
+"use strict";
 
 var browser = null;
 var aboutNewTabService = Cc["@mozilla.org/browser/aboutnewtab-service;1"]
                            .getService(Ci.nsIAboutNewTabService);
+
+const ABOUT_NEWTAB_URI = "about:newtab";
+const PREF_URI = "http://example.com/browser/browser/base/content/test/newtab/external_newtab.html";
+const DEFAULT_URI = aboutNewTabService.newTabURL;
 
 function testPref() {
   
@@ -34,7 +40,7 @@ function testPref() {
 
     
     aboutNewTabService.resetNewTabURL();
-    is(aboutNewTabService.newTabURL, ABOUT_NEWTAB_URI,
+    is(aboutNewTabService.newTabURL, DEFAULT_URI,
        "sanity check: resetting the URL to about:newtab should return about:newtab");
 
     
