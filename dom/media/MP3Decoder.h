@@ -13,6 +13,7 @@ namespace mozilla {
 class MP3Decoder : public MediaDecoder {
 public:
   
+  explicit MP3Decoder(MediaDecoderOwner* aOwner) : MediaDecoder(aOwner) {}
   MediaDecoder* Clone() override;
   MediaDecoderStateMachine* CreateStateMachine() override;
 

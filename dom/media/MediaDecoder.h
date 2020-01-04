@@ -299,7 +299,7 @@ public:
   
   static void InitStatics();
 
-  MediaDecoder();
+  explicit MediaDecoder(MediaDecoderOwner* aOwner);
 
   
   
