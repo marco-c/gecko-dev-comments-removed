@@ -80,6 +80,14 @@ var Reader = {
         ReaderMode.removeArticleFromCache(aData).catch(e => Cu.reportError("Error removing article from cache: " + e));
         break;
       }
+
+      case "Reader:AddToCache": {
+        
+        this._getArticle(aData).then((article) => {
+          ReaderMode.storeArticleInCache(article);
+        }).catch(e => Cu.reportError("Error storing article in cache: " + e));
+        break;
+      }
     }
   },
 
