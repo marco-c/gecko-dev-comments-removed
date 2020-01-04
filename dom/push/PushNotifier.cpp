@@ -131,7 +131,7 @@ PushNotifier::NotifyPushWorkers(const nsACString& aScope,
 
   
   
-  bool ok = false;
+  bool ok = true;
   nsTArray<ContentParent*> contentActors;
   ContentParent::GetAll(contentActors);
   for (uint32_t i = 0; i < contentActors.Length(); ++i) {
@@ -169,7 +169,7 @@ PushNotifier::NotifySubscriptionChangeWorkers(const nsACString& aScope,
   }
 
   
-  bool ok = false;
+  bool ok = true;
   nsTArray<ContentParent*> contentActors;
   ContentParent::GetAll(contentActors);
   for (uint32_t i = 0; i < contentActors.Length(); ++i) {
