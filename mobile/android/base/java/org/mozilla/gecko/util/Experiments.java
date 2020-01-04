@@ -37,9 +37,9 @@ public class Experiments {
 
     
     
-    public static final String ONBOARDING2_A = "onboarding2-a"; 
-    public static final String ONBOARDING2_B = "onboarding2-b"; 
-    public static final String ONBOARDING2_C = "onboarding2-c"; 
+    public static final String ONBOARDING3_A = "onboarding3-a"; 
+    public static final String ONBOARDING3_B = "onboarding3-b"; 
+    public static final String ONBOARDING3_C = "onboarding3-c"; 
 
     
     public static final String DOWNLOAD_CONTENT_CATALOG_SYNC = "download-content-catalog-sync";
@@ -95,12 +95,12 @@ public class Experiments {
 
 
     public static boolean isInExperimentLocal(Context context, String experiment) {
-        if (SwitchBoard.isInBucket(context, 0, 33)) {
-            return Experiments.ONBOARDING2_A.equals(experiment);
-        } else if (SwitchBoard.isInBucket(context, 33, 66)) {
-            return Experiments.ONBOARDING2_B.equals(experiment);
-        } else if (SwitchBoard.isInBucket(context, 66, 100)) {
-            return Experiments.ONBOARDING2_C.equals(experiment);
+        if (SwitchBoard.isInBucket(context, 0, 20)) {
+            return Experiments.ONBOARDING3_A.equals(experiment);
+        } else if (SwitchBoard.isInBucket(context, 20, 60)) {
+            return Experiments.ONBOARDING3_B.equals(experiment);
+        } else if (SwitchBoard.isInBucket(context, 60, 100)) {
+            return Experiments.ONBOARDING3_C.equals(experiment);
         } else {
             return false;
         }
