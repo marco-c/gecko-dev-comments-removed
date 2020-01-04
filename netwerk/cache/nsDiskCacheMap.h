@@ -408,8 +408,7 @@ public:
 
 
     nsresult  Open( nsIFile *  cacheDirectory,
-                    nsDiskCache::CorruptCacheInfo *  corruptInfo,
-                    bool reportCacheCleanTelemetryData);
+                    nsDiskCache::CorruptCacheInfo *  corruptInfo);
     nsresult  Close(bool flush);
     nsresult  Trim();
 
@@ -542,8 +541,7 @@ private:
 
     
     nsresult InitCacheClean(nsIFile *  cacheDirectory,
-                            nsDiskCache::CorruptCacheInfo *  corruptInfo,
-                            bool reportCacheCleanTelemetryData);
+                            nsDiskCache::CorruptCacheInfo *  corruptInfo);
     
     nsresult WriteCacheClean(bool clean);
     
