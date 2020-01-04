@@ -539,12 +539,6 @@ this.FxAccountsClient.prototype = {
             "fxaBackoffTimer"
            );
         }
-        if (isInvalidTokenError(error)) {
-          
-          
-          Services.telemetry.getKeyedHistogramById(
-            "FXA_HAWK_ERRORS").add(path.replace(/[?#].*/, ''));
-        }
         deferred.reject(error);
       }
     );

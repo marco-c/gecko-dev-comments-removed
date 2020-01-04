@@ -1229,13 +1229,11 @@ SyncEngine.prototype = {
   },
 
   _noteApplyFailure: function () {
-    Services.telemetry.getKeyedHistogramById(
-      "WEAVE_ENGINE_APPLY_FAILURES").add(this.name);
+    
   },
 
   _noteApplyNewFailure: function () {
-    Services.telemetry.getKeyedHistogramById(
-      "WEAVE_ENGINE_APPLY_NEW_FAILURES").add(this.name);
+    
   },
 
   
