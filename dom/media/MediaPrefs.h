@@ -147,6 +147,11 @@ private:
   DECL_MEDIA_PREF("media.num-decode-threads",                 MediaThreadPoolDefaultCount, uint32_t, 4);
   DECL_MEDIA_PREF("media.decoder.limit",                      MediaDecoderLimit, int32_t, MediaDecoderLimitDefault());
 
+  
+  DECL_MEDIA_PREF("media.ogg.enabled",                        OggEnabled, bool, true);
+  DECL_MEDIA_PREF("media.format-reader.ogg",                  OggFormatReader, bool, true);
+  DECL_MEDIA_PREF("media.ogg.flac.enabled",                   FlacInOgg, bool, false);
+
 public:
   
   static MediaPrefs& GetSingleton();
