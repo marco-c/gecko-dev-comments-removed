@@ -273,9 +273,10 @@ SyncScheduler.prototype = {
         this._log.debug("Woke from sleep.");
         Utils.nextTick(() => {
           
+          
           if (this.numClients > 1) {
-            this._log.debug("More than 1 client. Syncing.");
-            this.scheduleNextSync(0);
+            this._log.debug("More than 1 client. Will sync in 5s.");
+            this.scheduleNextSync(5000);
           }
         });
         break;
