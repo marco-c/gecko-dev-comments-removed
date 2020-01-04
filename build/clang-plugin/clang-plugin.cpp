@@ -435,6 +435,8 @@ public:
       bool overridden = false;
       for (CXXRecordDecl::method_iterator M = d->method_begin();
            !overridden && M != d->method_end(); ++M) {
+        if (!M->getIdentifier() || !(*it)->getIdentifier())
+          continue;
         
         
         if (M->getName() == (*it)->getName() &&
@@ -509,6 +511,8 @@ bool classHasAddRefRelease(const CXXRecordDecl *D) {
   bool seenRelease = false;
   for (CXXRecordDecl::method_iterator method = D->method_begin();
        method != D->method_end(); ++method) {
+    if (!method->getIdentifier())
+      continue;
     const auto &name = method->getName();
     if (name == "AddRef") {
       seenAddRef = true;
