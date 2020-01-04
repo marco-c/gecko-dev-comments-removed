@@ -96,8 +96,7 @@ RelatedAccIterator::Next()
     return nullptr;
 
   while (mIndex < mProviders->Length()) {
-    const std::unique_ptr<DocAccessible::AttrRelProvider>& provider =
-      (*mProviders)[mIndex++];
+    DocAccessible::AttrRelProvider* provider = (*mProviders)[mIndex++];
 
     
     
