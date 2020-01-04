@@ -3,7 +3,9 @@
 
 "use strict";
 
-const DEFAULT_MAX_DEPTH = 3;
+const { Visitor, walk } = require("resource://devtools/shared/heapsnapshot/CensusUtils.js");
+
+const DEFAULT_MAX_DEPTH = 4;
 const DEFAULT_MAX_SIBLINGS = 15;
 
 
@@ -12,9 +14,15 @@ const DEFAULT_MAX_SIBLINGS = 15;
 
 
 
-function DominatorTreeNode(nodeId, retainedSize) {
+function DominatorTreeNode(nodeId, label, shallowSize, retainedSize) {
   
   this.nodeId = nodeId;
+
+  
+  this.label = label;
+
+  
+  this.shallowSize = shallowSize;
 
   
   this.retainedSize = retainedSize;
@@ -63,6 +71,109 @@ DominatorTreeNode.addChild = function (parent, child) {
 
 
 
+function LabelAndShallowSizeVisitor() {
+  
+  this._labelPieces = [];
+
+  
+  
+  this._label = undefined;
+
+  
+  
+  this._shallowSize = 0;
+}
+
+DominatorTreeNode.LabelAndShallowSizeVisitor = LabelAndShallowSizeVisitor;
+
+LabelAndShallowSizeVisitor.prototype = Object.create(Visitor);
+
+
+
+
+LabelAndShallowSizeVisitor.prototype.enter = function (breakdown, report, edge) {
+  if (this._labelPieces && edge) {
+    this._labelPieces.push(edge);
+  }
+};
+
+
+
+
+LabelAndShallowSizeVisitor.prototype.exit = function (breakdown, report, edge) {
+  if (this._labelPieces && edge) {
+    this._labelPieces.pop();
+  }
+};
+
+
+
+
+LabelAndShallowSizeVisitor.prototype.count = function (breakdown, report, edge) {
+  if (report.count === 0) {
+    return;
+  }
+
+  this._label = this._labelPieces;
+  this._labelPieces = undefined;
+
+  this._shallowSize = report.bytes;
+};
+
+
+
+
+
+
+LabelAndShallowSizeVisitor.prototype.label = function () {
+  return this._label;
+};
+
+
+
+
+
+
+LabelAndShallowSizeVisitor.prototype.shallowSize = function () {
+  return this._shallowSize;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DominatorTreeNode.getLabelAndShallowSize = function (nodeId,
+                                                     snapshot,
+                                                     breakdown) {
+  const description = snapshot.describeNode(breakdown, nodeId);
+
+  const visitor = new LabelAndShallowSizeVisitor();
+  walk(breakdown, description, visitor);
+
+  return {
+    label: visitor.label(),
+    shallowSize: visitor.shallowSize(),
+  };
+};
+
+
+
+
+
 
 
 
@@ -75,11 +186,15 @@ DominatorTreeNode.addChild = function (parent, child) {
 
 
 DominatorTreeNode.partialTraversal = function (dominatorTree,
+                                               snapshot,
+                                               breakdown,
                                                maxDepth = DEFAULT_MAX_DEPTH,
                                                maxSiblings = DEFAULT_MAX_SIBLINGS) {
   function dfs(nodeId, depth) {
-    const size = dominatorTree.getRetainedSize(nodeId);
-    const node = new DominatorTreeNode(nodeId, size);
+    const { label, shallowSize } =
+      DominatorTreeNode.getLabelAndShallowSize(nodeId, snapshot, breakdown);
+    const retainedSize = dominatorTree.getRetainedSize(nodeId);
+    const node = new DominatorTreeNode(nodeId, label, shallowSize, retainedSize);
     const childNodeIds = dominatorTree.getImmediatelyDominated(nodeId);
 
     const newDepth = depth + 1;

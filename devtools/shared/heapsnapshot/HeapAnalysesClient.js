@@ -182,9 +182,13 @@ HeapAnalysesClient.prototype.computeDominatorTree = function (snapshotFilePath) 
 
 
 
+
+
 HeapAnalysesClient.prototype.getDominatorTree = function (opts) {
   return this._worker.performTask("getDominatorTree", opts);
 };
+
+
 
 
 
