@@ -11,6 +11,7 @@
 #include "nsID.h"
 #include "StreamBuffer.h"
 #include "MediaTrackConstraints.h"
+#include "PrincipalChangeObserver.h"
 
 namespace mozilla {
 
@@ -184,6 +185,11 @@ public:
   
   void NotifyEnded() { mEnded = true; }
 
+  
+
+
+  nsIPrincipal* GetPrincipal() const { return nullptr; }
+
   MediaStreamGraph* Graph();
 
   MediaStreamTrackSource& GetSource() const
@@ -195,6 +201,23 @@ public:
   
   
   void AssignId(const nsAString& aID) { mID = aID; }
+
+  
+
+
+
+
+
+
+
+  bool AddPrincipalChangeObserver(PrincipalChangeObserver<MediaStreamTrack>* aObserver);
+
+  
+
+
+
+
+  bool RemovePrincipalChangeObserver(PrincipalChangeObserver<MediaStreamTrack>* aObserver);
 
 protected:
   virtual ~MediaStreamTrack();
@@ -208,6 +231,8 @@ protected:
   
   
   DOMMediaStream* GetInputDOMStream();
+
+  nsTArray<PrincipalChangeObserver<MediaStreamTrack>*> mPrincipalChangeObservers;
 
   RefPtr<DOMMediaStream> mOwningStream;
   TrackID mTrackID;
