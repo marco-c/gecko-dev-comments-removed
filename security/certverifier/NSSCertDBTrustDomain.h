@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_psm__NSSCertDBTrustDomain_h
-#define mozilla_psm__NSSCertDBTrustDomain_h
+#ifndef NSSCertDBTrustDomain_h
+#define NSSCertDBTrustDomain_h
 
 #include "CertVerifier.h"
 #include "nsICertBlocklist.h"
@@ -39,7 +39,7 @@ void UnloadLoadableRoots(const char* modNameUTF8);
 
 char* DefaultServerNicknameForCert(CERTCertificate* cert);
 
-void SaveIntermediateCerts(const ScopedCERTCertList& certList);
+void SaveIntermediateCerts(const UniqueCERTCertList& certList);
 
 class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain
 {
@@ -63,7 +63,7 @@ public:
                        unsigned int minRSABits,
                        ValidityCheckingMode validityCheckingMode,
                        CertVerifier::SHA1Mode sha1Mode,
-                       ScopedCERTCertList& builtChain,
+                       UniqueCERTCertList& builtChain,
            PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
            const char* hostname = nullptr);
 
@@ -149,7 +149,7 @@ private:
   const unsigned int mMinRSABits;
   ValidityCheckingMode mValidityCheckingMode;
   CertVerifier::SHA1Mode mSHA1Mode;
-  ScopedCERTCertList& mBuiltChain; 
+  UniqueCERTCertList& mBuiltChain; 
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname; 
   nsCOMPtr<nsICertBlocklist> mCertBlocklist;

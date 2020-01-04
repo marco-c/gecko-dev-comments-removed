@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZILLA_PSM_TRANSPORTSECURITYINFO_H
-#define _MOZILLA_PSM_TRANSPORTSECURITYINFO_H
+#ifndef TransportSecurityInfo_h
+#define TransportSecurityInfo_h
 
 #include "ScopedNSSTypes.h"
 #include "certt.h"
@@ -70,13 +70,13 @@ public:
   
   void SetCanceled(PRErrorCode errorCode,
                    ::mozilla::psm::SSLErrorMessageType errorMessageType);
-  
+
   
   nsresult SetSSLStatus(nsSSLStatus *aSSLStatus);
   nsSSLStatus* SSLStatus() { return mSSLStatus; }
   void SetStatusErrorBits(nsNSSCertificate* cert, uint32_t collected_errors);
 
-  nsresult SetFailedCertChain(ScopedCERTCertList& certList);
+  nsresult SetFailedCertChain(UniqueCERTCertList certList);
 
 private:
   mutable ::mozilla::Mutex mMutex;

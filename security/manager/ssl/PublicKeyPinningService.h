@@ -5,8 +5,9 @@
 #ifndef PublicKeyPinningService_h
 #define PublicKeyPinningService_h
 
-#include "cert.h"
 #include "CertVerifier.h"
+#include "ScopedNSSTypes.h"
+#include "cert.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "pkix/Time.h"
@@ -26,7 +27,7 @@ public:
 
 
 
-  static nsresult ChainHasValidPins(const CERTCertList* certList,
+  static nsresult ChainHasValidPins(const UniqueCERTCertList& certList,
                                     const char* hostname,
                                     mozilla::pkix::Time time,
                                     bool enforceTestMode,
@@ -37,7 +38,7 @@ public:
 
 
 
-  static nsresult ChainMatchesPinset(const CERTCertList* certList,
+  static nsresult ChainMatchesPinset(const UniqueCERTCertList& certList,
                                      const nsTArray<nsCString>& aSHA256keys,
                               bool& chainMatchesPinset);
 

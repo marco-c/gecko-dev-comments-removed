@@ -3,20 +3,20 @@
 
 
 
-#ifndef _NS_NSSCERTIFICATE_H_
-#define _NS_NSSCERTIFICATE_H_
+#ifndef nsNSSCertificate_h
+#define nsNSSCertificate_h
 
+#include "ScopedNSSTypes.h"
+#include "certt.h"
+#include "nsCOMPtr.h"
+#include "nsIASN1Object.h"
+#include "nsIClassInfo.h"
+#include "nsISerializable.h"
+#include "nsISimpleEnumerator.h"
 #include "nsIX509Cert.h"
 #include "nsIX509CertDB.h"
 #include "nsIX509CertList.h"
-#include "nsIASN1Object.h"
-#include "nsCOMPtr.h"
 #include "nsNSSShutDown.h"
-#include "nsISimpleEnumerator.h"
-#include "nsISerializable.h"
-#include "nsIClassInfo.h"
-#include "ScopedNSSTypes.h"
-#include "certt.h"
 
 namespace mozilla { namespace pkix { class DERArray; } }
 
@@ -84,7 +84,7 @@ namespace mozilla {
 
 SECStatus ConstructCERTCertListFromReversedDERArray(
             const mozilla::pkix::DERArray& certArray,
-             mozilla::ScopedCERTCertList& certList);
+             mozilla::UniqueCERTCertList& certList);
 
 } 
 
@@ -98,20 +98,21 @@ public:
   NS_DECL_NSISERIALIZABLE
 
   
-  nsNSSCertList(mozilla::ScopedCERTCertList& certList,
+  nsNSSCertList(mozilla::UniqueCERTCertList certList,
                 const nsNSSShutDownPreventionLock& proofOfLock);
 
   nsNSSCertList();
 
-  static CERTCertList* DupCertList(CERTCertList* aCertList,
-                                   const nsNSSShutDownPreventionLock&
-                                     proofOfLock);
+  static mozilla::UniqueCERTCertList DupCertList(
+    const mozilla::UniqueCERTCertList& certList,
+    const nsNSSShutDownPreventionLock& proofOfLock);
+
 private:
    virtual ~nsNSSCertList();
    virtual void virtualDestroyNSSReference() override;
    void destructorSafeDestroyNSSReference();
 
-   mozilla::ScopedCERTCertList mCertList;
+   mozilla::UniqueCERTCertList mCertList;
 
    nsNSSCertList(const nsNSSCertList&) = delete;
    void operator=(const nsNSSCertList&) = delete;
@@ -124,14 +125,14 @@ public:
    NS_DECL_THREADSAFE_ISUPPORTS
    NS_DECL_NSISIMPLEENUMERATOR
 
-   nsNSSCertListEnumerator(CERTCertList* certList,
+   nsNSSCertListEnumerator(const mozilla::UniqueCERTCertList& certList,
                            const nsNSSShutDownPreventionLock& proofOfLock);
 private:
    virtual ~nsNSSCertListEnumerator();
    virtual void virtualDestroyNSSReference() override;
    void destructorSafeDestroyNSSReference();
 
-   mozilla::ScopedCERTCertList mCertList;
+   mozilla::UniqueCERTCertList mCertList;
 
    nsNSSCertListEnumerator(const nsNSSCertListEnumerator&) = delete;
    void operator=(const nsNSSCertListEnumerator&) = delete;

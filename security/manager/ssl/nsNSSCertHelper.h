@@ -2,25 +2,26 @@
 
 
 
-#ifndef _NSNSSCERTHELPER_H_
-#define _NSNSSCERTHELPER_H_
+#ifndef nsNSSCertHelper_h
+#define nsNSSCertHelper_h
 
 #ifndef INET6_ADDRSTRLEN
 #define INET6_ADDRSTRLEN 46
 #endif
 
+#include "ScopedNSSTypes.h"
 #include "certt.h"
 #include "nsString.h"
 
 uint32_t
 getCertType(CERTCertificate *cert);
 
-CERTCertNicknames *
-getNSSCertNicknamesFromCertList(CERTCertList *certList);
+CERTCertNicknames*
+getNSSCertNicknamesFromCertList(const mozilla::UniqueCERTCertList& certList);
 
 nsresult
 GetCertFingerprintByOidTag(CERTCertificate* nsscert,
                            SECOidTag aOidTag, 
                            nsCString &fp);
 
-#endif
+#endif 

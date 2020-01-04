@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_psm_AppsTrustDomain_h
-#define mozilla_psm_AppsTrustDomain_h
+#ifndef AppTrustDomain_h
+#define AppTrustDomain_h
 
 #include "pkix/pkixtypes.h"
 #include "mozilla/StaticMutex.h"
@@ -21,7 +21,7 @@ class AppTrustDomain final : public mozilla::pkix::TrustDomain
 public:
   typedef mozilla::pkix::Result Result;
 
-  AppTrustDomain(ScopedCERTCertList&, void* pinArg);
+  AppTrustDomain(UniqueCERTCertList& certChain, void* pinArg);
 
   SECStatus SetTrustedRoot(AppTrustedRoot trustedRoot);
 
@@ -67,7 +67,7 @@ public:
                            size_t digestBufLen) override;
 
 private:
-   ScopedCERTCertList& mCertChain;
+   UniqueCERTCertList& mCertChain;
   void* mPinArg; 
   UniqueCERTCertificate mTrustedRoot;
   unsigned int mMinRSABits;

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_psm__CertVerifier_h
-#define mozilla_psm__CertVerifier_h
+#ifndef CertVerifier_h
+#define CertVerifier_h
 
 #include "BRNameMatchingPolicy.h"
 #include "OCSPCache.h"
@@ -74,7 +74,7 @@ public:
                        mozilla::pkix::Time time,
                        void* pinArg,
                        const char* hostname,
-                ScopedCERTCertList& builtChain,
+                UniqueCERTCertList& builtChain,
                        Flags flags = 0,
         const SECItem* stapledOCSPResponse = nullptr,
        SECOidTag* evOidPolicy = nullptr,
@@ -89,7 +89,7 @@ public:
                     mozilla::pkix::Time time,
         void* pinarg,
                     const char* hostname,
-             ScopedCERTCertList& builtChain,
+             UniqueCERTCertList& builtChain,
         bool saveIntermediatesInPermanentDatabase = false,
         Flags flags = 0,
     SECOidTag* evOidPolicy = nullptr,
