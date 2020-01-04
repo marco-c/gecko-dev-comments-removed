@@ -12,6 +12,7 @@
 #include "keyhi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
+#include "mozilla/unused.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsISupportsPriority.h"
@@ -99,25 +100,24 @@ ReadChainIntoCertList(const nsACString& aCertChain, CERTCertList* aCertList,
         inBlock = false;
         certFound = true;
         
-        UniqueSECItem der(::SECITEM_AllocItem(nullptr, nullptr, 0));
-        if (!der || !NSSBase64_DecodeBuffer(nullptr, der.get(),
-                                            blockData.BeginReading(),
-                                            blockData.Length())) {
+        ScopedAutoSECItem der;
+        if (!NSSBase64_DecodeBuffer(nullptr, &der, blockData.BeginReading(),
+                                    blockData.Length())) {
           CSVerifier_LOG(("CSVerifier: decoding the signature failed\n"));
           return NS_ERROR_FAILURE;
         }
-        CERTCertificate* tmpCert =
-          CERT_NewTempCertificate(CERT_GetDefaultCertDB(), der.get(), nullptr,
-                                  false, true);
+        UniqueCERTCertificate tmpCert(
+          CERT_NewTempCertificate(CERT_GetDefaultCertDB(), &der, nullptr, false,
+                                  true));
         if (!tmpCert) {
           return NS_ERROR_FAILURE;
         }
         
-        SECStatus res = CERT_AddCertToListTail(aCertList, tmpCert);
+        SECStatus res = CERT_AddCertToListTail(aCertList, tmpCert.get());
         if (res != SECSuccess) {
-          CERT_DestroyCertificate(tmpCert);
           return MapSECStatus(res);
         }
+        Unused << tmpCert.release();
       } else {
         blockData.Append(token);
       }
@@ -214,28 +214,24 @@ ContentSignatureVerifier::CreateContextInternal(const nsACString& aData,
   }
 
   
-  UniqueSECItem rawSignatureItem(::SECITEM_AllocItem(nullptr, nullptr, 0));
-  if (!rawSignatureItem ||
-      !NSSBase64_DecodeBuffer(nullptr, rawSignatureItem.get(),
-                              mSignature.get(), mSignature.Length())) {
+  ScopedAutoSECItem rawSignatureItem;
+  if (!NSSBase64_DecodeBuffer(nullptr, &rawSignatureItem, mSignature.get(),
+                              mSignature.Length())) {
     CSVerifier_LOG(("CSVerifier: decoding the signature failed\n"));
     return NS_ERROR_FAILURE;
   }
 
   
-  UniqueSECItem signatureItem(::SECITEM_AllocItem(nullptr, nullptr, 0));
-  if (!signatureItem) {
-    return NS_ERROR_FAILURE;
-  }
+  ScopedAutoSECItem signatureItem;
   
   
   
-  if (rawSignatureItem->len == 0 || rawSignatureItem->len % 2 != 0) {
+  if (rawSignatureItem.len == 0 || rawSignatureItem.len % 2 != 0) {
     CSVerifier_LOG(("CSVerifier: signature length is bad\n"));
     return NS_ERROR_FAILURE;
   }
-  if (DSAU_EncodeDerSigWithLen(signatureItem.get(), rawSignatureItem.get(),
-                               rawSignatureItem->len) != SECSuccess) {
+  if (DSAU_EncodeDerSigWithLen(&signatureItem, &rawSignatureItem,
+                               rawSignatureItem.len) != SECSuccess) {
     CSVerifier_LOG(("CSVerifier: encoding the signature failed\n"));
     return NS_ERROR_FAILURE;
   }
@@ -244,8 +240,7 @@ ContentSignatureVerifier::CreateContextInternal(const nsACString& aData,
   SECOidTag oid = SEC_OID_ANSIX962_ECDSA_SHA384_SIGNATURE;
 
   mCx = UniqueVFYContext(
-    VFY_CreateContext(mKey.get(), signatureItem.get(), oid, nullptr));
-
+    VFY_CreateContext(mKey.get(), &signatureItem, oid, nullptr));
   if (!mCx) {
     return NS_ERROR_INVALID_SIGNATURE;
   }
