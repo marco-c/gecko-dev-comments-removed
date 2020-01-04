@@ -143,12 +143,6 @@ CtypesKernelHelpers.prototype = {
 function CtypesVaultHelpers() {
   this._structs = {};
   this._functions = {};
-  
-  if (wintypes.VOIDP.size == 4) {
-    this._vaultHandleType = wintypes.DWORD;
-  } else {
-    this._vaultHandleType = wintypes.DWORDLONG;
-  }
 
   this._structs.GUID = new ctypes.StructType("GUID", [
     {id: wintypes.DWORD.array(4)},
@@ -205,13 +199,13 @@ function CtypesVaultHelpers() {
                                 
                                 wintypes.DWORD,
                                 
-                                this._vaultHandleType.ptr);
+                                wintypes.VOIDP.ptr);
     this._functions.VaultEnumerateItems =
       this._vaultcliLib.declare("VaultEnumerateItems",
                                 ctypes.winapi_abi,
                                 wintypes.DWORD,
                                 
-                                this._vaultHandleType,
+                                wintypes.VOIDP,
                                 
                                 wintypes.DWORD,
                                 
@@ -223,13 +217,13 @@ function CtypesVaultHelpers() {
                                 ctypes.winapi_abi,
                                 wintypes.DWORD,
                                 
-                                this._vaultHandleType);
+                                wintypes.VOIDP);
     this._functions.VaultGetItem =
       this._vaultcliLib.declare("VaultGetItem",
                                 ctypes.winapi_abi,
                                 wintypes.DWORD,
                                 
-                                this._vaultHandleType,
+                                wintypes.VOIDP,
                                 
                                 this._structs.GUID.ptr,
                                 
@@ -828,7 +822,7 @@ WindowsVaultFormPasswords.prototype = {
       let vaultCount = new wintypes.DWORD;
       error = new wintypes.DWORD;
       
-      vault = new ctypesVaultHelpers._vaultHandleType;
+      vault = new wintypes.VOIDP;
       
       error = ctypesVaultHelpers._functions.VaultOpenVault(vaultGuid.address(), 0, vault.address());
       if (error != RESULT_SUCCESS) {
