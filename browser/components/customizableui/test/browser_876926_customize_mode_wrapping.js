@@ -4,7 +4,7 @@
 
 "use strict";
 
-const kXULWidgetId = "sync-button";
+const kXULWidgetId = "a-test-button"; 
 const kAPIWidgetId = "feed-button";
 const kPanel = CustomizableUI.AREA_PANEL;
 const kToolbar = CustomizableUI.AREA_NAVBAR;
@@ -141,6 +141,16 @@ function checkPalette(id, method) {
   checkWrapper(id);
 }
 
+
+
+function createXULButtonForWindow(win) {
+  createDummyXULButton(kXULWidgetId, "test-button", win);
+}
+
+function removeXULButtonForWindow(win) {
+  win.gNavToolbox.palette.querySelector(`#${kXULWidgetId}`).remove();
+}
+
 var otherWin;
 
 
@@ -148,6 +158,9 @@ add_task(function MoveWidgetsInTwoWindows() {
   yield startCustomizing();
   otherWin = yield openAndLoadWindow(null, true);
   yield otherWin.PanelUI.ensureReady();
+  
+  createXULButtonForWindow(window);
+  createXULButtonForWindow(otherWin);
   ok(CustomizableUI.inDefaultState, "Should start in default state");
 
   for (let widgetId of [kXULWidgetId, kAPIWidgetId]) {
@@ -164,6 +177,7 @@ add_task(function MoveWidgetsInTwoWindows() {
   yield promiseWindowClosed(otherWin);
   otherWin = null;
   yield endCustomizing();
+  removeXULButtonForWindow(window);
 });
 
 add_task(function asyncCleanup() {
