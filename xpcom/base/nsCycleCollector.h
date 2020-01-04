@@ -39,7 +39,8 @@ void nsCycleCollector_prepareForGarbageCollection();
 
 void nsCycleCollector_finishAnyCurrentCollection();
 
-void nsCycleCollector_dispatchDeferredDeletion(bool aContinuation = false);
+void nsCycleCollector_dispatchDeferredDeletion(bool aContinuation = false,
+                                               bool aPurge = false);
 bool nsCycleCollector_doDeferredDeletion();
 
 already_AddRefed<nsICycleCollectorLogSink> nsCycleCollector_createLogSink();
