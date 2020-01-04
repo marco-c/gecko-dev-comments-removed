@@ -342,8 +342,11 @@ let DocumentManager = {
     }
 
     
+
     
-    context.execute(script, scheduled => scheduled == state);
+    
+    
+    context.execute(script, scheduled => true);
   },
 
   enumerateWindows: function*(docShell) {
@@ -415,7 +418,7 @@ let DocumentManager = {
       for (let script of extension.scripts) {
         if (script.matches(window)) {
           let context = this.getContext(extensionId, window);
-          context.execute(script, scheduled => isWhenBeforeOrSame(scheduled, state));
+          context.execute(script, scheduled => scheduled == state);
         }
       }
     }
