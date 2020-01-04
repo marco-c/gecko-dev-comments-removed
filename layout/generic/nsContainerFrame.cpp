@@ -372,7 +372,7 @@ nsContainerFrame::PeekOffsetCharacter(bool aForward, int32_t* aOffset,
 
 
 
-static nsresult
+static void
 ReparentFrameViewTo(nsIFrame*       aFrame,
                     nsViewManager* aViewManager,
                     nsView*        aNewParentView,
@@ -382,7 +382,7 @@ ReparentFrameViewTo(nsIFrame*       aFrame,
 #ifdef MOZ_XUL
     if (aFrame->GetType() == nsGkAtoms::menuPopupFrame) {
       
-      return NS_OK;
+      return;
     }
 #endif
     nsView* view = aFrame->GetView();
@@ -407,8 +407,6 @@ ReparentFrameViewTo(nsIFrame*       aFrame,
       }
     }
   }
-
-  return NS_OK;
 }
 
 void
@@ -540,8 +538,8 @@ nsContainerFrame::ReparentFrameView(nsIFrame* aChildFrame,
   
   if (oldParentView != newParentView) {
     
-    return ReparentFrameViewTo(aChildFrame, oldParentView->GetViewManager(), newParentView,
-                               oldParentView);
+    ReparentFrameViewTo(aChildFrame, oldParentView->GetViewManager(), newParentView,
+                        oldParentView);
   }
 
   return NS_OK;
