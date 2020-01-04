@@ -45,7 +45,6 @@
 
     var url = "error_worker.js" + "?" + (Math.random());
     registration = yield navigator.serviceWorker.register(url, {scope: "."});
-    yield waitForActive(registration);
   });
 
   var controlledFrame;

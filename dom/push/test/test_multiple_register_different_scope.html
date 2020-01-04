@@ -32,8 +32,7 @@
   }
 
   function registerServiceWorker(scope) {
-    return navigator.serviceWorker.register("worker.js" + "?" + (Math.random()), {scope: scope})
-      .then(swr => waitForActive(swr));
+    return navigator.serviceWorker.register("worker.js" + "?" + (Math.random()), {scope: scope});
   }
 
   function unregister(swr) {

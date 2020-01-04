@@ -2768,7 +2768,7 @@ Promise::Settle(JS::Handle<JS::Value> aValue, PromiseState aState)
     worker->AssertIsOnWorkerThread();
 
     mWorkerHolder = new PromiseReportRejectWorkerHolder(this);
-    if (NS_WARN_IF(!mWorkerHolder->HoldWorker(worker, Closing))) {
+    if (NS_WARN_IF(!mWorkerHolder->HoldWorker(worker))) {
       mWorkerHolder = nullptr;
       
       
@@ -3025,7 +3025,7 @@ PromiseWorkerProxy::AddRefObject()
 
   MOZ_ASSERT(!mWorkerHolder);
   mWorkerHolder.reset(new PromiseWorkerHolder(this));
-  if (NS_WARN_IF(!mWorkerHolder->HoldWorker(mWorkerPrivate, Canceling))) {
+  if (NS_WARN_IF(!mWorkerHolder->HoldWorker(mWorkerPrivate))) {
     mWorkerHolder = nullptr;
     return false;
   }
