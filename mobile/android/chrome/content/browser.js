@@ -2680,6 +2680,12 @@ var NativeWindow = {
 
       
       
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      
+      
       this._target = BrowserEventHandler._highlightElement || event.target;
       if (!this._target) {
         return;
