@@ -228,6 +228,12 @@
 }
 
 
+.devtools-toolbarbutton.icon-and-text .toolbarbutton-text {
+  margin-inline-start: .5em !important;
+  font-weight: 600;
+}
+
+
 .theme-light .devtools-toolbarbutton[label]:not([text-as-image]):not([type=menu-button]),
 .theme-light .devtools-toolbarbutton[data-text-only],
 .theme-light #toolbox-buttons .devtools-toolbarbutton[text-as-image] {
@@ -274,6 +280,18 @@
 .theme-light .devtools-button:not(:empty)[checked=true],
 .theme-light #toolbox-buttons .devtools-toolbarbutton[text-as-image][checked=true] {
   background: rgba(76, 158, 217, .3); 
+}
+
+:root {
+  --clear-icon-url: url("chrome://devtools/skin/images/clear.svg");
+}
+
+.devtools-button.devtools-clear-icon::before {
+  background-image: var(--clear-icon-url);
+}
+
+.devtools-toolbarbutton.devtools-clear-icon {
+  list-style-image: var(--clear-icon-url);
 }
 
 .devtools-option-toolbarbutton {
