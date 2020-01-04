@@ -148,7 +148,7 @@ function run_test() {
   
   add_test(function () {
     
-    Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 86400);
+    Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 108000);
     
     Services.prefs.setIntPref("app.update.lastUpdateTime.blocklist-background-update-timer",
                               Math.floor(Date.now() / 1000) - 1);
@@ -174,10 +174,10 @@ function run_test() {
 
   add_test(function () {
     
-    Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 86400);
+    Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 108000);
     
     Services.prefs.setIntPref("app.update.lastUpdateTime.blocklist-background-update-timer",
-                              Math.floor(Date.now() / 1000) - 86480);
+                              Math.floor(Date.now() / 1000) - 108080);
     clearOCSPCache();
     let ocspResponder = start_ocsp_responder(
                           gEVExpected ? ["int-ev-valid", "ev-valid"]

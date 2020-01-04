@@ -52,6 +52,8 @@ pref("extensions.getAddons.link.url", "https://addons.mozilla.org/%LOCALE%/firef
 
 
 pref("extensions.blocklist.enabled", true);
+
+
 pref("extensions.blocklist.interval", 86400);
 
 
@@ -273,7 +275,13 @@ pref("browser.urlbar.doubleClickSelectsAll", false);
 pref("browser.urlbar.autoFill", true);
 pref("browser.urlbar.autoFill.typed", true);
 
+#ifdef NIGHTLY_BUILD
+
 pref("browser.urlbar.unifiedcomplete", true);
+#else
+
+pref("browser.urlbar.unifiedcomplete", false);
+#endif
 
 
 
@@ -1746,7 +1754,7 @@ pref("security.cert_pinning.enforcement_level", 1);
 
 
 
-pref("security.onecrl.maximum_staleness_in_seconds", 0);
+pref("security.onecrl.maximum_staleness_in_seconds", 108000);
 
 
 pref("plain_text.wrap_long_lines", true);
