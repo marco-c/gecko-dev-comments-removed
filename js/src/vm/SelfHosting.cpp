@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "vm/SelfHosting.h"
 
@@ -41,6 +41,7 @@
 #include "vm/Interpreter.h"
 #include "vm/String.h"
 #include "vm/TypedArrayCommon.h"
+#include "vm/WrapperObject.h"
 
 #include "jsfuninlines.h"
 #include "jsobjinlines.h"
@@ -139,28 +140,28 @@ intrinsic_IsConstructor(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-/**
- * Intrinsic for calling a wrapped self-hosted function without invoking the
- * wrapper's security checks.
- *
- * Takes a wrapped function as the first and the receiver object as the
- * second argument. Any additional arguments are passed on to the unwrapped
- * function.
- *
- * Xray wrappers prevent lower-privileged code from passing objects to wrapped
- * functions from higher-privileged realms. In some cases, this check is too
- * strict, so this intrinsic allows getting around it.
- *
- * Note that it's not possible to replace all usages with dedicated intrinsics
- * as the function in question might be an inner function that closes over
- * state relevant to its execution.
- *
- * Right now, this is used for the Promise implementation to enable creating
- * resolution functions for xrayed Promises in the privileged realm and then
- * creating the Promise instance in the non-privileged one. The callbacks have
- * to be called by non-privileged code in various places, in many cases
- * passing objects as arguments.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static bool
 intrinsic_UnsafeCallWrappedFunction(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -204,17 +205,17 @@ intrinsic_IsInstanceOfBuiltin(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-/**
- * Self-hosting intrinsic returning the original constructor for a builtin
- * the name of which is the first and only argument.
- *
- * The return value is guaranteed to be the original constructor even if
- * content code changed the named binding on the global object.
- *
- * This intrinsic shouldn't be called directly. Instead, the
- * `GetBuiltinConstructor` and `GetBuiltinPrototype` helper functions in
- * Utilities.js should be used, as they cache results, improving performance.
- */
+
+
+
+
+
+
+
+
+
+
+
 static bool
 intrinsic_GetBuiltinConstructor(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -333,17 +334,17 @@ intrinsic_ThrowSyntaxError(JSContext* cx, unsigned argc, Value* vp)
     return false;
 }
 
-/**
- * Handles an assertion failure in self-hosted code just like an assertion
- * failure in C++ code. Information about the failure can be provided in args[0].
- */
+
+
+
+
 static bool
 intrinsic_AssertionFailed(JSContext* cx, unsigned argc, Value* vp)
 {
 #ifdef DEBUG
     CallArgs args = CallArgsFromVp(argc, vp);
     if (args.length() > 0) {
-        // try to dump the informative string
+        
         JSString* str = ToString<CanGC>(cx, args[0]);
         if (str) {
             fprintf(stderr, "Self-hosted JavaScript assertion info: ");
@@ -356,16 +357,16 @@ intrinsic_AssertionFailed(JSContext* cx, unsigned argc, Value* vp)
     return false;
 }
 
-/**
- * Dumps a message to stderr, after stringifying it. Doesn't append a newline.
- */
+
+
+
 static bool
 intrinsic_DumpMessage(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 #ifdef DEBUG
     if (args.length() > 0) {
-        // try to dump the informative string
+        
         JSString* str = ToString<CanGC>(cx, args[0]);
         if (str) {
             str->dumpCharsNoNewline();
@@ -389,8 +390,8 @@ intrinsic_MakeConstructible(JSContext* cx, unsigned argc, Value* vp)
     MOZ_ASSERT(args[0].toObject().as<JSFunction>().isSelfHostedBuiltin());
     MOZ_ASSERT(args[1].isObjectOrNull());
 
-    // Normal .prototype properties aren't enumerable.  But for this to clone
-    // correctly, it must be enumerable.
+    
+    
     RootedObject ctor(cx, &args[0].toObject());
     if (!DefineProperty(cx, ctor, cx->names().prototype, args[1],
                         nullptr, nullptr,
@@ -419,12 +420,12 @@ intrinsic_MakeDefaultConstructor(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-/*
- * Used to mark bound functions as such and make them constructible if the
- * target is.
- * Also sets the name and correct length, both of which are more costly to
- * do in JS.
- */
+
+
+
+
+
+
 static bool
 intrinsic_FinishBoundFunctionInit(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -441,7 +442,7 @@ intrinsic_FinishBoundFunctionInit(JSContext* cx, unsigned argc, Value* vp)
     if (targetObj->isConstructor())
         bound->setIsConstructor();
 
-    // 9.4.1.3 BoundFunctionCreate, Steps 2-3., 8.
+    
     RootedObject proto(cx);
     if (!GetPrototype(cx, targetObj, &proto))
         return false;
@@ -454,7 +455,7 @@ intrinsic_FinishBoundFunctionInit(JSContext* cx, unsigned argc, Value* vp)
     bound->setExtendedSlot(BOUND_FUN_LENGTH_SLOT, args[2]);
     MOZ_ASSERT(!bound->hasGuessedAtom());
 
-    // 9.2.11 SetFunctionName, Step 6.
+    
     RootedAtom name(cx, AtomizeString(cx, args[3].toString()));
     if (!name)
         return false;
@@ -481,14 +482,14 @@ intrinsic_SetPrototype(JSContext *cx, unsigned argc, Value *vp)
     return true;
 }
 
-/*
- * Used to decompile values in the nearest non-builtin stack frame, falling
- * back to decompiling in the current frame. Helpful for printing higher-order
- * function arguments.
- *
- * The user must supply the argument number of the value in question; it
- * _cannot_ be automatically determined.
- */
+
+
+
+
+
+
+
+
 static bool
 intrinsic_DecompileArg(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -540,8 +541,8 @@ intrinsic_DefineDataProperty(JSContext* cx, unsigned argc, Value* vp)
         if (attributes & ATTR_NONWRITABLE)
             attrs |= JSPROP_READONLY;
     } else {
-        // If the fourth argument is unspecified, the attributes are for a
-        // plain data property.
+        
+        
         attrs = JSPROP_ENUMERATE;
     }
 
@@ -615,13 +616,13 @@ intrinsic_UnsafeGetBooleanFromReservedSlot(JSContext* cx, unsigned argc, Value* 
     return true;
 }
 
-/**
- * Intrinsic for creating an empty array in the compartment of the object
- * passed as the first argument.
- *
- * Returns the array, wrapped in the default wrapper to use between the two
- * compartments.
- */
+
+
+
+
+
+
+
 static bool
 intrinsic_NewArrayInCompartment(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -869,6 +870,33 @@ intrinsic_GeneratorSetClosed(JSContext* cx, unsigned argc, Value* vp)
 }
 
 static bool
+intrinsic_IsWrappedArrayBuffer(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 1);
+
+    if (!args[0].isObject()) {
+        args.rval().setBoolean(false);
+        return true;
+    }
+
+    JSObject* obj = &args[0].toObject();
+    if (!obj->is<WrapperObject>()) {
+        args.rval().setBoolean(false);
+        return true;
+    }
+
+    JSObject* unwrapped = CheckedUnwrap(obj);
+    if (!unwrapped) {
+        JS_ReportError(cx, "Permission denied to access object");
+        return false;
+    }
+
+    args.rval().setBoolean(unwrapped->is<ArrayBufferObject>());
+    return true;
+}
+
+static bool
 intrinsic_ArrayBufferByteLength(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
@@ -902,15 +930,22 @@ static bool
 intrinsic_ArrayBufferCopyData(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    MOZ_ASSERT(args.length() == 4);
-    MOZ_ASSERT(args[0].isObject());
-    MOZ_ASSERT(args[0].toObject().is<ArrayBufferObject>());
-    MOZ_ASSERT(args[1].isObject());
-    MOZ_ASSERT(args[1].toObject().is<ArrayBufferObject>());
-    MOZ_ASSERT(args[2].isInt32());
-    MOZ_ASSERT(args[3].isInt32());
+    MOZ_ASSERT(args.length() == 5);
 
-    Rooted<ArrayBufferObject*> toBuffer(cx, &args[0].toObject().as<ArrayBufferObject>());
+    bool isWrapped = args[4].toBoolean();
+    Rooted<ArrayBufferObject*> toBuffer(cx);
+    if (!isWrapped) {
+        toBuffer = &args[0].toObject().as<ArrayBufferObject>();
+    } else {
+        JSObject* wrapped = &args[0].toObject();
+        MOZ_ASSERT(wrapped->is<WrapperObject>());
+        RootedObject toBufferObj(cx, CheckedUnwrap(wrapped));
+        if (!toBufferObj) {
+            JS_ReportError(cx, "Permission denied to access object");
+            return false;
+        }
+        toBuffer = toBufferObj.as<ArrayBufferObject>();
+    }
     Rooted<ArrayBufferObject*> fromBuffer(cx, &args[1].toObject().as<ArrayBufferObject>());
     uint32_t fromIndex = uint32_t(args[2].toInt32());
     uint32_t count = uint32_t(args[3].toInt32());
@@ -1040,7 +1075,7 @@ intrinsic_TypedArrayElementShift(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-// Return the value of [[ArrayLength]] internal slot of the TypedArray
+
 static bool
 intrinsic_TypedArrayLength(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1093,8 +1128,8 @@ intrinsic_MoveTypedArrayElements(JSContext* cx, unsigned argc, Value* vp)
         return false;
     }
 
-    // Don't multiply by |tarray->bytesPerElement()| in case the compiler can't
-    // strength-reduce multiplication by 1/2/4/8 into the equivalent shift.
+    
+    
     const size_t ElementShift = TypedArrayShift(tarray->type());
 
     MOZ_ASSERT((UINT32_MAX >> ElementShift) > to);
@@ -1124,45 +1159,45 @@ intrinsic_MoveTypedArrayElements(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-// Extract the TypedArrayObject* underlying |obj| and return it.  This method,
-// in a TOTALLY UNSAFE manner, completely violates the normal compartment
-// boundaries, returning an object not necessarily in the current compartment
-// or in |obj|'s compartment.
-//
-// All callers of this method are expected to sigil this TypedArrayObject*, and
-// all values and information derived from it, with an "unsafe" prefix, to
-// indicate the extreme caution required when dealing with such values.
-//
-// If calling code discipline ever fails to be maintained, it's gonna have a
-// bad time.
+
+
+
+
+
+
+
+
+
+
+
 static TypedArrayObject*
 DangerouslyUnwrapTypedArray(JSContext* cx, JSObject* obj)
 {
-    // An unwrapped pointer to an object potentially on the other side of a
-    // compartment boundary!  Isn't this such fun?
+    
+    
     JSObject* unwrapped = CheckedUnwrap(obj);
     if (!unwrapped->is<TypedArrayObject>()) {
-        // By *appearances* this can't happen, as self-hosted TypedArraySet
-        // checked this.  But.  Who's to say a GC couldn't happen between
-        // the check that this value was a typed array, and this extraction
-        // occurring?  A GC might turn a cross-compartment wrapper |obj| into
-        // |unwrapped == obj|, a dead object no longer connected its typed
-        // array.
-        //
-        // Yeah, yeah, it's pretty unlikely.  Are you willing to stake a
-        // sec-critical bug on that assessment, now and forever, against
-        // all changes those pesky GC and JIT people might make?
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
         return nullptr;
     }
 
-    // Be super-duper careful using this, as we've just punched through
-    // the compartment boundary, and things like buffer() on this aren't
-    // same-compartment with anything else in the calling method.
+    
+    
+    
     return &unwrapped->as<TypedArrayObject>();
 }
 
-// ES6 draft 20150403 22.2.3.22.2, steps 12-24, 29.
+
 static bool
 intrinsic_SetFromTypedArrayApproach(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1174,8 +1209,8 @@ intrinsic_SetFromTypedArrayApproach(JSContext* cx, unsigned argc, Value* vp)
                "something should have defended against a target viewing a "
                "detached buffer");
 
-    // As directed by |DangerouslyUnwrapTypedArray|, sigil this pointer and all
-    // variables derived from it to counsel extreme caution here.
+    
+    
     Rooted<TypedArrayObject*> unsafeTypedArrayCrossCompartment(cx);
     unsafeTypedArrayCrossCompartment = DangerouslyUnwrapTypedArray(cx, &args[1].toObject());
     if (!unsafeTypedArrayCrossCompartment)
@@ -1186,28 +1221,28 @@ intrinsic_SetFromTypedArrayApproach(JSContext* cx, unsigned argc, Value* vp)
 
     uint32_t targetLength = uint32_t(args[3].toInt32());
 
-    // Handle all checks preceding the actual element-setting.  A visual skim
-    // of 22.2.3.22.2 should confirm these are the only steps after steps 1-11
-    // that might abort processing (other than for reason of internal error.)
+    
+    
+    
 
-    // Steps 12-13.
+    
     if (unsafeTypedArrayCrossCompartment->hasDetachedBuffer()) {
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
         return false;
     }
 
-    // Steps 21, 23.
+    
     uint32_t unsafeSrcLengthCrossCompartment = unsafeTypedArrayCrossCompartment->length();
     if (unsafeSrcLengthCrossCompartment + doubleTargetOffset > targetLength) {
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
         return false;
     }
 
-    // Now that that's confirmed, we can use |targetOffset| of a sane type.
+    
     uint32_t targetOffset = uint32_t(doubleTargetOffset);
 
-    // The remaining steps are unobservable *except* through their effect on
-    // which elements are copied and how.
+    
+    
 
     Scalar::Type targetType = target->type();
     Scalar::Type unsafeSrcTypeCrossCompartment = unsafeTypedArrayCrossCompartment->type();
@@ -1224,15 +1259,15 @@ intrinsic_SetFromTypedArrayApproach(JSContext* cx, unsigned argc, Value* vp)
     uint32_t unsafeSrcByteLengthCrossCompartment =
         unsafeSrcLengthCrossCompartment * unsafeSrcElementSizeCrossCompartment;
 
-    // Step 29.
-    //
-    // The same-type case requires exact copying preserving the bit-level
-    // encoding of the source data, so move the values.  (We could PodCopy if
-    // we knew the buffers differed, but it's doubtful the work to check
-    // wouldn't swap any minor wins PodCopy would afford.  Because of the
-    // TOTALLY UNSAFE CROSS-COMPARTMENT NONSENSE here, comparing buffer
-    // pointers directly could give an incorrect answer.)  If this occurs,
-    // the %TypedArray%.prototype.set operation is completely finished.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (targetType == unsafeSrcTypeCrossCompartment) {
         jit::AtomicOperations::memmoveSafeWhenRacy(targetData,
                                                    unsafeSrcDataCrossCompartment,
@@ -1241,23 +1276,23 @@ intrinsic_SetFromTypedArrayApproach(JSContext* cx, unsigned argc, Value* vp)
         return true;
     }
 
-    // Every other bit of element-copying is handled by step 28.  Indicate
-    // whether such copying must take care not to overlap, so that self-hosted
-    // code may correctly perform the copying.
+    
+    
+    
 
     SharedMem<uint8_t*> unsafeSrcDataLimitCrossCompartment =
         unsafeSrcDataCrossCompartment + unsafeSrcByteLengthCrossCompartment;
     SharedMem<uint8_t*> targetDataLimit =
         target->viewDataEither().cast<uint8_t*>() + targetLength * targetElementSize;
 
-    // Step 24 test (but not steps 24a-d -- the caller handles those).
+    
     bool overlap =
-        IsInRange(targetData.unwrap(/*safe - used for ptr value*/),
-                  unsafeSrcDataCrossCompartment.unwrap(/*safe - ditto*/),
-                  unsafeSrcDataLimitCrossCompartment.unwrap(/*safe - ditto*/)) ||
-        IsInRange(unsafeSrcDataCrossCompartment.unwrap(/*safe - ditto*/),
-                  targetData.unwrap(/*safe - ditto*/),
-                  targetDataLimit.unwrap(/*safe - ditto*/));
+        IsInRange(targetData.unwrap(),
+                  unsafeSrcDataCrossCompartment.unwrap(),
+                  unsafeSrcDataLimitCrossCompartment.unwrap()) ||
+        IsInRange(unsafeSrcDataCrossCompartment.unwrap(),
+                  targetData.unwrap(),
+                  targetDataLimit.unwrap());
 
     args.rval().setInt32(overlap ? JS_SETTYPEDARRAY_OVERLAPPING : JS_SETTYPEDARRAY_DISJOINT);
     return true;
@@ -1268,10 +1303,10 @@ static void
 CopyValues(SharedMem<To*> dest, SharedMem<From*> src, uint32_t count)
 {
 #ifdef DEBUG
-    void* destVoid = dest.template cast<void*>().unwrap(/*safe - used for ptr value*/);
-    void* destVoidEnd = (dest + count).template cast<void*>().unwrap(/*safe - ditto*/);
-    const void* srcVoid = src.template cast<void*>().unwrap(/*safe - ditto*/);
-    const void* srcVoidEnd = (src + count).template cast<void*>().unwrap(/*safe - ditto*/);
+    void* destVoid = dest.template cast<void*>().unwrap();
+    void* destVoidEnd = (dest + count).template cast<void*>().unwrap();
+    const void* srcVoid = src.template cast<void*>().unwrap();
+    const void* srcVoidEnd = (src + count).template cast<void*>().unwrap();
     MOZ_ASSERT(!IsInRange(destVoid, srcVoid, srcVoidEnd));
     MOZ_ASSERT(!IsInRange(srcVoid, destVoid, destVoidEnd));
 #endif
@@ -1390,10 +1425,10 @@ CopyToDisjointArray(TypedArrayObject* target, uint32_t targetOffset, SharedMem<v
     }
 }
 
-// |unsafeSrcCrossCompartment| is produced by |DangerouslyUnwrapTypedArray|,
-// counseling extreme caution when using it.  As directed by
-// |DangerouslyUnwrapTypedArray|, sigil this pointer and all variables derived
-// from it to counsel extreme caution here.
+
+
+
+
 void
 js::SetDisjointTypedElements(TypedArrayObject* target, uint32_t targetOffset,
                              TypedArrayObject* unsafeSrcCrossCompartment)
@@ -1421,8 +1456,8 @@ intrinsic_SetDisjointTypedElements(JSContext* cx, unsigned argc, Value* vp)
 
     uint32_t targetOffset = uint32_t(args[1].toInt32());
 
-    // As directed by |DangerouslyUnwrapTypedArray|, sigil this pointer and all
-    // variables derived from it to counsel extreme caution here.
+    
+    
     Rooted<TypedArrayObject*> unsafeSrcCrossCompartment(cx);
     unsafeSrcCrossCompartment = DangerouslyUnwrapTypedArray(cx, &args[2].toObject());
     if (!unsafeSrcCrossCompartment)
@@ -1446,18 +1481,18 @@ intrinsic_SetOverlappingTypedElements(JSContext* cx, unsigned argc, Value* vp)
 
     uint32_t targetOffset = uint32_t(args[1].toInt32());
 
-    // As directed by |DangerouslyUnwrapTypedArray|, sigil this pointer and all
-    // variables derived from it to counsel extreme caution here.
+    
+    
     Rooted<TypedArrayObject*> unsafeSrcCrossCompartment(cx);
     unsafeSrcCrossCompartment = DangerouslyUnwrapTypedArray(cx, &args[2].toObject());
     if (!unsafeSrcCrossCompartment)
         return false;
 
-    // Smarter algorithms exist to perform overlapping transfers of the sort
-    // this method performs (for example, v8's self-hosted implementation).
-    // But it seems likely deliberate overlapping transfers are rare enough
-    // that it's not worth the trouble to implement one (and worry about its
-    // safety/correctness!).  Make a copy and do a disjoint set from that.
+    
+    
+    
+    
+    
     uint32_t count = unsafeSrcCrossCompartment->length();
     Scalar::Type unsafeSrcTypeCrossCompartment = unsafeSrcCrossCompartment->type();
     size_t sourceByteLen = count * TypedArrayElemSize(unsafeSrcTypeCrossCompartment);
@@ -1480,10 +1515,10 @@ intrinsic_SetOverlappingTypedElements(JSContext* cx, unsigned argc, Value* vp)
 bool
 CallSelfHostedNonGenericMethod(JSContext* cx, const CallArgs& args)
 {
-    // This function is called when a self-hosted method is invoked on a
-    // wrapper object, like a CrossCompartmentWrapper. The last argument is
-    // the name of the self-hosted function. The other arguments are the
-    // arguments to pass to this function.
+    
+    
+    
+    
 
     MOZ_ASSERT(args.length() > 0);
     RootedPropertyName name(cx, args[args.length() - 1].toString()->asAtom().asPropertyName());
@@ -1556,12 +1591,12 @@ js::IsCallSelfHostedNonGenericMethod(NativeImpl impl)
 bool
 js::ReportIncompatibleSelfHostedMethod(JSContext* cx, const CallArgs& args)
 {
-    // The contract for this function is the same as CallSelfHostedNonGenericMethod.
-    // The normal ReportIncompatible function doesn't work for selfhosted functions,
-    // because they always call the different CallXXXMethodIfWrapped methods,
-    // which would be reported as the called function instead.
+    
+    
+    
+    
 
-    // Lookup the selfhosted method that was invoked.
+    
     ScriptFrameIter iter(cx);
     MOZ_ASSERT(iter.isFunctionFrame());
 
@@ -1574,7 +1609,7 @@ js::ReportIncompatibleSelfHostedMethod(JSContext* cx, const CallArgs& args)
     return false;
 }
 
-// ES6, 25.4.1.6.
+
 static bool
 intrinsic_EnqueuePromiseJob(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1590,10 +1625,10 @@ intrinsic_EnqueuePromiseJob(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-/**
- * Returns the default locale as a well-formed, but not necessarily canonicalized,
- * BCP-47 language tag.
- */
+
+
+
+
 static bool
 intrinsic_RuntimeDefaultLocale(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1689,15 +1724,15 @@ intrinsic_ConstructorForTypedArray(JSContext* cx, unsigned argc, Value* vp)
     JSProtoKey protoKey = StandardProtoKeyOrNull(object);
     MOZ_ASSERT(protoKey);
 
-    // While it may seem like an invariant that in any compartment,
-    // seeing a typed array object implies that the TypedArray constructor
-    // for that type is initialized on the compartment's global, this is not
-    // the case. When we construct a typed array given a cross-compartment
-    // ArrayBuffer, we put the constructed TypedArray in the same compartment
-    // as the ArrayBuffer. Since we use the prototype from the initial
-    // compartment, and never call the constructor in the ArrayBuffer's
-    // compartment from script, we are not guaranteed to have initialized
-    // the constructor.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     RootedObject ctor(cx);
     if (!GetBuiltinConstructor(cx, protoKey, &ctor))
         return false;
@@ -1732,13 +1767,13 @@ intrinsic_RejectUnwrappedPromise(JSContext* cx, unsigned argc, Value* vp)
     AutoCompartment ac(cx, promise);
     RootedValue reasonVal(cx, args[1]);
 
-    // The rejection reason might've been created in a compartment with higher
-    // privileges than the Promise's. In that case, object-type rejection
-    // values might be wrapped into a wrapper that throws whenever the
-    // Promise's reaction handler wants to do anything useful with it. To
-    // avoid that situation, we synthesize a generic error that doesn't
-    // expose any privileged information but can safely be used in the
-    // rejection handler.
+    
+    
+    
+    
+    
+    
+    
     if (!promise->compartment()->wrap(cx, &reasonVal))
         return false;
     if (reasonVal.isObject() && !CheckedUnwrap(&reasonVal.toObject())) {
@@ -1858,8 +1893,8 @@ intrinsic_CreateNamespaceBinding(JSContext* cx, unsigned argc, Value* vp)
     RootedModuleEnvironmentObject environment(cx, &args[0].toObject().as<ModuleEnvironmentObject>());
     RootedId name(cx, AtomToId(&args[1].toString()->asAtom()));
     MOZ_ASSERT(args[2].toObject().is<ModuleNamespaceObject>());
-    // The property already exists in the evironment but is not writable, so set
-    // the slot directly.
+    
+    
     RootedShape shape(cx, environment->lookup(cx, name));
     MOZ_ASSERT(shape);
     MOZ_ASSERT(environment->getSlot(shape->slot()).isMagic(JS_UNINITIALIZED_LEXICAL));
@@ -1939,13 +1974,13 @@ intrinsic_ModuleNamespaceExports(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-/**
- * Intrinsic used to tell the debugger about settled promises.
- *
- * This is invoked both when resolving and rejecting promises, after the
- * resulting state has been set on the promise, and it's up to the debugger
- * to act on this signal in whichever way it wants.
- */
+
+
+
+
+
+
+
 static bool
 intrinsic_onPromiseSettled(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1957,13 +1992,13 @@ intrinsic_onPromiseSettled(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-/**
- * Intrinsic used to tell the debugger about settled promises.
- *
- * This is invoked both when resolving and rejecting promises, after the
- * resulting state has been set on the promise, and it's up to the debugger
- * to act on this signal in whichever way it wants.
- */
+
+
+
+
+
+
+
 static bool
 intrinsic_captureCurrentStack(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1981,17 +2016,17 @@ intrinsic_captureCurrentStack(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-// The self-hosting global isn't initialized with the normal set of builtins.
-// Instead, individual C++-implemented functions that're required by
-// self-hosted code are defined as global functions. Accessing these
-// functions via a content compartment's builtins would be unsafe, because
-// content script might have changed the builtins' prototypes' members.
-// Installing the whole set of builtins in the self-hosting compartment, OTOH,
-// would be wasteful: it increases memory usage and initialization time for
-// self-hosting compartment.
-//
-// Additionally, a set of C++-implemented helper functions is defined on the
-// self-hosting global.
+
+
+
+
+
+
+
+
+
+
+
 static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("std_Array",                 ArrayConstructor,             1,0, Array),
     JS_FN("std_Array_join",                      array_join,                   1,0),
@@ -2063,7 +2098,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("std_SIMD_Bool32x4_extractLane",       simd_bool32x4_extractLane,    2,0),
     JS_FN("std_SIMD_Bool64x2_extractLane",       simd_bool64x2_extractLane,    2,0),
 
-    // Helper funtions after this point.
+    
     JS_INLINABLE_FN("ToObject",      intrinsic_ToObject,                1,0, IntrinsicToObject),
     JS_INLINABLE_FN("IsObject",      intrinsic_IsObject,                1,0, IntrinsicIsObject),
     JS_INLINABLE_FN("ToInteger",     intrinsic_ToInteger,               1,0, IntrinsicToInteger),
@@ -2167,12 +2202,13 @@ static const JSFunctionSpec intrinsic_functions[] = {
           intrinsic_IsInstanceOfBuiltin<ArrayBufferObject>,             1,0),
     JS_FN("IsSharedArrayBuffer",
           intrinsic_IsInstanceOfBuiltin<SharedArrayBufferObject>,       1,0),
+    JS_FN("IsWrappedArrayBuffer",    intrinsic_IsWrappedArrayBuffer,    1,0),
 
     JS_INLINABLE_FN("ArrayBufferByteLength",   intrinsic_ArrayBufferByteLength, 1,0,
                     IntrinsicArrayBufferByteLength),
     JS_INLINABLE_FN("PossiblyWrappedArrayBufferByteLength", intrinsic_PossiblyWrappedArrayBufferByteLength, 1,0,
                     IntrinsicPossiblyWrappedArrayBufferByteLength),
-    JS_FN("ArrayBufferCopyData",     intrinsic_ArrayBufferCopyData,     4,0),
+    JS_FN("ArrayBufferCopyData",     intrinsic_ArrayBufferCopyData,     5,0),
 
     JS_FN("IsUint8TypedArray",        intrinsic_IsUint8TypedArray,      1,0),
     JS_FN("IsInt8TypedArray",         intrinsic_IsInt8TypedArray,       1,0),
@@ -2225,7 +2261,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("CallPromiseMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<PromiseObject>>,      2,0),
 
-    // See builtin/TypedObject.h for descriptors of the typedobj functions.
+    
     JS_FN("NewOpaqueTypedObject",           js::NewOpaqueTypedObject, 1, 0),
     JS_FN("NewDerivedTypedObject",          js::NewDerivedTypedObject, 3, 0),
     JS_FN("TypedObjectBuffer",              TypedObject::GetBuffer, 1, 0),
@@ -2264,7 +2300,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FOR_EACH_REFERENCE_TYPE_REPR(LOAD_AND_STORE_REFERENCE_FN_DECLS)
 #undef LOAD_AND_STORE_REFERENCE_FN_DECLS
 
-    // See builtin/Intl.h for descriptions of the intl_* functions.
+    
     JS_FN("intl_availableCalendars", intl_availableCalendars, 1,0),
     JS_FN("intl_availableCollations", intl_availableCollations, 1,0),
     JS_FN("intl_Collator", intl_Collator, 2,0),
@@ -2289,7 +2325,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("RegExpTester", RegExpTester, 4,0,
                     RegExpTester),
 
-    // See builtin/RegExp.h for descriptions of the regexp_* functions.
+    
     JS_FN("regexp_exec_no_statics", regexp_exec_no_statics, 2,0),
     JS_FN("regexp_test_no_statics", regexp_test_no_statics, 2,0),
     JS_FN("regexp_construct", regexp_construct_self_hosting, 2,0),
@@ -2320,20 +2356,20 @@ static const JSFunctionSpec intrinsic_functions[] = {
 void
 js::FillSelfHostingCompileOptions(CompileOptions& options)
 {
-    /*
-     * In self-hosting mode, scripts use JSOP_GETINTRINSIC instead of
-     * JSOP_GETNAME or JSOP_GETGNAME to access unbound variables.
-     * JSOP_GETINTRINSIC does a name lookup on a special object, whose
-     * properties are filled in lazily upon first access for a given global.
-     *
-     * As that object is inaccessible to client code, the lookups are
-     * guaranteed to return the original objects, ensuring safe implementation
-     * of self-hosted builtins.
-     *
-     * Additionally, the special syntax callFunction(fun, receiver, ...args)
-     * is supported, for which bytecode is emitted that invokes |fun| with
-     * |receiver| as the this-object and ...args as the arguments.
-     */
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
     options.setIntroductionType("self-hosted");
     options.setFileAndLine("self-hosted", 1);
     options.setSelfHostingMode(true);
@@ -2396,10 +2432,10 @@ JSRuntime::initSelfHosting(JSContext* cx)
         return true;
     }
 
-    /*
-     * Self hosted state can be accessed from threads for other runtimes
-     * parented to this one, so cannot include state in the nursery.
-     */
+    
+
+
+
     JS::AutoDisableGenerationalGC disable(cx->runtime());
 
     Rooted<GlobalObject*> shg(cx, JSRuntime::createSelfHostingGlobal(cx));
@@ -2411,11 +2447,11 @@ JSRuntime::initSelfHosting(JSContext* cx)
     CompileOptions options(cx);
     FillSelfHostingCompileOptions(options);
 
-    /*
-     * Set a temporary error reporter printing to stderr because it is too
-     * early in the startup process for any other reporter to be registered
-     * and we don't want errors in self-hosted code to be silently swallowed.
-     */
+    
+
+
+
+
     JSErrorReporter oldReporter = JS_SetErrorReporter(cx->runtime(), selfHosting_ErrorReporter);
     RootedValue rv(cx);
     bool ok = true;
@@ -2485,10 +2521,10 @@ GetUnclonedValue(JSContext* cx, HandleNativeObject selfHostedObject,
         }
     }
 
-    // Since all atoms used by self hosting are marked as permanent, any
-    // attempt to look up a non-permanent atom will fail. We should only
-    // see such atoms when code is looking for properties on the self
-    // hosted global which aren't present.
+    
+    
+    
+    
     if (JSID_IS_STRING(id) && !JSID_TO_STRING(id)->isPermanentAtom()) {
         MOZ_ASSERT(selfHostedObject->is<GlobalObject>());
         RootedValue value(cx, IdToValue(id));
@@ -2530,7 +2566,7 @@ CloneProperties(JSContext* cx, HandleNativeObject selfHostedObject, HandleObject
             return false;
     }
 
-    // Now our shapes are in last-to-first order, so....
+    
     Reverse(shapes.begin(), shapes.end());
     for (size_t i = 0; i < shapes.length(); ++i) {
         MOZ_ASSERT(!shapes[i]->isAccessorShape(),
@@ -2588,10 +2624,10 @@ static JSObject*
 CloneObject(JSContext* cx, HandleNativeObject selfHostedObject)
 {
 #ifdef DEBUG
-    // Object hash identities are owned by the hashed object, which may be on a
-    // different thread than the clone target. In theory, these objects are all
-    // tenured and will not be compacted; however, we simply avoid the issue
-    // altogether by skipping the cycle-detection when off the main thread.
+    
+    
+    
+    
     mozilla::Maybe<AutoCycleDetector> detect;
     if (js::CurrentThreadCanAccessZone(selfHostedObject->zoneFromAnyThread())) {
         detect.emplace(cx, selfHostedObject);
@@ -2607,7 +2643,7 @@ CloneObject(JSContext* cx, HandleNativeObject selfHostedObject)
         RootedFunction selfHostedFunction(cx, &selfHostedObject->as<JSFunction>());
         bool hasName = selfHostedFunction->atom() != nullptr;
 
-        // Arrow functions use the first extended slot for their lexical |this| value.
+        
         MOZ_ASSERT(!selfHostedFunction->isArrow());
         js::gc::AllocKind kind = hasName
                                  ? gc::AllocKind::FUNCTION_EXTENDED
@@ -2617,8 +2653,8 @@ CloneObject(JSContext* cx, HandleNativeObject selfHostedObject)
         RootedObject staticGlobalLexical(cx, &globalLexical->staticBlock());
         clone = CloneFunctionAndScript(cx, selfHostedFunction, globalLexical,
                                        staticGlobalLexical, kind);
-        // To be able to re-lazify the cloned function, its name in the
-        // self-hosting compartment has to be stored on the clone.
+        
+        
         if (clone && hasName) {
             clone->as<JSFunction>().setExtendedSlot(LAZY_FUNCTION_NAME_SLOT,
                                                     StringValue(selfHostedFunction->atom()));
@@ -2668,7 +2704,7 @@ CloneValue(JSContext* cx, HandleValue selfHostedValue, MutableHandleValue vp)
             return false;
         vp.setObject(*clone);
     } else if (selfHostedValue.isBoolean() || selfHostedValue.isNumber() || selfHostedValue.isNullOrUndefined()) {
-        // Nothing to do here: these are represented inline in the value.
+        
         vp.set(selfHostedValue);
     } else if (selfHostedValue.isString()) {
         if (!selfHostedValue.toString()->isFlat())
@@ -2679,7 +2715,7 @@ CloneValue(JSContext* cx, HandleValue selfHostedValue, MutableHandleValue vp)
             return false;
         vp.setString(clone);
     } else if (selfHostedValue.isSymbol()) {
-        // Well-known symbols are shared.
+        
         mozilla::DebugOnly<JS::Symbol*> sym = selfHostedValue.toSymbol();
         MOZ_ASSERT(sym->isWellKnownSymbol());
         MOZ_ASSERT(cx->wellKnownSymbols().get(size_t(sym->code())) == sym);
@@ -2724,8 +2760,8 @@ JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx, HandlePropertyName name,
     RootedFunction sourceFun(cx, getUnclonedSelfHostedFunction(cx, name));
     if (!sourceFun)
         return false;
-    // JSFunction::generatorKind can't handle lazy self-hosted functions, so we make sure there
-    // aren't any.
+    
+    
     MOZ_ASSERT(!sourceFun->isGenerator());
     MOZ_ASSERT(targetFun->isExtended());
     MOZ_ASSERT(targetFun->isInterpretedLazy());
@@ -2735,11 +2771,11 @@ JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx, HandlePropertyName name,
     if (!sourceScript)
         return false;
 
-    // Assert that there are no intervening scopes between the global scope
-    // and the self-hosted script. Toplevel lexicals are explicitly forbidden
-    // by the parser when parsing self-hosted code. The fact they have the
-    // global lexical scope on the scope chain is for uniformity and engine
-    // invariants.
+    
+    
+    
+    
+    
     MOZ_ASSERT(IsStaticGlobalLexicalScope(sourceScript->enclosingStaticScope()));
     Rooted<StaticScope*> enclosingScope(cx, &cx->global()->lexicalScope().staticBlock());
     if (!CloneScriptIntoFunction(cx, enclosingScope, targetFun, sourceScript))
@@ -2749,7 +2785,7 @@ JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx, HandlePropertyName name,
     MOZ_ASSERT(sourceFun->nargs() == targetFun->nargs());
     MOZ_ASSERT(sourceFun->hasRest() == targetFun->hasRest());
 
-    // The target function might have been relazified after its flags changed.
+    
     targetFun->setFlags(targetFun->flags() | sourceFun->flags());
     return true;
 }
@@ -2779,11 +2815,11 @@ JSRuntime::cloneSelfHostedValue(JSContext* cx, HandlePropertyName name, MutableH
     if (!getUnclonedSelfHostedValue(cx, name, &selfHostedValue))
         return false;
 
-    /*
-     * We don't clone if we're operating in the self-hosting global, as that
-     * means we're currently executing the self-hosting script while
-     * initializing the runtime (see JSRuntime::initSelfHosting).
-     */
+    
+
+
+
+
     if (cx->global() == selfHostingGlobal_) {
         vp.set(selfHostedValue);
         return true;
