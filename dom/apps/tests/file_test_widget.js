@@ -193,6 +193,7 @@ var tests = [
 
   
   function() {
+    SpecialPowers.setAllAppsLaunchable(true);
     SpecialPowers.autoConfirmAppInstall(() => {
       SpecialPowers.autoConfirmAppUninstall(runTest);
     });
