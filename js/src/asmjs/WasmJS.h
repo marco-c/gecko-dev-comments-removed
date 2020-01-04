@@ -62,8 +62,14 @@ extern const char InstanceExportField[];
 extern bool
 IsExportedFunction(JSFunction* fun);
 
+extern bool
+IsExportedFunction(const Value& v, MutableHandleFunction f);
+
 extern Instance&
 ExportedFunctionToInstance(JSFunction* fun);
+
+extern WasmInstanceObject*
+ExportedFunctionToInstanceObject(JSFunction* fun);
 
 extern uint32_t
 ExportedFunctionToIndex(JSFunction* fun);
@@ -196,6 +202,8 @@ class WasmTableObject : public NativeObject
     static bool lengthGetter(JSContext* cx, unsigned argc, Value* vp);
     static bool getImpl(JSContext* cx, const CallArgs& args);
     static bool get(JSContext* cx, unsigned argc, Value* vp);
+    static bool setImpl(JSContext* cx, const CallArgs& args);
+    static bool set(JSContext* cx, unsigned argc, Value* vp);
 
     
     
