@@ -1077,10 +1077,14 @@ EnvironmentCache.prototype = {
   _getCpuData: function () {
     let cpuData = {
       count: getSysinfoProperty("cpucount", null),
-      vendor: null, 
-      family: null, 
-      model: null, 
-      stepping: null, 
+      cores: getSysinfoProperty("cpucores", null),
+      vendor: getSysinfoProperty("cpuvendor", null),
+      family: getSysinfoProperty("cpufamily", null),
+      model: getSysinfoProperty("cpumodel", null),
+      stepping: getSysinfoProperty("cpustepping", null),
+      l2cacheKB: getSysinfoProperty("cpucachel2", null),
+      l3cacheKB: getSysinfoProperty("cpucachel3", null),
+      speedMHz: getSysinfoProperty("cpuspeed", null),
     };
 
     const CPU_EXTENSIONS = ["hasMMX", "hasSSE", "hasSSE2", "hasSSE3", "hasSSSE3",
@@ -1223,8 +1227,16 @@ EnvironmentCache.prototype = {
       memoryMB = Math.round(memoryMB / 1024 / 1024);
     }
 
+    let virtualMB = getSysinfoProperty("virtualmemsize", null);
+    if (virtualMB) {
+      
+      
+      virtualMB = Math.round(virtualMB / 1024 / 1024);
+    }
+
     return {
       memoryMB: memoryMB,
+      virtualMaxMB: virtualMB,
 #ifdef XP_WIN
       isWow64: getSysinfoProperty("isWow64", null),
 #endif
