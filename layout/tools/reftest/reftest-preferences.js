@@ -117,3 +117,8 @@ user_pref("media.gmp-manager.url.override", "http://localhost/dummy-gmp-manager.
 
 
 user_pref("testing.supports.moz-bool-pref", true);
+
+
+
+
+user_pref("places.history.enabled", false);
