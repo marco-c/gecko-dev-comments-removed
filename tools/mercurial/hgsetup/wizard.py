@@ -523,7 +523,10 @@ class MercurialSetupWizard(object):
                 print('')
                 return
         if not path:
-            path = os.path.join(self.vcs_tools_dir, 'hgext', name)
+            
+            
+            
+            path = os.path.join(self.vcs_tools_dir.replace(os.path.expanduser('~'), '~'), 'hgext', name)
         c.activate_extension(name, path)
         print('Activated %s extension.\n' % name)
 
