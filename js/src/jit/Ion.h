@@ -51,6 +51,7 @@ class JitContext
     JitContext(CompileRuntime* rt, TempAllocator* temp);
     explicit JitContext(CompileRuntime* rt);
     explicit JitContext(TempAllocator* temp);
+    JitContext();
     ~JitContext();
 
     
