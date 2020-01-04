@@ -22,7 +22,6 @@ class TabParent;
 template<typename T>
 class IdType
 {
-
   friend struct IPC::ParamTraits<IdType<T>>;
 
 public:
@@ -71,4 +70,4 @@ struct ParamTraits<mozilla::dom::IdType<T>>
 
 } 
 
-#endif
+#endif 

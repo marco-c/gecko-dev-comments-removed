@@ -196,10 +196,11 @@ public:
     return TabContext::SetTabContext(aContext);
   }
 
-  bool SetTabContext(mozIApplication* aOwnApp,
-                     mozIApplication* aAppFrameOwnerApp,
-                     const DocShellOriginAttributes& aOriginAttributes,
-                     const nsACString& aSignedPkgOriginNoSuffix = EmptyCString())
+  bool
+  SetTabContext(mozIApplication* aOwnApp,
+                mozIApplication* aAppFrameOwnerApp,
+                const DocShellOriginAttributes& aOriginAttributes,
+                const nsACString& aSignedPkgOriginNoSuffix = EmptyCString())
   {
     return TabContext::SetTabContext(aOwnApp,
                                      aAppFrameOwnerApp,

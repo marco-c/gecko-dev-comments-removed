@@ -77,6 +77,7 @@ public:
 
 
 
+
   TabId AllocateTabId(const TabId& aOpenerTabId,
                       const IPCTabContext& aContext,
                       const ContentParentId& aChildCpId);
@@ -162,4 +163,4 @@ private:
 } 
 } 
 
-#endif
+#endif 

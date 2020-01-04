@@ -18,8 +18,7 @@
 namespace mozilla {
 namespace dom {
 
-class CrashReporterParent :
-    public PCrashReporterParent
+class CrashReporterParent : public PCrashReporterParent
 {
 #ifdef MOZ_CRASHREPORTER
   typedef CrashReporter::AnnotationTable AnnotationTable;
@@ -137,7 +136,7 @@ public:
 
 
 
-  const nsString& ChildDumpID() {
+  const nsString& ChildDumpID() const {
     return mChildDumpID;
   }
 
@@ -147,18 +146,20 @@ public:
 
 
   void
-  AnnotateCrashReport(const nsCString& key, const nsCString& data);
+  AnnotateCrashReport(const nsCString& aKey, const nsCString& aData);
 
  protected:
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  virtual bool
-    RecvAnnotateCrashReport(const nsCString& key, const nsCString& data) override {
-    AnnotateCrashReport(key, data);
+  virtual bool RecvAnnotateCrashReport(const nsCString& aKey,
+                                       const nsCString& aData) override
+  {
+    AnnotateCrashReport(aKey, aData);
     return true;
   }
-  virtual bool
-    RecvAppendAppNotes(const nsCString& data) override;
+
+  virtual bool RecvAppendAppNotes(const nsCString& aData) override;
+
   virtual mozilla::ipc::IProtocol*
   CloneProtocol(Channel* aChannel,
                 mozilla::ipc::ProtocolCloneContext *aCtx) override;
@@ -217,7 +218,8 @@ CrashReporterParent::GenerateMinidumpAndPair(Toplevel* aTopLevel,
 #ifdef XP_MACOSX
   childHandle = aTopLevel->Process()->GetChildTask();
 #else
-  if (!base::OpenPrivilegedProcessHandle(aTopLevel->OtherPid(), &childHandle.rwget())) {
+  if (!base::OpenPrivilegedProcessHandle(aTopLevel->OtherPid(),
+                                         &childHandle.rwget())) {
     NS_WARNING("Failed to open child process handle.");
     return false;
   }
