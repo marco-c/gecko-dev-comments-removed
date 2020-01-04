@@ -63,9 +63,23 @@ StringToUsage(const nsString& aUsage, CryptoKey::KeyUsage& aUsageOut)
   return NS_OK;
 }
 
+
+
+
+
+static void
+DestroyPrivateKeyWithoutDestroyingPKCS11Object(SECKEYPrivateKey* key)
+{
+  PK11_FreeSlot(key->pkcs11Slot);
+  PORT_FreeArena(key->arena, PR_TRUE);
+}
+
+
+
+
+
 SECKEYPrivateKey*
-PrivateKeyFromPrivateKeyTemplate(SECItem* aObjID,
-                                 CK_ATTRIBUTE* aTemplate,
+PrivateKeyFromPrivateKeyTemplate(CK_ATTRIBUTE* aTemplate,
                                  CK_ULONG aTemplateSize)
 {
   
@@ -74,16 +88,63 @@ PrivateKeyFromPrivateKeyTemplate(SECItem* aObjID,
     return nullptr;
   }
 
+  
+  ScopedSECItem objID(::SECITEM_AllocItem(nullptr, nullptr, 20));
+  SECStatus rv = PK11_GenerateRandomOnSlot(slot, objID->data, objID->len);
+  if (rv != SECSuccess) {
+    return nullptr;
+  }
+  
+  SECKEYPrivateKey* preexistingKey = PK11_FindKeyByKeyID(slot, objID, nullptr);
+  if (preexistingKey) {
+    
+    
+    
+    
+    
+    DestroyPrivateKeyWithoutDestroyingPKCS11Object(preexistingKey);
+    
+    rv = PK11_GenerateRandomOnSlot(slot, objID->data, objID->len);
+    if (rv != SECSuccess) {
+      return nullptr;
+    }
+    preexistingKey = PK11_FindKeyByKeyID(slot, objID, nullptr);
+    if (preexistingKey) {
+      DestroyPrivateKeyWithoutDestroyingPKCS11Object(preexistingKey);
+      return nullptr;
+    }
+  }
+
+  CK_ATTRIBUTE* idAttributeSlot = nullptr;
+  for (CK_ULONG i = 0; i < aTemplateSize; i++) {
+    if (aTemplate[i].type == CKA_ID) {
+      if (aTemplate[i].pValue != nullptr || aTemplate[i].ulValueLen != 0) {
+        return nullptr;
+      }
+      idAttributeSlot = aTemplate + i;
+      break;
+    }
+  }
+  if (!idAttributeSlot) {
+    return nullptr;
+  }
+
+  idAttributeSlot->pValue = objID->data;
+  idAttributeSlot->ulValueLen = objID->len;
   ScopedPK11GenericObject obj(PK11_CreateGenericObject(slot,
                                                        aTemplate,
                                                        aTemplateSize,
                                                        PR_FALSE));
+  
+  
+  idAttributeSlot->pValue = nullptr;
+  idAttributeSlot->ulValueLen = 0;
   if (!obj) {
     return nullptr;
   }
 
   
-  return PK11_FindKeyByKeyID(slot, aObjID, nullptr);
+  return PK11_FindKeyByKeyID(slot, objID, nullptr);
 }
 
 CryptoKey::CryptoKey(nsIGlobalObject* aGlobal)
@@ -262,22 +323,10 @@ CryptoKey::AddPublicKeyData(SECKEYPublicKey* aPublicKey)
 
   nsNSSShutDownPreventionLock locker;
 
-  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
-  if (!slot) {
-    return NS_ERROR_DOM_OPERATION_ERR;
-  }
-
-  
-  ScopedSECItem objID(::SECITEM_AllocItem(nullptr, nullptr, 20));
-  SECStatus rv = PK11_GenerateRandomOnSlot(slot, objID->data, objID->len);
-  if (rv != SECSuccess) {
-    return NS_ERROR_DOM_OPERATION_ERR;
-  }
-
   
   ScopedSECItem params(::SECITEM_AllocItem(nullptr, nullptr, 0));
-  rv = PK11_ReadRawAttribute(PK11_TypePrivKey, mPrivateKey, CKA_EC_PARAMS,
-                             params);
+  SECStatus rv = PK11_ReadRawAttribute(PK11_TypePrivKey, mPrivateKey,
+                                       CKA_EC_PARAMS, params);
   if (rv != SECSuccess) {
     return NS_ERROR_DOM_OPERATION_ERR;
   }
@@ -300,13 +349,14 @@ CryptoKey::AddPublicKeyData(SECKEYPublicKey* aPublicKey)
     { CKA_TOKEN,            &falseValue,          sizeof(falseValue) },
     { CKA_SENSITIVE,        &falseValue,          sizeof(falseValue) },
     { CKA_PRIVATE,          &falseValue,          sizeof(falseValue) },
-    { CKA_ID,               objID->data,          objID->len },
+    
+    { CKA_ID,               nullptr,              0 },
     { CKA_EC_PARAMS,        params->data,         params->len },
     { CKA_EC_POINT,         point->data,          point->len },
     { CKA_VALUE,            value->data,          value->len },
   };
 
-  mPrivateKey = PrivateKeyFromPrivateKeyTemplate(objID, keyTemplate,
+  mPrivateKey = PrivateKeyFromPrivateKeyTemplate(keyTemplate,
                                                  PR_ARRAY_SIZE(keyTemplate));
   NS_ENSURE_TRUE(mPrivateKey, NS_ERROR_DOM_OPERATION_ERR);
 
@@ -728,13 +778,6 @@ CryptoKey::PrivateKeyFromJwk(const JsonWebKey& aJwk,
     }
 
     
-    
-    ScopedSECItem objID(PK11_MakeIDFromPubKey(ecPoint));
-    if (!objID.get()) {
-      return nullptr;
-    }
-
-    
     CK_KEY_TYPE ecValue = CKK_EC;
     CK_ATTRIBUTE keyTemplate[9] = {
       { CKA_CLASS,            &privateKeyValue,     sizeof(privateKeyValue) },
@@ -742,13 +785,14 @@ CryptoKey::PrivateKeyFromJwk(const JsonWebKey& aJwk,
       { CKA_TOKEN,            &falseValue,          sizeof(falseValue) },
       { CKA_SENSITIVE,        &falseValue,          sizeof(falseValue) },
       { CKA_PRIVATE,          &falseValue,          sizeof(falseValue) },
-      { CKA_ID,               objID->data,          objID->len },
+      
+      { CKA_ID,               nullptr,              0 },
       { CKA_EC_PARAMS,        params->data,         params->len },
       { CKA_EC_POINT,         ecPoint->data,        ecPoint->len },
       { CKA_VALUE,            (void*) d.Elements(), (CK_ULONG) d.Length() },
     };
 
-    return PrivateKeyFromPrivateKeyTemplate(objID, keyTemplate,
+    return PrivateKeyFromPrivateKeyTemplate(keyTemplate,
                                             PR_ARRAY_SIZE(keyTemplate));
   }
 
@@ -772,18 +816,6 @@ CryptoKey::PrivateKeyFromJwk(const JsonWebKey& aJwk,
     }
 
     
-    
-    SECItem nItem = { siBuffer, nullptr, 0 };
-    if (!n.ToSECItem(arena, &nItem)) {
-      return nullptr;
-    }
-
-    ScopedSECItem objID(PK11_MakeIDFromPubKey(&nItem));
-    if (!objID.get()) {
-      return nullptr;
-    }
-
-    
     CK_KEY_TYPE rsaValue = CKK_RSA;
     CK_ATTRIBUTE keyTemplate[14] = {
       { CKA_CLASS,            &privateKeyValue,      sizeof(privateKeyValue) },
@@ -791,7 +823,8 @@ CryptoKey::PrivateKeyFromJwk(const JsonWebKey& aJwk,
       { CKA_TOKEN,            &falseValue,           sizeof(falseValue) },
       { CKA_SENSITIVE,        &falseValue,           sizeof(falseValue) },
       { CKA_PRIVATE,          &falseValue,           sizeof(falseValue) },
-      { CKA_ID,               objID->data,           objID->len },
+      
+      { CKA_ID,               nullptr,               0 },
       { CKA_MODULUS,          (void*) n.Elements(),  (CK_ULONG) n.Length() },
       { CKA_PUBLIC_EXPONENT,  (void*) e.Elements(),  (CK_ULONG) e.Length() },
       { CKA_PRIVATE_EXPONENT, (void*) d.Elements(),  (CK_ULONG) d.Length() },
@@ -802,7 +835,7 @@ CryptoKey::PrivateKeyFromJwk(const JsonWebKey& aJwk,
       { CKA_COEFFICIENT,      (void*) qi.Elements(), (CK_ULONG) qi.Length() },
     };
 
-    return PrivateKeyFromPrivateKeyTemplate(objID, keyTemplate,
+    return PrivateKeyFromPrivateKeyTemplate(keyTemplate,
                                             PR_ARRAY_SIZE(keyTemplate));
   }
 
