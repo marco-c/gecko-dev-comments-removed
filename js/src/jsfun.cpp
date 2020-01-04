@@ -487,6 +487,18 @@ fun_resolve(JSContext* cx, HandleObject obj, HandleId id, bool* resolvedp)
             if (fun->hasResolvedName())
                 return true;
 
+            if (fun->isClassConstructor()) {
+                
+                
+                
+                MOZ_ASSERT(fun->atom() != cx->names().empty);
+
+                
+                
+                if (fun->atom() == nullptr)
+                    return true;
+            }
+
             v.setString(fun->atom() == nullptr ? cx->runtime()->emptyString : fun->atom());
         }
 
