@@ -195,6 +195,7 @@ class AndroidArtifactJob(ArtifactJob):
         'application.ini',
         'platform.ini',
         '**/*.so',
+        '**/interfaces.xpt',
     }
 
     def process_artifact(self, filename, processed_filename):
@@ -228,6 +229,7 @@ class LinuxArtifactJob(ArtifactJob):
         'firefox/plugin-container',
         'firefox/updater',
         'firefox/**/*.so',
+        'firefox/**/interfaces.xpt',
     }
 
     def process_package_artifact(self, filename, processed_filename):
@@ -318,6 +320,7 @@ class MacArtifactJob(ArtifactJob):
                 'gmp-clearkey/0.1/libclearkey.dylib',
                 
                 
+                '**/interfaces.xpt',
             ])
 
             with JarWriter(file=processed_filename, optimize=False, compress_level=5) as writer:
@@ -358,6 +361,7 @@ class WinArtifactJob(ArtifactJob):
         'firefox/application.ini',
         'firefox/**/*.dll',
         'firefox/*.exe',
+        'firefox/**/interfaces.xpt',
     }
     
     test_artifact_patterns = {
