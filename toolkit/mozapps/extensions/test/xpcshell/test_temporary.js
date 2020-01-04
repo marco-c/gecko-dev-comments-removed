@@ -3,11 +3,48 @@
 
 
 const ID = "bootstrap1@tests.mozilla.org";
+const sampleRDFManifest = {
+  id: ID,
+  version: "1.0",
+  bootstrap: true,
+  targetApplications: [{
+    id: "xpcshell@tests.mozilla.org",
+    minVersion: "1",
+    maxVersion: "1"
+  }],
+  name: "Test Bootstrap 1 (temporary)",
+};
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
 startupManager();
 
 BootstrapMonitor.init();
+
+
+const BOOTSTRAP_REASONS = {
+  ADDON_INSTALL: 5,
+  ADDON_UPGRADE: 7,
+  ADDON_DOWNGRADE: 8,
+};
+
+function waitForBootstrapEvent(expectedEvent, addonId) {
+  return new Promise(resolve => {
+    const observer = {
+      observe: (subject, topic, data) => {
+        const info = JSON.parse(data);
+        const targetAddonId = info.data.id;
+        if (targetAddonId === addonId && info.event === expectedEvent) {
+          resolve(info);
+          Services.obs.removeObserver(observer);
+        } else {
+          do_print(
+            `Ignoring bootstrap event: ${info.event} for ${targetAddonId}`);
+        }
+      },
+    };
+    Services.obs.addObserver(observer, "bootstrapmonitor-event", false);
+  });
+}
 
 
 
@@ -45,7 +82,8 @@ add_task(function*() {
   do_check_true(installingCalled);
   do_check_true(installedCalled);
 
-  BootstrapMonitor.checkAddonInstalled(ID, "1.0");
+  const install = BootstrapMonitor.checkAddonInstalled(ID, "1.0");
+  equal(install.reason, BOOTSTRAP_REASONS.ADDON_INSTALL);
   BootstrapMonitor.checkAddonStarted(ID, "1.0");
 
   let addon = yield promiseAddonByID(ID);
@@ -257,6 +295,126 @@ add_task(function*() {
 
 
 add_task(function*() {
+  const tempdir = gTmpD.clone();
+
+  writeInstallRDFToDir(sampleRDFManifest, tempdir,
+                       "bootstrap1@tests.mozilla.org", "bootstrap.js");
+
+  const unpackedAddon = tempdir.clone();
+  unpackedAddon.append(ID);
+  do_get_file("data/test_temporary/bootstrap.js")
+    .copyTo(unpackedAddon, "bootstrap.js");
+
+  yield AddonManager.installTemporaryAddon(unpackedAddon);
+
+  
+  
+  writeInstallRDFToDir(Object.assign({}, sampleRDFManifest, {
+    version: "2.0"
+  }), tempdir, "bootstrap1@tests.mozilla.org");
+
+  const onUninstall = waitForBootstrapEvent("uninstall", ID);
+  const onInstall = waitForBootstrapEvent("install", ID);
+  yield AddonManager.installTemporaryAddon(unpackedAddon);
+
+  const uninstall = yield onUninstall;
+  equal(uninstall.data.version, "1.0");
+  equal(uninstall.reason, BOOTSTRAP_REASONS.ADDON_UPGRADE);
+
+  const install = yield onInstall;
+  equal(install.data.version, "2.0");
+  equal(install.reason, BOOTSTRAP_REASONS.ADDON_UPGRADE);
+
+  const addon = yield promiseAddonByID(ID);
+  addon.uninstall();
+
+  unpackedAddon.remove(true);
+  yield promiseRestartManager();
+});
+
+
+
+add_task(function*() {
+  const tempdir = gTmpD.clone();
+
+  writeInstallRDFToDir(sampleRDFManifest, tempdir,
+                       "bootstrap1@tests.mozilla.org", "bootstrap.js");
+
+  const unpackedAddon = tempdir.clone();
+  unpackedAddon.append(ID);
+  do_get_file("data/test_temporary/bootstrap.js")
+    .copyTo(unpackedAddon, "bootstrap.js");
+
+  yield AddonManager.installTemporaryAddon(unpackedAddon);
+
+  
+  
+  writeInstallRDFToDir(Object.assign({}, sampleRDFManifest, {
+    version: "0.8"
+  }), tempdir, "bootstrap1@tests.mozilla.org");
+
+  const onUninstall = waitForBootstrapEvent("uninstall", ID);
+  const onInstall = waitForBootstrapEvent("install", ID);
+  yield AddonManager.installTemporaryAddon(unpackedAddon);
+
+  const uninstall = yield onUninstall;
+  equal(uninstall.data.version, "1.0");
+  equal(uninstall.reason, BOOTSTRAP_REASONS.ADDON_DOWNGRADE);
+
+  const install = yield onInstall;
+  equal(install.data.version, "0.8");
+  equal(install.reason, BOOTSTRAP_REASONS.ADDON_DOWNGRADE);
+
+  const addon = yield promiseAddonByID(ID);
+  addon.uninstall();
+
+  unpackedAddon.remove(true);
+  yield promiseRestartManager();
+});
+
+
+
+add_task(function*() {
+  const tempdir = gTmpD.clone();
+
+  writeInstallRDFToDir(sampleRDFManifest, tempdir,
+                       "bootstrap1@tests.mozilla.org", "bootstrap.js");
+
+  const unpackedAddon = tempdir.clone();
+  unpackedAddon.append(ID);
+  do_get_file("data/test_temporary/bootstrap.js")
+    .copyTo(unpackedAddon, "bootstrap.js");
+
+  const onInitialInstall = waitForBootstrapEvent("install", ID);
+  yield AddonManager.installTemporaryAddon(unpackedAddon);
+
+  const initialInstall = yield onInitialInstall;
+  equal(initialInstall.data.version, "1.0");
+  equal(initialInstall.reason, BOOTSTRAP_REASONS.ADDON_INSTALL);
+
+  
+  const onUninstall = waitForBootstrapEvent("uninstall", ID);
+  const onInstall = waitForBootstrapEvent("install", ID);
+  yield AddonManager.installTemporaryAddon(unpackedAddon);
+
+  const uninstall = yield onUninstall;
+  equal(uninstall.data.version, "1.0");
+  equal(uninstall.reason, BOOTSTRAP_REASONS.ADDON_UPGRADE);
+
+  const reInstall = yield onInstall;
+  equal(reInstall.data.version, "1.0");
+  equal(reInstall.reason, BOOTSTRAP_REASONS.ADDON_UPGRADE);
+
+  const addon = yield promiseAddonByID(ID);
+  addon.uninstall();
+
+  unpackedAddon.remove(true);
+  yield promiseRestartManager();
+});
+
+
+
+add_task(function*() {
   yield promiseInstallAllFiles([do_get_addon("test_bootstrap1_1")], true);
 
   BootstrapMonitor.checkAddonInstalled(ID, "1.0");
@@ -434,4 +592,26 @@ add_task(function*() {
 
   BootstrapMonitor.checkAddonNotInstalled(ID);
   BootstrapMonitor.checkAddonNotStarted(ID);
+});
+
+
+add_task(function*() {
+  yield AddonManager.installTemporaryAddon(do_get_addon("test_bootstrap1_1"));
+  const addon = yield promiseAddonByID(ID);
+
+  notEqual(addon, null);
+  equal(addon.temporarilyInstalled, true);
+
+  yield promiseRestartManager();
+});
+
+
+add_task(function*() {
+  yield promiseInstallAllFiles([do_get_addon("test_bootstrap1_1")], true);
+  const addon = yield promiseAddonByID(ID);
+
+  notEqual(addon, null);
+  equal(addon.temporarilyInstalled, false);
+
+  yield promiseRestartManager();
 });
