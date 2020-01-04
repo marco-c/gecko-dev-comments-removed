@@ -52,7 +52,7 @@
 
 
 
-#ifdef ID_TO_EVENT
+#ifdef MESSAGE_TO_EVENT
 #ifdef EVENT
 #error "Don't define EVENT"
 #endif 
@@ -69,11 +69,11 @@
 #error "Don't define NON_IDL_EVENT"
 #endif 
 
-#define EVENT ID_TO_EVENT
-#define WINDOW_ONLY_EVENT ID_TO_EVENT
-#define TOUCH_EVENT ID_TO_EVENT
-#define DOCUMENT_ONLY_EVENT ID_TO_EVENT
-#define NON_IDL_EVENT ID_TO_EVENT
+#define EVENT MESSAGE_TO_EVENT
+#define WINDOW_ONLY_EVENT MESSAGE_TO_EVENT
+#define TOUCH_EVENT MESSAGE_TO_EVENT
+#define DOCUMENT_ONLY_EVENT MESSAGE_TO_EVENT
+#define NON_IDL_EVENT MESSAGE_TO_EVENT
 #endif
 
 #ifdef DEFINED_FORWARDED_EVENT
@@ -90,7 +90,7 @@
 #endif 
 
 #ifndef WINDOW_ONLY_EVENT
-#define WINDOW_ONLY_EVENT(_name, _id, _type, _struct)
+#define WINDOW_ONLY_EVENT(_name, _message, _type, _struct)
 #define DEFINED_WINDOW_ONLY_EVENT
 #endif 
 
@@ -108,7 +108,7 @@
 #endif 
 
 #ifndef TOUCH_EVENT
-#define TOUCH_EVENT(_name, _id, _type, _struct)
+#define TOUCH_EVENT(_name, _message, _type, _struct)
 #define DEFINED_TOUCH_EVENT
 #endif 
 
@@ -117,7 +117,7 @@
 #endif 
 
 #ifndef DOCUMENT_ONLY_EVENT
-#define DOCUMENT_ONLY_EVENT(_name, _id, _type, _struct)
+#define DOCUMENT_ONLY_EVENT(_name, _message, _type, _struct)
 #define DEFINED_DOCUMENT_ONLY_EVENT
 #endif 
 
@@ -126,7 +126,7 @@
 #endif 
 
 #ifndef NON_IDL_EVENT
-#define NON_IDL_EVENT(_name, _id, _type, _struct)
+#define NON_IDL_EVENT(_name, _message, _type, _struct)
 #define DEFINED_NON_IDL_EVENT
 #endif 
 
@@ -764,7 +764,7 @@ NON_IDL_EVENT(SVGZoom,
               eSVGZoomEventClass)
 
 
-#ifndef ID_TO_EVENT
+#ifndef MESSAGE_TO_EVENT
 
 NON_IDL_EVENT(zoom,
               NS_SVG_ZOOM,
@@ -772,7 +772,7 @@ NON_IDL_EVENT(zoom,
               eBasicEventClass)
 #endif
 
-#ifndef ID_TO_EVENT
+#ifndef MESSAGE_TO_EVENT
 NON_IDL_EVENT(begin,
               NS_SMIL_BEGIN,
               EventNameType_SMIL,
@@ -783,7 +783,7 @@ NON_IDL_EVENT(beginEvent,
               EventNameType_None,
               eSMILTimeEventClass)
 
-#ifndef ID_TO_EVENT
+#ifndef MESSAGE_TO_EVENT
 NON_IDL_EVENT(end,
               NS_SMIL_END,
               EventNameType_SMIL,
@@ -794,7 +794,7 @@ NON_IDL_EVENT(endEvent,
               EventNameType_None,
               eSMILTimeEventClass)
 
-#ifndef ID_TO_EVENT
+#ifndef MESSAGE_TO_EVENT
 NON_IDL_EVENT(repeat,
               NS_SMIL_REPEAT,
               EventNameType_SMIL,
@@ -967,7 +967,7 @@ NON_IDL_EVENT(complete,
 #undef BEFOREUNLOAD_EVENT
 #endif 
 
-#ifdef ID_TO_EVENT
+#ifdef MESSAGE_TO_EVENT
 #undef EVENT
 #undef WINDOW_ONLY_EVENT
 #undef TOUCH_EVENT
