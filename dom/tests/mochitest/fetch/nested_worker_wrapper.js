@@ -1,7 +1,10 @@
+
+var worker;
+
 addEventListener('message', function nestedWorkerWrapperOnMessage(evt) {
   removeEventListener('message', nestedWorkerWrapperOnMessage);
 
-  var worker = new Worker('worker_wrapper.js');
+  worker = new Worker('worker_wrapper.js');
 
   worker.addEventListener('message', function(evt) {
     self.postMessage({
