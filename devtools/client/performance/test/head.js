@@ -206,6 +206,37 @@ function onceSpread(aTarget, aEventName, aUseCapture) {
   return once(aTarget, aEventName, aUseCapture, true);
 }
 
+
+
+
+
+
+function waitForMozAfterPaint() {
+  return new Promise(resolve => {
+    let onMozAfterPaint = function() {
+      window.removeEventListener("MozAfterPaint", onMozAfterPaint);
+      resolve();
+    };
+    window.addEventListener("MozAfterPaint", onMozAfterPaint);
+  });
+}
+
+
+
+
+
+
+function* appendAndWaitForPaint(parent, element) {
+  let isE10s = Services.appinfo.browserTabsRemoteAutostart;
+  if (isE10s) {
+    let onMozAfterPaint = waitForMozAfterPaint();
+    parent.appendChild(element);
+    return onMozAfterPaint;
+  }
+
+  parent.appendChild(element);
+}
+
 function test () {
   Task.spawn(spawnTest).then(finish, handleError);
 }
