@@ -71,7 +71,7 @@ exports.lookup = function(key) {
 };
 
 
-exports.propertyLookup = Proxy.create({
+exports.propertyLookup = new Proxy({}, {
   get: function(rcvr, name) {
     return exports.lookup(name);
   }
