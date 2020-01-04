@@ -623,12 +623,12 @@ public:
   MediaRawData(const uint8_t* aData, size_t mSize);
 
   
-  const uint8_t* Data() const { return mBuffer.Data(); }
+  const uint8_t* Data() const { return mData; }
   
-  size_t Size() const { return mBuffer.Length(); }
+  size_t Size() const { return mSize; }
   size_t ComputedSizeOfIncludingThis() const
   {
-    return sizeof(*this) + mBuffer.ComputedSizeOfExcludingThis();
+    return sizeof(*this) + mCapacity;
   }
 
   const CryptoSample& mCrypto;
@@ -648,7 +648,16 @@ protected:
 
 private:
   friend class MediaRawDataWriter;
-  AlignedByteBuffer mBuffer;
+  
+  
+  
+  
+  
+  bool EnsureCapacity(size_t aSize);
+  uint8_t* mData;
+  size_t mSize;
+  UniquePtr<uint8_t[]> mBuffer;
+  uint32_t mCapacity;
   CryptoSample mCryptoInternal;
   MediaRawData(const MediaRawData&); 
 };
