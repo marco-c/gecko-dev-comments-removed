@@ -3244,6 +3244,8 @@ WebSocketChannel::AsyncOpen(nsIURI *aURI,
     return rv;
   }
 
+  
+  
   rv = io2->NewChannelFromURIWithProxyFlags2(
               localURI,
               mURI,
@@ -3254,7 +3256,7 @@ WebSocketChannel::AsyncOpen(nsIURI *aURI,
               mLoadInfo->LoadingPrincipal(),
               mLoadInfo->TriggeringPrincipal(),
               mLoadInfo->GetSecurityFlags(),
-              mLoadInfo->GetContentPolicyType(),
+              mLoadInfo->InternalContentPolicyType(),
               getter_AddRefs(localChannel));
   NS_ENSURE_SUCCESS(rv, rv);
 

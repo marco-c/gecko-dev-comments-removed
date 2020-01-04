@@ -486,7 +486,7 @@ TabParent::ShouldSwitchProcess(nsIChannel* aChannel)
   nsCOMPtr<nsIURI> uri;
   aChannel->GetURI(getter_AddRefs(uri));
   LogChannelRelevantInfo(uri, loadingPrincipal, resultPrincipal,
-                         loadInfo->GetContentPolicyType());
+                         loadInfo->InternalContentPolicyType());
 
   
   bool sameOrigin = false;
@@ -497,7 +497,7 @@ TabParent::ShouldSwitchProcess(nsIChannel* aChannel)
   }
 
   
-  if (nsIContentPolicy::TYPE_DOCUMENT != loadInfo->GetContentPolicyType()) {
+  if (nsIContentPolicy::TYPE_DOCUMENT != loadInfo->InternalContentPolicyType()) {
     LOG("Subresource of a document. No need to switch process.\n");
     return false;
   }
