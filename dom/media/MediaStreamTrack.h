@@ -69,6 +69,13 @@ public:
   
 
 
+
+
+  virtual void Destroy() {}
+
+  
+
+
   virtual MediaSourceEnum GetMediaSource() const = 0;
 
   
