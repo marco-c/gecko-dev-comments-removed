@@ -292,6 +292,24 @@ DeflateStringToUTF8Buffer(JSFlatString* src, mozilla::RangedPtr<char> dst,
 
 
 
+enum class SmallestEncoding {
+    ASCII,
+    Latin1,
+    UTF16
+};
+
+
+
+
+
+
+JS_PUBLIC_API(SmallestEncoding)
+FindSmallestEncoding(UTF8Chars utf8);
+
+
+
+
+
 
 
 extern Latin1CharsZ
