@@ -969,22 +969,6 @@ function getBoolPref(aName, aDefault) {
 
 
 
-
-
-
-function getSanitizedFile(aName) {
-  var fileName = sanitizeName(aName) + ".xml";
-  var file = getDir(NS_APP_USER_SEARCH_DIR);
-  file.append(fileName);
-  file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
-  return file;
-}
-
-
-
-
-
-
 function sanitizeName(aName) {
   const maxLength = 60;
   const minLength = 1;
@@ -1302,6 +1286,8 @@ function Engine(aLocation, aIsReadOnly) {
       this._file = aLocation.value;
     else if (aLocation.type == "uri")
       this._uri = aLocation.value;
+    else if (aLocation.type == "user")
+      this._shortName = aLocation.shortName;
   } else if (aLocation instanceof Ci.nsILocalFile) {
     
     this._file = aLocation;
@@ -1323,15 +1309,25 @@ function Engine(aLocation, aIsReadOnly) {
   } else
     ERROR("Engine location is neither a File nor a URI object",
           Cr.NS_ERROR_INVALID_ARG);
+
+  if (!this._shortName) {
+    let shortName;
+    if (this._file) {
+      shortName = this._file.leafName;
+    }
+    else if (aIsReadOnly && this._uri && this._uri instanceof Ci.nsIURL) {
+      shortName = this._uri.fileName;
+    }
+    if (shortName && shortName.endsWith(".xml")) {
+      this._shortName = shortName.slice(0, -4);
+    }
+  }
 }
 
 Engine.prototype = {
   
   
   _alias: undefined,
-  
-  
-  _identifier: undefined,
   
   _data: null,
   
@@ -1653,7 +1649,8 @@ Engine.prototype = {
       engineToUpdate = aEngine._engineToUpdate.wrappedJSObject;
 
       
-      aEngine._file = engineToUpdate._file;
+      
+      aEngine._shortName = engineToUpdate._shortName;
     }
 
     var parser = Cc["@mozilla.org/xmlextras/domparser;1"].
@@ -1705,8 +1702,8 @@ Engine.prototype = {
 
     
     
-    if (!aEngine._file)
-      aEngine._file = getSanitizedFile(aEngine.name);
+    if (!aEngine._shortName)
+      aEngine._shortName = sanitizeName(aEngine.name);
 
     if (engineToUpdate) {
       
@@ -2084,6 +2081,7 @@ Engine.prototype = {
   _initWithJSON: function SRCH_ENG__initWithJSON(aJson) {
     this.__id = aJson._id;
     this._name = aJson._name;
+    this._shortName = aJson._shortName;
     this._description = aJson.description;
     if (aJson._hasPreferredIcon == undefined)
       this._hasPreferredIcon = true;
@@ -2122,6 +2120,7 @@ Engine.prototype = {
     var json = {
       _id: this._id,
       _name: this._name,
+      _shortName: this._shortName,
       description: this.description,
       __searchForm: this.__searchForm,
       _iconURL: this._iconURL,
@@ -2193,24 +2192,12 @@ Engine.prototype = {
 
 
   get identifier() {
-    if (this._identifier !== undefined) {
-      return this._identifier;
-    }
-
     
     if (!this._isInAppDir && !this._isInJAR) {
-      return this._identifier = null;
+      return null;
     }
 
-    let leaf = this._getLeafName();
-    ENSURE_WARN(leaf, "identifier: app-provided engine has no leafName");
-
-    
-    let ext = leaf.lastIndexOf(".");
-    if (ext == -1) {
-      return this._identifier = leaf;
-    }
-    return this._identifier = leaf.substring(0, ext);
+    return this._shortName;
   },
 
   get description() {
@@ -2254,20 +2241,6 @@ Engine.prototype = {
   },
 
   
-
-
-
-  _getLeafName: function () {
-    if (this._file) {
-      return this._file.leafName;
-    }
-    if (this._uri && this._uri instanceof Ci.nsIURL) {
-      return this._uri.fileName;
-    }
-    return null;
-  },
-
-  
   
   __id: null,
   get _id() {
@@ -2275,7 +2248,7 @@ Engine.prototype = {
       return this.__id;
     }
 
-    let leafName = this._getLeafName();
+    let leafName = this._shortName + ".xml";
 
     
     
@@ -2319,9 +2292,10 @@ Engine.prototype = {
 
 
 
-    let leafName = this._getLeafName();
+    let leafName = this._shortName;
     if (!leafName)
       return "null";
+    leafName += ".xml";
 
     let prefix = "", suffix = "";
     let file = this._file;
@@ -2384,15 +2358,15 @@ Engine.prototype = {
 
   get _installLocation() {
     if (this.__installLocation === null) {
-      if (!this._file) {
+      if (!this._readOnly)
+        this.__installLocation = SEARCH_PROFILE_DIR;
+      else if (!this._file) {
         ENSURE_WARN(this._uri, "Engines without files must have URIs",
                     Cr.NS_ERROR_UNEXPECTED);
         this.__installLocation = SEARCH_JAR;
       }
       else if (this._file.parent.equals(getDir(NS_APP_SEARCH_DIR)))
         this.__installLocation = SEARCH_APP_DIR;
-      else if (this._file.parent.equals(getDir(NS_APP_USER_SEARCH_DIR)))
-        this.__installLocation = SEARCH_PROFILE_DIR;
       else
         this.__installLocation = SEARCH_IN_EXTENSION;
     }
@@ -2907,6 +2881,9 @@ SearchService.prototype = {
     cache.visibleDefaultEngines = this._visibleDefaultEngines;
 
     let getParent = engine => {
+      if (!engine._readOnly)
+        return null;
+
       if (engine._file)
         return engine._file.parent;
 
@@ -2928,16 +2905,17 @@ SearchService.prototype = {
     for (let name in this._engines) {
       let engine = this._engines[name];
       let parent = getParent(engine);
-      if (!parent) {
+      if (!parent && engine._readOnly) {
         LOG("Error: no parent for engine " + engine._location + ", failing to cache it");
 
         continue;
       }
 
-      let cacheKey = parent.path;
+      let cacheKey = parent ? parent.path : "[user-installed]";
       if (!cache.directories[cacheKey]) {
         let cacheEntry = {};
-        cacheEntry.lastModifiedTime = parent.lastModifiedTime;
+        if (parent)
+          cacheEntry.lastModifiedTime = parent.lastModifiedTime;
         cacheEntry.engines = [];
         cache.directories[cacheKey] = cacheEntry;
       }
@@ -2992,10 +2970,12 @@ SearchService.prototype = {
     }
 
     let otherDirs = [];
+    let userSearchDir = getDir(NS_APP_USER_SEARCH_DIR);
     locations = getDir(NS_APP_SEARCH_DIR_LIST, Ci.nsISimpleEnumerator);
     while (locations.hasMoreElements()) {
       let dir = locations.getNext().QueryInterface(Ci.nsIFile);
-      if (dir.directoryEntries.hasMoreElements())
+      if ((!cache.directories || !dir.equals(userSearchDir)) &&
+          dir.directoryEntries.hasMoreElements())
         otherDirs.push(dir);
     }
 
@@ -3014,7 +2994,11 @@ SearchService.prototype = {
     }
 
     let buildID = Services.appinfo.platformBuildID;
-    let cachePaths = [path for (path in cache.directories)];
+    let cachePaths = [];
+    if (cache.directories) {
+      cachePaths = [path for (path in cache.directories)]
+                     .filter(p => p != "[user-installed]");
+    }
 
     let rebuildCache = !cache.directories ||
                        cache.version != CACHE_VERSION ||
@@ -3032,7 +3016,7 @@ SearchService.prototype = {
 
       this._loadFromChromeURLs(chromeURIs);
 
-      
+      LOG("_loadEngines: load user-installed engines from the obsolete cache");
       this._loadEnginesFromCache(cache, true);
 
       otherDirs.forEach(this._loadEnginesFromDir, this);
@@ -3094,9 +3078,12 @@ SearchService.prototype = {
       
       
       let otherDirs = [];
+      let userSearchDir = getDir(NS_APP_USER_SEARCH_DIR);
       locations = getDir(NS_APP_SEARCH_DIR_LIST, Ci.nsISimpleEnumerator);
       while (locations.hasMoreElements()) {
         let dir = locations.getNext().QueryInterface(Ci.nsIFile);
+        if (cache.directories && dir.equals(userSearchDir))
+          continue;
         let iterator = new OS.File.DirectoryIterator(dir.path,
                                                      { winPattern: "*.xml" });
         try {
@@ -3140,7 +3127,11 @@ SearchService.prototype = {
       }
 
       let buildID = Services.appinfo.platformBuildID;
-      let cachePaths = [path for (path in cache.directories)];
+      let cachePaths = [];
+      if (cache.directories) {
+        cachePaths = [path for (path in cache.directories)]
+                       .filter(p => p != "[user-installed]");
+      }
 
       let rebuildCache = !cache.directories ||
                          cache.version != CACHE_VERSION ||
@@ -3164,7 +3155,7 @@ SearchService.prototype = {
            yield checkForSyncCompletion(this._asyncLoadFromChromeURLs(chromeURIs));
         engines = engines.concat(enginesFromURLs);
 
-        
+        LOG("_asyncLoadEngines: loading user-installed engines from the obsolete cache");
         this._loadEnginesFromCache(cache, true);
 
         for (let loadDir of otherDirs) {
@@ -3355,6 +3346,8 @@ SearchService.prototype = {
                              json._readOnly);
       else if (json._url)
         engine = new Engine({type: "uri", value: json._url}, json._readOnly);
+      else if (json._shortName)
+        engine = new Engine({type: "user", value: json._shortName}, false);
 
       engine._initWithJSON(json);
       this._addEngineToStore(engine);
@@ -3930,7 +3923,7 @@ SearchService.prototype = {
     if (this._engines[aName])
       FAIL("An engine with that name already exists!", Cr.NS_ERROR_FILE_ALREADY_EXISTS);
 
-    var engine = new Engine(getSanitizedFile(aName), false);
+    var engine = new Engine({type: "user", shortName: sanitizeName(aName)}, false);
     engine._initFromMetadata(aName, aIconURL, aAlias, aDescription,
                              aMethod, aTemplate, aExtensionID);
     this._addEngineToStore(engine);
@@ -3997,7 +3990,10 @@ SearchService.prototype = {
       engineToRemove.alias = null;
     } else {
       
-      engineToRemove._remove();
+      
+      if (engineToRemove._file &&
+          engineToRemove._file.exists())
+        engineToRemove._remove();
       engineToRemove._file = null;
 
       

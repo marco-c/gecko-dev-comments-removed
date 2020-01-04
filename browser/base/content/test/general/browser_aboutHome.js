@@ -99,7 +99,8 @@ var gTests = [
 
     let engine = yield promiseNewEngine("searchSuggestionEngine.xml");
     
-    engine.wrappedJSObject._identifier = 'org.mozilla.testsearchsuggestions';
+    Object.defineProperty(engine.wrappedJSObject, "identifier",
+                          {value: "org.mozilla.testsearchsuggestions"});
 
     let p = promiseContentSearchChange(engine.name);
     Services.search.currentEngine = engine;

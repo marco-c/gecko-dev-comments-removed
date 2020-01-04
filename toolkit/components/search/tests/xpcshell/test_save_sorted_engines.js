@@ -43,7 +43,7 @@ add_task(function* test_save_sorted_engines() {
 
   
   let json = getSearchMetadata();
-  do_check_eq(json["[app]/test-search-engine.xml"].order, 1);
+  do_check_eq(json["[profile]/test-search-engine.xml"].order, 1);
   do_check_eq(json["[profile]/a-second-test-engine.xml"].order, 2);
 
   
