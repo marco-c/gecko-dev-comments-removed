@@ -104,7 +104,8 @@ function string(name) {
 }
 
 function encodedString(name, len) {
-    var nameBytes = name.split('').map(c => c.charCodeAt(0));
+    var name = unescape(encodeURIComponent(name)); 
+    var nameBytes = name.split('').map(c => c.charCodeAt(0)); 
     return varU32(len === undefined ? nameBytes.length : len).concat(nameBytes);
 }
 
@@ -278,9 +279,10 @@ runStartTraceTest([{name: 'test'}], 'test');
 runStartTraceTest([{name: 'test', locals: [{name: 'var1'}, {name: 'var2'}]}], 'test');
 runStartTraceTest([{name: 'test', locals: [{name: 'var1'}, {name: 'var2'}]}], 'test');
 runStartTraceTest([{name: 'test1'}, {name: 'test2'}], 'test1');
+runStartTraceTest([{name: 'test☃'}], 'test☃');
+runStartTraceTest([{name: 'te\xE0\xFF'}], 'te\xE0\xFF');
 runStartTraceTest([], 'wasm-function[0]');
 
 runStartTraceTest([{nameLen: 100, name: 'test'}], 'wasm-function[0]'); 
 runStartTraceTest([{name: 'test', locals: [{nameLen: 40, name: 'var1'}]}], 'wasm-function[0]'); 
 runStartTraceTest([{name: ''}], 'wasm-function[0]'); 
-runStartTraceTest([{name: 'te\xE0\xFF'}], 'wasm-function[0]'); 
