@@ -750,7 +750,7 @@ MediaFormatReader::NeedInput(DecoderData& aDecoder)
   
   
   return
-    !aDecoder.mDraining &&
+    !(aDecoder.mDraining || aDecoder.mDrainComplete) &&
     !aDecoder.HasFatalError() &&
     aDecoder.mDecodingRequested &&
     !aDecoder.mDemuxRequest.Exists() &&
