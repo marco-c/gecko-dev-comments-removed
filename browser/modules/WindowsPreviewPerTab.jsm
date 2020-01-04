@@ -50,6 +50,8 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/PageThumbs.jsm");
 
 
 const TOGGLE_PREF_NAME = "browser.taskbar.previews.enable";
@@ -75,9 +77,9 @@ XPCOMUtils.defineLazyServiceGetter(this, "faviconSvc",
 
 function _imageFromURI(doc, uri, privateMode, callback) {
   let channel = ioSvc.newChannelFromURI2(uri,
-                                         doc,
-                                         null,  
-                                         null,  
+                                         null,
+                                         Services.scriptSecurityManager.getSystemPrincipal(),
+                                         null,
                                          Ci.nsILoadInfo.SEC_NORMAL,
                                          Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE);
   try {
@@ -140,152 +142,98 @@ function snapRectAtScale(r, scale) {
 
 
 
+
+
 function PreviewController(win, tab) {
   this.win = win;
   this.tab = tab;
   this.linkedBrowser = tab.linkedBrowser;
   this.preview = this.win.createTabPreview(this);
 
-  this.linkedBrowser.addEventListener("MozAfterPaint", this, false);
-  this.linkedBrowser.addEventListener("resize", this, false);
   this.tab.addEventListener("TabAttrModified", this, false);
 
   XPCOMUtils.defineLazyGetter(this, "canvasPreview", function () {
-    let canvas = this.win.win.document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
+    let canvas = PageThumbs.createCanvas();
     canvas.mozOpaque = true;
     return canvas;
-  });
-
-  XPCOMUtils.defineLazyGetter(this, "dirtyRegion",
-    function () {
-      let dirtyRegion = Cc["@mozilla.org/gfx/region;1"]
-                       .createInstance(Ci.nsIScriptableRegion);
-      dirtyRegion.init();
-      return dirtyRegion;
-    });
-
-  XPCOMUtils.defineLazyGetter(this, "winutils",
-    function () {
-      let win = tab.linkedBrowser.contentWindow;
-      return win.QueryInterface(Ci.nsIInterfaceRequestor)
-                .getInterface(Ci.nsIDOMWindowUtils);
   });
 }
 
 PreviewController.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsITaskbarPreviewController,
                                          Ci.nsIDOMEventListener]),
+
   destroy: function () {
     this.tab.removeEventListener("TabAttrModified", this, false);
-    this.linkedBrowser.removeEventListener("resize", this, false);
-    this.linkedBrowser.removeEventListener("MozAfterPaint", this, false);
 
     
     
     delete this.win;
     delete this.preview;
-    delete this.dirtyRegion;
   },
+
   get wrappedJSObject() {
     return this;
   },
 
-  get dirtyRects() {
-    let rectstream = this.dirtyRegion.getRects();
-    if (!rectstream)
-      return [];
-    let rects = [];
-    for (let i = 0; i < rectstream.length; i+= 4) {
-      let r = {x:      rectstream[i],
-               y:      rectstream[i+1],
-               width:  rectstream[i+2],
-               height: rectstream[i+3]};
-      rects.push(r);
-    }
-    return rects;
-  },
-
-  
-  
   
   resetCanvasPreview: function () {
-    this.resizeCanvasPreview(0, 0);
+    this.canvasPreview.width = 0;
+    this.canvasPreview.height = 0;
   },
 
-  resizeCanvasPreview: function (width, height) {
-    this.canvasPreview.width = width;
-    this.canvasPreview.height = height;
+  
+
+
+  resizeCanvasPreview: function (aRequestedWidth, aRequestedHeight) {
+    this.canvasPreview.width = aRequestedWidth;
+    this.canvasPreview.height = aRequestedHeight;
   },
 
-  get wasResizedSinceLastPreview () {
-    let bx = this.linkedBrowser.boxObject;
-    return bx.width != this.canvasPreview.width ||
-           bx.height != this.canvasPreview.height;
-  },
 
   get zoom() {
     
     
     
     
-    return this.winutils.fullZoom;
+    return this.tab.linkedBrowser.fullZoom;
+  },
+
+  get screenPixelsPerCSSPixel() {
+    let chromeWin = this.tab.ownerGlobal;
+    let windowUtils = chromeWin.getInterface(Ci.nsIDOMWindowUtils);
+    return windowUtils.screenPixelsPerCSSPixel;
+  },
+
+  get browserDims() {
+    return this.tab.linkedBrowser.getBoundingClientRect();
+  },
+
+  cacheBrowserDims: function () {
+    let dims = this.browserDims;
+    this._cachedWidth = dims.width;
+    this._cachedHeight = dims.height;
+  },
+
+  testCacheBrowserDims: function () {
+    let dims = this.browserDims;
+    return this._cachedWidth == dims.width &&
+      this._cachedHeight == dims.height;
   },
 
   
-  
-  updateCanvasPreview: function () {
-    let win = this.linkedBrowser.contentWindow;
-    let bx = this.linkedBrowser.boxObject;
-    
-    
-    
-    let flushLayout = this.wasResizedSinceLastPreview;
-    
-    if (flushLayout) {
-      
-      this.onTabPaint({left:0, top:0, right:win.innerWidth, bottom:win.innerHeight});
-      this.resizeCanvasPreview(bx.width, bx.height);
-    }
 
-    
-    let ctx = this.canvasPreview.getContext("2d");
-    let scale = this.zoom;
 
-    let flags = this.canvasPreviewFlags;
-    if (flushLayout)
-      flags &= ~Ci.nsIDOMCanvasRenderingContext2D.DRAWWINDOW_DO_NOT_FLUSH;
 
+  updateCanvasPreview: function (aFullScale, aCallback) {
     
     
-    this.dirtyRegion.intersectRect(0, 0, win.innerWidth, win.innerHeight);
-    this.dirtyRects.forEach(function (r) {
-      
-      
-      snapRectAtScale(r, scale);
-      let x = r.x;
-      let y = r.y;
-      let width = r.width;
-      let height = r.height;
-
-      ctx.save();
-      ctx.scale(scale, scale);
-      ctx.translate(x, y);
-      ctx.drawWindow(win, x, y, width, height, "white", flags);
-      ctx.restore();
-    });
-    this.dirtyRegion.setToRect(0,0,0,0);
-
+    this.cacheBrowserDims();
+    PageThumbs.captureToCanvas(this.linkedBrowser, this.canvasPreview,
+                               aCallback, { fullScale: aFullScale });
     
     
     AeroPeek.resetCacheTimer();
-  },
-
-  onTabPaint: function (rect) {
-    let x = Math.floor(rect.left),
-        y = Math.floor(rect.top),
-        width = Math.ceil(rect.right) - x,
-        height = Math.ceil(rect.bottom) - y;
-    this.dirtyRegion.unionRect(x, y, width, height);
   },
 
   updateTitleAndTooltip: function () {
@@ -297,70 +245,85 @@ PreviewController.prototype = {
   
   
 
+  
   get width() {
     return this.win.width;
   },
 
+  
   get height() {
     return this.win.height;
   },
 
   get thumbnailAspectRatio() {
-    let boxObject = this.tab.linkedBrowser.boxObject;
+    let browserDims = this.browserDims;
     
-    let tabWidth = boxObject.width || 1;
+    let tabWidth = browserDims.width || 1;
     
-    let tabHeight = boxObject.height || 1;
+    let tabHeight = browserDims.height || 1;
     return tabWidth / tabHeight;
   },
 
-  drawPreview: function (ctx) {
-    this.win.tabbrowser.previewTab(this.tab, () => this.previewTabCallback(ctx));
+  
 
-    
-    return false;
-  },
 
-  previewTabCallback: function (ctx) {
-    
-    
-    
-    let scale = this.winutils.screenPixelsPerCSSPixel / this.winutils.fullZoom;
-    ctx.save();
-    ctx.scale(scale, scale);
-    let width = this.win.width;
-    let height = this.win.height;
-    
-    ctx.drawWindow(this.win.win, 0, 0, width, height, "transparent");
 
+
+
+  requestPreview: function (aTaskbarCallback) {
     
-    
-    
-    
-    
-    if (this.tab.hasAttribute("pending")) {
+    this.resetCanvasPreview();
+    this.updateCanvasPreview(true, (aPreviewCanvas) => {
+      let winWidth = this.win.width;
+      let winHeight = this.win.height;
+
+      let composite = PageThumbs.createCanvas();
+
+      
+      composite.mozOpaque = false;
+
+      let ctx = composite.getContext('2d');
+      let scale = this.screenPixelsPerCSSPixel / this.zoom;
+
+      composite.width = winWidth * scale;
+      composite.height = winHeight * scale;
+
+      ctx.save();
+      ctx.scale(scale, scale);
+
       
       
-      this.updateCanvasPreview();
+      ctx.drawWindow(this.win.win, 0, 0, winWidth, winHeight, "rgba(0,0,0,0)");
 
-      let boxObject = this.linkedBrowser.boxObject;
-      ctx.translate(boxObject.x, boxObject.y);
-      ctx.drawImage(this.canvasPreview, 0, 0);
-    }
+      
+      ctx.drawImage(aPreviewCanvas, this.browserDims.x, this.browserDims.y, aPreviewCanvas.width, aPreviewCanvas.height);
+      ctx.restore();
 
-    ctx.restore();
+      
+      this.win.tabbrowser.previewTab(this.tab, function () { aTaskbarCallback.done(composite, false); });
+    });
   },
 
-  drawThumbnail: function (ctx, width, height) {
-    this.updateCanvasPreview();
+  
 
-    let scale = width/this.linkedBrowser.boxObject.width;
-    ctx.scale(scale, scale);
-    ctx.drawImage(this.canvasPreview, 0, 0);
 
-    
-    return false;
+
+
+
+
+
+
+
+
+  requestThumbnail: function (aTaskbarCallback, aRequestedWidth, aRequestedHeight) {
+    this.resizeCanvasPreview(aRequestedWidth, aRequestedHeight);
+    this.updateCanvasPreview(false, (aThumbnailCanvas) => {
+      aTaskbarCallback.done(aThumbnailCanvas, false);
+    });
   },
+
+  
+  
 
   onClose: function () {
     this.win.tabbrowser.removeTab(this.tab);
@@ -377,32 +340,8 @@ PreviewController.prototype = {
   
   handleEvent: function (evt) {
     switch (evt.type) {
-      case "MozAfterPaint":
-        if (evt.originalTarget === this.linkedBrowser.contentWindow) {
-          let clientRects = evt.clientRects;
-          let length = clientRects.length;
-          for (let i = 0; i < length; i++) {
-            let r = clientRects.item(i);
-            this.onTabPaint(r);
-          }
-        }
-        this.preview.invalidate();
-        break;
       case "TabAttrModified":
         this.updateTitleAndTooltip();
-        break;
-      case "resize":
-        
-        
-        
-        
-        this.win.previews.forEach(function (p) {
-          let controller = p.controller.wrappedJSObject;
-          if (controller.wasResizedSinceLastPreview) {
-            controller.resetCanvasPreview();
-            p.invalidate();
-          }
-        });
         break;
     }
   }
@@ -429,12 +368,18 @@ function TabWindow(win) {
   this.win = win;
   this.tabbrowser = win.gBrowser;
 
+  this.cacheDims();
+
   this.previews = new Map();
 
   for (let i = 0; i < this.tabEvents.length; i++)
     this.tabbrowser.tabContainer.addEventListener(this.tabEvents[i], this, false);
-  this.tabbrowser.addTabsProgressListener(this);
 
+  for (let i = 0; i < this.winEvents.length; i++)
+    this.win.addEventListener(this.winEvents[i], this, false);
+
+  this.tabbrowser.addTabsProgressListener(this);
+   
   AeroPeek.windows.push(this);
   let tabs = this.tabbrowser.tabs;
   for (let i = 0; i < tabs.length; i++)
@@ -447,6 +392,7 @@ function TabWindow(win) {
 TabWindow.prototype = {
   _enabled: false,
   tabEvents: ["TabOpen", "TabClose", "TabSelect", "TabMove"],
+  winEvents: ["resize"],
 
   destroy: function () {
     this._destroying = true;
@@ -454,6 +400,10 @@ TabWindow.prototype = {
     let tabs = this.tabbrowser.tabs;
 
     this.tabbrowser.removeTabsProgressListener(this);
+
+  for (let i = 0; i < this.winEvents.length; i++)
+    this.win.removeEventListener(this.winEvents[i], this, false);
+
     for (let i = 0; i < this.tabEvents.length; i++)
       this.tabbrowser.tabContainer.removeEventListener(this.tabEvents[i], this, false);
 
@@ -470,6 +420,15 @@ TabWindow.prototype = {
   },
   get height () {
     return this.win.innerHeight;
+  },
+
+  cacheDims: function () {
+    this._cachedWidth = this.width;
+    this._cachedHeight = this.height;
+  },
+
+  testCacheDims: function () {
+    return this._cachedWidth == this.width && this._cachedHeight == this.height;
   },
 
   
@@ -493,7 +452,7 @@ TabWindow.prototype = {
     preview.active = this.tabbrowser.selectedTab == controller.tab;
     
     getFaviconAsImage(
-      controller.linkedBrowser.contentWindow.document,
+      null,
       null,
       PrivateBrowsingUtils.isWindowPrivate(this.win),
       function (img) {
@@ -577,15 +536,83 @@ TabWindow.prototype = {
       case "TabMove":
         this.updateTabOrdering();
         break;
+      case "resize":
+        if (!AeroPeek._prefenabled)
+          return;
+        this.onResize();
+        break;
     }
   },
 
   
+  setInvalidationTimer: function () {
+    if (!this.invalidateTimer) {
+      this.invalidateTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    }
+    this.invalidateTimer.cancel();
+
+    
+    this.invalidateTimer.initWithCallback(() => {
+      
+      
+      this.previews.forEach(function (aPreview) {
+        let controller = aPreview.controller.wrappedJSObject;
+        if (!controller.testCacheBrowserDims()) {
+          controller.cacheBrowserDims();
+          aPreview.invalidate();
+        }
+      });
+    }, 1000, Ci.nsITimer.TYPE_ONE_SHOT);
+  },
+
+  onResize: function () {
+    
+
+    
+    
+    
+
+    if (this.testCacheDims()) {
+      return;
+    }
+
+    
+    this.cacheDims();
+
+    
+    this.setInvalidationTimer();
+  },
+
+  invalidateTabPreview: function(aBrowser) {
+    for (let [tab, preview] of this.previews) {
+      if (aBrowser == tab.linkedBrowser) {
+        preview.invalidate();
+        break;
+      }
+    }
+  },
+
+  
+
+  onLocationChange: function (aBrowser) {
+    
+    
+    
+  },
+
+  onStateChange: function (aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
+    if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
+        aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) {
+      this.invalidateTabPreview(aBrowser);
+    }
+  },
+
   onLinkIconAvailable: function (aBrowser, aIconURL) {
     let self = this;
     getFaviconAsImage(
-      aBrowser.contentWindow.document,
-      aIconURL,PrivateBrowsingUtils.isWindowPrivate(this.win),
+      null,
+      aIconURL,
+      PrivateBrowsingUtils.isWindowPrivate(this.win),
       function (img) {
         let index = self.tabbrowser.browsers.indexOf(aBrowser);
         
