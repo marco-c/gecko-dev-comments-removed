@@ -16,7 +16,7 @@
 
 
 
-const PR_RDWR        = 0x04; 
+const PR_RDWR        = 0x04;
 const PR_CREATE_FILE = 0x08;
 const PR_TRUNCATE    = 0x20;
 
@@ -68,7 +68,7 @@ function tamper(inFilePath, outFilePath, modifications, newEntries) {
     } finally {
       reader.close();
     }
-    
+
     
     
     for(var name in modifications) {
@@ -76,7 +76,7 @@ function tamper(inFilePath, outFilePath, modifications, newEntries) {
         throw "input file was missing expected entries: " + name;
       }
     }
-    
+
     
     newEntries.forEach(function(newEntry) {
       var sis = Cc["@mozilla.org/io/string-input-stream;1"]

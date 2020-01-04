@@ -35,11 +35,10 @@ function onLoad()
       
       
       
-      tokenName="";
+      tokenName = "";
   }
-      
 
-  if(tokenName=="") {
+  if (tokenName == "") {
      var sectokdb = Components.classes[nsPK11TokenDB].getService(nsIPK11TokenDB);
      var tokenList = sectokdb.listTokens();
      var enumElement;
@@ -97,7 +96,7 @@ function process()
      var status = slot.status;
      if (status == nsIPKCS11Slot.SLOT_UNINITIALIZED
          || status == nsIPKCS11Slot.SLOT_READY) {
-      
+
        oldpwbox.setAttribute("hidden", "true");
        msgBox.setAttribute("value", bundle.getString("password_not_set"));
        msgBox.setAttribute("hidden", "false");
@@ -107,10 +106,9 @@ function process()
        } else {
          oldpwbox.setAttribute("inited", "true");
        }
-      
+
        
        document.getElementById('pw1').focus();
-    
      } else {
        
        oldpwbox.setAttribute("hidden", "false");
@@ -124,7 +122,7 @@ function process()
     
     params.SetInt(1, 0);
   }
-  
+
   checkPasswords();
 }
 
@@ -147,22 +145,21 @@ function setPassword()
   var bundle = document.getElementById("pippki_bundle");
 
   var success = false;
-  
+
   if (initpw == "false" || initpw == "empty") {
     try {
       var oldpw = "";
       var passok = 0;
-      
+
       if (initpw == "empty") {
         passok = 1;
       } else {
         oldpw = oldpwbox.value;
         passok = token.checkPassword(oldpw);
       }
-      
+
       if (passok) {
         if (initpw == "empty" && pw1.value == "") {
-          
           
         } else {
           if (pw1.value == "") {
@@ -196,9 +193,8 @@ function setPassword()
   } else {
     token.initPassword(pw1.value);
     if (pw1.value == "") {
-      doPrompt(bundle.getString("pw_not_wanted")
-            + " " 
-            + bundle.getString("pw_empty_warning"));
+      doPrompt(bundle.getString("pw_not_wanted") + " " +
+               bundle.getString("pw_empty_warning"));
     }
     success = true;
   }

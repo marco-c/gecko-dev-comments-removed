@@ -61,7 +61,7 @@ function getPEMString(cert)
          + wrapped
          + "\r\n-----END CERTIFICATE-----\r\n";
 }
- 
+
 function alertPromptService(title, message)
 {
   var ps = Components.classes["@mozilla.org/embedcomp/prompt-service;1"].

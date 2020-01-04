@@ -260,9 +260,10 @@ function ClearDeviceList()
 
   
   
-  var device_list = document.getElementById("device_list");
-  while (device_list.hasChildNodes())
-    device_list.removeChild(device_list.firstChild);
+  let deviceList = document.getElementById("device_list");
+  while (deviceList.hasChildNodes()) {
+    deviceList.removeChild(deviceList.firstChild);
+  }
 }
 
 
@@ -356,7 +357,7 @@ function doLogin()
     selected_token.login(false);
     var tok_status = document.getElementById("tok_status");
     if (selected_token.isLoggedIn()) {
-      tok_status.setAttribute("label", 
+      tok_status.setAttribute("label",
                               bundle.getString("devinfo_stat_loggedin"));
     } else {
       tok_status.setAttribute("label",
@@ -378,7 +379,7 @@ function doLogout()
     selected_token.logoutAndDropAuthenticatedResources();
     var tok_status = document.getElementById("tok_status");
     if (selected_token.isLoggedIn()) {
-      tok_status.setAttribute("label", 
+      tok_status.setAttribute("label",
                               bundle.getString("devinfo_stat_loggedin"));
     } else {
       tok_status.setAttribute("label",
@@ -392,8 +393,7 @@ function doLogout()
 
 function doLoad()
 {
-  window.open("load_device.xul", "loaddevice", 
-              "chrome,centerscreen,modal");
+  window.open("load_device.xul", "loaddevice", "chrome,centerscreen,modal");
   ClearDeviceList();
   RefreshDeviceList();
 }
@@ -439,11 +439,11 @@ function onSmartCardChange()
 function changePassword()
 {
   getSelectedItem();
-  var params = Components.classes[nsDialogParamBlock].createInstance(nsIDialogParamBlock);
-  params.SetString(1,selected_slot.tokenName);
-  window.openDialog("changepassword.xul",
-              "", 
-              "chrome,centerscreen,modal", params);
+  let params = Components.classes[nsDialogParamBlock]
+                         .createInstance(nsIDialogParamBlock);
+  params.SetString(1, selected_slot.tokenName);
+  window.openDialog("changepassword.xul", "", "chrome,centerscreen,modal",
+                    params);
   showSlotInfo();
   enableButtons();
 }
