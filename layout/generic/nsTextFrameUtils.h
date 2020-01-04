@@ -50,10 +50,7 @@ public:
     
     
     
-    TEXT_IS_SINGLE_CHAR_MI   = 0x8000000,
-
-    
-    TEXT_MIGHT_HAVE_GLYPH_CHANGES = 0x10000000,
+    TEXT_IS_SINGLE_CHAR_MI   = 0x8000000
 
     
     
