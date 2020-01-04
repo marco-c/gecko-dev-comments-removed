@@ -39,32 +39,35 @@ public:
   static const FrameMetrics sNullMetrics;   
 
   FrameMetrics()
-    : mPresShellResolution(1)
+    : mScrollId(NULL_SCROLL_ID)
+    , mScrollParentId(NULL_SCROLL_ID)
+    , mPresShellResolution(1)
     , mCompositionBounds(0, 0, 0, 0)
     , mDisplayPort(0, 0, 0, 0)
     , mCriticalDisplayPort(0, 0, 0, 0)
     , mScrollableRect(0, 0, 0, 0)
     , mCumulativeResolution()
     , mDevPixelsPerCSSPixel(1)
-    , mIsRootContent(false)
-    , mHasScrollgrab(false)
-    , mScrollId(NULL_SCROLL_ID)
-    , mScrollParentId(NULL_SCROLL_ID)
     , mScrollOffset(0, 0)
     , mZoom()
-    , mUpdateScrollOffset(false)
     , mScrollGeneration(0)
-    , mDoSmoothScroll(false)
     , mSmoothScrollOffset(0, 0)
     , mRootCompositionSize(0, 0)
     , mDisplayPortMargins(0, 0, 0, 0)
-    , mUseDisplayPortMargins(false)
     , mPresShellId(-1)
     , mViewport(0, 0, 0, 0)
     , mExtraResolution()
     , mBackgroundColor()
+    , mContentDescription()
     , mLineScrollAmount(0, 0)
     , mPageScrollAmount(0, 0)
+    , mClipRect()
+    , mMaskLayerIndex()
+    , mIsRootContent(false)
+    , mHasScrollgrab(false)
+    , mUpdateScrollOffset(false)
+    , mDoSmoothScroll(false)
+    , mUseDisplayPortMargins(false)
     , mAllowVerticalScrollWithWheel(false)
     , mIsLayersIdRoot(false)
     , mUsesContainerScrolling(false)
@@ -76,38 +79,42 @@ public:
 
   bool operator==(const FrameMetrics& aOther) const
   {
-    return mCompositionBounds.IsEqualEdges(aOther.mCompositionBounds) &&
-           mRootCompositionSize == aOther.mRootCompositionSize &&
-           mDisplayPort.IsEqualEdges(aOther.mDisplayPort) &&
-           mDisplayPortMargins == aOther.mDisplayPortMargins &&
-           mUseDisplayPortMargins == aOther.mUseDisplayPortMargins &&
-           mCriticalDisplayPort.IsEqualEdges(aOther.mCriticalDisplayPort) &&
-           mViewport.IsEqualEdges(aOther.mViewport) &&
-           mScrollableRect.IsEqualEdges(aOther.mScrollableRect) &&
+    
+    return mScrollId == aOther.mScrollId &&
+           mScrollParentId == aOther.mScrollParentId &&
            mPresShellResolution == aOther.mPresShellResolution &&
+           mCompositionBounds.IsEqualEdges(aOther.mCompositionBounds) &&
+           mDisplayPort.IsEqualEdges(aOther.mDisplayPort) &&
+           mCriticalDisplayPort.IsEqualEdges(aOther.mCriticalDisplayPort) &&
+           mScrollableRect.IsEqualEdges(aOther.mScrollableRect) &&
            mCumulativeResolution == aOther.mCumulativeResolution &&
            mDevPixelsPerCSSPixel == aOther.mDevPixelsPerCSSPixel &&
-           mPresShellId == aOther.mPresShellId &&
-           mIsRootContent == aOther.mIsRootContent &&
-           mScrollId == aOther.mScrollId &&
-           mScrollParentId == aOther.mScrollParentId &&
            mScrollOffset == aOther.mScrollOffset &&
-           mSmoothScrollOffset == aOther.mSmoothScrollOffset &&
-           mHasScrollgrab == aOther.mHasScrollgrab &&
-           mUpdateScrollOffset == aOther.mUpdateScrollOffset &&
+           
            mScrollGeneration == aOther.mScrollGeneration &&
+           mSmoothScrollOffset == aOther.mSmoothScrollOffset &&
+           mRootCompositionSize == aOther.mRootCompositionSize &&
+           mDisplayPortMargins == aOther.mDisplayPortMargins &&
+           mPresShellId == aOther.mPresShellId &&
+           mViewport.IsEqualEdges(aOther.mViewport) &&
            mExtraResolution == aOther.mExtraResolution &&
            mBackgroundColor == aOther.mBackgroundColor &&
-           mDoSmoothScroll == aOther.mDoSmoothScroll &&
+           
            mLineScrollAmount == aOther.mLineScrollAmount &&
            mPageScrollAmount == aOther.mPageScrollAmount &&
-           mAllowVerticalScrollWithWheel == aOther.mAllowVerticalScrollWithWheel &&
            mClipRect == aOther.mClipRect &&
            mMaskLayerIndex == aOther.mMaskLayerIndex &&
+           mIsRootContent == aOther.mIsRootContent &&
+           mHasScrollgrab == aOther.mHasScrollgrab &&
+           mUpdateScrollOffset == aOther.mUpdateScrollOffset &&
+           mDoSmoothScroll == aOther.mDoSmoothScroll &&
+           mUseDisplayPortMargins == aOther.mUseDisplayPortMargins &&
+           mAllowVerticalScrollWithWheel == aOther.mAllowVerticalScrollWithWheel &&
            mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
            mUsesContainerScrolling == aOther.mUsesContainerScrolling &&
            mIsScrollInfoLayer == aOther.mIsScrollInfoLayer;
   }
+
   bool operator!=(const FrameMetrics& aOther) const
   {
     return !operator==(aOther);
@@ -555,6 +562,11 @@ public:
   }
 
 private:
+  
+  ViewID mScrollId;
+
+  
+  ViewID mScrollParentId;
 
   
   
@@ -635,18 +647,6 @@ private:
   CSSToLayoutDeviceScale mDevPixelsPerCSSPixel;
 
   
-  bool mIsRootContent;
-
-  
-  bool mHasScrollgrab;
-
-  
-  ViewID mScrollId;
-
-  
-  ViewID mScrollParentId;
-
-  
   
   
   
@@ -670,14 +670,10 @@ private:
   CSSToParentLayerScale2D mZoom;
 
   
-  
-  bool mUpdateScrollOffset;
-  
   uint32_t mScrollGeneration;
 
   
   
-  bool mDoSmoothScroll;
   CSSPoint mSmoothScrollOffset;
 
   
@@ -686,10 +682,6 @@ private:
   
   
   ScreenMargin mDisplayPortMargins;
-
-  
-  
-  bool mUseDisplayPortMargins;
 
   uint32_t mPresShellId;
 
@@ -723,15 +715,33 @@ private:
   LayoutDeviceIntSize mPageScrollAmount;
 
   
-  bool mAllowVerticalScrollWithWheel;
-
-  
   Maybe<ParentLayerIntRect> mClipRect;
 
   
   
   
   Maybe<size_t> mMaskLayerIndex;
+
+  
+  bool mIsRootContent;
+
+  
+  bool mHasScrollgrab;
+
+  
+  
+  bool mUpdateScrollOffset;
+
+  
+  
+  bool mDoSmoothScroll;
+
+  
+  
+  bool mUseDisplayPortMargins;
+
+  
+  bool mAllowVerticalScrollWithWheel;
 
   
   
