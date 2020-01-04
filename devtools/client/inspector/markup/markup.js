@@ -475,11 +475,11 @@ MarkupView.prototype = {
 
 
 
-  _isImagePreviewTarget: function (target) {
+  _isImagePreviewTarget: Task.async(function* (target) {
     
     
     if (this.isDragging) {
-      return promise.reject(false);
+      return false;
     }
 
     let parent = target, container;
@@ -497,8 +497,8 @@ MarkupView.prototype = {
       return container.isImagePreviewTarget(target, this.tooltip);
     }
 
-    return undefined;
-  },
+    return false;
+  }),
 
   
 
@@ -2649,7 +2649,6 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
   },
 
   
-
 
 
 
