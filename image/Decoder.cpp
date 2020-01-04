@@ -128,6 +128,12 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
   
   Maybe<TerminalState> terminalState;
   do {
+    if (GetDecodeDone()) {
+      MOZ_ASSERT_UNREACHABLE("Finished decode without reaching terminal state?");
+      terminalState = Some(TerminalState::SUCCESS);
+      break;
+    }
+
     switch (mIterator->AdvanceOrScheduleResume(aOnResume.get())) {
       case SourceBufferIterator::WAITING:
         
@@ -166,7 +172,9 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
         MOZ_ASSERT_UNREACHABLE("Unknown SourceBufferIterator state");
         terminalState = Some(TerminalState::FAILURE);
     }
-  } while (!GetDecodeDone() && !terminalState);
+  } while (!terminalState);
+
+  MOZ_ASSERT(terminalState);
 
   
   if (terminalState == Some(TerminalState::FAILURE)) {
@@ -174,9 +182,7 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
   }
 
   
-  if (terminalState) {
-    CompleteDecode();
-  }
+  CompleteDecode();
 
   return HasError() ? NS_ERROR_FAILURE : NS_OK;
 }

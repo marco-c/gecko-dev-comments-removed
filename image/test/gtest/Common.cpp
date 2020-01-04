@@ -533,6 +533,15 @@ ImageTestCase CorruptTestCase()
                        TEST_CASE_HAS_ERROR);
 }
 
+ImageTestCase CorruptBMPWithTruncatedHeader()
+{
+  
+  
+  
+  return ImageTestCase("invalid-truncated-metadata.bmp", "image/bmp",
+                       IntSize(100, 100), TEST_CASE_HAS_ERROR);
+}
+
 ImageTestCase CorruptICOWithBadBMPWidthTestCase()
 {
   

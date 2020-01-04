@@ -582,9 +582,7 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
   }
 
   
-  uint32_t absHeight = AbsoluteHeight();
-  PostSize(mH.mWidth, absHeight);
-  mCurrentRow = absHeight;
+  mCurrentRow = AbsoluteHeight();
 
   
   
@@ -651,6 +649,9 @@ nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
   if (mMayHaveTransparency) {
     PostHasTransparency();
   }
+
+  
+  PostSize(mH.mWidth, AbsoluteHeight());
 
   
   
