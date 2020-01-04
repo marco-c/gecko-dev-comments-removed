@@ -985,7 +985,7 @@ protected:
   static DWORD sClientId;
 
   
-  static bool sCreateNativeCaretForATOK;
+  static bool sCreateNativeCaretForLegacyATOK;
   static bool sDoNotReturnNoLayoutErrorToMSSimplifiedTIP;
   static bool sDoNotReturnNoLayoutErrorToMSTraditionalTIP;
   static bool sDoNotReturnNoLayoutErrorToFreeChangJie;
