@@ -17,9 +17,9 @@ function test() {
       "-H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'",
       "-H 'Accept-Language: " + navigator.language + "'",
       "--compressed",
-      "-H 'X-Custom-Header-1: Custom value'",
-      "-H 'X-Custom-Header-2: 8.8.8.8'",
-      "-H 'X-Custom-Header-3: Mon, 3 Mar 2014 11:11:11 GMT'",
+      "-H 'x-custom-header-1: Custom value'",
+      "-H 'x-custom-header-2: 8.8.8.8'",
+      "-H 'x-custom-header-3: Mon, 3 Mar 2014 11:11:11 GMT'",
       "-H 'Referer: " + CURL_URL + "'",
       "-H 'Connection: keep-alive'",
       "-H 'Pragma: no-cache'",
@@ -34,9 +34,9 @@ function test() {
       '-H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"',
       '-H "Accept-Language: ' + navigator.language + '"',
       "--compressed",
-      '-H "X-Custom-Header-1: Custom value"',
-      '-H "X-Custom-Header-2: 8.8.8.8"',
-      '-H "X-Custom-Header-3: Mon, 3 Mar 2014 11:11:11 GMT"',
+      '-H "x-custom-header-1: Custom value"',
+      '-H "x-custom-header-2: 8.8.8.8"',
+      '-H "x-custom-header-3: Mon, 3 Mar 2014 11:11:11 GMT"',
       '-H "Referer: ' + CURL_URL + '"',
       '-H "Connection: keep-alive"',
       '-H "Pragma: no-cache"',
@@ -56,7 +56,36 @@ function test() {
       let requestItem = RequestsMenu.getItemAtIndex(0);
       RequestsMenu.selectedItem = requestItem;
 
-      waitForClipboard(EXPECTED_RESULT, function setup() {
+      waitForClipboard(function validate(aResult) {
+        if (typeof aResult !== "string") {
+          return false;
+        }
+
+        
+        
+        
+        var expected = EXPECTED_RESULT.toString().match(/[-A-Za-z1-9]+ ([\"'])(?:\\\1|.)*?\1/g),
+            actual = aResult.match(/[-A-Za-z1-9]+ ([\"'])(?:\\\1|.)*?\1/g);
+
+        
+        if (!actual || expected[0] != actual[0]) {
+          return false;
+        }
+
+        
+        var expectedSet = new Set(expected);
+        var actualSet = new Set(actual);
+        if (expected.size != actual.size) {
+          return false;
+        }
+        for (let param of expectedSet) {
+          if (!actualSet.has(param)) {
+            return false;
+          }
+        }
+
+        return true;
+      }, function setup() {
         RequestsMenu.copyAsCurl();
       }, function onSuccess() {
         ok(true, "Clipboard contains a cURL command for the currently selected item's url.");
