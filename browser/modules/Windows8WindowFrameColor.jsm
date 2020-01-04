@@ -3,7 +3,7 @@
 
 
 "use strict";
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+const {interfaces: Ci, utils: Cu} = Components;
 
 this.EXPORTED_SYMBOLS = ["Windows8WindowFrameColor"];
 
@@ -22,19 +22,25 @@ var Windows8WindowFrameColor = {
     const dwmKey = "Software\\Microsoft\\Windows\\DWM";
     let customizationColor = Registry.readRegKey(HKCU, dwmKey,
                                                  "ColorizationColor");
-    if (!customizationColor) {
+    if (customizationColor == undefined) {
       
       return [158, 158, 158];
     }
+
     
     let customizationColorHex = customizationColor.toString(16);
+
     
     customizationColorHex = ("00000000" + customizationColorHex).substr(-8);
     let customizationColorArray = customizationColorHex.match(/../g);
     let [unused, fgR, fgG, fgB] = customizationColorArray.map(val => parseInt(val, 16));
     let colorizationColorBalance = Registry.readRegKey(HKCU, dwmKey,
-                                                       "ColorizationColorBalance") || 78;
-     
+                                                       "ColorizationColorBalance");
+    if (colorizationColorBalance == undefined) {
+      colorizationColorBalance = 78;
+    }
+
+    
     let frameBaseColor = 217;
     let alpha = colorizationColorBalance / 100;
 
