@@ -480,7 +480,10 @@ DecodedStream::CreateData(MozPromiseHolder<GenericPromise>&& aPromise)
           self->mOutputStreamManager.Disconnect();
           delete data;
         });
-        AbstractThread::MainThread()->Dispatch(r.forget());
+        
+        
+        
+        NS_DispatchToMainThread(r.forget());
       }
     }
     RefPtr<DecodedStream> mThis;
