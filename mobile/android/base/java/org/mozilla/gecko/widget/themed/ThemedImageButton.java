@@ -177,8 +177,10 @@ public class ThemedImageButton extends android.widget.ImageButton
 
     private void setTintedImageDrawable(final Drawable drawable) {
         final Drawable tintedDrawable;
-        if (drawableColors == null) {
+        if (drawableColors == null || R.id.bookmark == getId()) {
             
+            
+
             
             tintedDrawable = drawable;
         } else if (drawable == null) {
