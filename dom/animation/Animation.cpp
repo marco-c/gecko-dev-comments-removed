@@ -140,6 +140,9 @@ Animation::SetEffectNoUpdate(AnimationEffectReadOnly* aEffect)
     return;
   }
 
+  AutoMutationBatchForAnimation mb(*this);
+  bool wasRelevant = mIsRelevant;
+
   if (mEffect) {
     if (!aEffect) {
       
@@ -149,9 +152,18 @@ Animation::SetEffectNoUpdate(AnimationEffectReadOnly* aEffect)
     }
 
     
+    
+    if (mIsRelevant) {
+      nsNodeUtils::AnimationRemoved(this);
+    }
+
+    
     RefPtr<AnimationEffectReadOnly> oldEffect = mEffect;
     mEffect = nullptr;
     oldEffect->SetAnimation(nullptr);
+
+    
+    UpdateRelevance();
   }
 
   if (aEffect) {
@@ -165,6 +177,14 @@ Animation::SetEffectNoUpdate(AnimationEffectReadOnly* aEffect)
     
     mEffect = newEffect;
     mEffect->SetAnimation(this);
+
+    
+    
+    
+    UpdateRelevance();
+    if (wasRelevant && mIsRelevant) {
+      nsNodeUtils::AnimationChanged(this);
+    }
 
     
     
