@@ -77,8 +77,6 @@ public:
 
   void OwnerContentChanged(nsIContent* aContent);
 
-  void SetBackgroundColor(nscolor aColor) { mBackgroundColor = gfxRGBA(aColor); };
-
   void ZoomToRect(uint32_t aPresShellId, ViewID aViewId, const CSSRect& aRect);
 
   void ContentReceivedInputBlock(const ScrollableLayerGuid& aGuid,
@@ -144,8 +142,6 @@ private:
   
   
   bool mFrameLoaderDestroyed;
-  
-  gfxRGBA mBackgroundColor;
 
   nsRegion mTouchRegion;
 
