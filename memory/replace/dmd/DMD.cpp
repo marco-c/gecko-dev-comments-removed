@@ -1829,6 +1829,15 @@ WriteBlockContents(JSONWriter& aWriter, const LiveBlock& aBlock)
 static void
 AnalyzeImpl(UniquePtr<JSONWriteFunc> aWriter)
 {
+  
+  
+  
+  
+  
+  
+  
+  JSONWriter writer(Move(aWriter));
+
   AutoBlockIntercepts block(Thread::Fetch());
   AutoLockState lock;
 
@@ -1846,7 +1855,6 @@ AnalyzeImpl(UniquePtr<JSONWriteFunc> aWriter)
   static int analysisCount = 1;
   StatusMsg("Dump %d {\n", analysisCount++);
 
-  JSONWriter writer(Move(aWriter));
   writer.Start();
   {
     writer.IntProperty("version", kOutputVersionNumber);
