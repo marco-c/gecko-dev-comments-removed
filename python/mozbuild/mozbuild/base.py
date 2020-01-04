@@ -308,6 +308,7 @@ class MozbuildObject(ProcessExecutionMixin):
         """
         
         no_clobber = {
+            '.mozbuild',
             'msvc',
         }
 
