@@ -2294,7 +2294,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
               if (gdkEvent->is_modifier)
                 event.type = XKeyPress;
               break;
-            case NS_KEY_PRESS:
+            case eKeyPress:
               event.type = XKeyPress;
               break;
             case NS_KEY_UP:

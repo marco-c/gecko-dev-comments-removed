@@ -320,14 +320,14 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
                        uint32_t aIndexOfKeypress)
 {
   MOZ_ASSERT(aMessage == NS_KEY_DOWN || aMessage == NS_KEY_UP ||
-             aMessage == NS_KEY_PRESS, "Invalid aMessage value");
+             aMessage == eKeyPress, "Invalid aMessage value");
   nsresult rv = GetState();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }
 
   
-  if (aMessage == NS_KEY_PRESS && !aKeyboardEvent.ShouldCauseKeypressEvents()) {
+  if (aMessage == eKeyPress && !aKeyboardEvent.ShouldCauseKeypressEvents()) {
     return false;
   }
 
@@ -336,7 +336,7 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
     
     
     
-    if (!sDispatchKeyEventsDuringComposition || aMessage == NS_KEY_PRESS) {
+    if (!sDispatchKeyEventsDuringComposition || aMessage == eKeyPress) {
       return false;
     }
     
@@ -363,7 +363,7 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
     keyEvent.charCode = 0;
   } else if (keyEvent.mKeyNameIndex != KEY_NAME_INDEX_USE_STRING) {
     MOZ_ASSERT(!aIndexOfKeypress,
-      "aIndexOfKeypress must be 0 for NS_KEY_PRESS of non-printable key");
+      "aIndexOfKeypress must be 0 for eKeyPress of non-printable key");
     
     
     keyEvent.charCode = 0;
@@ -422,7 +422,7 @@ TextEventDispatcher::MaybeDispatchKeypressEvents(
   bool consumed = false;
   for (size_t i = 0; i < keypressCount; i++) {
     aStatus = nsEventStatus_eIgnore;
-    if (!DispatchKeyboardEventInternal(NS_KEY_PRESS, aKeyboardEvent,
+    if (!DispatchKeyboardEventInternal(eKeyPress, aKeyboardEvent,
                                        aStatus, aDispatchTo, i)) {
       
       break;

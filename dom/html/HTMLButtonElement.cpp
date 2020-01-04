@@ -282,14 +282,14 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
   if (nsEventStatus_eIgnore == aVisitor.mEventStatus) {
     switch (aVisitor.mEvent->mMessage) {
-      case NS_KEY_PRESS:
+      case eKeyPress:
       case NS_KEY_UP:
         {
           
           
           WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
           if ((keyEvent->keyCode == NS_VK_RETURN &&
-               NS_KEY_PRESS == aVisitor.mEvent->mMessage) ||
+               eKeyPress == aVisitor.mEvent->mMessage) ||
               (keyEvent->keyCode == NS_VK_SPACE &&
                NS_KEY_UP == aVisitor.mEvent->mMessage)) {
             nsEventStatus status = nsEventStatus_eIgnore;

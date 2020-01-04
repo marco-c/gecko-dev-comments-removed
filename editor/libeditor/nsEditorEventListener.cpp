@@ -403,7 +403,7 @@ nsEditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
     }
 #endif 
     
-    case NS_KEY_PRESS: {
+    case eKeyPress: {
       nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aEvent);
       return KeyPress(keyEvent);
     }

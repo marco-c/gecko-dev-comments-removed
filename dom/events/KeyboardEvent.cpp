@@ -160,7 +160,7 @@ KeyboardEvent::CharCode()
   case NS_KEY_UP:
   case NS_KEY_AFTER_UP:
     return 0;
-  case NS_KEY_PRESS:
+  case eKeyPress:
     return mEvent->AsKeyboardEvent()->charCode;
   default:
     break;
@@ -206,7 +206,7 @@ KeyboardEvent::Which()
     case NS_KEY_UP:
     case NS_KEY_AFTER_UP:
       return KeyCode();
-    case NS_KEY_PRESS:
+    case eKeyPress:
       
       
       {

@@ -128,7 +128,7 @@ nsButtonBoxFrame::HandleEvent(nsPresContext* aPresContext,
 
 
 #ifndef XP_MACOSX
-    case NS_KEY_PRESS: {
+    case eKeyPress: {
       WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
       if (!keyEvent) {
         break;

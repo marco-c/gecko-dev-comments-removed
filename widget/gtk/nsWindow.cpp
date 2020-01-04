@@ -3052,7 +3052,7 @@ nsWindow::OnKeyPressEvent(GdkEventKey *aEvent)
 #endif 
 #endif 
 
-    WidgetKeyboardEvent event(true, NS_KEY_PRESS, this);
+    WidgetKeyboardEvent event(true, eKeyPress, this);
     KeymapWrapper::InitKeyEvent(event, aEvent);
 
     
