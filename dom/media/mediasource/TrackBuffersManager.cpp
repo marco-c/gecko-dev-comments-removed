@@ -1548,8 +1548,10 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
     trackBuffer.mLongestFrameDuration =
       Some(trackBuffer.mLongestFrameDuration.isNothing()
            ? trackBuffer.mLastFrameDuration.ref()
-           : std::max(trackBuffer.mLastFrameDuration.ref(),
-                      trackBuffer.mLongestFrameDuration.ref()));
+           : sample->mKeyframe
+             ? trackBuffer.mLastFrameDuration.ref()
+             : std::max(trackBuffer.mLastFrameDuration.ref(),
+                        trackBuffer.mLongestFrameDuration.ref()));
 
     
     if (trackBuffer.mHighestEndTimestamp.isNothing() ||
