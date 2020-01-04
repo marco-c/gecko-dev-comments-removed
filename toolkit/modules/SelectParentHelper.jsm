@@ -8,6 +8,9 @@ this.EXPORTED_SYMBOLS = [
   "SelectParentHelper"
 ];
 
+
+const MAX_ROWS = 20;
+
 var currentBrowser = null;
 var currentMenulist = null;
 var currentZoom = 1;
@@ -27,6 +30,19 @@ this.SelectParentHelper = {
     this._registerListeners(browser, menulist.menupopup);
 
     let win = browser.ownerDocument.defaultView;
+
+    
+    let firstItem = menulist.getItemAtIndex(0);
+    if (firstItem) {
+      let itemHeight = firstItem.getBoundingClientRect().height;
+
+      
+      let cs = win.getComputedStyle(menulist.menupopup);
+      let bpHeight = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth) +
+                     parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      menulist.menupopup.style.maxHeight = (itemHeight * MAX_ROWS + bpHeight) + "px";
+    }
+
     let constraintRect = browser.getBoundingClientRect();
     constraintRect = new win.DOMRect(constraintRect.left + win.mozInnerScreenX,
                                      constraintRect.top + win.mozInnerScreenY,

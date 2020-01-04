@@ -1042,7 +1042,6 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > #downloads-
 
 
 #ContentSelectDropdown > menupopup {
-  max-height: 350px;
   
 
   direction: ltr;
