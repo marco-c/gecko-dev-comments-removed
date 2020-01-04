@@ -399,18 +399,6 @@ SandboxCloneInto(JSContext* cx, unsigned argc, Value* vp)
     return xpc::CloneInto(cx, args[0], args[1], options, args.rval());
 }
 
-static bool
-sandbox_enumerate(JSContext* cx, HandleObject obj)
-{
-    return JS_EnumerateStandardClasses(cx, obj);
-}
-
-static bool
-sandbox_resolve(JSContext* cx, HandleObject obj, HandleId id, bool* resolvedp)
-{
-    return JS_ResolveStandardClass(cx, obj, id, resolvedp);
-}
-
 static void
 sandbox_finalize(js::FreeOp* fop, JSObject* obj)
 {
@@ -552,8 +540,8 @@ sandbox_addProperty(JSContext* cx, HandleObject obj, HandleId id, HandleValue v)
 
 static const js::ClassOps SandboxClassOps = {
     nullptr, nullptr, nullptr, nullptr,
-    sandbox_enumerate, sandbox_resolve,
-    nullptr,        
+    JS_EnumerateStandardClasses, JS_ResolveStandardClass,
+    JS_MayResolveStandardClass,
     sandbox_finalize,
     nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook,
 };
@@ -576,8 +564,8 @@ static const js::Class SandboxClass = {
 
 static const js::ClassOps SandboxWriteToProtoClassOps = {
     sandbox_addProperty, nullptr, nullptr, nullptr,
-    sandbox_enumerate, sandbox_resolve,
-    nullptr,        
+    JS_EnumerateStandardClasses, JS_ResolveStandardClass,
+    JS_MayResolveStandardClass,
     sandbox_finalize,
     nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook,
 };
