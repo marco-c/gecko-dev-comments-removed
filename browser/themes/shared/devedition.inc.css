@@ -284,9 +284,10 @@ searchbar:not([oneoffui]) .search-go-button {
 }
 
 
-#TabsToolbar {
-  --tab-separator-margin: 0;
-  --tab-separator-opacity: 0.2 !important;
+.tabbrowser-tab::after,
+.tabbrowser-tab::before {
+  background: currentColor;
+  opacity: 0.2 !important;
 }
 
 .tabbrowser-arrowscrollbox > .scrollbutton-down,
