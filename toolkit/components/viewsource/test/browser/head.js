@@ -49,17 +49,54 @@ function testViewSourceWindow(aURI, aTestCallback, aCloseCallback) {
 
 
 
-function* openViewPartialSourceWindow(aCSSSelector) {
-  var contentAreaContextMenu = document.getElementById("contentAreaContextMenu");
-  let popupShownPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popupshown");
+function* openViewPartialSourceTab(aCSSSelector) {
+  let contentAreaContextMenuPopup =
+    document.getElementById("contentAreaContextMenu");
+  let popupShownPromise =
+    BrowserTestUtils.waitForEvent(contentAreaContextMenuPopup, "popupshown");
   yield BrowserTestUtils.synthesizeMouseAtCenter(aCSSSelector,
-          { type: "contextmenu", button: 2}, gBrowser.selectedBrowser);
+          { type: "contextmenu", button: 2 }, gBrowser.selectedBrowser);
   yield popupShownPromise;
 
   let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null);
 
-  let popupHiddenPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(document.getElementById("context-viewpartialsource-selection"), {});
+  let popupHiddenPromise =
+    BrowserTestUtils.waitForEvent(contentAreaContextMenuPopup, "popuphidden");
+  let item = document.getElementById("context-viewpartialsource-selection");
+  EventUtils.synthesizeMouseAtCenter(item, {});
+  yield popupHiddenPromise;
+
+  return (yield newTabPromise);
+}
+
+
+
+
+
+
+
+
+function* openViewFrameSourceTab(aCSSSelector) {
+  let contentAreaContextMenuPopup =
+    document.getElementById("contentAreaContextMenu");
+  let popupShownPromise =
+    BrowserTestUtils.waitForEvent(contentAreaContextMenuPopup, "popupshown");
+  yield BrowserTestUtils.synthesizeMouseAtCenter(aCSSSelector,
+          { type: "contextmenu", button: 2 }, gBrowser.selectedBrowser);
+  yield popupShownPromise;
+
+  let frameContextMenu = document.getElementById("frame");
+  popupShownPromise =
+    BrowserTestUtils.waitForEvent(frameContextMenu, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(frameContextMenu, {});
+  yield popupShownPromise;
+
+  let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null);
+
+  let popupHiddenPromise =
+    BrowserTestUtils.waitForEvent(frameContextMenu, "popuphidden");
+  let item = document.getElementById("context-viewframesource");
+  EventUtils.synthesizeMouseAtCenter(item, {});
   yield popupHiddenPromise;
 
   return (yield newTabPromise);
@@ -75,12 +112,25 @@ registerCleanupFunction(function() {
 
 
 
+function waitForSourceLoaded(tab) {
+  return new Promise(resolve => {
+    let mm = tab.linkedBrowser.messageManager;
+    mm.addMessageListener("ViewSource:SourceLoaded", function sourceLoaded() {
+      mm.removeMessageListener("ViewSource:SourceLoaded", sourceLoaded);
+      setTimeout(resolve, 0);
+    });
+  });
+}
 
 
 
 
 
- 
+
+
+
+
+
 function* openDocumentSelect(aURI, aCSSSelector) {
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, aURI);
   registerCleanupFunction(function() {
@@ -92,16 +142,10 @@ function* openDocumentSelect(aURI, aCSSSelector) {
     content.getSelection().selectAllChildren(element);
   });
 
-  let newtab = yield openViewPartialSourceWindow(aCSSSelector);
+  let newtab = yield openViewPartialSourceTab(aCSSSelector);
 
   
-  yield new Promise(resolve => {
-    let mm = newtab.linkedBrowser.messageManager;
-    mm.addMessageListener("ViewSource:SourceLoaded", function selectionDrawn() {
-      mm.removeMessageListener("ViewSource:SourceLoaded", selectionDrawn);
-      setTimeout(resolve, 0);
-    });
-  });
+  yield waitForSourceLoaded(newtab);
 
   return newtab;
 }
