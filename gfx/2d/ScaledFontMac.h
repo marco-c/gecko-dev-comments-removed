@@ -37,6 +37,7 @@ public:
 
 private:
   friend class DrawTargetCG;
+  friend class DrawTargetSkia;
   CGFontRef mFont;
   CTFontRef mCTFont; 
 
