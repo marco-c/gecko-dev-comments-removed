@@ -10,6 +10,7 @@
 #include <algorithm>
 #include "mozilla/AllocPolicy.h"
 #include "mozilla/Move.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Types.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/Vector.h"
@@ -257,6 +258,16 @@ class BufferList : private AllocPolicy
   BufferList<BorrowingAllocPolicy> Borrow(IterImpl& aIter, size_t aSize, bool* aSuccess,
                                           BorrowingAllocPolicy aAP = BorrowingAllocPolicy());
 
+  
+  
+  
+  
+  
+  
+  
+  
+  BufferList Extract(IterImpl& aIter, size_t aSize, bool* aSuccess);
+
 private:
   explicit BufferList(AllocPolicy aAP)
    : AllocPolicy(aAP),
@@ -426,6 +437,74 @@ BufferList<AllocPolicy>::Borrow(IterImpl& aIter, size_t aSize, bool* aSuccess,
   }
 
   result.mSize = aSize;
+  *aSuccess = true;
+  return result;
+}
+
+template<typename AllocPolicy>
+BufferList<AllocPolicy>
+BufferList<AllocPolicy>::Extract(IterImpl& aIter, size_t aSize, bool* aSuccess)
+{
+  MOZ_RELEASE_ASSERT(aSize);
+  MOZ_RELEASE_ASSERT(mOwning);
+  MOZ_ASSERT(aSize % kSegmentAlignment == 0);
+  MOZ_ASSERT(intptr_t(aIter.mData) % kSegmentAlignment == 0);
+
+  IterImpl iter = aIter;
+  size_t size = aSize;
+  size_t toCopy = std::min(size, aIter.RemainingInSegment());
+  MOZ_ASSERT(toCopy % kSegmentAlignment == 0);
+
+  BufferList result(0, toCopy, mStandardCapacity);
+  BufferList error(0, 0, mStandardCapacity);
+
+  
+  if (!result.WriteBytes(aIter.mData, toCopy)) {
+    *aSuccess = false;
+    return error;
+  }
+  iter.Advance(*this, toCopy);
+  size -= toCopy;
+
+  
+  auto resultGuard = MakeScopeExit([&] {
+    *aSuccess = false;
+    result.mSegments.erase(result.mSegments.begin()+1, result.mSegments.end());
+  });
+
+  size_t movedSize = 0;
+  uintptr_t toRemoveStart = iter.mSegment;
+  uintptr_t toRemoveEnd = iter.mSegment;
+  while (!iter.Done() &&
+         !iter.HasRoomFor(size)) {
+    if (!result.mSegments.append(Segment(mSegments[iter.mSegment].mData,
+                                         mSegments[iter.mSegment].mSize,
+                                         mSegments[iter.mSegment].mCapacity))) {
+      return error;
+    }
+    movedSize += iter.RemainingInSegment();
+    size -= iter.RemainingInSegment();
+    toRemoveEnd++;
+    iter.Advance(*this, iter.RemainingInSegment());
+  }
+
+  if (size)  {
+    if (!iter.HasRoomFor(size) ||
+        !result.WriteBytes(iter.Data(), size)) {
+      return error;
+    }
+    iter.Advance(*this, size);
+  }
+
+  mSegments.erase(mSegments.begin() + toRemoveStart, mSegments.begin() + toRemoveEnd);
+  mSize -= movedSize;
+  aIter.mSegment = iter.mSegment - (toRemoveEnd - toRemoveStart);
+  aIter.mData = iter.mData;
+  aIter.mDataEnd = iter.mDataEnd;
+  MOZ_ASSERT(aIter.mDataEnd == mSegments[aIter.mSegment].End());
+  result.mSize = aSize;
+
+  resultGuard.release();
   *aSuccess = true;
   return result;
 }
