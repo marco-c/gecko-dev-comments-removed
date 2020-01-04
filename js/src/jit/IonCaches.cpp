@@ -1093,6 +1093,11 @@ GenerateCallGetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
     Label* maybePopAndFail = failures;
 
     
+    
+    if (IsGlobalLexicalScope(obj))
+        masm.extractObject(Address(object, ScopeObject::offsetOfEnclosingScope()), object);
+
+    
     if (spillObjReg) {
         masm.push(object);
         maybePopAndFail = &pop1AndFail;
@@ -3332,8 +3337,15 @@ SetPropertyIC::update(JSContext* cx, HandleScript outerScript, size_t cacheIndex
     }
 
     
-    if (!SetProperty(cx, obj, name, value, cache.strict(), cache.pc()))
-        return false;
+    if (JSOp(*cache.pc()) == JSOP_INITGLEXICAL) {
+        RootedScript script(cx);
+        jsbytecode* pc;
+        cache.getScriptedLocation(&script, &pc);
+        InitGlobalLexicalOperation(cx, script, pc, value);
+    } else {
+        if (!SetProperty(cx, obj, name, value, cache.strict(), cache.pc()))
+            return false;
+    }
 
     
     

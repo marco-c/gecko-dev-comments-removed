@@ -1000,6 +1000,12 @@ GetPcScript(JSContext* cx, JSScript** scriptRes, jsbytecode** pcRes);
 CalleeToken
 MarkCalleeToken(JSTracer* trc, CalleeToken token);
 
+
+
+
+
+static const uint32_t MinJITStackSize = 2;
+
 } 
 } 
 
