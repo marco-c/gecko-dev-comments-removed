@@ -752,19 +752,9 @@ final class GeckoEditable extends JNIObject
     }
 
     @Override
-    public Handler getInputConnectionHandler() {
-        
-        
-        return mIcRunHandler;
-    }
-
-    @Override
-    public boolean setInputConnectionHandler(Handler handler) {
-        if (handler == mIcPostHandler) {
-            return true;
-        }
-        if (!mFocused) {
-            return false;
+    public Handler setInputConnectionHandler(Handler handler) {
+        if (handler == mIcPostHandler || !mFocused) {
+            return mIcPostHandler;
         }
         if (DEBUG) {
             assertOnIcThread();
@@ -783,7 +773,7 @@ final class GeckoEditable extends JNIObject
         
         mActionQueue.offer(Action.newSetHandler(handler));
         mActionQueue.syncWithGecko();
-        return true;
+        return handler;
     }
 
     @Override 
