@@ -35,7 +35,7 @@ class FreeBSDBootstrapper(BaseBootstrapper):
             self.packages.append('unzip')
 
         
-        if self.flavor == 'freebsd' and self.version < 9:
+        if self.flavor == 'freebsd' and self.version < 11:
             self.browser_packages.append('gcc')
 
     def pkg_install(self, *packages):
