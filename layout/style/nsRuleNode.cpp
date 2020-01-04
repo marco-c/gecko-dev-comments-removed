@@ -9434,7 +9434,7 @@ nsRuleNode::GetStyleData(nsStyleStructID aSID,
   
   
   if (!(HasAnimationData() && ParentHasPseudoElementData(aContext))) {
-    data = mStyleData.GetStyleData(aSID, aContext);
+    data = mStyleData.GetStyleData(aSID, aContext, aComputeData);
     if (MOZ_LIKELY(data != nullptr)) {
       
       
