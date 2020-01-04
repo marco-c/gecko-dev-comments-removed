@@ -722,6 +722,7 @@ public:
   
   float ComputedVolume() const;
   bool ComputedMuted() const;
+  nsSuspendedTypes ComputedSuspended() const;
 
 protected:
   virtual ~HTMLMediaElement();
