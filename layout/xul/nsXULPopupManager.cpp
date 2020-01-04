@@ -2263,6 +2263,7 @@ nsXULPopupManager::HandleKeyboardEventWithKeyCode(
         break;
       }
       
+      MOZ_FALLTHROUGH;
 
     case nsIDOMKeyEvent::DOM_VK_RETURN: {
       

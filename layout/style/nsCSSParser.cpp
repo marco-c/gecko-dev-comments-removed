@@ -2730,8 +2730,7 @@ CSSParserImpl::ResolveValueWithVariableReferencesRec(
         break;
 
       default:
-        NS_NOTREACHED("unexpected token type");
-        
+        MOZ_FALLTHROUGH_ASSERT("unexpected token type");
       case eCSSToken_ID:
       case eCSSToken_String:
       case eCSSToken_Includes:
@@ -4329,7 +4328,7 @@ CSSParserImpl::ParseKeyframeSelectorList(InfallibleTArray<float>& aSelectorList)
           value = 1.0f;
           break;
         }
-        
+        MOZ_FALLTHROUGH;
       default:
         UngetToken();
         
@@ -7409,7 +7408,7 @@ CSSParserImpl::ParseVariantWithRestrictions(nsCSSValue& aValue,
 {
   switch (aRestrictions) {
     default:
-      MOZ_ASSERT(false, "should not be reached");
+      MOZ_FALLTHROUGH_ASSERT("should not be reached");
     case 0:
       return ParseVariant(aValue, aVariantMask, aKeywordTable);
     case CSS_PROPERTY_VALUE_NONNEGATIVE:
@@ -10099,7 +10098,7 @@ CSSParserImpl::IsLegacyGradientLine(const nsCSSTokenType& aType,
       haveGradientLine = true;
       break;
     }
-    
+    MOZ_FALLTHROUGH;
   case eCSSToken_ID:
   case eCSSToken_Hash:
     
@@ -10751,8 +10750,10 @@ CSSParserImpl::ParseBoxProperties(const nsCSSProperty aPropIDs[])
   switch (count) {
     case 1: 
       result.mRight = result.mTop;
+      MOZ_FALLTHROUGH;
     case 2: 
       result.mBottom = result.mTop;
+      MOZ_FALLTHROUGH;
     case 3: 
       result.mLeft = result.mRight;
   }
@@ -10794,8 +10795,10 @@ CSSParserImpl::ParseGroupedBoxProperty(int32_t aVariantMask,
   switch (count) {
     case 1: 
       result.mRight = result.mTop;
+      MOZ_FALLTHROUGH;
     case 2: 
       result.mBottom = result.mTop;
+      MOZ_FALLTHROUGH;
     case 3: 
       result.mLeft = result.mRight;
   }
@@ -10891,15 +10894,25 @@ CSSParserImpl::ParseBoxCornerRadiiInternals(nsCSSValue array[])
 
   
   switch (countX) {
-    case 1: dimenX.mRight = dimenX.mTop;  
-    case 2: dimenX.mBottom = dimenX.mTop; 
-    case 3: dimenX.mLeft = dimenX.mRight; 
+    case 1: 
+      dimenX.mRight = dimenX.mTop;
+      MOZ_FALLTHROUGH;
+    case 2: 
+      dimenX.mBottom = dimenX.mTop;
+      MOZ_FALLTHROUGH;
+    case 3: 
+      dimenX.mLeft = dimenX.mRight;
   }
 
   switch (countY) {
-    case 1: dimenY.mRight = dimenY.mTop;  
-    case 2: dimenY.mBottom = dimenY.mTop; 
-    case 3: dimenY.mLeft = dimenY.mRight; 
+    case 1: 
+      dimenY.mRight = dimenY.mTop;
+      MOZ_FALLTHROUGH;
+    case 2: 
+      dimenY.mBottom = dimenY.mTop;
+      MOZ_FALLTHROUGH;
+    case 3: 
+      dimenY.mLeft = dimenY.mRight;
   }
 
   NS_FOR_CSS_SIDES(side) {

@@ -260,10 +260,10 @@ FixedTableLayoutStrategy::ComputeColumnISizes(const nsHTMLReflowState& aReflowSt
           switch (cellFrame->StylePosition()->mBoxSizing) {
             case StyleBoxSizing::Content:
               boxSizingAdjust += offsets.hPadding;
-              
+              MOZ_FALLTHROUGH;
             case StyleBoxSizing::Padding:
               boxSizingAdjust += offsets.hBorder;
-              
+              MOZ_FALLTHROUGH;
             case StyleBoxSizing::Border:
               
               break;

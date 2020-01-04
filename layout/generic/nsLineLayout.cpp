@@ -3008,6 +3008,7 @@ nsLineLayout::ExpandRubyBox(PerFrameData* aFrame, nscoord aReservedISize,
       }
       
       
+      MOZ_FALLTHROUGH;
     }
     case NS_STYLE_RUBY_ALIGN_CENTER:
       
@@ -3199,6 +3200,7 @@ nsLineLayout::TextAlignLine(nsLineBox* aLine,
         }
         
         
+        MOZ_FALLTHROUGH;
       }
 
       case NS_STYLE_TEXT_ALIGN_DEFAULT:

@@ -83,10 +83,10 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
           switch (frameToResize->StylePosition()->mBoxSizing) {
             case StyleBoxSizing::Content:
               rect.Deflate(frameToResize->GetUsedPadding());
-              
+              MOZ_FALLTHROUGH;
             case StyleBoxSizing::Padding:
               rect.Deflate(frameToResize->GetUsedBorder());
-              
+              MOZ_FALLTHROUGH;
             case StyleBoxSizing::Border:
               
               break;
@@ -102,7 +102,7 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
             break;
 
           doDefault = false;
-            
+
           
           Direction direction = GetDirection();
           nsresult rv = aEvent->widget->BeginResizeDrag(aEvent,

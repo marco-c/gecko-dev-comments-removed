@@ -438,6 +438,7 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue,
       }
       
       aProperty = eCSSProperty_border_top;
+      MOZ_FALLTHROUGH;
     }
     case eCSSProperty_border_top:
     case eCSSProperty_border_right:
@@ -1065,6 +1066,7 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue,
         return;
       }
       
+      MOZ_FALLTHROUGH;
     }
     case eCSSProperty_grid_template: {
       const nsCSSValue& areasValue =

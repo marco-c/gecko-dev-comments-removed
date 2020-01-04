@@ -4349,10 +4349,10 @@ nsFrame::ComputeSize(nsRenderingContext *aRenderingContext,
   switch (stylePos->mBoxSizing) {
     case StyleBoxSizing::Border:
       boxSizingAdjust += aBorder;
-      
+      MOZ_FALLTHROUGH;
     case StyleBoxSizing::Padding:
       boxSizingAdjust += aPadding;
-      
+      MOZ_FALLTHROUGH;
     case StyleBoxSizing::Content:
       
       break;
@@ -6796,6 +6796,7 @@ nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos)
         aPos->mWordMovementType = eEndWord;
       }
       
+      MOZ_FALLTHROUGH;
     case eSelectWord:
     {
       

@@ -198,6 +198,7 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
     case eTouchEnd:
       aIsHandlingUserInput = true;
       
+      MOZ_FALLTHROUGH;
     case eTouchCancel: {
       
       

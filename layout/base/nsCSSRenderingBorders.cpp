@@ -642,7 +642,7 @@ MakeBorderColor(nscolor aColor, nscolor aBackgroundColor,
 
     case BorderColorStyleLight:
       k = 1;
-      
+      MOZ_FALLTHROUGH;
     case BorderColorStyleDark:
       NS_GetSpecial3DColors(colors, aBackgroundColor, aColor);
       return Color::FromABGR(colors[k]);
