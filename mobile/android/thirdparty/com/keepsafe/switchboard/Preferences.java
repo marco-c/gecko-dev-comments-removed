@@ -18,7 +18,7 @@ package com.keepsafe.switchboard;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
+import android.support.annotation.Nullable;
 
 
 
@@ -26,28 +26,20 @@ import android.content.SharedPreferences.Editor;
 
 
 public class Preferences {
-    private static final String TAG = "Preferences";
 
     private static final String switchBoardSettings = "com.keepsafe.switchboard.settings";
 
-    
     private static final String kDynamicConfigServerUrl = "dynamic-config-server-url";
-    private static final String kDynamicConfigServerUpdateUrl = "dynamic-config-server-update-url";
     private static final String kDynamicConfig = "dynamic-config";
 
-
-
-    
     
 
 
 
 
-
-
-    public static String getDynamicUpdateServerUrl(Context c) {
-        SharedPreferences settings = (SharedPreferences) Preferences.getPreferenceObject(c, false);
-        return settings.getString(kDynamicConfigServerUpdateUrl, null);
+    @Nullable public static String getDynamicConfigServerUrl(Context c) {
+        final SharedPreferences prefs = c.getApplicationContext().getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE);
+        return prefs.getString(kDynamicConfigServerUrl, null);
     }
 
     
@@ -55,11 +47,11 @@ public class Preferences {
 
 
 
-
-
-    public static String getDynamicConfigServerUrl(Context c) {
-        SharedPreferences settings = (SharedPreferences) Preferences.getPreferenceObject(c, false);
-        return settings.getString(kDynamicConfigServerUrl, null);
+    public static void setDynamicConfigServerUrl(Context c, String configServerUrl) {
+        final SharedPreferences.Editor editor = c.getApplicationContext().
+                getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE).edit();
+        editor.putString(kDynamicConfigServerUrl, configServerUrl);
+        editor.apply();
     }
 
     
@@ -67,14 +59,9 @@ public class Preferences {
 
 
 
-
-
-    public static boolean setDynamicConfigServerUrl(Context c, String updateServerUrl, String configServerUrl) {
-
-        SharedPreferences.Editor settings = (Editor) Preferences.getPreferenceObject(c, true);
-        settings.putString(kDynamicConfigServerUpdateUrl, updateServerUrl);
-        settings.putString(kDynamicConfigServerUrl, configServerUrl);
-        return settings.commit();
+    @Nullable public static String getDynamicConfigJson(Context c) {
+        final SharedPreferences prefs = c.getApplicationContext().getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE);
+        return prefs.getString(kDynamicConfig, null);
     }
 
     
@@ -82,35 +69,10 @@ public class Preferences {
 
 
 
-    public static String getDynamicConfigJson(Context c) {
-        SharedPreferences settings = (SharedPreferences) Preferences.getPreferenceObject(c, false);
-        return settings.getString(kDynamicConfig, null);
-    }
-
-    
-
-
-
-
-
-    public static boolean setDynamicConfigJson(Context c, String configJson) {
-        SharedPreferences.Editor settings = (Editor) Preferences.getPreferenceObject(c, true);
-        settings.putString(kDynamicConfig, configJson);
-        return settings.commit();
-    }
-
-    static private Object getPreferenceObject(Context ctx, boolean writeable) {
-
-        Object returnValue = null;
-
-        Context sharedDelegate = ctx.getApplicationContext();
-
-        if(!writeable) {
-            returnValue = sharedDelegate.getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE);
-        } else {
-            returnValue = sharedDelegate.getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE).edit();
-        }
-
-        return returnValue;
+    public static void setDynamicConfigJson(Context c, String configJson) {
+        final SharedPreferences.Editor editor = c.getApplicationContext().
+                getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE).edit();
+        editor.putString(kDynamicConfig, configJson);
+        editor.apply();
     }
 }

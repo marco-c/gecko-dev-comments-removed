@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.ProtocolException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -33,11 +33,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build;
-import android.support.v4.content.LocalBroadcastManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
+
 
 
 
@@ -63,64 +64,17 @@ public class SwitchBoard {
     
     public static boolean DEBUG = true;
 
-    
-    private static String DYNAMIC_CONFIG_SERVER_URL_UPDATE;
-
-    
-    private static String DYNAMIC_CONFIG_SERVER_DEFAULT_URL;
-
-    public static final String ACTION_CONFIG_FETCHED = ".SwitchBoard.CONFIG_FETCHED";
-
-    private static final String kUpdateServerUrl = "updateServerUrl";
-    private static final String kConfigServerUrl = "configServerUrl";
-
     private static final String IS_EXPERIMENT_ACTIVE = "isActive";
     private static final String EXPERIMENT_VALUES = "values";
 
+    private static final String KEY_SERVER_URL = "mainServerUrl";
+    private static final String KEY_CONFIG_RESULTS = "results";
+
     private static String uuidExtra = null;
-
-
-    
-
-
-
-
-
-    public static void initDefaultServerUrls(String configServerUpdateUrl, String configServerUrl,
-            boolean isDebug) {
-
-        DYNAMIC_CONFIG_SERVER_URL_UPDATE = configServerUpdateUrl;
-        DYNAMIC_CONFIG_SERVER_DEFAULT_URL = configServerUrl;
-        DEBUG = isDebug;
-    }
 
     public static void setUUIDFromExtra(String uuid) {
         uuidExtra = uuid;
     }
-    
-
-
-
-
-
-
-
-
-
-    public static void initDefaultServerUrls(String configServerUpdateUrlStaging, String configServerUrlStaging,
-            String configServerUpdateUrl, String configServerUrl,
-            boolean isDebug) {
-
-        if(isDebug) {
-            DYNAMIC_CONFIG_SERVER_URL_UPDATE = configServerUpdateUrlStaging;
-            DYNAMIC_CONFIG_SERVER_DEFAULT_URL = configServerUrlStaging;
-        } else {
-            DYNAMIC_CONFIG_SERVER_URL_UPDATE = configServerUpdateUrl;
-            DYNAMIC_CONFIG_SERVER_DEFAULT_URL = configServerUrl;
-        }
-
-        DEBUG = isDebug;
-    }
 
     
 
@@ -130,118 +84,82 @@ public class SwitchBoard {
 
 
 
+    static void loadConfig(Context c, String uuid, @NonNull String defaultServerUrl) {
 
+        
+        
+        
+        String serverUrl = defaultServerUrl;
 
-    public static void updateConfigServerUrl(Context c) {
-        if(DEBUG) Log.d(TAG, "start initConfigServerUrl");
-
-        if(DEBUG) {
-            
-            Preferences.setDynamicConfigServerUrl(c, DYNAMIC_CONFIG_SERVER_URL_UPDATE, DYNAMIC_CONFIG_SERVER_DEFAULT_URL);
+        final URL requestUrl = buildConfigRequestUrl(c, uuid, serverUrl);
+        if (requestUrl == null) {
             return;
         }
 
-        
-        String updateServerUrl = Preferences.getDynamicUpdateServerUrl(c);
+        if (DEBUG) Log.d(TAG, requestUrl.toString());
 
-        
-        if(updateServerUrl == null)
-            updateServerUrl = DYNAMIC_CONFIG_SERVER_URL_UPDATE;
+        final String result = readFromUrlGET(requestUrl);
+        if (DEBUG) Log.d(TAG, result);
+
+        if (result == null) {
+            return;
+        }
 
         try {
-            String result = readFromUrlGET(updateServerUrl, "");
-            if(DEBUG) Log.d(TAG, "Result String: " + result);
+            final JSONObject json = new JSONObject(result);
 
-            if(result != null){
-                JSONObject a = new JSONObject(result);
-
-                Preferences.setDynamicConfigServerUrl(c, (String)a.get(kUpdateServerUrl), (String)a.get(kConfigServerUrl));
-
-                if(DEBUG) Log.d(TAG, "Update Server Url: " + (String)a.get(kUpdateServerUrl));
-                if(DEBUG) Log.d(TAG, "Config Server Url: " + (String)a.get(kConfigServerUrl));
-            } else {
-                storeDefaultUrlsInPreferences(c);
+            
+            final String newServerUrl = json.getString(KEY_SERVER_URL);
+            if (!defaultServerUrl.equals(newServerUrl)) {
+                Preferences.setDynamicConfigServerUrl(c, newServerUrl);
             }
 
+            
+            final String config = json.getString(KEY_CONFIG_RESULTS);
+            Preferences.setDynamicConfigJson(c, config);
         } catch (JSONException e) {
+            Log.e(TAG, "Exception parsing server result", e);
+        }
+    }
+
+    @Nullable private static URL buildConfigRequestUrl(Context c, String uuid, String serverUrl) {
+        if (uuid == null) {
+            DeviceUuidFactory df = new DeviceUuidFactory(c);
+            uuid = df.getDeviceUuid().toString();
+        }
+
+        final String device = Build.DEVICE;
+        final String manufacturer = Build.MANUFACTURER;
+        String lang = "unknown";
+        try {
+            lang = Locale.getDefault().getISO3Language();
+        } catch (MissingResourceException e) {
+            e.printStackTrace();
+        }
+        String country = "unknown";
+        try {
+            country = Locale.getDefault().getISO3Country();
+        } catch (MissingResourceException e) {
             e.printStackTrace();
         }
 
-        if(DEBUG) Log.d(TAG, "end initConfigServerUrl");
-    }
+        final String packageName = c.getPackageName();
+        String versionName = "none";
+        try {
+            versionName = c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
+        } catch (NameNotFoundException e) {
+            e.printStackTrace();
+        }
 
-    
-
-
-
-
-
-    public static void loadConfig(Context c) {
-        loadConfig(c, null);
-    }
-
-    
-
-
-
-
-
-
-    public static void loadConfig(Context c, String uuid) {
+        final String params = "uuid="+uuid+"&device="+device+"&lang="+lang+"&country="+country
+                +"&manufacturer="+manufacturer+"&appId="+packageName+"&version="+versionName;
 
         try {
-
-            
-            if(uuid == null) {
-                DeviceUuidFactory df = new DeviceUuidFactory(c);
-                uuid = df.getDeviceUuid().toString();
-            }
-
-            String device = Build.DEVICE;
-            String manufacturer = Build.MANUFACTURER;
-            String lang = "unknown";
-            try {
-                lang = Locale.getDefault().getISO3Language();
-            } catch (MissingResourceException e) {
-                e.printStackTrace();
-            }
-            String country = "unknown";
-            try {
-                country = Locale.getDefault().getISO3Country();
-            } catch (MissingResourceException e) {
-                e.printStackTrace();
-            }
-            String packageName = c.getPackageName();
-            String versionName = "none";
-            try {
-                versionName = c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
-            } catch (NameNotFoundException e) {
-                e.printStackTrace();
-            }
-
-            
-            String serverUrl = Preferences.getDynamicConfigServerUrl(c);
-
-            if(serverUrl != null) {
-                String params = "uuid="+uuid+"&device="+device+"&lang="+lang+"&country="+country
-                        +"&manufacturer="+manufacturer+"&appId="+packageName+"&version="+versionName;
-                if(DEBUG) Log.d(TAG, "Read from server URL: " + serverUrl + "?" + params);
-                String serverConfig = readFromUrlGET(serverUrl, params);
-
-                if(DEBUG) Log.d(TAG, serverConfig);
-
-                
-                if(serverConfig != null)
-                    Preferences.setDynamicConfigJson(c, serverConfig);
-            }
-
-        } catch (NullPointerException e) {
+            return new URL(serverUrl + "?" + params);
+        } catch (MalformedURLException e) {
             e.printStackTrace();
+            return null;
         }
-
-        
-        Intent i = new Intent(ACTION_CONFIG_FETCHED);
-        LocalBroadcastManager.getInstance(c).sendBroadcast(i);
     }
 
     public static boolean isInBucket(Context c, int low, int high) {
@@ -378,44 +296,19 @@ public class SwitchBoard {
 
 
 
-    private static void storeDefaultUrlsInPreferences(Context c) {
-        String configUrl = Preferences.getDynamicConfigServerUrl(c);
-        String updateUrl = Preferences.getDynamicUpdateServerUrl(c);
-
-        if(configUrl == null)
-            configUrl = DYNAMIC_CONFIG_SERVER_DEFAULT_URL;
-
-        if(updateUrl == null)
-            updateUrl = DYNAMIC_CONFIG_SERVER_URL_UPDATE;
-
-        Preferences.setDynamicConfigServerUrl(c, updateUrl, configUrl);
-    }
-
-    
-
-
-
-
-
-    private static String readFromUrlGET(String address, String params) {
-        if(address == null || params == null)
-            return null;
-
-        String completeUrl = address + "?" + params;
-        if(DEBUG) Log.d(TAG, "readFromUrl(): " + completeUrl);
+    @Nullable private static String readFromUrlGET(URL url) {
+        if (DEBUG) Log.d(TAG, "readFromUrl(): " + url);
 
         try {
-            URL url = new URL(completeUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setUseCaches(false);
 
-            
             InputStream is = connection.getInputStream();
             InputStreamReader inputStreamReader = new InputStreamReader(is);
             BufferedReader bufferReader = new BufferedReader(inputStreamReader, 8192);
             String line = "";
-            StringBuffer resultContent = new StringBuffer();
+            StringBuilder resultContent = new StringBuilder();
             while ((line = bufferReader.readLine()) != null) {
                 if(DEBUG) Log.d(TAG, line);
                 resultContent.append(line);
@@ -425,8 +318,6 @@ public class SwitchBoard {
             if(DEBUG) Log.d(TAG, "readFromUrl() result: " + resultContent.toString());
 
             return resultContent.toString();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }

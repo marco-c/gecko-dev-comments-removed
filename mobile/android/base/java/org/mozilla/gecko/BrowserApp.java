@@ -817,27 +817,22 @@ public class BrowserApp extends GeckoApp
         final String hostExtra = ContextUtils.getStringExtra(intent, INTENT_KEY_SWITCHBOARD_HOST);
         final String host = TextUtils.isEmpty(hostExtra) ? DEFAULT_SWITCHBOARD_HOST : hostExtra;
 
-        final String configServerUpdateUrl;
-        final String configServerUrl;
+        final String serverUrl;
         try {
-            configServerUpdateUrl = new URL("https", host, "urls").toString();
-            configServerUrl = new URL("https", host, "v1").toString();
+            serverUrl = new URL("https", host, "v2").toString();
         } catch (MalformedURLException e) {
             Log.e(LOGTAG, "Error creating Switchboard server URL", e);
             return;
         }
 
-        SwitchBoard.initDefaultServerUrls(configServerUpdateUrl, configServerUrl, true);
-
         final String switchboardUUID = ContextUtils.getStringExtra(intent, INTENT_KEY_SWITCHBOARD_UUID);
         SwitchBoard.setUUIDFromExtra(switchboardUUID);
 
         
-        new AsyncConfigLoader(this, AsyncConfigLoader.UPDATE_SERVER, switchboardUUID).execute();
-
         
         
-        new AsyncConfigLoader(this, AsyncConfigLoader.CONFIG_SERVER, switchboardUUID).execute();
+        
+        new AsyncConfigLoader(this, switchboardUUID, serverUrl).execute();
     }
 
     private void showUpdaterPermissionSnackbar() {
