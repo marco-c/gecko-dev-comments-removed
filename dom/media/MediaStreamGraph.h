@@ -1248,15 +1248,11 @@ public:
 
 
 
-
-
   AudioNodeStream* CreateAudioNodeStream(AudioNodeEngine* aEngine,
-                                         AudioNodeStreamKind aKind,
-                                         TrackRate aSampleRate = 0);
+                                         AudioNodeStreamKind aKind);
 
   AudioNodeExternalInputStream*
-  CreateAudioNodeExternalInputStream(AudioNodeEngine* aEngine,
-                                     TrackRate aSampleRate = 0);
+  CreateAudioNodeExternalInputStream(AudioNodeEngine* aEngine);
 
   
 
