@@ -18,6 +18,8 @@ WebGL2Context::GetInternalformatParameter(JSContext* cx, GLenum target,
                                           ErrorResult& out_rv)
 {
     const char funcName[] = "getInternalfomratParameter";
+    retval.setObjectOrNull(nullptr);
+
     if (IsContextLost())
         return;
 
@@ -30,6 +32,29 @@ WebGL2Context::GetInternalformatParameter(JSContext* cx, GLenum target,
     
     
     
+
+    GLenum sizedFormat;
+    switch (internalformat) {
+    case LOCAL_GL_RGB:
+        sizedFormat = LOCAL_GL_RGB8;
+        break;
+    case LOCAL_GL_RGBA:
+        sizedFormat = LOCAL_GL_RGBA8;
+        break;
+    default:
+        sizedFormat = internalformat;
+        break;
+    }
+
+    
+    
+
+    const auto usage = mFormatUsage->GetRBUsage(sizedFormat);
+    if (!usage) {
+        ErrorInvalidEnum("%s: `internalformat` must be color-, depth-, or stencil-renderable, was: 0x%04x.",
+                         funcName, internalformat);
+        return;
+    }
 
     if (pname != LOCAL_GL_SAMPLES) {
         ErrorInvalidEnumInfo("%s: `pname` must be SAMPLES, was 0x%04x.", funcName, pname);
