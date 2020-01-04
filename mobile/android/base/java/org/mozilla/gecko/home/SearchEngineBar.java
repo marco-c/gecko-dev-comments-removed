@@ -99,7 +99,9 @@ public class SearchEngineBar extends RecyclerView
             } else {
                 
                 
-                searchEnginesToDisplay = Math.floor(availableWidth / mMinIconContainerWidth) - 0.5;
+                
+
+                searchEnginesToDisplay = Math.floor((availableWidth / mMinIconContainerWidth) - 0.5) + 0.5;
             }
 
             
