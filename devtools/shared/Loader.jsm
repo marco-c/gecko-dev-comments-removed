@@ -85,19 +85,19 @@ BuiltinProvider.prototype = {
         
         "": "resource://gre/modules/commonjs/",
         
-        "devtools": "resource://gre/modules/devtools",
+        "devtools": "resource://devtools",
         
-        "devtools/client": "resource:///modules/devtools/client",
+        "devtools/client": "resource://devtools/client",
         
-        "gcli": "resource://gre/modules/devtools/gcli",
+        "gcli": "resource://devtools/gcli",
         
         "promise": "resource://gre/modules/Promise-backend.js",
         
-        "acorn": "resource://gre/modules/devtools/acorn",
+        "acorn": "resource://devtools/acorn",
         
-        "acorn/util/walk": "resource://gre/modules/devtools/acorn/walk.js",
+        "acorn/util/walk": "resource://devtools/acorn/walk.js",
         
-        "source-map": "resource://gre/modules/devtools/sourcemap/source-map.js",
+        "source-map": "resource://devtools/sourcemap/source-map.js",
         
         
         "xpcshell-test": "resource://test"
@@ -433,7 +433,7 @@ DevToolsLoader.prototype = {
     if (showToolbox) {
       let { gBrowser } = Services.wm.getMostRecentWindow("navigator:browser");
       let target = this.TargetFactory.forTab(gBrowser.selectedTab);
-      const { gDevTools } = this.require("resource:///modules/devtools/client/framework/gDevTools.jsm");
+      const { gDevTools } = this.require("resource://devtools/client/framework/gDevTools.jsm");
       gDevTools.showToolbox(target);
     }
   },

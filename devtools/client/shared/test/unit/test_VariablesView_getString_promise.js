@@ -4,7 +4,7 @@
 
 
 var Cu = Components.utils;
-const { VariablesView } = Cu.import("resource:///modules/devtools/client/shared/widgets/VariablesView.jsm", {});
+const { VariablesView } = Cu.import("resource://devtools/client/shared/widgets/VariablesView.jsm", {});
 
 const PENDING = {
   "type": "object",

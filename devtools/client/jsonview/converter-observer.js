@@ -15,7 +15,7 @@ const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 
 
 XPCOMUtils.defineLazyGetter(this, "devtools", function() {
-  const {devtools} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
+  const {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
   return devtools;
 });
 

@@ -2,11 +2,11 @@
 
 
 
-var {require} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
+var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var {TargetFactory} = require("devtools/client/framework/target");
 var {console} = Cu.import("resource://gre/modules/Console.jsm", {});
-var {gDevTools} = Cu.import("resource:///modules/devtools/client/framework/gDevTools.jsm", {});
-const {DOMHelpers} = Cu.import("resource:///modules/devtools/client/shared/DOMHelpers.jsm", {});
+var {gDevTools} = Cu.import("resource://devtools/client/framework/gDevTools.jsm", {});
+const {DOMHelpers} = Cu.import("resource://devtools/client/shared/DOMHelpers.jsm", {});
 const {Hosts} = require("devtools/client/framework/toolbox-hosts");
 const {defer} = require("promise");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");

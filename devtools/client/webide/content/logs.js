@@ -3,8 +3,8 @@
 
 
 var Cu = Components.utils;
-Cu.import("resource:///modules/devtools/client/framework/gDevTools.jsm");
-const {require} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
+Cu.import("resource://devtools/client/framework/gDevTools.jsm");
+const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const {AppManager} = require("devtools/client/webide/modules/app-manager");
 
 window.addEventListener("load", function onLoad() {

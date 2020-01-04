@@ -3,7 +3,7 @@
 
 
 var Cu = Components.utils;
-const {require} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
+const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const {TargetFactory} = require("devtools/client/framework/target");
 const {console} = Cu.import("resource://gre/modules/Console.jsm", {});
 const promise = require("promise");

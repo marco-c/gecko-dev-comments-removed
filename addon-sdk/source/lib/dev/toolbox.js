@@ -15,7 +15,7 @@ const { contract, validate } = require("../sdk/util/contract");
 const { each, pairs, values } = require("../sdk/util/sequence");
 const { onEnable, onDisable } = require("../dev/theme/hooks");
 
-const { gDevTools } = Cu.import("resource:///modules/devtools/client/framework/gDevTools.jsm", {});
+const { gDevTools } = Cu.import("resource://devtools/client/framework/gDevTools.jsm", {});
 
 
 

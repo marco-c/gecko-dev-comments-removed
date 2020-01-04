@@ -6,7 +6,7 @@
 
 
 
-const { require } = Components.utils.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
+const { require } = Components.utils.import("resource://devtools/shared/Loader.jsm", {});
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Object.defineProperty(this, "NetworkHelper", {
