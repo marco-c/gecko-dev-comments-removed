@@ -179,13 +179,24 @@ static bool			malloc_initializer = NO_INITIALIZER;
 static malloc_mutex_t	init_lock = SRWLOCK_INIT;
 #else
 static malloc_mutex_t	init_lock;
+static bool init_lock_initialized = false;
 
 JEMALLOC_ATTR(constructor)
 static void WINAPI
 _init_init_lock(void)
 {
 
-	malloc_mutex_init(&init_lock);
+	
+
+
+
+
+
+
+
+	if (!init_lock_initialized)
+		malloc_mutex_init(&init_lock);
+	init_lock_initialized = true;
 }
 
 #ifdef _MSC_VER
@@ -510,15 +521,15 @@ arena_get_hard(tsd_t *tsd, unsigned ind, bool init_if_missing)
 		assert(ind < narenas_actual || !init_if_missing);
 		narenas_cache = (ind < narenas_actual) ? narenas_actual : ind+1;
 
-		if (!*arenas_cache_bypassp) {
+		if (tsd_nominal(tsd) && !*arenas_cache_bypassp) {
 			*arenas_cache_bypassp = true;
 			arenas_cache = (arena_t **)a0malloc(sizeof(arena_t *) *
 			    narenas_cache);
 			*arenas_cache_bypassp = false;
-		} else
-			arenas_cache = NULL;
+		}
 		if (arenas_cache == NULL) {
 			
+
 
 
 
@@ -531,6 +542,7 @@ arena_get_hard(tsd_t *tsd, unsigned ind, bool init_if_missing)
 			malloc_mutex_unlock(&arenas_lock);
 			return (arena);
 		}
+		assert(tsd_nominal(tsd) && !*arenas_cache_bypassp);
 		tsd_arenas_cache_set(tsd, arenas_cache);
 		tsd_narenas_cache_set(tsd, narenas_cache);
 	}
@@ -649,8 +661,10 @@ arenas_cache_cleanup(tsd_t *tsd)
 	arena_t **arenas_cache;
 
 	arenas_cache = tsd_arenas_cache_get(tsd);
-	if (arenas_cache != NULL)
+	if (arenas_cache != NULL) {
+		tsd_arenas_cache_set(tsd, NULL);
 		a0dalloc(arenas_cache);
+	}
 }
 
 void
@@ -1297,6 +1311,9 @@ static bool
 malloc_init_hard(void)
 {
 
+#if defined(_WIN32) && _WIN32_WINNT < 0x0600
+	_init_init_lock();
+#endif
 	malloc_mutex_lock(&init_lock);
 	if (!malloc_init_hard_needed()) {
 		malloc_mutex_unlock(&init_lock);
