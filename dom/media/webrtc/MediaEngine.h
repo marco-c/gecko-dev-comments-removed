@@ -8,6 +8,7 @@
 #include "mozilla/RefPtr.h"
 #include "DOMMediaStream.h"
 #include "MediaStreamGraph.h"
+#include "MediaTrackConstraints.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/dom/VideoStreamTrack.h"
 
@@ -174,7 +175,15 @@ protected:
 
 
 
-class MediaEngineSource : public nsISupports
+
+
+
+
+
+
+
+class MediaEngineSource : public nsISupports,
+                          protected MediaConstraintsHelper
 {
 public:
   
@@ -182,9 +191,17 @@ public:
   static const unsigned int kMaxDeviceNameLength = 128;
   static const unsigned int kMaxUniqueIdLength = 256;
 
-  virtual ~MediaEngineSource() {}
+  virtual ~MediaEngineSource()
+  {
+    if (!mInShutdown) {
+      Shutdown();
+    }
+  }
 
-  virtual void Shutdown() = 0;
+  virtual void Shutdown()
+  {
+    mInShutdown = true;
+  };
 
   
   virtual void GetName(nsAString&) const = 0;
@@ -215,7 +232,30 @@ public:
   };
 
   
-  virtual nsresult Deallocate(AllocationHandle* aHandle) = 0;
+  virtual nsresult Deallocate(AllocationHandle* aHandle)
+  {
+    MOZ_ASSERT(aHandle);
+    RefPtr<AllocationHandle> handle = aHandle;
+
+    class Comparator {
+    public:
+      static bool Equals(const RefPtr<AllocationHandle>& a,
+                         const RefPtr<AllocationHandle>& b) {
+        return a.get() == b.get();
+      }
+    };
+    MOZ_ASSERT(mRegisteredHandles.Contains(handle, Comparator()));
+    mRegisteredHandles.RemoveElementAt(mRegisteredHandles.IndexOf(handle, 0,
+                                                                  Comparator()));
+    if (mRegisteredHandles.Length() && !mInShutdown) {
+      
+      auto& first = mRegisteredHandles[0];
+      const char* badConstraint = nullptr;
+      return ReevaluateAllocation(nullptr, nullptr, first->mPrefs,
+                                  first->mDeviceId, &badConstraint);
+    }
+    return NS_OK;
+  }
 
   
 
@@ -274,7 +314,20 @@ public:
                             const nsString& aDeviceId,
                             const nsACString& aOrigin,
                             AllocationHandle** aOutHandle,
-                            const char** aOutBadConstraint) = 0;
+                            const char** aOutBadConstraint)
+  {
+    MOZ_ASSERT(aOutHandle);
+    RefPtr<AllocationHandle> handle = new AllocationHandle(aConstraints, aOrigin,
+                                                           aPrefs, aDeviceId);
+    nsresult rv = ReevaluateAllocation(handle, nullptr, aPrefs, aDeviceId,
+                                       aOutBadConstraint);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    mRegisteredHandles.AppendElement(handle);
+    handle.forget(aOutHandle);
+    return NS_OK;
+  }
 
   virtual uint32_t GetBestFitnessDistance(
       const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
@@ -293,7 +346,80 @@ protected:
 #ifdef DEBUG
     , mOwningThread(PR_GetCurrentThread())
 #endif
+    , mInShutdown(false)
   {}
+
+  
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult
+  UpdateSingleSource(const AllocationHandle* aHandle,
+                     const NormalizedConstraints& aNetConstraints,
+                     const MediaEnginePrefs& aPrefs,
+                     const nsString& aDeviceId,
+                     const char** aOutBadConstraint) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult
+  ReevaluateAllocation(AllocationHandle* aHandle,
+                       NormalizedConstraints* aConstraintsUpdate,
+                       const MediaEnginePrefs& aPrefs,
+                       const nsString& aDeviceId,
+                       const char** aOutBadConstraint)
+  {
+    
+
+    AutoTArray<const NormalizedConstraints*, 10> allConstraints;
+    for (auto& registered : mRegisteredHandles) {
+      if (aConstraintsUpdate && registered.get() == aHandle) {
+        continue; 
+      }
+      allConstraints.AppendElement(&registered->mConstraints);
+    }
+    if (aConstraintsUpdate) {
+      allConstraints.AppendElement(aConstraintsUpdate);
+    } else if (aHandle) {
+      
+      allConstraints.AppendElement(&aHandle->mConstraints);
+    }
+
+    NormalizedConstraints netConstraints(allConstraints);
+    if (netConstraints.mBadConstraint) {
+      *aOutBadConstraint = netConstraints.mBadConstraint;
+      return NS_ERROR_FAILURE;
+    }
+
+    nsresult rv = UpdateSingleSource(aHandle, netConstraints, aPrefs, aDeviceId,
+                                     aOutBadConstraint);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    if (aHandle && aConstraintsUpdate) {
+      aHandle->mConstraints = *aConstraintsUpdate;
+    }
+    return NS_OK;
+  }
 
   void AssertIsOnOwningThread()
   {
@@ -304,6 +430,9 @@ protected:
 #ifdef DEBUG
   PRThread* mOwningThread;
 #endif
+  nsTArray<RefPtr<AllocationHandle>> mRegisteredHandles;
+  bool mInShutdown;
+
   
   dom::MediaTrackSettings mSettings;
 };

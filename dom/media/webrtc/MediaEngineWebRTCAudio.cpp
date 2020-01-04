@@ -714,6 +714,7 @@ MediaEngineWebRTCMicrophoneSource::FreeChannel()
 void
 MediaEngineWebRTCMicrophoneSource::Shutdown()
 {
+  Super::Shutdown();
   if (mListener) {
     
     mListener->Shutdown();

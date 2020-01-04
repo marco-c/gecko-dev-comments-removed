@@ -50,6 +50,7 @@ namespace mozilla {
 class MediaEngineRemoteVideoSource : public MediaEngineCameraVideoSource,
                                      public webrtc::ExternalRenderer
 {
+  typedef MediaEngineCameraVideoSource Super;
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
@@ -103,7 +104,7 @@ public:
   void Shutdown() override;
 
 protected:
-  ~MediaEngineRemoteVideoSource() { Shutdown(); }
+  ~MediaEngineRemoteVideoSource() { }
 
 private:
   
@@ -112,46 +113,18 @@ private:
   void GetCapability(size_t aIndex, webrtc::CaptureCapability& aOut) const override;
   void SetLastCapability(const webrtc::CaptureCapability& aCapability);
 
-  
-
-
-
-
-
-
-
-
-
   nsresult
-  UpdateExisting(AllocationHandle* aHandle,
-                 NormalizedConstraints* aNewConstraints,
-                 const MediaEnginePrefs& aPrefs,
-                 const nsString& aDeviceId,
-                 const char** aOutBadConstraint);
-
-  nsresult
-  UpdateNew(AllocationHandle* aHandle,
-            const MediaEnginePrefs& aPrefs,
-            const nsString& aDeviceId,
-            const char** aOutBadConstraint) {
-    return UpdateExisting(aHandle, nullptr, aPrefs, aDeviceId, aOutBadConstraint);
-  }
-
-  nsresult
-  UpdateRemove(const MediaEnginePrefs& aPrefs,
-               const nsString& aDeviceId,
-               const char** aOutBadConstraint) {
-    return UpdateExisting(nullptr, nullptr, aPrefs, aDeviceId, aOutBadConstraint);
-  }
+  UpdateSingleSource(const AllocationHandle* aHandle,
+                     const NormalizedConstraints& aNetConstraints,
+                     const MediaEnginePrefs& aPrefs,
+                     const nsString& aDeviceId,
+                     const char** aOutBadConstraint) override;
 
   dom::MediaSourceEnum mMediaSource; 
   mozilla::camera::CaptureEngine mCapEngine;
 
-  nsTArray<RefPtr<AllocationHandle>> mRegisteredHandles;
-
   
   webrtc::CaptureCapability mLastCapability;
-  bool mInShutdown;
 };
 
 }
