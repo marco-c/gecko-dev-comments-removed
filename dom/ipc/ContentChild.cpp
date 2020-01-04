@@ -922,13 +922,11 @@ ContentChild::InitXPCOM()
   ClipboardCapabilities clipboardCaps;
   DomainPolicyClone domainPolicy;
   StructuredCloneData initialData;
-  OptionalURIParams userContentSheetURL;
 
   SendGetXPCOMProcessAttributes(&isOffline, &isConnected,
                                 &isLangRTL, &haveBidiKeyboards,
                                 &mAvailableDictionaries,
-                                &clipboardCaps, &domainPolicy, &initialData,
-                                &userContentSheetURL);
+                                &clipboardCaps, &domainPolicy, &initialData);
   RecvSetOffline(isOffline);
   RecvSetConnectivity(isConnected);
   RecvBidiKeyboardNotify(isLangRTL, haveBidiKeyboards);
@@ -965,10 +963,6 @@ ContentChild::InitXPCOM()
     ProcessGlobal* global = ProcessGlobal::Get();
     global->SetInitialProcessData(data);
   }
-
-  
-  nsCOMPtr<nsIURI> ucsURL = DeserializeURI(userContentSheetURL);
-  nsLayoutStylesheetCache::SetUserContentCSSURL(ucsURL);
 
   
   mozilla::dom::time::InitializeDateCacheCleaner();
