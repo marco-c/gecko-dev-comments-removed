@@ -229,7 +229,7 @@ function installCache(app) {
     return;
 
   let principal =
-    Services.scriptSecurityManager.createCodebasePrincipal(app.origin, {appId: aApp.localId});
+    Services.scriptSecurityManager.createCodebasePrincipal(app.origin, {appId: app.localId});
 
   
   
