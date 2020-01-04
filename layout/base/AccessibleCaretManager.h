@@ -7,6 +7,7 @@
 #ifndef AccessibleCaretManager_h
 #define AccessibleCaretManager_h
 
+#include "AccessibleCaret.h"
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
 #include "nsIFrame.h"
@@ -29,8 +30,6 @@ namespace dom {
 class Element;
 class Selection;
 } 
-
-class AccessibleCaret;
 
 
 
@@ -224,6 +223,11 @@ protected:
 
   
   CaretMode mLastUpdateCaretMode = CaretMode::None;
+
+  
+  
+  AccessibleCaret::Appearance mFirstCaretAppearanceOnScrollStart =
+                                 AccessibleCaret::Appearance::None;
 
   static const int32_t kAutoScrollTimerDelay = 30;
 
