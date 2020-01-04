@@ -4560,10 +4560,10 @@ nsRuleNode::ComputeTextData(void* aStartStruct,
   }
 
   
-  SetDiscrete(*aRuleData->ValueForWordWrap(), text->mWordWrap, conditions,
+  SetDiscrete(*aRuleData->ValueForOverflowWrap(), text->mOverflowWrap, conditions,
               SETDSC_ENUMERATED | SETDSC_UNSET_INHERIT,
-              parentText->mWordWrap,
-              NS_STYLE_WORDWRAP_NORMAL, 0, 0, 0, 0);
+              parentText->mOverflowWrap,
+              NS_STYLE_OVERFLOWWRAP_NORMAL, 0, 0, 0, 0);
 
   
   SetDiscrete(*aRuleData->ValueForHyphens(), text->mHyphens, conditions,
