@@ -57,6 +57,7 @@ struct ImageBitmapCloneData final
 {
   RefPtr<gfx::DataSourceSurface> mSurface;
   gfx::IntRect mPictureRect;
+  bool mIsPremultipliedAlpha;
 };
 
 
@@ -141,7 +142,27 @@ public:
 
 protected:
 
-  ImageBitmap(nsIGlobalObject* aGlobal, layers::Image* aData);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ImageBitmap(nsIGlobalObject* aGlobal, layers::Image* aData,
+              bool aIsPremultipliedAlpha = true);
 
   virtual ~ImageBitmap();
 
@@ -202,6 +223,8 @@ protected:
 
 
   gfx::IntRect mPictureRect;
+
+  const bool mIsPremultipliedAlpha;
 };
 
 } 
