@@ -1,8 +1,6 @@
 
 
 
-
-
 function $_(formNum, name) {
   var form = document.getElementById("form" + formNum);
   if (!form) {
@@ -29,9 +27,6 @@ function $_(formNum, name) {
 
   return element;
 }
-
-
-
 
 
 
@@ -85,9 +80,6 @@ function checkForm(formNum, val1, val2, val3) {
 
 
 
-
-
-
 function checkUnmodifiedForm(formNum) {
   var form = document.getElementById("form" + formNum);
   ok(form, "Locating form " + formNum);
@@ -103,6 +95,7 @@ function checkUnmodifiedForm(formNum) {
        ele.name + " in form " + formNum);
   }
 }
+
 
 
 
@@ -125,6 +118,8 @@ function doKey(aKey, modifier) {
   }
   wutils.sendKeyEvent("keyup",    key, 0, modifier);
 }
+
+
 
 
 
@@ -238,7 +233,7 @@ function dumpLogins(pwmgr) {
 }
 
 function dumpLogin(label, login) {
-  loginText = "";
+  var loginText = "";
   loginText += "host: ";
   loginText += login.hostname;
   loginText += " / formURL: ";
