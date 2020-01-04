@@ -17,6 +17,7 @@
 #include "skia/include/core/SkColorFilter.h"
 #include "skia/include/effects/SkBlurImageFilter.h"
 #include "skia/include/effects/SkLayerRasterizer.h"
+#include "Blur.h"
 #include "Logging.h"
 #include "Tools.h"
 #include "DataSurfaceHelpers.h"
@@ -432,16 +433,37 @@ DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface *aSurface,
   
 
   SkPaint shadowPaint;
-  SkAutoTUnref<SkImageFilter> blurFilter(SkBlurImageFilter::Create(aSigma, aSigma));
-  SkAutoTUnref<SkColorFilter> colorFilter(
-    SkColorFilter::CreateModeFilter(ColorToSkColor(aColor, 1.0), SkXfermode::kSrcIn_Mode));
-
   shadowPaint.setXfermode(paint.getXfermode());
-  shadowPaint.setImageFilter(blurFilter.get());
-  shadowPaint.setColorFilter(colorFilter.get());
 
   IntPoint shadowDest = RoundedToInt(aDest + aOffset);
-  mCanvas->drawBitmap(bitmap, shadowDest.x, shadowDest.y, &shadowPaint);
+
+  SkBitmap blurMask;
+  if (!UsingSkiaGPU() &&
+      bitmap.extractAlpha(&blurMask)) {
+    
+    
+    
+    AlphaBoxBlur blur(Rect(0, 0, blurMask.width(), blurMask.height()),
+                      int32_t(blurMask.rowBytes()),
+                      aSigma, aSigma);
+    blurMask.lockPixels();
+    blur.Blur(reinterpret_cast<uint8_t*>(blurMask.getPixels()));
+    blurMask.unlockPixels();
+    blurMask.notifyPixelsChanged();
+
+    shadowPaint.setColor(ColorToSkColor(aColor, 1.0f));
+
+    mCanvas->drawBitmap(blurMask, shadowDest.x, shadowDest.y, &shadowPaint);
+  } else {
+    SkAutoTUnref<SkImageFilter> blurFilter(SkBlurImageFilter::Create(aSigma, aSigma));
+    SkAutoTUnref<SkColorFilter> colorFilter(
+      SkColorFilter::CreateModeFilter(ColorToSkColor(aColor, 1.0f), SkXfermode::kSrcIn_Mode));
+
+    shadowPaint.setImageFilter(blurFilter.get());
+    shadowPaint.setColorFilter(colorFilter.get());
+
+    mCanvas->drawBitmap(bitmap, shadowDest.x, shadowDest.y, &shadowPaint);
+  }
 
   
   IntPoint dest = RoundedToInt(aDest);
