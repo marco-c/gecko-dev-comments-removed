@@ -442,8 +442,8 @@ function checkMediaStreamTrackCloneAgainstOriginal(clone, original) {
 
 
 
-function wait(time) {
-  return new Promise(r => setTimeout(r, time));
+function wait(time, message) {
+  return new Promise(r => setTimeout(() => r(message), time));
 }
 
 
@@ -483,8 +483,8 @@ var addFinallyToPromise = promise => {
 
 var listenUntil = (target, eventName, onFire) => {
   return new Promise(resolve => target.addEventListener(eventName,
-                                                        function callback() {
-    var result = onFire();
+                                                        function callback(event) {
+    var result = onFire(event);
     if (result) {
       target.removeEventListener(eventName, callback, false);
       resolve(result);
@@ -610,8 +610,7 @@ function haveEvent(target, name, cancelPromise) {
     (cancelPromise || new Promise()).then(e => Promise.reject(e)),
     new Promise(resolve => target.addEventListener(name, listener = resolve))
   ]);
-  p.then(() => target.removeEventListener(name, listener));
-  return p;
+  return p.then(event => (target.removeEventListener(name, listener), event));
 };
 
 
