@@ -2017,6 +2017,11 @@ KeyframeEffectReadOnly::ShouldBlockCompositorAnimations(const nsIFrame*
 
   for (const AnimationProperty& property : mProperties) {
     
+    
+    if (!property.mWinsInCascade) {
+      continue;
+    }
+    
     if (IsGeometricProperty(property.mProperty)) {
       if (shouldLog) {
         nsCString message;
