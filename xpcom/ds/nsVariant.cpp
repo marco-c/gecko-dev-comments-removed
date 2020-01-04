@@ -1667,8 +1667,6 @@ nsDiscriminatedUnion::Traverse(nsCycleCollectionTraversalCallback& aCb) const
 
 
 
-NS_IMPL_ISUPPORTS(nsVariantBase, nsIVariant, nsIWritableVariant)
-
 nsVariantBase::nsVariantBase()
   : mWritable(true)
 {
@@ -2176,3 +2174,7 @@ nsVariantBase::SetFromVariant(nsIVariant* aValue)
   }
   return mData.SetFromVariant(aValue);
 }
+
+
+
+NS_IMPL_ISUPPORTS(nsVariant, nsIVariant, nsIWritableVariant)
