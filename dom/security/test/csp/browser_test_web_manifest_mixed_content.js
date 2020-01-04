@@ -3,51 +3,52 @@
 
 
 
-
-"use strict";
+'use strict';
 const {
   ManifestObtainer
-} = Cu.import("resource://gre/modules/ManifestObtainer.jsm", {});
-const path = "/tests/dom/security/test/csp/";
-const mixedContent = `${path}file_web_manifest_mixed_content.html`;
-const server = `${path}file_testserver.sjs`;
-const secureURL = new URL(`https://example.com${server}`);
+} = Cu.import('resource://gre/modules/ManifestObtainer.jsm', {});
+const path = '/tests/dom/security/test/csp/';
+const mixedContent = `file=${path}file_web_manifest_mixed_content.html`;
+const server = 'file_testserver.sjs';
+const secureURL = `https://example.com${path}${server}`;
 const tests = [
   
   
   {
-    expected: "Mixed Content Blocker prevents fetching manifest.",
+    expected: `Mixed Content Blocker prevents fetching manifest.`,
     get tabURL() {
-      const url = new URL(secureURL);
-      url.searchParams.append("file", mixedContent);
-      return url.href;
+      let queryParts = [
+        mixedContent
+      ];
+      return `${secureURL}?${queryParts.join('&')}`;
     },
     run(error) {
       
-      const check = /NetworkError when attempting to fetch resource/.test(error.message);
+      const check = /blocked the loading of a resource/.test(error.message);
       ok(check, this.expected);
     }
   }
 ];
 
 
-add_task(function* () {
+add_task(function*() {
   
-  const testPromises = tests.map((test) => {
-    const tabOptions = {
-      gBrowser,
+  for (let test of tests) {
+    let tabOptions = {
+      gBrowser: gBrowser,
       url: test.tabURL,
-      skipAnimation: true,
     };
-    return BrowserTestUtils.withNewTab(tabOptions, (browser) => testObtainingManifest(browser, test));
-  });
-  yield Promise.all(testPromises);
-});
-
-function* testObtainingManifest(aBrowser, aTest) {
-  try {
-    yield ManifestObtainer.browserObtainManifest(aBrowser);
-  } catch (e) {
-    aTest.run(e);
+    yield BrowserTestUtils.withNewTab(
+      tabOptions,
+      browser => testObtainingManifest(browser, test)
+    );
   }
-}
+
+  function* testObtainingManifest(aBrowser, aTest) {
+    try {
+      yield ManifestObtainer.browserObtainManifest(aBrowser);
+    } catch (e) {
+      aTest.run(e)
+    }
+  }
+});

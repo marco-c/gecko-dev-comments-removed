@@ -39,7 +39,7 @@ InternalRequest::GetRequestConstructorCopy(nsIGlobalObject* aGlobal, ErrorResult
   
   copy->mReferrerPolicy = mReferrerPolicy;
 
-  copy->mContentPolicyType = mContentPolicyType;
+  copy->mContentPolicyType = nsIContentPolicy::TYPE_FETCH;
   copy->mMode = mMode;
   copy->mCredentialsMode = mCredentialsMode;
   copy->mCacheMode = mCacheMode;
