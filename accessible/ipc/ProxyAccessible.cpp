@@ -1065,17 +1065,20 @@ ProxyAccessible::IndexOfEmbeddedChild(const ProxyAccessible* aChild)
 ProxyAccessible*
 ProxyAccessible::EmbeddedChildAt(size_t aChildIdx)
 {
-  
-  
-  
-  
-  if (mOuterDoc) {
-    return ChildAt(aChildIdx);
+  size_t index = 0, kids = mChildren.Length();
+  for (size_t i = 0; i < kids; i++) {
+    if (!mChildren[i]->IsEmbeddedObject()) {
+      continue;
+    }
+
+    if (index == aChildIdx) {
+      return mChildren[i];
+    }
+
+    index++;
   }
 
-  uint64_t childID;
-  Unused << mDoc->SendEmbeddedChildAt(mID, aChildIdx, &childID);
-  return mDoc->GetAccessible(childID);
+  return nullptr;
 }
 
 ProxyAccessible*
