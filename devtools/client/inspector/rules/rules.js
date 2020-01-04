@@ -33,6 +33,8 @@ loader.lazyRequireGetter(this, "EventEmitter",
   "devtools/shared/event-emitter");
 loader.lazyRequireGetter(this, "StyleInspectorMenu",
   "devtools/client/inspector/shared/style-inspector-menu");
+loader.lazyRequireGetter(this, "KeyShortcuts",
+  "devtools/client/shared/key-shortcuts", true);
 
 XPCOMUtils.defineLazyGetter(this, "clipboardHelper", function () {
   return Cc["@mozilla.org/widget/clipboardhelper;1"]
@@ -161,13 +163,10 @@ function CssRuleView(inspector, document, store, pageStyle) {
 
   this._outputParser = new OutputParser(document);
 
-  this._onKeydown = this._onKeydown.bind(this);
-  this._onKeypress = this._onKeypress.bind(this);
   this._onAddRule = this._onAddRule.bind(this);
   this._onContextMenu = this._onContextMenu.bind(this);
   this._onCopy = this._onCopy.bind(this);
   this._onFilterStyles = this._onFilterStyles.bind(this);
-  this._onFilterKeyPress = this._onFilterKeyPress.bind(this);
   this._onClearSearch = this._onClearSearch.bind(this);
   this._onFilterTextboxContextMenu =
     this._onFilterTextboxContextMenu.bind(this);
@@ -187,13 +186,16 @@ function CssRuleView(inspector, document, store, pageStyle) {
 
   this.searchClearButton.hidden = true;
 
-  this.styleDocument.addEventListener("keydown", this._onKeydown);
-  this.styleDocument.addEventListener("keypress", this._onKeypress);
+  this.shortcuts = new KeyShortcuts({ window: this.styleWindow });
+  this._onShortcut = this._onShortcut.bind(this);
+  this.shortcuts.on("Escape", this._onShortcut);
+  this.shortcuts.on("Return", this._onShortcut);
+  this.shortcuts.on("Space", this._onShortcut);
+  this.shortcuts.on("CmdOrCtrl+F", this._onShortcut);
   this.element.addEventListener("copy", this._onCopy);
   this.element.addEventListener("contextmenu", this._onContextMenu);
   this.addRuleButton.addEventListener("click", this._onAddRule);
   this.searchField.addEventListener("input", this._onFilterStyles);
-  this.searchField.addEventListener("keypress", this._onFilterKeyPress);
   this.searchField.addEventListener("contextmenu",
                                     this._onFilterTextboxContextMenu);
   this.searchClearButton.addEventListener("click", this._onClearSearch);
@@ -706,18 +708,6 @@ CssRuleView.prototype = {
   
 
 
-
-  _onFilterKeyPress: function (event) {
-    if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_ESCAPE &&
-        this._onClearSearch()) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-  },
-
-  
-
-
   _onFilterTextboxContextMenu: function (event) {
     try {
       this.styleWindow.focus();
@@ -766,13 +756,11 @@ CssRuleView.prototype = {
     this.highlighters.destroy();
 
     
-    this.styleDocument.removeEventListener("keydown", this._onKeydown);
-    this.styleDocument.removeEventListener("keypress", this._onKeypress);
+    this.shortcuts.destroy();
     this.element.removeEventListener("copy", this._onCopy);
     this.element.removeEventListener("contextmenu", this._onContextMenu);
     this.addRuleButton.removeEventListener("click", this._onAddRule);
     this.searchField.removeEventListener("input", this._onFilterStyles);
-    this.searchField.removeEventListener("keypress", this._onFilterKeyPress);
     this.searchField.removeEventListener("contextmenu",
       this._onFilterTextboxContextMenu);
     this.searchClearButton.removeEventListener("click", this._onClearSearch);
@@ -1492,30 +1480,27 @@ CssRuleView.prototype = {
   
 
 
-  _onKeydown: function (event) {
-    if (this.element.classList.contains("non-interactive") &&
-        (event.code === "Enter" || event.code === " ")) {
-      event.preventDefault();
-    }
-  },
-
-  
-
-
-  _onKeypress: function (event) {
+  _onShortcut: function (name, event) {
     if (!event.target.closest("#sidebar-panel-ruleview")) {
       return;
     }
 
-    let isOSX = Services.appinfo.OS === "Darwin";
-
-    if (((isOSX && event.metaKey && !event.ctrlKey && !event.altKey) ||
-        (!isOSX && event.ctrlKey && !event.metaKey && !event.altKey)) &&
-        event.key === "f") {
+    if (name === "CmdOrCtrl+F") {
       this.searchField.focus();
       event.preventDefault();
+    } else if ((name === "Return" || name === "Space") &&
+               this.element.classList.contains("non-interactive")) {
+      event.preventDefault();
+    } else if (name === "Escape" &&
+               event.target === this.searchField &&
+               this._onClearSearch()) {
+      
+      
+      event.preventDefault();
+      event.stopPropagation();
     }
   }
+
 };
 
 
