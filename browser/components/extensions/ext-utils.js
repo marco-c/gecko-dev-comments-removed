@@ -558,7 +558,7 @@ global.TabManager = {
   },
 
   handleWindowOpen(window) {
-    if (window.arguments[0] instanceof window.XULElement) {
+    if (window.arguments && window.arguments[0] instanceof window.XULElement) {
       
       
       
