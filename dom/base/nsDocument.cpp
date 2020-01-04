@@ -2563,7 +2563,9 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   
   nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aContainer);
 
-  if (docShell) {
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
+  if (docShell && !(loadInfo && loadInfo->GetLoadErrorPage())) {
     nsresult rv = docShell->GetSandboxFlags(&mSandboxFlags);
     NS_ENSURE_SUCCESS(rv, rv);
     WarnIfSandboxIneffective(docShell, mSandboxFlags, GetChannel());
