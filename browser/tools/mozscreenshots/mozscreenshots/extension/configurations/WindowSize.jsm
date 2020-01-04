@@ -11,6 +11,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
+Cu.import("resource://testing-common/BrowserTestUtils.jsm");
 
 this.WindowSize = {
 
@@ -22,7 +23,7 @@ this.WindowSize = {
     maximized: {
       applyConfig: Task.async(function*() {
         let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-        browserWindow.fullScreen = false;
+        yield toggleFullScreen(browserWindow, false);
 
         
         
@@ -38,7 +39,7 @@ this.WindowSize = {
     normal: {
       applyConfig: Task.async(function*() {
         let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-        browserWindow.fullScreen = false;
+        yield toggleFullScreen(browserWindow, false);
         browserWindow.restore();
         yield new Promise((resolve, reject) => {
           setTimeout(resolve, 5000);
@@ -49,13 +50,19 @@ this.WindowSize = {
     fullScreen: {
       applyConfig: Task.async(function*() {
         let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-        browserWindow.fullScreen = true;
+        yield toggleFullScreen(browserWindow, true);
         
         yield new Promise((resolve, reject) => {
           setTimeout(resolve, 5000);
         });
       }),
     },
-
   },
 };
+
+function toggleFullScreen(browserWindow, wantsFS) {
+  browserWindow.fullScreen = wantsFS;
+  return BrowserTestUtils.waitForCondition(() => {
+    return wantsFS == browserWindow.document.documentElement.hasAttribute("inFullscreen");
+  }, "waiting for @inFullscreen change");
+}
