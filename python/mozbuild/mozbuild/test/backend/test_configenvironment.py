@@ -48,7 +48,7 @@ class TestEnvironment(unittest.TestCase):
         
         
         
-        self.assertEqual(env.substs['ACDEFINES'], """-Dfoo='bar' -Dbaz='qux 42' -Dabc='d'\\''e'\\''f'""")
+        self.assertEqual(env.substs['ACDEFINES'], """-Dfoo=bar -Dbaz='qux 42' -Dabc='d'\\''e'\\''f'""")
         
         self.assertEqual(env.substs['ALLDEFINES'], '''#define abc d'e'f
 #define baz qux 42
@@ -56,7 +56,7 @@ class TestEnvironment(unittest.TestCase):
         
         
         self.assertEqual(env.substs['ALLSUBSTS'], '''ABC = def
-ACDEFINES = -Dfoo='bar' -Dbaz='qux 42' -Dabc='d'\\''e'\\''f'
+ACDEFINES = -Dfoo=bar -Dbaz='qux 42' -Dabc='d'\\''e'\\''f'
 FOO = bar
 bar = baz qux
 zzz = "abc def"''')

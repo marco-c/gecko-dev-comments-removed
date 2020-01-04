@@ -40,6 +40,10 @@ DOUBLY_QUOTED_TOKENS_RE = _tokens2re(
 ESCAPED_NEWLINES_RE = re.compile(r'\\\n')
 
 
+
+SHELL_QUOTE_RE = re.compile('[\\\t\r\n \'\"#<>&|`~(){}$;\*\?]')
+
+
 class MetaCharacterException(Exception):
     def __init__(self, char):
         self.char = char
@@ -169,4 +173,25 @@ def split(cline):
     return _ClineSplitter(s).result
 
 
-__all__ = ['MetaCharacterException', 'split']
+def quote(s):
+    '''Given a string, returns a version that can be used literally on a shell
+    command line, enclosing it with single quotes if necessary.
+
+    As a special case, if given an int, returns a string containing the int,
+    not enclosed in quotes.
+    '''
+    if type(s) == int:
+        return '%d' % s
+
+    
+    if s and not SHELL_QUOTE_RE.search(s):
+        return s
+
+    
+    
+    
+    t = type(s)
+    return t("'%s'") % s.replace(t("'"), t("'\\''"))
+
+
+__all__ = ['MetaCharacterException', 'split', 'quote']
