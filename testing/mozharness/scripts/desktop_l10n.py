@@ -63,7 +63,9 @@ configuration_tokens = ('branch',
                         'en_us_binary_url',
                         'update_platform',
                         'update_channel',
-                        'ssh_key_dir')
+                        'ssh_key_dir',
+                        'stage_product',
+                        )
 
 
 
