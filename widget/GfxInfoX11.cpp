@@ -302,7 +302,8 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
     
     
     if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS &&
-        (mIsLlvmpipe || mIsOldSwrast))
+        (mIsLlvmpipe || mIsOldSwrast) &&
+        !PR_GetEnv("MOZ_LAYERS_ALLOW_SOFTWARE_GL"))
     {
       *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
       aFailureId = "FEATURE_FAILURE_SOFTWARE_GL";
