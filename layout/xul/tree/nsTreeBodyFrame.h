@@ -53,9 +53,10 @@ class nsTreeBodyFrame final
   , public nsIScrollbarMediator
   , public nsIReflowCallback
 {
-public:
   typedef mozilla::layout::ScrollbarActivity ScrollbarActivity;
+  typedef mozilla::image::DrawResult DrawResult;
 
+public:
   explicit nsTreeBodyFrame(nsStyleContext* aContext);
   ~nsTreeBodyFrame();
 
@@ -189,8 +190,8 @@ public:
     nsIScrollableFrame*  mColumnsScrollFrame;
   };
 
-  void PaintTreeBody(nsRenderingContext& aRenderingContext,
-                     const nsRect& aDirtyRect, nsPoint aPt);
+  DrawResult PaintTreeBody(nsRenderingContext& aRenderingContext,
+                           const nsRect& aDirtyRect, nsPoint aPt);
 
   nsITreeBoxObject* GetTreeBoxObject() const { return mTreeBoxObject; }
 
@@ -204,56 +205,56 @@ protected:
   friend class nsOverflowChecker;
 
   
-  void PaintColumn(nsTreeColumn*        aColumn,
-                   const nsRect&        aColumnRect,
-                   nsPresContext*      aPresContext,
-                   nsRenderingContext& aRenderingContext,
-                   const nsRect&        aDirtyRect);
+  DrawResult PaintColumn(nsTreeColumn*        aColumn,
+                         const nsRect&        aColumnRect,
+                         nsPresContext*       aPresContext,
+                         nsRenderingContext&  aRenderingContext,
+                         const nsRect&        aDirtyRect);
 
   
-  void PaintRow(int32_t              aRowIndex,
-                const nsRect&        aRowRect,
-                nsPresContext*       aPresContext,
-                nsRenderingContext& aRenderingContext,
-                const nsRect&        aDirtyRect,
-                nsPoint              aPt);
+  DrawResult PaintRow(int32_t              aRowIndex,
+                      const nsRect&        aRowRect,
+                      nsPresContext*       aPresContext,
+                      nsRenderingContext&  aRenderingContext,
+                      const nsRect&        aDirtyRect,
+                      nsPoint              aPt);
 
   
-  void PaintSeparator(int32_t              aRowIndex,
-                      const nsRect&        aSeparatorRect,
-                      nsPresContext*      aPresContext,
-                      nsRenderingContext& aRenderingContext,
-                      const nsRect&        aDirtyRect);
+  DrawResult PaintSeparator(int32_t              aRowIndex,
+                            const nsRect&        aSeparatorRect,
+                            nsPresContext*       aPresContext,
+                            nsRenderingContext&  aRenderingContext,
+                            const nsRect&        aDirtyRect);
 
   
-  void PaintCell(int32_t              aRowIndex, 
-                 nsTreeColumn*        aColumn,
-                 const nsRect&        aCellRect,
-                 nsPresContext*       aPresContext,
-                 nsRenderingContext& aRenderingContext,
-                 const nsRect&        aDirtyRect,
-                 nscoord&             aCurrX,
-                 nsPoint              aPt);
+  DrawResult PaintCell(int32_t              aRowIndex, 
+                       nsTreeColumn*        aColumn,
+                       const nsRect&        aCellRect,
+                       nsPresContext*       aPresContext,
+                       nsRenderingContext&  aRenderingContext,
+                       const nsRect&        aDirtyRect,
+                       nscoord&             aCurrX,
+                       nsPoint              aPt);
 
   
-  void PaintTwisty(int32_t              aRowIndex,
-                   nsTreeColumn*        aColumn,
-                   const nsRect&        aTwistyRect,
-                   nsPresContext*      aPresContext,
-                   nsRenderingContext& aRenderingContext,
-                   const nsRect&        aDirtyRect,
-                   nscoord&             aRemainingWidth,
-                   nscoord&             aCurrX);
+  DrawResult PaintTwisty(int32_t              aRowIndex,
+                         nsTreeColumn*        aColumn,
+                         const nsRect&        aTwistyRect,
+                         nsPresContext*       aPresContext,
+                         nsRenderingContext&  aRenderingContext,
+                         const nsRect&        aDirtyRect,
+                         nscoord&             aRemainingWidth,
+                         nscoord&             aCurrX);
 
   
-  void PaintImage(int32_t              aRowIndex,
-                  nsTreeColumn*        aColumn,
-                  const nsRect&        aImageRect,
-                  nsPresContext*      aPresContext,
-                  nsRenderingContext& aRenderingContext,
-                  const nsRect&        aDirtyRect,
-                  nscoord&             aRemainingWidth,
-                  nscoord&             aCurrX);
+  DrawResult PaintImage(int32_t              aRowIndex,
+                        nsTreeColumn*        aColumn,
+                        const nsRect&        aImageRect,
+                        nsPresContext*       aPresContext,
+                        nsRenderingContext&  aRenderingContext,
+                        const nsRect&        aDirtyRect,
+                        nscoord&             aRemainingWidth,
+                        nscoord&             aCurrX);
 
   
   void PaintText(int32_t              aRowIndex, 
@@ -265,35 +266,35 @@ protected:
                  nscoord&             aCurrX);
 
   
-  void PaintCheckbox(int32_t              aRowIndex, 
-                     nsTreeColumn*        aColumn,
-                     const nsRect&        aCheckboxRect,
-                     nsPresContext*      aPresContext,
-                     nsRenderingContext& aRenderingContext,
-                     const nsRect&        aDirtyRect);
+  DrawResult PaintCheckbox(int32_t              aRowIndex, 
+                           nsTreeColumn*        aColumn,
+                           const nsRect&        aCheckboxRect,
+                           nsPresContext*       aPresContext,
+                           nsRenderingContext&  aRenderingContext,
+                           const nsRect&        aDirtyRect);
 
   
-  void PaintProgressMeter(int32_t              aRowIndex, 
-                          nsTreeColumn*        aColumn,
-                          const nsRect&        aProgressMeterRect,
-                          nsPresContext*      aPresContext,
-                          nsRenderingContext& aRenderingContext,
-                          const nsRect&        aDirtyRect);
+  DrawResult PaintProgressMeter(int32_t              aRowIndex, 
+                                nsTreeColumn*        aColumn,
+                                const nsRect&        aProgressMeterRect,
+                                nsPresContext*       aPresContext,
+                                nsRenderingContext&  aRenderingContext,
+                                const nsRect&        aDirtyRect);
 
   
-  void PaintDropFeedback(const nsRect&        aDropFeedbackRect, 
-                         nsPresContext*      aPresContext,
-                         nsRenderingContext& aRenderingContext,
-                         const nsRect&        aDirtyRect,
-                         nsPoint              aPt);
+  DrawResult PaintDropFeedback(const nsRect&        aDropFeedbackRect, 
+                               nsPresContext*       aPresContext,
+                               nsRenderingContext&  aRenderingContext,
+                               const nsRect&        aDirtyRect,
+                               nsPoint              aPt);
 
   
   
-  void PaintBackgroundLayer(nsStyleContext*      aStyleContext,
-                            nsPresContext*      aPresContext, 
-                            nsRenderingContext& aRenderingContext, 
-                            const nsRect&        aRect,
-                            const nsRect&        aDirtyRect);
+  DrawResult PaintBackgroundLayer(nsStyleContext*      aStyleContext,
+                                  nsPresContext*       aPresContext, 
+                                  nsRenderingContext&  aRenderingContext, 
+                                  const nsRect&        aRect,
+                                  const nsRect&        aDirtyRect);
 
 
   
