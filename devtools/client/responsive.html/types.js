@@ -35,6 +35,9 @@ const device = {
   
   os: PropTypes.String,
 
+  
+  displayed: PropTypes.bool,
+
 };
 
 
@@ -62,6 +65,9 @@ exports.devices = {
 
   
   watches: PropTypes.arrayOf(PropTypes.shape(device)),
+
+  
+  isModalOpen: PropTypes.bool,
 
 };
 

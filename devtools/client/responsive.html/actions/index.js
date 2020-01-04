@@ -38,6 +38,12 @@ createEnum([
   
   "TAKE_SCREENSHOT_END",
 
+  
+  "UPDATE_DEVICE_DISPLAYED",
+
+  
+  "UPDATE_DEVICE_MODAL_OPEN",
+
 ], module.exports);
 
 
