@@ -46,9 +46,225 @@ function getHighlighterCanvasFrameHelper(conn, actorID) {
   }
 }
 
-var TestActor = exports.TestActor = protocol.ActorClass({
+var testSpec = protocol.generateActorSpec({
   typeName: "testActor",
 
+  methods: {
+    getNumberOfElementMatches: {
+      request: {
+        selector: Arg(0, "string"),
+      },
+      response: {
+        value: RetVal("number")
+      }
+    },
+    getHighlighterAttribute: {
+      request: {
+        nodeID: Arg(0, "string"),
+        name: Arg(1, "string"),
+        actorID: Arg(2, "string")
+      },
+      response: {
+        value: RetVal("string")
+      }
+    },
+    getHighlighterNodeTextContent: {
+      request: {
+        nodeID: Arg(0, "string"),
+        actorID: Arg(1, "string")
+      },
+      response: {
+        value: RetVal("string")
+      }
+    },
+    getSelectorHighlighterBoxNb: {
+      request: {
+        highlighter: Arg(0, "string"),
+      },
+      response: {
+        value: RetVal("number")
+      }
+    },
+    changeHighlightedNodeWaitForUpdate: {
+      request: {
+        name: Arg(0, "string"),
+        value: Arg(1, "string"),
+        actorID: Arg(2, "string")
+      },
+      response: {}
+    },
+    waitForHighlighterEvent: {
+      request: {
+        event: Arg(0, "string"),
+        actorID: Arg(1, "string")
+      },
+      response: {}
+    },
+    waitForEventOnNode: {
+      request: {
+        eventName: Arg(0, "string"),
+        selector: Arg(1, "nullable:string")
+      },
+      response: {}
+    },
+    changeZoomLevel: {
+      request: {
+        level: Arg(0, "string"),
+        actorID: Arg(1, "string"),
+      },
+      response: {}
+    },
+    assertElementAtPoint: {
+      request: {
+        x: Arg(0, "number"),
+        y: Arg(1, "number"),
+        selector: Arg(2, "string")
+      },
+      response: {
+        value: RetVal("boolean")
+      }
+    },
+    getAllAdjustedQuads: {
+      request: {
+        selector: Arg(0, "string")
+      },
+      response: {
+        value: RetVal("json")
+      }
+    },
+    synthesizeMouse: {
+      request: {
+        object: Arg(0, "json")
+      },
+      response: {}
+    },
+    synthesizeKey: {
+      request: {
+        args: Arg(0, "json")
+      },
+      response: {}
+    },
+    hasPseudoClassLock: {
+      request: {
+        selector: Arg(0, "string"),
+        pseudo: Arg(1, "string")
+      },
+      response: {
+        value: RetVal("boolean")
+      }
+    },
+    loadAndWaitForCustomEvent: {
+      request: {
+        url: Arg(0, "string")
+      },
+      response: {}
+    },
+    hasNode: {
+      request: {
+        selector: Arg(0, "string")
+      },
+      response: {
+        value: RetVal("boolean")
+      }
+    },
+    getBoundingClientRect: {
+      request: {
+        selector: Arg(0, "string"),
+      },
+      response: {
+        value: RetVal("json")
+      }
+    },
+    setProperty: {
+      request: {
+        selector: Arg(0, "string"),
+        property: Arg(1, "string"),
+        value: Arg(2, "string")
+      },
+      response: {}
+    },
+    getProperty: {
+      request: {
+        selector: Arg(0, "string"),
+        property: Arg(1, "string")
+      },
+      response: {
+        value: RetVal("string")
+      }
+    },
+    getAttribute: {
+      request: {
+        selector: Arg(0, "string"),
+        property: Arg(1, "string")
+      },
+      response: {
+        value: RetVal("string")
+      }
+    },
+    setAttribute: {
+      request: {
+        selector: Arg(0, "string"),
+        property: Arg(1, "string"),
+        value: Arg(2, "string")
+      },
+      response: {}
+    },
+    removeAttribute: {
+      request: {
+        selector: Arg(0, "string"),
+        property: Arg(1, "string")
+      },
+      response: {}
+    },
+    reload: {
+      request: {},
+      response: {}
+    },
+    reloadFrame: {
+      request: {
+        selector: Arg(0, "string"),
+      },
+      response: {}
+    },
+    eval: {
+      request: {
+        js: Arg(0, "string")
+      },
+      response: {
+        value: RetVal("nullable:json")
+      }
+    },
+    scrollWindow: {
+      request: {
+        x: Arg(0, "number"),
+        y: Arg(1, "number"),
+        relative: Arg(2, "nullable:boolean"),
+      },
+      response: {
+        value: RetVal("json")
+      }
+    },
+    reflow: {},
+    getNodeRect: {
+      request: {
+        selector: Arg(0, "string")
+      },
+      response: {
+        value: RetVal("json")
+      }
+    },
+    getNodeInfo: {
+      request: {
+        selector: Arg(0, "string")
+      },
+      response: {
+        value: RetVal("json")
+      }
+    }
+  }
+});
+
+var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   initialize: function (conn, tabActor, options) {
     this.conn = conn;
     this.tabActor = tabActor;
@@ -94,17 +310,9 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  getNumberOfElementMatches: protocol.method(function (selector,
-                                                       root = this.content.document) {
+  getNumberOfElementMatches: function (selector, root = this.content.document) {
     return root.querySelectorAll(selector).length;
-  }, {
-    request: {
-      selector: Arg(0, "string"),
-    },
-    response: {
-      value: RetVal("number")
-    }
-  }),
+  },
 
   
 
@@ -115,21 +323,12 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  getHighlighterAttribute: protocol.method(function (nodeID, name, actorID) {
+  getHighlighterAttribute: function (nodeID, name, actorID) {
     let helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
     if (helper) {
       return helper.getAttributeForElement(nodeID, name);
     }
-  }, {
-    request: {
-      nodeID: Arg(0, "string"),
-      name: Arg(1, "string"),
-      actorID: Arg(2, "string")
-    },
-    response: {
-      value: RetVal("string")
-    }
-  }),
+  },
 
   
 
@@ -138,22 +337,14 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  getHighlighterNodeTextContent: protocol.method(function (nodeID, actorID) {
+  getHighlighterNodeTextContent: function (nodeID, actorID) {
     let value;
     let helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
     if (helper) {
       value = helper.getTextContentForElement(nodeID);
     }
     return value;
-  }, {
-    request: {
-      nodeID: Arg(0, "string"),
-      actorID: Arg(1, "string")
-    },
-    response: {
-      value: RetVal("string")
-    }
-  }),
+  },
 
   
 
@@ -161,7 +352,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  getSelectorHighlighterBoxNb: protocol.method(function (actorID) {
+  getSelectorHighlighterBoxNb: function (actorID) {
     let highlighter = this.conn.getActor(actorID);
     let {_highlighter: h} = highlighter;
     if (!h || !h._highlighters) {
@@ -169,14 +360,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
     } else {
       return h._highlighters.length;
     }
-  }, {
-    request: {
-      highlighter: Arg(0, "string"),
-    },
-    response: {
-      value: RetVal("number")
-    }
-  }),
+  },
 
   
 
@@ -186,7 +370,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  changeHighlightedNodeWaitForUpdate: protocol.method(function (name, value, actorID) {
+  changeHighlightedNodeWaitForUpdate: function (name, value, actorID) {
     let deferred = defer();
 
     let highlighter = this.conn.getActor(actorID);
@@ -199,32 +383,19 @@ var TestActor = exports.TestActor = protocol.ActorClass({
     h.currentNode.setAttribute(name, value);
 
     return deferred.promise;
-  }, {
-    request: {
-      name: Arg(0, "string"),
-      value: Arg(1, "string"),
-      actorID: Arg(2, "string")
-    },
-    response: {}
-  }),
+  },
 
   
 
 
 
 
-  waitForHighlighterEvent: protocol.method(function (event, actorID) {
+  waitForHighlighterEvent: function (event, actorID) {
     let highlighter = this.conn.getActor(actorID);
     let {_highlighter: h} = highlighter;
 
     return h.once(event);
-  }, {
-    request: {
-      event: Arg(0, "string"),
-      actorID: Arg(1, "string")
-    },
-    response: {}
-  }),
+  },
 
   
 
@@ -232,7 +403,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  waitForEventOnNode: protocol.method(function (eventName, selector) {
+  waitForEventOnNode: function (eventName, selector) {
     return new Promise(resolve => {
       let node = selector ? this._querySelector(selector) : this.content;
       node.addEventListener(eventName, function onEvent() {
@@ -240,13 +411,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
         resolve();
       });
     });
-  }, {
-    request: {
-      eventName: Arg(0, "string"),
-      selector: Arg(1, "nullable:string")
-    },
-    response: {}
-  }),
+  },
 
   
 
@@ -255,7 +420,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  changeZoomLevel: protocol.method(function (level, actorID) {
+  changeZoomLevel: function (level, actorID) {
     dumpn("Zooming page to " + level);
     let deferred = defer();
 
@@ -275,32 +440,16 @@ var TestActor = exports.TestActor = protocol.ActorClass({
     docShell.contentViewer.fullZoom = level;
 
     return deferred.promise;
-  }, {
-    request: {
-      level: Arg(0, "string"),
-      actorID: Arg(1, "string"),
-    },
-    response: {}
-  }),
+  },
 
-  assertElementAtPoint: protocol.method(function (x, y, selector) {
+  assertElementAtPoint: function (x, y, selector) {
     let elementAtPoint = getElementFromPoint(this.content.document, x, y);
     if (!elementAtPoint) {
       throw new Error("Unable to find element at (" + x + ", " + y + ")");
     }
     let node = this._querySelector(selector);
     return node == elementAtPoint;
-  }, {
-    request: {
-      x: Arg(0, "number"),
-      y: Arg(1, "number"),
-      selector: Arg(2, "string")
-    },
-    response: {
-      value: RetVal("boolean")
-    }
-  }),
-
+  },
 
   
 
@@ -308,7 +457,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  getAllAdjustedQuads: protocol.method(function (selector) {
+  getAllAdjustedQuads: function (selector) {
     let regions = {};
     let node = this._querySelector(selector);
     for (let boxType of ["content", "padding", "border", "margin"]) {
@@ -316,14 +465,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
     }
 
     return regions;
-  }, {
-    request: {
-      selector: Arg(0, "string")
-    },
-    response: {
-      value: RetVal("json")
-    }
-  }),
+  },
 
   
 
@@ -337,7 +479,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  synthesizeMouse: protocol.method(function ({ selector, x, y, center, options }) {
+  synthesizeMouse: function ({ selector, x, y, center, options }) {
     let node = this._querySelector(selector);
     node.scrollIntoView();
     if (center) {
@@ -345,26 +487,16 @@ var TestActor = exports.TestActor = protocol.ActorClass({
     } else {
       EventUtils.synthesizeMouse(node, x, y, options, node.ownerDocument.defaultView);
     }
-  }, {
-    request: {
-      object: Arg(0, "json")
-    },
-    response: {}
-  }),
+  },
 
   
 
 
 
 
-  synthesizeKey: protocol.method(function ({key, options, content}) {
+  synthesizeKey: function ({key, options, content}) {
     EventUtils.synthesizeKey(key, options, this.content);
-  }, {
-    request: {
-      args: Arg(0, "json")
-    },
-    response: {}
-  }),
+  },
 
   
 
@@ -372,20 +504,12 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  hasPseudoClassLock: protocol.method(function (selector, pseudo) {
+  hasPseudoClassLock: function (selector, pseudo) {
     let node = this._querySelector(selector);
     return DOMUtils.hasPseudoClassLock(node, pseudo);
-  }, {
-    request: {
-      selector: Arg(0, "string"),
-      pseudo: Arg(1, "string")
-    },
-    response: {
-      value: RetVal("boolean")
-    }
-  }),
+  },
 
-  loadAndWaitForCustomEvent: protocol.method(function (url) {
+  loadAndWaitForCustomEvent: function (url) {
     let deferred = defer();
     let self = this;
     
@@ -400,14 +524,9 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
     this.content.location = url;
     return deferred.promise;
-  }, {
-    request: {
-      url: Arg(0, "string")
-    },
-    response: {}
-  }),
+  },
 
-  hasNode: protocol.method(function (selector) {
+  hasNode: function (selector) {
     try {
       
       this._querySelector(selector);
@@ -415,31 +534,17 @@ var TestActor = exports.TestActor = protocol.ActorClass({
     } catch (e) {
       return false;
     }
-  }, {
-    request: {
-      selector: Arg(0, "string")
-    },
-    response: {
-      value: RetVal("boolean")
-    }
-  }),
+  },
 
   
 
 
 
 
-  getBoundingClientRect: protocol.method(function (selector) {
+  getBoundingClientRect: function (selector) {
     let node = this._querySelector(selector);
     return node.getBoundingClientRect();
-  }, {
-    request: {
-      selector: Arg(0, "string"),
-    },
-    response: {
-      value: RetVal("json")
-    }
-  }),
+  },
 
   
 
@@ -447,17 +552,10 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  setProperty: protocol.method(function (selector, property, value) {
+  setProperty: function (selector, property, value) {
     let node = this._querySelector(selector);
     node[property] = value;
-  }, {
-    request: {
-      selector: Arg(0, "string"),
-      property: Arg(1, "string"),
-      value: Arg(2, "string")
-    },
-    response: {}
-  }),
+  },
 
   
 
@@ -465,18 +563,10 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  getProperty: protocol.method(function (selector, property) {
+  getProperty: function (selector, property) {
     let node = this._querySelector(selector);
     return node[property];
-  }, {
-    request: {
-      selector: Arg(0, "string"),
-      property: Arg(1, "string")
-    },
-    response: {
-      value: RetVal("string")
-    }
-  }),
+  },
 
   
 
@@ -484,18 +574,10 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  getAttribute: protocol.method(function (selector, attribute) {
+  getAttribute: function (selector, attribute) {
     let node = this._querySelector(selector);
     return node.getAttribute(attribute);
-  }, {
-    request: {
-      selector: Arg(0, "string"),
-      property: Arg(1, "string")
-    },
-    response: {
-      value: RetVal("string")
-    }
-  }),
+  },
 
   
 
@@ -503,49 +585,33 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  setAttribute: protocol.method(function (selector, attribute, value) {
+  setAttribute: function (selector, attribute, value) {
     let node = this._querySelector(selector);
     node.setAttribute(attribute, value);
-  }, {
-    request: {
-      selector: Arg(0, "string"),
-      property: Arg(1, "string"),
-      value: Arg(2, "string")
-    },
-    response: {}
-  }),
+  },
 
   
 
 
 
 
-  removeAttribute: protocol.method(function (selector, attribute) {
+  removeAttribute: function (selector, attribute) {
     let node = this._querySelector(selector);
     node.removeAttribute(attribute);
-  }, {
-    request: {
-      selector: Arg(0, "string"),
-      property: Arg(1, "string")
-    },
-    response: {}
-  }),
+  },
 
   
 
 
-  reload: protocol.method(function () {
+  reload: function () {
     this.content.location.reload();
-  }, {
-    request: {},
-    response: {}
-  }),
+  },
 
   
 
 
 
-  reloadFrame: protocol.method(function (selector) {
+  reloadFrame: function (selector) {
     let node = this._querySelector(selector);
 
     let deferred = defer();
@@ -558,30 +624,18 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
     node.contentWindow.location.reload();
     return deferred.promise;
-  }, {
-    request: {
-      selector: Arg(0, "string"),
-    },
-    response: {}
-  }),
+  },
 
   
 
 
 
 
-  eval: protocol.method(function (js) {
+  eval: function (js) {
     
     let sb = Cu.Sandbox(this.content, { sandboxPrototype: this.content });
     return Cu.evalInSandbox(js, sb);
-  }, {
-    request: {
-      js: Arg(0, "string")
-    },
-    response: {
-      value: RetVal("nullable:json")
-    }
-  }),
+  },
 
   
 
@@ -594,7 +648,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  scrollWindow: protocol.method(function (x, y, relative) {
+  scrollWindow: function (x, y, relative) {
     if (isNaN(x) || isNaN(y)) {
       return {};
     }
@@ -610,38 +664,22 @@ var TestActor = exports.TestActor = protocol.ActorClass({
     this.content[relative ? "scrollBy" : "scrollTo"](x, y);
 
     return deferred.promise;
-  }, {
-    request: {
-      x: Arg(0, "number"),
-      y: Arg(1, "number"),
-      relative: Arg(2, "nullable:boolean"),
-    },
-    response: {
-      value: RetVal("json")
-    }
-  }),
+  },
 
   
 
 
-  reflow: protocol.method(function () {
+  reflow: function () {
     let deferred = defer();
     this.content.document.documentElement.offsetWidth;
     this.content.requestAnimationFrame(deferred.resolve);
 
     return deferred.promise;
-  }),
+  },
 
-  getNodeRect: protocol.method(Task.async(function* (selector) {
+  getNodeRect: Task.async(function* (selector) {
     let node = this._querySelector(selector);
     return getRect(this.content, node, this.content);
-  }), {
-    request: {
-      selector: Arg(0, "string")
-    },
-    response: {
-      value: RetVal("json")
-    }
   }),
 
   
@@ -657,7 +695,7 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
-  getNodeInfo: protocol.method(function (selector) {
+  getNodeInfo: function (selector) {
     let node = this._querySelector(selector);
     let info = null;
 
@@ -676,17 +714,10 @@ var TestActor = exports.TestActor = protocol.ActorClass({
     }
 
     return info;
-  }, {
-    request: {
-      selector: Arg(0, "string")
-    },
-    response: {
-      value: RetVal("json")
-    }
-  })
+  }
 });
 
-var TestActorFront = exports.TestActorFront = protocol.FrontClass(TestActor, {
+var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSpec, {
   initialize: function (client, { testActor }, toolbox) {
     protocol.Front.prototype.initialize.call(this, client, { actor: testActor });
     this.manage(this);
