@@ -264,10 +264,26 @@ VideoSink::OnVideoQueueFinished()
 }
 
 void
-VideoSink::Redraw()
+VideoSink::Redraw(const VideoInfo& aInfo)
 {
   AssertOwnerThread();
-  RenderVideoFrames(1);
+
+  
+  if (!aInfo.IsValid() || !mContainer) {
+    return;
+  }
+
+  if (VideoQueue().GetSize() > 0) {
+    RenderVideoFrames(1);
+    return;
+  }
+
+  
+  
+  
+  RefPtr<Image> blank =
+    mContainer->GetImageContainer()->CreatePlanarYCbCrImage();
+  mContainer->SetCurrentFrame(aInfo.mDisplay, blank, TimeStamp::Now());
 }
 
 void

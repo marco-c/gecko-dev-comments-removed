@@ -2045,7 +2045,7 @@ MediaDecoderStateMachine::FinishDecodeFirstFrame()
   DECODER_LOG("FinishDecodeFirstFrame");
 
   if (!IsRealTime() && !mSentFirstFrameLoadedEvent) {
-    mMediaSink->Redraw();
+    mMediaSink->Redraw(mInfo.mVideo);
   }
 
   
@@ -2157,7 +2157,7 @@ MediaDecoderStateMachine::SeekCompleted()
   ScheduleStateMachine();
 
   if (video) {
-    mMediaSink->Redraw();
+    mMediaSink->Redraw(mInfo.mVideo);
     mOnPlaybackEvent.Notify(MediaEventType::Invalidate);
   }
 }

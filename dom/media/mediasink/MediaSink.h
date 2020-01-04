@@ -96,7 +96,7 @@ public:
   
   
   
-  virtual void Redraw() {};
+  virtual void Redraw(const VideoInfo& aInfo) {};
 
   
   
