@@ -335,6 +335,7 @@ function webAPIForAddon(addon) {
 
   
   result.isEnabled = !addon.userDisabled;
+  result.canUninstall = Boolean(addon.permissions & AddonManager.PERM_CAN_UNINSTALL);
 
   return result;
 }
