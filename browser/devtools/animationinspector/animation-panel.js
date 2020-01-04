@@ -43,7 +43,7 @@ var AnimationsPanel = {
     
     
     if (!AnimationsController.traits.hasToggleAll) {
-      document.querySelector("#toolbar").style.display = "none";
+      document.querySelector("#global-toolbar").style.display = "none";
     }
 
     let hUtils = gToolbox.highlighterUtils;
