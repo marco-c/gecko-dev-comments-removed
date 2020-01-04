@@ -1747,12 +1747,13 @@ LIRGenerator::visitFromCharCode(MFromCharCode* ins)
 void
 LIRGenerator::visitStart(MStart* start)
 {
-    
     LStart* lir = new(alloc()) LStart;
-    assignSnapshot(lir, Bailout_InitialState);
 
-    if (start->startType() == MStart::StartType_Default && lir->snapshot())
+    
+    assignSnapshot(lir, Bailout_ArgumentCheck);
+    if (start->block()->graph().entryBlock() == start->block())
         lirGraph_.setEntrySnapshot(lir->snapshot());
+
     add(lir);
 }
 
