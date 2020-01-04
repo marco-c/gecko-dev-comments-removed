@@ -3830,6 +3830,14 @@ nsWindow::Create(nsIWidget        *aParent,
     if (!mIsTopLevel)
         Resize(mBounds.x, mBounds.y, mBounds.width, mBounds.height, false);
 
+#ifdef MOZ_X11
+    if (mGdkWindow) {
+      
+      
+      gdk_x11_window_get_xid(mGdkWindow);
+    }
+#endif
+
     return NS_OK;
 }
 
