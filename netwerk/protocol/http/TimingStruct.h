@@ -27,6 +27,12 @@ struct ResourceTimingStruct : TimingStruct {
   uint64_t transferSize;
   uint64_t encodedBodySize;
   nsCString protocolVersion;
+
+  
+  
+  
+  TimeStamp cacheReadStart;
+  TimeStamp cacheReadEnd;
 };
 
 } 
