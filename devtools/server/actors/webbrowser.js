@@ -214,6 +214,15 @@ function createRootActor(connection) {
 
 
 
+
+
+
+
+
+
+
+
+
 function BrowserTabList(connection) {
   this._connection = connection;
 
@@ -292,8 +301,19 @@ BrowserTabList.prototype._getBrowsers = function* () {
 };
 
 BrowserTabList.prototype._getChildren = function (window) {
-  let children = window.gBrowser ? window.gBrowser.browsers : [];
-  return children ? children : [];
+  if (!window.gBrowser) {
+    return [];
+  }
+  let { gBrowser } = window;
+  if (!gBrowser.browsers) {
+    return [];
+  }
+  return gBrowser.browsers.filter(browser => {
+    
+    
+    let tab = gBrowser.getTabForBrowser(browser);
+    return !tab.closing;
+  });
 };
 
 BrowserTabList.prototype._isRemoteBrowser = function (browser) {
@@ -466,12 +486,16 @@ BrowserTabList.prototype._checkListening = function () {
 
 
 
+
+
   this._listenForEventsIf(this._onListChanged && this._mustNotify,
-                          "_listeningForTabOpen", ["TabOpen", "TabSelect"]);
+                          "_listeningForTabOpen",
+                          ["TabOpen", "TabSelect", "TabAttrModified"]);
 
   
   this._listenForEventsIf(this._actorByBrowser.size > 0,
-                          "_listeningForTabClose", ["TabClose"]);
+                          "_listeningForTabClose",
+                          ["TabClose", "TabRemotenessChange"]);
 
   
 
@@ -480,6 +504,14 @@ BrowserTabList.prototype._checkListening = function () {
 
   this._listenToMediatorIf((this._onListChanged && this._mustNotify) ||
                            (this._actorByBrowser.size > 0));
+
+  
+
+
+
+  this._listenForMessagesIf(this._onListChanged && this._mustNotify,
+                            "_listeningForTitleChange",
+                            ["DOMTitleChanged"]);
 };
 
 
@@ -509,23 +541,94 @@ BrowserTabList.prototype._listenForEventsIf =
 
 
 
+
+
+
+
+
+
+
+
+BrowserTabList.prototype._listenForMessagesIf = function(aShouldListen, aGuard, aMessageNames) {
+  if (!aShouldListen !== !this[aGuard]) {
+    let op = aShouldListen ? "addMessageListener" : "removeMessageListener";
+    for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+      for (let name of aMessageNames) {
+        win.messageManager[op](name, this);
+      }
+    }
+    this[aGuard] = aShouldListen;
+  }
+};
+
+
+
+
+BrowserTabList.prototype.receiveMessage = DevToolsUtils.makeInfallible(function(message) {
+  let browser = message.target;
+  switch (message.name) {
+    case "DOMTitleChanged": {
+      let actor = this._actorByBrowser.get(browser);
+      if (actor) {
+        this._notifyListChanged();
+        this._checkListening();
+      }
+      break;
+    }
+  }
+});
+
+
+
+
 BrowserTabList.prototype.handleEvent =
 DevToolsUtils.makeInfallible(function (event) {
+  let browser = event.target.linkedBrowser;
   switch (event.type) {
     case "TabOpen":
-    case "TabSelect":
-      
+    case "TabSelect": {
       
       this._notifyListChanged();
       this._checkListening();
       break;
-    case "TabClose":
-      let browser = event.target.linkedBrowser;
+    }
+    case "TabClose": {
       let actor = this._actorByBrowser.get(browser);
       if (actor) {
         this._handleActorClose(actor, browser);
       }
       break;
+    }
+    case "TabRemotenessChange": {
+      
+      
+      let actor = this._actorByBrowser.get(browser);
+      if (actor) {
+        this._actorByBrowser.delete(browser);
+        
+        this._notifyListChanged();
+        this._checkListening();
+      }
+      break;
+    }
+    case "TabAttrModified": {
+      
+      
+      
+      if (browser.isRemoteBrowser) {
+        break;
+      }
+      let actor = this._actorByBrowser.get(browser);
+      if (actor) {
+        
+        
+        if (event.detail.changed.includes("label")) {
+          this._notifyListChanged();
+          this._checkListening();
+        }
+      }
+      break;
+    }
   }
 }, "BrowserTabList.prototype.handleEvent");
 
@@ -566,9 +669,14 @@ DevToolsUtils.makeInfallible(function (window) {
     if (this._listeningForTabOpen) {
       window.addEventListener("TabOpen", this, false);
       window.addEventListener("TabSelect", this, false);
+      window.addEventListener("TabAttrModified", this, false);
     }
     if (this._listeningForTabClose) {
       window.addEventListener("TabClose", this, false);
+      window.addEventListener("TabRemotenessChange", this, false);
+    }
+    if (this._listeningForTitleChange) {
+      window.messageManager.addMessageListener("DOMTitleChanged", this);
     }
 
     
@@ -966,7 +1074,8 @@ TabActor.prototype = {
 
     
     
-    if (this.window) {
+    
+    if (this.docShell && !this.docShell.isBeingDestroyed()) {
       response.title = this.title;
       response.url = this.url;
       let windowUtils = this.window
