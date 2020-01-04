@@ -895,6 +895,14 @@ function makePreview(row)
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
       if (!isBG) {
         newImage.width = ("width" in item && item.width) || newImage.naturalWidth;
         newImage.height = ("height" in item && item.height) || newImage.naturalHeight;
@@ -902,8 +910,8 @@ function makePreview(row)
       else {
         
         
-        newImage.width = newImage.naturalWidth;
-        newImage.height = newImage.naturalHeight;
+        newImage.width = item.naturalWidth || newImage.naturalWidth;
+        newImage.height = item.naturalHeight || newImage.naturalHeight;
       }
 
       if (item.SVGImageElement) {

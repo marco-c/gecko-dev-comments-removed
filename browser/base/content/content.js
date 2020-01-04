@@ -1104,9 +1104,6 @@ var PageInfoListener = {
 
   serializeElementInfo: function(document, url, type, alt, item, isBG)
   {
-    
-    const nsIImageLoadingContent = Components.interfaces.nsIImageLoadingContent;
-
     let result = {};
 
     let imageText;
@@ -1130,10 +1127,9 @@ var PageInfoListener = {
       result.mimeType = item.type;
     }
 
-    if (!result.mimeType && !isBG && item instanceof nsIImageLoadingContent) {
+    if (!result.mimeType && !isBG && item instanceof Ci.nsIImageLoadingContent) {
       
-      const nsIImageLoadingContent = Components.interfaces.nsIImageLoadingContent;
-      let imageRequest = item.getRequest(nsIImageLoadingContent.CURRENT_REQUEST);
+      let imageRequest = item.getRequest(Ci.nsIImageLoadingContent.CURRENT_REQUEST);
       if (imageRequest) {
         result.mimeType = imageRequest.mimeType;
         let image = !(imageRequest.imageStatus & imageRequest.STATUS_ERROR) && imageRequest.image;
@@ -1158,7 +1154,18 @@ var PageInfoListener = {
     result.HTMLVideoElement = item instanceof content.HTMLVideoElement;
     result.HTMLAudioElement = item instanceof content.HTMLAudioElement;
 
-    if (!isBG) {
+    if (isBG) {
+      
+      
+      
+      
+      let img = content.document.createElement("img");
+      img.src = url;
+      result.naturalWidth = img.naturalWidth;
+      result.naturalHeight = img.naturalHeight;
+    } else {
+      
+      
       result.width = item.width;
       result.height = item.height;
     }
