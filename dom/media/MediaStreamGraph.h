@@ -842,17 +842,6 @@ public:
 
   void EndAllTrackAndFinish();
 
-  
-
-
-
-
-
-
-
-
-  StreamTime GetBufferedTicks(TrackID aID);
-
   void RegisterForAudioMixing();
 
   
