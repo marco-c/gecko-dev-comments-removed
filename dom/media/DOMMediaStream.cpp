@@ -1035,15 +1035,6 @@ DOMMediaStream::CloneDOMTrack(MediaStreamTrack& aTrack,
   NotifyTrackAdded(newTrack);
 
   newTrack->SetEnabled(aTrack.Enabled());
-  newTrack->SetReadyState(aTrack.ReadyState());
-
-  if (aTrack.Ended()) {
-    
-    
-    RefPtr<Pledge<bool, nsresult>> blockingPledge =
-      inputPort->BlockSourceTrackId(inputTrackID);
-    Unused << blockingPledge;
-  }
 
   return newTrack.forget();
 }
