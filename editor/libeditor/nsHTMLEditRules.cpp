@@ -3044,7 +3044,7 @@ nsHTMLEditRules::WillMakeList(Selection* aSelection,
     NS_ENSURE_STATE(theListItem);
 
     
-    mNewBlock = GetAsDOMNode(theListItem);
+    mNewBlock = theListItem;
     
     res = aSelection->Collapse(theListItem, 0);
     
@@ -3206,7 +3206,7 @@ nsHTMLEditRules::WillMakeList(Selection* aSelection,
       curList = mHTMLEditor->CreateNode(listType, curParent, offset);
       NS_ENSURE_SUCCESS(res, res);
       
-      mNewBlock = GetAsDOMNode(curList);
+      mNewBlock = curList;
       
       prevListItem = 0;
     }
@@ -3423,7 +3423,7 @@ nsHTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
         mHTMLEditor->CreateNode(blockType, parent, offset);
       NS_ENSURE_STATE(block);
       
-      mNewBlock = block->AsDOMNode();
+      mNewBlock = block;
       
       while (!arrayOfNodes.IsEmpty()) {
         OwningNonNull<nsINode> curNode = arrayOfNodes[0];
@@ -3556,7 +3556,7 @@ nsHTMLEditRules::WillCSSIndent(Selection* aSelection,
                                                          parent, offset);
     NS_ENSURE_STATE(theBlock);
     
-    mNewBlock = theBlock->AsDOMNode();
+    mNewBlock = theBlock;
     ChangeIndentation(*theBlock, Change::plus);
     
     while (!arrayOfNodes.IsEmpty()) {
@@ -3648,7 +3648,7 @@ nsHTMLEditRules::WillCSSIndent(Selection* aSelection,
         NS_ENSURE_STATE(curList);
         
         
-        mNewBlock = curList->AsDOMNode();
+        mNewBlock = curList;
       }
       
       uint32_t listLen = curList->Length();
@@ -3679,7 +3679,7 @@ nsHTMLEditRules::WillCSSIndent(Selection* aSelection,
           NS_ENSURE_STATE(curQuote);
           ChangeIndentation(*curQuote, Change::plus);
           
-          mNewBlock = curQuote->AsDOMNode();
+          mNewBlock = curQuote;
           
         }
 
@@ -3741,7 +3741,7 @@ nsHTMLEditRules::WillHTMLIndent(Selection* aSelection,
                                                          parent, offset);
     NS_ENSURE_STATE(theBlock);
     
-    mNewBlock = theBlock->AsDOMNode();
+    mNewBlock = theBlock;
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
@@ -3831,7 +3831,7 @@ nsHTMLEditRules::WillHTMLIndent(Selection* aSelection,
         NS_ENSURE_STATE(curList);
         
         
-        mNewBlock = curList->AsDOMNode();
+        mNewBlock = curList;
       }
       
       NS_ENSURE_STATE(mHTMLEditor);
@@ -3908,7 +3908,7 @@ nsHTMLEditRules::WillHTMLIndent(Selection* aSelection,
                                              offset);
           NS_ENSURE_STATE(curQuote);
           
-          mNewBlock = curQuote->AsDOMNode();
+          mNewBlock = curQuote;
           
         }
 
@@ -4557,7 +4557,7 @@ nsHTMLEditRules::WillAlign(Selection& aSelection,
                                                     offset);
     NS_ENSURE_STATE(div);
     
-    mNewBlock = div->AsDOMNode();
+    mNewBlock = div;
     
     rv = AlignBlock(*div, aAlignType, ContentsOnly::yes);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -4656,7 +4656,7 @@ nsHTMLEditRules::WillAlign(Selection& aSelection,
       curDiv = mHTMLEditor->CreateNode(nsGkAtoms::div, curParent, offset);
       NS_ENSURE_STATE(curDiv);
       
-      mNewBlock = curDiv->AsDOMNode();
+      mNewBlock = curDiv;
       
       rv = AlignBlock(*curDiv, aAlignType, ContentsOnly::yes);
     }
@@ -6606,7 +6606,7 @@ nsHTMLEditRules::MakeBlockquote(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
                                          offset);
       NS_ENSURE_STATE(curBlock);
       
-      mNewBlock = curBlock->AsDOMNode();
+      mNewBlock = curBlock;
       
     }
 
@@ -6778,7 +6778,7 @@ nsHTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
           mHTMLEditor->CreateNode(&aBlockTag, curParent, offset);
         NS_ENSURE_STATE(theBlock);
         
-        mNewBlock = theBlock->AsDOMNode();
+        mNewBlock = theBlock;
       }
     } else if (curNode->IsHTMLElement(nsGkAtoms::br)) {
       
@@ -6796,7 +6796,7 @@ nsHTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
         curBlock = mHTMLEditor->CreateNode(&aBlockTag, curParent, offset);
         NS_ENSURE_STATE(curBlock);
         
-        mNewBlock = curBlock->AsDOMNode();
+        mNewBlock = curBlock;
         
         res = mHTMLEditor->MoveNode(curNode->AsContent(), curBlock, -1);
         NS_ENSURE_SUCCESS(res, res);
@@ -6821,7 +6821,7 @@ nsHTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
         curBlock = mHTMLEditor->CreateNode(&aBlockTag, curParent, offset);
         NS_ENSURE_STATE(curBlock);
         
-        mNewBlock = curBlock->AsDOMNode();
+        mNewBlock = curBlock;
         
       }
 
@@ -7157,7 +7157,7 @@ nsHTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
   NS_ENSURE_SUCCESS(res, res);
   res = range->SetEnd(selNode, selOffset);
   NS_ENSURE_SUCCESS(res, res);
-  nsCOMPtr<nsIContent> block (do_QueryInterface(mNewBlock));
+  nsCOMPtr<nsIContent> block = mNewBlock.get();
   NS_ENSURE_TRUE(block, NS_ERROR_NO_INTERFACE);
   bool nodeBefore, nodeAfter;
   res = nsRange::CompareNodeToRange(block, range, &nodeBefore, &nodeAfter);
@@ -7168,7 +7168,7 @@ nsHTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
   else if (nodeBefore)
   {
     
-    nsCOMPtr<nsIDOMNode> tmp = mNewBlock;
+    nsCOMPtr<nsIDOMNode> tmp = GetAsDOMNode(mNewBlock);
     NS_ENSURE_STATE(mHTMLEditor);
     tmp = GetAsDOMNode(mHTMLEditor->GetLastEditableChild(*block));
     uint32_t endPoint;
@@ -7188,7 +7188,8 @@ nsHTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
   else
   {
     
-    nsCOMPtr<nsIDOMNode> tmp = mNewBlock;
+    nsCOMPtr<nsIDOMNode> tmp = GetAsDOMNode(mNewBlock);
+    NS_ENSURE_STATE(mHTMLEditor);
     tmp = GetAsDOMNode(mHTMLEditor->GetFirstEditableChild(*block));
     int32_t offset;
     if (mHTMLEditor->IsTextNode(tmp) ||
@@ -8485,7 +8486,7 @@ nsHTMLEditRules::WillAbsolutePosition(Selection& aSelection,
 
   nsCOMPtr<Element> focusElement = mHTMLEditor->GetSelectionContainer();
   if (focusElement && nsHTMLEditUtils::IsImage(focusElement)) {
-    mNewBlock = focusElement->AsDOMNode();
+    mNewBlock = focusElement;
     return NS_OK;
   }
 
@@ -8524,7 +8525,7 @@ nsHTMLEditRules::WillAbsolutePosition(Selection& aSelection,
       mHTMLEditor->CreateNode(nsGkAtoms::div, parent, offset);
     NS_ENSURE_STATE(positionedDiv);
     
-    mNewBlock = positionedDiv->AsDOMNode();
+    mNewBlock = positionedDiv;
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
@@ -8578,7 +8579,7 @@ nsHTMLEditRules::WillAbsolutePosition(Selection& aSelection,
             ? curParentParent->IndexOf(curParent) : -1;
           curPositionedDiv = mHTMLEditor->CreateNode(nsGkAtoms::div, curParentParent,
                                                      parentOffset);
-          mNewBlock = GetAsDOMNode(curPositionedDiv);
+          mNewBlock = curPositionedDiv;
         }
         curList = mHTMLEditor->CreateNode(curParent->NodeInfo()->NameAtom(),
                                           curPositionedDiv, -1);
@@ -8622,7 +8623,7 @@ nsHTMLEditRules::WillAbsolutePosition(Selection& aSelection,
             curPositionedDiv = mHTMLEditor->CreateNode(nsGkAtoms::div,
                                                        curParentParent,
                                                        parentOffset);
-            mNewBlock = GetAsDOMNode(curPositionedDiv);
+            mNewBlock = curPositionedDiv;
           }
           curList = mHTMLEditor->CreateNode(curParent->NodeInfo()->NameAtom(),
                                             curPositionedDiv, -1);
@@ -8638,7 +8639,7 @@ nsHTMLEditRules::WillAbsolutePosition(Selection& aSelection,
         if (!curPositionedDiv) {
           if (curNode->IsHTMLElement(nsGkAtoms::div)) {
             curPositionedDiv = curNode->AsElement();
-            mNewBlock = GetAsDOMNode(curPositionedDiv);
+            mNewBlock = curPositionedDiv;
             curList = nullptr;
             continue;
           }
@@ -8648,7 +8649,7 @@ nsHTMLEditRules::WillAbsolutePosition(Selection& aSelection,
                                                      offset);
           NS_ENSURE_STATE(curPositionedDiv);
           
-          mNewBlock = GetAsDOMNode(curPositionedDiv);
+          mNewBlock = curPositionedDiv;
           
         }
 
@@ -8668,7 +8669,8 @@ nsHTMLEditRules::DidAbsolutePosition()
 {
   NS_ENSURE_STATE(mHTMLEditor);
   nsCOMPtr<nsIHTMLAbsPosEditor> absPosHTMLEditor = mHTMLEditor;
-  nsCOMPtr<nsIDOMElement> elt = do_QueryInterface(mNewBlock);
+  nsCOMPtr<nsIDOMElement> elt =
+    static_cast<nsIDOMElement*>(GetAsDOMNode(mNewBlock));
   return absPosHTMLEditor->AbsolutelyPositionElement(elt, true);
 }
 
