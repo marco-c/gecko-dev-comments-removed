@@ -1,5 +1,7 @@
 "use strict";
 
+const {TabStateFlusher} = Cu.import("resource:///modules/sessionstore/TabStateFlusher.jsm", {});
+
 
 
 
@@ -63,4 +65,40 @@ add_task(function* clearURLBarAfterManuallyLoadingAboutHome() {
   is(gURLBar.value, "", "URL bar should be empty");
   is(tab.linkedBrowser.userTypedValue, null, "userTypedValue should be null");
   yield BrowserTestUtils.removeTab(tab);
+});
+
+
+
+
+
+
+add_task(function* dontTemporarilyShowAboutHome() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.startup.page", 1]]});
+  let windowOpenedPromise = BrowserTestUtils.waitForNewWindow();
+  let win = OpenBrowserWindow();
+  yield windowOpenedPromise;
+  let promiseTabSwitch = BrowserTestUtils.switchTab(win.gBrowser, () => {});
+  win.BrowserOpenTab();
+  yield promiseTabSwitch;
+  yield TabStateFlusher.flush(win.gBrowser.selectedBrowser);
+  yield BrowserTestUtils.closeWindow(win);
+  ok(SessionStore.getClosedWindowCount(), "Should have a closed window");
+
+  windowOpenedPromise = BrowserTestUtils.waitForNewWindow();
+  win = SessionStore.undoCloseWindow(0);
+  yield windowOpenedPromise;
+  let wpl = {
+    onLocationChange(wpl, request, location, flags) {
+      is(win.gURLBar.value, "", "URL bar value should stay empty.");
+    },
+  };
+  win.gBrowser.addProgressListener(wpl);
+  let otherTab = win.gBrowser.selectedTab.previousSibling;
+  let tabLoaded = BrowserTestUtils.browserLoaded(otherTab.linkedBrowser, false, "about:home");
+  yield BrowserTestUtils.switchTab(win.gBrowser, otherTab);
+  yield tabLoaded;
+  win.gBrowser.removeProgressListener(wpl);
+  is(win.gURLBar.value, "", "URL bar value should be empty.");
+
+  yield BrowserTestUtils.closeWindow(win);
 });
