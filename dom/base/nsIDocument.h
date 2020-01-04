@@ -2513,7 +2513,7 @@ public:
   
   virtual already_AddRefed<Element>
     CreateElement(const nsAString& aTagName,
-                  const mozilla::dom::ElementCreationOptions& aOptions,
+                  const mozilla::dom::ElementCreationOptionsOrString& aOptions,
                   mozilla::ErrorResult& rv) = 0;
   virtual already_AddRefed<Element>
     CreateElementNS(const nsAString& aNamespaceURI,
