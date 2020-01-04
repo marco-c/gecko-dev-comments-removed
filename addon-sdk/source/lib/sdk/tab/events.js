@@ -40,28 +40,32 @@ function tabEventsFor(window) {
 }
 
 
-var readyEvents = filter(events, e => e.type === "DOMContentLoaded");
 
-var futureWindows = map(readyEvents, e => e.target);
+function makeEvents() {
+  
+  var readyEvents = filter(events, e => e.type === "DOMContentLoaded");
+  
+  var futureWindows = map(readyEvents, e => e.target);
+  
+  
+  
+  var eventsFromFuture = expand(futureWindows, tabEventsFor);
 
-
-
-var eventsFromFuture = expand(futureWindows, tabEventsFor);
-
-
-
-
-var interactiveWindows = windows("navigator:browser", { includePrivate: true }).
-                         filter(isInteractive);
-var eventsFromInteractive = merge(interactiveWindows.map(tabEventsFor));
-
-
-
-
-var allEvents = merge([eventsFromInteractive, eventsFromFuture]);
+  
+  
+  
+  var interactiveWindows = windows("navigator:browser", { includePrivate: true }).
+                           filter(isInteractive);
+  var eventsFromInteractive = merge(interactiveWindows.map(tabEventsFor));
 
 
-exports.events = map(allEvents, function (event) {
+  
+  
+  return merge([eventsFromInteractive, eventsFromFuture]);
+}
+
+
+exports.events = map(makeEvents(), function (event) {
   return !isFennec ? event : {
     type: event.type,
     target: event.target.ownerDocument.defaultView.BrowserApp
