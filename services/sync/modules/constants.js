@@ -96,8 +96,8 @@ IDLE_OBSERVER_BACK_DELAY:              100,
 
 
 
-
 MAX_UPLOAD_RECORDS:                    100,
+MAX_UPLOAD_BYTES:                      1024 * 1023, 
 MAX_HISTORY_UPLOAD:                    5000,
 MAX_HISTORY_DOWNLOAD:                  5000,
 
