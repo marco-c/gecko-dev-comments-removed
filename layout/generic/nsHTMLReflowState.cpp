@@ -2002,7 +2002,7 @@ CalcQuirkContainingBlockHeight(const nsHTMLReflowState* aCBReflowState)
 LogicalSize
 nsHTMLReflowState::ComputeContainingBlockRectangle(
                      nsPresContext*           aPresContext,
-                     const nsHTMLReflowState* aContainingBlockRS)
+                     const nsHTMLReflowState* aContainingBlockRS) const
 {
   
   
