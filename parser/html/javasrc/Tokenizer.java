@@ -357,8 +357,6 @@ public class Tokenizer implements Locator {
 
     private int charRefBufMark;
 
-    private int prevValue;
-
     protected int value;
 
     private boolean seenDigits;
@@ -3217,7 +3215,6 @@ public class Tokenizer implements Locator {
                         break stateloop;
                     }
                     c = checkChar(buf, pos);
-                    prevValue = -1;
                     value = 0;
                     seenDigits = false;
                     
@@ -3270,20 +3267,17 @@ public class Tokenizer implements Locator {
                             c = checkChar(buf, pos);
                         }
                         
-                        if (value < prevValue) {
-                            value = 0x110000; 
-                            
-                            
-                        }
-                        prevValue = value;
-                        
 
 
 
+                        assert value >= 0: "value must not become negative.";
                         if (c >= '0' && c <= '9') {
                             seenDigits = true;
-                            value *= 10;
-                            value += c - '0';
+                            
+                            if (value <= 0x10FFFF) {
+                                value *= 10;
+                                value += c - '0';
+                            }
                             continue;
                         } else if (c == ';') {
                             if (seenDigits) {
@@ -3351,30 +3345,33 @@ public class Tokenizer implements Locator {
                         }
                         c = checkChar(buf, pos);
                         
-                        if (value < prevValue) {
-                            value = 0x110000; 
-                            
-                            
-                        }
-                        prevValue = value;
-                        
 
 
 
+                        assert value >= 0: "value must not become negative.";
                         if (c >= '0' && c <= '9') {
                             seenDigits = true;
-                            value *= 16;
-                            value += c - '0';
+                            
+                            if (value <= 0x10FFFF) {
+                                value *= 16;
+                                value += c - '0';
+                            }
                             continue;
                         } else if (c >= 'A' && c <= 'F') {
                             seenDigits = true;
-                            value *= 16;
-                            value += c - 'A' + 10;
+                            
+                            if (value <= 0x10FFFF) {
+                                value *= 16;
+                                value += c - 'A' + 10;
+                            }
                             continue;
                         } else if (c >= 'a' && c <= 'f') {
                             seenDigits = true;
-                            value *= 16;
-                            value += c - 'a' + 10;
+                            
+                            if (value <= 0x10FFFF) {
+                                value *= 16;
+                                value += c - 'a' + 10;
+                            }
                             continue;
                         } else if (c == ';') {
                             if (seenDigits) {
@@ -6613,7 +6610,6 @@ public class Tokenizer implements Locator {
         hi = 0; 
         candidate = -1;
         charRefBufMark = 0;
-        prevValue = -1;
         value = 0;
         seenDigits = false;
         endTag = false;
@@ -6663,7 +6659,6 @@ public class Tokenizer implements Locator {
         hi = other.hi;
         candidate = other.candidate;
         charRefBufMark = other.charRefBufMark;
-        prevValue = other.prevValue;
         value = other.value;
         seenDigits = other.seenDigits;
         endTag = other.endTag;
