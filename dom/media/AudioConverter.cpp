@@ -105,10 +105,7 @@ AudioConverter::ReOrderInterleavedChannels(void* aOut, const void* aIn,
 {
   MOZ_DIAGNOSTIC_ASSERT(mIn.Channels() == mOut.Channels());
 
-  if (mOut.Layout() == mIn.Layout()) {
-    return;
-  }
-  if (mOut.Channels() == 1) {
+  if (mOut.Channels() == 1 || mOut.Layout() == mIn.Layout()) {
     
     
     if (aOut != aIn) {
@@ -253,18 +250,27 @@ AudioConverter::ResampleAudio(void* aOut, const void* aIn, size_t aFrames)
   uint32_t outframes = ResampleRecipientFrames(aFrames);
   uint32_t inframes = aFrames;
 
+  int error;
   if (mOut.Format() == AudioConfig::FORMAT_FLT) {
     const float* in = reinterpret_cast<const float*>(aIn);
     float* out = reinterpret_cast<float*>(aOut);
-    speex_resampler_process_interleaved_float(mResampler, in, &inframes,
-                                              out, &outframes);
+    error =
+      speex_resampler_process_interleaved_float(mResampler, in, &inframes,
+                                                out, &outframes);
   } else if (mOut.Format() == AudioConfig::FORMAT_S16) {
     const int16_t* in = reinterpret_cast<const int16_t*>(aIn);
     int16_t* out = reinterpret_cast<int16_t*>(aOut);
-    speex_resampler_process_interleaved_int(mResampler, in, &inframes,
-                                            out, &outframes);
+    error =
+      speex_resampler_process_interleaved_int(mResampler, in, &inframes,
+                                              out, &outframes);
   } else {
     MOZ_DIAGNOSTIC_ASSERT(false, "Unsupported data type");
+  }
+  MOZ_ASSERT(error == RESAMPLER_ERR_SUCCESS);
+  if (error != RESAMPLER_ERR_SUCCESS) {
+    speex_resampler_destroy(mResampler);
+    mResampler = nullptr;
+    return 0;
   }
   MOZ_ASSERT(inframes == aFrames, "Some frames will be dropped");
   return outframes;
@@ -298,8 +304,7 @@ AudioConverter::DrainResampler(void* aOut)
     return 0;
   }
   int frames = speex_resampler_get_input_latency(mResampler);
-  AlignedByteBuffer buffer(FramesOutToSamples(frames) *
-                           AudioConfig::SampleSize(mOut.Format()));
+  AlignedByteBuffer buffer(FramesOutToBytes(frames));
   if (!buffer) {
     
     return 0;
@@ -358,6 +363,9 @@ AudioConverter::ResampleRecipientFrames(size_t aFrames) const
   if (!aFrames && mIn.Rate() != mOut.Rate()) {
     
     
+    if (!mResampler) {
+      return 0;
+    }
     return speex_resampler_get_output_latency(mResampler);
   } else {
     return (uint64_t)aFrames * mOut.Rate() / mIn.Rate() + 1;
