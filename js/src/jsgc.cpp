@@ -6862,7 +6862,7 @@ gc::MergeCompartments(JSCompartment* source, JSCompartment* target)
     target->zone()->types.typeLifoAlloc.transferFrom(&source->zone()->types.typeLifoAlloc);
 
     
-    target->zone()->adoptUniqueIds(source->zone());
+    source->zone()->assertNoUniqueIdsInZone();
 }
 
 void
