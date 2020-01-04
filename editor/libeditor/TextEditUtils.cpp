@@ -3,7 +3,7 @@
 
 
 
-#include "nsTextEditUtils.h"
+#include "TextEditUtils.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/Element.h"
@@ -21,27 +21,28 @@
 #include "nsPlaintextEditor.h"
 #include "nsString.h"
 
-using namespace mozilla;
+namespace mozilla {
+
 
 
 
 bool
-nsTextEditUtils::IsBody(nsIDOMNode *node)
+TextEditUtils::IsBody(nsIDOMNode* aNode)
 {
-  return nsEditor::NodeIsType(node, nsGkAtoms::body);
+  return nsEditor::NodeIsType(aNode, nsGkAtoms::body);
 }
 
 
 
 
 bool
-nsTextEditUtils::IsBreak(nsIDOMNode *node)
+TextEditUtils::IsBreak(nsIDOMNode* aNode)
 {
-  return nsEditor::NodeIsType(node, nsGkAtoms::br);
+  return nsEditor::NodeIsType(aNode, nsGkAtoms::br);
 }
 
 bool
-nsTextEditUtils::IsBreak(nsINode* aNode)
+TextEditUtils::IsBreak(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsHTMLElement(nsGkAtoms::br);
@@ -52,15 +53,14 @@ nsTextEditUtils::IsBreak(nsINode* aNode)
 
 
 bool
-nsTextEditUtils::IsMozBR(nsIDOMNode *node)
+TextEditUtils::IsMozBR(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(node, "null node passed to nsHTMLEditUtils::IsMozBR");
-  return IsBreak(node) && HasMozAttr(node);
+  MOZ_ASSERT(aNode);
+  return IsBreak(aNode) && HasMozAttr(aNode);
 }
 
-
 bool
-nsTextEditUtils::IsMozBR(nsINode* aNode)
+TextEditUtils::IsMozBR(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsHTMLElement(nsGkAtoms::br) &&
@@ -73,22 +73,20 @@ nsTextEditUtils::IsMozBR(nsINode* aNode)
 
 
 
-
 bool
-nsTextEditUtils::HasMozAttr(nsIDOMNode *node)
+TextEditUtils::HasMozAttr(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(node, "null parent passed to nsHTMLEditUtils::HasMozAttr");
-  nsCOMPtr<nsIDOMElement> elem = do_QueryInterface(node);
-  if (elem)
-  {
-    nsAutoString typeAttrVal;
-    nsresult res = elem->GetAttribute(NS_LITERAL_STRING("type"), typeAttrVal);
-    if (NS_SUCCEEDED(res) && (typeAttrVal.LowerCaseEqualsLiteral("_moz")))
-      return true;
+  MOZ_ASSERT(aNode);
+  nsCOMPtr<nsIDOMElement> element = do_QueryInterface(aNode);
+  if (!element) {
+    return false;
   }
-  return false;
+  nsAutoString typeAttrVal;
+  nsresult rv = element->GetAttribute(NS_LITERAL_STRING("type"), typeAttrVal);
+  return NS_SUCCEEDED(rv) && typeAttrVal.LowerCaseEqualsLiteral("_moz");
 }
 
+} 
 
 
 

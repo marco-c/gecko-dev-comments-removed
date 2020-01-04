@@ -24,6 +24,7 @@
 #include "JoinNodeTxn.h"                
 #include "PlaceholderTxn.h"             
 #include "SplitNodeTxn.h"               
+#include "TextEditUtils.h"              
 #include "mozFlushType.h"               
 #include "mozInlineSpellChecker.h"      
 #include "mozilla/CheckedInt.h"         
@@ -100,7 +101,6 @@
 #include "nsStyleSheetTxns.h"           
 #include "nsStyleStruct.h"              
 #include "nsStyleStructFwd.h"           
-#include "nsTextEditUtils.h"            
 #include "nsTextNode.h"                 
 #include "nsThreadUtils.h"              
 #include "nsTransactionManager.h"       
@@ -2306,7 +2306,7 @@ nsEditor::FindBetterInsertionPoint(nsCOMPtr<nsINode>& aNode,
   
   
   
-  if (nsTextEditUtils::IsMozBR(node) && !offset) {
+  if (TextEditUtils::IsMozBR(node) && !offset) {
     if (node->GetPreviousSibling() &&
         node->GetPreviousSibling()->IsNodeOfType(nsINode::eTEXT)) {
       NS_ENSURE_TRUE_VOID(node->Length() <= INT32_MAX);

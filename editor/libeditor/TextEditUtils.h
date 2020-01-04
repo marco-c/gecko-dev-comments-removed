@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsTextEditUtils_h__
-#define nsTextEditUtils_h__
+#ifndef TextEditUtils_h
+#define TextEditUtils_h
 
 #include "nscore.h"
 
@@ -12,7 +12,9 @@ class nsIDOMNode;
 class nsINode;
 class nsPlaintextEditor;
 
-class nsTextEditUtils
+namespace mozilla {
+
+class TextEditUtils final
 {
 public:
   
@@ -23,6 +25,8 @@ public:
   static bool IsMozBR(nsINode* aNode);
   static bool HasMozAttr(nsIDOMNode* aNode);
 };
+
+} 
 
 
 

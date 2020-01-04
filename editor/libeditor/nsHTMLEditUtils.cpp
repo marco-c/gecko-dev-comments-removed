@@ -5,6 +5,7 @@
 
 #include "nsHTMLEditUtils.h"
 
+#include "TextEditUtils.h"              
 #include "mozilla/ArrayUtils.h"         
 #include "mozilla/Assertions.h"         
 #include "mozilla/dom/Element.h"        
@@ -22,7 +23,6 @@
 #include "nsNameSpaceManager.h"        
 #include "nsLiteralString.h"            
 #include "nsString.h"                   
-#include "nsTextEditUtils.h"            
 
 using namespace mozilla;
 
@@ -405,8 +405,7 @@ nsHTMLEditUtils::IsDiv(nsIDOMNode* aNode)
 bool
 nsHTMLEditUtils::IsMozDiv(nsIDOMNode* aNode)
 {
-  if (IsDiv(aNode) && nsTextEditUtils::HasMozAttr(aNode)) return true;
-  return false;
+  return IsDiv(aNode) && TextEditUtils::HasMozAttr(aNode);
 }
 
 bool
@@ -414,7 +413,7 @@ nsHTMLEditUtils::IsMozDiv(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsHTMLElement(nsGkAtoms::div) &&
-         nsTextEditUtils::HasMozAttr(GetAsDOMNode(aNode));
+         TextEditUtils::HasMozAttr(GetAsDOMNode(aNode));
 }
 
 
