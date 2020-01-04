@@ -13,6 +13,12 @@
 #include "mozilla/RefPtr.h"
 #include "MP3FrameParser.h"
 
+
+
+
+
+
+
 struct IGraphBuilder;
 struct IMediaControl;
 struct IMediaSeeking;
@@ -83,7 +89,7 @@ private:
   
   MP3FrameParser mMP3FrameParser;
 
-#ifdef DEBUG
+#ifdef DIRECTSHOW_REGISTER_GRAPH
   
   
   
