@@ -853,16 +853,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
-
     NS_IMETHOD GetClientBounds(mozilla::LayoutDeviceIntRect& aRect) = 0;
-    NS_IMETHOD GetClientBoundsUntyped(nsIntRect& aRect) {
-      LayoutDeviceIntRect tmp;
-      nsresult rv = GetClientBounds(tmp);
-      aRect = tmp.ToUnknownRect();
-      return rv;
-    }
 
     
 

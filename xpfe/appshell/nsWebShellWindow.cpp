@@ -145,8 +145,8 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
 
   
   
-  nsIntRect r(initialX, initialY, aInitialWidth, aInitialHeight);
-  
+  LayoutDeviceIntRect r(initialX, initialY, aInitialWidth, aInitialHeight);
+
   
   mWindow = do_CreateInstance(kWindowCID, &rv);
   if (NS_OK != rv) {
@@ -173,9 +173,9 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
   mWindow->SetWidgetListener(this);
   mWindow->Create((nsIWidget *)parentWidget,          
                   nullptr,                            
-                  r,                                  
+                  r.ToUnknownRect(),                  
                   &widgetInitData);                   
-  mWindow->GetClientBoundsUntyped(r);
+  mWindow->GetClientBounds(r);
   
   
   mWindow->SetBackgroundColor(NS_RGB(255,255,255));

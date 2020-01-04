@@ -298,13 +298,13 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
 
   
   
-  nsIntRect newBounds;
+  LayoutDeviceIntRect newBounds;
   RefPtr<nsDeviceContext> dx = mViewManager->GetDeviceContext();
 
   nsWindowType type = widget->WindowType();
 
-  nsIntRect curBounds;
-  widget->GetClientBoundsUntyped(curBounds);
+  LayoutDeviceIntRect curBounds;
+  widget->GetClientBounds(curBounds);
   bool invisiblePopup = type == eWindowType_popup &&
                         ((curBounds.IsEmpty() && mDimBounds.IsEmpty()) ||
                          mVis == nsViewVisibility_kHide);
@@ -312,7 +312,7 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
   if (invisiblePopup) {
     
   } else {
-    newBounds = CalcWidgetBounds(type);
+    newBounds = LayoutDeviceIntRect::FromUnknownRect(CalcWidgetBounds(type));
   }
 
   bool curVisibility = widget->IsVisible();
