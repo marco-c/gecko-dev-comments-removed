@@ -167,7 +167,7 @@ function getProfileThreadFromAllocations(allocations) {
     return cached;
   }
 
-  let { sites, timestamps, frames } = allocations;
+  let { sites, timestamps, frames, sizes } = allocations;
   let uniqueStrings = new UniqueStrings();
 
   
@@ -246,7 +246,7 @@ function getProfileThreadFromAllocations(allocations) {
     
     let stackIndex = sites[i];
     if (frames[stackIndex]) {
-      samples[writePos++] = [stackIndex, timestamps[i]];
+      samples[writePos++] = [stackIndex, timestamps[i], sizes[i]];
     }
   }
   samples.length = writePos;
@@ -269,6 +269,7 @@ function allocationsWithSchema (data) {
     schema: {
       stack: slot++,
       time: slot++,
+      size: slot++,
     },
     data: data
   };
