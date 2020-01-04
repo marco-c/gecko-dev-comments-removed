@@ -843,6 +843,15 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     mIterationDurationMS /= 4;
   }
 
+  
+  if (aInputBuffer) {
+    if (mAudioInput) { 
+      mAudioInput->NotifyInputData(mGraphImpl, aInputBuffer,
+                                   static_cast<size_t>(aFrames),
+                                   mSampleRate, mInputChannels);
+    }
+  }
+
   mBuffer.SetBuffer(aOutputBuffer, aFrames);
   
   
@@ -898,15 +907,6 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   
   mGraphImpl->NotifyOutputData(aOutputBuffer, static_cast<size_t>(aFrames),
                                mSampleRate, ChannelCount);
-
-  
-  if (aInputBuffer) {
-    if (mAudioInput) { 
-      mAudioInput->NotifyInputData(mGraphImpl, aInputBuffer,
-                                   static_cast<size_t>(aFrames),
-                                   mSampleRate, mInputChannels);
-    }
-  }
 
   bool switching = false;
   {
