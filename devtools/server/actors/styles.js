@@ -10,6 +10,7 @@ const protocol = require("devtools/shared/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
 const events = require("sdk/event/core");
 const {Class} = require("sdk/core/heritage");
+const {PageStyleFront} = require("devtools/client/fronts/styles");
 const {LongStringActor} = require("devtools/server/actors/string");
 const {
   getDefinedGeometryProperties
@@ -18,6 +19,7 @@ const {
 
 const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} =
       require("devtools/server/actors/stylesheets");
+const {pageStyleSpec} = require("devtools/shared/specs/styles");
 
 loader.lazyRequireGetter(this, "CSS", "CSS");
 
@@ -56,81 +58,10 @@ const BOLD_FONT_WEIGHT = 700;
 const FONT_PREVIEW_OFFSET = 4;
 
 
-types.addActorType("domnode");
-
-
-types.addActorType("domstylerule");
 
 
 
-
-
-types.addLifetime("walker", "walker");
-
-
-
-
-
-
-
-
-
-
-types.addDictType("appliedstyle", {
-  rule: "domstylerule#actorid",
-  inherited: "nullable:domnode#actorid",
-  keyframes: "nullable:domstylerule#actorid"
-});
-
-types.addDictType("matchedselector", {
-  rule: "domstylerule#actorid",
-  selector: "string",
-  value: "string",
-  status: "number"
-});
-
-types.addDictType("appliedStylesReturn", {
-  entries: "array:appliedstyle",
-  rules: "array:domstylerule",
-  sheets: "array:stylesheet"
-});
-
-types.addDictType("modifiedStylesReturn", {
-  isMatching: RetVal("boolean"),
-  ruleProps: RetVal("nullable:appliedStylesReturn")
-});
-
-types.addDictType("fontpreview", {
-  data: "nullable:longstring",
-  size: "json"
-});
-
-types.addDictType("fontface", {
-  name: "string",
-  CSSFamilyName: "string",
-  rule: "nullable:domstylerule",
-  srcIndex: "number",
-  URI: "string",
-  format: "string",
-  preview: "nullable:fontpreview",
-  localName: "string",
-  metadata: "string"
-});
-
-
-
-
-
-var PageStyleActor = protocol.ActorClass({
-  typeName: "pagestyle",
-
-  events: {
-    "stylesheet-updated": {
-      type: "styleSheetUpdated",
-      styleSheet: Arg(0, "stylesheet")
-    }
-  },
-
+var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   
 
 
@@ -286,7 +217,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  getComputed: method(function(node, options) {
+  getComputed: function(node, options) {
     let ret = Object.create(null);
 
     this.cssLogic.sourceFilter = options.filter || CssLogic.FILTER.UA;
@@ -312,17 +243,7 @@ var PageStyleActor = protocol.ActorClass({
     }
 
     return ret;
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      markMatched: Option(1, "boolean"),
-      onlyMatched: Option(1, "boolean"),
-      filter: Option(1, "string"),
-    },
-    response: {
-      computed: RetVal("json")
-    }
-  }),
+  },
 
   
 
@@ -335,7 +256,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  getAllUsedFontFaces: method(function(options) {
+  getAllUsedFontFaces: function(options) {
     let windows = this.inspector.tabActor.windows;
     let fontsList = [];
     for (let win of windows) {
@@ -343,17 +264,7 @@ var PageStyleActor = protocol.ActorClass({
                    ...this.getUsedFontFaces(win.document.body, options)];
     }
     return fontsList;
-  }, {
-    request: {
-      includePreviews: Option(0, "boolean"),
-      previewText: Option(0, "string"),
-      previewFontSize: Option(0, "string"),
-      previewFillStyle: Option(0, "string")
-    },
-    response: {
-      fontFaces: RetVal("array:fontface")
-    }
-  }),
+  },
 
   
 
@@ -368,7 +279,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  getUsedFontFaces: method(function(node, options) {
+  getUsedFontFaces: function(node, options) {
     
     let actualNode = node.rawNode || node;
     let contentDocument = actualNode.ownerDocument;
@@ -448,18 +359,7 @@ var PageStyleActor = protocol.ActorClass({
     });
 
     return fontsArray;
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      includePreviews: Option(1, "boolean"),
-      previewText: Option(1, "string"),
-      previewFontSize: Option(1, "string"),
-      previewFillStyle: Option(1, "string")
-    },
-    response: {
-      fontFaces: RetVal("array:fontface")
-    }
-  }),
+  },
 
   
 
@@ -497,7 +397,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  getMatchedSelectors: method(function(node, property, options) {
+  getMatchedSelectors: function(node, property, options) {
     this.cssLogic.sourceFilter = options.filter || CssLogic.FILTER.UA;
     this.cssLogic.highlight(node.rawNode);
 
@@ -530,18 +430,7 @@ var PageStyleActor = protocol.ActorClass({
       rules: [...rules],
       sheets: [...sheets]
     };
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      property: Arg(1, "string"),
-      filter: Option(2, "string")
-    },
-    response: RetVal(types.addDictType("matchedselectorresponse", {
-      rules: "array:domstylerule",
-      sheets: "array:stylesheet",
-      matched: "array:matchedselector"
-    }))
-  }),
+  },
 
   
   
@@ -571,7 +460,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  getApplied: method(Task.async(function* (node, options) {
+  getApplied: Task.async(function* (node, options) {
     if (!node) {
       return {entries: [], rules: [], sheets: []};
     }
@@ -587,14 +476,6 @@ var PageStyleActor = protocol.ActorClass({
       yield rule.getAuthoredCssText();
     }
     return result;
-  }), {
-    request: {
-      node: Arg(0, "domnode"),
-      inherited: Option(1, "boolean"),
-      matchedSelectors: Option(1, "boolean"),
-      filter: Option(1, "string")
-    },
-    response: RetVal("appliedStylesReturn")
   }),
 
   _hasInheritedProps: function(style) {
@@ -603,7 +484,7 @@ var PageStyleActor = protocol.ActorClass({
     });
   },
 
-  isPositionEditable: method(Task.async(function* (node) {
+  isPositionEditable: Task.async(function* (node) {
     if (!node || node.rawNode.nodeType !== node.rawNode.ELEMENT_NODE) {
       return false;
     }
@@ -616,9 +497,6 @@ var PageStyleActor = protocol.ActorClass({
            props.has("right") ||
            props.has("left") ||
            props.has("bottom");
-  }), {
-    request: { node: Arg(0, "domnode")},
-    response: { value: RetVal("boolean") }
   }),
 
   
@@ -900,7 +778,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  getLayout: method(function(node, options) {
+  getLayout: function(node, options) {
     this.cssLogic.highlight(node.rawNode);
 
     let layout = {};
@@ -945,13 +823,7 @@ var PageStyleActor = protocol.ActorClass({
     }
 
     return layout;
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      autoMargins: Option(1, "boolean")
-    },
-    response: RetVal("json")
-  }),
+  },
 
   
 
@@ -1020,8 +892,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  addNewRule: method(Task.async(function* (node, pseudoClasses,
-                                          editAuthored = false) {
+  addNewRule: Task.async(function* (node, pseudoClasses, editAuthored = false) {
     let style = this.getStyleElement(node.rawNode.ownerDocument);
     let sheet = style.sheet;
     let cssRules = sheet.cssRules;
@@ -1052,82 +923,9 @@ var PageStyleActor = protocol.ActorClass({
     }
 
     return this.getNewAppliedProps(node, sheet.cssRules.item(index));
-  }), {
-    request: {
-      node: Arg(0, "domnode"),
-      pseudoClasses: Arg(1, "nullable:array:string"),
-      editAuthored: Arg(2, "boolean")
-    },
-    response: RetVal("appliedStylesReturn")
-  }),
-});
-exports.PageStyleActor = PageStyleActor;
-
-
-
-
-protocol.FrontClass(PageStyleActor, {
-  initialize: function(conn, form, ctx, detail) {
-    protocol.Front.prototype.initialize.call(this, conn, form, ctx, detail);
-    this.inspector = this.parent();
-  },
-
-  form: function(form, detail) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-    this._form = form;
-  },
-
-  destroy: function() {
-    protocol.Front.prototype.destroy.call(this);
-  },
-
-  get walker() {
-    return this.inspector.walker;
-  },
-
-  get supportsAuthoredStyles() {
-    return this._form.traits && this._form.traits.authoredStyles;
-  },
-
-  getMatchedSelectors: protocol.custom(function(node, property, options) {
-    return this._getMatchedSelectors(node, property, options).then(ret => {
-      return ret.matched;
-    });
-  }, {
-    impl: "_getMatchedSelectors"
-  }),
-
-  getApplied: protocol.custom(Task.async(function* (node, options = {}) {
-    
-    
-    
-    
-    if (!this._form.traits || !this._form.traits.getAppliedCreatesStyleCache) {
-      yield this.getLayout(node);
-    }
-    let ret = yield this._getApplied(node, options);
-    return ret.entries;
-  }), {
-    impl: "_getApplied"
-  }),
-
-  addNewRule: protocol.custom(function(node, pseudoClasses) {
-    let addPromise;
-    if (this.supportsAuthoredStyles) {
-      addPromise = this._addNewRule(node, pseudoClasses, true);
-    } else {
-      addPromise = this._addNewRule(node, pseudoClasses);
-    }
-    return addPromise.then(ret => {
-      return ret.entries[0];
-    });
-  }, {
-    impl: "_addNewRule"
   })
 });
+exports.PageStyleActor = PageStyleActor;
 
 
 
