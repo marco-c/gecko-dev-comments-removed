@@ -29,7 +29,23 @@ nsTransactionStack::Push(nsTransactionItem *aTransaction)
   }
 
   
-  mDeque.push_back(aTransaction);
+  RefPtr<nsTransactionItem> item(aTransaction);
+  Push(item.forget());
+}
+
+void
+nsTransactionStack::Push(already_AddRefed<nsTransactionItem> aTransaction)
+{
+  RefPtr<nsTransactionItem> item(aTransaction);
+  if (!item) {
+    return;
+  }
+
+  
+  
+  RefPtr<nsTransactionItem> dummy;
+  auto pushedItem = mDeque.insert(mDeque.end(), dummy);
+  *pushedItem = item.forget();
 }
 
 already_AddRefed<nsTransactionItem>
