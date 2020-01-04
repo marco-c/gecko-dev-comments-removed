@@ -35,6 +35,46 @@
 namespace mozilla {
 namespace dom {
 
+namespace {
+
+bool
+IsValidRelativeDOMPath(const nsString& aPath, nsTArray<nsString>& aParts)
+{
+  
+  if (aPath.IsEmpty()) {
+    return false;
+  }
+
+  
+  if (aPath.First() == FILESYSTEM_DOM_PATH_SEPARATOR_CHAR ||
+      aPath.Last() == FILESYSTEM_DOM_PATH_SEPARATOR_CHAR) {
+    return false;
+  }
+
+  NS_NAMED_LITERAL_STRING(kCurrentDir, ".");
+  NS_NAMED_LITERAL_STRING(kParentDir, "..");
+
+  
+  nsCharSeparatedTokenizer tokenizer(aPath, FILESYSTEM_DOM_PATH_SEPARATOR_CHAR);
+  while (tokenizer.hasMoreTokens()) {
+    nsDependentSubstring pathComponent = tokenizer.nextToken();
+    
+    
+    
+    if (pathComponent.IsEmpty() ||
+        pathComponent.Equals(kCurrentDir) ||
+        pathComponent.Equals(kParentDir)) {
+      return false;
+    }
+
+    aParts.AppendElement(pathComponent);
+  }
+
+  return true;
+}
+
+} 
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(Directory)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Directory)
@@ -302,7 +342,7 @@ void
 Directory::GetPath(nsAString& aRetval, ErrorResult& aRv)
 {
   if (mType == eDOMRootDirectory) {
-    aRetval.AssignLiteral(FILESYSTEM_DOM_PATH_SEPARATOR);
+    aRetval.AssignLiteral(FILESYSTEM_DOM_PATH_SEPARATOR_LITERAL);
   } else {
     
     GetName(aRetval, aRv);
@@ -384,7 +424,8 @@ Directory::DOMPathToRealPath(const nsAString& aPath, nsIFile** aFile) const
   static const char kWhitespace[] = "\b\t\r\n ";
   relativePath.Trim(kWhitespace);
 
-  if (!IsValidRelativePath(relativePath)) {
+  nsTArray<nsString> parts;
+  if (!IsValidRelativeDOMPath(relativePath, parts)) {
     return NS_ERROR_DOM_FILESYSTEM_INVALID_PATH_ERR;
   }
 
@@ -394,48 +435,15 @@ Directory::DOMPathToRealPath(const nsAString& aPath, nsIFile** aFile) const
     return rv;
   }
 
-  rv = file->AppendRelativePath(relativePath);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  for (uint32_t i = 0; i < parts.Length(); ++i) {
+    rv = file->AppendRelativePath(parts[i]);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   file.forget(aFile);
   return NS_OK;
-}
-
-
-bool
-Directory::IsValidRelativePath(const nsString& aPath)
-{
-  
-  if (aPath.IsEmpty()) {
-    return false;
-  }
-
-  
-  if (aPath.First() == FileSystemUtils::kSeparatorChar ||
-      aPath.Last() == FileSystemUtils::kSeparatorChar) {
-    return false;
-  }
-
-  NS_NAMED_LITERAL_STRING(kCurrentDir, ".");
-  NS_NAMED_LITERAL_STRING(kParentDir, "..");
-
-  
-  nsCharSeparatedTokenizer tokenizer(aPath, FileSystemUtils::kSeparatorChar);
-  while (tokenizer.hasMoreTokens()) {
-    nsDependentSubstring pathComponent = tokenizer.nextToken();
-    
-    
-    
-    if (pathComponent.IsEmpty() ||
-        pathComponent.Equals(kCurrentDir) ||
-        pathComponent.Equals(kParentDir)) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 } 

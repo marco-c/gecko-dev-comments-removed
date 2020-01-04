@@ -42,12 +42,6 @@ public:
   
 
 
-  already_AddRefed<nsIFile>
-  GetLocalFile(const nsAString& aRealPath) const;
-
-  
-
-
 
   virtual void
   GetRootName(nsAString& aRetval) const = 0;
