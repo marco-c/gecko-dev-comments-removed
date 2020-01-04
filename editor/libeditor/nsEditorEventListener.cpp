@@ -454,7 +454,7 @@ nsEditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
       return MouseClick(mouseEvent);
     }
     
-    case NS_FOCUS_CONTENT:
+    case eFocus:
       return Focus(aEvent);
     
     case NS_BLUR_CONTENT:

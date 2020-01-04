@@ -538,9 +538,9 @@ HTMLTextAreaElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
     mHandlingSelect = false;
   }
 
-  if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT ||
+  if (aVisitor.mEvent->mMessage == eFocus ||
       aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
-    if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT) {
+    if (aVisitor.mEvent->mMessage == eFocus) {
       
       
       GetValueInternal(mFocusedValue, true);

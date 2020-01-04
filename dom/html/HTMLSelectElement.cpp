@@ -1511,7 +1511,7 @@ HTMLSelectElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
 nsresult
 HTMLSelectElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 {
-  if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT) {
+  if (aVisitor.mEvent->mMessage == eFocus) {
     
     
     mCanShowInvalidUI = !IsValid() && ShouldShowValidityUI();

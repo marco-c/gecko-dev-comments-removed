@@ -3177,7 +3177,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   }
 
   if (mType == NS_FORM_INPUT_RANGE &&
-      (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT ||
+      (aVisitor.mEvent->mMessage == eFocus ||
        aVisitor.mEvent->mMessage == NS_BLUR_CONTENT)) {
     
     
@@ -3231,9 +3231,9 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
         StopNumberControlSpinnerSpin();
       }
     }
-    if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT ||
+    if (aVisitor.mEvent->mMessage == eFocus ||
         aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
-      if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT) {
+      if (aVisitor.mEvent->mMessage == eFocus) {
         
         
         nsNumberControlFrame* numberControlFrame =
@@ -3587,9 +3587,9 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
     return MaybeInitPickers(aVisitor);
   }
 
-  if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT ||
+  if (aVisitor.mEvent->mMessage == eFocus ||
       aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
-    if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT &&
+    if (aVisitor.mEvent->mMessage == eFocus &&
         MayFireChangeOnBlur() &&
         !mIsDraggingRange) { 
       GetValue(mFocusedValue);
@@ -3603,7 +3603,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
       }
     }
 
-    UpdateValidityUIBits(aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT);
+    UpdateValidityUIBits(aVisitor.mEvent->mMessage == eFocus);
 
     UpdateState(true);
   }
@@ -3745,9 +3745,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
       }
     } else if (nsEventStatus_eIgnore == aVisitor.mEventStatus) {
       switch (aVisitor.mEvent->mMessage) {
-
-        case NS_FOCUS_CONTENT:
-        {
+        case eFocus: {
           
           
           
