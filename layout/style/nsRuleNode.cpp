@@ -1277,15 +1277,13 @@ static void SetStyleImage(nsStyleContext* aStyleContext,
     case eCSSUnit_URL:
     {
 #ifdef DEBUG
-      nsIDocument* currentDoc = aStyleContext->PresContext()->Document();
-      nsIURI* docURI = currentDoc->GetDocumentURI();
-      nsIURI* imageURI = aValue.GetURLValue();
-      bool isEqualExceptRef = false;
-      imageURI->EqualsExceptRef(docURI, &isEqualExceptRef);
+      mozilla::css::URLValueData *urlData = aValue.GetURLStructValue();
+
       
       
       
-      NS_ASSERTION(aStyleContext->IsStyleIfVisited() || isEqualExceptRef,
+      NS_ASSERTION(aStyleContext->IsStyleIfVisited() ||
+                   urlData->GetLocalURLFlag(),
                    "unexpected unit; maybe nsCSSValue::Image::Image() failed?");
 #endif
 
