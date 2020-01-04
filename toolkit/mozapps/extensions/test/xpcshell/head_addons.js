@@ -73,35 +73,10 @@ var resHandler = Services.io.getProtocolHandler("resource")
 var dataURI = NetUtil.newURI(do_get_file("data", true));
 resHandler.setSubstitution("xpcshell-data", dataURI);
 
-function isManifestRegistered(file) {
-  let manifests = Components.manager.getManifestLocations();
-  for (let i = 0; i < manifests.length; i++) {
-    let manifest = manifests.queryElementAt(i, AM_Ci.nsIURI);
-
-    
-    
-    if (manifest instanceof AM_Ci.nsIJARURI) {
-      manifest = manifest.JARFile.QueryInterface(AM_Ci.nsIFileURL).file;
-    }
-    else if (manifest instanceof AM_Ci.nsIFileURL) {
-      manifest = manifest.file.parent;
-    }
-    else {
-      continue;
-    }
-
-    if (manifest.equals(file))
-      return true;
-  }
-  return false;
-}
-
 
 
 
 this.BootstrapMonitor = {
-  inited: false,
-
   
   installed: new Map(),
   started: new Map(),
@@ -114,15 +89,7 @@ this.BootstrapMonitor = {
   installPromises: [],
 
   init() {
-    this.inited = true;
     Services.obs.addObserver(this, "bootstrapmonitor-event", false);
-  },
-
-  shutdownCheck() {
-    if (!this.inited)
-      return;
-
-    do_check_eq(this.started.size, 0);
   },
 
   clear(id) {
@@ -147,7 +114,7 @@ this.BootstrapMonitor = {
   checkMatches(cached, current) {
     do_check_neq(cached, undefined);
     do_check_eq(current.data.version, cached.data.version);
-    do_check_eq(current.data.installPath.path, cached.data.installPath.path);
+    do_check_eq(current.data.installPath, cached.data.installPath);
     do_check_eq(current.data.resourceURI, cached.data.resourceURI);
   },
 
@@ -156,10 +123,6 @@ this.BootstrapMonitor = {
     do_check_neq(started, undefined);
     if (version != undefined)
       do_check_eq(started.data.version, version);
-
-    
-    let isRegistered = isManifestRegistered(started.data.installPath);
-    do_check_true(isRegistered);
   },
 
   checkAddonNotStarted(id) {
@@ -180,7 +143,6 @@ this.BootstrapMonitor = {
   observe(subject, topic, data) {
     let info = JSON.parse(data);
     let id = info.data.id;
-    info.data.installPath = new FileUtils.File(info.data.installPath);
 
     
     if (info.event == "install") {
@@ -202,35 +164,17 @@ this.BootstrapMonitor = {
 
       this.started.delete(id);
       this.stopped.set(id, info);
-
-      
-      let isRegistered = isManifestRegistered(info.data.installPath);
-      do_check_true(isRegistered);
-
-      
-      
-      
-      if (info.reason == 2 )
-        Components.manager.removeBootstrappedManifestLocation(info.data.installPath);
     }
     else {
       this.checkAddonNotStarted(id);
     }
 
     if (info.event == "uninstall") {
-      
-      let isRegistered = isManifestRegistered(info.data.installPath);
-      do_check_false(isRegistered);
-
       this.installed.delete(id);
       this.uninstalled.set(id, info)
     }
     else if (info.event == "startup") {
       this.started.set(id, info);
-
-      
-      let isRegistered = isManifestRegistered(info.data.installPath);
-      do_check_true(isRegistered);
 
       for (let resolve of this.startupPromises)
         resolve();
@@ -643,7 +587,6 @@ function promiseShutdownManager() {
   return MockAsyncShutdown.hook()
     .then(null, err => hookErr = err)
     .then( () => {
-      BootstrapMonitor.shutdownCheck();
       gInternalManager = null;
 
       
