@@ -369,7 +369,6 @@ function TelephonyService() {
   this._isDialing = false;
   this._cachedDialRequest = null;
   this._currentCalls = {};
-  this._currentConferenceState = nsITelephonyService.CALL_STATE_UNKNOWN;
   this._audioStates = [];
   this._ussdSessions = [];
 
@@ -2040,7 +2039,6 @@ TelephonyService.prototype = {
         calls.push(call);
       }
       this._handleCallStateChanged(aClientId, calls);
-      this._handleConferenceCallStateChanged(nsITelephonyService.CALL_STATE_CONNECTED);
 
       aCallback.notifySuccess();
     });
@@ -2084,7 +2082,6 @@ TelephonyService.prototype = {
     parentCall.isSwitchable = true;
     parentCall.isMergeable = true;
     this._handleCallStateChanged(aClientId, [childCall, parentCall]);
-    this._handleConferenceCallStateChanged(nsITelephonyService.CALL_STATE_UNKNOWN);
   },
 
   
@@ -2128,11 +2125,24 @@ TelephonyService.prototype = {
       return;
     }
 
-    let foreground = this._currentConferenceState == nsITelephonyService.CALL_STATE_CONNECTED;
-    this._sendToRilWorker(aClientId,
-                          foreground ? "hangUpForeground" : "hangUpBackground",
-                          null,
-                          this._defaultCallbackHandler.bind(this, aCallback));
+    
+    for (let index in this._currentCalls[aClientId]) {
+      let call = this._currentCalls[aClientId][index];
+      if (!call.isConference) {
+        continue;
+      }
+
+      let command = call.state === nsITelephonyService.CALL_STATE_CONNECTED ?
+                    "hangUpForeground" : "hangUpBackground";
+      this._sendToRilWorker(aClientId, command, null,
+                            this._defaultCallbackHandler.bind(this, aCallback));
+      return;
+    }
+
+    
+    if (DEBUG) debug("hangUpConference: " +
+                     "No conference call in modem[" + aClientId + "].");
+    aCallback.notifyError(RIL.GECKO_ERROR_GENERIC_FAILURE);
   },
 
   _switchConference: function(aClientId, aCallback) {
@@ -2354,12 +2364,6 @@ TelephonyService.prototype = {
 
     this._handleCallStateChanged(aClientId, [...changedCalls]);
 
-    
-    
-    if (newConferenceState != this._currentConferenceState) {
-      this._handleConferenceCallStateChanged(newConferenceState);
-    }
-
     this._updateAudioState(aClientId);
 
     
@@ -2437,12 +2441,6 @@ TelephonyService.prototype = {
 
     this._notifyAllListeners("supplementaryServiceNotification",
                              [aClientId, callIndex, notification]);
-  },
-
-  _handleConferenceCallStateChanged: function(aState) {
-    if (DEBUG) debug("handleConferenceCallStateChanged: " + aState);
-    this._currentConferenceState = aState;
-    this._notifyAllListeners("conferenceCallStateChanged", [aState]);
   },
 
   notifyUssdReceived: function(aClientId, aMessage, aSessionEnded) {

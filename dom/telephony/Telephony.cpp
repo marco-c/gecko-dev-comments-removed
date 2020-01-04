@@ -344,7 +344,7 @@ Telephony::HandleCallInfo(nsITelephonyCallInfo* aInfo)
       NS_ENSURE_SUCCESS(rv, rv);
     }
     return NS_OK;
-  } 
+  }
 
   
   call->UpdateEmergency(isEmergency);
@@ -723,6 +723,7 @@ Telephony::WindowAudioCaptureChanged()
 NS_IMETHODIMP
 Telephony::CallStateChanged(uint32_t aLength, nsITelephonyCallInfo** aAllInfo)
 {
+  
   nsresult rv;
   for (uint32_t i = 0; i < aLength; ++i) {
     rv = HandleCallInfo(aAllInfo[i]);
@@ -730,6 +731,9 @@ Telephony::CallStateChanged(uint32_t aLength, nsITelephonyCallInfo** aAllInfo)
       return rv;
     }
   }
+
+  
+  mGroup->ChangeState();
 
   rv = HandleAudioAgentState();
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -742,17 +746,6 @@ NS_IMETHODIMP
 Telephony::EnumerateCallState(nsITelephonyCallInfo* aInfo)
 {
   return HandleCallInfo(aInfo);
-}
-
-NS_IMETHODIMP
-Telephony::ConferenceCallStateChanged(uint16_t aCallState)
-{
-  
-  
-  
-  
-  mGroup->ChangeState();
-  return NS_OK;
 }
 
 NS_IMETHODIMP
