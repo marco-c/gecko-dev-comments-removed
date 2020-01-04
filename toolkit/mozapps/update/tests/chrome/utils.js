@@ -658,8 +658,6 @@ function checkPrefHasUserValue(aPrefHasValue) {
 
 
 
-
-
 function checkErrorExtraPage(aShouldBeHidden) {
   let shouldBeHidden = aShouldBeHidden === undefined ? gTest.shouldBeHidden
                                                      : aShouldBeHidden;
@@ -669,10 +667,6 @@ function checkErrorExtraPage(aShouldBeHidden) {
 
   is(gWin.document.getElementById(gTest.displayedTextElem).hidden, false,
      "Checking " + gTest.displayedTextElem + " should not be hidden");
-
-  ok(!Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CERT_ERRORS),
-     "Preference " + PREF_APP_UPDATE_CERT_ERRORS + " should not have a " +
-     "user value");
 
   ok(!Services.prefs.prefHasUserValue(PREF_APP_UPDATE_BACKGROUNDERRORS),
      "Preference " + PREF_APP_UPDATE_BACKGROUNDERRORS + " should not have a " +
@@ -993,14 +987,6 @@ function resetPrefs() {
     Services.prefs.clearUserPref(PREF_APP_UPDATE_SILENT);
   }
 
-  if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CERT_ERRORS)) {
-    Services.prefs.clearUserPref(PREF_APP_UPDATE_CERT_ERRORS);
-  }
-
-  if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CERT_MAXERRORS)) {
-    Services.prefs.clearUserPref(PREF_APP_UPDATE_CERT_MAXERRORS);
-  }
-
   if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_BACKGROUNDERRORS)) {
     Services.prefs.clearUserPref(PREF_APP_UPDATE_BACKGROUNDERRORS);
   }
@@ -1009,25 +995,8 @@ function resetPrefs() {
     Services.prefs.clearUserPref(PREF_APP_UPDATE_BACKGROUNDMAXERRORS);
   }
 
-  if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CERT_INVALID_ATTR_NAME)) {
-    Services.prefs.clearUserPref(PREF_APP_UPDATE_CERT_INVALID_ATTR_NAME);
-  }
-
   if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CERT_REQUIREBUILTIN)) {
     Services.prefs.clearUserPref(PREF_APP_UPDATE_CERT_REQUIREBUILTIN);
-  }
-
-  if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CERT_CHECKATTRIBUTES)) {
-    Services.prefs.clearUserPref(PREF_APP_UPDATE_CERT_CHECKATTRIBUTES);
-  }
-
-  try {
-    CERT_ATTRS.forEach(function(aCertAttrName) {
-      Services.prefs.clearUserPref(PREFBRANCH_APP_UPDATE_CERTS + "1." +
-                                   aCertAttrName);
-    });
-  }
-  catch (e) {
   }
 
   try {
