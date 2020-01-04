@@ -7,7 +7,7 @@
 const { Cc, Ci, Cu, components } = require("chrome");
 const protocol = require("devtools/server/protocol");
 const { method, RetVal, Arg, types } = protocol;
-const { Memory } = require("devtools/shared/shared/memory");
+const { Memory } = require("devtools/server/performance/memory");
 const { actorBridge } = require("devtools/server/actors/common");
 loader.lazyRequireGetter(this, "events", "sdk/event/core");
 loader.lazyRequireGetter(this, "StackFrameCache",
