@@ -976,6 +976,17 @@ public:
   
 
 
+
+
+
+  static nsresult FormatLocalizedString(PropertiesFile aFile,
+                                        const char* aKey,
+                                        const nsTArray<nsString>& aParamArray,
+                                        nsXPIDLString& aResult);
+
+  
+
+
   static bool IsChromeDoc(nsIDocument *aDocument);
 
   

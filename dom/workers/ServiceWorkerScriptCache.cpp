@@ -19,6 +19,7 @@
 #include "nsIThreadRetargetableRequest.h"
 
 #include "nsIPrincipal.h"
+#include "nsIScriptError.h"
 #include "nsContentUtils.h"
 #include "nsNetUtil.h"
 #include "nsScriptLoader.h"
@@ -289,7 +290,7 @@ public:
     return NS_OK;
   }
 
-  const nsAString&
+  const nsString&
   URL() const
   {
     AssertIsOnMainThread();
@@ -737,6 +738,18 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader, nsISupports* aContext
   }
 
   if (NS_WARN_IF(!requestSucceeded)) {
+    
+    
+    uint32_t status = 0;
+    httpChannel->GetResponseStatus(&status); 
+    nsAutoString statusAsText;
+    statusAsText.AppendInt(status);
+
+    RefPtr<ServiceWorkerRegistrationInfo> registration = mManager->GetRegistration();
+    ServiceWorkerManager::LocalizeAndReportToAllClients(
+      registration->mScope, "ServiceWorkerRegisterNetworkError",
+      nsTArray<nsString> { NS_ConvertUTF8toUTF16(registration->mScope),
+        statusAsText, mManager->URL() });
     mManager->NetworkFinished(NS_ERROR_FAILURE);
     return NS_OK;
   }

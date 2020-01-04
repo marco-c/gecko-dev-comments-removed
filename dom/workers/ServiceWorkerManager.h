@@ -178,6 +178,14 @@ public:
   void
   FinishFetch(ServiceWorkerRegistrationInfo* aRegistration);
 
+  
+
+
+
+
+
+
+
   void
   ReportToAllClients(const nsCString& aScope,
                      const nsString& aMessage,
@@ -186,6 +194,33 @@ public:
                      uint32_t aLineNumber,
                      uint32_t aColumnNumber,
                      uint32_t aFlags);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void
+  LocalizeAndReportToAllClients(const nsCString& aScope,
+                                const char* aStringKey,
+                                const nsTArray<nsString>& aParamArray,
+                                uint32_t aFlags = 0x0,
+                                const nsString& aFilename = EmptyString(),
+                                const nsString& aLine = EmptyString(),
+                                uint32_t aLineNumber = 0,
+                                uint32_t aColumnNumber = 0);
 
   
   
