@@ -2250,6 +2250,7 @@ const nsCSSProperty nsStyleImageLayers::kBackgroundLayerTable[] = {
   eCSSProperty_UNKNOWN                    
 };
 
+#ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
 const nsCSSProperty nsStyleImageLayers::kMaskLayerTable[] = {
   eCSSProperty_mask,                      
   eCSSProperty_UNKNOWN,                   
@@ -2263,6 +2264,7 @@ const nsCSSProperty nsStyleImageLayers::kMaskLayerTable[] = {
   eCSSProperty_mask_mode,                 
   eCSSProperty_mask_composite             
 };
+#endif
 
 nsStyleImageLayers::nsStyleImageLayers()
   : mAttachmentCount(1)

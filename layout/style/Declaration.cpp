@@ -351,7 +351,11 @@ Declaration::GetImageLayerValue(
         }
       
       } else {
+#ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
         MOZ_ASSERT(aTable == nsStyleImageLayers::kMaskLayerTable);
+#else
+        MOZ_ASSERT_UNREACHABLE("Should never get here when mask-as-shorthand is disable");
+#endif
         if (repeat || position || clip || origin || size || composite || mode) {
           
           aValue.Truncate();
@@ -370,7 +374,11 @@ Declaration::GetImageLayerValue(
       }
     
     } else {
+#ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
       MOZ_ASSERT(aTable == nsStyleImageLayers::kMaskLayerTable);
+#else
+      MOZ_ASSERT_UNREACHABLE("Should never get here when mask-as-shorthand is disable");
+#endif
       if (!repeat || !position || !clip || !origin || !size ||
           !composite || !mode) {
         
@@ -657,11 +665,13 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue,
                          nsStyleImageLayers::kBackgroundLayerTable);
       break;
     }
+#ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
     case eCSSProperty_mask: {
       GetImageLayerValue(data, aValue, aSerialization,
                          nsStyleImageLayers::kMaskLayerTable);
       break;
     }
+#endif
     case eCSSProperty_font: {
       
       
