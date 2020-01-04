@@ -38,10 +38,13 @@ add_task(function* mainTest() {
 
     
     
-    let dialogPromise = promiseAlertDialogOpen("cancel");
+    
+    let unblockOpenPromise = promiseUnblockAndOpenDownloadCalled(item);
+    let hidePromise = promisePanelHidden();
     EventUtils.synthesizeMouse(DownloadsBlockedSubview.elements.openButton,
                                10, 10, {}, window);
-    yield dialogPromise;
+    yield unblockOpenPromise;
+    yield hidePromise;
 
     window.focus();
     yield SimpleTest.promiseFocus(window);
@@ -163,5 +166,18 @@ function promiseSubviewShown(shown) {
         return;
       }
     }, 0);
+  });
+}
+
+function promiseUnblockAndOpenDownloadCalled(item) {
+  return new Promise(resolve => {
+    let realFn = item._shell.unblockAndOpenDownload;
+    item._shell.unblockAndOpenDownload = () => {
+      item._shell.unblockAndOpenDownload = realFn;
+      resolve();
+      
+      
+      return Promise.resolve();
+    };
   });
 }
