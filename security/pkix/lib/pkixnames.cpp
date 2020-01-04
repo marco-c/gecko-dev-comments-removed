@@ -1700,8 +1700,8 @@ FinishIPv6Address( uint8_t (&address)[16], int numComponents,
           address + (2u * static_cast<size_t>(contractionIndex)),
           componentsToMove * 2u);
   
-  memset(address + (2u * static_cast<size_t>(contractionIndex)), 0u,
-         (8u - static_cast<size_t>(numComponents)) * 2u);
+  std::fill_n(address + 2u * static_cast<size_t>(contractionIndex),
+              8u - static_cast<size_t>(numComponents) * 2u, 0u);
 
   return true;
 }
