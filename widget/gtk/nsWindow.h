@@ -30,6 +30,7 @@
 #include "mozilla/a11y/Accessible.h"
 #endif
 #include "mozilla/EventForwards.h"
+#include "mozilla/TouchEvents.h"
 
 #include "IMContextWrapper.h"
 
@@ -207,6 +208,7 @@ public:
                                                gpointer         aData);
     gboolean           OnPropertyNotifyEvent(GtkWidget *aWidget,
                                              GdkEventProperty *aEvent);
+    gboolean           OnTouchEvent(GdkEventTouch* aEvent);
 
     virtual already_AddRefed<mozilla::gfx::DrawTarget>
                        StartRemoteDrawingInRegion(nsIntRegion& aInvalidRegion) override;
@@ -347,6 +349,8 @@ protected:
     virtual nsresult NotifyIMEInternal(
                          const IMENotification& aIMENotification) override;
 
+    virtual void RegisterTouchWindow() override;
+
     nsCOMPtr<nsIWidget> mParent;
     
     bool                mIsTopLevel;
@@ -362,6 +366,8 @@ protected:
     bool                mEnabled;
     
     bool                mCreated;
+    
+    bool                mHandleTouchEvent;
 
 private:
     void               DestroyChildWindows();
@@ -396,10 +402,12 @@ private:
 
     nsIntPoint          mClientOffset;
 
-#if GTK_CHECK_VERSION(3,4,0)
     
     guint32             mLastScrollEventTime;
-#endif
+
+    
+    nsDataHashtable<nsPtrHashKey<GdkEventSequence>, RefPtr<mozilla::dom::Touch> > mTouches;
+    uint32_t            mTouchCounter;
 
 #ifdef MOZ_X11
     Display*            mXDisplay;

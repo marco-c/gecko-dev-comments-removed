@@ -3270,7 +3270,7 @@ pref("ui.osk.detect_physical_keyboard", true);
 pref("ui.osk.on_screen_keyboard_path", "");
 
 
-pref("ui.osk.require_win10", false);
+pref("ui.osk.require_tablet_mode", true);
 
 
 
@@ -4532,6 +4532,10 @@ pref("dom.mozPermissionSettings.enabled", false);
 
 
 #ifdef XP_WIN
+pref("dom.w3c_touch_events.enabled", 2);
+#endif
+
+#if MOZ_WIDGET_GTK == 3
 pref("dom.w3c_touch_events.enabled", 2);
 #endif
 
