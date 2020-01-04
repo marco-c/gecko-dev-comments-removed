@@ -234,6 +234,12 @@ public class BrowserContract {
         public static final int FIXED_SCREENSHOT_FOLDER_ID = -4;
         public static final int FAKE_READINGLIST_SMARTFOLDER_ID = -5;
 
+        
+
+
+
+        public static final long FAKE_PARTNER_BOOKMARKS_START = -1000;
+
         public static final String MOBILE_FOLDER_GUID = "mobile";
         public static final String PLACES_FOLDER_GUID = "places";
         public static final String MENU_FOLDER_GUID = "menu";
