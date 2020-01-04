@@ -1082,6 +1082,10 @@ public:
 
   mozilla::StyleBackendType GetStyleBackendType() const;
 
+  bool IsStyledByServo() const {
+    return GetStyleBackendType() == mozilla::StyleBackendType::Servo;
+  }
+
   
 
 
