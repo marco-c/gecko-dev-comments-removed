@@ -347,9 +347,20 @@ nsTextControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
     
     CSSPseudoElementType pseudoType = CSSPseudoElementType::mozPlaceholder;
 
+    
+    
+    nsIFrame* mainInputFrame = this;
+    if (StyleContext()->GetPseudoType() == CSSPseudoElementType::mozNumberText) {
+      do {
+        mainInputFrame = mainInputFrame->GetParent();
+      } while (mainInputFrame &&
+               mainInputFrame->GetType() != nsGkAtoms::numberControlFrame);
+      MOZ_ASSERT(mainInputFrame);
+    }
+
     RefPtr<nsStyleContext> placeholderStyleContext =
       PresContext()->StyleSet()->ResolvePseudoElementStyle(
-          mContent->AsElement(), pseudoType, StyleContext(),
+          mainInputFrame->GetContent()->AsElement(), pseudoType, StyleContext(),
           placeholderNode->AsElement());
 
     if (!aElements.AppendElement(ContentInfo(placeholderNode,
