@@ -135,12 +135,7 @@ protected:
 
 
 
-  nsCOMPtr<nsIContent> mBrowseDirs;
-  
-
-
-
-  nsCOMPtr<nsIContent> mBrowseFiles;
+  nsCOMPtr<nsIContent> mBrowseFilesOrDirs;
 
   
 
