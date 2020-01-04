@@ -119,6 +119,10 @@ typedef enum {
 #endif
 
 
+
+typedef void * cubeb_devid;
+
+
 typedef struct {
   cubeb_sample_format format; 
 
@@ -149,8 +153,12 @@ enum {
   CUBEB_ERROR = -1,                   
   CUBEB_ERROR_INVALID_FORMAT = -2,    
   CUBEB_ERROR_INVALID_PARAMETER = -3, 
-  CUBEB_ERROR_NOT_SUPPORTED = -4      
+  CUBEB_ERROR_NOT_SUPPORTED = -4,     
+  CUBEB_ERROR_DEVICE_UNAVAILABLE = -5 
 };
+
+
+
 
 typedef enum {
   CUBEB_DEVICE_TYPE_UNKNOWN,
@@ -158,31 +166,47 @@ typedef enum {
   CUBEB_DEVICE_TYPE_OUTPUT
 } cubeb_device_type;
 
+
+
+
 typedef enum {
-  CUBEB_DEVICE_STATE_DISABLED,
-  CUBEB_DEVICE_STATE_UNPLUGGED,
-  CUBEB_DEVICE_STATE_ENABLED
+  CUBEB_DEVICE_STATE_DISABLED, 
+  CUBEB_DEVICE_STATE_UNPLUGGED, 
+  CUBEB_DEVICE_STATE_ENABLED 
 } cubeb_device_state;
 
-typedef void * cubeb_devid;
+
+
 
 typedef enum {
-  CUBEB_DEVICE_FMT_S16LE          = 0x0010,
-  CUBEB_DEVICE_FMT_S16BE          = 0x0020,
-  CUBEB_DEVICE_FMT_F32LE          = 0x1000,
-  CUBEB_DEVICE_FMT_F32BE          = 0x2000
+  CUBEB_DEVICE_FMT_S16LE          = 0x0010, 
+  CUBEB_DEVICE_FMT_S16BE          = 0x0020, 
+  CUBEB_DEVICE_FMT_F32LE          = 0x1000, 
+  CUBEB_DEVICE_FMT_F32BE          = 0x2000  
 } cubeb_device_fmt;
 
 #if defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__)
+
 #define CUBEB_DEVICE_FMT_S16NE     CUBEB_DEVICE_FMT_S16BE
+
 #define CUBEB_DEVICE_FMT_F32NE     CUBEB_DEVICE_FMT_F32BE
 #else
+
 #define CUBEB_DEVICE_FMT_S16NE     CUBEB_DEVICE_FMT_S16LE
+
+
 #define CUBEB_DEVICE_FMT_F32NE     CUBEB_DEVICE_FMT_F32LE
 #endif
+
 #define CUBEB_DEVICE_FMT_S16_MASK  (CUBEB_DEVICE_FMT_S16LE | CUBEB_DEVICE_FMT_S16BE)
+
 #define CUBEB_DEVICE_FMT_F32_MASK  (CUBEB_DEVICE_FMT_F32LE | CUBEB_DEVICE_FMT_F32BE)
+
 #define CUBEB_DEVICE_FMT_ALL       (CUBEB_DEVICE_FMT_S16_MASK | CUBEB_DEVICE_FMT_F32_MASK)
+
+
+
+
 
 typedef enum {
   CUBEB_DEVICE_PREF_NONE          = 0x00,
@@ -191,6 +215,10 @@ typedef enum {
   CUBEB_DEVICE_PREF_NOTIFICATION  = 0x04,
   CUBEB_DEVICE_PREF_ALL           = 0x0F
 } cubeb_device_pref;
+
+
+
+
 
 typedef struct {
   cubeb_devid devid;          
@@ -204,7 +232,7 @@ typedef struct {
   cubeb_device_pref preferred;
 
   cubeb_device_fmt format;    
-  cubeb_device_fmt default_format;
+  cubeb_device_fmt default_format; 
   unsigned int max_channels;  
   unsigned int default_rate;  
   unsigned int max_rate;      
@@ -229,9 +257,13 @@ typedef struct {
 
 
 
+
+
+
 typedef long (* cubeb_data_callback)(cubeb_stream * stream,
                                      void * user_ptr,
-                                     void * buffer,
+                                     const void * input_buffer,
+                                     void * output_buffer,
                                      long nframes);
 
 
@@ -316,10 +348,21 @@ void cubeb_destroy(cubeb * context);
 
 
 
+
+
+
+
+
+
+
+
 int cubeb_stream_init(cubeb * context,
                       cubeb_stream ** stream,
                       char const * stream_name,
-                      cubeb_stream_params stream_params,
+                      cubeb_devid input_device,
+                      cubeb_stream_params * input_stream_params,
+                      cubeb_devid output_device,
+                      cubeb_stream_params * output_stream_params,
                       unsigned int latency,
                       cubeb_data_callback data_callback,
                       cubeb_state_callback state_callback,
@@ -409,7 +452,7 @@ int cubeb_stream_device_destroy(cubeb_stream * stream,
 
 
 int cubeb_stream_register_device_changed_callback(cubeb_stream * stream,
-                                                  cubeb_device_changed_callback  device_changed_callback);
+                                                  cubeb_device_changed_callback device_changed_callback);
 
 
 
@@ -442,7 +485,9 @@ int cubeb_device_info_destroy(cubeb_device_info * info);
 
 
 
+
 int cubeb_register_device_collection_changed(cubeb * context,
+                                       cubeb_device_type devtype,
                                        cubeb_device_collection_changed_callback callback,
                                        void * user_ptr);
 
