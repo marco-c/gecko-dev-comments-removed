@@ -1,4 +1,4 @@
-function test()
+add_task(function * ()
 {
   const kPrefName_AutoScroll = "general.autoScroll";
   Services.prefs.setBoolPref(kPrefName_AutoScroll, true);
@@ -21,7 +21,7 @@ function test()
   {
     key = aChar;
     dispatchedKeyEvents = kNoKeyEvents;
-    EventUtils.sendChar(key, gBrowser.contentWindow);
+    EventUtils.sendChar(key);
     is(dispatchedKeyEvents, expectedKeyEvents,
        "unexpected key events were dispatched or not dispatched: " + key);
   }
@@ -33,17 +33,17 @@ function test()
   {
     key = aKey;
     dispatchedKeyEvents = kNoKeyEvents;
-    EventUtils.sendKey(key, gBrowser.contentWindow);
+    EventUtils.sendKey(key);
     is(dispatchedKeyEvents, expectedKeyEvents,
        "unexpected key events were dispatched or not dispatched: " + key);
   }
 
   function onKey(aEvent)
   {
-    if (aEvent.target != root && aEvent.target != root.ownerDocument.body) {
-      ok(false, "unknown target: " + aEvent.target.tagName);
-      return;
-    }
+
+
+
+
 
     var keyFlag;
     switch (aEvent.type) {
@@ -64,67 +64,57 @@ function test()
     is(keyFlag, expectedKeyEvents & keyFlag, aEvent.type + " fired: " + key);
   }
 
-  waitForExplicitFinish();
-  gBrowser.selectedBrowser.addEventListener("pageshow", onLoad, false);
   var dataUri = 'data:text/html,<body style="height:10000px;"></body>';
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   gBrowser.loadURI(dataUri);
+  yield loadedPromise;
 
-  function onLoad() {
-    gBrowser.selectedBrowser.removeEventListener("pageshow", onLoad, false);
-    waitForFocus(onFocus, content);
-  }
+  yield SimpleTest.promiseFocus(gBrowser.selectedBrowser);
 
-  function onFocus() {
-    var doc = gBrowser.contentDocument;
+  window.addEventListener("keydown", onKey, false);
+  window.addEventListener("keypress", onKey, false);
+  window.addEventListener("keyup", onKey, false);
 
-    root = doc.documentElement;
-    root.addEventListener("keydown", onKey, true);
-    root.addEventListener("keypress", onKey, true);
-    root.addEventListener("keyup", onKey, true);
+  
+  expectedKeyEvents = kAllKeyEvents;
+  sendChar("A");
 
-    
-    expectedKeyEvents = kAllKeyEvents;
-    sendChar("A");
+  
+  let shownPromise = BrowserTestUtils.waitForEvent(window, "popupshown", false,
+                       event => event.originalTarget.className == "autoscroller");
+  yield BrowserTestUtils.synthesizeMouseAtPoint(10, 10, { button: 1 },
+                                                gBrowser.selectedBrowser);
+  yield shownPromise;
 
-    
-    EventUtils.synthesizeMouse(root, 10, 10, { button: 1 },
-                               gBrowser.contentWindow);
+  
+  expectedKeyEvents = kNoKeyEvents;
+  sendChar("A");
+  sendKey("DOWN");
+  sendKey("RETURN");
+  sendKey("RETURN");
+  sendKey("HOME");
+  sendKey("END");
+  sendKey("TAB");
+  sendKey("RETURN");
 
-    
-    
-    executeSoon(continueTest);
-  }
+  
+  
+  
+  expectedKeyEvents = kKeyUpEvent;
+  sendKey("ESCAPE");
 
-  function continueTest() {
-    
-    expectedKeyEvents = kNoKeyEvents;
-    sendChar("A");
-    sendKey("DOWN");
-    sendKey("RETURN");
-    sendKey("RETURN");
-    sendKey("HOME");
-    sendKey("END");
-    sendKey("TAB");
-    sendKey("RETURN");
+  
+  expectedKeyEvents = kAllKeyEvents;
+  sendChar("A");
 
-    
-    
-    
-    expectedKeyEvents = kKeyUpEvent;
-    sendKey("ESCAPE");
+  window.removeEventListener("keydown", onKey, false);
+  window.removeEventListener("keypress", onKey, false);
+  window.removeEventListener("keyup", onKey, false);
 
-    
-    expectedKeyEvents = kAllKeyEvents;
-    sendChar("A");
+  
+  if (Services.prefs.prefHasUserValue(kPrefName_AutoScroll))
+    Services.prefs.clearUserPref(kPrefName_AutoScroll);
 
-    root.removeEventListener("keydown", onKey, true);
-    root.removeEventListener("keypress", onKey, true);
-    root.removeEventListener("keyup", onKey, true);
-
-    
-    if (Services.prefs.prefHasUserValue(kPrefName_AutoScroll))
-      Services.prefs.clearUserPref(kPrefName_AutoScroll);
-
-    finish();
-  }
-}
+  finish();
+});

@@ -1,75 +1,67 @@
-function test()
+add_task(function* ()
 {
   const kPrefName_AutoScroll = "general.autoScroll";
   Services.prefs.setBoolPref(kPrefName_AutoScroll, false);
 
-  var doc;
-
-  function startLoad(dataUri) {
-    gBrowser.selectedBrowser.addEventListener("pageshow", onLoad, false);
-    gBrowser.loadURI(dataUri);
-  }
-
-  function onLoad() {
-    gBrowser.selectedBrowser.removeEventListener("pageshow", onLoad, false);
-    waitForFocus(onFocus, content);
-  }
-
-  function onFocus() {
-    doc = gBrowser.contentDocument;
-    runChecks();
-  }
-
-  function endTest() {
-    
-    if (Services.prefs.prefHasUserValue(kPrefName_AutoScroll))
-      Services.prefs.clearUserPref(kPrefName_AutoScroll);
-
-    
-    waitForFocus(finish);
-  }
-
-  waitForExplicitFinish();
-
   let dataUri = 'data:text/html,<html><body id="i" style="overflow-y: scroll"><div style="height: 2000px"></div>\
       <iframe id="iframe" style="display: none;"></iframe>\
 </body></html>';
-  startLoad(dataUri);
 
-  function runChecks() {
-    var elem = doc.getElementById('i');
+  let loadedPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  gBrowser.loadURI(dataUri);
+  yield loadedPromise;
+
+  yield BrowserTestUtils.synthesizeMouse("#i", 50, 50, { button: 1 },
+                                         gBrowser.selectedBrowser);
+
+  yield ContentTask.spawn(gBrowser.selectedBrowser, { }, function* () {
+    var iframe = content.document.getElementById("iframe");
+
+    if (iframe) {
+      var e = new iframe.contentWindow.PageTransitionEvent("pagehide",
+                                                           { bubbles: true,
+                                                             cancelable: true,
+                                                             persisted: false });
+      iframe.contentDocument.dispatchEvent(e);
+      iframe.contentDocument.documentElement.dispatchEvent(e);
+    }
+  });
+
+  yield BrowserTestUtils.synthesizeMouse("#i", 100, 100,
+                                         { type: "mousemove", clickCount: "0" },
+                                         gBrowser.selectedBrowser);
+
+  
+  
+  yield new Promise(resolve => window.requestAnimationFrame(resolve));
+
+  let msg = yield ContentTask.spawn(gBrowser.selectedBrowser, { }, function* () {
     
     
-    var skipFrames = 1;
-    var checkScroll = function () {
-      if (skipFrames--) {
-        window.requestAnimationFrame(checkScroll);
-        return;
+    return new Promise(resolve => {
+      function checkScroll() {
+        let msg = "";
+        let elem = content.document.getElementById('i');
+        if (elem.scrollTop != 0) {
+          msg += "element should not have scrolled vertically";
+        }
+        if (elem.scrollLeft != 0) {
+          msg += "element should not have scrolled horizontally";
+        }
+
+        resolve(msg);
       }
-      ok(elem.scrollTop == 0, "element should not have scrolled vertically");
-      ok(elem.scrollLeft == 0, "element should not have scrolled horizontally");
 
-      endTest();
-    };
-    EventUtils.synthesizeMouse(elem, 50, 50, { button: 1 },
-                               gBrowser.contentWindow);
+      content.requestAnimationFrame(checkScroll);
+    });
+  });
 
-    var iframe = gBrowser.contentDocument.getElementById("iframe");
-    var e = new iframe.contentWindow.PageTransitionEvent("pagehide",
-                                                         { bubbles: true,
-                                                           cancelable: true,
-                                                           persisted: false });
-    iframe.contentDocument.dispatchEvent(e);
-    iframe.contentDocument.documentElement.dispatchEvent(e);
+  ok(!msg, "element scroll " + msg);
 
-    EventUtils.synthesizeMouse(elem, 100, 100,
-                               { type: "mousemove", clickCount: "0" },
-                               gBrowser.contentWindow);
-    
+  
+  if (Services.prefs.prefHasUserValue(kPrefName_AutoScroll))
+    Services.prefs.clearUserPref(kPrefName_AutoScroll);
 
-
-
-
-    window.requestAnimationFrame(checkScroll);
-  }
-}
+  
+  yield SimpleTest.promiseFocus();
+});
