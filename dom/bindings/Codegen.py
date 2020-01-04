@@ -2032,24 +2032,8 @@ class PropertyDefiner:
 
     @staticmethod
     def getControllingCondition(interfaceMember, descriptor):
-        
-        
-        
-        
-        
-        
         interface = descriptor.interface
         nonExposureSet = interface.exposureSet - interfaceMember.exposureSet
-        
-        
-        if len(nonExposureSet) and not descriptor.workers:
-            workerProvider = descriptor.config.getDescriptorProvider(True)
-            workerDesc = workerProvider.getDescriptor(interface.identifier.name)
-            if workerDesc.workers:
-                
-                
-                
-                nonExposureSet.difference_update(interface.getWorkerExposureSet())
 
         return MemberCondition(
             PropertyDefiner.getStringAttr(interfaceMember,
