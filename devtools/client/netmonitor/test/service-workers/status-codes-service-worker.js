@@ -2,14 +2,7 @@
 
 
 
-"use strict";
-
-self.addEventListener("activate", event => {
-  
-  event.waitUntil(self.clients.claim());
-});
-
-self.addEventListener("fetch", event => {
+addEventListener("fetch", function (event) {
   let response = new Response("Service worker response");
   event.respondWith(response);
 });
