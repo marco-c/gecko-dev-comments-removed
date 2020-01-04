@@ -193,7 +193,7 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
     case eTouchEnd:
       aIsHandlingUserInput = true;
       
-    case NS_TOUCH_CANCEL: {
+    case eTouchCancel: {
       
       
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
