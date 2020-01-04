@@ -613,41 +613,33 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
 
           
           let window = destinationWindow || tab.ownerDocument.defaultView;
-          let windowId = WindowManager.getId(window);
           let gBrowser = window.gBrowser;
 
-          let getInsertionPoint = () => {
-            let point = indexMap.get(window) || index;
-            
-            if (point == -1) {
-              point = gBrowser.tabs.length;
-            }
-            indexMap.set(window, point + 1);
-            return point;
-          };
+          let insertionPoint = indexMap.get(window) || index;
+          
+          if (insertionPoint == -1) {
+            insertionPoint = gBrowser.tabs.length;
+          }
 
-          if (WindowManager.getId(tab.ownerDocument.defaultView) !== windowId) {
+          
+          
+          
+          
+          let numPinned = gBrowser._numPinnedTabs;
+          let ok = tab.pinned ? insertionPoint <= numPinned : insertionPoint >= numPinned;
+          if (!ok) {
+            continue;
+          }
+
+          indexMap.set(window, insertionPoint + 1);
+
+          if (tab.ownerDocument.defaultView !== window) {
             
             
-            let newTab = gBrowser.addTab("about:blank");
-            let newBrowser = gBrowser.getBrowserForTab(newTab);
-            gBrowser.updateBrowserRemotenessByURL(newBrowser, tab.linkedBrowser.currentURI.spec);
-            newBrowser.stop();
-            
-            void newBrowser.docShell;
-
-            if (tab.pinned) {
-              gBrowser.pinTab(newTab);
-            }
-
-            gBrowser.moveTabTo(newTab, getInsertionPoint());
-
-            tab.parentNode._finishAnimateTabMove();
-            gBrowser.swapBrowsersAndCloseOther(newTab, tab);
-            tab = newTab;
+            tab = gBrowser.adoptTab(tab, insertionPoint, false);
           } else {
             
-            gBrowser.moveTabTo(tab, getInsertionPoint());
+            gBrowser.moveTabTo(tab, insertionPoint);
           }
           tabsMoved.push(tab);
         }
