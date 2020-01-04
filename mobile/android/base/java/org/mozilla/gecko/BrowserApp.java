@@ -341,7 +341,12 @@ public class BrowserApp extends GeckoApp
         switch (msg) {
             case SELECTED:
                 if (Tabs.getInstance().isSelectedTab(tab) && mDynamicToolbar.isEnabled()) {
-                    mDynamicToolbar.setVisible(true, VisibilityTransition.ANIMATE);
+                    final VisibilityTransition transition = (tab.getShouldShowToolbarWithoutAnimationOnFirstSelection()) ?
+                            VisibilityTransition.IMMEDIATE : VisibilityTransition.ANIMATE;
+                    mDynamicToolbar.setVisible(true, transition);
+
+                    
+                    tab.setShouldShowToolbarWithoutAnimationOnFirstSelection(false);
                 }
                 
             case LOCATION_CHANGE:

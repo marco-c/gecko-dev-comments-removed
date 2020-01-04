@@ -208,6 +208,8 @@ public abstract class GeckoApp
 
     private Intent mRestartIntent;
 
+    private boolean mWasFirstTabShownAfterActivityUnhidden;
+
     abstract public int getLayout();
 
     protected void processTabQueue() {};
@@ -1343,6 +1345,12 @@ public abstract class GeckoApp
         IntentHelper.init(this);
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        mWasFirstTabShownAfterActivityUnhidden = false; 
+    }
+
     
 
 
@@ -1434,6 +1442,9 @@ public abstract class GeckoApp
     private void initialize() {
         mInitialized = true;
 
+        final boolean isFirstTab = !mWasFirstTabShownAfterActivityUnhidden;
+        mWasFirstTabShownAfterActivityUnhidden = true; 
+
         final SafeIntent intent = new SafeIntent(getIntent());
         final String action = intent.getAction();
 
@@ -1490,6 +1501,9 @@ public abstract class GeckoApp
                     int flags = Tabs.LOADURL_NEW_TAB | Tabs.LOADURL_USER_ENTERED | Tabs.LOADURL_EXTERNAL;
                     if (ACTION_HOMESCREEN_SHORTCUT.equals(action)) {
                         flags |= Tabs.LOADURL_PINNED;
+                    }
+                    if (isFirstTab) {
+                        flags |= Tabs.LOADURL_FIRST_AFTER_ACTIVITY_UNHIDDEN;
                     }
                     loadStartupTab(passedUri, intent, flags);
                 }
@@ -1886,6 +1900,9 @@ public abstract class GeckoApp
     protected void onNewIntent(Intent externalIntent) {
         final SafeIntent intent = new SafeIntent(externalIntent);
 
+        final boolean isFirstTab = !mWasFirstTabShownAfterActivityUnhidden;
+        mWasFirstTabShownAfterActivityUnhidden = true; 
+
         
         
         if (!mInitialized) {
@@ -1910,9 +1927,11 @@ public abstract class GeckoApp
                 @Override
                 public void run() {
                     final String url = intent.getDataString();
-                    Tabs.getInstance().loadUrlWithIntentExtras(url, intent, Tabs.LOADURL_NEW_TAB |
-                                                                                    Tabs.LOADURL_USER_ENTERED |
-                                                                                    Tabs.LOADURL_EXTERNAL);
+                    int flags = Tabs.LOADURL_NEW_TAB | Tabs.LOADURL_USER_ENTERED | Tabs.LOADURL_EXTERNAL;
+                    if (isFirstTab) {
+                        flags |= Tabs.LOADURL_FIRST_AFTER_ACTIVITY_UNHIDDEN;
+                    }
+                    Tabs.getInstance().loadUrlWithIntentExtras(url, intent, flags);
                 }
             });
         } else if (ACTION_HOMESCREEN_SHORTCUT.equals(action)) {
