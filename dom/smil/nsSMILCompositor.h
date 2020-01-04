@@ -85,10 +85,6 @@ public:
   void UpdateCachedBaseValue(const nsSMILValue& aBaseValue);
 
   
-  static PLDHashOperator DoComposeAttribute(
-      nsSMILCompositor* aCompositor, void *aData);
-
-  
   KeyType mKey;
 
   

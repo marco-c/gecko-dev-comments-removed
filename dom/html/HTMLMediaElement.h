@@ -1206,11 +1206,6 @@ protected:
   
   double mVolume;
 
-  
-  
-  static PLDHashOperator BuildObjectFromTags(nsCStringHashKey::KeyType aKey,
-                                             nsCString aValue,
-                                             void* aUserArg);
   nsAutoPtr<const MetadataTags> mTags;
 
   
