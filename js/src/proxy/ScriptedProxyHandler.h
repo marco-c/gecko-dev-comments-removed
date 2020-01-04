@@ -4,17 +4,18 @@
 
 
 
-#ifndef proxy_ScriptedDirectProxyHandler_h
-#define proxy_ScriptedDirectProxyHandler_h
+#ifndef proxy_ScriptedProxyHandler_h
+#define proxy_ScriptedProxyHandler_h
 
 #include "js/Proxy.h"
 
 namespace js {
 
 
-class ScriptedDirectProxyHandler : public BaseProxyHandler {
+class ScriptedProxyHandler : public BaseProxyHandler
+{
   public:
-    MOZ_CONSTEXPR ScriptedDirectProxyHandler()
+    MOZ_CONSTEXPR ScriptedProxyHandler()
       : BaseProxyHandler(&family)
     { }
 
@@ -29,7 +30,6 @@ class ScriptedDirectProxyHandler : public BaseProxyHandler {
     virtual bool delete_(JSContext* cx, HandleObject proxy, HandleId id,
                          ObjectOpResult& result) const override;
 
-    
     virtual bool getPrototype(JSContext* cx, HandleObject proxy,
                               MutableHandleObject protop) const override;
     virtual bool setPrototype(JSContext* cx, HandleObject proxy, HandleObject proto,
@@ -58,15 +58,6 @@ class ScriptedDirectProxyHandler : public BaseProxyHandler {
         return BaseProxyHandler::hasOwn(cx, proxy, id, bp);
     }
 
-
-    
-    
-    
-    virtual bool getOwnEnumerablePropertyKeys(JSContext* cx, HandleObject proxy,
-                                              AutoIdVector& props) const override {
-        return BaseProxyHandler::getOwnEnumerablePropertyKeys(cx, proxy, props);
-    }
-
     
     virtual bool nativeCall(JSContext* cx, IsAcceptableThis test, NativeImpl impl,
                             const CallArgs& args) const override;
@@ -90,7 +81,7 @@ class ScriptedDirectProxyHandler : public BaseProxyHandler {
     virtual bool isScripted() const override { return true; }
 
     static const char family;
-    static const ScriptedDirectProxyHandler singleton;
+    static const ScriptedProxyHandler singleton;
 
     
     
