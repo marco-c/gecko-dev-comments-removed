@@ -10,13 +10,6 @@
 #include "BluetoothCommon.h"
 #include "js/TypeDecls.h"
 
-namespace mozilla {
-namespace dom {
-class GattPermissions;
-class GattCharacteristicProperties;
-}
-}
-
 BEGIN_BLUETOOTH_NAMESPACE
 
 class BluetoothNamedValue;
@@ -52,48 +45,6 @@ StringToUuid(const nsAString& aString, BluetoothUuid& aUuid);
 
 nsresult
 GenerateUuid(nsAString &aUuidString);
-
-
-
-
-
-
-
-void
-GattPermissionsToDictionary(BluetoothGattAttrPerm aBits,
-                            GattPermissions& aPermissions);
-
-
-
-
-
-
-
-void
-GattPermissionsToBits(const GattPermissions& aPermissions,
-                      BluetoothGattAttrPerm& aBits);
-
-
-
-
-
-
-
-
-void
-GattPropertiesToDictionary(BluetoothGattCharProp aBits,
-                           GattCharacteristicProperties& aProperties);
-
-
-
-
-
-
-
-
-void
-GattPropertiesToBits(const GattCharacteristicProperties& aProperties,
-                     BluetoothGattCharProp& aBits);
 
 
 

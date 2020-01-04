@@ -16,23 +16,15 @@
 #include "nsWrapperCache.h"
 #include "nsPIDOMWindow.h"
 
-namespace mozilla {
-namespace dom {
-struct GattPermissions;
-}
-}
-
 BEGIN_BLUETOOTH_NAMESPACE
 
 class BluetoothGattCharacteristic;
 class BluetoothSignal;
-class BluetoothValue;
 
 class BluetoothGattDescriptor final : public nsISupports
                                     , public nsWrapperCache
                                     , public BluetoothSignalObserver
 {
-  friend class BluetoothGattCharacteristic;
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(BluetoothGattDescriptor)
@@ -52,8 +44,6 @@ public:
 
   void GetValue(JSContext* cx, JS::MutableHandle<JSObject*> aValue) const;
 
-  void GetPermissions(GattPermissions& aPermissions) const;
-
   
 
 
@@ -66,42 +56,17 @@ public:
 
   void Notify(const BluetoothSignal& aData); 
 
-  const BluetoothAttributeHandle& GetDescriptorHandle() const
-  {
-    return mDescriptorHandle;
-  }
-
   nsPIDOMWindow* GetParentObject() const
   {
      return mOwner;
   }
 
-  void GetUuid(BluetoothUuid& aUuid) const;
-
-  BluetoothGattAttrPerm GetPermissions() const
-  {
-    return mPermissions;
-  }
-
-  uint16_t GetHandleCount() const
-  {
-    return sHandleCount;
-  }
-
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  
   BluetoothGattDescriptor(nsPIDOMWindow* aOwner,
                           BluetoothGattCharacteristic* aCharacteristic,
                           const BluetoothGattId& aDescriptorId);
-
-  
-  BluetoothGattDescriptor(nsPIDOMWindow* aOwner,
-                          BluetoothGattCharacteristic* aCharacteristic,
-                          const nsAString& aDescriptorUuid,
-                          const GattPermissions& aPermissions,
-                          const ArrayBuffer& aValue);
 
 private:
   ~BluetoothGattDescriptor();
@@ -112,33 +77,6 @@ private:
 
 
   void HandleDescriptorValueUpdated(const BluetoothValue& aValue);
-
-  
-
-
-
-
-  void AssignAppUuid(const nsAString& aAppUuid);
-
-  
-
-
-
-
-
-
-  void AssignDescriptorHandle(const BluetoothAttributeHandle& aDescriptorHandle);
-
-  
-
-
-
-
-
-  bool IsActivated() const
-  {
-    return mActive;
-  }
 
   
 
@@ -166,66 +104,8 @@ private:
 
 
   nsTArray<uint8_t> mValue;
-
-  
-
-
-  BluetoothGattAttrPerm mPermissions;
-
-  
-
-
-  const BluetoothAttRole mAttRole;
-
-  
-
-
-
-
-
-
-
-
-
-
-  bool mActive;
-
-  
-
-
-
-
-  BluetoothAttributeHandle mDescriptorHandle;
-
-  
-
-
-  static const uint16_t sHandleCount;
 };
 
 END_BLUETOOTH_NAMESPACE
-
-
-
-
-
-
-
-
-
-template <>
-class nsDefaultComparator <
-  nsRefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>,
-  mozilla::dom::bluetooth::BluetoothUuid> {
-public:
-  bool Equals(
-    const nsRefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>& aDesc,
-    const mozilla::dom::bluetooth::BluetoothUuid& aUuid) const
-  {
-    mozilla::dom::bluetooth::BluetoothUuid uuid;
-    aDesc->GetUuid(uuid);
-    return uuid == aUuid;
-  }
-};
 
 #endif 
