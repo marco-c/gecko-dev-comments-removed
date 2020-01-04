@@ -8,6 +8,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+                                  "resource://gre/modules/Task.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
+                                  "resource://gre/modules/Timer.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "styleSheetService",
                                    "@mozilla.org/content/style-sheet-service;1",
@@ -19,6 +23,8 @@ XPCOMUtils.defineLazyGetter(this, "colorUtils", () => {
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
+
+const POPUP_LOAD_TIMEOUT_MS = 200;
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
@@ -86,18 +92,15 @@ XPCOMUtils.defineLazyGetter(this, "standaloneStylesheets", () => {
 });
 
 class BasePopup {
-  constructor(extension, viewNode, popupURL, browserStyle) {
-    let popupURI = Services.io.newURI(popupURL, null, extension.baseURI);
-
-    Services.scriptSecurityManager.checkLoadURIWithPrincipal(
-      extension.principal, popupURI,
-      Services.scriptSecurityManager.DISALLOW_SCRIPT);
-
+  constructor(extension, viewNode, popupURL, browserStyle, fixedWidth = false) {
     this.extension = extension;
-    this.popupURI = popupURI;
+    this.popupURL = popupURL;
     this.viewNode = viewNode;
     this.browserStyle = browserStyle;
     this.window = viewNode.ownerGlobal;
+    this.destroyed = false;
+    this.fixedWidth = fixedWidth;
+    this.ignoreResizes = true;
 
     this.contentReady = new Promise(resolve => {
       this._resolveContentReady = resolve;
@@ -110,36 +113,43 @@ class BasePopup {
     this.borderColor = doc.defaultView.getComputedStyle(arrowContent).borderTopColor;
 
     this.browser = null;
-    this.browserReady = this.createBrowser(viewNode, popupURI);
+    this.browserLoaded = new Promise((resolve, reject) => {
+      this.browserLoadedDeferred = {resolve, reject};
+    });
+    this.browserReady = this.createBrowser(viewNode, popupURL);
   }
 
   destroy() {
-    this.browserReady.then(() => {
-      this.browser.removeEventListener("DOMWindowCreated", this, true);
-      this.browser.removeEventListener("load", this, true);
-      this.browser.removeEventListener("DOMTitleChanged", this, true);
-      this.browser.removeEventListener("DOMWindowClose", this, true);
-      this.browser.removeEventListener("MozScrolledAreaChanged", this, true);
-      this.viewNode.removeEventListener(this.DESTROY_EVENT, this);
-      this.viewNode.style.maxHeight = "";
+    this.destroyed = true;
+    this.browserLoadedDeferred.reject(new Error("Popup destroyed"));
+    return this.browserReady.then(() => {
+      this.destroyBrowser(this.browser);
       this.browser.remove();
 
-      this.panel.style.setProperty("--panel-arrowcontent-background", "");
-      this.panel.style.setProperty("--panel-arrow-image-vertical", "");
+      this.viewNode.removeEventListener(this.DESTROY_EVENT, this);
+      this.viewNode.style.maxHeight = "";
+
+      this.panel.style.removeProperty("--panel-arrowcontent-background");
+      this.panel.style.removeProperty("--panel-arrow-image-vertical");
 
       this.browser = null;
       this.viewNode = null;
     });
   }
 
+  destroyBrowser(browser) {
+    browser.removeEventListener("DOMWindowCreated", this, true);
+    browser.removeEventListener("load", this, true);
+    browser.removeEventListener("DOMContentLoaded", this, true);
+    browser.removeEventListener("DOMTitleChanged", this, true);
+    browser.removeEventListener("DOMWindowClose", this, true);
+    browser.removeEventListener("MozScrolledAreaChanged", this, true);
+  }
+
   
   
   get DESTROY_EVENT() {
     throw new Error("Not implemented");
-  }
-
-  get fixedWidth() {
-    return false;
   }
 
   get panel() {
@@ -186,6 +196,11 @@ class BasePopup {
         this.viewNode.setAttribute("aria-label", this.browser.contentTitle);
         break;
 
+      case "DOMContentLoaded":
+        this.browserLoadedDeferred.resolve();
+        this.resizeBrowser(true);
+        break;
+
       case "load":
         
         
@@ -193,7 +208,7 @@ class BasePopup {
         
         
         Promise.resolve().then(() => {
-          this.resizeBrowser();
+          this.resizeBrowser(true);
         });
 
         
@@ -212,7 +227,7 @@ class BasePopup {
     }
   }
 
-  createBrowser(viewNode, popupURI) {
+  createBrowser(viewNode, popupURL = null) {
     let document = viewNode.ownerDocument;
     this.browser = document.createElementNS(XUL_NS, "browser");
     this.browser.setAttribute("type", "content");
@@ -233,6 +248,20 @@ class BasePopup {
 
     viewNode.appendChild(this.browser);
 
+    let initBrowser = browser => {
+      browser.addEventListener("DOMWindowCreated", this, true);
+      browser.addEventListener("load", this, true);
+      browser.addEventListener("DOMContentLoaded", this, true);
+      browser.addEventListener("DOMTitleChanged", this, true);
+      browser.addEventListener("DOMWindowClose", this, true);
+      browser.addEventListener("MozScrolledAreaChanged", this, true);
+    };
+
+    if (!popupURL) {
+      initBrowser(this.browser);
+      return this.browser;
+    }
+
     return new Promise(resolve => {
       
       
@@ -243,23 +272,29 @@ class BasePopup {
       };
       this.browser.addEventListener("load", loadListener, true);
     }).then(() => {
+      initBrowser(this.browser);
+
       let {contentWindow} = this.browser;
 
       contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                    .getInterface(Ci.nsIDOMWindowUtils)
                    .allowScriptsToClose();
 
-      this.browser.setAttribute("src", popupURI.spec);
-
-      this.browser.addEventListener("DOMWindowCreated", this, true);
-      this.browser.addEventListener("load", this, true);
-      this.browser.addEventListener("DOMTitleChanged", this, true);
-      this.browser.addEventListener("DOMWindowClose", this, true);
-      this.browser.addEventListener("MozScrolledAreaChanged", this, true);
+      this.browser.setAttribute("src", popupURL);
     });
   }
+
   
-  resizeBrowser() {
+  resizeBrowser(ignoreThrottling = false) {
+    if (this.ignoreResizes) {
+      return;
+    }
+
+    if (ignoreThrottling && this.resizeTimeout) {
+      this.window.clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = null;
+    }
+
     if (this.resizeTimeout == null) {
       this.resizeTimeout = this.window.setTimeout(() => {
         try {
@@ -268,16 +303,13 @@ class BasePopup {
           this.resizeTimeout = null;
         }
       }, RESIZE_TIMEOUT);
-      this._resizeBrowser(false);
+
+      this._resizeBrowser();
     }
   }
 
-  _resizeBrowser(clearTimeout = true) {
-    if (!this.browser) {
-      return;
-    }
-
-    let doc = this.browser.contentDocument;
+  _resizeBrowser() {
+    let doc = this.browser && this.browser.contentDocument;
     if (!doc || !doc.documentElement) {
       return;
     }
@@ -393,6 +425,8 @@ global.PanelPopup = class PanelPopup extends BasePopup {
 
     super(extension, panel, popupURL, browserStyle);
 
+    this.ignoreResizes = false;
+
     this.contentReady.then(() => {
       panel.openPopup(imageNode, "bottomcenter topright", 0, 0, false, false);
     });
@@ -418,38 +452,115 @@ global.PanelPopup = class PanelPopup extends BasePopup {
 };
 
 global.ViewPopup = class ViewPopup extends BasePopup {
-  constructor(...args) {
-    super(...args);
+  constructor(extension, window, popupURL, browserStyle, fixedWidth) {
+    let document = window.document;
 
     
     
-    this.viewHeight = this.viewNode.boxObject.height;
-
     
-    
-    let popupRect = this.panel.getBoundingClientRect();
+    let panel = document.createElement("panel");
+    panel.setAttribute("type", "arrow");
+    document.getElementById("mainPopupSet").appendChild(panel);
 
-    let win = this.window;
-    let popupBottom = win.mozInnerScreenY + popupRect.bottom;
-    let popupTop = win.mozInnerScreenY + popupRect.top;
+    super(extension, panel, popupURL, browserStyle, fixedWidth);
 
-    let screenBottom = win.screen.availTop + win.screen.availHeight;
-    this.extraHeight = {
-      bottom: Math.max(0, screenBottom - popupBottom),
-      top:  Math.max(0, popupTop - win.screen.availTop),
-    };
+    this.attached = false;
+    this.tempPanel = panel;
+
+    this.browser.classList.add("webextension-preload-browser");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  attach(viewNode) {
+    return Task.spawn(function* () {
+      this.viewNode = viewNode;
+      this.viewNode.addEventListener(this.DESTROY_EVENT, this);
+
+      
+      
+      
+      
+      
+      yield Promise.all([
+        this.browserReady,
+        Promise.race([
+          
+          
+          this.browserLoaded.catch(() => {}),
+          new Promise(resolve => setTimeout(resolve, POPUP_LOAD_TIMEOUT_MS)),
+        ]),
+      ]);
+
+      if (this.destroyed) {
+        return false;
+      }
+
+      this.attached = true;
+
+      
+      
+      this.viewHeight = this.viewNode.boxObject.height;
+
+      
+      
+      let popupRect = this.panel.getBoundingClientRect();
+
+      let win = this.window;
+      let popupBottom = win.mozInnerScreenY + popupRect.bottom;
+      let popupTop = win.mozInnerScreenY + popupRect.top;
+
+      let screenBottom = win.screen.availTop + win.screen.availHeight;
+      this.extraHeight = {
+        bottom: Math.max(0, screenBottom - popupBottom),
+        top:  Math.max(0, popupTop - win.screen.availTop),
+      };
+
+      
+      let browser = this.browser;
+      this.createBrowser(this.viewNode);
+
+      this.browser.swapDocShells(browser);
+      this.destroyBrowser(browser);
+
+      this.ignoreResizes = false;
+      this.resizeBrowser(true);
+
+      this.tempPanel.remove();
+      this.tempPanel = null;
+
+      return true;
+    }.bind(this));
+  }
+
+  destroy() {
+    return super.destroy().then(() => {
+      if (this.tempPanel) {
+        this.tempPanel.remove();
+        this.tempPanel = null;
+      }
+    });
   }
 
   get DESTROY_EVENT() {
     return "ViewHiding";
   }
 
-  get fixedWidth() {
-    return !this.viewNode.classList.contains("cui-widget-panelview");
-  }
-
   closePopup() {
-    CustomizableUI.hidePanelForNode(this.viewNode);
+    if (this.attached) {
+      CustomizableUI.hidePanelForNode(this.viewNode);
+    } else {
+      this.destroy();
+    }
   }
 };
 
