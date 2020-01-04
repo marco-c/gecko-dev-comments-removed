@@ -100,49 +100,51 @@ add_task(function* () {
   let glue = Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsIObserver)
   glue.observe(null, TOPIC_BROWSERGLUE_TEST, TOPICDATA_DISTRIBUTION_CUSTOMIZATION);
 
-  Assert.equal(Services.prefs.getCharPref("distribution.id"), "disttest");
-  Assert.equal(Services.prefs.getCharPref("distribution.version"), "1.0");
-  Assert.equal(Services.prefs.getComplexValue("distribution.about", Ci.nsISupportsString).data, "Tèƨƭ δïƨƭřïβúƭïôñ ƒïℓè");
+  var defaultBranch = Services.prefs.getDefaultBranch(null);
 
-  Assert.equal(Services.prefs.getCharPref("distribution.test.string"), "Test String");
-  Assert.equal(Services.prefs.getCharPref("distribution.test.string.noquotes"), "Test String");
-  Assert.equal(Services.prefs.getIntPref("distribution.test.int"), 777);
-  Assert.equal(Services.prefs.getBoolPref("distribution.test.bool.true"), true);
-  Assert.equal(Services.prefs.getBoolPref("distribution.test.bool.false"), false);
+  Assert.equal(defaultBranch.getCharPref("distribution.id"), "disttest");
+  Assert.equal(defaultBranch.getCharPref("distribution.version"), "1.0");
+  Assert.equal(defaultBranch.getComplexValue("distribution.about", Ci.nsISupportsString).data, "Tèƨƭ δïƨƭřïβúƭïôñ ƒïℓè");
 
-  Assert.throws(() => Services.prefs.getCharPref("distribution.test.empty"));
-  Assert.throws(() => Services.prefs.getIntPref("distribution.test.empty"));
-  Assert.throws(() => Services.prefs.getBoolPref("distribution.test.empty"));
+  Assert.equal(defaultBranch.getCharPref("distribution.test.string"), "Test String");
+  Assert.equal(defaultBranch.getCharPref("distribution.test.string.noquotes"), "Test String");
+  Assert.equal(defaultBranch.getIntPref("distribution.test.int"), 777);
+  Assert.equal(defaultBranch.getBoolPref("distribution.test.bool.true"), true);
+  Assert.equal(defaultBranch.getBoolPref("distribution.test.bool.false"), false);
 
-  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.locale"), "en-US");
-  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.language.en"), "en");
-  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.locale.en-US"), "en-US");
-  Assert.throws(() => Services.prefs.getCharPref("distribution.test.pref.language.de"));
-  
-  Assert.throws(() => Services.prefs.getCharPref("distribution.test.pref.language.reset"));
-  
-  Assert.throws(() => Services.prefs.getCharPref("distribution.test.pref.locale.reset"));
-  
-  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.locale.set"), "Locale Set");
-  
-  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.language.set"), "Language Set");
-  
-  Assert.notEqual(Services.prefs.getCharPref("distribution.test.pref.locale.set"), "Language Set");
+  Assert.throws(() => defaultBranch.getCharPref("distribution.test.empty"));
+  Assert.throws(() => defaultBranch.getIntPref("distribution.test.empty"));
+  Assert.throws(() => defaultBranch.getBoolPref("distribution.test.empty"));
 
-  Assert.equal(Services.prefs.getComplexValue("distribution.test.locale", Ci.nsIPrefLocalizedString).data, "en-US");
-  Assert.equal(Services.prefs.getComplexValue("distribution.test.language.en", Ci.nsIPrefLocalizedString).data, "en");
-  Assert.equal(Services.prefs.getComplexValue("distribution.test.locale.en-US", Ci.nsIPrefLocalizedString).data, "en-US");
-  Assert.throws(() => Services.prefs.getComplexValue("distribution.test.language.de", Ci.nsIPrefLocalizedString));
+  Assert.equal(defaultBranch.getCharPref("distribution.test.pref.locale"), "en-US");
+  Assert.equal(defaultBranch.getCharPref("distribution.test.pref.language.en"), "en");
+  Assert.equal(defaultBranch.getCharPref("distribution.test.pref.locale.en-US"), "en-US");
+  Assert.throws(() => defaultBranch.getCharPref("distribution.test.pref.language.de"));
   
-  Assert.throws(() => Services.prefs.getComplexValue("distribution.test.language.reset", Ci.nsIPrefLocalizedString));
+  Assert.throws(() => defaultBranch.getCharPref("distribution.test.pref.language.reset"));
   
-  Assert.throws(() => Services.prefs.getComplexValue("distribution.test.locale.reset", Ci.nsIPrefLocalizedString));
+  Assert.throws(() => defaultBranch.getCharPref("distribution.test.pref.locale.reset"));
   
-  Assert.equal(Services.prefs.getComplexValue("distribution.test.locale.set", Ci.nsIPrefLocalizedString).data, "Locale Set");
+  Assert.equal(defaultBranch.getCharPref("distribution.test.pref.locale.set"), "Locale Set");
   
-  Assert.equal(Services.prefs.getComplexValue("distribution.test.language.set", Ci.nsIPrefLocalizedString).data, "Language Set");
+  Assert.equal(defaultBranch.getCharPref("distribution.test.pref.language.set"), "Language Set");
   
-  Assert.notEqual(Services.prefs.getComplexValue("distribution.test.locale.set", Ci.nsIPrefLocalizedString).data, "Language Set");
+  Assert.notEqual(defaultBranch.getCharPref("distribution.test.pref.locale.set"), "Language Set");
+
+  Assert.equal(defaultBranch.getComplexValue("distribution.test.locale", Ci.nsIPrefLocalizedString).data, "en-US");
+  Assert.equal(defaultBranch.getComplexValue("distribution.test.language.en", Ci.nsIPrefLocalizedString).data, "en");
+  Assert.equal(defaultBranch.getComplexValue("distribution.test.locale.en-US", Ci.nsIPrefLocalizedString).data, "en-US");
+  Assert.throws(() => defaultBranch.getComplexValue("distribution.test.language.de", Ci.nsIPrefLocalizedString));
+  
+  Assert.throws(() => defaultBranch.getComplexValue("distribution.test.language.reset", Ci.nsIPrefLocalizedString));
+  
+  Assert.throws(() => defaultBranch.getComplexValue("distribution.test.locale.reset", Ci.nsIPrefLocalizedString));
+  
+  Assert.equal(defaultBranch.getComplexValue("distribution.test.locale.set", Ci.nsIPrefLocalizedString).data, "Locale Set");
+  
+  Assert.equal(defaultBranch.getComplexValue("distribution.test.language.set", Ci.nsIPrefLocalizedString).data, "Language Set");
+  
+  Assert.notEqual(defaultBranch.getComplexValue("distribution.test.locale.set", Ci.nsIPrefLocalizedString).data, "Language Set");
 
   do_test_pending();
 
