@@ -2,6 +2,8 @@
 
 
 
+
+
 'use strict';
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
@@ -11,66 +13,170 @@ Cu.import('resource://gre/modules/Services.jsm');
 
 this.EXPORTED_SYMBOLS = ['SystemAppProxy'];
 
+const kMainSystemAppId = 'main';
+
 var SystemAppProxy = {
-  _frame: null,
-  _isLoaded: false,
-  _isReady: false,
+  _frameInfoMap: new Map(),
   _pendingLoadedEvents: [],
   _pendingReadyEvents: [],
   _pendingListeners: [],
 
   
-  registerFrame: function (frame) {
-    this._isReady = false;
-    this._frame = frame;
+  
+  registerFrame: function systemApp_registerFrame(frame) {
+    this.registerFrameWithId(kMainSystemAppId, frame);
+  },
+
+  
+  registerFrameWithId: function systemApp_registerFrameWithId(frameId,
+                                                              frame) {
+    
+    
+    
+    
+    
+    
+    
+    
+
+    let frameInfo = { frameId: frameId,
+                      isReady: false,
+                      isLoaded: false,
+                      frame: frame };
+
+    this._frameInfoMap.set(frameId, frameInfo);
 
     
+    
     this._pendingListeners
-        .forEach((args) =>
-                 this.addEventListener.apply(this, args));
-    this._pendingListeners = [];
+        .forEach(args => {
+          if (args[0] === frameInfo.frameId) {
+            this.addEventListenerWithId.apply(this, args);
+          }
+        });
+    
+    this._pendingListeners =
+      this._pendingListeners
+          .filter(args => { return args[0] != frameInfo.frameId; });
+  },
+
+  unregisterFrameWithId: function systemApp_unregisterFrameWithId(frameId) {
+    this._frameInfoMap.delete(frameId);
+    
+    this._pendingListeners = this._pendingListeners.filter(
+      args => { return args[0] != frameId; });
+    this._pendingReadyEvents = this._pendingReadyEvents.filter(
+        ([evtFrameId]) => { return evtFrameId != frameId });
+    this._pendingLoadedEvents = this._pendingLoadedEvents.filter(
+        ([evtFrameId]) => { return evtFrameId != frameId });
   },
 
   
-  getFrame: function () {
-    return this._frame;
+  _getMainSystemAppInfo: function systemApp_getMainSystemAppInfo() {
+    return this._frameInfoMap.get(kMainSystemAppId);
   },
 
   
   
-  setIsLoaded: function () {
-    if (this._isLoaded) {
-      Cu.reportError('SystemApp has already been declared as being loaded.');
+  getFrame: function systemApp_getFrame() {
+    return this.getFrameWithId(kMainSystemAppId);
+  },
+
+  
+  getFrameWithId: function systemApp_getFrameWithId(frameId) {
+    let frameInfo = this._frameInfoMap.get(frameId);
+
+    if (!frameInfo) {
+      throw new Error('no frame ID is ' + frameId);
     }
-    this._isLoaded = true;
+    if (!frameInfo.frame) {
+      throw new Error('no content window');
+    }
+    return frameInfo.frame;
+  },
+
+  
+  
+  
+  setIsLoaded: function systemApp_setIsLoaded() {
+    this.setIsLoadedWithId(kMainSystemAppId);
+  },
+
+  
+  
+  setIsLoadedWithId: function systemApp_setIsLoadedWithId(frameId) {
+    let frameInfo = this._frameInfoMap.get(frameId);
+    if (!frameInfo) {
+      throw new Error('no frame ID is ' + frameId);
+    }
+
+    if (frameInfo.isLoaded) {
+      if (frameInfo.frameId === kMainSystemAppId) {
+        Cu.reportError('SystemApp has already been declared as being loaded.');
+      }
+      else {
+        Cu.reportError('SystemRemoteApp (ID: ' + frameInfo.frameId + ') ' +
+                       'has already been declared as being loaded.');
+      }
+    }
+
+    frameInfo.isLoaded = true;
 
     
     this._pendingLoadedEvents
-        .forEach(([type, details]) =>
-                 this._sendCustomEvent(type, details, true));
-    this._pendingLoadedEvents = [];
+        .forEach(([evtFrameId, evtType, evtDetails]) => {
+          if (evtFrameId === frameInfo.frameId) {
+            this.sendCustomEventWithId(evtFrameId, evtType, evtDetails, true);
+          }
+        });
+    
+    this._pendingLoadedEvents =
+      this._pendingLoadedEvents
+          .filter(([evtFrameId]) => { return evtFrameId != frameInfo.frameId });
   },
 
   
   
-  setIsReady: function () {
-    if (!this._isLoaded) {
+  
+  setIsReady: function systemApp_setIsReady() {
+    this.setIsReadyWithId(kMainSystemAppId);
+  },
+
+  
+  
+  setIsReadyWithId: function systemApp_setIsReadyWithId(frameId) {
+    let frameInfo = this._frameInfoMap.get(frameId);
+    if (!frameInfo) {
+      throw new Error('no frame ID is ' + frameId);
+    }
+
+    if (!frameInfo.isLoaded) {
       Cu.reportError('SystemApp.setIsLoaded() should be called before setIsReady().');
     }
 
-    if (this._isReady) {
+    if (frameInfo.isReady) {
       Cu.reportError('SystemApp has already been declared as being ready.');
     }
-    this._isReady = true;
+
+    frameInfo.isReady = true;
 
     
     this._pendingReadyEvents
-        .forEach(([type, details]) =>
-                 this._sendCustomEvent(type, details));
-    this._pendingReadyEvents = [];
+        .forEach(([evtFrameId, evtType, evtDetails]) => {
+          if (evtFrameId === frameInfo.frameId) {
+            this.sendCustomEventWithId(evtFrameId, evtType, evtDetails);
+          }
+        });
+
+    
+    this._pendingReadyEvents =
+      this._pendingReadyEvents
+          .filter(([evtFrameId]) => { return evtFrameId != frameInfo.frameId });
   },
 
   
+
+
 
 
 
@@ -92,24 +198,54 @@ var SystemAppProxy = {
                                                        details,
                                                        noPending,
                                                        target) {
-    let content = this._frame ? this._frame.contentWindow : null;
+    let args = Array.prototype.slice.call(arguments);
+    return this.sendCustomEventWithId
+               .apply(this, [kMainSystemAppId].concat(args));
+  },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  sendCustomEventWithId: function systemApp_sendCustomEventWithId(frameId,
+                                                                  type,
+                                                                  details,
+                                                                  noPending,
+                                                                  target) {
+    let frameInfo = this._frameInfoMap.get(frameId);
+    let content = (frameInfo && frameInfo.frame) ?
+                  frameInfo.frame.contentWindow : null;
     
     
-    if (!content || !this._isLoaded) {
+    if (!content || !(frameInfo && frameInfo.isLoaded)) {
       if (noPending) {
-        this._pendingLoadedEvents.push([type, details]);
+        this._pendingLoadedEvents.push([frameId, type, details]);
       } else {
-        this._pendingReadyEvents.push([type, details]);
+        this._pendingReadyEvents.push([frameId, type, details]);
       }
-
       return null;
     }
 
     
     
-    if (!this._isReady && !noPending) {
-      this._pendingReadyEvents.push([type, details]);
+    if (!(frameInfo && frameInfo.isReady) && !noPending) {
+      this._pendingReadyEvents.push([frameId, type, details]);
       return null;
     }
 
@@ -124,8 +260,8 @@ var SystemAppProxy = {
       payload = details ? Cu.cloneInto(details, content) : {};
     }
 
-    if ((target || content) === this._frame.contentWindow) {
-      dump('XXX FIXME : Dispatch a ' + type + ': ' + details.type + "\n");
+    if ((target || content) === frameInfo.frame.contentWindow) {
+      dump('XXX FIXME : Dispatch a ' + type + ': ' + details.type + '\n');
     }
 
     event.initCustomEvent(type, true, false, payload);
@@ -141,26 +277,27 @@ var SystemAppProxy = {
 
   dispatchKeyboardEvent: function systemApp_dispatchKeyboardEvent(type, details) {
     try {
-      let content = this._frame ? this._frame.contentWindow : null;
+      let frameInfo = this._getMainSystemAppInfo();
+      let content = (frameInfo && frameInfo.frame) ? frameInfo.frame.contentWindow
+                                                   : null;
       if (!content) {
-        throw new Error("no content window");
+        throw new Error('no content window');
       }
-
       
       if (!this.TIP) {
-        this.TIP = Cc["@mozilla.org/text-input-processor;1"]
+        this.TIP = Cc['@mozilla.org/text-input-processor;1']
           .createInstance(Ci.nsITextInputProcessor);
         if (!this.TIP) {
-          throw new Error("failed to create textInputProcessor");
+          throw new Error('failed to create textInputProcessor');
         }
       }
 
       if (!this.TIP.beginInputTransactionForTests(content)) {
         this.TIP = null;
-        throw new Error("beginInputTransaction failed");
+        throw new Error('beginInputTransaction failed');
       }
 
-      let e = new content.KeyboardEvent("", { key: details.key, });
+      let e = new content.KeyboardEvent('', { key: details.key, });
 
       if (type === 'keydown') {
         this.TIP.keydown(e);
@@ -169,50 +306,72 @@ var SystemAppProxy = {
         this.TIP.keyup(e);
       }
       else {
-        throw new Error("unexpected event type: " + type);
+        throw new Error('unexpected event type: ' + type);
       }
     }
     catch(e) {
-      dump("dispatchKeyboardEvent: " + e + "\n");
+      dump('dispatchKeyboardEvent: ' + e + '\n');
     }
   },
 
   
   addEventListener: function systemApp_addEventListener() {
-    let content = this._frame ? this._frame.contentWindow : null;
-    if (!content) {
+    let args = Array.prototype.slice.call(arguments);
+    this.addEventListenerWithId.apply(this, [kMainSystemAppId].concat(args));
+  },
+
+  
+  addEventListenerWithId: function systemApp_addEventListenerWithId(frameId,
+                                                                    ...args) {
+    let frameInfo = this._frameInfoMap.get(frameId);
+
+    if (!frameInfo) {
       this._pendingListeners.push(arguments);
       return false;
     }
 
-    content.addEventListener.apply(content, arguments);
+    let content = frameInfo.frame.contentWindow;
+    content.addEventListener.apply(content, args);
     return true;
   },
 
+  
   removeEventListener: function systemApp_removeEventListener(name, listener) {
-    let content = this._frame ? this._frame.contentWindow : null;
-    if (content) {
-      content.removeEventListener.apply(content, arguments);
-    } else {
+    this.removeEventListenerWithId.apply(this, [kMainSystemAppId, name, listener]);
+  },
+
+  
+  removeEventListenerWithId: function systemApp_removeEventListenerWithId(frameId,
+                                                                          name,
+                                                                          listener) {
+    let frameInfo = this._frameInfoMap.get(frameId);
+
+    if (frameInfo) {
+      let content = frameInfo.frame.contentWindow;
+      content.removeEventListener.apply(content, [name, listener]);
+    }
+    else {
       this._pendingListeners = this._pendingListeners.filter(
         args => {
-          return args[0] != name || args[1] != listener;
+          return args[0] != frameId || args[1] != name || args[2] != listener;
         });
     }
   },
 
-  getFrames: function systemApp_getFrames() {
-    let systemAppFrame = this._frame;
-    if (!systemAppFrame) {
-      return [];
+  
+  getFrames: function systemApp_getFrames(frameId) {
+    let frameList = [];
+
+    for (let frameId of this._frameInfoMap.keys()) {
+      let frameInfo = this._frameInfoMap.get(frameId);
+      let systemAppFrame = frameInfo.frame;
+      let subFrames = systemAppFrame.contentDocument.querySelectorAll('iframe');
+      frameList.push(systemAppFrame);
+      for (let i = 0; i < subFrames.length; ++i) {
+        frameList.push(subFrames[i]);
+      }
     }
-    let list = [systemAppFrame];
-    let frames = systemAppFrame.contentDocument.querySelectorAll('iframe');
-    for (let i = 0; i < frames.length; i++) {
-      list.push(frames[i]);
-    }
-    return list;
+    return frameList;
   }
 };
 this.SystemAppProxy = SystemAppProxy;
-
