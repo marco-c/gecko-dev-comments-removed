@@ -685,12 +685,6 @@ protected:
   bool mPinnedForSeek;
 
   
-  
-  
-  
-  bool mShuttingDown;
-
-  
   bool mPausedForPlaybackRateNull;
 
   
