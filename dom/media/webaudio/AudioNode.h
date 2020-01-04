@@ -256,11 +256,6 @@ private:
   
   
   bool mPassThrough;
-#ifdef DEBUG
-  
-  
-  bool mDemiseNotified;
-#endif
 };
 
 } 
