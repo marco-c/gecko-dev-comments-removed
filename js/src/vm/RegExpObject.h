@@ -474,6 +474,10 @@ class RegExpObject : public NativeObject
     void setPrivate(void* priv) = delete;
 };
 
+bool
+str_replace_regexp_raw(JSContext* cx, HandleString string, Handle<RegExpObject*> regexp,
+                       HandleString replacement, MutableHandleValue rval);
+
 
 
 
