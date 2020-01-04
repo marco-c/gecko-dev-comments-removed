@@ -692,6 +692,26 @@ this.LoginHelper = {
     let hasMP = slot.status != Ci.nsIPKCS11Slot.SLOT_UNINITIALIZED &&
                 slot.status != Ci.nsIPKCS11Slot.SLOT_READY;
     return hasMP;
+  },
+
+  
+
+
+  notifyStorageChanged(changeType, data) {
+    let dataObject = data;
+    
+    if (Array.isArray(data)) {
+      dataObject = Cc["@mozilla.org/array;1"].
+                   createInstance(Ci.nsIMutableArray);
+      for (let i = 0; i < data.length; i++) {
+        dataObject.appendElement(data[i], false);
+      }
+    } else if (typeof(data) == "string") {
+      dataObject = Cc["@mozilla.org/supports-string;1"].
+                   createInstance(Ci.nsISupportsString);
+      dataObject.data = data;
+    }
+    Services.obs.notifyObservers(dataObject, "passwordmgr-storage-changed", changeType);
   }
 };
 
