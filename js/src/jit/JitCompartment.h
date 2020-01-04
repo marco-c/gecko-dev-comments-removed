@@ -234,7 +234,9 @@ class JitRuntime
         
         
         AutoPreventBackedgePatching(JSRuntime* rt, JitRuntime* jrt)
-          : rt_(rt), jrt_(jrt)
+          : rt_(rt),
+            jrt_(jrt),
+            prev_(false)  
         {
             MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
             if (jrt_) {
