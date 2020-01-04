@@ -1611,7 +1611,8 @@ nsHTMLDocument::Open(JSContext* cx,
 #endif
 
     
-    rv = window->SetNewDocument(this, nullptr, false);
+    rv = window->SetNewDocument(this, nullptr,
+                                 false);
     if (rv.Failed()) {
       return nullptr;
     }
