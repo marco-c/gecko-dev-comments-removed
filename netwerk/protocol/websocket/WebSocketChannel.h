@@ -178,7 +178,14 @@ private:
   {
     mPingOutstanding = 0;
     if (mPingTimer) {
-      mPingTimer->SetDelay(mPingInterval);
+      if (!mPingInterval) {
+        
+        
+        mPingTimer->Cancel();
+        mPingTimer = nullptr;
+      } else {
+        mPingTimer->SetDelay(mPingInterval);
+      }
     }
   }
 

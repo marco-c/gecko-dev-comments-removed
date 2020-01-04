@@ -3073,15 +3073,13 @@ WebSocketChannel::Notify(nsITimer *timer)
 
     if (!mPingOutstanding) {
       
-      
-      if (mPingInterval || mPingForced) {
-        LOG(("nsWebSocketChannel:: Generating Ping\n"));
-        mPingOutstanding = 1;
-        mPingForced = 0;
-        GeneratePing();
-        mPingTimer->InitWithCallback(this, mPingResponseTimeout,
-                                     nsITimer::TYPE_ONE_SHOT);
-      }
+      MOZ_ASSERT(mPingInterval || mPingForced);
+      LOG(("nsWebSocketChannel:: Generating Ping\n"));
+      mPingOutstanding = 1;
+      mPingForced = 0;
+      GeneratePing();
+      mPingTimer->InitWithCallback(this, mPingResponseTimeout,
+                                   nsITimer::TYPE_ONE_SHOT);
     } else {
       LOG(("nsWebSocketChannel:: Timed out Ping\n"));
       mPingTimer = nullptr;
