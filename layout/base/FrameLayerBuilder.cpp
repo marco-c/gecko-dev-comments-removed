@@ -3962,11 +3962,18 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     bounds = fixedToViewportClip.ApplyNonRoundedIntersection(bounds);
     ((nsRect&)mAccumulatedChildBounds).UnionRect(mAccumulatedChildBounds, bounds);
 #endif
-    
-    
-    
-    nsIntRect itemVisibleRect = itemDrawRect.Intersect(
-      ScaleToOutsidePixels(item->GetVisibleRect(), false));
+
+    nsIntRect itemVisibleRect = itemDrawRect;
+    if (!shouldFixToViewport) {
+      
+      
+      
+      
+      
+      
+      itemVisibleRect = itemVisibleRect.Intersect(
+        ScaleToOutsidePixels(item->GetVisibleRect(), false));
+    }
 
     if (maxLayers != -1 && layerCount >= maxLayers) {
       forceInactive = true;
