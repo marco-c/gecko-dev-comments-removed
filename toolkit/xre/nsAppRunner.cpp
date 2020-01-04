@@ -4703,6 +4703,7 @@ enum {
   kE10sDisabledForAddons = 7,
   kE10sForceDisabled = 8,
   kE10sDisabledForXPAcceleration = 9,
+  kE10sDisabledForOperatingSystem = 10,
 };
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
@@ -4775,6 +4776,22 @@ MultiprocessBlockPolicy() {
   }
 #endif 
 
+  if (disabledForA11y) {
+    gMultiprocessBlockPolicy = kE10sDisabledForAccessibility;
+    return gMultiprocessBlockPolicy;
+  }
+
+  
+
+
+#if defined(XP_WIN)
+  if (Preferences::GetDefaultCString("app.update.channel").EqualsLiteral("release") &&
+      !IsVistaOrLater()) {
+    gMultiprocessBlockPolicy = kE10sDisabledForOperatingSystem;
+    return gMultiprocessBlockPolicy;
+  }
+#endif
+
 #if defined(XP_WIN)
   
 
@@ -4788,11 +4805,6 @@ MultiprocessBlockPolicy() {
     return gMultiprocessBlockPolicy;
   }
 #endif 
-
-  if (disabledForA11y) {
-    gMultiprocessBlockPolicy = kE10sDisabledForAccessibility;
-    return gMultiprocessBlockPolicy;
-  }
 
   
 
@@ -4810,8 +4822,6 @@ MultiprocessBlockPolicy() {
     gMultiprocessBlockPolicy = kE10sDisabledForBidi;
     return gMultiprocessBlockPolicy;
   }
-
-
 
   
 
