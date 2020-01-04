@@ -179,9 +179,6 @@ class Nursery
     static const size_t MaxNurseryBufferSize = 1024;
 
     
-
-
-
     void collect(JSRuntime* rt, JS::gcreason::Reason reason);
 
     
@@ -400,6 +397,9 @@ class Nursery
 
     
     void* allocate(size_t size);
+
+    double doCollection(JSRuntime* rt, JS::gcreason::Reason reason,
+                        gc::TenureCountCache& tenureCounts);
 
     
 

@@ -540,7 +540,6 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
     MOZ_ASSERT(!rt->mainThread.suppressGC);
     MOZ_RELEASE_ASSERT(CurrentThreadCanAccessRuntime(rt));
 
-    StoreBuffer& sb = rt->gc.storeBuffer;
     if (!isEnabled() || isEmpty()) {
         
 
@@ -548,7 +547,7 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
 
 
 
-        sb.clear();
+        rt->gc.storeBuffer.clear();
         return;
     }
 
@@ -567,111 +566,8 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
 
     startProfile(ProfileKey::Total);
 
-    AutoTraceSession session(rt, JS::HeapState::MinorCollecting);
-    AutoStopVerifyingBarriers av(rt, false);
-    AutoDisableProxyCheck disableStrictProxyChecking(rt);
-    mozilla::DebugOnly<AutoEnterOOMUnsafeRegion> oomUnsafeRegion;
-
-    size_t initialUsedSpace = usedSpace();
-
-    
-    TenuringTracer mover(rt, this);
-
-    
-
-    maybeStartProfile(ProfileKey::CancelIonCompilations);
-    if (sb.cancelIonCompilations()) {
-        for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
-            jit::StopAllOffThreadCompilations(c);
-    }
-    maybeEndProfile(ProfileKey::CancelIonCompilations);
-
-    maybeStartProfile(ProfileKey::TraceValues);
-    sb.traceValues(mover);
-    maybeEndProfile(ProfileKey::TraceValues);
-
-    maybeStartProfile(ProfileKey::TraceCells);
-    sb.traceCells(mover);
-    maybeEndProfile(ProfileKey::TraceCells);
-
-    maybeStartProfile(ProfileKey::TraceSlots);
-    sb.traceSlots(mover);
-    maybeEndProfile(ProfileKey::TraceSlots);
-
-    maybeStartProfile(ProfileKey::TraceWholeCells);
-    sb.traceWholeCells(mover);
-    maybeEndProfile(ProfileKey::TraceWholeCells);
-
-    maybeStartProfile(ProfileKey::TraceGenericEntries);
-    sb.traceGenericEntries(&mover);
-    maybeEndProfile(ProfileKey::TraceGenericEntries);
-
-    maybeStartProfile(ProfileKey::MarkRuntime);
-    rt->gc.markRuntime(&mover, GCRuntime::TraceRuntime, session.lock);
-    maybeEndProfile(ProfileKey::MarkRuntime);
-
-    maybeStartProfile(ProfileKey::MarkDebugger);
-    {
-        gcstats::AutoPhase ap(rt->gc.stats, gcstats::PHASE_MARK_ROOTS);
-        Debugger::markAll(&mover);
-    }
-    maybeEndProfile(ProfileKey::MarkDebugger);
-
-    maybeStartProfile(ProfileKey::ClearNewObjectCache);
-    rt->contextFromMainThread()->caches.newObjectCache.clearNurseryObjects(rt);
-    maybeEndProfile(ProfileKey::ClearNewObjectCache);
-
-    
-    
-    
-    
-    maybeStartProfile(ProfileKey::CollectToFP);
     TenureCountCache tenureCounts;
-    collectToFixedPoint(mover, tenureCounts);
-    maybeEndProfile(ProfileKey::CollectToFP);
-
-    
-    maybeStartProfile(ProfileKey::SweepArrayBufferViewList);
-    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
-        c->sweepAfterMinorGC();
-    maybeEndProfile(ProfileKey::SweepArrayBufferViewList);
-
-    
-    maybeStartProfile(ProfileKey::UpdateJitActivations);
-    js::jit::UpdateJitActivationsForMinorGC(rt, &mover);
-    forwardedBuffers.finish();
-    maybeEndProfile(ProfileKey::UpdateJitActivations);
-
-    maybeStartProfile(ProfileKey::ObjectsTenuredCallback);
-    rt->gc.callObjectsTenuredCallback();
-    maybeEndProfile(ProfileKey::ObjectsTenuredCallback);
-
-    
-    maybeStartProfile(ProfileKey::FreeMallocedBuffers);
-    freeMallocedBuffers();
-    maybeEndProfile(ProfileKey::FreeMallocedBuffers);
-
-    maybeStartProfile(ProfileKey::Sweep);
-    sweep();
-    maybeEndProfile(ProfileKey::Sweep);
-
-    maybeStartProfile(ProfileKey::ClearStoreBuffer);
-    rt->gc.storeBuffer.clear();
-    maybeEndProfile(ProfileKey::ClearStoreBuffer);
-
-    
-    maybeStartProfile(ProfileKey::CheckHashTables);
-#ifdef JS_GC_ZEAL
-    if (rt->hasZealMode(ZealMode::CheckHashTablesOnMinorGC))
-        CheckHashTablesAfterMovingGC(rt);
-#endif
-    maybeEndProfile(ProfileKey::CheckHashTables);
-
-    
-    maybeStartProfile(ProfileKey::Resize);
-    double promotionRate = mover.tenuredSize / double(initialUsedSpace);
-    maybeResizeNursery(reason, initialUsedSpace, promotionRate);
-    maybeEndProfile(ProfileKey::Resize);
+    double promotionRate = doCollection(rt, reason, tenureCounts);
 
     
     
@@ -728,6 +624,119 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
                 numChunks());
         printProfileTimes(profileTimes_);
     }
+}
+
+double
+js::Nursery::doCollection(JSRuntime* rt, JS::gcreason::Reason reason,
+                          TenureCountCache& tenureCounts)
+{
+    AutoTraceSession session(rt, JS::HeapState::MinorCollecting);
+    AutoStopVerifyingBarriers av(rt, false);
+    AutoDisableProxyCheck disableStrictProxyChecking(rt);
+    mozilla::DebugOnly<AutoEnterOOMUnsafeRegion> oomUnsafeRegion;
+
+    size_t initialUsedSpace = usedSpace();
+
+    
+    TenuringTracer mover(rt, this);
+
+    
+    StoreBuffer& sb = rt->gc.storeBuffer;
+
+    maybeStartProfile(ProfileKey::CancelIonCompilations);
+    if (sb.cancelIonCompilations()) {
+        for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
+            jit::StopAllOffThreadCompilations(c);
+    }
+    maybeEndProfile(ProfileKey::CancelIonCompilations);
+
+    maybeStartProfile(ProfileKey::TraceValues);
+    sb.traceValues(mover);
+    maybeEndProfile(ProfileKey::TraceValues);
+
+    maybeStartProfile(ProfileKey::TraceCells);
+    sb.traceCells(mover);
+    maybeEndProfile(ProfileKey::TraceCells);
+
+    maybeStartProfile(ProfileKey::TraceSlots);
+    sb.traceSlots(mover);
+    maybeEndProfile(ProfileKey::TraceSlots);
+
+    maybeStartProfile(ProfileKey::TraceWholeCells);
+    sb.traceWholeCells(mover);
+    maybeEndProfile(ProfileKey::TraceWholeCells);
+
+    maybeStartProfile(ProfileKey::TraceGenericEntries);
+    sb.traceGenericEntries(&mover);
+    maybeEndProfile(ProfileKey::TraceGenericEntries);
+
+    maybeStartProfile(ProfileKey::MarkRuntime);
+    rt->gc.markRuntime(&mover, GCRuntime::TraceRuntime, session.lock);
+    maybeEndProfile(ProfileKey::MarkRuntime);
+
+    maybeStartProfile(ProfileKey::MarkDebugger);
+    {
+        gcstats::AutoPhase ap(rt->gc.stats, gcstats::PHASE_MARK_ROOTS);
+        Debugger::markAll(&mover);
+    }
+    maybeEndProfile(ProfileKey::MarkDebugger);
+
+    maybeStartProfile(ProfileKey::ClearNewObjectCache);
+    rt->contextFromMainThread()->caches.newObjectCache.clearNurseryObjects(rt);
+    maybeEndProfile(ProfileKey::ClearNewObjectCache);
+
+    
+    
+    
+    
+    maybeStartProfile(ProfileKey::CollectToFP);
+    collectToFixedPoint(mover, tenureCounts);
+    maybeEndProfile(ProfileKey::CollectToFP);
+
+    
+    maybeStartProfile(ProfileKey::SweepArrayBufferViewList);
+    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
+        c->sweepAfterMinorGC();
+    maybeEndProfile(ProfileKey::SweepArrayBufferViewList);
+
+    
+    maybeStartProfile(ProfileKey::UpdateJitActivations);
+    js::jit::UpdateJitActivationsForMinorGC(rt, &mover);
+    forwardedBuffers.finish();
+    maybeEndProfile(ProfileKey::UpdateJitActivations);
+
+    maybeStartProfile(ProfileKey::ObjectsTenuredCallback);
+    rt->gc.callObjectsTenuredCallback();
+    maybeEndProfile(ProfileKey::ObjectsTenuredCallback);
+
+    
+    maybeStartProfile(ProfileKey::FreeMallocedBuffers);
+    freeMallocedBuffers();
+    maybeEndProfile(ProfileKey::FreeMallocedBuffers);
+
+    maybeStartProfile(ProfileKey::Sweep);
+    sweep();
+    maybeEndProfile(ProfileKey::Sweep);
+
+    maybeStartProfile(ProfileKey::ClearStoreBuffer);
+    rt->gc.storeBuffer.clear();
+    maybeEndProfile(ProfileKey::ClearStoreBuffer);
+
+    
+    maybeStartProfile(ProfileKey::CheckHashTables);
+#ifdef JS_GC_ZEAL
+    if (rt->hasZealMode(ZealMode::CheckHashTablesOnMinorGC))
+        CheckHashTablesAfterMovingGC(rt);
+#endif
+    maybeEndProfile(ProfileKey::CheckHashTables);
+
+    
+    maybeStartProfile(ProfileKey::Resize);
+    double promotionRate = mover.tenuredSize / double(initialUsedSpace);
+    maybeResizeNursery(reason, initialUsedSpace, promotionRate);
+    maybeEndProfile(ProfileKey::Resize);
+
+    return promotionRate;
 }
 
 void
