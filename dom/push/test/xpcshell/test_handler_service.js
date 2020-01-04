@@ -33,12 +33,9 @@ add_test(function test_service_instantiation() {
   equal(handlerService.observed[1].data, scope);
 
   
-  let reason = Ci.nsIPushErrorReporter.UNSUBSCRIBE_QUOTA_EXCEEDED;
-  pushNotifier.notifySubscriptionLost(scope, principal, reason);
+  pushNotifier.notifySubscriptionModified(scope, principal);
   equal(handlerService.observed.length, 3);
-  equal(handlerService.observed[2].topic, pushService.subscriptionLostTopic);
-  let wrapper = handlerService.observed[2].subject.QueryInterface(Ci.nsISupportsPRUint16);
-  equal(wrapper.data, reason);
+  equal(handlerService.observed[2].topic, pushService.subscriptionModifiedTopic);
   equal(handlerService.observed[2].data, scope);
 
   run_next_test();
