@@ -481,7 +481,6 @@ private:
   already_AddRefed<CSSValue> DoGetScrollSnapPointsY();
   already_AddRefed<CSSValue> DoGetScrollSnapDestination();
   already_AddRefed<CSSValue> DoGetScrollSnapCoordinate();
-  already_AddRefed<CSSValue> DoGetShapeOutside();
 
   
   already_AddRefed<CSSValue> DoGetCursor();
@@ -590,8 +589,6 @@ private:
     nsROCSSPrimitiveValue* aValue);
   void SetValueToPosition(const nsStyleImageLayers::Position& aPosition,
                           nsDOMCSSValueList* aValueList);
-  void SetValueToFragmentOrURL(const FragmentOrURL* aFragmentOrURL,
-                               nsROCSSPrimitiveValue* aValue);
 
   
 
@@ -646,21 +643,13 @@ private:
   already_AddRefed<CSSValue> CreatePrimitiveValueForStyleFilter(
     const nsStyleFilter& aStyleFilter);
 
-  template<typename ReferenceBox>
-  already_AddRefed<CSSValue>
-  GetShapeSource(const mozilla::StyleShapeSource<ReferenceBox>& aShapeSource,
-                 const KTableEntry aBoxKeywordTable[]);
-
-  template<typename ReferenceBox>
-  already_AddRefed<CSSValue>
-  CreatePrimitiveValueForShapeSource(
-    const mozilla::StyleBasicShape* aStyleBasicShape,
-    ReferenceBox aReferenceBox,
-    const KTableEntry aBoxKeywordTable[]);
+  already_AddRefed<CSSValue> CreatePrimitiveValueForClipPath(
+    const mozilla::nsStyleBasicShape* aStyleBasicShape,
+    mozilla::StyleClipShapeSizing aSizingBox);
 
   
   already_AddRefed<CSSValue> CreatePrimitiveValueForBasicShape(
-    const mozilla::StyleBasicShape* aStyleBasicShape);
+    const mozilla::nsStyleBasicShape* aStyleBasicShape);
   void BoxValuesToString(nsAString& aString,
                          const nsTArray<nsStyleCoord>& aBoxValues);
   void BasicShapeRadiiToString(nsAString& aCssText,
