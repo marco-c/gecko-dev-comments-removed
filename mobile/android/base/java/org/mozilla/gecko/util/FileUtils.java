@@ -15,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.Scanner;
 
+import org.json.JSONObject;
 import org.mozilla.gecko.annotation.RobocopTarget;
 
 public class FileUtils {
@@ -104,6 +105,14 @@ public class FileUtils {
 
 
 
+    public static void writeJSONObjectToFile(final File file, final JSONObject obj) throws IOException {
+        writeStringToFile(file, obj.toString());
+    }
+
+    
+
+
+
     public static void writeStringToFile(final File file, final String str) throws IOException {
         writeStringToOutputStreamAndCloseStream(new FileOutputStream(file, false), str);
     }
@@ -131,5 +140,4 @@ public class FileUtils {
             outputStream.close();
         }
     }
-
 }
