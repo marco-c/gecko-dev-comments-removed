@@ -56,15 +56,13 @@ public:
 
 
   void RegisterAudioChannelAgent(AudioChannelAgent* aAgent,
-                                 uint32_t aNotifyPlayback,
                                  AudioChannel aChannel);
 
   
 
 
 
-  void UnregisterAudioChannelAgent(AudioChannelAgent* aAgent,
-                                   uint32_t aNotifyPlayback);
+  void UnregisterAudioChannelAgent(AudioChannelAgent* aAgent);
 
   
 

@@ -4817,6 +4817,11 @@ void
 HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
 {
   
+  if (!HasAudio()) {
+    return;
+  }
+
+  
   
   WindowAudioCaptureChanged();
 
@@ -4826,13 +4831,9 @@ HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
   AutoNoJSAPI nojsapi;
 
   if (aPlaying) {
-    
-    uint32_t notify = HasAudio() ? nsIAudioChannelAgent::AUDIO_AGENT_NOTIFY :
-                                   nsIAudioChannelAgent::AUDIO_AGENT_DONT_NOTIFY;
-
     float volume = 0.0;
     bool muted = true;
-    mAudioChannelAgent->NotifyStartedPlaying(notify, &volume, &muted);
+    mAudioChannelAgent->NotifyStartedPlaying(&volume, &muted);
     WindowVolumeChanged(volume, muted);
   } else {
     mAudioChannelAgent->NotifyStoppedPlaying();
