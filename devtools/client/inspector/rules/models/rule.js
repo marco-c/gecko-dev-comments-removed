@@ -40,6 +40,8 @@ XPCOMUtils.defineLazyGetter(this, "domUtils", function() {
 
 
 
+
+
 function Rule(elementStyle, options) {
   this.elementStyle = elementStyle;
   this.domRule = options.rule || null;
@@ -48,6 +50,7 @@ function Rule(elementStyle, options) {
   this.pseudoElement = options.pseudoElement || "";
 
   this.isSystem = options.isSystem;
+  this.isUnmatched = options.isUnmatched || false;
   this.inherited = options.inherited || null;
   this.keyframes = options.keyframes || null;
   this._modificationDepth = 0;
