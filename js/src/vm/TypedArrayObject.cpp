@@ -676,12 +676,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     static JSObject*
     fromArray(JSContext* cx, HandleObject other, HandleObject newTarget = nullptr);
 
-    static JSObject*
-    fromTypedArray(JSContext* cx, HandleObject other, HandleObject newTarget);
-
-    static JSObject*
-    fromObject(JSContext* cx, HandleObject other, HandleObject newTarget);
-
     static const NativeType
     getIndex(JSObject* obj, uint32_t index)
     {
@@ -725,79 +719,31 @@ TypedArrayObjectTemplate<T>::fromArray(JSContext* cx, HandleObject other,
 {
     
     
-    if (other->is<TypedArrayObject>())
-        return fromTypedArray(cx, other, newTarget);
-
-    return fromObject(cx, other, newTarget);
-}
-
-
-template<typename T>
- JSObject*
-TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other,
-                                            HandleObject newTarget)
-{
-    
-    MOZ_ASSERT(other->is<TypedArrayObject>());
-
-    
-
-    
     RootedObject proto(cx);
-    if (!GetPrototypeForInstance(cx, newTarget, &proto))
-        return nullptr;
 
-    
-    Rooted<TypedArrayObject*> srcArray(cx, &other->as<TypedArrayObject>());
+    uint32_t len;
+    if (other->is<TypedArrayObject>()) {
+        if (!GetPrototypeForInstance(cx, newTarget, &proto))
+            return nullptr;
 
-    
-    if (srcArray->hasDetachedBuffer()) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
-        return nullptr;
+        if (other->as<TypedArrayObject>().hasDetachedBuffer()) {
+            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
+            return nullptr;
+        }
+        len = other->as<TypedArrayObject>().length();
+    } else {
+        if (!GetLengthProperty(cx, other, &len))
+            return nullptr;
+        if (!GetPrototypeForInstance(cx, newTarget, &proto))
+            return nullptr;
     }
 
-    
-    uint32_t elementLength = srcArray->length();
-
-    
     Rooted<ArrayBufferObject*> buffer(cx);
-    if (!maybeCreateArrayBuffer(cx, elementLength, &buffer))
-        return nullptr;
-
-    
-    Rooted<TypedArrayObject*> obj(cx, makeInstance(cx, buffer, 0, elementLength, proto));
-    if (!obj)
-        return nullptr;
-
-    
-    if (!TypedArrayMethods<TypedArrayObject>::setFromTypedArray(cx, obj, srcArray))
-        return nullptr;
-
-    return obj;
-}
-
-
-
-
-template<typename T>
- JSObject*
-TypedArrayObjectTemplate<T>::fromObject(JSContext* cx, HandleObject other, HandleObject newTarget)
-{
-    RootedObject proto(cx);
-    Rooted<ArrayBufferObject*> buffer(cx);
-    uint32_t len;
-    if (!GetLengthProperty(cx, other, &len))
-        return nullptr;
-    if (!GetPrototypeForInstance(cx, newTarget, &proto))
-        return nullptr;
     if (!maybeCreateArrayBuffer(cx, len, &buffer))
         return nullptr;
 
     Rooted<TypedArrayObject*> obj(cx, makeInstance(cx, buffer, 0, len, proto));
-    if (!obj)
-        return nullptr;
-
-    if (!TypedArrayMethods<TypedArrayObject>::setFromNonTypedArray(cx, obj, other, len))
+    if (!obj || !TypedArrayMethods<TypedArrayObject>::setFromArrayLike(cx, obj, other, len))
         return nullptr;
     return obj;
 }
