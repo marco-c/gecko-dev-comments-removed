@@ -17,6 +17,7 @@
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FragmentOrElement.h"
+#include "mozilla/dom/HTMLLinkElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/Preferences.h"
@@ -436,12 +437,21 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
     }
 
     
+    
+    
+
+    net::ReferrerPolicy referrerPolicy = GetLinkReferrerPolicy();
+    if (referrerPolicy == net::RP_Unset) {
+      referrerPolicy = doc->GetReferrerPolicy();
+    }
+
+    
     nsCOMPtr<nsIURI> clonedURI;
     uri->Clone(getter_AddRefs(clonedURI));
     NS_ENSURE_TRUE(clonedURI, NS_ERROR_OUT_OF_MEMORY);
     rv = doc->CSSLoader()->
       LoadStyleLink(thisContent, clonedURI, title, media, isAlternate,
-                    GetCORSMode(), doc->GetReferrerPolicy(), integrity,
+                    GetCORSMode(), referrerPolicy, integrity,
                     aObserver, &isAlternate);
     if (NS_FAILED(rv)) {
       
