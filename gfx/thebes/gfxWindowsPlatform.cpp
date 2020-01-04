@@ -2890,15 +2890,17 @@ gfxWindowsPlatform::GetAcceleratedCompositorBackends(nsTArray<LayersBackend>& aB
     aBackends.AppendElement(LayersBackend::LAYERS_OPENGL);
   }
 
+  bool allowTryingD3D9 = false;
   if (!gfxPrefs::LayersPreferD3D9()) {
     if (gfxPlatform::CanUseDirect3D11() && mD3D11Device) {
       aBackends.AppendElement(LayersBackend::LAYERS_D3D11);
     } else {
+      allowTryingD3D9 = gfxPrefs::LayersAllowD3D9Fallback();
       NS_WARNING("Direct3D 11-accelerated layers are not supported on this system.");
     }
   }
 
-  if (gfxPrefs::LayersPreferD3D9() || !IsVistaOrLater()) {
+  if (gfxPrefs::LayersPreferD3D9() || !IsVistaOrLater() || allowTryingD3D9) {
     
     if (gfxPlatform::CanUseDirect3D9()) {
       aBackends.AppendElement(LayersBackend::LAYERS_D3D9);
