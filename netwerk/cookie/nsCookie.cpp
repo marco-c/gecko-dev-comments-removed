@@ -3,10 +3,11 @@
 
 
 
+#include "mozilla/dom/ToJSValue.h"
+#include "nsAutoPtr.h"
 #include "nsCookie.h"
 #include "nsUTF8ConverterService.h"
 #include <stdlib.h>
-#include "nsAutoPtr.h"
 
 static const int64_t kCookieStaleThreshold = 60 * PR_USEC_PER_SEC; 
 
@@ -79,7 +80,8 @@ nsCookie::Create(const nsACString &aName,
                  int64_t           aCreationTime,
                  bool              aIsSession,
                  bool              aIsSecure,
-                 bool              aIsHttpOnly)
+                 bool              aIsHttpOnly,
+                 const OriginAttributes& aOriginAttributes)
 {
   
   
@@ -111,7 +113,8 @@ nsCookie::Create(const nsACString &aName,
   
   return new (place) nsCookie(name, value, host, path, end,
                               aExpiry, aLastAccessed, aCreationTime,
-                              aIsSession, aIsSecure, aIsHttpOnly);
+                              aIsSession, aIsSecure, aIsHttpOnly,
+                              aOriginAttributes);
 }
 
 size_t
@@ -150,6 +153,15 @@ NS_IMETHODIMP nsCookie::GetStatus(nsCookieStatus *aStatus) { *aStatus = 0;      
 NS_IMETHODIMP nsCookie::GetPolicy(nsCookiePolicy *aPolicy) { *aPolicy = 0;              return NS_OK; }
 NS_IMETHODIMP nsCookie::GetCreationTime(int64_t *aCreation){ *aCreation = CreationTime(); return NS_OK; }
 NS_IMETHODIMP nsCookie::GetLastAccessed(int64_t *aTime)    { *aTime = LastAccessed();   return NS_OK; }
+
+NS_IMETHODIMP
+nsCookie::GetOriginAttributes(JSContext *aCx, JS::MutableHandle<JS::Value> aVal)
+{
+  if (NS_WARN_IF(!ToJSValue(aCx, mOriginAttributes, aVal))) {
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
+}
 
 
 
