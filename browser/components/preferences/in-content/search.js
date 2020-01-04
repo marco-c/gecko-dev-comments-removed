@@ -169,7 +169,13 @@ var gSearchPane = {
         gSearchPane.remove(aEngine);
         break;
       case "engine-current":
-        gSearchPane.buildDefaultEngineDropDown();
+        
+        
+        
+        let selectedEngine =
+          document.getElementById("defaultEngine").selectedItem.engine;
+        if (selectedEngine.name != aEngine.name)
+          gSearchPane.buildDefaultEngineDropDown();
         break;
       case "engine-default":
         
