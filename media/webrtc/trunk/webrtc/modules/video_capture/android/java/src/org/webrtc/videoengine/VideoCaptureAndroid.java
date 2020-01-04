@@ -45,6 +45,7 @@ import org.mozilla.gecko.GeckoAppShell.AppStateListener;
 
 
 
+
 public class VideoCaptureAndroid implements PreviewCallback, Callback, AppStateListener {
   private final static String TAG = "WEBRTC-JC";
 
@@ -269,7 +270,8 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback, AppStateL
 
       
       
-      List<int[]> supportedFpsRanges = parameters.getSupportedPreviewFpsRange();
+      List<int[]> supportedFpsRanges =
+          VideoCaptureDeviceInfoAndroid.getFpsRangesRobust(parameters);
       frameDropRatio = Integer.MAX_VALUE;
       for (int i = 0; i < supportedFpsRanges.size(); i++) {
         int[] range = supportedFpsRanges.get(i);

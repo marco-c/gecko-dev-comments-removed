@@ -34,6 +34,37 @@ public class VideoCaptureDeviceInfoAndroid {
         ", Orientation "+ info.orientation;
   }
 
+  @WebRTCJNITarget
+  public static List<int[]> getFpsRangesRobust(Camera.Parameters parameters) {
+      List<int[]> supportedFpsRanges = null;
+      if (android.os.Build.VERSION.SDK_INT >= 9) {
+          supportedFpsRanges = parameters.getSupportedPreviewFpsRange();
+      }
+      
+      
+      if (supportedFpsRanges == null) {
+          supportedFpsRanges = new ArrayList<int[]>();
+          List<Integer> frameRates = parameters.getSupportedPreviewFrameRates();
+          if (frameRates != null) {
+              for (Integer rate: frameRates) {
+                  int[] range = new int[2];
+                  
+                  range[0] = rate * 1000;
+                  range[1] = rate * 1000;
+                  supportedFpsRanges.add(range);
+              }
+          } else {
+              Log.e(TAG, "Camera doesn't know its own framerate, guessing 30fps.");
+              int[] range = new int[2];
+              
+              range[0] = 30 * 1000;
+              range[1] = 30 * 1000;
+              supportedFpsRanges.add(range);
+          }
+      }
+      return supportedFpsRanges;
+  }
+
   
   
   
@@ -67,31 +98,7 @@ public class VideoCaptureDeviceInfoAndroid {
               }
               Parameters parameters = camera.getParameters();
               supportedSizes = parameters.getSupportedPreviewSizes();
-              if (android.os.Build.VERSION.SDK_INT >= 9) {
-                  supportedFpsRanges = parameters.getSupportedPreviewFpsRange();
-              }
-              
-              
-              if (supportedFpsRanges == null) {
-                  supportedFpsRanges = new ArrayList<int[]>();
-                  List<Integer> frameRates = parameters.getSupportedPreviewFrameRates();
-                  if (frameRates != null) {
-                      for (Integer rate: frameRates) {
-                          int[] range = new int[2];
-                          
-                          range[0] = rate * 1000;
-                          range[1] = rate * 1000;
-                          supportedFpsRanges.add(range);
-                      }
-                  } else {
-                      Log.e(TAG, "Camera doesn't know its own framerate, guessing 30fps.");
-                      int[] range = new int[2];
-                      
-                      range[0] = 30 * 1000;
-                      range[1] = 30 * 1000;
-                      supportedFpsRanges.add(range);
-                  }
-              }
+              supportedFpsRanges = getFpsRangesRobust(parameters);
               camera.release();
               Log.d(TAG, uniqueName);
           } catch (RuntimeException e) {
