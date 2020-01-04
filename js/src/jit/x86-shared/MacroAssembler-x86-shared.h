@@ -582,10 +582,6 @@ class MacroAssemblerX86Shared : public Assembler
         vucomisd(reg, scratch);
         return truthy ? NonZero : Zero;
     }
-    void branchTestDoubleTruthy(bool truthy, FloatRegister reg, Label* label) {
-        Condition cond = testDoubleTruthy(truthy, reg);
-        j(cond, label);
-    }
 
     
     

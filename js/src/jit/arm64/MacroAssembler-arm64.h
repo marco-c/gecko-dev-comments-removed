@@ -1948,23 +1948,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         return truthy ? NonZero : Zero;
     }
 
-    void branchTestDoubleTruthy(bool truthy, FloatRegister reg, Label* label) {
-        Fcmp(ARMFPRegister(reg, 64), 0.0);
-        if (!truthy) {
-            
-            branch(Zero, label);
-            branch(Overflow, label);
-        } else {
-            
-            
-            Label onFalse;
-            branch(Zero, &onFalse);
-            branch(Overflow, &onFalse);
-            B(label);
-            bind(&onFalse);
-        }
-    }
-
     Condition testBooleanTruthy(bool truthy, const ValueOperand& operand) {
         ARMRegister payload32(operand.valueReg(), 32);
         Tst(payload32, payload32);

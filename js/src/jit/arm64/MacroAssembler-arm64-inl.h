@@ -957,6 +957,25 @@ MacroAssembler::branchTestDoubleImpl(Condition cond, const T& t, Label* label)
     B(label, c);
 }
 
+void
+MacroAssembler::branchTestDoubleTruthy(bool truthy, FloatRegister reg, Label* label)
+{
+    Fcmp(ARMFPRegister(reg, 64), 0.0);
+    if (!truthy) {
+        
+        branch(Zero, label);
+        branch(Overflow, label);
+    } else {
+        
+        
+        Label onFalse;
+        branch(Zero, &onFalse);
+        branch(Overflow, &onFalse);
+        B(label);
+        bind(&onFalse);
+    }
+}
+
 
 
 
