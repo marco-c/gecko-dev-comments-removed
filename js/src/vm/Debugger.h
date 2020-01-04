@@ -547,7 +547,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSTrapStatus parseResumptionValue(mozilla::Maybe<AutoCompartment>& ac, bool OK, const Value& rv,
+    JSTrapStatus processHandlerResult(mozilla::Maybe<AutoCompartment>& ac, bool OK, const Value& rv,
                                       AbstractFramePtr frame, jsbytecode* pc, MutableHandleValue vp);
 
     
@@ -557,11 +557,11 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSTrapStatus parseResumptionValue(mozilla::Maybe<AutoCompartment>& ac, bool OK, const Value& rv,
+    JSTrapStatus processHandlerResult(mozilla::Maybe<AutoCompartment>& ac, bool OK, const Value& rv,
                                       const Value& thisVForCheck, AbstractFramePtr frame,
                                       MutableHandleValue vp);
 
-    JSTrapStatus parseResumptionValueHelper(mozilla::Maybe<AutoCompartment>& ac, bool ok, const Value& rv,
+    JSTrapStatus processHandlerResultHelper(mozilla::Maybe<AutoCompartment>& ac, bool ok, const Value& rv,
                                             const mozilla::Maybe<HandleValue>& thisVForCheck, AbstractFramePtr frame,
                                             MutableHandleValue vp);
 
