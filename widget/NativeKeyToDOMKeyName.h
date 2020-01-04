@@ -1226,7 +1226,7 @@ KEY_MAP_QT      (BrowserStop, Qt::Key_Stop)
 
 
 
-KEY_MAP_ANDROID (PhoneCall, AKEYCODE_CALL)
+KEY_MAP_ANDROID (Call, AKEYCODE_CALL)
 
 
 KEY_MAP_QT      (Camera, Qt::Key_Camera)
