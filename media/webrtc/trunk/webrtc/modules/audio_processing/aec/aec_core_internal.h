@@ -101,7 +101,7 @@ struct AecCore {
 
   int mult;  
   int sampFreq;
-  int num_bands;
+  size_t num_bands;
   uint32_t seed;
 
   float normal_mu;               
@@ -142,10 +142,11 @@ struct AecCore {
   int delay_correction_count;
   int shift_offset;
   float delay_quality_threshold;
+  int frame_count;
 
   
   
-  int reported_delay_enabled;
+  int delay_agnostic_enabled;
   
   int extended_filter_enabled;
   
@@ -165,6 +166,7 @@ struct AecCore {
   rtc_WavWriter* nearFile;
   rtc_WavWriter* outFile;
   rtc_WavWriter* outLinearFile;
+  rtc_WavWriter* e_fft_file;
   uint32_t debugWritten;
 #endif
 };

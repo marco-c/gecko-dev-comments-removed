@@ -106,7 +106,11 @@ ALIGN16_BEG const float ALIGN16_END WebRtcAec_overDriveCurve[65] = {
 
 
 static const float kDelayQualityThresholdMax = 0.07f;
+static const float kDelayQualityThresholdMin = 0.01f;
 static const int kInitialShiftOffset = 5;
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_GONK)
+static const int kDelayCorrectionStart = 1500;  
+#endif
 
 
 
@@ -820,8 +824,11 @@ static void UpdateDelayMetrics(AecCore* self) {
   
   {
     int num_delays_out_of_bounds = self->num_delay_values;
+    const int histogram_length = sizeof(self->delay_histogram) /
+      sizeof(self->delay_histogram[0]);
     for (i = lookahead; i < lookahead + self->num_partitions; ++i) {
-      num_delays_out_of_bounds -= self->delay_histogram[i];
+      if (i < histogram_length)
+        num_delays_out_of_bounds -= self->delay_histogram[i];
     }
     self->fraction_poor_delays = (float)num_delays_out_of_bounds /
         self->num_delay_values;
@@ -859,10 +866,28 @@ static void TimeToFrequency(float time_data[PART_LEN2],
   }
 }
 
+static int MoveFarReadPtrWithoutSystemDelayUpdate(AecCore* self, int elements) {
+  WebRtc_MoveReadPtr(self->far_buf_windowed, elements);
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+  WebRtc_MoveReadPtr(self->far_time_buf, elements);
+#endif
+  return WebRtc_MoveReadPtr(self->far_buf, elements);
+}
+
 static int SignalBasedDelayCorrection(AecCore* self) {
   int delay_correction = 0;
   int last_delay = -2;
   assert(self != NULL);
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_GONK)
+  
+  
+  
+  
+  if (self->frame_count < kDelayCorrectionStart) {
+    return 0;
+  }
+#endif
+
   
   
   
@@ -884,11 +909,18 @@ static int SignalBasedDelayCorrection(AecCore* self) {
     
     
     
-    if (delay <= 0 || delay > (self->num_partitions / 4)) {
+    const int lower_bound = 0;
+    const int upper_bound = self->num_partitions * 3 / 4;
+    const int do_correction = delay <= lower_bound || delay > upper_bound;
+    if (do_correction == 1) {
       int available_read = (int)WebRtc_available_read(self->far_buf);
       
       
-      delay_correction = -(delay - self->shift_offset);
+      
+      
+      
+      delay_correction = -delay;
+      delay_correction += delay > self->shift_offset ? self->shift_offset : 1;
       self->shift_offset--;
       self->shift_offset = (self->shift_offset <= 1 ? 1 : self->shift_offset);
       if (delay_correction > available_read - self->mult - 1) {
@@ -967,6 +999,8 @@ OpenCoreDebugFiles(AecCore* aec, int *aec_instance_count)
                 aec->instance_index, aec->debug_dump_count, process_rate);
       ReopenWav(&aec->outLinearFile, "aec_out_linear",
                 aec->instance_index, aec->debug_dump_count, process_rate);
+      ReopenWav(&aec->e_fft_file, "aec_fft",
+                aec->instance_index, aec->debug_dump_count, process_rate);
       ++aec->debug_dump_count;
     }
   } else {
@@ -982,7 +1016,10 @@ OpenCoreDebugFiles(AecCore* aec, int *aec_instance_count)
     if (aec->outLinearFile) {
       rtc_WavClose(aec->outLinearFile);
     }
-    aec->outLinearFile = aec->outFile = aec->nearFile = aec->farFile = NULL;
+    if (aec->e_fft_file) {
+      rtc_WavClose(aec->e_fft_file);
+    }
+    aec->outLinearFile = aec->outFile = aec->nearFile = aec->farFile = aec->e_fft_file = NULL;
     aec->debugWritten = 0;
   }
 }
@@ -996,7 +1033,8 @@ static void NonLinearProcessing(AecCore* aec,
   float fft[PART_LEN2];
   float scale, dtmp;
   float nlpGainHband;
-  int i, j;
+  int i;
+  size_t j;
 
   
   float cohde[PART_LEN1], cohxd[PART_LEN1];
@@ -1211,8 +1249,8 @@ static void NonLinearProcessing(AecCore* aec,
   memcpy(aec->eBuf, aec->eBuf + PART_LEN, sizeof(float) * PART_LEN);
 
   
-  for (i = 0; i < aec->num_bands - 1; ++i) {
-    memcpy(aec->dBufH[i], aec->dBufH[i] + PART_LEN, sizeof(float) * PART_LEN);
+  for (j = 0; j < aec->num_bands - 1; ++j) {
+    memcpy(aec->dBufH[j], aec->dBufH[j] + PART_LEN, sizeof(float) * PART_LEN);
   }
 
   memmove(aec->xfwBuf + PART_LEN1,
@@ -1221,7 +1259,7 @@ static void NonLinearProcessing(AecCore* aec,
 }
 
 static void ProcessBlock(AecCore* aec) {
-  int i;
+  size_t i;
   float y[PART_LEN], e[PART_LEN];
   float scale;
 
@@ -1405,6 +1443,13 @@ static void ProcessBlock(AecCore* aec) {
     ef[1][i] = fft[2 * i + 1];
   }
 
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+  if (aec->e_fft_file) {
+    rtc_WavWriteSamples(aec->e_fft_file, &ef[0][0],
+                        sizeof(ef[0][0]) * PART_LEN1 * 2);
+  }
+#endif
+
   if (aec->metricsMode == 1) {
     
     
@@ -1440,26 +1485,23 @@ static void ProcessBlock(AecCore* aec) {
 #endif
 }
 
-int WebRtcAec_CreateAec(AecCore** aecInst) {
+AecCore* WebRtcAec_CreateAec() {
   int i;
   AecCore* aec = malloc(sizeof(AecCore));
-  *aecInst = aec;
-  if (aec == NULL) {
-    return -1;
+  if (!aec) {
+    return NULL;
   }
 
   aec->nearFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(float));
   if (!aec->nearFrBuf) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
 
   aec->outFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(float));
   if (!aec->outFrBuf) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
 
   for (i = 0; i < NUM_HIGH_BANDS_MAX; ++i) {
@@ -1467,15 +1509,13 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
                                              sizeof(float));
     if (!aec->nearFrBufH[i]) {
       WebRtcAec_FreeAec(aec);
-      aec = NULL;
-      return -1;
+      return NULL;
     }
     aec->outFrBufH[i] = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
                                             sizeof(float));
     if (!aec->outFrBufH[i]) {
       WebRtcAec_FreeAec(aec);
-      aec = NULL;
-      return -1;
+      return NULL;
     }
   }
 
@@ -1484,15 +1524,13 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
       WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * 2 * PART_LEN1);
   if (!aec->far_buf) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
   aec->far_buf_windowed =
       WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * 2 * PART_LEN1);
   if (!aec->far_buf_windowed) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
 #ifdef WEBRTC_AEC_DEBUG_DUMP
   aec->instance_index = webrtc_aec_instance_count;
@@ -1500,10 +1538,9 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
       WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * PART_LEN);
   if (!aec->far_time_buf) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
-  aec->farFile = aec->nearFile = aec->outFile = aec->outLinearFile = NULL;
+  aec->farFile = aec->nearFile = aec->outFile = aec->outLinearFile = aec->e_fft_file = NULL;
   aec->debug_dump_count = 0;
   aec->debugWritten = 0;
   OpenCoreDebugFiles(aec, &webrtc_aec_instance_count);
@@ -1512,8 +1549,7 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
       WebRtc_CreateDelayEstimatorFarend(PART_LEN1, kHistorySizeBlocks);
   if (aec->delay_estimator_farend == NULL) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
   
   
@@ -1521,16 +1557,18 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
       aec->delay_estimator_farend, kHistorySizeBlocks);
   if (aec->delay_estimator == NULL) {
     WebRtcAec_FreeAec(aec);
-    aec = NULL;
-    return -1;
+    return NULL;
   }
-#ifdef WEBRTC_ANDROID
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_GONK)
+  aec->delay_agnostic_enabled = 1;  
   
   
   WebRtc_set_lookahead(aec->delay_estimator, 0);
 #else
+  aec->delay_agnostic_enabled = 0;
   WebRtc_set_lookahead(aec->delay_estimator, kLookaheadBlocks);
 #endif
+  aec->extended_filter_enabled = 0;
 
   
   WebRtcAec_FilterFar = FilterFar;
@@ -1560,13 +1598,13 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
 
   aec_rdft_init();
 
-  return 0;
+  return aec;
 }
 
-int WebRtcAec_FreeAec(AecCore* aec) {
+void WebRtcAec_FreeAec(AecCore* aec) {
   int i;
   if (aec == NULL) {
-    return -1;
+    return;
   }
 
   WebRtc_FreeBuffer(aec->nearFrBuf);
@@ -1587,13 +1625,13 @@ int WebRtcAec_FreeAec(AecCore* aec) {
     rtc_WavClose(aec->nearFile);
     rtc_WavClose(aec->outFile);
     rtc_WavClose(aec->outLinearFile);
+    rtc_WavClose(aec->e_fft_file);
   }
 #endif
   WebRtc_FreeDelayEstimator(aec->delay_estimator);
   WebRtc_FreeDelayEstimatorFarend(aec->delay_estimator_farend);
 
   free(aec);
-  return 0;
 }
 
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
@@ -1608,7 +1646,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   } else {
     aec->normal_mu = 0.5f;
     aec->normal_error_threshold = 1.5e-6f;
-    aec->num_bands = sampFreq / 16000;
+    aec->num_bands = (size_t)(sampFreq / 16000);
   }
 
   WebRtc_InitBuffer(aec->nearFrBuf);
@@ -1646,14 +1684,8 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   aec->previous_delay = -2;  
   aec->delay_correction_count = 0;
   aec->shift_offset = kInitialShiftOffset;
-  aec->delay_quality_threshold = 0;
+  aec->delay_quality_threshold = kDelayQualityThresholdMin;
 
-#ifdef WEBRTC_ANDROID
-  aec->reported_delay_enabled = 0;  
-#else
-  aec->reported_delay_enabled = 1;
-#endif
-  aec->extended_filter_enabled = 0;
   aec->num_partitions = kNormalNumPartitions;
 
   
@@ -1666,14 +1698,16 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   
   
   WebRtc_enable_robust_validation(aec->delay_estimator, 1);
+  aec->frame_count = 0;
 
   
   aec->nlp_mode = 1;
 
   
   
+  
   if (aec->num_bands > 1) {
-    aec->mult = (short)aec->sampFreq / 16000;
+    aec->mult = 2;
   } else {
     aec->mult = (short)aec->sampFreq / 8000;
   }
@@ -1769,24 +1803,21 @@ void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend) {
 }
 
 int WebRtcAec_MoveFarReadPtr(AecCore* aec, int elements) {
-  int elements_moved = WebRtc_MoveReadPtr(aec->far_buf_windowed, elements);
-  WebRtc_MoveReadPtr(aec->far_buf, elements);
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  WebRtc_MoveReadPtr(aec->far_time_buf, elements);
-#endif
+  int elements_moved = MoveFarReadPtrWithoutSystemDelayUpdate(aec, elements);
   aec->system_delay -= elements_moved * PART_LEN;
   return elements_moved;
 }
 
 void WebRtcAec_ProcessFrames(AecCore* aec,
                              const float* const* nearend,
-                             int num_bands,
-                             int num_samples,
+                             size_t num_bands,
+                             size_t num_samples,
                              int knownDelay,
                              float* const* out) {
-  int i, j;
+  size_t i, j;
   int out_elements = 0;
 
+  aec->frame_count++;
   
   
   
@@ -1834,7 +1865,7 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
       WebRtcAec_MoveFarReadPtr(aec, -(aec->mult + 1));
     }
 
-    if (aec->reported_delay_enabled) {
+    if (!aec->delay_agnostic_enabled) {
       
 
       
@@ -1845,20 +1876,16 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
       
       
       int move_elements = (aec->knownDelay - knownDelay - 32) / PART_LEN;
-      int moved_elements = WebRtc_MoveReadPtr(aec->far_buf, move_elements);
-      WebRtc_MoveReadPtr(aec->far_buf_windowed, move_elements);
+      int moved_elements =
+          MoveFarReadPtrWithoutSystemDelayUpdate(aec, move_elements);
       aec->knownDelay -= moved_elements * PART_LEN;
-  #ifdef WEBRTC_AEC_DEBUG_DUMP
-      WebRtc_MoveReadPtr(aec->far_time_buf, move_elements);
-  #endif
     } else {
       
       int move_elements = SignalBasedDelayCorrection(aec);
-      int moved_elements = WebRtc_MoveReadPtr(aec->far_buf, move_elements);
-      WebRtc_MoveReadPtr(aec->far_buf_windowed, move_elements);
-  #ifdef WEBRTC_AEC_DEBUG_DUMP
-      WebRtc_MoveReadPtr(aec->far_time_buf, move_elements);
-  #endif
+      int moved_elements =
+          MoveFarReadPtrWithoutSystemDelayUpdate(aec, move_elements);
+      int far_near_buffer_diff = WebRtc_available_read(aec->far_buf) -
+          WebRtc_available_read(aec->nearFrBuf) / PART_LEN;
       WebRtc_SoftResetDelayEstimator(aec->delay_estimator, moved_elements);
       WebRtc_SoftResetDelayEstimatorFarend(aec->delay_estimator_farend,
                                            moved_elements);
@@ -1868,19 +1895,8 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
       
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if ((int)WebRtc_available_read(aec->far_buf) < (aec->mult + 1)) {
-        
-        WebRtcAec_MoveFarReadPtr(aec, -(aec->mult + 1));
+      if (far_near_buffer_diff < 0) {
+        WebRtcAec_MoveFarReadPtr(aec, far_near_buffer_diff);
       }
     }
 
@@ -1963,28 +1979,28 @@ void WebRtcAec_SetConfigCore(AecCore* self,
   }
   
   
-  self->delay_logging_enabled = delay_logging || !self->reported_delay_enabled;
+  self->delay_logging_enabled = delay_logging || self->delay_agnostic_enabled;
   if (self->delay_logging_enabled) {
     memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
   }
 }
 
-void WebRtcAec_enable_reported_delay(AecCore* self, int enable) {
-  self->reported_delay_enabled = enable;
+void WebRtcAec_enable_delay_agnostic(AecCore* self, int enable) {
+  self->delay_agnostic_enabled = enable;
 }
 
-int WebRtcAec_reported_delay_enabled(AecCore* self) {
-  return self->reported_delay_enabled;
+int WebRtcAec_delay_agnostic_enabled(AecCore* self) {
+  return self->delay_agnostic_enabled;
 }
 
-void WebRtcAec_enable_delay_correction(AecCore* self, int enable) {
+void WebRtcAec_enable_extended_filter(AecCore* self, int enable) {
   self->extended_filter_enabled = enable;
   self->num_partitions = enable ? kExtendedNumPartitions : kNormalNumPartitions;
   
   WebRtc_set_allowed_offset(self->delay_estimator, self->num_partitions / 2);
 }
 
-int WebRtcAec_delay_correction_enabled(AecCore* self) {
+int WebRtcAec_extended_filter_enabled(AecCore* self) {
   return self->extended_filter_enabled;
 }
 

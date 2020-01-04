@@ -21,9 +21,9 @@ enum {
 };
 
 
-int WebRtcAec_CreateResampler(void** resampInst);
+void* WebRtcAec_CreateResampler();  
 int WebRtcAec_InitResampler(void* resampInst, int deviceSampleRateHz);
-int WebRtcAec_FreeResampler(void* resampInst);
+void WebRtcAec_FreeResampler(void* resampInst);
 
 
 int WebRtcAec_GetSkew(void* resampInst, int rawSkew, float* skewEst);
@@ -31,9 +31,9 @@ int WebRtcAec_GetSkew(void* resampInst, int rawSkew, float* skewEst);
 
 void WebRtcAec_ResampleLinear(void* resampInst,
                               const float* inspeech,
-                              int size,
+                              size_t size,
                               float skew,
                               float* outspeech,
-                              int* size_out);
+                              size_t* size_out);
 
 #endif  
