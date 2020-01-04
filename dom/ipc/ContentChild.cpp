@@ -643,6 +643,8 @@ ContentChild::Init(MessageLoop* aIOLoop,
     int argc = 3;
     char option_name[] = "--display";
     char* argv[] = {
+      
+      
       nullptr,
       option_name,
       display_name,
