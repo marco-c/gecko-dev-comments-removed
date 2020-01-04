@@ -206,38 +206,41 @@ function forceCollections() {
 
 
 
-
-
-
-
-
-
-function getAllWindows(baseWindow=gWindow) {
-  let windows = new Set();
-
-  let _getAllWindows = function(win) {
-    windows.add(win);
-
-    for (let i = 0; i < win.length; i++) {
-      _getAllWindows(win[i]);
-    }
-  };
-  _getAllWindows(baseWindow);
-
-  return windows;
-}
-
-
-
-
 function* finishTests() {
-  for (let win of getAllWindows()) {
-    if (win.clear) {
-      console.log("Clearing cookies, localStorage and indexedDBs from " +
-                  win.document.location);
-      yield win.clear();
+  
+  
+  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+    
+
+
+
+
+
+
+
+
+    function getAllWindows(baseWindow) {
+      let windows = new Set();
+
+      let _getAllWindows = function(win) {
+        windows.add(win);
+
+        for (let i = 0; i < win.length; i++) {
+          _getAllWindows(win[i]);
+        }
+      };
+      _getAllWindows(baseWindow);
+
+      return windows;
     }
-  }
+
+    let windows = getAllWindows(content.wrappedJSObject);
+    for (let win of windows) {
+      if (win.clear) {
+        yield Task.spawn(win.clear);
+      }
+    }
+  });
 
   forceCollections();
   finish();

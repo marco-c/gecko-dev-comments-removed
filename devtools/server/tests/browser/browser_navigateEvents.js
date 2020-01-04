@@ -117,7 +117,8 @@ function getServerTabActor(callback) {
 
 function test() {
   
-  addTab(URL1).then(function(doc) {
+  addTab(URL1).then(function(browser) {
+    let doc = browser.contentDocument;
     getServerTabActor(function (tabActor) {
       
       events.on(tabActor, "will-navigate", function (data) {
@@ -128,7 +129,6 @@ function test() {
       });
 
       
-      let browser = gBrowser.selectedBrowser;
       browser.addEventListener("DOMContentLoaded", onDOMContentLoaded, true);
       browser.addEventListener("load", onLoad, true);
 

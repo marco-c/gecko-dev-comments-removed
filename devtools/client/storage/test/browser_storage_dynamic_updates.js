@@ -198,7 +198,11 @@ add_task(function*() {
   yield findVariableViewProperties([{name: "ss2", value: "changed=ss2"}]);
 
   
-  yield gWindow.clear();
+  
+  
+  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+    return Task.spawn(content.wrappedJSObject.clear);
+  });
 
   yield gUI.once("store-objects-cleared");
 

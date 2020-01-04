@@ -27,6 +27,9 @@ waitForExplicitFinish();
 
 
 
+
+
+
 var addTab = Task.async(function* (url) {
   info("Adding a new tab with URL: '" + url + "'");
   let tab = gBrowser.selectedTab = gBrowser.addTab();
@@ -42,7 +45,7 @@ var addTab = Task.async(function* (url) {
     waitForFocus(resolve, content, isBlank);
   });
 
-  return tab.linkedBrowser.contentWindow.document;
+  return tab.linkedBrowser;
 });
 
 function* initAnimationsFrontForUrl(url) {
