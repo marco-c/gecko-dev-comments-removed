@@ -321,6 +321,12 @@ DecodedAudioDataSink::NotifyAudioNeeded()
     return;
   }
 
+  if (AudioQueue().IsFinished() && !AudioQueue().GetSize()) {
+    
+    DrainConverter();
+    return;
+  }
+
   
   
   while (AudioQueue().GetSize() && mProcessedQueue.GetSize() < 2) {
@@ -338,6 +344,8 @@ DecodedAudioDataSink::NotifyAudioNeeded()
                  mConverter? mConverter->InputConfig().Channels() : 0,
                  mConverter ? mConverter->InputConfig().Rate() : 0,
                  data->mChannels, data->mRate);
+
+      DrainConverter();
 
       
       
@@ -385,10 +393,15 @@ DecodedAudioDataSink::NotifyAudioNeeded()
       
       missingFrames = std::min<int64_t>(INT32_MAX, missingFrames.value());
       mFramesParsed += missingFrames.value();
-      AlignedAudioBuffer silenceData(missingFrames.value() * mOutputChannels);
-      RefPtr<AudioData> silence = CreateAudioFromBuffer(Move(silenceData), data);
-      if (silence) {
-        mProcessedQueue.Push(silence);
+      
+      missingFrames -= DrainConverter(missingFrames.value());
+      
+      if (missingFrames.value()) {
+        AlignedAudioBuffer silenceData(missingFrames.value() * mOutputChannels);
+        RefPtr<AudioData> silence = CreateAudioFromBuffer(Move(silenceData), data);
+        if (silence) {
+          mProcessedQueue.Push(silence);
+        }
       }
     }
 
@@ -404,6 +417,7 @@ DecodedAudioDataSink::NotifyAudioNeeded()
       }
     }
     mProcessedQueue.Push(data);
+    mLastProcessedPacket = Some(data);
   }
 }
 
@@ -430,6 +444,37 @@ DecodedAudioDataSink::CreateAudioFromBuffer(AlignedAudioBuffer&& aBuffer,
                   mOutputChannels,
                   mOutputRate);
   return data.forget();
+}
+
+uint32_t
+DecodedAudioDataSink::DrainConverter(uint32_t aMaxFrames)
+{
+  MOZ_ASSERT(mProcessingThread->IsCurrentThreadIn());
+
+  if (!mConverter || !mLastProcessedPacket) {
+    
+    return 0;
+  }
+
+  
+  AlignedAudioBuffer convertedData =
+    mConverter->Process(AudioSampleBuffer(AlignedAudioBuffer())).Forget();
+
+  uint32_t frames = convertedData.Length() / mOutputChannels;
+  convertedData.SetLength(std::min(frames, aMaxFrames) * mOutputChannels);
+
+  
+  
+  
+  RefPtr<AudioData> data = CreateAudioFromBuffer(Move(convertedData),
+                                                 mLastProcessedPacket.ref());
+  mLastProcessedPacket.reset();
+
+  if (!data) {
+    return 0;
+  }
+  mProcessedQueue.Push(data);
+  return data->mFrames;
 }
 
 } 
