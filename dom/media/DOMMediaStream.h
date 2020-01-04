@@ -14,7 +14,6 @@
 #include "StreamTracks.h"
 #include "nsIDOMWindow.h"
 #include "nsIPrincipal.h"
-#include "MediaTrackConstraints.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "PrincipalChangeObserver.h"
 
@@ -49,6 +48,7 @@ class VideoTrack;
 class AudioTrackList;
 class VideoTrackList;
 class MediaTrackListListener;
+struct MediaTrackConstraints;
 } 
 
 namespace layers {
@@ -522,8 +522,7 @@ public:
 
 
   MediaStreamTrack* CreateDOMTrack(TrackID aTrackID, MediaSegment::Type aType,
-      MediaStreamTrackSource* aSource,
-      const MediaTrackConstraints& aConstraints = MediaTrackConstraints());
+                                   MediaStreamTrackSource* aSource);
 
   
 
