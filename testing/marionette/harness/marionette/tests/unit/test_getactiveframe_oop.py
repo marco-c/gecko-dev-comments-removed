@@ -90,9 +90,3 @@ class TestGetActiveFrameOOP(MarionetteTestCase):
         self.marionette.switch_to_frame()
         self.marionette.switch_to_frame(active_frame2)
         self.assertTrue("test_oop_2.html" in self.marionette.execute_script("return document.wrappedJSObject.location.href"))
-
-        
-        
-        
-        
-        
