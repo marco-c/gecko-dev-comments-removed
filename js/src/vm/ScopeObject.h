@@ -930,13 +930,23 @@ class ClonedBlockObject : public BlockObject
 
 
 
-class UninitializedLexicalObject : public ScopeObject
+
+
+
+class RuntimeLexicalErrorObject : public ScopeObject
 {
+    static const unsigned ERROR_SLOT = 1;
+
   public:
-    static const unsigned RESERVED_SLOTS = 1;
+    static const unsigned RESERVED_SLOTS = 2;
     static const Class class_;
 
-    static UninitializedLexicalObject* create(JSContext* cx, HandleObject enclosing);
+    static RuntimeLexicalErrorObject* create(JSContext* cx, HandleObject enclosing,
+                                             unsigned errorNumber);
+
+    unsigned errorNumber() {
+        return getReservedSlot(ERROR_SLOT).toInt32();
+    }
 };
 
 template<XDRMode mode>
@@ -1256,7 +1266,7 @@ JSObject::is<js::ScopeObject>() const
     return is<js::CallObject>() ||
            is<js::DeclEnvObject>() ||
            is<js::NestedScopeObject>() ||
-           is<js::UninitializedLexicalObject>() ||
+           is<js::RuntimeLexicalErrorObject>() ||
            is<js::NonSyntacticVariablesObject>();
 }
 

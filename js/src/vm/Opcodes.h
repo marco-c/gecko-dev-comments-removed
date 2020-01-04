@@ -1727,8 +1727,26 @@
 
  \
     macro(JSOP_DERIVEDCONSTRUCTOR, 168,"derivedconstructor", NULL, 5,  1,  1,  JOF_ATOM) \
-    macro(JSOP_UNUSED169,     169,"unused169",  NULL,     1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED170,     170,"unused170",  NULL,     1,  0,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    macro(JSOP_THROWSETCONST,        169, "throwsetconst",        NULL, 4,  1,  1, JOF_LOCAL|JOF_NAME|JOF_SET|JOF_DETECTING) \
+    
+
+
+
+
+
+
+
+ \
+    macro(JSOP_THROWSETALIASEDCONST, 170, "throwsetaliasedconst", NULL, 5,  1,  1, JOF_SCOPECOORD|JOF_NAME|JOF_SET|JOF_DETECTING) \
     macro(JSOP_UNUSED171,     171,"unused171",  NULL,     1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED172,     172,"unused172",  NULL,     1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED173,     173,"unused173",  NULL,     1,  0,  0,  JOF_BYTE) \
