@@ -4215,9 +4215,11 @@ Downloader.prototype = {
       
       
       
+      
       } else if ((status == Cr.NS_ERROR_NET_TIMEOUT ||
                   status == Cr.NS_ERROR_CONNECTION_REFUSED ||
-                  status == Cr.NS_ERROR_NET_RESET) &&
+                  status == Cr.NS_ERROR_NET_RESET ||
+                  status == Cr.NS_ERROR_DOCUMENT_NOT_CACHED) &&
                  this.updateService._consecutiveSocketErrors < maxFail) {
         LOG("Downloader:onStopRequest - socket error, shouldRetrySoon: true");
         let dwnldCode = AUSTLMY.DWNLD_RETRY_CONNECTION_REFUSED;
@@ -4225,18 +4227,17 @@ Downloader.prototype = {
           dwnldCode = AUSTLMY.DWNLD_RETRY_NET_TIMEOUT;
         } else if (status == Cr.NS_ERROR_NET_RESET) {
           dwnldCode = AUSTLMY.DWNLD_RETRY_NET_RESET;
+        } else if (status == Cr.NS_ERROR_DOCUMENT_NOT_CACHED) {
+          dwnldCode = AUSTLMY.DWNLD_ERR_DOCUMENT_NOT_CACHED;
         }
         AUSTLMY.pingDownloadCode(this.isCompleteUpdate, dwnldCode);
         shouldRetrySoon = true;
         deleteActiveUpdate = false;
       } else if (status != Cr.NS_BINDING_ABORTED &&
-                 status != Cr.NS_ERROR_ABORT &&
-                 status != Cr.NS_ERROR_DOCUMENT_NOT_CACHED) {
+                 status != Cr.NS_ERROR_ABORT) {
         LOG("Downloader:onStopRequest - non-verification failure");
-        let dwnldCode = AUSTLMY.DWNLD_ERR_DOCUMENT_NOT_CACHED;
-        if (status == Cr.NS_BINDING_ABORTED) {
-          dwnldCode = AUSTLMY.DWNLD_ERR_BINDING_ABORTED;
-        } else if (status == Cr.NS_ERROR_ABORT) {
+        let dwnldCode = AUSTLMY.DWNLD_ERR_BINDING_ABORTED;
+        if (status == Cr.NS_ERROR_ABORT) {
           dwnldCode = AUSTLMY.DWNLD_ERR_ABORT;
         }
         AUSTLMY.pingDownloadCode(this.isCompleteUpdate, dwnldCode);
