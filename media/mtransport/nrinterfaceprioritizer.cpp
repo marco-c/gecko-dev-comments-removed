@@ -1,9 +1,11 @@
 
 
 
+#include <algorithm>
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 #include "logging.h"
 #include "nrinterfaceprioritizer.h"
 #include "nsCOMPtr.h"
@@ -15,20 +17,32 @@ namespace {
 class LocalAddress {
 public:
   LocalAddress()
-    : key_(),
+    : ifname_(),
+      addr_(),
+      key_(),
       is_vpn_(-1),
       estimated_speed_(-1),
       type_preference_(-1),
       ip_version_(-1) {}
 
   bool Init(const nr_local_addr& local_addr) {
+    ifname_ = local_addr.addr.ifname;
+
     char buf[MAXIFNAME + 41];
     int r = nr_transport_addr_fmt_ifname_addr_string(&local_addr.addr, buf, sizeof(buf));
     if (r) {
-      MOZ_MTLOG(ML_ERROR, "Error formatting interface address string.");
+      MOZ_MTLOG(ML_ERROR, "Error formatting interface key.");
       return false;
     }
     key_ = buf;
+
+    r = nr_transport_addr_get_addrstring(&local_addr.addr, buf, sizeof(buf));
+    if (r) {
+      MOZ_MTLOG(ML_ERROR, "Error formatting address string.");
+      return false;
+    }
+    addr_ = buf;
+
     is_vpn_ = (local_addr.interface.type & NR_INTERFACE_TYPE_VPN) != 0 ? 1 : 0;
     estimated_speed_ = local_addr.interface.estimated_speed;
     type_preference_ = GetNetworkTypePreference(local_addr.interface.type);
@@ -57,12 +71,27 @@ public:
     }
 
     
+    auto thisindex = std::find(interface_preference_list().begin(),
+                               interface_preference_list().end(),
+                               ifname_);
+    auto rhsindex = std::find(interface_preference_list().begin(),
+                              interface_preference_list().end(),
+                              rhs.ifname_);
+    if (thisindex != rhsindex) {
+      return thisindex < rhsindex;
+    }
+
+    
     if (ip_version_ != rhs.ip_version_) {
       return ip_version_ > rhs.ip_version_;
     }
 
     
-    return key_ < rhs.key_;
+    if (ifname_ != rhs.ifname_) {
+      return ifname_ < rhs.ifname_;
+    }
+
+    return addr_ < rhs.addr_;
   }
 
   const std::string& GetKey() const {
@@ -85,6 +114,46 @@ private:
     return 4;
   }
 
+  
+  
+  static const std::vector<std::string>& interface_preference_list()
+  {
+    static std::vector<std::string> list(build_interface_preference_list());
+    return list;
+  }
+
+  static std::vector<std::string> build_interface_preference_list()
+  {
+    std::vector<std::string> result;
+    result.push_back("rl0");
+    result.push_back("wi0");
+    result.push_back("en0");
+    result.push_back("en1");
+    result.push_back("en2");
+    result.push_back("en3");
+    result.push_back("eth0");
+    result.push_back("eth1");
+    result.push_back("eth2");
+    result.push_back("em1");
+    result.push_back("em0");
+    result.push_back("ppp");
+    result.push_back("ppp0");
+    result.push_back("vmnet1");
+    result.push_back("vmnet0");
+    result.push_back("vmnet3");
+    result.push_back("vmnet4");
+    result.push_back("vmnet5");
+    result.push_back("vmnet6");
+    result.push_back("vmnet7");
+    result.push_back("vmnet8");
+    result.push_back("virbr0");
+    result.push_back("wlan0");
+    result.push_back("lo0");
+    return result;
+  }
+
+  std::string ifname_;
+  std::string addr_;
   std::string key_;
   int is_vpn_;
   int estimated_speed_;

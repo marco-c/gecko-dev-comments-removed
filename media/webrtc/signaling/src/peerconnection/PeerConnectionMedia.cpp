@@ -316,7 +316,6 @@ nsresult PeerConnectionMedia::Init(const std::vector<NrIceStunServer>& stun_serv
   
   mIceCtx = NrIceCtx::Create("PC:" + mParentName,
                              true, 
-                             true, 
                              mParent->GetAllowIceLoopback(),
                              ice_tcp,
                              mParent->GetAllowIceLinkLocal(),
