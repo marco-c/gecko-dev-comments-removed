@@ -367,6 +367,8 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
         
         let lastDecl = declarations.pop();
         declarations = [...declarations, ...newDecls, lastDecl];
+      } else {
+        current += " ";
       }
     } else {
       current += inputString.substring(token.startOffset, token.endOffset);
