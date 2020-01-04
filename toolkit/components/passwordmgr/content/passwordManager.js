@@ -3,9 +3,11 @@
 
 
 
+var { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
                                   "resource://gre/modules/DeferredTask.jsm");
@@ -13,12 +15,77 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
 
 var kSignonBundle;
+var kObserverService;
+
+
+var passwordmanager = null;
+
 var showingPasswords = false;
+
+
+var signons = [];
+var deletedSignons = [];
+
+var signonsTree;
+var signonReloadDisplay = {
+  observe: function(subject, topic, data) {
+    if (topic == "passwordmgr-storage-changed") {
+      switch (data) {
+        case "addLogin":
+        case "modifyLogin":
+        case "removeLogin":
+        case "removeAllLogins":
+          if (!signonsTree) {
+            return;
+          }
+          signons.length = 0;
+          LoadSignons();
+          
+          if (document.getElementById("filter") && document.getElementById("filter").value != "") {
+            _filterPasswords();
+          }
+          break;
+      }
+      kObserverService.notifyObservers(null, "passwordmgr-dialog-updated", null);
+    }
+  }
+}
+
+
 var dateFormatter = new Intl.DateTimeFormat(undefined,
                       { day: "numeric", month: "short", year: "numeric" });
 var dateAndTimeFormatter = new Intl.DateTimeFormat(undefined,
                              { day: "numeric", month: "short", year: "numeric",
                                hour: "numeric", minute: "numeric" });
+
+function Startup() {
+  
+  passwordmanager = Components.classes["@mozilla.org/login-manager;1"]
+                        .getService(Components.interfaces.nsILoginManager);
+
+  
+  kObserverService = Components.classes["@mozilla.org/observer-service;1"]
+                               .getService(Components.interfaces.nsIObserverService);
+  kObserverService.addObserver(signonReloadDisplay, "passwordmgr-storage-changed", false);
+
+  signonsTree = document.getElementById("signonsTree");
+}
+
+
+
+function HandleTreeColumnClick(sortFunction, event) {
+  if (event.target.nodeName != "treecol" || event.button != 0) {
+    return;
+  }
+
+  let sortField = event.target.getAttribute("data-field-name");
+  if (!sortField) {
+    return;
+  }
+
+  sortFunction(sortField);
+  Services.telemetry.getKeyedHistogramById("PWMGR_MANAGE_SORTED").add(sortField);
+}
 
 function SignonsStartup() {
   kSignonBundle = document.getElementById("signonBundle");
@@ -42,6 +109,10 @@ function SignonsStartup() {
   }
 
   FocusFilterBox();
+}
+
+function Shutdown() {
+  kObserverService.removeObserver(signonReloadDisplay, "passwordmgr-storage-changed");
 }
 
 function setFilter(aFilterString) {
@@ -160,6 +231,73 @@ var signonsTreeView = {
   },
 };
 
+function SortTree(tree, view, table, column, lastSortColumn, lastSortAscending, updateSelection) {
+
+  
+  var selections = GetTreeSelections(tree);
+  var selectedNumber = selections.length ? table[selections[0]].number : -1;
+
+  
+  var ascending = (column == lastSortColumn) ? !lastSortAscending : true;
+
+  function compareFunc(a, b) {
+    var valA, valB;
+    switch (column) {
+      case "hostname":
+        var realmA = a.httpRealm;
+        var realmB = b.httpRealm;
+        realmA = realmA == null ? "" : realmA.toLowerCase();
+        realmB = realmB == null ? "" : realmB.toLowerCase();
+
+        valA = a[column].toLowerCase() + realmA;
+        valB = b[column].toLowerCase() + realmB;
+        break;
+      case "username":
+      case "password":
+        valA = a[column].toLowerCase();
+        valB = b[column].toLowerCase();
+        break;
+
+      default:
+        valA = a[column];
+        valB = b[column];
+    }
+
+    if (valA < valB)
+      return -1;
+    if (valA > valB)
+      return 1;
+    return 0;
+  }
+
+  
+  table.sort(compareFunc);
+  if (!ascending)
+    table.reverse();
+
+  
+  var selectedRow = -1;
+  if (selectedNumber>=0 && updateSelection) {
+    for (var s=0; s<table.length; s++) {
+      if (table[s].number == selectedNumber) {
+        
+        
+        tree.view.selection.select(-1);
+        tree.view.selection.select(s);
+        selectedRow = s;
+        break;
+      }
+    }
+  }
+
+  
+  tree.treeBoxObject.invalidate();
+  if (selectedRow >= 0) {
+    tree.treeBoxObject.ensureRowIsVisible(selectedRow)
+  }
+
+  return ascending;
+}
 
 function LoadSignons() {
   
@@ -193,6 +331,25 @@ function LoadSignons() {
   return true;
 }
 
+function GetTreeSelections(tree) {
+  var selections = [];
+  var select = tree.view.selection;
+  if (select) {
+    var count = select.getRangeCount();
+    var min = new Object();
+    var max = new Object();
+    for (var i=0; i<count; i++) {
+      select.getRangeAt(i, min, max);
+      for (var k=min.value; k<=max.value; k++) {
+        if (k != -1) {
+          selections[selections.length] = k;
+        }
+      }
+    }
+  }
+  return selections;
+}
+
 function SignonSelected() {
   var selections = GetTreeSelections(signonsTree);
   if (selections.length) {
@@ -202,12 +359,77 @@ function SignonSelected() {
   }
 }
 
+function DeleteSelectedItemFromTree
+    (tree, view, table, deletedTable, removeButton, removeAllButton) {
+
+  
+  tree.view.selection.selectEventsSuppressed = true;
+
+  
+  var selections = GetTreeSelections(tree);
+  for (var s=selections.length-1; s>= 0; s--) {
+    var i = selections[s];
+    deletedTable[deletedTable.length] = table[i];
+    table[i] = null;
+  }
+
+  
+  for (var j=0; j<table.length; j++) {
+    if (table[j] == null) {
+      var k = j;
+      while ((k < table.length) && (table[k] == null)) {
+        k++;
+      }
+      table.splice(j, k-j);
+      view.rowCount -= k - j;
+      tree.treeBoxObject.rowCountChanged(j, j - k);
+    }
+  }
+
+  
+  if (table.length) {
+    
+    var nextSelection = (selections[0] < table.length) ? selections[0] : table.length-1;
+    tree.view.selection.select(nextSelection);
+    tree.treeBoxObject.ensureRowIsVisible(nextSelection);
+  } else {
+    
+    document.getElementById(removeButton).setAttribute("disabled", "true")
+    document.getElementById(removeAllButton).setAttribute("disabled", "true");
+  }
+  tree.view.selection.selectEventsSuppressed = false;
+}
+
 function DeleteSignon() {
   var syncNeeded = (signonsTreeView._filterSet.length != 0);
   DeleteSelectedItemFromTree(signonsTree, signonsTreeView,
                              signonsTreeView._filterSet.length ? signonsTreeView._filterSet : signons,
                              deletedSignons, "removeSignon", "removeAllSignons");
   FinalizeSignonDeletions(syncNeeded);
+}
+
+function DeleteAllFromTree(tree, view, table, deletedTable, removeButton, removeAllButton) {
+
+  
+  for (var i=0; i<table.length; i++) {
+    deletedTable[deletedTable.length] = table[i];
+  }
+  table.length = 0;
+
+  
+  view.selection.select(-1);
+
+  
+  view.rowCount = 0;
+
+  var box = tree.treeBoxObject;
+  box.rowCountChanged(0, -deletedTable.length);
+  box.invalidate();
+
+
+  
+  document.getElementById(removeButton).setAttribute("disabled", "true")
+  document.getElementById(removeAllButton).setAttribute("disabled", "true");
 }
 
 function DeleteAllSignons() {
@@ -242,9 +464,7 @@ function TogglePasswordVisible() {
 
   
   
-  Components.classes["@mozilla.org/observer-service;1"]
-            .getService(Components.interfaces.nsIObserverService)
-            .notifyObservers(null, "passwordmgr-password-toggle-complete", null);
+  kObserverService.notifyObservers(null, "passwordmgr-password-toggle-complete", null);
   Services.telemetry.getHistogramById("PWMGR_MANAGE_VISIBILITY_TOGGLED").add(showingPasswords);
 }
 
