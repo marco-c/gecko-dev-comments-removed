@@ -22,6 +22,7 @@
 #include "nsCOMPtr.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
+#include "nsITimer.h"
 
 class nsNotifyAddrListener : public nsINetworkLinkService,
                              public nsIRunnable,
@@ -54,6 +55,9 @@ private:
     nsresult Shutdown(void);
 
     
+    nsresult NetworkChanged();
+
+    
     nsresult SendEvent(const char *aEventID);
 
     
@@ -78,6 +82,12 @@ private:
 
     
     mozilla::Atomic<bool, mozilla::Relaxed> mChildThreadShutdown;
-};
+
+    
+    bool mCoalescingActive;
+
+    
+    mozilla::TimeStamp mChangeTime;
+ };
 
 #endif 
