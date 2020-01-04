@@ -71,8 +71,7 @@ private:
                                  AVFrame* aFrame);
 
   RefPtr<ImageContainer> mImageContainer;
-  nsIntSize mDisplay;
-  nsIntRect mImage;
+  VideoInfo mInfo;
 
   
   AVCodecParserContext* mCodecParser;
