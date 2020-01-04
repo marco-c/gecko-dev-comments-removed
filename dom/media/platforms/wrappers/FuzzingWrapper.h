@@ -10,6 +10,8 @@
 #include "mozilla/Pair.h"
 #include "PlatformDecoderModule.h"
 
+#include <deque>
+
 namespace mozilla {
 
 
@@ -77,7 +79,7 @@ private:
   
   
   typedef Pair<nsRefPtr<MediaData>, bool> MediaDataAndInputExhausted;
-  nsTArray<MediaDataAndInputExhausted> mDelayedOutput;
+  std::deque<MediaDataAndInputExhausted> mDelayedOutput;
   nsRefPtr<MediaTimer> mDelayedOutputTimer;
   
   

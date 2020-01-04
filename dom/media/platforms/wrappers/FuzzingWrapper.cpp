@@ -147,16 +147,16 @@ DecoderCallbackFuzzingWrapper::Output(MediaData* aData)
   MOZ_ASSERT(mCallback);
   if (mFrameOutputMinimumInterval) {
     if (!mPreviousOutput.IsNull()) {
-      if (!mDelayedOutput.IsEmpty()) {
+      if (!mDelayedOutput.empty()) {
         
-        mDelayedOutput.AppendElement(MakePair<nsRefPtr<MediaData>, bool>(aData, false));
+        mDelayedOutput.push_back(MakePair<nsRefPtr<MediaData>, bool>(aData, false));
         CFW_LOGD("delaying output of sample@%lld, total queued:%d",
-                 aData->mTime, int(mDelayedOutput.Length()));
+                 aData->mTime, int(mDelayedOutput.size()));
         return;
       }
       if (TimeStamp::Now() < mPreviousOutput + mFrameOutputMinimumInterval) {
         
-        mDelayedOutput.AppendElement(MakePair<nsRefPtr<MediaData>, bool>(aData, false));
+        mDelayedOutput.push_back(MakePair<nsRefPtr<MediaData>, bool>(aData, false));
         CFW_LOGD("delaying output of sample@%lld, first queued", aData->mTime);
         if (!mDelayedOutputTimer) {
           mDelayedOutputTimer = new MediaTimer();
@@ -198,8 +198,8 @@ DecoderCallbackFuzzingWrapper::InputExhausted()
     mTaskQueue->Dispatch(task.forget());
     return;
   }
-  if (!mDontDelayInputExhausted && !mDelayedOutput.IsEmpty()) {
-    MediaDataAndInputExhausted& last = mDelayedOutput.LastElement();
+  if (!mDontDelayInputExhausted && !mDelayedOutput.empty()) {
+    MediaDataAndInputExhausted& last = mDelayedOutput.back();
     CFW_LOGD("InputExhausted delayed until after output of sample@%lld",
              last.first()->mTime);
     last.second() = true;
@@ -220,7 +220,7 @@ DecoderCallbackFuzzingWrapper::DrainComplete()
     return;
   }
   MOZ_ASSERT(mCallback);
-  if (mDelayedOutput.IsEmpty()) {
+  if (mDelayedOutput.empty()) {
     
     CFW_LOGV("No delayed output -> DrainComplete now");
     mCallback->DrainComplete();
@@ -270,7 +270,7 @@ void
 DecoderCallbackFuzzingWrapper::OutputDelayedFrame()
 {
   MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
-  if (mDelayedOutput.IsEmpty()) {
+  if (mDelayedOutput.empty()) {
     if (mDraining) {
       
       mDraining = false;
@@ -278,17 +278,17 @@ DecoderCallbackFuzzingWrapper::OutputDelayedFrame()
     }
     return;
   }
-  MediaDataAndInputExhausted& data = mDelayedOutput[0];
+  MediaDataAndInputExhausted& data = mDelayedOutput.front();
   CFW_LOGD("Outputting delayed sample@%lld, remaining:%d",
-          data.first()->mTime, int(mDelayedOutput.Length() - 1));
+          data.first()->mTime, int(mDelayedOutput.size() - 1));
   mPreviousOutput = TimeStamp::Now();
   mCallback->Output(data.first());
   if (data.second()) {
     CFW_LOGD("InputExhausted after delayed sample@%lld", data.first()->mTime);
     mCallback->InputExhausted();
   }
-  mDelayedOutput.RemoveElementAt(0);
-  if (!mDelayedOutput.IsEmpty()) {
+  mDelayedOutput.pop_front();
+  if (!mDelayedOutput.empty()) {
     
     ScheduleOutputDelayedFrame();
   } else if (mDraining) {
@@ -309,7 +309,7 @@ DecoderCallbackFuzzingWrapper::ClearDelayedOutput()
     return;
   }
   mDelayedOutputTimer = nullptr;
-  mDelayedOutput.Clear();
+  mDelayedOutput.clear();
 }
 
 void
