@@ -37,7 +37,7 @@ const int32_t kFirstShippedSchemaVersion = 15;
 namespace {
 
 
-const int32_t kLatestSchemaVersion = 17;
+const int32_t kLatestSchemaVersion = 18;
 
 
 
@@ -204,8 +204,7 @@ static_assert(int(RequestCache::Default) == 0 &&
               int(RequestCache::Reload) == 2 &&
               int(RequestCache::No_cache) == 3 &&
               int(RequestCache::Force_cache) == 4 &&
-              int(RequestCache::Only_if_cached) == 5 &&
-              int(RequestCache::EndGuard_) == 6,
+              int(RequestCache::EndGuard_) == 5,
               "RequestCache values are as expected");
 static_assert(int(RequestRedirect::Follow) == 0 &&
               int(RequestRedirect::Error) == 1 &&
@@ -2411,11 +2410,13 @@ struct Migration
 
 nsresult MigrateFrom15To16(mozIStorageConnection* aConn);
 nsresult MigrateFrom16To17(mozIStorageConnection* aConn);
+nsresult MigrateFrom17To18(mozIStorageConnection* aConn);
 
 
 Migration sMigrationList[] = {
   Migration(15, MigrateFrom15To16),
   Migration(16, MigrateFrom16To17),
+  Migration(17, MigrateFrom17To18),
 };
 
 uint32_t sMigrationListLength = sizeof(sMigrationList) / sizeof(Migration);
@@ -2652,6 +2653,37 @@ MigrateFrom16To17(mozIStorageConnection* aConn)
 
   return rv;
 }
+
+nsresult
+MigrateFrom17To18(mozIStorageConnection* aConn)
+{
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(aConn);
+
+  mozStorageTransaction trans(aConn, true,
+                              mozIStorageConnection::TRANSACTION_IMMEDIATE);
+
+  
+  
+  
+  
+  
+  
+
+  static_assert(int(RequestCache::Default) == 0,
+                "This is where the 0 below comes from!");
+  nsresult rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "UPDATE entries SET request_cache = 0 "
+      "WHERE request_cache = 5;"
+  ));
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  rv = aConn->SetSchemaVersion(18);
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  return rv;
+}
+
 
 } 
 
