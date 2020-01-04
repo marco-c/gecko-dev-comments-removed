@@ -228,6 +228,12 @@ RestyleTracker::DoProcessRestyles()
   
   
   
+  RestyleManager::AnimationsWithDestroyedFrame
+    animationsWithDestroyedFrame(mRestyleManager);
+
+  
+  
+  
   
   
   

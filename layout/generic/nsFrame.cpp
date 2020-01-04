@@ -687,6 +687,17 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     }
   }
 
+  if (nsLayoutUtils::HasCurrentAnimations(static_cast<nsIFrame*>(this))) {
+    
+    
+    RestyleManager::AnimationsWithDestroyedFrame* adf =
+      presContext->RestyleManager()->GetAnimationsWithDestroyedFrame();
+    
+    if (adf) {
+      adf->Put(mContent, mStyleContext);
+    }
+  }
+
   shell->NotifyDestroyingFrame(this);
 
   if (mState & NS_FRAME_EXTERNAL_REFERENCE) {

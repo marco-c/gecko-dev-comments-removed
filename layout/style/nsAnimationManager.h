@@ -290,6 +290,12 @@ public:
   void DispatchEvents()  { mEventDispatcher.DispatchEvents(mPresContext); }
   void ClearEventQueue() { mEventDispatcher.ClearEventQueue(); }
 
+  
+  
+  
+  void StopAnimationsForElement(mozilla::dom::Element* aElement,
+                                nsCSSPseudoElements::Type aPseudoType);
+
 protected:
   virtual ~nsAnimationManager() {}
 
