@@ -404,6 +404,11 @@ public:
   
 
 
+  static void NotifyVsync(const TimeStamp& aTimeStamp, const uint64_t& aLayersId);
+
+  
+
+
 
 
 

@@ -32,6 +32,17 @@ protected:
 }; 
 
 
+
+
+
+
+
+
+
+
+
+
+
 class CompositorVsyncDispatcher final
 {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorVsyncDispatcher)
@@ -46,13 +57,7 @@ public:
   void SetCompositorVsyncObserver(VsyncObserver* aVsyncObserver);
   void Shutdown();
 
-  
-  
-  
-  static void SetThreadAssertionsEnabled(bool aEnable);
-
 private:
-  void AssertOnCompositorThread();
   virtual ~CompositorVsyncDispatcher();
   void ObserveVsync(bool aEnable);
 

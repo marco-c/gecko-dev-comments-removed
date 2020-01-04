@@ -125,8 +125,6 @@ TEST_F(VsyncTester, EnableVsync)
 
 TEST_F(VsyncTester, CompositorGetVsyncNotifications)
 {
-  CompositorVsyncDispatcher::SetThreadAssertionsEnabled(false);
-
   VsyncSource::Display& globalDisplay = mVsyncSource->GetGlobalDisplay();
   globalDisplay.DisableVsync();
   ASSERT_FALSE(globalDisplay.IsVsyncEnabled());
