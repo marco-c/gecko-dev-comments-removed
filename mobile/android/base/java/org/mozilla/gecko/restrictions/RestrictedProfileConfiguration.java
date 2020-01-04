@@ -35,12 +35,7 @@ public class RestrictedProfileConfiguration implements RestrictionConfiguration 
         configuration.put(Restrictable.ADVANCED_SETTINGS, false);
         configuration.put(Restrictable.CAMERA_MICROPHONE, false);
         configuration.put(Restrictable.DATA_CHOICES, false);
-
-        
-        if (AppConstants.NIGHTLY_BUILD) {
-            configuration.put(Restrictable.BLOCK_LIST, false);
-        }
-
+        configuration.put(Restrictable.BLOCK_LIST, false);
         configuration.put(Restrictable.TELEMETRY, false);
         configuration.put(Restrictable.HEALTH_REPORT, true);
         configuration.put(Restrictable.DEFAULT_THEME, true);
@@ -49,12 +44,18 @@ public class RestrictedProfileConfiguration implements RestrictionConfiguration 
     
 
 
-    private static List<Restrictable> hiddenRestrictions = Arrays.asList(
-            Restrictable.MASTER_PASSWORD,
-            Restrictable.GUEST_BROWSING,
-            Restrictable.DATA_CHOICES,
-            Restrictable.DEFAULT_THEME
-    );
+    private static List<Restrictable> hiddenRestrictions = new ArrayList<>();
+    static {
+        hiddenRestrictions.add(Restrictable.MASTER_PASSWORD);
+        hiddenRestrictions.add(Restrictable.GUEST_BROWSING);
+        hiddenRestrictions.add(Restrictable.DATA_CHOICES);
+        hiddenRestrictions.add(Restrictable.DEFAULT_THEME);
+
+        
+        if (!AppConstants.NIGHTLY_BUILD){
+            hiddenRestrictions.add(Restrictable.BLOCK_LIST);
+        }
+    }
 
      static boolean shouldHide(Restrictable restrictable) {
         return hiddenRestrictions.contains(restrictable);
