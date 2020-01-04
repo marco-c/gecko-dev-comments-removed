@@ -1409,12 +1409,6 @@ MediaFormatReader::SkipVideoDemuxToNextKeyFrame(media::TimeUnit aTimeThreshold)
   }
   Reset(TrackInfo::kVideoTrack);
 
-  if (mVideo.mError) {
-    
-    
-    mVideo.RejectPromise(DECODE_ERROR, __func__);
-  }
-
   mSkipRequest.Begin(mVideo.mTrackDemuxer->SkipToNextRandomAccessPoint(aTimeThreshold)
                           ->Then(OwnerThread(), __func__, this,
                                  &MediaFormatReader::OnVideoSkipCompleted,
