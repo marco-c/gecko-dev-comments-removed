@@ -706,15 +706,6 @@ SimdTypeToLaneArgumentType(MIRType type)
     return laneType == MIRType::Boolean ? MIRType::Int32 : laneType;
 }
 
-
-
-enum SimdLane {
-    LaneX = 0x0,
-    LaneY = 0x1,
-    LaneZ = 0x2,
-    LaneW = 0x3
-};
-
 #ifdef DEBUG
 
 
