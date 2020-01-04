@@ -1,0 +1,24 @@
+
+
+
+
+const { interfaces: Ci } = Components;
+
+
+
+
+
+
+addEventListener("TalosQuitApplication", () => {
+  
+  
+  
+  
+  let priority = docShell.QueryInterface(Ci.nsIDocumentLoader)
+                         .loadGroup
+                         .QueryInterface(Ci.nsISupportsPriority)
+                         .priority;
+  if (priority != Ci.nsISupportsPriority.PRIORITY_LOWEST) {
+    sendAsyncMessage("Talos:ForceQuit");
+  }
+});
