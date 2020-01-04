@@ -692,7 +692,8 @@ private:
   
   
   
-  void NotifyTabContextUpdated();
+  
+  void NotifyTabContextUpdated(bool aIsPreallocated);
 
   
   void UpdateFrameType();
