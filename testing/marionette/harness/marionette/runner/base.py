@@ -808,7 +808,7 @@ setReq.onerror = function() {
             self.marionette = self.driverclass(**self._build_kwargs())
             
             
-            if self.appName != 'Fennec':
+            if self.appName != 'fennec':
                 need_external_ip = False
         self.logger.info('Initial Profile Destination is '
                          '"{}"'.format(self.marionette.profile_path))
