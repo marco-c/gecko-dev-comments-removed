@@ -1310,46 +1310,6 @@ CodeGeneratorX86::visitOutOfLineTruncateFloat32(OutOfLineTruncateFloat32* ool)
 }
 
 void
-CodeGeneratorX86::visitWasmTruncateToInt32(LWasmTruncateToInt32* lir)
-{
-    auto input = ToFloatRegister(lir->input());
-    auto output = ToRegister(lir->output());
-
-    MWasmTruncateToInt32* mir = lir->mir();
-    MIRType fromType = mir->input()->type();
-
-    auto* ool = new (alloc()) OutOfLineWasmTruncateCheck(mir, input);
-    addOutOfLineCode(ool, mir);
-
-    if (mir->isUnsigned()) {
-        Label done;
-        if (fromType == MIRType::Double) {
-            masm.vcvttsd2si(input, output);
-            masm.branch32(Assembler::Condition::NotSigned, output, Imm32(0), &done);
-            masm.loadConstantDouble(double(int32_t(0x80000000)), ScratchDoubleReg);
-            masm.addDouble(input, ScratchDoubleReg);
-            masm.vcvttsd2si(ScratchDoubleReg, output);
-        } else {
-            MOZ_ASSERT(fromType == MIRType::Float32);
-            masm.vcvttss2si(input, output);
-            masm.branch32(Assembler::Condition::NotSigned, output, Imm32(0), &done);
-            masm.loadConstantFloat32(float(int32_t(0x80000000)), ScratchFloat32Reg);
-            masm.addFloat32(input, ScratchFloat32Reg);
-            masm.vcvttss2si(ScratchFloat32Reg, output);
-        }
-
-        masm.branch32(Assembler::Condition::Signed, output, Imm32(0), ool->entry());
-        masm.or32(Imm32(0x80000000), output);
-        masm.bind(&done);
-        return;
-    }
-
-    emitWasmSignedTruncateToInt32(ool, output);
-
-    masm.bind(ool->rejoin());
-}
-
-void
 CodeGeneratorX86::visitCompareI64(LCompareI64* lir)
 {
     MCompare* mir = lir->mir();
@@ -1637,7 +1597,7 @@ CodeGeneratorX86::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir)
     auto* ool = new(alloc()) OutOfLineWasmTruncateCheck(mir, input);
     addOutOfLineCode(ool, mir);
 
-    masm.reserveStack(2*sizeof(int32_t));
+    masm.reserveStack(2 * sizeof(int32_t));
     masm.storeDouble(input, Operand(esp, 0));
 
     
@@ -1656,10 +1616,10 @@ CodeGeneratorX86::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir)
 
     
     masm.bind(&fail);
-    masm.freeStack(2*sizeof(int32_t));
+    masm.freeStack(2 * sizeof(int32_t));
     masm.jump(ool->entry());
     masm.bind(ool->rejoin());
-    masm.reserveStack(2*sizeof(int32_t));
+    masm.reserveStack(2 * sizeof(int32_t));
     masm.storeDouble(input, Operand(esp, 0));
 
     
@@ -1679,7 +1639,7 @@ CodeGeneratorX86::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir)
     
     masm.load64(Address(esp, 0), output);
 
-    masm.freeStack(2*sizeof(int32_t));
+    masm.freeStack(2 * sizeof(int32_t));
 }
 
 void

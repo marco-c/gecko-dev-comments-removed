@@ -634,3 +634,28 @@ template void
 MacroAssembler::storeUnboxedValue(ConstantOrRegister value, MIRType valueType, const BaseIndex& dest,
                                   MIRType slotType);
 
+void
+MacroAssembler::wasmTruncateDoubleToUInt32(FloatRegister input, Register output, Label* oolEntry)
+{
+    vcvttsd2sq(input, output);
+
+    
+    ScratchRegisterScope scratch(*this);
+    move32(Imm32(0xffffffff), scratch);
+    cmpq(scratch, output);
+    j(Assembler::Above, oolEntry);
+}
+
+void
+MacroAssembler::wasmTruncateFloat32ToUInt32(FloatRegister input, Register output, Label* oolEntry)
+{
+    vcvttss2sq(input, output);
+
+    
+    ScratchRegisterScope scratch(*this);
+    move32(Imm32(0xffffffff), scratch);
+    cmpq(scratch, output);
+    j(Assembler::Above, oolEntry);
+}
+
+
