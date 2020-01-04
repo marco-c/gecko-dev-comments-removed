@@ -7,14 +7,15 @@
 #ifndef CAPTURETASK_H
 #define CAPTURETASK_H
 
-#include "DOMMediaStream.h"
 #include "MediaStreamGraph.h"
+#include "PrincipalChangeObserver.h"
 
 namespace mozilla {
 
 namespace dom {
 class Blob;
 class ImageCapture;
+class MediaStreamTrack;
 } 
 
 
@@ -28,7 +29,7 @@ class ImageCapture;
 
 
 class CaptureTask : public MediaStreamListener,
-                    public dom::PrincipalChangeObserver<DOMMediaStream>
+                    public dom::PrincipalChangeObserver<dom::MediaStreamTrack>
 {
 public:
   
@@ -43,7 +44,7 @@ public:
                    MediaStreamGraphEvent aEvent) override;
 
   
-  void PrincipalChanged(DOMMediaStream* aMediaStream) override;
+  void PrincipalChanged(dom::MediaStreamTrack* aMediaStreamTrack) override;
 
   
 
