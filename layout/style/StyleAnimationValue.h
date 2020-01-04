@@ -68,6 +68,17 @@ public:
 
 
 
+  static double ComputeColorDistance(nscolor aStartColor, nscolor aEndColor);
+
+  
+
+
+
+
+
+
+
+
 
 
 

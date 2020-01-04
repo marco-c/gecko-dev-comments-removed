@@ -487,6 +487,39 @@ CalcPositionCoordSquareDistance(const nsCSSValue& aPos1,
 
 
 
+double
+StyleAnimationValue::ComputeColorDistance(nscolor aStartColor,
+                                          nscolor aEndColor)
+{
+  
+  
+  
+  
+  
+
+  
+  
+#define GET_COMPONENT(component_, color_) \
+  (NS_GET_##component_(color_) * (1.0 / 255.0))
+
+  double startA = GET_COMPONENT(A, aStartColor);
+  double startR = GET_COMPONENT(R, aStartColor) * startA;
+  double startG = GET_COMPONENT(G, aStartColor) * startA;
+  double startB = GET_COMPONENT(B, aStartColor) * startA;
+  double endA = GET_COMPONENT(A, aEndColor);
+  double endR = GET_COMPONENT(R, aEndColor) * endA;
+  double endG = GET_COMPONENT(G, aEndColor) * endA;
+  double endB = GET_COMPONENT(B, aEndColor) * endA;
+
+#undef GET_COMPONENT
+
+  double diffA = startA - endA;
+  double diffR = startR - endR;
+  double diffG = startG - endG;
+  double diffB = startB - endB;
+  return sqrt(diffA * diffA + diffR * diffR + diffG * diffG + diffB * diffB);
+}
+
 bool
 StyleAnimationValue::ComputeDistance(nsCSSPropertyID aProperty,
                                      const StyleAnimationValue& aStartValue,
@@ -558,40 +591,9 @@ StyleAnimationValue::ComputeDistance(nsCSSPropertyID aProperty,
       return true;
     }
     case eUnit_Color: {
-      
-      
-      
-      
-      
-      
-      
-      
-      
       nscolor startColor = aStartValue.GetCSSValueValue()->GetColorValue();
       nscolor endColor = aEndValue.GetCSSValueValue()->GetColorValue();
-
-      
-      
-      #define GET_COMPONENT(component_, color_) \
-        (NS_GET_##component_(color_) * (1.0 / 255.0))
-
-      double startA = GET_COMPONENT(A, startColor);
-      double startR = GET_COMPONENT(R, startColor) * startA;
-      double startG = GET_COMPONENT(G, startColor) * startA;
-      double startB = GET_COMPONENT(B, startColor) * startA;
-      double endA = GET_COMPONENT(A, endColor);
-      double endR = GET_COMPONENT(R, endColor) * endA;
-      double endG = GET_COMPONENT(G, endColor) * endA;
-      double endB = GET_COMPONENT(B, endColor) * endA;
-
-      #undef GET_COMPONENT
-
-      double diffA = startA - endA;
-      double diffR = startR - endR;
-      double diffG = startG - endG;
-      double diffB = startB - endB;
-      aDistance = sqrt(diffA * diffA + diffR * diffR +
-                       diffG * diffG + diffB * diffB);
+      aDistance = ComputeColorDistance(startColor, endColor);
       return true;
     }
     case eUnit_Calc: {
@@ -848,17 +850,9 @@ StyleAnimationValue::ComputeDistance(nsCSSPropertyID aProperty,
 #endif
 
         if (color1.GetUnit() != eCSSUnit_Null) {
-          StyleAnimationValue color1Value
-            (color1.GetColorValue(), StyleAnimationValue::ColorConstructor);
-          StyleAnimationValue color2Value
-            (color2.GetColorValue(), StyleAnimationValue::ColorConstructor);
-          double colorDistance;
-
-          DebugOnly<bool> ok =
-            StyleAnimationValue::ComputeDistance(eCSSProperty_color,
-                                                 color1Value, color2Value,
-                                                 colorDistance);
-          MOZ_ASSERT(ok, "should not fail");
+          double colorDistance =
+            StyleAnimationValue::ComputeColorDistance(color1.GetColorValue(),
+                                                      color2.GetColorValue());
           squareDistance += colorDistance * colorDistance;
         }
 
