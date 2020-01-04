@@ -79,17 +79,12 @@ static bool
 ShouldTrialCreateGMP(const nsAString& aKeySystem)
 {
   
-  
-  
-  return
-    Preferences::GetBool("media.gmp.trial-create.enabled", false) &&
 #ifdef XP_WIN
-    IsVistaOrLater();
-#elif defined(XP_MACOSX)
-    aKeySystem.EqualsLiteral("com.adobe.primetime") &&
-    nsCocoaFeatures::OnLionOrLater();
+  return Preferences::GetBool("media.gmp.trial-create.enabled", false) &&
+         aKeySystem.EqualsLiteral("org.w3.clearkey") &&
+         IsVistaOrLater();
 #else
-    false;
+  return false;
 #endif
 }
 
