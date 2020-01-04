@@ -494,6 +494,8 @@ private:
     
     uint32_t                          mIsCorsPreflightDone : 1;
 
+    nsCOMPtr<nsIChannel>              mPreflightChannel;
+
     nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
 
     
