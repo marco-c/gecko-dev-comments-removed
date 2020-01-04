@@ -1,0 +1,12 @@
+
+
+
+
+
+"use strict";
+
+function getAllMessages(state) {
+  return state.messages;
+}
+
+exports.getAllMessages = getAllMessages;
