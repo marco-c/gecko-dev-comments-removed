@@ -242,7 +242,8 @@ gfxDWriteFontFamily::FindStyleVariations(FontInfoData *aFontInfoData)
 
 void
 gfxDWriteFontFamily::ReadFaceNames(gfxPlatformFontList *aPlatformFontList,
-                                   bool aNeedFullnamePostscriptNames)
+                                   bool aNeedFullnamePostscriptNames,
+                                   FontInfoData *aFontInfoData)
 {
     
     if (mOtherFamilyNamesInitialized &&
@@ -252,12 +253,17 @@ gfxDWriteFontFamily::ReadFaceNames(gfxPlatformFontList *aPlatformFontList,
 
     
     
-    FindStyleVariations();
+    if (!aFontInfoData) {
+        
+        
+        FindStyleVariations();
+    }
 
     
     if (!mOtherFamilyNamesInitialized || !mFaceNamesInitialized) {
         gfxFontFamily::ReadFaceNames(aPlatformFontList,
-                                     aNeedFullnamePostscriptNames);
+                                     aNeedFullnamePostscriptNames,
+                                     aFontInfoData);
     }
 }
 
