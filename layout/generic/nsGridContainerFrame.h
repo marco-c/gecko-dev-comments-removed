@@ -106,6 +106,7 @@ public:
   }
 
   struct TrackSize;
+  struct GridItemInfo;
 protected:
   static const uint32_t kAutoLine;
   
@@ -120,7 +121,6 @@ protected:
   struct Grid;
   struct GridArea;
   class GridItemCSSOrderIterator;
-  struct GridItemInfo;
   struct GridReflowState;
   class LineNameMap;
   struct LineRange;
