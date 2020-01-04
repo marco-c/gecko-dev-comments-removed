@@ -173,10 +173,13 @@ char * net_RFindCharNotInSet(const char *str, const char *end, const char *set);
 
 
 
-void net_ParseContentType(const nsACString &aHeaderStr,
-                                      nsACString       &aContentType,
-                                      nsACString       &aContentCharset,
-                                      bool*          aHadCharset);
+
+
+
+void net_ParseRequestContentType(const nsACString &aHeaderStr,
+                                 nsACString       &aContentType,
+                                 nsACString       &aContentCharset,
+                                 bool*          aHadCharset);
 
 
 
@@ -187,11 +190,24 @@ void net_ParseContentType(const nsACString &aHeaderStr,
 
 
 void net_ParseContentType(const nsACString &aHeaderStr,
-                                      nsACString       &aContentType,
-                                      nsACString       &aContentCharset,
-                                      bool             *aHadCharset,
-                                      int32_t          *aCharsetStart,
-                                      int32_t          *aCharsetEnd);
+                          nsACString       &aContentType,
+                          nsACString       &aContentCharset,
+                          bool*          aHadCharset);
+
+
+
+
+
+
+
+
+
+void net_ParseContentType(const nsACString &aHeaderStr,
+                          nsACString       &aContentType,
+                          nsACString       &aContentCharset,
+                          bool             *aHadCharset,
+                          int32_t          *aCharsetStart,
+                          int32_t          *aCharsetEnd);
 
 
 

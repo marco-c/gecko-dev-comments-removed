@@ -828,7 +828,8 @@ net_ParseMediaType(const nsACString &aMediaTypeStr,
                    int32_t          aOffset,
                    bool             *aHadCharset,
                    int32_t          *aCharsetStart,
-                   int32_t          *aCharsetEnd)
+                   int32_t          *aCharsetEnd,
+                   bool             aStrict)
 {
     const nsCString& flatStr = PromiseFlatCString(aMediaTypeStr);
     const char* start = flatStr.get();
@@ -844,6 +845,8 @@ net_ParseMediaType(const nsACString &aMediaTypeStr,
     const char* charsetEnd = charset;
     int32_t charsetParamStart = 0;
     int32_t charsetParamEnd = 0;
+
+    uint32_t consumed = typeEnd - type;
 
     
     bool typeHasCharset = false;
@@ -868,6 +871,7 @@ net_ParseMediaType(const nsACString &aMediaTypeStr,
                 charsetParamEnd = curParamEnd;
             }
 
+            consumed = curParamEnd;
             curParamStart = curParamEnd + 1;
         } while (curParamStart < flatStr.Length());
     }
@@ -897,8 +901,10 @@ net_ParseMediaType(const nsACString &aMediaTypeStr,
     
     
 
-    if (type != typeEnd && strncmp(type, "*/*", typeEnd - type) != 0 &&
-        memchr(type, '/', typeEnd - type) != nullptr) {
+    if (type != typeEnd &&
+        memchr(type, '/', typeEnd - type) != nullptr &&
+        (aStrict ? (net_FindCharNotInSet(start + consumed, end, HTTP_LWS) == end) :
+                   (strncmp(type, "*/*", typeEnd - type) != 0))) {
         
         bool eq = !aContentType.IsEmpty() &&
             aContentType.Equals(Substring(type, typeEnd),
@@ -1005,11 +1011,57 @@ net_ParseContentType(const nsACString &aHeaderStr,
         net_ParseMediaType(Substring(flatStr, curTypeStart,
                                      curTypeEnd - curTypeStart),
                            aContentType, aContentCharset, curTypeStart,
-                           aHadCharset, aCharsetStart, aCharsetEnd);
+                           aHadCharset, aCharsetStart, aCharsetEnd, false);
 
         
         curTypeStart = curTypeEnd + 1;
     } while (curTypeStart < flatStr.Length());
+}
+
+void
+net_ParseRequestContentType(const nsACString &aHeaderStr,
+                            nsACString       &aContentType,
+                            nsACString       &aContentCharset,
+                            bool             *aHadCharset)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    aContentType.Truncate();
+    aContentCharset.Truncate();
+    *aHadCharset = false;
+    const nsCString& flatStr = PromiseFlatCString(aHeaderStr);
+
+    
+    
+    nsAutoCString contentType, contentCharset;
+    bool hadCharset = false;
+    int32_t dummy1, dummy2;
+    uint32_t typeEnd = net_FindMediaDelimiter(flatStr, 0, ',');
+    if (typeEnd != flatStr.Length()) {
+        
+        
+        return;
+    }
+    net_ParseMediaType(flatStr, contentType, contentCharset, 0,
+                       &hadCharset, &dummy1, &dummy2, true);
+
+    aContentType = contentType;
+    aContentCharset = contentCharset;
+    *aHadCharset = hadCharset;
 }
 
 bool
