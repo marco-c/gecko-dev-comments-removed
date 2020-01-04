@@ -513,11 +513,10 @@ void MediaPipeline::RtpPacketReceived(TransportLayer *layer,
   }
 
   
-  ScopedDeletePtr<unsigned char> inner_data(
-      new unsigned char[len]);
-  memcpy(inner_data, data, len);
+  auto inner_data = MakeUnique<unsigned char[]>(len);
+  memcpy(inner_data.get(), data, len);
   int out_len = 0;
-  nsresult res = rtp_.recv_srtp_->UnprotectRtp(inner_data,
+  nsresult res = rtp_.recv_srtp_->UnprotectRtp(inner_data.get(),
                                                len, len, &out_len);
   if (!NS_SUCCEEDED(res)) {
     char tmp[16];
@@ -536,7 +535,7 @@ void MediaPipeline::RtpPacketReceived(TransportLayer *layer,
   MOZ_MTLOG(ML_DEBUG, description_ << " received RTP packet.");
   increment_rtp_packets_received(out_len);
 
-  (void)conduit_->ReceivedRTPPacket(inner_data, out_len);  
+  (void)conduit_->ReceivedRTPPacket(inner_data.get(), out_len);  
 }
 
 void MediaPipeline::RtcpPacketReceived(TransportLayer *layer,
@@ -572,12 +571,11 @@ void MediaPipeline::RtcpPacketReceived(TransportLayer *layer,
   }
 
   
-  ScopedDeletePtr<unsigned char> inner_data(
-      new unsigned char[len]);
-  memcpy(inner_data, data, len);
+  auto inner_data = MakeUnique<unsigned char[]>(len);
+  memcpy(inner_data.get(), data, len);
   int out_len;
 
-  nsresult res = rtcp_.recv_srtp_->UnprotectRtcp(inner_data,
+  nsresult res = rtcp_.recv_srtp_->UnprotectRtcp(inner_data.get(),
                                                  len,
                                                  len,
                                                  &out_len);
@@ -588,7 +586,7 @@ void MediaPipeline::RtcpPacketReceived(TransportLayer *layer,
   
   
   if (filter_ && direction_ == RECEIVE) {
-    if (!filter_->FilterSenderReport(inner_data, out_len)) {
+    if (!filter_->FilterSenderReport(inner_data.get(), out_len)) {
       MOZ_MTLOG(ML_NOTICE, "Dropping rtcp packet");
       return;
     }
@@ -599,7 +597,7 @@ void MediaPipeline::RtcpPacketReceived(TransportLayer *layer,
 
   MOZ_ASSERT(rtcp_.recv_srtp_);  
 
-  (void)conduit_->ReceivedRTCPPacket(inner_data, out_len);  
+  (void)conduit_->ReceivedRTCPPacket(inner_data.get(), out_len);  
 }
 
 bool MediaPipeline::IsRtp(const unsigned char *data, size_t len) {
