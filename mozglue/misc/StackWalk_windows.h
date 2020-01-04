@@ -1,0 +1,21 @@
+#ifndef mozilla_StackWalk_windows_h
+#define mozilla_StackWalk_windows_h
+
+#include "mozilla/Types.h"
+
+
+
+
+
+
+
+MFBT_API void
+AcquireStackWalkWorkaroundLock();
+
+MFBT_API bool
+TryAcquireStackWalkWorkaroundLock();
+
+MFBT_API void
+ReleaseStackWalkWorkaroundLock();
+
+#endif 

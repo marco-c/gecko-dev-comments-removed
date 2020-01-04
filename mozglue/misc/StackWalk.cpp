@@ -188,6 +188,7 @@ StackWalkInitCriticalAddress()
 #include <stdio.h>
 #include <malloc.h>
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/StackWalk_windows.h"
 
 #include <imagehlp.h>
 
@@ -439,6 +440,49 @@ WalkStackMain64(struct WalkStackData* aData)
     }
 #endif
   }
+}
+
+
+
+
+#ifdef _M_AMD64
+
+struct CriticalSectionAutoInitializer {
+    CRITICAL_SECTION lock;
+
+    CriticalSectionAutoInitializer() {
+      InitializeCriticalSection(&lock);
+    }
+};
+
+static CriticalSectionAutoInitializer gWorkaroundLock;
+
+#endif 
+
+MFBT_API void
+AcquireStackWalkWorkaroundLock()
+{
+#ifdef _M_AMD64
+  EnterCriticalSection(&gWorkaroundLock.lock);
+#endif
+}
+
+MFBT_API bool
+TryAcquireStackWalkWorkaroundLock()
+{
+#ifdef _M_AMD64
+  return TryEnterCriticalSection(&gWorkaroundLock.lock);
+#else
+  return true;
+#endif
+}
+
+MFBT_API void
+ReleaseStackWalkWorkaroundLock()
+{
+#ifdef _M_AMD64
+  LeaveCriticalSection(&gWorkaroundLock.lock);
+#endif
 }
 
 static unsigned int WINAPI
