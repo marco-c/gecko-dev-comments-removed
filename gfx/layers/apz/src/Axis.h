@@ -223,6 +223,11 @@ public:
 
   bool ScaleWillOverscrollBothSides(float aScale) const;
 
+  
+
+
+  bool IsAxisLocked() const;
+
   ParentLayerCoord GetOrigin() const;
   ParentLayerCoord GetCompositionLength() const;
   ParentLayerCoord GetPageStart() const;
