@@ -9,6 +9,8 @@
 
 #include "mozilla/Types.h"
 
+#ifdef __cplusplus
+
 namespace mozilla {
 
 
@@ -28,5 +30,12 @@ operator<<(const unused_t& , const T& )
 }
 
 } 
+
+#endif 
+
+
+
+#define MOZ_UNUSED(expr) \
+  do { if (expr) { (void)0; } } while (0)
 
 #endif 
