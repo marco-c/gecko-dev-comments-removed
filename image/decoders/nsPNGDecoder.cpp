@@ -201,9 +201,6 @@ nsPNGDecoder::CreateFrame(const FrameInfo& aFrameInfo)
   MOZ_ASSERT_IF(mDownscaler, !GetImageMetadata().HasAnimation());
   MOZ_ASSERT_IF(mDownscaler, transparency != TransparencyType::eFrameRect);
 
-  IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
-                                   : GetSize();
-
   
   
   SurfacePipeFlags pipeFlags = aFrameInfo.mIsInterlaced
@@ -217,7 +214,7 @@ nsPNGDecoder::CreateFrame(const FrameInfo& aFrameInfo)
 
   Maybe<SurfacePipe> pipe =
     SurfacePipeFactory::CreateSurfacePipe(this, mNumFrames, GetSize(),
-                                          targetSize, aFrameInfo.mFrameRect,
+                                          OutputSize(), aFrameInfo.mFrameRect,
                                           format, pipeFlags);
 
   if (!pipe) {

@@ -194,17 +194,12 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
   Maybe<SurfacePipe> pipe;
   if (mGIFStruct.images_decoded == 0) {
     
-    
-    IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
-                                     : GetSize();
-
-    
     pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
 
     
     pipe =
       SurfacePipeFactory::CreateSurfacePipe(this, mGIFStruct.images_decoded,
-                                            GetSize(), targetSize,
+                                            GetSize(), OutputSize(),
                                             aFrameRect, format, pipeFlags);
   } else {
     

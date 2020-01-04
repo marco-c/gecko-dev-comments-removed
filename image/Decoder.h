@@ -130,6 +130,10 @@ public:
 
 
 
+
+
+
+
   Maybe<gfx::IntSize> GetTargetSize();
 
   
@@ -266,6 +270,19 @@ public:
   {
     MOZ_ASSERT(HasSize());
     return mImageMetadata.GetSize();
+  }
+
+  
+
+
+
+
+
+
+  gfx::IntSize OutputSize() const
+  {
+    return mDownscaler ? mDownscaler->TargetSize()
+                       : GetSize();
   }
 
   virtual Telemetry::ID SpeedHistogram();
