@@ -299,21 +299,21 @@ NS_EVENT_MESSAGE(eSelectionEventFirst,  3700)
 NS_EVENT_MESSAGE(eSetSelection,         eSelectionEventFirst)
 
 
-NS_EVENT_MESSAGE(eContentCommandEventFirst,             3800)
-NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_CUT,                eContentCommandEventFirst)
-NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_COPY,               eContentCommandEventFirst + 1)
-NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_PASTE,              eContentCommandEventFirst + 2)
-NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_DELETE,             eContentCommandEventFirst + 3)
-NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_UNDO,               eContentCommandEventFirst + 4)
-NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_REDO,               eContentCommandEventFirst + 5)
-NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_PASTE_TRANSFERABLE, eContentCommandEventFirst + 6)
+NS_EVENT_MESSAGE(eContentCommandEventFirst,        3800)
+NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_CUT,           eContentCommandEventFirst)
+NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_COPY,          eContentCommandEventFirst + 1)
+NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_PASTE,         eContentCommandEventFirst + 2)
+NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_DELETE,        eContentCommandEventFirst + 3)
+NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_UNDO,          eContentCommandEventFirst + 4)
+NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_REDO,          eContentCommandEventFirst + 5)
+NS_EVENT_MESSAGE(eContentCommandPasteTransferable, eContentCommandEventFirst + 6)
 
 
 
 
 
 
-NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_SCROLL,             eContentCommandEventFirst + 7)
+NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_SCROLL,        eContentCommandEventFirst + 7)
 
 
 NS_EVENT_MESSAGE(NS_GESTURENOTIFY_EVENT_START, 3900)
