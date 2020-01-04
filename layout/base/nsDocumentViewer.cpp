@@ -1919,6 +1919,14 @@ nsDocumentViewer::SetBoundsWithFlags(const nsIntRect& aBounds, uint32_t aFlags)
                     aBounds.width, aBounds.height,
                     false);
   } else if (mPresContext && mViewManager) {
+    
+    
+    
+    
+    
+    if (mPresContext->DeviceContext()->CheckDPIChange()) {
+      mPresContext->UIResolutionChanged();
+    }
     int32_t p2a = mPresContext->AppUnitsPerDevPixel();
     mViewManager->SetWindowDimensions(NSIntPixelsToAppUnits(mBounds.width, p2a),
                                       NSIntPixelsToAppUnits(mBounds.height, p2a),
