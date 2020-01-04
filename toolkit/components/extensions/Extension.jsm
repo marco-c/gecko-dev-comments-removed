@@ -179,7 +179,6 @@ var Management = new class extends SchemaAPIManager {
 
 
 
-
 ExtensionContext = class extends BaseContext {
   constructor(extension, params) {
     
@@ -189,7 +188,6 @@ ExtensionContext = class extends BaseContext {
     let {type, uri} = params;
     this.type = type;
     this.uri = uri || extension.baseURI;
-    this.incognito = params.incognito || false;
 
     if (params.contentWindow) {
       this.setContentWindow(params.contentWindow);
@@ -702,9 +700,8 @@ GlobalManager = {
 
     let extension = this.extensionMap.get(id);
     let uri = document.documentURIObject;
-    let incognito = PrivateBrowsingUtils.isContentWindowPrivate(contentWindow);
 
-    let context = new ExtensionContext(extension, {type, contentWindow, uri, docShell, incognito});
+    let context = new ExtensionContext(extension, {type, contentWindow, uri, docShell});
     inject(context);
     if (type == "background") {
       this._initializeBackgroundPage(contentWindow);
