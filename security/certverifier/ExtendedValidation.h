@@ -3,9 +3,10 @@
 
 
 
-#ifndef mozilla_psm_ExtendedValidation_h
-#define mozilla_psm_ExtendedValidation_h
+#ifndef ExtendedValidation_h
+#define ExtendedValidation_h
 
+#include "ScopedNSSTypes.h"
 #include "certt.h"
 #include "prtypes.h"
 
@@ -22,7 +23,7 @@ SECStatus GetFirstEVPolicy(CERTCertificate* cert,
 
 
 
-bool CertIsAuthoritativeForEVPolicy(const CERTCertificate* cert,
+bool CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
                                     const mozilla::pkix::CertPolicyId& policy);
 #endif
 
