@@ -484,6 +484,35 @@ function dispatchCommandEvent(node) {
 
 
 
+function contextMenuClick(element) {
+  let evt = element.ownerDocument.createEvent('MouseEvents');
+  let button = 2;  
+
+  evt.initMouseEvent('contextmenu', true, true,
+       element.ownerDocument.defaultView, 1, 0, 0, 0, 0, false,
+       false, false, false, button, null);
+
+  element.dispatchEvent(evt);
+}
+
+
+
+
+
+function* getNodeFrontForSelector(selector, inspector) {
+  if (selector) {
+    info("Retrieving front for selector " + selector);
+    return getNodeFront(selector, inspector);
+  } else {
+    info("Retrieving front for doctype node");
+    let {nodes} = yield inspector.walker.children(inspector.walker.rootNode);
+    return nodes[0];
+  }
+}
+
+
+
+
 
 
 
@@ -534,3 +563,33 @@ const getHighlighterHelperFor = (type) => Task.async(
     };
   }
 );
+
+
+
+
+function* waitForMultipleChildrenUpdates(inspector) {
+
+
+    if (inspector.markup._queuedChildUpdates &&
+        inspector.markup._queuedChildUpdates.size) {
+        yield waitForChildrenUpdated(inspector);
+        return yield waitForMultipleChildrenUpdates(inspector);
+    }
+}
+
+
+
+
+
+
+
+
+
+function waitForChildrenUpdated({markup}) {
+    info("Waiting for queued children updates to be handled");
+    let def = promise.defer();
+    markup._waitForChildren().then(() => {
+        executeSoon(def.resolve);
+    });
+    return def.promise;
+}
