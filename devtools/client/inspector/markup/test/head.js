@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -10,7 +12,7 @@ Services.scriptloader.loadSubScript(
 
 var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/inplace-editor");
 var clipboard = require("sdk/clipboard");
-var {setTimeout, clearTimeout} = require("sdk/timers");
+var {ActorRegistryFront} = require("devtools/server/actors/actor-registry");
 
 
 
@@ -178,23 +180,15 @@ var clickContainer = Task.async(function*(selector, inspector) {
   let nodeFront = yield getNodeFront(selector, inspector);
   let container = getContainerForNodeFront(nodeFront, inspector);
 
-  let updated = container.selected ? promise.resolve() : inspector.once("inspector-updated");
+  let updated = container.selected
+                ? promise.resolve()
+                : inspector.once("inspector-updated");
   EventUtils.synthesizeMouseAtCenter(container.tagLine, {type: "mousedown"},
     inspector.markup.doc.defaultView);
   EventUtils.synthesizeMouseAtCenter(container.tagLine, {type: "mouseup"},
     inspector.markup.doc.defaultView);
   return updated;
 });
-
-
-
-
-
-function isHighlighterVisible() {
-  let highlighter = gBrowser.selectedBrowser.parentNode
-                            .querySelector(".highlighter-container .box-model-root");
-  return highlighter && !highlighter.hasAttribute("hidden");
-}
 
 
 
@@ -224,7 +218,7 @@ function setEditableFieldValue(field, value, inspector) {
 
 
 var addNewAttributes = Task.async(function*(selector, text, inspector) {
-  info("Entering text '" + text + "' in node '" + selector + "''s new attribute field");
+  info(`Entering text "${text}" in new attribute field for node ${selector}`);
 
   let container = yield getContainerForSelector(selector, inspector);
   ok(container, "The container for '" + selector + "' was found");
@@ -252,7 +246,7 @@ var assertAttributes = Task.async(function*(selector, expected, testActor) {
   is(actual.length, Object.keys(expected).length,
     "The node " + selector + " has the expected number of attributes.");
   for (let attr in expected) {
-    let foundAttr = actual.find(({name, value}) => name === attr);
+    let foundAttr = actual.find(({name}) => name === attr);
     let foundValue = foundAttr ? foundAttr.value : undefined;
     ok(foundAttr, "The node " + selector + " has the attribute " + attr);
     is(foundValue, expected[attr],
@@ -344,10 +338,12 @@ function wait(ms) {
 
 
 
-var isEditingMenuDisabled = Task.async(function*(nodeFront, inspector, assert=true) {
-  let deleteMenuItem = inspector.panelDoc.getElementById("node-menu-delete");
-  let editHTMLMenuItem = inspector.panelDoc.getElementById("node-menu-edithtml");
-  let pasteHTMLMenuItem = inspector.panelDoc.getElementById("node-menu-pasteouterhtml");
+var isEditingMenuDisabled = Task.async(
+function*(nodeFront, inspector, assert = true) {
+  let doc = inspector.panelDoc;
+  let deleteMenuItem = doc.getElementById("node-menu-delete");
+  let editHTMLMenuItem = doc.getElementById("node-menu-edithtml");
+  let pasteHTMLMenuItem = doc.getElementById("node-menu-pasteouterhtml");
 
   
   clipboard.set("<p>test</p>", "html");
@@ -366,7 +362,9 @@ var isEditingMenuDisabled = Task.async(function*(nodeFront, inspector, assert=tr
     ok(isPasteHTMLMenuDisabled, "Paste HTML menu item is disabled");
   }
 
-  return isDeleteMenuDisabled && isEditHTMLMenuDisabled && isPasteHTMLMenuDisabled;
+  return isDeleteMenuDisabled &&
+         isEditHTMLMenuDisabled &&
+         isPasteHTMLMenuDisabled;
 });
 
 
@@ -378,10 +376,12 @@ var isEditingMenuDisabled = Task.async(function*(nodeFront, inspector, assert=tr
 
 
 
-var isEditingMenuEnabled = Task.async(function*(nodeFront, inspector, assert=true) {
-  let deleteMenuItem = inspector.panelDoc.getElementById("node-menu-delete");
-  let editHTMLMenuItem = inspector.panelDoc.getElementById("node-menu-edithtml");
-  let pasteHTMLMenuItem = inspector.panelDoc.getElementById("node-menu-pasteouterhtml");
+var isEditingMenuEnabled = Task.async(
+function*(nodeFront, inspector, assert = true) {
+  let doc = inspector.panelDoc;
+  let deleteMenuItem = doc.getElementById("node-menu-delete");
+  let editHTMLMenuItem = doc.getElementById("node-menu-edithtml");
+  let pasteHTMLMenuItem = doc.getElementById("node-menu-pasteouterhtml");
 
   
   clipboard.set("<p>test</p>", "html");
@@ -400,7 +400,9 @@ var isEditingMenuEnabled = Task.async(function*(nodeFront, inspector, assert=tru
     ok(!isPasteHTMLMenuDisabled, "Paste HTML menu item is enabled");
   }
 
-  return !isDeleteMenuDisabled && !isEditHTMLMenuDisabled && !isPasteHTMLMenuDisabled;
+  return !isDeleteMenuDisabled &&
+         !isEditHTMLMenuDisabled &&
+         !isPasteHTMLMenuDisabled;
 });
 
 
@@ -437,8 +439,10 @@ function promiseNextTick() {
 
 
 function collapseSelectionAndTab(inspector) {
-  EventUtils.sendKey("tab", inspector.panelWin); 
-  EventUtils.sendKey("tab", inspector.panelWin); 
+  
+  EventUtils.sendKey("tab", inspector.panelWin);
+  
+  EventUtils.sendKey("tab", inspector.panelWin);
 }
 
 
@@ -446,10 +450,12 @@ function collapseSelectionAndTab(inspector) {
 
 
 function collapseSelectionAndShiftTab(inspector) {
+  
   EventUtils.synthesizeKey("VK_TAB", { shiftKey: true },
-    inspector.panelWin); 
+    inspector.panelWin);
+  
   EventUtils.synthesizeKey("VK_TAB", { shiftKey: true },
-    inspector.panelWin); 
+    inspector.panelWin);
 }
 
 
@@ -461,10 +467,12 @@ function collapseSelectionAndShiftTab(inspector) {
 function checkFocusedAttribute(attrName, editMode) {
   let focusedAttr = Services.focus.focusedElement;
   is(focusedAttr ? focusedAttr.parentNode.dataset.attr : undefined,
-    attrName, attrName + " attribute editor is currently focused.");
+     attrName, attrName + " attribute editor is currently focused.");
   is(focusedAttr ? focusedAttr.tagName : undefined,
-    editMode ? "input": "span",
-    editMode ? attrName + " is in edit mode" : attrName + " is not in edit mode");
+     editMode ? "input" : "span",
+     editMode
+     ? attrName + " is in edit mode"
+     : attrName + " is not in edit mode");
 }
 
 
@@ -531,12 +539,12 @@ function createTestHTTPServer() {
 
 
 function contextMenuClick(element) {
-  let evt = element.ownerDocument.createEvent('MouseEvents');
-  let button = 2;  
+  let evt = element.ownerDocument.createEvent("MouseEvents");
+  let buttonRight = 2;
 
-  evt.initMouseEvent('contextmenu', true, true,
-       element.ownerDocument.defaultView, 1, 0, 0, 0, 0, false,
-       false, false, false, button, null);
+  evt.initMouseEvent("contextmenu", true, true,
+    element.ownerDocument.defaultView, 1, 0, 0, 0, 0, false, false, false,
+    false, buttonRight, null);
 
   element.dispatchEvent(evt);
 }
@@ -573,12 +581,10 @@ function registerTabActor(client, options) {
     
     let registry = ActorRegistryFront(client, response);
     return registry.registerActor(moduleUrl, config).then(registrar => {
-      return client.getTab().then(response => {
-        return {
-          registrar: registrar,
-          form: response.tab
-        };
-      });
+      return client.getTab().then(tabResponse => ({
+        registrar: registrar,
+        form: tabResponse.tab
+      }));
     });
   });
 }

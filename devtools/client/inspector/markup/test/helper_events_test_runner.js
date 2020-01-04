@@ -3,15 +3,18 @@
 
 
 
+"use strict";
 
 
 
-function* runEventPopupTests() {
-  let {inspector, testActor} = yield openInspectorForURL(TEST_URL);
+
+
+function* runEventPopupTests(url, tests) {
+  let {inspector, testActor} = yield openInspectorForURL(url);
 
   yield inspector.markup.expandAll();
 
-  for (let test of TEST_DATA) {
+  for (let test of tests) {
     yield checkEventsForNode(test, inspector, testActor);
   }
 
@@ -61,7 +64,8 @@ function* checkEventsForNode(test, inspector, testActor) {
 
   
   info("Clicking evHolder");
-  EventUtils.synthesizeMouseAtCenter(evHolder, {}, inspector.markup.doc.defaultView);
+  EventUtils.synthesizeMouseAtCenter(evHolder, {},
+    inspector.markup.doc.defaultView);
   yield tooltip.once("shown");
   info("tooltip shown");
 

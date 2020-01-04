@@ -40,6 +40,7 @@ function* showAllNodes(inspector) {
 
 function* assertAllNodesAreVisible(inspector) {
   let container = yield getContainerForSelector("ul", inspector);
-  ok(!container.elt.querySelector("button"), "All nodes button isn't here anymore");
+  ok(!container.elt.querySelector("button"),
+     "All nodes button isn't here anymore");
   is(container.children.childNodes.length, getNode("ul").children.length);
 }

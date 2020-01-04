@@ -23,8 +23,8 @@ var TEST_DATA = [{
     class: "changednode1"
   }
 }, {
-  desc: 'Try changing an attribute to a quote (") - this should result ' +
-        'in it being set to an empty string',
+  desc: "Try changing an attribute to a quote (\") - this should result " +
+        "in it being set to an empty string",
   node: "#node22",
   originalAttributes: {
     id: "node22",

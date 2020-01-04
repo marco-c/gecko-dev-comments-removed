@@ -7,6 +7,7 @@
 
 
 
+const {clearTimeout} = require("sdk/timers");
 const TEST_URL = URL_ROOT + "doc_markup_flashing.html";
 
 
@@ -44,7 +45,8 @@ const TEST_DATA = [{
     rootNode.setAttribute("test-name", "value-" + Date.now());
   }
 }, {
-  desc: "Adding an attribute with css reserved characters should flash the attribute",
+  desc: "Adding an attribute with css reserved characters should flash the " +
+        "attribute",
   attribute: "one:two",
   mutate: (doc, rootNode) => {
     rootNode.setAttribute("one:two", "value-" + Date.now());
@@ -116,7 +118,7 @@ function* assertNodeFlashing(nodeFront, inspector) {
     "Markup container for node is flashing");
 
   
-  let markup = inspector.markup;
+  
   clearTimeout(container._flashMutationTimer);
   container._flashMutationTimer = null;
   container.tagState.classList.remove("theme-bg-contrast");
@@ -125,7 +127,8 @@ function* assertNodeFlashing(nodeFront, inspector) {
 function* assertAttributeFlashing(nodeFront, attribute, inspector) {
   let container = getContainerForNodeFront(nodeFront, inspector);
   ok(container, "Markup container for node found");
-  ok(container.editor.attrElements.get(attribute), "Attribute exists on editor");
+  ok(container.editor.attrElements.get(attribute),
+     "Attribute exists on editor");
 
   let attributeElement = container.editor.getAttributeElement(attribute);
 

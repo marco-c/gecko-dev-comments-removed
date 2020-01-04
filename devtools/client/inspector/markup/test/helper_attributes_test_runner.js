@@ -3,6 +3,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -139,7 +142,8 @@ function* runEditAttributesTest(test, inspector, testActor) {
 
   info("Listening for the markupmutation event");
   let nodeMutated = inspector.once("markupmutation");
-  let attr = container.editor.attrElements.get(test.name).querySelector(".editable");
+  let attr = container.editor.attrElements.get(test.name)
+                                          .querySelector(".editable");
   setEditableFieldValue(attr, test.value, inspector);
   yield nodeMutated;
 
@@ -150,7 +154,8 @@ function* runEditAttributesTest(test, inspector, testActor) {
   yield undoChange(inspector);
   yield assertAttributes(test.node, test.originalAttributes, testActor);
 
-  info("Redo the change and assert that the attributes have been changed again");
+  info("Redo the change and assert that the attributes have been changed " +
+       "again");
   yield redoChange(inspector);
   yield assertAttributes(test.node, test.expectedAttributes, testActor);
 }

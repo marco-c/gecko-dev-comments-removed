@@ -231,4 +231,6 @@ const TEST_DATA = [
   },
 ];
 
-add_task(runEventPopupTests);
+add_task(function*() {
+  yield runEventPopupTests(TEST_URL, TEST_DATA);
+});

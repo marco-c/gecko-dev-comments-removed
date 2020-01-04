@@ -71,7 +71,8 @@ var TEST_DATA = [{
   }
 }, {
   desc: "Add event handlers",
-  text: "onclick=\"javascript: throw new Error('wont fire');\" onload=\"alert('here');\"",
+  text: "onclick=\"javascript: throw new Error('wont fire');\" " +
+        "onload=\"alert('here');\"",
   expectedAttributes: {
     onclick: "javascript: throw new Error('wont fire');",
     onload: "alert('here');"
@@ -80,5 +81,5 @@ var TEST_DATA = [{
 
 add_task(function*() {
   let {inspector, testActor} = yield openInspectorForURL(TEST_URL);
-  yield runAddAttributesTests(TEST_DATA, "div", inspector, testActor)
+  yield runAddAttributesTests(TEST_DATA, "div", inspector, testActor);
 });

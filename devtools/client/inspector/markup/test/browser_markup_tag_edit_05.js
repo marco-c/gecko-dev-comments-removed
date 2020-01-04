@@ -61,17 +61,17 @@ var TEST_DATA = [{
     disabled: "",
     autofocus: "",
     name: "name",
-    'data-test': "test"
+    "data-test": "test"
   }
 }, {
   desc: "Add attribute with xmlns",
   text: "xmlns:edi='http://ecommerce.example.org/schema'",
   expectedAttributes: {
-    'xmlns:edi': "http://ecommerce.example.org/schema"
+    "xmlns:edi": "http://ecommerce.example.org/schema"
   }
 }];
 
 add_task(function*() {
   let {inspector, testActor} = yield openInspectorForURL(TEST_URL);
-  yield runAddAttributesTests(TEST_DATA, "div", inspector, testActor)
+  yield runAddAttributesTests(TEST_DATA, "div", inspector, testActor);
 });

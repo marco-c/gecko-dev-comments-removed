@@ -38,6 +38,7 @@ add_task(function*() {
   yield followLinkWaitForNewNode(linkEl, false, inspector);
 
   
+  
   yield selectNode("label", inspector);
 
   info("Follow link with ctrl/meta-click, wait for new node to be selected.");
