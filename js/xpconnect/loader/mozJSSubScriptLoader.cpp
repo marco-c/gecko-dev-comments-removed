@@ -591,8 +591,6 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
     if (targetObj != result_obj)
         principal = GetObjectPrincipal(targetObj);
 
-    JSAutoCompartment ac(cx, targetObj);
-
     
 
     nsCOMPtr<nsIURI> uri;
@@ -605,6 +603,8 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
         
         return NS_ERROR_FAILURE;
     }
+
+    JSAutoCompartment ac(cx, targetObj);
 
     
     StartupCache* cache = (principal == mSystemPrincipal)
