@@ -1033,7 +1033,11 @@ pref("print.print_edge_right", 0);
 pref("print.print_edge_bottom", 0);
 
 
+#if defined(XP_WIN)
+pref("print.print_via_parent", true);
+#else
 pref("print.print_via_parent", false);
+#endif
 
 
 
