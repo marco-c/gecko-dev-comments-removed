@@ -18,7 +18,7 @@ namespace mozilla {
 struct FramePropertyDescriptor;
 
 typedef void (*FramePropertyDestructor)(void* aPropertyValue);
-typedef void (*FramePropertyDestructorWithFrame)(nsIFrame* aFrame,
+typedef void (*FramePropertyDestructorWithFrame)(const nsIFrame* aFrame,
                                                  void* aPropertyValue);
 
 
@@ -79,7 +79,7 @@ public:
 
 
 
-  void Set(nsIFrame* aFrame, const FramePropertyDescriptor* aProperty,
+  void Set(const nsIFrame* aFrame, const FramePropertyDescriptor* aProperty,
            void* aValue);
   
 
@@ -104,7 +104,7 @@ public:
 
 
 
-  void* Remove(nsIFrame* aFrame, const FramePropertyDescriptor* aProperty,
+  void* Remove(const nsIFrame* aFrame, const FramePropertyDescriptor* aProperty,
                bool* aFoundResult = nullptr);
   
 
@@ -112,12 +112,12 @@ public:
 
 
 
-  void Delete(nsIFrame* aFrame, const FramePropertyDescriptor* aProperty);
+  void Delete(const nsIFrame* aFrame, const FramePropertyDescriptor* aProperty);
   
 
 
 
-  void DeleteAllFor(nsIFrame* aFrame);
+  void DeleteAllFor(const nsIFrame* aFrame);
   
 
 
@@ -142,7 +142,7 @@ protected:
       return reinterpret_cast<nsTArray<PropertyValue>*>(&mValue);
     }
 
-    void DestroyValueFor(nsIFrame* aFrame) {
+    void DestroyValueFor(const nsIFrame* aFrame) {
       if (mProperty->mDestructor) {
         mProperty->mDestructor(mValue);
       } else if (mProperty->mDestructorWithFrame) {
@@ -189,12 +189,12 @@ protected:
 
 
 
-  class Entry : public nsPtrHashKey<nsIFrame>
+  class Entry : public nsPtrHashKey<const nsIFrame>
   {
   public:
-    explicit Entry(KeyTypePointer aKey) : nsPtrHashKey<nsIFrame>(aKey) {}
+    explicit Entry(KeyTypePointer aKey) : nsPtrHashKey<const nsIFrame>(aKey) {}
     Entry(const Entry &toCopy) :
-      nsPtrHashKey<nsIFrame>(toCopy), mProp(toCopy.mProp) {}
+      nsPtrHashKey<const nsIFrame>(toCopy), mProp(toCopy.mProp) {}
 
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
       return mProp.SizeOfExcludingThis(aMallocSizeOf);
@@ -206,7 +206,7 @@ protected:
   static void DeleteAllForEntry(Entry* aEntry);
 
   nsTHashtable<Entry> mEntries;
-  nsIFrame* mLastFrame;
+  const nsIFrame* mLastFrame;
   Entry* mLastEntry;
 };
 
@@ -215,10 +215,8 @@ protected:
 
 class FrameProperties {
 public:
-  FrameProperties(FramePropertyTable* aTable, nsIFrame* aFrame)
-    : mTable(aTable), mFrame(aFrame) {}
   FrameProperties(FramePropertyTable* aTable, const nsIFrame* aFrame)
-    : mTable(aTable), mFrame(const_cast<nsIFrame*>(aFrame)) {}
+    : mTable(aTable), mFrame(aFrame) {}
 
   void Set(const FramePropertyDescriptor* aProperty, void* aValue) const
   {
@@ -241,7 +239,7 @@ public:
 
 private:
   FramePropertyTable* mTable;
-  nsIFrame* mFrame;
+  const nsIFrame* mFrame;
 };
 
 } 
