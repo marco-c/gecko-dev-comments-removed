@@ -26,7 +26,7 @@ class LifoAlloc;
 class GenericPrinter
 {
   protected:
-    bool                    reportedOOM_;   
+    bool                  hadOOM_;     
 
     GenericPrinter();
 
@@ -66,21 +66,22 @@ class Sprinter final : public GenericPrinter
         }
     };
 
-    ExclusiveContext*       context;        
+    ExclusiveContext*     context;          
 
   private:
-    static const size_t     DefaultSize;
+    static const size_t   DefaultSize;
 #ifdef DEBUG
-    bool                    initialized;    
+    bool                  initialized;      
 #endif
-    char*                   base;           
-    size_t                  size;           
-    ptrdiff_t               offset;         
+    bool                  shouldReportOOM;  
+    char*                 base;             
+    size_t                size;             
+    ptrdiff_t             offset;           
 
     bool realloc_(size_t newSize);
 
   public:
-    explicit Sprinter(ExclusiveContext* cx);
+    explicit Sprinter(ExclusiveContext* cx, bool shouldReportOOM = true);
     ~Sprinter();
 
     
