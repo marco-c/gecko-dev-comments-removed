@@ -6,10 +6,10 @@
 #ifndef nsHTMLCSSUtils_h__
 #define nsHTMLCSSUtils_h__
 
-#include "ChangeStyleTxn.h"             
-#include "nsCOMPtr.h"                   
-#include "nsTArray.h"                   
-#include "nscore.h"                     
+#include "ChangeStyleTransaction.h" 
+#include "nsCOMPtr.h"               
+#include "nsTArray.h"               
+#include "nscore.h"                 
 
 class nsComputedDOMStyle;
 class nsIAtom;
@@ -386,10 +386,10 @@ private:
 
 
 
-  already_AddRefed<mozilla::dom::ChangeStyleTxn>
+  already_AddRefed<mozilla::ChangeStyleTransaction>
   CreateCSSPropertyTxn(mozilla::dom::Element& aElement,
       nsIAtom& aProperty, const nsAString& aValue,
-      mozilla::dom::ChangeStyleTxn::EChangeType aChangeType);
+      mozilla::ChangeStyleTransaction::EChangeType aChangeType);
 
   
 

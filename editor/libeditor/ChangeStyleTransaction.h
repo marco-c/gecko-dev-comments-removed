@@ -3,8 +3,8 @@
 
 
 
-#ifndef ChangeStyleTxn_h__
-#define ChangeStyleTxn_h__
+#ifndef ChangeStyleTransaction_h
+#define ChangeStyleTransaction_h
 
 #include "EditTxn.h"                      
 #include "nsCOMPtr.h"                     
@@ -15,17 +15,19 @@ class nsAString;
 class nsIAtom;
 
 namespace mozilla {
+
 namespace dom {
 class Element;
+} 
 
 
 
 
 
-class ChangeStyleTxn : public EditTxn
+class ChangeStyleTransaction final : public EditTxn
 {
 public:
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeStyleTxn, EditTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeStyleTransaction, EditTxn)
 
   NS_DECL_ISUPPORTS_INHERITED
 
@@ -40,10 +42,14 @@ public:
 
 
 
-  ChangeStyleTxn(Element& aElement, nsIAtom& aProperty,
-                 const nsAString& aValue, EChangeType aChangeType);
+
+  ChangeStyleTransaction(dom::Element& aElement,
+                         nsIAtom& aProperty,
+                         const nsAString& aValue,
+                         EChangeType aChangeType);
 
   
+
 
 
 
@@ -53,9 +59,11 @@ public:
                             const nsAString& aValue);
 
 private:
-  ~ChangeStyleTxn();
+  virtual ~ChangeStyleTransaction();
 
   
+
+
 
 
 
@@ -68,9 +76,11 @@ private:
 
 
 
+
   bool AcceptsMoreThanOneValue(nsIAtom& aCSSProperty);
 
   
+
 
 
 
@@ -82,10 +92,11 @@ private:
 
 
 
+
   nsresult SetStyle(bool aAttributeWasSet, nsAString& aValue);
 
   
-  nsCOMPtr<Element> mElement;
+  nsCOMPtr<dom::Element> mElement;
 
   
   nsCOMPtr<nsIAtom> mProperty;
@@ -107,6 +118,5 @@ private:
 };
 
 } 
-} 
 
-#endif
+#endif 
