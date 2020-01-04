@@ -92,7 +92,7 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-extensions.registerSchemaAPI("pageAction", null, (extension, context) => {
+extensions.registerSchemaAPI("pageAction", (extension, context) => {
   return {
     pageAction: {
       onClicked: new SingletonEventManager(context, "pageAction.onClicked", fire => {

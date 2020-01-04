@@ -152,7 +152,7 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-extensions.registerSchemaAPI("extension", null, (extension, context) => {
+extensions.registerSchemaAPI("extension", (extension, context) => {
   return {
     extension: {
       getBackgroundPage: function() {
