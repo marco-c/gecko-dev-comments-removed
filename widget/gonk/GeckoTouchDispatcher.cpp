@@ -115,7 +115,7 @@ GeckoTouchDispatcher::NotifyTouch(MultiTouchInput& aTouch, TimeStamp aEventTime)
       
       
       
-      layers::APZThreadUtils::RunOnControllerThread(NewRunnableMethod(
+      layers::APZThreadUtils::RunOnControllerThread(NewRunnableMethod<MultiTouchInput>(
         this, &GeckoTouchDispatcher::DispatchTouchEvent, aTouch));
       return;
     }
@@ -127,7 +127,7 @@ GeckoTouchDispatcher::NotifyTouch(MultiTouchInput& aTouch, TimeStamp aEventTime)
       MutexAutoLock lock(mTouchQueueLock);
       mInflightNonMoveEvents++;
     }
-    layers::APZThreadUtils::RunOnControllerThread(NewRunnableMethod(
+    layers::APZThreadUtils::RunOnControllerThread(NewRunnableMethod<MultiTouchInput>(
       this, &GeckoTouchDispatcher::DispatchTouchNonMoveEvent, aTouch));
   }
 }
