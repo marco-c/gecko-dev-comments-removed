@@ -22,54 +22,15 @@
 
 #include "libyuv/basic_types.h"
 
-#ifndef SIMD_ALIGNED
-#if defined(_MSC_VER) && !defined(__CLR_VER)
-#define SIMD_ALIGNED(var) __declspec(align(16)) var
-#elif defined(__GNUC__) && !defined(__pnacl__)
-#define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
-#else
-#define SIMD_ALIGNED(var) var
-#endif
-#endif
-
 static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
-}
-
-#define OFFBY 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static const int kMaxWidth = 32768;
-static const int kMaxHeight = 32768;
-
-static inline bool SizeValid(int src_width, int src_height,
-                             int dst_width, int dst_height) {
-  if (src_width > kMaxWidth || src_height > kMaxHeight ||
-      dst_width > kMaxWidth || dst_height > kMaxHeight) {
-    printf("Warning - size too large to test.  Skipping\n");
-    return false;
-  }
-  return true;
 }
 
 #define align_buffer_page_end(var, size)                                       \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \
-  var##_mem = reinterpret_cast<uint8*>(malloc(((size) + 4095 + 63) & ~4095));  \
-  var = (uint8*)((intptr_t)(var##_mem + (((size) + 4095 + 63) & ~4095) -       \
-      (size)) & ~63);
+  var##_mem = reinterpret_cast<uint8*>(malloc(((size) + 4095) & ~4095));       \
+  var = var##_mem + (-(size) & 4095);
 
 #define free_aligned_buffer_page_end(var) \
   free(var##_mem);  \
@@ -82,6 +43,9 @@ static inline double get_time() {
   QueryPerformanceFrequency(&f);
   return static_cast<double>(t.QuadPart) / static_cast<double>(f.QuadPart);
 }
+
+#define random rand
+#define srandom srand
 #else
 static inline double get_time() {
   struct timeval t;
@@ -91,109 +55,29 @@ static inline double get_time() {
 }
 #endif
 
-#ifndef SIMD_ALIGNED
-#if defined(_MSC_VER) && !defined(__CLR_VER)
-#define SIMD_ALIGNED(var) __declspec(align(16)) var
-#elif defined(__GNUC__) && !defined(__pnacl__)
-#define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
-#else
-#define SIMD_ALIGNED(var) var
-#endif
-#endif
-
-extern unsigned int fastrand_seed;
-inline int fastrand() {
-  fastrand_seed = fastrand_seed * 214013u + 2531011u;
-  return static_cast<int>((fastrand_seed >> 16) & 0xffff);
-}
-
-static inline void MemRandomize(uint8* dst, int64 len) {
-  int64 i;
+static inline void MemRandomize(uint8* dst, int len) {
+  int i;
   for (i = 0; i < len - 1; i += 2) {
-    *reinterpret_cast<uint16*>(dst) = fastrand();
+    *reinterpret_cast<uint16*>(dst) = random();
     dst += 2;
   }
   for (; i < len; ++i) {
-    *dst++ = fastrand();
+    *dst++ = random();
   }
 }
 
-class LibYUVColorTest : public ::testing::Test {
+class libyuvTest : public ::testing::Test {
  protected:
-  LibYUVColorTest();
+  libyuvTest();
+
+  const int rotate_max_w_;
+  const int rotate_max_h_;
 
   int benchmark_iterations_;  
   int benchmark_width_;  
   int benchmark_height_;  
   int benchmark_pixels_div256_;  
   int benchmark_pixels_div1280_;  
-  int disable_cpu_flags_;  
-  int benchmark_cpu_info_;  
-};
-
-class LibYUVConvertTest : public ::testing::Test {
- protected:
-  LibYUVConvertTest();
-
-  int benchmark_iterations_;  
-  int benchmark_width_;  
-  int benchmark_height_;  
-  int benchmark_pixels_div256_;  
-  int benchmark_pixels_div1280_;  
-  int disable_cpu_flags_;  
-  int benchmark_cpu_info_;  
-};
-
-class LibYUVScaleTest : public ::testing::Test {
- protected:
-  LibYUVScaleTest();
-
-  int benchmark_iterations_;  
-  int benchmark_width_;  
-  int benchmark_height_;  
-  int benchmark_pixels_div256_;  
-  int benchmark_pixels_div1280_;  
-  int disable_cpu_flags_;  
-  int benchmark_cpu_info_;  
-};
-
-class LibYUVRotateTest : public ::testing::Test {
- protected:
-  LibYUVRotateTest();
-
-  int benchmark_iterations_;  
-  int benchmark_width_;  
-  int benchmark_height_;  
-  int benchmark_pixels_div256_;  
-  int benchmark_pixels_div1280_;  
-  int disable_cpu_flags_;  
-  int benchmark_cpu_info_;  
-};
-
-class LibYUVPlanarTest : public ::testing::Test {
- protected:
-  LibYUVPlanarTest();
-
-  int benchmark_iterations_;  
-  int benchmark_width_;  
-  int benchmark_height_;  
-  int benchmark_pixels_div256_;  
-  int benchmark_pixels_div1280_;  
-  int disable_cpu_flags_;  
-  int benchmark_cpu_info_;  
-};
-
-class LibYUVBaseTest : public ::testing::Test {
- protected:
-  LibYUVBaseTest();
-
-  int benchmark_iterations_;  
-  int benchmark_width_;  
-  int benchmark_height_;  
-  int benchmark_pixels_div256_;  
-  int benchmark_pixels_div1280_;  
-  int disable_cpu_flags_;  
-  int benchmark_cpu_info_;  
 };
 
 #endif  

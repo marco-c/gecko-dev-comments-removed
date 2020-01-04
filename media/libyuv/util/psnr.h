@@ -13,8 +13,6 @@
 #ifndef UTIL_PSNR_H_  
 #define UTIL_PSNR_H_
 
-#include <math.h>  
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,15 +26,11 @@ static const double kMaxPSNR = 128.0;
 
 
 
-#if !defined(HAVE_JPEG)
+double ComputePSNR(double sse, double size);
+
 
 
 double ComputeSumSquareError(const uint8* org, const uint8* rec, int size);
-#endif
-
-
-
-double ComputePSNR(double sse, double size);
 
 #ifdef __cplusplus
 }  
