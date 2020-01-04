@@ -2120,6 +2120,10 @@ pref("services.blocklist.gfx.collection", "gfx");
 pref("services.blocklist.gfx.checked", 0);
 
 
+
+pref("services.blocklist.signing.enforced", false);
+
+
 #ifdef RELEASE_BUILD
 pref("services.blocklist.update_enabled", false);
 pref("security.onecrl.via.amo", true);

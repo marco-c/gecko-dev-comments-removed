@@ -109,6 +109,10 @@ add_task(function* test_something(){
 
 function run_test() {
   
+  
+  Services.prefs.setBoolPref("services.blocklist.signing.enforced", false);
+
+  
   server = new HttpServer();
   server.start(-1);
 
