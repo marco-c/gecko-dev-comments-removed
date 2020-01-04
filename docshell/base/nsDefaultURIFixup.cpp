@@ -222,45 +222,6 @@ nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
       info->mFixupChangedProtocol = true;
       return NS_OK;
     }
-
-#if defined(XP_WIN)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (scheme.IsEmpty() ||
-        scheme.LowerCaseEqualsLiteral("http") ||
-        scheme.LowerCaseEqualsLiteral("https") ||
-        scheme.LowerCaseEqualsLiteral("ftp")) {
-      
-      
-      
-      
-      
-      nsAutoCString::iterator start;
-      nsAutoCString::iterator end;
-      uriString.BeginWriting(start);
-      uriString.EndWriting(end);
-      while (start != end) {
-        if (*start == '?' || *start == '#' || *start == '/') {
-          break;
-        }
-        if (*start == '\\') {
-          *start = '/';
-        }
-        ++start;
-      }
-    }
-#endif
   }
 
   if (!sInitializedPrefCaches) {
