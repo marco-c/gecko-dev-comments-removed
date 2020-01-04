@@ -8,7 +8,6 @@
 #define __FFmpegH264Decoder_h__
 
 #include "FFmpegDataDecoder.h"
-#include <map>
 
 namespace mozilla
 {
@@ -66,9 +65,6 @@ private:
   uint32_t mPictureHeight;
   uint32_t mDisplayWidth;
   uint32_t mDisplayHeight;
-
-  
-  std::map<int64_t, int64_t> mDurationMap;
 };
 
 } 
