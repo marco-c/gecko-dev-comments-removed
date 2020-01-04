@@ -12,7 +12,7 @@ function testSteps()
   const fileIOFlags = 0x02 | 
                       0x08 | 
                       0x20;  
-  const filePerms = 0o664;
+  const filePerms = 0o666;
   const fileData = "abcdefghijklmnopqrstuvwxyz";
   const fileType = "text/plain";
 
