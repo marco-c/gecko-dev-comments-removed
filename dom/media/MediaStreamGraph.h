@@ -222,6 +222,41 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+class MediaStreamTrackListener
+{
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStreamTrackListener)
+
+public:
+  virtual void NotifyQueuedChanges(MediaStreamGraph* aGraph,
+                                   StreamTime aTrackOffset,
+                                   const MediaSegment& aQueuedMedia) {}
+
+  virtual void NotifyEnded() {}
+
+  virtual void NotifyRemoved() {}
+
+protected:
+  virtual ~MediaStreamTrackListener() {}
+};
+
+
+
+
+
+
+
+
 class MediaStreamDirectListener : public MediaStreamListener
 {
 public:
@@ -277,6 +312,16 @@ class AudioNodeEngine;
 class AudioNodeExternalInputStream;
 class AudioNodeStream;
 class CameraPreviewMediaStream;
+
+
+
+
+template<typename Listener>
+struct TrackBound
+{
+  RefPtr<Listener> mListener;
+  TrackID mTrackID;
+};
 
 
 
@@ -400,6 +445,10 @@ public:
   
   virtual void AddListener(MediaStreamListener* aListener);
   virtual void RemoveListener(MediaStreamListener* aListener);
+  virtual void AddTrackListener(MediaStreamTrackListener* aListener,
+                                TrackID aTrackID);
+  virtual void RemoveTrackListener(MediaStreamTrackListener* aListener,
+                                   TrackID aTrackID);
   
   
   void SetTrackEnabled(TrackID aTrackID, bool aEnabled);
@@ -496,6 +545,10 @@ public:
   void AddListenerImpl(already_AddRefed<MediaStreamListener> aListener);
   void RemoveListenerImpl(MediaStreamListener* aListener);
   void RemoveAllListenersImpl();
+  virtual void AddTrackListenerImpl(already_AddRefed<MediaStreamTrackListener> aListener,
+                                    TrackID aTrackID);
+  virtual void RemoveTrackListenerImpl(MediaStreamTrackListener* aListener,
+                                       TrackID aTrackID);
   virtual void SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled);
 
   void AddConsumer(MediaInputPort* aPort)
@@ -649,6 +702,7 @@ protected:
   
   VideoFrame mLastPlayedVideoFrame;
   nsTArray<RefPtr<MediaStreamListener> > mListeners;
+  nsTArray<TrackBound<MediaStreamTrackListener>> mTrackListeners;
   nsTArray<MainThreadMediaStreamListener*> mMainThreadListeners;
   nsTArray<TrackID> mDisabledTrackIDs;
 
