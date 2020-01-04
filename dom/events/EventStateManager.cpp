@@ -1194,7 +1194,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
   case eDragEventClass:
     switch (aEvent.mMessage) {
     case eDragOver:
-    case NS_DRAGDROP_EXIT:
+    case eDragExit:
     case eDrop:
       return true;
     default:
@@ -3319,7 +3319,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       ClearGlobalActiveContent(this);
       break;
     }
-  case NS_DRAGDROP_EXIT:
+  case eDragExit:
      
      
     GenerateDragDropEnterExit(presContext, aEvent->AsDragEvent());
@@ -4316,7 +4316,7 @@ EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
                                                  getter_AddRefs(lastContent));
 
           FireDragEnterOrExit(sLastDragOverFrame->PresContext(),
-                              aDragEvent, NS_DRAGDROP_EXIT,
+                              aDragEvent, eDragExit,
                               targetContent, lastContent, sLastDragOverFrame);
         }
 
@@ -4334,7 +4334,7 @@ EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
     }
     break;
 
-  case NS_DRAGDROP_EXIT:
+  case eDragExit:
     {
       
       if (sLastDragOverFrame) {
@@ -4344,7 +4344,7 @@ EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
 
         nsRefPtr<nsPresContext> lastDragOverFramePresContext = sLastDragOverFrame->PresContext();
         FireDragEnterOrExit(lastDragOverFramePresContext,
-                            aDragEvent, NS_DRAGDROP_EXIT,
+                            aDragEvent, eDragExit,
                             nullptr, lastContent, sLastDragOverFrame);
         FireDragEnterOrExit(lastDragOverFramePresContext,
                             aDragEvent, eDragLeave,
@@ -4393,15 +4393,14 @@ EventStateManager::FireDragEnterOrExit(nsPresContext* aPresContext,
     }
 
     
-    if (status == nsEventStatus_eConsumeNoDefault ||
-        aMessage == NS_DRAGDROP_EXIT) {
+    if (status == nsEventStatus_eConsumeNoDefault || aMessage == eDragExit) {
       SetContentState((aMessage == eDragEnter) ? aTargetContent : nullptr,
                       NS_EVENT_STATE_DRAGOVER);
     }
 
     
     
-    if (aMessage == eDragLeave || aMessage == NS_DRAGDROP_EXIT ||
+    if (aMessage == eDragLeave || aMessage == eDragExit ||
         aMessage == eDragEnter) {
       UpdateDragDataTransfer(&event);
     }

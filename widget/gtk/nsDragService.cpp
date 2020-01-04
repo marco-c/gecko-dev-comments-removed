@@ -1864,8 +1864,7 @@ nsDragService::RunScheduledTask()
         MOZ_LOG(sDragLm, LogLevel::Debug,
                ("nsDragService: dispatch drag leave (%p)\n",
                 mTargetWindow.get()));
-        mTargetWindow->
-            DispatchDragEvent(NS_DRAGDROP_EXIT, mTargetWindowPoint, 0);
+        mTargetWindow->DispatchDragEvent(eDragExit, mTargetWindowPoint, 0);
 
         if (!mSourceNode) {
             
@@ -2052,7 +2051,7 @@ nsDragService::DispatchDropEvent()
     if (mTargetWindow->IsDestroyed())
         return FALSE;
 
-    EventMessage msg = mCanDrop ? eDrop : NS_DRAGDROP_EXIT;
+    EventMessage msg = mCanDrop ? eDrop : eDragExit;
 
     mTargetWindow->DispatchDragEvent(msg, mTargetWindowPoint, mTargetTime);
 
