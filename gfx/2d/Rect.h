@@ -32,6 +32,19 @@ struct IntMarginTyped:
     IntMarginTyped() : Super() {}
     IntMarginTyped(int32_t aTop, int32_t aRight, int32_t aBottom, int32_t aLeft) :
         Super(aTop, aRight, aBottom, aLeft) {}
+
+    
+    
+
+    static IntMarginTyped<units> FromUnknownMargin(const IntMarginTyped<UnknownUnits>& aMargin) {
+        return IntMarginTyped<units>(aMargin.top, aMargin.right,
+                                     aMargin.bottom, aMargin.left);
+    }
+
+    IntMarginTyped<UnknownUnits> ToUnknownMargin() const {
+        return IntMarginTyped<UnknownUnits>(this->top, this->right,
+                                            this->bottom, this->left);
+    }
 };
 typedef IntMarginTyped<UnknownUnits> IntMargin;
 

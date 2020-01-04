@@ -880,8 +880,7 @@ class nsIWidget : public nsISupports {
     
 
 
-
-    NS_IMETHOD GetNonClientMargins(nsIntMargin &margins) = 0;
+    NS_IMETHOD GetNonClientMargins(mozilla::LayoutDeviceIntMargin &margins) = 0;
 
     
 
@@ -895,7 +894,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD SetNonClientMargins(nsIntMargin &margins) = 0;
+    NS_IMETHOD SetNonClientMargins(mozilla::LayoutDeviceIntMargin &margins) = 0;
 
     
 

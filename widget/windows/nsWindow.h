@@ -195,8 +195,10 @@ public:
   virtual void            UpdateOpaqueRegion(const nsIntRegion& aOpaqueRegion);
 #endif 
   virtual nsIMEUpdatePreference GetIMEUpdatePreference();
-  NS_IMETHOD              GetNonClientMargins(nsIntMargin &margins);
-  NS_IMETHOD              SetNonClientMargins(nsIntMargin &margins);
+  NS_IMETHOD              GetNonClientMargins(
+                            mozilla::LayoutDeviceIntMargin &margins) override;
+  NS_IMETHOD              SetNonClientMargins(
+                            mozilla::LayoutDeviceIntMargin &margins) override;
   void                    SetDrawsInTitlebar(bool aState);
   already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawing() override;
   virtual void            EndRemoteDrawing() override;
@@ -517,9 +519,9 @@ protected:
   
   mozilla::LayoutDeviceIntMargin mNonClientOffset;
   
-  nsIntMargin           mNonClientMargins;
+  mozilla::LayoutDeviceIntMargin mNonClientMargins;
   
-  nsIntMargin           mFutureMarginsOnceChromeShows;
+  mozilla::LayoutDeviceIntMargin mFutureMarginsOnceChromeShows;
   
   bool                  mFutureMarginsToUse;
 
