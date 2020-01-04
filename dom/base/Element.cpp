@@ -1760,6 +1760,23 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     }
     SetParentIsContent(false);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  if (HasFlag(NODE_HAS_PROPERTIES)) {
+    DeleteProperty(nsGkAtoms::transitionsOfBeforeProperty);
+    DeleteProperty(nsGkAtoms::transitionsOfAfterProperty);
+    DeleteProperty(nsGkAtoms::transitionsProperty);
+    DeleteProperty(nsGkAtoms::animationsOfBeforeProperty);
+    DeleteProperty(nsGkAtoms::animationsOfAfterProperty);
+    DeleteProperty(nsGkAtoms::animationsProperty);
+  }
+
   ClearInDocument();
 
   
@@ -1792,19 +1809,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
       
       document->EnqueueLifecycleCallback(nsIDocument::eDetached, this);
     }
-  }
-
-  
-  
-  
-  
-  if (HasFlag(NODE_HAS_PROPERTIES)) {
-    DeleteProperty(nsGkAtoms::transitionsOfBeforeProperty);
-    DeleteProperty(nsGkAtoms::transitionsOfAfterProperty);
-    DeleteProperty(nsGkAtoms::transitionsProperty);
-    DeleteProperty(nsGkAtoms::animationsOfBeforeProperty);
-    DeleteProperty(nsGkAtoms::animationsOfAfterProperty);
-    DeleteProperty(nsGkAtoms::animationsProperty);
   }
 
   

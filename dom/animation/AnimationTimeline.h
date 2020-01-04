@@ -40,7 +40,10 @@ public:
   }
 
 protected:
-  virtual ~AnimationTimeline() { }
+  virtual ~AnimationTimeline()
+  {
+    mAnimationOrder.clear();
+  }
 
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -91,6 +94,8 @@ public:
 
   virtual void NotifyAnimationUpdated(Animation& aAnimation);
 
+  void RemoveAnimation(Animation* aAnimation);
+
 protected:
   nsCOMPtr<nsIGlobalObject> mWindow;
 
@@ -101,11 +106,9 @@ protected:
   
   
   
-  
-  typedef nsTHashtable<nsPtrHashKey<dom::Animation>> AnimationSet;
-  typedef nsTArray<RefPtr<dom::Animation>>         AnimationArray;
-  AnimationSet   mAnimations;
-  AnimationArray mAnimationOrder;
+  typedef nsTHashtable<nsRefPtrHashKey<dom::Animation>> AnimationSet;
+  AnimationSet mAnimations;
+  LinkedList<dom::Animation> mAnimationOrder;
 };
 
 } 

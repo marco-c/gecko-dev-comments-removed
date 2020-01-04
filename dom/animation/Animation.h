@@ -10,6 +10,7 @@
 #include "nsWrapperCache.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/TimeStamp.h" 
 #include "mozilla/dom/AnimationBinding.h" 
 #include "mozilla/dom/AnimationTimeline.h" 
@@ -48,6 +49,7 @@ class CSSTransition;
 
 class Animation
   : public DOMEventTargetHelper
+  , public LinkedListElement<Animation>
 {
 protected:
   virtual ~Animation() {}
