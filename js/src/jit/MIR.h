@@ -7740,17 +7740,6 @@ class MInterruptCheck : public MNullaryInstruction
 
 
 
-class MAsmJSInterruptCheck
-  : public MNullaryInstruction
-{
-  public:
-    INSTRUCTION_HEADER(AsmJSInterruptCheck)
-    TRIVIAL_NEW_WRAPPERS
-};
-
-
-
-
 class MWasmTrap
   : public MAryControlInstruction<0, 0>,
     public NoTypePolicy::Data
