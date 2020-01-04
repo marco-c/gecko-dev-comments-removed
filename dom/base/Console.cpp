@@ -149,6 +149,12 @@ public:
     mIDType = eString;
   }
 
+  void
+  SetOriginAttributes(const PrincipalOriginAttributes& aOriginAttributes)
+  {
+    mOriginAttributes = aOriginAttributes;
+  }
+
   bool
   PopulateArgumentsSequence(Sequence<JS::Value>& aSequence) const
   {
@@ -240,6 +246,8 @@ public:
 
   uint64_t mInnerIDNumber;
   nsString mInnerIDString;
+
+  PrincipalOriginAttributes mOriginAttributes;
 
   nsString mMethodString;
 
@@ -614,6 +622,20 @@ private:
 
     if (aOuterWindow) {
       mCallData->SetIDs(aOuterWindow->WindowID(), aInnerWindow->WindowID());
+
+      
+      
+      nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(aInnerWindow);
+      if (NS_WARN_IF(!sop)) {
+        return;
+      }
+
+      nsCOMPtr<nsIPrincipal> principal = sop->GetPrincipal();
+      if (NS_WARN_IF(!principal)) {
+        return;
+      }
+
+      mCallData->SetOriginAttributes(BasePrincipal::Cast(principal)->OriginAttributesRef());
     } else {
       ConsoleStackEntry frame;
       if (mCallData->mTopStackFrame) {
@@ -634,6 +656,15 @@ private:
       }
 
       mCallData->SetIDs(id, innerID);
+
+      
+      
+      nsCOMPtr<nsIPrincipal> principal = mWorkerPrivate->GetPrincipal();
+      if (NS_WARN_IF(!principal)) {
+        return;
+      }
+
+      mCallData->SetOriginAttributes(BasePrincipal::Cast(principal)->OriginAttributesRef());
     }
 
     
@@ -1253,6 +1284,20 @@ Console::Method(JSContext* aCx, MethodName aMethodName,
     MOZ_ASSERT(loadContext);
 
     loadContext->GetUsePrivateBrowsing(&callData->mPrivate);
+
+    
+    
+    nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(mWindow);
+    if (NS_WARN_IF(!sop)) {
+      return;
+    }
+
+    nsCOMPtr<nsIPrincipal> principal = sop->GetPrincipal();
+    if (NS_WARN_IF(!principal)) {
+      return;
+    }
+
+    callData->SetOriginAttributes(BasePrincipal::Cast(principal)->OriginAttributesRef());
   }
 
   uint32_t maxDepth = ShouldIncludeStackTrace(aMethodName) ?
@@ -1504,6 +1549,13 @@ Console::PopulateConsoleNotificationInTheTargetScope(JSContext* aCx,
 
   ClearException ce(aCx);
   RootedDictionary<ConsoleEvent> event(aCx);
+
+  
+  
+  JS::Rooted<JS::Value> originAttributesValue(aCx);
+  if (ToJSValue(aCx, aData->mOriginAttributes, &originAttributesValue)) {
+    event.mOriginAttributes = originAttributesValue;
+  }
 
   event.mID.Construct();
   event.mInnerID.Construct();
