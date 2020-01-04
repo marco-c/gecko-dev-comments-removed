@@ -87,6 +87,27 @@ replace_init(const malloc_table_t* aTable)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  sFuncs->malloc(-1);
   pthread_atfork(prefork, postfork, postfork);
 #endif
 
