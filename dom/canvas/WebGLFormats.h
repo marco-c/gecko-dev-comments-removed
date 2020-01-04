@@ -198,22 +198,31 @@ struct FormatInfo
     const GLenum sizedFormat;
     const UnsizedFormat unsizedFormat;
     const ComponentType componentType;
+    const bool isSRGB;
+
+    const CompressedFormatInfo* const compression;
+
     const uint8_t estimatedBytesPerPixel; 
+
+    
     const uint8_t r;
     const uint8_t g;
     const uint8_t b;
     const uint8_t a;
-    const bool isColorFormat;             
-    const bool isSRGB;                    
-    const bool hasAlpha;                  
-    const bool hasDepth;
-    const bool hasStencil;
+    const uint8_t d;
+    const uint8_t s;
 
-    const CompressedFormatInfo* const compression;
+    
 
     std::map<UnsizedFormat, const FormatInfo*> copyDecayFormats;
 
     const FormatInfo* GetCopyDecayFormat(UnsizedFormat) const;
+
+    bool IsColorFormat() const {
+         
+        return bool(compression) ||
+               bool(r | g | b | a);
+    }
 };
 
 struct PackingInfo
