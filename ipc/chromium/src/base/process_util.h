@@ -115,7 +115,10 @@ bool OpenProcessHandle(ProcessId pid, ProcessHandle* handle);
 
 
 
-bool OpenPrivilegedProcessHandle(ProcessId pid, ProcessHandle* handle);
+
+bool OpenPrivilegedProcessHandle(ProcessId pid,
+                                 ProcessHandle* handle,
+                                 int64_t* error = nullptr);
 
 
 void CloseProcessHandle(ProcessHandle process);
