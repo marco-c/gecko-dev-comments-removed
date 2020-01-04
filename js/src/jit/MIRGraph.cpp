@@ -109,7 +109,7 @@ MIRGenerator::addAbortedPreliminaryGroup(ObjectGroup* group)
 }
 
 bool
-MIRGenerator::needsAsmJSBoundsCheckBranch(const MWasmMemoryAccess* access) const
+MIRGenerator::needsBoundsCheckBranch(const MWasmMemoryAccess* access) const
 {
     
     

@@ -163,7 +163,7 @@ LIRGeneratorX64::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins)
 
     
     
-    LAllocation baseAlloc = gen->needsAsmJSBoundsCheckBranch(ins)
+    LAllocation baseAlloc = gen->needsBoundsCheckBranch(ins)
                             ? useRegisterAtStart(base)
                             : useRegisterOrZeroAtStart(base);
 
@@ -178,7 +178,7 @@ LIRGeneratorX64::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins)
 
     
     
-    LAllocation baseAlloc = gen->needsAsmJSBoundsCheckBranch(ins)
+    LAllocation baseAlloc = gen->needsBoundsCheckBranch(ins)
                             ? useRegisterAtStart(base)
                             : useRegisterOrZeroAtStart(base);
 

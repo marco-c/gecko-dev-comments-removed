@@ -282,7 +282,6 @@ enum Index {
     
 };
 
-
 enum IsImmOp2_ {
     IsImmOp2    = 1 << 25,
     IsNotImmOp2 = 0 << 25

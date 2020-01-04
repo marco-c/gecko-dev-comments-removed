@@ -211,7 +211,7 @@ LIRGeneratorX86::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins)
 
     
     
-    LAllocation baseAlloc = gen->needsAsmJSBoundsCheckBranch(ins)
+    LAllocation baseAlloc = gen->needsBoundsCheckBranch(ins)
                             ? useRegisterAtStart(base)
                             : useRegisterOrZeroAtStart(base);
 
@@ -226,7 +226,7 @@ LIRGeneratorX86::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins)
 
     
     
-    LAllocation baseAlloc = gen->needsAsmJSBoundsCheckBranch(ins)
+    LAllocation baseAlloc = gen->needsBoundsCheckBranch(ins)
                             ? useRegisterAtStart(base)
                             : useRegisterOrZeroAtStart(base);
 
@@ -243,10 +243,10 @@ LIRGeneratorX86::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins)
       case Scalar::Int8x16:
       case Scalar::Int16x8:
       case Scalar::Int32x4:
-          
-          
-          lir = new (alloc()) LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value()));
-          break;
+        
+        
+        lir = new (alloc()) LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value()));
+        break;
       case Scalar::Uint8Clamped:
       case Scalar::MaxTypedArrayViewType:
         MOZ_CRASH("unexpected array type");
