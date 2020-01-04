@@ -34,7 +34,7 @@ add_task(function* test_nocache() {
 
   
   let cacheFile = gProfD.clone();
-  cacheFile.append("search.json");
+  cacheFile.append(CACHE_FILENAME);
   do_check_true(cacheFile.exists());
 
   
@@ -46,10 +46,7 @@ add_task(function* test_nocache() {
   yield promiseAfterCache();
 
   do_print("Searching test engine in cache");
-  let path = OS.Path.join(OS.Constants.Path.profileDir, "search.json");
-  let data = yield OS.File.read(path);
-  let text = new TextDecoder().decode(data);
-  let cache = JSON.parse(text);
+  let cache = yield promiseCacheData();
   let found = false;
   for (let engine of cache.engines) {
     if (engine._shortName == "test-search-engine") {
