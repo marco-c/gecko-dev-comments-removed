@@ -636,7 +636,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
                                         sriMetadata);
       request->mURI = scriptURI;
       request->mIsInline = false;
-      request->mLoading = true;
+      request->mProgress = nsScriptLoadRequest::Progress_Loading;
       request->mReferrerPolicy = ourRefPolicy;
 
       
@@ -651,12 +651,19 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       }
     }
 
+    
+    NS_ASSERTION(!request->InCompilingStage(),
+                 "Request should not yet be in compiling stage.");
+
     request->mJSVersion = version;
 
     if (aElement->GetScriptAsync()) {
       request->mIsAsync = true;
-      if (!request->mLoading) {
+      if (request->IsDoneLoading()) {
         mLoadedAsyncRequests.AppendElement(request);
+        
+        
+
         
         
         ProcessPendingRequestsAsync();
@@ -671,7 +678,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       
       request->mIsNonAsyncScriptInserted = true;
       mNonAsyncExternalScriptInsertedRequests.AppendElement(request);
-      if (!request->mLoading) {
+      if (request->IsDoneLoading()) {
         
         
         ProcessPendingRequestsAsync();
@@ -700,14 +707,14 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
           "Parser-blocking scripts and XSLT scripts in the same doc!");
       request->mIsXSLT = true;
       mXSLTRequests.AppendElement(request);
-      if (!request->mLoading) {
+      if (request->IsDoneLoading()) {
         
         
         ProcessPendingRequestsAsync();
       }
       return true;
     }
-    if (!request->mLoading && ReadyToExecuteScripts()) {
+    if (request->IsDoneLoading() && ReadyToExecuteScripts()) {
       
       
       
@@ -750,7 +757,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
   request = new nsScriptLoadRequest(aElement, version, CORS_NONE,
                                     SRIMetadata()); 
   request->mJSVersion = version;
-  request->mLoading = false;
+  request->mProgress = nsScriptLoadRequest::Progress_DoneLoading;
   request->mIsInline = true;
   request->mURI = mDocument->GetDocumentURI();
   request->mLineNo = aElement->GetScriptLineNumber();
@@ -821,6 +828,8 @@ public:
 nsresult
 nsScriptLoader::ProcessOffThreadRequest(nsScriptLoadRequest* aRequest)
 {
+  MOZ_ASSERT(aRequest->mProgress == nsScriptLoadRequest::Progress_Compiling);
+  aRequest->mProgress = nsScriptLoadRequest::Progress_DoneCompiling;
   nsresult rv = ProcessRequest(aRequest);
   mDocument->UnblockOnload(false);
   return rv;
@@ -905,18 +914,21 @@ nsScriptLoader::AttemptAsyncScriptParse(nsScriptLoadRequest* aRequest)
   }
 
   mDocument->BlockOnload();
+  aRequest->mProgress = nsScriptLoadRequest::Progress_Compiling;
 
   unused << runnable.forget();
   return NS_OK;
 }
 
 nsresult
-nsScriptLoader::ParseOffThreadOrProcessRequest(nsScriptLoadRequest* aRequest)
+nsScriptLoader::CompileOffThreadOrProcessRequest(nsScriptLoadRequest* aRequest)
 {
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
                "Processing requests when running scripts is unsafe.");
   NS_ASSERTION(!aRequest->mOffThreadToken,
-               "Candidate for off-thread parsing is already parsed off-thread");
+               "Candidate for off-thread compile is already parsed off-thread");
+  NS_ASSERTION(!aRequest->InCompilingStage(),
+               "Candidate for off-thread compile is already in compiling stage.");
 
   nsresult rv = AttemptAsyncScriptParse(aRequest);
   if (rv != NS_ERROR_FAILURE) {
@@ -931,6 +943,8 @@ nsScriptLoader::ProcessRequest(nsScriptLoadRequest* aRequest)
 {
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
                "Processing requests when running scripts is unsafe.");
+  NS_ASSERTION(aRequest->IsReadyToRun(),
+               "Processing a request that is not ready to run.");
 
   NS_ENSURE_ARG(aRequest);
   nsAutoString textData;
@@ -1203,8 +1217,9 @@ void
 nsScriptLoader::ProcessPendingRequests()
 {
   nsRefPtr<nsScriptLoadRequest> request;
+
   if (mParserBlockingRequest &&
-      !mParserBlockingRequest->mLoading &&
+      mParserBlockingRequest->IsReadyToRun() &&
       ReadyToExecuteScripts()) {
     request.swap(mParserBlockingRequest);
     UnblockParser(request);
@@ -1214,18 +1229,18 @@ nsScriptLoader::ProcessPendingRequests()
 
   while (ReadyToExecuteScripts() && 
          !mXSLTRequests.isEmpty() &&
-         !mXSLTRequests.getFirst()->mLoading) {
+         mXSLTRequests.getFirst()->IsReadyToRun()) {
     request = mXSLTRequests.StealFirst();
     ProcessRequest(request);
   }
 
   while (mEnabled && !mLoadedAsyncRequests.isEmpty()) {
     request = mLoadedAsyncRequests.StealFirst();
-    ParseOffThreadOrProcessRequest(request);
+    CompileOffThreadOrProcessRequest(request);
   }
 
   while (mEnabled && !mNonAsyncExternalScriptInsertedRequests.isEmpty() &&
-         !mNonAsyncExternalScriptInsertedRequests.getFirst()->mLoading) {
+         mNonAsyncExternalScriptInsertedRequests.getFirst()->IsReadyToRun()) {
     
     
     
@@ -1235,7 +1250,7 @@ nsScriptLoader::ProcessPendingRequests()
   }
 
   if (mDocumentParsingDone && mXSLTRequests.isEmpty()) {
-    while (!mDeferRequests.isEmpty() && !mDeferRequests.getFirst()->mLoading) {
+    while (!mDeferRequests.isEmpty() && mDeferRequests.getFirst()->IsReadyToRun()) {
       request = mDeferRequests.StealFirst();
       ProcessRequest(request);
     }
@@ -1610,7 +1625,7 @@ nsScriptLoader::PrepareLoadedRequest(nsScriptLoadRequest* aRequest,
                "aRequest should be pending!");
 
   
-  aRequest->mLoading = false;
+  aRequest->mProgress = nsScriptLoadRequest::Progress_DoneLoading;
 
   
   
@@ -1679,7 +1694,7 @@ nsScriptLoader::PreloadURI(nsIURI *aURI, const nsAString &aCharset,
                             sriMetadata);
   request->mURI = aURI;
   request->mIsInline = false;
-  request->mLoading = true;
+  request->mProgress = nsScriptLoadRequest::Progress_Loading;
   request->mReferrerPolicy = aReferrerPolicy;
 
   nsresult rv = StartLoad(request, aType, aScriptFromHead);
