@@ -11,11 +11,11 @@
 
 #if ENABLE_INTL_API
 #include "unicode/uchar.h"
+#include "unicode/uscript.h"
 #endif
 
 #define UNICODE_BMP_LIMIT 0x10000
 #define UNICODE_LIMIT     0x110000
-
 
 #ifndef ENABLE_INTL_API
 static const nsCharProps1&
@@ -56,14 +56,21 @@ GetCharProps2(uint32_t aCh)
 
     NS_NOTREACHED("Getting CharProps for codepoint outside Unicode range");
     
+    using namespace mozilla::unicode;
     static const nsCharProps2 undefined = {
-        MOZ_SCRIPT_UNKNOWN,                      
-        0,                                       
-        HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED,  
-        eCharType_LeftToRight,                   
-        mozilla::unicode::XIDMOD_NOT_CHARS,      
-        -1,                                      
-        mozilla::unicode::HVT_NotHan             
+#if ENABLE_INTL_API
+        PAIRED_BRACKET_TYPE_NONE,
+        VERTICAL_ORIENTATION_R,
+        XIDMOD_NOT_CHARS
+#else
+        MOZ_SCRIPT_UNKNOWN,
+        PAIRED_BRACKET_TYPE_NONE,
+        HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED,
+        eCharType_LeftToRight,
+        XIDMOD_NOT_CHARS,
+        -1, 
+        VERTICAL_ORIENTATION_R
+#endif
     };
     return undefined;
 }
@@ -93,7 +100,7 @@ namespace unicode {
 
 
 
-nsIUGenCategory::nsUGenCategory sDetailedToGeneralCategory[] = {
+const nsIUGenCategory::nsUGenCategory sDetailedToGeneralCategory[] = {
   
 
 
@@ -130,6 +137,69 @@ nsIUGenCategory::nsUGenCategory sDetailedToGeneralCategory[] = {
        nsIUGenCategory::kSeparator
 };
 
+#ifdef ENABLE_INTL_API
+const hb_unicode_general_category_t sICUtoHBcategory[U_CHAR_CATEGORY_COUNT] = {
+  HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED, 
+  HB_UNICODE_GENERAL_CATEGORY_UPPERCASE_LETTER, 
+  HB_UNICODE_GENERAL_CATEGORY_LOWERCASE_LETTER, 
+  HB_UNICODE_GENERAL_CATEGORY_TITLECASE_LETTER, 
+  HB_UNICODE_GENERAL_CATEGORY_MODIFIER_LETTER, 
+  HB_UNICODE_GENERAL_CATEGORY_OTHER_LETTER, 
+  HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK, 
+  HB_UNICODE_GENERAL_CATEGORY_ENCLOSING_MARK, 
+  HB_UNICODE_GENERAL_CATEGORY_SPACING_MARK, 
+  HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER, 
+  HB_UNICODE_GENERAL_CATEGORY_LETTER_NUMBER, 
+  HB_UNICODE_GENERAL_CATEGORY_OTHER_NUMBER, 
+  HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR, 
+  HB_UNICODE_GENERAL_CATEGORY_LINE_SEPARATOR, 
+  HB_UNICODE_GENERAL_CATEGORY_PARAGRAPH_SEPARATOR, 
+  HB_UNICODE_GENERAL_CATEGORY_CONTROL, 
+  HB_UNICODE_GENERAL_CATEGORY_FORMAT, 
+  HB_UNICODE_GENERAL_CATEGORY_PRIVATE_USE, 
+  HB_UNICODE_GENERAL_CATEGORY_SURROGATE, 
+  HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION, 
+  HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION, 
+  HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION, 
+  HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION, 
+  HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION, 
+  HB_UNICODE_GENERAL_CATEGORY_MATH_SYMBOL, 
+  HB_UNICODE_GENERAL_CATEGORY_CURRENCY_SYMBOL, 
+  HB_UNICODE_GENERAL_CATEGORY_MODIFIER_SYMBOL, 
+  HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL, 
+  HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION, 
+  HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION, 
+};
+#endif
+
+uint8_t GetGeneralCategory(uint32_t aCh) {
+#if ENABLE_INTL_API
+  return sICUtoHBcategory[u_charType(aCh)];
+#else
+  return GetCharProps2(aCh).mCategory;
+#endif
+}
+
+nsCharType GetBidiCat(uint32_t aCh) {
+#if ENABLE_INTL_API
+  return nsCharType(u_charDirection(aCh));
+#else
+  return nsCharType(GetCharProps2(aCh).mBidiCategory);
+#endif
+}
+
+int8_t GetNumericValue(uint32_t aCh) {
+#if ENABLE_INTL_API
+  UNumericType type =
+    UNumericType(u_getIntPropertyValue(aCh, UCHAR_NUMERIC_TYPE));
+  return type == U_NT_DECIMAL || type == U_NT_DIGIT
+         ? int8_t(u_getNumericValue(aCh))
+         : -1;  
+#else
+  return GetCharProps2(aCh).mNumericValue;
+#endif
+}
+
 uint32_t
 GetMirroredChar(uint32_t aCh)
 {
@@ -160,14 +230,30 @@ GetCombiningClass(uint32_t aCh)
 #endif
 }
 
+uint8_t
+GetScriptCode(uint32_t aCh)
+{
+#if ENABLE_INTL_API
+    UErrorCode err = U_ZERO_ERROR;
+    return uscript_getScript(aCh, &err);
+#else
+    return GetCharProps2(aCh).mScriptCode;
+#endif
+}
+
 uint32_t
 GetScriptTagForCode(int32_t aScriptCode)
 {
+#if ENABLE_INTL_API
+    const char* tag = uscript_getShortName(UScriptCode(aScriptCode));
+    return HB_TAG(tag[0], tag[1], tag[2], tag[3]);
+#else
     
     if (uint32_t(aScriptCode) > ArrayLength(sScriptCodeToTag)) {
         return 0;
     }
     return sScriptCodeToTag[aScriptCode];
+#endif
 }
 
 PairedBracketType GetPairedBracketType(uint32_t aCh)
@@ -254,6 +340,7 @@ GetTitlecaseForAll(uint32_t aCh)
     return aCh;
 }
 
+#if 0 
 HanVariantType
 GetHanVariant(uint32_t aCh)
 {
@@ -272,6 +359,7 @@ GetHanVariant(uint32_t aCh)
     
     return HanVariantType((v >> ((aCh & 3) * 2)) & 3);
 }
+#endif
 
 uint32_t
 GetFullWidth(uint32_t aCh)

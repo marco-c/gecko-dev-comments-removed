@@ -160,17 +160,9 @@ gfxScriptItemizer::Next(uint32_t& aRunStart, uint32_t& aRunLimit,
 
         
         
-        
-        
-        
-        
-        const nsCharProps2& charProps = GetCharProps2(ch);
-
-        
-        
         uint8_t gc = HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED;
 
-        sc = charProps.mScriptCode;
+        sc = GetScriptCode(ch);
         if (sc == MOZ_SCRIPT_COMMON) {
             
 
@@ -183,7 +175,7 @@ gfxScriptItemizer::Next(uint32_t& aRunStart, uint32_t& aRunLimit,
 
 
 
-            gc = charProps.mCategory;
+            GetGeneralCategory(ch);
             if (gc == HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION) {
                 uint32_t endPairChar = mozilla::unicode::GetMirroredChar(ch);
                 if (endPairChar != ch) {

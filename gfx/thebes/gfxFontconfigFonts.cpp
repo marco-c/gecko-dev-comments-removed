@@ -1627,7 +1627,12 @@ gfxPangoFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
 
     
     
-    const PangoScript script = static_cast<PangoScript>(aRunScript);
+    
+    
+    const hb_tag_t scriptTag = GetScriptTagForCode(aRunScript);
+    const PangoScript script =
+      (const PangoScript)g_unicode_script_from_iso15924(scriptTag);
+
     
     
     PangoLanguage *scriptLang;
@@ -1653,19 +1658,6 @@ gfxPangoFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
 
     return nullptr;
 }
-
-
-
-#define CHECK_SCRIPT_CODE(script) \
-    PR_STATIC_ASSERT(int32_t(MOZ_SCRIPT_##script) == \
-                     int32_t(PANGO_SCRIPT_##script))
-
-CHECK_SCRIPT_CODE(COMMON);
-CHECK_SCRIPT_CODE(INHERITED);
-CHECK_SCRIPT_CODE(ARABIC);
-CHECK_SCRIPT_CODE(LATIN);
-CHECK_SCRIPT_CODE(UNKNOWN);
-CHECK_SCRIPT_CODE(NKO);
 
 
 
