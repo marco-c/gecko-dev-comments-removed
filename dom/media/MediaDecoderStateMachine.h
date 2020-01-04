@@ -84,7 +84,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ReentrantMonitor.h"
-#include "mozilla/RollingMean.h"
 #include "mozilla/StateMirroring.h"
 
 #include "nsThreadUtils.h"
@@ -453,10 +452,6 @@ protected:
   
   
   void UpdatePlaybackPositionInternal(int64_t aTime);
-
-  
-  
-  void CheckFrameValidity(VideoData* aData);
 
   
   
@@ -1130,8 +1125,6 @@ private:
   nsAutoPtr<MetadataTags> mMetadataTags;
 
   mozilla::MediaMetadataManager mMetadataManager;
-
-  mozilla::RollingMean<uint32_t, uint32_t> mCorruptFrames;
 
   
   MozPromiseRequestHolder<MediaDecoderReader::BufferedUpdatePromise> mBufferedUpdateRequest;

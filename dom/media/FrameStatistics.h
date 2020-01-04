@@ -20,8 +20,7 @@ public:
       mParsedFrames(0),
       mDecodedFrames(0),
       mPresentedFrames(0),
-      mDroppedFrames(0),
-      mCorruptFrames(0) {}
+      mDroppedFrames(0) {}
 
   
   
@@ -49,12 +48,7 @@ public:
   
   uint32_t GetDroppedFrames() {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    return mDroppedFrames + mCorruptFrames;
-  }
-
-  uint32_t GetCorruptedFrames() {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    return mCorruptFrames;
+    return mDroppedFrames;
   }
 
   
@@ -76,11 +70,6 @@ public:
     ++mPresentedFrames;
   }
 
-  void NotifyCorruptFrame() {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    ++mCorruptFrames;
-  }
-
 private:
   ~FrameStatistics() {}
 
@@ -100,8 +89,6 @@ private:
   uint32_t mPresentedFrames;
 
   uint32_t mDroppedFrames;
-
-  uint32_t mCorruptFrames;
 };
 
 } 

@@ -238,7 +238,6 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mDropAudioUntilNextDiscontinuity(false),
   mDropVideoUntilNextDiscontinuity(false),
   mCurrentTimeBeforeSeek(0),
-  mCorruptFrames(60),
   mDecodingFirstFrame(true),
   mSentLoadedMetadataEvent(false),
   mSentFirstFrameLoadedEvent(false),
@@ -893,10 +892,6 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample,
              (video ? video->mTime : -1),
              (video ? video->GetEndTime() : -1),
              (video ? video->mDiscontinuity : 0));
-
-  
-  
-  CheckFrameValidity(aVideoSample->As<VideoData>());
 
   switch (mState) {
     case DECODER_STATE_BUFFERING: {
@@ -2417,33 +2412,6 @@ MediaDecoderStateMachine::Reset()
   nsCOMPtr<nsIRunnable> resetTask =
     NS_NewRunnableMethod(mReader, &MediaDecoderReader::ResetDecode);
   DecodeTaskQueue()->Dispatch(resetTask.forget());
-}
-
-void
-MediaDecoderStateMachine::CheckFrameValidity(VideoData* aData)
-{
-  MOZ_ASSERT(OnTaskQueue());
-
-  
-  if (aData->mImage && !aData->mImage->IsValid() && !gfxPrefs::HardwareVideoDecodingForceEnabled()) {
-    FrameStatistics& frameStats = *mFrameStats;
-    frameStats.NotifyCorruptFrame();
-    
-    
-    
-    mCorruptFrames.insert(10);
-    if (mReader->VideoIsHardwareAccelerated() &&
-        frameStats.GetPresentedFrames() > 60 &&
-        mCorruptFrames.mean() >= 2 ) {
-        nsCOMPtr<nsIRunnable> task =
-          NS_NewRunnableMethod(mReader, &MediaDecoderReader::DisableHardwareAcceleration);
-        DecodeTaskQueue()->Dispatch(task.forget());
-        mCorruptFrames.clear();
-      gfxCriticalNote << "Too many dropped/corrupted frames, disabling DXVA";
-    }
-  } else {
-    mCorruptFrames.insert(0);
-  }
 }
 
 int64_t

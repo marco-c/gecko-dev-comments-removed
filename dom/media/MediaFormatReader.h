@@ -70,8 +70,6 @@ public:
 
   bool VideoIsHardwareAccelerated() const override;
 
-  void DisableHardwareAcceleration() override;
-
   bool IsWaitForDataSupported() override { return true; }
   RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) override;
 
@@ -448,8 +446,6 @@ private:
 
   
   bool mTrackDemuxersMayBlock;
-
-  bool mHardwareAccelerationDisabled;
 
   
   Atomic<bool> mDemuxOnly;
