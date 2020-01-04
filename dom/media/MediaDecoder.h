@@ -434,7 +434,7 @@ private:
   
   void UpdateSameOriginStatus(bool aSameOrigin);
 
-  MediaDecoderOwner* GetOwner() override;
+  MediaDecoderOwner* GetOwner() const override;
 
 #ifdef MOZ_EME
   typedef MozPromise<RefPtr<CDMProxy>, bool ,  true> CDMProxyPromise;

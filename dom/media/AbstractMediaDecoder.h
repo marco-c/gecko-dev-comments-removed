@@ -86,7 +86,7 @@ public:
 
   
   
-  virtual MediaDecoderOwner* GetOwner() = 0;
+  virtual MediaDecoderOwner* GetOwner() const = 0;
 
   
   virtual void SetPlatformCanOffloadAudio(bool aCanOffloadAudio) {}
