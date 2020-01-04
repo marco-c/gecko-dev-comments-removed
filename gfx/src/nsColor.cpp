@@ -80,42 +80,42 @@ bool NS_HexToRGB(const nsAString& aColorSpec, nscolor* aResult)
   const char16_t* buffer = aColorSpec.BeginReading();
 
   int nameLen = aColorSpec.Length();
-  if ((nameLen == 3) || (nameLen == 6)) {
+  if (nameLen != 3 && nameLen != 6) {
     
-    for (int i = 0; i < nameLen; i++) {
-      char16_t ch = buffer[i];
-      if (((ch >= '0') && (ch <= '9')) ||
-          ((ch >= 'a') && (ch <= 'f')) ||
-          ((ch >= 'A') && (ch <= 'F'))) {
-        
-        continue;
-      }
-      
-      return false;
-    }
-
-    
-    int dpc = ((3 == nameLen) ? 1 : 2);
-    
-    int r = ComponentValue(buffer, nameLen, 0, dpc);
-    int g = ComponentValue(buffer, nameLen, 1, dpc);
-    int b = ComponentValue(buffer, nameLen, 2, dpc);
-    if (dpc == 1) {
-      
-      
-      r = (r << 4) | r;
-      g = (g << 4) | g;
-      b = (b << 4) | b;
-    }
-    NS_ASSERTION((r >= 0) && (r <= 255), "bad r");
-    NS_ASSERTION((g >= 0) && (g <= 255), "bad g");
-    NS_ASSERTION((b >= 0) && (b <= 255), "bad b");
-    *aResult = NS_RGB(r, g, b);
-    return true;
+    return false;
   }
 
   
-  return false;
+  for (int i = 0; i < nameLen; i++) {
+    char16_t ch = buffer[i];
+    if (((ch >= '0') && (ch <= '9')) ||
+        ((ch >= 'a') && (ch <= 'f')) ||
+        ((ch >= 'A') && (ch <= 'F'))) {
+      
+      continue;
+    }
+    
+    return false;
+  }
+
+  
+  int dpc = ((3 == nameLen) ? 1 : 2);
+  
+  int r = ComponentValue(buffer, nameLen, 0, dpc);
+  int g = ComponentValue(buffer, nameLen, 1, dpc);
+  int b = ComponentValue(buffer, nameLen, 2, dpc);
+  if (dpc == 1) {
+    
+    
+    r = (r << 4) | r;
+    g = (g << 4) | g;
+    b = (b << 4) | b;
+  }
+  NS_ASSERTION((r >= 0) && (r <= 255), "bad r");
+  NS_ASSERTION((g >= 0) && (g <= 255), "bad g");
+  NS_ASSERTION((b >= 0) && (b <= 255), "bad b");
+  *aResult = NS_RGB(r, g, b);
+  return true;
 }
 
 
