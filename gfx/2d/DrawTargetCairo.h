@@ -177,6 +177,8 @@ public:
 
   virtual void SetTransform(const Matrix& aTransform) override;
 
+  virtual void DetachAllSnapshots() override { MarkSnapshotIndependent(); }
+
   
   
   
