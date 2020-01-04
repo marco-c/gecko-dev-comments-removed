@@ -146,7 +146,7 @@ class ServerLocations(object):
         :param filename: in the format of server-locations.txt_
         :param check_for_primary: if True, a ``MissingPrimaryLocationError`` exception is raised if no primary is found
 
-        .. _server-locations.txt: http://mxr.mozilla.org/mozilla-central/source/build/pgo/server-locations.txt
+        .. _server-locations.txt: http://dxr.mozilla.org/mozilla-central/source/build/pgo/server-locations.txt
 
         The only exception is that the port, if not defined, defaults to 80 or 443.
 
@@ -313,7 +313,7 @@ class Permissions(object):
     def pac_prefs(self, user_proxy=None):
         """
         return preferences for Proxy Auto Config. originally taken from
-        http://mxr.mozilla.org/mozilla-central/source/build/automation.py.in
+        http://dxr.mozilla.org/mozilla-central/source/build/automation.py.in
         """
         proxy = DEFAULT_PORTS.copy()
 
