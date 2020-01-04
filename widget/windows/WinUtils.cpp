@@ -650,14 +650,8 @@ HMONITOR
 WinUtils::MonitorFromRect(const gfx::Rect& rect)
 {
   
-  double dpiScale = nsIWidget::DefaultScaleOverride();
-  if (dpiScale <= 0.0) {
-    if (IsPerMonitorDPIAware()) {
-      dpiScale = 1.0;
-    } else {
-      dpiScale = LogToPhysFactor(GetPrimaryMonitor());
-    }
-  }
+  double dpiScale =
+    IsPerMonitorDPIAware() ? 1.0 : LogToPhysFactor(GetPrimaryMonitor());
 
   RECT globalWindowBounds = {
     NSToIntRound(dpiScale * rect.x),
