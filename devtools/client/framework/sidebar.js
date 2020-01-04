@@ -147,7 +147,9 @@ ToolSidebar.prototype = {
     
     
     for (let [id, tab] of this._tabs) {
-      this._addItemToAllTabsMenu(id, tab, tab.hasAttribute("selected"));
+      if (!tab.hidden) {
+        this._addItemToAllTabsMenu(id, tab, tab.hasAttribute("selected"));
+      }
     }
   },
 
