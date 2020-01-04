@@ -5049,8 +5049,6 @@ pref("dom.audiochannel.mutedByDefault", false);
 
 
 
-pref("gfx.vsync.hw-vsync.enabled", true);
-pref("gfx.vsync.compositor", true);
 pref("gfx.vsync.refreshdriver", true);
 
 

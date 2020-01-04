@@ -171,8 +171,7 @@ HwcComposer2D::RegisterHwcEventCallback()
         &HookVsync,         
         &HookHotplug        
     };
-    mHasHWVsync = mHal->RegisterHwcEventCallback(cHWCProcs) &&
-                  gfxPrefs::HardwareVsyncEnabled();
+    mHasHWVsync = mHal->RegisterHwcEventCallback(cHWCProcs);
     return mHasHWVsync;
 }
 

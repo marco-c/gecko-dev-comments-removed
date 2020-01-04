@@ -1058,13 +1058,11 @@ nsBaseWidget::GetDocument() const
 
 void nsBaseWidget::CreateCompositorVsyncDispatcher()
 {
-  if (gfxPrefs::HardwareVsyncEnabled()) {
-    
-    
-    
-    if (XRE_IsParentProcess()) {
-      mCompositorVsyncDispatcher = new CompositorVsyncDispatcher();
-    }
+  
+  
+  
+  if (XRE_IsParentProcess()) {
+    mCompositorVsyncDispatcher = new CompositorVsyncDispatcher();
   }
 }
 
