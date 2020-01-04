@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["Extension", "ExtensionData", "ExtensionContext"];
+this.EXPORTED_SYMBOLS = ["Extension", "ExtensionData"];
 
 
 
@@ -267,6 +267,8 @@ let ProxyMessenger = {
     
     
     let pipmm = Services.ppmm.getChildAt(0);
+    
+    
     
     
     

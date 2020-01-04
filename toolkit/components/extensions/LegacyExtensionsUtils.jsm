@@ -17,21 +17,23 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-
 XPCOMUtils.defineLazyModuleGetter(this, "Extension",
                                   "resource://gre/modules/Extension.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "ExtensionContext",
-                                  "resource://gre/modules/Extension.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
-                                  "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+
+var {
+  BaseContext,
+  Messenger,
+} = ExtensionUtils;
 
 
 
 
-var LegacyExtensionContext = class extends ExtensionContext {
+
+var LegacyExtensionContext = class extends BaseContext {
   
 
 
@@ -40,20 +42,8 @@ var LegacyExtensionContext = class extends ExtensionContext {
 
 
 
-
-
-
-
-
-
-  constructor(targetExtension, optionalParams = {}) {
-    let {url} = optionalParams;
-
-    super(targetExtension, {
-      contentWindow: null,
-      uri: NetUtil.newURI(url || "about:blank"),
-      type: "legacy_extension",
-    });
+  constructor(targetExtension) {
+    super("legacy_extension", targetExtension);
 
     
     
@@ -69,6 +59,13 @@ var LegacyExtensionContext = class extends ExtensionContext {
       this, "cloneScope",
       {value: cloneScope, enumerable: true, configurable: true, writable: true}
     );
+
+    let sender = {id: targetExtension.uuid};
+    let filter = {extensionId: targetExtension.id};
+    
+    
+    
+    this.messenger = new Messenger(this, [Services.cpmm], sender, filter);
 
     this.api = {
       browser: {
@@ -91,13 +88,6 @@ var LegacyExtensionContext = class extends ExtensionContext {
     super.unload();
     Cu.nukeSandbox(this.cloneScope);
     this.cloneScope = null;
-  }
-
-  
-
-
-  get externallyVisible() {
-    return false;
   }
 };
 
@@ -167,9 +157,7 @@ class EmbeddedExtension {
         
         
         
-        this.context = new LegacyExtensionContext(this.extension, {
-          url: this.resourceURI.resolve("/"),
-        });
+        this.context = new LegacyExtensionContext(this.extension);
 
         
         
