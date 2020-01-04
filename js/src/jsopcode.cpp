@@ -1793,11 +1793,18 @@ GetPCCountJSON(JSContext* cx, const ScriptAndCounts& sac, StringBuffer& buf)
     bool comma = false;
 
     SrcNoteLineScanner scanner(script->notes(), script->lineno());
+    uint64_t hits = 0;
 
-    for (jsbytecode* pc = script->code(); pc < script->codeEnd(); pc += GetBytecodeLength(pc)) {
+    jsbytecode* end = script->codeEnd();
+    for (jsbytecode* pc = script->code(); pc < end; pc = GetNextPc(pc)) {
         size_t offset = script->pcToOffset(pc);
+        JSOp op = JSOp(*pc);
 
-        JSOp op = (JSOp) *pc;
+        
+        
+        const PCCounts* counts = sac.maybeGetPCCounts(pc);
+        if (counts)
+            hits = counts->numExec();
 
         if (comma)
             buf.append(',');
@@ -1838,19 +1845,22 @@ GetPCCountJSON(JSContext* cx, const ScriptAndCounts& sac, StringBuffer& buf)
             buf.append(str);
         }
 
-        const PCCounts* counts = sac.maybeGetPCCounts(pc);
-
         AppendJSONProperty(buf, "counts");
         buf.append('{');
 
-        double value = counts ? counts->numExec() : 0.0;
-        if (value > 0) {
+        if (hits > 0) {
             AppendJSONProperty(buf, PCCounts::numExecName, NO_COMMA);
-            NumberValueToStringBuffer(cx, DoubleValue(value), buf);
+            NumberValueToStringBuffer(cx, DoubleValue(hits), buf);
         }
 
         buf.append('}');
         buf.append('}');
+
+        
+        
+        counts = sac.maybeGetThrowCounts(pc);
+        if (counts)
+            hits -= counts->numExec();
     }
 
     buf.append(']');
