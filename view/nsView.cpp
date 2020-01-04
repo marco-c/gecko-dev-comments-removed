@@ -340,7 +340,26 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
   
   
   
-  DesktopToLayoutDeviceScale scale = dx->GetDesktopToDeviceScale();
+  DesktopToLayoutDeviceScale scale = widget->GetDesktopToDeviceScale();
+
+#ifdef XP_MACOSX
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int32_t appPerDev = dx->AppUnitsPerDevPixelAtUnitFullZoom();
+  if (NSToIntRound(60.0 / scale.scale) != appPerDev) {
+    scale = DesktopToLayoutDeviceScale(60.0 / appPerDev);
+  }
+#endif
 
   DesktopRect deskRect = newBounds / scale;
   if (changedPos) {
