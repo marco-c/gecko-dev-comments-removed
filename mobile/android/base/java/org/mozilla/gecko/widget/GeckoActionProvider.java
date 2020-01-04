@@ -195,6 +195,12 @@ public class GeckoActionProvider {
         return dataModel.getIntent();
     }
 
+    
+
+
+
+
+
     public void setIntent(Intent intent) {
         ActivityChooserModel dataModel = ActivityChooserModel.get(mContext, mHistoryFileName);
         dataModel.setIntent(intent);
