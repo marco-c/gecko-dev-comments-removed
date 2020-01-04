@@ -77,34 +77,14 @@ class Configuration(DescriptorProvider):
                 entry = {}
             else:
                 entry = config[iface.identifier.name]
-            if not isinstance(entry, list):
-                assert isinstance(entry, dict)
-                entry = [entry]
-            elif len(entry) == 1:
-                if entry[0].get("workers", False):
-                    
-                    
-                    
-                    entry.append({})
-                else:
-                    raise TypeError("Don't use a single-element list for "
-                                    "non-worker-only interface " + iface.identifier.name +
-                                    " in Bindings.conf")
-            elif len(entry) == 2:
-                if entry[0].get("workers", False) == entry[1].get("workers", False):
-                    raise TypeError("The two entries for interface " + iface.identifier.name +
-                                    " in Bindings.conf should not have the same value for 'workers'")
-            else:
-                raise TypeError("Interface " + iface.identifier.name +
-                                " should have no more than two entries in Bindings.conf")
-            descs = [Descriptor(self, iface, x) for x in entry]
-            self.descriptors.extend(descs)
+            assert not isinstance(entry, list)
+            desc = Descriptor(self, iface, entry)
+            self.descriptors.append(desc)
             
             
             
-            for d in descs:
-                self.descriptorsByName.setdefault(d.interface.identifier.name,
-                                                  []).append(d)
+            assert desc.interface.identifier.name not in self.descriptorsByName
+            self.descriptorsByName[desc.interface.identifier.name] = desc
 
         
         self.descriptors.sort(lambda x, y: cmp(x.name, y.name))
@@ -240,22 +220,17 @@ class Configuration(DescriptorProvider):
     def getCallbacks(self, webIDLFile):
         return filter(lambda c: c.filename() == webIDLFile, self.callbacks)
 
-    def getDescriptor(self, interfaceName, workers=False):
+    def getDescriptor(self, interfaceName):
         """
-        Gets the appropriate descriptor for the given interface name
-        and the given workers boolean.
+        Gets the appropriate descriptor for the given interface name.
         """
         
         
         
         
-        for d in self.descriptorsByName.get(interfaceName, []):
-            if d.workers == workers:
-                return d
-
-        if workers:
-            for d in self.descriptorsByName.get(interfaceName, []):
-                return d
+        d = self.descriptorsByName.get(interfaceName, None)
+        if d:
+            return d
 
         if interfaceName in self.optimizedOutDescriptorNames:
             raise NoSuchDescriptorError(
@@ -790,11 +765,9 @@ class Descriptor(DescriptorProvider):
 
     def getDescriptor(self, interfaceName):
         """
-        Gets the appropriate descriptor for the given interface name given the
-        context of the current descriptor. This selects the appropriate
-        implementation for cases like workers.
+        Gets the appropriate descriptor for the given interface name.
         """
-        return self.config.getDescriptor(interfaceName, self.workers)
+        return self.config.getDescriptor(interfaceName)
 
 
 
