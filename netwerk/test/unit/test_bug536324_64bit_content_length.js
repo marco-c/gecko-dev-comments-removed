@@ -2,7 +2,7 @@
 
 
 Cu.import("resource://testing-common/httpd.js");
-Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 
 
@@ -47,18 +47,11 @@ function hugeContentLength(metadata, response) {
 }
 
 function test_hugeContentLength() {
-  var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-  var chan = ios.newChannel2("http://localhost:" +
-                             httpServer.identity.primaryPort + "/",
-                             null,
-                             null,
-                             null,      
-                             Services.scriptSecurityManager.getSystemPrincipal(),
-                             null,      
-                             Ci.nsILoadInfo.SEC_NORMAL,
-                             Ci.nsIContentPolicy.TYPE_OTHER)
-                .QueryInterface(Ci.nsIHttpChannel);
-  chan.asyncOpen(listener, null);
+  var chan = NetUtil.newChannel({
+    uri: "http://localhost:" + httpServer.identity.primaryPort + "/",
+    loadUsingSystemPrincipal: true
+  }).QueryInterface(Ci.nsIHttpChannel);
+  chan.asyncOpen2(listener);
 }
 
 add_test(test_hugeContentLength);
