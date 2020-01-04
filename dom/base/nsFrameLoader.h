@@ -224,8 +224,6 @@ public:
   
   nsresult GetWindowDimensions(nsIntRect& aRect);
 
-  virtual nsIMessageSender* GetProcessMessageManager() const override;
-
   
   RefPtr<nsFrameMessageManager> mMessageManager;
   nsCOMPtr<nsIInProcessContentFrameMessageManager> mChildMessageManager;
