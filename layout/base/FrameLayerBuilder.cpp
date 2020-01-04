@@ -1341,9 +1341,7 @@ protected:
 
 
 
-
   void SetupMaskLayer(Layer *aLayer, const DisplayItemClip& aClip,
-                      const nsIntRegion& aLayerVisibleRegion,
                       uint32_t aRoundedRectClipCount = UINT32_MAX);
 
   
@@ -3192,7 +3190,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       commonClipCount = data->mItemClip.GetRoundedRectCount();
     } else {
       commonClipCount = std::max(0, data->mCommonClipCount);
-      SetupMaskLayer(layer, data->mItemClip, data->mVisibleRegion, commonClipCount);
+      SetupMaskLayer(layer, data->mItemClip, commonClipCount);
     }
     
     FrameLayerBuilder::PaintedLayerItemsEntry* entry = mLayerBuilder->
@@ -3200,7 +3198,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
     entry->mCommonClipCount = commonClipCount;
   } else {
     
-    SetupMaskLayer(layer, data->mItemClip, data->mVisibleRegion);
+    SetupMaskLayer(layer, data->mItemClip);
   }
 
   uint32_t flags = 0;
@@ -4123,13 +4121,13 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
           
           
-          if (layerClip.IsRectClippedByRoundedCorner(itemContent)) {
-            SetupMaskLayer(ownLayer, layerClip, itemVisibleRect);
+          if (layerClip.GetRoundedRectCount() > 0) {
+            SetupMaskLayer(ownLayer, layerClip);
           }
         } else {
           LayerClip scrolledClip;
           scrolledClip.SetClipRect(layerClipRect);
-          if (layerClip.IsRectClippedByRoundedCorner(itemContent)) {
+          if (layerClip.GetRoundedRectCount() > 0) {
             scrolledClip.SetMaskLayerIndex(
                 SetupMaskLayerForScrolledClip(ownLayer.get(), layerClip));
           }
@@ -5988,7 +5986,6 @@ SetClipCount(PaintedDisplayItemLayerUserData* apaintedData,
 void
 ContainerState::SetupMaskLayer(Layer *aLayer,
                                const DisplayItemClip& aClip,
-                               const nsIntRegion& aLayerVisibleRegion,
                                uint32_t aRoundedRectClipCount)
 {
   
@@ -6002,10 +5999,8 @@ ContainerState::SetupMaskLayer(Layer *aLayer,
   }
 
   
-  nsIntRect layerBounds = aLayerVisibleRegion.GetBounds();
   if (aClip.GetRoundedRectCount() == 0 ||
-      aRoundedRectClipCount == 0 ||
-      layerBounds.IsEmpty()) {
+      aRoundedRectClipCount == 0) {
     SetClipCount(paintedData, 0);
     return;
   }
