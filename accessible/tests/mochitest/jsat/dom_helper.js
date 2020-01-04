@@ -111,7 +111,8 @@ var originalConsecutiveGestureDelay =
 
 
 
-function testMozAccessFuGesture(aExpectedGestures) {
+
+function testMozAccessFuGesture(aExpectedGestures, aTitle) {
   var types = aExpectedGestures;
   function handleGesture(aEvent) {
     if (aEvent.detail.type !== types[0].type) {
@@ -120,8 +121,10 @@ function testMozAccessFuGesture(aExpectedGestures) {
       return;
     }
     is(!!aEvent.detail.edge, !!types[0].edge);
+    is(aEvent.detail.touches.length, types[0].fingers || 1,
+      'failed to count fingers: ' + types[0].type);
     ok(true, 'Received correct mozAccessFuGesture: ' +
-      JSON.stringify(types.shift()) + '.');
+      JSON.stringify(types.shift()) + '. (' + aTitle + ')');
     if (types.length === 0) {
       win.removeEventListener('mozAccessFuGesture', handleGesture);
       if (AccessFuTest.sequenceCleanup) {
@@ -168,7 +171,7 @@ function resetTimers() {
 
 AccessFuTest.addSequence = function AccessFuTest_addSequence(aSequence) {
   AccessFuTest.addFunc(function testSequence() {
-    testMozAccessFuGesture(aSequence.expectedGestures);
+    testMozAccessFuGesture(aSequence.expectedGestures, aSequence.title);
     var events = aSequence.events;
     function fireEvent(aEvent) {
       var event = {
