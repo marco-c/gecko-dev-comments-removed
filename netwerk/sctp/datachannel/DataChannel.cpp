@@ -80,12 +80,10 @@ static bool sctp_initialized;
 
 namespace mozilla {
 
-class DataChannelShutdown;
-StaticRefPtr<DataChannelShutdown> gDataChannelShutdown;
-
 class DataChannelShutdown : public nsIObserver
 {
 public:
+  
   
   
   
@@ -111,13 +109,9 @@ public:
     }
 
 private:
-  virtual ~DataChannelShutdown()
-    {
-      nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-      if (observerService)
-        observerService->RemoveObserver(this, "xpcom-will-shutdown");
-    }
+  
+  
+  virtual ~DataChannelShutdown() {}
 
 public:
   NS_IMETHODIMP Observe(nsISupports* aSubject, const char* aTopic,
@@ -137,9 +131,6 @@ public:
                                                     "xpcom-will-shutdown");
       MOZ_ASSERT(rv == NS_OK);
       (void) rv;
-
-      RefPtr<DataChannelShutdown> kungFuDeathGrip(this);
-      gDataChannelShutdown = nullptr;
     }
     return NS_OK;
   }
@@ -345,8 +336,8 @@ DataChannelConnection::Init(unsigned short aPort, uint16_t aNumStreams, bool aUs
       usrsctp_sysctl_set_sctp_ecn_enable(0);
       sctp_initialized = true;
 
-      gDataChannelShutdown = new DataChannelShutdown();
-      gDataChannelShutdown->Init();
+      RefPtr<DataChannelShutdown> shutdown = new DataChannelShutdown();
+      shutdown->Init();
     }
   }
 
