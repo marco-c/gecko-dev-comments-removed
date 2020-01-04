@@ -274,18 +274,8 @@ const IMPLEMENTATION_NAMES = Object.keys(IMPLEMENTATION_MAP);
 
 
 
-
-
-
-
-
-function createTierGraphDataFromFrameNode (frameNode, sampleTimes, { startTime, endTime, resolution }) {
-  if (!frameNode.hasOptimizations()) {
-    return;
-  }
-
-  let tierData = frameNode.getOptimizationTierData();
-  let duration = endTime - startTime;
+function createTierGraphDataFromFrameNode (frameNode, sampleTimes, bucketSize) {
+  let tierData = frameNode.getTierData();
   let stringTable = frameNode._stringTable;
   let output = [];
   let implEnum;
@@ -297,8 +287,9 @@ function createTierGraphDataFromFrameNode (frameNode, sampleTimes, { startTime, 
   let samplesInCurrentBucket = 0;
   let currentBucketStartTime = sampleTimes[0];
   let bucket = [];
+
   
-  let bucketSize = Math.ceil(duration / resolution);
+  let previousValues;
 
   
   for (let i = 0; i <= sampleTimes.length; i++) {
@@ -310,19 +301,30 @@ function createTierGraphDataFromFrameNode (frameNode, sampleTimes, { startTime, 
         i >= sampleTimes.length) {
 
       let dataPoint = {};
-      dataPoint.ys = [];
-      dataPoint.x = currentBucketStartTime;
+      dataPoint.values = [];
+      dataPoint.delta = currentBucketStartTime;
 
       
       
       for (let j = 0; j < IMPLEMENTATION_NAMES.length; j++) {
-        dataPoint.ys[j] = (bucket[j] || 0) / (samplesInCurrentBucket || 1);
+        dataPoint.values[j] = (bucket[j] || 0) / (samplesInCurrentBucket || 1);
       }
+
+      
+      
+      if (previousValues) {
+        let data = Object.create(null);
+        data.values = previousValues;
+        data.delta = currentBucketStartTime;
+        output.push(data);
+      }
+
       output.push(dataPoint);
 
       
       currentBucketStartTime += bucketSize;
       samplesInCurrentBucket = 0;
+      previousValues = dataPoint.values;
       bucket = [];
     }
 

@@ -24,6 +24,7 @@ let OptimizationsListView = {
 
   initialize: function () {
     this.reset = this.reset.bind(this);
+    this._onThemeChanged = this._onThemeChanged.bind(this);
 
     this.el = $("#jit-optimizations-view");
     this.$headerName = $("#jit-optimizations-header .header-function-name");
@@ -34,15 +35,20 @@ let OptimizationsListView = {
       sorted: false,
       emptyText: JIT_EMPTY_TEXT
     });
+    this.graph = new OptimizationsGraph($("#optimizations-graph"));
+    this.graph.setTheme(PerformanceController.getTheme());
 
     
     this.reset();
+
+    PerformanceController.on(EVENTS.THEME_CHANGED, this._onThemeChanged);
   },
 
   
 
 
   destroy: function () {
+    PerformanceController.off(EVENTS.THEME_CHANGED, this._onThemeChanged);
     this.tree = null;
     this.$headerName = this.$headerFile = this.$headerLine = this.el = null;
   },
@@ -53,7 +59,10 @@ let OptimizationsListView = {
 
 
 
-  setCurrentFrame: function (frameNode) {
+  setCurrentFrame: function (threadNode, frameNode) {
+    if (threadNode !== this.getCurrentThread()) {
+      this._currentThread = threadNode;
+    }
     if (frameNode !== this.getCurrentFrame()) {
       this._currentFrame = frameNode;
     }
@@ -64,7 +73,7 @@ let OptimizationsListView = {
 
 
 
-  getCurrentFrame: function (frameNode) {
+  getCurrentFrame: function () {
     return this._currentFrame;
   },
 
@@ -72,8 +81,17 @@ let OptimizationsListView = {
 
 
 
+
+  getCurrentThread: function () {
+    return this._currentThread;
+  },
+
+  
+
+
+
   reset: function () {
-    this.setCurrentFrame(null);
+    this.setCurrentFrame(null, null);
     this.clear();
     this.el.classList.add("empty");
     this.emit(EVENTS.OPTIMIZATIONS_RESET);
@@ -123,7 +141,16 @@ let OptimizationsListView = {
       this._renderSite(view, site, frameData);
     }
 
+    this._renderTierGraph();
+
     this.emit(EVENTS.OPTIMIZATIONS_RENDERED, this.getCurrentFrame());
+  },
+
+  
+
+
+  _renderTierGraph: function () {
+    this.graph.render(this.getCurrentThread(), this.getCurrentFrame());
   },
 
   
@@ -175,7 +202,6 @@ let OptimizationsListView = {
   
 
 
-
   _createSiteNode: function (frameData, site) {
     let node = document.createElement("span");
     let desc = document.createElement("span");
@@ -225,7 +251,6 @@ let OptimizationsListView = {
 
 
 
-
   _createIonNode: function (ionType) {
     let node = document.createElement("span");
     node.textContent = `${ionType.site} : ${ionType.mirType}`;
@@ -234,7 +259,6 @@ let OptimizationsListView = {
   },
 
   
-
 
 
 
@@ -280,7 +304,6 @@ let OptimizationsListView = {
 
 
 
-
   _createAttemptNode: function (attempt) {
     let node = document.createElement("span");
     let strategyNode = document.createElement("span");
@@ -309,7 +332,6 @@ let OptimizationsListView = {
 
 
 
-
   _createDebuggerLinkNode: function (url, line, el) {
     let node = el || document.createElement("span");
     node.className = "opt-url";
@@ -327,7 +349,6 @@ let OptimizationsListView = {
   },
 
   
-
 
 
   _setHeaders: function (frameData) {
@@ -351,12 +372,19 @@ let OptimizationsListView = {
 
 
 
-
   _isLinkableURL: function (url) {
     return url && url.indexOf &&
        (url.indexOf("http") === 0 ||
         url.indexOf("resource://") === 0 ||
         url.indexOf("file://") === 0);
+  },
+
+  
+
+
+  _onThemeChanged: function (_, theme) {
+    this.graph.setTheme(theme);
+    this.graph.refresh({ force: true });
   },
 
   toString: () => "[object OptimizationsListView]"

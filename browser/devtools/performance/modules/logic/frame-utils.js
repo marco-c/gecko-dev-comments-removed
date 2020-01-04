@@ -554,6 +554,30 @@ function getFrameInfo (node, options) {
 }
 
 exports.getFrameInfo = getFrameInfo;
+
+
+
+
+
+
+
+
+
+function findFrameByLocation (threadNode, location) {
+  if (!threadNode.inverted) {
+    throw new Error("FrameUtils.findFrameByLocation only supports leaf nodes in an inverted tree.");
+  }
+
+  let calls = threadNode.calls;
+  for (let i = 0; i < calls.length; i++) {
+    if (calls[i].location === location) {
+      return calls[i];
+    }
+  }
+  return null;
+}
+
+exports.findFrameByLocation = findFrameByLocation;
 exports.computeIsContentAndCategory = computeIsContentAndCategory;
 exports.parseLocation = parseLocation;
 exports.getInflatedFrameCache = getInflatedFrameCache;
