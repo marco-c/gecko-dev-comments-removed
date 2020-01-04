@@ -830,7 +830,7 @@ MarkupView.prototype = {
         if (type === "attributes" && container.selected) {
           requiresLayoutChange = true;
         }
-      } else if (type === "childList") {
+      } else if (type === "childList" || "nativeAnonymousChildList") {
         container.childrenDirty = true;
         
         this._updateChildren(container, {flash: true});
