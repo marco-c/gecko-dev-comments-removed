@@ -5567,6 +5567,16 @@ GsmPDUHelperObject.prototype = {
   
 
 
+  stringToExtendedBcd: function(string) {
+    return string.replace(/[^0-9*#,]/g, "")
+                 .replace(/\*/g, "a")
+                 .replace(/\#/g, "b")
+                 .replace(/\,/g, "c");
+  },
+
+  
+
+
 
 
 
@@ -8978,14 +8988,18 @@ ICCPDUHelperObject.prototype = {
     let number = this.readNumberWithLength();
 
     
-    Buf.seekIncoming(2 * Buf.PDU_HEX_OCTET_SIZE);
+    Buf.seekIncoming(Buf.PDU_HEX_OCTET_SIZE);
+
+    let extRecordNumber = this.context.GsmPDUHelper.readHexOctet();
     Buf.readStringDelimiter(length);
 
     let contact = null;
     if (alphaId || number) {
       contact = {alphaId: alphaId,
-                 number: number};
+                 number: number,
+                 extRecordNumber: extRecordNumber};
     }
+
     return contact;
   },
 
@@ -8999,7 +9013,8 @@ ICCPDUHelperObject.prototype = {
 
 
 
-  writeAlphaIdDiallingNumber: function(recordSize, alphaId, number) {
+
+  writeAlphaIdDiallingNumber: function(recordSize, alphaId, number, extRecordNumber) {
     let Buf = this.context.Buf;
     let GsmPDUHelper = this.context.GsmPDUHelper;
 
@@ -9013,7 +9028,8 @@ ICCPDUHelperObject.prototype = {
 
     
     GsmPDUHelper.writeHexOctet(0xff);
-    GsmPDUHelper.writeHexOctet(0xff);
+    GsmPDUHelper.writeHexOctet((extRecordNumber != null) ? extRecordNumber : 0xff);
+
     Buf.writeStringDelimiter(strLen);
 
     return {alphaId: writtenAlphaId,
@@ -9177,8 +9193,8 @@ ICCPDUHelperObject.prototype = {
       let writtenNumber = number.substring(0, numStart) +
                           number.substring(numStart)
                                 .replace(/[^0-9*#,]/g, "");
-
       let numDigits = writtenNumber.length - numStart;
+
       if (numDigits > ADN_MAX_NUMBER_DIGITS) {
         writtenNumber = writtenNumber.substring(0, ADN_MAX_NUMBER_DIGITS + numStart);
         numDigits = writtenNumber.length - numStart;
@@ -11651,12 +11667,14 @@ ICCRecordHelperObject.prototype = {
 
 
 
-  updateADNLike: function(fileId, contact, pin2, onsuccess, onerror) {
+
+  updateADNLike: function(fileId, extRecordNumber, contact, pin2, onsuccess, onerror) {
     let updatedContact;
     function dataWriter(recordSize) {
       updatedContact = this.context.ICCPDUHelper.writeAlphaIdDiallingNumber(recordSize,
                                                                             contact.alphaId,
-                                                                            contact.number);
+                                                                            contact.number,
+                                                                            extRecordNumber);
     }
 
     function callback(options) {
@@ -12157,6 +12175,113 @@ ICCRecordHelperObject.prototype = {
       Buf.seekIncoming(Buf.PDU_HEX_OCTET_SIZE);
       Buf.readStringDelimiter(length);
       onsuccess(number);
+    }
+
+    this.context.ICCIOHelper.loadLinearFixedEF({
+      fileId: fileId,
+      recordNumber: recordNumber,
+      callback: callback,
+      onerror: onerror
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+  updateExtension: function(fileId, recordNumber, number, onsuccess, onerror) {
+    let dataWriter = (recordSize) => {
+      let GsmPDUHelper = this.context.GsmPDUHelper;
+      
+      let strLen = recordSize * 2;
+      let Buf = this.context.Buf;
+      Buf.writeInt32(strLen);
+
+      
+      if (number.length > EXT_MAX_NUMBER_DIGITS) {
+        number = number.substring(0, EXT_MAX_NUMBER_DIGITS);
+      }
+
+      let numLen = Math.ceil(number.length / 2);
+      
+      GsmPDUHelper.writeHexOctet(0x02);
+      GsmPDUHelper.writeHexOctet(numLen);
+      GsmPDUHelper.writeSwappedNibbleBCD(number);
+      
+      for (let i = 0; i < EXT_MAX_BCD_NUMBER_BYTES - numLen; i++) {
+        GsmPDUHelper.writeHexOctet(0xff);
+      }
+      
+      GsmPDUHelper.writeHexOctet(0xff);
+      Buf.writeStringDelimiter(strLen);
+    };
+
+    this.context.ICCIOHelper.updateLinearFixedEF({
+      fileId: fileId,
+      recordNumber: recordNumber,
+      dataWriter: dataWriter,
+      callback: onsuccess,
+      onerror: onerror
+    });
+  },
+
+  
+
+
+
+
+
+
+
+  cleanEFRecord: function(fileId, recordNumber, onsuccess, onerror) {
+    let dataWriter = (recordSize) => {
+      let GsmPDUHelper = this.context.GsmPDUHelper;
+      let Buf = this.context.Buf;
+      
+      let strLen = recordSize * 2;
+
+      Buf.writeInt32(strLen);
+      
+      for (let i = 0; i < recordSize; i++) {
+        GsmPDUHelper.writeHexOctet(0xff);
+      }
+      Buf.writeStringDelimiter(strLen);
+    }
+
+    this.context.ICCIOHelper.updateLinearFixedEF({
+     fileId: fileId,
+     recordNumber: recordNumber,
+     dataWriter: dataWriter,
+     callback: onsuccess,
+     onerror: onerror
+    });
+  },
+
+  
+
+
+
+
+
+
+
+  getADNLikeExtensionRecordNumber: function(fileId, recordNumber, onsuccess, onerror) {
+    let callback = (options) => {
+      let Buf = this.context.Buf;
+      let length = Buf.readInt32();
+
+      
+      Buf.seekIncoming((options.recordSize -1) * Buf.PDU_HEX_OCTET_SIZE);
+
+      let extRecordNumber = this.context.GsmPDUHelper.readHexOctet();
+      Buf.readStringDelimiter(length);
+
+      onsuccess(extRecordNumber);
     }
 
     this.context.ICCIOHelper.loadLinearFixedEF({
@@ -14232,7 +14357,15 @@ ICCContactHelperObject.prototype = {
     switch (contactType) {
       case GECKO_CARDCONTACT_TYPE_ADN:
         if (!this.hasDfPhoneBook(appType)) {
-          ICCRecordHelper.updateADNLike(ICC_EF_ADN, contact, null, updateContactCb, onerror);
+          if (ICCUtilsHelper.isICCServiceAvailable("EXT1")) {
+            this.updateADNLikeWithExtension(ICC_EF_ADN, ICC_EF_EXT1,
+                                            contact, null,
+                                            updateContactCb, onerror);
+          } else {
+            ICCRecordHelper.updateADNLike(ICC_EF_ADN, 0xff,
+                                          contact, null,
+                                          updateContactCb, onerror);
+          }
         } else {
           this.updateUSimContact(contact, updateContactCb, onerror);
         }
@@ -14246,7 +14379,16 @@ ICCContactHelperObject.prototype = {
           onerror(CONTACT_ERR_CONTACT_TYPE_NOT_SUPPORTED);
           break;
         }
-        ICCRecordHelper.updateADNLike(ICC_EF_FDN, contact, pin2, updateContactCb, onerror);
+        if (ICCUtilsHelper.isICCServiceAvailable("EXT2")) {
+          this.updateADNLikeWithExtension(ICC_EF_FDN, ICC_EF_EXT2,
+                                          contact, pin2,
+                                          updateContactCb, onerror);
+        } else {
+          ICCRecordHelper.updateADNLike(ICC_EF_FDN,
+                                        0xff,
+                                        contact, pin2,
+                                        updateContactCb, onerror);
+        }
         break;
       default:
         if (DEBUG) {
@@ -14514,8 +14656,13 @@ ICCContactHelperObject.prototype = {
       }, onerror);
     }.bind(this);
 
-    this.context.ICCRecordHelper.updateADNLike(pbr.adn.fileId, contact, null,
-                                               updateAdnCb, onerror);
+    if (pbr.ext1) {
+      this.updateADNLikeWithExtension(pbr.adn.fileId, pbr.ext1.fileId,
+                                      contact, null, updateAdnCb, onerror);
+    } else {
+      this.context.ICCRecordHelper.updateADNLike(pbr.adn.fileId, 0xff, contact,
+                                                 null, updateAdnCb, onerror);
+    }
   },
 
   
@@ -14747,6 +14894,74 @@ ICCContactHelperObject.prototype = {
       ICCRecordHelper.updateIAP(pbr.iap.fileId, recordNumber, iap, onsuccess, onerror);
     }.bind(this);
     ICCRecordHelper.readIAP(pbr.iap.fileId, recordNumber, gotIAPCb, onerror);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  updateADNLikeWithExtension: function(fileId, extFileId, contact, pin2, onsuccess, onerror) {
+    let ICCRecordHelper = this.context.ICCRecordHelper;
+    let extNumber;
+
+    if (contact.number) {
+      let numStart = contact.number[0] == "+" ? 1 : 0;
+      let number = contact.number.substring(0, numStart) +
+                   this.context.GsmPDUHelper.stringToExtendedBcd(
+                    contact.number.substring(numStart));
+      extNumber = number.substr(numStart + ADN_MAX_NUMBER_DIGITS,
+                                EXT_MAX_NUMBER_DIGITS);
+    }
+
+    ICCRecordHelper.getADNLikeExtensionRecordNumber(fileId, contact.recordId,
+                                                    (extRecordNumber) => {
+        let updateADNLike = (extRecordNumber) => {
+          ICCRecordHelper.updateADNLike(fileId, extRecordNumber, contact,
+                                        pin2, (updatedContact) => {
+            if (extNumber && extRecordNumber != 0xff) {
+              updatedContact.number = updatedContact.number.concat(extNumber);
+            }
+            onsuccess(updatedContact);
+          }, onerror);
+        };
+
+        let updateExtension = (extRecordNumber) => {
+          ICCRecordHelper.updateExtension(extFileId, extRecordNumber,  extNumber,
+                                          () => updateADNLike(extRecordNumber),
+                                          () => updateADNLike(0xff));
+        };
+
+        if (extNumber) {
+          if (extRecordNumber != 0xff) {
+            updateExtension(extRecordNumber);
+            return;
+          }
+
+          ICCRecordHelper.findFreeRecordId(extFileId,
+            (extRecordNumber) => updateExtension(extRecordNumber),
+            (errorMsg) => {
+              if (DEBUG) {
+                this.context.debug("Couldn't find free extension record Id for " + extFileId + ": " + errorMsg);
+              }
+              updateADNLike(0xff);
+            });
+          return;
+        }
+
+        if (extRecordNumber != 0xff) {
+          ICCRecordHelper.cleanEFRecord(extFileId, extRecordNumber,
+            () => updateADNLike(0xff), onerror);
+          return;
+        }
+
+        updateADNLike(0xff);
+      }, onerror);
   },
 };
 

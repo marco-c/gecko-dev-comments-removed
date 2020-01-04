@@ -1,7 +1,7 @@
 
 
 
-MARIONETTE_TIMEOUT = 90000;
+MARIONETTE_TIMEOUT = 120000;
 MARIONETTE_HEAD_JS = "head.js";
 
 var TEST_ADD_DATA = [{
@@ -15,15 +15,19 @@ var TEST_ADD_DATA = [{
   }, {
     
     name: ["add3"],
+    tel: [{value: "01234567890123456789012345678901234567890123456789"}],
+  }, {
+    
+    name: ["add4"],
     tel: [{value: "01234567890123456789"}],
     email:[{value: "test@mozilla.com"}],
   }, {
     
-    name: ["add4"],
+    name: ["add5"],
     tel: [{value: "01234567890123456789"}, {value: "123456"}, {value: "123"}],
   }, {
     
-    name: ["add5"],
+    name: ["add6"],
     tel: [{value: "01234567890123456789"}, {value: "123456"}, {value: "123"}],
     email:[{value: "test@mozilla.com"}],
   }];
@@ -36,7 +40,7 @@ function testAddContact(aIcc, aType, aMozContact, aPin2) {
     .then((aResult) => {
       is(aResult.name[0], aMozContact.name[0]);
       
-      is(aResult.tel[0].value, aMozContact.tel[0].value.substring(0, 20));
+      is(aResult.tel[0].value, aMozContact.tel[0].value.substring(0, 40));
       
       ok(aResult.tel.length == 1);
       ok(!aResult.email);
@@ -45,11 +49,10 @@ function testAddContact(aIcc, aType, aMozContact, aPin2) {
       return aIcc.readContacts(aType)
         .then((aResult) => {
           let contact = aResult[aResult.length - 1];
-
           is(contact.name[0], aMozContact.name[0]);
           
-          is(contact.tel[0].value, aMozContact.tel[0].value.substring(0, 20));
-          is(contact.id, aIcc.iccInfo.iccid + aResult.length);
+          is(contact.tel[0].value, aMozContact.tel[0].value.substring(0, 40));
+          is(contact.id.substring(0, aIcc.iccInfo.iccid.length), aIcc.iccInfo.iccid);
 
           return contact.id;
         })
@@ -80,14 +83,15 @@ function removeContact(aIcc, aContactId, aType, aPin2) {
 
 startTestCommon(function() {
   let icc = getMozIcc();
-
+  let promise = Promise.resolve();
   for (let i = 0; i < TEST_ADD_DATA.length; i++) {
     let test_data = TEST_ADD_DATA[i];
     
-    return testAddContact(icc, "adn", test_data)
+    promise = promise.then(() => testAddContact(icc, "adn", test_data))
       
       .then(() => testAddContact(icc, "fdn", test_data, "0000"))
       
       .then(() => testAddContact(icc, "fdn", test_data));
   }
+  return promise;
 });
