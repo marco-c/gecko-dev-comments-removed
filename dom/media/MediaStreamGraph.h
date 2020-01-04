@@ -181,23 +181,6 @@ public:
 
 
   virtual void NotifyFinishedTrackCreation(MediaStreamGraph* aGraph) {}
-
-  
-  
-
-
-
-
-  virtual void NotifySpeakerData(MediaStreamGraph* aGraph,
-                                 AudioDataValue* aBuffer, size_t aFrames,
-                                 uint32_t aChannels) {}
-  
-
-
-
-  virtual void NotifyInputData(MediaStreamGraph* aGraph,
-                               AudioDataValue* aBuffer, size_t aFrames,
-                               uint32_t aChannels) {}
 };
 
 
@@ -1192,11 +1175,6 @@ public:
   
   static void DestroyNonRealtimeInstance(MediaStreamGraph* aGraph);
 
-  virtual nsresult OpenAudioInput(char *aName, MediaStreamListener *aListener) {
-    return NS_ERROR_FAILURE;
-  }
-  virtual void CloseAudioInput(MediaStreamListener *aListener) {}
-
   
   
 
@@ -1276,13 +1254,6 @@ public:
   already_AddRefed<MediaInputPort> ConnectToCaptureStream(
     uint64_t aWindowId, MediaStream* aMediaStream);
 
-  
-
-
-
-  void NotifySpeakerData(AudioDataValue* aBuffer, size_t aFrames,
-                         uint32_t aChannels);
-
 protected:
   explicit MediaStreamGraph(TrackRate aSampleRate)
     : mSampleRate(aSampleRate)
@@ -1303,8 +1274,6 @@ protected:
 
 
   TrackRate mSampleRate;
-
-  nsTArray<RefPtr<MediaStreamListener>> mAudioInputs;
 };
 
 } 

@@ -885,23 +885,6 @@ AudioCallbackDriver::DataCallback(AudioDataValue* aBuffer, long aFrames)
 
   mBuffer.BufferFilled();
 
-  
-  
-  
-  
-  
-  mGraphImpl->NotifySpeakerData(aOutputBuffer, static_cast<size_t>(aFrames),
-                                ChannelCount);
-
-  
-  if (aInputBuffer) {
-    if (mAudioInput) { 
-      mAudioInput->NotifyInputData(mGraphImpl, aInputBuffer,
-                                   static_cast<size_t>(aFrames),
-                                   ChannelCount);
-    }
-  }
-
   bool switching = false;
   {
     MonitorAutoLock mon(mGraphImpl->GetMonitor());
