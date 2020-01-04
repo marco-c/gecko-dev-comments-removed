@@ -89,13 +89,16 @@ MarkerDetails.prototype = {
 
 
 
-  render: function({ marker, frames }) {
+
+  render: function (options) {
+    let { marker, frames } = options;
     this.empty();
 
     let elements = [];
     elements.push(MarkerUtils.DOM.buildTitle(this._document, marker));
     elements.push(MarkerUtils.DOM.buildDuration(this._document, marker));
     MarkerUtils.DOM.buildFields(this._document, marker).forEach(f => elements.push(f));
+    MarkerUtils.DOM.buildCustom(this._document, marker, options).forEach(f => elements.push(f));
 
     
     
@@ -126,9 +129,7 @@ MarkerDetails.prototype = {
       return;
     }
 
-    if (data.action === "view-source") {
-      this.emit("view-source", data.url, data.line);
-    }
+    this.emit(data.action, data);
   },
 
   
