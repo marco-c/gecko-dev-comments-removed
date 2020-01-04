@@ -2,7 +2,7 @@
 function test() {
 
 
-assertGlobalDecl("let {x:y} = foo;", varDecl([{ id: objPatt([assignProp("x", ident("y"))]),
+assertGlobalDecl("let {x:y} = foo;", letDecl([{ id: objPatt([assignProp("x", ident("y"))]),
                                                 init: ident("foo") }]));
 
 assertLocalDecl("let {x:y} = foo;", letDecl([{ id: objPatt([assignProp("x", ident("y"))]),

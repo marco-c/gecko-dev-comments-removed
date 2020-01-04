@@ -1,7 +1,6 @@
 
 
 
-
 let v = "global-v";
 
 function f(v, global)

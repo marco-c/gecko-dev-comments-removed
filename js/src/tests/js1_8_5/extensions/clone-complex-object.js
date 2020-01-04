@@ -242,7 +242,7 @@ let obj = { 'foo': foo,
             'baz': baz };
 check(obj);
 
-for (var obj of new getTestContent)
+for (obj of new getTestContent)
     check(obj);
 
 
