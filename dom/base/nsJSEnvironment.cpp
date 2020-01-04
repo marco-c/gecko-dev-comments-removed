@@ -1335,6 +1335,8 @@ nsJSContext::ShrinkGCBuffersNow()
 static void
 FinishAnyIncrementalGC()
 {
+  PROFILER_LABEL_FUNC(js::ProfileEntry::Category::GC);
+
   if (sCCLockedOut) {
     
     JS::PrepareForIncrementalGC(sRuntime);
