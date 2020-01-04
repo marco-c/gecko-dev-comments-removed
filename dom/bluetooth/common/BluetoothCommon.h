@@ -453,6 +453,15 @@ struct BluetoothAddress {
 
 
 
+  bool IsCleared() const
+  {
+    return operator==(ANY);
+  }
+
+  
+
+
+
 
 
 

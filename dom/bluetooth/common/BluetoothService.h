@@ -232,12 +232,12 @@ public:
 
 
   virtual nsresult
-  GetServiceChannel(const nsAString& aDeviceAddress,
-                    const nsAString& aServiceUuid,
+  GetServiceChannel(const BluetoothAddress& aDeviceAddress,
+                    const BluetoothUuid& aServiceUuid,
                     BluetoothProfileManagerBase* aManager) = 0;
 
   virtual bool
-  UpdateSdpRecords(const nsAString& aDeviceAddress,
+  UpdateSdpRecords(const BluetoothAddress& aDeviceAddress,
                    BluetoothProfileManagerBase* aManager) = 0;
 
   virtual void

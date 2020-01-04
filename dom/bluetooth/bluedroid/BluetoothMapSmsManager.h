@@ -243,7 +243,7 @@ private:
   
   bool mMnsConnected;
   bool mNtfRequired;
-  nsString mDeviceAddress;
+  BluetoothAddress mDeviceAddress;
   unsigned int mRemoteMaxPacketLength;
 
   

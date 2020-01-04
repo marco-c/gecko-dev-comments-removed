@@ -16,15 +16,6 @@ class BluetoothProfileManagerBase;
 class BluetoothUuidHelper
 {
 public:
-  
-
-
-
-
-
-
-  static void
-  GetString(BluetoothServiceClass aServiceClassUuid, nsAString& aRetUuidStr);
 
   
 
