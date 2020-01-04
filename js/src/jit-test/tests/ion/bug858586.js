@@ -1,3 +1,10 @@
+
+
+
+
+
+Uint8ClampedArray.prototype.toString = Object.prototype.toString;
+
 function A(a) { this.a = a; }
 A.prototype.foo = function (x) {};
 function B(b) { this.b = b; }
