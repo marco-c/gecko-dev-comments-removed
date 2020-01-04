@@ -270,5 +270,26 @@ CompositableClient::DumpTextureClient(std::stringstream& aStream, TextureClient*
   aStream << gfxUtils::GetAsLZ4Base64Str(dSurf).get();
 }
 
+AutoRemoveTexture::~AutoRemoveTexture()
+{
+#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
+  if (mCompositable && mTexture && mCompositable->GetForwarder()) {
+    
+    RefPtr<AsyncTransactionWaiter> waiter = new AsyncTransactionWaiter();
+    RefPtr<AsyncTransactionTracker> tracker =
+        new RemoveTextureFromCompositableTracker(waiter);
+    
+    tracker->SetTextureClient(mTexture);
+    mTexture->SetRemoveFromCompositableWaiter(waiter);
+    
+    mCompositable->GetForwarder()->RemoveTextureFromCompositableAsync(tracker, mCompositable, mTexture);
+  }
+#else
+  if (mCompositable && mTexture) {
+    mCompositable->RemoveTexture(mTexture);
+  }
+#endif
+}
+
 } 
 } 
