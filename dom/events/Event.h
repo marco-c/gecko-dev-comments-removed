@@ -30,7 +30,6 @@ namespace mozilla {
 namespace dom {
 
 class EventTarget;
-class EventMessageAutoOverride;
 class WantsPopupControlCheck;
 #define GENERATED_EVENT(EventClass_) class EventClass_;
 #include "mozilla/dom/GeneratedEventList.h"
@@ -240,7 +239,6 @@ protected:
   void SetEventType(const nsAString& aEventTypeArg);
   already_AddRefed<nsIContent> GetTargetFromFrame();
 
-  friend class EventMessageAutoOverride;
   friend class WantsPopupControlCheck;
   void SetWantsPopupControlCheck(bool aCheck)
   {
@@ -268,48 +266,6 @@ protected:
   
   
   bool                        mWantsPopupControlCheck;
-};
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_RAII EventMessageAutoOverride
-{
-public:
-  explicit EventMessageAutoOverride(nsIDOMEvent* aEvent,
-                                    EventMessage aOverridingMessage)
-    : mEvent(aEvent->InternalDOMEvent()),
-      mOrigMessage(mEvent->mEvent->mMessage)
-  {
-    MOZ_ASSERT(aOverridingMessage != mOrigMessage,
-               "Don't use this class if you're not actually overriding");
-    MOZ_ASSERT(aOverridingMessage != eUnidentifiedEvent,
-               "Only use this class with a valid overriding EventMessage");
-    MOZ_ASSERT(mOrigMessage != eUnidentifiedEvent &&
-               mEvent->mEvent->typeString.IsEmpty(),
-               "Only use this class on events whose overridden type is "
-               "known (so we can restore it properly)");
-
-    mEvent->mEvent->mMessage = aOverridingMessage;
-  }
-
-  ~EventMessageAutoOverride()
-  {
-    mEvent->mEvent->mMessage = mOrigMessage;
-  }
-
-protected:
-  
-  
-  Event* const MOZ_NON_OWNING_REF mEvent;
-  const EventMessage mOrigMessage;
 };
 
 class MOZ_STACK_CLASS WantsPopupControlCheck

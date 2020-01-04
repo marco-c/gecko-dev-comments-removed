@@ -312,17 +312,11 @@ NS_EVENT_MESSAGE(eGestureNotify)
 
 NS_EVENT_MESSAGE(eScrolledAreaChanged)
 
-
 NS_EVENT_MESSAGE(eTransitionEnd)
+
 NS_EVENT_MESSAGE(eAnimationStart)
 NS_EVENT_MESSAGE(eAnimationEnd)
 NS_EVENT_MESSAGE(eAnimationIteration)
-
-
-NS_EVENT_MESSAGE(eWebkitTransitionEnd)
-NS_EVENT_MESSAGE(eWebkitAnimationStart)
-NS_EVENT_MESSAGE(eWebkitAnimationEnd)
-NS_EVENT_MESSAGE(eWebkitAnimationIteration)
 
 NS_EVENT_MESSAGE(eSMILBeginEvent)
 NS_EVENT_MESSAGE(eSMILEndEvent)
