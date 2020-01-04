@@ -53,6 +53,7 @@ class nsGlobalWindow;
 class nsICSSDeclaration;
 class nsISMILAttr;
 class nsDocument;
+class nsDOMStringMap;
 
 namespace mozilla {
 namespace dom {
@@ -1141,6 +1142,16 @@ public:
   float FontSizeInflation();
 
   net::ReferrerPolicy GetReferrerPolicyAsEnum();
+
+  
+
+
+
+  
+  already_AddRefed<nsDOMStringMap> Dataset();
+  
+  
+  void ClearDataset();
 
 protected:
   
