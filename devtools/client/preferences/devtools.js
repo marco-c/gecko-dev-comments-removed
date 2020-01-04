@@ -22,11 +22,6 @@ pref("devtools.toolbar.enabled", true);
 pref("devtools.toolbar.visible", false);
 
 
-pref("devtools.appmanager.enabled", true);
-pref("devtools.appmanager.lastTab", "help");
-pref("devtools.appmanager.manifestEditor.enabled", true);
-
-
 pref("devtools.webide.enabled", true);
 
 
