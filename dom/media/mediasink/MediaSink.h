@@ -95,6 +95,11 @@ public:
 
   
   
+  
+  virtual void Redraw() {};
+
+  
+  
   virtual void Start(int64_t aStartTime, const MediaInfo& aInfo) = 0;
 
   

@@ -7,8 +7,11 @@
 #ifndef VideoSink_h_
 #define VideoSink_h_
 
+#include "FrameStatistics.h"
 #include "ImageContainer.h"
+#include "MediaEventSource.h"
 #include "MediaSink.h"
+#include "MediaTimer.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
@@ -24,19 +27,16 @@ namespace media {
 
 class VideoSink : public MediaSink
 {
+  typedef mozilla::layers::ImageContainer::ProducerID ProducerID;
 public:
   VideoSink(AbstractThread* aThread,
             MediaSink* aAudioSink,
             MediaQueue<MediaData>& aVideoQueue,
             VideoFrameContainer* aContainer,
-            bool aRealTime)
-    : mOwnerThread(aThread)
-    , mAudioSink(aAudioSink)
-    , mVideoQueue(aVideoQueue)
-    , mContainer(aContainer)
-    , mRealTime(aRealTime)
-    , mVideoFrameEndTime(-1)
-  {}
+            bool aRealTime,
+            FrameStatistics& aFrameStats,
+            int aDelayDuration,
+            uint32_t aVQueueSentToCompositerSize);
 
   const PlaybackParams& GetPlaybackParams() const override;
 
@@ -54,6 +54,8 @@ public:
 
   void SetPlaying(bool aPlaying) override;
 
+  void Redraw() override;
+
   void Start(int64_t aStartTime, const MediaInfo& aInfo) override;
 
   void Stop() override;
@@ -67,6 +69,31 @@ public:
 private:
   virtual ~VideoSink();
 
+  
+  void OnVideoQueueEvent();
+  void ConnectListener();
+  void DisconnectListener();
+
+  
+  
+  
+  
+  
+  
+  void RenderVideoFrames(int32_t aMaxFrames, int64_t aClockTime = 0,
+                         const TimeStamp& aClickTimeStamp = TimeStamp());
+
+  
+  
+  void TryUpdateRenderedVideoFrames();
+
+  
+  
+  
+  
+  void UpdateRenderedVideoFrames();
+  void UpdateRenderedVideoFramesByTimer();
+
   void AssertOwnerThread() const
   {
     MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
@@ -76,15 +103,20 @@ private:
     return mVideoQueue;
   }
 
-  void OnVideoEnded();
-
   const RefPtr<AbstractThread> mOwnerThread;
   RefPtr<MediaSink> mAudioSink;
   MediaQueue<MediaData>& mVideoQueue;
   VideoFrameContainer* mContainer;
 
   
+  
+  const ProducerID mProducerID;
+
+  
   const bool mRealTime;
+
+  
+  FrameStatistics& mFrameStats;
 
   RefPtr<GenericPromise> mEndPromise;
   MozPromiseHolder<GenericPromise> mEndPromiseHolder;
@@ -93,6 +125,23 @@ private:
   
   
   int64_t mVideoFrameEndTime;
+
+  
+  MediaEventListener mPushListener;
+
+  
+  bool mHasVideo;
+
+  
+  DelayedScheduler mUpdateScheduler;
+
+  
+  
+  const int mDelayDuration;
+
+  
+  
+  const uint32_t mVideoQueueSendToCompositorSize;
 };
 
 } 

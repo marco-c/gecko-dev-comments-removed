@@ -128,7 +128,6 @@ public:
   typedef MediaDecoderReader::AudioDataPromise AudioDataPromise;
   typedef MediaDecoderReader::VideoDataPromise VideoDataPromise;
   typedef MediaDecoderOwner::NextFrameStatus NextFrameStatus;
-  typedef mozilla::layers::ImageContainer::ProducerID ProducerID;
   typedef mozilla::layers::ImageContainer::FrameID FrameID;
   MediaDecoderStateMachine(MediaDecoder* aDecoder,
                            MediaDecoderReader* aReader,
@@ -467,20 +466,7 @@ protected:
 
   
   
-  
-  
-  
-  
-  
-  void RenderVideoFrames(int32_t aMaxFrames, int64_t aClockTime = 0,
-                         const TimeStamp& aClickTimeStamp = TimeStamp());
-
-  
-  
-  
-  
-  
-  void UpdateRenderedVideoFrames();
+  void UpdatePlaybackPositionPeriodically();
 
   media::MediaSink* CreateAudioSink();
 
@@ -672,10 +658,6 @@ private:
 
   
   WatchManager<MediaDecoderStateMachine> mWatchManager;
-
-  
-  
-  const ProducerID mProducerID;
 
   
   const bool mRealTime;
@@ -929,11 +911,11 @@ private:
 
   
   
-  int64_t mDecodedAudioEndTime;
+  int64_t VideoEndTime() const;
 
   
   
-  int64_t mVideoFrameEndTime;
+  int64_t mDecodedAudioEndTime;
 
   
   
