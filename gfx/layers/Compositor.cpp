@@ -111,13 +111,7 @@ Compositor::DrawDiagnosticsInternal(DiagnosticFlags aFlags,
       color = gfx::Color(0.0f, 1.0f, 1.0f, 1.0f); 
     }
   } else if (aFlags & DiagnosticFlags::IMAGE) {
-    if (aFlags & DiagnosticFlags::NV12) {
-      color = gfx::Color(1.0f, 1.0f, 0.0f, 1.0f); 
-    } else if (aFlags & DiagnosticFlags::YCBCR) {
-      color = gfx::Color(1.0f, 0.55f, 0.0f, 1.0f); 
-    } else {
-      color = gfx::Color(1.0f, 0.0f, 0.0f, 1.0f); 
-    }
+    color = gfx::Color(1.0f, 0.0f, 0.0f, 1.0f); 
   } else if (aFlags & DiagnosticFlags::COLOR) {
     color = gfx::Color(0.0f, 0.0f, 1.0f, 1.0f); 
   } else if (aFlags & DiagnosticFlags::CONTAINER) {
