@@ -3,7 +3,7 @@
 
 
 const {Cu} = require("chrome");
-const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm");
+const promise = require("promise");
 const {AddonManager} = Cu.import("resource://gre/modules/AddonManager.jsm");
 const {Services} = Cu.import("resource://gre/modules/Services.jsm");
 const {getJSON} = require("devtools/shared/getjson");

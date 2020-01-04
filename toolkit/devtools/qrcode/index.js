@@ -5,8 +5,7 @@
 "use strict";
 
 const { Cu } = require("chrome");
-const { Promise: promise } =
-  Cu.import("resource://gre/modules/Promise.jsm", {});
+const promise = require("promise");
 
 
 Object.defineProperty(this, "Encoder", {

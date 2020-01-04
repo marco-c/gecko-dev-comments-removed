@@ -1,7 +1,7 @@
 
 
 
-const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
+const promise = require("promise");
 
 let gAppId = "actor-test";
 const APP_ORIGIN = "app://" + gAppId;
