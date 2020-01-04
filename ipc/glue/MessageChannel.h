@@ -525,16 +525,22 @@ class MessageChannel : HasResultCodes
     class AutoSetValue {
       public:
         explicit AutoSetValue(T &var, const T &newValue)
-          : mVar(var), mPrev(var)
+          : mVar(var), mPrev(var), mNew(newValue)
         {
             mVar = newValue;
         }
         ~AutoSetValue() {
-            mVar = mPrev;
+            
+            
+            
+            if (mVar == mNew) {
+                mVar = mPrev;
+            }
         }
       private:
         T& mVar;
         T mPrev;
+        T mNew;
     };
 
     
