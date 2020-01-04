@@ -1160,7 +1160,15 @@ void stop_and_join_render_thread(cubeb_stream * stm)
     LOG("Destroy SetEvent failed: %d\n", GetLastError());
   }
 
-  DWORD r = WaitForSingleObject(stm->thread, INFINITE);
+  
+
+  DWORD r = WaitForSingleObject(stm->thread, 5000);
+  if (r == WAIT_TIMEOUT) {
+    
+
+    LOG("Destroy WaitForSingleObject on thread timed out,"
+        " leaking the thread: %d\n", GetLastError());
+  }
   if (r == WAIT_FAILED) {
     LOG("Destroy WaitForSingleObject on thread failed: %d\n", GetLastError());
   }
