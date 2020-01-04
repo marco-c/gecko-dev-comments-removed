@@ -23,6 +23,8 @@ class nsPIDOMWindowOuter;
 namespace mozilla {
 namespace dom {
 
+class AudioPlaybackConfig;
+
 
 class AudioChannelAgent : public nsIAudioChannelAgent
 {
@@ -35,6 +37,7 @@ public:
   AudioChannelAgent();
 
   void WindowVolumeChanged();
+  void WindowSuspendChanged(nsSuspendedTypes aSuspend);
   void WindowAudioCaptureChanged(uint64_t aInnerWindowID, bool aCapture);
 
   nsPIDOMWindowOuter* Window() const
@@ -47,6 +50,9 @@ public:
 
 private:
   virtual ~AudioChannelAgent();
+
+  AudioPlaybackConfig GetMediaConfig();
+  bool IsDisposableSuspend(nsSuspendedTypes aSuspend) const;
 
   
   

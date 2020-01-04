@@ -3986,7 +3986,7 @@ nsPIDOMWindowOuter::RefreshMediaElementsSuspend(SuspendTypes aSuspend)
 {
   RefPtr<AudioChannelService> service = AudioChannelService::GetOrCreate();
   if (service) {
-    
+    service->RefreshAgentsSuspend(GetOuterWindow(), aSuspend);
   }
 }
 
