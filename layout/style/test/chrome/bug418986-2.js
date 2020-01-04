@@ -4,8 +4,6 @@
 
 
 
-SimpleTest.waitForExplicitFinish();
-
 
 
 
@@ -168,17 +166,20 @@ let cssLine = function (query, clazz, id, color) {
 
 
 
+
+let constructQuery = function (key, val) {
+  return Array.isArray(val) ?
+    "(min-" + key + ": " + val[0] + ") and (max-" +  key + ": " + val[1] + ")" :
+    "(" + key + ": " + val + ")";
+};
+
+
+
 let mediaQueryCSSLine = function (key, val, color) {
   if (val === null) {
     return "";
   }
-  let query;
-  if (Array.isArray(val)) {
-    query = "(min-" + key + ": " + val[0] + ") and (max-" +  key + ": " + val[1] + ")";
-  } else {
-    query = "(" + key + ": " + val + ")";
-  }
-  return cssLine(query, "spoof", key, color);
+  return cssLine(constructQuery(key, val), "spoof", key, color);
 };
 
 
@@ -249,32 +250,66 @@ let testOSXFontSmoothing = function (resisting) {
 };
 
 
-let prefVals = (for (prefVal of [false, true]) prefVal);
+
+let sleep = function (timeoutMs) {
+  return new Promise(function(resolve, reject) {
+    window.setTimeout(resolve);
+  });
+};
 
 
 
-let test = function(isContent) {
-  let {value: prefValue, done} = prefVals.next();
-  if (done) {
-    SimpleTest.finish();
-    return;
+
+
+let testMediaQueriesInPictureElements = function* (resisting) {
+  let lines = "";
+  for (let [key, offVal, onVal] of expected_values) {
+    let expected = resisting ? onVal : offVal;
+    if (expected) {
+      let query = constructQuery(key, expected);
+      lines += "<picture>\n";
+      lines += " <source srcset='/tests/layout/style/test/chrome/match.png' media='" + query + "' />\n";
+      lines += " <img title='" + key + ":" + expected + "' class='testImage' src='/tests/layout/style/test/chrome/mismatch.png' alt='" + key + "' />\n";
+      lines += "</picture><br/>\n";
+    }
   }
-  SpecialPowers.pushPrefEnv({set: [["privacy.resistFingerprinting", prefValue]]},
-    function () {
-      let resisting = prefValue && isContent;
-      expected_values.forEach(
-        function ([key, offVal, onVal]) {
-          testMatch(key, resisting ? onVal : offVal);
-        });
-      testToggles(resisting);
-      if (OS === "WINNT") {
-        testWindowsSpecific(resisting, "-moz-os-version", windows_versions);
-        testWindowsSpecific(resisting, "-moz-windows-theme", windows_themes);
-      }
-      testCSS(resisting);
-      if (OS === "Darwin") {
-        testOSXFontSmoothing(resisting);
-      }
-      test(isContent);
-    });
+  document.getElementById("pictures").innerHTML = lines;
+  var testImages = document.getElementsByClassName("testImage");
+  yield sleep(0);
+  for (let testImage of testImages) {
+    ok(testImage.currentSrc.endsWith("/match.png"), "Media query '" + testImage.title + "' in picture should match.");
+  }
+};
+
+
+
+
+let pushPref = function (key, value) {
+  return new Promise(function(resolve, reject) {
+    SpecialPowers.pushPrefEnv({"set": [[key, value]]}, resolve);
+  });
+};
+
+
+
+
+let test = function* (isContent) {
+  for (prefValue of [false, true]) {
+    yield pushPref("privacy.resistFingerprinting", prefValue);
+    let resisting = prefValue && isContent;
+    expected_values.forEach(
+      function ([key, offVal, onVal]) {
+        testMatch(key, resisting ? onVal : offVal);
+      });
+    testToggles(resisting);
+    if (OS === "WINNT") {
+      testWindowsSpecific(resisting, "-moz-os-version", windows_versions);
+      testWindowsSpecific(resisting, "-moz-windows-theme", windows_themes);
+    }
+    testCSS(resisting);
+    if (OS === "Darwin") {
+      testOSXFontSmoothing(resisting);
+    }
+    yield testMediaQueriesInPictureElements(resisting);
+  }
 };
