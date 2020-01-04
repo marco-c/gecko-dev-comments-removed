@@ -11,7 +11,6 @@ Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 
 Cu.import("chrome://marionette/content/driver.js");
-Cu.import("chrome://marionette/content/emulator.js");
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/message.js");
 
@@ -20,7 +19,6 @@ this.EXPORTED_SYMBOLS = ["Dispatcher"];
 const PROTOCOL_VERSION = 3;
 
 const logger = Log.repository.getLogger("Marionette");
-
 
 
 
@@ -47,8 +45,7 @@ this.Dispatcher = function(connId, transport, driverFactory) {
   
   this.lastId = 0;
 
-  this.emulator = new emulator.EmulatorService(this.sendEmulator.bind(this));
-  this.driver = driverFactory(this.emulator);
+  this.driver = driverFactory();
 
   
   this.commands_ = new Map();
@@ -159,13 +156,6 @@ Dispatcher.prototype.sayHello = function() {
   this.sendRaw(whatHo);
 };
 
-Dispatcher.prototype.sendEmulator = function(name, params, resCb, errCb) {
-  let cmd = new Command(++this.lastId, name, params);
-  cmd.onresult = resCb;
-  cmd.onerror = errCb;
-  this.send(cmd);
-};
-
 
 
 
@@ -191,16 +181,6 @@ Dispatcher.prototype.send = function(msg) {
 };
 
 
-
-
-
-
-
-
-
-Dispatcher.prototype.sendToEmulator = function(cmd) {
-  this.sendMessage(cmd);
-};
 
 
 

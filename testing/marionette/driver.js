@@ -21,7 +21,6 @@ Cu.import("chrome://marionette/content/action.js");
 Cu.import("chrome://marionette/content/atom.js");
 Cu.import("chrome://marionette/content/browser.js");
 Cu.import("chrome://marionette/content/element.js");
-Cu.import("chrome://marionette/content/emulator.js");
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/evaluate.js");
 Cu.import("chrome://marionette/content/event.js");
@@ -87,15 +86,9 @@ this.Context.fromString = function(s) {
 
 
 
-
-
-
-this.GeckoDriver = function(appName, device, stopSignal, emulator) {
+this.GeckoDriver = function(appName, device, stopSignal) {
   this.appName = appName;
   this.stopSignal_ = stopSignal;
-  this.emulator = emulator;
-  
-  this.emulator.sendToListener = this.sendAsync.bind(this);
 
   this.sessionId = null;
   this.wins = new browser.Windows();
@@ -872,7 +865,6 @@ GeckoDriver.prototype.execute_ = function(script, args, timeout, opts = {}) {
       if (opts.sandboxName) {
         sb = sandbox.augment(sb, new logging.Adapter(this.marionetteLog));
         sb = sandbox.augment(sb, {global: sb});
-        sb = sandbox.augment(sb, new emulator.Adapter(this.emulator));
       }
 
       opts.timeout = timeout;
