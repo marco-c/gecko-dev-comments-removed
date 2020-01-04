@@ -634,19 +634,9 @@ EnqueuePromiseReactionJob(JSContext* cx, HandleValue handler_, HandleValue handl
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    RootedObject promise(cx);
-    if (promise_->is<PromiseObject>()) {
-      promise = promise_;
-      if (!cx->compartment()->wrap(cx, &promise))
-          return false;
-    }
+    RootedObject promise(cx, promise_);
+    if (!cx->compartment()->wrap(cx, &promise))
+        return false;
 
     
     
