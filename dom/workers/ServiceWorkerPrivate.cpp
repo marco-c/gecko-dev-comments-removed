@@ -990,6 +990,7 @@ class FetchEventRunnable : public ExtendableFunctionalEventWorkerRunnable
   nsCString mMethod;
   nsString mClientId;
   bool mIsReload;
+  RequestCache mCacheMode;
   RequestMode mRequestMode;
   RequestRedirect mRequestRedirect;
   RequestCredentials mRequestCredentials;
@@ -1013,6 +1014,7 @@ public:
     , mScriptSpec(aScriptSpec)
     , mClientId(aDocumentId)
     , mIsReload(aIsReload)
+    , mCacheMode(RequestCache::Default)
     , mRequestMode(RequestMode::No_cors)
     , mRequestRedirect(RequestRedirect::Follow)
     
@@ -1115,6 +1117,11 @@ public:
     internalChannel->GetRedirectMode(&redirectMode);
     mRequestRedirect = static_cast<RequestRedirect>(redirectMode);
 
+    
+    uint32_t cacheMode;
+    internalChannel->GetFetchCacheMode(&cacheMode);
+    mCacheMode = static_cast<RequestCache>(cacheMode);
+
     mRequestCredentials = InternalRequest::MapChannelToRequestCredentials(channel);
 
     rv = httpChannel->VisitNonDefaultRequestHeaders(this);
@@ -1206,6 +1213,7 @@ private:
     RefPtr<InternalRequest> internalReq = new InternalRequest(mSpec,
                                                               mMethod,
                                                               internalHeaders.forget(),
+                                                              mCacheMode,
                                                               mRequestMode,
                                                               mRequestRedirect,
                                                               mRequestCredentials,
