@@ -695,6 +695,18 @@ class FunctionExtended : public JSFunction
 
     static const unsigned METHOD_HOMEOBJECT_SLOT = 0;
 
+    
+
+
+
+    static const unsigned ASM_MODULE_SLOT = 0;
+
+    
+
+
+
+    static const unsigned ASM_EXPORT_INDEX_SLOT = 1;
+
     static inline size_t offsetOfExtendedSlot(unsigned which) {
         MOZ_ASSERT(which < NUM_EXTENDED_SLOTS);
         return offsetof(FunctionExtended, extendedSlots) + which * sizeof(HeapValue);

@@ -24,18 +24,22 @@
 
 #include "jsprf.h"
 
-#include "asmjs/AsmJSValidate.h"
+#include "asmjs/AsmJS.h"
 #include "asmjs/WasmSerialize.h"
 #include "builtin/AtomicsObject.h"
+#include "builtin/SIMD.h"
 #ifdef JS_ION_PERF
 # include "jit/PerfSpewer.h"
 #endif
 #include "jit/BaselineJIT.h"
 #include "jit/ExecutableAllocator.h"
+#include "jit/JitCommon.h"
 #include "js/MemoryMetrics.h"
 #ifdef MOZ_VTUNE
 # include "vtune/VTuneWrapper.h"
 #endif
+
+#include "jsobjinlines.h"
 
 #include "jit/MacroAssembler-inl.h"
 #include "vm/ArrayBufferObject-inl.h"
@@ -497,6 +501,13 @@ Module::rawHeapPtr()
     return *(uint8_t**)(globalData() + HeapGlobalDataOffset);
 }
 
+WasmActivation*&
+Module::activation()
+{
+    MOZ_ASSERT(dynamicallyLinked_);
+    return *reinterpret_cast<WasmActivation**>(globalData() + ActivationGlobalDataOffset);
+}
+
 void
 Module::specializeToHeap(ArrayBufferObjectMaybeShared* heap)
 {
@@ -623,6 +634,61 @@ Module::sendCodeRangesToProfiler(JSContext* cx)
         }
     }
 #endif
+}
+
+void
+Module::setProfilingEnabled(bool enabled, JSContext* cx)
+{
+    MOZ_ASSERT(dynamicallyLinked_);
+    MOZ_ASSERT(!activation());
+
+    if (profilingEnabled_ == enabled)
+        return;
+
+    
+    
+    
+    
+    if (enabled) {
+        funcLabels_.resize(funcNames_.length());
+        for (const CodeRange& codeRange : codeRanges_) {
+            if (!codeRange.isFunction())
+                continue;
+            unsigned lineno = codeRange.funcLineNumber();
+            const char* name = funcNames_[codeRange.funcNameIndex()].get();
+            funcLabels_[codeRange.funcNameIndex()] =
+                UniqueChars(JS_smprintf("%s (%s:%u)", name, filename_.get(), lineno));
+        }
+    } else {
+        funcLabels_.clear();
+    }
+
+    
+    {
+        AutoMutateCode amc(cx, *this, "Module::setProfilingEnabled");
+
+        for (const CallSite& callSite : callSites_)
+            EnableProfilingPrologue(*this, callSite, enabled);
+
+        for (const CodeRange& codeRange : codeRanges_)
+            EnableProfilingEpilogue(*this, codeRange, enabled);
+    }
+
+    
+    for (FuncPtrTable& funcPtrTable : funcPtrTables_) {
+        auto array = reinterpret_cast<void**>(globalData() + funcPtrTable.globalDataOffset);
+        for (size_t i = 0; i < funcPtrTable.numElems; i++) {
+            const CodeRange* codeRange = lookupCodeRange(array[i]);
+            void* from = code() + codeRange->funcNonProfilingEntry();
+            void* to = code() + codeRange->funcProfilingEntry();
+            if (!enabled)
+                Swap(from, to);
+            MOZ_ASSERT(array[i] == from);
+            array[i] = to;
+        }
+    }
+
+    profilingEnabled_ = enabled;
 }
 
 Module::ImportExit&
@@ -951,13 +1017,6 @@ Module::dynamicallyLink(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> hea
     return true;
 }
 
-Module*
-Module::nextLinked() const
-{
-    MOZ_ASSERT(dynamicallyLinked_);
-    return next_;
-}
-
 ArrayBufferObjectMaybeShared*
 Module::maybeBuffer() const
 {
@@ -990,13 +1049,6 @@ Module::deoptimizeImportExit(uint32_t importIndex)
     ImportExit& exit = importToExit(import);
     exit.code = code() + import.interpExitCodeOffset();
     exit.baselineScript = nullptr;
-}
-
-bool
-Module::hasDetachedHeap() const
-{
-    MOZ_ASSERT(dynamicallyLinked_);
-    return pod.usesHeap_ && !maybeHeap_;
 }
 
 bool
@@ -1036,8 +1088,8 @@ Module::detachHeap(JSContext* cx)
     
     
     
-    MOZ_ASSERT_IF(active(), activation()->exitReason() == ExitReason::ImportJit ||
-                            activation()->exitReason() == ExitReason::ImportInterp);
+    MOZ_ASSERT_IF(activation(), activation()->exitReason() == ExitReason::ImportJit ||
+                                activation()->exitReason() == ExitReason::ImportInterp);
 
     AutoMutateCode amc(cx, *this, "Module::detachHeap");
     despecializeFromHeap(maybeHeap_);
@@ -1051,18 +1103,155 @@ Module::setInterrupted(bool interrupted)
     interrupted_ = interrupted;
 }
 
-WasmActivation*&
-Module::activation()
+Module*
+Module::nextLinked() const
 {
     MOZ_ASSERT(dynamicallyLinked_);
-    return *reinterpret_cast<WasmActivation**>(globalData() + ActivationGlobalDataOffset);
+    return next_;
 }
 
-Module::EntryFuncPtr
-Module::entryTrampoline(const Export& func) const
+bool
+Module::callExport(JSContext* cx, uint32_t exportIndex, CallArgs args)
 {
     MOZ_ASSERT(dynamicallyLinked_);
-    return JS_DATA_TO_FUNC_PTR(EntryFuncPtr, code() + func.stubOffset());
+
+    const Export& exp = exports_[exportIndex];
+
+    
+    
+    
+    
+    if (profilingEnabled() != cx->runtime()->spsProfiler.enabled() && !activation())
+        setProfilingEnabled(cx->runtime()->spsProfiler.enabled(), cx);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    Vector<Module::EntryArg, 8> coercedArgs(cx);
+    if (!coercedArgs.resize(Max<size_t>(1, exp.sig().args().length())))
+        return false;
+
+    RootedValue v(cx);
+    for (unsigned i = 0; i < exp.sig().args().length(); ++i) {
+        v = i < args.length() ? args[i] : UndefinedValue();
+        switch (exp.sig().arg(i)) {
+          case ValType::I32:
+            if (!ToInt32(cx, v, (int32_t*)&coercedArgs[i]))
+                return false;
+            break;
+          case ValType::I64:
+            MOZ_CRASH("int64");
+          case ValType::F32:
+            if (!RoundFloat32(cx, v, (float*)&coercedArgs[i]))
+                return false;
+            break;
+          case ValType::F64:
+            if (!ToNumber(cx, v, (double*)&coercedArgs[i]))
+                return false;
+            break;
+          case ValType::I32x4: {
+            SimdConstant simd;
+            if (!ToSimdConstant<Int32x4>(cx, v, &simd))
+                return false;
+            memcpy(&coercedArgs[i], simd.asInt32x4(), Simd128DataSize);
+            break;
+          }
+          case ValType::F32x4: {
+            SimdConstant simd;
+            if (!ToSimdConstant<Float32x4>(cx, v, &simd))
+                return false;
+            memcpy(&coercedArgs[i], simd.asFloat32x4(), Simd128DataSize);
+            break;
+          }
+          case ValType::B32x4: {
+            SimdConstant simd;
+            if (!ToSimdConstant<Bool32x4>(cx, v, &simd))
+                return false;
+            
+            memcpy(&coercedArgs[i], simd.asInt32x4(), Simd128DataSize);
+            break;
+          }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    if (usesHeap() && !maybeHeap_) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_OUT_OF_MEMORY);
+        return false;
+    }
+
+    {
+        
+        
+        
+        
+        
+        WasmActivation activation(cx, *this);
+        JitActivation jitActivation(cx,  false);
+
+        
+        auto entry = JS_DATA_TO_FUNC_PTR(EntryFuncPtr, code() + exp.stubOffset());
+        if (!CALL_GENERATED_2(entry, coercedArgs.begin(), globalData()))
+            return false;
+    }
+
+    if (args.isConstructing()) {
+        
+        
+        
+        
+        PlainObject* obj = NewBuiltinClassInstance<PlainObject>(cx);
+        if (!obj)
+            return false;
+        args.rval().set(ObjectValue(*obj));
+        return true;
+    }
+
+    JSObject* simdObj;
+    switch (exp.sig().ret()) {
+      case ExprType::Void:
+        args.rval().set(UndefinedValue());
+        break;
+      case ExprType::I32:
+        args.rval().set(Int32Value(*(int32_t*)&coercedArgs[0]));
+        break;
+      case ExprType::I64:
+        MOZ_CRASH("int64");
+      case ExprType::F32:
+      case ExprType::F64:
+        args.rval().set(NumberValue(*(double*)&coercedArgs[0]));
+        break;
+      case ExprType::I32x4:
+        simdObj = CreateSimd<Int32x4>(cx, (int32_t*)&coercedArgs[0]);
+        if (!simdObj)
+            return false;
+        args.rval().set(ObjectValue(*simdObj));
+        break;
+      case ExprType::F32x4:
+        simdObj = CreateSimd<Float32x4>(cx, (float*)&coercedArgs[0]);
+        if (!simdObj)
+            return false;
+        args.rval().set(ObjectValue(*simdObj));
+        break;
+      case ExprType::B32x4:
+        simdObj = CreateSimd<Bool32x4>(cx, (int32_t*)&coercedArgs[0]);
+        if (!simdObj)
+            return false;
+        args.rval().set(ObjectValue(*simdObj));
+        break;
+    }
+
+    return true;
 }
 
 bool
@@ -1135,61 +1324,6 @@ Module::callImport(JSContext* cx, uint32_t importIndex, unsigned argc, const Val
     exit.code = jitExitCode;
     exit.baselineScript = script->baselineScript();
     return true;
-}
-
-void
-Module::setProfilingEnabled(bool enabled, JSContext* cx)
-{
-    MOZ_ASSERT(dynamicallyLinked_);
-    MOZ_ASSERT(!active());
-
-    if (profilingEnabled_ == enabled)
-        return;
-
-    
-    
-    
-    
-    if (enabled) {
-        funcLabels_.resize(funcNames_.length());
-        for (const CodeRange& codeRange : codeRanges_) {
-            if (!codeRange.isFunction())
-                continue;
-            unsigned lineno = codeRange.funcLineNumber();
-            const char* name = funcNames_[codeRange.funcNameIndex()].get();
-            funcLabels_[codeRange.funcNameIndex()] =
-                UniqueChars(JS_smprintf("%s (%s:%u)", name, filename_.get(), lineno));
-        }
-    } else {
-        funcLabels_.clear();
-    }
-
-    
-    {
-        AutoMutateCode amc(cx, *this, "Module::setProfilingEnabled");
-
-        for (const CallSite& callSite : callSites_)
-            EnableProfilingPrologue(*this, callSite, enabled);
-
-        for (const CodeRange& codeRange : codeRanges_)
-            EnableProfilingEpilogue(*this, codeRange, enabled);
-    }
-
-    
-    for (FuncPtrTable& funcPtrTable : funcPtrTables_) {
-        auto array = reinterpret_cast<void**>(globalData() + funcPtrTable.globalDataOffset);
-        for (size_t i = 0; i < funcPtrTable.numElems; i++) {
-            const CodeRange* codeRange = lookupCodeRange(array[i]);
-            void* from = code() + codeRange->funcNonProfilingEntry();
-            void* to = code() + codeRange->funcProfilingEntry();
-            if (!enabled)
-                Swap(from, to);
-            MOZ_ASSERT(array[i] == from);
-            array[i] = to;
-        }
-    }
-
-    profilingEnabled_ = enabled;
 }
 
 const char*

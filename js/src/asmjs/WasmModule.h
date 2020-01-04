@@ -144,9 +144,6 @@ typedef Vector<Export, 0, SystemAllocPolicy> ExportVector;
 
 
 
-
-
-
 class Import
 {
     MallocSig sig_;
@@ -348,8 +345,6 @@ AllocateCode(ExclusiveContext* cx, size_t bytes);
 
 
 
-
-
 class Module
 {
     struct ImportExit {
@@ -358,6 +353,11 @@ class Module
         HeapPtrFunction fun;
         static_assert(sizeof(HeapPtrFunction) == sizeof(void*), "for JIT access");
     };
+    struct EntryArg {
+        uint64_t lo;
+        uint64_t hi;
+    };
+    typedef int32_t (*EntryFuncPtr)(EntryArg* args, uint8_t* global);
     struct FuncPtrTable {
         uint32_t globalDataOffset;
         uint32_t numElems;
@@ -414,9 +414,11 @@ class Module
     uint32_t totalBytes() const;
     uint8_t* rawHeapPtr() const;
     uint8_t*& rawHeapPtr();
+    WasmActivation*& activation();
     void specializeToHeap(ArrayBufferObjectMaybeShared* heap);
     void despecializeFromHeap(ArrayBufferObjectMaybeShared* heap);
     void sendCodeRangesToProfiler(JSContext* cx);
+    void setProfilingEnabled(bool enabled, JSContext* cx);
     ImportExit& importToExit(const Import& import);
 
     enum CacheBool { NotLoadedFromCache = false, LoadedFromCache = true };
@@ -439,10 +441,12 @@ class Module
            FuncLabelVector&& funcLabels);
 
     template <class> friend struct js::MallocProvider;
+    friend class js::WasmActivation;
 
   public:
     static const unsigned SizeOfImportExit = sizeof(ImportExit);
     static const unsigned OffsetOfImportExitFun = offsetof(ImportExit, fun);
+    static const unsigned SizeOfEntryArg = sizeof(EntryArg);
 
     enum HeapBool { DoesntUseHeap = false, UsesHeap = true };
     enum SharedBool { UnsharedHeap = false, SharedHeap = true };
@@ -482,7 +486,6 @@ class Module
     bool loadedFromCache() const { return loadedFromCache_; }
     bool staticallyLinked() const { return staticallyLinked_; }
     bool dynamicallyLinked() const { return dynamicallyLinked_; }
-    bool profilingEnabled() const { return profilingEnabled_; }
 
     
     
@@ -509,7 +512,6 @@ class Module
 
     bool dynamicallyLink(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> heap,
                          const AutoVectorRooter<JSFunction*>& imports);
-    Module* nextLinked() const;
 
     
 
@@ -520,25 +522,19 @@ class Module
     
     
     
+    
+    
 
-    bool hasDetachedHeap() const;
     bool changeHeap(Handle<ArrayBufferObject*> newBuffer, JSContext* cx);
     bool detachHeap(JSContext* cx);
     void setInterrupted(bool interrupted);
+    Module* nextLinked() const;
 
     
     
     
-    
-    
 
-    struct EntryArg {
-        uint64_t lo;
-        uint64_t hi;
-    };
-    typedef int32_t (*EntryFuncPtr)(EntryArg* args, uint8_t* global);
-    EntryFuncPtr entryTrampoline(const Export& func) const;
-    WasmActivation*& activation();
+    bool callExport(JSContext* cx, uint32_t exportIndex, CallArgs args);
 
     
     
@@ -560,9 +556,9 @@ class Module
     
     
     
+    
 
-    bool active() { return !!activation(); }
-    void setProfilingEnabled(bool enabled, JSContext* cx);
+    bool profilingEnabled() const { return profilingEnabled_; }
     const char* profilingLabel(uint32_t funcIndex) const;
 
     
