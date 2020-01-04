@@ -1328,6 +1328,10 @@ protected:
   bool ParsePolygonFunction(nsCSSValue& aValue);
   bool ParseCircleOrEllipseFunction(nsCSSKeyword, nsCSSValue& aValue);
   bool ParseInsetFunction(nsCSSValue& aValue);
+  
+  
+  bool ParsePositionValueForBasicShape(nsCSSValue& aOut);
+
 
   
   bool ParseSingleTransform(bool aIsPrefixed, bool aDisallowRelativeValues,
@@ -12568,6 +12572,11 @@ bool CSSParserImpl::ParseBoxPositionValues(nsCSSValuePair &aOut,
 
 
 
+
+
+
+
+
 bool
 CSSParserImpl::ParsePositionValue(nsCSSValue& aOut)
 {
@@ -12741,6 +12750,78 @@ CSSParserImpl::ParsePositionValue(nsCSSValue& aOut)
     yOffset = swapOffset;
   }
 
+  return true;
+}
+
+static void
+AdjustEdgeOffsetPairForBasicShape(nsCSSValue& aEdge,
+                                  nsCSSValue& aOffset,
+                                  uint8_t aDefaultEdge)
+{
+  
+  if (aOffset.IsLengthUnit() && aOffset.GetFloatValue() == 0.0) {
+    aOffset.SetPercentValue(0);
+  }
+
+  
+  
+  
+  if (eCSSUnit_Null == aEdge.GetUnit()) {
+    aEdge.SetIntValue(aDefaultEdge, eCSSUnit_Enumerated);
+  }
+  
+  if (eCSSUnit_Null == aOffset.GetUnit()) {
+    aOffset.SetPercentValue(0.0);
+  }
+  if (eCSSUnit_Enumerated == aEdge.GetUnit() &&
+      eCSSUnit_Percent == aOffset.GetUnit()) {
+    switch (aEdge.GetIntValue()) {
+      case NS_STYLE_IMAGELAYER_POSITION_CENTER:
+        aEdge.SetIntValue(aDefaultEdge, eCSSUnit_Enumerated);
+        MOZ_ASSERT(aOffset.GetPercentValue() == 0.0,
+                   "center cannot be used with an offset");
+        aOffset.SetPercentValue(0.5);
+        break;
+      case NS_STYLE_IMAGELAYER_POSITION_BOTTOM:
+        MOZ_ASSERT(aDefaultEdge == NS_STYLE_IMAGELAYER_POSITION_TOP);
+        aEdge.SetIntValue(aDefaultEdge, eCSSUnit_Enumerated);
+        aOffset.SetPercentValue(1 - aOffset.GetPercentValue());
+        break;
+      case NS_STYLE_IMAGELAYER_POSITION_RIGHT:
+        MOZ_ASSERT(aDefaultEdge == NS_STYLE_IMAGELAYER_POSITION_LEFT);
+        aEdge.SetIntValue(aDefaultEdge, eCSSUnit_Enumerated);
+        aOffset.SetPercentValue(1 - aOffset.GetPercentValue());
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+bool
+CSSParserImpl::ParsePositionValueForBasicShape(nsCSSValue& aOut)
+{
+  if (!ParsePositionValue(aOut)) {
+    return false;
+  }
+  nsCSSValue::Array* value = aOut.GetArrayValue();
+  nsCSSValue& xEdge   = value->Item(0);
+  nsCSSValue& xOffset = value->Item(1);
+  nsCSSValue& yEdge   = value->Item(2);
+  nsCSSValue& yOffset = value->Item(3);
+  
+  
+  
+  AdjustEdgeOffsetPairForBasicShape(xEdge, xOffset,
+                                    NS_STYLE_IMAGELAYER_POSITION_LEFT);
+  AdjustEdgeOffsetPairForBasicShape(yEdge, yOffset,
+                                    NS_STYLE_IMAGELAYER_POSITION_TOP);
   return true;
 }
 
@@ -15976,7 +16057,7 @@ CSSParserImpl::ParseCircleOrEllipseFunction(nsCSSKeyword aKeyword,
 
     if (mToken.mType != eCSSToken_Ident ||
         !mToken.mIdent.LowerCaseEqualsLiteral("at") ||
-        !ParsePositionValue(position)) {
+        !ParsePositionValueForBasicShape(position)) {
       REPORT_UNEXPECTED_TOKEN(PEExpectedPosition);
       SkipUntil(')');
       return false;
