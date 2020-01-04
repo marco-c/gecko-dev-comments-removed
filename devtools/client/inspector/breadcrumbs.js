@@ -24,6 +24,9 @@ const EventEmitter = require("devtools/shared/event-emitter");
 const {KeyShortcuts} = require("devtools/client/shared/key-shortcuts");
 
 
+const SCROLL_MARGIN = 1;
+
+
 
 
 
@@ -39,6 +42,9 @@ function ArrowScrollBox(win, container) {
 }
 
 ArrowScrollBox.prototype = {
+
+  
+  scrollBehavior: "smooth",
 
   
 
@@ -66,6 +72,22 @@ ArrowScrollBox.prototype = {
     
     this.inner.addEventListener("underflow", this.onUnderflow, false);
     this.inner.addEventListener("overflow", this.onOverflow, false);
+  },
+
+  
+
+
+  isRtl: function () {
+    return this.win.getComputedStyle(this.container).direction === "rtl";
+  },
+
+  
+
+
+
+
+  scrollToElement: function (element, block) {
+    element.scrollIntoView({ block: block, behavior: this.scrollBehavior });
   },
 
   
@@ -109,7 +131,7 @@ ArrowScrollBox.prototype = {
     }
 
     let element = this.inner.childNodes[0];
-    element.scrollIntoView({ block: "start", behavior: "smooth" });
+    this.scrollToElement(element, "start");
   },
 
   
@@ -122,7 +144,7 @@ ArrowScrollBox.prototype = {
     }
 
     let element = children[children.length - 1];
-    element.scrollIntoView({ block: "start", behavior: "smooth" });
+    this.scrollToElement(element, "start");
   },
 
   
@@ -135,7 +157,8 @@ ArrowScrollBox.prototype = {
         return;
       }
 
-      element.scrollIntoView({ block: "start", behavior: "smooth" });
+      let block = this.isRtl() ? "end" : "start";
+      this.scrollToElement(element, block);
     };
 
     this.clickOrHold(scrollToStart);
@@ -151,7 +174,8 @@ ArrowScrollBox.prototype = {
         return;
       }
 
-      element.scrollIntoView({ block: "end", behavior: "smooth" });
+      let block = this.isRtl() ? "start" : "end";
+      this.scrollToElement(element, block);
     };
 
     this.clickOrHold(scrollToEnd);
@@ -199,23 +223,38 @@ ArrowScrollBox.prototype = {
 
 
 
-  getFirstInvisibleElement: function () {
-    let start = this.inner.scrollLeft;
-    let end = this.inner.scrollLeft + this.inner.clientWidth;
-    let crumbs = this.inner.childNodes;
-    for (let i = crumbs.length - 1; i > -1; i--) {
-      let element = crumbs[i];
-      let elementRight = element.offsetLeft + element.offsetWidth;
-      if (element.offsetLeft < start) {
-        
-        if (elementRight >= end) {
-          continue;
-        }
-        return element;
-      }
-    }
 
-    return null;
+
+
+
+  elementLeftOfContainer: function (left, right, elementLeft, elementRight) {
+    return elementLeft < (left - SCROLL_MARGIN)
+           && elementRight < (right - SCROLL_MARGIN);
+  },
+
+  
+
+
+
+
+
+
+
+  elementRightOfContainer: function (left, right, elementLeft, elementRight) {
+    return elementLeft > (left + SCROLL_MARGIN)
+           && elementRight > (right + SCROLL_MARGIN);
+  },
+
+  
+
+
+
+  getFirstInvisibleElement: function () {
+    let elementsList = Array.from(this.inner.childNodes).reverse();
+
+    let predicate = this.isRtl() ?
+      this.elementRightOfContainer : this.elementLeftOfContainer;
+    return this.findFirstWithBounds(elementsList, predicate);
   },
 
   
@@ -223,19 +262,30 @@ ArrowScrollBox.prototype = {
 
 
   getLastInvisibleElement: function () {
-    let end = this.inner.scrollLeft + this.inner.clientWidth;
-    let elementStart = 0;
-    for (let element of this.inner.childNodes) {
-      let elementEnd = elementStart + element.offsetWidth;
-      if (elementEnd > end) {
-        
-        
-        if (elementStart > this.inner.scrollLeft) {
-          return element;
-        }
-      }
+    let predicate = this.isRtl() ?
+      this.elementLeftOfContainer : this.elementRightOfContainer;
+    return this.findFirstWithBounds(this.inner.childNodes, predicate);
+  },
 
-      elementStart = elementEnd;
+  
+
+
+
+
+
+
+  findFirstWithBounds: function (elements, predicate) {
+    let left = this.inner.scrollLeft;
+    let right = left + this.inner.clientWidth;
+    for (let element of elements) {
+      let elementLeft = element.offsetLeft - element.parentElement.offsetLeft;
+      let elementRight = elementLeft + element.offsetWidth;
+
+      
+      
+      if (predicate(left, right, elementLeft, elementRight)) {
+        return element;
+      }
     }
 
     return null;
@@ -725,7 +775,7 @@ HTMLBreadcrumbs.prototype = {
     
     if (!this.isDestroyed) {
       let element = this.nodeHierarchy[this.currentIndex].button;
-      element.scrollIntoView({ block: "end", behavior: "smooth" });
+      this.arrowScrollBox.scrollToElement(element, "end");
     }
   },
 
@@ -815,7 +865,6 @@ HTMLBreadcrumbs.prototype = {
     }
 
     
-    let trimmed = false;
     if (reason === "markupmutation") {
       for (let {type, removed} of mutations) {
         if (type !== "childList") {
@@ -826,7 +875,6 @@ HTMLBreadcrumbs.prototype = {
           let removedIndex = this.indexOf(node);
           if (removedIndex > -1) {
             this.cutAfter(removedIndex - 1);
-            trimmed = true;
           }
         }
       }
@@ -835,10 +883,6 @@ HTMLBreadcrumbs.prototype = {
     if (!this.selection.isElementNode()) {
       
       this.setCursor(-1);
-      if (trimmed) {
-        
-        this.inspector.emit("breadcrumbs-updated", this.selection.nodeFront);
-      }
       return;
     }
 
