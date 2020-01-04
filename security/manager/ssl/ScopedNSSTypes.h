@@ -16,6 +16,7 @@
 #include "cms.h"
 #include "cryptohi.h"
 #include "keyhi.h"
+#include "mozilla/Casting.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Scoped.h"
 #include "mozilla/UniquePtr.h"
@@ -36,6 +37,24 @@
 #endif
 
 namespace mozilla {
+
+
+
+
+
+
+
+inline char*
+char_ptr_cast(uint8_t* p) { return BitwiseCast<char*>(p); }
+
+inline const char*
+char_ptr_cast(const uint8_t* p) { return BitwiseCast<const char*>(p); }
+
+inline uint8_t*
+uint8_t_ptr_cast(char* p) { return BitwiseCast<uint8_t*>(p); }
+
+inline const uint8_t*
+uint8_t_ptr_cast(const char* p) { return BitwiseCast<const uint8_t*>(p); }
 
 
 
