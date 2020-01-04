@@ -2936,6 +2936,8 @@ this.XPIProvider = {
 
   showUpgradeUI: function(aAddonIDs) {
     logger.debug("XPI_showUpgradeUI: " + aAddonIDs.toSource());
+    Services.telemetry.getHistogramById("ADDON_MANAGER_UPGRADE_UI_SHOWN").add(1);
+
     
     Services.startup.interrupted = true;
 
