@@ -567,7 +567,17 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
         clipRect = aContext.GetClipExtents();
       }
       IntRect drawRect = RoundedOut(ToRect(clipRect));
-      RefPtr<DrawTarget> targetDT = aContext.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(), SurfaceFormat::A8);
+
+      
+      
+      
+      RefPtr<DrawTarget> targetDT =
+        (aContext.GetDrawTarget()->GetBackendType() == BackendType::COREGRAPHICS) ?
+          Factory::CreateDrawTarget(BackendType::SKIA, drawRect.Size(),
+                                    SurfaceFormat::A8) :
+          aContext.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(),
+                                                            SurfaceFormat::A8);
+
       if (!targetDT || !targetDT->IsValid()) {
         aContext.Restore();
         return;
