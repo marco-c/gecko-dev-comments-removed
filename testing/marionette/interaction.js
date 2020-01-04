@@ -229,6 +229,33 @@ interaction.selectOption = function(el) {
 
 
 
+interaction.uploadFile = function(el, file) {
+  let fs = Array.prototype.slice.call(el.files);
+  fs.push(file);
+
+  
+  
+  
+  event.mouseover(el);
+  event.mousemove(el);
+  event.mousedown(el);
+  event.focus(el);
+  event.mouseup(el);
+  event.click(el);
+
+  el.mozSetFileArray(fs);
+
+  event.change(el);
+};
+
+
+
+
+
+
+
+
+
 
 
 
