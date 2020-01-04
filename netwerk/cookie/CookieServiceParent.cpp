@@ -49,12 +49,9 @@ CreateDummyChannel(nsIURI* aHostURI, NeckoOriginAttributes& aAttrs, bool aIsPriv
       return;
   }
 
-  
-  
   nsCOMPtr<nsIChannel> dummyChannel;
   NS_NewChannel(getter_AddRefs(dummyChannel), dummyURI, principal,
-                nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
-                nsIContentPolicy::TYPE_INVALID);
+                nsILoadInfo::SEC_NORMAL, nsIContentPolicy::TYPE_INVALID);
   nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel = do_QueryInterface(dummyChannel);
   if (!pbChannel) {
     return;

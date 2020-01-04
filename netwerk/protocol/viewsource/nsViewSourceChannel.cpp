@@ -66,7 +66,6 @@ nsViewSourceChannel::Init(nsIURI* uri)
     
     
     
-    
     nsCOMPtr<nsIPrincipal> nullPrincipal = nsNullPrincipal::Create();
     NS_ENSURE_TRUE(nullPrincipal, NS_ERROR_FAILURE);
 
@@ -76,7 +75,7 @@ nsViewSourceChannel::Init(nsIURI* uri)
                                nullptr, 
                                nullPrincipal,
                                nullptr, 
-                               nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
+                               nsILoadInfo::SEC_NORMAL,
                                nsIContentPolicy::TYPE_OTHER,
                                getter_AddRefs(mChannel));
     NS_ENSURE_SUCCESS(rv, rv);
