@@ -5880,7 +5880,6 @@ private:
     RefPtr<FullscreenTransitionTask> mTask;
   };
 
-  static const uint32_t kNextPaintTimeout = 1000; 
   static const char* const kPaintedTopic;
 
   RefPtr<nsGlobalWindow> mWindow;
@@ -5940,8 +5939,14 @@ FullscreenTransitionTask::Run()
     
     
     
+    
+    
+    
+    
     mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-    mTimer->Init(observer, kNextPaintTimeout, nsITimer::TYPE_ONE_SHOT);
+    uint32_t timeout =
+      Preferences::GetUint("full-screen-api.transition.timeout", 500);
+    mTimer->Init(observer, timeout, nsITimer::TYPE_ONE_SHOT);
   } else if (stage == eAfterToggle) {
     mWidget->PerformFullscreenTransition(nsIWidget::eAfterFullscreenToggle,
                                          mDuration.mFadeOut, mTransitionData,
