@@ -49,7 +49,7 @@ import org.mozilla.gecko.preferences.ClearOnShutdownPref;
 import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.prompts.Prompt;
 import org.mozilla.gecko.prompts.PromptListItem;
-import org.mozilla.gecko.restrictions.Restriction;
+import org.mozilla.gecko.restrictions.Restrictable;
 import org.mozilla.gecko.sync.repositories.android.FennecTabsRepository;
 import org.mozilla.gecko.tabqueue.TabQueueHelper;
 import org.mozilla.gecko.tabqueue.TabQueuePrompt;
@@ -1793,7 +1793,7 @@ public class BrowserApp extends GeckoApp
                     }
                 }
 
-                if (AppConstants.MOZ_STUMBLER_BUILD_TIME_ENABLED && Restrictions.isAllowed(this, Restriction.DISALLOW_LOCATION_SERVICE)) {
+                if (AppConstants.MOZ_STUMBLER_BUILD_TIME_ENABLED && Restrictions.isAllowed(this, Restrictable.DISALLOW_LOCATION_SERVICE)) {
                     
                     
                     
@@ -3084,11 +3084,11 @@ public class BrowserApp extends GeckoApp
         }
 
         
-        final boolean shareVisible = Restrictions.isAllowed(this, Restriction.DISALLOW_SHARE);
+        final boolean shareVisible = Restrictions.isAllowed(this, Restrictable.DISALLOW_SHARE);
         share.setVisible(shareVisible);
         final boolean shareEnabled = StringUtils.isShareableUrl(url) && shareVisible;
         share.setEnabled(shareEnabled);
-        MenuUtils.safeSetEnabled(aMenu, R.id.downloads, Restrictions.isAllowed(this, Restriction.DISALLOW_DOWNLOADS));
+        MenuUtils.safeSetEnabled(aMenu, R.id.downloads, Restrictions.isAllowed(this, Restrictable.DISALLOW_DOWNLOADS));
 
         
         
@@ -3151,7 +3151,7 @@ public class BrowserApp extends GeckoApp
             }
         }
 
-        final boolean privateTabVisible = Restrictions.isAllowed(this, Restriction.DISALLOW_PRIVATE_BROWSING);
+        final boolean privateTabVisible = Restrictions.isAllowed(this, Restrictable.DISALLOW_PRIVATE_BROWSING);
         MenuUtils.safeSetVisible(aMenu, R.id.new_private_tab, privateTabVisible);
 
         
@@ -3173,11 +3173,11 @@ public class BrowserApp extends GeckoApp
             enterGuestMode.setVisible(true);
         }
 
-        if (!Restrictions.isAllowed(this, Restriction.DISALLOW_GUEST_BROWSING)) {
+        if (!Restrictions.isAllowed(this, Restrictable.DISALLOW_GUEST_BROWSING)) {
             MenuUtils.safeSetVisible(aMenu, R.id.new_guest_session, false);
         }
 
-        if (!Restrictions.isAllowed(this, Restriction.DISALLOW_INSTALL_EXTENSION)) {
+        if (!Restrictions.isAllowed(this, Restrictable.DISALLOW_INSTALL_EXTENSION)) {
             MenuUtils.safeSetVisible(aMenu, R.id.addons, false);
         }
 

@@ -12,7 +12,7 @@ public interface RestrictionConfiguration {
     
 
 
-    boolean isAllowed(Restriction restriction);
+    boolean isAllowed(Restrictable restrictable);
 
     
 
