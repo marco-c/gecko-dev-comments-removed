@@ -66,6 +66,12 @@ function runSafe(context, f, ...args)
 
 
 
+function instanceOf(value, type) {
+  return {}.toString.call(value) == `[object ${type}]`;
+}
+
+
+
 function extend(obj, ...args) {
   for (let arg of args) {
     let props = [...Object.getOwnPropertyNames(arg),
@@ -634,4 +640,5 @@ this.ExtensionUtils = {
   Messenger,
   extend,
   flushJarCache,
+  instanceOf,
 };

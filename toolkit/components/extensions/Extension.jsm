@@ -66,6 +66,7 @@ var {
   injectAPI,
   extend,
   flushJarCache,
+  instanceOf,
 } = ExtensionUtils;
 
 const LOGGER_ID_BASE = "addons.webextension.";
@@ -375,41 +376,36 @@ ExtensionData.prototype = {
   },
 
   
-  localizeMessage(message, substitutions, locale = this.selectedLocale) {
-    let messages = {};
-    if (this.localeMessages.has(locale)) {
-      messages = this.localeMessages.get(locale);
-    }
+  localizeMessage(message, substitutions = [], locale = this.selectedLocale, defaultValue = "??") {
+    let locales = new Set([locale, this.defaultLocale]
+                          .filter(locale => this.localeMessages.has(locale)));
 
-    if (message in messages) {
-      let str = messages[message].message;
+    
+    message = message.toLowerCase();
+    for (let locale of locales) {
+      let messages = this.localeMessages.get(locale);
+      if (messages.has(message)) {
+        let str = messages.get(message)
 
-      if (!substitutions) {
-        substitutions = [];
-      } else if (!Array.isArray(substitutions)) {
-        substitutions = [substitutions];
-      }
-
-      
-      
-      
-      
-      
-      let replacer = (matched, name) => {
-        if (name.length == 1 && name[0] >= '1' && name[0] <= '9') {
-          return substitutions[parseInt(name) - 1];
-        } else {
-          let content = messages[message].placeholders[name].content;
-          if (content[0] == '$') {
-            return replacer(matched, content[1]);
-          } else {
-            return content;
-          }
+        if (!Array.isArray(substitutions)) {
+          substitutions = [substitutions];
         }
-      };
-      return str.replace(/\$([A-Za-z_@]+)\$/, replacer)
-                .replace(/\$([0-9]+)/, replacer)
-                .replace(/\$\$/, "$");
+
+        let replacer = (matched, index, dollarSigns) => {
+          if (index) {
+            
+            
+            
+            index = parseInt(index) - 1;
+            return index in substitutions ? substitutions[index] : "";
+          } else {
+            
+            
+            return dollarSigns;
+          }
+        };
+        return str.replace(/\$(?:([1-9]\d*)|(\$+))/g, replacer);
+      }
     }
 
     
@@ -428,7 +424,7 @@ ExtensionData.prototype = {
     }
 
     Cu.reportError(`Unknown localization message ${message}`);
-    return "??";
+    return defaultValue;
   },
 
   
@@ -443,7 +439,7 @@ ExtensionData.prototype = {
     }
 
     return str.replace(/__MSG_([A-Za-z0-9@_]+?)__/g, (matched, message) => {
-      return this.localizeMessage(message, [], locale);
+      return this.localizeMessage(message, [], locale, matched);
     });
   },
 
@@ -570,14 +566,70 @@ ExtensionData.prototype = {
 
   
   
+  processLocale(locale, messages) {
+    let result = new Map();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!instanceOf(messages, "Object")) {
+      this.packagingError(`Invalid locale data for ${locale}`);
+      return result;
+    }
+
+    for (let key of Object.keys(messages)) {
+      let msg = messages[key];
+
+      if (!instanceOf(msg, "Object") || typeof(msg.message) != "string") {
+        this.packagingError(`Invalid locale message data for ${locale}, message ${JSON.stringify(key)}`);
+        continue;
+      }
+
+      
+      
+      let placeholders = new Map();
+      if (instanceOf(msg.placeholders, "Object")) {
+        for (let key of Object.keys(msg.placeholders)) {
+          placeholders.set(key.toLowerCase(), msg.placeholders[key]);
+        }
+      }
+
+      let replacer = (match, name) => {
+        let replacement = placeholders.get(name.toLowerCase());
+        if (instanceOf(replacement, "Object") && "content" in replacement) {
+          return replacement.content;
+        }
+        return "";
+      };
+
+      let value = msg.message.replace(/\$([A-Za-z0-9@_]+)\$/g, replacer);
+
+      
+      result.set(key.toLowerCase(), value);
+    }
+
+    return result;
+  },
+
+  
+  
   readLocaleFile: Task.async(function* (locale) {
     let locales = yield this.promiseLocales();
     let dir = locales.get(locale);
     let file = `_locales/${dir}/messages.json`;
 
-    let messages = {};
+    let messages = new Map();
     try {
       messages = yield this.readJSON(file);
+      messages = this.processLocale(locale, messages);
     } catch (e) {
       this.packagingError(`Loading locale file ${file}: ${e}`);
     }
@@ -642,15 +694,24 @@ ExtensionData.prototype = {
   
   
   
+  
+  
+  
   initLocale: Task.async(function* (locale = this.defaultLocale) {
     if (locale == null) {
       return null;
     }
 
-    let localeData = yield this.readLocaleFile(locale);
+    let promises = [this.readLocaleFile(locale)];
 
+    let { defaultLocale } = this;
+    if (locale != defaultLocale && !this.localeMessages.has(defaultLocale)) {
+      promises.push(this.readLocaleFile(defaultLocale));
+    }
+
+    let results = yield Promise.all(promises);
     this.selectedLocale = locale;
-    return localeData;
+    return results[0];
   }),
 };
 
@@ -780,7 +841,7 @@ this.Extension.generate = function(id, data)
     files[bgScript] = data.background;
   }
 
-  provide(files, ["manifest.json"], JSON.stringify(manifest));
+  provide(files, ["manifest.json"], manifest);
 
   let ZipWriter = Components.Constructor("@mozilla.org/zipwriter;1", "nsIZipWriter");
   let zipW = new ZipWriter();
@@ -810,6 +871,8 @@ this.Extension.generate = function(id, data)
     let script = files[filename];
     if (typeof(script) == "function") {
       script = "(" + script.toString() + ")()";
+    } else if (typeof(script) == "object") {
+      script = JSON.stringify(script);
     }
 
     let stream = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(Ci.nsIStringInputStream);
@@ -943,7 +1006,7 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
     if (locale === undefined) {
       let locales = yield this.promiseLocales();
 
-      let localeList = Object.keys(locales).map(locale => {
+      let localeList = Array.from(locales.keys(), locale => {
         return { name: locale, locales: [locale] };
       });
 
@@ -974,7 +1037,7 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
 
       return this.runManifest(this.manifest);
     }).catch(e => {
-      dump(`Extension error: ${e} ${e.filename}:${e.lineNumber}\n`);
+      dump(`Extension error: ${e} ${e.filename || e.fileName}:${e.lineNumber}\n`);
       Cu.reportError(e);
       throw e;
     });
