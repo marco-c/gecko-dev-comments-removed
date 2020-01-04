@@ -4640,6 +4640,119 @@ PresShell::NotifyCompositorOfVisibleRegionsChange()
                           layersId, presShellId);
 }
 
+template <typename Func> void
+ForAllTrackedFramesInVisibleSet(const VisibleFrames& aFrames, Func aFunc)
+{
+  for (auto iter = aFrames.ConstIter(); !iter.Done(); iter.Next()) {
+    nsIFrame* frame = iter.Get()->GetKey();
+
+    
+    
+    
+    if (frame->TrackingVisibility()) {
+      aFunc(frame);
+    }
+  }
+}
+
+void
+PresShell::VisibleFramesContainer::AddFrame(nsIFrame* aFrame,
+                                            VisibilityCounter aCounter)
+{
+  MOZ_ASSERT(aFrame->TrackingVisibility());
+
+  VisibleFrames& frameSet = ForCounter(aCounter);
+
+  uint32_t count = frameSet.Count();
+  frameSet.PutEntry(aFrame);
+
+  if (frameSet.Count() == count) {
+    return;  
+  }
+
+  if (mSuppressingVisibility) {
+    return;  
+  }
+
+  aFrame->IncVisibilityCount(aCounter);
+}
+
+void
+PresShell::VisibleFramesContainer::RemoveFrame(nsIFrame* aFrame,
+                                               VisibilityCounter aCounter)
+{
+  VisibleFrames& frameSet = ForCounter(aCounter);
+
+  uint32_t count = frameSet.Count();
+  frameSet.RemoveEntry(aFrame);
+
+  if (frameSet.Count() == count) {
+    return;  
+  }
+
+  if (mSuppressingVisibility) {
+    return;  
+  }
+
+  if (!aFrame->TrackingVisibility()) {
+    
+    
+    return;
+  }
+
+  aFrame->DecVisibilityCount(aCounter);
+}
+
+void
+PresShell::VisibleFramesContainer::SuppressVisibility()
+{
+  if (mSuppressingVisibility) {
+    return;  
+  }
+
+  mSuppressingVisibility = true;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ForAllTrackedFramesInVisibleSet(mApproximate, [&](nsIFrame* aFrame) {
+    aFrame->DecVisibilityCount(VisibilityCounter::MAY_BECOME_VISIBLE);
+  });
+  ForAllTrackedFramesInVisibleSet(mInDisplayPort, [&](nsIFrame* aFrame) {
+    aFrame->DecVisibilityCount(VisibilityCounter::IN_DISPLAYPORT);
+  });
+}
+
+void
+PresShell::VisibleFramesContainer::UnsuppressVisibility()
+{
+  if (!mSuppressingVisibility) {
+    return;  
+  }
+
+  mSuppressingVisibility = false;
+
+  
+  
+  
+  
+  
+  ForAllTrackedFramesInVisibleSet(mInDisplayPort, [&](nsIFrame* aFrame) {
+    aFrame->IncVisibilityCount(VisibilityCounter::IN_DISPLAYPORT);
+  });
+  ForAllTrackedFramesInVisibleSet(mApproximate, [&](nsIFrame* aFrame) {
+    aFrame->IncVisibilityCount(VisibilityCounter::MAY_BECOME_VISIBLE);
+  });
+}
+
 nsresult
 PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
                           nscolor aBackgroundColor,
@@ -5736,30 +5849,9 @@ PresShell::MarkFramesInListApproximatelyVisible(const nsDisplayList& aList)
 
     
     auto* presShell = static_cast<PresShell*>(frame->PresContext()->PresShell());
-    uint32_t count = presShell->mApproximatelyVisibleFrames.Count();
     MOZ_ASSERT(!presShell->AssumeAllFramesVisible());
-    presShell->mApproximatelyVisibleFrames.PutEntry(frame);
-    if (presShell->mApproximatelyVisibleFrames.Count() > count) {
-      
-      frame->IncVisibilityCount(VisibilityCounter::MAY_BECOME_VISIBLE);
-    }
-
+    presShell->mVisibleFrames.AddFrame(frame, VisibilityCounter::MAY_BECOME_VISIBLE);
     presShell->AddFrameToVisibleRegions(frame, VisibilityCounter::MAY_BECOME_VISIBLE);
-  }
-}
-
-template <typename Func> void
-ForAllTrackedFramesInVisibleSet(const VisibleFrames& aFrames, Func aFunc)
-{
-  for (auto iter = aFrames.ConstIter(); !iter.Done(); iter.Next()) {
-    nsIFrame* frame = iter.Get()->GetKey();
-
-    
-    
-    
-    if (frame->TrackingVisibility()) {
-      aFunc(frame);
-    }
   }
 }
 
@@ -5805,17 +5897,27 @@ struct MOZ_STACK_CLASS AutoUpdateVisibility
     
     
     
+    if (mPresShell->mVisibleFrames.IsVisibilitySuppressed()) {
+      mPresShell->mVisibleFrames.mApproximate.Clear();
+      mPresShell->mVisibleFrames.mInDisplayPort.Clear();
+      mPresShell->mVisibleRegions = nullptr;
+      return;
+    }
+
+    
+    
+    
     
     for (VisibilityCounter counter : aCounters) {
       switch (counter) {
         case VisibilityCounter::MAY_BECOME_VISIBLE:
           mOldApproximatelyVisibleFrames.emplace();
-          mPresShell->mApproximatelyVisibleFrames.SwapElements(*mOldApproximatelyVisibleFrames);
+          mPresShell->mVisibleFrames.mApproximate.SwapElements(*mOldApproximatelyVisibleFrames);
           break;
 
         case VisibilityCounter::IN_DISPLAYPORT:
           mOldInDisplayPortFrames.emplace();
-          mPresShell->mInDisplayPortFrames.SwapElements(*mOldInDisplayPortFrames);
+          mPresShell->mVisibleFrames.mInDisplayPort.SwapElements(*mOldInDisplayPortFrames);
           break;
       }
     }
@@ -5948,13 +6050,7 @@ PresShell::MarkFramesInSubtreeApproximatelyVisible(nsIFrame* aFrame,
       aFrame->StyleVisibility()->IsVisible() &&
       (!aRemoveOnly || aFrame->IsVisibleOrMayBecomeVisibleSoon())) {
     MOZ_ASSERT(!AssumeAllFramesVisible());
-    uint32_t count = mApproximatelyVisibleFrames.Count();
-    mApproximatelyVisibleFrames.PutEntry(aFrame);
-    if (mApproximatelyVisibleFrames.Count() > count) {
-      
-      aFrame->IncVisibilityCount(VisibilityCounter::MAY_BECOME_VISIBLE);
-    }
-
+    mVisibleFrames.AddFrame(aFrame, VisibilityCounter::MAY_BECOME_VISIBLE);
     AddFrameToVisibleRegions(aFrame, VisibilityCounter::MAY_BECOME_VISIBLE);
   }
 
@@ -6238,29 +6334,8 @@ PresShell::MarkFrameVisible(nsIFrame* aFrame, VisibilityCounter aCounter)
   }
 #endif
 
-  VisibleFrames& frameSet = VisibleFramesForCounter(aCounter);
-
-  if (!frameSet.Contains(aFrame)) {
-    MOZ_ASSERT(!AssumeAllFramesVisible());
-    frameSet.PutEntry(aFrame);
-    aFrame->IncVisibilityCount(aCounter);
-  }
-
+  mVisibleFrames.AddFrame(aFrame, aCounter);
   AddFrameToVisibleRegions(aFrame, aCounter);
-}
-
-static void
-RemoveFrameFromVisibleSet(nsIFrame* aFrame,
-                          VisibleFrames& aSet,
-                          VisibilityCounter aCounter)
-{
-  uint32_t count = aSet.Count();
-  aSet.RemoveEntry(aFrame);
-
-  if (aFrame->TrackingVisibility() && aSet.Count() < count) {
-    aFrame->DecVisibilityCount(aCounter);
-  }
-
 }
 
 void
@@ -6276,17 +6351,15 @@ PresShell::MarkFrameNonvisible(nsIFrame* aFrame)
 #endif
 
   if (AssumeAllFramesVisible()) {
-    MOZ_ASSERT(mApproximatelyVisibleFrames.Count() == 0,
+    MOZ_ASSERT(mVisibleFrames.mApproximate.Count() == 0,
                "Shouldn't have any frames in the approximate visibility set");
-    MOZ_ASSERT(mInDisplayPortFrames.Count() == 0,
+    MOZ_ASSERT(mVisibleFrames.mInDisplayPort.Count() == 0,
                "Shouldn't have any frames in the in-displayport visibility set");
     return;
   }
 
-  RemoveFrameFromVisibleSet(aFrame, mApproximatelyVisibleFrames,
-                            VisibilityCounter::MAY_BECOME_VISIBLE);
-  RemoveFrameFromVisibleSet(aFrame, mInDisplayPortFrames,
-                            VisibilityCounter::IN_DISPLAYPORT);
+  mVisibleFrames.RemoveFrame(aFrame, VisibilityCounter::MAY_BECOME_VISIBLE);
+  mVisibleFrames.RemoveFrame(aFrame, VisibilityCounter::IN_DISPLAYPORT);
 }
 
 class nsAutoNotifyDidPaint
@@ -9140,9 +9213,8 @@ PresShell::Freeze()
   }
 
   mFrozen = true;
-  if (mDocument) {
-    UpdateImageLockingState();
-  }
+
+  UpdateFrameVisibilityOnActiveStateChange();
 }
 
 void
@@ -9208,8 +9280,8 @@ PresShell::Thaw()
 
   
   mFrozen = false;
-  UpdateImageLockingState();
 
+  UpdateFrameVisibilityOnActiveStateChange();
   UnsuppressPainting();
 }
 
@@ -11054,7 +11126,7 @@ SetPluginIsActive(nsISupports* aSupports, void* aClosure)
   }
 }
 
-nsresult
+void
 PresShell::SetIsActive(bool aIsActive, bool aIsHidden)
 {
   NS_PRECONDITION(mDocument, "should only be called with a document");
@@ -11076,7 +11148,8 @@ PresShell::SetIsActive(bool aIsActive, bool aIsHidden)
                                         &aIsActive);
   mDocument->EnumerateActivityObservers(SetPluginIsActive,
                                         &aIsActive);
-  nsresult rv = UpdateImageLockingState();
+  UpdateFrameVisibilityOnActiveStateChange();
+
 #ifdef ACCESSIBILITY
   if (aIsActive) {
     nsAccessibilityService* accService = AccService();
@@ -11124,33 +11197,37 @@ PresShell::SetIsActive(bool aIsActive, bool aIsHidden)
       }
     }
   }
-  return rv;
 }
 
-
-
-
-
-nsresult
-PresShell::UpdateImageLockingState()
+void
+PresShell::UpdateFrameVisibilityOnActiveStateChange()
 {
   
-  bool locked = !mFrozen && mIsActive;
+  
+  
+  
+  
+  
+  bool treatAsActive = mIsActive && !mFrozen;
 
-  nsresult rv = mDocument->SetImageLockingState(locked);
+  
+  
+  
+  
+  
+  mDocument->SetImageLockingState(treatAsActive);
 
-  if (locked) {
+  if (treatAsActive) {
     
     
-    for (auto iter = mApproximatelyVisibleFrames.Iter(); !iter.Done(); iter.Next()) {
-      nsImageFrame* imageFrame = do_QueryFrame(iter.Get()->GetKey());
-      if (imageFrame) {
-        imageFrame->MaybeDecodeForPredictedSize();
-      }
-    }
+    
+    mVisibleFrames.UnsuppressVisibility();
+  } else {
+    
+    
+    
+    mVisibleFrames.SuppressVisibility();
   }
-
-  return rv;
 }
 
 PresShell*
@@ -11178,8 +11255,8 @@ PresShell::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
   if (mCaret) {
     *aPresShellSize += mCaret->SizeOfIncludingThis(aMallocSizeOf);
   }
-  *aPresShellSize += mApproximatelyVisibleFrames.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  *aPresShellSize += mInDisplayPortFrames.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  *aPresShellSize += mVisibleFrames.mApproximate.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  *aPresShellSize += mVisibleFrames.mInDisplayPort.ShallowSizeOfExcludingThis(aMallocSizeOf);
   *aPresShellSize += mVisibleRegions
                    ? mVisibleRegions->mApproximate.ShallowSizeOfIncludingThis(aMallocSizeOf) +
                      mVisibleRegions->mInDisplayPort.ShallowSizeOfIncludingThis(aMallocSizeOf)
