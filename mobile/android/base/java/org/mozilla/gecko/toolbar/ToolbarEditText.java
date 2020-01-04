@@ -370,6 +370,16 @@ public class ToolbarEditText extends CustomEditText
             text.append(result, textLength, resultLength);
 
             
+            for (int i = 0; i < spans.length; i++) {
+                final int spanFlag = spanFlags[i];
+                if (spanFlag == 0) {
+                    
+                    continue;
+                }
+                text.setSpan(spans[i], spanStarts[i], spanEnds[i], spanFlag);
+            }
+
+            
             for (final Object span : mAutoCompleteSpans) {
                 text.setSpan(span, textLength, resultLength, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
@@ -382,16 +392,6 @@ public class ToolbarEditText extends CustomEditText
             
             
             bringPointIntoView(resultLength);
-
-            
-            for (int i = 0; i < spans.length; i++) {
-                final int spanFlag = spanFlags[i];
-                if (spanFlag == 0) {
-                    
-                    continue;
-                }
-                text.setSpan(spans[i], spanStarts[i], spanEnds[i], spanFlag);
-            }
 
             endSettingAutocomplete();
         }
@@ -489,7 +489,7 @@ public class ToolbarEditText extends CustomEditText
             final Editable text = getText();
             final int start = text.getSpanStart(AUTOCOMPLETE_SPAN);
 
-            if (start < 0 || (start == selStart && start == selEnd)) {
+            if (mSettingAutoComplete || start < 0 || (start == selStart && start == selEnd)) {
                 
                 
                 return;
