@@ -38,8 +38,18 @@ this.TabStateFlusher = Object.freeze({
   
 
 
-  resolve(browser, flushID) {
-    TabStateFlusherInternal.resolve(browser, flushID);
+
+
+
+
+
+
+
+
+
+
+  resolve(browser, flushID, success=true, message="") {
+    TabStateFlusherInternal.resolve(browser, flushID, success, message);
   },
 
   
@@ -48,8 +58,16 @@ this.TabStateFlusher = Object.freeze({
 
 
 
-  resolveAll(browser) {
-    TabStateFlusherInternal.resolveAll(browser);
+
+
+
+
+
+
+
+
+  resolveAll(browser, success=true, message="") {
+    TabStateFlusherInternal.resolveAll(browser, success, message);
   }
 });
 
@@ -96,7 +114,17 @@ var TabStateFlusherInternal = {
   
 
 
-  resolve(browser, flushID) {
+
+
+
+
+
+
+
+
+
+
+  resolve(browser, flushID, success=true, message="") {
     
     if (!this._requests.has(browser.permanentKey)) {
       return;
@@ -108,10 +136,14 @@ var TabStateFlusherInternal = {
       return;
     }
 
+    if (!success) {
+      Cu.reportError("Failed to flush browser: " + message);
+    }
+
     
     let resolve = perBrowserRequests.get(flushID);
     perBrowserRequests.delete(flushID);
-    resolve();
+    resolve(success);
   },
 
   
@@ -120,7 +152,15 @@ var TabStateFlusherInternal = {
 
 
 
-  resolveAll(browser) {
+
+
+
+
+
+
+
+
+  resolveAll(browser, success=true, message="") {
     
     if (!this._requests.has(browser.permanentKey)) {
       return;
@@ -129,9 +169,13 @@ var TabStateFlusherInternal = {
     
     let perBrowserRequests = this._requests.get(browser.permanentKey);
 
+    if (!success) {
+      Cu.reportError("Failed to flush browser: " + message);
+    }
+
     
     for (let resolve of perBrowserRequests.values()) {
-      resolve();
+      resolve(success);
     }
 
     

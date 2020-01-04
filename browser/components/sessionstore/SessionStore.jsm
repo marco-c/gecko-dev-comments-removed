@@ -837,6 +837,7 @@ var SessionStoreInternal = {
         break;
       case "SessionStore:error":
         this.reportInternalError(data);
+        TabStateFlusher.resolveAll(browser, false, "Received error from the content process");
         break;
       default:
         throw new Error(`received unknown message '${aMessage.name}'`);
@@ -1210,6 +1211,10 @@ var SessionStoreInternal = {
 
     var tabbrowser = aWindow.gBrowser;
 
+    
+    
+    let browsers = tabbrowser.browsers;
+
     TAB_EVENTS.forEach(function(aEvent) {
       tabbrowser.tabContainer.removeEventListener(aEvent, this, true);
     }, this);
@@ -1281,10 +1286,6 @@ var SessionStoreInternal = {
         this.maybeSaveClosedWindow(winData, isLastWindow);
       }
 
-      
-      
-      let browsers = tabbrowser.browsers;
-
       TabStateFlusher.flushWindow(aWindow).then(() => {
         
         
@@ -1310,13 +1311,13 @@ var SessionStoreInternal = {
 
         
         
-        this.cleanUpWindow(aWindow, winData);
+        this.cleanUpWindow(aWindow, winData, browsers);
 
         
         this.saveStateDelayed();
       });
     } else {
-      this.cleanUpWindow(aWindow, winData);
+      this.cleanUpWindow(aWindow, winData, browsers);
     }
 
     for (let i = 0; i < tabbrowser.tabs.length; i++) {
@@ -1336,7 +1337,13 @@ var SessionStoreInternal = {
 
 
 
-  cleanUpWindow(aWindow, winData) {
+  cleanUpWindow(aWindow, winData, browsers) {
+    
+    
+    for (let browser of browsers) {
+      TabStateFlusher.resolveAll(browser);
+    }
+
     
     DyingWindowCache.set(aWindow, winData);
 
