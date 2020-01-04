@@ -42,14 +42,16 @@ function RegExpToString()
 {
     
     var R = this;
+
+    
     if (!IsObject(R))
         ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, R === null ? "null" : typeof R);
 
     
-    var pattern = R.source;
+    var pattern = ToString(R.source);
 
     
-    var flags = R.flags;
+    var flags = ToString(R.flags);
 
     
     return '/' + pattern + '/' + flags;
