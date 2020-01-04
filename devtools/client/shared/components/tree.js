@@ -218,17 +218,13 @@ const Tree = module.exports = createClass({
       this.props.onExpand(item);
       this.state.seen.add(item);
 
-      const children = this.props.getChildren(item);
-      const length = children.length;
-      for (let i = 0; i < length; i++) {
-        autoExpand(children[i], currentDepth + 1);
+      for (let child of this.props.getChildren(item)) {
+        autoExpand(child, currentDepth + 1);
       }
     };
 
-    const roots = this.props.getRoots();
-    const length = roots.length;
-    for (let i = 0; i < length; i++) {
-      autoExpand(roots[i], 0);
+    for (let root of this.props.getRoots()) {
+      autoExpand(root, 0);
     }
   },
 
@@ -319,10 +315,8 @@ const Tree = module.exports = createClass({
       return traversal;
     }
 
-    const children = this.props.getChildren(item);
-    const length = children.length;
-    for (let i = 0; i < length; i++) {
-      this._dfs(children[i], maxDepth, traversal, nextDepth);
+    for (let child of this.props.getChildren(item)) {
+      this._dfs(child, maxDepth, traversal, nextDepth);
     }
 
     return traversal;
@@ -334,10 +328,8 @@ const Tree = module.exports = createClass({
   _dfsFromRoots(maxDepth = Infinity) {
     const traversal = [];
 
-    const roots = this.props.getRoots();
-    const length = roots.length;
-    for (let i = 0; i < length; i++) {
-      this._dfs(roots[i], maxDepth, traversal);
+    for (let root of this.props.getRoots()) {
+      this._dfs(root, maxDepth, traversal);
     }
 
     return traversal;
@@ -354,10 +346,8 @@ const Tree = module.exports = createClass({
       this.props.onExpand(item);
 
       if (expandAllChildren) {
-        const children = this._dfs(item);
-        const length = children.length;
-        for (let i = 0; i < length; i++) {
-          this.props.onExpand(children[i].item);
+        for (let { item: child } of this._dfs(item)) {
+          this.props.onExpand(child);
         }
       }
     }
@@ -379,7 +369,7 @@ const Tree = module.exports = createClass({
 
 
 
-  _focus: function (item) {
+  _focus(item) {
     if (this.props.onFocus) {
       this.props.onFocus(item);
     }
@@ -388,7 +378,7 @@ const Tree = module.exports = createClass({
   
 
 
-  _onBlur: function () {
+  _onBlur() {
     this._focus(undefined);
   },
 
@@ -463,11 +453,7 @@ const Tree = module.exports = createClass({
     
 
     let prev;
-
-    const traversal = this._dfsFromRoots();
-    const length = traversal.length;
-    for (let i = 0; i < length; i++) {
-      const item = traversal[i].item;
+    for (let { item } of this._dfsFromRoots()) {
       if (item === this.props.focused) {
         break;
       }
@@ -491,11 +477,10 @@ const Tree = module.exports = createClass({
     
 
     const traversal = this._dfsFromRoots();
-    const length = traversal.length;
-    let i = 0;
 
-    while (i < length) {
-      if (traversal[i].item === this.props.focused) {
+    let i = 0;
+    for (let { item } of traversal) {
+      if (item === this.props.focused) {
         break;
       }
       i++;
