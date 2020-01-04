@@ -182,10 +182,6 @@ public:
                                bool aIsCallerChrome,
                                nsAString& aUserAgent);
 
-  
-  
-  void ClearUserAgentCache();
-
   already_AddRefed<Promise> GetDataStores(const nsAString& aName,
                                           const nsAString& aOwner,
                                           ErrorResult& aRv);
