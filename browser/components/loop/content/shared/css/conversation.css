@@ -15,10 +15,10 @@ button::-moz-focus-inner {
   z-index: 1020; 
   border: 0;
   left: 1.2rem;
-  right: .7rem;
-  height: 2.6rem;
+  right: 1.2rem;
+  height: 2.4rem;
   position: absolute;
-  bottom: 1.5rem;
+  bottom: 1.2rem;
 }
 
 html[dir="rtl"] .conversation-toolbar {
@@ -48,11 +48,11 @@ html[dir="rtl"] .conversation-toolbar > li {
 
 .conversation-toolbar .btn {
   background-position: center;
-  background-size: 28px;
+  background-size: 24px;
   background-repeat: no-repeat;
   background-color: transparent;
-  height: 28px;
-  width: 33px;
+  height: 24px;
+  width: 24px;
 }
 
 .conversation-toolbar-media-btn-group-box {
@@ -856,7 +856,7 @@ body[platform="win"] .share-service-dropdown.overflow > .dropdown-menu-item {
 
 .standalone-room-wrapper > .media-layout {
   
-  height: calc(100% - 50px - 3em);
+  height: calc(100% - 50px - 10px);
   margin: 0 10px;
 }
 
@@ -978,7 +978,7 @@ body[platform="win"] .share-service-dropdown.overflow > .dropdown-menu-item {
 @media screen and (max-width:640px) {
   .standalone-room-wrapper > .media-layout {
     
-    height: calc(100% - 50px - 25px);
+    height: calc(100% - 50px - 10px);
   }
 
   .media-layout > .media-wrapper {
@@ -1428,7 +1428,7 @@ html[dir="rtl"] .text-chat-entry.received .text-chat-arrow {
   }
   .standalone .room-conversation-wrapper .video-layout-wrapper {
     
-    height: calc(100% - 50px - 25px);
+    height: calc(100% - 50px - 10px);
   }
   .standalone .room-conversation .video_wrapper.remote_wrapper {
     width: 100%;
