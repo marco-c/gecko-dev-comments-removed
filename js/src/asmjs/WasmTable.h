@@ -36,7 +36,6 @@ class Table : public ShareableBase<Table>
     UniqueByteArray              array_;
     TableKind                    kind_;
     uint32_t                     length_;
-    bool                         initialized_;
     bool                         external_;
 
     void tracePrivate(JSTracer* trc);
@@ -47,17 +46,10 @@ class Table : public ShareableBase<Table>
                                 HandleWasmTableObject maybeObject);
     void trace(JSTracer* trc);
 
-    
-
     bool external() const { return external_; }
     bool isTypedFunction() const { return kind_ == TableKind::TypedFunction; }
     uint32_t length() const { return length_; }
     uint8_t* base() const { return array_.get(); }
-
-    
-
-    bool initialized() const { return initialized_; }
-    void init(Instance& instance);
 
     
     

@@ -80,7 +80,6 @@ gc();
 assertEq(finalizeCount(), 4);
 
 
-
 resetFinalizeCount();
 var i = evalText(`(module (table (resizable 2)) (export "tbl" table) ${caller})`);
 var e = i.exports;
@@ -96,7 +95,7 @@ gc();
 assertEq(finalizeCount(), 1);
 i = null;
 gc();
-assertEq(finalizeCount(), 1);
+assertEq(finalizeCount(), 2);
 t = null;
 gc();
 assertEq(finalizeCount(), 3);
@@ -144,11 +143,10 @@ assertEq(finalizeCount(), 2);
 t.set(0, null);
 assertEq(t.get(0), null);
 gc();
-assertEq(finalizeCount(), 2);
+assertEq(finalizeCount(), 3);
 t = null;
 gc();
 assertEq(finalizeCount(), 4);
-
 
 
 

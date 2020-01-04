@@ -463,13 +463,6 @@ Module::initSegments(JSContext* cx,
     }
 
     
-
-    for (const SharedTable& table : tables) {
-        if (!table->initialized())
-            table->init(instance);
-    }
-
-    
     
 
     for (const ElemSegment& seg : elemSegments_) {
