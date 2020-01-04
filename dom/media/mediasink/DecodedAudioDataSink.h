@@ -17,7 +17,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/Monitor.h"
 
 namespace mozilla {
 
@@ -78,9 +78,6 @@ private:
   const int64_t mStartTime;
 
   
-  Atomic<int64_t> mWritten;
-
-  
   
   
   int64_t mLastGoodPosition;
@@ -100,8 +97,18 @@ private:
 
   
   RefPtr<AudioData> mCurrentData;
+
+  
+  
+  
+  
+  mutable Monitor mMonitor;
   
   UniquePtr<AudioBufferCursor> mCursor;
+
+  
+  int64_t mWritten;
+
   
   Atomic<bool> mErrored;
 
