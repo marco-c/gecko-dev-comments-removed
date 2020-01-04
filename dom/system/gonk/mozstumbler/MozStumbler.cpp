@@ -77,6 +77,16 @@ private:
 void
 MozStumble(nsGeoPosition* position)
 {
+  if (WriteStumbleOnThread::IsFileWaitingForUpload()) {
+    nsCOMPtr<nsIEventTarget> target = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
+    MOZ_ASSERT(target);
+    
+    
+    nsCOMPtr<nsIRunnable> event = new WriteStumbleOnThread(EmptyCString());
+    target->Dispatch(event, NS_DISPATCH_NORMAL);
+    return;
+  }
+
   nsCOMPtr<nsIDOMGeoPositionCoords> coords;
   position->GetCoords(getter_AddRefs(coords));
   if (!coords) {

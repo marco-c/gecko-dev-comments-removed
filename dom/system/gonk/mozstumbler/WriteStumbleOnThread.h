@@ -46,6 +46,10 @@ public:
 
   static void UploadEnded(bool deleteUploadFile);
 
+  
+  
+  static bool IsFileWaitingForUpload();
+
 private:
   friend class DeleteRunnable;
 
@@ -71,6 +75,8 @@ private:
 
   
   static mozilla::Atomic<bool> sIsAlreadyRunning;
+
+  static mozilla::Atomic<bool> sIsFileWaitingForUpload;
 
   
   
