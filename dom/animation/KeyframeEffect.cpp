@@ -1329,6 +1329,15 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint()
   }
 }
 
+bool
+KeyframeEffectReadOnly::CanIgnoreIfNotVisible() const
+{
+  
+  
+  return NS_IsHintSubset(
+    mCumulativeChangeHint, nsChangeHint_Hints_CanIgnoreIfNotVisible);
+}
+
 
 
 

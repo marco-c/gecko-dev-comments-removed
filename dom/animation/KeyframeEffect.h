@@ -345,6 +345,12 @@ public:
   
   void CalculateCumulativeChangeHint();
 
+  
+  
+  
+  
+  bool CanIgnoreIfNotVisible() const;
+
 protected:
   KeyframeEffectReadOnly(nsIDocument* aDocument,
                          const Maybe<OwningAnimationTarget>& aTarget,
