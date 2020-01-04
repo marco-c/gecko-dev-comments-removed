@@ -21,10 +21,17 @@ function test() {
 
     
     let popupShown = promiseWaitForEvent(window, "popupshown");
+    let popupFilled = BrowserTestUtils.waitForMessage(gBrowser.selectedBrowser.messageManager,
+                                                      "PopupBlocking:ReplyGetBlockedPopupList");
     notification.querySelector("button").doCommand();
     let popup_event = yield popupShown;
     let menu = popup_event.target;
     is(menu.id, "blockedPopupOptions", "Blocked popup menu shown");
+
+    yield popupFilled;
+    
+    
+    yield new Promise(resolve => executeSoon(resolve));
 
     
     let sep = menu.querySelector("menuseparator");
