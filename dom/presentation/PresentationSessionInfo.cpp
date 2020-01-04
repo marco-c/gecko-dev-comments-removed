@@ -112,9 +112,9 @@ PresentationNetworkHelper::OnGetWifiIPAddress(const nsACString& aIPAddress)
   MOZ_ASSERT(mFunc);
 
   NS_DispatchToMainThread(
-    NS_NewRunnableMethodWithArg<nsCString>(mInfo,
-                                           mFunc,
-                                           aIPAddress));
+    NewRunnableMethod<nsCString>(mInfo,
+                                 mFunc,
+                                 aIPAddress));
   return NS_OK;
 }
 
@@ -550,7 +550,7 @@ PresentationControllingInfo::GetAddress()
   
   
   NS_DispatchToMainThread(
-    NS_NewRunnableMethodWithArg<nsCString>(
+    NewRunnableMethod<nsCString>(
       this,
       &PresentationControllingInfo::OnGetAddress,
       NS_ConvertUTF16toUTF8(ip)));
@@ -570,7 +570,7 @@ PresentationControllingInfo::GetAddress()
 #elif defined(MOZ_MULET)
   
   NS_DispatchToMainThread(
-    NS_NewRunnableMethodWithArg<nsCString>(
+    NewRunnableMethod<nsCString>(
       this,
       &PresentationControllingInfo::OnGetAddress,
       "127.0.0.1"));
@@ -579,7 +579,7 @@ PresentationControllingInfo::GetAddress()
   
 
   NS_DispatchToMainThread(
-    NS_NewRunnableMethodWithArg<nsCString>(
+    NewRunnableMethod<nsCString>(
       this,
       &PresentationControllingInfo::OnGetAddress,
       EmptyCString()));

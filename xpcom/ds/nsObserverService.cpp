@@ -200,9 +200,7 @@ nsObserverService::Create(nsISupports* aOuter, const nsIID& aIID,
   
   
   
-  RefPtr<nsRunnableMethod<nsObserverService>> registerRunnable =
-    NS_NewRunnableMethod(os, &nsObserverService::RegisterReporter);
-  NS_DispatchToCurrentThread(registerRunnable);
+  NS_DispatchToCurrentThread(NewRunnableMethod(os, &nsObserverService::RegisterReporter));
 
   return os->QueryInterface(aIID, aInstancePtr);
 }

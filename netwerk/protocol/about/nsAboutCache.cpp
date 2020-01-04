@@ -179,9 +179,7 @@ nsAboutCache::VisitNextStorage()
     
     
     
-    nsCOMPtr<nsIRunnable> event =
-        NS_NewRunnableMethod(this, &nsAboutCache::FireVisitStorage);
-    return NS_DispatchToMainThread(event);
+    return NS_DispatchToMainThread(mozilla::NewRunnableMethod(this, &nsAboutCache::FireVisitStorage));
 }
 
 void

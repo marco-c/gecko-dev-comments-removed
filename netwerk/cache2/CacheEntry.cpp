@@ -668,10 +668,9 @@ bool CacheEntry::InvokeCallbacks(bool aReadOnly)
 
     if (NS_SUCCEEDED(rv) && !onCheckThread) {
       
-      RefPtr<nsRunnableMethod<CacheEntry> > event =
-        NS_NewRunnableMethod(this, &CacheEntry::InvokeCallbacksLock);
-
-      rv = mCallbacks[i].mTargetThread->Dispatch(event, nsIEventTarget::DISPATCH_NORMAL);
+      rv = mCallbacks[i].mTargetThread->Dispatch(NewRunnableMethod(this,
+								   &CacheEntry::InvokeCallbacksLock),
+						 nsIEventTarget::DISPATCH_NORMAL);
       if (NS_SUCCEEDED(rv)) {
         LOG(("  re-dispatching to target thread"));
         return false;
@@ -1739,9 +1738,7 @@ void CacheEntry::BackgroundOp(uint32_t aOperations, bool aForceAsync)
 
       
       
-      RefPtr<nsRunnableMethod<CacheEntry> > event =
-        NS_NewRunnableMethodWithArg<double>(this, &CacheEntry::StoreFrecency, mFrecency);
-      NS_DispatchToMainThread(event);
+      NS_DispatchToMainThread(NewRunnableMethod<double>(this, &CacheEntry::StoreFrecency, mFrecency));
     }
 
     if (aOperations & Ops::REGISTER) {

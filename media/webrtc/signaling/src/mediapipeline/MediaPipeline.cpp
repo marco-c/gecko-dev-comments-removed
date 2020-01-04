@@ -192,7 +192,7 @@ public:
     ++mLength; 
 
     nsCOMPtr<nsIRunnable> runnable =
-      NS_NewRunnableMethodWithArgs<StorensRefPtrPassByPtr<Image>, bool>(
+      NewRunnableMethod<StorensRefPtrPassByPtr<Image>, bool>(
         this, &VideoFrameConverter::ProcessVideoFrame,
         aChunk.mFrame.GetImage(), forceBlack);
     mTaskQueue->Dispatch(runnable.forget());

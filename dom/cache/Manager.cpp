@@ -912,7 +912,7 @@ private:
     
     
     
-    nsCOMPtr<nsIRunnable> runnable = NS_NewNonOwningRunnableMethodWithArgs<nsresult>(
+    nsCOMPtr<nsIRunnable> runnable = NewNonOwningRunnableMethod<nsresult>(
       this, &CachePutAllAction::OnAsyncCopyComplete, aRv);
     MOZ_ALWAYS_SUCCEEDS(
       mTargetThread->Dispatch(runnable, nsIThread::DISPATCH_NORMAL));
@@ -1761,9 +1761,7 @@ Manager::~Manager()
 
   
   
-  nsCOMPtr<nsIRunnable> runnable =
-    NS_NewRunnableMethod(ioThread, &nsIThread::Shutdown);
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(runnable));
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NewRunnableMethod(ioThread, &nsIThread::Shutdown)));
 }
 
 void

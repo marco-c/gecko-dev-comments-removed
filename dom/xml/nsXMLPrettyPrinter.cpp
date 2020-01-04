@@ -194,7 +194,7 @@ nsXMLPrettyPrinter::MaybeUnhook(nsIContent* aContent)
         
         mUnhookPending = true;
         nsContentUtils::AddScriptRunner(
-          NS_NewRunnableMethod(this, &nsXMLPrettyPrinter::Unhook));
+          NewRunnableMethod(this, &nsXMLPrettyPrinter::Unhook));
     }
 }
 

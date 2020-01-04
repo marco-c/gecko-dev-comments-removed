@@ -95,7 +95,7 @@ ServiceWorkerJob::Start(Callback* aFinalCallback)
   mState = State::Started;
 
   nsCOMPtr<nsIRunnable> runnable =
-    NS_NewRunnableMethod(this, &ServiceWorkerJob::AsyncExecute);
+    NewRunnableMethod(this, &ServiceWorkerJob::AsyncExecute);
 
   
   

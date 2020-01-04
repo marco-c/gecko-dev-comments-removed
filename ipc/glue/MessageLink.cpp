@@ -118,14 +118,12 @@ ProcessLink::Open(mozilla::ipc::Transport* aTransport, MessageLoop *aIOLoop, Sid
             
             
             
-            RefPtr<Runnable> runnable = NS_NewNonOwningRunnableMethod(this, &ProcessLink::OnChannelOpened);
-            mIOLoop->PostTask(runnable.forget());
+            mIOLoop->PostTask(NewNonOwningRunnableMethod(this, &ProcessLink::OnChannelOpened));
         } else {
             
             
             
-            RefPtr<Runnable> runnable = NS_NewNonOwningRunnableMethod(this, &ProcessLink::OnTakeConnectedChannel);
-            mIOLoop->PostTask(runnable.forget());
+            mIOLoop->PostTask(NewNonOwningRunnableMethod(this, &ProcessLink::OnTakeConnectedChannel));
         }
 
 #ifdef MOZ_NUWA_PROCESS
@@ -152,9 +150,7 @@ ProcessLink::EchoMessage(Message *msg)
     mChan->AssertWorkerThread();
     mChan->mMonitor->AssertCurrentThreadOwns();
 
-    RefPtr<Runnable> runnable =
-        NS_NewNonOwningRunnableMethodWithArgs<Message*>(this, &ProcessLink::OnEchoMessage, msg);
-    mIOLoop->PostTask(runnable.forget());
+    mIOLoop->PostTask(NewNonOwningRunnableMethod<Message*>(this, &ProcessLink::OnEchoMessage, msg));
     
 }
 
@@ -200,9 +196,7 @@ ProcessLink::SendMessage(Message *msg)
 #endif
 #endif
 
-    RefPtr<Runnable> runnable =
-        NS_NewNonOwningRunnableMethodWithArgs<Message*>(mTransport, &Transport::Send, msg);
-    mIOLoop->PostTask(runnable.forget());
+    mIOLoop->PostTask(NewNonOwningRunnableMethod<Message*>(mTransport, &Transport::Send, msg));
 }
 
 void
@@ -211,8 +205,7 @@ ProcessLink::SendClose()
     mChan->AssertWorkerThread();
     mChan->mMonitor->AssertCurrentThreadOwns();
 
-    RefPtr<Runnable> runnable = NS_NewNonOwningRunnableMethod(this, &ProcessLink::OnCloseChannel);
-    mIOLoop->PostTask(runnable.forget());
+    mIOLoop->PostTask(NewNonOwningRunnableMethod(this, &ProcessLink::OnCloseChannel));
 }
 
 ThreadLink::ThreadLink(MessageChannel *aChan, MessageChannel *aTargetChan)

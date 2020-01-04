@@ -700,7 +700,7 @@ nsWyciwygChannel::OnCacheEntryAvailable(nsICacheEntry *aCacheEntry,
     if (!aNew) {
       
       
-      NS_DispatchToCurrentThread(NS_NewRunnableMethod(
+      NS_DispatchToCurrentThread(mozilla::NewRunnableMethod(
         this, &nsWyciwygChannel::NotifyListener));
     }
   }
