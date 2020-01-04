@@ -894,18 +894,22 @@ ArrayBufferObject::createDataViewForThisImpl(JSContext* cx, const CallArgs& args
 
 
 
-    MOZ_ASSERT(args.length() >= 2);
 
-    Rooted<JSObject*> proto(cx, &args[args.length() - 1].toObject());
+    MOZ_ASSERT(args.length() == 3);
 
-    Rooted<JSObject*> buffer(cx, &args.thisv().toObject());
+    uint32_t byteOffset = args[0].toPrivateUint32();
+    uint32_t byteLength = args[1].toPrivateUint32();
+    Rooted<ArrayBufferObject*> buffer(cx, &args.thisv().toObject().as<ArrayBufferObject>());
 
     
 
 
 
-    CallArgs frobbedArgs = CallArgsFromVp(args.length() - 1, args.base());
-    return DataViewObject::construct(cx, buffer, frobbedArgs, proto);
+    JSObject* obj = DataViewObject::create(cx, byteOffset, byteLength, buffer, &args[2].toObject());
+    if (!obj)
+        return false;
+    args.rval().setObject(*obj);
+    return true;
 }
 
 bool
