@@ -6658,9 +6658,6 @@ template <typename ParseHandler>
 bool
 Parser<ParseHandler>::shouldParseLetDeclaration(bool* parseDeclOut)
 {
-    
-    MOZ_ASSERT(!pc->sc->strict());
-
     TokenKind tt;
     *parseDeclOut = false;
 
@@ -6691,6 +6688,9 @@ bool
 Parser<ParseHandler>::peekShouldParseLetDeclaration(bool* parseDeclOut,
                                                     TokenStream::Modifier modifier)
 {
+    
+    MOZ_ASSERT(!pc->sc->strict());
+
     *parseDeclOut = false;
 
 #ifdef DEBUG
@@ -6776,6 +6776,11 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirecti
       }
 
       case TOK_NAME: {
+        
+        
+        
+        
+        
         
         
         if (tokenStream.currentName() == context->names().let) {
