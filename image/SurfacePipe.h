@@ -185,10 +185,7 @@ public:
             return WriteState::NEED_MORE_DATA;
 
           case WriteState::FINISHED:
-            
-            
-            mRowPointer = nullptr;
-            mCol = 0;
+            ZeroOutRestOfSurface<PixelType>();
             return WriteState::FINISHED;
 
           case WriteState::FAILURE:
@@ -444,6 +441,13 @@ protected:
   }
 
 private:
+
+  template <typename PixelType>
+  void ZeroOutRestOfSurface()
+  {
+    WritePixels<PixelType>([]{ return AsVariant(PixelType(0)); });
+  }
+
   gfx::IntSize mInputSize;  
   uint8_t* mRowPointer;     
   int32_t mCol;             
