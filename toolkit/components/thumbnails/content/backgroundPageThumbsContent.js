@@ -108,8 +108,6 @@ const backgroundPageThumbsContent = {
           this._startNextCapture();
         }
         else if (this._state == STATE_CANCELED) {
-          
-          
           delete this._currentCapture;
           this._startNextCapture();
         }
@@ -119,9 +117,20 @@ const backgroundPageThumbsContent = {
         
         this._state = STATE_CAPTURING;
         this._captureCurrentPage();
-      } else {
+      }
+      else if (this._state != STATE_CANCELED) {
+        
+        
+        
         this._state = STATE_CANCELED;
-        this._loadAboutBlank();
+        if (!this._cancelTimer) {
+          this._cancelTimer =
+            Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+          this._cancelTimer.init(() => {
+            this._loadAboutBlank();
+            delete this._cancelTimer;
+          }, 0, Ci.nsITimer.TYPE_ONE_SHOT);
+        }
       }
     }
   },
