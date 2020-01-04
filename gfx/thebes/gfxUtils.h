@@ -132,32 +132,6 @@ public:
     
 
 
-
-
-
-
-
-
-    static void
-    GetYCbCrToRGBDestFormatAndSize(const mozilla::layers::PlanarYCbCrData& aData,
-                                   gfxImageFormat& aSuggestedFormat,
-                                   mozilla::gfx::IntSize& aSuggestedSize);
-
-    
-
-
-
-
-    static void
-    ConvertYCbCrToRGB(const mozilla::layers::PlanarYCbCrData& aData,
-                      const gfxImageFormat& aDestFormat,
-                      const mozilla::gfx::IntSize& aDestSize,
-                      unsigned char* aDestBuffer,
-                      int32_t aStride);
-
-    
-
-
     static void ClearThebesSurface(gfxASurface* aSurface);
 
     
