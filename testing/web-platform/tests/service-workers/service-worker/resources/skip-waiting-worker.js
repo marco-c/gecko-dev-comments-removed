@@ -1,11 +1,7 @@
 importScripts('worker-testharness.js');
 
 promise_test(function() {
-    
-    
-    return new Promise(function(res, rej) {
-      oninstall = res;
-    }).then(() => skipWaiting())
+    return skipWaiting()
       .then(function(result) {
           assert_equals(result, undefined,
                         'Promise should be resolved with undefined');
