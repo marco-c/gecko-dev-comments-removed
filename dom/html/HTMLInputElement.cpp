@@ -1182,8 +1182,12 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
         NS_ENSURE_SUCCESS(rv, rv);
       }
       
+      
+      
+      
       UpdateRangeOverflowValidityState();
-      MOZ_ASSERT(mType != NS_FORM_INPUT_RANGE ||
+      MOZ_ASSERT(mParserCreating ||
+                 mType != NS_FORM_INPUT_RANGE ||
                  !GetValidityState(VALIDITY_STATE_RANGE_UNDERFLOW),
                  "HTML5 spec does not allow underflow for type=range");
     } else if (aName == nsGkAtoms::min) {
@@ -1199,7 +1203,8 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       
       UpdateRangeUnderflowValidityState();
       UpdateStepMismatchValidityState();
-      MOZ_ASSERT(mType != NS_FORM_INPUT_RANGE ||
+      MOZ_ASSERT(mParserCreating ||
+                 mType != NS_FORM_INPUT_RANGE ||
                  !GetValidityState(VALIDITY_STATE_RANGE_UNDERFLOW),
                  "HTML5 spec does not allow underflow for type=range");
     } else if (aName == nsGkAtoms::step) {
@@ -1213,7 +1218,8 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       }
       
       UpdateStepMismatchValidityState();
-      MOZ_ASSERT(mType != NS_FORM_INPUT_RANGE ||
+      MOZ_ASSERT(mParserCreating ||
+                 mType != NS_FORM_INPUT_RANGE ||
                  !GetValidityState(VALIDITY_STATE_RANGE_UNDERFLOW),
                  "HTML5 spec does not allow underflow for type=range");
     } else if (aName == nsGkAtoms::dir &&
