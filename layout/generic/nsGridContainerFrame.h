@@ -54,6 +54,8 @@ public:
     nscoord mLimit;
   };
 
+  enum Dimension { eColDimension, eRowDimension };
+
   
   static const nscoord VERY_LIKELY_A_GRID_CONTAINER = -123456789;
 
