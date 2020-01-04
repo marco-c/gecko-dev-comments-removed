@@ -20,6 +20,7 @@
 #include "mozilla/dom/EventTarget.h"
 
 struct JSCompartment;
+class nsIDocument;
 
 namespace mozilla {
 
@@ -126,7 +127,7 @@ public:
     return nsPIDOMWindowOuter::GetFromCurrentInner(GetOwner());
   }
 
-  nsresult CheckInnerWindowCorrectness()
+  nsresult CheckInnerWindowCorrectness() const
   {
     NS_ENSURE_STATE(!mHasOrHasHadOwnerWindow || mOwnerWindow);
     if (mOwnerWindow && !mOwnerWindow->IsCurrentInnerWindow()) {
@@ -136,6 +137,12 @@ public:
   }
 
   nsPIDOMWindowInner* GetOwner() const { return mOwnerWindow; }
+  
+  
+  nsPIDOMWindowInner* GetWindowIfCurrent() const;
+  
+  
+  nsIDocument* GetDocumentIfCurrent() const;
   void BindToOwner(nsIGlobalObject* aOwner);
   void BindToOwner(nsPIDOMWindowInner* aOwner);
   void BindToOwner(DOMEventTargetHelper* aOther);
