@@ -401,6 +401,8 @@ enum GeckoProcessType
 
   GeckoProcessType_GMPlugin, 
 
+  GeckoProcessType_GPU,      
+
   GeckoProcessType_End,
   GeckoProcessType_Invalid = GeckoProcessType_End
 };
@@ -410,7 +412,8 @@ static const char* const kGeckoProcessTypeString[] = {
   "plugin",
   "tab",
   "ipdlunittest",
-  "geckomediaplugin"
+  "geckomediaplugin",
+  "gpu"
 };
 
 static_assert(MOZ_ARRAY_LENGTH(kGeckoProcessTypeString) ==
