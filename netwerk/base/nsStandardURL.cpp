@@ -1187,6 +1187,29 @@ nsStandardURL::GetOriginCharset(nsACString &result)
     return NS_OK;
 }
 
+static bool
+IsSpecialProtocol(const nsACString &input)
+{
+    nsACString::const_iterator start, end;
+    input.BeginReading(start);
+    nsACString::const_iterator iterator(start);
+    input.EndReading(end);
+
+    while (iterator != end && *iterator != ':') {
+        iterator++;
+    }
+
+    nsAutoCString protocol(nsDependentCSubstring(start.get(), iterator.get()));
+
+    return protocol.LowerCaseEqualsLiteral("http") ||
+           protocol.LowerCaseEqualsLiteral("https") ||
+           protocol.LowerCaseEqualsLiteral("ftp") ||
+           protocol.LowerCaseEqualsLiteral("ws") ||
+           protocol.LowerCaseEqualsLiteral("wss") ||
+           protocol.LowerCaseEqualsLiteral("file") ||
+           protocol.LowerCaseEqualsLiteral("gopher");
+}
+
 NS_IMETHODIMP
 nsStandardURL::SetSpec(const nsACString &input)
 {
@@ -1217,11 +1240,34 @@ nsStandardURL::SetSpec(const nsACString &input)
     Clear();
 
     
-    nsAutoCString buf1;
-    if (net_FilterURIString(spec, buf1)) {
-        spec = buf1.get();
-        specLength = buf1.Length();
+    nsAutoCString filteredURI;
+    if (!net_FilterURIString(spec, filteredURI)) {
+        
+        
+        filteredURI = input;
     }
+
+    if (IsSpecialProtocol(filteredURI)) {
+        
+        
+        nsAutoCString::iterator start;
+        nsAutoCString::iterator end;
+        filteredURI.BeginWriting(start);
+        filteredURI.EndWriting(end);
+        while (start != end) {
+            if (*start == '?' || *start == '#') {
+                break;
+            }
+            if (*start == '\\') {
+                *start = '/';
+            }
+            start++;
+        }
+    }
+
+    spec = filteredURI.get();
+    specLength = filteredURI.Length();
+
 
     
     nsresult rv = ParseURL(spec, specLength);
@@ -2004,12 +2050,15 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
     
     nsAutoCString buf;
     int32_t relpathLen;
-    if (net_FilterURIString(relpath, buf)) {
-        relpath = buf.get();
-        relpathLen = buf.Length();
-    } else
-        relpathLen = flat.Length();
-    
+    if (!net_FilterURIString(relpath, buf)) {
+        
+        
+        buf = in;
+    }
+
+    relpath = buf.get();
+    relpathLen = buf.Length();
+
     char *result = nullptr;
 
     LOG(("nsStandardURL::Resolve [this=%p spec=%s relpath=%s]\n",
@@ -2045,6 +2094,30 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
     
     
     if (NS_FAILED(rv)) scheme.Reset(); 
+
+    nsAutoCString protocol(Segment(scheme));
+    nsAutoCString baseProtocol(Scheme());
+
+    
+    
+    
+    if ((protocol.IsEmpty() && IsSpecialProtocol(baseProtocol)) ||
+         IsSpecialProtocol(protocol)) {
+
+        nsAutoCString::iterator start;
+        nsAutoCString::iterator end;
+        buf.BeginWriting(start);
+        buf.EndWriting(end);
+        while (start != end) {
+            if (*start == '?' || *start == '#') {
+                break;
+            }
+            if (*start == '\\') {
+                *start = '/';
+            }
+            start++;
+        }
+    }
 
     if (scheme.mLen >= 0) {
         
