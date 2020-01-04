@@ -10,6 +10,7 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Tuple.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
 
@@ -130,19 +131,25 @@ class ListenerHelper {
   
   
   
-  template <typename T>
+  template <typename... Ts>
   class R : public nsRunnable {
-    typedef typename RemoveCV<typename RemoveReference<T>::Type>::Type ArgType;
   public:
-    template <typename U>
-    R(RevocableToken* aToken, const Function& aFunction, U&& aEvent)
-      : mToken(aToken), mFunction(aFunction), mEvent(Forward<U>(aEvent)) {}
+    template <typename... Us>
+    R(RevocableToken* aToken, const Function& aFunction, Us&&... aEvents)
+      : mToken(aToken)
+      , mFunction(aFunction)
+      , mEvents(Forward<Us>(aEvents)...) {}
+
+    template <typename... Vs, size_t... Is>
+    void Invoke(Tuple<Vs...>& aEvents, IndexSequence<Is...>) {
+      
+      mFunction(Move(Get<Is>(aEvents))...);
+    }
 
     NS_IMETHOD Run() override {
       
       if (!mToken->IsRevoked()) {
-        
-        mFunction(Move(mEvent));
+        Invoke(mEvents, typename IndexSequenceFor<Ts...>::Type());
       }
       return NS_OK;
     }
@@ -150,7 +157,10 @@ class ListenerHelper {
   private:
     RefPtr<RevocableToken> mToken;
     Function mFunction;
-    ArgType mEvent;
+
+    template <typename T>
+    using ArgType = typename RemoveCV<typename RemoveReference<T>::Type>::Type;
+    Tuple<ArgType<Ts>...> mEvents;
   };
 
 public:
@@ -158,17 +168,18 @@ public:
     : mToken(aToken), mTarget(aTarget), mFunction(aFunc) {}
 
   
-  template <typename F, typename T>
+  template <typename F, typename... Ts>
   typename EnableIf<TakeArgs<F>::value, void>::Type
-  Dispatch(const F& aFunc, T&& aEvent) {
-    nsCOMPtr<nsIRunnable> r = new R<T>(mToken, aFunc, Forward<T>(aEvent));
+  DispatchHelper(const F& aFunc, Ts&&... aEvents) {
+    nsCOMPtr<nsIRunnable> r =
+      new R<Ts...>(mToken, aFunc, Forward<Ts>(aEvents)...);
     EventTarget<Target>::Dispatch(mTarget.get(), r.forget());
   }
 
   
-  template <typename F, typename T>
+  template <typename F, typename... Ts>
   typename EnableIf<!TakeArgs<F>::value, void>::Type
-  Dispatch(const F& aFunc, T&&) {
+  DispatchHelper(const F& aFunc, Ts&&...) {
     const RefPtr<RevocableToken>& token = mToken;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
       
@@ -179,9 +190,9 @@ public:
     EventTarget<Target>::Dispatch(mTarget.get(), r.forget());
   }
 
-  template <typename T>
-  void Dispatch(T&& aEvent) {
-    Dispatch(mFunction, Forward<T>(aEvent));
+  template <typename... Ts>
+  void Dispatch(Ts&&... aEvents) {
+    DispatchHelper(mFunction, Forward<Ts>(aEvents)...);
   }
 
 private:
@@ -219,44 +230,44 @@ private:
 
 
 
-template <typename ArgType, EventPassMode Mode = EventPassMode::Copy>
+template <EventPassMode Mode, typename... As>
 class Listener : public ListenerBase {
 public:
   virtual ~Listener() {}
-  virtual void Dispatch(const ArgType& aEvent) = 0;
+  virtual void Dispatch(const As&... aEvents) = 0;
 };
 
-template <typename ArgType>
-class Listener<ArgType, EventPassMode::Move> : public ListenerBase {
+template <typename... As>
+class Listener<EventPassMode::Move, As...> : public ListenerBase {
 public:
   virtual ~Listener() {}
-  virtual void Dispatch(ArgType&& aEvent) = 0;
+  virtual void Dispatch(As&&... aEvents) = 0;
 };
 
 
 
 
 
-template <typename Target, typename Function, typename ArgType, EventPassMode>
-class ListenerImpl : public Listener<ArgType, EventPassMode::Copy> {
+template <typename Target, typename Function, EventPassMode, typename... As>
+class ListenerImpl : public Listener<EventPassMode::Copy, As...> {
 public:
   ListenerImpl(Target* aTarget, const Function& aFunction)
     : mHelper(ListenerBase::Token(), aTarget, aFunction) {}
-  void Dispatch(const ArgType& aEvent) override {
-    mHelper.Dispatch(aEvent);
+  void Dispatch(const As&... aEvents) override {
+    mHelper.Dispatch(aEvents...);
   }
 private:
   ListenerHelper<Target, Function> mHelper;
 };
 
-template <typename Target, typename Function, typename ArgType>
-class ListenerImpl<Target, Function, ArgType, EventPassMode::Move>
-  : public Listener<ArgType, EventPassMode::Move> {
+template <typename Target, typename Function, typename... As>
+class ListenerImpl<Target, Function, EventPassMode::Move, As...>
+  : public Listener<EventPassMode::Move, As...> {
 public:
   ListenerImpl(Target* aTarget, const Function& aFunction)
     : mHelper(ListenerBase::Token(), aTarget, aFunction) {}
-  void Dispatch(ArgType&& aEvent) override {
-    mHelper.Dispatch(Move(aEvent));
+  void Dispatch(As&&... aEvents) override {
+    mHelper.Dispatch(Move(aEvents)...);
   }
 private:
   ListenerHelper<Target, Function> mHelper;
@@ -278,9 +289,23 @@ struct PassModePicker {
     EventPassMode::Copy : EventPassMode::Move;
 };
 
+
+
+
+template <typename Head, typename... Tails>
+struct IsAnyReference {
+  static const bool value = IsReference<Head>::value ||
+                            IsAnyReference<Tails...>::value;
+};
+
+template <typename T>
+struct IsAnyReference<T> {
+  static const bool value = IsReference<T>::value;
+};
+
 } 
 
-template <typename T, ListenerMode> class MediaEventSource;
+template <ListenerMode, typename... Ts> class MediaEventSourceImpl;
 
 
 
@@ -289,8 +314,8 @@ template <typename T, ListenerMode> class MediaEventSource;
 
 
 class MediaEventListener {
-  template <typename T, ListenerMode>
-  friend class MediaEventSource;
+  template <ListenerMode, typename... Ts>
+  friend class MediaEventSourceImpl;
 
 public:
   MediaEventListener() {}
@@ -329,16 +354,22 @@ private:
 
 
 
-template <typename EventType, ListenerMode Mode = ListenerMode::NonExclusive>
-class MediaEventSource {
-  static_assert(!IsReference<EventType>::value, "Ref-type not supported!");
-  typedef typename detail::EventTypeTraits<EventType>::ArgType ArgType;
-  static const detail::EventPassMode PassMode
-    = detail::PassModePicker<Mode>::Value;
-  typedef detail::Listener<ArgType, PassMode> Listener;
+template <ListenerMode Mode, typename... Es>
+class MediaEventSourceImpl {
+  static_assert(!detail::IsAnyReference<Es...>::value,
+                "Ref-type not supported!");
+
+  template <typename T>
+  using ArgType = typename detail::EventTypeTraits<T>::ArgType;
+
+  static const detail::EventPassMode PassMode =
+    detail::PassModePicker<Mode>::Value;
+
+  typedef detail::Listener<PassMode, ArgType<Es>...> Listener;
 
   template<typename Target, typename Func>
-  using ListenerImpl = detail::ListenerImpl<Target, Func, ArgType, PassMode>;
+  using ListenerImpl =
+    detail::ListenerImpl<Target, Func, PassMode, ArgType<Es>...>;
 
   template <typename Method>
   using TakeArgs = detail::TakeArgs<Method>;
@@ -358,8 +389,8 @@ class MediaEventSource {
   typename EnableIf<TakeArgs<Method>::value, MediaEventListener>::Type
   ConnectInternal(Target* aTarget, This* aThis, Method aMethod) {
     detail::RawPtr<This> thiz(aThis);
-    auto f = [=] (ArgType&& aEvent) {
-      (thiz.get()->*aMethod)(Move(aEvent));
+    auto f = [=] (ArgType<Es>&&... aEvents) {
+      (thiz.get()->*aMethod)(Move(aEvents)...);
     };
     return ConnectInternal(aTarget, f);
   }
@@ -420,10 +451,10 @@ public:
   }
 
 protected:
-  MediaEventSource() : mMutex("MediaEventSource::mMutex") {}
+  MediaEventSourceImpl() : mMutex("MediaEventSourceImpl::mMutex") {}
 
-  template <typename T>
-  void NotifyInternal(T&& aEvent) {
+  template <typename... Ts>
+  void NotifyInternal(Ts&&... aEvents) {
     MutexAutoLock lock(mMutex);
     for (int32_t i = mListeners.Length() - 1; i >= 0; --i) {
       auto&& l = mListeners[i];
@@ -433,7 +464,7 @@ protected:
         mListeners.RemoveElementAt(i);
         continue;
       }
-      l->Dispatch(Forward<T>(aEvent));
+      l->Dispatch(Forward<Ts>(aEvents)...);
     }
   }
 
@@ -442,17 +473,25 @@ private:
   nsTArray<UniquePtr<Listener>> mListeners;
 };
 
+template <typename... Es>
+using MediaEventSource =
+  MediaEventSourceImpl<ListenerMode::NonExclusive, Es...>;
+
+template <typename... Es>
+using MediaEventSourceExc =
+  MediaEventSourceImpl<ListenerMode::Exclusive, Es...>;
 
 
 
 
 
-template <typename EventType, ListenerMode Mode = ListenerMode::NonExclusive>
-class MediaEventProducer : public MediaEventSource<EventType, Mode> {
+
+template <typename... Es>
+class MediaEventProducer : public MediaEventSource<Es...> {
 public:
-  template <typename T>
-  void Notify(T&& aEvent) {
-    this->NotifyInternal(Forward<T>(aEvent));
+  template <typename... Ts>
+  void Notify(Ts&&... aEvents) {
+    this->NotifyInternal(Forward<Ts>(aEvents)...);
   }
 };
 
@@ -465,6 +504,18 @@ class MediaEventProducer<void> : public MediaEventSource<void> {
 public:
   void Notify() {
     this->NotifyInternal(true );
+  }
+};
+
+
+
+
+template <typename... Es>
+class MediaEventProducerExc : public MediaEventSourceExc<Es...> {
+public:
+  template <typename... Ts>
+  void Notify(Ts&&... aEvents) {
+    this->NotifyInternal(Forward<Ts>(aEvents)...);
   }
 };
 
