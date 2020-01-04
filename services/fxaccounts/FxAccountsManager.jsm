@@ -62,7 +62,8 @@ this.FxAccountsManager = {
 
     return {
       email: this._activeSession.email,
-      verified: this._activeSession.verified
+      verified: this._activeSession.verified,
+      profile: this._activeSession.profile,
     }
   },
 
@@ -165,12 +166,22 @@ this.FxAccountsManager = {
               this._fxAccounts.getKeys();
             }
 
-            return Promise.resolve({
-              accountCreated: aMethod === "signUp",
-              user: this._user
+            return this._fxAccounts.getSignedInUserProfile().catch(error => {
+              
+              
+              return null;
             });
           }
-        );
+        ).then(profile => {
+          if (profile) {
+            this._activeSession.profile = profile;
+          }
+
+          return Promise.resolve({
+            accountCreated: aMethod === "signUp",
+            user: this._user
+          });
+        });
       },
       reason => { return this._serverError(reason); }
     );
@@ -420,10 +431,23 @@ this.FxAccountsManager = {
         
         if (!user.verified) {
           this.verificationStatus(user);
+          
+          
+          log.debug("Account ", this._user);
+          return Promise.resolve(this._user);
         }
 
-        log.debug("Account " + JSON.stringify(this._user));
-        return Promise.resolve(this._user);
+        return this._fxAccounts.getSignedInUserProfile().then(profile => {
+          if (profile) {
+            this._activeSession.profile = profile;
+          }
+          log.debug("Account ", this._user);
+          return Promise.resolve(this._user);
+        }).catch(error => {
+          
+          log.debug("Account ", this._user);
+          return Promise.resolve(this._user);
+        });
       }
     );
   },
@@ -486,6 +510,13 @@ this.FxAccountsManager = {
         if (this._activeSession.verified != data.verified) {
           this._activeSession.verified = data.verified;
           this._fxAccounts.setSignedInUser(this._activeSession);
+          this._fxAccounts.getSignedInUserProfile().then(profile => {
+            if (profile) {
+              this._activeSession.profile = profile;
+            }
+          }).catch(error => {
+            
+          });
         }
         log.debug(JSON.stringify(this._user));
       },
