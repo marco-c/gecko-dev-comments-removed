@@ -68,22 +68,7 @@ PresentationReceiver::Init()
   }
 
   
-  
-  nsAutoString sessionId;
-  nsresult rv = service->GetExistentSessionIdAtLaunch(mWindowId, sessionId);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-
-  if (!sessionId.IsEmpty()) {
-    rv = NotifySessionConnect(mWindowId, sessionId);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return false;
-    }
-  }
-
-  
-  rv = service->RegisterRespondingListener(mWindowId, this);
+  nsresult rv = service->RegisterRespondingListener(mWindowId, this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }
