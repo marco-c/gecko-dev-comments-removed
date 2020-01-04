@@ -507,7 +507,15 @@ public:
 
 
 
-  StreamTime GraphTimeToStreamTimeOptimistic(GraphTime aTime);
+
+  StreamTime GraphTimeToStreamTime(GraphTime aTime);
+  
+
+
+
+
+
+  GraphTime StreamTimeToGraphTime(StreamTime aTime);
   
 
 
