@@ -253,7 +253,8 @@ nsPrintSettingsWin::CopyToNative(DEVMODEW* aDevMode)
   }
 
   
-  if (paperHeight >= MM_PER_INCH_FLOAT) {
+  
+  if (paperHeight > 0) {
     
     aDevMode->dmPaperLength = paperHeight * 10l;
     aDevMode->dmFields |= DM_PAPERLENGTH;
@@ -262,7 +263,7 @@ nsPrintSettingsWin::CopyToNative(DEVMODEW* aDevMode)
     aDevMode->dmFields &= ~DM_PAPERLENGTH;
   }
 
-  if (paperWidth >= MM_PER_INCH_FLOAT) {
+  if (paperWidth > 0) {
     aDevMode->dmPaperWidth = paperWidth * 10l;
     aDevMode->dmFields |= DM_PAPERWIDTH;
   } else {
