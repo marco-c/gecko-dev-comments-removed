@@ -418,6 +418,18 @@ PresentationTCPSessionTransport::Send(const nsAString& aData)
 }
 
 NS_IMETHODIMP
+PresentationTCPSessionTransport::SendBinaryMsg(const nsACString& aData)
+{
+  return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+}
+
+NS_IMETHODIMP
+PresentationTCPSessionTransport::SendBlob(nsIDOMBlob* aBlob)
+{
+  return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+}
+
+NS_IMETHODIMP
 PresentationTCPSessionTransport::Close(nsresult aReason)
 {
   PRES_DEBUG("%s:reason[%x]\n", __func__, aReason);
@@ -573,5 +585,5 @@ PresentationTCPSessionTransport::OnDataAvailable(nsIRequest* aRequest,
   }
 
   
-  return mCallback->NotifyData(data);
+  return mCallback->NotifyData(data, false);
 }
