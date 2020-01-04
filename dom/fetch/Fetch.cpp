@@ -1051,15 +1051,17 @@ public:
 
     uint8_t* nonconstResult = const_cast<uint8_t*>(aResult);
     if (mFetchBody->mWorkerPrivate) {
+      
+      AutoFailConsumeBody<Derived> autoFail(mFetchBody);
       nsRefPtr<ContinueConsumeBodyRunnable<Derived>> r =
         new ContinueConsumeBodyRunnable<Derived>(mFetchBody,
                                         aStatus,
                                         aResultLength,
                                         nonconstResult);
       AutoSafeJSContext cx;
-      if (!r->Dispatch(cx)) {
-        
-        
+      if (r->Dispatch(cx)) {
+        autoFail.DontFail();
+      } else {
         NS_WARNING("Could not dispatch ConsumeBodyRunnable");
         
         return NS_ERROR_FAILURE;
@@ -1129,12 +1131,10 @@ class FetchBodyFeature final : public workers::WorkerFeature
   
   
   FetchBody<Derived>* mBody;
-  bool mWasNotified;
 
 public:
   explicit FetchBodyFeature(FetchBody<Derived>* aBody)
     : mBody(aBody)
-    , mWasNotified(false)
   { }
 
   ~FetchBodyFeature()
@@ -1143,10 +1143,7 @@ public:
   bool Notify(JSContext* aCx, workers::Status aStatus) override
   {
     MOZ_ASSERT(aStatus > workers::Running);
-    if (!mWasNotified) {
-      mWasNotified = true;
-      mBody->ContinueConsumeBody(NS_BINDING_ABORTED, 0, nullptr);
-    }
+    mBody->ContinueConsumeBody(NS_BINDING_ABORTED, 0, nullptr);
     return true;
   }
 };
