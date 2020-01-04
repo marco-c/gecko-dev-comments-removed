@@ -114,6 +114,10 @@
 #include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
 
+#ifdef XP_WIN
+#include "mozilla/WindowsVersion.h"
+#endif
+
 #if defined(MOZILLA_INTERNAL_API)
 
 #ifdef LOG_INFO
@@ -600,6 +604,25 @@ int NrSocket::create(nr_transport_addr *addr) {
               "family=%d, err=%d", naddr.raw.family, PR_GetError());
         ABORT(R_INTERNAL);
       }
+#ifdef XP_WIN
+      if (!mozilla::IsWin8OrLater()) {
+        PRSocketOptionData opt_rcvbuf;
+        opt_rcvbuf.option = PR_SockOpt_RecvBufferSize;
+        
+        
+        
+        
+        
+        
+        opt_rcvbuf.value.recv_buffer_size = 256 * 1024;
+        status = PR_SetSocketOption(fd_, &opt_rcvbuf);
+        if (status != PR_SUCCESS) {
+          r_log(LOG_GENERIC, LOG_CRIT,
+            "Couldn't set receive buffer size socket option: %d", status);
+          ABORT(R_INTERNAL);
+        }
+      }
+#endif
       break;
     case IPPROTO_TCP:
       if (!(fd_ = PR_OpenTCPSocket(naddr.raw.family))) {
@@ -1457,6 +1480,7 @@ int NrUdpSocketIpc::accept(nr_transport_addr *addrp, nr_socket **sockp) {
 void NrUdpSocketIpc::create_i(const nsACString &host, const uint16_t port) {
   ASSERT_ON_THREAD(io_thread_);
 
+  uint32_t recvBuffSize = 0;
   nsresult rv;
   nsCOMPtr<nsIUDPSocketChild> socketChild = do_CreateInstance("@mozilla.org/udp-socket-child;1", &rv);
   if (NS_FAILED(rv)) {
@@ -1485,10 +1509,22 @@ void NrUdpSocketIpc::create_i(const nsACString &host, const uint16_t port) {
     return;
   }
 
+#ifdef XP_WIN
+  if (!mozilla::IsWin8OrLater()) {
+    
+    
+    
+    
+    
+    
+    recvBuffSize = 256 * 1024;
+  }
+#endif
   
   if (NS_FAILED(socket_child_->Bind(proxy, nullptr, host, port,
                                      false,
-                                     false))) {
+                                     false,
+                                     recvBuffSize))) {
     err_ = true;
     MOZ_ASSERT(false, "Failed to create UDP socket");
     mon.NotifyAll();
