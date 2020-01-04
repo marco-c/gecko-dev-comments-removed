@@ -1432,12 +1432,9 @@ public:
   bool ChildrenHavePerspective() const;
 
   
+  void ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas, const nsRect& aBounds);
 
-
-
-  void ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas);
-
-  void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame);
+  void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame, const nsRect* aBounds);
 
   
 

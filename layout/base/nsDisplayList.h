@@ -1123,7 +1123,15 @@ public:
   };
 
   const nsRect GetPreserves3DDirtyRect(const nsIFrame *aFrame) const {
-    return mPreserves3DCtx.mDirtyRect;
+    nsRect dirty = mPreserves3DCtx.mDirtyRect;
+    
+    
+    const nsIFrame *rootPreserves3D = aFrame;
+    while (rootPreserves3D && rootPreserves3D->Combines3DTransformWithAncestors()) {
+      dirty.MoveBy(-rootPreserves3D->GetPosition());
+      rootPreserves3D = rootPreserves3D->GetParent();
+    }
+    return dirty;
   }
   void SetPreserves3DDirtyRect(const nsRect &aDirtyRect) {
     mPreserves3DCtx.mDirtyRect = aDirtyRect;
@@ -3390,11 +3398,6 @@ public:
   {
     mParticipatesInPreserve3D = aParticipatesInPreserve3D;
   }
-
-  virtual bool ShouldBuildLayerEvenIfInvisible(nsDisplayListBuilder* aBuilder) override
-  {
-    return mParticipatesInPreserve3D;
-  }
 private:
   float mOpacity;
   bool mForEventsOnly;
@@ -4010,7 +4013,9 @@ public:
 
   static nsRect TransformRect(const nsRect &aUntransformedBounds, 
                               const nsIFrame* aFrame,
-                              const nsRect* aBoundsOverride = nullptr);
+                              const nsPoint &aOrigin,
+                              const nsRect* aBoundsOverride = nullptr,
+                              bool aPreserves3D = true);
 
   
 
@@ -4018,7 +4023,9 @@ public:
   static bool UntransformRect(const nsRect &aTransformedBounds,
                               const nsRect &aChildBounds,
                               const nsIFrame* aFrame,
-                              nsRect *aOutRect);
+                              const nsPoint &aOrigin,
+                              nsRect *aOutRect,
+                              bool aPreserves3D = true);
 
   bool UntransformVisibleRect(nsDisplayListBuilder* aBuilder,
                               nsRect* aOutRect);
@@ -4077,21 +4084,27 @@ public:
 
 
 
+
+
+
   enum {
     OFFSET_BY_ORIGIN = 1 << 0,
-    INCLUDE_PRESERVE3D_ANCESTORS = 1 << 1,
-    INCLUDE_PERSPECTIVE = 1 << 2,
+    BASIS_AT_ORIGIN = 1 << 1,
+    INCLUDE_PRESERVE3D_ANCESTORS = 1 << 2,
+    INCLUDE_PERSPECTIVE = 1 << 3,
   };
   static Matrix4x4 GetResultingTransformMatrix(const nsIFrame* aFrame,
                                                const nsPoint& aOrigin,
                                                float aAppUnitsPerPixel,
                                                uint32_t aFlags,
-                                               const nsRect* aBoundsOverride = nullptr);
+                                               const nsRect* aBoundsOverride = nullptr,
+                                               nsIFrame** aOutAncestor = nullptr);
   static Matrix4x4 GetResultingTransformMatrix(const FrameTransformProperties& aProperties,
                                                const nsPoint& aOrigin,
                                                float aAppUnitsPerPixel,
                                                uint32_t aFlags,
-                                               const nsRect* aBoundsOverride = nullptr);
+                                               const nsRect* aBoundsOverride = nullptr,
+                                               nsIFrame** aOutAncestor = nullptr);
   
 
 
@@ -4171,7 +4184,8 @@ private:
                                                        const nsPoint& aOrigin,
                                                        float aAppUnitsPerPixel,
                                                        uint32_t aFlags,
-                                                       const nsRect* aBoundsOverride);
+                                                       const nsRect* aBoundsOverride,
+                                                       nsIFrame** aOutAncestor);
 
   StoreList mStoredList;
   Matrix4x4 mTransform;

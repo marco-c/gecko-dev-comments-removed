@@ -916,12 +916,6 @@ public:
 
 
 
-  static void PostTranslate(Matrix4x4& aTransform, const nsPoint& aOrigin, float aAppUnitsPerPixel, bool aRounded);
-
-  
-
-
-
   static nsRect GetRectRelativeToFrame(mozilla::dom::Element* aElement,
                                        nsIFrame* aFrame);
 
