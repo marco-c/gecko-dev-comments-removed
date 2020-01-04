@@ -285,15 +285,74 @@ public:
     }
 
     
-    MatchContext matchContext(aSurfaceKey);
-    ForEach(TryToImproveMatch, &matchContext);
+    RefPtr<CachedSurface> bestMatch;
+    for (auto iter = ConstIter(); !iter.Done(); iter.Next()) {
+      CachedSurface* surface = iter.UserData();
+      const SurfaceKey& idealKey = aSurfaceKey;
+
+      
+      if (surface->IsPlaceholder()) {
+        continue;
+      }
+      
+      if (aSurfaceKey.AnimationTime() != idealKey.AnimationTime() ||
+          aSurfaceKey.SVGContext() != idealKey.SVGContext()) {
+        continue;
+      }
+      
+      if (aSurfaceKey.Flags() != idealKey.Flags()) {
+        continue;
+      }
+      
+      
+      if (!bestMatch) {
+        bestMatch = surface;
+        continue;
+      }
+
+      MOZ_ASSERT(bestMatch, "Should have a current best match");
+
+      
+      bool bestMatchIsDecoded = bestMatch->IsDecoded();
+      if (bestMatchIsDecoded && !surface->IsDecoded()) {
+        continue;
+      }
+      if (!bestMatchIsDecoded && surface->IsDecoded()) {
+        bestMatch = surface;
+        continue;
+      }
+
+      SurfaceKey bestMatchKey = bestMatch->GetSurfaceKey();
+
+      
+      
+      
+      int64_t idealArea = idealKey.Size().width * idealKey.Size().height;
+      int64_t surfaceArea = aSurfaceKey.Size().width * aSurfaceKey.Size().height;
+      int64_t bestMatchArea =
+        bestMatchKey.Size().width * bestMatchKey.Size().height;
+
+      
+      if (bestMatchArea < idealArea) {
+        if (surfaceArea > bestMatchArea) {
+          bestMatch = surface;
+        }
+        continue;
+      }
+      
+      if (idealArea <= surfaceArea && surfaceArea < bestMatchArea) {
+        bestMatch = surface;
+        continue;
+      }
+      
+    }
 
     MatchType matchType;
-    if (matchContext.mBestMatch) {
+    if (bestMatch) {
       if (!exactMatch) {
         
         matchType = MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND;
-      } else if (exactMatch != matchContext.mBestMatch) {
+      } else if (exactMatch != bestMatch) {
         
         matchType = MatchType::SUBSTITUTE_BECAUSE_PENDING;
       } else {
@@ -303,7 +362,6 @@ public:
     } else {
       if (exactMatch) {
         
-        
         MOZ_ASSERT(exactMatch->IsPlaceholder());
         matchType = MatchType::PENDING;
       } else {
@@ -312,98 +370,18 @@ public:
       }
     }
 
-    return MakePair(matchContext.mBestMatch.forget(), matchType);
+    return MakePair(bestMatch.forget(), matchType);
   }
 
-  void ForEach(SurfaceTable::EnumReadFunction aFunction, void* aData)
+  SurfaceTable::Iterator ConstIter() const
   {
-    mSurfaces.EnumerateRead(aFunction, aData);
+    return mSurfaces.ConstIter();
   }
 
   void SetLocked(bool aLocked) { mLocked = aLocked; }
   bool IsLocked() const { return mLocked; }
 
 private:
-  struct MatchContext
-  {
-    explicit MatchContext(const SurfaceKey& aIdealKey)
-      : mIdealKey(aIdealKey)
-    { }
-
-    const SurfaceKey& mIdealKey;
-    RefPtr<CachedSurface> mBestMatch;
-  };
-
-  static PLDHashOperator TryToImproveMatch(const SurfaceKey& aSurfaceKey,
-                                           CachedSurface*    aSurface,
-                                           void*             aContext)
-  {
-    auto context = static_cast<MatchContext*>(aContext);
-    const SurfaceKey& idealKey = context->mIdealKey;
-
-    
-    if (aSurface->IsPlaceholder()) {
-      return PL_DHASH_NEXT;
-    }
-
-    
-    if (aSurfaceKey.AnimationTime() != idealKey.AnimationTime() ||
-        aSurfaceKey.SVGContext() != idealKey.SVGContext()) {
-      return PL_DHASH_NEXT;
-    }
-
-    
-    if (aSurfaceKey.Flags() != idealKey.Flags()) {
-      return PL_DHASH_NEXT;
-    }
-
-    
-    
-    if (!context->mBestMatch) {
-      context->mBestMatch = aSurface;
-      return PL_DHASH_NEXT;
-    }
-
-    MOZ_ASSERT(context->mBestMatch, "Should have a current best match");
-
-    
-    bool bestMatchIsDecoded = context->mBestMatch->IsDecoded();
-    if (bestMatchIsDecoded && !aSurface->IsDecoded()) {
-      return PL_DHASH_NEXT;
-    }
-    if (!bestMatchIsDecoded && aSurface->IsDecoded()) {
-      context->mBestMatch = aSurface;
-      return PL_DHASH_NEXT;
-    }
-
-    SurfaceKey bestMatchKey = context->mBestMatch->GetSurfaceKey();
-
-    
-    
-    
-    int64_t idealArea = idealKey.Size().width * idealKey.Size().height;
-    int64_t surfaceArea = aSurfaceKey.Size().width * aSurfaceKey.Size().height;
-    int64_t bestMatchArea =
-      bestMatchKey.Size().width * bestMatchKey.Size().height;
-
-    
-    if (bestMatchArea < idealArea) {
-      if (surfaceArea > bestMatchArea) {
-        context->mBestMatch = aSurface;
-      }
-      return PL_DHASH_NEXT;
-    }
-
-    
-    if (idealArea <= surfaceArea && surfaceArea < bestMatchArea) {
-      context->mBestMatch = aSurface;
-      return PL_DHASH_NEXT;
-    }
-
-    
-    return PL_DHASH_NEXT;
-  }
-
   SurfaceTable mSurfaces;
   bool         mLocked;
 };
@@ -721,9 +699,7 @@ public:
     }
 
     cache->SetLocked(false);
-
-    
-    cache->ForEach(DoUnlockSurface, this);
+    DoUnlockSurfaces(cache);
   }
 
   void UnlockSurfaces(const ImageKey aImageKey)
@@ -735,9 +711,7 @@ public:
 
     
     
-
-    
-    cache->ForEach(DoUnlockSurface, this);
+    DoUnlockSurfaces(cache);
   }
 
   void RemoveImage(const ImageKey aImageKey)
@@ -752,7 +726,9 @@ public:
     
     
     
-    cache->ForEach(DoStopTracking, this);
+    for (auto iter = cache->ConstIter(); !iter.Done(); iter.Next()) {
+      StopTracking(iter.UserData());
+    }
 
     
     
@@ -808,31 +784,6 @@ public:
     StartTracking(aSurface);
   }
 
-  static PLDHashOperator DoStopTracking(const SurfaceKey&,
-                                        CachedSurface*    aSurface,
-                                        void*             aCache)
-  {
-    static_cast<SurfaceCacheImpl*>(aCache)->StopTracking(aSurface);
-    return PL_DHASH_NEXT;
-  }
-
-  static PLDHashOperator DoUnlockSurface(const SurfaceKey&,
-                                         CachedSurface*    aSurface,
-                                         void*             aCache)
-  {
-    if (aSurface->IsPlaceholder() || !aSurface->IsLocked()) {
-      return PL_DHASH_NEXT;
-    }
-
-    auto cache = static_cast<SurfaceCacheImpl*>(aCache);
-    cache->StopTracking(aSurface);
-
-    aSurface->SetLocked(false);
-    cache->StartTracking(aSurface);
-
-    return PL_DHASH_NEXT;
-  }
-
   NS_IMETHOD
   CollectReports(nsIHandleReportCallback* aHandleReport,
                  nsISupports*             aData,
@@ -881,16 +832,9 @@ public:
 
     
     CachedSurface::SurfaceMemoryReport report(aCounters, aMallocSizeOf);
-    cache->ForEach(DoCollectSizeOfSurface, &report);
-  }
-
-  static PLDHashOperator DoCollectSizeOfSurface(const SurfaceKey&,
-                                                CachedSurface*    aSurface,
-                                                void*             aReport)
-  {
-    auto report = static_cast<CachedSurface::SurfaceMemoryReport*>(aReport);
-    report->Add(aSurface);
-    return PL_DHASH_NEXT;
+    for (auto iter = cache->ConstIter(); !iter.Done(); iter.Next()) {
+      report.Add(iter.UserData());
+    }
   }
 
 private:
@@ -917,6 +861,20 @@ private:
       LockSurface(aSurface);
     } else {
       mExpirationTracker.MarkUsed(aSurface);
+    }
+  }
+
+  void DoUnlockSurfaces(ImageSurfaceCache* aCache)
+  {
+    
+    for (auto iter = aCache->ConstIter(); !iter.Done(); iter.Next()) {
+      CachedSurface* surface = iter.UserData();
+      if (surface->IsPlaceholder() || !surface->IsLocked()) {
+        continue;
+      }
+      StopTracking(surface);
+      surface->SetLocked(false);
+      StartTracking(surface);
     }
   }
 
