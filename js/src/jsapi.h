@@ -2216,8 +2216,7 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
         preserveJitCode_(false),
         cloneSingletons_(false),
         experimentalDateTimeFormatFormatToPartsEnabled_(false),
-        sharedMemoryAndAtomics_(false),
-        secureContext_(false)
+        sharedMemoryAndAtomics_(false)
     {
         zone_.spec = JS::FreshZone;
     }
@@ -2300,16 +2299,6 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     bool getSharedMemoryAndAtomicsEnabled() const;
     CompartmentCreationOptions& setSharedMemoryAndAtomicsEnabled(bool flag);
 
-    
-    
-    
-    
-    bool secureContext() const { return secureContext_; }
-    CompartmentCreationOptions& setSecureContext(bool flag) {
-        secureContext_ = flag;
-        return *this;
-    }
-
   private:
     JSAddonId* addonId_;
     JSTraceOp traceGlobal_;
@@ -2323,7 +2312,6 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     bool cloneSingletons_;
     bool experimentalDateTimeFormatFormatToPartsEnabled_;
     bool sharedMemoryAndAtomics_;
-    bool secureContext_;
 };
 
 
