@@ -74,6 +74,7 @@ CssColor.COLORUNIT = {
 
 CssColor.prototype = {
   _colorUnit: null,
+  _colorUnitUppercase: false,
 
   
   authored: null,
@@ -84,6 +85,8 @@ CssColor.prototype = {
     if (this._colorUnit === null) {
       let defaultUnit = Services.prefs.getCharPref(COLOR_UNIT_PREF);
       this._colorUnit = CssColor.COLORUNIT[defaultUnit];
+      this._colorUnitUppercase =
+        (this.authored === this.authored.toUpperCase());
     }
     return this._colorUnit;
   },
@@ -103,6 +106,7 @@ CssColor.prototype = {
     if (Services.prefs.getCharPref(COLOR_UNIT_PREF) ===
         CssColor.COLORUNIT.authored) {
       this._colorUnit = classifyColor(color);
+      this._colorUnitUppercase = (color === color.toUpperCase());
     }
   },
 
@@ -180,7 +184,7 @@ CssColor.prototype = {
     }
 
     let tuple = this._getRGBATuple();
-    return "#" + ((1 << 24) + (tuple.r << 16) + (tuple.g << 8) + (tuple.b << 0)).toString(16).substr(-6).toUpperCase();
+    return "#" + ((1 << 24) + (tuple.r << 16) + (tuple.g << 8) + (tuple.b << 0)).toString(16).substr(-6);
   },
 
   get rgb() {
@@ -325,6 +329,12 @@ CssColor.prototype = {
       default:
         color = this.rgb;
     }
+
+    if (this._colorUnitUppercase &&
+        this.colorUnit != CssColor.COLORUNIT.authored) {
+      color = color.toUpperCase();
+    }
+
     return color;
   },
 
