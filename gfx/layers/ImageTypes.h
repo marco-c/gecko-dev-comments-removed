@@ -86,7 +86,12 @@ enum class ImageFormat {
   
 
 
-  D3D11_SHARE_HANDLE_TEXTURE
+  D3D11_SHARE_HANDLE_TEXTURE,
+
+  
+
+
+  TEXTURE_WRAPPER
 };
 
 enum class StereoMode {

@@ -10,9 +10,11 @@
 #include "gfxPlatform.h"                
 #include "mozilla/Atomics.h"
 #include "mozilla/ipc/SharedMemory.h"   
+#include "mozilla/layers/AsyncTransactionTracker.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/ImageDataSerializer.h"
+#include "mozilla/layers/TextureClientRecycleAllocator.h"
 #include "mozilla/layers/YCbCrImageDataSerializer.h"
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
@@ -27,6 +29,7 @@
 #include "gfxUtils.h"                   
 #include "IPDLActor.h"
 #include "BufferTexture.h"
+#include "gfxPrefs.h"
 
 #ifdef XP_WIN
 #include "mozilla/layers/TextureD3D9.h"
