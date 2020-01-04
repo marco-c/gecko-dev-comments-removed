@@ -189,6 +189,10 @@ protected:
   
   
   
+  
+  
+  
+  
   bool RestrictCaretDraggingOffsets(nsIFrame::ContentOffsets& aOffsets);
 
   
@@ -296,6 +300,11 @@ protected:
   
   
   static bool sCaretsScriptUpdates;
+
+  
+  
+  
+  static bool sCaretsAllowDraggingAcrossOtherCaret;
 
   
   static bool sHapticFeedback;

@@ -78,6 +78,8 @@ AccessibleCaretManager::sCaretsAlwaysTilt = false;
  bool
 AccessibleCaretManager::sCaretsScriptUpdates = false;
  bool
+AccessibleCaretManager::sCaretsAllowDraggingAcrossOtherCaret = true;
+ bool
 AccessibleCaretManager::sHapticFeedback = false;
 
 AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
@@ -104,6 +106,8 @@ AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
                                  "layout.accessiblecaret.always_tilt");
     Preferences::AddBoolVarCache(&sCaretsScriptUpdates,
       "layout.accessiblecaret.allow_script_change_updates");
+    Preferences::AddBoolVarCache(&sCaretsAllowDraggingAcrossOtherCaret,
+      "layout.accessiblecaret.allow_dragging_across_other_caret", true);
     Preferences::AddBoolVarCache(&sHapticFeedback,
                                  "layout.accessiblecaret.hapticfeedback");
     addedPrefs = true;
@@ -962,6 +966,12 @@ AccessibleCaretManager::RestrictCaretDraggingOffsets(
 
   
   
+  int32_t cmpToInactiveCaretPos =
+    nsContentUtils::ComparePoints(aOffsets.content, aOffsets.StartOffset(),
+                                  content, contentOffset);
+
+  
+  
   nsPeekOffsetStruct limit(eSelectCluster, dir, offset, nsPoint(0, 0), true, true,
                            false, false, false);
   nsresult rv = frame->PeekOffset(&limit);
@@ -974,14 +984,44 @@ AccessibleCaretManager::RestrictCaretDraggingOffsets(
   int32_t cmpToLimit =
     nsContentUtils::ComparePoints(aOffsets.content, aOffsets.StartOffset(),
                                   limit.mResultContent, limit.mContentOffset);
-  if ((mActiveCaret == mFirstCaret.get() && cmpToLimit == 1) ||
-      (mActiveCaret == mSecondCaret.get() && cmpToLimit == -1)) {
-    
-    
-    
+
+  auto SetOffsetsToLimit = [&aOffsets, &limit] () {
     aOffsets.content = limit.mResultContent;
     aOffsets.offset = limit.mContentOffset;
     aOffsets.secondaryOffset = limit.mContentOffset;
+  };
+
+  if (!sCaretsAllowDraggingAcrossOtherCaret) {
+    if ((mActiveCaret == mFirstCaret.get() && cmpToLimit == 1) ||
+        (mActiveCaret == mSecondCaret.get() && cmpToLimit == -1)) {
+      
+      
+      
+      SetOffsetsToLimit();
+    }
+  } else {
+    switch (cmpToInactiveCaretPos) {
+      case 0:
+        
+        
+        
+        SetOffsetsToLimit();
+        break;
+      case 1:
+        if (mActiveCaret == mFirstCaret.get()) {
+          
+          
+          mActiveCaret = mSecondCaret.get();
+        }
+        break;
+      case -1:
+        if (mActiveCaret == mSecondCaret.get()) {
+          
+          
+          mActiveCaret = mFirstCaret.get();
+        }
+        break;
+    }
   }
 
   return true;
@@ -1041,7 +1081,7 @@ AccessibleCaretManager::DragCaretInternal(const nsPoint& aPoint)
 
   nsIFrame::ContentOffsets offsets =
     newFrame->GetContentOffsetsFromPoint(newPoint);
-  if (!offsets.content) {
+  if (offsets.IsNull()) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1144,7 +1184,8 @@ AccessibleCaretManager::AdjustDragBoundary(const nsPoint& aPoint) const
     }
   }
 
-  if (GetCaretMode() == CaretMode::Selection) {
+  if (GetCaretMode() == CaretMode::Selection &&
+      !sCaretsAllowDraggingAcrossOtherCaret) {
     
     
     

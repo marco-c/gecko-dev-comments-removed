@@ -1060,6 +1060,9 @@ pref("layout.accessiblecaret.use_long_tap_injector", false);
 #endif
 
 
+pref("layout.accessiblecaret.allow_dragging_across_other_caret", false);
+
+
 pref("services.sync.fxaccounts.enabled", true);
 pref("identity.fxaccounts.enabled", true);
 

@@ -5019,6 +5019,10 @@ pref("layout.accessiblecaret.always_tilt", false);
 pref("layout.accessiblecaret.allow_script_change_updates", false);
 
 
+
+pref("layout.accessiblecaret.allow_dragging_across_other_caret", true);
+
+
 pref("layout.accessiblecaret.hapticfeedback", false);
 
 
