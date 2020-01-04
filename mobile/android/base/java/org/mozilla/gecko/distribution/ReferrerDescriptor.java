@@ -40,7 +40,9 @@ public class ReferrerDescriptor {
 
         try {
             referrer = URLDecoder.decode(referrer, "UTF-8");
-        } catch (UnsupportedEncodingException e) {}
+        } catch (UnsupportedEncodingException e) {
+            
+        }
 
         final Uri u = new Uri.Builder()
                              .scheme("http")
