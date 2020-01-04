@@ -119,12 +119,11 @@ JSObject2WrappedJSMap::UpdateWeakPointersAfterGC(XPCJSRuntime* runtime)
 
         
         JSObject* obj = e.front().key();
-        JSObject* prior = obj;
         JS_UpdateWeakPointerAfterGCUnbarriered(&obj);
         if (!obj)
             e.removeFront();
-        else if (obj != prior)
-            e.rekeyFront(obj);
+        else
+            e.front().mutableKey() = obj;
     }
 }
 
