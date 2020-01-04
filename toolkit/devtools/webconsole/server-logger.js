@@ -19,9 +19,9 @@ loader.lazyGetter(this, "NetworkHelper", () => require("devtools/toolkit/webcons
 
 
 const trace = {
-  log: function(...args) {
+  log: function() {
   }
-}
+};
 
 
 const makeInfallible = DevToolsUtils.makeInfallible;
@@ -38,7 +38,7 @@ const acceptableHeaders = ["x-chromelogger-data"];
 
 
 
-var ServerLoggingListener = Class({
+let ServerLoggingListener = Class({
   
 
 
@@ -245,7 +245,7 @@ var ServerLoggingListener = Class({
     
     
     let win = NetworkHelper.getWindowForRequest(aChannel);
-    while(win) {
+    while (win) {
       if (win == this.window) {
         return true;
       }
@@ -273,7 +273,7 @@ var ServerLoggingListener = Class({
       data = JSON.parse(result);
     } catch (err) {
       Cu.reportError("Failed to parse HTTP log data! " + err);
-      return;
+      return null;
     }
 
     let parsedMessage = [];
@@ -403,7 +403,7 @@ var ServerLoggingListener = Class({
 
 function format(msg) {
   if (!msg.logs || !msg.logs[0]) {
-    return;
+    return null;
   }
 
   
@@ -412,42 +412,8 @@ function format(msg) {
   
   let firstString = msg.logs.shift();
   
-  
-  let splitLog = [];
-  
-  let specifiers = [];
-  let specifierIndex = -1;
   let splitLogRegExp = /(.*?)(%[oOcsdif]|$)/g;
   let splitLogRegExpRes;
-
-  
-  
-  while ((splitLogRegExpRes = splitLogRegExp.exec(firstString)) !== null) {
-    let [_, log, specifier] = splitLogRegExpRes;
-
-    
-    
-    
-    
-    
-    
-    
-    if (log || specifier) {
-      splitLog.push(log);
-    }
-
-    
-    
-    if (!specifier) {
-      break;
-    }
-
-    specifiers.push(specifier);
-  }
-
-  
-  
-  let rebuiltLogArray = [];
   let concatString = "";
   let pushConcatString = () => {
     if (concatString) {
@@ -457,25 +423,38 @@ function format(msg) {
   };
 
   
-  splitLog.forEach((string, index) => {
+  
+  let rebuiltLogArray = [];
+
+  
+  
+  while ((splitLogRegExpRes = splitLogRegExp.exec(firstString)) !== null) {
+    let [, log, specifier] = splitLogRegExpRes;
+
     
-    concatString += string;
-    if (specifiers.length === 0) {
-      return;
+    
+    
+    
+    if (log) {
+      concatString += log;
+    }
+
+    
+    
+    if (!specifier) {
+      break;
     }
 
     let argument = msg.logs.shift();
-    switch (specifiers[index]) {
+    switch (specifier) {
       case "%i":
       case "%d":
         
-        argument |= 0;
-        concatString += argument;
+        concatString += (argument | 0);
         break;
       case "%f":
         
-        argument =+ argument;
-        concatString += argument;
+        concatString += (+argument);
         break;
       case "%o":
       case "%O":
@@ -489,16 +468,12 @@ function format(msg) {
         break;
       case "%c":
         pushConcatString();
-        for (let j = msg.styles.length; j < rebuiltLogArray.length; j++) {
-          msg.styles.push(null);
-        }
-        msg.styles.push(argument);
+        let fillNullArrayLength = rebuiltLogArray.length - msg.styles.length;
+        let fillNullArray = Array(fillNullArrayLength).fill(null);
+        msg.styles.push(...fillNullArray, argument);
         break;
-      default:
-        
-        return;
     }
-  });
+  }
 
   if (concatString) {
     rebuiltLogArray.push(concatString);
@@ -506,7 +481,7 @@ function format(msg) {
 
   
   
-  msg.logs = rebuiltLogArray.concat(msg.logs);
+  msg.logs.unshift(...rebuiltLogArray);
 
   
   
@@ -523,9 +498,9 @@ function format(msg) {
 
 
 function getInnerId(win) {
-  return win.QueryInterface(Ci.nsIInterfaceRequestor).
-    getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
-};
+  return win.QueryInterface(Ci.nsIInterfaceRequestor)
+    .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+}
 
 
 exports.ServerLoggingListener = ServerLoggingListener;
