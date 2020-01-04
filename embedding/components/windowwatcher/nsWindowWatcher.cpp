@@ -1055,14 +1055,17 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
 
   
   
+  if (activeDocsSandboxFlags && parentWindow) {
+    newDocShell->SetOnePermittedSandboxedNavigator(
+      parentWindow->GetDocShell());
+  }
+
+  
+  
   
   if (activeDocsSandboxFlags &
         SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS) {
     newDocShell->SetSandboxFlags(activeDocsSandboxFlags);
-    if (parentWindow) {
-      newDocShell->SetOnePermittedSandboxedNavigator(
-        parentWindow->GetDocShell());
-    }
   }
 
   rv = ReadyOpenedDocShellItem(newDocShellItem, parentWindow, windowIsNew, aResult);
