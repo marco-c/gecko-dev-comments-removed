@@ -546,4 +546,16 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         flushQueuedNativeCalls(newState);
         return true;
     }
+
+    @WrapForJNI(stubName = "SpeculativeConnect")
+    private static native void speculativeConnectNative(String uri);
+
+    public static void speculativeConnect(final String uri) {
+        
+        
+        
+        
+        queueNativeCallUntil(State.PROFILE_READY, GeckoThread.class,
+                             "speculativeConnectNative", uri);
+    }
 }
