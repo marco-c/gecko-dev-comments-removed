@@ -69,7 +69,7 @@ InputQueue::ReceiveInputEvent(const RefPtr<AsyncPanZoomController>& aTarget,
 bool
 InputQueue::MaybeHandleCurrentBlock(CancelableBlockState *block,
                                     const InputData& aEvent) {
-  if (block == CurrentBlock() && block->IsReadyForHandling()) {
+  if (mQueuedInputs.IsEmpty() && block->IsReadyForHandling()) {
     const RefPtr<AsyncPanZoomController>& target = block->GetTargetApzc();
     INPQ_LOG("current block is ready with target %p preventdefault %d\n",
         target.get(), block->IsDefaultPrevented());
@@ -110,7 +110,7 @@ InputQueue::ReceiveTouchInput(const RefPtr<AsyncPanZoomController>& aTarget,
     
     
     
-    if (block == CurrentBlock() &&
+    if (mQueuedInputs.IsEmpty() &&
         aEvent.mTouches.Length() == 1 &&
         block->GetOverscrollHandoffChain()->HasFastFlungApzc() &&
         haveBehaviors) {
@@ -386,7 +386,7 @@ InputQueue::CancelAnimationsForNewBlock(CancelableBlockState* aBlock)
   
   
   
-  if (aBlock == CurrentBlock()) {
+  if (mQueuedInputs.IsEmpty()) {
     aBlock->GetOverscrollHandoffChain()->CancelAnimations(ExcludeOverscroll | ScrollSnap);
   }
 }
