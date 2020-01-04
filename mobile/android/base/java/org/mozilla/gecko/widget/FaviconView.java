@@ -193,6 +193,7 @@ public class FaviconView extends ImageView {
 
             
             showDefaultFavicon(null);
+            return;
         }
 
         
