@@ -285,10 +285,10 @@ AttemptVideoScale(TextureSourceBasic* aSource, const SourceSurface* aSourceMask,
                        gfx::Float aOpacity, CompositionOp aBlendMode,
                        const TexturedEffect* aTexturedEffect,
                        const Matrix& aNewTransform, const gfx::Rect& aRect,
-                       const gfx::IntRect& aClipRect,
+                       const gfx::Rect& aClipRect,
                        DrawTarget* aDest, const DrawTarget* aBuffer)
 {
-  if (true || !mozilla::supports_ssse3())
+  if (!mozilla::supports_ssse3())
       return false;
   if (aNewTransform.IsTranslation()) 
       return false;
@@ -303,6 +303,10 @@ AttemptVideoScale(TextureSourceBasic* aSource, const SourceSurface* aSourceMask,
   
   
   if (!aNewTransform.TransformBounds(aRect).ToIntRect(&dstRect))
+      return false;
+
+  IntRect clipRect;
+  if (!aClipRect.ToIntRect(&clipRect))
       return false;
 
   if (!(aTexturedEffect->mTextureCoords == Rect(0.0f, 0.0f, 1.0f, 1.0f)))
@@ -320,7 +324,7 @@ AttemptVideoScale(TextureSourceBasic* aSource, const SourceSurface* aSourceMask,
     IntRect fillRect = dstRect;
     if (aDest == aBuffer) {
       
-      fillRect = fillRect.Intersect(aClipRect);
+      fillRect = fillRect.Intersect(clipRect);
     }
 
     fillRect = fillRect.Intersect(IntRect(IntPoint(0, 0), aDest->GetSize()));
@@ -391,6 +395,10 @@ BasicCompositor::DrawQuad(const gfx::Rect& aRect,
     new3DTransform.PreTranslate(aRect.x, aRect.y, 0);
   }
 
+  
+  
+  Rect transformedClipRect = buffer->GetTransform().TransformBounds(Rect(aClipRect));
+
   buffer->PushClipRect(Rect(aClipRect));
 
   newTransform.PostTranslate(-offset.x, -offset.y);
@@ -435,7 +443,7 @@ BasicCompositor::DrawQuad(const gfx::Rect& aRect,
         if (source->mFromYCBCR &&
             AttemptVideoScale(source, sourceMask, aOpacity, blendMode,
                               texturedEffect,
-                              newTransform, aRect, aClipRect - offset,
+                              newTransform, aRect, transformedClipRect,
                               dest, buffer)) {
           
         } else {
