@@ -98,7 +98,7 @@ add_task(function* testDuplicateTabLazily() {
   });
 
   extension.onMessage("duplicate-tab", tabId => {
-    let {TabManager} = Cu.import("resource://gre/modules/Extension.jsm", {});
+    let {TabManager} = Cu.import("resource://gre/modules/ExtensionGlobalScope.jsm", {}).getGlobalForTesting("chrome");
 
     let tab = TabManager.getTab(tabId);
     
