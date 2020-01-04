@@ -108,10 +108,10 @@ public:
   nsresult Reset();
 
   
-  virtual void PushAudioPacket(NesteggPacketHolder* aItem);
+  void PushAudioPacket(NesteggPacketHolder* aItem);
 
   
-  virtual void PushVideoPacket(NesteggPacketHolder* aItem);
+  void PushVideoPacket(NesteggPacketHolder* aItem);
 
   
   MediaResourceIndex* GetResource()
@@ -140,7 +140,7 @@ private:
   void NotifyDataRemoved() override;
   void EnsureUpToDateIndex();
   media::TimeIntervals GetBuffered();
-  virtual nsresult SeekInternal(const media::TimeUnit& aTarget);
+  nsresult SeekInternal(const media::TimeUnit& aTarget);
 
   
   
