@@ -8,8 +8,8 @@
 
 #include "libANGLE/renderer/d3d/loadimage_etc.h"
 
+#include "libANGLE/renderer/imageformats.h"
 #include "libANGLE/renderer/d3d/loadimage.h"
-#include "libANGLE/renderer/d3d/imageformats.h"
 
 namespace rx
 {
@@ -42,14 +42,6 @@ static const int intensityModifierNonOpaque[][4] =
     { 0,  80, 0,  -80 },
     { 0, 106, 0, -106 },
     { 0, 183, 0, -183 },
-};
-
-
-
-
-static const int valueMappingTable[] =
-{
-    2, 3, 1, 0
 };
 
 
@@ -738,8 +730,8 @@ struct ETC2Block
 
     void packBC1(void *bc1,
                  const R8G8B8A8 *rgba,
-                 R8G8B8A8 &minColor,
-                 R8G8B8A8 &maxColor,
+                 const R8G8B8A8 &minColor,
+                 const R8G8B8A8 &maxColor,
                  bool opaque) const
     {
         uint32_t bits;
@@ -854,7 +846,6 @@ struct ETC2Block
     }
 
     void decodeSubblock(R8G8B8A8 *rgbaBlock,
-                        size_t pixelRange[2][2],
                         size_t x,
                         size_t y,
                         size_t w,
@@ -880,19 +871,125 @@ struct ETC2Block
             for (size_t i = dxBegin; i < dxEnd && (x + i) < w; i++)
             {
                 const size_t pixelIndex = getIndex(i, j);
-                if (valueMappingTable[pixelIndex] < valueMappingTable[pixelRange[subblockIdx][0]])
-                {
-                    pixelRange[subblockIdx][0] = pixelIndex;
-                }
-                if (valueMappingTable[pixelIndex] > valueMappingTable[pixelRange[subblockIdx][1]])
-                {
-                    pixelRange[subblockIdx][1] = pixelIndex;
-                }
-
-                row[i]   = subblockColors[subblockIdx][pixelIndex];
-                row[i].A = alphaValues[j][i];
+                row[i]                  = subblockColors[subblockIdx][pixelIndex];
+                row[i].A                = alphaValues[j][i];
             }
         }
+    }
+
+    void selectEndPointPCA(const R8G8B8A8 *pixels, R8G8B8A8 *minColor, R8G8B8A8 *maxColor) const
+    {
+        static const int kNumPixels = 16;
+
+        
+        int mu[3], min[3], max[3];
+        for (int ch = 0; ch < 3; ch++)
+        {
+            int muv, minv, maxv;
+
+            muv = minv = maxv = (&pixels[0].R)[ch];
+            for (size_t i = 1; i < kNumPixels; i++)
+            {
+                muv += (&pixels[i].R)[ch];
+                minv = std::min<int>(minv, (&pixels[i].R)[ch]);
+                maxv = std::max<int>(maxv, (&pixels[i].R)[ch]);
+            }
+
+            mu[ch]  = (muv + kNumPixels / 2) / kNumPixels;
+            min[ch] = minv;
+            max[ch] = maxv;
+        }
+
+        
+        int cov[6] = {0, 0, 0, 0, 0, 0};
+        for (size_t i = 0; i < kNumPixels; i++)
+        {
+            int r = pixels[i].R - mu[0];
+            int g = pixels[i].G - mu[1];
+            int b = pixels[i].B - mu[2];
+
+            cov[0] += r * r;
+            cov[1] += r * g;
+            cov[2] += r * b;
+            cov[3] += g * g;
+            cov[4] += g * b;
+            cov[5] += b * b;
+        }
+
+        
+
+        
+        float vfr = static_cast<float>(max[0] - min[0]);
+        float vfg = static_cast<float>(max[1] - min[1]);
+        float vfb = static_cast<float>(max[2] - min[2]);
+        float eigenvalue;
+
+        static const size_t kPowerIterations = 4;
+        for (size_t i = 0; i < kPowerIterations; i++)
+        {
+            float r = vfr * cov[0] + vfg * cov[1] + vfb * cov[2];
+            float g = vfr * cov[1] + vfg * cov[3] + vfb * cov[4];
+            float b = vfr * cov[2] + vfg * cov[4] + vfb * cov[5];
+
+            vfr = r;
+            vfg = g;
+            vfb = b;
+
+            eigenvalue = sqrt(r * r + g * g + b * b);
+            if (eigenvalue > 0)
+            {
+                float invNorm = 1.0f / eigenvalue;
+                vfr *= invNorm;
+                vfg *= invNorm;
+                vfb *= invNorm;
+            }
+        }
+
+        int vr, vg, vb;
+
+        static const float kDefaultLuminanceThreshold = 4.0f * 255;
+        static const float kQuantizeRange = 512.0f;
+        if (eigenvalue < kDefaultLuminanceThreshold)  
+        {
+            
+            vr = 299;
+            vg = 587;
+            vb = 114;
+        }
+        else
+        {
+            
+            
+            
+            float magn = std::max(std::max(std::abs(vfr), std::abs(vfg)), std::abs(vfb));
+            magn       = kQuantizeRange / magn;
+            vr         = static_cast<int>(vfr * magn);
+            vg         = static_cast<int>(vfg * magn);
+            vb         = static_cast<int>(vfb * magn);
+        }
+
+        
+        int minD        = pixels[0].R * vr + pixels[0].G * vg + pixels[0].B * vb;
+        int maxD        = minD;
+        size_t minIndex = 0;
+        size_t maxIndex = 0;
+        for (size_t i = 1; i < kNumPixels; i++)
+        {
+            int dot = pixels[i].R * vr + pixels[i].G * vg + pixels[i].B * vb;
+            if (dot < minD)
+            {
+                minD     = dot;
+                minIndex = i;
+            }
+            if (dot > maxD)
+            {
+                maxD     = dot;
+                maxIndex = i;
+            }
+        }
+
+        *minColor = pixels[minIndex];
+        *maxColor = pixels[maxIndex];
     }
 
     void transcodeIndividualOrDifferentialBlockToBC1(uint8_t *dest,
@@ -921,9 +1018,6 @@ struct ETC2Block
         
         
         
-        
-        
-        
 
         const auto intensityModifier =
             nonOpaquePunchThroughAlpha ? intensityModifierNonOpaque : intensityModifierDefault;
@@ -940,15 +1034,12 @@ struct ETC2Block
             subblockColors[1][modifierIdx] = createRGBA(r2 + i2, g2 + i2, b2 + i2);
         }
 
-        
-        size_t pixelRange[2][2] = {{1, 3}, {1, 3}};
         R8G8B8A8 rgbaBlock[16];
-        
         
         for (size_t blockIdx = 0; blockIdx < 2; blockIdx++)
         {
-            decodeSubblock(rgbaBlock, pixelRange, x, y, w, h, alphaValues, u.idht.mode.idm.flipbit,
-                           blockIdx, subblockColors);
+            decodeSubblock(rgbaBlock, x, y, w, h, alphaValues, u.idht.mode.idm.flipbit, blockIdx,
+                           subblockColors);
         }
         if (nonOpaquePunchThroughAlpha)
         {
@@ -956,30 +1047,8 @@ struct ETC2Block
                                          sizeof(R8G8B8A8) * 4);
         }
 
-        
-        R8G8B8A8 minColor;
-        const R8G8B8A8 &minColor0 = subblockColors[0][pixelRange[0][0]];
-        const R8G8B8A8 &minColor1 = subblockColors[1][pixelRange[1][0]];
-        if (minColor0.R + minColor0.G + minColor0.B < minColor1.R + minColor1.G + minColor1.B)
-        {
-            minColor = minColor0;
-        }
-        else
-        {
-            minColor = minColor1;
-        }
-
-        R8G8B8A8 maxColor;
-        const R8G8B8A8 &maxColor0 = subblockColors[0][pixelRange[0][1]];
-        const R8G8B8A8 &maxColor1 = subblockColors[1][pixelRange[1][1]];
-        if (maxColor0.R + maxColor0.G + maxColor0.B < maxColor1.R + maxColor1.G + maxColor1.B)
-        {
-            maxColor = maxColor1;
-        }
-        else
-        {
-            maxColor = maxColor0;
-        }
+        R8G8B8A8 minColor, maxColor;
+        selectEndPointPCA(rgbaBlock, &minColor, &maxColor);
 
         packBC1(dest, rgbaBlock, minColor, maxColor, !nonOpaquePunchThroughAlpha);
     }

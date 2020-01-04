@@ -40,6 +40,18 @@ class ImageTest : public ANGLETest
             "    texcoord = (position.xy * 0.5) + 0.5;\n"
             "    texcoord.y = 1.0 - texcoord.y;\n"
             "}\n";
+        const std::string vsESSL3Source =
+            "#version 300 es\n"
+            "precision highp float;\n"
+            "in vec4 position;\n"
+            "out vec2 texcoord;\n"
+            "\n"
+            "void main()\n"
+            "{\n"
+            "    gl_Position = position;\n"
+            "    texcoord = (position.xy * 0.5) + 0.5;\n"
+            "    texcoord.y = 1.0 - texcoord.y;\n"
+            "}\n";
 
         const std::string textureFSSource =
             "precision highp float;\n"
@@ -50,6 +62,28 @@ class ImageTest : public ANGLETest
             "{\n"
             "    gl_FragColor = texture2D(tex, texcoord);\n"
             "}\n";
+        const std::string textureExternalFSSource =
+            "#extension GL_OES_EGL_image_external : require\n"
+            "precision highp float;\n"
+            "uniform samplerExternalOES tex;\n"
+            "varying vec2 texcoord;\n"
+            "\n"
+            "void main()\n"
+            "{\n"
+            "    gl_FragColor = texture2D(tex, texcoord);\n"
+            "}\n";
+        const std::string textureExternalESSL3FSSource =
+            "#version 300 es\n"
+            "#extension GL_OES_EGL_image_external_essl3 : require\n"
+            "precision highp float;\n"
+            "uniform samplerExternalOES tex;\n"
+            "in vec2 texcoord;\n"
+            "out vec4 color;"
+            "\n"
+            "void main()\n"
+            "{\n"
+            "    color = texture(tex, texcoord);\n"
+            "}\n";
 
         mTextureProgram = CompileProgram(vsSource, textureFSSource);
         if (mTextureProgram == 0)
@@ -58,6 +92,24 @@ class ImageTest : public ANGLETest
         }
 
         mTextureUniformLocation = glGetUniformLocation(mTextureProgram, "tex");
+
+        if (extensionEnabled("GL_OES_EGL_image_external"))
+        {
+            mTextureExternalProgram = CompileProgram(vsSource, textureExternalFSSource);
+            ASSERT_NE(0u, mTextureExternalProgram) << "shader compilation failed.";
+
+            mTextureExternalUniformLocation = glGetUniformLocation(mTextureExternalProgram, "tex");
+        }
+
+        if (extensionEnabled("GL_OES_EGL_image_external_essl3"))
+        {
+            mTextureExternalESSL3Program =
+                CompileProgram(vsESSL3Source, textureExternalESSL3FSSource);
+            ASSERT_NE(0u, mTextureExternalESSL3Program) << "shader compilation failed.";
+
+            mTextureExternalESSL3UniformLocation =
+                glGetUniformLocation(mTextureExternalESSL3Program, "tex");
+        }
 
         eglCreateImageKHR =
             reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImageKHR"));
@@ -69,9 +121,11 @@ class ImageTest : public ANGLETest
 
     void TearDown() override
     {
-        ANGLETest::TearDown();
-
         glDeleteProgram(mTextureProgram);
+        glDeleteProgram(mTextureExternalProgram);
+        glDeleteProgram(mTextureExternalESSL3Program);
+
+        ANGLETest::TearDown();
     }
 
     void createEGLImage2DTextureSource(size_t width,
@@ -245,6 +299,23 @@ class ImageTest : public ANGLETest
         *outTargetTexture = target;
     }
 
+    void createEGLImageTargetTextureExternal(EGLImageKHR image, GLuint *outTargetTexture)
+    {
+        
+        GLuint target;
+        glGenTextures(1, &target);
+        glBindTexture(GL_TEXTURE_EXTERNAL_OES, target);
+        glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, image);
+
+        
+        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        ASSERT_GL_NO_ERROR();
+
+        *outTargetTexture = target;
+    }
+
     void createEGLImageTargetRenderbuffer(EGLImageKHR image, GLuint *outTargetRenderbuffer)
     {
         
@@ -258,17 +329,39 @@ class ImageTest : public ANGLETest
         *outTargetRenderbuffer = target;
     }
 
-    void verifyResults2D(GLuint texture, GLubyte data[4])
+    void verifyResultsTexture(GLuint texture,
+                              GLubyte data[4],
+                              GLenum textureTarget,
+                              GLuint program,
+                              GLuint textureUniform)
     {
         
-        glUseProgram(mTextureProgram);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUniform1i(mTextureUniformLocation, 0);
+        glUseProgram(program);
+        glBindTexture(textureTarget, texture);
+        glUniform1i(textureUniform, 0);
 
-        drawQuad(mTextureProgram, "position", 0.5f);
+        drawQuad(program, "position", 0.5f);
 
         
         EXPECT_PIXEL_EQ(0, 0, data[0], data[1], data[2], data[3]);
+    }
+
+    void verifyResults2D(GLuint texture, GLubyte data[4])
+    {
+        verifyResultsTexture(texture, data, GL_TEXTURE_2D, mTextureProgram,
+                             mTextureUniformLocation);
+    }
+
+    void verifyResultsExternal(GLuint texture, GLubyte data[4])
+    {
+        verifyResultsTexture(texture, data, GL_TEXTURE_EXTERNAL_OES, mTextureExternalProgram,
+                             mTextureExternalUniformLocation);
+    }
+
+    void verifyResultsExternalESSL3(GLuint texture, GLubyte data[4])
+    {
+        verifyResultsTexture(texture, data, GL_TEXTURE_EXTERNAL_OES, mTextureExternalESSL3Program,
+                             mTextureExternalESSL3UniformLocation);
     }
 
     void verifyResultsRenderbuffer(GLuint renderbuffer, GLubyte data[4])
@@ -298,8 +391,18 @@ class ImageTest : public ANGLETest
     GLuint mTextureProgram;
     GLint mTextureUniformLocation;
 
+    GLuint mTextureExternalProgram        = 0;
+    GLint mTextureExternalUniformLocation = -1;
+
+    GLuint mTextureExternalESSL3Program        = 0;
+    GLint mTextureExternalESSL3UniformLocation = -1;
+
     PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR;
     PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR;
+};
+
+class ImageTestES3 : public ImageTest
+{
 };
 
 
@@ -755,17 +858,114 @@ TEST_P(ImageTest, ValidationGLEGLImage)
 
 TEST_P(ImageTest, ValidationGLEGLImageExternal)
 {
+    if (!extensionEnabled("GL_OES_EGL_image_external"))
+    {
+        std::cout << "Test skipped because GL_OES_EGL_image_external is not available."
+                  << std::endl;
+        return;
+    }
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture);
+
     
     
-    EXPECT_FALSE(extensionEnabled("GL_OES_EGL_image_external"));
+    
+    auto getTexParam = [](GLenum target, GLenum pname)
+    {
+        GLint value = 0;
+        glGetTexParameteriv(target, pname, &value);
+        EXPECT_GL_NO_ERROR();
+        return value;
+    };
+    EXPECT_GLENUM_EQ(GL_LINEAR, getTexParam(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER));
+    EXPECT_GLENUM_EQ(GL_LINEAR, getTexParam(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER));
+    EXPECT_GLENUM_EQ(GL_CLAMP_TO_EDGE, getTexParam(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S));
+    EXPECT_GLENUM_EQ(GL_CLAMP_TO_EDGE, getTexParam(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T));
+
+    
+    
+    
+    
+    
+    GLenum validMinFilters[]{
+        GL_NEAREST, GL_LINEAR,
+    };
+    for (auto minFilter : validMinFilters)
+    {
+        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, minFilter);
+        EXPECT_GL_NO_ERROR();
+    }
+
+    GLenum invalidMinFilters[]{
+        GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR,
+        GL_LINEAR_MIPMAP_NEAREST,
+    };
+    for (auto minFilter : invalidMinFilters)
+    {
+        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, minFilter);
+        EXPECT_GL_ERROR(GL_INVALID_ENUM);
+    }
+
+    GLenum validWrapModes[]{
+        GL_CLAMP_TO_EDGE,
+    };
+    for (auto minFilter : validWrapModes)
+    {
+        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, minFilter);
+        EXPECT_GL_NO_ERROR();
+        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, minFilter);
+        EXPECT_GL_NO_ERROR();
+    }
+
+    GLenum invalidWrapModes[]{
+        GL_REPEAT, GL_MIRRORED_REPEAT,
+    };
+    for (auto minFilter : invalidWrapModes)
+    {
+        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, minFilter);
+        EXPECT_GL_ERROR(GL_INVALID_ENUM);
+        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, minFilter);
+        EXPECT_GL_ERROR(GL_INVALID_ENUM);
+    }
+
+    
+    
+    glGenerateMipmap(GL_TEXTURE_EXTERNAL_OES);
+    EXPECT_GL_ERROR(GL_INVALID_ENUM);
+
+    glDeleteTextures(1, &texture);
 }
 
 
 TEST_P(ImageTest, ValidationGLEGLImageExternalESSL3)
 {
+    if (!extensionEnabled("GL_OES_EGL_image_external_essl3"))
+    {
+        std::cout << "Test skipped because GL_OES_EGL_image_external is not available."
+                  << std::endl;
+        return;
+    }
+
     
+    ASSERT_GE(getClientVersion(), 3);
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture);
+
     
-    EXPECT_FALSE(extensionEnabled("GL_OES_EGL_image_external_essl3"));
+    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_BASE_LEVEL, 1);
+    EXPECT_GL_ERROR(GL_INVALID_OPERATION);
+
+    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_BASE_LEVEL, 10);
+    EXPECT_GL_ERROR(GL_INVALID_OPERATION);
+
+    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_BASE_LEVEL, 0);
+    EXPECT_GL_NO_ERROR();
+
+    glDeleteTextures(1, &texture);
 }
 
 TEST_P(ImageTest, Source2DTarget2D)
@@ -827,6 +1027,74 @@ TEST_P(ImageTest, Source2DTargetRenderbuffer)
 
     
     verifyResultsRenderbuffer(target, data);
+
+    
+    glDeleteTextures(1, &source);
+    eglDestroyImageKHR(window->getDisplay(), image);
+    glDeleteRenderbuffers(1, &target);
+}
+
+TEST_P(ImageTest, Source2DTargetExternal)
+{
+    EGLWindow *window = getEGLWindow();
+    if (!extensionEnabled("OES_EGL_image") || !extensionEnabled("OES_EGL_image_external") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_image_base") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_gl_texture_2D_image"))
+    {
+        std::cout
+            << "Test skipped because OES_EGL_image, OES_EGL_image_external, EGL_KHR_image_base or "
+               "EGL_KHR_gl_texture_2D_image is not available."
+            << std::endl;
+        return;
+    }
+
+    GLubyte data[4] = {255, 0, 255, 255};
+
+    
+    GLuint source;
+    EGLImageKHR image;
+    createEGLImage2DTextureSource(1, 1, GL_RGBA, GL_UNSIGNED_BYTE, data, &source, &image);
+
+    
+    GLuint target;
+    createEGLImageTargetTextureExternal(image, &target);
+
+    
+    verifyResultsExternal(target, data);
+
+    
+    glDeleteTextures(1, &source);
+    eglDestroyImageKHR(window->getDisplay(), image);
+    glDeleteRenderbuffers(1, &target);
+}
+
+TEST_P(ImageTestES3, Source2DTargetExternalESSL3)
+{
+    EGLWindow *window = getEGLWindow();
+    if (!extensionEnabled("OES_EGL_image") || !extensionEnabled("OES_EGL_image_external_essl3") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_image_base") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_gl_texture_2D_image"))
+    {
+        std::cout << "Test skipped because OES_EGL_image, OES_EGL_image_external_essl3, "
+                     "EGL_KHR_image_base or "
+                     "EGL_KHR_gl_texture_2D_image is not available."
+                  << std::endl;
+        return;
+    }
+
+    GLubyte data[4] = {255, 0, 255, 255};
+
+    
+    GLuint source;
+    EGLImageKHR image;
+    createEGLImage2DTextureSource(1, 1, GL_RGBA, GL_UNSIGNED_BYTE, data, &source, &image);
+
+    
+    GLuint target;
+    createEGLImageTargetTextureExternal(image, &target);
+
+    
+    verifyResultsExternalESSL3(target, data);
 
     
     glDeleteTextures(1, &source);
@@ -908,6 +1176,92 @@ TEST_P(ImageTest, SourceCubeTargetRenderbuffer)
 
         
         verifyResultsRenderbuffer(target, &data[faceIdx * 4]);
+
+        
+        glDeleteTextures(1, &source);
+        eglDestroyImageKHR(window->getDisplay(), image);
+        glDeleteRenderbuffers(1, &target);
+    }
+}
+
+
+TEST_P(ImageTest, SourceCubeTargetExternal)
+{
+    EGLWindow *window = getEGLWindow();
+    if (!extensionEnabled("OES_EGL_image") || !extensionEnabled("OES_EGL_image_external") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_image_base") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_gl_texture_cubemap_image"))
+    {
+        std::cout
+            << "Test skipped because OES_EGL_image, OES_EGL_image_external, EGL_KHR_image_base or "
+               "EGL_KHR_gl_texture_cubemap_image is not available."
+            << std::endl;
+        return;
+    }
+
+    GLubyte data[24] = {
+        255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 255,
+        0,   0, 255, 255, 0,   255, 0,   255, 0,   0, 0, 255,
+    };
+
+    for (EGLenum faceIdx = 0; faceIdx < 6; faceIdx++)
+    {
+        
+        GLuint source;
+        EGLImageKHR image;
+        createEGLImageCubemapTextureSource(
+            1, 1, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<uint8_t *>(data), sizeof(GLubyte) * 4,
+            EGL_GL_TEXTURE_CUBE_MAP_POSITIVE_X_KHR + faceIdx, &source, &image);
+
+        
+        GLuint target;
+        createEGLImageTargetTextureExternal(image, &target);
+
+        
+        verifyResultsExternal(target, &data[faceIdx * 4]);
+
+        
+        glDeleteTextures(1, &source);
+        eglDestroyImageKHR(window->getDisplay(), image);
+        glDeleteRenderbuffers(1, &target);
+    }
+}
+
+
+TEST_P(ImageTestES3, SourceCubeTargetExternalESSL3)
+{
+    EGLWindow *window = getEGLWindow();
+    if (!extensionEnabled("OES_EGL_image") || !extensionEnabled("OES_EGL_image_external_essl3") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_image_base") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_gl_texture_cubemap_image"))
+    {
+        std::cout << "Test skipped because OES_EGL_image, OES_EGL_image_external_essl3, "
+                     "EGL_KHR_image_base or "
+                     "EGL_KHR_gl_texture_cubemap_image is not available."
+                  << std::endl;
+        return;
+    }
+
+    GLubyte data[24] = {
+        255, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 255,
+        0,   0, 255, 255, 0,   255, 0,   255, 0,   0, 0, 255,
+    };
+
+    for (EGLenum faceIdx = 0; faceIdx < 6; faceIdx++)
+    {
+        
+        GLuint source;
+        EGLImageKHR image;
+        createEGLImageCubemapTextureSource(
+            1, 1, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<uint8_t *>(data), sizeof(GLubyte) * 4,
+            EGL_GL_TEXTURE_CUBE_MAP_POSITIVE_X_KHR + faceIdx, &source, &image);
+
+        
+        GLuint target;
+        createEGLImageTargetTextureExternal(image, &target);
+
+        
+        verifyResultsExternalESSL3(target, &data[faceIdx * 4]);
 
         
         glDeleteTextures(1, &source);
@@ -1008,6 +1362,102 @@ TEST_P(ImageTest, Source3DTargetRenderbuffer)
     }
 }
 
+
+TEST_P(ImageTest, Source3DTargetExternal)
+{
+    EGLWindow *window = getEGLWindow();
+    if (!extensionEnabled("OES_EGL_image") || !extensionEnabled("OES_EGL_image_external") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_image_base") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_gl_texture_3D_image"))
+    {
+        std::cout
+            << "Test skipped because OES_EGL_image, OES_EGL_image_external, EGL_KHR_image_base or "
+               "EGL_KHR_gl_texture_3D_image is not available."
+            << std::endl;
+        return;
+    }
+
+    if (getClientVersion() < 3 && !extensionEnabled("GL_OES_texture_3D"))
+    {
+        std::cout << "Test skipped because 3D textures are not available." << std::endl;
+        return;
+    }
+
+    const size_t depth      = 2;
+    GLubyte data[4 * depth] = {
+        255, 0, 255, 255, 255, 255, 0, 255,
+    };
+
+    for (size_t layer = 0; layer < depth; layer++)
+    {
+        
+        GLuint source;
+        EGLImageKHR image;
+        createEGLImage3DTextureSource(1, 1, depth, GL_RGBA, GL_UNSIGNED_BYTE, data, layer, &source,
+                                      &image);
+
+        
+        GLuint target;
+        createEGLImageTargetTextureExternal(image, &target);
+
+        
+        verifyResultsExternal(target, &data[layer * 4]);
+
+        
+        glDeleteTextures(1, &source);
+        eglDestroyImageKHR(window->getDisplay(), image);
+        glDeleteTextures(1, &target);
+    }
+}
+
+
+TEST_P(ImageTestES3, Source3DTargetExternalESSL3)
+{
+    EGLWindow *window = getEGLWindow();
+    if (!extensionEnabled("OES_EGL_image") || !extensionEnabled("OES_EGL_image_external_essl3") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_image_base") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_gl_texture_3D_image"))
+    {
+        std::cout << "Test skipped because OES_EGL_image, OES_EGL_image_external_essl3, "
+                     "EGL_KHR_image_base or "
+                     "EGL_KHR_gl_texture_3D_image is not available."
+                  << std::endl;
+        return;
+    }
+
+    if (getClientVersion() < 3 && !extensionEnabled("GL_OES_texture_3D"))
+    {
+        std::cout << "Test skipped because 3D textures are not available." << std::endl;
+        return;
+    }
+
+    const size_t depth      = 2;
+    GLubyte data[4 * depth] = {
+        255, 0, 255, 255, 255, 255, 0, 255,
+    };
+
+    for (size_t layer = 0; layer < depth; layer++)
+    {
+        
+        GLuint source;
+        EGLImageKHR image;
+        createEGLImage3DTextureSource(1, 1, depth, GL_RGBA, GL_UNSIGNED_BYTE, data, layer, &source,
+                                      &image);
+
+        
+        GLuint target;
+        createEGLImageTargetTextureExternal(image, &target);
+
+        
+        verifyResultsExternalESSL3(target, &data[layer * 4]);
+
+        
+        glDeleteTextures(1, &source);
+        eglDestroyImageKHR(window->getDisplay(), image);
+        glDeleteTextures(1, &target);
+    }
+}
+
 TEST_P(ImageTest, SourceRenderbufferTargetTexture)
 {
     EGLWindow *window = getEGLWindow();
@@ -1034,6 +1484,76 @@ TEST_P(ImageTest, SourceRenderbufferTargetTexture)
 
     
     verifyResults2D(target, data);
+
+    
+    glDeleteRenderbuffers(1, &source);
+    eglDestroyImageKHR(window->getDisplay(), image);
+    glDeleteTextures(1, &target);
+}
+
+
+TEST_P(ImageTest, SourceRenderbufferTargetTextureExternal)
+{
+    EGLWindow *window = getEGLWindow();
+    if (!extensionEnabled("OES_EGL_image") || !extensionEnabled("OES_EGL_image_external") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_image_base") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_gl_renderbuffer_image"))
+    {
+        std::cout
+            << "Test skipped because OES_EGL_image, OES_EGL_image_external, EGL_KHR_image_base or "
+               "EGL_KHR_gl_renderbuffer_image is not available."
+            << std::endl;
+        return;
+    }
+
+    GLubyte data[4] = {255, 0, 255, 255};
+
+    
+    GLuint source;
+    EGLImageKHR image;
+    createEGLImageRenderbufferSource(1, 1, GL_RGBA8_OES, data, &source, &image);
+
+    
+    GLuint target;
+    createEGLImageTargetTextureExternal(image, &target);
+
+    
+    verifyResultsExternal(target, data);
+
+    
+    glDeleteRenderbuffers(1, &source);
+    eglDestroyImageKHR(window->getDisplay(), image);
+    glDeleteTextures(1, &target);
+}
+
+
+TEST_P(ImageTestES3, SourceRenderbufferTargetTextureExternalESSL3)
+{
+    EGLWindow *window = getEGLWindow();
+    if (!extensionEnabled("OES_EGL_image") || !extensionEnabled("OES_EGL_image_external_essl3") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_image_base") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_gl_renderbuffer_image"))
+    {
+        std::cout
+            << "Test skipped because OES_EGL_image, OES_EGL_image_external, EGL_KHR_image_base or "
+               "EGL_KHR_gl_renderbuffer_image is not available."
+            << std::endl;
+        return;
+    }
+
+    GLubyte data[4] = {255, 0, 255, 255};
+
+    
+    GLuint source;
+    EGLImageKHR image;
+    createEGLImageRenderbufferSource(1, 1, GL_RGBA8_OES, data, &source, &image);
+
+    
+    GLuint target;
+    createEGLImageTargetTextureExternal(image, &target);
+
+    
+    verifyResultsExternalESSL3(target, data);
 
     
     glDeleteRenderbuffers(1, &source);
@@ -1254,6 +1774,75 @@ TEST_P(ImageTest, Respecification)
 
 
 
+TEST_P(ImageTest, RespecificationWithFBO)
+{
+    EGLWindow *window = getEGLWindow();
+    if (!extensionEnabled("OES_EGL_image") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_image_base") ||
+        !eglDisplayExtensionEnabled(window->getDisplay(), "EGL_KHR_gl_texture_2D_image"))
+    {
+        std::cout << "Test skipped because OES_EGL_image, EGL_KHR_image_base or "
+                     "EGL_KHR_gl_texture_2D_image is not available."
+                  << std::endl;
+        return;
+    }
+
+    
+    const std::string &vertexSource =
+        "attribute vec2 position;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = vec4(position, 0, 1);\n"
+        "}";
+    const std::string &fragmentSource =
+        "void main()\n"
+        "{\n"
+        "    gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);\n"
+        "}";
+    GLuint program = CompileProgram(vertexSource, fragmentSource);
+    ASSERT_NE(0u, program);
+
+    GLubyte originalData[4] = {255, 0, 255, 255};
+    GLubyte updateData[4]   = {0, 255, 0, 255};
+
+    
+    GLuint source;
+    EGLImageKHR image;
+    createEGLImage2DTextureSource(1, 1, GL_RGBA, GL_UNSIGNED_BYTE, originalData, &source, &image);
+
+    
+    GLuint target;
+    createEGLImageTargetTexture2D(image, &target);
+
+    
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target, 0);
+    drawQuad(program, "position", 0.5f);
+    EXPECT_PIXEL_EQ(0, 0, 0, 0, 255, 255);
+
+    
+    glBindTexture(GL_TEXTURE_2D, source);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, updateData);
+
+    
+    verifyResults2D(source, updateData);
+
+    
+    drawQuad(program, "position", 0.5f);
+    EXPECT_PIXEL_EQ(0, 0, 0, 0, 255, 255);
+
+    
+    glDeleteTextures(1, &source);
+    eglDestroyImageKHR(window->getDisplay(), image);
+    glDeleteTextures(1, &target);
+    glDeleteProgram(program);
+    glDeleteFramebuffers(1, &fbo);
+}
+
+
+
 TEST_P(ImageTest, RespecificationOfOtherLevel)
 {
     EGLWindow *window = getEGLWindow();
@@ -1380,4 +1969,5 @@ ANGLE_INSTANTIATE_TEST(ImageTest,
                        ES3_OPENGL(),
                        ES2_OPENGLES(),
                        ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(ImageTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
 }

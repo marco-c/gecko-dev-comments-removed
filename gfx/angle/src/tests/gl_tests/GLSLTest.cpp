@@ -462,21 +462,13 @@ TEST_P(GLSLTest, NamelessScopedStructs)
 
 TEST_P(GLSLTest, ScopedStructsOrderBug)
 {
-#if defined(__APPLE__)
     
     
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    
+    
+    if (IsDesktopOpenGL() && (IsOSX() || !IsNVIDIA()))
     {
-        std::cout << "Test disabled on Apple OpenGL." << std::endl;
-        return;
-    }
-#endif
-
-    
-    
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on AMD OpenGL." << std::endl;
+        std::cout << "Test disabled on this OpenGL configuration." << std::endl;
         return;
     }
 
@@ -632,34 +624,6 @@ TEST_P(GLSLTest, TwoElseIfRewriting)
     EXPECT_NE(0u, program);
 }
 
-TEST_P(GLSLTest, InvariantVaryingOut)
-{
-    
-    
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on OpenGL." << std::endl;
-        return;
-    }
-
-    const std::string fragmentShaderSource = SHADER_SOURCE
-    (
-        precision mediump float;
-        varying float v_varying;
-        void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }
-    );
-
-    const std::string vertexShaderSource = SHADER_SOURCE
-    (
-        attribute vec4 a_position;
-        invariant varying float v_varying;
-        void main() { v_varying = a_position.x; gl_Position = a_position; }
-    );
-
-    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
-    EXPECT_NE(0u, program);
-}
-
 TEST_P(GLSLTest, FrontFacingAndVarying)
 {
     EGLPlatformParameters platform = GetParam().eglParameters;
@@ -711,91 +675,214 @@ TEST_P(GLSLTest, FrontFacingAndVarying)
     EXPECT_NE(0u, program);
 }
 
-TEST_P(GLSLTest, InvariantVaryingIn)
+
+TEST_P(GLSLTest_ES3, VersionMismatch)
+{
+    const std::string fragmentShaderSource100 =
+        "precision mediump float;\n"
+        "varying float v_varying;\n"
+        "void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource100 =
+        "attribute vec4 a_position;\n"
+        "varying float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    const std::string fragmentShaderSource300 =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "in float v_varying;\n"
+        "out vec4 my_FragColor;\n"
+        "void main() { my_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource300 =
+        "#version 300 es\n"
+        "in vec4 a_position;\n"
+        "out float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource300, fragmentShaderSource100);
+    EXPECT_EQ(0u, program);
+
+    program = CompileProgram(vertexShaderSource100, fragmentShaderSource300);
+    EXPECT_EQ(0u, program);
+}
+
+
+TEST_P(GLSLTest, InvariantVaryingOut)
+{
+    const std::string fragmentShaderSource =
+        "precision mediump float;\n"
+        "varying float v_varying;\n"
+        "void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "attribute vec4 a_position;\n"
+        "invariant varying float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_EQ(0u, program);
+}
+
+
+TEST_P(GLSLTest_ES3, InvariantVaryingOut)
 {
     
     
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    if (IsDesktopOpenGL())
     {
         std::cout << "Test disabled on OpenGL." << std::endl;
         return;
     }
 
-    const std::string fragmentShaderSource = SHADER_SOURCE
-    (
-        precision mediump float;
-        invariant varying float v_varying;
-        void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }
-    );
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "in float v_varying;\n"
+        "out vec4 my_FragColor;\n"
+        "void main() { my_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
 
-    const std::string vertexShaderSource = SHADER_SOURCE
-    (
-        attribute vec4 a_position;
-        varying float v_varying;
-        void main() { v_varying = a_position.x; gl_Position = a_position; }
-    );
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "in vec4 a_position;\n"
+        "invariant out float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
 
     GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
     EXPECT_NE(0u, program);
 }
+
+
+TEST_P(GLSLTest, InvariantVaryingIn)
+{
+    const std::string fragmentShaderSource =
+        "precision mediump float;\n"
+        "invariant varying float v_varying;\n"
+        "void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "attribute vec4 a_position;\n"
+        "varying float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_EQ(0u, program);
+}
+
+
+TEST_P(GLSLTest_ES3, InvariantVaryingIn)
+{
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "invariant in float v_varying;\n"
+        "out vec4 my_FragColor;\n"
+        "void main() { my_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "in vec4 a_position;\n"
+        "out float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_EQ(0u, program);
+}
+
 
 TEST_P(GLSLTest, InvariantVaryingBoth)
 {
-    const std::string fragmentShaderSource = SHADER_SOURCE
-    (
-        precision mediump float;
-        invariant varying float v_varying;
-        void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }
-    );
+    const std::string fragmentShaderSource =
+        "precision mediump float;\n"
+        "invariant varying float v_varying;\n"
+        "void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
 
-    const std::string vertexShaderSource = SHADER_SOURCE
-    (
-        attribute vec4 a_position;
-        invariant varying float v_varying;
-        void main() { v_varying = a_position.x; gl_Position = a_position; }
-    );
+    const std::string vertexShaderSource =
+        "attribute vec4 a_position;\n"
+        "invariant varying float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
 
     GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
     EXPECT_NE(0u, program);
 }
+
+
+TEST_P(GLSLTest_ES3, InvariantVaryingBoth)
+{
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "invariant in float v_varying;\n"
+        "out vec4 my_FragColor;\n"
+        "void main() { my_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "in vec4 a_position;\n"
+        "invariant out float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_EQ(0u, program);
+}
+
 
 TEST_P(GLSLTest, InvariantGLPosition)
 {
-    const std::string fragmentShaderSource = SHADER_SOURCE
-    (
-        precision mediump float;
-        varying float v_varying;
-        void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }
-    );
+    const std::string fragmentShaderSource =
+        "precision mediump float;\n"
+        "varying float v_varying;\n"
+        "void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
 
-    const std::string vertexShaderSource = SHADER_SOURCE
-    (
-        attribute vec4 a_position;
-        invariant gl_Position;
-        varying float v_varying;
-        void main() { v_varying = a_position.x; gl_Position = a_position; }
-    );
+    const std::string vertexShaderSource =
+        "attribute vec4 a_position;\n"
+        "invariant gl_Position;\n"
+        "varying float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
 
     GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
     EXPECT_NE(0u, program);
 }
 
-TEST_P(GLSLTest, InvariantAll)
+
+TEST_P(GLSLTest_ES3, InvariantGLPosition)
+{
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "in float v_varying;\n"
+        "out vec4 my_FragColor;\n"
+        "void main() { my_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "in vec4 a_position;\n"
+        "invariant gl_Position;\n"
+        "out float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_NE(0u, program);
+}
+
+
+TEST_P(GLSLTest, InvariantAllBoth)
 {
     
     
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    
+    if (IsDesktopOpenGL())
     {
         std::cout << "Test disabled on OpenGL." << std::endl;
         return;
     }
 
-    const std::string fragmentShaderSource = SHADER_SOURCE
-    (
-        precision mediump float;
-        varying float v_varying;
-        void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }
-    );
+    const std::string fragmentShaderSource =
+        "#pragma STDGL invariant(all)\n"
+        "precision mediump float;\n"
+        "varying float v_varying;\n"
+        "void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
 
     const std::string vertexShaderSource =
         "#pragma STDGL invariant(all)\n"
@@ -807,12 +894,121 @@ TEST_P(GLSLTest, InvariantAll)
     EXPECT_NE(0u, program);
 }
 
+
+TEST_P(GLSLTest_ES3, InvariantAllBoth)
+{
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "#pragma STDGL invariant(all)\n"
+        "precision mediump float;\n"
+        "in float v_varying;\n"
+        "out vec4 my_FragColor;\n"
+        "void main() { my_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "#pragma STDGL invariant(all)\n"
+        "in vec4 a_position;\n"
+        "out float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_EQ(0u, program);
+}
+
+
+TEST_P(GLSLTest, InvariantAllIn)
+{
+    const std::string fragmentShaderSource =
+        "#pragma STDGL invariant(all)\n"
+        "precision mediump float;\n"
+        "varying float v_varying;\n"
+        "void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "attribute vec4 a_position;\n"
+        "varying float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_EQ(0u, program);
+}
+
+
+TEST_P(GLSLTest_ES3, InvariantAllIn)
+{
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "#pragma STDGL invariant(all)\n"
+        "precision mediump float;\n"
+        "in float v_varying;\n"
+        "out vec4 my_FragColor;\n"
+        "void main() { my_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "in vec4 a_position;\n"
+        "out float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_EQ(0u, program);
+}
+
+
+TEST_P(GLSLTest, InvariantAllOut)
+{
+    const std::string fragmentShaderSource =
+        "precision mediump float;\n"
+        "varying float v_varying;\n"
+        "void main() { gl_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "#pragma STDGL invariant(all)\n"
+        "attribute vec4 a_position;\n"
+        "varying float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_EQ(0u, program);
+}
+
+
+TEST_P(GLSLTest_ES3, InvariantAllOut)
+{
+    
+    
+    
+    if (IsDesktopOpenGL())
+    {
+        std::cout << "Test disabled on OpenGL." << std::endl;
+        return;
+    }
+
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision mediump float;\n"
+        "in float v_varying;\n"
+        "out vec4 my_FragColor;\n"
+        "void main() { my_FragColor = vec4(v_varying, 0, 0, 1.0); }\n";
+
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "#pragma STDGL invariant(all)\n"
+        "in vec4 a_position;\n"
+        "out float v_varying;\n"
+        "void main() { v_varying = a_position.x; gl_Position = a_position; }\n";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_NE(0u, program);
+}
+
 TEST_P(GLSLTest, MaxVaryingVec4)
 {
 #if defined(__APPLE__)
     
     
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    if (IsAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
     {
         std::cout << "Test disabled on Apple AMD OpenGL." << std::endl;
         return;
@@ -837,7 +1033,7 @@ TEST_P(GLSLTest, MaxMinusTwoVaryingVec4PlusTwoSpecialVariables)
 TEST_P(GLSLTest, MaxMinusTwoVaryingVec4PlusThreeSpecialVariables)
 {
     
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    if (IsAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
     {
         std::cout << "Test disabled on OpenGL." << std::endl;
         return;
@@ -893,7 +1089,7 @@ TEST_P(GLSLTest, MaxVaryingVec3Array)
 
 TEST_P(GLSLTest, MaxVaryingVec3AndOneFloat)
 {
-    if (isD3D9())
+    if (IsD3D9())
     {
         std::cout << "Test disabled on D3D9." << std::endl;
         return;
@@ -908,7 +1104,7 @@ TEST_P(GLSLTest, MaxVaryingVec3AndOneFloat)
 
 TEST_P(GLSLTest, MaxVaryingVec3ArrayAndOneFloatArray)
 {
-    if (isD3D9())
+    if (IsD3D9())
     {
         std::cout << "Test disabled on D3D9." << std::endl;
         return;
@@ -923,7 +1119,7 @@ TEST_P(GLSLTest, MaxVaryingVec3ArrayAndOneFloatArray)
 
 TEST_P(GLSLTest, TwiceMaxVaryingVec2)
 {
-    if (isD3D9())
+    if (IsD3D9())
     {
         std::cout << "Test disabled on D3D9." << std::endl;
         return;
@@ -939,7 +1135,7 @@ TEST_P(GLSLTest, TwiceMaxVaryingVec2)
 #if defined(__APPLE__)
     
     
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    if (IsAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
     {
         std::cout << "Test disabled on Apple AMD OpenGL." << std::endl;
         return;
@@ -955,7 +1151,7 @@ TEST_P(GLSLTest, TwiceMaxVaryingVec2)
 
 TEST_P(GLSLTest, MaxVaryingVec2Arrays)
 {
-    if (isD3DSM3())
+    if (IsD3DSM3())
     {
         std::cout << "Test disabled on SM3." << std::endl;
         return;
@@ -971,7 +1167,7 @@ TEST_P(GLSLTest, MaxVaryingVec2Arrays)
 #if defined(__APPLE__)
     
     
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    if (IsAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
     {
         std::cout << "Test disabled on Apple AMD OpenGL." << std::endl;
         return;
@@ -1064,6 +1260,19 @@ TEST_P(GLSLTest, NegativeShaderLength)
     GLint compileResult;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &compileResult);
     EXPECT_NE(compileResult, 0);
+}
+
+
+TEST_P(GLSLTest, InvalidFieldFirstChar)
+{
+    GLuint shader      = glCreateShader(GL_VERTEX_SHADER);
+    const char *source = "void main() {vec4 x; x.}";
+    glShaderSource(shader, 1, &source, 0);
+    glCompileShader(shader);
+
+    GLint compileResult;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compileResult);
+    EXPECT_EQ(0, compileResult);
 }
 
 
@@ -1434,6 +1643,175 @@ TEST_P(GLSLTest, VerifyMaxFragmentUniformVectorsExceeded)
               << std::endl;
 
     CompileGLSLWithUniformsAndSamplers(0, maxUniforms + 1, 0, 0, false);
+}
+
+
+
+TEST_P(GLSLTest_ES3, AmbiguousConstructorCall2x2)
+{
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    my_FragColor = vec4(0.0);\n"
+        "}";
+
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "in vec4 a_vec;\n"
+        "in mat2 a_mat;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = vec4(a_vec) + vec4(a_mat);\n"
+        "}";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_NE(0u, program);
+}
+
+
+
+
+TEST_P(GLSLTest_ES3, AmbiguousConstructorCall2x3)
+{
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    my_FragColor = vec4(0.0);\n"
+        "}";
+
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "in mat3x2 a_matA;\n"
+        "in mat2x3 a_matB;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = vec4(a_matA) + vec4(a_matB);\n"
+        "}";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_NE(0u, program);
+}
+
+
+TEST_P(GLSLTest_ES3, AmbiguousFunctionCall2x2)
+{
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    my_FragColor = vec4(0.0);\n"
+        "}";
+
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "in vec4 a_vec;\n"
+        "in mat2 a_mat;\n"
+        "vec4 foo(vec4 a)\n"
+        "{\n"
+        "    return a;\n"
+        "}\n"
+        "vec4 foo(mat2 a)\n"
+        "{\n"
+        "    return vec4(a[0][0]);\n"
+        "}\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = foo(a_vec) + foo(a_mat);\n"
+        "}";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_NE(0u, program);
+}
+
+
+
+TEST_P(GLSLTest_ES3, LargeNumberOfFloat4Parameters)
+{
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "out vec4 my_FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    my_FragColor = vec4(0.0);\n"
+        "}";
+
+    std::stringstream vertexShaderStream;
+    const unsigned int paramCount = 1024u;
+
+    vertexShaderStream << "#version 300 es\n"
+                          "precision highp float;\n"
+                          "in vec4 a_vec;\n"
+                          "vec4 lotsOfVec4Parameters(";
+    for (unsigned int i = 0; i < paramCount; ++i)
+    {
+        vertexShaderStream << "vec4 a" << i << ", ";
+    }
+    vertexShaderStream << "vec4 aLast)\n"
+                          "{\n"
+                          "    return ";
+    for (unsigned int i = 0; i < paramCount; ++i)
+    {
+        vertexShaderStream << "a" << i << " + ";
+    }
+    vertexShaderStream << "aLast;\n"
+                          "}\n"
+                          "void main()\n"
+                          "{\n"
+                          "    gl_Position = lotsOfVec4Parameters(";
+    for (unsigned int i = 0; i < paramCount; ++i)
+    {
+        vertexShaderStream << "a_vec, ";
+    }
+    vertexShaderStream << "a_vec);\n"
+                          "}";
+
+    GLuint program = CompileProgram(vertexShaderStream.str(), fragmentShaderSource);
+    EXPECT_NE(0u, program);
+}
+
+
+
+
+
+
+
+
+TEST_P(GLSLTest_ES3, InitGlobalArrayWithArrayIndexing)
+{
+    const std::string vertexShaderSource =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "in vec4 a_vec;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = vec4(a_vec);\n"
+        "}";
+
+    const std::string fragmentShaderSource =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "out vec4 my_FragColor;\n"
+        "const highp float f[2] = float[2](0.1, 0.2);\n"
+        "const highp float[2] g = float[2](0.3, 0.4), h = float[2](0.5, f[1]);\n"
+        "void main()\n"
+        "{\n"
+        "    my_FragColor = vec4(h[1]);\n"
+        "}";
+
+    GLuint program = CompileProgram(vertexShaderSource, fragmentShaderSource);
+    EXPECT_NE(0u, program);
 }
 
 

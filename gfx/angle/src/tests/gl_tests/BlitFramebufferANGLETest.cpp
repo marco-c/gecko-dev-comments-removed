@@ -698,7 +698,7 @@ TEST_P(BlitFramebufferANGLETest, BlitStencil)
 {
     
     
-    if (isIntel() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE)
+    if (IsIntel() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE)
     {
         std::cout << "Test skipped on Intel D3D9." << std::endl;
         return;

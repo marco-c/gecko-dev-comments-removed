@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+#include "libANGLE/renderer/vulkan/VertexArrayVk.h"
+
+#include "common/debug.h"
+
+namespace rx
+{
+
+VertexArrayVk::VertexArrayVk(const gl::VertexArrayState &data) : VertexArrayImpl(data)
+{
+}
+
+VertexArrayVk::~VertexArrayVk()
+{
+}
+
+}  

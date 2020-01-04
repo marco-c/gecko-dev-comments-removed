@@ -168,12 +168,21 @@ void TranslatorGLSL::writeExtensionBehavior(TIntermNode *root)
             continue;
         }
 
-        
-        
-        if (iter.first == "GL_EXT_shader_texture_lod")
+        if (getOutputType() == SH_GLSL_COMPATIBILITY_OUTPUT)
         {
-            sink << "#extension GL_ARB_shader_texture_lod : " << getBehaviorString(iter.second)
-                 << "\n";
+            
+            
+            if (iter.first == "GL_EXT_shader_texture_lod")
+            {
+                sink << "#extension GL_ARB_shader_texture_lod : " << getBehaviorString(iter.second)
+                     << "\n";
+            }
+
+            if (iter.first == "GL_EXT_draw_buffers")
+            {
+                sink << "#extension GL_ARB_draw_buffers : " << getBehaviorString(iter.second)
+                     << "\n";
+            }
         }
     }
 

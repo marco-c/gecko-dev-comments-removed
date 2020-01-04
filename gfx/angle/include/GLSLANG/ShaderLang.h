@@ -48,7 +48,7 @@ typedef unsigned int GLenum;
 
 
 
-#define ANGLE_SH_VERSION 143
+#define ANGLE_SH_VERSION 146
 
 typedef enum {
   SH_GLES2_SPEC = 0x8B40,
@@ -255,6 +255,8 @@ typedef struct
     
     int OES_standard_derivatives;
     int OES_EGL_image_external;
+    int OES_EGL_image_external_essl3;
+    int NV_EGL_stream_consumer_external;
     int ARB_texture_rectangle;
     int EXT_blend_func_extended;
     int EXT_draw_buffers;
@@ -304,6 +306,10 @@ typedef struct
 
     
     int MaxCallStackDepth;
+
+    
+    
+    int MaxFunctionParameters;
 } ShBuiltInResources;
 
 
@@ -453,13 +459,7 @@ COMPILER_EXPORT bool ShGetInterfaceBlockRegister(const ShHandle handle,
 
 
 
-
-
-
-
-
-COMPILER_EXPORT bool ShGetUniformRegister(const ShHandle handle,
-                                          const std::string &uniformName,
-                                          unsigned int *indexOut);
+COMPILER_EXPORT const std::map<std::string, unsigned int> *ShGetUniformRegisterMap(
+    const ShHandle handle);
 
 #endif 

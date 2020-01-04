@@ -12,6 +12,7 @@
 #include "common/utilities.h"
 #include "libANGLE/renderer/d3d/IndexBuffer.h"
 #include "libANGLE/renderer/d3d/VertexBuffer.h"
+#include "libANGLE/renderer/d3d/RendererD3D.h"
 
 namespace rx
 {
@@ -21,33 +22,23 @@ unsigned int BufferD3D::mNextSerial = 1;
 BufferD3D::BufferD3D(BufferFactoryD3D *factory)
     : BufferImpl(),
       mFactory(factory),
-      mStaticVertexBuffer(nullptr),
       mStaticIndexBuffer(nullptr),
-      mStaticBufferCache(nullptr),
       mStaticBufferCacheTotalSize(0),
       mStaticVertexBufferOutOfDate(false),
       mUnmodifiedDataUse(0),
-      mUsage(D3D_BUFFER_USAGE_STATIC)
+      mUsage(D3DBufferUsage::STATIC)
 {
     updateSerial();
 }
 
 BufferD3D::~BufferD3D()
 {
-    SafeDelete(mStaticVertexBuffer);
     SafeDelete(mStaticIndexBuffer);
-
-    emptyStaticBufferCache();
 }
 
 void BufferD3D::emptyStaticBufferCache()
 {
-    if (mStaticBufferCache != nullptr)
-    {
-        SafeDeleteContainer(*mStaticBufferCache);
-        SafeDelete(mStaticBufferCache);
-    }
-
+    mStaticVertexBuffers.clear();
     mStaticBufferCacheTotalSize = 0;
 }
 
@@ -63,7 +54,7 @@ void BufferD3D::updateD3DBufferUsage(GLenum usage)
         case GL_STATIC_DRAW:
         case GL_STATIC_READ:
         case GL_STATIC_COPY:
-            mUsage = D3D_BUFFER_USAGE_STATIC;
+            mUsage = D3DBufferUsage::STATIC;
             initializeStaticData();
             break;
 
@@ -73,7 +64,7 @@ void BufferD3D::updateD3DBufferUsage(GLenum usage)
         case GL_DYNAMIC_READ:
         case GL_DYNAMIC_COPY:
         case GL_DYNAMIC_DRAW:
-            mUsage = D3D_BUFFER_USAGE_DYNAMIC;
+            mUsage = D3DBufferUsage::DYNAMIC;
             break;
         default:
             UNREACHABLE();
@@ -82,9 +73,11 @@ void BufferD3D::updateD3DBufferUsage(GLenum usage)
 
 void BufferD3D::initializeStaticData()
 {
-    if (!mStaticVertexBuffer)
+    if (mStaticVertexBuffers.empty())
     {
-        mStaticVertexBuffer = new StaticVertexBufferInterface(mFactory);
+        auto newStaticBuffer = new StaticVertexBufferInterface(mFactory);
+        mStaticVertexBuffers.push_back(
+            std::unique_ptr<StaticVertexBufferInterface>(newStaticBuffer));
     }
     if (!mStaticIndexBuffer)
     {
@@ -97,130 +90,69 @@ StaticIndexBufferInterface *BufferD3D::getStaticIndexBuffer()
     return mStaticIndexBuffer;
 }
 
-StaticVertexBufferInterface *BufferD3D::getStaticVertexBuffer(
-    const gl::VertexAttribute &attribute,
-    D3DStaticBufferCreationType creationType)
+StaticVertexBufferInterface *BufferD3D::getStaticVertexBuffer(const gl::VertexAttribute &attribute)
 {
-    if (!mStaticVertexBuffer)
+    if (mStaticVertexBuffers.empty())
     {
         
-        ASSERT(mStaticBufferCache == nullptr);
         return nullptr;
     }
 
-    if (mStaticBufferCache == nullptr && !mStaticVertexBuffer->isCommitted())
+    
+    if (mStaticVertexBuffers.size() == 1 && mStaticVertexBuffers[0]->empty())
     {
-        
-        return mStaticVertexBuffer;
+        return mStaticVertexBuffers[0].get();
     }
 
     
+    size_t currentTotalSize = 0;
 
     
-    if (mStaticVertexBuffer->lookupAttribute(attribute, nullptr))
+    
+    for (const auto &staticBuffer : mStaticVertexBuffers)
     {
-        return mStaticVertexBuffer;
-    }
-
-    if (mStaticBufferCache != nullptr)
-    {
-        
-        for (StaticVertexBufferInterface *staticBuffer : *mStaticBufferCache)
+        if (staticBuffer->matchesAttribute(attribute))
         {
-            if (staticBuffer->lookupAttribute(attribute, nullptr))
-            {
-                return staticBuffer;
-            }
+            return staticBuffer.get();
         }
-    }
 
-    if (!mStaticVertexBuffer->isCommitted())
-    {
-        
-        
-        return mStaticVertexBuffer;
+        currentTotalSize += staticBuffer->getBufferSize();
     }
 
     
-    if (creationType != D3D_BUFFER_CREATE_IF_NECESSARY)
-    {
-        return nullptr;
-    }
-
-    ASSERT(mStaticVertexBuffer);
-    ASSERT(mStaticVertexBuffer->isCommitted());
-    unsigned int staticVertexBufferSize = mStaticVertexBuffer->getBufferSize();
-    if (IsUnsignedAdditionSafe(staticVertexBufferSize, mStaticBufferCacheTotalSize))
-    {
-        
-        
-        unsigned int maxStaticCacheSize =
-            IsUnsignedMultiplicationSafe(static_cast<unsigned int>(getSize()), 4u)
-                ? 4u * static_cast<unsigned int>(getSize())
-                : std::numeric_limits<unsigned int>::max();
-
-        
-        if (staticVertexBufferSize + mStaticBufferCacheTotalSize <= maxStaticCacheSize)
-        {
-            if (mStaticBufferCache == nullptr)
-            {
-                mStaticBufferCache = new std::vector<StaticVertexBufferInterface *>();
-            }
-
-            mStaticBufferCacheTotalSize += staticVertexBufferSize;
-            (*mStaticBufferCache).push_back(mStaticVertexBuffer);
-            mStaticVertexBuffer = nullptr;
-
-            
-            initializeStaticData();
-
-            
-            return mStaticVertexBuffer;
-        }
-    }
+    ASSERT(getSize() < std::numeric_limits<size_t>::max() / 4u);
+    size_t sizeThreshold = std::max(getSize() * 4u, static_cast<size_t>(0x1000u));
 
     
     
     
     
-    
-    
-    
-    mStaticVertexBufferOutOfDate = true;
-    return nullptr;
-}
-
-void BufferD3D::reinitOutOfDateStaticData()
-{
-    if (mStaticVertexBufferOutOfDate)
-    {
-        
-        
-        
-        
-        invalidateStaticData(D3D_BUFFER_INVALIDATE_DEFAULT_BUFFER_ONLY);
-        mStaticVertexBufferOutOfDate = false;
-    }
-}
-
-void BufferD3D::invalidateStaticData(D3DBufferInvalidationType invalidationType)
-{
-    if (invalidationType == D3D_BUFFER_INVALIDATE_WHOLE_CACHE && mStaticBufferCache != nullptr)
+    if (currentTotalSize > sizeThreshold)
     {
         emptyStaticBufferCache();
     }
 
-    if ((mStaticVertexBuffer && mStaticVertexBuffer->getBufferSize() != 0) || (mStaticIndexBuffer && mStaticIndexBuffer->getBufferSize() != 0))
-    {
-        SafeDelete(mStaticVertexBuffer);
-        SafeDelete(mStaticIndexBuffer);
+    
+    auto newStaticBuffer = new StaticVertexBufferInterface(mFactory);
+    newStaticBuffer->setAttribute(attribute);
+    mStaticVertexBuffers.push_back(std::unique_ptr<StaticVertexBufferInterface>(newStaticBuffer));
+    return newStaticBuffer;
+}
 
-        
-        
-        if (mUsage == D3D_BUFFER_USAGE_STATIC)
-        {
-            initializeStaticData();
-        }
+void BufferD3D::invalidateStaticData()
+{
+    emptyStaticBufferCache();
+
+    if (mStaticIndexBuffer && mStaticIndexBuffer->getBufferSize() != 0)
+    {
+        SafeDelete(mStaticIndexBuffer);
+    }
+
+    
+    
+    if (mUsage == D3DBufferUsage::STATIC)
+    {
+        initializeStaticData();
     }
 
     mUnmodifiedDataUse = 0;
@@ -229,17 +161,13 @@ void BufferD3D::invalidateStaticData(D3DBufferInvalidationType invalidationType)
 
 void BufferD3D::promoteStaticUsage(int dataSize)
 {
-    if (!mStaticVertexBuffer && !mStaticIndexBuffer)
+    if (mUsage == D3DBufferUsage::DYNAMIC)
     {
-        
-        
-        ASSERT(mStaticBufferCache == nullptr);
-
         mUnmodifiedDataUse += dataSize;
 
         if (mUnmodifiedDataUse > 3 * getSize())
         {
-            initializeStaticData();
+            updateD3DBufferUsage(GL_STATIC_DRAW);
         }
     }
 }
@@ -261,4 +189,4 @@ gl::Error BufferD3D::getIndexRange(GLenum type,
     return gl::Error(GL_NO_ERROR);
 }
 
-}
+}  

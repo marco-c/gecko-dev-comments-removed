@@ -231,7 +231,7 @@ TEST_P(FenceSyncTest, BasicQueries)
 TEST_P(FenceSyncTest, BasicOperations)
 {
     
-    if (isIntel() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    if (IsIntel() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
     {
         std::cout << "Test skipped on Intel OpenGL." << std::endl;
         return;

@@ -8,10 +8,59 @@
 
 using namespace angle;
 
-class MipmapTest : public ANGLETest
+namespace
+{
+
+void TexImageCubeMapFaces(GLint level,
+                          GLenum internalformat,
+                          GLsizei width,
+                          GLenum format,
+                          GLenum type,
+                          void *pixels)
+{
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, level, internalformat, width, width, 0, format,
+                 type, pixels);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, level, internalformat, width, width, 0, format,
+                 type, pixels);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, level, internalformat, width, width, 0, format,
+                 type, pixels);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, level, internalformat, width, width, 0, format,
+                 type, pixels);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, level, internalformat, width, width, 0, format,
+                 type, pixels);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, level, internalformat, width, width, 0, format,
+                 type, pixels);
+}
+
+class BaseMipmapTest : public ANGLETest
+{
+  protected:
+    void clearAndDrawQuad(GLuint program, GLsizei viewportWidth, GLsizei viewportHeight)
+    {
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glViewport(0, 0, viewportWidth, viewportHeight);
+        ASSERT_GL_NO_ERROR();
+
+        drawQuad(program, "position", 0.0f);
+    }
+};
+
+}  
+
+class MipmapTest : public BaseMipmapTest
 {
   protected:
     MipmapTest()
+        : m2DProgram(0),
+          mCubeProgram(0),
+          mTexture2D(0),
+          mTextureCube(0),
+          mLevelZeroBlueInitData(nullptr),
+          mLevelZeroWhiteInitData(nullptr),
+          mLevelOneInitData(nullptr),
+          mLevelTwoInitData(nullptr),
+          mOffscreenFramebuffer(0)
     {
         setWindowWidth(128);
         setWindowHeight(128);
@@ -21,21 +70,19 @@ class MipmapTest : public ANGLETest
         setConfigAlphaBits(8);
     }
 
-    virtual void SetUp()
+    void setUp2DProgram()
     {
-        ANGLETest::SetUp();
-
+        
         
         const std::string vs = SHADER_SOURCE
         (
-            attribute vec4 aPosition;
-            attribute vec2 aTexCoord;
+            attribute vec4 position;
             varying vec2 vTexCoord;
 
             void main()
             {
-                gl_Position = aPosition;
-                vTexCoord = aTexCoord;
+                gl_Position = position;
+                vTexCoord   = (position.xy * 0.5) + 0.5;
             }
         );
 
@@ -52,22 +99,24 @@ class MipmapTest : public ANGLETest
                 gl_FragColor = texture2D(uTexture, vTexCoord);
             }
         );
+        
 
         m2DProgram = CompileProgram(vs, fs);
-        if (m2DProgram == 0)
-        {
-            FAIL() << "shader compilation failed.";
-        }
+        ASSERT_NE(0u, m2DProgram);
+    }
 
+    void setUpCubeProgram()
+    {
+        
         
         const std::string cubeVS = SHADER_SOURCE
         (
-            attribute vec4 aPosition;
+            attribute vec4 position;
             varying vec4 vPosition;
             void main()
             {
-                gl_Position = aPosition;
-                vPosition = aPosition;
+                gl_Position = position;
+                vPosition = position;
             }
         );
 
@@ -83,19 +132,19 @@ class MipmapTest : public ANGLETest
                 gl_FragColor = textureCube(uTexture, vec3(vPosition.x, -1, vPosition.y));
             }
         );
+        
 
         mCubeProgram = CompileProgram(cubeVS, cubeFS);
-        if (mCubeProgram == 0)
-        {
-            FAIL() << "shader compilation failed.";
-        }
+        ASSERT_NE(0u, mCubeProgram);
+    }
 
-        m2DTextureUniformPosition = glGetUniformLocation(m2DProgram, "uTexture");
-        m2DPositionAttributePosition = glGetAttribLocation(m2DProgram, "aPosition");
-        m2DTexCoordAttributePosition = glGetAttribLocation(m2DProgram, "aTexCoord");
+    void SetUp() override
+    {
+        ANGLETest::SetUp();
 
-        mCubeTextureUniformPosition = glGetUniformLocation(mCubeProgram, "uTexture");
-        mCubePositionAttributePosition = glGetAttribLocation(mCubeProgram, "aPosition");
+        setUp2DProgram();
+
+        setUpCubeProgram();
 
         mLevelZeroBlueInitData = createRGBInitData(getWindowWidth(), getWindowHeight(), 0, 0, 255); 
         mLevelZeroWhiteInitData = createRGBInitData(getWindowWidth(), getWindowHeight(), 255, 255, 255); 
@@ -103,28 +152,22 @@ class MipmapTest : public ANGLETest
         mLevelTwoInitData = createRGBInitData((getWindowWidth() / 4), (getWindowHeight() / 4), 255, 0, 0);   
 
         glGenFramebuffers(1, &mOffscreenFramebuffer);
-        glGenTextures(1, &mOffscreenTexture2D);
+        glGenTextures(1, &mTexture2D);
 
         
-        glBindTexture(GL_TEXTURE_2D, mOffscreenTexture2D);
+        glBindTexture(GL_TEXTURE_2D, mTexture2D);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, mOffscreenFramebuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mOffscreenTexture2D, 0);
-        ASSERT_GLENUM_EQ(GL_FRAMEBUFFER_COMPLETE, glCheckFramebufferStatus(GL_FRAMEBUFFER));
+        ASSERT_EQ(getWindowWidth(), getWindowHeight());
 
         
-        glGenTextures(1, &mOffscreenTextureCube);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, mOffscreenTextureCube);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, mLevelZeroBlueInitData);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glGenTextures(1, &mTextureCube);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureCube);
+        TexImageCubeMapFaces(0, GL_RGB, getWindowWidth(), GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, getWindowWidth(), getWindowWidth(),
+                     0, GL_RGB, GL_UNSIGNED_BYTE, mLevelZeroBlueInitData);
 
         
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -133,13 +176,13 @@ class MipmapTest : public ANGLETest
         ASSERT_GL_NO_ERROR();
     }
 
-    virtual void TearDown()
+    void TearDown() override
     {
         glDeleteProgram(m2DProgram);
         glDeleteProgram(mCubeProgram);
         glDeleteFramebuffers(1, &mOffscreenFramebuffer);
-        glDeleteTextures(1, &mOffscreenTexture2D);
-        glDeleteTextures(1, &mOffscreenTextureCube);
+        glDeleteTextures(1, &mTexture2D);
+        glDeleteTextures(1, &mTextureCube);
 
         SafeDeleteArray(mLevelZeroBlueInitData);
         SafeDeleteArray(mLevelZeroWhiteInitData);
@@ -163,69 +206,47 @@ class MipmapTest : public ANGLETest
         return data;
     }
 
-    void ClearAndDrawTexturedQuad(GLuint texture, GLsizei viewportWidth, GLsizei viewportHeight)
+    void clearTextureLevel0(GLenum textarget,
+                            GLuint texture,
+                            GLfloat red,
+                            GLfloat green,
+                            GLfloat blue,
+                            GLfloat alpha)
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, mOffscreenFramebuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textarget, texture, 0);
+        ASSERT_GLENUM_EQ(GL_FRAMEBUFFER_COMPLETE, glCheckFramebufferStatus(GL_FRAMEBUFFER));
+        glClearColor(red, green, blue, alpha);
         glClear(GL_COLOR_BUFFER_BIT);
-
-        glViewport(0, 0, viewportWidth, viewportHeight);
-
-        ASSERT_GL_NO_ERROR();
-
-        GLfloat vertexLocations[] =
-        {
-            -1.0f,  1.0f, 0.0f,
-            -1.0f, -1.0f, 0.0f,
-             1.0f,  1.0f, 0.0f,
-             1.0f, -1.0f, 0.0f,
-        };
-
-        GLfloat vertexTexCoords[] =
-        {
-            0.0f, 1.0f,
-            0.0f, 0.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f,
-        };
-
-        glUseProgram(m2DProgram);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUniform1i(m2DTextureUniformPosition, 0);
-
-        glVertexAttribPointer(m2DPositionAttributePosition, 3, GL_FLOAT, GL_FALSE, 0, vertexLocations);
-        glEnableVertexAttribArray(m2DPositionAttributePosition);
-
-        glVertexAttribPointer(m2DTexCoordAttributePosition, 2, GL_FLOAT, GL_FALSE, 0, vertexTexCoords);
-        glEnableVertexAttribArray(m2DTexCoordAttributePosition);
-
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     GLuint m2DProgram;
     GLuint mCubeProgram;
-    GLuint mOffscreenFramebuffer;
-    GLuint mOffscreenTexture2D;
-    GLuint mOffscreenTextureCube;
-
-    GLint m2DTextureUniformPosition;
-    GLint m2DPositionAttributePosition;
-    GLint m2DTexCoordAttributePosition;
-
-    GLint mCubeTextureUniformPosition;
-    GLint mCubePositionAttributePosition;
+    GLuint mTexture2D;
+    GLuint mTextureCube;
 
     GLubyte* mLevelZeroBlueInitData;
     GLubyte* mLevelZeroWhiteInitData;
     GLubyte* mLevelOneInitData;
     GLubyte* mLevelTwoInitData;
+
+  private:
+    GLuint mOffscreenFramebuffer;
 };
 
-class MipmapTestES3 : public ANGLETest
+class MipmapTestES3 : public BaseMipmapTest
 {
   protected:
     MipmapTestES3()
+        : mTexture(0),
+          mArrayProgram(0),
+          mTextureArraySliceUniformLocation(-1),
+          m3DProgram(0),
+          mTexture3DSliceUniformLocation(-1),
+          mTexture3DLODUniformLocation(-1),
+          m2DProgram(0)
+
     {
         setWindowWidth(128);
         setWindowHeight(128);
@@ -235,33 +256,29 @@ class MipmapTestES3 : public ANGLETest
         setConfigAlphaBits(8);
     }
 
-    virtual void SetUp()
+    std::string vertexShaderSource()
     {
-        ANGLETest::SetUp();
-
-        glGenTextures(1, &mTextureArray);
-        EXPECT_GL_NO_ERROR();
-
-        ASSERT_GL_NO_ERROR();
-
         
         
         
-        const std::string vertexShaderSource = SHADER_SOURCE
+        
+        return SHADER_SOURCE
         (   #version 300 es\n
             precision highp float;
             in vec4 position;
             out vec2 texcoord;
 
-            uniform vec2 textureScale;
-
             void main()
             {
-                gl_Position = vec4(position.xy * textureScale, 0.0, 1.0);
+                gl_Position = vec4(position.xy, 0.0, 1.0);
                 texcoord = (position.xy * 0.5) + 0.5;
             }
         );
+        
+    }
 
+    void setUpArrayProgram()
+    {
         const std::string fragmentShaderSourceArray = SHADER_SOURCE
         (   #version 300 es\n
             precision highp float;
@@ -276,30 +293,22 @@ class MipmapTestES3 : public ANGLETest
             }
         );
 
-        mArrayProgram = CompileProgram(vertexShaderSource, fragmentShaderSourceArray);
+        mArrayProgram = CompileProgram(vertexShaderSource(), fragmentShaderSourceArray);
         if (mArrayProgram == 0)
         {
             FAIL() << "shader compilation failed.";
         }
 
-        mTextureArrayUniformLocation = glGetUniformLocation(mArrayProgram, "tex");
-        ASSERT_NE(-1, mTextureArrayUniformLocation);
-
-        mTextureArrayScaleUniformLocation = glGetUniformLocation(mArrayProgram, "textureScale");
-        ASSERT_NE(-1, mTextureArrayScaleUniformLocation);
-
         mTextureArraySliceUniformLocation = glGetUniformLocation(mArrayProgram, "slice");
         ASSERT_NE(-1, mTextureArraySliceUniformLocation);
 
         glUseProgram(mArrayProgram);
-        glUniform2f(mTextureArrayScaleUniformLocation, 1.0f, 1.0f);
         glUseProgram(0);
         ASSERT_GL_NO_ERROR();
+    }
 
-        glGenTextures(1, &mTexture3D);
-
-        ASSERT_GL_NO_ERROR();
-
+    void setUp3DProgram()
+    {
         const std::string fragmentShaderSource3D = SHADER_SOURCE
         (   #version 300 es\n
             precision highp float;
@@ -315,17 +324,11 @@ class MipmapTestES3 : public ANGLETest
             }
         );
 
-        m3DProgram = CompileProgram(vertexShaderSource, fragmentShaderSource3D);
+        m3DProgram = CompileProgram(vertexShaderSource(), fragmentShaderSource3D);
         if (m3DProgram == 0)
         {
             FAIL() << "shader compilation failed.";
         }
-
-        mTexture3DUniformLocation = glGetUniformLocation(m3DProgram, "tex");
-        ASSERT_NE(-1, mTexture3DUniformLocation);
-
-        mTexture3DScaleUniformLocation = glGetUniformLocation(m3DProgram, "textureScale");
-        ASSERT_NE(-1, mTexture3DScaleUniformLocation);
 
         mTexture3DSliceUniformLocation = glGetUniformLocation(m3DProgram, "slice");
         ASSERT_NE(-1, mTexture3DSliceUniformLocation);
@@ -334,36 +337,95 @@ class MipmapTestES3 : public ANGLETest
         ASSERT_NE(-1, mTexture3DLODUniformLocation);
 
         glUseProgram(m3DProgram);
-        glUniform2f(mTexture3DScaleUniformLocation, 1.0f, 1.0f);
         glUniform1f(mTexture3DLODUniformLocation, 0);
         glUseProgram(0);
         ASSERT_GL_NO_ERROR();
     }
 
-    virtual void TearDown()
+    void setUp2DProgram()
     {
-        glDeleteTextures(1, &mTextureArray);
-        glDeleteProgram(mArrayProgram);
+        
+        const std::string fragmentShaderSource2D = SHADER_SOURCE
+        (   #version 300 es\n
+            precision highp float;
+            uniform highp sampler2D tex;
+            in vec2 texcoord;
+            out vec4 out_FragColor;
 
-        glDeleteTextures(1, &mTexture3D);
+            void main()
+            {
+                out_FragColor = texture(tex, texcoord);
+            }
+        );
+        
+
+        m2DProgram = CompileProgram(vertexShaderSource(), fragmentShaderSource2D);
+        ASSERT_NE(0u, m2DProgram);
+
+        ASSERT_GL_NO_ERROR();
+    }
+
+    void setUpCubeProgram()
+    {
+        
+        
+        const std::string cubeFS = SHADER_SOURCE
+        (   #version 300 es\n
+            precision mediump float;
+            uniform samplerCube uTexture;
+            in vec2 texcoord;
+            out vec4 out_FragColor;
+
+            void main()
+            {
+                out_FragColor = texture(uTexture, vec3(texcoord.x, -1, texcoord.y));
+            }
+        );
+        
+
+        mCubeProgram = CompileProgram(vertexShaderSource(), cubeFS);
+        ASSERT_NE(0u, mCubeProgram);
+
+        ASSERT_GL_NO_ERROR();
+    }
+
+    void SetUp() override
+    {
+        ANGLETest::SetUp();
+
+        glGenTextures(1, &mTexture);
+        ASSERT_GL_NO_ERROR();
+
+        setUpArrayProgram();
+        setUp3DProgram();
+        setUp2DProgram();
+        setUpCubeProgram();
+    }
+
+    void TearDown() override
+    {
+        glDeleteTextures(1, &mTexture);
+
+        glDeleteProgram(mArrayProgram);
         glDeleteProgram(m3DProgram);
+        glDeleteProgram(m2DProgram);
+        glDeleteProgram(mCubeProgram);
 
         ANGLETest::TearDown();
     }
 
-    GLuint mTextureArray;
-    GLuint mTexture3D;
+    GLuint mTexture;
 
     GLuint mArrayProgram;
-    GLint mTextureArrayUniformLocation;
-    GLint mTextureArrayScaleUniformLocation;
     GLint mTextureArraySliceUniformLocation;
 
     GLuint m3DProgram;
-    GLint mTexture3DUniformLocation;
-    GLint mTexture3DScaleUniformLocation;
     GLint mTexture3DSliceUniformLocation;
     GLint mTexture3DLODUniformLocation;
+
+    GLuint m2DProgram;
+
+    GLuint mCubeProgram;
 };
 
 
@@ -372,7 +434,7 @@ class MipmapTestES3 : public ANGLETest
 TEST_P(MipmapTest, DISABLED_ThreeLevelsInitData)
 {
     
-    glBindTexture(GL_TEXTURE_2D, mOffscreenTexture2D);
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, mLevelZeroBlueInitData);
     ASSERT_GL_NO_ERROR();
 
@@ -380,16 +442,16 @@ TEST_P(MipmapTest, DISABLED_ThreeLevelsInitData)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::blue);
 
     
     int n = 1;
@@ -405,69 +467,69 @@ TEST_P(MipmapTest, DISABLED_ThreeLevelsInitData)
     ASSERT_GL_NO_ERROR();
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::blue);
 
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 0, 255, 0, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::green);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 0, 0, 0, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::black);
 
     
     glTexImage2D(GL_TEXTURE_2D, 2, GL_RGB, getWindowWidth() / 4, getWindowHeight() / 4, 0, GL_RGB, GL_UNSIGNED_BYTE, mLevelTwoInitData);
     ASSERT_GL_NO_ERROR();
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 0, 255, 0, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::green);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 255, 0, 0, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::red);
 
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 0, 0, 255, 255);
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::blue);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::blue);
 
     
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, mLevelZeroWhiteInitData);
     ASSERT_GL_NO_ERROR();
 
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 255, 255, 255, 255);
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 255, 255, 255, 255);
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 255, 255, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::white);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::white);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::white);
 
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 255, 255, 255, 255);
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 0, 255, 0, 255);
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 255, 0, 0, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::white);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::green);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::red);
 }
 
 
@@ -478,6 +540,7 @@ TEST_P(MipmapTest, DISABLED_ThreeLevelsInitData)
 TEST_P(MipmapTest, GenerateMipmapFromInitDataThenRender)
 {
     
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, getWindowWidth(), getWindowHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, mLevelZeroBlueInitData);
 
     
@@ -488,43 +551,41 @@ TEST_P(MipmapTest, GenerateMipmapFromInitDataThenRender)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::blue);
 
     ASSERT_GL_NO_ERROR();
 
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
 
     
-    glBindFramebuffer(GL_FRAMEBUFFER, mOffscreenFramebuffer);
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    clearTextureLevel0(GL_TEXTURE_2D, mTexture2D, 1.0f, 0.0f, 0.0f, 1.0f);
 
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 255, 0, 0, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::red);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::blue);
 }
 
 
@@ -532,12 +593,9 @@ TEST_P(MipmapTest, GenerateMipmapFromInitDataThenRender)
 
 TEST_P(MipmapTest, GenerateMipmapFromRenderedImage)
 {
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
     
-    glBindFramebuffer(GL_FRAMEBUFFER, mOffscreenFramebuffer);
-
-    
-    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    clearTextureLevel0(GL_TEXTURE_2D, mTexture2D, 0.0f, 0.0f, 1.0f, 1.0f);
 
     
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -547,16 +605,16 @@ TEST_P(MipmapTest, GenerateMipmapFromRenderedImage)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 2, getWindowHeight() / 2);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 4, getWindowHeight() / 4, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::blue);
 }
 
 
@@ -564,26 +622,21 @@ TEST_P(MipmapTest, GenerateMipmapFromRenderedImage)
 TEST_P(MipmapTest, RenderOntoLevelZeroAfterGenerateMipmap)
 {
     
-    if ((isAMD() || isIntel()) && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    if ((IsAMD() || IsIntel()) && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
     {
         std::cout << "Test skipped on Intel/AMD OpenGL." << std::endl;
         return;
     }
 
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, mOffscreenFramebuffer);
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
 
     
-    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    clearTextureLevel0(GL_TEXTURE_2D, mTexture2D, 0.0f, 0.0f, 1.0f, 1.0f);
 
     
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
 
     
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -591,174 +644,103 @@ TEST_P(MipmapTest, RenderOntoLevelZeroAfterGenerateMipmap)
 
     
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
 
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
     EXPECT_GL_NO_ERROR();
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::blue);
 
     
-    glBindFramebuffer(GL_FRAMEBUFFER, mOffscreenFramebuffer);
-    glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    clearTextureLevel0(GL_TEXTURE_2D, mTexture2D, 0.0f, 1.0f, 0.0f, 1.0f);
 
     
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::green);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 255, 0, 255);
-
-    
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 0, 0, 255, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::blue);
 
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     ASSERT_GL_NO_ERROR();
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth(), getWindowHeight());
-    EXPECT_PIXEL_EQ(getWindowWidth() / 2, getWindowHeight() / 2, 0, 255, 0, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::green);
 
     
-    ClearAndDrawTexturedQuad(mOffscreenTexture2D, getWindowWidth() / 4, getWindowHeight() / 4);
-    EXPECT_PIXEL_EQ(getWindowWidth() / 8, getWindowHeight() / 8, 0, 255, 0, 255);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::green);
 }
 
 
 
 TEST_P(MipmapTest, TextureCubeGeneralLevelZero)
 {
-    GLfloat vertexLocations[] =
-    {
-        -1.0f, 1.0f, 0.0f,
-        -1.0f, -1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,
-    };
+    glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureCube);
 
     
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, getWindowWidth(), getWindowHeight());
-    glUseProgram(mCubeProgram);
-    glVertexAttribPointer(mCubePositionAttributePosition, 3, GL_FLOAT, GL_FALSE, 0, vertexLocations);
-    glEnableVertexAttribArray(mCubePositionAttributePosition);
-    glUniform1i(mCubeTextureUniformPosition, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, mOffscreenTextureCube);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::blue);
 
     
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    EXPECT_PIXEL_EQ(0, 0, 0, 0, 255, 255);
-
-    
-    glClear(GL_COLOR_BUFFER_BIT);
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    EXPECT_PIXEL_EQ(0, 0, 0, 0, 255, 255);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::blue);
 
     
-    glClear(GL_COLOR_BUFFER_BIT);
-    glViewport(0, 0, getWindowWidth() / 4, getWindowHeight() / 4);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    EXPECT_PIXEL_EQ(0, 0, 0, 0, 255, 255);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::blue);
 
     
-    glBindFramebuffer(GL_FRAMEBUFFER, mOffscreenFramebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mOffscreenTextureCube, 0);
-    ASSERT_GLENUM_EQ(GL_FRAMEBUFFER_COMPLETE, glCheckFramebufferStatus(GL_FRAMEBUFFER));
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    clearTextureLevel0(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mTextureCube, 1.0f, 0.0f, 0.0f, 1.0f);
 
     
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, mOffscreenTextureCube);
-
-    
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glViewport(0, 0, getWindowWidth(), getWindowHeight());
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    EXPECT_PIXEL_EQ(0, 0, 255, 0, 0, 255);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
 
     
     
-    glClear(GL_COLOR_BUFFER_BIT);
-    glViewport(0, 0, getWindowWidth() / 4, getWindowHeight() / 4);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    EXPECT_PIXEL_EQ(0, 0, 0, 0, 255, 255);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::blue);
 
     
     
-    glClear(GL_COLOR_BUFFER_BIT);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glViewport(0, 0, getWindowWidth() / 4, getWindowHeight() / 4);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
 }
 
 
 TEST_P(MipmapTest, TextureCubeRenderToLevelZero)
 {
-    GLfloat vertexLocations[] =
-    {
-        -1.0f,  1.0f, 0.0f,
-        -1.0f, -1.0f, 0.0f,
-         1.0f,  1.0f, 0.0f,
-         1.0f, -1.0f, 0.0f,
-    };
+    glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureCube);
 
     
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, getWindowWidth(), getWindowHeight());
-    glUseProgram(mCubeProgram);
-    glVertexAttribPointer(mCubePositionAttributePosition, 3, GL_FLOAT, GL_FALSE, 0, vertexLocations);
-    glEnableVertexAttribArray(mCubePositionAttributePosition);
-    glUniform1i(mCubeTextureUniformPosition, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, mOffscreenTextureCube);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::blue);
 
     
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    EXPECT_PIXEL_EQ(0, 0, 0, 0, 255, 255);
+    clearTextureLevel0(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mTextureCube, 1.0f, 0.0f, 0.0f, 1.0f);
 
     
-    glBindFramebuffer(GL_FRAMEBUFFER, mOffscreenFramebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mOffscreenTextureCube, 0);
-    ASSERT_GLENUM_EQ(GL_FRAMEBUFFER_COMPLETE, glCheckFramebufferStatus(GL_FRAMEBUFFER));
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
 
     
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, mOffscreenTextureCube);
-
-    
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glViewport(0, 0, getWindowWidth(), getWindowHeight());
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    EXPECT_PIXEL_EQ(0, 0, 255, 0, 0, 255);
-
-    
-    glClear(GL_COLOR_BUFFER_BIT);
-    glViewport(0, 0, getWindowWidth() / 4, getWindowHeight() / 4);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    EXPECT_PIXEL_EQ(0, 0, 255, 0, 0, 255);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(0, 0, GLColor::red);
 }
 
 
@@ -768,44 +750,24 @@ TEST_P(MipmapTestES3, MipmapsForTextureArray)
     int px = getWindowWidth() / 2;
     int py = getWindowHeight() / 2;
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureArray);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, mTexture);
 
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 5, GL_RGBA8, 16, 16, 3);
 
     
-    std::vector<GLubyte> pixels(4 * 16 * 16);
-    for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
-    {
-        pixels[pixelId * 4 + 0] = 255;
-        pixels[pixelId * 4 + 1] = 0;
-        pixels[pixelId * 4 + 2] = 0;
-        pixels[pixelId * 4 + 3] = 255;
-    }
-
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    std::vector<GLColor> pixelsRed(16 * 16, GLColor::red);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                    pixelsRed.data());
 
     
-    for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
-    {
-        pixels[pixelId * 4 + 0] = 0;
-        pixels[pixelId * 4 + 1] = 255;
-        pixels[pixelId * 4 + 2] = 0;
-        pixels[pixelId * 4 + 3] = 255;
-    }
-
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    std::vector<GLColor> pixelsGreen(16 * 16, GLColor::green);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                    pixelsGreen.data());
 
     
-    for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
-    {
-        pixels[pixelId * 4 + 0] = 0;
-        pixels[pixelId * 4 + 1] = 0;
-        pixels[pixelId * 4 + 2] = 255;
-        pixels[pixelId * 4 + 3] = 255;
-    }
-
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 2, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    std::vector<GLColor> pixelsBlue(16 * 16, GLColor::blue);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 2, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                    pixelsBlue.data());
 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -817,30 +779,66 @@ TEST_P(MipmapTestES3, MipmapsForTextureArray)
     EXPECT_GL_NO_ERROR();
 
     glUseProgram(mArrayProgram);
-    glUniform1i(mTextureArrayUniformLocation, 0);
 
     EXPECT_GL_NO_ERROR();
 
     
-    glUseProgram(mArrayProgram);
     glUniform1i(mTextureArraySliceUniformLocation, 0);
     drawQuad(mArrayProgram, "position", 0.5f);
     EXPECT_GL_NO_ERROR();
-    EXPECT_PIXEL_EQ(px, py, 255, 0, 0, 255);
+    EXPECT_PIXEL_COLOR_EQ(px, py, GLColor::red);
 
     
-    glUseProgram(mArrayProgram);
     glUniform1i(mTextureArraySliceUniformLocation, 1);
     drawQuad(mArrayProgram, "position", 0.5f);
     EXPECT_GL_NO_ERROR();
-    EXPECT_PIXEL_EQ(px, py, 0, 255, 0, 255);
+    EXPECT_PIXEL_COLOR_EQ(px, py, GLColor::green);
 
     
-    glUseProgram(mArrayProgram);
     glUniform1i(mTextureArraySliceUniformLocation, 2);
     drawQuad(mArrayProgram, "position", 0.5f);
     EXPECT_GL_NO_ERROR();
-    EXPECT_PIXEL_EQ(px, py, 0, 0, 255, 255);
+    EXPECT_PIXEL_COLOR_EQ(px, py, GLColor::blue);
+}
+
+
+
+TEST_P(MipmapTestES3, MipmapForDeepTextureArray)
+{
+    int px = getWindowWidth() / 2;
+    int py = getWindowHeight() / 2;
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, mTexture);
+
+    
+    std::vector<GLColor> pixelsRed(2 * 2 * 4, GLColor::red);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, 2, 2, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 pixelsRed.data());
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    EXPECT_GL_NO_ERROR();
+
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+    EXPECT_GL_NO_ERROR();
+
+    glUseProgram(mArrayProgram);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    glUniform1i(mTextureArraySliceUniformLocation, 0);
+    drawQuad(mArrayProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    EXPECT_PIXEL_COLOR_EQ(px, py, GLColor::red);
+
+    
+    glUniform1i(mTextureArraySliceUniformLocation, 3);
+    drawQuad(mArrayProgram, "position", 0.5f);
+    EXPECT_GL_NO_ERROR();
+    EXPECT_PIXEL_COLOR_EQ(px, py, GLColor::red);
 }
 
 
@@ -850,33 +848,19 @@ TEST_P(MipmapTestES3, MipmapsForTexture3D)
     int px = getWindowWidth() / 2;
     int py = getWindowHeight() / 2;
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, mTexture3D);
+    glBindTexture(GL_TEXTURE_3D, mTexture);
 
     glTexStorage3D(GL_TEXTURE_3D, 5, GL_RGBA8, 16, 16, 2);
 
     
-    std::vector<GLubyte> pixels(4 * 16 * 16);
-    for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
-    {
-        pixels[pixelId * 4 + 0] = 255;
-        pixels[pixelId * 4 + 1] = 0;
-        pixels[pixelId * 4 + 2] = 0;
-        pixels[pixelId * 4 + 3] = 255;
-    }
-
-    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    std::vector<GLColor> pixelsRed(16 * 16, GLColor::red);
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                    pixelsRed.data());
 
     
-    for (size_t pixelId = 0; pixelId < 16 * 16; ++pixelId)
-    {
-        pixels[pixelId * 4 + 0] = 0;
-        pixels[pixelId * 4 + 1] = 255;
-        pixels[pixelId * 4 + 2] = 0;
-        pixels[pixelId * 4 + 3] = 255;
-    }
-
-    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 1, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    std::vector<GLColor> pixelsGreen(16 * 16, GLColor::green);
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 1, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                    pixelsGreen.data());
 
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -888,40 +872,259 @@ TEST_P(MipmapTestES3, MipmapsForTexture3D)
     EXPECT_GL_NO_ERROR();
 
     glUseProgram(m3DProgram);
-    glUniform1i(mTexture3DUniformLocation, 0);
 
     EXPECT_GL_NO_ERROR();
 
     
     
-    glUseProgram(m3DProgram);
     glUniform1f(mTexture3DLODUniformLocation, 0.);
     glUniform1f(mTexture3DSliceUniformLocation, 0.25f);
     drawQuad(m3DProgram, "position", 0.5f);
     EXPECT_GL_NO_ERROR();
-    EXPECT_PIXEL_EQ(px, py, 255, 0, 0, 255);
+    EXPECT_PIXEL_COLOR_EQ(px, py, GLColor::red);
 
     
-    glUseProgram(m3DProgram);
     glUniform1f(mTexture3DSliceUniformLocation, 0.75f);
     drawQuad(m3DProgram, "position", 0.5f);
     EXPECT_GL_NO_ERROR();
-    EXPECT_PIXEL_EQ(px, py, 0, 255, 0, 255);
+    EXPECT_PIXEL_COLOR_EQ(px, py, GLColor::green);
 
     
     
-
-    glUseProgram(m3DProgram);
     glUniform1f(mTexture3DLODUniformLocation, 1.);
     drawQuad(m3DProgram, "position", 0.5f);
     EXPECT_GL_NO_ERROR();
     EXPECT_PIXEL_NEAR(px, py, 127, 127, 0, 255, 1.0);
 
-    glUseProgram(m3DProgram);
     glUniform1f(mTexture3DSliceUniformLocation, 0.75f);
     drawQuad(m3DProgram, "position", 0.5f);
     EXPECT_GL_NO_ERROR();
     EXPECT_PIXEL_NEAR(px, py, 127, 127, 0, 255, 1.0);
+}
+
+
+
+
+
+
+
+TEST_P(MipmapTestES3, GenerateMipmapBaseLevel)
+{
+    if (IsAMD() && IsDesktopOpenGL())
+    {
+        
+        std::cout << "Test skipped on AMD OpenGL." << std::endl;
+        return;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, mTexture);
+
+    
+    std::vector<GLColor> pixelsBlue(getWindowWidth() * getWindowHeight(), GLColor::blue);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, getWindowWidth(), getWindowHeight(), 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, pixelsBlue.data());
+
+    
+    std::vector<GLColor> pixelsRed(getWindowWidth() * getWindowHeight() / 4, GLColor::red);
+    glTexImage2D(GL_TEXTURE_2D, 1, GL_RGBA8, getWindowWidth() / 2, getWindowHeight() / 2, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, pixelsRed.data());
+
+    
+    std::vector<GLColor> pixelsGreen(getWindowWidth() * getWindowHeight() / 16, GLColor::green);
+    glTexImage2D(GL_TEXTURE_2D, 2, GL_RGBA8, getWindowWidth() / 4, getWindowHeight() / 4, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, pixelsGreen.data());
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 1);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::red);
+
+    if (IsNVIDIA() && IsOpenGL())
+    {
+        
+        
+        std::cout << "Test partially skipped on NVIDIA OpenGL." << std::endl;
+        return;
+    }
+
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
+}
+
+
+
+
+
+
+
+TEST_P(MipmapTestES3, GenerateMipmapCubeBaseLevel)
+{
+    if (IsAMD() && IsDesktopOpenGL())
+    {
+        
+        std::cout << "Test skipped on AMD OpenGL." << std::endl;
+        return;
+    }
+
+    ASSERT_EQ(getWindowWidth(), getWindowHeight());
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, mTexture);
+    std::vector<GLColor> pixelsBlue(getWindowWidth() * getWindowWidth(), GLColor::blue);
+    TexImageCubeMapFaces(0, GL_RGBA8, getWindowWidth(), GL_RGBA, GL_UNSIGNED_BYTE,
+                         pixelsBlue.data());
+
+    
+    std::vector<GLColor> pixelsRed(getWindowWidth() * getWindowWidth() / 4, GLColor::red);
+    TexImageCubeMapFaces(1, GL_RGBA8, getWindowWidth() / 2, GL_RGBA, GL_UNSIGNED_BYTE,
+                         pixelsRed.data());
+
+    
+    std::vector<GLColor> pixelsGreen(getWindowWidth() * getWindowWidth() / 16, GLColor::green);
+    TexImageCubeMapFaces(2, GL_RGBA8, getWindowWidth() / 4, GL_RGBA, GL_UNSIGNED_BYTE,
+                         pixelsGreen.data());
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 1);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    clearAndDrawQuad(mCubeProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::red);
+
+    if (IsNVIDIA() && IsOpenGL())
+    {
+        
+        
+        std::cout << "Test partially skipped on NVIDIA OpenGL." << std::endl;
+        return;
+    }
+
+    
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
+    clearAndDrawQuad(mCubeProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
+}
+
+
+
+
+
+
+
+TEST_P(MipmapTestES3, GenerateMipmapMaxLevel)
+{
+    glBindTexture(GL_TEXTURE_2D, mTexture);
+
+    
+    std::vector<GLColor> pixelsBlue(getWindowWidth() * getWindowHeight(), GLColor::blue);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, getWindowWidth(), getWindowHeight(), 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, pixelsBlue.data());
+
+    
+    std::vector<GLColor> pixelsRed(getWindowWidth() * getWindowHeight() / 4, GLColor::red);
+    glTexImage2D(GL_TEXTURE_2D, 1, GL_RGBA8, getWindowWidth() / 2, getWindowHeight() / 2, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, pixelsRed.data());
+
+    
+    std::vector<GLColor> pixelsGreen(getWindowWidth() * getWindowHeight() / 16, GLColor::green);
+    glTexImage2D(GL_TEXTURE_2D, 2, GL_RGBA8, getWindowWidth() / 4, getWindowHeight() / 4, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, pixelsGreen.data());
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 2, getWindowHeight() / 2);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 4, getWindowHeight() / 4, GLColor::blue);
+
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 2);
+    clearAndDrawQuad(m2DProgram, getWindowWidth() / 4, getWindowHeight() / 4);
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 8, getWindowHeight() / 8, GLColor::green);
+}
+
+
+
+
+
+
+
+TEST_P(MipmapTestES3, GenerateMipmapBaseLevelOutOfRange)
+{
+    glBindTexture(GL_TEXTURE_2D, mTexture);
+
+    
+    std::vector<GLColor> pixelsBlue(getWindowWidth() * getWindowHeight(), GLColor::blue);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, getWindowWidth(), getWindowHeight(), 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, pixelsBlue.data());
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 1000);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    
+    glGenerateMipmap(GL_TEXTURE_2D);
+    EXPECT_GL_ERROR(GL_INVALID_OPERATION);
+
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::blue);
+}
+
+
+
+TEST_P(MipmapTestES3, GenerateMipmapBaseLevelOutOfRangeImmutableTexture)
+{
+    glBindTexture(GL_TEXTURE_2D, mTexture);
+
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 1, 1);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &GLColor::green);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 1000);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    EXPECT_GL_NO_ERROR();
+
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    clearAndDrawQuad(m2DProgram, getWindowWidth(), getWindowHeight());
+    EXPECT_PIXEL_COLOR_EQ(getWindowWidth() / 2, getWindowHeight() / 2, GLColor::green);
 }
 
 

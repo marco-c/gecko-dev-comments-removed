@@ -11,21 +11,52 @@
 
 #include "libANGLE/renderer/VertexArrayImpl.h"
 #include "libANGLE/renderer/d3d/d3d11/Renderer11.h"
+#include "libANGLE/signal_utils.h"
 
 namespace rx
 {
 class Renderer11;
 
-class VertexArray11 : public VertexArrayImpl
+class VertexArray11 : public VertexArrayImpl, public angle::SignalReceiver
 {
   public:
-    VertexArray11(const gl::VertexArray::Data &data)
-        : VertexArrayImpl(data)
-    {
-    }
-    virtual ~VertexArray11() {}
+    VertexArray11(const gl::VertexArrayState &data);
+    ~VertexArray11() override;
+
+    void syncState(const gl::VertexArray::DirtyBits &dirtyBits) override;
+    gl::Error updateDirtyAndDynamicAttribs(VertexDataManager *vertexDataManager,
+                                           const gl::State &state,
+                                           GLint start,
+                                           GLsizei count,
+                                           GLsizei instances);
+    void clearDirtyAndPromoteDynamicAttribs(const gl::State &state, GLsizei count);
+
+    const std::vector<TranslatedAttribute> &getTranslatedAttribs() const;
+
+    
+    void signal(angle::SignalToken token) override;
+
+  private:
+    void updateVertexAttribStorage(size_t attribIndex);
+
+    std::vector<VertexStorageType> mAttributeStorageTypes;
+    std::vector<TranslatedAttribute> mTranslatedAttribs;
+
+    
+    gl::AttributesMask mDynamicAttribsMask;
+
+    
+    gl::AttributesMask mAttribsToUpdate;
+
+    
+    gl::AttributesMask mAttribsToTranslate;
+
+    
+    std::vector<BindingPointer<gl::Buffer>> mCurrentBuffers;
+
+    std::vector<angle::ChannelBinding> mOnBufferDataDirty;
 };
 
-}
+}  
 
 #endif 

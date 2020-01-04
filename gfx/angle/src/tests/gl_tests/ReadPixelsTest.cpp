@@ -35,6 +35,13 @@ class ReadPixelsTest : public ANGLETest
 
 TEST_P(ReadPixelsTest, OutOfBounds)
 {
+    
+    if (IsAndroid() && IsAdreno() && IsOpenGLES())
+    {
+        std::cout << "Test skipped on Adreno OpenGLES on Android." << std::endl;
+        return;
+    }
+
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     EXPECT_GL_NO_ERROR();
@@ -137,7 +144,7 @@ TEST_P(ReadPixelsPBOTest, ArrayBufferTarget)
 TEST_P(ReadPixelsPBOTest, ExistingDataPreserved)
 {
     
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    if (IsAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
     {
         std::cout << "Test disabled on AMD OpenGL." << std::endl;
         return;
@@ -211,6 +218,13 @@ TEST_P(ReadPixelsPBOTest, SubDataPreservesContents)
 
 TEST_P(ReadPixelsPBOTest, SubDataOffsetPreservesContents)
 {
+    
+    if (IsAndroid() && IsAdreno() && IsOpenGLES())
+    {
+        std::cout << "Test skipped on Adreno OpenGLES on Android." << std::endl;
+        return;
+    }
+
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     EXPECT_GL_NO_ERROR();

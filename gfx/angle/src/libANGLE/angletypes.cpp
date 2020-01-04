@@ -53,23 +53,21 @@ SamplerState::SamplerState()
 {
 }
 
-TextureState::TextureState()
-    : swizzleRed(GL_RED),
-      swizzleGreen(GL_GREEN),
-      swizzleBlue(GL_BLUE),
-      swizzleAlpha(GL_ALPHA),
-      samplerState(),
-      baseLevel(0),
-      maxLevel(1000),
-      immutableFormat(false),
-      immutableLevels(0)
-{
-}
 
-bool TextureState::swizzleRequired() const
+SamplerState SamplerState::CreateDefaultForTarget(GLenum target)
 {
-    return swizzleRed != GL_RED || swizzleGreen != GL_GREEN ||
-           swizzleBlue != GL_BLUE || swizzleAlpha != GL_ALPHA;
+    SamplerState state;
+
+    
+    
+    if (target == GL_TEXTURE_EXTERNAL_OES)
+    {
+        state.minFilter = GL_LINEAR;
+        state.wrapS     = GL_CLAMP_TO_EDGE;
+        state.wrapT     = GL_CLAMP_TO_EDGE;
+    }
+
+    return state;
 }
 
 static void MinMax(int a, int b, int *minimum, int *maximum)

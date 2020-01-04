@@ -80,6 +80,9 @@ class EGLX11VisualHintTest : public ::testing::TestWithParam<angle::PlatformPara
 
 TEST_P(EGLX11VisualHintTest, InvalidVisualID)
 {
+    
+    IgnoreANGLEPlatformMessages();
+
     static const int gInvalidVisualId = -1;
     auto attributes                   = getDisplayAttributes(gInvalidVisualId);
 

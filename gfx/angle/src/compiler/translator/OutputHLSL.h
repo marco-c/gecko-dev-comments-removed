@@ -8,7 +8,6 @@
 #define COMPILER_TRANSLATOR_OUTPUTHLSL_H_
 
 #include <list>
-#include <set>
 #include <map>
 #include <stack>
 
@@ -21,8 +20,9 @@ class BuiltInFunctionEmulator;
 
 namespace sh
 {
-class UnfoldShortCircuit;
 class StructureHLSL;
+class TextureFunctionHLSL;
+class UnfoldShortCircuit;
 class UniformHLSL;
 
 typedef std::map<TString, TIntermSymbol*> ReferencedSymbols;
@@ -139,36 +139,9 @@ class OutputHLSL : public TIntermTraverser
 
     StructureHLSL *mStructureHLSL;
     UniformHLSL *mUniformHLSL;
-
-    struct TextureFunction
-    {
-        enum Method
-        {
-            IMPLICIT,   
-            BIAS,
-            LOD,
-            LOD0,
-            LOD0BIAS,
-            SIZE,   
-            FETCH,
-            GRAD
-        };
-
-        TBasicType sampler;
-        int coords;
-        bool proj;
-        bool offset;
-        Method method;
-
-        TString name() const;
-
-        bool operator<(const TextureFunction &rhs) const;
-    };
-
-    typedef std::set<TextureFunction> TextureFunctionSet;
+    TextureFunctionHLSL *mTextureFunctionHLSL;
 
     
-    TextureFunctionSet mUsesTexture;
     bool mUsesFragColor;
     bool mUsesFragData;
     bool mUsesDepthRange;
@@ -177,6 +150,7 @@ class OutputHLSL : public TIntermTraverser
     bool mUsesFrontFacing;
     bool mUsesPointSize;
     bool mUsesInstanceID;
+    bool mUsesVertexID;
     bool mUsesFragDepth;
     bool mUsesXor;
     bool mUsesDiscardRewriting;
@@ -201,11 +175,6 @@ class OutputHLSL : public TIntermTraverser
 
     std::map<TIntermTyped*, TString> mFlaggedStructMappedNames;
     std::map<TIntermTyped*, TString> mFlaggedStructOriginalNames;
-
-    
-    
-    
-    TIntermSequence mDeferredGlobalInitializers;
 
     struct HelperFunction
     {
@@ -239,6 +208,10 @@ class OutputHLSL : public TIntermTraverser
     
     
     std::vector<ArrayHelperFunction> mArrayConstructIntoFunctions;
+
+  private:
+    TString samplerNamePrefixFromStruct(TIntermTyped *node);
+    bool ancestorEvaluatesToSamplerInStruct(Visit visit);
 };
 
 }

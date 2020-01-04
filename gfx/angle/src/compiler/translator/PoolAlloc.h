@@ -152,6 +152,11 @@ public:
     
     
 
+    
+    
+    void lock();
+    void unlock();
+
 protected:
     friend struct tHeader;
     
@@ -211,6 +216,7 @@ protected:
 private:
     TPoolAllocator& operator=(const TPoolAllocator&);  
     TPoolAllocator(const TPoolAllocator&);  
+    bool mLocked;
 };
 
 

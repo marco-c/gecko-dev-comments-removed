@@ -87,6 +87,7 @@ struct Extensions
     
     
     
+    
     void setTextureExtensionSupport(const TextureCapsMap &textureCaps);
 
     
@@ -257,6 +258,9 @@ struct Extensions
     bool eglImageExternalEssl3;
 
     
+    bool eglStreamConsumerExternal;
+
+    
     bool unpackSubimage;
 
     
@@ -279,9 +283,29 @@ struct Extensions
     bool lossyETCDecode;
 
     
+    bool bindUniformLocation;
+
+    
+    bool syncQuery;
+
+    
 
     
     bool colorBufferFloat;
+
+    
+    
+    bool multisampleCompatibility;
+
+    
+    bool framebufferMixedSamples;
+
+    
+    
+    bool textureNorm16;
+
+    
+    bool pathRendering;
 };
 
 struct Limitations
@@ -482,6 +506,18 @@ struct DisplayExtensions
 
     
     bool createContextNoError;
+
+    
+    bool stream;
+
+    
+    bool streamConsumerGLTexture;
+
+    
+    bool streamConsumerGLTextureYUV;
+
+    
+    bool streamProducerD3DTextureNV12;
 };
 
 struct DeviceExtensions

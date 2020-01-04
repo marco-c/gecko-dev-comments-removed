@@ -19,7 +19,9 @@ struct WorkaroundsGL
           rgba4IsNotSupportedForColorRendering(false),
           doesSRGBClearsOnLinearFramebufferAttachments(false),
           doWhileGLSLCausesGPUHang(false),
-          finishDoesNotCauseQueriesToBeAvailable(false)
+          finishDoesNotCauseQueriesToBeAvailable(false),
+          alwaysCallUseProgramAfterLink(false),
+          unpackOverlappingRowsSeparatelyUnpackBuffer(false)
     {
     }
 
@@ -56,6 +58,15 @@ struct WorkaroundsGL
     
     
     bool finishDoesNotCauseQueriesToBeAvailable;
+
+    
+    
+    
+    
+    bool alwaysCallUseProgramAfterLink;
+
+    
+    bool unpackOverlappingRowsSeparatelyUnpackBuffer;
 };
 }
 

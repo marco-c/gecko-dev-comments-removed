@@ -2117,7 +2117,16 @@ TFunction *TParseContext::parseFunctionDeclarator(const TSourceLoc &location, TF
     
     TFunction *prevDec =
         static_cast<TFunction *>(symbolTable.find(function->getMangledName(), getShaderVersion()));
-    if (prevDec)
+
+    if (getShaderVersion() >= 300 && symbolTable.hasUnmangledBuiltIn(function->getName().c_str()))
+    {
+        
+        
+        error(location, "Name of a built-in function cannot be redeclared as function",
+              function->getName().c_str());
+        recover();
+    }
+    else if (prevDec)
     {
         if (prevDec->getReturnType() != function->getReturnType())
         {
@@ -2167,6 +2176,45 @@ TFunction *TParseContext::parseFunctionDeclarator(const TSourceLoc &location, TF
     
     
     return function;
+}
+
+TFunction *TParseContext::parseFunctionHeader(const TPublicType &type,
+                                              const TString *name,
+                                              const TSourceLoc &location)
+{
+    if (type.qualifier != EvqGlobal && type.qualifier != EvqTemporary)
+    {
+        error(location, "no qualifiers allowed for function return",
+              getQualifierString(type.qualifier));
+        recover();
+    }
+    if (!type.layoutQualifier.isEmpty())
+    {
+        error(location, "no qualifiers allowed for function return", "layout");
+        recover();
+    }
+    
+    if (samplerErrorCheck(location, type, "samplers can't be function return values"))
+    {
+        recover();
+    }
+    if (mShaderVersion < 300)
+    {
+        
+        
+        ASSERT(type.arraySize == 0 || mDiagnostics.numErrors() > 0);
+
+        if (type.isStructureContainingArrays())
+        {
+            
+            error(location, "structures containing arrays can't be function return values",
+                  TType(type).getCompleteString().c_str());
+            recover();
+        }
+    }
+
+    
+    return new TFunction(name, new TType(type));
 }
 
 TFunction *TParseContext::addConstructorFunc(const TPublicType &publicTypeIn)

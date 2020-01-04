@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_DEFERGLOBALINITIALIZERS_H_
+#define COMPILER_TRANSLATOR_DEFERGLOBALINITIALIZERS_H_
+
+class TIntermNode;
+
+void DeferGlobalInitializers(TIntermNode *root);
+
+#endif  

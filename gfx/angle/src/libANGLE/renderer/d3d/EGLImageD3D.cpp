@@ -124,6 +124,9 @@ gl::Error EGLImageD3D::copyToLocalRendertarget()
     }
 
     
+    curRenderTarget->signalDirty();
+
+    
     mBuffer           = nullptr;
     mAttachmentBuffer = nullptr;
 

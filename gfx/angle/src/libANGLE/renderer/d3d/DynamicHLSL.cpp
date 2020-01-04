@@ -231,7 +231,8 @@ std::string DynamicHLSL::generateVertexShaderForInputLayout(
             {
                 GLenum componentType = mRenderer->getVertexComponentType(vertexFormatType);
 
-                if (shaderAttribute.name == "gl_InstanceID")
+                if (shaderAttribute.name == "gl_InstanceID" ||
+                    shaderAttribute.name == "gl_VertexID")
                 {
                     
                     
@@ -250,6 +251,10 @@ std::string DynamicHLSL::generateVertexShaderForInputLayout(
             if (shaderAttribute.name == "gl_InstanceID")
             {
                 structStream << "SV_InstanceID";
+            }
+            else if (shaderAttribute.name == "gl_VertexID")
+            {
+                structStream << "SV_VertexID";
             }
             else
             {
@@ -397,8 +402,8 @@ void DynamicHLSL::generateVaryingLinkHLSL(ShaderType shaderType,
     linkStream << "};\n";
 }
 
-bool DynamicHLSL::generateShaderLinkHLSL(const gl::Data &data,
-                                         const gl::Program::Data &programData,
+bool DynamicHLSL::generateShaderLinkHLSL(const gl::ContextState &data,
+                                         const gl::ProgramState &programData,
                                          const ProgramD3DMetadata &programMetadata,
                                          const VaryingPacking &varyingPacking,
                                          std::string *pixelHLSL,
@@ -407,7 +412,6 @@ bool DynamicHLSL::generateShaderLinkHLSL(const gl::Data &data,
     ASSERT(pixelHLSL->empty() && vertexHLSL->empty());
 
     const gl::Shader *vertexShaderGL   = programData.getAttachedVertexShader();
-    const ShaderD3D *vertexShader      = GetImplAs<ShaderD3D>(vertexShaderGL);
     const gl::Shader *fragmentShaderGL = programData.getAttachedFragmentShader();
     const ShaderD3D *fragmentShader    = GetImplAs<ShaderD3D>(fragmentShaderGL);
     const int shaderModel              = mRenderer->getMajorShaderModel();
@@ -430,9 +434,9 @@ bool DynamicHLSL::generateShaderLinkHLSL(const gl::Data &data,
     if (useInstancedPointSpriteEmulation)
     {
         vertexStream << "static float minPointSize = "
-                     << static_cast<int>(data.caps->minAliasedPointSize) << ".0f;\n"
+                     << static_cast<int>(data.getCaps().minAliasedPointSize) << ".0f;\n"
                      << "static float maxPointSize = "
-                     << static_cast<int>(data.caps->maxAliasedPointSize) << ".0f;\n";
+                     << static_cast<int>(data.getCaps().maxAliasedPointSize) << ".0f;\n";
     }
 
     
@@ -445,12 +449,6 @@ bool DynamicHLSL::generateShaderLinkHLSL(const gl::Data &data,
                  << "VS_OUTPUT main(VS_INPUT input)\n"
                  << "{\n"
                  << "    initAttributes(input);\n";
-
-    if (vertexShader->usesDeferredInit())
-    {
-        vertexStream << "\n"
-                     << "    initializeDeferredGlobals();\n";
-    }
 
     vertexStream << "\n"
                  << "    gl_main();\n"
@@ -766,12 +764,6 @@ bool DynamicHLSL::generateShaderLinkHLSL(const gl::Data &data,
         pixelStream << ";\n";
     }
 
-    if (fragmentShader->usesDeferredInit())
-    {
-        pixelStream << "\n"
-                    << "    initializeDeferredGlobals();\n";
-    }
-
     pixelStream << "\n"
                 << "    gl_main();\n"
                 << "\n"
@@ -833,8 +825,8 @@ std::string DynamicHLSL::generateGeometryShaderPreamble(const VaryingPacking &va
 }
 
 std::string DynamicHLSL::generateGeometryShaderHLSL(gl::PrimitiveType primitiveType,
-                                                    const gl::Data &data,
-                                                    const gl::Program::Data &programData,
+                                                    const gl::ContextState &data,
+                                                    const gl::ProgramState &programData,
                                                     const bool useViewScale,
                                                     const std::string &preambleString) const
 {
@@ -911,10 +903,10 @@ std::string DynamicHLSL::generateGeometryShaderHLSL(gl::PrimitiveType primitiveT
                         "};\n"
                         "\n"
                         "static float minPointSize = "
-                     << static_cast<int>(data.caps->minAliasedPointSize)
+                     << static_cast<int>(data.getCaps().minAliasedPointSize)
                      << ".0f;\n"
                         "static float maxPointSize = "
-                     << static_cast<int>(data.caps->maxAliasedPointSize) << ".0f;\n"
+                     << static_cast<int>(data.getCaps().maxAliasedPointSize) << ".0f;\n"
                      << "\n";
     }
 
@@ -1037,8 +1029,8 @@ std::string DynamicHLSL::generateAttributeConversionHLSL(
     return attribString;
 }
 
-void DynamicHLSL::getPixelShaderOutputKey(const gl::Data &data,
-                                          const gl::Program::Data &programData,
+void DynamicHLSL::getPixelShaderOutputKey(const gl::ContextState &data,
+                                          const gl::ProgramState &programData,
                                           const ProgramD3DMetadata &metadata,
                                           std::vector<PixelShaderOutputVariable> *outPixelShaderKey)
 {
@@ -1047,7 +1039,7 @@ void DynamicHLSL::getPixelShaderOutputKey(const gl::Data &data,
     
     bool broadcast = metadata.usesBroadcast(data);
     const unsigned int numRenderTargets =
-        (broadcast || metadata.usesMultipleFragmentOuts() ? data.caps->maxDrawBuffers : 1);
+        (broadcast || metadata.usesMultipleFragmentOuts() ? data.getCaps().maxDrawBuffers : 1);
 
     if (metadata.getMajorShaderVersion() < 300)
     {

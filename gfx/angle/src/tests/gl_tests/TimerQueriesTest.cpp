@@ -80,6 +80,29 @@ class TimerQueriesTest : public ANGLETest
 };
 
 
+TEST_P(TimerQueriesTest, ProcAddresses)
+{
+    if (!extensionEnabled("GL_EXT_disjoint_timer_query"))
+    {
+        std::cout << "Test skipped because GL_EXT_disjoint_timer_query is not available."
+                  << std::endl;
+        return;
+    }
+
+    ASSERT_NE(nullptr, eglGetProcAddress("glGenQueriesEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glDeleteQueriesEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glIsQueryEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glBeginQueryEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glEndQueryEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glQueryCounterEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glGetQueryivEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glGetQueryObjectivEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glGetQueryObjectuivEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glGetQueryObjecti64vEXT"));
+    ASSERT_NE(nullptr, eglGetProcAddress("glGetQueryObjectui64vEXT"));
+}
+
+
 TEST_P(TimerQueriesTest, TimeElapsed)
 {
     if (!extensionEnabled("GL_EXT_disjoint_timer_query"))
@@ -168,7 +191,7 @@ TEST_P(TimerQueriesTest, TimeElapsed)
 TEST_P(TimerQueriesTest, TimeElapsedTextureTest)
 {
     
-    if (isOSX())
+    if (IsOSX())
     {
         std::cout << "Test skipped on OSX" << std::endl;
         return;
@@ -309,13 +332,9 @@ TEST_P(TimerQueriesTest, TimeElapsedMulticontextTest)
     }
 
     
-    if (GetParam() == ES3_D3D11() || GetParam() == ES2_D3D11())
-    {
-        std::cout
-            << "Test skipped because the D3D backends cannot support simultaneous timer queries yet"
-            << std::endl;
-        return;
-    }
+    
+    glDepthMask(GL_TRUE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     EGLint contextAttributes[] = {
         EGL_CONTEXT_MAJOR_VERSION_KHR,
@@ -415,15 +434,6 @@ TEST_P(TimerQueriesTest, TimeElapsedMulticontextTest)
     
     eglMakeCurrent(display, surface, surface, contexts[0].context);
     glEndQueryEXT(GL_TIME_ELAPSED_EXT);
-    int timeout  = 20000;
-    GLuint ready = GL_FALSE;
-    while (ready == GL_FALSE && timeout > 0)
-    {
-        angle::Sleep(0);
-        glGetQueryObjectuivEXT(contexts[0].query, GL_QUERY_RESULT_AVAILABLE_EXT, &ready);
-        timeout--;
-    }
-    ASSERT_LT(0, timeout) << "Query result available timed out" << std::endl;
 
     GLuint64 result1 = 0;
     GLuint64 result2 = 0;
@@ -434,15 +444,6 @@ TEST_P(TimerQueriesTest, TimeElapsedMulticontextTest)
 
     
     eglMakeCurrent(display, surface, surface, contexts[1].context);
-    timeout = 20000;
-    ready = GL_FALSE;
-    while (ready == GL_FALSE && timeout > 0)
-    {
-        angle::Sleep(0);
-        glGetQueryObjectuivEXT(contexts[1].query, GL_QUERY_RESULT_AVAILABLE_EXT, &ready);
-        timeout--;
-    }
-    ASSERT_LT(0, timeout) << "Query result available timed out" << std::endl;
     glGetQueryObjectui64vEXT(contexts[1].query, GL_QUERY_RESULT_EXT, &result2);
     glDeleteQueriesEXT(1, &contexts[1].query);
     glDeleteProgram(contexts[1].program);

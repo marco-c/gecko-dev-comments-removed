@@ -30,7 +30,8 @@ class Clear11 : angle::NonCopyable
     ~Clear11();
 
     
-    gl::Error clearFramebuffer(const ClearParameters &clearParams, const gl::Framebuffer::Data &fboData);
+    gl::Error clearFramebuffer(const ClearParameters &clearParams,
+                               const gl::FramebufferState &fboData);
 
   private:
     struct MaskedRenderTarget

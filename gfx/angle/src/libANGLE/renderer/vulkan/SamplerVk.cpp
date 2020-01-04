@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+#include "libANGLE/renderer/vulkan/SamplerVk.h"
+
+#include "common/debug.h"
+
+namespace rx
+{
+
+SamplerVk::SamplerVk() : SamplerImpl()
+{
+}
+
+SamplerVk::~SamplerVk()
+{
+}
+
+}  
