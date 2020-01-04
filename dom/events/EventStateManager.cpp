@@ -2983,9 +2983,14 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
             
             
             
+            uint32_t flags = nsIFocusManager::FLAG_BYMOUSE |
+                             nsIFocusManager::FLAG_NOSCROLL;
+            
+            if (mouseEvent->inputSource == nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
+              flags |= nsIFocusManager::FLAG_BYTOUCH;
+            }
             nsCOMPtr<nsIDOMElement> newFocusElement = do_QueryInterface(newFocus);
-            fm->SetFocus(newFocusElement, nsIFocusManager::FLAG_BYMOUSE |
-                                          nsIFocusManager::FLAG_NOSCROLL);
+            fm->SetFocus(newFocusElement, flags);
           }
           else if (!suppressBlur) {
             

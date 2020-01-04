@@ -45,7 +45,7 @@ protected:
 private:
 #ifndef NS_CONTEXT_MENU_IS_MOUSEUP
     
-    nsresult FireFocusOnTargetContent(nsIDOMNode* aTargetNode);
+    nsresult FireFocusOnTargetContent(nsIDOMNode* aTargetNode, bool aIsTouch);
 #endif
 
     
