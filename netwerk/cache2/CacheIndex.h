@@ -835,6 +835,7 @@ private:
   
   
   static void DelayedUpdate(nsITimer *aTimer, void *aClosure);
+  void DelayedUpdateLocked();
   
   nsresult ScheduleUpdateTimer(uint32_t aDelay);
   nsresult SetupDirectoryEnumerator();
