@@ -301,8 +301,7 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
         NetworkInfo ni = null;
         try {
             ni = cm.getActiveNetworkInfo();
-        } catch (SecurityException se) {} 
-
+        } catch (SecurityException se) {  }
         if (ni == null) {
             return ConnectionType.NONE;
         }
