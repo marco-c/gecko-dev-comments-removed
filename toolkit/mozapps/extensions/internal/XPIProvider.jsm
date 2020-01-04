@@ -3120,7 +3120,6 @@ this.XPIProvider = {
     }
 
     
-    
     let downloadAddon = Task.async(function*(item) {
       try {
         let sourceAddon = updatedAddons.get(item.spec.id);

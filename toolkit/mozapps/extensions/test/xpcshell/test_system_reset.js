@@ -4,7 +4,7 @@ const PREF_SYSTEM_ADDON_SET = "extensions.systemAddonSet";
 
 BootstrapMonitor.init();
 
-const featureDir = FileUtils.getDir("ProfD", ["features"]);
+const updatesDir = FileUtils.getDir("ProfD", ["features"]);
 
 
 var dir = FileUtils.getDir("ProfD", ["sysfeatures", "app1"], true);
@@ -30,17 +30,24 @@ function makeUUID() {
   return uuidGen.generateUUID().toString();
 }
 
-function* check_installed(inProfile, ...versions) {
-  let expectedDir = inProfile ? featureDir : distroDir;
-
-  for (let i = 0; i < versions.length; i++) {
+function* check_installed(conditions) {
+  for (let i = 0; i < conditions.length; i++) {
+    let condition = conditions[i];
     let id = "system" + (i + 1) + "@tests.mozilla.org";
     let addon = yield promiseAddonByID(id);
 
-    if (versions[i]) {
+    if (!("isUpgrade" in condition) || !("version" in condition)) {
+      throw Error("condition must contain isUpgrade and version");
+    }
+    let isUpgrade = conditions[i].isUpgrade;
+    let version = conditions[i].version;
+
+    let expectedDir = isUpgrade ? updatesDir : distroDir;
+
+    if (version) {
       
       do_check_neq(addon, null);
-      do_check_eq(addon.version, versions[i]);
+      do_check_eq(addon.version, version);
       do_check_true(addon.isActive);
       do_check_false(addon.foreignInstall);
       do_check_false(hasFlag(addon.permissions, AddonManager.PERM_CAN_UPGRADE));
@@ -58,15 +65,15 @@ function* check_installed(inProfile, ...versions) {
       do_check_true(uri instanceof AM_Ci.nsIFileURL);
       do_check_eq(uri.file.path, file.path);
 
-      if (inProfile) {
+      if (isUpgrade) {
         do_check_eq(addon.signedState, AddonManager.SIGNEDSTATE_SYSTEM);
       }
 
       
-      BootstrapMonitor.checkAddonStarted(id, versions[i]);
+      BootstrapMonitor.checkAddonStarted(id, version);
     }
     else {
-      if (inProfile) {
+      if (isUpgrade) {
         
         do_check_eq(addon, null);
       }
@@ -89,9 +96,15 @@ function* check_installed(inProfile, ...versions) {
 add_task(function* test_missing_app_dir() {
   startupManager();
 
-  yield check_installed(false, null, null, null);
+  let conditions = [
+      { isUpgrade: false, version: null },
+      { isUpgrade: false, version: null },
+      { isUpgrade: false, version: null },
+  ];
 
-  do_check_false(featureDir.exists());
+  yield check_installed(conditions);
+
+  do_check_false(updatesDir.exists());
 
   yield promiseShutdownManager();
 });
@@ -102,9 +115,15 @@ add_task(function* test_new_version() {
   distroDir.leafName = "app1";
   startupManager();
 
-  yield check_installed(false, "1.0", "1.0", null);
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: null },
+  ];
 
-  do_check_false(featureDir.exists());
+  yield check_installed(conditions);
+
+  do_check_false(updatesDir.exists());
 
   yield promiseShutdownManager();
 });
@@ -115,9 +134,15 @@ add_task(function* test_upgrade() {
   distroDir.leafName = "app2";
   startupManager();
 
-  yield check_installed(false, "2.0", null, "1.0");
+  let conditions = [
+      { isUpgrade: false, version: "2.0" },
+      { isUpgrade: false, version: null },
+      { isUpgrade: false, version: "1.0" },
+  ];
 
-  do_check_false(featureDir.exists());
+  yield check_installed(conditions);
+
+  do_check_false(updatesDir.exists());
 
   yield promiseShutdownManager();
 });
@@ -128,9 +153,15 @@ add_task(function* test_downgrade() {
   distroDir.leafName = "app1";
   startupManager();
 
-  yield check_installed(false, "1.0", "1.0", null);
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: null },
+  ];
 
-  do_check_false(featureDir.exists());
+  yield check_installed(conditions);
+
+  do_check_false(updatesDir.exists());
 
   yield promiseShutdownManager();
 });
@@ -140,24 +171,24 @@ add_task(function* test_updated() {
   
   let dirname = makeUUID();
   FileUtils.getDir("ProfD", ["features", dirname], true);
-  featureDir.append(dirname);
+  updatesDir.append(dirname);
 
   
-  let file = do_get_file("data/system_addons/system2_1.xpi");
-  file.copyTo(featureDir, "system2@tests.mozilla.org.xpi");
-  file = do_get_file("data/system_addons/system3_1.xpi");
-  file.copyTo(featureDir, "system3@tests.mozilla.org.xpi");
+    let file = do_get_file("data/system_addons/system2_2.xpi");
+  file.copyTo(updatesDir, "system2@tests.mozilla.org.xpi");
+  file = do_get_file("data/system_addons/system3_2.xpi");
+  file.copyTo(updatesDir, "system3@tests.mozilla.org.xpi");
 
   
   let addonSet = {
     schema: 1,
-    directory: featureDir.leafName,
+    directory: updatesDir.leafName,
     addons: {
       "system2@tests.mozilla.org": {
-        version: "1.0"
+        version: "2.0"
       },
       "system3@tests.mozilla.org": {
-        version: "1.0"
+        version: "2.0"
       },
     }
   };
@@ -165,7 +196,13 @@ add_task(function* test_updated() {
 
   startupManager(false);
 
-  yield check_installed(true, null, "1.0", "1.0");
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: true, version: "2.0" },
+      { isUpgrade: true, version: "2.0" },
+  ];
+
+  yield check_installed(conditions);
 
   yield promiseShutdownManager();
 });
@@ -176,7 +213,13 @@ add_task(function* safe_mode_disabled() {
   gAppInfo.inSafeMode = true;
   startupManager(false);
 
-  yield check_installed(false, "1.0", "1.0", null);
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: null },
+  ];
+
+  yield check_installed(conditions);
 
   yield promiseShutdownManager();
 });
@@ -186,7 +229,13 @@ add_task(function* normal_mode_enabled() {
   gAppInfo.inSafeMode = false;
   startupManager(false);
 
-  yield check_installed(true, null, "1.0", "1.0");
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: true, version: "2.0" },
+      { isUpgrade: true, version: "2.0" },
+  ];
+
+  yield check_installed(conditions);
 
   yield promiseShutdownManager();
 });
@@ -194,19 +243,25 @@ add_task(function* normal_mode_enabled() {
 
 add_task(function* test_skips_additional() {
   
-  let file = do_get_file("data/system_addons/system1_1.xpi");
-  file.copyTo(featureDir, "system1@tests.mozilla.org.xpi");
+  let file = do_get_file("data/system_addons/system4_1.xpi");
+  file.copyTo(updatesDir, "system4@tests.mozilla.org.xpi");
 
   startupManager(false);
 
-  yield check_installed(true, null, "1.0", "1.0");
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: true, version: "2.0" },
+      { isUpgrade: true, version: "2.0" },
+  ];
+
+  yield check_installed(conditions);
 
   yield promiseShutdownManager();
 });
 
 
 add_task(function* test_revert() {
-  manuallyUninstall(featureDir, "system2@tests.mozilla.org");
+  manuallyUninstall(updatesDir, "system2@tests.mozilla.org");
 
   
   BootstrapMonitor.clear("system2@tests.mozilla.org");
@@ -215,19 +270,31 @@ add_task(function* test_revert() {
 
   
   
-  yield check_installed(false, "1.0", "1.0", null);
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: null },
+  ];
+
+  yield check_installed(conditions);
 
   yield promiseShutdownManager();
 });
 
 
 add_task(function* test_reuse() {
-  let file = do_get_file("data/system_addons/system2_1.xpi");
-  file.copyTo(featureDir, "system2@tests.mozilla.org.xpi");
+  let file = do_get_file("data/system_addons/system2_2.xpi");
+  file.copyTo(updatesDir, "system2@tests.mozilla.org.xpi");
 
   startupManager(false);
 
-  yield check_installed(true, null, "1.0", "1.0");
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: true, version: "2.0" },
+      { isUpgrade: true, version: "2.0" },
+  ];
+
+  yield check_installed(conditions);
 
   yield promiseShutdownManager();
 });
@@ -238,7 +305,13 @@ add_task(function* test_corrupt_pref() {
 
   startupManager(false);
 
-  yield check_installed(false, "1.0", "1.0", null);
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: null },
+  ];
+
+  yield check_installed(conditions);
 
   yield promiseShutdownManager();
 });
@@ -246,12 +319,12 @@ add_task(function* test_corrupt_pref() {
 
 add_task(function* test_bad_profile_cert() {
   let file = do_get_file("data/system_addons/system1_1_badcert.xpi");
-  file.copyTo(featureDir, "system1@tests.mozilla.org.xpi");
+  file.copyTo(updatesDir, "system1@tests.mozilla.org.xpi");
 
   
   let addonSet = {
     schema: 1,
-    directory: featureDir.leafName,
+    directory: updatesDir.leafName,
     addons: {
       "system1@tests.mozilla.org": {
         version: "2.0"
@@ -268,7 +341,13 @@ add_task(function* test_bad_profile_cert() {
 
   startupManager(false);
 
-  yield check_installed(false, "1.0", "1.0", null);
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: null },
+  ];
+
+  yield check_installed(conditions);
 
   yield promiseShutdownManager();
 });
@@ -284,7 +363,13 @@ add_task(function* test_bad_app_cert() {
   do_check_neq(addon, null);
   do_check_eq(addon.signedState, AddonManager.SIGNEDSTATE_NOT_REQUIRED);
 
-  yield check_installed(false, "1.0", null, "1.0");
+  let conditions = [
+      { isUpgrade: false, version: "1.0" },
+      { isUpgrade: false, version: null },
+      { isUpgrade: false, version: "1.0" },
+  ];
+
+  yield check_installed(conditions);
 
   yield promiseShutdownManager();
 });
