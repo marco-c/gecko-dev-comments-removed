@@ -10,7 +10,6 @@
 #include "ImageLayers.h"                
 #include "Layers.h"                     
 #include "Units.h"                      
-#include "GraphicsFilter.h"             
 #include "gfxRect.h"                    
 #include "gfxUtils.h"                   
 #include "mozilla/gfx/BaseSize.h"       
@@ -222,7 +221,7 @@ struct LayerPropertiesBase : public LayerProperties
     return IntRect();
   }
 
-  RefPtr<Layer> mLayer;
+  nsRefPtr<Layer> mLayer;
   UniquePtr<LayerPropertiesBase> mMaskLayer;
   nsTArray<UniquePtr<LayerPropertiesBase>> mAncestorMaskLayers;
   nsIntRegion mVisibleRegion;
@@ -455,9 +454,9 @@ struct ImageLayerProperties : public LayerPropertiesBase
     return IntRect();
   }
 
-  RefPtr<ImageContainer> mContainer;
-  RefPtr<ImageHost> mImageHost;
-  GraphicsFilter mFilter;
+  nsRefPtr<ImageContainer> mContainer;
+  nsRefPtr<ImageHost> mImageHost;
+  Filter mFilter;
   gfx::IntSize mScaleToSize;
   ScaleMode mScaleMode;
   int32_t mLastProducerID;

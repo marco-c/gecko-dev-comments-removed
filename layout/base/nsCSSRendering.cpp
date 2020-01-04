@@ -55,7 +55,6 @@
 #include "mozilla/Telemetry.h"
 #include "gfxUtils.h"
 #include "gfxGradientCache.h"
-#include "GraphicsFilter.h"
 #include "nsInlineFrame.h"
 #include <algorithm>
 
@@ -2626,7 +2625,7 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
   stopScale = 1.0/(stopEnd - stopOrigin);
 
   
-  RefPtr<gfxPattern> gradientPattern;
+  nsRefPtr<gfxPattern> gradientPattern;
   bool forceRepeatToCoverTiles = false;
   gfxMatrix matrix;
   gfxPoint gradientStart;
@@ -2733,7 +2732,7 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
     rawStops[i].color = stops[i].mColor;
     rawStops[i].offset = stopScale * (stops[i].mPosition - stopOrigin);
   }
-  RefPtr<mozilla::gfx::GradientStops> gs =
+  mozilla::RefPtr<mozilla::gfx::GradientStops> gs =
     gfxGradientCache::GetOrCreateGradientStops(ctx->GetDrawTarget(),
                                                rawStops,
                                                isRepeat ? gfx::ExtendMode::REPEAT : gfx::ExtendMode::CLAMP);
@@ -4958,7 +4957,7 @@ nsImageRenderer::Draw(nsPresContext*       aPresContext,
     return DrawResult::SUCCESS;
   }
 
-  GraphicsFilter filter = nsLayoutUtils::GetGraphicsFilterForFrame(mForFrame);
+  Filter filter = nsLayoutUtils::GetGraphicsFilterForFrame(mForFrame);
 
   switch (mType) {
     case eStyleImageType_Image:
@@ -4981,7 +4980,7 @@ nsImageRenderer::Draw(nsPresContext*       aPresContext,
     }
     case eStyleImageType_Element:
     {
-      RefPtr<gfxDrawable> drawable = DrawableForElement(aDest,
+      nsRefPtr<gfxDrawable> drawable = DrawableForElement(aDest,
                                                           aRenderingContext);
       if (!drawable) {
         NS_WARNING("Could not create drawable for element");
@@ -5031,7 +5030,7 @@ nsImageRenderer::DrawableForElement(const nsRect& aImageRect,
     nsRect destRect = aImageRect - aImageRect.TopLeft();
     nsIntSize roundedOut = destRect.ToOutsidePixels(appUnitsPerDevPixel).Size();
     IntSize imageSize(roundedOut.width, roundedOut.height);
-    RefPtr<gfxDrawable> drawable =
+    nsRefPtr<gfxDrawable> drawable =
       nsSVGIntegrationUtils::DrawableFromPaintServer(
         mPaintServerFrame, mForFrame, mSize, imageSize,
         aRenderingContext.GetDrawTarget(),
@@ -5041,7 +5040,7 @@ nsImageRenderer::DrawableForElement(const nsRect& aImageRect,
     return drawable.forget();
   }
   NS_ASSERTION(mImageElementSurface.mSourceSurface, "Surface should be ready.");
-  RefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(
+  nsRefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(
                                 mImageElementSurface.mSourceSurface,
                                 mImageElementSurface.mSize);
   return drawable.forget();
@@ -5180,7 +5179,7 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
       
       
 
-      RefPtr<gfxDrawable> drawable = DrawableForElement(nsRect(nsPoint(), mSize),
+      nsRefPtr<gfxDrawable> drawable = DrawableForElement(nsRect(nsPoint(), mSize),
                                                           aRenderingContext);
       if (!drawable) {
         NS_WARNING("Could not create drawable for element");
@@ -5191,14 +5190,13 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
       subImage = ImageOps::Clip(image, srcRect);
     }
 
-    GraphicsFilter graphicsFilter =
-      nsLayoutUtils::GetGraphicsFilterForFrame(mForFrame);
+    Filter filter = nsLayoutUtils::GetGraphicsFilterForFrame(mForFrame);
 
     if (!RequiresScaling(aFill, aHFill, aVFill, aUnitSize)) {
       nsLayoutUtils::DrawSingleImage(*aRenderingContext.ThebesContext(),
                                      aPresContext,
                                      subImage,
-                                     graphicsFilter,
+                                     filter,
                                      aFill, aDirtyRect,
                                      nullptr,
                                      imgIContainer::FLAG_NONE);
@@ -5209,7 +5207,7 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
     nsLayoutUtils::DrawImage(*aRenderingContext.ThebesContext(),
                              aPresContext,
                              subImage,
-                             graphicsFilter,
+                             filter,
                              tile, aFill, tile.TopLeft(), aDirtyRect,
                              imgIContainer::FLAG_NONE);
     return;

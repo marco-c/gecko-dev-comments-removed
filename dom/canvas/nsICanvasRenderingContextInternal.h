@@ -12,7 +12,6 @@
 #include "nsIDocShell.h"
 #include "nsRefreshDriver.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
-#include "GraphicsFilter.h"
 #include "mozilla/RefPtr.h"
 
 #define NS_ICANVASRENDERINGCONTEXTINTERNAL_IID \
@@ -163,8 +162,8 @@ public:
   NS_IMETHOD SetIsIPC(bool isIPC) = 0;
 
 protected:
-  RefPtr<mozilla::dom::HTMLCanvasElement> mCanvasElement;
-  RefPtr<nsRefreshDriver> mRefreshDriver;
+  nsRefPtr<mozilla::dom::HTMLCanvasElement> mCanvasElement;
+  nsRefPtr<nsRefreshDriver> mRefreshDriver;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsICanvasRenderingContextInternal,

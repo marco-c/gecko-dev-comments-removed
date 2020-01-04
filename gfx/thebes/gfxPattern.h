@@ -12,7 +12,6 @@
 #include "mozilla/Alignment.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PatternHelpers.h"
-#include "GraphicsFilter.h"
 #include "nsISupportsImpl.h"
 #include "nsAutoPtr.h"
 #include "nsTArray.h"
@@ -58,8 +57,8 @@ public:
 
     int CairoStatus();
 
-    void SetFilter(GraphicsFilter filter);
-    GraphicsFilter Filter() const;
+    void SetFilter(mozilla::gfx::Filter filter);
+    mozilla::gfx::Filter Filter() const;
 
     
     bool GetSolidColor(mozilla::gfx::Color& aColorOut);
@@ -69,9 +68,9 @@ private:
     ~gfxPattern() {}
 
     mozilla::gfx::GeneralPattern mGfxPattern;
-    RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
+    mozilla::RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
     mozilla::gfx::Matrix mPatternToUserSpace;
-    RefPtr<mozilla::gfx::GradientStops> mStops;
+    mozilla::RefPtr<mozilla::gfx::GradientStops> mStops;
     nsTArray<mozilla::gfx::GradientStop> mStopsList;
     mozilla::gfx::ExtendMode mExtend;
 };

@@ -74,7 +74,7 @@ FrozenImage::Draw(gfxContext* aContext,
                   const nsIntSize& aSize,
                   const ImageRegion& aRegion,
                   uint32_t ,
-                  GraphicsFilter aFilter,
+                  Filter aFilter,
                   const Maybe<SVGImageContext>& aSVGContext,
                   uint32_t aFlags)
 {

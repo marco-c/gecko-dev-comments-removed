@@ -253,7 +253,7 @@ private:
                           gfxContext* aContext,
                           const nsIntSize& aSize,
                           const ImageRegion& aRegion,
-                          GraphicsFilter aFilter,
+                          gfx::Filter aFilter,
                           uint32_t aFlags);
 
   already_AddRefed<gfx::SourceSurface> CopyFrame(uint32_t aWhichFrame,
@@ -275,7 +275,7 @@ private:
 
   nsIntRect GetFirstFrameRect();
 
-  Pair<DrawResult, RefPtr<layers::Image>>
+  Pair<DrawResult, nsRefPtr<layers::Image>>
     GetCurrentImage(layers::ImageContainer* aContainer, uint32_t aFlags);
 
   void UpdateImageContainer();
@@ -376,7 +376,7 @@ private:
 #endif
 
   
-  RefPtr<SourceBuffer>     mSourceBuffer;
+  nsRefPtr<SourceBuffer>     mSourceBuffer;
 
   
   uint32_t                   mFrameCount;
@@ -432,7 +432,7 @@ private:
   private:
     explicit HandleErrorWorker(RasterImage* aImage);
 
-    RefPtr<RasterImage> mImage;
+    nsRefPtr<RasterImage> mImage;
   };
 
   

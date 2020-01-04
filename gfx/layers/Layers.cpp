@@ -2144,7 +2144,7 @@ CanvasLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix)
 
 
 static void
-DumpFilter(layerscope::LayersPacket::Layer* aLayer, const GraphicsFilter& aFilter)
+DumpFilter(layerscope::LayersPacket::Layer* aLayer, const Filter& aFilter)
 {
   using namespace layerscope;
   switch (aFilter) {

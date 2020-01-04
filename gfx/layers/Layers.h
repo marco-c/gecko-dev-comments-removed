@@ -13,7 +13,6 @@
 #include "Units.h"                      
 #include "gfxContext.h"
 #include "gfxTypes.h"
-#include "GraphicsFilter.h"             
 #include "gfxPoint.h"                   
 #include "gfxRect.h"                    
 #include "gfx2DGlue.h"
@@ -2372,7 +2371,7 @@ public:
 
 
 
-  void SetFilter(GraphicsFilter aFilter)
+  void SetFilter(gfx::Filter aFilter)
   {
     if (mFilter != aFilter) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Filter", this));
@@ -2380,7 +2379,7 @@ public:
       Mutated();
     }
   }
-  GraphicsFilter GetFilter() const { return mFilter; }
+  gfx::Filter GetFilter() const { return mFilter; }
 
   MOZ_LAYER_DECL_NAME("CanvasLayer", TYPE_CANVAS)
 
@@ -2427,7 +2426,7 @@ protected:
   void* mPreTransCallbackData;
   DidTransactionCallback mPostTransCallback;
   void* mPostTransCallbackData;
-  GraphicsFilter mFilter;
+  gfx::Filter mFilter;
 
 private:
   

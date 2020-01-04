@@ -20,7 +20,6 @@
 #include "LayerScope.h"                 
 #include "gfxCrashReporterUtils.h"      
 #include "gfxMatrix.h"                  
-#include "GraphicsFilter.h"             
 #include "gfxPlatform.h"                
 #include "gfxPrefs.h"                   
 #include "gfxRect.h"                    

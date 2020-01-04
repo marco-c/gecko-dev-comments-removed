@@ -6,7 +6,6 @@
 #include "CanvasLayerComposite.h"
 #include "composite/CompositableHost.h"  
 #include "gfx2DGlue.h"                  
-#include "GraphicsFilter.h"             
 #include "gfxUtils.h"                   
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
@@ -129,7 +128,7 @@ CanvasLayerComposite::CleanupResources()
 gfx::Filter
 CanvasLayerComposite::GetEffectFilter()
 {
-  GraphicsFilter filter = mFilter;
+  gfx::Filter filter = mFilter;
 #ifdef ANDROID
   
   
