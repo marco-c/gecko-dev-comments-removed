@@ -127,23 +127,10 @@ public:
 
 } 
 
-
-
-
-class nsTimerEvent : public nsCancelableRunnable
+class nsTimerEvent : public nsRunnable
 {
 public:
-  NS_IMETHOD Run() override;
-
-  NS_IMETHOD Cancel() override
-  {
-    
-    
-    
-    
-    mTimer = nullptr;
-    return NS_OK;
-  }
+  NS_IMETHOD Run();
 
   nsTimerEvent()
     : mTimer()
@@ -266,8 +253,6 @@ nsTimerEvent::DeleteAllocatorIfNeeded()
 NS_IMETHODIMP
 nsTimerEvent::Run()
 {
-  MOZ_ASSERT(mTimer);
-
   if (mGeneration != mTimer->GetGeneration()) {
     return NS_OK;
   }
@@ -280,10 +265,13 @@ nsTimerEvent::Run()
   }
 
   mTimer->Fire();
+  
+  
+  
+  
+  mTimer = nullptr;
 
-  
-  
-  return Cancel();
+  return NS_OK;
 }
 
 nsresult
