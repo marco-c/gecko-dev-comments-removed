@@ -2,9 +2,9 @@
 
 
 
-let gTestRoot = getRootDirectory(gTestPath);
-let gBugWindow = null;
-let gIterations = 5;
+var gTestRoot = getRootDirectory(gTestPath);
+var gBugWindow = null;
+var gIterations = 5;
 
 function onLoad() {
   gBugWindow.close();

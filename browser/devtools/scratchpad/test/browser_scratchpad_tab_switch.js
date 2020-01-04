@@ -2,9 +2,9 @@
 
 
 
-let tab1;
-let tab2;
-let sp;
+var tab1;
+var tab2;
+var sp;
 
 function test()
 {

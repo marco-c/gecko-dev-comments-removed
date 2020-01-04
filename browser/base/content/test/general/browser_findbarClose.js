@@ -3,7 +3,7 @@
 
 
 
-let newTab, iframe;
+var newTab, iframe;
 
 function test() {
   waitForExplicitFinish();

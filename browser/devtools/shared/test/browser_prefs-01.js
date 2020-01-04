@@ -3,7 +3,7 @@
 
 
 
-let {ViewHelpers} = Cu.import("resource:///modules/devtools/ViewHelpers.jsm", {});
+var {ViewHelpers} = Cu.import("resource:///modules/devtools/ViewHelpers.jsm", {});
 
 function test() {
   let Prefs = new ViewHelpers.Prefs("devtools.debugger", {

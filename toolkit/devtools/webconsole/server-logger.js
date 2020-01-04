@@ -38,7 +38,7 @@ const acceptableHeaders = ["x-chromelogger-data"];
 
 
 
-let ServerLoggingListener = Class({
+var ServerLoggingListener = Class({
   
 
 

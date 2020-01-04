@@ -39,7 +39,7 @@ function setDefault(dict, key, default_)
 
 
 
-let NotificationTracker = {
+var NotificationTracker = {
   
   
   
@@ -109,7 +109,7 @@ function Interposition(name, base)
 
 
 
-let ContentPolicyParent = {
+var ContentPolicyParent = {
   init: function() {
     let ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
                .getService(Ci.nsIMessageBroadcaster);
@@ -172,7 +172,7 @@ ContentPolicyParent.init();
 
 
 
-let CategoryManagerInterposition = new Interposition("CategoryManagerInterposition");
+var CategoryManagerInterposition = new Interposition("CategoryManagerInterposition");
 
 CategoryManagerInterposition.methods.addCategoryEntry =
   function(addon, target, category, entry, value, persist, replace) {
@@ -199,7 +199,7 @@ CategoryManagerInterposition.methods.deleteCategoryEntry =
 
 
 
-let AboutProtocolParent = {
+var AboutProtocolParent = {
   init: function() {
     let ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
                .getService(Ci.nsIMessageBroadcaster);
@@ -284,7 +284,7 @@ let AboutProtocolParent = {
 };
 AboutProtocolParent.init();
 
-let ComponentRegistrarInterposition = new Interposition("ComponentRegistrarInterposition");
+var ComponentRegistrarInterposition = new Interposition("ComponentRegistrarInterposition");
 
 ComponentRegistrarInterposition.methods.registerFactory =
   function(addon, target, class_, className, contractID, factory) {
@@ -314,7 +314,7 @@ ComponentRegistrarInterposition.methods.unregisterFactory =
 
 
 
-let ObserverParent = {
+var ObserverParent = {
   init: function() {
     let ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
                .getService(Ci.nsIMessageBroadcaster);
@@ -354,7 +354,7 @@ let ObserverParent = {
 ObserverParent.init();
 
 
-let TOPIC_WHITELIST = [
+var TOPIC_WHITELIST = [
   "content-document-global-created",
   "document-element-inserted",
   "dom-window-destroyed",
@@ -365,7 +365,7 @@ let TOPIC_WHITELIST = [
 
 
 
-let ObserverInterposition = new Interposition("ObserverInterposition");
+var ObserverInterposition = new Interposition("ObserverInterposition");
 
 ObserverInterposition.methods.addObserver =
   function(addon, target, observer, topic, ownsWeak) {
@@ -390,7 +390,7 @@ ObserverInterposition.methods.removeObserver =
 
 
 
-let EventTargetParent = {
+var EventTargetParent = {
   init: function() {
     
     
@@ -577,7 +577,7 @@ EventTargetParent.init();
 
 
 
-let filteringListeners = new WeakMap();
+var filteringListeners = new WeakMap();
 function makeFilteringListener(eventType, listener)
 {
   if (filteringListeners.has(listener)) {
@@ -611,7 +611,7 @@ function makeFilteringListener(eventType, listener)
 
 
 
-let EventTargetInterposition = new Interposition("EventTargetInterposition");
+var EventTargetInterposition = new Interposition("EventTargetInterposition");
 
 EventTargetInterposition.methods.addEventListener =
   function(addon, target, type, listener, useCapture, wantsUntrusted) {
@@ -634,7 +634,7 @@ EventTargetInterposition.methods.removeEventListener =
 
 
 
-let ContentDocShellTreeItemInterposition = new Interposition("ContentDocShellTreeItemInterposition");
+var ContentDocShellTreeItemInterposition = new Interposition("ContentDocShellTreeItemInterposition");
 
 ContentDocShellTreeItemInterposition.getters.rootTreeItem =
   function(addon, target) {
@@ -675,7 +675,7 @@ function chromeGlobalForContentWindow(window)
 
 
 
-let SandboxParent = {
+var SandboxParent = {
   componentsMap: new WeakMap(),
 
   makeContentSandbox: function(addon, chromeGlobal, principals, ...rest) {
@@ -722,7 +722,7 @@ let SandboxParent = {
 
 
 
-let ComponentsUtilsInterposition = new Interposition("ComponentsUtilsInterposition");
+var ComponentsUtilsInterposition = new Interposition("ComponentsUtilsInterposition");
 
 ComponentsUtilsInterposition.methods.Sandbox =
   function(addon, target, principals, ...rest) {
@@ -766,7 +766,7 @@ ComponentsUtilsInterposition.methods.evalInSandbox =
 
 
 
-let ContentDocumentInterposition = new Interposition("ContentDocumentInterposition");
+var ContentDocumentInterposition = new Interposition("ContentDocumentInterposition");
 
 ContentDocumentInterposition.methods.importNode =
   function(addon, target, node, deep) {
@@ -784,7 +784,7 @@ ContentDocumentInterposition.methods.importNode =
 
 
 
-let RemoteBrowserElementInterposition = new Interposition("RemoteBrowserElementInterposition",
+var RemoteBrowserElementInterposition = new Interposition("RemoteBrowserElementInterposition",
                                                           EventTargetInterposition);
 
 RemoteBrowserElementInterposition.getters.docShell = function(addon, target) {
@@ -853,7 +853,7 @@ RemoteBrowserElementInterposition.getters.contentDocument = function(addon, targ
   return getContentDocument(addon, target);
 };
 
-let TabBrowserElementInterposition = new Interposition("TabBrowserElementInterposition",
+var TabBrowserElementInterposition = new Interposition("TabBrowserElementInterposition",
                                                        EventTargetInterposition);
 
 TabBrowserElementInterposition.getters.contentWindow = function(addon, target) {
@@ -878,7 +878,7 @@ TabBrowserElementInterposition.getters.contentDocument = function(addon, target)
 
 
 
-let progressListeners = {global: new WeakMap(), tabs: new WeakMap()};
+var progressListeners = {global: new WeakMap(), tabs: new WeakMap()};
 function wrapProgressListener(kind, listener)
 {
   if (progressListeners[kind].has(listener)) {
@@ -938,7 +938,7 @@ TabBrowserElementInterposition.methods.removeTabsProgressListener = function(add
   return target.removeTabsProgressListener(wrapProgressListener("tabs", listener));
 };
 
-let ChromeWindowInterposition = new Interposition("ChromeWindowInterposition",
+var ChromeWindowInterposition = new Interposition("ChromeWindowInterposition",
                                                   EventTargetInterposition);
 
 
@@ -955,7 +955,7 @@ ChromeWindowInterposition.getters._content = function(addon, target) {
   return browser.contentWindowAsCPOW;
 };
 
-let RemoteAddonsParent = {
+var RemoteAddonsParent = {
   init: function() {
     let mm = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
     mm.addMessageListener("Addons:RegisterGlobal", this);

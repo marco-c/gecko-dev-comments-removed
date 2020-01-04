@@ -3,9 +3,9 @@
 
 "use strict";
 
-let gTestTab;
-let gContentAPI;
-let gContentWindow;
+var gTestTab;
+var gContentAPI;
+var gContentWindow;
 
 function test() {
   UITourTest();
@@ -65,7 +65,7 @@ function cleanUpNotification(aId, aChromeWindow = window) {
   notification.close();
 }
 
-let tests = [
+var tests = [
   
 
 

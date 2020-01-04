@@ -2,7 +2,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "NewTabURL",
                                   "resource:///modules/NewTabURL.jsm");
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-let {
+var {
   EventManager,
   ignoreEvent,
   runSafe,
@@ -35,7 +35,7 @@ function getSender(context, target, sender)
 }
 
 
-let pageDataMap = new WeakMap();
+var pageDataMap = new WeakMap();
 
 
 

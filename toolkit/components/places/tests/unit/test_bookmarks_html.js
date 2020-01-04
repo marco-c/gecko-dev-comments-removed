@@ -8,7 +8,7 @@ const LOAD_IN_SIDEBAR_ANNO = "bookmarkProperties/loadInSidebar";
 const DESCRIPTION_ANNO = "bookmarkProperties/description";
 
 
-let test_bookmarks = {
+var test_bookmarks = {
   menu: [
     { title: "Mozilla Firefox",
       children: [
@@ -69,9 +69,9 @@ let test_bookmarks = {
 };
 
 
-let gBookmarksFileOld;
+var gBookmarksFileOld;
 
-let gBookmarksFileNew;
+var gBookmarksFileNew;
 
 function run_test()
 {

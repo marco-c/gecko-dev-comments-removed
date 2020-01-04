@@ -1,7 +1,7 @@
 
 
 
-let wasOriginBlocked = false;
+var wasOriginBlocked = false;
 
 function test() {
   Harness.installOriginBlockedCallback = install_blocked;

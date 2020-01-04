@@ -13,13 +13,13 @@ const {LongStringActor} = require("devtools/server/actors/string");
 const {DebuggerServer} = require("devtools/server/main");
 const Services = require("Services");
 const promise = require("promise");
-const {isWindowIncluded} = require("devtools/toolkit/layout/utils");
+const LayoutHelpers = require("devtools/toolkit/layout-helpers");
 const { setTimeout, clearTimeout } = require("sdk/timers");
 
 loader.lazyImporter(this, "OS", "resource://gre/modules/osfile.jsm");
 loader.lazyImporter(this, "Sqlite", "resource://gre/modules/Sqlite.jsm");
 
-let gTrackedMessageManager = new Map();
+var gTrackedMessageManager = new Map();
 
 
 
@@ -31,7 +31,7 @@ const BATCH_DELAY = 200;
 
 
 
-let illegalFileNameCharacters = [
+var illegalFileNameCharacters = [
   "[",
   
   "\\x00-\\x24",
@@ -39,10 +39,10 @@ let illegalFileNameCharacters = [
   "/:*?\\\"<>|\\\\",
   "]"
 ].join("");
-let ILLEGAL_CHAR_REGEX = new RegExp(illegalFileNameCharacters, "g");
+var ILLEGAL_CHAR_REGEX = new RegExp(illegalFileNameCharacters, "g");
 
 
-let storageTypePool = new Map();
+var storageTypePool = new Map();
 
 
 
@@ -137,7 +137,7 @@ types.addDictType("storeUpdateObject", {
 });
 
 
-let StorageActors = {};
+var StorageActors = {};
 
 
 
@@ -683,7 +683,7 @@ StorageActors.createActor({
   },
 });
 
-let cookieHelpers = {
+var cookieHelpers = {
   getCookiesFromHost: function(host) {
     
     if (host.startsWith("file:///")) {
@@ -1276,7 +1276,7 @@ StorageActors.createActor({
   },
 });
 
-let indexedDBHelpers = {
+var indexedDBHelpers = {
   backToChild: function(...args) {
     let mm = Cc["@mozilla.org/globalmessagemanager;1"]
                .getService(Ci.nsIMessageListenerManager);
@@ -1626,7 +1626,7 @@ exports.setupParentProcessForIndexedDB = function({mm, prefix}) {
 
 
 
-let StorageActor = exports.StorageActor = protocol.ActorClass({
+var StorageActor = exports.StorageActor = protocol.ActorClass({
   typeName: "storage",
 
   get window() {
@@ -1693,11 +1693,16 @@ let StorageActor = exports.StorageActor = protocol.ActorClass({
 
     this.destroyed = false;
     this.boundUpdate = {};
+
+    
+    
+    this.layoutHelper = new LayoutHelpers(this.window);
   },
 
   destroy: function() {
     clearTimeout(this.batchTimer);
     this.batchTimer = null;
+    this.layoutHelper = null;
     
     Services.obs.removeObserver(this, "content-document-global-created", false);
     Services.obs.removeObserver(this, "inner-window-destroyed", false);
@@ -1746,7 +1751,7 @@ let StorageActor = exports.StorageActor = protocol.ActorClass({
   },
 
   isIncludedInTopLevelWindow: function(window) {
-    return isWindowIncluded(this.window, window);
+    return this.layoutHelper.isIncludedInTopLevelWindow(window);
   },
 
   getWindowFromInnerWindowID: function(innerID) {
@@ -1964,7 +1969,7 @@ let StorageActor = exports.StorageActor = protocol.ActorClass({
 
 
 
-let StorageFront = exports.StorageFront = protocol.FrontClass(StorageActor, {
+var StorageFront = exports.StorageFront = protocol.FrontClass(StorageActor, {
   initialize: function(client, tabForm) {
     protocol.Front.prototype.initialize.call(this, client);
     this.actorID = tabForm.storageActor;

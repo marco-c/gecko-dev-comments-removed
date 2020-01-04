@@ -2,9 +2,9 @@
 
 
 
-let {Toolbox} = require("devtools/framework/toolbox");
+var {Toolbox} = require("devtools/framework/toolbox");
 
-let toolbox, target, tab1, tab2;
+var toolbox, target, tab1, tab2;
 
 function test() {
   gBrowser.selectedTab = tab1 = gBrowser.addTab();

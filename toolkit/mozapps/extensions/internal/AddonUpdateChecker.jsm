@@ -49,7 +49,7 @@ const LOGGER_ID = "addons.update-checker";
 
 
 
-let logger = Log.repository.getLogger(LOGGER_ID);
+var logger = Log.repository.getLogger(LOGGER_ID);
 
 
 

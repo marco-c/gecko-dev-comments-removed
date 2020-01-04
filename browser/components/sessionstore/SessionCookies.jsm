@@ -40,7 +40,7 @@ this.SessionCookies = Object.freeze({
 
 
 
-let SessionCookiesInternal = {
+var SessionCookiesInternal = {
   
 
 
@@ -314,7 +314,7 @@ function* getPossibleSubdomainVariants(host) {
 
 
 
-let CookieStore = {
+var CookieStore = {
   
 
 

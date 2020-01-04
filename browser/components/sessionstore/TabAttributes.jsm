@@ -23,7 +23,7 @@ this.TabAttributes = Object.freeze({
   }
 });
 
-let TabAttributesInternal = {
+var TabAttributesInternal = {
   _attrs: new Set(["muted"]),
 
   

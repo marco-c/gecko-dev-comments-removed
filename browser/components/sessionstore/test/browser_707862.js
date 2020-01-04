@@ -1,7 +1,7 @@
 
 
 
-let tabState = {
+var tabState = {
   entries: [{url: "about:robots", children: [{url: "about:mozilla"}]}]
 };
 

@@ -20,7 +20,7 @@ function test() {
 }
 
 
-let tests = [test_setup, test_hang];
+var tests = [test_setup, test_hang];
 function runNextTest() {
   
   if (tests.length) {

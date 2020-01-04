@@ -225,7 +225,7 @@ function promiseSaveGlobalMetadata(globalData) {
   }));
 }
 
-let forceExpiration = Task.async(function* () {
+var forceExpiration = Task.async(function* () {
   let metadata = yield promiseGlobalMetadata();
 
   
@@ -365,7 +365,7 @@ if (!isChild) {
 
 
 
-let gDataUrl;
+var gDataUrl;
 
 
 
@@ -397,7 +397,7 @@ function useHttpServer() {
 
 
 
-let addTestEngines = Task.async(function* (aItems) {
+var addTestEngines = Task.async(function* (aItems) {
   if (!gDataUrl) {
     do_throw("useHttpServer must be called before addTestEngines.");
   }

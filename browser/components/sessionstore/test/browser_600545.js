@@ -2,7 +2,7 @@
 
 
 
-let stateBackup = JSON.parse(ss.getBrowserState());
+var stateBackup = JSON.parse(ss.getBrowserState());
 
 function test() {
   

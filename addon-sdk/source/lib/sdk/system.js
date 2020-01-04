@@ -52,7 +52,7 @@ exports.env = require('./system/environment').env;
 
 
 
-let forcedExit = false;
+var forcedExit = false;
 exports.exit = function exit(code) {
   if (forcedExit) {
     
@@ -91,7 +91,7 @@ exports.exit = function exit(code) {
 
 
 
-let stdout = Object.freeze({ write: dump, end: dump });
+var stdout = Object.freeze({ write: dump, end: dump });
 exports.stdout = stdout;
 exports.stderr = stdout;
 

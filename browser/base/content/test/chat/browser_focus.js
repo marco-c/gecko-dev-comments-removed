@@ -22,7 +22,7 @@ function isChatFocused(chat) {
   return elt == chat.content;
 }
 
-let chatbar = document.getElementById("pinnedchats");
+var chatbar = document.getElementById("pinnedchats");
 
 function* setUp() {
   

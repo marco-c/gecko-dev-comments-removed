@@ -11,7 +11,7 @@
 
 
 
-let transitions = [
+var transitions = [
   TRANSITION_LINK
 , TRANSITION_TYPED
 , TRANSITION_BOOKMARK

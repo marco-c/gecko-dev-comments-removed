@@ -4,7 +4,7 @@
 
 
 
-let mDBConn = DBConn();
+var mDBConn = DBConn();
 
 function promiseOnClearHistoryObserved() {
   let deferred = Promise.defer();
@@ -35,7 +35,7 @@ function promiseOnClearHistoryObserved() {
 
 
 
-let promiseInit;
+var promiseInit;
 
 function run_test() {
   

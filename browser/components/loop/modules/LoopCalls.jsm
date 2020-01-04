@@ -192,7 +192,7 @@ CallProgressSocket.prototype = {
 
 
 
-let LoopCallsInternal = {
+var LoopCallsInternal = {
   mocks: {
     webSocket: undefined
   },

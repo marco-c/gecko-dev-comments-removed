@@ -67,7 +67,7 @@ const gNSURLStore = new Map();
 
 
 
-let NetworkHelper = {
+var NetworkHelper = {
   
 
 

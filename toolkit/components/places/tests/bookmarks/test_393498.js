@@ -4,7 +4,7 @@
 
 
 
-let observer = {
+var observer = {
   __proto__: NavBookmarkObserver.prototype,
 
   onItemAdded: function (id, folder, index) {

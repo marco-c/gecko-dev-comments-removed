@@ -317,13 +317,13 @@ this.WorkerDebuggerLoader = WorkerDebuggerLoader;
 
 
 
-let PromiseDebugging = {
+var PromiseDebugging = {
   getState: function () {
     throw new Error("PromiseDebugging is not available in workers!");
   }
 };
 
-let chrome = {
+var chrome = {
   CC: undefined,
   Cc: undefined,
   ChromeWorker: undefined,
@@ -334,7 +334,7 @@ let chrome = {
   components: undefined
 };
 
-let loader = {
+var loader = {
   lazyGetter: function (object, name, lambda) {
     Object.defineProperty(object, name, {
       get: function () {
@@ -364,7 +364,7 @@ let loader = {
 
 
 
-let {
+var {
   Debugger,
   createSandbox,
   dump,

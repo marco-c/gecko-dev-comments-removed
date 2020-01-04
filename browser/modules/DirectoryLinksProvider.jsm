@@ -110,7 +110,7 @@ const INADJACENCY_SOURCE = "chrome://browser/content/newtab/newTab.inadjacent.js
 
 
 
-let DirectoryLinksProvider = {
+var DirectoryLinksProvider = {
 
   __linksURL: null,
 

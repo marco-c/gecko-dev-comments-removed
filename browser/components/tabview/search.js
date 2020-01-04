@@ -24,7 +24,7 @@
 
 
 
-let TabUtils = {
+var TabUtils = {
   
   
   
@@ -274,7 +274,7 @@ TabMatcher.prototype = {
 
 
 
-let TabHandlers = {
+var TabHandlers = {
   _mouseDownLocation: null,
 
   
@@ -370,7 +370,7 @@ let TabHandlers = {
 
 
 
-let Search = {
+var Search = {
   _initiatedBy: "",
   _blockClick: false,
   _currentHandler: null,

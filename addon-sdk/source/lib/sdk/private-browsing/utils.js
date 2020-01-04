@@ -13,7 +13,7 @@ const { isWindowPrivate } = require('../window/utils');
 const { isPrivateBrowsingSupported } = require('../self');
 const { dispatcher } = require("../util/dispatcher");
 
-let PrivateBrowsingUtils;
+var PrivateBrowsingUtils;
 
 
 try {
@@ -24,11 +24,11 @@ catch (e) {}
 exports.isGlobalPBSupported = false;
 
 
-let isWindowPBSupported = exports.isWindowPBSupported =
+var isWindowPBSupported = exports.isWindowPBSupported =
                           !!PrivateBrowsingUtils && is('Firefox');
 
 
-let isTabPBSupported = exports.isTabPBSupported =
+var isTabPBSupported = exports.isTabPBSupported =
                        !!PrivateBrowsingUtils && is('Fennec');
 
 function isPermanentPrivateBrowsing() {
@@ -41,7 +41,7 @@ function ignoreWindow(window) {
 }
 exports.ignoreWindow = ignoreWindow;
 
-let getMode = function getMode(chromeWin) {
+var getMode = function getMode(chromeWin) {
   return (chromeWin !== undefined && isWindowPrivate(chromeWin));
 };
 exports.getMode = getMode;

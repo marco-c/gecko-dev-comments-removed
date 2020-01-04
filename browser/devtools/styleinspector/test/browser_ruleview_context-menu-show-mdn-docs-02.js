@@ -84,4 +84,4 @@ function* testShowAndHideMdnTooltip(view) {
 
 
 
-let rootElement = view => (view.element) ? view.element : view.styleDocument;
+var rootElement = view => (view.element) ? view.element : view.styleDocument;

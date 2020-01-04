@@ -3729,7 +3729,7 @@ exports.AddonThreadActor = AddonThreadActor;
 
 
 
-let oldReportError = reportError;
+var oldReportError = reportError;
 reportError = function(aError, aPrefix="") {
   dbg_assert(aError instanceof Error, "Must pass Error objects to reportError");
   let msg = aPrefix + aError.message + ":\n" + aError.stack;

@@ -7,7 +7,7 @@
 const BUTTONID = "test-widget-saved-earlier";
 const AREAID = "test-area-saved-earlier";
 
-let hadSavedState;
+var hadSavedState;
 function test() {
   
   let backstagePass = Cu.import("resource:///modules/CustomizableUI.jsm", {});

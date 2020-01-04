@@ -59,9 +59,9 @@ function stopWatch(method) {
   };
 }
 
-let stopWatchStart = stopWatch("start");
-let stopWatchCancel = stopWatch("cancel");
-let stopWatchFinish = stopWatch("finish");
+var stopWatchStart = stopWatch("start");
+var stopWatchCancel = stopWatch("cancel");
+var stopWatchFinish = stopWatch("finish");
 
 
 
@@ -102,7 +102,7 @@ this.SessionSaver = Object.freeze({
 
 
 
-let SessionSaverInternal = {
+var SessionSaverInternal = {
   
 
 

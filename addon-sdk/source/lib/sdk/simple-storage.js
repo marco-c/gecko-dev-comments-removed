@@ -180,7 +180,7 @@ JsonStore.prototype = {
 
 
 
-let manager = ({
+var manager = ({
   jsonStore: null,
 
   

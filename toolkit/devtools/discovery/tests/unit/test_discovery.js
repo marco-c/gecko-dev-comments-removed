@@ -24,7 +24,7 @@ function log(msg) {
 }
 
 
-let gTestTransports = {};
+var gTestTransports = {};
 
 
 

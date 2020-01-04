@@ -40,10 +40,10 @@ const isWindows = (Services.appinfo.OS == "WINNT");
 const EOL = isWindows ? "\r\n" : "\n";
 
 
-let gPingData = null;
+var gPingData = null;
 
 
-let documentRTLMode = "";
+var documentRTLMode = "";
 
 
 
@@ -201,7 +201,7 @@ function shortTimeString(date) {
          + ":" + padToTwoDigits(date.getSeconds());
 }
 
-let Settings = {
+var Settings = {
   SETTINGS: [
     
     {
@@ -259,7 +259,7 @@ let Settings = {
   }
 };
 
-let PingPicker = {
+var PingPicker = {
   viewCurrentPingData: true,
   _archivedPings: null,
 
@@ -434,7 +434,7 @@ let PingPicker = {
   },
 };
 
-let GeneralData = {
+var GeneralData = {
   
 
 
@@ -483,7 +483,7 @@ let GeneralData = {
   },
 };
 
-let EnvironmentData = {
+var EnvironmentData = {
   
 
 
@@ -535,7 +535,7 @@ let EnvironmentData = {
   },
 };
 
-let TelLog = {
+var TelLog = {
   
 
 
@@ -588,7 +588,7 @@ let TelLog = {
   },
 };
 
-let SlowSQL = {
+var SlowSQL = {
 
   slowSqlHits: bundle.GetStringFromName("slowSqlHits"),
 
@@ -710,7 +710,7 @@ let SlowSQL = {
   }
 };
 
-let StackRenderer = {
+var StackRenderer = {
 
   stackTitle: bundle.GetStringFromName("stackTitle"),
 
@@ -865,7 +865,7 @@ function SymbolicationRequest_fetchSymbols() {
   this.symbolRequest.send(requestJSON);
 }
 
-let ChromeHangs = {
+var ChromeHangs = {
 
   symbolRequest: null,
 
@@ -892,7 +892,7 @@ let ChromeHangs = {
   }
 };
 
-let ThreadHangStats = {
+var ThreadHangStats = {
 
   
 
@@ -944,7 +944,7 @@ let ThreadHangStats = {
   },
 };
 
-let Histogram = {
+var Histogram = {
 
   hgramSamplesCaption: bundle.GetStringFromName("histogramSamples"),
 
@@ -1197,7 +1197,7 @@ function RenderObject(aObject) {
   return output + "}";
 };
 
-let KeyValueTable = {
+var KeyValueTable = {
   
 
 
@@ -1263,7 +1263,7 @@ let KeyValueTable = {
   }
 };
 
-let KeyedHistogram = {
+var KeyedHistogram = {
   render: function(parent, id, keyedHistogram) {
     let outerDiv = document.createElement("div");
     outerDiv.className = "keyed-histogram";
@@ -1283,7 +1283,7 @@ let KeyedHistogram = {
   },
 };
 
-let AddonDetails = {
+var AddonDetails = {
   tableIDTitle: bundle.GetStringFromName("addonTableID"),
   tableDetailsTitle: bundle.GetStringFromName("addonTableDetails"),
 
@@ -1451,7 +1451,7 @@ function onLoad() {
   }
 }
 
-let LateWritesSingleton = {
+var LateWritesSingleton = {
   renderHeader: function LateWritesSingleton_renderHeader(aIndex) {
     StackRenderer.renderHeader("late-writes", [aIndex + 1]);
   },

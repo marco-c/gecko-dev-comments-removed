@@ -418,7 +418,7 @@ ChildMessagePort.prototype.destroy = function() {
 
 
 
-let RemotePageManagerInternal = {
+var RemotePageManagerInternal = {
   
   pages: new Map(),
 
@@ -487,9 +487,9 @@ this.RemotePageManager = {
 };
 
 
-let registeredURLs = new Set();
+var registeredURLs = new Set();
 
-let observer = (window) => {
+var observer = (window) => {
   let url = window.location.toString();
   if (!registeredURLs.has(url))
     return;

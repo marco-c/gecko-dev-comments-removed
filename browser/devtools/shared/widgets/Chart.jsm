@@ -27,13 +27,13 @@ this.EXPORTED_SYMBOLS = ["Chart"];
 
 
 
-let L10N = new ViewHelpers.L10N(NET_STRINGS_URI);
+var L10N = new ViewHelpers.L10N(NET_STRINGS_URI);
 
 
 
 
 
-let Chart = {
+var Chart = {
   Pie: createPieChart,
   Table: createTableChart,
   PieTable: createPieTableChart

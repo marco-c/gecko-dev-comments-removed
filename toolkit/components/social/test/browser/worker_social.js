@@ -3,9 +3,9 @@
 
 
 
-let apiPort;
+var apiPort;
 
-let testerPort;
+var testerPort;
 
 onconnect = function(e) {
   

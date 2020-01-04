@@ -3,7 +3,7 @@
 
 
 const CHROMEUTILS_URL = "chrome://mochikit/content/tests/SimpleTest/ChromeUtils.js";
-let ChromeUtils = {};
+var ChromeUtils = {};
 
 Services.scriptloader.loadSubScript(CHROMEUTILS_URL, ChromeUtils);
 

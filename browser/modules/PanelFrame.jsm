@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "DynamicResizeWatcher", "resource:///mod
 const PANEL_MIN_HEIGHT = 100;
 const PANEL_MIN_WIDTH = 330;
 
-let PanelFrameInternal = {
+var PanelFrameInternal = {
   
 
 
@@ -96,7 +96,7 @@ let PanelFrameInternal = {
 
 
 
-let PanelFrame = {
+var PanelFrame = {
   
 
 

@@ -6,10 +6,9 @@
 
 "use strict";
 
-const { Cu, Ci } = require("chrome");
-const { getRootBindingParent } = require("devtools/toolkit/layout/utils");
-
-let EventEmitter = require("devtools/toolkit/event-emitter");
+const {Cu, Ci} = require("chrome");
+var EventEmitter = require("devtools/toolkit/event-emitter");
+var LayoutHelpers = require("devtools/toolkit/layout-helpers");
 
 
 
@@ -229,7 +228,7 @@ Selection.prototype = {
         let doc = this.document;
         if (doc && doc.defaultView) {
           let docEl = doc.documentElement;
-          let bindingParent = getRootBindingParent(rawNode);
+          let bindingParent = LayoutHelpers.getRootBindingParent(rawNode);
 
           if (docEl.contains(bindingParent)) {
             return true;

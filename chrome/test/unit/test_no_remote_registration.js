@@ -4,14 +4,14 @@
 
 
 
-let manifests = [
+var manifests = [
   do_get_file("data/test_no_remote_registration.manifest"),
 ];
 registerManifests(manifests);
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-let XULAppInfo = {
+var XULAppInfo = {
   vendor: "Mozilla",
   name: "XPCShell",
   ID: "{39885e5f-f6b4-4e2a-87e5-6259ecf79011}",
@@ -29,7 +29,7 @@ let XULAppInfo = {
   ])
 };
 
-let XULAppInfoFactory = {
+var XULAppInfoFactory = {
   
   CID: XULAPPINFO_CID,
   scheme: "XULAppInfo",
@@ -70,7 +70,7 @@ ProtocolHandler.prototype =
   ])
 };
 
-let testProtocols = [
+var testProtocols = [
   
   
   {scheme: "moz-protocol-ui-resource",

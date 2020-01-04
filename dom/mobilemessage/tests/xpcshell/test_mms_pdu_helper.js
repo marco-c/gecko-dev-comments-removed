@@ -1,7 +1,7 @@
 
 
 
-let MMS = {};
+var MMS = {};
 subscriptLoader.loadSubScript("resource://gre/modules/MmsPduHelper.jsm", MMS);
 MMS.debug = do_print;
 

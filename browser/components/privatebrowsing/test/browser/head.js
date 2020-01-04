@@ -1,7 +1,7 @@
 
 
 
-let {PromiseUtils} = Cu.import("resource://gre/modules/PromiseUtils.jsm", {});
+var {PromiseUtils} = Cu.import("resource://gre/modules/PromiseUtils.jsm", {});
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
   "resource://testing-common/PlacesTestUtils.jsm");
 

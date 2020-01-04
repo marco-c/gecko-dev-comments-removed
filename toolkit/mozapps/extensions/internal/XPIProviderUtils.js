@@ -33,7 +33,7 @@ const LOGGER_ID = "addons.xpi-utils";
 
 
 
-let logger = Log.repository.getLogger(LOGGER_ID);
+var logger = Log.repository.getLogger(LOGGER_ID);
 
 const KEY_PROFILEDIR                  = "ProfD";
 const FILE_DATABASE                   = "extensions.sqlite";

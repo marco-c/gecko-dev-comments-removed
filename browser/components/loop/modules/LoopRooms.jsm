@@ -53,11 +53,11 @@ const roomsPushNotification = function(version, channelID) {
 
 
 
-let gDirty = true;
+var gDirty = true;
 
-let gCurrentUser = null;
+var gCurrentUser = null;
 
-let gRoomsCache = null;
+var gRoomsCache = null;
 
 
 
@@ -131,7 +131,7 @@ const checkForParticipantsUpdate = function(room, updatedRoom) {
 
 
 
-let timerHandlers = {
+var timerHandlers = {
   
 
 
@@ -151,7 +151,7 @@ let timerHandlers = {
 
 
 
-let LoopRoomsInternal = {
+var LoopRoomsInternal = {
   
 
 

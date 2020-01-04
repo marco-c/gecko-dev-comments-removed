@@ -125,7 +125,7 @@ types.addDictType("fontface", {
 
 
 
-let PageStyleActor = protocol.ActorClass({
+var PageStyleActor = protocol.ActorClass({
   typeName: "pagestyle",
 
   
@@ -944,7 +944,7 @@ exports.PageStyleActor = PageStyleActor;
 
 
 
-let PageStyleFront = protocol.FrontClass(PageStyleActor, {
+var PageStyleFront = protocol.FrontClass(PageStyleActor, {
   initialize: function(conn, form, ctx, detail) {
     protocol.Front.prototype.initialize.call(this, conn, form, ctx, detail);
     this.inspector = this.parent();
@@ -1005,7 +1005,7 @@ let PageStyleFront = protocol.FrontClass(PageStyleActor, {
 
 
 
-let StyleRuleActor = protocol.ActorClass({
+var StyleRuleActor = protocol.ActorClass({
   typeName: "domstylerule",
   initialize: function(pageStyle, item) {
     protocol.Actor.prototype.initialize.call(this, null);
@@ -1324,7 +1324,7 @@ let StyleRuleActor = protocol.ActorClass({
 
 
 
-let StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
+var StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
   initialize: function(client, form, ctx, detail) {
     protocol.Front.prototype.initialize.call(this, client, form, ctx, detail);
   },
@@ -1479,7 +1479,7 @@ let StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
 
 
 
-let RuleModificationList = Class({
+var RuleModificationList = Class({
   
 
 

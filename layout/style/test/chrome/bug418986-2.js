@@ -8,7 +8,7 @@
 
 
 
-let expected_values = [
+var expected_values = [
   ["color", null, 8],
   ["color-index", null, 0],
   ["aspect-ratio", null, window.innerWidth + "/" + window.innerHeight],
@@ -36,7 +36,7 @@ let expected_values = [
 
 
 
-let suppressed_toggles = [
+var suppressed_toggles = [
   "-moz-images-in-menus",
   "-moz-mac-graphite-theme",
   
@@ -53,7 +53,7 @@ let suppressed_toggles = [
 ];
 
 
-let windows_versions = [
+var windows_versions = [
   "windows-xp",
   "windows-vista",
   "windows-win7",
@@ -62,7 +62,7 @@ let windows_versions = [
 ];
 
 
-let windows_themes = [
+var windows_themes = [
   "aero",
   "aero-lite",
   "luna-blue",
@@ -74,7 +74,7 @@ let windows_themes = [
 ];
 
 
-let OS = SpecialPowers.Services.appinfo.OS;
+var OS = SpecialPowers.Services.appinfo.OS;
 
 
 
@@ -84,13 +84,13 @@ if (OS === "WINNT") {
 
 
 
-let keyValMatches = (key, val) => matchMedia("(" + key + ":" + val +")").matches;
+var keyValMatches = (key, val) => matchMedia("(" + key + ":" + val +")").matches;
 
 
 
 
 
-let testMatch = function (key, val) {
+var testMatch = function (key, val) {
   if (val === null) {
     return;
   } else if (Array.isArray(val)) {
@@ -103,7 +103,7 @@ let testMatch = function (key, val) {
 
 
 
-let testToggles = function (resisting) {
+var testToggles = function (resisting) {
   suppressed_toggles.forEach(
     function (key) {
       var exists = keyValMatches(key, 0) || keyValMatches(key, 1);
@@ -117,7 +117,7 @@ let testToggles = function (resisting) {
 
 
 
-let testWindowsSpecific = function (resisting, queryName, possibleValues) {
+var testWindowsSpecific = function (resisting, queryName, possibleValues) {
   let foundValue = null;
   possibleValues.forEach(function (val) {
     if (keyValMatches(queryName, val)) {
@@ -136,7 +136,7 @@ let testWindowsSpecific = function (resisting, queryName, possibleValues) {
 
 
 
-let generateHtmlLines = function (resisting) {
+var generateHtmlLines = function (resisting) {
   let lines = "";
   expected_values.forEach(
     function ([key, offVal, onVal]) {
@@ -159,7 +159,7 @@ let generateHtmlLines = function (resisting) {
 
 
 
-let cssLine = function (query, clazz, id, color) {
+var cssLine = function (query, clazz, id, color) {
   return "@media " + query + " { ." + clazz +  "#" + id +
          " { background-color: " + color + "; } }\n";
 };
@@ -167,7 +167,7 @@ let cssLine = function (query, clazz, id, color) {
 
 
 
-let constructQuery = function (key, val) {
+var constructQuery = function (key, val) {
   return Array.isArray(val) ?
     "(min-" + key + ": " + val[0] + ") and (max-" +  key + ": " + val[1] + ")" :
     "(" + key + ": " + val + ")";
@@ -175,7 +175,7 @@ let constructQuery = function (key, val) {
 
 
 
-let mediaQueryCSSLine = function (key, val, color) {
+var mediaQueryCSSLine = function (key, val, color) {
   if (val === null) {
     return "";
   }
@@ -185,7 +185,7 @@ let mediaQueryCSSLine = function (key, val, color) {
 
 
 
-let suppressedMediaQueryCSSLine = function (key, color, suppressed) {
+var suppressedMediaQueryCSSLine = function (key, color, suppressed) {
   let query = "(" + key + ": 0), (" + key + ": 1)";
   return cssLine(query, "suppress", key, color);
 };
@@ -194,7 +194,7 @@ let suppressedMediaQueryCSSLine = function (key, color, suppressed) {
 
 
 
-let generateCSSLines = function (resisting) {
+var generateCSSLines = function (resisting) {
   let lines = ".spoof { background-color: red;}\n";
   expected_values.forEach(
     function ([key, offVal, onVal]) {
@@ -217,7 +217,7 @@ let generateCSSLines = function (resisting) {
 
 
 
-let green = (function () {
+var green = (function () {
   let temp = document.createElement("span");
   temp.style.backgroundColor = "green";
   return getComputedStyle(temp).backgroundColor;
@@ -227,7 +227,7 @@ let green = (function () {
 
 
 
-let testCSS = function (resisting) {
+var testCSS = function (resisting) {
   document.getElementById("display").innerHTML = generateHtmlLines(resisting);
   document.getElementById("test-css").innerHTML = generateCSSLines(resisting);
   let cssTestDivs = document.querySelectorAll(".spoof,.suppress");
@@ -240,7 +240,7 @@ let testCSS = function (resisting) {
 
 
 
-let testOSXFontSmoothing = function (resisting) {
+var testOSXFontSmoothing = function (resisting) {
   let div = document.createElement("div");
   div.style.MozOsxFontSmoothing = "unset";
   let readBack = window.getComputedStyle(div).MozOsxFontSmoothing;
@@ -251,7 +251,7 @@ let testOSXFontSmoothing = function (resisting) {
 
 
 
-let sleep = function (timeoutMs) {
+var sleep = function (timeoutMs) {
   return new Promise(function(resolve, reject) {
     window.setTimeout(resolve);
   });
@@ -261,7 +261,7 @@ let sleep = function (timeoutMs) {
 
 
 
-let testMediaQueriesInPictureElements = function* (resisting) {
+var testMediaQueriesInPictureElements = function* (resisting) {
   let lines = "";
   for (let [key, offVal, onVal] of expected_values) {
     let expected = resisting ? onVal : offVal;
@@ -284,7 +284,7 @@ let testMediaQueriesInPictureElements = function* (resisting) {
 
 
 
-let pushPref = function (key, value) {
+var pushPref = function (key, value) {
   return new Promise(function(resolve, reject) {
     SpecialPowers.pushPrefEnv({"set": [[key, value]]}, resolve);
   });
@@ -293,7 +293,7 @@ let pushPref = function (key, value) {
 
 
 
-let test = function* (isContent) {
+var test = function* (isContent) {
   for (prefValue of [false, true]) {
     yield pushPref("privacy.resistFingerprinting", prefValue);
     let resisting = prefValue && isContent;

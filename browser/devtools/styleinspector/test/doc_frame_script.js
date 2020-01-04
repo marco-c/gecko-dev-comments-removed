@@ -15,11 +15,11 @@
 
 
 
-let {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
-let {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
-let {CssLogic} = require("devtools/styleinspector/css-logic");
-let promise = require("promise");
+var {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+var {CssLogic} = require("devtools/styleinspector/css-logic");
+var promise = require("promise");
 
 
 
@@ -112,7 +112,7 @@ addMessageListener("Test:WaitForComputedStylePropertyValue", function(msg) {
 });
 
 
-let dumpn = msg => dump(msg + "\n");
+var dumpn = msg => dump(msg + "\n");
 
 
 

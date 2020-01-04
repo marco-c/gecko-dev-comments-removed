@@ -21,7 +21,7 @@ function section(number, url)
   return { number, url: baseURL + url };
 }
 
-let CompatWarning = {
+var CompatWarning = {
   
   
   

@@ -14,11 +14,11 @@
 
 
 
-let katakana = ["\u30a8", "\u30c9"]; 
-let ideograph = ["\u4efb", "\u5929", "\u5802"]; 
+var katakana = ["\u30a8", "\u30c9"]; 
+var ideograph = ["\u4efb", "\u5929", "\u5802"]; 
 
 
-let kURIs = [
+var kURIs = [
   "http://matchme/",
   "http://dontmatchme/",
   "http://title/1",
@@ -30,7 +30,7 @@ let kURIs = [
   "http://ideograph/",
   "http://camel/pleaseMatchMe/",
 ];
-let kTitles = [
+var kTitles = [
   "title1",
   "matchme2",
   "dontmatchme3",
@@ -59,7 +59,7 @@ addPageBook(9, 0);
 
 
 
-let gTests = [
+var gTests = [
   
   ["0: Match 'match' at the beginning or after / or on a CamelCase",
    "match", [0,2,4,9],

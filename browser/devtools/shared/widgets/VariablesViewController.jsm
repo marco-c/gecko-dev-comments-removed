@@ -11,8 +11,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource:///modules/devtools/VariablesView.jsm");
 Cu.import("resource:///modules/devtools/ViewHelpers.jsm");
-let {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
-let promise = require("promise");
+var {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+var promise = require("promise");
 
 Object.defineProperty(this, "WebConsoleUtils", {
   get: function() {
@@ -734,7 +734,7 @@ VariablesViewController.attach = function(aView, aOptions) {
 
 
 
-let StackFrameUtils = {
+var StackFrameUtils = {
   
 
 
@@ -790,4 +790,4 @@ let StackFrameUtils = {
 
 
 
-let L10N = new ViewHelpers.L10N(DBG_STRINGS_URI);
+var L10N = new ViewHelpers.L10N(DBG_STRINGS_URI);

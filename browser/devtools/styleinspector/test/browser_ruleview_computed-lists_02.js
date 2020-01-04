@@ -7,7 +7,7 @@
 
 
 
-let TEST_URI = `
+var TEST_URI = `
   <style type="text/css">
     #testid {
       margin: 0px 1px 2px 3px;

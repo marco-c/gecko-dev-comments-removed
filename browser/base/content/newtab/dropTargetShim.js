@@ -9,7 +9,7 @@
 
 
 
-let gDropTargetShim = {
+var gDropTargetShim = {
   
 
 

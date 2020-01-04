@@ -3,7 +3,7 @@
 
 
 
-let schema_version3 = `
+var schema_version3 = `
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
   CREATE TABLE groups (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
@@ -54,7 +54,7 @@ function run_test() {
 
 
 
-let tests = [
+var tests = [
   function testMigration() {
     
     schemaVersionIs(4);

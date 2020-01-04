@@ -26,7 +26,7 @@ function setPermissions() {
   perms.add(uri, "allowXULXBL", Ci.nsIPermissionManager.ALLOW_ACTION);
 }
 
-let cm = Cc["@mozilla.org/categorymanager;1"]
+var cm = Cc["@mozilla.org/categorymanager;1"]
            .getService(Components.interfaces.nsICategoryManager);
 
 
@@ -36,9 +36,9 @@ if (cm) {
 }
 
 
-let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
+var wm = Cc["@mozilla.org/appshell/window-mediator;1"]
             .getService(Ci.nsIWindowMediator);
-let win = wm.getMostRecentWindow('');
+var win = wm.getMostRecentWindow('');
 
 
 setDefaultPrefs();
@@ -46,7 +46,7 @@ setPermissions();
 
 
 
-let reftest = {};
+var reftest = {};
 Cu.import("chrome://reftest/content/reftest.jsm", reftest);
 
 

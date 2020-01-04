@@ -6,8 +6,8 @@
 
 
 
-let TEST_URL = "chrome://global/skin/icons/warning.svg";
-let TEST_SELECTOR = "path";
+var TEST_URL = "chrome://global/skin/icons/warning.svg";
+var TEST_SELECTOR = "path";
 
 add_task(function*() {
   yield addTab(TEST_URL);

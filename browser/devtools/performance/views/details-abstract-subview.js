@@ -6,7 +6,7 @@
 
 
 
-let DetailsSubview = {
+var DetailsSubview = {
   
 
 

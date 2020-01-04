@@ -13,7 +13,7 @@ Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 
 
-let {AccountState} = Cu.import("resource://gre/modules/FxAccounts.jsm", {});
+var {AccountState} = Cu.import("resource://gre/modules/FxAccounts.jsm", {});
 
 const ONE_HOUR_MS = 1000 * 60 * 60;
 const ONE_DAY_MS = ONE_HOUR_MS * 24;
@@ -24,7 +24,7 @@ initTestLogging("Trace");
 
 Cu.importGlobalProperties(['atob']);
 
-let log = Log.repository.getLogger("Services.FxAccounts.test");
+var log = Log.repository.getLogger("Services.FxAccounts.test");
 log.level = Log.Level.Debug;
 
 

@@ -4,7 +4,7 @@
 
 Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 
-let ContentAreaDownloadsView = {
+var ContentAreaDownloadsView = {
   init() {
     let view = new DownloadsPlacesView(document.getElementById("downloadsRichListBox"));
     

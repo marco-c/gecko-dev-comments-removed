@@ -8,10 +8,10 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 
 
-let ppmm = Cc['@mozilla.org/parentprocessmessagemanager;1']
+var ppmm = Cc['@mozilla.org/parentprocessmessagemanager;1']
              .getService(Ci.nsIMessageListenerManager);
 
-let pickResult = null;
+var pickResult = null;
 
 function processPickMessage(message) {
   let sender = message.target.QueryInterface(Ci.nsIMessageSender);

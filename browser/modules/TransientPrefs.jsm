@@ -8,7 +8,7 @@ this.EXPORTED_SYMBOLS = ["TransientPrefs"];
 
 Components.utils.import("resource://gre/modules/Preferences.jsm");
 
-let prefVisibility = new Map;
+var prefVisibility = new Map;
 
 
 

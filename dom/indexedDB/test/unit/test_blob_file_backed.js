@@ -3,9 +3,9 @@
 
 
 
-let disableWorkerTest = "This test uses SpecialPowers";
+var disableWorkerTest = "This test uses SpecialPowers";
 
-let testGenerator = testSteps();
+var testGenerator = testSteps();
 
 function createFileReader() {
   return SpecialPowers.Cc["@mozilla.org/files/filereader;1"]

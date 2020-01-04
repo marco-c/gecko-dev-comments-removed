@@ -231,9 +231,9 @@ function injectAPI(source, dest)
 
 
 
-let nextBrokerId = 1;
+var nextBrokerId = 1;
 
-let MESSAGES = [
+var MESSAGES = [
   "Extension:Message",
   "Extension:Connect",
 ];

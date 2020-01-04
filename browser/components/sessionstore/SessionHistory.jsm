@@ -40,7 +40,7 @@ this.SessionHistory = Object.freeze({
 
 
 
-let SessionHistoryInternal = {
+var SessionHistoryInternal = {
   
 
 

@@ -9,7 +9,7 @@
 
 
 
-let gOCSPRequestCount = 0;
+var gOCSPRequestCount = 0;
 
 function run_test() {
   do_get_profile();

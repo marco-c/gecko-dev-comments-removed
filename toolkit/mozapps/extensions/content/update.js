@@ -22,7 +22,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "AddonRepository", "resource://gre/modul
 XPCOMUtils.defineLazyModuleGetter(this, "Task", "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Promise", "resource://gre/modules/Promise.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Log", "resource://gre/modules/Log.jsm");
-let logger = null;
+var logger = null;
 
 var gUpdateWizard = {
   
@@ -163,7 +163,7 @@ var gOfflinePage = {
 }
 
 
-let listener = {
+var listener = {
   onDisabled: function listener_onDisabled(aAddon) {
     gUpdateWizard.affectedAddonIDs.add(aAddon.id);
     gUpdateWizard.metadataDisabled++;

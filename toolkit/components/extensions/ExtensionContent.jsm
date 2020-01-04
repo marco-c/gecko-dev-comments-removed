@@ -29,7 +29,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-let {
+var {
   runSafeWithoutClone,
   MessageBroker,
   Messenger,
@@ -48,7 +48,7 @@ function isWhenBeforeOrSame(when1, when2)
 
 
 
-let api = context => { return {
+var api = context => { return {
   runtime: {
     connect: function(extensionId, connectInfo) {
       let name = connectInfo && connectInfo.name || "";
@@ -259,7 +259,7 @@ ExtensionContext.prototype = {
 
 
 
-let DocumentManager = {
+var DocumentManager = {
   extensionCount: 0,
 
   
@@ -454,7 +454,7 @@ BrowserExtensionContent.prototype = {
   },
 };
 
-let ExtensionManager = {
+var ExtensionManager = {
   
   extensions: new Map(),
 

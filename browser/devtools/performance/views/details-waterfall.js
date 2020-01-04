@@ -9,7 +9,7 @@ const MARKER_DETAILS_WIDTH = 200;
 
 
 
-let WaterfallView = Heritage.extend(DetailsSubview, {
+var WaterfallView = Heritage.extend(DetailsSubview, {
 
   
   MARKER_EPSILON: 0.000000000001,

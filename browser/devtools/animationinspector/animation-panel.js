@@ -19,7 +19,7 @@ const {
 
 
 
-let AnimationsPanel = {
+var AnimationsPanel = {
   UI_UPDATED_EVENT: "ui-updated",
   PANEL_INITIALIZED: "panel-initialized",
 

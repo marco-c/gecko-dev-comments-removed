@@ -3,7 +3,7 @@
 
 
 var testnum = 0;
-let dbConnection; 
+var dbConnection; 
 
 Cu.import("resource://gre/modules/Promise.jsm");
 

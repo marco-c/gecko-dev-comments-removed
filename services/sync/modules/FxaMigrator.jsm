@@ -24,7 +24,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Weave",
   "resource://services-sync/main.js");
 
 
-let fxAccountsCommon = {};
+var fxAccountsCommon = {};
 Cu.import("resource://gre/modules/FxAccountsCommon.js", fxAccountsCommon);
 
 
@@ -563,4 +563,4 @@ Migrator.prototype = {
 
 
 this.EXPORTED_SYMBOLS = ["fxaMigrator"];
-let fxaMigrator = new Migrator();
+var fxaMigrator = new Migrator();

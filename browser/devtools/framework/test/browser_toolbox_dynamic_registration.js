@@ -2,7 +2,7 @@
 
 
 
-let toolbox;
+var toolbox;
 
 function test()
 {

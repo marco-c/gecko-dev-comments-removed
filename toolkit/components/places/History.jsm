@@ -442,7 +442,7 @@ function sqlList(list) {
 
 
 
-let invalidateFrecencies = Task.async(function*(db, idList) {
+var invalidateFrecencies = Task.async(function*(db, idList) {
   if (idList.length == 0) {
     return;
   }
@@ -462,7 +462,7 @@ let invalidateFrecencies = Task.async(function*(db, idList) {
 });
 
 
-let clear = Task.async(function* (db) {
+var clear = Task.async(function* (db) {
   
   yield db.execute("DELETE FROM moz_historyvisits");
 
@@ -497,7 +497,7 @@ let clear = Task.async(function* (db) {
 
 
 
-let removePagesById = Task.async(function*(db, idList) {
+var removePagesById = Task.async(function*(db, idList) {
   if (idList.length == 0) {
     return;
   }
@@ -526,7 +526,7 @@ let removePagesById = Task.async(function*(db, idList) {
 
 
 
-let cleanupPages = Task.async(function*(db, pages) {
+var cleanupPages = Task.async(function*(db, pages) {
   yield invalidateFrecencies(db, [p.id for (p of pages) if (p.hasForeign || p.hasVisits)]);
   yield removePagesById(db, [p.id for (p of pages) if (!p.hasForeign && !p.hasVisits)]);
 });
@@ -548,7 +548,7 @@ let cleanupPages = Task.async(function*(db, pages) {
 
 
 
-let notifyCleanup = Task.async(function*(db, pages) {
+var notifyCleanup = Task.async(function*(db, pages) {
   let notifiedCount = 0;
   let observers = PlacesUtils.history.getObservers();
 
@@ -590,7 +590,7 @@ let notifyCleanup = Task.async(function*(db, pages) {
 
 
 
-let notifyOnResult = Task.async(function*(data, onResult) {
+var notifyOnResult = Task.async(function*(data, onResult) {
   if (!onResult) {
     return;
   }
@@ -611,7 +611,7 @@ let notifyOnResult = Task.async(function*(data, onResult) {
 });
 
 
-let removeVisitsByFilter = Task.async(function*(db, filter, onResult = null) {
+var removeVisitsByFilter = Task.async(function*(db, filter, onResult = null) {
   
   
   
@@ -698,7 +698,7 @@ let removeVisitsByFilter = Task.async(function*(db, filter, onResult = null) {
 
 
 
-let remove = Task.async(function*(db, {guids, urls}, onResult = null) {
+var remove = Task.async(function*(db, {guids, urls}, onResult = null) {
   
   let query =
     `SELECT id, url, guid, foreign_count, title, frecency FROM moz_places

@@ -10,7 +10,7 @@ this.EXPORTED_SYMBOLS = ["SplitView"];
 
 const LANDSCAPE_MEDIA_QUERY = "(min-width: 701px)";
 
-let bindings = new WeakMap();
+var bindings = new WeakMap();
 
 
 

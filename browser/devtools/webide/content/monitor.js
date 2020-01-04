@@ -38,7 +38,7 @@ window.addEventListener('load', function onLoad() {
 
 
 
-let Monitor = {
+var Monitor = {
 
   apps: new Map(),
   graphs: new Map(),

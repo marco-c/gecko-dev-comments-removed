@@ -3,7 +3,7 @@
 
 
 
-let testData = [
+var testData = [
   { isInQuery: true
   , isBookmark: true
   , title: "bookmark 1"

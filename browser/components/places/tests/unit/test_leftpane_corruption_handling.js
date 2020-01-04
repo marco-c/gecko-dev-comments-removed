@@ -9,11 +9,11 @@
 
 
 
-let gLeftPaneFolderIdGetter;
-let gAllBookmarksFolderIdGetter;
+var gLeftPaneFolderIdGetter;
+var gAllBookmarksFolderIdGetter;
 
-let gReferenceHierarchy;
-let gLeftPaneFolderId;
+var gReferenceHierarchy;
+var gLeftPaneFolderId;
 
 add_task(function* () {
   
@@ -69,7 +69,7 @@ add_task(function* () {
 });
 
 
-let gTests = [
+var gTests = [
 
   function* test1() {
     print("1. Do nothing, checks test calibration.");

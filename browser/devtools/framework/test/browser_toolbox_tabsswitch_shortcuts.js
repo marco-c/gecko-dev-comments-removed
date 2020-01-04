@@ -1,9 +1,9 @@
 
 
 
-let {Toolbox} = require("devtools/framework/toolbox");
+var {Toolbox} = require("devtools/framework/toolbox");
 
-let toolbox, toolIDs, idIndex, secondTime = false,
+var toolbox, toolIDs, idIndex, secondTime = false,
     reverse = false, nextKey = null, prevKey = null;
 
 function test() {

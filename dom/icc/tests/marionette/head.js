@@ -92,7 +92,7 @@ function isStkText(aStkText, aExpectedStkText) {
   }
 }
 
-let _pendingEmulatorCmdCount = 0;
+var _pendingEmulatorCmdCount = 0;
 
 
 
@@ -223,8 +223,8 @@ function verifyWithPeekedStkEnvelope(aExpectEnvelope) {
   });
 }
 
-let workingFrame;
-let iccManager;
+var workingFrame;
+var iccManager;
 
 
 

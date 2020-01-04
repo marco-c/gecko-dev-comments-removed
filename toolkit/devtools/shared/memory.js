@@ -28,7 +28,7 @@ loader.lazyRequireGetter(this, "HeapSnapshotFileUtils",
 
 
 
-let Memory = exports.Memory = Class({
+var Memory = exports.Memory = Class({
   extends: EventTarget,
 
   

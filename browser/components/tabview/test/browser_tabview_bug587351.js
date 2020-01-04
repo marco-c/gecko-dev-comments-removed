@@ -1,7 +1,7 @@
 
 
 
-let newTab;
+var newTab;
 
 function test() {
   waitForExplicitFinish();

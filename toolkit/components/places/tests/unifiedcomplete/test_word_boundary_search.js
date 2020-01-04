@@ -14,8 +14,8 @@
 
 
 
-let katakana = ["\u30a8", "\u30c9"]; 
-let ideograph = ["\u4efb", "\u5929", "\u5802"]; 
+var katakana = ["\u30a8", "\u30c9"]; 
+var ideograph = ["\u4efb", "\u5929", "\u5802"]; 
 
 add_task(function* test_escape() {
   Services.prefs.setBoolPref("browser.urlbar.autoFill.searchEngines", false);

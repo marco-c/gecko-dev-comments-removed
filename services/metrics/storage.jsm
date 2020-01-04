@@ -689,7 +689,7 @@ this.MetricsStorageBackend = function (path) {
 
 
 
-let shutdown = new AsyncShutdown.Barrier("Metrics Storage Backend");
+var shutdown = new AsyncShutdown.Barrier("Metrics Storage Backend");
 this.MetricsStorageBackend.shutdown = shutdown.client;
 Sqlite.shutdown.addBlocker("Metrics Storage: Shutting down",
   () => shutdown.wait());

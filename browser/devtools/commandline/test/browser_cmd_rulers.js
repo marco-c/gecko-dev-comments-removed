@@ -5,7 +5,7 @@
 
 
 
-let TEST_PAGE = "data:text/html;charset=utf-8,foo";
+var TEST_PAGE = "data:text/html;charset=utf-8,foo";
 
 function test() {
   return Task.spawn(spawnTest).then(finish, helpers.handleError);

@@ -895,7 +895,7 @@ const TEST_PASS_ASYNC = 1;
 
 
 
-let testPass = TEST_PASS_SYNC;
+var testPass = TEST_PASS_SYNC;
 
 
 
@@ -947,10 +947,10 @@ var tests =
   test_not_right_owning_statement,
   test_multiple_results,
 ];
-let index = 0;
+var index = 0;
 
 const STARTING_UNIQUE_ID = 2;
-let nextUniqueId = STARTING_UNIQUE_ID;
+var nextUniqueId = STARTING_UNIQUE_ID;
 
 function run_next_test()
 {

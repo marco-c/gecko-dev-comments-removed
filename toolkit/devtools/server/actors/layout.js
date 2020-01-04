@@ -36,7 +36,7 @@ const EventEmitter = require("devtools/toolkit/event-emitter");
 
 
 
-let ReflowActor = exports.ReflowActor = protocol.ActorClass({
+var ReflowActor = exports.ReflowActor = protocol.ActorClass({
   typeName: "reflow",
 
   events: {
@@ -206,7 +206,7 @@ Observable.prototype = {
 
 
 
-let gIgnoreLayoutChanges = false;
+var gIgnoreLayoutChanges = false;
 exports.setIgnoreLayoutChanges = function(ignore, syncReflowNode) {
   if (syncReflowNode) {
     let forceSyncReflow = syncReflowNode.offsetWidth;
@@ -344,7 +344,7 @@ LayoutChangesObserver.prototype = Heritage.extend(Observable.prototype, {
 
 
 
-let observedWindows = new Map();
+var observedWindows = new Map();
 function getLayoutChangesObserver(tabActor) {
   let observerData = observedWindows.get(tabActor);
   if (observerData) {

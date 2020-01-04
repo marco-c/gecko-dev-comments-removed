@@ -16,7 +16,7 @@ const method = require("method/core");
 
 
 
-let dispatcher = hint => {
+var dispatcher = hint => {
   const base = method(hint);
   
   let implementations = new Map();

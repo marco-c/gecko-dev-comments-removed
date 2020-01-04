@@ -117,7 +117,7 @@ Prompter.prototype = {
 
 
 
-let PromptUtilsTemp = {
+var PromptUtilsTemp = {
     __proto__ : PromptUtils,
 
     getLocalizedString : function (key, formatArgs) {

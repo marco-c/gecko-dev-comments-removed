@@ -4,9 +4,9 @@
 
 "use strict";
 
-let bookmarksToolbar = document.getElementById("PersonalToolbar");
-let navbar = document.getElementById("nav-bar");
-let tabsToolbar = document.getElementById("TabsToolbar");
+var bookmarksToolbar = document.getElementById("PersonalToolbar");
+var navbar = document.getElementById("nav-bar");
+var tabsToolbar = document.getElementById("TabsToolbar");
 
 
 add_task(function() {

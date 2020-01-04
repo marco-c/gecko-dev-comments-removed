@@ -1,11 +1,11 @@
 
 
 
-let {Log} = Cu.import("resource://gre/modules/Log.jsm", {});
-let {Weave} = Cu.import("resource://services-sync/main.js", {});
-let {Notifications} = Cu.import("resource://services-sync/notifications.js", {});
+var {Log} = Cu.import("resource://gre/modules/Log.jsm", {});
+var {Weave} = Cu.import("resource://services-sync/main.js", {});
+var {Notifications} = Cu.import("resource://services-sync/notifications.js", {});
 
-let stringBundle = Cc["@mozilla.org/intl/stringbundle;1"]
+var stringBundle = Cc["@mozilla.org/intl/stringbundle;1"]
                    .getService(Ci.nsIStringBundleService)
                    .createBundle("chrome://weave/locale/services/sync.properties");
 

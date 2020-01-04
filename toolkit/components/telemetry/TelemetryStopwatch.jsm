@@ -8,14 +8,14 @@ const Cu = Components.utils;
 
 this.EXPORTED_SYMBOLS = ["TelemetryStopwatch"];
 
-let Telemetry = Cc["@mozilla.org/base/telemetry;1"]
+var Telemetry = Cc["@mozilla.org/base/telemetry;1"]
                   .getService(Ci.nsITelemetry);
 
 
 
 
-let simpleTimers = {};
-let objectTimers = new WeakMap();
+var simpleTimers = {};
+var objectTimers = new WeakMap();
 
 this.TelemetryStopwatch = {
   

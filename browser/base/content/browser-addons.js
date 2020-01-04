@@ -650,7 +650,7 @@ var LightWeightThemeWebInstaller = {
 
 
 
-let LightweightThemeListener = {
+var LightweightThemeListener = {
   _modifiedStyles: [],
 
   init: function () {

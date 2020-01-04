@@ -3,15 +3,15 @@
 
 "use strict";
 
-let gTestTab;
-let gContentAPI;
-let gContentWindow;
+var gTestTab;
+var gContentAPI;
+var gContentWindow;
 
 function test() {
   UITourTest();
 }
 
-let tests = [
+var tests = [
   
   function test_resetFirefox(done) {
     let winWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].

@@ -10,7 +10,7 @@ const certdb  = Cc["@mozilla.org/security/x509certdb;1"]
                   .getService(Ci.nsIX509CertDB);
 
 
-let certList = [
+var certList = [
   'ee',
   'ca-1',
   'ca-2',

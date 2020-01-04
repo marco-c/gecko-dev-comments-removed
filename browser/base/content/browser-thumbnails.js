@@ -7,7 +7,7 @@
 
 
 
-let gBrowserThumbnails = {
+var gBrowserThumbnails = {
   
 
 

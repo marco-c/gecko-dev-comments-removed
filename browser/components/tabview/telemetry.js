@@ -5,7 +5,7 @@
 
 
 
-let Telemetry = {
+var Telemetry = {
   TOPIC_GATHER_TELEMETRY: "gather-telemetry",
 
   

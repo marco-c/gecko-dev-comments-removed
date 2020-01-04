@@ -14,13 +14,13 @@ XPCOMUtils.defineLazyModuleGetter(this, "WebChannel",
 
 
 
-let {FxAccountsWebChannel} = Components.utils.import("resource://gre/modules/FxAccountsWebChannel.jsm", {});
+var {FxAccountsWebChannel} = Components.utils.import("resource://gre/modules/FxAccountsWebChannel.jsm", {});
 
 const TEST_HTTP_PATH = "http://example.com";
 const TEST_BASE_URL = TEST_HTTP_PATH + "/browser/browser/base/content/test/general/browser_fxa_web_channel.html";
 const TEST_CHANNEL_ID = "account_updates_test";
 
-let gTests = [
+var gTests = [
   {
     desc: "FxA Web Channel - should receive message about profile changes",
     run: function* () {

@@ -80,7 +80,7 @@ writeInstallRDFToDir({
 
 
 
-let lastTimestamp = Date.now();
+var lastTimestamp = Date.now();
 
 
 

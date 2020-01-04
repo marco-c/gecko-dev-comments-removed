@@ -7,7 +7,7 @@
 
 
 
-let gDrag = {
+var gDrag = {
   
 
 

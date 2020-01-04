@@ -55,7 +55,7 @@ const HSL_BOX_WIDTH = 158;
 
 
 
-let EyedropperManager = {
+var EyedropperManager = {
   _instances: new WeakMap(),
 
   getInstance: function(chromeWindow) {

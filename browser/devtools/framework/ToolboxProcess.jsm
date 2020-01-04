@@ -24,7 +24,7 @@ const promise = require("promise");
 
 this.EXPORTED_SYMBOLS = ["BrowserToolboxProcess"];
 
-let processes = new Set();
+var processes = new Set();
 
 
 
@@ -268,7 +268,7 @@ function dumpn(str) {
   }
 }
 
-let wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");
+var wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");
 
 Services.prefs.addObserver("devtools.debugger.log", {
   observe: (...args) => wantLogging = Services.prefs.getBoolPref(args.pop())

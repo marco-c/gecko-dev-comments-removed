@@ -2,7 +2,7 @@
 
 
 
-let provider;
+var provider;
 
 function test() {
   waitForExplicitFinish();
@@ -27,7 +27,7 @@ function test() {
   });
 }
 
-let tests = {
+var tests = {
   testSingleProvider: function(next) {
     ok(provider.enabled, "provider is initially enabled");
     let port = provider.getWorkerPort();

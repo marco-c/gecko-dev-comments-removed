@@ -55,7 +55,7 @@ add_task(function* test_corrupt_database() {
 
 
 
-let database_check = Task.async(function* () {
+var database_check = Task.async(function* () {
   
   let root = PlacesUtils.getFolderContents(PlacesUtils.bookmarksMenuFolderId).root;
   Assert.equal(root.childCount, 2);

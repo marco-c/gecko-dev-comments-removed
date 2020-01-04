@@ -8,7 +8,7 @@
 
 
 
-let gUndoDialog = {
+var gUndoDialog = {
   
 
 

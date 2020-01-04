@@ -193,7 +193,7 @@ LinksStorage.prototype = {
 
 
 
-let AllPages = {
+var AllPages = {
   
 
 
@@ -325,7 +325,7 @@ let AllPages = {
 
 
 
-let GridPrefs = {
+var GridPrefs = {
   
 
 
@@ -380,7 +380,7 @@ GridPrefs.init();
 
 
 
-let PinnedLinks = {
+var PinnedLinks = {
   
 
 
@@ -506,7 +506,7 @@ let PinnedLinks = {
 
 
 
-let BlockedLinks = {
+var BlockedLinks = {
   
 
 
@@ -606,7 +606,7 @@ let BlockedLinks = {
 
 
 
-let PlacesProvider = {
+var PlacesProvider = {
   
 
 
@@ -817,7 +817,7 @@ let PlacesProvider = {
 
 
 
-let Links = {
+var Links = {
   
 
 
@@ -1292,7 +1292,7 @@ Links.compareLinks = Links.compareLinks.bind(Links);
 
 
 
-let Telemetry = {
+var Telemetry = {
   
 
 
@@ -1334,7 +1334,7 @@ let Telemetry = {
 
 
 
-let LinkChecker = {
+var LinkChecker = {
   _cache: {},
 
   get flags() {
@@ -1361,7 +1361,7 @@ let LinkChecker = {
   }
 };
 
-let ExpirationFilter = {
+var ExpirationFilter = {
   init: function ExpirationFilter_init() {
     PageThumbs.addExpirationFilter(this);
   },

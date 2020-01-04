@@ -5,21 +5,21 @@
 
 const WINDOW_ATTRIBUTES = ["width", "height", "screenX", "screenY", "sizemode"];
 
-let stateBackup = ss.getBrowserState();
+var stateBackup = ss.getBrowserState();
 
-let originalWarnOnClose = gPrefService.getBoolPref("browser.tabs.warnOnClose");
-let originalStartupPage = gPrefService.getIntPref("browser.startup.page");
-let originalWindowType = document.documentElement.getAttribute("windowtype");
+var originalWarnOnClose = gPrefService.getBoolPref("browser.tabs.warnOnClose");
+var originalStartupPage = gPrefService.getIntPref("browser.startup.page");
+var originalWindowType = document.documentElement.getAttribute("windowtype");
 
-let gotLastWindowClosedTopic = false;
-let shouldPinTab = false;
-let shouldOpenTabs = false;
-let shouldCloseTab = false;
-let testNum = 0;
-let afterTestCallback;
+var gotLastWindowClosedTopic = false;
+var shouldPinTab = false;
+var shouldOpenTabs = false;
+var shouldCloseTab = false;
+var testNum = 0;
+var afterTestCallback;
 
 
-let testState = {
+var testState = {
   windows: [
     { tabs: [{ entries: [{ url: "http://example.org" }] }] }
   ],
@@ -29,7 +29,7 @@ let testState = {
 
 
 
-let tests = [];
+var tests = [];
 
 
 function checkOSX34Generator(num) {

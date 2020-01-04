@@ -221,7 +221,7 @@ DOMDownloadManagerImpl.prototype = {
 
 
 
-let downloadsCache = {
+var downloadsCache = {
   init: function() {
     this.cache = new WeakMap();
   },

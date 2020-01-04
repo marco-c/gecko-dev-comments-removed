@@ -13,7 +13,7 @@ const evrootnick = "evroot";
 
 
 
-let certList = [
+var certList = [
   
   'int-ev-valid',
   'ev-valid',

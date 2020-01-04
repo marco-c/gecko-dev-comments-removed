@@ -81,8 +81,8 @@ const kTargetBlank = {
 
 
 
-let originalNewWindowPref = Services.prefs.getIntPref(kNewWindowPrefKey);
-let originalNewWindowRestrictionPref =
+var originalNewWindowPref = Services.prefs.getIntPref(kNewWindowPrefKey);
+var originalNewWindowRestrictionPref =
   Services.prefs.getIntPref(kNewWindowRestrictionPrefKey);
 
 registerCleanupFunction(function() {

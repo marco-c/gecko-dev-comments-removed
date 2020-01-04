@@ -2,7 +2,7 @@
 
 
 
-let { interfaces: Ci } = Components;
+var { interfaces: Ci } = Components;
 
 addMessageListener("Eyedropper:RequestContentScreenshot", sendContentScreenshot);
 

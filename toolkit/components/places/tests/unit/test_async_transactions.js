@@ -13,7 +13,7 @@ const rootGuid = PlacesUtils.bookmarks.rootGuid;
 Components.utils.importGlobalProperties(["URL"]);
 
 
-let observer = {
+var observer = {
   __proto__: NavBookmarkObserver.prototype,
 
   tagRelatedGuids: new Set(),
@@ -105,7 +105,7 @@ let observer = {
 observer.reset();
 
 
-let bmStartIndex = 0;
+var bmStartIndex = 0;
 
 function run_test() {
   bmsvc.addObserver(observer, false);

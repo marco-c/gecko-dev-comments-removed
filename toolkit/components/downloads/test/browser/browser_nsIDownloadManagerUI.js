@@ -1,7 +1,7 @@
 
 
 
-let Cr = Components.results;
+var Cr = Components.results;
 
 function test_visibility_open()
 {

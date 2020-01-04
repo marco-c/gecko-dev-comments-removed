@@ -1,9 +1,9 @@
 
 
 
-let {Toolbox} = require("devtools/framework/toolbox");
+var {Toolbox} = require("devtools/framework/toolbox");
 
-let toolbox = null;
+var toolbox = null;
 
 function test() {
   const URL = "data:text/plain;charset=UTF-8,Nothing to see here, move along";

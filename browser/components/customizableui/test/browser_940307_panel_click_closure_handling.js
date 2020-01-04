@@ -4,7 +4,7 @@
 
 "use strict";
 
-let button, menuButton;
+var button, menuButton;
 
 add_task(function() {
   button = document.createElement("toolbarbutton");

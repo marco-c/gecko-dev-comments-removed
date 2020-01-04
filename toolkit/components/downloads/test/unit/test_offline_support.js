@@ -11,7 +11,7 @@
 
 
 
-let doNotError = false;
+var doNotError = false;
 
 const nsIF = Ci.nsIFile;
 const nsIDM = Ci.nsIDownloadManager;

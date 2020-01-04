@@ -15,7 +15,7 @@ const PROPNAME_MAX_LENGTH = 4;
 
 
 
-let OptimizationsListView = {
+var OptimizationsListView = {
 
   _currentFrame: null,
 

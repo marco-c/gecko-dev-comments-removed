@@ -12,7 +12,7 @@ const TEST_URL = TEST_URL_ROOT + "doc_inspector_search.html";
 
 
 
-let TEST_DATA = [
+var TEST_DATA = [
   {
     key: "d",
     suggestions: [

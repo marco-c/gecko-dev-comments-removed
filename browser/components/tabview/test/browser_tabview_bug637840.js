@@ -1,7 +1,7 @@
 
 
 
-let cw;
+var cw;
 
 Components.utils.import("resource://gre/modules/Promise.jsm", this);
 

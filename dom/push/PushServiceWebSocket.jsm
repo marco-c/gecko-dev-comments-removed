@@ -45,7 +45,7 @@ const prefs = new Preferences("dom.push.");
 this.EXPORTED_SYMBOLS = ["PushServiceWebSocket"];
 
 
-let gDebuggingEnabled = true;
+var gDebuggingEnabled = true;
 
 function debug(s) {
   if (gDebuggingEnabled) {
@@ -1200,7 +1200,7 @@ this.PushServiceWebSocket = {
   },
 };
 
-let PushNetworkInfo = {
+var PushNetworkInfo = {
   
 
 

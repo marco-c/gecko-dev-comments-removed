@@ -6,7 +6,7 @@ Components.utils.import("resource://gre/modules/osfile.jsm");
 const kSelectedEnginePref = "browser.search.selectedEngine";
 
 
-let waitForNotification = waitForSearchNotification;
+var waitForNotification = waitForSearchNotification;
 
 
 add_task(function* test_defaultEngine() {

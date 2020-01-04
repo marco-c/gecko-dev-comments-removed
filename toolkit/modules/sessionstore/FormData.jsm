@@ -94,7 +94,7 @@ this.FormData = Object.freeze({
 
 
 
-let FormDataInternal = {
+var FormDataInternal = {
   
 
 

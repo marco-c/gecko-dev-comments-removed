@@ -12,7 +12,7 @@ Cu.import("resource://gre/modules/services/healthreport/providers.jsm");
 
 
 
-let gGlobalScope = this;
+var gGlobalScope = this;
 function loadAddonManager() {
   let ns = {};
   Cu.import("resource://gre/modules/Services.jsm", ns);

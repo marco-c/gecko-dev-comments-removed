@@ -18,9 +18,9 @@ const ELLIPSIS = Services.prefs.getComplexValue("intl.ellipsis",
 
 
 
-let testDate = -310435200000;
+var testDate = -310435200000;
 
-let inputTests = [
+var inputTests = [
   
   {
     input: "/foo?b*\\s\"ar/igym",

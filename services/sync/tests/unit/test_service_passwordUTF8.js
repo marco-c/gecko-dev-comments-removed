@@ -11,13 +11,13 @@ const APPLES = "\uf8ff\uf8ff\uf8ff\uf8ff";
 const LOWBYTES = "\xff\xff\xff\xff";
 
 
-let basicauth = {};
+var basicauth = {};
 basicauth[LOWBYTES] = "Basic am9obmRvZTr/////";
 basicauth[Utils.encodeUTF8(JAPANESE)] = "Basic am9obmRvZTrjk7/jl7/jm7/jn78=";
 
 
 
-let server_password;
+var server_password;
 
 function login_handling(handler) {
   return function (request, response) {

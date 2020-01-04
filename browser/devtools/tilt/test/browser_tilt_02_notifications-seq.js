@@ -2,7 +2,7 @@
 
 "use strict";
 
-let tabEvents = "";
+var tabEvents = "";
 
 function test() {
   if (!isTiltEnabled()) {

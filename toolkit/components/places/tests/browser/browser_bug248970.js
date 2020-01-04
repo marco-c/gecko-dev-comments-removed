@@ -6,7 +6,7 @@
 
 
 
-let visitedURIs = [
+var visitedURIs = [
   "http://www.test-link.com/",
   "http://www.test-typed.com/",
   "http://www.test-bookmark.com/",

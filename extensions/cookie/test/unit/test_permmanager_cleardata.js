@@ -1,7 +1,7 @@
 
 
 
-let pm;
+var pm;
 
 
 function createPrincipal(aOrigin, aAppId, aBrowserElement)

@@ -16,7 +16,7 @@ const MAX_ENTRIES = 10;
 
 
 
-let testData = [
+var testData = [
   ["d", "direction", 0, 3],
   ["VK_DOWN", "display", 1, 3],
   ["VK_DOWN", "dominant-baseline", 2, 3],

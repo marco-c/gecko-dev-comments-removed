@@ -2,7 +2,7 @@
 
 
 
-let stateBackup = ss.getBrowserState();
+var stateBackup = ss.getBrowserState();
 
 function cleanup() {
   

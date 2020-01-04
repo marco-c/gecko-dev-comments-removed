@@ -8,7 +8,7 @@
 
 
 
-let gOCSPRequestCount = 0;
+var gOCSPRequestCount = 0;
 
 function add_ocsp_test(aHost, aExpectedResult) {
   add_connection_test(aHost, aExpectedResult,

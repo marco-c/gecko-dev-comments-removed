@@ -35,7 +35,7 @@ types.addType("profiler-data", {
 
 
 
-let ProfilerActor = exports.ProfilerActor = protocol.ActorClass({
+var ProfilerActor = exports.ProfilerActor = protocol.ActorClass({
   typeName: "profiler",
 
   

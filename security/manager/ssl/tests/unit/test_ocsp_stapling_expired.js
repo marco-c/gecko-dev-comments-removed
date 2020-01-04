@@ -9,8 +9,8 @@
 
 
 
-let gCurrentOCSPResponse = null;
-let gOCSPRequestCount = 0;
+var gCurrentOCSPResponse = null;
+var gOCSPRequestCount = 0;
 
 function add_ocsp_test(aHost, aExpectedResult, aOCSPResponseToServe,
                        aExpectedRequestCount) {
@@ -31,31 +31,31 @@ function add_ocsp_test(aHost, aExpectedResult, aOCSPResponseToServe,
 do_get_profile();
 Services.prefs.setBoolPref("security.ssl.enable_ocsp_stapling", true);
 Services.prefs.setIntPref("security.OCSP.enabled", 1);
-let args = [["good", "localhostAndExampleCom", "unused"],
+var args = [["good", "localhostAndExampleCom", "unused"],
              ["expiredresponse", "localhostAndExampleCom", "unused"],
              ["oldvalidperiod", "localhostAndExampleCom", "unused"],
              ["revoked", "localhostAndExampleCom", "unused"],
              ["unknown", "localhostAndExampleCom", "unused"],
             ];
-let ocspResponses = generateOCSPResponses(args, "tlsserver");
+var ocspResponses = generateOCSPResponses(args, "tlsserver");
 
-let ocspResponseGood = ocspResponses[0];
+var ocspResponseGood = ocspResponses[0];
 
-let expiredOCSPResponseGood = ocspResponses[1];
+var expiredOCSPResponseGood = ocspResponses[1];
 
-let oldValidityPeriodOCSPResponseGood = ocspResponses[2];
+var oldValidityPeriodOCSPResponseGood = ocspResponses[2];
 
-let ocspResponseRevoked = ocspResponses[3];
+var ocspResponseRevoked = ocspResponses[3];
 
-let ocspResponseUnknown = ocspResponses[4];
-
-
-let willNotRetry = 1;
+var ocspResponseUnknown = ocspResponses[4];
 
 
+var willNotRetry = 1;
 
 
-let willRetry = 4;
+
+
+var willRetry = 4;
 
 function run_test() {
   let ocspResponder = new HttpServer();

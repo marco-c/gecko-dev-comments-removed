@@ -2,9 +2,9 @@
 
 
 
-let EXPORTED_SYMBOLS = ["LightweightThemeConsumer"];
-let Cc = Components.classes;
-let Ci = Components.interfaces;
+var EXPORTED_SYMBOLS = ["LightweightThemeConsumer"];
+var Cc = Components.classes;
+var Ci = Components.interfaces;
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/LightweightThemeManager.jsm");

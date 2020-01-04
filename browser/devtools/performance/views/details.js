@@ -7,7 +7,7 @@
 
 
 
-let DetailsView = {
+var DetailsView = {
   
 
 

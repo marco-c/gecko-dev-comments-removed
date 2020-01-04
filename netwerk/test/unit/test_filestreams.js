@@ -1,8 +1,8 @@
 
 
 
-let Cc = Components.classes;
-let Ci = Components.interfaces;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
 
 
 
@@ -275,7 +275,7 @@ function test_zero_size_buffered()
 
 
 
-let tests = [
+var tests = [
   test_access,
   test_access_trick,
   test_access_defer,

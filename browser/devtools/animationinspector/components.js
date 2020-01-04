@@ -556,7 +556,7 @@ AnimationTargetNode.prototype = {
 
 
 
-let TimeScale = {
+var TimeScale = {
   minStartTime: Infinity,
   maxEndTime: 0,
 

@@ -55,14 +55,14 @@ const PREF_ACTIVE = "security.mixed_content.block_active_content";
 const gHttpTestRoot1 = "https://test1.example.com/browser/browser/base/content/test/general/";
 const gHttpTestRoot2 = "https://test2.example.com/browser/browser/base/content/test/general/";
 
-let origBlockActive;
-let gTestWin = null;
-let mainTab = null;
-let curClickHandler = null;
-let curContextMenu = null;
-let curTestFunc = null;
-let curTestName = null;
-let curChildTabLink = null;
+var origBlockActive;
+var gTestWin = null;
+var mainTab = null;
+var curClickHandler = null;
+var curContextMenu = null;
+var curTestFunc = null;
+var curTestName = null;
+var curChildTabLink = null;
 
 
 
@@ -96,7 +96,7 @@ function waitForCondition(condition, nextTest, errorMsg) {
 
 
 
-let clickHandler = function (aEvent, aFunc) {
+var clickHandler = function (aEvent, aFunc) {
   gTestWin.gBrowser.removeEventListener("click", curClickHandler, true);
   gTestWin.contentAreaClick(aEvent, true);
   waitForSomeTabToLoad(aFunc);
@@ -107,7 +107,7 @@ let clickHandler = function (aEvent, aFunc) {
 
 
 
-let contextMenuOpenHandler = function(aEvent, aFunc) {
+var contextMenuOpenHandler = function(aEvent, aFunc) {
   gTestWin.document.removeEventListener("popupshown", curContextMenu, false);
   waitForSomeTabToLoad(aFunc);
   var openLinkInTabCommand = gTestWin.document.getElementById("context-openlinkintab");

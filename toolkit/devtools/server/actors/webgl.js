@@ -23,7 +23,7 @@ const PROGRAM_HIGHLIGHT_TRAIT = 2;
 
 
 
-let ShaderActor = protocol.ActorClass({
+var ShaderActor = protocol.ActorClass({
   typeName: "gl-shader",
 
   
@@ -84,7 +84,7 @@ let ShaderActor = protocol.ActorClass({
 
 
 
-let ShaderFront = protocol.FrontClass(ShaderActor, {
+var ShaderFront = protocol.FrontClass(ShaderActor, {
   initialize: function(client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
   }
@@ -94,7 +94,7 @@ let ShaderFront = protocol.FrontClass(ShaderActor, {
 
 
 
-let ProgramActor = protocol.ActorClass({
+var ProgramActor = protocol.ActorClass({
   typeName: "gl-program",
 
   
@@ -208,7 +208,7 @@ let ProgramActor = protocol.ActorClass({
 
 
 
-let ProgramFront = protocol.FrontClass(ProgramActor, {
+var ProgramFront = protocol.FrontClass(ProgramActor, {
   initialize: function(client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
   }
@@ -219,7 +219,7 @@ let ProgramFront = protocol.FrontClass(ProgramActor, {
 
 
 
-let WebGLActor = exports.WebGLActor = protocol.ActorClass({
+var WebGLActor = exports.WebGLActor = protocol.ActorClass({
   typeName: "webgl",
   initialize: function(conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
@@ -403,7 +403,7 @@ let WebGLActor = exports.WebGLActor = protocol.ActorClass({
 
 
 
-let WebGLFront = exports.WebGLFront = protocol.FrontClass(WebGLActor, {
+var WebGLFront = exports.WebGLFront = protocol.FrontClass(WebGLActor, {
   initialize: function(client, { webglActor }) {
     protocol.Front.prototype.initialize.call(this, client, { actor: webglActor });
     this.manage(this);
@@ -413,7 +413,7 @@ let WebGLFront = exports.WebGLFront = protocol.FrontClass(WebGLActor, {
 
 
 
-let WebGLInstrumenter = {
+var WebGLInstrumenter = {
   
 
 

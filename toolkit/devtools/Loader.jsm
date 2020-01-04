@@ -8,7 +8,7 @@
 
 
 
-let { Constructor: CC, classes: Cc, interfaces: Ci, utils: Cu } = Components;
+var { Constructor: CC, classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -17,8 +17,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil", "resource://gre/modules/NetUt
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils", "resource://gre/modules/FileUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
-let { Loader } = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
-let promise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
+var { Loader } = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
+var promise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
 
 this.EXPORTED_SYMBOLS = ["DevToolsLoader", "devtools", "BuiltinProvider",
                          "SrcdirProvider", "require", "loader"];
@@ -27,7 +27,7 @@ this.EXPORTED_SYMBOLS = ["DevToolsLoader", "devtools", "BuiltinProvider",
 
 
 
-let loaderModules = {
+var loaderModules = {
   "Services": Object.create(Services),
   "toolkit/loader": Loader,
   PromiseDebugging,
@@ -65,7 +65,7 @@ XPCOMUtils.defineLazyGetter(loaderModules, "indexedDB", () => {
   }
 });
 
-let sharedGlobalBlacklist = ["sdk/indexed-db"];
+var sharedGlobalBlacklist = ["sdk/indexed-db"];
 
 
 function BuiltinProvider() {}

@@ -27,7 +27,7 @@ this.ScrollPosition = Object.freeze({
 
 
 
-let ScrollPositionInternal = {
+var ScrollPositionInternal = {
   
 
 

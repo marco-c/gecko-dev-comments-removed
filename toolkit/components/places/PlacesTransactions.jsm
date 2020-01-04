@@ -189,7 +189,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "console",
 
 Components.utils.importGlobalProperties(["URL"]);
 
-let TransactionsHistory = [];
+var TransactionsHistory = [];
 TransactionsHistory.__proto__ = {
   __proto__: Array.prototype,
 
@@ -306,7 +306,7 @@ TransactionsHistory.__proto__ = {
 };
 
 
-let PlacesTransactions = {
+var PlacesTransactions = {
   
 
 
@@ -486,7 +486,7 @@ Enqueuer.prototype = {
   }
 };
 
-let TransactionsManager = {
+var TransactionsManager = {
   
   
   _mainEnqueuer: new Enqueuer(),
@@ -1065,7 +1065,7 @@ function* createItemsFromBookmarksTree(aBookmarksTree, aRestoring = false,
 
 
 
-let PT = PlacesTransactions;
+var PT = PlacesTransactions;
 
 
 

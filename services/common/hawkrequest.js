@@ -181,7 +181,7 @@ this.Intl.prototype = {
 };
 
 
-let intl = null;
+var intl = null;
 function getIntl() {
   if (!intl) {
     intl = new Intl();

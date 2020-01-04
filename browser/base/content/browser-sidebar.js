@@ -19,7 +19,7 @@
 
 
 
-let SidebarUI = {
+var SidebarUI = {
   browser: null,
 
   _box: null,

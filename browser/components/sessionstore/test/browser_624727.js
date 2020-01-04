@@ -1,7 +1,7 @@
 
 
 
-let TEST_STATE = { windows: [{ tabs: [{ url: "about:blank" }] }] };
+var TEST_STATE = { windows: [{ tabs: [{ url: "about:blank" }] }] };
 
 add_task(function* () {
   function assertNumberOfTabs(num, msg) {

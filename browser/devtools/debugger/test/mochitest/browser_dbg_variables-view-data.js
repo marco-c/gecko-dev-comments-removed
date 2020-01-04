@@ -6,8 +6,8 @@
 
 
 
-let gTab, gPanel, gDebugger;
-let gVariablesView, gScope, gVariable;
+var gTab, gPanel, gDebugger;
+var gVariablesView, gScope, gVariable;
 
 function test() {
   initDebugger("about:blank").then(([aTab,, aPanel]) => {

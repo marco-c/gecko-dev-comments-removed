@@ -12,7 +12,7 @@ Cu.import("resource://testing-common/services/sync/utils.js");
 const MORE_THAN_CLIENTS_TTL_REFRESH = 691200; 
 const LESS_THAN_CLIENTS_TTL_REFRESH = 86400;  
 
-let engine = Service.clientsEngine;
+var engine = Service.clientsEngine;
 
 
 

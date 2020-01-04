@@ -21,7 +21,7 @@ XPCOMUtils.defineLazyGetter(this, "gDecoder", function () {
   return new TextDecoder();
 });
 
-let SessionMigrationInternal = {
+var SessionMigrationInternal = {
   
 
 
@@ -96,7 +96,7 @@ let SessionMigrationInternal = {
   }
 }
 
-let SessionMigration = {
+var SessionMigration = {
   
 
 

@@ -5,7 +5,7 @@
 
 
 
-let gProcess;
+var gProcess;
 
 function test() {
   

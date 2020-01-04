@@ -55,7 +55,7 @@ const validate = contract({
 
 
 
-let toolbars = new Map();
+var toolbars = new Map();
 
 const Toolbar = Class({
   extends: EventTarget,

@@ -4,9 +4,9 @@
 
 
 
-let doc;
-let div;
-let plate;
+var doc;
+var div;
+var plate;
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource:///modules/domplate.jsm");

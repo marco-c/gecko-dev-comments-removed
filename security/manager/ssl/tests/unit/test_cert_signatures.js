@@ -12,7 +12,7 @@
 
 
 do_get_profile(); 
-let certdb = Cc["@mozilla.org/security/x509certdb;1"]
+var certdb = Cc["@mozilla.org/security/x509certdb;1"]
                .getService(Ci.nsIX509CertDB);
 
 

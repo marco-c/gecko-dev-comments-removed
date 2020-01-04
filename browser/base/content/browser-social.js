@@ -3,7 +3,7 @@
 
 
 
-let SocialUI,
+var SocialUI,
     SocialFlyout,
     SocialMarks,
     SocialShare,
@@ -1172,7 +1172,7 @@ ToolbarHelper.prototype = {
   }
 }
 
-let SocialStatusWidgetListener = {
+var SocialStatusWidgetListener = {
   _getNodeOrigin: function(aWidgetId) {
     
     let node = document.getElementById(aWidgetId);
@@ -1297,7 +1297,7 @@ SocialStatus = {
 };
 
 
-let SocialMarksWidgetListener = {
+var SocialMarksWidgetListener = {
   onWidgetAdded: function(aWidgetId, aArea, aPosition) {
     let node = document.getElementById(aWidgetId);
     if (!node || !node.classList.contains("social-mark-button"))

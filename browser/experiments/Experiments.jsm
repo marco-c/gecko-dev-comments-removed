@@ -97,25 +97,25 @@ const TELEMETRY_LOG = {
 
 const gPrefs = new Preferences(PREF_BRANCH);
 const gPrefsTelemetry = new Preferences(PREF_BRANCH_TELEMETRY);
-let gExperimentsEnabled = false;
-let gAddonProvider = null;
-let gExperiments = null;
-let gLogAppenderDump = null;
-let gPolicyCounter = 0;
-let gExperimentsCounter = 0;
-let gExperimentEntryCounter = 0;
-let gPreviousProviderCounter = 0;
+var gExperimentsEnabled = false;
+var gAddonProvider = null;
+var gExperiments = null;
+var gLogAppenderDump = null;
+var gPolicyCounter = 0;
+var gExperimentsCounter = 0;
+var gExperimentEntryCounter = 0;
+var gPreviousProviderCounter = 0;
 
 
 
-let gActiveInstallURLs = new Set();
+var gActiveInstallURLs = new Set();
 
 
 
-let gActiveUninstallAddonIDs = new Set();
+var gActiveUninstallAddonIDs = new Set();
 
-let gLogger;
-let gLogDumping = false;
+var gLogger;
+var gLogDumping = false;
 
 function configureLogging() {
   if (!gLogger) {
@@ -217,7 +217,7 @@ function uninstallAddons(addons) {
 
 
 
-let Experiments = {
+var Experiments = {
   
 
 
@@ -2086,7 +2086,7 @@ Experiments.ExperimentEntry.prototype = {
 
 
 
-let stripDateToMidnight = function (d) {
+var stripDateToMidnight = function (d) {
   let m = new Date(d);
   m.setUTCHours(0, 0, 0, 0);
 

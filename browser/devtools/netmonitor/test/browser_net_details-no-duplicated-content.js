@@ -5,7 +5,7 @@
 
 
 
-let test = Task.async(function* () {
+var test = Task.async(function* () {
   info("Initializing test");
   let [tab, debuggee, monitor] = yield initNetMonitor(CUSTOM_GET_URL);
   let panel = monitor.panelWin;

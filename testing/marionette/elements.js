@@ -2,7 +2,7 @@
 
 
 
-let {utils: Cu} = Components;
+var {utils: Cu} = Components;
 
 Cu.import("chrome://marionette/content/error.js");
 

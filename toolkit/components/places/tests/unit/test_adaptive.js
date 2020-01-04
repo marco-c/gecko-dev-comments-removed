@@ -136,20 +136,20 @@ function doAdaptiveDecay()
   }, this);
 }
 
-let uri1 = uri("http://site.tld/1");
-let uri2 = uri("http://site.tld/2");
+var uri1 = uri("http://site.tld/1");
+var uri2 = uri("http://site.tld/2");
 
 
-let d1 = new Date(Date.now() - 1000 * 60 * 60) * 1000;
+var d1 = new Date(Date.now() - 1000 * 60 * 60) * 1000;
 
-let c1 = 10;
-let c2 = 1;
+var c1 = 10;
+var c2 = 1;
 
-let s0 = "";
-let s1 = "si";
-let s2 = "site";
+var s0 = "";
+var s1 = "si";
+var s2 = "site";
 
-let observer = {
+var observer = {
   results: null,
   search: null,
   runCount: -1,
@@ -172,7 +172,7 @@ function makeResult(aURI, aStyle = "favicon") {
   };
 }
 
-let tests = [
+var tests = [
   
   function() {
     print("Test 0 same count, diff rank, same term; no search");
@@ -350,7 +350,7 @@ let tests = [
 
 
 
-let deferEnsureResults;
+var deferEnsureResults;
 
 
 

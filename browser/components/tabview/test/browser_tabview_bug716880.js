@@ -1,8 +1,8 @@
 
 
 
-let contentWindow;
-let pinnedTab;
+var contentWindow;
+var pinnedTab;
 
 function test() {
   waitForExplicitFinish();

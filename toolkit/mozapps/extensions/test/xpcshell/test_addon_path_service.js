@@ -2,7 +2,7 @@
 
 
 
-let service = Components.classes["@mozilla.org/addon-path-service;1"].getService(Components.interfaces.amIAddonPathService);
+var service = Components.classes["@mozilla.org/addon-path-service;1"].getService(Components.interfaces.amIAddonPathService);
 
 function insert(path, value)
 {

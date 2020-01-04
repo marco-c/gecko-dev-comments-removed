@@ -27,7 +27,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "ppmm",
 
 
 
-let ContactService = this.ContactService = {
+var ContactService = this.ContactService = {
   init: function() {
     if (DEBUG) debug("Init");
     this._messages = ["Contacts:Find", "Contacts:GetAll", "Contacts:GetAll:SendNow",

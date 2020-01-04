@@ -8,10 +8,10 @@
 
 
 
-let kURIs = [
+var kURIs = [
   "http://url/0",
 ];
-let kTitles = [
+var kTitles = [
   "title",
 ];
 
@@ -19,7 +19,7 @@ addPageBook(0, 0);
 
 
 
-let gTests = [
+var gTests = [
   ["1: plain search",
    "url", [0]],
   ["2: search disabled",

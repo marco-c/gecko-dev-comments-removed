@@ -4,7 +4,7 @@
 
 "use strict";
 
-let {Class} = require("sdk/core/heritage");
+var {Class} = require("sdk/core/heritage");
 
 
 
@@ -12,7 +12,7 @@ let {Class} = require("sdk/core/heritage");
 
 
 
-let StackFrameCache = Class({
+var StackFrameCache = Class({
   
 
 

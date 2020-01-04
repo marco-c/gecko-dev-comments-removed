@@ -4,7 +4,7 @@
 
 const TEST_URI = "http://example.com/browser/browser/devtools/commandline/" +
                  "test/browser_cmd_media.html";
-let tests = {
+var tests = {
   testInput: function(options) {
     return helpers.audit(options, [
       {

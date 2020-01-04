@@ -33,7 +33,7 @@ const Cc = typeof Components != "undefined" ? Components.classes : undefined;
 
 
 
-let Meta;
+var Meta;
 if (typeof Components != "undefined") {
   
   
@@ -47,7 +47,7 @@ if (typeof Components != "undefined") {
   Meta = require("resource://gre/modules/workers/PromiseWorker.js").Meta;
 }
 
-let EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "LOG",
   "clone",
   "Config",
@@ -69,7 +69,7 @@ let EXPORTED_SYMBOLS = [
 
 
 
-let Config = {
+var Config = {
   
 
 
@@ -99,7 +99,7 @@ exports.Constants = OS.Constants;
 
 
 
-let defineLazyGetter = function defineLazyGetter(object, name, getter) {
+var defineLazyGetter = function defineLazyGetter(object, name, getter) {
   Object.defineProperty(object, name, {
     configurable: true,
     get: function lazy() {
@@ -122,7 +122,7 @@ exports.defineLazyGetter = defineLazyGetter;
 
 
 
-let gLogger;
+var gLogger;
 if (typeof window != "undefined" && window.console && console.log) {
   gLogger = console.log.bind(console, "OS");
 } else {
@@ -139,7 +139,7 @@ if (typeof window != "undefined" && window.console && console.log) {
 
 
 
-let stringifyArg = function stringifyArg(arg) {
+var stringifyArg = function stringifyArg(arg) {
   if (typeof arg === "string") {
     return arg;
   }
@@ -170,7 +170,7 @@ let stringifyArg = function stringifyArg(arg) {
   return arg;
 };
 
-let LOG = function (...args) {
+var LOG = function (...args) {
   if (!Config.DEBUG) {
     
     return;
@@ -204,7 +204,7 @@ exports.LOG = LOG;
 
 
 
-let clone = function (object, refs = []) {
+var clone = function (object, refs = []) {
   let result = {};
   
   let refer = function refer(result, key, object) {
@@ -407,7 +407,7 @@ Type.prototype = {
 
 
 
-let isTypedArray = function isTypedArray(obj) {
+var isTypedArray = function isTypedArray(obj) {
   return obj != null && typeof obj == "object"
     && "byteOffset" in obj;
 };
@@ -416,7 +416,7 @@ exports.isTypedArray = isTypedArray;
 
 
 
-let isArrayBuffer = function(obj) {
+var isArrayBuffer = function(obj) {
   return obj != null && typeof obj == "object" &&
     obj.constructor.name == "ArrayBuffer";
 };
@@ -511,7 +511,7 @@ exports.Type = Type;
 
 
 
-let projectLargeInt = function projectLargeInt(x) {
+var projectLargeInt = function projectLargeInt(x) {
   let str = x.toString();
   let rv = parseInt(str, 10);
   if (rv.toString() !== str) {
@@ -519,10 +519,10 @@ let projectLargeInt = function projectLargeInt(x) {
   }
   return rv;
 };
-let projectLargeUInt = function projectLargeUInt(x) {
+var projectLargeUInt = function projectLargeUInt(x) {
   return projectLargeInt(x);
 };
-let projectValue = function projectValue(x) {
+var projectValue = function projectValue(x) {
   if (!(x instanceof ctypes.CData)) {
     return x;
   }
@@ -1070,7 +1070,7 @@ exports.Library = Library;
 
 
 
-let declareFFI = function declareFFI(lib, symbol, abi,
+var declareFFI = function declareFFI(lib, symbol, abi,
                                      returnType ) {
   LOG("Attempting to declare FFI ", symbol);
   

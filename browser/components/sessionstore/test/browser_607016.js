@@ -1,6 +1,6 @@
 "use strict";
 
-let stateBackup = ss.getBrowserState();
+var stateBackup = ss.getBrowserState();
 
 add_task(function* () {
   

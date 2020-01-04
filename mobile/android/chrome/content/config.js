@@ -13,8 +13,8 @@ const PAGE_SCROLL_TRIGGER = 200;
 const FILTER_CHANGE_TRIGGER = 200;     
 const INNERHTML_VALUE_DELAY = 100;    
 
-let gStringBundle = Services.strings.createBundle("chrome://browser/locale/config.properties");
-let gClipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
+var gStringBundle = Services.strings.createBundle("chrome://browser/locale/config.properties");
+var gClipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
 
 
 

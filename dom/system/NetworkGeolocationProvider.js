@@ -16,7 +16,7 @@ const SETTINGS_DEBUG_ENABLED = "geolocation.debugging.enabled";
 const SETTINGS_CHANGED_TOPIC = "mozsettings-changed";
 const SETTINGS_WIFI_ENABLED = "wifi.enabled";
 
-let gLoggingEnabled = false;
+var gLoggingEnabled = false;
 
 
 
@@ -29,10 +29,10 @@ let gLoggingEnabled = false;
 
 
 
-let gLocationRequestTimeout = 5000;
+var gLocationRequestTimeout = 5000;
 
-let gWifiScanningEnabled = true;
-let gCellScanningEnabled = false;
+var gWifiScanningEnabled = true;
+var gCellScanningEnabled = false;
 
 function LOG(aMsg) {
   if (gLoggingEnabled) {
@@ -127,8 +127,8 @@ function CachedRequest(loc, cellInfo, wifiList) {
   };
  }
 
-let gCachedRequest = null;
-let gDebugCacheReasoning = ""; 
+var gCachedRequest = null;
+var gDebugCacheReasoning = ""; 
 
 
 

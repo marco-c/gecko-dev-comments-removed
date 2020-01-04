@@ -6,7 +6,7 @@ const URI_BLOCKLIST_DIALOG = "chrome://mozapps/content/extensions/blocklist.xul"
 
 
 
-let args = {
+var args = {
   restart: false,
   list: [{
     name: "Bug 523784 softblocked addon",

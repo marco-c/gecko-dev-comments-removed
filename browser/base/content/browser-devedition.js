@@ -6,7 +6,7 @@
 
 
 
-let DevEdition = {
+var DevEdition = {
   _devtoolsThemePrefName: "devtools.theme",
   styleSheetLocation: "chrome://browser/skin/devedition.css",
   styleSheet: null,

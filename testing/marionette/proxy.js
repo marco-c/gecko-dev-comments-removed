@@ -68,7 +68,7 @@ proxy.toListener = function(mmFn, sendAsyncFn) {
 
 
 
-let ContentSender = function(mmFn, sendAsyncFn) {
+var ContentSender = function(mmFn, sendAsyncFn) {
   this.curId = null;
   this.sendAsync = sendAsyncFn;
   this.mmFn_ = mmFn;

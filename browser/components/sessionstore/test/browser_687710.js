@@ -8,9 +8,9 @@
 
 
 
-let stateBackup = ss.getBrowserState();
+var stateBackup = ss.getBrowserState();
 
-let state = {windows:[{tabs:[{entries:[
+var state = {windows:[{tabs:[{entries:[
   {
     docIdentifier: 1,
     url: "http://example.com",

@@ -35,7 +35,7 @@ const kIntlProperties = "chrome://global/locale/intl.properties";
 
 
 
-let gFunctions = [
+var gFunctions = [
   
   [1, (n) => 0],
   

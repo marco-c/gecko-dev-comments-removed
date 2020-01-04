@@ -22,8 +22,8 @@ const { fromIterator } = require("../util/array");
 
 
 
-let cache = new Set();
-let elements = new WeakMap();
+var cache = new Set();
+var elements = new WeakMap();
 
 function contentLoaded(target) {
   var deferred = defer();

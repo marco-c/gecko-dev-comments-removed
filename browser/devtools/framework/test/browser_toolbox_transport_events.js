@@ -54,8 +54,8 @@ function testPackets(sent, received) {
 
 
 
-let sent1 = [];
-let received1 = [];
+var sent1 = [];
+var received1 = [];
 
 function send1(eventId, packet) {
   sent1.push(packet);
@@ -80,8 +80,8 @@ function onToolboxCreated(eventId, toolbox) {
 }
 
 
-let sent2 = [];
-let received2 = [];
+var sent2 = [];
+var received2 = [];
 
 function send2(eventId, packet) {
   sent2.push(packet);

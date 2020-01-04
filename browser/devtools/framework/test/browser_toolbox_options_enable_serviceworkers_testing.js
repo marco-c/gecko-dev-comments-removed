@@ -16,7 +16,7 @@ const TEST_URI = URL_ROOT +
 
 const ELEMENT_ID = "devtools-enable-serviceWorkersTesting";
 
-let toolbox;
+var toolbox;
 
 function test() {
   

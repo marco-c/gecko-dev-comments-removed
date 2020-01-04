@@ -589,7 +589,7 @@ LoginManagerStorage.prototype = {
 
 
 
-let haveLoginManager =
+var haveLoginManager =
 #if defined(MOZ_B2G)
                        false;
 #else

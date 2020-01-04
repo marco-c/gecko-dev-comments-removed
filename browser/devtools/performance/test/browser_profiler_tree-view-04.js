@@ -6,7 +6,7 @@
 
 
 
-let { CATEGORY_MASK } = require("devtools/performance/global");
+var { CATEGORY_MASK } = require("devtools/performance/global");
 
 function test() {
   let { ThreadNode } = require("devtools/performance/tree-model");
@@ -81,7 +81,7 @@ function test() {
   finish();
 }
 
-let gThread = synthesizeProfileForTest([{
+var gThread = synthesizeProfileForTest([{
   time: 5,
   frames: [
     { category: CATEGORY_MASK('other'),  location: "(root)" },

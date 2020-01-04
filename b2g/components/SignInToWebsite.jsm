@@ -94,7 +94,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "SystemAppProxy",
 
 
 
-let kPersonaUri = "https://firefoxos.persona.org";
+var kPersonaUri = "https://firefoxos.persona.org";
 try {
   kPersonaUri = Services.prefs.getCharPref("toolkit.identity.uri");
 } catch(noSuchPref) {

@@ -5,8 +5,8 @@
 
 
 
-let URL = `${URL_ROOT}doc_viewsource.html`;
-let JS_URL = `${URL_ROOT}code_math.js`;
+var URL = `${URL_ROOT}doc_viewsource.html`;
+var JS_URL = `${URL_ROOT}code_math.js`;
 
 function *viewSource() {
   let toolbox = yield loadToolbox(URL);

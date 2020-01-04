@@ -66,7 +66,7 @@ function frameScript() {
 
 
 
-let SilentAssert = {
+var SilentAssert = {
   equal: function(a, b, msg) {
     if (a == b) {
       return;
@@ -90,7 +90,7 @@ let SilentAssert = {
   }
 };
 
-let isShuttingDown = false;
+var isShuttingDown = false;
 function monotinicity_tester(source, testName) {
   
   

@@ -11,7 +11,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 
-let gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+var gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
 function sleep(wait) {
   return new Promise((resolve, reject) => {
@@ -52,7 +52,7 @@ function promiseLoadEvent(browser, url, eventType="load") {
 const PENDING_VISIT_WAIT = 4000;
 
 
-let gVisitURLs = [];
+var gVisitURLs = [];
 function visitObserver(subject, topic, data) {
   let uri = subject.QueryInterface(Ci.nsIURI);
   do_print("Observer: " + uri.spec);
@@ -60,7 +60,7 @@ function visitObserver(subject, topic, data) {
 };
 
 
-let gBrowser;
+var gBrowser;
 
 add_test(function setup_browser() {
   let chromeWin = Services.wm.getMostRecentWindow("navigator:browser");

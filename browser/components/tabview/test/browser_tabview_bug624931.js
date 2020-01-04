@@ -4,7 +4,7 @@
 
 
 
-let tab, frontChanged, transformChanged;
+var tab, frontChanged, transformChanged;
 
 function test() {
   waitForExplicitFinish();

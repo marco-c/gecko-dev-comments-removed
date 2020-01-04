@@ -3,7 +3,7 @@
 
 
 
-let proxyPrefValue;
+var proxyPrefValue;
 
 function test() {
   waitForExplicitFinish();

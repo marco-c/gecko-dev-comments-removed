@@ -14,7 +14,7 @@
 
 
 
-let gTests = [
+var gTests = [
 
   {
     desc: "Simple left click",
@@ -160,7 +160,7 @@ let gTests = [
 ];
 
 
-let gReplacedMethods = [
+var gReplacedMethods = [
   "middleMousePaste",
   "urlSecurityCheck",
   "loadURI",
@@ -171,13 +171,13 @@ let gReplacedMethods = [
 ];
 
 
-let gTestWin = null;
+var gTestWin = null;
 
 
-let gInvokedMethods = [];
+var gInvokedMethods = [];
 
 
-let gCurrentTest = null;
+var gCurrentTest = null;
 
 function test() {
   waitForExplicitFinish();
@@ -198,7 +198,7 @@ function test() {
 }
 
 
-let gClickHandler = {
+var gClickHandler = {
   handleEvent: function (event) {
     let linkId = event.target.id || event.target.localName;
     is(event.type, "click",

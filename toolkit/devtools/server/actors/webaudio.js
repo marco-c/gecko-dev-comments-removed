@@ -8,14 +8,13 @@ const {Cc, Ci, Cu, Cr} = require("chrome");
 const Services = require("Services");
 
 const events = require("sdk/event/core");
-const promise = require("promise");
 const { on: systemOn, off: systemOff } = require("sdk/system/events");
 const protocol = require("devtools/server/protocol");
 const { CallWatcherActor, CallWatcherFront } = require("devtools/server/actors/call-watcher");
 const { createValueGrip } = require("devtools/server/actors/object");
 const AutomationTimeline = require("./utils/automation-timeline");
 const { on, once, off, emit } = events;
-const { types, method, Arg, Option, RetVal, preEvent } = protocol;
+const { types, method, Arg, Option, RetVal } = protocol;
 const AUDIO_NODE_DEFINITION = require("devtools/server/actors/utils/audionodes.json");
 const ENABLE_AUTOMATION = false;
 const AUTOMATION_GRANULARITY = 2000;
@@ -47,21 +46,8 @@ const NODE_ROUTING_METHODS = [
 
 
 types.addActorType("audionode");
-let AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
+var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
   typeName: "audionode",
-
-  form: function (detail) {
-    if (detail === "actorid") {
-      return this.actorID;
-    }
-
-    return {
-      actor: this.actorID, 
-      type: this.type,
-      source: this.source,
-      bypassable: this.bypassable,
-    };
-  },
 
   
 
@@ -89,9 +75,6 @@ let AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
       this.type = "";
     }
 
-    this.source = !!AUDIO_NODE_DEFINITION[this.type].source;
-    this.bypassable = !AUDIO_NODE_DEFINITION[this.type].unbypassable;
-
     
     Object.keys(AUDIO_NODE_DEFINITION[this.type].properties || {})
       .filter(isAudioParam.bind(null, node))
@@ -104,10 +87,21 @@ let AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-
   getType: method(function () {
     return this.type;
-  }, { response: { type: RetVal("string") }}),
+  }, {
+    response: { type: RetVal("string") }
+  }),
+
+  
+
+
+
+  isSource: method(function () {
+    return !!~this.type.indexOf("Source") || this.type === "OscillatorNode";
+  }, {
+    response: { source: RetVal("boolean") }
+  }),
 
   
 
@@ -145,7 +139,8 @@ let AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
       return;
     }
 
-    if (this.bypassable) {
+    let bypassable = !AUDIO_NODE_DEFINITION[this.type].unbypassable;
+    if (bypassable) {
       node.passThrough = enable;
     }
 
@@ -461,28 +456,7 @@ let AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-
-
-
-
-
-
-
-
-
-let AudioNodeFront = protocol.FrontClass(AudioNodeActor, {
-  form: function (form, detail) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-
-    this.actorID = form.actor;
-    this.type = form.type;
-    this.source = form.source;
-    this.bypassable = form.bypassable;
-  },
-
+var AudioNodeFront = protocol.FrontClass(AudioNodeActor, {
   initialize: function (client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
     
@@ -498,7 +472,7 @@ let AudioNodeFront = protocol.FrontClass(AudioNodeActor, {
 
 
 
-let WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
+var WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
   typeName: "webaudio",
   initialize: function(conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
@@ -886,26 +860,11 @@ let WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
 
 
 
-let WebAudioFront = exports.WebAudioFront = protocol.FrontClass(WebAudioActor, {
+var WebAudioFront = exports.WebAudioFront = protocol.FrontClass(WebAudioActor, {
   initialize: function(client, { webaudioActor }) {
     protocol.Front.prototype.initialize.call(this, client, { actor: webaudioActor });
     this.manage(this);
-  },
-
-  
-
-
-
-
-  _onCreateNode: preEvent("create-node", function (audionode) {
-    if (!audionode.type) {
-      return audionode.getType().then(type => {
-        audionode.type = type;
-        audionode.source = !!AUDIO_NODE_DEFINITION[type].source;
-        audionode.bypassable = !AUDIO_NODE_DEFINITION[type].unbypassable;
-      });
-    }
-  }),
+  }
 });
 
 WebAudioFront.AUTOMATION_METHODS = new Set(AUTOMATION_METHODS);

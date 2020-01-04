@@ -50,7 +50,7 @@ add_task(function* init() {
 
 
 
-let burn_rubber = Task.async(function*({histogramName, topic, expectedReason, prefs, expectedMinSum}) {
+var burn_rubber = Task.async(function*({histogramName, topic, expectedReason, prefs, expectedMinSum}) {
   try {
     for  (let key of Object.keys(prefs)) {
       Services.prefs.setIntPref(key, prefs[key]);

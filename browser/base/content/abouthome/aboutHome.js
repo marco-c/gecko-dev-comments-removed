@@ -21,11 +21,11 @@ const DATABASE_NAME = "abouthome";
 const DATABASE_VERSION = 1;
 const DATABASE_STORAGE = "persistent";
 const SNIPPETS_OBJECTSTORE_NAME = "snippets";
-let searchText, findKey;
+var searchText, findKey;
 
 
-let gInitialized = false;
-let gObserver = new MutationObserver(function (mutations) {
+var gInitialized = false;
+var gObserver = new MutationObserver(function (mutations) {
   for (let mutation of mutations) {
     if (mutation.attributeName == "snippetsVersion") {
       if (!gInitialized) {
@@ -68,8 +68,8 @@ window.addEventListener("keypress", ev => {
 
 
 
-let gSnippetsMap;
-let gSnippetsMapCallbacks = [];
+var gSnippetsMap;
+var gSnippetsMapCallbacks = [];
 
 
 
@@ -183,7 +183,7 @@ function onSearchSubmit(aEvent)
 }
 
 
-let gContentSearchController;
+var gContentSearchController;
 
 function setupSearch()
 {
@@ -274,7 +274,7 @@ function loadSnippets()
 
 
 
-let _snippetsShown = false;
+var _snippetsShown = false;
 function showSnippets()
 {
   let snippetsElt = document.getElementById("snippets");

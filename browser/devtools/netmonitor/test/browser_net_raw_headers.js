@@ -1,8 +1,8 @@
 
 
 
-let gPanelWin;
-let gPanelDoc;
+var gPanelWin;
+var gPanelDoc;
 
 
 

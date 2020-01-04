@@ -1,10 +1,10 @@
 
 
 
-let normalURLs = [];
-let pbTabURL = "about:privatebrowsing";
-let groupTitles = [];
-let normalIteration = 0;
+var normalURLs = [];
+var pbTabURL = "about:privatebrowsing";
+var groupTitles = [];
+var normalIteration = 0;
 
 function test() {
   waitForExplicitFinish();

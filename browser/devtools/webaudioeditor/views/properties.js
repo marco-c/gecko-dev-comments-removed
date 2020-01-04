@@ -19,7 +19,7 @@ const GENERIC_VARIABLES_VIEW_SETTINGS = {
 
 
 
-let PropertiesView = {
+var PropertiesView = {
 
   
 

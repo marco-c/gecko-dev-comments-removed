@@ -2,7 +2,7 @@
 
 "use strict";
 
-let isWebGLAvailable;
+var isWebGLAvailable;
 
 function onWebGLFail() {
   isWebGLAvailable = false;

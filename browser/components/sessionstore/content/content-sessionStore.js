@@ -8,10 +8,10 @@ function debug(msg) {
   Services.console.logStringMessage("SessionStoreContent: " + msg);
 }
 
-let Cu = Components.utils;
-let Cc = Components.classes;
-let Ci = Components.interfaces;
-let Cr = Components.results;
+var Cu = Components.utils;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cr = Components.results;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/Timer.jsm", this);
@@ -34,14 +34,14 @@ XPCOMUtils.defineLazyServiceGetter(this, "cpmm",
                                    "nsISyncMessageSender");
 
 Cu.import("resource:///modules/sessionstore/FrameTree.jsm", this);
-let gFrameTree = new FrameTree(this);
+var gFrameTree = new FrameTree(this);
 
 Cu.import("resource:///modules/sessionstore/ContentRestore.jsm", this);
 XPCOMUtils.defineLazyGetter(this, 'gContentRestore',
                             () => { return new ContentRestore(this) });
 
 
-let gCurrentEpoch = 0;
+var gCurrentEpoch = 0;
 
 
 
@@ -79,7 +79,7 @@ function isSessionStorageEvent(event) {
 
 
 
-let EventListener = {
+var EventListener = {
 
   init: function () {
     addEventListener("load", this, true);
@@ -100,7 +100,7 @@ let EventListener = {
 
 
 
-let MessageListener = {
+var MessageListener = {
 
   MESSAGES: [
     "SessionStore:restoreHistory",
@@ -207,7 +207,7 @@ let MessageListener = {
 
 
 
-let SyncHandler = {
+var SyncHandler = {
   init: function () {
     
     
@@ -255,7 +255,7 @@ let SyncHandler = {
 
 
 
-let SessionHistoryListener = {
+var SessionHistoryListener = {
   init: function () {
     
     
@@ -355,7 +355,7 @@ let SessionHistoryListener = {
 
 
 
-let ScrollPositionListener = {
+var ScrollPositionListener = {
   init: function () {
     addEventListener("scroll", this);
     gFrameTree.addObserver(this);
@@ -401,7 +401,7 @@ let ScrollPositionListener = {
 
 
 
-let FormDataListener = {
+var FormDataListener = {
   init: function () {
     addEventListener("input", this, true);
     addEventListener("change", this, true);
@@ -440,7 +440,7 @@ let FormDataListener = {
 
 
 
-let PageStyleListener = {
+var PageStyleListener = {
   init: function () {
     Services.obs.addObserver(this, "author-style-disabled-changed", false);
     Services.obs.addObserver(this, "style-sheet-applicable-state-changed", false);
@@ -482,7 +482,7 @@ let PageStyleListener = {
 
 
 
-let DocShellCapabilitiesListener = {
+var DocShellCapabilitiesListener = {
   
 
 
@@ -518,7 +518,7 @@ let DocShellCapabilitiesListener = {
 
 
 
-let SessionStorageListener = {
+var SessionStorageListener = {
   init: function () {
     addEventListener("MozStorageChanged", this, true);
     Services.obs.addObserver(this, "browser:purge-domain-data", false);
@@ -567,7 +567,7 @@ let SessionStorageListener = {
 
 
 
-let PrivacyListener = {
+var PrivacyListener = {
   init: function() {
     docShell.addWeakPrivacyTransitionObserver(this);
 
@@ -594,7 +594,7 @@ let PrivacyListener = {
 
 
 
-let MessageQueue = {
+var MessageQueue = {
   
 
 

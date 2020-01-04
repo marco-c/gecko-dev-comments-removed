@@ -4,8 +4,8 @@
 
 
 
-let gNow = Date.now();
-let gTestData = [
+var gNow = Date.now();
+var gTestData = [
   {
     isVisit: true,
     uri: "http://example.com/1/",

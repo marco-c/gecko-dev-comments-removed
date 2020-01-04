@@ -19,10 +19,10 @@ function iQ(selector, context) {
 
 
 
-let quickExpr = /^[^<]*(<[\w\W]+>)[^>]*$|^#([\w-]+)$/;
+var quickExpr = /^[^<]*(<[\w\W]+>)[^>]*$|^#([\w-]+)$/;
 
 
-let rsingleTag = /^<(\w+)\s*\/?>(?:<\/\1>)?$/;
+var rsingleTag = /^<(\w+)\s*\/?>(?:<\/\1>)?$/;
 
 
 
@@ -739,7 +739,7 @@ iQClass.prototype = {
 
 
 
-let events = [
+var events = [
   'keyup',
   'keydown',
   'keypress',

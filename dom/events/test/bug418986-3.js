@@ -1,7 +1,7 @@
 SimpleTest.waitForExplicitFinish();
 
 
-let test = function (isContent) {
+var test = function (isContent) {
   
   
   let eventDefs = [["mousedown", true],

@@ -6,7 +6,7 @@
 
 
 
-let TESTS = [{
+var TESTS = [{
   desc: "Event dispatch from XMLHttpRequest",
   searchFor: function(markers) {
     return markers.filter(m => m.name == "DOMEvent").length >= 5;

@@ -22,7 +22,7 @@ const {CSSProperties, CSSValues} = getCSSKeywords();
 
 
 
-let TEST_CASES = [
+var TEST_CASES = [
   ["VK_RIGHT"],
   ["VK_RIGHT"],
   ["VK_RIGHT"],

@@ -37,7 +37,7 @@ function findGraphNodeParent (el) {
 
 
 
-let ToggleMixin = {
+var ToggleMixin = {
 
   bindToggle: function () {
     this._onToggle = this._onToggle.bind(this);

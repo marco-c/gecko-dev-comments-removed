@@ -23,7 +23,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
 
 
-let gFakeBattery = {
+var gFakeBattery = {
   charging: false,
   chargingTime: 0,
   dischargingTime: Infinity,

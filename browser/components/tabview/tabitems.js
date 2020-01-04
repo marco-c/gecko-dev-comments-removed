@@ -699,7 +699,7 @@ TabItem.prototype = Utils.extend(new Item(), new Subscribable(), {
 
 
 
-let TabItems = {
+var TabItems = {
   minTabWidth: 40,
   tabWidth: 160,
   tabHeight: 120,

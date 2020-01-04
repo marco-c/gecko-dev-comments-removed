@@ -2,7 +2,7 @@
 
 
 
-let testPort, sidebarPort, apiPort, updatingManifest=false;
+var testPort, sidebarPort, apiPort, updatingManifest=false;
 
 onconnect = function(e) {
   let port = e.ports[0];

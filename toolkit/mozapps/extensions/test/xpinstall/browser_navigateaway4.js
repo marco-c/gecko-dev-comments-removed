@@ -1,7 +1,7 @@
 
 
 
-let sawUnload = null;
+var sawUnload = null;
 
 function test() {
   Harness.installConfirmCallback = confirm_install;

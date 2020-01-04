@@ -5,7 +5,7 @@ Components.utils.import("resource://gre/modules/Promise.jsm");
 
 
 
-let WORKER_SOURCE_URI = "chrome://workers/content/worker.js";
+var WORKER_SOURCE_URI = "chrome://workers/content/worker.js";
 do_load_manifest("data/chrome.manifest");
 
 function run_test() {

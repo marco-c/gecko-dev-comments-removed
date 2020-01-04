@@ -7,13 +7,13 @@
 
 
 
-let theTag = "superTag";
+var theTag = "superTag";
 
 
-let kURIs = [
+var kURIs = [
   "http://theuri/",
 ];
-let kTitles = [
+var kTitles = [
   "Page title",
   "Bookmark title",
   theTag,
@@ -24,7 +24,7 @@ addPageBook(0, 0, 1, [2]);
 
 
 
-let gTests = [
+var gTests = [
   ["0: Make sure the tag match gives the bookmark title",
    theTag, [0]],
 ];

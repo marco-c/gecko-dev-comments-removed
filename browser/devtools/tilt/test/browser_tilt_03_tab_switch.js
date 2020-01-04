@@ -2,8 +2,8 @@
 
 "use strict";
 
-let tab0, tab1, tab2;
-let testStep = -1;
+var tab0, tab1, tab2;
+var testStep = -1;
 
 function test() {
   
@@ -59,7 +59,7 @@ function createTab2() {
   });
 }
 
-let testSteps = [
+var testSteps = [
   function step0() {
     gBrowser.selectedTab = tab1;
   },

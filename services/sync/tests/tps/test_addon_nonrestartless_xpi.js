@@ -6,7 +6,7 @@
 
 EnableEngines(["addons"]);
 
-let phases = {
+var phases = {
   "phase01": "profile1",
   "phase02": "profile1",
   "phase03": "profile2",

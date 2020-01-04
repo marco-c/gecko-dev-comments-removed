@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "LoginManagerParent",
 
 
 
-let LoginManagerContextMenu = {
+var LoginManagerContextMenu = {
   dateAndTimeFormatter: new Intl.DateTimeFormat(undefined,
                         { day: "numeric", month: "short", year: "numeric" }),
   

@@ -2,14 +2,14 @@
 
 
 
-let aaaListener = {
+var aaaListener = {
   onSearchResult: function(search, result) {
     do_check_eq(result.searchString, "aaa");
     do_test_finished();
   }
 };
 
-let aaListener = {
+var aaListener = {
   onSearchResult: function(search, result) {
     do_check_eq(result.searchString, "aa");
     search.startSearch("aaa", "", result, aaaListener);

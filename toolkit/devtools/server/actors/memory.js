@@ -45,7 +45,7 @@ types.addDictType("AllocationsRecordingOptions", {
 
 
 
-let MemoryActor = exports.MemoryActor = protocol.ActorClass({
+var MemoryActor = exports.MemoryActor = protocol.ActorClass({
   typeName: "memory",
 
   

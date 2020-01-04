@@ -20,7 +20,7 @@ function getMinidumpDirectory() {
 
 
 
-let CrashObserver = {
+var CrashObserver = {
   observe: function(subject, topic, data) {
     is(topic, 'ipc:content-shutdown', 'Received correct observer topic.');
     ok(subject instanceof Ci.nsIPropertyBag2,
@@ -118,7 +118,7 @@ function remoteResolveURI(uri) {
   });
 }
 
-let loadTestTab = Task.async(function*() {
+var loadTestTab = Task.async(function*() {
   gBrowser.selectedTab = gBrowser.addTab(TEST_URL);
   let browser = gBrowser.selectedBrowser;
   yield waitForEvent(browser, "load", true);
@@ -127,7 +127,7 @@ let loadTestTab = Task.async(function*() {
 });
 
 
-let restart = Task.async(function*() {
+var restart = Task.async(function*() {
   let browser = gBrowser.selectedBrowser;
   
   if (browser.getAttribute("remote") != "true")

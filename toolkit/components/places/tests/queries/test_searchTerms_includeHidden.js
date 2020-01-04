@@ -6,7 +6,7 @@
 
 
 
-let timeInMicroseconds = Date.now() * 1000;
+var timeInMicroseconds = Date.now() * 1000;
 
 const VISITS = [
   { isVisit: true,

@@ -1,9 +1,9 @@
-let Ci = Components.interfaces;
-let Cc = Components.classes;
-let Cu = Components.utils;
+var Ci = Components.interfaces;
+var Cc = Components.classes;
+var Cu = Components.utils;
 
 
-let isMainProcess = function() {
+var isMainProcess = function() {
   try {
     return Cc["@mozilla.org/xre/app-info;1"].
         getService(Ci.nsIXULRuntime).

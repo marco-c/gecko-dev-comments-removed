@@ -182,7 +182,7 @@ LoginRecipesParent.prototype = {
 };
 
 
-let LoginRecipesContent = {
+var LoginRecipesContent = {
   
 
 

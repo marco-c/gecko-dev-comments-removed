@@ -5,7 +5,7 @@
 
 
 
-let gSSService = null;
+var gSSService = null;
 
 function checkStateRead(aSubject, aTopic, aData) {
   

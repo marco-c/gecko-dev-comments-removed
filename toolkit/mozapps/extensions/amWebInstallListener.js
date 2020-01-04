@@ -38,7 +38,7 @@ const LOGGER_ID = "addons.weblistener";
 
 
 
-let logger = Log.repository.getLogger(LOGGER_ID);
+var logger = Log.repository.getLogger(LOGGER_ID);
 
 function notifyObservers(aTopic, aBrowser, aUri, aInstalls) {
   let info = {

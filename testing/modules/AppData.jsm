@@ -14,7 +14,7 @@ Cu.import("resource://gre/modules/osfile.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 
 
-let gFakeAppDirectoryProvider;
+var gFakeAppDirectoryProvider;
 
 
 

@@ -7,7 +7,7 @@
 
 
 
-let {ELEMENT_STYLE} = require("devtools/server/actors/styles");
+var {ELEMENT_STYLE} = require("devtools/server/actors/styles");
 
 const TEST_URI = `
   <style type="text/css">

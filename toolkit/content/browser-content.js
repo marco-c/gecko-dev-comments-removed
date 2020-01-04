@@ -3,10 +3,10 @@
 
 
 
-let Cc = Components.classes;
-let Ci = Components.interfaces;
-let Cu = Components.utils;
-let Cr = Components.results;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cu = Components.utils;
+var Cr = Components.results;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -20,7 +20,7 @@ addMessageListener("Finder:Initialize", function () {
   new RemoteFinderListener(global);
 });
 
-let ClickEventHandler = {
+var ClickEventHandler = {
   init: function init() {
     this._scrollable = null;
     this._scrolldir = "";
@@ -249,7 +249,7 @@ let ClickEventHandler = {
 };
 ClickEventHandler.init();
 
-let PopupBlocking = {
+var PopupBlocking = {
   popupData: null,
   popupDataInternal: null,
 
@@ -357,7 +357,7 @@ XPCOMUtils.defineLazyGetter(this, "console", () => {
   return new Console.ConsoleAPI();
 });
 
-let Printing = {
+var Printing = {
   
   
   
@@ -556,7 +556,7 @@ addMessageListener("SwitchDocumentDirection", () => {
   SwitchDocumentDirection(content.window);
 });
 
-let FindBar = {
+var FindBar = {
   
   FIND_NORMAL: 0,
   FIND_TYPEAHEAD: 1,
@@ -689,7 +689,7 @@ addMessageListener("WebChannelMessageToContent", function (e) {
   }
 });
 
-let AudioPlaybackListener = {
+var AudioPlaybackListener = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
   init() {
@@ -749,7 +749,7 @@ addMessageListener("Browser:PurgeSessionHistory", function BrowserPurgeHistory()
   }
 });
 
-let ViewSelectionSource = {
+var ViewSelectionSource = {
   init: function () {
     addMessageListener("ViewSource:GetSelection", this);
   },

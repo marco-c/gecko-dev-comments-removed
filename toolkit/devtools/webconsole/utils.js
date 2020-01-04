@@ -7,7 +7,6 @@
 "use strict";
 
 const {Cc, Ci, Cu, components} = require("chrome");
-const {isWindowIncluded} = require("devtools/toolkit/layout/utils");
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -17,6 +16,7 @@ loader.lazyImporter(this, "Services", "resource://gre/modules/Services.jsm");
 
 loader.lazyImporter(this, "VariablesView", "resource:///modules/devtools/VariablesView.jsm");
 const DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
+const LayoutHelpers = require("devtools/toolkit/layout-helpers");
 
 
 
@@ -42,7 +42,7 @@ const CONSOLE_WORKER_IDS = exports.CONSOLE_WORKER_IDS = [ 'SharedWorker', 'Servi
 
 const MAX_AUTOCOMPLETIONS = exports.MAX_AUTOCOMPLETIONS = 1500;
 
-let WebConsoleUtils = {
+var WebConsoleUtils = {
 
   
 
@@ -1108,7 +1108,7 @@ function getExactMatch_impl(aObj, aName, {chainIterator, getProperty})
 }
 
 
-let JSObjectSupport = {
+var JSObjectSupport = {
   chainIterator: function*(aObj)
   {
     while (aObj) {
@@ -1129,7 +1129,7 @@ let JSObjectSupport = {
   },
 };
 
-let DebuggerObjectSupport = {
+var DebuggerObjectSupport = {
   chainIterator: function*(aObj)
   {
     while (aObj) {
@@ -1150,7 +1150,7 @@ let DebuggerObjectSupport = {
   },
 };
 
-let DebuggerEnvironmentSupport = {
+var DebuggerEnvironmentSupport = {
   chainIterator: function*(aObj)
   {
     while (aObj) {
@@ -1201,6 +1201,9 @@ function ConsoleServiceListener(aWindow, aListener)
 {
   this.window = aWindow;
   this.listener = aListener;
+  if (this.window) {
+    this.layoutHelpers = new LayoutHelpers(this.window);
+  }
 }
 exports.ConsoleServiceListener = ConsoleServiceListener;
 
@@ -1249,8 +1252,8 @@ ConsoleServiceListener.prototype =
         return;
       }
 
-      let errorWindow = Services.wm.getOuterWindowWithId(aMessage .outerWindowID);
-      if (!errorWindow || !isWindowIncluded(this.window, errorWindow)) {
+      let errorWindow = Services.wm.getOuterWindowWithId(aMessage.outerWindowID);
+      if (!errorWindow || !this.layoutHelpers.isIncludedInTopLevelWindow(errorWindow)) {
         return;
       }
     }
@@ -1375,6 +1378,9 @@ function ConsoleAPIListener(aWindow, aOwner, aConsoleID)
   this.window = aWindow;
   this.owner = aOwner;
   this.consoleID = aConsoleID;
+  if (this.window) {
+    this.layoutHelpers = new LayoutHelpers(this.window);
+  }
 }
 exports.ConsoleAPIListener = ConsoleAPIListener;
 
@@ -1435,7 +1441,7 @@ ConsoleAPIListener.prototype =
     let apiMessage = aMessage.wrappedJSObject;
     if (this.window && CONSOLE_WORKER_IDS.indexOf(apiMessage.innerID) == -1) {
       let msgWindow = Services.wm.getCurrentInnerWindowWithId(apiMessage.innerID);
-      if (!msgWindow || !isWindowIncluded(this.window, msgWindow)) {
+      if (!msgWindow || !this.layoutHelpers.isIncludedInTopLevelWindow(msgWindow)) {
         
         return;
       }
@@ -1505,7 +1511,7 @@ ConsoleAPIListener.prototype =
 
 
 
-let WebConsoleCommands = {
+var WebConsoleCommands = {
   _registeredCommands: new Map(),
   _originalCommands: new Map(),
 

@@ -69,7 +69,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 
-let gTerminationTasks = [];
+var gTerminationTasks = [];
 
 
 
@@ -103,7 +103,7 @@ function getTaskId(stackFrame) {
 }
 
 
-let _mochitestAssert = {
+var _mochitestAssert = {
   ok: function (actual) {
     let stack = Components.stack.caller;
     ok(actual, "[" + stack.name + " : " + stack.lineNumber + "] " + actual +

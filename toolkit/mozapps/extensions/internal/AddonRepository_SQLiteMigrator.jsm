@@ -30,7 +30,7 @@ const LOGGER_ID = "addons.repository.sqlmigrator";
 
 
 
-let logger = Log.repository.getLogger(LOGGER_ID);
+var logger = Log.repository.getLogger(LOGGER_ID);
 
 this.EXPORTED_SYMBOLS = ["AddonRepository_SQLiteMigrator"];
 

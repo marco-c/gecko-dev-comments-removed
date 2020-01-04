@@ -3,8 +3,8 @@
 
 
 
-let wrongBrowserNotificationObject = new BasicNotification("wrongBrowser");
-let wrongBrowserNotification;
+var wrongBrowserNotificationObject = new BasicNotification("wrongBrowser");
+var wrongBrowserNotification;
 
 function test() {
   waitForExplicitFinish();
@@ -16,7 +16,7 @@ function test() {
   goNext();
 }
 
-let tests = [
+var tests = [
   { id: "Test#1",
     run: function () {
       this.notifyObj = new BasicNotification(this.id);

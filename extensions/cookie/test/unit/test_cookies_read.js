@@ -3,9 +3,9 @@
 
 
 
-let test_generator = do_run_test();
+var test_generator = do_run_test();
 
-let CMAX = 1000;    
+var CMAX = 1000;    
 
 function run_test() {
   do_test_pending();

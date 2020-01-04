@@ -12,7 +12,7 @@ const { Heritage, ViewHelpers, WidgetMethods } = require("resource:///modules/de
 
 
 
-let gToolbox, gTarget, gFront;
+var gToolbox, gTarget, gFront;
 
 
 

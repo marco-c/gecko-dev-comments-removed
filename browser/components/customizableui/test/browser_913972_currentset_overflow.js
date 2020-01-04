@@ -4,7 +4,7 @@
 
 "use strict";
 
-let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
+var navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
 
 add_task(function() {

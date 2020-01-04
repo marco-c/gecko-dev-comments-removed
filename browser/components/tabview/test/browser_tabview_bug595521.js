@@ -1,8 +1,8 @@
 
 
 
-let fadeAwayUndoButtonDelay;
-let fadeAwayUndoButtonDuration;
+var fadeAwayUndoButtonDelay;
+var fadeAwayUndoButtonDuration;
 
 function test() {
   waitForExplicitFinish();

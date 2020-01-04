@@ -131,10 +131,10 @@ function off(type, listener) {
 exports.off = off;
 
 
-let weakRefs = new WeakMap();
+var weakRefs = new WeakMap();
 
 
-let stillAlive = new Map();   
+var stillAlive = new Map();   
 
 on('sdk:loader:destroy', function onunload({ subject, data: reason }) {
   

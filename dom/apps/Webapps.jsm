@@ -106,11 +106,11 @@ XPCOMUtils.defineLazyGetter(this, "libcutils", function() {
 
 
 
-let debug = Cu.import("resource://gre/modules/AndroidLog.jsm", {})
+var debug = Cu.import("resource://gre/modules/AndroidLog.jsm", {})
               .AndroidLog.d.bind(null, "Webapps");
 #else
 
-let debug;
+var debug;
 function debugPrefObserver() {
   debug = Services.prefs.getBoolPref("dom.mozApps.debug")
             ? (aMsg) => dump("-*- Webapps.jsm : " + aMsg + "\n")
@@ -4802,7 +4802,7 @@ this.DOMApplicationRegistry = {
 
 
 
-let AppcacheObserver = function(aApp) {
+var AppcacheObserver = function(aApp) {
   debug("Creating AppcacheObserver for " + aApp.origin +
         " - " + aApp.installState);
   this.app = aApp;

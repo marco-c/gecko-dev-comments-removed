@@ -34,8 +34,8 @@ const PRIORITY_DELTA = -10;
 
 
 
-let _lastFocusedWindow = null;
-let _windows = [];
+var _lastFocusedWindow = null;
+var _windows = [];
 
 
 
@@ -64,7 +64,7 @@ function _handleEvent(aEvent) {
 
 
 
-let BrowserHelper = {
+var BrowserHelper = {
   onOpen: function NP_BH_onOpen(aBrowser) {
     
     if (aBrowser.ownerDocument.defaultView != _lastFocusedWindow)
@@ -91,7 +91,7 @@ let BrowserHelper = {
 
 
 
-let WindowHelper = {
+var WindowHelper = {
   addWindow: function NP_WH_addWindow(aWindow) {
     
     _windows.push({ window: aWindow, lastSelectedBrowser: null });

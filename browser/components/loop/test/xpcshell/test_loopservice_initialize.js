@@ -3,7 +3,7 @@
 
 "use strict";
 
-let startTimerCalled = false;
+var startTimerCalled = false;
 
 
 

@@ -118,9 +118,9 @@ const compareContacts = function(contact1, contact2) {
 };
 
 
-let gExpectedAdds = [];
-let gExpectedRemovals = [];
-let gExpectedUpdates = [];
+var gExpectedAdds = [];
+var gExpectedRemovals = [];
+var gExpectedUpdates = [];
 
 const onContactAdded = function(e, contact) {
   let expectedIds = gExpectedAdds.map(contactEntry => contactEntry.id);

@@ -36,7 +36,7 @@ XPCOMUtils.defineLazyGetter(this, 'MemoryFront', function() {
 
 Cu.import('resource://gre/modules/Frames.jsm');
 
-let _telemetryDebug = true;
+var _telemetryDebug = true;
 
 function telemetryDebug(...args) {
   if (_telemetryDebug) {
@@ -50,7 +50,7 @@ function telemetryDebug(...args) {
 
 
 
-let developerHUD = {
+var developerHUD = {
 
   _targets: new Map(),
   _histograms: new Set(),
@@ -433,7 +433,7 @@ Target.prototype = {
 
 
 
-let consoleWatcher = {
+var consoleWatcher = {
 
   _client: null,
   _targets: new Map(),
@@ -695,7 +695,7 @@ let consoleWatcher = {
 developerHUD.registerWatcher(consoleWatcher);
 
 
-let eventLoopLagWatcher = {
+var eventLoopLagWatcher = {
   _client: null,
   _fronts: new Map(),
   _active: false,
@@ -760,7 +760,7 @@ developerHUD.registerWatcher(eventLoopLagWatcher);
 
 
 
-let performanceEntriesWatcher = {
+var performanceEntriesWatcher = {
   _client: null,
   _fronts: new Map(),
   _appLaunchName: null,
@@ -865,7 +865,7 @@ developerHUD.registerWatcher(performanceEntriesWatcher);
 
 
 
-let memoryWatcher = {
+var memoryWatcher = {
 
   _client: null,
   _fronts: new Map(),

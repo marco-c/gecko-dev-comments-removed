@@ -19,13 +19,13 @@ XPCOMUtils.defineLazyModuleGetter(this, "ProfileAge",
                                   "resource://gre/modules/ProfileAge.jsm");
 
 
-let gHttpServer = null;
+var gHttpServer = null;
 
-let gHttpRoot = null;
+var gHttpRoot = null;
 
-let gDataRoot = null;
+var gDataRoot = null;
 
-let gNow = new Date(2010, 1, 1, 12, 0, 0);
+var gNow = new Date(2010, 1, 1, 12, 0, 0);
 fakeNow(gNow);
 
 const PLATFORM_VERSION = "1.9.2";
@@ -96,13 +96,13 @@ PluginTag.prototype = {
 };
 
 
-let gInstalledPlugins = [
+var gInstalledPlugins = [
   new PluginTag("Java", "A mock Java plugin", "1.0", false ),
   new PluginTag(FLASH_PLUGIN_NAME, FLASH_PLUGIN_DESC, FLASH_PLUGIN_VERSION, true),
 ];
 
 
-let PluginHost = {
+var PluginHost = {
   getPluginTags: function(countRef) {
     countRef.value = gInstalledPlugins.length;
     return gInstalledPlugins;

@@ -40,7 +40,7 @@ const CHANGE_THROTTLE_INTERVAL_MS = 5 * 60 * 1000;
 
 
 
-let Policy = {
+var Policy = {
   now: () => new Date(),
 };
 

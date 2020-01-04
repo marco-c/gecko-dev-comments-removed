@@ -49,8 +49,8 @@ const TEST_DATA_PARTIAL_LENGTH = TEST_DATA_REPLACEMENT.length;
 
 const MAXBYTES_IN_DB = TEST_DATA_LENGTH - 10;
 
-let gDownloadsRowToImport;
-let gDownloadsRowNonImportable;
+var gDownloadsRowToImport;
+var gDownloadsRowNonImportable;
 
 
 

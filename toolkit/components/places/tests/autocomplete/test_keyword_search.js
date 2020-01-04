@@ -13,17 +13,17 @@
 
 
 
-let keyBase = "http://abc/?search=";
-let keyKey = "key";
+var keyBase = "http://abc/?search=";
+var keyKey = "key";
 
 
-let otherBase = "http://xyz/?foo=";
+var otherBase = "http://xyz/?foo=";
 
-let unescaped = "ユニコード";
-let pageInHistory = "ThisPageIsInHistory";
+var unescaped = "ユニコード";
+var pageInHistory = "ThisPageIsInHistory";
 
 
-let kURIs = [
+var kURIs = [
   keyBase + "%s",
   keyBase + "term",
   keyBase + "multi+word",
@@ -35,7 +35,7 @@ let kURIs = [
   keyBase + "twoKey",
   otherBase + "twoKey"
 ];
-let kTitles = [
+var kTitles = [
   "Generic page title",
   "Keyword title",
   "abc",
@@ -55,7 +55,7 @@ gPages[6] = [6,2];
 
 
 
-let gTests = [
+var gTests = [
   ["0: Plain keyword query",
    keyKey + " term", [1]],
   ["1: Multi-word keyword query",

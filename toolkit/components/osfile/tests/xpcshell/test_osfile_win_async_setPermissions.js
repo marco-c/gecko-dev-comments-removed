@@ -11,7 +11,7 @@
 
 
 
-let testSequence = [
+var testSequence = [
   [ { winAttributes: { readOnly: true, system: true, hidden: true } },
     { readOnly: true, system: true, hidden: true } ],
   [ { winAttributes: { readOnly: false } },

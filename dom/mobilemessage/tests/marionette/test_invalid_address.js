@@ -8,7 +8,7 @@ const MMS_MAX_LENGTH_SUBJECT = 40;
 SpecialPowers.addPermission("sms", true, document);
 SpecialPowers.setBoolPref("dom.sms.enabled", true);
 
-let tasks = {
+var tasks = {
   
   
   _tasks: [],
@@ -41,7 +41,7 @@ let tasks = {
   }
 };
 
-let manager;
+var manager;
 
 function getAllMessages(callback, filter, reverse) {
   let messages = [];

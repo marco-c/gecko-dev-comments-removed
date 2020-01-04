@@ -4,7 +4,7 @@
 
 
 
-let SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
+var SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
 
 
 
@@ -16,7 +16,7 @@ function resetSocial() {
   SocialService._providerListeners.clear();
 }
 
-let createdWindows = [];
+var createdWindows = [];
 
 function openWindowAndWaitForInit(parentWin, callback) {
   
@@ -51,14 +51,14 @@ function postTestCleanup(cb) {
   closeOneWindow(cb);
 }
 
-let manifest = { 
+var manifest = { 
   name: "provider 1",
   origin: "https://example.com",
   sidebarURL: "https://example.com/browser/browser/base/content/test/social/social_sidebar.html",
   workerURL: "https://example.com/browser/browser/base/content/test/social/social_worker.js",
   iconURL: "https://example.com/browser/browser/base/content/test/general/moz.png"
 };
-let manifest2 = { 
+var manifest2 = { 
   name: "provider test1",
   origin: "https://test1.example.com",
   workerURL: "https://test1.example.com/browser/browser/base/content/test/social/social_worker.js",
@@ -72,7 +72,7 @@ function test() {
   runSocialTests(tests, undefined, postTestCleanup);
 }
 
-let tests = {
+var tests = {
   
   testInactiveStartup: function(cbnext) {
     is(Social.providers.length, 0, "needs zero providers to start this test.");

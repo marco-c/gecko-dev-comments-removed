@@ -1,8 +1,8 @@
 
 
 
-let contentWindow;
-let contentElement;
+var contentWindow;
+var contentElement;
 
 function test() {
   waitForExplicitFinish();

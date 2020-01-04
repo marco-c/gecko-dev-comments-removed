@@ -3,11 +3,11 @@
 
 
 
-let tempScope = {};
+var tempScope = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", tempScope);
 Cu.import("resource://gre/modules/FileUtils.jsm", tempScope);
-let NetUtil = tempScope.NetUtil;
-let FileUtils = tempScope.FileUtils;
+var NetUtil = tempScope.NetUtil;
+var FileUtils = tempScope.FileUtils;
 
 
 const expected = 9;

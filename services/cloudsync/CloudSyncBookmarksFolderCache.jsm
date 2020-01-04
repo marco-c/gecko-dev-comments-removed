@@ -7,7 +7,7 @@
 this.EXPORTED_SYMBOLS = ["FolderCache"];
 
 
-let FolderCache = function () {
+var FolderCache = function () {
   this.cache = new Map();
 }
 

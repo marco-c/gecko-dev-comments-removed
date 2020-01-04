@@ -30,7 +30,7 @@ function _dump(str) {
 }
 
 
-let runningInParent = true;
+var runningInParent = true;
 try {
   runningInParent = Components.classes["@mozilla.org/xre/runtime;1"].
                     getService(Components.interfaces.nsIXULRuntime).processType
@@ -679,14 +679,14 @@ function _do_execute_cleanup() {
 
 
 
-let _gTests = [];
+var _gTests = [];
 function add_test(func) {
   _gTests.push([false, func]);
   return func;
 }
 
 
-let _Task;
+var _Task;
 
 
 
@@ -737,8 +737,8 @@ function add_task(func) {
 
 
 
-let _gRunningTest = null;
-let _gTestIndex = 0; 
+var _gRunningTest = null;
+var _gTestIndex = 0; 
 function run_next_test()
 {
   function _run_next_test()

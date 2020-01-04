@@ -3,14 +3,14 @@ const Cu = Components.utils;
 const { Services } = Cu.import("resource://gre/modules/Services.jsm");
 
 
-let scope = {};
+var scope = {};
 Services.scriptloader.loadSubScript("resource://gre/modules/SystemAppProxy.jsm", scope);
 const { SystemAppProxy } = scope;
 
-let frame;
-let customEventTarget;
+var frame;
+var customEventTarget;
 
-let index = -1;
+var index = -1;
 function next() {
   index++;
   if (index >= steps.length) {
@@ -26,8 +26,8 @@ function next() {
 
 
 
-let isLoaded = false;
-let n = 0;
+var isLoaded = false;
+var n = 0;
 function listener(event) {
   if (!isLoaded) {
     assert.ok(false, "Received event before the iframe is ready");
@@ -60,7 +60,7 @@ function listener(event) {
 }
 
 
-let steps = [
+var steps = [
   function waitForWebapps() {
     
     

@@ -2,9 +2,9 @@
 
 
 
-let Cc = Components.classes;
-let Ci = Components.interfaces;
-let Cu = Components.utils;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cu = Components.utils;
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -28,7 +28,7 @@ function makeInputStream(aString) {
   return stream; 
 }
 
-let WebProgressListener = {
+var WebProgressListener = {
   init: function() {
     this._filter = Cc["@mozilla.org/appshell/component/browser-status-filter;1"]
                      .createInstance(Ci.nsIWebProgress);
@@ -209,7 +209,7 @@ addEventListener("unload", () => {
   WebProgressListener.uninit();
 });
 
-let WebNavigation =  {
+var WebNavigation =  {
   init: function() {
     addMessageListener("WebNavigation:GoBack", this);
     addMessageListener("WebNavigation:GoForward", this);
@@ -312,7 +312,7 @@ let WebNavigation =  {
 
 WebNavigation.init();
 
-let SecurityUI = {
+var SecurityUI = {
   getSSLStatusAsString: function() {
     let status = docShell.securityUI.QueryInterface(Ci.nsISSLStatusProvider).SSLStatus;
 
@@ -328,7 +328,7 @@ let SecurityUI = {
   }
 };
 
-let ControllerCommands = {
+var ControllerCommands = {
   init: function () {
     addMessageListener("ControllerCommands:Do", this);
   },
@@ -501,7 +501,7 @@ addMessageListener("Browser:Thumbnail:CheckState", function (aMessage) {
 
 
 
-let AddonsChild = RemoteAddonsChild.init(this);
+var AddonsChild = RemoteAddonsChild.init(this);
 if (AddonsChild) {
   addEventListener("unload", () => {
     RemoteAddonsChild.uninit(AddonsChild);
@@ -515,7 +515,7 @@ addMessageListener("NetworkPrioritizer:AdjustPriority", (msg) => {
   loadGroup.adjustPriority(msg.data.adjustment);
 });
 
-let AutoCompletePopup = {
+var AutoCompletePopup = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompletePopup]),
 
   init: function() {
@@ -593,10 +593,10 @@ let AutoCompletePopup = {
 
 
 
-let outerWindowID = content.QueryInterface(Ci.nsIInterfaceRequestor)
+var outerWindowID = content.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIDOMWindowUtils)
                            .outerWindowID;
-let initData = sendSyncMessage("Browser:Init", {outerWindowID: outerWindowID});
+var initData = sendSyncMessage("Browser:Init", {outerWindowID: outerWindowID});
 if (initData.length) {
   docShell.useGlobalHistory = initData[0].useGlobalHistory;
   if (initData[0].initPopup) {

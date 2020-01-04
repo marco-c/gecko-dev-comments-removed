@@ -31,12 +31,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 
 
 
-let gMonitor = PerformanceStats.getMonitor([]);
+var gMonitor = PerformanceStats.getMonitor([]);
 
 
 
 
-let isContent = Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
+var isContent = Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
 
 
 

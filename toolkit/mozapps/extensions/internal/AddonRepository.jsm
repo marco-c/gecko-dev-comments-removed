@@ -70,7 +70,7 @@ const LOGGER_ID = "addons.repository";
 
 
 
-let logger = Log.repository.getLogger(LOGGER_ID);
+var logger = Log.repository.getLogger(LOGGER_ID);
 
 
 
@@ -99,7 +99,7 @@ const INTEGER_KEY_MAP = {
 };
 
 
-let XHRequest = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1",
+var XHRequest = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1",
                                        "nsIXMLHttpRequest");
 
 function convertHTMLToPlainText(html) {

@@ -6,7 +6,7 @@
 
 
 
-let {ELEMENT_STYLE} = require("devtools/server/actors/styles");
+var {ELEMENT_STYLE} = require("devtools/server/actors/styles");
 
 const TEST_URI = `
   <div id="test2" style="color: red">

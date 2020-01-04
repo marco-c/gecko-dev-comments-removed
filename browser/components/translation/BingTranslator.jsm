@@ -345,7 +345,7 @@ BingRequest.prototype = {
 
 
 
-let BingTokenManager = {
+var BingTokenManager = {
   _currentToken: null,
   _currentExpiryTime: 0,
   _pendingRequest: null,

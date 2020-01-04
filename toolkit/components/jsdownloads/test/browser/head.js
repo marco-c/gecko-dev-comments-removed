@@ -41,7 +41,7 @@ const TEST_TARGET_FILE_NAME_PDF = "test-download.pdf";
 
 
 
-let gFileCounter = Math.floor(Math.random() * 1000000);
+var gFileCounter = Math.floor(Math.random() * 1000000);
 
 
 

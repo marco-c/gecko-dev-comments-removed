@@ -47,7 +47,7 @@ CallbackCaller.prototype = {
   },
 };
 
-let ContentPrefServiceChild = {
+var ContentPrefServiceChild = {
   QueryInterface: XPCOMUtils.generateQI([ Ci.nsIContentPrefService2 ]),
 
   

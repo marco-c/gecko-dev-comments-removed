@@ -14,7 +14,7 @@ const SPONSORED_TAG_BUFFER = 2;
 
 
 
-let gGrid = {
+var gGrid = {
   
 
 

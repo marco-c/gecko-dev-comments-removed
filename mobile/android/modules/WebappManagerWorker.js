@@ -4,11 +4,11 @@
 
 importScripts("resource://gre/modules/osfile.jsm");
 importScripts("resource://gre/modules/workers/require.js");
-let Log = require("resource://gre/modules/AndroidLog.jsm");
+var Log = require("resource://gre/modules/AndroidLog.jsm");
 
 
 
-let log = Log.d.bind(null, "WebappManagerWorker");
+var log = Log.d.bind(null, "WebappManagerWorker");
 
 
 onmessage = function(event) { 

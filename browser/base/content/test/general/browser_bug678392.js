@@ -2,7 +2,7 @@
 
 
 
-let HTTPROOT = "http://example.com/browser/browser/base/content/test/general/";
+var HTTPROOT = "http://example.com/browser/browser/base/content/test/general/";
 
 function maxSnapshotOverride() {
   return 5;

@@ -2,7 +2,7 @@
 
 "use strict";
 
-let pickDone = false;
+var pickDone = false;
 
 function test() {
   if (!isTiltEnabled()) {

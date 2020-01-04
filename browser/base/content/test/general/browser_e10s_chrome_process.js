@@ -84,7 +84,7 @@ add_task(function* test_remote() {
 });
 
 
-let TESTS = [
+var TESTS = [
   [
     "chrome -> chrome",
     CHROME, false,
@@ -118,7 +118,7 @@ let TESTS = [
 ];
 
 
-let TRANSITIONS = [
+var TRANSITIONS = [
 
 function* loadURI(browser, uri) {
   info("Calling browser.loadURI");

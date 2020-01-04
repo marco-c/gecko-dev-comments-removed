@@ -1,7 +1,7 @@
 
 
 
-let {FileUtils} = Cu.import("resource://gre/modules/FileUtils.jsm", {});
+var {FileUtils} = Cu.import("resource://gre/modules/FileUtils.jsm", {});
 
 function run_test() {
   run_next_test();

@@ -1,10 +1,10 @@
 
 
 
-let TS = {};
+var TS = {};
 subscriptLoader.loadSubScript("resource://gre/components/TelephonyService.js", TS);
 
-let NS = {};
+var NS = {};
 subscriptLoader.loadSubScript("resource://gre/modules/DialNumberUtils.jsm", NS);
 
 function run_test() {

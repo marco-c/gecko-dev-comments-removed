@@ -1,7 +1,7 @@
 
 
 
-let expectedTab = null;
+var expectedTab = null;
 
 function test() {
   Harness.installConfirmCallback = confirm_install;

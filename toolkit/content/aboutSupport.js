@@ -32,7 +32,7 @@ window.addEventListener("load", function onload(event) {
 
 
 
-let snapshotFormatters = {
+var snapshotFormatters = {
 
   application: function application(data) {
     $("application-box").textContent = data.name;
@@ -399,7 +399,7 @@ let snapshotFormatters = {
 #endif
 };
 
-let $ = document.getElementById.bind(document);
+var $ = document.getElementById.bind(document);
 
 $.new = function $_new(tag, textContentOrChildren, className, attributes) {
   let elt = document.createElement(tag);

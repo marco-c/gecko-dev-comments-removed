@@ -24,7 +24,7 @@ types.addType("ObjectActor", {
 
 
 
-let PromisesActor = protocol.ActorClass({
+var PromisesActor = protocol.ActorClass({
   typeName: "promises",
 
   events: {

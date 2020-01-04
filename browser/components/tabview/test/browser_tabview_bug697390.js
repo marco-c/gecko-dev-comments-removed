@@ -1,7 +1,7 @@
 
 
 
-let state = {
+var state = {
   windows: [{
     tabs: [{
       entries: [{ url: "about:robots" }],

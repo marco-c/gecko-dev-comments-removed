@@ -5,7 +5,7 @@
 
 
 
-let WAIT_TIME = 10;
+var WAIT_TIME = 10;
 
 function* spawnTest() {
   let { panel } = yield initPerformance(SIMPLE_URL);

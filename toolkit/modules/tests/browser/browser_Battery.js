@@ -2,7 +2,7 @@
 
 
 
-let imported = Components.utils.import("resource://gre/modules/Battery.jsm", this);
+var imported = Components.utils.import("resource://gre/modules/Battery.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm", this);
 
 function test() {

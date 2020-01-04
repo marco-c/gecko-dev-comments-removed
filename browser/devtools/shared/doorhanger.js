@@ -32,7 +32,7 @@ function shouldDevEditionPromoShow () {
          LOCALE === "en-US";
 }
 
-let TYPES = {
+var TYPES = {
   
   
   
@@ -47,7 +47,7 @@ let TYPES = {
   }
 };
 
-let panelAttrs = {
+var panelAttrs = {
   orient: "vertical",
   hidden: "false",
   consumeoutsideclicks: "true",

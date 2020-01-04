@@ -4,7 +4,7 @@
 
 "use strict";
 
-let { TabActor } = require("devtools/server/actors/webbrowser");
+var { TabActor } = require("devtools/server/actors/webbrowser");
 
 
 

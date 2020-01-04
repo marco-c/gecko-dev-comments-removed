@@ -2,18 +2,18 @@
 
 
 
-let tempScope = {};
+var tempScope = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", tempScope);
-let NetUtil = tempScope.NetUtil;
+var NetUtil = tempScope.NetUtil;
 
 
-let gScratchpad;
+var gScratchpad;
 
 
-let gFile;
+var gFile;
 
 
-let gFileContent = "hello.world('bug636725');";
+var gFileContent = "hello.world('bug636725');";
 
 function test()
 {

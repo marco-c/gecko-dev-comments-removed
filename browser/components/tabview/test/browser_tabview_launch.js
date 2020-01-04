@@ -1,7 +1,7 @@
 
 
 
-let newWin;
+var newWin;
 
 
 function test() {

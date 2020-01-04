@@ -14,11 +14,11 @@ Cu.import("resource://testing-common/MockRegistrar.jsm");
 
 
 
-let passwordResetOnServer = false;
-let deletedOnServer = false;
+var passwordResetOnServer = false;
+var deletedOnServer = false;
 
 
-let certExpired = false;
+var certExpired = false;
 
 
 function makePrincipal(origin, appId) {
@@ -27,13 +27,13 @@ function makePrincipal(origin, appId) {
   let uri = Services.io.newURI(origin, null, null);
   return secMan.createCodebasePrincipal(uri, {appId: appId});
 }
-let principal = makePrincipal('app://settings.gaiamobile.org', 27, false);
+var principal = makePrincipal('app://settings.gaiamobile.org', 27, false);
 
 
-let fakeFxAccountsUIGlueCID;
+var fakeFxAccountsUIGlueCID;
 
 
-let FxAccountsUIGlue = {
+var FxAccountsUIGlue = {
   _reject: false,
 
   _error: 'error',
@@ -177,7 +177,7 @@ FxAccountsManager._fxAccounts = {
 const kFxAccountsClient = FxAccountsManager._getFxAccountsClient;
 
 
-let FakeFxAccountsClient = {
+var FakeFxAccountsClient = {
   _reject: false,
   _recoveryEmailStatusCalled: false,
   _signInCalled: false,

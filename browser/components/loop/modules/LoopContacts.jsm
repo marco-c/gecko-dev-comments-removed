@@ -323,7 +323,7 @@ LoopStorage.on("upgrade", function(e, db) {
 
 
 
-let LoopContactsInternal = Object.freeze({
+var LoopContactsInternal = Object.freeze({
   
 
 

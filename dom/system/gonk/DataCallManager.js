@@ -37,15 +37,15 @@ XPCOMUtils.defineLazyGetter(this, "RIL", function() {
 });
 
 
-let RILQUIRKS_DATA_REGISTRATION_ON_DEMAND =
+var RILQUIRKS_DATA_REGISTRATION_ON_DEMAND =
   libcutils.property_get("ro.moz.ril.data_reg_on_demand", "false") == "true";
 
 
-let RILQUIRKS_SUBSCRIPTION_CONTROL =
+var RILQUIRKS_SUBSCRIPTION_CONTROL =
   libcutils.property_get("ro.moz.ril.subscription_control", "false") == "true";
 
 
-let RILQUIRKS_HAVE_IPV6 =
+var RILQUIRKS_HAVE_IPV6 =
   libcutils.property_get("ro.moz.ril.ipv6", "false") == "true";
 
 const DATACALLMANAGER_CID =

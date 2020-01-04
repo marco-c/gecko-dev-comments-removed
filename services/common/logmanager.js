@@ -38,12 +38,12 @@ const DEFAULT_MAX_ERROR_AGE = 20 * 24 * 60 * 60;
 
 
 
-let formatter;
-let dumpAppender;
-let consoleAppender;
+var formatter;
+var dumpAppender;
+var consoleAppender;
 
 
-let allBranches = new Set();
+var allBranches = new Set();
 
 
 

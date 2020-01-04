@@ -23,13 +23,13 @@ const BUNDLE_URL = "chrome://global/locale/viewSource.properties";
 const MARK_SELECTION_START = "\uFDD0";
 const MARK_SELECTION_END = "\uFDEF";
 
-let global = this;
+var global = this;
 
 
 
 
 
-let ViewSourceContent = {
+var ViewSourceContent = {
   
 
 

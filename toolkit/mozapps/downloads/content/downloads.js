@@ -17,7 +17,7 @@ const nsLocalFile = Components.Constructor("@mozilla.org/file/local;1",
 
 var Cc = Components.classes;
 var Ci = Components.interfaces;
-let Cu = Components.utils;
+var Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/DownloadUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -27,15 +27,15 @@ XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
 
 const nsIDM = Ci.nsIDownloadManager;
 
-let gDownloadManager = Cc["@mozilla.org/download-manager;1"].getService(nsIDM);
-let gDownloadManagerUI = Cc["@mozilla.org/download-manager-ui;1"].
+var gDownloadManager = Cc["@mozilla.org/download-manager;1"].getService(nsIDM);
+var gDownloadManagerUI = Cc["@mozilla.org/download-manager-ui;1"].
                          getService(Ci.nsIDownloadManagerUI);
 
-let gDownloadListener = null;
-let gDownloadsView = null;
-let gSearchBox = null;
-let gSearchTerms = [];
-let gBuilder = 0;
+var gDownloadListener = null;
+var gDownloadsView = null;
+var gSearchBox = null;
+var gSearchTerms = [];
+var gBuilder = 0;
 
 
 
@@ -44,7 +44,7 @@ let gBuilder = 0;
 
 
 
-let gPerformAllCallback;
+var gPerformAllCallback;
 
 
 
@@ -65,7 +65,7 @@ var gUserInteracted = false;
 
 
 
-let gStr = {
+var gStr = {
   paused: "paused",
   cannotPause: "cannotPause",
   doneStatus: "doneStatus",
@@ -83,7 +83,7 @@ let gStr = {
 };
 
 
-let gStmt = null;
+var gStmt = null;
 
 
 
@@ -469,7 +469,7 @@ function Shutdown()
   gStmt.finalize();
 }
 
-let gDownloadObserver = {
+var gDownloadObserver = {
   observe: function gdo_observe(aSubject, aTopic, aData) {
     switch (aTopic) {
       case "download-manager-remove-download":

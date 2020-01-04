@@ -7,7 +7,7 @@
 
 
 
-let AutomationView = {
+var AutomationView = {
 
   
 

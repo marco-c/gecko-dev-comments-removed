@@ -5,8 +5,8 @@
 
 
 
-let HORIZONTAL_AXIS = 1;
-let VERTICAL_AXIS = 2;
+var HORIZONTAL_AXIS = 1;
+var VERTICAL_AXIS = 2;
 
 function* spawnTest() {
   let { panel } = yield initPerformance(SIMPLE_URL);

@@ -707,7 +707,7 @@ exports.settleAll = values => {
 
 
 
-let testing = false;
+var testing = false;
 Object.defineProperty(exports, "testing", {
   get: function() {
     return testing;

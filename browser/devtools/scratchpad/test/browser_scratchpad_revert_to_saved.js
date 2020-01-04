@@ -3,29 +3,29 @@
 
 
 
-let tempScope = {};
+var tempScope = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", tempScope);
 Cu.import("resource://gre/modules/FileUtils.jsm", tempScope);
-let NetUtil = tempScope.NetUtil;
-let FileUtils = tempScope.FileUtils;
+var NetUtil = tempScope.NetUtil;
+var FileUtils = tempScope.FileUtils;
 
 
-let gScratchpad;
+var gScratchpad;
 
 
-let gFile;
+var gFile;
 
 
-let gFileName = "testFileForBug751744.tmp"
+var gFileName = "testFileForBug751744.tmp"
 
 
 
-let gFileContent = "/* this file is already saved */\n" +
+var gFileContent = "/* this file is already saved */\n" +
                    "function foo() { alert('bar') }";
-let gLength = gFileContent.length;
+var gLength = gFileContent.length;
 
 
-let menu;
+var menu;
 
 function startTest()
 {

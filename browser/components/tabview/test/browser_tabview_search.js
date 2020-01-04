@@ -1,7 +1,7 @@
 
 
 
-let newTabs = [];
+var newTabs = [];
 
 
 function test() {

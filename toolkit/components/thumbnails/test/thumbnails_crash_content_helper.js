@@ -1,19 +1,19 @@
 
 
 
-let Cu = Components.utils;
+var Cu = Components.utils;
 
 
 
 Cu.import("resource://gre/modules/ctypes.jsm");
-let crash = function() { 
+var crash = function() { 
   let zero = new ctypes.intptr_t(8);
   let badptr = ctypes.cast(zero, ctypes.PointerType(ctypes.int32_t));
   badptr.contents
 };
 
 
-let TestHelper = {
+var TestHelper = {
   init: function() {
     addMessageListener("thumbnails-test:crash", this);
   },

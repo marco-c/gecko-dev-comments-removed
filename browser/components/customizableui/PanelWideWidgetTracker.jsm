@@ -11,19 +11,19 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
   "resource:///modules/CustomizableUI.jsm");
 
-let gModuleName = "[PanelWideWidgetTracker]";
+var gModuleName = "[PanelWideWidgetTracker]";
 #include logging.js
 
-let gPanel = CustomizableUI.AREA_PANEL;
+var gPanel = CustomizableUI.AREA_PANEL;
 
-let gPanelPlacements = [];
+var gPanelPlacements = [];
 
 
-let gWideWidgets = new Set();
+var gWideWidgets = new Set();
 
-let gSeenWidgets = new Set();
+var gSeenWidgets = new Set();
 
-let PanelWideWidgetTracker = {
+var PanelWideWidgetTracker = {
   
   onWidgetAdded: function(aWidgetId, aArea, aPosition) {
     if (aArea == gPanel) {

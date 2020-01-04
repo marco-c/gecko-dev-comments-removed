@@ -4,12 +4,12 @@
 
 
 
-let bs = PlacesUtils.bookmarks;
-let hs = PlacesUtils.history;
-let anno = PlacesUtils.annotations;
+var bs = PlacesUtils.bookmarks;
+var hs = PlacesUtils.history;
+var anno = PlacesUtils.annotations;
 
 
-let bookmarksObserver = {
+var bookmarksObserver = {
   onBeginUpdateBatch: function() {
     this._beginUpdateBatch = true;
   },
@@ -71,9 +71,9 @@ let bookmarksObserver = {
 
 
 
-let root = bs.bookmarksMenuFolder;
+var root = bs.bookmarksMenuFolder;
 
-let bmStartIndex = 0;
+var bmStartIndex = 0;
 
 
 function run_test() {

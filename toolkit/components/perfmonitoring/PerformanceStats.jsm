@@ -55,7 +55,7 @@ const PROPERTIES_META = [...PROPERTIES_META_IMMUTABLE, "windowId", "title", "nam
 
 const MAX_WAIT_FOR_CHILD_PROCESS_MS = 5000;
 
-let isContent = Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
+var isContent = Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
 
 
 
@@ -180,7 +180,7 @@ function lastNonZero(array) {
 
 
 
-let Probes = {
+var Probes = {
   
 
 
@@ -667,7 +667,7 @@ function Snapshot({xpcom, childProcesses, probes}) {
 
 
 
-let Process = {
+var Process = {
   
   _idcounter: 0,
   _loader: null,

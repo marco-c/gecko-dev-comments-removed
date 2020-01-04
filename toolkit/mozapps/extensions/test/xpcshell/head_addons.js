@@ -31,12 +31,12 @@ Components.utils.import("resource://gre/modules/AsyncShutdown.jsm");
 Components.utils.import("resource://testing-common/MockRegistrar.jsm");
 
 
-let AMscope = Components.utils.import("resource://gre/modules/AddonManager.jsm");
-let AddonManager = AMscope.AddonManager;
-let AddonManagerInternal = AMscope.AddonManagerInternal;
+var AMscope = Components.utils.import("resource://gre/modules/AddonManager.jsm");
+var AddonManager = AMscope.AddonManager;
+var AddonManagerInternal = AMscope.AddonManagerInternal;
 
 
-let MockAsyncShutdown = {
+var MockAsyncShutdown = {
   hook: null,
   status: null,
   profileBeforeChange: {
@@ -378,7 +378,7 @@ function do_check_icons(aActual, aExpected) {
 
 
 
-let gXPISaveError = null;
+var gXPISaveError = null;
 
 
 
@@ -885,7 +885,7 @@ function writeInstallRDFToXPIFile(aData, aFile, aExtraFile) {
   zipW.close();
 }
 
-let temp_xpis = [];
+var temp_xpis = [];
 
 
 
@@ -1474,11 +1474,11 @@ if ("nsIWindowsRegKey" in AM_Ci) {
 const gProfD = do_get_profile();
 
 const EXTENSIONS_DB = "extensions.json";
-let gExtensionsJSON = gProfD.clone();
+var gExtensionsJSON = gProfD.clone();
 gExtensionsJSON.append(EXTENSIONS_DB);
 
 const EXTENSIONS_INI = "extensions.ini";
-let gExtensionsINI = gProfD.clone();
+var gExtensionsINI = gProfD.clone();
 gExtensionsINI.append(EXTENSIONS_INI);
 
 

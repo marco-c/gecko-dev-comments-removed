@@ -11,7 +11,7 @@ const REFERRER_URL_BASE = "/browser/browser/base/content/test/referrer/";
 const REFERRER_POLICYSERVER_URL =
   "test1.example.com" + REFERRER_URL_BASE + "file_referrer_policyserver.sjs";
 
-let gTestWindow = null;
+var gTestWindow = null;
 
 
 
@@ -21,7 +21,7 @@ let gTestWindow = null;
 
 
 
-let _referrerTests = [
+var _referrerTests = [
   
   
   {

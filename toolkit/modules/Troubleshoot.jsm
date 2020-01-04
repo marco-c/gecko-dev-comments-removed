@@ -12,7 +12,7 @@ Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
-let Experiments;
+var Experiments;
 try {
   Experiments = Cu.import("resource:///modules/experiments/Experiments.jsm").Experiments;
 }
@@ -167,7 +167,7 @@ this.Troubleshoot = {
 
 
 
-let dataProviders = {
+var dataProviders = {
 
   application: function application(done) {
     let data = {

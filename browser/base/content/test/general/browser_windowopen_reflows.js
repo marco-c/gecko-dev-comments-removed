@@ -72,7 +72,7 @@ function test() {
   });
 }
 
-let observer = {
+var observer = {
   reflow: function (start, end) {
     
     let stack = new Error().stack;

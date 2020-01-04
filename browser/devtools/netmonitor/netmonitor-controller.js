@@ -157,7 +157,7 @@ Object.defineProperty(this, "NetworkHelper", {
 
 
 
-let NetMonitorController = {
+var NetMonitorController = {
   
 
 
@@ -338,16 +338,9 @@ let NetMonitorController = {
     let inspector = function() {
       let predicate = i => i.value === requestId;
       request = NetMonitorView.RequestsMenu.getItemForPredicate(predicate);
-      if (!request) {
-        
-        NetMonitorView.RequestsMenu.filterOn("all");
-        request = NetMonitorView.RequestsMenu.getItemForPredicate(predicate);
-      }
-
-      
-      
       if (request) {
         window.off(EVENTS.REQUEST_ADDED, inspector);
+        NetMonitorView.RequestsMenu.filterOn("all");
         NetMonitorView.RequestsMenu.selectedItem = request;
         deferred.resolve();
       }
@@ -756,13 +749,13 @@ NetworkEventsHandler.prototype = {
 
 
 
-let L10N = new ViewHelpers.L10N(NET_STRINGS_URI);
-let PKI_L10N = new ViewHelpers.L10N(PKI_STRINGS_URI);
+var L10N = new ViewHelpers.L10N(NET_STRINGS_URI);
+var PKI_L10N = new ViewHelpers.L10N(PKI_STRINGS_URI);
 
 
 
 
-let Prefs = new ViewHelpers.Prefs("devtools.netmonitor", {
+var Prefs = new ViewHelpers.Prefs("devtools.netmonitor", {
   networkDetailsWidth: ["Int", "panes-network-details-width"],
   networkDetailsHeight: ["Int", "panes-network-details-height"],
   statistics: ["Bool", "statistics"],
@@ -848,4 +841,4 @@ function dumpn(str) {
   }
 }
 
-let wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");
+var wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");

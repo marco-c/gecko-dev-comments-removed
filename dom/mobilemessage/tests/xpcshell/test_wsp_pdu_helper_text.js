@@ -1,7 +1,7 @@
 
 
 
-let WSP = {};
+var WSP = {};
 subscriptLoader.loadSubScript("resource://gre/modules/WspPduHelper.jsm", WSP);
 WSP.debug = do_print;
 
@@ -81,7 +81,7 @@ add_test(function test_NullTerminatedTexts_encode() {
 
 
 
-let TOKEN_SEPS = "()<>@,;:\\\"/[]?={} \t";
+var TOKEN_SEPS = "()<>@,;:\\\"/[]?={} \t";
 
 
 

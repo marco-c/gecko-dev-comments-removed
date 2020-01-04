@@ -3,13 +3,13 @@
 
 "use strict";
 
-let {require} = Cu.import("resource:///modules/devtools/gDevTools.jsm", {});
-let {TargetFactory} = require("devtools/framework/target");
-let DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
-let promise = require("promise");
+var {require} = Cu.import("resource:///modules/devtools/gDevTools.jsm", {});
+var {TargetFactory} = require("devtools/framework/target");
+var DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
+var promise = require("promise");
 
 
-let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
+var testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
 Services.scriptloader.loadSubScript(testDir + "../../../commandline/test/helpers.js", this);
 
 DevToolsUtils.testing = true;
@@ -24,7 +24,7 @@ registerCleanupFunction(() => {
 
 
 
-let openInspector = Task.async(function*() {
+var openInspector = Task.async(function*() {
   info("Opening the inspector");
   let target = TargetFactory.forTab(gBrowser.selectedTab);
 
@@ -78,7 +78,7 @@ function waitForToolboxFrameFocus(toolbox) {
 
 
 
-let openInspectorSideBar = Task.async(function*(id) {
+var openInspectorSideBar = Task.async(function*(id) {
   let {toolbox, inspector} = yield openInspector();
 
   if (!hasSideBarTab(inspector, id)) {
@@ -133,7 +133,7 @@ function openRuleView() {
 
 
 
-let addTab = Task.async(function* (url) {
+var addTab = Task.async(function* (url) {
   info("Adding a new tab with URL: '" + url + "'");
 
   window.focus();

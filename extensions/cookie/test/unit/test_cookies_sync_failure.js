@@ -18,9 +18,9 @@
 
 
 
-let COOKIE_DATABASE_SCHEMA_CURRENT = 5;
+var COOKIE_DATABASE_SCHEMA_CURRENT = 5;
 
-let test_generator = do_run_test();
+var test_generator = do_run_test();
 
 function run_test() {
   do_test_pending();

@@ -49,7 +49,7 @@ const actions = require('./content/stores/event-listeners').actions;
 
 
 
-let DebuggerView = {
+var DebuggerView = {
   
 
 

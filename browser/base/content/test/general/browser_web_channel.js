@@ -14,7 +14,7 @@ const HTTP_ENDPOINT = "/browser/browser/base/content/test/general/browser_web_ch
 
 
 
-let gTests = [
+var gTests = [
   {
     desc: "WebChannel generic message",
     run: function* () {

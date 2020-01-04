@@ -514,14 +514,14 @@ DevTools.prototype = {
 
 
 
-let gDevTools = new DevTools();
+var gDevTools = new DevTools();
 this.gDevTools = gDevTools;
 
 
 
 
 
-let gDevToolsBrowser = {
+var gDevToolsBrowser = {
   
 
 

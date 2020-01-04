@@ -4,7 +4,7 @@
 
 
 
-let LineGraphWidget = require("devtools/shared/widgets/LineGraphWidget");
+var LineGraphWidget = require("devtools/shared/widgets/LineGraphWidget");
 
 add_task(function*() {
   yield promiseTab("about:blank");

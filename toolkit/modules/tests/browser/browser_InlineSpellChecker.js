@@ -9,7 +9,7 @@ function test() {
   }
 }
 
-let tests = {
+var tests = {
   
   
   testDictionaryDisplayNames: function() {

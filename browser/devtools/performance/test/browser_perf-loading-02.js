@@ -8,7 +8,7 @@
 
 
 
-let test = Task.async(function*() {
+var test = Task.async(function*() {
   
   requestLongerTimeout(2);
 

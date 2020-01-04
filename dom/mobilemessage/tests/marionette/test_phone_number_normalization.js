@@ -6,7 +6,7 @@ MARIONETTE_TIMEOUT = 60000;
 SpecialPowers.setBoolPref("dom.sms.enabled", true);
 SpecialPowers.addPermission("sms", true, document);
 
-let pendingEmulatorCmdCount = 0;
+var pendingEmulatorCmdCount = 0;
 function sendSmsToEmulator(from, text) {
   ++pendingEmulatorCmdCount;
 
@@ -18,7 +18,7 @@ function sendSmsToEmulator(from, text) {
   });
 }
 
-let tasks = {
+var tasks = {
   
   
   _tasks: [],
@@ -105,7 +105,7 @@ function validate(number, normalizedNumber) {
   };
 }
 
-let manager = window.navigator.mozMobileMessage;
+var manager = window.navigator.mozMobileMessage;
 tasks.push(function() {
   log("Verifying initial state.");
   ok(manager instanceof MozMobileMessageManager,

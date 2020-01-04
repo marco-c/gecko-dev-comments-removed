@@ -2,7 +2,7 @@
 
 
 
-let four = require("./modules/exportsEquals");
+var four = require("./modules/exportsEquals");
 exports.testExportsEquals = function(assert) {
   assert.equal(four, 4);
 };

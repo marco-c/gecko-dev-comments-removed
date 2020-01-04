@@ -36,9 +36,9 @@ function addLoadListener(target, listener)
   });
 }
 
-let gWin;
-let gBrowser;
-let ok, is, info;
+var gWin;
+var gBrowser;
+var ok, is, info;
 
 
 

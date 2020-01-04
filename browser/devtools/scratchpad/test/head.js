@@ -13,7 +13,7 @@ const DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
 const promise = require("promise");
 
 
-let gScratchpadWindow; 
+var gScratchpadWindow; 
 
 DevToolsUtils.testing = true;
 SimpleTest.registerCleanupFunction(() => {

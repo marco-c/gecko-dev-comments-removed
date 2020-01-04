@@ -1,7 +1,7 @@
 
 
 
-let state = {windows:[{tabs:[
+var state = {windows:[{tabs:[
   {entries:[{url:"http://example.com#1"}]},
   {entries:[{url:"http://example.com#2"}]},
   {entries:[{url:"http://example.com#3"}]},
@@ -55,7 +55,7 @@ function test_loadTabs(restoreHiddenTabs, callback) {
   });
 }
 
-let TabsProgressListener = {
+var TabsProgressListener = {
   init: function (win) {
     this.window = win;
     Services.obs.addObserver(this, "sessionstore-debug-tab-restored", false);

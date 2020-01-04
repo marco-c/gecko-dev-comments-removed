@@ -6,7 +6,7 @@
 
 try {
 
-let chromeGlobal = this;
+var chromeGlobal = this;
 
 
 

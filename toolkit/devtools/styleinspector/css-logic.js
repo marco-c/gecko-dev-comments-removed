@@ -41,9 +41,9 @@
 const { Cc, Ci, Cu } = require("chrome");
 const Services = require("Services");
 const DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
-const { getRootBindingParent } = require("devtools/toolkit/layout/utils");
+const LayoutHelpers = require("devtools/toolkit/layout-helpers");
 
-let pseudos = new Set([
+var pseudos = new Set([
   ":after",
   ":before",
   ":first-letter",
@@ -76,7 +76,7 @@ exports.PSEUDO_ELEMENT_SET = PSEUDO_ELEMENT_SET;
 
 
 if (Cu) {
-  Cu.importGlobalProperties(["CSS"]);
+  Cu.importGlobalProperties(['CSS']);
 }
 
 function CssLogic()
@@ -945,7 +945,7 @@ function positionInNodeList(element, nodeList) {
 
 
 CssLogic.findCssSelector = function CssLogic_findCssSelector(ele) {
-  ele = getRootBindingParent(ele);
+  ele = LayoutHelpers.getRootBindingParent(ele);
   var document = ele.ownerDocument;
   if (!document || !document.contains(ele)) {
     throw new Error('findCssSelector received element not inside document');

@@ -22,7 +22,7 @@ this.DocShellCapabilities = Object.freeze({
 
 
 
-let DocShellCapabilitiesInternal = {
+var DocShellCapabilitiesInternal = {
   
   
   

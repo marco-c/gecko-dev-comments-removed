@@ -40,13 +40,13 @@
 
 
 
-let Cu = this.require ? require("chrome").Cu : Components.utils;
-let Cc = this.require ? require("chrome").Cc : Components.classes;
-let Ci = this.require ? require("chrome").Ci : Components.interfaces;
+var Cu = this.require ? require("chrome").Cu : Components.utils;
+var Cc = this.require ? require("chrome").Cc : Components.classes;
+var Ci = this.require ? require("chrome").Ci : Components.interfaces;
 
 
 
-let Components_ = this.require ? require("chrome").components : Components;
+var Components_ = this.require ? require("chrome").components : Components;
 
 
 if (Cu) {
@@ -104,7 +104,7 @@ const DOMPromise = Cu ? Promise : null;
 
 
 
-let PendingErrors = {
+var PendingErrors = {
   
   _counter: 0,
   

@@ -6,11 +6,11 @@
 
 
 
-let Cr = Components.results;
+var Cr = Components.results;
 
 
 
-let testServices = [
+var testServices = [
   ["browser/nav-history-service;1", "nsINavHistoryService",
     ["queryStringToQueries", "removePagesByTimeframe", "removePagesFromHost",
      "removeVisitsByTimeframe", "getObservers"]],

@@ -40,20 +40,20 @@ XPCOMUtils.defineLazyModuleGetter(this, "console",
 
 
 
-let connectionCounters = new Map();
+var connectionCounters = new Map();
 
 
 
 
 
-let wrappedConnections = new Set();
+var wrappedConnections = new Set();
 
 
 
 
-let isClosed = false;
+var isClosed = false;
 
-let Debugging = {
+var Debugging = {
   
   
   

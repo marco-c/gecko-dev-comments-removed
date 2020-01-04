@@ -11,16 +11,16 @@ Components.utils.import("resource://gre/modules/NetUtil.jsm");
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 
-let myok = ok;
-let myis = is;
-let myinfo = info;
-let myisnot = isnot;
+var myok = ok;
+var myis = is;
+var myinfo = info;
+var myisnot = isnot;
 
-let isPromise = function ispromise(value) {
+var isPromise = function ispromise(value) {
   return value != null && typeof value == "object" && "then" in value;
 };
 
-let maketest = function(prefix, test) {
+var maketest = function(prefix, test) {
   let utils = {
     ok: function ok(t, m) {
       myok(t, prefix + ": " + m);
@@ -85,7 +85,7 @@ let maketest = function(prefix, test) {
 
 
 
-let reference_fetch_file = function reference_fetch_file(path, test) {
+var reference_fetch_file = function reference_fetch_file(path, test) {
   test.info("Fetching file " + path);
   let promise = Promise.defer();
   let file = new FileUtils.File(path);
@@ -124,14 +124,14 @@ let reference_fetch_file = function reference_fetch_file(path, test) {
 
 
 
-let reference_compare_files = function reference_compare_files(a, b, test) {
+var reference_compare_files = function reference_compare_files(a, b, test) {
   test.info("Comparing files " + a + " and " + b);
   let a_contents = yield reference_fetch_file(a, test);
   let b_contents = yield reference_fetch_file(b, test);
   is(a_contents, b_contents, "Contents of files " + a + " and " + b + " match");
 };
 
-let reference_dir_contents = function reference_dir_contents(path) {
+var reference_dir_contents = function reference_dir_contents(path) {
   let result = [];
   let entries = new FileUtils.File(path).directoryEntries;
   while (entries.hasMoreElements()) {
@@ -149,7 +149,7 @@ function toggleDebugTest (pref, consoleListener) {
     consoleListener);
 }
 
-let test = maketest("Main", function main(test) {
+var test = maketest("Main", function main(test) {
   return Task.spawn(function() {
     SimpleTest.waitForExplicitFinish();
     yield test_stat();
@@ -167,13 +167,13 @@ let test = maketest("Main", function main(test) {
 
 
 
-let EXISTING_FILE = OS.Path.join("chrome", "toolkit", "components",
+var EXISTING_FILE = OS.Path.join("chrome", "toolkit", "components",
   "osfile", "tests", "mochi", "main_test_osfile_async.js");
 
 
 
 
-let test_stat = maketest("stat", function stat(test) {
+var test_stat = maketest("stat", function stat(test) {
   return Task.spawn(function() {
     
     let file = yield OS.File.open(EXISTING_FILE);
@@ -202,7 +202,7 @@ let test_stat = maketest("stat", function stat(test) {
 
 
 
-let test_info_features_detect = maketest("features_detect", function features_detect(test) {
+var test_info_features_detect = maketest("features_detect", function features_detect(test) {
   return Task.spawn(function() {
     if (OS.Constants.Win) {
       
@@ -225,7 +225,7 @@ let test_info_features_detect = maketest("features_detect", function features_de
 
 
 
-let test_position = maketest("position", function position(test) {
+var test_position = maketest("position", function position(test) {
   return Task.spawn(function() {
     let file = yield OS.File.open(EXISTING_FILE);
 
@@ -256,7 +256,7 @@ let test_position = maketest("position", function position(test) {
 
 
 
-let test_iter = maketest("iter", function iter(test) {
+var test_iter = maketest("iter", function iter(test) {
   return Task.spawn(function() {
     let currentDir = yield OS.File.getCurrentDirectory();
 
@@ -381,7 +381,7 @@ let test_iter = maketest("iter", function iter(test) {
 
 
 
-let test_exists = maketest("exists", function exists(test) {
+var test_exists = maketest("exists", function exists(test) {
   return Task.spawn(function() {
     let fileExists = yield OS.File.exists(EXISTING_FILE);
     test.ok(fileExists, "file exists");
@@ -393,7 +393,7 @@ let test_exists = maketest("exists", function exists(test) {
 
 
 
-let test_debug = maketest("debug", function debug(test) {
+var test_debug = maketest("debug", function debug(test) {
   return Task.spawn(function() {
     function testSetDebugPref (pref) {
       try {
@@ -418,7 +418,7 @@ let test_debug = maketest("debug", function debug(test) {
 
 
 
-let test_debug_test = maketest("debug_test", function debug_test(test) {
+var test_debug_test = maketest("debug_test", function debug_test(test) {
   return Task.spawn(function () {
     
     let consoleListener = {

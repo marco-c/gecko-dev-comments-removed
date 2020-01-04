@@ -371,7 +371,7 @@ ConsoleOutput.prototype = {
 
 
 
-let Messages = {};
+var Messages = {};
 
 
 
@@ -2041,7 +2041,7 @@ Messages.ConsoleTable.prototype = Heritage.extend(Messages.Extended.prototype,
   _renderRepeatNode: function() { },
 }); 
 
-let Widgets = {};
+var Widgets = {};
 
 
 

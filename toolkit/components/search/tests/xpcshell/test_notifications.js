@@ -3,7 +3,7 @@
 
 "use strict";
 
-let gTestLog = [];
+var gTestLog = [];
 
 
 
@@ -16,7 +16,7 @@ let gTestLog = [];
 
 
 
-let expectedLog = [
+var expectedLog = [
   "engine-changed", 
   "engine-added",
   "engine-default",

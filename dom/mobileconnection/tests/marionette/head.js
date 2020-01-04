@@ -24,8 +24,8 @@ function Deferred() {
   Object.freeze(this);
 }
 
-let _pendingEmulatorCmdCount = 0;
-let _pendingEmulatorShellCmdCount = 0;
+var _pendingEmulatorCmdCount = 0;
+var _pendingEmulatorShellCmdCount = 0;
 
 
 
@@ -93,7 +93,7 @@ function runEmulatorShellCmdSafe(aCommands) {
   return deferred.promise;
 }
 
-let workingFrame;
+var workingFrame;
 
 
 
@@ -222,7 +222,7 @@ function setDataApnSettings(aApnSettings, aAllowError) {
   return setSettings1(SETTINGS_KEY_DATA_APN_SETTINGS, aApnSettings, aAllowError);
 }
 
-let mobileConnection;
+var mobileConnection;
 
 
 
@@ -1136,7 +1136,7 @@ function setEmulatorLteSignalStrengthAndWait(aRxlev, aRsrp, aRssnr,
   return Promise.all(promises);
 }
 
-let _networkManager;
+var _networkManager;
 
 
 
@@ -1151,7 +1151,7 @@ function getNetworkManager() {
   return _networkManager;
 }
 
-let _numOfRadioInterfaces;
+var _numOfRadioInterfaces;
 
 
 

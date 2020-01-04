@@ -8,8 +8,8 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 do_load_manifest("test_downloads.manifest");
 
-let httpserver = null;
-let currentTest = 0;
+var httpserver = null;
+var currentTest = 0;
 
 function WindowContext() { }
 WindowContext.prototype = {
@@ -26,7 +26,7 @@ WindowContext.prototype = {
   removeRequest: function (request, context, status) { }
 };
 
-let DownloadListener = {
+var DownloadListener = {
   set: null,
   prevFiles : [],
 
@@ -138,7 +138,7 @@ function getResponse(aSet) {
 
 
 
-let tests = [
+var tests = [
   { serverURL: "/test1.html", data: "Test data 1", doPause: false },
   { serverURL: "/test2.html", data: "Test data 2", doPause: false },
   { serverURL: "/test3.html", data: "Test data 3", doPause: true }

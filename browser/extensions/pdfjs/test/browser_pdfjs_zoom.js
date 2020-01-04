@@ -54,7 +54,7 @@ const TESTS = [
   }
 ];
 
-let initialWidth; 
+var initialWidth; 
 var previousWidth; 
 
 function test() {

@@ -1,11 +1,11 @@
 
 
 
-let modifiers = {
+var modifiers = {
   accelKey: true
 };
 
-let toolbox;
+var toolbox;
 
 function test() {
   addTab("about:blank").then(openToolbox);

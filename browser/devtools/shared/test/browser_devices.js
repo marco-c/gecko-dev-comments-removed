@@ -1,7 +1,7 @@
 
 
 
-let { GetDevices, GetDeviceString, AddDevice } = require("devtools/shared/devices");
+var { GetDevices, GetDeviceString, AddDevice } = require("devtools/shared/devices");
 
 add_task(function*() {
   Services.prefs.setCharPref("devtools.devices.url", TEST_URI_ROOT + "browser_devices.json");

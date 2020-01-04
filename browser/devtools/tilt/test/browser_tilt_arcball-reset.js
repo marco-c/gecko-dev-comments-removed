@@ -2,7 +2,7 @@
 
 "use strict";
 
-let tiltOpened = false;
+var tiltOpened = false;
 
 function test() {
   if (!isTiltEnabled()) {

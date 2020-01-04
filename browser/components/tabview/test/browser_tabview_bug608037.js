@@ -1,8 +1,8 @@
 
 
 
-let tabOne;
-let tabTwo;
+var tabOne;
+var tabTwo;
 
 function test() {
   waitForExplicitFinish();

@@ -3,14 +3,14 @@
 
 'use strict';
 
-let {
+var {
   Loader, main, unload, parseStack, generateMap, resolve, nodeResolve
 } = require('toolkit/loader');
-let { readURI } = require('sdk/net/url');
-let { all } = require('sdk/core/promise');
-let testOptions = require('@test/options');
+var { readURI } = require('sdk/net/url');
+var { all } = require('sdk/core/promise');
+var testOptions = require('@test/options');
 
-let root = module.uri.substr(0, module.uri.lastIndexOf('/'))
+var root = module.uri.substr(0, module.uri.lastIndexOf('/'))
 
 const { Cu } = require('chrome');
 const { addDebuggerToGlobal } = Cu.import('resource://gre/modules/jsdebugger.jsm', {});

@@ -5,7 +5,7 @@
 
 
 
-let gDataNotificationInfoBar = {
+var gDataNotificationInfoBar = {
   _OBSERVERS: [
     "datareporting:notify-data-policy:request",
     "datareporting:notify-data-policy:close",

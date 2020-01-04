@@ -2,7 +2,7 @@
 
 
 
-let originalPolicy = null;
+var originalPolicy = null;
 
 
 
@@ -47,7 +47,7 @@ function sendNotifyRequest(name) {
   return [policy, deferred.promise];
 }
 
-let dumpAppender, rootLogger;
+var dumpAppender, rootLogger;
 
 function test() {
   registerCleanupFunction(cleanup);

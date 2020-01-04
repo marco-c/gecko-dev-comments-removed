@@ -66,7 +66,7 @@ const NOTIFICATION_DELAY_NEXT_RUNS_MSEC = 10 * 1000;
 
 
 
-let Policy = {
+var Policy = {
   now: () => new Date(),
   setShowInfobarTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
   clearShowInfobarTimeout: (id) => clearTimeout(id),
@@ -164,7 +164,7 @@ this.TelemetryReportingPolicy = {
   },
 };
 
-let TelemetryReportingPolicyImpl = {
+var TelemetryReportingPolicyImpl = {
   _logger: null,
   
   _notificationInProgress: false,

@@ -26,7 +26,7 @@ loader.lazyGetter(this, "nsIProfilerModule", () => {
   return Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler);
 });
 
-let DEFAULT_PROFILER_OPTIONS = {
+var DEFAULT_PROFILER_OPTIONS = {
   
   
   entries: Math.pow(10, 7),
@@ -376,7 +376,7 @@ const ProfilerManager = (function () {
 
 
 
-let Profiler = exports.Profiler = Class({
+var Profiler = exports.Profiler = Class({
   extends: EventTarget,
 
   initialize: function () {

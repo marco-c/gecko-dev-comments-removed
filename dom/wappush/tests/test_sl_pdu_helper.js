@@ -1,7 +1,7 @@
 
 
 
-let SL = {};
+var SL = {};
 subscriptLoader.loadSubScript("resource://gre/modules/SlPduHelper.jsm", SL);
 SL.debug = do_print;
 

@@ -2,7 +2,7 @@
 
 "use strict";
 
-let someObject = {
+var someObject = {
   a: 1,
   func: function()
   {
@@ -10,7 +10,7 @@ let someObject = {
   }
 };
 
-let anotherObject = {
+var anotherObject = {
   _finalize: function()
   {
     someObject.c = 3;

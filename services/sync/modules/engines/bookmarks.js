@@ -135,7 +135,7 @@ BookmarkSeparator.prototype = {
 Utils.deferGetSet(BookmarkSeparator, "cleartext", "pos");
 
 
-let kSpecialIds = {
+var kSpecialIds = {
 
   
   

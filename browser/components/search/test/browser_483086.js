@@ -1,7 +1,7 @@
 
 
 
-let gSS = Services.search;
+var gSS = Services.search;
 
 function test() {
   waitForExplicitFinish();

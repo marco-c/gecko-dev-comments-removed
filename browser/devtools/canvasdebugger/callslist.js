@@ -7,7 +7,7 @@
 
 
 
-let CallsListView = Heritage.extend(WidgetMethods, {
+var CallsListView = Heritage.extend(WidgetMethods, {
   
 
 

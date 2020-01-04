@@ -100,13 +100,13 @@ const ERRORS_TO_REPORT = ["EvalError", "RangeError", "ReferenceError", "TypeErro
 
 
 
-let gCurrentTask = null;
+var gCurrentTask = null;
 
 
 
 
 
-let gMaintainStack = false;
+var gMaintainStack = false;
 
 
 

@@ -1230,7 +1230,7 @@ UserAutoCompleteResult.prototype = {
 
 
 
-let FormLikeFactory = {
+var FormLikeFactory = {
   _propsFromForm: [
     "autocomplete",
     "ownerDocument",

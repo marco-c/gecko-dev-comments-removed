@@ -8,11 +8,11 @@
 
 
 
-let kURIs = [
+var kURIs = [
   "http://unescapeduri/",
   "http://escapeduri/%40/",
 ];
-let kTitles = [
+var kTitles = [
   "title",
 ];
 
@@ -22,7 +22,7 @@ addPageBook(1, 0);
 
 
 
-let gTests = [
+var gTests = [
   ["0: Unescaped location matches itself",
    kURIs[0], [0]],
   ["1: Escaped location matches itself",

@@ -148,7 +148,7 @@ function pushAll (dest, src) {
 
 
 
-let gProfileThreadFromAllocationCache = new WeakMap();
+var gProfileThreadFromAllocationCache = new WeakMap();
 
 
 

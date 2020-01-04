@@ -323,7 +323,7 @@ PingMonitor.prototype = {
 
 
 
-let MozLoopPushHandler = {
+var MozLoopPushHandler = {
   
   pushServerUri: undefined,
   

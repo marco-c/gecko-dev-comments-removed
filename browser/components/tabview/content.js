@@ -4,8 +4,8 @@
 
 "use strict";
 
-let Cu = Components.utils;
-let Ci = Components.interfaces;
+var Cu = Components.utils;
+var Ci = Components.interfaces;
 
 Cu.import("resource:///modules/tabview/utils.jsm");
 
@@ -20,7 +20,7 @@ this.__defineGetter__("webProgress", function () {
 
 
 
-let WindowEventHandler = {
+var WindowEventHandler = {
   
   
   
@@ -56,7 +56,7 @@ addEventListener("MozAfterPaint", WindowEventHandler.onMozAfterPaint, false);
 
 
 
-let WindowMessageHandler = {
+var WindowMessageHandler = {
   
   
   

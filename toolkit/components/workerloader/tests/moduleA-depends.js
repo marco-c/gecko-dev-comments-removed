@@ -2,7 +2,7 @@
 
 
 
-let B = require("chrome://mochitests/content/chrome/toolkit/components/workerloader/tests/moduleB-dependency.js");
+var B = require("chrome://mochitests/content/chrome/toolkit/components/workerloader/tests/moduleB-dependency.js");
 
 
 if (Object.keys(exports).length) {

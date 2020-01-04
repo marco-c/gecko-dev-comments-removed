@@ -5,9 +5,9 @@
 
 
 
-let tempScope = {};
+var tempScope = {};
 Components.utils.import("resource://gre/modules/LightweightThemeManager.jsm", tempScope);
-let LightweightThemeManager = tempScope.LightweightThemeManager;
+var LightweightThemeManager = tempScope.LightweightThemeManager;
 
 
 const PREF_GETADDONS_MAXRESULTS = "extensions.getAddons.maxResults";

@@ -33,7 +33,7 @@ function deprecationFunctionCustomCallstack () {
   return true;
 }
 
-let tests = [
+var tests = [
 
 {
   deprecatedFunction: basicDeprecatedFunction,
@@ -84,7 +84,7 @@ let tests = [
 }];
 
 
-let idx = -1;
+var idx = -1;
 
 function test() {
   waitForExplicitFinish();

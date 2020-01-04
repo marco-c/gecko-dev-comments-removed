@@ -14,14 +14,14 @@
 
 
 
-let theTag = "superTag";
+var theTag = "superTag";
 
 
-let kURIs = [
+var kURIs = [
   "http://escaped/ユニコード",
   "http://asciiescaped/blocking-firefox3%2B",
 ];
-let kTitles = [
+var kTitles = [
   "title",
   theTag,
 ];
@@ -32,7 +32,7 @@ addPageBook(1, 0, 0, [1]);
 
 
 
-let gTests = [
+var gTests = [
   ["0: Make sure tag matches return the right url as well as '+' remain escaped",
    theTag, [0,1]],
 ];

@@ -4,7 +4,7 @@
 
 
 
-let doc = null, toolbox = null, panelWin = null, modifiedPrefs = [];
+var doc = null, toolbox = null, panelWin = null, modifiedPrefs = [];
 
 add_task(function*() {
   const URL = "data:text/html;charset=utf8,test for dynamically registering and unregistering tools";

@@ -99,7 +99,7 @@ const CALLS_LIST_SLOW_SAVE_DELAY = 100;
 
 
 
-let gToolbox, gTarget, gFront;
+var gToolbox, gTarget, gFront;
 
 
 
@@ -126,7 +126,7 @@ function shutdownCanvasDebugger() {
 
 
 
-let EventsHandler = {
+var EventsHandler = {
   
 
 
@@ -179,8 +179,8 @@ let EventsHandler = {
 
 
 
-let L10N = new ViewHelpers.L10N(STRINGS_URI);
-let SHARED_L10N = new ViewHelpers.L10N(SHARED_STRINGS_URI);
+var L10N = new ViewHelpers.L10N(STRINGS_URI);
+var SHARED_L10N = new ViewHelpers.L10N(SHARED_STRINGS_URI);
 
 
 
@@ -190,8 +190,8 @@ EventEmitter.decorate(this);
 
 
 
-let $ = (selector, target = document) => target.querySelector(selector);
-let $all = (selector, target = document) => target.querySelectorAll(selector);
+var $ = (selector, target = document) => target.querySelector(selector);
+var $all = (selector, target = document) => target.querySelectorAll(selector);
 
 
 

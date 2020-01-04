@@ -311,7 +311,7 @@ add_task(function* checkLockedUpdates() {
 
 
 
-let setupStorageManagerForQueueTest = Task.async(function* () {
+var setupStorageManagerForQueueTest = Task.async(function* () {
   let sm = new FxAccountsStorageManager();
   sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
   sm.secureStorage = new MockedSecureStorage({kA: "kA"});

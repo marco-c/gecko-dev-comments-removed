@@ -74,7 +74,7 @@ const {DeferredTask} = Cu.import("resource://gre/modules/DeferredTask.jsm", {});
 
 
 
-let NetMonitorView = {
+var NetMonitorView = {
   
 
 
@@ -3403,8 +3403,8 @@ PerformanceStatisticsView.prototype = {
 
 
 
-let $ = (aSelector, aTarget = document) => aTarget.querySelector(aSelector);
-let $all = (aSelector, aTarget = document) => aTarget.querySelectorAll(aSelector);
+var $ = (aSelector, aTarget = document) => aTarget.querySelector(aSelector);
+var $all = (aSelector, aTarget = document) => aTarget.querySelectorAll(aSelector);
 
 
 

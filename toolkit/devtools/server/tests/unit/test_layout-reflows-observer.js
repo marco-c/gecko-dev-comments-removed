@@ -3,7 +3,7 @@
 
 
 
-let {
+var {
   getLayoutChangesObserver,
   releaseLayoutChangesObserver,
   LayoutChangesObserver

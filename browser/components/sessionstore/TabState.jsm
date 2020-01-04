@@ -56,7 +56,7 @@ this.TabState = Object.freeze({
   }
 });
 
-let TabStateInternal = {
+var TabStateInternal = {
   
   
   

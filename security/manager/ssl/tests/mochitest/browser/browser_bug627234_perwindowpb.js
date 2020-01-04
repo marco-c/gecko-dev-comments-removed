@@ -2,7 +2,7 @@
 
 
 
-let FakeSSLStatus = function() {
+var FakeSSLStatus = function() {
 };
 
 FakeSSLStatus.prototype = {

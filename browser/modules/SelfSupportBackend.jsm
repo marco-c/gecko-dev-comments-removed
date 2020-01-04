@@ -52,7 +52,7 @@ const UITOUR_FRAME_SCRIPT = "chrome://browser/content/content-UITour.js";
 
 const IS_UNIFIED_TELEMETRY = Preferences.get(PREF_TELEMETRY_UNIFIED, false);
 
-let gLogAppenderDump = null;
+var gLogAppenderDump = null;
 
 this.SelfSupportBackend = Object.freeze({
   init: function () {
@@ -64,7 +64,7 @@ this.SelfSupportBackend = Object.freeze({
   },
 });
 
-let SelfSupportBackendInternal = {
+var SelfSupportBackendInternal = {
   
   _browser: null,
   

@@ -4,7 +4,7 @@
 
 "use strict";
 
-let originalWindowWidth;
+var originalWindowWidth;
 
 
 add_task(function*() {

@@ -18,10 +18,10 @@ Components.utils.import("resource://gre/modules/DownloadUtils.jsm");
 
 
 
-let _ = function(some, debug, text, to) print(Array.slice(arguments).join(" "));
+var _ = function(some, debug, text, to) print(Array.slice(arguments).join(" "));
 
 _("Make an array of time lefts and expected string to be shown for that time");
-let expectedTimes = [
+var expectedTimes = [
   [1.1, "A few seconds remaining", "under 4sec -> few"],
   [2.5, "A few seconds remaining", "under 4sec -> few"],
   [3.9, "A few seconds remaining", "under 4sec -> few"],

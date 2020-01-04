@@ -8,7 +8,7 @@ module.metadata = {
   "stability": "unstable"
 };
 
-let unescape = decodeURIComponent;
+var unescape = decodeURIComponent;
 exports.unescape = unescape;
 
 

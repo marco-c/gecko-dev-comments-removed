@@ -11,16 +11,16 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/SimpleServiceDiscovery.jsm");
 
 
-let chromeWin;
+var chromeWin;
 
 
-let browser;
+var browser;
 
 
-let contentDocument;
+var contentDocument;
 
 
-let video;
+var video;
 
 add_test(function setup_browser() {
   chromeWin = Services.wm.getMostRecentWindow("navigator:browser");

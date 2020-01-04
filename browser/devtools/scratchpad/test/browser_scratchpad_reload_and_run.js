@@ -3,8 +3,8 @@
 
 
 
-let DEVTOOLS_CHROME_ENABLED = "devtools.chrome.enabled";
-let EDITOR_TEXT = [
+var DEVTOOLS_CHROME_ENABLED = "devtools.chrome.enabled";
+var EDITOR_TEXT = [
   "var evt = new CustomEvent('foo', { bubbles: true });",
   "document.body.innerHTML = 'Modified text';",
   "window.dispatchEvent(evt);"

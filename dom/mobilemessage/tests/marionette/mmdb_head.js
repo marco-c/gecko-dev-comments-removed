@@ -3,13 +3,13 @@
 
 MARIONETTE_CONTEXT = "chrome";
 
-let Promise = Cu.import("resource://gre/modules/Promise.jsm").Promise;
+var Promise = Cu.import("resource://gre/modules/Promise.jsm").Promise;
 
 
 
 
 
-let MMDB;
+var MMDB;
 
 
 
@@ -359,7 +359,7 @@ function createThreadCursor(aMmdb) {
 }
 
 
-let _uuidGenerator;
+var _uuidGenerator;
 
 
 

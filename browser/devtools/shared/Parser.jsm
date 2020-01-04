@@ -411,7 +411,7 @@ SyntaxTree.prototype = {
 
 
 
-let ParserHelpers = {
+var ParserHelpers = {
   
 
 
@@ -732,7 +732,7 @@ let ParserHelpers = {
 
 
 
-let SyntaxTreeVisitor = {
+var SyntaxTreeVisitor = {
   
 
 

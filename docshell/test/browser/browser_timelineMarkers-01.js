@@ -5,7 +5,7 @@
 
 
 
-let test = Task.async(function*() {
+var test = Task.async(function*() {
   waitForExplicitFinish();
 
   yield openUrl("data:text/html;charset=utf-8,Test page");

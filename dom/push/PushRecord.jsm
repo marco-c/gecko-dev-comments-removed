@@ -196,7 +196,7 @@ PushRecord.prototype = {
 
 
 
-let principals = new WeakMap();
+var principals = new WeakMap();
 Object.defineProperties(PushRecord.prototype, {
   principal: {
     get() {

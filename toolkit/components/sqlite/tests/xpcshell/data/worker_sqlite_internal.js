@@ -17,11 +17,11 @@ self.onmessage = function onmessage(msg) {
   }
 };
 
-let Sqlite;
+var Sqlite;
 
-let SQLITE_OK;   
-let SQLITE_ROW;  
-let SQLITE_DONE; 
+var SQLITE_OK;   
+var SQLITE_ROW;  
+var SQLITE_DONE; 
 
 function test_init() {
   do_print("Starting test_init");

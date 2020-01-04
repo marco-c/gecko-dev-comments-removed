@@ -8,7 +8,7 @@
 
 
 
-let gUpdater = {
+var gUpdater = {
   
 
 

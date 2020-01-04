@@ -31,7 +31,7 @@ const GRAPH_REDRAW_EVENTS = ["add", "connect", "disconnect", "remove"];
 
 
 
-let ContextView = {
+var ContextView = {
   
 
 

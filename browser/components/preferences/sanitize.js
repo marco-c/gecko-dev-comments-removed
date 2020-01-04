@@ -3,7 +3,7 @@
 
 
 
-let gSanitizeDialog = Object.freeze({
+var gSanitizeDialog = Object.freeze({
   init: function() {
     let customWidthElements = document.getElementsByAttribute("dialogWidth", "*");
     let isInSubdialog = document.documentElement.hasAttribute("subdialog");

@@ -3,9 +3,9 @@
 
 "use strict";
 
-let {utils: Cu, interfaces: Ci} = Components;
+var {utils: Cu, interfaces: Ci} = Components;
 
-let {XPCOMUtils} = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
+var {XPCOMUtils} = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 
 
 
@@ -19,8 +19,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
 
-let {Promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
-let {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
+var {Promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
+var {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 
 Services.prefs.setBoolPref("toolkit.osfile.log", true);
 

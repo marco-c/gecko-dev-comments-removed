@@ -51,8 +51,8 @@ const DEFAULT_SORT_KEY = "TITLE";
 
 
 
-let prevSortDir = null;
-let prevSortKey = null;
+var prevSortDir = null;
+var prevSortKey = null;
 
 
 

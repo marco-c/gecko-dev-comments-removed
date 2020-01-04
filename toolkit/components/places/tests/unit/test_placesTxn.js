@@ -4,10 +4,10 @@
 
 
 
-let bmsvc = PlacesUtils.bookmarks;
-let tagssvc = PlacesUtils.tagging;
-let annosvc = PlacesUtils.annotations;
-let txnManager = PlacesUtils.transactionManager;
+var bmsvc = PlacesUtils.bookmarks;
+var tagssvc = PlacesUtils.tagging;
+var annosvc = PlacesUtils.annotations;
+var txnManager = PlacesUtils.transactionManager;
 const DESCRIPTION_ANNO = "bookmarkProperties/description";
 
 function* promiseKeyword(keyword, href, postData) {
@@ -24,7 +24,7 @@ function* promiseKeyword(keyword, href, postData) {
 }
 
 
-let observer = {
+var observer = {
 
   onBeginUpdateBatch: function() {
     this._beginUpdateBatch = true;
@@ -105,10 +105,10 @@ let observer = {
 };
 
 
-let bmStartIndex = 0;
+var bmStartIndex = 0;
 
 
-let root = PlacesUtils.bookmarksMenuFolderId;
+var root = PlacesUtils.bookmarksMenuFolderId;
 
 add_task(function* init() {
   bmsvc.addObserver(observer, false);

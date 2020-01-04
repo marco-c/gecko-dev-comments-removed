@@ -3,20 +3,20 @@
 
 
 
-let tempScope = {};
+var tempScope = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", tempScope);
 Cu.import("resource://gre/modules/FileUtils.jsm", tempScope);
-let NetUtil = tempScope.NetUtil;
-let FileUtils = tempScope.FileUtils;
+var NetUtil = tempScope.NetUtil;
+var FileUtils = tempScope.FileUtils;
 
 
-let gScratchpad;
+var gScratchpad;
 
 
-let gFile01;
-let gFile02;
-let gFile03;
-let gFile04;
+var gFile01;
+var gFile02;
+var gFile03;
+var gFile04;
 
 
 var lists = {
@@ -27,17 +27,17 @@ var lists = {
 };
 
 
-let gFileName01 = "file01_ForBug651942.tmp"
-let gFileName02 = "☕" 
-let gFileName03 = "file03_ForBug651942.tmp"
-let gFileName04 = "file04_ForBug651942.tmp"
+var gFileName01 = "file01_ForBug651942.tmp"
+var gFileName02 = "☕" 
+var gFileName03 = "file03_ForBug651942.tmp"
+var gFileName04 = "file04_ForBug651942.tmp"
 
 
-let gFileContent;
-let gFileContent01 = "hello.world.01('bug651942');";
-let gFileContent02 = "hello.world.02('bug651942');";
-let gFileContent03 = "hello.world.03('bug651942');";
-let gFileContent04 = "hello.world.04('bug651942');";
+var gFileContent;
+var gFileContent01 = "hello.world.01('bug651942');";
+var gFileContent02 = "hello.world.02('bug651942');";
+var gFileContent03 = "hello.world.03('bug651942');";
+var gFileContent04 = "hello.world.04('bug651942');";
 
 function startTest()
 {

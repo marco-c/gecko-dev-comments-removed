@@ -21,17 +21,17 @@ const globalMM = Cc["@mozilla.org/globalmessagemanager;1"]
 
 
 
-let gFrameScriptLoaded = false;
+var gFrameScriptLoaded = false;
 
 
 
 
-let gPromises = new Map();
+var gPromises = new Map();
 
 
 
 
-let gMessageID = 1;
+var gMessageID = 1;
 
 
 
@@ -82,7 +82,7 @@ this.ContentTask = {
   },
 };
 
-let ContentMessageListener = {
+var ContentMessageListener = {
   receiveMessage(aMessage) {
     let id = aMessage.data.id
     let deferred = gPromises.get(id);

@@ -3,7 +3,7 @@
 
 
 
-let gTests;
+var gTests;
 function test() {
   waitForExplicitFinish();
   requestLongerTimeout(2);

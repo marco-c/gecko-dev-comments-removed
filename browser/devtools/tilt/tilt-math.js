@@ -7,14 +7,14 @@
 
 const {Cu} = require("chrome");
 
-let TiltUtils = require("devtools/tilt/tilt-utils");
+var TiltUtils = require("devtools/tilt/tilt-utils");
 
 
 
 
 
 
-let EPSILON = 0.01;
+var EPSILON = 0.01;
 exports.EPSILON = EPSILON;
 
 const PI_OVER_180 = Math.PI / 180;
@@ -25,7 +25,7 @@ const ONE_OVER_255 = 1 / 255;
 
 
 
-let vec3 = {
+var vec3 = {
 
   
 
@@ -497,7 +497,7 @@ exports.vec3 = vec3;
 
 
 
-let mat3 = {
+var mat3 = {
 
   
 
@@ -662,7 +662,7 @@ exports.mat3 = mat3;
 
 
 
-let mat4 = {
+var mat4 = {
 
   
 
@@ -1632,7 +1632,7 @@ exports.mat4 = mat4;
 
 
 
-let quat4 = {
+var quat4 = {
 
   
 
@@ -2123,7 +2123,7 @@ exports.quat4 = quat4;
 
 
 
-let TiltMath = {
+var TiltMath = {
 
   
 

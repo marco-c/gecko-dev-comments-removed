@@ -5,12 +5,12 @@
 
 
 
-let Keys = { meta: false };
+var Keys = { meta: false };
 
 
 
 
-let UI = {
+var UI = {
   
   
   _frameInitialized: false,

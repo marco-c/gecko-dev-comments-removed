@@ -182,14 +182,14 @@ function getJSONPref(aName) {
   return value ? JSON.parse(value) : null;
 }
 
-let gHawkClient = null;
-let gLocalizedStrings = new Map();
-let gFxAEnabled = true;
-let gFxAOAuthClientPromise = null;
-let gFxAOAuthClient = null;
-let gErrors = new Map();
-let gLastWindowId = 0;
-let gConversationWindowData = new Map();
+var gHawkClient = null;
+var gLocalizedStrings = new Map();
+var gFxAEnabled = true;
+var gFxAOAuthClientPromise = null;
+var gFxAOAuthClient = null;
+var gErrors = new Map();
+var gLastWindowId = 0;
+var gConversationWindowData = new Map();
 
 
 
@@ -198,7 +198,7 @@ let gConversationWindowData = new Map();
 
 
 
-let MozLoopServiceInternal = {
+var MozLoopServiceInternal = {
   conversationContexts: new Map(),
   pushURLs: new Map(),
 
@@ -1145,7 +1145,7 @@ let MozLoopServiceInternal = {
 Object.freeze(MozLoopServiceInternal);
 
 
-let gInitializeTimerFunc = (deferredInitialization) => {
+var gInitializeTimerFunc = (deferredInitialization) => {
   
   
   
@@ -1154,7 +1154,7 @@ let gInitializeTimerFunc = (deferredInitialization) => {
              MozLoopServiceInternal.initialRegistrationDelayMilliseconds);
 };
 
-let gServiceInitialized = false;
+var gServiceInitialized = false;
 
 
 

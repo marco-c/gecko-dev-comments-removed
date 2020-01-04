@@ -59,7 +59,7 @@ function generateFields(json) {
   }
 }
 
-let getRawPermissionsTablePromise; 
+var getRawPermissionsTablePromise; 
 function BuildUI() {
   let table = document.querySelector("table");
   let lines = table.querySelectorAll(".line");

@@ -59,9 +59,9 @@ function BannerMessage(options) {
 
 
 
-let HomeBannerMessageHandlers;
+var HomeBannerMessageHandlers;
 
-let HomeBanner = (function () {
+var HomeBanner = (function () {
   
   let _pendingRequest = false;
 
@@ -190,9 +190,9 @@ let HomeBanner = (function () {
 
 
 
-let HomePanelsMessageHandlers;
+var HomePanelsMessageHandlers;
 
-let HomePanels = (function () {
+var HomePanels = (function () {
   
   HomePanelsMessageHandlers = {
 

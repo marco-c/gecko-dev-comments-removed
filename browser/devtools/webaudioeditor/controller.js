@@ -6,7 +6,7 @@
 
 
 
-let gAudioNodes = new AudioNodesCollection();
+var gAudioNodes = new AudioNodesCollection();
 
 
 
@@ -37,7 +37,7 @@ function shutdownWebAudioEditor() {
 
 
 
-let WebAudioEditorController = {
+var WebAudioEditorController = {
   
 
 
@@ -185,9 +185,9 @@ let WebAudioEditorController = {
 
 
 
-  _onCreateNode: function (nodeActor) {
-    gAudioNodes.add(nodeActor);
-  },
+  _onCreateNode: Task.async(function* (nodeActor) {
+    yield gAudioNodes.add(nodeActor);
+  }),
 
   
 

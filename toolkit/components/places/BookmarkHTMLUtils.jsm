@@ -89,7 +89,7 @@ const MICROSEC_PER_SEC = 1000000;
 const EXPORT_INDENT = "    "; 
 
 
-let serialNumber = 0;
+var serialNumber = 0;
 
 function base64EncodeString(aString) {
   let stream = Cc["@mozilla.org/io/string-input-stream;1"]

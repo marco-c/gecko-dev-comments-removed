@@ -13,7 +13,7 @@ function getMinidumpDirectory() {
 
 
 
-let CrashObserver = {
+var CrashObserver = {
   observe: function(subject, topic, data) {
     is(topic, 'ipc:content-shutdown', 'Received correct observer topic.');
     ok(subject instanceof Ci.nsIPropertyBag2,
@@ -82,7 +82,7 @@ function isBrowserAppTab(browser) {
 }
 
 
-let restart = Task.async(function*(browser) {
+var restart = Task.async(function*(browser) {
   
   if (!browser.isRemoteBrowser)
     return browser;

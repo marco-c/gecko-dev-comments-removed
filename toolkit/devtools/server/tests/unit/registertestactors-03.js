@@ -1,9 +1,9 @@
 
 
 
-let {method, RetVal, Actor, ActorClass, Front, FrontClass} =
+var {method, RetVal, Actor, ActorClass, Front, FrontClass} =
   require("devtools/server/protocol");
-let Services = require("Services");
+var Services = require("Services");
 
 exports.LazyActor = ActorClass({
   typeName: "lazy",

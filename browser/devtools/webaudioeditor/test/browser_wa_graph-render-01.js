@@ -5,7 +5,7 @@
 
 
 
-let connectCount = 0;
+var connectCount = 0;
 
 add_task(function*() {
   let { target, panel } = yield initWebAudioEditor(SIMPLE_CONTEXT_URL);

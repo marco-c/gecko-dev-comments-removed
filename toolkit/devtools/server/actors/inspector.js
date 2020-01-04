@@ -67,16 +67,10 @@ const {
   HighlighterActor,
   CustomHighlighterActor,
   isTypeRegistered,
-} = require("devtools/server/actors/highlighters");
-const {
-  isAnonymous,
-  isNativeAnonymous,
-  isXBLAnonymous,
-  isShadowAnonymous,
-  getFrameElement
-} = require("devtools/toolkit/layout/utils");
+} = require("devtools/server/actors/highlighter");
 const {getLayoutChangesObserver, releaseLayoutChangesObserver} =
   require("devtools/server/actors/layout");
+const LayoutHelpers = require("devtools/toolkit/layout-helpers");
 
 const {EventParsers} = require("devtools/toolkit/event-parsers");
 
@@ -119,7 +113,7 @@ const PSEUDO_SELECTORS = [
   ["::selection", 0]
 ];
 
-let HELPER_SHEET = ".__fx-devtools-hide-shortcut__ { visibility: hidden !important } ";
+var HELPER_SHEET = ".__fx-devtools-hide-shortcut__ { visibility: hidden !important } ";
 HELPER_SHEET += ":-moz-devtools-highlighted { outline: 2px dashed #F06!important; outline-offset: -2px!important } ";
 
 loader.lazyRequireGetter(this, "DevToolsUtils",
@@ -270,10 +264,10 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
       attrs: this.writeAttrs(),
       isBeforePseudoElement: this.isBeforePseudoElement,
       isAfterPseudoElement: this.isAfterPseudoElement,
-      isAnonymous: isAnonymous(this.rawNode),
-      isNativeAnonymous: isNativeAnonymous(this.rawNode),
-      isXBLAnonymous: isXBLAnonymous(this.rawNode),
-      isShadowAnonymous: isShadowAnonymous(this.rawNode),
+      isAnonymous: LayoutHelpers.isAnonymous(this.rawNode),
+      isNativeAnonymous: LayoutHelpers.isNativeAnonymous(this.rawNode),
+      isXBLAnonymous: LayoutHelpers.isXBLAnonymous(this.rawNode),
+      isShadowAnonymous: LayoutHelpers.isShadowAnonymous(this.rawNode),
       pseudoClassLocks: this.writePseudoClassLocks(),
 
       isDisplayed: this.isDisplayed,
@@ -764,7 +758,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-let NodeFront = protocol.FrontClass(NodeActor, {
+var NodeFront = protocol.FrontClass(NodeActor, {
   initialize: function(conn, form, detail, ctx) {
     this._parent = null; 
     this._child = null;  
@@ -1225,7 +1219,7 @@ var NodeListFront = exports.NodeListFront = protocol.FrontClass(NodeListActor, {
 
 
 
-let nodeArrayMethod = {
+var nodeArrayMethod = {
   request: {
     node: Arg(0, "domnode"),
     maxNodes: Option(1),
@@ -1238,7 +1232,7 @@ let nodeArrayMethod = {
   }))
 };
 
-let traversalMethod = {
+var traversalMethod = {
   request: {
     node: Arg(0, "domnode"),
     whatToShow: Option(1)
@@ -1295,6 +1289,8 @@ var WalkerActor = protocol.ActorClass({
     this._pendingMutations = [];
     this._activePseudoClassLocks = new Set();
     this.showAllAnonymousContent = options.showAllAnonymousContent;
+
+    this.layoutHelpers = new LayoutHelpers(this.rootWin);
 
     
     
@@ -1495,7 +1491,7 @@ var WalkerActor = protocol.ActorClass({
         
         
         
-        if (!this.showAllAnonymousContent && isAnonymous(node)) {
+        if (!this.showAllAnonymousContent && LayoutHelpers.isAnonymous(node)) {
           node = this.getDocumentWalker(node).currentNode;
         }
 
@@ -2882,7 +2878,7 @@ var WalkerActor = protocol.ActorClass({
       });
       return;
     }
-    let frame = getFrameElement(window);
+    let frame = this.layoutHelpers.getFrameElement(window);
     let frameActor = this._refMap.get(frame);
     if (!frameActor) {
       return;
@@ -2909,7 +2905,7 @@ var WalkerActor = protocol.ActorClass({
       if (win === window) {
         return true;
       }
-      win = getFrameElement(win);
+      win = this.layoutHelpers.getFrameElement(win);
     }
     return false;
   },
@@ -3910,8 +3906,8 @@ function standardTreeWalkerFilter(aNode) {
   }
 
   
-  if (!isInXULDocument(aNode) && (isXBLAnonymous(aNode) ||
-                                  isNativeAnonymous(aNode))) {
+  if (!isInXULDocument(aNode) && (LayoutHelpers.isXBLAnonymous(aNode) ||
+                                  LayoutHelpers.isNativeAnonymous(aNode))) {
     
     
     
@@ -4001,7 +3997,7 @@ function ensureImageLoaded(image, timeout) {
 
 
 
-let imageToImageData = Task.async(function* (node, maxDim) {
+var imageToImageData = Task.async(function* (node, maxDim) {
   let { HTMLCanvasElement, HTMLImageElement } = node.ownerDocument.defaultView;
 
   let isImg = node instanceof HTMLImageElement;

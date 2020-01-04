@@ -22,7 +22,7 @@ module.metadata = {
   'stability': 'unstable'
 };
 
-let promised = (function() {
+var promised = (function() {
   
   
   

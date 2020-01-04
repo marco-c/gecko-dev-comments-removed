@@ -4,7 +4,7 @@
 
 
 
-let tests = [
+var tests = [
     
     ['http://example.com/browser/browser/base/content/test/general/dummy_page.html',
      'Dummy test page'],

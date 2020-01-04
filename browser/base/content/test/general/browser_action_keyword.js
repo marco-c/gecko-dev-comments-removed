@@ -1,7 +1,7 @@
 
 
 
-let gOnSearchComplete = null;
+var gOnSearchComplete = null;
 
 function* promise_first_result(inputText) {
   yield promiseAutocompleteResultPopup(inputText);

@@ -25,9 +25,9 @@ Cu.import("resource://testing-common/MockRegistrar.jsm");
 
 
 const TIMER_CONTRACT_ID = "@mozilla.org/timer;1";
-let mockCID;
+var mockCID;
 
-let mockTimerImpl = {
+var mockTimerImpl = {
   initWithCallback: function MTI_initWithCallback(aCallback, aDelay, aType) {
     print("Checking timer delay equals expected interval value");
     if (!currentTest)
@@ -61,7 +61,7 @@ do_register_cleanup(function() {
 });
 
 
-let tests = [
+var tests = [
 
   
   
@@ -87,7 +87,7 @@ let tests = [
 
 ];
 
-let currentTest;
+var currentTest;
 
 function run_test() {
   

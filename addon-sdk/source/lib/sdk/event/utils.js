@@ -7,7 +7,7 @@ module.metadata = {
   "stability": "unstable"
 };
 
-let { emit, on, once, off, EVENT_TYPE_PATTERN } = require("./core");
+var { emit, on, once, off, EVENT_TYPE_PATTERN } = require("./core");
 
 
 
@@ -17,7 +17,7 @@ let { emit, on, once, off, EVENT_TYPE_PATTERN } = require("./core");
 
 
 
-let refs = (function() {
+var refs = (function() {
   let refSets = new WeakMap();
   return function refs(target) {
     if (!refSets.has(target)) refSets.set(target, new Set());

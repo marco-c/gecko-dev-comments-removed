@@ -84,7 +84,7 @@ add_task(function* test_run() {
 
 
 
-let testCookieCollection = Task.async(function (params) {
+var testCookieCollection = Task.async(function (params) {
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;
 
@@ -137,7 +137,7 @@ let testCookieCollection = Task.async(function (params) {
 
 
 
-let replaceCurrentURI = Task.async(function* (browser, uri) {
+var replaceCurrentURI = Task.async(function* (browser, uri) {
   
   let flags = Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
   browser.loadURIWithFlags(uri, flags);

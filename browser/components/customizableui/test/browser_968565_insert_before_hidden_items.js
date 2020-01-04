@@ -7,7 +7,7 @@
 const kHidden1Id = "test-hidden-button-1";
 const kHidden2Id = "test-hidden-button-2";
 
-let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
+var navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
 
 

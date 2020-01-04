@@ -39,7 +39,7 @@ protocol.types.addType("array-of-numbers-as-strings", {
 
 
 
-let TimelineActor = exports.TimelineActor = protocol.ActorClass({
+var TimelineActor = exports.TimelineActor = protocol.ActorClass({
   typeName: "timeline",
 
   events: {

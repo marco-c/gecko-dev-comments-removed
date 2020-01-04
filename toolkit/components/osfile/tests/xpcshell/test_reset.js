@@ -1,7 +1,7 @@
 
 
 
-let Path = OS.Constants.Path;
+var Path = OS.Constants.Path;
 
 add_task(function* init() {
   do_get_profile();

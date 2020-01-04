@@ -3,15 +3,15 @@
 
 
 
-let Cc = Components.classes;
-let Ci = Components.interfaces;
-let Cu = Components.utils;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cu = Components.utils;
 
 const appStartup = Services.startup;
 
 Cu.import("resource://gre/modules/ResetProfile.jsm");
 
-let defaultToReset = false;
+var defaultToReset = false;
 
 function restartApp() {
   appStartup.quit(appStartup.eForceQuit | appStartup.eRestart);

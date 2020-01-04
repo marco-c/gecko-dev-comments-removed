@@ -32,7 +32,7 @@ XPCOMUtils.defineLazyGetter(this, "RIL", function () {
 
 
 
-let RILQUIRKS_RADIO_OFF_WO_CARD =
+var RILQUIRKS_RADIO_OFF_WO_CARD =
   libcutils.property_get("ro.moz.ril.radio_off_wo_card", "false") == "true";
 
 const RADIOINTERFACELAYER_CID =

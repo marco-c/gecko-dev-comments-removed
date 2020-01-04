@@ -6,7 +6,7 @@
 
 
 
-let PerformanceView = {
+var PerformanceView = {
 
   _state: null,
 

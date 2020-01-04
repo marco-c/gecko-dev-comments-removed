@@ -4,7 +4,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
 Cu.import("resource://gre/modules/devtools/event-emitter.js");
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-let {
+var {
   EventManager,
   DefaultWeakMap,
   ignoreEvent,
@@ -12,7 +12,7 @@ let {
 } = ExtensionUtils;
 
 
-let browserActionMap = new WeakMap();
+var browserActionMap = new WeakMap();
 
 function browserActionOf(extension)
 {
@@ -25,7 +25,7 @@ function makeWidgetId(id)
   return id.replace(/[^a-z0-9_-]/g, "_");
 }
 
-let nextActionId = 0;
+var nextActionId = 0;
 
 
 

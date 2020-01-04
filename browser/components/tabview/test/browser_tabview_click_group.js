@@ -1,9 +1,9 @@
 
 
 
-let contentWindow;
-let groupItem;
-let groupItemId;
+var contentWindow;
+var groupItem;
+var groupItemId;
 
 function test() {
   waitForExplicitFinish();

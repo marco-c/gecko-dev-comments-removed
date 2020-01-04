@@ -5,19 +5,19 @@
 
 
 
-let { BrowserTabList } = require("devtools/server/actors/webbrowser");
+var { BrowserTabList } = require("devtools/server/actors/webbrowser");
 
-let gTestPage = "data:text/html;charset=utf-8," + encodeURIComponent(
+var gTestPage = "data:text/html;charset=utf-8," + encodeURIComponent(
   "<title>JS Debugger BrowserTabList test page</title><body>Yo.</body>");
 
 
-let gTabList;
-let gFirstActor, gActorA;
-let gTabA, gTabB, gTabC;
-let gNewWindow;
+var gTabList;
+var gFirstActor, gActorA;
+var gTabA, gTabB, gTabC;
+var gNewWindow;
 
 
-let onListChangedCount = 0;
+var onListChangedCount = 0;
 function onListChangedHandler() {
   onListChangedCount++;
 }

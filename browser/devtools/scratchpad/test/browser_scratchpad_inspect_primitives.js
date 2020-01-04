@@ -4,7 +4,7 @@
 
 
 
-let {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
+var {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 
 function test() {
   const options = {
@@ -27,7 +27,7 @@ function* runTests([win, sp]) {
 }
 
 
-let checkResults = Task.async(function* (sp, value, isString = false) {
+var checkResults = Task.async(function* (sp, value, isString = false) {
   let sourceValue = value;
   if (isString) {
     sourceValue = '"' + value + '"';

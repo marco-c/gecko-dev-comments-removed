@@ -20,7 +20,7 @@ function inheritsFrom(t, baseName)
   return false;
 }  
 
-let output = [];
+var output = [];
 
 function process_type(t)
 {
@@ -48,14 +48,14 @@ function process_type(t)
   }
 }
 
-let frameIIDRE = /::kFrameIID$/;
-let queryFrameRE = /^do_QueryFrame::operator/;
+var frameIIDRE = /::kFrameIID$/;
+var queryFrameRE = /^do_QueryFrame::operator/;
 
 
-let needIDs = [];
+var needIDs = [];
 
 
-let haveIDs = {};
+var haveIDs = {};
 
 
 

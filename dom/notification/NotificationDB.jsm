@@ -39,7 +39,7 @@ const kMessages = [
   "Notification:GetAllCrossOrigin"
 ];
 
-let NotificationDB = {
+var NotificationDB = {
 
   
   _shutdownInProgress: false,

@@ -2770,7 +2770,7 @@ ContentPermissionPrompt.prototype = {
 
 };
 
-let DefaultBrowserCheck = {
+var DefaultBrowserCheck = {
   get OPTIONPOPUP() { return "defaultBrowserNotificationPopup" },
   _setAsDefaultTimer: null,
   _setAsDefaultButtonClickStartTime: 0,
@@ -2967,7 +2967,7 @@ let DefaultBrowserCheck = {
 };
 
 #ifdef E10S_TESTING_ONLY
-let E10SUINotification = {
+var E10SUINotification = {
   
   
   CURRENT_NOTICE_COUNT: 4,
@@ -3224,7 +3224,7 @@ this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
 
 
 
-let globalMM = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
+var globalMM = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
 globalMM.addMessageListener("UITour:onPageEvent", function(aMessage) {
   UITour.onPageEvent(aMessage, aMessage.data);
 });

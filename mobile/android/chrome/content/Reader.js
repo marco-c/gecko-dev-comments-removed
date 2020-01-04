@@ -7,7 +7,7 @@
 
 
 
-let Reader = {
+var Reader = {
   
   STATUS_UNFETCHED: 0,
   STATUS_FETCH_FAILED_TEMPORARY: 1,

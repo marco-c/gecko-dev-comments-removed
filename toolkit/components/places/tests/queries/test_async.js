@@ -4,7 +4,7 @@
 
 
 
-let tests = [
+var tests = [
   {
     desc: "nsNavHistoryFolderResultNode: Basic test, asynchronously open and " +
           "close container with a single child",
@@ -264,7 +264,7 @@ Test.prototype = {
 
 
 
-let DataHelper = {
+var DataHelper = {
   defaults: {
     bookmark: {
       parent: PlacesUtils.bookmarks.unfiledBookmarksFolder,

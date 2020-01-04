@@ -7,11 +7,11 @@
 
 
 
-let kURIs = [
+var kURIs = [
   "http://site/",
   "http://happytimes/",
 ];
-let kTitles = [
+var kTitles = [
   "title",
 ];
 
@@ -21,7 +21,7 @@ addPageBook(1, 0);
 
 
 
-let gTests = [
+var gTests = [
   ["0: Searching for h matches site and not http://",
    "h", [1]],
 ];

@@ -233,14 +233,14 @@ function setup_provisioning(identity, afterSetupCallback, doneProvisioningCallba
 }
 
 
-let initialPrefDebugValue = false;
+var initialPrefDebugValue = false;
 try {
   initialPrefDebugValue = Services.prefs.getBoolPref("toolkit.identity.debug");
 } catch(noPref) {}
 Services.prefs.setBoolPref("toolkit.identity.debug", true);
 
 
-let initialPrefFXAValue = false;
+var initialPrefFXAValue = false;
 try {
   initialPrefFXAValue = Services.prefs.getBoolPref("identity.fxaccounts.enabled");
 } catch(noPref) {}

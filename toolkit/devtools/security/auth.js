@@ -6,11 +6,11 @@
 
 "use strict";
 
-let { Ci, Cc } = require("chrome");
-let Services = require("Services");
-let promise = require("promise");
-let DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
-let { dumpn, dumpv } = DevToolsUtils;
+var { Ci, Cc } = require("chrome");
+var Services = require("Services");
+var promise = require("promise");
+var DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
+var { dumpn, dumpv } = DevToolsUtils;
 loader.lazyRequireGetter(this, "prompt",
   "devtools/toolkit/security/prompt");
 loader.lazyRequireGetter(this, "cert",
@@ -38,7 +38,7 @@ function createEnum(obj) {
 
 
 
-let AuthenticationResult = exports.AuthenticationResult = createEnum({
+var AuthenticationResult = exports.AuthenticationResult = createEnum({
 
   
 
@@ -80,7 +80,7 @@ let AuthenticationResult = exports.AuthenticationResult = createEnum({
 
 
 
-let Authenticators = {};
+var Authenticators = {};
 
 
 
@@ -88,7 +88,7 @@ let Authenticators = {};
 
 
 
-let Prompt = Authenticators.Prompt = {};
+var Prompt = Authenticators.Prompt = {};
 
 Prompt.mode = "PROMPT";
 
@@ -252,7 +252,7 @@ Prompt.Server.prototype = {
 
 
 
-let OOBCert = Authenticators.OOBCert = {};
+var OOBCert = Authenticators.OOBCert = {};
 
 OOBCert.mode = "OOB_CERT";
 

@@ -1,7 +1,7 @@
 
 
 
-let test_generator = do_run_test();
+var test_generator = do_run_test();
 
 function run_test()
 {
@@ -31,10 +31,10 @@ function repeat_test()
 }
 
 
-let gPurgeAge = 1;
+var gPurgeAge = 1;
 
 
-let gShortExpiry = 2;
+var gShortExpiry = 2;
 
 
 

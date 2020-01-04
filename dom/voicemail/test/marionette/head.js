@@ -5,7 +5,7 @@
 
 const {Cc: Cc, Ci: Ci, Cr: Cr, Cu: Cu} = SpecialPowers;
 
-let RIL = SpecialPowers.wrap(SpecialPowers.createBlankObject());
+var RIL = SpecialPowers.wrap(SpecialPowers.createBlankObject());
 SpecialPowers.Cu.import("resource://gre/modules/ril_consts.js", RIL);
 
 
@@ -27,7 +27,7 @@ const MWI_TIMESTAMP = "00000000000000";
 
 
 
-let PDUBuilder = {
+var PDUBuilder = {
   toHexString: function(n, length) {
     let str = n.toString(16);
     if (str.length < length) {
@@ -200,7 +200,7 @@ let PDUBuilder = {
   }
 };
 
-let pendingEmulatorCmdCount = 0;
+var pendingEmulatorCmdCount = 0;
 
 
 
@@ -258,7 +258,7 @@ function pushPermissions(aPermissions) {
   return deferred.promise;
 }
 
-let voicemail;
+var voicemail;
 
 
 

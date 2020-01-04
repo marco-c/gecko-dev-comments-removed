@@ -1,7 +1,7 @@
 
 
 
-let toolbox;
+var toolbox;
 
 function test() {
   addTab("about:blank").then(function() {
@@ -10,7 +10,7 @@ function test() {
   });
 }
 
-let called = {
+var called = {
   inspector: false,
   webconsole: false,
   styleeditor: false,

@@ -4,9 +4,9 @@
 
 
 
-let { Task } =
+var { Task } =
   Cu.import("resource://gre/modules/Task.jsm", {});
-let { WebAudioFront } =
+var { WebAudioFront } =
   require("devtools/server/actors/webaudio");
 
 function* testTarget (client, target) {

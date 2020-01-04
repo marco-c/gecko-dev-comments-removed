@@ -89,7 +89,7 @@ const OVERDUE_PING_FILE_AGE = 7 * 24 * 60 * MS_IN_A_MINUTE;
 
 
 
-let Policy = {
+var Policy = {
   now: () => new Date(),
   midnightPingFuzzingDelay: () => MIDNIGHT_FUZZING_DELAY_MS,
   setSchedulerTickTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
@@ -256,7 +256,7 @@ this.TelemetrySend = {
   },
 };
 
-let CancellableTimeout = {
+var CancellableTimeout = {
   _deferred: null,
   _timer: null,
 
@@ -297,7 +297,7 @@ let CancellableTimeout = {
 
 
 
-let SendScheduler = {
+var SendScheduler = {
   
   
   _sendsFailed: false,
@@ -519,7 +519,7 @@ let SendScheduler = {
   },
  };
 
-let TelemetrySendImpl = {
+var TelemetrySendImpl = {
   _sendingEnabled: false,
   _logger: null,
   

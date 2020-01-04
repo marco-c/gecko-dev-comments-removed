@@ -94,7 +94,7 @@ function run_test()
 
 
 
-let gHttpServer;
+var gHttpServer;
 
 
 
@@ -109,7 +109,7 @@ function httpUrl(aFileName) {
 
 
 
-let gFileCounter = Math.floor(Math.random() * 1000000);
+var gFileCounter = Math.floor(Math.random() * 1000000);
 
 
 
@@ -587,7 +587,7 @@ function startFakeServer()
 
 
 
-let _gDeferResponses = Promise.defer();
+var _gDeferResponses = Promise.defer();
 
 
 
@@ -672,7 +672,7 @@ function isValidDate(aDate) {
 
 
 
-let gMostRecentFirstBytePos;
+var gMostRecentFirstBytePos;
 
 
 

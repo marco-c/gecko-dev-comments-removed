@@ -2,7 +2,7 @@
 
 
 
-let Ci = Components.interfaces, Cc = Components.classes, Cu = Components.utils, Cr = Components.results;
+var Ci = Components.interfaces, Cc = Components.classes, Cu = Components.utils, Cr = Components.results;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 

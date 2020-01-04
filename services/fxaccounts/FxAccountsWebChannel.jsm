@@ -331,7 +331,7 @@ this.FxAccountsWebChannelHelpers.prototype = {
   }
 };
 
-let singleton;
+var singleton;
 
 
 

@@ -6,7 +6,7 @@
 
 
 
-let ToolbarView = {
+var ToolbarView = {
   
 
 

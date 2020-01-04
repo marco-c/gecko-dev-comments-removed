@@ -9,7 +9,7 @@ Cu.import("resource://gre/modules/FxAccountsCommon.js");
 Cu.import("resource://gre/modules/osfile.jsm");
 
 
-let {AccountState} = Cu.import("resource://gre/modules/FxAccounts.jsm", {});
+var {AccountState} = Cu.import("resource://gre/modules/FxAccounts.jsm", {});
 
 function promiseNotification(topic) {
   return new Promise(resolve => {

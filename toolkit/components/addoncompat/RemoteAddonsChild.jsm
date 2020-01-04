@@ -40,7 +40,7 @@ function setDefault(dict, key, default_)
 
 
 
-let NotificationTracker = {
+var NotificationTracker = {
   init: function() {
     let cpmm = Cc["@mozilla.org/childprocessmessagemanager;1"]
                .getService(Ci.nsISyncMessageSender);
@@ -148,7 +148,7 @@ let NotificationTracker = {
 
 
 
-let ContentPolicyChild = {
+var ContentPolicyChild = {
   _classDescription: "Addon shim content policy",
   _classID: Components.ID("6e869130-635c-11e2-bcfd-0800200c9a66"),
   _contractID: "@mozilla.org/addon-child/policy;1",
@@ -348,7 +348,7 @@ AboutProtocolInstance.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIFactory, Ci.nsIAboutModule])
 };
 
-let AboutProtocolChild = {
+var AboutProtocolChild = {
   _classDescription: "Addon shim about: protocol handler",
 
   init: function() {
@@ -383,7 +383,7 @@ let AboutProtocolChild = {
 
 
 
-let ObserverChild = {
+var ObserverChild = {
   init: function() {
     NotificationTracker.watch("observer", this);
   },
@@ -506,7 +506,7 @@ SandboxChild.prototype = {
                                          Ci.nsISupportsWeakReference])
 };
 
-let RemoteAddonsChild = {
+var RemoteAddonsChild = {
   _ready: false,
 
   makeReady: function() {

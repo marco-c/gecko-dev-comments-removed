@@ -50,7 +50,7 @@ function getCurrentLevel(isPinned) {
 
 
 
-let PrivacyLevel = Object.freeze({
+var PrivacyLevel = Object.freeze({
   
 
 

@@ -20,8 +20,8 @@ Cu.import("resource://gre/modules/FxAccountsCommon.js");
 
 
 
-let {LoginManagerStorage} = Cu.import("resource://gre/modules/FxAccountsStorage.jsm", {});
-let isLoggedIn = true;
+var {LoginManagerStorage} = Cu.import("resource://gre/modules/FxAccountsStorage.jsm", {});
+var isLoggedIn = true;
 LoginManagerStorage.prototype.__defineGetter__("_isLoggedIn", () => isLoggedIn);
 
 function setLoginMgrLoggedInState(loggedIn) {

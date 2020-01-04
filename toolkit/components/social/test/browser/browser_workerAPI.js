@@ -2,7 +2,7 @@
 
 
 
-let provider;
+var provider;
 
 function test() {
   waitForExplicitFinish();
@@ -27,7 +27,7 @@ function test() {
   });
 }
 
-let tests = {
+var tests = {
   testProfile: function(next) {
     let expect = {
       portrait: "https://example.com/portrait.jpg",

@@ -58,15 +58,15 @@ const ANDROID_LOG_ERROR = 6;
 
 const MAX_TAG_LENGTH = 18;
 
-let liblog = ctypes.open("liblog.so"); 
-let __android_log_write = liblog.declare("__android_log_write",
+var liblog = ctypes.open("liblog.so"); 
+var __android_log_write = liblog.declare("__android_log_write",
                                          ctypes.default_abi,
                                          ctypes.int, 
                                          ctypes.int, 
                                          ctypes.char.ptr, 
                                          ctypes.char.ptr); 
 
-let AndroidLog = {
+var AndroidLog = {
   MAX_TAG_LENGTH: MAX_TAG_LENGTH,
   v: (tag, msg) => __android_log_write(ANDROID_LOG_VERBOSE, "Gecko" + tag.substring(0, MAX_TAG_LENGTH), msg),
   d: (tag, msg) => __android_log_write(ANDROID_LOG_DEBUG, "Gecko" + tag.substring(0, MAX_TAG_LENGTH), msg),

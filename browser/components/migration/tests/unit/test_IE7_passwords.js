@@ -169,8 +169,8 @@ const TESTED_URLS = [
   "https://c.bar.com",
 ];
 
-let nsIWindowsRegKey = Ci.nsIWindowsRegKey;
-let Storage2Key;
+var nsIWindowsRegKey = Ci.nsIWindowsRegKey;
+var Storage2Key;
 
 
 

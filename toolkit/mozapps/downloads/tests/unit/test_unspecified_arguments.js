@@ -7,7 +7,7 @@
 
 
 
-let Cu = Components.utils;
+var Cu = Components.utils;
 Cu.import("resource://gre/modules/DownloadUtils.jsm");
 
 function run_test()

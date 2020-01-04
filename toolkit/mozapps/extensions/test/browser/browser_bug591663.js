@@ -7,25 +7,25 @@
 
 
 
-let VIEW_ID = "addons://list/mock-addon";
+var VIEW_ID = "addons://list/mock-addon";
 
-let LIST_ID = "addon-list";
-let EMPTY_ID = "addon-list-empty";
+var LIST_ID = "addon-list";
+var EMPTY_ID = "addon-list-empty";
 
-let gManagerWindow;
-let gProvider;
-let gItem;
+var gManagerWindow;
+var gProvider;
+var gItem;
 
-let gInstallProperties = {
+var gInstallProperties = {
   name: "Bug 591663 Mock Install",
   type: "mock-addon"
 };
-let gAddonProperties = {
+var gAddonProperties = {
   id: "test1@tests.mozilla.org",
   name: "Bug 591663 Mock Add-on",
   type: "mock-addon"
 };
-let gExtensionProperties = {
+var gExtensionProperties = {
   name: "Bug 591663 Extension Install",
   type: "extension"
 };

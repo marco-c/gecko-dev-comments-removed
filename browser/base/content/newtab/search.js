@@ -4,7 +4,7 @@
 
 #endif
 
-let gSearch = {
+var gSearch = {
   init: function () {
     document.getElementById("newtab-search-submit")
             .addEventListener("click", e => this._contentSearchController.search(e));

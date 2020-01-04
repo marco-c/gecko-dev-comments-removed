@@ -505,7 +505,7 @@ function track_collections_helper() {
 
 
 
-let SyncServerCallback = {
+var SyncServerCallback = {
   onCollectionDeleted: function onCollectionDeleted(user, collection) {},
   onItemDeleted: function onItemDeleted(user, collection, wboID) {},
 

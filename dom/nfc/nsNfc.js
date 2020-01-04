@@ -107,7 +107,7 @@ NfcCallback.prototype = {
 };
 
 
-let TagType = {
+var TagType = {
   TYPE1: "Type1",
   TYPE2: "Type2",
   TYPE3: "Type3",
@@ -314,7 +314,7 @@ MozNFCPeerImpl.prototype = {
 };
 
 
-let RFState = {
+var RFState = {
   IDLE: "idle",
   LISTEN: "listen",
   DISCOVERY: "discovery"

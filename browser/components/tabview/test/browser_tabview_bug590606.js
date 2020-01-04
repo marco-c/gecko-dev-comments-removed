@@ -1,9 +1,9 @@
 
 
 
-let originalTab;
-let newTabOne;
-let groupItemTwoId;
+var originalTab;
+var newTabOne;
+var groupItemTwoId;
 
 function test() {
   waitForExplicitFinish();

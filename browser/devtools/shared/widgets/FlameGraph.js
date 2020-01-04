@@ -1003,7 +1003,7 @@ FlameGraph.prototype = {
 
 
 
-let FlameGraphUtils = {
+var FlameGraphUtils = {
   _cache: new WeakMap(),
 
   

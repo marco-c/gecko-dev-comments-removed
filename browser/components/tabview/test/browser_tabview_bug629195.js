@@ -1,9 +1,9 @@
 
 
 
-let win;
-let contentWindow;
-let originalTab;
+var win;
+var contentWindow;
+var originalTab;
 
 function test() {
   waitForExplicitFinish();

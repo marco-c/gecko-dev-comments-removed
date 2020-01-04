@@ -49,7 +49,7 @@ function getChromeWindow(contentWin) {
 
 
 
-let Chat = {
+var Chat = {
 
   
 

@@ -31,7 +31,7 @@ const prefs = {
   ]
 };
 
-let test = asyncTest(function* () {
+var test = asyncTest(function* () {
   
   for (let category in prefs) {
     prefs[category].forEach(function(pref) {

@@ -1,16 +1,16 @@
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-let {
+var {
   EventManager,
   ignoreEvent,
 } = ExtensionUtils;
 
 
-let notificationsMap = new WeakMap();
+var notificationsMap = new WeakMap();
 
 
-let notificationCallbacksMap = new WeakMap();
+var notificationCallbacksMap = new WeakMap();
 
 
 function Notification(extension, id, options)
@@ -73,7 +73,7 @@ extensions.on("shutdown", (type, extension) => {
   notificationsMap.delete(extension);
 });
 
-let nextId = 0;
+var nextId = 0;
 
 extensions.registerPrivilegedAPI("notifications", (extension, context) => {
   return {

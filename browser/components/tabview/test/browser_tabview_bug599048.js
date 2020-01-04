@@ -1,7 +1,7 @@
 
 
 
-let cw;
+var cw;
 
 function test() {
   waitForExplicitFinish();

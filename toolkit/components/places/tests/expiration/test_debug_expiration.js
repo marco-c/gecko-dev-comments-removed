@@ -8,7 +8,7 @@
 
 
 
-let gNow = getExpirablePRTime();
+var gNow = getExpirablePRTime();
 
 add_task(function* test_expire_orphans()
 {

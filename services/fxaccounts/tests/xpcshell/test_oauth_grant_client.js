@@ -19,7 +19,7 @@ const STATUS_SUCCESS = 200;
 
 
 
-let mockResponse = function (response) {
+var mockResponse = function (response) {
   return function () {
     return {
       setHeader: function () {},
@@ -37,7 +37,7 @@ let mockResponse = function (response) {
 
 
 
-let mockResponseError = function (error) {
+var mockResponseError = function (error) {
   return function () {
     return {
       setHeader: function () {},

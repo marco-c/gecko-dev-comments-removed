@@ -55,7 +55,7 @@ function promiseSocialUrlNotRemembered(url) {
   return deferred.promise;
 }
 
-let gURLsNotRemembered = [];
+var gURLsNotRemembered = [];
 
 
 function checkProviderPrefsEmpty(isError) {
@@ -656,7 +656,7 @@ function closeAllChats() {
 
 
 
-let origProxyType = Services.prefs.getIntPref('network.proxy.type');
+var origProxyType = Services.prefs.getIntPref('network.proxy.type');
 
 function toggleOfflineStatus(goOffline) {
   

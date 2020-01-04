@@ -6,20 +6,20 @@
 
 
 
-let { Cc, Ci, Cu, Cr } = require("chrome");
-const {getElementFromPoint, getAdjustedQuads} = require("devtools/toolkit/layout/utils");
+var { Cc, Ci, Cu, Cr } = require("chrome");
+const LayoutHelpers = require("devtools/toolkit/layout-helpers");
 const promise = require("promise");
 const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
-let DOMUtils = Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
-let loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
+var DOMUtils = Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
+var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
             .getService(Ci.mozIJSSubScriptLoader);
-let EventUtils = {};
+var EventUtils = {};
 loader.loadSubScript("chrome://marionette/content/EventUtils.js", EventUtils);
 
 const protocol = require("devtools/server/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
 
-let dumpn = msg => {
+var dumpn = msg => {
   dump(msg + "\n");
 }
 
@@ -239,7 +239,8 @@ const TestActor = exports.TestActor = protocol.ActorClass({
   }),
 
   assertElementAtPoint: protocol.method(function (x, y, selector) {
-    let elementAtPoint = getElementFromPoint(this.content.document, x, y);
+    let helper = new LayoutHelpers(this.content);
+    let elementAtPoint = helper.getElementFromPoint(this.content.document, x, y);
     if (!elementAtPoint) {
       throw new Error("Unable to find element at (" + x + ", " + y + ")");
     }
@@ -265,9 +266,10 @@ const TestActor = exports.TestActor = protocol.ActorClass({
 
   getAllAdjustedQuads: protocol.method(function(selector) {
     let regions = {};
+    let helper = new LayoutHelpers(this.content);
     let node = this._querySelector(selector);
     for (let boxType of ["content", "padding", "border", "margin"]) {
-      regions[boxType] = getAdjustedQuads(this.content, node, boxType);
+      regions[boxType] = helper.getAdjustedQuads(node, boxType);
     }
 
     return regions;

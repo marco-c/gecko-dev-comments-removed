@@ -1,8 +1,8 @@
 
 
 
-let contentWindow;
-let groupItem;
+var contentWindow;
+var groupItem;
 
 function test() {
   waitForExplicitFinish();

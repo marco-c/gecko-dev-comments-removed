@@ -1,13 +1,13 @@
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 
-let pb = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
+var pb = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
 
 
 
 const kPrefName = 'intl.accept_languages'; 
                                            
-let initialValue = null;
+var initialValue = null;
 
 function check_child_pref_info_eq(continuation) {
     sendCommand(

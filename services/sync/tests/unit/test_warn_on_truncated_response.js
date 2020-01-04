@@ -12,11 +12,11 @@ function run_test() {
   run_next_test();
 }
 
-let BODY = "response body";
+var BODY = "response body";
 
 
 
-let contentLength = BODY.length + 1;
+var contentLength = BODY.length + 1;
 
 function contentHandler(request, response) {
   _("Handling request.");

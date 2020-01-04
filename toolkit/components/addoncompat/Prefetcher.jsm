@@ -14,7 +14,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
                                   "resource://gre/modules/Preferences.jsm");
 
 
-let PrefetcherRules = {};
+var PrefetcherRules = {};
 
 
 
@@ -348,7 +348,7 @@ Database.prototype = {
   },
 };
 
-let Prefetcher = {
+var Prefetcher = {
   init: function() {
     
     
@@ -482,8 +482,8 @@ let Prefetcher = {
   },
 };
 
-let AdblockId = "{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}";
-let AdblockRules = {
+var AdblockId = "{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}";
+var AdblockRules = {
   "ContentPolicy.shouldLoad": [
     new MethodOp("Node", "InitNode", "QueryInterface", Ci.nsISupports),
     new PropertyOp("Document", "Node", "ownerDocument"),
@@ -501,8 +501,8 @@ let AdblockRules = {
 };
 PrefetcherRules[AdblockId] = AdblockRules;
 
-let LastpassId = "support@lastpass.com";
-let LastpassRules = {
+var LastpassId = "support@lastpass.com";
+var LastpassRules = {
   "EventTarget.handleEvent": [
     new PropertyOp("EventTarget", "Event", "target"),
     new PropertyOp("EventOriginalTarget", "Event", "originalTarget"),

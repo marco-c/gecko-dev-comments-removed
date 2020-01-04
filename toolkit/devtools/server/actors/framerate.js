@@ -15,7 +15,7 @@ const { Framerate } = require("devtools/toolkit/shared/framerate");
 
 
 
-let FramerateActor = exports.FramerateActor = protocol.ActorClass({
+var FramerateActor = exports.FramerateActor = protocol.ActorClass({
   typeName: "framerate",
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
@@ -54,7 +54,7 @@ let FramerateActor = exports.FramerateActor = protocol.ActorClass({
 
 
 
-let FramerateFront = exports.FramerateFront = protocol.FrontClass(FramerateActor, {
+var FramerateFront = exports.FramerateFront = protocol.FrontClass(FramerateActor, {
   initialize: function(client, { framerateActor }) {
     protocol.Front.prototype.initialize.call(this, client, { actor: framerateActor });
     this.manage(this);

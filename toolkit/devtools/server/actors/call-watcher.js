@@ -33,7 +33,7 @@ protocol.types.addDictType("call-details", {
 
 
 
-let FunctionCallActor = protocol.ActorClass({
+var FunctionCallActor = protocol.ActorClass({
   typeName: "function-call",
 
   
@@ -235,7 +235,7 @@ let FunctionCallActor = protocol.ActorClass({
 
 
 
-let FunctionCallFront = protocol.FrontClass(FunctionCallActor, {
+var FunctionCallFront = protocol.FrontClass(FunctionCallActor, {
   initialize: function(client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
   },
@@ -259,7 +259,7 @@ let FunctionCallFront = protocol.FrontClass(FunctionCallActor, {
 
 
 
-let CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
+var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
   typeName: "call-watcher",
   initialize: function(conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
@@ -579,7 +579,7 @@ let CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
 
 
 
-let CallWatcherFront = exports.CallWatcherFront = protocol.FrontClass(CallWatcherActor, {
+var CallWatcherFront = exports.CallWatcherFront = protocol.FrontClass(CallWatcherActor, {
   initialize: function(client, { callWatcherActor }) {
     protocol.Front.prototype.initialize.call(this, client, { actor: callWatcherActor });
     this.manage(this);

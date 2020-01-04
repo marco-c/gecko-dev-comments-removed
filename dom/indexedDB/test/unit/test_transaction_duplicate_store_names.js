@@ -4,7 +4,7 @@
 
 
 
-let testGenerator = testSteps();
+var testGenerator = testSteps();
 
 function testSteps() {
   const dbName = this.window ?

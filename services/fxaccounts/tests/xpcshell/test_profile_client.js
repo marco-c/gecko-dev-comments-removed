@@ -14,7 +14,7 @@ const STATUS_SUCCESS = 200;
 
 
 
-let mockResponse = function (response) {
+var mockResponse = function (response) {
   let Request = function (requestUri) {
     
     Request._requestUri = requestUri;
@@ -33,7 +33,7 @@ let mockResponse = function (response) {
 
 
 
-let mockFxa = {
+var mockFxa = {
   getOAuthToken(options) {
     do_check_eq(options.scope, "profile");
     return "token";
@@ -51,7 +51,7 @@ const PROFILE_OPTIONS = {
 
 
 
-let mockResponseError = function (error) {
+var mockResponseError = function (error) {
   return function () {
     return {
       setHeader: function () {},

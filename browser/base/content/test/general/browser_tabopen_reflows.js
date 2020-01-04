@@ -124,7 +124,7 @@ add_task(function*() {
   gBrowser.removeCurrentTab();
 });
 
-let observer = {
+var observer = {
   reflow: function (start, end) {
     
     let path = (new Error().stack).split("\n").slice(1).map(line => {

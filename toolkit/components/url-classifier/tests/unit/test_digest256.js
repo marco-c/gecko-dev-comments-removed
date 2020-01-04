@@ -5,16 +5,16 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
 XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
 
-let gHttpServ = null;
+var gHttpServ = null;
 
-let gDbService = Cc["@mozilla.org/url-classifier/dbservice;1"]
+var gDbService = Cc["@mozilla.org/url-classifier/dbservice;1"]
   .getService(Ci.nsIUrlClassifierDBService);
 
-let gSecMan = Cc["@mozilla.org/scriptsecuritymanager;1"]
+var gSecMan = Cc["@mozilla.org/scriptsecuritymanager;1"]
   .getService(Ci.nsIScriptSecurityManager);
 
 
-let gTables = {};
+var gTables = {};
 
 
 function readFileToString(aFilename) {

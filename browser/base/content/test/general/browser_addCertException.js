@@ -22,7 +22,7 @@ function loadBadCertPage() {
 
 
 
-let certErrorProgressListener = {
+var certErrorProgressListener = {
   buttonClicked: false,
 
   onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
@@ -47,7 +47,7 @@ let certErrorProgressListener = {
 
 
 const EXCEPTION_DIALOG_URI = "chrome://pippki/content/exceptionDialog.xul";
-let certExceptionDialogObserver = {
+var certExceptionDialogObserver = {
   observe: function(aSubject, aTopic, aData) {
     if (aTopic == "cert-exception-ui-ready") {
       Services.obs.removeObserver(this, "cert-exception-ui-ready");
@@ -64,7 +64,7 @@ let certExceptionDialogObserver = {
 };
 
 
-let successfulLoadListener = {
+var successfulLoadListener = {
   handleEvent: function() {
     gBrowser.selectedBrowser.removeEventListener("load", this, true);
     let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]

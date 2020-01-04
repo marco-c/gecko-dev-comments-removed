@@ -3,7 +3,7 @@
 
 
 
-let gActiveListeners = {};
+var gActiveListeners = {};
 
 function registerPopupEventHandler(eventName, callback) {
   gActiveListeners[eventName] = function (event) {

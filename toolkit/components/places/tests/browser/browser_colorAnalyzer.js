@@ -17,7 +17,7 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-let tests = [];
+var tests = [];
 function generatorTest() {
   while (tests.length > 0) {
     tests.shift()();
@@ -233,7 +233,7 @@ tests.push(function test_interestingColorPreferenceNotTooLenient() {
   }, 0xFF0000, "interestingColorPreferenceNotTooLenient analysis returns red");
 });
 
-let maxPixels = 144; 
+var maxPixels = 144; 
 
 
 tests.push(function test_imageTooLarge() {
@@ -247,7 +247,7 @@ tests.push(function test_imageTooLarge() {
 
 
 
-let maxColor = Math.pow(2, 24) - 1;
+var maxColor = Math.pow(2, 24) - 1;
 
 function getRandomColor() {
   let randomColor = (Math.ceil(Math.random() * maxColor)).toString(16);

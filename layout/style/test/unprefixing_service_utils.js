@@ -6,7 +6,7 @@
 
 
 
-let gWhitelistedHosts = [
+var gWhitelistedHosts = [
   
   "test1.example.org",
   
@@ -16,7 +16,7 @@ let gWhitelistedHosts = [
 ];
 
 
-let gNotWhitelistedHosts = [
+var gNotWhitelistedHosts = [
   
   "sub1.test1.example.org",
   
@@ -30,7 +30,7 @@ const PREF_INCLUDE_TEST_DOMAINS =
   "layout.css.unprefixing-service.include-test-domains";
 
 
-let gCounter = 0;
+var gCounter = 0;
 function getIncreasingCounter() {
   return gCounter++;
 }

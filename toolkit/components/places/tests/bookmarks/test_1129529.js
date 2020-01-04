@@ -1,4 +1,4 @@
-let now = Date.now() * 1000;
+var now = Date.now() * 1000;
 
 
 

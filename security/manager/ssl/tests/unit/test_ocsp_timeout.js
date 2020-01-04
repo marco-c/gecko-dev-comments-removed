@@ -15,7 +15,7 @@
 
 
 
-let gSocketListener = {
+var gSocketListener = {
   onSocketAccepted: function(serverSocket, socketTransport) {
     socketTransport.setTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT, 30);
     socketTransport.setTimeout(Ci.nsISocketTransport.TIMEOUT_READ_WRITE, 30);

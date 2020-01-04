@@ -15,7 +15,7 @@ const Cu = Components.utils;
 
 
 
-let timeStamps = {};
+var timeStamps = {};
 
 this.TelemetryTimestamps = {
   

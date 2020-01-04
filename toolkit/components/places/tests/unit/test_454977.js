@@ -5,7 +5,7 @@
 
 
 
-let visit_count = 0;
+var visit_count = 0;
 
 
 function task_add_visit(aURI, aVisitType)

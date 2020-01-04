@@ -2,15 +2,15 @@
 
 
 
-let outOfProcess = __marionetteParams[0]
-let mochitestUrl = __marionetteParams[1]
-let onDevice = __marionetteParams[2]
-let wifiSettings = __marionetteParams[3]
-let chrome = __marionetteParams[4]
-let prefs = Components.classes["@mozilla.org/preferences-service;1"].
+var outOfProcess = __marionetteParams[0]
+var mochitestUrl = __marionetteParams[1]
+var onDevice = __marionetteParams[2]
+var wifiSettings = __marionetteParams[3]
+var chrome = __marionetteParams[4]
+var prefs = Components.classes["@mozilla.org/preferences-service;1"].
                             getService(Components.interfaces.nsIPrefBranch)
-let settings = window.navigator.mozSettings;
-let cm = Components.classes["@mozilla.org/categorymanager;1"].
+var settings = window.navigator.mozSettings;
+var cm = Components.classes["@mozilla.org/categorymanager;1"].
                     getService(Components.interfaces.nsICategoryManager);
 
 if (wifiSettings)
@@ -20,8 +20,8 @@ const CHILD_SCRIPT = "chrome://specialpowers/content/specialpowers.js";
 const CHILD_SCRIPT_API = "chrome://specialpowers/content/specialpowersAPI.js";
 const CHILD_LOGGER_SCRIPT = "chrome://specialpowers/content/MozillaLogger.js";
 
-let homescreen = document.getElementById('systemapp');
-let container = homescreen.contentWindow.document.getElementById('test-container');
+var homescreen = document.getElementById('systemapp');
+var container = homescreen.contentWindow.document.getElementById('test-container');
 
 
 if (cm) {
@@ -29,7 +29,7 @@ if (cm) {
   cm.deleteCategoryEntry("update-timer", "nsUpdateService", false);
 }
 
-let SECURITY_PREF = "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer";
+var SECURITY_PREF = "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer";
 Components.utils.import("resource://gre/modules/Services.jsm");
 Services.prefs.setBoolPref(SECURITY_PREF, true);
 

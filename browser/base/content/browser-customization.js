@@ -8,7 +8,7 @@
 
 
 
-let CustomizationHandler = {
+var CustomizationHandler = {
   handleEvent: function(aEvent) {
     switch(aEvent.type) {
       case "customizationstarting":

@@ -1,7 +1,7 @@
 
 
 
-let originalWindowHeight;
+var originalWindowHeight;
 registerCleanupFunction(function() {
   window.resizeTo(window.outerWidth, originalWindowHeight);
   while (gBrowser.tabs[1])

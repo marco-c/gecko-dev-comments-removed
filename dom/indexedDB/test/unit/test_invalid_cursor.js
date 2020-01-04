@@ -3,9 +3,9 @@
 
 
 
-let disableWorkerTest = "Need to implement a gc() function for worker tests";
+var disableWorkerTest = "Need to implement a gc() function for worker tests";
 
-let testGenerator = testSteps();
+var testGenerator = testSteps();
 
 function testSteps()
 {

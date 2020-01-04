@@ -25,7 +25,7 @@ const SYSTEM_PROPERTY_VALUE_MAX = 92;
 
 
 
-let DEBUG;
+var DEBUG;
 
 
 

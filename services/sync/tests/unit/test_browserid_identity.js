@@ -21,8 +21,8 @@ const SECOND_MS = 1000;
 const MINUTE_MS = SECOND_MS * 60;
 const HOUR_MS = MINUTE_MS * 60;
 
-let identityConfig = makeIdentityConfig();
-let browseridManager = new BrowserIDManager();
+var identityConfig = makeIdentityConfig();
+var browseridManager = new BrowserIDManager();
 configureFxAccountIdentity(browseridManager, identityConfig);
 
 
@@ -31,7 +31,7 @@ configureFxAccountIdentity(browseridManager, identityConfig);
 
 
 
-let MockFxAccountsClient = function() {
+var MockFxAccountsClient = function() {
   FxAccountsClient.apply(this);
 };
 MockFxAccountsClient.prototype = {

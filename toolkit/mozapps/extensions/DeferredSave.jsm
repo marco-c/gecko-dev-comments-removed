@@ -12,7 +12,7 @@ Cu.import("resource://gre/modules/osfile.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 
 
-let MakeTimer = () => Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+var MakeTimer = () => Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
 this.EXPORTED_SYMBOLS = ["DeferredSave"];
 
@@ -23,9 +23,9 @@ Cu.import("resource://gre/modules/Log.jsm");
 
 
 const DEFERREDSAVE_PARENT_LOGGER_ID = "DeferredSave";
-let parentLogger = Log.repository.getLogger(DEFERREDSAVE_PARENT_LOGGER_ID);
+var parentLogger = Log.repository.getLogger(DEFERREDSAVE_PARENT_LOGGER_ID);
 parentLogger.level = Log.Level.Warn;
-let formatter = new Log.BasicFormatter();
+var formatter = new Log.BasicFormatter();
 
 
 parentLogger.addAppender(new Log.ConsoleAppender(formatter));

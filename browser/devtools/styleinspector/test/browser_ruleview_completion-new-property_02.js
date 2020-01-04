@@ -15,7 +15,7 @@
 
 
 
-let testData = [
+var testData = [
   ["a", {accelKey: true, ctrlKey: true}, "", -1, 0],
   ["d", {}, "direction", 0, 3],
   ["VK_DOWN", {}, "display", 1, 3],

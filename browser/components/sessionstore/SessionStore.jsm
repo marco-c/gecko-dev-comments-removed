@@ -165,7 +165,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "ViewSourceBrowser",
 
 
 
-let gDebuggingEnabled = false;
+var gDebuggingEnabled = false;
 function debug(aMsg) {
   if (gDebuggingEnabled) {
     aMsg = ("SessionStore: " + aMsg).replace(/\S{80}/g, "$&\n");
@@ -322,7 +322,7 @@ this.SessionStore = {
 
 Object.freeze(SessionStore);
 
-let SessionStoreInternal = {
+var SessionStoreInternal = {
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsIDOMEventListener,
     Ci.nsIObserver,
@@ -3819,7 +3819,7 @@ let SessionStoreInternal = {
 
 
 
-let TabRestoreQueue = {
+var TabRestoreQueue = {
   
   tabs: {priority: [], visible: [], hidden: []},
 
@@ -3956,7 +3956,7 @@ let TabRestoreQueue = {
 
 
 
-let DyingWindowCache = {
+var DyingWindowCache = {
   _data: new WeakMap(),
 
   has: function (window) {
@@ -3978,7 +3978,7 @@ let DyingWindowCache = {
 
 
 
-let DirtyWindows = {
+var DirtyWindows = {
   _data: new WeakMap(),
 
   has: function (window) {
@@ -4002,7 +4002,7 @@ let DirtyWindows = {
 
 
 
-let LastSession = {
+var LastSession = {
   _state: null,
 
   get canRestore() {

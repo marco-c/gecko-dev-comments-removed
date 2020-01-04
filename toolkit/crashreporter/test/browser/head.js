@@ -9,7 +9,7 @@ function create_subdir(dir, subdirname) {
 }
 
 
-let _provider = null;
+var _provider = null;
 
 function make_fake_appdir() {
   

@@ -58,7 +58,7 @@ function loadPinningPage() {
 
 
 
-let successfulPinningPageListener = {
+var successfulPinningPageListener = {
   handleEvent: function() {
     gBrowser.selectedBrowser.removeEventListener("load", this, true);
     gBrowser.addProgressListener(certErrorProgressListener);
@@ -68,7 +68,7 @@ let successfulPinningPageListener = {
 
 
 
-let certErrorProgressListener = {
+var certErrorProgressListener = {
   onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
     if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
       let textElement = content.document.getElementById("errorShortDescText");
@@ -86,7 +86,7 @@ let certErrorProgressListener = {
 
 
 
-let successfulPinningRemovalPageListener = {
+var successfulPinningRemovalPageListener = {
   handleEvent: function() {
     gBrowser.selectedBrowser.removeEventListener("load", this, true);
     gBrowser.selectedBrowser.addEventListener("load",
@@ -99,7 +99,7 @@ let successfulPinningRemovalPageListener = {
 
 
 
-let successfulLoadListener = {
+var successfulLoadListener = {
   handleEvent: function() {
     gBrowser.selectedBrowser.removeEventListener("load", this, true);
     gBrowser.removeTab(gBrowser.selectedTab);

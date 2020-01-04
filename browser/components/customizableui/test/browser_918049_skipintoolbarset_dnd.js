@@ -4,8 +4,8 @@
 
 "use strict";
 
-let navbar;
-let skippedItem;
+var navbar;
+var skippedItem;
 
 
 add_task(function() {

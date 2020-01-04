@@ -38,7 +38,7 @@ if (typeof Components != "undefined") {
   throw new Error("Please load this module using require()");
 }
 
-let EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "basename",
   "dirname",
   "join",
@@ -54,7 +54,7 @@ let EXPORTED_SYMBOLS = [
 
 
 
-let basename = function(path) {
+var basename = function(path) {
   if (path.startsWith("\\\\")) {
     
     let index = path.lastIndexOf("\\");
@@ -84,7 +84,7 @@ exports.basename = basename;
 
 
 
-let dirname = function(path, options) {
+var dirname = function(path, options) {
   let noDrive = (options && options.winNoDrive);
 
   
@@ -139,7 +139,7 @@ exports.dirname = dirname;
 
 
 
-let join = function(...path) {
+var join = function(...path) {
   let paths = [];
   let root;
   let absolute = false;
@@ -187,7 +187,7 @@ exports.join = join;
 
 
 
-let winGetDrive = function(path) {
+var winGetDrive = function(path) {
   if (path == null) {
     throw new TypeError("path is invalid");
   }
@@ -216,7 +216,7 @@ exports.winGetDrive = winGetDrive;
 
 
 
-let winIsAbsolute = function(path) {
+var winIsAbsolute = function(path) {
   let index = path.indexOf(":");
   return path.length > index + 1 && path[index + 1] == "\\";
 };
@@ -226,7 +226,7 @@ exports.winIsAbsolute = winIsAbsolute;
 
 
 
-let normalize = function(path) {
+var normalize = function(path) {
   let stack = [];
 
   if (!path.startsWith("\\\\")) {
@@ -293,7 +293,7 @@ exports.normalize = normalize;
 
 
 
-let split = function(path) {
+var split = function(path) {
   return {
     absolute: this.winIsAbsolute(path),
     winDrive: this.winGetDrive(path),
@@ -306,8 +306,8 @@ exports.split = split;
 
 
 
-let toFileURIExtraEncodings = {';': '%3b', '?': '%3F', '#': '%23'};
-let toFileURI = function toFileURI(path) {
+var toFileURIExtraEncodings = {';': '%3b', '?': '%3F', '#': '%23'};
+var toFileURI = function toFileURI(path) {
   
   path = this.normalize(path).replace(/[\\\/]/g, m => (m=='\\')? '/' : '%2F');
   let uri = encodeURI(path);
@@ -329,7 +329,7 @@ exports.toFileURI = toFileURI;
 
 
 
-let fromFileURI = function fromFileURI(uri) {
+var fromFileURI = function fromFileURI(uri) {
   let url = new URL(uri);
   if (url.protocol != 'file:') {
     throw new Error("fromFileURI expects a file URI");
@@ -357,7 +357,7 @@ exports.fromFileURI = fromFileURI;
 
 
 
-let trimBackslashes = function trimBackslashes(string) {
+var trimBackslashes = function trimBackslashes(string) {
   return string.replace(/^\\+|\\+$/g,'');
 };
 

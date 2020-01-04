@@ -6,9 +6,9 @@
 
 
 
-let Preferences = Cu.import("resource://gre/modules/Preferences.jsm", {}).Preferences;
-let PromiseUtils = Cu.import("resource://gre/modules/PromiseUtils.jsm", {}).PromiseUtils;
-let SelfSupportBackend =
+var Preferences = Cu.import("resource://gre/modules/Preferences.jsm", {}).Preferences;
+var PromiseUtils = Cu.import("resource://gre/modules/PromiseUtils.jsm", {}).PromiseUtils;
+var SelfSupportBackend =
   Cu.import("resource:///modules/SelfSupportBackend.jsm", {}).SelfSupportBackend;
 
 const PREF_SELFSUPPORT_ENABLED = "browser.selfsupport.enabled";

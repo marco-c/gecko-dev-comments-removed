@@ -15,7 +15,7 @@ function run_test() {
 
 
 
-let EXISTING_FILE = "test_osfile_async_copy.js";
+var EXISTING_FILE = "test_osfile_async_copy.js";
 
 
 
@@ -26,7 +26,7 @@ let EXISTING_FILE = "test_osfile_async_copy.js";
 
 
 
-let reference_fetch_file = function reference_fetch_file(path) {
+var reference_fetch_file = function reference_fetch_file(path) {
   let promise = Promise.defer();
   let file = new FileUtils.File(path);
   NetUtil.asyncFetch({
@@ -64,7 +64,7 @@ let reference_fetch_file = function reference_fetch_file(path) {
 
 
 
-let reference_compare_files = function reference_compare_files(a, b) {
+var reference_compare_files = function reference_compare_files(a, b) {
   let a_contents = yield reference_fetch_file(a);
   let b_contents = yield reference_fetch_file(b);
   

@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "gCrashReporter",
                                    "nsICrashReporter");
 #endif
 
-let progressListener = {
+var progressListener = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
                                          Ci.nsISupportsWeakReference]),
   onLocationChange: function onLocationChange(progress, request, location,
@@ -148,7 +148,7 @@ document.addEventListener('mozfullscreenchange', function() {
 
 
 
-let updateMenuItems = Task.async(function*() {
+var updateMenuItems = Task.async(function*() {
 #ifdef XP_MACOSX
   yield WebappRT.configPromise;
 
@@ -165,7 +165,7 @@ let updateMenuItems = Task.async(function*() {
 });
 
 #ifndef XP_MACOSX
-let gEditUIVisible = true;
+var gEditUIVisible = true;
 #endif
 
 function updateEditUIVisibility() {
@@ -225,7 +225,7 @@ function updateCrashReportURL(aURI) {
 
 
 
-let gContextMenu = null;
+var gContextMenu = null;
 
 XPCOMUtils.defineLazyGetter(this, "PageMenu", function() {
   let tmp = {};

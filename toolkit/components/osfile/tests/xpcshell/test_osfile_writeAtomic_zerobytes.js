@@ -2,7 +2,7 @@
 
 
 "use strict";
-let SHARED_PATH;
+var SHARED_PATH;
 
 add_task(function* init() {
   do_get_profile();

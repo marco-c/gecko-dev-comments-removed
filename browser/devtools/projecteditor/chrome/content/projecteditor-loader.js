@@ -15,7 +15,7 @@ const SAMPLE_ICON = "chrome://browser/skin/devtools/tool-debugger.svg";
 
 
 
-let appManagerEditor;
+var appManagerEditor;
 
 
 function log(msg) {

@@ -14,7 +14,7 @@
 
 
 
-let testData = [
+var testData = [
   {
     isVisit: true,
     uri: "file:///directory/1",
@@ -65,8 +65,8 @@ let testData = [
     isInQuery: true
   }
 ];
-let domainsInRange = [2, 3];
-let leveledTestData = [
+var domainsInRange = [2, 3];
+var leveledTestData = [
                        [[0],    
                         [1,2]], 
                        
@@ -77,7 +77,7 @@ let leveledTestData = [
 
 
 
-let testDataAddedLater = [
+var testDataAddedLater = [
   {
     isVisit: true,
     uri: "http://example.com/5",

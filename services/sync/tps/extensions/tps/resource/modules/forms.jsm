@@ -13,7 +13,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://tps/logger.jsm");
 
-let formService = Cc["@mozilla.org/satchel/form-history;1"]
+var formService = Cc["@mozilla.org/satchel/form-history;1"]
                   .getService(Ci.nsIFormHistory2);
 
 
@@ -22,7 +22,7 @@ let formService = Cc["@mozilla.org/satchel/form-history;1"]
 
 
 
-let FormDB = {
+var FormDB = {
   
 
 

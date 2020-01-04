@@ -3,19 +3,19 @@
 
 
 
-let tempScope = {};
+var tempScope = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", tempScope);
 Cu.import("resource://gre/modules/FileUtils.jsm", tempScope);
-let NetUtil = tempScope.NetUtil;
-let FileUtils = tempScope.FileUtils;
+var NetUtil = tempScope.NetUtil;
+var FileUtils = tempScope.FileUtils;
 
 
-let gScratchpad; 
-let gFile; 
-let DEVTOOLS_CHROME_ENABLED = "devtools.chrome.enabled";
+var gScratchpad; 
+var gFile; 
+var DEVTOOLS_CHROME_ENABLED = "devtools.chrome.enabled";
 
 
-let gFileContent = "function main() { return 0; }";
+var gFileContent = "function main() { return 0; }";
 
 function test() {
   waitForExplicitFinish();

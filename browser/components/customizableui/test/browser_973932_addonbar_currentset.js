@@ -4,8 +4,8 @@
 
 "use strict";
 
-let addonbarID = CustomizableUI.AREA_ADDONBAR;
-let addonbar = document.getElementById(addonbarID);
+var addonbarID = CustomizableUI.AREA_ADDONBAR;
+var addonbar = document.getElementById(addonbarID);
 
 
 add_task(function() {

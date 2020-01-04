@@ -3814,7 +3814,7 @@ VariablesView.getClass = function(aGrip) {
 
 
 
-let generateId = (function() {
+var generateId = (function() {
   let count = 0;
   return function(aName = "") {
     return aName.toLowerCase().trim().replace(/\s+/g, "-") + (++count);

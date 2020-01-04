@@ -109,7 +109,7 @@ const DirectorRegistry = exports.DirectorRegistry = {
 
 
 
-let gTrackedMessageManager = new Set();
+var gTrackedMessageManager = new Set();
 
 exports.setupParentProcess = function setupParentProcess({mm, prefix}) {
   

@@ -13,7 +13,7 @@ const PATH = __URI__.replace('framescript/FrameScriptManager.jsm', '');
 
 
 
-let LOADER_ID = 0;
+var LOADER_ID = 0;
 this.getNewLoaderID = () => {
   return PATH + ":" + LOADER_ID++;
 }

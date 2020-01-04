@@ -3,7 +3,7 @@
 
 
 
-let {FlameGraphUtils} = require("devtools/shared/widgets/FlameGraph");
+var {FlameGraphUtils} = require("devtools/shared/widgets/FlameGraph");
 
 add_task(function*() {
   yield promiseTab("about:blank");
@@ -24,7 +24,7 @@ function* performTest() {
   isnot(out3, out4, "The outputted data is not identical anymore.");
 }
 
-let TEST_DATA = synthesizeProfileForTest([{
+var TEST_DATA = synthesizeProfileForTest([{
   frames: [{
     location: "A"
   }, {

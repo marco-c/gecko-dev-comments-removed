@@ -21,7 +21,7 @@ this.EXPORTED_SYMBOLS = ["ViewSourceBrowser"];
 
 
 
-let gKnownBrowsers = new WeakSet();
+var gKnownBrowsers = new WeakSet();
 
 
 

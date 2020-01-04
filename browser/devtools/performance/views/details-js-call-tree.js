@@ -6,7 +6,7 @@
 
 
 
-let JsCallTreeView = Heritage.extend(DetailsSubview, {
+var JsCallTreeView = Heritage.extend(DetailsSubview, {
 
   rerenderPrefs: [
     "invert-call-tree",

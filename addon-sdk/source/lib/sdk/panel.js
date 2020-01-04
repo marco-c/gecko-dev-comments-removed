@@ -36,19 +36,19 @@ const { number, boolean, object } = require('./deprecated/api-utils');
 const { Style } = require("./stylesheet/style");
 const { attach, detach } = require("./content/mod");
 
-let isRect = ({top, right, bottom, left}) => [top, right, bottom, left].
+var isRect = ({top, right, bottom, left}) => [top, right, bottom, left].
   some(value => isNumber(value) && !isNaN(value));
 
-let isSDKObj = obj => obj instanceof Class;
+var isSDKObj = obj => obj instanceof Class;
 
-let rectContract = contract({
+var rectContract = contract({
   top: number,
   right: number,
   bottom: number,
   left: number
 });
 
-let position = {
+var position = {
   is: object,
   map: v => (isNil(v) || isSDKObj(v) || !isObject(v)) ? v : rectContract(v),
   ok: v => isNil(v) || isSDKObj(v) || (isObject(v) && isRect(v)),
@@ -57,14 +57,14 @@ let position = {
         'values: top, right, bottom, left.'
 }
 
-let displayContract = contract({
+var displayContract = contract({
   width: number,
   height: number,
   focus: boolean,
   position: position
 });
 
-let panelContract = contract(merge({
+var panelContract = contract(merge({
   
   
   contentStyle: merge(Object.create(loaderContract.rules.contentScript), {
@@ -79,11 +79,11 @@ let panelContract = contract(merge({
 
 function isDisposed(panel) !views.has(panel);
 
-let panels = new WeakMap();
-let models = new WeakMap();
-let views = new WeakMap();
-let workers = new WeakMap();
-let styles = new WeakMap();
+var panels = new WeakMap();
+var models = new WeakMap();
+var views = new WeakMap();
+var workers = new WeakMap();
+var styles = new WeakMap();
 
 const viewFor = (panel) => views.get(panel);
 const modelFor = (panel) => models.get(panel);
@@ -93,7 +93,7 @@ const styleFor = (panel) => styles.get(panel);
 
 
 
-let setupAutoHide = new function() {
+var setupAutoHide = new function() {
   let refs = new WeakMap();
 
   return function setupAutoHide(panel) {
@@ -280,27 +280,27 @@ exports.Panel = Panel;
 getActiveView.define(Panel, viewFor);
 
 
-let panelEvents = filter(events, ({target}) => panelFor(target));
+var panelEvents = filter(events, ({target}) => panelFor(target));
 
 
-let shows = filter(panelEvents, ({type}) => type === "popupshown");
+var shows = filter(panelEvents, ({type}) => type === "popupshown");
 
 
-let hides = filter(panelEvents, ({type}) => type === "popuphidden");
+var hides = filter(panelEvents, ({type}) => type === "popuphidden");
 
 
 
 
 
-let ready = filter(panelEvents, ({type, target}) =>
+var ready = filter(panelEvents, ({type, target}) =>
   getAttachEventType(modelFor(panelFor(target))) === type);
 
 
-let readyToShow = filter(panelEvents, ({type}) => type === "DOMContentLoaded");
+var readyToShow = filter(panelEvents, ({type}) => type === "DOMContentLoaded");
 
 
 
-let start = filter(panelEvents, ({type}) => type === "document-element-inserted");
+var start = filter(panelEvents, ({type}) => type === "document-element-inserted");
 
 
 on(shows, "data", ({target}) => {

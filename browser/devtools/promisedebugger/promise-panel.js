@@ -11,7 +11,7 @@
 
 
 
-let PromisesPanel = {
+var PromisesPanel = {
   PANEL_INITIALIZED: "panel-initialized",
 
   initialize: Task.async(function*() {

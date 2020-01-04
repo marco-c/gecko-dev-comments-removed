@@ -2,7 +2,7 @@
 
 
 
-let fm = Services.focus;
+var fm = Services.focus;
 
 function test() {
   waitForExplicitFinish();

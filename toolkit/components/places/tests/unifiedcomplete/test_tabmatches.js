@@ -4,7 +4,7 @@
 
 
 
-let gTabRestrictChar = "%";
+var gTabRestrictChar = "%";
 
 add_task(function* test_tab_matches() {
   let uri1 = NetUtil.newURI("http://abc.com/");

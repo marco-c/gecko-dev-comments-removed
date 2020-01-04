@@ -5,7 +5,7 @@
 
 
 
-let CustomChromeProtocol = {
+var CustomChromeProtocol = {
   scheme: "khrome",
   defaultPort: -1,
   protocolFlags: Ci.nsIProtocolHandler.URI_DANGEROUS_TO_LOAD |

@@ -2,9 +2,9 @@
 
 
 
-let SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
+var SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
 
-let manifest2 = { 
+var manifest2 = { 
   name: "provider test1",
   origin: "https://test1.example.com",
   workerURL: "https://test1.example.com/browser/browser/base/content/test/social/social_worker.js",
@@ -15,7 +15,7 @@ let manifest2 = {
   iconURL: "https://test1.example.com/browser/browser/base/content/test/general/moz.png",
   version: 1
 };
-let manifest3 = { 
+var manifest3 = { 
   name: "provider test2",
   origin: "https://test2.example.com",
   sidebarURL: "https://test2.example.com/browser/browser/base/content/test/social/social_sidebar.html",

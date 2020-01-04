@@ -2,7 +2,7 @@
 
 
 
-let bakFile;
+var bakFile;
 
 function run_test() {
   

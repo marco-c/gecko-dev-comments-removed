@@ -6,7 +6,7 @@
 
 
 
-let RecordingsView = Heritage.extend(WidgetMethods, {
+var RecordingsView = Heritage.extend(WidgetMethods, {
   
 
 

@@ -1,9 +1,9 @@
 
 
 
-let Imports = {};
+var Imports = {};
 Cu.import("resource:///modules/sessionstore/SessionSaver.jsm", Imports);
-let {SessionSaver} = Imports;
+var {SessionSaver} = Imports;
 
 add_task(function cleanup() {
   info("Forgetting closed tabs");

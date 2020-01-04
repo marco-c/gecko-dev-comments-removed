@@ -24,7 +24,7 @@ this.PageStyle = Object.freeze({
 
 const NO_STYLE = "_nostyle";
 
-let PageStyleInternal = {
+var PageStyleInternal = {
   
 
 

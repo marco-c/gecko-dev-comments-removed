@@ -1,7 +1,7 @@
 
 
 
-let newWindows = [];
+var newWindows = [];
 
 function test() {
   waitForExplicitFinish();

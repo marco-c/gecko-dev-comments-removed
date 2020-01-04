@@ -3,7 +3,7 @@ const { interfaces: Ci, utils: Cu } = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 
 
-let backgroundPagesMap = new WeakMap();
+var backgroundPagesMap = new WeakMap();
 
 
 function BackgroundPage(options, extension)

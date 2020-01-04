@@ -30,7 +30,7 @@
 
 
 
-let basicCompletionSet = [
+var basicCompletionSet = [
   {
     hash: "abcdefgh",
     expectCompletion: true,
@@ -50,7 +50,7 @@ let basicCompletionSet = [
 ];
 
 
-let falseCompletionSet = [
+var falseCompletionSet = [
   {
     hash: "1234",
     expectCompletion: false,
@@ -67,7 +67,7 @@ let falseCompletionSet = [
 
 
 
-let dupedCompletionSet = [
+var dupedCompletionSet = [
   {
     hash: "1234",
     expectCompletion: true,
@@ -96,7 +96,7 @@ let dupedCompletionSet = [
 
 
 
-let multipleResponsesCompletionSet = [
+var multipleResponsesCompletionSet = [
   {
     hash: "1234",
     expectCompletion: true,
@@ -165,28 +165,28 @@ function getRandomCompletionSet(forceServerError) {
   return completionSet;
 }
 
-let completionSets = [basicCompletionSet, falseCompletionSet,
+var completionSets = [basicCompletionSet, falseCompletionSet,
                       dupedCompletionSet, multipleResponsesCompletionSet];
-let currentCompletionSet = -1;
-let finishedCompletions = 0;
+var currentCompletionSet = -1;
+var finishedCompletions = 0;
 
 const SERVER_PORT = 8080;
 const SERVER_PATH = "/hash-completer";
-let server;
+var server;
 
 
 
 
 const COMPLETE_LENGTH = 32;
 
-let completer = Cc["@mozilla.org/url-classifier/hashcompleter;1"].
+var completer = Cc["@mozilla.org/url-classifier/hashcompleter;1"].
                   getService(Ci.nsIUrlClassifierHashCompleter);
 
-let gethashUrl;
+var gethashUrl;
 
 
-let expectedMaxServerCompletionSet = 0;
-let maxServerCompletionSet = 0;
+var expectedMaxServerCompletionSet = 0;
+var maxServerCompletionSet = 0;
 
 function run_test() {
   

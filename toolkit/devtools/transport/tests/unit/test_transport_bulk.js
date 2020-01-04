@@ -1,8 +1,8 @@
 
 
 
-let { FileUtils } = Cu.import("resource://gre/modules/FileUtils.jsm", {});
-let { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
+var { FileUtils } = Cu.import("resource://gre/modules/FileUtils.jsm", {});
+var { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 
 function run_test() {
   initTestDebuggerServer();
@@ -21,7 +21,7 @@ function run_test() {
 
 
 
-let test_bulk_transfer_transport = Task.async(function*(transportFactory) {
+var test_bulk_transfer_transport = Task.async(function*(transportFactory) {
   do_print("Starting bulk transfer test at " + new Date().toTimeString());
 
   let clientDeferred = promise.defer();

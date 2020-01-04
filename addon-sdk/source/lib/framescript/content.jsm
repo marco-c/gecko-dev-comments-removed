@@ -18,7 +18,7 @@ const PATH = __URI__.replace('framescript/content.jsm', '');
 const { Loader } = Cu.import(PATH + 'toolkit/loader.js', {});
 
 
-let addons = new Map();
+var addons = new Map();
 
 
 cpmm.sendAsyncMessage('sdk/remote/process/start', {
@@ -67,7 +67,7 @@ cpmm.addMessageListener('sdk/remote/process/unload', ({ data: { loaderID, reason
 })
 
 
-let frames = new Set();
+var frames = new Set();
 
 this.registerContentFrame = contentFrame => {
   contentFrame.addEventListener("unload", () => {

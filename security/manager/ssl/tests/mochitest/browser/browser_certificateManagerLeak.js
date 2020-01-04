@@ -2,7 +2,7 @@
 
 
 
-let gBugWindow;
+var gBugWindow;
 
 function onLoad() {
   gBugWindow.removeEventListener("load", onLoad);

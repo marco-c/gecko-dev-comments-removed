@@ -24,7 +24,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 
-let WebChannelBroker = Object.create({
+var WebChannelBroker = Object.create({
   
 
 

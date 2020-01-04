@@ -11,7 +11,7 @@ const DELAY_REARRANGE_MS = 100;
 
 
 
-let gDrop = {
+var gDrop = {
   
 
 

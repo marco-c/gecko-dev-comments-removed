@@ -82,7 +82,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 const DB_URL_LENGTH_MAX = 65536;
 const DB_TITLE_LENGTH_MAX = 4096;
 
-let Bookmarks = Object.freeze({
+var Bookmarks = Object.freeze({
   
 
 
@@ -1271,7 +1271,7 @@ function validateBookmarkObject(input, behavior={}) {
 
 
 
-let updateFrecency = Task.async(function* (db, urls) {
+var updateFrecency = Task.async(function* (db, urls) {
   yield db.execute(
     `UPDATE moz_places
      SET frecency = NOTIFY_FRECENCY(
@@ -1293,7 +1293,7 @@ let updateFrecency = Task.async(function* (db, urls) {
 
 
 
-let removeOrphanAnnotations = Task.async(function* (db) {
+var removeOrphanAnnotations = Task.async(function* (db) {
   yield db.executeCached(
     `DELETE FROM moz_items_annos
      WHERE id IN (SELECT a.id from moz_items_annos a
@@ -1317,7 +1317,7 @@ let removeOrphanAnnotations = Task.async(function* (db) {
 
 
 
-let removeAnnotationsForItem = Task.async(function* (db, itemId) {
+var removeAnnotationsForItem = Task.async(function* (db, itemId) {
   yield db.executeCached(
     `DELETE FROM moz_items_annos
      WHERE item_id = :id
@@ -1343,7 +1343,7 @@ let removeAnnotationsForItem = Task.async(function* (db, itemId) {
 
 
 
-let setAncestorsLastModified = Task.async(function* (db, folderGuid, time) {
+var setAncestorsLastModified = Task.async(function* (db, folderGuid, time) {
   yield db.executeCached(
     `WITH RECURSIVE
      ancestors(aid) AS (
@@ -1367,7 +1367,7 @@ let setAncestorsLastModified = Task.async(function* (db, folderGuid, time) {
 
 
 
-let removeFoldersContents =
+var removeFoldersContents =
 Task.async(function* (db, folderGuids) {
   let itemsRemoved = [];
   for (let folderGuid of folderGuids) {

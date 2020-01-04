@@ -216,7 +216,7 @@ function getLoopString(stringID) {
 
 
 
-let mockPushHandler = {
+var mockPushHandler = {
   
   
   registrationResult: null,

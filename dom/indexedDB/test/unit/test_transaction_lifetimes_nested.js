@@ -3,7 +3,7 @@
 
 
 
-let disableWorkerTest = "This test uses SpecialPowers";
+var disableWorkerTest = "This test uses SpecialPowers";
 
 var testGenerator = testSteps();
 

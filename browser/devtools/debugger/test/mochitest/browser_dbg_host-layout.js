@@ -8,7 +8,7 @@
 
 "use strict";
 
-let gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");
+var gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");
 
 function test() {
   

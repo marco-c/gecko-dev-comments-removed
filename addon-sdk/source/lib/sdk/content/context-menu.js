@@ -96,7 +96,7 @@ const NON_PAGE_CONTEXT_ELTS = [
 
 
 
-let editableInputs = {
+var editableInputs = {
   email: true,
   number: true,
   password: true,
@@ -107,9 +107,9 @@ let editableInputs = {
   url: true
 };
 
-let CONTEXTS = {};
+var CONTEXTS = {};
 
-let Context = Class({
+var Context = Class({
   initialize: function(id) {
     this.id = id;
   },
@@ -250,7 +250,7 @@ function instantiateContext({ id, type, args }) {
   return new CONTEXTS[type](id, ...args);
 }
 
-let ContextWorker = Class({
+var ContextWorker = Class({
   implements: [ WorkerChild ],
 
   
@@ -304,7 +304,7 @@ function getItemWorkerForWindow(item, window) {
 
 
 
-let RemoteItem = Class({
+var RemoteItem = Class({
   initialize: function(options, manager) {
     this.id = options.id;
     this.contexts = [instantiateContext(c) for (c of options.contexts)];
@@ -362,7 +362,7 @@ let RemoteItem = Class({
 exports.RemoteItem = RemoteItem;
 
 
-let keepAlive = new Map();
+var keepAlive = new Map();
 
 
 
@@ -386,7 +386,7 @@ process.port.on('sdk/contextmenu/destroyitems', (process, items) => {
   }
 });
 
-let lastPopupNode = null;
+var lastPopupNode = null;
 
 system.on('content-contextmenu', ({ subject }) => {
   let { event: { target: popupNode }, addonInfo } = subject.wrappedJSObject;

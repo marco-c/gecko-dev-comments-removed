@@ -23,7 +23,7 @@ const LOGGER_ID = "addons.plugins";
 
 
 
-let logger = Log.repository.getLogger(LOGGER_ID);
+var logger = Log.repository.getLogger(LOGGER_ID);
 
 function getIDHashForString(aStr) {
   

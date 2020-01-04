@@ -1,7 +1,7 @@
 
 
 
-let doc = null, toolbox = null, panelWin = null, modifiedPrefs = [];
+var doc = null, toolbox = null, panelWin = null, modifiedPrefs = [];
 
 function test() {
   gBrowser.selectedTab = gBrowser.addTab();

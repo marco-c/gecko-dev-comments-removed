@@ -17,7 +17,7 @@ add_task(function* () {
   yield testSwitchToTab("about:mozilla?foo=bar", {replaceQueryString: true});
 });
 
-let testSwitchToTab = Task.async(function* (url, options) {
+var testSwitchToTab = Task.async(function* (url, options) {
   
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;

@@ -19,7 +19,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 
-let Manager = {
+var Manager = {
   listeners: new Map(),
 
   init() {
@@ -147,7 +147,7 @@ const EVENTS = [
   
 ];
 
-let WebNavigation = {};
+var WebNavigation = {};
 
 for (let event of EVENTS) {
   WebNavigation[event] = {

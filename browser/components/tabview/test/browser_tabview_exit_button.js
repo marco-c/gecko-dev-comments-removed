@@ -1,10 +1,10 @@
 
 
 
-let contentWindow;
-let appTab;
-let originalTab;
-let exitButton;
+var contentWindow;
+var appTab;
+var originalTab;
+var exitButton;
 
 
 function test() {

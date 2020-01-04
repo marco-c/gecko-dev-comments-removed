@@ -8,7 +8,7 @@
 
 
 
-let kURIs = [
+var kURIs = [
   "http://foo/0",
   "http://foo/1",
   "http://foo/2",
@@ -16,7 +16,7 @@ let kURIs = [
   "http://foo/4",
   "http://foo/5",
 ];
-let kTitles = [
+var kTitles = [
   "title",
 ];
 
@@ -37,7 +37,7 @@ removePages([4,5]);
 
 
 
-let gTests = [
+var gTests = [
   ["0: Match everything",
    "foo", [0,1,2,3,4,5]],
   ["1: Match only typed history",

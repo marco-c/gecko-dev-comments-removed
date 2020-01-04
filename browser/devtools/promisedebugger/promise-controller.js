@@ -23,12 +23,12 @@ loader.lazyRequireGetter(this, "PromisesFront",
   "devtools/server/actors/promises", true);
 
 
-let gToolbox;
+var gToolbox;
 
 
 
 
-let startup = Task.async(function*(toolbox) {
+var startup = Task.async(function*(toolbox) {
   gToolbox = toolbox;
 
   yield PromisesController.initialize(toolbox);
@@ -38,7 +38,7 @@ let startup = Task.async(function*(toolbox) {
 
 
 
-let shutdown = Task.async(function*() {
+var shutdown = Task.async(function*() {
   yield PromisesController.destroy();
   yield PromisesPanel.destroy();
 
@@ -58,7 +58,7 @@ function destroy() {
 
 
 
-let PromisesController = {
+var PromisesController = {
   initialize: Task.async(function*() {
     if (this.initialized) {
       return this.initialized.promise;

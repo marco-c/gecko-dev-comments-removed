@@ -46,7 +46,7 @@ types.addDictType("messageportevent", {
 
 
 
-let MessagePortActor = exports.MessagePortActor = protocol.ActorClass({
+var MessagePortActor = exports.MessagePortActor = protocol.ActorClass({
   typeName: "messageport",
 
   
@@ -169,7 +169,7 @@ let MessagePortActor = exports.MessagePortActor = protocol.ActorClass({
 
 
 
-let MessagePortFront = exports.MessagePortFront = protocol.FrontClass(MessagePortActor, {
+var MessagePortFront = exports.MessagePortFront = protocol.FrontClass(MessagePortActor, {
   initialize: function (client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
   }
@@ -217,7 +217,7 @@ types.addDictType("director-script-detach", {
 
 
 
-let DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass({
+var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass({
   typeName: "director-script",
 
   
@@ -438,7 +438,7 @@ let DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass({
 
 
 
-let DirectorScriptFront = exports.DirectorScriptFront = protocol.FrontClass(DirectorScriptActor, {
+var DirectorScriptFront = exports.DirectorScriptFront = protocol.FrontClass(DirectorScriptActor, {
   initialize: function (client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
   }

@@ -1,7 +1,7 @@
 
 
 
-let testData = [
+var testData = [
   
   [ 'http://example.com/', 'q', 'http://example.com/?q=%s' ],
   [ 'http://example.com/new-path-here/', 'q', 'http://example.com/new-path-here/?q=%s' ],
@@ -10,7 +10,7 @@ let testData = [
   [ 'http://example.com/search?oe=utf-8', 'q', 'http://example.com/search?oe=utf-8&q=%s' ],
 ];
 
-let mm = gBrowser.selectedBrowser.messageManager;
+var mm = gBrowser.selectedBrowser.messageManager;
 
 add_task(function*() {
   yield BrowserTestUtils.withNewTab({

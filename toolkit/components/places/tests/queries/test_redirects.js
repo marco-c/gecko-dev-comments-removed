@@ -4,7 +4,7 @@
 
 
 
-let visits = [];
+var visits = [];
 
 
 

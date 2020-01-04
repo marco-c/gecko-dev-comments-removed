@@ -53,51 +53,43 @@ const kSubviewEvents = [
 
 
 
-let kVersion = 4;
+var kVersion = 4;
 
 
 
 
 
-let gPalette = new Map();
+var gPalette = new Map();
 
 
 
 
 
-let gAreas = new Map();
-
-
-
-
-
-
-let gPlacements = new Map();
+var gAreas = new Map();
 
 
 
 
 
 
-let gFuturePlacements = new Map();
-
-
-
-let gSupportedWidgetTypes = new Set(["button", "view", "custom"]);
-
-
-
-
-
-let gPanelsForWindow = new WeakMap();
+var gPlacements = new Map();
 
 
 
 
 
 
+var gFuturePlacements = new Map();
 
-let gSeenWidgets = new Set();
+
+
+var gSupportedWidgetTypes = new Set(["button", "view", "custom"]);
+
+
+
+
+
+var gPanelsForWindow = new WeakMap();
 
 
 
@@ -105,48 +97,56 @@ let gSeenWidgets = new Set();
 
 
 
-let gDirtyAreaCache = new Set();
+var gSeenWidgets = new Set();
 
 
 
 
 
 
-let gPendingBuildAreas = new Map();
 
-let gSavedState = null;
-let gRestoring = false;
-let gDirty = false;
-let gInBatchStack = 0;
-let gResetting = false;
-let gUndoResetting = false;
-
-
-
-
-let gBuildAreas = new Map();
+var gDirtyAreaCache = new Set();
 
 
 
 
 
-let gBuildWindows = new Map();
 
-let gNewElementCount = 0;
-let gGroupWrapperCache = new Map();
-let gSingleWrapperCache = new WeakMap();
-let gListeners = new Set();
+var gPendingBuildAreas = new Map();
 
-let gUIStateBeforeReset = {
+var gSavedState = null;
+var gRestoring = false;
+var gDirty = false;
+var gInBatchStack = 0;
+var gResetting = false;
+var gUndoResetting = false;
+
+
+
+
+var gBuildAreas = new Map();
+
+
+
+
+
+var gBuildWindows = new Map();
+
+var gNewElementCount = 0;
+var gGroupWrapperCache = new Map();
+var gSingleWrapperCache = new WeakMap();
+var gListeners = new Set();
+
+var gUIStateBeforeReset = {
   uiCustomizationState: null,
   drawInTitlebar: null,
   gUIStateBeforeReset: null,
 };
 
-let gModuleName = "[CustomizableUI]";
+var gModuleName = "[CustomizableUI]";
 #include logging.js
 
-let CustomizableUIInternal = {
+var CustomizableUIInternal = {
   initialize: function() {
     LOG("Initializing");
 

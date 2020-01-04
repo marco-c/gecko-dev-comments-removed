@@ -29,7 +29,7 @@ const MOUSE_ID = 'mouse';
 
 const SYNTH_ID = -1;
 
-let PointerRelay = { 
+var PointerRelay = { 
   
 
 

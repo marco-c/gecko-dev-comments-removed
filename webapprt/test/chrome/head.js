@@ -53,7 +53,7 @@ function loadWebapp(manifest, parameters, onLoad) {
 
 
 
-let MockDownloadList = function() {
+var MockDownloadList = function() {
 };
 
 MockDownloadList.prototype = {

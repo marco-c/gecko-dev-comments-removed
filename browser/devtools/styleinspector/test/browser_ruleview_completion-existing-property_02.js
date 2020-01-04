@@ -15,7 +15,7 @@
 
 
 
-let testData = [
+var testData = [
   ["b", {}, "beige", 0, 8],
   ["l", {}, "black", 0, 4],
   ["VK_DOWN", {}, "blanchedalmond", 1, 4],

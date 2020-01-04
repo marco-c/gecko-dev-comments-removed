@@ -1,7 +1,7 @@
 
 
 
-let gAccumulator = {
+var gAccumulator = {
   get callback() {
     this.results = [];
     return result => this.results.push(result);

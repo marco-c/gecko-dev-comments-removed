@@ -13,7 +13,7 @@ const searchIcon = document.getAnonymousElementByAttribute(searchbar, "anonid",
 const searchSettings =
   document.getAnonymousElementByAttribute(searchPopup, "anonid",
                                           "search-settings");
-let header =
+var header =
   document.getAnonymousElementByAttribute(searchPopup, "anonid",
                                           "search-panel-one-offs-header");
 function getHeaderText() {
@@ -138,7 +138,4 @@ add_task(function* test_text() {
   info("Closing search panel");
   EventUtils.synthesizeKey("VK_ESCAPE", {});
   yield promise;
-
-  
-  yield synthesizeNativeMouseMove(searchbar);
 });

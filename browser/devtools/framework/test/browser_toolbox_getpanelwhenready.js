@@ -4,7 +4,7 @@
 
 
 
-let toolbox = null;
+var toolbox = null;
 
 const URL = "data:text/html;charset=utf8,test for getPanelWhenReady";
 

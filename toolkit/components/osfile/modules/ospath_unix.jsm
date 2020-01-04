@@ -29,7 +29,7 @@ if (typeof Components != "undefined") {
   throw new Error("Please load this module using require()");
 }
 
-let EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "basename",
   "dirname",
   "join",
@@ -43,7 +43,7 @@ let EXPORTED_SYMBOLS = [
 
 
 
-let basename = function(path) {
+var basename = function(path) {
   return path.slice(path.lastIndexOf("/") + 1);
 };
 exports.basename = basename;
@@ -56,7 +56,7 @@ exports.basename = basename;
 
 
 
-let dirname = function(path) {
+var dirname = function(path) {
   let index = path.lastIndexOf("/");
   if (index == -1) {
     return ".";
@@ -82,7 +82,7 @@ exports.dirname = dirname;
 
 
 
-let join = function(...path) {
+var join = function(...path) {
   
   let paths = [];
   for (let subpath of path) {
@@ -104,7 +104,7 @@ exports.join = join;
 
 
 
-let normalize = function(path) {
+var normalize = function(path) {
   let stack = [];
   let absolute;
   if (path.length >= 0 && path[0] == "/") {
@@ -151,7 +151,7 @@ exports.normalize = normalize;
 
 
 
-let split = function(path) {
+var split = function(path) {
   return {
     absolute: path.length && path[0] == "/",
     components: path.split("/")
@@ -163,8 +163,8 @@ exports.split = split;
 
 
 
-let toFileURIExtraEncodings = {';': '%3b', '?': '%3F', '#': '%23'};
-let toFileURI = function toFileURI(path) {
+var toFileURIExtraEncodings = {';': '%3b', '?': '%3F', '#': '%23'};
+var toFileURI = function toFileURI(path) {
   let uri = encodeURI(this.normalize(path));
 
   
@@ -179,7 +179,7 @@ exports.toFileURI = toFileURI;
 
 
 
-let fromFileURI = function fromFileURI(uri) {
+var fromFileURI = function fromFileURI(uri) {
   let url = new URL(uri);
   if (url.protocol != 'file:') {
     throw new Error("fromFileURI expects a file URI");

@@ -2,7 +2,7 @@
 
 
 
-let EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "ContentPrefStore",
 ];
 

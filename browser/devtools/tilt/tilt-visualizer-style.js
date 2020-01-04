@@ -5,8 +5,8 @@
 
 "use strict";
 
-let {TiltMath} = require("devtools/tilt/tilt-math");
-let rgba = TiltMath.hex2rgba;
+var {TiltMath} = require("devtools/tilt/tilt-math");
+var rgba = TiltMath.hex2rgba;
 
 
 

@@ -14,13 +14,13 @@ if (typeof Components != "undefined") {
 }
 (function(exports) {
 
-let SharedAll =
+var SharedAll =
   require("resource://gre/modules/osfile/osfile_shared_allthreads.jsm");
-let Path = require("resource://gre/modules/osfile/ospath.jsm");
-let Lz4 =
+var Path = require("resource://gre/modules/osfile/ospath.jsm");
+var Lz4 =
   require("resource://gre/modules/workers/lz4.js");
-let LOG = SharedAll.LOG.bind(SharedAll, "Shared front-end");
-let clone = SharedAll.clone;
+var LOG = SharedAll.LOG.bind(SharedAll, "Shared front-end");
+var clone = SharedAll.clone;
 
 
 
@@ -29,7 +29,7 @@ let clone = SharedAll.clone;
 
 
 
-let AbstractFile = function AbstractFile(fd, path) {
+var AbstractFile = function AbstractFile(fd, path) {
   this._fd = fd;
   if (!path) {
     throw new TypeError("path is expected");

@@ -9,12 +9,12 @@
 
 const Cu = Components.utils;
 const Ci = Components.interfaces;
-let {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
-let {advanceValidate} = require("devtools/styleinspector/utils");
+var {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+var {advanceValidate} = require("devtools/styleinspector/utils");
 
 
 
-let sampleInput = '\\symbol "string" url(somewhere)';
+var sampleInput = '\\symbol "string" url(somewhere)';
 
 function testInsertion(where, result, testName) {
   do_print(testName);

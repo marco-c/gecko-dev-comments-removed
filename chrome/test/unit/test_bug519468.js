@@ -11,7 +11,7 @@ Components.utils.import("resource://testing-common/MockRegistrar.jsm");
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-let stubOSLocale = null;
+var stubOSLocale = null;
 
 StubLocaleService = {
   QueryInterface:   XPCOMUtils.generateQI([Ci.nsILocaleService, Ci.nsISupports]),

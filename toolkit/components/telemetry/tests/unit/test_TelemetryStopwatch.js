@@ -1,18 +1,18 @@
 
 
 
-let tmpScope = {};
+var tmpScope = {};
 Cu.import("resource://gre/modules/TelemetryStopwatch.jsm", tmpScope);
-let TelemetryStopwatch = tmpScope.TelemetryStopwatch;
+var TelemetryStopwatch = tmpScope.TelemetryStopwatch;
 
 
 
 const HIST_NAME = "TELEMETRY_PING";
 const HIST_NAME2 = "RANGE_CHECKSUM_ERRORS";
 
-let refObj = {}, refObj2 = {};
+var refObj = {}, refObj2 = {};
 
-let originalCount1, originalCount2;
+var originalCount1, originalCount2;
 
 function run_test() {
   let histogram = Telemetry.getHistogramById(HIST_NAME);

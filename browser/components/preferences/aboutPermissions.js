@@ -4,9 +4,9 @@
 
 "use strict";
 
-let Ci = Components.interfaces;
-let Cc = Components.classes;
-let Cu = Components.utils;
+var Ci = Components.interfaces;
+var Cc = Components.classes;
+var Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -17,18 +17,18 @@ Cu.import("resource://gre/modules/ForgetAboutSite.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
                                   "resource://gre/modules/PluralForm.jsm");
 
-let gSecMan = Cc["@mozilla.org/scriptsecuritymanager;1"].
+var gSecMan = Cc["@mozilla.org/scriptsecuritymanager;1"].
               getService(Ci.nsIScriptSecurityManager);
 
-let gFaviconService = Cc["@mozilla.org/browser/favicon-service;1"].
+var gFaviconService = Cc["@mozilla.org/browser/favicon-service;1"].
                       getService(Ci.nsIFaviconService);
 
-let gPlacesDatabase = Cc["@mozilla.org/browser/nav-history-service;1"].
+var gPlacesDatabase = Cc["@mozilla.org/browser/nav-history-service;1"].
                       getService(Ci.nsPIPlacesDatabase).
                       DBConnection.
                       clone(true);
 
-let gSitesStmt = gPlacesDatabase.createAsyncStatement(
+var gSitesStmt = gPlacesDatabase.createAsyncStatement(
                   "SELECT url " +
                   "FROM moz_places " +
                   "WHERE rev_host > '.' " +
@@ -37,7 +37,7 @@ let gSitesStmt = gPlacesDatabase.createAsyncStatement(
                   "ORDER BY MAX(frecency) DESC " +
                   "LIMIT :limit");
 
-let gVisitStmt = gPlacesDatabase.createAsyncStatement(
+var gVisitStmt = gPlacesDatabase.createAsyncStatement(
                   "SELECT SUM(visit_count) AS count " +
                   "FROM moz_places " +
                   "WHERE rev_host = :rev_host");
@@ -46,7 +46,7 @@ let gVisitStmt = gPlacesDatabase.createAsyncStatement(
 
 
 
-let TEST_EXACT_PERM_TYPES = ["geo", "camera", "microphone"];
+var TEST_EXACT_PERM_TYPES = ["geo", "camera", "microphone"];
 
 
 
@@ -242,7 +242,7 @@ Site.prototype = {
 
 
 
-let PermissionDefaults = {
+var PermissionDefaults = {
   UNKNOWN: Ci.nsIPermissionManager.UNKNOWN_ACTION, 
   ALLOW: Ci.nsIPermissionManager.ALLOW_ACTION, 
   DENY: Ci.nsIPermissionManager.DENY_ACTION, 
@@ -338,7 +338,7 @@ let PermissionDefaults = {
 
 
 
-let AboutPermissions = {
+var AboutPermissions = {
   
 
 

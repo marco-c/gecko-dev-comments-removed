@@ -2,8 +2,8 @@
 
 
 
-let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-let isMulet = "ResponsiveUI" in browserWindow;
+var browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
+var isMulet = "ResponsiveUI" in browserWindow;
 
 
 

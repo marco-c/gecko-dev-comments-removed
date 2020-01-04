@@ -6,7 +6,7 @@
 
 
 
-let EventUtils = {};
+var EventUtils = {};
 EventUtils.window = {};
 EventUtils.parent = EventUtils.window;
 EventUtils._EU_Ci = Components.interfaces;

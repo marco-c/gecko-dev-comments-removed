@@ -54,7 +54,7 @@ const DEFAULT_EDITOR_CONFIG = {
 
 
 
-let gToolbox, gTarget, gFront;
+var gToolbox, gTarget, gFront;
 
 
 
@@ -81,7 +81,7 @@ function shutdownShaderEditor() {
 
 
 
-let EventsHandler = {
+var EventsHandler = {
   
 
 
@@ -196,7 +196,7 @@ let EventsHandler = {
 
 
 
-let ShadersListView = Heritage.extend(WidgetMethods, {
+var ShadersListView = Heritage.extend(WidgetMethods, {
   
 
 
@@ -363,7 +363,7 @@ let ShadersListView = Heritage.extend(WidgetMethods, {
 
 
 
-let ShadersEditorsView = {
+var ShadersEditorsView = {
   
 
 
@@ -621,7 +621,7 @@ let ShadersEditorsView = {
 
 
 
-let L10N = new ViewHelpers.L10N(STRINGS_URI);
+var L10N = new ViewHelpers.L10N(STRINGS_URI);
 
 
 
@@ -631,4 +631,4 @@ EventEmitter.decorate(this);
 
 
 
-let $ = (selector, target = document) => target.querySelector(selector);
+var $ = (selector, target = document) => target.querySelector(selector);

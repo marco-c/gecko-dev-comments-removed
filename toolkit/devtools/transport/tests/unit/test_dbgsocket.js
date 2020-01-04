@@ -1,8 +1,8 @@
 
 
 
-let gPort;
-let gExtraListener;
+var gPort;
+var gExtraListener;
 
 function run_test()
 {

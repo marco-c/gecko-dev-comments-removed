@@ -8,11 +8,11 @@
 
 
 
-let kURIs = [
+var kURIs = [
   "http://x.com/y",
   "https://y.com/x",
 ];
-let kTitles = [
+var kTitles = [
   "a b",
   "b a",
 ];
@@ -22,7 +22,7 @@ addPageBook(1, 1);
 
 
 
-let gTests = [
+var gTests = [
   
   ["0: Match at the beginning of titles",
    "a", [0],

@@ -55,7 +55,7 @@ function generateFields(json) {
   };
 }
 
-let getDescriptionPromise; 
+var getDescriptionPromise; 
 function BuildUI() {
   let table = document.querySelector("table");
   table.innerHTML = "";

@@ -3,11 +3,11 @@
 
 
 
-let Ci = Components.interfaces;
+var Ci = Components.interfaces;
 
 
-let noop = function() {};
-let endl = '\n';
+var noop = function() {};
+var endl = '\n';
 
 
 function BrowserView(container, visibleRect) {

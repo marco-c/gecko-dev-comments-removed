@@ -1,10 +1,10 @@
 
 
 
-let activeTab;
-let testTab;
-let testGroup;
-let contentWindow;
+var activeTab;
+var testTab;
+var testGroup;
+var contentWindow;
 
 function test() {
   waitForExplicitFinish();

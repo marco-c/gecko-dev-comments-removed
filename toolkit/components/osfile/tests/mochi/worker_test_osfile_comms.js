@@ -7,7 +7,7 @@ importScripts('worker_test_osfile_shared.js');
 
 
 
-let samples;
+var samples;
 
 self.onmessage = function(msg) {
   info("Initializing");

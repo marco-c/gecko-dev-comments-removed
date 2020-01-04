@@ -17,9 +17,9 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
-let gNextId = 1; 
+var gNextId = 1; 
 
-let gTimerTable = new Map(); 
+var gTimerTable = new Map(); 
 
 this.setTimeout = function setTimeout(aCallback, aMilliseconds) {
   let id = gNextId++;

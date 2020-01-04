@@ -3,28 +3,28 @@
 
 
 
-let tempScope = {};
+var tempScope = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", tempScope);
 Cu.import("resource://gre/modules/FileUtils.jsm", tempScope);
-let NetUtil = tempScope.NetUtil;
-let FileUtils = tempScope.FileUtils;
+var NetUtil = tempScope.NetUtil;
+var FileUtils = tempScope.FileUtils;
 
 
-let gScratchpadWindow;
+var gScratchpadWindow;
 
 
-let gScratchpad;
+var gScratchpad;
 
 
-let gFileA;
-let gFileB;
+var gFileA;
+var gFileB;
 
 
-let gFileAContent = "// File A ** Hello World!";
-let gFileBContent = "// File B ** Goodbye All";
+var gFileAContent = "// File A ** Hello World!";
+var gFileBContent = "// File B ** Goodbye All";
 
 
-let gFirstFileSaved = false;
+var gFirstFileSaved = false;
 
 function test()
 {

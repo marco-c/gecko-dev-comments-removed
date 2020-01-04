@@ -39,7 +39,7 @@ function apply_umask(mode) {
 
 
 
-let testSequence = [
+var testSequence = [
   [null,                                        apply_umask(0o600)],
   [{ unixMode: 0o4777 },                        apply_umask(0o4777)],
   [{ unixMode: 0o4777, unixHonorUmask: false }, 0o4777],

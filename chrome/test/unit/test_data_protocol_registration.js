@@ -4,12 +4,12 @@
 
 
 
-let manifests = [
+var manifests = [
   do_get_file("data/test_data_protocol_registration.manifest"),
 ];
 registerManifests(manifests);
 
-let XULAppInfoFactory = {
+var XULAppInfoFactory = {
   
   CID: XULAPPINFO_CID,
   scheme: "XULAppInfo",

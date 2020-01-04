@@ -94,7 +94,7 @@ function findTabFromWindow(windowId) {
 
 
 
-let Delta = {
+var Delta = {
   compare: function(a, b) {
     
     
@@ -153,7 +153,7 @@ let Delta = {
 
 
 
-let State = {
+var State = {
   _monitor: PerformanceStats.getMonitor([
     "jank", "cpow", "ticks",
   ]),
@@ -380,7 +380,7 @@ let State = {
   }),
 };
 
-let View = {
+var View = {
   
 
 
@@ -709,7 +709,7 @@ let View = {
   },
 };
 
-let Control = {
+var Control = {
   init: function() {
     this._initAutorefresh();
     this._initDisplayMode();
@@ -792,7 +792,7 @@ let Control = {
   _displayMode: MODE_GLOBAL,
 };
 
-let go = Task.async(function*() {
+var go = Task.async(function*() {
   Control.init();
 
   

@@ -40,25 +40,25 @@ function tabEventsFor(window) {
 }
 
 
-let readyEvents = filter(events, function(e) e.type === "DOMContentLoaded");
+var readyEvents = filter(events, function(e) e.type === "DOMContentLoaded");
 
-let futureWindows = map(readyEvents, function(e) e.target);
-
-
-
-let eventsFromFuture = expand(futureWindows, tabEventsFor);
+var futureWindows = map(readyEvents, function(e) e.target);
 
 
 
+var eventsFromFuture = expand(futureWindows, tabEventsFor);
 
-let interactiveWindows = windows("navigator:browser", { includePrivate: true }).
+
+
+
+var interactiveWindows = windows("navigator:browser", { includePrivate: true }).
                          filter(isInteractive);
-let eventsFromInteractive = merge(interactiveWindows.map(tabEventsFor));
+var eventsFromInteractive = merge(interactiveWindows.map(tabEventsFor));
 
 
 
 
-let allEvents = merge([eventsFromInteractive, eventsFromFuture]);
+var allEvents = merge([eventsFromInteractive, eventsFromFuture]);
 
 
 exports.events = map(allEvents, function (event) {

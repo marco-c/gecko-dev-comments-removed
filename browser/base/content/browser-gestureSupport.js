@@ -13,7 +13,7 @@
 
 
 
-let gGestureSupport = {
+var gGestureSupport = {
   _currentRotation: 0,
   _lastRotateDelta: 0,
   _rotateMomentumThreshold: .75,
@@ -571,7 +571,7 @@ let gGestureSupport = {
 };
 
 
-let gHistorySwipeAnimation = {
+var gHistorySwipeAnimation = {
 
   active: false,
   isLTR: false,

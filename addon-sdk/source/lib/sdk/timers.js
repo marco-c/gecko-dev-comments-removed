@@ -19,13 +19,13 @@ const prefBranch = Cc["@mozilla.org/preferences-service;1"].
                     getService(Ci.nsIPrefService).
                     QueryInterface(Ci.nsIPrefBranch);
 
-let MIN_DELAY = 4;
+var MIN_DELAY = 4;
 
 try { MIN_DELAY = prefBranch.getIntPref("dom.min_timeout_value"); } finally {}
 
 
 
-let lastID = 0;
+var lastID = 0;
 
 
 
@@ -53,9 +53,9 @@ function unsetTimer(id) {
   if (timer) timer.cancel();
 }
 
-let immediates = new Map();
+var immediates = new Map();
 
-let dispatcher = _ => {
+var dispatcher = _ => {
   
   dispatcher.scheduled = false;
   

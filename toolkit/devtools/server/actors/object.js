@@ -1693,9 +1693,9 @@ function stringify(obj) {
 }
 
 
-let seen = null;
+var seen = null;
 
-let stringifiers = {
+var stringifiers = {
   Error: errorStringify,
   EvalError: errorStringify,
   RangeError: errorStringify,

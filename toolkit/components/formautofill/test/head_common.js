@@ -32,7 +32,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "OS",
 
 
 
-let TestUtils = {
+var TestUtils = {
   
 
 
@@ -150,7 +150,7 @@ let TestUtils = {
 
 
 
-let FormAutofillTest = {
+var FormAutofillTest = {
   
 
 
@@ -188,7 +188,7 @@ let FormAutofillTest = {
   }),
 };
 
-let TestData = {
+var TestData = {
   
 
 

@@ -2,10 +2,10 @@
 
 "use strict";
 
-let { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
+var { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
 
-let netMonitorHead = "chrome://mochitests/content/browser/browser/devtools/netmonitor/test/head.js";
+var netMonitorHead = "chrome://mochitests/content/browser/browser/devtools/netmonitor/test/head.js";
 Services.scriptloader.loadSubScript(netMonitorHead, this);
 
 

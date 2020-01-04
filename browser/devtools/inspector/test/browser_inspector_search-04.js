@@ -15,7 +15,7 @@ const TEST_URL = "data:text/html;charset=utf-8," +
 
 
 
-let TEST_DATA = [
+var TEST_DATA = [
   {
     key: "d",
     suggestions: [

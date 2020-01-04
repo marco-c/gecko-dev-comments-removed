@@ -89,7 +89,7 @@ PromiseHelpersSubclass.prototype = {
 };
 
 
-let PromiseHelpers;
+var PromiseHelpers;
 
 
 

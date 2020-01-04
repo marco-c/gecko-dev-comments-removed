@@ -11,7 +11,7 @@
 
 
 
-let iter = tests();
+var iter = tests();
 
 function run_test()
 {

@@ -1,8 +1,8 @@
 
 
 
-let origTab = gBrowser.visibleTabs[0];
-let contentWindow;
+var origTab = gBrowser.visibleTabs[0];
+var contentWindow;
 
 function test() {
   waitForExplicitFinish();

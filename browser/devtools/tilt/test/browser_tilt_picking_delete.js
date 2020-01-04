@@ -2,8 +2,8 @@
 
 "use strict";
 
-let nodeDeleted = false;
-let presenter;
+var nodeDeleted = false;
+var presenter;
 
 function test() {
   if (!isTiltEnabled()) {

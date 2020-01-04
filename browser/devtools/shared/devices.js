@@ -35,7 +35,7 @@ const Strings = Services.strings.createBundle("chrome://browser/locale/devtools/
 
 
 
-let localDevices = {};
+var localDevices = {};
 
 
 function AddDevice(device, type = "phones") {

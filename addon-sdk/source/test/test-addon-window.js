@@ -3,7 +3,7 @@
 
 'use strict';
 
-let { Loader } = require('sdk/test/loader');
+var { Loader } = require('sdk/test/loader');
 
 exports.testReady = function(assert, done) {
   let loader = Loader(module);

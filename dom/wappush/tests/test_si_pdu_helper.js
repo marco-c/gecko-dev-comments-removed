@@ -1,7 +1,7 @@
 
 
 
-let SI = {};
+var SI = {};
 subscriptLoader.loadSubScript("resource://gre/modules/SiPduHelper.jsm", SI);
 SI.debug = do_print;
 

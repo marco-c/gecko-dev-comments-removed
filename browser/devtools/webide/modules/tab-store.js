@@ -12,7 +12,7 @@ const { Task } = Cu.import("resource://gre/modules/Task.jsm", {});
 
 const _knownTabStores = new WeakMap();
 
-let TabStore;
+var TabStore;
 
 module.exports = TabStore = function(connection) {
   

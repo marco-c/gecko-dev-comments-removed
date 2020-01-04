@@ -11,7 +11,7 @@ const { Class } = require("sdk/core/heritage");
 
 
 
-let Framerate = exports.Framerate = Class({
+var Framerate = exports.Framerate = Class({
   initialize: function (tabActor) {
     this.tabActor = tabActor;
     this._contentWin = tabActor.window;

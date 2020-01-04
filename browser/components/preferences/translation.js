@@ -69,7 +69,7 @@ Lang.prototype = {
   toString: function() this._label
 }
 
-let gTranslationExceptions = {
+var gTranslationExceptions = {
   onLoad: function() {
     if (this._siteTree) {
       

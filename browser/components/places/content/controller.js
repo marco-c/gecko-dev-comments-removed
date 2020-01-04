@@ -1408,7 +1408,7 @@ PlacesController.prototype = {
 
 
 
-let PlacesControllerDragHelper = {
+var PlacesControllerDragHelper = {
   
 
 

@@ -4,7 +4,7 @@
 
 #endif
 
-let gCustomize = {
+var gCustomize = {
   _nodeIDSuffixes: [
     "blank",
     "button",

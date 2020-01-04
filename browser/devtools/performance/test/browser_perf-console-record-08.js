@@ -6,9 +6,9 @@
 
 
 
-let C = 1; 
-let R = 2; 
-let S = 4; 
+var C = 1; 
+var R = 2; 
+var S = 4; 
 
 function testRecordings (win, expected) {
   let recordings = win.PerformanceController.getRecordings();

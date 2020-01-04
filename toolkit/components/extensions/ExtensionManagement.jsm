@@ -24,7 +24,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 
-let Frames = {
+var Frames = {
   
   topWindowIds: new Set(),
 
@@ -85,7 +85,7 @@ let Frames = {
 Frames.init();
 
 
-let Scripts = {
+var Scripts = {
   scripts: new Set(),
 
   register(script) {
@@ -106,7 +106,7 @@ let Scripts = {
 
 
 
-let Service = {
+var Service = {
   initialized: false,
 
   

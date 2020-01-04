@@ -65,7 +65,7 @@ Object.defineProperty(this, "ConsoleServiceListener", {
 
 
 
-let CommandUtils = {
+var CommandUtils = {
   
 
 
@@ -306,7 +306,7 @@ Object.defineProperty(DeveloperToolbar.prototype, "visible", {
   enumerable: true
 });
 
-let _gSequenceId = 0;
+var _gSequenceId = 0;
 
 
 

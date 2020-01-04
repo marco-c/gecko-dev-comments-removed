@@ -97,9 +97,9 @@ Cu.import("resource://gre/modules/Log.jsm");
 
 
 const PARENT_LOGGER_ID = "addons";
-let parentLogger = Log.repository.getLogger(PARENT_LOGGER_ID);
+var parentLogger = Log.repository.getLogger(PARENT_LOGGER_ID);
 parentLogger.level = Log.Level.Warn;
-let formatter = new Log.BasicFormatter();
+var formatter = new Log.BasicFormatter();
 
 
 parentLogger.addAppender(new Log.ConsoleAppender(formatter));
@@ -110,7 +110,7 @@ parentLogger.addAppender(new Log.DumpAppender(formatter));
 
 
 const LOGGER_ID = "addons.manager";
-let logger = Log.repository.getLogger(LOGGER_ID);
+var logger = Log.repository.getLogger(LOGGER_ID);
 
 
 

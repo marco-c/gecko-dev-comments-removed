@@ -1,8 +1,8 @@
 
 
 
-let prefsBranch;
-let currentActiveGroupItemId;
+var prefsBranch;
+var currentActiveGroupItemId;
 
 function test() {
   waitForExplicitFinish();

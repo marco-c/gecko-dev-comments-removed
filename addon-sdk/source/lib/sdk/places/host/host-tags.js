@@ -79,7 +79,7 @@ function getTagsByURL (message) {
 
 
 
-let reqStream = filter(request, function (data) {
+var reqStream = filter(request, function (data) {
   return /sdk-places-tags/.test(data.event);
 });
 

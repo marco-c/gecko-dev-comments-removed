@@ -11,7 +11,7 @@
 
 
 
-let kURIs = [
+var kURIs = [
   "http://url/",
   "http://url/2",
   "http://foo.bar/",
@@ -25,7 +25,7 @@ let kURIs = [
   "http://foo.bar/tag",
   "http://foo.bar/tag/2",
 ];
-let kTitles = [
+var kTitles = [
   "title",
   "foo.bar",
 ];
@@ -57,7 +57,7 @@ markTyped([3], 1);
 
 
 
-let gTests = [
+var gTests = [
   
   ["0: History restrict",
    "^", [0,1,2,3,5,10]],

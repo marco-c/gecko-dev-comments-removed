@@ -5,8 +5,8 @@
 
 
 
-let gSSService = null;
-let gProfileDir = null;
+var gSSService = null;
+var gProfileDir = null;
 
 function do_state_written(aSubject, aTopic, aData) {
   do_check_eq(aData, SSS_STATE_FILE_NAME);

@@ -4,8 +4,8 @@
 
 "use strict"
 
-let Cc = Components.classes;
-let Ci = Components.interfaces;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/Messaging.jsm");

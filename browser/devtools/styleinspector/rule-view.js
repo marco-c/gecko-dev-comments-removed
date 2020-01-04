@@ -71,7 +71,7 @@ const IOService = Cc["@mozilla.org/network/io-service;1"]
 
 
 
-let gDummyPromise;
+var gDummyPromise;
 function createDummyDocument() {
   if (gDummyPromise) {
     return gDummyPromise;

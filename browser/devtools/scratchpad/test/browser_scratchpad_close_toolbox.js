@@ -4,8 +4,8 @@
 
 
 
-let {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
-let {TargetFactory} = require("devtools/framework/target");
+var {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
+var {TargetFactory} = require("devtools/framework/target");
 
 function test() {
   const options = {

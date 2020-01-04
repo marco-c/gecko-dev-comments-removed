@@ -12,7 +12,7 @@ Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 
 
 
-let BlocklistProxy = {
+var BlocklistProxy = {
   _uuid: null,
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,

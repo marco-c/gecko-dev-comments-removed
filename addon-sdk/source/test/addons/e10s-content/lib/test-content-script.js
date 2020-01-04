@@ -92,7 +92,7 @@ function createWorker(assert, xrayWindow, contentScript, done) {
 
 
 
-let html = "<script>var documentGlobal = true</script>";
+var html = "<script>var documentGlobal = true</script>";
 
 exports["test Create Proxy Test"] = createProxyTest(html, function (helper, assert) {
   
@@ -169,7 +169,7 @@ exports["test Create Proxy Test With Events"] = createProxyTest("", function (he
 
 
 
-let html = '<iframe id="iframe" name="test" src="data:text/html;charset=utf-8," />';
+var html = '<iframe id="iframe" name="test" src="data:text/html;charset=utf-8," />';
 exports["test postMessage"] = createProxyTest(html, function (helper, assert) {
   let ifWindow = helper.xrayWindow.document.getElementById("iframe").contentWindow;
   
@@ -199,7 +199,7 @@ exports["test postMessage"] = createProxyTest(html, function (helper, assert) {
   );
 });
 
-let html = '<input id="input2" type="checkbox" />';
+var html = '<input id="input2" type="checkbox" />';
 exports["test Object Listener"] = createProxyTest(html, function (helper) {
 
   helper.createWorker(
@@ -255,7 +255,7 @@ exports["test Object Listener 2"] = createProxyTest("", function (helper) {
 
 });
 
-let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' +
+var html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' +
              '<input id="input2" type="checkbox" />';
 
 exports.testStringOverload = createProxyTest(html, function (helper, assert) {
@@ -504,7 +504,7 @@ exports["test Document TagName"] = createProxyTest("", function (helper) {
 
 });
 
-let html = '<iframe id="iframe" name="test" src="data:text/html;charset=utf-8," />';
+var html = '<iframe id="iframe" name="test" src="data:text/html;charset=utf-8," />';
 exports["test Window Frames"] = createProxyTest(html, function (helper) {
 
   helper.createWorker(
@@ -539,7 +539,7 @@ exports["test Collections"] = createProxyTest("", function (helper) {
 
 });
 
-let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' +
+var html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' +
              '<input id="input2" type="checkbox" />';
 exports["test Collections 2"] = createProxyTest(html, function (helper) {
 
@@ -656,7 +656,7 @@ exports["test Functions"] = createProxyTest("", function (helper) {
 
 });
 
-let html = '<input id="input2" type="checkbox" />';
+var html = '<input id="input2" type="checkbox" />';
 exports["test Listeners"] = createProxyTest(html, function (helper) {
 
   helper.createWorker(
@@ -790,7 +790,7 @@ exports["test Cross Domain Iframe"] = createProxyTest("", function (helper) {
 });
 
 
-let html = '<a href="foo">link</a>';
+var html = '<a href="foo">link</a>';
 exports["test MutationObvserver"] = createProxyTest(html, function (helper) {
 
   helper.createWorker(
@@ -828,7 +828,7 @@ exports["test MutationObvserver"] = createProxyTest(html, function (helper) {
 
 });
 
-let html = '<script>' +
+var html = '<script>' +
   'var accessCheck = function() {' +
   '  assert(true, "exporting function works");' +
   '  try{' +

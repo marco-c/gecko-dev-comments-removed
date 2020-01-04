@@ -11,7 +11,7 @@ const SCHEDULE_UPDATE_TIMEOUT_MS = 1000;
 
 
 
-let gPage = {
+var gPage = {
   
 
 

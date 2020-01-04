@@ -3,7 +3,7 @@
 
 
 
-let scope = {};
+var scope = {};
 Cu.import("resource://gre/modules/PermissionSettings.jsm", scope);
 
 const TEST_URL =

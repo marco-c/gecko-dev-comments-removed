@@ -27,7 +27,7 @@ waitForExplicitFinish();
 
 
 
-let addTab = Task.async(function* (url) {
+var addTab = Task.async(function* (url) {
   info("Adding a new tab with URL: '" + url + "'");
   let tab = gBrowser.selectedTab = gBrowser.addTab();
   let loaded = once(gBrowser.selectedBrowser, "load", true);

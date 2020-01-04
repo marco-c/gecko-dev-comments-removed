@@ -1,9 +1,9 @@
 "use strict";
 
-let gTestTab;
-let gContentAPI;
-let gContentWindow;
-let handleDialog;
+var gTestTab;
+var gContentAPI;
+var gContentWindow;
+var handleDialog;
 
 
 var didDialog;
@@ -79,7 +79,7 @@ function test() {
 }
 
 
-let tests = [
+var tests = [
   taskify(function* test_modal_dialog_while_opening_tooltip(done) {
     let panelShown;
     let popup;

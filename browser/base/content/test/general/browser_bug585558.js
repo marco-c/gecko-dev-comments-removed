@@ -2,7 +2,7 @@
 
 
 
-let tabs = [];
+var tabs = [];
 
 function addTab(aURL) {
   tabs.push(gBrowser.addTab(aURL, {skipAnimation: true}));

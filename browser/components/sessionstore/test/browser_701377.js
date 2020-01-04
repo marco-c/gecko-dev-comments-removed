@@ -1,7 +1,7 @@
 
 
 
-let state = {windows:[{tabs:[
+var state = {windows:[{tabs:[
   {entries:[{url:"http://example.com#1"}]},
   {entries:[{url:"http://example.com#2"}], hidden: true}
 ]}]};

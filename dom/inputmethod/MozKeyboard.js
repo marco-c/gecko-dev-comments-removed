@@ -22,7 +22,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "tm",
 
 
 
-let WindowMap = {
+var WindowMap = {
   
   _map: null,
 
@@ -121,7 +121,7 @@ let WindowMap = {
   }
 };
 
-let cpmmSendAsyncMessageWithKbID = function (self, msg, data) {
+var cpmmSendAsyncMessageWithKbID = function (self, msg, data) {
   data.kbID = WindowMap.getKbID(self._window);
   cpmm.sendAsyncMessage(msg, data);
 };

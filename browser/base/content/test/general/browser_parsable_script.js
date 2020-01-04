@@ -11,8 +11,8 @@ const kWhitelist = new Set([
 ]);
 
 
-let moduleLocation = gTestPath.replace(/\/[^\/]*$/i, "/parsingTestHelpers.jsm");
-let {generateURIsFromDirTree} = Cu.import(moduleLocation, {});
+var moduleLocation = gTestPath.replace(/\/[^\/]*$/i, "/parsingTestHelpers.jsm");
+var {generateURIsFromDirTree} = Cu.import(moduleLocation, {});
 
 
 

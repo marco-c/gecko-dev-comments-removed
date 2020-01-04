@@ -1,6 +1,6 @@
 
 
-let ifr;
+var ifr;
 function test() {
   ifr = document.createElement('iframe');
   document.getElementById('main-window').appendChild(ifr);

@@ -14,7 +14,7 @@ function wait_while_tab_is_busy() {
 
 
 
-let with_new_tab_opened = Task.async(function* (options, taskFn) {
+var with_new_tab_opened = Task.async(function* (options, taskFn) {
   let busyPromise = wait_while_tab_is_busy();
   let tab = yield BrowserTestUtils.openNewForegroundTab(options.gBrowser, options.url, false);
   yield busyPromise;

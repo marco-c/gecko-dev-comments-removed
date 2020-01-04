@@ -59,11 +59,11 @@ var tests = [
   },
 ]
 
-let gCurrentTest, gCurrentTestIndex = -1, gTestDesc;
+var gCurrentTest, gCurrentTestIndex = -1, gTestDesc;
 
 
-let gForward = true;
-let gCheckETLD = false;
+var gForward = true;
+var gCheckETLD = false;
 function nextTest() {
   if (!gCheckETLD) {
     if (gForward)

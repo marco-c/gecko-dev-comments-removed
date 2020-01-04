@@ -386,7 +386,7 @@ Preferences.prototype = Preferences;
 
 
 
-let observers = [];
+var observers = [];
 
 function PrefObserver(prefName, callback, thisObject) {
   this.prefName = prefName;

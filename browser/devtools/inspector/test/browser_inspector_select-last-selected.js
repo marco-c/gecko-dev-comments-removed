@@ -6,15 +6,15 @@
 
 
 
-let PAGE_1 = TEST_URL_ROOT + "doc_inspector_select-last-selected-01.html";
-let PAGE_2 = TEST_URL_ROOT + "doc_inspector_select-last-selected-02.html";
+var PAGE_1 = TEST_URL_ROOT + "doc_inspector_select-last-selected-01.html";
+var PAGE_2 = TEST_URL_ROOT + "doc_inspector_select-last-selected-02.html";
 
 
 
 
 
 
-let TEST_DATA = [
+var TEST_DATA = [
   {
     url: PAGE_1,
     nodeToSelect: "#id1",

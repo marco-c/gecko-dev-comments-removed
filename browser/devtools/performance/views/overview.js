@@ -25,7 +25,7 @@ const GRAPH_REQUIREMENTS = {
 
 
 
-let OverviewView = {
+var OverviewView = {
 
   
 

@@ -49,17 +49,17 @@ ExtensionManagement.registerScript("chrome://extensions/content/ext-storage.js")
 ExtensionManagement.registerScript("chrome://extensions/content/ext-test.js");
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-let {
+var {
   MessageBroker,
   Messenger,
   injectAPI,
   flushJarCache,
 } = ExtensionUtils;
 
-let scriptScope = this;
+var scriptScope = this;
 
 
-let Management = {
+var Management = {
   initialized: false,
   scopes: [],
   apis: [],
@@ -154,7 +154,7 @@ let Management = {
 
 
 
-let globalBroker = new MessageBroker([Services.mm, Services.ppmm]);
+var globalBroker = new MessageBroker([Services.mm, Services.ppmm]);
 
 
 
@@ -223,7 +223,7 @@ ExtensionPage.prototype = {
 };
 
 
-let GlobalManager = {
+var GlobalManager = {
   
   count: 0,
 

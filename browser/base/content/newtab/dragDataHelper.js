@@ -4,7 +4,7 @@
 
 #endif
 
-let gDragDataHelper = {
+var gDragDataHelper = {
   get mimeType() {
     return "text/x-moz-url";
   },

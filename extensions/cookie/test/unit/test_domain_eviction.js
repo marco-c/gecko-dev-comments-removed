@@ -4,7 +4,7 @@
 
 
 
-let test_generator = do_run_test();
+var test_generator = do_run_test();
 
 function run_test()
 {

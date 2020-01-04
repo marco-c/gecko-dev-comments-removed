@@ -8,10 +8,10 @@
 
 
 
-let kURIs = [
+var kURIs = [
   "http://site/%EAid",
 ];
-let kTitles = [
+var kTitles = [
   "title",
 ];
 
@@ -19,7 +19,7 @@ addPageBook(0, 0);
 
 
 
-let gTests = [
+var gTests = [
   ["0: Bad escaped uri stays escaped",
    "site", [0]],
 ];

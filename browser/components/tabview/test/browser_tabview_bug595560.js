@@ -1,8 +1,8 @@
 
 
 
-let win;
-let cw;
+var win;
+var cw;
 
 function test() {
   waitForExplicitFinish();

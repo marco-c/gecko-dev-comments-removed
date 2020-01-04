@@ -83,7 +83,7 @@ function doUpdate() {
   });
 }
 
-let BrowserApp = Services.wm.getMostRecentWindow("navigator:browser").BrowserApp;
+var BrowserApp = Services.wm.getMostRecentWindow("navigator:browser").BrowserApp;
 
 
 

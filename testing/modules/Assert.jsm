@@ -29,7 +29,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
 
 
 
-let Assert = this.Assert = function(reporterFunc) {
+var Assert = this.Assert = function(reporterFunc) {
   if (reporterFunc)
     this.setReporter(reporterFunc);
 };
@@ -123,7 +123,7 @@ Assert.AssertionError.prototype = Object.create(Error.prototype, {
   }
 });
 
-let proto = Assert.prototype;
+var proto = Assert.prototype;
 
 proto._reporter = null;
 

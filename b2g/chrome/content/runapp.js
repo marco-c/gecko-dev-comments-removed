@@ -3,7 +3,7 @@
 
 
 
-let runAppObj;
+var runAppObj;
 window.addEventListener('load', function() {
   
   let args;

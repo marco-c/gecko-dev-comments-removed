@@ -13,9 +13,9 @@
 const TEST_URI = "http://example.com/browser/browser/devtools/webconsole/" +
                  "test/test-bug-597756-reopen-closed-tab.html";
 
-let HUD;
+var HUD;
 
-let test = asyncTest(function* () {
+var test = asyncTest(function* () {
   
   
   if (!Services.appinfo.browserTabsRemoteAutostart) {

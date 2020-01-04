@@ -6,8 +6,8 @@
 
 
 
-let gTab, gPanel, gDebugger;
-let gOldListener;
+var gTab, gPanel, gDebugger;
+var gOldListener;
 
 const TAB_URL = EXAMPLE_URL + "doc_inline-script.html";
 

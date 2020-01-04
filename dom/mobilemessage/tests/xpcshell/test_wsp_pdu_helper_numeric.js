@@ -1,7 +1,7 @@
 
 
 
-let WSP = {};
+var WSP = {};
 subscriptLoader.loadSubScript("resource://gre/modules/WspPduHelper.jsm", WSP);
 WSP.debug = do_print;
 

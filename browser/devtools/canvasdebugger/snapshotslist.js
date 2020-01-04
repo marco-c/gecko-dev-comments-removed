@@ -6,7 +6,7 @@
 
 
 
-let SnapshotsListView = Heritage.extend(WidgetMethods, {
+var SnapshotsListView = Heritage.extend(WidgetMethods, {
   
 
 

@@ -25,7 +25,7 @@ const LoginInfo =
                              "nsILoginInfo", "init");
 
 
-let Assert = null;
+var Assert = null;
 
 this.LoginTestUtils = {
   set Assert(assert) {

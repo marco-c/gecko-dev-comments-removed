@@ -3,10 +3,10 @@
 
 
 
-let testGenerator = testSteps();
+var testGenerator = testSteps();
 
-let testResult;
-let testException;
+var testResult;
+var testException;
 
 function testFinishedCallback(result, exception)
 {

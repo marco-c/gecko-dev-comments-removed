@@ -22,7 +22,7 @@
   }
 }).call(this, function (require, exports, module, { Ci, Cc }, ChromeWorker, dumpn) {
 
-let MESSAGE_COUNTER = 0;
+var MESSAGE_COUNTER = 0;
 
 
 

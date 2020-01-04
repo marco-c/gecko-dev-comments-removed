@@ -2123,7 +2123,7 @@ XPCOMUtils.defineLazyGetter(this, "gAsyncDBWrapperPromised",
 
 
 
-let Keywords = {
+var Keywords = {
   
 
 
@@ -2298,7 +2298,7 @@ let Keywords = {
 
 
 
-let gIgnoreKeywordNotifications = false;
+var gIgnoreKeywordNotifications = false;
 
 XPCOMUtils.defineLazyGetter(this, "gKeywordsCachePromise", () =>
   PlacesUtils.withConnectionWrapper("PlacesUtils: gKeywordsCachePromise",
@@ -2405,7 +2405,7 @@ XPCOMUtils.defineLazyGetter(this, "gKeywordsCachePromise", () =>
 
 
 
-let GuidHelper = {
+var GuidHelper = {
   
   guidsForIds: new Map(),
   idsForGuids: new Map(),

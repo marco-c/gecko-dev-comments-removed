@@ -192,7 +192,7 @@ function decodeGsmDataCodingScheme(aDcs) {
 
 
 
-let cbManager;
+var cbManager;
 function ensureCellBroadcast() {
   let deferred = Promise.defer();
 
@@ -246,7 +246,7 @@ function ensureCellBroadcast() {
 
 
 
-let pendingEmulatorCmdCount = 0;
+var pendingEmulatorCmdCount = 0;
 function runEmulatorCmdSafe(aCommand) {
   let deferred = Promise.defer();
 

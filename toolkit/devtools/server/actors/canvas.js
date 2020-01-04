@@ -98,7 +98,7 @@ protocol.types.addDictType("snapshot-overview", {
 
 
 
-let FrameSnapshotActor = protocol.ActorClass({
+var FrameSnapshotActor = protocol.ActorClass({
   typeName: "frame-snapshot",
 
   
@@ -186,7 +186,7 @@ let FrameSnapshotActor = protocol.ActorClass({
 
 
 
-let FrameSnapshotFront = protocol.FrontClass(FrameSnapshotActor, {
+var FrameSnapshotFront = protocol.FrontClass(FrameSnapshotActor, {
   initialize: function(client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
     this._animationFrameEndScreenshot = null;
@@ -232,7 +232,7 @@ let FrameSnapshotFront = protocol.FrontClass(FrameSnapshotActor, {
 
 
 
-let CanvasActor = exports.CanvasActor = protocol.ActorClass({
+var CanvasActor = exports.CanvasActor = protocol.ActorClass({
   
   
   _animationContainsDrawCall: false,
@@ -482,7 +482,7 @@ let CanvasActor = exports.CanvasActor = protocol.ActorClass({
 
 
 
-let ContextUtils = {
+var ContextUtils = {
   
 
 
@@ -825,7 +825,7 @@ let ContextUtils = {
 
 
 
-let CanvasFront = exports.CanvasFront = protocol.FrontClass(CanvasActor, {
+var CanvasFront = exports.CanvasFront = protocol.FrontClass(CanvasActor, {
   initialize: function(client, { canvasActor }) {
     protocol.Front.prototype.initialize.call(this, client, { actor: canvasActor });
     this.manage(this);

@@ -36,7 +36,7 @@ const { isPrivate } = require('../private-browsing/utils');
 
 const workers = new WeakMap();
 
-let modelFor = (worker) => workers.get(worker);
+var modelFor = (worker) => workers.get(worker);
 
 const ERR_DESTROYED =
   "Couldn't find the worker to receive this message. " +

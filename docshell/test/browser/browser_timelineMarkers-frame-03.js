@@ -6,7 +6,7 @@
 
 
 
-let TESTS = [{
+var TESTS = [{
   desc: "Event dispatch with single handler",
   searchFor: 'DOMEvent',
   setup: function(docShell) {

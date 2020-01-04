@@ -14,7 +14,7 @@ const NDEF_MESSAGE = [new MozNDEFRecord({tnf: "well-known",
                                          type: new Uint8Array(0x84),
                                          payload: new Uint8Array(0x20)})];
 
-let nfcPeers = [];
+var nfcPeers = [];
 
 
 
@@ -138,7 +138,7 @@ function setAndFireTechLostHandler() {
   return deferred.promise;
 }
 
-let tests = [
+var tests = [
   testNfcNotEnabledError,
 
 

@@ -8,8 +8,8 @@
 
 
 const Cu = Components.utils;
-let {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
-let {CubicBezier, _parseTimingFunction} = require("devtools/shared/widgets/CubicBezierWidget");
+var {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+var {CubicBezier, _parseTimingFunction} = require("devtools/shared/widgets/CubicBezierWidget");
 
 function run_test() {
   throwsWhenMissingCoordinates();

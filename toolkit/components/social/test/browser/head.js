@@ -2,8 +2,8 @@
 
 
 
-let SocialService = Components.utils.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
-let MockRegistrar = Components.utils.import("resource://testing-common/MockRegistrar.jsm", {}).MockRegistrar;
+var SocialService = Components.utils.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
+var MockRegistrar = Components.utils.import("resource://testing-common/MockRegistrar.jsm", {}).MockRegistrar;
 
 
 
@@ -95,7 +95,7 @@ MockAlertsService.prototype = {
     }
 };
 
-let originalAlertsServiceCID;
+var originalAlertsServiceCID;
 function replaceAlertsService() {
   originalAlertsServiceCID =
     MockRegistrar.register(ALERTS_SERVICE_CONTRACT_ID, MockAlertsService);
