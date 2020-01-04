@@ -483,7 +483,23 @@ const Services = {
         }
       }
       return "Unknown";
-    }
+    },
+
+    
+    get name() {
+      return window.navigator.userAgent;
+    },
+
+    
+    get version() {
+      return window.navigator.appVersion;
+    },
+
+    
+    
+    get is64Bit() {
+      return true;
+    },
   },
 };
 
