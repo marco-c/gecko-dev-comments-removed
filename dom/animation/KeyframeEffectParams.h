@@ -10,6 +10,11 @@
 #include "nsCSSProps.h"
 #include "nsString.h"
 
+#ifdef None
+#undef None
+#endif
+#include "mozilla/dom/KeyframeEffectBinding.h" 
+
 namespace mozilla {
 
 class ErrorResult;
@@ -51,7 +56,8 @@ struct KeyframeEffectParams
                            nsAString& aInvalidPacedProperty,
                            ErrorResult& aRv);
 
-  
+  dom::IterationCompositeOperation mIterationComposite =
+    dom::IterationCompositeOperation::Replace;
   
   SpacingMode mSpacingMode = SpacingMode::distribute;
   nsCSSPropertyID mPacedProperty = eCSSProperty_UNKNOWN;

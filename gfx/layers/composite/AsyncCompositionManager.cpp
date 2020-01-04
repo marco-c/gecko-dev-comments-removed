@@ -16,6 +16,7 @@
 #include "mozilla/WidgetUtils.h"        
 #include "mozilla/dom/KeyframeEffectReadOnly.h"
 #include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
+#include "mozilla/dom/KeyframeEffectBinding.h" 
 #include "mozilla/gfx/BaseRect.h"       
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
@@ -553,18 +554,45 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
 }
 
 static void
-SampleValue(float aPortion, Animation& aAnimation, StyleAnimationValue& aStart,
-            StyleAnimationValue& aEnd, Animatable* aValue, Layer* aLayer)
+SampleValue(float aPortion, Animation& aAnimation,
+            const StyleAnimationValue& aStart, const StyleAnimationValue& aEnd,
+            const StyleAnimationValue& aLastValue, uint64_t aCurrentIteration,
+            Animatable* aValue, Layer* aLayer)
 {
-  StyleAnimationValue interpolatedValue;
   NS_ASSERTION(aStart.GetUnit() == aEnd.GetUnit() ||
                aStart.GetUnit() == StyleAnimationValue::eUnit_None ||
                aEnd.GetUnit() == StyleAnimationValue::eUnit_None,
                "Must have same unit");
+
+  StyleAnimationValue startValue = aStart;
+  StyleAnimationValue endValue = aEnd;
+  
+  if (static_cast<dom::IterationCompositeOperation>
+        (aAnimation.iterationComposite()) ==
+          dom::IterationCompositeOperation::Accumulate &&
+      aCurrentIteration > 0) {
+    
+    
+    DebugOnly<bool> accumulateResult =
+      StyleAnimationValue::Accumulate(aAnimation.property(),
+                                      startValue,
+                                      aLastValue,
+                                      aCurrentIteration);
+    MOZ_ASSERT(accumulateResult, "could not accumulate value");
+    accumulateResult =
+      StyleAnimationValue::Accumulate(aAnimation.property(),
+                                      endValue,
+                                      aLastValue,
+                                      aCurrentIteration);
+    MOZ_ASSERT(accumulateResult, "could not accumulate value");
+  }
+
+  StyleAnimationValue interpolatedValue;
   
   
   DebugOnly<bool> uncomputeResult =
-    StyleAnimationValue::Interpolate(aAnimation.property(), aStart, aEnd,
+    StyleAnimationValue::Interpolate(aAnimation.property(),
+                                     startValue, endValue,
                                      aPortion, interpolatedValue);
   MOZ_ASSERT(uncomputeResult, "could not uncompute value");
 
@@ -683,8 +711,12 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
 
           
           Animatable interpolatedValue;
-          SampleValue(portion, animation, animData.mStartValues[segmentIndex],
-                      animData.mEndValues[segmentIndex], &interpolatedValue, layer);
+          SampleValue(portion, animation,
+                      animData.mStartValues[segmentIndex],
+                      animData.mEndValues[segmentIndex],
+                      animData.mEndValues.LastElement(),
+                      computedTiming.mCurrentIteration,
+                      &interpolatedValue, layer);
           LayerComposite* layerComposite = layer->AsLayerComposite();
           switch (animation.property()) {
           case eCSSProperty_opacity:
