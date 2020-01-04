@@ -544,14 +544,14 @@ var BrowserApp = {
       ExternalApps.init();
     }, NativeWindow, "contextmenus");
 
-    InitLater(() => {
-      let mm = window.getGroupMessageManager("browsers");
-      mm.loadFrameScript("chrome://browser/content/content.js", true);
-    });
-
     if (AppConstants.ACCESSIBILITY) {
       InitLater(() => AccessFu.attach(window), window, "AccessFu");
     }
+
+    
+    
+    let mm = window.getGroupMessageManager("browsers");
+    mm.loadFrameScript("chrome://browser/content/content.js", true);
 
     
     
