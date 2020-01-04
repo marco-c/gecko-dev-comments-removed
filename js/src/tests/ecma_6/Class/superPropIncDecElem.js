@@ -1,6 +1,4 @@
-var test = `
 
-// #1
 function base() { }
 
 base.prototype = {
@@ -12,7 +10,7 @@ base.prototype = {
 var d = new base();
 d.test();
 
-// #2
+
 class test2 {
     test() {
         super[1]++;
@@ -21,11 +19,6 @@ class test2 {
 
 var d = new test2();
 d.test()
-
-`;
-
-if (classesEnabled())
-    eval(test);
 
 if (typeof reportCompare === 'function')
     reportCompare(0,0,"OK");

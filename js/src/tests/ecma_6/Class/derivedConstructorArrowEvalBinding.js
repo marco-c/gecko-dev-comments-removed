@@ -1,6 +1,4 @@
 
-var test = `
-
 new class extends class { } {
     constructor() {
         let arrow = () => this;
@@ -9,11 +7,6 @@ new class extends class { } {
         assertEq(arrow(), this);
     }
 }();
-
-`;
-
-if (classesEnabled())
-    eval(test);
 
 if (typeof reportCompare === 'function')
     reportCompare(0,0,"OK");

@@ -1,12 +1,10 @@
-var test = `
 
-// This is super weird. A super property reference in the spec contains two
-// things. The first is the object to do the lookup on, the super base. This
-// should be unchanged, no matter what's going on: I can move the method to
-// another object. I can pull it out as its own function. I can put it on my
-// head and run around the front yard. No changes. The other half, the |this|
-// for invoked calls, is the this at the time of referencing the property, which
-// means it's gonna vary wildly as stuff gets moved around.
+
+
+
+
+
+
 
 class base {
     constructor() { }
@@ -27,10 +25,10 @@ derivedInstance.testCPN(derivedInstance);
 let obj = { test: derivedInstance.test };
 obj.test(obj);
 
-let test = derivedInstance.test;
-// Hah! The engine is not prepared for non-object receivers, since this couldn't
-// happen before. Hope Waldo fixes this soon as he claims he will :)
-assertThrowsInstanceOf(() =>test(undefined), TypeError);
+let testSolo = derivedInstance.test;
+
+
+assertThrowsInstanceOf(() =>testSolo(undefined), TypeError);
 
 let anotherObject = { };
 derivedInstance.test.call(anotherObject, anotherObject);
@@ -38,11 +36,11 @@ derivedInstance.test.call(anotherObject, anotherObject);
 let strThis = "this is not an object!";
 derivedInstance.test.call(strThis, strThis);
 
-// You can take the arrow function out of the super, ... or something like that
+
 let arrowTest = derivedInstance.testArrow();
 arrowTest();
 
-// There's no magic "super script index" per code location.
+
 class base1 {
     constructor() { }
     test() { return "llama"; }
@@ -59,11 +57,6 @@ for (let exprBase of [base1, base2])
         test() { animals.push(super["test"]()); }
     }().test();
 assertDeepEq(animals, ["llama", "alpaca"]);
-
-`;
-
-if (classesEnabled())
-    eval(test);
 
 if (typeof reportCompare === 'function')
     reportCompare(0,0,"OK");

@@ -1,10 +1,6 @@
 
 
 
-
-if (classesEnabled()) {
-
-var test = `
 class Foof { constructor() { }; tryBreak() { Foof = 4; } }
 for (let result of [Foof, class Bar { constructor() { }; tryBreak() { Bar = 4; } }])
     assertThrowsInstanceOf(() => new result().tryBreak(), TypeError);
@@ -15,18 +11,18 @@ for (let result of [Foof, class Bar { constructor() { }; tryBreak() { Bar = 4; }
         assertThrowsInstanceOf(() => new result().tryBreak(), TypeError);
 }
 
-// TDZ applies to inner bindings
-assertThrowsInstanceOf(()=>eval(\`class Bar {
+
+assertThrowsInstanceOf(()=>eval(`class Bar {
                                     constructor() { };
                                     [Bar] () { };
-                                 }\`), ReferenceError);
+                                 }`), ReferenceError);
 
-assertThrowsInstanceOf(()=>eval(\`(class Bar {
+assertThrowsInstanceOf(()=>eval(`(class Bar {
                                     constructor() { };
                                     [Bar] () { };
-                                 })\`), ReferenceError);
+                                 })`), ReferenceError);
 
-// There's no magic "inner binding" global
+
 {
     class Foo {
         constructor() { };
@@ -50,7 +46,7 @@ assertThrowsInstanceOf(()=>eval(\`(class Bar {
     }().test(), false);
 }
 
-// Inner bindings are shadowable
+
 {
     class Foo {
         constructor() { }
@@ -63,7 +59,7 @@ assertThrowsInstanceOf(()=>eval(\`(class Bar {
     }().test(4), 4);
 }
 
-// Inner bindings in expressions should shadow even existing names.
+
 class Foo { constructor() { } static method() { throw new Error("NO!"); } }
 assertEq(new class Foo {
             constructor() { };
@@ -71,7 +67,7 @@ assertEq(new class Foo {
             test() { return Foo.method(); }
          }().test(), 4);
 
-// The outer binding is distinct from the inner one
+
 {
     let orig_X;
 
@@ -84,13 +80,6 @@ assertEq(new class Foo {
     X = 13;
     assertEq(X, 13);
     new orig_X().f();
-}
-
-
-`;
-
-eval(test);
-
 }
 
 if (typeof reportCompare === "function")

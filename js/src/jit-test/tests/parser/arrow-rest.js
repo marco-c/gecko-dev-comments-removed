@@ -1,8 +1,6 @@
 
 
 
-load(libdir + "class.js");
-
 function testThrow(code, column) {
   var caught = false;
   try {
@@ -143,11 +141,9 @@ try {} catch (x if ...a) =>
 
 
 
-if (classesEnabled()) {
 testThrow(`
 class A extends ...a) =>
 `, 16);
-}
 
 
 

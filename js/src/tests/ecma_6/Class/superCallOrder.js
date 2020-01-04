@@ -1,5 +1,3 @@
-var test = `
-
 function base() { }
 
 class beforeSwizzle extends base {
@@ -10,8 +8,8 @@ class beforeSwizzle extends base {
 
 new beforeSwizzle();
 
-// Again, testing both dynamic prototype dispatch, and that we get the function
-// before evaluating args
+
+
 class beforeThrow extends base {
     constructor() {
         function thrower() { throw new Error(); }
@@ -21,13 +19,8 @@ class beforeThrow extends base {
 
 Object.setPrototypeOf(beforeThrow, Math.sin);
 
-// Will throw that Math.sin is not a constructor before evaluating the args
+
 assertThrowsInstanceOf(() => new beforeThrow(), TypeError);
-
-`;
-
-if (classesEnabled())
-    eval(test);
 
 if (typeof reportCompare === 'function')
     reportCompare(0,0,"OK");

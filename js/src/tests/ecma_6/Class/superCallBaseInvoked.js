@@ -1,5 +1,3 @@
-var test = `
-
 function testBase(base) {
     class instance extends base {
         constructor(inst, one) {
@@ -18,12 +16,12 @@ function testBase(base) {
 }
 
 class base {
-    // Base class must be [[Construct]]ed, as you cannot [[Call]] a class
-    // constructor
+    
+    
     constructor(nt, one) {
         assertEq(new.target, nt);
 
-        // Check argument ordering
+        
         assertEq(one, 1);
         this.calledBase = true;
     }
@@ -32,7 +30,7 @@ class base {
 testBase(base);
 testBase(class extends base {
              constructor(nt, one) {
-                 // Every step of the way, new.target and args should be right
+                 
                  assertEq(new.target, nt);
                  assertEq(one, 1);
                  super(nt, one);
@@ -52,11 +50,6 @@ testBase(p);
 
 handler.construct = (target, args, nt) => Reflect.construct(target, args, nt);
 testBase(p);
-
-`;
-
-if (classesEnabled())
-    eval(test);
 
 if (typeof reportCompare === 'function')
     reportCompare(0,0,"OK");

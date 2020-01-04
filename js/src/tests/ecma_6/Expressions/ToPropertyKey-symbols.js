@@ -39,38 +39,34 @@ for (var sym of symbols) {
     assertEq(Math.PI[key], "success");
     delete Number.prototype[sym];
 
-    if (classesEnabled()) {
-        eval(`
-            // Getting a super property.
-            class X {
-                [sym]() { return "X"; }
-            }
-            class Y extends X {
-                [sym]() { return super[key]() + "Y"; }
-            }
-            var y = new Y();
-            assertEq(y[sym](), "XY");
-
-            // Setting a super property.
-            class Z {
-                set [sym](v) {
-                    this.self = this;
-                    this.value = v;
-                }
-            }
-            class W extends Z {
-                set [sym](v) {
-                    this.isW = true;
-                    super[key] = v;
-                }
-            }
-            var w = new W();
-            w[key] = "ok";
-            assertEq(w.self, w);
-            assertEq(w.value, "ok");
-            assertEq(w.isW, true);
-        `);
+    
+    class X {
+        [sym]() { return "X"; }
     }
+    class Y extends X {
+        [sym]() { return super[key]() + "Y"; }
+    }
+    var y = new Y();
+    assertEq(y[sym](), "XY");
+
+    
+    class Z {
+        set [sym](v) {
+            this.self = this;
+            this.value = v;
+        }
+    }
+    class W extends Z {
+        set [sym](v) {
+            this.isW = true;
+            super[key] = v;
+        }
+    }
+    var w = new W();
+    w[key] = "ok";
+    assertEq(w.self, w);
+    assertEq(w.value, "ok");
+    assertEq(w.isW, true);
 
     
     obj = {[sym]: 1};

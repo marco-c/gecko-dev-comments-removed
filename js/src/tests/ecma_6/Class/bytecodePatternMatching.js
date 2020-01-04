@@ -1,6 +1,5 @@
 
 
-var test = `
 function a() {
     var b = {a: "A"};
 
@@ -25,10 +24,6 @@ function b() {
 
 a();
 b();
-`;
-
-if (classesEnabled())
-    eval(test);
 
 if (typeof reportCompare === "function")
     reportCompare(0, 0, "OK");
