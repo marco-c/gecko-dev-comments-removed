@@ -4883,7 +4883,7 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
       if (clipRect) {
         clippedOpaque.AndWith(clipRect->ToUnknownRect());
       }
-      if (e->mLayer->GetIsFixedPosition() && !e->mLayer->IsClipFixed()) {
+      if (e->mLayer->GetIsFixedPosition() && e->mLayer->GetScrolledClip()) {
         
         
         clippedOpaque.SetEmpty();

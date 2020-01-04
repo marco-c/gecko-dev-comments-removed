@@ -564,15 +564,11 @@ public:
 
 
 
-
-
-
   static void SetFixedPositionLayerData(Layer* aLayer, const nsIFrame* aViewportFrame,
                                         const nsRect& aAnchorRect,
                                         const nsIFrame* aFixedPosFrame,
                                         nsPresContext* aPresContext,
-                                        const ContainerLayerParameters& aContainerParameters,
-                                        bool aIsClipFixed);
+                                        const ContainerLayerParameters& aContainerParameters);
 
   
 
