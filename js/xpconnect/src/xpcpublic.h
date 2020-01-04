@@ -510,7 +510,12 @@ class ErrorReport {
 
     void Init(JSErrorReport* aReport, const char* aFallbackMessage,
               bool aIsChrome, uint64_t aWindowID);
+    
+    
     void LogToConsole();
+    
+    
+    
     void LogToConsoleWithStack(JS::HandleObject aStack);
 
     
@@ -538,6 +543,15 @@ class ErrorReport {
 void
 DispatchScriptErrorEvent(nsPIDOMWindowInner* win, JSRuntime* rt, xpc::ErrorReport* xpcReport,
                          JS::Handle<JS::Value> exception);
+
+
+
+
+
+
+
+JSObject*
+FindExceptionStack(JSContext* cx, JS::HandleValue exceptionValue);
 
 
 
