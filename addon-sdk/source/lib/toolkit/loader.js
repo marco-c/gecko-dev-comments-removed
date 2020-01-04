@@ -557,24 +557,8 @@ const resolveURI = iced(function resolveURI(id, mapping) {
 
   while (index < count) {
     let [ path, uri ] = mapping[index++];
-
-    
-    let stripped = path.endsWith('/') ? path.slice(0, -1) : path;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if(stripped === "" ||
-       (id.indexOf(stripped) === 0 &&
-        (id.length === path.length || id[stripped.length] === '/'))) {
+    if (id.indexOf(path) === 0)
       return normalizeExt(id.replace(path, uri));
-    }
   }
   return void 0; 
 });
@@ -1075,7 +1059,8 @@ function traverse (node, cb) {
     cb(node);
     keys(node).map(key => {
       if (key === 'parent' || !node[key]) return;
-      node[key].parent = node;
+      if (typeof node[key] === "object")
+        node[key].parent = node;
       traverse(node[key], cb);
     });
   }
