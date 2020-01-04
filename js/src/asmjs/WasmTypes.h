@@ -138,7 +138,7 @@ class Val
 
 
 
-enum class ExprType : uint8_t
+enum class ExprType : uint16_t
 {
     I32 = uint8_t(ValType::I32),
     I64 = uint8_t(ValType::I64),
