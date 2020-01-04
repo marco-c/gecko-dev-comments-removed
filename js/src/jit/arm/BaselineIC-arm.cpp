@@ -31,8 +31,8 @@ ICCompare_Int32::Compiler::generateStubCode(MacroAssembler& masm)
     
     Assembler::Condition cond = JSOpToCondition(op, true);
     masm.cmp32(R0.payloadReg(), R1.payloadReg());
-    masm.ma_mov(Imm32(1), R0.payloadReg(), LeaveCC, cond);
-    masm.ma_mov(Imm32(0), R0.payloadReg(), LeaveCC, Assembler::InvertCondition(cond));
+    masm.ma_mov(Imm32(1), R0.payloadReg(), cond);
+    masm.ma_mov(Imm32(0), R0.payloadReg(), Assembler::InvertCondition(cond));
 
     
     masm.tagValue(JSVAL_TYPE_BOOLEAN, R0.payloadReg(), R0);
@@ -59,7 +59,7 @@ ICCompare_Double::Compiler::generateStubCode(MacroAssembler& masm)
 
     masm.compareDouble(FloatReg0, FloatReg1);
     masm.ma_mov(Imm32(0), dest);
-    masm.ma_mov(Imm32(1), dest, LeaveCC, cond);
+    masm.ma_mov(Imm32(1), dest, cond);
 
     masm.tagValue(JSVAL_TYPE_BOOLEAN, dest, R0);
     EmitReturnFromIC(masm);

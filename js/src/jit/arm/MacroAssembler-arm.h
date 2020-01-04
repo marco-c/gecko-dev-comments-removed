@@ -125,17 +125,10 @@ class MacroAssemblerARM : public Assembler
 
     
     
-    
+    void ma_mov(Register src, Register dest, SBit s = LeaveCC, Condition c = Always);
 
-    
-    
-    void ma_mov(Register src, Register dest,
-                SBit s = LeaveCC, Condition c = Always);
-
-    void ma_mov(Imm32 imm, Register dest,
-                SBit s = LeaveCC, Condition c = Always);
-    void ma_mov(ImmWord imm, Register dest,
-                SBit s = LeaveCC, Condition c = Always);
+    void ma_mov(Imm32 imm, Register dest, Condition c = Always);
+    void ma_mov(ImmWord imm, Register dest, Condition c = Always);
 
     void ma_mov(ImmGCPtr ptr, Register dest);
 
@@ -145,7 +138,7 @@ class MacroAssemblerARM : public Assembler
     void ma_asr(Imm32 shift, Register src, Register dst);
     void ma_ror(Imm32 shift, Register src, Register dst);
     void ma_rol(Imm32 shift, Register src, Register dst);
-    
+
     void ma_lsl(Register shift, Register src, Register dst);
     void ma_lsr(Register shift, Register src, Register dst);
     void ma_asr(Register shift, Register src, Register dst);
@@ -153,12 +146,7 @@ class MacroAssemblerARM : public Assembler
     void ma_rol(Register shift, Register src, Register dst);
 
     
-    void ma_mvn(Imm32 imm, Register dest,
-                SBit s = LeaveCC, Condition c = Always);
-
-
-    void ma_mvn(Register src1, Register dest,
-                SBit s = LeaveCC, Condition c = Always);
+    void ma_mvn(Register src1, Register dest, SBit s = LeaveCC, Condition c = Always);
 
     
     void ma_neg(Register src, Register dest,
@@ -176,8 +164,6 @@ class MacroAssemblerARM : public Assembler
 
     void ma_and(Imm32 imm, Register src1, Register dest,
                 SBit s = LeaveCC, Condition c = Always);
-
-
 
     
     void ma_bic(Imm32 imm, Register dest,
@@ -1595,8 +1581,8 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
         
         ScratchRegisterScope scratch(asMasm());
         as_mov(scratch, asr(reg, 8), SetCC);
-        ma_mov(Imm32(0xff), reg, LeaveCC, NotEqual);
-        ma_mov(Imm32(0), reg, LeaveCC, Signed);
+        ma_mov(Imm32(0xff), reg, NotEqual);
+        ma_mov(Imm32(0), reg, Signed);
     }
 
     inline void incrementInt32Value(const Address& addr);
@@ -1648,7 +1634,7 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
     emitSet(Assembler::Condition cond, Register dest)
     {
         ma_mov(Imm32(0), dest);
-        ma_mov(Imm32(1), dest, LeaveCC, cond);
+        ma_mov(Imm32(1), dest, cond);
     }
 
     template <typename T1, typename T2>
