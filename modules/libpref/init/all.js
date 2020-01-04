@@ -317,10 +317,6 @@ pref("media.wakelock_timeout", 2000);
 
 pref("media.play-stand-alone", true);
 
-
-
-pref("media.block-play-until-visible", false);
-
 pref("media.hardware-video-decoding.enabled", true);
 pref("media.hardware-video-decoding.force-enabled", false);
 
@@ -5539,6 +5535,7 @@ pref("dom.webkitBlink.dirPicker.enabled", true);
 pref("dom.webkitBlink.filesystem.enabled", true);
 #endif
 
+pref("media.block-autoplay-until-in-foreground", true);
 #ifdef MOZ_STYLO
 
 pref("layout.css.servo.enabled", true);
