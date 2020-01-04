@@ -1514,43 +1514,50 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   }
 
   
-  switch (userReferrerTrimmingPolicy) {
-
-  case 1: {
+  if (userReferrerTrimmingPolicy) {
     
-    nsAutoCString prepath, path;
-    rv = clone->GetPrePath(prepath);
+    
+    
+    
+    nsAutoCString scheme, asciiHostPort;
+    rv = clone->GetScheme(scheme);
     if (NS_FAILED(rv)) return rv;
+    spec = scheme;
+    spec.AppendLiteral("://");
+    
+    rv = clone->GetAsciiHostPort(asciiHostPort);
+    if (NS_FAILED(rv)) return rv;
+    spec.Append(asciiHostPort);
 
-    nsCOMPtr<nsIURL> url(do_QueryInterface(clone));
-    if (!url) {
-      
-      
-      spec = prepath;
-      break;
+    switch (userReferrerTrimmingPolicy) {
+      case 1: { 
+        nsCOMPtr<nsIURL> url(do_QueryInterface(clone));
+        if (url) {
+          nsAutoCString path;
+          rv = url->GetFilePath(path);
+          if (NS_FAILED(rv)) return rv;
+          spec.Append(path);
+          rv = url->SetQuery(EmptyCString());
+          if (NS_FAILED(rv)) return rv;
+          rv = url->SetRef(EmptyCString());
+          if (NS_FAILED(rv)) return rv;
+          break;
+        }
+        
+        
+      }
+      MOZ_FALLTHROUGH;
+      default: 
+      case 2: 
+        spec.AppendLiteral("/");
+        
+        rv = clone->SetPath(EmptyCString());
+        if (NS_FAILED(rv)) return rv;
+        break;
     }
-    rv = url->GetFilePath(path);
-    if (NS_FAILED(rv)) return rv;
-    spec = prepath + path;
-    break;
-  }
-  case 2:
-    
-    rv = clone->GetPrePath(spec);
-    spec.AppendLiteral("/");
-    if (NS_FAILED(rv)) return rv;
-    break;
-
-  default:
+  } else {
     
     rv = clone->GetAsciiSpec(spec);
-    if (NS_FAILED(rv)) return rv;
-    break;
-  }
-
-  
-  if (userReferrerTrimmingPolicy) {
-    rv = NS_NewURI(getter_AddRefs(clone), spec);
     if (NS_FAILED(rv)) return rv;
   }
 
