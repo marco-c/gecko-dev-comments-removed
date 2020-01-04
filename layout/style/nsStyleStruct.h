@@ -1243,8 +1243,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
 
 public:
   nsBorderColors** mBorderColors;        
-
-public:
   nsStyleCorners mBorderRadius;       
   nsStyleImage   mBorderImageSource;  
   nsStyleSides   mBorderImageSlice;   
