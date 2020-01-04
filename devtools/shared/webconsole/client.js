@@ -100,6 +100,7 @@ WebConsoleClient.prototype = {
           method: actor.method,
         },
         isXHR: actor.isXHR,
+        cause: actor.cause,
         response: {},
         timings: {},
         
