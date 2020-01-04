@@ -3142,24 +3142,27 @@ TabParent::AddInitialDnDDataTo(DataTransfer* aDataTransfer)
         auto* parent = static_cast<BlobParent*>(item.data().get_PBlobParent());
         RefPtr<BlobImpl> impl = parent->GetBlobImpl();
         variant->SetAsISupports(impl);
-      } else if (item.data().type() == IPCDataTransferData::TnsCString &&
-                 nsContentUtils::IsFlavorImage(item.flavor())) {
-        
-        nsCOMPtr<imgIContainer> imageContainer;
-        nsresult rv =
-          nsContentUtils::DataTransferItemToImage(item,
-                                                  getter_AddRefs(imageContainer));
-        if (NS_FAILED(rv)) {
-          continue;
+      } else if (item.data().type() == IPCDataTransferData::TnsCString) {
+        if (nsContentUtils::IsFlavorImage(item.flavor())) {
+          
+          nsCOMPtr<imgIContainer> imageContainer;
+          nsresult rv =
+            nsContentUtils::DataTransferItemToImage(item,
+                                                    getter_AddRefs(imageContainer));
+          if (NS_FAILED(rv)) {
+            continue;
+          }
+          variant->SetAsISupports(imageContainer);
+        } else {
+          variant->SetAsACString(item.data().get_nsCString());
         }
-        variant->SetAsISupports(imageContainer);
       }
 
       
       
-      aDataTransfer->SetDataWithPrincipal(NS_ConvertUTF8toUTF16(item.flavor()),
-                                          variant, i,
-                                          nsContentUtils::GetSystemPrincipal());
+      aDataTransfer->SetDataWithPrincipalFromOtherProcess(NS_ConvertUTF8toUTF16(item.flavor()),
+                                                          variant, i,
+                                                          nsContentUtils::GetSystemPrincipal());
     }
   }
   mInitialDataTransferItems.Clear();

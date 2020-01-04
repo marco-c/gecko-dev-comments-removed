@@ -42,6 +42,7 @@ PRLogModuleInfo* gWin32ClipboardLog = nullptr;
 
 
 UINT nsClipboard::CF_HTML = ::RegisterClipboardFormatW(L"HTML Format");
+UINT nsClipboard::CF_CUSTOMTYPES = ::RegisterClipboardFormatW(L"application/x-moz-custom-clipdata");
 
 
 
@@ -108,6 +109,8 @@ UINT nsClipboard::GetFormat(const char* aMimeStr, bool aMapHTMLMime)
   else if (strcmp(aMimeStr, kNativeHTMLMime) == 0 ||
            aMapHTMLMime && strcmp(aMimeStr, kHTMLMime) == 0)
     format = CF_HTML;
+  else if (strcmp(aMimeStr, kCustomTypesMime) == 0)
+    format = CF_CUSTOMTYPES;
   else
     format = ::RegisterClipboardFormatW(NS_ConvertASCIItoUTF16(aMimeStr).get());
 
@@ -534,6 +537,9 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject * aDataObject, UINT 
                     
                     
                     *aLen = allocLen;
+                  } else if (fe.cfFormat == CF_CUSTOMTYPES) {
+                    
+                    *aLen = allocLen;
                   } else if (fe.cfFormat == preferredDropEffect) {
                     
                     
@@ -683,15 +689,18 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
         }
         else {
           
-          
-          int32_t signedLen = static_cast<int32_t>(dataLen);
-          nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks ( flavorStr, &data, &signedLen );
-          dataLen = signedLen;
-
-          if (strcmp(flavorStr, kRTFMime) == 0) {
+          if (strcmp(flavorStr, kCustomTypesMime) != 0) {
             
-            if (dataLen > 0 && static_cast<char*>(data)[dataLen - 1] == '\0')
-              dataLen--;
+            
+            int32_t signedLen = static_cast<int32_t>(dataLen);
+            nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks ( flavorStr, &data, &signedLen );
+            dataLen = signedLen;
+
+            if (strcmp(flavorStr, kRTFMime) == 0) {
+              
+              if (dataLen > 0 && static_cast<char*>(data)[dataLen - 1] == '\0')
+                dataLen--;
+            }
           }
 
           nsPrimitiveHelpers::CreatePrimitiveForData ( flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper) );

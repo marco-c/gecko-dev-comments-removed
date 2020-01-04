@@ -970,12 +970,14 @@ nsDragService::GetData(nsITransferable * aTransferable,
             } 
 
             if (dataFound) {
-                
-                
-                nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(
-                             flavorStr,
-                             &mTargetDragData,
-                             reinterpret_cast<int*>(&mTargetDragDataLen));
+                if (strcmp(flavorStr, kCustomTypesMime) != 0) {
+                  
+                  
+                  nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(
+                               flavorStr,
+                               &mTargetDragData,
+                               reinterpret_cast<int*>(&mTargetDragDataLen));
+                }
         
                 
                 nsCOMPtr<nsISupports> genericDataWrapper;

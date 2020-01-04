@@ -1328,7 +1328,7 @@ HRESULT nsDataObj::GetText(const nsACString & aDataFlavor, FORMATETC& aFE, STGME
       return S_OK;
     }
   }
-  else {
+  else if ( aFE.cfFormat != nsClipboard::CF_CUSTOMTYPES ) {
     
     
     allocLen += sizeof(char16_t);

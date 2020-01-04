@@ -219,6 +219,13 @@ public:
                                 nsIPrincipal* aPrincipal);
 
   
+  
+  void SetDataWithPrincipalFromOtherProcess(const nsAString& aFormat,
+                                            nsIVariant* aData,
+                                            uint32_t aIndex,
+                                            nsIPrincipal* aPrincipal);
+
+  
   Element* GetDragImage(int32_t* aX, int32_t* aY)
   {
     *aX = mDragImageX;
@@ -260,6 +267,9 @@ protected:
 
   friend class ContentParent;
   void FillAllExternalData();
+
+  void FillInExternalCustomTypes(uint32_t aIndex, nsIPrincipal* aPrincipal);
+  void FillInExternalCustomTypes(nsIVariant* aData, uint32_t aIndex, nsIPrincipal* aPrincipal);
 
   void MozClearDataAtHelper(const nsAString& aFormat, uint32_t aIndex,
                             mozilla::ErrorResult& aRv);
