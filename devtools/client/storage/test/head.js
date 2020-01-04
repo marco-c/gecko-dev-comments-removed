@@ -213,8 +213,13 @@ function* finishTests() {
 
     let windows = getAllWindows(content);
     for (let win of windows) {
-      win.localStorage.clear();
-      win.sessionStorage.clear();
+      
+      try {
+        win.localStorage.clear();
+        win.sessionStorage.clear();
+      } catch (ex) {
+        
+      }
 
       if (win.clear) {
         yield win.clear();
