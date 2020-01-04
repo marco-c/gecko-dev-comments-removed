@@ -1616,6 +1616,14 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
         atomicEffectOp(4, AtomicFetchXorOp, value, mem, flagTemp);
     }
 
+    template<typename T>
+    void compareExchangeToTypedIntArray(Scalar::Type arrayType, const T& mem, Register oldval, Register newval,
+                                        Register temp, AnyRegister output);
+
+    template<typename T>
+    void atomicExchangeToTypedIntArray(Scalar::Type arrayType, const T& mem, Register value,
+                                       Register temp, AnyRegister output);
+
     void clampIntToUint8(Register reg) {
         
         
