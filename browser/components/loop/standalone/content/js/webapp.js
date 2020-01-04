@@ -3,7 +3,7 @@
 
 
 var loop = loop || {};
-loop.webapp = (function($, _, OT, mozL10n) {
+loop.webapp = (function(_, OT, mozL10n) {
   "use strict";
 
   loop.config = loop.config || {};
@@ -1122,4 +1122,4 @@ loop.webapp = (function($, _, OT, mozL10n) {
     WebappRootView: WebappRootView,
     FxOSConversationModel: FxOSConversationModel
   };
-})(jQuery, _, window.OT, navigator.mozL10n);
+})(_, window.OT, navigator.mozL10n);

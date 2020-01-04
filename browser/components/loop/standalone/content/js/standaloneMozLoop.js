@@ -15,7 +15,6 @@ loop.StandaloneMozLoop = (function(mozL10n) {
 
   var ROOM_MAX_CLIENTS = 2;
 
-
   
 
 
@@ -38,14 +37,11 @@ loop.StandaloneMozLoop = (function(mozL10n) {
 
 
 
-
-
-  function failureHandler(callback, jqXHR, textStatus, errorThrown) {
-    var jsonErr = jqXHR && jqXHR.responseJSON || {};
-    var message = "HTTP " + jqXHR.status + " " + errorThrown;
-
+  function failureHandler(callback, xhrReq) {
+    var jsonErr = JSON.parse(xhrReq.responseText && xhrReq.responseText || "{}");
+    var message = "HTTP " + xhrReq.status + " " + xhrReq.statusText;
     
-    var err = new Error(message + (jsonErr.error ? "; " + jsonErr.error : ""));
+    var err = new Error(message);
     err.errno = jsonErr.errno;
 
     callback(err);
@@ -76,30 +72,34 @@ loop.StandaloneMozLoop = (function(mozL10n) {
 
 
     get: function(roomToken, callback) {
-      var req = $.ajax({
-        url: this._baseServerUrl + "/rooms/" + roomToken,
-        method: "GET",
-        contentType: "application/json",
-        beforeSend: function(xhr) {
-          if (this.sessionToken) {
-            xhr.setRequestHeader("Authorization", "Basic " + btoa(this.sessionToken));
+      var url = this._baseServerUrl + "/rooms/" + roomToken;
+
+      this._xhrReq = new XMLHttpRequest();
+      this._xhrReq.open("GET", url, true);
+      this._xhrReq.setRequestHeader("Content-type", "application/json");
+
+      if (this.sessionToken) {
+        this._xhrReq.setRequestHeader("Authorization", "Basic " + btoa(this.sessionToken));
+      }
+
+      this._xhrReq.onload = function() {
+        var request = this._xhrReq;
+        var responseJSON = JSON.parse(request.responseText || "{}");
+
+        if (request.readyState === 4 && request.status >= 200 && request.status < 300) {
+          try {
+            
+            callback(null, validate(responseJSON, { roomUrl: String }));
+          } catch (err) {
+            console.error("Error requesting call info", err.message);
+            callback(err);
           }
-        }.bind(this)
-      });
-
-      req.done(function(responseData) {
-        try {
-          
-          callback(null, validate(responseData, {
-            roomUrl: String
-          }));
-        } catch (err) {
-          console.error("Error requesting call info", err.message);
-          callback(err);
+        } else {
+          failureHandler(callback, request);
         }
-      }.bind(this));
+      }.bind(this);
 
-      req.fail(failureHandler.bind(this, callback));
+      this._xhrReq.send();
     },
 
     
@@ -117,28 +117,33 @@ loop.StandaloneMozLoop = (function(mozL10n) {
 
     _postToRoom: function(roomToken, sessionToken, roomData, expectedProps,
                           async, callback) {
-      var req = $.ajax({
-        url: this._baseServerUrl + "/rooms/" + roomToken,
-        method: "POST",
-        contentType: "application/json",
-        dataType: "json",
-        data: JSON.stringify(roomData),
-        beforeSend: function(xhr) {
-          if (sessionToken) {
-            xhr.setRequestHeader("Authorization", "Basic " + btoa(sessionToken));
-          }
-        },
-        async: async,
-        success: function(responseData) {
+      var url = this._baseServerUrl + "/rooms/" + roomToken;
+      var xhrReq = new XMLHttpRequest();
+
+      xhrReq.open("POST", url, async);
+      xhrReq.setRequestHeader("Content-type", "application/json");
+
+      if (sessionToken) {
+        xhrReq.setRequestHeader("Authorization", "Basic " + btoa(sessionToken));
+      }
+
+      xhrReq.onload = function() {
+        var request = xhrReq;
+        var responseJSON = JSON.parse(request.responseText || null);
+
+        if (request.readyState === 4 && request.status >= 200 && request.status < 300) {
           try {
-            callback(null, validate(responseData, expectedProps));
+            callback(null, validate(responseJSON, expectedProps));
           } catch (err) {
             console.error("Error requesting call info", err.message);
             callback(err);
           }
-        }.bind(this),
-        error: failureHandler.bind(this, callback)
-      });
+        } else {
+          failureHandler(callback, request);
+        }
+      }.bind(this, xhrReq);
+
+      xhrReq.send(JSON.stringify(roomData));
     },
 
     
@@ -273,7 +278,6 @@ loop.StandaloneMozLoop = (function(mozL10n) {
     },
 
     
-
 
 
 
