@@ -83,8 +83,7 @@ task_description_schema = Schema({
     
     Optional('index'): {
         
-        
-        'product': Any('firefox', 'mobile', 'b2g', 'lint', 'harness_test'),
+        'product': Any('firefox', 'mobile', 'b2g'),
 
         
         'job-name': Any(
