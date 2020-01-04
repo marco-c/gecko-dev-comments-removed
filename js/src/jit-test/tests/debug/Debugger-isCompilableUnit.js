@@ -48,3 +48,11 @@ for (var code of compilable_units) {
 for (var code of non_compilable_units) {
     assertEq(Debugger.isCompilableUnit(code), false);
 }
+
+
+assertThrowsInstanceOf(() => {
+    Debugger.isCompilableUnit();
+}, TypeError);
+
+
+assertEq(Debugger.isCompilableUnit("", 1, 2, 3, 4, {}, []), true);
