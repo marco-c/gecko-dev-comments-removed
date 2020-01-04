@@ -10,7 +10,7 @@
 #include "LayerTimelineMarker.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Move.h"
-#include "mozilla/ScopeExit.h"
+#include "mozilla/AutoRestore.h"
 
 namespace mozilla {
 
@@ -65,8 +65,8 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
   MutexAutoLock lock(GetLock()); 
 
   MOZ_RELEASE_ASSERT(!mPopping);
+  AutoRestore<bool> resetPopping(mPopping);
   mPopping = true;
-  auto resetPopping = MakeScopeExit([&] { mPopping = false; });
 
   
   
