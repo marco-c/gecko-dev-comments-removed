@@ -256,7 +256,7 @@ class IonCache
     
     
     
-    void setFallbackLabel(CodeOffsetLabel fallbackLabel) {
+    void setFallbackLabel(CodeOffset fallbackLabel) {
         fallbackLabel_ = fallbackLabel;
     }
 

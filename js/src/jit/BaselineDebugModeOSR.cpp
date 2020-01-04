@@ -1115,7 +1115,7 @@ JitRuntime::generateBaselineDebugModeOSRHandler(JSContext* cx, uint32_t* noFrame
 
     
     
-    CodeOffsetLabel noFrameRegPopOffset(masm.currentOffset());
+    CodeOffset noFrameRegPopOffset(masm.currentOffset());
 
     
     masm.moveStackPtrTo(syncedStackStart);
