@@ -15,9 +15,15 @@
 
 
 
+
+
+
 function FUNC_NAME(rx, S, lengthS, replaceValue
 #ifdef SUBSTITUTION
                    , firstDollarIndex
+#endif
+#ifdef ELEMBASE
+                   , elemBase
 #endif
                   )
 {
@@ -43,9 +49,10 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
         if (result === null)
             break;
 
+        var nCaptures;
 #if defined(FUNCTIONAL) || defined(SUBSTITUTION)
         
-        var nCaptures = std_Math_max(result.length - 1, 0);
+        nCaptures = std_Math_max(result.length - 1, 0);
 #endif
 
         
@@ -70,6 +77,24 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
 
                                                   nCaptures, replaceValue,
                                                   false, firstDollarIndex);
+#elif defined(ELEMBASE)
+        if (IsObject(elemBase)) {
+            var prop = GetStringDataProperty(elemBase, matched);
+            if (prop !== undefined)
+                replacement = prop;
+            else
+                elemBase = undefined;
+        }
+
+        if (!IsObject(elemBase)) {
+            
+            nCaptures = std_Math_max(result.length - 1, 0);
+
+            replacement = RegExpGetComplexReplacement(result, matched, S, position,
+
+                                                      nCaptures, replaceValue,
+                                                      true, -1);
+        }
 #else
         replacement = replaceValue;
 #endif
