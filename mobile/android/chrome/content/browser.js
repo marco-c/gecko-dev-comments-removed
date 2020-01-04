@@ -5331,6 +5331,9 @@ var ErrorPageEventHandler = {
             
             
             NativeWindow.doorhanger.show(Strings.browser.GetStringFromName("safeBrowsingDoorhanger"), "safebrowsing-warning", [], BrowserApp.selectedTab.id);
+          } else if (target == errorDoc.getElementById("whyForbiddenButton")) {
+            
+            BrowserApp.selectedBrowser.loadURI("https://support.mozilla.org/kb/controlledaccess");
           }
         }
         break;
