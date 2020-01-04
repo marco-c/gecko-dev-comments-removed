@@ -44,33 +44,10 @@
 # define getpid() GetCurrentProcessId()
 #elif defined(XP_UNIX)
 # include <unistd.h>
+# include <sys/wait.h>
 #endif
 
 using namespace mozilla;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(XP_UNIX) && !defined(XP_MACOSX)
-#define USE_EXECV
-#endif
 
 static PRLogModuleInfo *
 GetUpdateLog()
@@ -204,7 +181,7 @@ static bool
 GetFile(nsIFile *dir, const nsCSubstring &name, nsCOMPtr<nsIFile> &result)
 {
   nsresult rv;
-  
+
   nsCOMPtr<nsIFile> file;
   rv = dir->Clone(getter_AddRefs(file));
   if (NS_FAILED(rv))
@@ -401,7 +378,7 @@ CopyUpdaterIntoUpdateDir(nsIFile *greDir, nsIFile *appDir, nsIFile *updateDir,
     return false;
 #endif
   rv = updater->AppendNative(NS_LITERAL_CSTRING(UPDATER_BIN));
-  return NS_SUCCEEDED(rv); 
+  return NS_SUCCEEDED(rv);
 }
 
 
@@ -595,7 +572,8 @@ SwitchToUpdatedApp(nsIFile *greDir, nsIFile *updateDir,
 
   
   
-#if defined(USE_EXECV)
+  
+#if defined(XP_UNIX) & !defined(XP_MACOSX)
   nsAutoCString pid("0");
 #else
   nsAutoCString pid;
@@ -642,14 +620,14 @@ SwitchToUpdatedApp(nsIFile *greDir, nsIFile *updateDir,
 
   LOG(("spawning updater process for replacing [%s]\n", updaterPath.get()));
 
-#if defined(USE_EXECV)
+#if defined(XP_UNIX) & !defined(XP_MACOSX)
 # if defined(MOZ_WIDGET_GONK)
   
   
   
   unsetenv("LD_PRELOAD");
 # endif
-  execv(updaterPath.get(), argv);
+  exit(execv(updaterPath.get(), argv));
 #elif defined(XP_WIN)
   
   if (!WinLaunchChild(updaterPathW.get(), argc, argv)) {
@@ -789,7 +767,7 @@ ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *statusFile,
   rv = appFile->GetNativePath(appFilePath);
   if (NS_FAILED(rv))
     return;
-  
+
   nsAutoCString updaterPath;
   rv = updater->GetNativePath(updaterPath);
   if (NS_FAILED(rv))
@@ -870,12 +848,22 @@ ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *statusFile,
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nsAutoCString pid;
   if (!restart) {
     
     pid.AssignASCII("-1");
   } else {
-#if defined(USE_EXECV)
+#if defined(XP_UNIX) & !defined(XP_MACOSX)
     pid.AssignASCII("0");
 #else
     pid.AppendInt((int32_t) getpid());
@@ -942,12 +930,20 @@ ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *statusFile,
 
   LOG(("spawning updater process [%s]\n", updaterPath.get()));
 
-#if defined(USE_EXECV)
+#if defined(XP_UNIX) && !defined(XP_MACOSX)
+  
+  
+  
+  
   
   if (restart) {
-    execv(updaterPath.get(), argv);
-  } else {
-    *outpid = PR_CreateProcess(updaterPath.get(), argv, nullptr, nullptr);
+    exit(execv(updaterPath.get(), argv));
+  }
+  *outpid = fork();
+  if (*outpid == -1) {
+    return;
+  } else if (*outpid == 0) {
+    exit(execv(updaterPath.get(), argv));
   }
 #elif defined(XP_WIN)
   
@@ -987,20 +983,33 @@ ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *statusFile,
 
 
 
-static void
-WaitForProcess(ProcessType pt)
+static bool
+ProcessHasTerminated(ProcessType pt)
 {
 #if defined(XP_WIN)
-  WaitForSingleObject(pt, INFINITE);
+  if (WaitForSingleObject(pt, 1000)) {
+    return false;
+  }
   CloseHandle(pt);
-#elif defined(XP_MACOSX)
-  waitpid(pt, 0, 0);
+  return true;
+#elif defined(XP_UNIX)
+  int exitStatus;
+  bool exited = waitpid(pt, &exitStatus, WNOHANG) > 0;
+  if (!exited) {
+    sleep(1);
+  } else if (WIFEXITED(exitStatus) && (WEXITSTATUS(exitStatus) != 0)) {
+    LOG(("Error while running the updater process, check update.log"));
+  }
+  return exited;
 #else
+  
+  
   int32_t exitCode;
   PR_WaitProcess(pt, &exitCode);
   if (exitCode != 0) {
     LOG(("Error while running the updater process, check update.log"));
   }
+  return true;
 #endif
 }
 
@@ -1024,7 +1033,7 @@ ProcessUpdates(nsIFile *greDir, nsIFile *appDir, nsIFile *updRootDir,
   rv = updatesDir->AppendNative(NS_LITERAL_CSTRING("0"));
   if (NS_FAILED(rv))
     return rv;
- 
+
   nsCOMPtr<nsIFile> statusFile;
   UpdateStatus status = GetUpdateStatus(updatesDir, statusFile);
   switch (status) {
@@ -1270,8 +1279,11 @@ void
 nsUpdateProcessor::WaitForProcess()
 {
   MOZ_ASSERT(!NS_IsMainThread(), "main thread");
-  ::WaitForProcess(mUpdaterPID);
-  NS_DispatchToMainThread(NewRunnableMethod(this, &nsUpdateProcessor::UpdateDone));
+  if (ProcessHasTerminated(mUpdaterPID)) {
+    NS_DispatchToMainThread(NewRunnableMethod(this, &nsUpdateProcessor::UpdateDone));
+  } else {
+    NS_DispatchToCurrentThread(NewRunnableMethod(this, &nsUpdateProcessor::WaitForProcess));
+  }
 }
 
 void
@@ -1287,4 +1299,3 @@ nsUpdateProcessor::UpdateDone()
 
   ShutdownWatcherThread();
 }
-
