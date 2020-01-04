@@ -124,17 +124,17 @@ protected:
 };
 
 
-class PresentationRequesterInfo final : public PresentationSessionInfo
-                                      , public nsIServerSocketListener
+class PresentationControllingInfo final : public PresentationSessionInfo
+                                        , public nsIServerSocketListener
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIPRESENTATIONCONTROLCHANNELLISTENER
   NS_DECL_NSISERVERSOCKETLISTENER
 
-  PresentationRequesterInfo(const nsAString& aUrl,
-                            const nsAString& aSessionId,
-                            nsIPresentationServiceCallback* aCallback)
+  PresentationControllingInfo(const nsAString& aUrl,
+                              const nsAString& aSessionId,
+                              nsIPresentationServiceCallback* aCallback)
     : PresentationSessionInfo(aUrl, aSessionId, aCallback)
   {
     MOZ_ASSERT(mCallback);
@@ -143,7 +143,7 @@ public:
   nsresult Init(nsIPresentationControlChannel* aControlChannel) override;
 
 private:
-  ~PresentationRequesterInfo()
+  ~PresentationControllingInfo()
   {
     Shutdown(NS_OK);
   }
@@ -156,18 +156,18 @@ private:
 };
 
 
-class PresentationResponderInfo final : public PresentationSessionInfo
-                                      , public PromiseNativeHandler
-                                      , public nsITimerCallback
+class PresentationPresentingInfo final : public PresentationSessionInfo
+                                       , public PromiseNativeHandler
+                                       , public nsITimerCallback
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIPRESENTATIONCONTROLCHANNELLISTENER
   NS_DECL_NSITIMERCALLBACK
 
-  PresentationResponderInfo(const nsAString& aUrl,
-                            const nsAString& aSessionId,
-                            nsIPresentationDevice* aDevice)
+  PresentationPresentingInfo(const nsAString& aUrl,
+                             const nsAString& aSessionId,
+                             nsIPresentationDevice* aDevice)
     : PresentationSessionInfo(aUrl, aSessionId, nullptr)
   {
     MOZ_ASSERT(aDevice);
@@ -192,7 +192,7 @@ public:
   bool IsAccessible(base::ProcessId aProcessId) override;
 
 private:
-  ~PresentationResponderInfo()
+  ~PresentationPresentingInfo()
   {
     Shutdown(NS_OK);
   }
