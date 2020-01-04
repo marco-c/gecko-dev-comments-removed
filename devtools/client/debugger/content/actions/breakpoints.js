@@ -100,13 +100,24 @@ function _removeOrDisableBreakpoint(location, isDisabled) {
     }
 
     const bpClient = getBreakpointClient(bp.actor);
-
-    return dispatch({
+    const action = {
       type: constants.REMOVE_BREAKPOINT,
       breakpoint: bp,
-      disabled: isDisabled,
-      [PROMISE]: bpClient.remove()
-    });
+      disabled: isDisabled
+    };
+
+    
+    
+    
+    
+    if(!bp.disabled) {
+      return dispatch(Object.assign({}, action, {
+        [PROMISE]: bpClient.remove()
+      }));
+    }
+    else {
+      return dispatch(Object.assign({}, action, { status: "done" }));
+    }
   }
 }
 
