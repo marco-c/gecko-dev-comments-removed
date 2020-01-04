@@ -4,8 +4,8 @@
 
 
 
-#ifndef js_Mutex_h
-#define js_Mutex_h
+#ifndef threading_ExclusiveData_h
+#define threading_ExclusiveData_h
 
 #include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
@@ -16,33 +16,33 @@ namespace js {
 
 namespace detail {
 
-class MutexBase
+class ExclusiveDataBase
 {
   private:
     mutable PRLock* lock_;
 
-    MutexBase(const MutexBase&) = delete;
-    MutexBase& operator=(const MutexBase&) = delete;
+    ExclusiveDataBase(const ExclusiveDataBase&) = delete;
+    ExclusiveDataBase& operator=(const ExclusiveDataBase&) = delete;
 
   public:
     
-    MutexBase(MutexBase&& rhs)
+    ExclusiveDataBase(ExclusiveDataBase&& rhs)
       : lock_(rhs.lock_)
     {
         MOZ_ASSERT(&rhs != this, "self-move disallowed!");
         rhs.lock_ = nullptr;
     }
 
-    ~MutexBase();
+    ~ExclusiveDataBase();
 
   protected:
-    explicit MutexBase(PRLock* lock)
+    explicit ExclusiveDataBase(PRLock* lock)
       : lock_(lock)
     {
         MOZ_ASSERT(lock_);
     }
 
-    static mozilla::Maybe<MutexBase> Create();
+    static mozilla::Maybe<ExclusiveDataBase> Create();
 
     void acquire() const;
     void release() const;
@@ -111,17 +111,18 @@ class MutexBase
 
 
 
+
 template <typename T>
-class Mutex : private detail::MutexBase
+class ExclusiveData : private detail::ExclusiveDataBase
 {
     mutable T value_;
 
-    Mutex(const Mutex&) = delete;
-    Mutex& operator=(const Mutex&) = delete;
+    ExclusiveData(const ExclusiveData&) = delete;
+    ExclusiveData& operator=(const ExclusiveData&) = delete;
 
     template <typename U>
-    explicit Mutex(U&& u, MutexBase&& base)
-      : MutexBase(mozilla::Move(base))
+    explicit ExclusiveData(U&& u, ExclusiveDataBase&& base)
+      : ExclusiveDataBase(mozilla::Move(base))
       , value_(mozilla::Forward<U>(u))
     { }
 
@@ -132,24 +133,25 @@ class Mutex : private detail::MutexBase
 
 
 
+
     template <typename U>
-    static mozilla::Maybe<Mutex<T>> Create(U&& u) {
-        auto base = detail::MutexBase::Create();
+    static mozilla::Maybe<ExclusiveData<T>> Create(U&& u) {
+        auto base = detail::ExclusiveDataBase::Create();
         if (base.isNothing())
             return mozilla::Nothing();
-        return mozilla::Some(Mutex(mozilla::Forward<U>(u), mozilla::Move(*base)));
+        return mozilla::Some(ExclusiveData(mozilla::Forward<U>(u), mozilla::Move(*base)));
     }
 
-    Mutex(Mutex&& rhs)
-      : MutexBase(mozilla::Move(static_cast<MutexBase&&>(rhs)))
+    ExclusiveData(ExclusiveData&& rhs)
+      : ExclusiveDataBase(mozilla::Move(static_cast<ExclusiveDataBase&&>(rhs)))
       , value_(mozilla::Move(rhs.value_))
     {
         MOZ_ASSERT(&rhs != this, "self-move disallowed!");
     }
 
-    Mutex& operator=(Mutex&& rhs) {
-        this->~Mutex();
-        new (this) Mutex(mozilla::Move(rhs));
+    ExclusiveData& operator=(ExclusiveData&& rhs) {
+        this->~ExclusiveData();
+        new (this) ExclusiveData(mozilla::Move(rhs));
         return *this;
     }
 
@@ -163,13 +165,13 @@ class Mutex : private detail::MutexBase
 
     class MOZ_STACK_CLASS Guard
     {
-        const Mutex* parent_;
+        const ExclusiveData* parent_;
 
         Guard(const Guard&) = delete;
         Guard& operator=(const Guard&) = delete;
 
       public:
-        explicit Guard(const Mutex& parent)
+        explicit Guard(const ExclusiveData& parent)
           : parent_(&parent)
         {
             parent_->acquire();
