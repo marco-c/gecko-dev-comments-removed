@@ -20,8 +20,6 @@ namespace dom {
 OSFileSystem::OSFileSystem(const nsAString& aRootDir)
 {
   mLocalRootPath = aRootDir;
-  FileSystemUtils::LocalPathToNormalizedPath(mLocalRootPath,
-                                             mNormalizedLocalRootPath);
 
   
   
