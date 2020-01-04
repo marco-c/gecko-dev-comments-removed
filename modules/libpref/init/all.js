@@ -543,9 +543,6 @@ pref("media.mediasource.webm.enabled", true);
 #endif
 pref("media.mediasource.webm.audio.enabled", true);
 
-
-pref("media.format-reader.ogg", true);
-
 pref("media.benchmark.vp9.threshold", 150);
 pref("media.benchmark.frames", 300);
 pref("media.benchmark.timeout", 1000);
@@ -5059,14 +5056,7 @@ pref("dom.mapped_arraybuffer.enabled", true);
 
 
 pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-malware-simple,test-unwanted-simple");
-
-#ifdef MOZILLA_OFFICIAL
-
-
 pref("urlclassifier.phishTable", "goog-phish-shavar,test-phish-simple");
-#else
-pref("urlclassifier.phishTable", "googpub-phish-shavar,test-phish-simple");
-#endif
 
 
 pref("urlclassifier.downloadBlockTable", "goog-badbinurl-shavar");
@@ -5120,14 +5110,14 @@ pref("browser.safebrowsing.debug", false);
 
 
 pref("browser.safebrowsing.provider.google.pver", "2.2");
-pref("browser.safebrowsing.provider.google.lists", "goog-badbinurl-shavar,goog-downloadwhite-digest256,goog-phish-shavar,googpub-phish-shavar,goog-malware-shavar,goog-unwanted-shavar");
+pref("browser.safebrowsing.provider.google.lists", "goog-badbinurl-shavar,goog-downloadwhite-digest256,goog-phish-shavar,goog-malware-shavar,goog-unwanted-shavar");
 pref("browser.safebrowsing.provider.google.updateURL", "https://safebrowsing.google.com/safebrowsing/downloads?client=SAFEBROWSING_ID&appver=%MAJOR_VERSION%&pver=2.2&key=%GOOGLE_API_KEY%");
 pref("browser.safebrowsing.provider.google.gethashURL", "https://safebrowsing.google.com/safebrowsing/gethash?client=SAFEBROWSING_ID&appver=%MAJOR_VERSION%&pver=2.2");
 pref("browser.safebrowsing.provider.google.reportURL", "https://safebrowsing.google.com/safebrowsing/diagnostic?client=%NAME%&hl=%LOCALE%&site=");
 
 
 pref("browser.safebrowsing.provider.google4.pver", "4");
-pref("browser.safebrowsing.provider.google4.lists", "goog-phish-proto,googpub-phish-proto,goog-malware-proto,goog-unwanted-proto");
+pref("browser.safebrowsing.provider.google4.lists", "goog-phish-proto,goog-malware-proto,goog-unwanted-proto");
 pref("browser.safebrowsing.provider.google4.updateURL", "https://safebrowsing.googleapis.com/v4/threatListUpdates:fetch?$req=%REQUEST_BASE64%&$ct=application/x-protobuf&key=%GOOGLE_API_KEY%");
 pref("browser.safebrowsing.provider.google4.gethashURL", "https://safebrowsing.googleapis.com/v4/fullHashes:find?$req=%REQUEST_BASE64%&$ct=application/x-protobuf&key=%GOOGLE_API_KEY%");
 pref("browser.safebrowsing.provider.google4.reportURL", "https://safebrowsing.google.com/safebrowsing/diagnostic?client=%NAME%&hl=%LOCALE%&site=");
@@ -5452,9 +5442,6 @@ pref("toolkit.pageThumbs.minHeight", 0);
 pref("webextensions.tests", false);
 
 
-pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
-
-
 pref("dom.input.fallbackUploadDir", "");
 
 
@@ -5489,4 +5476,9 @@ pref("media.seekToNextFrame.enabled", true);
 
 #if !defined(RELEASE_BUILD)
 pref("osfile.reset_worker_delay", 30000);
+#endif
+
+#if !defined(MOZ_WIDGET_GONK) && !defined(MOZ_WIDGET_ANDROID)
+pref("dom.webkitBlink.dirPicker.enabled", true);
+pref("dom.webkitBlink.filesystem.enabled", true);
 #endif
