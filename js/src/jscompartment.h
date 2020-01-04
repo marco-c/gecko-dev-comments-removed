@@ -278,6 +278,7 @@ struct JSCompartment
     bool                         marked;
     bool                         warnedAboutFlagsArgument;
     bool                         warnedAboutExprClosure;
+    bool                         warnedAboutRegExpMultiline;
 
     
     
