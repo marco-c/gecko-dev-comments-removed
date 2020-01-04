@@ -1135,6 +1135,24 @@ PluginModuleChromeParent::AnnotateHang(mozilla::HangMonitor::HangAnnotations& aA
         aAnnotations.AddAnnotation(NS_LITERAL_STRING("pluginName"), mPluginName);
         aAnnotations.AddAnnotation(NS_LITERAL_STRING("pluginVersion"),
                                    mPluginVersion);
+        if (mIsFlashPlugin) {
+            bool isWhitelistedForShumway = false;
+            { 
+                mozilla::MutexAutoLock lock(mHangAnnotatorMutex);
+                if (!mProtocolCallStack.IsEmpty()) {
+                    mozilla::ipc::IProtocol* topProtocol =
+                        mProtocolCallStack.LastElement();
+                    PluginInstanceParent* instance =
+                        GetManagingInstance(topProtocol);
+                    if (instance) {
+                        isWhitelistedForShumway =
+                            instance->IsWhitelistedForShumway();
+                    }
+                }
+            }
+            aAnnotations.AddAnnotation(NS_LITERAL_STRING("pluginIsWhitelistedForShumway"),
+                                       isWhitelistedForShumway);
+        }
     }
 }
 
@@ -1981,6 +1999,22 @@ PluginModuleParent::EndUpdateBackground(NPP instance, const nsIntRect& aRect)
 
     return i->EndUpdateBackground(aRect);
 }
+
+#if defined(XP_WIN)
+nsresult
+PluginModuleParent::GetScrollCaptureContainer(NPP aInstance,
+                                              mozilla::layers::ImageContainer** aContainer)
+{
+    PluginInstanceParent* inst = PluginInstanceParent::Cast(aInstance);
+    return !inst ? NS_ERROR_FAILURE : inst->GetScrollCaptureContainer(aContainer);
+}
+nsresult
+PluginModuleParent::UpdateScrollState(NPP aInstance, bool aIsScrolling)
+{
+    PluginInstanceParent* inst = PluginInstanceParent::Cast(aInstance);
+    return !inst ? NS_ERROR_FAILURE : inst->UpdateScrollState(aIsScrolling);
+}
+#endif
 
 void
 PluginModuleParent::OnInitFailure()
