@@ -2484,9 +2484,11 @@ gfxPlatform::NotifyCompositorCreated(LayersBackend aBackend)
   mCompositorBackend = aBackend;
 
   
-  if (nsCOMPtr<nsIObserverService> obsvc = services::GetObserverService()) {
-    obsvc->NotifyObservers(nullptr, "compositor:created", nullptr);
-  }
+  NS_DispatchToMainThread(NS_NewRunnableFunction([] {
+    if (nsCOMPtr<nsIObserverService> obsvc = services::GetObserverService()) {
+      obsvc->NotifyObservers(nullptr, "compositor:created", nullptr);
+    }
+  }));
 }
 
 void
