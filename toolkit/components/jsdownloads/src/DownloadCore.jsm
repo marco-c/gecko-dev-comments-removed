@@ -422,10 +422,12 @@ this.Download.prototype = {
 
       let changeMade = false;
 
-      if ("contentType" in aOptions &&
-          this.contentType != aOptions.contentType) {
-        this.contentType = aOptions.contentType;
-        changeMade = true;
+      for (let property of ["contentType", "progress", "hasPartialData",
+                            "hasBlockedData"]) {
+        if (property in aOptions && this[property] != aOptions[property]) {
+          this[property] = aOptions[property];
+          changeMade = true;
+        }
       }
 
       if (changeMade) {
@@ -2135,7 +2137,7 @@ this.DownloadCopySaver.prototype = {
         
         yield deferSaveComplete.promise;
 
-        yield this._checkReputationAndMove();
+        yield this._checkReputationAndMove(aSetPropertiesFn);
       } catch (ex) {
         
         
@@ -2167,7 +2169,10 @@ this.DownloadCopySaver.prototype = {
 
 
 
-  _checkReputationAndMove: Task.async(function* () {
+
+
+
+  _checkReputationAndMove: Task.async(function* (aSetPropertiesFn) {
     let download = this.download;
     let targetPath = this.download.target.path;
     let partFilePath = this.download.target.partFilePath;
@@ -2175,8 +2180,7 @@ this.DownloadCopySaver.prototype = {
     let { shouldBlock, verdict } =
         yield DownloadIntegration.shouldBlockForReputationCheck(download);
     if (shouldBlock) {
-      download.progress = 100;
-      download.hasPartialData = false;
+      let newProperties = { progress: 100, hasPartialData: false };
 
       
       
@@ -2189,8 +2193,10 @@ this.DownloadCopySaver.prototype = {
           Cu.reportError(ex);
         }
       } else {
-        download.hasBlockedData = true;
+        newProperties.hasBlockedData = true;
       }
+
+      aSetPropertiesFn(newProperties);
 
       throw new DownloadError({
         becauseBlockedByReputationCheck: true,
@@ -2475,7 +2481,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  execute: function DLS_execute(aSetProgressBytesFn)
+  execute: function DLS_execute(aSetProgressBytesFn, aSetPropertiesFn)
   {
     
     
@@ -2531,7 +2537,7 @@ this.DownloadLegacySaver.prototype = {
           }
         }
 
-        yield this._checkReputationAndMove();
+        yield this._checkReputationAndMove(aSetPropertiesFn);
 
       } catch (ex) {
         
@@ -2566,7 +2572,8 @@ this.DownloadLegacySaver.prototype = {
   },
 
   _checkReputationAndMove: function () {
-    return DownloadCopySaver.prototype._checkReputationAndMove.call(this);
+    return DownloadCopySaver.prototype._checkReputationAndMove
+                                      .apply(this, arguments);
   },
 
   
