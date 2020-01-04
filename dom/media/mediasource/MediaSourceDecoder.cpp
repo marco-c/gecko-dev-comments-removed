@@ -35,7 +35,7 @@ MediaSourceDecoder::MediaSourceDecoder(dom::HTMLMediaElement* aElement)
 }
 
 MediaDecoder*
-MediaSourceDecoder::Clone()
+MediaSourceDecoder::Clone(MediaDecoderOwner* aOwner)
 {
   
   return nullptr;

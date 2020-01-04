@@ -306,7 +306,7 @@ public:
   virtual void ResetConnectionState();
   
   
-  virtual MediaDecoder* Clone() = 0;
+  virtual MediaDecoder* Clone(MediaDecoderOwner* aOwner) = 0;
   
   
   virtual MediaDecoderStateMachine* CreateStateMachine() = 0;
