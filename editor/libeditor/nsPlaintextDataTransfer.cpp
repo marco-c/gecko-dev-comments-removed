@@ -4,6 +4,7 @@
 
 
 #include "EditorUtils.h"
+#include "SelectionState.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/dom/Selection.h"
@@ -39,7 +40,6 @@
 #include "nsLiteralString.h"
 #include "nsPlaintextEditor.h"
 #include "nsRange.h"
-#include "nsSelectionState.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsXPCOM.h"

@@ -4,6 +4,7 @@
 
 
 #include "DeleteTextTransaction.h"
+#include "SelectionState.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/Selection.h"
 #include "nsDebug.h"
@@ -11,7 +12,6 @@
 #include "nsError.h"
 #include "nsIEditor.h"
 #include "nsISupportsImpl.h"
-#include "nsSelectionState.h"
 #include "nsAString.h"
 
 namespace mozilla {

@@ -6,6 +6,7 @@
 #ifndef __editor_h__
 #define __editor_h__
 
+#include "SelectionState.h"             
 #include "mozilla/Assertions.h"         
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/StyleSheetHandle.h"   
@@ -22,7 +23,6 @@
 #include "nsISupportsImpl.h"            
 #include "nsIWeakReferenceUtils.h"      
 #include "nsLiteralString.h"            
-#include "nsSelectionState.h"           
 #include "nsString.h"                   
 #include "nsWeakReference.h"            
 #include "nscore.h"                     
@@ -850,7 +850,8 @@ protected:
   nsWeakPtr        mPlaceHolderTxn;      
   nsWeakPtr        mDocWeak;             
   nsIAtom          *mPlaceHolderName;    
-  nsSelectionState *mSelState;           
+  
+  mozilla::SelectionState* mSelState;
   nsString         *mPhonetic;
   
   
@@ -865,7 +866,7 @@ protected:
   nsTArray<OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
 
   
-  nsSelectionState  mSavedSel;
+  mozilla::SelectionState mSavedSel;
   nsRangeUpdater    mRangeUpdater;       
 
   uint32_t          mModCount;     

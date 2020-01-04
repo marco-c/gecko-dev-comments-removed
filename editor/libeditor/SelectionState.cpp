@@ -3,7 +3,7 @@
 
 
 
-#include "nsSelectionState.h"
+#include "SelectionState.h"
 
 #include "EditorUtils.h"                
 #include "mozilla/Assertions.h"         
@@ -19,23 +19,28 @@
 #include "nsISupportsImpl.h"            
 #include "nsRange.h"                    
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
+
+using namespace dom;
 
 
 
 
 
 
-nsSelectionState::nsSelectionState() : mArray(){}
 
-nsSelectionState::~nsSelectionState()
+
+SelectionState::SelectionState()
+{
+}
+
+SelectionState::~SelectionState()
 {
   MakeEmpty();
 }
 
 void
-nsSelectionState::SaveSelection(Selection* aSel)
+SelectionState::SaveSelection(Selection* aSel)
 {
   MOZ_ASSERT(aSel);
   int32_t arrayCount = mArray.Length();
@@ -61,7 +66,7 @@ nsSelectionState::SaveSelection(Selection* aSel)
 }
 
 nsresult
-nsSelectionState::RestoreSelection(Selection* aSel)
+SelectionState::RestoreSelection(Selection* aSel)
 {
   NS_ENSURE_TRUE(aSel, NS_ERROR_NULL_POINTER);
   nsresult res;
@@ -84,7 +89,7 @@ nsSelectionState::RestoreSelection(Selection* aSel)
 }
 
 bool
-nsSelectionState::IsCollapsed()
+SelectionState::IsCollapsed()
 {
   if (1 != mArray.Length()) return false;
   RefPtr<nsRange> range = mArray[0]->GetRange();
@@ -95,7 +100,7 @@ nsSelectionState::IsCollapsed()
 }
 
 bool
-nsSelectionState::IsEqual(nsSelectionState *aSelState)
+SelectionState::IsEqual(SelectionState* aSelState)
 {
   NS_ENSURE_TRUE(aSelState, false);
   uint32_t i, myCount = mArray.Length(), itsCount = aSelState->mArray.Length();
@@ -120,17 +125,22 @@ nsSelectionState::IsEqual(nsSelectionState *aSelState)
 }
 
 void
-nsSelectionState::MakeEmpty()
+SelectionState::MakeEmpty()
 {
   
   mArray.Clear();
 }
 
 bool
-nsSelectionState::IsEmpty()
+SelectionState::IsEmpty()
 {
   return mArray.IsEmpty();
 }
+
+} 
+
+using namespace mozilla;
+using namespace mozilla::dom;
 
 
 
@@ -163,7 +173,7 @@ nsRangeUpdater::DropRangeItem(nsRangeStore *aRangeItem)
 }
 
 nsresult
-nsRangeUpdater::RegisterSelectionState(nsSelectionState &aSelState)
+nsRangeUpdater::RegisterSelectionState(SelectionState& aSelState)
 {
   uint32_t i, theCount = aSelState.mArray.Length();
   if (theCount < 1) return NS_ERROR_FAILURE;
@@ -177,7 +187,7 @@ nsRangeUpdater::RegisterSelectionState(nsSelectionState &aSelState)
 }
 
 nsresult
-nsRangeUpdater::DropSelectionState(nsSelectionState &aSelState)
+nsRangeUpdater::DropSelectionState(SelectionState& aSelState)
 {
   uint32_t i, theCount = aSelState.mArray.Length();
   if (theCount < 1) return NS_ERROR_FAILURE;
