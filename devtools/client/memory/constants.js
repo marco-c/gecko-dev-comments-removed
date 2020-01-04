@@ -12,6 +12,10 @@ exports.ALLOCATION_RECORDING_OPTIONS = {
 
 
 
+exports.TREE_ROW_HEIGHT = 14;
+
+
+
 const actions = exports.actions = {};
 
 
@@ -50,9 +54,6 @@ actions.SELECT_SNAPSHOT = "select-snapshot";
 actions.TOGGLE_INVERTED = "toggle-inverted";
 
 
-actions.TOGGLE_DIFFING = "toggle-diffing";
-
-
 actions.SELECT_SNAPSHOT_FOR_DIFFING = "select-snapshot-for-diffing";
 
 
@@ -64,10 +65,37 @@ actions.DIFFING_ERROR = "diffing-error";
 actions.SET_BREAKDOWN = "set-breakdown";
 
 
+actions.SET_DOMINATOR_TREE_BREAKDOWN = "set-dominator-tree-breakdown";
+
+
+actions.CHANGE_VIEW = "change-view";
+
+
 actions.SNAPSHOT_ERROR = "snapshot-error";
 
 
 actions.SET_FILTER_STRING = "set-filter-string";
+
+
+actions.EXPAND_CENSUS_NODE = "expand-census-node";
+actions.EXPAND_DIFFING_CENSUS_NODE = "expand-diffing-census-node";
+actions.COLLAPSE_CENSUS_NODE = "collapse-census-node";
+actions.COLLAPSE_DIFFING_CENSUS_NODE = "collapse-diffing-census-node";
+
+
+actions.FOCUS_CENSUS_NODE = "focus-census-node";
+actions.FOCUS_DIFFING_CENSUS_NODE = "focus-diffing-census-node";
+actions.FOCUS_DOMINATOR_TREE_NODE = "focus-dominator-tree-node";
+
+actions.COMPUTE_DOMINATOR_TREE_START = "compute-dominator-tree-start";
+actions.COMPUTE_DOMINATOR_TREE_END = "compute-dominator-tree-end";
+actions.FETCH_DOMINATOR_TREE_START = "fetch-dominator-tree-start";
+actions.FETCH_DOMINATOR_TREE_END = "fetch-dominator-tree-end";
+actions.DOMINATOR_TREE_ERROR = "dominator-tree-error";
+actions.FETCH_IMMEDIATELY_DOMINATED_START = "fetch-immediately-dominated-start";
+actions.FETCH_IMMEDIATELY_DOMINATED_END = "fetch-immediately-dominated-end";
+actions.EXPAND_DOMINATOR_TREE_NODE = "expand-dominator-tree-node";
+actions.COLLAPSE_DOMINATOR_TREE_NODE = "collapse-dominator-tree-node";
 
 
 
@@ -108,9 +136,55 @@ const breakdowns = exports.breakdowns = {
   },
 };
 
+const DOMINATOR_TREE_LABEL_COARSE_TYPE = {
+  by: "coarseType",
+  objects: OBJECT_CLASS,
+  scripts: {
+    by: "internalType",
+    then: {
+      by: "filename",
+      then: COUNT,
+      noFilename: COUNT,
+    },
+  },
+  strings: INTERNAL_TYPE,
+  other: INTERNAL_TYPE,
+};
+
+const dominatorTreeBreakdowns = exports.dominatorTreeBreakdowns = {
+  coarseType: {
+    displayName: "Coarse Type",
+    breakdown: DOMINATOR_TREE_LABEL_COARSE_TYPE
+  },
+
+  allocationStack: {
+    displayName: "Allocation Stack",
+    breakdown: {
+      by: "allocationStack",
+      then: DOMINATOR_TREE_LABEL_COARSE_TYPE,
+      noStack: DOMINATOR_TREE_LABEL_COARSE_TYPE,
+    },
+  },
+
+  internalType: {
+    displayName: "Internal Type",
+    breakdown: INTERNAL_TYPE,
+  },
+};
 
 
-const snapshotState = exports.snapshotState = {};
+
+
+
+
+const viewState = exports.viewState = Object.create(null);
+viewState.CENSUS = "view-state-census";
+viewState.DIFFING = "view-state-diffing";
+viewState.DOMINATOR_TREE = "view-state-dominator-tree";
+
+
+
+const snapshotState = exports.snapshotState = Object.create(null);
 
 
 
@@ -155,3 +229,20 @@ diffingState.TOOK_DIFF = "diffing-state-took-diff";
 
 
 diffingState.ERROR = "diffing-state-error";
+
+
+
+
+
+
+
+
+
+
+const dominatorTreeState = exports.dominatorTreeState = Object.create(null);
+dominatorTreeState.COMPUTING = "dominator-tree-state-computing";
+dominatorTreeState.COMPUTED = "dominator-tree-state-computed";
+dominatorTreeState.FETCHING = "dominator-tree-state-fetching";
+dominatorTreeState.LOADED = "dominator-tree-state-loaded";
+dominatorTreeState.INCREMENTAL_FETCHING = "dominator-tree-state-incremental-fetching";
+dominatorTreeState.ERROR = "dominator-tree-state-error";

@@ -1,0 +1,148 @@
+
+
+
+
+const { assert, isSavedFrame } = require("devtools/shared/DevToolsUtils");
+const { DOM: dom, createClass, createFactory, PropTypes } = require("devtools/client/shared/vendor/react");
+const { L10N } = require("../utils");
+const Frame = createFactory(require("devtools/client/shared/components/frame"));
+const { TREE_ROW_HEIGHT } = require("../constants");
+
+const Separator = createFactory(createClass({
+  displayName: "Separator",
+
+  render() {
+    return dom.span({ className: "separator" }, "›");
+  }
+}));
+
+const DominatorTreeItem = module.exports = createClass({
+  displayName: "DominatorTreeItem",
+
+  propTypes: {
+    item: PropTypes.object.isRequired,
+    depth: PropTypes.number.isRequired,
+    arrow: PropTypes.object.isRequired,
+    focused: PropTypes.bool.isRequired,
+    getPercentSize: PropTypes.func.isRequired,
+    onViewSourceInDebugger: PropTypes.func.isRequired,
+  },
+
+  formatPercent(percent) {
+    return L10N.getFormatStr("tree-item.percent",
+                             this.formatNumber(percent));
+  },
+
+  formatNumber(number) {
+    const rounded = Math.round(number);
+    if (rounded === 0 || rounded === -0) {
+      return "0";
+    }
+
+    return String(Math.abs(rounded));
+  },
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return this.props.item != nextProps.item
+      || this.props.depth != nextProps.depth
+      || this.props.focused != nextProps.focused;
+  },
+
+  render() {
+    let {
+      item,
+      depth,
+      arrow,
+      focused,
+      getPercentSize,
+      onViewSourceInDebugger,
+    } = this.props;
+
+    const retainedSize = this.formatNumber(item.retainedSize);
+    const percentRetainedSize = this.formatPercent(getPercentSize(item.retainedSize));
+
+    const shallowSize = this.formatNumber(item.shallowSize);
+    const percentShallowSize = this.formatPercent(getPercentSize(item.shallowSize));
+
+    
+    
+
+    assert(item.label.length > 0,
+           "Our label should not be empty");
+    const label = Array(item.label.length * 2 - 1);
+    label.fill(undefined);
+
+    for (let i = 0, length = item.label.length; i < length; i++) {
+      const piece = item.label[i];
+      const key = `${item.nodeId}-label-${i}`;
+
+      
+      
+      
+
+      if (isSavedFrame(piece)) {
+        label[i * 2] = Frame({
+          key,
+          onClick: () => onViewSourceInDebugger(piece),
+          frame: piece
+        });
+      } else if (piece === "noStack") {
+        label[i * 2] = dom.span({ key, className: "not-available" },
+                                L10N.getStr("tree-item.nostack"));
+      } else if (piece === "noFilename") {
+        label[i * 2] = dom.span({ key, className: "not-available" },
+                                L10N.getStr("tree-item.nofilename"));
+      } else {
+        label[i * 2] = piece;
+      }
+
+      
+      if (i < length - 1) {
+        label[i * 2 + 1] = Separator({ key: `${item.nodeId}-separator-${i}` });
+      }
+    }
+
+    return dom.div(
+      {
+        className: `heap-tree-item ${focused ? "focused" : ""} node-${item.nodeId}`
+      },
+
+      dom.span(
+        {
+          className: "heap-tree-item-field heap-tree-item-bytes"
+        },
+        dom.span(
+          {
+            className: "heap-tree-number"
+          },
+          retainedSize
+        ),
+        dom.span({ className: "heap-tree-percent" }, percentRetainedSize)
+      ),
+
+      dom.span(
+        {
+          className: "heap-tree-item-field heap-tree-item-bytes"
+        },
+        dom.span(
+          {
+            className: "heap-tree-number"
+          },
+          shallowSize
+        ),
+        dom.span({ className: "heap-tree-percent" }, percentShallowSize)
+      ),
+
+      dom.span(
+        {
+          className: "heap-tree-item-field heap-tree-item-name",
+          style: { marginLeft: depth * TREE_ROW_HEIGHT }
+        },
+        arrow,
+        label,
+        dom.span({ className: "heap-tree-item-address" },
+                 `@ 0x${item.nodeId.toString(16)}`)
+      )
+    );
+  },
+});

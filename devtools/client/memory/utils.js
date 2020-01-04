@@ -13,8 +13,15 @@ const { OS } = require("resource://gre/modules/osfile.jsm");
 const { assert } = require("devtools/shared/DevToolsUtils");
 const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 const CUSTOM_BREAKDOWN_PREF = "devtools.memory.custom-breakdowns";
+const CUSTOM_DOMINATOR_TREE_BREAKDOWN_PREF = "devtools.memory.custom-dominator-tree-breakdowns";
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { snapshotState: states, diffingState, breakdowns } = require("./constants");
+const {
+  snapshotState: states,
+  diffingState,
+  breakdowns,
+  dominatorTreeBreakdowns,
+  dominatorTreeState
+} = require("./constants");
 
 
 
@@ -95,7 +102,6 @@ exports.getCustomBreakdowns = function () {
 
 
 
-
 exports.breakdownNameToSpec = function (name) {
   let customBreakdowns = exports.getCustomBreakdowns();
 
@@ -111,6 +117,81 @@ exports.breakdownNameToSpec = function (name) {
   else if (name in breakdowns) {
     return breakdowns[name].breakdown;
   }
+  return Object.create(null);
+};
+
+
+
+
+
+
+
+exports.getDominatorTreeBreakdownDisplayData = function () {
+  return exports.getDominatorTreeBreakdownNames().map(name => {
+    
+    let preset = dominatorTreeBreakdowns[name];
+    let displayName = name;
+    if (preset && preset.displayName) {
+      displayName = preset.displayName;
+    }
+    return { name, displayName };
+  });
+};
+
+
+
+
+
+
+
+exports.getDominatorTreeBreakdownNames = function () {
+  let custom = exports.getCustomDominatorTreeBreakdowns();
+  return Object.keys(Object.assign({}, dominatorTreeBreakdowns, custom));
+};
+
+
+
+
+
+
+exports.getCustomDominatorTreeBreakdowns = function () {
+  let customBreakdowns = Object.create(null);
+  try {
+    customBreakdowns = JSON.parse(Preferences.get(CUSTOM_DOMINATOR_TREE_BREAKDOWN_PREF)) || Object.create(null);
+  } catch (e) {
+    DevToolsUtils.reportException(
+      `String stored in "${CUSTOM_BREAKDOWN_PREF}" pref cannot be parsed by \`JSON.parse()\`.`);
+  }
+  return customBreakdowns;
+}
+
+
+
+
+
+
+
+
+
+
+exports.dominatorTreeBreakdownNameToSpec = function (name) {
+  let customBreakdowns = exports.getCustomDominatorTreeBreakdowns();
+
+  
+  if (typeof name === "object") {
+    return name;
+  }
+
+  
+  if (name in customBreakdowns) {
+    return customBreakdowns[name];
+  }
+
+  
+  if (name in dominatorTreeBreakdowns) {
+    return dominatorTreeBreakdowns[name].breakdown;
+  }
+
   return Object.create(null);
 };
 
@@ -150,8 +231,22 @@ exports.getStatusText = function (state) {
     case diffingState.SELECTING:
       return L10N.getStr("diffing.state.selecting");
 
+    case dominatorTreeState.COMPUTING:
+      return L10N.getStr("dominatorTree.state.computing");
+
+    case dominatorTreeState.COMPUTED:
+    case dominatorTreeState.FETCHING:
+      return L10N.getStr("dominatorTree.state.fetching");
+
+    case dominatorTreeState.INCREMENTAL_FETCHING:
+      return L10N.getStr("dominatorTree.state.incrementalFetching");
+
+    case dominatorTreeState.ERROR:
+      return L10N.getStr("dominatorTree.state.error");
+
     
     
+    case dominatorTreeState.LOADED:
     case diffingState.TOOK_DIFF:
     case states.READ:
     case states.SAVED_CENSUS:
@@ -199,8 +294,22 @@ exports.getStatusTextFull = function (state) {
     case diffingState.SELECTING:
       return L10N.getStr("diffing.state.selecting.full");
 
+    case dominatorTreeState.COMPUTING:
+      return L10N.getStr("dominatorTree.state.computing.full");
+
+    case dominatorTreeState.COMPUTED:
+    case dominatorTreeState.FETCHING:
+      return L10N.getStr("dominatorTree.state.fetching.full");
+
+    case dominatorTreeState.INCREMENTAL_FETCHING:
+      return L10N.getStr("dominatorTree.state.incrementalFetching.full");
+
+    case dominatorTreeState.ERROR:
+      return L10N.getStr("dominatorTree.state.error.full");
+
     
     
+    case dominatorTreeState.LOADED:
     case diffingState.TOOK_DIFF:
     case states.READ:
     case states.SAVED_CENSUS:
@@ -236,7 +345,7 @@ exports.snapshotIsDiffable = function snapshotIsDiffable(snapshot) {
 
 exports.getSnapshot = function getSnapshot (state, id) {
   const found = state.snapshots.find(s => s.id === id);
-  assert(found, `No matching snapshot found for ${id}`);
+  assert(found, `No matching snapshot found with id = ${id}`);
   return found;
 };
 
@@ -245,11 +354,23 @@ exports.getSnapshot = function getSnapshot (state, id) {
 
 
 
+
 let ID_COUNTER = 0;
-exports.createSnapshot = function createSnapshot() {
+exports.createSnapshot = function createSnapshot(state) {
+  let dominatorTree = null;
+  if (state.view === dominatorTreeState.DOMINATOR_TREE) {
+    dominatorTree = Object.freeze({
+      dominatorTreeId: null,
+      root: null,
+      error: null,
+      state: dominatorTreeState.COMPUTING,
+    });
+  }
+
   return Object.freeze({
     id: ++ID_COUNTER,
     state: states.SAVING,
+    dominatorTree,
     census: null,
     path: null,
     imported: false,
@@ -323,6 +444,20 @@ exports.censusIsUpToDate = function (inverted, filter, breakdown, census) {
 
 
 
+exports.dominatorTreeIsComputed = function (snapshot) {
+  return snapshot.dominatorTree &&
+    (snapshot.dominatorTree.state === dominatorTreeState.COMPUTED ||
+     snapshot.dominatorTree.state === dominatorTreeState.LOADED ||
+     snapshot.dominatorTree.state === dominatorTreeState.INCREMENTAL_FETCHING);
+};
+
+
+
+
+
+
+
+
 exports.getSnapshotTotals = function (census) {
   let bytes = 0;
   let count = 0;
@@ -380,4 +515,25 @@ exports.openFilePicker = function({ title, filters, defaultName, mode }) {
       }
     });
   });
+};
+
+
+
+
+
+
+
+
+
+const createParentMap = exports.createParentMap = function (node,
+                                                            getId = node => node.id,
+                                                            aggregator = Object.create(null)) {
+  if (node.children) {
+    for (let child of node.children) {
+      aggregator[getId(child)] = node;
+      createParentMap(child, getId, aggregator);
+    }
+  }
+
+  return aggregator;
 };

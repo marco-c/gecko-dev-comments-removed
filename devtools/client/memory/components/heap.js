@@ -4,14 +4,15 @@
 
 const { DOM: dom, createClass, PropTypes, createFactory } = require("devtools/client/shared/vendor/react");
 const { assert, safeErrorString } = require("devtools/shared/DevToolsUtils");
-const Tree = createFactory(require("devtools/client/shared/components/tree"));
-const TreeItem = createFactory(require("./tree-item"));
+const Census = createFactory(require("./census"));
+const CensusHeader = createFactory(require("./census-header"));
+const DominatorTree = createFactory(require("./dominator-tree"));
+const DominatorTreeHeader = createFactory(require("./dominator-tree-header"));
 const { getStatusTextFull, L10N } = require("../utils");
-const { snapshotState: states, diffingState } = require("../constants");
+const { snapshotState: states, diffingState, viewState, dominatorTreeState } = require("../constants");
 const { snapshot: snapshotModel, diffingModel } = require("../models");
 
 
-const HEAP_TREE_ROW_HEIGHT = 14;
 
 
 
@@ -21,13 +22,23 @@ const HEAP_TREE_ROW_HEIGHT = 14;
 
 
 
-function createParentMap (node, aggregator=Object.create(null)) {
-  for (let child of (node.children || [])) {
-    aggregator[child.id] = node;
-    createParentMap(child, aggregator);
+
+function getState(view, snapshot, diffing) {
+  switch (view) {
+    case viewState.CENSUS:
+      return snapshot.state;
+
+    case viewState.DIFFING:
+      return diffing.state;
+
+    case viewState.DOMINATOR_TREE:
+      return snapshot.dominatorTree
+        ? snapshot.dominatorTree.state
+        : snapshot.state;
   }
 
-  return aggregator;
+  assert(false, `Unexpected view state: ${view}`);
+  return null;
 }
 
 
@@ -38,46 +49,83 @@ function createParentMap (node, aggregator=Object.create(null)) {
 
 
 
-function createTreeProperties(census, onViewSourceInDebugger, diffing) {
-  const report = census.report;
-  let map = createParentMap(report);
-  const { totalBytes, totalCount } = report;
 
-  const getPercentBytes = totalBytes === 0
-    ? _ => 0
-    : bytes => (bytes / totalBytes) * 100;
 
-  const getPercentCount = totalCount === 0
-    ? _ => 0
-    : count => (count / totalCount) * 100;
-
-  return {
-    autoExpandDepth: 0,
-    getParent: node => {
-      const parent = map[node.id];
-      return parent === report ? null : parent;
-    },
-    getChildren: node => node.children || [],
-    renderItem: (item, depth, focused, arrow, expanded) =>
-      new TreeItem({
-        onViewSourceInDebugger,
-        item,
-        depth,
-        focused,
-        arrow,
-        expanded,
-        getPercentBytes,
-        getPercentCount,
-        showSign: !!diffing,
-      }),
-    getRoots: () => report.children || [],
-    getKey: node => node.id,
-    itemHeight: HEAP_TREE_ROW_HEIGHT,
-    
-    
-    reuseCachedTraversal: _ => true,
-  };
+function shouldDisplayStatus(state, view, snapshot) {
+  switch (state) {
+    case states.IMPORTING:
+    case states.SAVING:
+    case states.SAVED:
+    case states.READING:
+    case states.READ:
+    case states.SAVING_CENSUS:
+    case diffingState.SELECTING:
+    case diffingState.TAKING_DIFF:
+    case dominatorTreeState.COMPUTING:
+    case dominatorTreeState.COMPUTED:
+    case dominatorTreeState.FETCHING:
+      return true;
+  }
+  return view === viewState.DOMINATOR_TREE && !snapshot.dominatorTree;
 }
+
+
+
+
+
+
+
+
+
+function getStateStatusText(state, diffing) {
+  if (state === diffingState.SELECTING) {
+    return L10N.getStr(diffing.firstSnapshotId === null
+                         ? "diffing.prompt.selectBaseline"
+                         : "diffing.prompt.selectComparison");
+  }
+
+  return getStatusTextFull(state);
+}
+
+
+
+
+
+
+
+
+
+function shouldDisplayThrobber(diffing) {
+  return !diffing || diffing.state !== diffingState.SELECTING;
+}
+
+
+
+
+
+
+
+
+
+function getError(snapshot, diffing) {
+  if (diffing && diffing.state === diffingState.ERROR) {
+    return diffing.error;
+  }
+
+  if (snapshot) {
+    if (snapshot.state === states.ERROR) {
+      return snapshot.error;
+    }
+
+    if (snapshot.dominatorTree &&
+        snapshot.dominatorTree.state === dominatorTreeState.ERROR) {
+      return snapshot.dominatorTree.error;
+    }
+  }
+
+  return null;
+}
+
 
 
 
@@ -86,118 +134,158 @@ function createTreeProperties(census, onViewSourceInDebugger, diffing) {
 
 
 const Heap = module.exports = createClass({
-  displayName: "heap-view",
+  displayName: "Heap",
 
   propTypes: {
     onSnapshotClick: PropTypes.func.isRequired,
+    onLoadMoreSiblings: PropTypes.func.isRequired,
+    onCensusExpand: PropTypes.func.isRequired,
+    onCensusCollapse: PropTypes.func.isRequired,
+    onDominatorTreeExpand: PropTypes.func.isRequired,
+    onDominatorTreeCollapse: PropTypes.func.isRequired,
+    onCensusFocus: PropTypes.func.isRequired,
+    onDominatorTreeFocus: PropTypes.func.isRequired,
     snapshot: snapshotModel,
     onViewSourceInDebugger: PropTypes.func.isRequired,
     diffing: diffingModel,
+    view: PropTypes.string.isRequired,
   },
 
   render() {
-    let { snapshot, diffing, onSnapshotClick, onViewSourceInDebugger } = this.props;
+    let {
+      snapshot,
+      diffing,
+      onSnapshotClick,
+      onLoadMoreSiblings,
+      onViewSourceInDebugger,
+      view,
+    } = this.props;
 
-    let census;
-    let state;
-    let statusText;
-    let error;
-    if (diffing) {
-      census = diffing.census;
-      state = diffing.state;
-
-      if (diffing.state === diffingState.SELECTING) {
-        statusText = L10N.getStr(diffing.firstSnapshotId === null
-                                   ? "diffing.prompt.selectBaseline"
-                                   : "diffing.prompt.selectComparison");
-      } else {
-        statusText = getStatusTextFull(diffing.state);
-      }
-
-      if (diffing.error) {
-        error = diffing.error;
-      }
-    } else {
-      census = snapshot ? snapshot.census : null;
-      state = snapshot ? snapshot.state : "initial";
-      statusText = snapshot ? getStatusTextFull(snapshot.state) : "";
-      if (snapshot && snapshot.error) {
-        error = snapshot.error;
-      }
+    if (!diffing && !snapshot) {
+      return this._renderInitial(onSnapshotClick);
     }
-    assert(census !== undefined, "census should have been set");
-    assert(state !== undefined, "state should have been set");
-    assert(statusText !== undefined, "statusText should have been set");
 
-    let content;
-    switch (state) {
-      case "initial":
-        content = [dom.button({
-          className: "devtools-toolbarbutton take-snapshot",
-          onClick: onSnapshotClick,
-          
-          
-          "data-standalone": true,
-          "data-text-only": true,
-        }, L10N.getStr("take-snapshot"))];
-        break;
+    const state = getState(view, snapshot, diffing);
+    const statusText = getStateStatusText(state, diffing);
 
-      case diffingState.ERROR:
-      case states.ERROR:
-        content = [
-          dom.span({ className: "snapshot-status error" }, statusText),
-          dom.pre({}, safeErrorString(error))
-        ];
-        break;
-
-      case diffingState.SELECTING:
-      case diffingState.TAKING_DIFF:
-      case states.IMPORTING:
-      case states.SAVING:
-      case states.SAVED:
-      case states.READING:
-      case states.READ:
-      case states.SAVING_CENSUS:
-        const throbber = state === diffingState.SELECTING
-          ? ""
-          : "devtools-throbber";
-        content = [dom.span({ className: `snapshot-status ${throbber}` },
-                            statusText)];
-        break;
-
-      case diffingState.TOOK_DIFF:
-      case states.SAVED_CENSUS:
-        content = [];
-
-        if (census.breakdown.by === "allocationStack"
-            && census.report.children.length === 1
-            && census.report.children[0].name === "noStack") {
-          content.push(dom.div({ className: "error no-allocation-stacks" },
-                               L10N.getStr("heapview.noAllocationStacks")));
-        }
-
-        content.push(
-          dom.div({ className: "header" },
-            dom.span({ className: "heap-tree-item-bytes" }, L10N.getStr("heapview.field.bytes")),
-            dom.span({ className: "heap-tree-item-count" }, L10N.getStr("heapview.field.count")),
-            dom.span({ className: "heap-tree-item-total-bytes" }, L10N.getStr("heapview.field.totalbytes")),
-            dom.span({ className: "heap-tree-item-total-count" }, L10N.getStr("heapview.field.totalcount")),
-            dom.span({ className: "heap-tree-item-name" }, L10N.getStr("heapview.field.name"))
-          ),
-          Tree(createTreeProperties(census, onViewSourceInDebugger, diffing))
-        );
-        break;
-
-      default:
-        assert(false, "Unexpected state: ${state}");
+    if (shouldDisplayStatus(state, view, snapshot)) {
+      return this._renderStatus(state, statusText, diffing);
     }
-    assert(!!content, "Should have set content in the above switch block");
 
-    let pane = dom.div({ className: "heap-view-panel", "data-state": state },
-                       ...content);
+    const error = getError(snapshot, diffing);
+    if (error) {
+      return this._renderError(state, statusText, error);
+    }
 
-    return (
-      dom.div({ id: "heap-view", "data-state": state }, pane)
+    if (view === viewState.CENSUS || view === viewState.DIFFING) {
+      const census = view === viewState.CENSUS
+        ? snapshot.census
+        : diffing.census;
+      return this._renderCensus(state, census, diffing, onViewSourceInDebugger);
+    }
+
+    assert(view === viewState.DOMINATOR_TREE,
+           "If we aren't in progress, looking at a census, or diffing, then we " +
+           "must be looking at a dominator tree");
+    assert(!diffing, "Should not have diffing");
+    assert(snapshot.dominatorTree, "Should have a dominator tree");
+
+    return this._renderDominatorTree(state, onViewSourceInDebugger, snapshot.dominatorTree,
+                                     onLoadMoreSiblings);
+  },
+
+  
+
+
+
+
+
+
+  _renderHeapView(state, ...contents) {
+    return dom.div(
+      {
+        id: "heap-view",
+        "data-state": state
+      },
+      dom.div(
+        {
+          className: "heap-view-panel",
+          "data-state": state,
+        },
+        ...contents
+      )
     );
-  }
+  },
+
+  _renderInitial(onSnapshotClick) {
+    return this._renderHeapView("initial", dom.button(
+      {
+        className: "devtools-toolbarbutton take-snapshot",
+        onClick: onSnapshotClick,
+        "data-standalone": true,
+        "data-text-only": true,
+      },
+      L10N.getStr("take-snapshot")
+    ));
+  },
+
+  _renderStatus(state, statusText, diffing) {
+    let throbber = "";
+    if (shouldDisplayThrobber(diffing)) {
+      throbber = "devtools-throbber";
+    }
+
+    return this._renderHeapView(state, dom.span(
+      {
+        className: `snapshot-status ${throbber}`
+      },
+      statusText
+    ));
+  },
+
+  _renderError(state, statusText, error) {
+    return this._renderHeapView(
+      state,
+      dom.span({ className: "snapshot-status error" }, statusText),
+      dom.pre({}, safeErrorString(error))
+    );
+  },
+
+  _renderCensus(state, census, diffing, onViewSourceInDebugger) {
+    const contents = [];
+
+    if (census.breakdown.by === "allocationStack"
+        && census.report.children.length === 1
+        && census.report.children[0].name === "noStack") {
+      contents.push(dom.div({ className: "error no-allocation-stacks" },
+                           L10N.getStr("heapview.noAllocationStacks")));
+    }
+
+    contents.push(CensusHeader());
+    contents.push(Census({
+      onViewSourceInDebugger,
+      diffing,
+      census,
+      onExpand: node => this.props.onCensusExpand(census, node),
+      onCollapse: node => this.props.onCensusCollapse(census, node),
+      onFocus: node => this.props.onCensusFocus(census, node),
+    }));
+
+    return this._renderHeapView(state, ...contents);
+  },
+
+  _renderDominatorTree(state, onViewSourceInDebugger, dominatorTree, onLoadMoreSiblings) {
+    return this._renderHeapView(
+      state,
+      DominatorTreeHeader(),
+      DominatorTree({
+        onViewSourceInDebugger,
+        dominatorTree,
+        onLoadMoreSiblings,
+        onExpand: this.props.onDominatorTreeExpand,
+        onCollapse: this.props.onDominatorTreeCollapse,
+        onFocus: this.props.onDominatorTreeFocus,
+      })
+    );
+  },
 });
