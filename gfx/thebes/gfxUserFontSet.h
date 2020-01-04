@@ -263,6 +263,10 @@ public:
                                    bool* aBypassCache) = 0;
 
     
+    virtual bool IsFontLoadAllowed(nsIURI* aFontLocation,
+                                   nsIPrincipal* aPrincipal) = 0;
+
+    
     
     virtual nsresult StartLoad(gfxUserFontEntry* aUserFontEntry,
                                const gfxFontFaceSrc* aFontFaceSrc) = 0;

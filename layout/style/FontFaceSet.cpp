@@ -21,6 +21,7 @@
 #include "mozilla/Snprintf.h"
 #include "mozilla/Telemetry.h"
 #include "nsCORSListenerProxy.h"
+#include "nsContentPolicyUtils.h"
 #include "nsCSSParser.h"
 #include "nsDeviceContext.h"
 #include "nsFontFaceLoader.h"
@@ -597,10 +598,9 @@ FontFaceSet::StartLoad(gfxUserFontEntry* aUserFontEntry,
                                             aFontFaceSrc->mURI,
                                             mDocument,
                                             aUserFontEntry->GetPrincipal(),
-                                            nsILoadInfo::SEC_NORMAL,
+                                            nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS,
                                             nsIContentPolicy::TYPE_FONT,
                                             loadGroup);
-
   NS_ENSURE_SUCCESS(rv, rv);
 
   RefPtr<nsFontFaceLoader> fontLoader =
@@ -646,25 +646,9 @@ FontFaceSet::StartLoad(gfxUserFontEntry* aUserFontEntry,
                                nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE,
                                loadGroup);
 
-  bool inherits = false;
-  rv = NS_URIChainHasFlags(aFontFaceSrc->mURI,
-                           nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT,
-                           &inherits);
-  if (NS_SUCCEEDED(rv) && inherits) {
-    
-    rv = channel->AsyncOpen(streamLoader, nullptr);
-  } else {
-    RefPtr<nsCORSListenerProxy> listener =
-      new nsCORSListenerProxy(streamLoader, aUserFontEntry->GetPrincipal(), false);
-    
-    
-    rv = listener->Init(channel, DataURIHandling::Disallow);
-    if (NS_SUCCEEDED(rv)) {
-      rv = channel->AsyncOpen(listener, nullptr);
-    }
-    if (NS_FAILED(rv)) {
-      fontLoader->DropChannel();  
-    }
+  rv = channel->AsyncOpen2(streamLoader);
+  if (NS_FAILED(rv)) {
+    fontLoader->DropChannel();  
   }
 
   if (NS_SUCCEEDED(rv)) {
@@ -1338,13 +1322,6 @@ FontFaceSet::CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
     *aPrincipal = aFontFaceSrc->mOriginPrincipal;
   }
 
-  nsresult rv = nsFontFaceLoader::CheckLoadAllowed(*aPrincipal,
-                                                   aFontFaceSrc->mURI,
-                                                   mDocument);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   *aBypassCache = false;
 
   nsCOMPtr<nsIDocShell> docShell = mDocument->GetDocShell();
@@ -1363,7 +1340,28 @@ FontFaceSet::CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
     }
   }
 
-  return rv;
+  return NS_OK;
+}
+
+
+
+
+
+bool
+FontFaceSet::IsFontLoadAllowed(nsIURI* aFontLocation, nsIPrincipal* aPrincipal)
+{
+  int16_t shouldLoad = nsIContentPolicy::ACCEPT;
+  nsresult rv = NS_CheckContentLoadPolicy(nsIContentPolicy::TYPE_FONT,
+                                          aFontLocation,
+                                          aPrincipal,
+                                          mDocument,
+                                          EmptyCString(), 
+                                          nullptr, 
+                                          &shouldLoad,
+                                          nsContentUtils::GetContentPolicy(),
+                                          nsContentUtils::GetSecurityManager());
+
+  return NS_SUCCEEDED(rv) && NS_CP_ACCEPTED(shouldLoad);
 }
 
 nsresult
@@ -1379,18 +1377,21 @@ FontFaceSet::SyncLoadFontData(gfxUserFontEntry* aFontToLoad,
   
   
   
+  
+  
+  
   rv = NS_NewChannelWithTriggeringPrincipal(getter_AddRefs(channel),
                                             aFontFaceSrc->mURI,
                                             mDocument,
                                             aFontToLoad->GetPrincipal(),
-                                            nsILoadInfo::SEC_NORMAL,
+                                            nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS,
                                             nsIContentPolicy::TYPE_FONT);
 
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   nsCOMPtr<nsIInputStream> stream;
-  rv = channel->Open(getter_AddRefs(stream));
+  rv = channel->Open2(getter_AddRefs(stream));
   NS_ENSURE_SUCCESS(rv, rv);
 
   uint64_t bufferLength64;
@@ -1740,6 +1741,14 @@ FontFaceSet::UserFontSet::CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
     return NS_ERROR_FAILURE;
   }
   return mFontFaceSet->CheckFontLoad(aFontFaceSrc, aPrincipal, aBypassCache);
+}
+
+ bool
+FontFaceSet::UserFontSet::IsFontLoadAllowed(nsIURI* aFontLocation,
+                                            nsIPrincipal* aPrincipal)
+{
+  return mFontFaceSet &&
+         mFontFaceSet->IsFontLoadAllowed(aFontLocation, aPrincipal);
 }
 
  nsresult
