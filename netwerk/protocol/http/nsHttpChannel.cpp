@@ -1131,6 +1131,20 @@ nsHttpChannel::CallOnStartRequest()
         }
     }
 
+    
+    
+    
+    
+    
+    
+    if (!mCanceled) {
+        rv = ProcessContentSignatureHeader(mResponseHead);
+        if (NS_FAILED(rv)) {
+            LOG(("Content-signature verification failed.\n"));
+            return rv;
+        }
+    }
+
     LOG(("  calling mListener->OnStartRequest\n"));
     if (mListener) {
         MOZ_ASSERT(!mOnStartRequestCalled,
@@ -1190,24 +1204,6 @@ nsHttpChannel::CallOnStartRequest()
         } else if (mApplicationCacheForWrite) {
             LOG(("offline cache is up to date, not updating"));
             CloseOfflineCacheEntry();
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!mCanceled) {
-        rv = ProcessContentSignatureHeader(mResponseHead);
-        if (NS_FAILED(rv)) {
-            LOG(("Content-signature verification failed.\n"));
-            return rv;
         }
     }
 
@@ -1532,8 +1528,8 @@ nsHttpChannel::ProcessContentSignatureHeader(nsHttpResponseHead *aResponseHead)
     
     RefPtr<ContentVerifier> contentVerifyingMediator =
       new ContentVerifier(mListener, mListenerContext);
-    rv = contentVerifyingMediator->Init(contentSignatureHeader, this,
-                                        mListenerContext);
+    rv = contentVerifyingMediator->Init(
+      NS_ConvertUTF8toUTF16(contentSignatureHeader));
     NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_SIGNATURE);
     mListener = contentVerifyingMediator;
 
