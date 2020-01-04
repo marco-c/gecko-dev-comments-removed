@@ -820,6 +820,7 @@ JSCompartment::fixupAfterMovingGC()
     fixupGlobal();
     fixupInitialShapeTable();
     objectGroups.fixupTablesAfterMovingGC();
+    dtoaCache.purge();
 
 #ifdef DEBUG
     
