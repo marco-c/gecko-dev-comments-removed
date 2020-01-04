@@ -4423,8 +4423,6 @@ pref("layers.max-active", -1);
 pref("layers.tiles.adjust", true);
 
 
-pref("layers.offmainthreadcomposition.force-disabled", false);
-
 
 
 
