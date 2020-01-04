@@ -1352,7 +1352,7 @@ inline void Node::clear_has_coarsetype() {
   _has_bits_[0] &= ~0x00000040u;
 }
 inline void Node::clear_coarsetype() {
-  coarsetype_ = 3u;
+  coarsetype_ = 0u;
   clear_has_coarsetype();
 }
 inline ::google::protobuf::uint32 Node::coarsetype() const {

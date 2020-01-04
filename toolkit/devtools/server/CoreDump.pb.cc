@@ -205,7 +205,7 @@ void protobuf_AddDesc_CoreDump_2eproto() {
     "\0132\037.mozilla.devtools.protobuf.Edge\022>\n\017al"
     "locationStack\030\005 \001(\0132%.mozilla.devtools.p"
     "rotobuf.StackFrame\022\031\n\021jsObjectClassName\030"
-    "\006 \001(\014\022\025\n\ncoarseType\030\007 \001(\r:\0013\"&\n\004Edge\022\020\n\010"
+    "\006 \001(\014\022\025\n\ncoarseType\030\007 \001(\r:\0010\"&\n\004Edge\022\020\n\010"
     "referent\030\001 \001(\004\022\014\n\004name\030\002 \001(\014", 628);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "CoreDump.proto", &protobuf_RegisterTypes);
@@ -1308,7 +1308,7 @@ void Node::SharedCtor() {
   size_ = GOOGLE_ULONGLONG(0);
   allocationstack_ = NULL;
   jsobjectclassname_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  coarsetype_ = 3u;
+  coarsetype_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1367,7 +1367,7 @@ void Node::Clear() {
         jsobjectclassname_->clear();
       }
     }
-    coarsetype_ = 3u;
+    coarsetype_ = 0u;
   }
   edges_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
