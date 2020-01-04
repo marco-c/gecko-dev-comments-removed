@@ -34,8 +34,8 @@
 
 #include <wtypes.h>
 
-typedef struct 
-{
+typedef struct
+    {
     PRBool isMultiProcess;
 #ifdef WINNT
     
@@ -43,25 +43,25 @@ typedef struct
 #else
     union {
 #endif
-        PRLock* sslLock;
+        PRLock *sslLock;
         HANDLE sslMutx;
     } u;
 } sslMutex;
 
-typedef int    sslPID;
+typedef int sslPID;
 
 #elif defined(LINUX) || defined(AIX) || defined(BEOS) || defined(BSDI) || (defined(NETBSD) && __NetBSD_Version__ < 500000000) || defined(OPENBSD)
 
 #include <sys/types.h>
 #include "prtypes.h"
 
-typedef struct { 
+typedef struct {
     PRBool isMultiProcess;
     union {
-        PRLock* sslLock;
+        PRLock *sslLock;
         struct {
-            int      mPipes[3]; 
-            PRInt32  nWaiters;
+            int mPipes[3];
+            PRInt32 nWaiters;
         } pipeStr;
     } u;
 } sslMutex;
@@ -70,15 +70,15 @@ typedef pid_t sslPID;
 
 #elif defined(XP_UNIX) && !defined(DARWIN)
 
-#include <sys/types.h>	/* for pid_t */
-#include <semaphore.h>  /* for sem_t, and sem_* functions */
+#include <sys/types.h> /* for pid_t */
+#include <semaphore.h> /* for sem_t, and sem_* functions */
 
 typedef struct
-{
+    {
     PRBool isMultiProcess;
     union {
-        PRLock* sslLock;
-        sem_t  sem;
+        PRLock *sslLock;
+        sem_t sem;
     } u;
 } sslMutex;
 
@@ -88,10 +88,10 @@ typedef pid_t sslPID;
 
 
 
-typedef struct { 
+typedef struct {
     PRBool isMultiProcess;
     union {
-        PRLock* sslLock;
+        PRLock *sslLock;
         
     } u;
 } sslMutex;

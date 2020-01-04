@@ -286,7 +286,15 @@ static const struct FREEBLVectorStr vector =
 
     EC_FillParams,
     EC_DecodeParams,
-    EC_CopyParams
+    EC_CopyParams,
+
+    
+
+    ChaCha20Poly1305_InitContext,
+    ChaCha20Poly1305_CreateContext,
+    ChaCha20Poly1305_DestroyContext,
+    ChaCha20Poly1305_Seal,
+    ChaCha20Poly1305_Open
 
     
 };

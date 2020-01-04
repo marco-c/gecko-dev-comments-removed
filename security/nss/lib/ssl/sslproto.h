@@ -11,6 +11,8 @@
 #define __sslproto_h_
 
 
+
+
 #define SSL_LIBRARY_VERSION_2                   0x0002
 #define SSL_LIBRARY_VERSION_3_0                 0x0300
 #define SSL_LIBRARY_VERSION_TLS_1_0             0x0301
@@ -260,6 +262,10 @@
 #define TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256   0xC02F
 #define TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256    0xC031
 
+#define TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256   0xCCA8
+#define TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 0xCCA9
+#define TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256     0xCCAA
+
 
 #define SSL_RSA_OLDFIPS_WITH_3DES_EDE_CBC_SHA   0xffe0
 #define SSL_RSA_OLDFIPS_WITH_DES_CBC_SHA        0xffe1
@@ -274,5 +280,7 @@
 #define SRTP_AES128_CM_HMAC_SHA1_32             0x0002
 #define SRTP_NULL_HMAC_SHA1_80                  0x0005
 #define SRTP_NULL_HMAC_SHA1_32                  0x0006
+
+
 
 #endif 

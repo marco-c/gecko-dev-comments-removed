@@ -10,14 +10,18 @@
 #include "sslimpl.h"
 
 #if defined(WIN32)
-#define MAP_ERROR(from,to) if (err == from) { PORT_SetError(to); }
-#define DEFINE_ERROR       PRErrorCode err = PR_GetError();
+#define MAP_ERROR(from, to) \
+    if (err == from) {      \
+        PORT_SetError(to);  \
+    }
+#define DEFINE_ERROR PRErrorCode err = PR_GetError();
 #else
-#define MAP_ERROR(from,to)
+#define MAP_ERROR(from, to)
 #define DEFINE_ERROR
 #endif
 
-int ssl_DefConnect(sslSocket *ss, const PRNetAddr *sa)
+int
+ssl_DefConnect(sslSocket *ss, const PRNetAddr *sa)
 {
     PRFileDesc *lower = ss->fd->lower;
     int rv;
@@ -26,7 +30,8 @@ int ssl_DefConnect(sslSocket *ss, const PRNetAddr *sa)
     return rv;
 }
 
-int ssl_DefBind(sslSocket *ss, const PRNetAddr *addr)
+int
+ssl_DefBind(sslSocket *ss, const PRNetAddr *addr)
 {
     PRFileDesc *lower = ss->fd->lower;
     int rv;
@@ -35,7 +40,8 @@ int ssl_DefBind(sslSocket *ss, const PRNetAddr *addr)
     return rv;
 }
 
-int ssl_DefListen(sslSocket *ss, int backlog)
+int
+ssl_DefListen(sslSocket *ss, int backlog)
 {
     PRFileDesc *lower = ss->fd->lower;
     int rv;
@@ -44,7 +50,8 @@ int ssl_DefListen(sslSocket *ss, int backlog)
     return rv;
 }
 
-int ssl_DefShutdown(sslSocket *ss, int how)
+int
+ssl_DefShutdown(sslSocket *ss, int how)
 {
     PRFileDesc *lower = ss->fd->lower;
     int rv;
@@ -53,19 +60,21 @@ int ssl_DefShutdown(sslSocket *ss, int how)
     return rv;
 }
 
-int ssl_DefRecv(sslSocket *ss, unsigned char *buf, int len, int flags)
+int
+ssl_DefRecv(sslSocket *ss, unsigned char *buf, int len, int flags)
 {
     PRFileDesc *lower = ss->fd->lower;
     int rv;
 
     rv = lower->methods->recv(lower, (void *)buf, len, flags, ss->rTimeout);
     if (rv < 0) {
-	DEFINE_ERROR
-	MAP_ERROR(PR_SOCKET_SHUTDOWN_ERROR, PR_CONNECT_RESET_ERROR)
-    } else if (rv > len) {
-	PORT_Assert(rv <= len);
-	PORT_SetError(PR_BUFFER_OVERFLOW_ERROR);
-	rv = SECFailure;
+        DEFINE_ERROR
+        MAP_ERROR(PR_SOCKET_SHUTDOWN_ERROR, PR_CONNECT_RESET_ERROR)
+    }
+    else if (rv > len) {
+        PORT_Assert(rv <= len);
+        PORT_SetError(PR_BUFFER_OVERFLOW_ERROR);
+        rv = SECFailure;
     }
     return rv;
 }
@@ -76,7 +85,8 @@ int ssl_DefRecv(sslSocket *ss, unsigned char *buf, int len, int flags)
 
 
 
-int ssl_DefSend(sslSocket *ss, const unsigned char *buf, int len, int flags)
+int
+ssl_DefSend(sslSocket *ss, const unsigned char *buf, int len, int flags)
 {
     PRFileDesc *lower = ss->fd->lower;
     int sent = 0;
@@ -86,74 +96,77 @@ int ssl_DefSend(sslSocket *ss, const unsigned char *buf, int len, int flags)
 
 
     if (ss->opt.useSecurity && !ss->delayDisabled) {
-	ssl_EnableNagleDelay(ss, PR_FALSE);   
-    	ss->delayDisabled = 1;
+        ssl_EnableNagleDelay(ss, PR_FALSE); 
+        ss->delayDisabled = 1;
     }
 #endif
     do {
-	int rv = lower->methods->send(lower, (const void *)(buf + sent), 
-	                              len - sent, flags, ss->wTimeout);
-	if (rv < 0) {
-	    PRErrorCode err = PR_GetError();
-	    if (err == PR_WOULD_BLOCK_ERROR) {
-		ss->lastWriteBlocked = 1;
-		return sent ? sent : SECFailure;
-	    }
-	    ss->lastWriteBlocked = 0;
-	    MAP_ERROR(PR_CONNECT_ABORTED_ERROR, PR_CONNECT_RESET_ERROR)
-	    
-	    return rv;
-	}
-	sent += rv;
-	
-	if (IS_DTLS(ss) && (len > sent)) { 
-	    
-	    return sent;
-	}
+        int rv = lower->methods->send(lower, (const void *)(buf + sent),
+                                      len - sent, flags, ss->wTimeout);
+        if (rv < 0) {
+            PRErrorCode err = PR_GetError();
+            if (err == PR_WOULD_BLOCK_ERROR) {
+                ss->lastWriteBlocked = 1;
+                return sent ? sent : SECFailure;
+            }
+            ss->lastWriteBlocked = 0;
+            MAP_ERROR(PR_CONNECT_ABORTED_ERROR, PR_CONNECT_RESET_ERROR)
+            
+            return rv;
+        }
+        sent += rv;
+
+        if (IS_DTLS(ss) && (len > sent)) {
+            
+            return sent;
+        }
     } while (len > sent);
     ss->lastWriteBlocked = 0;
     return sent;
 }
 
-int ssl_DefRead(sslSocket *ss, unsigned char *buf, int len)
+int
+ssl_DefRead(sslSocket *ss, unsigned char *buf, int len)
 {
     PRFileDesc *lower = ss->fd->lower;
     int rv;
 
     rv = lower->methods->read(lower, (void *)buf, len);
     if (rv < 0) {
-	DEFINE_ERROR
-	MAP_ERROR(PR_SOCKET_SHUTDOWN_ERROR, PR_CONNECT_RESET_ERROR)
+        DEFINE_ERROR
+        MAP_ERROR(PR_SOCKET_SHUTDOWN_ERROR, PR_CONNECT_RESET_ERROR)
     }
     return rv;
 }
 
-int ssl_DefWrite(sslSocket *ss, const unsigned char *buf, int len)
+int
+ssl_DefWrite(sslSocket *ss, const unsigned char *buf, int len)
 {
     PRFileDesc *lower = ss->fd->lower;
     int sent = 0;
 
     do {
-	int rv = lower->methods->write(lower, (const void *)(buf + sent), 
-	                               len - sent);
-	if (rv < 0) {
-	    PRErrorCode err = PR_GetError();
-	    if (err == PR_WOULD_BLOCK_ERROR) {
-		ss->lastWriteBlocked = 1;
-		return sent ? sent : SECFailure;
-	    }
-	    ss->lastWriteBlocked = 0;
-	    MAP_ERROR(PR_CONNECT_ABORTED_ERROR, PR_CONNECT_RESET_ERROR)
-	    
-	    return rv;
-	}
-	sent += rv;
+        int rv = lower->methods->write(lower, (const void *)(buf + sent),
+                                       len - sent);
+        if (rv < 0) {
+            PRErrorCode err = PR_GetError();
+            if (err == PR_WOULD_BLOCK_ERROR) {
+                ss->lastWriteBlocked = 1;
+                return sent ? sent : SECFailure;
+            }
+            ss->lastWriteBlocked = 0;
+            MAP_ERROR(PR_CONNECT_ABORTED_ERROR, PR_CONNECT_RESET_ERROR)
+            
+            return rv;
+        }
+        sent += rv;
     } while (len > sent);
     ss->lastWriteBlocked = 0;
     return sent;
 }
 
-int ssl_DefGetpeername(sslSocket *ss, PRNetAddr *name)
+int
+ssl_DefGetpeername(sslSocket *ss, PRNetAddr *name)
 {
     PRFileDesc *lower = ss->fd->lower;
     int rv;
@@ -162,7 +175,8 @@ int ssl_DefGetpeername(sslSocket *ss, PRNetAddr *name)
     return rv;
 }
 
-int ssl_DefGetsockname(sslSocket *ss, PRNetAddr *name)
+int
+ssl_DefGetsockname(sslSocket *ss, PRNetAddr *name)
 {
     PRFileDesc *lower = ss->fd->lower;
     int rv;
@@ -171,13 +185,14 @@ int ssl_DefGetsockname(sslSocket *ss, PRNetAddr *name)
     return rv;
 }
 
-int ssl_DefClose(sslSocket *ss)
+int
+ssl_DefClose(sslSocket *ss)
 {
     PRFileDesc *fd;
     PRFileDesc *popped;
-    int         rv;
+    int rv;
 
-    fd    = ss->fd;
+    fd = ss->fd;
 
     
 
@@ -185,8 +200,8 @@ int ssl_DefClose(sslSocket *ss)
 
     PORT_Assert(fd->higher == NULL);
     if (fd->higher) {
-	PORT_SetError(PR_BAD_DESCRIPTOR_ERROR);
-	return SECFailure;
+        PORT_SetError(PR_BAD_DESCRIPTOR_ERROR);
+        return SECFailure;
     }
     ss->fd = NULL;
 
@@ -194,7 +209,7 @@ int ssl_DefClose(sslSocket *ss)
 
 
 
-    popped = PR_PopIOLayer(fd, PR_TOP_IO_LAYER); 
+    popped = PR_PopIOLayer(fd, PR_TOP_IO_LAYER);
     popped->dtor(popped);
 
     
@@ -205,6 +220,6 @@ int ssl_DefClose(sslSocket *ss)
     ssl_FreeSocket(ss);
 
     SSL_TRC(5, ("%d: SSL[%d]: closing, rv=%d errno=%d",
-		SSL_GETPID(), fd, rv, PORT_GetError()));
+                SSL_GETPID(), fd, rv, PORT_GetError()));
     return rv;
 }

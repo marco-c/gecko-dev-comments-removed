@@ -4,15 +4,16 @@
 
 #include "seccomon.h"
 
-#if defined(XP_UNIX) || defined(XP_WIN32) || defined (XP_OS2) || defined(XP_BEOS)
+#if defined(XP_UNIX) || defined(XP_WIN32) || defined(XP_OS2) || defined(XP_BEOS)
 
 #include "sslmutex.h"
 #include "prerr.h"
 
-static SECStatus single_process_sslMutex_Init(sslMutex* pMutex)
+static SECStatus
+single_process_sslMutex_Init(sslMutex* pMutex)
 {
-    PR_ASSERT(pMutex != 0 && pMutex->u.sslLock == 0 );
-    
+    PR_ASSERT(pMutex != 0 && pMutex->u.sslLock == 0);
+
     pMutex->u.sslLock = PR_NewLock();
     if (!pMutex->u.sslLock) {
         return SECFailure;
@@ -20,10 +21,11 @@ static SECStatus single_process_sslMutex_Init(sslMutex* pMutex)
     return SECSuccess;
 }
 
-static SECStatus single_process_sslMutex_Destroy(sslMutex* pMutex)
+static SECStatus
+single_process_sslMutex_Destroy(sslMutex* pMutex)
 {
     PR_ASSERT(pMutex != 0);
-    PR_ASSERT(pMutex->u.sslLock!= 0);
+    PR_ASSERT(pMutex->u.sslLock != 0);
     if (!pMutex->u.sslLock) {
         PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
         return SECFailure;
@@ -32,10 +34,11 @@ static SECStatus single_process_sslMutex_Destroy(sslMutex* pMutex)
     return SECSuccess;
 }
 
-static SECStatus single_process_sslMutex_Unlock(sslMutex* pMutex)
+static SECStatus
+single_process_sslMutex_Unlock(sslMutex* pMutex)
 {
-    PR_ASSERT(pMutex != 0 );
-    PR_ASSERT(pMutex->u.sslLock !=0);
+    PR_ASSERT(pMutex != 0);
+    PR_ASSERT(pMutex->u.sslLock != 0);
     if (!pMutex->u.sslLock) {
         PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
         return SECFailure;
@@ -44,10 +47,11 @@ static SECStatus single_process_sslMutex_Unlock(sslMutex* pMutex)
     return SECSuccess;
 }
 
-static SECStatus single_process_sslMutex_Lock(sslMutex* pMutex)
+static SECStatus
+single_process_sslMutex_Lock(sslMutex* pMutex)
 {
     PR_ASSERT(pMutex != 0);
-    PR_ASSERT(pMutex->u.sslLock != 0 );
+    PR_ASSERT(pMutex->u.sslLock != 0);
     if (!pMutex->u.sslLock) {
         PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
         return SECFailure;
@@ -66,7 +70,7 @@ static SECStatus single_process_sslMutex_Lock(sslMutex* pMutex)
 #include "pratom.h"
 
 #define SSL_MUTEX_MAGIC 0xfeedfd
-#define NONBLOCKING_POSTS 1	/* maybe this is faster */
+#define NONBLOCKING_POSTS 1 /* maybe this is faster */
 
 #if NONBLOCKING_POSTS
 
@@ -82,20 +86,20 @@ setNonBlocking(int fd, int nonBlocking)
 
     flags = fcntl(fd, F_GETFL, 0);
     if (0 > flags)
-	return flags;
+        return flags;
     if (nonBlocking)
-	flags |= FNONBLOCK;
+        flags |= FNONBLOCK;
     else
-	flags &= ~FNONBLOCK;
+        flags &= ~FNONBLOCK;
     err = fcntl(fd, F_SETFL, flags);
     return err;
 }
 #endif
 
 SECStatus
-sslMutex_Init(sslMutex *pMutex, int shared)
+sslMutex_Init(sslMutex* pMutex, int shared)
 {
-    int  err;
+    int err;
     PR_ASSERT(pMutex);
     pMutex->isMultiProcess = (PRBool)(shared != 0);
     if (!shared) {
@@ -104,17 +108,17 @@ sslMutex_Init(sslMutex *pMutex, int shared)
     pMutex->u.pipeStr.mPipes[0] = -1;
     pMutex->u.pipeStr.mPipes[1] = -1;
     pMutex->u.pipeStr.mPipes[2] = -1;
-    pMutex->u.pipeStr.nWaiters  =  0;
+    pMutex->u.pipeStr.nWaiters = 0;
 
     err = pipe(pMutex->u.pipeStr.mPipes);
     if (err) {
-	nss_MD_unix_map_default_error(errno);
-	return err;
+        nss_MD_unix_map_default_error(errno);
+        return err;
     }
 #if NONBLOCKING_POSTS
     err = setNonBlocking(pMutex->u.pipeStr.mPipes[1], 1);
     if (err)
-	goto loser;
+        goto loser;
 #endif
 
     pMutex->u.pipeStr.mPipes[2] = SSL_MUTEX_MAGIC;
@@ -135,26 +139,26 @@ loser:
 }
 
 SECStatus
-sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
+sslMutex_Destroy(sslMutex* pMutex, PRBool processLocal)
 {
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Destroy(pMutex);
     }
     if (pMutex->u.pipeStr.mPipes[2] != SSL_MUTEX_MAGIC) {
-	PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
-	return SECFailure;
+        PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
+        return SECFailure;
     }
     close(pMutex->u.pipeStr.mPipes[0]);
     close(pMutex->u.pipeStr.mPipes[1]);
 
     if (processLocal) {
-	return SECSuccess;
+        return SECSuccess;
     }
 
     pMutex->u.pipeStr.mPipes[0] = -1;
     pMutex->u.pipeStr.mPipes[1] = -1;
     pMutex->u.pipeStr.mPipes[2] = -1;
-    pMutex->u.pipeStr.nWaiters  =  0;
+    pMutex->u.pipeStr.nWaiters = 0;
 
     return SECSuccess;
 }
@@ -166,11 +170,10 @@ sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
 
 
 
- 
 
 
-SECStatus 
-sslMutex_Unlock(sslMutex *pMutex)
+SECStatus
+sslMutex_Unlock(sslMutex* pMutex)
 {
     PRInt32 newValue;
     if (PR_FALSE == pMutex->isMultiProcess) {
@@ -178,30 +181,30 @@ sslMutex_Unlock(sslMutex *pMutex)
     }
 
     if (pMutex->u.pipeStr.mPipes[2] != SSL_MUTEX_MAGIC) {
-	PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
-	return SECFailure;
+        PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
+        return SECFailure;
     }
     
     newValue = PR_ATOMIC_DECREMENT(&pMutex->u.pipeStr.nWaiters);
     if (newValue > 0) {
-	int  cc;
-	char c  = 1;
-	do {
-	    cc = write(pMutex->u.pipeStr.mPipes[1], &c, 1);
-	} while (cc < 0 && (errno == EINTR || errno == EAGAIN));
-	if (cc != 1) {
-	    if (cc < 0)
-		nss_MD_unix_map_default_error(errno);
-	    else
-		PORT_SetError(PR_UNKNOWN_ERROR);
-	    return SECFailure;
-	}
+        int cc;
+        char c = 1;
+        do {
+            cc = write(pMutex->u.pipeStr.mPipes[1], &c, 1);
+        } while (cc < 0 && (errno == EINTR || errno == EAGAIN));
+        if (cc != 1) {
+            if (cc < 0)
+                nss_MD_unix_map_default_error(errno);
+            else
+                PORT_SetError(PR_UNKNOWN_ERROR);
+            return SECFailure;
+        }
     }
     return SECSuccess;
 }
 
-SECStatus 
-sslMutex_Lock(sslMutex *pMutex)
+SECStatus
+sslMutex_Lock(sslMutex* pMutex)
 {
     PRInt32 newValue;
     if (PR_FALSE == pMutex->isMultiProcess) {
@@ -209,24 +212,24 @@ sslMutex_Lock(sslMutex *pMutex)
     }
 
     if (pMutex->u.pipeStr.mPipes[2] != SSL_MUTEX_MAGIC) {
-	PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
-	return SECFailure;
+        PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
+        return SECFailure;
     }
     newValue = PR_ATOMIC_INCREMENT(&pMutex->u.pipeStr.nWaiters);
     
     if (newValue > 1) {
-	int   cc;
-	char  c;
-	do {
-	    cc = read(pMutex->u.pipeStr.mPipes[0], &c, 1);
-	} while (cc < 0 && errno == EINTR);
-	if (cc != 1) {
-	    if (cc < 0)
-		nss_MD_unix_map_default_error(errno);
-	    else
-		PORT_SetError(PR_UNKNOWN_ERROR);
-	    return SECFailure;
-	}
+        int cc;
+        char c;
+        do {
+            cc = read(pMutex->u.pipeStr.mPipes[0], &c, 1);
+        } while (cc < 0 && errno == EINTR);
+        if (cc != 1) {
+            if (cc < 0)
+                nss_MD_unix_map_default_error(errno);
+            else
+                PORT_SetError(PR_UNKNOWN_ERROR);
+            return SECFailure;
+        }
     }
     return SECSuccess;
 }
@@ -239,58 +242,58 @@ sslMutex_Lock(sslMutex *pMutex)
 
 
 
-SECStatus 
-sslMutex_Unlock(sslMutex *pMutex)
+SECStatus
+sslMutex_Unlock(sslMutex* pMutex)
 {
-    int  cc;
-    char c  = 1;
+    int cc;
+    char c = 1;
 
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Unlock(pMutex);
     }
 
     if (pMutex->u.pipeStr.mPipes[2] != SSL_MUTEX_MAGIC) {
-	PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
-	return SECFailure;
+        PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
+        return SECFailure;
     }
     do {
-	cc = write(pMutex->u.pipeStr.mPipes[1], &c, 1);
+        cc = write(pMutex->u.pipeStr.mPipes[1], &c, 1);
     } while (cc < 0 && (errno == EINTR || errno == EAGAIN));
     if (cc != 1) {
-	if (cc < 0)
-	    nss_MD_unix_map_default_error(errno);
-	else
-	    PORT_SetError(PR_UNKNOWN_ERROR);
-	return SECFailure;
+        if (cc < 0)
+            nss_MD_unix_map_default_error(errno);
+        else
+            PORT_SetError(PR_UNKNOWN_ERROR);
+        return SECFailure;
     }
 
     return SECSuccess;
 }
 
-SECStatus 
-sslMutex_Lock(sslMutex *pMutex)
+SECStatus
+sslMutex_Lock(sslMutex* pMutex)
 {
-    int   cc;
-    char  c;
+    int cc;
+    char c;
 
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Lock(pMutex);
     }
- 
+
     if (pMutex->u.pipeStr.mPipes[2] != SSL_MUTEX_MAGIC) {
-	PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
-	return SECFailure;
+        PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
+        return SECFailure;
     }
 
     do {
-	cc = read(pMutex->u.pipeStr.mPipes[0], &c, 1);
+        cc = read(pMutex->u.pipeStr.mPipes[0], &c, 1);
     } while (cc < 0 && errno == EINTR);
     if (cc != 1) {
-	if (cc < 0)
-	    nss_MD_unix_map_default_error(errno);
-	else
-	    PORT_SetError(PR_UNKNOWN_ERROR);
-	return SECFailure;
+        if (cc < 0)
+            nss_MD_unix_map_default_error(errno);
+        else
+            PORT_SetError(PR_UNKNOWN_ERROR);
+        return SECFailure;
     }
 
     return SECSuccess;
@@ -314,7 +317,8 @@ sslMutex_Lock(sslMutex *pMutex)
 
 #ifdef WINNT
 
-SECStatus sslMutex_2LevelInit(sslMutex *sem)
+SECStatus
+sslMutex_2LevelInit(sslMutex *sem)
 {
     
 
@@ -330,7 +334,8 @@ SECStatus sslMutex_2LevelInit(sslMutex *sem)
     return single_process_sslMutex_Init(sem);
 }
 
-static SECStatus sslMutex_2LevelDestroy(sslMutex *sem)
+static SECStatus
+sslMutex_2LevelDestroy(sslMutex *sem)
 {
     return single_process_sslMutex_Destroy(sem);
 }
@@ -345,26 +350,28 @@ sslMutex_Init(sslMutex *pMutex, int shared)
 #endif
     HANDLE hMutex;
     SECURITY_ATTRIBUTES attributes =
-                                { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+        { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
-    PR_ASSERT(pMutex != 0 && (pMutex->u.sslMutx == 0 || 
-              pMutex->u.sslMutx == INVALID_HANDLE_VALUE) );
-    
+    PR_ASSERT(pMutex != 0 && (pMutex->u.sslMutx == 0 ||
+                              pMutex->u.sslMutx ==
+                                  INVALID_HANDLE_VALUE));
+
     pMutex->isMultiProcess = (PRBool)(shared != 0);
-    
+
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Init(pMutex);
     }
-    
+
 #ifdef WINNT
     
     retvalue = sslMutex_2LevelInit(pMutex);
     if (SECSuccess != retvalue)
         return SECFailure;
 #endif
-    
-    if (!pMutex || ((hMutex = pMutex->u.sslMutx) != 0 && 
-        hMutex != INVALID_HANDLE_VALUE)) {
+
+    if (!pMutex || ((hMutex = pMutex->u.sslMutx) != 0 &&
+                    hMutex !=
+                        INVALID_HANDLE_VALUE)) {
         PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
         return SECFailure;
     }
@@ -383,7 +390,7 @@ SECStatus
 sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
 {
     HANDLE hMutex;
-    int    rv;
+    int rv;
     int retvalue = SECSuccess;
 
     PR_ASSERT(pMutex != 0);
@@ -391,20 +398,20 @@ sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
         return single_process_sslMutex_Destroy(pMutex);
     }
 
-        
+
 #ifdef WINNT
     
     retvalue = sslMutex_2LevelDestroy(pMutex);
 #endif
-    
-    PR_ASSERT( pMutex->u.sslMutx != 0 && 
-               pMutex->u.sslMutx != INVALID_HANDLE_VALUE);
-    if (!pMutex || (hMutex = pMutex->u.sslMutx) == 0 
-        || hMutex == INVALID_HANDLE_VALUE) {
+
+    PR_ASSERT(pMutex->u.sslMutx != 0 &&
+              pMutex->u.sslMutx != INVALID_HANDLE_VALUE);
+    if (!pMutex || (hMutex = pMutex->u.sslMutx) == 0 ||
+        hMutex == INVALID_HANDLE_VALUE) {
         PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
         return SECFailure;
     }
-    
+
     rv = CloseHandle(hMutex); 
     if (!processLocal && rv) {
         pMutex->u.sslMutx = hMutex = INVALID_HANDLE_VALUE;
@@ -416,18 +423,18 @@ sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
     return retvalue;
 }
 
-int 
+int
 sslMutex_Unlock(sslMutex *pMutex)
 {
-    BOOL   success = FALSE;
+    BOOL success = FALSE;
     HANDLE hMutex;
 
-    PR_ASSERT(pMutex != 0 );
+    PR_ASSERT(pMutex != 0);
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Unlock(pMutex);
     }
-    
-    PR_ASSERT(pMutex->u.sslMutx != 0 && 
+
+    PR_ASSERT(pMutex->u.sslMutx != 0 &&
               pMutex->u.sslMutx != INVALID_HANDLE_VALUE);
     if (!pMutex || (hMutex = pMutex->u.sslMutx) == 0 ||
         hMutex == INVALID_HANDLE_VALUE) {
@@ -447,12 +454,12 @@ sslMutex_Unlock(sslMutex *pMutex)
 #endif
 }
 
-int 
+int
 sslMutex_Lock(sslMutex *pMutex)
 {
-    HANDLE    hMutex;
-    DWORD     event;
-    DWORD     lastError;
+    HANDLE hMutex;
+    DWORD event;
+    DWORD lastError;
     SECStatus rv;
     SECStatus retvalue = SECSuccess;
     PR_ASSERT(pMutex != 0);
@@ -465,42 +472,42 @@ sslMutex_Lock(sslMutex *pMutex)
 
     retvalue = single_process_sslMutex_Lock(pMutex);
 #endif
-    PR_ASSERT(pMutex->u.sslMutx != 0 && 
+    PR_ASSERT(pMutex->u.sslMutx != 0 &&
               pMutex->u.sslMutx != INVALID_HANDLE_VALUE);
-    if (!pMutex || (hMutex = pMutex->u.sslMutx) == 0 || 
+    if (!pMutex || (hMutex = pMutex->u.sslMutx) == 0 ||
         hMutex == INVALID_HANDLE_VALUE) {
         PORT_SetError(PR_INVALID_ARGUMENT_ERROR);
-        return SECFailure;      
+        return SECFailure; 
     }
     
     event = WaitForSingleObject(hMutex, INFINITE);
     switch (event) {
-    case WAIT_OBJECT_0:
-    case WAIT_ABANDONED:
-        rv = SECSuccess;
-        break;
+        case WAIT_OBJECT_0:
+        case WAIT_ABANDONED:
+            rv = SECSuccess;
+            break;
 
-    case WAIT_TIMEOUT:
+        case WAIT_TIMEOUT:
 #if defined(WAIT_IO_COMPLETION)
-    case WAIT_IO_COMPLETION:
+        case WAIT_IO_COMPLETION:
 #endif
-    default:            
-        PR_ASSERT(!("WaitForSingleObject returned invalid value."));
-	PORT_SetError(PR_UNKNOWN_ERROR);
-	rv = SECFailure;
-	break;
+        default: 
+            PR_ASSERT(!("WaitForSingleObject returned invalid value."));
+            PORT_SetError(PR_UNKNOWN_ERROR);
+            rv = SECFailure;
+            break;
 
-    case WAIT_FAILED:           
-        rv = SECFailure;
-        lastError = GetLastError();     
-        nss_MD_win32_map_default_error(lastError);
-        break;
+        case WAIT_FAILED: 
+            rv = SECFailure;
+            lastError = GetLastError(); 
+            nss_MD_win32_map_default_error(lastError);
+            break;
     }
 
-    if (! (SECSuccess == retvalue && SECSuccess == rv)) {
+    if (!(SECSuccess == retvalue && SECSuccess == rv)) {
         return SECFailure;
     }
-    
+
     return SECSuccess;
 }
 
@@ -509,8 +516,8 @@ sslMutex_Lock(sslMutex *pMutex)
 #include <errno.h>
 #include "unix_err.h"
 
-SECStatus 
-sslMutex_Init(sslMutex *pMutex, int shared)
+SECStatus
+sslMutex_Init(sslMutex* pMutex, int shared)
 {
     int rv;
     PR_ASSERT(pMutex);
@@ -528,8 +535,8 @@ sslMutex_Init(sslMutex *pMutex, int shared)
     return SECSuccess;
 }
 
-SECStatus 
-sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
+SECStatus
+sslMutex_Destroy(sslMutex* pMutex, PRBool processLocal)
 {
     int rv;
     if (PR_FALSE == pMutex->isMultiProcess) {
@@ -538,56 +545,56 @@ sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
 
     
     if (processLocal) {
-	return SECSuccess;
+        return SECSuccess;
     }
     do {
-	rv = sem_destroy(&pMutex->u.sem);
+        rv = sem_destroy(&pMutex->u.sem);
     } while (rv < 0 && errno == EINTR);
     if (rv < 0) {
-	nss_MD_unix_map_default_error(errno);
-	return SECFailure;
+        nss_MD_unix_map_default_error(errno);
+        return SECFailure;
     }
     return SECSuccess;
 }
 
-SECStatus 
-sslMutex_Unlock(sslMutex *pMutex)
+SECStatus
+sslMutex_Unlock(sslMutex* pMutex)
 {
     int rv;
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Unlock(pMutex);
     }
     do {
-	rv = sem_post(&pMutex->u.sem);
+        rv = sem_post(&pMutex->u.sem);
     } while (rv < 0 && errno == EINTR);
     if (rv < 0) {
-	nss_MD_unix_map_default_error(errno);
-	return SECFailure;
+        nss_MD_unix_map_default_error(errno);
+        return SECFailure;
     }
     return SECSuccess;
 }
 
-SECStatus 
-sslMutex_Lock(sslMutex *pMutex)
+SECStatus
+sslMutex_Lock(sslMutex* pMutex)
 {
     int rv;
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Lock(pMutex);
     }
     do {
-	rv = sem_wait(&pMutex->u.sem);
+        rv = sem_wait(&pMutex->u.sem);
     } while (rv < 0 && errno == EINTR);
     if (rv < 0) {
-	nss_MD_unix_map_default_error(errno);
-	return SECFailure;
+        nss_MD_unix_map_default_error(errno);
+        return SECFailure;
     }
     return SECSuccess;
 }
 
 #else
 
-SECStatus 
-sslMutex_Init(sslMutex *pMutex, int shared)
+SECStatus
+sslMutex_Init(sslMutex* pMutex, int shared)
 {
     PR_ASSERT(pMutex);
     pMutex->isMultiProcess = (PRBool)(shared != 0);
@@ -599,8 +606,8 @@ sslMutex_Init(sslMutex *pMutex, int shared)
     return SECFailure;
 }
 
-SECStatus 
-sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
+SECStatus
+sslMutex_Destroy(sslMutex* pMutex, PRBool processLocal)
 {
     PR_ASSERT(pMutex);
     if (PR_FALSE == pMutex->isMultiProcess) {
@@ -611,8 +618,8 @@ sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
     return SECFailure;
 }
 
-SECStatus 
-sslMutex_Unlock(sslMutex *pMutex)
+SECStatus
+sslMutex_Unlock(sslMutex* pMutex)
 {
     PR_ASSERT(pMutex);
     if (PR_FALSE == pMutex->isMultiProcess) {
@@ -623,8 +630,8 @@ sslMutex_Unlock(sslMutex *pMutex)
     return SECFailure;
 }
 
-SECStatus 
-sslMutex_Lock(sslMutex *pMutex)
+SECStatus
+sslMutex_Lock(sslMutex* pMutex)
 {
     PR_ASSERT(pMutex);
     if (PR_FALSE == pMutex->isMultiProcess) {

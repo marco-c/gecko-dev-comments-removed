@@ -36,12 +36,12 @@ typedef struct SSL3StatisticsStr {
 
 
 typedef enum {
-    ssl_kea_null     = 0,
-    ssl_kea_rsa      = 1,
-    ssl_kea_dh       = 2,
-    ssl_kea_fortezza = 3,       
-    ssl_kea_ecdh     = 4,
-    ssl_kea_size		
+    ssl_kea_null = 0,
+    ssl_kea_rsa = 1,
+    ssl_kea_dh = 2,
+    ssl_kea_fortezza = 3, 
+    ssl_kea_ecdh = 4,
+    ssl_kea_size 
 } SSLKEAType;
 
 
@@ -49,21 +49,20 @@ typedef enum {
 
 
 
-#define kt_null   	ssl_kea_null
-#define kt_rsa   	ssl_kea_rsa
-#define kt_dh   	ssl_kea_dh
-#define kt_fortezza	ssl_kea_fortezza       /* deprecated, now unused */
-#define kt_ecdh   	ssl_kea_ecdh
-#define kt_kea_size	ssl_kea_size
-
+#define kt_null ssl_kea_null
+#define kt_rsa ssl_kea_rsa
+#define kt_dh ssl_kea_dh
+#define kt_fortezza ssl_kea_fortezza /* deprecated, now unused */
+#define kt_ecdh ssl_kea_ecdh
+#define kt_kea_size ssl_kea_size
 
 
 
 typedef enum {
-    ssl_sign_null   = 0, 
-    ssl_sign_rsa    = 1,
-    ssl_sign_dsa    = 2,
-    ssl_sign_ecdsa  = 3
+    ssl_sign_null = 0, 
+    ssl_sign_rsa = 1,
+    ssl_sign_dsa = 2,
+    ssl_sign_ecdsa = 3
 } SSLSignType;
 
 
@@ -86,80 +85,86 @@ typedef struct SSLSignatureAndHashAlgStr {
 } SSLSignatureAndHashAlg;
 
 typedef enum {
-    ssl_auth_null   = 0, 
-    ssl_auth_rsa    = 1,
-    ssl_auth_dsa    = 2,
-    ssl_auth_kea    = 3,
-    ssl_auth_ecdsa  = 4
+    ssl_auth_null = 0,
+    ssl_auth_rsa = 1,
+    ssl_auth_dsa = 2,
+    ssl_auth_kea = 3,
+    ssl_auth_ecdsa = 4
 } SSLAuthType;
 
 typedef enum {
-    ssl_calg_null     = 0,
-    ssl_calg_rc4      = 1,
-    ssl_calg_rc2      = 2,
-    ssl_calg_des      = 3,
-    ssl_calg_3des     = 4,
-    ssl_calg_idea     = 5,
-    ssl_calg_fortezza = 6,      
-    ssl_calg_aes      = 7,
+    ssl_calg_null = 0,
+    ssl_calg_rc4 = 1,
+    ssl_calg_rc2 = 2,
+    ssl_calg_des = 3,
+    ssl_calg_3des = 4,
+    ssl_calg_idea = 5,
+    ssl_calg_fortezza = 6, 
+    ssl_calg_aes = 7,
     ssl_calg_camellia = 8,
-    ssl_calg_seed     = 9,
-    ssl_calg_aes_gcm  = 10
+    ssl_calg_seed = 9,
+    ssl_calg_aes_gcm = 10,
+    ssl_calg_chacha20 = 11
 } SSLCipherAlgorithm;
 
-typedef enum { 
-    ssl_mac_null      = 0, 
-    ssl_mac_md5       = 1, 
-    ssl_mac_sha       = 2, 
-    ssl_hmac_md5      = 3, 	
-    ssl_hmac_sha      = 4, 	
-    ssl_hmac_sha256   = 5,
-    ssl_mac_aead      = 6
+typedef enum {
+    ssl_mac_null = 0,
+    ssl_mac_md5 = 1,
+    ssl_mac_sha = 2,
+    ssl_hmac_md5 = 3, 
+    ssl_hmac_sha = 4, 
+    ssl_hmac_sha256 = 5,
+    ssl_mac_aead = 6
 } SSLMACAlgorithm;
 
 typedef enum {
     ssl_compression_null = 0,
-    ssl_compression_deflate = 1  
+    ssl_compression_deflate = 1 
 } SSLCompressionMethod;
 
 typedef struct SSLChannelInfoStr {
-    PRUint32             length;
-    PRUint16             protocolVersion;
-    PRUint16             cipherSuite;
-
-    
-    PRUint32             authKeyBits;
-
-    
-    PRUint32             keaKeyBits;
-
-    
-    PRUint32             creationTime;		
-    PRUint32             lastAccessTime;	
-    PRUint32             expirationTime;	
-    PRUint32             sessionIDLength;	
-    PRUint8              sessionID    [32];
-
     
 
+
+    PRUint32 length;
+    PRUint16 protocolVersion;
+    PRUint16 cipherSuite;
+
     
-    const char *         compressionMethodName;
+    PRUint32 authKeyBits;
+
+    
+    PRUint32 keaKeyBits;
+
+    
+    PRUint32 creationTime;    
+    PRUint32 lastAccessTime;  
+    PRUint32 expirationTime;  
+    PRUint32 sessionIDLength; 
+    PRUint8 sessionID[32];
+
+    
+
+    
+    const char* compressionMethodName;
     SSLCompressionMethod compressionMethod;
 
     
 
 
 
-    PRBool               extendedMasterSecretUsed;
+    PRBool extendedMasterSecretUsed;
 } SSLChannelInfo;
 
 
 #define ssl_preinfo_version (1U << 0)
 #define ssl_preinfo_cipher_suite (1U << 1)
-#define ssl_preinfo_all (ssl_preinfo_version|ssl_preinfo_cipher_suite)
+#define ssl_preinfo_all (ssl_preinfo_version | ssl_preinfo_cipher_suite)
 
 typedef struct SSLPreliminaryChannelInfoStr {
     
+
+
     PRUint32 length;
     
 
@@ -171,39 +176,42 @@ typedef struct SSLPreliminaryChannelInfoStr {
 } SSLPreliminaryChannelInfo;
 
 typedef struct SSLCipherSuiteInfoStr {
-    PRUint16             length;
-    PRUint16             cipherSuite;
-
-    
-    const char *         cipherSuiteName;
-
-    
-    const char *         authAlgorithmName;
-    SSLAuthType          authAlgorithm;
-
-    
-    const char *         keaTypeName;
-    SSLKEAType           keaType;
-
-    
-    const char *         symCipherName;
-    SSLCipherAlgorithm   symCipher;
-    PRUint16             symKeyBits;
-    PRUint16             symKeySpace;
-    PRUint16             effectiveKeyBits;
-
-    
     
 
 
-    const char *         macAlgorithmName;
-    SSLMACAlgorithm      macAlgorithm;
-    PRUint16             macBits;
+    PRUint16 length;
+    PRUint16 cipherSuite;
 
-    PRUintn              isFIPS       : 1;
-    PRUintn              isExportable : 1;
-    PRUintn              nonStandard  : 1;
-    PRUintn              reservedBits :29;
+    
+    const char* cipherSuiteName;
+
+    
+    const char* authAlgorithmName;
+    SSLAuthType authAlgorithm;
+
+    
+    const char* keaTypeName;
+    SSLKEAType keaType;
+
+    
+    const char* symCipherName;
+    SSLCipherAlgorithm symCipher;
+    PRUint16 symKeyBits;
+    PRUint16 symKeySpace;
+    PRUint16 effectiveKeyBits;
+
+    
+    
+
+
+    const char* macAlgorithmName;
+    SSLMACAlgorithm macAlgorithm;
+    PRUint16 macBits;
+
+    PRUintn isFIPS : 1;
+    PRUintn isExportable : 1;
+    PRUintn nonStandard : 1;
+    PRUintn reservedBits : 29;
 
 } SSLCipherSuiteInfo;
 
@@ -218,34 +226,34 @@ typedef struct SSLVersionRangeStr {
 } SSLVersionRange;
 
 typedef enum {
-    SSL_sni_host_name                    = 0,
+    SSL_sni_host_name = 0,
     SSL_sni_type_total
 } SSLSniNameType;
 
 
 
 typedef enum {
-    ssl_server_name_xtn              = 0,
-    ssl_cert_status_xtn              = 5,
+    ssl_server_name_xtn = 0,
+    ssl_cert_status_xtn = 5,
 #ifndef NSS_DISABLE_ECC
-    ssl_elliptic_curves_xtn          = 10,
-    ssl_ec_point_formats_xtn         = 11,
+    ssl_elliptic_curves_xtn = 10,
+    ssl_ec_point_formats_xtn = 11,
 #endif
-    ssl_signature_algorithms_xtn     = 13,
-    ssl_use_srtp_xtn                 = 14,
-    ssl_app_layer_protocol_xtn       = 16,
+    ssl_signature_algorithms_xtn = 13,
+    ssl_use_srtp_xtn = 14,
+    ssl_app_layer_protocol_xtn = 16,
     
-    ssl_signed_cert_timestamp_xtn    = 18,
-    ssl_padding_xtn                  = 21,
-    ssl_extended_master_secret_xtn   = 23,
-    ssl_session_ticket_xtn           = 35,
-    ssl_tls13_key_share_xtn          = 40,      
-    ssl_next_proto_nego_xtn          = 13172,
-    ssl_renegotiation_info_xtn       = 0xff01,
-    ssl_tls13_draft_version_xtn      = 0xff02   
+    ssl_signed_cert_timestamp_xtn = 18,
+    ssl_padding_xtn = 21,
+    ssl_extended_master_secret_xtn = 23,
+    ssl_session_ticket_xtn = 35,
+    ssl_tls13_key_share_xtn = 40, 
+    ssl_next_proto_nego_xtn = 13172,
+    ssl_renegotiation_info_xtn = 0xff01,
+    ssl_tls13_draft_version_xtn = 0xff02 
 } SSLExtensionType;
 
-#define SSL_MAX_EXTENSIONS             14 /* doesn't include ssl_padding_xtn. */
+#define SSL_MAX_EXTENSIONS 14 /* doesn't include ssl_padding_xtn. */
 
 typedef enum {
     ssl_dhe_group_none = 0,
