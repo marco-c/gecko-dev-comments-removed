@@ -446,6 +446,8 @@ public:
   nsCSSUnit GetUnit() const { return mUnit; }
   bool      IsLengthUnit() const
     { return eCSSUnit_PhysicalMillimeter <= mUnit && mUnit <= eCSSUnit_Pixel; }
+  bool      IsLengthPercentCalcUnit() const
+    { return IsLengthUnit() || mUnit == eCSSUnit_Percent || IsCalcUnit(); }
   
 
 

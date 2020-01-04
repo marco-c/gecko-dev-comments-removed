@@ -428,7 +428,6 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::TrackSizingFunctions
       
       
       
-      
       const auto& maxCoord = mMaxSizingFunctions[i];
       const auto* coord = &maxCoord;
       if (!coord->IsCoordPercentCalcUnit()) {
