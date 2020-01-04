@@ -1641,7 +1641,7 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
 KeyframeEffectReadOnly::BuildAnimationPropertyList(
     JSContext* aCx,
     Element* aTarget,
-    const Optional<JS::Handle<JSObject*>>& aFrames,
+    JS::Handle<JSObject*> aFrames,
     InfallibleTArray<AnimationProperty>& aResult,
     ErrorResult& aRv)
 {
@@ -1657,8 +1657,7 @@ KeyframeEffectReadOnly::BuildAnimationPropertyList(
   
   
 
-  if (!aFrames.WasPassed() || !aFrames.Value().get()) {
-    
+  if (!aFrames) {
     
     
     return;
@@ -1667,7 +1666,7 @@ KeyframeEffectReadOnly::BuildAnimationPropertyList(
   
   
   
-  JS::Rooted<JS::Value> objectValue(aCx, JS::ObjectValue(*aFrames.Value()));
+  JS::Rooted<JS::Value> objectValue(aCx, JS::ObjectValue(*aFrames));
   JS::ForOfIterator iter(aCx);
   if (!iter.init(objectValue, JS::ForOfIterator::AllowNonIterable)) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -1688,7 +1687,7 @@ KeyframeEffectReadOnly::BuildAnimationPropertyList(
 KeyframeEffectReadOnly::Constructor(
     const GlobalObject& aGlobal,
     Element* aTarget,
-    const Optional<JS::Handle<JSObject*>>& aFrames,
+    JS::Handle<JSObject*> aFrames,
     const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
     ErrorResult& aRv)
 {
