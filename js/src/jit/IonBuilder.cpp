@@ -9863,17 +9863,11 @@ IonBuilder::setElemTryCache(bool* emitted, MDefinition* object,
 
     bool barrier = true;
 
-    if (index->mightBeType(MIRType_Int32)) {
-        
-        
-        if (PropertyWriteNeedsTypeBarrier(alloc(), constraints(), current,
-                                          &object, nullptr, &value,  true))
-        {
-            trackOptimizationOutcome(TrackedOutcome::NeedsTypeBarrier);
-            return true;
-        }
-        if (index->type() == MIRType_Int32)
-            barrier = false;
+    if (index->type() == MIRType_Int32 &&
+        !PropertyWriteNeedsTypeBarrier(alloc(), constraints(), current,
+                                       &object, nullptr, &value,  true))
+    {
+        barrier = false;
     }
 
     
