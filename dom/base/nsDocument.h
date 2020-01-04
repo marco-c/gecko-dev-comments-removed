@@ -616,7 +616,7 @@ protected:
     
     
     
-    
+
     
 #define DECL_SHIM(_i, _allcaps)                                              \
     class _i##Shim final : public nsIInterfaceRequestor,                     \
@@ -655,7 +655,7 @@ protected:
   nsresult AddExternalResource(nsIURI* aURI, nsIContentViewer* aViewer,
                                nsILoadGroup* aLoadGroup,
                                nsIDocument* aDisplayDocument);
-  
+
   nsClassHashtable<nsURIHashKey, ExternalResource> mMap;
   nsRefPtrHashtable<nsURIHashKey, PendingLoad> mPendingLoads;
   bool mHaveShutDown;
