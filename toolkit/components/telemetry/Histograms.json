@@ -5314,6 +5314,12 @@
     "kind": "flag",
     "description": "Whether enablePrivilege has ever been called during the current session"
   },
+  "READ_SAVED_PING_SUCCESS": {
+    "alert_emails": ["perf-telemetry-alerts@mozilla.com"],
+    "expires_in_version": "never",
+    "kind": "boolean",
+    "description": "Successfully reading a saved ping file"
+  },
   "TOUCH_ENABLED_DEVICE": {
     "expires_in_version": "never",
     "kind": "boolean",
@@ -6498,6 +6504,48 @@
     "kind": "enumerated",
     "n_values": 8,
     "description": "Type for media in getUserMedia calls (0=Camera, 1=Screen, 2=Application, 3=Window, 4=Browser, 5=Microphone, 6=AudioCapture, 7=Other)"
+  },
+  "WEBRTC_LOAD_STATE_RELAXED": {
+    "expires_in_version": "never",
+    "kind": "linear",
+    "high": "100",
+    "n_buckets": "25",
+    "description": "Percentage of time spent in the Relaxed load state in calls over 30 seconds."
+  },
+  "WEBRTC_LOAD_STATE_RELAXED_SHORT": {
+    "expires_in_version": "never",
+    "kind": "linear",
+    "high": "100",
+    "n_buckets": "25",
+    "description": "Percentage of time spent in the Relaxed load state in calls 5-30 seconds."
+  },
+  "WEBRTC_LOAD_STATE_NORMAL": {
+    "expires_in_version": "never",
+    "kind": "linear",
+    "high": "100",
+    "n_buckets": "25",
+    "description": "Percentage of time spent in the Normal load state in calls over 30 seconds."
+  },
+  "WEBRTC_LOAD_STATE_NORMAL_SHORT": {
+    "expires_in_version": "never",
+    "kind": "linear",
+    "high": "100",
+    "n_buckets": "25",
+    "description": "Percentage of time spent in the Normal load state in calls over 5-30 seconds."
+  },
+  "WEBRTC_LOAD_STATE_STRESSED": {
+    "expires_in_version": "never",
+    "kind": "linear",
+    "high": "100",
+    "n_buckets": "25",
+    "description": "Percentage of time spent in the Stressed load state in calls over 30 seconds."
+  },
+  "WEBRTC_LOAD_STATE_STRESSED_SHORT": {
+    "expires_in_version": "never",
+    "kind": "linear",
+    "high": "100",
+    "n_buckets": "25",
+    "description": "Percentage of time spent in the Stressed load state in calls 5-30 seconds."
   },
   "DEVTOOLS_DEBUGGER_RDP_LOCAL_TRACERDETACH_MS": {
     "expires_in_version": "never",
