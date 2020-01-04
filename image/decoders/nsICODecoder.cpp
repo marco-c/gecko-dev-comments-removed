@@ -170,14 +170,14 @@ nsICODecoder::ReadHeader(const char* aData)
 {
   
   if ((aData[2] != 1) && (aData[2] != 2)) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
   mIsCursor = (aData[2] == 2);
 
   
   mNumIcons = LittleEndian::readUint16(aData + 4);
   if (mNumIcons == 0) {
-    return Transition::Terminate(ICOState::SUCCESS); 
+    return Transition::TerminateSuccess(); 
   }
 
   
@@ -257,7 +257,7 @@ nsICODecoder::ReadDirEntry(const char* aData)
   if (mCurrIcon == mNumIcons) {
     
     if (mDirEntry.mImageOffset < FirstResourceOffset()) {
-      return Transition::Terminate(ICOState::FAILURE);
+      return Transition::TerminateFailure();
     }
 
     
@@ -272,7 +272,7 @@ nsICODecoder::ReadDirEntry(const char* aData)
     
     PostSize(mBiggestResourceSize.width, mBiggestResourceSize.height);
     if (IsMetadataDecode()) {
-      return Transition::Terminate(ICOState::SUCCESS);
+      return Transition::TerminateSuccess();
     }
 
     
@@ -309,11 +309,11 @@ nsICODecoder::SniffResource(const char* aData)
     mContainedDecoder->Init();
 
     if (!WriteToContainedDecoder(aData, PNGSIGNATURESIZE)) {
-      return Transition::Terminate(ICOState::FAILURE);
+      return Transition::TerminateFailure();
     }
 
     if (mDirEntry.mBytesInRes <= PNGSIGNATURESIZE) {
-      return Transition::Terminate(ICOState::FAILURE);
+      return Transition::TerminateFailure();
     }
 
     
@@ -325,7 +325,7 @@ nsICODecoder::SniffResource(const char* aData)
     
     int32_t bihSize = LittleEndian::readUint32(aData);
     if (bihSize != static_cast<int32_t>(BITMAPINFOSIZE)) {
-      return Transition::Terminate(ICOState::FAILURE);
+      return Transition::TerminateFailure();
     }
 
     
@@ -341,13 +341,13 @@ LexerTransition<ICOState>
 nsICODecoder::ReadPNG(const char* aData, uint32_t aLen)
 {
   if (!WriteToContainedDecoder(aData, aLen)) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
 
   
   
   if (!static_cast<nsPNGDecoder*>(mContainedDecoder.get())->IsValidICO()) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
 
   return Transition::ContinueUnbuffered(ICOState::READ_PNG);
@@ -372,7 +372,7 @@ nsICODecoder::ReadBIH(const char* aData)
     
     uint16_t numColors = GetNumColors();
     if (numColors == (uint16_t)-1) {
-      return Transition::Terminate(ICOState::FAILURE);
+      return Transition::TerminateFailure();
     }
     dataOffset += 4 * numColors;
   }
@@ -393,23 +393,23 @@ nsICODecoder::ReadBIH(const char* aData)
   
   
   if (!FixBitmapHeight(reinterpret_cast<int8_t*>(mBIHraw))) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
 
   
   if (!FixBitmapWidth(reinterpret_cast<int8_t*>(mBIHraw))) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
 
   
   if (!WriteToContainedDecoder(mBIHraw, sizeof(mBIHraw))) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
 
   
   uint16_t numColors = GetNumColors();
   if (numColors == uint16_t(-1)) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
 
   
@@ -429,7 +429,7 @@ LexerTransition<ICOState>
 nsICODecoder::ReadBMP(const char* aData, uint32_t aLen)
 {
   if (!WriteToContainedDecoder(aData, aLen)) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
 
   return Transition::ContinueUnbuffered(ICOState::READ_BMP);
@@ -466,7 +466,7 @@ nsICODecoder::PrepareForMask()
   
   uint32_t expectedLength = mMaskRowSize * GetRealHeight();
   if (maskLength < expectedLength) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
 
   
@@ -483,7 +483,7 @@ nsICODecoder::PrepareForMask()
                                            true,
                                            true);
     if (NS_FAILED(rv)) {
-      return Transition::Terminate(ICOState::FAILURE);
+      return Transition::TerminateFailure();
     }
   }
 
@@ -516,7 +516,7 @@ nsICODecoder::ReadMaskRow(const char* aData)
       static_cast<nsBMPDecoder*>(mContainedDecoder.get());
     uint32_t* imageData = bmpDecoder->GetImageData();
     if (!imageData) {
-      return Transition::Terminate(ICOState::FAILURE);
+      return Transition::TerminateFailure();
     }
 
     decoded = imageData + mCurrMaskLine * GetRealWidth();
@@ -566,7 +566,7 @@ nsICODecoder::FinishMask()
       static_cast<nsBMPDecoder*>(mContainedDecoder.get());
     uint8_t* imageData = reinterpret_cast<uint8_t*>(bmpDecoder->GetImageData());
     if (!imageData) {
-      return Transition::Terminate(ICOState::FAILURE);
+      return Transition::TerminateFailure();
     }
 
     
@@ -596,10 +596,10 @@ nsICODecoder::FinishResource()
   
   if (mContainedDecoder->HasSize() &&
       mContainedDecoder->GetSize() != GetRealSize()) {
-    return Transition::Terminate(ICOState::FAILURE);
+    return Transition::TerminateFailure();
   }
 
-  return Transition::Terminate(ICOState::SUCCESS);
+  return Transition::TerminateSuccess();
 }
 
 void
@@ -609,7 +609,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
   MOZ_ASSERT(aBuffer);
   MOZ_ASSERT(aCount > 0);
 
-  Maybe<ICOState> terminalState =
+  Maybe<TerminalState> terminalState =
     mLexer.Lex(aBuffer, aCount,
                [=](ICOState aState, const char* aData, size_t aLength) {
       switch (aState) {
@@ -640,21 +640,13 @@ nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
         case ICOState::FINISHED_RESOURCE:
           return FinishResource();
         default:
-          MOZ_ASSERT_UNREACHABLE("Unknown ICOState");
-          return Transition::Terminate(ICOState::FAILURE);
+          MOZ_CRASH("Unknown ICOState");
       }
     });
 
-  if (!terminalState) {
-    return;  
-  }
-
-  if (*terminalState == ICOState::FAILURE) {
+  if (terminalState == Some(TerminalState::FAILURE)) {
     PostDataError();
-    return;
   }
-
-  MOZ_ASSERT(*terminalState == ICOState::SUCCESS);
 }
 
 bool
