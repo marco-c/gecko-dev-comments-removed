@@ -36,13 +36,10 @@ protected:
     explicit AtomicRefCountedWithFinalize(const char* aName)
       : mRecycleCallback(nullptr)
       , mRefCount(0)
-      , mMessageLoopToPostDestructionTo(nullptr)
 #ifdef DEBUG
       , mSpew(false)
       , mManualAddRefs(0)
       , mManualReleases(0)
-#endif
-#ifdef NS_BUILD_REFCNT_LOGGING
       , mName(aName)
 #endif
     {}
@@ -51,16 +48,6 @@ protected:
       if (mRefCount >= 0) {
         gfxCriticalError() << "Deleting referenced object? " << mRefCount;
       }
-    }
-
-    void SetMessageLoopToPostDestructionTo(MessageLoop* l) {
-      MOZ_ASSERT(NS_IsMainThread());
-      mMessageLoopToPostDestructionTo = l;
-    }
-
-    static void DestroyToBeCalledOnMainThread(T* ptr) {
-      MOZ_ASSERT(NS_IsMainThread());
-      delete ptr;
     }
 
 public:
@@ -112,8 +99,8 @@ public:
 private:
     void AddRef() {
       MOZ_ASSERT(mRefCount >= 0, "AddRef() during/after Finalize()/dtor.");
-      mRefCount++;
-      NS_LOG_ADDREF(this, mRefCount, mName, sizeof(*this));
+      DebugOnly<int> count = ++mRefCount;
+      NS_LOG_ADDREF(this, count, mName, sizeof(*this));
     }
 
     void Release() {
@@ -146,16 +133,7 @@ private:
 
         T* derived = static_cast<T*>(this);
         derived->Finalize();
-        if (MOZ_LIKELY(!mMessageLoopToPostDestructionTo)) {
-          delete derived;
-        } else {
-          if (MOZ_LIKELY(NS_IsMainThread())) {
-            delete derived;
-          } else {
-            mMessageLoopToPostDestructionTo->PostTask(
-              NewRunnableFunction(&DestroyToBeCalledOnMainThread, derived));
-          }
-        }
+        delete derived;
       } else if (1 == currCount && recycleCallback) {
         
         
@@ -199,15 +177,12 @@ private:
     RecycleCallback mRecycleCallback;
     void *mClosure;
     Atomic<int> mRefCount;
-    MessageLoop *mMessageLoopToPostDestructionTo;
 #ifdef DEBUG
 public:
     bool mSpew;
 private:
     Atomic<uint32_t> mManualAddRefs;
     Atomic<uint32_t> mManualReleases;
-#endif
-#ifdef NS_BUILD_REFCNT_LOGGING
     const char* mName;
 #endif
 };

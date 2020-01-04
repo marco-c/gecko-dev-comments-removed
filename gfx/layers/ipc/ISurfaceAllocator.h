@@ -16,7 +16,6 @@
 #include "mozilla/Atomics.h"            
 #include "mozilla/layers/LayersMessages.h" 
 #include "LayersTypes.h"
-#include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 
 
 
@@ -76,12 +75,13 @@ mozilla::ipc::SharedMemory::SharedMemoryType OptimalShmemType();
 
 
 
-class ISurfaceAllocator : public AtomicRefCountedWithFinalize<ISurfaceAllocator>
+class ISurfaceAllocator
 {
 public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(ISurfaceAllocator)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ISurfaceAllocator)
 
-  ISurfaceAllocator(const char* aName) : AtomicRefCountedWithFinalize(aName) {}
+  ISurfaceAllocator() {}
 
   
 
@@ -114,15 +114,13 @@ protected:
   void Finalize() {}
 
   virtual ~ISurfaceAllocator() {}
-
-  friend class AtomicRefCountedWithFinalize<ISurfaceAllocator>;
 };
 
 
 class ClientIPCAllocator : public ISurfaceAllocator
 {
 public:
-  ClientIPCAllocator(const char* aName) : ISurfaceAllocator(aName) {}
+  ClientIPCAllocator() {}
 
   virtual ClientIPCAllocator* AsClientAllocator() override { return this; }
 
@@ -139,7 +137,7 @@ public:
 class HostIPCAllocator : public ISurfaceAllocator
 {
 public:
-  HostIPCAllocator(const char* aName) : ISurfaceAllocator(aName) {}
+  HostIPCAllocator() {}
 
   virtual HostIPCAllocator* AsHostIPCAllocator() override { return this; }
 
@@ -175,7 +173,7 @@ protected:
 class CompositorBridgeParentIPCAllocator : public HostIPCAllocator
 {
 public:
-  CompositorBridgeParentIPCAllocator(const char* aName) : HostIPCAllocator(aName) {}
+  CompositorBridgeParentIPCAllocator() {}
   virtual void NotifyNotUsed(PTextureParent* aTexture, uint64_t aTransactionId) override;
 };
 

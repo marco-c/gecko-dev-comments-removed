@@ -48,16 +48,12 @@ static StaticRefPtr<CompositorBridgeChild> sCompositorBridge;
 Atomic<int32_t> CompositableForwarder::sSerialCounter(0);
 
 CompositorBridgeChild::CompositorBridgeChild(ClientLayerManager *aLayerManager)
-  : TextureForwarder("CompositorBridgeChild")
-  , mLayerManager(aLayerManager)
+  : mLayerManager(aLayerManager)
   , mCanSend(false)
   , mFwdTransactionId(0)
   , mMessageLoop(MessageLoop::current())
 {
   MOZ_ASSERT(NS_IsMainThread());
-
-  
-  SetMessageLoopToPostDestructionTo(mMessageLoop);
 }
 
 CompositorBridgeChild::~CompositorBridgeChild()
@@ -87,7 +83,6 @@ void
 CompositorBridgeChild::Destroy()
 {
   
-  MOZ_ASSERT(!IsDead());
   mTexturesWaitingRecycled.Clear();
 
   if (!mCanSend) {

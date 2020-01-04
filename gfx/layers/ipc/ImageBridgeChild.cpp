@@ -494,8 +494,7 @@ static void ConnectImageBridge(ImageBridgeChild * child, ImageBridgeParent * par
 }
 
 ImageBridgeChild::ImageBridgeChild()
-  : CompositableForwarder("ImageBridgeChild")
-  , mShuttingDown(false)
+  : mShuttingDown(false)
   , mFwdTransactionId(0)
 #ifdef MOZ_WIDGET_GONK
   , mWaitingFenceHandleMutex("ImageBridgeChild::mWaitingFenceHandleMutex")
@@ -503,14 +502,10 @@ ImageBridgeChild::ImageBridgeChild()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  SetMessageLoopToPostDestructionTo(MessageLoop::current());
-
   mTxn = new CompositableTransaction();
 }
 ImageBridgeChild::~ImageBridgeChild()
 {
-  MOZ_ASSERT(NS_IsMainThread());
   delete mTxn;
 }
 
