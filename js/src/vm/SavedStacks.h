@@ -223,6 +223,7 @@ class SavedStacks {
         RelocatablePtrScript script;
         jsbytecode* pc;
 
+        void trace(JSTracer* trc) {  }
         bool needsSweep() { return IsAboutToBeFinalized(&script); }
     };
 
@@ -239,8 +240,12 @@ class SavedStacks {
         }
 
         bool needsSweep() {
+            
+            
+            
             MOZ_ASSERT(source);
-            return IsAboutToBeFinalized(&source);
+            MOZ_ASSERT(!IsAboutToBeFinalized(&source));
+            return true;
         }
 
         RelocatablePtrAtom source;
@@ -282,6 +287,13 @@ class SavedStacks {
         }
     };
 
+    
+    
+    
+    
+    
+    
+    
     using PCLocationMap = GCHashMap<PCKey, LocationValue, PCLocationHasher, SystemAllocPolicy>;
     PCLocationMap pcLocationMap;
 
