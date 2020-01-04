@@ -130,17 +130,6 @@ private:
 
 
   void CopyVariablesFrom(const CSSVariableDeclarations& aOther);
-  static PLDHashOperator EnumerateVariableForCopy(const nsAString& aName,
-                                                  nsString aValue,
-                                                  void* aData);
-  static PLDHashOperator
-    EnumerateVariableForMapRuleInfoInto(const nsAString& aName,
-                                        nsString aValue,
-                                        void* aData);
-  static PLDHashOperator
-    EnumerateVariableForAddVariablesToResolver(const nsAString& aName,
-                                               nsString aValue,
-                                               void* aData);
 
   nsDataHashtable<nsStringHashKey, nsString> mVariables;
 };

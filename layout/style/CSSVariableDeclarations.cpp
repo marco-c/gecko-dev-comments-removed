@@ -5,6 +5,7 @@
 
 
 
+
 #include "CSSVariableDeclarations.h"
 
 #include "CSSVariableResolver.h"
@@ -50,20 +51,12 @@ CSSVariableDeclarations::operator=(const CSSVariableDeclarations& aOther)
   return *this;
 }
 
- PLDHashOperator
-CSSVariableDeclarations::EnumerateVariableForCopy(const nsAString& aName,
-                                                  nsString aValue,
-                                                  void* aData)
-{
-  CSSVariableDeclarations* variables = static_cast<CSSVariableDeclarations*>(aData);
-  variables->mVariables.Put(aName, aValue);
-  return PL_DHASH_NEXT;
-}
-
 void
 CSSVariableDeclarations::CopyVariablesFrom(const CSSVariableDeclarations& aOther)
 {
-  aOther.mVariables.EnumerateRead(EnumerateVariableForCopy, this);
+  for (auto iter = aOther.mVariables.ConstIter(); !iter.Done(); iter.Next()) {
+    mVariables.Put(iter.Key(), iter.UserData());
+  }
 }
 
 bool
@@ -132,20 +125,6 @@ CSSVariableDeclarations::Remove(const nsAString& aName)
   mVariables.Remove(aName);
 }
 
- PLDHashOperator
-CSSVariableDeclarations::EnumerateVariableForMapRuleInfoInto(
-                                                         const nsAString& aName,
-                                                         nsString aValue,
-                                                         void* aData)
-{
-  nsDataHashtable<nsStringHashKey, nsString>* variables =
-    static_cast<nsDataHashtable<nsStringHashKey, nsString>*>(aData);
-  if (!variables->Contains(aName)) {
-    variables->Put(aName, aValue);
-  }
-  return PL_DHASH_NEXT;
-}
-
 void
 CSSVariableDeclarations::MapRuleInfoInto(nsRuleData* aRuleData)
 {
@@ -156,52 +135,48 @@ CSSVariableDeclarations::MapRuleInfoInto(nsRuleData* aRuleData)
   if (!aRuleData->mVariables) {
     aRuleData->mVariables = new CSSVariableDeclarations(*this);
   } else {
-    mVariables.EnumerateRead(EnumerateVariableForMapRuleInfoInto,
-                             aRuleData->mVariables.get());
+    for (auto iter = mVariables.Iter(); !iter.Done(); iter.Next()) {
+      nsDataHashtable<nsStringHashKey, nsString>& variables =
+        aRuleData->mVariables->mVariables;
+      const nsAString& aName = iter.Key();
+      if (!variables.Contains(aName)) {
+        variables.Put(aName, iter.UserData());
+      }
+    }
   }
-}
-
- PLDHashOperator
-CSSVariableDeclarations::EnumerateVariableForAddVariablesToResolver(
-                                                         const nsAString& aName,
-                                                         nsString aValue,
-                                                         void* aData)
-{
-  CSSVariableResolver* resolver = static_cast<CSSVariableResolver*>(aData);
-  if (aValue.EqualsLiteral(INITIAL_VALUE)) {
-    
-    
-    resolver->Put(aName, EmptyString(),
-                  eCSSTokenSerialization_Nothing,
-                  eCSSTokenSerialization_Nothing,
-                  false);
-  } else if (aValue.EqualsLiteral(INHERIT_VALUE) ||
-             aValue.EqualsLiteral(UNSET_VALUE)) {
-    
-    
-    
-    
-    
-    
-    
-  } else {
-    
-    
-    
-    resolver->Put(aName, aValue,
-                  eCSSTokenSerialization_Nothing,
-                  eCSSTokenSerialization_Nothing,
-                  false);
-  }
-  return PL_DHASH_NEXT;
 }
 
 void
 CSSVariableDeclarations::AddVariablesToResolver(
                                            CSSVariableResolver* aResolver) const
 {
-  mVariables.EnumerateRead(EnumerateVariableForAddVariablesToResolver,
-                           aResolver);
+  for (auto iter = mVariables.ConstIter(); !iter.Done(); iter.Next()) {
+    const nsAString& name = iter.Key();
+    nsString value = iter.UserData();
+    if (value.EqualsLiteral(INITIAL_VALUE)) {
+      
+      
+      aResolver->Put(name, EmptyString(),
+                     eCSSTokenSerialization_Nothing,
+                     eCSSTokenSerialization_Nothing,
+                     false);
+    } else if (value.EqualsLiteral(INHERIT_VALUE) ||
+               value.EqualsLiteral(UNSET_VALUE)) {
+      
+      
+      
+      
+      
+    } else {
+      
+      
+      
+      aResolver->Put(name, value,
+                     eCSSTokenSerialization_Nothing,
+                     eCSSTokenSerialization_Nothing,
+                     false);
+    }
+  }
 }
 
 size_t
