@@ -169,6 +169,9 @@ struct EventNameMapping
   int32_t  mType;
   mozilla::EventMessage mMessage;
   mozilla::EventClassID mEventClassID;
+  
+  
+  bool mMaybeSpecialSVGorSMILEvent;
 };
 
 typedef bool (*CallOnRemoteChildFunction) (mozilla::dom::TabParent* aTabParent,
@@ -1170,6 +1173,13 @@ public:
 
 
   static mozilla::EventMessage GetEventMessage(nsIAtom* aName);
+
+  
+
+
+
+  static mozilla::EventMessage
+  GetEventMessageAndAtomForListener(const nsAString& aName, nsIAtom** aOnName);
 
   
 
