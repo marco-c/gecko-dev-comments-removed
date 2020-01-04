@@ -404,12 +404,12 @@ protected:
   
   friend class nsInlineFrame;
 
+  
+  
+  
+  
   nsBlockReflowState* mBlockRS;
 
-  
-  
-  
-  
   nsLineList::iterator mLineBox;
 
   
