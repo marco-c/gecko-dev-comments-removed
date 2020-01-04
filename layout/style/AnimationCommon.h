@@ -379,13 +379,6 @@ public:
   void UpdateCheckGeneration(nsPresContext* aPresContext);
 
   
-  bool HasCurrentAnimations() const;
-  
-  
-  bool HasCurrentAnimationsForProperties(const nsCSSProperty* aProperties,
-                                         size_t aPropertyCount) const;
-
-  
   TimeStamp mStyleRuleRefreshTime;
 
   
