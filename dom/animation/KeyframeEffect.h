@@ -290,7 +290,8 @@ public:
   
   
   
-  void UpdateProperties(
+  
+  bool UpdateProperties(
     const InfallibleTArray<AnimationProperty>& aProperties);
 
   
