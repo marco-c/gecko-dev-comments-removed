@@ -375,10 +375,8 @@ private:
   
   
   
-  void InitAxesFromLegacyProps(const nsFlexContainerFrame* aFlexContainer,
-                               const WritingMode& aWM);
-  void InitAxesFromModernProps(const nsFlexContainerFrame* aFlexContainer,
-                               const WritingMode& aWM);
+  void InitAxesFromLegacyProps(const nsFlexContainerFrame* aFlexContainer);
+  void InitAxesFromModernProps(const nsFlexContainerFrame* aFlexContainer);
 
   
   AxisOrientationType mMainAxis;
@@ -3219,9 +3217,9 @@ FlexboxAxisTracker::FlexboxAxisTracker(
 {
   if (IsLegacyBox(aFlexContainer->StyleDisplay(),
                   aFlexContainer->StyleContext())) {
-    InitAxesFromLegacyProps(aFlexContainer, aWM);
+    InitAxesFromLegacyProps(aFlexContainer);
   } else {
-    InitAxesFromModernProps(aFlexContainer, aWM);
+    InitAxesFromModernProps(aFlexContainer);
   }
 
   
@@ -3245,14 +3243,13 @@ FlexboxAxisTracker::FlexboxAxisTracker(
 
 void
 FlexboxAxisTracker::InitAxesFromLegacyProps(
-  const nsFlexContainerFrame* aFlexContainer,
-  const WritingMode& aWM)
+  const nsFlexContainerFrame* aFlexContainer)
 {
   const nsStyleXUL* styleXUL = aFlexContainer->StyleXUL();
 
   const bool boxOrientIsVertical = (styleXUL->mBoxOrient ==
                                     NS_STYLE_BOX_ORIENT_VERTICAL);
-  const bool wmIsVertical = aWM.IsVertical();
+  const bool wmIsVertical = mWM.IsVertical();
 
   
   
@@ -3272,7 +3269,7 @@ FlexboxAxisTracker::InitAxesFromLegacyProps(
   
   
   
-  if (!aWM.IsBidiLTR()) {
+  if (!mWM.IsBidiLTR()) {
     AxisOrientationType& axisToFlip = mIsRowOriented ? mMainAxis : mCrossAxis;
     axisToFlip = GetReverseAxis(axisToFlip);
   }
@@ -3294,8 +3291,7 @@ FlexboxAxisTracker::InitAxesFromLegacyProps(
 
 void
 FlexboxAxisTracker::InitAxesFromModernProps(
-  const nsFlexContainerFrame* aFlexContainer,
-  const WritingMode& aWM)
+  const nsFlexContainerFrame* aFlexContainer)
 {
   const nsStylePosition* stylePos = aFlexContainer->StylePosition();
   uint32_t flexDirection = stylePos->mFlexDirection;
