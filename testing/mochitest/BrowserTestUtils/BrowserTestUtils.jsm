@@ -411,7 +411,7 @@ this.BrowserTestUtils = {
 
 
 
-  openNewBrowserWindow(options={}) {
+  openNewBrowserWindow: Task.async(function*(options={}) {
     let argString = Cc["@mozilla.org/supports-string;1"].
                     createInstance(Ci.nsISupportsString);
     argString.data = "";
@@ -433,9 +433,17 @@ this.BrowserTestUtils = {
     
     
     
-    return TestUtils.topicObserved("browser-delayed-startup-finished",
-                                   subject => subject == win).then(() => win);
-  },
+    yield this.waitForEvent(win, "load");
+    let startupPromise =
+      TestUtils.topicObserved("browser-delayed-startup-finished",
+                              subject => subject == win).then(() => win);
+    let loadPromise = this.browserLoaded(win.gBrowser.selectedBrowser);
+
+    yield startupPromise;
+    yield loadPromise;
+
+    return win;
+  }),
 
   
 
