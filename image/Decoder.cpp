@@ -106,7 +106,7 @@ Decoder::Init()
   return rv;
 }
 
-LexerResult
+nsresult
 Decoder::Decode(IResumable* aOnResume )
 {
   MOZ_ASSERT(mInitialized, "Should be initialized here");
@@ -114,8 +114,7 @@ Decoder::Decode(IResumable* aOnResume )
 
   
   if (GetDecodeDone()) {
-    return LexerResult(HasError() ? TerminalState::FAILURE
-                                  : TerminalState::SUCCESS);
+    return HasError() ? NS_ERROR_FAILURE : NS_OK;
   }
 
   LexerResult lexerResult(TerminalState::FAILURE);
@@ -130,7 +129,8 @@ Decoder::Decode(IResumable* aOnResume )
     
     
     
-    return lexerResult;
+    MOZ_ASSERT(lexerResult.as<Yield>() == Yield::NEED_MORE_DATA);
+    return NS_OK;
   }
 
   
@@ -145,8 +145,7 @@ Decoder::Decode(IResumable* aOnResume )
   
   CompleteDecode();
 
-  return LexerResult(HasError() ? TerminalState::FAILURE
-                                : TerminalState::SUCCESS);
+  return HasError() ? NS_ERROR_FAILURE : NS_OK;
 }
 
 bool
@@ -446,6 +445,12 @@ Decoder::PostFrameStop(Opacity aFrameOpacity
   if (!ShouldSendPartialInvalidations() && mFrameCount == 1) {
     mInvalidRect.UnionRect(mInvalidRect,
                            gfx::IntRect(gfx::IntPoint(0, 0), GetSize()));
+  }
+
+  
+  if (mImage && mFrameCount == 1 && HasAnimation()) {
+    MOZ_ASSERT(HasProgress());
+    IDecodingTask::NotifyProgress(WrapNotNull(this));
   }
 }
 

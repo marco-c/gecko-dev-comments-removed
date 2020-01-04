@@ -50,6 +50,11 @@ public:
   
   virtual NotNull<Decoder*> GetDecoder() const = 0;
 
+  
+  
+  
+  static void NotifyProgress(NotNull<Decoder*> aDecoder);
+
 protected:
   virtual ~IDecodingTask() { }
 };

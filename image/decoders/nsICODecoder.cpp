@@ -645,13 +645,9 @@ nsICODecoder::WriteToContainedDecoder(const char* aBuffer, uint32_t aCount)
   
   
   
-  LexerResult result = mContainedDecoder->Decode();
-  if (result == LexerResult(TerminalState::FAILURE)) {
+  if (NS_FAILED(mContainedDecoder->Decode())) {
     succeeded = false;
   }
-
-  MOZ_ASSERT(result != LexerResult(Yield::OUTPUT_AVAILABLE),
-             "Unexpected yield");
 
   
   

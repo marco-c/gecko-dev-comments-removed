@@ -19,8 +19,8 @@ namespace image {
 
 
 
-static void
-NotifyProgress(NotNull<Decoder*> aDecoder)
+ void
+IDecodingTask::NotifyProgress(NotNull<Decoder*> aDecoder)
 {
   MOZ_ASSERT(aDecoder->HasProgress() && !aDecoder->IsMetadataDecode());
 
@@ -85,31 +85,20 @@ DecodingTask::DecodingTask(NotNull<Decoder*> aDecoder)
 void
 DecodingTask::Run()
 {
-  while (true) {
-    LexerResult result = mDecoder->Decode(WrapNotNull(this));
+  nsresult rv = mDecoder->Decode(WrapNotNull(this));
 
-    if (result.is<TerminalState>()) {
-      NotifyDecodeComplete(mDecoder);
-      return;  
-    }
-
-    MOZ_ASSERT(result.is<Yield>());
-
+  if (NS_SUCCEEDED(rv) && !mDecoder->GetDecodeDone()) {
     
     if (mDecoder->HasProgress()) {
       NotifyProgress(mDecoder);
     }
 
-    if (result == LexerResult(Yield::NEED_MORE_DATA)) {
-      
-      
-      
-      return;
-    }
-
     
     
+    return;
   }
+
+  NotifyDecodeComplete(mDecoder);
 }
 
 bool
@@ -133,14 +122,9 @@ MetadataDecodingTask::MetadataDecodingTask(NotNull<Decoder*> aDecoder)
 void
 MetadataDecodingTask::Run()
 {
-  LexerResult result = mDecoder->Decode(WrapNotNull(this));
+  nsresult rv = mDecoder->Decode(WrapNotNull(this));
 
-  if (result.is<TerminalState>()) {
-    NotifyDecodeComplete(mDecoder);
-    return;  
-  }
-
-  if (result == LexerResult(Yield::NEED_MORE_DATA)) {
+  if (NS_SUCCEEDED(rv) && !mDecoder->GetDecodeDone()) {
     
     
     
@@ -148,7 +132,7 @@ MetadataDecodingTask::Run()
     return;
   }
 
-  MOZ_ASSERT_UNREACHABLE("Metadata decode yielded for an unexpected reason");
+  NotifyDecodeComplete(mDecoder);
 }
 
 
@@ -163,23 +147,7 @@ AnonymousDecodingTask::AnonymousDecodingTask(NotNull<Decoder*> aDecoder)
 void
 AnonymousDecodingTask::Run()
 {
-  while (true) {
-    LexerResult result = mDecoder->Decode(WrapNotNull(this));
-
-    if (result.is<TerminalState>()) {
-      return;  
-    }
-
-    if (result == LexerResult(Yield::NEED_MORE_DATA)) {
-      
-      
-      return;
-    }
-
-    
-    
-    MOZ_ASSERT(result.is<Yield>());
-  }
+  mDecoder->Decode(WrapNotNull(this));
 }
 
 } 

@@ -36,15 +36,9 @@ private:
   
   explicit nsPNGDecoder(RasterImage* aImage);
 
-  
-  struct FrameInfo
-  {
-    gfx::SurfaceFormat mFormat;
-    gfx::IntRect mFrameRect;
-    bool mIsInterlaced;
-  };
-
-  nsresult CreateFrame(const FrameInfo& aFrameInfo);
+  nsresult CreateFrame(gfx::SurfaceFormat aFormat,
+                       const gfx::IntRect& aFrameRect,
+                       bool aIsInterlaced);
   void EndImageFrame();
 
   enum class TransparencyType
@@ -62,11 +56,6 @@ private:
 
   void WriteRow(uint8_t* aRow);
 
-  
-  
-  void Terminate(png_structp aPNGStruct, TerminalState aState);
-  void Yield(png_structp aPNGStruct);
-
   enum class State
   {
     PNG_DATA,
@@ -77,20 +66,6 @@ private:
   LexerTransition<State> FinishedPNGData();
 
   StreamingLexer<State> mLexer;
-
-  
-  
-  LexerTransition<State> mNextTransition;
-
-  
-  
-  
-  
-  Maybe<FrameInfo> mNextFrameInfo;
-
-  
-  
-  size_t mLastChunkLength;
 
 public:
   png_structp mPNG;
