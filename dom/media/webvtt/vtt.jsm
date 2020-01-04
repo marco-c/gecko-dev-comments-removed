@@ -726,38 +726,60 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
   
   
   function CueStyleBox(window, cue, styleOptions) {
+    var isIE8 = (/MSIE\s8\.0/).test(navigator.userAgent);
+    var color = "rgba(255, 255, 255, 1)";
+    var backgroundColor = "rgba(0, 0, 0, 0.8)";
+
+    if (isIE8) {
+      color = "rgb(255, 255, 255)";
+      backgroundColor = "rgb(0, 0, 0)";
+    }
+
     StyleBox.call(this);
     this.cue = cue;
 
     
     
     this.cueDiv = parseContent(window, cue.text);
-    this.applyStyles({
-      color: "rgba(255, 255, 255, 1)",
-      backgroundColor: "rgba(0, 0, 0, 0.8)",
+    var styles = {
+      color: color,
+      backgroundColor: backgroundColor,
       position: "relative",
       left: 0,
       right: 0,
       top: 0,
       bottom: 0,
       display: "inline"
-    }, this.cueDiv);
+    };
+
+    if (!isIE8) {
+      styles.writingMode = cue.vertical === "" ? "horizontal-tb"
+                                               : cue.vertical === "lr" ? "vertical-lr"
+                                                                       : "vertical-rl";
+      styles.unicodeBidi = "plaintext";
+    }
+    this.applyStyles(styles, this.cueDiv);
 
     
     
     
     this.div = window.document.createElement("div");
-    this.applyStyles({
+    styles = {
       textAlign: cue.align === "middle" ? "center" : cue.align,
-      direction: determineBidi(this.cueDiv),
-      writingMode: cue.vertical === "" ? "horizontal-tb"
-                                       : cue.vertical === "lr" ? "vertical-lr"
-                                                               : "vertical-rl",
-      unicodeBidi: "plaintext",
       font: styleOptions.font,
       whiteSpace: "pre-line",
       position: "absolute"
-    });
+    };
+
+    if (!isIE8) {
+      styles.direction = determineBidi(this.cueDiv);
+      styles.writingMode = cue.vertical === "" ? "horizontal-tb"
+                                               : cue.vertical === "lr" ? "vertical-lr"
+                                                                       : "vertical-rl".
+      stylesunicodeBidi =  "plaintext";
+    }
+
+    this.applyStyles(styles);
 
     this.div.appendChild(this.cueDiv);
 
@@ -783,7 +805,7 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
     if (cue.vertical === "") {
       this.applyStyles({
         left:  this.formatStyle(textPos, "%"),
-        width: this.formatStyle(cue.size, "%"),
+        width: this.formatStyle(cue.size, "%")
       });
     
     
@@ -802,7 +824,7 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
         left: this.formatStyle(box.left, "px"),
         right: this.formatStyle(box.right, "px"),
         height: this.formatStyle(box.height, "px"),
-        width: this.formatStyle(box.width, "px"),
+        width: this.formatStyle(box.width, "px")
       });
     };
   }
@@ -813,12 +835,18 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
   
   
   function BoxPosition(obj) {
+    var isIE8 = (/MSIE\s8\.0/).test(navigator.userAgent);
+
     
     
     
     
-    var lh;
+    var lh, height, width, top;
     if (obj.div) {
+      height = obj.div.offsetHeight;
+      width = obj.div.offsetWidth;
+      top = obj.div.offsetTop;
+
       var rects = (rects = obj.div.childNodes) && (rects = rects[0]) &&
                   rects.getClientRects && rects.getClientRects();
       obj = obj.div.getBoundingClientRect();
@@ -828,14 +856,19 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
       
       lh = rects ? Math.max((rects[0] && rects[0].height) || 0, obj.height / rects.length)
                  : 0;
+
     }
     this.left = obj.left;
     this.right = obj.right;
-    this.top = obj.top;
-    this.height = obj.height;
-    this.bottom = obj.bottom;
-    this.width = obj.width;
+    this.top = obj.top || top;
+    this.height = obj.height || height;
+    this.bottom = obj.bottom || (top + (obj.height || height));
+    this.width = obj.width || width;
     this.lineHeight = lh !== undefined ? lh : obj.lineHeight;
+
+    if (isIE8 && !this.lineHeight) {
+      this.lineHeight = 13;
+    }
   }
 
   
@@ -933,16 +966,21 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
   
   
   BoxPosition.getSimpleBoxPosition = function(obj) {
+    var height = obj.div ? obj.div.offsetHeight : obj.tagName ? obj.offsetHeight : 0;
+    var width = obj.div ? obj.div.offsetWidth : obj.tagName ? obj.offsetWidth : 0;
+    var top = obj.div ? obj.div.offsetTop : obj.tagName ? obj.offsetTop : 0;
+
     obj = obj.div ? obj.div.getBoundingClientRect() :
                   obj.tagName ? obj.getBoundingClientRect() : obj;
-    return {
+    var ret = {
       left: obj.left,
       right: obj.right,
-      top: obj.top,
-      height: obj.height,
-      bottom: obj.bottom,
-      width: obj.width
+      top: obj.top || top,
+      height: obj.height || height,
+      bottom: obj.bottom || (top + (obj.height || height)),
+      width: obj.width || width
     };
+    return ret;
   };
 
   
@@ -1141,9 +1179,9 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
 
     
     if (!shouldCompute(cues)) {
-      cues.forEach(function(cue) {
-        paddedOverlay.appendChild(cue.displayState);
-      });
+      for (var i = 0; i < cues.length; i++) {
+        paddedOverlay.appendChild(cues[i].displayState);
+      }
       return;
     }
 
@@ -1154,20 +1192,26 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
       font: fontSize + "px " + FONT_STYLE
     };
 
-    cues.forEach(function(cue) {
-      
-      var styleBox = new CueStyleBox(window, cue, styleOptions);
-      paddedOverlay.appendChild(styleBox.div);
+    (function() {
+      var styleBox, cue;
 
-      
-      moveBoxToLinePosition(window, styleBox, containerBox, boxPositions);
+      for (var i = 0; i < cues.length; i++) {
+        cue = cues[i];
 
-      
-      
-      cue.displayState = styleBox.div;
+        
+        styleBox = new CueStyleBox(window, cue, styleOptions);
+        paddedOverlay.appendChild(styleBox.div);
 
-      boxPositions.push(BoxPosition.getSimpleBoxPosition(styleBox));
-    });
+        
+        moveBoxToLinePosition(window, styleBox, containerBox, boxPositions);
+
+        
+        
+        cue.displayState = styleBox.div;
+
+        boxPositions.push(BoxPosition.getSimpleBoxPosition(styleBox));
+      }
+    })();
   };
 
   WebVTT.Parser = function(window, decoder) {
