@@ -212,15 +212,17 @@ var SessionSaverInternal = {
     }
 
     
-    
-    
-    
-    if (RunState.isClosing &&
-        Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
-          Services.cookies.ACCEPT_SESSION &&
-        !Services.prefs.getBoolPref("browser.sessionstore.resume_session_once")) {
-      for (let window of state.windows) {
-        delete window.cookies;
+    if (RunState.isClosing) {
+      let expireCookies = Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
+                            Services.cookies.ACCEPT_SESSION;
+      let sanitizeCookies = Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown") &&
+                            Services.prefs.getBoolPref("privacy.clearOnShutdown.cookies");
+      let restart = Services.prefs.getBoolPref("browser.sessionstore.resume_session_once");
+      
+      if ((expireCookies || sanitizeCookies) && !restart) {
+        for (let window of state.windows) {
+          delete window.cookies;
+        }
       }
     }
 
