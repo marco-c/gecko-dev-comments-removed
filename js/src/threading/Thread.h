@@ -55,8 +55,21 @@ public:
   };
 
   
+  class Options
+  {
+    size_t stackSize_;
+
+  public:
+    Options() : stackSize_(0) {}
+
+    Options& setStackSize(size_t sz) { stackSize_ = sz; return *this; }
+    size_t stackSize() const { return stackSize_; }
+  };
+
   
-  Thread() : id_(Id()) {}
+  
+  
+  explicit Thread(const Options& options = Options()) : id_(Id()), options_(options) {}
 
   
   
@@ -124,6 +137,9 @@ private:
 
   
   Id id_;
+
+  
+  Options options_;
 
   
   MOZ_MUST_USE bool create(THREAD_RETURN_TYPE (THREAD_CALL_API *aMain)(void*), void* aArg);

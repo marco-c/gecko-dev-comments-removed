@@ -70,7 +70,9 @@ js::Thread::create(unsigned int (__stdcall* aMain)(void*), void* aArg)
   
   
   
-  uintptr_t handle = _beginthreadex(nullptr, 0, aMain, aArg, 0,
+  uintptr_t handle = _beginthreadex(nullptr, options_.stackSize(),
+                                    aMain, aArg,
+                                    STACK_SIZE_PARAM_IS_A_RESERVATION,
                                     &id_.platformData()->id);
   if (!handle) {
     
