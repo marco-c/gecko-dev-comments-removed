@@ -10,7 +10,7 @@
 #include <sys/types.h>                  
 #include "gfxFontFamilyList.h"
 #include "gfxFontFeatures.h"
-#include "nsAutoPtr.h"                  
+#include "mozilla/RefPtr.h"             
 #include "nsCoord.h"                    
 #include "nsStringFwd.h"                
 #include "nsString.h"               

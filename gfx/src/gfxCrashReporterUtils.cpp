@@ -16,7 +16,7 @@
 #include "mozilla/Services.h"           
 #include "mozilla/StaticMutex.h"
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
+#include "mozilla/RefPtr.h"             
 #include "nsCOMPtr.h"                   
 #include "nsError.h"                    
 #include "nsExceptionHandler.h"         

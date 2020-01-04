@@ -20,8 +20,10 @@
 #include "nsString.h"                   
 #include "nsStyleConsts.h"              
 #include "mozilla/Assertions.h"         
+#include "mozilla/UniquePtr.h"          
 
 class gfxUserFontSet;
+using namespace mozilla;
 
 namespace {
 
@@ -32,27 +34,27 @@ public:
     AutoTextRun(nsFontMetrics* aMetrics, DrawTarget* aDrawTarget,
                 const char* aString, int32_t aLength)
     {
-        mTextRun = aMetrics->GetThebesFontGroup()->MakeTextRun(
+        mTextRun.reset(aMetrics->GetThebesFontGroup()->MakeTextRun(
             reinterpret_cast<const uint8_t*>(aString), aLength,
             aDrawTarget,
             aMetrics->AppUnitsPerDevPixel(),
             ComputeFlags(aMetrics),
-            nullptr);
+            nullptr));
     }
 
     AutoTextRun(nsFontMetrics* aMetrics, DrawTarget* aDrawTarget,
                 const char16_t* aString, int32_t aLength)
     {
-        mTextRun = aMetrics->GetThebesFontGroup()->MakeTextRun(
+        mTextRun.reset(aMetrics->GetThebesFontGroup()->MakeTextRun(
             aString, aLength,
             aDrawTarget,
             aMetrics->AppUnitsPerDevPixel(),
             ComputeFlags(aMetrics),
-            nullptr);
+            nullptr));
     }
 
-    gfxTextRun *get() { return mTextRun; }
-    gfxTextRun *operator->() { return mTextRun; }
+    gfxTextRun *get() { return mTextRun.get(); }
+    gfxTextRun *operator->() { return mTextRun.get(); }
 
 private:
     static uint32_t ComputeFlags(nsFontMetrics* aMetrics) {
@@ -76,7 +78,7 @@ private:
         return flags;
     }
 
-    nsAutoPtr<gfxTextRun> mTextRun;
+    UniquePtr<gfxTextRun> mTextRun;
 };
 
 class StubPropertyProvider : public gfxTextRun::PropertyProvider {

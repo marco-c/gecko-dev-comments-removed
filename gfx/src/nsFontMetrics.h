@@ -10,7 +10,7 @@
 #include <sys/types.h>                  
 #include "gfxTextRun.h"                 
 #include "mozilla/Assertions.h"         
-#include "nsAutoPtr.h"                  
+#include "mozilla/RefPtr.h"             
 #include "nsCOMPtr.h"                   
 #include "nsCoord.h"                    
 #include "nsError.h"                    
