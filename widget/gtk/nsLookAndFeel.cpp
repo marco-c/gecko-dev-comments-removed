@@ -1091,11 +1091,16 @@ nsLookAndFeel::Init()
 #else
     GdkRGBA color;
     GtkStyleContext *style;
+    GtkSettings *settings;
 
     
     
     
-    (void)gtk_settings_get_for_screen(gdk_screen_get_default());
+    settings = gtk_settings_get_for_screen(gdk_screen_get_default());
+
+    
+    
+    g_object_set(settings, "gtk-application-prefer-dark-theme", FALSE, nullptr);
 
     GtkWidgetPath *path = gtk_widget_path_new();
     gtk_widget_path_append_type(path, GTK_TYPE_WINDOW);
