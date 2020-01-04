@@ -83,6 +83,8 @@ GetGradientColors(const GValue* aValue,
         return false;
 
     auto pattern = static_cast<cairo_pattern_t*>(g_value_get_boxed(aValue));
+    if (!pattern)
+        return false;
 
     
     
