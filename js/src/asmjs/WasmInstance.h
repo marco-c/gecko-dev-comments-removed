@@ -109,12 +109,6 @@ class Instance
 
     
     
-
-    uint32_t currentMemory();
-    uint32_t growMemory(uint32_t delta);
-
-    
-    
     
     
     

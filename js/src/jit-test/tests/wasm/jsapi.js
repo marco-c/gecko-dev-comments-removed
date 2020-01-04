@@ -1,6 +1,8 @@
 load(libdir + 'wasm.js');
 load(libdir + 'asserts.js');
 
+const WasmPage = 64 * 1024;
+
 const emptyModule = textToBinary('(module)');
 
 
@@ -101,8 +103,6 @@ assertEq(exportsDesc.enumerable, true);
 assertEq(exportsDesc.configurable, true);
 
 
-
-
 const memoryDesc = Object.getOwnPropertyDescriptor(WebAssembly, 'Memory');
 assertEq(typeof memoryDesc.value, "function");
 assertEq(memoryDesc.writable, true);
@@ -123,7 +123,7 @@ assertErrorMessage(() => new Memory({initial:1, maximum: Math.pow(2,32)/Math.pow
 assertErrorMessage(() => new Memory({initial:2, maximum: 1 }), TypeError, /bad Memory maximum size/);
 assertErrorMessage(() => new Memory({maximum: -1 }), TypeError, /bad Memory maximum size/);
 assertEq(new Memory({initial:1}) instanceof Memory, true);
-assertEq(new Memory({initial:1.5}).buffer.byteLength, 64*1024);
+assertEq(new Memory({initial:1.5}).buffer.byteLength, WasmPage);
 
 
 const memoryProtoDesc = Object.getOwnPropertyDescriptor(Memory, 'prototype');
@@ -156,7 +156,36 @@ const bufferGetter = bufferDesc.get;
 assertErrorMessage(() => bufferGetter.call(), TypeError, /called on incompatible undefined/);
 assertErrorMessage(() => bufferGetter.call({}), TypeError, /called on incompatible Object/);
 assertEq(bufferGetter.call(mem1) instanceof ArrayBuffer, true);
-assertEq(bufferGetter.call(mem1).byteLength, 64 * 1024);
+assertEq(bufferGetter.call(mem1).byteLength, WasmPage);
+
+
+const growDesc = Object.getOwnPropertyDescriptor(memoryProto, 'grow');
+assertEq(typeof growDesc.value, "function");
+assertEq(growDesc.enumerable, false);
+assertEq(growDesc.configurable, true);
+
+
+const grow = growDesc.value;
+assertEq(grow.length, 1);
+assertErrorMessage(() => grow.call(), TypeError, /called on incompatible undefined/);
+assertErrorMessage(() => grow.call({}), TypeError, /called on incompatible Object/);
+assertErrorMessage(() => grow.call(mem1, -1), Error, /failed to grow memory/);
+assertErrorMessage(() => grow.call(mem1, Math.pow(2,32)), Error, /failed to grow memory/);
+var mem = new Memory({initial:1, maximum:2});
+var buf = mem.buffer;
+assertEq(buf.byteLength, WasmPage);
+assertEq(mem.grow(0), 1);
+assertEq(buf !== mem.buffer, true);
+assertEq(buf.byteLength, 0);
+buf = mem.buffer;
+assertEq(buf.byteLength, WasmPage);
+assertEq(mem.grow(1), 1);
+assertEq(buf !== mem.buffer, true);
+assertEq(buf.byteLength, 0);
+buf = mem.buffer;
+assertEq(buf.byteLength, 2 * WasmPage);
+assertErrorMessage(() => mem.grow(1), Error, /failed to grow memory/);
+assertEq(buf, mem.buffer);
 
 
 const tableDesc = Object.getOwnPropertyDescriptor(WebAssembly, 'Table');
