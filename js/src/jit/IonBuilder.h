@@ -215,6 +215,9 @@ class IonBuilder
                const OptimizationInfo* optimizationInfo, BaselineFrameInspector* baselineFrame,
                size_t inliningDepth = 0, uint32_t loopDepth = 0);
 
+    
+    
+    
     bool build();
     bool buildInline(IonBuilder* callerBuilder, MResumePoint* callerResumePoint,
                      CallInfo& callInfo);

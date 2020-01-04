@@ -2205,6 +2205,11 @@ IonCompile(JSContext* cx, JSScript* script,
             TrackIonAbort(cx, abortScript, abortPc, abortMessage);
         }
 
+        if (cx->isThrowingOverRecursed()) {
+            
+            MOZ_CRASH("Stack overflow during compilation");
+        }
+
         return reason;
     }
 
