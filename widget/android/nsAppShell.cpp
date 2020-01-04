@@ -183,7 +183,6 @@ public:
 };
 
 nsAppShell::nsAppShell()
-    : mQueuedViewportEvent(nullptr)
 {
     gAppShell = this;
 
@@ -544,11 +543,6 @@ nsAppShell::LegacyGeckoEvent::Run()
 
     case AndroidGeckoEvent::VIEWPORT:
     case AndroidGeckoEvent::BROADCAST: {
-        {
-            MonitorAutoLock lock(nsAppShell::gAppShell->mEventQueue.mMonitor);
-            nsAppShell::gAppShell->mQueuedViewportEvent = nullptr;
-        }
-
         if (curEvent->Characters().Length() == 0)
             break;
 
@@ -826,11 +820,6 @@ void
 nsAppShell::LegacyGeckoEvent::PostTo(mozilla::LinkedList<Event>& queue)
 {
     {
-        
-        
-        
-        bool allowCoalescingNextViewport = false;
-
         EVLOG("nsAppShell::PostEvent %p %d", ae, ae->Type());
         switch (ae->Type()) {
         case AndroidGeckoEvent::COMPOSITOR_CREATE:
@@ -858,16 +847,26 @@ nsAppShell::LegacyGeckoEvent::PostTo(mozilla::LinkedList<Event>& queue)
             break;
 
         case AndroidGeckoEvent::VIEWPORT:
-            if (nsAppShell::gAppShell->mQueuedViewportEvent) {
+            
+            
+            for (Event* event = queue.getLast(); event;
+                    event = event->getPrevious())
+            {
+                if (event->HasSameTypeAs(this) &&
+                        static_cast<LegacyGeckoEvent*>(event)->ae->Type()
+                            == AndroidGeckoEvent::VIEWPORT) {
+                    
+                    delete event;
+                    break;
+                }
+                NativeCallbackEvent callbackEvent(nullptr);
+                if (event->HasSameTypeAs(&callbackEvent)) {
+                    
+                    continue;
+                }
                 
-                EVLOG("nsAppShell: Dropping old viewport event at %p in favour of new VIEWPORT event %p",
-                      nsAppShell::gAppShell->mQueuedViewportEvent, ae);
-                
-                delete nsAppShell::gAppShell->mQueuedViewportEvent;
+                break;
             }
-            nsAppShell::gAppShell->mQueuedViewportEvent = this;
-            allowCoalescingNextViewport = true;
-
             queue.insertBack(this);
             break;
 
@@ -887,20 +886,9 @@ nsAppShell::LegacyGeckoEvent::PostTo(mozilla::LinkedList<Event>& queue)
             queue.insertBack(this);
             break;
 
-        case AndroidGeckoEvent::NATIVE_POKE:
-            allowCoalescingNextViewport = true;
-            
-
         default:
             queue.insertBack(this);
             break;
-        }
-
-        
-        
-        
-        if (!allowCoalescingNextViewport) {
-            nsAppShell::gAppShell->mQueuedViewportEvent = nullptr;
         }
     }
 }
