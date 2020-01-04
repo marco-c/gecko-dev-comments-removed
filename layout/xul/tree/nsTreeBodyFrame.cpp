@@ -2598,7 +2598,7 @@ nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
     mSlots->mDropRow = -1;
     mSlots->mDropOrient = -1;
     mSlots->mDragAction = GetDropEffect(aEvent);
-  } else if (aEvent->mMessage == NS_DRAGDROP_OVER) {
+  } else if (aEvent->mMessage == eDragOver) {
     
     
     

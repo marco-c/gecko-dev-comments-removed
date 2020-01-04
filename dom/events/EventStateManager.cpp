@@ -653,7 +653,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       KillClickHoldTimer();
     }
     break;
-  case NS_DRAGDROP_OVER:
+  case eDragOver:
     
     
     GenerateDragDropEnterExit(aPresContext, aEvent->AsDragEvent());
@@ -1193,7 +1193,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
     }
   case eDragEventClass:
     switch (aEvent.mMessage) {
-    case NS_DRAGDROP_OVER:
+    case eDragOver:
     case NS_DRAGDROP_EXIT:
     case eDrop:
       return true;
@@ -3172,7 +3172,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
     break;
 
   case NS_DRAGDROP_ENTER:
-  case NS_DRAGDROP_OVER:
+  case eDragOver:
     {
       NS_ASSERTION(aEvent->mClass == eDragEventClass, "Expected a drag event");
 
@@ -3261,13 +3261,13 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
         
         
-        if (aEvent->mMessage == NS_DRAGDROP_OVER && !isChromeDoc) {
+        if (aEvent->mMessage == eDragOver && !isChromeDoc) {
           
           
           dragSession->SetOnlyChromeDrop(
             !dragEvent->mDefaultPreventedOnContent);
         }
-      } else if (aEvent->mMessage == NS_DRAGDROP_OVER && !isChromeDoc) {
+      } else if (aEvent->mMessage == eDragOver && !isChromeDoc) {
         
         dragSession->SetOnlyChromeDrop(true);
       }
@@ -4299,7 +4299,7 @@ EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
   nsCOMPtr<nsIContent> targetBeforeEvent = mCurrentTargetContent;
 
   switch(aDragEvent->mMessage) {
-  case NS_DRAGDROP_OVER:
+  case eDragOver:
     {
       
       
