@@ -2,7 +2,7 @@
 
 
 
-var {scrollIntoViewIfNeeded} = require("devtools/shared/layout/utils");
+var {scrollIntoViewIfNeeded} = require("devtools/client/shared/scroll");
 
 const TEST_URI = TEST_URI_ROOT + "browser_layoutHelpers.html";
 
