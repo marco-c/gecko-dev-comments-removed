@@ -58,6 +58,7 @@ class BlobSet;
 class FormData;
 class URLSearchParams;
 class XMLHttpRequestUpload;
+struct OriginAttributesDictionary;
 
 
 
@@ -537,6 +538,10 @@ public:
   {
     return sDontWarnAboutSyncXHR;
   }
+
+  virtual void
+  SetOriginAttributes(const mozilla::dom::OriginAttributesDictionary& aAttrs) override;
+
 protected:
   
   

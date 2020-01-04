@@ -23,6 +23,8 @@ class nsExpandedPrincipal;
 
 namespace mozilla {
 
+class GenericOriginAttributes;
+
 
 
 class OriginAttributes : public dom::OriginAttributesDictionary
@@ -56,6 +58,8 @@ public:
   
   
   void SyncAttributesWithPrivateBrowsing(bool aInPrivateBrowsing);
+
+  void SetFromGenericAttributes(const GenericOriginAttributes& aAttrs);
 
 protected:
   OriginAttributes() {}
