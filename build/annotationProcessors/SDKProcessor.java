@@ -162,6 +162,20 @@ public class SDKProcessor {
                 continue;
             }
 
+            
+            
+            
+            try {
+                if (m instanceof Field && !m.equals(cls.getField(m.getName()))) {
+                    
+                    
+                    System.out.println("Skipping " + m.getName() +
+                                       " from " + m.getDeclaringClass());
+                    continue;
+                }
+            } catch (final NoSuchFieldException e) {
+            }
+
             list.add(m);
         }
 
