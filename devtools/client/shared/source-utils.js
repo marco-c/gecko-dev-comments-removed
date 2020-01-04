@@ -4,10 +4,16 @@
 "use strict";
 
 const { URL } = require("sdk/url");
+const { Cu } = require("chrome");
+Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
+const STRINGS_URI = "chrome://devtools/locale/components.properties";
+const L10N = new ViewHelpers.L10N(STRINGS_URI);
+const UNKNOWN_SOURCE_STRING = L10N.getStr("frame.unknownSource");
 
 
 const CHAR_CODE_A = "a".charCodeAt(0);
 const CHAR_CODE_C = "c".charCodeAt(0);
+const CHAR_CODE_D = "d".charCodeAt(0);
 const CHAR_CODE_E = "e".charCodeAt(0);
 const CHAR_CODE_F = "f".charCodeAt(0);
 const CHAR_CODE_H = "h".charCodeAt(0);
@@ -26,6 +32,8 @@ const CHAR_CODE_SLASH = "/".charCodeAt(0);
 
 
 const gURLStore = new Map();
+
+const gSourceNamesStore = new Map();
 
 
 
@@ -89,9 +97,30 @@ function parseURL(location) {
 
 
 
-function getSourceNames (source, unknownSourceString) {
+
+function getSourceNames (source) {
+  let data = gSourceNamesStore.get(source);
+
+  if (data) {
+    return data;
+  }
+
   let short, long, host;
   const sourceStr = source ? String(source) : "";
+
+  
+  if (isDataScheme(sourceStr)) {
+    let commaIndex = sourceStr.indexOf(",");
+    if (commaIndex > -1) {
+      
+      
+      let short = `data:${sourceStr.substring(commaIndex + 1)}`.slice(0, 100);
+      let result = { short, long: sourceStr };
+      gSourceNamesStore.set(source, result);
+      return result;
+    }
+  }
+
   const parsedUrl = parseURL(sourceStr);
 
   if (!parsedUrl) {
@@ -99,19 +128,35 @@ function getSourceNames (source, unknownSourceString) {
     long = sourceStr;
     short = sourceStr.slice(0, 100);
   } else {
-    short = parsedUrl.fileName;
-    long = parsedUrl.href;
     host = parsedUrl.host;
+
+    long = parsedUrl.href;
+    if (parsedUrl.hash) {
+      long = long.replace(parsedUrl.hash, "");
+    }
+    if (parsedUrl.search) {
+      long = long.replace(parsedUrl.search, "");
+    }
+
+    short = parsedUrl.fileName;
+    
+    
+    
+    if (short === "/" && parsedUrl.pathname !== "/") {
+      short = parseURL(long.replace(/\/$/, "")).fileName;
+    }
   }
 
   if (!short) {
     if (!long) {
-      long = unknownSourceString;
+      long = UNKNOWN_SOURCE_STRING;
     }
     short = long.slice(0, 100);
   }
 
-  return { short, long, host };
+  let result = { short, long, host };
+  gSourceNamesStore.set(source, result);
+  return result;
 }
 
 
@@ -124,6 +169,14 @@ function isColonSlashSlash(location, i=0) {
   return location.charCodeAt(++i) === CHAR_CODE_COLON &&
          location.charCodeAt(++i) === CHAR_CODE_SLASH &&
          location.charCodeAt(++i) === CHAR_CODE_SLASH;
+}
+
+function isDataScheme(location, i=0) {
+  return location.charCodeAt(i)   === CHAR_CODE_D &&
+         location.charCodeAt(++i) === CHAR_CODE_A &&
+         location.charCodeAt(++i) === CHAR_CODE_T &&
+         location.charCodeAt(++i) === CHAR_CODE_A &&
+         location.charCodeAt(++i) === CHAR_CODE_COLON;
 }
 
 function isContentScheme(location, i=0) {
@@ -208,3 +261,4 @@ exports.parseURL = parseURL;
 exports.getSourceNames = getSourceNames;
 exports.isChromeScheme = isChromeScheme;
 exports.isContentScheme = isContentScheme;
+exports.isDataScheme = isDataScheme;
