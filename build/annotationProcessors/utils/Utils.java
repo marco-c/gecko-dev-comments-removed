@@ -88,7 +88,7 @@ public class Utils {
         if (type.equals(Class.class)) {
             
             
-            return "mozilla::jni::ClassObject::Param";
+            return "mozilla::jni::Class::Param";
         }
 
         if (type.equals(Throwable.class)) {
@@ -120,7 +120,7 @@ public class Utils {
         if (type.equals(Class.class)) {
             
             
-            return "mozilla::jni::ClassObject::LocalRef";
+            return "mozilla::jni::Class::LocalRef";
         }
 
         if (type.equals(Throwable.class)) {
