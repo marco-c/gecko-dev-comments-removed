@@ -2371,7 +2371,7 @@ nsGenericHTMLFormElement::IntrinsicState() const
 
   
   if (!state.HasState(NS_EVENT_STATE_MOZ_READWRITE) &&
-      IsTextControl(false)) {
+      IsTextOrNumberControl( false)) {
     bool roState = GetBoolAttr(nsGkAtoms::readonly);
 
     if (!roState) {

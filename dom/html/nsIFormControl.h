@@ -176,7 +176,14 @@ public:
 
 
 
-  inline bool IsTextControl(bool aExcludePassword) const ;
+  inline bool IsTextControl(bool aExcludePassword) const;
+
+  
+
+
+
+
+  inline bool IsTextOrNumberControl(bool aExcludePassword) const;
 
   
 
@@ -233,6 +240,12 @@ nsIFormControl::IsTextControl(bool aExcludePassword) const
   uint32_t type = GetType();
   return type == NS_FORM_TEXTAREA ||
          IsSingleLineTextControl(aExcludePassword, type);
+}
+
+bool
+nsIFormControl::IsTextOrNumberControl(bool aExcludePassword) const
+{
+  return IsTextControl(aExcludePassword) || GetType() == NS_FORM_INPUT_NUMBER;
 }
 
 bool
