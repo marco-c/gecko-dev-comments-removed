@@ -677,6 +677,9 @@ public:
     case __NR_fallocate:
       return Allow();
 
+    case __NR_get_mempolicy:
+      return Allow();
+
 #endif 
 
 #ifdef __NR_getrandom
