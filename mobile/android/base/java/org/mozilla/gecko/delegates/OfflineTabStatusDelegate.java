@@ -73,6 +73,8 @@ public class OfflineTabStatusDelegate extends TabsTrayVisibilityAwareDelegate im
                 }
                 break;
             
+            case OPENED_FROM_TABS_TRAY:
+            
             
             case SELECTED:
                 if (isTabsTrayVisible()) {
