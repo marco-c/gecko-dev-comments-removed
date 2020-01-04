@@ -10,7 +10,7 @@
 #include "js/TypeDecls.h"
 #include "jsapi.h"
 #include "jsprf.h"
-#include "mozilla/CycleCollectedJSRuntime.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -145,12 +145,12 @@ Throw(JSContext* aCx, nsresult aRv, const nsACString& aMessage)
     return false;
   }
 
-  CycleCollectedJSRuntime* runtime = CycleCollectedJSRuntime::Get();
-  nsCOMPtr<nsIException> existingException = runtime->GetPendingException();
+  CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
+  nsCOMPtr<nsIException> existingException = context->GetPendingException();
   
   
   
-  runtime->SetPendingException(nullptr);
+  context->SetPendingException(nullptr);
 
   
   if (aMessage.IsEmpty() && existingException) {

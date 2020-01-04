@@ -7,7 +7,7 @@
 #include "js/Value.h"
 #include "nsThreadUtils.h"
 
-#include "mozilla/CycleCollectedJSRuntime.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/TimeStamp.h"
 
@@ -318,7 +318,7 @@ PromiseDebugging::GetTimeToSettle(GlobalObject&, JS::Handle<JSObject*> aPromise,
 PromiseDebugging::AddUncaughtRejectionObserver(GlobalObject&,
                                                UncaughtRejectionObserver& aObserver)
 {
-  CycleCollectedJSRuntime* storage = CycleCollectedJSRuntime::Get();
+  CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
   nsTArray<nsCOMPtr<nsISupports>>& observers = storage->mUncaughtRejectionObservers;
   observers.AppendElement(&aObserver);
 }
@@ -327,7 +327,7 @@ PromiseDebugging::AddUncaughtRejectionObserver(GlobalObject&,
 PromiseDebugging::RemoveUncaughtRejectionObserver(GlobalObject&,
                                                   UncaughtRejectionObserver& aObserver)
 {
-  CycleCollectedJSRuntime* storage = CycleCollectedJSRuntime::Get();
+  CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
   nsTArray<nsCOMPtr<nsISupports>>& observers = storage->mUncaughtRejectionObservers;
   for (size_t i = 0; i < observers.Length(); ++i) {
     UncaughtRejectionObserver* observer = static_cast<UncaughtRejectionObserver*>(observers[i].get());
@@ -345,7 +345,7 @@ PromiseDebugging::RemoveUncaughtRejectionObserver(GlobalObject&,
 PromiseDebugging::AddUncaughtRejection(JS::HandleObject aPromise)
 {
   
-  if (CycleCollectedJSRuntime::Get()->mUncaughtRejections.append(aPromise)) {
+  if (CycleCollectedJSContext::Get()->mUncaughtRejections.append(aPromise)) {
     FlushRejections::DispatchNeeded();
   }
 }
@@ -356,7 +356,7 @@ PromiseDebugging::AddConsumedRejection(JS::HandleObject aPromise)
   
   
   
-  auto& uncaughtRejections = CycleCollectedJSRuntime::Get()->mUncaughtRejections;
+  auto& uncaughtRejections = CycleCollectedJSContext::Get()->mUncaughtRejections;
   for (size_t i = 0; i < uncaughtRejections.length(); i++) {
     if (uncaughtRejections[i] == aPromise) {
       
@@ -366,7 +366,7 @@ PromiseDebugging::AddConsumedRejection(JS::HandleObject aPromise)
     }
   }
   
-  if (CycleCollectedJSRuntime::Get()->mConsumedRejections.append(aPromise)) {
+  if (CycleCollectedJSContext::Get()->mConsumedRejections.append(aPromise)) {
     FlushRejections::DispatchNeeded();
   }
 }
@@ -374,7 +374,7 @@ PromiseDebugging::AddConsumedRejection(JS::HandleObject aPromise)
  void
 PromiseDebugging::FlushUncaughtRejectionsInternal()
 {
-  CycleCollectedJSRuntime* storage = CycleCollectedJSRuntime::Get();
+  CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
 
   auto& uncaught = storage->mUncaughtRejections;
   auto& consumed = storage->mConsumedRejections;
@@ -427,14 +427,14 @@ PromiseDebugging::FlushUncaughtRejectionsInternal()
  void
 PromiseDebugging::AddUncaughtRejection(Promise& aPromise)
 {
-  CycleCollectedJSRuntime::Get()->mUncaughtRejections.AppendElement(&aPromise);
+  CycleCollectedJSContext::Get()->mUncaughtRejections.AppendElement(&aPromise);
   FlushRejections::DispatchNeeded();
 }
 
  void
 PromiseDebugging::AddConsumedRejection(Promise& aPromise)
 {
-  CycleCollectedJSRuntime::Get()->mConsumedRejections.AppendElement(&aPromise);
+  CycleCollectedJSContext::Get()->mConsumedRejections.AppendElement(&aPromise);
   FlushRejections::DispatchNeeded();
 }
 
@@ -456,7 +456,7 @@ PromiseDebugging::GetPromiseID(GlobalObject&,
  void
 PromiseDebugging::FlushUncaughtRejectionsInternal()
 {
-  CycleCollectedJSRuntime* storage = CycleCollectedJSRuntime::Get();
+  CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
 
   
   

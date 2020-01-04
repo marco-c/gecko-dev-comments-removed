@@ -655,7 +655,7 @@ XPCJSRuntime::TraverseAdditionalNativeRoots(nsCycleCollectionNoteRootCallback& c
 void
 XPCJSRuntime::UnmarkSkippableJSHolders()
 {
-    CycleCollectedJSRuntime::UnmarkSkippableJSHolders();
+    CycleCollectedJSContext::UnmarkSkippableJSHolders();
 }
 
 void
@@ -1475,7 +1475,7 @@ XPCJSRuntime::SizeOfIncludingThis(MallocSizeOf mallocSizeOf)
     n += mClassInfo2NativeSetMap->ShallowSizeOfIncludingThis(mallocSizeOf);
     n += mNativeSetMap->SizeOfIncludingThis(mallocSizeOf);
 
-    n += CycleCollectedJSRuntime::SizeOfExcludingThis(mallocSizeOf);
+    n += CycleCollectedJSContext::SizeOfExcludingThis(mallocSizeOf);
 
     
     
@@ -3371,7 +3371,7 @@ GetWindowsStackSize()
 nsresult
 XPCJSRuntime::Initialize()
 {
-    nsresult rv = CycleCollectedJSRuntime::Initialize(nullptr,
+    nsresult rv = CycleCollectedJSContext::Initialize(nullptr,
                                                       JS::DefaultHeapMaxBytes,
                                                       JS::DefaultNurseryBytes);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -3665,7 +3665,7 @@ XPCJSRuntime::BeforeProcessTask(bool aMightBlock)
     
     js::ResetPerformanceMonitoring(Get()->Context());
 
-    CycleCollectedJSRuntime::BeforeProcessTask(aMightBlock);
+    CycleCollectedJSContext::BeforeProcessTask(aMightBlock);
 }
 
 void
@@ -3679,7 +3679,7 @@ XPCJSRuntime::AfterProcessTask(uint32_t aNewRecursionDepth)
     MOZ_ASSERT(NS_IsMainThread());
     nsJSContext::MaybePokeCC();
 
-    CycleCollectedJSRuntime::AfterProcessTask(aNewRecursionDepth);
+    CycleCollectedJSContext::AfterProcessTask(aNewRecursionDepth);
 
     
     

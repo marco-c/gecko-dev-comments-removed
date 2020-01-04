@@ -154,7 +154,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
-#include "mozilla/CycleCollectedJSRuntime.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/HoldDropJSObjects.h"
 
@@ -1268,7 +1268,7 @@ private:
   CycleCollectorResults mResults;
   TimeStamp mCollectionStart;
 
-  CycleCollectedJSRuntime* mJSRuntime;
+  CycleCollectedJSContext* mJSContext;
 
   ccPhase mIncrementalPhase;
   CCGraph mGraph;
@@ -1299,8 +1299,8 @@ private:
 public:
   nsCycleCollector();
 
-  void RegisterJSRuntime(CycleCollectedJSRuntime* aJSRuntime);
-  void ForgetJSRuntime();
+  void RegisterJSContext(CycleCollectedJSContext* aJSContext);
+  void ForgetJSContext();
 
   void SetBeforeUnlinkCallback(CC_BeforeUnlinkCallback aBeforeUnlinkCB)
   {
@@ -1408,7 +1408,7 @@ public:
 struct CollectorData
 {
   RefPtr<nsCycleCollector> mCollector;
-  CycleCollectedJSRuntime* mRuntime;
+  CycleCollectedJSContext* mContext;
 };
 
 static MOZ_THREAD_LOCAL(CollectorData*) sCollectorData;
@@ -1830,8 +1830,8 @@ public:
     NS_ENSURE_SUCCESS(rv, rv);
     
     CollectorData* data = sCollectorData.get();
-    if (data && data->mRuntime) {
-      data->mRuntime->DumpJSHeap(gcLog);
+    if (data && data->mContext) {
+      data->mContext->DumpJSHeap(gcLog);
     }
     rv = mLogSink->CloseGCLog();
     NS_ENSURE_SUCCESS(rv, rv);
@@ -2073,7 +2073,7 @@ private:
 public:
   CCGraphBuilder(CCGraph& aGraph,
                  CycleCollectorResults& aResults,
-                 CycleCollectedJSRuntime* aJSRuntime,
+                 CycleCollectedJSContext* aJSContext,
                  nsCycleCollectorLogger* aLogger,
                  bool aMergeZones);
   virtual ~CCGraphBuilder();
@@ -2171,7 +2171,7 @@ private:
 
 CCGraphBuilder::CCGraphBuilder(CCGraph& aGraph,
                                CycleCollectorResults& aResults,
-                               CycleCollectedJSRuntime* aJSRuntime,
+                               CycleCollectedJSContext* aJSContext,
                                nsCycleCollectorLogger* aLogger,
                                bool aMergeZones)
   : mGraph(aGraph)
@@ -2183,9 +2183,9 @@ CCGraphBuilder::CCGraphBuilder(CCGraph& aGraph,
   , mLogger(aLogger)
   , mMergeZones(aMergeZones)
 {
-  if (aJSRuntime) {
-    mJSParticipant = aJSRuntime->GCThingParticipant();
-    mJSZoneParticipant = aJSRuntime->ZoneParticipant();
+  if (aJSContext) {
+    mJSParticipant = aJSContext->GCThingParticipant();
+    mJSZoneParticipant = aJSContext->ZoneParticipant();
   }
 
   if (mLogger) {
@@ -2871,8 +2871,8 @@ nsCycleCollector::ForgetSkippable(bool aRemoveChildlessNodes,
   
   MOZ_ASSERT(IsIdle());
 
-  if (mJSRuntime) {
-    mJSRuntime->PrepareForForgetSkippable();
+  if (mJSContext) {
+    mJSContext->PrepareForForgetSkippable();
   }
   MOZ_ASSERT(!mScanInProgress,
              "Don't forget skippable or free snow-white while scan is in progress.");
@@ -3055,11 +3055,11 @@ nsCycleCollector::ScanIncrementalRoots()
   mPurpleBuf.VisitEntries(purpleScanBlackVisitor);
   timeLog.Checkpoint("ScanIncrementalRoots::fix purple");
 
-  bool hasJSRuntime = !!mJSRuntime;
+  bool hasJSContext = !!mJSContext;
   nsCycleCollectionParticipant* jsParticipant =
-    hasJSRuntime ? mJSRuntime->GCThingParticipant() : nullptr;
+    hasJSContext ? mJSContext->GCThingParticipant() : nullptr;
   nsCycleCollectionParticipant* zoneParticipant =
-    hasJSRuntime ? mJSRuntime->ZoneParticipant() : nullptr;
+    hasJSContext ? mJSContext->ZoneParticipant() : nullptr;
   bool hasLogger = !!mLogger;
 
   NodePool::Enumerator etor(mGraph.mNodes);
@@ -3078,7 +3078,7 @@ nsCycleCollector::ScanIncrementalRoots()
     
     
     
-    if (pi->IsGrayJS() && MOZ_LIKELY(hasJSRuntime)) {
+    if (pi->IsGrayJS() && MOZ_LIKELY(hasJSContext)) {
       
       
       if (pi->mParticipant == jsParticipant) {
@@ -3290,16 +3290,16 @@ nsCycleCollector::CollectWhite()
   uint32_t numWhiteGCed = 0;
   uint32_t numWhiteJSZones = 0;
 
-  bool hasJSRuntime = !!mJSRuntime;
+  bool hasJSContext = !!mJSContext;
   nsCycleCollectionParticipant* zoneParticipant =
-    hasJSRuntime ? mJSRuntime->ZoneParticipant() : nullptr;
+    hasJSContext ? mJSContext->ZoneParticipant() : nullptr;
 
   NodePool::Enumerator etor(mGraph.mNodes);
   while (!etor.IsDone()) {
     PtrInfo* pinfo = etor.GetNext();
     if (pinfo->mColor == white && pinfo->mParticipant) {
       if (pinfo->IsGrayJS()) {
-        MOZ_ASSERT(mJSRuntime);
+        MOZ_ASSERT(mJSContext);
         ++numWhiteGCed;
         JS::Zone* zone;
         if (MOZ_UNLIKELY(pinfo->mParticipant == zoneParticipant)) {
@@ -3309,7 +3309,7 @@ nsCycleCollector::CollectWhite()
           JS::GCCellPtr ptr(pinfo->mPointer, JS::GCThingTraceKind(pinfo->mPointer));
           zone = JS::GetTenuredGCThingZone(ptr);
         }
-        mJSRuntime->AddZoneWaitingForGC(zone);
+        mJSContext->AddZoneWaitingForGC(zone);
       } else {
         whiteNodes.InfallibleAppend(pinfo);
         pinfo->mParticipant->Root(pinfo->mPointer);
@@ -3338,8 +3338,8 @@ nsCycleCollector::CollectWhite()
                "Unlink shouldn't see objects removed from graph.");
     pinfo->mParticipant->Unlink(pinfo->mPointer);
 #ifdef DEBUG
-    if (mJSRuntime) {
-      mJSRuntime->AssertNoObjectsToTrace(pinfo->mPointer);
+    if (mJSContext) {
+      mJSContext->AssertNoObjectsToTrace(pinfo->mPointer);
     }
 #endif
   }
@@ -3411,7 +3411,7 @@ nsCycleCollector::nsCycleCollector() :
   mActivelyCollecting(false),
   mFreeingSnowWhite(false),
   mScanInProgress(false),
-  mJSRuntime(nullptr),
+  mJSContext(nullptr),
   mIncrementalPhase(IdlePhase),
 #ifdef DEBUG
   mThread(NS_GetCurrentThread()),
@@ -3430,10 +3430,10 @@ nsCycleCollector::~nsCycleCollector()
 }
 
 void
-nsCycleCollector::RegisterJSRuntime(CycleCollectedJSRuntime* aJSRuntime)
+nsCycleCollector::RegisterJSContext(CycleCollectedJSContext* aJSContext)
 {
-  MOZ_RELEASE_ASSERT(!mJSRuntime, "Multiple registrations of JS runtime in cycle collector");
-  mJSRuntime = aJSRuntime;
+  MOZ_RELEASE_ASSERT(!mJSContext, "Multiple registrations of JS context in cycle collector");
+  mJSContext = aJSContext;
 
   if (!NS_IsMainThread()) {
     return;
@@ -3446,10 +3446,10 @@ nsCycleCollector::RegisterJSRuntime(CycleCollectedJSRuntime* aJSRuntime)
 }
 
 void
-nsCycleCollector::ForgetJSRuntime()
+nsCycleCollector::ForgetJSContext()
 {
-  MOZ_RELEASE_ASSERT(mJSRuntime, "Forgetting JS runtime in cycle collector before a JS runtime was registered");
-  mJSRuntime = nullptr;
+  MOZ_RELEASE_ASSERT(mJSContext, "Forgetting JS context in cycle collector before a JS context was registered");
+  mJSContext = nullptr;
 }
 
 #ifdef DEBUG
@@ -3509,15 +3509,15 @@ nsCycleCollector::FixGrayBits(bool aForceGC, TimeLog& aTimeLog)
 {
   CheckThreadSafety();
 
-  if (!mJSRuntime) {
+  if (!mJSContext) {
     return;
   }
 
   if (!aForceGC) {
-    mJSRuntime->FixWeakMappingGrayBits();
+    mJSContext->FixWeakMappingGrayBits();
     aTimeLog.Checkpoint("FixWeakMappingGrayBits");
 
-    bool needGC = !mJSRuntime->AreGCGrayBitsValid();
+    bool needGC = !mJSContext->AreGCGrayBitsValid();
     
     CC_TELEMETRY(_NEED_GC, needGC);
     if (!needGC) {
@@ -3526,7 +3526,7 @@ nsCycleCollector::FixGrayBits(bool aForceGC, TimeLog& aTimeLog)
     mResults.mForcedGC = true;
   }
 
-  mJSRuntime->GarbageCollect(aForceGC ? JS::gcreason::SHUTDOWN_CC :
+  mJSContext->GarbageCollect(aForceGC ? JS::gcreason::SHUTDOWN_CC :
                                         JS::gcreason::CC_FORCED);
   aTimeLog.Checkpoint("FixGrayBits GC");
 }
@@ -3534,7 +3534,7 @@ nsCycleCollector::FixGrayBits(bool aForceGC, TimeLog& aTimeLog)
 bool
 nsCycleCollector::IsIncrementalGCInProgress()
 {
-  return mJSRuntime && JS::IsIncrementalGCInProgress(mJSRuntime->Context());
+  return mJSContext && JS::IsIncrementalGCInProgress(mJSContext->Context());
 }
 
 void
@@ -3542,8 +3542,8 @@ nsCycleCollector::FinishAnyIncrementalGCInProgress()
 {
   if (IsIncrementalGCInProgress()) {
     NS_WARNING("Finishing incremental GC in progress during CC");
-    JS::PrepareForIncrementalGC(mJSRuntime->Context());
-    JS::FinishIncrementalGC(mJSRuntime->Context(), JS::gcreason::CC_FORCED);
+    JS::PrepareForIncrementalGC(mJSContext->Context());
+    JS::FinishIncrementalGC(mJSContext->Context(), JS::gcreason::CC_FORCED);
   }
 }
 
@@ -3577,11 +3577,11 @@ nsCycleCollector::CleanupAfterCollection()
   CC_TELEMETRY(_COLLECTED, mWhiteNodeCount);
   timeLog.Checkpoint("CleanupAfterCollection::telemetry");
 
-  if (mJSRuntime) {
-    mJSRuntime->FinalizeDeferredThings(mResults.mAnyManual
-                                       ? CycleCollectedJSRuntime::FinalizeNow
-                                       : CycleCollectedJSRuntime::FinalizeIncrementally);
-    mJSRuntime->EndCycleCollectionCallback(mResults);
+  if (mJSContext) {
+    mJSContext->FinalizeDeferredThings(mResults.mAnyManual
+                                       ? CycleCollectedJSContext::FinalizeNow
+                                       : CycleCollectedJSContext::FinalizeIncrementally);
+    mJSContext->EndCycleCollectionCallback(mResults);
     timeLog.Checkpoint("CleanupAfterCollection::EndCycleCollectionCallback()");
   }
   mIncrementalPhase = IdlePhase;
@@ -3759,7 +3759,7 @@ static const uint32_t kMaxConsecutiveMerged = 3;
 bool
 nsCycleCollector::ShouldMergeZones(ccType aCCType)
 {
-  if (!mJSRuntime) {
+  if (!mJSContext) {
     return false;
   }
 
@@ -3777,7 +3777,7 @@ nsCycleCollector::ShouldMergeZones(ccType aCCType)
     return false;
   }
 
-  if (aCCType == SliceCC && mJSRuntime->UsefulToMergeZones()) {
+  if (aCCType == SliceCC && mJSContext->UsefulToMergeZones()) {
     mMergedInARow++;
     return true;
   } else {
@@ -3795,8 +3795,8 @@ nsCycleCollector::BeginCollection(ccType aCCType,
 
   mCollectionStart = TimeStamp::Now();
 
-  if (mJSRuntime) {
-    mJSRuntime->BeginCycleCollectionCallback();
+  if (mJSContext) {
+    mJSContext->BeginCycleCollectionCallback();
     timeLog.Checkpoint("BeginCycleCollectionCallback()");
   }
 
@@ -3849,13 +3849,13 @@ nsCycleCollector::BeginCollection(ccType aCCType,
   mResults.mMergedZones = mergeZones;
 
   MOZ_ASSERT(!mBuilder, "Forgot to clear mBuilder");
-  mBuilder = new CCGraphBuilder(mGraph, mResults, mJSRuntime, mLogger,
+  mBuilder = new CCGraphBuilder(mGraph, mResults, mJSContext, mLogger,
                                 mergeZones);
   timeLog.Checkpoint("BeginCollection prepare graph builder");
 
-  if (mJSRuntime) {
-    mJSRuntime->TraverseRoots(*mBuilder);
-    timeLog.Checkpoint("mJSRuntime->TraverseRoots()");
+  if (mJSContext) {
+    mJSContext->TraverseRoots(*mBuilder);
+    timeLog.Checkpoint("mJSContext->TraverseRoots()");
   }
 
   AutoRestore<bool> ar(mScanInProgress);
@@ -3935,7 +3935,7 @@ nsCycleCollector::GetJSPurpleBuffer()
 
 
 void
-nsCycleCollector_registerJSRuntime(CycleCollectedJSRuntime* aRt)
+nsCycleCollector_registerJSContext(CycleCollectedJSContext* aCx)
 {
   CollectorData* data = sCollectorData.get();
 
@@ -3943,39 +3943,39 @@ nsCycleCollector_registerJSRuntime(CycleCollectedJSRuntime* aRt)
   MOZ_ASSERT(data);
   MOZ_ASSERT(data->mCollector);
   
-  MOZ_ASSERT(!data->mRuntime);
+  MOZ_ASSERT(!data->mContext);
 
-  data->mRuntime = aRt;
-  data->mCollector->RegisterJSRuntime(aRt);
+  data->mContext = aCx;
+  data->mCollector->RegisterJSContext(aCx);
 }
 
 void
-nsCycleCollector_forgetJSRuntime()
+nsCycleCollector_forgetJSContext()
 {
   CollectorData* data = sCollectorData.get();
 
   
   MOZ_ASSERT(data);
   
-  MOZ_ASSERT(data->mRuntime);
+  MOZ_ASSERT(data->mContext);
 
   
   if (data->mCollector) {
-    data->mCollector->ForgetJSRuntime();
-    data->mRuntime = nullptr;
+    data->mCollector->ForgetJSContext();
+    data->mContext = nullptr;
   } else {
-    data->mRuntime = nullptr;
+    data->mContext = nullptr;
     delete data;
     sCollectorData.set(nullptr);
   }
 }
 
- CycleCollectedJSRuntime*
-CycleCollectedJSRuntime::Get()
+ CycleCollectedJSContext*
+CycleCollectedJSContext::Get()
 {
   CollectorData* data = sCollectorData.get();
   if (data) {
-    return data->mRuntime;
+    return data->mContext;
   }
   return nullptr;
 }
@@ -4055,7 +4055,7 @@ nsCycleCollector_startup()
 
   CollectorData* data = new CollectorData;
   data->mCollector = new nsCycleCollector();
-  data->mRuntime = nullptr;
+  data->mContext = nullptr;
 
   sCollectorData.set(data);
 }
@@ -4106,9 +4106,9 @@ nsCycleCollector_forgetSkippable(bool aRemoveChildlessNodes,
 void
 nsCycleCollector_dispatchDeferredDeletion(bool aContinuation, bool aPurge)
 {
-  CycleCollectedJSRuntime* rt = CycleCollectedJSRuntime::Get();
-  if (rt) {
-    rt->DispatchDeferredDeletion(aContinuation, aPurge);
+  CycleCollectedJSContext* cx = CycleCollectedJSContext::Get();
+  if (cx) {
+    cx->DispatchDeferredDeletion(aContinuation, aPurge);
   }
 }
 
@@ -4120,7 +4120,7 @@ nsCycleCollector_doDeferredDeletion()
   
   MOZ_ASSERT(data);
   MOZ_ASSERT(data->mCollector);
-  MOZ_ASSERT(data->mRuntime);
+  MOZ_ASSERT(data->mContext);
 
   return data->mCollector->FreeSnowWhite(false);
 }
@@ -4204,12 +4204,12 @@ nsCycleCollector_shutdown(bool aDoCollect)
 
     data->mCollector->Shutdown(aDoCollect);
     data->mCollector = nullptr;
-    if (data->mRuntime) {
+    if (data->mContext) {
       
       
-      data->mRuntime->ProcessStableStateQueue();
+      data->mContext->ProcessStableStateQueue();
     }
-    if (!data->mRuntime) {
+    if (!data->mContext) {
       delete data;
       sCollectorData.set(nullptr);
     }

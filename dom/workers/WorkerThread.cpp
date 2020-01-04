@@ -331,7 +331,7 @@ WorkerThread::Observer::OnProcessNextEvent(nsIThreadInternal* ,
   
   
   if (aMayWait) {
-    MOZ_ASSERT(CycleCollectedJSRuntime::Get()->RecursionDepth() == 2);
+    MOZ_ASSERT(CycleCollectedJSContext::Get()->RecursionDepth() == 2);
     MOZ_ASSERT(!BackgroundChild::GetForCurrentThread());
     return NS_OK;
   }
