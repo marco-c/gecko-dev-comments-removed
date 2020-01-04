@@ -28,6 +28,7 @@ Cu.import("resource://gre/modules/Promise.jsm");
 
 const {PushServiceWebSocket} = Cu.import("resource://gre/modules/PushServiceWebSocket.jsm");
 const {PushServiceHttp2} = Cu.import("resource://gre/modules/PushServiceHttp2.jsm");
+const {PushCrypto} = Cu.import("resource://gre/modules/PushCrypto.jsm");
 
 
 const CONNECTION_PROTOCOLS = [PushServiceWebSocket, PushServiceHttp2];
@@ -710,11 +711,11 @@ this.PushService = {
   _notifyAllAppsRegister: function() {
     debug("notifyAllAppsRegister()");
     
-    return this._db.getAllUnexpired().then(records =>
-      records.forEach(record =>
-        this._notifySubscriptionChangeObservers(record)
-      )
-    );
+    return this._db.getAllUnexpired().then(records => {
+      records.forEach(record => {
+        this._notifySubscriptionChangeObservers(record);
+      });
+    });
   },
 
   dropRegistrationAndNotifyApp: function(aKeyId) {
@@ -730,9 +731,31 @@ this.PushService = {
       .then(record => this._notifySubscriptionChangeObservers(record));
   },
 
+  ensureP256dhKey: function(record) {
+    if (record.p256dhPublicKey && record.p256dhPrivateKey) {
+      return Promise.resolve(record);
+    }
+    
+    
+    return PushCrypto.generateKeys()
+      .then(exportedKeys => {
+        return this.updateRecordAndNotifyApp(record.keyID, record => {
+          record.p256dhPublicKey = exportedKeys[0];
+          record.p256dhPrivateKey = exportedKeys[1];
+          return record;
+        });
+      }, error => {
+        return this.dropRegistrationAndNotifyApp(record.keyID).then(
+          () => Promise.reject(error));
+      });
+  },
+
   updateRecordAndNotifyApp: function(aKeyID, aUpdateFunc) {
     return this._db.update(aKeyID, aUpdateFunc)
-      .then(record => this._notifySubscriptionChangeObservers(record));
+      .then(record => {
+        this._notifySubscriptionChangeObservers(record);
+        return record;
+      });
   },
 
   _recordDidNotNotify: function(reason) {
@@ -755,7 +778,8 @@ this.PushService = {
 
 
 
-  receivedPushMessage: function(keyID, message, updateFunc) {
+
+  receivedPushMessage: function(keyID, message, cryptoParams, updateFunc) {
     debug("receivedPushMessage()");
     Services.telemetry.getHistogramById("PUSH_API_NOTIFICATION_RECEIVED").add();
 
@@ -780,9 +804,10 @@ this.PushService = {
           return null;
         }
         
+        
+        
+        
         if (newRecord.isExpired()) {
-          
-          
           debug("receivedPushMessage: Ignoring update for expired key ID " + keyID);
           return null;
         }
@@ -794,20 +819,33 @@ this.PushService = {
       if (!record) {
         return notified;
       }
-
-      if (shouldNotify) {
-        notified = this._notifyApp(record, message);
+      let decodedPromise;
+      if (cryptoParams) {
+        decodedPromise = PushCrypto.decodeMsg(
+          message,
+          record.p256dhPrivateKey,
+          cryptoParams.dh,
+          cryptoParams.salt,
+          cryptoParams.rs
+        ).then(bytes => new TextDecoder("utf-8").decode(bytes));
+      } else {
+        decodedPromise = Promise.resolve("");
       }
-      if (record.isExpired()) {
-        this._recordDidNotNotify(kDROP_NOTIFICATION_REASON_EXPIRED);
-        
-        
-        
-        this._sendUnregister(record).catch(error => {
-          debug("receivedPushMessage: Unregister error: " + error);
-        });
-      }
-      return notified;
+      return decodedPromise.then(message => {
+        if (shouldNotify) {
+          notified = this._notifyApp(record, message);
+        }
+        if (record.isExpired()) {
+          this._recordDidNotNotify(kDROP_NOTIFICATION_REASON_EXPIRED);
+          
+          
+          
+          this._sendUnregister(record).catch(error => {
+            debug("receivedPushMessage: Unregister error: " + error);
+          });
+        }
+        return notified;
+      });
     }).catch(error => {
       debug("receivedPushMessage: Error notifying app: " + error);
     });
