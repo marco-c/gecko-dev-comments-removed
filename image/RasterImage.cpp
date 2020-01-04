@@ -176,13 +176,13 @@ RasterImage::RequestRefresh(const TimeStamp& aTime)
     return;
   }
 
-  FrameAnimator::RefreshResult res;
+  RefreshResult res;
   if (mAnimationState) {
     MOZ_ASSERT(mFrameAnimator);
     res = mFrameAnimator->RequestRefresh(*mAnimationState, aTime);
   }
 
-  if (res.frameAdvanced) {
+  if (res.mFrameAdvanced) {
     
     
     
@@ -190,10 +190,10 @@ RasterImage::RequestRefresh(const TimeStamp& aTime)
       mFramesNotified++;
     #endif
 
-    NotifyProgress(NoProgress, res.dirtyRect);
+    NotifyProgress(NoProgress, res.mDirtyRect);
   }
 
-  if (res.animationFinished) {
+  if (res.mAnimationFinished) {
     mAnimationFinished = true;
     EvaluateAnimation();
   }

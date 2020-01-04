@@ -131,6 +131,36 @@ private:
   bool mDoneDecoding;
 };
 
+
+
+
+
+struct RefreshResult
+{
+  RefreshResult()
+    : mFrameAdvanced(false)
+    , mAnimationFinished(false)
+  { }
+
+  
+  void Accumulate(const RefreshResult& aOther)
+  {
+    mFrameAdvanced = mFrameAdvanced || aOther.mFrameAdvanced;
+    mAnimationFinished = mAnimationFinished || aOther.mAnimationFinished;
+    mDirtyRect = mDirtyRect.Union(aOther.mDirtyRect);
+  }
+
+  
+  gfx::IntRect mDirtyRect;
+
+  
+  
+  bool mFrameAdvanced : 1;
+
+  
+  bool mAnimationFinished : 1;
+};
+
 class FrameAnimator
 {
 public:
@@ -146,34 +176,6 @@ public:
   {
     MOZ_COUNT_DTOR(FrameAnimator);
   }
-
-  
-
-
-
-  struct RefreshResult
-  {
-    
-    nsIntRect dirtyRect;
-
-    
-    bool frameAdvanced : 1;
-
-    
-    bool animationFinished : 1;
-
-    RefreshResult()
-      : frameAdvanced(false)
-      , animationFinished(false)
-    { }
-
-    void Accumulate(const RefreshResult& other)
-    {
-      frameAdvanced = frameAdvanced || other.frameAdvanced;
-      animationFinished = animationFinished || other.animationFinished;
-      dirtyRect = dirtyRect.Union(other.dirtyRect);
-    }
-  };
 
   
 
