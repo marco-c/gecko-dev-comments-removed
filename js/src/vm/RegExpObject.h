@@ -64,7 +64,7 @@ enum RegExpRunStatus
 };
 
 extern RegExpObject*
-RegExpAlloc(ExclusiveContext* cx);
+RegExpAlloc(ExclusiveContext* cx, HandleObject proto = nullptr);
 
 
 extern JSObject*
