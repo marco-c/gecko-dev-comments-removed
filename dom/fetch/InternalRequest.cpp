@@ -38,7 +38,7 @@ InternalRequest::GetRequestConstructorCopy(nsIGlobalObject* aGlobal, ErrorResult
   
   copy->mSameOriginDataURL = true;
   copy->mPreserveContentCodings = true;
-  
+  copy->mReferrer = mReferrer;
   copy->mReferrerPolicy = mReferrerPolicy;
   copy->mEnvironmentReferrerPolicy = mEnvironmentReferrerPolicy;
 
