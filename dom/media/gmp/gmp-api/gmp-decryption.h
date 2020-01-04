@@ -106,32 +106,6 @@ enum GMPMediaKeyStatus {
 typedef int64_t GMPTimestamp;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define GMP_EME_CAP_DECRYPT_AUDIO (uint64_t(1) << 0)
-#define GMP_EME_CAP_DECRYPT_VIDEO (uint64_t(1) << 1)
-
-
-
-#define GMP_EME_CAP_DECRYPT_AND_DECODE_AUDIO (uint64_t(1) << 2)
-#define GMP_EME_CAP_DECRYPT_AND_DECODE_VIDEO (uint64_t(1) << 3)
-
-
-#define GMP_EME_CAP_RENDER_AUDIO (uint64_t(1) << 4)
-#define GMP_EME_CAP_RENDER_VIDEO (uint64_t(1) << 5)
-
-
 class GMPDecryptorCallback {
 public:
 
@@ -213,11 +187,6 @@ public:
                                 GMPMediaKeyStatus aStatus) = 0;
 
   
-  
-  
-  
-  
-  
   virtual void SetCapabilities(uint64_t aCaps) = 0;
 
   
@@ -256,13 +225,6 @@ enum GMPSessionType {
 class GMPDecryptor {
 public:
 
-  
-  
-  
-  
-  
-  
-  
   
   
   virtual void Init(GMPDecryptorCallback* aCallback) = 0;

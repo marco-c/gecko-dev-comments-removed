@@ -19,10 +19,7 @@ class EMEDecoderModule : public PlatformDecoderModule {
 private:
 
 public:
-  EMEDecoderModule(CDMProxy* aProxy,
-                   PDMFactory* aPDM,
-                   bool aCDMDecodesAudio,
-                   bool aCDMDecodesVideo);
+  EMEDecoderModule(CDMProxy* aProxy, PDMFactory* aPDM);
 
   virtual ~EMEDecoderModule();
 
@@ -56,8 +53,6 @@ private:
   RefPtr<PDMFactory> mPDM;
   
   RefPtr<TaskQueue> mTaskQueue;
-  bool mCDMDecodesAudio;
-  bool mCDMDecodesVideo;
 };
 
 } 

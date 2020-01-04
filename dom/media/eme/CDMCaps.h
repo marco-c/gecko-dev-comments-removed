@@ -55,10 +55,6 @@ public:
     explicit AutoLock(CDMCaps& aKeyCaps);
     ~AutoLock();
 
-    
-    
-    bool AreCapsKnown();
-
     bool IsKeyUsable(const CencKeyId& aKeyId);
 
     
@@ -76,21 +72,6 @@ public:
     bool RemoveKeysForSession(const nsString& aSessionId);
 
     
-    
-    void SetCaps(uint64_t aCaps);
-
-    bool CanRenderAudio();
-    bool CanRenderVideo();
-
-    bool CanDecryptAndDecodeAudio();
-    bool CanDecryptAndDecodeVideo();
-
-    bool CanDecryptAudio();
-    bool CanDecryptVideo();
-
-    void CallOnMainThreadWhenCapsAvailable(nsIRunnable* aContinuation);
-
-    
     void NotifyWhenKeyIdUsable(const CencKeyId& aKey,
                                SamplesWaitingForKey* aSamplesWaiting);
   private:
@@ -101,7 +82,6 @@ public:
 private:
   void Lock();
   void Unlock();
-  bool HasCap(uint64_t);
 
   struct WaitForKeys {
     WaitForKeys(const CencKeyId& aKeyId,
@@ -118,9 +98,6 @@ private:
   nsTArray<KeyStatus> mKeyStatuses;
 
   nsTArray<WaitForKeys> mWaitForKeys;
-
-  nsTArray<nsCOMPtr<nsIRunnable>> mWaitForCaps;
-  uint64_t mCaps;
 
   
   CDMCaps(const CDMCaps&) = delete;
