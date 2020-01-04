@@ -244,6 +244,12 @@ public:
   void WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyboardEvent,
                                  uint32_t aIndex);
 
+  
+
+
+
+  static bool IsControlChar(char16_t aChar);
+
 private:
   RefPtr<nsWindowBase> mWidget;
   RefPtr<TextEventDispatcher> mDispatcher;
@@ -314,12 +320,6 @@ private:
   }
 
   void InitWithAppCommand();
-
-  
-
-
-
-  bool IsControlChar(char16_t aChar) const;
 
   
 
