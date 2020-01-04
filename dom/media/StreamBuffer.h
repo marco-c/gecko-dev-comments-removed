@@ -63,7 +63,6 @@ public:
 
 
 
-
   class Track final
   {
     Track(TrackID aID, StreamTime aStart, MediaSegment* aSegment)
