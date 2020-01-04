@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Ci } = require("chrome");
+const { Ci, Cc } = require("chrome");
 const { memoize } = require("sdk/lang/functional");
 
 loader.lazyRequireGetter(this, "setIgnoreLayoutChanges",
@@ -155,8 +155,7 @@ function getFrameOffsets(boundaryWindow, node) {
     
     let frameRect = frameElement.getBoundingClientRect();
 
-    let [offsetTop, offsetLeft] =
-      getIframeContentOffset(frameElement);
+    let [offsetTop, offsetLeft] = getFrameContentOffset(frameElement);
 
     xOffset += frameRect.left + offsetLeft;
     yOffset += frameRect.top + offsetTop;
@@ -288,8 +287,7 @@ function getRect(boundaryWindow, aNode, aContentWindow) {
     
     let frameRect = frameElement.getBoundingClientRect();
 
-    let [offsetTop, offsetLeft] =
-      getIframeContentOffset(frameElement);
+    let [offsetTop, offsetLeft] = getFrameContentOffset(frameElement);
 
     rect.top += frameRect.top + offsetTop;
     rect.left += frameRect.left + offsetLeft;
@@ -370,14 +368,42 @@ exports.getNodeBounds = getNodeBounds;
 
 
 
+function safelyGetContentWindow(aFrame) {
+  if (aFrame.contentWindow) {
+    return aFrame.contentWindow;
+  }
+
+  let walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"]
+               .createInstance(Ci.inIDeepTreeWalker);
+  walker.showSubDocuments = true;
+  walker.showDocumentsAsNodes = true;
+  walker.init(aFrame, Ci.nsIDOMNodeFilter.SHOW_ALL);
+  walker.currentNode = aFrame;
+
+  let document = walker.nextNode();
+  if (!document || !document.defaultView) {
+    throw new Error("Couldn't get the content window inside aFrame " + aFrame);
+  }
+
+  return document.defaultView;
+}
 
 
 
 
 
 
-function getIframeContentOffset(aIframe) {
-  let style = aIframe.contentWindow.getComputedStyle(aIframe, null);
+
+
+
+
+
+
+
+
+
+function getFrameContentOffset(aFrame) {
+  let style = safelyGetContentWindow(aFrame).getComputedStyle(aFrame, null);
 
   
   if (!style) {
@@ -392,7 +418,6 @@ function getIframeContentOffset(aIframe) {
 
   return [borderTop + paddingTop, borderLeft + paddingLeft];
 }
-exports.getIframeContentOffset = getIframeContentOffset;
 
 
 
@@ -413,7 +438,7 @@ function getElementFromPoint(aDocument, aX, aY) {
       let rect = node.getBoundingClientRect();
 
       
-      let [offsetTop, offsetLeft] = getIframeContentOffset(node);
+      let [offsetTop, offsetLeft] = getFrameContentOffset(node);
 
       aX -= rect.left + offsetLeft;
       aY -= rect.top + offsetTop;
