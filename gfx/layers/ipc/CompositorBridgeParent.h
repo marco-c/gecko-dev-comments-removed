@@ -387,20 +387,6 @@ public:
 
 
 
-  static uint64_t AllocateLayerTreeId();
-  
-
-
-
-
-  static void DeallocateLayerTreeId(uint64_t aId);
-
-  
-
-
-
-
-
   static void SetControllerForLayerTree(uint64_t aLayersId,
                                         GeckoContentController* aController);
 
@@ -505,6 +491,20 @@ private:
 
 
   static already_AddRefed<APZCTreeManager> GetAPZCTreeManager(uint64_t aLayersId);
+
+  
+
+
+
+
+
+  static uint64_t AllocateLayerTreeId();
+  
+
+
+
+
+  static void DeallocateLayerTreeId(uint64_t aId);
 
 protected:
   

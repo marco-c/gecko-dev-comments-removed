@@ -47,6 +47,17 @@ public:
   
   already_AddRefed<APZCTreeManager> GetAPZCTreeManagerForLayers(uint64_t aLayersId);
 
+  
+  
+  
+  
+  uint64_t AllocateLayerTreeId();
+
+  
+  
+  
+  void DeallocateLayerTreeId(uint64_t aLayersId);
+
 private:
   GPUProcessManager();
 
