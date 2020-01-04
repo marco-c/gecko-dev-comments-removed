@@ -170,11 +170,6 @@ private:
 
   
   
-  
-  Transport* mTransport;
-
-  
-  
   nsTArray<ParentImpl*>* mLiveActorArray;
 
   
@@ -237,7 +232,7 @@ private:
 
   
   ParentImpl()
-  : mTransport(nullptr), mLiveActorArray(nullptr), mIsOtherProcessActor(false),
+  : mLiveActorArray(nullptr), mIsOtherProcessActor(false),
     mActorDestroyed(false)
   {
     AssertIsInMainProcess();
@@ -245,14 +240,13 @@ private:
   }
 
   
-  ParentImpl(ContentParent* aContent, Transport* aTransport)
-  : mContent(aContent), mTransport(aTransport), mLiveActorArray(nullptr),
+  explicit ParentImpl(ContentParent* aContent)
+  : mContent(aContent), mLiveActorArray(nullptr),
     mIsOtherProcessActor(true), mActorDestroyed(false)
   {
     AssertIsInMainProcess();
     AssertIsOnMainThread();
     MOZ_ASSERT(aContent);
-    MOZ_ASSERT(aTransport);
   }
 
   ~ParentImpl()
@@ -260,7 +254,6 @@ private:
     AssertIsInMainProcess();
     AssertIsOnMainThread();
     MOZ_ASSERT(!mContent);
-    MOZ_ASSERT(!mTransport);
   }
 
   void
@@ -454,10 +447,6 @@ private:
   
   ~ChildImpl()
   {
-    RefPtr<DeleteTask<Transport>> task =
-      new DeleteTask<Transport>(GetTransport());
-    XRE_GetIOMessageLoop()->PostTask(task.forget());
-
     AssertActorDestroyed();
   }
 
@@ -1061,7 +1050,7 @@ ParentImpl::Alloc(ContentParent* aContent,
 
   sLiveActorCount++;
 
-  RefPtr<ParentImpl> actor = new ParentImpl(aContent, aTransport);
+  RefPtr<ParentImpl> actor = new ParentImpl(aContent);
 
   nsCOMPtr<nsIRunnable> connectRunnable =
     new ConnectActorRunnable(actor, aTransport, aOtherPid,
@@ -1292,14 +1281,6 @@ ParentImpl::MainThreadActorDestroy()
   AssertIsOnMainThread();
   MOZ_ASSERT_IF(mIsOtherProcessActor, mContent);
   MOZ_ASSERT_IF(!mIsOtherProcessActor, !mContent);
-  MOZ_ASSERT_IF(mIsOtherProcessActor, mTransport);
-  MOZ_ASSERT_IF(!mIsOtherProcessActor, !mTransport);
-
-  if (mTransport) {
-    RefPtr<DeleteTask<Transport>> task = new DeleteTask<Transport>(mTransport);
-    XRE_GetIOMessageLoop()->PostTask(task.forget());
-    mTransport = nullptr;
-  }
 
   mContent = nullptr;
 
@@ -1326,19 +1307,18 @@ ParentImpl::CloneToplevel(const InfallibleTArray<ProtocolFdMapping>& aFds,
       continue;
     }
 
-    Transport* transport = OpenDescriptor(aFds[i].fd(),
-                                          Transport::MODE_SERVER);
+    UniquePtr<Transport> transport = OpenDescriptor(aFds[i].fd(), Transport::MODE_SERVER);
     if (!transport) {
       NS_WARNING("Failed to open transport!");
       break;
     }
 
     PBackgroundParent* clonedActor =
-      Alloc(aCtx->GetContentParent(), transport, base::GetProcId(aPeerProcess));
+      Alloc(aCtx->GetContentParent(), transport.get(), base::GetProcId(aPeerProcess));
     MOZ_ASSERT(clonedActor);
 
     clonedActor->CloneManagees(this, aCtx);
-    clonedActor->SetTransport(transport);
+    clonedActor->SetTransport(Move(transport));
 
     return clonedActor;
   }

@@ -47,7 +47,7 @@ public:
   
 
 
-  SharedBufferManagerParent(Transport* aTransport, ProcessId aOwner, base::Thread* aThread);
+  SharedBufferManagerParent(ProcessId aOwner, base::Thread* aThread);
   virtual ~SharedBufferManagerParent();
 
   
@@ -101,7 +101,6 @@ protected:
   std::map<int64_t, android::sp<android::GraphicBuffer> > mBuffers;
 #endif
   
-  Transport* mTransport;
   base::ProcessId mOwner;
   base::Thread* mThread;
   bool mDestroyed;

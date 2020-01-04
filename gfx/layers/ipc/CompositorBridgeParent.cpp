@@ -72,7 +72,6 @@
 #include "mozilla/Hal.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Telemetry.h"
 #ifdef MOZ_ENABLE_PROFILER_SPS
 #include "ProfilerMarkers.h"
 #endif
@@ -1520,22 +1519,8 @@ CompositorBridgeParent::NewCompositor(const nsTArray<LayersBackend>& aBackendHin
       compositor = new CompositorD3D9(this, mWidget);
 #endif
     }
-    nsCString failureReason;
-    if (compositor && compositor->Initialize(&failureReason)) {
-      if (failureReason.IsEmpty()){
-        failureReason = "SUCCESS";
-      }
-      if (compositor->GetBackendType() == LayersBackend::LAYERS_OPENGL){
-        Telemetry::Accumulate(Telemetry::OPENGL_COMPOSITING_FAILURE_ID, failureReason);
-      }
-#ifdef XP_WIN
-      else if (compositor->GetBackendType() == LayersBackend::LAYERS_D3D9){
-        Telemetry::Accumulate(Telemetry::D3D9_COMPOSITING_FAILURE_ID, failureReason);
-      }
-      else if (compositor->GetBackendType() == LayersBackend::LAYERS_D3D11){
-        Telemetry::Accumulate(Telemetry::D3D11_COMPOSITING_FAILURE_ID, failureReason);
-      }
-#endif
+
+    if (compositor && compositor->Initialize()) {
       compositor->SetCompositorID(mCompositorID);
       return compositor;
     }
@@ -1869,9 +1854,8 @@ class CrossProcessCompositorBridgeParent final : public PCompositorBridgeParent,
   friend class CompositorBridgeParent;
 
 public:
-  explicit CrossProcessCompositorBridgeParent(Transport* aTransport)
+  explicit CrossProcessCompositorBridgeParent()
     : CompositorBridgeParentIPCAllocator("CrossProcessCompositorBridgeParent")
-    , mTransport(aTransport)
     , mNotifyAfterRemotePaint(false)
     , mDestroyCalled(false)
   {
@@ -2058,7 +2042,6 @@ private:
   
   
   RefPtr<CrossProcessCompositorBridgeParent> mSelfRef;
-  Transport* mTransport;
 
   RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
   
@@ -2223,7 +2206,7 @@ CompositorBridgeParent::Create(Transport* aTransport, ProcessId aOtherPid)
   gfxPlatform::InitLayersIPC();
 
   RefPtr<CrossProcessCompositorBridgeParent> cpcp =
-    new CrossProcessCompositorBridgeParent(aTransport);
+    new CrossProcessCompositorBridgeParent();
 
   cpcp->mSelfRef = cpcp;
   CompositorLoop()->PostTask(
@@ -2793,8 +2776,7 @@ CrossProcessCompositorBridgeParent::~CrossProcessCompositorBridgeParent()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(XRE_GetIOMessageLoop());
-  RefPtr<DeleteTask<Transport>> task = new DeleteTask<Transport>(mTransport);
-  XRE_GetIOMessageLoop()->PostTask(task.forget());
+  MOZ_ASSERT(IToplevelProtocol::GetTransport());
 }
 
 IToplevelProtocol*
@@ -2805,12 +2787,12 @@ CrossProcessCompositorBridgeParent::CloneToplevel(
 {
   for (unsigned int i = 0; i < aFds.Length(); i++) {
     if (aFds[i].protocolId() == (unsigned)GetProtocolId()) {
-      Transport* transport = OpenDescriptor(aFds[i].fd(),
-                                            Transport::MODE_SERVER);
+      UniquePtr<Transport> transport =
+        OpenDescriptor(aFds[i].fd(), Transport::MODE_SERVER);
       PCompositorBridgeParent* compositor =
-        CompositorBridgeParent::Create(transport, base::GetProcId(aPeerProcess));
+        CompositorBridgeParent::Create(transport.get(), base::GetProcId(aPeerProcess));
       compositor->CloneManagees(this, aCtx);
-      compositor->IToplevelProtocol::SetTransport(transport);
+      compositor->IToplevelProtocol::SetTransport(Move(transport));
       
       
       compositor->OnChannelConnected(base::GetProcId(aPeerProcess));

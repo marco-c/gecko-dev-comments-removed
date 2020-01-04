@@ -263,11 +263,6 @@ HangMonitorChild::HangMonitorChild(ProcessHangMonitor* aMonitor)
 
 HangMonitorChild::~HangMonitorChild()
 {
-  
-  
-  RefPtr<DeleteTask<Transport>> task = new DeleteTask<Transport>(GetTransport());
-  XRE_GetIOMessageLoop()->PostTask(task.forget());
-
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sInstance == this);
   sInstance = nullptr;
@@ -480,11 +475,6 @@ HangMonitorParent::HangMonitorParent(ProcessHangMonitor* aMonitor)
 
 HangMonitorParent::~HangMonitorParent()
 {
-  
-  
-  RefPtr<DeleteTask<Transport>> task = new DeleteTask<Transport>(GetTransport());
-  XRE_GetIOMessageLoop()->PostTask(task.forget());
-
 #ifdef MOZ_CRASHREPORTER
   MutexAutoLock lock(mBrowserCrashDumpHashLock);
 

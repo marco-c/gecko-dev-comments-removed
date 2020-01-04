@@ -154,15 +154,6 @@ PluginModuleChild::PluginModuleChild(bool aIsChrome)
 
 PluginModuleChild::~PluginModuleChild()
 {
-    if (mTransport) {
-        
-        
-        
-        
-        RefPtr<DeleteTask<Transport>> task = new DeleteTask<Transport>(mTransport);
-        XRE_GetIOMessageLoop()->PostTask(task.forget());
-    }
-
     if (mIsChrome) {
         MOZ_ASSERT(gChromeInstance == this);
 

@@ -108,11 +108,6 @@ ShutdownTestOpensOpenedParent(TestOpensOpenedParent* parent,
                               Transport* transport)
 {
     delete parent;
-
-    
-    
-    XRE_GetIOMessageLoop()->PostTask(
-        do_AddRef(new DeleteTask<Transport>(transport)));
 }
 
 void
@@ -230,11 +225,6 @@ ShutdownTestOpensOpenedChild(TestOpensOpenedChild* child,
                              Transport* transport)
 {
     delete child;
-
-    
-    
-    XRE_GetIOMessageLoop()->PostTask(
-        do_AddRef(new DeleteTask<Transport>(transport)));
 
     
     gMainThread->PostTask(

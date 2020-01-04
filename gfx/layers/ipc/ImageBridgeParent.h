@@ -46,7 +46,7 @@ public:
   typedef InfallibleTArray<OpDestroy> OpDestroyArray;
   typedef InfallibleTArray<EditReply> EditReplyArray;
 
-  ImageBridgeParent(MessageLoop* aLoop, Transport* aTransport, ProcessId aChildProcessId);
+  ImageBridgeParent(MessageLoop* aLoop, ProcessId aChildProcessId);
   ~ImageBridgeParent();
 
   virtual ShmemAllocator* AsShmemAllocator() override { return this; }
@@ -146,7 +146,6 @@ protected:
 private:
   void DeferredDestroy();
   MessageLoop* mMessageLoop;
-  Transport* mTransport;
   
   
   RefPtr<ImageBridgeParent> mSelfRef;
