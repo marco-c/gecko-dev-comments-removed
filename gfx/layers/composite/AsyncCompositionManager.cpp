@@ -15,6 +15,7 @@
 #include "mozilla/StyleAnimationValue.h" 
 #include "mozilla/WidgetUtils.h"        
 #include "mozilla/dom/KeyframeEffect.h" 
+#include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
 #include "mozilla/gfx/BaseRect.h"       
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
@@ -583,12 +584,12 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
     
     timing.mDelay = TimeDuration(0);
     timing.mIterationCount = animation.iterationCount();
-    timing.mDirection = animation.direction();
+    timing.mDirection = static_cast<dom::PlaybackDirection>(animation.direction());
     
     
     
     
-    timing.mFillMode = NS_STYLE_ANIMATION_FILL_MODE_BOTH;
+    timing.mFillMode = dom::FillMode::Both;
 
     ComputedTiming computedTiming =
       dom::KeyframeEffectReadOnly::GetComputedTimingAt(
