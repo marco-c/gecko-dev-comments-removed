@@ -14,11 +14,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_h264.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -323,7 +327,7 @@ bool RTPSenderVideo::Send(const RtpVideoCodecTypes videoType,
   
   
   const RTPFragmentationHeader* frag =
-      (videoType == kRtpVideoVp8 || videoType == kRtpVideoVp9) ? NULL : fragmentation;
+      (videoType == kRtpVideoVp8) ? NULL : fragmentation;
 
   packetizer->SetPayloadData(data, payload_bytes_to_send, frag);
 

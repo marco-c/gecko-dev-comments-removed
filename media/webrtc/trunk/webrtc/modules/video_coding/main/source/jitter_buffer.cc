@@ -14,6 +14,9 @@
 #include <algorithm>
 #include <utility>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/trace_event.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/frame_buffer.h"
 #include "webrtc/modules/video_coding/main/source/inter_frame_delay.h"
@@ -26,9 +29,11 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/metrics.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
+
+
+static const uint32_t kSsCleanupIntervalSec = 60;
 
 
 static const int64_t kDefaultRtt = 200;
@@ -146,6 +151,98 @@ void FrameList::Reset(UnorderedFrameList* free_frames) {
   }
 }
 
+bool Vp9SsMap::Insert(const VCMPacket& packet) {
+  if (!packet.codecSpecificHeader.codecHeader.VP9.ss_data_available)
+    return false;
+
+  ss_map_[packet.timestamp] = packet.codecSpecificHeader.codecHeader.VP9.gof;
+  return true;
+}
+
+void Vp9SsMap::Reset() {
+  ss_map_.clear();
+}
+
+bool Vp9SsMap::Find(uint32_t timestamp, SsMap::iterator* it_out) {
+  bool found = false;
+  for (SsMap::iterator it = ss_map_.begin(); it != ss_map_.end(); ++it) {
+    if (it->first == timestamp || IsNewerTimestamp(timestamp, it->first)) {
+      *it_out = it;
+      found = true;
+    }
+  }
+  return found;
+}
+
+void Vp9SsMap::RemoveOld(uint32_t timestamp) {
+  if (!TimeForCleanup(timestamp))
+    return;
+
+  SsMap::iterator it;
+  if (!Find(timestamp, &it))
+    return;
+
+  ss_map_.erase(ss_map_.begin(), it);
+  AdvanceFront(timestamp);
+}
+
+bool Vp9SsMap::TimeForCleanup(uint32_t timestamp) const {
+  if (ss_map_.empty() || !IsNewerTimestamp(timestamp, ss_map_.begin()->first))
+    return false;
+
+  uint32_t diff = timestamp - ss_map_.begin()->first;
+  return diff / kVideoPayloadTypeFrequency >= kSsCleanupIntervalSec;
+}
+
+void Vp9SsMap::AdvanceFront(uint32_t timestamp) {
+  RTC_DCHECK(!ss_map_.empty());
+  GofInfoVP9 gof = ss_map_.begin()->second;
+  ss_map_.erase(ss_map_.begin());
+  ss_map_[timestamp] = gof;
+}
+
+
+bool Vp9SsMap::UpdatePacket(VCMPacket* packet) {
+  uint8_t gof_idx = packet->codecSpecificHeader.codecHeader.VP9.gof_idx;
+  if (gof_idx == kNoGofIdx)
+    return false;  
+
+  SsMap::iterator it;
+  if (!Find(packet->timestamp, &it))
+    return false;  
+
+  if (gof_idx >= it->second.num_frames_in_gof)
+    return false;  
+
+  RTPVideoHeaderVP9* vp9 = &packet->codecSpecificHeader.codecHeader.VP9;
+  vp9->temporal_idx = it->second.temporal_idx[gof_idx];
+  vp9->temporal_up_switch = it->second.temporal_up_switch[gof_idx];
+
+  
+  vp9->num_ref_pics = it->second.num_ref_pics[gof_idx];
+  for (uint8_t i = 0; i < it->second.num_ref_pics[gof_idx]; ++i) {
+    vp9->pid_diff[i] = it->second.pid_diff[gof_idx][i];
+  }
+  return true;
+}
+
+void Vp9SsMap::UpdateFrames(FrameList* frames) {
+  for (const auto& frame_it : *frames) {
+    uint8_t gof_idx =
+        frame_it.second->CodecSpecific()->codecSpecific.VP9.gof_idx;
+    if (gof_idx == kNoGofIdx) {
+      continue;
+    }
+    SsMap::iterator ss_it;
+    if (Find(frame_it.second->TimeStamp(), &ss_it)) {
+      if (gof_idx >= ss_it->second.num_frames_in_gof) {
+        continue;  
+      }
+      frame_it.second->SetGofInfo(ss_it->second, gof_idx);
+    }
+  }
+}
+
 VCMJitterBuffer::VCMJitterBuffer(Clock* clock, EventFactory* event_factory)
     : clock_(clock),
       running_(false),
@@ -204,7 +301,7 @@ VCMJitterBuffer::~VCMJitterBuffer() {
 }
 
 void VCMJitterBuffer::UpdateHistograms() {
-  if (num_packets_ <= 0) {
+  if (num_packets_ <= 0 || !running_) {
     return;
   }
   int64_t elapsed_sec =
@@ -624,6 +721,9 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
     last_decoded_state_.UpdateOldPacket(&packet);
     DropPacketsFromNackList(last_decoded_state_.sequence_num());
 
+    
+    FindAndInsertContinuousFramesWithState(last_decoded_state_);
+
     if (num_consecutive_old_packets_ > kMaxConsecutiveOldPackets) {
       LOG(LS_WARNING)
           << num_consecutive_old_packets_
@@ -800,6 +900,16 @@ void VCMJitterBuffer::FindAndInsertContinuousFrames(
   VCMDecodingState decoding_state;
   decoding_state.CopyFrom(last_decoded_state_);
   decoding_state.SetState(&new_frame);
+  FindAndInsertContinuousFramesWithState(decoding_state);
+}
+
+void VCMJitterBuffer::FindAndInsertContinuousFramesWithState(
+    const VCMDecodingState& original_decoded_state) {
+  
+  
+  VCMDecodingState decoding_state;
+  decoding_state.CopyFrom(original_decoded_state);
+
   
   
   
@@ -807,7 +917,8 @@ void VCMJitterBuffer::FindAndInsertContinuousFrames(
   for (FrameList::iterator it = incomplete_frames_.begin();
        it != incomplete_frames_.end();)  {
     VCMFrameBuffer* frame = it->second;
-    if (IsNewerTimestamp(new_frame.TimeStamp(), frame->TimeStamp())) {
+    if (IsNewerTimestamp(original_decoded_state.time_stamp(),
+                         frame->TimeStamp())) {
       ++it;
       continue;
     }
