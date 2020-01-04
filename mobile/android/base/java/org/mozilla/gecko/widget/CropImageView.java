@@ -12,7 +12,6 @@ import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
-import com.nineoldandroids.view.ViewHelper;
 import org.mozilla.gecko.widget.themed.ThemedImageView;
 
 
@@ -54,8 +53,8 @@ public abstract class CropImageView extends ThemedImageView {
         
         
         
-        ViewHelper.setPivotX(this, 1);
-        ViewHelper.setPivotY(this, 1);
+        setPivotX(1);
+        setPivotY(1);
     }
 
     
