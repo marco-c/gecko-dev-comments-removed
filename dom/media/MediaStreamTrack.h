@@ -11,6 +11,7 @@
 #include "nsID.h"
 #include "StreamBuffer.h"
 #include "MediaTrackConstraints.h"
+#include "mozilla/CORSMode.h"
 #include "PrincipalChangeObserver.h"
 
 namespace mozilla {
@@ -65,6 +66,13 @@ public:
 
 
   nsIPrincipal* GetPrincipal() const { return mPrincipal; }
+
+  
+
+
+
+
+  virtual CORSMode GetCORSMode() const { return CORS_NONE; }
 
   
 
@@ -225,6 +233,11 @@ public:
 
 
   nsIPrincipal* GetPrincipal() const { return GetSource().GetPrincipal(); }
+
+  
+
+
+  CORSMode GetCORSMode() const { return GetSource().GetCORSMode(); }
 
   MediaStreamGraph* Graph();
 
