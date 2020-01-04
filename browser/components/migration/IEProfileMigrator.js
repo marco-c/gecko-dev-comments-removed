@@ -12,6 +12,7 @@ const Cr = Components.results;
 const kLoginsKey = "Software\\Microsoft\\Internet Explorer\\IntelliForms\\Storage2";
 const kMainKey = "Software\\Microsoft\\Internet Explorer\\Main";
 
+Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
@@ -524,9 +525,12 @@ IEProfileMigrator.prototype.getResources = function IE_getResources() {
     MSMigrationUtils.getBookmarksMigrator()
   , new History()
   , MSMigrationUtils.getCookiesMigrator()
-  , new IE7FormPasswords()
   , new Settings()
   ];
+  
+  if (AppConstants.isPlatformAndVersionAtMost("win", "6.1")) {
+    resources.push(new IE7FormPasswords());
+  }
   return [r for each (r in resources) if (r.exists)];
 };
 
