@@ -416,14 +416,9 @@ Module::initElems(JSContext* cx, HandleWasmInstanceObject instanceObj,
     const SharedTableVector& tables = instance.tables();
 
     
-    
-    if (tableObj && !tableObj->initialized() && !tableObj->init(cx, instanceObj))
-        return false;
-
-    
     for (const SharedTable& table : tables) {
         if (!table->initialized())
-            table->init(instance.code().segment());
+            table->init(instance);
     }
 
     
@@ -462,14 +457,6 @@ Module::initElems(JSContext* cx, HandleWasmInstanceObject instanceObj,
             return false;
         }
 
-        if (tableObj) {
-            MOZ_ASSERT(seg.tableIndex == 0);
-            for (uint32_t i = 0; i < seg.elems.length(); i++) {
-                if (!tableObj->setInstance(cx, offset + i, instanceObj))
-                    return false;
-            }
-        }
-
         
         
         
@@ -477,10 +464,12 @@ Module::initElems(JSContext* cx, HandleWasmInstanceObject instanceObj,
 
         uint8_t* codeBase = instance.codeBase();
         for (uint32_t i = 0; i < seg.elems.length(); i++) {
-            void* callee = codeBase + seg.elems[i];
+            void* code = codeBase + seg.elems[i];
             if (useProfilingEntry)
-                callee = codeBase + instance.code().lookupRange(callee)->funcProfilingEntry();
-            table.array()[offset + i] = callee;
+                code = codeBase + instance.code().lookupRange(code)->funcProfilingEntry();
+
+            if (!table.set(cx, offset + i, code, instance))
+                return false;
         }
 
         prevEnd = offset + seg.elems.length();

@@ -30,24 +30,36 @@ namespace wasm {
 
 class Table : public ShareableBase<Table>
 {
+    UniquePtr<uint8_t[], JS::FreePolicy> array_;
     TableKind kind_;
-    UniquePtr<void*> array_;
     uint32_t length_;
     bool initialized_;
+    bool external_;
 
   public:
     static RefPtr<Table> create(JSContext* cx, const TableDesc& desc);
+    void trace(JSTracer* trc);
 
     
 
+    bool external() const { return external_; }
     bool isTypedFunction() const { return kind_ == TableKind::TypedFunction; }
-    void** array() const { return array_.get(); }
     uint32_t length() const { return length_; }
+    uint8_t* base() const { return array_.get(); }
 
     
 
     bool initialized() const { return initialized_; }
-    void init(const CodeSegment& codeSegment);
+    void init(Instance& instance);
+
+    
+    
+    
+
+    void** internalArray() const;
+    ExternalTableElem* externalArray() const;
+    bool set(JSContext* cx, uint32_t index, void* code, Instance& instance);
+    void setNull(uint32_t index);
 
     
 

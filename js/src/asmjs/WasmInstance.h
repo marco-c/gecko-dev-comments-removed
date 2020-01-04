@@ -43,10 +43,6 @@ class Instance
     const UniqueCode                     code_;
     GCPtrWasmMemoryObject                memory_;
     SharedTableVector                    tables_;
-
-    
-    
-    
     TlsData                              tlsData_;
 
     
@@ -91,12 +87,13 @@ class Instance
     const SharedTableVector& tables() const { return tables_; }
     SharedMem<uint8_t*> memoryBase() const;
     size_t memoryLength() const;
+    TlsData& tlsData() { return tlsData_; }
 
     
     
     
 
-    WasmInstanceObject* object() const { return object_; }
+    WasmInstanceObject* object() const;
 
     
     

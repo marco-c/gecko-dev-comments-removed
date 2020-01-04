@@ -1141,6 +1141,10 @@ class CalleeDesc
         MOZ_ASSERT(which_ == WasmTable);
         return u.table.desc_.initial;
     }
+    bool wasmTableIsExternal() const {
+        MOZ_ASSERT(which_ == WasmTable);
+        return u.table.desc_.external;
+    }
     SigIdDesc wasmTableSigId() const {
         MOZ_ASSERT(which_ == WasmTable);
         return u.table.sigId_;
@@ -1218,6 +1222,24 @@ struct FuncImportTls
     
     GCPtrObject obj;
     static_assert(sizeof(GCPtrObject) == sizeof(void*), "for JIT access");
+};
+
+
+
+
+
+struct ExternalTableElem
+{
+    
+    
+    
+    
+    
+    void* code;
+
+    
+    
+    TlsData* tls;
 };
 
 
