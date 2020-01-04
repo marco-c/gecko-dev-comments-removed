@@ -274,12 +274,24 @@ PropertyDescriptor::trace(JSTracer* trc)
 void
 js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 {
+    
+    
+    if (rt->isBeingDestroyed())
+        return;
+
     traceRuntimeCommon(trc, MarkRuntime, lock);
 }
 
 void
 js::gc::GCRuntime::traceRuntimeForMinorGC(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 {
+    
+    
+    
+    
+    
+    
+    
     traceRuntimeCommon(trc, TraceRuntime, lock);
 }
 
@@ -298,6 +310,7 @@ js::TraceRuntime(JSTracer* trc)
 void
 js::gc::GCRuntime::traceRuntime(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 {
+    MOZ_ASSERT(!rt->isBeingDestroyed());
     traceRuntimeCommon(trc, TraceRuntime, lock);
 }
 
@@ -321,10 +334,8 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
 
         AutoGCRooter::traceAll(trc);
 
-        if (!rt->isBeingDestroyed()) {
-            MarkExactStackRoots(rt, trc);
-            rt->markSelfHostingGlobal(trc);
-        }
+        MarkExactStackRoots(rt, trc);
+        rt->markSelfHostingGlobal(trc);
 
         for (RootRange r = rootsHash.all(); !r.empty(); r.popFront()) {
             const RootEntry& entry = r.front();
@@ -335,7 +346,7 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
     }
 
     
-    if (!rt->isBeingDestroyed() && !rt->isHeapMinorCollecting()) {
+    if (!rt->isHeapMinorCollecting()) {
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_RUNTIME_DATA);
 
         if (traceOrMark == TraceRuntime || rt->atomsCompartment(lock)->zone()->isCollecting()) {

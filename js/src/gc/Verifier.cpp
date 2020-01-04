@@ -509,7 +509,8 @@ CheckHeapTracer::check(AutoLockForExclusiveAccess& lock)
 {
     
     JS::AutoSuppressGCAnalysis nogc;
-    rt->gc.traceRuntime(this, lock);
+    if (!rt->isBeingDestroyed())
+        rt->gc.traceRuntime(this, lock);
 
     while (!stack.empty()) {
         WorkItem item = stack.back();
