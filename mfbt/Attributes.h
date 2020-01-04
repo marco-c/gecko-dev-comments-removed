@@ -336,6 +336,35 @@
 #  define MOZ_WARN_UNUSED_RESULT
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__clang__) && __cplusplus >= 201103L
+   
+#  define MOZ_FALLTHROUGH [[clang::fallthrough]]
+#elif defined(_MSC_VER)
+   
+
+
+
+#  include <sal.h>
+#  define MOZ_FALLTHROUGH __fallthrough
+#else
+#  define MOZ_FALLTHROUGH
+#endif
+
 #ifdef __cplusplus
 
 
