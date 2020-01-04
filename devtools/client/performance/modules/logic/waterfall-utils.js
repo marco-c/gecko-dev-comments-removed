@@ -8,7 +8,7 @@
 
 
 const { extend } = require("sdk/util/object");
-const MarkerUtils = require("devtools/client/performance/modules/logic/marker-utils");
+const { MarkerBlueprintUtils } = require("devtools/client/performance/modules/marker-blueprint-utils");
 
 
 
@@ -40,12 +40,12 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
     let curr = markersList[i];
 
     
-    if (!MarkerUtils.isMarkerValid(curr, filter)) {
+    if (!MarkerBlueprintUtils.shouldDisplayMarker(curr, filter)) {
       continue;
     }
 
     let parentNode = getCurrentParentNode();
-    let blueprint = MarkerUtils.getBlueprintFor(curr);
+    let blueprint = MarkerBlueprintUtils.getBlueprintFor(curr);
 
     let nestable = "nestable" in blueprint ? blueprint.nestable : true;
     let collapsible = "collapsible" in blueprint ? blueprint.collapsible : true;
