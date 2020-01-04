@@ -36,6 +36,7 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsIFile.h"
 #include "nsILoadContext.h"
+#include "mozilla/UniquePtr.h"
 
 NS_IMPL_ISUPPORTS(nsTransferable, nsITransferable)
 
@@ -183,7 +184,7 @@ DataStruct::ReadCache(nsISupports** aData, uint32_t* aDataLen)
 
     uint32_t size = uint32_t(fileSize);
     
-    auto data = MakeUnique<char[]>(size);
+    auto data = mozilla::MakeUnique<char[]>(size);
     if ( !data )
       return NS_ERROR_OUT_OF_MEMORY;
       
