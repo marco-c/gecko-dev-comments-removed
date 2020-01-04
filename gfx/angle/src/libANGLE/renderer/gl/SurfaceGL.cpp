@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+#include "libANGLE/renderer/gl/SurfaceGL.h"
+
+namespace rx
+{
+
+SurfaceGL::SurfaceGL()
+    : SurfaceImpl()
+{
+}
+
+SurfaceGL::~SurfaceGL()
+{
+}
+
+}

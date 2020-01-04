@@ -4,8 +4,8 @@
 
 
 
-#ifndef CROSSCOMPILERGLSL_OUTPUTESSL_H_
-#define CROSSCOMPILERGLSL_OUTPUTESSL_H_
+#ifndef COMPILER_TRANSLATOR_OUTPUTESSL_H_
+#define COMPILER_TRANSLATOR_OUTPUTESSL_H_
 
 #include "compiler/translator/OutputGLSLBase.h"
 
@@ -17,10 +17,13 @@ public:
                 ShHashFunction64 hashFunction,
                 NameMap& nameMap,
                 TSymbolTable& symbolTable,
-                int shaderVersion);
+                int shaderVersion,
+                bool forceHighp);
 
 protected:
     virtual bool writeVariablePrecision(TPrecision precision);
+private:
+    bool mForceHighp;
 };
 
 #endif  

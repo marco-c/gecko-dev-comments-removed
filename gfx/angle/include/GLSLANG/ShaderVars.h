@@ -7,8 +7,8 @@
 
 
 
-#ifndef _COMPILER_INTERFACE_VARIABLES_
-#define _COMPILER_INTERFACE_VARIABLES_
+#ifndef GLSLANG_SHADERVARS_H_
+#define GLSLANG_SHADERVARS_H_
 
 #include <string>
 #include <vector>
@@ -27,6 +27,9 @@ enum InterpolationType
     INTERPOLATION_CENTROID,
     INTERPOLATION_FLAT
 };
+
+
+COMPILER_EXPORT bool InterpolationTypesMatch(InterpolationType a, InterpolationType b);
 
 
 enum BlockLayoutType
@@ -66,6 +69,8 @@ struct COMPILER_EXPORT ShaderVariable
     bool findInfoByMappedName(const std::string &mappedFullName,
                               const ShaderVariable **leafVar,
                               std::string* originalFullName) const;
+
+    bool isBuiltIn() const { return name.compare(0, 3, "gl_") == 0; }
 
     GLenum type;
     GLenum precision;
@@ -156,6 +161,11 @@ struct COMPILER_EXPORT Varying : public ShaderVariable
 
     
     
+    
+    
+    
+    bool isSameVaryingAtLinkTime(const Varying &other, int shaderVersion) const;
+
     
     bool isSameVaryingAtLinkTime(const Varying &other) const;
 

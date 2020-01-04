@@ -7,8 +7,8 @@
 
 
 
-#ifndef TRANSLATOR_UTILSHLSL_H_
-#define TRANSLATOR_UTILSHLSL_H_
+#ifndef COMPILER_TRANSLATOR_UTILSHLSL_H_
+#define COMPILER_TRANSLATOR_UTILSHLSL_H_
 
 #include <vector>
 #include "compiler/translator/Types.h"

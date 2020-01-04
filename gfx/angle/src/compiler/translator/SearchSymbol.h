@@ -6,8 +6,8 @@
 
 
 
-#ifndef COMPILER_SEARCHSYMBOL_H_
-#define COMPILER_SEARCHSYMBOL_H_
+#ifndef COMPILER_TRANSLATOR_SEARCHSYMBOL_H_
+#define COMPILER_TRANSLATOR_SEARCHSYMBOL_H_
 
 #include "compiler/translator/IntermNode.h"
 #include "compiler/translator/ParseContext.h"

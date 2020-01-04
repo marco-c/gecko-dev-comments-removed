@@ -4,8 +4,8 @@
 
 
 
-#ifndef _INFOSINK_INCLUDED_
-#define _INFOSINK_INCLUDED_
+#ifndef COMPILER_TRANSLATOR_INFOSINK_H_
+#define COMPILER_TRANSLATOR_INFOSINK_H_
 
 #include <math.h>
 #include <stdlib.h>

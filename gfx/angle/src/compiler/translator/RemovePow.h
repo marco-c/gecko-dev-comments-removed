@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_REMOVEPOW_H_
+#define COMPILER_TRANSLATOR_REMOVEPOW_H_
+
+class TIntermNode;
+
+void RemovePow(TIntermNode *root);
+
+#endif   

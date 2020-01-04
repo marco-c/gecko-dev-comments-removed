@@ -8,8 +8,8 @@
 
 
 
-#if !defined(__LENGTH_LIMITS_H)
-#define __LENGTH_LIMITS_H 1
+#ifndef COMPILER_TRANSLATOR_LENGTHLIMITS_H_
+#define COMPILER_TRANSLATOR_LENGTHLIMITS_H_
 
 #include "GLSLANG/ShaderLang.h"
 

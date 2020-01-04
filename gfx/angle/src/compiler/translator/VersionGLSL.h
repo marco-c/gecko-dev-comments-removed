@@ -11,6 +11,21 @@
 
 #include "compiler/translator/Pragma.h"
 
+static const int GLSL_VERSION_110 = 110;
+static const int GLSL_VERSION_120 = 120;
+static const int GLSL_VERSION_130 = 130;
+static const int GLSL_VERSION_140 = 140;
+static const int GLSL_VERSION_150 = 150;
+static const int GLSL_VERSION_330 = 330;
+static const int GLSL_VERSION_400 = 400;
+static const int GLSL_VERSION_410 = 410;
+static const int GLSL_VERSION_420 = 420;
+static const int GLSL_VERSION_430 = 430;
+static const int GLSL_VERSION_440 = 440;
+static const int GLSL_VERSION_450 = 450;
+
+int ShaderOutputTypeToGLSLVersion(ShShaderOutput output);
+
 
 
 
@@ -29,7 +44,7 @@
 class TVersionGLSL : public TIntermTraverser
 {
   public:
-    TVersionGLSL(sh::GLenum type, const TPragma &pragma);
+    TVersionGLSL(sh::GLenum type, const TPragma &pragma, ShShaderOutput output);
 
     
     
@@ -37,15 +52,16 @@ class TVersionGLSL : public TIntermTraverser
     
     
     
-    int getVersion() { return mVersion; }
+    
+    
+    int getVersion() const { return mVersion; }
 
     virtual void visitSymbol(TIntermSymbol *);
     virtual bool visitAggregate(Visit, TIntermAggregate *);
 
-  protected:
-    void updateVersion(int version);
-
   private:
+    void ensureVersionIsAtLeast(int version);
+
     int mVersion;
 };
 

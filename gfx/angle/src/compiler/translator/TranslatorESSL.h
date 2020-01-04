@@ -4,19 +4,22 @@
 
 
 
-#ifndef COMPILER_TRANSLATORESSL_H_
-#define COMPILER_TRANSLATORESSL_H_
+#ifndef COMPILER_TRANSLATOR_TRANSLATORESSL_H_
+#define COMPILER_TRANSLATOR_TRANSLATORESSL_H_
 
 #include "compiler/translator/Compiler.h"
 
-class TranslatorESSL : public TCompiler {
-public:
+class TranslatorESSL : public TCompiler
+{
+  public:
     TranslatorESSL(sh::GLenum type, ShShaderSpec spec);
 
-protected:
-    virtual void translate(TIntermNode* root);
+  protected:
+    void initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu, int compileOptions) override;
 
-private:
+    void translate(TIntermNode *root, int compileOptions) override;
+
+  private:
     void writeExtensionBehavior();
 };
 

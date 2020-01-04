@@ -23,8 +23,8 @@
 
 
 
-#ifndef THIRD_PARTY_COMPILER_ARRAY_BOUNDS_CLAMPER_H_
-#define THIRD_PARTY_COMPILER_ARRAY_BOUNDS_CLAMPER_H_
+#ifndef THIRD_PARTY_COMPILER_ARRAYBOUNDSCLAMPER_H_
+#define THIRD_PARTY_COMPILER_ARRAYBOUNDSCLAMPER_H_
 
 #include "compiler/translator/InfoSink.h"
 #include "compiler/translator/IntermNode.h"

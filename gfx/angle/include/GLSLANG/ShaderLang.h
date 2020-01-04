@@ -3,8 +3,8 @@
 
 
 
-#ifndef _COMPILER_INTERFACE_INCLUDED_
-#define _COMPILER_INTERFACE_INCLUDED_
+#ifndef GLSLANG_SHADERLANG_H_
+#define GLSLANG_SHADERLANG_H_
 
 #if defined(COMPONENT_BUILD) && !defined(ANGLE_TRANSLATOR_STATIC)
 #if defined(_WIN32) || defined(_WIN64)
@@ -48,7 +48,7 @@ typedef unsigned int GLenum;
 
 
 
-#define ANGLE_SH_VERSION 132
+#define ANGLE_SH_VERSION 138
 
 typedef enum {
   SH_GLES2_SPEC = 0x8B40,
@@ -81,11 +81,29 @@ typedef enum {
 } ShShaderSpec;
 
 typedef enum {
-  SH_ESSL_OUTPUT   = 0x8B45,
-  SH_GLSL_OUTPUT   = 0x8B46,
-  SH_HLSL_OUTPUT   = 0x8B47,
-  SH_HLSL9_OUTPUT  = 0x8B47,
-  SH_HLSL11_OUTPUT = 0x8B48
+  SH_ESSL_OUTPUT               = 0x8B45,
+  
+  SH_GLSL_OUTPUT               = 0x8B46,
+  SH_GLSL_COMPATIBILITY_OUTPUT = 0x8B46,
+  
+  SH_GLSL_CORE_OUTPUT          = 0x8B47,
+  
+  
+  SH_GLSL_130_OUTPUT           = 0x8B47,
+  SH_GLSL_140_OUTPUT           = 0x8B80,
+  SH_GLSL_150_CORE_OUTPUT      = 0x8B81,
+  SH_GLSL_330_CORE_OUTPUT      = 0x8B82,
+  SH_GLSL_400_CORE_OUTPUT      = 0x8B83,
+  SH_GLSL_410_CORE_OUTPUT      = 0x8B84,
+  SH_GLSL_420_CORE_OUTPUT      = 0x8B85,
+  SH_GLSL_430_CORE_OUTPUT      = 0x8B86,
+  SH_GLSL_440_CORE_OUTPUT      = 0x8B87,
+  SH_GLSL_450_CORE_OUTPUT      = 0x8B88,
+
+  
+  SH_HLSL_OUTPUT   = 0x8B48,
+  SH_HLSL9_OUTPUT  = 0x8B48,
+  SH_HLSL11_OUTPUT = 0x8B49
 } ShShaderOutput;
 
 
@@ -172,6 +190,15 @@ typedef enum {
   
   
   SH_REGENERATE_STRUCT_NAMES = 0x80000,
+
+  
+  
+  
+  SH_DONT_PRUNE_UNUSED_FUNCTIONS = 0x100000,
+
+  
+  
+  SH_REMOVE_POW_WITH_CONSTANT_EXPONENT = 0x200000,
 } ShCompileOptions;
 
 
@@ -223,6 +250,10 @@ typedef struct
     int EXT_draw_buffers;
     int EXT_frag_depth;
     int EXT_shader_texture_lod;
+    int WEBGL_debug_shader_precision;
+    int EXT_shader_framebuffer_fetch;
+    int NV_shader_framebuffer_fetch;
+    int ARM_shader_framebuffer_fetch;
 
     
     
@@ -292,6 +323,7 @@ COMPILER_EXPORT const std::string &ShGetBuiltInResourcesString(const ShHandle ha
 
 
 
+
 COMPILER_EXPORT ShHandle ShConstructCompiler(
     sh::GLenum type,
     ShShaderSpec spec,
@@ -328,6 +360,9 @@ COMPILER_EXPORT bool ShCompile(
     const char * const shaderStrings[],
     size_t numStrings,
     int compileOptions);
+
+
+COMPILER_EXPORT void ShClearResults(const ShHandle handle);
 
 
 COMPILER_EXPORT int ShGetShaderVersion(const ShHandle handle);

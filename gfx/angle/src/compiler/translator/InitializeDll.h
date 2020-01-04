@@ -3,8 +3,8 @@
 
 
 
-#ifndef __INITIALIZEDLL_H
-#define __INITIALIZEDLL_H
+#ifndef COMPILER_TRANSLATOR_INITIALIZEDLL_H_
+#define COMPILER_TRANSLATOR_INITIALIZEDLL_H_
 
 bool InitProcess();
 void DetachProcess();

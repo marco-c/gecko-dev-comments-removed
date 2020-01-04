@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+#ifndef LIBANGLE_RENDERER_GL_WGL_WGLUTILS_H_
+#define LIBANGLE_RENDERER_GL_WGL_WGLUTILS_H_
+
+#include "common/platform.h"
+
+namespace rx
+{
+
+namespace wgl
+{
+
+PIXELFORMATDESCRIPTOR GetDefaultPixelFormatDescriptor();
+
+}
+
+}
+
+#endif 

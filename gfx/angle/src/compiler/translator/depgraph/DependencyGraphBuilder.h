@@ -4,8 +4,8 @@
 
 
 
-#ifndef COMPILER_TRANSLATOR_DEPGRAPH_DEPENDENCY_GRAPH_BUILDER_H
-#define COMPILER_TRANSLATOR_DEPGRAPH_DEPENDENCY_GRAPH_BUILDER_H
+#ifndef COMPILER_TRANSLATOR_DEPGRAPH_DEPENDENCYGRAPHBUILDER_H_
+#define COMPILER_TRANSLATOR_DEPGRAPH_DEPENDENCYGRAPHBUILDER_H_
 
 #include "compiler/translator/depgraph/DependencyGraph.h"
 
@@ -104,7 +104,7 @@ class TDependencyGraphBuilder : public TIntermTraverser
     
     
     
-    class TNodeSetMaintainer
+    class TNodeSetMaintainer : angle::NonCopyable
     {
       public:
         TNodeSetMaintainer(TDependencyGraphBuilder *factory)
@@ -122,7 +122,7 @@ class TDependencyGraphBuilder : public TIntermTraverser
     
     
     
-    class TNodeSetPropagatingMaintainer
+    class TNodeSetPropagatingMaintainer : angle::NonCopyable
     {
       public:
         TNodeSetPropagatingMaintainer(TDependencyGraphBuilder *factory)
@@ -147,7 +147,7 @@ class TDependencyGraphBuilder : public TIntermTraverser
     
     
     
-    class TLeftmostSymbolMaintainer
+    class TLeftmostSymbolMaintainer : angle::NonCopyable
     {
       public:
         TLeftmostSymbolMaintainer(

@@ -46,4 +46,5 @@ struct Macro
 typedef std::map<std::string, Macro> MacroSet;
 
 }  
+
 #endif  

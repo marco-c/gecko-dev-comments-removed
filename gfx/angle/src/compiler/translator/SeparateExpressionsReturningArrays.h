@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_SEPARATEEXPRESSIONSRETURNINGARRAYS_H_
+#define COMPILER_TRANSLATOR_SEPARATEEXPRESSIONSRETURNINGARRAYS_H_
+
+class TIntermNode;
+
+void SeparateExpressionsReturningArrays(TIntermNode *root, unsigned int *temporaryIndex);
+
+#endif 

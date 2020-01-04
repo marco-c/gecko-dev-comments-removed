@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+#include "libANGLE/renderer/DeviceImpl.h"
+
+namespace rx
+{
+
+DeviceImpl::DeviceImpl()
+{
+}
+
+DeviceImpl::~DeviceImpl()
+{
+}
+
+}

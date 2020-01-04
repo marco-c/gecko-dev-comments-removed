@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_SEPARATEDECLARATIONS_H_
+#define COMPILER_TRANSLATOR_SEPARATEDECLARATIONS_H_
+
+class TIntermNode;
+
+void SeparateDeclarations(TIntermNode *root);
+
+#endif  

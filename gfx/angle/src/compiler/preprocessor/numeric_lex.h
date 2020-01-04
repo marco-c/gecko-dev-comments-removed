@@ -6,8 +6,8 @@
 
 
 
-#ifndef COMPILER_PREPROCESSOR_NUMERIC_LEX_H_
-#define COMPILER_PREPROCESSOR_NUMERIC_LEX_H_
+#ifndef COMPILER_PREPROCESSOR_NUMERICLEX_H_
+#define COMPILER_PREPROCESSOR_NUMERICLEX_H_
 
 #include <sstream>
 
@@ -58,4 +58,5 @@ bool numeric_lex_float(const std::string &str, FloatType *value)
 }
 
 } 
+
 #endif 

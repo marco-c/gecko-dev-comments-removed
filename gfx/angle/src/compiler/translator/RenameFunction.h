@@ -4,8 +4,8 @@
 
 
 
-#ifndef COMPILER_RENAME_FUNCTION
-#define COMPILER_RENAME_FUNCTION
+#ifndef COMPILER_TRANSLATOR_RENAMEFUNCTION_H_
+#define COMPILER_TRANSLATOR_RENAMEFUNCTION_H_
 
 #include "compiler/translator/IntermNode.h"
 

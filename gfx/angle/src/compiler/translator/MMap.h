@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MMAP_INCLUDED_
-#define _MMAP_INCLUDED_
+#ifndef COMPILER_TRANSLATOR_MMAP_H_
+#define COMPILER_TRANSLATOR_MMAP_H_
 
 
 

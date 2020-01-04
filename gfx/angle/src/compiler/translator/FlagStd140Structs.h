@@ -4,8 +4,8 @@
 
 
 
-#ifndef COMPILER_FLAGSTD140STRUCTS_H_
-#define COMPILER_FLAGSTD140STRUCTS_H_
+#ifndef COMPILER_TRANSLATOR_FLAGSTD140STRUCTS_H_
+#define COMPILER_TRANSLATOR_FLAGSTD140STRUCTS_H_
 
 #include "compiler/translator/IntermNode.h"
 
@@ -18,6 +18,12 @@ namespace sh
 class FlagStd140Structs : public TIntermTraverser
 {
   public:
+
+    FlagStd140Structs()
+        : TIntermTraverser(true, false, false)
+    {
+    }
+
     const std::vector<TIntermTyped *> getFlaggedNodes() const { return mFlaggedNodes; }
 
   protected:

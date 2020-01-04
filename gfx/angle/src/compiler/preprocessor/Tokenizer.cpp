@@ -18,7 +18,7 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 37
+#define YY_FLEX_SUBMINOR_VERSION 39
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -196,6 +196,7 @@ typedef size_t yy_size_t;
 #define EOB_ACT_LAST_MATCH 2
 
     #define YY_LESS_LINENO(n)
+    #define YY_LINENO_REWIND_TO(ptr)
     
 
 #define yyless(n) \
@@ -539,6 +540,10 @@ static yyconst flex_int16_t yy_chk[224] =
 
 
 
+#if defined(_MSC_VER)
+#pragma warning(disable: 4005)
+#endif
+
 #include "Tokenizer.h"
 
 #include "DiagnosticsBase.h"
@@ -547,6 +552,15 @@ static yyconst flex_int16_t yy_chk[224] =
 #if defined(__GNUC__)
 
 #pragma GCC diagnostic ignored "-Wmissing-noreturn"
+#elif defined(_MSC_VER)
+#pragma warning(disable: 4244)
+#endif
+
+
+#ifdef __cplusplus
+#if __cplusplus > 199711L
+#define register
+#endif
 #endif
 
 typedef std::string YYSTYPE;
@@ -814,8 +828,6 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-    
-
     yylval = yylval_param;
 
     yylloc = yylloc_param;
@@ -846,6 +858,10 @@ YY_DECL
 		pp_load_buffer_state(yyscanner );
 		}
 
+	{
+
+    
+
 	while ( 1 )		
 		{
 		yy_cp = yyg->yy_c_buf_p;
@@ -862,7 +878,7 @@ YY_DECL
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
 			if ( yy_accept[yy_current_state] )
 				{
 				yyg->yy_last_accepting_state = yy_current_state;
@@ -903,7 +919,7 @@ YY_RULE_SETUP
 	YY_BREAK
 
 
- 
+
 case 2:
 YY_RULE_SETUP
 { BEGIN(COMMENT); }
@@ -1307,6 +1323,7 @@ ECHO;
 			"fatal flex scanner internal error--no action found" );
 	} 
 		} 
+	} 
 } 
 
 

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_PRUNEEMPTYDECLARATIONS_H_
+#define COMPILER_TRANSLATOR_PRUNEEMPTYDECLARATIONS_H_
+
+class TIntermNode;
+
+void PruneEmptyDeclarations(TIntermNode *root);
+
+#endif  

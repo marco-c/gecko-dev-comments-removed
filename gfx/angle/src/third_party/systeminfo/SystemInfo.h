@@ -23,8 +23,8 @@
 
 
 
-#ifndef SystemInfo_h
-#define SystemInfo_h
+#ifndef THIRD_PARTY_SYSTEMINFO_SYSTEMINFO_H_
+#define THIRD_PARTY_SYSTEMINFO_SYSTEMINFO_H_
 
 namespace rx {
 

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_UNFOLDSHORTCIRCUIT_H_
+#define COMPILER_TRANSLATOR_UNFOLDSHORTCIRCUIT_H_
+
+class TIntermNode;
+
+void UnfoldShortCircuitToIf(TIntermNode *root, unsigned int *temporaryIndex);
+
+#endif   

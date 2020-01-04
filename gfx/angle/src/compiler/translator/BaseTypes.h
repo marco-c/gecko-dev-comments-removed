@@ -4,10 +4,10 @@
 
 
 
-#ifndef _BASICTYPES_INCLUDED_
-#define _BASICTYPES_INCLUDED_
+#ifndef COMPILER_TRANSLATOR_BASETYPES_H_
+#define COMPILER_TRANSLATOR_BASETYPES_H_
 
-#include <assert.h>
+#include "common/debug.h"
 
 
 
@@ -18,7 +18,10 @@ enum TPrecision
     EbpUndefined,
     EbpLow,
     EbpMedium,
-    EbpHigh
+    EbpHigh,
+
+    
+    EbpLast
 };
 
 inline const char* getPrecisionString(TPrecision p)
@@ -43,6 +46,14 @@ enum TBasicType
     EbtUInt,
     EbtBool,
     EbtGVec4,              
+    EbtGenType,            
+    EbtGenIType,           
+    EbtGenUType,           
+    EbtGenBType,           
+    EbtVec,                
+    EbtIVec,               
+    EbtUVec,               
+    EbtBVec,               
     EbtGuardSamplerBegin,  
     EbtSampler2D,
     EbtSampler3D,
@@ -69,6 +80,9 @@ enum TBasicType
     EbtStruct,
     EbtInterfaceBlock,
     EbtAddress,            
+
+    
+    EbtLast
 };
 
 const char* getBasicString(TBasicType t);
@@ -258,6 +272,11 @@ inline bool IsShadowSampler(TBasicType type)
     return false;
 }
 
+inline bool IsInteger(TBasicType type)
+{
+    return type == EbtInt || type == EbtUInt;
+}
+
 inline bool SupportsPrecision(TBasicType type)
 {
     return type == EbtFloat || type == EbtInt || type == EbtUInt || IsSampler(type);
@@ -271,27 +290,27 @@ inline bool SupportsPrecision(TBasicType type)
 
 enum TQualifier
 {
-    EvqTemporary,     
-    EvqGlobal,        
-    EvqInternal,      
-    EvqConst,         
-    EvqAttribute,     
-    EvqVaryingIn,     
-    EvqVaryingOut,    
-    EvqInvariantVaryingIn,     
-    EvqInvariantVaryingOut,    
-    EvqUniform,       
+    EvqTemporary,   
+    EvqGlobal,      
+    EvqConst,       
+    EvqAttribute,   
+    EvqVaryingIn,   
+    EvqVaryingOut,  
+    EvqUniform,     
 
-    EvqVertexIn,      
-    EvqFragmentOut,   
-    EvqVertexOut,     
-    EvqFragmentIn,    
+    EvqVertexIn,     
+    EvqFragmentOut,  
+    EvqVertexOut,    
+    EvqFragmentIn,   
 
     
     EvqIn,
     EvqOut,
     EvqInOut,
     EvqConstReadOnly,
+
+    
+    EvqInstanceID,
 
     
     EvqPosition,
@@ -305,17 +324,22 @@ enum TQualifier
     
     EvqFragColor,
     EvqFragData,
-    EvqFragDepth,
+    EvqFragDepthEXT,  
+    EvqFragDepth,     
 
     
-    EvqSmooth,        
-    EvqFlat,          
+    EvqLastFragColor,
+    EvqLastFragData,
+
+    
+    EvqSmooth,  
+    EvqFlat,    
     EvqSmoothOut = EvqSmooth,
-    EvqFlatOut = EvqFlat,
-    EvqCentroidOut,   
+    EvqFlatOut   = EvqFlat,
+    EvqCentroidOut,  
     EvqSmoothIn,
     EvqFlatIn,
-    EvqCentroidIn,    
+    EvqCentroidIn,  
 
     
     EvqLast
@@ -365,16 +389,13 @@ struct TLayoutQualifier
 inline const char* getQualifierString(TQualifier q)
 {
     switch(q)
-    {
+    { 
     case EvqTemporary:      return "Temporary";      break;
     case EvqGlobal:         return "Global";         break;
     case EvqConst:          return "const";          break;
-    case EvqConstReadOnly:  return "const";          break;
     case EvqAttribute:      return "attribute";      break;
     case EvqVaryingIn:      return "varying";        break;
     case EvqVaryingOut:     return "varying";        break;
-    case EvqInvariantVaryingIn: return "invariant varying";	break;
-    case EvqInvariantVaryingOut:return "invariant varying";	break;
     case EvqUniform:        return "uniform";        break;
     case EvqVertexIn:       return "in";             break;
     case EvqFragmentOut:    return "out";            break;
@@ -383,21 +404,27 @@ inline const char* getQualifierString(TQualifier q)
     case EvqIn:             return "in";             break;
     case EvqOut:            return "out";            break;
     case EvqInOut:          return "inout";          break;
+    case EvqConstReadOnly:  return "const";          break;
+    case EvqInstanceID:     return "InstanceID";     break;
     case EvqPosition:       return "Position";       break;
     case EvqPointSize:      return "PointSize";      break;
     case EvqFragCoord:      return "FragCoord";      break;
     case EvqFrontFacing:    return "FrontFacing";    break;
+    case EvqPointCoord:     return "PointCoord";     break;
     case EvqFragColor:      return "FragColor";      break;
     case EvqFragData:       return "FragData";       break;
+    case EvqFragDepthEXT:   return "FragDepth";      break;
     case EvqFragDepth:      return "FragDepth";      break;
+    case EvqLastFragColor:  return "LastFragColor";  break;
+    case EvqLastFragData:   return "LastFragData";   break;
     case EvqSmoothOut:      return "smooth out";     break;
     case EvqCentroidOut:    return "centroid out";   break;
     case EvqFlatOut:        return "flat out";       break;
     case EvqSmoothIn:       return "smooth in";      break;
-    case EvqCentroidIn:     return "centroid in";    break;
     case EvqFlatIn:         return "flat in";        break;
-    default:                return "unknown qualifier";
-    }
+    case EvqCentroidIn:     return "centroid in";    break;
+    default: UNREACHABLE(); return "unknown qualifier";
+    } 
 }
 
 inline const char* getMatrixPackingString(TLayoutMatrixPacking mpq)
@@ -407,7 +434,7 @@ inline const char* getMatrixPackingString(TLayoutMatrixPacking mpq)
     case EmpUnspecified:    return "mp_unspecified";
     case EmpRowMajor:       return "row_major";
     case EmpColumnMajor:    return "column_major";
-    default:                return "unknown matrix packing";
+    default: UNREACHABLE(); return "unknown matrix packing";
     }
 }
 
@@ -419,7 +446,7 @@ inline const char* getBlockStorageString(TLayoutBlockStorage bsq)
     case EbsShared:         return "shared";
     case EbsPacked:         return "packed";
     case EbsStd140:         return "std140";
-    default:                return "unknown block storage";
+    default: UNREACHABLE(); return "unknown block storage";
     }
 }
 
@@ -433,7 +460,7 @@ inline const char* getInterpolationString(TQualifier q)
     case EvqSmoothIn:       return "smooth";   break;
     case EvqCentroidIn:     return "centroid"; break;
     case EvqFlatIn:         return "flat";     break;
-    default:                return "unknown interpolation";
+    default: UNREACHABLE(); return "unknown interpolation";
     }
 }
 

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+#include "libANGLE/renderer/SurfaceImpl.h"
+
+namespace rx
+{
+
+SurfaceImpl::SurfaceImpl()
+{
+}
+
+SurfaceImpl::~SurfaceImpl()
+{
+}
+
+}

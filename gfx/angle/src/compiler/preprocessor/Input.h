@@ -58,5 +58,5 @@ class Input
 };
 
 }  
-#endif  
 
+#endif  

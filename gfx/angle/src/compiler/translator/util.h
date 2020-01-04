@@ -4,8 +4,8 @@
 
 
 
-#ifndef COMPILER_UTIL_H
-#define COMPILER_UTIL_H
+#ifndef COMPILER_TRANSLATOR_UTIL_H_
+#define COMPILER_TRANSLATOR_UTIL_H_
 
 #include <stack>
 
@@ -18,11 +18,11 @@
 
 
 
-extern bool atof_clamp(const char *str, float *value);
+bool strtof_clamp(const std::string &str, float *value);
 
 
 
-extern bool atoi_clamp(const char *str, int *value);
+bool atoi_clamp(const char *str, int *value);
 
 class TSymbolTable;
 
@@ -37,7 +37,7 @@ bool IsVarying(TQualifier qualifier);
 InterpolationType GetInterpolationType(TQualifier qualifier);
 TString ArrayString(const TType &type);
 
-class GetVariableTraverser
+class GetVariableTraverser : angle::NonCopyable
 {
   public:
     GetVariableTraverser(const TSymbolTable &symbolTable);
@@ -57,8 +57,6 @@ class GetVariableTraverser
         const TType &type, const TString &name, VarT *variable) {}
 
     const TSymbolTable &mSymbolTable;
-
-    DISALLOW_COPY_AND_ASSIGN(GetVariableTraverser);
 };
 
 }

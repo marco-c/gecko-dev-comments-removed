@@ -7,8 +7,8 @@
 
 
 
-#ifndef ANGLE_GL_H_
-#define ANGLE_GL_H_
+#ifndef ANGLEGL_H_
+#define ANGLEGL_H_
 
 #include "GLES2/gl2.h"
 #include "GLES2/gl2ext.h"

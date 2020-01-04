@@ -4,8 +4,8 @@
 
 
 
-#ifndef COMPILER_PREPROCESSOR_DIRECTIVE_PARSER_H_
-#define COMPILER_PREPROCESSOR_DIRECTIVE_PARSER_H_
+#ifndef COMPILER_PREPROCESSOR_DIRECTIVEPARSER_H_
+#define COMPILER_PREPROCESSOR_DIRECTIVEPARSER_H_
 
 #include "Lexer.h"
 #include "Macro.h"
@@ -70,13 +70,16 @@ class DirectiveParser : public Lexer
         }
     };
     bool mPastFirstStatement;
+    bool mSeenNonPreprocessorToken; 
+                                    
     std::vector<ConditionalBlock> mConditionalStack;
     Tokenizer *mTokenizer;
     MacroSet *mMacroSet;
     Diagnostics *mDiagnostics;
     DirectiveHandler *mDirectiveHandler;
+    int mShaderVersion;
 };
 
 }  
-#endif  
 
+#endif  

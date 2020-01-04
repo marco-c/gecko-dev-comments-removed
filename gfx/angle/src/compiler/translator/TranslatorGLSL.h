@@ -4,18 +4,20 @@
 
 
 
-#ifndef COMPILER_TRANSLATORGLSL_H_
-#define COMPILER_TRANSLATORGLSL_H_
+#ifndef COMPILER_TRANSLATOR_TRANSLATORGLSL_H_
+#define COMPILER_TRANSLATOR_TRANSLATORGLSL_H_
 
 #include "compiler/translator/Compiler.h"
 
 class TranslatorGLSL : public TCompiler
 {
   public:
-    TranslatorGLSL(sh::GLenum type, ShShaderSpec spec);
+    TranslatorGLSL(sh::GLenum type, ShShaderSpec spec, ShShaderOutput output);
 
   protected:
-    virtual void translate(TIntermNode *root);
+    void initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu, int compileOptions) override;
+
+    void translate(TIntermNode *root, int compileOptions) override;
 
   private:
     void writeVersion(TIntermNode *root);

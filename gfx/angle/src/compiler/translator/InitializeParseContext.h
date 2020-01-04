@@ -4,13 +4,13 @@
 
 
 
-#ifndef __INITIALIZE_PARSE_CONTEXT_INCLUDED_
-#define __INITIALIZE_PARSE_CONTEXT_INCLUDED_
+#ifndef COMPILER_TRANSLATOR_INITIALIZEPARSECONTEXT_H_
+#define COMPILER_TRANSLATOR_INITIALIZEPARSECONTEXT_H_
 
 bool InitializeParseContextIndex();
 void FreeParseContextIndex();
 
-struct TParseContext;
+class TParseContext;
 extern void SetGlobalParseContext(TParseContext* context);
 extern TParseContext* GetGlobalParseContext();
 

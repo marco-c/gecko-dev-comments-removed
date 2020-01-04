@@ -4,8 +4,8 @@
 
 
 
-#ifndef _VARIABLEPACKER_INCLUDED_
-#define _VARIABLEPACKER_INCLUDED_
+#ifndef COMPILER_TRANSLATOR_VARIABLEPACKER_H_
+#define COMPILER_TRANSLATOR_VARIABLEPACKER_H_
 
 #include <vector>
 #include "compiler/translator/VariableInfo.h"

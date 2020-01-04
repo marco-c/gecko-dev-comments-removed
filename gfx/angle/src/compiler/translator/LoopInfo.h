@@ -4,8 +4,8 @@
 
 
 
-#ifndef COMPILER_TRANSLATOR_LOOP_INFO_H_
-#define COMPILER_TRANSLATOR_LOOP_INFO_H_
+#ifndef COMPILER_TRANSLATOR_LOOPINFO_H_
+#define COMPILER_TRANSLATOR_LOOPINFO_H_
 
 #include "compiler/translator/IntermNode.h"
 

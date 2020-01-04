@@ -4,14 +4,15 @@
 
 
 
-#ifndef COMPILER_DIAGNOSTICS_H_
-#define COMPILER_DIAGNOSTICS_H_
+#ifndef COMPILER_TRANSLATOR_DIAGNOSTICS_H_
+#define COMPILER_TRANSLATOR_DIAGNOSTICS_H_
 
+#include "common/angleutils.h"
 #include "compiler/preprocessor/DiagnosticsBase.h"
 
 class TInfoSink;
 
-class TDiagnostics : public pp::Diagnostics
+class TDiagnostics : public pp::Diagnostics, angle::NonCopyable
 {
   public:
     TDiagnostics(TInfoSink& infoSink);
@@ -27,8 +28,6 @@ class TDiagnostics : public pp::Diagnostics
                    const std::string& reason,
                    const std::string& token,
                    const std::string& extra);
-
-    void writeDebug(const std::string& str);
 
   protected:
     virtual void print(ID id,

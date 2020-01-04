@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SHHANDLE_INCLUDED_
-#define _SHHANDLE_INCLUDED_
+#ifndef COMPILER_TRANSLATOR_COMPILER_H_
+#define COMPILER_TRANSLATOR_COMPILER_H_
 
 
 
@@ -15,6 +15,7 @@
 
 
 #include "compiler/translator/BuiltInFunctionEmulator.h"
+#include "compiler/translator/CallDAG.h"
 #include "compiler/translator/ExtensionBehavior.h"
 #include "compiler/translator/HashNames.h"
 #include "compiler/translator/InfoSink.h"
@@ -25,7 +26,9 @@
 
 class TCompiler;
 class TDependencyGraph;
+#ifdef ANGLE_ENABLE_HLSL
 class TranslatorHLSL;
+#endif 
 
 
 
@@ -36,12 +39,19 @@ bool IsWebGLBasedSpec(ShShaderSpec spec);
 
 
 
+bool IsGLSL130OrNewer(ShShaderOutput output);
+
+
+
+
 class TShHandleBase {
 public:
     TShHandleBase();
     virtual ~TShHandleBase();
     virtual TCompiler* getAsCompiler() { return 0; }
+#ifdef ANGLE_ENABLE_HLSL
     virtual TranslatorHLSL* getAsTranslatorHLSL() { return 0; }
+#endif 
 
 protected:
     
@@ -61,13 +71,22 @@ class TCompiler : public TShHandleBase
     virtual TCompiler* getAsCompiler() { return this; }
 
     bool Init(const ShBuiltInResources& resources);
+
+    
+    
+    
+    TIntermNode *compileTreeForTesting(const char* const shaderStrings[],
+        size_t numStrings, int compileOptions);
+
     bool compile(const char* const shaderStrings[],
-                 size_t numStrings,
-                 int compileOptions);
+        size_t numStrings, int compileOptions);
 
     
     int getShaderVersion() const { return shaderVersion; }
     TInfoSink& getInfoSink() { return infoSink; }
+
+    
+    void clearResults();
 
     const std::vector<sh::Attribute> &getAttributes() const { return attributes; }
     const std::vector<sh::Attribute> &getOutputVariables() const { return outputVariables; }
@@ -92,9 +111,7 @@ class TCompiler : public TShHandleBase
     
     void setResourceString();
     
-    void clearResults();
-    
-    bool detectCallDepth(TIntermNode* root, TInfoSink& infoSink, bool limitCallStackDepth);
+    bool checkCallDepth();
     
     bool validateOutputs(TIntermNode* root);
     
@@ -105,7 +122,9 @@ class TCompiler : public TShHandleBase
     
     void collectVariables(TIntermNode* root);
     
-    virtual void translate(TIntermNode* root) = 0;
+    virtual void initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu, int compileOptions) {};
+    
+    virtual void translate(TIntermNode *root, int compileOptions) = 0;
     
     
     bool enforcePackingRestrictions();
@@ -130,6 +149,7 @@ class TCompiler : public TShHandleBase
     bool limitExpressionComplexity(TIntermNode* root);
     
     const TExtensionBehavior& getExtensionBehavior() const;
+    const char *getSourcePath() const;
     const TPragma& getPragma() const { return mPragma; }
     void writePragma();
 
@@ -145,9 +165,34 @@ class TCompiler : public TShHandleBase
     std::vector<sh::InterfaceBlock> interfaceBlocks;
 
   private:
+    
+    bool initCallDag(TIntermNode *root);
+    
+    bool tagUsedFunctions();
+    void internalTagUsedFunction(size_t index);
+
+    
+    class UnusedPredicate;
+    bool pruneUnusedFunctions(TIntermNode *root);
+
+    TIntermNode *compileTreeImpl(const char* const shaderStrings[],
+        size_t numStrings, int compileOptions);
+
     sh::GLenum shaderType;
     ShShaderSpec shaderSpec;
     ShShaderOutput outputType;
+
+    struct FunctionMetadata
+    {
+        FunctionMetadata()
+            : used(false)
+        {
+        }
+        bool used;
+    };
+
+    CallDAG mCallDag;
+    std::vector<FunctionMetadata> functionMetadata;
 
     int maxUniformVectors;
     int maxExpressionComplexity;
@@ -170,6 +215,7 @@ class TCompiler : public TShHandleBase
     
     int shaderVersion;
     TInfoSink infoSink;  
+    const char *mSourcePath; 
 
     
     ShHashFunction64 hashFunction;

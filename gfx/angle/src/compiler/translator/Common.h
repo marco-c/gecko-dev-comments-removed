@@ -4,8 +4,8 @@
 
 
 
-#ifndef _COMMON_INCLUDED_
-#define _COMMON_INCLUDED_
+#ifndef COMPILER_TRANSLATOR_COMMON_H_
+#define COMPILER_TRANSLATOR_COMMON_H_
 
 #include <map>
 #include <sstream>
@@ -14,9 +14,9 @@
 #include <limits>
 #include <stdio.h>
 
-#include "compiler/translator/PoolAlloc.h"
-#include "compiler/translator/compilerdebug.h"
 #include "common/angleutils.h"
+#include "common/debug.h"
+#include "compiler/translator/PoolAlloc.h"
 
 struct TSourceLoc {
     int first_file;

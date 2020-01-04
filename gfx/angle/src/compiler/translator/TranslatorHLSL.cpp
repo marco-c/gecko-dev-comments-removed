@@ -6,20 +6,51 @@
 
 #include "compiler/translator/TranslatorHLSL.h"
 
-#include "compiler/translator/InitializeParseContext.h"
+#include "compiler/translator/ArrayReturnValueToOutParameter.h"
 #include "compiler/translator/OutputHLSL.h"
+#include "compiler/translator/RewriteElseBlocks.h"
+#include "compiler/translator/SeparateArrayInitialization.h"
+#include "compiler/translator/SeparateDeclarations.h"
+#include "compiler/translator/SeparateExpressionsReturningArrays.h"
+#include "compiler/translator/UnfoldShortCircuitToIf.h"
 
 TranslatorHLSL::TranslatorHLSL(sh::GLenum type, ShShaderSpec spec, ShShaderOutput output)
     : TCompiler(type, spec, output)
 {
 }
 
-void TranslatorHLSL::translate(TIntermNode *root)
+void TranslatorHLSL::translate(TIntermNode *root, int compileOptions)
 {
-    TParseContext& parseContext = *GetGlobalParseContext();
-    sh::OutputHLSL outputHLSL(parseContext, this);
+    const ShBuiltInResources &resources = getResources();
+    int numRenderTargets = resources.EXT_draw_buffers ? resources.MaxDrawBuffers : 1;
 
-    outputHLSL.output();
+    SeparateDeclarations(root);
+
+    unsigned int temporaryIndex = 0;
+
+    
+    UnfoldShortCircuitToIf(root, &temporaryIndex);
+
+    SeparateExpressionsReturningArrays(root, &temporaryIndex);
+
+    
+    SeparateArrayInitialization(root);
+
+    
+    
+    ArrayReturnValueToOutParameter(root, &temporaryIndex);
+
+    
+    
+    if (getOutputType() == SH_HLSL9_OUTPUT && getShaderType() == GL_VERTEX_SHADER)
+    {
+        sh::RewriteElseBlocks(root, &temporaryIndex);
+    }
+
+    sh::OutputHLSL outputHLSL(getShaderType(), getShaderVersion(), getExtensionBehavior(),
+        getSourcePath(), getOutputType(), numRenderTargets, getUniforms(), compileOptions);
+
+    outputHLSL.output(root, getInfoSink().obj);
 
     mInterfaceBlockRegisterMap = outputHLSL.getInterfaceBlockRegisterMap();
     mUniformRegisterMap = outputHLSL.getUniformRegisterMap();
