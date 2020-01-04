@@ -153,9 +153,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "LoopContacts",
 XPCOMUtils.defineLazyModuleGetter(this, "LoopStorage",
                                   "resource:///modules/loop/LoopStorage.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "LoopCalls",
-                                  "resource:///modules/loop/LoopCalls.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "LoopRooms",
                                   "resource:///modules/loop/LoopRooms.jsm");
 
@@ -464,12 +461,8 @@ var MozLoopServiceInternal = {
         roomsPushNotification);
     } else {
       regPromise = this.createNotificationChannel(
-        MozLoopService.channelIDs.callsFxA, sessionType, "calls",
-        LoopCalls.onNotification).then(() => {
-          return this.createNotificationChannel(
-            MozLoopService.channelIDs.roomsFxA, sessionType, "rooms",
-            roomsPushNotification);
-        });
+        MozLoopService.channelIDs.roomsFxA, sessionType, "rooms",
+        roomsPushNotification);
     }
 
     log.debug("assigning to deferredRegistrations for sessionType:", sessionType);
@@ -505,7 +498,7 @@ var MozLoopServiceInternal = {
 
     
     if (!pushURLs) {
-      pushURLs = { calls: undefined, rooms: undefined };
+      pushURLs = { rooms: undefined };
       this.pushURLs.set(sessionType, pushURLs);
     }
 
@@ -513,8 +506,7 @@ var MozLoopServiceInternal = {
       return Promise.resolve(pushURL);
     }
 
-    let newURLs = {calls: pushURLs.calls,
-                   rooms: pushURLs.rooms};
+    let newURLs = {rooms: pushURLs.rooms};
     newURLs[serviceType] = pushURL;
 
     return this.hawkRequestInternal(sessionType, "/registration", "POST",
@@ -570,34 +562,29 @@ var MozLoopServiceInternal = {
 
     let error,
         pushURLs = this.pushURLs.get(sessionType),
-        callsPushURL = pushURLs ? pushURLs.calls : null,
         roomsPushURL = pushURLs ? pushURLs.rooms : null;
     this.pushURLs.delete(sessionType);
 
-    let unregister = (sessType, pushURL) => {
-      if (!pushURL) {
-        return Promise.resolve("no pushURL of this type to unregister");
-      }
+    if (!roomsPushURL) {
+      return Promise.resolve("no pushURL of this type to unregister");
+    }
 
-      let unregisterURL = "/registration?simplePushURL=" + encodeURIComponent(pushURL);
-      return this.hawkRequestInternal(sessType, unregisterURL, "DELETE").then(
-        () => {
-          log.debug("Successfully unregistered from server for sessionType = ", sessType);
-          return "unregistered sessionType " + sessType;
-        },
-        err => {
-          if (err.code === 401) {
-            
-            log.debug("already unregistered - invalid token", sessType);
-            return "already unregistered, sessionType = " + sessType;
-          }
+    let unregisterURL = "/registration?simplePushURL=" + encodeURIComponent(roomsPushURL);
+    return this.hawkRequestInternal(sessionType, unregisterURL, "DELETE").then(
+      () => {
+        log.debug("Successfully unregistered from server for sessionType = ", sessionType);
+        return "unregistered sessionType " + sessionType;
+      },
+      err => {
+        if (err.code === 401) {
+          
+          log.debug("already unregistered - invalid token", sessionType);
+          return "already unregistered, sessionType = " + sessionType;
+        }
 
-          log.error("Failed to unregister with the loop server. Error: ", error);
-          throw err;
-        });
-    };
-
-    return Promise.all([unregister(sessionType, callsPushURL), unregister(sessionType, roomsPushURL)]);
+        log.error("Failed to unregister with the loop server. Error: ", error);
+        throw err;
+      });
   },
 
   
@@ -874,16 +861,13 @@ var MozLoopServiceInternal = {
     }, pc.id);
   },
 
+  
+
+
+
+
   getChatWindowID: function(conversationWindowData) {
-    
-    
-    
-    
-    let windowId = ("contact" in conversationWindowData) ?
-                   conversationWindowData.contact._guid || gLastWindowId++ :
-                   conversationWindowData.roomToken || conversationWindowData.callId ||
-                   gLastWindowId++;
-    return windowId.toString();
+    return conversationWindowData.roomToken;
   },
 
   getChatURL: function(chatWindowId) {
@@ -1203,7 +1187,6 @@ this.MozLoopService = {
   get channelIDs() {
     
     return {
-      callsFxA: "25389583-921f-4169-a426-a4673658944b",
       roomsFxA: "6add272a-d316-477c-8335-f00f73dfde71",
       roomsGuest: "19d3f799-a8f3-4328-9822-b7cd02765832"
     };
@@ -1697,7 +1680,6 @@ this.MozLoopService = {
       MozLoopServiceInternal.deferredRegistrations.delete(LOOP_SESSION_TYPE.FXA);
       
       
-      MozLoopServiceInternal.pushHandler.unregister(MozLoopService.channelIDs.callsFxA);
       MozLoopServiceInternal.pushHandler.unregister(MozLoopService.channelIDs.roomsFxA);
 
       

@@ -9,7 +9,6 @@ const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 Cu.import("resource://services-common/utils.js");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource:///modules/loop/LoopCalls.jsm");
 Cu.import("resource:///modules/loop/MozLoopService.jsm");
 Cu.import("resource:///modules/loop/LoopRooms.jsm");
 Cu.import("resource:///modules/loop/LoopContacts.jsm");
@@ -428,22 +427,6 @@ function injectLoopAPI(targetWindow) {
 
 
 
-    calls: {
-      enumerable: true,
-      get: function() {
-        if (callsAPI) {
-          return callsAPI;
-        }
-
-        return callsAPI = injectObjectAPI(LoopCalls, targetWindow);
-      }
-    },
-
-    
-
-
-
-
 
 
 
@@ -606,50 +589,6 @@ function injectLoopAPI(targetWindow) {
           ringer.pause();
           ringer = null;
         }
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    hawkRequest: {
-      enumerable: true,
-      writable: true,
-      value: function(sessionType, path, method, payloadObj, callback) {
-        
-        MozLoopService.hawkRequest(sessionType, path, method, payloadObj).then((response) => {
-          invokeCallback(callback, null, response.body);
-        }, hawkError => {
-          
-          
-          
-          invokeCallback(callback, Cu.cloneInto({
-            error: (hawkError.error && typeof hawkError.error == "string")
-                   ? hawkError.error : "Unexpected exception",
-            message: hawkError.message,
-            code: hawkError.code,
-            errno: hawkError.errno,
-          }, targetWindow));
-        }).catch(Cu.reportError);
       }
     },
 
