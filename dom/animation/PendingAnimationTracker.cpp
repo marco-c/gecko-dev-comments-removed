@@ -63,6 +63,7 @@ PendingAnimationTracker::TriggerPendingAnimationsOnNextTick(const TimeStamp&
       
       if (!timeline) {
         iter.Remove();
+        continue;
       }
 
       
