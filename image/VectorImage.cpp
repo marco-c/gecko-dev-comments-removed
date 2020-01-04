@@ -686,6 +686,10 @@ VectorImage::IsOpaque()
 NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
 VectorImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags)
 {
+  if (mError) {
+    return nullptr;
+  }
+
   
   
   SVGSVGElement* svgElem = mSVGDocumentWrapper->GetRootSVGElem();
