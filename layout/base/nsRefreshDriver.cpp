@@ -83,6 +83,19 @@ static mozilla::LazyLogModule sRefreshDriverLog("nsRefreshDriver");
 
 #define DEFAULT_INACTIVE_TIMER_DISABLE_SECONDS 600
 
+namespace {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static uint64_t sActiveVsyncTimers = 0;
+}
+
 namespace mozilla {
 
 
@@ -503,6 +516,9 @@ private:
 
   virtual void StartTimer() override
   {
+    
+    MOZ_ASSERT(NS_IsMainThread());
+
     mLastFireEpoch = JS_Now();
     mLastFireTime = TimeStamp::Now();
 
@@ -512,15 +528,23 @@ private:
       Unused << mVsyncChild->SendObserve();
       mVsyncObserver->OnTimerStart();
     }
+
+    ++sActiveVsyncTimers;
   }
 
   virtual void StopTimer() override
   {
+    
+    MOZ_ASSERT(NS_IsMainThread());
+
     if (XRE_IsParentProcess()) {
       mVsyncDispatcher->SetParentRefreshTimer(nullptr);
     } else {
       Unused << mVsyncChild->SendUnobserve();
     }
+
+    MOZ_ASSERT(sActiveVsyncTimers > 0);
+    --sActiveVsyncTimers;
   }
 
   virtual void ScheduleNextTick(TimeStamp aNowTime) override
@@ -2126,6 +2150,13 @@ nsRefreshDriver::CancelPendingEvents(nsIDocument* aDocument)
       mPendingEvents.RemoveElementAt(i);
     }
   }
+}
+
+ bool
+nsRefreshDriver::IsJankCritical()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  return sActiveVsyncTimers > 0;
 }
 
 #undef LOG

@@ -430,6 +430,17 @@ private:
   
   void ConfigureHighPrecision();
   void SetHighPrecisionTimersEnabled(bool aEnable);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool IsJankCritical();
 };
 
 #endif 
