@@ -166,7 +166,12 @@ class FileAvoidWrite(BytesIO):
                 existing.close()
 
         ensureParentDir(self.name)
-        with open(self.name, 'w') as file:
+        
+        
+        writemode = 'w'
+        if 'b' in self.mode:
+            writemode += 'b'
+        with open(self.name, writemode) as file:
             file.write(buf)
 
         if self._capture_diff:
