@@ -889,7 +889,7 @@ AsyncPanZoomController::Destroy()
 {
   APZThreadUtils::AssertOnCompositorThread();
 
-  CancelAnimation();
+  CancelAnimation(CancelAnimationFlags::RequestSnap);
 
   { 
     MonitorAutoLock lock(mRefPtrMonitor);
@@ -1318,6 +1318,7 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) 
     
     if (!SnapBackIfOverscrolled()) {
       SetState(NOTHING);
+      RequestSnap();
     }
     return nsEventStatus_eIgnore;
 
@@ -1511,6 +1512,10 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
     } else {
       ClearOverscroll();
     }
+    
+    
+    
+    RequestSnap();
 
     ScheduleComposite();
     RequestContentRepaint();
@@ -2497,6 +2502,11 @@ void AsyncPanZoomController::CancelAnimation(CancelAnimationFlags aFlags) {
     ClearOverscroll();
     repaint = true;
   }
+  
+  
+  if (aFlags & CancelAnimationFlags::RequestSnap) {
+    RequestSnap();
+  }
   if (repaint) {
     RequestContentRepaint();
     ScheduleComposite();
@@ -3352,7 +3362,7 @@ AsyncPanZoomController::CancelAnimationAndGestureState()
 {
   mX.CancelGesture();
   mY.CancelGesture();
-  CancelAnimation();
+  CancelAnimation(CancelAnimationFlags::RequestSnap);
 }
 
 bool

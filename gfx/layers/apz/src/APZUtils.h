@@ -21,9 +21,17 @@ enum HitTestResult {
 };
 
 enum CancelAnimationFlags : uint32_t {
-  Default = 0,            
-  ExcludeOverscroll = 1   
+  Default = 0x0,            
+  ExcludeOverscroll = 0x1,  
+  RequestSnap = 0x2         
 };
+
+inline CancelAnimationFlags
+operator|(CancelAnimationFlags a, CancelAnimationFlags b)
+{
+  return static_cast<CancelAnimationFlags>(static_cast<int>(a)
+                                         | static_cast<int>(b));
+}
 
 enum class ScrollSource {
   
