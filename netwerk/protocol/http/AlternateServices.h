@@ -105,21 +105,21 @@ private:
 
   
   nsCString mAlternateHost;
-  int32_t mAlternatePort;
+  MOZ_INIT_OUTSIDE_CTOR int32_t mAlternatePort;
 
   nsCString mOriginHost;
-  int32_t mOriginPort;
+  MOZ_INIT_OUTSIDE_CTOR int32_t mOriginPort;
 
   nsCString mUsername;
-  bool mPrivate;
+  MOZ_INIT_OUTSIDE_CTOR bool mPrivate;
 
-  uint32_t mExpiresAt; 
+  MOZ_INIT_OUTSIDE_CTOR uint32_t mExpiresAt; 
 
-  bool mValidated;
-  bool mHttps; 
-  bool mMixedScheme; 
+  MOZ_INIT_OUTSIDE_CTOR bool mValidated;
+  MOZ_INIT_OUTSIDE_CTOR bool mHttps; 
+  MOZ_INIT_OUTSIDE_CTOR bool mMixedScheme; 
 
-  nsCString        mNPNToken;
+  nsCString mNPNToken;
 };
 
 class AltSvcOverride : public nsIInterfaceRequestor
