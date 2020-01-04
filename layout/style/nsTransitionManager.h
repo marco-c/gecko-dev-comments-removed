@@ -121,6 +121,7 @@ public:
     : dom::Animation(aGlobal)
     , mWasFinishedOnLastTick(false)
     , mNeedsNewAnimationIndexWhenRun(false)
+    , mTransitionProperty(eCSSProperty_UNKNOWN)
   {
   }
 
@@ -210,6 +211,8 @@ public:
       const TimeDuration& aStartTime,
       double aPlaybackRate);
 
+  void SetEffect(KeyframeEffectReadOnly* aEffect) override;
+
 protected:
   virtual ~CSSTransition()
   {
@@ -247,6 +250,14 @@ protected:
   
   
   bool mNeedsNewAnimationIndexWhenRun;
+
+  
+  
+  
+  
+  
+  nsCSSPropertyID mTransitionProperty;
+  StyleAnimationValue mTransitionToValue;
 };
 
 } 

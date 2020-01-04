@@ -137,13 +137,10 @@ CSSTransition::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 void
 CSSTransition::GetTransitionProperty(nsString& aRetVal) const
 {
-  
-  
-  
-  MOZ_ASSERT(mEffect && mEffect->AsTransition(),
-             "Transitions should have a transition effect");
-  nsCSSPropertyID prop = mEffect->AsTransition()->TransitionProperty();
-  aRetVal = NS_ConvertUTF8toUTF16(nsCSSProps::GetStringValue(prop));
+  MOZ_ASSERT(eCSSProperty_UNKNOWN != mTransitionProperty,
+             "Transition Property should be initialized");
+  aRetVal =
+    NS_ConvertUTF8toUTF16(nsCSSProps::GetStringValue(mTransitionProperty));
 }
 
 AnimationPlayState
@@ -213,24 +210,17 @@ CSSTransition::Tick()
 nsCSSPropertyID
 CSSTransition::TransitionProperty() const
 {
-  
-  
-  
-  dom::KeyframeEffectReadOnly* effect = GetEffect();
-  MOZ_ASSERT(effect && effect->AsTransition(),
-             "Transition should have a transition effect");
-  return effect->AsTransition()->TransitionProperty();
+  MOZ_ASSERT(eCSSProperty_UNKNOWN != mTransitionProperty,
+             "Transition property should be initialized");
+  return mTransitionProperty;
 }
 
 StyleAnimationValue
 CSSTransition::ToValue() const
 {
-  
-  
-  dom::KeyframeEffectReadOnly* effect = GetEffect();
-  MOZ_ASSERT(effect && effect->AsTransition(),
-             "Transition should have a transition effect");
-  return effect->AsTransition()->ToValue();
+  MOZ_ASSERT(!mTransitionToValue.IsNull(),
+             "Transition ToValue should be initialized");
+  return mTransitionToValue;
 }
 
 bool
@@ -275,6 +265,19 @@ CSSTransition::GetCurrentTimeAt(const DocumentTimeline& aTimeline,
   }
 
   return result;
+}
+
+void
+CSSTransition::SetEffect(KeyframeEffectReadOnly* aEffect)
+{
+  Animation::SetEffect(aEffect);
+
+  
+  ElementPropertyTransition* pt = aEffect ? aEffect->AsTransition() : nullptr;
+  if (eCSSProperty_UNKNOWN == mTransitionProperty && pt) {
+    mTransitionProperty = pt->TransitionProperty();
+    mTransitionToValue = pt->ToValue();
+  }
 }
 
 
@@ -650,12 +653,12 @@ nsTransitionManager::ConsiderStartingTransition(
   if (aElementTransitions) {
     OwningCSSTransitionPtrArray& animations = aElementTransitions->mAnimations;
     for (size_t i = 0, i_end = animations.Length(); i < i_end; ++i) {
-      const ElementPropertyTransition *iPt =
-        animations[i]->GetEffect()->AsTransition();
-      if (iPt->TransitionProperty() == aProperty) {
+      if (animations[i]->TransitionProperty() == aProperty) {
         haveCurrentTransition = true;
         currentIndex = i;
-        oldPT = iPt;
+        oldPT = animations[i]->GetEffect()
+                ? animations[i]->GetEffect()->AsTransition()
+                : nullptr;
         break;
       }
     }
@@ -675,7 +678,8 @@ nsTransitionManager::ConsiderStartingTransition(
   
   
   
-  if (haveCurrentTransition && haveValues && oldPT->ToValue() == endValue) {
+  if (haveCurrentTransition && haveValues &&
+      aElementTransitions->mAnimations[currentIndex]->ToValue() == endValue) {
     
     return;
   }
@@ -722,8 +726,12 @@ nsTransitionManager::ConsiderStartingTransition(
 
   
   
+  
+  
+  
   if (haveCurrentTransition &&
       aElementTransitions->mAnimations[currentIndex]->HasCurrentEffect() &&
+      oldPT &&
       oldPT->mStartForReversingTest == endValue) {
     
     
@@ -817,10 +825,7 @@ nsTransitionManager::ConsiderStartingTransition(
 #ifdef DEBUG
   for (size_t i = 0, i_end = animations.Length(); i < i_end; ++i) {
     MOZ_ASSERT(
-      i == currentIndex ||
-      (animations[i]->GetEffect() &&
-       animations[i]->GetEffect()->AsTransition()->TransitionProperty()
-         != aProperty),
+      i == currentIndex || animations[i]->TransitionProperty() != aProperty,
       "duplicate transitions for property");
   }
 #endif
@@ -831,7 +836,8 @@ nsTransitionManager::ConsiderStartingTransition(
     
     
     
-    if (oldPT->IsCurrent() &&
+    if (oldPT &&
+        oldPT->IsCurrent() &&
         oldPT->IsRunningOnCompositor() &&
         !oldPT->GetAnimation()->GetStartTime().IsNull() &&
         timeline == oldPT->GetAnimation()->GetTimeline()) {
