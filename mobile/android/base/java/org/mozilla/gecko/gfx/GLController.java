@@ -142,6 +142,10 @@ public class GLController extends JNIObject {
     void updateCompositor() {
         ThreadUtils.assertOnUiThread();
 
+        if (mView == null) {
+            return;
+        }
+
         if (mCompositorCreated) {
             
             
