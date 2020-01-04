@@ -507,7 +507,6 @@ public:
       
       DoSessionEndTask(NS_OK);
     }
-    nsContentUtils::UnregisterShutdownObserver(this);
   }
 
   nsresult Pause()
@@ -581,6 +580,13 @@ private:
     MOZ_COUNT_DTOR(MediaRecorder::Session);
     LOG(LogLevel::Debug, ("Session.~Session (%p)", this));
     CleanupStreams();
+    if (mReadThread) {
+      mReadThread->Shutdown();
+      mReadThread = nullptr;
+      
+      
+      nsContentUtils::UnregisterShutdownObserver(this);
+    }
   }
   
   
@@ -880,6 +886,7 @@ private:
         mReadThread->Shutdown();
         mReadThread = nullptr;
       }
+      nsContentUtils::UnregisterShutdownObserver(this);
       BreakCycle();
       Stop();
     }
