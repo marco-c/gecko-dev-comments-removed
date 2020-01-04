@@ -80,6 +80,10 @@ enum TextureAllocationFlags {
   
   
   ALLOC_FOR_OUT_OF_BAND_CONTENT = 1 << 5,
+
+  
+  
+  ALLOC_MANUAL_SYNCHRONIZATION = 1 << 6,
 };
 
 #ifdef XP_WIN
