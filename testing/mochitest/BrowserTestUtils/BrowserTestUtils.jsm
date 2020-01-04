@@ -261,13 +261,38 @@ this.BrowserTestUtils = {
 
 
 
-  domWindowOpened() {
+
+
+
+
+  domWindowOpened(win) {
     return new Promise(resolve => {
       function observer(subject, topic, data) {
-        if (topic != "domwindowopened") { return; }
+        if (topic == "domwindowopened" && (!win || subject === win)) {
+          Services.ww.unregisterNotification(observer);
+          resolve(subject.QueryInterface(Ci.nsIDOMWindow));
+        }
+      }
+      Services.ww.registerNotification(observer);
+    });
+  },
 
-        Services.ww.unregisterNotification(observer);
-        resolve(subject.QueryInterface(Ci.nsIDOMWindow));
+  
+
+
+
+
+
+
+
+
+  domWindowClosed(win) {
+    return new Promise((resolve) => {
+      function observer(subject, topic, data) {
+        if (topic == "domwindowclosed" && (!win || subject === win)) {
+          Services.ww.unregisterNotification(observer);
+          resolve(subject.QueryInterface(Ci.nsIDOMWindow));
+        }
       }
       Services.ww.registerNotification(observer);
     });
@@ -323,16 +348,24 @@ this.BrowserTestUtils = {
 
 
   closeWindow(win) {
-    let domWinClosedPromise = new Promise((resolve) => {
-      function observer(subject, topic, data) {
-        if (topic == "domwindowclosed" && subject === win) {
-          Services.ww.unregisterNotification(observer);
-          resolve();
-        }
-      }
-      Services.ww.registerNotification(observer);
-    });
+    let closedPromise = BrowserTestUtils.windowClosed(win);
+    win.close();
+    return closedPromise;
+  },
 
+  
+
+
+
+
+
+
+
+
+
+
+  windowClosed(win)  {
+    let domWinClosedPromise = BrowserTestUtils.domWindowClosed(win);
     let promises = [domWinClosedPromise];
     let winType = win.document.documentElement.getAttribute("windowtype");
 
@@ -357,8 +390,6 @@ this.BrowserTestUtils = {
 
       promises.push(finalMsgsPromise);
     }
-
-    win.close();
 
     return Promise.all(promises);
   },
