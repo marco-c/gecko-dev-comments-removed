@@ -4251,8 +4251,15 @@ ScrollFrameHelper::CreateAnonymousContent(
   }
 
   
+  
+  
+  
+  
+  
+  
   int8_t resizeStyle = mOuter->StyleDisplay()->mResize;
-  bool isResizable = resizeStyle != NS_STYLE_RESIZE_NONE;
+  bool isResizable = resizeStyle != NS_STYLE_RESIZE_NONE &&
+                     !mOuter->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT);
 
   nsIScrollableFrame *scrollable = do_QueryFrame(mOuter);
 
