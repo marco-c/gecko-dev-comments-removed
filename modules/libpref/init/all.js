@@ -871,11 +871,11 @@ pref("accessibility.typeaheadfind.prefillwithselection", false);
 #else
 pref("accessibility.typeaheadfind.prefillwithselection", true);
 #endif
-pref("accessibility.typeaheadfind.matchesCountTimeout", 100);
 pref("accessibility.typeaheadfind.matchesCountLimit", 1000);
 pref("findbar.highlightAll", false);
 pref("findbar.modalHighlight", false);
 pref("findbar.entireword", false);
+pref("findbar.iteratorTimeout", 100);
 
 
 pref("gfx.use_text_smoothing_setting", false);
@@ -1231,7 +1231,7 @@ pref("javascript.options.discardSystemSource", false);
 
 pref("javascript.options.mem.high_water_mark", 128);
 pref("javascript.options.mem.max", -1);
-pref("javascript.options.mem.gc_per_zone", true);
+pref("javascript.options.mem.gc_per_compartment", true);
 pref("javascript.options.mem.gc_incremental", true);
 pref("javascript.options.mem.gc_incremental_slice_ms", 10);
 pref("javascript.options.mem.gc_compacting", true);

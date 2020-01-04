@@ -8,9 +8,16 @@ this.EXPORTED_SYMBOLS = ["FinderIterator"];
 
 const { interfaces: Ci, classes: Cc, utils: Cu } = Components;
 
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/Timer.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "NLP", "resource://gre/modules/NLP.jsm");
+
+const kDebug = false;
 const kIterationSizeMax = 100;
+const kTimeoutPref = "findbar.iteratorTimeout";
 
 
 
@@ -23,6 +30,8 @@ this.FinderIterator = {
   _previousParams: null,
   _previousRanges: [],
   _spawnId: 0,
+  _timeout: Services.prefs.getIntPref(kTimeoutPref),
+  _timer: null,
   ranges: [],
   running: false,
 
@@ -72,8 +81,13 @@ this.FinderIterator = {
 
 
 
-  start({ caseSensitive, entireWord, finder, limit, linksOnly, listener, useCache, word }) {
+
+
+
+  start({ allowDistance, caseSensitive, entireWord, finder, limit, linksOnly, listener, useCache, word }) {
     
+    if (typeof allowDistance != "number")
+      allowDistance = 0;
     if (typeof limit != "number")
       limit = -1;
     if (typeof linksOnly != "boolean")
@@ -117,8 +131,15 @@ this.FinderIterator = {
     if (this.running) {
       
       
-      if (!this._areParamsEqual(this._currentParams, iterParams))
-        throw new Error(`We're currently iterating over '${this._currentParams.word}', not '${word}'`);
+      if (!this._areParamsEqual(this._currentParams, iterParams, allowDistance)) {
+        if (kDebug) {
+          Cu.reportError(`We're currently iterating over '${this._currentParams.word}', not '${word}'\n` +
+            new Error().stack);
+        }
+        this._listeners.delete(listener);
+        resolver();
+        return promise;
+      }
 
       
       this._yieldIntermediateResult(listener, window);
@@ -144,6 +165,11 @@ this.FinderIterator = {
   stop(cachePrevious = false) {
     if (!this.running)
       return;
+
+    if (this._timer) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
 
     if (cachePrevious) {
       this._previousRanges = [].concat(this.ranges);
@@ -190,6 +216,11 @@ this.FinderIterator = {
 
 
   reset() {
+    if (this._timer) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
+
     this._catchingUp.clear();
     this._currentParams = this._previousParams = null;
     this._previousRanges = [];
@@ -270,12 +301,15 @@ this.FinderIterator = {
 
 
 
-  _areParamsEqual(paramSet1, paramSet2) {
+
+
+
+  _areParamsEqual(paramSet1, paramSet2, allowDistance = 0) {
     return (!!paramSet1 && !!paramSet2 &&
       paramSet1.caseSensitive === paramSet2.caseSensitive &&
       paramSet1.entireWord === paramSet2.entireWord &&
       paramSet1.linksOnly === paramSet2.linksOnly &&
-      paramSet1.word == paramSet2.word);
+      NLP.levenshtein(paramSet1.word, paramSet2.word) <= allowDistance);
   },
 
   
@@ -384,6 +418,17 @@ this.FinderIterator = {
 
 
   _findAllRanges: Task.async(function* (finder, window, spawnId) {
+    if (this._timeout) {
+      if (this._timer)
+        clearTimeout(this._timer);
+      yield new Promise(resolve => this._timer = setTimeout(resolve, this._timeout));
+      this._timer = null;
+      
+      
+      if (!this.running || spawnId !== this._spawnId)
+        return;
+    }
+
     this._notifyListeners("start", this.params);
 
     
