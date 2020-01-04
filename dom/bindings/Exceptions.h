@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include "jspubtd.h"
 #include "nsIException.h"
+#include "nsStringGlue.h"
 
 class nsIStackFrame;
 class nsPIDOMWindow;
@@ -23,13 +24,14 @@ namespace dom {
 
 class Exception;
 
+
+
 bool
-Throw(JSContext* cx, nsresult rv, const char* sz = nullptr);
+Throw(JSContext* cx, nsresult rv, const nsACString& message = EmptyCString());
 
 
 void
-ThrowAndReport(nsPIDOMWindow* aWindow, nsresult aRv,
-               const char* aMessage = nullptr);
+ThrowAndReport(nsPIDOMWindow* aWindow, nsresult aRv);
 
 bool
 ThrowExceptionObject(JSContext* aCx, Exception* aException);
@@ -39,8 +41,12 @@ ThrowExceptionObject(JSContext* aCx, nsIException* aException);
 
 
 
+
+
+
 already_AddRefed<Exception>
-CreateException(JSContext* aCx, nsresult aRv, const char* aMessage = nullptr);
+CreateException(JSContext* aCx, nsresult aRv,
+                const nsACString& aMessage = EmptyCString());
 
 already_AddRefed<nsIStackFrame>
 GetCurrentJSStack();

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/Exceptions.h"
 
@@ -28,19 +28,19 @@ namespace dom {
 bool
 ThrowExceptionObject(JSContext* aCx, nsIException* aException)
 {
-  // See if we really have an Exception.
+  
   nsCOMPtr<Exception> exception = do_QueryInterface(aException);
   if (exception) {
     return ThrowExceptionObject(aCx, exception);
   }
 
-  // We only have an nsIException (probably an XPCWrappedJS).  Fall back on old
-  // wrapping.
+  
+  
   MOZ_ASSERT(NS_IsMainThread());
 
   JS::Rooted<JSObject*> glob(aCx, JS::CurrentGlobalOrNull(aCx));
   if (!glob) {
-    // XXXbz Can this really be null here?
+    
     return false;
   }
 
@@ -59,11 +59,11 @@ ThrowExceptionObject(JSContext* aCx, Exception* aException)
 {
   JS::Rooted<JS::Value> thrown(aCx);
 
-  // If we stored the original thrown JS value in the exception
-  // (see XPCConvert::ConstructException) and we are in a web context
-  // (i.e., not chrome), rethrow the original value. This only applies to JS
-  // implemented components so we only need to check for this on the main
-  // thread.
+  
+  
+  
+  
+  
   if (NS_IsMainThread() && !nsContentUtils::IsCallerChrome() &&
       aException->StealJSVal(thrown.address())) {
     if (!JS_WrapValue(aCx, &thrown)) {
@@ -75,7 +75,7 @@ ThrowExceptionObject(JSContext* aCx, Exception* aException)
 
   JS::Rooted<JSObject*> glob(aCx, JS::CurrentGlobalOrNull(aCx));
   if (!glob) {
-    // XXXbz Can this actually be null here?
+    
     return false;
   }
 
@@ -88,16 +88,16 @@ ThrowExceptionObject(JSContext* aCx, Exception* aException)
 }
 
 bool
-Throw(JSContext* aCx, nsresult aRv, const char* aMessage)
+Throw(JSContext* aCx, nsresult aRv, const nsACString& aMessage)
 {
   if (aRv == NS_ERROR_UNCATCHABLE_EXCEPTION) {
-    // Nuke any existing exception on aCx, to make sure we're uncatchable.
+    
     JS_ClearPendingException(aCx);
     return false;
   }
 
   if (JS_IsExceptionPending(aCx)) {
-    // Don't clobber the existing exception.
+    
     return false;
   }
 
@@ -107,14 +107,14 @@ Throw(JSContext* aCx, nsresult aRv, const char* aMessage)
     nsresult nr;
     if (NS_SUCCEEDED(existingException->GetResult(&nr)) && 
         aRv == nr) {
-      // Reuse the existing exception.
+      
 
-      // Clear pending exception
+      
       runtime->SetPendingException(nullptr);
 
       if (!ThrowExceptionObject(aCx, existingException)) {
-        // If we weren't able to throw an exception we're
-        // most likely out of memory
+        
+        
         JS_ReportOutOfMemory(aCx);
       }
       return false;
@@ -125,8 +125,8 @@ Throw(JSContext* aCx, nsresult aRv, const char* aMessage)
 
   MOZ_ASSERT(finalException);
   if (!ThrowExceptionObject(aCx, finalException)) {
-    // If we weren't able to throw an exception we're
-    // most likely out of memory
+    
+    
     JS_ReportOutOfMemory(aCx);
   }
 
@@ -134,7 +134,7 @@ Throw(JSContext* aCx, nsresult aRv, const char* aMessage)
 }
 
 void
-ThrowAndReport(nsPIDOMWindow* aWindow, nsresult aRv, const char* aMessage)
+ThrowAndReport(nsPIDOMWindow* aWindow, nsresult aRv)
 {
   MOZ_ASSERT(aRv != NS_ERROR_UNCATCHABLE_EXCEPTION,
              "Doesn't make sense to report uncatchable exceptions!");
@@ -144,13 +144,13 @@ ThrowAndReport(nsPIDOMWindow* aWindow, nsresult aRv, const char* aMessage)
   }
   jsapi.TakeOwnershipOfErrorReporting();
 
-  Throw(jsapi.cx(), aRv, aMessage);
+  Throw(jsapi.cx(), aRv);
 }
 
 already_AddRefed<Exception>
-CreateException(JSContext* aCx, nsresult aRv, const char* aMessage)
+CreateException(JSContext* aCx, nsresult aRv, const nsACString& aMessage)
 {
-  // Do we use DOM exceptions for this error code?
+  
   switch (NS_ERROR_GET_MODULE(aRv)) {
   case NS_ERROR_MODULE_DOM:
   case NS_ERROR_MODULE_SVG:
@@ -158,23 +158,24 @@ CreateException(JSContext* aCx, nsresult aRv, const char* aMessage)
   case NS_ERROR_MODULE_DOM_INDEXEDDB:
   case NS_ERROR_MODULE_DOM_FILEHANDLE:
   case NS_ERROR_MODULE_DOM_BLUETOOTH:
-    return DOMException::Create(aRv);
+    if (aMessage.IsEmpty()) {
+      return DOMException::Create(aRv);
+    }
+    return DOMException::Create(aRv, aMessage);
   default:
     break;
   }
 
-  // If not, use the default.
-  // aMessage can be null, so we can't use nsDependentCString on it.
+  
   nsRefPtr<Exception> exception =
-    new Exception(nsCString(aMessage), aRv,
-                  EmptyCString(), nullptr, nullptr);
+    new Exception(aMessage, aRv, EmptyCString(), nullptr, nullptr);
   return exception.forget();
 }
 
 already_AddRefed<nsIStackFrame>
 GetCurrentJSStack()
 {
-  // is there a current context available?
+  
   JSContext* cx = nullptr;
 
   if (NS_IsMainThread()) {
@@ -193,7 +194,7 @@ GetCurrentJSStack()
     return nullptr;
   }
 
-  // Note that CreateStack only returns JS frames, so we're done here.
+  
   return stack.forget();
 }
 
@@ -273,7 +274,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(JSStackFrame,
                                                          StackFrame)
 
-  // aStack must not be null.
+  
   explicit JSStackFrame(JS::Handle<JSObject*> aStack);
 
   static already_AddRefed<nsIStackFrame>
@@ -370,17 +371,17 @@ NS_IMETHODIMP JSStackFrame::GetLanguageName(nsACString& aLanguageName)
   return NS_OK;
 }
 
-// Helper method to get the value of a stack property, if it's not already
-// cached.  This will make sure we skip the cache if the access is happening
-// over Xrays.
-//
-// @argument aStack the stack we're working with; must be non-null.
-// @argument aPropGetter the getter function to call.
-// @argument aIsCached whether we've cached this property's value before.
-//
-// @argument [out] aCanCache whether the value can get cached.
-// @argument [out] aUseCachedValue if true, just use the cached value.
-// @argument [out] aValue the value we got from the stack.
+
+
+
+
+
+
+
+
+
+
+
 template<typename ReturnType, typename GetterOutParamType>
 static void
 GetValueIfNotCached(JSContext* aCx, JSObject* aStack,
@@ -393,8 +394,8 @@ GetValueIfNotCached(JSContext* aCx, JSObject* aStack,
   MOZ_ASSERT(aStack);
 
   JS::Rooted<JSObject*> stack(aCx, aStack);
-  // Allow caching if aCx and stack are same-compartment.  Otherwise take the
-  // slow path.
+  
+  
   *aCanCache = js::GetContextCompartment(aCx) == js::GetObjectCompartment(stack);
   if (*aCanCache && aIsCached) {
     *aUseCachedValue = true;
@@ -441,7 +442,7 @@ NS_IMETHODIMP JSStackFrame::GetFilename(nsAString& aFilename)
 
 NS_IMETHODIMP StackFrame::GetFilename(nsAString& aFilename)
 {
-  // The filename must be set to null if empty.
+  
   if (mFilename.IsEmpty()) {
     aFilename.SetIsVoid(true);
   } else {
@@ -491,7 +492,7 @@ NS_IMETHODIMP JSStackFrame::GetName(nsAString& aFunction)
 
 NS_IMETHODIMP StackFrame::GetName(nsAString& aFunction)
 {
-  // The function name must be set to null if empty.
+  
   if (mFunname.IsEmpty()) {
     aFunction.SetIsVoid(true);
   } else {
@@ -501,7 +502,7 @@ NS_IMETHODIMP StackFrame::GetName(nsAString& aFunction)
   return NS_OK;
 }
 
-// virtual
+
 int32_t
 JSStackFrame::GetLineno()
 {
@@ -533,7 +534,7 @@ NS_IMETHODIMP StackFrame::GetLineNumber(int32_t* aLineNumber)
   return NS_OK;
 }
 
-// virtual
+
 int32_t
 JSStackFrame::GetColNo()
 {
@@ -611,7 +612,7 @@ NS_IMETHODIMP JSStackFrame::GetAsyncCause(nsAString& aAsyncCause)
 
 NS_IMETHODIMP StackFrame::GetAsyncCause(nsAString& aAsyncCause)
 {
-  // The async cause must be set to null if empty.
+  
   if (mAsyncCause.IsEmpty()) {
     aAsyncCause.SetIsVoid(true);
   } else {
@@ -678,9 +679,9 @@ NS_IMETHODIMP JSStackFrame::GetCaller(nsIStackFrame** aCaller)
   if (callerObj) {
       caller = new JSStackFrame(callerObj);
   } else {
-    // Do we really need this dummy frame?  If so, we should document why... I
-    // guess for symmetry with the "nothing on the stack" case, which returns
-    // a single dummy frame?
+    
+    
+    
     caller = new StackFrame();
   }
   caller.forget(aCaller);
@@ -706,14 +707,14 @@ NS_IMETHODIMP JSStackFrame::GetFormattedStack(nsAString& aStack)
     return NS_OK;
   }
 
-  // Sadly we can't use GetValueIfNotCached here, because our getter
-  // returns bool, not JS::SavedFrameResult.  Maybe it's possible to
-  // make the templates more complicated to deal, but in the meantime
-  // let's just inline GetValueIfNotCached here.
+  
+  
+  
+  
   ThreadsafeAutoJSContext cx;
 
-  // Allow caching if cx and stack are same-compartment.  Otherwise take the
-  // slow path.
+  
+  
   bool canCache =
     js::GetContextCompartment(cx) == js::GetObjectCompartment(mStack);
   if (canCache && mFormattedStackInitialized) {
@@ -798,7 +799,7 @@ NS_IMETHODIMP StackFrame::ToString(nsACString& _retval)
   return NS_OK;
 }
 
-/* static */ already_AddRefed<nsIStackFrame>
+ already_AddRefed<nsIStackFrame>
 JSStackFrame::CreateStack(JSContext* aCx, int32_t aMaxDepth)
 {
   static const unsigned MAX_FRAMES = 100;
@@ -826,6 +827,6 @@ CreateStack(JSContext* aCx, int32_t aMaxDepth)
   return JSStackFrame::CreateStack(aCx, aMaxDepth);
 }
 
-} // namespace exceptions
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
