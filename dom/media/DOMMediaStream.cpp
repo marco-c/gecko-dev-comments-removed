@@ -698,8 +698,9 @@ DOMMediaStream::CreateAudioCaptureStream(nsIDOMWindow* aWindow,
 void
 DOMMediaStream::SetTrackEnabled(TrackID aTrackID, bool aEnabled)
 {
-  if (mOwnedStream) {
-    mOwnedStream->SetTrackEnabled(aTrackID, aEnabled);
+  
+  if (mInputStream) {
+    mInputStream->SetTrackEnabled(aTrackID, aEnabled);
   }
 }
 
