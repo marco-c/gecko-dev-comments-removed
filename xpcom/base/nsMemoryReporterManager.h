@@ -205,7 +205,7 @@ private:
 
   uint32_t mNextGeneration;
 
-  struct GetReportsState
+  struct PendingProcessesState
   {
     uint32_t                             mGeneration;
     bool                                 mAnonymize;
@@ -221,23 +221,23 @@ private:
     nsCOMPtr<nsISupports>                mFinishReportingData;
     nsString                             mDMDDumpIdent;
 
-    GetReportsState(uint32_t aGeneration, bool aAnonymize, bool aMinimize,
-                    uint32_t aConcurrencyLimit,
-                    nsIHandleReportCallback* aHandleReport,
-                    nsISupports* aHandleReportData,
-                    nsIFinishReportingCallback* aFinishReporting,
-                    nsISupports* aFinishReportingData,
-                    const nsAString& aDMDDumpIdent);
+    PendingProcessesState(uint32_t aGeneration, bool aAnonymize, bool aMinimize,
+                          uint32_t aConcurrencyLimit,
+                          nsIHandleReportCallback* aHandleReport,
+                          nsISupports* aHandleReportData,
+                          nsIFinishReportingCallback* aFinishReporting,
+                          nsISupports* aFinishReportingData,
+                          const nsAString& aDMDDumpIdent);
   };
 
   
   
   
-  GetReportsState* mGetReportsState;
+  PendingProcessesState* mPendingProcessesState;
 
-  GetReportsState* GetStateForGeneration(uint32_t aGeneration);
+  PendingProcessesState* GetStateForGeneration(uint32_t aGeneration);
   static bool StartChildReport(mozilla::dom::ContentParent* aChild,
-                               const GetReportsState* aState);
+                               const PendingProcessesState* aState);
 };
 
 #define NS_MEMORY_REPORTER_MANAGER_CID \
