@@ -81,7 +81,7 @@ function errorPageLoaded() {
       return BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
     }).then(pinningRemovalLoaded);
   });
-};
+}
 
 
 
@@ -89,7 +89,7 @@ function pinningRemovalLoaded() {
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "https://" + kBadPinningDomain).then(function() {
     return BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   }).then(badPinningPageLoaded);
-};
+}
 
 
 
@@ -98,4 +98,4 @@ function badPinningPageLoaded() {
     ok(true, "load complete");
     finish();
   });
-};
+}

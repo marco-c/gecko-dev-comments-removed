@@ -1,7 +1,7 @@
 
 
 
- 
+
 
 
 
@@ -45,7 +45,7 @@ var gTests = [
       gPrefService.setBoolPref("browser.altClickSave", true);
     },
     clean: function() {
-      gPrefService.clearUserPref("browser.altClickSave"); 
+      gPrefService.clearUserPref("browser.altClickSave");
     },
     event: { shiftKey: true,
              altKey: true },
@@ -60,7 +60,7 @@ var gTests = [
       gPrefService.setBoolPref("browser.altClickSave", true);
     },
     clean: function() {
-      gPrefService.clearUserPref("browser.altClickSave"); 
+      gPrefService.clearUserPref("browser.altClickSave");
     },
     event: { shiftKey: true,
              altKey: true },
@@ -85,7 +85,7 @@ var gTests = [
       gPrefService.setBoolPref("browser.altClickSave", true);
     },
     clean: function() {
-      gPrefService.clearUserPref("browser.altClickSave"); 
+      gPrefService.clearUserPref("browser.altClickSave");
     },
     event: { altKey: true },
     targets: [ "commonlink", "maplink" ],
@@ -99,7 +99,7 @@ var gTests = [
       gPrefService.setBoolPref("browser.altClickSave", true);
     },
     clean: function() {
-      gPrefService.clearUserPref("browser.altClickSave"); 
+      gPrefService.clearUserPref("browser.altClickSave");
     },
     event: { altKey: true },
     targets: [ "mathxlink", "svgxlink" ],
@@ -215,7 +215,7 @@ var gClickHandler = {
       isnot(gInvokedMethods.indexOf(aExpectedMethodName), -1,
             gCurrentTest.desc + ":" + aExpectedMethodName + " was invoked");
     });
-    
+
     if (gInvokedMethods.length != gCurrentTest.expectedInvokedMethods.length) {
       ok(false, "Wrong number of invoked methods");
       gInvokedMethods.forEach(method => info(method + " was invoked"));

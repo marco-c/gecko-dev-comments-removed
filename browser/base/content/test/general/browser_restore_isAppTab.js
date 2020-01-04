@@ -85,7 +85,7 @@ function isBrowserAppTab(browser) {
 var restart = Task.async(function*(browser) {
   
   if (!browser.isRemoteBrowser)
-    return browser;
+    return;
 
   
   yield TabStateFlusher.flush(browser);

@@ -4,7 +4,7 @@
 
 
 
-add_task(function*(){
+add_task(function*() {
   let homepage = "about:home";
   yield SpecialPowers.pushPrefEnv({
     "set": [

@@ -137,9 +137,9 @@ add_task(function* testPrivateBrowsing() {
   yield tabReloadPromise;
 
   
-  is(getEnabledCounts().reduce((p,c)=>p+c), 0, "Telemetry logging off in PB mode");
-  is(getEventCounts().reduce((p,c)=>p+c), 0, "Telemetry logging off in PB mode");
-  is(getShieldCounts().reduce((p,c)=>p+c), 0, "Telemetry logging off in PB mode");
+  is(getEnabledCounts().reduce((p, c) => p+c), 0, "Telemetry logging off in PB mode");
+  is(getEventCounts().reduce((p, c) => p+c), 0, "Telemetry logging off in PB mode");
+  is(getShieldCounts().reduce((p, c) => p+c), 0, "Telemetry logging off in PB mode");
 
   yield promiseWindowClosed(privateWin);
 });

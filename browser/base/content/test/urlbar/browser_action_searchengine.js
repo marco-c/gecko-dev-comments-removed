@@ -15,7 +15,7 @@ add_task(function* () {
 
     try {
       gBrowser.removeTab(tab);
-    } catch(ex) {  }
+    } catch (ex) {  }
 
     return PlacesTestUtils.clearHistory();
   });

@@ -27,7 +27,7 @@ function test () {
   });
 }
 
-registerCleanupFunction(function(){
+registerCleanupFunction(function() {
   
   BrowserFullScreen();
 
@@ -331,7 +331,7 @@ WindowListener.prototype = {
 
       
       if (isOSX) {
-        setTimeout(function(){
+        setTimeout(function() {
           domwindow.close();
           executeSoon(this.callBack_onFinalize);
         }.bind(this), 3000);

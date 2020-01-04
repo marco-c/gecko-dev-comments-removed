@@ -32,7 +32,7 @@ add_task(function* () {
   
   let pluginInfo = yield promiseForPluginInfo("test", gBrowser.selectedBrowser);
   ok(!pluginInfo.activated, "plugin should not be activated");
-   
+
   
   
   yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {

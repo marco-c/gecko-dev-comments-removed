@@ -22,7 +22,7 @@ function test() {
   is(gBrowser.tabs.length, 2, "there are two remaining tabs open");
   is(gBrowser.tabs[0], testTab2, "pinned tab2 stayed open");
   is(gBrowser.tabs[1], testTab1, "tab1 stayed open");
-  
+
   
   
   gBrowser.removeTab(testTab2);

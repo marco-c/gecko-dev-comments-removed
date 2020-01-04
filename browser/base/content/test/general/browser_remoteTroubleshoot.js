@@ -18,7 +18,7 @@ function promiseChannelResponse(channelID, originOrPermission) {
       resolve(data);
     });
   });
-};
+}
 
 
 

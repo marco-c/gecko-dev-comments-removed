@@ -45,7 +45,7 @@ function fakeTelemetryNow(...args) {
   return date;
 }
 
-function setupPingArchive() {
+function* setupPingArchive() {
   let scope = {};
   Cu.import("resource://gre/modules/TelemetryController.jsm", scope);
   Cc["@mozilla.org/moz/jssubscript-loader;1"].getService(Ci.mozIJSSubScriptLoader)
@@ -86,7 +86,7 @@ var gTests = [
         }
       }, true);
 
-    } catch(e) {
+    } catch (e) {
       ok(false, "Failed to get all commands");
       deferred.reject();
     }
@@ -103,7 +103,7 @@ function test()
   
   requestLongerTimeout(10);
 
-  Task.spawn(function () {
+  Task.spawn(function* () {
     for (let test of gTests) {
       info(test.desc);
       yield test.setup();

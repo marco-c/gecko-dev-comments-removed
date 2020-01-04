@@ -72,7 +72,7 @@ function test_eventMatchesKey() {
     
     
     document.removeEventListener("keypress", checkEvent);
-  };
+  }
 
   runNextTest();
 }

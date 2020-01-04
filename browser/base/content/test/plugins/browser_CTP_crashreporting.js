@@ -18,7 +18,7 @@ const PLUGIN_SMALL_PAGE = gTestRoot + "plugin_small.html";
 function convertPropertyBag(aBag) {
   let result = {};
   let enumerator = aBag.enumerator;
-  while(enumerator.hasMoreElements()) {
+  while (enumerator.hasMoreElements()) {
     let { name, value } = enumerator.getNext().QueryInterface(Ci.nsIProperty);
     if (value instanceof Ci.nsIPropertyBag) {
       value = convertPropertyBag(value);
@@ -95,7 +95,7 @@ add_task(function*() {
 
       try {
         Components.utils.waiveXrays(plugin).crash();
-      } catch(e) {
+      } catch (e) {
       }
 
       let doc = plugin.ownerDocument;
@@ -116,8 +116,8 @@ add_task(function*() {
       
       let style = content.getComputedStyle(getUI("pleaseSubmit"));
       if (style.display != "block") {
-        return Promise.reject(`Submission UI visibility is not correct. ` +
-                              `Expected block style, got ${style.display}.`);
+        throw new Error(`Submission UI visibility is not correct. ` +
+                        `Expected block style, got ${style.display}.`);
       }
 
       
@@ -125,7 +125,7 @@ add_task(function*() {
       getUI("submitComment").value = "a test comment";
       let optIn = getUI("submitURLOptIn");
       if (!optIn.checked) {
-        return Promise.reject("URL opt-in should default to true.");
+        throw new Error("URL opt-in should default to true.");
       }
 
       
@@ -197,7 +197,7 @@ add_task(function*() {
 
       try {
         Components.utils.waiveXrays(plugin).crash();
-      } catch(e) {}
+      } catch (e) {}
     });
 
     

@@ -156,7 +156,7 @@ add_task(function* ()
   SidebarUI.toggle('viewBookmarksSidebar');
   yield loadPromise;
 
-  
+
   gURLBar.focus();
   yield* expectFocusOnF6(false, "bookmarksPanel",
                                 sidebar.contentDocument.getElementById("search-box").inputField,
