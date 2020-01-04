@@ -83,7 +83,7 @@ nsNSSU2FToken::destructorSafeDestroyNSSReference()
 }
 
 static PK11SymKey*
-GetSymKeyByNickname(PK11SlotInfo* aSlot,
+GetSymKeyByNickname(const UniquePK11SlotInfo& aSlot,
                     nsCString aNickname,
                     const nsNSSShutDownPreventionLock&)
 {
@@ -91,13 +91,13 @@ GetSymKeyByNickname(PK11SlotInfo* aSlot,
           ("Searching for a symmetric key named %s", aNickname.get()));
 
   PK11SymKey* keyList;
-  keyList = PK11_ListFixedKeysInSlot(aSlot, const_cast<char*>(aNickname.get()),
+  keyList = PK11_ListFixedKeysInSlot(aSlot.get(),
+                                     const_cast<char*>(aNickname.get()),
                                       nullptr);
   while (keyList) {
     ScopedPK11SymKey freeKey(keyList);
 
-    UniquePtr<char, void(&)(void*)>
-      freeKeyName(PK11_GetSymKeyNickname(freeKey), PORT_Free);
+    UniquePORTString freeKeyName(PK11_GetSymKeyNickname(freeKey.get()));
 
     if (aNickname == freeKeyName.get()) {
       MOZ_LOG(gNSSTokenLog, LogLevel::Debug, ("Symmetric key found!"));
@@ -112,7 +112,7 @@ GetSymKeyByNickname(PK11SlotInfo* aSlot,
 }
 
 static nsresult
-GenEcKeypair(PK11SlotInfo* aSlot, ScopedSECKEYPrivateKey& aPrivKey,
+GenEcKeypair(const UniquePK11SlotInfo& aSlot, ScopedSECKEYPrivateKey& aPrivKey,
              ScopedSECKEYPublicKey& aPubKey, const nsNSSShutDownPreventionLock&)
 {
   UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
@@ -130,7 +130,7 @@ GenEcKeypair(PK11SlotInfo* aSlot, ScopedSECKEYPrivateKey& aPrivKey,
   CK_MECHANISM_TYPE mechanism = CKM_EC_KEY_PAIR_GEN;
 
   SECKEYPublicKey* pubKeyRaw;
-  aPrivKey = PK11_GenerateKeyPair(aSlot, mechanism, keyParams, &pubKeyRaw,
+  aPrivKey = PK11_GenerateKeyPair(aSlot.get(), mechanism, keyParams, &pubKeyRaw,
                                    PR_FALSE, PR_FALSE,
                                    nullptr);
   aPubKey = pubKeyRaw;
@@ -147,7 +147,7 @@ GenEcKeypair(PK11SlotInfo* aSlot, ScopedSECKEYPrivateKey& aPrivKey,
 }
 
 nsresult
-nsNSSU2FToken::GetOrCreateWrappingKey(PK11SlotInfo* aSlot,
+nsNSSU2FToken::GetOrCreateWrappingKey(const UniquePK11SlotInfo& aSlot,
                                       const nsNSSShutDownPreventionLock& locker)
 {
   
@@ -164,7 +164,7 @@ nsNSSU2FToken::GetOrCreateWrappingKey(PK11SlotInfo* aSlot,
 
   
   
-  mWrappingKey = PK11_TokenKeyGenWithFlags(aSlot, CKM_AES_KEY_GEN,
+  mWrappingKey = PK11_TokenKeyGenWithFlags(aSlot.get(), CKM_AES_KEY_GEN,
                                             nullptr,
                                            kWrappingKeyByteLen,
                                             nullptr,
@@ -194,7 +194,7 @@ nsNSSU2FToken::GetOrCreateWrappingKey(PK11SlotInfo* aSlot,
 }
 
 static nsresult
-GetAttestationCertificate(PK11SlotInfo* aSlot,
+GetAttestationCertificate(const UniquePK11SlotInfo& aSlot,
                           ScopedSECKEYPrivateKey& aAttestPrivKey,
                           ScopedCERTCertificate& aAttestCert,
                           const nsNSSShutDownPreventionLock& locker)
@@ -246,7 +246,8 @@ GetAttestationCertificate(PK11SlotInfo* aSlot,
 
   unsigned long serial;
   unsigned char* serialBytes = reinterpret_cast<unsigned char *>(&serial);
-  SECStatus srv = PK11_GenerateRandomOnSlot(aSlot, serialBytes, sizeof(serial));
+  SECStatus srv = PK11_GenerateRandomOnSlot(aSlot.get(), serialBytes,
+                                            sizeof(serial));
   if (srv != SECSuccess) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning,
             ("Failed to gen serial, NSS error #%d", PORT_GetError()));
@@ -320,11 +321,11 @@ nsNSSU2FToken::Init()
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  ScopedPK11SlotInfo slot(PK11_GetInternalKeySlot());
+  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
   MOZ_ASSERT(slot.get());
 
   
-  nsresult rv = GetOrCreateWrappingKey(slot.get(), locker);
+  nsresult rv = GetOrCreateWrappingKey(slot, locker);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -337,7 +338,7 @@ nsNSSU2FToken::Init()
 
 
 static SECItem*
-KeyHandleFromPrivateKey(PK11SlotInfo* aSlot,
+KeyHandleFromPrivateKey(const UniquePK11SlotInfo& aSlot,
                         PK11SymKey* aWrappingKey,
                         SECKEYPrivateKey* aPrivKey,
                         const nsNSSShutDownPreventionLock&)
@@ -354,7 +355,7 @@ KeyHandleFromPrivateKey(PK11SlotInfo* aSlot,
   ScopedSECItem param(PK11_ParamFromIV(CKM_NSS_AES_KEY_WRAP_PAD,
                                         nullptr ));
 
-  SECStatus srv = PK11_WrapPrivKey(aSlot, aWrappingKey, aPrivKey,
+  SECStatus srv = PK11_WrapPrivKey(aSlot.get(), aWrappingKey, aPrivKey,
                                    CKM_NSS_AES_KEY_WRAP_PAD, param,
                                    wrappedKey.get(),  nullptr);
   if (srv != SECSuccess) {
@@ -369,7 +370,8 @@ KeyHandleFromPrivateKey(PK11SlotInfo* aSlot,
 
 
 static SECKEYPrivateKey*
-PrivateKeyFromKeyHandle(PK11SlotInfo* aSlot, PK11SymKey* aWrappingKey,
+PrivateKeyFromKeyHandle(const UniquePK11SlotInfo& aSlot,
+                        PK11SymKey* aWrappingKey,
                         uint8_t* aKeyHandle, uint32_t aKeyHandleLen,
                         const nsNSSShutDownPreventionLock&)
 {
@@ -385,7 +387,7 @@ PrivateKeyFromKeyHandle(PK11SlotInfo* aSlot, PK11SymKey* aWrappingKey,
   int usageCount = 1;
 
   SECKEYPrivateKey* unwrappedKey;
-  unwrappedKey = PK11_UnwrapPrivKey(aSlot, aWrappingKey,
+  unwrappedKey = PK11_UnwrapPrivKey(aSlot.get(), aWrappingKey,
                                     CKM_NSS_AES_KEY_WRAP_PAD,
                                     param, &keyHandleItem,
                                      nullptr,
@@ -437,11 +439,11 @@ nsNSSU2FToken::IsRegistered(uint8_t* aKeyHandle, uint32_t aKeyHandleLen,
     return NS_ERROR_FAILURE;
   }
 
-  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   MOZ_ASSERT(slot.get());
 
   
-  ScopedSECKEYPrivateKey privKey(PrivateKeyFromKeyHandle(slot.get(),
+  UniqueSECKEYPrivateKey privKey(PrivateKeyFromKeyHandle(slot,
                                                          mWrappingKey.get(),
                                                          aKeyHandle,
                                                          aKeyHandleLen,
@@ -500,13 +502,13 @@ nsNSSU2FToken::Register(uint8_t* aApplication,
   
   MOZ_ASSERT(mWrappingKey);
 
-  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   MOZ_ASSERT(slot.get());
 
   
   ScopedSECKEYPrivateKey attestPrivKey;
   ScopedCERTCertificate attestCert;
-  nsresult rv = GetAttestationCertificate(slot.get(), attestPrivKey, attestCert,
+  nsresult rv = GetAttestationCertificate(slot, attestPrivKey, attestCert,
                                           locker);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_FAILURE;
@@ -517,14 +519,13 @@ nsNSSU2FToken::Register(uint8_t* aApplication,
   
   ScopedSECKEYPrivateKey privKey;
   ScopedSECKEYPublicKey pubKey;
-  rv = GenEcKeypair(slot.get(), privKey, pubKey, locker);
+  rv = GenEcKeypair(slot, privKey, pubKey, locker);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_FAILURE;
   }
 
   
-  ScopedSECItem keyHandleItem(KeyHandleFromPrivateKey(slot.get(),
-                                                      mWrappingKey.get(),
+  UniqueSECItem keyHandleItem(KeyHandleFromPrivateKey(slot, mWrappingKey.get(),
                                                       privKey.get(),
                                                       locker));
   if (!keyHandleItem.get()) {
@@ -628,7 +629,7 @@ nsNSSU2FToken::Sign(uint8_t* aApplication, uint32_t aApplicationLen,
 
   MOZ_ASSERT(mWrappingKey);
 
-  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   MOZ_ASSERT(slot.get());
 
   if ((aChallengeLen != kParamLen) || (aApplicationLen != kParamLen)) {
@@ -640,7 +641,7 @@ nsNSSU2FToken::Sign(uint8_t* aApplication, uint32_t aApplicationLen,
   }
 
   
-  ScopedSECKEYPrivateKey privKey(PrivateKeyFromKeyHandle(slot.get(),
+  UniqueSECKEYPrivateKey privKey(PrivateKeyFromKeyHandle(slot,
                                                          mWrappingKey.get(),
                                                          aKeyHandle,
                                                          aKeyHandleLen,

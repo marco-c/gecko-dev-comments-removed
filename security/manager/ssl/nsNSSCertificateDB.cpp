@@ -65,14 +65,14 @@ attemptToLogInWithDefaultPassword()
   
   
   
-  ScopedPK11SlotInfo slot(PK11_GetInternalKeySlot());
+  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
   if (!slot) {
     return MapSECStatus(SECFailure);
   }
-  if (PK11_NeedUserInit(slot)) {
+  if (PK11_NeedUserInit(slot.get())) {
     
     
-    (void) PK11_InitPin(slot, nullptr, nullptr);
+    Unused << PK11_InitPin(slot.get(), nullptr, nullptr);
   }
 #endif
 
@@ -1009,7 +1009,7 @@ nsNSSCertificateDB::ImportCertsFromFile(nsIFile* aFile, uint32_t aType)
   return NS_ERROR_FAILURE;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsNSSCertificateDB::ImportPKCS12File(nsISupports* aToken, nsIFile* aFile)
 {
   nsNSSShutDownPreventionLock locker;
@@ -1026,12 +1026,11 @@ nsNSSCertificateDB::ImportPKCS12File(nsISupports* aToken, nsIFile* aFile)
   return blob.ImportFromFile(aFile);
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsNSSCertificateDB::ExportPKCS12File(nsISupports* aToken,
                                      nsIFile* aFile,
                                      uint32_t count,
                                      nsIX509Cert** certs)
-                                     
 {
   nsNSSShutDownPreventionLock locker;
   if (isAlreadyShutDown()) {
@@ -1043,16 +1042,15 @@ nsNSSCertificateDB::ExportPKCS12File(nsISupports* aToken,
   if (count == 0) return NS_OK;
   nsCOMPtr<nsIPK11Token> localRef;
   if (!aToken) {
-    ScopedPK11SlotInfo keySlot(PK11_GetInternalKeySlot());
-    NS_ASSERTION(keySlot,"Failed to get the internal key slot");
-    localRef = new nsPK11Token(keySlot);
-  }
-  else {
+    UniquePK11SlotInfo keySlot(PK11_GetInternalKeySlot());
+    if (!keySlot) {
+      return NS_ERROR_FAILURE;
+    }
+    localRef = new nsPK11Token(keySlot.get());
+  } else {
     localRef = do_QueryInterface(aToken);
   }
   blob.SetToken(localRef);
-  
-  
   return blob.ExportToFile(aFile, certs, count);
 }
 
@@ -1307,12 +1305,13 @@ nsNSSCertificateDB::get_default_nickname(CERTCertificate *cert,
 
 
 
-  ScopedPK11SlotInfo slot(PK11_KeyForCertExists(cert, &keyHandle, ctx));
+  UniquePK11SlotInfo slot(PK11_KeyForCertExists(cert, &keyHandle, ctx));
   if (!slot)
     return;
 
-  if (!PK11_IsInternal(slot)) {
-    char *tmp = PR_smprintf("%s:%s", PK11_GetTokenName(slot), baseName.get());
+  if (!PK11_IsInternal(slot.get())) {
+    char* tmp = PR_smprintf("%s:%s", PK11_GetTokenName(slot.get()),
+                            baseName.get());
     if (!tmp) {
       nickname.Truncate();
       return;
@@ -1337,19 +1336,14 @@ nsNSSCertificateDB::get_default_nickname(CERTCertificate *cert,
 
     UniqueCERTCertificate dummycert;
 
-    if (PK11_IsInternal(slot)) {
+    if (PK11_IsInternal(slot.get())) {
       
       dummycert.reset(CERT_FindCertByNickname(defaultcertdb, nickname.get()));
     } else {
       
-
-
-
       dummycert.reset(PK11_FindCertFromNickname(nickname.get(), ctx));
       if (dummycert) {
 	
-
- 
 	if (CERT_CompareName(&cert->subject, &dummycert->subject) == SECEqual)
 	{
 	  
