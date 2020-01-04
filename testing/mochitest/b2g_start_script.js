@@ -83,13 +83,7 @@ container.addEventListener('mozbrowsershowmodalprompt', function (e) {
 });
 
 if (outOfProcess) {
-  let specialpowers = {};
-  let loader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"].getService(Ci.mozIJSSubScriptLoader);
-  loader.loadSubScript("chrome://specialpowers/content/SpecialPowersObserver.jsm", specialpowers);
-  let specialPowersObserver = new specialpowers.SpecialPowersObserver();
-
   let mm = container.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader.messageManager;
-  specialPowersObserver.init(mm);
 
   
   function contentScript() {
