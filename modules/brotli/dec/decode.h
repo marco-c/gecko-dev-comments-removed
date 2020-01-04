@@ -6,20 +6,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef BROTLI_DEC_DECODE_H_
 #define BROTLI_DEC_DECODE_H_
 
 #include "./state.h"
-#include "./streams.h"
 #include "./types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -39,17 +29,13 @@ typedef enum {
 
 
 
-#if defined(_MSC_VER) || !defined(BROTLI_DEBUG)
-#define BROTLI_FAILURE() BROTLI_RESULT_ERROR
-#else
-#define BROTLI_FAILURE() \
-    BrotliFailure(__FILE__, __LINE__, __PRETTY_FUNCTION__)
-static inline BrotliResult BrotliFailure(const char *f, int l, const char *fn) {
-  fprintf(stderr, "ERROR at %s:%d (%s)\n", f, l, fn);
-  fflush(stderr);
-  return BROTLI_RESULT_ERROR;
-}
-#endif
+
+
+BrotliState* BrotliCreateState(
+    brotli_alloc_func alloc_func, brotli_free_func free_func, void* opaque);
+
+
+void BrotliDestroyState(BrotliState* state);
 
 
 
@@ -62,9 +48,6 @@ int BrotliDecompressedSize(size_t encoded_size,
 
 
 
-
-
-
 BrotliResult BrotliDecompressBuffer(size_t encoded_size,
                                     const uint8_t* encoded_buffer,
                                     size_t* decoded_size,
@@ -72,7 +55,6 @@ BrotliResult BrotliDecompressBuffer(size_t encoded_size,
 
 
 
-BrotliResult BrotliDecompress(BrotliInput input, BrotliOutput output);
 
 
 
@@ -86,56 +68,12 @@ BrotliResult BrotliDecompress(BrotliInput input, BrotliOutput output);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-BrotliResult BrotliDecompressStreaming(BrotliInput input, BrotliOutput output,
-                                       int finish, BrotliState* s);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BrotliResult BrotliDecompressBufferStreaming(size_t* available_in,
-                                             const uint8_t** next_in,
-                                             int finish,
-                                             size_t* available_out,
-                                             uint8_t** next_out,
-                                             size_t* total_out,
-                                             BrotliState* s);
+BrotliResult BrotliDecompressStream(size_t* available_in,
+                                    const uint8_t** next_in,
+                                    size_t* available_out,
+                                    uint8_t** next_out,
+                                    size_t* total_out,
+                                    BrotliState* s);
 
 
 
@@ -150,9 +88,6 @@ BrotliResult BrotliDecompressBufferStreaming(size_t* available_in,
 void BrotliSetCustomDictionary(
     size_t size, const uint8_t* dict, BrotliState* s);
 
-
-
-void InverseMoveToFrontTransformForTesting(uint8_t* v, int l, BrotliState* s);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 } 

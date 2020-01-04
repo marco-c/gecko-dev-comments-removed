@@ -6,22 +6,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef BROTLI_DEC_STATE_H_
 #define BROTLI_DEC_STATE_H_
 
-#include <stdio.h>
 #include "./bit_reader.h"
 #include "./huffman.h"
-#include "./streams.h"
 #include "./types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -30,19 +19,20 @@ extern "C" {
 
 typedef enum {
   BROTLI_STATE_UNINITED,
-  BROTLI_STATE_BITREADER_WARMUP,
   BROTLI_STATE_METABLOCK_BEGIN,
   BROTLI_STATE_METABLOCK_HEADER,
+  BROTLI_STATE_METABLOCK_HEADER_2,
   BROTLI_STATE_CONTEXT_MODES,
   BROTLI_STATE_COMMAND_BEGIN,
   BROTLI_STATE_COMMAND_INNER,
+  BROTLI_STATE_COMMAND_POST_DECODE_LITERALS,
+  BROTLI_STATE_COMMAND_POST_WRAP_COPY,
   BROTLI_STATE_UNCOMPRESSED,
   BROTLI_STATE_METADATA,
   BROTLI_STATE_COMMAND_INNER_WRITE,
   BROTLI_STATE_METABLOCK_DONE,
   BROTLI_STATE_COMMAND_POST_WRITE_1,
   BROTLI_STATE_COMMAND_POST_WRITE_2,
-  BROTLI_STATE_COMMAND_POST_WRAP_COPY,
   BROTLI_STATE_HUFFMAN_CODE_0,
   BROTLI_STATE_HUFFMAN_CODE_1,
   BROTLI_STATE_HUFFMAN_CODE_2,
@@ -66,8 +56,6 @@ typedef enum {
 
 typedef enum {
   BROTLI_STATE_UNCOMPRESSED_NONE,
-  BROTLI_STATE_UNCOMPRESSED_SHORT,
-  BROTLI_STATE_UNCOMPRESSED_COPY,
   BROTLI_STATE_UNCOMPRESSED_WRITE
 } BrotliRunningUncompressedState;
 
@@ -80,11 +68,16 @@ typedef enum {
   BROTLI_STATE_CONTEXT_MAP_NONE,
   BROTLI_STATE_CONTEXT_MAP_READ_PREFIX,
   BROTLI_STATE_CONTEXT_MAP_HUFFMAN,
-  BROTLI_STATE_CONTEXT_MAP_DECODE
+  BROTLI_STATE_CONTEXT_MAP_DECODE,
+  BROTLI_STATE_CONTEXT_MAP_TRANSFORM
 } BrotliRunningContextMapState;
 
 typedef enum {
   BROTLI_STATE_HUFFMAN_NONE,
+  BROTLI_STATE_HUFFMAN_SIMPLE_SIZE,
+  BROTLI_STATE_HUFFMAN_SIMPLE_READ,
+  BROTLI_STATE_HUFFMAN_SIMPLE_BUILD,
+  BROTLI_STATE_HUFFMAN_COMPLEX,
   BROTLI_STATE_HUFFMAN_LENGTH_SYMBOLS
 } BrotliRunningHuffmanState;
 
@@ -94,11 +87,30 @@ typedef enum {
   BROTLI_STATE_DECODE_UINT8_LONG
 } BrotliRunningDecodeUint8State;
 
-typedef struct {
+typedef enum {
+  BROTLI_STATE_READ_BLOCK_LENGTH_NONE,
+  BROTLI_STATE_READ_BLOCK_LENGTH_SUFFIX
+} BrotliRunningReadBlockLengthState;
+
+struct BrotliStateStruct {
   BrotliRunningState state;
+
   
-  BrotliBitReader br;
   int loop_counter;
+
+  BrotliBitReader br;
+
+  brotli_alloc_func alloc_func;
+  brotli_free_func free_func;
+  void* memory_manager_opaque;
+
+  
+  union {
+    uint64_t u64;
+    uint8_t u8[8];
+  } buffer;
+  uint32_t buffer_length;
+
   int pos;
   int max_backward_distance;
   int max_backward_distance_minus_custom_dict_size;
@@ -115,6 +127,8 @@ typedef struct {
   uint8_t* context_map_slice;
   uint8_t* dist_context_map_slice;
 
+  uint32_t sub_loop_counter;
+
   
   
   HuffmanTreeGroup literal_hgroup;
@@ -127,27 +141,28 @@ typedef struct {
   int trivial_literal_context;
   int distance_context;
   int meta_block_remaining_len;
-  int block_length[3];
-  int num_block_types[3];
-  int block_type_rb[6];
-  int distance_postfix_bits;
-  int num_direct_distance_codes;
+  uint32_t block_length_index;
+  uint32_t block_length[3];
+  uint32_t num_block_types[3];
+  uint32_t block_type_rb[6];
+  uint32_t distance_postfix_bits;
+  uint32_t num_direct_distance_codes;
   int distance_postfix_mask;
-  int num_dist_htrees;
+  uint32_t num_dist_htrees;
   uint8_t* dist_context_map;
   HuffmanCode *literal_htree;
   uint8_t literal_htree_index;
   uint8_t dist_htree_index;
-  uint8_t repeat_code_len;
-  uint8_t prev_code_len;
+  uint32_t repeat_code_len;
+  uint32_t prev_code_len;
 
 
   int copy_length;
   int distance_code;
 
   
-  int to_write;
-  int partially_written;
+  size_t rb_roundtrips;  
+  size_t partial_pos_out;  
 
   
   uint32_t symbol;
@@ -171,12 +186,13 @@ typedef struct {
   HuffmanCode* next;
 
   
-  int context_index;
-  int max_run_length_prefix;
-  HuffmanCode context_map_table[BROTLI_HUFFMAN_MAX_TABLE_SIZE];
+  uint32_t context_index;
+  uint32_t max_run_length_prefix;
+  uint32_t code;
+  HuffmanCode context_map_table[BROTLI_HUFFMAN_MAX_SIZE_272];
 
   
-  int mtf_upper_bound;
+  uint32_t mtf_upper_bound;
   uint8_t mtf[256];
 
   
@@ -191,6 +207,7 @@ typedef struct {
   BrotliRunningUncompressedState substate_uncompressed;
   BrotliRunningHuffmanState substate_huffman;
   BrotliRunningDecodeUint8State substate_decode_uint8;
+  BrotliRunningReadBlockLengthState substate_read_block_length;
 
   uint8_t is_last_metablock;
   uint8_t is_uncompressed;
@@ -198,15 +215,33 @@ typedef struct {
   uint8_t size_nibbles;
   uint32_t window_bits;
 
-  int num_literal_htrees;
+  uint32_t num_literal_htrees;
   uint8_t* context_map;
   uint8_t* context_modes;
-} BrotliState;
+};
+
+typedef struct BrotliStateStruct BrotliState;
 
 void BrotliStateInit(BrotliState* s);
+void BrotliStateInitWithCustomAllocators(BrotliState* s,
+                                         brotli_alloc_func alloc_func,
+                                         brotli_free_func free_func,
+                                         void* opaque);
 void BrotliStateCleanup(BrotliState* s);
 void BrotliStateMetablockBegin(BrotliState* s);
 void BrotliStateCleanupAfterMetablock(BrotliState* s);
+void BrotliHuffmanTreeGroupInit(BrotliState* s, HuffmanTreeGroup* group,
+                                uint32_t alphabet_size, uint32_t ntrees);
+void BrotliHuffmanTreeGroupRelease(BrotliState* s, HuffmanTreeGroup* group);
+
+
+
+int BrotliStateIsStreamStart(const BrotliState* s);
+
+
+
+int BrotliStateIsStreamEnd(const BrotliState* s);
+
 
 #if defined(__cplusplus) || defined(c_plusplus)
 } 

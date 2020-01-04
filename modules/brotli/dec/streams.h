@@ -6,15 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef BROTLI_DEC_STREAMS_H_
 #define BROTLI_DEC_STREAMS_H_
 
@@ -95,7 +86,7 @@ BrotliOutput BrotliFileOutput(FILE* f);
 
 
 int BrotliNullOutputFunction(void* data, const uint8_t* buf, size_t count);
-BrotliOutput BrotliNullOutput();
+BrotliOutput BrotliNullOutput(void);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }    

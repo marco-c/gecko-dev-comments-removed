@@ -6,15 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef BROTLI_DEC_HUFFMAN_H_
 #define BROTLI_DEC_HUFFMAN_H_
 
@@ -31,7 +22,12 @@ extern "C" {
 
 
 
-#define BROTLI_HUFFMAN_MAX_TABLE_SIZE 1080
+static const uint16_t kMaxHuffmanTableSize[] = {
+  256, 402, 436, 468, 500, 534, 566, 598, 630, 662, 694, 726, 758, 790, 822,
+  854, 886, 920, 952, 984, 1016, 1048, 1080};
+#define BROTLI_HUFFMAN_MAX_SIZE_26 396
+#define BROTLI_HUFFMAN_MAX_SIZE_258 632
+#define BROTLI_HUFFMAN_MAX_SIZE_272 646
 
 #define BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH 5
 
@@ -48,31 +44,27 @@ void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* root_table,
 
 
 
-int BrotliBuildHuffmanTable(HuffmanCode* root_table,
-                            int root_bits,
-                            const uint16_t* const symbol_lists,
-                            uint16_t *count_arg);
+uint32_t BrotliBuildHuffmanTable(HuffmanCode* root_table,
+                                 int root_bits,
+                                 const uint16_t* const symbol_lists,
+                                 uint16_t *count_arg);
 
 
 
 
 
-int BrotliBuildSimpleHuffmanTable(HuffmanCode* table,
-                                  int root_bits,
-                                  uint16_t *symbols,
-                                  uint32_t num_symbols);
+uint32_t BrotliBuildSimpleHuffmanTable(HuffmanCode* table,
+                                       int root_bits,
+                                       uint16_t *symbols,
+                                       uint32_t num_symbols);
 
 
 typedef struct {
   HuffmanCode** htrees;
   HuffmanCode* codes;
-  int16_t alphabet_size;
-  int16_t num_htrees;
+  uint16_t alphabet_size;
+  uint16_t num_htrees;
 } HuffmanTreeGroup;
-
-void BrotliHuffmanTreeGroupInit(HuffmanTreeGroup* group,
-                                int alphabet_size, int ntrees);
-void BrotliHuffmanTreeGroupRelease(HuffmanTreeGroup* group);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }    

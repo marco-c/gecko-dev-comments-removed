@@ -8,23 +8,16 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef BROTLI_DEC_PREFIX_H_
 #define BROTLI_DEC_PREFIX_H_
+
+#include "./types.h"
 
 
 
 struct PrefixCodeRange {
-  int16_t offset;
-  int8_t nbits;
+  uint16_t offset;
+  uint8_t nbits;
 };
 
 static const struct PrefixCodeRange kBlockLengthPrefixCode[] = {
