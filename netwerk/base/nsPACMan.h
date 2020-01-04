@@ -55,9 +55,9 @@ class PendingPACQuery final : public nsRunnable,
 {
 public:
   PendingPACQuery(nsPACMan *pacMan, nsIURI *uri, uint32_t appId,
-                  bool isInBrowser, nsPACManCallback *callback,
+                  bool isInIsolatedMozBrowser, nsPACManCallback *callback,
                   bool mainThreadResponse);
- 
+
   
   void Complete(nsresult status, const nsCString &pacString);
   void UseAlternatePACFile(const nsCString &pacURL);
@@ -74,7 +74,7 @@ private:
 
 public:
   uint32_t                   mAppId;
-  bool                       mIsInBrowser;
+  bool                       mIsInIsolatedMozBrowser;
   nsString                   mAppOrigin;
 
 private:

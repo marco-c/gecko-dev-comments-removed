@@ -714,7 +714,7 @@ bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport = false);
 
 bool NS_GetAppInfo(nsIChannel *aChannel,
                    uint32_t *aAppID,
-                   bool *aIsInBrowserElement);
+                   bool *aIsInIsolatedMozBrowserElement);
 
 
 

@@ -1176,7 +1176,7 @@ WebSocketChannel::WebSocketChannel() :
   mCountRecv(0),
   mCountSent(0),
   mAppId(NECKO_NO_APP_ID),
-  mIsInBrowser(false)
+  mIsInIsolatedMozBrowser(false)
 {
   MOZ_ASSERT(NS_IsMainThread(), "not main thread");
 
@@ -1388,7 +1388,7 @@ WebSocketChannel::BeginOpenInternal()
   }
 
   if (localChannel) {
-    NS_GetAppInfo(localChannel, &mAppId, &mIsInBrowser);
+    NS_GetAppInfo(localChannel, &mAppId, &mIsInIsolatedMozBrowser);
   }
 
 #ifdef MOZ_WIDGET_GONK
@@ -3911,7 +3911,7 @@ WebSocketChannel::SaveNetworkStats(bool enforce)
   
   
   RefPtr<nsRunnable> event =
-    new SaveNetworkStatsEvent(mAppId, mIsInBrowser, mActiveNetworkInfo,
+    new SaveNetworkStatsEvent(mAppId, mIsInIsolatedMozBrowser, mActiveNetworkInfo,
                               countRecv, countSent, false);
   NS_DispatchToMainThread(event);
 
