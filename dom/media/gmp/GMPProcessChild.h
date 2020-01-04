@@ -22,8 +22,8 @@ public:
   explicit GMPProcessChild(ProcessId aParentPid);
   ~GMPProcessChild();
 
-  virtual bool Init() override;
-  virtual void CleanUp() override;
+  bool Init() override;
+  void CleanUp() override;
 
   
   

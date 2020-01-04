@@ -35,8 +35,8 @@ public:
   void EncodedFrameDestroyed(GMPVideoEncodedFrameImpl* aFrame);
 
   
-  virtual GMPErr CreateFrame(GMPVideoFrameFormat aFormat, GMPVideoFrame** aFrame) override;
-  virtual GMPErr CreatePlane(GMPPlane** aPlane) override;
+  GMPErr CreateFrame(GMPVideoFrameFormat aFormat, GMPVideoFrame** aFrame) override;
+  GMPErr CreatePlane(GMPPlane** aPlane) override;
 
 private:
   

@@ -29,7 +29,7 @@ public:
 
 protected:
   
-  virtual bool RecvTimerExpired(const uint32_t& aTimerId) override;
+  bool RecvTimerExpired(const uint32_t& aTimerId) override;
 
 private:
   ~GMPTimerChild();
