@@ -354,6 +354,18 @@ struct BaseRect {
   T YMost() const { return y + height; }
 
   
+  T Edge(mozilla::Side aSide) const
+  {
+    switch (aSide) {
+      case NS_SIDE_TOP: return Y();
+      case NS_SIDE_RIGHT: return XMost();
+      case NS_SIDE_BOTTOM: return YMost();
+      case NS_SIDE_LEFT: return X();
+    }
+    MOZ_CRASH("Incomplete switch");
+  }
+
+  
   void SetLeftEdge(T aX) {
     MOZ_ASSERT(aX <= XMost());
     width = XMost() - aX;
