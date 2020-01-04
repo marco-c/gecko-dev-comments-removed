@@ -1066,7 +1066,7 @@ InspectorPanel.prototype = {
     yield onMutations;
 
     
-    this.selection.setNodeFront(nodes[0]);
+    this.selection.setNodeFront(nodes[0], "node-inserted");
   }),
 
   

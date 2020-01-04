@@ -553,16 +553,22 @@ MarkupView.prototype = {
 
 
 
-
   maybeFocusNewSelection: function() {
     let {reason, nodeFront} = this._inspector.selection;
 
-    if (reason !== "browser-context-menu" &&
-        reason !== "picker-node-picked") {
-      return;
-    }
+    
+    let reasonsToFocus = [
+      
+      "picker-node-picked",
+      
+      "browser-context-menu",
+      
+      "node-inserted"
+    ];
 
-    this.getContainer(nodeFront).focus();
+    if (reasonsToFocus.includes(reason)) {
+      this.getContainer(nodeFront).focus();
+    }
   },
 
   
