@@ -1696,32 +1696,6 @@ int    mp_cmp_mag(const mp_int *a, const mp_int *b)
 
 
 
-
-int    mp_cmp_int(const mp_int *a, long z)
-{
-  mp_int  tmp;
-  int     out;
-
-  ARGCHK(a != NULL, MP_EQ);
-  
-  mp_init(&tmp);
-  mp_set_int(&tmp, z);
-  out = mp_cmp(a, &tmp);
-  mp_clear(&tmp);
-
-  return out;
-
-} 
-
-
-
-
-
-
-
-
-
-
 int    mp_isodd(const mp_int *a)
 {
   ARGCHK(a != NULL, 0);

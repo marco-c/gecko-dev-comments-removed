@@ -12,6 +12,8 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include "secrng.h"
 #include "secerr.h"
 #include "prerror.h"
@@ -986,7 +988,7 @@ size_t RNG_FileUpdate(const char *fileName, size_t limit)
 	fd = fileno(file);
 	
 	PORT_Assert(fd != -1);
-	while (limit > fileBytes) {
+	while (limit > fileBytes && fd != -1) {
 	    bytes = PR_MIN(sizeof buffer, limit - fileBytes);
 	    bytes = read(fd, buffer, bytes);
 	    if (bytes <= 0)
@@ -1054,26 +1056,20 @@ ReadFileOK(char *dir, char *file)
 
 
 
-int ReadOneFile(int fileToRead)
+static int
+ReadOneFile(int fileToRead)
 {
     char *dir = "/etc";
     DIR *fd = opendir(dir);
     int resetCount = 0;
-#ifdef SOLARIS
-     
-    typedef union {
-	unsigned char space[sizeof(struct dirent) + MAXNAMELEN];
-	struct dirent dir;
-    } dirent_hack;
-    dirent_hack entry, firstEntry;
-
-#define entry_dir entry.dir
+    struct dirent *entry;
+#if defined(__sun)
+    char firstName[256];
 #else
-    struct dirent entry, firstEntry;
-#define entry_dir entry
+    char firstName[NAME_MAX + 1];
 #endif
-
-    int i, error = -1;
+    const char *name = NULL;
+    int i;
 
     if (fd == NULL) {
 	dir = PR_GetEnvSecure("HOME");
@@ -1085,33 +1081,34 @@ int ReadOneFile(int fileToRead)
 	return 1;
     }
 
+    firstName[0] = '\0';
     for (i=0; i <= fileToRead; i++) {
-	struct dirent *result = NULL;
 	do {
-	    error = readdir_r(fd, &entry_dir, &result);
-	} while (error == 0 && result != NULL  &&
-					!ReadFileOK(dir,&result->d_name[0]));
-	if (error != 0 || result == NULL)  {
+            
+
+
+	    entry = readdir(fd);
+	} while (entry != NULL && !ReadFileOK(dir, &entry->d_name[0]));
+	if (entry == NULL)  {
 	    resetCount = 1; 
-	    if (i != 0) {
+	    if (firstName[0]) {
 		
-	 	entry = firstEntry;
-	 	error = 0;
-	 	break;
+	 	name = firstName;
 	    }
-	    
 	    break;
 	}
-	if (i==0) {
+        name = entry->d_name;
+	if (i == 0) {
 	    
-	    firstEntry = entry;
+            PORT_Assert(PORT_Strlen(name) < sizeof(firstName));
+            PORT_Strncpy(firstName, name, sizeof(firstName) - 1);
+            firstName[sizeof(firstName) - 1] = '\0';
 	}
     }
 
-    if (error == 0) {
+    if (name) {
 	char filename[PATH_MAX];
-	int count = snprintf(filename, sizeof filename, 
-				"%s/%s",dir, &entry_dir.d_name[0]);
+	int count = snprintf(filename, sizeof(filename), "%s/%s",dir, name);
 	if (count >= 1) {
 	    ReadSingleFile(filename);
 	}
@@ -1155,7 +1152,7 @@ size_t RNG_SystemRNG(void *dest, size_t maxLen)
     fd = fileno(file);
     
     PORT_Assert(fd != -1);
-    while (maxLen > fileBytes) {
+    while (maxLen > fileBytes && fd != -1) {
 	bytes = maxLen - fileBytes;
 	bytes = read(fd, buffer, bytes);
 	if (bytes <= 0)

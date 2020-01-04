@@ -32,10 +32,9 @@
 #define PK12UERR_INVALIDALGORITHM 30
 
 
-
 typedef struct p12uContextStr {
-    char        *filename;    
-	PRFileDesc  *file;        
-	PRBool       error;       
-	int          errorValue;  
+    char *filename;   
+    PRFileDesc *file; 
+    PRBool error;     
+    int errorValue;   
 } p12uContext;
