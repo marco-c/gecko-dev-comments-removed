@@ -32,8 +32,8 @@ AV_FUNC(avcodec_free_frame, AV_FUNC_AVUTIL_54)
 #endif
 #if LIBAVCODEC_VERSION_MAJOR >= 55 || defined(LIBAVCODEC_ALLVERSION)
 
-AV_FUNC(av_frame_alloc, AV_FUNC_AVUTIL_55)
-AV_FUNC(av_frame_free, AV_FUNC_AVUTIL_55)
-AV_FUNC(av_frame_unref, AV_FUNC_AVUTIL_55)
+AV_FUNC(av_frame_alloc, (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57))
+AV_FUNC(av_frame_free, (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57))
+AV_FUNC(av_frame_unref, (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57))
 #endif
 #endif

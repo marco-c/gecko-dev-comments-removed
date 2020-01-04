@@ -44,8 +44,8 @@ FFmpegAudioDecoder<LIBAV_VER>::InitCodecContext()
   
   mCodecContext->thread_count = 1;
   
-  uint32_t major, minor;
-  FFmpegRuntimeLinker::GetVersion(major, minor);
+  uint32_t major, minor, micro;
+  FFmpegRuntimeLinker::GetVersion(major, minor, micro);
   
   mCodecContext->request_sample_fmt =
     (major == 53) ? AV_SAMPLE_FMT_S16 : AV_SAMPLE_FMT_FLT;
