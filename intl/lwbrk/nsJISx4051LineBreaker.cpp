@@ -404,7 +404,7 @@ IS_HYPHEN(char16_t u)
 }
 
 static int8_t
-GetClass(char32_t u)
+GetClass(uint32_t u)
 {
   if (u < 0x10000) {
     uint16_t h = u & 0xFF00;
@@ -464,8 +464,8 @@ GetClass(char32_t u)
       }
     } else if (0x3100 == h) { 
       if (l <= 0xbf) { 
-                      
-                      
+                       
+                       
         return CLASS_BREAKABLE;
       }
       if (l >= 0xf0) { 
@@ -513,7 +513,7 @@ GetClass(char32_t u)
      CLASS_CHARACTER,
      CLASS_CHARACTER,
      CLASS_CHARACTER,
-     CLASS_OPEN_LIKE_CHARACTER, 
+     CLASS_OPEN_LIKE_CHARACTER,
      CLASS_CHARACTER,
      CLASS_CHARACTER,
      CLASS_CHARACTER,
@@ -526,7 +526,7 @@ GetClass(char32_t u)
      CLASS_CLOSE_LIKE_CHARACTER,
      CLASS_CHARACTER,
      CLASS_BREAKABLE,
-     CLASS_CLOSE,
+     CLASS_CLOSE_LIKE_CHARACTER,
      CLASS_CHARACTER,
      CLASS_CHARACTER,
      CLASS_CHARACTER,
@@ -938,6 +938,8 @@ nsJISx4051LineBreaker::GetJISx4051Breaks(const char16_t* aChars, uint32_t aLengt
     }
 
     if (ch > 0xffff) {
+      
+      
       ++cur;
       aBreakBefore[cur] = false;
       state.AdvanceIndex();
