@@ -412,8 +412,8 @@ public:
 
 
 
-  static PCompositorBridgeParent*
-  Create(Transport* aTransport, ProcessId aOtherProcess);
+  static bool
+  CreateForContent(Endpoint<PCompositorBridgeParent>&& aEndpoint);
 
   struct LayerTreeState {
     LayerTreeState();
