@@ -39,69 +39,68 @@ function test_simple_breakpoint()
     let source = gThreadClient.source(aPacket.frame.where.source);
     let location = { line: gDebuggee.line0 + 2 };
 
-    source.setBreakpoint(location, function (aResponse, bpClient) {
-      gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-        
-        do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 5);
-        do_check_eq(aPacket.why.type, "resumeLimit");
-
-        gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+    source.setBreakpoint(location, Task.async(function*(aResponse, bpClient) {
+      const testCallbacks = [
+        function(aPacket) {
+          
+          do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 5);
+          do_check_eq(aPacket.why.type, "resumeLimit");
+        },
+        function(aPacket) {
           
           do_check_eq(aPacket.frame.where.line, location.line);
           do_check_neq(aPacket.why.type, "breakpoint");
           do_check_eq(aPacket.why.type, "resumeLimit");
-
-          gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-            
-            
-            do_check_eq(aPacket.frame.where.line, location.line);
-            do_check_neq(aPacket.why.type, "breakpoint");
-            do_check_eq(aPacket.why.type, "resumeLimit");
-            do_check_eq(aPacket.why.frameFinished.return.type, "undefined");
-
-            gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-              
-              do_check_eq(gDebuggee.a, 1);
-              do_check_eq(gDebuggee.b, undefined);
-              do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 5);
-              do_check_eq(aPacket.why.type, "resumeLimit");
-              do_check_eq(aPacket.poppedFrames.length, 1);
-
-              gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-                
-                do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 6);
-                do_check_neq(aPacket.why.type, "debuggerStatement");
-                do_check_eq(aPacket.why.type, "resumeLimit");
-
-                gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-                  
-                  do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 7);
-                  do_check_neq(aPacket.why.type, "debuggerStatement");
-                  do_check_eq(aPacket.why.type, "resumeLimit");
-
-                  
-                  bpClient.remove(() => gThreadClient.resume(() => gClient.close(gCallback)));
-
-                });
-                
-                gThreadClient.stepIn();
-              });
-              
-              gThreadClient.stepIn();
-            });
-            
-            gThreadClient.stepIn();
-          });
+        },
+        function(aPacket) {
           
-          gThreadClient.stepIn();
-        });
+          do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 3);
+          do_check_neq(aPacket.why.type, "breakpoint");
+          do_check_eq(aPacket.why.type, "resumeLimit");
+        },
+        function(aPacket) {
+          
+          
+          do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 3);
+          do_check_neq(aPacket.why.type, "breakpoint");
+          do_check_eq(aPacket.why.type, "resumeLimit");
+          do_check_eq(aPacket.why.frameFinished.return.type, "undefined");
+        },
+        function(aPacket) {
+          
+          do_check_eq(gDebuggee.a, 1);
+          do_check_eq(gDebuggee.b, undefined);
+          do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 5);
+          do_check_eq(aPacket.why.type, "resumeLimit");
+          do_check_eq(aPacket.poppedFrames.length, 1);
+        },
+        function(aPacket) {
+          
+          do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 6);
+          do_check_neq(aPacket.why.type, "debuggerStatement");
+          do_check_eq(aPacket.why.type, "resumeLimit");
+        },
+        function(aPacket) {
+          
+          do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 7);
+          do_check_neq(aPacket.why.type, "debuggerStatement");
+          do_check_eq(aPacket.why.type, "resumeLimit");
+        },
+      ];
 
-        
+      for (let callback of testCallbacks) {
+        let waiter = waitForPause(gThreadClient);
         gThreadClient.stepIn();
-      });
+        let packet = yield waiter;
+        callback(packet);
+      }
+
       
+      let waiter = waitForPause(gThreadClient);
       gThreadClient.stepIn();
-    });
+      yield waiter;
+      bpClient.remove(() => gThreadClient.resume(() => gClient.close(gCallback)));
+    }));
   });
 
   Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
