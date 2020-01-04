@@ -487,6 +487,7 @@ private:
                                     JS::Handle<JSObject *> aScopeChain,
                                     JS::CompileOptions *aOptions);
 
+  uint32_t NumberOfProcessors();
   nsresult PrepareLoadedRequest(nsScriptLoadRequest* aRequest,
                                 nsIStreamLoader* aLoader,
                                 nsresult aStatus,
@@ -530,6 +531,7 @@ private:
   
   nsTArray< nsRefPtr<nsScriptLoader> > mPendingChildLoaders;
   uint32_t mBlockerCount;
+  uint32_t mNumberOfProcessors;
   bool mEnabled;
   bool mDeferEnabled;
   bool mDocumentParsingDone;
