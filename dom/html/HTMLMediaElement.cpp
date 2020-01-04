@@ -469,8 +469,11 @@ class HTMLMediaElement::ChannelLoader final {
 public:
   NS_INLINE_DECL_REFCOUNTING(ChannelLoader);
 
-  nsresult Load(HTMLMediaElement* aElement)
+  void LoadInternal(HTMLMediaElement* aElement)
   {
+    if (mCancelled) {
+      return;
+    }
 
     
     nsSecurityFlags securityFlags = aElement->ShouldCheckAllowOrigin()
@@ -511,7 +514,9 @@ public:
                                 nsIChannel::LOAD_CALL_CONTENT_SNIFFERS);
 
     if (NS_FAILED(rv)) {
-      return rv;
+      
+      aElement->NotifyLoadError();
+      return;
     }
 
     
@@ -545,7 +550,9 @@ public:
 
     rv = channel->AsyncOpen2(loadListener);
     if (NS_FAILED(rv)) {
-      return rv;
+      
+      aElement->NotifyLoadError();
+      return;
     }
 
     
@@ -556,16 +563,27 @@ public:
     
     
     nsContentUtils::RegisterShutdownObserver(loadListener);
-    return NS_OK;
+  }
+
+  nsresult Load(HTMLMediaElement* aElement)
+  {
+    
+    
+    return NS_DispatchToMainThread(NewRunnableMethod<HTMLMediaElement*>(
+      this, &ChannelLoader::LoadInternal, aElement));
   }
 
   void Cancel()
   {
-    mChannel->Cancel(NS_BINDING_ABORTED);
-    mChannel = nullptr;
+    mCancelled = true;
+    if (mChannel) {
+      mChannel->Cancel(NS_BINDING_ABORTED);
+      mChannel = nullptr;
+    }
   }
 
   void Done() {
+    MOZ_ASSERT(mChannel);
     
     
     mChannel = nullptr;
@@ -609,6 +627,8 @@ private:
   
   
   nsCOMPtr<nsIChannel> mChannel;
+
+  bool mCancelled = false;
 };
 
 NS_IMPL_ADDREF_INHERITED(HTMLMediaElement, nsGenericHTMLElement)
