@@ -11,13 +11,13 @@ import static org.mozilla.gecko.tests.helpers.AssertionHelper.fAssertTrue;
 
 import java.util.List;
 
-import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.menu.MenuItemActionBar;
 import org.mozilla.gecko.menu.MenuItemDefault;
 import org.mozilla.gecko.tests.UITestContext;
 import org.mozilla.gecko.tests.helpers.DeviceHelper;
 import org.mozilla.gecko.tests.helpers.WaitHelper;
+import org.mozilla.gecko.util.HardwareUtils;
 
 import android.text.TextUtils;
 import android.view.View;
@@ -31,7 +31,7 @@ import com.jayway.android.robotium.solo.Solo;
 
 
 public class AppMenuComponent extends BaseComponent {
-    private static final long MAX_WAITTIME_FOR_MENU_UPDATE_IN_MS = 7500L;
+    private static final long MAX_WAITTIME_FOR_MENU_UPDATE_IN_MS = 1000L;
 
     private Boolean hasLegacyMenu = null;
 
@@ -245,7 +245,7 @@ public class AppMenuComponent extends BaseComponent {
 
         
         
-        if (DeviceHelper.isTablet() || AppConstants.Versions.preHC) {
+        if (HardwareUtils.hasMenuButton() || DeviceHelper.isTablet()) {
             mSolo.sendKey(Solo.MENU);
         } else {
             pressOverflowMenuButton();
@@ -288,9 +288,7 @@ public class AppMenuComponent extends BaseComponent {
 
 
     private boolean isMenuOpen() {
-        
-        
-        return isMenuOpen(MenuItem.NEW_TAB.getString(mSolo)) || isMenuOpen(MenuItem.PAGE.getString(mSolo));
+        return isMenuOpen(MenuItem.NEW_TAB.getString(mSolo));
     }
 
     private boolean isLegacyMoreMenuOpen() {
