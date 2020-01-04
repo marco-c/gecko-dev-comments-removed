@@ -113,7 +113,7 @@
         ok(mutationCount == 19, "(20) Mutation listener should have been called! ["+ mutationCount + "]");
       }
     ,false);
-    synthesizeMouseAtPoint(5, 5, {}, window);
+    synthesizeMouseAtCenter(inputelement, {}, window);
     SimpleTest.finish();
   }
 
