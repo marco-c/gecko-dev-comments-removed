@@ -302,10 +302,6 @@ public:
     mIsSuspended = aState;
   }
 
-  AbstractCanonical<bool>* CanonicalIsSuspended() {
-    return &mIsSuspended;
-  }
-
 protected:
   virtual ~MediaDecoderReader();
 
@@ -451,7 +447,7 @@ private:
   
   bool mAudioDiscontinuity;
   bool mVideoDiscontinuity;
-  Canonical<bool> mIsSuspended;
+  bool mIsSuspended;
 
   MediaEventListener mDataArrivedListener;
 };

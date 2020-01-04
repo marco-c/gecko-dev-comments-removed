@@ -381,8 +381,6 @@ protected:
 
   void BufferedRangeUpdated();
 
-  void ReaderSuspendedChanged();
-
   
   
 
@@ -523,8 +521,7 @@ protected:
   
   
   
-  
-  void InitiateDecodeRecoverySeek(MediaDecoderReader::TargetQueues aQueues);
+  void InitiateVideoDecodeRecoverySeek();
 
   nsresult DispatchAudioDecodeTaskIfNeeded();
 
@@ -977,8 +974,6 @@ private:
 private:
   
   Mirror<media::TimeIntervals> mBuffered;
-
-  Mirror<bool> mIsReaderSuspended;
 
   
   Mirror<media::NullableTimeUnit> mEstimatedDuration;
