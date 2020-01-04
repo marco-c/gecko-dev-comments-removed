@@ -431,7 +431,35 @@ struct Pool
 
 
 
-template <size_t SliceSize, size_t InstSize, class Inst, class Asm>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <size_t SliceSize, size_t InstSize, class Inst, class Asm,
+          unsigned NumShortBranchRanges = 0>
 struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst>
 {
   private:
@@ -503,7 +531,16 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     };
 
     
+    
     Vector<PoolInfo, 8, LifoAllocPolicy<Fallible>> poolInfo_;
+
+    
+    
+    
+    
+    
+    
+    BranchDeadlineSet<NumShortBranchRanges> branchDeadlines_;
 
     
     bool canNotPlacePool_;
@@ -560,6 +597,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
         pool_(poolMaxOffset, pcBias, this->lifoAlloc_),
         instBufferAlign_(instBufferAlign),
         poolInfo_(this->lifoAlloc_),
+        branchDeadlines_(this->lifoAlloc_),
         canNotPlacePool_(false),
 #ifdef DEBUG
         canNotPlacePoolStartOffset_(0),
@@ -613,18 +651,65 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     static const unsigned OOM_FAIL = unsigned(-1);
     static const unsigned NO_DATA = unsigned(-2);
 
-    unsigned insertEntryForwards(unsigned numInst, unsigned numPoolEntries, uint8_t* inst, uint8_t* data) {
+    
+    
+    bool hasSpaceForInsts(unsigned numInsts, unsigned numPoolEntries) const
+    {
         size_t nextOffset = sizeExcludingCurrentPool();
-        size_t poolOffset = nextOffset + (numInst + guardSize_ + headerSize_) * InstSize;
+        
+        
+        
+        size_t poolOffset = nextOffset + (numInsts + guardSize_ + headerSize_) * InstSize;
 
         
+        if (pool_.checkFull(poolOffset))
+            return false;
 
+        
+        if (!branchDeadlines_.empty()) {
+            size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
+            size_t poolEnd =
+              poolOffset + pool_.getPoolSize() + numPoolEntries * sizeof(PoolAllocUnit);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            
+            size_t secondaryVeneers =
+              guardSize_ * (branchDeadlines_.size() - branchDeadlines_.maxRangeSize());
+
+            if (deadline < poolEnd + secondaryVeneers)
+                return false;
+        }
+
+        return true;
+    }
+
+    unsigned insertEntryForwards(unsigned numInst, unsigned numPoolEntries, uint8_t* inst, uint8_t* data) {
         
         
         if (numPoolEntries)
-            pool_.updateLimiter(BufferOffset(nextOffset));
+            pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
 
-        if (pool_.checkFull(poolOffset)) {
+        if (!hasSpaceForInsts(numInst, numPoolEntries)) {
             if (numPoolEntries)
                 JitSpew(JitSpew_Pools, "[%d] Inserting pool entry caused a spill", id);
             else
@@ -656,14 +741,9 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     
     BufferOffset nextInstrOffset()
     {
-        size_t nextOffset = sizeExcludingCurrentPool();
-        
-        size_t poolOffset =
-          nextOffset + (1 + guardSize_ + headerSize_) * InstSize;
-        if (pool_.checkFull(poolOffset)) {
-            JitSpew(JitSpew_Pools,
-                    "[%d] nextInstrOffset @ %d caused a constant pool spill",
-                    id, nextOffset);
+        if (!hasSpaceForInsts( 1,  0)) {
+            JitSpew(JitSpew_Pools, "[%d] nextInstrOffset @ %d caused a constant pool spill", id,
+                    this->nextOffset().getOffset());
             finishPool();
         }
         return this->nextOffset();
@@ -719,6 +799,46 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
 
     BufferOffset putInt(uint32_t value, bool markAsBranch = false) {
         return allocEntry(1, 0, (uint8_t*)&value, nullptr, nullptr, markAsBranch);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    void registerBranchDeadline(unsigned rangeIdx, BufferOffset deadline)
+    {
+        if (!this->oom() && !branchDeadlines_.addDeadline(rangeIdx, deadline))
+            this->fail_oom();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    void unregisterBranchDeadline(unsigned rangeIdx, BufferOffset deadline)
+    {
+        if (!this->oom())
+            branchDeadlines_.removeDeadline(rangeIdx, deadline);
     }
 
   private:
@@ -803,9 +923,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
         
         
         
-        size_t poolOffset = sizeExcludingCurrentPool() + (maxInst + guardSize_ + headerSize_) * InstSize;
-
-        if (pool_.checkFull(poolOffset)) {
+        if (!hasSpaceForInsts(maxInst, 0)) {
             JitSpew(JitSpew_Pools, "[%d] No-Pool instruction(%d) caused a spill.", id,
                     sizeExcludingCurrentPool());
             finishPool();
@@ -830,7 +948,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     }
 
     void align(unsigned alignment) {
-        MOZ_ASSERT(IsPowerOfTwo(alignment));
+        MOZ_ASSERT(IsPowerOfTwo(alignment) && alignment >= InstSize);
 
         
         insertNopFill();
@@ -843,9 +961,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
 
         
         
-        uint32_t poolOffset = sizeExcludingCurrentPool() + requiredFill
-                              + (1 + guardSize_ + headerSize_) * InstSize;
-        if (pool_.checkFull(poolOffset)) {
+        if (!hasSpaceForInsts(requiredFill / InstSize + 1, 0)) {
             
             JitSpew(JitSpew_Pools, "[%d] Alignment of %d at %d caused a spill.", id, alignment,
                     sizeExcludingCurrentPool());
