@@ -282,10 +282,10 @@ struct InternalGCMethods<Value>
         if (next.isObject() && (sb = reinterpret_cast<gc::Cell*>(&next.toObject())->storeBuffer())) {
             
             
-            if (prev.isObject() && reinterpret_cast<gc::Cell*>(&prev.toObject())->storeBuffer()) {
-                sb->assertHasValueEdge(vp);
+            
+            
+            if (prev.isObject() && reinterpret_cast<gc::Cell*>(&prev.toObject())->storeBuffer())
                 return;
-            }
             sb->putValue(vp);
             return;
         }
