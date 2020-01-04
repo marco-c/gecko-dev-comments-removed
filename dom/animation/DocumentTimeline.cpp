@@ -110,6 +110,8 @@ void
 DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
 {
   MOZ_ASSERT(mIsObservingRefreshDriver);
+  MOZ_ASSERT(GetRefreshDriver(),
+             "Should be able to reach refresh driver from within WillRefresh");
 
   bool needsTicks = false;
   nsTArray<Animation*> animationsToRemove(mAnimations.Count());
@@ -145,8 +147,11 @@ DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
   if (!needsTicks) {
     
     
+    
+    
+    
     MOZ_ASSERT(GetRefreshDriver(),
-               "Refresh driver should still be valid inside WillRefresh");
+               "Refresh driver should still be valid at end of WillRefresh");
     GetRefreshDriver()->RemoveRefreshObserver(this, Flush_Style);
     mIsObservingRefreshDriver = false;
   }
