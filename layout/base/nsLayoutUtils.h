@@ -2722,6 +2722,15 @@ public:
   static void SetScrollPositionClampingScrollPortSize(nsIPresShell* aPresShell,
                                                       CSSSize aSize);
 
+  
+
+
+
+
+
+
+  static bool CanScrollOriginClobberApz(nsIAtom* aScrollOrigin);
+
   static FrameMetrics ComputeFrameMetrics(nsIFrame* aForFrame,
                                           nsIFrame* aScrollFrame,
                                           nsIContent* aContent,

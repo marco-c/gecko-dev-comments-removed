@@ -1725,9 +1725,15 @@ private:
 void
 ScrollFrameHelper::AsyncScroll::InitPreferences(TimeStamp aTime, nsIAtom *aOrigin)
 {
-  if (!aOrigin){
+  if (!aOrigin || aOrigin == nsGkAtoms::restore) {
+    
+    
+    
     aOrigin = nsGkAtoms::other;
   }
+  
+  
+  MOZ_ASSERT(aOrigin != nsGkAtoms::apz);
 
   
   if (!mIsFirstIteration && aOrigin == mOrigin) {
@@ -3938,7 +3944,8 @@ ScrollFrameHelper::ScrollToRestoredPosition()
         scrollToPos.x = mScrollPort.x -
           (mScrollPort.XMost() - scrollToPos.x - mScrolledFrame->GetRect().width);
       nsWeakFrame weakFrame(mOuter);
-      ScrollTo(scrollToPos, nsIScrollableFrame::INSTANT);
+      ScrollToWithOrigin(scrollToPos, nsIScrollableFrame::INSTANT,
+                         nsGkAtoms::restore, nullptr);
       if (!weakFrame.IsAlive()) {
         return;
       }

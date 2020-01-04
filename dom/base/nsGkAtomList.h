@@ -104,7 +104,6 @@ GK_ATOM(applet, "applet")
 GK_ATOM(applyImports, "apply-imports")
 GK_ATOM(applyTemplates, "apply-templates")
 GK_ATOM(mozapptype, "mozapptype")
-GK_ATOM(apz, "apz")
 GK_ATOM(archive, "archive")
 GK_ATOM(area, "area")
 GK_ATOM(arrow, "arrow")
@@ -2271,12 +2270,19 @@ GK_ATOM(ForwardMail, "ForwardMail")
 GK_ATOM(ReplyToMail, "ReplyToMail")
 
 
+
+
+
+
 GK_ATOM(mouseWheel, "mouseWheel")  
 GK_ATOM(pixels,     "pixels")
 GK_ATOM(lines,      "lines")
 GK_ATOM(pages,      "pages")
 GK_ATOM(scrollbars, "scrollbars")
 GK_ATOM(other,      "other")
+
+GK_ATOM(apz,        "apz")
+GK_ATOM(restore,    "restore")
 
 #ifdef ACCESSIBILITY
 GK_ATOM(alert, "alert")
