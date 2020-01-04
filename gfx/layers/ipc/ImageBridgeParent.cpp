@@ -58,7 +58,7 @@ ImageBridgeParent::ImageBridgeParent(MessageLoop* aLoop,
   : mMessageLoop(aLoop)
   , mTransport(aTransport)
   , mSetChildThreadPriority(false)
-  , mStopped(false)
+  , mClosed(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
   sMainLoop = MessageLoop::current();
@@ -71,6 +71,8 @@ ImageBridgeParent::ImageBridgeParent(MessageLoop* aLoop,
   CompositableMap::Create();
   sImageBridges[aChildProcessId] = this;
   SetOtherProcessId(aChildProcessId);
+  
+  mSelfRef = this;
 }
 
 ImageBridgeParent::~ImageBridgeParent()
@@ -95,9 +97,19 @@ ImageBridgeParent::~ImageBridgeParent()
 void
 ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
 {
+  
+  mClosed = true;
+
   MessageLoop::current()->PostTask(
     FROM_HERE,
     NewRunnableMethod(this, &ImageBridgeParent::DeferredDestroy));
+
+  
+  
+  
+  
+  
+  
 }
 
 bool
@@ -186,14 +198,13 @@ ImageBridgeParent::Create(Transport* aTransport, ProcessId aChildProcessId)
 {
   MessageLoop* loop = CompositorBridgeParent::CompositorLoop();
   RefPtr<ImageBridgeParent> bridge = new ImageBridgeParent(loop, aTransport, aChildProcessId);
-  bridge->mSelfRef = bridge;
   loop->PostTask(FROM_HERE,
                  NewRunnableFunction(ConnectImageBridgeInParentProcess,
                                      bridge.get(), aTransport, aChildProcessId));
   return bridge.get();
 }
 
-bool ImageBridgeParent::RecvWillStop()
+bool ImageBridgeParent::RecvWillClose()
 {
   
   
@@ -205,31 +216,6 @@ bool ImageBridgeParent::RecvWillStop()
     RefPtr<TextureHost> tex = TextureHost::AsTextureHost(textures[i]);
     tex->DeallocateDeviceData();
   }
-  return true;
-}
-
-static void
-ReleaseImageBridgeParent(ImageBridgeParent* aImageBridgeParent)
-{
-  RELEASE_MANUALLY(aImageBridgeParent);
-}
-
-bool ImageBridgeParent::RecvStop()
-{
-  
-  
-
-  
-  mStopped = true;
-
-  
-  
-  
-  
-  ADDREF_MANUALLY(this);
-  MessageLoop::current()->PostTask(
-    FROM_HERE,
-    NewRunnableFunction(&ReleaseImageBridgeParent, this));
   return true;
 }
 
@@ -353,9 +339,8 @@ ImageBridgeParent::NotifyImageComposites(nsTArray<ImageCompositeNotification>& a
 void
 ImageBridgeParent::DeferredDestroy()
 {
-  MOZ_ASSERT(mCompositorThreadHolder);
   mCompositorThreadHolder = nullptr;
-  mSelfRef = nullptr;
+  mSelfRef = nullptr; 
 }
 
 ImageBridgeParent*
@@ -398,7 +383,7 @@ ImageBridgeParent::AllocShmem(size_t aSize,
                       ipc::SharedMemory::SharedMemoryType aType,
                       ipc::Shmem* aShmem)
 {
-  if (mStopped) {
+  if (mClosed) {
     return false;
   }
   return PImageBridgeParent::AllocShmem(aSize, aType, aShmem);
@@ -409,7 +394,7 @@ ImageBridgeParent::AllocUnsafeShmem(size_t aSize,
                       ipc::SharedMemory::SharedMemoryType aType,
                       ipc::Shmem* aShmem)
 {
-  if (mStopped) {
+  if (mClosed) {
     return false;
   }
   return PImageBridgeParent::AllocUnsafeShmem(aSize, aType, aShmem);
@@ -418,7 +403,7 @@ ImageBridgeParent::AllocUnsafeShmem(size_t aSize,
 void
 ImageBridgeParent::DeallocShmem(ipc::Shmem& aShmem)
 {
-  if (mStopped) {
+  if (mClosed) {
     return;
   }
   PImageBridgeParent::DeallocShmem(aShmem);

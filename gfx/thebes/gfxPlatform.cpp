@@ -874,20 +874,25 @@ gfxPlatform::ShutdownLayersIPC()
     }
     sLayersIPCIsUp = false;
 
-    if (XRE_IsParentProcess())
-    {
-      
-      
-      gfx::VRManagerChild::ShutDown();
-      layers::ImageBridgeChild::ShutDown();
+    if (XRE_IsContentProcess()) {
+
+        gfx::VRManagerChild::ShutDown();
+        layers::ImageBridgeChild::ShutDown();
+
+    } else if (XRE_IsParentProcess()) {
+        gfx::VRManagerChild::ShutDown();
+        layers::ImageBridgeChild::ShutDown();
+
 #ifdef MOZ_WIDGET_GONK
-      layers::SharedBufferManagerChild::ShutDown();
+        layers::SharedBufferManagerChild::ShutDown();
 #endif
 
-      layers::CompositorBridgeParent::ShutDown();
-	} else if (XRE_GetProcessType() == GeckoProcessType_Content) {
-		gfx::VRManagerChild::ShutDown();
-	}
+        
+        layers::CompositorBridgeParent::ShutDown();
+    } else {
+      
+      
+    }
 }
 
 gfxPlatform::~gfxPlatform()
