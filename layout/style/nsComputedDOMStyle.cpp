@@ -2447,6 +2447,8 @@ nsComputedDOMStyle::GetGridTrackSize(const nsStyleCoord& aMinValue,
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::GetGridTemplateColumnsRows(const nsStyleGridTemplate& aTrackList,
+                                               const uint32_t aNumLeadingImplicitTracks,
+                                               const uint32_t aNumExplicitTracks,
                                                const nsTArray<nscoord>* aTrackSizes)
 {
   if (aTrackList.mIsSubgrid) {
@@ -2484,22 +2486,24 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(const nsStyleGridTemplate& aTrack
   MOZ_ASSERT(aTrackList.mMaxTrackSizingFunctions.Length() == numSizes,
              "Different number of min and max track sizing functions");
   if (aTrackSizes) {
+    DebugOnly<bool> isAutoFill =
+      aTrackList.HasRepeatAuto() && aTrackList.mIsAutoFill;
+    DebugOnly<bool> isAutoFit =
+      aTrackList.HasRepeatAuto() && !aTrackList.mIsAutoFill;
+    MOZ_ASSERT(aNumExplicitTracks == numSizes ||
+               (isAutoFill && aNumExplicitTracks >= numSizes) ||
+               (isAutoFit && aNumExplicitTracks + 1 >= numSizes),
+               "expected all explicit tracks (or possibly one less, if there's "
+               "an 'auto-fit' track, since that can collapse away)");
     numSizes = aTrackSizes->Length();
-    MOZ_ASSERT(numSizes > 0 ||
-               (aTrackList.HasRepeatAuto() && !aTrackList.mIsAutoFill),
-               "only 'auto-fit' can result in zero tracks");
   }
+
   
   if (numSizes == 0) {
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
     val->SetIdent(eCSSKeyword_none);
     return val.forget();
   }
-  
-  
-  MOZ_ASSERT(aTrackList.mLineNameLists.Length() ==
-               aTrackList.mMinTrackSizingFunctions.Length() + 1,
-             "Unexpected number of line name lists");
 
   RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
   if (aTrackSizes) {
@@ -2508,49 +2512,69 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(const nsStyleGridTemplate& aTrack
     
     
     
-    int32_t endOfRepeat = 0;  
-    int32_t offsetToLastRepeat = 0;
-    if (aTrackList.HasRepeatAuto()) {
-      
-      offsetToLastRepeat = numSizes + 1 - aTrackList.mLineNameLists.Length();
-      endOfRepeat = aTrackList.mRepeatAutoIndex + offsetToLastRepeat + 1;
+    MOZ_ASSERT(numSizes > 0 &&
+               numSizes >= aNumLeadingImplicitTracks + aNumExplicitTracks);
+
+    
+    for (uint32_t i = 0; i < aNumLeadingImplicitTracks; ++i) {
+      RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
+      val->SetAppUnits((*aTrackSizes)[i]);
+      valueList->AppendCSSValue(val.forget());
     }
-    MOZ_ASSERT(numSizes > 0);
-    for (int32_t i = 0;; i++) {
+
+    
+    if (aNumExplicitTracks) {
+      int32_t endOfRepeat = 0;  
+      int32_t offsetToLastRepeat = 0;
       if (aTrackList.HasRepeatAuto()) {
-        if (i == aTrackList.mRepeatAutoIndex) {
-          const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[i];
-          if (i == endOfRepeat) {
-            
-            
-            AppendGridLineNames(valueList, lineNames,
-                                aTrackList.mLineNameLists[i + 1]);
-          } else {
-            AppendGridLineNames(valueList, lineNames,
+        
+        offsetToLastRepeat = aNumExplicitTracks + 1 - aTrackList.mLineNameLists.Length();
+        endOfRepeat = aTrackList.mRepeatAutoIndex + offsetToLastRepeat + 1;
+      }
+      for (int32_t i = 0;; i++) {
+        if (aTrackList.HasRepeatAuto()) {
+          if (i == aTrackList.mRepeatAutoIndex) {
+            const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[i];
+            if (i == endOfRepeat) {
+              
+              
+              AppendGridLineNames(valueList, lineNames,
+                                  aTrackList.mLineNameLists[i + 1]);
+            } else {
+              AppendGridLineNames(valueList, lineNames,
+                                  aTrackList.mRepeatAutoLineNameListBefore);
+            }
+          } else if (i == endOfRepeat) {
+            const nsTArray<nsString>& lineNames =
+              aTrackList.mLineNameLists[aTrackList.mRepeatAutoIndex + 1];
+            AppendGridLineNames(valueList,
+                                aTrackList.mRepeatAutoLineNameListAfter,
+                                lineNames);
+          } else if (i > aTrackList.mRepeatAutoIndex && i < endOfRepeat) {
+            AppendGridLineNames(valueList,
+                                aTrackList.mRepeatAutoLineNameListAfter,
                                 aTrackList.mRepeatAutoLineNameListBefore);
+          } else {
+            uint32_t j = i > endOfRepeat ? i - offsetToLastRepeat : i;
+            const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[j];
+            AppendGridLineNames(valueList, lineNames);
           }
-        } else if (i == endOfRepeat) {
-          const nsTArray<nsString>& lineNames =
-            aTrackList.mLineNameLists[aTrackList.mRepeatAutoIndex + 1];
-          AppendGridLineNames(valueList,
-                              aTrackList.mRepeatAutoLineNameListAfter,
-                              lineNames);
-        } else if (i > aTrackList.mRepeatAutoIndex && i < endOfRepeat) {
-          AppendGridLineNames(valueList,
-                              aTrackList.mRepeatAutoLineNameListAfter,
-                              aTrackList.mRepeatAutoLineNameListBefore);
         } else {
-          uint32_t j = i > endOfRepeat ? i - offsetToLastRepeat : i;
-          const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[j];
+          const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[i];
           AppendGridLineNames(valueList, lineNames);
         }
-      } else {
-        const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[i];
-        AppendGridLineNames(valueList, lineNames);
+        if (uint32_t(i) == aNumExplicitTracks) {
+          break;
+        }
+        RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
+        val->SetAppUnits((*aTrackSizes)[i + aNumLeadingImplicitTracks]);
+        valueList->AppendCSSValue(val.forget());
       }
-      if (uint32_t(i) == numSizes) {
-        break;
-      }
+    }
+
+    
+    for (uint32_t i = aNumLeadingImplicitTracks + aNumExplicitTracks;
+         i < numSizes; ++i) {
       RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
       val->SetAppUnits((*aTrackSizes)[i]);
       valueList->AppendCSSValue(val.forget());
@@ -2627,30 +2651,44 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetGridTemplateColumns()
 {
   const nsTArray<nscoord>* trackSizes = nullptr;
+  uint32_t numLeadingImplicitTracks = 0;
+  uint32_t numExplicitTracks = 0;
   if (mInnerFrame) {
     nsIFrame* gridContainerCandidate = mInnerFrame->GetContentInsertionFrame();
     if (gridContainerCandidate &&
         gridContainerCandidate->GetType() == nsGkAtoms::gridContainerFrame) {
       auto gridContainer = static_cast<nsGridContainerFrame*>(gridContainerCandidate);
       trackSizes = gridContainer->GetComputedTemplateColumns();
+      numLeadingImplicitTracks = gridContainer->NumImplicitLeadingCols();
+      numExplicitTracks = gridContainer->NumExplicitCols();
     }
   }
-  return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateColumns, trackSizes);
+  return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateColumns,
+                                    numLeadingImplicitTracks,
+                                    numExplicitTracks,
+                                    trackSizes);
 }
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetGridTemplateRows()
 {
   const nsTArray<nscoord>* trackSizes = nullptr;
+  uint32_t numLeadingImplicitTracks = 0;
+  uint32_t numExplicitTracks = 0;
   if (mInnerFrame) {
     nsIFrame* gridContainerCandidate = mInnerFrame->GetContentInsertionFrame();
     if (gridContainerCandidate &&
         gridContainerCandidate->GetType() == nsGkAtoms::gridContainerFrame) {
       auto gridContainer = static_cast<nsGridContainerFrame*>(gridContainerCandidate);
       trackSizes = gridContainer->GetComputedTemplateRows();
-    }
+      numLeadingImplicitTracks = gridContainer->NumImplicitLeadingRows();
+      numExplicitTracks = gridContainer->NumExplicitRows();
+     }
   }
-  return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateRows, trackSizes);
+  return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateRows,
+                                    numLeadingImplicitTracks,
+                                    numExplicitTracks,
+                                    trackSizes);
 }
 
 already_AddRefed<CSSValue>
