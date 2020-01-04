@@ -561,7 +561,6 @@ pref("layers.async-pan-zoom.enabled", true);
 pref("apz.axis_lock.mode", 1);
 pref("apz.fling_stop_on_tap_threshold", "0.08");
 #endif
-pref("apz.allow_zooming", true);
 pref("layers.progressive-paint", true);
 pref("layers.low-precision-buffer", true);
 pref("layers.low-precision-resolution", "0.25");
@@ -910,9 +909,6 @@ pref("layout.accessiblecaret.use_long_tap_injector", false);
 
 
 pref("layout.accessiblecaret.extendedvisibility", true);
-
-
-pref("layout.accessiblecaret.hapticfeedback", true);
 
 
 #ifdef RELEASE_BUILD
