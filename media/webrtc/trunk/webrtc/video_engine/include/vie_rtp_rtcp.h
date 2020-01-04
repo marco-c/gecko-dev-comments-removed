@@ -115,6 +115,11 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
   
   
+  virtual int GetRemoteRID(const int video_channel,
+                           char rid[256]) const = 0;
+
+  
+  
   virtual int SetRtxSendPayloadType(const int video_channel,
                                     const uint8_t payload_type) = 0;
 
@@ -264,6 +269,15 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int SetReceiveVideoRotationStatus(int video_channel,
                                             bool enable,
                                             int id) = 0;
+
+  virtual int SetSendRIDStatus(int video_channel,
+                               bool enable,
+                               int id,
+                               const char *rid) = 0;
+
+  virtual int SetReceiveRIDStatus(int video_channel,
+                                  bool enable,
+                                  int id) = 0;
 
   
   

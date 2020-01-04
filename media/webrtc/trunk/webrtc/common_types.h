@@ -572,6 +572,7 @@ enum { kConfigParameterSize = 128};
 enum { kPayloadNameSize = 32};
 enum { kMaxSimulcastStreams = 4};
 enum { kMaxTemporalStreams = 4};
+enum { kRIDSize = 32};
 
 enum VideoCodecComplexity
 {
@@ -685,6 +686,7 @@ struct SimulcastStream {
   unsigned int        targetBitrate;  
   unsigned int        minBitrate;  
   unsigned int        qpMax; 
+  char                rid[kRIDSize];
 
   bool operator==(const SimulcastStream& other) const {
     return width == other.width &&
@@ -693,7 +695,8 @@ struct SimulcastStream {
            maxBitrate == other.maxBitrate &&
            targetBitrate == other.targetBitrate &&
            minBitrate == other.minBitrate &&
-           qpMax == other.qpMax;
+           qpMax == other.qpMax &&
+           strcmp(rid, other.rid) == 0;
   }
 
   bool operator!=(const SimulcastStream& other) const {
@@ -728,6 +731,7 @@ struct VideoCodec {
 
   unsigned int        qpMax;
   unsigned char       numberOfSimulcastStreams;
+  unsigned char       ridId;
   SimulcastStream     simulcastStream[kMaxSimulcastStreams];
 
   VideoCodecMode      mode;
@@ -848,6 +852,10 @@ struct RTPHeaderExtension {
   
   bool hasVideoRotation;
   uint8_t videoRotation;
+
+  
+  bool hasRID;
+  char *rid; 
 };
 
 struct RTPHeader {

@@ -27,6 +27,8 @@ const size_t kAbsoluteSendTimeLength = 4;
 const size_t kVideoRotationLength = 2;
 const size_t kTransportSequenceNumberLength = 3;
 
+const size_t kRIDLength = 4; 
+
 struct HeaderExtension {
   HeaderExtension(RTPExtensionType extension_type)
       : type(extension_type), length(0), active(true) {
@@ -57,6 +59,9 @@ struct HeaderExtension {
         break;
       case kRtpExtensionTransportSequenceNumber:
         length = kTransportSequenceNumberLength;
+        break;
+      case kRtpExtensionRID:
+        length = kRIDLength;
         break;
       default:
         assert(false);

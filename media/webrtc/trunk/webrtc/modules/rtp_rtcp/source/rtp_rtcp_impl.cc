@@ -317,6 +317,11 @@ void ModuleRtpRtcpImpl::SetCsrcs(const std::vector<uint32_t>& csrcs) {
   rtp_sender_.SetCsrcs(csrcs);
 }
 
+int32_t ModuleRtpRtcpImpl::SetRID(const char *rid) {
+  
+  return rtp_sender_.SetRID(rid);
+}
+
 
 
 RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {

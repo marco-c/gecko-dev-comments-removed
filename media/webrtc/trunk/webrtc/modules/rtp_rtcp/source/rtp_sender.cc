@@ -131,6 +131,7 @@ RTPSender::RTPSender(int32_t id,
       rotation_(kVideoRotation_0),
       cvo_mode_(kCVONone),
       transport_sequence_number_(0),
+      rid_(NULL),
       
       nack_byte_count_times_(),
       nack_byte_count_(),
@@ -261,6 +262,18 @@ void RTPSender::SetVideoRotation(VideoRotation rotation) {
 int32_t RTPSender::SetTransportSequenceNumber(uint16_t sequence_number) {
   CriticalSectionScoped cs(send_critsect_.get());
   transport_sequence_number_ = sequence_number;
+  return 0;
+}
+
+int32_t RTPSender::SetRID(const char* rid) {
+  CriticalSectionScoped cs(send_critsect_.get());
+  
+  if (!rid_ || strlen(rid_) < strlen(rid)) {
+    
+    delete [] rid_;
+    rid_ = new char[strlen(rid)+1];
+  }
+  strcpy(rid_, rid);
   return 0;
 }
 
@@ -1221,6 +1234,9 @@ uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer,
       case kRtpExtensionTransportSequenceNumber:
         block_length = BuildTransportSequenceNumberExtension(extension_data);
         break;
+      case kRtpExtensionRID:
+        block_length = BuildRIDExtension(extension_data);
+        break;
       default:
         assert(false);
     }
@@ -1394,6 +1410,30 @@ uint8_t RTPSender::BuildTransportSequenceNumberExtension(
   pos += 2;
   assert(pos == kTransportSequenceNumberLength);
   return kTransportSequenceNumberLength;
+}
+
+uint8_t RTPSender::BuildRIDExtension(
+    uint8_t* data_buffer) const {
+  
+  
+  
+  
+  
+
+  
+  uint8_t id;
+  if (rtp_header_extension_map_.GetId(kRtpExtensionRID,
+                                      &id) != 0) {
+    
+    return 0;
+  }
+  size_t pos = 0;
+  
+  const uint8_t len = strlen(rid_);
+  data_buffer[pos++] = (id << 4) + len;
+  memcpy(data_buffer + pos, rid_, len);
+  pos += len;
+  return pos;
 }
 
 bool RTPSender::FindHeaderExtensionPosition(RTPExtensionType type,

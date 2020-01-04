@@ -291,7 +291,7 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
   header.headerLength   = 12 + (CC * 4);
   
   
-  if (header.paddingLength + header.headerLength > length) {
+  if (header.paddingLength + header.headerLength > (ptrdiff_t) length) {
     return false;
   }
 
@@ -300,7 +300,7 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
     ptr += 4;
     header.arrOfCSRCs[i] = CSRC;
   }
-  assert((ptr - _ptrRTPDataBegin) == header.headerLength);
+  assert((ptr - _ptrRTPDataBegin) == (ptrdiff_t) header.headerLength);
 
   
   
@@ -318,6 +318,10 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
   
   header.extension.hasVideoRotation = false;
   header.extension.videoRotation = 0;
+
+  
+  header.extension.hasRID = false;
+  header.extension.rid = NULL;
 
   if (X) {
     
@@ -481,6 +485,21 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           sequence_number += ptr[1];
           header.extension.transportSequenceNumber = sequence_number;
           header.extension.hasTransportSequenceNumber = true;
+          break;
+        }
+        case kRtpExtensionRID: {
+          
+          
+          
+          
+          
+
+          
+          char* ptrRID = new char[len+1];
+          memcpy(ptrRID, ptr, len);
+          ptrRID[len] = '\0';
+          header.extension.rid = ptrRID;
+          header.extension.hasRID = true;
           break;
         }
         default: {

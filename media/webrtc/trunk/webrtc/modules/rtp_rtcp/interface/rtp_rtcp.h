@@ -220,6 +220,11 @@ class RtpRtcp : public Module {
     
 
 
+    virtual int32_t SetRID(const char *rid) = 0;
+
+    
+
+
 
     virtual void SetRtxSendStatus(int modes) = 0;
 
