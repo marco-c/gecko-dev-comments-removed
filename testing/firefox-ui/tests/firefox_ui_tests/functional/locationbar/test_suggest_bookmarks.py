@@ -83,7 +83,7 @@ class TestStarInAutocomplete(FirefoxTestCase):
         
         
         Wait(self.marionette).until(lambda mn: locationbar.value == search_string)
-        Wait(self.marionette).until(lambda mn: autocomplete_results.is_open)
+        Wait(self.marionette).until(lambda mn: autocomplete_results.is_complete)
         Wait(self.marionette).until(lambda mn: len(autocomplete_results.visible_results) == 2)
 
         
