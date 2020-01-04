@@ -383,8 +383,8 @@ class WidgetMouseScrollEvent : public WidgetMouseEventBase
 {
 private:
   WidgetMouseScrollEvent()
-    : delta(0)
-    , isHorizontal(false)
+    : mDelta(0)
+    , mIsHorizontal(false)
   {
   }
 
@@ -398,8 +398,8 @@ public:
                          nsIWidget* aWidget)
     : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget,
                            eMouseScrollEventClass)
-    , delta(0)
-    , isHorizontal(false)
+    , mDelta(0)
+    , mIsHorizontal(false)
   {
   }
 
@@ -421,19 +421,19 @@ public:
   
   
   
-  int32_t delta;
+  int32_t mDelta;
 
   
   
-  bool isHorizontal;
+  bool mIsHorizontal;
 
   void AssignMouseScrollEventData(const WidgetMouseScrollEvent& aEvent,
                                   bool aCopyTargets)
   {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
 
-    delta = aEvent.delta;
-    isHorizontal = aEvent.isHorizontal;
+    mDelta = aEvent.mDelta;
+    mIsHorizontal = aEvent.mIsHorizontal;
   }
 };
 
