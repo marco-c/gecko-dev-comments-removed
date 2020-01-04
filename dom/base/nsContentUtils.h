@@ -1037,6 +1037,14 @@ public:
 
 
 
+  static bool IsPreloadType(nsContentPolicyType aType);
+
+  
+
+
+
+
+
 
 
 

@@ -204,42 +204,57 @@ CSPService::ShouldLoad(uint32_t aContentType,
   nsCOMPtr<nsINode> node(do_QueryInterface(aRequestContext));
   nsCOMPtr<nsIPrincipal> principal = node ? node->NodePrincipal()
                                           : aRequestPrincipal;
-  if (principal) {
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    principal->GetCsp(getter_AddRefs(csp));
+  if (!principal) {
+    
+    return NS_OK;
+  }
+  nsresult rv = NS_OK;
 
-    if (csp) {
-      if (MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
-        uint32_t numPolicies = 0;
-        nsresult rv = csp->GetPolicyCount(&numPolicies);
-        if (NS_SUCCEEDED(rv)) {
-          for (uint32_t i=0; i<numPolicies; i++) {
-            nsAutoString policy;
-            csp->GetPolicy(i, policy);
-            MOZ_LOG(gCspPRLog, LogLevel::Debug,
-                   ("Document has CSP[%d]: %s", i,
-                   NS_ConvertUTF16toUTF8(policy).get()));
-          }
-        }
+  
+  bool isPreload = nsContentUtils::IsPreloadType(aContentType);
+
+  if (isPreload) {
+    nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
+    rv = principal->GetPreloadCsp(getter_AddRefs(preloadCsp));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (preloadCsp) {
+      
+      
+      rv = preloadCsp->ShouldLoad(aContentType,
+                                  aContentLocation,
+                                  aRequestOrigin,
+                                  aRequestContext,
+                                  aMimeTypeGuess,
+                                  nullptr, 
+                                  aDecision);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      
+      
+      if (NS_CP_REJECTED(*aDecision)) {
+        return NS_OK;
       }
-      
-      
-      csp->ShouldLoad(aContentType,
-                      aContentLocation,
-                      aRequestOrigin,
-                      aRequestContext,
-                      aMimeTypeGuess,
-                      nullptr,
-                      aDecision);
     }
   }
-  else if (MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
-    nsAutoCString uriSpec;
-    aContentLocation->GetSpec(uriSpec);
-    MOZ_LOG(gCspPRLog, LogLevel::Debug,
-           ("COULD NOT get nsIPrincipal for location: %s", uriSpec.get()));
-  }
 
+  
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  rv = principal->GetCsp(getter_AddRefs(csp));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (csp) {
+    
+    
+    rv = csp->ShouldLoad(aContentType,
+                         aContentLocation,
+                         aRequestOrigin,
+                         aRequestContext,
+                         aMimeTypeGuess,
+                         nullptr,
+                         aDecision);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
   return NS_OK;
 }
 
@@ -295,16 +310,6 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
   }
 
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  rv = loadInfo->LoadingPrincipal()->GetCsp(getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  if (!csp) {
-    return NS_OK;
-  }
-
-  
 
 
 
@@ -314,37 +319,55 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
   nsCOMPtr<nsIURI> originalUri;
   rv = oldChannel->GetOriginalURI(getter_AddRefs(originalUri));
   NS_ENSURE_SUCCESS(rv, rv);
+  nsContentPolicyType policyType = loadInfo->InternalContentPolicyType();
+
+  bool isPreload = nsContentUtils::IsPreloadType(policyType);
+
   
 
 
 
-  nsContentPolicyType policyType =
-    nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(
-        loadInfo->InternalContentPolicyType());
+  policyType =
+    nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(policyType);
 
   int16_t aDecision = nsIContentPolicy::ACCEPT;
-  csp->ShouldLoad(policyType,     
-                  newUri,         
-                  nullptr,        
-                  nullptr,        
-                  EmptyCString(), 
-                  originalUri,    
-                  &aDecision);
+  
+  if (isPreload) {
+    nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
+    loadInfo->LoadingPrincipal()->GetPreloadCsp(getter_AddRefs(preloadCsp));
 
-  if (newUri && MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
-    nsAutoCString newUriSpec("None");
-    newUri->GetSpec(newUriSpec);
-    MOZ_LOG(gCspPRLog, LogLevel::Debug,
-           ("CSPService::AsyncOnChannelRedirect called for %s",
-            newUriSpec.get()));
+    if (preloadCsp) {
+      
+      preloadCsp->ShouldLoad(policyType,     
+                             newUri,         
+                             nullptr,        
+                             nullptr,        
+                             EmptyCString(), 
+                             originalUri,    
+                             &aDecision);
+
+      
+      
+      if (NS_CP_REJECTED(aDecision)) {
+        autoCallback.DontCallback();
+        return NS_BINDING_FAILED;
+      }
+    }
   }
-  if (aDecision == 1) {
-    MOZ_LOG(gCspPRLog, LogLevel::Debug,
-           ("CSPService::AsyncOnChannelRedirect ALLOWING request."));
-  }
-  else {
-    MOZ_LOG(gCspPRLog, LogLevel::Debug,
-           ("CSPService::AsyncOnChannelRedirect CANCELLING request."));
+
+  
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  loadInfo->LoadingPrincipal()->GetCsp(getter_AddRefs(csp));
+
+  if (csp) {
+    
+    csp->ShouldLoad(policyType,     
+                    newUri,         
+                    nullptr,        
+                    nullptr,        
+                    EmptyCString(), 
+                    originalUri,    
+                    &aDecision);
   }
 
   

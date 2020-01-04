@@ -116,9 +116,7 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
     CSPCONTEXTLOG((">>>>                      aContentType: %d", aContentType));
   }
 
-  bool isStyleOrScriptPreLoad =
-    (aContentType == nsIContentPolicy::TYPE_INTERNAL_SCRIPT_PRELOAD ||
-     aContentType == nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD);
+  bool isPreload = nsContentUtils::IsPreloadType(aContentType);
 
   
   
@@ -157,7 +155,7 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
   }
 
   nsAutoString nonce;
-  if (!isStyleOrScriptPreLoad) {
+  if (!isPreload) {
     nsCOMPtr<nsIDOMHTMLElement> htmlElement = do_QueryInterface(aRequestContext);
     if (htmlElement) {
       rv = htmlElement->GetAttribute(NS_LITERAL_STRING("nonce"), nonce);
@@ -174,7 +172,7 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
                                    originalURI,
                                    nonce,
                                    wasRedirected,
-                                   isStyleOrScriptPreLoad,
+                                   isPreload,
                                    false,     
                                    true,      
                                    true);     
@@ -183,7 +181,7 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
                            : nsIContentPolicy::REJECT_SERVER;
 
   
-  if (cacheKey.Length() > 0 && !isStyleOrScriptPreLoad) {
+  if (cacheKey.Length() > 0 && !isPreload) {
     mShouldLoadCache.Put(cacheKey, *outDecision);
   }
 
