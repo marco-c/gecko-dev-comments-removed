@@ -110,16 +110,13 @@ public:
     EnsureIFFT();
 #if defined(MOZ_LIBAV_FFT)
     {
-      PodCopy(aDataOut, (float*)mOutputBuffer.Elements(), mFFTSize);
-      aDataOut[1] = mOutputBuffer[mFFTSize/2].r; 
+      
+      
+      
+      AudioBufferCopyWithScale(mOutputBuffer.Elements()->f, 2.0f,
+                               aDataOut, mFFTSize);
+      aDataOut[1] = 2.0f * mOutputBuffer[mFFTSize/2].r; 
       av_rdft_calc(mAvIRDFT, aDataOut);
-      
-      
-      
-      
-      for (uint32_t i = 0; i < mFFTSize; ++i) {
-        aDataOut[i] *= 2.0;
-      }
     }
 #else
 #ifdef BUILD_ARM_NEON
