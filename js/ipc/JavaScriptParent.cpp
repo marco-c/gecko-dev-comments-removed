@@ -63,87 +63,25 @@ ForbidUnsafeBrowserCPOWs()
     return result;
 }
 
-
-
-
-
-
-
-
-static bool
-ForbidCPOWsInCompatibleAddon(const nsACString& aAddonId)
-{
-    static bool forbid;
-    static nsCString allow;
-    static bool cached = false;
-    if (!cached) {
-        cached = true;
-        Preferences::AddBoolVarCache(&forbid, "dom.ipc.cpows.forbid-cpows-in-compat-addons", false);
-
-        allow.Assign(',');
-        allow.Append(Preferences::GetCString("dom.ipc.cpows.allow-cpows-in-compat-addons"));
-        allow.Append(',');
-    }
-
-    if (!forbid) {
-        return false;
-    }
-    nsCString searchString(",");
-    searchString.Append(aAddonId);
-    searchString.Append(',');
-    return allow.Find(searchString) == kNotFound;
-}
-
 bool
 JavaScriptParent::allowMessage(JSContext* cx)
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     MessageChannel* channel = GetIPCChannel();
-    bool isSafe = channel->IsInTransaction();
+    if (channel->IsInTransaction())
+        return true;
 
-    bool warn = !isSafe;
-    nsIGlobalObject* global = dom::GetIncumbentGlobal();
-    JSObject* jsGlobal = global ? global->GetGlobalJSObject() : nullptr;
-    if (jsGlobal) {
-        JSAutoCompartment ac(cx, jsGlobal);
-        JSAddonId* addonId = JS::AddonIdOfObject(jsGlobal);
-
-        if (!xpc::CompartmentPrivate::Get(jsGlobal)->allowCPOWs) {
-            if (!addonId && ForbidUnsafeBrowserCPOWs() && !isSafe) {
+    if (ForbidUnsafeBrowserCPOWs()) {
+        nsIGlobalObject* global = dom::GetIncumbentGlobal();
+        JSObject* jsGlobal = global ? global->GetGlobalJSObject() : nullptr;
+        if (jsGlobal) {
+            JSAutoCompartment ac(cx, jsGlobal);
+            if (!JS::AddonIdOfObject(jsGlobal) && !xpc::CompartmentPrivate::Get(jsGlobal)->allowCPOWs) {
                 Telemetry::Accumulate(Telemetry::BROWSER_SHIM_USAGE_BLOCKED, 1);
                 JS_ReportError(cx, "unsafe CPOW usage forbidden");
                 return false;
             }
-
-            if (addonId) {
-                JSFlatString* flat = JS_ASSERT_STRING_IS_FLAT(JS::StringOfAddonId(addonId));
-                nsString addonIdString;
-                AssignJSFlatString(addonIdString, flat);
-                NS_ConvertUTF16toUTF8 addonIdCString(addonIdString);
-                Telemetry::Accumulate(Telemetry::ADDON_FORBIDDEN_CPOW_USAGE, addonIdCString);
-
-                if (ForbidCPOWsInCompatibleAddon(addonIdCString)) {
-                    JS_ReportError(cx, "CPOW usage forbidden in this add-on");
-                    return false;
-                }
-
-                warn = true;
-            }
         }
     }
-
-    if (!warn)
-        return true;
 
     static bool disableUnsafeCPOWWarnings = PR_GetEnv("DISABLE_UNSAFE_CPOW_WARNINGS");
     if (!disableUnsafeCPOWWarnings) {
@@ -153,7 +91,7 @@ JavaScriptParent::allowMessage(JSContext* cx)
             uint32_t lineno = 0, column = 0;
             nsJSUtils::GetCallingLocation(cx, filename, &lineno, &column);
             nsCOMPtr<nsIScriptError> error(do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
-            error->Init(NS_LITERAL_STRING("unsafe/forbidden CPOW usage"), filename,
+            error->Init(NS_LITERAL_STRING("unsafe CPOW usage"), filename,
                         EmptyString(), lineno, column,
                         nsIScriptError::warningFlag, "chrome javascript");
             console->LogMessage(error);

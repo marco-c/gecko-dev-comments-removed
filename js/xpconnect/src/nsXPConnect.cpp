@@ -1287,20 +1287,6 @@ SetAddonInterposition(const nsACString& addonIdStr, nsIAddonInterposition* inter
     return XPCWrappedNativeScope::SetAddonInterposition(jsapi.cx(), addonId, interposition);
 }
 
-bool
-AllowCPOWsInAddon(const nsACString& addonIdStr, bool allow)
-{
-    JSAddonId* addonId;
-    
-    
-    AutoJSAPI jsapi;
-    jsapi.Init(xpc::PrivilegedJunkScope());
-    addonId = NewAddonId(jsapi.cx(), addonIdStr);
-    if (!addonId)
-        return false;
-    return XPCWrappedNativeScope::AllowCPOWsInAddon(jsapi.cx(), addonId, allow);
-}
-
 } 
 
 namespace mozilla {

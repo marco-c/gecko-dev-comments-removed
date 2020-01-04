@@ -26,10 +26,8 @@ using namespace JS;
 
 XPCWrappedNativeScope* XPCWrappedNativeScope::gScopes = nullptr;
 XPCWrappedNativeScope* XPCWrappedNativeScope::gDyingScopes = nullptr;
-bool XPCWrappedNativeScope::gShutdownObserverInitialized = false;
 XPCWrappedNativeScope::InterpositionMap* XPCWrappedNativeScope::gInterpositionMap = nullptr;
 InterpositionWhitelistArray* XPCWrappedNativeScope::gInterpositionWhitelists = nullptr;
-XPCWrappedNativeScope::AddonSet* XPCWrappedNativeScope::gAllowCPOWAddonSet = nullptr;
 
 NS_IMPL_ISUPPORTS(XPCWrappedNativeScope::ClearInterpositionsObserver, nsIObserver)
 
@@ -52,11 +50,6 @@ XPCWrappedNativeScope::ClearInterpositionsObserver::Observe(nsISupports* subject
     if (gInterpositionWhitelists) {
         delete gInterpositionWhitelists;
         gInterpositionWhitelists = nullptr;
-    }
-
-    if (gAllowCPOWAddonSet) {
-        delete gAllowCPOWAddonSet;
-        gAllowCPOWAddonSet = nullptr;
     }
 
     nsContentUtils::UnregisterShutdownObserver(this);
@@ -162,11 +155,6 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(JSContext* cx,
             UpdateInterpositionWhitelist(cx, mInterposition);
           }
         }
-    }
-
-    if (addonId) {
-        
-        priv->allowCPOWs = gAllowCPOWAddonSet ? gAllowCPOWAddonSet->has(addonId) : false;
     }
 }
 
@@ -716,10 +704,9 @@ XPCWrappedNativeScope::SetAddonInterposition(JSContext* cx,
         bool ok = gInterpositionMap->init();
         NS_ENSURE_TRUE(ok, false);
 
-        if (!gShutdownObserverInitialized) {
-            gShutdownObserverInitialized = true;
-            nsContentUtils::RegisterShutdownObserver(new ClearInterpositionsObserver());
-        }
+        
+        
+        nsContentUtils::RegisterShutdownObserver(new ClearInterpositionsObserver());
     }
     if (interp) {
         bool ok = gInterpositionMap->put(addonId, interp);
@@ -727,30 +714,6 @@ XPCWrappedNativeScope::SetAddonInterposition(JSContext* cx,
         UpdateInterpositionWhitelist(cx, interp);
     } else {
         gInterpositionMap->remove(addonId);
-    }
-    return true;
-}
-
- bool
-XPCWrappedNativeScope::AllowCPOWsInAddon(JSContext* cx,
-                                         JSAddonId* addonId,
-                                         bool allow)
-{
-    if (!gAllowCPOWAddonSet) {
-        gAllowCPOWAddonSet = new AddonSet();
-        bool ok = gAllowCPOWAddonSet->init();
-        NS_ENSURE_TRUE(ok, false);
-
-        if (!gShutdownObserverInitialized) {
-            gShutdownObserverInitialized = true;
-            nsContentUtils::RegisterShutdownObserver(new ClearInterpositionsObserver());
-        }
-    }
-    if (allow) {
-        bool ok = gAllowCPOWAddonSet->put(addonId);
-        NS_ENSURE_TRUE(ok, false);
-    } else {
-        gAllowCPOWAddonSet->remove(addonId);
     }
     return true;
 }
