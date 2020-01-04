@@ -2812,6 +2812,7 @@ this.XPIProvider = {
       logger.debug("Notifying XPI shutdown observers");
       Services.obs.notifyObservers(null, "xpi-provider-shutdown", null);
     }
+    return undefined;
   },
 
   
@@ -2906,16 +2907,18 @@ this.XPIProvider = {
   updateSystemAddons: Task.async(function*() {
     let systemAddonLocation = XPIProvider.installLocationsByName[KEY_APP_SYSTEM_ADDONS];
     if (!systemAddonLocation)
-      return undefined;
+      return;
 
     
     if (Services.appinfo.inSafeMode)
-      return undefined;
+      return;
 
     
     let url = Preferences.get(PREF_SYSTEM_ADDON_UPDATE_URL, null);
-    if (!url)
-      return systemAddonLocation.cleanDirectories();
+    if (!url) {
+      yield systemAddonLocation.cleanDirectories();
+      return;
+    }
 
     url = UpdateUtils.formatUpdateURL(url);
 
@@ -2925,7 +2928,8 @@ this.XPIProvider = {
     
     if (!addonList) {
       logger.info("No system add-ons list was returned.");
-      return systemAddonLocation.cleanDirectories();
+      yield systemAddonLocation.cleanDirectories();
+      return;
     }
 
     addonList = new Map(
@@ -2957,7 +2961,8 @@ this.XPIProvider = {
     let updatedAddons = addonMap(yield getAddonsInLocation(KEY_APP_SYSTEM_ADDONS));
     if (setMatches(addonList, updatedAddons)) {
       logger.info("Retaining existing updated system add-ons.");
-      return systemAddonLocation.cleanDirectories();
+      yield systemAddonLocation.cleanDirectories();
+      return;
     }
 
     
@@ -2966,7 +2971,8 @@ this.XPIProvider = {
     if (setMatches(addonList, defaultAddons)) {
       logger.info("Resetting system add-ons.");
       systemAddonLocation.resetAddonSet();
-      return systemAddonLocation.cleanDirectories();
+      yield systemAddonLocation.cleanDirectories();
+      return;
     }
 
     
@@ -5636,6 +5642,7 @@ AddonInstall.prototype = {
                                     repoAddon.compatibilityOverrides :
                                     null;
     this.addon.appDisabled = !isUsableAddon(this.addon);
+    return undefined;
   }),
 
   observe: function(aSubject, aTopic, aData) {
@@ -7388,8 +7395,9 @@ PROP_LOCALE_SINGLE.forEach(function(aProp) {
       }
     }
 
+    let rest;
     if (result == null)
-      [result, ] = chooseValue(addon, addon.selectedLocale, aProp);
+      [result, ...rest] = chooseValue(addon, addon.selectedLocale, aProp);
 
     if (aProp == "creator")
       return result ? new AddonManagerPrivate.AddonAuthor(result) : null;
