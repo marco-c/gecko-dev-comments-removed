@@ -6972,12 +6972,6 @@ ICCall_Native::Compiler::generateStubCode(MacroAssembler& masm)
     else
         pushCallArguments(masm, regs, argcReg,  false, isConstructing_);
 
-    if (isConstructing_) {
-        
-        
-        masm.storeValue(MagicValue(JS_IS_CONSTRUCTING), Address(masm.getStackPointer(), sizeof(Value)));
-    }
-
 
     
     
@@ -7069,12 +7063,6 @@ ICCall_ClassHook::Compiler::generateStubCode(MacroAssembler& masm)
     regs.add(scratch);
     pushCallArguments(masm, regs, argcReg,  false, isConstructing_);
     regs.take(scratch);
-
-    if (isConstructing_) {
-        
-        
-        masm.storeValue(MagicValue(JS_IS_CONSTRUCTING), Address(masm.getStackPointer(), sizeof(Value)));
-    }
 
     masm.checkStackAlignment();
 

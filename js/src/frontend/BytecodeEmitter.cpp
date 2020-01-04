@@ -7708,13 +7708,21 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn)
         callop = false;             
         break;
     }
-    if (!callop) {
-        if (!emit1(JSOP_UNDEFINED))
-            return false;
-    }
 
     bool isNewOp = pn->getOp() == JSOP_NEW || pn->getOp() == JSOP_SPREADNEW ||
-                   pn->getOp() == JSOP_SUPERCALL || pn->getOp() == JSOP_SPREADSUPERCALL;;
+                   pn->getOp() == JSOP_SUPERCALL || pn->getOp() == JSOP_SPREADSUPERCALL;
+
+
+    
+    if (!callop) {
+        if (isNewOp) {
+            if (!emit1(JSOP_IS_CONSTRUCTING))
+                return false;
+        } else {
+            if (!emit1(JSOP_UNDEFINED))
+                return false;
+        }
+    }
 
     
 
