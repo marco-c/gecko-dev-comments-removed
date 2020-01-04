@@ -12,6 +12,7 @@ var Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Timer.jsm");
 
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
@@ -36,6 +37,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "CloudSync",
 
 XPCOMUtils.defineLazyModuleGetter(this, "Weave",
                                   "resource://services-sync/main.js");
+
+const gInContentProcess = Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
+const FAVICON_REQUEST_TIMEOUT = 60 * 1000;
+
+let gFaviconLoadDataMap = new Map();
 
 
 const TAB_DROP_TYPE = "application/x-moz-tabbrowser-tab";
@@ -76,6 +82,149 @@ function IsLivemark(aItemId) {
   }
   return self.ids.has(aItemId);
 }
+
+let InternalFaviconLoader = {
+  
+
+
+
+
+  observe(subject, topic, data) {
+    let innerWindowID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+    this.onInnerDestroyed(innerWindowID);
+  },
+
+  
+
+
+  _cancelRequest({uri, innerWindowID, timerID, callback}, reason) {
+    
+    let request = callback.request;
+    delete callback.request;
+    
+    clearTimeout(timerID);
+    try {
+      request.cancel();
+    } catch (ex) {
+      Cu.reportError("When cancelling a request for " + uri.spec + " because " + reason + ", it was already canceled!");
+    }
+  },
+
+  
+
+
+  onInnerDestroyed(innerID) {
+    for (let [window, loadDataForWindow] of gFaviconLoadDataMap) {
+      let newLoadDataForWindow = loadDataForWindow.filter(loadData => {
+        let innerWasDestroyed = loadData.innerWindowID == innerID;
+        if (innerWasDestroyed) {
+          this._cancelRequest(loadData, "the inner window was destroyed");
+        }
+        
+        return !innerWasDestroyed;
+      });
+      
+      
+      gFaviconLoadDataMap.set(window, newLoadDataForWindow);
+    }
+  },
+
+  
+
+
+
+
+  onUnload(win) {
+    let loadDataForWindow = gFaviconLoadDataMap.get(win);
+    if (loadDataForWindow) {
+      for (let loadData of loadDataForWindow) {
+        this._cancelRequest(loadData, "the chrome window went away");
+      }
+    }
+    gFaviconLoadDataMap.delete(win);
+  },
+
+  
+
+
+
+
+
+
+  _makeCompletionCallback(win, id) {
+    return {
+      onComplete(uri) {
+        let loadDataForWindow = gFaviconLoadDataMap.get(win);
+        if (loadDataForWindow) {
+          let itemIndex = loadDataForWindow.findIndex(loadData => {
+            return loadData.innerWindowID == id &&
+                   loadData.uri.equals(uri) &&
+                   loadData.callback.request == this.request;
+          });
+          if (itemIndex != -1) {
+            let loadData = loadDataForWindow[itemIndex];
+            clearTimeout(loadData.timerID);
+            loadDataForWindow.splice(itemIndex, 1);
+          }
+        }
+        delete this.request;
+      },
+    };
+  },
+
+  ensureInitialized() {
+    if (this._initialized) {
+      return;
+    }
+    this._initialized = true;
+
+    Services.obs.addObserver(this, "inner-window-destroyed", false);
+    Services.ppmm.addMessageListener("Toolkit:inner-window-destroyed", msg => {
+      this.onInnerDestroyed(msg.data);
+    });
+  },
+
+  loadFavicon(browser, principal, uri) {
+    this.ensureInitialized();
+    let win = browser.ownerDocument.defaultView;
+    if (!gFaviconLoadDataMap.has(win)) {
+      gFaviconLoadDataMap.set(win, []);
+      let unloadHandler = event => {
+        let doc = event.target;
+        let eventWin = doc.defaultview;
+        if (win == win.top && doc.documentURI != "about:blank") {
+          win.removeEventListener("unload", unloadHandler);
+          this.onUnload(win);
+        }
+      };
+      win.addEventListener("unload", unloadHandler, true);
+    }
+
+    
+    let {innerWindowID, currentURI} = browser;
+    let loadType = PrivateBrowsingUtils.isWindowPrivate(win)
+      ? PlacesUtils.favicons.FAVICON_LOAD_PRIVATE
+      : PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE;
+    let callback = this._makeCompletionCallback(win, innerWindowID);
+    let request = PlacesUtils.favicons.setAndFetchFaviconForPage(currentURI, uri, false,
+                                                                 loadType, callback, principal);
+
+    
+    if (!request) {
+      
+      
+      
+      return;
+    }
+    callback.request = request;
+    let loadData = {innerWindowID, uri, callback};
+    loadData.timerID = setTimeout(() => {
+      this._cancelRequest(loadData, "it timed out");
+    }, FAVICON_REQUEST_TIMEOUT);
+    let loadDataForWindow = gFaviconLoadDataMap.get(win);
+    loadDataForWindow.push(loadData);
+  },
+};
 
 this.PlacesUIUtils = {
   ORGANIZER_LEFTPANE_VERSION: 7,
@@ -479,6 +628,19 @@ this.PlacesUIUtils = {
 
   _getTopBrowserWin: function PUIU__getTopBrowserWin() {
     return RecentWindow.getMostRecentBrowserWindow();
+  },
+
+  
+
+
+
+
+
+  loadFavicon(browser, principal, uri) {
+    if (gInContentProcess) {
+      throw new Error("Can't track loads from within the child process!");
+    }
+    InternalFaviconLoader.loadFavicon(browser, principal, uri);
   },
 
   
