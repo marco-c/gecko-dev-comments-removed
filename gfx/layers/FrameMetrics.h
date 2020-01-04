@@ -233,6 +233,12 @@ public:
     mDoSmoothScroll = aOther.mDoSmoothScroll;
   }
 
+  void UpdateScrollInfo(uint32_t aScrollGeneration, const CSSPoint& aScrollOffset)
+  {
+    mScrollOffset = aScrollOffset;
+    mScrollGeneration = aScrollGeneration;
+  }
+
   
   
   
