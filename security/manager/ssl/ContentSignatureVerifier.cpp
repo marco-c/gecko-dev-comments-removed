@@ -42,12 +42,13 @@ ContentSignatureVerifier::~ContentSignatureVerifier()
   shutdown(calledFromObject);
 }
 
-nsresult
+NS_IMETHODIMP
 ContentSignatureVerifier::VerifyContentSignature(
   const nsACString& aData, const nsACString& aCSHeader,
-  const nsACString& aCertChain, const uint32_t aSource, bool* _retval)
+  const nsACString& aCertChain, const nsACString& aName, bool* _retval)
 {
-  nsresult rv = CreateContext(aData, aCSHeader, aCertChain, aSource);
+  NS_ENSURE_ARG(_retval);
+  nsresult rv = CreateContext(aData, aCSHeader, aCertChain, aName);
   if (NS_FAILED(rv)) {
     *_retval = false;
     CSVerifier_LOG(("CSVerifier: Signature verification failed\n"));
@@ -127,11 +128,12 @@ ReadChainIntoCertList(const nsACString& aCertChain, CERTCertList* aCertList,
 
 
 
+
 NS_IMETHODIMP
 ContentSignatureVerifier::CreateContext(const nsACString& aData,
                                         const nsACString& aCSHeader,
                                         const nsACString& aCertChain,
-                                        const uint32_t aSource)
+                                        const nsACString& aName)
 {
   MutexAutoLock lock(mMutex);
   nsNSSShutDownPreventionLock locker;
@@ -186,24 +188,10 @@ ContentSignatureVerifier::CreateContext(const nsACString& aData,
   }
 
   
-  nsAutoCString hostname;
-
   Input hostnameInput;
 
-  switch (aSource) {
-    case ABOUT_NEWTAB:
-      hostname = "remote-newtab-signer.mozilla.org";
-      break;
-    case ONECRL:
-      hostname = "oneCRL-signer.mozilla.org";
-      break;
-    default:
-      CSVerifier_LOG(("CSVerifier: bad context\n"));
-      return NS_ERROR_INVALID_ARG;
-  }
-
-  result = hostnameInput.Init(uint8_t_ptr_cast(hostname.BeginReading()),
-                              hostname.Length());
+  result = hostnameInput.Init(uint8_t_ptr_cast(aName.BeginReading()),
+                              aName.Length());
   if (result != Success) {
     return NS_ERROR_FAILURE;
   }
