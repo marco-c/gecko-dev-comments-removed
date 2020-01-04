@@ -290,6 +290,7 @@ function loadLazyObjects() {
     recordAddonTelemetry,
     applyBlocklistChanges,
     flushStartupCache,
+    canRunInSafeMode,
   }
 
   for (let key of Object.keys(shared))
@@ -638,6 +639,21 @@ function applyBlocklistChanges(aOldAddon, aNewAddon, aOldAppVersion,
 
 
 
+function canRunInSafeMode(aAddon) {
+  
+  
+  
+  return aAddon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
+         aAddon._installLocation.name == KEY_APP_SYSTEM_ADDONS;
+}
+
+
+
+
+
+
+
+
 function isUsableAddon(aAddon) {
   
   if (aAddon.type == "theme" && aAddon.internalName == XPIProvider.defaultSkin)
@@ -703,7 +719,8 @@ function createAddonDetails(id, aAddon) {
     id: id || aAddon.id,
     type: aAddon.type,
     version: aAddon.version,
-    multiprocessCompatible: aAddon.multiprocessCompatible
+    multiprocessCompatible: aAddon.multiprocessCompatible,
+    runInSafeMode: aAddon.runInSafeMode,
   };
 }
 
@@ -2793,6 +2810,10 @@ this.XPIProvider = {
 
   updateSystemAddons: Task.async(function XPI_updateSystemAddons() {
     
+    if (Services.appinfo.inSafeMode)
+      return;
+
+    
     let url = Preferences.get(PREF_SYSTEM_ADDON_UPDATE_URL, null);
     if (!url)
       return;
@@ -4173,14 +4194,18 @@ this.XPIProvider = {
 
 
 
+
+
   loadBootstrapScope: function XPI_loadBootstrapScope(aId, aFile, aVersion, aType,
-                                                      aMultiprocessCompatible) {
+                                                      aMultiprocessCompatible,
+                                                      aRunInSafeMode) {
     
     this.bootstrappedAddons[aId] = {
       version: aVersion,
       type: aType,
       descriptor: aFile.persistentDescriptor,
-      multiprocessCompatible: aMultiprocessCompatible
+      multiprocessCompatible: aMultiprocessCompatible,
+      runInSafeMode: aRunInSafeMode,
     };
     this.persistBootstrappedAddons();
     this.addAddonsToCrashReporter();
@@ -4301,14 +4326,15 @@ this.XPIProvider = {
 
 
   callBootstrapMethod: function XPI_callBootstrapMethod(aAddon, aFile, aMethod, aReason, aExtraParams) {
-    
-    if (Services.appinfo.inSafeMode)
-      return;
-
     if (!aAddon.id || !aAddon.version || !aAddon.type) {
       logger.error(new Error("aAddon must include an id, version, and type"));
       return;
     }
+
+    
+    let runInSafeMode = "runInSafeMode" in aAddon ? aAddon.runInSafeMode : canRunInSafeMode(aAddon);
+    if (Services.appinfo.inSafeMode && !runInSafeMode)
+      return;
 
     let timeStart = new Date();
     if (CHROME_TYPES.has(aAddon.type) && aMethod == "startup") {
@@ -4318,9 +4344,11 @@ this.XPIProvider = {
 
     try {
       
-      if (!(aAddon.id in this.bootstrapScopes))
+      if (!(aAddon.id in this.bootstrapScopes)) {
         this.loadBootstrapScope(aAddon.id, aFile, aAddon.version, aAddon.type,
-                                aAddon.multiprocessCompatible || false);
+                                aAddon.multiprocessCompatible || false,
+                                runInSafeMode);
+      }
 
       
       if (aAddon.type == "locale")
@@ -6814,9 +6842,11 @@ function AddonWrapper(aAddon) {
   });
 
   this.__defineGetter__("isActive", function AddonWrapper_isActiveGetter() {
-    if (Services.appinfo.inSafeMode)
+    if (!aAddon.active)
       return false;
-    return aAddon.active;
+    if (!Services.appinfo.inSafeMode)
+      return true;
+    return aAddon.bootstrap && canRunInSafeMode(aAddon);
   });
 
   this.__defineGetter__("userDisabled", function AddonWrapper_userDisabledGetter() {
@@ -7525,6 +7555,10 @@ Object.assign(SystemAddonInstallLocation.prototype, {
   },
 
   getAddonLocations: function() {
+    
+    if (Services.appinfo.inSafeMode)
+      return new Map();
+
     let addons = DirectoryInstallLocation.prototype.getAddonLocations.call(this);
 
     

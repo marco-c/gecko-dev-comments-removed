@@ -171,6 +171,27 @@ add_task(function* test_updated() {
 });
 
 
+
+add_task(function* safe_mode_disabled() {
+  gAppInfo.inSafeMode = true;
+  startupManager(false);
+
+  yield check_installed(false, "1.0", "1.0", null);
+
+  yield promiseShutdownManager();
+});
+
+
+add_task(function* normal_mode_enabled() {
+  gAppInfo.inSafeMode = false;
+  startupManager(false);
+
+  yield check_installed(true, null, "1.0", "1.0");
+
+  yield promiseShutdownManager();
+});
+
+
 add_task(function* test_skips_additional() {
   
   let file = do_get_file("data/system_addons/system1_1.xpi");
