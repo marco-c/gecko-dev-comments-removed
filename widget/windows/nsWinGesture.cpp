@@ -403,12 +403,10 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
     break;
 
     case GID_PRESSANDTAP:
-    {
       
-      evt.mMessage = NS_SIMPLE_GESTURE_PRESSTAP;
+      evt.mMessage = ePressTapGesture;
       evt.clickCount = 1;
-    }
-    break;
+      break;
   }
 
   return true;
