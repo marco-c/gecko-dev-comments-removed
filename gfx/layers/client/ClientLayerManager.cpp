@@ -840,7 +840,8 @@ ClientLayerManager::DependsOnStaleDevice() const
 
 already_AddRefed<PersistentBufferProvider>
 ClientLayerManager::CreatePersistentBufferProvider(const gfx::IntSize& aSize,
-                                                   gfx::SurfaceFormat aFormat)
+                                                   gfx::SurfaceFormat aFormat,
+                                                   int64_t* aMemoryCounter)
 {
   
   
@@ -849,13 +850,13 @@ ClientLayerManager::CreatePersistentBufferProvider(const gfx::IntSize& aSize,
   if (IsCompositingCheap() &&
       gfxPrefs::PersistentBufferProviderSharedEnabled()) {
     RefPtr<PersistentBufferProvider> provider
-      = PersistentBufferProviderShared::Create(aSize, aFormat, AsShadowForwarder());
+      = PersistentBufferProviderShared::Create(aSize, aFormat, AsShadowForwarder(), aMemoryCounter);
     if (provider) {
       return provider.forget();
     }
   }
 
-  return LayerManager::CreatePersistentBufferProvider(aSize, aFormat);
+  return LayerManager::CreatePersistentBufferProvider(aSize, aFormat, aMemoryCounter);
 }
 
 

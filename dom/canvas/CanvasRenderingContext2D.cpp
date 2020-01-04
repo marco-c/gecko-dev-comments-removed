@@ -1159,12 +1159,6 @@ CanvasRenderingContext2D::Reset()
     mCanvasElement->InvalidateCanvas();
   }
 
-  
-  
-  if (mTarget && IsTargetValid() && !mDocShell) {
-    gCanvasAzureMemoryUsed -= mWidth * mHeight * 4;
-  }
-
   bool forceReset = true;
   ReturnTarget(forceReset);
   mTarget = nullptr;
@@ -1627,8 +1621,6 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
   mTarget = newTarget.forget();
   mBufferProvider = newProvider.forget();
 
-  RegisterAllocation();
-
   
   
   
@@ -1672,10 +1664,6 @@ CanvasRenderingContext2D::SetErrorState()
 {
   EnsureErrorTarget();
 
-  if (mTarget && mTarget != sErrorTarget) {
-    gCanvasAzureMemoryUsed -= mWidth * mHeight * 4;
-  }
-
   mTarget = sErrorTarget;
   mBufferProvider = nullptr;
 
@@ -1684,21 +1672,12 @@ CanvasRenderingContext2D::SetErrorState()
 }
 
 void
-CanvasRenderingContext2D::RegisterAllocation()
+EnsureCanvasMemoryReporter()
 {
-  
-  
   static bool registered = false;
-  
-  if (!registered && false) {
+  if (!registered) {
     registered = true;
     RegisterStrongMemoryReporter(new Canvas2dPixelsReporter());
-  }
-
-  gCanvasAzureMemoryUsed += mWidth * mHeight * 4;
-  JSContext* context = nsContentUtils::GetCurrentJSContext();
-  if (context) {
-    JS_updateMallocCounter(context, mWidth * mHeight * 4);
   }
 }
 
@@ -1783,7 +1762,9 @@ CanvasRenderingContext2D::TrySharedTarget(RefPtr<gfx::DrawTarget>& aOutDT,
     return false;
   }
 
-  aOutProvider = layerManager->CreatePersistentBufferProvider(GetSize(), GetSurfaceFormat());
+  EnsureCanvasMemoryReporter();
+  aOutProvider = layerManager->CreatePersistentBufferProvider(GetSize(), GetSurfaceFormat(),
+                                                              &gCanvasAzureMemoryUsed);
 
   if (!aOutProvider) {
     return false;
