@@ -77,6 +77,20 @@ nsSystemPrincipal::SetCsp(nsIContentSecurityPolicy* aCsp)
 }
 
 NS_IMETHODIMP
+nsSystemPrincipal::GetPreloadCsp(nsIContentSecurityPolicy** aPreloadCSP)
+{
+  *aPreloadCSP = nullptr;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSystemPrincipal::SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCSP)
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsSystemPrincipal::GetDomain(nsIURI** aDomain)
 {
     *aDomain = nullptr;
