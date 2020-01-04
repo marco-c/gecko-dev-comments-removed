@@ -388,6 +388,7 @@ class BASE_EXPORT Time {
     return Time(us);
   }
 
+#if !defined(MOZ_SANDBOX)
   
   
   
@@ -402,6 +403,7 @@ class BASE_EXPORT Time {
   static bool FromUTCString(const char* time_string, Time* parsed_time) {
     return FromStringInternal(time_string, false, parsed_time);
   }
+#endif
 
   
   
@@ -485,6 +487,7 @@ class BASE_EXPORT Time {
   
   static Time FromExploded(bool is_local, const Exploded& exploded);
 
+#if !defined(MOZ_SANDBOX)
   
   
   
@@ -495,6 +498,7 @@ class BASE_EXPORT Time {
   static bool FromStringInternal(const char* time_string,
                                  bool is_local,
                                  Time* parsed_time);
+#endif
 
   
   int64 us_;
