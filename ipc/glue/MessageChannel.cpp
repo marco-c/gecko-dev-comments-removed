@@ -740,9 +740,17 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
         }
     }
 
+    bool wakeUpSyncSend = AwaitingSyncReply() && !ShouldDeferMessage(aMsg);
+
     bool shouldWakeUp = AwaitingInterruptReply() ||
-                        (AwaitingSyncReply() && !ShouldDeferMessage(aMsg)) ||
+                        wakeUpSyncSend ||
                         AwaitingIncomingMessage();
+
+    
+    
+    
+    
+    bool shouldPostTask = !shouldWakeUp || wakeUpSyncSend;
 
     IPC_LOG("Receive on link thread; seqno=%d, xid=%d, shouldWakeUp=%d",
             aMsg.seqno(), aMsg.transaction_id(), shouldWakeUp);
@@ -773,10 +781,9 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
 
     if (shouldWakeUp) {
         NotifyWorkerThread();
-    } else {
-        
-        
-        
+    }
+
+    if (shouldPostTask) {
         if (!compress) {
             
             
@@ -788,7 +795,7 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
 void
 MessageChannel::ProcessPendingRequests(int transaction, int prio)
 {
-    IPC_LOG("ProcessPendingRequests");
+    IPC_LOG("ProcessPendingRequests for seqno=%d, xid=%d", seqno, transaction);
 
     
     for (;;) {
