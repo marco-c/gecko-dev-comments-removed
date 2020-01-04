@@ -46,7 +46,9 @@ WebGLBuffer::BindTo(GLenum target)
 
     case LOCAL_GL_COPY_READ_BUFFER:
     case LOCAL_GL_COPY_WRITE_BUFFER:
-        
+        if (mContent == Kind::Undefined) {
+          mContent = Kind::OtherData;
+        }
         break;
 
     default:
