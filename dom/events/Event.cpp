@@ -153,7 +153,7 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Event)
   if (tmp->mEventIsInternal) {
-    tmp->mEvent->target = nullptr;
+    tmp->mEvent->mTarget = nullptr;
     tmp->mEvent->currentTarget = nullptr;
     tmp->mEvent->originalTarget = nullptr;
     switch (tmp->mEvent->mClass) {
@@ -191,7 +191,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Event)
   if (tmp->mEventIsInternal) {
-    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEvent->target)
+    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEvent->mTarget)
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEvent->currentTarget)
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEvent->originalTarget)
     switch (tmp->mEvent->mClass) {
@@ -288,7 +288,7 @@ GetDOMEventTarget(nsIDOMEventTarget* aTarget)
 EventTarget*
 Event::GetTarget() const
 {
-  return GetDOMEventTarget(mEvent->target);
+  return GetDOMEventTarget(mEvent->mTarget);
 }
 
 NS_METHOD
@@ -424,7 +424,7 @@ Event::EventPhase() const
   
   
   if ((mEvent->currentTarget &&
-       mEvent->currentTarget == mEvent->target) ||
+       mEvent->currentTarget == mEvent->mTarget) ||
        mEvent->mFlags.InTargetPhase()) {
     return nsIDOMEvent::AT_TARGET;
   }
@@ -586,7 +586,7 @@ Event::InitEvent(const nsAString& aEventTypeArg,
 
   
   
-  mEvent->target = nullptr;
+  mEvent->mTarget = nullptr;
   mEvent->originalTarget = nullptr;
 }
 
@@ -609,7 +609,7 @@ Event::DuplicatePrivateData()
 NS_IMETHODIMP
 Event::SetTarget(nsIDOMEventTarget* aTarget)
 {
-  mEvent->target = do_QueryInterface(aTarget);
+  mEvent->mTarget = do_QueryInterface(aTarget);
   return NS_OK;
 }
 
@@ -991,10 +991,10 @@ Event::GetOffsetCoords(nsPresContext* aPresContext,
                        LayoutDeviceIntPoint aPoint,
                        CSSIntPoint aDefaultPoint)
 {
-  if (!aEvent->target) {
+  if (!aEvent->mTarget) {
     return GetPageCoords(aPresContext, aEvent, aPoint, aDefaultPoint);
   }
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aEvent->target);
+  nsCOMPtr<nsIContent> content = do_QueryInterface(aEvent->mTarget);
   if (!content || !aPresContext) {
     return CSSIntPoint(0, 0);
   }

@@ -947,7 +947,7 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
     event.mFlags.mBubbles = false;
     event.mFlags.mCancelable = false;
      
-    event.target = mDocument;
+    event.mTarget = mDocument;
 
     
     
@@ -1305,7 +1305,7 @@ nsDocumentViewer::PageHide(bool aIsUnload)
     WidgetEvent event(true, eUnload);
     event.mFlags.mBubbles = false;
     
-    event.target = mDocument;
+    event.mTarget = mDocument;
 
     
     

@@ -5285,7 +5285,7 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
     
     
     initialDataTransfer =
-      new DataTransfer(aDragEvent->target, aDragEvent->mMessage, true, -1);
+      new DataTransfer(aDragEvent->mTarget, aDragEvent->mMessage, true, -1);
 
     
     dragSession->SetDataTransfer(initialDataTransfer);
@@ -5298,7 +5298,7 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
   }
 
   
-  initialDataTransfer->Clone(aDragEvent->target, aDragEvent->mMessage,
+  initialDataTransfer->Clone(aDragEvent->mTarget, aDragEvent->mMessage,
                              aDragEvent->mUserCancelled,
                              isCrossDomainSubFrameDrop,
                              getter_AddRefs(aDragEvent->mDataTransfer));

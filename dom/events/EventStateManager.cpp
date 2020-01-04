@@ -2947,14 +2947,14 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           suppressBlur = (ui->mUserFocus == NS_STYLE_USER_FOCUS_IGNORE);
 
           if (!suppressBlur) {
-            nsCOMPtr<Element> element = do_QueryInterface(aEvent->target);
+            nsCOMPtr<Element> element = do_QueryInterface(aEvent->mTarget);
             suppressBlur = element &&
                            element->State().HasState(NS_EVENT_STATE_DISABLED);
           }
 
           if (!suppressBlur) {
             nsCOMPtr<nsIDOMXULControlElement> xulControl =
-              do_QueryInterface(aEvent->target);
+              do_QueryInterface(aEvent->mTarget);
             if (xulControl) {
               bool disabled;
               xulControl->GetDisabled(&disabled);

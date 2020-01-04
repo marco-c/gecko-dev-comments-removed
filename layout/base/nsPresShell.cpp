@@ -8203,7 +8203,7 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
 
     
     
-    aEvent->target = nullptr;
+    aEvent->mTarget = nullptr;
 
     
     
@@ -8395,7 +8395,7 @@ PresShell::DispatchTouchEventToDOM(WidgetEvent* aEvent,
     WidgetTouchEvent newEvent(touchEvent->IsTrusted(),
                               touchEvent->mMessage, touchEvent->mWidget);
     newEvent.AssignTouchEventData(*touchEvent, false);
-    newEvent.target = targetPtr;
+    newEvent.mTarget = targetPtr;
 
     RefPtr<PresShell> contentPresShell;
     if (doc == mDocument) {

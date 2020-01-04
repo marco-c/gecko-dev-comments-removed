@@ -333,7 +333,7 @@ EventTargetChainItem::HandleEventTargetChain(
                         ELMCreationDetector& aCd)
 {
   
-  nsCOMPtr<EventTarget> firstTarget = aVisitor.mEvent->target;
+  nsCOMPtr<EventTarget> firstTarget = aVisitor.mEvent->mTarget;
   uint32_t chainLength = aChain.Length();
 
   
@@ -353,7 +353,7 @@ EventTargetChainItem::HandleEventTargetChain(
         uint32_t childIndex = j - 1;
         EventTarget* newTarget = aChain[childIndex].GetNewTarget();
         if (newTarget) {
-          aVisitor.mEvent->target = newTarget;
+          aVisitor.mEvent->mTarget = newTarget;
           break;
         }
       }
@@ -380,7 +380,7 @@ EventTargetChainItem::HandleEventTargetChain(
     if (newTarget) {
       
       
-      aVisitor.mEvent->target = newTarget;
+      aVisitor.mEvent->mTarget = newTarget;
     }
 
     if (aVisitor.mEvent->mFlags.mBubbles || newTarget) {
@@ -403,7 +403,7 @@ EventTargetChainItem::HandleEventTargetChain(
     aVisitor.mEvent->mFlags.mImmediatePropagationStopped = false;
 
     
-    aVisitor.mEvent->target = aVisitor.mEvent->originalTarget;
+    aVisitor.mEvent->mTarget = aVisitor.mEvent->originalTarget;
 
     
     
@@ -413,7 +413,7 @@ EventTargetChainItem::HandleEventTargetChain(
 
     
     
-    aVisitor.mEvent->target = firstTarget;
+    aVisitor.mEvent->mTarget = firstTarget;
     aVisitor.mEvent->mFlags.mInSystemGroup = true;
     HandleEventTargetChain(aChain,
                            aVisitor,
@@ -532,7 +532,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
       }
 
       
-      aEvent->target = target;
+      aEvent->mTarget = target;
       
       target = piTarget;
     } else if (NS_WARN_IF(!doc)) {
@@ -590,18 +590,18 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
 
   
   
-  if (!aEvent->target) {
+  if (!aEvent->mTarget) {
     
     
-    aEvent->target = targetEtci->CurrentTarget();
+    aEvent->mTarget = targetEtci->CurrentTarget();
   } else {
     
     
     
     
     
-    aEvent->target = aEvent->target->GetTargetForEventTargetChain();
-    NS_ENSURE_STATE(aEvent->target);
+    aEvent->mTarget = aEvent->mTarget->GetTargetForEventTargetChain();
+    NS_ENSURE_STATE(aEvent->mTarget);
   }
 
   if (retargeted) {
@@ -610,7 +610,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
     NS_ENSURE_STATE(aEvent->originalTarget);
   }
   else {
-    aEvent->originalTarget = aEvent->target;
+    aEvent->originalTarget = aEvent->mTarget;
   }
 
   nsCOMPtr<nsIContent> content = do_QueryInterface(aEvent->originalTarget);
@@ -637,7 +637,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
   if (preVisitor.mCanHandle) {
     
     
-    nsCOMPtr<EventTarget> t = do_QueryInterface(aEvent->target);
+    nsCOMPtr<EventTarget> t = do_QueryInterface(aEvent->mTarget);
     targetEtci->SetNewTarget(t);
     EventTargetChainItem* topEtci = targetEtci;
     targetEtci = nullptr;
@@ -655,7 +655,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
       if (preVisitor.mEventTargetAtParent) {
         
         
-        preVisitor.mEvent->target = preVisitor.mEventTargetAtParent;
+        preVisitor.mEvent->mTarget = preVisitor.mEventTargetAtParent;
         parentEtci->SetNewTarget(preVisitor.mEventTargetAtParent);
       }
 
@@ -750,7 +750,7 @@ EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
 
     bool dontResetTrusted = false;
     if (innerEvent->mFlags.mDispatchedAtLeastOnce) {
-      innerEvent->target = nullptr;
+      innerEvent->mTarget = nullptr;
       innerEvent->originalTarget = nullptr;
     } else {
       aDOMEvent->GetIsTrusted(&dontResetTrusted);
