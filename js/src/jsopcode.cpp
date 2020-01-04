@@ -2111,6 +2111,13 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
             if (script->compartment() != comp)
                 continue;
 
+            
+            
+            
+            if (!script->code())
+                continue;
+
+            
             if (script->functionNonDelazifying())
                 continue;
 
