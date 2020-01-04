@@ -9,7 +9,6 @@
 #include "base/message_loop.h"
 #include "base/object_watcher.h"
 #include "base/sys_info.h"
-#include "chrome/common/result_codes.h"
 
 
 static const int kWaitInterval = 2000;
@@ -81,7 +80,7 @@ class ChildReaper : public mozilla::Runnable,
     
     
     
-    TerminateProcess(process_, ResultCodes::HUNG);
+    TerminateProcess(process_, base::PROCESS_END_PROCESS_WAS_HUNG);
 
     
     OnObjectSignaled(process_);
