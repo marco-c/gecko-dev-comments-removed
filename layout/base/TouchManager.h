@@ -15,8 +15,6 @@
 class PresShell;
 class nsIDocument;
 
-namespace mozilla {
-
 class TouchManager {
 public:
   
@@ -40,7 +38,5 @@ private:
   RefPtr<PresShell>   mPresShell;
   nsCOMPtr<nsIDocument> mDocument;
 };
-
-} 
 
 #endif 

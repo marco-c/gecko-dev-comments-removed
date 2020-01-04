@@ -51,6 +51,9 @@
     
     
     branch.setBoolPref("layout.interruptible-reflow.enabled", false);
+    
+    
+    branch.setIntPref("touchcaret.expiration.time", 0);
 
     
     

@@ -73,6 +73,12 @@ public:
   
   NS_DECL_ISUPPORTS
 
+  
+  static bool TouchCaretPrefEnabled();
+
+  
+  static bool SelectionCaretPrefEnabled();
+
   static bool AccessibleCaretEnabled();
 
   
@@ -239,6 +245,14 @@ public:
                                       bool aFlushOnHoverChange) override;
   virtual void ClearMouseCaptureOnView(nsView* aView) override;
   virtual bool IsVisible() override;
+
+  
+  virtual already_AddRefed<mozilla::TouchCaret> GetTouchCaret() const override;
+  virtual mozilla::dom::Element* GetTouchCaretElement() const override;
+  
+  virtual already_AddRefed<mozilla::SelectionCarets> GetSelectionCarets() const override;
+  virtual mozilla::dom::Element* GetSelectionCaretsStartElement() const override;
+  virtual mozilla::dom::Element* GetSelectionCaretsEndElement() const override;
 
   virtual already_AddRefed<mozilla::AccessibleCaretEventHub> GetAccessibleCaretEventHub() const override;
 
@@ -802,11 +816,15 @@ protected:
   nsCallbackEventRequest*   mFirstCallbackEventRequest;
   nsCallbackEventRequest*   mLastCallbackEventRequest;
 
-  mozilla::TouchManager     mTouchManager;
+  
+  TouchManager              mTouchManager;
 
   RefPtr<ZoomConstraintsClient> mZoomConstraintsClient;
   RefPtr<MobileViewportManager> mMobileViewportManager;
 
+  
+  RefPtr<mozilla::TouchCaret> mTouchCaret;
+  RefPtr<mozilla::SelectionCarets> mSelectionCarets;
   RefPtr<mozilla::AccessibleCaretEventHub> mAccessibleCaretEventHub;
 
   
