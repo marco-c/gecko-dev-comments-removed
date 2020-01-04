@@ -638,6 +638,14 @@ class Marionette(object):
         
         self.emulator_callback_id = None
 
+    @property
+    def profile_path(self):
+        if self.instance and self.instance.profile:
+            return self.instance.profile.profile
+        elif self.runner and self.runner.profile:
+            return self.runner.profile.profile
+
+
     def cleanup(self):
         if self.session:
             try:
