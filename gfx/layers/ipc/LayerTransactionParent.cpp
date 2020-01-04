@@ -731,7 +731,7 @@ LayerTransactionParent::RecvGetAnimationTransform(PLayerParent* aParent,
   
   
 
-  Matrix4x4 transform = layer->AsLayerComposite()->GetShadowTransform();
+  Matrix4x4 transform = layer->AsLayerComposite()->GetShadowBaseTransform();
   if (ContainerLayer* c = layer->AsContainerLayer()) {
     
     transform.PostScale(1.0f/c->GetInheritedXScale(),
