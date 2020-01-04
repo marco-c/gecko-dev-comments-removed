@@ -86,32 +86,41 @@ Sanitizer.prototype = {
     },
 
     siteSettings: {
-      clear: function ()
-      {
-        return new Promise(function(resolve, reject) {
-          
-          Services.perms.removeAll();
+      clear: Task.async(function* () {
+        
+        Services.perms.removeAll();
 
-          
-          Cc["@mozilla.org/content-pref/service;1"]
-            .getService(Ci.nsIContentPrefService2)
-            .removeAllDomains(null);
+        
+        Cc["@mozilla.org/content-pref/service;1"]
+          .getService(Ci.nsIContentPrefService2)
+          .removeAllDomains(null);
 
-          
-          
-          var hosts = Services.logins.getAllDisabledHosts({})
-          for (var host of hosts) {
-            Services.logins.setLoginSavingEnabled(host, true);
-          }
+        
+        
+        var hosts = Services.logins.getAllDisabledHosts({})
+        for (var host of hosts) {
+          Services.logins.setLoginSavingEnabled(host, true);
+        }
 
-          
-          var sss = Cc["@mozilla.org/ssservice;1"]
-                      .getService(Ci.nsISiteSecurityService);
-          sss.clearAll();
+        
+        var sss = Cc["@mozilla.org/ssservice;1"]
+                    .getService(Ci.nsISiteSecurityService);
+        sss.clearAll();
 
-          resolve();
+        
+        yield new Promise((resolve, reject) => {
+          let push = Cc["@mozilla.org/push/Service;1"]
+                       .getService(Ci.nsIPushService);
+          push.clearForDomain("*", status => {
+            if (Components.isSuccessCode(status)) {
+              resolve();
+            } else {
+              reject(new Error("Error clearing push subscriptions: " +
+                               status));
+            }
+          });
         });
-      },
+      }),
 
       get canClear()
       {
