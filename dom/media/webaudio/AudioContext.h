@@ -82,9 +82,9 @@ public:
   WebCore::PeriodicWave* GetBasicWaveForm(OscillatorType aType);
 private:
   ~BasicWaveFormCache();
-  RefPtr<WebCore::PeriodicWave> mSawtooth;
-  RefPtr<WebCore::PeriodicWave> mSquare;
-  RefPtr<WebCore::PeriodicWave> mTriangle;
+  nsRefPtr<WebCore::PeriodicWave> mSawtooth;
+  nsRefPtr<WebCore::PeriodicWave> mSquare;
+  nsRefPtr<WebCore::PeriodicWave> mTriangle;
   uint32_t mSampleRate;
 };
 
@@ -105,9 +105,9 @@ public:
   NS_IMETHOD Run() override;
 
 private:
-  RefPtr<AudioContext> mAudioContext;
+  nsRefPtr<AudioContext> mAudioContext;
   void* mPromise;
-  RefPtr<AudioNodeStream> mAudioNodeStream;
+  nsRefPtr<AudioNodeStream> mAudioNodeStream;
   AudioContextState mNewState;
 };
 
@@ -124,7 +124,7 @@ class AudioContext final : public DOMEventTargetHelper,
                float aSampleRate = 0.0f);
   ~AudioContext();
 
-  void Init();
+  nsresult Init();
 
 public:
   typedef uint64_t AudioContextId;
@@ -334,12 +334,12 @@ private:
   
   const float mSampleRate;
   AudioContextState mAudioContextState;
-  RefPtr<AudioDestinationNode> mDestination;
-  RefPtr<AudioListener> mListener;
-  nsTArray<RefPtr<WebAudioDecodeJob> > mDecodeJobs;
+  nsRefPtr<AudioDestinationNode> mDestination;
+  nsRefPtr<AudioListener> mListener;
+  nsTArray<nsRefPtr<WebAudioDecodeJob> > mDecodeJobs;
   
   
-  nsTArray<RefPtr<Promise>> mPromiseGripArray;
+  nsTArray<nsRefPtr<Promise>> mPromiseGripArray;
   
   
   nsTHashtable<nsRefPtrHashKey<AudioNode> > mActiveNodes;
@@ -349,7 +349,7 @@ private:
   
   nsTHashtable<nsPtrHashKey<PannerNode> > mPannerNodes;
   
-  RefPtr<BasicWaveFormCache> mBasicWaveFormCache;
+  nsRefPtr<BasicWaveFormCache> mBasicWaveFormCache;
   
   uint32_t mNumberOfChannels;
   bool mIsOffline;

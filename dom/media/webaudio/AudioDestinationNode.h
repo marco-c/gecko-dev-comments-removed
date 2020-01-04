@@ -73,7 +73,7 @@ public:
   
   void SetIsOnlyNodeForContext(bool aIsOnlyNode);
 
-  void CreateAudioChannelAgent();
+  nsresult CreateAudioChannelAgent();
   void DestroyAudioChannelAgent();
 
   virtual const char* NodeType() const override
@@ -102,9 +102,9 @@ private:
   uint32_t mFramesToProduce;
 
   nsCOMPtr<nsIAudioChannelAgent> mAudioChannelAgent;
-  RefPtr<MediaInputPort> mCaptureStreamPort;
+  nsRefPtr<MediaInputPort> mCaptureStreamPort;
 
-  RefPtr<Promise> mOfflineRenderingPromise;
+  nsRefPtr<Promise> mOfflineRenderingPromise;
 
   
   AudioChannel mAudioChannel;
