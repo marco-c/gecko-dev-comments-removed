@@ -87,9 +87,7 @@ BuiltinProvider.prototype = {
         
         "devtools": "resource://devtools",
         
-        "devtools/client": "resource://devtools/client",
-        
-        "gcli": "resource://devtools/gcli",
+        "gcli": "resource://devtools/shared/gcli/source/lib/gcli",
         
         "promise": "resource://gre/modules/Promise-backend.js",
         
