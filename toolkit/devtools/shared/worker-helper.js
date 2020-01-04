@@ -102,8 +102,29 @@
         }
       }
 
-      function handleError(e="Error") {
-        self.postMessage({ id, error: e.message || e });
+      function handleError(error="Error") {
+        try {
+          
+          self.postMessage({ id, error });
+        } catch (_) {
+          
+          
+          let errorString = `Error while performing task "${task}": `;
+
+          try {
+            errorString += error.toString();
+          } catch (_) {
+            errorString += "<could not stringify error>";
+          }
+
+          if ("stack" in error) {
+            try {
+              errorString += "\n" + error.stack;
+            } catch (_) { }
+          }
+
+          self.postMessage({ id, error: errorString });
+        }
       }
     };
   }
