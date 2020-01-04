@@ -46,6 +46,7 @@
 
 #include "logging.h"
 #include "nsError.h"
+#include "mozilla/Scoped.h"
 
 
 extern "C" {
@@ -168,13 +169,13 @@ static bool ToNrIceCandidate(const nr_ice_candidate& candc,
 
 
 
-static UniquePtr<NrIceCandidate> MakeNrIceCandidate(const nr_ice_candidate& candc) {
-  UniquePtr<NrIceCandidate> out(new NrIceCandidate());
+static NrIceCandidate* MakeNrIceCandidate(const nr_ice_candidate& candc) {
+  ScopedDeletePtr<NrIceCandidate> out(new NrIceCandidate());
 
-  if (!ToNrIceCandidate(candc, out.get())) {
+  if (!ToNrIceCandidate(candc, out)) {
     return nullptr;
   }
-  return out;
+  return out.forget();
 }
 
 
@@ -258,8 +259,8 @@ nsresult NrIceMediaStream::ParseTrickleCandidate(const std::string& candidate) {
 
 
 nsresult NrIceMediaStream::GetActivePair(int component,
-                                         UniquePtr<NrIceCandidate>* localp,
-                                         UniquePtr<NrIceCandidate>* remotep) {
+                                         NrIceCandidate **localp,
+                                         NrIceCandidate **remotep) {
   int r;
   nr_ice_candidate *local_int;
   nr_ice_candidate *remote_int;
@@ -279,20 +280,20 @@ nsresult NrIceMediaStream::GetActivePair(int component,
   if (r)
     return NS_ERROR_FAILURE;
 
-  UniquePtr<NrIceCandidate> local(
+  ScopedDeletePtr<NrIceCandidate> local(
       MakeNrIceCandidate(*local_int));
   if (!local)
     return NS_ERROR_FAILURE;
 
-  UniquePtr<NrIceCandidate> remote(
+  ScopedDeletePtr<NrIceCandidate> remote(
       MakeNrIceCandidate(*remote_int));
   if (!remote)
     return NS_ERROR_FAILURE;
 
   if (localp)
-    *localp = Move(local);
+    *localp = local.forget();
   if (remotep)
-    *remotep = Move(remote);
+    *remotep = remote.forget();
 
   return NS_OK;
 }

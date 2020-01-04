@@ -50,7 +50,7 @@
 #include "sigslot.h"
 
 #include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"
+#include "mozilla/Scoped.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
 #include "nsITimer.h"
@@ -159,8 +159,7 @@ class NrIceMediaStream {
   
   
   nsresult GetActivePair(int component,
-                         UniquePtr<NrIceCandidate>* local,
-                         UniquePtr<NrIceCandidate>* remote);
+                         NrIceCandidate** local, NrIceCandidate** remote);
 
   
   size_t components() const { return components_; }

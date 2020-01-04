@@ -49,6 +49,7 @@
 #include "nss.h"
 #include "ssl.h"
 
+#include "mozilla/Scoped.h"
 #include "nsThreadUtils.h"
 #include "nsXPCOM.h"
 

@@ -10,7 +10,6 @@
 #include "nsAutoPtr.h"
 #include "nsThreadUtils.h"
 #include "nsIAsyncShutdown.h"
-#include "mozilla/UniquePtr.h"
 #include "base/task.h"
 
 namespace mozilla {
@@ -97,8 +96,8 @@ public:
       OnSuccessType mOnSuccess;
       OnFailureType mOnFailure;
     };
-    mFunctors = MakeUnique<Functors>(Forward<OnSuccessType>(aOnSuccess),
-                                     Forward<OnFailureType>(aOnFailure));
+    mFunctors = new Functors(Forward<OnSuccessType>(aOnSuccess),
+                             Forward<OnFailureType>(aOnFailure));
     if (mDone) {
       if (!mRejected) {
         mFunctors->Succeed(mValue);
@@ -143,7 +142,7 @@ private:
   bool mDone;
   bool mRejected;
   ErrorType mError;
-  UniquePtr<FunctorsBase> mFunctors;
+  ScopedDeletePtr<FunctorsBase> mFunctors;
 };
 
 
@@ -351,13 +350,13 @@ private:
 };
 
 template<typename T>
-class Refcountable<UniquePtr<T>> : public UniquePtr<T>
+class Refcountable<ScopedDeletePtr<T>> : public ScopedDeletePtr<T>
 {
 public:
-  explicit Refcountable<UniquePtr<T>>(T* aPtr) : UniquePtr<T>(aPtr) {}
+  explicit Refcountable<ScopedDeletePtr<T>>(T* aPtr) : ScopedDeletePtr<T>(aPtr) {}
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Refcountable<T>)
 private:
-  ~Refcountable<UniquePtr<T>>() {}
+  ~Refcountable<ScopedDeletePtr<T>>() {}
 };
 
 
