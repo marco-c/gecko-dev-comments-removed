@@ -98,8 +98,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
                     if (v == mUserEnteredView) {
                         Telemetry.sendUIEvent(TelemetryContract.Event.LOAD_URL, TelemetryContract.Method.SUGGESTION, "user");
                     } else {
-                        final String extras = "engine." + (String) v.getTag();
-                        Telemetry.sendUIEvent(TelemetryContract.Event.LOAD_URL, TelemetryContract.Method.SUGGESTION, extras);
+                        Telemetry.sendUIEvent(TelemetryContract.Event.LOAD_URL, TelemetryContract.Method.SUGGESTION, (String) v.getTag());
                     }
                     mSearchListener.onSearch(mSearchEngine, suggestion);
                 }
@@ -184,7 +183,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
         mEditSuggestionListener = listener;
     }
 
-    private void bindSuggestionView(String suggestion, boolean animate, int recycledSuggestionCount, Integer previousSuggestionChildIndex, boolean isUserSavedSearch){
+    private void bindSuggestionView(String suggestion, boolean animate, int recycledSuggestionCount, Integer previousSuggestionChildIndex, boolean isUserSavedSearch, String telemetryTag){
         final View suggestionItem;
 
         
@@ -197,8 +196,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
             suggestionItem.setOnClickListener(mClickListener);
             suggestionItem.setOnLongClickListener(mLongClickListener);
 
-            
-            suggestionItem.setTag(String.valueOf(previousSuggestionChildIndex));
+            suggestionItem.setTag(telemetryTag);
 
             mSuggestionView.addView(suggestionItem);
         }
@@ -227,9 +225,13 @@ class SearchEngineRow extends AnimatedHeightLayout {
         try {
             if (c.moveToFirst()) {
                 final int searchColumn = c.getColumnIndexOrThrow(SearchHistory.QUERY);
+                final int historyStartIndex = suggestionCounter;
                 do {
                     final String savedSearch = c.getString(searchColumn);
-                    bindSuggestionView(savedSearch, animate, recycledSuggestionCount, suggestionCounter, true);
+                    
+                    
+                    String telemetryTag = "history." + (suggestionCounter - historyStartIndex);
+                    bindSuggestionView(savedSearch, animate, recycledSuggestionCount, suggestionCounter, true, telemetryTag);
                     ++suggestionCounter;
                 } while (c.moveToNext());
             }
@@ -266,12 +268,13 @@ class SearchEngineRow extends AnimatedHeightLayout {
             }
         }
         int suggestionCounter = 0;
-        
         for (String suggestion : mSearchEngine.getSuggestions()) {
             if (suggestionCounter == limit) {
                 break;
             }
-            bindSuggestionView(suggestion, animate, recycledSuggestionCount, suggestionCounter, false);
+            
+            String telemetryTag = "engine." + suggestionCounter;
+            bindSuggestionView(suggestion, animate, recycledSuggestionCount, suggestionCounter, false, telemetryTag);
             ++suggestionCounter;
         }
 
