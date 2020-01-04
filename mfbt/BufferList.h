@@ -78,6 +78,7 @@ class BufferList : private AllocPolicy
              AllocPolicy aAP = AllocPolicy())
    : AllocPolicy(aAP),
      mOwning(true),
+     mSegments(aAP),
      mSize(0),
      mStandardCapacity(aStandardCapacity)
   {
@@ -259,7 +260,7 @@ class BufferList : private AllocPolicy
   
   template<typename BorrowingAllocPolicy>
   BufferList<BorrowingAllocPolicy> Borrow(IterImpl& aIter, size_t aSize, bool* aSuccess,
-                                          BorrowingAllocPolicy aAP = BorrowingAllocPolicy());
+                                          BorrowingAllocPolicy aAP = BorrowingAllocPolicy()) const;
 
   
   
@@ -432,7 +433,7 @@ BufferList<AllocPolicy>::FlattenBytes(IterImpl& aIter, const char** aOutData, si
 template<typename AllocPolicy> template<typename BorrowingAllocPolicy>
 BufferList<BorrowingAllocPolicy>
 BufferList<AllocPolicy>::Borrow(IterImpl& aIter, size_t aSize, bool* aSuccess,
-                                BorrowingAllocPolicy aAP)
+                                BorrowingAllocPolicy aAP) const
 {
   BufferList<BorrowingAllocPolicy> result(aAP);
 
