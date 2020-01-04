@@ -66,9 +66,6 @@ getSiteKey(const nsACString& hostName, uint16_t port,
 }
 
 
-typedef enum {ASK, AUTO} SSM_UserCertChoice;
-
-
 
 
 
@@ -1938,42 +1935,31 @@ loser:
 }
 
 
+enum class UserCertChoice {
+  
+  Ask = 0,
+  
+  Auto = 1,
+};
 
 
 
-
-
-
-nsresult
-nsGetUserCertChoice(SSM_UserCertChoice* certChoice)
+UserCertChoice
+nsGetUserCertChoice()
 {
-  char* mode = nullptr;
-  nsresult ret;
-
-  NS_ENSURE_ARG_POINTER(certChoice);
-
-  nsCOMPtr<nsIPrefBranch> pref = do_GetService(NS_PREFSERVICE_CONTRACTID);
-
-  ret = pref->GetCharPref("security.default_personal_cert", &mode);
-  if (NS_FAILED(ret)) {
-    goto loser;
+  nsAutoCString value;
+  nsresult rv = Preferences::GetCString("security.default_personal_cert", &value);
+  if (NS_FAILED(rv)) {
+    return UserCertChoice::Ask;
   }
 
-  if (PL_strcmp(mode, "Select Automatically") == 0) {
-    *certChoice = AUTO;
-  } else if (PL_strcmp(mode, "Ask Every Time") == 0) {
-    *certChoice = ASK;
-  } else {
-    
-    
-    *certChoice = ASK;
-  }
-
-loser:
-  if (mode) {
-    free(mode);
-  }
-  return ret;
+  
+  
+  
+  
+  
+  return value.EqualsLiteral("Select Automatically") ? UserCertChoice::Auto
+                                                     : UserCertChoice::Ask;
 }
 
 static bool
@@ -2094,6 +2080,10 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
 void
 ClientAuthDataRunnable::RunOnTargetThread()
 {
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
   UniquePLArenaPool arena;
   char** caNameStrings;
   ScopedCERTCertificate cert;
@@ -2102,7 +2092,6 @@ ClientAuthDataRunnable::RunOnTargetThread()
   CERTCertListNode* node;
   UniqueCERTCertNicknames nicknames;
   int keyError = 0; 
-  SSM_UserCertChoice certChoice;
   int32_t NumberOfCerts = 0;
   void* wincx = mSocketInfo;
   nsresult rv;
@@ -2148,12 +2137,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
   }
 
   
-  if (NS_FAILED(nsGetUserCertChoice(&certChoice))) {
-    goto loser;
-  }
-
-  
-  if (certChoice == AUTO) {
+  if (nsGetUserCertChoice() == UserCertChoice::Auto) {
     
 
     
