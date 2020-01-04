@@ -241,7 +241,7 @@ PresentationSessionInfo::Shutdown(nsresult aReason)
   mIsResponderReady = false;
   mIsOnTerminating = false;
 
-  SetBuilder(nullptr);
+  ResetBuilder();
 }
 
 nsresult
@@ -379,7 +379,12 @@ PresentationSessionInfo::GetWindow()
     return nullptr;
   }
 
-  return nsGlobalWindow::GetInnerWindowWithId(windowId)->AsInner();
+  auto window = nsGlobalWindow::GetInnerWindowWithId(windowId);
+  if (!window) {
+    return nullptr;
+  }
+
+  return window->AsInner();
 }
 
  bool
@@ -492,7 +497,7 @@ PresentationSessionInfo::OnSessionTransport(nsIPresentationSessionTransport* tra
   PRES_DEBUG("%s:id[%s], role[%d], state[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole, mState);
 
-  SetBuilder(nullptr);
+  ResetBuilder();
 
   if (mState != nsIPresentationSessionListener::STATE_CONNECTING) {
     return NS_ERROR_FAILURE;
@@ -523,7 +528,7 @@ PresentationSessionInfo::OnError(nsresult aReason)
   PRES_DEBUG("%s:id[%s], reason[%x], role[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), aReason, mRole);
 
-  SetBuilder(nullptr);
+  ResetBuilder();
   return ReplyError(aReason);
 }
 
@@ -827,12 +832,14 @@ PresentationControllingInfo::BuildTransport()
     return NS_OK;
   }
 
+  if (NS_WARN_IF(!mBuilderConstructor)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   if (!Preferences::GetBool("dom.presentation.session_transport.data_channel.enable")) {
     
     return GetAddress();
   }
-
-  nsPIDOMWindowInner* window = nullptr;
   
 
 
@@ -847,25 +854,22 @@ PresentationControllingInfo::BuildTransport()
 
 
 
-  
-  if (!mBuilder) {
-    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> builder =
-      do_CreateInstance("@mozilla.org/presentation/datachanneltransportbuilder;1");
-    if (NS_WARN_IF(!builder)) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-    SetBuilder(builder);
-    
-    window = GetWindow();
-  }
-  
   mTransportType = nsIPresentationChannelDescription::TYPE_DATACHANNEL;
+  if (NS_WARN_IF(NS_FAILED(
+    mBuilderConstructor->CreateTransportBuilder(mTransportType,
+                                                getter_AddRefs(mBuilder))))) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
     dataChannelBuilder(do_QueryInterface(mBuilder));
   if (NS_WARN_IF(!dataChannelBuilder)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
+
+  
+  nsPIDOMWindowInner* window = GetWindow();
+
   nsresult rv = dataChannelBuilder->
          BuildDataChannelTransport(nsIPresentationService::ROLE_CONTROLLER,
                                    window,
@@ -873,6 +877,7 @@ PresentationControllingInfo::BuildTransport()
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
+
   return NS_OK;
 }
 
@@ -923,9 +928,18 @@ PresentationControllingInfo::OnSocketAccepted(nsIServerSocket* aServerSocket,
 
   MOZ_ASSERT(NS_IsMainThread());
 
+  if (NS_WARN_IF(!mBuilderConstructor)) {
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
+  }
+
   
-  nsCOMPtr<nsIPresentationTCPSessionTransportBuilder> builder =
-    do_CreateInstance(PRESENTATION_TCP_SESSION_TRANSPORT_CONTRACTID);
+  nsCOMPtr<nsIPresentationTCPSessionTransportBuilder> builder;
+  if (NS_SUCCEEDED(mBuilderConstructor->CreateTransportBuilder(
+                     nsIPresentationChannelDescription::TYPE_TCP,
+                     getter_AddRefs(mBuilder)))) {
+    builder = do_QueryInterface(mBuilder);
+  }
+
   if (NS_WARN_IF(!builder)) {
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
@@ -1135,6 +1149,7 @@ PresentationPresentingInfo::Shutdown(nsresult aReason)
   mRequesterDescription = nullptr;
   mPendingCandidates.Clear();
   mPromise = nullptr;
+  mHasFlushPendingEvents = false;
 }
 
 
@@ -1212,16 +1227,25 @@ PresentationPresentingInfo::InitTransportAndSendAnswer()
     return rv;
   }
 
+  if (NS_WARN_IF(!mBuilderConstructor)) {
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
+  }
+
+  if (NS_WARN_IF(NS_FAILED(
+    mBuilderConstructor->CreateTransportBuilder(type,
+                                                getter_AddRefs(mBuilder))))) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   if (type == nsIPresentationChannelDescription::TYPE_TCP) {
     
     
     nsCOMPtr<nsIPresentationTCPSessionTransportBuilder> builder =
-      do_CreateInstance(PRESENTATION_TCP_SESSION_TRANSPORT_CONTRACTID);
+      do_QueryInterface(mBuilder);
     if (NS_WARN_IF(!builder)) {
       return NS_ERROR_NOT_AVAILABLE;
     }
 
-    SetBuilder(builder);
     mTransportType = nsIPresentationChannelDescription::TYPE_TCP;
     return builder->BuildTCPReceiverTransport(mRequesterDescription, this);
   }
@@ -1230,8 +1254,6 @@ PresentationPresentingInfo::InitTransportAndSendAnswer()
     if (!Preferences::GetBool("dom.presentation.session_transport.data_channel.enable")) {
       return NS_ERROR_NOT_IMPLEMENTED;
     }
-    nsPIDOMWindowInner* window = nullptr;
-
     
 
 
@@ -1246,27 +1268,16 @@ PresentationPresentingInfo::InitTransportAndSendAnswer()
 
 
 
-    
-    if (!mBuilder) {
-      nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> builder =
-        do_CreateInstance("@mozilla.org/presentation/datachanneltransportbuilder;1");
-
-      if (NS_WARN_IF(!builder)) {
-        return NS_ERROR_NOT_AVAILABLE;
-      }
-
-      SetBuilder(builder);
-
-      
-      window = GetWindow();
-    }
     mTransportType = nsIPresentationChannelDescription::TYPE_DATACHANNEL;
 
-    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
-      dataChannelBuilder(do_QueryInterface(mBuilder));
+    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> dataChannelBuilder =
+      do_QueryInterface(mBuilder);
     if (NS_WARN_IF(!dataChannelBuilder)) {
       return NS_ERROR_NOT_AVAILABLE;
     }
+
+    nsPIDOMWindowInner* window = GetWindow();
+
     rv = dataChannelBuilder->
            BuildDataChannelTransport(nsIPresentationService::ROLE_RECEIVER,
                                      window,
@@ -1275,11 +1286,11 @@ PresentationPresentingInfo::InitTransportAndSendAnswer()
       return rv;
     }
 
-
-    rv = this->FlushPendingEvents(dataChannelBuilder);
+    rv = FlushPendingEvents(dataChannelBuilder);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+
     return NS_OK;
   }
 
