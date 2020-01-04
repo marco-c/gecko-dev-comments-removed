@@ -566,8 +566,14 @@ public:
     if (navHistory) {
       nsCOMPtr<nsIURI> uri;
       (void)NS_NewURI(getter_AddRefs(uri), mSpec);
-      navHistory->NotifyFrecencyChanged(uri, mNewFrecency, mGUID, mHidden,
-                                        mLastVisitDate);
+      
+      NS_WARN_IF_FALSE(uri, "Invalid URI in FrecencyNotification");
+      
+      
+      if (uri) {
+        navHistory->NotifyFrecencyChanged(uri, mNewFrecency, mGUID, mHidden,
+                                          mLastVisitDate);
+      }
     }
     return NS_OK;
   }
@@ -2500,6 +2506,8 @@ nsNavHistory::RemovePages(nsIURI **aURIs, uint32_t aLength)
   for (uint32_t i = 0; i < aLength; i++) {
     int64_t placeId;
     nsAutoCString guid;
+    if (!aURIs[i])
+      continue;
     rv = GetIdForPage(aURIs[i], &placeId, guid);
     NS_ENSURE_SUCCESS(rv, rv);
     if (placeId != 0) {

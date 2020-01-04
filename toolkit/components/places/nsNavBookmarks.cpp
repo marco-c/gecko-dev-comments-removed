@@ -626,6 +626,8 @@ nsNavBookmarks::RemoveItem(int64_t aItemId)
     }
     
     (void)NS_NewURI(getter_AddRefs(uri), bookmark.url);
+    
+    NS_WARN_IF_FALSE(uri, "Invalid URI in RemoveItem");
   }
 
   NOTIFY_OBSERVERS(mCanNotify, mCacheObservers, mObservers,
@@ -1102,6 +1104,8 @@ nsNavBookmarks::RemoveFolderChildren(int64_t aFolderId)
       }
       
       (void)NS_NewURI(getter_AddRefs(uri), child.url);
+      
+      NS_WARN_IF_FALSE(uri, "Invalid URI in RemoveFolderChildren");
     }
 
     NOTIFY_OBSERVERS(mCanNotify, mCacheObservers, mObservers,
@@ -2573,17 +2577,22 @@ void
 nsNavBookmarks::NotifyItemVisited(const ItemVisitData& aData)
 {
   nsCOMPtr<nsIURI> uri;
-  (void)NS_NewURI(getter_AddRefs(uri), aData.bookmark.url);
-  NOTIFY_OBSERVERS(mCanNotify, mCacheObservers, mObservers,
-                   nsINavBookmarkObserver,
-                   OnItemVisited(aData.bookmark.id,
-                                 aData.visitId,
-                                 aData.time,
-                                 aData.transitionType,
-                                 uri,
-                                 aData.bookmark.parentId,
-                                 aData.bookmark.guid,
-                                 aData.bookmark.parentGuid));
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), aData.bookmark.url)));
+  
+  
+  
+  if (uri) {
+    NOTIFY_OBSERVERS(mCanNotify, mCacheObservers, mObservers,
+                     nsINavBookmarkObserver,
+                     OnItemVisited(aData.bookmark.id,
+                                   aData.visitId,
+                                   aData.time,
+                                   aData.transitionType,
+                                   uri,
+                                   aData.bookmark.parentId,
+                                   aData.bookmark.guid,
+                                   aData.bookmark.parentGuid));
+  }
 }
 
 void
@@ -2661,6 +2670,8 @@ nsNavBookmarks::OnVisit(nsIURI* aURI, int64_t aVisitId, PRTime aTime,
                         uint32_t aTransitionType, const nsACString& aGUID,
                         bool aHidden)
 {
+  NS_ENSURE_ARG(aURI);
+
   
   ItemVisitData visitData;
   nsresult rv = aURI->GetSpec(visitData.bookmark.url);
@@ -2681,6 +2692,8 @@ nsNavBookmarks::OnDeleteURI(nsIURI* aURI,
                             const nsACString& aGUID,
                             uint16_t aReason)
 {
+  NS_ENSURE_ARG(aURI);
+
 #ifdef DEBUG
   nsNavHistory* history = nsNavHistory::GetHistoryService();
   int64_t placeId;
@@ -2737,6 +2750,8 @@ nsNavBookmarks::OnPageChanged(nsIURI* aURI,
                               const nsAString& aNewValue,
                               const nsACString& aGUID)
 {
+  NS_ENSURE_ARG(aURI);
+
   nsresult rv;
   if (aChangedAttribute == nsINavHistoryObserver::ATTRIBUTE_FAVICON) {
     ItemChangeData changeData;
@@ -2784,6 +2799,8 @@ nsNavBookmarks::OnDeleteVisits(nsIURI* aURI, PRTime aVisitTime,
                                const nsACString& aGUID,
                                uint16_t aReason, uint32_t aTransitionType)
 {
+  NS_ENSURE_ARG(aURI);
+
   
   if (!aVisitTime) {
     
