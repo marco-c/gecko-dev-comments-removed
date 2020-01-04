@@ -308,18 +308,6 @@ private:
   bool HaveNextFrameData();
 
   
-  bool IsBuffering() const {
-    MOZ_ASSERT(OnTaskQueue());
-    return mState == DECODER_STATE_BUFFERING;
-  }
-
-  
-  bool IsSeeking() const {
-    MOZ_ASSERT(OnTaskQueue());
-    return mState == DECODER_STATE_SEEKING;
-  }
-
-  
   TaskQueue* OwnerThread() const { return mTaskQueue; }
 
   
