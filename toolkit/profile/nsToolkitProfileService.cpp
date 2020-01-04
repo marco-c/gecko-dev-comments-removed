@@ -512,11 +512,7 @@ nsToolkitProfileService::Init()
     }
 
 #ifdef MOZ_DEV_EDITION
-    
-    
-    bool isFirefox = strcmp(gAppData->ID,
-                            "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}") == 0;
-    if (!foundAuroraDefault && isFirefox && !shouldIgnoreSeparateProfile) {
+    if (!foundAuroraDefault && !shouldIgnoreSeparateProfile) {
         
         
         if (!mChosen && mFirst && !mFirst->mNext)
