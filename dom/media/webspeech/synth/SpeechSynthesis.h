@@ -44,7 +44,6 @@ public:
 
   bool Paused() const;
 
-  
   bool HasEmptyQueue() const;
 
   void Speak(SpeechSynthesisUtterance& aUtterance);
@@ -60,8 +59,6 @@ public:
   void GetVoices(nsTArray< RefPtr<SpeechSynthesisVoice> >& aResult);
 
   void ForceEnd();
-
-  SpeechSynthesisUtterance* CurrentUtterance() const;
 
   IMPL_EVENT_HANDLER(voiceschanged)
 
