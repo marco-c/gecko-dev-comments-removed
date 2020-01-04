@@ -39,33 +39,33 @@ enum MemoryBarrierBits {
     MembarAllbits = 31,
 };
 
-static inline MOZ_CONSTEXPR MemoryBarrierBits
+static inline constexpr MemoryBarrierBits
 operator|(MemoryBarrierBits a, MemoryBarrierBits b)
 {
     return MemoryBarrierBits(int(a) | int(b));
 }
 
-static inline MOZ_CONSTEXPR MemoryBarrierBits
+static inline constexpr MemoryBarrierBits
 operator&(MemoryBarrierBits a, MemoryBarrierBits b)
 {
     return MemoryBarrierBits(int(a) & int(b));
 }
 
-static inline MOZ_CONSTEXPR MemoryBarrierBits
+static inline constexpr MemoryBarrierBits
 operator~(MemoryBarrierBits a)
 {
     return MemoryBarrierBits(~int(a));
 }
 
 
-static MOZ_CONSTEXPR_VAR MemoryBarrierBits MembarFull = MembarLoadLoad|MembarLoadStore|MembarStoreLoad|MembarStoreStore;
+static constexpr MemoryBarrierBits MembarFull = MembarLoadLoad|MembarLoadStore|MembarStoreLoad|MembarStoreStore;
 
 
 
-static MOZ_CONSTEXPR_VAR MemoryBarrierBits MembarBeforeLoad = MembarNobits;
-static MOZ_CONSTEXPR_VAR MemoryBarrierBits MembarAfterLoad = MembarLoadLoad|MembarLoadStore;
-static MOZ_CONSTEXPR_VAR MemoryBarrierBits MembarBeforeStore = MembarStoreStore;
-static MOZ_CONSTEXPR_VAR MemoryBarrierBits MembarAfterStore = MembarStoreLoad;
+static constexpr MemoryBarrierBits MembarBeforeLoad = MembarNobits;
+static constexpr MemoryBarrierBits MembarAfterLoad = MembarLoadLoad|MembarLoadStore;
+static constexpr MemoryBarrierBits MembarBeforeStore = MembarStoreStore;
+static constexpr MemoryBarrierBits MembarAfterStore = MembarStoreLoad;
 
 } 
 } 

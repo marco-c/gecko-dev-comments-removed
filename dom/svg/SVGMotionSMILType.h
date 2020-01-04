@@ -78,7 +78,7 @@ public:
 
 private:
   
-  MOZ_CONSTEXPR SVGMotionSMILType() {}
+  constexpr SVGMotionSMILType() {}
 };
 
 } 

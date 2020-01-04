@@ -41,7 +41,7 @@ protected:
 
 private:
   
-  MOZ_CONSTEXPR nsSMILFloatType() {}
+  constexpr nsSMILFloatType() {}
 };
 
 #endif 

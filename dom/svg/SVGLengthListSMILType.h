@@ -93,7 +93,7 @@ protected:
 
 private:
   
-  MOZ_CONSTEXPR SVGLengthListSMILType() {}
+  constexpr SVGLengthListSMILType() {}
 };
 
 } 

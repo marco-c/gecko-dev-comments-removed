@@ -110,7 +110,7 @@ public:
 
 private:
   
-  MOZ_CONSTEXPR nsSMILCSSValueType() {}
+  constexpr nsSMILCSSValueType() {}
 };
 
 #endif 

@@ -134,14 +134,14 @@ static constexpr Register AsmJSIonExitRegD1 = r1;
 static constexpr Register AsmJSIonExitRegD2 = r4;
 
 
-static MOZ_CONSTEXPR_VAR Register RegExpMatcherRegExpReg = CallTempReg0;
-static MOZ_CONSTEXPR_VAR Register RegExpMatcherStringReg = CallTempReg1;
-static MOZ_CONSTEXPR_VAR Register RegExpMatcherLastIndexReg = CallTempReg2;
+static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;
+static constexpr Register RegExpMatcherStringReg = CallTempReg1;
+static constexpr Register RegExpMatcherLastIndexReg = CallTempReg2;
 
 
-static MOZ_CONSTEXPR_VAR Register RegExpTesterRegExpReg = CallTempReg0;
-static MOZ_CONSTEXPR_VAR Register RegExpTesterStringReg = CallTempReg1;
-static MOZ_CONSTEXPR_VAR Register RegExpTesterLastIndexReg = CallTempReg2;
+static constexpr Register RegExpTesterRegExpReg = CallTempReg0;
+static constexpr Register RegExpTesterStringReg = CallTempReg1;
+static constexpr Register RegExpTesterLastIndexReg = CallTempReg2;
 
 static constexpr Register JSReturnReg_Type = r3;
 static constexpr Register JSReturnReg_Data = r2;
@@ -175,12 +175,12 @@ static const uint32_t AsmJSStackAlignment = SimdMemoryAlignment;
 static const int32_t AsmJSGlobalRegBias = 1024;
 
 
-static MOZ_CONSTEXPR_VAR bool SupportsUint32x4FloatConversions = false;
+static constexpr bool SupportsUint32x4FloatConversions = false;
 
 
-static MOZ_CONSTEXPR_VAR bool SupportsUint8x16Compares = false;
-static MOZ_CONSTEXPR_VAR bool SupportsUint16x8Compares = false;
-static MOZ_CONSTEXPR_VAR bool SupportsUint32x4Compares = false;
+static constexpr bool SupportsUint8x16Compares = false;
+static constexpr bool SupportsUint16x8Compares = false;
+static constexpr bool SupportsUint32x4Compares = false;
 
 class Assembler : public vixl::Assembler
 {
@@ -457,15 +457,15 @@ class ABIArgGenerator
     ABIArg current_;
 };
 
-static MOZ_CONSTEXPR_VAR Register ABINonArgReg0 = r8;
-static MOZ_CONSTEXPR_VAR Register ABINonArgReg1 = r9;
-static MOZ_CONSTEXPR_VAR Register ABINonArgReturnReg0 = r8;
-static MOZ_CONSTEXPR_VAR Register ABINonArgReturnReg1 = r9;
+static constexpr Register ABINonArgReg0 = r8;
+static constexpr Register ABINonArgReg1 = r9;
+static constexpr Register ABINonArgReturnReg0 = r8;
+static constexpr Register ABINonArgReturnReg1 = r9;
 
 
 
-static MOZ_CONSTEXPR_VAR Register WasmTableCallPtrReg = ABINonArgReg0;
-static MOZ_CONSTEXPR_VAR Register WasmTableCallSigReg = ABINonArgReg1;
+static constexpr Register WasmTableCallPtrReg = ABINonArgReg0;
+static constexpr Register WasmTableCallSigReg = ABINonArgReg1;
 
 static inline bool
 GetIntArgReg(uint32_t usedIntArgs, uint32_t usedFloatArgs, Register* out)

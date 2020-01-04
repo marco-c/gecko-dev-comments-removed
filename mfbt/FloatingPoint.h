@@ -117,7 +117,7 @@ struct FloatingPoint : public SelectTrait<T>
 
 
 template<typename T>
-static MOZ_ALWAYS_INLINE MOZ_CONSTEXPR bool
+static MOZ_ALWAYS_INLINE constexpr bool
 IsNaN(T aValue)
 {
   

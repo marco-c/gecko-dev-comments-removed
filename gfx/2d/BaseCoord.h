@@ -21,8 +21,8 @@ struct BaseCoord {
   T value;
 
   
-  MOZ_CONSTEXPR BaseCoord() : value(0) {}
-  explicit MOZ_CONSTEXPR BaseCoord(T aValue) : value(aValue) {}
+  constexpr BaseCoord() : value(0) {}
+  explicit constexpr BaseCoord(T aValue) : value(aValue) {}
 
   
   

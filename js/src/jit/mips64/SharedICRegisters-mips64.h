@@ -12,34 +12,34 @@
 namespace js {
 namespace jit {
 
-static MOZ_CONSTEXPR_VAR Register BaselineFrameReg = s5;
-static MOZ_CONSTEXPR_VAR Register BaselineStackReg = sp;
+static constexpr Register BaselineFrameReg = s5;
+static constexpr Register BaselineStackReg = sp;
 
 
 
 
-static MOZ_CONSTEXPR_VAR ValueOperand R0(v1);
-static MOZ_CONSTEXPR_VAR ValueOperand R1(s4);
-static MOZ_CONSTEXPR_VAR ValueOperand R2(a6);
+static constexpr ValueOperand R0(v1);
+static constexpr ValueOperand R1(s4);
+static constexpr ValueOperand R2(a6);
 
 
 
-static MOZ_CONSTEXPR_VAR Register ICTailCallReg = ra;
-static MOZ_CONSTEXPR_VAR Register ICStubReg = a5;
+static constexpr Register ICTailCallReg = ra;
+static constexpr Register ICStubReg = a5;
 
-static MOZ_CONSTEXPR_VAR Register ExtractTemp0 = s6;
-static MOZ_CONSTEXPR_VAR Register ExtractTemp1 = s7;
-
-
-static MOZ_CONSTEXPR_VAR Register BaselineSecondScratchReg = SecondScratchReg;
+static constexpr Register ExtractTemp0 = s6;
+static constexpr Register ExtractTemp1 = s7;
 
 
+static constexpr Register BaselineSecondScratchReg = SecondScratchReg;
 
 
 
 
-static MOZ_CONSTEXPR_VAR FloatRegister FloatReg0 = f0;
-static MOZ_CONSTEXPR_VAR FloatRegister FloatReg1 = f2;
+
+
+static constexpr FloatRegister FloatReg0 = f0;
+static constexpr FloatRegister FloatReg1 = f2;
 
 } 
 } 

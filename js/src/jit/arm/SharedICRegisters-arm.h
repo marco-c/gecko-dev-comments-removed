@@ -17,36 +17,36 @@ namespace jit {
 
 
 
-static MOZ_CONSTEXPR_VAR Register BaselineFrameReg = r11;
-static MOZ_CONSTEXPR_VAR Register BaselineStackReg = sp;
+static constexpr Register BaselineFrameReg = r11;
+static constexpr Register BaselineStackReg = sp;
 
 
 
 
-static MOZ_CONSTEXPR_VAR ValueOperand R0(r3, r2);
-static MOZ_CONSTEXPR_VAR ValueOperand R1(r5, r4);
-static MOZ_CONSTEXPR_VAR ValueOperand R2(r1, r0);
+static constexpr ValueOperand R0(r3, r2);
+static constexpr ValueOperand R1(r5, r4);
+static constexpr ValueOperand R2(r1, r0);
 
 
 
-static MOZ_CONSTEXPR_VAR Register ICTailCallReg = r14;
-static MOZ_CONSTEXPR_VAR Register ICStubReg     = r9;
+static constexpr Register ICTailCallReg = r14;
+static constexpr Register ICStubReg     = r9;
 
-static MOZ_CONSTEXPR_VAR Register ExtractTemp0        = InvalidReg;
-static MOZ_CONSTEXPR_VAR Register ExtractTemp1        = InvalidReg;
-
-
-static MOZ_CONSTEXPR_VAR Register BaselineSecondScratchReg = r6;
+static constexpr Register ExtractTemp0        = InvalidReg;
+static constexpr Register ExtractTemp1        = InvalidReg;
 
 
-
-
+static constexpr Register BaselineSecondScratchReg = r6;
 
 
 
 
-static MOZ_CONSTEXPR_VAR FloatRegister FloatReg0      = d0;
-static MOZ_CONSTEXPR_VAR FloatRegister FloatReg1      = d1;
+
+
+
+
+static constexpr FloatRegister FloatReg0      = d0;
+static constexpr FloatRegister FloatReg1      = d1;
 
 } 
 } 

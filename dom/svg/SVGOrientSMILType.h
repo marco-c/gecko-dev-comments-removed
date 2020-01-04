@@ -60,7 +60,7 @@ protected:
 
 private:
   
-  MOZ_CONSTEXPR SVGOrientSMILType() {}
+  constexpr SVGOrientSMILType() {}
 };
 
 } 

@@ -51,7 +51,7 @@ protected:
 
 private:
   
-  MOZ_CONSTEXPR SVGPathSegListSMILType() {}
+  constexpr SVGPathSegListSMILType() {}
 };
 
 } 

@@ -62,7 +62,7 @@ class BaseTimeDuration
 {
 public:
   
-  MOZ_CONSTEXPR BaseTimeDuration() : mValue(0) {}
+  constexpr BaseTimeDuration() : mValue(0) {}
   
   
   struct _SomethingVeryRandomHere;
@@ -395,7 +395,7 @@ public:
   
 
 
-  MOZ_CONSTEXPR TimeStamp() : mValue(0) {}
+  constexpr TimeStamp() : mValue(0) {}
   
 
   

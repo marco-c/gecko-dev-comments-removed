@@ -49,7 +49,7 @@ struct AnimationPerformanceWarning
   
   
   
-  static MOZ_CONSTEXPR_VAR uint8_t kMaxParamsForLocalization = 10;
+  static constexpr uint8_t kMaxParamsForLocalization = 10;
 
   
   Type mType;

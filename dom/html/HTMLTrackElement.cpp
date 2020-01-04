@@ -60,7 +60,7 @@ namespace mozilla {
 namespace dom {
 
 
-static MOZ_CONSTEXPR nsAttrValue::EnumTable kKindTable[] = {
+static constexpr nsAttrValue::EnumTable kKindTable[] = {
   { "subtitles", static_cast<int16_t>(TextTrackKind::Subtitles) },
   { "captions", static_cast<int16_t>(TextTrackKind::Captions) },
   { "descriptions", static_cast<int16_t>(TextTrackKind::Descriptions) },
@@ -71,7 +71,7 @@ static MOZ_CONSTEXPR nsAttrValue::EnumTable kKindTable[] = {
 
 
 
-static MOZ_CONSTEXPR const nsAttrValue::EnumTable* kKindTableInvalidValueDefault = &kKindTable[4];
+static constexpr const nsAttrValue::EnumTable* kKindTableInvalidValueDefault = &kKindTable[4];
 
 
 HTMLTrackElement::HTMLTrackElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)

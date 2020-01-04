@@ -90,7 +90,7 @@ class XorShift128PlusRNG {
 
 
 
-    static MOZ_CONSTEXPR_VAR int kMantissaBits =
+    static constexpr int kMantissaBits =
       mozilla::FloatingPoint<double>::kExponentShift + 1;
     uint64_t mantissa = next() & ((UINT64_C(1) << kMantissaBits) - 1);
     return double(mantissa) / (UINT64_C(1) << kMantissaBits);

@@ -2123,7 +2123,7 @@ struct TrackedDBEntry
   const uint32_t mNameLength;
 
   
-  MOZ_CONSTEXPR
+  constexpr
   TrackedDBEntry(const char* aName, uint32_t aNameLength)
     : mName(aName)
     , mNameLength(aNameLength)
@@ -2137,7 +2137,7 @@ struct TrackedDBEntry
 
 
 
-static MOZ_CONSTEXPR_VAR TrackedDBEntry kTrackedDBs[] = {
+static constexpr TrackedDBEntry kTrackedDBs[] = {
   
   TRACKEDDB_ENTRY("818200132aebmoouht.sqlite"),
   TRACKEDDB_ENTRY("addons.sqlite"),

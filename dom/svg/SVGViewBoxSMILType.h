@@ -40,7 +40,7 @@ protected:
 
 private:
   
-  MOZ_CONSTEXPR SVGViewBoxSMILType() {}
+  constexpr SVGViewBoxSMILType() {}
 };
 
 } 

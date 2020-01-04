@@ -418,7 +418,7 @@ class MOZ_NONHEAP_CLASS Handle : public js::HandleBase<T>
 
 
 
-    static MOZ_CONSTEXPR Handle fromMarkedLocation(const T* p) {
+    static constexpr Handle fromMarkedLocation(const T* p) {
         return Handle(p, DeliberatelyChoosingThisOverload,
                       ImUsingThisOnlyInFromFromMarkedLocation);
     }
@@ -453,7 +453,7 @@ class MOZ_NONHEAP_CLASS Handle : public js::HandleBase<T>
 
     enum Disambiguator { DeliberatelyChoosingThisOverload = 42 };
     enum CallerIdentity { ImUsingThisOnlyInFromFromMarkedLocation = 17 };
-    MOZ_CONSTEXPR Handle(const T* p, Disambiguator, CallerIdentity) : ptr(p) {}
+    constexpr Handle(const T* p, Disambiguator, CallerIdentity) : ptr(p) {}
 
     const T* ptr;
 };

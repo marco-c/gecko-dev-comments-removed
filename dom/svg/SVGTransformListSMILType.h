@@ -123,7 +123,7 @@ public:
 
 private:
   
-  MOZ_CONSTEXPR SVGTransformListSMILType() {}
+  constexpr SVGTransformListSMILType() {}
 };
 
 } 

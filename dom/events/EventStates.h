@@ -24,7 +24,7 @@ class EventStates
 public:
   typedef uint64_t InternalType;
 
-  MOZ_CONSTEXPR EventStates()
+  constexpr EventStates()
     : mStates(0)
   {
   }
@@ -34,12 +34,12 @@ public:
   
   
   
-  explicit MOZ_CONSTEXPR EventStates(InternalType aStates)
+  explicit constexpr EventStates(InternalType aStates)
     : mStates(aStates)
   {
   }
 
-  EventStates MOZ_CONSTEXPR operator|(const EventStates& aEventStates) const
+  EventStates constexpr operator|(const EventStates& aEventStates) const
   {
     return EventStates(mStates | aEventStates.mStates);
   }
@@ -53,7 +53,7 @@ public:
   
   
   
-  EventStates MOZ_CONSTEXPR operator&(const EventStates& aEventStates) const
+  EventStates constexpr operator&(const EventStates& aEventStates) const
   {
     return EventStates(mStates & aEventStates.mStates);
   }

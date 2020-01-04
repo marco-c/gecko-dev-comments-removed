@@ -26,20 +26,20 @@ struct ScaleFactors2D {
   float xScale;
   float yScale;
 
-  MOZ_CONSTEXPR ScaleFactors2D() : xScale(1.0), yScale(1.0) {}
-  MOZ_CONSTEXPR ScaleFactors2D(const ScaleFactors2D<src, dst>& aCopy)
+  constexpr ScaleFactors2D() : xScale(1.0), yScale(1.0) {}
+  constexpr ScaleFactors2D(const ScaleFactors2D<src, dst>& aCopy)
     : xScale(aCopy.xScale), yScale(aCopy.yScale) {}
-  MOZ_CONSTEXPR ScaleFactors2D(float aXScale, float aYScale)
+  constexpr ScaleFactors2D(float aXScale, float aYScale)
     : xScale(aXScale), yScale(aYScale) {}
   
-  explicit MOZ_CONSTEXPR ScaleFactors2D(const gfxSize& aSize)
+  explicit constexpr ScaleFactors2D(const gfxSize& aSize)
     : xScale(aSize.width), yScale(aSize.height) {}
 
   
   
   
   
-  explicit MOZ_CONSTEXPR ScaleFactors2D(const ScaleFactor<src, dst>& aScale)
+  explicit constexpr ScaleFactors2D(const ScaleFactor<src, dst>& aScale)
     : xScale(aScale.scale), yScale(aScale.scale) {}
 
   bool AreScalesSame() const {

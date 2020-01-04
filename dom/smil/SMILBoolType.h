@@ -42,7 +42,7 @@ protected:
 
 private:
   
-  MOZ_CONSTEXPR SMILBoolType() {}
+  constexpr SMILBoolType() {}
 };
 
 } 
