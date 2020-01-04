@@ -33,6 +33,8 @@ const {ActorClass, Actor, FrontClass, Front,
        Arg, method, RetVal, types} = protocol;
 
 const {NodeActor} = require("devtools/server/actors/inspector");
+const {AnimationPlayerFront} = require("devtools/shared/fronts/animation");
+const {animationPlayerSpec} = require("devtools/shared/specs/animation");
 const events = require("sdk/event/core");
 
 
@@ -53,16 +55,7 @@ exports.ANIMATION_TYPES = ANIMATION_TYPES;
 
 
 
-var AnimationPlayerActor = ActorClass({
-  typeName: "animationplayer",
-
-  events: {
-    "changed": {
-      type: "changed",
-      state: Arg(0, "json")
-    }
-  },
-
+var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
   
 
 
@@ -141,7 +134,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  release: method(function () {}, {release: true}),
+  release: function () {},
 
   form: function (detail) {
     if (detail === "actorid") {
@@ -313,7 +306,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getCurrentState: method(function () {
+  getCurrentState: function () {
     let newState = this.getState();
 
     
@@ -334,12 +327,7 @@ var AnimationPlayerActor = ActorClass({
     this.currentState = newState;
 
     return sentState;
-  }, {
-    request: {},
-    response: {
-      data: RetVal("json")
-    }
-  }),
+  },
 
   
 
@@ -380,25 +368,19 @@ var AnimationPlayerActor = ActorClass({
   
 
 
-  pause: method(function () {
+  pause: function () {
     this.player.pause();
     return this.player.ready;
-  }, {
-    request: {},
-    response: {}
-  }),
+  },
 
   
 
 
 
-  play: method(function () {
+  play: function () {
     this.player.play();
     return this.player.ready;
-  }, {
-    request: {},
-    response: {}
-  }),
+  },
 
   
 
@@ -411,177 +393,48 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  ready: method(function () {
+  ready: function () {
     return this.player.ready;
-  }, {
-    request: {},
-    response: {}
-  }),
+  },
 
   
 
 
-  setCurrentTime: method(function (currentTime) {
+  setCurrentTime: function (currentTime) {
     this.player.currentTime = currentTime * this.player.playbackRate;
-  }, {
-    request: {
-      currentTime: Arg(0, "number")
-    },
-    response: {}
-  }),
+  },
 
   
 
 
-  setPlaybackRate: method(function (playbackRate) {
+  setPlaybackRate: function (playbackRate) {
     this.player.playbackRate = playbackRate;
-  }, {
-    request: {
-      currentTime: Arg(0, "number")
-    },
-    response: {}
-  }),
+  },
 
   
 
 
 
 
-  getFrames: method(function () {
+  getFrames: function () {
     return this.player.effect.getKeyframes();
-  }, {
-    request: {},
-    response: {
-      frames: RetVal("json")
-    }
-  }),
+  },
 
   
 
 
 
 
-  getProperties: method(function () {
+  getProperties: function () {
     return this.player.effect.getProperties().map(property => {
       return {name: property.property, values: property.values};
     });
-  }, {
-    request: {},
-    response: {
-      properties: RetVal("array:json")
-    }
-  })
+  }
 });
 
 exports.AnimationPlayerActor = AnimationPlayerActor;
 
-var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
-  initialize: function (conn, form, detail, ctx) {
-    Front.prototype.initialize.call(this, conn, form, detail, ctx);
-
-    this.state = {};
-  },
-
-  form: function (form, detail) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-    this._form = form;
-    this.state = this.initialState;
-  },
-
-  destroy: function () {
-    Front.prototype.destroy.call(this);
-  },
-
-  
-
-
-
-  get animationTargetNodeFront() {
-    if (!this._form.animationTargetNodeActorID) {
-      return null;
-    }
-
-    return this.conn.getActor(this._form.animationTargetNodeActorID);
-  },
-
-  
-
-
-
-  get initialState() {
-    return {
-      type: this._form.type,
-      startTime: this._form.startTime,
-      previousStartTime: this._form.previousStartTime,
-      currentTime: this._form.currentTime,
-      playState: this._form.playState,
-      playbackRate: this._form.playbackRate,
-      name: this._form.name,
-      duration: this._form.duration,
-      delay: this._form.delay,
-      endDelay: this._form.endDelay,
-      iterationCount: this._form.iterationCount,
-      iterationStart: this._form.iterationStart,
-      isRunningOnCompositor: this._form.isRunningOnCompositor,
-      propertyState: this._form.propertyState,
-      documentCurrentTime: this._form.documentCurrentTime
-    };
-  },
-
-  
-
-
-
-  onChanged: protocol.preEvent("changed", function (partialState) {
-    let {state} = this.reconstructState(partialState);
-    this.state = state;
-  }),
-
-  
-
-
-
-  refreshState: Task.async(function* () {
-    let data = yield this.getCurrentState();
-    if (this.currentStateHasChanged) {
-      this.state = data;
-    }
-  }),
-
-  
-
-
-
-  getCurrentState: protocol.custom(function () {
-    this.currentStateHasChanged = false;
-    return this._getCurrentState().then(partialData => {
-      let {state, hasChanged} = this.reconstructState(partialData);
-      this.currentStateHasChanged = hasChanged;
-      return state;
-    });
-  }, {
-    impl: "_getCurrentState"
-  }),
-
-  reconstructState: function (data) {
-    let hasChanged = false;
-
-    for (let key in this.state) {
-      if (typeof data[key] === "undefined") {
-        data[key] = this.state[key];
-      } else if (data[key] !== this.state[key]) {
-        hasChanged = true;
-      }
-    }
-
-    return {state: data, hasChanged};
-  }
-});
-
-
+ 
 
 
 
