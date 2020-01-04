@@ -576,13 +576,25 @@ WebConsoleFrame.prototype = {
     
 
 
-
-
-    this._addFocusCallback(this.outputNode, (evt) => {
-      if ((evt.target.nodeName.toLowerCase() != "a") &&
-          (evt.target.parentNode.nodeName.toLowerCase() != "a")) {
-        this.jsterm.focus();
+    this.outputWrapper.addEventListener("click", (event) => {
+      
+      if (event.detail !== 1 || event.button !== 0) {
+        return;
       }
+
+      
+      let selection = this.window.getSelection();
+      if (selection && !selection.isCollapsed) {
+        return;
+      }
+
+      
+      if (event.target.nodeName.toLowerCase() === "a" ||
+          event.target.parentNode.nodeName.toLowerCase() === "a") {
+        return;
+      }
+
+      this.jsterm.focus();
     });
 
     
@@ -2626,39 +2638,6 @@ WebConsoleFrame.prototype = {
       if (mousedown &&
           (this._startX != event.clientX) &&
           (this._startY != event.clientY)) {
-        this._startX = this._startY = undefined;
-        return;
-      }
-
-      this._startX = this._startY = undefined;
-
-      callback.call(this, event);
-    }, false);
-  },
-
-  _addFocusCallback: function(node, callback) {
-    node.addEventListener("mousedown", (event) => {
-      this._mousedown = true;
-      this._startX = event.clientX;
-      this._startY = event.clientY;
-    }, false);
-
-    node.addEventListener("click", (event) => {
-      let mousedown = this._mousedown;
-      this._mousedown = false;
-
-      
-      if (event.detail != 1 || event.button != 0) {
-        return;
-      }
-
-      
-      
-      
-      
-      if (mousedown &&
-          (Math.abs(event.clientX - this._startX) >= 2) &&
-          (Math.abs(event.clientY - this._startY) >= 1)) {
         this._startX = this._startY = undefined;
         return;
       }
