@@ -228,27 +228,27 @@ function plInit() {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (browserWindow.gMultiProcessBrowser) {
-          if (firstPageCanLoadAsRemote())
-            browserWindow.XULBrowserWindow.forceInitialBrowserRemote();
-          
-        }
-
-        
-        
-        
         setTimeout(function () {
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     if (browserWindow.gMultiProcessBrowser) {
+                       if (firstPageCanLoadAsRemote())
+                         browserWindow.XULBrowserWindow.forceInitialBrowserRemote();
+                       
+                     }
+
                      browserWindow.resizeTo(winWidth, winHeight);
                      browserWindow.moveTo(0, 0);
                      browserWindow.focus();
