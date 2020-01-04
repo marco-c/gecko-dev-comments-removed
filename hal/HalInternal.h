@@ -67,7 +67,7 @@ void DisableSwitchNotifications(hal::SwitchDevice aDevice);
 
 
 
-bool EnableAlarm();
+MOZ_MUST_USE bool EnableAlarm();
 
 
 
