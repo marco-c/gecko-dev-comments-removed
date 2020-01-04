@@ -407,7 +407,7 @@ function deleteSession(msg) {
   if (isB2G) {
     content.removeEventListener("mozbrowsershowmodalprompt", modalHandler, false);
   }
-  seenEls.reset();
+  seenEls.clear();
   
   curContainer = { frame: content, shadowRoot: null };
   curContainer.frame.focus();
