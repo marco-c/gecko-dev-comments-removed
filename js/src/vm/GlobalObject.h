@@ -299,7 +299,8 @@ class GlobalObject : public NativeObject
 
     JSFunction*
     createConstructor(JSContext* cx, JSNative ctor, JSAtom* name, unsigned length,
-                      gc::AllocKind kind = gc::AllocKind::FUNCTION);
+                      gc::AllocKind kind = gc::AllocKind::FUNCTION,
+                      const JSJitInfo* jitInfo = nullptr);
 
     
 
@@ -900,14 +901,14 @@ typedef HashSet<GlobalObject*, DefaultHasher<GlobalObject*>, SystemAllocPolicy> 
 
 
 
-template<JSNative ctor, unsigned length, gc::AllocKind kind>
+template<JSNative ctor, unsigned length, gc::AllocKind kind, const JSJitInfo* jitInfo = nullptr>
 JSObject*
 GenericCreateConstructor(JSContext* cx, JSProtoKey key)
 {
     
     
     PropertyName* name = (&cx->names().Null)[key];
-    return cx->global()->createConstructor(cx, ctor, name, length, kind);
+    return cx->global()->createConstructor(cx, ctor, name, length, kind, jitInfo);
 }
 
 inline JSObject*
