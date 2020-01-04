@@ -1196,8 +1196,7 @@ nsXULPopupManager::HidePopupAfterDelay(nsMenuPopupFrame* aPopup)
 }
 
 void
-nsXULPopupManager::HidePopupsInList(const nsTArray<nsMenuPopupFrame *> &aFrames,
-                                    bool aDeselectMenu)
+nsXULPopupManager::HidePopupsInList(const nsTArray<nsMenuPopupFrame *> &aFrames)
 {
   
   
@@ -1271,7 +1270,7 @@ nsXULPopupManager::HidePopupsInDocShell(nsIDocShellTreeItem* aDocShellToHide)
     item = parent;
   }
 
-  HidePopupsInList(popupsToHide, true);
+  HidePopupsInList(popupsToHide);
 }
 
 void
@@ -1315,7 +1314,7 @@ nsXULPopupManager::ExecuteMenu(nsIContent* aMenu, nsXULMenuCommandEvent* aEvent)
 
     
     
-    HidePopupsInList(popupsToHide, cmm == CloseMenuMode_Auto);
+    HidePopupsInList(popupsToHide);
   }
 
   aEvent->SetCloseMenuMode(cmm);
@@ -1792,7 +1791,7 @@ nsXULPopupManager::PopupDestroyed(nsMenuPopupFrame* aPopup)
     item = item->GetParent();
   }
 
-  HidePopupsInList(popupsToHide, false);
+  HidePopupsInList(popupsToHide);
 }
 
 bool

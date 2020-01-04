@@ -638,10 +638,7 @@ protected:
 
   
   
-  
-  
-  void HidePopupsInList(const nsTArray<nsMenuPopupFrame *> &aFrames,
-                        bool aDeselectMenu);
+  void HidePopupsInList(const nsTArray<nsMenuPopupFrame *> &aFrames);
 
   
   
