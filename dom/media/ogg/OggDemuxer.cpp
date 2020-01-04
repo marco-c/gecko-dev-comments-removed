@@ -1169,29 +1169,46 @@ OggDemuxer::SeekInternal(TrackInfo::TrackType aType, const TimeUnit& aTarget)
     }
   }
 
-  if (aType == TrackInfo::kVideoTrack) {
-    
-    
-    
-    
-    
-    
-    while (true) {
-      DemuxUntilPacketAvailable(aType, mTheoraState);
-      ogg_packet* packet = mTheoraState->PacketPeek();
-      if (packet == nullptr) {
-        OGG_DEBUG("End of Theora stream reached before keyframe found in indexed seek");
-        break;
-      }
-      if (mTheoraState->IsKeyframe(packet)) {
-        OGG_DEBUG("Theora keyframe found after seek");
-        break;
-      }
+  
+  
+  
+  
+  
+  
+  
+  OggCodecState* state = GetTrackCodecState(aType);
+  OggPacketQueue tempPackets;
+  bool foundKeyframe = false;
+  while (true) {
+    DemuxUntilPacketAvailable(aType, state);
+    ogg_packet* packet = state->PacketPeek();
+    if (packet == nullptr) {
+      OGG_DEBUG("End of stream reached before keyframe found in indexed seek");
+      break;
+    }
+    int64_t startTstamp = state->PacketStartTime(packet);
+    if (foundKeyframe && startTstamp > adjustedTarget) {
+      break;
+    }
+    if (state->IsKeyframe(packet)) {
+      OGG_DEBUG("keyframe found after seeking at %lld", startTstamp);
+      tempPackets.Erase();
+      foundKeyframe = true;
+    }
+    if (foundKeyframe && startTstamp == adjustedTarget) {
+      break;
+    }
+    ogg_packet* releaseMe = state->PacketOut();
+    if (foundKeyframe) {
+      tempPackets.Append(releaseMe);
+    } else {
       
-      ogg_packet* releaseMe = mTheoraState->PacketOut();
       OggCodecState::ReleasePacket(releaseMe);
     }
   }
+  
+  state->PushFront(Move(tempPackets));
+
   return NS_OK;
 }
 

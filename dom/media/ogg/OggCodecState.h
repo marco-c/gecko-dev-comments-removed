@@ -67,6 +67,7 @@ public:
   void Append(ogg_packet* aPacket);
   ogg_packet* PopFront() { return static_cast<ogg_packet*>(nsDeque::PopFront()); }
   ogg_packet* PeekFront() { return static_cast<ogg_packet*>(nsDeque::PeekFront()); }
+  ogg_packet* Pop() { return static_cast<ogg_packet*>(nsDeque::Pop()); }
   void PushFront(ogg_packet* aPacket) { nsDeque::PushFront(aPacket); }
   void Erase() { nsDeque::Erase(); }
 };
@@ -175,6 +176,9 @@ public:
   
   
   ogg_packet* PacketPeek();
+
+  
+  void PushFront(OggPacketQueue&& aOther);
 
   
   
