@@ -544,11 +544,6 @@ public:
 
   layout::RenderFrameParent* GetRenderFrame();
 
-  
-  
-  void OnStartSignedPackageRequest(nsIChannel* aChannel,
-                                   const nsACString& aPackageId);
-
   void AudioChannelChangeNotification(nsPIDOMWindowOuter* aWindow,
                                       AudioChannel aAudioChannel,
                                       float aVolume,
@@ -591,10 +586,6 @@ protected:
 
   bool InitBrowserConfiguration(const nsCString& aURI,
                                 BrowserConfiguration& aConfiguration);
-
-  
-  
-  bool ShouldSwitchProcess(nsIChannel* aChannel, const nsACString& aSignedPkg);
 
   ContentCacheInParent mContentCache;
 

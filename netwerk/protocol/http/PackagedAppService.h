@@ -13,7 +13,6 @@
 #include "PackagedAppVerifier.h"
 #include "nsIMultiPartChannel.h"
 #include "PackagedAppVerifier.h"
-#include "nsIPackagedAppChannelListener.h"
 #include "nsCOMArray.h"
 #include "nsRefPtrHashtable.h"
 
@@ -129,8 +128,7 @@ private:
     
     
     nsresult AddCallback(nsIURI *aURI,
-                         nsICacheEntryOpenCallback *aCallback,
-                         nsIChannel* aRequester);
+                         nsICacheEntryOpenCallback *aCallback);
 
     
     nsresult RemoveCallbacks(nsICacheEntryOpenCallback* aCallback);
@@ -214,9 +212,6 @@ private:
 
     
     RefPtr<PackagedAppVerifier> mVerifier;
-
-    
-    nsCOMArray<nsIPackagedAppChannelListener> mRequesters;
 
     
     
