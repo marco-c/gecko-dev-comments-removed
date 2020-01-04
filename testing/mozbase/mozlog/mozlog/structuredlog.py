@@ -207,7 +207,13 @@ class StructuredLogger(object):
                     return
 
             for handler in self.handlers:
-                handler(data)
+                try:
+                    handler(data)
+                except Exception:
+                    
+                    
+                    print >> sys.__stderr__, '%s: Failure calling log handler:' % __name__
+                    print >> sys.__stderr__, traceback.format_exc()
 
     def _make_log_data(self, action, data):
         all_data = {"action": action,
