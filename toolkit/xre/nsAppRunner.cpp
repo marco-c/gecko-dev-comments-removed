@@ -3700,6 +3700,11 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
 
   
 
+#if (MOZ_WIDGET_GTK == 3) && defined(MOZ_X11)
+  
+  gdk_disable_multidevice();
+#endif
+
   
   
   
