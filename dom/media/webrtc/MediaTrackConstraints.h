@@ -266,7 +266,7 @@ template<> void NormalizedConstraintSet::Range<bool>::FinalizeMerge();
 
 struct NormalizedConstraints : public NormalizedConstraintSet
 {
-  NormalizedConstraints(const dom::MediaTrackConstraints& aOther,
+  explicit NormalizedConstraints(const dom::MediaTrackConstraints& aOther,
                         nsTArray<MemberPtrType>* aList = nullptr);
 
   
