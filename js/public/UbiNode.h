@@ -183,6 +183,9 @@ using mozilla::Move;
 using mozilla::RangedPtr;
 using mozilla::Variant;
 
+template <typename T>
+using Vector = mozilla::Vector<T, 0, js::SystemAllocPolicy>;
+
 
 
 

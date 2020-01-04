@@ -5,6 +5,8 @@
 
 
 
+#include "jsalloc.h"
+
 #include "mozilla/Atomics.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Move.h"
@@ -62,7 +64,7 @@ BEGIN_TEST(testThreadingThreadVectorMoveConstruct)
 {
     const static size_t N = 10;
     mozilla::Atomic<int> count(0);
-    mozilla::Vector<js::Thread> v;
+    mozilla::Vector<js::Thread, 0, js::SystemAllocPolicy> v;
     for (auto i : mozilla::MakeRange(N)) {
         CHECK(v.emplaceBack([](mozilla::Atomic<int>* countp){(*countp)++;}, &count));
         CHECK(v.length() == i + 1);
