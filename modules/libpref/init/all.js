@@ -206,6 +206,12 @@ pref("dom.url.getters_decode_hash", false);
 
 pref("dom.compartment_per_addon", true);
 
+#ifdef NIGHTLY_BUILD
+pref("dom.document.scrollingElement.enabled", true);
+#else
+pref("dom.document.scrollingElement.enabled", false);
+#endif
+
 
 
 pref("browser.sessionhistory.max_total_viewers", -1);
