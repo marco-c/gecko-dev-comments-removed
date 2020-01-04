@@ -695,6 +695,9 @@ WebGLContext::CreateAndInitGL(bool forceEnabled)
     if (!disableANGLE) {
         if (CreateAndInitGLWith(CreateGLWithANGLE, baseCaps, flags))
             return true;
+
+        
+        return false;
     }
 
     MOZ_ASSERT(!gl);
