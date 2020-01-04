@@ -741,6 +741,18 @@ this.UITour = {
         });
         break;
       }
+
+      case "closeTab": {
+        
+        
+        
+        
+        let tabBrowser = browser.ownerDocument.defaultView.gBrowser;
+        if (tabBrowser && tabBrowser.browsers.length > 1) {
+          tabBrowser.removeTab(tabBrowser.getTabForBrowser(browser));
+        }
+        break;
+      }
     }
 
     this.initForBrowser(browser, window);
