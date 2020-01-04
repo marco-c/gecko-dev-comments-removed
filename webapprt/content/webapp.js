@@ -64,7 +64,7 @@ var progressListener = {
       
       
       
-      if (document.mozFullScreenElement) {
+      if (document.fullscreenElement) {
         document.getElementById("main-menubar").style.display = "none";
       }
     }
@@ -137,8 +137,8 @@ window.addEventListener("unload", onUnload, false);
 
 
 #ifndef XP_MACOSX
-document.addEventListener('mozfullscreenchange', function() {
-  if (document.mozFullScreenElement) {
+document.addEventListener('fullscreenchange', function() {
+  if (document.fullscreenElement) {
     document.getElementById("main-menubar").style.display = "none";
   } else {
     document.getElementById("main-menubar").style.display = "";

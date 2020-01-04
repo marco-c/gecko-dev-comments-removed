@@ -632,7 +632,7 @@ var DOMFullscreenHandler = {
     switch(aMessage.name) {
       case "DOMFullscreen:Entered": {
         if (!this._windowUtils.handleFullscreenRequests() &&
-            !content.document.mozFullScreen) {
+            !content.document.fullscreenElement) {
           
           
           
@@ -670,7 +670,7 @@ var DOMFullscreenHandler = {
       case "MozDOMFullscreen:Entered":
       case "MozDOMFullscreen:Exited": {
         addEventListener("MozAfterPaint", this);
-        if (!content || !content.document.mozFullScreen) {
+        if (!content || !content.document.fullscreenElement) {
           
           
           
