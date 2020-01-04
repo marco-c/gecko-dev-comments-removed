@@ -575,6 +575,23 @@ GMPParent::SupportsAPI(const nsCString& aAPI, const nsCString& aTag)
     nsTArray<nsCString>& tags = mCapabilities[i].mAPITags;
     for (uint32_t j = 0; j < tags.Length(); j++) {
       if (tags[j].Equals(aTag)) {
+#ifdef XP_WIN
+        
+        
+        
+        
+        if (tags[j].EqualsLiteral("org.w3.clearkey")) {
+          if (mCapabilities[i].mAPIName.EqualsLiteral(GMP_API_VIDEO_DECODER)) {
+            if (!WMFDecoderModule::HasH264()) {
+              continue;
+            }
+          } else if (mCapabilities[i].mAPIName.EqualsLiteral(GMP_API_AUDIO_DECODER)) {
+            if (!WMFDecoderModule::HasAAC()) {
+              continue;
+            }
+          }
+        }
+#endif
         return true;
       }
     }
@@ -887,25 +904,6 @@ GMPParent::ReadGMPInfoFile(nsIFile* aFile)
       }
 #endif 
     }
-
-#ifdef XP_WIN
-    
-    
-    
-    
-    
-    
-    if (cap.mAPIName.EqualsLiteral(GMP_API_VIDEO_DECODER) &&
-        cap.mAPITags.Contains(NS_LITERAL_CSTRING("org.w3.clearkey")) &&
-        !WMFDecoderModule::HasH264()) {
-      continue;
-    }
-    if (cap.mAPIName.EqualsLiteral(GMP_API_AUDIO_DECODER) &&
-        cap.mAPITags.Contains(NS_LITERAL_CSTRING("org.w3.clearkey")) &&
-        !WMFDecoderModule::HasAAC()) {
-      continue;
-    }
-#endif
 
     mCapabilities.AppendElement(Move(cap));
   }
