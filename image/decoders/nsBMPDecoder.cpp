@@ -221,6 +221,14 @@ nsBMPDecoder::GetCompressedImageSize() const
 }
 
 void
+nsBMPDecoder::BeforeFinishInternal()
+{
+  if (!IsMetadataDecode() && !mImageData) {
+    PostDataError();
+  }
+}
+
+void
 nsBMPDecoder::FinishInternal()
 {
   
@@ -233,16 +241,17 @@ nsBMPDecoder::FinishInternal()
   if (!IsMetadataDecode() && HasSize()) {
 
     
-    if (mImageData) {
-      while (mCurrentRow > 0) {
-        uint32_t* dst = RowBuffer();
-        while (mCurrentPos < mH.mWidth) {
-          SetPixel(dst, 0, 0, 0);
-          mCurrentPos++;
-        }
-        mCurrentPos = 0;
-        FinishRow();
+    MOZ_ASSERT(mImageData);
+
+    
+    while (mCurrentRow > 0) {
+      uint32_t* dst = RowBuffer();
+      while (mCurrentPos < mH.mWidth) {
+        SetPixel(dst, 0, 0, 0);
+        mCurrentPos++;
       }
+      mCurrentPos = 0;
+      FinishRow();
     }
 
     
