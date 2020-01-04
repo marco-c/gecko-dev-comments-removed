@@ -160,6 +160,16 @@ var Service = {
     this.uuidMap.set(uuid, extension);
     this.aps.setAddonLoadURICallback(extension.id, this.checkAddonMayLoad.bind(this, extension));
     this.aps.setAddonLocalizeCallback(extension.id, extension.localize.bind(extension));
+
+    
+    try {
+      let uuids = "";
+      for (let [uuid, extension] of this.uuidMap) {
+        uuids += "[" + uuid + ", " + extension.id + "],";
+      }
+
+      Services.appinfo.annotateCrashReport("Extensions", uuids);
+    } catch (e) { }
   },
 
   
