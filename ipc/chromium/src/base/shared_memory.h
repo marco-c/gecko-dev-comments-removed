@@ -43,16 +43,17 @@ class SharedMemory {
 
   
   
-  SharedMemory(SharedMemoryHandle handle, bool read_only);
-
-  
-  
-  
-  SharedMemory(SharedMemoryHandle handle, bool read_only,
-      base::ProcessHandle process);
+  SharedMemory(SharedMemoryHandle init_handle, bool read_only)
+    : SharedMemory() {
+    SetHandle(init_handle, read_only);
+  }
 
   
   ~SharedMemory();
+
+  
+  
+  bool SetHandle(SharedMemoryHandle handle, bool read_only);
 
   
   
@@ -116,7 +117,7 @@ class SharedMemory {
 
   
   
-  void Close();
+  void Close(bool unmap_view = true);
 
   
   

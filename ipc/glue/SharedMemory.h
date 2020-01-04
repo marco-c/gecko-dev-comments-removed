@@ -12,6 +12,9 @@
 #include "nsISupportsImpl.h"    
 #include "mozilla/Attributes.h"
 
+#include "base/process.h"
+#include "chrome/common/ipc_message_utils.h"
+
 
 
 
@@ -55,7 +58,12 @@ public:
   virtual bool Create(size_t size) = 0;
   virtual bool Map(size_t nBytes) = 0;
 
+  virtual void CloseHandle() = 0;
+
   virtual SharedMemoryType Type() const = 0;
+
+  virtual bool ShareHandle(base::ProcessId aProcessId, IPC::Message* aMessage) = 0;
+  virtual bool ReadHandle(const IPC::Message* aMessage, void** aIter) = 0;
 
   void
   Protect(char* aAddr, size_t aSize, int aRights)
@@ -108,6 +116,35 @@ protected:
   
   
   size_t mMappedSize;
+};
+
+template<typename HandleImpl>
+class SharedMemoryCommon : public SharedMemory
+{
+public:
+  typedef HandleImpl Handle;
+
+  virtual bool ShareToProcess(base::ProcessId aProcessId, Handle* aHandle) = 0;
+  virtual bool IsHandleValid(const Handle& aHandle) const = 0;
+  virtual bool SetHandle(const Handle& aHandle) = 0;
+
+  virtual bool ShareHandle(base::ProcessId aProcessId, IPC::Message* aMessage) override
+  {
+    Handle handle;
+    if (!ShareToProcess(aProcessId, &handle)) {
+      return false;
+    }
+    IPC::WriteParam(aMessage, handle);
+    return true;
+  }
+
+  virtual bool ReadHandle(const IPC::Message* aMessage, void** aIter) override
+  {
+    Handle handle;
+    return IPC::ReadParam(aMessage, aIter, &handle) &&
+           IsHandleValid(handle) &&
+           SetHandle(handle);
+  }
 };
 
 } 
