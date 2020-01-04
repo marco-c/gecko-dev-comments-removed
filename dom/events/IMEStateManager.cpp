@@ -1167,7 +1167,7 @@ IMEStateManager::DispatchCompositionEvent(
   EnsureTextCompositionArray();
 
   RefPtr<TextComposition> composition =
-    sTextCompositions->GetCompositionFor(aCompositionEvent->widget);
+    sTextCompositions->GetCompositionFor(aCompositionEvent);
   if (!composition) {
     
     
@@ -1662,11 +1662,23 @@ IMEStateManager::GetTextCompositionFor(nsIWidget* aWidget)
 
 
 already_AddRefed<TextComposition>
-IMEStateManager::GetTextCompositionFor(WidgetGUIEvent* aGUIEvent)
+IMEStateManager::GetTextCompositionFor(
+                   const WidgetKeyboardEvent* aKeyboardEvent)
 {
-  MOZ_ASSERT(aGUIEvent->AsCompositionEvent() || aGUIEvent->AsKeyboardEvent(),
-    "aGUIEvent has to be WidgetCompositionEvent or WidgetKeyboardEvent");
-  return GetTextCompositionFor(aGUIEvent->widget);
+  return GetTextCompositionFor(aKeyboardEvent->widget);
+}
+
+
+already_AddRefed<TextComposition>
+IMEStateManager::GetTextCompositionFor(
+                   const WidgetCompositionEvent* aCompositionEvent)
+{
+  if (!sTextCompositions) {
+    return nullptr;
+  }
+  RefPtr<TextComposition> textComposition =
+    sTextCompositions->GetCompositionFor(aCompositionEvent);
+  return textComposition.forget();
 }
 
 } 

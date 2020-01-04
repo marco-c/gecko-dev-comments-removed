@@ -182,10 +182,10 @@ public:
   
 
 
-
-
   static already_AddRefed<TextComposition>
-    GetTextCompositionFor(WidgetGUIEvent* aGUIEvent);
+    GetTextCompositionFor(const WidgetKeyboardEvent* aKeyboardEvent);
+  static already_AddRefed<TextComposition>
+    GetTextCompositionFor(const WidgetCompositionEvent* aCompositionEvent);
 
   
 

@@ -403,12 +403,18 @@ class TextCompositionArray final :
   public nsAutoTArray<RefPtr<TextComposition>, 2>
 {
 public:
+  
   index_type IndexOf(const widget::NativeIMEContext& aNativeIMEContext);
   index_type IndexOf(nsIWidget* aWidget);
+
+  TextComposition* GetCompositionFor(nsIWidget* aWidget);
+  TextComposition* GetCompositionFor(
+                     const WidgetCompositionEvent* aCompositionEvent);
+
+  
   index_type IndexOf(nsPresContext* aPresContext);
   index_type IndexOf(nsPresContext* aPresContext, nsINode* aNode);
 
-  TextComposition* GetCompositionFor(nsIWidget* aWidget);
   TextComposition* GetCompositionFor(nsPresContext* aPresContext,
                                      nsINode* aNode);
   TextComposition* GetCompositionInContent(nsPresContext* aPresContext,

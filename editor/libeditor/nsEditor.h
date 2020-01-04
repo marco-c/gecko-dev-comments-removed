@@ -413,7 +413,7 @@ protected:
 
 
 
-  void EnsureComposition(mozilla::WidgetGUIEvent* aEvent);
+  void EnsureComposition(mozilla::WidgetCompositionEvent* aCompositionEvent);
 
   nsresult GetSelection(int16_t aSelectionType, nsISelection** aSelection);
 
