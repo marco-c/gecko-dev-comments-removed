@@ -2982,6 +2982,39 @@ JS_DefineElement(JSContext* cx, JS::HandleObject obj, uint32_t index, double val
 
 
 
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_HasPropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id, bool* foundp);
+
+extern JS_PUBLIC_API(bool)
+JS_HasProperty(JSContext* cx, JS::HandleObject obj, const char* name, bool* foundp);
+
+extern JS_PUBLIC_API(bool)
+JS_HasUCProperty(JSContext* cx, JS::HandleObject obj, const char16_t* name, size_t namelen,
+                 bool* vp);
+
+extern JS_PUBLIC_API(bool)
+JS_HasElement(JSContext* cx, JS::HandleObject obj, uint32_t index, bool* foundp);
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_HasOwnPropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id, bool* foundp);
+
+extern JS_PUBLIC_API(bool)
+JS_HasOwnProperty(JSContext* cx, JS::HandleObject obj, const char* name, bool* foundp);
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 JS_DefineObject(JSContext* cx, JS::HandleObject obj, const char* name,
                 const JSClass* clasp = nullptr, unsigned attrs = 0);
@@ -2999,25 +3032,20 @@ JS_DefineProperties(JSContext* cx, JS::HandleObject obj, const JSPropertySpec* p
 
 
 extern JS_PUBLIC_API(bool)
-JS_AlreadyHasOwnProperty(JSContext* cx, JS::HandleObject obj, const char* name,
-                         bool* foundp);
-
-extern JS_PUBLIC_API(bool)
 JS_AlreadyHasOwnPropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
                              bool* foundp);
 
 extern JS_PUBLIC_API(bool)
-JS_HasProperty(JSContext* cx, JS::HandleObject obj, const char* name, bool* foundp);
+JS_AlreadyHasOwnProperty(JSContext* cx, JS::HandleObject obj, const char* name,
+                         bool* foundp);
 
 extern JS_PUBLIC_API(bool)
-JS_HasPropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id, bool* foundp);
-
-
-extern JS_PUBLIC_API(bool)
-JS_HasOwnPropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id, bool* foundp);
+JS_AlreadyHasOwnUCProperty(JSContext* cx, JS::HandleObject obj, const char16_t* name,
+                           size_t namelen, bool* foundp);
 
 extern JS_PUBLIC_API(bool)
-JS_HasOwnProperty(JSContext* cx, JS::HandleObject obj, const char* name, bool* foundp);
+JS_AlreadyHasOwnElement(JSContext* cx, JS::HandleObject obj, uint32_t index, bool* foundp);
+
 
 extern JS_PUBLIC_API(bool)
 JS_GetProperty(JSContext* cx, JS::HandleObject obj, const char* name, JS::MutableHandleValue vp);
@@ -3052,15 +3080,6 @@ JS_DeletePropertyById(JSContext* cx, JS::HandleObject obj, jsid id);
 extern JS_PUBLIC_API(bool)
 JS_DeletePropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
                       JS::ObjectOpResult& result);
-
-extern JS_PUBLIC_API(bool)
-JS_AlreadyHasOwnUCProperty(JSContext* cx, JS::HandleObject obj, const char16_t* name,
-                           size_t namelen, bool* foundp);
-
-extern JS_PUBLIC_API(bool)
-JS_HasUCProperty(JSContext* cx, JS::HandleObject obj,
-                 const char16_t* name, size_t namelen,
-                 bool* vp);
 
 extern JS_PUBLIC_API(bool)
 JS_GetUCProperty(JSContext* cx, JS::HandleObject obj,
@@ -3103,12 +3122,6 @@ JS_GetArrayLength(JSContext* cx, JS::Handle<JSObject*> obj, uint32_t* lengthp);
 
 extern JS_PUBLIC_API(bool)
 JS_SetArrayLength(JSContext* cx, JS::Handle<JSObject*> obj, uint32_t length);
-
-extern JS_PUBLIC_API(bool)
-JS_AlreadyHasOwnElement(JSContext* cx, JS::HandleObject obj, uint32_t index, bool* foundp);
-
-extern JS_PUBLIC_API(bool)
-JS_HasElement(JSContext* cx, JS::HandleObject obj, uint32_t index, bool* foundp);
 
 extern JS_PUBLIC_API(bool)
 JS_GetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::MutableHandleValue vp);
