@@ -2664,6 +2664,12 @@ public:
 
 
 
+  static float GetCurrentAPZResolutionScale(nsIPresShell* aShell);
+
+  
+
+
+
 
 
 
