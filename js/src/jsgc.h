@@ -1035,16 +1035,13 @@ class RelocationOverlay
     static const uintptr_t Relocated = uintptr_t(0xbad0bad1);
 
     
-    
-
-    
-    RelocationOverlay* next_;
-
-    
     uintptr_t magic_;
 
     
     Cell* newLocation_;
+
+    
+    RelocationOverlay* next_;
 
   public:
     static RelocationOverlay* fromCell(Cell* cell) {
@@ -1060,14 +1057,7 @@ class RelocationOverlay
         return newLocation_;
     }
 
-    void forwardTo(Cell* cell) {
-        MOZ_ASSERT(!isForwarded());
-        static_assert(offsetof(JSObject, group_) == offsetof(RelocationOverlay, next_),
-                      "next pointer and group should be at same location, "
-                      "so that group is not overwritten during compacting");
-        newLocation_ = cell;
-        magic_ = Relocated;
-    }
+    void forwardTo(Cell* cell);
 
     RelocationOverlay*& nextRef() {
         MOZ_ASSERT(isForwarded());
