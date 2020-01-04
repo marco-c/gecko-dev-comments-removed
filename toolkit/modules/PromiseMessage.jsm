@@ -10,14 +10,11 @@ var msgId = 0;
 
 var PromiseMessage = {
   send(messageManager, name, data = {}) {
-    let id = msgId++;
+    const id = `${name}_${msgId++}`;
 
     
-    let dataCopy = {};
-    for (let prop in data) {
-      dataCopy[prop] = data[prop];
-    }
-    dataCopy.id = id;
+    
+    const dataCopy = Object.assign({}, data, {id});
 
     
     messageManager.sendAsyncMessage(name, dataCopy);
