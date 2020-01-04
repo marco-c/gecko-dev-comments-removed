@@ -352,18 +352,22 @@ this.DownloadIntegration = {
     
     
     
-    
-    
+    if (!aDownload.stopped || aDownload.hasPartialData ||
+        aDownload.hasBlockedData) {
+      return true;
+    }
 #ifdef MOZ_B2G
+    
     let maxTime = Date.now() -
       Services.prefs.getIntPref("dom.downloads.max_retention_days") * 24 * 60 * 60 * 1000;
-    return (aDownload.startTime > maxTime) ||
-           aDownload.hasPartialData ||
-           !aDownload.stopped;
+    return aDownload.startTime > maxTime;
 #elif defined(MOZ_WIDGET_ANDROID)
+    
     return true;
 #else
-    return aDownload.hasPartialData || !aDownload.stopped;
+    
+    
+    return false;
 #endif
   },
 
