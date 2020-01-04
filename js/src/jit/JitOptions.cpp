@@ -56,6 +56,7 @@ T overrideDefault(const char* param, T dflt) {
     }
     return dflt;
 }
+
 #define SET_DEFAULT(var, dflt) var = overrideDefault("JIT_OPTION_" #var, dflt)
 DefaultJitOptions::DefaultJitOptions()
 {
@@ -188,6 +189,9 @@ DefaultJitOptions::DefaultJitOptions()
 
     
     SET_DEFAULT(disableUnboxedObjects, false);
+
+    
+    SET_DEFAULT(wasmTestMode, false);
 }
 
 bool

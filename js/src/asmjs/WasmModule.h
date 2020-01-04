@@ -600,7 +600,7 @@ class Module : public mozilla::LinkedListElement<Module>
     
     
 
-    bool callImport(JSContext* cx, uint32_t importIndex, unsigned argc, const Value* argv,
+    bool callImport(JSContext* cx, uint32_t importIndex, unsigned argc, const uint64_t* argv,
                     MutableHandleValue rval);
     void deoptimizeImportExit(uint32_t importIndex);
 
