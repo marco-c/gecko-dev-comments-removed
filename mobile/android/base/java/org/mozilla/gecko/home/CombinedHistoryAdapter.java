@@ -86,7 +86,7 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
     }
 
     public interface RecentTabsUpdateHandler {
-        void onRecentTabsCountUpdated(int count);
+        void onRecentTabsCountUpdated(int count, boolean countReliable);
     }
 
     public RecentTabsUpdateHandler getRecentTabsUpdateHandler() {
@@ -96,7 +96,7 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
 
         recentTabsUpdateHandler = new RecentTabsUpdateHandler() {
             @Override
-            public void onRecentTabsCountUpdated(final int count) {
+            public void onRecentTabsCountUpdated(final int count, final boolean countReliable) {
                 
                 
                 ThreadUtils.postToUiThread(new Runnable() {
