@@ -5,6 +5,7 @@
 
 
 #include "mozilla/unused.h"
+#include "nsContentUtils.h"
 #include "nsIAppShell.h"
 #include "nsScreenManagerProxy.h"
 #include "nsServiceManagerUtils.h"
