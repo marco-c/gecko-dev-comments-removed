@@ -54,11 +54,13 @@ pref("browser.viewport.desktopWidth", 980);
 
 pref("browser.viewport.defaultZoom", -1);
 
+#ifdef MOZ_WIDGET_ANDROID
 
 pref("ui.showHideScrollbars", 1);
 pref("ui.useOverlayScrollbars", 1);
 pref("ui.scrollbarFadeBeginDelay", 450);
 pref("ui.scrollbarFadeDuration", 0);
+#endif
 
 
 pref("ui.caretBlinkCount", 10);
@@ -400,7 +402,6 @@ pref("javascript.options.mem.gc_high_frequency_low_limit_mb", 10);
 pref("javascript.options.mem.gc_low_frequency_heap_growth", 120);
 pref("javascript.options.mem.high_water_mark", 16);
 pref("javascript.options.mem.gc_allocation_threshold_mb", 3);
-pref("javascript.options.mem.gc_decommit_threshold_mb", 1);
 pref("javascript.options.mem.gc_min_empty_chunk_count", 1);
 pref("javascript.options.mem.gc_max_empty_chunk_count", 2);
 #else
