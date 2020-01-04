@@ -3398,6 +3398,12 @@ IonBuilder::inlineConstructSimdObject(CallInfo& callInfo, SimdTypeDescr* descr)
     }
 
     
+    if (SimdTypeToLength(simdType) != 4) {
+        trackOptimizationOutcome(TrackedOutcome::SimdTypeNotOptimized);
+        return InliningStatus_NotInlined;
+    }
+
+    
     
     MOZ_ASSERT(size_t(descr->size(descr->type())) < InlineTypedObject::MaximumSize);
     JSObject* templateObject = inspector->getTemplateObjectForClassHook(pc, descr->getClass());
