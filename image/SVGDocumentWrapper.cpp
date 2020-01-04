@@ -350,6 +350,20 @@ SVGDocumentWrapper::SetupViewer(nsIRequest* aRequest,
 
   NS_ENSURE_TRUE(viewer, NS_ERROR_UNEXPECTED);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<nsDOMNavigationTiming> timing = new nsDOMNavigationTiming();
+  timing->NotifyNavigationStart();
+  viewer->SetNavigationTiming(timing);
+
   nsCOMPtr<nsIParser> parser = do_QueryInterface(listener);
   NS_ENSURE_TRUE(parser, NS_ERROR_UNEXPECTED);
 
