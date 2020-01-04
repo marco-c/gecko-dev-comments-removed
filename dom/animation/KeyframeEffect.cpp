@@ -170,16 +170,9 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mAnimation && GetComputedTiming().mProgress != mProgressOnLastCompose) {
+  if (mAnimation &&
+      !mProperties.IsEmpty() &&
+      GetComputedTiming().mProgress != mProgressOnLastCompose) {
     EffectCompositor::RestyleType restyleType =
       CanThrottle() ?
       EffectCompositor::RestyleType::Throttled :
