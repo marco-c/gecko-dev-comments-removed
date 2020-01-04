@@ -1615,10 +1615,8 @@ pref("dom.serviceWorkers.enabled", true);
 pref("dom.serviceWorkers.interception.enabled", true);
 pref("dom.serviceWorkers.openWindow.enabled", true);
 
-#ifndef RELEASE_BUILD
 
 pref("dom.push.enabled", true);
-#endif
 
 
 
