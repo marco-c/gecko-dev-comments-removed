@@ -185,6 +185,7 @@ NS_IMETHODIMP nsDeviceContextSpecWin::Init(nsIWidget* aWidget,
   char16_t * printerName = nullptr;
   if (mPrintSettings) {
     mPrintSettings->GetPrinterName(&printerName);
+    mPrintSettings->GetOutputFormat(&mOutputFormat);
   }
 
   
@@ -225,12 +226,7 @@ NS_IMETHODIMP nsDeviceContextSpecWin::GetSurfaceForPrinter(gfxASurface **surface
   *surface = nullptr;
   RefPtr<gfxASurface> newSurface;
 
-  int16_t outputFormat = 0;
-  if (mPrintSettings) {
-    mPrintSettings->GetOutputFormat(&outputFormat);
-  }
-
-  if (outputFormat == nsIPrintSettings::kOutputFormatPDF) {
+  if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF) {
     nsXPIDLString filename;
     mPrintSettings->GetToFileName(getter_Copies(filename));
 
@@ -278,10 +274,24 @@ NS_IMETHODIMP nsDeviceContextSpecWin::GetSurfaceForPrinter(gfxASurface **surface
 }
 
 float
+nsDeviceContextSpecWin::GetDPI()
+{
+  
+  
+  return mOutputFormat == nsIPrintSettings::kOutputFormatPDF ? 72.0f : 144.0f;
+}
+
+float
 nsDeviceContextSpecWin::GetPrintingScale()
 {
   MOZ_ASSERT(mPrintSettings);
 
+  
+  if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF) {
+    return 1.0f;
+  }
+
+  
   int32_t resolution;
   mPrintSettings->GetResolution(&resolution);
   return float(resolution) / GetDPI();
