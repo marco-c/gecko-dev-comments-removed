@@ -415,7 +415,9 @@ BookmarksEngine.prototype = {
     }
     let mapped = this._mapDupe(item);
     this._log.debug(item.id + " mapped to " + mapped);
-    return mapped;
+    
+    
+    return mapped ? mapped.toString() : mapped;
   }
 };
 
