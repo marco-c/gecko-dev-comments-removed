@@ -191,6 +191,7 @@ class NrIceProxyServer {
   std::string alpn_;
 };
 
+class TestNat;
 
 class NrIceCtx {
  public:
@@ -222,6 +223,8 @@ class NrIceCtx {
                                  bool allow_link_local = false,
                                  bool hide_non_default = false,
                                  Policy policy = ICE_POLICY_ALL);
+
+  int SetNat(const RefPtr<TestNat>& aNat);
 
   
   static void internal_DeinitializeGlobal();
@@ -332,21 +335,7 @@ class NrIceCtx {
  private:
   NrIceCtx(const std::string& name,
            bool offerer,
-           Policy policy)
-  : connection_state_(ICE_CTX_INIT),
-    gathering_state_(ICE_CTX_GATHER_INIT),
-    name_(name),
-    offerer_(offerer),
-    streams_(),
-    ctx_(nullptr),
-    peer_(nullptr),
-    ice_handler_vtbl_(nullptr),
-    ice_handler_(nullptr),
-    trickle_(true),
-    policy_(policy) {
-    
-    (void)offerer_;
-  }
+           Policy policy);
 
   virtual ~NrIceCtx();
 
@@ -390,6 +379,7 @@ class NrIceCtx {
   bool trickle_;
   nsCOMPtr<nsIEventTarget> sts_target_; 
   Policy policy_;
+  RefPtr<TestNat> nat_;
 };
 
 
