@@ -72,5 +72,11 @@ const key = (id, win = window) => {
     DevToolsUtils.testing = false;
     PrefUtils.rollbackPrefsToDefault();
     stopObservingPrefs();
+
+    
+    
+    Cu.forceGC();
+    Cu.forceCC();
+    Cu.forceShrinkingGC();
   });
 })();
