@@ -2011,8 +2011,10 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t*       aText,
   int32_t runCount;
 
   nsAutoString textBuffer(aText, aLength);
+  textBuffer.ReplaceChar(kSeparators, kSpace);
+  const char16_t* text = textBuffer.get();
 
-  nsresult rv = aBidiEngine->SetPara(aText, aLength, aBaseLevel);
+  nsresult rv = aBidiEngine->SetPara(text, aLength, aBaseLevel);
   if (NS_FAILED(rv))
     return rv;
 
@@ -2066,7 +2068,7 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t*       aText,
 
 
     if (dir == NSBIDI_RTL) {
-      aprocessor.SetText(aText + start, subRunLength, dir);
+      aprocessor.SetText(text + start, subRunLength, dir);
       width = aprocessor.GetWidth();
       xOffset += width;
       xEndRun = xOffset;
@@ -2075,10 +2077,10 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t*       aText,
     while (subRunCount > 0) {
       
       
-      CalculateCharType(aBidiEngine, aText, lineOffset, typeLimit, subRunLimit, subRunLength, subRunCount, charType, prevType);
+      CalculateCharType(aBidiEngine, text, lineOffset, typeLimit, subRunLimit, subRunLength, subRunCount, charType, prevType);
 
       nsAutoString runVisualText;
-      runVisualText.Assign(aText + start, subRunLength);
+      runVisualText.Assign(text + start, subRunLength);
       if (int32_t(runVisualText.Length()) < subRunLength)
         return NS_ERROR_OUT_OF_MEMORY;
       FormatUnicodeText(aPresContext, runVisualText.BeginWriting(),
@@ -2162,14 +2164,14 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t*       aText,
               
               posResolve->visualIndex = visualStart + (subRunLength - (posResolve->logicalIndex + 1 - start));
               
-              visualLeftPart = aText + posResolve->logicalIndex + 1;
+              visualLeftPart = text + posResolve->logicalIndex + 1;
               
               visualRightSide = visualLeftPart - 1;
             }
             else {
               posResolve->visualIndex = visualStart + (posResolve->logicalIndex - start);
               
-              visualLeftPart = aText + start;
+              visualLeftPart = text + start;
               
               visualRightSide = visualLeftPart;
             }
