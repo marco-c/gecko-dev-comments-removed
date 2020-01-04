@@ -1,0 +1,14 @@
+
+
+
+
+
+"use strict";
+
+const { grips } = require("./grips");
+const { filter } = require("./filter");
+
+exports.reducers = {
+  grips,
+  filter,
+};
