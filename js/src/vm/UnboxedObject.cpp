@@ -1974,6 +1974,12 @@ js::TryConvertToUnboxedLayout(ExclusiveContext* cx, Shape* templateShape,
         
         if (UnboxedTypeSize(elementType) == 0)
             return true;
+
+        
+        
+        
+        if (group->flags() & OBJECT_FLAG_NON_PACKED)
+            return true;
     } else {
         if (objectCount <= 1) {
             
