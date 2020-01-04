@@ -39,6 +39,8 @@ struct AnimationCollection;
 class AnimValuesStyleRule;
 
 namespace dom {
+class ElementOrCSSPseudoElement;
+class OwningElementOrCSSPseudoElement;
 class UnrestrictedDoubleOrKeyframeEffectOptions;
 enum class IterationCompositeOperation : uint32_t;
 enum class CompositeOperation : uint32_t;
@@ -188,7 +190,7 @@ public:
   
   static already_AddRefed<KeyframeEffectReadOnly>
   Constructor(const GlobalObject& aGlobal,
-              Element* aTarget,
+              const Nullable<ElementOrCSSPseudoElement>& aTarget,
               JS::Handle<JSObject*> aFrames,
               const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
               ErrorResult& aRv)
@@ -202,20 +204,12 @@ public:
   
   static already_AddRefed<KeyframeEffectReadOnly>
   Constructor(const GlobalObject& aGlobal,
-              Element* aTarget,
+              const Nullable<ElementOrCSSPseudoElement>& aTarget,
               JS::Handle<JSObject*> aFrames,
               const TimingParams& aTiming,
               ErrorResult& aRv);
 
-  Element* GetTarget() const {
-    
-    
-    
-    MOZ_ASSERT(mPseudoType == nsCSSPseudoElements::ePseudo_NotPseudoElement,
-               "Requesting the target of a KeyframeEffect that targets a"
-               " pseudo-element is not yet supported.");
-    return mTarget;
-  }
+  void GetTarget(Nullable<OwningElementOrCSSPseudoElement>& aRv) const;
   void GetFrames(JSContext*& aCx,
                  nsTArray<JSObject*>& aResult,
                  ErrorResult& aRv);

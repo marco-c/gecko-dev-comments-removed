@@ -1625,25 +1625,26 @@ KeyframeEffectReadOnly::BuildAnimationPropertyList(
  already_AddRefed<KeyframeEffectReadOnly>
 KeyframeEffectReadOnly::Constructor(
     const GlobalObject& aGlobal,
-    Element* aTarget,
+    const Nullable<ElementOrCSSPseudoElement>& aTarget,
     JS::Handle<JSObject*> aFrames,
     const TimingParams& aTiming,
     ErrorResult& aRv)
 {
-  if (!aTarget) {
+  if (aTarget.IsNull() || aTarget.Value().IsCSSPseudoElement()) {
     
     aRv.Throw(NS_ERROR_DOM_ANIM_NO_TARGET_ERR);
     return nullptr;
   }
 
-  if (!aTarget->GetCurrentDoc()) {
+  Element& targetElement = aTarget.Value().GetAsElement();
+  if (!targetElement.GetCurrentDoc()) {
     
     aRv.Throw(NS_ERROR_DOM_ANIM_TARGET_NOT_IN_DOC_ERR);
     return nullptr;
   }
 
   InfallibleTArray<AnimationProperty> animationProperties;
-  BuildAnimationPropertyList(aGlobal.Context(), aTarget, aFrames,
+  BuildAnimationPropertyList(aGlobal.Context(), &targetElement, aFrames,
                              animationProperties, aRv);
 
   if (aRv.Failed()) {
@@ -1651,11 +1652,24 @@ KeyframeEffectReadOnly::Constructor(
   }
 
   RefPtr<KeyframeEffectReadOnly> effect =
-    new KeyframeEffectReadOnly(aTarget->OwnerDoc(), aTarget,
+    new KeyframeEffectReadOnly(targetElement.OwnerDoc(), &targetElement,
                                nsCSSPseudoElements::ePseudo_NotPseudoElement,
                                aTiming);
   effect->mProperties = Move(animationProperties);
   return effect.forget();
+}
+
+void
+KeyframeEffectReadOnly::GetTarget(
+    Nullable<OwningElementOrCSSPseudoElement>& aRv) const
+{
+  
+  
+  
+  MOZ_ASSERT(mPseudoType == nsCSSPseudoElements::ePseudo_NotPseudoElement,
+             "Requesting the target of a KeyframeEffect that targets a"
+             " pseudo-element is not yet supported.");
+  aRv.Value().SetAsElement() = mTarget;
 }
 
 void
