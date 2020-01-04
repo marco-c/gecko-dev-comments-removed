@@ -37,6 +37,13 @@ public:
   {
     mContents.SetLength(aCount);
   }
+  
+
+
+
+
+  static already_AddRefed<ThreadSharedFloatArrayBufferList>
+  Create(uint32_t aChannelCount, size_t aLength, const mozilla::fallible_t&);
 
   struct Storage final
   {
