@@ -2530,15 +2530,6 @@ HttpBaseChannel::AddCookiesToRequest()
   SetRequestHeader(nsDependentCString(nsHttp::Cookie), cookie, false);
 }
 
-static PLDHashOperator
-CopyProperties(const nsAString& aKey, nsIVariant *aData, void *aClosure)
-{
-  nsIWritablePropertyBag* bag = static_cast<nsIWritablePropertyBag*>
-                                           (aClosure);
-  bag->SetProperty(aKey, aData);
-  return PL_DHASH_NEXT;
-}
-
 bool
 HttpBaseChannel::ShouldRewriteRedirectToGET(uint32_t httpStatus,
                                             nsHttpRequestHead::ParsedMethodType method)
@@ -2734,8 +2725,11 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
 
   
   nsCOMPtr<nsIWritablePropertyBag> bag(do_QueryInterface(newChannel));
-  if (bag)
-    mPropertyHash.EnumerateRead(CopyProperties, bag.get());
+  if (bag) {
+    for (auto iter = mPropertyHash.Iter(); !iter.Done(); iter.Next()) {
+      bag->SetProperty(iter.Key(), iter.UserData());
+    }
+  }
 
   
   nsCOMPtr<nsITimedChannel> newTimedChannel(do_QueryInterface(newChannel));

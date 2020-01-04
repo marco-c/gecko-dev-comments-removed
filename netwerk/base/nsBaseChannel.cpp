@@ -23,16 +23,6 @@
 #include "nsContentSecurityManager.h"
 #include "LoadInfo.h"
 
-static PLDHashOperator
-CopyProperties(const nsAString &key, nsIVariant *data, void *closure)
-{
-  nsIWritablePropertyBag *bag =
-      static_cast<nsIWritablePropertyBag *>(closure);
-
-  bag->SetProperty(key, data);
-  return PL_DHASH_NEXT;
-}
-
 
 class ScopedRequestSuspender {
 public:
@@ -121,8 +111,11 @@ nsBaseChannel::Redirect(nsIChannel *newChannel, uint32_t redirectFlags,
   }
 
   nsCOMPtr<nsIWritablePropertyBag> bag = ::do_QueryInterface(newChannel);
-  if (bag)
-    mPropertyHash.EnumerateRead(CopyProperties, bag.get());
+  if (bag) {
+    for (auto iter = mPropertyHash.Iter(); !iter.Done(); iter.Next()) {
+      bag->SetProperty(iter.Key(), iter.UserData());
+    }
+  }
 
   
   
