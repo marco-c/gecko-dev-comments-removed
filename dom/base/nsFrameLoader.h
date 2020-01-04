@@ -25,6 +25,7 @@
 #include "nsStubMutationObserver.h"
 #include "Units.h"
 #include "nsIWebBrowserPersistable.h"
+#include "nsIFrame.h"
 
 class nsIURI;
 class nsSubDocumentFrame;
@@ -200,14 +201,14 @@ public:
 
 
 
-  void SetDetachedSubdocView(nsView* aDetachedView,
-                             nsIDocument* aContainerDoc);
+  void SetDetachedSubdocFrame(nsIFrame* aDetachedFrame,
+                              nsIDocument* aContainerDoc);
 
   
 
 
 
-  nsView* GetDetachedSubdocView(nsIDocument** aContainerDoc) const;
+  nsIFrame* GetDetachedSubdocFrame(nsIDocument** aContainerDoc) const;
 
   
 
@@ -359,7 +360,7 @@ private:
 
   
   
-  nsView* mDetachedSubdocViews;
+  nsWeakFrame mDetachedSubdocFrame;
   
   
   
