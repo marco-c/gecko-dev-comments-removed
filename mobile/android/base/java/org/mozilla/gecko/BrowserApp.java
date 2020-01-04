@@ -998,17 +998,6 @@ public class BrowserApp extends GeckoApp
         
         AdjustConstants.getAdjustHelper().onResume();
 
-        final String args = ContextUtils.getStringExtra(getIntent(), "args");
-        
-        
-        
-        final boolean enableGuestSession = GuestSession.shouldUse(this, args);
-        final boolean inGuestSession = GeckoProfile.get(this).inGuestMode();
-        if (enableGuestSession != inGuestSession) {
-            doRestart(getIntent());
-            return;
-        }
-
         if (!mHasResumed) {
             EventDispatcher.getInstance().unregisterGeckoThreadListener((GeckoEventListener) this,
                     "Prompt:ShowTop");
