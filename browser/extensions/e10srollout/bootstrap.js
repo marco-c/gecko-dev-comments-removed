@@ -13,6 +13,7 @@ Cu.import("resource://gre/modules/UpdateUtils.jsm");
  
 const TEST_THRESHOLD = {
   "beta"    : 0.5,  
+  "release" : 1.0,  
 };
 
 const ADDON_ROLLOUT_POLICY = {
