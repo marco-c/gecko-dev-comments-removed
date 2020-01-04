@@ -180,23 +180,21 @@ NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(UninflatedTextRunProperty, gfxTextRun)
 
 NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(FontSizeInflationProperty, float)
 
+
+
+
+
+
 class GlyphObserver : public gfxFont::GlyphChangeObserver {
 public:
-  GlyphObserver(gfxFont* aFont, nsTextFrame* aFrame)
-    : gfxFont::GlyphChangeObserver(aFont), mFrame(aFrame) {}
+  GlyphObserver(gfxFont* aFont, gfxTextRun* aTextRun)
+    : gfxFont::GlyphChangeObserver(aFont), mTextRun(aTextRun) {
+    MOZ_ASSERT(aTextRun->GetUserData());
+  }
   virtual void NotifyGlyphsChanged() override;
 private:
-  nsTextFrame* mFrame;
+  gfxTextRun* mTextRun;
 };
-
-
-
-
-
-
-
-NS_DECLARE_FRAME_PROPERTY_DELETABLE(TextFrameGlyphObservers,
-                                    nsTArray<UniquePtr<GlyphObserver>>)
 
 static const nsFrameState TEXT_REFLOW_FLAGS =
    TEXT_FIRST_LETTER |
@@ -251,6 +249,40 @@ static const nsFrameState TEXT_WHITESPACE_FLAGS =
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+struct SimpleTextRunUserData {
+  nsTArray<UniquePtr<GlyphObserver>> mGlyphObservers;
+  nsTextFrame* mFrame;
+  explicit SimpleTextRunUserData(nsTextFrame* aFrame)
+    : mFrame(aFrame)
+  {
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct TextRunMappedFlow {
   nsTextFrame* mStartFrame;
   int32_t      mDOMOffsetToBeforeTransformOffset;
@@ -269,6 +301,14 @@ struct TextRunUserData {
   TextRunMappedFlow* mMappedFlows;
   uint32_t           mMappedFlowCount;
   uint32_t           mLastFlowIndex;
+};
+
+
+
+
+
+struct ComplexTextRunUserData : public TextRunUserData {
+  nsTArray<UniquePtr<GlyphObserver>> mGlyphObservers;
 };
 
 
@@ -413,13 +453,82 @@ protected:
                                nscolor aBackColor);
 };
 
-static void
-DestroyUserData(void* aUserData)
+static TextRunUserData*
+CreateUserData(uint32_t aMappedFlowCount)
 {
-  TextRunUserData* userData = static_cast<TextRunUserData*>(aUserData);
-  if (userData) {
-    free(userData);
+  TextRunUserData* data = static_cast<TextRunUserData*>
+      (moz_xmalloc(sizeof(TextRunUserData) +
+       aMappedFlowCount * sizeof(TextRunMappedFlow)));
+  data->mMappedFlows = reinterpret_cast<TextRunMappedFlow*>(data + 1);
+  data->mMappedFlowCount = aMappedFlowCount;
+  data->mLastFlowIndex = 0;
+  return data;
+}
+
+static void
+DestroyUserData(TextRunUserData* aUserData)
+{
+  if (aUserData) {
+    free(aUserData);
   }
+}
+
+static ComplexTextRunUserData*
+CreateComplexUserData(uint32_t aMappedFlowCount)
+{
+  ComplexTextRunUserData* data = static_cast<ComplexTextRunUserData*>
+      (moz_xmalloc(sizeof(ComplexTextRunUserData) +
+       aMappedFlowCount * sizeof(TextRunMappedFlow)));
+  new (data) ComplexTextRunUserData();
+  data->mMappedFlows = reinterpret_cast<TextRunMappedFlow*>(data + 1);
+  data->mMappedFlowCount = aMappedFlowCount;
+  data->mLastFlowIndex = 0;
+  return data;
+}
+
+static void
+DestroyComplexUserData(ComplexTextRunUserData* aUserData)
+{
+  if (aUserData) {
+    aUserData->~ComplexTextRunUserData();
+    free(aUserData);
+  }
+}
+
+static void
+DestroyTextRunUserData(gfxTextRun* aTextRun)
+{
+  MOZ_ASSERT(aTextRun->GetUserData());
+  if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW) {
+    if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES) {
+      delete static_cast<SimpleTextRunUserData*>(aTextRun->GetUserData());
+    }
+  } else {
+    if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES) {
+      DestroyComplexUserData(
+        static_cast<ComplexTextRunUserData*>(aTextRun->GetUserData()));
+    } else {
+      DestroyUserData(
+        static_cast<TextRunUserData*>(aTextRun->GetUserData()));
+    }
+  }
+  aTextRun->SetUserData(nullptr);
+}
+
+
+
+
+
+static nsTextFrame*
+GetFrameForSimpleFlow(gfxTextRun* aTextRun)
+{
+  MOZ_ASSERT(aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW,
+             "Not so simple flow?");
+  if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES) {
+    return static_cast<SimpleTextRunUserData*>(aTextRun->GetUserData())->mFrame;
+  }
+
+  return static_cast<nsTextFrame*>(aTextRun->GetUserData());
 }
 
 
@@ -475,12 +584,12 @@ ClearAllTextRunReferences(nsTextFrame* aFrame, gfxTextRun* aTextRun,
 static void
 UnhookTextRunFromFrames(gfxTextRun* aTextRun, nsTextFrame* aStartContinuation)
 {
-  if (!aTextRun->GetUserData())
+  if (!aTextRun->GetUserData()) {
     return;
+  }
 
   if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW) {
-    nsTextFrame* userDataFrame = static_cast<nsTextFrame*>(
-      static_cast<nsIFrame*>(aTextRun->GetUserData()));
+    nsTextFrame* userDataFrame = GetFrameForSimpleFlow(aTextRun);
     nsFrameState whichTextRunState =
       userDataFrame->GetTextRun(nsTextFrame::eInflated) == aTextRun
         ? TEXT_IN_TEXTRUN_USER_DATA
@@ -491,11 +600,11 @@ UnhookTextRunFromFrames(gfxTextRun* aTextRun, nsTextFrame* aStartContinuation)
     NS_ASSERTION(!aStartContinuation || found,
                  "aStartContinuation wasn't found in simple flow text run");
     if (!(userDataFrame->GetStateBits() & whichTextRunState)) {
-      aTextRun->SetUserData(nullptr);
+      DestroyTextRunUserData(aTextRun);
+      aTextRun->ClearFlagBits(nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES);
     }
   } else {
-    TextRunUserData* userData =
-      static_cast<TextRunUserData*>(aTextRun->GetUserData());
+    auto userData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
     int32_t destroyFromIndex = aStartContinuation ? -1 : 0;
     for (uint32_t i = 0; i < userData->mMappedFlowCount; ++i) {
       nsTextFrame* userDataFrame = userData->mMappedFlows[i].mStartFrame;
@@ -509,8 +618,7 @@ UnhookTextRunFromFrames(gfxTextRun* aTextRun, nsTextFrame* aStartContinuation)
       if (found) {
         if (userDataFrame->GetStateBits() & whichTextRunState) {
           destroyFromIndex = i + 1;
-        }
-        else {
+        } else {
           destroyFromIndex = i;
         }
         aStartContinuation = nullptr;
@@ -519,10 +627,9 @@ UnhookTextRunFromFrames(gfxTextRun* aTextRun, nsTextFrame* aStartContinuation)
     NS_ASSERTION(destroyFromIndex >= 0,
                  "aStartContinuation wasn't found in multi flow text run");
     if (destroyFromIndex == 0) {
-      DestroyUserData(userData);
-      aTextRun->SetUserData(nullptr);
-    }
-    else {
+      DestroyTextRunUserData(aTextRun);
+      aTextRun->ClearFlagBits(nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES);
+    } else {
       userData->mMappedFlowCount = uint32_t(destroyFromIndex);
       if (userData->mLastFlowIndex >= uint32_t(destroyFromIndex)) {
         userData->mLastFlowIndex = uint32_t(destroyFromIndex) - 1;
@@ -531,16 +638,14 @@ UnhookTextRunFromFrames(gfxTextRun* aTextRun, nsTextFrame* aStartContinuation)
   }
 }
 
-void
-GlyphObserver::NotifyGlyphsChanged()
+static void
+InvalidateFrameDueToGlyphsChanged(nsIFrame* aFrame)
 {
-  nsIPresShell* shell = mFrame->PresContext()->PresShell();
-  for (nsIFrame* f = mFrame; f;
+  MOZ_ASSERT(aFrame);
+
+  nsIPresShell* shell = aFrame->PresContext()->PresShell();
+  for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
-    if (f != mFrame && f->HasAnyStateBits(TEXT_IN_TEXTRUN_USER_DATA)) {
-      
-      break;
-    }
     f->InvalidateFrame();
 
     
@@ -560,6 +665,20 @@ GlyphObserver::NotifyGlyphsChanged()
       
       shell->FrameNeedsReflow(f, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
     }
+  }
+}
+
+void
+GlyphObserver::NotifyGlyphsChanged()
+{
+  if (mTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW) {
+    InvalidateFrameDueToGlyphsChanged(GetFrameForSimpleFlow(mTextRun));
+    return;
+  }
+
+  auto data = static_cast<TextRunUserData*>(mTextRun->GetUserData());
+  for (uint32_t i = 0; i < data->mMappedFlowCount; ++i) {
+    InvalidateFrameDueToGlyphsChanged(data->mMappedFlows[i].mStartFrame);
   }
 }
 
@@ -744,27 +863,19 @@ IsAllWhitespace(const nsTextFragment* aFrag, bool aAllowNewline)
 }
 
 static void
-CreateObserverForAnimatedGlyphs(nsTextFrame* aFrame, const nsTArray<gfxFont*>& aFonts)
+ClearObserversFromTextRun(gfxTextRun* aTextRun)
 {
-  if (!(aFrame->GetStateBits() & TEXT_IN_TEXTRUN_USER_DATA)) {
-    
+  if (!(aTextRun->GetFlags() & nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES)) {
     return;
   }
 
-  nsTArray<UniquePtr<GlyphObserver>>* observers =
-    new nsTArray<UniquePtr<GlyphObserver>>();
-  for (uint32_t i = 0, count = aFonts.Length(); i < count; ++i) {
-    observers->AppendElement(new GlyphObserver(aFonts[i], aFrame));
+  if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW) {
+    static_cast<SimpleTextRunUserData*>(aTextRun->GetUserData())
+      ->mGlyphObservers.Clear();
+  } else {
+    static_cast<ComplexTextRunUserData*>(aTextRun->GetUserData())
+      ->mGlyphObservers.Clear();
   }
-  aFrame->Properties().Set(TextFrameGlyphObservers(), observers);
-  
-  
-  
-  
-  
-  
-  
-  
 }
 
 static void
@@ -773,6 +884,9 @@ CreateObserversForAnimatedGlyphs(gfxTextRun* aTextRun)
   if (!aTextRun->GetUserData()) {
     return;
   }
+
+  ClearObserversFromTextRun(aTextRun);
+
   nsTArray<gfxFont*> fontsWithAnimatedGlyphs;
   uint32_t numGlyphRuns;
   const gfxTextRun::GlyphRun* glyphRuns =
@@ -784,19 +898,46 @@ CreateObserversForAnimatedGlyphs(gfxTextRun* aTextRun)
     }
   }
   if (fontsWithAnimatedGlyphs.IsEmpty()) {
+    
+    
+    
+    
+    
     return;
   }
 
+  nsTArray<UniquePtr<GlyphObserver>>* observers;
+
   if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW) {
-    CreateObserverForAnimatedGlyphs(static_cast<nsTextFrame*>(
-      static_cast<nsIFrame*>(aTextRun->GetUserData())), fontsWithAnimatedGlyphs);
-  } else {
-    TextRunUserData* userData =
-      static_cast<TextRunUserData*>(aTextRun->GetUserData());
-    for (uint32_t i = 0; i < userData->mMappedFlowCount; ++i) {
-      CreateObserverForAnimatedGlyphs(userData->mMappedFlows[i].mStartFrame,
-                                      fontsWithAnimatedGlyphs);
+    
+    
+    if (!(aTextRun->GetFlags() & nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES)) {
+      auto frame = static_cast<nsTextFrame*>(aTextRun->GetUserData());
+      aTextRun->SetUserData(new SimpleTextRunUserData(frame));
     }
+
+    auto data =
+      static_cast<SimpleTextRunUserData*>(aTextRun->GetUserData());
+    observers = &data->mGlyphObservers;
+  } else {
+    if (!(aTextRun->GetFlags() & nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES)) {
+      auto oldData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
+      auto data = CreateComplexUserData(oldData->mMappedFlowCount);
+      data->mLastFlowIndex = oldData->mLastFlowIndex;
+      for (uint32_t i = 0; i < oldData->mMappedFlowCount; ++i) {
+        data->mMappedFlows[i] = oldData->mMappedFlows[i];
+      }
+      DestroyUserData(oldData);
+      aTextRun->SetUserData(data);
+    }
+    auto data = static_cast<ComplexTextRunUserData*>(aTextRun->GetUserData());
+    observers = &data->mGlyphObservers;
+  }
+
+  aTextRun->SetFlagBits(nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES);
+
+  for (auto font : fontsWithAnimatedGlyphs) {
+    observers->AppendElement(new GlyphObserver(font, aTextRun));
   }
 }
 
@@ -945,9 +1086,7 @@ public:
     }
 
     void Finish(gfxMissingFontRecorder* aMFR) {
-      MOZ_ASSERT(!(mTextRun->GetFlags() &
-                   (gfxTextRunFactory::TEXT_UNUSED_FLAGS |
-                    nsTextFrameUtils::TEXT_UNUSED_FLAG)),
+      MOZ_ASSERT(!(mTextRun->GetFlags() & nsTextFrameUtils::TEXT_UNUSED_FLAG),
                    "Flag set that should never be set! (memory safety error?)");
       if (mTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_TRANSFORMED) {
         nsTransformedTextRun* transformedTextRun =
@@ -1400,12 +1539,13 @@ ExpandBuffer(char16_t* aDest, uint8_t* aSrc, uint32_t aCount)
 
 bool BuildTextRunsScanner::IsTextRunValidForMappedFlows(gfxTextRun* aTextRun)
 {
-  if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW)
+  if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW) {
     return mMappedFlows.Length() == 1 &&
-      mMappedFlows[0].mStartFrame == static_cast<nsTextFrame*>(aTextRun->GetUserData()) &&
+      mMappedFlows[0].mStartFrame == GetFrameForSimpleFlow(aTextRun) &&
       mMappedFlows[0].mEndFrame == nullptr;
+  }
 
-  TextRunUserData* userData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
+  auto userData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
   if (userData->mMappedFlowCount != mMappedFlows.Length())
     return false;
   for (uint32_t i = 0; i < mMappedFlows.Length(); ++i) {
@@ -1875,14 +2015,12 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
     userData = &dummyData;
     userDataToDestroy = nullptr;
     dummyData.mMappedFlows = &dummyMappedFlow;
+    dummyData.mMappedFlowCount = mMappedFlows.Length();
+    dummyData.mLastFlowIndex = 0;
   } else {
-    userData = static_cast<TextRunUserData*>
-      (moz_xmalloc(sizeof(TextRunUserData) + mMappedFlows.Length()*sizeof(TextRunMappedFlow)));
+    userData = CreateUserData(mMappedFlows.Length());
     userDataToDestroy = userData;
-    userData->mMappedFlows = reinterpret_cast<TextRunMappedFlow*>(userData + 1);
   }
-  userData->mMappedFlowCount = mMappedFlows.Length();
-  userData->mLastFlowIndex = 0;
 
   uint32_t currentTransformedTextOffset = 0;
 
@@ -2280,14 +2418,12 @@ BuildTextRunsScanner::SetupLineBreakerContext(gfxTextRun *aTextRun)
     userData = &dummyData;
     userDataToDestroy = nullptr;
     dummyData.mMappedFlows = &dummyMappedFlow;
+    dummyData.mMappedFlowCount = mMappedFlows.Length();
+    dummyData.mLastFlowIndex = 0;
   } else {
-    userData = static_cast<TextRunUserData*>
-      (moz_xmalloc(sizeof(TextRunUserData) + mMappedFlows.Length()*sizeof(TextRunMappedFlow)));
+    userData = CreateUserData(mMappedFlows.Length());
     userDataToDestroy = userData;
-    userData->mMappedFlows = reinterpret_cast<TextRunMappedFlow*>(userData + 1);
   }
-  userData->mMappedFlowCount = mMappedFlows.Length();
-  userData->mLastFlowIndex = 0;
 
   uint32_t nextBreakIndex = 0;
   nsTextFrame* nextBreakBeforeFrame = GetNextBreakBeforeFrame(&nextBreakIndex);
@@ -2576,16 +2712,14 @@ BuildTextRunsScanner::AssignTextRun(gfxTextRun* aTextRun, float aInflation)
       if (f->GetTextRun(mWhichTextRun)) {
         gfxTextRun* textRun = f->GetTextRun(mWhichTextRun);
         if (textRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW) {
-          if (mMappedFlows[0].mStartFrame != static_cast<nsTextFrame*>(textRun->GetUserData())) {
+          if (mMappedFlows[0].mStartFrame != GetFrameForSimpleFlow(textRun)) {
             NS_WARNING("REASSIGNING SIMPLE FLOW TEXT RUN!");
           }
         } else {
-          TextRunUserData* userData =
-            static_cast<TextRunUserData*>(textRun->GetUserData());
-         
+          auto userData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
           if (userData->mMappedFlowCount >= mMappedFlows.Length() ||
               userData->mMappedFlows[userData->mMappedFlowCount - 1].mStartFrame !=
-              mMappedFlows[userData->mMappedFlowCount - 1].mStartFrame) {
+              mMappedFlows[userdata->mMappedFlowCount - 1].mStartFrame) {
             NS_WARNING("REASSIGNING MULTIFLOW TEXT RUN (not append)!");
           }
         }
@@ -2597,17 +2731,16 @@ BuildTextRunsScanner::AssignTextRun(gfxTextRun* aTextRun, float aInflation)
         nsTextFrame* firstFrame = nullptr;
         uint32_t startOffset = 0;
         if (oldTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW) {
-          firstFrame = static_cast<nsTextFrame*>(oldTextRun->GetUserData());
-        }
-        else {
-          TextRunUserData* userData = static_cast<TextRunUserData*>(oldTextRun->GetUserData());
+          firstFrame = GetFrameForSimpleFlow(oldTextRun);
+        } else {
+          auto userData = static_cast<TextRunUserData*>(oldTextRun->GetUserData());
           firstFrame = userData->mMappedFlows[0].mStartFrame;
           if (MOZ_UNLIKELY(f != firstFrame)) {
-            TextRunMappedFlow* flow = FindFlowForContent(userData, f->GetContent());
+            TextRunMappedFlow* flow = FindFlowForContent(userData,
+                                                         f->GetContent());
             if (flow) {
               startOffset = flow->mDOMOffsetToBeforeTransformOffset;
-            }
-            else {
+            } else {
               NS_ERROR("Can't find flow containing frame 'f'");
             }
           }
@@ -2687,7 +2820,7 @@ nsTextFrame::EnsureTextRun(TextRunType aWhichTextRun,
     return gfxSkipCharsIterator(textRun->GetSkipChars(), 0, mContentOffset);
   }
 
-  TextRunUserData* userData = static_cast<TextRunUserData*>(textRun->GetUserData());
+  auto userData = static_cast<TextRunUserData*>(textRun->GetUserData());
   TextRunMappedFlow* flow = FindFlowForContent(userData, mContent);
   if (flow) {
     

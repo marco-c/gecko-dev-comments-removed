@@ -568,8 +568,6 @@ public:
 
         
         TEXT_USE_MATH_SCRIPT = 0x80000000,
-
-        TEXT_UNUSED_FLAGS = 0x10000000
     };
 
     
