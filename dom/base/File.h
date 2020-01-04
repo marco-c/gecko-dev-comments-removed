@@ -118,8 +118,7 @@ public:
 
   
   
-  already_AddRefed<File> ToFile(const nsAString& aName,
-                                ErrorResult& aRv) const;
+  already_AddRefed<File> ToFile(const nsAString& aName) const;
 
   already_AddRefed<Blob>
   CreateSlice(uint64_t aStart, uint64_t aLength, const nsAString& aContentType,
@@ -798,10 +797,6 @@ public:
   void SetPath(const nsAString& aFullPath);
 
   virtual void LookupAndCacheIsDirectory() override;
-
-  
-  virtual bool IsSizeUnknown() const { return false; }
-  virtual bool IsDateUnknown() const { return false; }
 
 protected:
   virtual ~BlobImplFile() {

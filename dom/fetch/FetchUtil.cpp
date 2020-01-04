@@ -203,9 +203,7 @@ public:
   bool URLParamsIterator(const nsString& aName,
                          const nsString& aValue) override
   {
-    ErrorResult rv;
-    mFormData->Append(aName, aValue, rv);
-    MOZ_ASSERT(!rv.Failed());
+    mFormData->Append(aName, aValue);
     return true;
   }
 
@@ -394,9 +392,7 @@ private:
     NS_ConvertUTF8toUTF16 name(mName);
 
     if (mFilename.IsVoid()) {
-      ErrorResult rv;
-      mFormData->Append(name, NS_ConvertUTF8toUTF16(body), rv);
-      MOZ_ASSERT(!rv.Failed());
+      mFormData->Append(name, NS_ConvertUTF8toUTF16(body));
     } else {
       
       
@@ -421,11 +417,7 @@ private:
                                NS_ConvertUTF8toUTF16(mFilename),
                                NS_ConvertUTF8toUTF16(mContentType),  0);
       Optional<nsAString> dummy;
-      ErrorResult rv;
-      mFormData->Append(name, *file, dummy, rv);
-      if (NS_WARN_IF(rv.Failed())) {
-        return false;
-      }
+      mFormData->Append(name, *file, dummy);
     }
 
     return true;
