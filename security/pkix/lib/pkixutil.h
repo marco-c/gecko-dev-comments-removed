@@ -106,6 +106,10 @@ public:
   {
     return MaybeInput(requiredTLSFeatures);
   }
+  const Input* GetSignedCertificateTimestamps() const
+  {
+    return MaybeInput(signedCertificateTimestamps);
+  }
 
 private:
   const Input der;
@@ -149,6 +153,7 @@ private:
   Input subjectAltName;
   Input criticalNetscapeCertificateType;
   Input requiredTLSFeatures;
+  Input signedCertificateTimestamps; 
 
   Result RememberExtension(Reader& extnID, Input extnValue, bool critical,
                             bool& understood);
@@ -196,6 +201,12 @@ private:
   NonOwningDERArray(const NonOwningDERArray&) = delete;
   void operator=(const NonOwningDERArray&) = delete;
 };
+
+
+
+Result
+ExtractSignedCertificateTimestampListFromExtension(Input extnValue,
+                                                   Input& sctList);
 
 inline unsigned int
 DaysBeforeYear(unsigned int year)

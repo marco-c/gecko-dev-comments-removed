@@ -215,6 +215,12 @@ CSTrustDomain::NetscapeStepUpMatchesServerAuth(Time notBefore,
   return Success;
 }
 
+void
+CSTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension ,
+                                      Input )
+{
+}
+
 Result
 CSTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
                           uint8_t* digestBuf, size_t digestBufLen)

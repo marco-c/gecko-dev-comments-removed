@@ -64,6 +64,9 @@ public:
   virtual Result NetscapeStepUpMatchesServerAuth(
                    mozilla::pkix::Time notBefore,
                     bool& matches) override;
+  virtual void NoteAuxiliaryExtension(
+                   mozilla::pkix::AuxiliaryExtension extension,
+                   mozilla::pkix::Input extensionData) override;
   virtual Result DigestBuf(mozilla::pkix::Input item,
                            mozilla::pkix::DigestAlgorithm digestAlg,
                             uint8_t* digestBuf,

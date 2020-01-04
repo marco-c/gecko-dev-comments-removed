@@ -31,11 +31,13 @@
 #endif
 
 #include <map>
+#include <vector>
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #pragma warning(pop)
 #endif
 
+#include "pkixder.h"
 #include "pkixgtest.h"
 
 using namespace mozilla::pkix;
@@ -46,7 +48,8 @@ CreateCert(const char* issuerCN,
            const char* subjectCN, 
            EndEntityOrCA endEntityOrCA,
             std::map<ByteString, ByteString>*
-             subjectDERToCertDER = nullptr)
+             subjectDERToCertDER = nullptr,
+            const ByteString* extension = nullptr)
 {
   static long serialNumberValue = 0;
   ++serialNumberValue;
@@ -56,18 +59,23 @@ CreateCert(const char* issuerCN,
   ByteString issuerDER(issuerCN ? CNToDERName(issuerCN) : Name(ByteString()));
   ByteString subjectDER(subjectCN ? CNToDERName(subjectCN) : Name(ByteString()));
 
-  ByteString extensions[2];
+  std::vector<ByteString> extensions;
   if (endEntityOrCA == EndEntityOrCA::MustBeCA) {
-    extensions[0] =
+    ByteString basicConstraints =
       CreateEncodedBasicConstraints(true, nullptr, Critical::Yes);
-    EXPECT_FALSE(ENCODING_FAILED(extensions[0]));
+    EXPECT_FALSE(ENCODING_FAILED(basicConstraints));
+    extensions.push_back(basicConstraints);
   }
+  if (extension) {
+    extensions.push_back(*extension);
+  }
+  extensions.push_back(ByteString()); 
 
   ScopedTestKeyPair reusedKey(CloneReusedKeyPair());
   ByteString certDER(CreateEncodedCertificate(
                        v3, sha256WithRSAEncryption(), serialNumber, issuerDER,
                        oneDayBeforeNow, oneDayAfterNow, subjectDER,
-                       *reusedKey, extensions, *reusedKey,
+                       *reusedKey, extensions.data(), *reusedKey,
                        sha256WithRSAEncryption()));
   EXPECT_FALSE(ENCODING_FAILED(certDER));
 
@@ -244,10 +252,10 @@ TEST_F(pkixbuild, BeyondMaxAcceptableCertChainLength)
 
 
 
-class ExpiredCertTrustDomain final : public DefaultCryptoTrustDomain
+class SingleRootTrustDomain : public DefaultCryptoTrustDomain
 {
 public:
-  explicit ExpiredCertTrustDomain(ByteString rootDER)
+  explicit SingleRootTrustDomain(ByteString rootDER)
     : rootDER(rootDER)
   {
   }
@@ -288,8 +296,34 @@ public:
     return Success;
   }
 
+  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
+                          const Input*,  const Input*)
+                         override
+  {
+    return Success;
+  }
+
 private:
   ByteString rootDER;
+};
+
+
+class ExpiredCertTrustDomain final : public SingleRootTrustDomain
+{
+public:
+  explicit ExpiredCertTrustDomain(ByteString rootDER)
+    : SingleRootTrustDomain(rootDER)
+  {
+  }
+
+  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
+                          const Input*,  const Input*)
+                         override
+  {
+    ADD_FAILURE();
+    return NotReached("CheckRevocation should not be called",
+                      Result::FATAL_ERROR_LIBRARY_FAILURE);
+  }
 };
 
 TEST_F(pkixbuild, NoRevocationCheckingForExpiredCert)
@@ -474,3 +508,71 @@ TEST_P(pkixbuild_IssuerNameCheck, MatchingName)
 
 INSTANTIATE_TEST_CASE_P(pkixbuild_IssuerNameCheck, pkixbuild_IssuerNameCheck,
                         testing::ValuesIn(ISSUER_NAME_CHECK_PARAMS));
+
+
+
+class EmbeddedSCTListTestTrustDomain final : public SingleRootTrustDomain
+{
+public:
+  explicit EmbeddedSCTListTestTrustDomain(ByteString rootDER)
+    : SingleRootTrustDomain(rootDER)
+  {
+  }
+
+  virtual void NoteAuxiliaryExtension(AuxiliaryExtension extension,
+                                      Input extensionData) override
+  {
+    if (extension == AuxiliaryExtension::EmbeddedSCTList) {
+      signedCertificateTimestamps = InputToByteString(extensionData);
+    } else {
+      ADD_FAILURE();
+    }
+  }
+
+  ByteString signedCertificateTimestamps;
+};
+
+TEST_F(pkixbuild, CertificateTransparencyExtension)
+{
+  
+  
+  static const uint8_t tlv_id_embeddedSctList[] = {
+    0x06, 0x0a, 0x2b, 0x06, 0x01, 0x04, 0x01, 0xd6, 0x79, 0x02, 0x04, 0x02
+  };
+  static const uint8_t dummySctList[] = {
+    0x01, 0x02, 0x03, 0x04, 0x05
+  };
+
+  ByteString ctExtension = TLV(der::SEQUENCE,
+    BytesToByteString(tlv_id_embeddedSctList) +
+    Boolean(false) +
+    TLV(der::OCTET_STRING,
+      
+      
+      
+      TLV(der::OCTET_STRING, BytesToByteString(dummySctList))));
+
+  const char* rootCN = "Root CA";
+  ByteString rootDER(CreateCert(rootCN, rootCN, EndEntityOrCA::MustBeCA));
+  ASSERT_FALSE(ENCODING_FAILED(rootDER));
+
+  ByteString certDER(CreateCert(rootCN, "Cert with SCT list",
+                                EndEntityOrCA::MustBeEndEntity,
+                                nullptr, 
+                                &ctExtension));
+  ASSERT_FALSE(ENCODING_FAILED(certDER));
+
+  Input certInput;
+  ASSERT_EQ(Success, certInput.Init(certDER.data(), certDER.length()));
+
+  EmbeddedSCTListTestTrustDomain extTrustDomain(rootDER);
+  ASSERT_EQ(Success,
+            BuildCertChain(extTrustDomain, certInput, Now(),
+                           EndEntityOrCA::MustBeEndEntity,
+                           KeyUsage::noParticularKeyUsageRequired,
+                           KeyPurposeId::anyExtendedKeyUsage,
+                           CertPolicyId::anyPolicy,
+                           nullptr ));
+  ASSERT_EQ(BytesToByteString(dummySctList),
+            extTrustDomain.signedCertificateTimestamps);
+}

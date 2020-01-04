@@ -378,4 +378,10 @@ AppTrustDomain::NetscapeStepUpMatchesServerAuth(Time ,
   return Success;
 }
 
+void
+AppTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension ,
+                                       Input )
+{
+}
+
 } } 

@@ -76,6 +76,8 @@ public:
   Time* validThrough;
   bool expired;
 
+  Input signedCertificateTimestamps;
+
   
   
   
@@ -168,6 +170,9 @@ static inline Result ResponseData(
 static inline Result SingleResponse(Reader& input, Context& context);
 static Result ExtensionNotUnderstood(Reader& extnID, Input extnValue,
                                      bool critical,  bool& understood);
+static Result RememberSingleExtension(Context& context, Reader& extnID,
+                                      Input extnValue, bool critical,
+                                       bool& understood);
 static inline Result CertID(Reader& input,
                             const Context& context,
                              bool& match);
@@ -329,6 +334,16 @@ VerifyEncodedOCSPResponse(TrustDomain& trustDomain, const struct CertID& certID,
     case CertStatus::Good:
       if (expired) {
         return Result::ERROR_OCSP_OLD_RESPONSE;
+      }
+      if (context.signedCertificateTimestamps.GetLength()) {
+        Input sctList;
+        rv = ExtractSignedCertificateTimestampListFromExtension(
+          context.signedCertificateTimestamps, sctList);
+        if (rv != Success) {
+          return MapBadDERToMalformedOCSPResponse(rv);
+        }
+        context.trustDomain.NoteAuxiliaryExtension(
+          AuxiliaryExtension::SCTListFromOCSPResponse, sctList);
       }
       return Success;
     case CertStatus::Revoked:
@@ -651,9 +666,15 @@ SingleResponse(Reader& input, Context& context)
     context.expired = true;
   }
 
-  rv = der::OptionalExtensions(input,
-                               der::CONTEXT_SPECIFIC | der::CONSTRUCTED | 1,
-                               ExtensionNotUnderstood);
+  rv = der::OptionalExtensions(
+    input,
+    der::CONTEXT_SPECIFIC | der::CONSTRUCTED | 1,
+    [&context](Reader& extnID, const Input& extnValue, bool critical,
+                bool& understood) {
+      return RememberSingleExtension(context, extnID, extnValue, critical,
+                                     understood);
+    });
+
   if (rv != Success) {
     return rv;
   }
@@ -823,6 +844,36 @@ ExtensionNotUnderstood(Reader& , Input ,
                        bool ,  bool& understood)
 {
   understood = false;
+  return Success;
+}
+
+Result
+RememberSingleExtension(Context& context, Reader& extnID, Input extnValue,
+                        bool ,  bool& understood)
+{
+  understood = false;
+
+  
+  
+  
+  
+  static const uint8_t id_ocsp_singleExtensionSctList[] = {
+    0x2b, 0x06, 0x01, 0x04, 0x01, 0xd6, 0x79, 0x02, 0x04, 0x05
+  };
+
+  if (extnID.MatchRest(id_ocsp_singleExtensionSctList)) {
+    
+    
+    if (extnValue.GetLength() == 0) {
+      return Result::ERROR_EXTENSION_VALUE_INVALID;
+    }
+    if (context.signedCertificateTimestamps.Init(extnValue) != Success) {
+      
+      return Result::ERROR_EXTENSION_VALUE_INVALID;
+    }
+    understood = true;
+  }
+
   return Success;
 }
 

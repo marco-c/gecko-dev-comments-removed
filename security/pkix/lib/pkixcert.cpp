@@ -223,6 +223,11 @@ BackCert::RememberExtension(Reader& extnID, Input extnValue,
   static const uint8_t id_pe_tlsfeature[] = {
     0x2b, 0x06, 0x01, 0x05, 0x05, 0x07, 0x01, 0x18
   };
+  
+  
+  static const uint8_t id_embeddedSctList[] = {
+    0x2b, 0x06, 0x01, 0x04, 0x01, 0xd6, 0x79, 0x02, 0x04, 0x02
+  };
 
   Input* out = nullptr;
 
@@ -269,6 +274,8 @@ BackCert::RememberExtension(Reader& extnID, Input extnValue,
     out = &authorityInfoAccess;
   } else if (extnID.MatchRest(id_pe_tlsfeature)) {
     out = &requiredTLSFeatures;
+  } else if (extnID.MatchRest(id_embeddedSctList)) {
+    out = &signedCertificateTimestamps;
   } else if (extnID.MatchRest(id_pkix_ocsp_nocheck) && critical) {
     
     
@@ -298,6 +305,19 @@ BackCert::RememberExtension(Reader& extnID, Input extnValue,
   }
 
   return Success;
+}
+
+Result
+ExtractSignedCertificateTimestampListFromExtension(Input extnValue,
+                                                   Input& sctList)
+{
+  Reader decodedValue;
+  Result rv = der::ExpectTagAndGetValueAtEnd(extnValue, der::OCTET_STRING,
+                                             decodedValue);
+  if (rv != Success) {
+    return rv;
+  }
+  return decodedValue.SkipToEnd(sctList);
 }
 
 } } 

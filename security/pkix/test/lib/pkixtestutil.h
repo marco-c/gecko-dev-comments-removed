@@ -376,6 +376,8 @@ ByteString CreateEncodedEKUExtension(Input eku, Critical critical);
 class OCSPResponseExtension final
 {
 public:
+  OCSPResponseExtension();
+
   ByteString id;
   bool critical;
   ByteString value;
@@ -412,7 +414,10 @@ public:
 
   std::time_t producedAt;
 
-  OCSPResponseExtension* extensions;
+  
+  OCSPResponseExtension* singleExtensions;
+  
+  OCSPResponseExtension* responseExtensions;
   bool includeEmptyExtensions; 
                                
                                

@@ -22,6 +22,7 @@
 
 
 
+#include "pkixder.h"
 #include "pkixgtest.h"
 
 using namespace mozilla::pkix;
@@ -43,6 +44,19 @@ public:
     trustLevel = TrustLevel::InheritsTrust;
     return Success;
   }
+
+  virtual void NoteAuxiliaryExtension(AuxiliaryExtension extension,
+                                      Input extensionData) override
+  {
+    if (extension == AuxiliaryExtension::SCTListFromOCSPResponse) {
+      signedCertificateTimestamps = InputToByteString(extensionData);
+    } else {
+      
+      ADD_FAILURE();
+    }
+  }
+
+  ByteString signedCertificateTimestamps;
 };
 
 namespace {
@@ -199,7 +213,9 @@ public:
                     time_t producedAt, time_t thisUpdate,
         const time_t* nextUpdate,
                     const TestSignatureAlgorithm& signatureAlgorithm,
-        const ByteString* certs = nullptr)
+        const ByteString* certs = nullptr,
+        OCSPResponseExtension* singleExtensions = nullptr,
+        OCSPResponseExtension* responseExtensions = nullptr)
   {
     OCSPResponseContext context(certID, producedAt);
     if (signerName) {
@@ -212,6 +228,8 @@ public:
     context.producedAt = producedAt;
     context.signatureAlgorithm = signatureAlgorithm;
     context.certs = certs;
+    context.singleExtensions = singleExtensions;
+    context.responseExtensions = responseExtensions;
 
     context.certStatus = static_cast<uint8_t>(certStatus);
     context.thisUpdate = thisUpdate;
@@ -395,6 +413,46 @@ TEST_F(pkixocsp_VerifyEncodedResponse_successful, check_validThrough)
                                         response, expired));
     ASSERT_TRUE(expired);
   }
+}
+
+TEST_F(pkixocsp_VerifyEncodedResponse_successful, ct_extension)
+{
+  
+  
+  static const uint8_t tlv_id_ocsp_singleExtensionSctList[] = {
+    0x06, 0x0a, 0x2b, 0x06, 0x01, 0x04, 0x01, 0xd6, 0x79, 0x02, 0x04, 0x05
+  };
+  static const uint8_t dummySctList[] = {
+    0x01, 0x02, 0x03, 0x04, 0x05
+  };
+
+  OCSPResponseExtension ctExtension;
+  ctExtension.id = BytesToByteString(tlv_id_ocsp_singleExtensionSctList);
+  
+  
+  
+  ctExtension.value = TLV(der::OCTET_STRING, BytesToByteString(dummySctList));
+
+  ByteString responseString(
+               CreateEncodedOCSPSuccessfulResponse(
+                         OCSPResponseContext::good, *endEntityCertID, byKey,
+                         *rootKeyPair, oneDayBeforeNow,
+                         oneDayBeforeNow, &oneDayAfterNow,
+                         sha256WithRSAEncryption(),
+                          nullptr,
+                         &ctExtension));
+  Input response;
+  ASSERT_EQ(Success,
+            response.Init(responseString.data(), responseString.length()));
+
+  bool expired;
+  ASSERT_EQ(Success,
+            VerifyEncodedOCSPResponse(trustDomain, *endEntityCertID,
+                                      Now(), END_ENTITY_MAX_LIFETIME_IN_DAYS,
+                                      response, expired));
+  ASSERT_FALSE(expired);
+  ASSERT_EQ(BytesToByteString(dummySctList),
+            trustDomain.signedCertificateTimestamps);
 }
 
 

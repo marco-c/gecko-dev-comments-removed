@@ -184,7 +184,7 @@ GetOCSPResponseForType(OCSPResponseType aORT, const UniqueCERTCertificate& aCert
     extension.value.push_back(0x05); 
     extension.value.push_back(0x00); 
     extension.next = nullptr;
-    context.extensions = &extension;
+    context.responseExtensions = &extension;
   }
   if (aORT == ORTEmptyExtensions) {
     context.includeEmptyExtensions = true;
