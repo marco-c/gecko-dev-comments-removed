@@ -22,6 +22,14 @@ BUILD_TYPE_ALIASES = {
 }
 
 
+BUILD_KINDS = set([
+])
+
+
+JOB_KINDS = set([
+])
+
+
 
 
 def alias_prefix(prefix):
@@ -121,6 +129,7 @@ UNITTEST_PLATFORM_PRETTY_NAMES = {
     
     
 }
+
 
 
 
@@ -245,7 +254,7 @@ class TryOptionSyntax(object):
             if build in RIDEALONG_BUILDS:
                 results.extend(RIDEALONG_BUILDS[build])
                 logger.info("platform %s triggers ridealong builds %s" %
-                            (build, RIDEALONG_BUILDS[build]))
+                            (build, ', '.join(RIDEALONG_BUILDS[build])))
 
         return results
 
@@ -508,6 +517,21 @@ class TryOptionSyntax(object):
             return False
         elif attr('kind') in ('desktop-test', 'android-test'):
             return match_test(self.unittests, 'unittest_try_name')
+        elif attr('kind') in JOB_KINDS:
+            if self.jobs is None:
+                return True
+            if attr('build_platform') in self.jobs:
+                return True
+        elif attr('kind') in BUILD_KINDS:
+            if attr('build_type') not in self.build_types:
+                return False
+            elif self.platforms is None:
+                
+                return set(['try', 'all']) & set(attr('run_on_projects', []))
+            else:
+                if attr('build_platform') not in self.platforms:
+                    return False
+            return True
         else:
             return False
 
