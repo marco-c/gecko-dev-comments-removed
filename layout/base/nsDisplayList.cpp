@@ -5092,17 +5092,6 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
     result = Matrix4x4::From2D(svgTransform);
   }
 
-  if (aProperties.mChildPerspective > 0.0) {
-    Matrix4x4 perspective;
-    perspective._34 =
-      -1.0 / NSAppUnitsToFloatPixels(aProperties.mChildPerspective, aAppUnitsPerPixel);
-    
-
-
-    perspective.ChangeBasis(aProperties.GetToPerspectiveOrigin() - aProperties.mToTransformOrigin);
-    result = result * perspective;
-  }
-
   
 
 
@@ -5114,12 +5103,15 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
                         hasSVGTransforms ? newOrigin.y : NS_round(newOrigin.y),
                         0);
 
+  bool hasPerspective = aProperties.mChildPerspective > 0.0;
+
   if (!hasSVGTransforms || !hasTransformFromSVGParent) {
     
     
     
     Point3D offsets = roundedOrigin + aProperties.mToTransformOrigin;
-    if (aOffsetByOrigin) {
+    if (aOffsetByOrigin &&
+        !hasPerspective) {
       
       
       
@@ -5153,11 +5145,25 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
     
     
     Point3D offsets = roundedOrigin + refBoxOffset;
-    if (aOffsetByOrigin) {
+    if (aOffsetByOrigin &&
+        !hasPerspective) {
       result.PreTranslate(-refBoxOffset);
       result.PostTranslate(offsets);
     } else {
       result.ChangeBasis(offsets);
+    }
+  }
+
+  if (hasPerspective) {
+    Matrix4x4 perspective;
+    perspective._34 =
+      -1.0 / NSAppUnitsToFloatPixels(aProperties.mChildPerspective, aAppUnitsPerPixel);
+    
+    perspective.ChangeBasis(aProperties.GetToPerspectiveOrigin() + roundedOrigin);
+    result = result * perspective;
+
+    if (aOffsetByOrigin) {
+      result.PreTranslate(roundedOrigin);
     }
   }
 
