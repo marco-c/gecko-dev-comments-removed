@@ -6513,6 +6513,9 @@ var PDFViewerApplication = {
       self.progress(progressData.loaded / progressData.total);
     };
 
+    
+    loadingTask.onUnsupportedFeature = this.fallback.bind(this);
+
     var result = loadingTask.promise.then(
       function getDocumentCallback(pdfDocument) {
         self.load(pdfDocument, scale);
@@ -7247,10 +7250,6 @@ function webViewerInitialized() {
   if (PDFViewerApplication.supportsIntegratedFind) {
     document.getElementById('viewFind').classList.add('hidden');
   }
-
-  
-  PDFJS.UnsupportedManager.listen(
-    PDFViewerApplication.fallback.bind(PDFViewerApplication));
 
   
   document.getElementById('scaleSelect').oncontextmenu = noContextMenuHandler;

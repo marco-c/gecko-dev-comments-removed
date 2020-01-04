@@ -20,8 +20,8 @@ if (typeof PDFJS === 'undefined') {
   (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
-PDFJS.version = '1.3.42';
-PDFJS.build = '84a47f8';
+PDFJS.version = '1.3.56';
+PDFJS.build = 'e2aca38';
 
 (function pdfjsWrapper() {
   
@@ -248,7 +248,6 @@ function error(msg) {
     console.log('Error: ' + msg);
     console.log(backtrace());
   }
-  UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
   throw new Error(msg);
 }
 
@@ -274,22 +273,6 @@ var UNSUPPORTED_FEATURES = PDFJS.UNSUPPORTED_FEATURES = {
   shadingPattern: 'shadingPattern',
   font: 'font'
 };
-
-var UnsupportedManager = PDFJS.UnsupportedManager =
-  (function UnsupportedManagerClosure() {
-  var listeners = [];
-  return {
-    listen: function (cb) {
-      listeners.push(cb);
-    },
-    notify: function (featureId) {
-      warn('Unsupported feature "' + featureId + '"');
-      for (var i = 0, ii = listeners.length; i < ii; i++) {
-        listeners[i](featureId);
-      }
-    }
-  };
-})();
 
 
 
@@ -1772,6 +1755,12 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
 
 
     this.onProgress = null;
+
+    
+
+
+
+    this.onUnsupportedFeature = null;
   }
 
   PDFDocumentLoadingTask.prototype =
@@ -2530,9 +2519,6 @@ var PDFWorker = (function PDFWorkerClosure() {
           messageHandler.on('console_error', function (data) {
             console.error.apply(console, data);
           });
-          messageHandler.on('_unsupported_feature', function (data) {
-            UnsupportedManager.notify(data);
-          });
 
           var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
           
@@ -2897,6 +2883,19 @@ var WorkerTransport = (function WorkerTransportClosure() {
         } else {
           error(data.error);
         }
+      }, this);
+
+      messageHandler.on('UnsupportedFeature',
+          function transportUnsupportedFeature(data) {
+        if (this.destroyed) {
+          return; 
+        }
+        var featureId = data.featureId;
+        var loadingTask = this.loadingTask;
+        if (loadingTask.onUnsupportedFeature) {
+          loadingTask.onUnsupportedFeature(featureId);
+        }
+        PDFJS.UnsupportedManager.notify(featureId);
       }, this);
 
       messageHandler.on('JpegDecode', function(data) {
@@ -3314,6 +3313,26 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
   };
 
   return InternalRenderTask;
+})();
+
+
+
+
+
+PDFJS.UnsupportedManager = (function UnsupportedManagerClosure() {
+  var listeners = [];
+  return {
+    listen: function (cb) {
+      deprecated('Global UnsupportedManager.listen is used: ' +
+                 ' use PDFDocumentLoadingTask.onUnsupportedFeature instead');
+      listeners.push(cb);
+    },
+    notify: function (featureId) {
+      for (var i = 0, ii = listeners.length; i < ii; i++) {
+        listeners[i](featureId);
+      }
+    }
+  };
 })();
 
 
@@ -4352,6 +4371,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       composeSMask(this.ctx, this.current.activeSMask, groupCtx);
       this.ctx.restore();
+      copyCtxState(groupCtx, this.ctx);
     },
     save: function CanvasGraphics_save() {
       this.ctx.save();
@@ -5471,7 +5491,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintXObject: function CanvasGraphics_paintXObject() {
-      UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
       warn('Unsupported \'paintXObject\' command.');
     },
 
