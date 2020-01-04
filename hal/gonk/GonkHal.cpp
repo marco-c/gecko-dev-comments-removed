@@ -1127,7 +1127,7 @@ EnableAlarm()
     return false;
   }
 
-  nsAutoPtr<AlarmData> alarmData(new AlarmData(alarmFd));
+  UniquePtr<AlarmData> alarmData = MakeUnique<AlarmData>(alarmFd);
 
   struct sigaction actions;
   memset(&actions, 0, sizeof(actions));
@@ -1146,7 +1146,7 @@ EnableAlarm()
   int status = pthread_create(&sAlarmFireWatcherThread, &attr, WaitForAlarm,
                               alarmData.get());
   if (status) {
-    alarmData = nullptr;
+    alarmData.reset();
     HAL_LOG("Failed to create alarm-watcher thread. Status: %d.", status);
     return false;
   }
@@ -1154,7 +1154,7 @@ EnableAlarm()
   pthread_attr_destroy(&attr);
 
   
-  sAlarmData = alarmData.forget();
+  sAlarmData = alarmData.release();
   return true;
 }
 
