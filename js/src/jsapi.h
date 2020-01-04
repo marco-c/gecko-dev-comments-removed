@@ -4323,7 +4323,7 @@ extern JS_PUBLIC_API(JSInterruptCallback)
 JS_GetInterruptCallback(JSContext* cx);
 
 extern JS_PUBLIC_API(void)
-JS_RequestInterruptCallback(JSRuntime* rt);
+JS_RequestInterruptCallback(JSContext* cx);
 
 namespace JS {
 
