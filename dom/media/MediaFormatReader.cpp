@@ -510,6 +510,14 @@ MediaFormatReader::RequestVideoData(bool aSkipToNextKeyframe,
   if (ShouldSkip(aSkipToNextKeyframe, timeThreshold)) {
     
     mVideo.mDemuxRequest.DisconnectIfExists();
+
+    
+    
+    
+    
+    
+    mDecoder->NotifyDecodedFrames(0, 0, SizeOfVideoQueueInFrames());
+
     Flush(TrackInfo::kVideoTrack);
     RefPtr<VideoDataPromise> p = mVideo.mPromise.Ensure(__func__);
     SkipVideoDemuxToNextKeyFrame(timeThreshold);
