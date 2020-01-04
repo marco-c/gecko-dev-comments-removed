@@ -1,7 +1,7 @@
 
 
 
-__defineSetter__("x", function(){})
+this.__defineSetter__("x", function(){})
 this.watch("x", "".localeCompare)
 window = x
 Object.defineProperty(this, "x", ({

@@ -1,6 +1,6 @@
 
 try {
-    __defineGetter__("x", Iterator)()
+    this.__defineGetter__("x", Iterator)()
 } catch (e) {}
 f = function() {
     return (function() {
