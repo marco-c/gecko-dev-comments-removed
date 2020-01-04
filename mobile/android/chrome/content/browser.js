@@ -546,6 +546,16 @@ var BrowserApp = {
       InitLater(() => AccessFu.attach(window), window, "AccessFu");
     }
 
+    if (!AppConstants.MOZ_ANDROID_NATIVE_ACCOUNT_UI) {
+      
+      
+      
+      
+      console.log("browser.js: loading Firefox Accounts WebChannel");
+      Cu.import("resource://gre/modules/FxAccountsWebChannel.jsm");
+      EnsureFxAccountsWebChannel();
+    }
+
     
     Messaging.sendRequest({ type: "Gecko:Ready" });
 

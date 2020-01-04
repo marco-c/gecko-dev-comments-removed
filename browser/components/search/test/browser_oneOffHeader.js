@@ -138,4 +138,7 @@ add_task(function* test_text() {
   info("Closing search panel");
   EventUtils.synthesizeKey("VK_ESCAPE", {});
   yield promise;
+
+  
+  yield synthesizeNativeMouseMove(searchbar);
 });
