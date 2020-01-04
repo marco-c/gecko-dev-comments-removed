@@ -2665,8 +2665,16 @@ class MOZ_RAII JS_FRIEND_API(AutoCTypesActivityCallback) {
     }
 };
 
-typedef JSObject*
-(* AllocationMetadataBuilder)(JSContext* cx, JS::HandleObject obj);
+
+
+struct AllocationMetadataBuilder {
+    
+    
+    
+    
+    
+    virtual JSObject* build(JSContext *cx, JS::HandleObject obj) const { return nullptr; }
+};
 
 
 
@@ -2674,7 +2682,7 @@ typedef JSObject*
 
 
 JS_FRIEND_API(void)
-SetAllocationMetadataBuilder(JSContext* cx, AllocationMetadataBuilder callback);
+SetAllocationMetadataBuilder(JSContext* cx, const AllocationMetadataBuilder *callback);
 
 
 JS_FRIEND_API(JSObject*)
