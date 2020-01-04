@@ -1494,6 +1494,12 @@ private:
            aType == NS_FORM_INPUT_NUMBER;
   }
 
+  
+
+
+
+  bool MayFireChangeOnKeyUp(uint32_t aKeyCode) const;
+
   struct nsFilePickerFilter {
     nsFilePickerFilter()
       : mFilterMask(0) {}

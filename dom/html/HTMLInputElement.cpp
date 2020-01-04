@@ -3762,19 +3762,19 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
         
         frame->InvalidateFrame();
       }
-    } else if (aVisitor.mEvent->mMessage == eKeyUp) {
-      WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
-      if ((keyEvent->mKeyCode == NS_VK_UP ||
-           keyEvent->mKeyCode == NS_VK_DOWN) &&
-          !(keyEvent->IsShift() || keyEvent->IsControl() ||
-            keyEvent->IsAlt() || keyEvent->IsMeta() ||
-            keyEvent->IsAltGraph() || keyEvent->IsFn() ||
-            keyEvent->IsOS())) {
-        
-        
-        
-        FireChangeEventIfNeeded();
-      }
+    }
+  }
+
+  if (aVisitor.mEvent->mMessage == eKeyUp && aVisitor.mEvent->IsTrusted()) {
+    WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
+    if (MayFireChangeOnKeyUp(keyEvent->mKeyCode) &&
+        !(keyEvent->IsShift() || keyEvent->IsControl() || keyEvent->IsAlt() ||
+          keyEvent->IsMeta() || keyEvent->IsAltGraph() || keyEvent->IsFn() ||
+          keyEvent->IsOS())) {
+      
+      
+      
+      FireChangeEventIfNeeded();
     }
   }
 
@@ -8142,6 +8142,18 @@ HTMLInputElement::GetWebkitEntries(nsTArray<RefPtr<Entry>>& aSequence)
 {
   Telemetry::Accumulate(Telemetry::BLINK_FILESYSTEM_USED, true);
   aSequence.AppendElements(mEntries);
+}
+
+bool HTMLInputElement::MayFireChangeOnKeyUp(uint32_t aKeyCode) const
+{
+  switch (mType) {
+    case NS_FORM_INPUT_NUMBER:
+      return aKeyCode == NS_VK_UP || aKeyCode == NS_VK_DOWN;
+    case NS_FORM_INPUT_RANGE:
+      return aKeyCode == NS_VK_UP || aKeyCode == NS_VK_DOWN ||
+             aKeyCode == NS_VK_LEFT || aKeyCode == NS_VK_RIGHT;
+  }
+  return false;
 }
 
 } 
