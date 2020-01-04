@@ -385,7 +385,7 @@ protected:
   
   
   
-  template<typename ActualAlloc>
+  
   void ShrinkCapacity(size_type aElemSize, size_t aElemAlign);
 
   
@@ -1885,8 +1885,7 @@ public:
   
   void Compact()
   {
-    this->template ShrinkCapacity<Alloc>(sizeof(elem_type),
-                                         MOZ_ALIGNOF(elem_type));
+    ShrinkCapacity(sizeof(elem_type), MOZ_ALIGNOF(elem_type));
   }
 
   

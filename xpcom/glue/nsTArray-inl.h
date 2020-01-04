@@ -196,8 +196,9 @@ nsTArray_base<Alloc, Copy>::EnsureCapacity(size_type aCapacity,
   return ActualAlloc::SuccessResult();
 }
 
+
+
 template<class Alloc, class Copy>
-template<typename ActualAlloc>
 void
 nsTArray_base<Alloc, Copy>::ShrinkCapacity(size_type aElemSize,
                                            size_t aElemAlign)
@@ -219,20 +220,20 @@ nsTArray_base<Alloc, Copy>::ShrinkCapacity(size_type aElemSize,
     header->mLength = length;
     Copy::CopyElements(header + 1, mHdr + 1, length, aElemSize);
 
-    ActualAlloc::Free(mHdr);
+    nsTArrayFallibleAllocator::Free(mHdr);
     mHdr = header;
     return;
   }
 
   if (length == 0) {
     MOZ_ASSERT(!IsAutoArray(), "autoarray should have fit 0 elements");
-    ActualAlloc::Free(mHdr);
+    nsTArrayFallibleAllocator::Free(mHdr);
     mHdr = EmptyHdr();
     return;
   }
 
   size_type size = sizeof(Header) + length * aElemSize;
-  void* ptr = ActualAlloc::Realloc(mHdr, size);
+  void* ptr = nsTArrayFallibleAllocator::Realloc(mHdr, size);
   if (!ptr) {
     return;
   }
@@ -257,7 +258,7 @@ nsTArray_base<Alloc, Copy>::ShiftData(index_type aStart,
   
   mHdr->mLength += aNewLen - aOldLen;
   if (mHdr->mLength == 0) {
-    ShrinkCapacity<ActualAlloc>(aElemSize, aElemAlign);
+    ShrinkCapacity(aElemSize, aElemAlign);
   } else {
     
     if (num == 0) {
