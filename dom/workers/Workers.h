@@ -361,9 +361,6 @@ ThrowDOMExceptionForNSResult(JSContext* aCx, nsresult aNSResult);
 
 } 
 
-nsIGlobalObject*
-GetGlobalObjectForGlobal(JSObject* global);
-
 bool
 IsWorkerGlobal(JSObject* global);
 
