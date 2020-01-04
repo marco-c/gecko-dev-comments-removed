@@ -15,7 +15,6 @@ let css = Cc["@mozilla.org/netwerk/cache-storage-service;1"]
 const USER_CONTEXTS = [
   "default",
   "personal",
-  "work",
 ];
 const TEST_HOST = "example.com";
 const TEST_URL = "http://" + TEST_HOST + "/browser/browser/components/contextualidentity/test/browser/";
@@ -212,8 +211,10 @@ function* test_image_cache_cleared() {
     yield BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 
+  let expectedHits = USER_CONTEXTS.length;
+
   
-  todo_is(gHits, 3, "The image should be loaded three times. This test should be enabled after the bug 1270680 landed");
+  is(gHits, expectedHits, "The image should be loaded" + expectedHits + "times.");
 
   
   gHits = 0;
@@ -230,7 +231,7 @@ function* test_image_cache_cleared() {
   }
 
   
-  todo_is(gHits, 3, "The image should be loaded three times. This test should be enabled after the bug 1270680 landed");
+  is(gHits, expectedHits, "The image should be loaded" + expectedHits + "times.");
 }
 
 
