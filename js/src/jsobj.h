@@ -1245,14 +1245,6 @@ GetOwnPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id, MutableHa
 
 
 
-extern bool
-FromPropertyDescriptor(JSContext* cx, Handle<PropertyDescriptor> desc, MutableHandleValue vp);
-
-
-
-
-
-
 
 
 

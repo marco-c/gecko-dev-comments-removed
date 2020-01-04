@@ -2846,6 +2846,16 @@ ObjectToCompletePropertyDescriptor(JSContext* cx,
                                    JS::HandleValue descriptor,
                                    JS::MutableHandle<PropertyDescriptor> desc);
 
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+FromPropertyDescriptor(JSContext* cx,
+                       JS::Handle<JS::PropertyDescriptor> desc,
+                       JS::MutableHandleValue vp);
+
 } 
 
 
