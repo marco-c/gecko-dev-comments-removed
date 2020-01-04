@@ -204,6 +204,15 @@ class JitRuntime
     JitCode* generateBaselineDebugModeOSRHandler(JSContext* cx, uint32_t* noFrameRegPopOffsetOut);
     JitCode* generateVMWrapper(JSContext* cx, const VMFunction& f);
 
+    bool generateTLEventVM(JSContext* cx, MacroAssembler& masm, const VMFunction& f, bool enter);
+
+    inline bool generateTLEnterVM(JSContext* cx, MacroAssembler& masm, const VMFunction& f) {
+        return generateTLEventVM(cx, masm, f,  true);
+    }
+    inline bool generateTLExitVM(JSContext* cx, MacroAssembler& masm, const VMFunction& f) {
+        return generateTLEventVM(cx, masm, f,  false);
+    }
+
   public:
     explicit JitRuntime(JSRuntime* rt);
     ~JitRuntime();
