@@ -760,8 +760,10 @@ nsIndexedToHTML::OnIndexAvailable(nsIRequest *aRequest,
     
     
     
+
+    nsAutoCString scheme;
     if (mExpectAbsLoc &&
-        NS_SUCCEEDED(net_ExtractURLScheme(loc, nullptr, nullptr, nullptr))) {
+        NS_SUCCEEDED(net_ExtractURLScheme(loc, scheme))) {
         
         escFlags = esc_Forced | esc_AlwaysCopy | esc_Minimal;
     }

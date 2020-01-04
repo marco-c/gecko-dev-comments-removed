@@ -85,12 +85,16 @@ nsresult net_ResolveRelativePath(const nsACString &relativePath,
 
 
 
+bool net_IsAbsoluteURL(const nsACString& inURL);
+
+
+
+
+
 
 
 nsresult net_ExtractURLScheme(const nsACString &inURI,
-                                          uint32_t *startPos, 
-                                          uint32_t *endPos,
-                                          nsACString *scheme = nullptr);
+                              nsACString &scheme);
 
 
 bool net_IsValidScheme(const char *scheme, uint32_t schemeLen);
@@ -99,7 +103,6 @@ inline bool net_IsValidScheme(const nsAFlatCString &scheme)
 {
     return net_IsValidScheme(scheme.get(), scheme.Length());
 }
-
 
 
 
