@@ -60,7 +60,7 @@ public:
   virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus) override;
-  
+
   virtual void SetInitialChildList(ChildListID     aListID,
                                    nsFrameList&    aChildList) override;
 
@@ -76,8 +76,8 @@ public:
                     nsContainerFrame* aParent,
                     nsIFrame*         aPrevInFlow) override;
 
-  virtual void DidReflow(nsPresContext*            aPresContext, 
-                         const nsHTMLReflowState*  aReflowState, 
+  virtual void DidReflow(nsPresContext*            aPresContext,
+                         const nsHTMLReflowState*  aReflowState,
                          nsDidReflowStatus         aStatus) override;
   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
 
@@ -389,7 +389,7 @@ protected:
 
 
   uint32_t GetNumberOfRows();
-  
+
   
   int32_t      mStartSelectionIndex;
   int32_t      mEndSelectionIndex;
@@ -427,7 +427,7 @@ protected:
 
   
   bool mForceSelection:1;
-  
+
   
   
   
@@ -437,7 +437,7 @@ protected:
   
   
   nscolor mLastDropdownBackstopColor;
-  
+
   RefPtr<nsListEventListener> mEventListener;
 
   static nsListControlFrame * mFocused;

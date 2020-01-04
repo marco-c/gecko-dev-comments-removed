@@ -159,7 +159,7 @@ nsListControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                      const nsDisplayListSet& aLists)
 {
   
-  
+
   
   
   
@@ -224,7 +224,7 @@ void nsListControlFrame::PaintFocus(DrawTarget* aDrawTarget, nsPoint aPt)
     fRect.MoveBy(containerFrame->GetOffsetTo(this));
   }
   fRect += aPt;
-  
+
   bool lastItemIsSelected = false;
   if (focusedContent) {
     nsCOMPtr<nsIDOMHTMLOptionElement> domOpt =
@@ -354,9 +354,9 @@ nsListControlFrame::GetMinISize(nsRenderingContext *aRenderingContext)
 }
 
 void
-nsListControlFrame::Reflow(nsPresContext*           aPresContext, 
+nsListControlFrame::Reflow(nsPresContext*           aPresContext,
                            nsHTMLReflowMetrics&     aDesiredSize,
-                           const nsHTMLReflowState& aReflowState, 
+                           const nsHTMLReflowState& aReflowState,
                            nsReflowStatus&          aStatus)
 {
   NS_PRECONDITION(aReflowState.ComputedISize() != NS_UNCONSTRAINEDSIZE,
@@ -413,7 +413,7 @@ nsListControlFrame::Reflow(nsPresContext*           aPresContext,
 
   mMightNeedSecondPass = autoBSize &&
     (NS_SUBTREE_DIRTY(this) || aReflowState.ShouldReflowAllKids());
-  
+
   nsHTMLReflowState state(aReflowState);
   int32_t length = GetNumberOfRows();
 
@@ -492,14 +492,14 @@ nsListControlFrame::Reflow(nsPresContext*           aPresContext,
 }
 
 void
-nsListControlFrame::ReflowAsDropdown(nsPresContext*           aPresContext, 
+nsListControlFrame::ReflowAsDropdown(nsPresContext*           aPresContext,
                                      nsHTMLReflowMetrics&     aDesiredSize,
-                                     const nsHTMLReflowState& aReflowState, 
+                                     const nsHTMLReflowState& aReflowState,
                                      nsReflowStatus&          aStatus)
 {
   NS_PRECONDITION(aReflowState.ComputedBSize() == NS_UNCONSTRAINEDSIZE,
                   "We should not have a computed block size here!");
-  
+
   mMightNeedSecondPass = NS_SUBTREE_DIRTY(this) ||
     aReflowState.ShouldReflowAllKids();
 
@@ -886,7 +886,7 @@ nsListControlFrame::CaptureMouseEvents(bool aGrabMouseEvents)
 }
 
 
-nsresult 
+nsresult
 nsListControlFrame::HandleEvent(nsPresContext* aPresContext,
                                 WidgetGUIEvent* aEvent,
                                 nsEventStatus* aEventStatus)
@@ -1031,7 +1031,7 @@ nsListControlFrame::OnContentReset()
   ResetList(true);
 }
 
-void 
+void
 nsListControlFrame::ResetList(bool aAllowScrolling)
 {
   
@@ -1062,9 +1062,9 @@ nsListControlFrame::ResetList(bool aAllowScrolling)
   mEndSelectionIndex = kNothingSelected;
   InvalidateFocus();
   
-} 
- 
-void 
+}
+
+void
 nsListControlFrame::SetFocus(bool aOn, bool aRepaint)
 {
   InvalidateFocus();
@@ -1139,7 +1139,7 @@ nsListControlFrame::GetCurrentOption()
   return nullptr;
 }
 
-bool 
+bool
 nsListControlFrame::IsInDropDownMode() const
 {
   return (mComboboxFrame != nullptr);
@@ -1515,7 +1515,7 @@ nsListControlFrame::DidReflow(nsPresContext*           aPresContext,
 nsIAtom*
 nsListControlFrame::GetType() const
 {
-  return nsGkAtoms::listControlFrame; 
+  return nsGkAtoms::listControlFrame;
 }
 
 #ifdef DEBUG_FRAME_DUMP
@@ -1632,7 +1632,7 @@ nsListControlFrame::MouseUp(nsIDOMEvent* aMouseEvent)
   }
 
   const nsStyleVisibility* vis = StyleVisibility();
-      
+
   if (!vis->IsVisible()) {
     return NS_OK;
   }
@@ -1735,7 +1735,7 @@ nsListControlFrame::FireMenuItemActiveEvent()
 #endif
 
 nsresult
-nsListControlFrame::GetIndexFromDOMEvent(nsIDOMEvent* aMouseEvent, 
+nsListControlFrame::GetIndexFromDOMEvent(nsIDOMEvent* aMouseEvent,
                                          int32_t&     aCurIndex)
 {
   if (IgnoreMouseEventForSelection(aMouseEvent))
@@ -1866,7 +1866,7 @@ nsListControlFrame::MouseMove(nsIDOMEvent* aMouseEvent)
 
   UpdateInListState(aMouseEvent);
 
-  if (IsInDropDownMode()) { 
+  if (IsInDropDownMode()) {
     if (mComboboxFrame->IsDroppedDown()) {
       int32_t selectedIndex;
       if (NS_SUCCEEDED(GetIndexFromDOMEvent(aMouseEvent, selectedIndex))) {
@@ -1888,7 +1888,7 @@ nsListControlFrame::DragMove(nsIDOMEvent* aMouseEvent)
 
   UpdateInListState(aMouseEvent);
 
-  if (!IsInDropDownMode()) { 
+  if (!IsInDropDownMode()) {
     int32_t selectedIndex;
     if (NS_SUCCEEDED(GetIndexFromDOMEvent(aMouseEvent, selectedIndex))) {
       
@@ -2047,9 +2047,9 @@ nsListControlFrame::AdjustIndexForDisabledOpt(int32_t aStartIndex,
   aNewIndex     = newIndex;
 }
 
-nsAString& 
+nsAString&
 nsListControlFrame::GetIncrementalString()
-{ 
+{
   if (sIncrementalString == nullptr)
     sIncrementalString = new nsString();
 
