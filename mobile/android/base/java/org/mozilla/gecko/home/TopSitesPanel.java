@@ -17,6 +17,8 @@ import java.util.Map;
 
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.Tab;
+import org.mozilla.gecko.Tabs;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.db.BrowserContract.Thumbnails;
@@ -811,30 +813,20 @@ public class TopSitesPanel extends HomeFragment {
             }
 
             
-            
-            final Map<String, String> queryURLs = new HashMap<>();
-            for (final String pageURL : mUrls) {
-                queryURLs.put(pageURL, StringUtils.stripRef(pageURL));
-            }
-
-            
             final ContentResolver cr = getContext().getContentResolver();
-            
-            final Map<String, Map<String, Object>> metadata = mDB.getURLMetadata().getForURLs(cr, queryURLs.values(), COLUMNS);
+            final Map<String, Map<String, Object>> metadata = mDB.getURLMetadata().getForURLs(cr, mUrls, COLUMNS);
 
             
             final List<String> thumbnailUrls = new ArrayList<String>();
-            for (final String pageURL : mUrls) {
-                final String queryURL = queryURLs.get(pageURL);
-
-                ThumbnailInfo info = ThumbnailInfo.fromMetadata(metadata.get(queryURL));
+            for (String url : mUrls) {
+                ThumbnailInfo info = ThumbnailInfo.fromMetadata(metadata.get(url));
                 if (info == null) {
                     
-                    thumbnailUrls.add(pageURL);
+                    thumbnailUrls.add(url);
                     continue;
                 }
 
-                thumbnails.put(pageURL, info);
+                thumbnails.put(url, info);
             }
 
             if (thumbnailUrls.size() == 0) {
