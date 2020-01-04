@@ -772,12 +772,14 @@ video > .caption-box {
 
 
 
-details > summary::-moz-list-bullet {
-  list-style-type: disclosure-closed;
-}
+@supports -moz-bool-pref("dom.details_element.enabled") {
+  details > summary::-moz-list-bullet {
+    list-style-type: disclosure-closed;
+  }
 
-details[open] > summary::-moz-list-bullet {
-  list-style-type: disclosure-open;
+  details[open] > summary::-moz-list-bullet {
+    list-style-type: disclosure-open;
+  }
 }
 
 
