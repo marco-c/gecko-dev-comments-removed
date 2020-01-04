@@ -8,6 +8,7 @@ var tests = [
   test44, 
   test46, 
   test47, 
+  test49, 
 ];
 
 doTest();
