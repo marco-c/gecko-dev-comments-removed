@@ -2531,7 +2531,7 @@ nsWindow::OnMotionNotifyEvent(GdkEventMotion *aEvent)
     }
 #endif 
 
-    WidgetMouseEvent event(true, NS_MOUSE_MOVE, this, WidgetMouseEvent::eReal);
+    WidgetMouseEvent event(true, eMouseMove, this, WidgetMouseEvent::eReal);
 
     gdouble pressure = 0;
     gdk_event_get_axis ((GdkEvent*)aEvent, GDK_AXIS_PRESSURE, &pressure);

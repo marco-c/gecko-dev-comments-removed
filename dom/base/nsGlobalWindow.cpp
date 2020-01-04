@@ -3061,7 +3061,7 @@ nsGlobalWindow::PreHandleEvent(EventChainPreVisitor& aVisitor)
 
   aVisitor.mCanHandle = true;
   aVisitor.mForceContentDispatch = true; 
-  if ((msg == NS_MOUSE_MOVE) && gEntropyCollector) {
+  if (msg == eMouseMove && gEntropyCollector) {
     
     
     

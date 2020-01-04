@@ -615,7 +615,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       
       
-      mouseEvent->mMessage = NS_MOUSE_MOVE;
+      mouseEvent->mMessage = eMouseMove;
       mouseEvent->reason = WidgetMouseEvent::eSynthesized;
       
     } else {
@@ -628,7 +628,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       aEvent->mMessage = eVoidEvent;
       break;
     }
-  case NS_MOUSE_MOVE:
+  case eMouseMove:
   case NS_POINTER_DOWN:
   case NS_POINTER_MOVE: {
     
@@ -1172,7 +1172,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
     switch (aEvent.mMessage) {
     case NS_MOUSE_BUTTON_DOWN:
     case NS_MOUSE_BUTTON_UP:
-    case NS_MOUSE_MOVE:
+    case eMouseMove:
     case NS_CONTEXTMENU:
     case NS_MOUSE_ENTER_WIDGET:
     case NS_MOUSE_EXIT_WIDGET:
@@ -4082,7 +4082,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
   nsCOMPtr<nsIContent> targetBeforeEvent = mCurrentTargetContent;
 
   switch(aMouseEvent->mMessage) {
-  case NS_MOUSE_MOVE:
+  case eMouseMove:
     {
       
       
