@@ -2212,13 +2212,6 @@ public:
 
 
 
-  static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
-                                         nsCSSProperty aProperty);
-
-  
-
-
-
   static bool HasCurrentAnimationOfProperty(const nsIFrame* aFrame,
                                             nsCSSProperty aProperty);
 
