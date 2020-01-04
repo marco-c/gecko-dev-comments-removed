@@ -169,8 +169,10 @@ private:
 
 
 
-  static void fixupURISpec(const nsCString &aURISpec, int32_t aMatchBehavior,
-                           nsCString &_fixedSpec);
+
+  static nsDependentCSubstring fixupURISpec(const nsACString &aURISpec,
+                                            int32_t aMatchBehavior,
+                                            nsACString &aSpecBuf);
 };
 
 

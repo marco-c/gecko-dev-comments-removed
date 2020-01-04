@@ -211,36 +211,40 @@ namespace places {
   }
 
   
-  void
-  MatchAutoCompleteFunction::fixupURISpec(const nsCString &aURISpec,
+  nsDependentCSubstring
+  MatchAutoCompleteFunction::fixupURISpec(const nsACString &aURISpec,
                                           int32_t aMatchBehavior,
-                                          nsCString &_fixedSpec)
+                                          nsACString &aSpecBuf)
   {
-    nsCString unescapedSpec;
-    (void)NS_UnescapeURL(aURISpec, esc_SkipControl | esc_AlwaysCopy,
-                         unescapedSpec);
+    nsDependentCSubstring fixedSpec;
 
     
     
-    NS_ASSERTION(_fixedSpec.IsEmpty(),
-                 "Passing a non-empty string as an out parameter!");
-    if (IsUTF8(unescapedSpec))
-      _fixedSpec.Assign(unescapedSpec);
-    else
-      _fixedSpec.Assign(aURISpec);
+    
+    bool unescaped = NS_UnescapeURL(aURISpec.BeginReading(),
+      aURISpec.Length(), esc_SkipControl, aSpecBuf);
+    if (unescaped && IsUTF8(aSpecBuf)) {
+      fixedSpec.Rebind(aSpecBuf, 0);
+    } else {
+      fixedSpec.Rebind(aURISpec, 0);
+    }
 
     if (aMatchBehavior == mozIPlacesAutoComplete::MATCH_ANYWHERE_UNMODIFIED)
-      return;
+      return fixedSpec;
 
-    if (StringBeginsWith(_fixedSpec, NS_LITERAL_CSTRING("http://")))
-      _fixedSpec.Cut(0, 7);
-    else if (StringBeginsWith(_fixedSpec, NS_LITERAL_CSTRING("https://")))
-      _fixedSpec.Cut(0, 8);
-    else if (StringBeginsWith(_fixedSpec, NS_LITERAL_CSTRING("ftp://")))
-      _fixedSpec.Cut(0, 6);
+    if (StringBeginsWith(fixedSpec, NS_LITERAL_CSTRING("http://"))) {
+      fixedSpec.Rebind(fixedSpec, 7);
+    } else if (StringBeginsWith(fixedSpec, NS_LITERAL_CSTRING("https://"))) {
+      fixedSpec.Rebind(fixedSpec, 8);
+    } else if (StringBeginsWith(fixedSpec, NS_LITERAL_CSTRING("ftp://"))) {
+      fixedSpec.Rebind(fixedSpec, 6);
+    }
 
-    if (StringBeginsWith(_fixedSpec, NS_LITERAL_CSTRING("www.")))
-      _fixedSpec.Cut(0, 4);
+    if (StringBeginsWith(fixedSpec, NS_LITERAL_CSTRING("www."))) {
+      fixedSpec.Rebind(fixedSpec, 4);
+    }
+
+    return fixedSpec;
   }
 
   
@@ -393,8 +397,9 @@ namespace places {
     searchFunctionPtr searchFunction = getSearchFunction(matchBehavior);
 
     
-    nsCString fixedUrl;
-    fixupURISpec(url, matchBehavior, fixedUrl);
+    nsCString fixedUrlBuf;
+    nsDependentCSubstring fixedUrl =
+      fixupURISpec(url, matchBehavior, fixedUrlBuf);
     
     const nsDependentCSubstring& trimmedUrl =
       Substring(fixedUrl, 0, MAX_CHARS_TO_SEARCH_THROUGH);
