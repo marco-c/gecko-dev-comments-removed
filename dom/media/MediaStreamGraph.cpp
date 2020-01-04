@@ -815,24 +815,23 @@ MediaStreamGraphImpl::PlayAudio(MediaStream* aStream,
 {
   MOZ_ASSERT(mRealtime, "Should only attempt to play audio in realtime mode");
 
-  StreamTime ticksWritten = 0;
-  
-  
-  
-  
-  
-  StreamTime ticksNeeded = aTo - aFrom;
-
-  if (aStream->mAudioOutputStreams.IsEmpty()) {
-    return 0;
-  }
-
   float volume = 0.0f;
   for (uint32_t i = 0; i < aStream->mAudioOutputs.Length(); ++i) {
     volume += aStream->mAudioOutputs[i].mVolume;
   }
 
+  StreamTime ticksWritten = 0;
+
   for (uint32_t i = 0; i < aStream->mAudioOutputStreams.Length(); ++i) {
+    ticksWritten = 0;
+
+    
+    
+    
+    
+    
+    StreamTime ticksNeeded = aTo - aFrom;
+
     MediaStream::AudioOutputStream& audioOutput = aStream->mAudioOutputStreams[i];
     StreamBuffer::Track* track = aStream->mBuffer.FindTrack(audioOutput.mTrackID);
     AudioSegment* audio = track->Get<AudioSegment>();
