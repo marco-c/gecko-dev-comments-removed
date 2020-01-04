@@ -54,7 +54,7 @@ function test() {
     
     
     let consoleLostFocus = false;
-    jsterm.inputNode.focus();
+    jsterm.focus();
     jsterm.inputNode.addEventListener('blur', () => {consoleLostFocus = true;});
 
     is(gThreadClient.paused, true,

@@ -21,8 +21,6 @@ add_task(function* () {
 function testClosingAfterCompletion(hud, browser) {
   let deferred = promise.defer();
 
-  let inputNode = hud.jsterm.inputNode;
-
   let errorWhileClosing = false;
   function errorListener() {
     errorWhileClosing = true;
@@ -31,7 +29,7 @@ function testClosingAfterCompletion(hud, browser) {
   browser.addEventListener("error", errorListener, false);
 
   
-  inputNode.focus();
+  hud.jsterm.focus();
 
   gDevTools.once("toolbox-destroyed", function() {
     browser.removeEventListener("error", errorListener, false);

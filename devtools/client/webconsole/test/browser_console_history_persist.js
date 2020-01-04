@@ -106,8 +106,7 @@ function* populateInputHistory(hud) {
 
 function* testNaviatingHistoryInUI(hud) {
   let jsterm = hud.jsterm;
-  let {inputNode} = jsterm;
-  inputNode.focus();
+  jsterm.focus();
 
   
   
