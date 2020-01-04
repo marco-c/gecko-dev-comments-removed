@@ -42,10 +42,11 @@ function EvaluationResult(props) {
     
     
     icon,
-    dom.span(
-      {className: "message-body-wrapper message-body devtools-monospace"},
-      dom.span({},
-        GripMessageBody({grip: message.parameters})
+    dom.span({ className: "message-body-wrapper" },
+      dom.span({ className: "message-flex-body" },
+        dom.span({ className: "message-body devtools-monospace" },
+          GripMessageBody({grip: message.parameters})
+        )
       )
     )
   );
