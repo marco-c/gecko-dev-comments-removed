@@ -1,21 +1,21 @@
 
 
 
-function runTests() {
+add_task(function* () {
   yield setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks("");
 
-  yield addNewTabPageTab();
-  checkGrid("0,1,2,3,4,5,6,7,8");
+  yield* addNewTabPageTab();
+  yield* checkGrid("0,1,2,3,4,5,6,7,8");
 
-  yield simulateExternalDrop(1);
-  checkGrid("0,99p,1,2,3,4,5,6,7");
+  yield* simulateExternalDrop(1);
+  yield* checkGrid("0,99p,1,2,3,4,5,6,7");
 
   yield blockCell(1);
-  checkGrid("0,1,2,3,4,5,6,7,8");
+  yield* checkGrid("0,1,2,3,4,5,6,7,8");
 
-  yield simulateExternalDrop(1);
-  checkGrid("0,99p,1,2,3,4,5,6,7");
+  yield* simulateExternalDrop(1);
+  yield* checkGrid("0,99p,1,2,3,4,5,6,7");
 
   
   
@@ -24,9 +24,9 @@ function runTests() {
   
   NewTabUtils.allPages.update();
 
-  yield addNewTabPageTab();
-  checkGrid("0,99p,1,2,3,4,5,6,7");
+  yield* addNewTabPageTab();
+  yield* checkGrid("0,99p,1,2,3,4,5,6,7");
 
   yield blockCell(1);
-  checkGrid("0,1,2,3,4,5,6,7,8");
-}
+  yield* checkGrid("0,1,2,3,4,5,6,7,8");
+});
