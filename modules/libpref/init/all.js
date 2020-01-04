@@ -930,8 +930,7 @@ pref("devtools.commands.dir", "");
 pref("devtools.telemetry.supported_performance_marks", "contentInteractive,navigationInteractive,navigationLoaded,visuallyLoaded,fullyLoaded,mediaEnumerated,scanEnd");
 
 
-
-pref("devtools.migration.warnings", false);
+pref("devtools.migration.warnings", true);
 
 
 pref("view_source.syntax_highlight", true);
@@ -5211,4 +5210,3 @@ pref("dom.input.fallbackUploadDir", "");
 
 
 pref("plugins.rewrite_youtube_embeds", true);
-
