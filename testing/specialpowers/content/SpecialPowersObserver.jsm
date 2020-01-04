@@ -8,7 +8,6 @@
 
 
 
-
 var EXPORTED_SYMBOLS = ["SpecialPowersObserver", "SpecialPowersObserverFactory"];
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
