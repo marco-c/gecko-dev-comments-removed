@@ -54,9 +54,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub struct FourCC([u8; 4]);
 
 impl fmt::Debug for FourCC {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "'{}'", String::from_utf8_lossy(&self.0))
-  }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "'{}'", String::from_utf8_lossy(&self.0))
+    }
 }
 
 
@@ -237,13 +237,28 @@ struct ES_Descriptor {
 
 #[derive(Debug)]
 pub struct MediaContext {
+    
     tracks: Vec<Track>,
+    
+    trace: bool,
 }
 
 impl MediaContext {
     pub fn new() -> MediaContext {
         MediaContext {
             tracks: Vec::new(),
+            trace: false,
+        }
+    }
+    pub fn trace(&mut self, on: bool) {
+        self.trace = on;
+    }
+}
+
+macro_rules! log {
+    ( $ctx:expr, $( $args:expr),* ) => {
+        if $ctx.trace {
+            println!( $( $args, )* );
         }
     }
 }
@@ -251,7 +266,7 @@ impl MediaContext {
 #[derive(Debug)]
 enum TrackType {
     Video,
-    Audio
+    Audio,
 }
 
 #[derive(Debug)]
@@ -323,7 +338,7 @@ fn limit<'a, T: Read>(f: &'a mut T, h: &BoxHeader) -> Take<&'a mut T> {
 
 
 fn recurse<T: Read>(f: &mut T, h: &BoxHeader, context: &mut MediaContext) -> Result<()> {
-    println!("{:?} -- recursing", h);
+    log!(context, "{:?} -- recursing", h);
     
     
     
@@ -341,26 +356,26 @@ fn recurse<T: Read>(f: &mut T, h: &BoxHeader, context: &mut MediaContext) -> Res
                 
                 
                 
-                println!("Caught Error::UnexpectedEOF");
+                log!(context, "Caught Error::UnexpectedEOF");
                 break;
             },
             Err(Error::InvalidData) => {
-                println!("Invalid data");
+                log!(context, "Invalid data");
                 return Err(Error::InvalidData);
             },
             Err(Error::Unsupported) => {
-                println!("Unsupported BMFF construct");
+                log!(context, "Unsupported BMFF construct");
                 return Err(Error::Unsupported);
             },
             Err(Error::Io(e)) => {
-                println!("I/O Error '{:?}' reading box: {:?}",
-                         e.kind(), e.description());
+                log!(context, "I/O Error '{:?}' reading box: {:?}",
+                              e.kind(), e.description());
                 return Err(Error::Io(e));
             },
         }
     }
     assert!(content.position() == h.size - h.offset);
-    println!("{:?} -- end", h);
+    log!(context, "{:?} -- end", h);
     Ok(())
 }
 
@@ -374,53 +389,53 @@ pub fn read_box<T: BufRead>(f: &mut T, context: &mut MediaContext) -> Result<()>
         match &h.name.0 {
             b"ftyp" => {
                 let ftyp = try!(read_ftyp(&mut content, &h));
-                println!("{:?}", ftyp);
+                log!(context, "{:?}", ftyp);
             },
             b"moov" => try!(recurse(&mut content, &h, context)),
             b"mvhd" => {
                 let mvhd = try!(read_mvhd(&mut content, &h));
-                println!("  {:?}", mvhd);
+                log!(context, "  {:?}", mvhd);
             },
             b"trak" => try!(recurse(&mut content, &h, context)),
             b"tkhd" => {
                 let tkhd = try!(read_tkhd(&mut content, &h));
-                println!("  {:?}", tkhd);
+                log!(context, "  {:?}", tkhd);
             },
             b"edts" => try!(recurse(&mut content, &h, context)),
             b"elst" => {
                 let elst = try!(read_elst(&mut content, &h));
-                println!("  {:?}", elst);
+                log!(context, "  {:?}", elst);
             },
             b"mdia" => try!(recurse(&mut content, &h, context)),
             b"mdhd" => {
                 let mdhd = try!(read_mdhd(&mut content, &h));
-                println!("  {:?}", mdhd);
+                log!(context, "  {:?}", mdhd);
             },
             b"minf" => try!(recurse(&mut content, &h, context)),
             b"stbl" => try!(recurse(&mut content, &h, context)),
             b"stco" => {
                 let stco = try!(read_stco(&mut content, &h));
-                println!("  {:?}", stco);
+                log!(context, "  {:?}", stco);
             },
             b"co64" => {
                 let co64 = try!(read_co64(&mut content, &h));
-                println!("  {:?}", co64);
+                log!(context, "  {:?}", co64);
             },
             b"stss" => {
                 let stss = try!(read_stss(&mut content, &h));
-                println!("  {:?}", stss);
+                log!(context, "  {:?}", stss);
             },
             b"stsc" => {
                 let stsc = try!(read_stsc(&mut content, &h));
-                println!("  {:?}", stsc);
+                log!(context, "  {:?}", stsc);
             },
             b"stsz" => {
                 let stsz = try!(read_stsz(&mut content, &h));
-                println!("  {:?}", stsz);
+                log!(context, "  {:?}", stsz);
             },
             b"stts" => {
                 let stts = try!(read_stts(&mut content, &h));
-                println!("  {:?}", stts);
+                log!(context, "  {:?}", stts);
             },
             b"hdlr" => {
                 let hdlr = try!(read_hdlr(&mut content, &h));
@@ -433,23 +448,24 @@ pub fn read_box<T: BufRead>(f: &mut T, context: &mut MediaContext) -> Result<()>
                 match track_type {
                     Some(track_type) =>
                          context.tracks.push(Track { track_type: track_type }),
-                    None => println!("unknown track type!"),
+                    None => log!(context, "unknown track type!"),
                 };
-                println!("  {:?}", hdlr);
+                log!(context, "  {:?}", hdlr);
             },
             b"stsd" => {
                 let track = &context.tracks[context.tracks.len() - 1];
                 let stsd = try!(read_stsd(&mut content, &h, &track));
-                println!("  {:?}", stsd);
+                log!(context, "  {:?}", stsd);
             },
             _ => {
                 
-                println!("{:?} (skipped)", h);
+                log!(context, "{:?} (skipped)", h);
                 try!(skip_box_content(&mut content, &h));
             },
         };
+        log!(context, "{} content bytes left", content.limit());
         assert!(content.limit() == 0);
-        println!("read_box context: {:?}", context);
+        log!(context, "read_box context: {:?}", context);
         Ok(()) 
     })
 }
@@ -458,7 +474,12 @@ pub fn read_box<T: BufRead>(f: &mut T, context: &mut MediaContext) -> Result<()>
 fn read_ftyp<T: ReadBytesExt>(src: &mut T, head: &BoxHeader) -> Result<FileTypeBox> {
     let major = try!(be_fourcc(src));
     let minor = try!(be_u32(src));
-    let brand_count = (head.size - 8 - 8) / 4;
+    let bytes_left = head.size - head.offset - 8;
+    if bytes_left % 4 != 0 {
+        return Err(Error::InvalidData);
+    }
+    
+    let brand_count = bytes_left / 4;
     let mut brands = Vec::new();
     for _ in 0..brand_count {
         brands.push(try!(be_fourcc(src)));
@@ -844,7 +865,7 @@ fn skip<T: BufRead>(src: &mut T, bytes: usize) -> Result<usize> {
     while bytes_to_skip > 0 {
         let len = try!(src.fill_buf()).len();
         if len == 0 {
-            return Err(Error::UnexpectedEOF)
+            return Err(Error::UnexpectedEOF);
         }
         let discard = cmp::min(len, bytes_to_skip);
         src.consume(discard);
