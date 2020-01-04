@@ -2901,6 +2901,11 @@ public:
         LARGE_INTEGER frequency;
         QueryPerformanceFrequency(&frequency);
         TimeStamp vsync = TimeStamp::Now();
+        
+        
+        
+        
+        mPrevVsync = vsync + mSoftwareVsyncRate;
 
         for (;;) {
           { 
