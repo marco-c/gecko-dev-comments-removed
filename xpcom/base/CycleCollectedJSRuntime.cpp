@@ -528,8 +528,6 @@ CycleCollectedJSRuntime::Initialize(JSRuntime* aParentRuntime,
   JS_SetDestroyZoneCallback(mJSRuntime, XPCStringConvert::FreeZoneCache);
   JS_SetSweepZoneCallback(mJSRuntime, XPCStringConvert::ClearZoneCache);
   JS::SetBuildIdOp(mJSRuntime, GetBuildId);
-  
-  
   JS_SetErrorReporter(mJSRuntime, MozCrashErrorReporter);
 
   static js::DOMCallbacks DOMcallbacks = {
