@@ -152,13 +152,20 @@ js::ExecuteRegExpLegacy(JSContext* cx, RegExpStatics* res, RegExpObject& reobj,
     return CreateRegExpMatchResult(cx, input, matches, rval);
 }
 
+enum RegExpSharedUse {
+    UseRegExpShared,
+    DontUseRegExpShared
+};
+
+
 
 
 
 
 static bool
 RegExpInitializeIgnoringLastIndex(JSContext* cx, Handle<RegExpObject*> obj,
-                                  HandleValue patternValue, HandleValue flagsValue)
+                                  HandleValue patternValue, HandleValue flagsValue,
+                                  RegExpSharedUse sharedUse = DontUseRegExpShared)
 {
     RootedAtom pattern(cx);
     if (patternValue.isUndefined()) {
@@ -184,17 +191,49 @@ RegExpInitializeIgnoringLastIndex(JSContext* cx, Handle<RegExpObject*> obj,
             return false;
     }
 
-    
-    CompileOptions options(cx);
-    frontend::TokenStream dummyTokenStream(cx, options, nullptr, 0, nullptr);
-    if (!irregexp::ParsePatternSyntax(dummyTokenStream, cx->tempLifoAlloc(), pattern,
-                                      flags & UnicodeFlag))
-    {
-        return false;
+    if (sharedUse == UseRegExpShared) {
+        
+        RegExpGuard re(cx);
+        if (!cx->compartment()->regExps.get(cx, pattern, flags, &re))
+            return false;
+
+        
+        obj->initIgnoringLastIndex(pattern, flags);
+
+        obj->setShared(*re);
+    } else {
+        
+        CompileOptions options(cx);
+        frontend::TokenStream dummyTokenStream(cx, options, nullptr, 0, nullptr);
+        if (!irregexp::ParsePatternSyntax(dummyTokenStream, cx->tempLifoAlloc(), pattern,
+                                          flags & UnicodeFlag))
+        {
+            return false;
+        }
+
+        
+        obj->initIgnoringLastIndex(pattern, flags);
     }
 
+    return true;
+}
+
+
+bool
+js::RegExpCreate(JSContext* cx, HandleValue patternValue, HandleValue flagsValue,
+                 MutableHandleValue rval)
+{
     
-    obj->initIgnoringLastIndex(pattern, flags);
+    Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx, nullptr));
+    if (!regexp)
+         return false;
+
+    
+    if (!RegExpInitializeIgnoringLastIndex(cx, regexp, patternValue, flagsValue, UseRegExpShared))
+        return false;
+    regexp->zeroLastIndex(cx);
+
+    rval.setObject(*regexp);
     return true;
 }
 
