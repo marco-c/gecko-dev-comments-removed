@@ -96,5 +96,11 @@ DEF_TEST(DeserializedNodeUbiNodes, {
       .Times(1)
       .WillOnce(Return(JS::ubi::Node(referent3.get())));
 
-    ubi.edges(rt);
+    auto range = ubi.edges(rt);
+    ASSERT_TRUE(!!range);
+
+    for ( ; !range->empty(); range->popFront()) {
+      
+      
+    }
   });
