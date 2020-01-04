@@ -43,6 +43,7 @@ namespace layers {
 
 class CompositableForwarder;
 class ShadowLayerForwarder;
+class TextureForwarder;
 
 class ShmemAllocator;
 class ShmemSectionAllocator;
@@ -88,6 +89,8 @@ public:
   virtual ShmemSectionAllocator* AsShmemSectionAllocator() { return nullptr; }
 
   virtual CompositableForwarder* AsCompositableForwarder() { return nullptr; }
+
+  virtual TextureForwarder* AsTextureForwarder() { return nullptr; }
 
   virtual ShadowLayerForwarder* AsLayerForwarder() { return nullptr; }
 
@@ -240,6 +243,54 @@ private:
   
   
   static mozilla::Atomic<ptrdiff_t> sAmount;
+};
+
+
+
+
+class FixedSizeSmallShmemSectionAllocator final : public ShmemSectionAllocator
+{
+public:
+  enum AllocationStatus
+  {
+    STATUS_ALLOCATED,
+    STATUS_FREED
+  };
+
+  struct ShmemSectionHeapHeader
+  {
+    Atomic<uint32_t> mTotalBlocks;
+    Atomic<uint32_t> mAllocatedBlocks;
+  };
+
+  struct ShmemSectionHeapAllocation
+  {
+    Atomic<uint32_t> mStatus;
+    uint32_t mSize;
+  };
+
+  explicit FixedSizeSmallShmemSectionAllocator(ClientIPCAllocator* aShmProvider);
+
+  ~FixedSizeSmallShmemSectionAllocator();
+
+  virtual bool AllocShmemSection(uint32_t aSize, ShmemSection* aShmemSection) override;
+
+  virtual void DeallocShmemSection(ShmemSection& aShmemSection) override;
+
+  virtual void MemoryPressure() override { ShrinkShmemSectionHeap(); }
+
+  
+  static void FreeShmemSection(ShmemSection& aShmemSection);
+
+  void ShrinkShmemSectionHeap();
+
+  ShmemAllocator* GetShmAllocator() { return mShmProvider->AsShmemAllocator(); }
+
+  bool IPCOpen() const { return mShmProvider->IPCOpen(); }
+
+protected:
+  std::vector<mozilla::ipc::Shmem> mUsedShmems;
+  ClientIPCAllocator* mShmProvider;
 };
 
 } 
