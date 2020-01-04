@@ -3051,7 +3051,8 @@ void HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream)
     
     
     
-    mPlaybackStream = DOMMediaStream::CreateTrackUnionStream(window);
+    MediaStreamGraph* graph = mSrcStream->GetStream()->Graph();
+    mPlaybackStream = DOMMediaStream::CreateTrackUnionStream(window, graph);
     mPlaybackStreamInputPort = mPlaybackStream->GetStream()->AsProcessedStream()->
       AllocateInputPort(mSrcStream->GetStream(), MediaInputPort::FLAG_BLOCK_OUTPUT);
 
