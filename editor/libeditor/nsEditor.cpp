@@ -20,7 +20,7 @@
 #include "EditorUtils.h"                
 #include "EditTxn.h"                    
 #include "InsertNodeTransaction.h"      
-#include "InsertTextTxn.h"              
+#include "InsertTextTransaction.h"      
 #include "JoinNodeTxn.h"                
 #include "PlaceholderTxn.h"             
 #include "SplitNodeTxn.h"               
@@ -2577,15 +2577,14 @@ nsEditor::NotifyDocumentListeners(TDocumentListenerNotification aNotificationTyp
 }
 
 
-already_AddRefed<InsertTextTxn>
+already_AddRefed<InsertTextTransaction>
 nsEditor::CreateTxnForInsertText(const nsAString& aStringToInsert,
                                  Text& aTextNode, int32_t aOffset)
 {
-  RefPtr<InsertTextTxn> txn = new InsertTextTxn(aTextNode, aOffset,
-                                                  aStringToInsert, *this);
-  return txn.forget();
+  RefPtr<InsertTextTransaction> transaction =
+    new InsertTextTransaction(aTextNode, aOffset, aStringToInsert, *this);
+  return transaction.forget();
 }
-
 
 nsresult
 nsEditor::DeleteText(nsGenericDOMDataNode& aCharData, uint32_t aOffset,

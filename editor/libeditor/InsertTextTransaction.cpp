@@ -1,0 +1,121 @@
+
+
+
+
+
+#include "InsertTextTransaction.h"
+
+#include "mozilla/dom/Selection.h"      
+#include "mozilla/dom/Text.h"           
+#include "nsAString.h"                  
+#include "nsDebug.h"                    
+#include "nsEditor.h"                   
+#include "nsError.h"                    
+#include "nsQueryObject.h"              
+
+namespace mozilla {
+
+using namespace dom;
+
+InsertTextTransaction::InsertTextTransaction(Text& aTextNode,
+                                             uint32_t aOffset,
+                                             const nsAString& aStringToInsert,
+                                             nsEditor& aEditor)
+  : mTextNode(&aTextNode)
+  , mOffset(aOffset)
+  , mStringToInsert(aStringToInsert)
+  , mEditor(aEditor)
+{
+}
+
+InsertTextTransaction::~InsertTextTransaction()
+{
+}
+
+NS_IMPL_CYCLE_COLLECTION_INHERITED(InsertTextTransaction, EditTxn,
+                                   mTextNode)
+
+NS_IMPL_ADDREF_INHERITED(InsertTextTransaction, EditTxn)
+NS_IMPL_RELEASE_INHERITED(InsertTextTransaction, EditTxn)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(InsertTextTransaction)
+  if (aIID.Equals(NS_GET_IID(InsertTextTransaction))) {
+    foundInterface = static_cast<nsITransaction*>(this);
+  } else
+NS_INTERFACE_MAP_END_INHERITING(EditTxn)
+
+
+NS_IMETHODIMP
+InsertTextTransaction::DoTransaction()
+{
+  nsresult res = mTextNode->InsertData(mOffset, mStringToInsert);
+  NS_ENSURE_SUCCESS(res, res);
+
+  
+  if (mEditor.GetShouldTxnSetSelection()) {
+    RefPtr<Selection> selection = mEditor.GetSelection();
+    NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+    res = selection->Collapse(mTextNode,
+                              mOffset + mStringToInsert.Length());
+    NS_ASSERTION(NS_SUCCEEDED(res),
+                 "Selection could not be collapsed after insert");
+  } else {
+    
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+InsertTextTransaction::UndoTransaction()
+{
+  return mTextNode->DeleteData(mOffset, mStringToInsert.Length());
+}
+
+NS_IMETHODIMP
+InsertTextTransaction::Merge(nsITransaction* aTransaction,
+                             bool* aDidMerge)
+{
+  if (!aTransaction || !aDidMerge) {
+    return NS_OK;
+  }
+  
+  *aDidMerge = false;
+
+  
+  
+  RefPtr<InsertTextTransaction> otherTransaction = do_QueryObject(aTransaction);
+  if (otherTransaction && IsSequentialInsert(*otherTransaction)) {
+    nsAutoString otherData;
+    otherTransaction->GetData(otherData);
+    mStringToInsert += otherData;
+    *aDidMerge = true;
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+InsertTextTransaction::GetTxnDescription(nsAString& aString)
+{
+  aString.AssignLiteral("InsertTextTransaction: ");
+  aString += mStringToInsert;
+  return NS_OK;
+}
+
+
+
+void
+InsertTextTransaction::GetData(nsString& aResult)
+{
+  aResult = mStringToInsert;
+}
+
+bool
+InsertTextTransaction::IsSequentialInsert(
+                         InsertTextTransaction& aOtherTransaction)
+{
+  return aOtherTransaction.mTextNode == mTextNode &&
+         aOtherTransaction.mOffset == mOffset + mStringToInsert.Length();
+}
+
+} 

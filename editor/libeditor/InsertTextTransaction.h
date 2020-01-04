@@ -3,8 +3,8 @@
 
 
 
-#ifndef InsertTextTxn_h__
-#define InsertTextTxn_h__
+#ifndef InsertTextTransaction_h
+#define InsertTextTransaction_h
 
 #include "EditTxn.h"                    
 #include "nsCycleCollectionParticipant.h" 
@@ -21,14 +21,15 @@ class nsITransaction;
   { 0xb1, 0x59, 0x8a, 0x0f, 0xdb, 0x1d, 0x08, 0xe9 } }
 
 namespace mozilla {
+
 namespace dom {
-
 class Text;
+} 
 
 
 
 
-class InsertTextTxn : public EditTxn
+class InsertTextTransaction final : public EditTxn
 {
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_INSERTTEXTTXN_IID)
@@ -38,27 +39,30 @@ public:
 
 
 
-  InsertTextTxn(Text& aTextNode, uint32_t aOffset, const nsAString& aString,
-                nsEditor& aEditor);
+
+  InsertTextTransaction(dom::Text& aTextNode, uint32_t aOffset,
+                        const nsAString& aString, nsEditor& aEditor);
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertTextTxn, EditTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertTextTransaction, EditTxn)
 
   NS_DECL_EDITTXN
 
   NS_IMETHOD Merge(nsITransaction* aTransaction, bool* aDidMerge) override;
 
   
+
+
   void GetData(nsString& aResult);
 
 private:
-  virtual ~InsertTextTxn();
+  virtual ~InsertTextTransaction();
 
   
-  bool IsSequentialInsert(InsertTextTxn& aOtherTxn);
+  bool IsSequentialInsert(InsertTextTransaction& aOtherTrasaction);
 
   
-  RefPtr<Text> mTextNode;
+  RefPtr<dom::Text> mTextNode;
 
   
   uint32_t mOffset;
@@ -70,9 +74,8 @@ private:
   nsEditor& mEditor;
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(InsertTextTxn, NS_INSERTTEXTTXN_IID)
+NS_DEFINE_STATIC_IID_ACCESSOR(InsertTextTransaction, NS_INSERTTEXTTXN_IID)
 
 } 
-} 
 
-#endif
+#endif 
