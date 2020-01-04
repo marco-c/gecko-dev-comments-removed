@@ -59,7 +59,7 @@ struct ElementPropertyTransition : public dom::KeyframeEffectReadOnly
   
   
   
-  mozilla::StyleAnimationValue mStartForReversingTest;
+  StyleAnimationValue mStartForReversingTest;
   
   
   
@@ -195,12 +195,13 @@ protected:
 } 
 
 struct TransitionEventInfo {
-  nsCOMPtr<nsIContent> mElement;
+  nsRefPtr<dom::Element> mElement;
   InternalTransitionEvent mEvent;
 
-  TransitionEventInfo(nsIContent *aElement, nsCSSProperty aProperty,
-                      TimeDuration aDuration,
-                      nsCSSPseudoElements::Type aPseudoType)
+  TransitionEventInfo(dom::Element* aElement,
+                      nsCSSPseudoElements::Type aPseudoType,
+                      nsCSSProperty aProperty,
+                      TimeDuration aDuration)
     : mElement(aElement)
     , mEvent(true, eTransitionEnd)
   {
@@ -213,7 +214,7 @@ struct TransitionEventInfo {
 
   
   
-  TransitionEventInfo(const TransitionEventInfo &aOther)
+  TransitionEventInfo(const TransitionEventInfo& aOther)
     : mElement(aOther.mElement)
     , mEvent(true, eTransitionEnd)
   {
