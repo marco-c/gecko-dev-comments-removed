@@ -1437,15 +1437,20 @@ public:
         return !choices.empty();
       }
       bool Parse(std::istream& is, std::string* error);
-      void AppendAsStrings(std::vector<std::string>* formats) const;
-      void AddChoice(const std::string& pt);
+      bool GetChoicesAsFormats(std::vector<uint16_t>* formats) const;
 
-      std::vector<uint16_t> choices;
+      std::vector<std::string> choices;
   };
 
   class Versions : public std::vector<Version>
   {
     public:
+      enum Type {
+        kPt,
+        kRid
+      };
+
+      Versions() : type(kRid) {}
       void Serialize(std::ostream& os) const;
       bool IsSet() const
       {
@@ -1461,12 +1466,13 @@ public:
 
         return false;
       }
+
       bool Parse(std::istream& is, std::string* error);
+      Type type;
   };
 
   Versions sendVersions;
   Versions recvVersions;
-  Versions sendrecvVersions;
 };
 
 
