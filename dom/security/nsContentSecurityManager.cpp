@@ -27,12 +27,6 @@ ValidateSecurityFlags(nsILoadInfo* aLoadInfo)
   }
 
   
-  if (aLoadInfo->GetRequireCorsWithCredentials() &&
-      securityMode != nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
-    MOZ_ASSERT(false, "can not use cors-with-credentials without cors");
-    return NS_ERROR_FAILURE;
-  }
-  
   return NS_OK;
 }
 
@@ -115,7 +109,8 @@ DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
   RefPtr<nsCORSListenerProxy> corsListener =
     new nsCORSListenerProxy(aInAndOutListener,
                             loadingPrincipal,
-                            aLoadInfo->GetRequireCorsWithCredentials());
+                            aLoadInfo->GetCookiePolicy() ==
+                              nsILoadInfo::SEC_COOKIES_INCLUDE);
   
   
   
@@ -422,6 +417,15 @@ nsContentSecurityManager::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   return NS_OK;
 }
 
+static void
+AddLoadFlags(nsIRequest *aRequest, nsLoadFlags aNewFlags)
+{
+  nsLoadFlags flags;
+  aRequest->GetLoadFlags(&flags);
+  flags |= aNewFlags;
+  aRequest->SetLoadFlags(flags);
+}
+
 
 
 
@@ -432,6 +436,26 @@ nsContentSecurityManager::CheckChannel(nsIChannel* aChannel)
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   MOZ_ASSERT(loadInfo);
 
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  uint32_t cookiePolicy = loadInfo->GetCookiePolicy();
+  if (cookiePolicy == nsILoadInfo::SEC_COOKIES_SAME_ORIGIN) {
+    nsIPrincipal* loadingPrincipal = loadInfo->LoadingPrincipal();
+
+    
+    
+    rv = loadingPrincipal->CheckMayLoad(uri, false, false);
+    if (NS_FAILED(rv)) {
+      AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
+    }
+  }
+  else if (cookiePolicy == nsILoadInfo::SEC_COOKIES_OMIT) {
+    AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
+  }
+
   nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
 
   
@@ -441,11 +465,6 @@ nsContentSecurityManager::CheckChannel(nsIChannel* aChannel)
     }
     return NS_OK;
   }
-
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
-  NS_ENSURE_SUCCESS(rv, rv);
-
 
   
   if ((securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS) ||

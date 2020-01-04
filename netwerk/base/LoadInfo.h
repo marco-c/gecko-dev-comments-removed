@@ -101,7 +101,7 @@ private:
   
   
   
-  void SetWithCredentialsSecFlag();
+  void SetIncludeCookiesSecFlag();
   friend class ::nsXMLHttpRequest;
 
   
