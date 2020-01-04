@@ -162,7 +162,7 @@ add_task(function* test_edit_username() {
       
       if (testCase.usernameChangedTo) {
         notificationElement.querySelector("#password-notification-username")
-                .value = testCase.usernameChangedTo;
+                .setAttribute("value", testCase.usernameChangedTo);
       }
 
       
@@ -288,13 +288,13 @@ add_task(function* test_edit_password() {
       
       if (testCase.usernameChangedTo) {
         notificationElement.querySelector("#password-notification-username")
-                .value = testCase.usernameChangedTo;
+                .setAttribute("value", testCase.usernameChangedTo);
       }
 
       
       if (testCase.passwordChangedTo) {
         notificationElement.querySelector("#password-notification-password")
-                .value = testCase.passwordChangedTo;
+                .setAttribute("value", testCase.passwordChangedTo);
       }
 
       

@@ -308,34 +308,6 @@ this.BrowserTestUtils = {
 
 
 
-  waitForLocationChange(tabbrowser, url) {
-    return new Promise((resolve, reject) => {
-      let progressListener = {
-        onLocationChange(aBrowser) {
-          if ((url && aBrowser.currentURI.spec != url) ||
-              (!url && aBrowser.currentURI.spec == "about:blank")) {
-            return;
-          }
-
-          tabbrowser.removeTabsProgressListener(progressListener);
-          resolve();
-        },
-      };
-      tabbrowser.addTabsProgressListener(progressListener);
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
 
