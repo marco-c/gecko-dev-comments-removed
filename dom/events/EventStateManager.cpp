@@ -683,7 +683,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       }
     }
     
-  case NS_KEY_BEFORE_DOWN:
+  case eBeforeKeyDown:
   case eKeyDown:
   case NS_KEY_AFTER_DOWN:
   case NS_KEY_BEFORE_UP:
