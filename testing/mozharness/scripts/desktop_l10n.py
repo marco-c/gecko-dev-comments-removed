@@ -356,8 +356,16 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
         replace_dict = self.query_abs_dirs()
 
         replace_dict['en_us_binary_url'] = config.get('en_us_binary_url')
-        
         self.read_buildbot_config()
+        
+        
+        if self.buildbot_config["properties"].get("packageUrl"):
+            packageUrl = self.buildbot_config["properties"]["packageUrl"]
+            
+            packageUrl = packageUrl.rsplit('/', 1)[0]
+            self.info("Overriding en_us_binary_url with %s" % packageUrl)
+            replace_dict['en_us_binary_url'] = packageUrl
+        
         if self.buildbot_config["properties"].get("en_us_binary_url"):
             self.info("Overriding en_us_binary_url with %s" %
                       self.buildbot_config["properties"]["en_us_binary_url"])
