@@ -13,9 +13,10 @@
 
 #include "nsCOMPtr.h"
 
+#include "mozilla/Attributes.h"
 #include "mozilla/Logging.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Attributes.h"
+#include "mozilla/Variant.h"
 
 #ifdef MOZ_TASK_TRACER
 #include "TracedTaskCommon.h"
@@ -121,6 +122,28 @@ private:
     nsITimerCallback* MOZ_OWNING_REF i;
     nsIObserver* MOZ_OWNING_REF o;
   } mCallback;
+
+  void LogFiring(CallbackType aCallbackType, CallbackUnion aCallbackUnion);
+
+  
+  
+  
+  
+  typedef const int NameNothing;
+  typedef const char* NameString;
+  typedef nsTimerNameCallbackFunc NameFunc;
+  typedef mozilla::Variant<NameNothing, NameString, NameFunc> Name;
+  static const NameNothing Nothing;
+
+  nsresult InitWithFuncCallbackCommon(nsTimerCallbackFunc aFunc,
+                                      void* aClosure,
+                                      uint32_t aDelay,
+                                      uint32_t aType,
+                                      Name aName);
+
+  
+  
+  Name mName;
 
   
   

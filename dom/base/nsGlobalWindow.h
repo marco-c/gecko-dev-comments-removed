@@ -1424,6 +1424,8 @@ public:
   
   void InsertTimeoutIntoList(nsTimeout *aTimeout);
   static void TimerCallback(nsITimer *aTimer, void *aClosure);
+  static void TimerNameCallback(nsITimer* aTimer, void* aClosure, char* aBuf,
+                                size_t aLen);
 
   
   already_AddRefed<nsIDocShellTreeOwner> GetTreeOwner();

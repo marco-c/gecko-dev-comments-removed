@@ -275,8 +275,9 @@ nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync()
       
       
       
-      gFlushTimer->InitWithFuncCallback(FlushTimerCallback, nullptr,
-                                        50, nsITimer::TYPE_REPEATING_SLACK);
+      gFlushTimer->InitWithNamedFuncCallback(FlushTimerCallback, nullptr,
+                                             50, nsITimer::TYPE_REPEATING_SLACK,
+                                             "FlushTimerCallback");
     }
   }
 }
