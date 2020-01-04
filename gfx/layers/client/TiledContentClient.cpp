@@ -119,11 +119,6 @@ MultiTiledContentClient::UpdatedBuffer(TiledBufferType aType)
 
   MOZ_ASSERT(aType != LOW_PRECISION_TILED_BUFFER || mHasLowPrecision);
 
-  
-  
-  
-  buffer->ReadLock();
-
   mForwarder->UseTiledLayerBuffer(this, buffer->GetSurfaceDescriptorTiles());
   buffer->ClearPaintedRegion();
 }
@@ -570,10 +565,6 @@ TileClient::DiscardFrontBuffer()
 
     mAllocator->ReturnTextureClientDeferred(mFrontBuffer);
     if (mFrontBufferOnWhite) {
-      
-      
-      RefPtr<TextureReadLock> lock = mFrontBuffer->GetReadLock();
-      mFrontBuffer->SetReadLock(lock.forget());
       mFrontBufferOnWhite->RemoveFromCompositable(mCompositableClient);
       mAllocator->ReturnTextureClientDeferred(mFrontBufferOnWhite);
     }
@@ -588,36 +579,61 @@ TileClient::DiscardFrontBuffer()
   }
 }
 
+static void
+DiscardTexture(TextureClient* aTexture, TextureClientAllocator* aAllocator)
+{
+  if (aTexture) {
+    MOZ_ASSERT(aTexture->GetReadLock());
+    if (!aTexture->HasSynchronization() && aTexture->IsReadLocked()) {
+      
+      
+      
+     aAllocator->ReportClientLost();
+    } else {
+      aAllocator->ReturnTextureClientDeferred(aTexture);
+    }
+    if (aTexture->IsLocked()) {
+      aTexture->Unlock();
+    }
+  }
+}
+
 void
 TileClient::DiscardBackBuffer()
 {
-  if (mBackBuffer) {
-    MOZ_ASSERT(mBackBuffer->GetReadLock());
-    if (!mBackBuffer->HasSynchronization() && mBackBuffer->IsReadLocked()) {
-      
-      
-      
-     mAllocator->ReportClientLost();
-     if (mBackBufferOnWhite) {
-       mAllocator->ReportClientLost();
-     }
-    } else {
-      mAllocator->ReturnTextureClientDeferred(mBackBuffer);
-      if (mBackBufferOnWhite) {
-        RefPtr<TextureReadLock> lock = mBackBuffer->GetReadLock();
-        mBackBufferOnWhite->SetReadLock(lock.forget());
-        mAllocator->ReturnTextureClientDeferred(mBackBufferOnWhite);
-      }
-    }
-    if (mBackBuffer->IsLocked()) {
-      mBackBuffer->Unlock();
-    }
-    if (mBackBufferOnWhite && mBackBufferOnWhite->IsLocked()) {
-      mBackBufferOnWhite->Unlock();
-    }
-    mBackBuffer.Set(this, nullptr);
-    mBackBufferOnWhite = nullptr;
+  DiscardTexture(mBackBuffer, mAllocator);
+  mBackBuffer.Set(this, nullptr);
+  DiscardTexture(mBackBufferOnWhite, mAllocator);
+  mBackBufferOnWhite = nullptr;
+}
+
+static already_AddRefed<TextureClient>
+CreateBackBufferTexture(TextureClient* aCurrentTexture,
+                        CompositableClient* aCompositable,
+                        TextureClientAllocator* aAllocator)
+{
+  if (aCurrentTexture) {
+    
+    
+    
+    aAllocator->ReportClientLost();
   }
+
+  RefPtr<TextureClient> texture = aAllocator->GetTextureClient();
+
+  if (!texture) {
+    gfxCriticalError() << "[Tiling:Client] Failed to allocate a TextureClient";
+    return nullptr;
+  }
+
+  texture->EnableReadLock();
+
+  if (!aCompositable->AddTextureClient(texture)) {
+    gfxCriticalError() << "[Tiling:Client] Failed to connect a TextureClient";
+    return nullptr;
+  }
+
+  return texture.forget();
 }
 
 TextureClient*
@@ -627,49 +643,53 @@ TileClient::GetBackBuffer(const nsIntRegion& aDirtyRegion,
                           nsIntRegion& aAddPaintedRegion,
                           RefPtr<TextureClient>* aBackBufferOnWhite)
 {
+  if (aMode != SurfaceMode::SURFACE_COMPONENT_ALPHA) {
+    
+    
+    if (mBackBufferOnWhite) {
+      mAllocator->ReportClientLost();
+      mBackBufferOnWhite = nullptr;
+    }
+    if (mFrontBufferOnWhite) {
+      mAllocator->ReportClientLost();
+      mFrontBufferOnWhite = nullptr;
+    }
+  }
+
   
-  bool createdTextureClient = false;
   if (mFrontBuffer &&
       mFrontBuffer->HasIntermediateBuffer() &&
       !mFrontBuffer->IsReadLocked() &&
-      !(aMode == SurfaceMode::SURFACE_COMPONENT_ALPHA && !mFrontBufferOnWhite)) {
+      (aMode != SurfaceMode::SURFACE_COMPONENT_ALPHA || (
+        mFrontBufferOnWhite && !mFrontBufferOnWhite->IsReadLocked()))) {
     
     
     DiscardBackBuffer();
     Flip();
   } else {
     if (!mBackBuffer || mBackBuffer->IsReadLocked()) {
-
-      if (mBackBuffer) {
-        
-        
-        
-        mAllocator->ReportClientLost();
-      }
-      if (mBackBufferOnWhite) {
-        mAllocator->ReportClientLost();
-        mBackBufferOnWhite = nullptr;
-      }
-
-      mBackBuffer.Set(this, mAllocator->GetTextureClient());
+      mBackBuffer.Set(this,
+        CreateBackBufferTexture(mBackBuffer, mCompositableClient, mAllocator)
+      );
+      mInvalidBack = IntRect(0, 0, mBackBuffer->GetSize().width, mBackBuffer->GetSize().height);
       if (!mBackBuffer) {
-        gfxCriticalError() << "[Tiling:Client] Failed to allocate a TextureClient (B)";
+        DiscardBackBuffer();
+        DiscardFrontBuffer();
         return nullptr;
       }
+    }
 
-      if (aMode == SurfaceMode::SURFACE_COMPONENT_ALPHA) {
-        mBackBufferOnWhite = mAllocator->GetTextureClient();
-        if (!mBackBufferOnWhite) {
-          mBackBuffer.Set(this, nullptr);
-          gfxCriticalError() << "[Tiling:Client] Failed to allocate a TextureClient (W)";
-          return nullptr;
-        }
-      }
-
-      mBackBuffer->SetReadLock(TextureReadLock::Create(mManager->AsShadowForwarder()));
-
-      createdTextureClient = true;
+    if (aMode == SurfaceMode::SURFACE_COMPONENT_ALPHA
+        && (!mBackBufferOnWhite || mBackBufferOnWhite->IsReadLocked())) {
+      mBackBufferOnWhite = CreateBackBufferTexture(
+        mBackBufferOnWhite, mCompositableClient, mAllocator
+      );
       mInvalidBack = IntRect(0, 0, mBackBuffer->GetSize().width, mBackBuffer->GetSize().height);
+      if (!mBackBufferOnWhite) {
+        DiscardBackBuffer();
+        DiscardFrontBuffer();
+        return nullptr;
+      }
     }
 
     ValidateBackBufferFromFront(aDirtyRegion, aAddPaintedRegion);
@@ -693,21 +713,6 @@ TileClient::GetBackBuffer(const nsIntRegion& aDirtyRegion,
     }
   }
 
-  if (createdTextureClient) {
-    if (!mCompositableClient->AddTextureClient(mBackBuffer)) {
-      gfxCriticalError() << "[Tiling:Client] Failed to connect a TextureClient (a)";
-      DiscardFrontBuffer();
-      DiscardBackBuffer();
-      return nullptr;
-    }
-    if (mBackBufferOnWhite && !mCompositableClient->AddTextureClient(mBackBufferOnWhite)) {
-      gfxCriticalError() << "[Tiling:Client] Failed to connect a TextureClient (b)";
-      DiscardFrontBuffer();
-      DiscardBackBuffer();
-      return nullptr;
-    }
-  }
-
   *aBackBufferOnWhite = mBackBufferOnWhite;
   return mBackBuffer;
 }
@@ -722,23 +727,19 @@ TileClient::GetTileDescriptor()
   bool wasPlaceholder = mWasPlaceholder;
   mWasPlaceholder = false;
 
-  TileLock lock;
-  mFrontBuffer->GetReadLock()->Serialize(lock);
+  ReadLockDescriptor lock;
+  mFrontBuffer->SerializeReadLock(lock);
+
+  ReadLockDescriptor lockOnWhite = null_t();
+  if (mFrontBufferOnWhite) {
+    mFrontBufferOnWhite->SerializeReadLock(lockOnWhite);
+  }
 
   return TexturedTileDescriptor(nullptr, mFrontBuffer->GetIPDLActor(),
                                 mFrontBufferOnWhite ? MaybeTexture(mFrontBufferOnWhite->GetIPDLActor()) : MaybeTexture(null_t()),
                                 mUpdateRect,
-                                lock,
+                                lock, lockOnWhite,
                                 wasPlaceholder);
-}
-
-void
-ClientMultiTiledLayerBuffer::ReadLock() {
-  for (TileClient& tile : mRetainedTiles) {
-    if (!tile.IsPlaceholderTile()) {
-      tile.ReadLock();
-    }
-  }
 }
 
 void

@@ -325,6 +325,26 @@ void TextureHost::Finalize()
 }
 
 void
+TextureHost::UnbindTextureSource()
+{
+  if (mReadLock) {
+    auto compositor = GetCompositor();
+    
+    
+    
+    
+    
+    if (compositor) {
+      compositor->UnlockAfterComposition(mReadLock.forget());
+    } else {
+      
+      
+      ReadUnlock();
+    }
+  }
+}
+
+void
 TextureHost::RecycleTexture(TextureFlags aFlags)
 {
   MOZ_ASSERT(GetFlags() & TextureFlags::RECYCLE);
@@ -503,9 +523,18 @@ BufferTextureHost::Unlock()
 }
 
 void
-TextureHost::SetReadLock(already_AddRefed<TextureReadLock> aLock)
+TextureHost::DeserializeReadLock(const ReadLockDescriptor& aDesc,
+                                 ISurfaceAllocator* aAllocator)
 {
-  mReadLock = aLock;
+  RefPtr<TextureReadLock> lock = TextureReadLock::Deserialize(aDesc, aAllocator);
+  if (!lock) {
+    return;
+  }
+
+  
+  
+  MOZ_ASSERT(!mReadLock);
+  mReadLock = lock.forget();
 }
 
 void

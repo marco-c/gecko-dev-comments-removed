@@ -30,11 +30,6 @@ SingleTiledContentClient::ClearCachedResources()
 void
 SingleTiledContentClient::UpdatedBuffer(TiledBufferType aType)
 {
-  
-  
-  
-  mTiledBuffer->ReadLock();
-
   mForwarder->UseTiledLayerBuffer(this, mTiledBuffer->GetSurfaceDescriptorTiles());
   mTiledBuffer->ClearPaintedRegion();
 }
@@ -54,13 +49,6 @@ ClientSingleTiledLayerBuffer::ClientSingleTiledLayerBuffer(ClientTiledPaintedLay
   , mWasLastPaintProgressive(false)
   , mFormat(gfx::SurfaceFormat::UNKNOWN)
 {
-}
-
-void
-ClientSingleTiledLayerBuffer::ReadLock() {
-  if (!mTile.IsPlaceholderTile()) {
-    mTile.ReadLock();
-  }
 }
 
 void

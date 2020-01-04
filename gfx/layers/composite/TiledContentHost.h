@@ -140,9 +140,6 @@ public:
 
   void Clear();
 
-  void MarkTilesForUnlock();
-  void ProcessDelayedUnlocks();
-
   TileHost GetPlaceholderTile() const { return TileHost(); }
 
   
@@ -155,7 +152,6 @@ public:
 protected:
 
   CSSToParentLayerScale2D mFrameResolution;
-  nsTArray<RefPtr<TextureReadLock>> mDelayedUnlocks;
 };
 
 

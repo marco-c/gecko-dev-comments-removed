@@ -259,6 +259,7 @@ GrallocTextureHostOGL::GetAsSurface() {
 void
 GrallocTextureHostOGL::UnbindTextureSource()
 {
+  TextureHost::UnbindTextureSource();
   
   
   

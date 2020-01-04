@@ -177,7 +177,25 @@ struct MappedYCbCrTextureData {
   }
 };
 
-class TileLock;
+class ReadLockDescriptor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class TextureReadLock {
@@ -196,9 +214,9 @@ public:
   Create(ClientIPCAllocator* aAllocator);
 
   static already_AddRefed<TextureReadLock>
-  Open(const TileLock& aDescriptor, ISurfaceAllocator* aAllocator);
+  Deserialize(const ReadLockDescriptor& aDescriptor, ISurfaceAllocator* aAllocator);
 
-  virtual bool Serialize(TileLock& aOutput) = 0;
+  virtual bool Serialize(ReadLockDescriptor& aOutput) = 0;
 
   enum LockType {
     TYPE_MEMORY,
@@ -632,11 +650,16 @@ public:
   virtual void RemoveFromCompositable(CompositableClient* aCompositable,
                                       AsyncTransactionWaiter* aWaiter = nullptr);
 
-  void SetReadLock(already_AddRefed<TextureReadLock> aLock) { mReadLock = aLock; }
+
+  void EnableReadLock();
+
+  void SetReadLock(TextureReadLock* aLock);
 
   TextureReadLock* GetReadLock() { return mReadLock; }
 
   bool IsReadLocked() const;
+
+  void SerializeReadLock(ReadLockDescriptor& aDescriptor);
 
 private:
   static void TextureClientRecycleCallback(TextureClient* aClient, void* aClosure);
@@ -687,6 +710,10 @@ protected:
   uint32_t mExpectedDtRefs;
 #endif
   bool mIsLocked;
+  
+  
+  
+  bool mPendingReadUnlock;
   bool mInUse;
 
   bool mAddedToCompositableClient;

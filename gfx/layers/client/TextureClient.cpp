@@ -452,7 +452,7 @@ TextureClient::UnlockActor() const
 bool
 TextureClient::IsReadLocked() const
 {
-  return mReadLock && mReadLock->GetReadCount() > 1;
+  return mReadLock && mReadLock->GetReadCount() > 1 && !mPendingReadUnlock;
 }
 
 bool
@@ -528,6 +528,15 @@ TextureClient::Unlock()
     mBorrowedDrawTarget = nullptr;
   }
 
+  if (mOpenMode & OpenMode::OPEN_WRITE) {
+    if (mReadLock && !mPendingReadUnlock) {
+      
+      
+      mReadLock->ReadLock();
+    }
+    mPendingReadUnlock = true;
+  }
+
   mData->Unlock();
   mIsLocked = false;
   mOpenMode = OpenMode::OPEN_NONE;
@@ -535,8 +544,43 @@ TextureClient::Unlock()
   UnlockActor();
 }
 
+void
+TextureClient::EnableReadLock()
+{
+  if (!mReadLock) {
+    mReadLock = TextureReadLock::Create(mAllocator);
+    if (mPendingReadUnlock) {
+      
+      
+      mReadLock->ReadLock();
+    }
+  }
+}
+
+void
+TextureClient::SetReadLock(TextureReadLock* aLock)
+{
+  MOZ_ASSERT(!mReadLock);
+  mReadLock = aLock;
+}
+
+void
+TextureClient::SerializeReadLock(ReadLockDescriptor& aDescriptor)
+{
+  if (mReadLock && mPendingReadUnlock) {
+    mReadLock->Serialize(aDescriptor);
+    mPendingReadUnlock = false;
+  } else {
+    aDescriptor = null_t();
+  }
+}
+
 TextureClient::~TextureClient()
 {
+  if (mPendingReadUnlock && mReadLock) {
+    mReadLock->ReadUnlock();
+    mReadLock = nullptr;
+  }
   Destroy(false);
 }
 
@@ -1044,6 +1088,7 @@ TextureClient::TextureClient(TextureData* aData, TextureFlags aFlags, ClientIPCA
 , mExpectedDtRefs(0)
 #endif
 , mIsLocked(false)
+, mPendingReadUnlock(false)
 , mInUse(false)
 , mAddedToCompositableClient(false)
 , mWorkaroundAnnoyingSharedSurfaceLifetimeIssues(false)
@@ -1174,10 +1219,18 @@ public:
 
   virtual bool IsValid() const override { return true; };
 
-  virtual bool Serialize(TileLock& aOutput) override;
+  virtual bool Serialize(ReadLockDescriptor& aOutput) override;
 
   int32_t mReadCount;
 };
+
+
+
+
+
+
+
+
 
 class ShmemTextureReadLock : public TextureReadLock {
 public:
@@ -1199,7 +1252,7 @@ public:
 
   virtual LockType GetType() override { return TYPE_SHMEM; }
 
-  virtual bool Serialize(TileLock& aOutput) override;
+  virtual bool Serialize(ReadLockDescriptor& aOutput) override;
 
   mozilla::layers::ShmemSection& GetShmemSection() { return mShmemSection; }
 
@@ -1224,31 +1277,43 @@ public:
 
 
 already_AddRefed<TextureReadLock>
-TextureReadLock::Open(const TileLock& aDescriptor, ISurfaceAllocator* aAllocator)
+TextureReadLock::Deserialize(const ReadLockDescriptor& aDescriptor, ISurfaceAllocator* aAllocator)
 {
-  RefPtr<TextureReadLock> lock;
-  if (aDescriptor.type() == TileLock::TShmemSection) {
-    const ShmemSection& section = aDescriptor.get_ShmemSection();
-    MOZ_RELEASE_ASSERT(section.shmem().IsReadable());
-    lock = new ShmemTextureReadLock(aAllocator, section);
-  } else {
-    if (!aAllocator->IsSameProcess()) {
-      
-      
-      NS_ERROR("A client process may be trying to peek at the host's address space!");
+  switch (aDescriptor.type()) {
+    case ReadLockDescriptor::TShmemSection: {
+      const ShmemSection& section = aDescriptor.get_ShmemSection();
+      MOZ_RELEASE_ASSERT(section.shmem().IsReadable());
+      return MakeAndAddRef<ShmemTextureReadLock>(aAllocator, section);
+    }
+    case ReadLockDescriptor::Tuintptr_t: {
+      if (!aAllocator->IsSameProcess()) {
+        
+        
+        NS_ERROR("A client process may be trying to peek at the host's address space!");
+        return nullptr;
+      }
+      RefPtr<TextureReadLock> lock = reinterpret_cast<MemoryTextureReadLock*>(
+        aDescriptor.get_uintptr_t()
+      );
+
+      MOZ_ASSERT(lock);
+      if (lock) {
+        
+        lock.get()->Release();
+      }
+
+      return lock.forget();
+    }
+    case ReadLockDescriptor::Tnull_t: {
       return nullptr;
     }
-    lock = reinterpret_cast<MemoryTextureReadLock*>(aDescriptor.get_uintptr_t());
-    MOZ_ASSERT(lock);
-    if (lock) {
+    default: {
       
-      lock.get()->Release();
+      MOZ_DIAGNOSTIC_ASSERT(false);
     }
   }
-
-  return lock.forget();
+  return nullptr;
 }
-
 
 already_AddRefed<TextureReadLock>
 TextureReadLock::Create(ClientIPCAllocator* aAllocator)
@@ -1276,13 +1341,13 @@ MemoryTextureReadLock::~MemoryTextureReadLock()
 }
 
 bool
-MemoryTextureReadLock::Serialize(TileLock& aOutput)
+MemoryTextureReadLock::Serialize(ReadLockDescriptor& aOutput)
 {
   
   
   
   this->AddRef();
-  aOutput = TileLock(uintptr_t(this));
+  aOutput = ReadLockDescriptor(uintptr_t(this));
   return true;
 }
 
@@ -1339,9 +1404,9 @@ ShmemTextureReadLock::~ShmemTextureReadLock()
 }
 
 bool
-ShmemTextureReadLock::Serialize(TileLock& aOutput)
+ShmemTextureReadLock::Serialize(ReadLockDescriptor& aOutput)
 {
-  aOutput = TileLock(GetShmemSection());
+  aOutput = ReadLockDescriptor(GetShmemSection());
   return true;
 }
 

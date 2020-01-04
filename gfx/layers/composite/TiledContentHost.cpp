@@ -186,23 +186,6 @@ UseTileTexture(CompositableTextureHostRef& aTexture,
   aTexture->PrepareTextureSource(aTextureSource);
 }
 
-void
-TiledLayerBufferComposite::MarkTilesForUnlock()
-{
-  
-  
-  
-  
-  for (TileHost& tile : mRetainedTiles) {
-    
-    
-    if (tile.mTextureHost && tile.mTextureHost->GetReadLock()) {
-      mDelayedUnlocks.AppendElement(tile.mTextureHost->GetReadLock());
-      tile.mTextureHost->SetReadLock(nullptr);
-    }
-  }
-}
-
 class TextureSourceRecycler
 {
 public:
@@ -297,11 +280,6 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
 
   const InfallibleTArray<TileDescriptor>& tileDescriptors = aTiles.tiles();
 
-  
-  
-  
-  MarkTilesForUnlock();
-
   TextureSourceRecycler oldRetainedTiles(Move(mRetainedTiles));
   mRetainedTiles.SetLength(tileDescriptors.Length());
 
@@ -327,16 +305,15 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
 
     tile.mTextureHost = TextureHost::AsTextureHost(texturedDesc.textureParent());
     tile.mTextureHost->SetCompositor(aCompositor);
-
-    tile.mTextureHost->SetReadLock(TextureReadLock::Open(texturedDesc.sharedLock(), aAllocator));
-
-    if (!tile.mTextureHost->GetReadLock()) {
-      return false;
-    }
+    tile.mTextureHost->DeserializeReadLock(texturedDesc.sharedLock(), aAllocator);
 
     if (texturedDesc.textureOnWhite().type() == MaybeTexture::TPTextureParent) {
-      tile.mTextureHostOnWhite =
-        TextureHost::AsTextureHost(texturedDesc.textureOnWhite().get_PTextureParent());
+      tile.mTextureHostOnWhite = TextureHost::AsTextureHost(
+        texturedDesc.textureOnWhite().get_PTextureParent()
+      );
+      tile.mTextureHostOnWhite->DeserializeReadLock(
+        texturedDesc.sharedLockOnWhite(), aAllocator
+      );
     }
 
     tile.mTilePosition = newTiles.TilePosition(i);
@@ -393,12 +370,6 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
                      texturedDesc.updateRect(),
                      aCompositor);
     }
-
-    if (tile.mTextureHost->HasIntermediateBuffer()) {
-      
-      
-      tile.ReadUnlock();
-    }
   }
 
   mTiles = newTiles;
@@ -413,22 +384,9 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
 }
 
 void
-TiledLayerBufferComposite::ProcessDelayedUnlocks()
-{
-  for (TextureReadLock* lock : mDelayedUnlocks) {
-    lock->ReadUnlock();
-  }
-  mDelayedUnlocks.Clear();
-}
-
-void
 TiledLayerBufferComposite::Clear()
 {
-  for (TileHost& tile : mRetainedTiles) {
-    tile.ReadUnlock();
-  }
   mRetainedTiles.Clear();
-  ProcessDelayedUnlocks();
   mTiles.mFirst = TileIntPoint();
   mTiles.mSize = TileIntSize();
   mValidRegion = nsIntRegion();
@@ -490,8 +448,6 @@ TiledContentHost::Composite(LayerComposite* aLayer,
                     aFilter, aClipRect, *renderRegion, aTransform);
   RenderLayerBuffer(mTiledBuffer, nullptr, aEffectChain, aOpacity, aFilter,
                     aClipRect, *renderRegion, aTransform);
-  mLowPrecisionTiledBuffer.ProcessDelayedUnlocks();
-  mTiledBuffer.ProcessDelayedUnlocks();
 }
 
 

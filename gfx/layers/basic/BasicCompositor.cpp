@@ -650,6 +650,8 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
 void
 BasicCompositor::EndFrame()
 {
+  Compositor::EndFrame();
+
   
   mRenderTarget->mDrawTarget->PopClip();
 
