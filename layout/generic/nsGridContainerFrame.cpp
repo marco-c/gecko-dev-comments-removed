@@ -829,6 +829,243 @@ GetDisplayFlagsForGridItem(nsIFrame* aFrame)
   return nsIFrame::DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT;
 }
 
+static nscoord
+SpaceToFill(WritingMode aWM, const LogicalSize& aSize, nscoord aMargin,
+            LogicalAxis aAxis, nscoord aCBSize)
+{
+  nscoord size = aAxis == eLogicalAxisBlock ? aSize.BSize(aWM)
+                                            : aSize.ISize(aWM);
+  return aCBSize - (size + aMargin);
+}
+
+static bool
+AlignJustifySelf(uint8_t aAlignment, bool aOverflowSafe, LogicalAxis aAxis,
+                 bool aSameSide, nscoord aCBSize, const nsHTMLReflowState& aRS,
+                 const LogicalSize& aChildSize, LogicalSize* aContentSize,
+                 LogicalPoint* aPos)
+{
+  MOZ_ASSERT(aAlignment != NS_STYLE_ALIGN_AUTO, "unexpected 'auto' "
+             "computed value for normal flow grid item");
+  MOZ_ASSERT(aAlignment != NS_STYLE_ALIGN_LEFT &&
+             aAlignment != NS_STYLE_ALIGN_RIGHT,
+             "caller should map that to the corresponding START/END");
+
+  
+  switch (aAlignment) {
+    case NS_STYLE_ALIGN_SELF_START: 
+      aAlignment = MOZ_LIKELY(aSameSide) ? NS_STYLE_ALIGN_START
+                                         : NS_STYLE_ALIGN_END;
+      break;
+    case NS_STYLE_ALIGN_SELF_END: 
+      aAlignment = MOZ_LIKELY(aSameSide) ? NS_STYLE_ALIGN_END
+                                         : NS_STYLE_ALIGN_START;
+      break;
+    case NS_STYLE_ALIGN_FLEX_START: 
+      aAlignment = NS_STYLE_ALIGN_START;
+      break;
+    case NS_STYLE_ALIGN_FLEX_END: 
+      aAlignment = NS_STYLE_ALIGN_END;
+      break;
+  }
+
+  
+  
+
+  
+  const LogicalMargin margin = aRS.ComputedLogicalMargin();
+  WritingMode wm = aRS.GetWritingMode();
+  nscoord marginStart, marginEnd;
+  if (aAxis == eLogicalAxisBlock) {
+    if (MOZ_LIKELY(aSameSide)) {
+      marginStart = margin.BStart(wm);
+      marginEnd = margin.BEnd(wm);
+    } else {
+      marginStart = margin.BEnd(wm);
+      marginEnd = margin.BStart(wm);
+    }
+  } else {
+    if (MOZ_LIKELY(aSameSide)) {
+      marginStart = margin.IStart(wm);
+      marginEnd = margin.IEnd(wm);
+    } else {
+      marginStart = margin.IEnd(wm);
+      marginEnd = margin.IStart(wm);
+    }
+  }
+
+  
+  
+  if (MOZ_UNLIKELY(aOverflowSafe) && aAlignment != NS_STYLE_ALIGN_START) {
+    nscoord space = SpaceToFill(wm, aChildSize, marginStart + marginEnd,
+                                aAxis, aCBSize);
+    
+    
+    if (space < 0) {
+      aAlignment = NS_STYLE_ALIGN_START;
+    }
+  }
+
+  
+  bool didResize = false;
+  nscoord offset = 0;
+  switch (aAlignment) {
+    case NS_STYLE_ALIGN_BASELINE:
+    case NS_STYLE_ALIGN_LAST_BASELINE:
+      NS_WARNING("NYI: baseline/last-baseline for grid (bug 1151204)"); 
+    case NS_STYLE_ALIGN_START:
+      offset = marginStart;
+      break;
+    case NS_STYLE_ALIGN_END: {
+      nscoord size = aAxis == eLogicalAxisBlock ? aChildSize.BSize(wm)
+                                                : aChildSize.ISize(wm);
+      offset = aCBSize - (size + marginEnd);
+      break;
+    }
+    case NS_STYLE_ALIGN_CENTER:
+      offset = SpaceToFill(wm, aChildSize, marginStart + marginEnd,
+                           aAxis, aCBSize) / 2;
+      break;
+    case NS_STYLE_ALIGN_STRETCH: {
+      offset = marginStart;
+      const auto& styleMargin = aRS.mStyleMargin->mMargin;
+      if (aAxis == eLogicalAxisBlock
+             ? (aRS.mStylePosition->BSize(wm).GetUnit() == eStyleUnit_Auto &&
+                styleMargin.GetBStartUnit(wm) != eStyleUnit_Auto &&
+                styleMargin.GetBEndUnit(wm) != eStyleUnit_Auto)
+             : (aRS.mStylePosition->ISize(wm).GetUnit() == eStyleUnit_Auto &&
+                styleMargin.GetIStartUnit(wm) != eStyleUnit_Auto &&
+                styleMargin.GetIEndUnit(wm) != eStyleUnit_Auto)) {
+        nscoord size = aAxis == eLogicalAxisBlock ? aChildSize.BSize(wm)
+                                                  : aChildSize.ISize(wm);
+        nscoord gap = aCBSize - (size + marginStart + marginEnd);
+        if (gap > 0) {
+          
+          
+          LogicalMargin bp = aRS.ComputedLogicalBorderPadding();
+          
+          
+          
+          bp.ApplySkipSides(aRS.frame->GetLogicalSkipSides());
+          nscoord bpInAxis = aAxis == eLogicalAxisBlock ? bp.BStartEnd(wm)
+                                                        : bp.IStartEnd(wm);
+          nscoord contentSize = size - bpInAxis;
+          NS_ASSERTION(contentSize >= 0, "huh?");
+          const nscoord unstretchedContentSize = contentSize;
+          contentSize += gap;
+          nscoord max = aAxis == eLogicalAxisBlock ? aRS.ComputedMaxBSize()
+                                                   : aRS.ComputedMaxISize();
+          if (MOZ_UNLIKELY(contentSize > max)) {
+            contentSize = max;
+            gap = contentSize - unstretchedContentSize;
+          }
+          
+          didResize = gap > 0;
+          if (didResize) {
+            (aAxis == eLogicalAxisBlock ? aContentSize->BSize(wm)
+                                        : aContentSize->ISize(wm)) = contentSize;
+            if (MOZ_UNLIKELY(!aSameSide)) {
+              offset += gap;
+            }
+          }
+        }
+      }
+      break;
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("unknown align-/justify-self value");
+  }
+  if (offset != 0) {
+    nscoord& pos = aAxis == eLogicalAxisBlock ? aPos->B(wm) : aPos->I(wm);
+    pos += MOZ_LIKELY(aSameSide) ? offset : -offset;
+  }
+  return didResize;
+}
+
+static bool
+SameSide(WritingMode aContainerWM, LogicalSide aContainerSide,
+         WritingMode aChildWM, LogicalSide aChildSide)
+{
+  MOZ_ASSERT(aContainerWM.PhysicalAxis(GetAxis(aContainerSide)) ==
+                 aChildWM.PhysicalAxis(GetAxis(aChildSide)));
+  return aContainerWM.PhysicalSide(aContainerSide) ==
+             aChildWM.PhysicalSide(aChildSide);
+}
+
+static Maybe<LogicalAxis>
+AlignSelf(uint8_t aAlignSelf, const LogicalRect& aCB, const WritingMode aCBWM,
+          const nsHTMLReflowState& aRS, const LogicalSize& aSize,
+          LogicalSize* aContentSize, LogicalPoint* aPos)
+{
+  Maybe<LogicalAxis> resizedAxis;
+  auto alignSelf = aAlignSelf;
+  bool overflowSafe = alignSelf & NS_STYLE_ALIGN_SAFE;
+  alignSelf &= ~NS_STYLE_ALIGN_FLAG_BITS;
+  MOZ_ASSERT(alignSelf != NS_STYLE_ALIGN_LEFT &&
+             alignSelf != NS_STYLE_ALIGN_RIGHT,
+             "Grid's 'align-self' axis is never parallel to the container's "
+             "inline axis, so these should've computed to 'start' already");
+  if (MOZ_UNLIKELY(alignSelf == NS_STYLE_ALIGN_AUTO)) {
+    
+    
+    alignSelf = NS_STYLE_ALIGN_STRETCH;
+  }
+  WritingMode childWM = aRS.GetWritingMode();
+  bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
+  
+  
+  bool sameSide = SameSide(aCBWM, eLogicalSideBStart,
+                           childWM, isOrthogonal ? eLogicalSideIStart
+                                                 : eLogicalSideBStart);
+  LogicalAxis axis = isOrthogonal ? eLogicalAxisInline : eLogicalAxisBlock;
+  if (AlignJustifySelf(alignSelf, overflowSafe, axis, sameSide,
+                       aCB.BSize(aCBWM), aRS, aSize, aContentSize, aPos)) {
+    resizedAxis.emplace(axis);
+  }
+  return resizedAxis;
+}
+
+static Maybe<LogicalAxis>
+JustifySelf(uint8_t aJustifySelf, const LogicalRect& aCB, const WritingMode aCBWM,
+            const nsHTMLReflowState& aRS, const LogicalSize& aSize,
+            LogicalSize* aContentSize, LogicalPoint* aPos)
+{
+  Maybe<LogicalAxis> resizedAxis;
+  auto justifySelf = aJustifySelf;
+  bool overflowSafe = justifySelf & NS_STYLE_JUSTIFY_SAFE;
+  justifySelf &= ~NS_STYLE_JUSTIFY_FLAG_BITS;
+  if (MOZ_UNLIKELY(justifySelf == NS_STYLE_ALIGN_AUTO)) {
+    
+    
+    justifySelf = NS_STYLE_ALIGN_STRETCH;
+  }
+  WritingMode childWM = aRS.GetWritingMode();
+  bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
+  
+  
+  bool sameSide = SameSide(aCBWM, eLogicalSideIStart,
+                           childWM, isOrthogonal ? eLogicalSideBStart
+                                                 : eLogicalSideIStart);
+  
+  
+  switch (justifySelf) {
+    case NS_STYLE_JUSTIFY_LEFT:
+      justifySelf = aCBWM.IsBidiLTR() ? NS_STYLE_JUSTIFY_START
+                                      : NS_STYLE_JUSTIFY_END;
+    break;
+    case NS_STYLE_JUSTIFY_RIGHT:
+      justifySelf = aCBWM.IsBidiLTR() ? NS_STYLE_JUSTIFY_END
+                                      : NS_STYLE_JUSTIFY_START;
+    break;
+  }
+
+  LogicalAxis axis = isOrthogonal ? eLogicalAxisBlock : eLogicalAxisInline;
+  if (AlignJustifySelf(justifySelf, overflowSafe, axis, sameSide,
+                       aCB.ISize(aCBWM), aRS, aSize, aContentSize, aPos)) {
+    resizedAxis.emplace(axis);
+  }
+  return resizedAxis;
+}
+
 
 
 
@@ -2367,6 +2604,7 @@ nsGridContainerFrame::ReflowChildren(GridReflowState&     aState,
     (aContentArea.Size(wm) +
      aState.mReflowState->ComputedLogicalBorderPadding().Size(wm)).GetPhysicalSize(wm);
   nsPresContext* pc = PresContext();
+  nsStyleContext* containerSC = StyleContext();
   for (; !aState.mIter.AtEnd(); aState.mIter.Next()) {
     nsIFrame* child = *aState.mIter;
     const bool isGridItem = child->GetType() != nsGkAtoms::placeholderFrame;
@@ -2383,33 +2621,60 @@ nsGridContainerFrame::ReflowChildren(GridReflowState&     aState,
     }
     WritingMode childWM = child->GetWritingMode();
     LogicalSize childCBSize = cb.Size(wm).ConvertTo(childWM, wm);
-    nsHTMLReflowState childRS(pc, *aState.mReflowState, child, childCBSize);
-    const LogicalMargin margin = childRS.ComputedLogicalMargin();
-    if (childRS.ComputedBSize() == NS_AUTOHEIGHT && MOZ_LIKELY(isGridItem)) {
-      
-      
-      LogicalMargin bp = childRS.ComputedLogicalBorderPadding();
-      bp.ApplySkipSides(child->GetLogicalSkipSides());
-      nscoord bSize = childCBSize.BSize(childWM) - bp.BStartEnd(childWM) -
-                        margin.BStartEnd(childWM);
-      childRS.SetComputedBSize(std::max(bSize, 0));
-    }
+    
+    
+    childCBSize.BSize(childWM) = NS_UNCONSTRAINEDSIZE;
+
+    Maybe<nsHTMLReflowState> childRS; 
+    childRS.emplace(pc, *aState.mReflowState, child, childCBSize);
     
     
     
-    nsHTMLReflowMetrics childSize(childRS);
+    Maybe<nsHTMLReflowMetrics> childSize; 
+    childSize.emplace(*childRS);
     nsReflowStatus childStatus;
     const nsSize dummyContainerSize;
-    ReflowChild(child, pc, childSize, childRS, childWM, LogicalPoint(childWM),
+    ReflowChild(child, pc, *childSize, *childRS, childWM, LogicalPoint(childWM),
                 dummyContainerSize, 0, childStatus);
     LogicalPoint childPos =
       cb.Origin(wm).ConvertTo(childWM, wm,
-                              containerSize - childSize.PhysicalSize() -
-                              margin.Size(childWM).GetPhysicalSize(childWM));
-    childPos.I(childWM) += margin.IStart(childWM);
-    childPos.B(childWM) += margin.BStart(childWM);
-    childRS.ApplyRelativePositioning(&childPos, containerSize);
-    FinishReflowChild(child, pc, childSize, &childRS, childWM, childPos,
+                              containerSize - childSize->PhysicalSize());
+    
+    if (isGridItem) {
+      LogicalSize oldSize = childSize->Size(childWM); 
+      LogicalSize newContentSize(childWM);
+      auto align = childRS->mStylePosition->ComputedAlignSelf(
+                     childRS->mStyleDisplay, containerSC);
+      Maybe<LogicalAxis> alignResize =
+        AlignSelf(align, cb, wm, *childRS, oldSize, &newContentSize, &childPos);
+      auto justify = childRS->mStylePosition->ComputedJustifySelf(
+                       childRS->mStyleDisplay, containerSC);
+      Maybe<LogicalAxis> justifyResize =
+        JustifySelf(justify, cb, wm, *childRS, oldSize, &newContentSize, &childPos);
+      if (alignResize || justifyResize) {
+        FinishReflowChild(child, pc, *childSize, childRS.ptr(), childWM,
+                          LogicalPoint(childWM), containerSize,
+                          NS_FRAME_NO_MOVE_FRAME | NS_FRAME_NO_SIZE_VIEW);
+        childSize.reset(); 
+        childRS.reset();   
+        childRS.emplace(pc, *aState.mReflowState, child, childCBSize);
+        if ((alignResize && alignResize.value() == eLogicalAxisBlock) ||
+            (justifyResize && justifyResize.value() == eLogicalAxisBlock)) {
+          childRS->SetComputedBSize(newContentSize.BSize(childWM));
+          childRS->SetBResize(true);
+        }
+        if ((alignResize && alignResize.value() == eLogicalAxisInline) ||
+            (justifyResize && justifyResize.value() == eLogicalAxisInline)) {
+          childRS->SetComputedISize(newContentSize.ISize(childWM));
+          childRS->SetIResize(true);
+        }
+        childSize.emplace(*childRS);
+        ReflowChild(child, pc, *childSize, *childRS, childWM,
+                    LogicalPoint(childWM), dummyContainerSize, 0, childStatus);
+      }
+    }
+    childRS->ApplyRelativePositioning(&childPos, containerSize);
+    FinishReflowChild(child, pc, *childSize, childRS.ptr(), childWM, childPos,
                       containerSize, 0);
     ConsiderChildOverflow(aDesiredSize.mOverflowAreas, child);
     

@@ -18,7 +18,6 @@
 #include "nsFontMetrics.h"
 #include "nsBlockFrame.h"
 #include "nsLineBox.h"
-#include "nsFlexContainerFrame.h"
 #include "nsImageFrame.h"
 #include "nsTableFrame.h"
 #include "nsTableCellFrame.h"
@@ -2037,18 +2036,6 @@ IsSideCaption(nsIFrame* aFrame, const nsStyleDisplay* aStyleDisplay,
          captionSide == NS_STYLE_CAPTION_SIDE_RIGHT;
 }
 
-static nsFlexContainerFrame*
-GetFlexContainer(nsIFrame* aFrame)
-{
-  nsIFrame* parent = aFrame->GetParent();
-  if (!parent ||
-      parent->GetType() != nsGkAtoms::flexContainerFrame) {
-    return nullptr;
-  }
-
-  return static_cast<nsFlexContainerFrame*>(parent);
-}
-
 
 
 
@@ -2306,8 +2293,9 @@ nsHTMLReflowState::InitConstraints(nsPresContext*     aPresContext,
           ComputeSizeFlags(computeSizeFlags | ComputeSizeFlags::eShrinkWrap);
       }
 
-      const nsFlexContainerFrame* flexContainerFrame = GetFlexContainer(frame);
-      if (flexContainerFrame) {
+      nsIFrame* parent = frame->GetParent();
+      nsIAtom* parentFrameType = parent ? parent->GetType() : nullptr;
+      if (parentFrameType == nsGkAtoms::flexContainerFrame) {
         computeSizeFlags =
           ComputeSizeFlags(computeSizeFlags | ComputeSizeFlags::eShrinkWrap);
 
@@ -2344,10 +2332,12 @@ nsHTMLReflowState::InitConstraints(nsPresContext*     aPresContext,
                    ComputedBSize() >= 0, "Bogus block-size");
 
       
+      
       if (isBlock &&
           !IsSideCaption(frame, mStyleDisplay, cbwm) &&
           mStyleDisplay->mDisplay != NS_STYLE_DISPLAY_INLINE_TABLE &&
-          !flexContainerFrame) {
+          parentFrameType != nsGkAtoms::flexContainerFrame &&
+          parentFrameType != nsGkAtoms::gridContainerFrame) {
         CalculateBlockSideMargins(aFrameType);
       }
     }
