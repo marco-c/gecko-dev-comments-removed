@@ -59,9 +59,6 @@
 
 
 
-
-
-
 "use strict";
 
 var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -848,10 +845,10 @@ const DownloadsView = {
 
 
 
-  _controllersForElements: new Map(),
+  _itemsForElements: new Map(),
 
-  controllerForElement(element) {
-    return this._controllersForElements.get(element);
+  itemForElement(element) {
+    return this._itemsForElements.get(element);
   },
 
   
@@ -866,8 +863,7 @@ const DownloadsView = {
     let element = document.createElement("richlistitem");
     let viewItem = new DownloadsViewItem(download, element);
     this._visibleViewItems.set(download, viewItem);
-    let viewItemController = new DownloadsViewItemController(download);
-    this._controllersForElements.set(element, viewItemController);
+    this._itemsForElements.set(element, viewItem);
     if (aNewest) {
       this.richListBox.insertBefore(element, this.richListBox.firstChild);
     } else {
@@ -888,7 +884,7 @@ const DownloadsView = {
                                                 this.richListBox.itemCount - 1);
     }
     this._visibleViewItems.delete(download);
-    this._controllersForElements.delete(element);
+    this._itemsForElements.delete(element);
   },
 
   
@@ -909,7 +905,7 @@ const DownloadsView = {
     while (target.nodeName != "richlistitem") {
       target = target.parentNode;
     }
-    DownloadsView.controllerForElement(target).doCommand(aCommand);
+    DownloadsView.itemForElement(target).doCommand(aCommand);
   },
 
   onDownloadClick(aEvent) {
@@ -986,7 +982,7 @@ const DownloadsView = {
     }
 
     
-    let file = new FileUtils.File(DownloadsView.controllerForElement(element)
+    let file = new FileUtils.File(DownloadsView.itemForElement(element)
                                                .download.target.path);
     if (!file.exists()) {
       return;
@@ -1005,6 +1001,7 @@ const DownloadsView = {
 }
 
 XPCOMUtils.defineConstant(this, "DownloadsView", DownloadsView);
+
 
 
 
@@ -1051,113 +1048,7 @@ DownloadsViewItem.prototype = {
                                   !!this.download.hasBlockedData);
     this._updateProgress();
   },
-};
 
-
-
-
-
-
-
-
-
-const DownloadsViewController = {
-  
-  
-
-  initialize() {
-    window.controllers.insertControllerAt(0, this);
-  },
-
-  terminate() {
-    window.controllers.removeController(this);
-  },
-
-  
-  
-
-  supportsCommand(aCommand) {
-    
-    if (!(aCommand in this.commands) &&
-        !(aCommand in DownloadsViewItemController.prototype.commands)) {
-      return false;
-    }
-    
-    let element = document.commandDispatcher.focusedElement;
-    while (element && element != DownloadsView.richListBox) {
-      element = element.parentNode;
-    }
-    
-    
-    return !!element;
-  },
-
-  isCommandEnabled(aCommand) {
-    
-    if (aCommand == "downloadsCmd_clearList") {
-      return DownloadsCommon.getData(window).canRemoveFinished;
-    }
-
-    
-    let element = DownloadsView.richListBox.selectedItem;
-    return element && DownloadsView.controllerForElement(element)
-                                   .isCommandEnabled(aCommand);
-  },
-
-  doCommand(aCommand) {
-    
-    if (aCommand in this.commands) {
-      this.commands[aCommand].apply(this);
-      return;
-    }
-
-    
-    let element = DownloadsView.richListBox.selectedItem;
-    if (element) {
-      
-      DownloadsView.controllerForElement(element).doCommand(aCommand);
-    }
-  },
-
-  onEvent() {},
-
-  
-  
-
-  updateCommands() {
-    Object.keys(this.commands).forEach(goUpdateCommand);
-    Object.keys(DownloadsViewItemController.prototype.commands)
-          .forEach(goUpdateCommand);
-  },
-
-  
-  
-
-  
-
-
-
-  commands: {
-    downloadsCmd_clearList() {
-      DownloadsCommon.getData(window).removeFinished();
-    }
-  }
-};
-
-XPCOMUtils.defineConstant(this, "DownloadsViewController", DownloadsViewController);
-
-
-
-
-
-
-
-
-function DownloadsViewItemController(download) {
-  this.download = download;
-}
-
-DownloadsViewItemController.prototype = {
   isCommandEnabled(aCommand) {
     switch (aCommand) {
       case "downloadsCmd_open": {
@@ -1310,6 +1201,98 @@ DownloadsViewItemController.prototype = {
   },
 };
 
+
+
+
+
+
+
+
+
+const DownloadsViewController = {
+  
+  
+
+  initialize() {
+    window.controllers.insertControllerAt(0, this);
+  },
+
+  terminate() {
+    window.controllers.removeController(this);
+  },
+
+  
+  
+
+  supportsCommand(aCommand) {
+    
+    if (!(aCommand in this.commands) &&
+        !(aCommand in DownloadsViewItem.prototype.commands)) {
+      return false;
+    }
+    
+    let element = document.commandDispatcher.focusedElement;
+    while (element && element != DownloadsView.richListBox) {
+      element = element.parentNode;
+    }
+    
+    
+    return !!element;
+  },
+
+  isCommandEnabled(aCommand) {
+    
+    if (aCommand == "downloadsCmd_clearList") {
+      return DownloadsCommon.getData(window).canRemoveFinished;
+    }
+
+    
+    let element = DownloadsView.richListBox.selectedItem;
+    return element && DownloadsView.itemForElement(element)
+                                   .isCommandEnabled(aCommand);
+  },
+
+  doCommand(aCommand) {
+    
+    if (aCommand in this.commands) {
+      this.commands[aCommand].apply(this);
+      return;
+    }
+
+    
+    let element = DownloadsView.richListBox.selectedItem;
+    if (element) {
+      
+      DownloadsView.itemForElement(element).doCommand(aCommand);
+    }
+  },
+
+  onEvent() {},
+
+  
+  
+
+  updateCommands() {
+    Object.keys(this.commands).forEach(goUpdateCommand);
+    Object.keys(DownloadsViewItem.prototype.commands)
+          .forEach(goUpdateCommand);
+  },
+
+  
+  
+
+  
+
+
+
+  commands: {
+    downloadsCmd_clearList() {
+      DownloadsCommon.getData(window).removeFinished();
+    }
+  }
+};
+
+XPCOMUtils.defineConstant(this, "DownloadsViewController", DownloadsViewController);
 
 
 
