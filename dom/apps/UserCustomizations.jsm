@@ -151,9 +151,6 @@ this.UserCustomizations = {
   },
 
   init: function() {
-    
-    AppsUtils.allowUnsignedAddons = true;
-
     this._enabled = false;
     try {
       this._enabled = Services.prefs.getBoolPref("dom.apps.customization.enabled");
