@@ -322,6 +322,11 @@ nsLayoutStatics::Initialize()
   Servo_Initialize();
 #endif
 
+#ifndef MOZ_WIDGET_ANDROID
+  
+  MediaPrefs::GetSingleton();
+#endif
+
   return NS_OK;
 }
 
