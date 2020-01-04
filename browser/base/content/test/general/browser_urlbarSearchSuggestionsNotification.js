@@ -18,7 +18,7 @@ add_task(function* prepare() {
 
     
     
-    Services.prefs.setBoolPref(CHOICE_PREF, true);
+    yield setUserMadeChoicePref(true);
 
     
     gURLBar.blur();
@@ -30,7 +30,7 @@ add_task(function* focus() {
   
   
   Services.prefs.setBoolPref(SUGGEST_ALL_PREF, true);
-  Services.prefs.setBoolPref(CHOICE_PREF, false);
+  yield setUserMadeChoicePref(false);
   gURLBar.blur();
   gURLBar.focus();
   Assert.ok(!gURLBar.popup.popupOpen, "popup should remain closed");
@@ -38,7 +38,7 @@ add_task(function* focus() {
 
 add_task(function* dismissWithoutResults() {
   Services.prefs.setBoolPref(SUGGEST_ALL_PREF, true);
-  Services.prefs.setBoolPref(CHOICE_PREF, false);
+  yield setUserMadeChoicePref(false);
   gURLBar.blur();
   gURLBar.focus();
   let popupPromise = promisePopupShown(gURLBar.popup);
@@ -64,7 +64,7 @@ add_task(function* dismissWithoutResults() {
 
 add_task(function* dismissWithResults() {
   Services.prefs.setBoolPref(SUGGEST_ALL_PREF, true);
-  Services.prefs.setBoolPref(CHOICE_PREF, false);
+  yield setUserMadeChoicePref(false);
   gURLBar.blur();
   gURLBar.focus();
   yield promiseAutocompleteResultPopup("foo");
@@ -88,7 +88,7 @@ add_task(function* dismissWithResults() {
 
 add_task(function* disable() {
   Services.prefs.setBoolPref(SUGGEST_ALL_PREF, true);
-  Services.prefs.setBoolPref(CHOICE_PREF, false);
+  yield setUserMadeChoicePref(false);
   gURLBar.blur();
   gURLBar.focus();
   yield promiseAutocompleteResultPopup("foo");
@@ -102,32 +102,32 @@ add_task(function* disable() {
   yield transitionPromise;
   gURLBar.blur();
   yield promiseAutocompleteResultPopup("foo");
-  assertSuggestionsPresent(false);
+  Assert.ok(!suggestionsPresent());
 });
 
 add_task(function* enable() {
   Services.prefs.setBoolPref(SUGGEST_ALL_PREF, true);
   Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, false);
-  Services.prefs.setBoolPref(CHOICE_PREF, false);
+  yield setUserMadeChoicePref(false);
   gURLBar.blur();
   gURLBar.focus();
   yield promiseAutocompleteResultPopup("foo");
   assertVisible(true);
-  assertSuggestionsPresent(false);
+  Assert.ok(!suggestionsPresent());
   let enableButton = document.getAnonymousElementByAttribute(
     gURLBar.popup, "anonid", "search-suggestions-notification-enable"
   );
-  let searchPromise = promiseSearchComplete();
+  let searchPromise = promiseSuggestionsPresent();
   enableButton.click();
   yield searchPromise;
   
   
-  assertSuggestionsPresent(true);
+  Assert.ok(suggestionsPresent());
   gURLBar.blur();
   gURLBar.focus();
   
   yield promiseAutocompleteResultPopup("bar");
-  assertSuggestionsPresent(true);
+  Assert.ok(suggestionsPresent());
 });
 
 add_task(function* privateWindow() {
@@ -142,10 +142,76 @@ add_task(function* privateWindow() {
   yield BrowserTestUtils.closeWindow(win);
 });
 
-function assertSuggestionsPresent(expectedPresent) {
+add_task(function* multipleWindows() {
+  
+  
+  Services.prefs.setBoolPref(SUGGEST_ALL_PREF, true);
+  Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, false);
+  yield setUserMadeChoicePref(false);
+
+  gURLBar.focus();
+  yield promiseAutocompleteResultPopup("win1");
+  assertVisible(true);
+
+  let win2 = yield BrowserTestUtils.openNewBrowserWindow();
+  win2.gURLBar.focus();
+  yield promiseAutocompleteResultPopup("win2", win2);
+  assertVisible(true, win2);
+
+  let win3 = yield BrowserTestUtils.openNewBrowserWindow();
+  win3.gURLBar.focus();
+  yield promiseAutocompleteResultPopup("win3", win3);
+  assertVisible(true, win3);
+
+  let enableButton = win3.document.getAnonymousElementByAttribute(
+    win3.gURLBar.popup, "anonid", "search-suggestions-notification-enable"
+  );
+  let transitionPromise = promiseTransition(win3);
+  enableButton.click();
+  yield transitionPromise;
+  assertVisible(false, win3);
+
+  win2.gURLBar.focus();
+  yield promiseAutocompleteResultPopup("win2done", win2);
+  assertVisible(false, win2);
+
+  gURLBar.focus();
+  yield promiseAutocompleteResultPopup("win1done");
+  assertVisible(false);
+
+  yield BrowserTestUtils.closeWindow(win2);
+  yield BrowserTestUtils.closeWindow(win3);
+});
+
+
+
+
+
+
+
+
+
+
+function setUserMadeChoicePref(userMadeChoice) {
+  return new Promise(resolve => {
+    let currentUserMadeChoice = Services.prefs.getBoolPref(CHOICE_PREF);
+    if (currentUserMadeChoice != userMadeChoice) {
+      Services.prefs.addObserver(CHOICE_PREF, function obs(subj, topic, data) {
+        Services.prefs.removeObserver(CHOICE_PREF, obs);
+        resolve();
+      }, false);
+    }
+    Services.prefs.setBoolPref(CHOICE_PREF, userMadeChoice);
+    if (currentUserMadeChoice == userMadeChoice) {
+      resolve();
+    }
+  });
+}
+
+function suggestionsPresent() {
   let controller = gURLBar.popup.input.controller;
   let matchCount = controller.matchCount;
-  let actualPresent = false;
+  let present = false;
   for (let i = 0; i < matchCount; i++) {
     let url = controller.getValueAt(i);
     let [, type, paramStr] = url.match(/^moz-action:([^,]+),(.*)$/);
@@ -153,10 +219,17 @@ function assertSuggestionsPresent(expectedPresent) {
     try {
       params = JSON.parse(paramStr);
     } catch (err) {}
-    let isSuggestion = type == "searchengine" && "searchSuggestion" in params;
-    actualPresent = actualPresent || isSuggestion;
+    if (type == "searchengine" && "searchSuggestion" in params) {
+      return true;
+    }
   }
-  Assert.equal(actualPresent, expectedPresent);
+  return false;
+}
+
+function promiseSuggestionsPresent() {
+  return new Promise(resolve => {
+    waitForCondition(suggestionsPresent, resolve);
+  });
 }
 
 function assertVisible(visible, win=window) {
@@ -165,10 +238,10 @@ function assertVisible(visible, win=window) {
   Assert.equal(style.visibility, visible ? "visible" : "collapse");
 }
 
-function promiseTransition() {
+function promiseTransition(win=window) {
   return new Promise(resolve => {
-    gURLBar.popup.addEventListener("transitionend", function onEnd() {
-      gURLBar.popup.removeEventListener("transitionend", onEnd, true);
+    win.gURLBar.popup.addEventListener("transitionend", function onEnd() {
+      win.gURLBar.popup.removeEventListener("transitionend", onEnd, true);
       
       
       resolve();
