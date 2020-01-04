@@ -142,21 +142,6 @@ IsCompilingAsmJS()
     JitContext* jctx = MaybeGetJitContext();
     return jctx && jctx->compartment == nullptr;
 }
-
-static inline bool
-CanUsePointerImmediates()
-{
-    if (!IsCompilingAsmJS())
-        return true;
-
-    
-    
-    JitContext* jctx = MaybeGetJitContext();
-    if (jctx && jctx->runtime->profilingScripts())
-        return true;
-
-    return false;
-}
 #endif
 
 
@@ -168,42 +153,42 @@ struct ImmPtr
     {
         
         
-        MOZ_ASSERT(CanUsePointerImmediates());
+        MOZ_ASSERT(!IsCompilingAsmJS());
     }
 
     template <class R>
     explicit ImmPtr(R (*pf)())
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(CanUsePointerImmediates());
+        MOZ_ASSERT(!IsCompilingAsmJS());
     }
 
     template <class R, class A1>
     explicit ImmPtr(R (*pf)(A1))
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(CanUsePointerImmediates());
+        MOZ_ASSERT(!IsCompilingAsmJS());
     }
 
     template <class R, class A1, class A2>
     explicit ImmPtr(R (*pf)(A1, A2))
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(CanUsePointerImmediates());
+        MOZ_ASSERT(!IsCompilingAsmJS());
     }
 
     template <class R, class A1, class A2, class A3>
     explicit ImmPtr(R (*pf)(A1, A2, A3))
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(CanUsePointerImmediates());
+        MOZ_ASSERT(!IsCompilingAsmJS());
     }
 
     template <class R, class A1, class A2, class A3, class A4>
     explicit ImmPtr(R (*pf)(A1, A2, A3, A4))
       : value(JS_FUNC_TO_DATA_PTR(void*, pf))
     {
-        MOZ_ASSERT(CanUsePointerImmediates());
+        MOZ_ASSERT(!IsCompilingAsmJS());
     }
 
 };
@@ -255,7 +240,7 @@ struct AbsoluteAddress
     explicit AbsoluteAddress(const void* addr)
       : addr(const_cast<void*>(addr))
     {
-        MOZ_ASSERT(CanUsePointerImmediates());
+        MOZ_ASSERT(!IsCompilingAsmJS());
     }
 
     AbsoluteAddress offset(ptrdiff_t delta) {
