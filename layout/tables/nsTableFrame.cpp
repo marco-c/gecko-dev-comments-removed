@@ -1253,7 +1253,6 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
     
     if (aBuilder->IsForEventDelivery()) {
       nsDisplayBackgroundImage::AppendBackgroundItemsToTop(aBuilder, aFrame,
-                                                           aFrame->GetRectRelativeToSelf(),
                                                            lists->BorderBackground());
     }
 
