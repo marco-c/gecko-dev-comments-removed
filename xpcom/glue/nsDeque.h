@@ -143,14 +143,6 @@ public:
   
 
 
-
-
-
-  void* RemoveObjectAt(int aIndex);
-
-  
-
-
   void Empty();
 
   
@@ -160,8 +152,6 @@ public:
 
   void Erase();
 
-  void* Last() const;
-
   
 
 
@@ -170,17 +160,6 @@ public:
 
 
   void ForEach(nsDequeFunctor& aFunctor) const;
-
-  
-
-
-
-
-
-
-
-
-  const void* FirstThat(nsDequeFunctor& aFunctor) const;
 
   void SetDeallocator(nsDequeFunctor* aDeallocator);
 
