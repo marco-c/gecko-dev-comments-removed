@@ -177,6 +177,11 @@ void Gecko_SetMozBinding(nsStyleDisplay* style_struct,
 void Gecko_CopyMozBindingFrom(nsStyleDisplay* des, const nsStyleDisplay* src);
 
 
+uint32_t Gecko_GetNodeFlags(RawGeckoNode* node);
+void Gecko_SetNodeFlags(RawGeckoNode* node, uint32_t flags);
+void Gecko_UnsetNodeFlags(RawGeckoNode* node, uint32_t flags);
+
+
 
 
 

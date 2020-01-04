@@ -1003,6 +1003,7 @@ public:
     SetFlags(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO | NODE_IS_DIRTY_FOR_SERVO);
   }
 
+  inline void UnsetRestyleFlagsIfGecko();
 
   
 
@@ -1726,7 +1727,17 @@ public:
   }
 protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
-  void SetInDocument() { SetBoolFlag(IsInDocument); }
+  
+
+
+
+  void SetIsDocument() { SetBoolFlag(IsInDocument); }
+  void SetIsInDocument() {
+    if (IsStyledByServo()) {
+      SetIsDirtyAndHasDirtyDescendantsForServo();
+    }
+    SetBoolFlag(IsInDocument);
+  }
   void SetNodeIsContent() { SetBoolFlag(NodeIsContent); }
   void ClearInDocument() { ClearBoolFlag(IsInDocument); }
   void SetIsElement() { SetBoolFlag(NodeIsElement); }
@@ -2058,8 +2069,8 @@ public:
 
   void SetServoNodeData(ServoNodeData* aData) {
 #ifdef MOZ_STYLO
-  MOZ_ASSERT(!mServoNodeData);
-  mServoNodeData = aData;
+    MOZ_ASSERT(!mServoNodeData);
+    mServoNodeData = aData;
 #else
     MOZ_CRASH("Setting servo node data in non-stylo build");
 #endif

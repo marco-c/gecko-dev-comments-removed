@@ -1526,7 +1526,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     ClearSubtreeRootPointer();
 
     
-    SetInDocument();
+    SetIsInDocument();
 
     
     UnsetFlags(NODE_FORCE_XBL_BINDINGS |

@@ -1980,7 +1980,7 @@ nsCSSFrameConstructor::GetParentType(nsIAtom* aFrameType)
   }
   if (aFrameType == nsGkAtoms::rubyTextContainerFrame) {
     return eTypeRubyTextContainer;
-  } 
+  }
   if (aFrameType == nsGkAtoms::rubyFrame) {
     return eTypeRuby;
   }
@@ -2430,7 +2430,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   
   
-  aDocElement->UnsetFlags(ELEMENT_ALL_RESTYLE_FLAGS);
+  aDocElement->UnsetRestyleFlagsIfGecko();
 
   
   
@@ -5513,7 +5513,7 @@ nsCSSFrameConstructor::ShouldCreateItemsForChild(nsFrameConstructorState& aState
                                                  nsContainerFrame* aParentFrame)
 {
   aContent->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
-  if (aContent->IsElement()) {
+  if (aContent->IsElement() && !aContent->IsStyledByServo()) {
     
     
     
@@ -9756,7 +9756,7 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
     &nsCSSAnonBoxes::ruby
   },
   { 
-    FCDATA_DECL(FCDATA_USE_CHILD_ITEMS | 
+    FCDATA_DECL(FCDATA_USE_CHILD_ITEMS |
                 FCDATA_IS_LINE_PARTICIPANT |
                 FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRubyBaseContainer) |
                 FCDATA_SKIP_FRAMESET,
@@ -10326,7 +10326,7 @@ nsCSSFrameConstructor::CreateNeededPseudoContainers(
         break;
       case eTypeColGroup:
         MOZ_CRASH("Colgroups should be suppresing non-col child items");
-      default: 
+      default:
         NS_ASSERTION(ourParentType == eTypeBlock, "Unrecognized parent type");
         if (IsRubyParentType(groupingParentType)) {
           wrapperType = eTypeRuby;
@@ -10543,12 +10543,15 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
                  "ProcessChildren() codepath for this frame");
 #endif
     
+    MOZ_ASSERT_IF(content->IsStyledByServo(), !!content->GetServoNodeData());
+    
+    MOZ_ASSERT_IF(!content->IsStyledByServo(),
+                  !content->IsElement() ||
+                  !(content->GetFlags() & ELEMENT_ALL_RESTYLE_FLAGS));
+    
     MOZ_ASSERT(!(content->GetFlags() &
                  (NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME)),
                "Should not be marked as needing frames");
-    MOZ_ASSERT(!content->IsElement() ||
-               !(content->GetFlags() & ELEMENT_ALL_RESTYLE_FLAGS),
-               "Should have no pending restyle flags");
     MOZ_ASSERT(!content->GetPrimaryFrame(),
                "Should have no existing frame");
     MOZ_ASSERT(!content->IsNodeOfType(nsINode::eCOMMENT) &&
@@ -10696,9 +10699,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
 
       
       
-      if (child->IsElement()) {
-        child->UnsetFlags(ELEMENT_ALL_RESTYLE_FLAGS);
-      }
+      child->UnsetRestyleFlagsIfGecko();
       if (addChildItems) {
         AddFrameConstructionItems(aState, child, iter.XBLInvolved(), insertion,
                                   itemsToConstruct);
@@ -12008,13 +12009,12 @@ nsCSSFrameConstructor::BuildInlineChildItems(nsFrameConstructorState& aState,
           content->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
         continue;
       }
-      if (content->IsElement()) {
-        
-        
-        
-        
-        content->UnsetFlags(ELEMENT_ALL_RESTYLE_FLAGS);
-      }
+
+      
+      
+      
+      
+      content->UnsetRestyleFlagsIfGecko();
 
       RefPtr<nsStyleContext> childContext =
         ResolveStyleContext(parentStyleContext, content, &aState);
