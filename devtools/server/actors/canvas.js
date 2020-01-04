@@ -11,98 +11,26 @@ const {CallWatcherActor} = require("devtools/server/actors/call-watcher");
 const {CallWatcherFront} = require("devtools/shared/fronts/call-watcher");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const {WebGLPrimitiveCounter} = require("devtools/server/primitive");
+const {
+  frameSnapshotSpec,
+  canvasSpec,
+  CANVAS_CONTEXTS,
+  ANIMATION_GENERATORS,
+  LOOP_GENERATORS,
+  DRAW_CALLS,
+  INTERESTING_CALLS,
+} = require("devtools/shared/specs/canvas");
+const {CanvasFront} = require("devtools/shared/fronts/canvas");
 
 const {on, once, off, emit} = events;
 const {method, custom, Arg, Option, RetVal} = protocol;
 
-const CANVAS_CONTEXTS = [
-  "CanvasRenderingContext2D",
-  "WebGLRenderingContext"
-];
-
-const ANIMATION_GENERATORS = [
-  "requestAnimationFrame"
-];
-
-const LOOP_GENERATORS = [
-  "setTimeout"
-];
-
-const DRAW_CALLS = [
-  
-  "fill",
-  "stroke",
-  "clearRect",
-  "fillRect",
-  "strokeRect",
-  "fillText",
-  "strokeText",
-  "drawImage",
-
-  
-  "clear",
-  "drawArrays",
-  "drawElements",
-  "finish",
-  "flush"
-];
-
-const INTERESTING_CALLS = [
-  
-  "save",
-  "restore",
-
-  
-  "useProgram"
-];
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-protocol.types.addType("array-buffer-view", {
-  write: (v) => "[" + Array.join(v, ",") + "]",
-  read: (v) => JSON.parse(v)
-});
-
-
-
-
-protocol.types.addDictType("snapshot-image", {
-  index: "number",
-  width: "number",
-  height: "number",
-  scaling: "number",
-  flipped: "boolean",
-  pixels: "array-buffer-view"
-});
-
-
-
-
-protocol.types.addDictType("snapshot-overview", {
-  calls: "array:function-call",
-  thumbnails: "array:snapshot-image",
-  screenshot: "snapshot-image"
-});
-
-
-
-
-
-
-var FrameSnapshotActor = protocol.ActorClass({
-  typeName: "frame-snapshot",
-
+var FrameSnapshotActor = protocol.ActorClassWithSpec(frameSnapshotSpec, {
   
 
 
@@ -126,7 +54,7 @@ var FrameSnapshotActor = protocol.ActorClass({
   
 
 
-  getOverview: method(function () {
+  getOverview: function () {
     return {
       calls: this._functionCalls,
       thumbnails: this._functionCalls.map(e => e._thumbnail).filter(e => !!e),
@@ -138,15 +66,13 @@ var FrameSnapshotActor = protocol.ActorClass({
         lines: this._primitive.lines
       }
     };
-  }, {
-    response: { overview: RetVal("snapshot-overview") }
-  }),
+  },
 
   
 
 
 
-  generateScreenshotFor: method(function (functionCall) {
+  generateScreenshotFor: function (functionCall) {
     let caller = functionCall.details.caller;
     let global = functionCall.details.global;
 
@@ -186,54 +112,7 @@ var FrameSnapshotActor = protocol.ActorClass({
     screenshot.scaling = replayContextScaling;
     screenshot.index = lastDrawCallIndex;
     return screenshot;
-  }, {
-    request: { call: Arg(0, "function-call") },
-    response: { screenshot: RetVal("snapshot-image") }
-  })
-});
-
-
-
-
-var FrameSnapshotFront = protocol.FrontClass(FrameSnapshotActor, {
-  initialize: function (client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-    this._animationFrameEndScreenshot = null;
-    this._cachedScreenshots = new WeakMap();
-  },
-
-  
-
-
-
-  getOverview: custom(function () {
-    return this._getOverview().then(data => {
-      this._animationFrameEndScreenshot = data.screenshot;
-      return data;
-    });
-  }, {
-    impl: "_getOverview"
-  }),
-
-  
-
-
-
-  generateScreenshotFor: custom(function (functionCall) {
-    if (CanvasFront.ANIMATION_GENERATORS.has(functionCall.name) ||
-        CanvasFront.LOOP_GENERATORS.has(functionCall.name)) {
-      return promise.resolve(this._animationFrameEndScreenshot);
-    }
-    let cachedScreenshot = this._cachedScreenshots.get(functionCall);
-    if (cachedScreenshot) {
-      return cachedScreenshot;
-    }
-    let screenshot = this._generateScreenshotFor(functionCall);
-    this._cachedScreenshots.set(functionCall, screenshot);
-    return screenshot;
-  }, {
-    impl: "_generateScreenshotFor"
-  })
+  }
 });
 
 
@@ -241,12 +120,11 @@ var FrameSnapshotFront = protocol.FrontClass(FrameSnapshotActor, {
 
 
 
-var CanvasActor = exports.CanvasActor = protocol.ActorClass({
+var CanvasActor = exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
   
   
   _animationContainsDrawCall: false,
 
-  typeName: "canvas",
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
@@ -262,7 +140,7 @@ var CanvasActor = exports.CanvasActor = protocol.ActorClass({
   
 
 
-  setup: method(function ({ reload }) {
+  setup: function ({ reload }) {
     if (this._initialized) {
       return;
     }
@@ -276,15 +154,12 @@ var CanvasActor = exports.CanvasActor = protocol.ActorClass({
       performReload: reload,
       storeCalls: true
     });
-  }, {
-    request: { reload: Option(0, "boolean") },
-    oneway: true
-  }),
+  },
 
   
 
 
-  finalize: method(function () {
+  finalize: function () {
     if (!this._initialized) {
       return;
     }
@@ -292,35 +167,29 @@ var CanvasActor = exports.CanvasActor = protocol.ActorClass({
 
     this._callWatcher.finalize();
     this._callWatcher = null;
-  }, {
-    oneway: true
-  }),
+  },
 
   
 
 
-  isInitialized: method(function () {
+  isInitialized: function () {
     return !!this._initialized;
-  }, {
-    response: { initialized: RetVal("boolean") }
-  }),
+  },
 
   
 
 
 
-  isRecording: method(function () {
+  isRecording: function () {
     return !!this._callWatcher.isRecording();
-  }, {
-    response: { recording: RetVal("boolean") }
-  }),
+  },
 
   
 
 
 
 
-  recordAnimationFrame: method(function () {
+  recordAnimationFrame: function () {
     if (this._callWatcher.isRecording()) {
       return this._currentAnimationFrameSnapshot.promise;
     }
@@ -333,14 +202,12 @@ var CanvasActor = exports.CanvasActor = protocol.ActorClass({
 
     let deferred = this._currentAnimationFrameSnapshot = promise.defer();
     return deferred.promise;
-  }, {
-    response: { snapshot: RetVal("nullable:frame-snapshot") }
-  }),
+  },
 
   
 
 
-  stopRecordingAnimationFrame: method(function () {
+  stopRecordingAnimationFrame: function () {
     if (!this._callWatcher.isRecording()) {
       return;
     }
@@ -349,9 +216,7 @@ var CanvasActor = exports.CanvasActor = protocol.ActorClass({
     this._callWatcher.eraseRecording();
     this._currentAnimationFrameSnapshot.resolve(null);
     this._currentAnimationFrameSnapshot = null;
-  }, {
-    oneway: true
-  }),
+  },
 
   
 
@@ -840,33 +705,6 @@ var ContextUtils = {
 
     return { oldViewport, newViewport };
   }
-};
-
-
-
-
-var CanvasFront = exports.CanvasFront = protocol.FrontClass(CanvasActor, {
-  initialize: function (client, { canvasActor }) {
-    protocol.Front.prototype.initialize.call(this, client, { actor: canvasActor });
-    this.manage(this);
-  }
-});
-
-
-
-
-CanvasFront.CANVAS_CONTEXTS = new Set(CANVAS_CONTEXTS);
-CanvasFront.ANIMATION_GENERATORS = new Set(ANIMATION_GENERATORS);
-CanvasFront.LOOP_GENERATORS = new Set(LOOP_GENERATORS);
-CanvasFront.DRAW_CALLS = new Set(DRAW_CALLS);
-CanvasFront.INTERESTING_CALLS = new Set(INTERESTING_CALLS);
-CanvasFront.THUMBNAIL_SIZE = 50; 
-CanvasFront.WEBGL_SCREENSHOT_MAX_HEIGHT = 256; 
-CanvasFront.INVALID_SNAPSHOT_IMAGE = {
-  index: -1,
-  width: 0,
-  height: 0,
-  pixels: []
 };
 
 
