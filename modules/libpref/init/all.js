@@ -5131,3 +5131,6 @@ pref("dom.mozKillSwitch.enabled", false);
 pref("toolkit.pageThumbs.screenSizeDivisor", 7);
 pref("toolkit.pageThumbs.minWidth", 0);
 pref("toolkit.pageThumbs.minHeight", 0);
+
+
+pref("dom.input.fallbackUploadDir", "");
