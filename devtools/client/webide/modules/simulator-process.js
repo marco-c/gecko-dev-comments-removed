@@ -154,6 +154,13 @@ SimulatorProcess.prototype = {
     
     args.push("-no-remote");
 
+    
+    
+    
+    if (this.b2gBinary.leafName.includes("firefox")) {
+      args.push("-chrome", "chrome://b2g/content/shell.html");
+    }
+
     return args;
   },
 };
@@ -212,6 +219,19 @@ Object.defineProperty(ASPp, "b2gBinary", {
         mac64: "B2G.app/Contents/MacOS/b2g-bin",
         linux32: "b2g-bin",
         linux64: "b2g-bin",
+      };
+      binaries[OS].split("/").forEach(node => file.append(node));
+    }
+    
+    
+    if (!file.exists()) {
+      file = this.addon.getResourceURI().QueryInterface(Ci.nsIFileURL).file;
+      file.append("firefox");
+      let binaries = {
+        win32: "firefox-bin.exe",
+        mac64: "B2G.app/Contents/MacOS/firefox-bin",
+        linux32: "firefox-bin",
+        linux64: "firefox-bin",
       };
       binaries[OS].split("/").forEach(node => file.append(node));
     }
