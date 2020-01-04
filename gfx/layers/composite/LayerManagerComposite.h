@@ -285,8 +285,6 @@ public:
   
   void SetWindowOverlayChanged() { mWindowOverlayChanged = true; }
 
-  void ForcePresent() { mCompositor->ForcePresent(); }
-
 private:
   
   nsIntRegion mClippingRegion;

@@ -450,8 +450,6 @@ public:
 
   virtual bool Ready() { return true; }
 
-  virtual void ForcePresent() { }
-
   
   
   virtual nsIWidget* GetWidget() const { return nullptr; }
