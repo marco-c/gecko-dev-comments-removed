@@ -9,6 +9,7 @@
 const Services = require("Services");
 const { Cc, Ci, Cu, components, ChromeWorker } = require("chrome");
 const { ActorPool, OriginalLocation, GeneratedLocation } = require("devtools/server/actors/common");
+const { BreakpointActor } = require("devtools/server/actors/breakpoint");
 const { FrameActor } = require("devtools/server/actors/frame");
 const { ObjectActor, createValueGrip, longStringGrip } = require("devtools/server/actors/object");
 const { DebuggerServer } = require("devtools/server/main");
@@ -1531,7 +1532,7 @@ ThreadActor.prototype = {
                 .getService(Ci.nsIEventListenerService);
       els.removeListenerForAllEvents(this.global, this._allEventsListener, true);
       for (let [,bp] of this._hiddenBreakpoints) {
-        bp.onDelete();
+        bp.delete();
       }
       this._hiddenBreakpoints.clear();
     }
@@ -2795,7 +2796,7 @@ SourceActor.prototype = {
         const existingActor = this.breakpointActorMap.getActor(actualLocation);
         this.breakpointActorMap.deleteActor(originalLocation);
         if (existingActor) {
-          actor.onDelete();
+          actor.delete();
           actor = existingActor;
         } else {
           actor.originalLocation = actualLocation;
@@ -2972,172 +2973,6 @@ update(PauseScopedObjectActor.prototype, {
 update(PauseScopedObjectActor.prototype.requestTypes, {
   "threadGrip": PauseScopedObjectActor.prototype.onThreadGrip,
 });
-
-
-
-
-
-
-
-
-
-
-
-function BreakpointActor(aThreadActor, aOriginalLocation)
-{
-  
-  
-  this.scripts = new Set();
-
-  this.threadActor = aThreadActor;
-  this.originalLocation = aOriginalLocation;
-  this.condition = null;
-  this.isPending = true;
-}
-
-BreakpointActor.prototype = {
-  actorPrefix: "breakpoint",
-  condition: null,
-
-  disconnect: function () {
-    this.removeScripts();
-  },
-
-  hasScript: function (aScript) {
-    return this.scripts.has(aScript);
-  },
-
-  
-
-
-
-
-
-
-
-
-  addScript: function (aScript) {
-    this.scripts.add(aScript);
-    this.isPending = false;
-  },
-
-  
-
-
-  removeScripts: function () {
-    for (let script of this.scripts) {
-      script.clearBreakpoint(this);
-    }
-    this.scripts.clear();
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  checkCondition: function(aFrame) {
-    let completion = aFrame.eval(this.condition);
-    if (completion) {
-      if (completion.throw) {
-        
-        let message = "Unknown exception";
-        try {
-          if (completion.throw.getOwnPropertyDescriptor) {
-            message = completion.throw.getOwnPropertyDescriptor("message").value;
-          } else if (completion.toString) {
-            message = completion.toString();
-          }
-        } catch (ex) {}
-        return {
-          result: true,
-          message: message
-        };
-      } else if (completion.yield) {
-        assert(false, "Shouldn't ever get yield completions from an eval");
-      } else {
-        return { result: completion.return ? true : false };
-      }
-    } else {
-      
-      return { result: undefined };
-    }
-  },
-
-  
-
-
-
-
-
-  hit: function (aFrame) {
-    
-    
-    let generatedLocation = this.threadActor.sources.getFrameLocation(aFrame);
-    let { originalSourceActor } = this.threadActor.unsafeSynchronize(
-      this.threadActor.sources.getOriginalLocation(generatedLocation));
-    let url = originalSourceActor.url;
-
-    if (this.threadActor.sources.isBlackBoxed(url)
-        || aFrame.onStep) {
-      return undefined;
-    }
-
-    let reason = {};
-
-    if (this.threadActor._hiddenBreakpoints.has(this.actorID)) {
-      reason.type = "pauseOnDOMEvents";
-    } else if (!this.condition) {
-      reason.type = "breakpoint";
-      
-      reason.actors = [ this.actorID ];
-    } else {
-      let { result, message } = this.checkCondition(aFrame)
-
-      if (result) {
-        if (!message) {
-          reason.type = "breakpoint";
-        } else {
-          reason.type = "breakpointConditionThrown";
-          reason.message = message;
-        }
-        reason.actors = [ this.actorID ];
-      } else {
-        return undefined;
-      }
-    }
-    return this.threadActor._pauseAndRespond(aFrame, reason);
-  },
-
-  
-
-
-
-
-
-  onDelete: function (aRequest) {
-    
-    if (this.originalLocation) {
-      this.threadActor.breakpointActorMap.deleteActor(this.originalLocation);
-    }
-    this.threadActor.threadLifetimePool.removeActor(this);
-    
-    this.removeScripts();
-    return { from: this.actorID };
-  }
-};
-
-BreakpointActor.prototype.requestTypes = {
-  "delete": BreakpointActor.prototype.onDelete
-};
 
 
 
