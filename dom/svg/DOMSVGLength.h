@@ -223,6 +223,13 @@ private:
   bool IndexIsValid();
 #endif
 
+  
+
+
+
+
+  void CleanupWeakRefs();
+
   RefPtr<DOMSVGLengthList> mList;
 
   

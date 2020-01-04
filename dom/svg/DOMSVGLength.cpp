@@ -140,19 +140,30 @@ DOMSVGLength::DOMSVGLength(nsSVGLength2* aVal, nsSVGElement* aSVGElement,
 {
 }
 
-DOMSVGLength::~DOMSVGLength()
+void
+DOMSVGLength::CleanupWeakRefs()
 {
   
   
   
   if (mList) {
+    MOZ_ASSERT(mList->mItems[mListIndex] == this,
+               "Clearing out the wrong list index...?");
     mList->mItems[mListIndex] = nullptr;
   }
 
+  
+  
   if (mVal) {
-    auto& table = mIsAnimValItem ? sAnimSVGLengthTearOffTable : sBaseSVGLengthTearOffTable;
+    auto& table = mIsAnimValItem ?
+      sAnimSVGLengthTearOffTable : sBaseSVGLengthTearOffTable;
     table.RemoveTearoff(mVal);
   }
+}
+
+DOMSVGLength::~DOMSVGLength()
+{
+  CleanupWeakRefs();
 }
 
 already_AddRefed<DOMSVGLength>
