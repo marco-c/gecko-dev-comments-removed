@@ -11566,7 +11566,12 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   
   if (!equalURIs) {
     document->SetDocumentURI(newURI);
-    SetCurrentURI(newURI, nullptr, true, LOCATION_CHANGE_SAME_DOCUMENT);
+    
+    
+    SetCurrentURI(newURI, nullptr, false, LOCATION_CHANGE_SAME_DOCUMENT);
+    if (mLoadType != LOAD_ERROR_PAGE) {
+      FireDummyOnLocationChange();
+    }
 
     AddURIVisit(newURI, oldURI, oldURI, 0);
 
