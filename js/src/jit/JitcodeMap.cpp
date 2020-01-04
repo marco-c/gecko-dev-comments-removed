@@ -446,19 +446,12 @@ JitcodeGlobalTable::lookupForSamplerInfallible(void* ptr, JSRuntime* rt, uint32_
         rejoinEntry.setGeneration(sampleBufferGen);
     }
 
-#ifdef DEBUG
     
     
     
     
-    
-    if (rt->isHeapBusy() &&
-        rt->gc.stats.currentPhase() >= gcstats::PHASE_FINALIZE_START &&
-        rt->gc.stats.currentPhase() <= gcstats::PHASE_FINALIZE_END)
-    {
-        MOZ_ASSERT(entry->isMarkedFromAnyThread(rt));
-    }
-#endif
+    MOZ_ASSERT_IF(rt->isHeapBusy() && entry->jitcode()->zoneFromAnyThread()->isGCSweeping(),
+                  entry->isMarkedFromAnyThread(rt));
 
     return *entry;
 }
