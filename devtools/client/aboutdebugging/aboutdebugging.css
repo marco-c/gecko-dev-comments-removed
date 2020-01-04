@@ -45,13 +45,6 @@ button {
 
 
 
-label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-
-
 .targets {
   margin-bottom: 25px;
 }
@@ -87,4 +80,9 @@ label {
 
 .addons-options {
   flex: 1;
+}
+
+.addons-debugging-label {
+  display: inline-block;
+  margin: 0 5px 5px 0;
 }
