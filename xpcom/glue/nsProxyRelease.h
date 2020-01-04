@@ -170,6 +170,13 @@ public:
     MOZ_ASSERT(!mStrict || NS_IsMainThread());
     NS_IF_ADDREF(mRawPtr = aPtr);
   }
+  explicit nsMainThreadPtrHolder(already_AddRefed<T> aPtr, bool aString = true)
+    : mRawPtr(aPtr.take())
+    , mStrict(aString)
+  {
+    
+    
+  }
 
 private:
   
@@ -226,6 +233,11 @@ public:
   nsMainThreadPtrHandle() : mPtr(nullptr) {}
   MOZ_IMPLICIT nsMainThreadPtrHandle(decltype(nullptr)) : mPtr(nullptr) {}
   explicit nsMainThreadPtrHandle(nsMainThreadPtrHolder<T>* aHolder)
+    : mPtr(aHolder)
+  {
+  }
+  explicit nsMainThreadPtrHandle(
+      already_AddRefed<nsMainThreadPtrHolder<T>> aHolder)
     : mPtr(aHolder)
   {
   }
