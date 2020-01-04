@@ -663,6 +663,7 @@ namespace js {
 MOZ_ALWAYS_INLINE bool
 CheckForInterrupt(JSContext* cx)
 {
+    MOZ_ASSERT(!cx->isExceptionPending());
     
     
     JSRuntime* rt = cx->runtime();
