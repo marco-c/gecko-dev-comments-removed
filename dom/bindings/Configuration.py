@@ -150,7 +150,15 @@ class Configuration:
             if t.isUnion():
                 filenamesForUnion = self.filenamesPerUnion[t.name]
                 if t.filename() not in filenamesForUnion:
-                    if len(filenamesForUnion) == 0:
+                    
+                    
+                    
+                    
+                    
+                    
+                    if t.filename() == "<unknown>":
+                        uniqueFilenameForUnion = None
+                    elif len(filenamesForUnion) == 0:
                         
                         
                         uniqueFilenameForUnion = t.filename()
