@@ -81,7 +81,7 @@ def main():
     else:
         directory = tempfile.mkdtemp()
         print("Cloning WebGL repository into temporary directory {}".format(directory))
-        subprocess.check_call(["git", "clone", KHRONOS_REPO_URL, directory, "--depth", "1"])
+        subprocess.check_call(["git", "clone", KHRONOS_REPO_URL, directory])
 
     suite_dir = os.path.join(directory, "conformance-suites", version)
     print("Test suite directory: {}".format(suite_dir))
@@ -109,9 +109,6 @@ def main():
 
     
     for dirpath, dirnames, filenames in os.walk(destination):
-        if '/resources' in dirpath:
-          continue 
-
         for f in filenames:
             if not f.endswith('.html'):
                 continue
