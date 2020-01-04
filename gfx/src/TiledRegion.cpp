@@ -14,7 +14,7 @@ namespace mozilla {
 namespace gfx {
 
 static const int32_t kTileSize = 256;
-static const size_t kMaxTiles = 1000;
+static const size_t kMaxTiles = 100;
 
 
 
@@ -132,10 +132,15 @@ public:
     if (mEnd.y == mStart.y) {
       return (mEnd.x - mStart.x) / kTileSize;
     }
-    size_t numberOfFullRows = (mEnd.y - mStart.y) / kTileSize - 1;
-    return ((mTileBounds.x2 - mStart.x) +
-            (mTileBounds.x2 - mTileBounds.x1) * numberOfFullRows +
-            (mEnd.x - mTileBounds.x1)) / kTileSize;
+    int64_t numberOfFullRows = (((int64_t)mEnd.y - (int64_t)mStart.y) / kTileSize) - 1;
+    int64_t tilesInFirstRow = ((int64_t)mTileBounds.x2 - (int64_t)mStart.x) / kTileSize;
+    int64_t tilesInLastRow = ((int64_t)mEnd.x - (int64_t)mTileBounds.x1) / kTileSize;
+    int64_t tilesInFullRow = ((int64_t)mTileBounds.x2 - (int64_t)mTileBounds.x1) / kTileSize;
+    int64_t total = tilesInFirstRow + (tilesInFullRow * numberOfFullRows) + tilesInLastRow;
+    MOZ_ASSERT(total > 0);
+    
+    
+    return ((uint64_t)total > (uint64_t)SIZE_MAX) ? SIZE_MAX : (size_t)total;
   }
 
   

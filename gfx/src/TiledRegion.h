@@ -110,7 +110,12 @@ public:
 
     for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
       RectT r = iter.Get();
-      MOZ_ASSERT(!r.IsEmpty());
+      if (r.IsEmpty()) {
+        
+        
+        
+        continue;
+      }
       if (!mImpl.AddRect(RectToBox(r))) {
         FallBackToBounds();
         return;
@@ -144,6 +149,9 @@ public:
 
   bool Contains(const RectT& aRect) const
   {
+    if (aRect.IsEmpty()) {
+      return true;
+    }
     if (!mBounds.Contains(aRect)) {
       return false;
     }
