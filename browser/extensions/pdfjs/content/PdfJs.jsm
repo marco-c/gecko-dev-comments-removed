@@ -13,6 +13,11 @@
 
 
 
+
+
+
+'use strict';
+
 var EXPORTED_SYMBOLS = ['PdfJs'];
 
 const Cc = Components.classes;
