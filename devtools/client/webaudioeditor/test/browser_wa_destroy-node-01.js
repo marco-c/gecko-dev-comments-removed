@@ -38,6 +38,9 @@ add_task(function* () {
   
   yield clickGraphNode(panelWin, actorIDs[5]);
 
+  
+  
+  yield DevToolsUtils.waitForTick();
   forceCC();
 
   

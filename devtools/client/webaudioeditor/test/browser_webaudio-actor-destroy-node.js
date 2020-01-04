@@ -17,6 +17,10 @@ add_task(function* () {
   ]);
 
   
+  
+  yield DevToolsUtils.waitForTick();
+
+  
   forceCC();
 
   let destroyed = yield waitUntilDestroyed;
