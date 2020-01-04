@@ -10,6 +10,7 @@
 #include <stdint.h>                     
 #include "gfxTypes.h"
 #include "mozilla/Attributes.h"         
+#include "mozilla/UniquePtr.h"
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
@@ -79,9 +80,10 @@ class CompositableForwarder : public TextureForwarder
 public:
 
   CompositableForwarder()
-    : mActiveResourceTracker(1000, "CompositableForwarder")
-    , mSerial(++sSerialCounter)
-  {}
+    : mSerial(++sSerialCounter)
+  {
+    mActiveResourceTracker = MakeUnique<ActiveResourceTracker>(1000, "CompositableForwarder");
+  }
 
   
 
@@ -207,7 +209,7 @@ public:
     return mTextureFactoryIdentifier;
   }
 
-  ActiveResourceTracker& GetActiveResourceTracker() { return mActiveResourceTracker; }
+  ActiveResourceTracker& GetActiveResourceTracker() { return *mActiveResourceTracker.get(); }
 
 protected:
   TextureFactoryIdentifier mTextureFactoryIdentifier;
@@ -216,7 +218,7 @@ protected:
   nsTArray<RefPtr<CompositableClient>> mCompositableClientsToRemove;
   RefPtr<SyncObject> mSyncObject;
 
-  ActiveResourceTracker mActiveResourceTracker;
+  UniquePtr<ActiveResourceTracker> mActiveResourceTracker;
 
   const int32_t mSerial;
   static mozilla::Atomic<int32_t> sSerialCounter;
