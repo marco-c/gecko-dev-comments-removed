@@ -41,8 +41,28 @@ const AutoMigrate = {
     return BOOKMARKS | HISTORY | PASSWORDS;
   },
 
+  _checkIfEnabled() {
+    let pref = Preferences.get(kAutoMigrateEnabledPref, false);
+    
+    if (Services.prefs.prefHasUserValue(kAutoMigrateEnabledPref)) {
+      return pref;
+    }
+    
+    
+    try {
+      let distributionFile = Services.dirsvc.get("XREAppDist", Ci.nsIFile);
+      distributionFile.append("distribution.ini");
+      let parser = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].
+                 getService(Ci.nsIINIParserFactory).
+                 createINIParser(distributionFile);
+      return JSON.parse(parser.getString("Preferences", kAutoMigrateEnabledPref));
+    } catch (ex) {  }
+
+    return pref;
+  },
+
   init() {
-    this.enabled = Preferences.get(kAutoMigrateEnabledPref, false);
+    this.enabled = this._checkIfEnabled();
     if (this.enabled) {
       this.maybeInitUndoObserver();
     }
