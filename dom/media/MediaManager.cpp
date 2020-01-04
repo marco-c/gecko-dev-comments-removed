@@ -79,8 +79,6 @@
 #include "mozilla/WindowsVersion.h"
 #endif
 
-#include <map>
-
 
 
 #ifdef GetCurrentTime
@@ -1157,127 +1155,6 @@ GetSources(MediaEngine *engine, dom::MediaSourceEnum aSrcType,
   }
 }
 
-template<class DeviceType>
-static bool
-AreUnfitSettings(const MediaTrackConstraints &aConstraints,
-                 nsTArray<nsRefPtr<DeviceType>>& aSources)
-{
-  nsTArray<const MediaTrackConstraintSet*> aggregateConstraints;
-  aggregateConstraints.AppendElement(&aConstraints);
-
-  for (auto& source : aSources) {
-    if (source->GetBestFitnessDistance(aggregateConstraints) != UINT32_MAX) {
-      return false;
-    }
-  }
-  return true;
-}
-
-
-
-template<class DeviceType>
-static const char*
-SelectSettings(const MediaTrackConstraints &aConstraints,
-               nsTArray<nsRefPtr<DeviceType>>& aSources)
-{
-  auto& c = aConstraints;
-
-  
-
-  
-  
-  
-  nsTArray<nsRefPtr<DeviceType>> unsatisfactory;
-  nsTArray<const MediaTrackConstraintSet*> aggregateConstraints;
-  aggregateConstraints.AppendElement(&c);
-
-  std::multimap<uint32_t, nsRefPtr<DeviceType>> ordered;
-
-  for (uint32_t i = 0; i < aSources.Length();) {
-    uint32_t distance = aSources[i]->GetBestFitnessDistance(aggregateConstraints);
-    if (distance == UINT32_MAX) {
-      unsatisfactory.AppendElement(aSources[i]);
-      aSources.RemoveElementAt(i);
-    } else {
-      ordered.insert(std::pair<uint32_t, nsRefPtr<DeviceType>>(distance,
-                                                               aSources[i]));
-      ++i;
-    }
-  }
-  if (!aSources.Length()) {
-    
-    
-    
-
-    if (c.mDeviceId.IsConstrainDOMStringParameters()) {
-      MediaTrackConstraints fresh;
-      fresh.mDeviceId = c.mDeviceId;
-      if (AreUnfitSettings(fresh, unsatisfactory)) {
-        return "deviceId";
-      }
-    }
-    if (c.mWidth.IsConstrainLongRange()) {
-      MediaTrackConstraints fresh;
-      fresh.mWidth = c.mWidth;
-      if (AreUnfitSettings(fresh, unsatisfactory)) {
-        return "width";
-      }
-    }
-    if (c.mHeight.IsConstrainLongRange()) {
-      MediaTrackConstraints fresh;
-      fresh.mHeight = c.mHeight;
-      if (AreUnfitSettings(fresh, unsatisfactory)) {
-        return "height";
-      }
-    }
-    if (c.mFrameRate.IsConstrainDoubleRange()) {
-      MediaTrackConstraints fresh;
-      fresh.mFrameRate = c.mFrameRate;
-      if (AreUnfitSettings(fresh, unsatisfactory)) {
-        return "frameRate";
-      }
-    }
-    if (c.mFacingMode.IsConstrainDOMStringParameters()) {
-      MediaTrackConstraints fresh;
-      fresh.mFacingMode = c.mFacingMode;
-      if (AreUnfitSettings(fresh, unsatisfactory)) {
-        return "facingMode";
-      }
-    }
-    return "";
-  }
-
-  
-  for (auto& ordinal : ordered) {
-    aSources.RemoveElement(ordinal.second);
-    aSources.AppendElement(ordinal.second);
-  }
-
-  
-
-  if (c.mAdvanced.WasPassed()) {
-    auto &array = c.mAdvanced.Value();
-
-    for (int i = 0; i < int(array.Length()); i++) {
-      aggregateConstraints.AppendElement(&array[i]);
-      nsTArray<nsRefPtr<DeviceType>> rejects;
-      for (uint32_t j = 0; j < aSources.Length();) {
-        if (aSources[j]->GetBestFitnessDistance(aggregateConstraints) == UINT32_MAX) {
-          rejects.AppendElement(aSources[j]);
-          aSources.RemoveElementAt(j);
-        } else {
-          ++j;
-        }
-      }
-      if (!aSources.Length()) {
-        aSources.AppendElements(Move(rejects));
-        aggregateConstraints.RemoveElementAt(aggregateConstraints.Length() - 1);
-      }
-    }
-  }
-  return nullptr;
-}
-
 static const char*
 SelectSettings(MediaStreamConstraints &aConstraints,
                nsTArray<nsRefPtr<MediaDevice>>& aSources)
@@ -1304,13 +1181,15 @@ SelectSettings(MediaStreamConstraints &aConstraints,
   const char* badConstraint = nullptr;
 
   if (IsOn(aConstraints.mVideo)) {
-    badConstraint = SelectSettings(GetInvariant(aConstraints.mVideo), videos);
+    badConstraint = MediaConstraintsHelper::SelectSettings(
+        GetInvariant(aConstraints.mVideo), videos);
     for (auto& video : videos) {
       aSources.AppendElement(video);
     }
   }
   if (audios.Length() && IsOn(aConstraints.mAudio)) {
-    badConstraint = SelectSettings(GetInvariant(aConstraints.mAudio), audios);
+    badConstraint = MediaConstraintsHelper::SelectSettings(
+        GetInvariant(aConstraints.mAudio), audios);
     for (auto& audio : audios) {
       aSources.AppendElement(audio);
     }
