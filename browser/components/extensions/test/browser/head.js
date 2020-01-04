@@ -83,6 +83,13 @@ function promisePopupHidden(popup) {
   });
 }
 
+function getPanelForNode(node) {
+  while (node.localName != "panel") {
+    node = node.parentNode;
+  }
+  return node;
+}
+
 function getBrowserActionWidget(extension) {
   return CustomizableUI.getWidget(makeWidgetId(extension.id) + "-browser-action");
 }
