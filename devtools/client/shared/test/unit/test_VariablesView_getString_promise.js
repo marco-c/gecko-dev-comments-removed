@@ -3,7 +3,7 @@
 
 
 
-const Cu = Components.utils;
+var Cu = Components.utils;
 const { VariablesView } = Cu.import("resource:///modules/devtools/client/shared/widgets/VariablesView.jsm", {});
 
 const PENDING = {

@@ -8,7 +8,7 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 this.EXPORTED_SYMBOLS = [
   "ServerBSO",

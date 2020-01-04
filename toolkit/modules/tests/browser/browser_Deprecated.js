@@ -2,8 +2,8 @@
 
 
 
-const Ci = Components.interfaces;
-const Cu = Components.utils;
+var Ci = Components.interfaces;
+var Cu = Components.utils;
 const PREF_DEPRECATION_WARNINGS = "devtools.errorconsole.deprecation_warnings";
 
 Cu.import("resource://gre/modules/Services.jsm", this);

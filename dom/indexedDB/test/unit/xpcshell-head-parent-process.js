@@ -3,7 +3,7 @@
 
 
 
-const { 'classes': Cc, 'interfaces': Ci, 'utils': Cu } = Components;
+var { 'classes': Cc, 'interfaces': Ci, 'utils': Cu } = Components;
 
 if (!("self" in this)) {
   this.self = this;

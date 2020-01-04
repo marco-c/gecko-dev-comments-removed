@@ -6,7 +6,7 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -85,19 +85,6 @@ SocialErrorListener = {
     
     
     if (failure && aStatus != Components.results.NS_BINDING_ABORTED) {
-      
-      
-      
-      
-      if (docShell.hasTrackingContentBlocked) {
-        let frame = docShell.chromeEventHandler;
-        let src = frame.getAttribute("src");
-        if (aRequest && aRequest.name != src) {
-          Cu.reportError("SocialErrorListener ignoring blocked content error for " + aRequest.name);
-          return;
-        }
-      }
-
       aRequest.cancel(Components.results.NS_BINDING_ABORTED);
       this.setErrorPage();
     }

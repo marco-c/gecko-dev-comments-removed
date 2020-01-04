@@ -1,8 +1,8 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
 
 const isWindows = ("@mozilla.org/windows-registry-key;1" in Components.classes);
 const refMARPrefix = (isWindows ? "win_" : "");

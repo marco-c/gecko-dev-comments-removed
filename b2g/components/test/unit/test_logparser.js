@@ -1,6 +1,6 @@
 
 
-const {utils: Cu, classes: Cc, interfaces: Ci} = Components;
+var {utils: Cu, classes: Cc, interfaces: Ci} = Components;
 
 function debug(msg) {
   var timestamp = Date.now();

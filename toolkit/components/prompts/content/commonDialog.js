@@ -2,10 +2,10 @@
 
 
 
-const Ci = Components.interfaces;
-const Cr = Components.results;
-const Cc = Components.classes;
-const Cu = Components.utils;
+var Ci = Components.interfaces;
+var Cr = Components.results;
+var Cc = Components.classes;
+var Cu = Components.utils;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/CommonDialog.jsm");

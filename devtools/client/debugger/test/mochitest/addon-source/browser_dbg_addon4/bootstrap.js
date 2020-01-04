@@ -1,7 +1,7 @@
 
 
 
-const { interfaces: Ci, classes: Cc, utils: Cu } = Components;
+var { interfaces: Ci, classes: Cc, utils: Cu } = Components;
 
 function notify() {
   

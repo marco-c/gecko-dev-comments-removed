@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {utils: Cu, classes: Cc, interfaces: Ci} = Components;
+var {utils: Cu, classes: Cc, interfaces: Ci} = Components;
 
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import("resource://gre/modules/FileUtils.jsm");
@@ -25,6 +25,7 @@ if (window.location === "chrome://browser/content/browser.xul") {
 
 Services.prefs.setBoolPref("devtools.webide.enabled", true);
 Services.prefs.setBoolPref("devtools.webide.enableLocalRuntime", true);
+Services.prefs.setBoolPref("devtools.webide.sidebars", true);
 
 Services.prefs.setCharPref("devtools.webide.addonsURL", TEST_BASE + "addons/simulators.json");
 Services.prefs.setCharPref("devtools.webide.simulatorAddonsURL", TEST_BASE + "addons/fxos_#SLASHED_VERSION#_simulator-#OS#.xpi");
@@ -41,6 +42,7 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.webide.enableLocalRuntime");
   Services.prefs.clearUserPref("devtools.webide.autoinstallADBHelper");
   Services.prefs.clearUserPref("devtools.webide.autoinstallFxdtAdapters");
+  Services.prefs.clearUserPref("devtools.webide.sidebars");
   Services.prefs.clearUserPref("devtools.webide.busyTimeout");
   Services.prefs.clearUserPref("devtools.webide.lastSelectedProject");
   Services.prefs.clearUserPref("devtools.webide.lastConnectedRuntime");
@@ -202,27 +204,25 @@ function getProjectDocument(win) {
   return win.document.querySelector("#project-listing-panel-details").contentDocument;
 }
 
-function getRuntimeWindow(win) {
-  return win.document.querySelector("#runtime-listing-panel-details").contentWindow;
-}
-
-function getProjectWindow(win) {
-  return win.document.querySelector("#project-listing-panel-details").contentWindow;
-}
-
-function connectToLocalRuntime(win) {
+function connectToLocalRuntime(aWindow) {
   info("Loading local runtime.");
 
   let panelNode;
   let runtimePanel;
 
-  runtimePanel = getRuntimeDocument(win);
+  
+  
+  if (aWindow.runtimeList.sidebarsEnabled) {
+    runtimePanel = getRuntimeDocument(aWindow);
+  } else {
+    runtimePanel = aWindow.document;
+  }
 
   panelNode = runtimePanel.querySelector("#runtime-panel");
   let items = panelNode.querySelectorAll(".runtime-panel-item-other");
   is(items.length, 2, "Found 2 custom runtime buttons");
 
-  let updated = waitForUpdate(win, "runtime-global-actors");
+  let updated = waitForUpdate(aWindow, "runtime-global-actors");
   items[1].click();
   return updated;
 }

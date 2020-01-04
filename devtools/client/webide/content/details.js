@@ -2,7 +2,7 @@
 
 
 
-const Cu = Components.utils;
+var Cu = Components.utils;
 Cu.import("resource:///modules/devtools/client/framework/gDevTools.jsm");
 const {Services} = Cu.import("resource://gre/modules/Services.jsm");
 const {require} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});

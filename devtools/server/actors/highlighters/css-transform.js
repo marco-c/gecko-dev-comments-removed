@@ -15,7 +15,7 @@ const { setIgnoreLayoutChanges,
 
 const ARROW_LINE_MIN_DISTANCE = 10;
 
-let MARKER_COUNTER = 1;
+var MARKER_COUNTER = 1;
 
 
 

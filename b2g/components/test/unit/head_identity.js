@@ -1,8 +1,8 @@
 
 
 
-const Ci = Components.interfaces;
-const Cu = Components.utils;
+var Ci = Components.interfaces;
+var Cu = Components.utils;
 
 
 

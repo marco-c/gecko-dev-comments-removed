@@ -2,7 +2,7 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 
 const NS_ALERT_HORIZONTAL = 1;
@@ -32,19 +32,9 @@ function prefillAlertInfo() {
   
   
   
-  
 
   switch (window.arguments.length) {
     default:
-    case 11: {
-      let label = document.getElementById('alertSourceLabel');
-      if (window.arguments[10]) {
-        label.hidden = false;
-        label.setAttribute('value', window.arguments[10]);
-      } else {
-        label.hidden = true;
-      }
-    }
     case 10:
       gAlertListener = window.arguments[9];
     case 9:

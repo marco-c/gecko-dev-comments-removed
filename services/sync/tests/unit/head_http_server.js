@@ -1,4 +1,4 @@
-const Cm = Components.manager;
+var Cm = Components.manager;
 
 
 Cu.import("resource://gre/modules/Log.jsm");

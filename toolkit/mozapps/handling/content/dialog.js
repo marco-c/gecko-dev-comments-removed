@@ -28,9 +28,9 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cr = Components.results;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cr = Components.results;
 
 var dialog = {
   

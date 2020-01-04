@@ -2,10 +2,10 @@
 
 
 
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cc = Components.classes;
-const CC = Components.Constructor;
+var Ci = Components.interfaces;
+var Cu = Components.utils;
+var Cc = Components.classes;
+var CC = Components.Constructor;
 
 var BinaryOutputStream = CC("@mozilla.org/binaryoutputstream;1",
                             "nsIBinaryOutputStream",

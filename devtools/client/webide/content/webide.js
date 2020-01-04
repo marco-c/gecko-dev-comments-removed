@@ -2,9 +2,9 @@
 
 
 
-const Cc = Components.classes;
-const Cu = Components.utils;
-const Ci = Components.interfaces;
+var Cc = Components.classes;
+var Cu = Components.utils;
+var Ci = Components.interfaces;
 
 Cu.import("resource:///modules/devtools/client/framework/gDevTools.jsm");
 Cu.import("resource://gre/modules/Task.jsm");

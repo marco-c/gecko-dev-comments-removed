@@ -4,7 +4,7 @@
 
 "use strict";
 
-const Cu = Components.utils;
+var Cu = Components.utils;
 var {gDevTools} = Cu.import("resource:///modules/devtools/client/framework/gDevTools.jsm", {});
 var {require} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
 var {TargetFactory} = require("devtools/client/framework/target");
@@ -317,13 +317,10 @@ function openRuleView() {
 
 
 
-
-
-function waitForNEvents(target, eventName, numTimes, useCapture = false) {
+function once(target, eventName, useCapture=false) {
   info("Waiting for event: '" + eventName + "' on " + target + ".");
 
   let deferred = promise.defer();
-  let count = 0;
 
   for (let [add, remove] of [
     ["addEventListener", "removeEventListener"],
@@ -332,31 +329,14 @@ function waitForNEvents(target, eventName, numTimes, useCapture = false) {
   ]) {
     if ((add in target) && (remove in target)) {
       target[add](eventName, function onEvent(...aArgs) {
-        if (++count == numTimes) {
-          target[remove](eventName, onEvent, useCapture);
-          deferred.resolve.apply(deferred, aArgs);
-        }
+        target[remove](eventName, onEvent, useCapture);
+        deferred.resolve.apply(deferred, aArgs);
       }, useCapture);
       break;
     }
   }
 
   return deferred.promise;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function once(target, eventName, useCapture=false) {
-  return waitForNEvents(target, eventName, 1, useCapture);
 }
 
 

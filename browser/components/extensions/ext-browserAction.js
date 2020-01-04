@@ -17,7 +17,7 @@ var browserActionMap = new WeakMap();
 
 
 
-let imageRendererMap = new WeakMap();
+var imageRendererMap = new WeakMap();
 
 function browserActionOf(extension)
 {

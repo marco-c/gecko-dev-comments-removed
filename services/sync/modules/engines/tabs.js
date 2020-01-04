@@ -4,7 +4,7 @@
 
 this.EXPORTED_SYMBOLS = ["TabEngine", "TabSetRecord"];
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 const TABS_TTL = 604800;           
 const TAB_ENTRIES_LIMIT = 25;      

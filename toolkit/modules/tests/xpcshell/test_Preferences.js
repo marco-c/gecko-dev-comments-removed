@@ -1,7 +1,7 @@
 
 
 
-const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu, manager: Cm} = Components;
+var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu, manager: Cm} = Components;
 
 Cu.import("resource://gre/modules/Preferences.jsm");
 

@@ -6,7 +6,7 @@
 
 "use strict";
 
-const {utils: Cu, interfaces: Ci, classes: Cc} = Components;
+var {utils: Cu, interfaces: Ci, classes: Cc} = Components;
 
 Cu.import("resource://gre/modules/Task.jsm");
 const {require} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
@@ -95,9 +95,9 @@ EditingSession.prototype = {
       }
 
       if (property.value == "") {
-        modifications.removeProperty(-1, property.name);
+        modifications.removeProperty(property.name);
       } else {
-        modifications.setProperty(-1, property.name, property.value, "");
+        modifications.setProperty(property.name, property.value, "");
       }
     }
 
@@ -113,9 +113,9 @@ EditingSession.prototype = {
 
     for (let [property, value] of this._modifications) {
       if (value != "") {
-        modifications.setProperty(-1, property, value, "");
+        modifications.setProperty(property, value, "");
       } else {
-        modifications.removeProperty(-1, property);
+        modifications.removeProperty(property);
       }
     }
 

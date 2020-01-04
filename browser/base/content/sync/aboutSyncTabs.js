@@ -2,7 +2,7 @@
 
 
 
-const Cu = Components.utils;
+var Cu = Components.utils;
 
 Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-sync/main.js");

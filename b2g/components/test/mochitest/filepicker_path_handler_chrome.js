@@ -4,8 +4,8 @@
 
 'use strict';
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
 
 
 var ppmm = Cc['@mozilla.org/parentprocessmessagemanager;1']

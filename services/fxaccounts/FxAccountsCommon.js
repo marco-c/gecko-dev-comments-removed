@@ -2,7 +2,7 @@
 
 
 
-const { interfaces: Ci, utils: Cu } = Components;
+var { interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");

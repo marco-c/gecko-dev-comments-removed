@@ -29,7 +29,7 @@ function getWindow() {
 
 
 
-let _blockedSettings = new Set();
+var _blockedSettings = new Set();
 
 this.MessagesBridge = {
   init: function() {

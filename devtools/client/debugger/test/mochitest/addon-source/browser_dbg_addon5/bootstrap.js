@@ -1,7 +1,7 @@
 
 
 
-const { interfaces: Ci, classes: Cc } = Components;
+var { interfaces: Ci, classes: Cc } = Components;
 
 function startup(aParams, aReason) {
   Components.utils.import("resource://gre/modules/Services.jsm");

@@ -1,7 +1,7 @@
 
 
 
-const {utils: Cu} = Components;
+var {utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/osfile.jsm");
