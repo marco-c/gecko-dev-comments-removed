@@ -4602,11 +4602,7 @@ PresShell::NotifyCompositorOfVisibleRegionsChange()
   }
 
   
-  
-  
-
-  
-  compositorChild->SendClearApproximatelyVisibleRegions(layersId, presShellId);
+  compositorChild->SendClearVisibleRegions(layersId, presShellId);
 
   
   for (auto iter = mVisibleRegions->mApproximate.ConstIter();
@@ -4618,7 +4614,8 @@ PresShell::NotifyCompositorOfVisibleRegionsChange()
 
     const ScrollableLayerGuid guid(layersId, presShellId, viewId);
 
-    compositorChild->SendNotifyApproximatelyVisibleRegion(guid, *region);
+    compositorChild->SendUpdateVisibleRegion(VisibilityCounter::MAY_BECOME_VISIBLE,
+                                             guid, *region);
   }
 
   for (auto iter = mVisibleRegions->mInDisplayPort.ConstIter();
@@ -4630,7 +4627,8 @@ PresShell::NotifyCompositorOfVisibleRegionsChange()
 
     const ScrollableLayerGuid guid(layersId, presShellId, viewId);
 
-    compositorChild->SendNotifyApproximatelyVisibleRegion(guid, *region);
+    compositorChild->SendUpdateVisibleRegion(VisibilityCounter::IN_DISPLAYPORT,
+                                             guid, *region);
   }
 }
 
