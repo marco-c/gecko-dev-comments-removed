@@ -260,6 +260,21 @@ public:
   
 
 
+
+  void ProcessChunkMetadata(GraphTime aPrevCurrentTime);
+  
+
+
+
+  template<typename C, typename Chunk>
+  void ProcessChunkMetadataForInterval(MediaStream* aStream,
+                                       TrackID aTrackID,
+                                       C& aSegment,
+                                       StreamTime aStart,
+                                       StreamTime aEnd);
+  
+
+
   void RunMessagesInQueue();
   
 
