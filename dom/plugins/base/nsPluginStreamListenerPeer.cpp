@@ -841,7 +841,7 @@ nsresult nsPluginStreamListenerPeer::ServeStreamAsFile(nsIRequest *request,
   if (owner) {
     NPWindow* window = nullptr;
     owner->GetWindow(window);
-#if (MOZ_WIDGET_GTK == 2) || defined(MOZ_WIDGET_QT)
+#if (MOZ_WIDGET_GTK == 2)
     
     
     nsCOMPtr<nsIWidget> widget;

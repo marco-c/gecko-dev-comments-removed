@@ -287,9 +287,6 @@ PluginInstanceParent::AnswerNPN_GetValue_NPNVnetscapeWindow(NativeWindowHandle* 
 #elif defined(ANDROID)
     
     int id;
-#elif defined(MOZ_WIDGET_QT)
-    
-    int id;
 #else
 #warning Implement me
 #endif
