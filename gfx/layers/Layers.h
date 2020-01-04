@@ -28,6 +28,7 @@
 #include "mozilla/gfx/BaseMargin.h"     
 #include "mozilla/gfx/BasePoint.h"      
 #include "mozilla/gfx/Point.h"          
+#include "mozilla/gfx/TiledRegion.h"    
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/gfx/UserData.h"       
 #include "mozilla/layers/LayersTypes.h"
@@ -1662,20 +1663,24 @@ public:
 
 
 
-  const nsIntRegion& GetInvalidRegion() { return mInvalidRegion; }
+  const gfx::TiledIntRegion& GetInvalidRegion() { return mInvalidRegion; }
   void AddInvalidRegion(const nsIntRegion& aRegion) {
-    mInvalidRegion.Or(mInvalidRegion, aRegion);
+    mInvalidRegion.Add(aRegion);
   }
 
   
 
 
-  void SetInvalidRectToVisibleRegion() { mInvalidRegion = GetVisibleRegion().ToUnknownRegion(); }
+  void SetInvalidRectToVisibleRegion()
+  {
+    mInvalidRegion.SetEmpty();
+    mInvalidRegion.Add(GetVisibleRegion().ToUnknownRegion());
+  }
 
   
 
 
-  void AddInvalidRect(const gfx::IntRect& aRect) { mInvalidRegion.Or(mInvalidRegion, aRect); }
+  void AddInvalidRect(const gfx::IntRect& aRect) { mInvalidRegion.Add(aRect); }
 
   
 
@@ -1833,7 +1838,7 @@ protected:
   bool mForceIsolatedGroup;
   Maybe<ParentLayerIntRect> mClipRect;
   gfx::IntRect mTileSourceRect;
-  nsIntRegion mInvalidRegion;
+  gfx::TiledIntRegion mInvalidRegion;
   nsTArray<RefPtr<AsyncPanZoomController> > mApzcs;
   uint32_t mContentFlags;
   bool mUseTileSourceRect;
