@@ -143,8 +143,17 @@ StrokeOptionsToPaint(SkPaint& aPaint, const StrokeOptions &aOptions)
 
     for (uint32_t i = 0; i < dashCount; i++) {
       pattern[i] = SkFloatToScalar(aOptions.mDashPattern[i % aOptions.mDashLength]);
-      if (!pattern[i])
-          pattern[i] = SK_ScalarNearlyZero;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (pattern[i] == 0)
+          pattern[i] = SkScalarMulDiv(SK_ScalarNearlyZero, 33, 32);
     }
 
     SkDashPathEffect* dash = SkDashPathEffect::Create(&pattern.front(),
