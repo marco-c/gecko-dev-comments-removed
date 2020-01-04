@@ -51,8 +51,8 @@ CompositorChild::~CompositorChild()
   }
 }
 
-static void DeferredDestroyCompositor(RefPtr<CompositorParent> aCompositorParent,
-                                      RefPtr<CompositorChild> aCompositorChild)
+static void DeferredDestroyCompositor(nsRefPtr<CompositorParent> aCompositorParent,
+                                      nsRefPtr<CompositorChild> aCompositorChild)
 {
     
     
@@ -74,7 +74,7 @@ CompositorChild::Destroy()
   
   
   
-  RefPtr<CompositorChild> selfRef = this;
+  nsRefPtr<CompositorChild> selfRef = this;
 
   SendWillStop();
   
@@ -126,7 +126,7 @@ CompositorChild::Create(Transport* aTransport, ProcessId aOtherPid)
   
   MOZ_ASSERT(!sCompositor);
 
-  RefPtr<CompositorChild> child(new CompositorChild(nullptr));
+  nsRefPtr<CompositorChild> child(new CompositorChild(nullptr));
   if (!child->Open(aTransport, aOtherPid, XRE_GetIOMessageLoop(), ipc::ChildSide)) {
     NS_RUNTIMEABORT("Couldn't Open() Compositor channel.");
     return nullptr;
@@ -318,6 +318,9 @@ CompositorChild::RecvUpdatePluginConfigurations(const nsIntPoint& aContentOffset
   
   
   nsIWidget::UpdateRegisteredPluginWindowVisibility((uintptr_t)parent, visiblePluginIds);
+#if defined(XP_WIN)
+  SendRemotePluginsReady();
+#endif
   return true;
 #endif 
 }
@@ -333,6 +336,9 @@ CompositorChild::RecvHideAllPlugins(const uintptr_t& aParentWidget)
   MOZ_ASSERT(NS_IsMainThread());
   nsTArray<uintptr_t> list;
   nsIWidget::UpdateRegisteredPluginWindowVisibility(aParentWidget, list);
+#if defined(XP_WIN)
+  SendRemotePluginsReady();
+#endif
   return true;
 #endif 
 }
@@ -495,7 +501,7 @@ CompositorChild::RecvRemotePaintIsReady()
   
   
   MOZ_LAYERS_LOG(("[RemoteGfx] CompositorChild received RemotePaintIsReady"));
-  RefPtr<nsISupports> iTabChildBase(do_QueryReferent(mWeakTabChild));
+  nsRefPtr<nsISupports> iTabChildBase(do_QueryReferent(mWeakTabChild));
   if (!iTabChildBase) {
     MOZ_LAYERS_LOG(("[RemoteGfx] Note: TabChild was released before RemotePaintIsReady. "
         "MozAfterRemotePaint will not be sent to listener."));
@@ -521,7 +527,7 @@ CompositorChild::RequestNotifyAfterRemotePaint(TabChild* aTabChild)
 void
 CompositorChild::CancelNotifyAfterRemotePaint(TabChild* aTabChild)
 {
-  RefPtr<nsISupports> iTabChildBase(do_QueryReferent(mWeakTabChild));
+  nsRefPtr<nsISupports> iTabChildBase(do_QueryReferent(mWeakTabChild));
   if (!iTabChildBase) {
     return;
   }

@@ -386,8 +386,14 @@ public:
 
 
 
-  void UpdatePluginWindowState(uint64_t aId);
+  bool UpdatePluginWindowState(uint64_t aId);
 #endif
+
+  
+
+
+
+  virtual bool RecvRemotePluginsReady() override;
 
   
 
@@ -484,6 +490,11 @@ protected:
   nsIntPoint mPluginsLayerOffset;
   nsIntRegion mPluginsLayerVisibleRegion;
   nsTArray<PluginWindowData> mCachedPluginData;
+#endif
+#if defined(XP_WIN)
+  
+  
+  bool mPluginUpdateResponsePending;
 #endif
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorParent);
