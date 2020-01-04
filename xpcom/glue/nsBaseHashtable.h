@@ -7,12 +7,10 @@
 #ifndef nsBaseHashtable_h__
 #define nsBaseHashtable_h__
 
-#include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
 #include "nsTHashtable.h"
 #include "nsDebug.h"
-
 
 
 
@@ -156,36 +154,6 @@ public:
 
 
   void Remove(KeyType aKey) { this->RemoveEntry(aKey); }
-
-  
-
-
-
-
-
-
-  typedef PLDHashOperator (*EnumReadFunction)(KeyType aKey,
-                                              UserDataType aData,
-                                              void* aUserArg);
-
-  
-
-
-
-
-
-  uint32_t EnumerateRead(EnumReadFunction aEnumFunc, void* aUserArg) const
-  {
-    uint32_t n = 0;
-    for (auto iter = this->mTable.ConstIter(); !iter.Done(); iter.Next()) {
-      auto entry = static_cast<EntryType*>(iter.Get());
-      mozilla::DebugOnly<PLDHashOperator> op =
-        aEnumFunc(entry->GetKey(), entry->mData, aUserArg);
-      n++;
-      MOZ_ASSERT(!(op & PL_DHASH_REMOVE));
-    }
-    return n;
-  }
 
   
 
