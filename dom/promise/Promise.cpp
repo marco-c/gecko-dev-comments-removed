@@ -1620,7 +1620,7 @@ PromiseWorkerProxy::CleanProperties()
   mWorkerPrivate = nullptr;
 
   
-  Shutdown();
+  Clear();
 }
 
 bool
@@ -1757,10 +1757,10 @@ PromiseWorkerProxy::CleanUp(JSContext* aCx)
 }
 
 JSObject*
-PromiseWorkerProxy::ReadCallback(JSContext* aCx,
-                                 JSStructuredCloneReader* aReader,
-                                 uint32_t aTag,
-                                 uint32_t aIndex)
+PromiseWorkerProxy::CustomReadHandler(JSContext* aCx,
+                                      JSStructuredCloneReader* aReader,
+                                      uint32_t aTag,
+                                      uint32_t aIndex)
 {
   if (NS_WARN_IF(!mCallbacks)) {
     return nullptr;
@@ -1770,9 +1770,9 @@ PromiseWorkerProxy::ReadCallback(JSContext* aCx,
 }
 
 bool
-PromiseWorkerProxy::WriteCallback(JSContext* aCx,
-                                  JSStructuredCloneWriter* aWriter,
-                                  JS::Handle<JSObject*> aObj)
+PromiseWorkerProxy::CustomWriteHandler(JSContext* aCx,
+                                       JSStructuredCloneWriter* aWriter,
+                                       JS::Handle<JSObject*> aObj)
 {
   if (NS_WARN_IF(!mCallbacks)) {
     return false;
