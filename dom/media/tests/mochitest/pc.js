@@ -409,6 +409,7 @@ function(peer, desc, stateExpected) {
 
   var stateChanged = peer.setRemoteDescription(desc).then(() => {
     peer.setRemoteDescDate = new Date();
+    peer.checkMediaTracks();
   });
 
   return Promise.all([eventFired, stateChanged]);
@@ -1129,28 +1130,24 @@ PeerConnectionWrapper.prototype = {
     observedTrackInfoById[track.id] = expectedTrackInfoById[track.id];
   },
 
+  isTrackOnPC: function(track) {
+    return this._pc.getRemoteStreams().some(stream => {
+      return stream.getTracks().some(pcTrack => pcTrack.id == track.id);
+    });
+  },
+
   allExpectedTracksAreObserved: function(expected, observed) {
     return Object.keys(expected).every(trackId => observed[trackId]);
   },
 
   setupTrackEventHandler: function() {
-    var resolveAllTrackEventsDone;
-
-    
-    this.allTrackEventsDonePromise =
-      new Promise(resolve => resolveAllTrackEventsDone = resolve);
-
     this._pc.addEventListener('track', event => {
       info(this + ": 'ontrack' event fired for " + JSON.stringify(event.track));
 
       this.checkTrackIsExpected(event.track,
                                 this.expectedRemoteTrackInfoById,
                                 this.observedRemoteTrackInfoById);
-
-      if (this.allExpectedTracksAreObserved(this.expectedRemoteTrackInfoById,
-                                            this.observedRemoteTrackInfoById)) {
-        resolveAllTrackEventsDone();
-      }
+      ok(this.isTrackOnPC(event.track), "Found track " + event.track.id);
 
       this.ensureMediaElement(event.track, event.streams[0], 'remote');
     });
@@ -1333,22 +1330,17 @@ PeerConnectionWrapper.prototype = {
   
 
 
-
-
-
   checkMediaTracks : function() {
     this.checkLocalMediaTracks();
 
     info(this + " Checking remote tracks " +
          JSON.stringify(this.expectedRemoteTrackInfoById));
 
-    
-    if (this.allExpectedTracksAreObserved(this.expectedRemoteTrackInfoById,
-                                          this.observedRemoteTrackInfoById)) {
-      return;
-    }
-
-    return timerGuard(this.allTrackEventsDonePromise, 60000, "The expected ontrack events never fired");
+    ok(this.allExpectedTracksAreObserved(this.expectedRemoteTrackInfoById,
+                                         this.observedRemoteTrackInfoById),
+       "All expected tracks have been observed"
+       + "\nexpected: " + JSON.stringify(this.expectedRemoteTrackInfoById)
+       + "\nobserved: " + JSON.stringify(this.observedRemoteTrackInfoById));
   },
 
   checkMsids: function() {
@@ -1374,7 +1366,11 @@ PeerConnectionWrapper.prototype = {
 
   rollbackRemoteTracksIfNotNegotiated: function() {
     Object.keys(this.observedRemoteTrackInfoById).forEach(
-        id => delete this.observedRemoteTrackInfoById[id]);
+        id => {
+          if (!this.observedRemoteTrackInfoById[id].negotiated) {
+            delete this.observedRemoteTrackInfoById[id];
+          }
+        });
   },
 
   
