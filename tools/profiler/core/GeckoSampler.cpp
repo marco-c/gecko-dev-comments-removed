@@ -523,6 +523,7 @@ void GeckoSampler::StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
     if (TaskTracer()) {
       aWriter.StartObjectProperty("tasktracer");
       StreamTaskTracer(aWriter);
+      aWriter.EndObject();
     }
 
     
