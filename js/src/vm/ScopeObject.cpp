@@ -755,6 +755,26 @@ DynamicWithObject::create(JSContext* cx, HandleObject object, HandleObject enclo
     return obj;
 }
 
+
+static bool
+CheckUnscopables(JSContext *cx, HandleObject obj, HandleId id, bool *scopable)
+{
+    RootedId unscopablesId(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols()
+                                                .get(JS::SymbolCode::unscopables)));
+    RootedValue v(cx);
+    if (!GetProperty(cx, obj, obj, unscopablesId, &v))
+        return false;
+    if (v.isObject()) {
+        RootedObject unscopablesObj(cx, &v.toObject());
+        if (!GetProperty(cx, unscopablesObj, unscopablesObj, id, &v))
+            return false;
+        *scopable = !ToBoolean(v);
+    } else {
+        *scopable = true;
+    }
+    return true;
+}
+
 static bool
 with_LookupProperty(JSContext* cx, HandleObject obj, HandleId id,
                     MutableHandleObject objp, MutableHandleShape propp)
@@ -765,7 +785,19 @@ with_LookupProperty(JSContext* cx, HandleObject obj, HandleId id,
         return true;
     }
     RootedObject actual(cx, &obj->as<DynamicWithObject>().object());
-    return LookupProperty(cx, actual, id, objp, propp);
+    if (!LookupProperty(cx, actual, id, objp, propp))
+        return false;
+
+    if (propp) {
+        bool scopable;
+        if (!CheckUnscopables(cx, actual, id, &scopable))
+            return false;
+        if (!scopable) {
+            objp.set(nullptr);
+            propp.set(nullptr);
+        }
+    }
+    return true;
 }
 
 static bool
@@ -782,7 +814,15 @@ with_HasProperty(JSContext* cx, HandleObject obj, HandleId id, bool* foundp)
 {
     MOZ_ASSERT(!JSID_IS_ATOM(id, cx->names().dotThis));
     RootedObject actual(cx, &obj->as<DynamicWithObject>().object());
-    return HasProperty(cx, actual, id, foundp);
+
+    
+    if (!HasProperty(cx, actual, id, foundp))
+        return false;
+    if (!*foundp)
+        return true;
+
+    
+    return CheckUnscopables(cx, actual, id, foundp);
 }
 
 static bool
@@ -2247,10 +2287,23 @@ class DebugScopeProxy : public BaseProxyHandler
         
         
         
-        Rooted<JSObject*> target(cx, (scope->is<DynamicWithObject>()
-                                      ? &scope->as<DynamicWithObject>().object() : scope));
+        
+        bool isWith = scope->is<DynamicWithObject>();
+        Rooted<JSObject*> target(cx, (isWith ? &scope->as<DynamicWithObject>().object() : scope));
         if (!GetPropertyKeys(cx, target, JSITER_OWNONLY, &props))
             return false;
+
+        if (isWith) {
+            size_t j = 0;
+            for (size_t i = 0; i < props.length(); i++) {
+                bool inScope;
+                if (!CheckUnscopables(cx, scope, props[i], &inScope))
+                    return false;
+                if (inScope)
+                    props[j++].set(props[i]);
+            }
+            props.resize(j);
+        }
 
         
 

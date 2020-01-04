@@ -1,0 +1,8 @@
+
+
+
+const x = 1;
+with ({x: 1, [Symbol.unscopables]: {x: true}})
+    assertThrowsInstanceOf(() => {x = 2;}, TypeError);
+
+reportCompare(0, 0);
