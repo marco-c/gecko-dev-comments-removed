@@ -8,6 +8,7 @@
 
 
 
+
 "use strict";
 
 var { utils: Cu, classes: Cc, interfaces: Ci } = Components;
@@ -24,14 +25,14 @@ registerCleanupFunction(() => {
   DevToolsUtils.testing = false;
 });
 
-function* openAboutDebugging(page) {
+function* openAboutDebugging(page, win) {
   info("opening about:debugging");
   let url = "about:debugging";
   if (page) {
     url += "#" + page;
   }
 
-  let tab = yield addTab(url);
+  let tab = yield addTab(url, win);
   let browser = tab.linkedBrowser;
   let document = browser.contentDocument;
 
@@ -63,9 +64,9 @@ function openPanel(document, panelId) {
     document.querySelector(".main-content"), {childList: true});
 }
 
-function closeAboutDebugging(tab) {
+function closeAboutDebugging(tab, win) {
   info("Closing about:debugging");
-  return removeTab(tab);
+  return removeTab(tab, win);
 }
 
 function addTab(url, win, backgroundTab = false) {
@@ -294,5 +295,22 @@ function unregisterServiceWorker(tab) {
     let { sw } = content.wrappedJSObject;
     let registration = yield sw;
     yield registration.unregister();
+  });
+}
+
+
+
+
+
+
+
+function waitForDelayedStartupFinished(win) {
+  return new Promise(function (resolve) {
+    Services.obs.addObserver(function observer(subject, topic) {
+      if (win == subject) {
+        Services.obs.removeObserver(observer, topic);
+        resolve();
+      }
+    }, "browser-delayed-startup-finished", false);
   });
 }
