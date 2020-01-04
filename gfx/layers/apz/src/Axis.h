@@ -64,7 +64,7 @@ public:
 
 
 
-  void CancelTouch();
+  void CancelGesture();
 
   
 
