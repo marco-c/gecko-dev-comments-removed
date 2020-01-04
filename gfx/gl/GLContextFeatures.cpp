@@ -568,6 +568,17 @@ static const FeatureInfo sFeatureInfoArr[] = {
         }
     },
     {
+        "shader_texture_lod",
+        GLVersion::NONE,
+        GLESVersion::NONE,
+        GLContext::Extension_None,
+        {
+            GLContext::ARB_shader_texture_lod,
+            GLContext::EXT_shader_texture_lod,
+            GLContext::Extensions_End
+        }
+    },
+    {
         
         "split_framebuffer",
         GLVersion::GL3,
