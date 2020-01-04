@@ -1165,16 +1165,9 @@ public abstract class GeckoApp
             final String action = intent.getAction();
             final String args = intent.getStringExtra("args");
 
-            
-            
-            
-            
-            
-            final GeckoProfile profile = (args != null) ?
-                GeckoProfile.getFromArgs(getApplicationContext(), args) : null;
-
             sAlreadyLoaded = true;
-            GeckoThread.init(profile, args, action,  ACTION_DEBUG.equals(action));
+            GeckoThread.init( null, args, action,
+                              ACTION_DEBUG.equals(action));
 
             
             ThreadUtils.postToBackgroundThread(new Runnable() {
