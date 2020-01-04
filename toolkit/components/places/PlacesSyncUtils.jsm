@@ -101,65 +101,34 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     }
     return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: order",
       Task.async(function* (db) {
-        let children;
-
-        yield db.executeTransaction(function* () {
-          children = yield fetchAllChildren(db, parentGuid);
-          if (!children.length) {
-            return;
-          }
-          for (let child of children) {
-            
-            
-            child.oldIndex = child.index;
-          }
-
-          
-          let delta = 0;
-          for (let i = 0; i < childGuids.length; ++i) {
-            let guid = childGuids[i];
-            let child = findChildByGuid(children, guid);
-            if (!child) {
-              delta++;
-              BookmarkSyncLog.trace(`order: Ignoring missing child ${guid}`);
-              continue;
-            }
-            let newIndex = i - delta;
-            updateChildIndex(children, child, newIndex);
-          }
-          children.sort((a, b) => a.index - b.index);
-
+        let children = yield fetchAllChildren(db, parentGuid);
+        if (!children.length) {
+          return;
+        }
+        for (let child of children) {
           
           
-          
-          
-
-          
-
-
-
-
-          yield db.executeCached(`WITH sorting(g, p) AS (
-            VALUES ${children.map(
-              (child, i) => `("${child.guid}", ${i})`
-            ).join()}
-          ) UPDATE moz_bookmarks SET position = (
-            SELECT p FROM sorting WHERE g = guid
-          ) WHERE parent = (
-            SELECT id FROM moz_bookmarks WHERE guid = :parentGuid
-          )`,
-          { parentGuid });
-        });
+          child.oldIndex = child.index;
+        }
 
         
-        let observers = PlacesUtils.bookmarks.getObservers();
-        for (let child of children) {
-          notify(observers, "onItemMoved", [ child.id, child.parentId,
-                                             child.oldIndex, child.parentId,
-                                             child.index, child.type,
-                                             child.guid, parentGuid,
-                                             parentGuid, SOURCE_SYNC ]);
+        let delta = 0;
+        for (let i = 0; i < childGuids.length; ++i) {
+          let guid = childGuids[i];
+          let child = findChildByGuid(children, guid);
+          if (!child) {
+            delta++;
+            BookmarkSyncLog.trace(`order: Ignoring missing child ${guid}`);
+            continue;
+          }
+          let newIndex = i - delta;
+          updateChildIndex(children, child, newIndex);
         }
+        children.sort((a, b) => a.index - b.index);
+
+        
+        let orderedChildrenGuids = children.map(({ guid }) => guid);
+        yield PlacesUtils.bookmarks.reorder(parentGuid, orderedChildrenGuids);
       })
     );
   }),

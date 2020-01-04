@@ -1183,14 +1183,15 @@ function reorderChildren(parent, orderedChildrenGuids) {
            VALUES ${valuesTable}
          )
          UPDATE moz_bookmarks SET position = (
-           SELECT CASE count(a.g) WHEN 0 THEN -position
-                                  ELSE count(a.g) - 1
+           SELECT CASE count(*) WHEN 0 THEN -position
+                                       ELSE count(*) - 1
                   END
            FROM sorting a
            JOIN sorting b ON b.p <= a.p
            WHERE a.g = guid
-             AND parent = :parentId
-        )`, { parentId: parent._id});
+         )
+         WHERE parent = :parentId
+        `, { parentId: parent._id});
 
       
       
