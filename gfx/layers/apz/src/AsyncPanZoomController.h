@@ -836,7 +836,7 @@ public:
   
 
 
-  void ResetInputState();
+  void ResetTouchInputState();
 
 private:
   void CancelAnimationAndGestureState();
