@@ -82,8 +82,12 @@ private:
   const SHA1Sum::Hash *mHash;
   mozilla::Atomic<bool, ReleaseAcquire> mIsDoomed;
   mozilla::Atomic<bool, ReleaseAcquire> mClosed;
-  bool const           mPriority : 1;
-  bool const           mSpecialFile : 1;
+
+  
+  
+  
+  bool const           mPriority;
+  bool const           mSpecialFile;
 
   
   bool                 mInvalid : 1;
