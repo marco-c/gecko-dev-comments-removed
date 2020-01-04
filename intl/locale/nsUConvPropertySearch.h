@@ -7,6 +7,13 @@
 
 #include "nsStringFwd.h"
 
+struct nsUConvProp
+{
+    const char* const mKey;
+    const char* const mValue;
+    const uint32_t mValueLength;
+};
+
 class nsUConvPropertySearch
 {
   public:
@@ -21,7 +28,7 @@ class nsUConvPropertySearch
 
 
 
-    static nsresult SearchPropertyValue(const char* const aProperties[][3],
+    static nsresult SearchPropertyValue(const nsUConvProp aProperties[],
                                         int32_t aNumberOfProperties,
                                         const nsACString& aKey,
                                         nsACString& aValue);
