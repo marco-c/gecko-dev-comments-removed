@@ -263,8 +263,60 @@ public:
   { }
 
   template <typename Func>
+  Maybe<TerminalState> Lex(SourceBufferIterator& aIterator,
+                           IResumable* aOnResume,
+                           Func aFunc)
+  {
+    if (mTransition.NextStateIsTerminal()) {
+      
+      
+      return Some(mTransition.NextStateAsTerminal());
+    }
+
+    do {
+      switch (aIterator.AdvanceOrScheduleResume(aOnResume)) {
+        case SourceBufferIterator::WAITING:
+          
+          
+          
+          
+          return Nothing();
+
+        case SourceBufferIterator::COMPLETE:
+          
+          
+          
+          
+          
+          mTransition = NS_SUCCEEDED(aIterator.CompletionStatus())
+                      ? Transition::TerminateSuccess()
+                      : Transition::TerminateFailure();
+          break;
+
+        case SourceBufferIterator::READY:
+          
+          
+          
+          MOZ_ASSERT(aIterator.Data());
+          MOZ_ASSERT(aIterator.Length() > 0);
+          Lex(aIterator.Data(), aIterator.Length(), aFunc);
+          break;
+
+        default:
+          MOZ_ASSERT_UNREACHABLE("Unknown SourceBufferIterator state");
+          mTransition = Transition::TerminateFailure();
+      }
+    } while (!mTransition.NextStateIsTerminal());
+
+    
+    return Some(mTransition.NextStateAsTerminal());
+  }
+
+  template <typename Func>
   Maybe<TerminalState> Lex(const char* aInput, size_t aLength, Func aFunc)
   {
+    MOZ_ASSERT(aInput);
+
     if (mTransition.NextStateIsTerminal()) {
       
       

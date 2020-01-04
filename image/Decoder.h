@@ -50,7 +50,7 @@ public:
 
 
 
-  nsresult Decode(NotNull<IResumable*> aOnResume);
+  nsresult Decode(IResumable* aOnResume = nullptr);
 
   
 
@@ -297,7 +297,8 @@ protected:
 
 
   virtual nsresult InitInternal();
-  virtual Maybe<TerminalState> DoDecode(SourceBufferIterator& aIterator) = 0;
+  virtual Maybe<TerminalState> DoDecode(SourceBufferIterator& aIterator,
+                                        IResumable* aOnResume) = 0;
   virtual nsresult BeforeFinishInternal();
   virtual nsresult FinishInternal();
   virtual nsresult FinishWithErrorInternal();

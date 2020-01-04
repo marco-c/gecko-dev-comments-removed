@@ -107,7 +107,7 @@ Decoder::Init()
 }
 
 nsresult
-Decoder::Decode(NotNull<IResumable*> aOnResume)
+Decoder::Decode(IResumable* aOnResume )
 {
   MOZ_ASSERT(mInitialized, "Should be initialized here");
   MOZ_ASSERT(mIterator, "Should have a SourceBufferIterator");
@@ -118,54 +118,21 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
   }
 
   Maybe<TerminalState> terminalState;
-
-  
-  
   {
-    PROFILER_LABEL("ImageDecoder", "Decode",
-                   js::ProfileEntry::Category::GRAPHICS);
+    PROFILER_LABEL("ImageDecoder", "Decode", js::ProfileEntry::Category::GRAPHICS);
     AutoRecordDecoderTelemetry telemetry(this);
 
-    do {
-      if (GetDecodeDone()) {
-        MOZ_ASSERT_UNREACHABLE("Finished decode without reaching terminal state?");
-        terminalState = Some(TerminalState::SUCCESS);
-        break;
-      }
-
-      switch (mIterator->AdvanceOrScheduleResume(aOnResume.get())) {
-        case SourceBufferIterator::WAITING:
-          
-          
-          
-          
-          return NS_OK;
-
-        case SourceBufferIterator::COMPLETE:
-          
-          
-          
-          
-          
-          terminalState = NS_SUCCEEDED(mIterator->CompletionStatus())
-                        ? Some(TerminalState::SUCCESS)
-                        : Some(TerminalState::FAILURE);
-
-          break;
-
-        case SourceBufferIterator::READY:
-          
-          terminalState = DoDecode(*mIterator);
-          break;
-
-        default:
-          MOZ_ASSERT_UNREACHABLE("Unknown SourceBufferIterator state");
-          terminalState = Some(TerminalState::FAILURE);
-      }
-    } while (!terminalState);
+    terminalState = DoDecode(*mIterator, aOnResume);
   }
 
-  MOZ_ASSERT(terminalState);
+  if (!terminalState) {
+    
+    
+    
+    return NS_OK;
+  }
+
+  
   mReachedTerminalState = true;
 
   
