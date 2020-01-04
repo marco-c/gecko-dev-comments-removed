@@ -382,7 +382,8 @@ private:
   nsresult DoomFileInternal(CacheFileHandle *aHandle,
                             PinningDoomRestriction aPinningStatusRestriction = NO_RESTRICTION);
   nsresult DoomFileByKeyInternal(const SHA1Sum::Hash *aHash);
-  nsresult ReleaseNSPRHandleInternal(CacheFileHandle *aHandle);
+  nsresult ReleaseNSPRHandleInternal(CacheFileHandle *aHandle,
+                                     bool aIgnoreShutdownLag = false);
   nsresult TruncateSeekSetEOFInternal(CacheFileHandle *aHandle,
                                       int64_t aTruncatePos, int64_t aEOFPos);
   nsresult RenameFileInternal(CacheFileHandle *aHandle,
@@ -430,10 +431,17 @@ private:
   nsresult UpdateSmartCacheSize(int64_t aFreeSpace);
 
   
+  
+  bool IsPastShutdownIOLag();
+
+  
   size_t SizeOfExcludingThisInternal(mozilla::MallocSizeOf mallocSizeOf) const;
 
   static CacheFileIOManager           *gInstance;
   TimeStamp                            mStartTime;
+  
+  
+  TimeStamp                            mShutdownDemandedTime;
   bool                                 mShuttingDown;
   RefPtr<CacheIOThread>                mIOThread;
   nsCOMPtr<nsIFile>                    mCacheDirectory;

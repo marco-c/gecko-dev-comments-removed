@@ -89,6 +89,11 @@ pref("browser.cache.disk.preload_chunk_count", 4);
 
 pref("browser.cache.frecency_half_life_hours", 6);
 
+
+
+
+pref("browser.cache.max_shutdown_io_lag", 2);
+
 pref("browser.cache.offline.enable",           true);
 
 pref("offline-apps.allow_by_default",          true);
