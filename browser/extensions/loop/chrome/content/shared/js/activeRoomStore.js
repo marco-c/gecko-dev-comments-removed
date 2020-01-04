@@ -385,7 +385,7 @@ loop.store.ActiveRoomStore = (function() {
 
 
     _getRoomDataForStandalone: function(roomCryptoKey) {
-      return new Promise(function(resolve, reject) {
+      return new Promise(function(resolve) {
         loop.request("Rooms:Get", this._storeState.roomToken).then(function(result) {
           if (result.isError) {
             resolve(new sharedActions.RoomFailure({
@@ -438,7 +438,7 @@ loop.store.ActiveRoomStore = (function() {
             roomInfoData.roomName = realResult.roomName;
 
             resolve(roomInfoData);
-          }, function(error) {
+          }, function() {
             roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.DECRYPT_FAILED;
             resolve(roomInfoData);
           });
@@ -454,7 +454,7 @@ loop.store.ActiveRoomStore = (function() {
 
 
     _promiseDetectUserAgentHandles: function() {
-      return new Promise(function(resolve, reject) {
+      return new Promise(function(resolve) {
         function resolveWithNotHandlingResponse() {
           resolve(new sharedActions.UserAgentHandlesRoom({
             handlesRoom: false
@@ -569,8 +569,7 @@ loop.store.ActiveRoomStore = (function() {
 
 
 
-
-    _handleRoomDelete: function(roomData) {
+    _handleRoomDelete: function() {
       this._sdkDriver.forceDisconnectAll(function() {
         window.close();
       });
@@ -926,7 +925,8 @@ loop.store.ActiveRoomStore = (function() {
 
       
       loop.request("GetSelectedTabMetadata").then(function(meta) {
-        if (!meta) {
+        
+        if (!meta || !meta.url || !this._hasParticipants()) {
           return;
         }
 
@@ -951,7 +951,7 @@ loop.store.ActiveRoomStore = (function() {
 
 
 
-    startBrowserShare: function(actionData) {
+    startBrowserShare: function() {
       
       
       
@@ -960,9 +960,6 @@ loop.store.ActiveRoomStore = (function() {
         state: SCREEN_SHARE_STATES.PENDING
       }));
 
-      var options = {
-        videoSource: "browser"
-      };
       this._browserSharingListener = this._handleSwitchBrowserShare.bind(this);
 
       
@@ -1224,6 +1221,24 @@ loop.store.ActiveRoomStore = (function() {
 
     sendTextChatMessage: function(actionData) {
       this._handleTextChatMessage(actionData);
+    },
+
+    
+
+
+
+    _hasParticipants: function() {
+      
+      var participants = this.getStoreState("participants");
+      if (participants) {
+        participants = participants.filter(function(participant) {
+          return !participant.owner;
+        });
+
+        return participants.length > 0;
+      }
+
+      return false;
     }
   });
 

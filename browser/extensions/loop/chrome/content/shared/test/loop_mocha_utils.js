@@ -1,6 +1,8 @@
 
 
 
+
+
 var LoopMochaUtils = (function(global, _) {
   "use strict";
 
@@ -30,7 +32,7 @@ var LoopMochaUtils = (function(global, _) {
 
 
 
-  function syncThenable(asyncFn) {
+  function SyncThenable(asyncFn) {
     var continuations = [];
     var resolved = false;
     var resolvedWith = null;
@@ -44,6 +46,12 @@ var LoopMochaUtils = (function(global, _) {
       continuations.push(contFn);
       return this;
     };
+
+    
+
+
+
+
 
     this.resolve = function(result) {
       resolved = true;
@@ -69,8 +77,8 @@ var LoopMochaUtils = (function(global, _) {
     asyncFn(this.resolve.bind(this), this.reject.bind(this));
   }
 
-  syncThenable.all = function(promises) {
-    return new syncThenable(function(resolve) {
+  SyncThenable.all = function(promises) {
+    return new SyncThenable(function(resolve) {
       var results = [];
 
       promises.forEach(function(promise) {
@@ -89,9 +97,22 @@ var LoopMochaUtils = (function(global, _) {
 
 
 
+
+  SyncThenable.resolve = function(result) {
+    return new SyncThenable(function(resolve) {
+      resolve(result);
+    });
+  };
+
+  
+
+
+
+
+
   function createSandbox() {
     var sandbox = sinon.sandbox.create();
-    sandbox.stub(global, "Promise", syncThenable);
+    sandbox.stub(global, "Promise", SyncThenable);
     return sandbox;
   }
 
@@ -201,7 +222,8 @@ var LoopMochaUtils = (function(global, _) {
 
 
   function publish() {
-    var args = Array.slice(arguments);
+    
+    var args = Array.prototype.slice.call(arguments);
     var name = args.shift();
     gPushListenerCallbacks.forEach(function(cb) {
       cb({ data: [name, args] });

@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+const { utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -34,6 +34,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "loopCrypto",
   "chrome://loop/content/shared/js/crypto.js", "LoopCrypto");
 XPCOMUtils.defineLazyModuleGetter(this, "ObjectUtils",
   "resource://gre/modules/ObjectUtils.jsm");
+
 
 
 this.EXPORTED_SYMBOLS = ["LoopRooms", "roomsPushNotification"];
@@ -737,7 +738,7 @@ var LoopRoomsInternal = {
     let room = this.rooms.get(roomToken);
     let url = "/rooms/" + encodeURIComponent(roomToken);
     MozLoopService.hawkRequest(this.sessionType, url, "DELETE")
-      .then(response => {
+      .then(() => {
         this.rooms.delete(roomToken);
         eventEmitter.emit("delete", room);
         eventEmitter.emit("delete:" + room.roomToken, room);

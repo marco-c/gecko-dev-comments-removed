@@ -221,14 +221,19 @@
     get: translateString,
 
     
-    getLanguage: function() { return gLanguage; },
-
-    
-    getDirection: function() {
-      
-      
-      var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
-      return (rtlList.indexOf(gLanguage) >= 0) ? 'rtl' : 'ltr';
+    language: {
+      set code(lang) {
+        throw new Error("unsupported");
+      },
+      get code() {
+        return gLanguage;
+      },
+      get direction() {
+        
+        
+        var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
+        return (rtlList.indexOf(gLanguage) >= 0) ? 'rtl' : 'ltr';
+      }
     },
 
     

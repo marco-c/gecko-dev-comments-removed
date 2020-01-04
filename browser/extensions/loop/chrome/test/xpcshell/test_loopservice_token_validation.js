@@ -6,6 +6,8 @@
 
 
 
+
+
 add_test(function test_registration_handles_bogus_hawk_token() {
 
   var wrongSizeToken = "jdkasjkasjdlaksj";
