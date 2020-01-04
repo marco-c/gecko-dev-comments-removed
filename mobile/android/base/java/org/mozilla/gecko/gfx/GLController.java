@@ -82,24 +82,16 @@ public class GLController extends JNIObject {
         }
     }
 
-    synchronized void serverSurfaceChanged(int newWidth, int newHeight) {
+    void serverSurfaceChanged(int newWidth, int newHeight) {
         ThreadUtils.assertOnUiThread();
 
-        mWidth = newWidth;
-        mHeight = newHeight;
-        mServerSurfaceValid = true;
+        synchronized(this) {
+            mWidth = newWidth;
+            mHeight = newHeight;
+            mServerSurfaceValid = true;
+        }
 
-        
-        
-        
-        
-        
-        mView.post(new Runnable() {
-            @Override
-            public void run() {
-                updateCompositor();
-            }
-        });
+        updateCompositor();
     }
 
     void updateCompositor() {
@@ -123,6 +115,7 @@ public class GLController extends JNIObject {
         
         if (mView.getLayerClient().isGeckoReady()) {
             createCompositor(mWidth, mHeight);
+            compositorCreated();
         }
     }
 
@@ -138,8 +131,7 @@ public class GLController extends JNIObject {
 
     @WrapForJNI(allowMultithread = true)
     private synchronized Object getSurface() {
-        compositorCreated();
-        if (mView != null) {
+        if (mView != null && isServerSurfaceValid()) {
             return mView.getSurface();
         } else {
             return null;
