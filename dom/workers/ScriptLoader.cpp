@@ -240,6 +240,10 @@ struct ScriptLoadInfo
   
   RefPtr<Promise> mCachePromise;
 
+  
+  
+  nsCOMPtr<nsIInputStream> mCacheReadStream;
+
   nsCOMPtr<nsIChannel> mChannel;
   char16_t* mScriptTextBuf;
   size_t mScriptTextLength;
@@ -534,7 +538,6 @@ class ScriptLoaderRunnable final : public WorkerFeature
   nsCOMPtr<nsIEventTarget> mSyncLoopTarget;
   nsTArray<ScriptLoadInfo> mLoadInfos;
   RefPtr<CacheCreator> mCacheCreator;
-  nsCOMPtr<nsIInputStream> mReader;
   bool mIsMainScript;
   WorkerScriptType mWorkerScriptType;
   bool mCanceled;
@@ -641,7 +644,10 @@ private:
     
     RefPtr<mozilla::dom::InternalResponse> ir =
       new mozilla::dom::InternalResponse(200, NS_LITERAL_CSTRING("OK"));
-    ir->SetBody(mReader);
+    ir->SetBody(loadInfo.mCacheReadStream);
+    
+    
+    loadInfo.mCacheReadStream = nullptr;
 
     
     
@@ -917,7 +923,8 @@ private:
       
       loadInfo.mCacheStatus = ScriptLoadInfo::Cancel;
 
-      rv = NS_NewPipe(getter_AddRefs(mReader), getter_AddRefs(writer), 0,
+      rv = NS_NewPipe(getter_AddRefs(loadInfo.mCacheReadStream),
+                      getter_AddRefs(writer), 0,
                       UINT32_MAX, 
                       true, false); 
       if (NS_WARN_IF(NS_FAILED(rv))) {
