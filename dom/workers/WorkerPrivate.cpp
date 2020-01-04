@@ -1147,7 +1147,7 @@ public:
     nsresult rv =
       event->InitMessageEvent(NS_LITERAL_STRING("message"),
                               false ,
-                              true ,
+                              false ,
                               messageData,
                               EmptyString(),
                               EmptyString(),
