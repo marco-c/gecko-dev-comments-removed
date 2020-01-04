@@ -42,6 +42,17 @@ assertThrowsInstanceOf(function () {
        `);
 }, SyntaxError);
 
+
+
+assertThrowsInstanceOf(function () {
+  eval(`
+    let x;
+    try {} catch (x) {
+      var x;
+    }
+    `);
+}, SyntaxError);
+
 var log = '';
 var x = 'global-x';
 
