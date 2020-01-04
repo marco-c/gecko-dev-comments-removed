@@ -105,7 +105,7 @@ UpdateStreamBlocking(MediaStream* aStream, bool aBlocking)
 
 class DecodedStreamData {
 public:
-  DecodedStreamData(SourceMediaStream* aStream, bool aPlaying,
+  DecodedStreamData(SourceMediaStream* aStream,
                     MozPromiseHolder<GenericPromise>&& aPromise);
   ~DecodedStreamData();
   bool IsFinished() const;
@@ -142,7 +142,7 @@ public:
   bool mEOSVideoCompensation;
 };
 
-DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream, bool aPlaying,
+DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream,
                                      MozPromiseHolder<GenericPromise>&& aPromise)
   : mAudioFramesWritten(0)
   , mNextVideoTime(-1)
@@ -152,7 +152,7 @@ DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream, bool aPlaying,
   , mHaveSentFinishAudio(false)
   , mHaveSentFinishVideo(false)
   , mStream(aStream)
-  , mPlaying(aPlaying)
+  , mPlaying(true)
   , mEOSVideoCompensation(false)
 {
   
@@ -160,9 +160,7 @@ DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream, bool aPlaying,
   mStream->AddListener(mListener);
 
   
-  if (!aPlaying) {
-    UpdateStreamBlocking(mStream, true);
-  }
+  
 }
 
 DecodedStreamData::~DecodedStreamData()
@@ -358,6 +356,7 @@ DecodedStream::DecodedStream(AbstractThread* aOwnerThread,
                              MediaQueue<MediaData>& aAudioQueue,
                              MediaQueue<MediaData>& aVideoQueue)
   : mOwnerThread(aOwnerThread)
+  , mShuttingDown(false)
   , mMonitor("DecodedStream::mMonitor")
   , mPlaying(false)
   , mVolume(1.0)
@@ -369,6 +368,13 @@ DecodedStream::DecodedStream(AbstractThread* aOwnerThread,
 DecodedStream::~DecodedStream()
 {
   MOZ_ASSERT(mStartTime.isNothing(), "playback should've ended.");
+}
+
+void
+DecodedStream::Shutdown()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  mShuttingDown = true;
 }
 
 nsRefPtr<GenericPromise>
@@ -424,12 +430,20 @@ void DecodedStream::StopPlayback()
 
   
   
-  DecodedStreamData* data = mData.release();
-  
-  if (!data) {
+  DestroyData(Move(mData));
+}
+
+void
+DecodedStream::DestroyData(UniquePtr<DecodedStreamData> aData)
+{
+  AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
+
+  if (!aData) {
     return;
   }
 
+  DecodedStreamData* data = aData.release();
   nsRefPtr<DecodedStream> self = this;
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
     self->mOutputStreamManager.Disconnect();
@@ -443,40 +457,66 @@ DecodedStream::CreateData(MozPromiseHolder<GenericPromise>&& aPromise)
 {
   MOZ_ASSERT(NS_IsMainThread());
   ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-  MOZ_ASSERT(!mData, "Already created.");
 
   
   
   
-  
-  if (!mOutputStreamManager.Graph() || mStartTime.isNothing()) {
+  if (!mOutputStreamManager.Graph() || mShuttingDown) {
     
     aPromise.Resolve(true, __func__);
     return;
   }
 
   auto source = mOutputStreamManager.Graph()->CreateSourceStream(nullptr);
-  mData.reset(new DecodedStreamData(source, mPlaying, Move(aPromise)));
-  mOutputStreamManager.Connect(mData->mStream);
+  auto data = new DecodedStreamData(source, Move(aPromise));
+  mOutputStreamManager.Connect(data->mStream);
+
+  class R : public nsRunnable {
+    typedef void(DecodedStream::*Method)(UniquePtr<DecodedStreamData>);
+  public:
+    R(DecodedStream* aThis, Method aMethod, DecodedStreamData* aData)
+      : mThis(aThis), mMethod(aMethod), mData(aData) {}
+    NS_IMETHOD Run() override
+    {
+      (mThis->*mMethod)(Move(mData));
+      return NS_OK;
+    }
+  private:
+    nsRefPtr<DecodedStream> mThis;
+    Method mMethod;
+    UniquePtr<DecodedStreamData> mData;
+  };
 
   
-  nsRefPtr<DecodedStream> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    ReentrantMonitorAutoEnter mon(self->GetReentrantMonitor());
-    
-    if (self->mStartTime.isSome()) {
-      self->SendData();
-    }
-  });
   
   
-  mOwnerThread->Dispatch(r.forget(), AbstractThread::DontAssertDispatchSuccess);
+  nsCOMPtr<nsIRunnable> r = new R(this, &DecodedStream::OnDataCreated, data);
+  mOwnerThread->Dispatch(r.forget());
 }
 
 bool
 DecodedStream::HasConsumers() const
 {
   return !mOutputStreamManager.IsEmpty();
+}
+
+void
+DecodedStream::OnDataCreated(UniquePtr<DecodedStreamData> aData)
+{
+  AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
+  MOZ_ASSERT(!mData, "Already created.");
+
+  
+  if (mStartTime.isSome()) {
+    aData->SetPlaying(mPlaying);
+    mData = Move(aData);
+    SendData();
+    return;
+  }
+
+  
+  DestroyData(Move(aData));
 }
 
 ReentrantMonitor&
