@@ -1294,8 +1294,7 @@ public:
     
     
     explicit XPCNativeSetKey(XPCNativeSet* baseSet,
-                             XPCNativeInterface* addition,
-                             uint16_t position);
+                             XPCNativeInterface* addition);
     ~XPCNativeSetKey() {}
 
     XPCNativeSet* GetBaseSet() const {return mBaseSet;}
