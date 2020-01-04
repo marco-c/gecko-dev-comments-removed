@@ -848,6 +848,28 @@ var RefreshBlocker = {
 
 RefreshBlocker.init();
 
+var UserContextIdNotifier = {
+  init() {
+    addEventListener("DOMContentLoaded", this);
+  },
+
+  uninit() {
+    removeEventListener("DOMContentLoaded", this);
+  },
+
+  handleEvent(aEvent) {
+    
+    
+    
+    
+    this.uninit();
+    let userContextId = content.document.nodePrincipal.originAttributes.userContextId;
+    sendAsyncMessage("Browser:FirstContentLoaded", { userContextId });
+  }
+};
+
+UserContextIdNotifier.init();
+
 ExtensionContent.init(this);
 addEventListener("unload", () => {
   ExtensionContent.uninit(this);
