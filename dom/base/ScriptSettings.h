@@ -346,6 +346,12 @@ public:
                   
                   JSContext* aCx = nullptr);
 
+  AutoEntryScript(JSObject* aObject, 
+                  const char *aReason,
+                  bool aIsMainThread = NS_IsMainThread(),
+                  
+                  JSContext* aCx = nullptr);
+
   ~AutoEntryScript();
 
   void SetWebIDLCallerPrincipal(nsIPrincipal *aPrincipal) {
