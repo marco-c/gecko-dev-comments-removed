@@ -49,10 +49,10 @@ struct SurfaceDescriptorX11 {
 
   already_AddRefed<gfxXlibSurface> OpenForeign() const;
 
-  Drawable mId;
-  XID mFormat; 
+  MOZ_INIT_OUTSIDE_CTOR Drawable mId;
+  MOZ_INIT_OUTSIDE_CTOR XID mFormat; 
   gfx::IntSize mSize;
-  Drawable mGLXPixmap; 
+  MOZ_INIT_OUTSIDE_CTOR Drawable mGLXPixmap; 
 };
 
 } 
