@@ -381,6 +381,9 @@ pref("media.suspend-bkgnd-video.enabled", true);
 pref("media.suspend-bkgnd-video.enabled", false);
 #endif
 
+
+pref("media.suspend-bkgnd-video.delay-ms", 10000);
+
 #ifdef MOZ_WEBRTC
 pref("media.navigator.enabled", true);
 pref("media.navigator.video.enabled", true);

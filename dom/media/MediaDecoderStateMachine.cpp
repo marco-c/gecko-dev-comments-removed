@@ -46,6 +46,7 @@
 #include "MediaDecoderReaderWrapper.h"
 #include "MediaDecoderStateMachine.h"
 #include "MediaShutdownManager.h"
+#include "MediaPrefs.h"
 #include "MediaTimer.h"
 #include "NextFrameSeekTask.h"
 #include "TimeUnits.h"
@@ -203,19 +204,17 @@ static void InitVideoQueuePrefs() {
   }
 }
 
-static bool sSuspendBackgroundVideos = true;
+
+
+static TimeDuration sSuspendBackgroundVideoDelay;
 
 static void
 InitSuspendBackgroundPref()
 {
   MOZ_ASSERT(NS_IsMainThread(), "Must be on main thread.");
 
-  static bool sSetupPrefCache = false;
-  if (!sSetupPrefCache) {
-    sSetupPrefCache = true;
-    Preferences::AddBoolVarCache(&sSuspendBackgroundVideos,
-                                 "media.suspend-bkgnd-video.enabled", false);
-  }
+  sSuspendBackgroundVideoDelay = TimeDuration::FromMilliseconds(
+      MediaPrefs::MDSMSuspendBackgroundVideoDelay());
 }
 
 MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
@@ -256,6 +255,8 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mSentLoadedMetadataEvent(false),
   mSentFirstFrameLoadedEvent(false),
   mSentPlaybackEndedEvent(false),
+  mVideoDecodeSuspended(false),
+  mVideoDecodeSuspendTimer(mTaskQueue),
   mOutputStreamManager(new OutputStreamManager()),
   mResource(aDecoder->GetResource()),
   mAudioOffloading(false),
@@ -1226,6 +1227,10 @@ MediaDecoderStateMachine::Shutdown()
 
   DiscardSeekTaskIfExist();
 
+  
+  
+  mVideoDecodeSuspendTimer.Reset();
+
 #ifdef MOZ_EME
   mCDMProxyPromise.DisconnectIfExists();
 #endif
@@ -1301,10 +1306,8 @@ void MediaDecoderStateMachine::PlayStateChanged()
 {
   MOZ_ASSERT(OnTaskQueue());
 
-  
-  
-  
   if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING) {
+    mVideoDecodeSuspendTimer.Reset();
     return;
   }
 
@@ -1343,10 +1346,11 @@ void MediaDecoderStateMachine::PlayStateChanged()
 void MediaDecoderStateMachine::VisibilityChanged()
 {
   MOZ_ASSERT(OnTaskQueue());
-  DECODER_LOG("VisibilityChanged: is visible = %d", mIsVisible.Ref());
+  DECODER_LOG("VisibilityChanged: is visible = %d, video decode suspended = %d",
+              mIsVisible.Ref(), mVideoDecodeSuspended);
 
   
-  if (!sSuspendBackgroundVideos) {
+  if (!MediaPrefs::MDSMSuspendBackgroundVideoEnabled()) {
     return;
   }
 
@@ -1355,19 +1359,38 @@ void MediaDecoderStateMachine::VisibilityChanged()
   }
 
   
-  
-  if (!mIsVisible || mPlayState != MediaDecoder::PLAY_STATE_PLAYING) {
+  if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING) {
     return;
   }
 
   
-  
-  if (mSeekTask || mQueuedSeek.Exists()) {
+  if (!mIsVisible) {
+    TimeStamp target = TimeStamp::Now() + sSuspendBackgroundVideoDelay;
+
+    RefPtr<MediaDecoderStateMachine> self = this;
+    mVideoDecodeSuspendTimer.Ensure(target,
+                                    [=]() { self->OnSuspendTimerResolved(); },
+                                    [=]() { self->OnSuspendTimerRejected(); });
     return;
   }
 
   
-  InitiateVideoDecodeRecoverySeek();
+
+  
+  mVideoDecodeSuspendTimer.Reset();
+
+  if (mVideoDecodeSuspended) {
+    mVideoDecodeSuspended = false;
+
+    
+    
+    if (mSeekTask || mQueuedSeek.Exists()) {
+      return;
+    }
+
+    
+    InitiateVideoDecodeRecoverySeek();
+  }
 }
 
 
@@ -2605,7 +2628,7 @@ bool MediaDecoderStateMachine::IsStateMachineScheduled() const
 bool MediaDecoderStateMachine::IsVideoDecodeSuspended() const
 {
   MOZ_ASSERT(OnTaskQueue());
-  return sSuspendBackgroundVideos && !mIsVisible;
+  return MediaPrefs::MDSMSuspendBackgroundVideoEnabled() && mVideoDecodeSuspended;
 }
 
 void
@@ -2889,6 +2912,23 @@ MediaDecoderStateMachine::VideoRequestStatus() const
     return "waiting";
   }
   return "idle";
+}
+
+void
+MediaDecoderStateMachine::OnSuspendTimerResolved()
+{
+  DECODER_LOG("OnSuspendTimerResolved");
+  mVideoDecodeSuspendTimer.CompleteRequest();
+  mVideoDecodeSuspended = true;
+}
+
+void
+MediaDecoderStateMachine::OnSuspendTimerRejected()
+{
+  DECODER_LOG("OnSuspendTimerRejected");
+  MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(!mVideoDecodeSuspended);
+  mVideoDecodeSuspendTimer.CompleteRequest();
 }
 
 } 

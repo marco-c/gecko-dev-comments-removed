@@ -837,6 +837,9 @@ private:
   CallbackID mWaitVideoCallbackID;
   const char* VideoRequestStatus() const;
 
+  void OnSuspendTimerResolved();
+  void OnSuspendTimerRejected();
+
   
   
   
@@ -923,6 +926,12 @@ private:
   bool mSentFirstFrameLoadedEvent;
 
   bool mSentPlaybackEndedEvent;
+
+  
+  bool mVideoDecodeSuspended;
+
+  
+  DelayedScheduler mVideoDecodeSuspendTimer;
 
   
   const RefPtr<OutputStreamManager> mOutputStreamManager;
