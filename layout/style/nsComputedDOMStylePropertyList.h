@@ -301,6 +301,12 @@ COMPUTED_STYLE_PROP(_moz_window_shadow,            WindowShadow)
 
 
 
+COMPUTED_STYLE_PROP(_webkit_text_fill_color,       WebkitTextFillColor)
+
+
+
+
+
 COMPUTED_STYLE_PROP(clip_path,                     ClipPath)
 COMPUTED_STYLE_PROP(clip_rule,                     ClipRule)
 COMPUTED_STYLE_PROP(color_interpolation,           ColorInterpolation)

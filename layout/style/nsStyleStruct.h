@@ -1872,6 +1872,7 @@ struct nsStyleText
   bool mTextAlignTrue : 1;              
   bool mTextAlignLastTrue : 1;          
   bool mTextEmphasisColorForeground : 1;
+  bool mWebkitTextFillColorForeground : 1;    
   uint8_t mTextTransform;               
   uint8_t mWhiteSpace;                  
   uint8_t mWordBreak;                   
@@ -1886,6 +1887,7 @@ struct nsStyleText
   uint8_t mTextEmphasisStyle;           
   int32_t mTabSize;                     
   nscolor mTextEmphasisColor;           
+  nscolor mWebkitTextFillColor;         
 
   nsStyleCoord mWordSpacing;            
   nsStyleCoord mLetterSpacing;          
