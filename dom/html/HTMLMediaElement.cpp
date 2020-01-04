@@ -3205,7 +3205,13 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder,
 
 #ifdef MOZ_EME
   if (mMediaKeys) {
-    mDecoder->SetCDMProxy(mMediaKeys->GetCDMProxy());
+    if (mMediaKeys->GetCDMProxy()) {
+      mDecoder->SetCDMProxy(mMediaKeys->GetCDMProxy());
+    } else {
+      
+      ShutdownDecoder();
+      return NS_ERROR_FAILURE;
+    }
   }
 #endif
 
@@ -5496,6 +5502,12 @@ HTMLMediaElement::SetMediaKeys(mozilla::dom::MediaKeys* aMediaKeys,
 
   
   if (aMediaKeys) {
+    if (!aMediaKeys->GetCDMProxy()) {
+      promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
+        NS_LITERAL_CSTRING("CDM crashed before binding MediaKeys object to HTMLMediaElement"));
+      return promise.forget();
+    }
+
     
     
     if (NS_FAILED(aMediaKeys->Bind(this))) {
