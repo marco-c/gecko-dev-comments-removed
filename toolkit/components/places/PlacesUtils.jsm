@@ -2041,88 +2041,67 @@ XPCOMUtils.defineLazyGetter(this, "bundle", function() {
          createBundle(PLACES_STRING_BUNDLE_URI);
 });
 
-XPCOMUtils.defineLazyGetter(this, "gAsyncDBConnPromised",
-  () => new Promise((resolve) => {
-    Sqlite.cloneStorageConnection({
-      connection: PlacesUtils.history.DBConnection,
-      readOnly:   true
-    }).then(conn => {
-      try {
-        let state = "0. Not started.";
-        let promiseClosed = new Promise(resolve => {
+
+
+
+
+
+
+
+
+
+
+function setupDbForShutdown(conn, name) {
+  try {
+    let state = "0. Not started.";
+    let promiseClosed = new Promise(resolve => {
+      
+      
+      
+      AsyncShutdown.placesClosingInternalConnection.addBlocker(`${name} closing as part of Places shutdown`,
+        Task.async(function*() {
+          state = "1. Service has initiated shutdown";
+
           
           
-          
-          AsyncShutdown.placesClosingInternalConnection.addBlocker("PlacesUtils read-only connection closing",
-            Task.async(function*() {
-              state = "1. Service has initiated shutdown";
+          yield conn.close();
+          state = "2. Closed Sqlite.jsm connection.";
 
-              
-              
-              yield conn.close();
-              state = "2. Closed Sqlite.jsm connection.";
-
-              resolve();
-            }),
-            () => state
-          );
-        });
-
-        
-        
-        Sqlite.shutdown.addBlocker("PlacesUtils read-only connection closing",
-          () => promiseClosed,
-          () => state
-        );
-      } catch(ex) {
-        
-        conn.close();
-        throw ex;
-      }
-      resolve(conn);
+          resolve();
+        }),
+        () => state
+      );
     });
+
+    
+    
+    Sqlite.shutdown.addBlocker(`${name} must be closed before Sqlite.jsm`,
+      () => promiseClosed,
+      () => state
+    );
+  } catch(ex) {
+    
+    conn.close();
+    throw ex;
+  }
+}
+
+XPCOMUtils.defineLazyGetter(this, "gAsyncDBConnPromised",
+  () => Sqlite.cloneStorageConnection({
+    connection: PlacesUtils.history.DBConnection,
+    readOnly:   true
+  }).then(conn => {
+      setupDbForShutdown(conn, "PlacesUtils read-only connection");
+      return conn;
   })
 );
 
 XPCOMUtils.defineLazyGetter(this, "gAsyncDBWrapperPromised",
-  () => new Promise((resolve) => {
-    Sqlite.wrapStorageConnection({
+  () => Sqlite.wrapStorageConnection({
       connection: PlacesUtils.history.DBConnection,
-    }).then(conn => {
-      try {
-        let state = "0. Not started.";
-        let promiseClosed = new Promise(resolve => {
-          
-          
-          
-          AsyncShutdown.placesClosingInternalConnection.addBlocker("PlacesUtils wrapped connection closing",
-            Task.async(function*() {
-              state = "1. Service has initiated shutdown";
-
-              
-              
-              yield conn.close();
-              state = "2. Closed Sqlite.jsm connection.";
-
-              resolve();
-            }),
-            () => state
-          );
-        });
-
-        
-        
-        Sqlite.shutdown.addBlocker("PlacesUtils wrapped connection closing",
-          () => promiseClosed,
-          () => state
-        );
-      } catch(ex) {
-        
-        conn.close();
-        throw ex;
-      }
-      resolve(conn);
-    });
+  }).then(conn => {
+    setupDbForShutdown(conn, "PlacesUtils wrapped connection");
+    return conn;
   })
 );
 
