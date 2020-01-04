@@ -22,6 +22,7 @@ ServoStyleSet::ServoStyleSet()
   : mPresContext(nullptr)
   , mRawSet(Servo_StyleSet_Init())
   , mBatching(0)
+  , mStylingStarted(false)
 {
 }
 
@@ -70,6 +71,24 @@ ServoStyleSet::EndUpdate()
 
   
   return NS_OK;
+}
+
+void
+ServoStyleSet::StartStyling(nsPresContext* aPresContext)
+{
+  MOZ_ASSERT(!mStylingStarted);
+
+  
+  
+  
+  
+  nsIContent* root = mPresContext->Document()->GetRootElement();
+  if (root) {
+    root->SetIsDirtyForServo();
+  }
+
+  StyleDocument( false);
+  mStylingStarted = true;
 }
 
 already_AddRefed<nsStyleContext>
@@ -466,15 +485,20 @@ void
 ServoStyleSet::StyleDocument(bool aLeaveDirtyBits)
 {
   
+  
   nsIDocument* doc = mPresContext->Document();
-  nsIContent* root = doc->GetRootElement();
-  MOZ_ASSERT(root);
+  doc->UnsetHasDirtyDescendantsForServo();
+
+  
+  nsIContent* root = mPresContext->Document()->GetRootElement();
+  if (!root) {
+    return;
+  }
 
   
   Servo_RestyleSubtree(root, mRawSet.get());
   if (!aLeaveDirtyBits) {
     ClearDirtyBits(root);
-    doc->UnsetHasDirtyDescendantsForServo();
   }
 }
 
@@ -482,7 +506,9 @@ void
 ServoStyleSet::StyleNewSubtree(nsIContent* aContent)
 {
   MOZ_ASSERT(aContent->IsDirtyForServo());
-  Servo_RestyleSubtree(aContent, mRawSet.get());
+  if (aContent->IsElement() || aContent->IsNodeOfType(nsINode::eTEXT)) {
+    Servo_RestyleSubtree(aContent, mRawSet.get());
+  }
   ClearDirtyBits(aContent);
 }
 
