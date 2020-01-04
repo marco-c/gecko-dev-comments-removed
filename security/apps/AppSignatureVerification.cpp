@@ -651,6 +651,27 @@ VerifyCertificate(CERTCertificate* signerCert, void* voidContext, void* pinArg)
                       KeyPurposeId::id_kp_codeSigning,
                       CertPolicyId::anyPolicy,
                       nullptr);
+  if (rv == Result::ERROR_EXPIRED_CERTIFICATE) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    rv = Success;
+  }
   if (rv != Success) {
     return mozilla::psm::GetXPCOMFromNSSError(MapResultToPRErrorCode(rv));
   }
