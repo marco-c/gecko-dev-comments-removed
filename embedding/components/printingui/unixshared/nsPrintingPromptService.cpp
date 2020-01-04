@@ -198,8 +198,6 @@ nsPrintingPromptService::DoDialog(mozIDOMWindowProxy *aParent,
     if (!mWatcher)
         return NS_ERROR_FAILURE;
 
-    nsresult rv = NS_OK;
-
     
     
     
@@ -213,8 +211,10 @@ nsPrintingPromptService::DoDialog(mozIDOMWindowProxy *aParent,
     
     
     nsCOMPtr<nsISupportsArray> array;
-    NS_NewISupportsArray(getter_AddRefs(array));
-    if (!array) return NS_ERROR_FAILURE;
+    nsresult rv = NS_NewISupportsArray(getter_AddRefs(array));
+    if (NS_FAILED(rv)) {
+      return NS_ERROR_FAILURE;
+    }
 
     nsCOMPtr<nsISupports> psSupports(do_QueryInterface(aPS));
     NS_ASSERTION(psSupports, "PrintSettings must be a supports");
