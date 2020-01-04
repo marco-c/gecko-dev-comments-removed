@@ -372,13 +372,10 @@ function attachTestThread(aClient, aTitle, aCallback) {
 
 
 
-function attachTestTabAndResume(aClient, aTitle, aCallback = () => {}) {
-  return new Promise((resolve, reject) => {
-    attachTestThread(aClient, aTitle, function(aResponse, aTabClient, aThreadClient) {
-      aThreadClient.resume(function (aResponse) {
-        aCallback(aResponse, aTabClient, aThreadClient);
-        resolve([aResponse, aTabClient, aThreadClient]);
-      });
+function attachTestTabAndResume(aClient, aTitle, aCallback) {
+  attachTestThread(aClient, aTitle, function(aResponse, aTabClient, aThreadClient) {
+    aThreadClient.resume(function (aResponse) {
+      aCallback(aResponse, aTabClient, aThreadClient);
     });
   });
 }
@@ -725,20 +722,6 @@ function stepIn(client, threadClient) {
   const paused = waitForPause(client);
   return threadClient.stepIn()
     .then(() => paused);
-}
-
-
-
-
-
-
-
-
-
-function stepOver(client, threadClient) {
-  dumpn("Stepping over.");
-  return threadClient.stepOver()
-    .then(() => waitForPause(client));
 }
 
 
