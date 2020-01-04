@@ -34,12 +34,6 @@ const nsIDM = Ci.nsIDownloadManager;
 const DESTINATION_FILE_URI_ANNO  = "downloads/destinationFileURI";
 const DOWNLOAD_META_DATA_ANNO    = "downloads/metaData";
 
-const DOWNLOAD_VIEW_SUPPORTED_COMMANDS =
- ["cmd_delete", "cmd_copy", "cmd_paste", "cmd_selectAll",
-  "downloadsCmd_pauseResume", "downloadsCmd_cancel", "downloadsCmd_unblock",
-  "downloadsCmd_confirmBlock", "downloadsCmd_open", "downloadsCmd_show",
-  "downloadsCmd_retry", "downloadsCmd_openReferrer", "downloadsCmd_clearDownloads"];
-
 
 
 
@@ -317,7 +311,6 @@ HistoryDownloadElementShell.prototype = {
     this._updateProgress();
   },
 
-  
   isCommandEnabled(aCommand) {
     
     if (!this.active && aCommand != "cmd_delete") {
@@ -356,66 +349,66 @@ HistoryDownloadElementShell.prototype = {
     return false;
   },
 
-  
   doCommand(aCommand) {
-    switch (aCommand) {
-      case "downloadsCmd_open": {
-        let file = new FileUtils.File(this.download.target.path);
-        DownloadsCommon.openDownloadedFile(file, null, window);
-        break;
-      }
-      case "downloadsCmd_show": {
-        let file = new FileUtils.File(this.download.target.path);
-        DownloadsCommon.showDownloadedFile(file);
-        break;
-      }
-      case "downloadsCmd_openReferrer": {
-        openURL(this.download.source.referrer);
-        break;
-      }
-      case "downloadsCmd_cancel": {
-        this.download.cancel().catch(() => {});
-        this.download.removePartialData().catch(Cu.reportError);
-        break;
-      }
-      case "cmd_delete": {
-        if (this._sessionDownload) {
-          DownloadsCommon.removeAndFinalizeDownload(this.download);
-        }
-        if (this._historyDownload) {
-          let uri = NetUtil.newURI(this.download.source.url);
-          PlacesUtils.bhistory.removePage(uri);
-        }
-        break;
-      }
-      case "downloadsCmd_retry": {
-        
-        this.download.start().catch(() => {});
-        break;
-      }
-      case "downloadsCmd_pauseResume": {
-        
-        if (this.download.stopped) {
-          this.download.start();
-        } else {
-          this.download.cancel();
-        }
-        break;
-      }
-      case "downloadsCmd_unblock": {
-        DownloadsCommon.confirmUnblockDownload(DownloadsCommon.BLOCK_VERDICT_MALWARE,
-                                               window).then((confirmed) => {
-          if (confirmed) {
-            return this.download.unblock();
-          }
-        }).catch(Cu.reportError);
-        break;
-      }
-      case "downloadsCmd_confirmBlock": {
-        this.download.confirmBlock().catch(Cu.reportError);
-        break;
-      }
+    if (DownloadsViewUI.isCommandName(aCommand)) {
+      this[aCommand]();
     }
+  },
+
+  downloadsCmd_open() {
+    let file = new FileUtils.File(this.download.target.path);
+    DownloadsCommon.openDownloadedFile(file, null, window);
+  },
+
+  downloadsCmd_show() {
+    let file = new FileUtils.File(this.download.target.path);
+    DownloadsCommon.showDownloadedFile(file);
+  },
+
+  downloadsCmd_openReferrer() {
+    openURL(this.download.source.referrer);
+  },
+
+  downloadsCmd_cancel() {
+    this.download.cancel().catch(() => {});
+    this.download.removePartialData().catch(Cu.reportError);
+  },
+
+  cmd_delete() {
+    if (this._sessionDownload) {
+      DownloadsCommon.removeAndFinalizeDownload(this.download);
+    }
+    if (this._historyDownload) {
+      let uri = NetUtil.newURI(this.download.source.url);
+      PlacesUtils.bhistory.removePage(uri);
+    }
+  },
+
+  downloadsCmd_retry() {
+    
+    this.download.start().catch(() => {});
+  },
+
+  downloadsCmd_pauseResume() {
+    
+    if (this.download.stopped) {
+      this.download.start();
+    } else {
+      this.download.cancel();
+    }
+  },
+
+  downloadsCmd_unblock() {
+    DownloadsCommon.confirmUnblockDownload(DownloadsCommon.BLOCK_VERDICT_MALWARE,
+                                           window).then((confirmed) => {
+      if (confirmed) {
+        return this.download.unblock();
+      }
+    }).catch(Cu.reportError);
+  },
+
+  downloadsCmd_confirmBlock() {
+    this.download.confirmBlock().catch(Cu.reportError);
   },
 
   
@@ -1186,24 +1179,28 @@ DownloadsPlacesView.prototype = {
     this._removeSessionDownloadFromView(download);
   },
 
+  
   supportsCommand(aCommand) {
-    if (DOWNLOAD_VIEW_SUPPORTED_COMMANDS.indexOf(aCommand) != -1) {
-      
-      
-      
-      
-      
-      
-      
-      
-      if (document.activeElement == this._richlistbox ||
-          aCommand == "downloadsCmd_clearDownloads") {
-        return true;
-      }
+    
+    if (!aCommand.startsWith("cmd_") &&
+        !aCommand.startsWith("downloadsCmd_")) {
+      return false;
     }
-    return false;
+    if (!(aCommand in this) &&
+        !(aCommand in HistoryDownloadElementShell.prototype)) {
+      return false;
+    }
+    
+    
+    
+    
+    
+    
+    return aCommand == "downloadsCmd_clearDownloads" ||
+           document.activeElement == this._richlistbox;
   },
 
+  
   isCommandEnabled(aCommand) {
     switch (aCommand) {
       case "cmd_copy":
@@ -1280,42 +1277,50 @@ DownloadsPlacesView.prototype = {
     DownloadURL(url, name, initiatingDoc);
   },
 
+  
   doCommand(aCommand) {
-    switch (aCommand) {
-      case "cmd_copy":
-        this._copySelectedDownloadsToClipboard();
-        break;
-      case "cmd_selectAll":
-        this._richlistbox.selectAll();
-        break;
-      case "cmd_paste":
-        this._downloadURLFromClipboard();
-        break;
-      case "downloadsCmd_clearDownloads":
-        this._downloadsData.removeFinished();
-        if (this.result) {
-          Cc["@mozilla.org/browser/download-history;1"]
-            .getService(Ci.nsIDownloadHistory)
-            .removeAllDownloads();
-        }
-        
-        
-        goUpdateCommand("downloadsCmd_clearDownloads");
-        break;
-      default: {
-        
-        
-        
-        
-        let selectedElements = [... this._richlistbox.selectedItems];
-        for (let element of selectedElements) {
-          element._shell.doCommand(aCommand);
-        }
-      }
+    
+    if (aCommand in this) {
+      this[aCommand]();
+      return;
+    }
+
+    
+    
+    
+    
+    let selectedElements = [...this._richlistbox.selectedItems];
+    for (let element of selectedElements) {
+      element._shell.doCommand(aCommand);
     }
   },
 
+  
   onEvent() {},
+
+  cmd_copy() {
+    this._copySelectedDownloadsToClipboard();
+  },
+
+  cmd_selectAll() {
+    this._richlistbox.selectAll();
+  },
+
+  cmd_paste() {
+    this._downloadURLFromClipboard();
+  },
+
+  downloadsCmd_clearDownloads() {
+    this._downloadsData.removeFinished();
+    if (this.result) {
+      Cc["@mozilla.org/browser/download-history;1"]
+        .getService(Ci.nsIDownloadHistory)
+        .removeAllDownloads();
+    }
+    
+    
+    goUpdateCommand("downloadsCmd_clearDownloads");
+  },
 
   onContextMenu(aEvent) {
     let element = this._richlistbox.selectedItem;
@@ -1457,7 +1462,13 @@ for (let methodName of ["load", "applyFilter", "selectNode", "selectItems"]) {
 }
 
 function goUpdateDownloadCommands() {
-  for (let command of DOWNLOAD_VIEW_SUPPORTED_COMMANDS) {
-    goUpdateCommand(command);
+  function updateCommandsForObject(object) {
+    for (let name in object) {
+      if (name.startsWith("cmd_") || name.startsWith("downloadsCmd_")) {
+        goUpdateCommand(name);
+      }
+    }
   }
+  updateCommandsForObject(this);
+  updateCommandsForObject(HistoryDownloadElementShell.prototype);
 }

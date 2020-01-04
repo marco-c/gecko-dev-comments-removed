@@ -24,7 +24,15 @@ XPCOMUtils.defineLazyModuleGetter(this, "DownloadsCommon",
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
 
-this.DownloadsViewUI = {};
+this.DownloadsViewUI = {
+  
+
+
+
+  isCommandName(name) {
+    return name.startsWith("cmd_") || name.startsWith("downloadsCmd_");
+  },
+};
 
 
 
