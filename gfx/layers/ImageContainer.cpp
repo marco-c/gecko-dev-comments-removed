@@ -842,21 +842,13 @@ SourceSurfaceImage::GetTextureClient(CompositableClient *aClient)
 #endif
   if (!textureClient) {
     
-    textureClient = aClient->CreateTextureClientForDrawing(surface->GetFormat(),
-                                                           surface->GetSize(),
-                                                           BackendSelector::Content,
-                                                           TextureFlags::DEFAULT);
+    textureClient = aClient->CreateTextureClientFromSurface(surface,
+                                                            BackendSelector::Content,
+                                                            TextureFlags::DEFAULT);
   }
   if (!textureClient) {
     return nullptr;
   }
-
-  TextureClientAutoLock autoLock(textureClient, OpenMode::OPEN_WRITE_ONLY);
-  if (!autoLock.Succeeded()) {
-    return nullptr;
-  }
-
-  textureClient->UpdateFromSurface(surface);
 
   textureClient->SyncWithObject(forwarder->GetSyncObject());
 
