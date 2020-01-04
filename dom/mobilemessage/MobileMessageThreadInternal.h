@@ -14,12 +14,18 @@
 
 namespace mozilla {
 namespace dom {
+
+class MobileMessageThread;
+
 namespace mobilemessage {
 
 class ThreadData;
 
 class MobileMessageThreadInternal final : public nsIMobileMessageThread
 {
+  
+  
+  friend class mozilla::dom::MobileMessageThread;
 
 public:
   NS_DECL_ISUPPORTS
