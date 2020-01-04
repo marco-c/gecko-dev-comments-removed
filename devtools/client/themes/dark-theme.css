@@ -187,13 +187,13 @@ body {
 
 
 
-.CodeMirror { 
+.CodeMirror.cm-s-mozilla  { 
   font-family: inherit;
   font-size: inherit;
   background: transparent;
 }
 
-.CodeMirror pre,
+.CodeMirror.cm-s-mozilla  pre,
 .cm-s-mozilla .cm-variable-2,
 .cm-s-mozilla .cm-variable-3,
 .cm-s-mozilla .cm-operator,
