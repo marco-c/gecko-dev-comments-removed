@@ -569,14 +569,6 @@ PuppetWidget::GetLayerManager(PLayerTransactionChild* aShadowManager,
                               LayersBackend aBackendHint,
                               LayerManagerPersistence aPersistence)
 {
-  if (XRE_IsParentProcess()) {
-    
-    
-    return nsBaseWidget::GetLayerManager(aShadowManager,
-                                         aBackendHint,
-                                         aPersistence);
-  }
-
   if (!mLayerManager) {
     mLayerManager = new ClientLayerManager(this);
   }
