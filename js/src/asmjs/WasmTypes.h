@@ -817,7 +817,7 @@ enum ModuleKind
 
 
 
-struct ImportExit
+struct FuncImportExit
 {
     void* code;
     jit::BaselineScript* baselineScript;

@@ -413,9 +413,9 @@ FillArgumentArray(MacroAssembler& masm, const ValTypeVector& args, unsigned argO
 
 
 ProfilingOffsets
-wasm::GenerateInterpExit(MacroAssembler& masm, const Import& import, uint32_t importIndex)
+wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t funcImportIndex)
 {
-    const Sig& sig = import.sig();
+    const Sig& sig = fi.sig();
 
     masm.setFramePushed(0);
 
@@ -447,9 +447,9 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const Import& import, uint32_t im
 
     
     if (i->kind() == ABIArg::GPR)
-        masm.mov(ImmWord(importIndex), i->gpr());
+        masm.mov(ImmWord(funcImportIndex), i->gpr());
     else
-        masm.store32(Imm32(importIndex), Address(masm.getStackPointer(), i->offsetFromArgBase()));
+        masm.store32(Imm32(funcImportIndex), Address(masm.getStackPointer(), i->offsetFromArgBase()));
     i++;
 
     
@@ -528,9 +528,9 @@ static const unsigned MaybeSavedGlobalReg = 0;
 
 
 ProfilingOffsets
-wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
+wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, bool usesHeap)
 {
-    const Sig& sig = import.sig();
+    const Sig& sig = fi.sig();
 
     masm.setFramePushed(0);
 
@@ -562,7 +562,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
     Register scratch = ABINonArgReturnReg1;  
 
     
-    uint32_t globalDataOffset = import.exitGlobalDataOffset();
+    uint32_t globalDataOffset = fi.exitGlobalDataOffset();
 #if defined(JS_CODEGEN_X64)
     masm.append(AsmJSGlobalAccess(masm.leaRipRelative(callee), globalDataOffset));
 #elif defined(JS_CODEGEN_X86)
@@ -573,7 +573,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
 #endif
 
     
-    masm.loadPtr(Address(callee, offsetof(ImportExit, fun)), callee);
+    masm.loadPtr(Address(callee, offsetof(FuncImportExit, fun)), callee);
 
     
     masm.storePtr(callee, Address(masm.getStackPointer(), argOffset));

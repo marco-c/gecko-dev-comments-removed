@@ -180,7 +180,9 @@ typedef Vector<Export, 0, SystemAllocPolicy> ExportVector;
 
 
 
-class Import
+
+
+class FuncImport
 {
     Sig sig_;
     struct CacheablePod {
@@ -190,8 +192,8 @@ class Import
     } pod;
 
   public:
-    Import() = default;
-    Import(Sig&& sig, uint32_t exitGlobalDataOffset)
+    FuncImport() = default;
+    FuncImport(Sig&& sig, uint32_t exitGlobalDataOffset)
       : sig_(Move(sig))
     {
         pod.exitGlobalDataOffset_ = exitGlobalDataOffset;
@@ -221,10 +223,10 @@ class Import
         return pod.jitExitCodeOffset_;
     }
 
-    WASM_DECLARE_SERIALIZABLE(Import)
+    WASM_DECLARE_SERIALIZABLE(FuncImport)
 };
 
-typedef Vector<Import, 0, SystemAllocPolicy> ImportVector;
+typedef Vector<FuncImport, 0, SystemAllocPolicy> FuncImportVector;
 
 
 
@@ -425,7 +427,7 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
     MetadataCacheablePod& pod() { return *this; }
     const MetadataCacheablePod& pod() const { return *this; }
 
-    ImportVector          imports;
+    FuncImportVector      funcImports;
     ExportVector          exports;
     MemoryAccessVector    memoryAccesses;
     BoundsCheckVector     boundsChecks;

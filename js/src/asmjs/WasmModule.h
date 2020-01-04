@@ -97,20 +97,20 @@ typedef UniquePtr<const LinkData> UniqueConstLinkData;
 
 
 
-struct ImportName
+struct Import
 {
     CacheableChars module;
     CacheableChars func;
 
-    ImportName() = default;
-    ImportName(UniqueChars&& module, UniqueChars&& func)
+    Import() = default;
+    Import(UniqueChars&& module, UniqueChars&& func)
       : module(Move(module)), func(Move(func))
     {}
 
-    WASM_DECLARE_SERIALIZABLE(ImportName)
+    WASM_DECLARE_SERIALIZABLE(Import)
 };
 
-typedef Vector<ImportName, 0, SystemAllocPolicy> ImportNameVector;
+typedef Vector<Import, 0, SystemAllocPolicy> ImportVector;
 
 
 
@@ -161,7 +161,7 @@ class Module
 {
     const Bytes             code_;
     const LinkData          linkData_;
-    const ImportNameVector  importNames_;
+    const ImportVector      imports_;
     const ExportMap         exportMap_;
     const DataSegmentVector dataSegments_;
     const SharedMetadata    metadata_;
@@ -170,14 +170,14 @@ class Module
   public:
     Module(Bytes&& code,
            LinkData&& linkData,
-           ImportNameVector&& importNames,
+           ImportVector&& imports,
            ExportMap&& exportMap,
            DataSegmentVector&& dataSegments,
            const Metadata& metadata,
            const ShareableBytes& bytecode)
       : code_(Move(code)),
         linkData_(Move(linkData)),
-        importNames_(Move(importNames)),
+        imports_(Move(imports)),
         exportMap_(Move(exportMap)),
         dataSegments_(Move(dataSegments)),
         metadata_(&metadata),
@@ -185,7 +185,7 @@ class Module
     {}
 
     const Metadata& metadata() const { return *metadata_; }
-    const ImportNameVector& importNames() const { return importNames_; }
+    const ImportVector& imports() const { return imports_; }
 
     
 

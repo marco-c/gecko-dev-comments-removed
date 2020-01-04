@@ -67,7 +67,7 @@ class Instance
 
     
     uint8_t** addressOfMemoryBase() const;
-    ImportExit& importToExit(const Import& import);
+    FuncImportExit& funcImportToExit(const FuncImport& fi);
     MOZ_MUST_USE bool toggleProfiling(JSContext* cx);
 
     
@@ -77,7 +77,7 @@ class Instance
 
     
     friend void* AddressOf(SymbolicAddress, ExclusiveContext*);
-    bool callImport(JSContext* cx, uint32_t importIndex, unsigned argc, const uint64_t* argv,
+    bool callImport(JSContext* cx, uint32_t funcImportIndex, unsigned argc, const uint64_t* argv,
                     MutableHandleValue rval);
     static int32_t callImport_void(int32_t importIndex, int32_t argc, uint64_t* argv);
     static int32_t callImport_i32(int32_t importIndex, int32_t argc, uint64_t* argv);
@@ -142,7 +142,7 @@ class Instance
     
     
 
-    void deoptimizeImportExit(uint32_t importIndex);
+    void deoptimizeImportExit(uint32_t funcImportIndex);
 
     
 
