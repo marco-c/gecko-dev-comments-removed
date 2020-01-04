@@ -575,7 +575,7 @@ nsWinGesture::PanDeltaToPixelScroll(WidgetWheelEvent& aWheelEvent)
   aWheelEvent.mIsNoLineOrPageDelta = true;
 
   aWheelEvent.mOverflowDeltaX = 0.0;
-  aWheelEvent.overflowDeltaY = 0.0;
+  aWheelEvent.mOverflowDeltaY = 0.0;
 
   
   

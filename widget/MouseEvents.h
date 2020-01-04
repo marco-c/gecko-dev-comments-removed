@@ -459,7 +459,7 @@ private:
     , mLineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
     , mOverflowDeltaX(0.0)
-    , overflowDeltaY(0.0)
+    , mOverflowDeltaY(0.0)
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
     , mAllowToOverrideSystemScrollSpeed(false)
@@ -483,7 +483,7 @@ public:
     , mLineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
     , mOverflowDeltaX(0.0)
-    , overflowDeltaY(0.0)
+    , mOverflowDeltaY(0.0)
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
     , mAllowToOverrideSystemScrollSpeed(true)
@@ -589,7 +589,7 @@ public:
   
   
   double mOverflowDeltaX;
-  double overflowDeltaY;
+  double mOverflowDeltaY;
 
   
   
@@ -622,7 +622,7 @@ public:
     mLineOrPageDeltaY = aEvent.mLineOrPageDeltaY;
     mScrollType = aEvent.mScrollType;
     mOverflowDeltaX = aEvent.mOverflowDeltaX;
-    overflowDeltaY = aEvent.overflowDeltaY;
+    mOverflowDeltaY = aEvent.mOverflowDeltaY;
     mViewPortIsOverscrolled = aEvent.mViewPortIsOverscrolled;
     mCanTriggerSwipe = aEvent.mCanTriggerSwipe;
     mAllowToOverrideSystemScrollSpeed =
