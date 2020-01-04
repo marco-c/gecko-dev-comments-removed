@@ -77,7 +77,7 @@ typedef mozilla::docshell::OfflineCacheUpdateGlue OfflineCacheUpdateGlue;
 
 
 
-PRLogModuleInfo *gOfflineCacheUpdateLog;
+LazyLogModule gOfflineCacheUpdateLog("nsOfflineCacheUpdate");
 
 #undef LOG
 #define LOG(args) MOZ_LOG(gOfflineCacheUpdateLog, mozilla::LogLevel::Debug, args)
@@ -257,9 +257,6 @@ nsOfflineCacheUpdateService::~nsOfflineCacheUpdateService()
 nsresult
 nsOfflineCacheUpdateService::Init()
 {
-    if (!gOfflineCacheUpdateLog)
-        gOfflineCacheUpdateLog = PR_NewLogModule("nsOfflineCacheUpdate");
-
     
     nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();

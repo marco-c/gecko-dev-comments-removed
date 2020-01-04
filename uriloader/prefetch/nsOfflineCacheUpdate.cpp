@@ -61,7 +61,7 @@ static const int32_t  kCustomProfileQuota = 512000;
 
 
 
-extern PRLogModuleInfo *gOfflineCacheUpdateLog;
+extern LazyLogModule gOfflineCacheUpdateLog;
 
 #undef LOG
 #define LOG(args) MOZ_LOG(gOfflineCacheUpdateLog, mozilla::LogLevel::Debug, args)
