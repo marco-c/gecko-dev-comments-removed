@@ -127,42 +127,50 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
   
   
   while (!GetDecodeDone() && !HasError()) {
-    auto newState = mIterator->AdvanceOrScheduleResume(aOnResume.get());
+    switch (mIterator->AdvanceOrScheduleResume(aOnResume.get())) {
+      case SourceBufferIterator::WAITING:
+        
+        
+        
+        
+        return NS_OK;
 
-    if (newState == SourceBufferIterator::WAITING) {
-      
-      
-      
-      
-      return NS_OK;
-    }
+      case SourceBufferIterator::COMPLETE: {
+        mDataDone = true;
 
-    if (newState == SourceBufferIterator::COMPLETE) {
-      mDataDone = true;
+        
+        
+        
+        
+        
+        nsresult finalStatus = mIterator->CompletionStatus();
+        if (NS_FAILED(finalStatus)) {
+          PostDataError();
+        }
 
-      nsresult finalStatus = mIterator->CompletionStatus();
-      if (NS_FAILED(finalStatus)) {
-        PostDataError();
+        CompleteDecode();
+        return finalStatus;
       }
 
-      CompleteDecode();
-      return finalStatus;
-    }
+      case SourceBufferIterator::READY: {
+        PROFILER_LABEL("ImageDecoder", "Decode",
+                       js::ProfileEntry::Category::GRAPHICS);
 
-    MOZ_ASSERT(newState == SourceBufferIterator::READY);
+        AutoRecordDecoderTelemetry telemetry(this, mIterator->Length());
 
-    {
-      PROFILER_LABEL("ImageDecoder", "Write",
-        js::ProfileEntry::Category::GRAPHICS);
+        
+        Maybe<TerminalState> terminalState = DoDecode(*mIterator);
 
-      AutoRecordDecoderTelemetry telemetry(this, mIterator->Length());
+        if (terminalState == Some(TerminalState::FAILURE)) {
+          PostDataError();
+        }
 
-      
-      Maybe<TerminalState> terminalState = DoDecode(*mIterator);
-
-      if (terminalState == Some(TerminalState::FAILURE)) {
-        PostDataError();
+        break;
       }
+
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unknown SourceBufferIterator state");
+        Maybe<TerminalState> terminalState = Some(TerminalState::FAILURE);
     }
   }
 
