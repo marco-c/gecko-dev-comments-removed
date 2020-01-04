@@ -113,7 +113,14 @@ nsSVGFilterFrame::GetReferencedFilter()
     
     SVGFilterElement *filter = static_cast<SVGFilterElement *>(mContent);
     nsAutoString href;
-    filter->mStringAttributes[SVGFilterElement::HREF].GetAnimValue(href, filter);
+    if (filter->mStringAttributes[SVGFilterElement::HREF].IsExplicitlySet()) {
+      filter->mStringAttributes[SVGFilterElement::HREF]
+        .GetAnimValue(href, filter);
+    } else {
+      filter->mStringAttributes[SVGFilterElement::XLINK_HREF]
+        .GetAnimValue(href, filter);
+    }
+
     if (href.IsEmpty()) {
       mNoHRefURI = true;
       return nullptr; 
@@ -172,7 +179,8 @@ nsSVGFilterFrame::AttributeChanged(int32_t  aNameSpaceID,
        aAttribute == nsGkAtoms::filterUnits ||
        aAttribute == nsGkAtoms::primitiveUnits)) {
     nsSVGEffects::InvalidateDirectRenderingObservers(this);
-  } else if (aNameSpaceID == kNameSpaceID_XLink &&
+  } else if ((aNameSpaceID == kNameSpaceID_XLink ||
+              aNameSpaceID == kNameSpaceID_None) &&
              aAttribute == nsGkAtoms::href) {
     
     Properties().Delete(nsSVGEffects::HrefAsPaintingProperty());
