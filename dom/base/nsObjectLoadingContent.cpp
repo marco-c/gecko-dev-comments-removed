@@ -715,7 +715,6 @@ nsObjectLoadingContent::nsObjectLoadingContent()
   , mInstantiating(false)
   , mNetworkCreated(true)
   , mActivated(false)
-  , mPlayPreviewCanceled(false)
   , mIsStopping(false)
   , mIsLoading(false)
   , mScriptRequested(false) {}
@@ -1406,8 +1405,6 @@ nsObjectLoadingContent::ObjectState() const
           return NS_EVENT_STATE_USERDISABLED;
         case eFallbackClickToPlay:
           return NS_EVENT_STATE_TYPE_CLICK_TO_PLAY;
-        case eFallbackPlayPreview:
-          return NS_EVENT_STATE_TYPE_PLAY_PREVIEW;
         case eFallbackDisabled:
           return NS_EVENT_STATE_BROKEN | NS_EVENT_STATE_HANDLER_DISABLED;
         case eFallbackBlocklisted:
@@ -3137,7 +3134,6 @@ nsObjectLoadingContent::Reload(bool aClearActivation)
 {
   if (aClearActivation) {
     mActivated = false;
-    mPlayPreviewCanceled = false;
   }
 
   return LoadObject(true, true);
@@ -3174,22 +3170,6 @@ nsObjectLoadingContent::GetHasRunningPlugin(bool *aHasPlugin)
 {
   NS_ENSURE_TRUE(nsContentUtils::IsCallerChrome(), NS_ERROR_NOT_AVAILABLE);
   *aHasPlugin = HasRunningPlugin();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsObjectLoadingContent::CancelPlayPreview()
-{
-  if (!nsContentUtils::IsCallerChrome())
-    return NS_ERROR_NOT_AVAILABLE;
-
-  mPlayPreviewCanceled = true;
-
-  
-  if (mType == eType_Null && mFallbackType == eFallbackPlayPreview) {
-    return LoadObject(true, true);
-  }
-
   return NS_OK;
 }
 
@@ -3238,38 +3218,11 @@ nsObjectLoadingContent::ShouldPlay(FallbackType &aReason, bool aIgnoreCurrentTyp
 
   nsRefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
 
-  nsCOMPtr<nsIPluginPlayPreviewInfo> playPreviewInfo;
-  bool isPlayPreviewSpecified = NS_SUCCEEDED(pluginHost->GetPlayPreviewInfo(
-    mContentType, getter_AddRefs(playPreviewInfo)));
-  if (isPlayPreviewSpecified) {
-    
-    nsCString uriSpec, baseSpec;
-    if (mURI) {
-      mURI->GetSpec(uriSpec);
-    }
-    if (mBaseURI) {
-      mBaseURI->GetSpec(baseSpec);
-    }
-    playPreviewInfo->CheckWhitelist(baseSpec, uriSpec, &isPlayPreviewSpecified);
-  }
-  bool ignoreCTP = false;
-  if (isPlayPreviewSpecified) {
-    playPreviewInfo->GetIgnoreCTP(&ignoreCTP);
-  }
-  if (isPlayPreviewSpecified && !mPlayPreviewCanceled &&
-      ignoreCTP) {
-    
-    
-    aReason = eFallbackPlayPreview;
-    return false;
-  }
   
   if (!aIgnoreCurrentType && mType != eType_Plugin) {
     return true;
   }
 
-  
-  
   
   
   
@@ -3307,12 +3260,6 @@ nsObjectLoadingContent::ShouldPlay(FallbackType &aReason, bool aIgnoreCurrentTyp
   }
   else if (blocklistState == nsIBlocklistService::STATE_VULNERABLE_NO_UPDATE) {
     aReason = eFallbackVulnerableNoUpdate;
-  }
-
-  if (aReason == eFallbackClickToPlay && isPlayPreviewSpecified &&
-      !mPlayPreviewCanceled && !ignoreCTP) {
-    
-    aReason = eFallbackPlayPreview;
   }
 
   
