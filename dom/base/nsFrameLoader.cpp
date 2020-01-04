@@ -1032,6 +1032,14 @@ nsFrameLoader::SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
+  
+  if (OwnerIsMozBrowserOrAppFrame() && !aOther->OwnerIsMozBrowserOrAppFrame()) {
+    DestroyBrowserFrameScripts();
+  }
+  if (!OwnerIsMozBrowserOrAppFrame() && aOther->OwnerIsMozBrowserOrAppFrame()) {
+    aOther->DestroyBrowserFrameScripts();
+  }
+
   aOther->mRemoteBrowser->SetBrowserDOMWindow(browserDOMWindow);
   mRemoteBrowser->SetBrowserDOMWindow(otherBrowserDOMWindow);
 
@@ -1404,6 +1412,14 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   rv = ourFrameFrame->BeginSwapDocShells(otherFrame);
   if (NS_FAILED(rv)) {
     return rv;
+  }
+
+  
+  if (OwnerIsMozBrowserOrAppFrame() && !aOther->OwnerIsMozBrowserOrAppFrame()) {
+    DestroyBrowserFrameScripts();
+  }
+  if (!OwnerIsMozBrowserOrAppFrame() && aOther->OwnerIsMozBrowserOrAppFrame()) {
+    aOther->DestroyBrowserFrameScripts();
   }
 
   
@@ -3364,23 +3380,36 @@ nsFrameLoader::GetLoadContext(nsILoadContext** aLoadContext)
 void
 nsFrameLoader::InitializeBrowserAPI()
 {
-  if (OwnerIsMozBrowserOrAppFrame()) {
-    if (!IsRemoteFrame()) {
-      nsresult rv = EnsureMessageManager();
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return;
-      }
-      if (mMessageManager) {
-        mMessageManager->LoadFrameScript(
-          NS_LITERAL_STRING("chrome://global/content/BrowserElementChild.js"),
-           true,
-           true);
-      }
+  if (!OwnerIsMozBrowserOrAppFrame()) {
+    return;
+  }
+  if (!IsRemoteFrame()) {
+    nsresult rv = EnsureMessageManager();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
     }
-    nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
-    if (browserFrame) {
-      browserFrame->InitializeBrowserAPI();
+    if (mMessageManager) {
+      mMessageManager->LoadFrameScript(
+        NS_LITERAL_STRING("chrome://global/content/BrowserElementChild.js"),
+         true,
+         true);
     }
+  }
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
+  if (browserFrame) {
+    browserFrame->InitializeBrowserAPI();
+  }
+}
+
+void
+nsFrameLoader::DestroyBrowserFrameScripts()
+{
+  if (!OwnerIsMozBrowserOrAppFrame()) {
+    return;
+  }
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
+  if (browserFrame) {
+    browserFrame->DestroyBrowserFrameScripts();
   }
 }
 

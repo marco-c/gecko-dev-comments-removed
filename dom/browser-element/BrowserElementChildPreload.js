@@ -30,9 +30,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "ManifestObtainer",
 
 var kLongestReturnedString = 128;
 
-const Timer = Components.Constructor("@mozilla.org/timer;1",
-                                     "nsITimer",
-                                     "initWithCallback");
+var Timer = Components.Constructor("@mozilla.org/timer;1",
+                                   "nsITimer",
+                                   "initWithCallback");
 
 function sendAsyncMsg(msg, data) {
   
@@ -66,12 +66,42 @@ function sendSyncMsg(msg, data) {
 
 var CERTIFICATE_ERROR_PAGE_PREF = 'security.alternate_certificate_error_page';
 
-const OBSERVED_EVENTS = [
+var OBSERVED_EVENTS = [
   'xpcom-shutdown',
   'audio-playback',
   'activity-done',
   'invalid-widget',
   'will-launch-app'
+];
+
+var LISTENED_EVENTS = [
+  { type: "DOMTitleChanged", useCapture: true, wantsUntrusted: false },
+  { type: "DOMLinkAdded", useCapture: true, wantsUntrusted: false },
+  { type: "MozScrolledAreaChanged", useCapture: true, wantsUntrusted: false },
+  { type: "MozDOMFullscreen:Request", useCapture: true, wantsUntrusted: false },
+  { type: "MozDOMFullscreen:NewOrigin", useCapture: true, wantsUntrusted: false },
+  { type: "MozDOMFullscreen:Exit", useCapture: true, wantsUntrusted: false },
+  { type: "DOMMetaAdded", useCapture: true, wantsUntrusted: false },
+  { type: "DOMMetaChanged", useCapture: true, wantsUntrusted: false },
+  { type: "DOMMetaRemoved", useCapture: true, wantsUntrusted: false },
+  { type: "scrollviewchange", useCapture: true, wantsUntrusted: false },
+  { type: "click", useCapture: false, wantsUntrusted: false },
+  
+  
+  
+  
+  
+  { type: "unload", useCapture: false, wantsUntrusted: false },
+];
+
+
+
+var LISTENED_SYSTEM_EVENTS = [
+  { type: "DOMWindowClose", useCapture: false },
+  { type: "DOMWindowCreated", useCapture: false },
+  { type: "DOMWindowResize", useCapture: false },
+  { type: "contextmenu", useCapture: false },
+  { type: "scroll", useCapture: false },
 ];
 
 
@@ -177,76 +207,124 @@ BrowserElementChild.prototype = {
 
     this._shuttingDown = false;
 
-    addEventListener('DOMTitleChanged',
-                     this._titleChangedHandler.bind(this),
-                      true,
-                      false);
-
-    addEventListener('DOMLinkAdded',
-                     this._linkAddedHandler.bind(this),
-                      true,
-                      false);
-
-    addEventListener('MozScrolledAreaChanged',
-                     this._mozScrollAreaChanged.bind(this),
-                      true,
-                      false);
-
-    addEventListener("MozDOMFullscreen:Request",
-                     this._mozRequestedDOMFullscreen.bind(this),
-                      true,
-                      false);
-
-    addEventListener("MozDOMFullscreen:NewOrigin",
-                     this._mozFullscreenOriginChange.bind(this),
-                      true,
-                      false);
-
-    addEventListener("MozDOMFullscreen:Exit",
-                     this._mozExitDomFullscreen.bind(this),
-                      true,
-                      false);
-
-    addEventListener('DOMMetaAdded',
-                     this._metaChangedHandler.bind(this),
-                      true,
-                      false);
-
-    addEventListener('DOMMetaChanged',
-                     this._metaChangedHandler.bind(this),
-                      true,
-                      false);
-
-    addEventListener('DOMMetaRemoved',
-                     this._metaChangedHandler.bind(this),
-                      true,
-                      false);
-
-    addEventListener('scrollviewchange',
-                     this._ScrollViewChangeHandler.bind(this),
-                      true,
-                      false);
-
-    addEventListener('click',
-                     this._ClickHandler.bind(this),
-                      false,
-                      false);
-
-    
-    
-    
-    
-    
-    addEventListener('unload',
-                     this._unloadHandler.bind(this),
-                      false,
-                      false);
+    LISTENED_EVENTS.forEach(event => {
+      addEventListener(event.type, this, event.useCapture, event.wantsUntrusted);
+    });
 
     
     this._addMozAfterPaintHandler(function () {
       sendAsyncMsg('firstpaint');
     });
 
+    addMessageListener("browser-element-api:call", this);
+
+    let els = Cc["@mozilla.org/eventlistenerservice;1"]
+                .getService(Ci.nsIEventListenerService);
+    LISTENED_SYSTEM_EVENTS.forEach(event => {
+      els.addSystemEventListener(global, event.type, this, event.useCapture);
+    });
+
+    OBSERVED_EVENTS.forEach((aTopic) => {
+      Services.obs.addObserver(this, aTopic, false);
+    });
+
+    this.forwarder.init();
+  },
+
+  
+
+
+
+
+
+  destroy: function() {
+    debug("Destroying");
+    this._shuttingDown = true;
+
+    BrowserElementPromptService.unmapWindowToBrowserElementChild(content);
+
+    docShell.QueryInterface(Ci.nsIWebProgress)
+            .removeProgressListener(this._progressListener);
+
+    LISTENED_EVENTS.forEach(event => {
+      removeEventListener(event.type, this, event.useCapture, event.wantsUntrusted);
+    });
+
+    this._deactivateNextPaintListener();
+
+    removeMessageListener("browser-element-api:call", this);
+
+    let els = Cc["@mozilla.org/eventlistenerservice;1"]
+                .getService(Ci.nsIEventListenerService);
+    LISTENED_SYSTEM_EVENTS.forEach(event => {
+      els.removeSystemEventListener(global, event.type, this, event.useCapture);
+    });
+
+    OBSERVED_EVENTS.forEach((aTopic) => {
+      Services.obs.removeObserver(this, aTopic);
+    });
+
+    this.forwarder.uninit();
+    this.forwarder = null;
+  },
+
+  handleEvent: function(event) {
+    switch (event.type) {
+      case "DOMTitleChanged":
+        this._titleChangedHandler(event);
+        break;
+      case "DOMLinkAdded":
+        this._linkAddedHandler(event);
+        break;
+      case "MozScrolledAreaChanged":
+        this._mozScrollAreaChanged(event);
+        break;
+      case "MozDOMFullscreen:Request":
+        this._mozRequestedDOMFullscreen(event);
+        break;
+      case "MozDOMFullscreen:NewOrigin":
+        this._mozFullscreenOriginChange(event);
+        break;
+      case "MozDOMFullscreen:Exit":
+        this._mozExitDomFullscreen(event);
+        break;
+      case "DOMMetaAdded":
+        this._metaChangedHandler(event);
+        break;
+      case "DOMMetaChanged":
+        this._metaChangedHandler(event);
+        break;
+      case "DOMMetaRemoved":
+        this._metaChangedHandler(event);
+        break;
+      case "scrollviewchange":
+        this._ScrollViewChangeHandler(event);
+        break;
+      case "click":
+        this._ClickHandler(event);
+        break;
+      case "unload":
+        this.destroy(event);
+        break;
+      case "DOMWindowClose":
+        this._windowCloseHandler(event);
+        break;
+      case "DOMWindowCreated":
+        this._windowCreatedHandler(event);
+        break;
+      case "DOMWindowResize":
+        this._windowResizeHandler(event);
+        break;
+      case "contextmenu":
+        this._contextmenuHandler(event);
+        break;
+      case "scroll":
+        this._scrollEventHandler(event);
+        break;
+    }
+  },
+
+  receiveMessage: function(message) {
     let self = this;
 
     let mmCalls = {
@@ -259,11 +337,11 @@ BrowserElementChild.prototype = {
       "send-touch-event": this._recvSendTouchEvent,
       "get-can-go-back": this._recvCanGoBack,
       "get-can-go-forward": this._recvCanGoForward,
-      "mute": this._recvMute.bind(this),
-      "unmute": this._recvUnmute.bind(this),
-      "get-muted": this._recvGetMuted.bind(this),
-      "set-volume": this._recvSetVolume.bind(this),
-      "get-volume": this._recvGetVolume.bind(this),
+      "mute": this._recvMute,
+      "unmute": this._recvUnmute,
+      "get-muted": this._recvGetMuted,
+      "set-volume": this._recvSetVolume,
+      "get-volume": this._recvGetVolume,
       "go-back": this._recvGoBack,
       "go-forward": this._recvGoForward,
       "reload": this._recvReload,
@@ -273,13 +351,13 @@ BrowserElementChild.prototype = {
       "fire-ctx-callback": this._recvFireCtxCallback,
       "owner-visibility-change": this._recvOwnerVisibilityChange,
       "entered-fullscreen": this._recvEnteredFullscreen,
-      "exit-fullscreen": this._recvExitFullscreen.bind(this),
-      "activate-next-paint-listener": this._activateNextPaintListener.bind(this),
-      "set-input-method-active": this._recvSetInputMethodActive.bind(this),
-      "deactivate-next-paint-listener": this._deactivateNextPaintListener.bind(this),
-      "find-all": this._recvFindAll.bind(this),
-      "find-next": this._recvFindNext.bind(this),
-      "clear-match": this._recvClearMatch.bind(this),
+      "exit-fullscreen": this._recvExitFullscreen,
+      "activate-next-paint-listener": this._activateNextPaintListener,
+      "set-input-method-active": this._recvSetInputMethodActive,
+      "deactivate-next-paint-listener": this._deactivateNextPaintListener,
+      "find-all": this._recvFindAll,
+      "find-next": this._recvFindNext,
+      "clear-match": this._recvClearMatch,
       "execute-script": this._recvExecuteScript,
       "get-audio-channel-volume": this._recvGetAudioChannelVolume,
       "set-audio-channel-volume": this._recvSetAudioChannelVolume,
@@ -289,38 +367,9 @@ BrowserElementChild.prototype = {
       "get-web-manifest": this._recvGetWebManifest,
     }
 
-    addMessageListener("browser-element-api:call", function(aMessage) {
-      if (aMessage.data.msg_name in mmCalls) {
-        return mmCalls[aMessage.data.msg_name].apply(self, arguments);
-      }
-    });
-
-    let els = Cc["@mozilla.org/eventlistenerservice;1"]
-                .getService(Ci.nsIEventListenerService);
-
-    
-    
-    els.addSystemEventListener(global, 'DOMWindowClose',
-                               this._windowCloseHandler.bind(this),
-                                false);
-    els.addSystemEventListener(global, 'DOMWindowCreated',
-                               this._windowCreatedHandler.bind(this),
-                                true);
-    els.addSystemEventListener(global, 'DOMWindowResize',
-                               this._windowResizeHandler.bind(this),
-                                false);
-    els.addSystemEventListener(global, 'contextmenu',
-                               this._contextmenuHandler.bind(this),
-                                false);
-    els.addSystemEventListener(global, 'scroll',
-                               this._scrollEventHandler.bind(this),
-                                false);
-
-    OBSERVED_EVENTS.forEach((aTopic) => {
-      Services.obs.addObserver(this, aTopic, false);
-    });
-
-    this.forwarder.init();
+    if (message.data.msg_name in mmCalls) {
+      return mmCalls[message.data.msg_name].apply(self, arguments);
+    }
   },
 
   _paintFrozenTimer: null,
@@ -374,20 +423,6 @@ BrowserElementChild.prototype = {
     docShell.contentViewer.resumePainting();
     this._paintFrozenTimer.cancel();
     this._paintFrozenTimer = null;
-  },
-
-  
-
-
-
-  _unloadHandler: function() {
-    this._shuttingDown = true;
-    OBSERVED_EVENTS.forEach((aTopic) => {
-      Services.obs.removeObserver(this, aTopic);
-    });
-
-    this.forwarder.uninit();
-    this.forwarder = null;
   },
 
   get _windowUtils() {

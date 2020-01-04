@@ -14,7 +14,7 @@ Cu.import("resource://gre/modules/Geometry.jsm");
 
 var global = this;
 
-const ContentPanningAPZDisabled = {
+var ContentPanningAPZDisabled = {
   
   watchedEventsType: '',
 
@@ -23,10 +23,26 @@ const ContentPanningAPZDisabled = {
   hybridEvents: false,
 
   init: function cp_init() {
-    this._setupListenersForPanning();
+    let events = this._getEventsList();
+    let els = Cc["@mozilla.org/eventlistenerservice;1"]
+                .getService(Ci.nsIEventListenerService);
+    events.forEach(type => {
+      
+      
+      els.addSystemEventListener(global, type, this,  false);
+    });
   },
 
-  _setupListenersForPanning: function cp_setupListenersForPanning() {
+  destroy: function () {
+    let events = this._getEventsList();
+    let els = Cc["@mozilla.org/eventlistenerservice;1"]
+                .getService(Ci.nsIEventListenerService);
+    events.forEach(type => {
+      els.removeSystemEventListener(global, type, this,  false);
+    });
+  },
+
+  _getEventsList: function () {
     let events;
 
     if (content.TouchEvent) {
@@ -48,16 +64,7 @@ const ContentPanningAPZDisabled = {
       this.watchedEventsType = 'mouse';
     }
 
-    let els = Cc["@mozilla.org/eventlistenerservice;1"]
-                .getService(Ci.nsIEventListenerService);
-
-    events.forEach(function(type) {
-      
-      
-      els.addSystemEventListener(global, type,
-                                 this.handleEvent.bind(this),
-                                  false);
-    }.bind(this));
+    return events;
   },
 
   handleEvent: function cp_handleEvent(evt) {
@@ -478,23 +485,23 @@ const ContentPanningAPZDisabled = {
 };
 
 
-const kMinVelocity = 0.2;
-const kMaxVelocity = 6;
+var kMinVelocity = 0.2;
+var kMaxVelocity = 6;
 
 
-const kExponentialC = 1000;
-const kPolynomialC = 100 / 1000000;
-
-
-
-
-const kUpdateInterval = 16;
+var kExponentialC = 1000;
+var kPolynomialC = 100 / 1000000;
 
 
 
-const kSamples = 5;
 
-const KineticPanning = {
+var kUpdateInterval = 16;
+
+
+
+var kSamples = 5;
+
+var KineticPanning = {
   _position: new Point(0, 0),
   _velocity: new Point(0, 0),
   _acceleration: new Point(0, 0),

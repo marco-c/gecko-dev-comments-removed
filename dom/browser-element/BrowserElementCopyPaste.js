@@ -23,11 +23,31 @@ var CopyPasteAssistent = {
   },
 
   init: function() {
-    addEventListener('mozcaretstatechanged',
-                     this._caretStateChangedHandler.bind(this),
-                      true,
-                      false);
-    addMessageListener('browser-element-api:call', this._browserAPIHandler.bind(this));
+    addEventListener("mozcaretstatechanged", this,
+                      true,  false);
+    addMessageListener("browser-element-api:call", this);
+  },
+
+  destroy: function() {
+    removeEventListener("mozcaretstatechanged", this,
+                         true,  false);
+    removeMessageListener("browser-element-api:call", this);
+  },
+
+  handleEvent: function(event) {
+    switch (event.type) {
+      case "mozcaretstatechanged":
+        this._caretStateChangedHandler(event);
+        break;
+    }
+  },
+
+  receiveMessage: function(message) {
+    switch (message.name) {
+      case "browser-element-api:call":
+        this._browserAPIHandler(message);
+        break;
+    }
   },
 
   _browserAPIHandler: function(e) {

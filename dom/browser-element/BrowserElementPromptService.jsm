@@ -631,6 +631,9 @@ this.BrowserElementPromptService = {
   mapWindowToBrowserElementChild: function(win, browserElementChild) {
     this._browserElementChildMap[this._getOuterWindowID(win)] = browserElementChild;
   },
+  unmapWindowToBrowserElementChild: function(win) {
+    delete this._browserElementChildMap[this._getOuterWindowID(win)];
+  },
 
   getBrowserElementChildForWindow: function(win) {
     
