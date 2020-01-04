@@ -63,11 +63,19 @@ template <typename T>
 void
 TraceRoot(JSTracer* trc, T* thingp, const char* name);
 
+template <typename T>
+void
+TraceRoot(JSTracer* trc, ReadBarriered<T>* thingp, const char* name);
+
 
 
 template <typename T>
 void
 TraceNullableRoot(JSTracer* trc, T* thingp, const char* name);
+
+template <typename T>
+void
+TraceNullableRoot(JSTracer* trc, ReadBarriered<T>* thingp, const char* name);
 
 
 
