@@ -1299,8 +1299,6 @@ private:
   
   
   nsRefPtrHashtable<nsIDHashKey, GetFilesHelper> mGetFilesPendingRequests;
-
-  nsTArray<nsCString> mBlobURLs;
 };
 
 } 
