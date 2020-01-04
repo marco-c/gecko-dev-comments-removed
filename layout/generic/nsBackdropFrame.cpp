@@ -45,10 +45,22 @@ nsBackdropFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   auto display = StyleDisplay()->mDisplay;
-  if (display != NS_STYLE_DISPLAY_NONE &&
-      display != NS_STYLE_DISPLAY_CONTENTS) {
-    DisplayBorderBackgroundOutline(aBuilder, aLists);
+  if (display == NS_STYLE_DISPLAY_NONE ||
+      display == NS_STYLE_DISPLAY_CONTENTS) {
+    return;
   }
+
+  
+  
+  
+  
+  
+  
+  if (GetStateBits() & NS_FRAME_HAS_VR_CONTENT) {
+    return;
+  }
+
+  DisplayBorderBackgroundOutline(aBuilder, aLists);
 }
 
  LogicalSize
