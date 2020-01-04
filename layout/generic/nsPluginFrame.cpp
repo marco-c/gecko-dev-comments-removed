@@ -1553,6 +1553,17 @@ nsPluginFrame::PaintPlugin(nsDisplayListBuilder* aBuilder,
     mInstanceOwner->Paint(ctx, frameGfxRect, dirtyGfxRect);
     return;
   }
+#else
+# if defined(DEBUG)
+  
+  
+  
+  if (mInstanceOwner) {
+    NPWindow *window = nullptr;
+    mInstanceOwner->GetWindow(window);
+    MOZ_ASSERT(!window || window->type == NPWindowTypeWindow);
+  }
+# endif
 #endif
 }
 
