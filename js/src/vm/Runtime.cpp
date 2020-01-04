@@ -150,7 +150,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
     telemetryCallback(nullptr),
     handlingSegFault(false),
     handlingJitInterrupt_(false),
-    interruptCallbackDisabled(false),
+    interruptCallback(nullptr),
     getIncumbentGlobalCallback(nullptr),
     enqueuePromiseJobCallback(nullptr),
     enqueuePromiseJobCallbackData(nullptr),
@@ -532,16 +532,11 @@ InvokeInterruptCallback(JSContext* cx)
     
     
     
-    if (cx->runtime()->interruptCallbackDisabled)
+    JSInterruptCallback cb = cx->runtime()->interruptCallback;
+    if (!cb)
         return true;
 
-    bool stop = false;
-    for (JSInterruptCallback cb : cx->runtime()->interruptCallbacks) {
-        if (!cb(cx))
-            stop = true;
-    }
-
-    if (!stop) {
+    if (cb(cx)) {
         
         
         if (cx->compartment()->isDebuggee()) {
