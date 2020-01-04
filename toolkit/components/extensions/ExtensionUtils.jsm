@@ -334,10 +334,8 @@ class BaseContext {
 
 
   wrapPromise(promise, callback = null) {
-    
-    
     let runSafe = this.runSafe.bind(this);
-    if (promise.constructor === this.cloneScope.Promise) {
+    if (promise instanceof this.cloneScope.Promise) {
       runSafe = this.runSafeWithoutClone.bind(this);
     }
 
@@ -474,8 +472,10 @@ let IconDetails = {
 
   
   
-  getPreferredIcon(icons, extension = null, size = 16) {
+  getURL(icons, window, extension, size = 16) {
     const DEFAULT = "chrome://browser/content/extension.svg";
+
+    size *= window.devicePixelRatio;
 
     let bestSize = null;
     if (icons[size]) {

@@ -47,6 +47,7 @@ var ecmaGlobals =
     "NaN",
     "Number",
     "Object",
+    "Promise",
     "Proxy",
     "RangeError",
     "ReferenceError",
@@ -166,8 +167,6 @@ var interfaceNamesInGlobalScope =
     { name: "PerformanceObserver", nightly: true },
 
     { name: "PerformanceObserverEntryList", nightly: true },
-
-    "Promise",
 
     { name: "PushManager", b2g: false },
 
