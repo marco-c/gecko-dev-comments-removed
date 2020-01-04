@@ -4,8 +4,13 @@
 
 "use strict";
 
+
+
+
 const { Cc, Ci } = require("chrome");
+
 const {cssTokenizer, cssTokenizerWithLineColumn} = require("devtools/shared/css-parsing-utils");
+
 
 
 
@@ -71,6 +76,7 @@ const SELECTOR_STATES = {
   attribute: "attribute",  
   value: "value",          
 };
+
 
 const { properties, propertyNames } = getCSSKeywords();
 
@@ -979,11 +985,11 @@ CSSCompleter.prototype = {
 
   getInfoAt: function (source, caret) {
     
-    function limit(source, {line, ch}) {
+    function limit(sourceArg, {line, ch}) {
       line++;
-      let list = source.split("\n");
+      let list = sourceArg.split("\n");
       if (list.length < line) {
-        return source;
+        return sourceArg;
       }
       if (line == 1) {
         return list[0].slice(0, ch);
@@ -1036,11 +1042,11 @@ CSSCompleter.prototype = {
             continue;
           }
 
-          let state = this.resolveState(limitedSource, {
+          let forwState = this.resolveState(limitedSource, {
             line: line,
             ch: token.endOffset + ech
           });
-          if (check(state)) {
+          if (check(forwState)) {
             if (prevToken && prevToken.tokenType == "whitespace") {
               token = prevToken;
             }
@@ -1097,11 +1103,11 @@ CSSCompleter.prototype = {
             continue;
           }
 
-          let state = this.resolveState(limitedSource, {
+          let backState = this.resolveState(limitedSource, {
             line: line,
             ch: token.startOffset
           });
-          if (check(state)) {
+          if (check(backState)) {
             if (tokens[i + 1] && tokens[i + 1].tokenType == "whitespace") {
               token = tokens[i + 1];
             }
@@ -1126,16 +1132,16 @@ CSSCompleter.prototype = {
       
       
       
-      let start = traverseBackwards(state => {
-        return (state != CSS_STATES.selector ||
+      let start = traverseBackwards(backState => {
+        return (backState != CSS_STATES.selector ||
                (this.selector == "" && this.selectorBeforeNot == null));
       });
 
       line = caret.line;
       limitedSource = limit(source, caret);
       
-      let end = traverseForward(state => {
-        return (state != CSS_STATES.selector ||
+      let end = traverseForward(forwState => {
+        return (forwState != CSS_STATES.selector ||
                (this.selector == "" && this.selectorBeforeNot == null));
       });
 
@@ -1180,11 +1186,11 @@ CSSCompleter.prototype = {
     } else if (state == CSS_STATES.value) {
       
       
-      let start = traverseBackwards(state => state != CSS_STATES.value, true);
+      let start = traverseBackwards(backState => backState != CSS_STATES.value, true);
 
       line = caret.line;
       limitedSource = limit(source, caret);
-      let end = traverseForward(state => state != CSS_STATES.value);
+      let end = traverseForward(forwState => forwState != CSS_STATES.value);
 
       let value = source.split("\n").slice(start.line, end.line + 1);
       value[value.length - 1] = value[value.length - 1].substring(0, end.ch);
