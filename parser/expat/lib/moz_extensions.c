@@ -116,13 +116,18 @@ int MOZ_XMLIsNCNameChar(const char* ptr)
 int MOZ_XMLTranslateEntity(const char* ptr, const char* end, const char** next,
                            XML_Char* result)
 {
+  
+  
+
   const ENCODING* enc = XmlGetUtf16InternalEncodingNS();
-  int tok = PREFIX(scanRef)(enc, ptr, end, next);
+  
+  int tok = PREFIX(scanRef)(enc, ptr + enc->minBytesPerChar, end, next);
   if (tok <= XML_TOK_INVALID) {
     return 0;
   }
 
   if (tok == XML_TOK_CHAR_REF) {
+    
     int n = XmlCharRefNumber(enc, ptr);
 
     
@@ -136,8 +141,11 @@ int MOZ_XMLTranslateEntity(const char* ptr, const char* end, const char** next,
   if (tok == XML_TOK_ENTITY_REF) {
     
 
+
+
     XML_Char ch =
-      (XML_Char)XmlPredefinedEntityName(enc, ptr, *next - enc->minBytesPerChar);
+      (XML_Char)XmlPredefinedEntityName(enc, ptr + enc->minBytesPerChar,
+                                        *next - enc->minBytesPerChar);
     if (!ch) {
       return 0;
     }
