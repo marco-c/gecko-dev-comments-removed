@@ -2514,18 +2514,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
         chromeRegistry->SendRegisteredChrome(this);
     }
 
-    
-    
-    mMessageManager->InitWithCallback(this);
-
-    
-    
-    
-    
-    
-    
-    ProcessPriorityManager::SetProcessPriority(this, aInitialPriority);
-
     if (gAppData) {
         nsCString version(gAppData->version);
         nsCString buildID(gAppData->buildID);
@@ -2537,6 +2525,18 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
         
         unused << SendAppInfo(version, buildID, name, UAName, ID, vendor);
     }
+
+    
+    
+    mMessageManager->InitWithCallback(this);
+
+    
+    
+    
+    
+    
+    
+    ProcessPriorityManager::SetProcessPriority(this, aInitialPriority);
 
     if (aSetupOffMainThreadCompositing) {
         
