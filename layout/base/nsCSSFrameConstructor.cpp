@@ -9477,7 +9477,7 @@ nsCSSFrameConstructor::RecreateFramesForContent(nsIContent*  aContent,
   
   
   
-  NS_ENSURE_TRUE(aContent->GetCrossShadowCurrentDoc(), NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(aContent->GetComposedDoc(), NS_ERROR_FAILURE);
 
   
   

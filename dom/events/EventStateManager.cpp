@@ -1544,7 +1544,7 @@ EventStateManager::FireContextClick()
         }
       }
 
-      nsIDocument* doc = mGestureDownContent->GetCrossShadowCurrentDoc();
+      nsIDocument* doc = mGestureDownContent->GetComposedDoc();
       AutoHandlingUserInputStatePusher userInpStatePusher(true, &event, doc);
 
       
@@ -2975,7 +2975,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         
         
         if (newFocus && !newFocus->IsEditable()) {
-          nsIDocument *doc = newFocus->GetCrossShadowCurrentDoc();
+          nsIDocument *doc = newFocus->GetComposedDoc();
           if (doc && newFocus == doc->GetRootElement()) {
             nsIContent *bodyContent =
               nsLayoutUtils::GetEditableRootContentByContentEditable(doc);
@@ -4933,7 +4933,7 @@ EventStateManager::SetContentState(nsIContent* aContent, EventStates aState)
         newHover = aContent;
       } else {
         NS_ASSERTION(!aContent ||
-                     aContent->GetCrossShadowCurrentDoc() ==
+                     aContent->GetComposedDoc() ==
                        mPresContext->PresShell()->GetDocument(),
                      "Unexpected document");
         nsIFrame *frame = aContent ? aContent->GetPrimaryFrame() : nullptr;

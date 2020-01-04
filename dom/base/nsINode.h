@@ -535,14 +535,6 @@ public:
   
 
 
-  nsIDocument* GetCrossShadowCurrentDoc() const
-  {
-    return GetComposedDoc();
-  }
-
-  
-
-
   bool IsInComposedDoc() const
   {
     return IsInUncomposedDoc() || (IsInShadowTree() && GetComposedDocInternal());

@@ -72,7 +72,7 @@ RestyleTracker::ProcessOneRestyle(Element* aElement,
   NS_PRECONDITION((aRestyleHint & eRestyle_LaterSiblings) == 0,
                   "Someone should have handled this before calling us");
   NS_PRECONDITION(Document(), "Must have a document");
-  NS_PRECONDITION(aElement->GetCrossShadowCurrentDoc() == Document(),
+  NS_PRECONDITION(aElement->GetComposedDoc() == Document(),
                   "Element has unexpected document");
 
   LOG_RESTYLE("aRestyleHint = %s, aChangeHint = %s",
@@ -172,7 +172,7 @@ RestyleTracker::DoProcessRestyles()
           
           
           
-          if (element->GetCrossShadowCurrentDoc() == Document() &&
+          if (element->GetComposedDoc() == Document() &&
               element->HasFlag(RestyleBit()) &&
               (iter.Data()->mRestyleHint & eRestyle_LaterSiblings)) {
             laterSiblingArr.AppendElement(element);
@@ -234,7 +234,7 @@ RestyleTracker::DoProcessRestyles()
         
         
         
-        if (element->GetCrossShadowCurrentDoc() != Document()) {
+        if (element->GetComposedDoc() != Document()) {
           
           
           LOG_RESTYLE("skipping, no longer in the document");
@@ -296,7 +296,7 @@ RestyleTracker::DoProcessRestyles()
           
           
           
-          if (element->GetCrossShadowCurrentDoc() != Document() ||
+          if (element->GetComposedDoc() != Document() ||
               !element->HasFlag(RestyleBit())) {
             LOG_RESTYLE("skipping pending restyle %s, already restyled or no "
                         "longer in the document",
@@ -310,7 +310,7 @@ RestyleTracker::DoProcessRestyles()
             (element->GetFlattenedTreeParent() &&
              (!element->GetFlattenedTreeParent()->GetPrimaryFrame() ||
               element->GetFlattenedTreeParent()->GetPrimaryFrame()->IsLeaf() ||
-              element->GetCrossShadowCurrentDoc()->GetShell()->FrameManager()
+              element->GetComposedDoc()->GetShell()->FrameManager()
                 ->GetDisplayContentsStyleFor(element))) ||
             
             
@@ -397,7 +397,7 @@ RestyleTracker::DoProcessRestyles()
 bool
 RestyleTracker::GetRestyleData(Element* aElement, nsAutoPtr<RestyleData>& aData)
 {
-  NS_PRECONDITION(aElement->GetCrossShadowCurrentDoc() == Document(),
+  NS_PRECONDITION(aElement->GetComposedDoc() == Document(),
                   "Unexpected document; this will lead to incorrect behavior!");
 
   if (!aElement->HasFlag(RestyleBit())) {
