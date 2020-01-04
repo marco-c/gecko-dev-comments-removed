@@ -250,6 +250,7 @@ protected:
   
   
   
+  
   static bool sCaretsExtendedVisibility;
 
   
