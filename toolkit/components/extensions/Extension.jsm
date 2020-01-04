@@ -363,12 +363,16 @@ GlobalManager = {
       Schemas.inject(chromeObj, schemaWrapper);
     };
 
+    let id = ExtensionManagement.getAddonIdForWindow(contentWindow);
+
+    
+    const { FULL_PRIVILEGES } = ExtensionManagement.API_LEVELS;
+    if (ExtensionManagement.getAPILevelForWindow(contentWindow, id) !== FULL_PRIVILEGES) {
+      return;
+    }
+
     
     
-    
-    
-    let principal = contentWindow.document.nodePrincipal;
-    let id = principal.originAttributes.addonId;
     if (!this.extensionMap.has(id)) {
       return;
     }
@@ -387,10 +391,6 @@ GlobalManager = {
       return;
     }
 
-    
-    if (contentWindow != contentWindow.top) {
-      return;
-    }
     let extension = this.extensionMap.get(id);
     let uri = contentWindow.document.documentURIObject;
     let incognito = PrivateBrowsingUtils.isContentWindowPrivate(contentWindow);
