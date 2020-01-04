@@ -18,6 +18,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
+#include "mozilla/HangMonitor.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WindowsVersion.h"
@@ -764,6 +765,11 @@ WinUtils::WaitForMessage(DWORD aTimeoutMs)
       break;
     }
     if (result == WAIT_IO_COMPLETION) {
+      if (NS_IsMainThread()) {
+        
+        
+        mozilla::HangMonitor::Suspend();
+      }
       continue;
     }
 
