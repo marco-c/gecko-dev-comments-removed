@@ -2171,8 +2171,21 @@ IMENotification::TextChangeDataBase::MergeWith(
     newData.mCausedOnlyByComposition && oldData.mCausedOnlyByComposition;
   
   
-  mOccurredDuringComposition =
-    newData.mOccurredDuringComposition && oldData.mOccurredDuringComposition;
+
+  if (!newData.mCausedOnlyByComposition &&
+      !newData.mIncludingChangesDuringComposition) {
+    
+    
+    
+    
+    mIncludingChangesDuringComposition = false;
+  } else {
+    
+    
+    mIncludingChangesDuringComposition =
+      newData.mIncludingChangesDuringComposition ||
+        oldData.mIncludingChangesDuringComposition;
+  }
 
   if (newData.mStartOffset >= oldData.mAddedEndOffset) {
     
