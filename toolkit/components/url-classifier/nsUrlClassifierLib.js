@@ -24,6 +24,23 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 #include ./content/xml-fetcher.js
 
 
+
+
+
+function RequestBackoffV4(maxRequests, requestPeriod) {
+  let rand = Math.random();
+  let retryInterval = Math.floor(15 * 60 * 1000 * (rand + 1));   
+  let backoffInterval = Math.floor(30 * 60 * 1000 * (rand + 1)); 
+
+  return new RequestBackoff(2 ,
+                retryInterval ,
+                  maxRequests ,
+                requestPeriod ,
+              backoffInterval ,
+          24 * 60 * 60 * 1000 );
+}
+
+
 var lib = this;
 
 function UrlClassifierLib() {
