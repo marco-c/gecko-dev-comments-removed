@@ -1394,7 +1394,7 @@ nsTextControlFrame::RestoreState(nsPresState* aState)
   
   
   
-  Properties().Set(ContentScrollPos(), new nsPoint(aState->GetScrollState()));
+  Properties().Set(ContentScrollPos(), new nsPoint(aState->GetScrollPosition()));
   return NS_OK;
 }
 

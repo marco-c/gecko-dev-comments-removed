@@ -1891,6 +1891,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter,
   , mTransformingByAPZ(false)
   , mScrollableByAPZ(false)
   , mZoomableByAPZ(false)
+  , mRestoringHistoryScrollPosition(true)
   , mVelocityQueue(aOuter->PresContext())
   , mAsyncScrollEvent(END_DOM)
 {
@@ -4059,20 +4060,35 @@ ScrollFrameHelper::ScrollToRestoredPosition()
       if (!weakFrame.IsAlive()) {
         return;
       }
-      
-      
-      mLastPos = GetLogicalScrollPosition();
-    } else {
-      
-      mRestorePos.y = -1;
-      mLastPos.x = -1;
-      mLastPos.y = -1;
+      if (mRestoringHistoryScrollPosition) {
+        
+        
+        
+        
+        
+        mLastPos = GetLogicalScrollPosition();
+        return;
+      }
     }
+    
+    
+    
+    mRestorePos.y = -1;
+    mLastPos.x = -1;
+    mLastPos.y = -1;
+    mRestoringHistoryScrollPosition = false;
   } else {
     
     mLastPos.x = -1;
     mLastPos.y = -1;
+    mRestoringHistoryScrollPosition = false;
   }
+}
+
+void
+ScrollFrameHelper::SetRestoringHistoryScrollPosition(bool aValue)
+{
+  mRestoringHistoryScrollPosition = aValue;
 }
 
 nsresult
@@ -5656,7 +5672,7 @@ ScrollFrameHelper::SaveState() const
   if (mRestorePos.y != -1 && pt == mLastPos) {
     pt = mRestorePos;
   }
-  state->SetScrollState(pt);
+  state->SetScrollState(pt, mRestoringHistoryScrollPosition);
   if (mIsRoot) {
     
     nsIPresShell* shell = mOuter->PresContext()->PresShell();
@@ -5669,7 +5685,8 @@ ScrollFrameHelper::SaveState() const
 void
 ScrollFrameHelper::RestoreState(nsPresState* aState)
 {
-  mRestorePos = aState->GetScrollState();
+  mRestorePos = aState->GetScrollPosition();
+  mRestoringHistoryScrollPosition = aState->GetRestoringHistoryScrollPosition();
   mDidHistoryRestore = true;
   mLastPos = mScrolledFrame ? GetLogicalScrollPosition() : nsPoint(0,0);
 
