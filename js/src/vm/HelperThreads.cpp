@@ -81,9 +81,6 @@ js::SetFakeCPUCount(size_t count)
 bool
 js::StartOffThreadWasmCompile(ExclusiveContext* cx, wasm::CompileTask* task)
 {
-    
-    MOZ_ASSERT(task->results);
-
     AutoLockHelperThreadState lock;
 
     
@@ -501,8 +498,6 @@ GlobalHelperThreadState::ensureInitialized()
         }
     }
 
-    resetWasmFailureState();
-
     return true;
 }
 
@@ -511,12 +506,11 @@ GlobalHelperThreadState::GlobalHelperThreadState()
    threadCount(0),
    threads(nullptr),
    wasmCompilationInProgress(false),
+   numWasmFailedJobs(0),
    helperLock(nullptr),
    consumerWakeup(nullptr),
    producerWakeup(nullptr),
-   pauseWakeup(nullptr),
-   numWasmFailedJobs(0),
-   wasmFailedFunction(nullptr)
+   pauseWakeup(nullptr)
 {
     cpuCount = GetCPUCount();
     threadCount = ThreadCountForCPUCount(cpuCount);
@@ -1205,8 +1199,8 @@ HelperThread::handleWasmWorkload()
     wasm::CompileTask* task = wasmTask();
     {
         AutoUnlockHelperThreadState unlock;
-        PerThreadData::AutoEnterRuntime enter(threadData.ptr(), task->runtime);
-        success = wasm::CompileFunction(task->lifo, task->args, *task->func, task->results.ptr());
+        PerThreadData::AutoEnterRuntime enter(threadData.ptr(), task->args().runtime);
+        success = wasm::CompileFunction(task);
     }
 
     
@@ -1214,12 +1208,8 @@ HelperThread::handleWasmWorkload()
         success = HelperThreadState().wasmFinishedList().append(task);
 
     
-    if (!success) {
-        HelperThreadState().noteWasmFailure(task->func);
-        HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER);
-        currentTask.reset();
-        return;
-    }
+    if (!success)
+        HelperThreadState().noteWasmFailure();
 
     
     HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER);
