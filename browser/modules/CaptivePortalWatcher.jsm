@@ -87,7 +87,7 @@ this.CaptivePortalWatcher = {
     
     
     
-    if (!win || Services.ww.activeWindow != win) {
+    if (!win || !win.document.hasFocus()) {
       this._waitingToAddTab = true;
       Services.obs.addObserver(this, "xul-window-visible", false);
       return;
@@ -110,7 +110,7 @@ this.CaptivePortalWatcher = {
     }
 
     let win = RecentWindow.getMostRecentBrowserWindow();
-    if (!win || Services.ww.activeWindow != win) {
+    if (!win.document.hasFocus()) {
       
       return;
     }
