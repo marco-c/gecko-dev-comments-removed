@@ -83,6 +83,18 @@ var EventListener = {
       return;
     }
 
+    if (content.document.documentURI.startsWith("about:reader")) {
+      if (event.type == "load" &&
+          !content.document.body.classList.contains("loaded")) {
+        
+        
+        content.addEventListener("AboutReaderContentReady", this);
+        return;
+      }
+
+      content.removeEventListener("AboutReaderContentReady", this);
+    }
+
     
     
     gContentRestore.restoreDocument();
