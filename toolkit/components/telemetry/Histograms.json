@@ -663,14 +663,13 @@
     "n_buckets": 50,
     "description": "Committed, unused heap memory (KB)"
   },
-  "MEMORY_HEAP_OVERHEAD_FRACTION": {
+  "MEMORY_HEAP_COMMITTED_UNUSED_RATIO": {
     "alert_emails": ["memshrink-telemetry-alerts@mozilla.com"],
-    "bug_numbers": [1252375],
     "expires_in_version": "never",
     "kind": "linear",
     "high": 100,
     "n_buckets": 25,
-    "description": "Fraction of committed heap memory that is overhead (percentage)."
+    "description": "Ratio of committed, unused memory to allocated memory in the heap (percentage)."
   },
   "GHOST_WINDOWS": {
     "alert_emails": ["memshrink-telemetry-alerts@mozilla.com"],
@@ -8489,6 +8488,15 @@
     "releaseChannelCollection": "opt-out",
     "bug_numbers": [1245486],
     "description": "Number times info bar buttons are clicked (0=PAUSED, 1=CREATED)"
+  },
+  "LOOP_ACTIVITY_COUNTER": {
+    "alert_emails": ["firefox-dev@mozilla.org", "mbanner@mozilla.com"],
+    "expires_in_version": "51",
+    "kind": "enumerated",
+    "n_values": 5,
+    "releaseChannelCollection": "opt-out",
+    "bug_numbers": [1208416],
+    "description": "Number of times an action is performed by an user (0=OPEN_PANEL, 1=OPEN_CONVERSATION, 2=ROOM_OPEN, 3=ROOM_SHARE, 4=ROOM_DELETE)"
   },
   "E10S_STATUS": {
     "alert_emails": ["firefox-dev@mozilla.org"],
