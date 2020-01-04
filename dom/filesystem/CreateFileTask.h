@@ -86,10 +86,6 @@ private:
   nsCOMPtr<nsIInputStream> mBlobStream;
   InfallibleTArray<uint8_t> mArrayData;
   bool mReplace;
-
-  
-  
-  RefPtr<BlobImpl> mTargetBlobImpl;
 };
 
 } 

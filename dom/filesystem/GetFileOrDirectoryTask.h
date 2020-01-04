@@ -76,10 +76,6 @@ private:
   
   bool mIsDirectory;
   Directory::DirectoryType mType;
-
-  
-  
-  RefPtr<BlobImpl> mTargetBlobImpl;
 };
 
 } 

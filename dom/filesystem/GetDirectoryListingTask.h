@@ -77,7 +77,7 @@ private:
 
   
   
-  FallibleTArray<Directory::BlobImplOrDirectoryPath> mTargetData;
+  FallibleTArray<Directory::FileOrDirectoryPath> mTargetData;
 };
 
 } 

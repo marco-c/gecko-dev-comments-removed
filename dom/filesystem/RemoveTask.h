@@ -23,7 +23,6 @@ public:
   static already_AddRefed<RemoveTask>
   Create(FileSystemBase* aFileSystem,
          nsIFile* aDirPath,
-         BlobImpl* aTargetBlob,
          nsIFile* aTargetPath,
          bool aRecursive,
          ErrorResult& aRv);
@@ -64,7 +63,6 @@ protected:
 private:
   RemoveTask(FileSystemBase* aFileSystem,
              nsIFile* aDirPath,
-             BlobImpl* aTargetBlob,
              nsIFile* aTargetPath,
              bool aRecursive);
 
@@ -73,12 +71,13 @@ private:
              FileSystemRequestParent* aParent);
 
   RefPtr<Promise> mPromise;
+
+  
   nsCOMPtr<nsIFile> mDirPath;
 
   
-  
-  RefPtr<BlobImpl> mTargetBlobImpl;
   nsCOMPtr<nsIFile> mTargetPath;
+
   bool mRecursive;
   bool mReturnValue;
 };
