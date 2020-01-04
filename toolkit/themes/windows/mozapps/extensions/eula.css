@@ -3,7 +3,7 @@
 
 
 #icon {
-  list-style-image: url("chrome://mozapps/skin/extensions/extensionGeneric.svg");
+  list-style-image: url("chrome://mozapps/skin/extensions/extensionGeneric.png");
   max-width: 48px;
   max-height: 48px;
   -moz-margin-end: 6px;
