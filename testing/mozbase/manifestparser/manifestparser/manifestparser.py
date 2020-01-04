@@ -156,7 +156,13 @@ class ManifestParser(object):
             if '://' not in path: 
                 path = normalize_path(path)
                 if here and not os.path.isabs(path):
-                    path = os.path.normpath(os.path.join(here, path))
+                    
+                    
+                    
+                    
+                    path = os.path.join(here, path)
+                    if '..' in path:
+                        path = os.path.normpath(path)
 
                 
                 
