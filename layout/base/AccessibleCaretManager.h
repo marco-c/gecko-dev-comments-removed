@@ -41,6 +41,9 @@ class Selection;
 
 
 
+
+
+
 class AccessibleCaretManager
 {
 public:
