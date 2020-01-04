@@ -4228,50 +4228,46 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
         next = binding->pn_next;
 
         ParseNode* initializer;
-        if (!binding->isKind(PNK_NAME)) {
-            if (binding->isKind(PNK_ARRAY) || binding->isKind(PNK_OBJECT)) {
+        if (binding->isKind(PNK_ARRAY) || binding->isKind(PNK_OBJECT)) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            MOZ_ASSERT(pn->pn_count == 1);
+            if (emitOption == DefineVars) {
                 
                 
                 
                 
-                
-                
+                if (!emitDestructuringDecls(pn->getOp(), binding))
+                    return false;
+            } else {
                 
                 
                 
 
-                MOZ_ASSERT(pn->pn_count == 1);
-                if (emitOption == DefineVars) {
-                    
-                    
-                    
-                    
-                    if (!emitDestructuringDecls(pn->getOp(), binding))
-                        return false;
-                } else {
-                    
-                    
-                    
-
-                    
-                    
-                    MOZ_ASSERT(emitOption != DefineVars);
-                    MOZ_ASSERT_IF(emitOption == InitializeVars, pn->pn_xflags & PNX_POPVAR);
-                    if (!emit1(JSOP_UNDEFINED))
-                        return false;
-                    if (!emitInitializeDestructuringDecls(pn->getOp(), binding))
-                        return false;
-                }
-                continue;
+                
+                
+                MOZ_ASSERT(emitOption != DefineVars);
+                MOZ_ASSERT_IF(emitOption == InitializeVars, pn->pn_xflags & PNX_POPVAR);
+                if (!emit1(JSOP_UNDEFINED))
+                    return false;
+                if (!emitInitializeDestructuringDecls(pn->getOp(), binding))
+                    return false;
             }
-
+        } else if (binding->isKind(PNK_ASSIGN)) {
             
 
 
 
 
 
-            MOZ_ASSERT(binding->isKind(PNK_ASSIGN));
             MOZ_ASSERT(binding->isOp(JSOP_NOP));
             MOZ_ASSERT(emitOption != DefineVars);
 
@@ -4300,7 +4296,6 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
             if (emitOption != InitializeVars)
                 continue;
         } else {
-
             
 
 
@@ -4310,6 +4305,7 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
             initializer = binding->maybeExpr();
 
          do_name:
+            MOZ_ASSERT(binding->isKind(PNK_NAME));
             if (!bindNameToSlot(binding))
                 return false;
 
