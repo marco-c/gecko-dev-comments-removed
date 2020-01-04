@@ -48,6 +48,7 @@ protected:
   
   
   nsTArray<RefPtr<nsMimeType> > mMimeTypes;
+  nsTArray<RefPtr<nsMimeType> > mCTPMimeTypes;
 };
 
 class nsMimeType final : public nsWrapperCache
