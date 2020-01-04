@@ -2180,7 +2180,8 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
         invisibleToDebugger_(false),
         mergeable_(false),
         preserveJitCode_(false),
-        cloneSingletons_(false)
+        cloneSingletons_(false),
+        experimentalDateTimeFormatFormatToPartsEnabled_(false)
     {
         zone_.spec = JS::FreshZone;
     }
@@ -2243,6 +2244,24 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
         return *this;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool experimentalDateTimeFormatFormatToPartsEnabled() const {
+        return experimentalDateTimeFormatFormatToPartsEnabled_;
+    }
+    CompartmentCreationOptions& setExperimentalDateTimeFormatFormatToPartsEnabled(bool flag) {
+        experimentalDateTimeFormatFormatToPartsEnabled_ = flag;
+        return *this;
+    }
+
+
   private:
     JSAddonId* addonId_;
     JSTraceOp traceGlobal_;
@@ -2254,6 +2273,7 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     bool mergeable_;
     bool preserveJitCode_;
     bool cloneSingletons_;
+    bool experimentalDateTimeFormatFormatToPartsEnabled_;
 };
 
 
