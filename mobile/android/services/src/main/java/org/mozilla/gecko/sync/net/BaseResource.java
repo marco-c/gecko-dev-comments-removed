@@ -30,6 +30,7 @@ import ch.boye.httpclientandroidlib.HttpResponse;
 import ch.boye.httpclientandroidlib.HttpVersion;
 import ch.boye.httpclientandroidlib.client.AuthCache;
 import ch.boye.httpclientandroidlib.client.ClientProtocolException;
+import ch.boye.httpclientandroidlib.client.entity.GzipCompressingEntity;
 import ch.boye.httpclientandroidlib.client.methods.HttpDelete;
 import ch.boye.httpclientandroidlib.client.methods.HttpGet;
 import ch.boye.httpclientandroidlib.client.methods.HttpPatch;
@@ -79,6 +80,10 @@ public class BaseResource implements Resource {
   public    ResourceDelegate delegate;
   protected HttpRequestBase request;
   public final String charset = "utf-8";
+
+  private boolean shouldGzipCompress = false;
+  
+  private boolean shouldChunkUploadsHint = true;
 
   
 
@@ -160,6 +165,34 @@ public class BaseResource implements Resource {
   @Override
   public String getHostname() {
     return this.getURI().getHost();
+  }
+
+  
+
+
+
+  public void setShouldCompressUploadedEntity(final boolean shouldCompress) {
+    shouldGzipCompress = shouldCompress;
+  }
+
+  
+
+
+
+
+
+
+
+  public void setShouldChunkUploadsHint(final boolean shouldChunk) {
+    shouldChunkUploadsHint = shouldChunk;
+  }
+
+  private HttpEntity getMaybeCompressedEntity(final HttpEntity entity) {
+    if (!shouldGzipCompress) {
+      return entity;
+    }
+
+    return shouldChunkUploadsHint ? new GzipCompressingEntity(entity) : new GzipNonChunkedCompressingEntity(entity);
   }
 
   
@@ -365,6 +398,7 @@ public class BaseResource implements Resource {
   @Override
   public void post(HttpEntity body) {
     Logger.debug(LOG_TAG, "HTTP POST " + this.uri.toASCIIString());
+    body = getMaybeCompressedEntity(body);
     HttpPost request = new HttpPost(this.uri);
     request.setEntity(body);
     this.go(request);
@@ -373,6 +407,7 @@ public class BaseResource implements Resource {
   @Override
   public void patch(HttpEntity body) {
     Logger.debug(LOG_TAG, "HTTP PATCH " + this.uri.toASCIIString());
+    body = getMaybeCompressedEntity(body);
     HttpPatch request = new HttpPatch(this.uri);
     request.setEntity(body);
     this.go(request);
@@ -381,6 +416,7 @@ public class BaseResource implements Resource {
   @Override
   public void put(HttpEntity body) {
     Logger.debug(LOG_TAG, "HTTP PUT " + this.uri.toASCIIString());
+    body = getMaybeCompressedEntity(body);
     HttpPut request = new HttpPut(this.uri);
     request.setEntity(body);
     this.go(request);

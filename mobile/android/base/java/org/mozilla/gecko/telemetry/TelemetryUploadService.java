@@ -200,6 +200,8 @@ public class TelemetryUploadService extends BackgroundService {
 
         delegate.setResource(resource);
         resource.delegate = delegate;
+        resource.setShouldCompressUploadedEntity(true);
+        resource.setShouldChunkUploadsHint(false); 
 
         
         
