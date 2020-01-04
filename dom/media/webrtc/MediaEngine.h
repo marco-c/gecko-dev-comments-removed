@@ -181,10 +181,6 @@ public:
   
 
 
-  void SetHasFakeTracks(bool aHasFakeTracks) {
-    mHasFakeTracks = aHasFakeTracks;
-  }
-
   
   virtual nsresult Allocate(const dom::MediaTrackConstraints &aConstraints,
                             const MediaEnginePrefs &aPrefs,
@@ -210,7 +206,6 @@ protected:
 #ifdef DEBUG
     , mOwningThread(PR_GetCurrentThread())
 #endif
-    , mHasFakeTracks(false)
   {}
 
   void AssertIsOnOwningThread()
@@ -222,7 +217,6 @@ protected:
 #ifdef DEBUG
   PRThread* mOwningThread;
 #endif
-  bool mHasFakeTracks;
   
   dom::MediaTrackSettings mSettings;
 };
