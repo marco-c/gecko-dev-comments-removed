@@ -837,6 +837,16 @@ AccessibleWrap::accSelect(
     return CO_E_OBJNOTCONNECTED;
 
   if (flagsSelect & SELFLAG_TAKEFOCUS) {
+    if (XRE_IsContentProcess()) {
+      
+      
+      
+      
+      nsCOMPtr<nsIRunnable> runnable =
+        mozilla::NewRunnableMethod(xpAccessible, &Accessible::TakeFocus);
+      NS_DispatchToMainThread(runnable, NS_DISPATCH_NORMAL);
+      return S_OK;
+    }
     xpAccessible->TakeFocus();
     return S_OK;
   }
