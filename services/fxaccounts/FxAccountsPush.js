@@ -115,37 +115,46 @@ FxAccountsPushService.prototype = {
 
 
   observe(subject, topic, data) {
-   this.log.trace(`observed topic=${topic}, data=${data}, subject=${subject}`);
-   switch (topic) {
-     case this.pushService.pushTopic:
-       if (data === FXA_PUSH_SCOPE_ACCOUNT_UPDATE) {
-         this._onPushMessage();
-       }
-       break;
-     case this.pushService.subscriptionChangeTopic:
-       if (data === FXA_PUSH_SCOPE_ACCOUNT_UPDATE) {
-         this._onPushSubscriptionChange();
-       }
-       break;
-     case ONLOGOUT_NOTIFICATION:
-       
-       this.unsubscribe().catch(err => {
-         this.log.error("Error during unsubscribe", err);
-       });
-       break;
-     default:
-       break;
-   }
+    this.log.trace(`observed topic=${topic}, data=${data}, subject=${subject}`);
+    switch (topic) {
+      case this.pushService.pushTopic:
+        if (data === FXA_PUSH_SCOPE_ACCOUNT_UPDATE) {
+          let message = subject.QueryInterface(Ci.nsIPushMessage);
+          this._onPushMessage(message);
+        }
+        break;
+      case this.pushService.subscriptionChangeTopic:
+        if (data === FXA_PUSH_SCOPE_ACCOUNT_UPDATE) {
+          this._onPushSubscriptionChange();
+        }
+        break;
+      case ONLOGOUT_NOTIFICATION:
+        
+        this.unsubscribe().catch(err => {
+          this.log.error("Error during unsubscribe", err);
+        });
+        break;
+      default:
+        break;
+    }
   },
   
 
 
 
 
-  _onPushMessage() {
+  _onPushMessage(message) {
     this.log.trace("FxAccountsPushService _onPushMessage");
-    
-    this.fxAccounts.checkVerificationStatus();
+    if (!message.data) {
+      
+      this.fxAccounts.checkVerificationStatus();
+      return;
+    }
+    let payload = message.data.json();
+    switch (payload.command) {
+      default:
+        this.log.warn("FxA Push command unrecognized: " + payload.command);
+    }
   },
   
 
