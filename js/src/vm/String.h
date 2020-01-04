@@ -1175,6 +1175,10 @@ extern JSLinearString*
 NewDependentString(JSContext* cx, JSString* base, size_t start, size_t length);
 
 
+extern JSFlatString*
+NewLatin1StringZ(js::ExclusiveContext* cx, UniqueChars chars);
+
+
 template <js::AllowGC allowGC, typename CharT>
 extern JSFlatString*
 NewStringCopyN(js::ExclusiveContext* cx, const CharT* s, size_t n);
