@@ -35,8 +35,8 @@ class ConfigEnvironment(ConfigStatus.ConfigEnvironment):
 
 class TestEnvironment(unittest.TestCase):
     def test_auto_substs(self):
-        '''Test the automatically set values of ACDEFINES, ALLDEFINES,
-        ALLSUBSTS and ALLEMPTYSUBSTS.
+        '''Test the automatically set values of ACDEFINES, ALLSUBSTS
+        and ALLEMPTYSUBSTS.
         '''
         env = ConfigEnvironment('.', '.',
                   defines = [ ('foo', 'bar'), ('baz', 'qux 42'),
@@ -47,13 +47,7 @@ class TestEnvironment(unittest.TestCase):
                              ('qux', '') ])
         
         
-        
         self.assertEqual(env.substs['ACDEFINES'], """-Dfoo=bar -Dbaz='qux 42' -Dabc='d'\\''e'\\''f'""")
-        
-        self.assertEqual(env.substs['ALLDEFINES'], '''#define abc d'e'f
-#define baz qux 42
-#define foo bar''')
-        
         
         self.assertEqual(env.substs['ALLSUBSTS'], '''ABC = def
 ACDEFINES = -Dfoo=bar -Dbaz='qux 42' -Dabc='d'\\''e'\\''f'
