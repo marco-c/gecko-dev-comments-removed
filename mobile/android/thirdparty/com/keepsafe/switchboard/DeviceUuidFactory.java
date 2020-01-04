@@ -19,8 +19,6 @@ import java.util.UUID;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.Preference;
-
 
 
 
@@ -34,7 +32,6 @@ public class DeviceUuidFactory {
     private static UUID uuid = null;
 
     public DeviceUuidFactory(Context context) {
-
         if (uuid == null) {
             synchronized (DeviceUuidFactory.class) {
                 if (uuid == null) {
@@ -44,19 +41,12 @@ public class DeviceUuidFactory {
 
                     if (id != null) {
                         
-                        
                         uuid = UUID.fromString(id);
-
                     } else {
-
-                        UUID newId = UUID.randomUUID();
-                        uuid = newId;
+                        uuid = UUID.randomUUID();
 
                         
-                        prefs.edit()
-                                .putString(PREFS_DEVICE_ID, newId.toString())
-                                .commit();
-
+                        prefs.edit().putString(PREFS_DEVICE_ID, uuid.toString()).apply();
                     }
                 }
             }
