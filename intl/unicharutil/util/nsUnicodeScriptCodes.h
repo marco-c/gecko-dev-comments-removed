@@ -59,6 +59,9 @@
 
 
 
+
+
+
 #ifndef NS_UNICODE_SCRIPT_CODES
 #define NS_UNICODE_SCRIPT_CODES
 
@@ -94,6 +97,7 @@ struct nsCharProps2 {
   unsigned char mXidmod:4;
   signed char   mNumericValue:5;
   unsigned char mVertOrient:2;
+  unsigned char mLineBreak; 
 };
 
 #endif
