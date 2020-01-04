@@ -1620,7 +1620,7 @@ GetPropertyIC::tryAttachTypedArrayLength(JSContext* cx, HandleScript outerScript
     MOZ_ASSERT(canAttachStub());
     MOZ_ASSERT(!*emitted);
 
-    if (!obj->is<TypedArrayObject>())
+    if (!IsAnyTypedArray(obj))
         return true;
 
     if (!JSID_IS_ATOM(id, cx->names().length))
@@ -3978,7 +3978,7 @@ GetPropertyIC::tryAttachDenseElementHole(JSContext* cx, HandleScript outerScript
 GetPropertyIC::canAttachTypedOrUnboxedArrayElement(JSObject* obj, const Value& idval,
                                                    TypedOrValueRegister output)
 {
-    if (!obj->is<TypedArrayObject>() && !obj->is<UnboxedArrayObject>())
+    if (!IsAnyTypedArray(obj) && !obj->is<UnboxedArrayObject>())
         return false;
 
     MOZ_ASSERT(idval.isInt32() || idval.isString());
@@ -3996,13 +3996,13 @@ GetPropertyIC::canAttachTypedOrUnboxedArrayElement(JSObject* obj, const Value& i
             return false;
     }
 
-    if (obj->is<TypedArrayObject>()) {
-        if (index >= obj->as<TypedArrayObject>().length())
+    if (IsAnyTypedArray(obj)) {
+        if (index >= AnyTypedArrayLength(obj))
             return false;
 
         
         
-        uint32_t arrayType = obj->as<TypedArrayObject>().type();
+        uint32_t arrayType = AnyTypedArrayType(obj);
         if (arrayType == Scalar::Float32 || arrayType == Scalar::Float64)
             return output.hasValue();
 
@@ -4092,7 +4092,7 @@ GenerateGetTypedOrUnboxedArrayElement(JSContext* cx, MacroAssembler& masm,
 
     Label popObjectAndFail;
 
-    if (array->is<TypedArrayObject>()) {
+    if (IsAnyTypedArray(array)) {
         
         Address length(object, TypedArrayObject::lengthOffset());
         masm.branch32(Assembler::BelowOrEqual, length, indexReg, &failures);
@@ -4106,7 +4106,7 @@ GenerateGetTypedOrUnboxedArrayElement(JSContext* cx, MacroAssembler& masm,
 
         
         
-        Scalar::Type arrayType = array->as<TypedArrayObject>().type();
+        Scalar::Type arrayType = AnyTypedArrayType(array);
         int width = Scalar::byteSize(arrayType);
         BaseIndex source(elementReg, indexReg, ScaleFromElemWidth(width));
         if (output.hasValue()) {
@@ -4321,7 +4321,7 @@ static bool
 IsTypedArrayElementSetInlineable(JSObject* obj, const Value& idval, const Value& value)
 {
     
-    return obj->is<TypedArrayObject>() && idval.isInt32() &&
+    return IsAnyTypedArray(obj) && idval.isInt32() &&
            !value.isString() && !value.isObject() && !value.isSymbol();
 }
 
@@ -4525,7 +4525,7 @@ GenerateSetTypedArrayElement(JSContext* cx, MacroAssembler& masm, IonCache::Stub
     Label failures, done, popObjectAndFail;
 
     
-    Shape* shape = tarr->as<TypedArrayObject>().lastProperty();
+    Shape* shape = AnyTypedArrayShape(tarr);
     if (!shape)
         return false;
     masm.branchTestObjShape(Assembler::NotEqual, object, shape, &failures);
@@ -4552,7 +4552,7 @@ GenerateSetTypedArrayElement(JSContext* cx, MacroAssembler& masm, IonCache::Stub
     masm.loadPtr(Address(object, TypedArrayObject::dataOffset()), elements);
 
     
-    Scalar::Type arrayType = tarr->as<TypedArrayObject>().type();
+    Scalar::Type arrayType = AnyTypedArrayType(tarr);
     int width = Scalar::byteSize(arrayType);
     BaseIndex target(elements, indexReg, ScaleFromElemWidth(width));
 
