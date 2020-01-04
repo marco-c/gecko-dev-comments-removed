@@ -319,17 +319,17 @@ protected:
     
     nsIFrame* mFrame;
     
-    int32_t mStartOffsetInNode;
+    int32_t mOffsetInNode;
 
     FrameAndNodeOffset()
       : mFrame(nullptr)
-      , mStartOffsetInNode(-1)
+      , mOffsetInNode(-1)
     {
     }
 
     FrameAndNodeOffset(nsIFrame* aFrame, int32_t aStartOffsetInNode)
       : mFrame(aFrame)
-      , mStartOffsetInNode(aStartOffsetInNode)
+      , mOffsetInNode(aStartOffsetInNode)
     {
     }
 
@@ -337,12 +337,17 @@ protected:
     const nsIFrame* operator->() const { return mFrame; }
     operator nsIFrame*() { return mFrame; }
     operator const nsIFrame*() const { return mFrame; }
-    bool IsValid() const { return mFrame && mStartOffsetInNode >= 0; }
+    bool IsValid() const { return mFrame && mOffsetInNode >= 0; }
   };
   
   
   
   FrameAndNodeOffset GetFirstFrameHavingFlatTextInRange(nsRange* aRange);
+
+  
+  
+  
+  FrameAndNodeOffset GetLastFrameHavingFlatTextInRange(nsRange* aRange);
 
   struct MOZ_STACK_CLASS FrameRelativeRect final
   {

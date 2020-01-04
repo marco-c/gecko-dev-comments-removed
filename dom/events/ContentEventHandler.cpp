@@ -1495,6 +1495,105 @@ ContentEventHandler::GetFirstFrameHavingFlatTextInRange(nsRange* aRange)
   return FrameAndNodeOffset(firstFrame, nodePosition.mOffset);
 }
 
+ContentEventHandler::FrameAndNodeOffset
+ContentEventHandler::GetLastFrameHavingFlatTextInRange(nsRange* aRange)
+{
+  NodePosition nodePosition;
+  nsCOMPtr<nsIContentIterator> iter = NS_NewPreContentIterator();
+  iter->Init(aRange);
+
+  nsINode* endNode = aRange->GetEndParent();
+  uint32_t endOffset = static_cast<uint32_t>(aRange->EndOffset());
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsINode* nextNodeOfRangeEnd = nullptr;
+  if (endNode->IsNodeOfType(nsINode::eTEXT)) {
+    if (!endOffset) {
+      nextNodeOfRangeEnd = endNode;
+    }
+  } else if (endOffset < endNode->GetChildCount()) {
+    nextNodeOfRangeEnd = endNode->GetChildAt(endOffset);
+  }
+
+  for (iter->Last(); !iter->IsDone(); iter->Prev()) {
+    nsINode* node = iter->GetCurrentNode();
+    if (NS_WARN_IF(!node)) {
+      break;
+    }
+
+    if (!node->IsContent() || node == nextNodeOfRangeEnd) {
+      continue;
+    }
+
+    if (node->IsNodeOfType(nsINode::eTEXT)) {
+      nodePosition.mNode = node;
+      if (node == aRange->GetEndParent()) {
+        nodePosition.mOffset = aRange->EndOffset();
+      } else {
+        nodePosition.mOffset = node->Length();
+      }
+      break;
+    }
+
+    if (ShouldBreakLineBefore(node->AsContent(), mRootContent)) {
+      nodePosition.mNode = node;
+      nodePosition.mOffset = 0;
+      break;
+    }
+  }
+
+  if (!nodePosition.IsValid()) {
+    return FrameAndNodeOffset();
+  }
+
+  nsIFrame* lastFrame = nullptr;
+  GetFrameForTextRect(nodePosition.mNode, nodePosition.mOffset,
+                      true, &lastFrame);
+  if (!lastFrame) {
+    return FrameAndNodeOffset();
+  }
+
+  
+  
+  
+  if (lastFrame->GetType() != nsGkAtoms::textFrame) {
+    return FrameAndNodeOffset(lastFrame, nodePosition.mOffset);
+  }
+
+  int32_t start, end;
+  if (NS_WARN_IF(NS_FAILED(lastFrame->GetOffsets(start, end)))) {
+    return FrameAndNodeOffset();
+  }
+
+  
+  
+  
+  if (nodePosition.mOffset == start) {
+    MOZ_ASSERT(nodePosition.mOffset);
+    GetFrameForTextRect(nodePosition.mNode, --nodePosition.mOffset,
+                        true, &lastFrame);
+    if (NS_WARN_IF(!lastFrame)) {
+      return FrameAndNodeOffset();
+    }
+  }
+
+  return FrameAndNodeOffset(lastFrame, nodePosition.mOffset);
+}
+
 ContentEventHandler::FrameRelativeRect
 ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame)
 {
@@ -1677,14 +1776,14 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
         startsBetweenLineBreaker = frameForPrevious.mFrame == firstFrame.mFrame;
       }
     } else {
-      rv = firstFrame->GetCharacterRectsInRange(firstFrame.mStartOffsetInNode,
+      rv = firstFrame->GetCharacterRectsInRange(firstFrame.mOffsetInNode,
                                                 kEndOffset - offset, charRects);
       if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(charRects.IsEmpty())) {
         return rv;
       }
       
       
-      AppendSubString(chars, firstContent, firstFrame.mStartOffsetInNode,
+      AppendSubString(chars, firstContent, firstFrame.mOffsetInNode,
                       charRects.Length());
       if (NS_WARN_IF(chars.Length() != charRects.Length())) {
         return NS_ERROR_UNEXPECTED;
@@ -1833,48 +1932,63 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   iter->Init(range);
 
   
-  NodePosition startNodePosition(iter->GetCurrentNode(), range->StartOffset());
-  if (!startNodePosition.mNode) {
-    startNodePosition =
-      GetNodePositionHavingFlatText(range->GetStartParent(),
-                                    startNodePosition.mOffset);
-    if (NS_WARN_IF(!startNodePosition.IsValid())) {
-      return NS_ERROR_FAILURE;
-    }
-  }
-  nsIFrame* firstFrame = nullptr;
-  rv = GetFrameForTextRect(startNodePosition.mNode, startNodePosition.mOffset,
-                           true, &firstFrame);
-  NS_ENSURE_SUCCESS(rv, rv);
+  FrameAndNodeOffset firstFrame = GetFirstFrameHavingFlatTextInRange(range);
 
   
-  nsRect rect(nsPoint(0, 0), firstFrame->GetRect().Size());
-  rv = ConvertToRootRelativeOffset(firstFrame, rect);
-  NS_ENSURE_SUCCESS(rv, rv);
-  nsRect frameRect = rect;
+  
+  
+  if (!firstFrame.IsValid()) {
+    
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  bool hasSetRect = false;
+
+  nsRect rect, frameRect;
   nsPoint ptOffset;
-  firstFrame->GetPointFromOffset(startNodePosition.mOffset, &ptOffset);
-  if (firstFrame->GetWritingMode().IsVertical()) {
-    rect.y += ptOffset.y;
-    rect.height -= ptOffset.y;
-  } else {
-    rect.x += ptOffset.x;
-    rect.width -= ptOffset.x;
+
+  
+  if (firstFrame->GetType() == nsGkAtoms::textFrame) {
+    hasSetRect = true;
+    rect.SetRect(nsPoint(0, 0), firstFrame->GetRect().Size());
+    rv = ConvertToRootRelativeOffset(firstFrame, rect);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    frameRect = rect;
+    firstFrame->GetPointFromOffset(firstFrame.mOffsetInNode, &ptOffset);
+    if (firstFrame->GetWritingMode().IsVertical()) {
+      rect.y += ptOffset.y;
+      rect.height -= ptOffset.y;
+    } else {
+      rect.x += ptOffset.x;
+      rect.width -= ptOffset.x;
+    }
+  } else if (firstFrame->GetType() == nsGkAtoms::brFrame) {
+    hasSetRect = true;
+    FrameRelativeRect relativeRect = GetLineBreakerRectBefore(firstFrame);
+    if (NS_WARN_IF(!relativeRect.IsValid())) {
+      return NS_ERROR_FAILURE;
+    }
+    rect = relativeRect.RectRelativeTo(firstFrame);
+    rv = ConvertToRootRelativeOffset(firstFrame, rect);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    frameRect = rect;
   }
   
   
   EnsureNonEmptyRect(rect);
 
   
-  NodePosition endNodePosition =
-    GetNodePositionHavingFlatText(range->GetEndParent(), range->EndOffset());
-  if (NS_WARN_IF(!endNodePosition.IsValid())) {
+  FrameAndNodeOffset lastFrame = GetLastFrameHavingFlatTextInRange(range);
+  if (NS_WARN_IF(!lastFrame.IsValid())) {
     return NS_ERROR_FAILURE;
   }
-  nsIFrame* lastFrame = nullptr;
-  rv = GetFrameForTextRect(endNodePosition.mNode, endNodePosition.mOffset,
-                           range->Collapsed(), &lastFrame);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   for (nsIFrame* frame = firstFrame; frame != lastFrame;) {
@@ -1889,16 +2003,40 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
         if (!node->IsNodeOfType(nsINode::eCONTENT)) {
           continue;
         }
-        frame = node->AsContent()->GetPrimaryFrame();
+        nsIFrame* primaryFrame = node->AsContent()->GetPrimaryFrame();
+        
+        if (!primaryFrame) {
+          continue;
+        }
+        
+        
+        
+        
+        
+        if (primaryFrame->GetType() == nsGkAtoms::textFrame ||
+            primaryFrame->GetType() == nsGkAtoms::brFrame) {
+          frame = primaryFrame;
+        }
       } while (!frame && !iter->IsDone());
       if (!frame) {
-        
-        frame = lastFrame;
+        break;
       }
     }
-    frameRect.SetRect(nsPoint(0, 0), frame->GetRect().Size());
+    hasSetRect = true;
+    if (frame->GetType() == nsGkAtoms::textFrame) {
+      frameRect.SetRect(nsPoint(0, 0), frame->GetRect().Size());
+    } else {
+      MOZ_ASSERT(frame->GetType() == nsGkAtoms::brFrame);
+      FrameRelativeRect relativeRect = GetLineBreakerRectBefore(frame);
+      if (NS_WARN_IF(!relativeRect.IsValid())) {
+        return NS_ERROR_FAILURE;
+      }
+      frameRect = relativeRect.RectRelativeTo(frame);
+    }
     rv = ConvertToRootRelativeOffset(frame, frameRect);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     
     
     EnsureNonEmptyRect(frameRect);
@@ -1909,20 +2047,38 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   }
 
   
-  lastFrame->GetPointFromOffset(endNodePosition.mOffset, &ptOffset);
-  if (lastFrame->GetWritingMode().IsVertical()) {
-    frameRect.height -= lastFrame->GetRect().height - ptOffset.y;
-  } else {
-    frameRect.width -= lastFrame->GetRect().width - ptOffset.x;
+  if (NS_WARN_IF(!hasSetRect)) {
+    return NS_ERROR_FAILURE;
   }
-  
-  
-  EnsureNonEmptyRect(frameRect);
 
-  if (firstFrame == lastFrame) {
-    rect.IntersectRect(rect, frameRect);
-  } else {
-    rect.UnionRect(rect, frameRect);
+  
+  
+  
+  if (firstFrame.mFrame != lastFrame.mFrame) {
+    frameRect.SetRect(nsPoint(0, 0), lastFrame->GetRect().Size());
+    rv = ConvertToRootRelativeOffset(lastFrame, frameRect);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  
+  if (lastFrame->GetType() == nsGkAtoms::textFrame) {
+    lastFrame->GetPointFromOffset(lastFrame.mOffsetInNode, &ptOffset);
+    if (lastFrame->GetWritingMode().IsVertical()) {
+      frameRect.height -= lastFrame->GetRect().height - ptOffset.y;
+    } else {
+      frameRect.width -= lastFrame->GetRect().width - ptOffset.x;
+    }
+    
+    
+    EnsureNonEmptyRect(frameRect);
+
+    if (firstFrame.mFrame == lastFrame.mFrame) {
+      rect.IntersectRect(rect, frameRect);
+    } else {
+      rect.UnionRect(rect, frameRect);
+    }
   }
   aEvent->mReply.mRect = LayoutDeviceIntRect::FromUnknownRect(
       rect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));

@@ -945,12 +945,15 @@ nsContentIterator::First()
 void
 nsContentIterator::Last()
 {
-  NS_ASSERTION(mLast, "No last node!");
-
-  if (mLast) {
-    mozilla::DebugOnly<nsresult> rv = PositionAt(mLast);
-    NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to position iterator!");
+  
+  
+  if (!mLast) {
+    MOZ_ASSERT(mIsDone);
+    return;
   }
+
+  mozilla::DebugOnly<nsresult> rv = PositionAt(mLast);
+  NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to position iterator!");
 
   mIsDone = mLast == nullptr;
 }
