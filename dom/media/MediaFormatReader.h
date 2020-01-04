@@ -123,9 +123,6 @@ private:
   void ReturnOutput(MediaData* aData, TrackType aTrack);
 
   bool EnsureDecodersCreated();
-  
-  
-  bool EnsureDecodersInitialized();
   bool EnsureDecoderInitialized(TrackType aTrack);
 
   
@@ -368,9 +365,6 @@ private:
 
   DecoderData& GetDecoderData(TrackType aTrack);
 
-  void OnDecoderInitDone(const nsTArray<TrackType>& aTrackTypes);
-  void OnDecoderInitFailed(MediaDataDecoder::DecoderFailureReason aReason);
-
   
   RefPtr<MediaDataDemuxer> mDemuxer;
   bool mDemuxerInitDone;
@@ -448,9 +442,6 @@ private:
   Maybe<media::TimeUnit> mOriginalSeekTime;
   Maybe<media::TimeUnit> mPendingSeekTime;
   MozPromiseHolder<SeekPromise> mSeekPromise;
-
-  
-  MozPromiseRequestHolder<MediaDataDecoder::InitPromise::AllPromiseType> mDecodersInitRequest;
 
   RefPtr<VideoFrameContainer> mVideoFrameContainer;
   layers::ImageContainer* GetImageContainer();
