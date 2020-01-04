@@ -2413,7 +2413,7 @@ TabChild::RecvDestroy()
   
   
   nsCOMPtr<nsIRunnable> deleteRunnable = new DelayedDeleteRunnable(this);
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_DispatchToCurrentThread(deleteRunnable)));
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(deleteRunnable));
 
   return true;
 }

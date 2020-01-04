@@ -247,8 +247,8 @@ public:
         ClearOnShutdown(&sShutdownPoller); 
       });
       MOZ_ASSERT(runnable);
-      MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
-        NS_DispatchToMainThread(runnable, NS_DISPATCH_NORMAL)));
+      MOZ_ALWAYS_SUCCEEDS(
+        NS_DispatchToMainThread(runnable, NS_DISPATCH_NORMAL));
     }
   }
 private:

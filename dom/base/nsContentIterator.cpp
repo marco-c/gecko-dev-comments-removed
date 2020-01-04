@@ -1329,8 +1329,8 @@ nsContentSubtreeIterator::Init(nsIDOMRange* aRange)
   
 
   bool nodeBefore, nodeAfter;
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
-    nsRange::CompareNodeToRange(firstCandidate, mRange, &nodeBefore, &nodeAfter)));
+  MOZ_ALWAYS_SUCCEEDS(
+    nsRange::CompareNodeToRange(firstCandidate, mRange, &nodeBefore, &nodeAfter));
 
   if (nodeBefore || nodeAfter) {
     MakeEmpty();
@@ -1373,8 +1373,8 @@ nsContentSubtreeIterator::Init(nsIDOMRange* aRange)
   
   
 
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
-    nsRange::CompareNodeToRange(lastCandidate, mRange, &nodeBefore, &nodeAfter)));
+  MOZ_ALWAYS_SUCCEEDS(
+    nsRange::CompareNodeToRange(lastCandidate, mRange, &nodeBefore, &nodeAfter));
 
   if (nodeBefore || nodeAfter) {
     MakeEmpty();
@@ -1526,8 +1526,8 @@ nsContentSubtreeIterator::GetTopAncestorInRange(nsINode* aNode)
     if (!parent || !parent->GetParentNode()) {
       return content;
     }
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
-      nsRange::CompareNodeToRange(parent, mRange, &nodeBefore, &nodeAfter)));
+    MOZ_ALWAYS_SUCCEEDS(
+      nsRange::CompareNodeToRange(parent, mRange, &nodeBefore, &nodeAfter));
 
     if (nodeBefore || nodeAfter) {
       return content;

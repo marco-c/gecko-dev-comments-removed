@@ -509,8 +509,8 @@ nsHTMLCSSUtils::GetCSSInlinePropertyBase(nsINode* aNode, nsIAtom* aProperty,
     NS_ENSURE_STATE(cssDecl);
 
     
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
-      cssDecl->GetPropertyValue(nsDependentAtomString(aProperty), aValue)));
+    MOZ_ALWAYS_SUCCEEDS(
+      cssDecl->GetPropertyValue(nsDependentAtomString(aProperty), aValue));
 
     return NS_OK;
   }

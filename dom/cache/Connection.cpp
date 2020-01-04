@@ -28,7 +28,7 @@ Connection::Connection(mozIStorageConnection* aBase)
 Connection::~Connection()
 {
   NS_ASSERT_OWNINGTHREAD(Connection);
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(Close()));
+  MOZ_ALWAYS_SUCCEEDS(Close());
 }
 
 NS_IMETHODIMP
@@ -43,7 +43,7 @@ Connection::Close()
 
   
   
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(db::IncrementalVacuum(this)));
+  MOZ_ALWAYS_SUCCEEDS(db::IncrementalVacuum(this));
 
   return mBase->Close();
 }

@@ -229,7 +229,7 @@ PermissionRequestBase::Observe(nsISupports* aSubject,
 
   nsresult rv;
   uint32_t promptResult = nsDependentString(aData).ToInteger(&rv);
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(rv));
+  MOZ_ALWAYS_SUCCEEDS(rv);
 
   
   

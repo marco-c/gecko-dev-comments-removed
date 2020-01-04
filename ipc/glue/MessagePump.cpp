@@ -246,7 +246,7 @@ DoWorkRunnable::Cancel()
   
   
   
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(Run()));
+  MOZ_ALWAYS_SUCCEEDS(Run());
   return NS_OK;
 }
 

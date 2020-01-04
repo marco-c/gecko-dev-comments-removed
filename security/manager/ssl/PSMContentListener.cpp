@@ -153,7 +153,7 @@ PSMContentStreamListener::OnStopRequest(nsIRequest* request,
   
   nsCOMPtr<nsIRunnable> r =
     NS_NewRunnableMethod(this, &PSMContentStreamListener::ImportCertificate);
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_DispatchToMainThread(r)));
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(r));
 
   return NS_OK;
 }

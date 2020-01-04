@@ -1117,7 +1117,7 @@ nsStandardURL::GetAsciiSpec(nsACString &result)
 
     
     nsAutoCString hostport;
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(GetAsciiHostPort(hostport)));
+    MOZ_ALWAYS_SUCCEEDS(GetAsciiHostPort(hostport));
     result += hostport;
 
     NS_EscapeURL(Path(), esc_OnlyNonASCII | esc_AlwaysCopy, result);
@@ -1133,7 +1133,7 @@ nsStandardURL::GetAsciiHostPort(nsACString &result)
         return NS_OK;
     }
 
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(GetAsciiHost(result)));
+    MOZ_ALWAYS_SUCCEEDS(GetAsciiHost(result));
 
     
     

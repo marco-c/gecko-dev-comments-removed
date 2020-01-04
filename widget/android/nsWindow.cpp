@@ -2726,8 +2726,8 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
     nsCOMPtr<nsIContent> imeRoot;
 
     
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(IMEStateManager::GetFocusSelectionAndRoot(
-            getter_AddRefs(imeSelection), getter_AddRefs(imeRoot))));
+    MOZ_ALWAYS_SUCCEEDS(IMEStateManager::GetFocusSelectionAndRoot(
+            getter_AddRefs(imeSelection), getter_AddRefs(imeRoot)));
 
     
     

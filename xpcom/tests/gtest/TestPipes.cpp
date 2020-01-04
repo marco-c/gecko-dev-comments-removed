@@ -889,7 +889,7 @@ CloseDuringReadFunc(nsIInputStream *aReader,
   
   
   
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(aReader->Close()));
+  MOZ_ALWAYS_SUCCEEDS(aReader->Close());
 
   nsTArray<char>* buffer = static_cast<nsTArray<char>*>(aClosure);
   buffer->AppendElements(aFromSegment, aCount);
