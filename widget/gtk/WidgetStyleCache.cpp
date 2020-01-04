@@ -280,13 +280,32 @@ GtkStyleContext*
 ClaimStyleContext(WidgetNodeType aNodeType, GtkTextDirection aDirection,
                   GtkStateFlags aStateFlags, StyleFlags aFlags)
 {
+  MOZ_ASSERT(!sStyleContextNeedsRestore);
   GtkStyleContext* style = GetStyleInternal(aNodeType);
 #ifdef DEBUG
   MOZ_ASSERT(!sCurrentStyleContext);
   sCurrentStyleContext = style;
 #endif
-  gtk_style_context_set_state(style, aStateFlags);
-  gtk_style_context_set_direction(style, aDirection);
+  GtkStateFlags oldState = gtk_style_context_get_state(style);
+  GtkTextDirection oldDirection = gtk_style_context_get_direction(style);
+  if (oldState != aStateFlags || oldDirection != aDirection) {
+    
+    
+    gtk_style_context_set_state(style, aStateFlags);
+    gtk_style_context_set_direction(style, aDirection);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!sStyleContextNeedsRestore) {
+      gtk_style_context_invalidate(style);
+    }
+  }
   return style;
 }
 
