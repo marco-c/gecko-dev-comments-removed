@@ -406,6 +406,11 @@ var SessionStoreInternal = {
   _closedWindowTabs: new WeakMap(),
 
   
+  
+  
+  _remotenessChangingBrowsers: new WeakMap(),
+
+  
   _browserSetState: false,
 
   
@@ -2374,10 +2379,30 @@ var SessionStoreInternal = {
 
 
 
+
+
+
+
+
   navigateAndRestore(tab, loadArguments, historyIndex) {
     let window = tab.ownerDocument.defaultView;
     NS_ASSERT(window.__SSi, "tab's window must be tracked");
     let browser = tab.linkedBrowser;
+
+    
+    
+    let alreadyRestoring =
+      this._remotenessChangingBrowsers.has(browser.permanentKey);
+
+    
+    
+    this._remotenessChangingBrowsers.set(browser.permanentKey, loadArguments);
+
+    if (alreadyRestoring) {
+      
+      
+      return;
+    }
 
     
     
@@ -2386,6 +2411,13 @@ var SessionStoreInternal = {
 
     
     TabStateFlusher.flush(browser).then(() => {
+      
+      
+      
+      let recentLoadArguments =
+        this._remotenessChangingBrowsers.get(browser.permanentKey);
+      this._remotenessChangingBrowsers.delete(browser.permanentKey);
+
       
       if (tab.closing || !tab.linkedBrowser) {
         return;
@@ -2406,7 +2438,7 @@ var SessionStoreInternal = {
         tabState.index = Math.max(1, Math.min(tabState.index, tabState.entries.length));
       } else {
         tabState.userTypedValue = null;
-        options.loadArguments = loadArguments;
+        options.loadArguments = recentLoadArguments;
       }
 
       

@@ -916,6 +916,7 @@ function _loadURIWithFlags(browser, uri, params) {
     
     
     
+    Cu.reportError(e);
     gBrowser.updateBrowserRemotenessByURL(browser, uri);
     browser.webNavigation.loadURIWithOptions(uri, flags, referrer, referrerPolicy,
                                              postData, null, null);
