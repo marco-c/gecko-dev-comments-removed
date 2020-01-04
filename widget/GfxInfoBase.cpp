@@ -239,42 +239,6 @@ RemovePrefForDriverVersion()
 }
 
 
-static bool
-BlacklistNodeToTextValue(nsIDOMNode *aBlacklistNode, nsAString& aValue)
-{
-  nsAutoString value;
-  if (NS_FAILED(aBlacklistNode->GetTextContent(value)))
-    return false;
-
-  value.Trim(" \t\r\n");
-  aValue = value;
-
-  return true;
-}
-
-
-static bool
-BlacklistAttrToTextValue(nsIDOMNode *aBlacklistNode,
-                         const nsAString& aAttrName,
-                         nsAString& aValue)
-{
-  nsCOMPtr<nsIDOMElement> element = do_QueryInterface(aBlacklistNode);
-  if (!element) {
-    return false;
-  }
-
-  nsAutoString value;
-  if (NS_FAILED(element->GetAttribute(aAttrName, value))) {
-    return false;
-  }
-
-  value.Trim(" \t\r\n");
-  aValue = value;
-
-  return true;
-}
-
-
 static OperatingSystem
 BlacklistOSToOperatingSystem(const nsAString& os)
 {
@@ -317,26 +281,19 @@ BlacklistOSToOperatingSystem(const nsAString& os)
 }
 
 static GfxDeviceFamily*
-BlacklistDevicesToDeviceFamily(nsIDOMHTMLCollection* aDevices)
+BlacklistDevicesToDeviceFamily(nsTArray<nsCString>& devices)
 {
-  uint32_t length;
-  if (NS_FAILED(aDevices->GetLength(&length)))
+  if (devices.Length() == 0)
     return nullptr;
 
   
   
   GfxDeviceFamily* deviceIds = new GfxDeviceFamily;
 
-  for (uint32_t i = 0; i < length; ++i) {
-    nsCOMPtr<nsIDOMNode> node;
-    if (NS_FAILED(aDevices->Item(i, getter_AddRefs(node))) || !node)
-      continue;
-
-    nsAutoString deviceValue;
-    if (!BlacklistNodeToTextValue(node, deviceValue))
-      continue;
-
-    deviceIds->AppendElement(deviceValue);
+  for (uint32_t i = 0; i < devices.Length(); ++i) {
+    
+    
+    deviceIds->AppendElement(NS_ConvertUTF8toUTF16(devices[i]));
   }
 
   return deviceIds;
@@ -433,59 +390,15 @@ BlacklistComparatorToComparisonOp(const nsAString& op)
 }
 
 
-static bool
-BlacklistNodeGetChildByName(nsIDOMElement *element,
-                            const nsAString& tagname,
-                            nsIDOMNode** firstchild)
-{
-  nsCOMPtr<nsIDOMHTMLCollection> nodelist;
-  if (NS_FAILED(element->GetElementsByTagName(tagname,
-                                              getter_AddRefs(nodelist))) ||
-      !nodelist) {
-    return false;
-  }
-
-  nsCOMPtr<nsIDOMNode> node;
-  if (NS_FAILED(nodelist->Item(0, getter_AddRefs(node))) || !node)
-    return false;
-
-  node.forget(firstchild);
-  return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 
 
 static bool
-BlacklistEntryToDriverInfo(nsIDOMNode* aBlacklistEntry,
+BlacklistEntryToDriverInfo(nsCString& aBlacklistEntry,
                            GfxDriverInfo& aDriverInfo)
 {
-  nsAutoString nodename;
-  if (NS_FAILED(aBlacklistEntry->GetNodeName(nodename)) ||
-      nodename != NS_LITERAL_STRING(BLACKLIST_ENTRY_TAG_NAME)) {
-    return false;
-  }
-
-  nsCOMPtr<nsIDOMElement> element = do_QueryInterface(aBlacklistEntry);
-  if (!element)
-    return false;
-
-  nsCOMPtr<nsIDOMNode> dataNode;
-  nsAutoString dataValue;
-
   
   
   
@@ -494,184 +407,127 @@ BlacklistEntryToDriverInfo(nsIDOMNode* aBlacklistEntry,
   static mozilla::Version appV(GfxInfoBase::GetApplicationVersion().get());
   if (appV <= zeroV) {
       gfxCriticalErrorOnce(gfxCriticalError::DefaultOptions(false)) << "Invalid application version " << GfxInfoBase::GetApplicationVersion().get();
-  } else if (BlacklistNodeGetChildByName(element,
-                                         NS_LITERAL_STRING("versionRange"),
-                                         getter_AddRefs(dataNode))) {
-    if (BlacklistAttrToTextValue(dataNode,
-                                 NS_LITERAL_STRING("minVersion"),
-                                 dataValue)) {
-      mozilla::Version minV(NS_ConvertUTF16toUTF8(dataValue).get());
-      if (minV > zeroV && appV < minV) {
-        
-        
-        
-        return false;
-      }
-    }
-
-    if (BlacklistAttrToTextValue(dataNode,
-                                 NS_LITERAL_STRING("maxVersion"),
-                                 dataValue)) {
-      mozilla::Version maxV(NS_ConvertUTF16toUTF8(dataValue).get());
-      if (maxV > zeroV && appV > maxV) {
-        
-        
-        
-        return false;
-      }
-    }
   }
 
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("os"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mOperatingSystem = BlacklistOSToOperatingSystem(dataValue);
-  }
+  nsTArray<nsCString> keyValues;
+  ParseString(aBlacklistEntry, '\t', keyValues);
 
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("osversion"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mOperatingSystemVersion = strtoul(NS_LossyConvertUTF16toASCII(dataValue).get(),
-                                                  nullptr, 10);
-  }
+  aDriverInfo.mRuleId = NS_LITERAL_CSTRING("FEATURE_FAILURE_DL_BLACKLIST_NO_ID");
 
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("vendor"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mAdapterVendor = dataValue;
-  }
-
-  
-  
-  
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("devices"),
-                                  getter_AddRefs(dataNode))) {
-    nsCOMPtr<nsIDOMElement> devicesElement = do_QueryInterface(dataNode);
-    if (devicesElement) {
-
+  for (uint32_t i = 0; i < keyValues.Length(); ++i) {
+    nsCString keyValue = keyValues[i];
+    nsTArray<nsCString> splitted;
+    ParseString(keyValue, ':', splitted);
+    if (splitted.Length() != 2) {
       
-      
-      nsCOMPtr<nsIDOMHTMLCollection> devices;
-      if (NS_SUCCEEDED(devicesElement->GetElementsByTagName(NS_LITERAL_STRING("device"),
-                                                            getter_AddRefs(devices)))) {
-        GfxDeviceFamily* deviceIds = BlacklistDevicesToDeviceFamily(devices);
-        if (deviceIds) {
-          
-          aDriverInfo.mDeleteDevices = true;
-          aDriverInfo.mDevices = deviceIds;
-        }
-      }
-    }
-  }
-
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("feature"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mFeature = BlacklistFeatureToGfxFeature(dataValue);
-    if (aDriverInfo.mFeature < 0) {
-      
-      gfxWarning() << "Unrecognized feature " << NS_ConvertUTF16toUTF8(dataValue).get();
+      gfxCriticalErrorOnce(CriticalLog::DefaultOptions(false)) << "Unrecognized data " << keyValue.get();
       return false;
     }
-  }
+    nsCString key = splitted[0];
+    nsCString value = splitted[1];
+    NS_ConvertUTF8toUTF16 dataValue(value);
 
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("featureStatus"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mFeatureStatus = BlacklistFeatureStatusToGfxFeatureStatus(dataValue);
-  }
+    if (value.Length() == 0) {
+      
+      gfxCriticalErrorOnce(CriticalLog::DefaultOptions(false)) << "Empty value for " << key.get();
+      return false;
+    }
 
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("driverVersion"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    uint64_t version;
-    if (ParseDriverVersion(dataValue, &version))
-      aDriverInfo.mDriverVersion = version;
-  }
+    if (key.EqualsLiteral("blockID")) {
+       nsCString blockIdStr = NS_LITERAL_CSTRING("FEATURE_FAILURE_DL_BLACKLIST_") + value;
+       aDriverInfo.mRuleId = blockIdStr.get();
+    } else if (key.EqualsLiteral("os")) {
+      aDriverInfo.mOperatingSystem = BlacklistOSToOperatingSystem(dataValue);
+    } else if (key.EqualsLiteral("osversion")) {
+      aDriverInfo.mOperatingSystemVersion = strtoul(value.get(), nullptr, 10);
+    } else if (key.EqualsLiteral("vendor")) {
+      aDriverInfo.mAdapterVendor = dataValue;
+    } else if (key.EqualsLiteral("feature")) {
+      aDriverInfo.mFeature = BlacklistFeatureToGfxFeature(dataValue);
+      if (aDriverInfo.mFeature < 0) {
+        
+        gfxCriticalErrorOnce(CriticalLog::DefaultOptions(false)) << "Unrecognized feature " << value.get();
+        return false;
+      }
+    } else if (key.EqualsLiteral("featureStatus")) {
+      aDriverInfo.mFeatureStatus = BlacklistFeatureStatusToGfxFeatureStatus(dataValue);
+    } else if (key.EqualsLiteral("driverVersion")) {
+      uint64_t version;
+      if (ParseDriverVersion(dataValue, &version))
+        aDriverInfo.mDriverVersion = version;
+    } else if (key.EqualsLiteral("driverVersionMax")) {
+      uint64_t version;
+      if (ParseDriverVersion(dataValue, &version))
+        aDriverInfo.mDriverVersionMax = version;
+    } else if (key.EqualsLiteral("driverVersionMax")) {
+      uint64_t version;
+      if (ParseDriverVersion(dataValue, &version))
+        aDriverInfo.mDriverVersionMax = version;
+    } else if (key.EqualsLiteral("driverVersionComparator")) {
+      aDriverInfo.mComparisonOp = BlacklistComparatorToComparisonOp(dataValue);
+    } else if (key.EqualsLiteral("model")) {
+      aDriverInfo.mModel = dataValue;
+    } else if (key.EqualsLiteral("product")) {
+      aDriverInfo.mProduct = dataValue;
+    } else if (key.EqualsLiteral("manufacturer")) {
+      aDriverInfo.mManufacturer = dataValue;
+    } else if (key.EqualsLiteral("hardware")) {
+      aDriverInfo.mHardware = dataValue;
+    } else if (key.EqualsLiteral("versionRange")) {
+      nsTArray<nsCString> versionRange;
+      ParseString(value, ',', versionRange);
+      if (versionRange.Length() != 2) {
+        gfxCriticalErrorOnce(CriticalLog::DefaultOptions(false)) << "Unrecognized versionRange " << value.get();
+        return false;
+      }
+      nsCString minValue = versionRange[0];
+      nsCString maxValue = versionRange[1];
 
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("driverVersionMax"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    uint64_t version;
-    if (ParseDriverVersion(dataValue, &version))
-      aDriverInfo.mDriverVersionMax = version;
-  }
+      mozilla::Version minV(minValue.get());
+      mozilla::Version maxV(maxValue.get());
 
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("driverVersionComparator"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mComparisonOp = BlacklistComparatorToComparisonOp(dataValue);
+      if (minV > zeroV && !(appV >= minV)) {
+        
+        
+        
+        return false;
+      }
+      if (maxV > zeroV && !(appV <= maxV)) {
+        
+        
+        
+        return false;
+      }
+    } else if (key.EqualsLiteral("devices")) {
+      nsTArray<nsCString> devices;
+      ParseString(value, ',', devices);
+      GfxDeviceFamily* deviceIds = BlacklistDevicesToDeviceFamily(devices);
+      if (deviceIds) {
+        
+        aDriverInfo.mDeleteDevices = true;
+        aDriverInfo.mDevices = deviceIds;
+      }
+    }
+    
   }
-
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("model"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mModel = dataValue;
-  }
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("product"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mProduct = dataValue;
-  }
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("manufacturer"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mManufacturer = dataValue;
-  }
-  
-  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("hardware"),
-                                  getter_AddRefs(dataNode))) {
-    BlacklistNodeToTextValue(dataNode, dataValue);
-    aDriverInfo.mHardware = dataValue;
-  }
-  if (BlacklistAttrToTextValue(element,
-                               NS_LITERAL_STRING("blockID"),
-                               dataValue) && !dataValue.IsEmpty()) {
-    nsCString blockIdStr = NS_LITERAL_CSTRING("FEATURE_FAILURE_DL_BLACKLIST_") +
-                           NS_ConvertUTF16toUTF8(dataValue);
-    aDriverInfo.mRuleId = blockIdStr.get();
-  } else {
-    aDriverInfo.mRuleId = NS_LITERAL_CSTRING("FEATURE_FAILURE_DL_BLACKLIST_NO_ID");
-  }
-
-  
 
   return true;
 }
 
 static void
-BlacklistEntriesToDriverInfo(nsIDOMHTMLCollection* aBlacklistEntries,
+BlacklistEntriesToDriverInfo(nsTArray<nsCString>& aBlacklistEntries,
                              nsTArray<GfxDriverInfo>& aDriverInfo)
 {
-  uint32_t length;
-  if (NS_FAILED(aBlacklistEntries->GetLength(&length)))
-    return;
-
   aDriverInfo.Clear();
-  aDriverInfo.SetLength(length);
-  for (uint32_t i = 0; i < length; ++i) {
-    nsCOMPtr<nsIDOMNode> blacklistEntry;
-    if (NS_SUCCEEDED(aBlacklistEntries->Item(i,
-                                             getter_AddRefs(blacklistEntry))) &&
-        blacklistEntry) {
-      GfxDriverInfo di;
-      if (BlacklistEntryToDriverInfo(blacklistEntry, di)) {
-        aDriverInfo[i] = di;
-        
-        di.mDeleteDevices = false;
-      }
+  aDriverInfo.SetLength(aBlacklistEntries.Length());
+
+  for (uint32_t i = 0; i < aBlacklistEntries.Length(); ++i) {
+    nsCString blacklistEntry = aBlacklistEntries[i];
+    GfxDriverInfo di;
+    if (BlacklistEntryToDriverInfo(blacklistEntry, di)) {
+      aDriverInfo[i] = di;
+      
+      di.mDeleteDevices = false;
     }
   }
 }
@@ -681,19 +537,14 @@ GfxInfoBase::Observe(nsISupports* aSubject, const char* aTopic,
                      const char16_t* aData)
 {
   if (strcmp(aTopic, "blocklist-data-gfxItems") == 0) {
-    nsCOMPtr<nsIDOMElement> gfxItems = do_QueryInterface(aSubject);
-    if (gfxItems) {
-      nsCOMPtr<nsIDOMHTMLCollection> blacklistEntries;
-      if (NS_SUCCEEDED(gfxItems->
-            GetElementsByTagName(NS_LITERAL_STRING(BLACKLIST_ENTRY_TAG_NAME),
-                                 getter_AddRefs(blacklistEntries))) &&
-          blacklistEntries)
-      {
-        nsTArray<GfxDriverInfo> driverInfo;
-        BlacklistEntriesToDriverInfo(blacklistEntries, driverInfo);
-        EvaluateDownloadedBlacklist(driverInfo);
-      }
+    nsTArray<GfxDriverInfo> driverInfo;
+    nsTArray<nsCString> blacklistEntries;
+    nsCString utf8Data = NS_ConvertUTF16toUTF8(aData);
+    if (utf8Data.Length() > 0) {
+      ParseString(utf8Data, '\n', blacklistEntries);
     }
+    BlacklistEntriesToDriverInfo(blacklistEntries, driverInfo);
+    EvaluateDownloadedBlacklist(driverInfo);
   }
 
   return NS_OK;
