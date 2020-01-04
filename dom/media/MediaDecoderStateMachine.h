@@ -167,6 +167,7 @@ private:
   
   void InitializationTask();
 
+  void SetAudioCaptured(bool aCaptured);
   void DispatchAudioCaptured();
   void DispatchAudioUncaptured();
 
@@ -488,6 +489,8 @@ protected:
   
   
   void UpdateRenderedVideoFrames();
+
+  media::MediaSink* CreateAudioSink();
 
   
   
