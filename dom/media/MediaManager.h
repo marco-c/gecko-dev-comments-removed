@@ -533,7 +533,6 @@ private:
   nsAutoPtr<base::Thread> mMediaThread;
   nsCOMPtr<nsIAsyncShutdownBlocker> mShutdownBlocker;
 
-  Mutex mMutex;
   
   RefPtr<MediaEngine> mBackend;
 

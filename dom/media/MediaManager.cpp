@@ -1478,7 +1478,6 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
 
 MediaManager::MediaManager()
   : mMediaThread(nullptr)
-  , mMutex("mozilla::MediaManager")
   , mBackend(nullptr) {
   mPrefs.mFreq   = 1000; 
   mPrefs.mWidth  = 0; 
@@ -2400,10 +2399,10 @@ MediaManager::GetUserMediaDevices(nsPIDOMWindow* aWindow,
 MediaEngine*
 MediaManager::GetBackend(uint64_t aWindowId)
 {
+  MOZ_ASSERT(MediaManager::IsInMediaThread());
   
   
   
-  MutexAutoLock lock(mMutex);
   if (!mBackend) {
     MOZ_RELEASE_ASSERT(!sInShutdown);  
 #if defined(MOZ_WEBRTC)
@@ -2600,12 +2599,6 @@ MediaManager::Shutdown()
   GetActiveWindows()->Clear();
   mActiveCallbacks.Clear();
   mCallIds.Clear();
-  {
-    MutexAutoLock lock(mMutex);
-    if (mBackend) {
-      mBackend->Shutdown(); 
-    }
-  }
 
   
   
@@ -2613,26 +2606,32 @@ MediaManager::Shutdown()
   class ShutdownTask : public Task
   {
   public:
-    ShutdownTask(already_AddRefed<MediaEngine> aBackend,
+    ShutdownTask(MediaManager* aManager,
                  nsRunnable* aReply)
-      : mReply(aReply)
-      , mBackend(aBackend) {}
+      : mManager(aManager)
+      , mReply(aReply) {}
   private:
     virtual void
     Run()
     {
       LOG(("MediaManager Thread Shutdown"));
       MOZ_ASSERT(MediaManager::IsInMediaThread());
+      
+      {
+        if (mManager->mBackend) {
+          mManager->mBackend->Shutdown(); 
+        }
+      }
       mozilla::ipc::BackgroundChild::CloseForCurrentThread();
       
-      mBackend = nullptr; 
+      mManager->mBackend = nullptr; 
 
       if (NS_FAILED(NS_DispatchToMainThread(mReply.forget()))) {
         LOG(("Will leak thread: DispatchToMainthread of reply runnable failed in MediaManager shutdown"));
       }
     }
+    RefPtr<MediaManager> mManager;
     RefPtr<nsRunnable> mReply;
-    RefPtr<MediaEngine> mBackend;
   };
 
   
@@ -2645,14 +2644,8 @@ MediaManager::Shutdown()
   
   RefPtr<MediaManager> that(sSingleton);
   
-  RefPtr<MediaEngine> temp;
-  {
-    MutexAutoLock lock(mMutex);
-    temp = mBackend.forget();
-  }
   
-  mMediaThread->message_loop()->PostTask(FROM_HERE, new ShutdownTask(
-      temp.forget(),
+  mMediaThread->message_loop()->PostTask(FROM_HERE, new ShutdownTask(this,
       media::NewRunnableFrom([this, that]() mutable {
     LOG(("MediaManager shutdown lambda running, releasing MediaManager singleton and thread"));
     if (mMediaThread) {
