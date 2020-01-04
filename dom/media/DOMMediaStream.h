@@ -362,6 +362,10 @@ public:
 
   
 
+  MediaStreamTrack* GetTrackById(const nsString& aId);
+
+  MediaStreamTrack* GetOwnedTrackById(const nsString& aId);
+
   
 
 
