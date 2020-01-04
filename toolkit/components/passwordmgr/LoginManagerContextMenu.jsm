@@ -60,7 +60,7 @@ let LoginManagerContextMenu = {
 
         
         item.addEventListener("command", function(login, event) {
-          this._fillPassword(login, inputElement, browser, documentURI);
+          this._fillTargetField(login, inputElement, browser, documentURI);
         }.bind(this, login));
 
         fragment.appendChild(item);
@@ -151,7 +151,7 @@ let LoginManagerContextMenu = {
 
 
 
-  _fillPassword(login, inputElement, browser, documentURI) {
+  _fillTargetField(login, inputElement, browser, documentURI) {
     LoginManagerParent.fillForm({
       browser: browser,
       loginFormOrigin: documentURI.prePath,

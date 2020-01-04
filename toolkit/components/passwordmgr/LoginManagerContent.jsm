@@ -476,7 +476,9 @@ var LoginManagerContent = {
     
     if (inputElement) {
       form = FormLikeFactory.createFromField(inputElement);
-      clobberUsername = false;
+      if (inputElement.type == "password") {
+        clobberUsername = false;
+      }
     }
     this._fillForm(form, true, clobberUsername, true, true, loginsFound, recipes, options);
   },
@@ -823,6 +825,9 @@ var LoginManagerContent = {
 
 
 
+
+
+
   _fillForm : function (form, autofillForm, clobberUsername, clobberPassword,
                         userTriggered, foundLogins, recipes, {inputElement} = {}) {
     let ignoreAutocomplete = true;
@@ -867,11 +872,16 @@ var LoginManagerContent = {
       
       
       if (inputElement) {
-        if (inputElement.type != "password") {
+        if (inputElement.type == "password") {
+          passwordField = inputElement;
+          if (!clobberUsername) {
+            usernameField = null;
+          }
+        } else if (LoginHelper.isUsernameFieldType(inputElement)) {
+          usernameField = inputElement;
+        } else {
           throw new Error("Unexpected input element type.");
         }
-        passwordField = inputElement;
-        usernameField = null;
       }
 
       
@@ -1029,6 +1039,53 @@ var LoginManagerContent = {
     } finally {
       Services.obs.notifyObservers(form.rootElement, "passwordmgr-processed-form", null);
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getFieldContext(aField) {
+    
+    if (!(aField instanceof Ci.nsIDOMHTMLInputElement) ||
+        (aField.type != "password" && !LoginHelper.isUsernameFieldType(aField)) ||
+        !aField.ownerDocument) {
+      return null;
+    }
+    let form = FormLikeFactory.createFromField(aField);
+
+    let doc = aField.ownerDocument;
+    let messageManager = messageManagerFromWindow(doc.defaultView);
+    let recipes = messageManager.sendSyncMessage("RemoteLogins:findRecipes", {
+      formOrigin: LoginUtils._getPasswordOrigin(doc.documentURI),
+    })[0];
+
+    let [usernameField, newPasswordField, oldPasswordField] =
+          this._getFormFields(form, false, recipes);
+
+    
+    
+    if (aField.type != "password") {
+      usernameField = aField;
+    }
+
+    return {
+      usernameField: {
+        found: !!usernameField,
+        disabled: usernameField && (usernameField.disabled || usernameField.readOnly),
+      },
+      passwordField: {
+        found: !!newPasswordField,
+        disabled: newPasswordField && (newPasswordField.disabled || newPasswordField.readOnly),
+      },
+    };
   },
 
 };
