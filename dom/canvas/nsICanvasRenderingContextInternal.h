@@ -137,6 +137,13 @@ public:
   virtual void MarkContextClean() = 0;
 
   
+  virtual void MarkContextCleanForFrameCapture() = 0;
+
+  
+  
+  virtual bool IsContextCleanForFrameCapture() = 0;
+
+  
   NS_IMETHOD Redraw(const gfxRect &dirty) = 0;
 
   NS_IMETHOD SetContextOptions(JSContext* cx, JS::Handle<JS::Value> options) { return NS_OK; }

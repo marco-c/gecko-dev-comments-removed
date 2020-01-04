@@ -460,6 +460,8 @@ public:
                                                LayerManager *aManager) override;
   virtual bool ShouldForceInactiveLayer(LayerManager *aManager) override;
   void MarkContextClean() override;
+  void MarkContextCleanForFrameCapture() override;
+  bool IsContextCleanForFrameCapture() override;
   NS_IMETHOD SetIsIPC(bool isIPC) override;
   
   void Redraw(const mozilla::gfx::Rect &r);
@@ -748,6 +750,13 @@ protected:
 
 
   bool mPredictManyRedrawCalls;
+
+  
+
+
+
+
+  bool mIsCapturedFrameInvalid;
 
   
   

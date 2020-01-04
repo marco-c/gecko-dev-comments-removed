@@ -214,6 +214,13 @@ public:
   
   void MarkContextClean();
 
+  
+  
+  void MarkContextCleanForFrameCapture();
+
+  
+  bool IsContextCleanForFrameCapture();
+
   nsresult GetContext(const nsAString& aContextId, nsISupports** aContext);
 
 protected:
