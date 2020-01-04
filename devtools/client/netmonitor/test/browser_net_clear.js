@@ -1,63 +1,64 @@
 
 
 
+"use strict";
 
 
 
 
-function test() {
-  initNetMonitor(SIMPLE_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test... ");
 
-    let { document, $, NetMonitorView } = aMonitor.panelWin;
-    let { RequestsMenu } = NetMonitorView;
-    let detailsPane = $("#details-pane");
-    let detailsPaneToggleButton = $("#details-pane-toggle");
-    let clearButton = $("#requests-menu-clear-button");
+add_task(function* () {
+  let [tab, , monitor] = yield initNetMonitor(SIMPLE_URL);
+  info("Starting test... ");
 
-    RequestsMenu.lazyUpdate = false;
+  let { $, NetMonitorView } = monitor.panelWin;
+  let { RequestsMenu } = NetMonitorView;
+  let detailsPane = $("#details-pane");
+  let detailsPaneToggleButton = $("#details-pane-toggle");
+  let clearButton = $("#requests-menu-clear-button");
 
-    
-    assertNoRequestState(RequestsMenu, detailsPaneToggleButton);
+  RequestsMenu.lazyUpdate = false;
 
-    
-    aMonitor.panelWin.once(aMonitor.panelWin.EVENTS.NETWORK_EVENT, () => {
-      assertSingleRequestState(RequestsMenu, detailsPaneToggleButton);
+  
+  assertNoRequestState(RequestsMenu, detailsPaneToggleButton);
 
-      
-      EventUtils.sendMouseEvent({ type: "click" }, clearButton);
-      assertNoRequestState(RequestsMenu, detailsPaneToggleButton);
+  
+  let networkEvent = monitor.panelWin.once(monitor.panelWin.EVENTS.NETWORK_EVENT);
+  tab.linkedBrowser.reload();
+  yield networkEvent;
 
-      
-      aMonitor.panelWin.once(aMonitor.panelWin.EVENTS.NETWORK_EVENT, () => {
-        assertSingleRequestState(RequestsMenu, detailsPaneToggleButton);
+  assertSingleRequestState();
 
-        
-        NetMonitorView.toggleDetailsPane({ visible: true, animated: false });
-        ok(!detailsPane.classList.contains("pane-collapsed") &&
-          !detailsPaneToggleButton.classList.contains("pane-collapsed"),
-          "The details pane should be visible after clicking the toggle button.");
+  
+  EventUtils.sendMouseEvent({ type: "click" }, clearButton);
+  assertNoRequestState();
 
-        
-        EventUtils.sendMouseEvent({ type: "click" }, clearButton);
-        assertNoRequestState(RequestsMenu, detailsPaneToggleButton);
-        ok(detailsPane.classList.contains("pane-collapsed") &&
-          detailsPaneToggleButton.classList.contains("pane-collapsed"),
-          "The details pane should not be visible clicking 'clear'.");
+  
+  networkEvent = monitor.panelWin.once(monitor.panelWin.EVENTS.NETWORK_EVENT);
+  tab.linkedBrowser.reload();
+  yield networkEvent;
 
-        teardown(aMonitor).then(finish);
-      });
+  assertSingleRequestState();
 
-      aDebuggee.location.reload();
-    });
+  
+  NetMonitorView.toggleDetailsPane({ visible: true, animated: false });
+  ok(!detailsPane.classList.contains("pane-collapsed") &&
+    !detailsPaneToggleButton.classList.contains("pane-collapsed"),
+    "The details pane should be visible after clicking the toggle button.");
 
-    aDebuggee.location.reload();
-  });
+  
+  EventUtils.sendMouseEvent({ type: "click" }, clearButton);
+  assertNoRequestState();
+  ok(detailsPane.classList.contains("pane-collapsed") &&
+    detailsPaneToggleButton.classList.contains("pane-collapsed"),
+    "The details pane should not be visible clicking 'clear'.");
+
+  return teardown(monitor);
 
   
 
 
-  function assertSingleRequestState(RequestsMenu, detailsPaneToggleButton) {
+  function assertSingleRequestState() {
     is(RequestsMenu.itemCount, 1,
       "The request menu should have one item at this point.");
     is(detailsPaneToggleButton.hasAttribute("disabled"), false,
@@ -67,10 +68,10 @@ function test() {
   
 
 
-  function assertNoRequestState(RequestsMenu, detailsPaneToggleButton) {
+  function assertNoRequestState() {
     is(RequestsMenu.itemCount, 0,
       "The request menu should be empty at this point.");
     is(detailsPaneToggleButton.hasAttribute("disabled"), true,
       "The pane toggle button should be disabled when the request menu is cleared.");
   }
-}
+});

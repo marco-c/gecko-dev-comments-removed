@@ -1,40 +1,35 @@
 
 
 
+"use strict";
 
 
 
 
-function test() {
-  initNetMonitor(CONTENT_TYPE_WITHOUT_CACHE_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test... ");
 
-    const EXPECTED_RESULT = '{ "greeting": "Hello JSON!" }';
+add_task(function* () {
+  let [tab, , monitor] = yield initNetMonitor(CONTENT_TYPE_WITHOUT_CACHE_URL);
+  info("Starting test... ");
 
-    let { NetMonitorView } = aMonitor.panelWin;
-    let { RequestsMenu } = NetMonitorView;
+  const EXPECTED_RESULT = '{ "greeting": "Hello JSON!" }';
 
-    RequestsMenu.lazyUpdate = false;
+  let { NetMonitorView } = monitor.panelWin;
+  let { RequestsMenu } = NetMonitorView;
 
-    waitForNetworkEvents(aMonitor, 7).then(() => {
-      let requestItem = RequestsMenu.getItemAtIndex(3);
-      RequestsMenu.selectedItem = requestItem;
+  RequestsMenu.lazyUpdate = false;
 
-      waitForClipboard(EXPECTED_RESULT, function setup() {
-        RequestsMenu.copyResponse();
-      }, function onSuccess() {
-        ok(true, "Clipboard contains the currently selected item's response.");
-        cleanUp();
-      }, function onFailure() {
-        ok(false, "Copying the currently selected item's response was unsuccessful.");
-        cleanUp();
-      });
-    });
-
-    aDebuggee.performRequests();
-
-    function cleanUp() {
-      teardown(aMonitor).then(finish);
-    }
+  let wait = waitForNetworkEvents(monitor, 7);
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+    content.wrappedJSObject.performRequests();
   });
-}
+  yield wait;
+
+  let requestItem = RequestsMenu.getItemAtIndex(3);
+  RequestsMenu.selectedItem = requestItem;
+
+  yield waitForClipboardPromise(function setup() {
+    RequestsMenu.copyResponse();
+  }, EXPECTED_RESULT);
+
+  yield teardown(monitor);
+});

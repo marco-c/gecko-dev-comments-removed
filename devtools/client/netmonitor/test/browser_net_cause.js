@@ -17,7 +17,7 @@ const EXPECTED_REQUESTS = [
     causeType: "document",
     causeUri: "",
     
-    stack: !gMultiProcessBrowser
+    stack: true
   },
   {
     method: "GET",
@@ -77,21 +77,21 @@ const EXPECTED_REQUESTS = [
   },
 ];
 
-var test = Task.async(function* () {
+add_task(function* () {
   
   
   
   
   
   
-  let [, debuggee, monitor] = yield initNetMonitor(SIMPLE_URL);
+  let [tab, , monitor] = yield initNetMonitor(SIMPLE_URL);
   let { $, NetMonitorView } = monitor.panelWin;
   let { RequestsMenu } = NetMonitorView;
   RequestsMenu.lazyUpdate = false;
 
-  debuggee.location = CAUSE_URL;
-
-  yield waitForNetworkEvents(monitor, EXPECTED_REQUESTS.length);
+  let wait = waitForNetworkEvents(monitor, EXPECTED_REQUESTS.length);
+  tab.linkedBrowser.loadURI(CAUSE_URL);
+  yield wait;
 
   is(RequestsMenu.itemCount, EXPECTED_REQUESTS.length,
     "All the page events should be recorded.");
@@ -141,5 +141,4 @@ var test = Task.async(function* () {
   });
 
   yield teardown(monitor);
-  finish();
 });
