@@ -700,6 +700,26 @@ ParseDigitsN(size_t n, size_t* result, const CharT* s, size_t* i, size_t limit)
     return false;
 }
 
+
+
+
+
+
+
+
+template <typename CharT>
+static bool
+ParseDigitsNOrLess(size_t n, size_t* result, const CharT* s, size_t* i, size_t limit)
+{
+    size_t init = *i;
+
+    if (ParseDigits(result, s, i, Min(limit, init + n)))
+        return ((*i - init) > 0) && ((*i - init) <= n);
+
+    *i = init;
+    return false;
+}
+
 static int
 DaysInMonth(int year, int month)
 {
@@ -763,9 +783,10 @@ DaysInMonth(int year, int month)
 
 
 
+
 template <typename CharT>
 static bool
-ParseISODate(const CharT* s, size_t length, ClippedTime* result)
+ParseISOStyleDate(const CharT* s, size_t length, ClippedTime* result)
 {
     size_t i = 0;
     int tzMul = 1;
@@ -795,6 +816,9 @@ ParseISODate(const CharT* s, size_t length, ClippedTime* result)
 #define NEED_NDIGITS(n, field)                                                 \
     if (!ParseDigitsN(n, &field, s, &i, length)) { return false; }
 
+#define NEED_NDIGITS_OR_LESS(n, field)                                         \
+    if (!ParseDigitsNOrLess(n, &field, s, &i, length)) { return false; }
+
     if (PEEK('+') || PEEK('-')) {
         if (PEEK('-'))
             dateMul = -1;
@@ -804,19 +828,23 @@ ParseISODate(const CharT* s, size_t length, ClippedTime* result)
         NEED_NDIGITS(4, year);
     }
     DONE_DATE_UNLESS('-');
-    NEED_NDIGITS(2, month);
+    NEED_NDIGITS_OR_LESS(2, month);
     DONE_DATE_UNLESS('-');
-    NEED_NDIGITS(2, day);
+    NEED_NDIGITS_OR_LESS(2, day);
 
  done_date:
-    DONE_UNLESS('T');
-    NEED_NDIGITS(2, hour);
+    if (PEEK('T') || PEEK(' '))
+        i++;
+    else
+        goto done;
+
+    NEED_NDIGITS_OR_LESS(2, hour);
     NEED(':');
-    NEED_NDIGITS(2, min);
+    NEED_NDIGITS_OR_LESS(2, min);
 
     if (PEEK(':')) {
         ++i;
-        NEED_NDIGITS(2, sec);
+        NEED_NDIGITS_OR_LESS(2, sec);
         if (PEEK('.')) {
             ++i;
             if (!ParseFractional(&frac, s, &i, length))
@@ -882,7 +910,7 @@ template <typename CharT>
 static bool
 ParseDate(const CharT* s, size_t length, ClippedTime* result)
 {
-    if (ParseISODate(s, length, result))
+    if (ParseISOStyleDate(s, length, result))
         return true;
 
     if (length == 0)
