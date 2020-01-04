@@ -9,13 +9,6 @@ const URL = require("URL");
 
 
 
-exports.dirname = path => {
-  return new URL(".", new URL(path)).href;
-}
-
-
-
-
 
 exports.joinURI = (initialPath, ...paths) => {
   let url;
