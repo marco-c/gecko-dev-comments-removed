@@ -113,6 +113,21 @@ function getCtorName(aObj) {
 
 
 
+function isError(aThing) {
+  return aThing && (
+           (typeof aThing.name == "string" &&
+            aThing.name.startsWith("NS_ERROR_")) ||
+           getCtorName(aThing).endsWith("Error"));
+}
+
+
+
+
+
+
+
+
+
 
 
 function stringify(aThing, aAllowNewLines) {
@@ -122,6 +137,10 @@ function stringify(aThing, aAllowNewLines) {
 
   if (aThing === null) {
     return "null";
+  }
+
+  if (isError(aThing)) {
+    return "Message: " + aThing;
   }
 
   if (typeof aThing == "object") {
@@ -203,9 +222,7 @@ function log(aThing) {
         i++;
       }
     }
-    else if (type.match("Error$") ||
-             (typeof aThing.name == "string" &&
-              aThing.name.match("NS_ERROR_"))) {
+    else if (isError(aThing)) {
       reply += "  Message: " + aThing + "\n";
       if (aThing.stack) {
         reply += "  Stack:\n";
