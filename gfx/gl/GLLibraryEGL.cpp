@@ -4,12 +4,15 @@
 
 #include "GLLibraryEGL.h"
 
+#include "angle/Platform.h"
 #include "gfxConfig.h"
 #include "gfxCrashReporterUtils.h"
 #include "gfxUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/Tokenizer.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/unused.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
@@ -172,8 +175,51 @@ GetAndInitDisplay(GLLibraryEGL& egl, void* displayType)
     return display;
 }
 
+class AngleErrorReporting: public angle::Platform {
+public:
+    AngleErrorReporting()
+    {
+      
+    }
+
+    void SetFailureId(nsACString* const aFailureId)
+    {
+      mFailureId = aFailureId;
+    }
+
+    void logError(const char *errorMessage) override
+    {
+        nsCString str(errorMessage);
+        Tokenizer tokenizer(str);
+
+        
+        
+        nsCString currWord;
+        Tokenizer::Token intToken;
+        if (tokenizer.CheckWord("ANGLE") &&
+            tokenizer.CheckWhite() &&
+            tokenizer.CheckWord("Display") &&
+            tokenizer.CheckChar(':') &&
+            tokenizer.CheckChar(':') &&
+            tokenizer.CheckWord("initialize") &&
+            tokenizer.CheckWhite() &&
+            tokenizer.CheckWord("error") &&
+            tokenizer.CheckWhite() &&
+            tokenizer.Check(Tokenizer::TOKEN_INTEGER, intToken)) {
+            *mFailureId = "FAILURE_ID_ANGLE_ID_";
+            mFailureId->AppendPrintf("%i", intToken.AsInteger());
+        } else {
+            *mFailureId = "FAILURE_ID_ANGLE_UNKNOWN";
+        }
+    }
+private:
+    nsACString* mFailureId;
+};
+
+AngleErrorReporting gAngleErrorReporter;
+
 static EGLDisplay
-GetAndInitDisplayForAccelANGLE(GLLibraryEGL& egl)
+GetAndInitDisplayForAccelANGLE(GLLibraryEGL& egl, nsACString* const out_failureId)
 {
     EGLDisplay ret = 0;
 
@@ -186,8 +232,19 @@ GetAndInitDisplayForAccelANGLE(GLLibraryEGL& egl)
     if (gfxPrefs::WebGLANGLEForceD3D11())
         d3d11ANGLE.UserForceEnable("User force-enabled D3D11 ANGLE on disabled hardware");
 
-    if (gfxConfig::IsForcedOnByUser(Feature::D3D11_HW_ANGLE))
+    gAngleErrorReporter.SetFailureId(out_failureId);
+    egl.fANGLEPlatformInitialize(&gAngleErrorReporter);
+
+    auto guardShutdown = mozilla::MakeScopeExit([&] {
+        gAngleErrorReporter.SetFailureId(nullptr);
+        
+        
+        
+    });
+
+    if (gfxConfig::IsForcedOnByUser(Feature::D3D11_HW_ANGLE)) {
         return GetAndInitDisplay(egl, LOCAL_EGL_D3D11_ONLY_DISPLAY_ANGLE);
+    }
 
     if (d3d11ANGLE.IsEnabled()) {
         ret = GetAndInitDisplay(egl, LOCAL_EGL_D3D11_ELSE_D3D9_DISPLAY_ANGLE);
@@ -372,7 +429,9 @@ GLLibraryEGL::EnsureInitialized(bool forceAccel, nsACString* const out_failureId
     
     if (IsExtensionSupported(ANGLE_platform_angle_d3d)) {
         GLLibraryLoader::SymLoadStruct d3dSymbols[] = {
-            { (PRFuncPtr*)&mSymbols.fGetPlatformDisplayEXT, { "eglGetPlatformDisplayEXT", nullptr } },
+            { (PRFuncPtr*)&mSymbols.fANGLEPlatformInitialize, { "ANGLEPlatformInitialize", nullptr } },
+            { (PRFuncPtr*)&mSymbols.fANGLEPlatformShutdown,   { "ANGLEPlatformShutdown", nullptr } },
+            { (PRFuncPtr*)&mSymbols.fGetPlatformDisplayEXT,   { "eglGetPlatformDisplayEXT", nullptr } },
             { nullptr, { nullptr } }
         };
 
@@ -407,7 +466,7 @@ GLLibraryEGL::EnsureInitialized(bool forceAccel, nsACString* const out_failureId
 
         
         if (shouldTryAccel) {
-            chosenDisplay = GetAndInitDisplayForAccelANGLE(*this);
+            chosenDisplay = GetAndInitDisplayForAccelANGLE(*this, out_failureId);
         }
 
         
