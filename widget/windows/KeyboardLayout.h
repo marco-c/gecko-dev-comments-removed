@@ -13,6 +13,7 @@
 #include "nsWindowDefs.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/TextEventDispatcher.h"
 #include <windows.h>
 
 #define NS_NUM_OF_KEYS          70
@@ -270,6 +271,7 @@ public:
 
 private:
   RefPtr<nsWindowBase> mWidget;
+  RefPtr<TextEventDispatcher> mDispatcher;
   HKL mKeyboardLayout;
   MSG mMsg;
 
@@ -441,22 +443,17 @@ private:
   
 
 
-  void InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
-                    const ModifierKeyState& aModKeyState) const;
-  void InitKeyEvent(WidgetKeyboardEvent& aKeyEvent) const;
+  nsEventStatus InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
+                             const ModifierKeyState& aModKeyState,
+                             const MSG* aMsgSentToPlugin = nullptr) const;
+  nsEventStatus InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
+                             const MSG* aMsgSentToPlugin = nullptr) const;
 
   
 
 
 
   bool DispatchCommandEvent(uint32_t aEventCommand) const;
-
-  
-
-
-
-  bool DispatchKeyEvent(WidgetKeyboardEvent& aKeyEvent,
-                        const MSG* aMsgSentToPlugin = nullptr) const;
 
   
 
