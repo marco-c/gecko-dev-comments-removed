@@ -1901,12 +1901,29 @@ bool DoesD3D11TextureSharingWorkInternal(ID3D11Device *device, DXGI_FORMAT forma
     color[i] = 0xff00ffff;
   }
   
-  D3D11_SUBRESOURCE_DATA data;
-  data.pSysMem = color;
-  data.SysMemPitch = texture_size * 4;
-  data.SysMemSlicePitch = 0;
+  
+  
+  if (!TryCreateTexture2D(device, &desc, nullptr, texture)) {
+    gfxCriticalError() << "DoesD3D11TextureSharingWork_TryCreateTextureFailure";
+    return false;
+  }
 
-  if (!TryCreateTexture2D(device, &desc, &data, texture)) {
+  RefPtr<IDXGIKeyedMutex> sourceSharedMutex;
+  texture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)getter_AddRefs(sourceSharedMutex));
+  if (FAILED(sourceSharedMutex->AcquireSync(0, 30*1000))) {
+    gfxCriticalError() << "DoesD3D11TextureSharingWork_SourceMutexTimeout";
+    
+    return false;
+  }
+
+  RefPtr<ID3D11DeviceContext> deviceContext;
+  device->GetImmediateContext(getter_AddRefs(deviceContext));
+
+  int stride = texture_size * 4;
+  deviceContext->UpdateSubresource(texture, 0, nullptr, color, stride, stride * texture_size);
+
+  if (FAILED(sourceSharedMutex->ReleaseSync(0))) {
+    gfxCriticalError() << "DoesD3D11TextureSharingWork_SourceReleaseSyncTimeout";
     return false;
   }
 
@@ -1915,10 +1932,12 @@ bool DoesD3D11TextureSharingWorkInternal(ID3D11Device *device, DXGI_FORMAT forma
   if (FAILED(texture->QueryInterface(__uuidof(IDXGIResource),
                                      getter_AddRefs(otherResource))))
   {
+    gfxCriticalError() << "DoesD3D11TextureSharingWork_GetResourceFailure";
     return false;
   }
 
   if (FAILED(otherResource->GetSharedHandle(&shareHandle))) {
+    gfxCriticalError() << "DoesD3D11TextureSharingWork_GetSharedTextureFailure";
     return false;
   }
 
@@ -1934,6 +1953,7 @@ bool DoesD3D11TextureSharingWorkInternal(ID3D11Device *device, DXGI_FORMAT forma
   if (FAILED(sharedResource->QueryInterface(__uuidof(ID3D11Texture2D),
                                             getter_AddRefs(sharedTexture))))
   {
+    gfxCriticalError() << "DoesD3D11TextureSharingWork_GetSharedTextureFailure";
     return false;
   }
 
@@ -1944,13 +1964,12 @@ bool DoesD3D11TextureSharingWorkInternal(ID3D11Device *device, DXGI_FORMAT forma
   desc.MiscFlags = 0;
   desc.BindFlags = 0;
   if (FAILED(device->CreateTexture2D(&desc, nullptr, getter_AddRefs(cpuTexture)))) {
+    gfxCriticalError() << "DoesD3D11TextureSharingWork_CreateTextureFailure";
     return false;
   }
 
   RefPtr<IDXGIKeyedMutex> sharedMutex;
-  RefPtr<ID3D11DeviceContext> deviceContext;
   sharedResource->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)getter_AddRefs(sharedMutex));
-  device->GetImmediateContext(getter_AddRefs(deviceContext));
   if (FAILED(sharedMutex->AcquireSync(0, 30*1000))) {
     gfxCriticalError() << "DoesD3D11TextureSharingWork_AcquireSyncTimeout";
     
