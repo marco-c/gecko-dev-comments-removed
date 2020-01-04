@@ -5,10 +5,12 @@
 
 
 #include "gfxPrefs.h"
+#include "mozilla/dom/Event.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TextInputProcessor.h"
+#include "nsContentUtils.h"
 #include "nsIDocShell.h"
 #include "nsIWidget.h"
 #include "nsPIDOMWindow.h"
