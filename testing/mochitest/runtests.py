@@ -2190,6 +2190,12 @@ class MochitestDesktop(MochitestBase):
     def runTests(self, options):
         """ Prepare, configure, run tests and cleanup """
 
+        
+        
+        if options.a11y or options.chrome:
+            options.e10s = False
+        mozinfo.update({"e10s": options.e10s})  
+
         self.setTestRoot(options)
 
         

@@ -789,12 +789,6 @@ class MochitestArguments(ArgumentContainer):
         if options.nested_oop:
             options.e10s = True
 
-        
-        if options.a11y or options.chrome:
-            options.e10s = False
-
-        mozinfo.update({"e10s": options.e10s})  
-
         options.leakThresholds = {
             "default": options.defaultLeakThreshold,
             "tab": 10000,  
