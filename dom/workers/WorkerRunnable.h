@@ -429,8 +429,10 @@ class WorkerMainThreadRunnable : public Runnable
 protected:
   WorkerPrivate* mWorkerPrivate;
   nsCOMPtr<nsIEventTarget> mSyncLoopTarget;
+  const nsCString mTelemetryKey;
 
-  explicit WorkerMainThreadRunnable(WorkerPrivate* aWorkerPrivate);
+  explicit WorkerMainThreadRunnable(WorkerPrivate* aWorkerPrivate,
+                                    const nsACString& aTelemetryKey);
   ~WorkerMainThreadRunnable() {}
 
   virtual bool MainThreadRun() = 0;
@@ -452,13 +454,14 @@ private:
 
 
 
-class WorkerCheckAPIExposureOnMainThreadRunnable : public WorkerMainThreadRunnable
+class WorkerCheckAPIExposureOnMainThreadRunnable
+  : public WorkerMainThreadRunnable
 {
 public:
-  explicit WorkerCheckAPIExposureOnMainThreadRunnable(WorkerPrivate* aWorkerPrivate):
-    WorkerMainThreadRunnable(aWorkerPrivate)
-  {}
-  ~WorkerCheckAPIExposureOnMainThreadRunnable() {}
+  explicit
+  WorkerCheckAPIExposureOnMainThreadRunnable(WorkerPrivate* aWorkerPrivate);
+  virtual
+  ~WorkerCheckAPIExposureOnMainThreadRunnable();
 
   
   
