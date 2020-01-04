@@ -559,11 +559,11 @@ SpeechRecognition::StartRecording(DOMMediaStream* aDOMStream)
   
   mDOMStream = aDOMStream;
 
-  if (NS_WARN_IF(!mDOMStream->GetStream())) {
+  if (NS_WARN_IF(!mDOMStream->GetPlaybackStream())) {
     return NS_ERROR_UNEXPECTED;
   }
   mSpeechListener = new SpeechStreamListener(this);
-  mDOMStream->GetStream()->AddListener(mSpeechListener);
+  mDOMStream->GetPlaybackStream()->AddListener(mSpeechListener);
 
   mEndpointer.StartSession();
 
@@ -577,7 +577,7 @@ SpeechRecognition::StopRecording()
   
   
   
-  mDOMStream->GetStream()->RemoveListener(mSpeechListener);
+  mDOMStream->GetPlaybackStream()->RemoveListener(mSpeechListener);
   mSpeechListener = nullptr;
   mDOMStream = nullptr;
 

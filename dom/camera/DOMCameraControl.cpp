@@ -280,7 +280,12 @@ nsDOMCameraControl::nsDOMCameraControl(uint32_t aCameraId,
   mCurrentConfiguration = initialConfig.forget();
 
   
-  InitStreamCommon(mInput);
+  
+  
+  
+  
+  CreateAndAddPlaybackStreamListener(mInput);
+
   MOZ_ASSERT(mWindow, "Shouldn't be created with a null window!");
   if (mWindow->GetExtantDoc()) {
     CombineWithPrincipal(mWindow->GetExtantDoc()->NodePrincipal());
@@ -324,6 +329,11 @@ nsDOMCameraControl::~nsDOMCameraControl()
   DOM_CAMERA_LOGT("%s:%d : this=%p\n", __func__, __LINE__, this);
   
   Destroy();
+
+  if (mInput) {
+    mInput->Destroy();
+    mInput = nullptr;
+  }
 }
 
 JSObject*
@@ -457,6 +467,12 @@ nsDOMCameraControl::Get(uint32_t aKey, nsTArray<CameraRegion>& aValue)
   }
 
   return NS_OK;
+}
+
+MediaStream*
+nsDOMCameraControl::GetCameraStream() const
+{
+  return mInput;
 }
 
 #define THROW_IF_NO_CAMERACONTROL(...)                                          \

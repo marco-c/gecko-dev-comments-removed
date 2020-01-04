@@ -683,7 +683,7 @@ nsresult MediaPipelineTransmit::ReplaceTrack(DOMMediaStream *domstream,
                                              const std::string& track_id) {
   
   MOZ_MTLOG(ML_DEBUG, "Reattaching pipeline " << description_ << " to stream "
-            << static_cast<void *>(domstream->GetStream())
+            << static_cast<void *>(domstream->GetOwnedStream())
             << " track " << track_id << " conduit type=" <<
             (conduit_->type() == MediaSessionConduit::AUDIO ?"audio":"video"));
 
@@ -691,7 +691,7 @@ nsresult MediaPipelineTransmit::ReplaceTrack(DOMMediaStream *domstream,
     DetachMediaStream();
   }
   domstream_ = domstream; 
-  stream_ = domstream->GetStream();
+  stream_ = domstream->GetOwnedStream();
   
   listener_->UnsetTrackId(stream_->GraphImpl());
   track_id_ = track_id;

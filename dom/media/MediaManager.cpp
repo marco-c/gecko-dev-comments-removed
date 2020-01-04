@@ -701,9 +701,9 @@ public:
       
       
       
-      if (GetDOMTrackFor(aTrackID)) {
-        mListener->StopTrack(aTrackID,
-                             !!GetDOMTrackFor(aTrackID)->AsAudioStreamTrack());
+      nsRefPtr<dom::MediaStreamTrack> ownedTrack = FindOwnedDOMTrack(mOwnedStream, aTrackID);
+      if (ownedTrack) {
+        mListener->StopTrack(aTrackID, !!ownedTrack->AsAudioStreamTrack());
       } else {
         LOG(("StopTrack(%d) on non-existent track", aTrackID));
       }
@@ -734,7 +734,7 @@ public:
       return promise.forget();
     }
 
-    nsRefPtr<dom::MediaStreamTrack> track = GetDOMTrackFor(aTrackID);
+    nsRefPtr<dom::MediaStreamTrack> track = FindOwnedDOMTrack(mOwnedStream, aTrackID);
     if (!track) {
       LOG(("ApplyConstraintsToTrack(%d) on non-existent track", aTrackID));
       nsRefPtr<MediaStreamError> error = new MediaStreamError(window,
@@ -811,7 +811,7 @@ public:
 
     
     
-    GetStream()->AsProcessedStream()->ForwardTrackEnabled(aTrackID, aEnabled);
+    GetInputStream()->AsProcessedStream()->ForwardTrackEnabled(aTrackID, aEnabled);
   }
 
   virtual DOMLocalMediaStream* AsDOMLocalMediaStream() override
@@ -927,7 +927,7 @@ public:
 
       
       
-      aStream->SetLogicalStreamStartTime(aStream->GetStream()->GetCurrentTime());
+      aStream->SetLogicalStreamStartTime(aStream->GetPlaybackStream()->GetCurrentTime());
 
       
       
@@ -1013,7 +1013,7 @@ public:
       
       domStream->SetPrincipal(window->GetExtantDoc()->NodePrincipal());
       msg->RegisterCaptureStreamForWindow(
-            mWindowID, domStream->GetStream()->AsProcessedStream());
+            mWindowID, domStream->GetInputStream()->AsProcessedStream());
       window->SetAudioCapture(true);
     } else {
       
@@ -1022,8 +1022,8 @@ public:
         nsDOMUserMediaStream::CreateTrackUnionStream(window, mListener,
                                                      mAudioDevice, mVideoDevice,
                                                      msg);
-      trackunion->GetStream()->AsProcessedStream()->SetAutofinish(true);
-      nsRefPtr<MediaInputPort> port = trackunion->GetStream()->AsProcessedStream()->
+      trackunion->GetInputStream()->AsProcessedStream()->SetAutofinish(true);
+      nsRefPtr<MediaInputPort> port = trackunion->GetInputStream()->AsProcessedStream()->
         AllocateInputPort(stream);
       trackunion->mSourceStream = stream;
       trackunion->mPort = port.forget();
@@ -1031,8 +1031,8 @@ public:
       
       AsyncLatencyLogger::Get(true);
       LogLatency(AsyncLatencyLogger::MediaStreamCreate,
-          reinterpret_cast<uint64_t>(stream.get()),
-          reinterpret_cast<int64_t>(trackunion->GetStream()));
+                 reinterpret_cast<uint64_t>(stream.get()),
+                 reinterpret_cast<int64_t>(trackunion->GetInputStream()));
 
       nsCOMPtr<nsIPrincipal> principal;
       if (mPeerIdentity) {
