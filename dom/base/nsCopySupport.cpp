@@ -554,27 +554,17 @@ nsCopySupport::GetSelectionForCopy(nsIDocument* aDocument, nsISelection** aSelec
   if (!presShell)
     return nullptr;
 
-  
-  nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
-  nsIContent* content =
-    nsFocusManager::GetFocusedDescendant(aDocument->GetWindow(), false,
-                                         getter_AddRefs(focusedWindow));
-  if (content) {
-    nsIFrame* frame = content->GetPrimaryFrame();
-    if (frame) {
-      nsCOMPtr<nsISelectionController> selCon;
-      frame->GetSelectionController(presShell->GetPresContext(), getter_AddRefs(selCon));
-      if (selCon) {
-        selCon->GetSelection(nsISelectionController::SELECTION_NORMAL, aSelection);
-        return content;
-      }
-    }
+  nsCOMPtr<nsIContent> focusedContent;
+  nsCOMPtr<nsISelectionController> selectionController =
+    presShell->GetSelectionControllerForFocusedContent(
+      getter_AddRefs(focusedContent));
+  if (!selectionController) {
+    return nullptr;
   }
 
-  
-  NS_IF_ADDREF(*aSelection =
-                 presShell->GetCurrentSelection(SelectionType::eNormal));
-  return nullptr;
+  selectionController->GetSelection(nsISelectionController::SELECTION_NORMAL,
+                                    aSelection);
+  return focusedContent;
 }
 
 bool

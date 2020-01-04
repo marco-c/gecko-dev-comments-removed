@@ -839,6 +839,24 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+  virtual already_AddRefed<nsISelectionController>
+            GetSelectionControllerForFocusedContent(
+              nsIContent** aFocusedContent = nullptr) = 0;
+
+  
+
+
+
   virtual nsresult HandleEventWithTarget(
                                  mozilla::WidgetEvent* aEvent,
                                  nsIFrame* aFrame,
