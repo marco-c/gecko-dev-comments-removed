@@ -4,6 +4,7 @@
 
 
 #include <windows.h>
+#include <winsdkver.h>
 #include "mozwrlbase.h"
 #include "nsServiceManagerUtils.h"
 
@@ -36,7 +37,7 @@ using namespace ABI::Windows::Foundation;
 
 
 
-#if MOZ_WINSDK_MAXVER < 0x0A000000
+#if WINVER_MAXVER < 0x0A00
 namespace ABI {
   namespace Windows {
     namespace UI {
@@ -56,7 +57,7 @@ namespace ABI {
 #define RuntimeClass_Windows_UI_ViewManagement_UIViewSettings L"Windows.UI.ViewManagement.UIViewSettings"
 #endif
 
-#if MOZ_WINSDK_MAXVER < 0x0A000000
+#if WINVER_MAXVER < 0x0A00
 namespace ABI {
   namespace Windows {
     namespace UI {
