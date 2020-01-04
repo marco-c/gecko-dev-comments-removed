@@ -13,10 +13,16 @@ const { assert } = require("devtools/shared/DevToolsUtils");
 const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 const CUSTOM_CENSUS_DISPLAY_PREF = "devtools.memory.custom-census-displays";
 const CUSTOM_DOMINATOR_TREE_DISPLAY_PREF = "devtools.memory.custom-dominator-tree-displays";
+const CUSTOM_TREE_MAP_DISPLAY_PREF = "devtools.memory.custom-tree-map-displays";
+const BYTES = 1024;
+const KILOBYTES = Math.pow(BYTES, 2);
+const MEGABYTES = Math.pow(BYTES, 3);
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const {
   snapshotState: states,
   diffingState,
+  censusState,
+  treeMapState,
   censusDisplays,
   dominatorTreeDisplays,
   dominatorTreeState
@@ -85,6 +91,16 @@ exports.getCustomDominatorTreeDisplays = function () {
 
 
 
+exports.getCustomTreeMapDisplays = function () {
+  return getCustomDisplaysHelper(CUSTOM_TREE_MAP_DISPLAY_PREF);
+};
+
+
+
+
+
+
+
 
 exports.getStatusText = function (state) {
   assert(state, "Must have a state");
@@ -106,8 +122,11 @@ exports.getStatusText = function (state) {
     case states.READING:
       return L10N.getStr("snapshot.state.reading");
 
-    case states.SAVING_CENSUS:
+    case censusState.SAVING:
       return L10N.getStr("snapshot.state.saving-census");
+
+    case treeMapState.SAVING:
+      return L10N.getStr("snapshot.state.saving-tree-map");
 
     case diffingState.TAKING_DIFF:
       return L10N.getStr("diffing.state.taking-diff");
@@ -133,7 +152,8 @@ exports.getStatusText = function (state) {
     case dominatorTreeState.LOADED:
     case diffingState.TOOK_DIFF:
     case states.READ:
-    case states.SAVED_CENSUS:
+    case censusState.SAVED:
+    case treeMapState.SAVED:
       return "";
 
     default:
@@ -169,8 +189,11 @@ exports.getStatusTextFull = function (state) {
     case states.READING:
       return L10N.getStr("snapshot.state.reading.full");
 
-    case states.SAVING_CENSUS:
+    case censusState.SAVING:
       return L10N.getStr("snapshot.state.saving-census.full");
+
+    case treeMapState.SAVING:
+      return L10N.getStr("snapshot.state.saving-tree-map.full");
 
     case diffingState.TAKING_DIFF:
       return L10N.getStr("diffing.state.taking-diff.full");
@@ -196,7 +219,8 @@ exports.getStatusTextFull = function (state) {
     case dominatorTreeState.LOADED:
     case diffingState.TOOK_DIFF:
     case states.READ:
-    case states.SAVED_CENSUS:
+    case censusState.SAVED:
+    case treeMapState.SAVED:
       return "";
 
     default:
@@ -212,8 +236,8 @@ exports.getStatusTextFull = function (state) {
 
 
 exports.snapshotIsDiffable = function snapshotIsDiffable(snapshot) {
-  return snapshot.state === states.SAVED_CENSUS
-    || snapshot.state === states.SAVING_CENSUS
+  return (snapshot.census && snapshot.census.state === censusState.SAVED)
+    || (snapshot.census && snapshot.census.state === censusState.SAVING)
     || snapshot.state === states.SAVED
     || snapshot.state === states.READ;
 };
@@ -256,6 +280,7 @@ exports.createSnapshot = function createSnapshot(state) {
     state: states.SAVING,
     dominatorTree,
     census: null,
+    treeMap: null,
     path: null,
     imported: false,
     selected: false,
@@ -275,8 +300,23 @@ exports.createSnapshot = function createSnapshot(state) {
 
 exports.censusIsUpToDate = function (filter, display, census) {
   return census
-      && filter === census.filter
+      
+      && filter == census.filter
       && display === census.display;
+};
+
+
+
+
+
+
+
+
+
+exports.canTakeCensus = function (snapshot) {
+  return snapshot.state === states.READ &&
+    (!snapshot.census || snapshot.census.state === censusState.SAVED) &&
+    (!snapshot.treeMap || snapshot.treeMap.state === treeMapState.SAVED);
 };
 
 
@@ -291,6 +331,23 @@ exports.dominatorTreeIsComputed = function (snapshot) {
     (snapshot.dominatorTree.state === dominatorTreeState.COMPUTED ||
      snapshot.dominatorTree.state === dominatorTreeState.LOADED ||
      snapshot.dominatorTree.state === dominatorTreeState.INCREMENTAL_FETCHING);
+};
+
+
+
+
+
+
+
+
+exports.getSavedCensus = function (snapshot) {
+  if (snapshot.treeMap && snapshot.treeMap.state === treeMapState.SAVED) {
+    return snapshot.treeMap;
+  }
+  if (snapshot.census && snapshot.census.state === censusState.SAVED) {
+    return snapshot.census;
+  }
+  return null;
 };
 
 
@@ -393,4 +450,55 @@ exports.formatNumber = function(number, showSign = false) {
 exports.formatPercent = function(percent, showSign = false) {
   return exports.L10N.getFormatStr("tree-item.percent",
                            exports.formatNumber(percent, showSign));
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.hslToStyle = function(h, s, l) {
+  h = parseInt(h * 360, 10);
+  s = parseInt(s * 100, 10);
+  l = parseInt(l * 100, 10);
+
+  return `hsl(${h},${s}%,${l}%)`;
+};
+
+
+
+
+
+
+
+
+
+
+exports.lerp = function(a, b, t) {
+  return a * (1 - t) + b * t;
+};
+
+
+
+
+
+
+
+
+exports.formatAbbreviatedBytes = function(n) {
+  if (n < BYTES) {
+    return n + "B";
+  } else if (n < KILOBYTES) {
+    return Math.floor(n / BYTES) + "KiB";
+  } else if (n < MEGABYTES) {
+    return Math.floor(n / KILOBYTES) + "MiB";
+  }
+  return Math.floor(n / MEGABYTES) + "GiB";
 };

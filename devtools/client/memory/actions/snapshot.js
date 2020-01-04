@@ -9,8 +9,16 @@ const {
   getSnapshot,
   createSnapshot,
   dominatorTreeIsComputed,
+  canTakeCensus
 } = require("../utils");
-const { actions, snapshotState: states, viewState, dominatorTreeState } = require("../constants");
+const {
+  actions,
+  snapshotState: states,
+  viewState,
+  censusState,
+  treeMapState,
+  dominatorTreeState
+} = require("../constants");
 const telemetry = require("../telemetry");
 const view = require("./view");
 const refresh = require("./refresh");
@@ -50,7 +58,10 @@ const computeSnapshotData = exports.computeSnapshotData = function(heapWorker, i
       return;
     }
 
-    yield dispatch(takeCensus(heapWorker, id));
+    
+    const censusTaker = getCurrentCensusTaker(getState().view);
+    yield dispatch(censusTaker(heapWorker, id));
+
     if (getState().view === viewState.DOMINATOR_TREE) {
       yield dispatch(computeAndFetchDominatorTree(heapWorker, id));
     }
@@ -145,65 +156,132 @@ const readSnapshot = exports.readSnapshot = function readSnapshot (heapWorker, i
 
 
 
-const takeCensus = exports.takeCensus = function (heapWorker, id) {
-  return function *(dispatch, getState) {
-    const snapshot = getSnapshot(getState(), id);
-    assert([states.READ, states.SAVED_CENSUS].includes(snapshot.state),
-      `Can only take census of snapshots in READ or SAVED_CENSUS state, found ${snapshot.state}`);
 
-    let report, parentMap;
-    let display = getState().censusDisplay;
-    let filter = getState().filter;
 
-    
-    if (censusIsUpToDate(filter, display, snapshot.census)) {
-      return;
-    }
 
-    
-    
-    
-    do {
-      display = getState().censusDisplay;
-      filter = getState().filter;
+function makeTakeCensusTask({ getDisplay, getFilter, getCensus, beginAction,
+                              endAction, errorAction }) {
+  
 
-      dispatch({
-        type: actions.TAKE_CENSUS_START,
-        id,
-        filter,
-        display
-      });
 
-      let opts = display.inverted
-        ? { asInvertedTreeNode: true }
-        : { asTreeNode: true };
-      opts.filter = filter || null;
 
-      try {
-        ({ report, parentMap } = yield heapWorker.takeCensus(
-          snapshot.path,
-          { breakdown: display.breakdown },
-          opts));
-      } catch (error) {
-        reportException("takeCensus", error);
-        dispatch({ type: actions.SNAPSHOT_ERROR, id, error });
+
+
+
+
+  return function (heapWorker, id) {
+    return function *(dispatch, getState) {
+      const snapshot = getSnapshot(getState(), id);
+      
+
+      assert(canTakeCensus(snapshot),
+        `Attempting to take a census when the snapshot is not in a ready state.`);
+
+      let report, parentMap;
+      let display = getDisplay(getState());
+      let filter = getFilter(getState());
+
+      
+      if (censusIsUpToDate(filter, display, getCensus(snapshot))) {
         return;
       }
-    }
-    while (filter !== getState().filter ||
-           display !== getState().censusDisplay);
 
-    dispatch({
-      type: actions.TAKE_CENSUS_END,
-      id,
-      display,
-      filter,
-      report,
-      parentMap
-    });
+      
+      
+      
+      do {
+        display = getDisplay(getState());
+        filter = getState().filter;
 
-    telemetry.countCensus({ filter, display });
+        dispatch({
+          type: beginAction,
+          id,
+          filter,
+          display
+        });
+
+        let opts = display.inverted
+          ? { asInvertedTreeNode: true }
+          : { asTreeNode: true };
+
+        opts.filter = filter || null;
+
+        try {
+          ({ report, parentMap } = yield heapWorker.takeCensus(
+            snapshot.path,
+            { breakdown: display.breakdown },
+            opts));
+        } catch (error) {
+          reportException("takeCensus", error);
+          dispatch({ type: errorAction, id, error });
+          return;
+        }
+      }
+      while (filter !== getState().filter ||
+             display !== getDisplay(getState()));
+
+      dispatch({
+        type: endAction,
+        id,
+        display,
+        filter,
+        report,
+        parentMap
+      });
+
+      telemetry.countCensus({ filter, display });
+    };
   };
+}
+
+
+
+
+const takeCensus = exports.takeCensus = makeTakeCensusTask({
+  getDisplay: (state) => state.censusDisplay,
+  getFilter: (state) => state.filter,
+  getCensus: (snapshot) => snapshot.census,
+  beginAction: actions.TAKE_CENSUS_START,
+  endAction: actions.TAKE_CENSUS_END,
+  errorAction: actions.TAKE_CENSUS_ERROR
+});
+
+
+
+
+const takeTreeMap = exports.takeTreeMap = makeTakeCensusTask({
+  getDisplay: (state) => state.treeMapDisplay,
+  getFilter: () => null,
+  getCensus: (snapshot) => snapshot.treeMap,
+  beginAction: actions.TAKE_TREE_MAP_START,
+  endAction: actions.TAKE_TREE_MAP_END,
+  errorAction: actions.TAKE_TREE_MAP_ERROR
+});
+
+
+
+
+
+const defaultCensusTaker = takeTreeMap;
+
+
+
+
+
+
+
+
+
+const getCurrentCensusTaker = exports.getCurrentCensusTaker = function (currentView) {
+  switch (currentView) {
+    case viewState.TREE_MAP:
+      return takeTreeMap;
+    break;
+    case viewState.CENSUS:
+      return takeCensus;
+    break;
+  }
+  return defaultCensusTaker;
 };
 
 
@@ -222,8 +300,34 @@ const refreshSelectedCensus = exports.refreshSelectedCensus = function (heapWork
     
     
     
-    if (snapshot && snapshot.state === states.SAVED_CENSUS) {
+    if (snapshot &&
+        (snapshot.census && snapshot.census.state === censusState.SAVED) ||
+        !snapshot.census) {
       yield dispatch(takeCensus(heapWorker, snapshot.id));
+    }
+  };
+};
+
+
+
+
+
+
+
+const refreshSelectedTreeMap = exports.refreshSelectedTreeMap = function (heapWorker) {
+  return function*(dispatch, getState) {
+    let snapshot = getState().snapshots.find(s => s.selected);
+
+    
+    
+    
+    
+    
+    
+    if (snapshot &&
+        (snapshot.treeMap && snapshot.treeMap.state === treeMapState.SAVED) ||
+        !snapshot.treeMap) {
+      yield dispatch(takeTreeMap(heapWorker, snapshot.id));
     }
   };
 };
@@ -396,18 +500,13 @@ const refreshSelectedDominatorTree = exports.refreshSelectedDominatorTree = func
       return;
     }
 
-    switch (snapshot.state) {
-      case states.READ:
-      case states.SAVING_CENSUS:
-      case states.SAVED_CENSUS:
-        if (snapshot.dominatorTree) {
-          yield dispatch(fetchDominatorTree(heapWorker, snapshot.id));
-        } else {
-          yield dispatch(computeAndFetchDominatorTree(heapWorker, snapshot.id));
-        }
-        return;
-
-      default:
+    if (snapshot.state === states.READ) {
+      if (snapshot.dominatorTree) {
+        yield dispatch(fetchDominatorTree(heapWorker, snapshot.id));
+      } else {
+        yield dispatch(computeAndFetchDominatorTree(heapWorker, snapshot.id));
+      }
+    } else {
         
         
         
@@ -436,8 +535,13 @@ const selectSnapshot = exports.selectSnapshot = function (id) {
 
 const clearSnapshots = exports.clearSnapshots = function (heapWorker) {
   return function*(dispatch, getState) {
-    let snapshots = getState().snapshots.filter(
-      s => s.state === states.SAVED_CENSUS || s.state === states.ERROR);
+    let snapshots = getState().snapshots.filter(s => {
+      let snapshotReady = s.state === states.READ || s.state === states.ERROR;
+      let censusReady = (s.treeMap && s.treeMap.state === treeMapState.SAVED) ||
+                        (s.census && s.census.state === censusState.SAVED);
+
+      return snapshotReady && censusReady
+    });
 
     let ids = snapshots.map(s => s.id);
 

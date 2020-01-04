@@ -73,6 +73,50 @@ const dominatorTreeDisplayModel = exports.dominatorTreeDisplay = PropTypes.shape
   })
 });
 
+
+
+
+
+
+const treeMapDisplayModel = exports.treeMapDisplay = PropTypes.shape({
+  displayName: PropTypes.string.isRequired,
+  tooltip: PropTypes.string.isRequired,
+  inverted: PropTypes.bool.isRequired,
+  breakdown: PropTypes.shape({
+    by: PropTypes.string.isRequired,
+  })
+});
+
+
+
+
+const treeMapModel = exports.treeMapModel = PropTypes.shape({
+  
+  report: PropTypes.object,
+  
+  display: treeMapDisplayModel,
+  
+  state: catchAndIgnore(function (treeMap) {
+    switch (treeMap.state) {
+      case treeMapState.SAVING:
+        assert(!treeMap.report, "Should not have a report");
+        assert(!treeMap.error, "Should not have an error");
+        break;
+      case treeMapState.SAVED:
+        assert(treeMap.report, "Should have a report");
+        assert(!treeMap.error, "Should not have an error");
+        break;
+
+      case treeMapState.ERROR:
+        assert(treeMap.error, "Should have an error");
+        break;
+
+      default:
+        assert(false, `Unexpected treeMap state: ${treeMap.state}`);
+    }
+  })
+});
+
 let censusModel = exports.censusModel = PropTypes.shape({
   
   report: PropTypes.object,
@@ -92,6 +136,32 @@ let censusModel = exports.censusModel = PropTypes.shape({
   }),
   
   focused: PropTypes.object,
+  
+  state: catchAndIgnore(function (census) {
+    switch (census.state) {
+      case censusState.SAVING:
+        assert(!census.report, "Should not have a report");
+        assert(!census.parentMap, "Should not have a parent map");
+        assert(census.expanded, "Should not have an expanded set");
+        assert(!census.error, "Should not have an error");
+        break;
+
+      case censusState.SAVED:
+        assert(census.report, "Should have a report");
+        assert(census.parentMap, "Should have a parent map");
+        assert(census.expanded, "Should have an expanded set");
+        assert(!census.error, "Should not have an error");
+        break;
+
+      case censusState.ERROR:
+        assert(!census.report, "Should not have a report");
+        assert(census.error, "Should have an error");
+        break;
+
+      default:
+        assert(false, `Unexpected census state: ${census.state}`);
+    }
+  })
 });
 
 
@@ -194,6 +264,8 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   
   dominatorTree: dominatorTreeModel,
   
+  treeMap: treeMapModel,
+  
   
   error: PropTypes.object,
   
@@ -205,19 +277,14 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   
   state: catchAndIgnore(function (snapshot, propName) {
     let current = snapshot.state;
-    let shouldHavePath = [states.IMPORTING, states.SAVED, states.READ, states.SAVING_CENSUS, states.SAVED_CENSUS];
-    let shouldHaveCreationTime = [states.READ, states.SAVING_CENSUS, states.SAVED_CENSUS];
-    let shouldHaveCensus = [states.SAVED_CENSUS];
+    let shouldHavePath = [states.IMPORTING, states.SAVED, states.READ];
+    let shouldHaveCreationTime = [states.READ];
 
     if (!stateKeys.includes(current)) {
       throw new Error(`Snapshot state must be one of ${stateKeys}.`);
     }
     if (shouldHavePath.includes(current) && !snapshot.path) {
       throw new Error(`Snapshots in state ${current} must have a snapshot path.`);
-    }
-    if (shouldHaveCensus.includes(current) &&
-        (!snapshot.census || !snapshot.census.display || !snapshot.census.display.breakdown)) {
-      throw new Error(`Snapshots in state ${current} must have a census and breakdown.`);
     }
     if (shouldHaveCreationTime.includes(current) && !snapshot.creationTime) {
       throw new Error(`Snapshots in state ${current} must have a creation time.`);
@@ -296,6 +363,10 @@ let appModel = exports.app = {
   dominatorTreeDisplay: dominatorTreeDisplayModel.isRequired,
 
   
+  
+  treeMapDisplay: treeMapDisplayModel.isRequired,
+
+  
   snapshots: PropTypes.arrayOf(snapshotModel).isRequired,
 
   
@@ -316,6 +387,10 @@ let appModel = exports.app = {
         break;
 
       case viewState.DOMINATOR_TREE:
+        assert(!app.diffing, "Should not be diffing");
+        break;
+
+      case viewState.TREE_MAP:
         assert(!app.diffing, "Should not be diffing");
         break;
 

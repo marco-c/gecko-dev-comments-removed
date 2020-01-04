@@ -30,6 +30,12 @@ actions.READ_SNAPSHOT_END = "read-snapshot-end";
 
 actions.TAKE_CENSUS_START = "take-census-start";
 actions.TAKE_CENSUS_END = "take-census-end";
+actions.TAKE_CENSUS_ERROR = "take-census-error";
+
+
+actions.TAKE_TREE_MAP_START = "take-tree-map-start";
+actions.TAKE_TREE_MAP_END = "take-tree-map-end";
+actions.TAKE_TREE_MAP_ERROR = "take-tree-map-error";
 
 
 actions.TOGGLE_RECORD_ALLOCATION_STACKS_START = "toggle-record-allocation-stacks-start";
@@ -72,6 +78,9 @@ actions.SET_CENSUS_DISPLAY = "set-census-display";
 actions.SET_DOMINATOR_TREE_DISPLAY = "set-dominator-tree-display";
 
 
+actions.SET_TREEMAP_DISPLAY = "set-treemap-display";
+
+
 actions.CHANGE_VIEW = "change-view";
 
 
@@ -109,6 +118,17 @@ const COUNT = Object.freeze({ by: "count", count: true, bytes: true });
 const INTERNAL_TYPE = Object.freeze({ by: "internalType", then: COUNT });
 const ALLOCATION_STACK = Object.freeze({ by: "allocationStack", then: COUNT, noStack: COUNT });
 const OBJECT_CLASS = Object.freeze({ by: "objectClass", then: COUNT, other: COUNT });
+const COARSE_TYPE = Object.freeze({
+  by: "coarseType",
+  objects: OBJECT_CLASS,
+  strings: COUNT,
+  scripts: {
+    by: "filename",
+    then: INTERNAL_TYPE,
+    noFilename: INTERNAL_TYPE
+  },
+  other: INTERNAL_TYPE,
+});
 
 exports.censusDisplays = Object.freeze({
   coarseType: Object.freeze({
@@ -120,17 +140,7 @@ exports.censusDisplays = Object.freeze({
       return L10N.getStr("censusDisplays.coarseType.tooltip");
     },
     inverted: true,
-    breakdown: Object.freeze({
-      by: "coarseType",
-      objects: OBJECT_CLASS,
-      strings: COUNT,
-      scripts: {
-        by: "filename",
-        then: INTERNAL_TYPE,
-        noFilename: INTERNAL_TYPE
-      },
-      other: INTERNAL_TYPE,
-    })
+    breakdown: COARSE_TYPE
   }),
 
   allocationStack: Object.freeze({
@@ -193,6 +203,18 @@ exports.dominatorTreeDisplays = Object.freeze({
   }),
 });
 
+exports.treeMapDisplays = Object.freeze({
+  coarseType: Object.freeze({
+    displayName: "Type",
+    get tooltip() {
+      const { L10N } = require("./utils");
+      return L10N.getStr("treeMapDisplays.coarseType.tooltip");
+    },
+    breakdown: COARSE_TYPE,
+    inverted: false,
+  })
+});
+
 
 
 
@@ -202,6 +224,7 @@ const viewState = exports.viewState = Object.create(null);
 viewState.CENSUS = "view-state-census";
 viewState.DIFFING = "view-state-diffing";
 viewState.DOMINATOR_TREE = "view-state-dominator-tree";
+viewState.TREE_MAP = "view-state-tree-map";
 
 
 
@@ -224,8 +247,36 @@ snapshotState.SAVING = "snapshot-state-saving";
 snapshotState.SAVED = "snapshot-state-saved";
 snapshotState.READING = "snapshot-state-reading";
 snapshotState.READ = "snapshot-state-read";
-snapshotState.SAVING_CENSUS = "snapshot-state-saving-census";
-snapshotState.SAVED_CENSUS = "snapshot-state-saved-census";
+
+
+
+
+
+
+
+
+
+
+const censusState = exports.censusState = Object.create(null);
+
+censusState.SAVING = "census-state-saving";
+censusState.SAVED = "census-state-saved";
+censusState.ERROR = "census-state-error";
+
+
+
+
+
+
+
+
+
+
+const treeMapState = exports.treeMapState = Object.create(null);
+
+treeMapState.SAVING = "tree-map-state-saving";
+treeMapState.SAVED = "tree-map-state-saved";
+treeMapState.ERROR = "tree-map-state-error";
 
 
 

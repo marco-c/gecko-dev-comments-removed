@@ -498,6 +498,19 @@ html, body, #app, #memory-tool {
 
 
 
+.tree-map-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  margin-top: -1em;
+  padding-bottom: 1em;
+}
+
+
+
+
+
 .error::before {
   content: "";
   display: inline-block;
