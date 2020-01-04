@@ -49,7 +49,7 @@ private:
   Atomic<bool> mRevoked;
 };
 
-enum class ListenerMode : int8_t {
+enum class ListenerPolicy : int8_t {
   
   
   Exclusive,
@@ -283,10 +283,10 @@ private:
 
 
 
-template <ListenerMode Mode>
+template <ListenerPolicy Lp>
 struct PassModePicker {
   static const EventPassMode Value =
-    Mode == ListenerMode::NonExclusive ?
+    Lp == ListenerPolicy::NonExclusive ?
     EventPassMode::Copy : EventPassMode::Move;
 };
 
@@ -306,7 +306,7 @@ struct IsAnyReference<T> {
 
 } 
 
-template <ListenerMode, typename... Ts> class MediaEventSourceImpl;
+template <ListenerPolicy, typename... Ts> class MediaEventSourceImpl;
 
 
 
@@ -315,7 +315,7 @@ template <ListenerMode, typename... Ts> class MediaEventSourceImpl;
 
 
 class MediaEventListener {
-  template <ListenerMode, typename... Ts>
+  template <ListenerPolicy, typename... Ts>
   friend class MediaEventSourceImpl;
 
 public:
@@ -355,7 +355,7 @@ private:
 
 
 
-template <ListenerMode Mode, typename... Es>
+template <ListenerPolicy Lp, typename... Es>
 class MediaEventSourceImpl {
   static_assert(!detail::IsAnyReference<Es...>::value,
                 "Ref-type not supported!");
@@ -364,7 +364,7 @@ class MediaEventSourceImpl {
   using ArgType = typename detail::EventTypeTraits<T>::ArgType;
 
   static const detail::EventPassMode PassMode =
-    detail::PassModePicker<Mode>::Value;
+    detail::PassModePicker<Lp>::Value;
 
   typedef detail::Listener<PassMode, ArgType<Es>...> Listener;
 
@@ -379,7 +379,7 @@ class MediaEventSourceImpl {
   MediaEventListener
   ConnectInternal(Target* aTarget, const Function& aFunction) {
     MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(Mode == ListenerMode::NonExclusive || mListeners.IsEmpty());
+    MOZ_ASSERT(Lp == ListenerPolicy::NonExclusive || mListeners.IsEmpty());
     auto l = mListeners.AppendElement();
     l->reset(new ListenerImpl<Target, Function>(aTarget, aFunction));
     return MediaEventListener((*l)->Token());
@@ -476,11 +476,11 @@ private:
 
 template <typename... Es>
 using MediaEventSource =
-  MediaEventSourceImpl<ListenerMode::NonExclusive, Es...>;
+  MediaEventSourceImpl<ListenerPolicy::NonExclusive, Es...>;
 
 template <typename... Es>
 using MediaEventSourceExc =
-  MediaEventSourceImpl<ListenerMode::Exclusive, Es...>;
+  MediaEventSourceImpl<ListenerPolicy::Exclusive, Es...>;
 
 
 
