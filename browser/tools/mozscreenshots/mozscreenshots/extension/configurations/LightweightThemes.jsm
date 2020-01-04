@@ -40,7 +40,7 @@ this.LightweightThemes = {
           name:        "black",
           headerURL:   LightweightThemes._blackImageURL,
           footerURL:   LightweightThemes._blackImageURL,
-          textcolor:   "#ffffff",
+          textcolor:   "#eeeeee",
           accentcolor: "#111111",
         });
 
@@ -62,7 +62,7 @@ this.LightweightThemes = {
           name:        "white",
           headerURL:   LightweightThemes._whiteImageURL,
           footerURL:   LightweightThemes._whiteImageURL,
-          textcolor:   "#000000",
+          textcolor:   "#111111",
           accentcolor: "#eeeeee",
         });
         
