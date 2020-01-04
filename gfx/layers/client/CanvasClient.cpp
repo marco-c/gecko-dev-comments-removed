@@ -412,6 +412,15 @@ CanvasClientSharedSurface::UpdateRenderer(gfx::IntSize aSize, Renderer& aRendere
     auto layersBackend = shadowForwarder->GetCompositorBackendType();
     mReadbackClient = TexClientFromReadback(surf, forwarder, flags, layersBackend);
 
+    if (asyncRenderer) {
+      
+      
+      
+      
+      
+      asyncRenderer->CopyFromTextureClient(mReadbackClient);
+    }
+
     newFront = mReadbackClient;
   } else {
     mReadbackClient = nullptr;
