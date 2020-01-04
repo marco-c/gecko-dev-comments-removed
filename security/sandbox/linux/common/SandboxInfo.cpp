@@ -31,6 +31,10 @@
 #include "nsIMemoryInfoDumper.h"
 #endif
 
+#ifdef MOZ_VALGRIND
+#include <valgrind/valgrind.h>
+#endif
+
 
 
 
@@ -79,6 +83,16 @@ HasSeccompBPF()
   if (getenv("MOZ_FAKE_NO_SANDBOX")) {
     return false;
   }
+
+  
+  
+  
+# if defined(MOZ_VALGRIND)
+  if (RUNNING_ON_VALGRIND) {
+    return false;
+  }
+# endif
+
   
   
   
