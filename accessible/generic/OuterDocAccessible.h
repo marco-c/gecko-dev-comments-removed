@@ -40,6 +40,11 @@ public:
   virtual bool RemoveChild(Accessible* aAccessible) override;
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 
+#if defined(XP_WIN)
+  virtual uint32_t ChildCount() const override;
+  virtual Accessible* GetChildAt(uint32_t aIndex) const override;
+#endif 
+
 protected:
   virtual ~OuterDocAccessible() override;
 };
@@ -53,4 +58,4 @@ Accessible::AsOuterDoc()
 } 
 } 
 
-#endif  
+#endif
