@@ -19,4 +19,15 @@ interface GeckoEditableClient {
     void setSuppressKeyUp(boolean suppress);
     Handler setInputConnectionHandler(Handler handler);
     void postToInputConnection(Runnable runnable);
+
+    
+
+    
+    public static final int ONE_SHOT = 1;
+    
+    public static final int START_MONITOR = 2;
+    
+    public static final int END_MONITOR = 3;
+
+    void requestCursorUpdates(int requestMode);
 }
