@@ -637,7 +637,7 @@ class nsDOMUserMediaStream : public DOMLocalMediaStream
 {
 public:
   static already_AddRefed<nsDOMUserMediaStream>
-  CreateSourceStream(nsIDOMWindow* aWindow,
+  CreateTrackUnionStream(nsIDOMWindow* aWindow,
                          GetUserMediaCallbackMediaStreamListener* aListener,
                          AudioDevice* aAudioDevice,
                          VideoDevice* aVideoDevice,
@@ -646,7 +646,7 @@ public:
     nsRefPtr<nsDOMUserMediaStream> stream = new nsDOMUserMediaStream(aListener,
                                                                      aAudioDevice,
                                                                      aVideoDevice);
-    stream->InitSourceStream(aWindow, aMSG);
+    stream->InitTrackUnionStream(aWindow, aMSG);
     return stream.forget();
   }
 
@@ -675,15 +675,18 @@ public:
   {
     Stop();
 
-    if (GetSourceStream()) {
-      GetSourceStream()->Destroy();
+    if (mPort) {
+      mPort->Destroy();
+    }
+    if (mSourceStream) {
+      mSourceStream->Destroy();
     }
   }
 
   virtual void Stop() override
   {
-    if (GetSourceStream()) {
-      GetSourceStream()->EndAllTrackAndFinish();
+    if (mSourceStream) {
+      mSourceStream->EndAllTrackAndFinish();
     }
   }
 
@@ -693,14 +696,14 @@ public:
   
   virtual void StopTrack(TrackID aTrackID) override
   {
-    if (GetSourceStream()) {
-      GetSourceStream()->EndTrack(aTrackID);
+    if (mSourceStream) {
+      mSourceStream->EndTrack(aTrackID);
       
       
       
-      nsRefPtr<dom::MediaStreamTrack> ownedTrack = FindOwnedDOMTrack(mOwnedStream, aTrackID);
-      if (ownedTrack) {
-        mListener->StopTrack(aTrackID, !!ownedTrack->AsAudioStreamTrack());
+      if (GetDOMTrackFor(aTrackID)) {
+        mListener->StopTrack(aTrackID,
+                             !!GetDOMTrackFor(aTrackID)->AsAudioStreamTrack());
       } else {
         LOG(("StopTrack(%d) on non-existent track", aTrackID));
       }
@@ -723,7 +726,7 @@ public:
       promise->MaybeReject(error);
       return promise.forget();
     }
-    if (!GetSourceStream()) {
+    if (!mSourceStream) {
       nsRefPtr<MediaStreamError> error = new MediaStreamError(window,
           NS_LITERAL_STRING("InternalError"),
           NS_LITERAL_STRING("No stream."));
@@ -731,7 +734,7 @@ public:
       return promise.forget();
     }
 
-    nsRefPtr<dom::MediaStreamTrack> track = FindOwnedDOMTrack(mOwnedStream, aTrackID);
+    nsRefPtr<dom::MediaStreamTrack> track = GetDOMTrackFor(aTrackID);
     if (!track) {
       LOG(("ApplyConstraintsToTrack(%d) on non-existent track", aTrackID));
       nsRefPtr<MediaStreamError> error = new MediaStreamError(window,
@@ -771,8 +774,8 @@ public:
   
   virtual bool AddDirectListener(MediaStreamDirectListener *aListener) override
   {
-    if (GetSourceStream()) {
-      GetSourceStream()->AddDirectListener(aListener);
+    if (mSourceStream) {
+      mSourceStream->AddDirectListener(aListener);
       return true; 
     }
     return false;
@@ -795,9 +798,20 @@ public:
 
   virtual void RemoveDirectListener(MediaStreamDirectListener *aListener) override
   {
-    if (GetSourceStream()) {
-      GetSourceStream()->RemoveDirectListener(aListener);
+    if (mSourceStream) {
+      mSourceStream->RemoveDirectListener(aListener);
     }
+  }
+
+  
+  virtual void SetTrackEnabled(TrackID aTrackID, bool aEnabled) override
+  {
+    
+    
+
+    
+    
+    GetStream()->AsProcessedStream()->ForwardTrackEnabled(aTrackID, aEnabled);
   }
 
   virtual DOMLocalMediaStream* AsDOMLocalMediaStream() override
@@ -819,14 +833,10 @@ public:
     return nullptr;
   }
 
-  SourceMediaStream* GetSourceStream()
-  {
-    if (GetInputStream()) {
-      return GetInputStream()->AsSourceStream();
-    }
-    return nullptr;
-  }
-
+  
+  
+  nsRefPtr<SourceMediaStream> mSourceStream;
+  nsRefPtr<MediaInputPort> mPort;
   nsRefPtr<GetUserMediaCallbackMediaStreamListener> mListener;
   nsRefPtr<AudioDevice> mAudioDevice; 
   nsRefPtr<VideoDevice> mVideoDevice;
@@ -917,7 +927,7 @@ public:
 
       
       
-      aStream->SetLogicalStreamStartTime(aStream->GetPlaybackStream()->GetCurrentTime());
+      aStream->SetLogicalStreamStartTime(aStream->GetStream()->GetCurrentTime());
 
       
       
@@ -989,8 +999,9 @@ public:
       MediaStreamGraph::GetInstance(graphDriverType,
                                     dom::AudioChannel::Normal);
 
+    nsRefPtr<SourceMediaStream> stream = msg->CreateSourceStream(nullptr);
+
     nsRefPtr<DOMLocalMediaStream> domStream;
-    nsRefPtr<SourceMediaStream> stream;
     
     
     
@@ -1001,33 +1012,38 @@ public:
       
       
       domStream->SetPrincipal(window->GetExtantDoc()->NodePrincipal());
-      stream = msg->CreateSourceStream(nullptr); 
       msg->RegisterCaptureStreamForWindow(
-            mWindowID, domStream->GetInputStream()->AsProcessedStream());
+            mWindowID, domStream->GetStream()->AsProcessedStream());
       window->SetAudioCapture(true);
     } else {
       
       
-      domStream = nsDOMUserMediaStream::CreateSourceStream(window, mListener,
-                                                           mAudioDevice, mVideoDevice,
-                                                           msg);
-
-      if (mAudioDevice) {
-        domStream->CreateOwnDOMTrack(kAudioTrack, MediaSegment::AUDIO);
-      }
-      if (mVideoDevice) {
-        domStream->CreateOwnDOMTrack(kVideoTrack, MediaSegment::VIDEO);
-      }
+      nsRefPtr<nsDOMUserMediaStream> trackunion =
+        nsDOMUserMediaStream::CreateTrackUnionStream(window, mListener,
+                                                     mAudioDevice, mVideoDevice,
+                                                     msg);
+      trackunion->GetStream()->AsProcessedStream()->SetAutofinish(true);
+      nsRefPtr<MediaInputPort> port = trackunion->GetStream()->AsProcessedStream()->
+        AllocateInputPort(stream);
+      trackunion->mSourceStream = stream;
+      trackunion->mPort = port.forget();
+      
+      
+      AsyncLatencyLogger::Get(true);
+      LogLatency(AsyncLatencyLogger::MediaStreamCreate,
+          reinterpret_cast<uint64_t>(stream.get()),
+          reinterpret_cast<int64_t>(trackunion->GetStream()));
 
       nsCOMPtr<nsIPrincipal> principal;
       if (mPeerIdentity) {
         principal = nsNullPrincipal::Create();
-        domStream->SetPeerIdentity(mPeerIdentity.forget());
+        trackunion->SetPeerIdentity(mPeerIdentity.forget());
       } else {
         principal = window->GetExtantDoc()->NodePrincipal();
       }
-      domStream->CombineWithPrincipal(principal);
-      stream = domStream->GetInputStream()->AsSourceStream();
+      trackunion->CombineWithPrincipal(principal);
+
+      domStream = trackunion.forget();
     }
 
     if (!domStream || sInShutdown) {
@@ -1049,7 +1065,6 @@ public:
     
     
     
-    MOZ_ASSERT(stream);
     mListener->Activate(stream.forget(), mAudioDevice, mVideoDevice);
 
     

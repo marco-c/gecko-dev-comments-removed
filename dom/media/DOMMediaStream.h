@@ -35,9 +35,7 @@ class DOMHwMediaStream;
 class DOMLocalMediaStream;
 class MediaStream;
 class MediaEngineSource;
-class MediaInputPort;
 class MediaStreamGraph;
-class ProcessedMediaStream;
 
 namespace dom {
 class AudioNode;
@@ -67,113 +65,8 @@ class MediaStreamDirectListener;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class DOMMediaStream : public DOMEventTargetHelper
 {
-  class TrackPort;
   friend class DOMLocalMediaStream;
   typedef dom::MediaStreamTrack MediaStreamTrack;
   typedef dom::AudioStreamTrack AudioStreamTrack;
@@ -210,38 +103,9 @@ public:
   void GetAudioTracks(nsTArray<nsRefPtr<AudioStreamTrack> >& aTracks);
   void GetVideoTracks(nsTArray<nsRefPtr<VideoStreamTrack> >& aTracks);
   void GetTracks(nsTArray<nsRefPtr<MediaStreamTrack> >& aTracks);
-
-  
-
-  
-
-
   bool HasTrack(const MediaStreamTrack& aTrack) const;
 
-  
-
-
-  bool OwnsTrack(const MediaStreamTrack& aTrack) const;
-
-  
-
-
-  MediaStreamTrack* FindOwnedDOMTrack(MediaStream* aOwningStream, TrackID aTrackID) const;
-
-  
-
-
-  MediaStreamTrack* FindPlaybackDOMTrack(MediaStream* aOwningStream, TrackID aTrackID) const;
-
-  MediaStream* GetInputStream() const { return mInputStream; }
-  ProcessedMediaStream* GetOwnedStream() const { return mOwnedStream; }
-  ProcessedMediaStream* GetPlaybackStream() const { return mPlaybackStream; }
-
-  
-
-
-
-  virtual MediaStream* GetCameraStream() const { return nullptr; }
+  MediaStream* GetStream() const { return mStream; }
 
   
 
@@ -354,12 +218,10 @@ public:
   }
 
   
-
-
-
-
-
-  MediaStreamTrack* CreateOwnDOMTrack(TrackID aTrackID, MediaSegment::Type aType);
+  
+  MediaStreamTrack* BindDOMTrack(TrackID aTrackID, MediaSegment::Type aType);
+  MediaStreamTrack* CreateDOMTrack(TrackID aTrackID, MediaSegment::Type aType);
+  MediaStreamTrack* GetDOMTrackFor(TrackID aTrackID);
 
   class OnTracksAvailableCallback {
   public:
@@ -409,10 +271,13 @@ protected:
   virtual ~DOMMediaStream();
 
   void Destroy();
-  void InitSourceStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
-  void InitTrackUnionStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
-  void InitAudioCaptureStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
-  void InitStreamCommon(MediaStream* aStream, MediaStreamGraph* aGraph);
+  void InitSourceStream(nsIDOMWindow* aWindow,
+                        MediaStreamGraph* aGraph);
+  void InitTrackUnionStream(nsIDOMWindow* aWindow,
+                            MediaStreamGraph* aGraph);
+  void InitAudioCaptureStream(nsIDOMWindow* aWindow,
+                              MediaStreamGraph* aGraph);
+  void InitStreamCommon(MediaStream* aStream);
   already_AddRefed<AudioTrack> CreateAudioTrack(AudioStreamTrack* aStreamTrack);
   already_AddRefed<VideoTrack> CreateVideoTrack(VideoStreamTrack* aStreamTrack);
 
@@ -422,14 +287,8 @@ protected:
 
   void CheckTracksAvailable();
 
-  class OwnedStreamListener;
-  friend class OwnedStreamListener;
-
-  class PlaybackStreamListener;
-  friend class PlaybackStreamListener;
-
-  
-  void CreateAndAddPlaybackStreamListener(MediaStream*);
+  class StreamListener;
+  friend class StreamListener;
 
   
   StreamTime mLogicalStreamStartTime;
@@ -439,35 +298,10 @@ protected:
 
   
   
+  MediaStream* mStream;
 
-  
-  
-  
-  MediaStream* mInputStream;
-
-  
-  
-  ProcessedMediaStream* mOwnedStream;
-
-  
-  
-  ProcessedMediaStream* mPlaybackStream;
-
-  
-  nsRefPtr<MediaInputPort> mOwnedPort;
-
-  
-  
-  nsRefPtr<MediaInputPort> mPlaybackPort;
-
-  
-  nsAutoTArray<nsRefPtr<TrackPort>, 2> mOwnedTracks;
-
-  
-  nsAutoTArray<nsRefPtr<TrackPort>, 2> mTracks;
-
-  nsRefPtr<OwnedStreamListener> mOwnedListener;
-  nsRefPtr<PlaybackStreamListener> mPlaybackListener;
+  nsAutoTArray<nsRefPtr<MediaStreamTrack>,2> mTracks;
+  nsRefPtr<StreamListener> mListener;
 
   nsTArray<nsAutoPtr<OnTracksAvailableCallback> > mRunOnTracksAvailable;
 

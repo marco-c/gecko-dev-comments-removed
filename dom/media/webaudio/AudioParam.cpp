@@ -114,8 +114,7 @@ AudioParam::Stream()
   
   AudioNodeStream* nodeStream = mNode->GetStream();
   if (nodeStream) {
-    mNodeStreamPort =
-      nodeStream->AllocateInputPort(mStream, AudioNodeStream::AUDIO_TRACK);
+    mNodeStreamPort = nodeStream->AllocateInputPort(mStream);
   }
 
   

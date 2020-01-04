@@ -34,14 +34,14 @@ MediaStreamAudioDestinationNode::MediaStreamAudioDestinationNode(AudioContext* a
                                                       aContext->Graph()))
 {
   
-  mDOMStream->CreateOwnDOMTrack(AudioNodeStream::AUDIO_TRACK, MediaSegment::AUDIO);
+  mDOMStream->CreateDOMTrack(AudioNodeStream::AUDIO_TRACK, MediaSegment::AUDIO);
 
-  ProcessedMediaStream* outputStream = mDOMStream->GetInputStream()->AsProcessedStream();
+  ProcessedMediaStream* outputStream = mDOMStream->GetStream()->AsProcessedStream();
   MOZ_ASSERT(!!outputStream);
   AudioNodeEngine* engine = new AudioNodeEngine(this);
   mStream = AudioNodeStream::Create(aContext, engine,
                                     AudioNodeStream::EXTERNAL_OUTPUT);
-  mPort = outputStream->AllocateInputPort(mStream, AudioNodeStream::AUDIO_TRACK);
+  mPort = outputStream->AllocateInputPort(mStream);
 
   nsIDocument* doc = aContext->GetParentObject()->GetExtantDoc();
   if (doc) {

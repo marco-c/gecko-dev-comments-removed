@@ -354,14 +354,7 @@ public:
 
   MediaStream* GetSrcMediaStream() const
   {
-    if (!mSrcStream) {
-      return nullptr;
-    }
-    if (mSrcStream->GetCameraStream()) {
-      
-      return mSrcStream->GetCameraStream();
-    }
-    return mSrcStream->GetPlaybackStream();
+    return mSrcStream ? mSrcStream->GetStream() : nullptr;
   }
 
   
@@ -1099,6 +1092,11 @@ protected:
 
   
   nsRefPtr<MediaInputPort> mCaptureStreamPort;
+
+  
+  
+  
+  nsRefPtr<DOMMediaStream> mPlaybackStream;
 
   
   

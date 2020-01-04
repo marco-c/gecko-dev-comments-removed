@@ -162,15 +162,10 @@ public:
 
 
 
-
-
-
   virtual void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
                                         StreamTime aTrackOffset,
                                         uint32_t aTrackEvents,
-                                        const MediaSegment& aQueuedMedia,
-                                        MediaStream* aInputStream = nullptr,
-                                        TrackID aInputTrackID = TRACK_INVALID) {}
+                                        const MediaSegment& aQueuedMedia) {}
 
   
 
@@ -424,6 +419,7 @@ public:
   virtual SourceMediaStream* AsSourceStream() { return nullptr; }
   virtual ProcessedMediaStream* AsProcessedStream() { return nullptr; }
   virtual AudioNodeStream* AsAudioNodeStream() { return nullptr; }
+  virtual CameraPreviewMediaStream* AsCameraPreviewStream() { return nullptr; }
 
   
   
@@ -920,19 +916,13 @@ protected:
 
 
 
-
-
-
-
 class MediaInputPort final
 {
 private:
   
-  MediaInputPort(MediaStream* aSource, TrackID& aSourceTrack,
-                 ProcessedMediaStream* aDest,
+  MediaInputPort(MediaStream* aSource, ProcessedMediaStream* aDest,
                  uint16_t aInputNumber, uint16_t aOutputNumber)
     : mSource(aSource)
-    , mSourceTrack(aSourceTrack)
     , mDest(aDest)
     , mInputNumber(aInputNumber)
     , mOutputNumber(aOutputNumber)
@@ -965,21 +955,7 @@ public:
 
   
   MediaStream* GetSource() { return mSource; }
-  TrackID GetSourceTrackId() { return mSourceTrack; }
   ProcessedMediaStream* GetDestination() { return mDest; }
-
-  
-  void BlockTrackId(TrackID aTrackId);
-private:
-  void BlockTrackIdImpl(TrackID aTrackId);
-
-public:
-  
-  
-  bool PassTrackThrough(TrackID aTrackId) {
-    return !mBlockedTracks.Contains(aTrackId) &&
-           (mSourceTrack == TRACK_ANY || mSourceTrack == aTrackId);
-  }
 
   uint16_t InputNumber() const { return mInputNumber; }
   uint16_t OutputNumber() const { return mOutputNumber; }
@@ -1026,13 +1002,11 @@ private:
   friend class ProcessedMediaStream;
   
   MediaStream* mSource;
-  TrackID mSourceTrack;
   ProcessedMediaStream* mDest;
   
   
   const uint16_t mInputNumber;
   const uint16_t mOutputNumber;
-  nsTArray<TrackID> mBlockedTracks;
 
   
   MediaStreamGraphImpl* mGraph;
@@ -1055,12 +1029,7 @@ public:
 
 
 
-
-
-
-
   already_AddRefed<MediaInputPort> AllocateInputPort(MediaStream* aStream,
-                                                     TrackID aTrackID = TRACK_ANY,
                                                      uint16_t aInputNumber = 0,
                                                      uint16_t aOutputNumber = 0);
   
@@ -1114,6 +1083,11 @@ public:
   };
   virtual void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) = 0;
   void SetAutofinishImpl(bool aAutofinish) { mAutofinish = aAutofinish; }
+
+  
+
+
+  virtual void ForwardTrackEnabled(TrackID aOutputID, bool aEnabled) {};
 
   
   
@@ -1202,8 +1176,7 @@ public:
   
 
 
-  ProcessedMediaStream* CreateAudioCaptureStream(DOMMediaStream* aWrapper,
-                                                 TrackID aTrackId);
+  ProcessedMediaStream* CreateAudioCaptureStream(DOMMediaStream* aWrapper);
 
   enum {
     ADD_STREAM_SUSPENDED = 0x01
