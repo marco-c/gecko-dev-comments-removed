@@ -4,6 +4,7 @@
 
 
 #include "WebGLContext.h"
+#include "WebGL2Context.h"
 
 #include "WebGLActiveInfo.h"
 #include "WebGLContextUtils.h"
@@ -1214,28 +1215,37 @@ WebGLContext::PixelStorei(GLenum pname, GLint param)
     ErrorInvalidEnumInfo("pixelStorei: parameter", pname);
 }
 
-bool
-WebGLContext::DoReadPixelsAndConvert(GLint x, GLint y, GLsizei width, GLsizei height,
-                                     GLenum destFormat, GLenum destType, void* destBytes,
-                                     GLenum auxReadFormat, GLenum auxReadType)
+static bool
+IsNeedsANGLEWorkAround(const webgl::FormatInfo* format)
 {
-    GLenum readFormat = destFormat;
-    GLenum readType = destType;
+    switch (format->effectiveFormat) {
+    case webgl::EffectiveFormat::RGB16F:
+    case webgl::EffectiveFormat::RGBA16F:
+        return true;
 
+    default:
+        return false;
+    }
+}
+
+bool
+WebGLContext::DoReadPixelsAndConvert(const webgl::FormatInfo* srcFormat, GLint x, GLint y,
+                                     GLsizei width, GLsizei height, GLenum format,
+                                     GLenum destType, void* dest)
+{
     if (gl->WorkAroundDriverBugs() &&
         gl->IsANGLE() &&
         gl->Version() < 300 && 
-        readType == LOCAL_GL_FLOAT &&
-        auxReadFormat == destFormat &&
-        auxReadType == LOCAL_GL_HALF_FLOAT)
+        IsNeedsANGLEWorkAround(srcFormat))
     {
         MOZ_RELEASE_ASSERT(!IsWebGL2()); 
+        MOZ_ASSERT(!mBoundPixelPackBuffer); 
 
-        readType = auxReadType;
+        const GLenum readType = LOCAL_GL_HALF_FLOAT_OES;
 
         const char funcName[] = "readPixels";
-        const auto readBytesPerPixel = webgl::BytesPerPixel({readFormat, readType});
-        const auto destBytesPerPixel = webgl::BytesPerPixel({destFormat, destType});
+        const auto readBytesPerPixel = webgl::BytesPerPixel({format, readType});
+        const auto destBytesPerPixel = webgl::BytesPerPixel({format, destType});
 
         uint32_t readStride;
         uint32_t readByteCount;
@@ -1258,7 +1268,7 @@ WebGLContext::DoReadPixelsAndConvert(GLint x, GLint y, GLsizei width, GLsizei he
 
         gl::GLContext::LocalErrorScope errorScope(*gl);
 
-        gl->fReadPixels(x, y, width, height, readFormat, readType, readBuffer.get());
+        gl->fReadPixels(x, y, width, height, format, readType, readBuffer.get());
 
         const GLenum error = errorScope.GetError();
         if (error == LOCAL_GL_OUT_OF_MEMORY) {
@@ -1275,7 +1285,7 @@ WebGLContext::DoReadPixelsAndConvert(GLint x, GLint y, GLsizei width, GLsizei he
                                          destStride / sizeof(float));
 
         const uint8_t* srcRow = (uint8_t*)readBuffer.get();
-        uint8_t* dstRow = (uint8_t*)destBytes;
+        uint8_t* dstRow = (uint8_t*)dest;
 
         for (size_t j = 0; j < (size_t)height; j++) {
             auto src = (const uint16_t*)srcRow;
@@ -1295,7 +1305,7 @@ WebGLContext::DoReadPixelsAndConvert(GLint x, GLint y, GLsizei width, GLsizei he
         return true;
     }
 
-    gl->fReadPixels(x, y, width, height, destFormat, destType, destBytes);
+    gl->fReadPixels(x, y, width, height, format, destType, dest);
     return true;
 }
 
@@ -1393,6 +1403,68 @@ IsIntegerFormatAndTypeUnpackable(GLenum format, GLenum type)
     }
 }
 
+static bool
+GetJSScalarFromGLType(GLenum type, js::Scalar::Type* const out_scalarType)
+{
+    switch (type) {
+    case LOCAL_GL_BYTE:
+        *out_scalarType = js::Scalar::Int8;
+        return true;
+
+    case LOCAL_GL_UNSIGNED_BYTE:
+        *out_scalarType = js::Scalar::Uint8;
+        return true;
+
+    case LOCAL_GL_SHORT:
+        *out_scalarType = js::Scalar::Int16;
+        return true;
+
+    case LOCAL_GL_HALF_FLOAT:
+    case LOCAL_GL_HALF_FLOAT_OES:
+    case LOCAL_GL_UNSIGNED_SHORT:
+    case LOCAL_GL_UNSIGNED_SHORT_4_4_4_4:
+    case LOCAL_GL_UNSIGNED_SHORT_5_5_5_1:
+    case LOCAL_GL_UNSIGNED_SHORT_5_6_5:
+        *out_scalarType = js::Scalar::Uint16;
+        return true;
+
+    case LOCAL_GL_UNSIGNED_INT:
+    case LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV:
+    case LOCAL_GL_UNSIGNED_INT_5_9_9_9_REV:
+    case LOCAL_GL_UNSIGNED_INT_10F_11F_11F_REV:
+    case LOCAL_GL_UNSIGNED_INT_24_8:
+        *out_scalarType = js::Scalar::Uint32;
+        return true;
+    case LOCAL_GL_INT:
+        *out_scalarType = js::Scalar::Int32;
+        return true;
+
+    case LOCAL_GL_FLOAT:
+        *out_scalarType = js::Scalar::Float32;
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+bool
+WebGLContext::ReadPixels_SharedPrecheck(ErrorResult* const out_error)
+{
+    if (IsContextLost())
+        return false;
+
+    if (mCanvasElement &&
+        mCanvasElement->IsWriteOnly() &&
+        !nsContentUtils::IsCallerChrome())
+    {
+        GenerateWarning("readPixels: Not allowed");
+        out_error->Throw(NS_ERROR_DOM_SECURITY_ERR);
+        return false;
+    }
+
+    return true;
+}
 
 bool
 WebGLContext::ValidatePackSize(const char* funcName, uint32_t width, uint32_t height,
@@ -1443,132 +1515,44 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
                          const dom::Nullable<dom::ArrayBufferView>& pixels,
                          ErrorResult& out_error)
 {
-    const char funcName[] = "readPixels";
-    if (IsContextLost())
+    if (!ReadPixels_SharedPrecheck(&out_error))
         return;
 
-    if (mCanvasElement &&
-        mCanvasElement->IsWriteOnly() &&
-        !nsContentUtils::IsCallerChrome())
-    {
-        GenerateWarning("readPixels: Not allowed");
-        out_error.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    if (mBoundPixelPackBuffer) {
+        ErrorInvalidOperation("readPixels: PIXEL_PACK_BUFFER must be null.");
         return;
     }
 
-    if (width < 0 || height < 0)
-        return ErrorInvalidValue("readPixels: negative size passed");
-
-    if (pixels.IsNull())
-        return ErrorInvalidValue("readPixels: null destination buffer");
-
-    if (!(IsWebGL2() && IsIntegerFormatAndTypeUnpackable(format, type)) &&
-        !IsFormatAndTypeUnpackable(format, type, IsWebGL2())) {
-        return ErrorInvalidEnum("readPixels: Bad format or type.");
-    }
-
-    int channels = 0;
-
     
-    switch (format) {
-    case LOCAL_GL_ALPHA:
-    case LOCAL_GL_LUMINANCE:
-    case LOCAL_GL_RED:
-    case LOCAL_GL_RED_INTEGER:
-        channels = 1;
-        break;
-    case LOCAL_GL_LUMINANCE_ALPHA:
-    case LOCAL_GL_RG:
-    case LOCAL_GL_RG_INTEGER:
-        channels = 2;
-        break;
-    case LOCAL_GL_RGB:
-    case LOCAL_GL_RGB_INTEGER:
-        channels = 3;
-        break;
-    case LOCAL_GL_RGBA:
-    case LOCAL_GL_RGBA_INTEGER:
-        channels = 4;
-        break;
-    default:
-        MOZ_CRASH("GFX: bad `format`");
+
+    if (pixels.IsNull()) {
+        ErrorInvalidValue("readPixels: null destination buffer");
+        return;
     }
-
-
-    
-    int bytesPerPixel;
-    int requiredDataType;
-    switch (type) {
-    case LOCAL_GL_BYTE:
-        bytesPerPixel = 1*channels;
-        requiredDataType = js::Scalar::Int8;
-        break;
-
-    case LOCAL_GL_UNSIGNED_BYTE:
-        bytesPerPixel = 1*channels;
-        requiredDataType = js::Scalar::Uint8;
-        break;
-
-    case LOCAL_GL_SHORT:
-        bytesPerPixel = 2*channels;
-        requiredDataType = js::Scalar::Int16;
-        break;
-
-    case LOCAL_GL_UNSIGNED_SHORT:
-    case LOCAL_GL_UNSIGNED_SHORT_4_4_4_4:
-    case LOCAL_GL_UNSIGNED_SHORT_5_5_5_1:
-    case LOCAL_GL_UNSIGNED_SHORT_5_6_5:
-        bytesPerPixel = 2;
-        requiredDataType = js::Scalar::Uint16;
-        break;
-
-    case LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV:
-    case LOCAL_GL_UNSIGNED_INT_5_9_9_9_REV:
-    case LOCAL_GL_UNSIGNED_INT_10F_11F_11F_REV:
-    case LOCAL_GL_UNSIGNED_INT_24_8:
-        bytesPerPixel = 4;
-        requiredDataType = js::Scalar::Uint32;
-        break;
-
-    case LOCAL_GL_UNSIGNED_INT:
-        bytesPerPixel = 4*channels;
-        requiredDataType = js::Scalar::Uint32;
-        break;
-
-    case LOCAL_GL_INT:
-        bytesPerPixel = 4*channels;
-        requiredDataType = js::Scalar::Int32;
-        break;
-
-    case LOCAL_GL_FLOAT:
-        bytesPerPixel = 4*channels;
-        requiredDataType = js::Scalar::Float32;
-        break;
-
-    case LOCAL_GL_HALF_FLOAT:
-    case LOCAL_GL_HALF_FLOAT_OES:
-        bytesPerPixel = 2*channels;
-        requiredDataType = js::Scalar::Uint16;
-        break;
-
-    default:
-        MOZ_CRASH("GFX: bad `type`");
-    }
-
-    
 
     const auto& view = pixels.Value();
+
+    
+
+    js::Scalar::Type reqScalarType;
+    if (!GetJSScalarFromGLType(type, &reqScalarType)) {
+        ErrorInvalidEnum("readPixels: Bad `type`.");
+        return;
+    }
+
+    const js::Scalar::Type dataScalarType = JS_GetArrayBufferViewType(view.Obj());
+    if (dataScalarType != reqScalarType) {
+        ErrorInvalidOperation("readPixels: `pixels` type does not match `type`.");
+        return;
+    }
+
+    
 
     
     
     view.ComputeLengthAndData();
     void* data = view.DataAllowShared();
-    size_t bytesAvailable = view.LengthAllowShared();
-    js::Scalar::Type dataType = JS_GetArrayBufferViewType(view.Obj());
-
-    
-    if (dataType != requiredDataType)
-        return ErrorInvalidOperation("readPixels: Mismatched type/pixels types");
+    const auto dataLen = view.LengthAllowShared();
 
     if (!data) {
         ErrorOutOfMemory("readPixels: buffer storage is null. Did we run out of memory?");
@@ -1576,20 +1560,161 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
         return;
     }
 
+    ReadPixelsImpl(x, y, width, height, format, type, data, dataLen);
+}
+
+void
+WebGL2Context::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format,
+                          GLenum type, WebGLsizeiptr offset, ErrorResult& out_error)
+{
+    if (!ReadPixels_SharedPrecheck(&out_error))
+        return;
+
+    if (!mBoundPixelPackBuffer) {
+        ErrorInvalidOperation("readPixels: PIXEL_PACK_BUFFER must not be null.");
+        return;
+    }
+
     
 
-    uint32_t rowStride;
-    uint32_t bytesNeeded;
-    if (!ValidatePackSize(funcName, width, height, bytesPerPixel, &rowStride,
-                          &bytesNeeded))
-    {
+    if (offset < 0) {
+        ErrorInvalidValue("readPixels: offset must not be negative.");
         return;
     }
 
-    if (bytesNeeded > bytesAvailable) {
-        ErrorInvalidOperation("readPixels: buffer too small");
+    {
+        const auto bytesPerType = webgl::BytesPerPixel({LOCAL_GL_RED, type});
+
+        if (offset % bytesPerType != 0) {
+            ErrorInvalidOperation("readPixels: `offset` must be divisible by the size"
+                                  " a `type` in bytes.");
+            return;
+        }
+    }
+
+    
+
+    const auto bytesAvailable = mBoundPixelPackBuffer->ByteLength();
+    const auto checkedBytesAfterOffset = CheckedUint32(bytesAvailable) - offset;
+
+    uint32_t bytesAfterOffset = 0;
+    if (checkedBytesAfterOffset.isValid()) {
+        bytesAfterOffset = checkedBytesAfterOffset.value();
+    }
+
+    ReadPixelsImpl(x, y, width, height, format, type, (void*)offset, bytesAfterOffset);
+}
+
+static bool
+ValidateReadPixelsFormatAndType(const webgl::FormatInfo* srcFormat,
+                                const webgl::PackingInfo& pi, gl::GLContext* gl,
+                                WebGLContext* webgl)
+{
+    
+    GLenum mainFormat;
+    GLenum mainType;
+
+    switch (srcFormat->componentType) {
+    case webgl::ComponentType::Float:
+        mainFormat = LOCAL_GL_RGBA;
+        mainType = LOCAL_GL_FLOAT;
+        break;
+
+    case webgl::ComponentType::UInt:
+        mainFormat = LOCAL_GL_RGBA_INTEGER;
+        mainType = LOCAL_GL_UNSIGNED_INT;
+        break;
+
+    case webgl::ComponentType::Int:
+        mainFormat = LOCAL_GL_RGBA_INTEGER;
+        mainType = LOCAL_GL_INT;
+        break;
+
+    case webgl::ComponentType::NormInt:
+    case webgl::ComponentType::NormUInt:
+        mainFormat = LOCAL_GL_RGBA;
+        mainType = LOCAL_GL_UNSIGNED_BYTE;
+        break;
+
+    default:
+        gfxCriticalNote << "Unhandled srcFormat->componentType: "
+                        << (uint32_t)srcFormat->componentType;
+        webgl->ErrorInvalidOperation("readPixels: Unhandled srcFormat->componentType."
+                                     " Please file a bug!");
+        return false;
+    }
+
+    if (pi.format == mainFormat && pi.type == mainType)
+        return true;
+
+    
+    
+    
+    
+
+    if (webgl->IsWebGL2() &&
+        srcFormat->effectiveFormat == webgl::EffectiveFormat::RGB10_A2 &&
+        pi.format == LOCAL_GL_RGBA &&
+        pi.type == LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV)
+    {
+        return true;
+    }
+
+    
+    
+    
+
+    
+    
+    if (!webgl->mFormatUsage->AreUnpackEnumsValid(pi.format, pi.type)) {
+        webgl->ErrorInvalidEnum("readPixels: Bad format and/or type.");
+        return false;
+    }
+
+    
+    
+    
+    
+    
+    switch (pi.format) {
+    case LOCAL_GL_LUMINANCE:
+    case LOCAL_GL_LUMINANCE_ALPHA:
+    case LOCAL_GL_DEPTH_COMPONENT:
+    case LOCAL_GL_DEPTH_STENCIL:
+        webgl->ErrorInvalidEnum("readPixels: Invalid format: 0x%04x", pi.format);
+        return false;
+    }
+
+    MOZ_ASSERT(gl->IsCurrent());
+    if (gl->IsSupported(gl::GLFeature::ES2_compatibility)) {
+        const auto auxFormat = gl->GetIntAs<GLenum>(LOCAL_GL_IMPLEMENTATION_COLOR_READ_FORMAT);
+        const auto auxType = gl->GetIntAs<GLenum>(LOCAL_GL_IMPLEMENTATION_COLOR_READ_TYPE);
+
+        if (auxFormat && auxType &&
+            pi.format == auxFormat && pi.type == auxType)
+        {
+            return true;
+        }
+    }
+
+    
+
+    webgl->ErrorInvalidOperation("readPixels: Invalid format or type.");
+    return false;
+}
+
+void
+WebGLContext::ReadPixelsImpl(GLint x, GLint y, GLsizei rawWidth, GLsizei rawHeight,
+                             GLenum packFormat, GLenum packType, void* dest,
+                             uint32_t dataLen)
+{
+    if (rawWidth < 0 || rawHeight < 0) {
+        ErrorInvalidValue("readPixels: negative size passed");
         return;
     }
+
+    const uint32_t width(rawWidth);
+    const uint32_t height(rawHeight);
 
     
 
@@ -1602,57 +1727,33 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
         return;
 
     
-    auto srcType = srcFormat->format->componentType;
-    GLenum mainReadFormat;
-    GLenum mainReadType;
-    switch (srcType) {
-        case webgl::ComponentType::Float:
-            mainReadFormat = LOCAL_GL_RGBA;
-            mainReadType = LOCAL_GL_FLOAT;
-            break;
-        case webgl::ComponentType::UInt:
-            mainReadFormat = LOCAL_GL_RGBA_INTEGER;
-            mainReadType = LOCAL_GL_UNSIGNED_INT;
-            break;
-        case webgl::ComponentType::Int:
-            mainReadFormat = LOCAL_GL_RGBA_INTEGER;
-            mainReadType = LOCAL_GL_INT;
-            break;
-        default:
-            mainReadFormat = LOCAL_GL_RGBA;
-            mainReadType = LOCAL_GL_UNSIGNED_BYTE;
-            break;
+
+    const webgl::PackingInfo pi = {packFormat, packType};
+    if (!ValidateReadPixelsFormatAndType(srcFormat->format, pi, gl, this))
+        return;
+
+    uint8_t bytesPerPixel;
+    if (!webgl::GetBytesPerPixel(pi, &bytesPerPixel)) {
+        ErrorInvalidOperation("readPixels: Unsupported format and type.");
+        return;
     }
 
-    GLenum auxReadFormat = mainReadFormat;
-    GLenum auxReadType = mainReadType;
+    
 
-    
-    
-    if (gl->IsSupported(gl::GLFeature::ES2_compatibility)) {
-        gl->fGetIntegerv(LOCAL_GL_IMPLEMENTATION_COLOR_READ_FORMAT,
-                         reinterpret_cast<GLint*>(&auxReadFormat));
-        gl->fGetIntegerv(LOCAL_GL_IMPLEMENTATION_COLOR_READ_TYPE,
-                         reinterpret_cast<GLint*>(&auxReadType));
-    }
-
-    const bool mainMatches = (format == mainReadFormat && type == mainReadType);
-    const bool auxMatches = (format == auxReadFormat && type == auxReadType);
-    bool isValid = mainMatches || auxMatches;
-
-    
-    
-    
-    if (srcFormat->format->effectiveFormat == webgl::EffectiveFormat::RGB10_A2 &&
-        format == LOCAL_GL_RGBA &&
-        type == LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV)
+    uint32_t rowStride;
+    uint32_t bytesNeeded;
+    if (!ValidatePackSize("readPixels", width, height, bytesPerPixel, &rowStride,
+                          &bytesNeeded))
     {
-        isValid = true;
+        return;
     }
 
-    if (!isValid)
-        return ErrorInvalidOperation("readPixels: Invalid format/type pair");
+    if (bytesNeeded > dataLen) {
+        ErrorInvalidOperation("readPixels: buffer too small");
+        return;
+    }
 
+    
     
 
     uint32_t readX, readY;
@@ -1662,8 +1763,8 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
     Intersect(srcHeight, y, height, &readY, &writeY, &rwHeight);
 
     if (rwWidth == uint32_t(width) && rwHeight == uint32_t(height)) {
-        DoReadPixelsAndConvert(x, y, width, height, format, type, data, auxReadFormat,
-                               auxReadType);
+        DoReadPixelsAndConvert(srcFormat->format, x, y, width, height, packFormat,
+                               packType, dest);
         return;
     }
 
@@ -1688,13 +1789,14 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
 
     if (IsWebGL2()) {
         if (!mPixelStore_PackRowLength) {
-            gl->fPixelStorei(LOCAL_GL_PACK_ROW_LENGTH, mPixelStore_PackSkipPixels + width);
+            gl->fPixelStorei(LOCAL_GL_PACK_ROW_LENGTH,
+                             mPixelStore_PackSkipPixels + width);
         }
         gl->fPixelStorei(LOCAL_GL_PACK_SKIP_PIXELS, mPixelStore_PackSkipPixels + writeX);
         gl->fPixelStorei(LOCAL_GL_PACK_SKIP_ROWS, mPixelStore_PackSkipRows + writeY);
 
-        DoReadPixelsAndConvert(readX, readY, rwWidth, rwHeight, format, type, data,
-                               auxReadFormat, auxReadType);
+        DoReadPixelsAndConvert(srcFormat->format, readX, readY, rwWidth, rwHeight,
+                               packFormat, packType, dest);
 
         gl->fPixelStorei(LOCAL_GL_PACK_ROW_LENGTH, mPixelStore_PackRowLength);
         gl->fPixelStorei(LOCAL_GL_PACK_SKIP_PIXELS, mPixelStore_PackSkipPixels);
@@ -1702,11 +1804,11 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
     } else {
         
 
-        uint8_t* row = (uint8_t*)data + writeX * bytesPerPixel;
+        uint8_t* row = (uint8_t*)dest + writeX * bytesPerPixel;
         row += writeY * rowStride;
         for (uint32_t j = 0; j < rwHeight; j++) {
-            DoReadPixelsAndConvert(readX, readY+j, rwWidth, 1, format, type, row,
-                                   auxReadFormat, auxReadType);
+            DoReadPixelsAndConvert(srcFormat->format, readX, readY+j, rwWidth, 1,
+                                   packFormat, packType, row);
             row += rowStride;
         }
     }
