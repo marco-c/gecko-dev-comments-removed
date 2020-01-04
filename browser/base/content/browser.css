@@ -364,9 +364,9 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 %ifdef XP_MACOSX
-#PlacesToolbarItems {
+#main-window[tabsintitlebar]:not([customizing]) #personal-bookmarks {
 %else
-#main-window[tabsintitlebar] #PlacesToolbarItems:-moz-lwtheme {
+#main-window[tabsintitlebar]:not([customizing]) #personal-bookmarks:-moz-lwtheme {
 %endif
   -moz-window-dragging: drag;
 }
