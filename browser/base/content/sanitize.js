@@ -111,7 +111,9 @@ Sanitizer.prototype = {
 
     
     
-    Preferences.set(Sanitizer.PREF_SANITIZE_IN_PROGRESS, JSON.stringify(itemsToClear));
+    Preferences.set(Sanitizer.PREF_SANITIZE_IN_PROGRESS,
+                    JSON.stringify(itemsToClear));
+    }
 
     
     for (let k of itemsToClear) {
@@ -679,8 +681,16 @@ Sanitizer.prototype = {
 
 
 Sanitizer.PREF_DOMAIN = "privacy.sanitize.";
+
 Sanitizer.PREF_SANITIZE_ON_SHUTDOWN = "privacy.sanitize.sanitizeOnShutdown";
+
+
+
+
 Sanitizer.PREF_SANITIZE_IN_PROGRESS = "privacy.sanitize.sanitizeInProgress";
+
+
+
 Sanitizer.PREF_SANITIZE_DID_SHUTDOWN = "privacy.sanitize.didShutdownSanitize";
 
 
@@ -767,6 +777,15 @@ Sanitizer.sanitize = function(aParentWindow)
 
 Sanitizer.onStartup = Task.async(function*() {
   
+  let shutownSanitizationWasInterrupted =
+    Preferences.get(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, false) &&
+    !Preferences.has(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
+  
+  
+  Preferences.reset(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
+  Services.prefs.savePrefFile(null);
+
+  
   
   let placesClient = Cc["@mozilla.org/browser/nav-history-service;1"]
                        .getService(Ci.nsPIPlacesDatabase)
@@ -787,14 +806,15 @@ Sanitizer.onStartup = Task.async(function*() {
   placesClient.addBlocker("sanitize.js: Sanitize on shutdown", doSanitize);
 
   
-  if (Preferences.has(Sanitizer.PREF_SANITIZE_IN_PROGRESS)) {
-    
+  let lastInterruptedSanitization = Preferences.get(Sanitizer.PREF_SANITIZE_IN_PROGRESS, "");
+  if (lastInterruptedSanitization) {
     let s = new Sanitizer();
-    let json = Preferences.get(Sanitizer.PREF_SANITIZE_IN_PROGRESS);
-    let itemsToClear = JSON.parse(json);
+    
+    let itemsToClear = JSON.parse(lastInterruptedSanitization);
     yield s.sanitize(itemsToClear);
-  }
-  if (Preferences.has(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN)) {
+  } else if (shutownSanitizationWasInterrupted) {
+    
+    
     
     
     
@@ -810,5 +830,8 @@ Sanitizer.onShutdown = Task.async(function*() {
   let s = new Sanitizer();
   s.prefDomain = "privacy.clearOnShutdown.";
   yield s.sanitize();
+  
+  
   Preferences.set(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN, true);
+  Services.prefs.savePrefFile(null);
 });
