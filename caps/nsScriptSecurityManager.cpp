@@ -782,9 +782,6 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
        return NS_ERROR_DOM_BAD_URI;
     }
 
-    NS_NAMED_LITERAL_STRING(errorTag, "CheckLoadURIError");
-    bool reportErrors = !(aFlags & nsIScriptSecurityManager::DONT_REPORT_ERRORS);
-
     
     bool hasFlags;
     rv = NS_URIChainHasFlags(targetBaseURI,
@@ -793,6 +790,12 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (hasFlags) {
+        
+        
+        rv = CheckLoadURIFlags(sourceURI, aTargetURI, sourceBaseURI,
+                               targetBaseURI, aFlags);
+        NS_ENSURE_SUCCESS(rv, rv);
+        
         return aPrincipal->CheckMayLoad(targetBaseURI, true, false);
     }
 
@@ -865,10 +868,34 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
 
     
     
+    return CheckLoadURIFlags(sourceURI, aTargetURI, sourceBaseURI,
+                             targetBaseURI, aFlags);
+}
+
+
+
+
+
+
+
+
+
+
+nsresult
+nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
+                                           nsIURI *aTargetURI,
+                                           nsIURI *aSourceBaseURI,
+                                           nsIURI *aTargetBaseURI,
+                                           uint32_t aFlags)
+{
     
     
-    
-    
+    bool reportErrors = !(aFlags & nsIScriptSecurityManager::DONT_REPORT_ERRORS);
+    NS_NAMED_LITERAL_STRING(errorTag, "CheckLoadURIError");
+
+    nsAutoCString targetScheme;
+    nsresult rv = aTargetBaseURI->GetScheme(targetScheme);
+    if (NS_FAILED(rv)) return rv;
 
     
     rv = DenyAccessIfURIHasFlags(aTargetURI,
@@ -876,13 +903,14 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     if (NS_FAILED(rv)) {
         
         if (reportErrors) {
-            ReportError(nullptr, errorTag, sourceURI, aTargetURI);
+            ReportError(nullptr, errorTag, aSourceURI, aTargetURI);
         }
         return rv;
     }
 
     
-    rv = NS_URIChainHasFlags(targetBaseURI,
+    bool hasFlags = false;
+    rv = NS_URIChainHasFlags(aTargetBaseURI,
                              nsIProtocolHandler::URI_IS_UI_RESOURCE,
                              &hasFlags);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -904,7 +932,7 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
             
             
             bool sourceIsUIResource;
-            rv = NS_URIChainHasFlags(sourceBaseURI,
+            rv = NS_URIChainHasFlags(aSourceBaseURI,
                                      nsIProtocolHandler::URI_IS_UI_RESOURCE,
                                      &sourceIsUIResource);
             NS_ENSURE_SUCCESS(rv, rv);
@@ -917,7 +945,7 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
                                                  NS_CHROMEREGISTRY_CONTRACTID));
             if (reg) {
                 bool accessAllowed = false;
-                reg->AllowContentToAccess(targetBaseURI, &accessAllowed);
+                reg->AllowContentToAccess(aTargetBaseURI, &accessAllowed);
                 if (accessAllowed) {
                     return NS_OK;
                 }
@@ -927,13 +955,13 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         
         
         nsAutoCString sourceSpec;
-        if (NS_SUCCEEDED(sourceBaseURI->GetSpec(sourceSpec)) &&
+        if (NS_SUCCEEDED(aSourceBaseURI->GetSpec(sourceSpec)) &&
             sourceSpec.EqualsLiteral("resource://gre-resources/hiddenWindow.html")) {
             return NS_OK;
         }
 
         if (reportErrors) {
-            ReportError(nullptr, errorTag, sourceURI, aTargetURI);
+            ReportError(nullptr, errorTag, aSourceURI, aTargetURI);
         }
         return NS_ERROR_DOM_BAD_URI;
     }
@@ -947,19 +975,20 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         
         
         for (size_t i = 0; i < mFileURIWhitelist.Length(); ++i) {
-            if (EqualOrSubdomain(sourceURI, mFileURIWhitelist[i])) {
+            if (EqualOrSubdomain(aSourceURI, mFileURIWhitelist[i])) {
                 return NS_OK;
             }
         }
 
         
-        if (sourceScheme.EqualsLiteral("chrome")) {
+        bool isChrome = false;
+        if (NS_SUCCEEDED(aSourceBaseURI->SchemeIs("chrome", &isChrome)) && isChrome) {
             return NS_OK;
         }
 
         
         if (reportErrors) {
-            ReportError(nullptr, errorTag, sourceURI, aTargetURI);
+            ReportError(nullptr, errorTag, aSourceURI, aTargetURI);
         }
         return NS_ERROR_DOM_BAD_URI;
     }
@@ -968,11 +997,19 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     
     
     
-    rv = NS_URIChainHasFlags(targetBaseURI,
+    rv = NS_URIChainHasFlags(aTargetBaseURI,
                              nsIProtocolHandler::URI_LOADABLE_BY_ANYONE,
                              &hasFlags);
     NS_ENSURE_SUCCESS(rv, rv);
-    if (!hasFlags) {
+    
+    
+    
+    bool hasSubsumersFlag = false;
+    rv = NS_URIChainHasFlags(aTargetBaseURI,
+                             nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,
+                             &hasSubsumersFlag);
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (!hasFlags && !hasSubsumersFlag) {
         nsXPIDLString message;
         NS_ConvertASCIItoUTF16 ucsTargetScheme(targetScheme);
         const char16_t* formatStrings[] = { ucsTargetScheme.get() };
