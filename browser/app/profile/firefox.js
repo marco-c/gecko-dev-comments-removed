@@ -1221,7 +1221,7 @@ pref("security.mixed_content.block_active_content", true);
 
 
 
-#ifndef RELEASE_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
 pref("security.insecure_password.ui.enabled", true);
 #else
 pref("security.insecure_password.ui.enabled", false);
