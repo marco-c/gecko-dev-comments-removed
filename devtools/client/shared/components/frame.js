@@ -5,7 +5,7 @@
 "use strict";
 
 const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
-const { getSourceNames } = require("devtools/client/shared/source-utils");
+const { getSourceNames, parseURL } = require("devtools/client/shared/source-utils");
 const { L10N } = require("resource://devtools/client/shared/widgets/ViewHelpers.jsm").ViewHelpers;
 const l10n = new L10N("chrome://devtools/locale/components.properties");
 
@@ -38,11 +38,18 @@ module.exports = createClass({
   render() {
     let { onClick, frame, showFunctionName, showHost } = this.props;
     const { short, long, host } = getSourceNames(frame.source);
+    
+    
+    
+    const isLinkable = !!parseURL(frame.source);
+    const elements = [];
 
     let tooltip = long;
     
     
-    if (frame.line) {
+    
+    
+    if (isLinkable && frame.line) {
       tooltip += `:${frame.line}`;
       
       if (frame.column) {
@@ -57,22 +64,28 @@ module.exports = createClass({
       title: tooltip,
     };
 
-    let fields = [
-      dom.a({
+    if (isLinkable) {
+      elements.push(dom.a({
         className: "frame-link-filename",
         onClick,
         title: onClickTooltipString
-      }, short)
-    ];
+      }, short));
+    } else {
+      
+      
+      elements.push(dom.span({
+        className: "frame-link-filename"
+      }, short));
+    }
 
     
-    if (frame.line) {
-      fields.push(dom.span({ className: "frame-link-colon" }, ":"));
-      fields.push(dom.span({ className: "frame-link-line" }, frame.line));
+    if (isLinkable && frame.line) {
+      elements.push(dom.span({ className: "frame-link-colon" }, ":"));
+      elements.push(dom.span({ className: "frame-link-line" }, frame.line));
       
       if (frame.column) {
-        fields.push(dom.span({ className: "frame-link-colon" }, ":"));
-        fields.push(dom.span({ className: "frame-link-column" }, frame.column));
+        elements.push(dom.span({ className: "frame-link-colon" }, ":"));
+        elements.push(dom.span({ className: "frame-link-column" }, frame.column));
         
         attributes["data-column"] = frame.column;
       }
@@ -82,15 +95,15 @@ module.exports = createClass({
     }
 
     if (showFunctionName && frame.functionDisplayName) {
-      fields.unshift(
+      elements.unshift(
         dom.span({ className: "frame-link-function-display-name" }, frame.functionDisplayName)
       );
     }
 
     if (showHost && host) {
-      fields.push(dom.span({ className: "frame-link-host" }, host));
+      elements.push(dom.span({ className: "frame-link-host" }, host));
     }
 
-    return dom.span(attributes, ...fields);
+    return dom.span(attributes, ...elements);
   }
 });
