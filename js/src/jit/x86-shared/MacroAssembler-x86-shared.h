@@ -104,8 +104,8 @@ class MacroAssemblerX86Shared : public Assembler
 
     
     
-    void minMaxDouble(FloatRegister srcDest, FloatRegister second, bool handleNaN, bool isMax);
-    void minMaxFloat32(FloatRegister srcDest, FloatRegister second, bool handleNaN, bool isMax);
+    void minMaxDouble(FloatRegister srcDest, FloatRegister second, bool canBeNaN, bool isMax);
+    void minMaxFloat32(FloatRegister srcDest, FloatRegister second, bool canBeNaN, bool isMax);
 
     void compareDouble(DoubleCondition cond, FloatRegister lhs, FloatRegister rhs) {
         if (cond & DoubleConditionBitInvert)

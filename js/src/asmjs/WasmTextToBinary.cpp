@@ -1569,7 +1569,7 @@ ParseNaNLiteral(const char16_t* cur, const char16_t* end, Float* result)
         
         if (value == 0)
             return false;
-        *result = SpecificNaN<Float>(0, value);
+        SpecificNaN<Float>(0, value, result);
     } else {
         
         *result = SpecificNaN<Float>(0, (Traits::kSignificandBits + 1) >> 1);

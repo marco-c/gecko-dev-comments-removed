@@ -316,7 +316,8 @@ MacroAssemblerX86Shared::asmMergeWith(const MacroAssemblerX86Shared& other)
 }
 
 void
-MacroAssemblerX86Shared::minMaxDouble(FloatRegister first, FloatRegister second, bool handleNaN, bool isMax)
+MacroAssemblerX86Shared::minMaxDouble(FloatRegister first, FloatRegister second, bool canBeNaN,
+                                      bool isMax)
 {
     Label done, nan, minMaxInst;
 
@@ -327,7 +328,7 @@ MacroAssemblerX86Shared::minMaxDouble(FloatRegister first, FloatRegister second,
     
     vucomisd(second, first);
     j(Assembler::NotEqual, &minMaxInst);
-    if (handleNaN)
+    if (canBeNaN)
         j(Assembler::Parity, &nan);
 
     
@@ -342,7 +343,7 @@ MacroAssemblerX86Shared::minMaxDouble(FloatRegister first, FloatRegister second,
     
     
     
-    if (handleNaN) {
+    if (canBeNaN) {
         bind(&nan);
         vucomisd(first, first);
         j(Assembler::Parity, &done);
@@ -360,7 +361,8 @@ MacroAssemblerX86Shared::minMaxDouble(FloatRegister first, FloatRegister second,
 }
 
 void
-MacroAssemblerX86Shared::minMaxFloat32(FloatRegister first, FloatRegister second, bool handleNaN, bool isMax)
+MacroAssemblerX86Shared::minMaxFloat32(FloatRegister first, FloatRegister second, bool canBeNaN,
+                                       bool isMax)
 {
     Label done, nan, minMaxInst;
 
@@ -371,7 +373,7 @@ MacroAssemblerX86Shared::minMaxFloat32(FloatRegister first, FloatRegister second
     
     vucomiss(second, first);
     j(Assembler::NotEqual, &minMaxInst);
-    if (handleNaN)
+    if (canBeNaN)
         j(Assembler::Parity, &nan);
 
     
@@ -386,7 +388,7 @@ MacroAssemblerX86Shared::minMaxFloat32(FloatRegister first, FloatRegister second
     
     
     
-    if (handleNaN) {
+    if (canBeNaN) {
         bind(&nan);
         vucomiss(first, first);
         j(Assembler::Parity, &done);

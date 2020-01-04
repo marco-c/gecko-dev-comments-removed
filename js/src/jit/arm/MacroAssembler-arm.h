@@ -1345,8 +1345,8 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
 
     
     
-    void minMaxDouble(FloatRegister srcDest, FloatRegister other, bool handleNaN, bool isMax);
-    void minMaxFloat32(FloatRegister srcDest, FloatRegister other, bool handleNaN, bool isMax);
+    void minMaxDouble(FloatRegister srcDest, FloatRegister other, bool canBeNaN, bool isMax);
+    void minMaxFloat32(FloatRegister srcDest, FloatRegister other, bool canBeNaN, bool isMax);
 
     void compareDouble(FloatRegister lhs, FloatRegister rhs);
 
