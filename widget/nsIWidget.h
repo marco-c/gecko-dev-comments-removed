@@ -479,7 +479,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD AttachViewToTopLevel(bool aUseAttachedEvents) = 0;
+    virtual void AttachViewToTopLevel(bool aUseAttachedEvents) = 0;
 
     
 

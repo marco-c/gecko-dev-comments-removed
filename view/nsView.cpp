@@ -691,9 +691,7 @@ nsresult nsView::AttachToTopLevelWidget(nsIWidget* aWidget)
 
   
   
-  nsresult rv = aWidget->AttachViewToTopLevel(!nsIWidget::UsePuppetWidgets());
-  if (NS_FAILED(rv))
-    return rv;
+  aWidget->AttachViewToTopLevel(!nsIWidget::UsePuppetWidgets());
 
   mWindow = aWidget;
 
