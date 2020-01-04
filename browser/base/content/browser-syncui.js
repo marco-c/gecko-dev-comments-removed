@@ -125,6 +125,21 @@ let gSyncUI = {
            firstSync == "notReady";
   },
 
+  _needsVerification() {
+    
+    
+    
+    if (Weave.Status._authManager._signedInUser === undefined) {
+      
+      return false;
+    }
+    if (!Weave.Status._authManager._signedInUser) {
+      
+      return false;
+    }
+    return !Weave.Status._authManager._signedInUser.verified;
+  },
+
   
   
   
@@ -154,21 +169,7 @@ let gSyncUI = {
       document.getElementById("sync-syncnow-state").hidden = false;
     }
 
-    if (!gBrowser)
-      return;
-
-    let syncButton = document.getElementById("sync-button");
-    let statusButton = document.getElementById("PanelUI-fxa-icon");
-    if (needsSetup) {
-      if (syncButton) {
-        syncButton.removeAttribute("tooltiptext");
-      }
-      if (statusButton) {
-        statusButton.removeAttribute("tooltiptext");
-      }
-    }
-
-    this._updateLastSyncTime();
+    this._updateSyncButtonsTooltip();
   },
 
   
@@ -312,38 +313,59 @@ let gSyncUI = {
   },
 
   
-  _updateLastSyncTime: function SUI__updateLastSyncTime() {
+
+
+
+
+
+  _updateSyncButtonsTooltip: function() {
     if (!gBrowser)
       return;
 
     let syncButton = document.getElementById("sync-button");
     let statusButton = document.getElementById("PanelUI-fxa-icon");
 
-    let lastSync;
+    let email;
     try {
-      lastSync = new Date(Services.prefs.getCharPref("services.sync.lastSync"));
-    }
-    catch (e) { };
-    if (!lastSync || this._needsSetup()) {
-      if (syncButton) {
-        syncButton.removeAttribute("tooltiptext");
-      }
-      if (statusButton) {
-        statusButton.removeAttribute("tooltiptext");
-      }
-      return;
-    }
+      email = Services.prefs.getCharPref("services.sync.username");
+    } catch (ex) {}
 
     
-    let lastSyncDateString = lastSync.toLocaleFormat("%a %H:%M");
-    let lastSyncLabel =
-      this._stringBundle.formatStringFromName("lastSync2.label", [lastSyncDateString], 1);
-
-    if (syncButton) {
-      syncButton.setAttribute("tooltiptext", lastSyncLabel);
+    
+    
+    let tooltiptext;
+    if (this._needsVerification()) {
+      
+      tooltiptext = gFxAccounts.strings.formatStringFromName("verifyDescription", [email], 1);
+    } else if (this._needsSetup()) {
+      
+      tooltiptext = this._stringBundle.GetStringFromName("signInToSync.description");
+    } else if (this._loginFailed()) {
+      
+      tooltiptext = gFxAccounts.strings.formatStringFromName("reconnectDescription", [email], 1);
+    } else {
+      
+      try {
+        let lastSync = new Date(Services.prefs.getCharPref("services.sync.lastSync"));
+        
+        let lastSyncDateString = lastSync.toLocaleFormat("%a %H:%M");
+        tooltiptext = this._stringBundle.formatStringFromName("lastSync2.label", [lastSyncDateString], 1);
+      }
+      catch (e) {
+        
+        
+        
+        
+      }
     }
-    if (statusButton) {
-      statusButton.setAttribute("tooltiptext", lastSyncLabel);
+    for (let button of [syncButton, statusButton]) {
+      if (button) {
+        if (tooltiptext) {
+          button.setAttribute("tooltiptext", tooltiptext);
+        } else {
+          button.removeAttribute("tooltiptext");
+        }
+      }
     }
   },
 

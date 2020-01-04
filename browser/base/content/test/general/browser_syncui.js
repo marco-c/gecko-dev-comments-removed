@@ -34,22 +34,59 @@ function promiseObserver(topic) {
   });
 }
 
+function checkButtonTooltips(stringPrefix) {
+  for (let butId of ["sync-button", "PanelUI-fxa-icon"]) {
+    let text = document.getElementById(butId).getAttribute("tooltiptext");
+    let desc = `Text is "${text}", expecting it to start with "${stringPrefix}"`
+    Assert.ok(text.startsWith(stringPrefix), desc);
+  }
+}
+
 add_task(function* prepare() {
+  
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_NAVBAR);
+  registerCleanupFunction(() => {
+    CustomizableUI.removeWidgetFromArea("sync-button");
+  });
+
   let xps = Components.classes["@mozilla.org/weave/service;1"]
                               .getService(Components.interfaces.nsISupports)
                               .wrappedJSObject;
   yield xps.whenLoaded();
+  
+  Weave.Status.login = Weave.LOGIN_FAILED_NO_USERNAME;
+  Services.obs.notifyObservers(null, "weave:ui:clear-error", null);
+
   checkBroadcasterVisible("sync-setup-state");
+  checkButtonTooltips("Sign In To Sync");
   
   let oldNeedsSetup = window.gSyncUI._needsSetup;
   window.gSyncUI._needsSetup = () => false;
   registerCleanupFunction(() => {
     window.gSyncUI._needsSetup = oldNeedsSetup;
+    
+    
+    Services.obs.notifyObservers(null, "weave:ui:clear-error", null);
   });
   
   Services.obs.notifyObservers(null, "weave:ui:clear-error", null);
   checkBroadcasterVisible("sync-syncnow-state");
 });
+
+add_task(function* testSyncNeedsVerification() {
+  Assert.equal(Notifications.notifications.length, 0, "start with no notifications");
+  
+  let oldNeedsVerification = window.gSyncUI._needsVerification;
+  window.gSyncUI._needsVerification = () => true;
+  try {
+    
+    Services.obs.notifyObservers(null, "weave:ui:clear-error", null);
+    checkButtonTooltips("Verify");
+  } finally {
+    window.gSyncUI._needsVerification = oldNeedsVerification;
+  }
+});
+
 
 add_task(function* testSyncLoginError() {
   Assert.equal(Notifications.notifications.length, 0, "start with no notifications");
@@ -63,6 +100,8 @@ add_task(function* testSyncLoginError() {
   Assert.equal(Notifications.notifications.length, 0, "no notifications shown on login error");
   
   checkBroadcasterVisible("sync-reauth-state");
+  
+  checkButtonTooltips("Reconnect");
 
   
   Weave.Status.sync = Weave.STATUS_OK;
@@ -96,27 +135,36 @@ function testButtonActions(startNotification, endNotification) {
   checkButtonsStatus(false);
 }
 
-add_task(function* testButtonActivities() {
+function doTestButtonActivities() {
+  testButtonActions("weave:service:login:start", "weave:service:login:finish");
+  testButtonActions("weave:service:login:start", "weave:service:login:error");
+
+  testButtonActions("weave:service:sync:start", "weave:service:sync:finish");
+  testButtonActions("weave:service:sync:start", "weave:service:sync:error");
+
+  
+  Services.obs.notifyObservers(null, "weave:service:sync:start", null);
+  checkButtonsStatus(true);
+  
+  Services.obs.notifyObservers(null, "weave:service:sync:finish", null);
+  
+  checkButtonsStatus(false);
+}
+
+add_task(function* testButtonActivitiesInNavBar() {
+  
+  
+  doTestButtonActivities();
+});
+
+add_task(function* testButtonActivitiesInPanel() {
+  
   
   CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
-  
   yield PanelUI.show();
   try {
-    testButtonActions("weave:service:login:start", "weave:service:login:finish");
-    testButtonActions("weave:service:login:start", "weave:service:login:error");
-
-    testButtonActions("weave:service:sync:start", "weave:service:sync:finish");
-    testButtonActions("weave:service:sync:start", "weave:service:sync:error");
-
-    
-    Services.obs.notifyObservers(null, "weave:service:sync:start", null);
-    checkButtonsStatus(true);
-    
-    Services.obs.notifyObservers(null, "weave:service:sync:finish", null);
-    
-    checkButtonsStatus(false);
+    doTestButtonActivities();
   } finally {
     PanelUI.hide();
-    CustomizableUI.removeWidgetFromArea("sync-button");
   }
 });
