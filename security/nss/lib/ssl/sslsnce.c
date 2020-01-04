@@ -98,7 +98,7 @@ struct sidCacheEntryStr {
      PRUint8 valid;
      PRUint8 sessionIDLength;
      PRUint8 sessionID[SSL3_SESSIONID_BYTES];
-     PRUint16 authType;
+     PRUint16 authAlgorithm;
      PRUint16 authKeyBits;
      PRUint16 keaType;
      PRUint16 keaKeyBits;
@@ -112,10 +112,10 @@ struct {
      ssl3SidKeys keys; 
 
      PRUint32 masterWrapMech;
+     SSL3KEAType exchKeyType;
      PRInt32 certIndex;
      PRInt32 srvNameIndex;
      PRUint8 srvNameHash[SHA256_LENGTH]; 
-     PRUint16 certTypeArgs;
 } ssl3;
 
 
@@ -436,7 +436,7 @@ ConvertFromSID(sidCacheEntry *to, sslSessionID *from)
     to->creationTime = from->creationTime;
     to->lastAccessTime = from->lastAccessTime;
     to->expirationTime = from->expirationTime;
-    to->authType = from->authType;
+    to->authAlgorithm = from->authAlgorithm;
     to->authKeyBits = from->authKeyBits;
     to->keaType = from->keaType;
     to->keaKeyBits = from->keaKeyBits;
@@ -445,24 +445,12 @@ ConvertFromSID(sidCacheEntry *to, sslSessionID *from)
     to->u.ssl3.compression = (PRUint16)from->u.ssl3.compression;
     to->u.ssl3.keys = from->u.ssl3.keys;
     to->u.ssl3.masterWrapMech = from->u.ssl3.masterWrapMech;
+    to->u.ssl3.exchKeyType = from->u.ssl3.exchKeyType;
     to->sessionIDLength = from->u.ssl3.sessionIDLength;
     to->u.ssl3.certIndex = -1;
     to->u.ssl3.srvNameIndex = -1;
     PORT_Memcpy(to->sessionID, from->u.ssl3.sessionID,
                 to->sessionIDLength);
-    to->u.ssl3.certTypeArgs = 0U;
-    switch(from->authType) {
-#ifndef NSS_DISABLE_ECC
-        case ssl_auth_ecdsa:
-        case ssl_auth_ecdh_rsa:
-        case ssl_auth_ecdh_ecdsa:
-            to->u.ssl3.certTypeArgs = (PRUint16)from->certType.u.namedCurve;
-            break;
-#endif
-        default:
-            break;
-    }
-
 
     SSL_TRC(8, ("%d: SSL3: ConvertSID: time=%d addr=0x%08x%08x%08x%08x "
                 "cipherSuite=%d",
@@ -493,6 +481,7 @@ ConvertToSID(sidCacheEntry *from,
     to->u.ssl3.compression = (SSLCompressionMethod)from->u.ssl3.compression;
     to->u.ssl3.keys = from->u.ssl3.keys;
     to->u.ssl3.masterWrapMech = from->u.ssl3.masterWrapMech;
+    to->u.ssl3.exchKeyType = from->u.ssl3.exchKeyType;
     if (from->u.ssl3.srvNameIndex != -1 && psnce) {
         SECItem name;
         SECStatus rv;
@@ -537,19 +526,6 @@ ConvertToSID(sidCacheEntry *from,
         if (to->peerCert == NULL)
             goto loser;
     }
-    to->certType.authType = from->authType;
-    switch (from->authType) {
-#ifndef NSS_DISABLE_ECC
-        case ssl_auth_ecdsa:
-        case ssl_auth_ecdh_rsa:
-        case ssl_auth_ecdh_ecdsa:
-            to->certType.u.namedCurve =
-                (ECName)from->u.ssl3.certTypeArgs;
-            break;
-#endif
-        default:
-            break;
-    }
 
     to->version = from->version;
     to->creationTime = from->creationTime;
@@ -558,7 +534,7 @@ ConvertToSID(sidCacheEntry *from,
     to->cached = in_server_cache;
     to->addr = from->addr;
     to->references = 1;
-    to->authType = from->authType;
+    to->authAlgorithm = from->authAlgorithm;
     to->authKeyBits = from->authKeyBits;
     to->keaType = from->keaType;
     to->keaKeyBits = from->keaKeyBits;
@@ -996,7 +972,7 @@ InitCache(cacheDesc *cache, int maxCacheEntries, int maxCertCacheEntries,
     cache->certCacheSize =
         (char *)cache->keyCacheData - (char *)cache->certCacheData;
 
-    cache->numKeyCacheEntries = ssl_auth_size * SSL_NUM_WRAP_MECHS;
+    cache->numKeyCacheEntries = kt_kea_size * SSL_NUM_WRAP_MECHS;
     ptr = (ptrdiff_t)(cache->keyCacheData + cache->numKeyCacheEntries);
     ptr = SID_ROUNDUP(ptr, SID_ALIGNMENT);
 
@@ -1628,12 +1604,12 @@ StopLockPoller(cacheDesc *cache)
 
 static PRBool
 getSvrWrappingKey(PRInt32 symWrapMechIndex,
-                  SSLAuthType authType,
+                  SSL3KEAType exchKeyType,
                   SSLWrappedSymWrappingKey *wswk,
                   cacheDesc *cache,
                   PRUint32 lockTime)
 {
-    PRUint32 ndx = (authType * SSL_NUM_WRAP_MECHS) + symWrapMechIndex;
+    PRUint32 ndx = (exchKeyType * SSL_NUM_WRAP_MECHS) + symWrapMechIndex;
     SSLWrappedSymWrappingKey *pwswk = cache->keyCacheData + ndx;
     PRUint32 now = 0;
     PRBool rv = PR_FALSE;
@@ -1648,7 +1624,7 @@ getSvrWrappingKey(PRInt32 symWrapMechIndex,
             return rv;
         }
     }
-    if (pwswk->authType == authType &&
+    if (pwswk->exchKeyType == exchKeyType &&
         pwswk->symWrapMechIndex == symWrapMechIndex &&
         pwswk->wrappedSymKeyLen != 0) {
         *wswk = *pwswk;
@@ -1662,16 +1638,16 @@ getSvrWrappingKey(PRInt32 symWrapMechIndex,
 
 PRBool
 ssl_GetWrappingKey(PRInt32 symWrapMechIndex,
-                   SSLAuthType authType,
+                   SSL3KEAType exchKeyType,
                    SSLWrappedSymWrappingKey *wswk)
 {
     PRBool rv;
 
-    PORT_Assert( (unsigned)authType < ssl_auth_size);
-    PORT_Assert( (unsigned)symWrapMechIndex < SSL_NUM_WRAP_MECHS);
-    if ((unsigned)authType < ssl_auth_size &&
+    PORT_Assert((unsigned)exchKeyType < kt_kea_size);
+    PORT_Assert((unsigned)symWrapMechIndex < SSL_NUM_WRAP_MECHS);
+    if ((unsigned)exchKeyType < kt_kea_size &&
         (unsigned)symWrapMechIndex < SSL_NUM_WRAP_MECHS) {
-        rv = getSvrWrappingKey(symWrapMechIndex, authType, wswk,
+        rv = getSvrWrappingKey(symWrapMechIndex, exchKeyType, wswk,
                                &globalCache, 0);
     } else {
         rv = PR_FALSE;
@@ -1952,7 +1928,7 @@ ssl_SetWrappingKey(SSLWrappedSymWrappingKey *wswk)
 {
     cacheDesc *cache = &globalCache;
     PRBool rv = PR_FALSE;
-    SSLAuthType authType = wswk->authType;
+    SSL3KEAType exchKeyType = wswk->exchKeyType;
     
     PRInt32 symWrapMechIndex = wswk->symWrapMechIndex;
     PRUint32 ndx;
@@ -1964,20 +1940,20 @@ ssl_SetWrappingKey(SSLWrappedSymWrappingKey *wswk)
         return 0;
     }
 
-    PORT_Assert((unsigned)authType < ssl_auth_size);
-    if ((unsigned)authType >= ssl_auth_size)
+    PORT_Assert((unsigned)exchKeyType < kt_kea_size);
+    if ((unsigned)exchKeyType >= kt_kea_size)
         return 0;
 
     PORT_Assert((unsigned)symWrapMechIndex < SSL_NUM_WRAP_MECHS);
     if ((unsigned)symWrapMechIndex >= SSL_NUM_WRAP_MECHS)
         return 0;
 
-    ndx = (authType * SSL_NUM_WRAP_MECHS) + symWrapMechIndex;
+    ndx = (exchKeyType * SSL_NUM_WRAP_MECHS) + symWrapMechIndex;
     PORT_Memset(&myWswk, 0, sizeof myWswk); 
 
     now = LockSidCacheLock(cache->keyCacheLock, now);
     if (now) {
-        rv = getSvrWrappingKey(wswk->symWrapMechIndex, wswk->authType,
+        rv = getSvrWrappingKey(wswk->symWrapMechIndex, wswk->exchKeyType,
                                &myWswk, cache, now);
         if (rv) {
             
@@ -2027,7 +2003,7 @@ SSL_InheritMPServerSIDCache(const char *envString)
 
 PRBool
 ssl_GetWrappingKey(PRInt32 symWrapMechIndex,
-                   SSLAuthType authType,
+                   SSL3KEAType exchKeyType,
                    SSLWrappedSymWrappingKey *wswk)
 {
     PRBool rv = PR_FALSE;

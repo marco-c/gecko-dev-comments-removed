@@ -51,11 +51,12 @@ class TlsConnectTestBase : public ::testing::Test {
   
   void ClearServerCache();
   
+  void ResetRsa();
+  
+  
+  void ResetEcdsa();
+  
   void EnsureTlsSetup();
-  
-  void Reset();
-  
-  void Reset(const std::string& server_name);
 
   
   void Handshake();
@@ -65,8 +66,7 @@ class TlsConnectTestBase : public ::testing::Test {
   void CheckConnected();
   
   void ConnectExpectFail();
-  void ConnectWithCipherSuite(uint16_t cipher_suite);
-  void CheckKeys(SSLKEAType akeyType, SSLAuthType authType) const;
+  void CheckKeys(SSLKEAType keyType, SSLAuthType authType) const;
 
   void SetExpectedVersion(uint16_t version);
   
@@ -74,7 +74,6 @@ class TlsConnectTestBase : public ::testing::Test {
   void DisableDheAndEcdheCiphers();
   void DisableDheCiphers();
   void DisableEcdheCiphers();
-  void EnableSomeEcdhCiphers();
   void EnableExtendedMasterSecret();
   void ConfigureSessionCache(SessionResumptionMode client,
                              SessionResumptionMode server);
@@ -94,6 +93,7 @@ class TlsConnectTestBase : public ::testing::Test {
   std::vector<std::vector<uint8_t>> session_ids_;
 
  private:
+  void Reset(const std::string& server_name, SSLKEAType kea);
   void CheckResumption(SessionResumptionMode expected);
   void CheckExtendedMasterSecret();
 

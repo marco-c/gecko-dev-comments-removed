@@ -98,11 +98,12 @@ static SECStatus ssl3_AESGCMBypass(ssl3KeyMaterial *keys, PRBool doDecrypt,
 static ssl3CipherSuiteCfg cipherSuites[ssl_V3_SUITES_IMPLEMENTED] = {
    
 
-#ifndef NSS_DISABLE_ECC
  
 
 
  { TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256,   SSL_ALLOWED, PR_TRUE,  PR_FALSE},
+
+#ifndef NSS_DISABLE_ECC
  { TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, SSL_ALLOWED, PR_TRUE, PR_FALSE},
  { TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,   SSL_ALLOWED, PR_TRUE, PR_FALSE},
  { TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, SSL_ALLOWED, PR_TRUE, PR_FALSE},
@@ -309,29 +310,28 @@ static const ssl3BulkCipherDef bulk_cipher_defs[] = {
 static const ssl3KEADef kea_defs[] =
 { 
     
-    {kea_null,           ssl_kea_null, ssl_sign_null, ssl_auth_null, PR_FALSE,   0, PR_FALSE, PR_FALSE, 0},
-    {kea_rsa,            ssl_kea_rsa,  ssl_sign_null, ssl_auth_rsa_decrypt,  PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_RSA},
-    
-    {kea_rsa_export,     ssl_kea_rsa,  ssl_sign_rsa, ssl_auth_rsa_sign, PR_TRUE,  512, PR_FALSE, PR_FALSE, SEC_OID_TLS_RSA_EXPORT},
-    {kea_rsa_export_1024,ssl_kea_rsa,  ssl_sign_rsa, ssl_auth_rsa_sign, PR_TRUE, 1024, PR_FALSE, PR_FALSE, SEC_OID_TLS_RSA_EXPORT},
-    {kea_dh_dss,         ssl_kea_dh,   ssl_sign_dsa, ssl_auth_dsa,  PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_DH_DSS},
-    {kea_dh_dss_export,  ssl_kea_dh,   ssl_sign_dsa, ssl_auth_dsa,   PR_TRUE,  512, PR_FALSE, PR_FALSE, SEC_OID_TLS_DH_DSS_EXPORT},
-    {kea_dh_rsa,         ssl_kea_dh,   ssl_sign_rsa, ssl_auth_rsa_sign,   PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_DH_RSA},
-    {kea_dh_rsa_export,  ssl_kea_dh,   ssl_sign_rsa, ssl_auth_rsa_sign,   PR_TRUE,  512, PR_FALSE, PR_FALSE, SEC_OID_TLS_DH_RSA_EXPORT},
-    {kea_dhe_dss,        ssl_kea_dh,   ssl_sign_dsa, ssl_auth_dsa,   PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DHE_DSS},
-    {kea_dhe_dss_export, ssl_kea_dh,   ssl_sign_dsa, ssl_auth_dsa,   PR_TRUE,  512, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DHE_DSS_EXPORT},
-    {kea_dhe_rsa,        ssl_kea_dh,   ssl_sign_rsa, ssl_auth_rsa_sign,   PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DHE_RSA},
-    {kea_dhe_rsa_export, ssl_kea_dh,   ssl_sign_rsa, ssl_auth_rsa_sign,   PR_TRUE,  512, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DHE_RSA_EXPORT},
-    {kea_dh_anon,        ssl_kea_dh,   ssl_sign_null, ssl_auth_null, PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DH_ANON},
-    {kea_dh_anon_export, ssl_kea_dh,   ssl_sign_null, ssl_auth_null, PR_TRUE,  512, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DH_ANON_EXPORT},
-    {kea_rsa_fips,       ssl_kea_rsa,  ssl_sign_rsa, ssl_auth_rsa_decrypt,   PR_FALSE,   0, PR_TRUE,  PR_FALSE, SEC_OID_TLS_RSA},
+    {kea_null,           kt_null, ssl_sign_null,  PR_FALSE,   0, PR_FALSE, PR_FALSE, 0},
+    {kea_rsa,            kt_rsa,  ssl_sign_rsa,   PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_RSA},
+    {kea_rsa_export,     kt_rsa,  ssl_sign_rsa,   PR_TRUE,  512, PR_FALSE, PR_FALSE, SEC_OID_TLS_RSA_EXPORT},
+    {kea_rsa_export_1024,kt_rsa,  ssl_sign_rsa,   PR_TRUE, 1024, PR_FALSE, PR_FALSE, SEC_OID_TLS_RSA_EXPORT},
+    {kea_dh_dss,         kt_dh,   ssl_sign_dsa,   PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_DH_DSS},
+    {kea_dh_dss_export,  kt_dh,   ssl_sign_dsa,   PR_TRUE,  512, PR_FALSE, PR_FALSE, SEC_OID_TLS_DH_DSS_EXPORT},
+    {kea_dh_rsa,         kt_dh,   ssl_sign_rsa,   PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_DH_RSA},
+    {kea_dh_rsa_export,  kt_dh,   ssl_sign_rsa,   PR_TRUE,  512, PR_FALSE, PR_FALSE, SEC_OID_TLS_DH_RSA_EXPORT},
+    {kea_dhe_dss,        kt_dh,   ssl_sign_dsa,   PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DHE_DSS},
+    {kea_dhe_dss_export, kt_dh,   ssl_sign_dsa,   PR_TRUE,  512, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DHE_DSS_EXPORT},
+    {kea_dhe_rsa,        kt_dh,   ssl_sign_rsa,   PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DHE_RSA},
+    {kea_dhe_rsa_export, kt_dh,   ssl_sign_rsa,   PR_TRUE,  512, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DHE_RSA_EXPORT},
+    {kea_dh_anon,        kt_dh,   ssl_sign_null,  PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DH_ANON},
+    {kea_dh_anon_export, kt_dh,   ssl_sign_null,  PR_TRUE,  512, PR_FALSE, PR_TRUE,  SEC_OID_TLS_DH_ANON_EXPORT},
+    {kea_rsa_fips,       kt_rsa,  ssl_sign_rsa,   PR_FALSE,   0, PR_TRUE,  PR_FALSE, SEC_OID_TLS_RSA},
 #ifndef NSS_DISABLE_ECC
-    {kea_ecdh_ecdsa,     ssl_kea_ecdh, ssl_sign_null, ssl_auth_ecdh_ecdsa, PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_ECDH_ECDSA},
-    {kea_ecdhe_ecdsa,    ssl_kea_ecdh, ssl_sign_ecdsa, ssl_auth_ecdsa, PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_ECDHE_ECDSA},
-    {kea_ecdh_rsa,       ssl_kea_ecdh, ssl_sign_null, ssl_auth_ecdh_rsa, PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_ECDH_RSA},
-    {kea_ecdhe_rsa,      ssl_kea_ecdh, ssl_sign_rsa, ssl_auth_rsa_sign,   PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_ECDHE_RSA},
-    {kea_ecdh_anon,      ssl_kea_ecdh, ssl_sign_null, ssl_auth_null, PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_ECDH_ANON},
-    {kea_ecdhe_psk,      ssl_kea_ecdh_psk, ssl_sign_null, ssl_auth_psk, PR_FALSE, 0, PR_FALSE, PR_TRUE, SEC_OID_TLS_ECDHE_PSK}
+    {kea_ecdh_ecdsa,     kt_ecdh, ssl_sign_ecdsa, PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_ECDH_ECDSA},
+    {kea_ecdhe_ecdsa,    kt_ecdh, ssl_sign_ecdsa, PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_ECDHE_ECDSA},
+    {kea_ecdh_rsa,       kt_ecdh, ssl_sign_rsa,   PR_FALSE,   0, PR_FALSE, PR_FALSE, SEC_OID_TLS_ECDH_RSA},
+    {kea_ecdhe_rsa,      kt_ecdh, ssl_sign_rsa,   PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_ECDHE_RSA},
+    {kea_ecdh_anon,      kt_ecdh, ssl_sign_null,  PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_ECDH_ANON},
+    {kea_ecdhe_psk,      kt_ecdh, ssl_sign_psk,   PR_FALSE,   0, PR_FALSE, PR_TRUE,  SEC_OID_TLS_ECDHE_PSK}
 #endif 
 };
 
@@ -437,11 +437,10 @@ static const ssl3CipherSuiteDef cipher_suite_defs[] =
     {TLS_DHE_DSS_WITH_AES_256_CBC_SHA256, cipher_aes_256, hmac_sha256, kea_dhe_dss},
 
     {TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256, cipher_chacha20, mac_aead, kea_dhe_rsa},
-
-#ifndef NSS_DISABLE_ECC
     {TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, cipher_chacha20, mac_aead, kea_ecdhe_rsa},
     {TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, cipher_chacha20, mac_aead, kea_ecdhe_ecdsa},
 
+#ifndef NSS_DISABLE_ECC
     {TLS_ECDH_ECDSA_WITH_NULL_SHA,        cipher_null, mac_sha, kea_ecdh_ecdsa},
     {TLS_ECDH_ECDSA_WITH_RC4_128_SHA,      cipher_rc4, mac_sha, kea_ecdh_ecdsa},
     {TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA, cipher_3des, mac_sha, kea_ecdh_ecdsa},
@@ -480,29 +479,13 @@ static const ssl3CipherSuiteDef cipher_suite_defs[] =
 };
 
 
-static const CK_MECHANISM_TYPE auth_alg_defs[] = {
-    CKM_INVALID_MECHANISM, 
-    CKM_RSA_PKCS, 
-    CKM_DSA,  
-    CKM_INVALID_MECHANISM, 
-    CKM_ECDSA, 
-    CKM_ECDH1_DERIVE, 
-    CKM_ECDH1_DERIVE, 
-    CKM_RSA_PKCS, 
-    CKM_RSA_PKCS_PSS, 
-    CKM_NSS_HKDF_SHA256 
-};
-PR_STATIC_ASSERT(PR_ARRAY_SIZE(auth_alg_defs) == ssl_auth_size);
-
 static const CK_MECHANISM_TYPE kea_alg_defs[] = {
-    CKM_INVALID_MECHANISM, 
-    CKM_RSA_PKCS, 
-    CKM_DH_PKCS_DERIVE, 
-    CKM_INVALID_MECHANISM, 
-    CKM_ECDH1_DERIVE, 
-    CKM_ECDH1_DERIVE 
+    0x80000000L,
+    CKM_RSA_PKCS,
+    CKM_DH_PKCS_DERIVE,
+    CKM_KEA_KEY_DERIVE,
+    CKM_ECDH1_DERIVE
 };
-PR_STATIC_ASSERT(PR_ARRAY_SIZE(kea_alg_defs) == ssl_kea_size);
 
 typedef struct SSLCipher2MechStr {
     SSLCipherAlgorithm calg;
@@ -749,9 +732,6 @@ ssl3_CipherSuiteAllowedForVersionRange(
         case TLS_DHE_DSS_WITH_AES_256_CBC_SHA256:
         case TLS_RSA_WITH_NULL_SHA256:
         case TLS_DHE_DSS_WITH_AES_128_GCM_SHA256:
-        case TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
-        case TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
-        case TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
             return vrange->max == SSL_LIBRARY_VERSION_TLS_1_2;
 
         case TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
@@ -826,27 +806,6 @@ ssl_LookupCipherSuiteCfg(ssl3CipherSuite suite, ssl3CipherSuiteCfg *suites)
     return NULL;
 }
 
-static PRBool
-ssl3_HasCert(sslSocket *ss, SSLAuthType authType)
-{
-    PRCList *cursor;
-    if (authType == ssl_auth_null) {
-        return PR_TRUE;
-    }
-    for (cursor = PR_NEXT_LINK(&ss->serverCerts);
-         cursor != &ss->serverCerts;
-         cursor = PR_NEXT_LINK(cursor)) {
-        sslServerCert *cert = (sslServerCert*)cursor;
-        if (cert->certType.authType == authType &&
-            cert->serverKeyPair &&
-            cert->serverKeyPair->privKey &&
-            cert->serverCertChain) {
-            return PR_TRUE;
-        }
-    }
-    return PR_FALSE;
-}
-
 
 
 
@@ -859,12 +818,12 @@ ssl3_config_match_init(sslSocket *ss)
     const ssl3CipherSuiteDef *cipher_def;
     SSLCipherAlgorithm cipher_alg;
     CK_MECHANISM_TYPE cipher_mech;
-    SSLAuthType authType;
-    SSLKEAType keaType;
+    SSL3KEAType exchKeyType;
     int i;
     int numPresent = 0;
     int numEnabled = 0;
     PRBool isServer;
+    sslServerCerts *svrAuth;
 
     PORT_Assert(ss);
     if (!ss) {
@@ -890,34 +849,50 @@ ssl3_config_match_init(sslSocket *ss)
             }
             cipher_alg = bulk_cipher_defs[cipher_def->bulk_cipher_alg].calg;
             cipher_mech = ssl3_Alg2Mech(cipher_alg);
+            exchKeyType =
+                kea_defs[cipher_def->key_exchange_alg].exchKeyType;
+#ifdef NSS_DISABLE_ECC
+            svrAuth = ss->serverCerts + exchKeyType;
+#else
+            
+
+
+
+
+            switch (cipher_def->key_exchange_alg) {
+                case kea_dhe_dss:
+                    svrAuth = ss->serverCerts + ssl_kea_dh;
+                    break;
+                case kea_ecdhe_rsa:
+                case kea_dhe_rsa:
+                    svrAuth = ss->serverCerts + kt_rsa;
+                    break;
+                case kea_ecdh_ecdsa:
+                case kea_ecdh_rsa:
+                
+
+
+
+
+
+
+                case kea_dhe_dss_export:
+                case kea_dhe_rsa_export:
+                default:
+                    svrAuth = ss->serverCerts + exchKeyType;
+                    break;
+            }
+#endif 
 
             
-            suite->isPresent = PR_TRUE;
-
-            authType = kea_defs[cipher_def->key_exchange_alg].authKeyType;
-            if (authType != ssl_auth_null) {
-                if (isServer && !ssl3_HasCert(ss, authType)) {
-                    suite->isPresent = PR_FALSE;
-                }
-                if (!PK11_TokenExists(auth_alg_defs[authType])) {
-                    suite->isPresent = PR_FALSE;
-                }
-            }
-
-            keaType = kea_defs[cipher_def->key_exchange_alg].exchKeyType;
-            if (keaType != ssl_kea_null &&
-                !PK11_TokenExists(kea_alg_defs[keaType])) {
-                suite->isPresent = PR_FALSE;
-            }
-
-            if (cipher_alg != calg_null &&
-                !PK11_TokenExists(cipher_mech)) {
-                suite->isPresent = PR_FALSE;
-            }
-
-            if (suite->isPresent) {
+            suite->isPresent = (PRBool)(((exchKeyType == kt_null) ||
+                                         ((!isServer ||
+                                           (svrAuth->serverKeyPair && svrAuth->SERVERKEY &&
+                                            svrAuth->serverCertChain)) &&
+                                          PK11_TokenExists(kea_alg_defs[exchKeyType]))) &&
+                                        ((cipher_alg == calg_null) || PK11_TokenExists(cipher_mech)));
+            if (suite->isPresent)
                 ++numPresent;
-            }
         }
     }
     PORT_Assert(numPresent > 0 || numEnabled == 0);
@@ -961,8 +936,8 @@ config_match(ssl3CipherSuiteCfg *suite, int policy, PRBool enabled,
         return PR_FALSE;
 
     
-    if (kea_defs[cipher_def->key_exchange_alg].authKeyType ==
-        ssl_auth_psk) {
+    if (kea_defs[cipher_def->key_exchange_alg].signKeyType ==
+        ssl_sign_psk) {
         return tls13_AllowPskCipher(ss, cipher_def);
     }
 
@@ -3932,8 +3907,8 @@ ssl3_ComputeMasterSecretInt(sslSocket *ss, PK11SymKey *pms,
 
 
 
-    PRBool isDH = (PRBool)((ss->ssl3.hs.kea_def->exchKeyType == ssl_kea_dh) ||
-                           (ss->ssl3.hs.kea_def->exchKeyType == ssl_kea_ecdh));
+    PRBool isDH = (PRBool)((ss->ssl3.hs.kea_def->exchKeyType == kt_dh) ||
+                           (ss->ssl3.hs.kea_def->exchKeyType == kt_ecdh));
     CK_MECHANISM_TYPE master_derive;
     CK_MECHANISM_TYPE key_derive;
     SECItem params;
@@ -4010,8 +3985,8 @@ tls_ComputeExtendedMasterSecretInt(sslSocket *ss, PK11SymKey *pms,
     
 
 
-    PRBool isDH = (PRBool)((ss->ssl3.hs.kea_def->exchKeyType == ssl_kea_dh) ||
-                           (ss->ssl3.hs.kea_def->exchKeyType == ssl_kea_ecdh));
+    PRBool isDH = (PRBool)((ss->ssl3.hs.kea_def->exchKeyType == kt_dh) ||
+                           (ss->ssl3.hs.kea_def->exchKeyType == kt_ecdh));
     CK_MECHANISM_TYPE master_derive;
     CK_MECHANISM_TYPE key_derive;
     SECItem params;
@@ -5922,7 +5897,7 @@ static PK11SymKey *
 ssl_UnwrapSymWrappingKey(
     SSLWrappedSymWrappingKey *pWswk,
     SECKEYPrivateKey *svrPrivKey,
-    SSLAuthType authType,
+    SSL3KEAType exchKeyType,
     CK_MECHANISM_TYPE masterWrapMech,
     void *pwArg)
 {
@@ -5936,9 +5911,9 @@ ssl_UnwrapSymWrappingKey(
 
     
     PORT_Assert(pWswk->symWrapMechanism == masterWrapMech);
-    PORT_Assert(pWswk->authType == authType);
+    PORT_Assert(pWswk->exchKeyType == exchKeyType);
     if (pWswk->symWrapMechanism != masterWrapMech ||
-        pWswk->authType != authType) {
+        pWswk->exchKeyType != exchKeyType) {
         goto loser;
     }
     wrappedKey.type = siBuffer;
@@ -5946,19 +5921,16 @@ ssl_UnwrapSymWrappingKey(
     wrappedKey.len = pWswk->wrappedSymKeyLen;
     PORT_Assert(wrappedKey.len <= sizeof pWswk->wrappedSymmetricWrappingkey);
 
-    switch (authType) {
+    switch (exchKeyType) {
 
-        case ssl_auth_rsa_decrypt:
-        case ssl_auth_rsa_sign: 
+        case kt_rsa:
             unwrappedWrappingKey =
-                    PK11_PubUnwrapSymKey(svrPrivKey, &wrappedKey,
-                                         masterWrapMech, CKA_UNWRAP, 0);
+                PK11_PubUnwrapSymKey(svrPrivKey, &wrappedKey,
+                                     masterWrapMech, CKA_UNWRAP, 0);
             break;
 
 #ifndef NSS_DISABLE_ECC
-        case ssl_auth_ecdsa:
-        case ssl_auth_ecdh_rsa:
-        case ssl_auth_ecdh_ecdsa:
+        case kt_ecdh:
             
 
 
@@ -6026,7 +5998,7 @@ loser:
 
 
 typedef struct {
-    PK11SymKey *symWrapKey[ssl_auth_size];
+    PK11SymKey *symWrapKey[kt_kea_size];
 } ssl3SymWrapKey;
 
 static PZLock *symWrapKeysLock = NULL;
@@ -6054,7 +6026,7 @@ SSL3_ShutdownServerCache(void)
     PZ_Lock(symWrapKeysLock);
     
     for (i = 0; i < SSL_NUM_WRAP_MECHS; ++i) {
-        for (j = 0; j < ssl_auth_size; ++j) {
+        for (j = 0; j < kt_kea_size; ++j) {
             PK11SymKey **pSymWrapKey;
             pSymWrapKey = &symWrapKeys[i].symWrapKey[j];
             if (*pSymWrapKey) {
@@ -6081,18 +6053,13 @@ ssl_InitSymWrapKeysLock(void)
 
 
 
-
-
-
-
 PK11SymKey *
 ssl3_GetWrappingKey(sslSocket *ss,
                PK11SlotInfo *masterSecretSlot,
-               const sslServerCert *serverCert,
+               SSL3KEAType exchKeyType,
                CK_MECHANISM_TYPE masterWrapMech,
                void *pwArg)
 {
-    SSLAuthType authType;
     SECKEYPrivateKey *svrPrivKey;
     SECKEYPublicKey *svrPubKey = NULL;
     PK11SymKey *unwrappedWrappingKey = NULL;
@@ -6110,25 +6077,18 @@ ssl3_GetWrappingKey(sslSocket *ss,
     ECCWrappedKeyInfo *ecWrapped;
 #endif 
 
-    PORT_Assert(serverCert);
-    PORT_Assert(serverCert->serverKeyPair);
-    PORT_Assert(serverCert->serverKeyPair->privKey);
-    PORT_Assert(serverCert->serverKeyPair->pubKey);
-    if (!serverCert || !serverCert->serverKeyPair ||
-        !serverCert->serverKeyPair->privKey ||
-        !serverCert->serverKeyPair->pubKey) {
-        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+    svrPrivKey = ss->serverCerts[exchKeyType].SERVERKEY;
+    PORT_Assert(svrPrivKey != NULL);
+    if (!svrPrivKey) {
         return NULL; 
     }
-    authType = serverCert->certType.authType;
-    svrPrivKey = serverCert->serverKeyPair->privKey;
 
     symWrapMechIndex = ssl_FindIndexByWrapMechanism(masterWrapMech);
     PORT_Assert(symWrapMechIndex >= 0);
     if (symWrapMechIndex < 0)
         return NULL; 
 
-    pSymWrapKey = &symWrapKeys[symWrapMechIndex].symWrapKey[authType];
+    pSymWrapKey = &symWrapKeys[symWrapMechIndex].symWrapKey[exchKeyType];
 
     ssl_InitSessionCacheLocks(PR_TRUE);
 
@@ -6147,10 +6107,10 @@ ssl3_GetWrappingKey(sslSocket *ss,
 
     
     
-    if (ssl_GetWrappingKey(symWrapMechIndex, authType, &wswk)) {
+    if (ssl_GetWrappingKey(symWrapMechIndex, exchKeyType, &wswk)) {
         
         unwrappedWrappingKey =
-            ssl_UnwrapSymWrappingKey(&wswk, svrPrivKey, authType,
+            ssl_UnwrapSymWrappingKey(&wswk, svrPrivKey, exchKeyType,
                                      masterWrapMech, pwArg);
         if (unwrappedWrappingKey) {
             goto install;
@@ -6175,7 +6135,13 @@ ssl3_GetWrappingKey(sslSocket *ss,
 
     PORT_Memset(&wswk, 0, sizeof wswk); 
 
-    svrPubKey = serverCert->serverKeyPair->pubKey;
+    if (ss->serverCerts[exchKeyType].serverKeyPair) {
+        svrPubKey = ss->serverCerts[exchKeyType].serverKeyPair->pubKey;
+    }
+    if (svrPubKey == NULL) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        goto loser;
+    }
     wrappedKey.type = siBuffer;
     wrappedKey.len = SECKEY_PublicKeyStrength(svrPubKey);
     wrappedKey.data = wswk.wrappedSymmetricWrappingkey;
@@ -6185,18 +6151,15 @@ ssl3_GetWrappingKey(sslSocket *ss,
         goto loser;
 
     
-    switch (authType) {
-        case ssl_auth_rsa_decrypt:
-        case ssl_auth_rsa_sign: 
+    switch (exchKeyType) {
+        case kt_rsa:
             asymWrapMechanism = CKM_RSA_PKCS;
             rv = PK11_PubWrapSymKey(asymWrapMechanism, svrPubKey,
                                     unwrappedWrappingKey, &wrappedKey);
             break;
 
 #ifndef NSS_DISABLE_ECC
-        case ssl_auth_ecdsa:
-        case ssl_auth_ecdh_rsa:
-        case ssl_auth_ecdh_ecdsa:
+        case kt_ecdh:
             
 
 
@@ -6301,7 +6264,7 @@ ssl3_GetWrappingKey(sslSocket *ss,
     wswk.symWrapMechanism = masterWrapMech;
     wswk.symWrapMechIndex = symWrapMechIndex;
     wswk.asymWrapMechanism = asymWrapMechanism;
-    wswk.authType = authType;
+    wswk.exchKeyType = exchKeyType;
     wswk.wrappedSymKeyLen = wrappedKey.len;
 
     
@@ -6317,7 +6280,7 @@ ssl3_GetWrappingKey(sslSocket *ss,
         PK11_FreeSymKey(unwrappedWrappingKey);
 
         unwrappedWrappingKey =
-            ssl_UnwrapSymWrappingKey(&wswk, svrPrivKey, authType,
+            ssl_UnwrapSymWrappingKey(&wswk, svrPrivKey, exchKeyType,
                                      masterWrapMech, pwArg);
     }
 
@@ -6332,7 +6295,6 @@ done:
     return unwrappedWrappingKey;
 }
 
-#ifdef NSS_ALLOW_SSLKEYLOGFILE
 
 
 static void
@@ -6346,7 +6308,6 @@ hexEncode(char *out, const unsigned char *in, unsigned int length)
         *(out++) = hextable[in[i] & 15];
     }
 }
-#endif
 
 
 
@@ -6386,7 +6347,6 @@ sendRSAClientKeyExchange(sslSocket *ss, SECKEYPublicKey *svrPubKey)
         goto loser;
     }
 
-#ifdef NSS_ALLOW_SSLKEYLOGFILE
     if (ssl_keylog_iob) {
         SECStatus extractRV = PK11_ExtractKeyValue(pms);
         if (extractRV == SECSuccess) {
@@ -6418,7 +6378,6 @@ sendRSAClientKeyExchange(sslSocket *ss, SECKEYPublicKey *svrPubKey)
             }
         }
     }
-#endif
 
     rv = ssl3_AppendHandshakeHeader(ss, client_key_exchange,
                                     isTLS ? enc_pms.len + 2
@@ -6596,16 +6555,16 @@ ssl3_SendClientKeyExchange(sslSocket *ss)
     ss->sec.keaKeyBits = SECKEY_PublicKeyStrengthInBits(serverKey);
 
     switch (ss->ssl3.hs.kea_def->exchKeyType) {
-        case ssl_kea_rsa:
+        case kt_rsa:
             rv = sendRSAClientKeyExchange(ss, serverKey);
             break;
 
-        case ssl_kea_dh:
+        case kt_dh:
             rv = sendDHClientKeyExchange(ss, serverKey);
             break;
 
 #ifndef NSS_DISABLE_ECC
-        case ssl_kea_ecdh:
+        case kt_ecdh:
             rv = ssl3_SendECDHClientKeyExchange(ss, serverKey);
             break;
 #endif 
@@ -7068,7 +7027,7 @@ ssl3_HandleServerHelloPart2(sslSocket *ss, const SECItem *sidBytes,
                 goto alert_loser;
             }
 
-            ss->sec.authType = sid->authType;
+            ss->sec.authAlgorithm = sid->authAlgorithm;
             ss->sec.authKeyBits = sid->authKeyBits;
             ss->sec.keaType = sid->keaType;
             ss->sec.keaKeyBits = sid->keaKeyBits;
@@ -7214,7 +7173,7 @@ ssl3_HandleServerHelloPart2(sslSocket *ss, const SECItem *sidBytes,
     }
 
     ss->ssl3.hs.isResuming = PR_FALSE;
-    if (ss->ssl3.hs.kea_def->authKeyType != ssl_auth_null) {
+    if (ss->ssl3.hs.kea_def->signKeyType != ssl_sign_null) {
         
 
         ss->ssl3.hs.ws = wait_server_cert;
@@ -7269,7 +7228,8 @@ ssl3_HandleServerKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
     isTLS12 = (PRBool)(ss->ssl3.prSpec->version >= SSL_LIBRARY_VERSION_TLS_1_2);
 
     switch (ss->ssl3.hs.kea_def->exchKeyType) {
-        case ssl_kea_rsa: {
+
+        case kt_rsa: {
             SECItem modulus = { siBuffer, NULL, 0 };
             SECItem exponent = { siBuffer, NULL, 0 };
 
@@ -7305,7 +7265,8 @@ ssl3_HandleServerKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
             }
             if (length != 0) {
                 if (isTLS)
-                    desc = decode_error;
+                    desc =
+                        decode_error;
                 goto alert_loser; 
             }
 
@@ -7361,7 +7322,7 @@ ssl3_HandleServerKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
             return SECSuccess;
         }
 
-        case ssl_kea_dh: {
+        case kt_dh: {
             SECItem dh_p = { siBuffer, NULL, 0 };
             SECItem dh_g = { siBuffer, NULL, 0 };
             SECItem dh_Ys = { siBuffer, NULL, 0 };
@@ -7417,7 +7378,8 @@ ssl3_HandleServerKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
             }
             if (length != 0) {
                 if (isTLS)
-                    desc = decode_error;
+                    desc =
+                        decode_error;
                 goto alert_loser; 
             }
 
@@ -7480,7 +7442,7 @@ ssl3_HandleServerKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
         }
 
 #ifndef NSS_DISABLE_ECC
-        case ssl_kea_ecdh:
+        case kt_ecdh:
             rv = ssl3_HandleECDHServerKeyExchange(ss, b, length);
             return rv;
 #endif 
@@ -8254,26 +8216,15 @@ ssl3_SendServerHelloSequence(sslSocket *ss)
     kea_def = ss->ssl3.hs.kea_def;
     ss->ssl3.hs.usedStepDownKey = PR_FALSE;
 
-    if (kea_def->is_limited) {
+    if (kea_def->is_limited && kea_def->exchKeyType == kt_rsa) {
         
-        unsigned int keyBits;
-        const sslServerCert *cert;
+        unsigned int keyLen; 
 
-        
+        keyLen = PK11_GetPrivateModulusLen(
+            ss->serverCerts[kea_def->exchKeyType].SERVERKEY);
 
-
-        PORT_Assert(kea_def->authKeyType == ssl_auth_rsa_sign);
-
-        cert = ssl_FindServerCertByAuthType(ss, ssl_auth_rsa_sign);
-        if (!cert || !cert->serverKeyPair || !cert->serverKeyPair->pubKey) {
-            PORT_SetError(SSL_ERROR_NO_CERTIFICATE);
-            return SECFailure;
-        }
-
-        keyBits = SECKEY_PublicKeyStrengthInBits(cert->serverKeyPair->pubKey);
-        PORT_Assert(keyBits);
-
-        if (keyBits <= kea_def->key_size_limit) {
+        if (keyLen > 0 &&
+            keyLen * BPB <= kea_def->key_size_limit) {
             
             
         } else if (ss->stepDownKeyPair != NULL) {
@@ -8315,14 +8266,19 @@ ssl3_SendServerHelloSequence(sslSocket *ss)
 static const PRUint8 emptyRIext[5] = { 0xff, 0x01, 0x00, 0x01, 0x00 };
 
 static PRBool
-ssl3_KEASupportsTickets(const ssl3KEADef *kea_def)
+ssl3_KEAAllowsSessionTicket(SSL3KeyExchangeAlgorithm kea)
 {
-    if (kea_def->signKeyType == ssl_sign_dsa) {
-        
+    switch (kea) {
+        case kea_dhe_dss:
+        case kea_dhe_dss_export:
+        case kea_dh_dss_export:
+        case kea_dh_dss:
+            
 
-        return PR_FALSE;
-    }
-    return PR_TRUE;
+            return PR_FALSE;
+        default:
+            return PR_TRUE;
+    };
 }
 
 
@@ -8533,46 +8489,6 @@ ssl3_ServerCallSNICallback(sslSocket *ss)
 alert_loser:
     (void)SSL3_SendAlert(ss, alert_fatal, desc);
     PORT_SetError(errCode);
-    return SECFailure;
-}
-
-SECStatus
-ssl3_SelectServerCert(sslSocket *ss)
-{
-    const ssl3KEADef *kea_def = ss->ssl3.hs.kea_def;
-    PRCList *cursor;
-
-    
-
-
-
-
-
-    for (cursor = PR_NEXT_LINK(&ss->serverCerts);
-         cursor != &ss->serverCerts;
-         cursor = PR_NEXT_LINK(cursor)) {
-        sslServerCert *cert = (sslServerCert*)cursor;
-        if (cert->certType.authType != kea_def->authKeyType) {
-            continue;
-        }
-#ifndef NSS_DISABLE_ECC
-        if ((cert->certType.authType == ssl_auth_ecdsa ||
-             cert->certType.authType == ssl_auth_ecdh_rsa ||
-             cert->certType.authType == ssl_auth_ecdh_ecdsa) &&
-            !SSL_IS_CURVE_NEGOTIATED(ss->ssl3.hs.negotiatedECCurves,
-                                     cert->certType.u.namedCurve)) {
-            continue;
-        }
-#endif
-
-        
-        ss->sec.serverCert = cert;
-        ss->sec.authType = cert->certType.authType;
-        ss->sec.authKeyBits = cert->serverKeyBits;
-        return SECSuccess;
-    }
-
-    PORT_SetError(SSL_ERROR_NO_CYPHER_OVERLAP);
     return SECFailure;
 }
 
@@ -8795,22 +8711,6 @@ ssl3_HandleClientHello(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
         rv = ssl3_HandleHelloExtensions(ss, &b, &length, client_hello);
         if (rv != SECSuccess) {
             goto loser; 
-        }
-    }
-
-    
-    if (ss->version == SSL_LIBRARY_VERSION_TLS_1_3 &&
-        !ssl3_ExtensionNegotiated(ss, ssl_tls13_draft_version_xtn)) {
-        SSL_TRC(30, ("%d: SSL3[%d]: Unsupported version of TLS 1.3 "
-                     "advertised, expected %d",
-                     SSL_GETPID(), ss->fd, TLS_1_3_DRAFT_VERSION));
-        ss->version = SSL_LIBRARY_VERSION_TLS_1_2;
-        
-        if (ss->version < ss->vrange.min) {
-            desc = protocol_version;
-            level = alert_fatal;
-            errCode = SSL_ERROR_UNSUPPORTED_VERSION;
-            goto alert_loser;
         }
     }
 
@@ -9057,8 +8957,8 @@ static SECStatus ssl3_HandleClientHelloPart2(sslSocket *ss,
     }
 
     if (canOfferSessionTicket)
-        canOfferSessionTicket =
-                ssl3_KEASupportsTickets(ss->ssl3.hs.kea_def);
+        canOfferSessionTicket = ssl3_KEAAllowsSessionTicket(
+            ss->ssl3.hs.suite_def->key_exchange_alg);
 
     if (canOfferSessionTicket) {
         ssl3_RegisterServerHelloExtensionSender(ss,
@@ -9095,20 +8995,11 @@ compression_found:
         do {
             ssl3CipherSpec *pwSpec;
             SECItem wrappedMS; 
-            const sslServerCert *serverCert;
 
             if (sid->version != ss->version ||
                 sid->u.ssl3.cipherSuite != ss->ssl3.hs.cipher_suite ||
                 sid->u.ssl3.compression != ss->ssl3.hs.compression) {
                 break; 
-            }
-
-            serverCert = ssl_FindServerCert(ss, &sid->certType);
-            if (!serverCert || !serverCert->serverCert) {
-                
-
-
-                break;
             }
 
             
@@ -9161,7 +9052,7 @@ compression_found:
                 }
 #endif
 
-                wrapKey = ssl3_GetWrappingKey(ss, NULL, serverCert,
+                wrapKey = ssl3_GetWrappingKey(ss, NULL, sid->u.ssl3.exchKeyType,
                                               sid->u.ssl3.masterWrapMech,
                                               ss->pkcs11PinArg);
                 if (!wrapKey) {
@@ -9170,7 +9061,8 @@ compression_found:
                 }
 
                 if (ss->version > SSL_LIBRARY_VERSION_3_0) { 
-                    keyFlags = CKF_SIGN | CKF_VERIFY;
+                    keyFlags =
+                        CKF_SIGN | CKF_VERIFY;
                 }
 
                 wrappedMS.data = sid->u.ssl3.keys.wrapped_master_secret;
@@ -9224,7 +9116,7 @@ compression_found:
                 SSL_AtomicIncrementLong(&ssl3stats.hch_sid_stateless_resumes);
             ss->ssl3.hs.isResuming = PR_TRUE;
 
-            ss->sec.authType = sid->authType;
+            ss->sec.authAlgorithm = sid->authAlgorithm;
             ss->sec.authKeyBits = sid->authKeyBits;
             ss->sec.keaType = sid->keaType;
             ss->sec.keaKeyBits = sid->keaKeyBits;
@@ -9234,8 +9126,8 @@ compression_found:
 
 
 
-            ss->sec.serverCert = serverCert;
-            ss->sec.localCert = CERT_DupCertificate(serverCert->serverCert);
+            ss->sec.localCert =
+                CERT_DupCertificate(ss->serverCerts[sid->keaType].serverCert);
 
             
             if (sid != NULL &&
@@ -9322,13 +9214,6 @@ compression_found:
         
         errCode = PORT_GetError();
         goto loser;
-    }
-
-    rv = ssl3_SelectServerCert(ss);
-    if (rv != SECSuccess) {
-        errCode = PORT_GetError();
-        desc = handshake_failure;
-        goto alert_loser;
     }
 
     sid = ssl3_NewSessionID(ss, PR_TRUE);
@@ -9564,13 +9449,6 @@ suite_found:
 
     ss->ssl3.hs.compression = ssl_compression_null;
 
-    rv = ssl3_SelectServerCert(ss);
-    if (rv != SECSuccess) {
-        errCode = PORT_GetError();
-        desc = handshake_failure;
-        goto alert_loser;
-    }
-
     
     SSL_AtomicIncrementLong(&ssl3stats.hch_sid_cache_misses);
     sid = ssl3_NewSessionID(ss, PR_TRUE);
@@ -9751,7 +9629,7 @@ ssl3_SendDHServerKeyExchange(sslSocket *ss)
     ssl3KeyPair *keyPair = NULL;
     SECKEYPublicKey *pubKey = NULL;   
     SECKEYPrivateKey *privKey = NULL; 
-    SECKEYPrivateKey *certPrivateKey;
+    int certIndex = -1;
 
     if (kea_def->kea != kea_dhe_dss && kea_def->kea != kea_dhe_rsa) {
         
@@ -9804,9 +9682,16 @@ ssl3_SendDHServerKeyExchange(sslSocket *ss)
         goto loser;
     }
 
+    
+
+    if (kea_def->kea == kea_dhe_rsa)
+        certIndex = ssl_kea_rsa;
+    else
+        certIndex = ssl_kea_dh;
+
     isTLS = (PRBool)(ss->ssl3.pwSpec->version > SSL_LIBRARY_VERSION_3_0);
-    certPrivateKey = ss->sec.serverCert->serverKeyPair->privKey;
-    rv = ssl3_SignHashes(&hashes, certPrivateKey, &signed_hash, isTLS);
+    rv = ssl3_SignHashes(&hashes, ss->serverCerts[certIndex].SERVERKEY,
+                         &signed_hash, isTLS);
     if (rv != SECSuccess) {
         goto loser; 
     }
@@ -9954,7 +9839,7 @@ ssl3_SendServerKeyExchange(sslSocket *ss)
     }
 
     switch (kea_def->exchKeyType) {
-        case ssl_kea_rsa:
+        case kt_rsa:
             
             sdPub = ss->stepDownKeyPair->pubKey;
             PORT_Assert(sdPub != NULL);
@@ -9974,7 +9859,7 @@ ssl3_SendServerKeyExchange(sslSocket *ss)
             }
 
             isTLS = (PRBool)(ss->ssl3.pwSpec->version > SSL_LIBRARY_VERSION_3_0);
-            rv = ssl3_SignHashes(&hashes, ss->sec.serverCert->serverKeyPair->privKey,
+            rv = ssl3_SignHashes(&hashes, ss->serverCerts[kt_rsa].SERVERKEY,
                                  &signed_hash, isTLS);
             if (rv != SECSuccess) {
                 goto loser; 
@@ -9985,8 +9870,8 @@ ssl3_SendServerKeyExchange(sslSocket *ss)
                 goto loser;
             }
             length = 2 + sdPub->u.rsa.modulus.len +
-                    2 + sdPub->u.rsa.publicExponent.len +
-                    2 + signed_hash.len;
+                     2 + sdPub->u.rsa.publicExponent.len +
+                     2 + signed_hash.len;
 
             if (ss->ssl3.pwSpec->version >= SSL_LIBRARY_VERSION_TLS_1_2) {
                 length += 2;
@@ -10031,13 +9916,13 @@ ssl3_SendServerKeyExchange(sslSocket *ss)
         }
 
 #ifndef NSS_DISABLE_ECC
-        case ssl_kea_ecdh: {
+        case kt_ecdh: {
             rv = ssl3_SendECDHServerKeyExchange(ss, &sigAndHash);
             return rv;
         }
 #endif 
 
-        case ssl_kea_null:
+        case kt_null:
         default:
             PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
             break;
@@ -10654,10 +10539,11 @@ ssl3_HandleClientKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
 
     if (ss->ssl3.hs.usedStepDownKey) {
         PORT_Assert(kea_def->is_limited 
-                    && kea_def->authKeyType == ssl_auth_rsa_sign
-                    && ss->stepDownKeyPair != NULL);
+                    &&
+                    kea_def->exchKeyType == kt_rsa &&
+                    ss->stepDownKeyPair != NULL);
         if (!kea_def->is_limited ||
-            kea_def->authKeyType != ssl_auth_rsa_sign ||
+            kea_def->exchKeyType != kt_rsa ||
             ss->stepDownKeyPair == NULL) {
             
             goto skip;
@@ -10666,27 +10552,38 @@ ssl3_HandleClientKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
         ss->sec.keaKeyBits = EXPORT_RSA_KEY_LENGTH * BPB;
     } else
     skip:
-    if (kea_def->ephemeral) {
-        if (kea_def->exchKeyType == ssl_kea_dh && ss->dheKeyPair) {
+    if (kea_def->kea == kea_dhe_dss ||
+        kea_def->kea == kea_dhe_rsa) {
+        if (ss->dheKeyPair) {
             serverKeyPair = ss->dheKeyPair;
             if (serverKeyPair->pubKey) {
                 ss->sec.keaKeyBits =
                     SECKEY_PublicKeyStrengthInBits(serverKeyPair->pubKey);
             }
         }
+    } else
 #ifndef NSS_DISABLE_ECC
-        else if (kea_def->exchKeyType == ssl_kea_ecdh &&
-                 ss->ephemeralECDHKeyPair) {
+        
+
+
+
+
+
+        if ((kea_def->kea == kea_ecdhe_rsa) ||
+            (kea_def->kea == kea_ecdhe_ecdsa)) {
+        if (ss->ephemeralECDHKeyPair != NULL) {
             serverKeyPair = ss->ephemeralECDHKeyPair;
             if (serverKeyPair->pubKey) {
                 ss->sec.keaKeyBits =
-                        SECKEY_PublicKeyStrengthInBits(serverKeyPair->pubKey);
+                    SECKEY_PublicKeyStrengthInBits(serverKeyPair->pubKey);
             }
         }
+    } else
 #endif
-    } else {
-        serverKeyPair = ss->sec.serverCert->serverKeyPair;
-        ss->sec.keaKeyBits = ss->sec.serverCert->serverKeyBits;
+    {
+        sslServerCerts *sc = ss->serverCerts + kea_def->exchKeyType;
+        serverKeyPair = sc->serverKeyPair;
+        ss->sec.keaKeyBits = sc->serverKeyBits;
     }
 
     if (serverKeyPair) {
@@ -10702,7 +10599,7 @@ ssl3_HandleClientKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
     ss->sec.keaType = kea_def->exchKeyType;
 
     switch (kea_def->exchKeyType) {
-        case ssl_kea_rsa:
+        case kt_rsa:
             rv = ssl3_HandleRSAClientKeyExchange(ss, b, length, serverKey);
             if (rv != SECSuccess) {
                 SEND_ALERT
@@ -10727,7 +10624,13 @@ ssl3_HandleClientKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
             break;
 
 #ifndef NSS_DISABLE_ECC
-        case ssl_kea_ecdh:
+        case kt_ecdh:
+            
+
+
+
+
+
             if (serverKeyPair) {
                 serverPubKey = serverKeyPair->pubKey;
             }
@@ -10914,6 +10817,7 @@ ssl3_SendCertificate(sslSocket *ss)
     CERTCertificateList *certChain;
     int certChainLen = 0;
     int i;
+    SSL3KEAType certIndex;
 #ifdef NISCC_TEST
     SECItem fakeCert;
     int ndex = -1;
@@ -10930,11 +10834,27 @@ ssl3_SendCertificate(sslSocket *ss)
     if (ss->sec.localCert)
         CERT_DestroyCertificate(ss->sec.localCert);
     if (ss->sec.isServer) {
-        
-        PORT_Assert(ss->sec.serverCert);
+        sslServerCerts *sc = NULL;
 
-        certChain = ss->sec.serverCert->serverCertChain;
-        ss->sec.localCert = CERT_DupCertificate(ss->sec.serverCert->serverCert);
+        
+
+
+
+
+
+
+
+        if ((ss->ssl3.hs.kea_def->kea == kea_ecdhe_rsa) ||
+            (ss->ssl3.hs.kea_def->kea == kea_dhe_rsa)) {
+            certIndex = kt_rsa;
+        } else {
+            certIndex = ss->ssl3.hs.kea_def->exchKeyType;
+        }
+        sc = ss->serverCerts + certIndex;
+        certChain = sc->serverCertChain;
+        ss->sec.authKeyBits = sc->serverKeyBits;
+        ss->sec.authAlgorithm = ss->ssl3.hs.kea_def->signKeyType;
+        ss->sec.localCert = CERT_DupCertificate(sc->serverCert);
     } else {
         certChain = ss->ssl3.clientCertChain;
         ss->sec.localCert = CERT_DupCertificate(ss->ssl3.clientCertificate);
@@ -11021,7 +10941,7 @@ ssl3_SendCertificateStatus(sslSocket *ss)
     SECStatus rv;
     int len = 0;
     SECItemArray *statusToSend = NULL;
-    const sslServerCert *serverCert;
+    SSL3KEAType certIndex;
 
     SSL_TRC(3, ("%d: SSL3[%d]: send certificate status handshake",
                 SSL_GETPID(), ss->fd));
@@ -11034,9 +10954,14 @@ ssl3_SendCertificateStatus(sslSocket *ss)
         return SECSuccess;
 
     
-    serverCert = ss->sec.serverCert;
-    if (serverCert->certStatusArray && serverCert->certStatusArray->len) {
-        statusToSend = serverCert->certStatusArray;
+    if ((ss->ssl3.hs.kea_def->kea == kea_ecdhe_rsa) ||
+        (ss->ssl3.hs.kea_def->kea == kea_dhe_rsa)) {
+        certIndex = kt_rsa;
+    } else {
+        certIndex = ss->ssl3.hs.kea_def->exchKeyType;
+    }
+    if (ss->certStatusArray[certIndex] && ss->certStatusArray[certIndex]->len) {
+        statusToSend = ss->certStatusArray[certIndex];
     }
     if (!statusToSend)
         return SECSuccess;
@@ -11393,7 +11318,7 @@ ssl3_AuthCertificate(sslSocket *ss)
         
 
         SECKEYPublicKey *pubKey = CERT_ExtractPublicKey(cert);
-        ss->sec.authType = ss->ssl3.hs.kea_def->authKeyType;
+        ss->sec.authAlgorithm = ss->ssl3.hs.kea_def->signKeyType;
         ss->sec.keaType = ss->ssl3.hs.kea_def->exchKeyType;
         if (pubKey) {
             KeyType pubKeyType;
@@ -11730,7 +11655,6 @@ ssl3_SendNextProto(sslSocket *ss)
 static void
 ssl3_RecordKeyLog(sslSocket *ss)
 {
-#ifdef NSS_ALLOW_SSLKEYLOGFILE
     SECStatus rv;
     SECItem *keyData;
     char buf[14  +
@@ -11781,7 +11705,6 @@ ssl3_RecordKeyLog(sslSocket *ss)
         return;
     fflush(ssl_keylog_iob);
     return;
-#endif
 }
 
 
@@ -11860,7 +11783,7 @@ fail:
 
 SECStatus
 ssl3_CacheWrappedMasterSecret(sslSocket *ss, sslSessionID *sid,
-                              ssl3CipherSpec *spec, SSLAuthType authType)
+                              ssl3CipherSpec *spec, SSL3KEAType effectiveExchKeyType)
 {
     PK11SymKey *wrappingKey = NULL;
     PK11SlotInfo *symKeySlot;
@@ -11868,7 +11791,6 @@ ssl3_CacheWrappedMasterSecret(sslSocket *ss, sslSessionID *sid,
     SECStatus rv = SECFailure;
     PRBool isServer = ss->sec.isServer;
     CK_MECHANISM_TYPE mechanism = CKM_INVALID_MECHANISM;
-
     symKeySlot = PK11_GetSlotFromKey(spec->master_secret);
     if (!isServer) {
         int wrapKeyIndex;
@@ -11914,7 +11836,7 @@ ssl3_CacheWrappedMasterSecret(sslSocket *ss, sslSessionID *sid,
         mechanism = PK11_GetBestWrapMechanism(symKeySlot);
         if (mechanism != CKM_INVALID_MECHANISM) {
             wrappingKey =
-                ssl3_GetWrappingKey(ss, symKeySlot, ss->sec.serverCert,
+                ssl3_GetWrappingKey(ss, symKeySlot, effectiveExchKeyType,
                                     mechanism, pwArg);
             if (wrappingKey) {
                 mechanism = PK11_GetMechanism(wrappingKey); 
@@ -11951,6 +11873,7 @@ ssl3_HandleFinished(sslSocket *ss, SSL3Opaque *b, PRUint32 length,
     SECStatus rv = SECSuccess;
     PRBool isServer = ss->sec.isServer;
     PRBool isTLS;
+    SSL3KEAType effectiveExchKeyType;
 
     PORT_Assert(ss->opt.noLocks || ssl_HaveRecvBufLock(ss));
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
@@ -12027,7 +11950,7 @@ ssl3_HandleFinished(sslSocket *ss, SSL3Opaque *b, PRUint32 length,
 
         if (isServer && !ss->ssl3.hs.isResuming &&
             ssl3_ExtensionNegotiated(ss, ssl_session_ticket_xtn) &&
-            ssl3_KEASupportsTickets(ss->ssl3.hs.kea_def)) {
+            ssl3_KEAAllowsSessionTicket(ss->ssl3.hs.suite_def->key_exchange_alg)) {
             
 
 
@@ -12075,8 +11998,15 @@ xmit_loser:
         return rv;
     }
 
+    if (ss->ssl3.hs.kea_def->kea == kea_ecdhe_rsa ||
+        ss->ssl3.hs.kea_def->kea == kea_dhe_rsa) {
+        effectiveExchKeyType = kt_rsa;
+    } else {
+        effectiveExchKeyType = ss->ssl3.hs.kea_def->exchKeyType;
+    }
+
     if (sid->cached == never_cached && !ss->opt.noCache && ss->sec.cache) {
-        rv = ssl3_FillInCachedSID(ss, sid);
+        rv = ssl3_FillInCachedSID(ss, sid, effectiveExchKeyType);
 
         
 
@@ -12100,7 +12030,8 @@ xmit_loser:
 }
 
 SECStatus
-ssl3_FillInCachedSID(sslSocket *ss, sslSessionID *sid)
+ssl3_FillInCachedSID(sslSocket *ss, sslSessionID *sid,
+                     SSL3KEAType effectiveExchKeyType)
 {
     SECStatus rv;
 
@@ -12113,19 +12044,15 @@ ssl3_FillInCachedSID(sslSocket *ss, sslSessionID *sid)
 #ifndef NSS_DISABLE_ECC
     sid->u.ssl3.negotiatedECCurves = ss->ssl3.hs.negotiatedECCurves;
 #endif
+    sid->u.ssl3.exchKeyType = effectiveExchKeyType;
     sid->version = ss->version;
-    sid->authType = ss->sec.authType;
+    sid->authAlgorithm = ss->sec.authAlgorithm;
     sid->authKeyBits = ss->sec.authKeyBits;
     sid->keaType = ss->sec.keaType;
     sid->keaKeyBits = ss->sec.keaKeyBits;
     sid->lastAccessTime = sid->creationTime = ssl_Time();
     sid->expirationTime = sid->creationTime + ssl3_sid_timeout;
     sid->localCert = CERT_DupCertificate(ss->sec.localCert);
-    if (ss->sec.isServer) {
-        memcpy(&sid->certType, &ss->sec.serverCert->certType, sizeof(sid->certType));
-    } else {
-        sid->certType.authType = ssl_auth_null;
-    }
 
     ssl_GetSpecReadLock(ss); 
 
@@ -12141,7 +12068,7 @@ ssl3_FillInCachedSID(sslSocket *ss, sslSessionID *sid)
     } else {
         rv = ssl3_CacheWrappedMasterSecret(ss, ss->sec.ci.sid,
                                            ss->ssl3.crSpec,
-                                           ss->ssl3.hs.kea_def->authKeyType);
+                                           effectiveExchKeyType);
         sid->u.ssl3.keys.msIsWrapped = PR_TRUE;
     }
     ssl_ReleaseSpecReadLock(ss); 
@@ -12205,7 +12132,7 @@ ssl3_HandleHandshakeMessage(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
 {
     SECStatus rv = SECSuccess;
     SSL3HandshakeType type = ss->ssl3.hs.msg_type;
-    SSL3Hashes hashes; 
+    SSL3Hashes hashes;            
     SSL3Hashes *hashesPtr = NULL; 
     PRUint8 hdr[4];
     PRUint8 dtlsData[8];
@@ -12575,7 +12502,7 @@ ssl3_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
     } 
 
     origBuf->len = 0; 
-    buf->buf = NULL; 
+    buf->buf = NULL;  
     return SECSuccess;
 }
 
@@ -13389,21 +13316,15 @@ ssl3_CreateRSAStepDownKeys(sslSocket *ss)
 {
     SECStatus rv = SECSuccess;
     SECKEYPrivateKey *privKey; 
-    SECKEYPublicKey *pubKey; 
-    const sslServerCert *cert;
-    unsigned int len;
+    SECKEYPublicKey *pubKey;   
 
     if (ss->stepDownKeyPair)
         ssl3_FreeKeyPair(ss->stepDownKeyPair);
     ss->stepDownKeyPair = NULL;
 #ifndef HACKED_EXPORT_SERVER
-    cert = ssl_FindServerCertByAuthType(ss, ssl_auth_rsa_decrypt);
-    if (!cert || !cert->serverKeyPair) {
-        return SECFailure;
-    }
-    len = PK11_GetPrivateModulusLen(cert->serverKeyPair->privKey);
     
-    if (len > EXPORT_RSA_KEY_LENGTH) {
+    if (PK11_GetPrivateModulusLen(ss->serverCerts[kt_rsa].SERVERKEY) >
+        EXPORT_RSA_KEY_LENGTH) {
         
         privKey = SECKEY_CreateRSAPrivateKey(EXPORT_RSA_KEY_LENGTH * BPB,
                                              &pubKey, NULL);
@@ -13634,7 +13555,7 @@ ssl3_RedoHandshake(sslSocket *ss, PRBool flushCache)
     if (sid && flushCache) {
         if (ss->sec.uncache)
             ss->sec.uncache(sid); 
-        ssl_FreeSID(sid); 
+        ssl_FreeSID(sid);         
         ss->sec.ci.sid = NULL;
     }
 

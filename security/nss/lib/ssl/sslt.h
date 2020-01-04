@@ -10,8 +10,6 @@
 #define __sslt_h_
 
 #include "prtypes.h"
-#include "secitem.h"
-#include "certt.h"
 
 typedef struct SSL3StatisticsStr {
     
@@ -43,7 +41,6 @@ typedef enum {
     ssl_kea_dh = 2,
     ssl_kea_fortezza = 3, 
     ssl_kea_ecdh = 4,
-    ssl_kea_ecdh_psk = 5,
     ssl_kea_size 
 } SSLKEAType;
 
@@ -65,7 +62,8 @@ typedef enum {
     ssl_sign_null = 0, 
     ssl_sign_rsa = 1,
     ssl_sign_dsa = 2,
-    ssl_sign_ecdsa = 3
+    ssl_sign_ecdsa = 3,
+    ssl_sign_psk = 4
 } SSLSignType;
 
 
@@ -87,26 +85,14 @@ typedef struct SSLSignatureAndHashAlgStr {
     SSLSignType sigAlg;
 } SSLSignatureAndHashAlg;
 
-
-
-
-
 typedef enum {
     ssl_auth_null = 0,
-    ssl_auth_rsa_decrypt = 1, 
+    ssl_auth_rsa = 1,
     ssl_auth_dsa = 2,
-    ssl_auth_kea = 3, 
+    ssl_auth_kea = 3,
     ssl_auth_ecdsa = 4,
-    ssl_auth_ecdh_rsa = 5, 
-    ssl_auth_ecdh_ecdsa = 6, 
-    ssl_auth_rsa_sign = 7, 
-    ssl_auth_rsa_pss = 8,
-    ssl_auth_psk = 9,
-    ssl_auth_size 
+    ssl_auth_psk = 5         
 } SSLAuthType;
-
-
-#define ssl_auth_rsa ssl_auth_rsa_decrypt
 
 typedef enum {
     ssl_calg_null = 0,
@@ -137,22 +123,6 @@ typedef enum {
     ssl_compression_null = 0,
     ssl_compression_deflate = 1 
 } SSLCompressionMethod;
-
-typedef struct SSLExtraServerCertDataStr {
-    
-
-
-
-    SSLAuthType authType;
-    
-    const CERTCertificateList *certChain;
-    
-
-    const SECItemArray *stapledOCSPResponses;
-    
-
-    const SECItem *signedCertTimestamps;
-} SSLExtraServerCertData;
 
 typedef struct SSLChannelInfoStr {
     
@@ -185,27 +155,8 @@ typedef struct SSLChannelInfoStr {
 
 
 
-
-
-
-
-
-
-
-    
-
-
-
-    PRBool UseMacroToAccess_extendedMasterSecretUsed;
+    PRBool extendedMasterSecretUsed;
 } SSLChannelInfo;
-
-
-
-#define SSL_CHANNEL_INFO_FIELD_EXISTS(info, field) \
-   ((info).length >= (offsetof(SSLChannelInfo, UseMacroToAccess_##field) + sizeof((info).UseMacroToAccess_##field)))
-
-#define SSL_CHANNEL_INFO_FIELD_GET(info,field) \
-   (SSL_CHANNEL_INFO_FIELD_EXISTS(info,field) ? info.UseMacroToAccess_##field : -1)
 
 
 #define ssl_preinfo_version (1U << 0)
@@ -238,7 +189,7 @@ typedef struct SSLCipherSuiteInfoStr {
 
     
     const char* authAlgorithmName;
-    SSLAuthType authAlgorithm; 
+    SSLAuthType authAlgorithm;
 
     
     const char* keaTypeName;
@@ -263,10 +214,6 @@ typedef struct SSLCipherSuiteInfoStr {
     PRUintn isExportable : 1;
     PRUintn nonStandard : 1;
     PRUintn reservedBits : 29;
-
-    
-
-    SSLAuthType authType;
 
 } SSLCipherSuiteInfo;
 

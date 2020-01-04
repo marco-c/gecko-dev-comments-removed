@@ -16,7 +16,7 @@
 #include <stdio.h>
 
 #ifdef SECUTIL_NEW
-typedef int (*SECU_PPFunc)(PRFileDesc *out, SECItem *item,
+typedef int (*SECU_PPFunc)(PRFileDesc *out, SECItem *item, 
                            char *msg, int level);
 #else
 typedef int (*SECU_PPFunc)(FILE *out, SECItem *item, char *msg, int level);
@@ -62,7 +62,7 @@ extern int SECU_PrintPrivateKey(FILE *out, SECItem *der, char *m, int level);
 extern SECStatus SECU_PKCS11Init(PRBool readOnly);
 
 
-extern int SECU_PrintSignedData(FILE *out, SECItem *der, const char *m,
+extern int SECU_PrintSignedData(FILE *out, SECItem *der, const char *m, 
                                 int level, SECU_PPFunc inner);
 
 extern void SECU_PrintString(FILE *out, const SECItem *si, const char *m,
@@ -73,12 +73,12 @@ extern void SECU_PrintPRandOSError(const char *progName);
 
 
 void
-SECU_SECItemToHex(const SECItem *item, char *dst);
+SECU_SECItemToHex(const SECItem * item, char * dst);
 
 
 
 SECStatus
-SECU_SECItemHexStringToBinary(SECItem *srcdest);
+SECU_SECItemHexStringToBinary(SECItem* srcdest);
 
 
 
@@ -106,9 +106,9 @@ typedef struct
 } secuCommand;
 
 
-SECStatus
+SECStatus 
 SECU_ParseCommandLine(int argc, char **argv, char *progName,
-                      const secuCommand *cmd);
+		      const secuCommand *cmd);
 char *
 SECU_GetOptionArg(const secuCommand *cmd, int optionNum);
 

@@ -8,46 +8,45 @@
 #include "prenv.h"
 #include "nss.h"
 
-static int is_dir(char *filename);
+static int	is_dir (char *filename);
 
 
 
 
 
-long *mozilla_event_queue = 0;
+long	*mozilla_event_queue = 0;
 
 #ifndef XP_WIN
-char *
-XP_GetString(int i)
+char *XP_GetString (int i)
 {
     
 
-    return (char *)SECU_Strerror(i);
+    return (char *)SECU_Strerror (i);
 }
 #endif
 
-void
-FE_SetPasswordEnabled()
+void	FE_SetPasswordEnabled()
 {
 }
 
-void  *
-FE_GetInitContext(void)
+
+void	 *FE_GetInitContext (void)
 {
     return 0;
 }
 
-void  *
-XP_FindSomeContext()
+
+void	 *XP_FindSomeContext()
 {
     
     return NULL;
 }
 
-void
-ET_moz_CallFunction()
+
+void	ET_moz_CallFunction()
 {
 }
+
 
 
 
@@ -59,51 +58,51 @@ ET_moz_CallFunction()
 int
 RemoveAllArc(char *tree)
 {
-    PRDir *dir;
-    PRDirEntry *entry;
-    char *archive = NULL;
-    int retval = 0;
+    PRDir * dir;
+    PRDirEntry * entry;
+    char	*archive = NULL;
+    int	retval = 0;
 
-    dir = PR_OpenDir(tree);
-    if (!dir)
-        return -1;
+    dir = PR_OpenDir (tree);
+    if (!dir) 
+	return - 1;
 
-    for (entry = PR_ReadDir(dir, 0); entry; entry = PR_ReadDir(dir,
-                                                               0)) {
+    for (entry = PR_ReadDir (dir, 0); entry; entry = PR_ReadDir (dir,
+         0)) {
 
-        if (entry->name[0] == '.') {
-            continue;
-        }
+	if (entry->name[0] == '.') {
+	    continue;
+	}
 
-        if (archive)
-            PR_Free(archive);
-        archive = PR_smprintf("%s/%s", tree, entry->name);
+	if (archive) 
+	    PR_Free(archive);
+	archive = PR_smprintf("%s/%s", tree, entry->name);
 
-        if (PL_strcaserstr(entry->name, ".arc") ==
-            (entry->name + strlen(entry->name) - 4)) {
+	if (PL_strcaserstr (entry->name, ".arc")
+	     == (entry->name + strlen(entry->name) - 4) ) {
 
-            if (verbosity >= 0) {
-                PR_fprintf(outputFD, "removing: %s\n", archive);
-            }
+	    if (verbosity >= 0) {
+		PR_fprintf(outputFD, "removing: %s\n", archive);
+	    }
 
-            if (rm_dash_r(archive)) {
-                PR_fprintf(errorFD, "Error removing %s\n", archive);
-                errorCount++;
-                retval = -1;
-                goto finish;
-            }
-        } else if (is_dir(archive)) {
-            if (RemoveAllArc(archive)) {
-                retval = -1;
-                goto finish;
-            }
-        }
+	    if (rm_dash_r(archive)) {
+		PR_fprintf(errorFD, "Error removing %s\n", archive);
+		errorCount++;
+		retval = -1;
+		goto finish;
+	    }
+	} else if (is_dir(archive)) {
+	    if (RemoveAllArc(archive)) {
+		retval = -1;
+		goto finish;
+	    }
+	}
     }
 
 finish:
-    PR_CloseDir(dir);
-    if (archive)
-        PR_Free(archive);
+    PR_CloseDir (dir);
+    if (archive) 
+	PR_Free(archive);
 
     return retval;
 }
@@ -114,52 +113,52 @@ finish:
 
 
 
-int
-rm_dash_r(char *path)
+
+int	rm_dash_r (char *path)
 {
-    PRDir *dir;
-    PRDirEntry *entry;
+    PRDir	 * dir;
+    PRDirEntry * entry;
     PRFileInfo fileinfo;
-    char filename[FNSIZE];
+    char	filename[FNSIZE];
 
     if (PR_GetFileInfo(path, &fileinfo) != PR_SUCCESS) {
-        
-        return -1;
+	
+	return - 1;
     }
     if (fileinfo.type == PR_FILE_DIRECTORY) {
 
-        dir = PR_OpenDir(path);
-        if (!dir) {
-            PR_fprintf(errorFD, "Error: Unable to open directory %s.\n", path);
-            errorCount++;
-            return -1;
-        }
+	dir = PR_OpenDir(path);
+	if (!dir) {
+	    PR_fprintf(errorFD, "Error: Unable to open directory %s.\n", path);
+	    errorCount++;
+	    return - 1;
+	}
 
-        
-        while ((entry = PR_ReadDir(dir, PR_SKIP_BOTH)) != NULL) {
-            sprintf(filename, "%s/%s", path, entry->name);
-            if (rm_dash_r(filename))
-                return -1;
-        }
+	
+	while ((entry = PR_ReadDir(dir, PR_SKIP_BOTH)) != NULL) {
+	    sprintf(filename, "%s/%s", path, entry->name);
+	    if (rm_dash_r(filename)) 
+		return - 1;
+	}
 
-        if (PR_CloseDir(dir) != PR_SUCCESS) {
-            PR_fprintf(errorFD, "Error: Could not close %s.\n", path);
-            errorCount++;
-            return -1;
-        }
+	if (PR_CloseDir(dir) != PR_SUCCESS) {
+	    PR_fprintf(errorFD, "Error: Could not close %s.\n", path);
+	    errorCount++;
+	    return - 1;
+	}
 
-        
-        if (PR_RmDir(path) != PR_SUCCESS) {
-            PR_fprintf(errorFD, "Error: Unable to delete %s\n", path);
-            errorCount++;
-            return -1;
-        }
+	
+	if (PR_RmDir(path) != PR_SUCCESS) {
+	    PR_fprintf(errorFD, "Error: Unable to delete %s\n", path);
+	    errorCount++;
+	    return - 1;
+	}
     } else {
-        if (PR_Delete(path) != PR_SUCCESS) {
-            PR_fprintf(errorFD, "Error: Unable to delete %s\n", path);
-            errorCount++;
-            return -1;
-        }
+	if (PR_Delete(path) != PR_SUCCESS) {
+	    PR_fprintf(errorFD, "Error: Unable to delete %s\n", path);
+	    errorCount++;
+	    return - 1;
+	}
     }
     return 0;
 }
@@ -171,8 +170,10 @@ rm_dash_r(char *path)
 
 
 
+
+
 void
-Usage(void)
+Usage (void)
 {
 #define FPS PR_fprintf(outputFD,
     FPS "%s %s -a signing tool for jar files\n", LONG_PROGRAM_NAME,NSS_VERSION);
@@ -197,10 +198,10 @@ Usage(void)
     FPS "\t%s -G nickname [--keysize|-s size] [-t |--token tokenname]\n"
         "\t\t [--outfile] [-O] \n", PROGRAM_NAME);
     FPS "\t%s -f filename\n" , PROGRAM_NAME);
-    exit(ERRX);
+    exit (ERRX);
 }
 
-void
+void 
 LongUsage(void)
 {
     FPS "%s %s -a signing tool for jar files\n", LONG_PROGRAM_NAME,NSS_VERSION);
@@ -211,119 +212,121 @@ LongUsage(void)
     FPS "%-30s Base filename for the .rsa and.sf files in the\n",
         "   -b basename");
     FPS "%-30s META-INF directory\n"," ");
-    FPS "%-30s Set the compression level. 0-9, 0=none\n",
-    "   -c CompressionLevel");
+    FPS "%-30s Set the compression level. 0-9, 0=none\n", 
+	"   -c CompressionLevel");
     FPS "%-30s Certificate database directory containing cert*db\n",
-    "   -d certificate directory");
+	"   -d certificate directory");
     FPS "%-30s and key*db\n"," ");
     FPS "%-30s Name of the installer script for SmartUpdate\n",
-    "   -i installer script");
+	"   -i installer script");
     FPS "%-30s Name of a metadata control file\n",
-    "   -m metafile");
+	"   -m metafile");
     FPS "%-30s For optimizing the archive for size.\n",
-    "   -o");
+	"   -o");
     FPS "%-30s Omit Optional Headers\n"," ");
     FPS "%-30s Excludes the specified directory or file from\n",
-    "   -x  directory or file name");
+	"   -x  directory or file name");
     FPS "%-30s signing\n"," ");
     FPS "%-30s To not store the signing time in digital\n",
-    "   -z  directory or file name");
+	"   -z  directory or file name");
     FPS "%-30s signature\n"," ");
     FPS "%-30s Create XPI Compatible Archive. It requires -Z\n",
-    "   -X  directory or file name");
+	"   -X  directory or file name");
     FPS "%-30s option\n"," ");
     FPS "%-30s Sign only files with the given extension\n",
-    "   -e");
+	"   -e");
     FPS "%-30s Causes the specified directory to be signed and\n",
-    "   -j");
+	"   -j");
     FPS "%-30s tags its entries as inline JavaScript\n"," ");
     FPS "%-30s Creates a JAR file with the specified name.\n",
-    "   -Z");
+	"   -Z");
     FPS "%-30s -Z option cannot be used with -J option\n"," ");
     FPS "%-30s Specifies a password for the private-key database\n",
-    "   -p");
+	"   -p");
     FPS "%-30s (insecure)\n"," ");
     FPS "%-30s File to receive redirected output\n",
-        "   --outfile filename");
+    	"   --outfile filename");
     FPS "%-30s Sets the quantity of information generated in\n",
-    "   --verbosity value");
+	"   --verbosity value");
     FPS "%-30s operation\n"," ");
     FPS "%-30s Blocks recursion into subdirectories\n",
-    "   --norecurse");
+	"   --norecurse");
     FPS "%-30s Retains the temporary .arc (archive) directories\n",
-    "   --leavearc");
+	"   --leavearc");
     FPS "%-30s -J option creates\n"," ");
 
     FPS "\n%-20s Signs a directory of HTML files containing JavaScript and\n",
-    "-J" );
+	"-J" );
     FPS "%-20s creates as many archive files as are in the HTML tags.\n"," ");
 
     FPS "%-20s The options are same as without any command option given\n"," ");
     FPS "%-20s above. -Z and -J options are not allowed together\n"," ");
-
+    
     FPS "\n%-20s Generates a new private-public key pair and corresponding\n",
-    "-G nickname");
+	"-G nickname");
     FPS "%-20s object-signing certificates with the given nickname\n"," ");
     FPS "%-30s Specifies the size of the key for generated \n",
-    "   --keysize|-s keysize");
+	"   --keysize|-s keysize");
     FPS "%-30s certificate\n"," ");
     FPS "%-30s Specifies which available token should generate\n",
-    "   --token|-t token name ");
+	"   --token|-t token name ");
     FPS "%-30s the key and receive the certificate\n"," ");
     FPS "%-30s Specifies a file to receive redirected output\n",
-    "   --outfile filename ");
-
+	"   --outfile filename ");
+    
     FPS "\n%-20s Display signtool help\n",
-    "-h ");
-
+	"-h ");
+    
     FPS "\n%-20s Display signtool help(Detailed)\n",
-    "-H ");
-
+	"-H ");
+    
     FPS "\n%-20s Lists signing certificates, including issuing CAs\n",
-    "-l ");
+	"-l ");
     FPS "%-30s Certificate database directory containing cert*db\n",
-    "   -d certificate directory");
+	"   -d certificate directory");
     FPS "%-30s and key*db\n"," ");
 
     FPS "%-30s Specifies a file to receive redirected output\n",
-    "   --outfile filename ");
+	"   --outfile filename ");
     FPS "%-30s Specifies the nickname (key) of the certificate\n",
-    "   -k keyname");
+	"   -k keyname");
 
+    
     FPS "\n%-20s Lists the certificates in your database\n",
-    "-L ");
+	"-L ");
     FPS "%-30s Certificate database directory containing cert*db\n",
-    "   -d certificate directory");
+	"   -d certificate directory");
     FPS "%-30s and key*db\n"," ");
 
     FPS "%-30s Specifies a file to receive redirected output\n",
-    "   --outfile filename ");
+	"   --outfile filename ");
     FPS "%-30s Specifies the nickname (key) of the certificate\n",
-    "   -k keyname");
-
+	"   -k keyname");
+    
     FPS "\n%-20s Lists the PKCS #11 modules available to signtool\n",
-    "-M ");
-
+	"-M ");
+   
     FPS "\n%-20s Displays the contents of an archive and verifies\n",
-    "-v archive");
+	"-v archive");
     FPS "%-20s cryptographic integrity\n"," ");
     FPS "%-30s Certificate database directory containing cert*db\n",
-    "   -d certificate directory");
+	"   -d certificate directory");
     FPS "%-30s and key*db\n"," ");
     FPS "%-30s Specifies a file to receive redirected output\n",
-    "   --outfile filename ");
-
+	"   --outfile filename ");
+    
     FPS "\n%-20s Displays the names of signers in the archive\n",
-    "-w archive");
+	"-w archive");
     FPS "%-30s Specifies a file to receive redirected output\n",
-    "   --outfile filename ");
+	"   --outfile filename ");
 
+    
     FPS "\n%-30s Common option to all the above.\n",
-    "   -O");
+	"   -O");
     FPS "%-30s Enable OCSP checking\n"," ");
-
+    
     FPS "\n%-20s Specifies a text file containing options and arguments in\n",
-    "-f command-file");
+	"-f command-file");
     FPS "%-20s keyword=value format. Commands are taken from this file\n"," ");
 
     FPS  "\n\n\n");
@@ -352,7 +355,7 @@ LongUsage(void)
     FPS "metafile\tSame as -m option\n");
     FPS "modules\t\tSame as -M option. Value is ignored,\n"
         "       \t\tbut = sign must be present\n");
-    FPS "optimize\tSame as -o option. Value is ignored,\n"
+    FPS "optimize\tSame as -o option. Value is ignored,\n" 
         "        \tbut = sign must be present\n");
     FPS "ocsp\t\tSame as -O option\n");
     FPS "password\tSame as -p option\n");
@@ -374,16 +377,16 @@ LongUsage(void)
     FPS "\n\n");
     FPS "Here's an example of the use of the command file. The command\n\n");
     FPS "   signtool -d c:\\netscape\\users\\james -k mycert -Z myjar.jar \\\n"
-        "   signdir > output.txt\n\n");
+        "   signdir > output.txt\n\n"); 
     FPS "becomes\n\n");
     FPS "   signtool -f somefile\n\n");
     FPS "where somefile contains the following lines:\n\n");
-    FPS "   certdir=c:\\netscape\\users\\james\n"," ");
-    FPS "   certname=mycert\n"," ");
-    FPS "   jarfile=myjar.jar\n"," ");
-    FPS "   signdir=signdir\n"," ");
-    FPS "   outfile=output.txt\n"," ");
-    exit(ERRX);
+    FPS "   certdir=c:\\netscape\\users\\james\n"," "); 
+    FPS "   certname=mycert\n"," "); 
+    FPS "   jarfile=myjar.jar\n"," "); 
+    FPS "   signdir=signdir\n"," "); 
+    FPS "   outfile=output.txt\n"," "); 
+    exit (ERRX);
 #undef FPS
 }
 
@@ -397,12 +400,13 @@ LongUsage(void)
 
 
 void
-print_error(int err)
+print_error (int err)
 {
-    PR_fprintf(errorFD, "Error %d: %s\n", err, JAR_get_error(err));
+    PR_fprintf(errorFD, "Error %d: %s\n", err, JAR_get_error (err));
     errorCount++;
-    give_help(err);
+    give_help (err);
 }
+
 
 
 
@@ -411,12 +415,13 @@ print_error(int err)
 
 
 void
-out_of_memory(void)
+out_of_memory (void)
 {
     PR_fprintf(errorFD, "%s: out of memory\n", PROGRAM_NAME);
     errorCount++;
-    exit(ERRX);
+    exit (ERRX);
 }
+
 
 
 
@@ -428,11 +433,11 @@ out_of_memory(void)
 void
 VerifyCertDir(char *dir, char *keyName)
 {
-    char fn[FNSIZE];
+    char	fn [FNSIZE];
 
     
     if (strncmp(dir, "multiaccess:", sizeof("multiaccess:") - 1) == 0) {
-        return;
+	return;
     }
     
 
@@ -441,37 +446,37 @@ VerifyCertDir(char *dir, char *keyName)
     
 
 
-    sprintf(fn, "%s/cert8.db", dir);
+    sprintf (fn, "%s/cert8.db", dir);
 
-    if (PR_Access(fn, PR_ACCESS_EXISTS)) {
-        PR_fprintf(errorFD, "%s: No certificate database in \"%s\"\n",
-                   PROGRAM_NAME, dir);
-        PR_fprintf(errorFD, "%s: Check the -d arguments that you gave\n",
-                   PROGRAM_NAME);
-        errorCount++;
-        exit(ERRX);
+    if (PR_Access (fn, PR_ACCESS_EXISTS)) {
+	PR_fprintf(errorFD, "%s: No certificate database in \"%s\"\n",
+			 PROGRAM_NAME, dir);
+	PR_fprintf(errorFD, "%s: Check the -d arguments that you gave\n",
+	     		PROGRAM_NAME);
+	errorCount++;
+	exit (ERRX);
     }
 
     if (verbosity >= 0) {
-        PR_fprintf(outputFD, "using certificate directory: %s\n", dir);
+	PR_fprintf(outputFD, "using certificate directory: %s\n", dir);
     }
 
     if (keyName == NULL)
-        return;
+	return;
 
     
 
 
-    sprintf(fn, "%s/key3.db", dir);
+    sprintf (fn, "%s/key3.db", dir);
 
-    if (PR_Access(fn, PR_ACCESS_EXISTS)) {
-        PR_fprintf(errorFD, "%s: No private key database in \"%s\"\n",
-                   PROGRAM_NAME,
-                   dir);
-        PR_fprintf(errorFD, "%s: Check the -d arguments that you gave\n",
-                   PROGRAM_NAME);
-        errorCount++;
-        exit(ERRX);
+    if (PR_Access (fn, PR_ACCESS_EXISTS)) {
+	PR_fprintf(errorFD, "%s: No private key database in \"%s\"\n",
+	     PROGRAM_NAME,
+	    dir);
+	PR_fprintf(errorFD, "%s: Check the -d arguments that you gave\n",
+	     		PROGRAM_NAME);
+	errorCount++;
+	exit (ERRX);
     }
 }
 
@@ -486,87 +491,90 @@ VerifyCertDir(char *dir, char *keyName)
 
 
 
-int foreach (char *dirname, char *prefix,
-             int (*fn)(char *relpath, char *basedir, char *reldir, char *filename,
-                       void *arg),
-             PRBool recurse, PRBool includeDirs, void *arg)
+
+int
+foreach(char *dirname, char *prefix, 
+int (*fn)(char *relpath, char *basedir, char *reldir, char *filename,
+void*arg),
+PRBool recurse, PRBool includeDirs, void *arg) 
 {
-    char newdir[FNSIZE];
-    int retval = 0;
+    char	newdir [FNSIZE];
+    int	retval = 0;
 
-    PRDir *dir;
-    PRDirEntry *entry;
+    PRDir * dir;
+    PRDirEntry * entry;
 
-    strcpy(newdir, dirname);
+    strcpy (newdir, dirname);
     if (*prefix) {
-        strcat(newdir, "/");
-        strcat(newdir, prefix);
+	strcat (newdir, "/");
+	strcat (newdir, prefix);
     }
 
-    dir = PR_OpenDir(newdir);
-    if (!dir)
-        return -1;
+    dir = PR_OpenDir (newdir);
+    if (!dir) 
+	return - 1;
 
-    for (entry = PR_ReadDir(dir, 0); entry; entry = PR_ReadDir(dir, 0)) {
-        if (strcmp(entry->name, ".") == 0 ||
-            strcmp(entry->name, "..") == 0) {
-            
-            continue;
-        }
+    for (entry = PR_ReadDir (dir, 0); entry; entry = PR_ReadDir (dir, 0)) {
+	if ( strcmp(entry->name, ".") == 0   || 
+	    strcmp(entry->name, "..") == 0 ) {
+	    
+	    continue;
+	}
 
-        
-        if (!strcmp(entry->name, "META-INF"))
-            continue;
+	
+	if (!strcmp (entry->name, "META-INF"))
+	    continue;
 
-        
-        if (PL_HashTableLookup(excludeDirs, entry->name))
-            continue;
+	
+	if (PL_HashTableLookup(excludeDirs, entry->name))
+	    continue;
 
-        strcpy(newdir, dirname);
-        if (*dirname)
-            strcat(newdir, "/");
+	strcpy (newdir, dirname);
+	if (*dirname)
+	    strcat (newdir, "/");
 
-        if (*prefix) {
-            strcat(newdir, prefix);
-            strcat(newdir, "/");
-        }
-        strcat(newdir, entry->name);
+	if (*prefix) {
+	    strcat (newdir, prefix);
+	    strcat (newdir, "/");
+	}
+	strcat (newdir, entry->name);
 
-        if (!is_dir(newdir) || includeDirs) {
-            char newpath[FNSIZE];
+	if (!is_dir(newdir) || includeDirs) {
+	    char	newpath [FNSIZE];
 
-            strcpy(newpath, prefix);
-            if (*newpath)
-                strcat(newpath, "/");
-            strcat(newpath, entry->name);
+	    strcpy (newpath, prefix);
+	    if (*newpath)
+		strcat (newpath, "/");
+	    strcat (newpath, entry->name);
 
-            if ((*fn)(newpath, dirname, prefix, (char *)entry->name,
-                      arg)) {
-                retval = -1;
-                break;
-            }
-        }
+	    if ( (*fn) (newpath, dirname, prefix, (char *) entry->name,
+	         arg)) {
+		retval = -1;
+		break;
+	    }
+	}
 
-        if (is_dir(newdir)) {
-            if (recurse) {
-                char newprefix[FNSIZE];
+	if (is_dir (newdir)) {
+	    if (recurse) {
+		char	newprefix [FNSIZE];
 
-                strcpy(newprefix, prefix);
-                if (*newprefix) {
-                    strcat(newprefix, "/");
-                }
-                strcat(newprefix, entry->name);
+		strcpy (newprefix, prefix);
+		if (*newprefix) {
+		    strcat (newprefix, "/");
+		}
+		strcat (newprefix, entry->name);
 
-                if (foreach (dirname, newprefix, fn, recurse,
-                             includeDirs, arg)) {
-                    retval = -1;
-                    break;
-                }
-            }
-        }
+		if (foreach (dirname, newprefix, fn, recurse,
+		     includeDirs, arg)) {
+		    retval = -1;
+		    break;
+		}
+	    }
+	}
+
     }
 
-    PR_CloseDir(dir);
+    PR_CloseDir (dir);
 
     return retval;
 }
@@ -578,17 +586,17 @@ int foreach (char *dirname, char *prefix,
 
 
 
-static int
-is_dir(char *filename)
-{
-    PRFileInfo finfo;
 
-    if (PR_GetFileInfo(filename, &finfo) != PR_SUCCESS) {
-        printf("Unable to get information about %s\n", filename);
-        return 0;
+static int	is_dir (char *filename)
+{
+    PRFileInfo	finfo;
+
+    if ( PR_GetFileInfo(filename, &finfo) != PR_SUCCESS ) {
+	printf("Unable to get information about %s\n", filename);
+	return 0;
     }
 
-    return (finfo.type == PR_FILE_DIRECTORY);
+    return ( finfo.type == PR_FILE_DIRECTORY );
 }
 
 
@@ -599,98 +607,99 @@ is_dir(char *filename)
 
 
 
-const char *
+
+const char	*
 secErrorString(long code)
 {
-    static char errstring[80]; 
-    char *c;                   
+    static char	errstring[80]; 
+    char	*c; 
 
     switch (code) {
-        case SEC_ERROR_IO:
-            c = "io error";
-            break;
-        case SEC_ERROR_LIBRARY_FAILURE:
-            c = "security library failure";
-            break;
-        case SEC_ERROR_BAD_DATA:
-            c = "bad data";
-            break;
-        case SEC_ERROR_OUTPUT_LEN:
-            c = "output length";
-            break;
-        case SEC_ERROR_INPUT_LEN:
-            c = "input length";
-            break;
-        case SEC_ERROR_INVALID_ARGS:
-            c = "invalid args";
-            break;
-        case SEC_ERROR_EXPIRED_CERTIFICATE:
-            c = "expired certificate";
-            break;
-        case SEC_ERROR_REVOKED_CERTIFICATE:
-            c = "revoked certificate";
-            break;
-        case SEC_ERROR_INADEQUATE_KEY_USAGE:
-            c = "inadequate key usage";
-            break;
-        case SEC_ERROR_INADEQUATE_CERT_TYPE:
-            c = "inadequate certificate type";
-            break;
-        case SEC_ERROR_UNTRUSTED_CERT:
-            c = "untrusted cert";
-            break;
-        case SEC_ERROR_NO_KRL:
-            c = "no key revocation list";
-            break;
-        case SEC_ERROR_KRL_BAD_SIGNATURE:
-            c = "key revocation list: bad signature";
-            break;
-        case SEC_ERROR_KRL_EXPIRED:
-            c = "key revocation list expired";
-            break;
-        case SEC_ERROR_REVOKED_KEY:
-            c = "revoked key";
-            break;
-        case SEC_ERROR_CRL_BAD_SIGNATURE:
-            c = "certificate revocation list: bad signature";
-            break;
-        case SEC_ERROR_CRL_EXPIRED:
-            c = "certificate revocation list expired";
-            break;
-        case SEC_ERROR_CRL_NOT_YET_VALID:
-            c = "certificate revocation list not yet valid";
-            break;
-        case SEC_ERROR_UNKNOWN_ISSUER:
-            c = "unknown issuer";
-            break;
-        case SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE:
-            c = "expired issuer certificate";
-            break;
-        case SEC_ERROR_BAD_SIGNATURE:
-            c = "bad signature";
-            break;
-        case SEC_ERROR_BAD_KEY:
-            c = "bad key";
-            break;
-        case SEC_ERROR_NOT_FORTEZZA_ISSUER:
-            c = "not fortezza issuer";
-            break;
-        case SEC_ERROR_CA_CERT_INVALID:
-            c = "Certificate Authority certificate invalid";
-            break;
-        case SEC_ERROR_EXTENSION_NOT_FOUND:
-            c = "extension not found";
-            break;
-        case SEC_ERROR_CERT_NOT_IN_NAME_SPACE:
-            c = "certificate not in name space";
-            break;
-        case SEC_ERROR_UNTRUSTED_ISSUER:
-            c = "untrusted issuer";
-            break;
-        default:
-            sprintf(errstring, "security error %ld", code);
-            c = errstring;
-            break;
+    case SEC_ERROR_IO: 
+	c = "io error";
+	break;
+    case SEC_ERROR_LIBRARY_FAILURE: 
+	c = "security library failure";
+	break;
+    case SEC_ERROR_BAD_DATA: 
+	c = "bad data";
+	break;
+    case SEC_ERROR_OUTPUT_LEN: 
+	c = "output length";
+	break;
+    case SEC_ERROR_INPUT_LEN: 
+	c = "input length";
+	break;
+    case SEC_ERROR_INVALID_ARGS: 
+	c = "invalid args";
+	break;
+    case SEC_ERROR_EXPIRED_CERTIFICATE: 
+	c = "expired certificate";
+	break;
+    case SEC_ERROR_REVOKED_CERTIFICATE: 
+	c = "revoked certificate";
+	break;
+    case SEC_ERROR_INADEQUATE_KEY_USAGE: 
+	c = "inadequate key usage";
+	break;
+    case SEC_ERROR_INADEQUATE_CERT_TYPE: 
+	c = "inadequate certificate type";
+	break;
+    case SEC_ERROR_UNTRUSTED_CERT: 
+	c = "untrusted cert";
+	break;
+    case SEC_ERROR_NO_KRL: 
+	c = "no key revocation list";
+	break;
+    case SEC_ERROR_KRL_BAD_SIGNATURE: 
+	c = "key revocation list: bad signature";
+	break;
+    case SEC_ERROR_KRL_EXPIRED: 
+	c = "key revocation list expired";
+	break;
+    case SEC_ERROR_REVOKED_KEY: 
+	c = "revoked key";
+	break;
+    case SEC_ERROR_CRL_BAD_SIGNATURE:
+	c = "certificate revocation list: bad signature";
+	break;
+    case SEC_ERROR_CRL_EXPIRED: 
+	c = "certificate revocation list expired";
+	break;
+    case SEC_ERROR_CRL_NOT_YET_VALID:
+	c = "certificate revocation list not yet valid";
+	break;
+    case SEC_ERROR_UNKNOWN_ISSUER: 
+	c = "unknown issuer";
+	break;
+    case SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE: 
+	c = "expired issuer certificate";
+	break;
+    case SEC_ERROR_BAD_SIGNATURE: 
+	c = "bad signature";
+	break;
+    case SEC_ERROR_BAD_KEY: 
+	c = "bad key";
+	break;
+    case SEC_ERROR_NOT_FORTEZZA_ISSUER: 
+	c = "not fortezza issuer";
+	break;
+    case SEC_ERROR_CA_CERT_INVALID:
+	c = "Certificate Authority certificate invalid";
+	break;
+    case SEC_ERROR_EXTENSION_NOT_FOUND: 
+	c = "extension not found";
+	break;
+    case SEC_ERROR_CERT_NOT_IN_NAME_SPACE: 
+	c = "certificate not in name space";
+	break;
+    case SEC_ERROR_UNTRUSTED_ISSUER: 
+	c = "untrusted issuer";
+	break;
+    default:
+	sprintf(errstring, "security error %ld", code);
+	c = errstring;
+	break;
     }
 
     return c;
@@ -702,38 +711,41 @@ secErrorString(long code)
 
 
 
+
 void
 displayVerifyLog(CERTVerifyLog *log)
 {
-    CERTVerifyLogNode *node;
-    CERTCertificate *cert;
-    char *name;
+    CERTVerifyLogNode	 * node;
+    CERTCertificate		 * cert;
+    char	*name;
 
-    if (!log || (log->count <= 0)) {
-        return;
+    if ( !log  || (log->count <= 0) ) {
+	return;
     }
 
     for (node = log->head; node != NULL; node = node->next) {
 
-        if (!(cert = node->cert)) {
-            continue;
-        }
+	if ( !(cert = node->cert) ) {
+	    continue;
+	}
 
-        
-        if (cert->nickname != NULL) {
-            name = cert->nickname;
-        } else if (cert->emailAddr && cert->emailAddr[0]) {
-            name = cert->emailAddr;
-        } else {
-            name = cert->subjectName;
-        }
+	
+	if (cert->nickname != NULL) {
+	    name = cert->nickname;
+	} else if (cert->emailAddr && cert->emailAddr[0]) {
+	    name = cert->emailAddr;
+	} else {
+	    name = cert->subjectName;
+	}
 
-        printf("%s%s:\n", name,
-               (node->depth > 0) ? " [Certificate Authority]" : "");
+	printf( "%s%s:\n", name,
+	    (node->depth > 0) ? " [Certificate Authority]" : "");
 
-        printf("\t%s\n", secErrorString(node->error));
+	printf("\t%s\n", secErrorString(node->error));
+
     }
 }
+
 
 
 
@@ -746,76 +758,76 @@ displayVerifyLog(CERTVerifyLog *log)
 void
 JarListModules(void)
 {
-    int i;
-    int count = 0;
+    int	i;
+    int	count = 0;
 
-    SECMODModuleList *modules = NULL;
+    SECMODModuleList * modules = NULL;
     static SECMODListLock *moduleLock = NULL;
 
-    SECMODModuleList *mlp;
+    SECMODModuleList * mlp;
 
     if ((moduleLock = SECMOD_GetDefaultModuleListLock()) == NULL) {
-        
-        PR_fprintf(errorFD, "%s: unable to acquire lock on module list\n",
-                   PROGRAM_NAME);
-        errorCount++;
-        exit(ERRX);
+	
+	PR_fprintf(errorFD, "%s: unable to acquire lock on module list\n",
+	     		PROGRAM_NAME);
+	errorCount++;
+	exit (ERRX);
     }
 
-    SECMOD_GetReadLock(moduleLock);
+    SECMOD_GetReadLock (moduleLock);
 
     modules = SECMOD_GetDefaultModuleList();
 
     if (modules == NULL) {
-        SECMOD_ReleaseReadLock(moduleLock);
-        PR_fprintf(errorFD, "%s: Can't get module list\n", PROGRAM_NAME);
-        errorCount++;
-        exit(ERRX);
+	SECMOD_ReleaseReadLock (moduleLock);
+	PR_fprintf(errorFD, "%s: Can't get module list\n", PROGRAM_NAME);
+	errorCount++;
+	exit (ERRX);
     }
 
     PR_fprintf(outputFD, "\nListing of PKCS11 modules\n");
     PR_fprintf(outputFD, "-----------------------------------------------\n");
 
     for (mlp = modules; mlp != NULL; mlp = mlp->next) {
-        count++;
-        PR_fprintf(outputFD, "%3d. %s\n", count, mlp->module->commonName);
+	count++;
+	PR_fprintf(outputFD, "%3d. %s\n", count, mlp->module->commonName);
 
-        if (mlp->module->internal)
-            PR_fprintf(outputFD, "          (this module is internally loaded)\n");
-        else
-            PR_fprintf(outputFD, "          (this is an external module)\n");
+	if (mlp->module->internal)
+	    PR_fprintf(outputFD, "          (this module is internally loaded)\n");
+	else
+	    PR_fprintf(outputFD, "          (this is an external module)\n");
 
-        if (mlp->module->dllName)
-            PR_fprintf(outputFD, "          DLL name: %s\n",
-                       mlp->module->dllName);
+	if (mlp->module->dllName)
+	    PR_fprintf(outputFD, "          DLL name: %s\n",
+	        mlp->module->dllName);
 
-        if (mlp->module->slotCount == 0)
-            PR_fprintf(outputFD, "          slots: There are no slots attached to this module\n");
-        else
-            PR_fprintf(outputFD, "          slots: %d slots attached\n",
-                       mlp->module->slotCount);
+	if (mlp->module->slotCount == 0)
+	    PR_fprintf(outputFD, "          slots: There are no slots attached to this module\n");
+	else
+	    PR_fprintf(outputFD, "          slots: %d slots attached\n",
+	         mlp->module->slotCount);
 
-        if (mlp->module->loaded == 0)
-            PR_fprintf(outputFD, "          status: Not loaded\n");
-        else
-            PR_fprintf(outputFD, "          status: loaded\n");
+	if (mlp->module->loaded == 0)
+	    PR_fprintf(outputFD, "          status: Not loaded\n");
+	else
+	    PR_fprintf(outputFD, "          status: loaded\n");
 
-        for (i = 0; i < mlp->module->slotCount; i++) {
-            PK11SlotInfo *slot = mlp->module->slots[i];
+	for (i = 0; i < mlp->module->slotCount; i++) {
+	    PK11SlotInfo * slot = mlp->module->slots[i];
 
-            PR_fprintf(outputFD, "\n");
-            PR_fprintf(outputFD, "    slot: %s\n", PK11_GetSlotName(slot));
-            PR_fprintf(outputFD, "   token: %s\n", PK11_GetTokenName(slot));
-        }
+	    PR_fprintf(outputFD, "\n");
+	    PR_fprintf(outputFD, "    slot: %s\n", PK11_GetSlotName(slot));
+	    PR_fprintf(outputFD, "   token: %s\n", PK11_GetTokenName(slot));
+	}
     }
 
     PR_fprintf(outputFD, "-----------------------------------------------\n");
 
     if (count == 0)
-        PR_fprintf(outputFD,
-                   "Warning: no modules were found (should have at least one)\n");
+	PR_fprintf(outputFD,
+	    "Warning: no modules were found (should have at least one)\n");
 
-    SECMOD_ReleaseReadLock(moduleLock);
+    SECMOD_ReleaseReadLock (moduleLock);
 }
 
 
@@ -824,33 +836,35 @@ JarListModules(void)
 
 
 
-char *
+
+char*
 chop(char *str)
 {
-    char *start, *end;
+    char	*start, *end;
 
     if (str) {
-        start = str;
+	start = str;
 
-        
-        while (isspace(*start)) {
-            start++;
-        }
+	
+	while (isspace(*start)) {
+	    start++;
+	}
 
-        
-        if (*start) {
-            end = start + strlen(start) - 1;
-            while (isspace(*end) && end > start) {
-                end--;
-            }
-            *(end + 1) = '\0';
-        }
+	
+	if (*start) {
+	    end = start + strlen(start) - 1;
+	    while (isspace(*end) && end > start) {
+		end--;
+	    }
+	    *(end + 1) = '\0';
+	}
 
-        return start;
+	return start;
     } else {
-        return NULL;
+	return NULL;
     }
 }
+
 
 
 
@@ -861,8 +875,8 @@ chop(char *str)
 void
 FatalError(char *msg)
 {
-    if (!msg)
-        msg = "";
+    if (!msg) 
+	msg = "";
 
     PR_fprintf(errorFD, "FATAL ERROR: %s\n", msg);
     errorCount++;
@@ -873,78 +887,77 @@ FatalError(char *msg)
 
 
 
+
 int
 InitCrypto(char *cert_dir, PRBool readOnly)
 {
     SECStatus rv;
-    static int prior = 0;
-    PK11SlotInfo *slotinfo;
+    static int	prior = 0;
+    PK11SlotInfo * slotinfo;
 
     if (prior == 0) {
-        
+	
 
-        if (readOnly) {
-            rv = NSS_Init(cert_dir);
-        } else {
-            rv = NSS_InitReadWrite(cert_dir);
-        }
-        if (rv != SECSuccess) {
-            SECU_PrintPRandOSError(PROGRAM_NAME);
-            exit(-1);
-        }
+	if (readOnly) {
+	    rv = NSS_Init(cert_dir);
+	} else {
+	    rv = NSS_InitReadWrite(cert_dir);
+	}
+	if (rv != SECSuccess) {
+	    SECU_PrintPRandOSError(PROGRAM_NAME);
+	    exit(-1);
+	}
 
-        SECU_ConfigDirectory(cert_dir);
+	SECU_ConfigDirectory (cert_dir);
 
-        
-        prior++;
+	
+	prior++;
 
         PK11_SetPasswordFunc(SECU_GetModulePassword);
 
-        
-        if (PK11_IsFIPS()) {
-            slotinfo = PK11_GetInternalSlot();
-            if (!slotinfo) {
-                fprintf(stderr, "%s: Unable to get PKCS #11 Internal Slot."
-                                "\n",
-                        PROGRAM_NAME);
-                return -1;
-            }
-            if (PK11_Authenticate(slotinfo, PR_FALSE ,
-                                  &pwdata) != SECSuccess) {
-                fprintf(stderr, "%s: Unable to authenticate to %s.\n",
-                        PROGRAM_NAME, PK11_GetSlotName(slotinfo));
-                PK11_FreeSlot(slotinfo);
-                return -1;
-            }
-            PK11_FreeSlot(slotinfo);
-        }
+	
+	if (PK11_IsFIPS()) {
+	    slotinfo = PK11_GetInternalSlot();
+	    if (!slotinfo) {
+		fprintf(stderr, "%s: Unable to get PKCS #11 Internal Slot."
+				    "\n", PROGRAM_NAME);
+		return - 1;
+	    }
+	    if (PK11_Authenticate(slotinfo, PR_FALSE ,
+	         			  &pwdata) != SECSuccess) {
+		fprintf(stderr, "%s: Unable to authenticate to %s.\n",
+				    PROGRAM_NAME, PK11_GetSlotName(slotinfo));
+		PK11_FreeSlot(slotinfo);
+		return - 1;
+	    }
+	    PK11_FreeSlot(slotinfo);
+	}
 
-        
-        slotinfo = PK11_GetInternalKeySlot();
-        if (!slotinfo) {
-            fprintf(stderr, "%s: Unable to get PKCS #11 Internal Key Slot."
-                            "\n",
-                    PROGRAM_NAME);
-            return -1;
-        }
-        if (PK11_NeedUserInit(slotinfo)) {
-            PR_fprintf(errorFD,
-                       "\nWARNING: No password set on internal key database.  Most operations will fail."
-                       "\nYou must create a password.\n");
-            warningCount++;
-        }
+	
+	slotinfo = PK11_GetInternalKeySlot();
+	if (!slotinfo) {
+	    fprintf(stderr, "%s: Unable to get PKCS #11 Internal Key Slot."
+	        "\n", PROGRAM_NAME);
+	    return - 1;
+	}
+	if (PK11_NeedUserInit(slotinfo)) {
+	    PR_fprintf(errorFD,
+	        "\nWARNING: No password set on internal key database.  Most operations will fail."
+	        "\nYou must create a password.\n");
+	    warningCount++;
+	}
 
-        
-        if (PK11_IsFIPS()) {
-            if (PK11_Authenticate(slotinfo, PR_FALSE ,
-                                  &pwdata) != SECSuccess) {
-                fprintf(stderr, "%s: Unable to authenticate to %s.\n",
-                        PROGRAM_NAME, PK11_GetSlotName(slotinfo));
-                PK11_FreeSlot(slotinfo);
-                return -1;
-            }
-        }
-        PK11_FreeSlot(slotinfo);
+	
+	if (PK11_IsFIPS()) {
+	    if (PK11_Authenticate(slotinfo, PR_FALSE ,
+	         			  &pwdata) != SECSuccess) {
+		fprintf(stderr, "%s: Unable to authenticate to %s.\n",
+				PROGRAM_NAME, PK11_GetSlotName(slotinfo));
+		PK11_FreeSlot(slotinfo);
+		return - 1;
+	    }
+	}
+	PK11_FreeSlot(slotinfo);
     }
 
     return 0;
@@ -960,75 +973,75 @@ InitCrypto(char *cert_dir, PRBool readOnly)
 
 
 
-char *
-get_default_cert_dir(void)
-{
-    char *home;
 
-    char *cd = NULL;
-    static char db[FNSIZE];
+char	*get_default_cert_dir (void)
+{
+    char	*home;
+
+    char	*cd = NULL;
+    static char	db [FNSIZE];
 
 #ifdef XP_UNIX
-    home = PR_GetEnvSecure("HOME");
+    home = PR_GetEnvSecure ("HOME");
 
     if (home && *home) {
-        sprintf(db, "%s/.netscape", home);
-        cd = db;
+	sprintf (db, "%s/.netscape", home);
+	cd = db;
     }
 #endif
 
 #ifdef XP_PC
-    FILE *fp;
+    FILE * fp;
 
     
 
-    home = PR_GetEnvSecure("JAR_HOME");
+    home = PR_GetEnvSecure ("JAR_HOME");
 
     if (home && *home) {
-        sprintf(db, "%s/cert7.db", home);
+	sprintf (db, "%s/cert7.db", home);
 
-        if ((fp = fopen(db, "r")) != NULL) {
-            fclose(fp);
-            cd = home;
-        }
+	if ((fp = fopen (db, "r")) != NULL) {
+	    fclose (fp);
+	    cd = home;
+	}
     }
 
     
 
     if (cd == NULL) {
-        home = "c:/Program Files/Netscape/Navigator";
+	home = "c:/Program Files/Netscape/Navigator";
 
-        sprintf(db, "%s/cert7.db", home);
+	sprintf (db, "%s/cert7.db", home);
 
-        if ((fp = fopen(db, "r")) != NULL) {
-            fclose(fp);
-            cd = home;
-        }
+	if ((fp = fopen (db, "r")) != NULL) {
+	    fclose (fp);
+	    cd = home;
+	}
     }
 
     
 
 
     if (cd == NULL) {
-        home = ".";
+	home = ".";
 
-        sprintf(db, "%s/cert7.db", home);
+	sprintf (db, "%s/cert7.db", home);
 
-        if ((fp = fopen(db, "r")) != NULL) {
-            fclose(fp);
-            cd = home;
-        }
+	if ((fp = fopen (db, "r")) != NULL) {
+	    fclose (fp);
+	    cd = home;
+	}
     }
 
 #endif
 
     if (!cd) {
-        PR_fprintf(errorFD,
-                   "You must specify the location of your certificate directory\n");
-        PR_fprintf(errorFD,
-                   "with the -d option. Example: -d ~/.netscape in many cases with Unix.\n");
-        errorCount++;
-        exit(ERRX);
+	PR_fprintf(errorFD,
+	    "You must specify the location of your certificate directory\n");
+	PR_fprintf(errorFD,
+	    "with the -d option. Example: -d ~/.netscape in many cases with Unix.\n");
+	errorCount++;
+	exit (ERRX);
     }
 
     return cd;
@@ -1037,17 +1050,17 @@ get_default_cert_dir(void)
 
 
 
-void
-give_help(int status)
+
+void	give_help (int status)
 {
     if (status == SEC_ERROR_UNKNOWN_ISSUER) {
-        PR_fprintf(errorFD,
-                   "The Certificate Authority (CA) for this certificate\n");
-        PR_fprintf(errorFD,
-                   "does not appear to be in your database. You should contact\n");
-        PR_fprintf(errorFD,
-                   "the organization which issued this certificate to obtain\n");
-        PR_fprintf(errorFD, "a copy of its CA Certificate.\n");
+	PR_fprintf(errorFD,
+	    "The Certificate Authority (CA) for this certificate\n");
+	PR_fprintf(errorFD,
+	    "does not appear to be in your database. You should contact\n");
+	PR_fprintf(errorFD,
+	    "the organization which issued this certificate to obtain\n");
+	PR_fprintf(errorFD, "a copy of its CA Certificate.\n");
     }
 }
 
@@ -1057,30 +1070,33 @@ give_help(int status)
 
 
 
-char *
+
+char*
 pr_fgets(char *buf, int size, PRFileDesc *file)
 {
-    int i;
-    int status;
-    char c;
+    int	i;
+    int	status;
+    char	c;
 
     i = 0;
     while (i < size - 1) {
-        status = PR_Read(file, &c, 1);
-        if (status == -1) {
-            return NULL;
-        } else if (status == 0) {
-            if (i == 0) {
-                return NULL;
-            }
-            break;
-        }
-        buf[i++] = c;
-        if (c == '\n') {
-            break;
-        }
+	status = PR_Read(file, &c, 1);
+	if (status == -1) {
+	    return NULL;
+	} else if (status == 0) {
+	    if (i == 0) {
+		return NULL;
+	    }
+	    break;
+	}
+	buf[i++] = c;
+	if (c == '\n') {
+	    break;
+	}
     }
     buf[i] = '\0';
 
     return buf;
 }
+
+

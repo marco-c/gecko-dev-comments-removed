@@ -190,20 +190,9 @@ ssl3_GenerateSessionTicketKeysPKCS11(void *data)
 {
     SECStatus rv;
     sslSocket *ss = (sslSocket *)data;
-    sslServerCertType certType;
-    const sslServerCert *sc;
-    SECKEYPrivateKey *svrPrivKey;
-    SECKEYPublicKey *svrPubKey;
+    SECKEYPrivateKey *svrPrivKey = ss->serverCerts[kt_rsa].SERVERKEY;
+    SECKEYPublicKey *svrPubKey = ss->serverCerts[kt_rsa].serverKeyPair->pubKey;
 
-    certType.authType = ssl_auth_rsa_decrypt;
-    sc = ssl_FindServerCert(ss, &certType);
-    if (!sc || !sc->serverKeyPair) {
-        SSL_DBG(("%d: SSL[%d]: No ssl_auth_rsa_decrypt cert and key pair",
-                 SSL_GETPID(), ss->fd));
-        goto loser;
-    }
-    svrPrivKey = sc->serverKeyPair->privKey;
-    svrPubKey = sc->serverKeyPair->pubKey;
     if (svrPrivKey == NULL || svrPubKey == NULL) {
         SSL_DBG(("%d: SSL[%d]: Pub or priv key(s) is NULL.",
                  SSL_GETPID(), ss->fd));
@@ -331,10 +320,6 @@ static const ssl3HelloExtensionHandler serverHelloHandlersSSL3[] = {
     { ssl_renegotiation_info_xtn, &ssl3_HandleRenegotiationInfoXtn },
     { -1, NULL }
 };
-
-
-
-
 
 
 
@@ -1040,11 +1025,22 @@ ssl3_ServerSendStatusRequestXtn(
     PRUint32 maxBytes)
 {
     PRInt32 extension_length;
-    const sslServerCert *serverCert = ss->sec.serverCert;
+    SSLKEAType effectiveExchKeyType;
     SECStatus rv;
 
-    if (!serverCert->certStatusArray ||
-        !serverCert->certStatusArray->len) {
+    
+
+
+
+    if (ss->ssl3.hs.kea_def->kea == kea_ecdhe_rsa ||
+        ss->ssl3.hs.kea_def->kea == kea_dhe_rsa) {
+        effectiveExchKeyType = ssl_kea_rsa;
+    } else {
+        effectiveExchKeyType = ss->ssl3.hs.kea_def->exchKeyType;
+    }
+
+    if (!ss->certStatusArray[effectiveExchKeyType] ||
+        !ss->certStatusArray[effectiveExchKeyType]->len) {
         return 0;
     }
 
@@ -1139,6 +1135,7 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
     PRBool ms_is_wrapped;
     unsigned char wrapped_ms[SSL3_MASTER_SECRET_LENGTH];
     SECItem ms_item = { 0, NULL, 0 };
+    SSL3KEAType effectiveExchKeyType = ssl_kea_null;
     PRUint32 padding_length;
     PRUint32 message_length;
     PRUint32 cert_length = 0;
@@ -1213,8 +1210,15 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
         sslSessionID sid;
         PORT_Memset(&sid, 0, sizeof(sslSessionID));
 
+        if (ss->ssl3.hs.kea_def->kea == kea_ecdhe_rsa ||
+            ss->ssl3.hs.kea_def->kea == kea_dhe_rsa) {
+            effectiveExchKeyType = kt_rsa;
+        } else {
+            effectiveExchKeyType = ss->ssl3.hs.kea_def->exchKeyType;
+        }
+
         rv = ssl3_CacheWrappedMasterSecret(ss, &sid, spec,
-                                           ss->ssl3.hs.kea_def->authKeyType);
+                                           effectiveExchKeyType);
         if (rv == SECSuccess) {
             if (sid.u.ssl3.keys.wrapped_master_secret_len > sizeof(wrapped_ms))
                 goto loser;
@@ -1295,7 +1299,7 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
         goto loser;
 
     
-    rv = ssl3_AppendNumberToItem(&plaintext, ss->sec.authType, 1);
+    rv = ssl3_AppendNumberToItem(&plaintext, ss->sec.authAlgorithm, 1);
     if (rv != SECSuccess)
         goto loser;
     rv = ssl3_AppendNumberToItem(&plaintext, ss->sec.authKeyBits, 4);
@@ -1309,26 +1313,10 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
         goto loser;
 
     
-    PORT_Assert(ss->sec.serverCert->certType.authType == ss->sec.authType);
-    switch (ss->sec.authType) {
-#ifndef NSS_DISABLE_ECC
-        case ssl_auth_ecdsa:
-        case ssl_auth_ecdh_rsa:
-        case ssl_auth_ecdh_ecdsa:
-            
-            PORT_Assert(ec_pastLastName < 256);
-            rv = ssl3_AppendNumberToItem(&plaintext,
-                                         ss->sec.serverCert->certType.u.namedCurve, 1);
-            break;
-#endif
-        default:
-            rv = ssl3_AppendNumberToItem(&plaintext, 0, 1);
-            break;
-    }
-    if (rv != SECSuccess) goto loser;
-
-    
     rv = ssl3_AppendNumberToItem(&plaintext, ms_is_wrapped, 1);
+    if (rv != SECSuccess)
+        goto loser;
+    rv = ssl3_AppendNumberToItem(&plaintext, effectiveExchKeyType, 1);
     if (rv != SECSuccess)
         goto loser;
     rv = ssl3_AppendNumberToItem(&plaintext, msWrapMech, 4);
@@ -1421,7 +1409,6 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
     } else
 #endif
     {
-        PORT_Assert(aes_key_pkcs11);
         aes_ctx_pkcs11 = PK11_CreateContextBySymKey(cipherMech,
                                                     CKA_ENCRYPT, aes_key_pkcs11, &ivItem);
         if (!aes_ctx_pkcs11)
@@ -1443,8 +1430,6 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
 
 #ifndef NO_PKCS11_BYPASS
     if (ss->opt.bypassPKCS11) {
-        PORT_Assert(mac_key);
-
         hmac_ctx = (HMACContext *)hmac_ctx_buf;
         hashObj = HASH_GetRawHashObject(HASH_AlgSHA256);
         if (HMAC_Init(hmac_ctx, hashObj, mac_key,
@@ -1462,7 +1447,6 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
 #endif
     {
         SECItem macParam;
-        PORT_Assert(mac_key_pkcs11);
         macParam.data = NULL;
         macParam.len = 0;
         hmac_ctx_pkcs11 = PK11_CreateContextBySymKey(macMech,
@@ -1803,7 +1787,7 @@ ssl3_ProcessSessionTicketCommon(sslSocket *ss, SECItem *data)
     temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
     if (temp < 0)
         goto no_ticket;
-    parsed_session_ticket->authType = (SSLAuthType)temp;
+    parsed_session_ticket->authAlgorithm = (SSLSignType)temp;
     temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
     if (temp < 0)
         goto no_ticket;
@@ -1818,27 +1802,15 @@ ssl3_ProcessSessionTicketCommon(sslSocket *ss, SECItem *data)
     parsed_session_ticket->keaKeyBits = (PRUint32)temp;
 
     
-    parsed_session_ticket->certType.authType = parsed_session_ticket->authType;
-    temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    switch (parsed_session_ticket->authType) {
-#ifndef NSS_DISABLE_ECC
-        case ssl_auth_ecdsa:
-        case ssl_auth_ecdh_rsa:
-        case ssl_auth_ecdh_ecdsa:
-            parsed_session_ticket->certType.u.namedCurve = (ECName)temp;
-            break;
-#endif
-        default:
-            break;
-    }
-
-    
     temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
     if (temp < 0)
         goto no_ticket;
     parsed_session_ticket->ms_is_wrapped = (PRBool)temp;
+
+    temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
+    if (temp < 0)
+        goto no_ticket;
+    parsed_session_ticket->exchKeyType = (SSL3KEAType)temp;
 
     temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
     if (temp < 0)
@@ -1935,18 +1907,15 @@ ssl3_ProcessSessionTicketCommon(sslSocket *ss, SECItem *data)
         sid->version = parsed_session_ticket->ssl_version;
         sid->u.ssl3.cipherSuite = parsed_session_ticket->cipher_suite;
         sid->u.ssl3.compression = parsed_session_ticket->compression_method;
-        sid->authType = parsed_session_ticket->authType;
+        sid->authAlgorithm = parsed_session_ticket->authAlgorithm;
         sid->authKeyBits = parsed_session_ticket->authKeyBits;
         sid->keaType = parsed_session_ticket->keaType;
         sid->keaKeyBits = parsed_session_ticket->keaKeyBits;
-        memcpy(&sid->certType, &parsed_session_ticket->certType,
-               sizeof(sslServerCertType));
+       if (SECITEM_CopyItem(NULL, &sid->u.ssl3.locked.sessionTicket.ticket,
+                            &extension_data) != SECSuccess)
+           goto no_ticket;
 
-        if (SECITEM_CopyItem(NULL, &sid->u.ssl3.locked.sessionTicket.ticket,
-                             &extension_data) != SECSuccess)
-            goto no_ticket;
-
-        
+       
 #ifndef NO_PKCS11_BYPASS
         if (ss->opt.bypassPKCS11 &&
             parsed_session_ticket->ms_is_wrapped)
@@ -1960,6 +1929,7 @@ ssl3_ProcessSessionTicketCommon(sslSocket *ss, SECItem *data)
                     parsed_session_ticket->ms_length);
         sid->u.ssl3.keys.wrapped_master_secret_len =
                 parsed_session_ticket->ms_length;
+        sid->u.ssl3.exchKeyType = parsed_session_ticket->exchKeyType;
         sid->u.ssl3.masterWrapMech = parsed_session_ticket->msWrapMech;
         sid->u.ssl3.keys.msIsWrapped =
                 parsed_session_ticket->ms_is_wrapped;
@@ -2819,14 +2789,19 @@ ssl3_ServerHandleDraftVersionXtn(sslSocket *ss, PRUint16 ex_type,
         return SECFailure;
     }
 
-    if (draft_version == TLS_1_3_DRAFT_VERSION) {
+    
+    ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
+
+    if (draft_version != TLS_1_3_DRAFT_VERSION) {
         
 
-        ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
-    } else {
+
+
+
         SSL_TRC(30, ("%d: SSL3[%d]: Incompatible version of TLS 1.3 (%d), "
                      "expected %d",
                      SSL_GETPID(), ss->fd, draft_version, TLS_1_3_DRAFT_VERSION));
+        ss->version = SSL_LIBRARY_VERSION_TLS_1_2;
     }
 
     return SECSuccess;
@@ -2986,7 +2961,17 @@ ssl3_ServerSendSignedCertTimestampXtn(sslSocket *ss,
                                       PRUint32 maxBytes)
 {
     PRInt32 extension_length;
-    const SECItem *scts = &ss->sec.serverCert->signedCertTimestamps;
+    SSLKEAType effectiveExchKeyType;
+    const SECItem *scts;
+
+    if (ss->ssl3.hs.kea_def->kea == kea_ecdhe_rsa ||
+        ss->ssl3.hs.kea_def->kea == kea_dhe_rsa) {
+        effectiveExchKeyType = ssl_kea_rsa;
+    } else {
+        effectiveExchKeyType = ss->ssl3.hs.kea_def->exchKeyType;
+    }
+
+    scts = &ss->signedCertTimestamps[effectiveExchKeyType];
 
     if (!scts->len) {
         
@@ -3255,7 +3240,6 @@ tls13_ServerSendKeyShareXtn(sslSocket *ss, PRBool append,
     switch (ss->ssl3.hs.kea_def->exchKeyType) {
 #ifndef NSS_DISABLE_ECC
         case ssl_kea_ecdh:
-        case ssl_kea_ecdh_psk:
             PORT_Assert(ss->ephemeralECDHKeyPair);
             break;
 #endif

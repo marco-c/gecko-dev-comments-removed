@@ -20,7 +20,6 @@
 #include "montmulf.h"
 #endif
 #include <stddef.h> 
-#include <assert.h>
 
 #define STATIC
 
@@ -591,8 +590,6 @@ mp_err weave_to_mpi(mp_int *a,
 
   MP_SIGN(a) = MP_ZPOS;
   MP_USED(a) = nDigits;
-
-  assert(weaved != NULL);
 
   
   for (i=0; i<nDigits; ++i) {
