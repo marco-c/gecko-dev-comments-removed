@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- *
- * Copyright 2015 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "asmjs/WasmModule.h"
 
@@ -58,9 +58,9 @@ using JS::GenericNaN;
 UniqueCodePtr
 wasm::AllocateCode(ExclusiveContext* cx, size_t bytes)
 {
-    // On most platforms, this will allocate RWX memory. On iOS, or when
-    // --non-writable-jitcode is used, this will allocate RW memory. In this
-    // case, DynamicallyLinkModule will reprotect the code as RX.
+    
+    
+    
     unsigned permissions =
         ExecutableAllocator::initialProtectionFlags(ExecutableAllocator::Writable);
 
@@ -81,8 +81,8 @@ CodeDeleter::operator()(uint8_t* p)
 }
 
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-// On MIPS, CodeLabels are instruction immediates so InternalLinks only
-// patch instruction immediates.
+
+
 StaticLinkData::InternalLink::InternalLink(Kind kind)
 {
     MOZ_ASSERT(kind == CodeLabel || kind == InstructionImmediate);
@@ -94,8 +94,8 @@ StaticLinkData::InternalLink::isRawPointerPatch()
     return false;
 }
 #else
-// On the rest, CodeLabels are raw pointers so InternalLinks only patch
-// raw pointers.
+
+
 StaticLinkData::InternalLink::InternalLink(Kind kind)
 {
     MOZ_ASSERT(kind == CodeLabel || kind == RawPointer);
@@ -357,7 +357,7 @@ CodeRange::CodeRange(Kind kind, Offsets offsets)
     profilingReturn_(0),
     end_(offsets.end)
 {
-    PodZero(&u);  // zero padding for Valgrind
+    PodZero(&u);  
     u.kind_ = kind;
 
     MOZ_ASSERT(begin_ <= end_);
@@ -371,7 +371,7 @@ CodeRange::CodeRange(Kind kind, ProfilingOffsets offsets)
     profilingReturn_(offsets.profilingReturn),
     end_(offsets.end)
 {
-    PodZero(&u);  // zero padding for Valgrind
+    PodZero(&u);  
     u.kind_ = kind;
 
     MOZ_ASSERT(begin_ < profilingReturn_);
@@ -383,7 +383,7 @@ CodeRange::CodeRange(uint32_t nameIndex, uint32_t lineNumber, FuncOffsets offset
   : nameIndex_(nameIndex),
     lineNumber_(lineNumber)
 {
-    PodZero(&u);  // zero padding for Valgrind
+    PodZero(&u);  
     u.kind_ = Function;
 
     MOZ_ASSERT(offsets.nonProfilingEntry - offsets.begin <= UINT8_MAX);
@@ -539,7 +539,7 @@ ModuleData::serialize(uint8_t* cursor) const
     return cursor;
 }
 
-/* static */ const uint8_t*
+ const uint8_t*
 ModuleData::deserialize(ExclusiveContext* cx, const uint8_t* cursor)
 {
     cursor = ReadBytes(cursor, &pod(), sizeof(pod()));
@@ -583,7 +583,7 @@ ModuleData::clone(JSContext* cx, ModuleData* out) const
 size_t
 ModuleData::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const
 {
-    // Module::addSizeOfMisc takes care of code and global memory.
+    
     return SizeOfVectorExcludingThis(imports, mallocSizeOf) +
            SizeOfVectorExcludingThis(exports, mallocSizeOf) +
            heapAccesses.sizeOfExcludingThis(mallocSizeOf) +
@@ -621,14 +621,14 @@ Module::specializeToHeap(ArrayBufferObjectMaybeShared* heap)
     MOZ_ASSERT(!heap_);
     MOZ_ASSERT(!rawHeapPtr());
 
-    uint8_t* ptrBase = heap->dataPointerEither().unwrap(/*safe - protected by Module methods*/);
+    uint8_t* ptrBase = heap->dataPointerEither().unwrap();
     uint32_t heapLength = heap->byteLength();
 #if defined(JS_CODEGEN_X86)
-    // An access is out-of-bounds iff
-    //      ptr + offset + data-type-byte-size > heapLength
-    // i.e. ptr > heapLength - data-type-byte-size - offset. data-type-byte-size
-    // and offset are already included in the addend so we
-    // just have to add the heap length here.
+    
+    
+    
+    
+    
     for (const HeapAccess& access : module_->heapAccesses) {
         if (access.hasLengthCheck())
             X86Encoding::AddInt32(access.patchLengthAt(code()), heapLength);
@@ -638,15 +638,15 @@ Module::specializeToHeap(ArrayBufferObjectMaybeShared* heap)
         X86Encoding::SetPointer(addr, (void*)(ptrBase + disp));
     }
 #elif defined(JS_CODEGEN_X64)
-    // Even with signal handling being used for most bounds checks, there may be
-    // atomic operations that depend on explicit checks.
-    //
-    // If we have any explicit bounds checks, we need to patch the heap length
-    // checks at the right places. All accesses that have been recorded are the
-    // only ones that need bound checks (see also
-    // CodeGeneratorX64::visitAsmJS{Load,Store,CompareExchange,Exchange,AtomicBinop}Heap)
+    
+    
+    
+    
+    
+    
+    
     for (const HeapAccess& access : module_->heapAccesses) {
-        // See comment above for x86 codegen.
+        
         if (access.hasLengthCheck())
             X86Encoding::AddInt32(access.patchLengthAt(code()), heapLength);
     }
@@ -663,15 +663,15 @@ Module::specializeToHeap(ArrayBufferObjectMaybeShared* heap)
 void
 Module::despecializeFromHeap(ArrayBufferObjectMaybeShared* heap)
 {
-    // heap_/rawHeapPtr can be null if this module holds cloned code from
-    // another dynamically-linked module which we are despecializing from that
-    // module's heap.
+    
+    
+    
     MOZ_ASSERT_IF(heap_, heap_ == heap);
     MOZ_ASSERT_IF(rawHeapPtr(), rawHeapPtr() == heap->dataPointerEither().unwrap());
 
 #if defined(JS_CODEGEN_X86)
     uint32_t heapLength = heap->byteLength();
-    uint8_t* ptrBase = heap->dataPointerEither().unwrap(/*safe - used for value*/);
+    uint8_t* ptrBase = heap->dataPointerEither().unwrap();
     for (unsigned i = 0; i < module_->heapAccesses.length(); i++) {
         const HeapAccess& access = module_->heapAccesses[i];
         if (access.hasLengthCheck())
@@ -754,10 +754,10 @@ Module::setProfilingEnabled(JSContext* cx, bool enabled)
     if (profilingEnabled_ == enabled)
         return true;
 
-    // When enabled, generate profiling labels for every name in funcNames_
-    // that is the name of some Function CodeRange. This involves malloc() so
-    // do it now since, once we start sampling, we'll be in a signal-handing
-    // context where we cannot malloc.
+    
+    
+    
+    
     if (enabled) {
         if (!funcLabels_.resize(module_->funcNames.length())) {
             ReportOutOfMemory(cx);
@@ -779,7 +779,7 @@ Module::setProfilingEnabled(JSContext* cx, bool enabled)
         funcLabels_.clear();
     }
 
-    // Patch callsites and returns to execute profiling prologues/epilogues.
+    
     {
         AutoWritableJitCode awjc(cx->runtime(), code(), codeBytes());
         AutoFlushICache afc("Module::setProfilingEnabled");
@@ -792,7 +792,7 @@ Module::setProfilingEnabled(JSContext* cx, bool enabled)
             EnableProfilingEpilogue(*this, codeRange, enabled);
     }
 
-    // Update the function-pointer tables to point to profiling prologues.
+    
     for (FuncPtrTable& funcPtrTable : funcPtrTables_) {
         auto array = reinterpret_cast<void**>(globalData() + funcPtrTable.globalDataOffset);
         for (size_t i = 0; i < funcPtrTable.numElems; i++) {
@@ -821,19 +821,18 @@ Module::clone(JSContext* cx, const StaticLinkData& link, Module* out) const
 {
     MOZ_ASSERT(dynamicallyLinked_);
 
-    // The out->module_ field was already cloned and initialized when 'out' was
-    // constructed. This function should clone the rest.
+    
+    
     MOZ_ASSERT(out->module_);
 
-    out->isAsmJS_ = isAsmJS_;
     out->profilingEnabled_ = profilingEnabled_;
 
     if (!CloneVector(cx, funcLabels_, &out->funcLabels_))
         return false;
 
 #ifdef DEBUG
-    // Put the symbolic links back to -1 so PatchDataWithValueCheck assertions
-    // in Module::staticallyLink are valid.
+    
+    
     for (auto imm : MakeEnumeratedRange(SymbolicAddress::Limit)) {
         void* callee = AddressOf(imm, cx);
         const StaticLinkData::OffsetVector& offsets = link.symbolicLinks[imm];
@@ -845,8 +844,8 @@ Module::clone(JSContext* cx, const StaticLinkData& link, Module* out) const
     }
 #endif
 
-    // If the copied machine code has been specialized to the heap, it must be
-    // unspecialized in the copy.
+    
+    
     if (usesHeap())
         out->despecializeFromHeap(heap_);
 
@@ -854,9 +853,8 @@ Module::clone(JSContext* cx, const StaticLinkData& link, Module* out) const
 }
 
 
-Module::Module(UniqueModuleData module, AsmJSBool isAsmJS)
+Module::Module(UniqueModuleData module)
   : module_(Move(module)),
-    isAsmJS_(bool(isAsmJS)),
     staticallyLinked_(false),
     interrupt_(nullptr),
     outOfBounds_(nullptr),
@@ -969,11 +967,11 @@ Module::staticallyLink(ExclusiveContext* cx, const StaticLinkData& linkData)
     MOZ_ASSERT(!staticallyLinked_);
     staticallyLinked_ = true;
 
-    // Push a JitContext for benefit of IsCompilingAsmJS and delay flushing
-    // until Module::dynamicallyLink.
+    
+    
     JitContext jcx(CompileRuntime::get(cx->compartment()->runtimeFromAnyThread()));
     MOZ_ASSERT(IsCompilingAsmJS());
-    AutoFlushICache afc("Module::staticallyLink", /* inhibit = */ true);
+    AutoFlushICache afc("Module::staticallyLink",  true);
     AutoFlushICache::setRange(uintptr_t(code()), codeBytes());
 
     interrupt_ = code() + linkData.pod.interruptOffset;
@@ -983,11 +981,11 @@ Module::staticallyLink(ExclusiveContext* cx, const StaticLinkData& linkData)
         uint8_t* patchAt = code() + link.patchAtOffset;
         void* target = code() + link.targetOffset;
 
-        // If the target of an InternalLink is the non-profiling entry of a
-        // function, then we assume it is for a call that wants to call the
-        // profiling entry when profiling is enabled. Note that the target may
-        // be in the middle of a function (e.g., for a switch table) and in
-        // these cases we should not modify the target.
+        
+        
+        
+        
+        
         if (profilingEnabled_) {
             if (const CodeRange* cr = lookupCodeRange(target)) {
                 if (cr->isFunction() && link.targetOffset == cr->funcNonProfilingEntry())
@@ -1022,10 +1020,10 @@ Module::staticallyLink(ExclusiveContext* cx, const StaticLinkData& linkData)
         }
     }
 
-    // CodeRangeVector, CallSiteVector and the code technically have all the
-    // necessary info to do all the updates necessary in setProfilingEnabled.
-    // However, to simplify the finding of function-pointer table sizes and
-    // global-data offsets, save just that information here.
+    
+    
+    
+    
 
     if (!funcPtrTables_.appendAll(linkData.funcPtrTables)) {
         ReportOutOfMemory(cx);
@@ -1043,14 +1041,14 @@ Module::dynamicallyLink(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> hea
     MOZ_ASSERT(!dynamicallyLinked_);
     dynamicallyLinked_ = true;
 
-    // Push a JitContext for benefit of IsCompilingAsmJS and flush the ICache.
-    // We've been inhibiting flushing up to this point so flush it all now.
+    
+    
     JitContext jcx(CompileRuntime::get(cx->compartment()->runtimeFromAnyThread()));
     MOZ_ASSERT(IsCompilingAsmJS());
     AutoFlushICache afc("Module::dynamicallyLink");
     AutoFlushICache::setRange(uintptr_t(code()), codeBytes());
 
-    // Initialize imports with actual imported values.
+    
     MOZ_ASSERT(importArgs.length() == imports().length());
     for (size_t i = 0; i < imports().length(); i++) {
         const Import& import = imports()[i];
@@ -1060,11 +1058,11 @@ Module::dynamicallyLink(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> hea
         exit.baselineScript = nullptr;
     }
 
-    // Specialize code to the actual heap.
+    
     if (usesHeap())
         specializeToHeap(heap);
 
-    // See AllocateCode comment above.
+    
     if (!ExecutableAllocator::makeExecutable(code(), codeBytes())) {
         ReportOutOfMemory(cx);
         return false;
@@ -1196,23 +1194,23 @@ Module::callExport(JSContext* cx, uint32_t exportIndex, CallArgs args)
 
     const Export& exp = exports()[exportIndex];
 
-    // Enable/disable profiling in the Module to match the current global
-    // profiling state. Don't do this if the Module is already active on the
-    // stack since this would leave the Module in a state where profiling is
-    // enabled but the stack isn't unwindable.
+    
+    
+    
+    
     if (profilingEnabled() != cx->runtime()->spsProfiler.enabled() && !activation()) {
         if (!setProfilingEnabled(cx, cx->runtime()->spsProfiler.enabled()))
             return false;
     }
 
-    // The calling convention for an external call into wasm is to pass an
-    // array of 16-byte values where each value contains either a coerced int32
-    // (in the low word), a double value (in the low dword) or a SIMD vector
-    // value, with the coercions specified by the wasm signature. The external
-    // entry point unpacks this array into the system-ABI-specified registers
-    // and stack memory and then calls into the internal entry point. The return
-    // value is stored in the first element of the array (which, therefore, must
-    // have length >= 1).
+    
+    
+    
+    
+    
+    
+    
+    
     Vector<Module::EntryArg, 8> coercedArgs(cx);
     if (!coercedArgs.resize(Max<size_t>(1, exp.sig().args().length())))
         return false;
@@ -1253,7 +1251,7 @@ Module::callExport(JSContext* cx, uint32_t exportIndex, CallArgs args)
             SimdConstant simd;
             if (!ToSimdConstant<Bool32x4>(cx, v, &simd))
                 return false;
-            // Bool32x4 uses the same representation as Int32x4.
+            
             memcpy(&coercedArgs[i], simd.asInt32x4(), Simd128DataSize);
             break;
           }
@@ -1261,25 +1259,25 @@ Module::callExport(JSContext* cx, uint32_t exportIndex, CallArgs args)
     }
 
     {
-        // Push a WasmActivation to describe the wasm frames we're about to push
-        // when running this module. Additionally, push a JitActivation so that
-        // the optimized wasm-to-Ion FFI call path (which we want to be very
-        // fast) can avoid doing so. The JitActivation is marked as inactive so
-        // stack iteration will skip over it.
+        
+        
+        
+        
+        
         WasmActivation activation(cx, *this);
-        JitActivation jitActivation(cx, /* active */ false);
+        JitActivation jitActivation(cx,  false);
 
-        // Call the per-exported-function trampoline created by GenerateEntry.
+        
         auto entry = JS_DATA_TO_FUNC_PTR(EntryFuncPtr, code() + exp.stubOffset());
         if (!CALL_GENERATED_2(entry, coercedArgs.begin(), globalData()))
             return false;
     }
 
     if (args.isConstructing()) {
-        // By spec, when a function is called as a constructor and this function
-        // returns a primary type, which is the case for all wasm exported
-        // functions, the returned value is discarded and an empty object is
-        // returned instead.
+        
+        
+        
+        
         PlainObject* obj = NewBuiltinClassInstance<PlainObject>(cx);
         if (!obj)
             return false;
@@ -1338,12 +1336,12 @@ Module::callImport(JSContext* cx, uint32_t importIndex, unsigned argc, const Val
 
     ImportExit& exit = importToExit(import);
 
-    // The exit may already have become optimized.
+    
     void* jitExitCode = code() + import.jitExitCodeOffset();
     if (exit.code == jitExitCode)
         return true;
 
-    // Test if the function is JIT compiled.
+    
     if (!exit.fun->hasScript())
         return true;
     JSScript* script = exit.fun->nonLazyScript();
@@ -1352,24 +1350,24 @@ Module::callImport(JSContext* cx, uint32_t importIndex, unsigned argc, const Val
         return true;
     }
 
-    // Don't enable jit entry when we have a pending ion builder.
-    // Take the interpreter path which will link it and enable
-    // the fast path on the next call.
+    
+    
+    
     if (script->baselineScript()->hasPendingIonBuilder())
         return true;
 
-    // Currently we can't rectify arguments. Therefore disable if argc is too low.
+    
     if (exit.fun->nargs() > import.sig().args().length())
         return true;
 
-    // Ensure the argument types are included in the argument TypeSets stored in
-    // the TypeScript. This is necessary for Ion, because the import exit will
-    // use the skip-arg-checks entry point.
-    //
-    // Note that the TypeScript is never discarded while the script has a
-    // BaselineScript, so if those checks hold now they must hold at least until
-    // the BaselineScript is discarded and when that happens the import exit is
-    // patched back.
+    
+    
+    
+    
+    
+    
+    
+    
     if (!TypeScript::ThisTypes(script)->hasType(TypeSet::UndefinedType()))
         return true;
     for (uint32_t i = 0; i < exit.fun->nargs(); i++) {
@@ -1387,7 +1385,7 @@ Module::callImport(JSContext* cx, uint32_t importIndex, unsigned argc, const Val
             return true;
     }
 
-    // Let's optimize it!
+    
     if (!script->baselineScript()->addDependentWasmModule(cx, *this, importIndex))
         return false;
 
@@ -1420,17 +1418,17 @@ const Class WasmModuleObject::class_ = {
     "WasmModuleObject",
     JSCLASS_IS_ANONYMOUS | JSCLASS_DELAY_METADATA_CALLBACK |
     JSCLASS_HAS_RESERVED_SLOTS(WasmModuleObject::RESERVED_SLOTS),
-    nullptr, /* addProperty */
-    nullptr, /* delProperty */
-    nullptr, /* getProperty */
-    nullptr, /* setProperty */
-    nullptr, /* enumerate */
-    nullptr, /* resolve */
-    nullptr, /* mayResolve */
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
     WasmModuleObject::finalize,
-    nullptr, /* call */
-    nullptr, /* hasInstance */
-    nullptr, /* construct */
+    nullptr, 
+    nullptr, 
+    nullptr, 
     WasmModuleObject::trace
 };
 
@@ -1441,7 +1439,7 @@ WasmModuleObject::hasModule() const
     return !getReservedSlot(MODULE_SLOT).isUndefined();
 }
 
-/* static */ void
+ void
 WasmModuleObject::finalize(FreeOp* fop, JSObject* obj)
 {
     WasmModuleObject& moduleObj = obj->as<WasmModuleObject>();
@@ -1449,7 +1447,7 @@ WasmModuleObject::finalize(FreeOp* fop, JSObject* obj)
         fop->delete_(&moduleObj.module());
 }
 
-/* static */ void
+ void
 WasmModuleObject::trace(JSTracer* trc, JSObject* obj)
 {
     WasmModuleObject& moduleObj = obj->as<WasmModuleObject>();
@@ -1457,7 +1455,7 @@ WasmModuleObject::trace(JSTracer* trc, JSObject* obj)
         moduleObj.module().trace(trc);
 }
 
-/* static */ WasmModuleObject*
+ WasmModuleObject*
 WasmModuleObject::create(ExclusiveContext* cx)
 {
     AutoSetNewObjectMetadata metadata(cx);
