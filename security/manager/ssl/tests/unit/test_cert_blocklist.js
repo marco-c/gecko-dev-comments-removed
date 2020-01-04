@@ -142,7 +142,7 @@ function verify_cert(file, expectedError) {
 }
 
 function load_cert(cert, trust) {
-  let file = "tlsserver/" + cert + ".pem";
+  let file = "bad_certs/" + cert + ".pem";
   addCertFromFile(certDB, file, trust);
 }
 
@@ -204,17 +204,17 @@ function run_test() {
   
   
   
-  let file = "tlsserver/test-int-ee.pem";
+  let file = "test_onecrl/test-int-ee.pem";
   verify_cert(file, PRErrorCodeSuccess);
 
   
   
-  file = "tlsserver/other-issuer-ee.pem";
+  file = "bad_certs/other-issuer-ee.pem";
   verify_cert(file, PRErrorCodeSuccess);
 
   
   
-  file = "tlsserver/same-issuer-ee.pem";
+  file = "test_onecrl/same-issuer-ee.pem";
   verify_cert(file, PRErrorCodeSuccess);
 
   
@@ -283,23 +283,23 @@ function run_test() {
     equal(contents, expected, "revocations.txt should be as expected");
 
     
-    let file = "tlsserver/test-int-ee.pem";
+    let file = "test_onecrl/test-int-ee.pem";
     verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
-    file = "tlsserver/other-issuer-ee.pem";
+    file = "bad_certs/other-issuer-ee.pem";
     verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
-    file = "tlsserver/same-issuer-ee.pem";
+    file = "test_onecrl/same-issuer-ee.pem";
     verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
-    file = "tlsserver/default-ee.pem";
+    file = "bad_certs/default-ee.pem";
     verify_cert(file, PRErrorCodeSuccess);
 
     
-    file = "tlsserver/unknownissuer.pem";
+    file = "bad_certs/unknownissuer.pem";
     verify_cert(file, SEC_ERROR_UNKNOWN_ISSUER);
 
     

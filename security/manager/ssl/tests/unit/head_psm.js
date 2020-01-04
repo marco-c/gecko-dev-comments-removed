@@ -281,9 +281,9 @@ function clearSessionCache() {
 
 
 
-function add_tls_server_setup(serverBinName) {
+function add_tls_server_setup(serverBinName, certsPath) {
   add_test(function() {
-    _setupTLSServerTest(serverBinName);
+    _setupTLSServerTest(serverBinName, certsPath);
   });
 }
 
@@ -430,12 +430,12 @@ function _getBinaryUtil(binaryUtilName) {
 }
 
 
-function _setupTLSServerTest(serverBinName)
+function _setupTLSServerTest(serverBinName, certsPath)
 {
   let certdb = Cc["@mozilla.org/security/x509certdb;1"]
                   .getService(Ci.nsIX509CertDB);
   
-  addCertFromFile(certdb, "tlsserver/test-ca.pem", "CTu,u,u");
+  addCertFromFile(certdb, `${certsPath}/test-ca.pem`, "CTu,u,u");
 
   const CALLBACK_PORT = 8444;
 
@@ -468,8 +468,8 @@ function _setupTLSServerTest(serverBinName)
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
   process.init(serverBin);
   let certDir = directoryService.get("CurWorkD", Ci.nsILocalFile);
-  certDir.append("tlsserver");
-  Assert.ok(certDir.exists(), "tlsserver folder should exist");
+  certDir.append(`${certsPath}`);
+  Assert.ok(certDir.exists(), `certificate folder (${certsPath}) should exist`);
   
   process.run(false, [ "sql:" + certDir.path ], 1);
 
