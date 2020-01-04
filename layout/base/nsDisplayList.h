@@ -4120,7 +4120,12 @@ public:
 
 
 
-  bool ShouldPrerender();
+  bool MaybePrerender() const { return mMaybePrerender; }
+  
+
+
+
+  bool ShouldPrerender(nsDisplayListBuilder* aBuilder);
 
   virtual void WriteDebugInfo(std::stringstream& aStream) override;
 
@@ -4206,7 +4211,9 @@ private:
   nsRect mBounds;
   
   bool mHasBounds;
-  bool mPrerender;
+  
+  
+  bool mMaybePrerender;
   
   
   

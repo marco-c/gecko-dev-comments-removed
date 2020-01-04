@@ -4309,7 +4309,7 @@ nsDisplayOpacity::BuildLayer(nsDisplayListBuilder* aBuilder,
 static bool
 IsItemTooSmallForActiveLayer(nsDisplayItem* aItem)
 {
-  nsIntRect visibleDevPixels = aItem->Frame()->GetVisualOverflowRectRelativeToSelf().ToOutsidePixels(
+  nsIntRect visibleDevPixels = aItem->GetVisibleRect().ToOutsidePixels(
           aItem->Frame()->PresContext()->AppUnitsPerDevPixel());
   static const int MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS = 16;
   return visibleDevPixels.Size() <
@@ -4322,7 +4322,7 @@ SetAnimationPerformanceWarningForTooSmallItem(nsDisplayItem* aItem,
 {
   
   
-  nsIntRect visibleDevPixels = aItem->Frame()->GetVisualOverflowRectRelativeToSelf().ToNearestPixels(
+  nsIntRect visibleDevPixels = aItem->GetVisibleRect().ToNearestPixels(
           aItem->Frame()->PresContext()->AppUnitsPerDevPixel());
 
   
@@ -5322,10 +5322,18 @@ nsDisplayTransform::Init(nsDisplayListBuilder* aBuilder)
   mHasBounds = false;
   mStoredList.SetClip(aBuilder, DisplayItemClip::NoClip());
   mStoredList.SetVisibleRect(mChildrenVisibleRect);
-  
-  
-  
-  mPrerender = ShouldPrerenderTransformedContent(aBuilder, mFrame);
+  mMaybePrerender = ShouldPrerenderTransformedContent(aBuilder, mFrame);
+
+  const nsStyleDisplay* disp = mFrame->StyleDisplay();
+  if ((disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_TRANSFORM)) {
+    
+    mMaybePrerender = true;
+  }
+
+  if (mMaybePrerender) {
+    bool snap;
+    mVisibleRect = GetBounds(aBuilder, &snap);
+  }
 }
 
 nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
@@ -5788,14 +5796,35 @@ nsDisplayOpacity::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 }
 
 bool
-nsDisplayTransform::ShouldPrerender() {
-  return mPrerender;
+nsDisplayTransform::ShouldPrerender(nsDisplayListBuilder* aBuilder) {
+  if (!mMaybePrerender) {
+    return false;
+  }
+
+  if (ShouldPrerenderTransformedContent(aBuilder, mFrame)) {
+    return true;
+  }
+
+  const nsStyleDisplay* disp = mFrame->StyleDisplay();
+  if ((disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_TRANSFORM) &&
+      aBuilder->IsInWillChangeBudget(mFrame, mFrame->GetSize())) {
+    return true;
+  }
+
+  return false;
 }
 
 bool
 nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 {
-  return mPrerender;
+  if (mMaybePrerender) {
+    
+    
+    return true;
+  }
+  DebugOnly<bool> prerender = ShouldPrerenderTransformedContent(aBuilder, mFrame);
+  NS_ASSERTION(!prerender, "Something changed under us!");
+  return false;
 }
 
  bool
@@ -5939,7 +5968,7 @@ nsDisplayTransform::ShouldBuildLayerEvenIfInvisible(nsDisplayListBuilder* aBuild
   
   
   
-  return ShouldPrerender() || mFrame->Combines3DTransformWithAncestors();
+  return ShouldPrerender(aBuilder) || mFrame->Combines3DTransformWithAncestors();
 }
 
 already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBuilder,
@@ -5952,7 +5981,7 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBu
 
   const Matrix4x4& newTransformMatrix = GetTransformForRendering();
 
-  uint32_t flags = ShouldPrerender() ?
+  uint32_t flags = ShouldPrerender(aBuilder) ?
     FrameLayerBuilder::CONTAINER_NOT_CLIPPED_BY_ANCESTORS : 0;
   flags |= FrameLayerBuilder::CONTAINER_ALLOW_PULL_BACKGROUND_COLOR;
   RefPtr<ContainerLayer> container = aManager->GetLayerBuilder()->
@@ -5974,7 +6003,7 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBu
   nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(container, aBuilder,
                                                            this, mFrame,
                                                            eCSSProperty_transform);
-  if (ShouldPrerender()) {
+  if (ShouldPrerender(aBuilder)) {
     if (MayBeAnimated(aBuilder)) {
       
       
@@ -6026,6 +6055,11 @@ nsDisplayTransform::GetLayerState(nsDisplayListBuilder* aBuilder,
     return LAYER_ACTIVE_FORCE;
   }
 
+  const nsStyleDisplay* disp = mFrame->StyleDisplay();
+  if ((disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_TRANSFORM)) {
+    return LAYER_ACTIVE;
+  }
+
   
   
   
@@ -6042,7 +6076,7 @@ bool nsDisplayTransform::ComputeVisibility(nsDisplayListBuilder *aBuilder,
 
 
   nsRect untransformedVisibleRect;
-  if (ShouldPrerender() ||
+  if (ShouldPrerender(aBuilder) ||
       !UntransformVisibleRect(aBuilder, &untransformedVisibleRect))
   {
     untransformedVisibleRect = mFrame->GetVisualOverflowRectRelativeToSelf();
@@ -6188,7 +6222,7 @@ nsDisplayTransform::GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap)
     return nsRect();
   }
 
-  nsRect untransformedBounds = ShouldPrerender() ?
+  nsRect untransformedBounds = MaybePrerender() ?
     mFrame->GetVisualOverflowRectRelativeToSelf() :
     mStoredList.GetBounds(aBuilder, aSnap);
   
@@ -6227,7 +6261,7 @@ nsDisplayTransform::ComputeBounds(nsDisplayListBuilder* aBuilder)
 
 
   bool snap;
-  nsRect untransformedBounds = ShouldPrerender() ?
+  nsRect untransformedBounds = MaybePrerender() ?
     mFrame->GetVisualOverflowRectRelativeToSelf() :
     mStoredList.GetBounds(aBuilder, &snap);
   
@@ -6267,7 +6301,7 @@ nsRegion nsDisplayTransform::GetOpaqueRegion(nsDisplayListBuilder *aBuilder,
   
   
   
-  if (ShouldPrerender() ||
+  if (MaybePrerender() ||
       !UntransformVisibleRect(aBuilder, &untransformedVisible)) {
       return nsRegion();
   }
