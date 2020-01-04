@@ -277,16 +277,17 @@ protected:
   };
 
   struct BlockOwner {
-    BlockOwner() : mStream(nullptr), mClass(READAHEAD_BLOCK) {}
+    constexpr BlockOwner() {}
 
     
-    MediaCacheStream* mStream;
-    
-    uint32_t            mStreamBlock;
+    MediaCacheStream* mStream = nullptr;
     
     
-    TimeStamp           mLastUseTime;
-    BlockClass          mClass;
+    uint32_t          mStreamBlock = UINT32_MAX;
+    
+    
+    TimeStamp         mLastUseTime;
+    BlockClass        mClass = READAHEAD_BLOCK;
   };
 
   struct Block {
