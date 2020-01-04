@@ -3243,6 +3243,12 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
   
   if (isCutCopy) {
     if (!nsContentUtils::IsCutCopyAllowed()) {
+      
+      
+      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                      NS_LITERAL_CSTRING("DOM"), this,
+                                      nsContentUtils::eDOM_PROPERTIES,
+                                      "ExecCommandCutCopyDeniedNotInputDriven");
       return false;
     }
 
