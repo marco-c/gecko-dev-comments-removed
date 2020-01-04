@@ -11,6 +11,9 @@ function run_test()
 
   do_crash(
    function() {
+      
+      shouldDelay = true;
+
       let Cc = Components.classes;
       let Ci = Components.interfaces;
 

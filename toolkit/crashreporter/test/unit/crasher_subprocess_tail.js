@@ -1,2 +1,15 @@
 
+if (shouldDelay) {
+  let shouldCrashNow = false;
+  let thr = Components.classes["@mozilla.org/thread-manager;1"]
+                          .getService().currentThread;
+  thr.dispatch({ run: () => { shouldCrashNow = true; } },
+               Components.interfaces.nsIThread.DISPATCH_NORMAL);
+
+  while (!shouldCrashNow) {
+    thr.processNextEvent(true);
+  }
+}
+
+
 CrashTestUtils.crash(crashType);
