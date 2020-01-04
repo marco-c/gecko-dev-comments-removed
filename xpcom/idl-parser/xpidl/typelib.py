@@ -245,7 +245,7 @@ def write_typelib(idl, fd, filename):
     
     ifaces = []
     for p in idl.productions:
-        if p.kind == 'interface':
+        if p.kind == 'interface' and p.attributes.scriptable:
             ifaces.append(build_interface(p, ifaces))
 
     typelib = xpt.Typelib(interfaces=ifaces)
