@@ -256,7 +256,7 @@ HTMLFormElement::Submit(ErrorResult& aRv)
     mPendingSubmission = nullptr;
   }
 
-  aRv = DoSubmitOrReset(nullptr, NS_FORM_SUBMIT);
+  aRv = DoSubmitOrReset(nullptr, eFormSubmit);
 }
 
 NS_IMETHODIMP
@@ -493,7 +493,7 @@ HTMLFormElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   aVisitor.mWantsWillHandleEvent = true;
   if (aVisitor.mEvent->originalTarget == static_cast<nsIContent*>(this)) {
     uint32_t msg = aVisitor.mEvent->mMessage;
-    if (msg == NS_FORM_SUBMIT) {
+    if (msg == eFormSubmit) {
       if (mGeneratingSubmit) {
         aVisitor.mCanHandle = false;
         return NS_OK;
@@ -522,7 +522,7 @@ HTMLFormElement::WillHandleEvent(EventChainPostVisitor& aVisitor)
   
   
   
-  if ((aVisitor.mEvent->mMessage == NS_FORM_SUBMIT ||
+  if ((aVisitor.mEvent->mMessage == eFormSubmit ||
        aVisitor.mEvent->mMessage == NS_FORM_RESET) &&
       aVisitor.mEvent->mFlags.mInBubblingPhase &&
       aVisitor.mEvent->originalTarget != static_cast<nsIContent*>(this)) {
@@ -536,7 +536,7 @@ HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 {
   if (aVisitor.mEvent->originalTarget == static_cast<nsIContent*>(this)) {
     EventMessage msg = aVisitor.mEvent->mMessage;
-    if (msg == NS_FORM_SUBMIT) {
+    if (msg == eFormSubmit) {
       
       mDeferSubmission = false;
     }
@@ -544,9 +544,8 @@ HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
     if (aVisitor.mEventStatus == nsEventStatus_eIgnore) {
       switch (msg) {
         case NS_FORM_RESET:
-        case NS_FORM_SUBMIT:
-        {
-          if (mPendingSubmission && msg == NS_FORM_SUBMIT) {
+        case eFormSubmit: {
+          if (mPendingSubmission && msg == eFormSubmit) {
             
             
             
@@ -561,7 +560,7 @@ HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           break;
       }
     } else {
-      if (msg == NS_FORM_SUBMIT) {
+      if (msg == eFormSubmit) {
         
         
         
@@ -570,7 +569,7 @@ HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
       }
     }
 
-    if (msg == NS_FORM_SUBMIT) {
+    if (msg == eFormSubmit) {
       mGeneratingSubmit = false;
     }
     else if (msg == NS_FORM_RESET) {
@@ -582,7 +581,7 @@ HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
 nsresult
 HTMLFormElement::DoSubmitOrReset(WidgetEvent* aEvent,
-                                 int32_t aMessage)
+                                 EventMessage aMessage)
 {
   
   nsIDocument* doc = GetComposedDoc();
@@ -597,7 +596,7 @@ HTMLFormElement::DoSubmitOrReset(WidgetEvent* aEvent,
     return DoReset();
   }
 
-  if (NS_FORM_SUBMIT == aMessage) {
+  if (eFormSubmit == aMessage) {
     
     
     if (!doc || (doc->GetSandboxFlags() & SANDBOXED_FORMS)) {

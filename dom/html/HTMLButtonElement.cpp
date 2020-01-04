@@ -370,7 +370,7 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
       if (mForm && (mType == NS_FORM_BUTTON_SUBMIT ||
                     mType == NS_FORM_BUTTON_RESET)) {
         InternalFormEvent event(true,
-          (mType == NS_FORM_BUTTON_RESET) ? NS_FORM_RESET : NS_FORM_SUBMIT);
+          (mType == NS_FORM_BUTTON_RESET) ? NS_FORM_RESET : eFormSubmit);
         event.originator     = this;
         nsEventStatus status = nsEventStatus_eIgnore;
 
@@ -382,7 +382,7 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
         
         
         
-        if (presShell && (event.mMessage != NS_FORM_SUBMIT ||
+        if (presShell && (event.mMessage != eFormSubmit ||
                           mForm->HasAttr(kNameSpaceID_None, nsGkAtoms::novalidate) ||
                           
                           
