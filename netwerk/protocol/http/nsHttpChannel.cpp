@@ -315,6 +315,21 @@ nsHttpChannel::Connect()
 
     LOG(("nsHttpChannel::Connect [this=%p]\n", this));
 
+    
+    
+    
+    
+    nsContentPolicyType type = mLoadInfo ?
+                               mLoadInfo->GetExternalContentPolicyType() :
+                               nsIContentPolicy::TYPE_OTHER;
+
+    if (type == nsIContentPolicy::TYPE_DOCUMENT ||
+        type == nsIContentPolicy::TYPE_SUBDOCUMENT) {
+        rv = SetRequestHeader(NS_LITERAL_CSTRING("Upgrade-Insecure-Requests"),
+                              NS_LITERAL_CSTRING("1"), false);
+        NS_ENSURE_SUCCESS(rv, rv);
+    }
+ 
     bool isHttps = false;
     rv = mURI->SchemeIs("https", &isHttps);
     NS_ENSURE_SUCCESS(rv,rv);
