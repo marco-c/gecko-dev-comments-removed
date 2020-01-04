@@ -134,6 +134,10 @@ nsAppShell::Init()
         sReal_gtk_window_check_resize = *check_resize;
         *check_resize = wrap_gtk_window_check_resize;
     }
+
+    
+    if (gtk_check_version(3, 20, 0) != nullptr)
+        unsetenv("GTK_CSD");
 #endif
 
     if (PR_GetEnv("MOZ_DEBUG_PAINTS"))
