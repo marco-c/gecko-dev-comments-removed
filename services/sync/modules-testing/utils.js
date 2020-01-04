@@ -316,7 +316,7 @@ this.add_identity_test = function(test, testFunction) {
   let ns = {};
   Cu.import("resource://services-sync/service.js", ns);
   
-  test.add_task(function() {
+  test.add_task(function* () {
     note("sync");
     let oldIdentity = Status._authManager;
     ensureLegacyIdentityManager();
@@ -324,7 +324,7 @@ this.add_identity_test = function(test, testFunction) {
     Status.__authManager = ns.Service.identity = oldIdentity;
   });
   
-  test.add_task(function() {
+  test.add_task(function* () {
     note("FxAccounts");
     let oldIdentity = Status._authManager;
     Status.__authManager = ns.Service.identity = new BrowserIDManager();
