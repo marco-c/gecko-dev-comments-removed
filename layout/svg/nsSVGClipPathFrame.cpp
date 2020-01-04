@@ -20,6 +20,9 @@ using namespace mozilla::dom;
 using namespace mozilla::gfx;
 
 
+#define MAX_SVG_CLIP_PATH_REFERENCE_CHAIN_LENGTH int16_t(512)
+
+
 
 
 nsIFrame*
@@ -89,6 +92,16 @@ nsSVGClipPathFrame::GetClipMask(gfxContext& aReferenceContext,
   MOZ_ASSERT(!IsTrivial(), "Caller needs to use ApplyClipPath");
 
   DrawTarget& aReferenceDT = *aReferenceContext.GetDrawTarget();
+
+  
+  
+  static int16_t sRefChainLengthCounter = AutoReferenceLimiter::notReferencing;
+  AutoReferenceLimiter
+    refChainLengthLimiter(&sRefChainLengthCounter,
+                          MAX_SVG_CLIP_PATH_REFERENCE_CHAIN_LENGTH);
+  if (!refChainLengthLimiter.Reference()) {
+    return false; 
+  }
 
   
   
@@ -241,6 +254,16 @@ nsSVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
 {
   
   
+  static int16_t sRefChainLengthCounter = AutoReferenceLimiter::notReferencing;
+  AutoReferenceLimiter
+    refChainLengthLimiter(&sRefChainLengthCounter,
+                          MAX_SVG_CLIP_PATH_REFERENCE_CHAIN_LENGTH);
+  if (!refChainLengthLimiter.Reference()) {
+    return false; 
+  }
+
+  
+  
   AutoReferenceLimiter refLoopDetector(&mReferencing, 1);
   if (!refLoopDetector.Reference()) {
     return true; 
@@ -323,6 +346,16 @@ nsSVGClipPathFrame::IsTrivial(nsISVGChildFrame **aSingleChild)
 bool
 nsSVGClipPathFrame::IsValid()
 {
+  
+  
+  static int16_t sRefChainLengthCounter = AutoReferenceLimiter::notReferencing;
+  AutoReferenceLimiter
+    refChainLengthLimiter(&sRefChainLengthCounter,
+                          MAX_SVG_CLIP_PATH_REFERENCE_CHAIN_LENGTH);
+  if (!refChainLengthLimiter.Reference()) {
+    return false; 
+  }
+
   
   
   AutoReferenceLimiter refLoopDetector(&mReferencing, 1);
