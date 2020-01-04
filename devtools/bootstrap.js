@@ -161,6 +161,17 @@ function reload(event) {
   actionOccurred("reloadAddonReload");
 }
 
+let prefs = {
+  
+  "browser.dom.window.dump.enabled": true,
+  
+  "devtools.chrome.enabled": true,
+  "devtools.debugger.remote-enabled": true,
+  
+  "devtools.debugger.prompt-connection": false,
+};
+let originalPrefValues = {};
+
 let listener;
 function startup() {
   dump("DevTools addon started.\n");
@@ -169,10 +180,31 @@ function startup() {
     callback: reload
   });
   listener.start();
+
+  
+  originalPrefValues = {};
+  for (let name in prefs) {
+    let value = prefs[name];
+    let userValue = Services.prefs.getBoolPref(name);
+    
+    if (userValue != value) {
+      Services.prefs.setBoolPref(name, value);
+      originalPrefValues[name] = userValue;
+    }
+  }
 }
 function shutdown() {
   listener.stop();
   listener = null;
+
+  
+  for (let name in originalPrefValues) {
+    let userValue = Services.prefs.getBoolPref(name);
+    
+    if (userValue == prefs[name]) {
+      Services.prefs.setBoolPref(name, originalPrefValues[name]);
+    }
+  }
 }
 function install() {
   actionOccurred("reloadAddonInstalled");
