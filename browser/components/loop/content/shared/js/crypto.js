@@ -68,7 +68,7 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
     return new Promise(function(resolve, reject) {
       
-      rootObject.crypto.subtle.generateKey({name: ALGORITHM, length: KEY_LENGTH },
+      rootObject.crypto.subtle.generateKey({ name: ALGORITHM, length: KEY_LENGTH },
         
         true,
         
@@ -105,7 +105,7 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     return new Promise(function(resolve, reject) {
       
       rootObject.crypto.subtle.importKey(KEY_FORMAT,
-        {k: key, kty: KEY_TYPE},
+        { k: key, kty: KEY_TYPE },
         ALGORITHM,
         
         true,
@@ -158,7 +158,7 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     return new Promise(function(resolve, reject) {
       
       rootObject.crypto.subtle.importKey(KEY_FORMAT,
-        {k: key, kty: KEY_TYPE},
+        { k: key, kty: KEY_TYPE },
         ALGORITHM,
         
         true,
