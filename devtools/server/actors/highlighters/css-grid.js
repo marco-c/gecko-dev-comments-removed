@@ -9,8 +9,7 @@ const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
   CanvasFrameAnonymousContentHelper,
   createNode,
-  createSVGNode,
-  moveInfobar,
+  createSVGNode
 } = require("./utils/markup");
 const {
   getCurrentZoom,
@@ -35,14 +34,6 @@ const GRID_LINES_PROPERTIES = {
     strokeStyle: "#9370DB"
   }
 };
-
-
-
-
-
-
-
-
 
 
 
@@ -138,52 +129,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       attributes: {
         "class": "areas",
         "id": "areas"
-      },
-      prefix: this.ID_CLASS_PREFIX
-    });
-
-    
-    let infobarContainer = createNode(this.win, {
-      parent: container,
-      attributes: {
-        "class": "infobar-container",
-        "id": "infobar-container",
-        "position": "top",
-        "hidden": "true"
-      },
-      prefix: this.ID_CLASS_PREFIX
-    });
-
-    let infobar = createNode(this.win, {
-      parent: infobarContainer,
-      attributes: {
-        "class": "infobar"
-      },
-      prefix: this.ID_CLASS_PREFIX
-    });
-
-    let textbox = createNode(this.win, {
-      parent: infobar,
-      attributes: {
-        "class": "infobar-text"
-      },
-      prefix: this.ID_CLASS_PREFIX
-    });
-    createNode(this.win, {
-      nodeType: "span",
-      parent: textbox,
-      attributes: {
-        "class": "infobar-areaname",
-        "id": "infobar-areaname"
-      },
-      prefix: this.ID_CLASS_PREFIX
-    });
-    createNode(this.win, {
-      nodeType: "span",
-      parent: textbox,
-      attributes: {
-        "class": "infobar-dimensions",
-        "id": "infobar-dimensions"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -299,61 +244,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     setIgnoreLayoutChanges(false, this.currentNode.ownerDocument.documentElement);
     return true;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _updateInfobar(area, x1, x2, y1, y2) {
-    let width = x2 - x1;
-    let height = y2 - y1;
-    let dim = parseFloat(width.toPrecision(6)) +
-              " \u00D7 " +
-              parseFloat(height.toPrecision(6));
-
-    this.getElement("infobar-areaname").setTextContent(area.name);
-    this.getElement("infobar-dimensions").setTextContent(dim);
-
-    this._moveInfobar(x1, x2, y1, y2);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _moveInfobar(x1, x2, y1, y2) {
-    let bounds = {
-      bottom: y2,
-      height: y2 - y1,
-      left: x1,
-      right: x2,
-      top: y1,
-      width: x2 - x1,
-      x: x1,
-      y: y1,
-    };
-    let container = this.getElement("infobar-container");
-
-    moveInfobar(container, bounds, this.win);
   },
 
   clearCanvas() {
@@ -567,12 +457,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
                    "L" + x2 + "," + y2 + " " +
                    "L" + x1 + "," + y2;
         paths.push(path);
-
-        
-        if (!renderAllGridAreas) {
-          this._updateInfobar(area, x1, x2, y1, y2);
-          this._showInfoBar();
-        }
       }
     }
 
@@ -587,7 +471,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     setIgnoreLayoutChanges(true);
     this._hideGrid();
     this._hideGridArea();
-    this._hideInfoBar();
     setIgnoreLayoutChanges(false, this.currentNode.ownerDocument.documentElement);
   },
 
@@ -605,14 +488,6 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   _showGridArea() {
     this.getElement("elements").removeAttribute("hidden");
-  },
-
-  _hideInfoBar() {
-    this.getElement("infobar-container").setAttribute("hidden", "true");
-  },
-
-  _showInfoBar() {
-    this.getElement("infobar-container").removeAttribute("hidden");
   },
 
 });
