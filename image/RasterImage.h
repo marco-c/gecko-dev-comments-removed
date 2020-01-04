@@ -27,6 +27,7 @@
 #include "nsThreadUtils.h"
 #include "DecodePool.h"
 #include "DecoderFactory.h"
+#include "FrameAnimator.h"
 #include "Orientation.h"
 #include "nsIObserver.h"
 #include "mozilla/Attributes.h"
@@ -133,7 +134,6 @@ class Image;
 namespace image {
 
 class Decoder;
-class FrameAnimator;
 class ImageMetadata;
 class SourceBuffer;
 
@@ -287,7 +287,7 @@ private:
   
   
   bool IsUnlocked() {
-    return (mLockCount == 0 || (mAnim && mAnimationConsumers == 0));
+    return (mLockCount == 0 || (mAnimationState && mAnimationConsumers == 0));
   }
 
 
@@ -350,7 +350,10 @@ private:
   nsCOMPtr<nsIProperties>   mProperties;
 
   
-  UniquePtr<FrameAnimator> mAnim;
+  UniquePtr<FrameAnimator> mFrameAnimator;
+
+  
+  Maybe<AnimationState> mAnimationState;
 
   
   uint32_t                   mLockCount;

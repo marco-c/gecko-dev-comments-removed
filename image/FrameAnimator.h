@@ -22,72 +22,18 @@ namespace image {
 
 class RasterImage;
 
-class FrameAnimator
+class AnimationState
 {
 public:
-  FrameAnimator(RasterImage* aImage,
-                gfx::IntSize aSize,
-                uint16_t aAnimationMode)
-    : mImage(aImage)
-    , mSize(aSize)
-    , mCurrentAnimationFrameIndex(0)
-    , mLoopRemainingCount(-1)
+  explicit AnimationState(uint16_t aAnimationMode)
+    : mCurrentAnimationFrameIndex(0)
     , mLastCompositedFrameIndex(-1)
+    , mLoopRemainingCount(-1)
     , mLoopCount(-1)
     , mFirstFrameTimeout(0)
     , mAnimationMode(aAnimationMode)
     , mDoneDecoding(false)
-  {
-     MOZ_COUNT_CTOR(FrameAnimator);
-  }
-
-  ~FrameAnimator()
-  {
-    MOZ_COUNT_DTOR(FrameAnimator);
-  }
-
-  
-
-
-
-  struct RefreshResult
-  {
-    
-    nsIntRect dirtyRect;
-
-    
-    bool frameAdvanced : 1;
-
-    
-    bool animationFinished : 1;
-
-    
-    
-    bool error : 1;
-
-    RefreshResult()
-      : frameAdvanced(false)
-      , animationFinished(false)
-      , error(false)
-    { }
-
-    void Accumulate(const RefreshResult& other)
-    {
-      frameAdvanced = frameAdvanced || other.frameAdvanced;
-      animationFinished = animationFinished || other.animationFinished;
-      error = error || other.error;
-      dirtyRect = dirtyRect.Union(other.dirtyRect);
-    }
-  };
-
-  
-
-
-
-
-
-
-  RefreshResult RequestRefresh(const TimeStamp& aTime);
+  { }
 
   
 
@@ -139,21 +85,6 @@ public:
 
 
 
-
-  LookupResult GetCompositedFrame(uint32_t aFrameNum);
-
-  
-
-
-
-
-
-  int32_t GetTimeoutForFrame(uint32_t aFrameNum) const;
-
-  
-
-
-
   void SetLoopCount(int32_t aLoopCount) { mLoopCount = aLoopCount; }
   int32_t LoopCount() const { return mLoopCount; }
 
@@ -162,6 +93,110 @@ public:
 
 
   void SetFirstFrameTimeout(int32_t aTimeout) { mFirstFrameTimeout = aTimeout; }
+
+private:
+  friend class FrameAnimator;
+
+  
+  nsIntRect mFirstFrameRefreshArea;
+
+  
+  TimeStamp mCurrentAnimationFrameTime;
+
+  
+  uint32_t mCurrentAnimationFrameIndex;
+
+  
+  int32_t mLastCompositedFrameIndex;
+
+  
+  int32_t mLoopRemainingCount;
+
+  
+  int32_t mLoopCount;
+
+  
+  int32_t mFirstFrameTimeout;
+
+  
+  uint16_t mAnimationMode;
+
+  
+  bool mDoneDecoding;
+};
+
+class FrameAnimator
+{
+public:
+  FrameAnimator(RasterImage* aImage, gfx::IntSize aSize)
+    : mImage(aImage)
+    , mSize(aSize)
+  {
+     MOZ_COUNT_CTOR(FrameAnimator);
+  }
+
+  ~FrameAnimator()
+  {
+    MOZ_COUNT_DTOR(FrameAnimator);
+  }
+
+  
+
+
+
+  struct RefreshResult
+  {
+    
+    nsIntRect dirtyRect;
+
+    
+    bool frameAdvanced : 1;
+
+    
+    bool animationFinished : 1;
+
+    
+    
+    bool error : 1;
+
+    RefreshResult()
+      : frameAdvanced(false)
+      , animationFinished(false)
+      , error(false)
+    { }
+
+    void Accumulate(const RefreshResult& other)
+    {
+      frameAdvanced = frameAdvanced || other.frameAdvanced;
+      animationFinished = animationFinished || other.animationFinished;
+      error = error || other.error;
+      dirtyRect = dirtyRect.Union(other.dirtyRect);
+    }
+  };
+
+  
+
+
+
+
+
+
+  RefreshResult RequestRefresh(AnimationState& aState, const TimeStamp& aTime);
+
+  
+
+
+
+
+  LookupResult GetCompositedFrame(AnimationState& aState, uint32_t aFrameNum);
+
+  
+
+
+
+
+
+  int32_t GetTimeoutForFrame(AnimationState& aState, uint32_t aFrameNum) const;
 
   
 
@@ -179,36 +214,38 @@ private:
 
 
 
-  int32_t GetSingleLoopTime() const;
-
-  
 
 
 
 
 
-
-
-
-
-
-
-  RefreshResult AdvanceFrame(TimeStamp aTime);
-
-  
-
-
-
-
-  TimeStamp GetCurrentImgFrameEndTime() const;
-
-  bool DoBlend(nsIntRect* aDirtyRect, uint32_t aPrevFrameIndex,
-               uint32_t aNextFrameIndex);
+  RefreshResult AdvanceFrame(AnimationState& aState, TimeStamp aTime);
 
   
 
 
   RawAccessFrameRef GetRawFrame(uint32_t aFrameNum) const;
+
+  
+
+
+
+
+
+
+  int32_t GetSingleLoopTime(AnimationState& aState) const;
+
+  
+
+
+
+
+  TimeStamp GetCurrentImgFrameEndTime(AnimationState& aState) const;
+
+  bool DoBlend(AnimationState& aState,
+               nsIntRect* aDirtyRect,
+               uint32_t aPrevFrameIndex,
+               uint32_t aNextFrameIndex);
 
   
 
@@ -274,33 +311,6 @@ private:
 
 
   RawAccessFrameRef mCompositingPrevFrame;
-
-  
-  nsIntRect mFirstFrameRefreshArea;
-
-  
-  TimeStamp mCurrentAnimationFrameTime;
-
-  
-  uint32_t mCurrentAnimationFrameIndex;
-
-  
-  int32_t mLoopRemainingCount;
-
-  
-  int32_t mLastCompositedFrameIndex;
-
-  
-  int32_t mLoopCount;
-
-  
-  int32_t mFirstFrameTimeout;
-
-  
-  uint16_t mAnimationMode;
-
-  
-  bool mDoneDecoding;
 };
 
 } 
