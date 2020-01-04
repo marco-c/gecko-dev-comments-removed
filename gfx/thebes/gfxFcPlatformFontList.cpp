@@ -1555,9 +1555,7 @@ gfxFcPlatformFontList::FindGenericFamilies(const nsAString& aGeneric,
                                  PatternHasLang(font, ToFcChar8Ptr(fcLang.get()));
                 foundFontWithLang = foundFontWithLang || foundLang;
                 
-                
-                if (fcLang.IsEmpty() ||
-                    prefFonts->Length() >= limit || foundLang) {
+                if (prefFonts->Length() >= limit) {
                     break;
                 }
             }
