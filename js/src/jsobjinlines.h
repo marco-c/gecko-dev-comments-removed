@@ -275,7 +275,17 @@ ClassCanHaveFixedData(const Class* clasp)
         || js::IsTypedArrayClass(clasp);
 }
 
-static MOZ_ALWAYS_INLINE void
+
+
+
+
+
+
+
+
+
+
+static MOZ_ALWAYS_INLINE MOZ_WARN_UNUSED_RESULT JSObject*
 SetNewObjectMetadata(ExclusiveContext* cxArg, JSObject* obj)
 {
     MOZ_ASSERT(!cxArg->compartment()->hasObjectPendingMetadata());
@@ -290,10 +300,13 @@ SetNewObjectMetadata(ExclusiveContext* cxArg, JSObject* obj)
             
             AutoEnterAnalysis enter(cx);
 
-            RootedObject hobj(cx, obj);
-            cx->compartment()->setNewObjectMetadata(cx, hobj);
+            RootedObject rooted(cx, obj);
+            cx->compartment()->setNewObjectMetadata(cx, rooted);
+            return rooted;
         }
     }
+
+    return obj;
 }
 
 } 
@@ -357,7 +370,7 @@ JSObject::create(js::ExclusiveContext* cx, js::gc::AllocKind kind, js::gc::Initi
     if (group->clasp()->shouldDelayMetadataCallback())
         cx->compartment()->setObjectPendingMetadata(cx, obj);
     else
-        SetNewObjectMetadata(cx, obj);
+        obj = SetNewObjectMetadata(cx, obj);
 
     js::gc::TraceCreateObject(obj);
 
