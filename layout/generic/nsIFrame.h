@@ -1276,6 +1276,13 @@ public:
 
   bool Combines3DTransformWithAncestors() const;
 
+  
+
+
+
+
+  bool In3DContextAndBackfaceIsHidden() const;
+
   bool IsPreserve3DLeaf() const {
     return Combines3DTransformWithAncestors() && !Extend3DContext();
   }
