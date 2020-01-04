@@ -142,7 +142,7 @@ public:
                            MediaDecoderReader* aReader,
                            bool aRealTime = false);
 
-  nsresult Init();
+  nsresult Init(MediaDecoder* aDecoder);
 
   
   enum State {
