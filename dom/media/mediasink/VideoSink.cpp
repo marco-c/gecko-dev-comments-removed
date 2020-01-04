@@ -166,6 +166,25 @@ VideoSink::Start(int64_t aStartTime, const MediaInfo& aInfo)
 
   if (mHasVideo) {
     mEndPromise = mEndPromiseHolder.Ensure(__func__);
+
+    
+    
+    
+    
+    
+    RefPtr<GenericPromise> p = mAudioSink->OnEnded(TrackInfo::kVideoTrack);
+    if (p) {
+      RefPtr<VideoSink> self = this;
+      mVideoSinkEndRequest.Begin(p->Then(mOwnerThread, __func__,
+        [self] () {
+          self->mVideoSinkEndRequest.Complete();
+          self->TryUpdateRenderedVideoFrames();
+        }, [self] () {
+          self->mVideoSinkEndRequest.Complete();
+          self->TryUpdateRenderedVideoFrames();
+        }));
+    }
+
     ConnectListener();
     
     
@@ -185,6 +204,7 @@ VideoSink::Stop()
   mUpdateScheduler.Reset();
   if (mHasVideo) {
     DisconnectListener();
+    mVideoSinkEndRequest.DisconnectIfExists();
     mEndPromiseHolder.ResolveIfExists(true, __func__);
     mEndPromise = nullptr;
   }
@@ -389,7 +409,9 @@ VideoSink::UpdateRenderedVideoFrames()
   }
 
   
-  if (VideoQueue().IsFinished() && VideoQueue().GetSize() <= 1) {
+  if (VideoQueue().IsFinished() &&
+      VideoQueue().GetSize() <= 1 &&
+      !mVideoSinkEndRequest.Exists()) {
     mEndPromiseHolder.ResolveIfExists(true, __func__);
   }
 
