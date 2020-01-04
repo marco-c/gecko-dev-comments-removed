@@ -436,6 +436,12 @@ ImageEncoder::ExtractDataInternal(const nsAString& aType,
       imgStream = do_QueryInterface(aEncoder);
     }
   } else {
+    CheckedInt32 requiredBytes = CheckedInt32(aSize.width) * CheckedInt32(aSize.height) * 4;
+    if (MOZ_UNLIKELY(!requiredBytes.isValid())) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
+
     
     
     
