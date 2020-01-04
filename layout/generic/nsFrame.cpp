@@ -2183,14 +2183,14 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     aBuilder->IsBuildingLayerEventRegions() &&
     StyleUserInterface()->GetEffectivePointerEvents(this) !=
       NS_STYLE_POINTER_EVENTS_NONE;
-  bool opacityItemForEventsOnly = false;
+  bool opacityItemForEventsAndPluginsOnly = false;
   if (effects->mOpacity == 0.0 && aBuilder->IsForPainting() &&
-      !aBuilder->WillComputePluginGeometry() &&
       !(disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_OPACITY) &&
       !nsLayoutUtils::HasCurrentAnimationOfProperty(this,
                                                     eCSSProperty_opacity)) {
-    if (needEventRegions) {
-      opacityItemForEventsOnly = true;
+    if (needEventRegions ||
+        aBuilder->WillComputePluginGeometry()) {
+      opacityItemForEventsAndPluginsOnly = true;
     } else {
       return;
     }
@@ -2457,7 +2457,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     opacityClipState.Clear();
     resultList.AppendNewToTop(
         new (aBuilder) nsDisplayOpacity(aBuilder, this, &resultList,
-                                        containerItemScrollClip, opacityItemForEventsOnly));
+                                        containerItemScrollClip, opacityItemForEventsAndPluginsOnly));
   }
 
   
@@ -4496,9 +4496,9 @@ nsIFrame::InlinePrefISizeData::ForceBreak()
         }
       }
 
-      StyleFloat floatStyle = floatDisp->PhysicalFloats(mLineContainerWM);
-      nscoord& floats_cur =
-        floatStyle == StyleFloat::Left ? floats_cur_left : floats_cur_right;
+      uint8_t floatStyle = floatDisp->PhysicalFloats(mLineContainerWM);
+      nscoord& floats_cur = floatStyle == NS_STYLE_FLOAT_LEFT
+                              ? floats_cur_left : floats_cur_right;
       nscoord floatWidth = floatInfo.Width();
       
       

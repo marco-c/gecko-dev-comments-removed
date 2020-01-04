@@ -166,7 +166,7 @@ RenderFrameParent::BuildLayer(nsDisplayListBuilder* aBuilder,
     
     
     
-    if (!aContainerParameters.mForEventsOnly) {
+    if (!aContainerParameters.mForEventsAndPluginsOnly) {
       NS_WARNING("Remote iframe not rendered");
     }
     return nullptr;
