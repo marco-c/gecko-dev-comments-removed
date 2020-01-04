@@ -70,6 +70,7 @@
 #include "mozilla/dom/WorkerDebuggerGlobalScopeBinding.h"
 #include "mozilla/dom/WorkerGlobalScopeBinding.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/TimelineConsumers.h"
 #include "mozilla/WorkerTimelineMarker.h"
 #include "nsAlgorithm.h"
@@ -3915,6 +3916,7 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
   , mJSContext(nullptr)
   , mPRThread(nullptr)
   , mDebuggerEventLoopLevel(0)
+  , mMainThreadEventTarget(do_GetMainThread())
   , mErrorHandlerRecursionCount(0)
   , mNextTimeoutId(1)
   , mStatus(Pending)
@@ -3943,6 +3945,29 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
     RuntimeService::GetDefaultPreferences(mPreferences);
     mOnLine = !NS_IsOffline() && !NS_IsAppOffline(aLoadInfo.mPrincipal);
   }
+
+  nsCOMPtr<nsIEventTarget> target;
+
+  if (aParent) {
+    target = aParent->MainThreadEventTarget();
+  }
+
+  
+  
+
+  if (!target) {
+    nsCOMPtr<nsIThread> mainThread;
+    NS_GetMainThread(getter_AddRefs(mainThread));
+    MOZ_DIAGNOSTIC_ASSERT(mainThread);
+    target = mainThread;
+  }
+
+  
+  
+  mMainThreadTaskQueue = new TaskQueue(target.forget());
+
+  
+  mMainThreadEventTarget = mMainThreadTaskQueue->WrapAsEventTarget();
 }
 
 WorkerPrivate::~WorkerPrivate()
@@ -4484,6 +4509,14 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
 
         
         
+        
+        mMainThreadEventTarget = do_GetMainThread();
+        RefPtr<TaskQueue> taskQueue = mMainThreadTaskQueue.forget();
+        taskQueue->BeginShutdown();
+        taskQueue->AwaitShutdownAndIdle();
+
+        
+        
         if (!mControlQueue.IsEmpty()) {
           WorkerControlRunnable* runnable;
           while (mControlQueue.Pop(runnable)) {
@@ -4547,6 +4580,14 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
       
       SetGCTimerMode(IdleTimer);
     }
+
+    
+    
+    
+    if (mMainThreadTaskQueue &&
+        mMainThreadTaskQueue->ImpreciseLengthForHeuristics() > 5000) {
+      mMainThreadTaskQueue->AwaitIdle();
+    }
   }
 
   MOZ_CRASH("Shouldn't get here!");
@@ -4590,6 +4631,26 @@ WorkerPrivate::MaybeDispatchLoadFailedRunnable()
   }
 
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(runnable.forget()));
+}
+
+nsIEventTarget*
+WorkerPrivate::MainThreadEventTarget()
+{
+  return mMainThreadEventTarget;
+}
+
+nsresult
+WorkerPrivate::DispatchToMainThread(nsIRunnable* aRunnable, uint32_t aFlags)
+{
+  nsCOMPtr<nsIRunnable> r = aRunnable;
+  return DispatchToMainThread(r.forget(), aFlags);
+}
+
+nsresult
+WorkerPrivate::DispatchToMainThread(already_AddRefed<nsIRunnable> aRunnable,
+                                    uint32_t aFlags)
+{
+  return mMainThreadEventTarget->Dispatch(Move(aRunnable), aFlags);
 }
 
 void
