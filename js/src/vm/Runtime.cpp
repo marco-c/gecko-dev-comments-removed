@@ -12,7 +12,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ThreadLocal.h"
 
-#if defined(XP_MACOSX)
+#if defined(XP_DARWIN)
 #include <mach/mach.h>
 #elif defined(XP_UNIX)
 #include <sys/resource.h>
@@ -1109,7 +1109,7 @@ JSRuntime::Stopwatch::getResources(uint64_t* userTime,
     MOZ_ASSERT(userTime);
     MOZ_ASSERT(systemTime);
 
-#if defined(XP_MACOSX)
+#if defined(XP_DARWIN)
     
     
 

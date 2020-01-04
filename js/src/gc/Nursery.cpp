@@ -113,7 +113,7 @@ js::Nursery::updateDecommittedRegion()
     if (numActiveChunks_ < numNurseryChunks_) {
         
         
-# ifndef XP_MACOSX
+# ifndef XP_DARWIN
         uintptr_t decommitStart = chunk(numActiveChunks_).start();
         uintptr_t decommitSize = heapEnd() - decommitStart;
         MOZ_ASSERT(decommitStart == AlignBytes(decommitStart, Alignment));

@@ -112,7 +112,7 @@ JitOptions::JitOptions()
 
     
     
-    #if defined(XP_MACOSX)
+    #if defined(XP_DARWIN)
         SET_DEFAULT(disableSincos, false);
     #else
         SET_DEFAULT(disableSincos, true);

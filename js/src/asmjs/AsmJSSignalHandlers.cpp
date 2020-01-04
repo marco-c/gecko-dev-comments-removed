@@ -198,7 +198,7 @@ class AutoSetHandlingSignal
 # else
 #  define R15_sig(p) ((p)->uc_mcontext.mc_r15)
 # endif
-#elif defined(XP_MACOSX)
+#elif defined(XP_DARWIN)
 # define EIP_sig(p) ((p)->uc_mcontext->__ss.__eip)
 # define RIP_sig(p) ((p)->uc_mcontext->__ss.__rip)
 #else
@@ -313,7 +313,7 @@ enum { REG_EIP = 14 };
 
 
 
-#if defined(XP_MACOSX) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
+#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
 # if defined(JS_CODEGEN_X64)
 struct macos_x64_context {
     x86_thread_state64_t thread;
@@ -421,7 +421,7 @@ StoreValueFromGPImm(void* addr, size_t size, int32_t imm)
     memcpy(addr, &imm, size);
 }
 
-# if !defined(XP_MACOSX)
+# if !defined(XP_DARWIN)
 MOZ_COLD static void*
 AddressOfFPRegisterSlot(CONTEXT* context, FloatRegisters::Encoding encoding)
 {
@@ -793,7 +793,7 @@ AsmJSFaultHandler(LPEXCEPTION_POINTERS exception)
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
-#elif defined(XP_MACOSX)
+#elif defined(XP_DARWIN)
 # include <mach/exc.h>
 
 static uint8_t**
@@ -1199,7 +1199,7 @@ JitInterruptHandler(int signum, siginfo_t* info, void* context)
 bool
 js::EnsureSignalHandlersInstalled(JSRuntime* rt)
 {
-#if defined(XP_MACOSX) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
+#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
     
     if (!rt->asmJSMachExceptionHandler.installed() && !rt->asmJSMachExceptionHandler.install(rt))
         return false;
@@ -1262,7 +1262,7 @@ js::EnsureSignalHandlersInstalled(JSRuntime* rt)
 # if defined(XP_WIN)
     if (!AddVectoredExceptionHandler( true, AsmJSFaultHandler))
         return false;
-# elif defined(XP_MACOSX)
+# elif defined(XP_DARWIN)
     
     
 # else
