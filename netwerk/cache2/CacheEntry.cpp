@@ -927,56 +927,54 @@ void CacheEntry::OnHandleClosed(CacheEntryHandle const* aHandle)
 {
   LOG(("CacheEntry::OnHandleClosed [this=%p, state=%s, handle=%p]", this, StateString(mState), aHandle));
 
-  nsCOMPtr<nsIOutputStream> outputStream;
+  mozilla::MutexAutoLock lock(mLock);
 
-  {
-    mozilla::MutexAutoLock lock(mLock);
-
-    if (mWriter != aHandle) {
-      LOG(("  not the writer"));
-      return;
-    }
-
-    if (mOutputStream) {
-      
-      
-      
-      mHasData = false;
-    }
-
-    outputStream.swap(mOutputStream);
-    mWriter = nullptr;
-
-    if (mState == WRITING) {
-      LOG(("  reverting to state EMPTY - write failed"));
-      mState = EMPTY;
-    }
-    else if (mState == REVALIDATING) {
-      LOG(("  reverting to state READY - reval failed"));
-      mState = READY;
-    }
-
-    if (mState == READY && !mHasData) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      LOG(("  we are in READY state, pretend we have data regardless it"
-            " has actully been never touched"));
-      mHasData = true;
-    }
-
-    InvokeCallbacks();
+  if (mWriter != aHandle) {
+    LOG(("  not the writer"));
+    return;
   }
 
-  if (outputStream) {
+  if (mOutputStream) {
     LOG(("  abandoning phantom output stream"));
-    outputStream->Close();
+    
+    
+    
+    mHasData = false;
+    
+    
+    mOutputStream->Close();
+    mOutputStream = nullptr;
+  } else {
+    
+    
+    
+    BackgroundOp(Ops::CALLBACKS, true);
+  }
+
+  mWriter = nullptr;
+
+  if (mState == WRITING) {
+    LOG(("  reverting to state EMPTY - write failed"));
+    mState = EMPTY;
+  }
+  else if (mState == REVALIDATING) {
+    LOG(("  reverting to state READY - reval failed"));
+    mState = READY;
+  }
+
+  if (mState == READY && !mHasData) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    LOG(("  we are in READY state, pretend we have data regardless it"
+          " has actully been never touched"));
+    mHasData = true;
   }
 }
 
