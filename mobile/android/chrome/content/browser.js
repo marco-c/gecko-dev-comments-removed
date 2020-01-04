@@ -3355,6 +3355,7 @@ function Tab(aURL, aParams) {
   this.desktopMode = false;
   this.originalURI = null;
   this.hasTouchListener = false;
+  this.playingAudio = false;
 
   this.create(aURL, aParams);
 }
@@ -4142,10 +4143,12 @@ Tab.prototype = {
           return;
         }
 
+        this.playingAudio = aEvent.type === "DOMAudioPlaybackStarted";
+
         Messaging.sendRequest({
           type: "Tab:AudioPlayingChange",
           tabID: this.id,
-          isAudioPlaying: aEvent.type === "DOMAudioPlaybackStarted"
+          isAudioPlaying: this.playingAudio
         });
         return;
       }
@@ -7281,7 +7284,10 @@ var Tabs = {
     let lruTab = null;
     
     for (let i = 0; i < tabs.length; i++) {
-      if (tabs[i] == selected || tabs[i].browser.__SS_restore) {
+      if (tabs[i] == selected ||
+          tabs[i].browser.__SS_restore ||
+          tabs[i].playingAudio) {
+        
         
         continue;
       }
