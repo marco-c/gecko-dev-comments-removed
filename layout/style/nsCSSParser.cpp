@@ -323,9 +323,6 @@ public:
     if (mUnsafeRulesEnabled) {
       enabledState |= nsCSSProps::eEnabledInUASheets;
     }
-    if (mIsChrome) {
-      enabledState |= nsCSSProps::eEnabledInChrome;
-    }
     return enabledState;
   }
 
@@ -1213,9 +1210,6 @@ protected:
   bool mUnsafeRulesEnabled : 1;
 
   
-  bool mIsChrome : 1;
-
-  
   bool mViewportUnitsEnabled : 1;
 
   
@@ -1338,7 +1332,6 @@ CSSParserImpl::CSSParserImpl()
     mHashlessColorQuirk(false),
     mUnitlessLengthQuirk(false),
     mUnsafeRulesEnabled(false),
-    mIsChrome(false),
     mViewportUnitsEnabled(true),
     mHTMLMediaMode(false),
     mParsingCompoundProperty(false),
@@ -1491,7 +1484,6 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   }
 
   mUnsafeRulesEnabled = aAllowUnsafeRules;
-  mIsChrome = nsContentUtils::IsSystemPrincipal(aSheetPrincipal);
   mReusableSheets = aReusableSheets;
 
   nsCSSToken* tk = &mToken;
@@ -1516,7 +1508,6 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   ReleaseScanner();
 
   mUnsafeRulesEnabled = false;
-  mIsChrome = false;
   mReusableSheets = nullptr;
 
   
@@ -1693,7 +1684,10 @@ CSSParserImpl::ParseProperty(const nsCSSProperty aPropID,
 
   
   if (eCSSProperty_UNKNOWN == aPropID ||
-      !nsCSSProps::IsEnabled(aPropID, PropertyEnabledState())) {
+      !(nsCSSProps::IsEnabled(aPropID) ||
+        (mUnsafeRulesEnabled &&
+         nsCSSProps::PropHasFlags(aPropID,
+                                  CSS_PROPERTY_ALWAYS_ENABLED_IN_UA_SHEETS)))) {
     NS_ConvertASCIItoUTF16 propName(nsCSSProps::GetStringValue(aPropID));
     REPORT_UNEXPECTED_P(PEUnknownProperty, propName);
     REPORT_UNEXPECTED(PEDeclDropped);
@@ -2997,8 +2991,7 @@ CSSParserImpl::ParseAtRule(RuleAppendFunc aAppendFunc,
     parseFunc = &CSSParserImpl::ParsePageRule;
     newSection = eCSSSection_General;
 
-  } else if ((nsCSSProps::IsEnabled(eCSSPropertyAlias_MozAnimation,
-                                    PropertyEnabledState()) &&
+  } else if ((nsCSSProps::IsEnabled(eCSSPropertyAlias_MozAnimation) &&
               mToken.mIdent.LowerCaseEqualsLiteral("-moz-keyframes")) ||
              mToken.mIdent.LowerCaseEqualsLiteral("keyframes")) {
     parseFunc = &CSSParserImpl::ParseKeyframesRule;

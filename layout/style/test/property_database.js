@@ -1841,6 +1841,22 @@ var gCSSProperties = {
     other_values: [ "none", "text", "element", "elements", "all", "toggle", "tri-state", "-moz-all", "-moz-none" ],
     invalid_values: []
   },
+  "-moz-window-dragging": {
+    domProp: "MozWindowDragging",
+    inherited: true,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: [ "no-drag" ],
+    other_values: [ "drag" ],
+    invalid_values: [ "none" ]
+  },
+  "-moz-window-shadow": {
+    domProp: "MozWindowShadow",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: [ "default" ],
+    other_values: [ "none", "menu", "tooltip", "sheet" ],
+    invalid_values: []
+  },
   "background": {
     domProp: "background",
     inherited: false,
@@ -6604,25 +6620,4 @@ if (IsCSSPropertyPrefEnabled("layout.css.unset-value.enabled")) {
   } else {
     gCSSProperties["text-align"].invalid_values.push("true left");
   }
-}
-
-if (false) {
-  
-  
-  gCSSProperties["-moz-window-dragging"] = {
-    
-    inherited: true,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: [ "no-drag" ],
-    other_values: [ "drag" ],
-    invalid_values: [ "none" ]
-  };
-  gCSSProperties["-moz-window-shadow"] = {
-    
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: [ "default" ],
-    other_values: [ "none", "menu", "tooltip", "sheet" ],
-    invalid_values: []
-  };
 }
