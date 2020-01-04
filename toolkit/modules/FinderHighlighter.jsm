@@ -46,8 +46,10 @@ const kModalStyles = {
     ["margin", "-2px 0 0 -2px !important"],
     ["padding", "2px !important"],
     ["pointer-events", "none"],
+    ["transition-property", "opacity, transform, top, left"],
+    ["transition-duration", "50ms"],
+    ["transition-timing-function", "linear"],
     ["white-space", "nowrap"],
-    ["will-change", "transform"],
     ["z-index", 2]
   ],
   outlineNodeDebug: [ ["z-index", 2147483647] ],
@@ -58,6 +60,7 @@ const kModalStyles = {
   ],
   maskNode: [
     ["background", "#000"],
+    ["mix-blend-mode", "multiply"],
     ["opacity", ".35"],
     ["pointer-events", "none"],
     ["position", "absolute"],
@@ -113,9 +116,6 @@ function mockAnonymousContentNode(domNode) {
       try {
         domNode.parentNode.removeChild(domNode);
       } catch (ex) {}
-    },
-    setAnimationForElement(id, keyframes, duration) {
-      return (domNode.querySelector("#" + id) || domNode).animate(keyframes, duration);
     }
   };
 }
@@ -869,8 +869,7 @@ FinderHighlighter.prototype = {
       rectCount != 1);
     dict.previousRangeRectsCount = rectCount;
 
-    let window = range.startContainer.ownerDocument.defaultView.top;
-    let document = window.document;
+    let document = range.startContainer.ownerDocument;
     
     if (rebuildOutline && outlineAnonNode) {
       if (kDebug) {
@@ -887,11 +886,8 @@ FinderHighlighter.prototype = {
     if (!textContent.length)
       return;
 
-    let container, outlineBox;
+    let outlineBox;
     if (rebuildOutline) {
-      
-      
-      container = document.createElementNS(kNSHTML, "div");
       
       outlineBox = document.createElementNS(kNSHTML, "div");
       outlineBox.setAttribute("id", kModalOutlineId);
@@ -936,11 +932,10 @@ FinderHighlighter.prototype = {
     }
 
     if (rebuildOutline) {
-      container.appendChild(outlineBox);
       dict.modalHighlightOutline = kDebug ?
         mockAnonymousContentNode((document.body ||
-          document.documentElement).appendChild(container.firstChild)) :
-        document.insertAnonymousContent(container);
+          document.documentElement).appendChild(outlineBox)) :
+        document.insertAnonymousContent(outlineBox);
     }
   },
 
@@ -1158,7 +1153,8 @@ FinderHighlighter.prototype = {
     let target = this.iterator._getDocShell(window).chromeEventHandler;
     target.addEventListener("MozAfterPaint", dict.highlightListeners[0]);
     target.addEventListener("resize", dict.highlightListeners[1]);
-    target.addEventListener("scroll", dict.highlightListeners[2]);
+    target.addEventListener("DOMMouseScroll", dict.highlightListeners[2]);
+    target.addEventListener("mousewheel", dict.highlightListeners[2]);
     target.addEventListener("click", dict.highlightListeners[3]);
   },
 
@@ -1176,7 +1172,8 @@ FinderHighlighter.prototype = {
     let target = this.iterator._getDocShell(window).chromeEventHandler;
     target.removeEventListener("MozAfterPaint", dict.highlightListeners[0]);
     target.removeEventListener("resize", dict.highlightListeners[1]);
-    target.removeEventListener("scroll", dict.highlightListeners[2]);
+    target.removeEventListener("DOMMouseScroll", dict.highlightListeners[2]);
+    target.removeEventListener("mousewheel", dict.highlightListeners[2]);
     target.removeEventListener("click", dict.highlightListeners[3]);
 
     dict.highlightListeners = null;
