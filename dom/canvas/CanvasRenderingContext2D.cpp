@@ -4398,9 +4398,11 @@ CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
 
   MOZ_ASSERT(aOptional_argc == 0 || aOptional_argc == 2 || aOptional_argc == 6);
 
+  if (!ValidateRect(aDx, aDy, aDw, aDh, true)) {
+    return;
+  }
   if (aOptional_argc == 6) {
-    if  (!ValidateRect(aSx, aSy, aSw, aSh, true) ||
-         !ValidateRect(aDx, aDy, aDw, aDh, true)) {
+    if (!ValidateRect(aSx, aSy, aSw, aSh, true)) {
       return;
     }
   }
