@@ -371,7 +371,6 @@ PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
 
   
   
-  mTransport->SetCallback(nullptr);
   mTransport = nullptr;
 
   if (NS_WARN_IF(!IsSessionReady())) {
