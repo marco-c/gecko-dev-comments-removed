@@ -2001,17 +2001,20 @@ void
 ServiceWorkerManager::StopControllingADocument(ServiceWorkerRegistrationInfo* aRegistration)
 {
   aRegistration->StopControllingADocument();
-  if (!aRegistration->IsControllingDocuments()) {
-    if (aRegistration->mPendingUninstall) {
-      RemoveRegistration(aRegistration);
-    } else {
-      
-      
-      
-      
-      aRegistration->TryToActivateAsync();
-    }
+  if (aRegistration->IsControllingDocuments()) {
+    return;
   }
+
+  if (aRegistration->mPendingUninstall) {
+    RemoveRegistration(aRegistration);
+    return;
+  }
+
+  
+  
+  
+  
+  aRegistration->TryToActivateAsync();
 }
 
 NS_IMETHODIMP
