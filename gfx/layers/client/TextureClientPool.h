@@ -48,8 +48,8 @@ public:
                     gfx::SurfaceFormat aFormat,
                     gfx::IntSize aSize,
                     TextureFlags aFlags,
-                    uint32_t aMaxTextureClients,
-                    uint32_t aShrinkTimeoutMsec,
+                    uint32_t aInitialPoolSize,
+                    uint32_t aPoolIncrementSize,
                     TextureForwarder* aAllocator);
 
   
@@ -79,19 +79,13 @@ public:
 
 
 
-  void ShrinkToMaximumSize();
-
-  
-
-
-
-  void ShrinkToMinimumSize();
-
-  
-
-
-
   void ReturnDeferredClients();
+
+  
+
+
+
+  void ShrinkToMaximumSize();
 
   
 
@@ -119,7 +113,9 @@ private:
 
   
   
-  static const uint32_t sMinCacheSize = 0;
+  
+  
+  void AllocateTextureClients(size_t aSize);
 
   
   LayersBackend mBackend;
@@ -135,11 +131,11 @@ private:
 
   
   
-  uint32_t mMaxTextureClients;
+  uint32_t mInitialPoolSize;
 
   
   
-  uint32_t mShrinkTimeoutMsec;
+  uint32_t mPoolIncrementSize;
 
   
   
