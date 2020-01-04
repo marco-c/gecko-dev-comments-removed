@@ -25,13 +25,10 @@ SignalTrampoline(int aSignal, siginfo_t* aInfo, void* aContext)
     "nop; nop; nop; nop"
     : : : "memory");
 
-  
-  
-
   asm volatile (
-    "bx %0"
+    "b %0"
     :
-    : "r"(H), "l"(aSignal), "l"(aInfo), "l"(aContext)
+    : "X"(H)
     : "memory");
 }
 
