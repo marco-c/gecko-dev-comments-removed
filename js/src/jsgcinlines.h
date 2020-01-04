@@ -185,29 +185,44 @@ class ArenaCellIterUnderFinalize : public ArenaCellIterImpl
     explicit ArenaCellIterUnderFinalize(Arena* arena) : ArenaCellIterImpl(arena) {}
 };
 
-class ZoneCellIterImpl
+class ZoneCellIter
 {
     ArenaIter arenaIter;
     ArenaCellIterImpl cellIter;
-    mozilla::DebugOnly<bool> initialized;
+    JS::AutoAssertNoAlloc noAlloc;
 
-  protected:
-    ZoneCellIterImpl() : initialized(false) {}
-
-    ZoneCellIterImpl(JS::Zone* zone, AllocKind kind) : initialized(false) { init(zone, kind); }
-
-    void init(JS::Zone* zone, AllocKind kind) {
-        MOZ_ASSERT(!initialized);
+  public:
+    ZoneCellIter(JS::Zone* zone, AllocKind kind) {
         MOZ_ASSERT(zone);
-        initialized = true;
+
+        
+        
+        JSRuntime* rt = zone->runtimeFromMainThread();
+        MOZ_ASSERT_IF(rt->isHeapBusy(), rt->gc.nursery.isEmpty());
+        if (!rt->isHeapBusy()) {
+            
+            
+            
+            
+            if (IsBackgroundFinalized(kind) &&
+                zone->arenas.needBackgroundFinalizeWait(kind))
+            {
+                rt->gc.waitBackgroundSweepEnd();
+            }
+
+            
+            rt->gc.evictNursery();
+
+            
+            noAlloc.disallowAlloc(rt);
+        }
+
         arenaIter.init(zone, kind);
         if (!arenaIter.done())
             cellIter.init(arenaIter.get());
     }
 
-  public:
     bool done() const {
-        MOZ_ASSERT(initialized);
         return arenaIter.done();
     }
 
@@ -230,49 +245,6 @@ class ZoneCellIterImpl
             if (!arenaIter.done())
                 cellIter.reset(arenaIter.get());
         }
-    }
-};
-
-class ZoneCellIterUnderGC : public ZoneCellIterImpl
-{
-  public:
-    ZoneCellIterUnderGC(JS::Zone* zone, AllocKind kind) : ZoneCellIterImpl(zone, kind) {
-        MOZ_ASSERT(zone->runtimeFromAnyThread()->gc.nursery.isEmpty());
-        MOZ_ASSERT(zone->runtimeFromAnyThread()->isHeapBusy());
-    }
-};
-
-class ZoneCellIter : public ZoneCellIterImpl
-{
-    JS::AutoAssertNoAlloc noAlloc;
-
-  public:
-    ZoneCellIter(JS::Zone* zone, AllocKind kind) {
-        JSRuntime* rt = zone->runtimeFromMainThread();
-
-        if (zone->runtimeFromAnyThread()->isHeapBusy()) {
-            MOZ_ASSERT(zone->runtimeFromAnyThread()->gc.nursery.isEmpty());
-        } else {
-            
-
-
-
-
-
-            if (IsBackgroundFinalized(kind) &&
-                zone->arenas.needBackgroundFinalizeWait(kind))
-            {
-                rt->gc.waitBackgroundSweepEnd();
-            }
-
-            
-            rt->gc.evictNursery();
-
-            
-            noAlloc.disallowAlloc(rt);
-        }
-
-        init(zone, kind);
     }
 };
 
