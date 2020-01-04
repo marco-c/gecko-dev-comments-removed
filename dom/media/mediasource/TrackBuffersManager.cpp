@@ -1568,19 +1568,19 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
   }
 }
 
-void
+bool
 TrackBuffersManager::CheckNextInsertionIndex(TrackData& aTrackData,
                                              const TimeUnit& aSampleTime)
 {
   if (aTrackData.mNextInsertionIndex.isSome()) {
-    return;
+    return true;
   }
 
   TrackBuffer& data = aTrackData.mBuffers.LastElement();
 
   if (data.IsEmpty() || aSampleTime < aTrackData.mBufferedRanges.GetStart()) {
     aTrackData.mNextInsertionIndex = Some(size_t(0));
-    return;
+    return true;
   }
 
   
@@ -1594,17 +1594,20 @@ TrackBuffersManager::CheckNextInsertionIndex(TrackData& aTrackData,
   if (target.IsEmpty()) {
     
     aTrackData.mNextInsertionIndex = Some(data.Length());
-    return;
+    return true;
   }
+  
+  
   for (uint32_t i = 0; i < data.Length(); i++) {
     const nsRefPtr<MediaRawData>& sample = data[i];
     if (sample->mTime >= target.mStart.ToMicroseconds() ||
         sample->GetEndTime() > target.mStart.ToMicroseconds()) {
       aTrackData.mNextInsertionIndex = Some(size_t(i));
-      return;
+      return true;
     }
   }
-  MOZ_CRASH("Insertion Index Not Found");
+  NS_ASSERTION(false, "Insertion Index Not Found");
+  return false;
 }
 
 void
@@ -1650,8 +1653,11 @@ TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
   }
 
   
-  CheckNextInsertionIndex(aTrackData,
-                          TimeUnit::FromMicroseconds(aSamples[0]->mTime));
+  if (!CheckNextInsertionIndex(aTrackData,
+                               TimeUnit::FromMicroseconds(aSamples[0]->mTime))) {
+    RejectProcessing(NS_ERROR_FAILURE, __func__);
+    return;
+  }
 
   
   if (trackBuffer.mNextGetSampleIndex.isSome() &&
