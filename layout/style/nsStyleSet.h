@@ -169,13 +169,21 @@ class nsStyleSet final
   
   
   
+  already_AddRefed<nsStyleContext>
+  ResolveStyleForText(nsIContent* aTextNode, nsStyleContext* aParentContext);
+
+  
+  
+  
+  
+  
+  
   
   
   
   
   already_AddRefed<nsStyleContext>
-  ResolveStyleForNonElement(nsStyleContext* aParentContext,
-                            nsIAtom* aPseudoTag);
+  ResolveStyleForOtherNonElement(nsStyleContext* aParentContext);
 
   
   
