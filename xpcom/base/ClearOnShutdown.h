@@ -9,6 +9,7 @@
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/Array.h"
 #include "MainThreadUtils.h"
 
 
@@ -35,7 +36,25 @@
 
 
 
+
+
+
+
 namespace mozilla {
+
+
+enum class ShutdownPhase {
+  NotInShutdown = 0,
+  WillShutdown,
+  Shutdown,
+  ShutdownThreads,
+  ShutdownLoaders,
+  ShutdownFinal,
+  ShutdownPhase_Length, 
+  First = WillShutdown, 
+  Last = ShutdownFinal
+};
+
 namespace ClearOnShutdown_Internal {
 
 class ShutdownObserver : public LinkedListElement<ShutdownObserver>
@@ -67,45 +86,38 @@ private:
   SmartPtr* mPtr;
 };
 
-extern bool sHasShutDown;
-extern StaticAutoPtr<LinkedList<ShutdownObserver>> sShutdownObservers;
+typedef LinkedList<ShutdownObserver> ShutdownList;
+extern Array<StaticAutoPtr<ShutdownList>,
+             static_cast<size_t>(ShutdownPhase::ShutdownPhase_Length)> sShutdownObservers;
+extern ShutdownPhase sCurrentShutdownPhase;
 
 } 
 
 template<class SmartPtr>
 inline void
-ClearOnShutdown(SmartPtr* aPtr)
+ClearOnShutdown(SmartPtr* aPtr, ShutdownPhase aPhase = ShutdownPhase::ShutdownFinal)
 {
   using namespace ClearOnShutdown_Internal;
 
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!sHasShutDown);
+  MOZ_ASSERT(aPhase != ShutdownPhase::ShutdownPhase_Length);
 
-  if (!sShutdownObservers) {
-    sShutdownObservers = new LinkedList<ShutdownObserver>();
+  
+  if (!(static_cast<size_t>(sCurrentShutdownPhase) < static_cast<size_t>(aPhase))) {
+    MOZ_ASSERT(false, "ClearOnShutdown for phase that already was cleared");
+    *aPtr = nullptr;
+    return;
   }
-  sShutdownObservers->insertBack(new PointerClearer<SmartPtr>(aPtr));
+
+  if (!(sShutdownObservers[static_cast<size_t>(aPhase)])) {
+    sShutdownObservers[static_cast<size_t>(aPhase)] = new ShutdownList();
+  }
+  sShutdownObservers[static_cast<size_t>(aPhase)]->insertBack(new PointerClearer<SmartPtr>(aPtr));
 }
 
 
 
-inline void
-KillClearOnShutdown()
-{
-  using namespace ClearOnShutdown_Internal;
-
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (sShutdownObservers) {
-    while (ShutdownObserver* observer = sShutdownObservers->popFirst()) {
-      observer->Shutdown();
-      delete observer;
-    }
-  }
-
-  sShutdownObservers = nullptr;
-  sHasShutDown = true;
-}
+void KillClearOnShutdown(ShutdownPhase aPhase);
 
 } 
 

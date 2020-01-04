@@ -9,8 +9,37 @@
 namespace mozilla {
 namespace ClearOnShutdown_Internal {
 
-bool sHasShutDown = false;
-StaticAutoPtr<LinkedList<ShutdownObserver>> sShutdownObservers;
+Array<StaticAutoPtr<ShutdownList>,
+      static_cast<size_t>(ShutdownPhase::ShutdownPhase_Length)> sShutdownObservers;
+ShutdownPhase sCurrentShutdownPhase = ShutdownPhase::NotInShutdown;
 
 } 
+
+
+
+void
+KillClearOnShutdown(ShutdownPhase aPhase)
+{
+  using namespace ClearOnShutdown_Internal;
+
+  MOZ_ASSERT(NS_IsMainThread());
+  
+  MOZ_ASSERT(static_cast<size_t>(sCurrentShutdownPhase) < static_cast<size_t>(aPhase));
+
+  
+  
+  
+  for (size_t phase = static_cast<size_t>(ShutdownPhase::First);
+       phase <= static_cast<size_t>(aPhase);
+       phase++) {
+    if (sShutdownObservers[static_cast<size_t>(phase)]) {
+      while (ShutdownObserver* observer = sShutdownObservers[static_cast<size_t>(phase)]->popFirst()) {
+        observer->Shutdown();
+        delete observer;
+      }
+      sShutdownObservers[static_cast<size_t>(phase)] = nullptr;
+    }
+  }
+}
+
 } 

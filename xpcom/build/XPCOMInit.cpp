@@ -832,6 +832,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
                    (nsObserverService**)getter_AddRefs(observerService));
 
     if (observerService) {
+      mozilla::KillClearOnShutdown(ShutdownPhase::WillShutdown);
       observerService->NotifyObservers(nullptr,
                                        NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID,
                                        nullptr);
@@ -839,6 +840,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
       nsCOMPtr<nsIServiceManager> mgr;
       rv = NS_GetServiceManager(getter_AddRefs(mgr));
       if (NS_SUCCEEDED(rv)) {
+        mozilla::KillClearOnShutdown(ShutdownPhase::Shutdown);
         observerService->NotifyObservers(mgr, NS_XPCOM_SHUTDOWN_OBSERVER_ID,
                                          nullptr);
       }
@@ -851,6 +853,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
 
     mozilla::scache::StartupCache::DeleteSingleton();
     if (observerService)
+      mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownThreads);
       observerService->NotifyObservers(nullptr,
                                        NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID,
                                        nullptr);
@@ -881,6 +884,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
     
     
     if (observerService) {
+      mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownLoaders);
       observerService->EnumerateObservers(NS_XPCOM_SHUTDOWN_LOADERS_OBSERVER_ID,
                                           getter_AddRefs(moduleLoaders));
 
@@ -891,7 +895,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   
   
-  mozilla::KillClearOnShutdown();
+  mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
 
   
   
