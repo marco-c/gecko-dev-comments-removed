@@ -133,11 +133,14 @@ public:
   };
 
   
+  
+  
   static nsresult GetFlatTextLengthInRange(const NodePosition& aStartPosition,
                                            const NodePosition& aEndPosition,
                                            nsIContent* aRootContent,
                                            uint32_t* aLength,
-                                           LineBreakType aLineBreakType);
+                                           LineBreakType aLineBreakType,
+                                           bool aIsRemovingNode = false);
   
   
   static uint32_t GetNativeTextLength(nsIContent* aContent,
