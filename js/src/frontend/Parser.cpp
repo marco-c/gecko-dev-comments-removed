@@ -216,17 +216,20 @@ SharedContext::markSuperScopeNeedsHomeObject()
 
 template <>
 bool
-ParseContext<FullParseHandler>::define(TokenStream& ts,
-                                       HandlePropertyName name, ParseNode* pn, Definition::Kind kind)
+ParseContext<FullParseHandler>::define(TokenStream& ts, HandlePropertyName name, ParseNode* pn,
+                                       Definition::Kind kind, bool declaringVarInCatchBody)
 {
     MOZ_ASSERT(!pn->isUsed());
     MOZ_ASSERT_IF(pn->isDefn(), pn->isPlaceholder());
+    MOZ_ASSERT_IF(declaringVarInCatchBody, kind == Definition::VAR);
 
     pn->setDefn(true);
 
     Definition* prevDef = nullptr;
     if (kind == Definition::LET || kind == Definition::CONSTANT)
         prevDef = decls_.lookupFirst(name);
+    else if (declaringVarInCatchBody)
+        MOZ_ASSERT(decls_.lookupLast(name)->kind() != Definition::VAR);
     else
         MOZ_ASSERT(!decls_.lookupFirst(name));
 
@@ -306,8 +309,18 @@ ParseContext<FullParseHandler>::define(TokenStream& ts,
             if (!checkLocalsOverflow(ts))
                 return false;
         }
-        if (!decls_.addUnique(name, dn))
-            return false;
+
+        
+        
+        
+        if (declaringVarInCatchBody) {
+            if (!decls_.addShadowedForAnnexB(name, dn))
+                return false;
+        } else {
+            if (!decls_.addUnique(name, dn))
+                return false;
+        }
+
         break;
 
       case Definition::LET:
@@ -317,6 +330,8 @@ ParseContext<FullParseHandler>::define(TokenStream& ts,
         dn->pn_dflags |= (PND_LEXICAL | PND_BOUND);
         if (atBodyLevel()) {
             if (!bodyLevelLexicals_.append(dn))
+                return false;
+            if (!addBodyLevelLexicallyDeclaredName(ts, name))
                 return false;
             if (!checkLocalsOverflow(ts))
                 return false;
@@ -355,7 +370,7 @@ ParseContext<SyntaxParseHandler>::checkLocalsOverflow(TokenStream& ts)
 template <>
 bool
 ParseContext<SyntaxParseHandler>::define(TokenStream& ts, HandlePropertyName name, Node pn,
-                                         Definition::Kind kind)
+                                         Definition::Kind kind, bool declaringVarInCatchBody)
 {
     MOZ_ASSERT(!decls_.lookupFirst(name));
 
@@ -1520,7 +1535,10 @@ struct BindData
     };
 
     explicit BindData(ExclusiveContext* cx)
-      : kind_(Uninitialized), nameNode_(ParseHandler::null()), letData_(cx)
+      : kind_(Uninitialized),
+        nameNode_(ParseHandler::null()),
+        letData_(cx),
+        isForOf(false)
     {}
 
     void initLexical(VarContext varContext, JSOp op, StaticBlockScope* blockScope,
@@ -1617,6 +1635,10 @@ struct BindData
     bool isAnnexB_;   
     LetData letData_;
 
+  public:
+    bool isForOf;     
+
+  private:
     bool isInitialized() {
         return kind_ != Uninitialized;
     }
@@ -3703,42 +3725,63 @@ Parser<FullParseHandler>::bindLexical(BindData<FullParseHandler>* data,
 
 
     if (data->letData().varContext == HoistVars) {
-        
-        
-        
-        if (dn && dn->pn_blockid >= pc->blockid()) {
+        if (dn) {
             
             
             
-            
-            
-            
-            if (pn->isKind(PNK_FUNCTION) && dn->isKind(PNK_FUNCTION) && !pc->sc->strict()) {
-                if (!parser->makeDefIntoUse(dn, pn, name))
-                    return false;
+            if (dn->pn_blockid >= pc->blockid()) {
+                
+                
+                
+                
+                
+                
+                if (pn->isKind(PNK_FUNCTION) && dn->isKind(PNK_FUNCTION) && !pc->sc->strict()) {
+                    if (!parser->makeDefIntoUse(dn, pn, name))
+                        return false;
 
-                MOZ_ASSERT(blockScope);
-                Shape* shape = blockScope->lastProperty()->search(cx, NameToId(name));
-                MOZ_ASSERT(shape);
-                uint32_t oldDefIndex = blockScope->shapeToIndex(*shape);
-                blockScope->updateDefinitionParseNode(oldDefIndex, dn,
-                                                      reinterpret_cast<Definition*>(pn));
+                    MOZ_ASSERT(blockScope);
+                    Shape* shape = blockScope->lastProperty()->search(cx, NameToId(name));
+                    MOZ_ASSERT(shape);
+                    uint32_t oldDefIndex = blockScope->shapeToIndex(*shape);
+                    blockScope->updateDefinitionParseNode(oldDefIndex, dn,
+                                                          reinterpret_cast<Definition*>(pn));
 
-                parser->addTelemetry(JSCompartment::DeprecatedBlockScopeFunRedecl);
-                JSAutoByteString bytes;
-                if (!AtomToPrintableString(cx, name, &bytes))
-                    return false;
-                if (!parser->report(ParseWarning, false, null(),
-                                    JSMSG_DEPRECATED_BLOCK_SCOPE_FUN_REDECL,
-                                    bytes.ptr()))
-                {
-                    return false;
+                    parser->addTelemetry(JSCompartment::DeprecatedBlockScopeFunRedecl);
+                    JSAutoByteString bytes;
+                    if (!AtomToPrintableString(cx, name, &bytes))
+                        return false;
+                    if (!parser->report(ParseWarning, false, null(),
+                                        JSMSG_DEPRECATED_BLOCK_SCOPE_FUN_REDECL,
+                                        bytes.ptr()))
+                    {
+                        return false;
+                    }
+
+                    return true;
                 }
 
-                return true;
+                return parser->reportRedeclaration(pn, dn->kind(), name);
             }
 
-            return parser->reportRedeclaration(pn, dn->kind(), name);
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            StmtInfoPC* enclosingStmt = pc->innermostScopeStmt()
+                                      ? pc->innermostScopeStmt()->enclosing
+                                      : nullptr;
+            if (enclosingStmt && enclosingStmt->type == StmtType::CATCH &&
+                dn->pn_blockid == enclosingStmt->blockid)
+            {
+                MOZ_ASSERT(LexicalLookup(pc, name) == enclosingStmt);
+                return parser->reportRedeclaration(pn, dn->kind(), name);
+            }
         }
 
         if (!pc->define(parser->tokenStream, name, pn, bindingKind))
@@ -3910,7 +3953,7 @@ Parser<ParseHandler>::AutoPushStmtInfoPC::makeInnermostLexicalScope(StaticBlockS
 
 template <typename ParseHandler>
 static inline bool
-OuterLet(ParseContext<ParseHandler>* pc, StmtInfoPC* stmt, HandleAtom atom)
+HasOuterLexicalBinding(ParseContext<ParseHandler>* pc, StmtInfoPC* stmt, HandleAtom atom)
 {
     while (stmt->enclosingScope) {
         stmt = LexicalLookup(pc, atom, stmt->enclosingScope);
@@ -3919,7 +3962,10 @@ OuterLet(ParseContext<ParseHandler>* pc, StmtInfoPC* stmt, HandleAtom atom)
         if (stmt->type == StmtType::BLOCK)
             return true;
     }
-    return false;
+
+    
+    
+    return pc->isBodyLevelLexicallyDeclaredName(atom);
 }
 
 template <typename ParseHandler>
@@ -3936,6 +3982,27 @@ Parser<ParseHandler>::bindVar(BindData<ParseHandler>* data,
 
     if (!parser->checkStrictBinding(name, pn))
         return false;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (data->isForOf) {
+        for (StmtInfoPC* scopeStmt = pc->innermostScopeStmt();
+             scopeStmt;
+             scopeStmt = scopeStmt->enclosingScope)
+        {
+            if (scopeStmt->type == StmtType::CATCH) {
+                if (!parser->abortIfSyntaxParser())
+                    return false;
+            }
+        }
+    }
 
     StmtInfoPC* stmt = LexicalLookup(pc, name);
 
@@ -3972,9 +4039,47 @@ Parser<ParseHandler>::bindVar(BindData<ParseHandler>* data,
     DefinitionList::Range defs = pc->decls().lookupMulti(name);
     MOZ_ASSERT_IF(stmt, !defs.empty());
 
-    
     if (defs.empty())
         return pc->define(parser->tokenStream, name, pn, Definition::VAR);
+
+    
+    
+    bool nameIsCatchParam = stmt && stmt->type == StmtType::CATCH;
+    bool declaredVarInCatchBody = false;
+    if (nameIsCatchParam && !data->isForOf && !HasOuterLexicalBinding(pc, stmt, name)) {
+        declaredVarInCatchBody = true;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        parser->handler.setFlag(pn, PND_DEOPTIMIZED);
+
+        
+        DefinitionNode last = pc->decls().lookupLast(name);
+        if (last && parser->handler.getDefinitionKind(last) != Definition::VAR) {
+            parser->handler.setFlag(parser->handler.getDefinitionNode(last), PND_CLOSED);
+
+            Node synthesizedVarName = parser->newName(name);
+            if (!synthesizedVarName)
+                return false;
+            if (!pc->define(parser->tokenStream, name, synthesizedVarName, Definition::VAR,
+                             true))
+            {
+                return false;
+            }
+        }
+    }
 
     
 
@@ -3992,11 +4097,9 @@ Parser<ParseHandler>::bindVar(BindData<ParseHandler>* data,
         if (!parser->report(ParseExtraWarning, false, pn, JSMSG_VAR_HIDES_ARG, bytes.ptr()))
             return false;
     } else {
-        bool inCatchBody = (stmt && stmt->type == StmtType::CATCH);
         bool error = (dn_kind == Definition::IMPORT ||
                       dn_kind == Definition::CONSTANT ||
-                      (dn_kind == Definition::LET &&
-                       (!inCatchBody || OuterLet(pc, stmt, name))));
+                      (dn_kind == Definition::LET && !declaredVarInCatchBody));
 
         if (parser->options().extraWarningsOption
             ? data->op() != JSOP_DEFVAR || dn_kind != Definition::VAR
@@ -4007,7 +4110,7 @@ Parser<ParseHandler>::bindVar(BindData<ParseHandler>* data,
                 return false;
 
             ParseReportKind reporter = error ? ParseError : ParseExtraWarning;
-            if (!(inCatchBody
+            if (!(nameIsCatchParam && !declaredVarInCatchBody
                   ? parser->report(reporter, false, pn,
                                    JSMSG_REDECLARED_CATCH_IDENTIFIER, bytes.ptr())
                   : parser->report(reporter, false, pn, JSMSG_REDECLARED_VAR,
@@ -4440,7 +4543,7 @@ Parser<SyntaxParseHandler>::pushLetScope(HandleStaticBlockScope blockScope,
 
 template <typename ParseHandler>
 typename ParseHandler::Node
-Parser<ParseHandler>::blockStatement(YieldHandling yieldHandling)
+Parser<ParseHandler>::blockStatement(YieldHandling yieldHandling, unsigned errorNumber)
 {
     MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_LC));
 
@@ -4452,7 +4555,7 @@ Parser<ParseHandler>::blockStatement(YieldHandling yieldHandling)
     if (!list)
         return null();
 
-    MUST_MATCH_TOKEN_MOD(TOK_RC, TokenStream::Operand, JSMSG_CURLY_IN_COMPOUND);
+    MUST_MATCH_TOKEN_MOD(TOK_RC, TokenStream::Operand, errorNumber);
     return list;
 }
 
@@ -4522,12 +4625,14 @@ Parser<ParseHandler>::declarationPattern(Node decl, TokenKind tt, BindData<Parse
         if (!matchInOrOf(&isForIn, &isForOf))
             return null();
 
-        if (isForIn)
+        if (isForIn) {
             *forHeadKind = PNK_FORIN;
-        else if (isForOf)
+        } else if (isForOf) {
+            data->isForOf = true;
             *forHeadKind = PNK_FOROF;
-        else
+        } else {
             *forHeadKind = PNK_FORHEAD;
+        }
 
         if (*forHeadKind != PNK_FORHEAD) {
             
@@ -4727,12 +4832,15 @@ Parser<ParseHandler>::declarationName(Node decl, TokenKind tt, BindData<ParseHan
             if (!matchInOrOf(&isForIn, &isForOf))
                 return null();
 
-            if (isForIn || isForOf) {
+            if (isForIn) {
                 
                 
                 
 
-                *forHeadKind = isForIn ? PNK_FORIN : PNK_FOROF;
+                *forHeadKind = PNK_FORIN;
+            } else if (isForOf) {
+                data->isForOf = true;
+                *forHeadKind = PNK_FOROF;
             } else {
                 *forHeadKind = PNK_FORHEAD;
             }
@@ -6780,10 +6888,9 @@ Parser<ParseHandler>::tryStatement(YieldHandling yieldHandling)
             MUST_MATCH_TOKEN(TOK_RP, JSMSG_PAREN_AFTER_CATCH);
 
             MUST_MATCH_TOKEN(TOK_LC, JSMSG_CURLY_BEFORE_CATCH);
-            Node catchBody = statements(yieldHandling);
+            Node catchBody = blockStatement(yieldHandling, JSMSG_CURLY_AFTER_CATCH);
             if (!catchBody)
                 return null();
-            MUST_MATCH_TOKEN_MOD(TOK_RC, TokenStream::Operand, JSMSG_CURLY_AFTER_CATCH);
 
             if (!catchGuard)
                 hasUnconditionalCatch = true;
