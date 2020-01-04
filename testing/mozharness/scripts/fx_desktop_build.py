@@ -89,6 +89,10 @@ class FxDesktopBuild(BuildScript, object):
 
                 'stage_username': 'ffxbld',
                 'stage_ssh_key': 'ffxbld_rsa',
+
+                
+                
+                
                 'virtualenv_modules': [
                     'requests==2.2.1',
                     'PyHawk-with-a-single-extra-commit==0.1.5',

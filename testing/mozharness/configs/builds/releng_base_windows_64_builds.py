@@ -60,6 +60,19 @@ config = {
     'enable_talos_sendchange': True,
     'enable_unittest_sendchange': True,
     'max_build_output_timeout': 60 * 80,
+
+    
+    
+    
+    
+    
+    'virtualenv_modules': [
+        'pip>=1.5',
+        'psutil==3.1.1',
+        'requests==2.2.1',
+        'PyHawk-with-a-single-extra-commit==0.1.5',
+        'taskcluster==0.0.15',
+    ],
     
 
 
