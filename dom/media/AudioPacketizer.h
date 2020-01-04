@@ -8,7 +8,7 @@
 
 #include <mozilla/PodOperations.h>
 #include <mozilla/Assertions.h>
-#include <nsAutoPtr.h>
+#include <mozilla/UniquePtr.h>
 #include <AudioSampleFormat.h>
 
 
@@ -62,8 +62,8 @@ public:
       
       uint32_t newLength = AvailableSamples() + inputSamples;
       uint32_t toCopy = AvailableSamples();
-      nsAutoPtr<InputType> oldStorage = mStorage;
-      mStorage = new InputType[newLength];
+      UniquePtr<InputType[]> oldStorage = mozilla::Move(mStorage);
+      mStorage = mozilla::MakeUnique<InputType[]>(newLength);
       
       if (WriteIndex() >= ReadIndex()) {
         PodCopy(mStorage.get(),
@@ -186,7 +186,7 @@ private:
   uint64_t mReadIndex;
   uint64_t mWriteIndex;
   
-  nsAutoPtr<InputType> mStorage;
+  mozilla::UniquePtr<InputType[]> mStorage;
   
   uint32_t mLength;
 };

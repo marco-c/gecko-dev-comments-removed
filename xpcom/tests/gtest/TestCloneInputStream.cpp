@@ -13,7 +13,6 @@
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
 #include "nsComponentManagerUtils.h"
-#include "nsAutoPtr.h"
 
 TEST(CloneInputStream, InvalidInput)
 {
@@ -145,7 +144,7 @@ TEST(CloneInputStream, CloneMultiplexStream)
   testing::ConsumeAndValidateStream(clone, doubled);
 
   
-  nsAutoPtr<char> buffer(new char[512]);
+  char buffer[512];
   uint32_t read;
   rv = stream->Read(buffer, 512, &read);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
@@ -175,7 +174,7 @@ TEST(CloneInputStream, CloneMultiplexStreamPartial)
   }
 
   
-  nsAutoPtr<char> buffer(new char[1024]);
+  char buffer[1024];
   uint32_t read;
   nsresult rv = stream->Read(buffer, 1024, &read);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
