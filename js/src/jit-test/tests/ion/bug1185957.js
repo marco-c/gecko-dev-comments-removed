@@ -11,5 +11,8 @@ class test {
 })();
 `;
 
+
 if (classesEnabled())
     eval(test);
+else
+    throw new TypeError();
