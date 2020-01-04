@@ -3898,7 +3898,7 @@ public:
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
                      nsDisplayList *aList, const nsRect& aChildrenVisibleRect,
-                     uint32_t aIndex = 0);
+                     uint32_t aIndex = 0, bool aIsFullyVisible = false);
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
                      nsDisplayItem *aItem, const nsRect& aChildrenVisibleRect,
                      uint32_t aIndex = 0);
@@ -4116,12 +4116,6 @@ public:
 
   bool MayBeAnimated(nsDisplayListBuilder* aBuilder);
 
-  
-
-
-
-  bool ShouldPrerender();
-
   virtual void WriteDebugInfo(std::stringstream& aStream) override;
 
   
@@ -4206,7 +4200,6 @@ private:
   nsRect mBounds;
   
   bool mHasBounds;
-  bool mPrerender;
   
   
   
@@ -4219,6 +4212,9 @@ private:
   bool mIsTransformSeparator;
   
   bool mTransformPreserves3DInited;
+  
+  
+  bool mIsFullyVisible;
 };
 
 
