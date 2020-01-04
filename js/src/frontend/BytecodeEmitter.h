@@ -19,6 +19,7 @@
 #include "frontend/Parser.h"
 #include "frontend/SharedContext.h"
 #include "frontend/SourceNotes.h"
+#include "vm/Interpreter.h"
 
 namespace js {
 
@@ -503,6 +504,9 @@ struct BytecodeEmitter
     
     
     MOZ_MUST_USE bool emitDupAt(unsigned slotFromTop);
+
+    
+    MOZ_MUST_USE bool emitCheckIsObj(CheckIsObjectKind kind);
 
     
     

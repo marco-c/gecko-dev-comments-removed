@@ -28,7 +28,7 @@ function collect_results(iter) {
 }
 
 
-var expected = [{value: 1}, 13, "foo", {value: 34, done: true}];
+var expected = [{value: 1}, {value: 34, done: true}];
 
 
 assertDeepEq(expected, collect_results(results(expected)));

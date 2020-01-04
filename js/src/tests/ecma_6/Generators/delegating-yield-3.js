@@ -10,11 +10,11 @@ var inner = g(20);
 var outer = delegate(inner);
 assertIteratorNext(outer, 0);
 assertIteratorNext(outer, 1);
-inner.next = function() { return 0; };
+inner.next = function() { return { patched: true }; };
 
-assertEq(0, outer.next());
+assertEq(true, outer.next().patched);
 
-assertEq(0, outer.next());
+assertEq(true, outer.next().patched);
 
 inner.next = GeneratorObjectPrototype_next;
 assertIteratorNext(outer, 2);
@@ -27,11 +27,11 @@ var inner = g(20);
 var outer = delegate(inner);
 assertIteratorNext(outer, 0);
 assertIteratorNext(outer, 1);
-GeneratorObjectPrototype.next = function() { return 0; };
+GeneratorObjectPrototype.next = function() { return { patched: true }; };
 
-assertEq(0, GeneratorObjectPrototype_next.call(outer));
+assertEq(true, GeneratorObjectPrototype_next.call(outer).patched);
 
-assertEq(0, GeneratorObjectPrototype_next.call(outer));
+assertEq(true, GeneratorObjectPrototype_next.call(outer).patched);
 
 GeneratorObjectPrototype.next = GeneratorObjectPrototype_next;
 assertIteratorNext(outer, 2);

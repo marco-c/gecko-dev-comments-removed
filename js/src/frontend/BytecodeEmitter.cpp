@@ -457,6 +457,12 @@ BytecodeEmitter::emitDupAt(unsigned slotFromTop)
     return true;
 }
 
+bool
+BytecodeEmitter::emitCheckIsObj(CheckIsObjectKind kind)
+{
+    return emit2(JSOP_CHECKISOBJ, uint8_t(kind));
+}
+
 static const char*
 StatementName(StmtInfoBCE* stmt)
 {
@@ -4147,6 +4153,8 @@ BytecodeEmitter::emitIteratorNext(ParseNode* pn, bool allowSelfHosted)
         return false;
     if (!emitCall(JSOP_CALL, 0, pn))                      
         return false;
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorNext)) 
+        return false;
     checkTypeSet(JSOP_CALL);
     return true;
 }
@@ -7170,6 +7178,8 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
     if (!emit2(JSOP_PICK, 3))                                    
         return false;
     if (!emitCall(JSOP_CALL, 1, iter))                           
+        return false;
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorNext))        
         return false;
     checkTypeSet(JSOP_CALL);
     MOZ_ASSERT(this->stackDepth == depth);
