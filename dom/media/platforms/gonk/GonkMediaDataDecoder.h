@@ -33,7 +33,7 @@ public:
   nsresult Input(MediaRawData* aSample);
 
   
-  nsresult Flush();
+  virtual nsresult Flush();
 
   
   virtual nsresult Shutdown();
