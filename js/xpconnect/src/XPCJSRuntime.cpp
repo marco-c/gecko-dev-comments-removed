@@ -596,6 +596,22 @@ CompartmentSizeOfIncludingThisCallback(MallocSizeOf mallocSizeOf, JSCompartment*
     return priv ? priv->SizeOfIncludingThis(mallocSizeOf) : 0;
 }
 
+
+
+
+
+
+bool XPCJSRuntime::UsefulToMergeZones() const
+{
+    MOZ_ASSERT(NS_IsMainThread());
+
+    
+    
+    
+
+    return false;
+}
+
 void XPCJSRuntime::TraceNativeBlackRoots(JSTracer* trc)
 {
     
