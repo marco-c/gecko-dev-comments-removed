@@ -274,10 +274,6 @@ protected:
   ImageFactory() {}
   virtual ~ImageFactory() {}
 
-  virtual already_AddRefed<Image> CreateImage(ImageFormat aFormat,
-                                              const gfx::IntSize &aScaleHint,
-                                              BufferRecycleBin *aRecycleBin);
-
   virtual RefPtr<PlanarYCbCrImage> CreatePlanarYCbCrImage(
     const gfx::IntSize& aScaleHint,
     BufferRecycleBin *aRecycleBin);
@@ -316,17 +312,6 @@ public:
 
   typedef uint32_t FrameID;
   typedef uint32_t ProducerID;
-
-
-  
-
-
-
-
-
-
-
-  B2G_ACL_EXPORT already_AddRefed<Image> CreateImage(ImageFormat aFormat);
 
   RefPtr<PlanarYCbCrImage> CreatePlanarYCbCrImage();
 
