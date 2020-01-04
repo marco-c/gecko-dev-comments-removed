@@ -1103,6 +1103,12 @@ var gBrowserInit = {
         let tabToOpen = uriToLoad;
 
         
+        
+        if (window.arguments[0] == tabToOpen) {
+          window.arguments[0] = null;
+        }
+
+        
         gBrowser.stop();
         
         gBrowser.docShell;

@@ -892,7 +892,8 @@ var SessionStoreInternal = {
         break;
       case "TabClose":
         
-        if (!aEvent.detail)
+        
+        if (!aEvent.detail.adoptedBy)
           this.onTabClose(win, target);
         this.onTabRemove(win, target);
         break;
