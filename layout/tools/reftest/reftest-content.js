@@ -39,6 +39,7 @@ var gTimeoutHook = null;
 var gFailureTimeout = null;
 var gFailureReason;
 var gAssertionCount = 0;
+var gTestCount = 0;
 
 var gDebug;
 var gVerbose = false;
@@ -139,6 +140,15 @@ function SetFailureTimeout(cb, timeout)
 
 function StartTestURI(type, uri, timeout)
 {
+    
+    
+    
+    ++gTestCount;
+    if (gTestCount % 3000 == 0) {
+        CU.forceGC();
+        CU.forceCC();
+    }
+
     
     
     if (gExplicitPendingPaintCount != 0) {
