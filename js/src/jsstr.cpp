@@ -2387,22 +2387,37 @@ BuildFlatMatchArray(JSContext* cx, HandleString textstr, const FlatMatch& fm, Ca
     }
 
     
-    RootedObject obj(cx, NewDenseEmptyArray(cx));
-    if (!obj)
+    JSObject* templateObject = cx->compartment()->regExps.getOrCreateMatchResultTemplateObject(cx);
+    if (!templateObject)
         return false;
 
-    RootedValue patternVal(cx, StringValue(fm.pattern()));
-    RootedValue matchVal(cx, Int32Value(fm.match()));
-    RootedValue textVal(cx, StringValue(textstr));
-
-    if (!DefineElement(cx, obj, 0, patternVal) ||
-        !DefineProperty(cx, obj, cx->names().index, matchVal) ||
-        !DefineProperty(cx, obj, cx->names().input, textVal))
-    {
+    RootedArrayObject arr(cx, NewDenseFullyAllocatedArrayWithTemplate(cx, 1, templateObject));
+    if (!arr)
         return false;
-    }
 
-    args->rval().setObject(*obj);
+    
+    arr->setDenseInitializedLength(1);
+    arr->initDenseElement(0, StringValue(fm.pattern()));
+
+    
+    arr->setSlot(0, Int32Value(fm.match()));
+
+    
+    arr->setSlot(1, StringValue(textstr));
+
+#ifdef DEBUG
+    RootedValue test(cx);
+    RootedId id(cx, NameToId(cx->names().index));
+    if (!NativeGetProperty(cx, arr, id, &test))
+        return false;
+    MOZ_ASSERT(test == arr->getSlot(0));
+    id = NameToId(cx->names().input);
+    if (!NativeGetProperty(cx, arr, id, &test))
+        return false;
+    MOZ_ASSERT(test == arr->getSlot(1));
+#endif
+
+    args->rval().setObject(*arr);
     return true;
 }
 
