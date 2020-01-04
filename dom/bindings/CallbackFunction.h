@@ -56,15 +56,6 @@ protected:
     : CallbackObject(aCallbackFunction)
   {
   }
-
-  
-  CallbackFunction(JSContext* aCx, JS::Handle<JSObject*> aCallable,
-                   nsIGlobalObject* aIncumbentGlobal,
-                   const FastCallbackConstructor&)
-    : CallbackObject(aCx, aCallable, aIncumbentGlobal,
-                     FastCallbackConstructor())
-  {
-  }
 };
 
 } 

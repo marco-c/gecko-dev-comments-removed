@@ -25,13 +25,11 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/OwningNonNull.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "nsWrapperCache.h"
 #include "nsJSEnvironment.h"
 #include "xpcpublic.h"
 #include "jsapi.h"
-#include "js/TracingAPI.h"
 
 namespace mozilla {
 namespace dom {
@@ -56,7 +54,7 @@ public:
   
   
   explicit CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
-                          nsIGlobalObject* aIncumbentGlobal)
+                          nsIGlobalObject *aIncumbentGlobal)
   {
     if (aCx && JS::RuntimeOptionsRef(aCx).asyncStack()) {
       JS::RootedObject stack(aCx);
@@ -74,7 +72,7 @@ public:
   
   explicit CallbackObject(JS::Handle<JSObject*> aCallback,
                           JS::Handle<JSObject*> aAsyncStack,
-                          nsIGlobalObject* aIncumbentGlobal)
+                          nsIGlobalObject *aIncumbentGlobal)
   {
     Init(aCallback, aAsyncStack, aIncumbentGlobal);
   }
@@ -165,8 +163,8 @@ protected:
   }
 
 private:
-  inline void InitNoHold(JSObject* aCallback, JSObject* aCreationStack,
-                         nsIGlobalObject* aIncumbentGlobal)
+  inline void Init(JSObject* aCallback, JSObject* aCreationStack,
+                   nsIGlobalObject* aIncumbentGlobal)
   {
     MOZ_ASSERT(aCallback && !mCallback);
     
@@ -177,20 +175,7 @@ private:
       mIncumbentGlobal = aIncumbentGlobal;
       mIncumbentJSGlobal = aIncumbentGlobal->GetGlobalJSObject();
     }
-  }
-
-  inline void Init(JSObject* aCallback, JSObject* aCreationStack,
-                   nsIGlobalObject* aIncumbentGlobal)
-  {
-    InitNoHold(aCallback, aCreationStack, aIncumbentGlobal);
     mozilla::HoldJSObjects(this);
-  }
-
-  inline void ClearJSReferences()
-  {
-    mCallback = nullptr;
-    mCreationStack = nullptr;
-    mIncumbentJSGlobal = nullptr;
   }
 
   CallbackObject(const CallbackObject&) = delete;
@@ -201,43 +186,10 @@ protected:
   {
     MOZ_ASSERT_IF(mIncumbentJSGlobal, mCallback);
     if (mCallback) {
-      ClearJSReferences();
+      mCallback = nullptr;
+      mCreationStack = nullptr;
+      mIncumbentJSGlobal = nullptr;
       mozilla::DropJSObjects(this);
-    }
-  }
-
-  
-  void Trace(JSTracer* aTracer);
-
-  
-  
-  
-  void HoldJSObjectsIfMoreThanOneOwner();
-
-  
-  
-  
-  
-  
-  
-  struct FastCallbackConstructor {
-  };
-
-  
-  
-  
-  CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
-                 nsIGlobalObject* aIncumbentGlobal,
-                 const FastCallbackConstructor&)
-  {
-    if (aCx && JS::RuntimeOptionsRef(aCx).asyncStack()) {
-      JS::RootedObject stack(aCx);
-      if (!JS::CaptureCurrentStack(aCx, &stack)) {
-        JS_ClearPendingException(aCx);
-      }
-      InitNoHold(aCallback, stack, aIncumbentGlobal);
-    } else {
-      InitNoHold(aCallback, nullptr, aIncumbentGlobal);
     }
   }
 
@@ -520,98 +472,6 @@ ImplCycleCollectionUnlink(CallbackObjectHolder<T, U>& aField)
 {
   aField.UnlinkSelf();
 }
-
-
-
-
-
-
-
-
-template<typename T>
-class RootedCallbackRefPtr : public JS::Rooted<RefPtr<T>>
-{
-public:
-  explicit RootedCallbackRefPtr(JSContext* cx)
-    : JS::Rooted<RefPtr<T>>(cx)
-  {}
-
-  
-  
-  template<typename S>
-  void operator=(S* arg)
-  {
-    this->get().operator=(arg);
-  }
-
-  
-  
-  void operator=(decltype(nullptr) arg)
-  {
-    this->get().operator=(arg);
-  }
-
-  
-  JS::Handle<JSObject*> Callback() const
-  {
-    return this->get()->Callback();
-  }
-
-  ~RootedCallbackRefPtr()
-  {
-    
-    
-    if (this->get().get()) {
-      this->get()->HoldJSObjectsIfMoreThanOneOwner();
-    }
-  }
-};
-
-
-
-
-
-
-
-
-template<typename T>
-class RootedCallbackOwningNonNull : public JS::Rooted<OwningNonNull<T>>
-{
-public:
-  explicit RootedCallbackOwningNonNull(JSContext* cx)
-    : JS::Rooted<OwningNonNull<T>>(cx)
-  {}
-
-  
-  
-  template<typename S>
-  void operator=(S* arg)
-  {
-    this->get().operator=(arg);
-  }
-
-  
-  
-  void operator=(decltype(nullptr) arg)
-  {
-    this->get().operator=(arg);
-  }
-
-  
-  JS::Handle<JSObject*> Callback() const
-  {
-    return this->get()->Callback();
-  }
-
-  ~RootedCallbackOwningNonNull()
-  {
-    
-    
-    if (this->get().isInitialized()) {
-      this->get()->HoldJSObjectsIfMoreThanOneOwner();
-    }
-  }
-};
 
 } 
 } 
