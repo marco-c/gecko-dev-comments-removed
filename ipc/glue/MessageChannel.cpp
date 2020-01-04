@@ -2093,11 +2093,21 @@ MessageChannel::CancelCurrentTransactionInternal()
     
     
 
+    IPC_LOG("CancelInternal: current xid=%d", mCurrentTransaction);
+
     MOZ_ASSERT(mCurrentTransaction);
     mCurrentTransaction = 0;
 
     mAwaitingSyncReply = false;
     mAwaitingSyncReplyPriority = 0;
+
+    for (size_t i = 0; i < mPending.size(); i++) {
+        
+        
+        
+        
+        mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
+    }
 
     
     
