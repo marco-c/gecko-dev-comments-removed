@@ -161,7 +161,7 @@ nsSelectsAreaFrame::BuildDisplayListInternal(nsDisplayListBuilder*   aBuilder,
 void
 nsSelectsAreaFrame::Reflow(nsPresContext*           aPresContext, 
                            ReflowOutput&     aDesiredSize,
-                           const ReflowInput& aReflowState, 
+                           const ReflowInput& aReflowInput, 
                            nsReflowStatus&          aStatus)
 {
   nsListControlFrame* list = GetEnclosingListFrame(this);
@@ -173,7 +173,7 @@ nsSelectsAreaFrame::Reflow(nsPresContext*           aPresContext,
 
   
   
-  WritingMode wm = aReflowState.GetWritingMode();
+  WritingMode wm = aReflowInput.GetWritingMode();
   nscoord oldBSize;
   if (isInDropdownMode) {
     
@@ -185,7 +185,7 @@ nsSelectsAreaFrame::Reflow(nsPresContext*           aPresContext,
     }
   }
 
-  nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowState, aStatus);
+  nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
   
   

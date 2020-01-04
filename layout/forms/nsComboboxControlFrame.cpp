@@ -418,12 +418,12 @@ public:
 
 void
 nsComboboxControlFrame::ReflowDropdown(nsPresContext*  aPresContext,
-                                       const ReflowInput& aReflowState)
+                                       const ReflowInput& aReflowInput)
 {
   
   
   
-  if (!aReflowState.ShouldReflowAllKids() &&
+  if (!aReflowInput.ShouldReflowAllKids() &&
       !NS_SUBTREE_DIRTY(mDropdownFrame)) {
     return;
   }
@@ -432,19 +432,19 @@ nsComboboxControlFrame::ReflowDropdown(nsPresContext*  aPresContext,
   
   
   WritingMode wm = mDropdownFrame->GetWritingMode();
-  LogicalSize availSize = aReflowState.AvailableSize(wm);
+  LogicalSize availSize = aReflowInput.AvailableSize(wm);
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-  ReflowInput kidReflowState(aPresContext, aReflowState, mDropdownFrame,
+  ReflowInput kidReflowInput(aPresContext, aReflowInput, mDropdownFrame,
                                    availSize);
 
   
   
   
   
-  nscoord forcedISize = aReflowState.ComputedISize() +
-    aReflowState.ComputedLogicalBorderPadding().IStartEnd(wm) -
-    kidReflowState.ComputedLogicalBorderPadding().IStartEnd(wm);
-  kidReflowState.SetComputedISize(std::max(kidReflowState.ComputedISize(),
+  nscoord forcedISize = aReflowInput.ComputedISize() +
+    aReflowInput.ComputedLogicalBorderPadding().IStartEnd(wm) -
+    kidReflowInput.ComputedLogicalBorderPadding().IStartEnd(wm);
+  kidReflowInput.SetComputedISize(std::max(kidReflowInput.ComputedISize(),
                                          forcedISize));
 
   
@@ -470,14 +470,14 @@ nsComboboxControlFrame::ReflowDropdown(nsPresContext*  aPresContext,
   
   WritingMode outerWM = GetWritingMode();
   const nsSize dummyContainerSize;
-  ReflowOutput desiredSize(aReflowState);
+  ReflowOutput desiredSize(aReflowInput);
   nsReflowStatus ignoredStatus;
   ReflowChild(mDropdownFrame, aPresContext, desiredSize,
-              kidReflowState, outerWM, LogicalPoint(outerWM),
+              kidReflowInput, outerWM, LogicalPoint(outerWM),
               dummyContainerSize, flags, ignoredStatus);
 
    
-  FinishReflowChild(mDropdownFrame, aPresContext, desiredSize, &kidReflowState,
+  FinishReflowChild(mDropdownFrame, aPresContext, desiredSize, &kidReflowInput,
                     outerWM, LogicalPoint(outerWM), dummyContainerSize, flags);
 }
 
@@ -809,7 +809,7 @@ nsComboboxControlFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 void
 nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
                                ReflowOutput&     aDesiredSize,
-                               const ReflowInput& aReflowState,
+                               const ReflowInput& aReflowInput,
                                nsReflowStatus&          aStatus)
 {
   MarkInReflow();
@@ -848,7 +848,7 @@ nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
   }
 
   
-  ReflowDropdown(aPresContext, aReflowState);
+  ReflowDropdown(aPresContext, aReflowInput);
   RefPtr<nsResizeDropdownAtFinalPosition> resize =
     new nsResizeDropdownAtFinalPosition(this);
   if (NS_SUCCEEDED(aPresContext->PresShell()->PostReflowCallback(resize))) {
@@ -859,7 +859,7 @@ nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
 
   
   
-  WritingMode wm = aReflowState.GetWritingMode();
+  WritingMode wm = aReflowInput.GetWritingMode();
   nscoord buttonISize;
   const nsStyleDisplay *disp = StyleDisplay();
   if ((IsThemed(disp) && !aPresContext->GetTheme()->ThemeNeedsComboboxDropmarker()) ||
@@ -870,25 +870,25 @@ nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
     nsIScrollableFrame* scrollable = do_QueryFrame(mListControlFrame);
     NS_ASSERTION(scrollable, "List must be a scrollable frame");
     buttonISize = scrollable->GetNondisappearingScrollbarWidth(
-      PresContext(), aReflowState.mRenderingContext, wm);
-    if (buttonISize > aReflowState.ComputedISize()) {
+      PresContext(), aReflowInput.mRenderingContext, wm);
+    if (buttonISize > aReflowInput.ComputedISize()) {
       buttonISize = 0;
     }
   }
 
-  mDisplayISize = aReflowState.ComputedISize() - buttonISize;
+  mDisplayISize = aReflowInput.ComputedISize() - buttonISize;
 
-  nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowState, aStatus);
+  nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
   
   nsSize containerSize = aDesiredSize.PhysicalSize();
   LogicalRect buttonRect = mButtonFrame->GetLogicalRect(containerSize);
 
   buttonRect.IStart(wm) =
-    aReflowState.ComputedLogicalBorderPadding().IStartEnd(wm) +
+    aReflowInput.ComputedLogicalBorderPadding().IStartEnd(wm) +
     mDisplayISize -
-    (aReflowState.ComputedLogicalBorderPadding().IEnd(wm) -
-     aReflowState.ComputedLogicalPadding().IEnd(wm));
+    (aReflowInput.ComputedLogicalBorderPadding().IEnd(wm) -
+     aReflowInput.ComputedLogicalPadding().IEnd(wm));
   buttonRect.ISize(wm) = buttonISize;
 
   buttonRect.BStart(wm) = this->GetLogicalUsedBorder(wm).BStart(wm);
@@ -1287,7 +1287,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                           ReflowOutput&     aDesiredSize,
-                          const ReflowInput& aReflowState,
+                          const ReflowInput& aReflowInput,
                           nsReflowStatus&          aStatus) override;
 
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
@@ -1309,17 +1309,17 @@ nsComboboxDisplayFrame::GetType() const
 void
 nsComboboxDisplayFrame::Reflow(nsPresContext*           aPresContext,
                                ReflowOutput&     aDesiredSize,
-                               const ReflowInput& aReflowState,
+                               const ReflowInput& aReflowInput,
                                nsReflowStatus&          aStatus)
 {
-  ReflowInput state(aReflowState);
+  ReflowInput state(aReflowInput);
   if (state.ComputedBSize() == NS_INTRINSICSIZE) {
     
     
     
     state.SetComputedBSize(mComboBox->mListControlFrame->GetBSizeOfARow());
   }
-  WritingMode wm = aReflowState.GetWritingMode();
+  WritingMode wm = aReflowInput.GetWritingMode();
   nscoord computedISize = mComboBox->mDisplayISize -
     state.ComputedLogicalBorderPadding().IStartEnd(wm);
   if (computedISize < 0) {

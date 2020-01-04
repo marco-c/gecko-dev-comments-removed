@@ -185,14 +185,14 @@ nsHTMLButtonControlFrame::GetPrefISize(nsRenderingContext* aRenderingContext)
 void
 nsHTMLButtonControlFrame::Reflow(nsPresContext* aPresContext,
                                  ReflowOutput& aDesiredSize,
-                                 const ReflowInput& aReflowState,
+                                 const ReflowInput& aReflowInput,
                                  nsReflowStatus& aStatus)
 {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsHTMLButtonControlFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowState, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
 
-  NS_PRECONDITION(aReflowState.ComputedISize() != NS_INTRINSICSIZE,
+  NS_PRECONDITION(aReflowInput.ComputedISize() != NS_INTRINSICSIZE,
                   "Should have real computed inline-size by now");
 
   if (mState & NS_FRAME_FIRST_REFLOW) {
@@ -217,7 +217,7 @@ nsHTMLButtonControlFrame::Reflow(nsPresContext* aPresContext,
   
   
   ReflowButtonContents(aPresContext, aDesiredSize,
-                       aReflowState, firstKid);
+                       aReflowInput, firstKid);
 
   if (!ShouldClipPaintingToBorderBox()) {
     ConsiderChildOverflow(aDesiredSize.mOverflowAreas, firstKid);
@@ -227,14 +227,14 @@ nsHTMLButtonControlFrame::Reflow(nsPresContext* aPresContext,
 
   aStatus = NS_FRAME_COMPLETE;
   FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize,
-                                 aReflowState, aStatus);
+                                 aReflowInput, aStatus);
 
   
   
   aStatus = NS_FRAME_COMPLETE;
   MOZ_ASSERT(!GetNextInFlow());
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 
@@ -243,22 +243,22 @@ nsHTMLButtonControlFrame::Reflow(nsPresContext* aPresContext,
 
 
 static ReflowInput
-CloneReflowStateWithReducedContentBox(
-  const ReflowInput& aButtonReflowState,
+CloneReflowInputWithReducedContentBox(
+  const ReflowInput& aButtonReflowInput,
   const nsMargin& aFocusPadding)
 {
   nscoord adjustedWidth =
-    aButtonReflowState.ComputedWidth() - aFocusPadding.LeftRight();
+    aButtonReflowInput.ComputedWidth() - aFocusPadding.LeftRight();
   adjustedWidth = std::max(0, adjustedWidth);
 
   
-  nscoord adjustedHeight = aButtonReflowState.ComputedHeight();
+  nscoord adjustedHeight = aButtonReflowInput.ComputedHeight();
   if (adjustedHeight != NS_INTRINSICSIZE) {
     adjustedHeight -= aFocusPadding.TopBottom();
     adjustedHeight = std::max(0, adjustedHeight);
   }
 
-  ReflowInput clone(aButtonReflowState);
+  ReflowInput clone(aButtonReflowInput);
   clone.SetComputedWidth(adjustedWidth);
   clone.SetComputedHeight(adjustedHeight);
 
@@ -268,11 +268,11 @@ CloneReflowStateWithReducedContentBox(
 void
 nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
                                                ReflowOutput& aButtonDesiredSize,
-                                               const ReflowInput& aButtonReflowState,
+                                               const ReflowInput& aButtonReflowInput,
                                                nsIFrame* aFirstKid)
 {
   WritingMode wm = GetWritingMode();
-  LogicalSize availSize = aButtonReflowState.ComputedSize(wm);
+  LogicalSize availSize = aButtonReflowInput.ComputedSize(wm);
   availSize.BSize(wm) = NS_INTRINSICSIZE;
 
   
@@ -286,8 +286,8 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
   
   
   
-  nscoord IOverflow = GetMinISize(aButtonReflowState.mRenderingContext) -
-                      aButtonReflowState.ComputedISize();
+  nscoord IOverflow = GetMinISize(aButtonReflowInput.mRenderingContext) -
+                      aButtonReflowInput.ComputedISize();
   nscoord IFocusPadding = focusPadding.IStartEnd(wm);
   nscoord focusPaddingReduction = std::min(IFocusPadding,
                                            std::max(IOverflow, 0));
@@ -303,7 +303,7 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
   }
 
   
-  const LogicalMargin& clbp = aButtonReflowState.ComputedLogicalBorderPadding();
+  const LogicalMargin& clbp = aButtonReflowInput.ComputedLogicalBorderPadding();
 
   
   
@@ -315,16 +315,16 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
 
   
   
-  ReflowInput adjustedButtonReflowState =
-    CloneReflowStateWithReducedContentBox(aButtonReflowState,
+  ReflowInput adjustedButtonReflowInput =
+    CloneReflowInputWithReducedContentBox(aButtonReflowInput,
                                           focusPadding.GetPhysicalMargin(wm));
 
-  ReflowInput contentsReflowState(aPresContext,
-                                        adjustedButtonReflowState,
+  ReflowInput contentsReflowInput(aPresContext,
+                                        adjustedButtonReflowInput,
                                         aFirstKid, availSize);
 
   nsReflowStatus contentsReflowStatus;
-  ReflowOutput contentsDesiredSize(aButtonReflowState);
+  ReflowOutput contentsDesiredSize(aButtonReflowInput);
   childPos.B(wm) = 0; 
                       
 
@@ -332,7 +332,7 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
   
   nsSize dummyContainerSize;
   ReflowChild(aFirstKid, aPresContext,
-              contentsDesiredSize, contentsReflowState,
+              contentsDesiredSize, contentsReflowInput,
               wm, childPos, dummyContainerSize, 0, contentsReflowStatus);
   MOZ_ASSERT(NS_FRAME_IS_COMPLETE(contentsReflowStatus),
              "We gave button-contents frame unconstrained available height, "
@@ -340,9 +340,9 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
 
   
   LogicalSize buttonContentBox(wm);
-  if (aButtonReflowState.ComputedBSize() != NS_INTRINSICSIZE) {
+  if (aButtonReflowInput.ComputedBSize() != NS_INTRINSICSIZE) {
     
-    buttonContentBox.BSize(wm) = aButtonReflowState.ComputedBSize();
+    buttonContentBox.BSize(wm) = aButtonReflowInput.ComputedBSize();
   } else {
     
     
@@ -356,18 +356,18 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
     
     buttonContentBox.BSize(wm) =
       NS_CSS_MINMAX(buttonContentBox.BSize(wm),
-                    aButtonReflowState.ComputedMinBSize(),
-                    aButtonReflowState.ComputedMaxBSize());
+                    aButtonReflowInput.ComputedMinBSize(),
+                    aButtonReflowInput.ComputedMaxBSize());
   }
-  if (aButtonReflowState.ComputedISize() != NS_INTRINSICSIZE) {
-    buttonContentBox.ISize(wm) = aButtonReflowState.ComputedISize();
+  if (aButtonReflowInput.ComputedISize() != NS_INTRINSICSIZE) {
+    buttonContentBox.ISize(wm) = aButtonReflowInput.ComputedISize();
   } else {
     buttonContentBox.ISize(wm) =
       contentsDesiredSize.ISize(wm) + focusPadding.IStartEnd(wm);
     buttonContentBox.ISize(wm) =
       NS_CSS_MINMAX(buttonContentBox.ISize(wm),
-                    aButtonReflowState.ComputedMinISize(),
-                    aButtonReflowState.ComputedMaxISize());
+                    aButtonReflowInput.ComputedMinISize(),
+                    aButtonReflowInput.ComputedMaxISize());
   }
 
   
@@ -387,13 +387,13 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
 
   
   FinishReflowChild(aFirstKid, aPresContext,
-                    contentsDesiredSize, &contentsReflowState,
+                    contentsDesiredSize, &contentsReflowInput,
                     wm, childPos, containerSize, 0);
 
   
   if (contentsDesiredSize.BlockStartAscent() ==
       ReflowOutput::ASK_FOR_BASELINE) {
-    WritingMode wm = aButtonReflowState.GetWritingMode();
+    WritingMode wm = aButtonReflowInput.GetWritingMode();
     contentsDesiredSize.SetBlockStartAscent(aFirstKid->GetLogicalBaseline(wm));
   }
 
@@ -401,7 +401,7 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
   
   
   aButtonDesiredSize.SetSize(wm,
-    LogicalSize(wm, aButtonReflowState.ComputedISize() + clbp.IStartEnd(wm),
+    LogicalSize(wm, aButtonReflowInput.ComputedISize() + clbp.IStartEnd(wm),
                     buttonContentBox.BSize(wm) + clbp.BStartEnd(wm)));
 
   

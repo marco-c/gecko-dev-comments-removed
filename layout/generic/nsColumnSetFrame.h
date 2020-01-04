@@ -26,7 +26,7 @@ public:
 
   virtual void Reflow(nsPresContext* aPresContext,
                       ReflowOutput& aDesiredSize,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsReflowStatus& aStatus) override;
 
 #ifdef DEBUG
@@ -48,7 +48,7 @@ public:
 
 
 
-  virtual nscoord GetAvailableContentBSize(const ReflowInput& aReflowState);
+  virtual nscoord GetAvailableContentBSize(const ReflowInput& aReflowInput);
 
   virtual nsContainerFrame* GetContentInsertionFrame() override {
     nsIFrame* frame = PrincipalChildList().FirstChild();
@@ -162,7 +162,7 @@ protected:
   };
 
   bool ReflowColumns(ReflowOutput& aDesiredSize,
-                     const ReflowInput& aReflowState,
+                     const ReflowInput& aReflowInput,
                      nsReflowStatus& aReflowStatus,
                      ReflowConfig& aConfig,
                      bool aLastColumnUnbounded,
@@ -176,7 +176,7 @@ protected:
 
 
 
-  ReflowConfig ChooseColumnStrategy(const ReflowInput& aReflowState,
+  ReflowConfig ChooseColumnStrategy(const ReflowInput& aReflowInput,
                                     bool aForceAuto, nscoord aFeasibleBSize,
                                     nscoord aInfeasibleBSize);
 
@@ -204,7 +204,7 @@ protected:
 
 
 
-  void FindBestBalanceBSize(const ReflowInput& aReflowState,
+  void FindBestBalanceBSize(const ReflowInput& aReflowInput,
                             nsPresContext* aPresContext,
                             ReflowConfig& aConfig,
                             ColumnBalanceData& aColData,
@@ -218,7 +218,7 @@ protected:
 
 
   bool ReflowChildren(ReflowOutput& aDesiredSize,
-                        const ReflowInput& aReflowState,
+                        const ReflowInput& aReflowInput,
                         nsReflowStatus& aStatus,
                         const ReflowConfig& aConfig,
                         bool aLastColumnUnbounded,

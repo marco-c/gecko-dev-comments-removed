@@ -39,7 +39,7 @@ public:
 
   nsLineLayout(nsPresContext* aPresContext,
                nsFloatManager* aFloatManager,
-               const ReflowInput* aOuterReflowState,
+               const ReflowInput* aOuterReflowInput,
                const nsLineList::iterator* aLine,
                nsLineLayout* aBaseLineLayout);
   ~nsLineLayout();
@@ -76,7 +76,7 @@ public:
                   const mozilla::LogicalRect& aNewAvailableSpace,
                   nsIFrame* aFloatFrame);
 
-  void BeginSpan(nsIFrame* aFrame, const ReflowInput* aSpanReflowState,
+  void BeginSpan(nsIFrame* aFrame, const ReflowInput* aSpanReflowInput,
                  nscoord aLeftEdge, nscoord aRightEdge, nscoord* aBaseline);
 
   
@@ -342,8 +342,8 @@ public:
 
 
 
-  nsIFrame* LineContainerFrame() const { return mBlockReflowState->mFrame; }
-  const ReflowInput* LineContainerRS() const { return mBlockReflowState; }
+  nsIFrame* LineContainerFrame() const { return mBlockReflowInput->mFrame; }
+  const ReflowInput* LineContainerRS() const { return mBlockReflowInput; }
   const nsLineList::iterator* GetLine() const {
     return mGotLineBox ? &mLineBox : nullptr;
   }
@@ -383,7 +383,7 @@ protected:
   
   nsFloatManager* mFloatManager;
   const nsStyleText* mStyleText; 
-  const ReflowInput* mBlockReflowState;
+  const ReflowInput* mBlockReflowInput;
 
   
   
@@ -534,7 +534,7 @@ protected:
     
     PerFrameData* mLastFrame;
 
-    const ReflowInput* mReflowState;
+    const ReflowInput* mReflowInput;
     bool mNoWrap;
     mozilla::WritingMode mWritingMode;
     bool mContainsFloat;
@@ -667,7 +667,7 @@ protected:
   void PushFrame(nsIFrame* aFrame);
 
   void AllowForStartMargin(PerFrameData* pfd,
-                           ReflowInput& aReflowState);
+                           ReflowInput& aReflowInput);
 
   void SyncAnnotationBounds(PerFrameData* aRubyFrame);
 

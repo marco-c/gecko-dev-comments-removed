@@ -313,8 +313,8 @@ typedef uint32_t nsReflowStatus;
 #define NS_FRAME_TRUNCATED  0x0010
 #define NS_FRAME_IS_TRUNCATED(status) \
   (0 != ((status) & NS_FRAME_TRUNCATED))
-#define NS_FRAME_SET_TRUNCATION(status, aReflowState, aMetrics) \
-  aReflowState.SetTruncated(aMetrics, &status);
+#define NS_FRAME_SET_TRUNCATION(status, aReflowInput, aMetrics) \
+  aReflowInput.SetTruncated(aMetrics, &status);
 
 
 
@@ -2049,7 +2049,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aReflowMetrics,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus) = 0;
 
   
@@ -2068,7 +2068,7 @@ public:
 
 
   virtual void DidReflow(nsPresContext*           aPresContext,
-                         const ReflowInput* aReflowState,
+                         const ReflowInput* aReflowInput,
                          nsDidReflowStatus        aStatus) = 0;
 
   
@@ -2669,9 +2669,9 @@ public:
 
 
 
-  Sides GetSkipSides(const ReflowInput* aReflowState = nullptr) const;
+  Sides GetSkipSides(const ReflowInput* aReflowInput = nullptr) const;
   virtual LogicalSides
-  GetLogicalSkipSides(const ReflowInput* aReflowState = nullptr) const {
+  GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const {
     return LogicalSides();
   }
 

@@ -126,7 +126,7 @@ protected:
   
   
   void SetDesiredSize(ReflowOutput& aDesiredSize,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nscoord aWidth, nscoord aHeight);
 
   

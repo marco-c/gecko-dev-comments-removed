@@ -255,7 +255,7 @@ public:
 
 
 
-  void ComputeFinalBSize(const ReflowInput&      aReflowState,
+  void ComputeFinalBSize(const ReflowInput&      aReflowInput,
                          nsReflowStatus*               aStatus,
                          nscoord                       aContentBSize,
                          const mozilla::LogicalMargin& aBorderPadding,
@@ -264,7 +264,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus) override;
 
   virtual nsresult AttributeChanged(int32_t         aNameSpaceID,
@@ -414,7 +414,7 @@ protected:
   
   void MoveChildFramesOfLine(nsLineBox* aLine, nscoord aDeltaBCoord);
 
-  void ComputeFinalSize(const ReflowInput& aReflowState,
+  void ComputeFinalSize(const ReflowInput& aReflowInput,
                         BlockReflowInput&      aState,
                         ReflowOutput&     aMetrics,
                         nscoord*                 aBottomEdgeOfChildren);

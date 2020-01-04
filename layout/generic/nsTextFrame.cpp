@@ -8650,26 +8650,26 @@ struct NewlineProperty {
 void
 nsTextFrame::Reflow(nsPresContext*           aPresContext,
                     ReflowOutput&     aMetrics,
-                    const ReflowInput& aReflowState,
+                    const ReflowInput& aReflowInput,
                     nsReflowStatus&          aStatus)
 {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsTextFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowState, aMetrics, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aMetrics, aStatus);
 
   
   
   
-  if (!aReflowState.mLineLayout) {
+  if (!aReflowInput.mLineLayout) {
     ClearMetrics(aMetrics);
     aStatus = NS_FRAME_COMPLETE;
     return;
   }
 
-  ReflowText(*aReflowState.mLineLayout, aReflowState.AvailableWidth(),
-             aReflowState.mRenderingContext->GetDrawTarget(), aMetrics, aStatus);
+  ReflowText(*aReflowInput.mLineLayout, aReflowInput.AvailableWidth(),
+             aReflowInput.mRenderingContext->GetDrawTarget(), aMetrics, aStatus);
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aMetrics);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
 }
 
 #ifdef ACCESSIBILITY

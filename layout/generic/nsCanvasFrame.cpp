@@ -573,12 +573,12 @@ nsCanvasFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 void
 nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus)
 {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsCanvasFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowState, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
   NS_FRAME_TRACE_REFLOW_IN("nsCanvasFrame::Reflow");
 
   
@@ -603,7 +603,7 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  SetSize(nsSize(aReflowState.ComputedWidth(), aReflowState.ComputedHeight())); 
+  SetSize(nsSize(aReflowInput.ComputedWidth(), aReflowInput.ComputedHeight())); 
 
   
   
@@ -612,7 +612,7 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  ReflowOutput kidDesiredSize(aReflowState);
+  ReflowOutput kidDesiredSize(aReflowInput);
   if (mFrames.IsEmpty()) {
     
     aDesiredSize.Width() = aDesiredSize.Height() = 0;
@@ -621,31 +621,31 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
     bool kidDirty = (kidFrame->GetStateBits() & NS_FRAME_IS_DIRTY) != 0;
 
     ReflowInput
-      kidReflowState(aPresContext, aReflowState, kidFrame,
-                     aReflowState.AvailableSize(kidFrame->GetWritingMode()));
+      kidReflowInput(aPresContext, aReflowInput, kidFrame,
+                     aReflowInput.AvailableSize(kidFrame->GetWritingMode()));
 
-    if (aReflowState.IsBResizeForWM(kidReflowState.GetWritingMode()) &&
+    if (aReflowInput.IsBResizeForWM(kidReflowInput.GetWritingMode()) &&
         (kidFrame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
       
       
-      kidReflowState.SetBResize(true);
+      kidReflowInput.SetBResize(true);
     }
 
-    WritingMode wm = aReflowState.GetWritingMode();
-    WritingMode kidWM = kidReflowState.GetWritingMode();
-    nsSize containerSize = aReflowState.ComputedPhysicalSize();
+    WritingMode wm = aReflowInput.GetWritingMode();
+    WritingMode kidWM = kidReflowInput.GetWritingMode();
+    nsSize containerSize = aReflowInput.ComputedPhysicalSize();
 
-    LogicalMargin margin = kidReflowState.ComputedLogicalMargin();
+    LogicalMargin margin = kidReflowInput.ComputedLogicalMargin();
     LogicalPoint kidPt(kidWM, margin.IStart(kidWM), margin.BStart(kidWM));
 
-    kidReflowState.ApplyRelativePositioning(&kidPt, containerSize);
+    kidReflowInput.ApplyRelativePositioning(&kidPt, containerSize);
 
     
-    ReflowChild(kidFrame, aPresContext, kidDesiredSize, kidReflowState,
+    ReflowChild(kidFrame, aPresContext, kidDesiredSize, kidReflowInput,
                 kidWM, kidPt, containerSize, 0, aStatus);
 
     
-    FinishReflowChild(kidFrame, aPresContext, kidDesiredSize, &kidReflowState,
+    FinishReflowChild(kidFrame, aPresContext, kidDesiredSize, &kidReflowInput,
                       kidWM, kidPt, containerSize, 0);
 
     if (!NS_FRAME_IS_FULLY_COMPLETE(aStatus)) {
@@ -685,12 +685,12 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
     
     
     LogicalSize finalSize(wm);
-    finalSize.ISize(wm) = aReflowState.ComputedISize();
-    if (aReflowState.ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
+    finalSize.ISize(wm) = aReflowInput.ComputedISize();
+    if (aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
       finalSize.BSize(wm) = kidFrame->GetLogicalSize(wm).BSize(wm) +
-        kidReflowState.ComputedLogicalMargin().BStartEnd(wm);
+        kidReflowInput.ComputedLogicalMargin().BStartEnd(wm);
     } else {
-      finalSize.BSize(wm) = aReflowState.ComputedBSize();
+      finalSize.BSize(wm) = aReflowInput.ComputedBSize();
     }
 
     aDesiredSize.SetSize(wm, finalSize);
@@ -700,15 +700,15 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
   }
 
   if (prevCanvasFrame) {
-    ReflowOverflowContainerChildren(aPresContext, aReflowState,
+    ReflowOverflowContainerChildren(aPresContext, aReflowInput,
                                     aDesiredSize.mOverflowAreas, 0,
                                     aStatus);
   }
 
-  FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize, aReflowState, aStatus);
+  FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
   NS_FRAME_TRACE_REFLOW_OUT("nsCanvasFrame::Reflow", aStatus);
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 nsIAtom*

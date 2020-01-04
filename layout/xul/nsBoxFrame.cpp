@@ -554,12 +554,12 @@ nsBoxFrame::GetInitialAutoStretch(bool& aStretch)
 
 void
 nsBoxFrame::DidReflow(nsPresContext*           aPresContext,
-                      const ReflowInput*  aReflowState,
+                      const ReflowInput*  aReflowInput,
                       nsDidReflowStatus         aStatus)
 {
   nsFrameState preserveBits =
     mState & (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
-  nsFrame::DidReflow(aPresContext, aReflowState, aStatus);
+  nsFrame::DidReflow(aPresContext, aReflowInput, aStatus);
   mState |= preserveBits;
 }
 
@@ -630,7 +630,7 @@ nsBoxFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 void
 nsBoxFrame::Reflow(nsPresContext*          aPresContext,
                    ReflowOutput&     aDesiredSize,
-                   const ReflowInput& aReflowState,
+                   const ReflowInput& aReflowInput,
                    nsReflowStatus&          aStatus)
 {
   MarkInReflow();
@@ -638,19 +638,19 @@ nsBoxFrame::Reflow(nsPresContext*          aPresContext,
   
 
   DO_GLOBAL_REFLOW_COUNT("nsBoxFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowState, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
 
-  NS_ASSERTION(aReflowState.ComputedWidth() >=0 &&
-               aReflowState.ComputedHeight() >= 0, "Computed Size < 0");
+  NS_ASSERTION(aReflowInput.ComputedWidth() >=0 &&
+               aReflowInput.ComputedHeight() >= 0, "Computed Size < 0");
 
 #ifdef DO_NOISY_REFLOW
   printf("\n-------------Starting BoxFrame Reflow ----------------------------\n");
   printf("%p ** nsBF::Reflow %d ", this, myCounter++);
   
-  printSize("AW", aReflowState.AvailableWidth());
-  printSize("AH", aReflowState.AvailableHeight());
-  printSize("CW", aReflowState.ComputedWidth());
-  printSize("CH", aReflowState.ComputedHeight());
+  printSize("AW", aReflowInput.AvailableWidth());
+  printSize("AH", aReflowInput.AvailableHeight());
+  printSize("CW", aReflowInput.ComputedWidth());
+  printSize("CH", aReflowInput.ComputedHeight());
 
   printf(" *\n");
 
@@ -659,14 +659,14 @@ nsBoxFrame::Reflow(nsPresContext*          aPresContext,
   aStatus = NS_FRAME_COMPLETE;
 
   
-  nsBoxLayoutState state(aPresContext, aReflowState.mRenderingContext,
-                         &aReflowState, aReflowState.mReflowDepth);
+  nsBoxLayoutState state(aPresContext, aReflowInput.mRenderingContext,
+                         &aReflowInput, aReflowInput.mReflowDepth);
 
-  WritingMode wm = aReflowState.GetWritingMode();
-  LogicalSize computedSize(wm, aReflowState.ComputedISize(),
-                           aReflowState.ComputedBSize());
+  WritingMode wm = aReflowInput.GetWritingMode();
+  LogicalSize computedSize(wm, aReflowInput.ComputedISize(),
+                           aReflowInput.ComputedBSize());
 
-  LogicalMargin m = aReflowState.ComputedLogicalBorderPadding();
+  LogicalMargin m = aReflowInput.ComputedLogicalBorderPadding();
   
 
   LogicalSize prefSize(wm);
@@ -686,15 +686,15 @@ nsBoxFrame::Reflow(nsPresContext*          aPresContext,
   
   computedSize.ISize(wm) += m.IStart(wm) + m.IEnd(wm);
 
-  if (aReflowState.ComputedBSize() == NS_INTRINSICSIZE) {
+  if (aReflowInput.ComputedBSize() == NS_INTRINSICSIZE) {
     computedSize.BSize(wm) = prefSize.BSize(wm);
     
     nscoord blockDirBorderPadding =
-      aReflowState.ComputedLogicalBorderPadding().BStartEnd(wm);
+      aReflowInput.ComputedLogicalBorderPadding().BStartEnd(wm);
     nscoord contentBSize = computedSize.BSize(wm) - blockDirBorderPadding;
     
     
-    computedSize.BSize(wm) = aReflowState.ApplyMinMaxHeight(contentBSize) +
+    computedSize.BSize(wm) = aReflowInput.ApplyMinMaxHeight(contentBSize) +
                              blockDirBorderPadding;
   } else {
     computedSize.BSize(wm) += m.BStart(wm) + m.BEnd(wm);
@@ -738,9 +738,9 @@ nsBoxFrame::Reflow(nsPresContext*          aPresContext,
   }
 #endif
 
-  ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowState, aStatus);
+  ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 nsSize
@@ -918,13 +918,13 @@ nsBoxFrame::DoXULLayout(nsBoxLayoutState& aState)
   if (HasAbsolutelyPositionedChildren()) {
     
     WritingMode wm = GetWritingMode();
-    ReflowInput reflowState(aState.PresContext(), this,
+    ReflowInput reflowInput(aState.PresContext(), this,
                                   aState.GetRenderingContext(),
                                   LogicalSize(wm, GetLogicalSize().ISize(wm),
                                               NS_UNCONSTRAINEDSIZE));
 
     
-    ReflowOutput desiredSize(reflowState);
+    ReflowOutput desiredSize(reflowInput);
     desiredSize.Width() = mRect.width;
     desiredSize.Height() = mRect.height;
 
@@ -944,7 +944,7 @@ nsBoxFrame::DoXULLayout(nsBoxLayoutState& aState)
     
     nsReflowStatus reflowStatus = NS_FRAME_COMPLETE;
     ReflowAbsoluteFrames(aState.PresContext(), desiredSize,
-                         reflowState, reflowStatus);
+                         reflowInput, reflowStatus);
     RemoveStateBits(NS_FRAME_IN_REFLOW);
   }
 

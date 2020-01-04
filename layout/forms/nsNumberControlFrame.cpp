@@ -106,12 +106,12 @@ nsNumberControlFrame::GetPrefISize(nsRenderingContext* aRenderingContext)
 void
 nsNumberControlFrame::Reflow(nsPresContext* aPresContext,
                              ReflowOutput& aDesiredSize,
-                             const ReflowInput& aReflowState,
+                             const ReflowInput& aReflowInput,
                              nsReflowStatus& aStatus)
 {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsNumberControlFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowState, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
 
   NS_ASSERTION(mOuterWrapper, "Outer wrapper div must exist!");
 
@@ -127,22 +127,22 @@ nsNumberControlFrame::Reflow(nsPresContext* aPresContext,
     nsFormControlFrame::RegUnRegAccessKey(this, true);
   }
 
-  const WritingMode myWM = aReflowState.GetWritingMode();
+  const WritingMode myWM = aReflowInput.GetWritingMode();
 
   
   
-  const nscoord contentBoxISize = aReflowState.ComputedISize();
-  nscoord contentBoxBSize = aReflowState.ComputedBSize();
+  const nscoord contentBoxISize = aReflowInput.ComputedISize();
+  nscoord contentBoxBSize = aReflowInput.ComputedBSize();
 
   
   
   const nscoord borderBoxISize = contentBoxISize +
-    aReflowState.ComputedLogicalBorderPadding().IStartEnd(myWM);
+    aReflowInput.ComputedLogicalBorderPadding().IStartEnd(myWM);
 
   nscoord borderBoxBSize;
   if (contentBoxBSize != NS_INTRINSICSIZE) {
     borderBoxBSize = contentBoxBSize +
-      aReflowState.ComputedLogicalBorderPadding().BStartEnd(myWM);
+      aReflowInput.ComputedLogicalBorderPadding().BStartEnd(myWM);
   } 
 
   nsIFrame* outerWrapperFrame = mOuterWrapper->GetPrimaryFrame();
@@ -151,30 +151,30 @@ nsNumberControlFrame::Reflow(nsPresContext* aPresContext,
     if (contentBoxBSize == NS_INTRINSICSIZE) {
       contentBoxBSize = 0;
       borderBoxBSize =
-        aReflowState.ComputedLogicalBorderPadding().BStartEnd(myWM);
+        aReflowInput.ComputedLogicalBorderPadding().BStartEnd(myWM);
     }
   } else {
     NS_ASSERTION(outerWrapperFrame == mFrames.FirstChild(), "huh?");
 
-    ReflowOutput wrappersDesiredSize(aReflowState);
+    ReflowOutput wrappersDesiredSize(aReflowInput);
 
     WritingMode wrapperWM = outerWrapperFrame->GetWritingMode();
-    LogicalSize availSize = aReflowState.ComputedSize(wrapperWM);
+    LogicalSize availSize = aReflowInput.ComputedSize(wrapperWM);
     availSize.BSize(wrapperWM) = NS_UNCONSTRAINEDSIZE;
 
-    ReflowInput wrapperReflowState(aPresContext, aReflowState,
+    ReflowInput wrapperReflowInput(aPresContext, aReflowInput,
                                          outerWrapperFrame, availSize);
 
     
     LogicalMargin wrapperMargin =
-      wrapperReflowState.ComputedLogicalMargin().ConvertTo(myWM, wrapperWM);
+      wrapperReflowInput.ComputedLogicalMargin().ConvertTo(myWM, wrapperWM);
 
     
     LogicalPoint
       wrapperOffset(myWM,
-                    aReflowState.ComputedLogicalBorderPadding().IStart(myWM) +
+                    aReflowInput.ComputedLogicalBorderPadding().IStart(myWM) +
                     wrapperMargin.IStart(myWM),
-                    aReflowState.ComputedLogicalBorderPadding().BStart(myWM) +
+                    aReflowInput.ComputedLogicalBorderPadding().BStart(myWM) +
                     wrapperMargin.BStart(myWM));
 
     nsReflowStatus childStatus;
@@ -182,7 +182,7 @@ nsNumberControlFrame::Reflow(nsPresContext* aPresContext,
     
     const nsSize dummyContainerSize;
     ReflowChild(outerWrapperFrame, aPresContext, wrappersDesiredSize,
-                wrapperReflowState, myWM, wrapperOffset, dummyContainerSize, 0,
+                wrapperReflowInput, myWM, wrapperOffset, dummyContainerSize, 0,
                 childStatus);
     MOZ_ASSERT(NS_FRAME_IS_FULLY_COMPLETE(childStatus),
                "We gave our child unconstrained available block-size, "
@@ -203,11 +203,11 @@ nsNumberControlFrame::Reflow(nsPresContext* aPresContext,
       
       contentBoxBSize =
         NS_CSS_MINMAX(contentBoxBSize,
-                      aReflowState.ComputedMinBSize(),
-                      aReflowState.ComputedMaxBSize());
+                      aReflowInput.ComputedMinBSize(),
+                      aReflowInput.ComputedMaxBSize());
 
       borderBoxBSize = contentBoxBSize +
-        aReflowState.ComputedLogicalBorderPadding().BStartEnd(myWM);
+        aReflowInput.ComputedLogicalBorderPadding().BStartEnd(myWM);
     }
 
     
@@ -220,7 +220,7 @@ nsNumberControlFrame::Reflow(nsPresContext* aPresContext,
 
     
     FinishReflowChild(outerWrapperFrame, aPresContext, wrappersDesiredSize,
-                      &wrapperReflowState, myWM, wrapperOffset,
+                      &wrapperReflowInput, myWM, wrapperOffset,
                       borderBoxSize, 0);
 
     nsSize contentBoxSize =
@@ -228,7 +228,7 @@ nsNumberControlFrame::Reflow(nsPresContext* aPresContext,
         GetPhysicalSize(myWM);
     aDesiredSize.SetBlockStartAscent(
        wrappersDesiredSize.BlockStartAscent() +
-       outerWrapperFrame->BStart(aReflowState.GetWritingMode(),
+       outerWrapperFrame->BStart(aReflowInput.GetWritingMode(),
                                  contentBoxSize));
   }
 
@@ -245,7 +245,7 @@ nsNumberControlFrame::Reflow(nsPresContext* aPresContext,
 
   aStatus = NS_FRAME_COMPLETE;
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 void

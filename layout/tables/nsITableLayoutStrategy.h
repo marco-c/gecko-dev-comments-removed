@@ -41,7 +41,7 @@ public:
 
 
 
-    virtual void ComputeColumnISizes(const ReflowInput& aReflowState) = 0;
+    virtual void ComputeColumnISizes(const ReflowInput& aReflowInput) = 0;
 
     
 

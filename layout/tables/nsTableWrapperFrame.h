@@ -86,7 +86,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus) override;
 
   
@@ -185,8 +185,8 @@ protected:
   explicit nsTableWrapperFrame(nsStyleContext* aContext);
   virtual ~nsTableWrapperFrame();
 
-  void InitChildReflowState(nsPresContext&     aPresContext,
-                            ReflowInput& aReflowState);
+  void InitChildReflowInput(nsPresContext&     aPresContext,
+                            ReflowInput& aReflowInput);
 
   
   

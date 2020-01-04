@@ -486,12 +486,12 @@ nsTextControlFrame::ComputeAutoSize(nsRenderingContext *aRenderingContext,
 void
 nsTextControlFrame::Reflow(nsPresContext*   aPresContext,
                            ReflowOutput&     aDesiredSize,
-                           const ReflowInput& aReflowState,
+                           const ReflowInput& aReflowInput,
                            nsReflowStatus&          aStatus)
 {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsTextControlFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowState, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
 
   
   if (mState & NS_FRAME_FIRST_REFLOW) {
@@ -499,17 +499,17 @@ nsTextControlFrame::Reflow(nsPresContext*   aPresContext,
   }
 
   
-  WritingMode wm = aReflowState.GetWritingMode();
+  WritingMode wm = aReflowInput.GetWritingMode();
   LogicalSize
     finalSize(wm,
-              aReflowState.ComputedISize() +
-              aReflowState.ComputedLogicalBorderPadding().IStartEnd(wm),
-              aReflowState.ComputedBSize() +
-              aReflowState.ComputedLogicalBorderPadding().BStartEnd(wm));
+              aReflowInput.ComputedISize() +
+              aReflowInput.ComputedLogicalBorderPadding().IStartEnd(wm),
+              aReflowInput.ComputedBSize() +
+              aReflowInput.ComputedLogicalBorderPadding().BStartEnd(wm));
   aDesiredSize.SetSize(wm, finalSize);
 
   
-  nscoord lineHeight = aReflowState.ComputedBSize();
+  nscoord lineHeight = aReflowInput.ComputedBSize();
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   if (!IsSingleLineTextControl()) {
     lineHeight = ReflowInput::CalcLineHeight(GetContent(), StyleContext(),
@@ -521,14 +521,14 @@ nsTextControlFrame::Reflow(nsPresContext*   aPresContext,
   aDesiredSize.SetBlockStartAscent(
     nsLayoutUtils::GetCenteredFontBaseline(fontMet, lineHeight,
                                            wm.IsLineInverted()) +
-    aReflowState.ComputedLogicalBorderPadding().BStart(wm));
+    aReflowInput.ComputedLogicalBorderPadding().BStart(wm));
 
   
   aDesiredSize.SetOverflowAreasToDesiredBounds();
   
   nsIFrame* kid = mFrames.FirstChild();
   while (kid) {
-    ReflowTextControlChild(kid, aPresContext, aReflowState, aStatus, aDesiredSize);
+    ReflowTextControlChild(kid, aPresContext, aReflowInput, aStatus, aDesiredSize);
     kid = kid->GetNextSibling();
   }
 
@@ -536,45 +536,45 @@ nsTextControlFrame::Reflow(nsPresContext*   aPresContext,
   FinishAndStoreOverflow(&aDesiredSize);
 
   aStatus = NS_FRAME_COMPLETE;
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 void
 nsTextControlFrame::ReflowTextControlChild(nsIFrame*                aKid,
                                            nsPresContext*           aPresContext,
-                                           const ReflowInput& aReflowState,
+                                           const ReflowInput& aReflowInput,
                                            nsReflowStatus&          aStatus,
                                            ReflowOutput& aParentDesiredSize)
 {
   
   WritingMode wm = aKid->GetWritingMode();
-  LogicalSize availSize = aReflowState.ComputedSizeWithPadding(wm);
+  LogicalSize availSize = aReflowInput.ComputedSizeWithPadding(wm);
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
 
-  ReflowInput kidReflowState(aPresContext, aReflowState, 
+  ReflowInput kidReflowInput(aPresContext, aReflowInput, 
                                    aKid, availSize, nullptr,
                                    ReflowInput::CALLER_WILL_INIT);
   
-  kidReflowState.Init(aPresContext, nullptr, nullptr, &aReflowState.ComputedPhysicalPadding());
+  kidReflowInput.Init(aPresContext, nullptr, nullptr, &aReflowInput.ComputedPhysicalPadding());
 
   
-  kidReflowState.SetComputedWidth(aReflowState.ComputedWidth());
-  kidReflowState.SetComputedHeight(aReflowState.ComputedHeight());
+  kidReflowInput.SetComputedWidth(aReflowInput.ComputedWidth());
+  kidReflowInput.SetComputedHeight(aReflowInput.ComputedHeight());
 
   
-  nscoord xOffset = aReflowState.ComputedPhysicalBorderPadding().left -
-                    aReflowState.ComputedPhysicalPadding().left;
-  nscoord yOffset = aReflowState.ComputedPhysicalBorderPadding().top -
-                    aReflowState.ComputedPhysicalPadding().top;
+  nscoord xOffset = aReflowInput.ComputedPhysicalBorderPadding().left -
+                    aReflowInput.ComputedPhysicalPadding().left;
+  nscoord yOffset = aReflowInput.ComputedPhysicalBorderPadding().top -
+                    aReflowInput.ComputedPhysicalPadding().top;
 
   
-  ReflowOutput desiredSize(aReflowState);
-  ReflowChild(aKid, aPresContext, desiredSize, kidReflowState, 
+  ReflowOutput desiredSize(aReflowInput);
+  ReflowChild(aKid, aPresContext, desiredSize, kidReflowInput, 
               xOffset, yOffset, 0, aStatus);
 
   
   FinishReflowChild(aKid, aPresContext, desiredSize,
-                    &kidReflowState, xOffset, yOffset, 0);
+                    &kidReflowInput, xOffset, yOffset, 0);
 
   
   aParentDesiredSize.mOverflowAreas.UnionWith(desiredSize.mOverflowAreas);

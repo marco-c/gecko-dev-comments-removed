@@ -425,7 +425,7 @@ nsPluginFrame::GetWidgetConfiguration(nsTArray<nsIWidget::Configuration>* aConfi
 
 void
 nsPluginFrame::GetDesiredSize(nsPresContext* aPresContext,
-                              const ReflowInput& aReflowState,
+                              const ReflowInput& aReflowInput,
                               ReflowOutput& aMetrics)
 {
   
@@ -435,21 +435,21 @@ nsPluginFrame::GetDesiredSize(nsPresContext* aPresContext,
     return;
   }
 
-  aMetrics.Width() = aReflowState.ComputedWidth();
-  aMetrics.Height() = aReflowState.ComputedHeight();
+  aMetrics.Width() = aReflowInput.ComputedWidth();
+  aMetrics.Height() = aReflowInput.ComputedHeight();
 
   
   if (mContent->IsAnyOfHTMLElements(nsGkAtoms::applet,
                                     nsGkAtoms::embed)) {
     if (aMetrics.Width() == NS_UNCONSTRAINEDSIZE) {
       aMetrics.Width() = clamped(nsPresContext::CSSPixelsToAppUnits(EMBED_DEF_WIDTH),
-                               aReflowState.ComputedMinWidth(),
-                               aReflowState.ComputedMaxWidth());
+                               aReflowInput.ComputedMinWidth(),
+                               aReflowInput.ComputedMaxWidth());
     }
     if (aMetrics.Height() == NS_UNCONSTRAINEDSIZE) {
       aMetrics.Height() = clamped(nsPresContext::CSSPixelsToAppUnits(EMBED_DEF_HEIGHT),
-                                aReflowState.ComputedMinHeight(),
-                                aReflowState.ComputedMaxHeight());
+                                aReflowInput.ComputedMinHeight(),
+                                aReflowInput.ComputedMaxHeight());
     }
 
 #if defined(MOZ_WIDGET_GTK)
@@ -467,8 +467,8 @@ nsPluginFrame::GetDesiredSize(nsPresContext* aPresContext,
   
   if (aMetrics.Width() == NS_UNCONSTRAINEDSIZE) {
     aMetrics.Width() =
-      (aReflowState.ComputedMinWidth() != NS_UNCONSTRAINEDSIZE) ?
-        aReflowState.ComputedMinWidth() : 0;
+      (aReflowInput.ComputedMinWidth() != NS_UNCONSTRAINEDSIZE) ?
+        aReflowInput.ComputedMinWidth() : 0;
   }
 
   
@@ -477,8 +477,8 @@ nsPluginFrame::GetDesiredSize(nsPresContext* aPresContext,
   
   if (aMetrics.Height() == NS_UNCONSTRAINEDSIZE) {
     aMetrics.Height() =
-      (aReflowState.ComputedMinHeight() != NS_UNCONSTRAINEDSIZE) ?
-        aReflowState.ComputedMinHeight() : 0;
+      (aReflowInput.ComputedMinHeight() != NS_UNCONSTRAINEDSIZE) ?
+        aReflowInput.ComputedMinHeight() : 0;
   }
 
   
@@ -491,15 +491,15 @@ nsPluginFrame::GetDesiredSize(nsPresContext* aPresContext,
 void
 nsPluginFrame::Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aMetrics,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus)
 {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsPluginFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowState, aMetrics, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aMetrics, aStatus);
 
   
-  GetDesiredSize(aPresContext, aReflowState, aMetrics);
+  GetDesiredSize(aPresContext, aReflowInput, aMetrics);
   aMetrics.SetOverflowAreasToDesiredBounds();
   FinishAndStoreOverflow(&aMetrics);
 
@@ -518,7 +518,7 @@ nsPluginFrame::Reflow(nsPresContext*           aPresContext,
   }
 
   nsRect r(0, 0, aMetrics.Width(), aMetrics.Height());
-  r.Deflate(aReflowState.ComputedPhysicalBorderPadding());
+  r.Deflate(aReflowInput.ComputedPhysicalBorderPadding());
 
   if (mInnerView) {
     nsViewManager* vm = mInnerView->GetViewManager();
@@ -534,7 +534,7 @@ nsPluginFrame::Reflow(nsPresContext*           aPresContext,
 
   aStatus = NS_FRAME_COMPLETE;
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aMetrics);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
 }
 
 
@@ -822,7 +822,7 @@ nsPluginFrame::GetWindowOriginInPixels(bool aWindowless)
 
 void
 nsPluginFrame::DidReflow(nsPresContext*            aPresContext,
-                         const ReflowInput*  aReflowState,
+                         const ReflowInput*  aReflowInput,
                          nsDidReflowStatus         aStatus)
 {
   
@@ -834,7 +834,7 @@ nsPluginFrame::DidReflow(nsPresContext*            aPresContext,
     objContent->HasNewFrame(this);
   }
 
-  nsFrame::DidReflow(aPresContext, aReflowState, aStatus);
+  nsFrame::DidReflow(aPresContext, aReflowInput, aStatus);
 
   
   

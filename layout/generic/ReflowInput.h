@@ -175,8 +175,8 @@ public:
                    mozilla::WritingMode aContainingBlockWritingMode,
                    nscoord aContainingBlockISize);
 
-  struct ReflowStateFlags {
-    ReflowStateFlags() { memset(this, 0, sizeof(*this)); }
+  struct ReflowInputFlags {
+    ReflowInputFlags() { memset(this, 0, sizeof(*this)); }
     uint16_t mSpecialBSizeReflow:1;  
                                      
     uint16_t mNextInFlowUntouched:1; 
@@ -206,7 +206,7 @@ public:
     uint16_t mIsFlexContainerMeasuringHeight:1; 
                                                 
                                                 
-    uint16_t mDummyParentReflowState:1; 
+    uint16_t mDummyParentReflowInput:1; 
                                         
                                         
     uint16_t mMustReflowPlaceholders:1; 
@@ -281,7 +281,7 @@ protected:
   void InitOffsets(mozilla::WritingMode aWM,
                    const mozilla::LogicalSize& aPercentBasis,
                    nsIAtom* aFrameType,
-                   ReflowStateFlags aFlags,
+                   ReflowInputFlags aFlags,
                    const nsMargin* aBorder = nullptr,
                    const nsMargin* aPadding = nullptr);
 
@@ -317,7 +317,7 @@ protected:
 struct ReflowInput : public SizeComputationInput {
   
   
-  const ReflowInput* mParentReflowState;
+  const ReflowInput* mParentReflowInput;
 
   
   nsFloatManager* mFloatManager;
@@ -327,7 +327,7 @@ struct ReflowInput : public SizeComputationInput {
 
   
   
-  const ReflowInput *mCBReflowState;
+  const ReflowInput *mCBReflowInput;
 
   
   
@@ -591,7 +591,7 @@ public:
   
   
   int16_t mReflowDepth;
-  ReflowStateFlags mFlags;
+  ReflowInputFlags mFlags;
 
   
   
@@ -671,7 +671,7 @@ public:
 
 
   ReflowInput(nsPresContext*              aPresContext,
-                    const ReflowInput&    aParentReflowState,
+                    const ReflowInput&    aParentReflowInput,
                     nsIFrame*                   aFrame,
                     const mozilla::LogicalSize& aAvailableSpace,
                     const mozilla::LogicalSize* aContainingBlockSize = nullptr,
@@ -922,7 +922,7 @@ public:
 
 protected:
   void InitFrameType(nsIAtom* aFrameType);
-  void InitCBReflowState();
+  void InitCBReflowInput();
   void InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameType);
 
   void InitConstraints(nsPresContext*              aPresContext,

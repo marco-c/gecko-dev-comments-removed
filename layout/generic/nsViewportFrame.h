@@ -66,7 +66,7 @@ public:
   virtual nscoord GetPrefISize(nsRenderingContext *aRenderingContext) override;
   virtual void Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus) override;
 
   
@@ -84,7 +84,7 @@ public:
 
 
 
-  nsRect AdjustReflowStateAsContainingBlock(ReflowInput* aReflowState) const;
+  nsRect AdjustReflowInputAsContainingBlock(ReflowInput* aReflowInput) const;
 
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
@@ -101,7 +101,7 @@ protected:
 
 
 
-  nsPoint AdjustReflowStateForScrollbars(ReflowInput* aReflowState) const;
+  nsPoint AdjustReflowInputForScrollbars(ReflowInput* aReflowInput) const;
 };
 
 

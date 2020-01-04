@@ -100,7 +100,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus) override;
 
   void DidResize();
@@ -129,7 +129,7 @@ public:
 
   
   
-  nscoord CalcBSize(const ReflowInput& aReflowState);
+  nscoord CalcBSize(const ReflowInput& aReflowInput);
 
   
 
@@ -152,7 +152,7 @@ public:
 
   
   nscoord ReflowCellFrame(nsPresContext*           aPresContext,
-                          const ReflowInput& aReflowState,
+                          const ReflowInput& aReflowInput,
                           bool                     aIsTopOfPage,
                           nsTableCellFrame*        aCellFrame,
                           nscoord                  aAvailableBSize,
@@ -262,12 +262,12 @@ protected:
 
   explicit nsTableRowFrame(nsStyleContext *aContext);
 
-  void InitChildReflowState(nsPresContext&              aPresContext,
+  void InitChildReflowInput(nsPresContext&              aPresContext,
                             const mozilla::LogicalSize& aAvailSize,
                             bool                        aBorderCollapse,
-                            TableCellReflowInput&     aReflowState);
+                            TableCellReflowInput&     aReflowInput);
   
-  virtual LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowState = nullptr) const override;
+  virtual LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const override;
 
   
 
@@ -280,7 +280,7 @@ protected:
 
   void ReflowChildren(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsTableFrame&            aTableFrame,
                       nsReflowStatus&          aStatus);
 

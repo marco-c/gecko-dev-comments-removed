@@ -76,7 +76,7 @@ nsRubyTextFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
  void
 nsRubyTextFrame::Reflow(nsPresContext* aPresContext,
                         ReflowOutput& aDesiredSize,
-                        const ReflowInput& aReflowState,
+                        const ReflowInput& aReflowInput,
                         nsReflowStatus& aStatus)
 {
   
@@ -85,12 +85,12 @@ nsRubyTextFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  nsRubyContentFrame::Reflow(aPresContext, aDesiredSize, aReflowState, aStatus);
+  nsRubyContentFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
   if (IsAutoHidden()) {
     
     
-    WritingMode lineWM = aReflowState.mLineLayout->GetWritingMode();
+    WritingMode lineWM = aReflowInput.mLineLayout->GetWritingMode();
     aDesiredSize.ISize(lineWM) = 0;
     aDesiredSize.SetOverflowAreasToDesiredBounds();
   }

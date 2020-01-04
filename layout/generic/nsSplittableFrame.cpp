@@ -217,10 +217,10 @@ nsSplittableFrame::GetConsumedBSize() const
 }
 
 nscoord
-nsSplittableFrame::GetEffectiveComputedBSize(const ReflowInput& aReflowState,
+nsSplittableFrame::GetEffectiveComputedBSize(const ReflowInput& aReflowInput,
                                               nscoord aConsumedBSize) const
 {
-  nscoord bSize = aReflowState.ComputedBSize();
+  nscoord bSize = aReflowInput.ComputedBSize();
   if (bSize == NS_INTRINSICSIZE) {
     return NS_INTRINSICSIZE;
   }
@@ -236,7 +236,7 @@ nsSplittableFrame::GetEffectiveComputedBSize(const ReflowInput& aReflowState,
 }
 
 nsIFrame::LogicalSides
-nsSplittableFrame::GetLogicalSkipSides(const ReflowInput* aReflowState) const
+nsSplittableFrame::GetLogicalSkipSides(const ReflowInput* aReflowInput) const
 {
   if (IS_TRUE_OVERFLOW_CONTAINER(this)) {
     return LogicalSides(eLogicalSideBitsBBoth);
@@ -252,16 +252,16 @@ nsSplittableFrame::GetLogicalSkipSides(const ReflowInput* aReflowState) const
     skip |= eLogicalSideBitsBStart;
   }
 
-  if (aReflowState) {
+  if (aReflowInput) {
     
     
     
     
 
-    if (NS_UNCONSTRAINEDSIZE != aReflowState->AvailableBSize()) {
-      nscoord effectiveCH = this->GetEffectiveComputedBSize(*aReflowState);
+    if (NS_UNCONSTRAINEDSIZE != aReflowInput->AvailableBSize()) {
+      nscoord effectiveCH = this->GetEffectiveComputedBSize(*aReflowInput);
       if (effectiveCH != NS_INTRINSICSIZE &&
-          effectiveCH > aReflowState->AvailableBSize()) {
+          effectiveCH > aReflowInput->AvailableBSize()) {
         
         
         skip |= eLogicalSideBitsBEnd;

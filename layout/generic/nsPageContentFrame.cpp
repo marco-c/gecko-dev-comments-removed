@@ -23,12 +23,12 @@ NS_IMPL_FRAMEARENA_HELPERS(nsPageContentFrame)
 void
 nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
                            ReflowOutput&     aDesiredSize,
-                           const ReflowInput& aReflowState,
+                           const ReflowInput& aReflowInput,
                            nsReflowStatus&          aStatus)
 {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsPageContentFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowState, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
   aStatus = NS_FRAME_COMPLETE;  
 
   if (GetPrevInFlow() && (GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
@@ -42,8 +42,8 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  nsSize  maxSize(aReflowState.ComputedWidth(),
-                  aReflowState.ComputedHeight());
+  nsSize  maxSize(aReflowInput.ComputedWidth(),
+                  aReflowInput.ComputedHeight());
   SetSize(maxSize);
  
   
@@ -53,12 +53,12 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
     nsIFrame* frame = mFrames.FirstChild();
     WritingMode wm = frame->GetWritingMode();
     LogicalSize logicalSize(wm, maxSize);
-    ReflowInput kidReflowState(aPresContext, aReflowState,
+    ReflowInput kidReflowInput(aPresContext, aReflowInput,
                                      frame, logicalSize);
-    kidReflowState.SetComputedBSize(logicalSize.BSize(wm));
+    kidReflowInput.SetComputedBSize(logicalSize.BSize(wm));
 
     
-    ReflowChild(frame, aPresContext, aDesiredSize, kidReflowState, 0, 0, 0, aStatus);
+    ReflowChild(frame, aPresContext, aDesiredSize, kidReflowInput, 0, 0, 0, aStatus);
 
     
     
@@ -67,7 +67,7 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
 
     
     
-    kidReflowState.mStylePadding->GetPadding(padding);
+    kidReflowInput.mStylePadding->GetPadding(padding);
 
     
     
@@ -79,7 +79,7 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
       nscoord xmost = aDesiredSize.ScrollableOverflow().XMost();
       if (xmost > aDesiredSize.Width()) {
         nscoord widthToFit = xmost + padding.right +
-          kidReflowState.mStyleBorder->GetComputedBorderWidth(NS_SIDE_RIGHT);
+          kidReflowInput.mStyleBorder->GetComputedBorderWidth(NS_SIDE_RIGHT);
         float ratio = float(maxSize.width) / widthToFit;
         NS_ASSERTION(ratio >= 0.0 && ratio < 1.0, "invalid shrink-to-fit ratio");
         mPD->mShrinkToFitRatio = std::min(mPD->mShrinkToFitRatio, ratio);
@@ -87,7 +87,7 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
     }
 
     
-    FinishReflowChild(frame, aPresContext, aDesiredSize, &kidReflowState, 0, 0, 0);
+    FinishReflowChild(frame, aPresContext, aDesiredSize, &kidReflowInput, 0, 0, 0);
 
     NS_ASSERTION(aPresContext->IsDynamic() || !NS_FRAME_IS_FULLY_COMPLETE(aStatus) ||
                   !frame->GetNextInFlow(), "bad child flow list");
@@ -95,18 +95,18 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
 
   
   nsReflowStatus fixedStatus = NS_FRAME_COMPLETE;
-  ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowState, fixedStatus);
+  ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, fixedStatus);
   NS_ASSERTION(NS_FRAME_IS_COMPLETE(fixedStatus), "fixed frames can be truncated, but not incomplete");
 
   
-  WritingMode wm = aReflowState.GetWritingMode();
-  aDesiredSize.ISize(wm) = aReflowState.ComputedISize();
-  if (aReflowState.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
-    aDesiredSize.BSize(wm) = aReflowState.ComputedBSize();
+  WritingMode wm = aReflowInput.GetWritingMode();
+  aDesiredSize.ISize(wm) = aReflowInput.ComputedISize();
+  if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
+    aDesiredSize.BSize(wm) = aReflowInput.ComputedBSize();
   }
   FinishAndStoreOverflow(&aDesiredSize);
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 nsIAtom*

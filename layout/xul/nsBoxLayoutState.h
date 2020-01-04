@@ -31,7 +31,7 @@ public:
   explicit nsBoxLayoutState(nsPresContext* aPresContext,
                             nsRenderingContext* aRenderingContext = nullptr,
                             
-                            const ReflowInput* aOuterReflowState = nullptr,
+                            const ReflowInput* aOuterReflowInput = nullptr,
                             uint16_t aReflowDepth = 0);
   nsBoxLayoutState(const nsBoxLayoutState& aState);
 
@@ -60,14 +60,14 @@ public:
 
   
   
-  const ReflowInput* OuterReflowState() { return mOuterReflowState; }
+  const ReflowInput* OuterReflowInput() { return mOuterReflowInput; }
 
   uint16_t GetReflowDepth() { return mReflowDepth; }
   
 private:
   RefPtr<nsPresContext> mPresContext;
   nsRenderingContext *mRenderingContext;
-  const ReflowInput *mOuterReflowState;
+  const ReflowInput *mOuterReflowInput;
   uint32_t mLayoutFlags;
   uint16_t mReflowDepth; 
   bool mPaintingDisabled;

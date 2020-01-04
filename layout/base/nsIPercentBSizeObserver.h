@@ -24,10 +24,10 @@ public:
 
   
   
-  virtual void NotifyPercentBSize(const mozilla::ReflowInput& aReflowState) = 0;
+  virtual void NotifyPercentBSize(const mozilla::ReflowInput& aReflowInput) = 0;
 
   
-  virtual bool NeedsToObserve(const mozilla::ReflowInput& aReflowState) = 0;
+  virtual bool NeedsToObserve(const mozilla::ReflowInput& aReflowInput) = 0;
 };
 
 #endif 

@@ -122,19 +122,19 @@ nsRubyTextContainerFrame::UpdateSpanFlag()
  void
 nsRubyTextContainerFrame::Reflow(nsPresContext* aPresContext,
                                  ReflowOutput& aDesiredSize,
-                                 const ReflowInput& aReflowState,
+                                 const ReflowInput& aReflowInput,
                                  nsReflowStatus& aStatus)
 {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsRubyTextContainerFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowState, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
 
   
   
   
   
   aStatus = NS_FRAME_COMPLETE;
-  WritingMode lineWM = aReflowState.mLineLayout->GetWritingMode();
+  WritingMode lineWM = aReflowInput.mLineLayout->GetWritingMode();
 
   nscoord minBCoord = nscoord_MAX;
   nscoord maxBCoord = nscoord_MIN;

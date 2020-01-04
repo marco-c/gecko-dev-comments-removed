@@ -163,15 +163,15 @@ public:
 
   
   
-  static bool AncestorsHaveStyleBSize(const ReflowInput& aParentReflowState);
+  static bool AncestorsHaveStyleBSize(const ReflowInput& aParentReflowInput);
 
   
   
-  static void CheckRequestSpecialBSizeReflow(const ReflowInput& aReflowState);
+  static void CheckRequestSpecialBSizeReflow(const ReflowInput& aReflowInput);
 
   
   
-  static void RequestSpecialBSizeReflow(const ReflowInput& aReflowState);
+  static void RequestSpecialBSizeReflow(const ReflowInput& aReflowInput);
 
   static void RePositionViews(nsIFrame* aFrame);
 
@@ -187,7 +187,7 @@ public:
   static void UnregisterPositionedTablePart(nsIFrame* aFrame,
                                             nsIFrame* aDestructRoot);
 
-  nsPoint GetFirstSectionOrigin(const ReflowInput& aReflowState) const;
+  nsPoint GetFirstSectionOrigin(const ReflowInput& aReflowInput) const;
   
 
 
@@ -217,7 +217,7 @@ public:
 
   
   LogicalMargin GetChildAreaOffset(const WritingMode aWM,
-                                   const ReflowInput* aReflowState) const;
+                                   const ReflowInput* aReflowInput) const;
 
   
   static nsTableFrame* GetTableFrame(nsIFrame* aSourceFrame);
@@ -370,11 +370,11 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
-                      const ReflowInput& aReflowState,
+                      const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus) override;
 
   void ReflowTable(ReflowOutput&     aDesiredSize,
-                   const ReflowInput& aReflowState,
+                   const ReflowInput& aReflowInput,
                    nscoord                  aAvailBSize,
                    nsIFrame*&               aLastChildReflowed,
                    nsReflowStatus&          aStatus);
@@ -614,9 +614,9 @@ protected:
   
   virtual ~nsTableFrame();
 
-  void InitChildReflowState(ReflowInput& aReflowState);
+  void InitChildReflowInput(ReflowInput& aReflowInput);
 
-  virtual LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowState = nullptr) const override;
+  virtual LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const override;
 
 public:
   bool IsRowInserted() const;
@@ -627,11 +627,11 @@ protected:
   
   
   
-  nsresult SetupHeaderFooterChild(const TableReflowInput& aReflowState,
+  nsresult SetupHeaderFooterChild(const TableReflowInput& aReflowInput,
                                   nsTableRowGroupFrame* aFrame,
                                   nscoord* aDesiredHeight);
 
-  void ReflowChildren(TableReflowInput&  aReflowState,
+  void ReflowChildren(TableReflowInput&  aReflowInput,
                       nsReflowStatus&      aStatus,
                       nsIFrame*&           aLastChildReflowed,
                       nsOverflowAreas&     aOverflowAreas);
@@ -665,7 +665,7 @@ protected:
 
   void FixupPositionedTableParts(nsPresContext*           aPresContext,
                                  ReflowOutput&     aDesiredSize,
-                                 const ReflowInput& aReflowState);
+                                 const ReflowInput& aReflowInput);
 
   
   void ClearAllPositionedTableParts();
@@ -690,28 +690,28 @@ public:
 
   
   
-  nscoord CalcBorderBoxBSize(const ReflowInput& aReflowState);
+  nscoord CalcBorderBoxBSize(const ReflowInput& aReflowInput);
 
 protected:
 
   
   
   
-  void CalcDesiredBSize(const ReflowInput& aReflowState,
+  void CalcDesiredBSize(const ReflowInput& aReflowInput,
                         ReflowOutput& aDesiredSize);
 
   
 
-  void DistributeBSizeToRows(const ReflowInput& aReflowState,
+  void DistributeBSizeToRows(const ReflowInput& aReflowInput,
                              nscoord                  aAmount);
 
-  void PlaceChild(TableReflowInput&  aReflowState,
+  void PlaceChild(TableReflowInput&  aReflowInput,
                   nsIFrame*            aKidFrame,
                   nsPoint              aKidPosition,
                   ReflowOutput& aKidDesiredSize,
                   const nsRect&        aOriginalKidRect,
                   const nsRect&        aOriginalKidVisualOverflow);
-   void PlaceRepeatedFooter(TableReflowInput& aReflowState,
+   void PlaceRepeatedFooter(TableReflowInput& aReflowInput,
                             nsTableRowGroupFrame *aTfoot,
                             nscoord aFooterHeight);
 
