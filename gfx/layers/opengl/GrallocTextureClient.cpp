@@ -347,7 +347,7 @@ GrallocTextureData::CreateForDrawing(gfx::IntSize aSize, gfx::SurfaceFormat aFor
   
   
   if (aSize.width < 64 || aSize.height < 32) {
-    return true;
+    return nullptr;
   }
 #endif
 
