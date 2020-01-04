@@ -1224,12 +1224,30 @@ ContainerLayer::DefaultComputeEffectiveTransforms(const Matrix4x4& aTransformToS
     } else {
       useIntermediateSurface = false;
       gfx::Matrix contTransform;
-      if (!mEffectiveTransform.Is2D(&contTransform) ||
+      bool checkClipRect = false;
+      bool checkMaskLayers = false;
+
+      if (!mEffectiveTransform.Is2D(&contTransform)) {
+        
+        checkClipRect = true;
+        checkMaskLayers = true;
+      } else {
 #ifdef MOZ_GFX_OPTIMIZE_MOBILE
-        !contTransform.PreservesAxisAlignedRectangles()) {
+        if (!contTransform.PreservesAxisAlignedRectangles()) {
 #else
-        gfx::ThebesMatrix(contTransform).HasNonIntegerTranslation()) {
+        if (gfx::ThebesMatrix(contTransform).HasNonIntegerTranslation()) {
 #endif
+          checkClipRect = true;
+        }
+        
+
+
+        if (contTransform.HasNonAxisAlignedTransform() || contTransform.HasNegativeScaling()) {
+          checkMaskLayers = true;
+        }
+      }
+
+      if (checkClipRect || checkMaskLayers) {
         for (Layer* child = GetFirstChild(); child; child = child->GetNextSibling()) {
           const Maybe<ParentLayerIntRect>& clipRect = child->GetEffectiveClipRect();
           
@@ -1237,8 +1255,11 @@ ContainerLayer::DefaultComputeEffectiveTransforms(const Matrix4x4& aTransformToS
 
 
 
-          if ((clipRect && !clipRect->IsEmpty() && !child->GetVisibleRegion().IsEmpty()) ||
-              child->HasMaskLayers()) {
+          if (checkClipRect && (clipRect && !clipRect->IsEmpty() && !child->GetVisibleRegion().IsEmpty())) {
+            useIntermediateSurface = true;
+            break;
+          }
+          if (checkMaskLayers && child->HasMaskLayers()) {
             useIntermediateSurface = true;
             break;
           }

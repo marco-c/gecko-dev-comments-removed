@@ -384,6 +384,13 @@ public:
   bool HasNonAxisAlignedTransform() const {
       return !FuzzyEqual(_21, 0.0) || !FuzzyEqual(_12, 0.0);
   }
+
+  
+
+
+  bool HasNegativeScaling() const {
+      return (_11 < 0.0) || (_22 < 0.0);
+  }
 };
 
 class Matrix4x4
