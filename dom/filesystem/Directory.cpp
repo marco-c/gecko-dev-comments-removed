@@ -230,8 +230,7 @@ Directory::GetPath(nsAString& aRetval) const
     
     aRetval.AssignLiteral(FILESYSTEM_DOM_PATH_SEPARATOR);
   } else {
-    aRetval = Substring(mPath, 0,
-                        mPath.RFindChar(FileSystemUtils::kSeparatorChar) + 1);
+    aRetval = mPath;
   }
 }
 
