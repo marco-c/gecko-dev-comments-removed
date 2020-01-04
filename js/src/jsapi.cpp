@@ -3455,6 +3455,11 @@ IsFunctionCloneable(HandleFunction fun)
 
         
         
+        if (scope->is<StaticNonSyntacticScopeObjects>())
+            return true;
+
+        
+        
         if (scope->is<StaticBlockObject>()) {
             StaticBlockObject& block = scope->as<StaticBlockObject>();
             if (block.needsClone())
@@ -3466,11 +3471,6 @@ IsFunctionCloneable(HandleFunction fun)
             
             if (enclosing->is<StaticEvalObject>())
                 return !enclosing->as<StaticEvalObject>().isNonGlobal();
-
-            
-            
-            if (enclosing->is<StaticNonSyntacticScopeObjects>())
-                return true;
         }
 
         
@@ -3536,7 +3536,16 @@ CloneFunctionObject(JSContext* cx, HandleObject funobj, HandleObject dynamicScop
         return CloneFunctionReuseScript(cx, fun, dynamicScope, fun->getAllocKind());
     }
 
-    return CloneFunctionAndScript(cx, fun, dynamicScope, staticScope, fun->getAllocKind());
+    JSFunction* clone = CloneFunctionAndScript(cx, fun, dynamicScope, staticScope,
+                                               fun->getAllocKind());
+
+#ifdef DEBUG
+    
+    RootedFunction cloneRoot(cx, clone);
+    MOZ_ASSERT_IF(cloneRoot, IsFunctionCloneable(cloneRoot));
+#endif
+
+    return clone;
 }
 
 namespace JS {
