@@ -579,6 +579,7 @@ function IsRegExpSplitOptimizable(rx, C) {
     
     
     return RegExpPrototypeOptimizable(RegExpProto) &&
+           RegExpInstanceOptimizable(rx, RegExpProto) &&
            RegExpProto.exec === RegExp_prototype_Exec;
 }
 
