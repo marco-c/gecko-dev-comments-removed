@@ -1,6 +1,7 @@
 
 
 import os
+import sys
 
 import mozharness
 
@@ -18,8 +19,16 @@ config = {
 
     
     'exes': {
-        'gittool.py': os.path.join(external_tools_path, 'gittool.py'),
-        'hgtool.py': os.path.join(external_tools_path, 'hgtool.py'),
+        'gittool.py': [
+            
+            sys.executable,
+            os.path.join(external_tools_path, 'gittool.py')
+        ],
+        'hgtool.py': [
+            
+            sys.executable,
+            os.path.join(external_tools_path, 'hgtool.py')
+        ],
     },
 
     
