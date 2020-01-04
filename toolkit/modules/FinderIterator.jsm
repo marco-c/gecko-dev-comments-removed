@@ -62,7 +62,10 @@ this.FinderIterator = {
 
 
 
-  start({ finder, limit, linksOnly, onRange, useCache, word }) {
+
+
+
+  start({ caseSensitive, entireWord, finder, limit, linksOnly, onRange, useCache, word }) {
     
     if (typeof limit != "number")
       limit = -1;
@@ -72,6 +75,10 @@ this.FinderIterator = {
       useCache = false;
 
     
+    if (typeof caseSensitive != "boolean")
+      throw new Error("Missing required option 'caseSensitive'");
+    if (typeof entireWord != "boolean")
+      throw new Error("Missing required option 'entireWord'");
     if (!finder)
       throw new Error("Missing required option 'finder'");
     if (!word)
@@ -86,7 +93,7 @@ this.FinderIterator = {
     let window = finder._getWindow();
     let resolver;
     let promise = new Promise(resolve => resolver = resolve);
-    let iterParams = { linksOnly, useCache, word };
+    let iterParams = { caseSensitive, entireWord, linksOnly, useCache, word };
 
     this._listeners.set(onRange, { limit, onEnd: resolver });
 
@@ -173,8 +180,13 @@ this.FinderIterator = {
 
 
 
-  continueRunning({ linksOnly, word }) {
+
+
+
+  continueRunning({ caseSensitive, entireWord, linksOnly, word }) {
     return (this.running &&
+      this._currentParams.caseSensitive === caseSensitive &&
+      this._currentParams.entireWord === entireWord &&
       this._currentParams.linksOnly === linksOnly &&
       this._currentParams.word == word);
   },
@@ -190,9 +202,12 @@ this.FinderIterator = {
 
 
 
-  _previousResultAvailable({ linksOnly, useCache, word }) {
+
+
+
+  _previousResultAvailable({ caseSensitive, entireWord, linksOnly, useCache, word }) {
     return !!(useCache &&
-      this._areParamsEqual(this._previousParams, { word, linksOnly }) &&
+      this._areParamsEqual(this._previousParams, { caseSensitive, entireWord, linksOnly, word }) &&
       this._previousRanges.length);
   },
 
@@ -205,6 +220,8 @@ this.FinderIterator = {
 
   _areParamsEqual(paramSet1, paramSet2) {
     return (!!paramSet1 && !!paramSet2 &&
+      paramSet1.caseSensitive === paramSet2.caseSensitive &&
+      paramSet1.entireWord === paramSet2.entireWord &&
       paramSet1.linksOnly === paramSet2.linksOnly &&
       paramSet1.word == paramSet2.word);
   },
@@ -318,7 +335,7 @@ this.FinderIterator = {
     let { linksOnly, word } = this._currentParams;
     let iterCount = 0;
     for (let frame of frames) {
-      for (let range of this._iterateDocument(word, frame, finder)) {
+      for (let range of this._iterateDocument(this._currentParams, frame)) {
         
         
         if (!this.running || spawnId !== this._spawnId)
@@ -372,7 +389,10 @@ this.FinderIterator = {
 
 
 
-  _iterateDocument: function* (word, window, finder) {
+
+
+
+  _iterateDocument: function* ({ caseSensitive, entireWord, word }, window) {
     let doc = window.document;
     let body = (doc instanceof Ci.nsIDOMHTMLDocument && doc.body) ?
                doc.body : doc.documentElement;
@@ -394,8 +414,8 @@ this.FinderIterator = {
     let nsIFind = Cc["@mozilla.org/embedcomp/rangefind;1"]
                     .createInstance()
                     .QueryInterface(Ci.nsIFind);
-    nsIFind.caseSensitive = finder._fastFind.caseSensitive;
-    nsIFind.entireWord = finder._fastFind.entireWord;
+    nsIFind.caseSensitive = caseSensitive;
+    nsIFind.entireWord = entireWord;
 
     while ((retRange = nsIFind.Find(word, searchRange, startPt, endPt))) {
       yield retRange;
