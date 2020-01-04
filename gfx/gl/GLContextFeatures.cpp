@@ -548,6 +548,15 @@ static const FeatureInfo sFeatureInfoArr[] = {
         }
     },
     {
+        "seamless_cube_map_opt_in",
+        GLVersion::GL3_2,
+        GLESVersion::NONE,
+        GLContext::ARB_seamless_cube_map,
+        {
+            GLContext::Extensions_End
+        }
+    },
+    {
         
         "split_framebuffer",
         GLVersion::GL3,

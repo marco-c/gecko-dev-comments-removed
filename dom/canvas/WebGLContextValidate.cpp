@@ -911,6 +911,10 @@ WebGLContext::InitAndValidateGL()
     }
 #endif
 
+    if (gl->IsSupported(gl::GLFeature::seamless_cube_map_opt_in)) {
+        gl->fEnable(LOCAL_GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
+
     
     mBypassShaderValidation = gfxPrefs::WebGLBypassShaderValidator();
 
