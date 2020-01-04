@@ -718,10 +718,6 @@ protected:
   
   bool mIsConsumed;
   
-  
-  
-  bool mInBlockingSet;
-  
   bool mBlockInThisPhase;
 
   

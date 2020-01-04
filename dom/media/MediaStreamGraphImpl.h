@@ -305,14 +305,6 @@ public:
   void RecomputeBlocking(GraphTime aEndBlockingDecisions);
 
   
-  
-
-
-
-
-  void AddBlockingRelatedStreamsToSet(nsTArray<MediaStream*>* aStreams,
-                                      MediaStream* aStream);
-  
 
 
 
@@ -324,7 +316,7 @@ public:
 
 
 
-  void RecomputeBlockingAt(const nsTArray<MediaStream*>& aStreams,
+  void RecomputeBlockingAt(MediaStream* aStream,
                            GraphTime aTime, GraphTime aEndBlockingDecisions,
                            GraphTime* aEnd);
   
