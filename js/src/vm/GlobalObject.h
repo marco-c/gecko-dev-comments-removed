@@ -135,8 +135,7 @@ class GlobalObject : public NativeObject
 
     enum WarnOnceFlag : int32_t {
         WARN_WATCH_DEPRECATED                   = 1 << 0,
-        WARN_PROTO_SETTING_SLOW                 = 1 << 1,
-        WARN_STRING_CONTAINS_DEPRECATED         = 1 << 2,
+        WARN_STRING_CONTAINS_DEPRECATED         = 1 << 1,
     };
 
     
@@ -697,12 +696,6 @@ class GlobalObject : public NativeObject
         
         
         return true;
-    }
-
-    
-    
-    static bool warnOnceAboutPrototypeMutation(JSContext* cx, HandleObject protoSetter) {
-        return warnOnceAbout(cx, protoSetter, WARN_PROTO_SETTING_SLOW, JSMSG_PROTO_SETTING_SLOW);
     }
 
     
