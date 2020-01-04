@@ -2,7 +2,7 @@
 
 
 
-from harness.testcase import (
+from external_media_harness.testcase import (
     MediaTestCase,
     VideoPlaybackTestsMixin
 )

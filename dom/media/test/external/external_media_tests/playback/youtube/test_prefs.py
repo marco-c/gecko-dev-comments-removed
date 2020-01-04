@@ -2,11 +2,11 @@
 
 
 
-from harness.testcase import MediaTestCase
+from external_media_harness.testcase import MediaTestCase
 from marionette_driver import Wait
 
-from media_tests.utils import verbose_until
-from media_utils.youtube_puppeteer import YouTubePuppeteer
+from external_media_tests.utils import verbose_until
+from external_media_tests.media_utils.youtube_puppeteer import YouTubePuppeteer
 
 
 class TestMediaSourcePrefs(MediaTestCase):
