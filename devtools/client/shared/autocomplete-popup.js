@@ -137,17 +137,36 @@ AutocompletePopup.prototype = {
 
 
 
-  openPopup: function AP_openPopup(aAnchor, aXOffset = 0, aYOffset = 0)
+
+
+  openPopup: function AP_openPopup(aAnchor, aXOffset = 0, aYOffset = 0, index)
   {
     this.__maxLabelLength = -1;
     this._updateSize();
     this._panel.openPopup(aAnchor, this.position, aXOffset, aYOffset);
 
     if (this.autoSelect) {
-      this.selectFirstItem();
+      this.selectItemAtIndex(index);
     }
 
     this.emit("popup-opened");
+  },
+
+  
+
+
+
+
+
+  selectItemAtIndex: function AP_selectItemAtIndex(index)
+  {
+    if (typeof index != "number") {
+      
+      let isAboveInput = this.position.includes("before");
+      index = isAboveInput ? this.itemCount - 1 : 0;
+    }
+    this.selectedIndex = index;
+    this._list.ensureIndexIsVisible(this._list.selectedIndex);
   },
 
   
@@ -238,7 +257,9 @@ AutocompletePopup.prototype = {
 
 
 
-  setItems: function AP_setItems(aItems)
+
+
+  setItems: function AP_setItems(aItems, index)
   {
     this.clearItems();
     aItems.forEach(this.appendItem, this);
@@ -246,26 +267,10 @@ AutocompletePopup.prototype = {
     
     if (this.isOpen) {
       if (this.autoSelect) {
-        this.selectFirstItem();
+        this.selectItemAtIndex(index);
       }
       this._updateSize();
     }
-  },
-
-  
-
-
-
-
-  selectFirstItem: function AP_selectFirstItem()
-  {
-    if (this.position.includes("before")) {
-      this.selectedIndex = this.itemCount - 1;
-    }
-    else {
-      this.selectedIndex = 0;
-    }
-    this._list.ensureIndexIsVisible(this._list.selectedIndex);
   },
 
   __maxLabelLength: -1,
