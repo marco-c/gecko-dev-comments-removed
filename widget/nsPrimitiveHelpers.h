@@ -29,20 +29,6 @@ public:
   static void CreateDataFromPrimitive ( const char* aFlavor, nsISupports* aPrimitive, 
                                          void** aDataBuff, uint32_t aDataLen ) ;
 
-    
-    
-    
-    
-  static nsresult ConvertUnicodeToPlatformPlainText ( char16_t* inUnicode, int32_t inUnicodeLen, 
-                                                    char** outPlainTextData, int32_t* outPlainTextLen ) ;
-
-    
-    
-    
-    
-  static nsresult ConvertPlatformPlainTextToUnicode ( const char* inText, int32_t inTextLen, 
-                                                    char16_t** outUnicode, int32_t* outUnicodeLen ) ;
-
 }; 
 
 
