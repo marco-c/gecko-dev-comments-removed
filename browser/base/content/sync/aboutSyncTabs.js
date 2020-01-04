@@ -159,7 +159,7 @@ var RemoteTabViewer = {
 
   _buildListRequested: false,
 
-  buildList: function (force) {
+  buildList: function (forceSync) {
     if (this._waitingForBuildList) {
       this._buildListRequested = true;
       return;
@@ -170,14 +170,15 @@ var RemoteTabViewer = {
 
     this._clearTabList();
 
-    if (Weave.Service.isLoggedIn && this._refetchTabs(force)) {
+    if (Weave.Service.isLoggedIn) {
+      this._refetchTabs(forceSync);
       this._generateWeaveTabList();
     } else {
       
       
     }
 
-    function complete() {
+    let complete = () => {
       this._waitingForBuildList = false;
       if (this._buildListRequested) {
         CommonUtils.nextTick(this.buildList, this);
@@ -335,10 +336,15 @@ var RemoteTabViewer = {
   observe: function (subject, topic, data) {
     switch (topic) {
       case "weave:service:login:finish":
+        
+        
+        
         this.buildList(true);
         break;
       case "weave:engine:sync:finish":
-        if (subject == "tabs") {
+        if (data == "tabs") {
+          
+          
           this.buildList(false);
         }
         break;
