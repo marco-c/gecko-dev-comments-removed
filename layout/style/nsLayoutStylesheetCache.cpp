@@ -158,13 +158,6 @@ nsLayoutStylesheetCache::QuirkSheet()
 }
 
 CSSStyleSheet*
-nsLayoutStylesheetCache::FullScreenOverrideSheet()
-{
-  EnsureGlobal();
-  return gStyleCache->mFullScreenOverrideSheet;
-}
-
-CSSStyleSheet*
 nsLayoutStylesheetCache::SVGSheet()
 {
   EnsureGlobal();
@@ -316,7 +309,6 @@ nsLayoutStylesheetCache::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf
   MEASURE(mCounterStylesSheet);
   MEASURE(mDesignModeSheet);
   MEASURE(mFormsSheet);
-  MEASURE(mFullScreenOverrideSheet);
   MEASURE(mHTMLSheet);
   MEASURE(mMathMLSheet);
   MEASURE(mMinimalXULSheet);
@@ -357,8 +349,6 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache()
   
   LoadSheetURL("resource://gre-resources/counterstyles.css",
                mCounterStylesSheet, true);
-  LoadSheetURL("resource://gre-resources/full-screen-override.css",
-               mFullScreenOverrideSheet, true);
   LoadSheetURL("chrome://global/content/minimal-xul.css",
                mMinimalXULSheet, true);
   LoadSheetURL("resource://gre-resources/quirk.css",
@@ -439,7 +429,7 @@ nsLayoutStylesheetCache::InitFromProfile()
 
  void
 nsLayoutStylesheetCache::LoadSheetURL(const char* aURL,
-                                      RefPtr<CSSStyleSheet>& aSheet,
+                                      nsRefPtr<CSSStyleSheet>& aSheet,
                                       bool aEnableUnsafeRules)
 {
   nsCOMPtr<nsIURI> uri;
@@ -451,7 +441,7 @@ nsLayoutStylesheetCache::LoadSheetURL(const char* aURL,
 }
 
 void
-nsLayoutStylesheetCache::LoadSheetFile(nsIFile* aFile, RefPtr<CSSStyleSheet>& aSheet)
+nsLayoutStylesheetCache::LoadSheetFile(nsIFile* aFile, nsRefPtr<CSSStyleSheet>& aSheet)
 {
   bool exists = false;
   aFile->Exists(&exists);
@@ -477,7 +467,7 @@ ErrorLoadingBuiltinSheet(nsIURI* aURI, const char* aMsg)
 
 void
 nsLayoutStylesheetCache::LoadSheet(nsIURI* aURI,
-                                   RefPtr<CSSStyleSheet>& aSheet,
+                                   nsRefPtr<CSSStyleSheet>& aSheet,
                                    bool aEnableUnsafeRules)
 {
   if (!aURI) {
@@ -504,7 +494,7 @@ nsLayoutStylesheetCache::LoadSheet(nsIURI* aURI,
 }
 
  void
-nsLayoutStylesheetCache::InvalidateSheet(RefPtr<CSSStyleSheet>& aSheet)
+nsLayoutStylesheetCache::InvalidateSheet(nsRefPtr<CSSStyleSheet>& aSheet)
 {
   MOZ_ASSERT(gCSSLoader, "pref changed before we loaded a sheet?");
 
@@ -560,7 +550,7 @@ nsLayoutStylesheetCache::AppendPreferenceColorRule(CSSStyleSheet* aSheet,
 }
 
 void
-nsLayoutStylesheetCache::BuildPreferenceSheet(RefPtr<CSSStyleSheet>& aSheet,
+nsLayoutStylesheetCache::BuildPreferenceSheet(nsRefPtr<CSSStyleSheet>& aSheet,
                                               nsPresContext* aPresContext)
 {
   aSheet = new CSSStyleSheet(CORS_NONE, mozilla::net::RP_Default);
