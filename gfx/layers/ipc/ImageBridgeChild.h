@@ -143,7 +143,7 @@ public:
 
 
 
-  static ImageBridgeChild* GetSingleton();
+  static RefPtr<ImageBridgeChild> GetSingleton();
 
 
   static void IdentifyCompositorTextureHost(const TextureFactoryIdentifier& aIdentifier);
