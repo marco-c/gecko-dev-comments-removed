@@ -18,7 +18,7 @@ const DISPLAYED_DEVICES_PREF = "devtools.responsive.html.displayedDeviceList";
 
 
 let initDevices = Task.async(function* (dispatch) {
-  let deviceList = loadDeviceList();
+  let preferredDevices = loadPreferredDevices();
   let devices = yield GetDevices();
 
   for (let type of devices.TYPES) {
@@ -29,20 +29,13 @@ let initDevices = Task.async(function* (dispatch) {
       }
 
       let newDevice = Object.assign({}, device, {
-        displayed: deviceList.has(device.name) ?
-                   true :
-                   !!device.featured,
+        displayed: preferredDevices.added.has(device.name) ||
+          (device.featured && !(preferredDevices.removed.has(device.name))),
       });
-
-      if (newDevice.displayed) {
-        deviceList.add(newDevice.name);
-      }
 
       dispatch(addDevice(newDevice, type));
     }
   }
-
-  updateDeviceList(deviceList);
 });
 
 
@@ -51,19 +44,27 @@ let initDevices = Task.async(function* (dispatch) {
 
 
 
-function loadDeviceList() {
-  let deviceList = new Set();
+
+function loadPreferredDevices() {
+  let preferredDevices = {
+    "added": new Set(),
+    "removed": new Set(),
+  };
 
   if (Services.prefs.prefHasUserValue(DISPLAYED_DEVICES_PREF)) {
     try {
-      let savedList = Services.prefs.getCharPref(DISPLAYED_DEVICES_PREF);
-      deviceList = new Set(JSON.parse(savedList));
+      let savedData = Services.prefs.getCharPref(DISPLAYED_DEVICES_PREF);
+      savedData = JSON.parse(savedData);
+      if (savedData.added && savedData.removed) {
+        preferredDevices.added = new Set(savedData.added);
+        preferredDevices.removed = new Set(savedData.removed);
+      }
     } catch (e) {
       console.error(e);
     }
   }
 
-  return deviceList;
+  return preferredDevices;
 }
 
 
@@ -72,11 +73,16 @@ function loadDeviceList() {
 
 
 
-function updateDeviceList(devices) {
-  let listToSave = JSON.stringify(Array.from(devices));
-  Services.prefs.setCharPref(DISPLAYED_DEVICES_PREF, listToSave);
+
+function updatePreferredDevices(devices) {
+  let devicesToSave = {
+    added: Array.from(devices.added),
+    removed: Array.from(devices.removed),
+  };
+  devicesToSave = JSON.stringify(devicesToSave);
+  Services.prefs.setCharPref(DISPLAYED_DEVICES_PREF, devicesToSave);
 }
 
 exports.initDevices = initDevices;
-exports.loadDeviceList = loadDeviceList;
-exports.updateDeviceList = updateDeviceList;
+exports.loadPreferredDevices = loadPreferredDevices;
+exports.updatePreferredDevices = updatePreferredDevices;
