@@ -31,7 +31,7 @@ var { helpers, assert } = (function () {
   var cli = require("gcli/cli");
   var KeyEvent = require("gcli/util/util").KeyEvent;
 
-  const { GcliFront } = require("devtools/server/actors/gcli");
+  const { GcliFront } = require("devtools/shared/fronts/gcli");
 
 
 
@@ -467,7 +467,7 @@ var { helpers, assert } = (function () {
 
     
       const front = yield GcliFront.create(options.target);
-      yield front._testOnly_addItemsByModule(MOCK_COMMANDS_URI);
+      yield front._testOnlyAddItemsByModule(MOCK_COMMANDS_URI);
 
     
     
@@ -483,7 +483,7 @@ var { helpers, assert } = (function () {
     
       system.removeItems(converters);
       const removePromise = system.commands.onCommandsChange.once();
-      yield front._testOnly_removeItemsByModule(MOCK_COMMANDS_URI);
+      yield front._testOnlyRemoveItemsByModule(MOCK_COMMANDS_URI);
       yield removedDeferred.promise;
 
     

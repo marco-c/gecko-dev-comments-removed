@@ -6,23 +6,16 @@
 
 const { Task } = require("devtools/shared/task");
 const {
-  method, Arg, Option, RetVal, Front, FrontClass, Actor, ActorClass
+  method, Arg, Option, RetVal, Actor, ActorClassWithSpec
 } = require("devtools/shared/protocol");
+const { gcliSpec } = require("devtools/shared/specs/gcli");
 const events = require("sdk/event/core");
 const { createSystem } = require("gcli/system");
 
 
 
 
-const GcliActor = ActorClass({
-  typeName: "gcli",
-
-  events: {
-    "commands-changed" : {
-      type: "commandsChanged"
-    }
-  },
-
+const GcliActor = ActorClassWithSpec(gcliSpec, {
   initialize: function (conn, tabActor) {
     Actor.prototype.initialize.call(this, conn);
 
@@ -63,28 +56,20 @@ const GcliActor = ActorClass({
   
 
 
-  _testOnly_addItemsByModule: method(function (names) {
+  _testOnlyAddItemsByModule: function (names) {
     return this._getRequisition().then(requisition => {
       return requisition.system.addItemsByModule(names);
     });
-  }, {
-    request: {
-      customProps: Arg(0, "array:string")
-    }
-  }),
+  },
 
   
 
 
-  _testOnly_removeItemsByModule: method(function (names) {
+  _testOnlyRemoveItemsByModule: function (names) {
     return this._getRequisition().then(requisition => {
       return requisition.system.removeItemsByModule(names);
     });
-  }, {
-    request: {
-      customProps: Arg(0, "array:string")
-    }
-  }),
+  },
 
   
 
@@ -92,18 +77,11 @@ const GcliActor = ActorClass({
 
 
 
-  specs: method(function (customProps) {
+  specs: function (customProps) {
     return this._getRequisition().then(requisition => {
       return requisition.system.commands.getCommandSpecs(customProps);
     });
-  }, {
-    request: {
-      customProps: Arg(0, "nullable:array:string")
-    },
-    response: {
-      value: RetVal("array:json")
-    }
-  }),
+  },
 
   
 
@@ -112,34 +90,22 @@ const GcliActor = ActorClass({
 
 
 
-  execute: method(function (typed) {
+  execute: function (typed) {
     return this._getRequisition().then(requisition => {
       return requisition.updateExec(typed).then(output => output.toJson());
     });
-  }, {
-    request: {
-      typed: Arg(0, "string") 
-    },
-    response: RetVal("json")
-  }),
+  },
 
   
 
 
-  state: method(function (typed, start, rank) {
+  state: function (typed, start, rank) {
     return this._getRequisition().then(requisition => {
       return requisition.update(typed).then(() => {
         return requisition.getStateData(start, rank);
       });
     });
-  }, {
-    request: {
-      typed: Arg(0, "string"), 
-      start: Arg(1, "number"), 
-      rank: Arg(2, "number") 
-    },
-    response: RetVal("json")
-  }),
+  },
 
   
 
@@ -148,7 +114,7 @@ const GcliActor = ActorClass({
 
 
 
-  parseType: method(function (typed, paramName) {
+  parseType: function (typed, paramName) {
     return this._getRequisition().then(requisition => {
       return requisition.update(typed).then(() => {
         let assignment = requisition.getAssignment(paramName);
@@ -161,38 +127,25 @@ const GcliActor = ActorClass({
         });
       });
     });
-  }, {
-    request: {
-      typed: Arg(0, "string"), 
-      paramName: Arg(1, "string") 
-    },
-    response: RetVal("json")
-  }),
+  },
 
   
 
 
 
-  nudgeType: method(function (typed, by, paramName) {
+  nudgeType: function (typed, by, paramName) {
     return this.requisition.update(typed).then(() => {
       const assignment = this.requisition.getAssignment(paramName);
       return this.requisition.nudge(assignment, by).then(() => {
         return assignment.arg == null ? undefined : assignment.arg.text;
       });
     });
-  }, {
-    request: {
-      typed: Arg(0, "string"),    
-      by: Arg(1, "number"),       
-      paramName: Arg(2, "string") 
-    },
-    response: RetVal("string")
-  }),
+  },
 
   
 
 
-  getSelectionLookup: method(function (commandName, paramName) {
+  getSelectionLookup: function (commandName, paramName) {
     return this._getRequisition().then(requisition => {
       const command = requisition.system.commands.get(commandName);
       if (command == null) {
@@ -218,13 +171,7 @@ const GcliActor = ActorClass({
         return lookup.map(info => ({ name: info.name }));
       });
     });
-  }, {
-    request: {
-      commandName: Arg(0, "string"), 
-      paramName: Arg(1, "string"),   
-    },
-    response: RetVal("json")
-  }),
+  },
 
   
 
@@ -284,36 +231,3 @@ const GcliActor = ActorClass({
 });
 
 exports.GcliActor = GcliActor;
-
-
-
-
-const GcliFront = exports.GcliFront = FrontClass(GcliActor, {
-  initialize: function (client, tabForm) {
-    Front.prototype.initialize.call(this, client);
-    this.actorID = tabForm.gcliActor;
-
-    
-    
-    this.manage(this);
-  },
-});
-
-
-const knownFronts = new WeakMap();
-
-
-
-
-
-
-exports.GcliFront.create = function (target) {
-  return target.makeRemote().then(() => {
-    let front = knownFronts.get(target.client);
-    if (front == null && target.form.gcliActor != null) {
-      front = new GcliFront(target.client, target.form);
-      knownFronts.set(target.client, front);
-    }
-    return front;
-  });
-};

@@ -5,7 +5,7 @@
 "use strict";
 
 const { createSystem, connectFront, disconnectFront } = require("gcli/system");
-const { GcliFront } = require("devtools/server/actors/gcli");
+const { GcliFront } = require("devtools/shared/fronts/gcli");
 
 
 
