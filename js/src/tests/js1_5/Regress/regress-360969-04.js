@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 360969;
 var summary = '2^17: global const';
 var actual = 'No Crash';

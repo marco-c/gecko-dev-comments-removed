@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 360969;
 var summary = '2^17: global function';
 var actual = 'No Crash';
