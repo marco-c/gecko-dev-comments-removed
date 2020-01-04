@@ -4,6 +4,7 @@
 
 
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
 
@@ -13,10 +14,15 @@
 #include "threading/posix/MutexPlatformData.h"
 
 #define TRY_CALL_PTHREADS(call, msg)            \
-    if ((call) != 0) {                          \
-        perror(msg);                            \
-        MOZ_CRASH(msg);                         \
-    }
+  {                                             \
+    int result = (call);                        \
+    if (result != 0) {                          \
+      MOZ_ASSERT(!errno);                       \
+      errno = result;                           \
+      perror(msg);                              \
+      MOZ_CRASH(msg);                           \
+    }                                           \
+  }
 
 js::Mutex::Mutex()
 {
