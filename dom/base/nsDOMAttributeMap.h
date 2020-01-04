@@ -179,11 +179,6 @@ private:
                   const nsAString& aLocalName);
 
   Attr* GetAttribute(mozilla::dom::NodeInfo* aNodeInfo, bool aNsAware);
-
-  
-
-
-  already_AddRefed<Attr> RemoveAttribute(mozilla::dom::NodeInfo* aNodeInfo);
 };
 
 
