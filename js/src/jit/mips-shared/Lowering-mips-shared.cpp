@@ -106,7 +106,7 @@ LIRGeneratorMIPSShared::lowerDivI(MDiv* div)
     
     
     if (div->rhs()->isConstant()) {
-        int32_t rhs = div->rhs()->toConstant()->value().toInt32();
+        int32_t rhs = div->rhs()->toConstant()->toInt32();
         
         
         
@@ -147,7 +147,7 @@ LIRGeneratorMIPSShared::lowerModI(MMod* mod)
     }
 
     if (mod->rhs()->isConstant()) {
-        int32_t rhs = mod->rhs()->toConstant()->value().toInt32();
+        int32_t rhs = mod->rhs()->toConstant()->toInt32();
         int32_t shift = FloorLog2(rhs);
         if (rhs > 0 && 1 << shift == rhs) {
             LModPowTwoI* lir = new(alloc()) LModPowTwoI(useRegister(mod->lhs()), shift);
@@ -301,10 +301,10 @@ LIRGeneratorMIPSShared::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins)
 
     
     
-    if (ptr->isConstantValue() && !ins->needsBoundsCheck()) {
+    if (ptr->isConstant() && !ins->needsBoundsCheck()) {
         
-        MOZ_ASSERT(ptr->constantValue().toInt32() >= 0);
-        ptrAlloc = LAllocation(ptr->constantVp());
+        MOZ_ASSERT(ptr->toConstant()->toInt32() >= 0);
+        ptrAlloc = LAllocation(ptr->toConstant());
     } else
         ptrAlloc = useRegisterAtStart(ptr);
 
@@ -318,9 +318,9 @@ LIRGeneratorMIPSShared::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins)
     MOZ_ASSERT(ptr->type() == MIRType_Int32);
     LAllocation ptrAlloc;
 
-    if (ptr->isConstantValue() && !ins->needsBoundsCheck()) {
-        MOZ_ASSERT(ptr->constantValue().toInt32() >= 0);
-        ptrAlloc = LAllocation(ptr->constantVp());
+    if (ptr->isConstant() && !ins->needsBoundsCheck()) {
+        MOZ_ASSERT(ptr->toConstant()->toInt32() >= 0);
+        ptrAlloc = LAllocation(ptr->toConstant());
     } else
         ptrAlloc = useRegisterAtStart(ptr);
 
