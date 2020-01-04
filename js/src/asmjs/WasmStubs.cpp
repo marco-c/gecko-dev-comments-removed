@@ -767,10 +767,8 @@ GenerateStackOverflow(MacroAssembler& masm)
 }
 
 
-
-
 static Offsets
-GenerateConversionError(MacroAssembler& masm)
+GenerateErrorStub(MacroAssembler& masm, SymbolicAddress address)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -781,33 +779,8 @@ GenerateConversionError(MacroAssembler& masm)
     
     masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
 
-    
     masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(SymbolicAddress::OnImpreciseConversion);
-    masm.jump(JumpTarget::Throw);
-
-    offsets.end = masm.currentOffset();
-    return offsets;
-}
-
-
-
-
-static Offsets
-GenerateOutOfBounds(MacroAssembler& masm)
-{
-    masm.haltingAlign(CodeAlignment);
-
-    Offsets offsets;
-    offsets.begin = masm.currentOffset();
-
-    
-    
-    masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
-
-    
-    masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(SymbolicAddress::OnOutOfBounds);
+    masm.call(address);
     masm.jump(JumpTarget::Throw);
 
     offsets.end = masm.currentOffset();
@@ -851,11 +824,16 @@ Offsets
 wasm::GenerateJumpTarget(MacroAssembler& masm, JumpTarget target)
 {
     switch (target) {
-      case JumpTarget::StackOverflow: return GenerateStackOverflow(masm);
-      case JumpTarget::ConversionError: return GenerateConversionError(masm);
-      case JumpTarget::OutOfBounds: return GenerateOutOfBounds(masm);
-      case JumpTarget::Throw: return GenerateThrow(masm);
-      case JumpTarget::Limit: break;
+      case JumpTarget::StackOverflow:
+        return GenerateStackOverflow(masm);
+      case JumpTarget::ConversionError:
+        return GenerateErrorStub(masm, SymbolicAddress::OnImpreciseConversion);
+      case JumpTarget::OutOfBounds:
+        return GenerateErrorStub(masm, SymbolicAddress::OnOutOfBounds);
+      case JumpTarget::Throw:
+        return GenerateThrow(masm);
+      case JumpTarget::Limit:
+        break;
     }
     MOZ_CRASH("bad JumpTarget");
 }
