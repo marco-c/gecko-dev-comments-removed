@@ -13,7 +13,6 @@
 #include "mozAccessibleProtocol.h"
 #endif
 
-#include "nsAutoPtr.h"
 #include "nsISupports.h"
 #include "nsBaseWidget.h"
 #include "nsWeakPtr.h"
@@ -627,7 +626,7 @@ protected:
 
   
   
-  nsAutoPtr<GLPresenter> mGLPresenter;
+  mozilla::UniquePtr<GLPresenter> mGLPresenter;
 
   mozilla::UniquePtr<mozilla::VibrancyManager> mVibrancyManager;
   RefPtr<mozilla::SwipeTracker> mSwipeTracker;
