@@ -77,6 +77,20 @@ public:
                                    uint32_t count, uint32_t *countWritten) = 0;
 
     
+    
+    
+    virtual nsresult ReadSegmentsAgain(nsAHttpSegmentReader *reader,
+                                       uint32_t count, uint32_t *countRead, bool *again)
+    {
+        return ReadSegments(reader, count, countRead);
+    }
+    virtual nsresult WriteSegmentsAgain(nsAHttpSegmentWriter *writer,
+                                   uint32_t count, uint32_t *countWritten, bool *again)
+    {
+        return WriteSegments(writer, count, countWritten);
+    }
+
+    
     virtual void Close(nsresult reason) = 0;
 
     
