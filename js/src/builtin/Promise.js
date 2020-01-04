@@ -672,32 +672,14 @@ function Promise_then(onFulfilled, onRejected) {
 
     
     if (isWrappedPromise) {
-        return callFunction(CallPromiseMethodIfWrapped, promise, onFulfilled, onRejected,
+        
+        let handlerForwarders = GetPromiseHandlerForwarders(onFulfilled, onRejected);
+        return callFunction(CallPromiseMethodIfWrapped, promise,
+                            handlerForwarders[0], handlerForwarders[1],
                             resultCapability.promise, resultCapability.resolve,
                             resultCapability.reject, "UnwrappedPerformPromiseThen");
     }
-
     return PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability);
-}
-
-
-
-
-
-
-
-function UnwrappedPerformPromiseThen(onFulfilled, onRejected, promise, resolve, reject) {
-    let resultCapability = {
-        __proto__: PromiseCapabilityRecordProto,
-        promise,
-        resolve(resolution) {
-            return UnsafeCallWrappedFunction(resolve, undefined, resolution);
-        },
-        reject(reason) {
-            return UnsafeCallWrappedFunction(reject, undefined, reason);
-        }
-    };
-    return PerformPromiseThen(this, onFulfilled, onRejected, resultCapability);
 }
 
 
@@ -722,8 +704,10 @@ function EnqueuePromiseReactions(promise, dependentPromise, onFulfilled, onRejec
            "EnqueuePromiseReactions's dependentPromise argument must be a Promise or null");
 
     if (isWrappedPromise) {
-        return callFunction(CallPromiseMethodIfWrapped, promise, onFulfilled, onRejected,
-                            dependentPromise, NullFunction, NullFunction,
+        
+        let handlerForwarders = GetPromiseHandlerForwarders(onFulfilled, onRejected);
+        return callFunction(CallPromiseMethodIfWrapped, promise, handlerForwarders[0],
+                            handlerForwarders[1], dependentPromise, NullFunction, NullFunction,
                             "UnwrappedPerformPromiseThen");
     }
     let capability = {
@@ -733,6 +717,81 @@ function EnqueuePromiseReactions(promise, dependentPromise, onFulfilled, onRejec
         reject: NullFunction
     };
     return PerformPromiseThen(promise, onFulfilled, onRejected, capability);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function GetPromiseHandlerForwarders(fulfilledHandler, rejectedHandler) {
+    
+    
+    return [
+        IsCallable(fulfilledHandler) ? function onFulfilled(argument) {
+            return callContentFunction(fulfilledHandler, this, argument);
+        } : fulfilledHandler,
+        IsCallable(rejectedHandler) ? function onRejected(argument) {
+            return callContentFunction(rejectedHandler, this, argument);
+        } : rejectedHandler
+    ];
+}
+
+
+
+
+
+
+
+function UnwrappedPerformPromiseThen(fulfilledHandler, rejectedHandler, promise, resolve, reject) {
+    let resultCapability = {
+        __proto__: PromiseCapabilityRecordProto,
+        promise,
+        resolve(resolution) {
+            return UnsafeCallWrappedFunction(resolve, undefined, resolution);
+        },
+        reject(reason) {
+            return UnsafeCallWrappedFunction(reject, undefined, reason);
+        }
+    };
+    function onFulfilled(argument) {
+        return UnsafeCallWrappedFunction(fulfilledHandler, undefined, argument);
+    }
+    function onRejected(argument) {
+        return UnsafeCallWrappedFunction(rejectedHandler, undefined, argument);
+    }
+    return PerformPromiseThen(this, IsCallable(fulfilledHandler) ? onFulfilled : fulfilledHandler,
+                              IsCallable(rejectedHandler) ? onRejected : rejectedHandler,
+                              resultCapability);
 }
 
 
