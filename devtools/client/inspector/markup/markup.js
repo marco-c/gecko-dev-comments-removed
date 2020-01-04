@@ -857,12 +857,26 @@ MarkupView.prototype = {
       this.undo.do(() => {
         this.walker.removeNode(node).then(siblings => {
           nextSibling = siblings.nextSibling;
-          let focusNode = moveBackward ? siblings.previousSibling : nextSibling;
+          let prevSibling = siblings.previousSibling;
+          let focusNode = moveBackward ? prevSibling : nextSibling;
 
           
           
           if (!focusNode) {
-            focusNode = nextSibling || siblings.previousSibling || parent;
+            focusNode = nextSibling || prevSibling || parent;
+          }
+
+          let isNextSiblingText = nextSibling ?
+            nextSibling.nodeType === Ci.nsIDOMNode.TEXT_NODE : false;
+          let isPrevSiblingText = prevSibling ?
+            prevSibling.nodeType === Ci.nsIDOMNode.TEXT_NODE : false;
+
+          
+          
+          
+          if (parent.numChildren === 2
+              && (isNextSiblingText || isPrevSiblingText)) {
+            focusNode = parent;
           }
 
           if (container.selected) {
