@@ -377,7 +377,7 @@ class WinArtifactJob(ArtifactJob):
 
 JOB_DETAILS = {
     
-    'android-api-11': (AndroidArtifactJob, ('public/build/fennec-(.*)\.android-arm\.apk',
+    'android-api-15': (AndroidArtifactJob, ('public/build/fennec-(.*)\.android-arm\.apk',
                                             None)),
     'android-x86': (AndroidArtifactJob, ('public/build/fennec-(.*)\.android-i386\.apk',
                                          None)),
