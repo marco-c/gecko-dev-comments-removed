@@ -2539,6 +2539,9 @@ pref("layout.css.background-blend-mode.enabled", true);
 pref("layout.css.background-clip-text.enabled", true);
 
 
+pref("layout.css.vertical-text.enabled", true);
+
+
 pref("layout.css.text-combine-upright.enabled", true);
 
 pref("layout.css.text-combine-upright-digits.enabled", false);
