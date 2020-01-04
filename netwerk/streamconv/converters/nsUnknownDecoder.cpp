@@ -15,6 +15,7 @@
 
 #include "nsIMIMEService.h"
 
+#include "nsIDivertableChannel.h"
 #include "nsIViewSourceChannel.h"
 #include "nsIHttpChannel.h"
 #include "nsIForcePendingChannel.h"
@@ -213,6 +214,15 @@ nsUnknownDecoder::OnDataAvailable(nsIRequest* request,
     NS_ASSERTION(!mContentType.IsEmpty(), 
                  "Content type should be known by now.");
 
+    nsCOMPtr<nsIDivertableChannel> divertable = do_QueryInterface(request);
+    if (divertable) {
+      bool diverting;
+      divertable->GetDivertingToParent(&diverting);
+      if (diverting) {
+        
+        return rv;
+      }
+    }
     rv = mNextListener->OnDataAvailable(request, aCtxt, aStream, 
                                         aSourceOffset, aCount);
   }
@@ -240,6 +250,11 @@ nsUnknownDecoder::OnStartRequest(nsIRequest* request, nsISupports *aCtxt)
     if (!mBuffer) {
       rv = NS_ERROR_OUT_OF_MEMORY;
     }
+  }
+
+  nsCOMPtr<nsIDivertableChannel> divertable = do_QueryInterface(request);
+  if (divertable) {
+    divertable->UnknownDecoderInvolvedKeepData();
   }
 
   
@@ -647,12 +662,29 @@ nsresult nsUnknownDecoder::FireListenerNotifications(nsIRequest* request,
       
       request->Cancel(rv);
       mNextListener->OnStartRequest(request, aCtxt);
+
+      nsCOMPtr<nsIDivertableChannel> divertable = do_QueryInterface(request);
+      if (divertable) {
+        rv = divertable->UnknownDecoderInvolvedOnStartRequestCalled();
+      }
+
       return rv;
     }
   }
 
   
   rv = mNextListener->OnStartRequest(request, aCtxt);
+
+   nsCOMPtr<nsIDivertableChannel> divertable = do_QueryInterface(request);
+   if (divertable) {
+     rv = divertable->UnknownDecoderInvolvedOnStartRequestCalled();
+     bool diverting;
+     divertable->GetDivertingToParent(&diverting);
+     if (diverting) {
+       
+       return rv;
+     }
+   }
 
   if (NS_SUCCEEDED(rv)) {
     
