@@ -45,7 +45,6 @@ user_pref("app.update.staging.enabled", false);
 user_pref("app.update.url.android", "");
 
 user_pref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager.xml");
-user_pref("browser.panorama.experienced_first_run", true); 
 user_pref("dom.w3c_touch_events.enabled", 1);
 user_pref("dom.undo_manager.enabled", true);
 user_pref("dom.webcomponents.enabled", true);
@@ -157,6 +156,9 @@ user_pref("layout.css.contain.enabled", true);
 
 
 user_pref("layout.css.object-fit-and-position.enabled", true);
+
+
+user_pref("layout.css.ruby.enabled", true);
 
 
 user_pref("layout.css.prefixes.webkit", true);
