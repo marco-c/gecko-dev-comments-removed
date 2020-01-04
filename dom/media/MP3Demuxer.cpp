@@ -1055,7 +1055,7 @@ FrameParser::VBRHeader::ParseVBRI(ByteReader* aReader) {
   MOZ_ASSERT(aReader);
   
   
-  MOZ_ASSERT(aReader->PeekU16() & 0xFFE0);
+  MOZ_ASSERT((aReader->PeekU16() & 0xFFE0) == 0xFFE0);
   const size_t prevReaderOffset = aReader->Offset();
 
   
