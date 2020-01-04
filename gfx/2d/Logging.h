@@ -126,6 +126,7 @@ enum class LogReason : int {
   AsyncTransactionTimeout, 
   TextureCreation,
   InvalidCacheSurface,
+  AlphaWithBasicClient,
   
   MustBeLessThanThis = 101,
 };
