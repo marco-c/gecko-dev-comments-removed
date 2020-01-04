@@ -127,6 +127,15 @@ window.setViewportSize = (width, height) => {
 
 
 window.getViewportBrowser = () => {
-  let { messageManager } = document.querySelector("iframe.browser").frameLoader;
-  return { messageManager };
+  let browser = document.querySelector("iframe.browser");
+  if (!browser.messageManager) {
+    Object.defineProperty(browser, "messageManager", {
+      get() {
+        return this.frameLoader.messageManager;
+      },
+      configurable: true,
+      enumerable: true,
+    });
+  }
+  return browser;
 };
