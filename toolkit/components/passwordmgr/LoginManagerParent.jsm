@@ -574,18 +574,7 @@ var LoginManagerParent = {
 
 
 
-
-  hasInsecureLoginForms(browser) {
-    return !!this.stateForBrowser(browser).hasInsecureLoginForms;
-  },
-
-  
-
-
-
-
-  updateLoginFormPresence(browser, { loginFormOrigin, loginFormPresent,
-                                     hasInsecureLoginForms }) {
+  updateLoginFormPresence(browser, { loginFormOrigin, loginFormPresent }) {
     const ANCHOR_DELAY_MS = 200;
 
     let state = this.stateForBrowser(browser);
@@ -594,11 +583,6 @@ var LoginManagerParent = {
     
     state.loginFormOrigin = loginFormOrigin;
     state.loginFormPresent = loginFormPresent;
-    state.hasInsecureLoginForms = hasInsecureLoginForms;
-
-    
-    browser.dispatchEvent(new browser.ownerDocument.defaultView
-                                 .CustomEvent("InsecureLoginFormsStateChange"));
 
     
     if (!state.anchorDeferredTask) {
