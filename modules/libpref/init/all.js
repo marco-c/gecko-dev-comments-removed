@@ -4919,6 +4919,9 @@ pref("layout.accessiblecaret.margin-left", "-18.5");
 pref("layout.accessiblecaret.bar.width", "2.0");
 
 
+pref("layout.accessiblecaret.bar.enabled", true);
+
+
 
 pref("layout.accessiblecaret.timeout_ms", 3000);
 
