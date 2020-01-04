@@ -17,7 +17,8 @@ class ConsoleTimelineMarker : public TimelineMarker
 public:
   explicit ConsoleTimelineMarker(const nsAString& aCause,
                                  TracingMetadata aMetaData)
-    : TimelineMarker("ConsoleTime", aCause, aMetaData)
+    : TimelineMarker("ConsoleTime", aMetaData)
+    , mCause(aCause)
   {
     
     
@@ -32,17 +33,22 @@ public:
       return false;
     }
     
-    return GetCause() == aOther.GetCause();
+    
+    
+    return mCause == static_cast<const ConsoleTimelineMarker*>(&aOther)->mCause;
   }
 
   virtual void AddDetails(JSContext* aCx, dom::ProfileTimelineMarker& aMarker) override
   {
     if (GetMetaData() == TRACING_INTERVAL_START) {
-      aMarker.mCauseName.Construct(GetCause());
+      aMarker.mCauseName.Construct(mCause);
     } else {
       aMarker.mEndStack = GetStack();
     }
   }
+
+private:
+  nsString mCause;
 };
 
 } 
