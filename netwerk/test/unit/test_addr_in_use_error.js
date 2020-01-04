@@ -12,7 +12,7 @@ function testAddrInUse()
 {
   
   
-  if ("@mozilla.org/windows-registry-key;1" in Cc) {
+  if (mozinfo.os == "win") {
     return;
   }
 
