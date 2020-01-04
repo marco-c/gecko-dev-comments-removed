@@ -80,6 +80,8 @@ class SearchEngineRow extends AnimatedHeightLayout {
     private int mMaxSavedSuggestions;
     private int mMaxSearchSuggestions;
 
+    private final List<Integer> mOccurrences = new ArrayList<Integer>();
+
     public SearchEngineRow(Context context) {
         this(context, null);
     }
@@ -164,19 +166,19 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
 
 
-    private List<Integer> findAllOccurrencesOf(String pattern, String string) {
-        List<Integer> occurrences = new ArrayList<>();
+    private void refreshOccurrencesWith(String pattern, String string) {
+        mOccurrences.clear();
         final int patternLength = pattern.length();
         int indexOfMatch = 0;
         int lastIndexOfMatch = 0;
         while(indexOfMatch != -1) {
             indexOfMatch = string.indexOf(pattern, lastIndexOfMatch);
             lastIndexOfMatch = indexOfMatch + patternLength;
+            
             if(indexOfMatch != -1) {
-                occurrences.add(indexOfMatch);
+                mOccurrences.add(indexOfMatch);
             }
         }
-        return occurrences;
     }
 
     
@@ -201,18 +203,19 @@ class SearchEngineRow extends AnimatedHeightLayout {
         final TextView suggestionText = (TextView) v.findViewById(R.id.suggestion_text);
         final String searchTerm = getSuggestionTextFromView(mUserEnteredView);
         final int searchTermLength = searchTerm.length();
-        final List<Integer> occurrences = findAllOccurrencesOf(searchTerm, suggestion);
-        if (occurrences.size() > 0) {
+        refreshOccurrencesWith(searchTerm, suggestion);
+        if (mOccurrences.size() > 0) {
             final SpannableStringBuilder sb = new SpannableStringBuilder(suggestion);
             int nextStartSpanIndex = 0;
             
-            occurrences.add(suggestion.length());
-            for(int occurrence : occurrences) {
+            mOccurrences.add(suggestion.length());
+            for(int occurrence : mOccurrences) {
                 
                 StyleSpan boldSpan = new StyleSpan(Typeface.BOLD);
                 sb.setSpan(boldSpan, nextStartSpanIndex, occurrence, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
                 nextStartSpanIndex = occurrence + searchTermLength;
             }
+            mOccurrences.clear();
             suggestionText.setText(sb);
         } else {
             suggestionText.setText(suggestion);
