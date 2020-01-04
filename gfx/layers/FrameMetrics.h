@@ -13,6 +13,7 @@
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/ScaleFactor.h"    
 #include "mozilla/gfx/Logging.h"        
+#include "mozilla/TimeStamp.h"          
 #include "nsString.h"
 
 namespace IPC {
@@ -63,6 +64,7 @@ public:
     , mPageScrollAmount(0, 0)
     , mClipRect()
     , mMaskLayerIndex()
+    , mPaintRequestTime()
     , mIsRootContent(false)
     , mHasScrollgrab(false)
     , mUpdateScrollOffset(false)
@@ -104,6 +106,7 @@ public:
            mPageScrollAmount == aOther.mPageScrollAmount &&
            mClipRect == aOther.mClipRect &&
            mMaskLayerIndex == aOther.mMaskLayerIndex &&
+           mPaintRequestTime == aOther.mPaintRequestTime &&
            mIsRootContent == aOther.mIsRootContent &&
            mHasScrollgrab == aOther.mHasScrollgrab &&
            mUpdateScrollOffset == aOther.mUpdateScrollOffset &&
@@ -540,6 +543,13 @@ public:
     return mMaskLayerIndex;
   }
 
+  void SetPaintRequestTime(const TimeStamp& aTime) {
+    mPaintRequestTime = aTime;
+  }
+  const TimeStamp& GetPaintRequestTime() const {
+    return mPaintRequestTime;
+  }
+
   void SetIsLayersIdRoot(bool aValue) {
     mIsLayersIdRoot = aValue;
   }
@@ -721,6 +731,9 @@ private:
   
   
   Maybe<size_t> mMaskLayerIndex;
+
+  
+  TimeStamp mPaintRequestTime;
 
   
   bool mIsRootContent:1;
