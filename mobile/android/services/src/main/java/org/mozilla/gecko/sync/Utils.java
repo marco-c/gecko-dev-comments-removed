@@ -79,13 +79,6 @@ public class Utils {
   
 
 
-  public static void reseedSharedRandom() {
-    sharedSecureRandom.setSeed(sharedSecureRandom.generateSeed(8));
-  }
-
-  
-
-
   public static String byte2Hex(final byte[] b) {
     return byte2Hex(b, 2 * b.length);
   }
@@ -565,17 +558,6 @@ public class Utils {
     return in.replaceAll("[^@\\.]", "X");
   }
 
-  public static String nodeWeaveURL(String serverURL, String username) {
-    String userPart = username + "/node/weave";
-    if (serverURL == null) {
-      return SyncConstants.DEFAULT_AUTH_SERVER + "user/1.0/" + userPart;
-    }
-    if (!serverURL.endsWith("/")) {
-      serverURL = serverURL + "/";
-    }
-    return serverURL + "user/1.0/" + userPart;
-  }
-
   public static void throwIfNull(Object... objects) {
     for (Object object : objects) {
       if (object == null) {
@@ -614,27 +596,5 @@ public class Utils {
       return language;
     }
     return language + "-" + country;
-  }
-
-  
-
-
-
-
-
-
-
-
-  public static Spannable interpolateClickableSpan(Context context, int messageId, int clickableId, ClickableSpan clickableSpan) {
-    
-    
-    
-    final String clickablePart = context.getString(clickableId);
-    final String message = context.getString(messageId, clickablePart);
-    final int clickableStart = message.lastIndexOf(clickablePart);
-    final int clickableEnd = clickableStart + clickablePart.length();
-    final Spannable span = Spannable.Factory.getInstance().newSpannable(message);
-    span.setSpan(clickableSpan, clickableStart, clickableEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-    return span;
   }
 }

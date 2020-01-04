@@ -17,43 +17,4 @@ public class SyncConstants {
   public static final String USER_AGENT = "Firefox AndroidSync " +
                                           SYNC_VERSION_STRING + " (" +
                                           AppConstants.MOZ_APP_UA_NAME + ")";
-
-  public static final String ACCOUNTTYPE_SYNC = AppConstants.MOZ_ANDROID_SHARED_ACCOUNT_TYPE;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  public static final String SYNC_ACCOUNT_DELETED_ACTION = AppConstants.MOZ_ANDROID_SHARED_ACCOUNT_TYPE + ".accounts.SYNC_ACCOUNT_DELETED_ACTION";
-
-  
-
-
-
-
-
-
-  public static final long SYNC_ACCOUNT_DELETED_INTENT_VERSION = 1;
-
-  
-
-
-
-
-  public static final String PER_ACCOUNT_TYPE_PERMISSION = AppConstants.MOZ_ANDROID_SHARED_ACCOUNT_TYPE + ".permission.PER_ACCOUNT_TYPE";
-
-  public static final String DEFAULT_AUTH_SERVER = "https://auth.services.mozilla.com/";
-
-  
-  public static final String BACKOFF_PREF_SUFFIX_11 = "sync";
-
-  public static final String SYNC_ACCOUNT_DEPRECATED_ACTION = AppConstants.MOZ_ANDROID_SHARED_ACCOUNT_TYPE + ".accounts.SYNC_ACCOUNT_DEPRECATED_ACTION";
 }
