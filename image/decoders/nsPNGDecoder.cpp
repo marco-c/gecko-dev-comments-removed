@@ -26,6 +26,8 @@
 
 using namespace mozilla::gfx;
 
+using std::min;
+
 namespace mozilla {
 namespace image {
 
@@ -100,6 +102,8 @@ nsPNGDecoder::nsPNGDecoder(RasterImage* aImage)
                                    State::PNG_DATA,
                                    SIZE_MAX),
           Transition::TerminateSuccess())
+ , mNextTransition(Transition::ContinueUnbuffered(State::PNG_DATA))
+ , mLastChunkLength(0)
  , mPNG(nullptr)
  , mInfo(nullptr)
  , mCMSLine(nullptr)
@@ -177,15 +181,13 @@ nsPNGDecoder::PostHasTransparencyIfNeeded(TransparencyType aTransparencyType)
 
 
 nsresult
-nsPNGDecoder::CreateFrame(SurfaceFormat aFormat,
-                          const IntRect& aFrameRect,
-                          bool aIsInterlaced)
+nsPNGDecoder::CreateFrame(const FrameInfo& aFrameInfo)
 {
   MOZ_ASSERT(HasSize());
   MOZ_ASSERT(!IsMetadataDecode());
 
   
-  auto transparency = GetTransparencyType(aFormat, aFrameRect);
+  auto transparency = GetTransparencyType(aFrameInfo.mFormat, aFrameInfo.mFrameRect);
   PostHasTransparencyIfNeeded(transparency);
   SurfaceFormat format = transparency == TransparencyType::eNone
                        ? SurfaceFormat::B8G8R8X8
@@ -201,7 +203,7 @@ nsPNGDecoder::CreateFrame(SurfaceFormat aFormat,
 
   
   
-  SurfacePipeFlags pipeFlags = aIsInterlaced
+  SurfacePipeFlags pipeFlags = aFrameInfo.mIsInterlaced
                              ? SurfacePipeFlags::ADAM7_INTERPOLATE
                              : SurfacePipeFlags();
 
@@ -211,8 +213,9 @@ nsPNGDecoder::CreateFrame(SurfaceFormat aFormat,
   }
 
   Maybe<SurfacePipe> pipe =
-    SurfacePipeFactory::CreateSurfacePipe(this, mNumFrames, GetSize(), targetSize,
-                                          aFrameRect, format, pipeFlags);
+    SurfacePipeFactory::CreateSurfacePipe(this, mNumFrames, GetSize(),
+                                          targetSize, aFrameInfo.mFrameRect,
+                                          format, pipeFlags);
 
   if (!pipe) {
     mPipe = SurfacePipe();
@@ -221,13 +224,13 @@ nsPNGDecoder::CreateFrame(SurfaceFormat aFormat,
 
   mPipe = Move(*pipe);
 
-  mFrameRect = aFrameRect;
+  mFrameRect = aFrameInfo.mFrameRect;
   mPass = 0;
 
   MOZ_LOG(sPNGDecoderAccountingLog, LogLevel::Debug,
          ("PNGDecoderAccounting: nsPNGDecoder::CreateFrame -- created "
           "image frame with %dx%d pixels for decoder %p",
-          aFrameRect.width, aFrameRect.height, this));
+          mFrameRect.width, mFrameRect.height, this));
 
 #ifdef PNG_APNG_SUPPORTED
   if (png_get_valid(mPNG, mInfo, PNG_INFO_acTL)) {
@@ -369,25 +372,36 @@ LexerTransition<nsPNGDecoder::State>
 nsPNGDecoder::ReadPNGData(const char* aData, size_t aLength)
 {
   
+  
+  if (mNextFrameInfo) {
+    if (NS_FAILED(CreateFrame(*mNextFrameInfo))) {
+      return Transition::TerminateFailure();
+    }
+
+    MOZ_ASSERT(mImageData, "Should have a buffer now");
+    mNextFrameInfo = Nothing();
+  }
+
+  
   if (setjmp(png_jmpbuf(mPNG))) {
     return Transition::TerminateFailure();
   }
 
   
+  mLastChunkLength = aLength;
+  mNextTransition = Transition::ContinueUnbuffered(State::PNG_DATA);
   png_process_data(mPNG, mInfo,
                    reinterpret_cast<unsigned char*>(const_cast<char*>((aData))),
                    aLength);
 
-  if (HasError()) {
-    return Transition::TerminateFailure();
-  }
-
-  if (GetDecodeDone()) {
-    return Transition::TerminateSuccess();
-  }
+  
+  MOZ_ASSERT_IF(GetDecodeDone(), mNextTransition.NextStateIsTerminal());
+  MOZ_ASSERT_IF(HasError(), mNextTransition.NextStateIsTerminal());
 
   
-  return Transition::ContinueUnbuffered(State::PNG_DATA);
+  
+  
+  return mNextTransition;
 }
 
 LexerTransition<nsPNGDecoder::State>
@@ -683,8 +697,7 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
 
     
     
-    png_process_data_pause(png_ptr,  false);
-    return;
+    return decoder->DoTerminate(png_ptr, TerminalState::SUCCESS);
   }
 
 #ifdef PNG_APNG_SUPPORTED
@@ -697,7 +710,9 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
     decoder->mFrameIsHidden = true;
   } else {
 #endif
-    nsresult rv = decoder->CreateFrame(decoder->format, frameRect, isInterlaced);
+    nsresult rv = decoder->CreateFrame(FrameInfo{ decoder->format,
+                                                  frameRect,
+                                                  isInterlaced });
     if (NS_FAILED(rv)) {
       png_longjmp(decoder->mPNG, 5); 
     }
@@ -899,6 +914,37 @@ nsPNGDecoder::WriteRow(uint8_t* aRow)
   PostInvalidationIfNeeded();
 }
 
+void
+nsPNGDecoder::DoTerminate(png_structp aPNGStruct, TerminalState aState)
+{
+  
+  
+  
+  
+  
+  png_process_data_pause(aPNGStruct,  false);
+
+  mNextTransition = aState == TerminalState::SUCCESS
+                  ? Transition::TerminateSuccess()
+                  : Transition::TerminateFailure();
+}
+
+void
+nsPNGDecoder::DoYield(png_structp aPNGStruct)
+{
+  
+  
+  
+  
+  png_size_t pendingBytes = png_process_data_pause(aPNGStruct,  false);
+
+  MOZ_ASSERT(pendingBytes < mLastChunkLength);
+  size_t consumedBytes = mLastChunkLength - min(pendingBytes, mLastChunkLength);
+
+  mNextTransition =
+    Transition::ContinueUnbufferedAfterYield(State::PNG_DATA, consumedBytes);
+}
+
 #ifdef PNG_APNG_SUPPORTED
 
 void
@@ -914,13 +960,14 @@ nsPNGDecoder::frame_info_callback(png_structp png_ptr, png_uint_32 frame_num)
     
     
     decoder->PostDecodeDone();
-    png_process_data_pause(png_ptr,  false);
-    return;
+    return decoder->DoTerminate(png_ptr, TerminalState::SUCCESS);
   }
 
   
   decoder->mFrameIsHidden = false;
 
+  
+  
   const IntRect frameRect(png_get_next_frame_x_offset(png_ptr, decoder->mInfo),
                           png_get_next_frame_y_offset(png_ptr, decoder->mInfo),
                           png_get_next_frame_width(png_ptr, decoder->mInfo),
@@ -928,11 +975,12 @@ nsPNGDecoder::frame_info_callback(png_structp png_ptr, png_uint_32 frame_num)
 
   const bool isInterlaced = bool(decoder->interlacebuf);
 
-  nsresult rv = decoder->CreateFrame(decoder->format, frameRect, isInterlaced);
-  if (NS_FAILED(rv)) {
-    png_longjmp(decoder->mPNG, 5); 
-  }
-  MOZ_ASSERT(decoder->mImageData, "Should have a buffer now");
+  decoder->mNextFrameInfo = Some(FrameInfo{ decoder->format,
+                                            frameRect,
+                                            isInterlaced });
+
+  
+  return decoder->DoYield(png_ptr);
 }
 #endif
 
@@ -968,6 +1016,7 @@ nsPNGDecoder::end_callback(png_structp png_ptr, png_infop info_ptr)
   
   decoder->EndImageFrame();
   decoder->PostDecodeDone(loop_count);
+  return decoder->DoTerminate(png_ptr, TerminalState::SUCCESS);
 }
 
 
