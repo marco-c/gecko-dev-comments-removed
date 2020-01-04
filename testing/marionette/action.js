@@ -12,16 +12,16 @@ Cu.import("chrome://marionette/content/event.js");
 const CONTEXT_MENU_DELAY_PREF = "ui.click_hold_context_menus.delay";
 const DEFAULT_CONTEXT_MENU_DELAY = 750;  
 
-this.EXPORTED_SYMBOLS = ["actions"];
+this.EXPORTED_SYMBOLS = ["action"];
 
 const logger = Log.repository.getLogger("Marionette");
 
-this.actions = {};
+this.action = {};
 
 
 
 
-actions.Chain = function(checkForInterrupted) {
+action.Chain = function(checkForInterrupted) {
   
   this.nextTouchId = 1000;
   
@@ -47,7 +47,7 @@ actions.Chain = function(checkForInterrupted) {
   this.inputSource = null;
 };
 
-actions.Chain.prototype.dispatchActions = function(
+action.Chain.prototype.dispatchActions = function(
     args,
     touchId,
     container,
@@ -105,7 +105,7 @@ actions.Chain.prototype.dispatchActions = function(
 
 
 
-actions.Chain.prototype.emitMouseEvent = function(
+action.Chain.prototype.emitMouseEvent = function(
     doc,
     type,
     elClientX,
@@ -147,7 +147,7 @@ actions.Chain.prototype.emitMouseEvent = function(
 
 
 
-actions.Chain.prototype.resetValues = function() {
+action.Chain.prototype.resetValues = function() {
   this.onSuccess = null;
   this.onError = null;
   this.container = null;
@@ -163,7 +163,7 @@ actions.Chain.prototype.resetValues = function() {
 
 
 
-actions.Chain.prototype.actions = function(chain, touchId, i, keyModifiers) {
+action.Chain.prototype.actions = function(chain, touchId, i, keyModifiers) {
   if (i == chain.length) {
     this.onSuccess(touchId || null);
     this.resetValues();
@@ -323,7 +323,7 @@ actions.Chain.prototype.actions = function(chain, touchId, i, keyModifiers) {
 
 
 
-actions.Chain.prototype.coordinates = function(target, x, y) {
+action.Chain.prototype.coordinates = function(target, x, y) {
   let box = target.getBoundingClientRect();
   if (x == null) {
     x = box.width / 2;
@@ -341,7 +341,7 @@ actions.Chain.prototype.coordinates = function(target, x, y) {
 
 
 
-actions.Chain.prototype.getCoordinateInfo = function(el, corx, cory) {
+action.Chain.prototype.getCoordinateInfo = function(el, corx, cory) {
   let win = el.ownerDocument.defaultView;
   return [
     corx, 
@@ -361,7 +361,7 @@ actions.Chain.prototype.getCoordinateInfo = function(el, corx, cory) {
 
 
 
-actions.Chain.prototype.generateEvents = function(
+action.Chain.prototype.generateEvents = function(
     type, x, y, touchId, target, keyModifiers) {
   this.lastCoordinates = [x, y];
   let doc = this.container.frame.document;
@@ -494,7 +494,7 @@ actions.Chain.prototype.generateEvents = function(
   this.checkForInterrupted();
 };
 
-actions.Chain.prototype.mouseTap = function(doc, x, y, button, count, mod) {
+action.Chain.prototype.mouseTap = function(doc, x, y, button, count, mod) {
   this.emitMouseEvent(doc, "mousemove", x, y, button, count, mod);
   this.emitMouseEvent(doc, "mousedown", x, y, button, count, mod);
   this.emitMouseEvent(doc, "mouseup", x, y, button, count, mod);
