@@ -4520,6 +4520,7 @@ struct JS_PUBLIC_API(AsyncTask)
 
 
 
+
 typedef bool
 (*StartAsyncTaskCallback)(JSContext* cx, AsyncTask* task);
 

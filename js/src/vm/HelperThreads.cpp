@@ -1589,11 +1589,17 @@ js::StartPromiseTask(JSContext* cx, UniquePtr<PromiseTask> task)
 {
     
     
-
+    
+    
+    
+    
     if (!cx->startAsyncTaskCallback(cx, task.get())) {
-        ReportOutOfMemory(cx);
-        return false;
+        MOZ_ASSERT(!cx->isExceptionPending());
+        return true;
     }
+
+    
+    
 
     AutoLockHelperThreadState lock;
 
