@@ -6,11 +6,18 @@
 package org.mozilla.gecko.db;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.mozilla.apache.commons.codec.binary.Base32;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.db.BrowserContract.Bookmarks;
 import org.mozilla.gecko.db.BrowserContract.Combined;
 import org.mozilla.gecko.db.BrowserContract.Favicons;
@@ -20,6 +27,8 @@ import org.mozilla.gecko.db.BrowserContract.ReadingListItems;
 import org.mozilla.gecko.db.BrowserContract.SearchHistory;
 import org.mozilla.gecko.db.BrowserContract.Thumbnails;
 import org.mozilla.gecko.db.BrowserContract.UrlAnnotations;
+import org.mozilla.gecko.reader.SavedReaderViewHelper;
+import org.mozilla.gecko.sync.Utils;
 import org.mozilla.gecko.util.FileUtils;
 
 import static org.mozilla.gecko.db.DBUtils.qualifyColumn;
@@ -44,7 +53,7 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
     
     
-    public static final int DATABASE_VERSION = 30; 
+    public static final int DATABASE_VERSION = 31; 
     public static final String DATABASE_NAME = "browser.db";
 
     final protected Context mContext;
@@ -59,15 +68,21 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
     static final String TABLE_LOGINS = BrowserContract.Logins.TABLE_LOGINS;
     static final String TABLE_DELETED_LOGINS = BrowserContract.DeletedLogins.TABLE_DELETED_LOGINS;
     static final String TABLE_DISABLED_HOSTS = BrowserContract.LoginsDisabledHosts.TABLE_DISABLED_HOSTS;
+    static final String TABLE_ANNOTATIONS = UrlAnnotations.TABLE_NAME;
 
     static final String VIEW_COMBINED = Combined.VIEW_NAME;
     static final String VIEW_BOOKMARKS_WITH_FAVICONS = Bookmarks.VIEW_WITH_FAVICONS;
+    static final String VIEW_BOOKMARKS_WITH_ANNOTATIONS = Bookmarks.VIEW_WITH_ANNOTATIONS;
     static final String VIEW_HISTORY_WITH_FAVICONS = History.VIEW_WITH_FAVICONS;
     static final String VIEW_COMBINED_WITH_FAVICONS = Combined.VIEW_WITH_FAVICONS;
 
     static final String TABLE_BOOKMARKS_JOIN_FAVICONS = TABLE_BOOKMARKS + " LEFT OUTER JOIN " +
             TABLE_FAVICONS + " ON " + qualifyColumn(TABLE_BOOKMARKS, Bookmarks.FAVICON_ID) + " = " +
             qualifyColumn(TABLE_FAVICONS, Favicons._ID);
+
+    static final String TABLE_BOOKMARKS_JOIN_ANNOTATIONS = TABLE_BOOKMARKS + " JOIN " +
+            TABLE_ANNOTATIONS + " ON " + qualifyColumn(TABLE_BOOKMARKS, Bookmarks.URL) + " = " +
+            qualifyColumn(TABLE_ANNOTATIONS, UrlAnnotations.URL);
 
     static final String TABLE_HISTORY_JOIN_FAVICONS = TABLE_HISTORY + " LEFT OUTER JOIN " +
             TABLE_FAVICONS + " ON " + qualifyColumn(TABLE_HISTORY, History.FAVICON_ID) + " = " +
@@ -172,6 +187,16 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
                 ", " + qualifyColumn(TABLE_FAVICONS, Favicons.DATA) + " AS " + Bookmarks.FAVICON +
                 ", " + qualifyColumn(TABLE_FAVICONS, Favicons.URL) + " AS " + Bookmarks.FAVICON_URL +
                 " FROM " + TABLE_BOOKMARKS_JOIN_FAVICONS);
+    }
+
+    private void createBookmarksWithAnnotationsView(SQLiteDatabase db) {
+        debug("Creating " + VIEW_BOOKMARKS_WITH_ANNOTATIONS + " view");
+
+        db.execSQL("CREATE VIEW IF NOT EXISTS " + VIEW_BOOKMARKS_WITH_ANNOTATIONS + " AS " +
+                   "SELECT " + qualifyColumn(TABLE_BOOKMARKS, "*") +
+                   ", " + qualifyColumn(TABLE_ANNOTATIONS, UrlAnnotations.KEY) + " AS " + Bookmarks.ANNOTATION_KEY +
+                   ", " + qualifyColumn(TABLE_ANNOTATIONS, UrlAnnotations.VALUE) + " AS " + Bookmarks.ANNOTATION_VALUE +
+                   " FROM " + TABLE_BOOKMARKS_JOIN_ANNOTATIONS);
     }
 
     private void createHistoryWithFaviconsView(SQLiteDatabase db) {
@@ -415,8 +440,6 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
         createOrUpdateAllSpecialFolders(db);
         createSearchHistoryTable(db);
-        createReadingListTable(db, TABLE_READING_LIST);
-        createReadingListIndices(db, TABLE_READING_LIST);
         createUrlAnnotationsTable(db);
         createNumbersTable(db);
 
@@ -424,6 +447,8 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
         createDisabledHostsTable(db, TABLE_DISABLED_HOSTS);
         createLoginsTable(db, TABLE_LOGINS);
         createLoginsTableIndices(db, TABLE_LOGINS);
+
+        createBookmarksWithAnnotationsView(db);
     }
 
     
@@ -1138,6 +1163,163 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
         createLoginsTableIndices(db, TABLE_LOGINS);
     }
 
+    
+    
+    
+    
+    private static String getReaderCacheFileNameForURL(String url) {
+        try {
+            
+            
+            byte[] utf8 = url.getBytes("UTF8");
+
+            final MessageDigest digester = MessageDigest.getInstance("MD5");
+            byte[] hash = digester.digest(utf8);
+
+            final String hashString = new Base32().encodeAsString(hash);
+            return hashString.substring(0, hashString.indexOf('=')) + ".json";
+        } catch (UnsupportedEncodingException e) {
+            
+            throw new IllegalStateException("UTF8 encoding not available - can't process readercache filename");
+        } catch (NoSuchAlgorithmException e) {
+            
+            throw new IllegalStateException("MD5 digester unavailable - can't process readercache filename");
+        }
+    }
+
+    
+
+
+
+    private void upgradeDatabaseFrom30to31(SQLiteDatabase db) {
+        
+        
+        
+
+        
+        
+        
+        final Cursor readingListCursor = db.query(TABLE_READING_LIST,
+                                     new String[] {
+                                             ReadingListItems.URL,
+                                             ReadingListItems.TITLE,
+                                             ReadingListItems.ADDED_ON,
+                                             ReadingListItems.CLIENT_LAST_MODIFIED
+                                     },
+                                     ReadingListItems.IS_DELETED + " = 0",
+                                     null,
+                                     null,
+                                     null,
+                                     ReadingListItems.ADDED_ON + " DESC");
+
+        
+        
+        
+        
+        
+        final Map<String, String> fileToURLMap = new HashMap<>();
+
+
+        try {
+            if (!readingListCursor.moveToFirst()) {
+                return;
+            }
+
+            final Integer mobileBookmarksID = getMobileFolderId(db);
+
+            if (mobileBookmarksID == null) {
+                
+                throw new IllegalStateException("mobile bookmarks folder must already exist");
+            }
+
+            final long now = System.currentTimeMillis();
+
+            
+            
+            
+            long position = 0;
+
+            final int titleColumnID = readingListCursor.getColumnIndexOrThrow(ReadingListItems.TITLE);
+            final int createdColumnID = readingListCursor.getColumnIndexOrThrow(ReadingListItems.ADDED_ON);
+
+            
+            
+            
+            do {
+                final ContentValues readingListItemValues = new ContentValues();
+
+                final String url = readingListCursor.getString(readingListCursor.getColumnIndexOrThrow(ReadingListItems.URL));
+
+                readingListItemValues.put(Bookmarks.PARENT, mobileBookmarksID);
+                readingListItemValues.put(Bookmarks.GUID, Utils.generateGuid());
+                readingListItemValues.put(Bookmarks.URL, url);
+                
+                if (!readingListCursor.isNull(titleColumnID)) {
+                    readingListItemValues.put(Bookmarks.TITLE, readingListCursor.getString(titleColumnID));
+                } else {
+                    readingListItemValues.put(Bookmarks.TITLE, "");
+                }
+                readingListItemValues.put(Bookmarks.DATE_CREATED, readingListCursor.getLong(createdColumnID));
+                readingListItemValues.put(Bookmarks.DATE_MODIFIED, now);
+                readingListItemValues.put(Bookmarks.POSITION, position);
+
+                db.insert(TABLE_BOOKMARKS,
+                          null,
+                          readingListItemValues);
+
+                final String cacheFileName = getReaderCacheFileNameForURL(url);
+                fileToURLMap.put(cacheFileName, url);
+
+                position++;
+            } while (readingListCursor.moveToNext());
+
+        } finally {
+            readingListCursor.close();
+            
+            
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_READING_LIST);
+            createBookmarksWithAnnotationsView(db);
+        }
+
+        final File profileDir = GeckoProfile.get(mContext).getDir();
+        final File cacheDir = new File(profileDir, "readercache");
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (cacheDir.exists() && cacheDir.isDirectory()) {
+            SavedReaderViewHelper savedReaderViewHelper = SavedReaderViewHelper.getSavedReaderViewHelper(mContext);
+
+            
+            
+            savedReaderViewHelper.loadItems();
+
+            for (File cacheFile : cacheDir.listFiles()) {
+                if (fileToURLMap.containsKey(cacheFile.getName())) {
+                    final String url = fileToURLMap.get(cacheFile.getName());
+                    final String path = cacheFile.getAbsolutePath();
+                    long size = cacheFile.length();
+
+                    savedReaderViewHelper.put(url, path, size);
+                } else {
+                    
+                    
+                    boolean deleted = cacheFile.delete();
+
+                    if (!deleted) {
+                        Log.w(LOGTAG, "Failed to delete orphaned saved reader view file.");
+                    }
+                }
+            }
+        }
+    }
+
     private void createV19CombinedView(SQLiteDatabase db) {
         db.execSQL("DROP VIEW IF EXISTS " + VIEW_COMBINED);
         db.execSQL("DROP VIEW IF EXISTS " + VIEW_COMBINED_WITH_FAVICONS);
@@ -1234,6 +1416,10 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
                 case 30:
                     upgradeDatabaseFrom29to30(db);
+                    break;
+
+                case 31:
+                    upgradeDatabaseFrom30to31(db);
                     break;
             }
         }
