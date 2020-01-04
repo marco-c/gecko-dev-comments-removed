@@ -7,7 +7,6 @@ config = {
         'package-source',
     ],
     'stage_platform': 'source',  
-    'purge_minsize': 3,
     'buildbot_json_path': 'buildprops.json',
     'app_ini_path': 'FAKE',  
     'objdir': 'obj-firefox',

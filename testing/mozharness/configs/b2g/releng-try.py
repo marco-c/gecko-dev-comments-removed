@@ -37,7 +37,6 @@ config = {
         "WGET_OPTS": "-c -q",
         "PATH": "/tools/python27/bin:%(PATH)s",
     },
-    "purge_minsize": 20,
     
     
     "is_automation": True,
