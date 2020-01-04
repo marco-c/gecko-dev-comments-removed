@@ -311,13 +311,16 @@ var TelemetryScheduler = {
     this._log.trace("init");
     this._shuttingDown = false;
     this._isUserIdle = false;
+
     
     
     let now = Policy.now();
     this._lastDailyPingTime = now.getTime();
     this._lastSessionCheckpointTime = now.getTime();
     this._rescheduleTimeout();
+
     idleService.addIdleObserver(this, IDLE_TIMEOUT_SECONDS);
+    Services.obs.addObserver(this, "wake_notification", false);
   },
 
   
@@ -340,6 +343,7 @@ var TelemetryScheduler = {
     }
 
     idleService.removeIdleObserver(this, IDLE_TIMEOUT_SECONDS);
+    Services.obs.removeObserver(this, "wake_notification");
 
     this._shuttingDown = true;
   },
@@ -437,6 +441,13 @@ var TelemetryScheduler = {
       case "active":
         
         this._isUserIdle = false;
+        return this._onSchedulerTick();
+        break;
+      case "wake_notification":
+        
+        
+        
+        
         return this._onSchedulerTick();
         break;
     }
