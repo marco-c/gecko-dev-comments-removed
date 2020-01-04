@@ -26,6 +26,7 @@ enum eHtml5SpeculativeLoad {
   eSpeculativeLoadStyle,
   eSpeculativeLoadManifest,
   eSpeculativeLoadSetDocumentCharset,
+  eSpeculativeLoadSetDocumentMode,
   eSpeculativeLoadPreconnect
 };
 
@@ -106,7 +107,7 @@ class nsHtml5SpeculativeLoad {
       mOpCode = eSpeculativeLoadPictureSource;
       mSrcset.Assign(aSrcset);
       mSizes.Assign(aSizes);
-      mTypeOrCharsetSource.Assign(aType);
+      mTypeOrCharsetSourceOrDocumentMode.Assign(aType);
       mMedia.Assign(aMedia);
     }
 
@@ -123,7 +124,7 @@ class nsHtml5SpeculativeLoad {
           eSpeculativeLoadScriptFromHead : eSpeculativeLoadScript;
       mUrl.Assign(aUrl);
       mCharset.Assign(aCharset);
-      mTypeOrCharsetSource.Assign(aType);
+      mTypeOrCharsetSourceOrDocumentMode.Assign(aType);
       mCrossOrigin.Assign(aCrossOrigin);
       mIntegrity.Assign(aIntegrity);
     }
@@ -177,7 +178,21 @@ class nsHtml5SpeculativeLoad {
                       "Trying to reinitialize a speculative load!");
       mOpCode = eSpeculativeLoadSetDocumentCharset;
       CopyUTF8toUTF16(aCharset, mCharset);
-      mTypeOrCharsetSource.Assign((char16_t)aCharsetSource);
+      mTypeOrCharsetSourceOrDocumentMode.Assign((char16_t)aCharsetSource);
+    }
+
+    
+
+
+
+
+
+    inline void InitSetDocumentMode(nsHtml5DocumentMode aMode)
+    {
+      NS_PRECONDITION(mOpCode == eSpeculativeLoadUninitialized,
+                      "Trying to reinitialize a speculative load!");
+      mOpCode = eSpeculativeLoadSetDocumentMode;
+      mTypeOrCharsetSourceOrDocumentMode.Assign((char16_t)aMode);
     }
 
     inline void InitPreconnect(const nsAString& aUrl,
@@ -211,7 +226,10 @@ class nsHtml5SpeculativeLoad {
 
 
 
-    nsString mTypeOrCharsetSource;
+
+
+
+    nsString mTypeOrCharsetSourceOrDocumentMode;
     
 
 
