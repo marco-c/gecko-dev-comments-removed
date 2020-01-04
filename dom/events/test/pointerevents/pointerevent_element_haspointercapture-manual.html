@@ -35,7 +35,9 @@
                     target1.setPointerCapture(e.pointerId);
                     test_pointerEvent.step(function () {
                         assert_equals(target0.hasPointerCapture(e.pointerId), false,
-                                      "target1.setPointerCapture, target0.hasPointerCapture should be false");
+                                      "after target1.setPointerCapture, target0.hasPointerCapture should be false");
+                        assert_equals(target1.hasPointerCapture(e.pointerId), true,
+                                      "after target1.setPointerCapture, target1.hasPointerCapture should be true");
                     });
                     target0.setPointerCapture(e.pointerId);
                     set_capture_to_target0 = true;
@@ -50,6 +52,8 @@
                     test_pointerEvent.step(function () {
                         assert_equals(target0.hasPointerCapture(e.pointerId), false,
                                       "after target0.releasePointerCapture, target0.hasPointerCapture should be false");
+                        assert_equals(target1.hasPointerCapture(e.pointerId), false,
+                                      "after target0.releasePointerCapture, target1.hasPointerCapture should be false");
                     });
                     target0.setPointerCapture(e.pointerId);
                     set_capture_to_target0 = true;
@@ -83,6 +87,13 @@
                         assert_equals(target0.hasPointerCapture(e.pointerId), false,
                                       "pointerup target0.hasPointerCapture should be false");
                     });
+                });
+
+                on_event(target1, "pointerup", function (e) {
+                    test_pointerEvent.step(function () {
+                        assert_equals(target1.hasPointerCapture(e.pointerId), false,
+                                      "pointerup target1.hasPointerCapture should be false");
+                    });
                     test_pointerEvent.done();
                 });
             }
@@ -101,8 +112,9 @@
 
 
 
-        <div id="target0" style="background:black"></div>
-        <div id="target1" style="background:yellow"></div>
+
+        <div id="target0" touch-action:none></div>
+        <div id="target1" touch-action:none></div>
         <div id="complete-notice">
             <p>The following pointer types were detected: <span id="pointertype-log"></span>.</p>
         </div>
