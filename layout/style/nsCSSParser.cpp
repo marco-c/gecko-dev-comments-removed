@@ -2116,62 +2116,71 @@ CSSParserImpl::ParseSourceSizeList(const nsAString& aBuffer,
   
   mHTMLMediaMode = aHTMLMode;
 
-  bool hitError = false;
-  for (;;) {
-    nsAutoPtr<nsMediaQuery> query;
-    nsCSSValue value;
-
-    bool hitStop;
-    if (!ParseMediaQuery(eMediaQuerySingleCondition, getter_Transfers(query),
-                         &hitStop)) {
-      NS_ASSERTION(!hitStop, "should return true when hit stop");
-      hitError = true;
-      break;
-    }
-
-    if (!query) {
-      REPORT_UNEXPECTED_EOF(PEParseSourceSizeListEOF);
-      NS_ASSERTION(hitStop,
-                   "should return hitStop or an error if returning no query");
-      hitError = true;
-      break;
-    }
-
-    if (hitStop) {
-      
-      
-      
-      query->SetNegated();
-    }
-
+  
+  bool hitEnd = false;
+  do {
+    bool hitError = false;
     
-    
-    
-    if (ParseNonNegativeVariant(value, VARIANT_LCALC, nullptr) !=
-        CSSParseResult::Ok) {
-      hitError = true;
-      break;
-    }
+    do {
+      nsAutoPtr<nsMediaQuery> query;
+      nsCSSValue value;
 
-    if (GetToken(true)) {
-      if (!mToken.IsSymbol(',')) {
-        REPORT_UNEXPECTED_TOKEN(PEParseSourceSizeListNotComma);
+      bool hitStop;
+      if (!ParseMediaQuery(eMediaQuerySingleCondition, getter_Transfers(query),
+                           &hitStop)) {
+        NS_ASSERTION(!hitStop, "should return true when hit stop");
         hitError = true;
         break;
       }
+
+      if (!query) {
+        REPORT_UNEXPECTED_EOF(PEParseSourceSizeListEOF);
+        NS_ASSERTION(hitStop,
+                     "should return hitStop or an error if returning no query");
+        hitError = true;
+        break;
+      }
+
+      if (hitStop) {
+        
+        
+        
+        query->SetNegated();
+      }
+
+      
+      
+      
+      if (ParseNonNegativeVariant(value, VARIANT_LCALC, nullptr) !=
+          CSSParseResult::Ok) {
+        hitError = true;
+        break;
+      }
+
+      if (GetToken(true)) {
+        if (!mToken.IsSymbol(',')) {
+          REPORT_UNEXPECTED_TOKEN(PEParseSourceSizeListNotComma);
+          hitError = true;
+          break;
+        }
+      } else {
+        hitEnd = true;
+      }
+
+      aQueries.AppendElement(query.forget());
+      aValues.AppendElement(value);
+    } while(0);
+
+    if (hitError) {
+      OUTPUT_ERROR();
+
+      
+      
+      if (!SkipUntil(',')) {
+        hitEnd = true;
+      }
     }
-
-    aQueries.AppendElement(query.forget());
-    aValues.AppendElement(value);
-  }
-
-  if (hitError) {
-    
-    
-    
-    
-    OUTPUT_ERROR();
-  }
+  } while (!hitEnd);
 
   CLEAR_ERROR();
   ReleaseScanner();
