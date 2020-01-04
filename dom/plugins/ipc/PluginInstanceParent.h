@@ -354,11 +354,6 @@ private:
 #if defined(OS_WIN)
 private:
     
-    bool SharedSurfaceSetWindow(const NPWindow* aWindow, NPRemoteWindow& aRemoteWindow);
-    void SharedSurfaceBeforePaint(RECT &rect, NPRemoteEvent& npremoteevent);
-    void SharedSurfaceAfterPaint(NPEvent* npevent);
-    void SharedSurfaceRelease();
-    
     static LRESULT CALLBACK PluginWindowHookProc(HWND hWnd, UINT message,
                                                  WPARAM wParam, LPARAM lParam);
     void SubclassPluginWindow(HWND aWnd);
@@ -368,7 +363,6 @@ private:
     void MaybeCreateChildPopupSurrogate();
 
 private:
-    gfx::SharedDIBWin  mSharedSurfaceDib;
     nsIntRect          mPluginPort;
     nsIntRect          mSharedSize;
     HWND               mPluginHWND;

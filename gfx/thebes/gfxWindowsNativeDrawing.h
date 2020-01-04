@@ -80,9 +80,6 @@ public:
     bool ShouldRenderAgain();
 
     
-    bool IsDoublePass();
-
-    
     void PaintToContext();
 
 private:

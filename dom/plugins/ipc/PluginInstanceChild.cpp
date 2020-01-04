@@ -189,9 +189,6 @@ PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
 #endif
 #endif 
 #if defined(OS_WIN)
-    memset(&mAlphaExtract, 0, sizeof(mAlphaExtract));
-#endif 
-#if defined(OS_WIN)
     InitPopupMenuHook();
     if (GetQuirks() & QUIRK_UNITY_FIXUP_MOUSE_CAPTURE) {
         SetUnityHooks();
@@ -821,21 +818,6 @@ PluginInstanceChild::AnswerNPP_HandleEvent(const NPRemoteEvent& event,
     if (WM_NULL == evcopy.event)
         return true;
 
-    
-    if (mWindow.type == NPWindowTypeDrawable) {
-       if (evcopy.event == WM_PAINT) {
-          *handled = SharedSurfacePaint(evcopy);
-          return true;
-       }
-       else if (DoublePassRenderingEvent() == evcopy.event) {
-            
-            
-            
-            mAlphaExtract.doublePass = RENDER_BACK_ONE;
-            *handled = true;
-            return true;
-       }
-    }
     *handled = WinlessHandleEvent(evcopy);
     return true;
 #endif
@@ -1294,13 +1276,6 @@ PluginInstanceChild::AnswerNPP_SetWindow(const NPRemoteWindow& aWindow)
               HookSetWindowLongPtr();
           }
       }
-      break;
-
-      case NPWindowTypeDrawable:
-          mWindow.type = aWindow.type;
-          if (GetQuirks() & QUIRK_FLASH_THROTTLE_WMUSER_EVENTS)
-              SetupFlashMsgThrottle();
-          return SharedSurfaceSetWindow(aWindow);
       break;
 
       default:
@@ -2022,187 +1997,6 @@ PluginInstanceChild::WinlessHandleEvent(NPEvent& event)
     }
 
     return handled;
-}
-
-
-
-bool
-PluginInstanceChild::SharedSurfaceSetWindow(const NPRemoteWindow& aWindow)
-{
-    
-    
-    
-    if (!aWindow.surfaceHandle) {
-        if (!mSharedSurfaceDib.IsValid()) {
-            return false;
-        }
-    }
-    else {
-        
-        if (NS_FAILED(mSharedSurfaceDib.Attach((SharedDIB::Handle)aWindow.surfaceHandle,
-                                               aWindow.width, aWindow.height, false)))
-          return false;
-        
-        
-        AlphaExtractCacheRelease();
-    }
-      
-    
-    mWindow.x      = aWindow.x;
-    mWindow.y      = aWindow.y;
-    mWindow.width  = aWindow.width;
-    mWindow.height = aWindow.height;
-    mWindow.type   = aWindow.type;
-
-    mWindow.window = reinterpret_cast<void*>(mSharedSurfaceDib.GetHDC());
-    ::SetViewportOrgEx(mSharedSurfaceDib.GetHDC(),
-                       -aWindow.x, -aWindow.y, nullptr);
-
-    if (mPluginIface->setwindow)
-        mPluginIface->setwindow(&mData, &mWindow);
-
-    return true;
-}
-
-void
-PluginInstanceChild::SharedSurfaceRelease()
-{
-    mSharedSurfaceDib.Close();
-    AlphaExtractCacheRelease();
-}
-
-
-
- 
-bool
-PluginInstanceChild::AlphaExtractCacheSetup()
-{
-    AlphaExtractCacheRelease();
-
-    mAlphaExtract.hdc = ::CreateCompatibleDC(nullptr);
-
-    if (!mAlphaExtract.hdc)
-        return false;
-
-    BITMAPINFOHEADER bmih;
-    memset((void*)&bmih, 0, sizeof(BITMAPINFOHEADER));
-    bmih.biSize        = sizeof(BITMAPINFOHEADER);
-    bmih.biWidth       = mWindow.width;
-    bmih.biHeight      = mWindow.height;
-    bmih.biPlanes      = 1;
-    bmih.biBitCount    = 32;
-    bmih.biCompression = BI_RGB;
-
-    void* ppvBits = nullptr;
-    mAlphaExtract.bmp = ::CreateDIBSection(mAlphaExtract.hdc,
-                                           (BITMAPINFO*)&bmih,
-                                           DIB_RGB_COLORS,
-                                           (void**)&ppvBits,
-                                           nullptr,
-                                           (unsigned long)sizeof(BITMAPINFOHEADER));
-    if (!mAlphaExtract.bmp)
-      return false;
-
-    DeleteObject(::SelectObject(mAlphaExtract.hdc, mAlphaExtract.bmp));
-    return true;
-}
-
-void
-PluginInstanceChild::AlphaExtractCacheRelease()
-{
-    if (mAlphaExtract.bmp)
-        ::DeleteObject(mAlphaExtract.bmp);
-
-    if (mAlphaExtract.hdc)
-        ::DeleteObject(mAlphaExtract.hdc);
-
-    mAlphaExtract.bmp = nullptr;
-    mAlphaExtract.hdc = nullptr;
-}
-
-void
-PluginInstanceChild::UpdatePaintClipRect(RECT* aRect)
-{
-    if (aRect) {
-        
-        HRGN clip = ::CreateRectRgnIndirect(aRect);
-        ::SelectClipRgn(mSharedSurfaceDib.GetHDC(), clip);
-        ::DeleteObject(clip);
-    }
-}
-
-int16_t
-PluginInstanceChild::SharedSurfacePaint(NPEvent& evcopy)
-{
-    if (!mPluginIface->event)
-        return false;
-
-    RECT* pRect = reinterpret_cast<RECT*>(evcopy.lParam);
-
-    switch(mAlphaExtract.doublePass) {
-        case RENDER_NATIVE:
-            
-            UpdatePaintClipRect(pRect);
-            evcopy.wParam = WPARAM(mSharedSurfaceDib.GetHDC());
-            return mPluginIface->event(&mData, reinterpret_cast<void*>(&evcopy));
-        break;
-        case RENDER_BACK_ONE:
-              
-              
-              
-              
-              
-              if (!mAlphaExtract.bmp && !AlphaExtractCacheSetup()) {
-                  mAlphaExtract.doublePass = RENDER_NATIVE;
-                  return false;
-              }
-
-              
-              UpdatePaintClipRect(pRect);
-              ::FillRect(mSharedSurfaceDib.GetHDC(), pRect, (HBRUSH)GetStockObject(WHITE_BRUSH));
-              evcopy.wParam = WPARAM(mSharedSurfaceDib.GetHDC());
-              if (!mPluginIface->event(&mData, reinterpret_cast<void*>(&evcopy))) {
-                  mAlphaExtract.doublePass = RENDER_NATIVE;
-                  return false;
-              }
-
-              
-              
-              ::BitBlt(mAlphaExtract.hdc,
-                       pRect->left,
-                       pRect->top,
-                       pRect->right - pRect->left,
-                       pRect->bottom - pRect->top,
-                       mSharedSurfaceDib.GetHDC(),
-                       pRect->left,
-                       pRect->top,
-                       SRCCOPY);
-
-              ::FillRect(mSharedSurfaceDib.GetHDC(), pRect, (HBRUSH)GetStockObject(BLACK_BRUSH));
-              if (!mPluginIface->event(&mData, reinterpret_cast<void*>(&evcopy))) {
-                  mAlphaExtract.doublePass = RENDER_NATIVE;
-                  return false;
-              }
-              mAlphaExtract.doublePass = RENDER_BACK_TWO;
-              return true;
-        break;
-        case RENDER_BACK_TWO:
-              
-              UpdatePaintClipRect(pRect);
-              ::BitBlt(mSharedSurfaceDib.GetHDC(),
-                       pRect->left,
-                       pRect->top,
-                       pRect->right - pRect->left,
-                       pRect->bottom - pRect->top,
-                       mAlphaExtract.hdc,
-                       pRect->left,
-                       pRect->top,
-                       SRCCOPY);
-              mAlphaExtract.doublePass = RENDER_NATIVE;
-              return true;
-        break;
-    }
-    return false;
 }
 
 
@@ -4049,7 +3843,6 @@ PluginInstanceChild::Destroy()
     mCachedElementActor = nullptr;
 
 #if defined(OS_WIN)
-    SharedSurfaceRelease();
     DestroyWinlessPopupSurrogate();
     UnhookWinlessFlashThrottle();
     DestroyPluginWindow();
