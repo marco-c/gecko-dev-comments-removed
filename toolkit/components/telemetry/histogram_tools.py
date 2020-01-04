@@ -3,6 +3,7 @@
 
 
 import collections
+import itertools
 import json
 import math
 import os
@@ -295,7 +296,8 @@ associated with the histogram.  Returns None if no guarding is necessary."""
     def check_whitelistable_fields(self, name, definition):
         
         
-        if self._is_use_counter:
+        
+        if self._is_use_counter or not self._strict_type_checks:
             return
 
         
@@ -305,6 +307,9 @@ associated with the histogram.  Returns None if no guarding is necessary."""
         for field in ['alert_emails', 'bug_numbers']:
             if field not in definition and name not in whitelists[field]:
                 raise KeyError, 'New histogram "%s" must have a %s field.' % (name, field)
+            if field in definition and name in whitelists[field]:
+                msg = 'Should remove histogram "%s" from the whitelist for "%s" in histogram-whitelists.json'
+                raise KeyError, msg % (name, field)
 
     def check_field_types(self, name, definition):
         
@@ -489,6 +494,14 @@ the histograms defined in filenames.
         n_counters = upper_bound - lower_bound + 1
         if n_counters != len(use_counter_indices):
             raise DefinitionException, "use counter histograms must be defined in a contiguous block"
+
+    
+    if whitelists is not None:
+        all_whitelist_entries = itertools.chain.from_iterable(whitelists.itervalues())
+        orphaned = set(all_whitelist_entries) - set(all_histograms.keys())
+        if len(orphaned) > 0:
+            msg = 'The following entries are orphaned and should be removed from histogram-whitelists.json: %s'
+            raise BaseException, msg % (', '.join(sorted(orphaned)))
 
     for (name, definition) in all_histograms.iteritems():
         yield Histogram(name, definition, strict_type_checks=True)
