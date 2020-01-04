@@ -876,7 +876,7 @@ StackFrames.prototype = {
       
       scope.descriptorTooltip = false;
       scope.contextMenuId = "debuggerWatchExpressionsContextMenu";
-      scope.separatorStr = L10N.getStr("watchExpressionsSeparatorLabel");
+      scope.separatorStr = L10N.getStr("watchExpressionsSeparatorLabel2");
       scope.switch = DebuggerView.WatchExpressions.switchExpression;
       scope.delete = DebuggerView.WatchExpressions.deleteExpression;
 
