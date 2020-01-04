@@ -2127,8 +2127,11 @@ GetPropertyIC::update(JSContext* cx, HandleScript outerScript, size_t cacheIndex
     
     
     bool emitted = false;
-    if (!cache.tryAttachStub(cx, outerScript, ion, obj, idval, &emitted))
-        return false;
+    if (!cache.isDisabled()) {
+        if (!cache.tryAttachStub(cx, outerScript, ion, obj, idval, &emitted))
+            return false;
+        cache.maybeDisable(emitted);
+    }
 
     if (cache.idempotent() && !emitted) {
         
@@ -2203,6 +2206,20 @@ IonCache::disable()
 {
     reset(Reprotect);
     this->disabled_ = 1;
+}
+
+void
+GetPropertyIC::maybeDisable(bool emitted)
+{
+    if (emitted) {
+        failedUpdates_ = 0;
+        return;
+    }
+
+    if (!canAttachStub() || (stubCount_ == 0 && failedUpdates_ > MAX_FAILED_UPDATES)) {
+        JitSpew(JitSpew_IonIC, "Disable inline cache");
+        disable();
+    }
 }
 
 void
