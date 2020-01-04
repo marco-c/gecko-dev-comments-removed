@@ -226,64 +226,22 @@ function TriggerPromiseReactions(reactions, argument) {
 
 
 function EnqueuePromiseReactionJob(reaction, argument) {
-    _EnqueuePromiseJob(reaction.capabilities.promise, function PromiseReactionJob() {
-        
-        assert(IsPromiseReaction(reaction), "Invalid promise reaction record");
-
-        
-        let promiseCapability = reaction.capabilities;
-
-        
-        let handler = reaction.handler;
-        let handlerResult = argument;
-        let shouldReject = false;
-
-        
-        if (handler === PROMISE_HANDLER_IDENTITY) {
-            
-        } else if (handler === PROMISE_HANDLER_THROWER) {
-            
-            shouldReject = true;
-        } else {
-            try {
-                handlerResult = callContentFunction(handler, undefined, argument);
-            } catch (e) {
-                handlerResult = e;
-                shouldReject = true;
-            }
-        }
-
-        
-        if (shouldReject) {
-            
-            callContentFunction(promiseCapability.reject, undefined, handlerResult);
-
-            
-            return;
-        }
-
-        
-        return callContentFunction(promiseCapability.resolve, undefined, handlerResult);
-    });
+    let capabilities = reaction.capabilities;
+    _EnqueuePromiseReactionJob([reaction.handler,
+                                argument,
+                                capabilities.resolve,
+                                capabilities.reject
+                               ],
+                               capabilities.promise);
 }
 
 
 function EnqueuePromiseResolveThenableJob(promiseToResolve, thenable, then) {
-    _EnqueuePromiseJob(promiseToResolve, function PromiseResolveThenableJob() {
-        
-        let {0: resolve, 1: reject} = CreateResolvingFunctions(promiseToResolve);
-
-        
-        try {
-            
-            callContentFunction(then, thenable, resolve, reject);
-        } catch (thenCallResult) {
-            
-            callFunction(reject, undefined, thenCallResult);
-        }
-
-        
-    });
+    _EnqueuePromiseResolveThenableJob([then,
+                                       thenable,
+                                       promiseToResolve
+                                      ],
+                                      promiseToResolve);
 }
 
 

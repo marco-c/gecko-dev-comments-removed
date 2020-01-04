@@ -72,6 +72,12 @@ class PromiseObject : public NativeObject
     }
 };
 
+
+bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
+
+
+bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp);
+
 } 
 
 #endif 

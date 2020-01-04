@@ -14,6 +14,7 @@
 #include "gc/Heap.h"
 #include "js/Date.h"
 #include "js/Debug.h"
+#include "vm/SelfHosting.h"
 
 #include "jsobjinlines.h"
 
@@ -44,6 +45,32 @@ static Value
 Now()
 {
     return JS::TimeValue(JS::TimeClip(static_cast<double>(PRMJ_Now()) / PRMJ_USEC_PER_MSEC));
+}
+
+static bool
+CreateResolvingFunctions(JSContext* cx, HandleValue promise,
+                         MutableHandleValue resolveVal,
+                         MutableHandleValue rejectVal)
+{
+    FixedInvokeArgs<1> args(cx);
+    args[0].set(promise);
+
+    RootedValue rval(cx);
+
+    if (!CallSelfHostedFunction(cx, cx->names().CreateResolvingFunctions, UndefinedHandleValue,
+                                args, &rval))
+    {
+        return false;
+    }
+
+    RootedArrayObject resolvingFunctions(cx, &args.rval().toObject().as<ArrayObject>());
+    resolveVal.set(resolvingFunctions->getDenseElement(0));
+    rejectVal.set(resolvingFunctions->getDenseElement(1));
+
+    MOZ_ASSERT(IsCallable(resolveVal));
+    MOZ_ASSERT(IsCallable(rejectVal));
+
+    return true;
 }
 
 
@@ -119,30 +146,10 @@ PromiseObject::create(JSContext* cx, HandleObject executor, HandleObject proto )
     
     
     
-    RootedValue resolvingFunctionsVal(cx);
-    if (!GlobalObject::getIntrinsicValue(cx, cx->global(), cx->names().CreateResolvingFunctions,
-                                         &resolvingFunctionsVal))
-    {
+    RootedValue resolveVal(cx);
+    RootedValue rejectVal(cx);
+    if (!CreateResolvingFunctions(cx, promiseVal, &resolveVal, &rejectVal))
         return nullptr;
-    }
-
-    RootedArrayObject resolvingFunctions(cx);
-    {
-        FixedInvokeArgs<1> args(cx);
-
-        args[0].set(promiseVal);
-
-        RootedValue rval(cx);
-        if (!Call(cx, resolvingFunctionsVal, UndefinedHandleValue, args, &rval))
-            return nullptr;
-
-        resolvingFunctions = &rval.toObject().as<ArrayObject>();
-    }
-
-    RootedValue resolveVal(cx, resolvingFunctions->getDenseElement(0));
-    MOZ_ASSERT(IsCallable(resolveVal));
-    RootedValue rejectVal(cx, resolvingFunctions->getDenseElement(1));
-    MOZ_ASSERT(IsCallable(rejectVal));
 
     
     if (wrappedProto) {
@@ -420,6 +427,101 @@ void PromiseObject::onSettled(JSContext* cx)
     }
 
     JS::dbg::onPromiseSettled(cx, promise);
+}
+
+
+bool
+PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    RootedFunction job(cx, &args.callee().as<JSFunction>());
+    RootedNativeObject jobArgs(cx, &job->getExtendedSlot(0).toObject().as<NativeObject>());
+
+    RootedValue argument(cx, jobArgs->getDenseElement(1));
+
+    
+
+    
+    RootedValue handlerVal(cx, jobArgs->getDenseElement(0));
+    RootedValue handlerResult(cx);
+    bool shouldReject = false;
+
+    
+    if (handlerVal.isNumber()) {
+        int32_t handlerNum = int32_t(handlerVal.toNumber());
+        
+        if (handlerNum == PROMISE_HANDLER_IDENTITY) {
+            handlerResult = argument;
+        } else {
+            
+            MOZ_ASSERT(handlerNum == PROMISE_HANDLER_THROWER);
+            shouldReject = true;
+            handlerResult = argument;
+        }
+    } else {
+        
+        FixedInvokeArgs<1> args2(cx);
+        args2[0].set(argument);
+        if (!Call(cx, handlerVal, UndefinedHandleValue, args2, &handlerResult)) {
+            shouldReject = true;
+            
+            
+            if (!cx->isExceptionPending() || !GetAndClearException(cx, &handlerResult))
+                return false;
+        }
+    }
+
+    
+    FixedInvokeArgs<1> args2(cx);
+    args2[0].set(handlerResult);
+    RootedValue calleeOrRval(cx);
+    if (shouldReject) {
+        calleeOrRval = jobArgs->getDenseElement(3);
+    } else {
+        calleeOrRval = jobArgs->getDenseElement(2);
+    }
+    bool result = Call(cx, calleeOrRval, UndefinedHandleValue, args2, &calleeOrRval);
+
+    args.rval().set(calleeOrRval);
+    return result;
+}
+
+
+bool
+PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    RootedFunction job(cx, &args.callee().as<JSFunction>());
+    RootedNativeObject jobArgs(cx, &job->getExtendedSlot(0).toObject().as<NativeObject>());
+
+    RootedValue promise(cx, jobArgs->getDenseElement(2));
+    RootedValue then(cx, jobArgs->getDenseElement(0));
+    RootedValue thenable(cx, jobArgs->getDenseElement(1));
+
+    
+    RootedValue resolveVal(cx);
+    RootedValue rejectVal(cx);
+    if (!CreateResolvingFunctions(cx, promise, &resolveVal, &rejectVal))
+        return false;
+
+    
+    FixedInvokeArgs<2> args2(cx);
+    args2[0].set(resolveVal);
+    args2[1].set(rejectVal);
+
+    RootedValue rval(cx);
+
+    
+    if (Call(cx, then, thenable, args2, &rval))
+        return true;
+
+    if (!GetAndClearException(cx, &rval))
+        return false;
+
+    FixedInvokeArgs<1> rejectArgs(cx);
+    rejectArgs[0].set(rval);
+
+    return Call(cx, rejectVal, UndefinedHandleValue, rejectArgs, &rval);
 }
 
 } 
