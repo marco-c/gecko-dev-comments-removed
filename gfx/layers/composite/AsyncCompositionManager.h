@@ -119,6 +119,24 @@ public:
   
   void GetFrameUniformity(FrameUniformityData* aFrameUniformityData);
 
+  
+  
+  
+  
+  struct ClipParts {
+    Maybe<ParentLayerIntRect> mFixedClip;
+    Maybe<ParentLayerIntRect> mScrolledClip;
+
+    Maybe<ParentLayerIntRect> Intersect() const {
+      return IntersectMaybeRects(mFixedClip, mScrolledClip);
+    }
+
+    bool IsSome() const {
+      return mFixedClip.isSome() || mScrolledClip.isSome();
+    }
+  };
+
+  typedef std::map<Layer*, ClipParts> ClipPartsCache;
 private:
   void TransformScrollableLayer(Layer* aLayer);
   
@@ -127,9 +145,12 @@ private:
   
   
   
+  
+  
   bool ApplyAsyncContentTransformToTree(Layer* aLayer,
                                         bool* aOutFoundRoot,
-                                        Maybe<ParentLayerIntRect>& aClipDeferredToParent);
+                                        Maybe<ParentLayerIntRect>& aClipDeferredToParent,
+                                        ClipPartsCache& aClipPartsCache);
   
 
 
@@ -175,12 +196,15 @@ private:
 
 
 
+
+
   void AlignFixedAndStickyLayers(Layer* aLayer, Layer* aTransformedSubtreeRoot,
                                  FrameMetrics::ViewID aTransformScrollId,
                                  const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
                                  const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
                                  const ScreenMargin& aFixedLayerMargins,
-                                 bool aTransformAffectsLayerClip);
+                                 bool aTransformAffectsLayerClip,
+                                 ClipPartsCache* aClipPartsCache);
 
   
 
