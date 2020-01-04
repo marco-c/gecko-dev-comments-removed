@@ -1991,6 +1991,13 @@ ContentParent::RecvDeallocateLayerTreeId(const uint64_t& aId)
 
 namespace {
 
+void
+DelayedDeleteSubprocess(GeckoChildProcessHost* aSubprocess)
+{
+  RefPtr<DeleteTask<GeckoChildProcessHost>> task = new DeleteTask<GeckoChildProcessHost>(aSubprocess);
+  XRE_GetIOMessageLoop()->PostTask(task.forget());
+}
+
 
 
 
@@ -2122,10 +2129,9 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
   }
   mIdleListeners.Clear();
 
-  if (mSubprocess) {
-    mSubprocess->DissociateActor();
-    mSubprocess = nullptr;
-  }
+  MessageLoop::current()->
+    PostTask(NewRunnableFunction(DelayedDeleteSubprocess, mSubprocess));
+  mSubprocess = nullptr;
 
   
   
@@ -3321,7 +3327,7 @@ ContentParent::AllocPCompositorBridgeParent(mozilla::ipc::Transport* aTransport,
                                             base::ProcessId aOtherProcess)
 {
   return GPUProcessManager::Get()->CreateTabCompositorBridge(
-    aTransport, aOtherProcess, mSubprocess);
+    aTransport, aOtherProcess);
 }
 
 gfx::PVRManagerParent*
@@ -3335,7 +3341,7 @@ PImageBridgeParent*
 ContentParent::AllocPImageBridgeParent(mozilla::ipc::Transport* aTransport,
                                        base::ProcessId aOtherProcess)
 {
-  return ImageBridgeParent::Create(aTransport, aOtherProcess, mSubprocess);
+  return ImageBridgeParent::Create(aTransport, aOtherProcess);
 }
 
 PBackgroundParent*

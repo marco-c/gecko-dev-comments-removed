@@ -70,8 +70,7 @@ public:
 
   layers::PCompositorBridgeParent* CreateTabCompositorBridge(
     ipc::Transport* aTransport,
-    base::ProcessId aOtherProcess,
-    ipc::GeckoChildProcessHost* aSubprocess);
+    base::ProcessId aOtherProcess);
 
   
   

@@ -68,7 +68,6 @@
 #endif
 #include "GeckoProfiler.h"
 #include "mozilla/ipc/ProtocolTypes.h"
-#include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/unused.h"
 #include "mozilla/Hal.h"
 #include "mozilla/HalTypes.h"
@@ -1819,7 +1818,6 @@ public:
   explicit CrossProcessCompositorBridgeParent(Transport* aTransport)
     : CompositorBridgeParentIPCAllocator("CrossProcessCompositorBridgeParent")
     , mTransport(aTransport)
-    , mSubprocess(nullptr)
     , mNotifyAfterRemotePaint(false)
     , mDestroyCalled(false)
   {
@@ -1998,7 +1996,6 @@ private:
   
   RefPtr<CrossProcessCompositorBridgeParent> mSelfRef;
   Transport* mTransport;
-  ipc::GeckoChildProcessHost* mSubprocess;
 
   RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
   
@@ -2158,17 +2155,12 @@ OpenCompositor(CrossProcessCompositorBridgeParent* aCompositor,
 }
 
  PCompositorBridgeParent*
-CompositorBridgeParent::Create(Transport* aTransport, ProcessId aOtherPid, GeckoChildProcessHost* aProcessHost)
+CompositorBridgeParent::Create(Transport* aTransport, ProcessId aOtherPid)
 {
   gfxPlatform::InitLayersIPC();
 
   RefPtr<CrossProcessCompositorBridgeParent> cpcp =
     new CrossProcessCompositorBridgeParent(aTransport);
-
-  if (aProcessHost) {
-    cpcp->mSubprocess = aProcessHost;
-    aProcessHost->AssociateActor();
-  }
 
   cpcp->mSelfRef = cpcp;
   CompositorLoop()->PostTask(
@@ -2276,11 +2268,6 @@ CrossProcessCompositorBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   RefPtr<CompositorLRU> lru = CompositorLRU::GetSingleton();
   lru->Remove(this);
-
-  if (mSubprocess) {
-    mSubprocess->DissociateActor();
-    mSubprocess = nullptr;
-  }
 
   
   
@@ -2758,7 +2745,7 @@ CrossProcessCompositorBridgeParent::CloneToplevel(
       Transport* transport = OpenDescriptor(aFds[i].fd(),
                                             Transport::MODE_SERVER);
       PCompositorBridgeParent* compositor =
-        CompositorBridgeParent::Create(transport, base::GetProcId(aPeerProcess), mSubprocess);
+        CompositorBridgeParent::Create(transport, base::GetProcId(aPeerProcess));
       compositor->CloneManagees(this, aCtx);
       compositor->IToplevelProtocol::SetTransport(transport);
       

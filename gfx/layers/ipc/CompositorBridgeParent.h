@@ -51,7 +51,6 @@ class GPUProcessManager;
 } 
 
 namespace ipc {
-class GeckoChildProcessHost;
 class Shmem;
 } 
 
@@ -400,7 +399,7 @@ public:
 
 
   static PCompositorBridgeParent*
-  Create(Transport* aTransport, ProcessId aOtherProcess, mozilla::ipc::GeckoChildProcessHost* aProcessHost);
+  Create(Transport* aTransport, ProcessId aOtherProcess);
 
   struct LayerTreeState {
     LayerTreeState();

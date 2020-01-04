@@ -28,7 +28,6 @@ class Thread;
 namespace mozilla {
 namespace ipc {
 class Shmem;
-class GeckoChildProcessHost;
 } 
 
 namespace layers {
@@ -55,7 +54,7 @@ public:
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   static PImageBridgeParent*
-  Create(Transport* aTransport, ProcessId aChildProcessId, ipc::GeckoChildProcessHost* aProcessHost);
+  Create(Transport* aTransport, ProcessId aChildProcessId);
 
   
   virtual void SendAsyncMessage(const InfallibleTArray<AsyncParentMessageData>& aMessage) override;
@@ -154,8 +153,6 @@ private:
 
   bool mSetChildThreadPriority;
   bool mClosed;
-
-  ipc::GeckoChildProcessHost* mSubprocess;
 
   
 

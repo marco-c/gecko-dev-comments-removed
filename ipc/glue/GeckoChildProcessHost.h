@@ -12,7 +12,6 @@
 #include "base/waitable_event.h"
 #include "chrome/common/child_process_host.h"
 
-#include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/Monitor.h"
@@ -128,14 +127,6 @@ public:
   
   void SetAlreadyDead();
 
-  
-  
-  void AssociateActor() { mAssociatedActors++; }
-
-  
-  
-  void DissociateActor();
-
   static void EnableSameExecutableForContentProc() { sRunSelfAsContentProc = true; }
 
 protected:
@@ -217,10 +208,6 @@ private:
   
   
   std::queue<IPC::Message> mQueue;
-
-  
-  
-  Atomic<int32_t> mAssociatedActors;
 
   
   
