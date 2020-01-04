@@ -547,8 +547,13 @@ public:
 
     case __NR_readlink:
     case __NR_readlinkat:
+#ifdef DESKTOP
+      
+      return Allow();
+#else
       
       return Error(EINVAL);
+#endif
 
     CASES_FOR_select:
     case __NR_pselect6:
