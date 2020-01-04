@@ -46,7 +46,6 @@
 #include "nsIWidget.h"                  
 #include "gfxVR.h"
 #include "ImageContainer.h"
-#include "LayerUserData.h"              
 
 class gfxContext;
 
@@ -103,6 +102,9 @@ class LayersPacket;
 #define MOZ_LAYER_DECL_NAME(n, e)                              \
   virtual const char* Name() const override { return n; }  \
   virtual LayerType GetType() const override { return e; }
+
+
+class LayerUserData;
 
 
 
