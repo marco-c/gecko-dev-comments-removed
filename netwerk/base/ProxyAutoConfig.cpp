@@ -620,7 +620,7 @@ class JSRuntimeWrapper
   }
 
 private:
-  static const unsigned sRuntimeHeapSize = 2 << 20;
+  static const unsigned sRuntimeHeapSize = 4 << 20; 
 
   JSRuntime *mRuntime;
   JSContext *mContext;
