@@ -3,10 +3,10 @@
 
 
 
-var {ViewHelpers} = Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm", {});
+var { PrefsHelper } = require("devtools/client/shared/prefs");
 
 function test() {
-  let Prefs = new ViewHelpers.Prefs("devtools.debugger", {
+  let Prefs = new PrefsHelper("devtools.debugger", {
     "foo": ["Bool", "enabled"]
   });
 
