@@ -558,6 +558,10 @@ pref("layers.low-precision-opacity", "1.0");
 
 pref("layers.max-active", 20);
 
+
+
+pref("dom.mouseEvent.offsetXY.enabled", false);
+
 pref("notification.feature.enabled", true);
 pref("dom.webnotifications.enabled", true);
 
@@ -1022,3 +1026,5 @@ pref("dom.ipc.systemMessageCPULockTimeoutSec", 30);
 pref("dom.wakelock.enabled", true);
 
 pref("dom.webcomponents.enabled", true);
+
+pref("layout.css.scroll-snap.enabled", true);
