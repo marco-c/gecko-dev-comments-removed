@@ -51,9 +51,9 @@ function run_test()
 
   
 
+  log_("first set of opens");
   var i;
   for (i = 0; i < kENTRYCOUNT; ++i) {
-    log_("first set of opens");
 
     
     mc.add();
@@ -100,7 +100,9 @@ function run_test()
       
       
       
+      log_("resuming");
       testingInterface.resumeCacheIOThread();
+      log_("resumed");
 
       mc.fired(); 
     }
