@@ -296,12 +296,12 @@ js::intrinsic_NewDenseArray(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-    
-    if (!args[0].isInt32()) {
-        JS_ReportError(cx, "Expected int32 as second argument");
-        return false;
-    }
-    uint32_t length = args[0].toInt32();
+    double lengthDouble = args[0].toNumber();
+    MOZ_ASSERT(lengthDouble >= 0);
+    MOZ_ASSERT(lengthDouble < INT32_MAX);
+    MOZ_ASSERT(uint32_t(lengthDouble) == lengthDouble);
+
+    uint32_t length = uint32_t(lengthDouble);
 
     
     RootedObject buffer(cx, NewFullyAllocatedArrayForCallingAllocationSite(cx, length));
