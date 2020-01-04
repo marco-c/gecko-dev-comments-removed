@@ -29,8 +29,8 @@ typedef pid_t ProcessId;
 class Process {
  public:
   Process() : process_(0), last_working_set_size_(0) {}
-  explicit Process(ProcessHandle handle) :
-    process_(handle), last_working_set_size_(0) {}
+  explicit Process(ProcessHandle aHandle) :
+    process_(aHandle), last_working_set_size_(0) {}
 
   
   static Process Current();
@@ -38,7 +38,7 @@ class Process {
   
   
   ProcessHandle handle() const { return process_; }
-  void set_handle(ProcessHandle handle) { process_ = handle; }
+  void set_handle(ProcessHandle aHandle) { process_ = aHandle; }
 
   
   ProcessId pid() const;

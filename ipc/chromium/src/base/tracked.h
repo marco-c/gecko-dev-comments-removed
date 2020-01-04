@@ -39,10 +39,10 @@ class Location {
   
   
   
-  Location(const char* function_name, const char* file_name, int line_number)
-      : function_name_(function_name),
-        file_name_(file_name),
-        line_number_(line_number) { }
+  Location(const char* aFunctionName, const char* aFilename, int aLineNumber)
+      : function_name_(aFunctionName),
+        file_name_(aFilename),
+        line_number_(aLineNumber) { }
 
   
   Location()
