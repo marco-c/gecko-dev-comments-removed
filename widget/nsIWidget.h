@@ -1318,9 +1318,13 @@ class nsIWidget : public nsISupports {
 
 
 
+    virtual void CleanupRemoteDrawing() = 0;
+
+    
 
 
-    virtual bool InitCompositor(mozilla::layers::Compositor*) { return true; }
+    virtual already_AddRefed<mozilla::gfx::DrawTarget> CreateBackBufferDrawTarget(mozilla::gfx::DrawTarget* aScreenTarget,
+                                                                                  const LayoutDeviceIntRect& aRect) = 0;
 
     
 
@@ -1328,7 +1332,9 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual void CleanupRemoteDrawing() = 0;
+
+
+    virtual bool InitCompositor(mozilla::layers::Compositor*) { return true; }
 
     
 
