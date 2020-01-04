@@ -4,6 +4,9 @@
 
 
 
+"use strict";
+
+
 const CHROME_URL = "chrome://mochitests/content/browser/devtools/client/framework/test/";
 
 var toolbox;
@@ -14,8 +17,8 @@ add_task(function* themeRegistration() {
   toolbox = yield gDevTools.showToolbox(target, "options");
 
   let themeId = yield new Promise(resolve => {
-    gDevTools.once("theme-registered", (e, themeId) => {
-      resolve(themeId);
+    gDevTools.once("theme-registered", (e, registeredThemeId) => {
+      resolve(registeredThemeId);
     });
 
     gDevTools.registerTheme({
@@ -79,7 +82,8 @@ add_task(function* themeUnregistration() {
   gDevTools.unregisterTheme("test-theme");
   yield onUnRegisteredTheme;
 
-  ok(!gDevTools.getThemeDefinitionMap().has("test-theme"), "theme removed from map");
+  ok(!gDevTools.getThemeDefinitionMap().has("test-theme"),
+    "theme removed from map");
 
   let panelWin = toolbox.getCurrentPanel().panelWin;
   let doc = panelWin.frameElement.contentDocument;
