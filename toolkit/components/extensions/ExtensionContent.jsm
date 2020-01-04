@@ -247,8 +247,12 @@ function ExtensionContext(extensionId, contentWindow) {
 
   let url = contentWindow.location.href;
   let broker = ExtensionContent.getBroker(mm);
-  this.messenger = new Messenger(this, broker, {id: extensionId, frameId, url},
-                                 {id: extensionId, frameId}, delegate);
+  
+  let sender = {id: this.extension.uuid, frameId, url};
+  
+  
+  let filter = {extensionId, frameId};
+  this.messenger = new Messenger(this, broker, sender, filter, delegate);
 
   let chromeObj = Cu.createObjectIn(this.sandbox, {defineAs: "browser"});
 

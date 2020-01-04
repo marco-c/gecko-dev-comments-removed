@@ -220,14 +220,18 @@ ExtensionPage = function(extension, params) {
 
   
   
-  let sender = {id: extension.id};
+  let sender = {id: extension.uuid};
   if (uri) {
     sender.url = uri.spec;
   }
-  let delegate = {};
+  let delegate = {
+    getSender() {},
+  };
   Management.emit("page-load", this, params, sender, delegate);
 
-  let filter = {id: extension.id};
+  
+  
+  let filter = {extensionId: extension.id};
   this.messenger = new Messenger(this, globalBroker, sender, filter, delegate);
 
   this.extension.views.add(this);
