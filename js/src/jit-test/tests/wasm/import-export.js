@@ -275,6 +275,18 @@ var e = new Instance(new Module(code), {a:{b:tbl}}).exports;
 assertEq(tbl, e.foo);
 assertEq(tbl, e.bar);
 
+var code = textToBinary('(module (import "a" "b" (table 2 2)) (func $foo) (elem (i32.const 0) $foo) (export "foo" $foo))');
+var tbl = new Table({initial:2, element:"anyfunc"});
+var e1 = new Instance(new Module(code), {a:{b:tbl}}).exports;
+assertEq(e1.foo, tbl.get(0));
+tbl.set(1, e1.foo);
+assertEq(e1.foo, tbl.get(1));
+var e2 = new Instance(new Module(code), {a:{b:tbl}}).exports;
+assertEq(e2.foo, tbl.get(0));
+assertEq(e1.foo, tbl.get(1));
+assertEq(tbl.get(0) === e1.foo, false);
+assertEq(e1.foo === e2.foo, false);
+
 
 
 assertErrorMessage(() => new Module(textToBinary('(module (export "a" 0))')), TypeError, /exported function index out of bounds/);
