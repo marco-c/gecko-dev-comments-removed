@@ -3017,7 +3017,8 @@ MaybeCallMethod(JSContext* cx, HandleObject obj, HandleId id, MutableHandleValue
         vp.setObject(*obj);
         return true;
     }
-    return Invoke(cx, ObjectValue(*obj), vp, 0, nullptr, vp);
+
+    return js::Call(cx, vp, obj, vp);
 }
 
 static bool
@@ -3133,12 +3134,13 @@ js::ToPrimitiveSlow(JSContext* cx, JSType preferredType, MutableHandleValue vp)
             return ReportCantConvert(cx, JSMSG_TOPRIMITIVE_NOT_CALLABLE, obj, preferredType);
 
         
-        RootedValue hint(cx, StringValue(preferredType == JSTYPE_STRING ? cx->names().string :
-                                         preferredType == JSTYPE_NUMBER ? cx->names().number :
-                                         cx->names().default_));
+        RootedValue arg0(cx, StringValue(preferredType == JSTYPE_STRING
+                                         ? cx->names().string
+                                         : preferredType == JSTYPE_NUMBER
+                                         ? cx->names().number
+                                         : cx->names().default_));
 
-        
-        if (!Invoke(cx, vp, method, 1, hint.address(), vp))
+        if (!js::Call(cx, method, vp, arg0, vp))
             return false;
 
         
