@@ -993,6 +993,13 @@ OPCODE_LIST(EMIT_OP)
         }
 
         
+        
+        if (pc == script->main() && !BytecodeIsJumpTarget(op)) {
+            if (!emit_JSOP_JUMPTARGET())
+                return Method_Error;
+        }
+
+        
         pc += GetBytecodeLength(pc);
         if (pc >= script->codeEnd())
             break;
