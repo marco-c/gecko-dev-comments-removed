@@ -251,6 +251,17 @@ public:
   size_t SizeOfAudioQueue() const;
 
 private:
+  class StateObject;
+  class DecodeMetadataState;
+  class WaitForCDMState;
+  class DormantState;
+  class DecodingFirstFrameState;
+  class DecodingState;
+  class SeekingState;
+  class BufferingState;
+  class CompletedState;
+  class ShutdownState;
+
   static const char* ToStateStr(State aState);
   const char* ToStateStr();
 
@@ -602,6 +613,8 @@ private:
   
   
   Watchable<State> mState;
+
+  UniquePtr<StateObject> mStateObj;
 
   
   
