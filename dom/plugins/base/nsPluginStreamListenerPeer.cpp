@@ -695,7 +695,8 @@ nsPluginStreamListenerPeer::RequestRead(NPByteRange* rangeList)
                        nsILoadInfo::SEC_NORMAL,
                        nsIContentPolicy::TYPE_OTHER,
                        loadGroup,
-                       callbacks);
+                       callbacks,
+                       nsIChannel::LOAD_BYPASS_SERVICE_WORKER);
   }
   else {
     
@@ -709,7 +710,8 @@ nsPluginStreamListenerPeer::RequestRead(NPByteRange* rangeList)
                        nsILoadInfo::SEC_NORMAL,
                        nsIContentPolicy::TYPE_OTHER,
                        loadGroup,
-                       callbacks);
+                       callbacks,
+                       nsIChannel::LOAD_BYPASS_SERVICE_WORKER);
   }
 
   if (NS_FAILED(rv))
