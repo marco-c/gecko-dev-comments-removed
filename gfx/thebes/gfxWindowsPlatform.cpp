@@ -194,7 +194,7 @@ public:
         IDXGIAdapter *DXGIAdapter;
 
         HMODULE gdi32Handle;
-        PFND3DKMTQS queryD3DKMTStatistics;
+        PFND3DKMTQS queryD3DKMTStatistics = nullptr;
 
         
         if (!IsWin7OrLater())
