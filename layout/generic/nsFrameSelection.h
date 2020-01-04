@@ -373,7 +373,7 @@ public:
 
 
 
-  nsresult RepaintSelection(mozilla::SelectionType aSelectionType) const;
+  nsresult RepaintSelection(mozilla::SelectionType aSelectionType);
 
   
 
@@ -681,6 +681,10 @@ private:
   
   
   nsresult     NotifySelectionListeners(mozilla::SelectionType aSelectionType);
+  
+  
+  nsresult     UpdateSelectionCacheOnRepaintSelection(mozilla::dom::
+                                                      Selection* aSel);
 
   RefPtr<mozilla::dom::Selection>
     mDomSelections[mozilla::kPresentSelectionTypeCount];

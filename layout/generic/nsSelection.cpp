@@ -1964,7 +1964,7 @@ nsFrameSelection::ScrollSelectionIntoView(SelectionType aSelectionType,
 }
 
 nsresult
-nsFrameSelection::RepaintSelection(SelectionType aSelectionType) const
+nsFrameSelection::RepaintSelection(SelectionType aSelectionType)
 {
   int8_t index = GetIndexFromSelectionType(aSelectionType);
   if (index < 0)
@@ -1972,6 +1972,14 @@ nsFrameSelection::RepaintSelection(SelectionType aSelectionType) const
   if (!mDomSelections[index])
     return NS_ERROR_NULL_POINTER;
   NS_ENSURE_STATE(mShell);
+
+
+
+#ifdef XP_MACOSX
+  if (aSelectionType == SelectionType::eNormal) {
+    UpdateSelectionCacheOnRepaintSelection(mDomSelections[index]);
+  }
+#endif
   return mDomSelections[index]->Repaint(mShell->GetPresContext());
 }
  
@@ -6510,6 +6518,44 @@ nsAutoCopyListener::NotifySelectionChanged(nsIDOMDocument *aDoc,
   
   return nsCopySupport::HTMLCopy(aSel, doc,
                                  mCachedClipboard, false);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult
+nsFrameSelection::UpdateSelectionCacheOnRepaintSelection(Selection* aSel)
+{
+  nsIPresShell* ps = aSel->GetPresShell();
+  if (!ps) {
+    return NS_OK;
+  }
+  nsCOMPtr<nsIDocument> aDoc = ps->GetDocument();
+
+  bool collapsed;
+  if (aDoc && aSel &&
+      NS_SUCCEEDED(aSel->GetIsCollapsed(&collapsed)) && !collapsed) {
+    return nsCopySupport::HTMLCopy(aSel, aDoc,
+                                   nsIClipboard::kSelectionCache, false);
+  }
+
+  return NS_OK;
 }
 
 
