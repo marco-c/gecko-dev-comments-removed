@@ -59,6 +59,8 @@ public:
 
   
   
+  
+  
   virtual void NetworkError() = 0;
 
   
