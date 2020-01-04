@@ -59,7 +59,7 @@ NS_SetThreadName(nsIThread* aThread, const char (&aName)[LEN])
 
 
 
-extern NS_METHOD
+extern nsresult
 NS_NewThread(nsIThread** aResult,
              nsIRunnable* aInitialEvent = nullptr,
              uint32_t aStackSize = nsIThreadManager::DEFAULT_STACK_SIZE);
@@ -68,7 +68,7 @@ NS_NewThread(nsIThread** aResult,
 
 
 template<size_t LEN>
-inline NS_METHOD
+inline nsresult
 NS_NewNamedThread(const char (&aName)[LEN],
                   nsIThread** aResult,
                   nsIRunnable* aInitialEvent = nullptr,
@@ -97,7 +97,7 @@ NS_NewNamedThread(const char (&aName)[LEN],
 
 
 
-extern NS_METHOD NS_GetCurrentThread(nsIThread** aResult);
+extern nsresult NS_GetCurrentThread(nsIThread** aResult);
 
 
 
@@ -108,8 +108,8 @@ extern NS_METHOD NS_GetCurrentThread(nsIThread** aResult);
 
 
 
-extern NS_METHOD NS_DispatchToCurrentThread(nsIRunnable* aEvent);
-extern NS_METHOD
+extern nsresult NS_DispatchToCurrentThread(nsIRunnable* aEvent);
+extern nsresult
 NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent);
 
 
@@ -123,10 +123,10 @@ NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent);
 
 
 
-extern NS_METHOD
+extern nsresult
 NS_DispatchToMainThread(nsIRunnable* aEvent,
                         uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
-extern NS_METHOD
+extern nsresult
 NS_DispatchToMainThread(already_AddRefed<nsIRunnable>&& aEvent,
                         uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
 
@@ -146,7 +146,7 @@ NS_DispatchToMainThread(already_AddRefed<nsIRunnable>&& aEvent,
 
 
 
-extern NS_METHOD
+extern nsresult
 NS_ProcessPendingEvents(nsIThread* aThread,
                         PRIntervalTime aTimeout = PR_INTERVAL_NO_TIMEOUT);
 #endif

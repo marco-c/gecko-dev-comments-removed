@@ -17,7 +17,7 @@ class nsIThread;
 
 
 
-extern NS_METHOD NS_GetMainThread(nsIThread** aResult);
+extern nsresult NS_GetMainThread(nsIThread** aResult);
 
 #ifdef MOZILLA_INTERNAL_API
 
