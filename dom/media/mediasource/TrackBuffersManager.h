@@ -163,7 +163,7 @@ private:
 
   
   friend class MediaSourceDemuxer;
-  virtual ~TrackBuffersManager();
+  ~TrackBuffersManager();
   
   RefPtr<AppendPromise> DoAppendData(RefPtr<MediaByteBuffer> aData,
                                      SourceBufferAttributes aAttributes);
