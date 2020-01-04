@@ -23,7 +23,7 @@ class GPUProcessManager;
 namespace layers {
 
 class GeckoContentController;
-class IAPZCTreeManager;
+class APZCTreeManager;
 class CompositorBridgeParent;
 class CompositorBridgeChild;
 class ClientLayerManager;
@@ -51,7 +51,7 @@ public:
   virtual void SetContentController(GeckoContentController* aController) = 0;
 
   
-  virtual already_AddRefed<IAPZCTreeManager> GetAPZCTreeManager() const = 0;
+  virtual already_AddRefed<APZCTreeManager> GetAPZCTreeManager() const = 0;
 
   
   CompositorBridgeChild* GetCompositorBridgeChild();
