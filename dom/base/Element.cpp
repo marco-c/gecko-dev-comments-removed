@@ -3292,16 +3292,15 @@ Element::MozRequestPointerLock()
 void
 Element::GetGridFragments(nsTArray<RefPtr<Grid>>& aResult)
 {
-  nsGridContainerFrame* frame =
-    nsGridContainerFrame::GetGridFrameWithComputedInfo(GetPrimaryFrame());
-
-  
-  
-  while (frame) {
-    aResult.AppendElement(
-      new Grid(this, frame)
-    );
-    frame = static_cast<nsGridContainerFrame*>(frame->GetNextInFlow());
+  nsIFrame* frame = GetPrimaryFrame();
+  if (frame && (frame->GetType() == nsGkAtoms::gridContainerFrame)) {
+    
+    
+    for (; frame != nullptr; frame = frame->GetNextInFlow()) {
+      aResult.AppendElement(
+        new Grid(this, static_cast<nsGridContainerFrame*>(frame))
+      );
+    }
   }
 }
 
