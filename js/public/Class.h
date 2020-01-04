@@ -435,9 +435,6 @@ typedef bool
 typedef bool
 (* UnwatchOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id);
 
-typedef bool
-(* ThisValueOp)(JSContext* cx, JS::HandleObject obj, JS::MutableHandleValue vp);
-
 class JS_FRIEND_API(ElementAdder)
 {
   public:
@@ -476,17 +473,6 @@ class JS_FRIEND_API(ElementAdder)
 typedef bool
 (* GetElementsOp)(JSContext* cx, JS::HandleObject obj, uint32_t begin, uint32_t end,
                   ElementAdder* adder);
-
-
-
-
-
-typedef JSObject*
-(* ObjectOp)(JSContext* cx, JS::HandleObject obj);
-
-
-typedef JSObject*
-(* InnerObjectOp)(JSObject* obj);
 
 typedef void
 (* FinalizeOp)(FreeOp* fop, JSObject* obj);
@@ -601,9 +587,6 @@ struct ClassSpec
 
 struct ClassExtension
 {
-    ObjectOp            outerObject;
-    InnerObjectOp       innerObject;
-
     
 
 
@@ -641,8 +624,8 @@ inline ClassObjectCreationOp DELEGATED_CLASSSPEC(const ClassSpec* spec) {
     return reinterpret_cast<ClassObjectCreationOp>(const_cast<ClassSpec*>(spec));
 }
 
-#define JS_NULL_CLASS_SPEC  {nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr}
-#define JS_NULL_CLASS_EXT   {nullptr,nullptr,false,nullptr,nullptr}
+#define JS_NULL_CLASS_SPEC  {nullptr,nullptr,nullptr,nullptr,nullptr,nullptr}
+#define JS_NULL_CLASS_EXT   {false,nullptr}
 
 struct ObjectOps
 {
@@ -657,7 +640,6 @@ struct ObjectOps
     UnwatchOp           unwatch;
     GetElementsOp       getElements;
     JSNewEnumerateOp    enumerate;
-    ThisValueOp         thisValue;
     JSFunToStringOp     funToString;
 };
 
@@ -674,7 +656,7 @@ typedef void (*JSClassInternal)();
 struct JSClass {
     JS_CLASS_MEMBERS(JSFinalizeOp);
 
-    void*               reserved[26];
+    void*               reserved[23];
 };
 
 #define JSCLASS_HAS_PRIVATE             (1<<0)  // objects have private slot

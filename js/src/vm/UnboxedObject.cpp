@@ -940,7 +940,6 @@ const Class UnboxedPlainObject::class_ = {
         nullptr,   
         nullptr,   
         UnboxedPlainObject::obj_enumerate,
-        nullptr, 
     }
 };
 
@@ -1613,8 +1612,6 @@ const Class UnboxedArrayObject::class_ = {
     UnboxedArrayObject::trace,
     JS_NULL_CLASS_SPEC,
     {
-        nullptr,    
-        nullptr,    
         false,      
         nullptr,    
         UnboxedArrayObject::objectMoved
@@ -1631,7 +1628,6 @@ const Class UnboxedArrayObject::class_ = {
         nullptr,   
         nullptr,   
         UnboxedArrayObject::obj_enumerate,
-        nullptr,   
     }
 };
 
