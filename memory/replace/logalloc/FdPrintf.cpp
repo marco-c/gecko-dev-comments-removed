@@ -13,7 +13,6 @@
 #endif
 #include <cstring>
 #include "mozilla/Assertions.h"
-#include "mozilla/unused.h"
 
 
 template <typename T>
@@ -126,7 +125,9 @@ out:
   DWORD written;
   WriteFile(reinterpret_cast<HANDLE>(aFd), buf, b - buf, &written, nullptr);
 #else
-  mozilla::unused << write(aFd, buf, b - buf);
+  
+  int unused = write(aFd, buf, b - buf);
+  (void) unused;
 #endif
   va_end(ap);
 }
