@@ -61,6 +61,22 @@ HeapAnalysesClient.prototype.readHeapSnapshot = function (snapshotFilePath) {
 
 
 
+HeapAnalysesClient.prototype.getCreationTime = function (snapshotFilePath) {
+  return this._worker.performTask("getCreationTime", snapshotFilePath);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -146,6 +162,55 @@ HeapAnalysesClient.prototype.takeCensusDiff = function (firstSnapshotFilePath,
 
 
 
-HeapAnalysesClient.prototype.getCreationTime = function (snapshotFilePath) {
-  return this._worker.performTask("getCreationTime", snapshotFilePath);
+HeapAnalysesClient.prototype.computeDominatorTree = function (snapshotFilePath) {
+  return this._worker.performTask("computeDominatorTree", snapshotFilePath);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HeapAnalysesClient.prototype.getDominatorTree = function (opts) {
+  return this._worker.performTask("getDominatorTree", opts);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HeapAnalysesClient.prototype.getImmediatelyDominated = function (opts) {
+  return this._worker.performTask("getImmediatelyDominated", opts);
 };
