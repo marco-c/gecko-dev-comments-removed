@@ -227,6 +227,18 @@ class MOZ_STACK_CLASS SavedFrame::AutoLookupVector : public JS::CustomAutoRooter
     }
 };
 
+ bool
+SavedFrame::HashPolicy::hasHash(const Lookup& l)
+{
+    return SavedFramePtrHasher::hasHash(l.parent);
+}
+
+ bool
+SavedFrame::HashPolicy::ensureHash(const Lookup& l)
+{
+    return SavedFramePtrHasher::ensureHash(l.parent);
+}
+
  HashNumber
 SavedFrame::HashPolicy::hash(const Lookup& lookup)
 {
