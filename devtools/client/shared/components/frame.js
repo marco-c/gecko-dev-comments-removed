@@ -48,6 +48,8 @@ module.exports = createClass({
     
     const isLinkable = !!(isScratchpadScheme(source) || parseURL(source));
     const elements = [];
+    const sourceElements = [];
+    let sourceEl;
 
     let tooltip = long;
     
@@ -62,35 +64,29 @@ module.exports = createClass({
       }
     }
 
-    let onClickTooltipString = l10n.getFormatStr("frame.viewsourceindebugger", tooltip);
     let attributes = {
       "data-url": long,
       className: "frame-link",
-      title: tooltip,
     };
 
-    if (isLinkable) {
-      elements.push(dom.a({
-        className: "frame-link-filename",
-        onClick,
-        title: onClickTooltipString
-      }, short));
-    } else {
-      
-      
-      elements.push(dom.span({
-        className: "frame-link-filename"
-      }, short));
+    if (showFunctionName && frame.functionDisplayName) {
+      elements.push(
+        dom.span({ className: "frame-link-function-display-name" }, frame.functionDisplayName)
+      );
     }
+
+    sourceElements.push(dom.span({
+      className: "frame-link-filename",
+    }, short));
 
     
     if (isLinkable && line) {
-      elements.push(dom.span({ className: "frame-link-colon" }, ":"));
-      elements.push(dom.span({ className: "frame-link-line" }, line));
+      sourceElements.push(dom.span({ className: "frame-link-colon" }, ":"));
+      sourceElements.push(dom.span({ className: "frame-link-line" }, line));
       
       if (column) {
-        elements.push(dom.span({ className: "frame-link-colon" }, ":"));
-        elements.push(dom.span({ className: "frame-link-column" }, column));
+        sourceElements.push(dom.span({ className: "frame-link-colon" }, ":"));
+        sourceElements.push(dom.span({ className: "frame-link-column" }, column));
         
         attributes["data-column"] = column;
       }
@@ -99,11 +95,21 @@ module.exports = createClass({
       attributes["data-line"] = line;
     }
 
-    if (showFunctionName && frame.functionDisplayName) {
-      elements.unshift(
-        dom.span({ className: "frame-link-function-display-name" }, frame.functionDisplayName)
-      );
+    
+    
+    if (isLinkable) {
+      sourceEl = dom.a({
+        onClick,
+        className: "frame-link-source",
+        title: l10n.getFormatStr("frame.viewsourceindebugger", tooltip)
+      }, sourceElements);
+    } else {
+      sourceEl = dom.span({
+        className: "frame-link-source",
+        title: tooltip,
+      }, sourceElements);
     }
+    elements.push(sourceEl);
 
     if (showHost && host) {
       elements.push(dom.span({ className: "frame-link-host" }, host));
