@@ -196,11 +196,14 @@ const getRelativeRect = function (node, relativeTo) {
 
 
 
+
+
 function HTMLTooltip(toolbox, {
     type = "normal",
     autofocus = false,
     consumeOutsideClicks = true,
     useXulWrapper = false,
+    stylesheet = "",
   } = {}) {
   EventEmitter.decorate(this);
 
@@ -223,6 +226,9 @@ function HTMLTooltip(toolbox, {
 
   this.container = this._createContainer();
 
+  if (stylesheet) {
+    this._applyStylesheet(stylesheet);
+  }
   if (this._isXUL() && this.useXulWrapper) {
     
     
@@ -574,4 +580,16 @@ HTMLTooltip.prototype = {
     top += this.doc.defaultView.mozInnerScreenY;
     return {top, right: left + width, bottom: top + height, left, width, height};
   },
+
+  
+
+
+
+  _applyStylesheet: function (url) {
+    let style = this.doc.createElementNS(XHTML_NS, "style");
+    style.setAttribute("scoped", "true");
+    url = url.replace(/"/g, "\\\"");
+    style.textContent = `@import url("${url}");`;
+    this.container.appendChild(style);
+  }
 };
