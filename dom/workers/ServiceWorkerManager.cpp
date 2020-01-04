@@ -2787,6 +2787,10 @@ ServiceWorkerManager::GetAllClients(nsIPrincipal* aPrincipal,
       }
 
       nsCOMPtr<nsIDocument> doc = do_QueryInterface(iter.Key());
+
+      
+      MOZ_ASSERT(doc->GetWindow());
+
       ProcessDocument(aPrincipal, doc);
     }
   }
