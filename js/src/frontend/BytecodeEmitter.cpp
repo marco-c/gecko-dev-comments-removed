@@ -5598,44 +5598,31 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
 }
 
 bool
-BytecodeEmitter::emitForOf(StmtType type, ParseNode* pn)
+BytecodeEmitter::emitForOf(ParseNode* pn)
 {
-    MOZ_ASSERT(type == StmtType::FOR_OF_LOOP || type == StmtType::SPREAD);
-#ifdef DEBUG
-    if (type == StmtType::FOR_OF_LOOP) {
-        MOZ_ASSERT(pn);
-        MOZ_ASSERT(pn->pn_left->isKind(PNK_FOROF));
-    } else {
-        MOZ_ASSERT(!pn);
-    }
-#endif
+    MOZ_ASSERT(pn->pn_left->isKind(PNK_FOROF));
 
     ptrdiff_t top = offset();
-    ParseNode* forHead = pn ? pn->pn_left : nullptr;
-    ParseNode* forHeadExpr = forHead ? forHead->pn_kid3 : nullptr;
-    ParseNode* forBody = pn ? pn->pn_right : nullptr;
+    ParseNode* forHead = pn->pn_left;
 
-    ParseNode* loopDecl = forHead ? forHead->pn_kid1 : nullptr;
-    if (loopDecl && !emitForInOrOfVariables(loopDecl))
-        return false;
-
-    if (type == StmtType::FOR_OF_LOOP) {
-        
-        
-
-        
-        if (!emitTree(forHeadExpr))
-            return false;
-        if (!emitIterator())
-            return false;
-
-        
-        if (!emit1(JSOP_UNDEFINED))                
+    if (ParseNode* loopDecl = forHead->pn_kid1) {
+        if (!emitForInOrOfVariables(loopDecl))
             return false;
     }
 
+    
+    ParseNode* forHeadExpr = forHead->pn_kid3;
+    if (!emitTree(forHeadExpr))                           
+        return false;
+    if (!emitIterator())                                  
+        return false;
+
+    
+    if (!emit1(JSOP_UNDEFINED))                           
+        return false;
+
     LoopStmtInfo stmtInfo(cx);
-    pushLoopStatement(&stmtInfo, type, top);
+    pushLoopStatement(&stmtInfo, StmtType::FOR_OF_LOOP, top);
 
     
     
@@ -5649,33 +5636,34 @@ BytecodeEmitter::emitForOf(StmtType type, ParseNode* pn)
 
     top = offset();
     stmtInfo.setTop(top);
-    if (!emitLoopHead(nullptr))
+    if (!emitLoopHead(nullptr))                           
         return false;
 
-    if (type == StmtType::SPREAD)
-        this->stackDepth++;
-
+    ptrdiff_t beq;
+    {
 #ifdef DEBUG
-    int loopDepth = this->stackDepth;
+        auto loopDepth = this->stackDepth;
 #endif
 
-    
-    if (type == StmtType::FOR_OF_LOOP) {
+        
         if (!emit1(JSOP_DUP))                             
             return false;
-    }
-    if (!emitAtomOp(cx->names().value, JSOP_GETPROP))     
-        return false;
-    if (type == StmtType::FOR_OF_LOOP) {
-        if (!emitAssignment(forHead->pn_kid2, JSOP_NOP, nullptr)) 
+        if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) 
+            return false;
+
+        ParseNode* forTarget = forHead->pn_kid2;
+        if (!emitAssignment(forTarget, JSOP_NOP, nullptr))
             return false;
         if (!emit1(JSOP_POP))                             
             return false;
 
         
-        MOZ_ASSERT(this->stackDepth == loopDepth);
+        MOZ_ASSERT(this->stackDepth == loopDepth,
+                   "the stack must be balanced around the assignment "
+                   "operation");
 
         
+        ParseNode* forBody = pn->pn_right;
         if (!emitTree(forBody))
             return false;
 
@@ -5684,41 +5672,29 @@ BytecodeEmitter::emitForOf(StmtType type, ParseNode* pn)
         do {
             stmt->update = offset();
         } while ((stmt = stmt->enclosing) != nullptr && stmt->type == StmtType::LABEL);
-    } else {
-        if (!emit1(JSOP_INITELEM_INC))                    
-            return false;
-
-        MOZ_ASSERT(this->stackDepth == loopDepth - 1);
 
         
-    }
+        setJumpOffsetAt(jmp);
+        if (!emitLoopEntry(forHeadExpr))
+            return false;
 
-    
-    setJumpOffsetAt(jmp);
-    if (!emitLoopEntry(forHeadExpr))
-        return false;
-
-    if (type == StmtType::FOR_OF_LOOP) {
         if (!emit1(JSOP_POP))                             
             return false;
         if (!emit1(JSOP_DUP))                             
             return false;
-    } else {
-        if (!emitDupAt(2))                                
+
+        if (!emitIteratorNext(forHead))                   
             return false;
+        if (!emit1(JSOP_DUP))                             
+            return false;
+        if (!emitAtomOp(cx->names().done, JSOP_GETPROP))  
+            return false;
+
+        if (!emitJump(JSOP_IFEQ, top - offset(), &beq))   
+            return false;
+
+        MOZ_ASSERT(this->stackDepth == loopDepth);
     }
-    if (!emitIteratorNext(forHead))                       
-        return false;
-    if (!emit1(JSOP_DUP))                                 
-        return false;
-    if (!emitAtomOp(cx->names().done, JSOP_GETPROP))      
-        return false;
-
-    ptrdiff_t beq;
-    if (!emitJump(JSOP_IFEQ, top - offset(), &beq))       
-        return false;
-
-    MOZ_ASSERT(this->stackDepth == loopDepth);
 
     
     if (!setSrcNoteOffset(noteIndex, 0, beq - jmp))
@@ -5731,13 +5707,7 @@ BytecodeEmitter::emitForOf(StmtType type, ParseNode* pn)
     if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, top, offset()))
         return false;
 
-    if (type == StmtType::SPREAD) {
-        if (!emit2(JSOP_PICK, 3))      
-            return false;
-    }
-
-    
-    return emitUint16Operand(JSOP_POPN, 2);
+    return emitUint16Operand(JSOP_POPN, 2);               
 }
 
 bool
@@ -6038,7 +6008,7 @@ BytecodeEmitter::emitFor(ParseNode* pn)
         return emitForIn(pn);
 
     MOZ_ASSERT(pn->pn_left->isKind(PNK_FOROF));
-    return emitForOf(StmtType::FOR_OF_LOOP, pn);
+    return emitForOf(pn);
 }
 
 bool

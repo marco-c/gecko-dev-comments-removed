@@ -644,17 +644,13 @@ struct BytecodeEmitter
     
     
     
+    
+    
     bool emitSpread(bool allowSelfHosted = false);
 
     
     
-    
-    
-    
-    
-    
-    
-    bool emitForOf(StmtType type, ParseNode* pn);
+    bool emitForOf(ParseNode* pn);
 
     bool emitClass(ParseNode* pn);
     bool emitSuperPropLHS(ParseNode* superBase, bool isCall = false);
