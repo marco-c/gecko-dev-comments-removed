@@ -86,12 +86,6 @@ function setup() {
   DOMApplicationRegistry.allAppsLaunchable = true;
 
   
-  Cu.import("resource://gre/modules/WebappOSUtils.jsm");
-  WebappOSUtils.getPackagePath = function(aApp) {
-    return aApp.basePath + "/" + aApp.id;
-  }
-
-  
   let {WebappsActor} = require("devtools/server/actors/webapps");
   WebappsActor.prototype.supportsLaunch = true;
 }

@@ -12,7 +12,6 @@ ALL_HARNESSES = [
     'common', 
     'mochitest',
     'reftest',
-    'webapprt',
     'xpcshell',
     'cppunittest',
     'jittest',

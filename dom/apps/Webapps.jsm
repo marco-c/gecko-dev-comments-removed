@@ -73,9 +73,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "OfflineCacheInstaller",
 XPCOMUtils.defineLazyModuleGetter(this, "SystemMessagePermissionsChecker",
   "resource://gre/modules/SystemMessagePermissionsChecker.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "WebappOSUtils",
-  "resource://gre/modules/WebappOSUtils.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
   "resource://gre/modules/NetUtil.jsm");
 
@@ -135,9 +132,7 @@ function supportSystemMessages() {
 
 const MIN_PROGRESS_EVENT_DELAY = 1500;
 
-const WEBAPP_RUNTIME = Services.appinfo.ID == "webapprt@mozilla.org";
-
-const chromeWindowType = WEBAPP_RUNTIME ? "webapprt:webapp" : "navigator:browser";
+const chromeWindowType = "navigator:browser";
 
 XPCOMUtils.defineLazyServiceGetter(this, "ppmm",
                                    "@mozilla.org/parentprocessmessagemanager;1",
@@ -181,9 +176,7 @@ XPCOMUtils.defineLazyGetter(this, "permMgr", function() {
   const DIRECTORY_NAME = "webappsDir";
 #else
   
-  
-  
-  const DIRECTORY_NAME = WEBAPP_RUNTIME ? "WebappRegD" : "ProfD";
+  const DIRECTORY_NAME = "ProfD";
 #endif
 
 
@@ -2998,7 +2991,7 @@ this.DOMApplicationRegistry = {
     app.manifestHash = AppsUtils.computeHash(JSON.stringify(aUpdateManifest ||
                                                             aManifest));
 
-    let zipFile = WebappOSUtils.getPackagePath(app);
+    let zipFile = app.basePath + "/" + app.id;
     app.packageHash = yield this._computeFileHash(zipFile);
 
     app.role = aManifest.role || "";
@@ -4811,10 +4804,7 @@ this.DOMApplicationRegistry = {
   },
 
   _isLaunchable: function(aApp) {
-    if (this.allAppsLaunchable)
-      return true;
-
-    return WebappOSUtils.isLaunchable(aApp);
+    return true;
   },
 
   _notifyCategoryAndObservers: function(subject, topic, data,  msg) {
