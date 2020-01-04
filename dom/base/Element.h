@@ -196,15 +196,6 @@ public:
 
 
 
-  bool IsFullScreenAncestor() const {
-    return mState.HasAtLeastOneOfStates(NS_EVENT_STATE_FULL_SCREEN_ANCESTOR |
-                                        NS_EVENT_STATE_FULL_SCREEN);
-  }
-
-  
-
-
-
   EventStates StyleState() const
   {
     if (!HasLockedStyleStates()) {

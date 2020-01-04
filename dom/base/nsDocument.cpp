@@ -1579,6 +1579,8 @@ nsDocument::~nsDocument()
       }
       Accumulate(Telemetry::MIXED_CONTENT_PAGE_LOAD, mixedContentLevel);
 
+      Accumulate(Telemetry::SCROLL_LINKED_EFFECT_FOUND, mHasScrollLinkedEffect);
+
       
       if (mHasMixedContentObjectSubrequest) {
         
@@ -4771,9 +4773,7 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
     }
 
     MaybeRescheduleAnimationFrameNotifications();
-    if (Preferences::GetBool("dom.webcomponents.enabled")) {
-      mRegistry = new Registry();
-    }
+    mRegistry = new Registry();
   }
 
   
@@ -5669,9 +5669,7 @@ nsDocument::CreateElement(const nsAString& aTagName,
     return nullptr;
   }
 
-  if (!aTypeExtension.IsVoid() &&
-      !aTagName.Equals(aTypeExtension)) {
-    
+  if (!aTagName.Equals(aTypeExtension)) {
     
     SetupCustomElement(elem, GetDefaultNamespaceID(), &aTypeExtension);
   }
@@ -5729,13 +5727,6 @@ nsDocument::CreateElementNS(const nsAString& aNamespaceURI,
     return nullptr;
   }
 
-  if (aTypeExtension.IsVoid() ||
-      aQualifiedName.Equals(aTypeExtension)) {
-    
-    
-    return elem.forget();
-  }
-
   int32_t nameSpaceId = kNameSpaceID_Wildcard;
   if (!aNamespaceURI.EqualsLiteral("*")) {
     rv = nsContentUtils::NameSpaceManager()->RegisterNameSpace(aNamespaceURI,
@@ -5745,7 +5736,10 @@ nsDocument::CreateElementNS(const nsAString& aNamespaceURI,
     }
   }
 
-  SetupCustomElement(elem, nameSpaceId, &aTypeExtension);
+  if (!aQualifiedName.Equals(aTypeExtension)) {
+    
+    SetupCustomElement(elem, nameSpaceId, &aTypeExtension);
+  }
 
   return elem.forget();
 }
@@ -11658,7 +11652,7 @@ nsDocument::FullScreenStackPop()
   while (!mFullScreenStack.IsEmpty()) {
     Element* element = FullScreenStackTop();
     if (!element || !element->IsInUncomposedDoc() || element->OwnerDoc() != this) {
-      NS_ASSERTION(!element->IsFullScreenAncestor(),
+      NS_ASSERTION(!element->State().HasState(NS_EVENT_STATE_FULL_SCREEN),
                    "Should have already removed full-screen styles");
       uint32_t last = mFullScreenStack.Length() - 1;
       mFullScreenStack.RemoveElementAt(last);
@@ -12220,7 +12214,7 @@ nsDocument::GetFullscreenElement()
 {
   Element* element = FullScreenStackTop();
   NS_ASSERTION(!element ||
-               element->IsFullScreenAncestor(),
+               element->State().HasState(NS_EVENT_STATE_FULL_SCREEN),
     "Fullscreen element should have fullscreen styles applied");
   return element;
 }
