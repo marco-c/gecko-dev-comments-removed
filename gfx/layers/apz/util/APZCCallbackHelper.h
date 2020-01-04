@@ -101,7 +101,7 @@ public:
 
     
 
-    static void ApplyCallbackTransform(WidgetTouchEvent& aEvent,
+    static void ApplyCallbackTransform(WidgetEvent& aEvent,
                                        const ScrollableLayerGuid& aGuid,
                                        const CSSToLayoutDeviceScale& aScale);
 
