@@ -46,7 +46,7 @@ class WeakMapBase {
     friend void js::GCMarker::enterWeakMarkingMode();
 
   public:
-    WeakMapBase(JSObject* memOf, JSCompartment* c);
+    WeakMapBase(JSObject* memOf, JS::Zone* zone);
     virtual ~WeakMapBase();
 
     void trace(JSTracer* tracer);
@@ -54,23 +54,23 @@ class WeakMapBase {
     
 
     
-    static void unmarkCompartment(JSCompartment* c);
+    static void unmarkZone(JS::Zone* zone);
 
     
-    static void markAll(JSCompartment* c, JSTracer* tracer);
-
-    
-    
-    
-    
-    static bool markCompartmentIteratively(JSCompartment* c, JSTracer* tracer);
-
-    
-    static bool findZoneEdgesForCompartment(JSCompartment* c);
+    static void markAll(JS::Zone* zone, JSTracer* tracer);
 
     
     
-    static void sweepCompartment(JSCompartment* c);
+    
+    
+    static bool markZoneIteratively(JS::Zone* zone, JSTracer* tracer);
+
+    
+    static bool findInterZoneEdges(JS::Zone* zone);
+
+    
+    
+    static void sweepZone(JS::Zone* zone);
 
     
     static void traceAllMappings(WeakMapTracer* tracer);
@@ -78,7 +78,7 @@ class WeakMapBase {
     bool isInList() { return next != WeakMapNotInList; }
 
     
-    static bool saveCompartmentMarkedWeakMaps(JSCompartment* c, WeakMapSet& markedWeakMaps);
+    static bool saveZoneMarkedWeakMaps(JS::Zone* zone, WeakMapSet& markedWeakMaps);
 
     
     static void restoreMarkedWeakMaps(WeakMapSet& markedWeakMaps);
@@ -107,7 +107,7 @@ class WeakMapBase {
     HeapPtrObject memberOf;
 
     
-    JSCompartment* compartment;
+    JS::Zone* zone;
 
     
     
@@ -142,14 +142,14 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
     typedef typename Base::AddPtr AddPtr;
 
     explicit WeakMap(JSContext* cx, JSObject* memOf = nullptr)
-        : Base(cx->runtime()), WeakMapBase(memOf, cx->compartment()) { }
+        : Base(cx->runtime()), WeakMapBase(memOf, cx->compartment()->zone()) { }
 
     bool init(uint32_t len = 16) {
         if (!Base::init(len))
             return false;
-        next = compartment->gcWeakMapList;
-        compartment->gcWeakMapList = this;
-        marked = JS::IsIncrementalGCInProgress(compartment->runtimeFromMainThread());
+        next = zone->gcWeakMapList;
+        zone->gcWeakMapList = this;
+        marked = JS::IsIncrementalGCInProgress(zone->runtimeFromMainThread());
         return true;
     }
 

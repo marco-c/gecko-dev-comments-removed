@@ -454,9 +454,6 @@ struct JSCompartment
 
     JSObject*                    gcIncomingGrayPointers;
 
-    
-    js::WeakMapBase*             gcWeakMapList;
-
   private:
     
     bool                         gcPreserveJitCode;
@@ -546,7 +543,6 @@ struct JSCompartment
     void sweepJitCompartment(js::FreeOp* fop);
     void sweepRegExps();
     void sweepDebugScopes();
-    void sweepWeakMaps();
     void sweepNativeIterators();
     void sweepTemplateObjects();
 
