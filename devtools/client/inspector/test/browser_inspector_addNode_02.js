@@ -49,14 +49,15 @@ add_task(function* () {
 function assertState(isEnabled, inspector, desc) {
   let doc = inspector.panelDoc;
   let btn = doc.querySelector("#inspector-element-add-button");
-  let item = doc.querySelector("#node-menu-add");
 
   
   
   
   
-  inspector._setupNodeMenu({target: {}});
+  let allMenuItems = openContextMenuAndGetAllItems(inspector);
+  let menuItem = allMenuItems.find(item => item.id === "node-menu-add");
+  ok(menuItem, "The item is in the menu");
+  is(!menuItem.disabled, isEnabled, desc);
 
   is(!btn.hasAttribute("disabled"), isEnabled, desc);
-  is(!item.hasAttribute("disabled"), isEnabled, desc);
 }

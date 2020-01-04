@@ -194,10 +194,13 @@ var openInspector = Task.async(function* (hostType) {
                                         hostType);
   let inspector = toolbox.getPanel("inspector");
 
-  info("Waiting for the inspector to update");
   if (inspector._updateProgress) {
+    info("Need to wait for the inspector to update");
     yield inspector.once("inspector-updated");
   }
+
+  info("Waiting for actor features to be detected");
+  yield inspector._detectingActorFeatures;
 
   yield registerTestActor(toolbox.target.client);
   let testActor = yield getTestActor(toolbox);
@@ -516,32 +519,6 @@ function redoChange(inspector) {
 
 
 
-function dispatchCommandEvent(node) {
-  info("Dispatching command event on " + node);
-  let commandEvent = document.createEvent("XULCommandEvent");
-  commandEvent.initCommandEvent("command", true, true, window, 0, false, false,
-                                false, false, null);
-  node.dispatchEvent(commandEvent);
-}
-
-
-
-
-function contextMenuClick(element) {
-  let evt = element.ownerDocument.createEvent("MouseEvents");
-  let button = 2;
-
-  evt.initMouseEvent("contextmenu", true, true,
-       element.ownerDocument.defaultView, 1, 0, 0, 0, 0, false,
-       false, false, false, button, null);
-
-  element.dispatchEvent(evt);
-}
-
-
-
-
-
 function* getNodeFrontForSelector(selector, inspector) {
   if (selector) {
     info("Retrieving front for selector " + selector);
@@ -828,4 +805,24 @@ function assertHoverTooltipOn(tooltip, element) {
   }, () => {
     ok(false, "No tooltip is defined on hover of the given element");
   });
+}
+
+
+
+
+
+
+
+function openContextMenuAndGetAllItems(inspector, options) {
+  let menu = inspector._openMenu(options);
+
+  
+  let allItems = [].concat.apply([], menu.items.map(function addItem(item) {
+    if (item.submenu) {
+      return addItem(item.submenu.items);
+    }
+    return item;
+  }));
+
+  return allItems;
 }
