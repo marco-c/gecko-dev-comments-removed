@@ -2631,6 +2631,9 @@ MediaManager::Shutdown()
   GetActiveWindows()->Clear();
   mActiveCallbacks.Clear();
   mCallIds.Clear();
+#ifdef MOZ_WEBRTC
+  StopWebRtcLog();
+#endif
 
   
   
