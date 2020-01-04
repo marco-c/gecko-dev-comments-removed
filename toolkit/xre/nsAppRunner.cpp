@@ -4361,7 +4361,7 @@ XREMain::XRE_mainRun()
   }
 #endif 
 
-#if defined(MOZ_SANDBOX) && defined(XP_LINUX)
+#if defined(MOZ_SANDBOX) && defined(XP_LINUX) && !defined(ANDROID)
   
   
   SandboxInfo::SubmitTelemetry();
