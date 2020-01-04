@@ -60,13 +60,6 @@ exports.Highlighter = Highlighter;
 
 
 
-exports.spawn = function(context, spawnSpec) {
-  throw new Error('Not supported');
-};
-
-
-
-
 exports.exec = function(task) {
   return Task.spawn(task);
 };
