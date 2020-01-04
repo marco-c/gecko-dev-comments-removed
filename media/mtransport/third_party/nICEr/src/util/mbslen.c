@@ -43,7 +43,7 @@
 #include <locale.h>
 #include <stdlib.h>
 #include <wchar.h>
-#if defined(DARWIN) || defined(__FreeBSD__)
+#if defined(DARWIN) || defined(__DragonFly__) || defined(__FreeBSD__)
 #define HAVE_XLOCALE
 #endif
 
