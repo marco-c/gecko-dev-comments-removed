@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <cxxabi.h>
+
+namespace __cxxabiv1
+{
+  __pointer_to_member_type_info::~__pointer_to_member_type_info()
+  {
+  }
+} 

@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <cxxabi.h>
+
+namespace __cxxabiv1
+{
+  __function_type_info::~__function_type_info()
+  {
+  }
+} 
