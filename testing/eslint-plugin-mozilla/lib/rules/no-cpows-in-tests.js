@@ -47,14 +47,16 @@ module.exports = function(context) {
 
       var expression = context.getSource(node);
 
-      cpows.some(function(cpow) {
+      
+      
+      var someCpowFound = cpows.some(function(cpow) {
         if (cpow.test(expression)) {
           showError(node, expression);
           return true;
         }
         return false;
       });
-      if (helpers.getIsGlobalScope(context)) {
+      if (!someCpowFound && helpers.getIsGlobalScope(context)) {
         if (/^content\./.test(expression)) {
           showError(node, expression);
           return;
