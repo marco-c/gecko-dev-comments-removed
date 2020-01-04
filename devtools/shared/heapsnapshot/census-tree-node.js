@@ -282,6 +282,9 @@ function CensusTreeNodeVisitor() {
   
   
   this._cacheStack = [new CensusTreeNodeCache()];
+
+  
+  this._index = -1;
 }
 
 CensusTreeNodeVisitor.prototype = Object.create(Visitor);
@@ -293,6 +296,8 @@ CensusTreeNodeVisitor.prototype = Object.create(Visitor);
 
 
 CensusTreeNodeVisitor.prototype.enter = function (breakdown, report, edge) {
+  this._index++;
+
   const cache = this._cacheStack[this._cacheStack.length - 1];
   makeCensusTreeNodeSubTree(breakdown, report, edge, cache, this._outParams);
   const { top, bottom } = this._outParams;
@@ -364,6 +369,7 @@ CensusTreeNodeVisitor.prototype.exit = function (breakdown, report, edge) {
 
 CensusTreeNodeVisitor.prototype.count = function (breakdown, report, edge) {
   const node = this._nodeStack[this._nodeStack.length - 1];
+  node.reportLeafIndex = this._index;
 
   if (breakdown.count) {
     node.count = report.count;
@@ -425,6 +431,27 @@ function CensusTreeNode(name) {
   
   
   this.parent = undefined;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  this.reportLeafIndex = undefined;
 }
 
 CensusTreeNode.prototype = null;
@@ -484,12 +511,28 @@ function insertOrMergeNode(parentCacheValue, node) {
   let val = CensusTreeNodeCache.lookupNode(parentCacheValue.children, node);
 
   if (val) {
+    
+    
+    
+    if (val.node.reportLeafIndex !== undefined &&
+        val.node.reportLeafIndex !== node.reportLeafIndex) {
+      if (typeof val.node.reportLeafIndex === "number") {
+        const oldIndex = val.node.reportLeafIndex;
+        val.node.reportLeafIndex = new Set();
+        val.node.reportLeafIndex.add(oldIndex);
+        val.node.reportLeafIndex.add(node.reportLeafIndex);
+      } else {
+        val.node.reportLeafIndex.add(node.reportLeafIndex);
+      }
+    }
+
     val.node.count += node.count;
     val.node.bytes += node.bytes;
   } else {
     val = new CensusTreeNodeCacheValue();
 
     val.node = new CensusTreeNode(node.name);
+    val.node.reportLeafIndex = node.reportLeafIndex;
     val.node.count = node.count;
     val.node.totalCount = node.totalCount;
     val.node.bytes = node.bytes;
