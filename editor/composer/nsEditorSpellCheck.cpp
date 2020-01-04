@@ -743,7 +743,7 @@ nsEditorSpellCheck::UpdateCurrentDictionary(nsIEditorSpellCheckCallback* aCallba
 
 
 nsresult
-nsEditorSpellCheck::TryDictionary(nsAutoString aDictName,
+nsEditorSpellCheck::TryDictionary(const nsAString& aDictName,
                                   nsTArray<nsString>& aDictList,
                                   enum dictCompare aCompareType)
 {
