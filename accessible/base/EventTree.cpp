@@ -189,48 +189,52 @@ EventTree::Process()
     node = node->mNext;
   }
 
+  MOZ_ASSERT(mContainer || mDependentEvents.IsEmpty(),
+             "No container, no events");
+  MOZ_ASSERT(!mContainer || !mContainer->IsDefunct(),
+             "Processing events for defunct container");
+
   
-  if (mContainer) {
-    uint32_t eventsCount = mDependentEvents.Length();
-    for (uint32_t jdx = 0; jdx < eventsCount; jdx++) {
-      AccMutationEvent* mtEvent = mDependentEvents[jdx];
-      MOZ_ASSERT(mtEvent->mEventRule != AccEvent::eDoNotEmit,
-                 "The event shouldn't be presented in the tree");
+  uint32_t eventsCount = mDependentEvents.Length();
+  for (uint32_t jdx = 0; jdx < eventsCount; jdx++) {
+    AccMutationEvent* mtEvent = mDependentEvents[jdx];
+    MOZ_ASSERT(mtEvent->mEventRule != AccEvent::eDoNotEmit,
+               "The event shouldn't be presented in the tree");
 
-      nsEventShell::FireEvent(mtEvent);
-      if (mtEvent->mTextChangeEvent) {
-        nsEventShell::FireEvent(mtEvent->mTextChangeEvent);
-      }
-
-      if (mtEvent->IsHide()) {
-        
-
-        
-        
-        
-        
-        
-        
-        
-        if (mtEvent->mAccessible->ARIARole() == roles::MENUPOPUP) {
-          nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_MENUPOPUP_END,
-                                  mtEvent->mAccessible);
-        }
-
-        AccHideEvent* hideEvent = downcast_accEvent(mtEvent);
-        if (hideEvent->NeedsShutdown()) {
-          mtEvent->GetDocAccessible()->ShutdownChildrenInSubtree(mtEvent->mAccessible);
-        }
-      }
+    nsEventShell::FireEvent(mtEvent);
+    if (mtEvent->mTextChangeEvent) {
+      nsEventShell::FireEvent(mtEvent->mTextChangeEvent);
     }
 
-    
-    if (mFireReorder) {
-      nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_REORDER, mContainer);
-    }
+    if (mtEvent->IsHide()) {
+      
 
-    mDependentEvents.Clear();
+      
+      
+      
+      
+      
+      
+      
+      if (mtEvent->mAccessible->ARIARole() == roles::MENUPOPUP) {
+        nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_MENUPOPUP_END,
+                                mtEvent->mAccessible);
+      }
+
+      AccHideEvent* hideEvent = downcast_accEvent(mtEvent);
+      if (hideEvent->NeedsShutdown()) {
+        mtEvent->GetDocAccessible()->ShutdownChildrenInSubtree(mtEvent->mAccessible);
+      }
+    }
   }
+
+  
+  if (mFireReorder) {
+    MOZ_ASSERT(mContainer);
+    nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_REORDER, mContainer);
+  }
+
+  mDependentEvents.Clear();
 }
 
 EventTree*
