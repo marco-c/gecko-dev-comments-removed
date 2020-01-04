@@ -22,4 +22,5 @@ public interface BaseAction {
 
 
     boolean requiresNetwork();
+    boolean requiresPreferenceEnabled();
 }
