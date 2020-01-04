@@ -103,8 +103,9 @@ class GlobalHelperThreadState
 
     GlobalHelperThreadState();
 
-    void ensureInitialized();
+    bool ensureInitialized();
     void finish();
+    void finishThreads();
 
     void lock();
     void unlock();
@@ -351,7 +352,7 @@ void
 DestroyHelperThreadsState();
 
 
-void
+bool
 EnsureHelperThreadsInitialized();
 
 
