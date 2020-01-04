@@ -259,27 +259,10 @@ public:
 
 };
 
-class AgnosticDecoderModule : public BlankDecoderModule {
-public:
-
-  bool SupportsMimeType(const nsACString& aMimeType) override
-  {
-    
-    
-    return false;
-  }
-};
-
 already_AddRefed<PlatformDecoderModule> CreateBlankDecoderModule()
 {
   nsRefPtr<PlatformDecoderModule> pdm = new BlankDecoderModule();
   return pdm.forget();
-}
-
-already_AddRefed<PlatformDecoderModule> CreateAgnosticDecoderModule()
-{
-  nsRefPtr<PlatformDecoderModule> adm = new AgnosticDecoderModule();
-  return adm.forget();
 }
 
 } 
