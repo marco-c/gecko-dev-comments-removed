@@ -4,8 +4,9 @@
 
 
 
-#include "mozilla/dom/ContentChild.h"
 #include "WindowIdentifier.h"
+
+#include "mozilla/dom/ContentChild.h"
 #include "nsPIDOMWindow.h"
 
 namespace mozilla {
