@@ -26,7 +26,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 const FILTERS = [
   {probe: "jank", field: "longestDuration"},
-  {probe: "cpow", field: "totalCPOWTime"},
 ];
 
 const WAKEUP_IS_SURPRISINGLY_SLOW_FACTOR = 2;
@@ -65,16 +64,6 @@ var AddonWatcher = {
   _latestSnapshot: null,
 
   
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -132,7 +121,7 @@ var AddonWatcher = {
       }
       this._monitor = null;
     } else {
-      this._monitor = PerformanceStats.getMonitor([for (filter of FILTERS) filter.probe]);
+      this._monitor = PerformanceStats.getMonitor(["jank", "cpow"]);
       this._timer.initWithCallback(this._checkAddons.bind(this), this._interval, Ci.nsITimer.TYPE_REPEATING_SLACK);
     }
     this._isPaused = isPaused;
@@ -188,12 +177,10 @@ var AddonWatcher = {
   
 
 
-
-
-
-
-
   _checkAddons: function() {
+    if (this.paused) {
+      return;
+    }
     let previousWakeup = this._latestWakeup;
     let currentWakeup = this._latestWakeup = Date.now();
 
@@ -201,11 +188,13 @@ var AddonWatcher = {
       try {
         let previousSnapshot = this._latestSnapshot;
         let snapshot = this._latestSnapshot = yield this._monitor.promiseSnapshot();
+        if (this.paused) {
+          return;
+        }
+
         let isSystemTooBusy = this._isSystemTooBusy(currentWakeup - previousWakeup, snapshot, previousSnapshot);
 
         let limits = {
-          
-          totalCPOWTime: Math.round(Preferences.get("browser.addon-watch.limits.totalCPOWTime", 1000000) * this._interval / 15000),
           
           
           longestDuration: Math.round(Math.log2(Preferences.get("browser.addon-watch.limits.longestDuration", 128))),
