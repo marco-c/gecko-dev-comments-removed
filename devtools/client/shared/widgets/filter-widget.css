@@ -5,10 +5,12 @@
 
 
 #filter-container {
-  height: 100%;
+  width: 510px;
+  height: 200px;
   display: flex;
   position: relative;
   padding: 5px;
+  box-sizing: border-box;
   
   color: var(--theme-body-color);
 }

@@ -37,6 +37,10 @@
 
 
 
+#spectrum-tooltip {
+  padding: 4px;
+}
+
 .spectrum-container {
   position: relative;
   display: none;
