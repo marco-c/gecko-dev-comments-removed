@@ -813,7 +813,7 @@ Promise::CallInitFunction(const GlobalObject& aGlobal,
 }
 
  already_AddRefed<Promise>
-Promise::Resolve(const GlobalObject& aGlobal,
+Promise::Resolve(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
                  JS::Handle<JS::Value> aValue, ErrorResult& aRv)
 {
   
@@ -856,7 +856,7 @@ Promise::Resolve(nsIGlobalObject* aGlobal, JSContext* aCx,
 }
 
  already_AddRefed<Promise>
-Promise::Reject(const GlobalObject& aGlobal,
+Promise::Reject(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
                 JS::Handle<JS::Value> aValue, ErrorResult& aRv)
 {
   nsCOMPtr<nsIGlobalObject> global =
@@ -1057,7 +1057,7 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION(AllResolveElementFunction, mCountdownHolder)
 
  already_AddRefed<Promise>
-Promise::All(const GlobalObject& aGlobal,
+Promise::All(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
              const Sequence<JS::Value>& aIterable, ErrorResult& aRv)
 {
   JSContext* cx = aGlobal.Context();
@@ -1066,7 +1066,7 @@ Promise::All(const GlobalObject& aGlobal,
 
   for (uint32_t i = 0; i < aIterable.Length(); ++i) {
     JS::Rooted<JS::Value> value(cx, aIterable.ElementAt(i));
-    RefPtr<Promise> nextPromise = Promise::Resolve(aGlobal, value, aRv);
+    RefPtr<Promise> nextPromise = Promise::Resolve(aGlobal, aThisv, value, aRv);
 
     MOZ_ASSERT(!aRv.Failed());
 
@@ -1132,7 +1132,7 @@ Promise::All(const GlobalObject& aGlobal,
 }
 
  already_AddRefed<Promise>
-Promise::Race(const GlobalObject& aGlobal,
+Promise::Race(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
               const Sequence<JS::Value>& aIterable, ErrorResult& aRv)
 {
   nsCOMPtr<nsIGlobalObject> global =
@@ -1162,7 +1162,7 @@ Promise::Race(const GlobalObject& aGlobal,
 
   for (uint32_t i = 0; i < aIterable.Length(); ++i) {
     JS::Rooted<JS::Value> value(cx, aIterable.ElementAt(i));
-    RefPtr<Promise> nextPromise = Promise::Resolve(aGlobal, value, aRv);
+    RefPtr<Promise> nextPromise = Promise::Resolve(aGlobal, aThisv, value, aRv);
     
     
     
