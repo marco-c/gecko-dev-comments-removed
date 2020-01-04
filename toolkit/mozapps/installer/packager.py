@@ -81,11 +81,15 @@ class ToolLauncher(object):
             env[e] = extra_env[e]
 
         
-        if 'VS120COMNTOOLS' in env and not buildconfig.substs['HAVE_64BIT_BUILD']:
-            vc12dir = os.path.abspath(os.path.join(env['VS120COMNTOOLS'],
-                                                   '../../VC/bin'))
-            if os.path.exists(vc12dir):
-                env['PATH'] = vc12dir + ';' + env['PATH']
+        if not buildconfig.substs['HAVE_64BIT_BUILD']:
+            for e in ('VS140COMNTOOLS', 'VS120COMNTOOLS'):
+                if e not in env:
+                    continue
+
+                vcdir = os.path.abspath(os.path.join(env[e], '../../VC/bin'))
+                if os.path.exists(vcdir):
+                    env['PATH'] = '%s;%s' % (vcdir, env['PATH'])
+                    break
 
         
         

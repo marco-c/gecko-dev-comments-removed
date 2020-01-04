@@ -57,11 +57,15 @@ if __name__ == '__main__':
     env["XPCOM_DEBUG_BREAK"] = "warn"
 
     
-    if "VS120COMNTOOLS" in env and not substs["HAVE_64BIT_BUILD"]:
-      vc12dir = os.path.abspath(os.path.join(env["VS120COMNTOOLS"],
-                                             "../../VC/bin"))
-      if os.path.exists(vc12dir):
-        env["PATH"] = vc12dir + ";" + env["PATH"]
+    if not substs['HAVE_64BIT_BUILD']:
+        for e in ('VS140COMNTOOLS', 'VS120COMNTOOLS'):
+            if e not in env:
+                continue
+
+            vcdir = os.path.abspath(os.path.join(env[e], '../../VC/bin'))
+            if os.path.exists(vcdir):
+                env['PATH'] = '%s;%s' % (vcdir, env['PATH'])
+                break
 
     
     runner = FirefoxRunner(profile=profile,
