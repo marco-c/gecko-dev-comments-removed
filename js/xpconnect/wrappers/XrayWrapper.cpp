@@ -424,25 +424,33 @@ TryResolvePropertyFromSpecs(JSContext* cx, HandleId id, HandleObject holder,
         RootedFunction getterObj(cx);
         RootedFunction setterObj(cx);
         unsigned flags = psMatch->flags;
-        if (psMatch->isSelfHosted()) {
-            getterObj = JS::GetSelfHostedFunction(cx, psMatch->getter.selfHosted.funname, id, 0);
-            if (!getterObj)
-                return false;
-            desc.setGetterObject(JS_GetFunctionObject(getterObj));
-            if (psMatch->setter.selfHosted.funname) {
-                MOZ_ASSERT(flags & JSPROP_SETTER);
-                setterObj = JS::GetSelfHostedFunction(cx, psMatch->setter.selfHosted.funname, id, 0);
-                if (!setterObj)
+        if (psMatch->isAccessor()) {
+            if (psMatch->isSelfHosted()) {
+                getterObj = JS::GetSelfHostedFunction(cx, psMatch->accessors.getter.selfHosted.funname, id, 0);
+                if (!getterObj)
                     return false;
-                desc.setSetterObject(JS_GetFunctionObject(setterObj));
+                desc.setGetterObject(JS_GetFunctionObject(getterObj));
+                if (psMatch->accessors.setter.selfHosted.funname) {
+                    MOZ_ASSERT(flags & JSPROP_SETTER);
+                    setterObj = JS::GetSelfHostedFunction(cx, psMatch->accessors.setter.selfHosted.funname, id, 0);
+                    if (!setterObj)
+                        return false;
+                    desc.setSetterObject(JS_GetFunctionObject(setterObj));
+                }
+            } else {
+                desc.setGetter(JS_CAST_NATIVE_TO(psMatch->accessors.getter.native.op,
+                                                 JSGetterOp));
+                desc.setSetter(JS_CAST_NATIVE_TO(psMatch->accessors.setter.native.op,
+                                                 JSSetterOp));
             }
+            desc.setAttributes(flags);
         } else {
-            desc.setGetter(JS_CAST_NATIVE_TO(psMatch->getter.native.op,
-                                             JSGetterOp));
-            desc.setSetter(JS_CAST_NATIVE_TO(psMatch->setter.native.op,
-                                             JSSetterOp));
+            RootedString atom(cx, JS_AtomizeString(cx, psMatch->string.value));
+            if (!atom)
+                return false;
+            desc.value().setString(atom);
+            desc.setAttributes(flags & ~JSPROP_INTERNAL_USE_BIT);
         }
-        desc.setAttributes(flags);
 
         
         
@@ -453,7 +461,7 @@ TryResolvePropertyFromSpecs(JSContext* cx, HandleId id, HandleObject holder,
         
         
         return JS_DefinePropertyById(cx, holder, id,
-                                     UndefinedHandleValue,
+                                     desc.value(),
                                      
                                      
                                      

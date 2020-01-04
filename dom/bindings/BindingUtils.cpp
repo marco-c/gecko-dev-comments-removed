@@ -1292,15 +1292,15 @@ XrayResolveAttribute(JSContext* cx, JS::Handle<JSObject*> wrapper,
           desc.setAttributes(attrSpec.flags);
           
           JS::Rooted<JSObject*> funobj(cx,
-            XrayCreateFunction(cx, wrapper, attrSpec.getter.native, 0, id));
+            XrayCreateFunction(cx, wrapper, attrSpec.accessors.getter.native, 0, id));
           if (!funobj)
             return false;
           desc.setGetterObject(funobj);
           desc.attributesRef() |= JSPROP_GETTER;
-          if (attrSpec.setter.native.op) {
+          if (attrSpec.accessors.setter.native.op) {
             
             funobj =
-              XrayCreateFunction(cx, wrapper, attrSpec.setter.native, 1, id);
+              XrayCreateFunction(cx, wrapper, attrSpec.accessors.setter.native, 1, id);
             if (!funobj)
               return false;
             desc.setSetterObject(funobj);
