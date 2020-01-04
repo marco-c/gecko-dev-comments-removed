@@ -1503,7 +1503,8 @@ nsObjectLoadingContent::IsYoutubeEmbed()
   
   nsAutoCString uri;
   mURI->GetSpec(uri);
-  if (uri.Find("enablejsapi=1", true, 0, -1) == kNotFound) {
+  
+  if (uri.Find("enablejsapi=1", true, 0, -1) != kNotFound) {
     return false;
   }
   return true;
@@ -2160,7 +2161,7 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
 
   
   if (IsYoutubeEmbed()) {
-    Telemetry::Accumulate(Telemetry::YOUTUBE_EMBED_SEEN, 1);
+    Telemetry::Accumulate(Telemetry::YOUTUBE_REWRITABLE_EMBED_SEEN, 1);
   }
 
   
