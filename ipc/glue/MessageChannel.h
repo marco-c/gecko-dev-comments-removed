@@ -599,6 +599,13 @@ class MessageChannel : HasResultCodes
     
     int32_t mCurrentTransaction;
 
+    
+    
+    
+    
+    
+    int mPendingSendPriorities;
+
     class AutoEnterTransaction
     {
      public:

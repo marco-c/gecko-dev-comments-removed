@@ -324,6 +324,7 @@ MessageChannel::MessageChannel(MessageListener *aListener)
     mDispatchingAsyncMessage(false),
     mDispatchingAsyncMessagePriority(0),
     mCurrentTransaction(0),
+    mPendingSendPriorities(0),
     mTimedOutMessageSeqno(0),
     mTimedOutMessagePriority(0),
     mRecvdErrors(0),
@@ -838,37 +839,6 @@ MessageChannel::WasTransactionCanceled(int transaction, int prio)
     if (transaction == mCurrentTransaction) {
         return false;
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    IPC_ASSERT(prio != IPC::Message::PRIORITY_NORMAL,
-               "Intentional crash: We canceled a CPOW that was racing with a sync message.");
-
     return true;
 }
 
@@ -967,6 +937,9 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     AutoSetValue<bool> replies(mAwaitingSyncReply, true);
     AutoSetValue<int> prioSet(mAwaitingSyncReplyPriority, prio);
     AutoEnterTransaction transact(this, seqno);
+
+    int prios = mPendingSendPriorities | (1 << prio);
+    AutoSetValue<int> priosSet(mPendingSendPriorities, prios);
 
     int32_t transaction = mCurrentTransaction;
     msg->set_transaction_id(transaction);
@@ -2115,6 +2088,37 @@ MessageChannel::CancelTransaction(int transaction)
 
     IPC_LOG("CancelTransaction: xid=%d prios=%d", transaction, mPendingSendPriorities);
 
+    if (mPendingSendPriorities & (1 << IPC::Message::PRIORITY_NORMAL)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        mListener->IntentionalCrash();
+    }
+
     
     
     
@@ -2183,8 +2187,7 @@ MessageChannel::CancelCurrentTransaction()
         if (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_URGENT ||
             DispatchingAsyncMessagePriority() == IPC::Message::PRIORITY_URGENT)
         {
-            MOZ_CRASH("Intentional crash: we're running a nested event loop "
-                      "while processing an urgent message");
+            mListener->IntentionalCrash();
         }
 
         IPC_LOG("Cancel requested: current xid=%d", mCurrentTransaction);
