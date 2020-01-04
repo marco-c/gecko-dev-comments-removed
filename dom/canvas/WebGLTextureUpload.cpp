@@ -1981,15 +1981,6 @@ WebGLTexture::CopyTexImage2D(TexImageTarget target, GLint level, GLenum internal
 
     
     
-    
-    
-    if (srcMode == LOCAL_GL_NONE) {
-        mContext->ErrorInvalidOperation("%s: READ_BUFFER is NONE. ", funcName);
-        return;
-    }
-
-    
-    
 
     const auto dstUsage = ValidateCopyDestUsage(funcName, mContext, srcFormat,
                                                 internalFormat);
@@ -2122,15 +2113,6 @@ WebGLTexture::CopyTexSubImage(const char* funcName, TexImageTarget target, GLint
 
     if (!ValidateCopyTexImageForFeedback(funcName, level))
         return;
-
-    
-    
-    
-    
-    if (srcMode == LOCAL_GL_NONE) {
-        mContext->ErrorInvalidOperation("%s: READ_BUFFER is NONE. ", funcName);
-        return;
-    }
 
     
     
