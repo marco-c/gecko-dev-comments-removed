@@ -159,7 +159,7 @@ private:
                                  int& aSkippedBytes);
 
   
-  RefPtr<MediaRawData> GetNextPacket(TrackInfo::TrackType aType);
+  ogg_packet* GetNextPacket(TrackInfo::TrackType aType);
 
   nsresult ResetTrackState(TrackInfo::TrackType aType);
 
