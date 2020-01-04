@@ -307,6 +307,11 @@ nsresult NrIceMediaStream::GetCandidatePairs(std::vector<NrIceCandidatePair>*
   }
 
   
+  if (ctx_->connection_state() == NrIceCtx::ICE_CTX_INIT) {
+    return NS_OK;
+  }
+
+  
   
   nr_ice_media_stream* peer_stream;
   int r = nr_ice_peer_ctx_find_pstream(ctx_->peer(), stream_, &peer_stream);
@@ -481,6 +486,11 @@ nsresult NrIceMediaStream::GetRemoteCandidates(
     std::vector<NrIceCandidate>* candidates) const {
   if (!stream_) {
     return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  if (ctx_->connection_state() == NrIceCtx::ICE_CTX_INIT) {
+    return NS_OK;
   }
 
   nr_ice_media_stream* peer_stream;
