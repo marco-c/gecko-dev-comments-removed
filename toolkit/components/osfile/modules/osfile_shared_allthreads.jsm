@@ -1050,6 +1050,42 @@ Library.prototype = Object.freeze({
     });
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  declareLazyWithFallback: function(fallbacklibrary, object, field, ...args) {
+    let lib = this;
+    Object.defineProperty(object, field, {
+      get: function() {
+        delete this[field];
+        try {
+          let ffi = lib.library.declare(...args);
+          if (ffi) {
+            return this[field] = ffi;
+          }
+        } catch (ex) {
+          
+          fallbacklibrary.declareLazy(object, field, ...args);
+          return object[field];
+        }
+        return undefined;
+      },
+      configurable: true,
+      enumerable: true
+    });
+  },
+
   toString: function() {
     return "[Library " + this.name + "]";
   }

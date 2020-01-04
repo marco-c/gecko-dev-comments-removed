@@ -264,26 +264,18 @@
          
          let default_lib = new SharedAll.Library("default_lib",
                                                  "a.out");
-         try {
-           
-           
-           
 
-           default_lib.declareLazy(SysFile, "free",
-             "free", ctypes.default_abi,
-              ctypes.void_t,
-                 ctypes.voidptr_t);
+         
+         
+         
+         
+         
 
-         } catch (ex) {
-           
-           
-
-           libc.declareLazy(SysFile, "free",
-             "free", ctypes.default_abi,
-              ctypes.void_t,
-                 ctypes.voidptr_t);
-         }
-      }
+         default_lib.declareLazyWithFallback(libc, SysFile, "free",
+           "free", ctypes.default_abi,
+            ctypes.void_t,
+               ctypes.voidptr_t);
+       }
 
 
        
@@ -625,7 +617,7 @@
                               Type.fd,
                              Type.stat.out_ptr);
 
-         
+
          SysFile.stat = function stat(path, buf) {
            return Stat.xstat(ver, path, buf);
          };
