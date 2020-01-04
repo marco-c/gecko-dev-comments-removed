@@ -48,7 +48,7 @@ public:
 
 
 
-  void ReceiveSocketData(JSContext* aCx, nsAutoPtr<UnixSocketBuffer>& aBuffer);
+  void ReceiveSocketData(JSContext* aCx, UniquePtr<UnixSocketBuffer>& aBuffer);
 
   
 
