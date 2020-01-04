@@ -5669,7 +5669,6 @@
 #define LOCAL_GLX_Y_INVERTED_EXT                             0x20D4
 
 
-
 #define LOCAL_WGL_ACCELERATION_ARB                           0x2003
 #define LOCAL_WGL_ACCELERATION_EXT                           0x2003
 #define LOCAL_WGL_ACCESS_READ_ONLY_NV                        0x00000000
