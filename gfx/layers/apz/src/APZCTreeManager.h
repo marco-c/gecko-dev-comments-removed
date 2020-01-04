@@ -98,6 +98,14 @@ public:
 
 
 
+  static void InitializeGlobalState();
+
+  
+
+
+
+
+
 
 
 
