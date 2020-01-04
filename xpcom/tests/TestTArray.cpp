@@ -5,7 +5,6 @@
 
 
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/unused.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -1116,9 +1115,9 @@ static bool test_SetLengthAndRetainStorage_no_ctor() {
     pre t post;                                                \
     pre tauto post;                                            \
   } while (0)
-
   
-  FOR_EACH(; unused << , .SetLength(N, fallible));
+  
+  FOR_EACH(;, .SetLength(N, fallible));
   for (int n = 0; n < N; ++n) {
     FOR_EACH(;, [n] = n);
   }
