@@ -306,6 +306,7 @@ public:
 
   
   bool     IsTooLong();
+  bool     IsTooShort();
   bool     IsValueMissing() const;
   bool     HasTypeMismatch() const;
   bool     HasPatternMismatch() const;
@@ -314,6 +315,7 @@ public:
   bool     HasStepMismatch(bool aUseZeroIfValueNaN = false) const;
   bool     HasBadInput() const;
   void     UpdateTooLongValidityState();
+  void     UpdateTooShortValidityState();
   void     UpdateValueMissingValidityState();
   void     UpdateTypeMismatchValidityState();
   void     UpdatePatternMismatchValidityState();
@@ -534,12 +536,29 @@ public:
 
   void SetMaxLength(int32_t aValue, ErrorResult& aRv)
   {
-    if (aValue < 0) {
+    int32_t minLength = MinLength();
+    if (aValue < 0 || (minLength >= 0 && aValue < minLength)) {
       aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
       return;
     }
 
     SetHTMLIntAttr(nsGkAtoms::maxlength, aValue, aRv);
+  }
+
+  int32_t MinLength() const
+  {
+    return GetIntAttr(nsGkAtoms::minlength, -1);
+  }
+
+  void SetMinLength(int32_t aValue, ErrorResult& aRv)
+  {
+    int32_t maxLength = MaxLength();
+    if (aValue < 0 || (maxLength >= 0 && aValue > maxLength)) {
+      aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
+      return;
+    }
+
+    SetHTMLIntAttr(nsGkAtoms::minlength, aValue, aRv);
   }
 
   
@@ -1051,7 +1070,7 @@ protected:
   
 
 
-  bool MaxLengthApplies() const { return IsSingleLineTextControl(false, mType); }
+  bool MinOrMaxLengthApplies() const { return IsSingleLineTextControl(false, mType); }
 
   void FreeData();
   nsTextEditorState *GetEditorState() const;

@@ -607,6 +607,7 @@ GK_ATOM(middle, "middle")
 GK_ATOM(min, "min")
 GK_ATOM(minheight, "minheight")
 GK_ATOM(minimum_scale, "minimum-scale")
+GK_ATOM(minlength, "minlength")
 GK_ATOM(minpos, "minpos")
 GK_ATOM(minusSign, "minus-sign")
 GK_ATOM(minwidth, "minwidth")
@@ -1955,9 +1956,6 @@ GK_ATOM(ondevicelight, "ondevicelight")
 
 GK_ATOM(onmozinterruptbegin, "onmozinterruptbegin")
 GK_ATOM(onmozinterruptend, "onmozinterruptend")
-
-
-GK_ATOM(ondevicechange, "ondevicechange")
 
 
 
