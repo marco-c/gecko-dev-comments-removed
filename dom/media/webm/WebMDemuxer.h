@@ -170,6 +170,7 @@ private:
   media::TimeIntervals GetBuffered();
   nsresult SeekInternal(TrackInfo::TrackType aType,
                         const media::TimeUnit& aTarget);
+  CryptoTrack GetTrackCrypto(TrackInfo::TrackType aType, size_t aTrackNumber);
 
   
   
@@ -244,6 +245,8 @@ private:
   
   
   RefPtr<SharedTrackInfo> mSharedVideoTrackInfo;
+
+  EncryptionInfo mCrypto;
 };
 
 class WebMTrackDemuxer : public MediaTrackDemuxer
