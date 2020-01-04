@@ -78,7 +78,8 @@ WheelScrollAnimation::InitPreferences(TimeStamp aTime)
   mOriginMaxMS = clamped(gfxPrefs::WheelSmoothScrollMaxDurationMs(), 0, 10000);
   mOriginMinMS = clamped(gfxPrefs::WheelSmoothScrollMinDurationMs(), 0, mOriginMaxMS);
 
-  mIntervalRatio = (gfxPrefs::SmoothScrollDurationToIntervalRatio() * 100) / 100.0;
+  
+  mIntervalRatio = ((double)gfxPrefs::SmoothScrollDurationToIntervalRatio()) / 100.0;
   mIntervalRatio = std::max(1.0, mIntervalRatio);
 
   InitializeHistory(aTime);
