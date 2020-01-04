@@ -143,11 +143,6 @@ ABIArgGenerator::next(MIRType type)
     return softNext(type);
 }
 
-const Register ABIArgGenerator::NonArgReturnReg0 = r4;
-const Register ABIArgGenerator::NonArgReturnReg1 = r5;
-const Register ABIArgGenerator::NonReturn_VolatileReg0 = r2;
-const Register ABIArgGenerator::NonReturn_VolatileReg1 = r3;
-
 
 
 uint32_t

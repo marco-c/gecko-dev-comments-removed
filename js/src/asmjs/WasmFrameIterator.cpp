@@ -194,15 +194,7 @@ static void
 GenerateProfilingPrologue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
                           ProfilingOffsets* offsets)
 {
-#if !defined (JS_CODEGEN_ARM)
-    Register scratch = ABIArgGenerator::NonArg_VolatileReg;
-#else
-    
-    
-    
-    Register scratch = lr;
-    masm.setSecondScratchReg(InvalidReg);
-#endif
+    Register scratch = ABINonArgReg0;
 
     
     
@@ -227,14 +219,8 @@ GenerateProfilingPrologue(MacroAssembler& masm, unsigned framePushed, ExitReason
         MOZ_ASSERT_IF(!masm.oom(), StoredFP == masm.currentOffset() - offsets->begin);
     }
 
-    if (reason != ExitReason::None) {
-        masm.store32_NoSecondScratch(Imm32(int32_t(reason)),
-                                     Address(scratch, WasmActivation::offsetOfExitReason()));
-    }
-
-#if defined(JS_CODEGEN_ARM)
-    masm.setSecondScratchReg(lr);
-#endif
+    if (reason != ExitReason::None)
+        masm.store32(Imm32(int32_t(reason)), Address(scratch, WasmActivation::offsetOfExitReason()));
 
     if (framePushed)
         masm.subFromStackPtr(Imm32(framePushed));
@@ -245,10 +231,10 @@ static void
 GenerateProfilingEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
                           ProfilingOffsets* offsets)
 {
-    Register scratch = ABIArgGenerator::NonReturn_VolatileReg0;
+    Register scratch = ABINonArgReturnReg0;
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
     defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    Register scratch2 = ABIArgGenerator::NonReturn_VolatileReg1;
+    Register scratch2 = ABINonArgReturnReg1;
 #endif
 
     if (framePushed)

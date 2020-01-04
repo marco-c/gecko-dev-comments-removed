@@ -135,8 +135,8 @@ wasm::GenerateEntry(MacroAssembler& masm, unsigned target, const Sig& sig, bool 
     
     
     
-    Register argv = ABIArgGenerator::NonArgReturnReg0;
-    Register scratch = ABIArgGenerator::NonArgReturnReg1;
+    Register argv = ABINonArgReturnReg0;
+    Register scratch = ABINonArgReturnReg1;
     Register64 scratch64(scratch);
 
 #if defined(JS_CODEGEN_X86)
@@ -424,7 +424,7 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const Import& import, uint32_t im
 
     
     unsigned offsetToCallerStackArgs = sizeof(AsmJSFrame) + masm.framePushed();
-    Register scratch = ABIArgGenerator::NonArgReturnReg0;
+    Register scratch = ABINonArgReturnReg0;
     FillArgumentArray(masm, sig.args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(false));
 
     
@@ -543,8 +543,8 @@ wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
     argOffset += sizeof(size_t);
 
     
-    Register callee = ABIArgGenerator::NonArgReturnReg0;   
-    Register scratch = ABIArgGenerator::NonArgReturnReg1;  
+    Register callee = ABINonArgReturnReg0;   
+    Register scratch = ABINonArgReturnReg1;  
 
     
     uint32_t globalDataOffset = import.exitGlobalDataOffset();
@@ -839,7 +839,7 @@ GenerateStackOverflow(MacroAssembler& masm)
     
     
     
-    Register activation = ABIArgGenerator::NonArgReturnReg0;
+    Register activation = ABINonArgReturnReg0;
     masm.loadWasmActivation(activation);
     masm.storePtr(masm.getStackPointer(), Address(activation, WasmActivation::offsetOfFP()));
 
@@ -909,7 +909,7 @@ GenerateThrow(MacroAssembler& masm)
     
     
     
-    Register scratch = ABIArgGenerator::NonArgReturnReg0;
+    Register scratch = ABINonArgReturnReg0;
     masm.loadWasmActivation(scratch);
     masm.storePtr(ImmWord(0), Address(scratch, WasmActivation::offsetOfFP()));
 
@@ -978,7 +978,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.setFramePushed(0);         
     masm.PushRegsInMask(AllRegsExceptSP); 
 
-    Register scratch = ABIArgGenerator::NonArgReturnReg0;
+    Register scratch = ABINonArgReturnReg0;
 
     
     masm.loadWasmActivation(scratch);
@@ -987,7 +987,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
 
     
     
-    masm.moveStackPtrTo(ABIArgGenerator::NonVolatileReg);
+    masm.moveStackPtrTo(ABINonVolatileReg);
     masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
     if (ShadowStackSpace)
         masm.subFromStackPtr(Imm32(ShadowStackSpace));
@@ -998,7 +998,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.branchIfFalseBool(ReturnReg, JumpTarget::Throw);
 
     
-    masm.moveToStackPtr(ABIArgGenerator::NonVolatileReg);
+    masm.moveToStackPtr(ABINonVolatileReg);
 
     
     masm.PopRegsInMask(AllRegsExceptSP); 
