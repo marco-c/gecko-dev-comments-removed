@@ -734,6 +734,16 @@ public:
   SourceMediaStream* AsSourceStream() override { return this; }
 
   
+
+  
+  
+  
+  
+  nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
+                          AudioDataListener *aListener);
+  
+  void CloseAudioInput();
+
   void DestroyImpl() override;
 
   
@@ -919,6 +929,12 @@ protected:
 
   void NotifyDirectConsumers(TrackData *aTrack,
                              MediaSegment *aSegment);
+
+  
+  
+  
+  
+  RefPtr<AudioDataListener> mInputListener;
 
   
   

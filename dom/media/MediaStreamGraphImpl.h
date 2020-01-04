@@ -8,6 +8,8 @@
 
 #include "MediaStreamGraph.h"
 
+#include "nsDataHashtable.h"
+
 #include "mozilla/Monitor.h"
 #include "mozilla/TimeStamp.h"
 #include "nsIMemoryReporter.h"
@@ -629,6 +631,9 @@ public:
   CubebUtils::AudioDeviceID mInputDeviceID;
   bool mOutputWanted;
   CubebUtils::AudioDeviceID mOutputDeviceID;
+  
+  
+  nsDataHashtable<nsPtrHashKey<AudioDataListener>, uint32_t> mInputDeviceUsers;
 
   
   Atomic<bool> mNeedAnotherIteration;

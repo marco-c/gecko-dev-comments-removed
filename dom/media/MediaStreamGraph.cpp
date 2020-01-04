@@ -938,18 +938,31 @@ void
 MediaStreamGraphImpl::OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
                                          AudioDataListener *aListener)
 {
- 
-  MOZ_ASSERT(!mInputWanted);
-  if (mInputWanted) {
+  
+  if (mInputDeviceUsers.Count() > 0 &&
+      !mInputDeviceUsers.Get(aListener, nullptr)) {
+    NS_ASSERTION(false, "Input from multiple mics not yet supported; bug 1238038");
     
     
     return;
   }
   mInputWanted = true;
+
+  
+  
+  
+  
+  uint32_t count = 0;
+  mInputDeviceUsers.Get(aListener, &count); 
+  count++;
+  mInputDeviceUsers.Put(aListener, count); 
+
   
   
   mInputDeviceID = aID;
-  mAudioInputs.AppendElement(aListener); 
+  if (count == 1) { 
+    mAudioInputs.AppendElement(aListener); 
+  }
 
   
   MonitorAutoLock mon(mMonitor);
@@ -986,6 +999,7 @@ MediaStreamGraphImpl::OpenAudioInput(CubebUtils::AudioDeviceID aID,
     CubebUtils::AudioDeviceID mID;
     RefPtr<AudioDataListener> mListener;
   };
+  
   this->AppendMessage(MakeUnique<Message>(this, aID, aListener));
   return NS_OK;
 }
@@ -993,6 +1007,14 @@ MediaStreamGraphImpl::OpenAudioInput(CubebUtils::AudioDeviceID aID,
 void
 MediaStreamGraphImpl::CloseAudioInputImpl(AudioDataListener *aListener)
 {
+  uint32_t count;
+  DebugOnly<bool> result = mInputDeviceUsers.Get(aListener, &count);
+  MOZ_ASSERT(result);
+  if (--count > 0) {
+    mInputDeviceUsers.Put(aListener, count);
+    return; 
+  }
+  mInputDeviceUsers.Remove(aListener);
   mInputDeviceID = nullptr;
   mInputWanted = false;
   AudioCallbackDriver *driver = CurrentDriver()->AsAudioCallbackDriver();
@@ -2299,9 +2321,32 @@ MediaStream::AddMainThreadListener(MainThreadMediaStreamListener* aListener)
   NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(runnable.forget())));
 }
 
+nsresult
+SourceMediaStream::OpenAudioInput(CubebUtils::AudioDeviceID aID,
+                                  AudioDataListener *aListener)
+{
+  if (GraphImpl()) {
+    mInputListener = aListener;
+    return GraphImpl()->OpenAudioInput(aID, aListener);
+  }
+  return NS_ERROR_FAILURE;
+}
+
+void
+SourceMediaStream::CloseAudioInput()
+{
+  
+  if (GraphImpl() && mInputListener) {
+    GraphImpl()->CloseAudioInput(mInputListener);
+  }
+  mInputListener = nullptr;
+}
+
 void
 SourceMediaStream::DestroyImpl()
 {
+  CloseAudioInput();
+
   
   
   MutexAutoLock lock(mMutex);
