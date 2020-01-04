@@ -359,8 +359,10 @@ class RemoteReftest(RefTest):
         prefs["datareporting.policy.dataSubmissionPolicyBypassAcceptance"] = True
 
         
-        prefs["browser.safebrowsing.gethashURL"] = "http://127.0.0.1:8888/safebrowsing-dummy/gethash"
-        prefs["browser.safebrowsing.updateURL"] = "http://127.0.0.1:8888/safebrowsing-dummy/update"
+        prefs["browser.safebrowsing.provider.google.gethashURL"] = "http://127.0.0.1:8888/safebrowsing-dummy/gethash"
+        prefs["browser.safebrowsing.provider.google.updateURL"] = "http://127.0.0.1:8888/safebrowsing-dummy/update"
+        prefs["browser.safebrowsing.provider.mozilla.gethashURL"] = "http://127.0.0.1:8888/safebrowsing-dummy/gethash"
+        prefs["browser.safebrowsing.provider.mozilla.updateURL"] = "http://127.0.0.1:8888/safebrowsing-dummy/update"
         
         prefs["extensions.update.url"] = "http://127.0.0.1:8888/extensions-dummy/updateURL"
         prefs["extensions.update.background.url"] = "http://127.0.0.1:8888/extensions-dummy/updateBackgroundURL"

@@ -58,12 +58,12 @@ DEFAULT_NO_CONNECTIONS_PREFS = {
     'browser.search.update': False,
     'browser.search.suggest.enabled' : False,
     'browser.safebrowsing.enabled' : False,
-    'browser.safebrowsing.updateURL': 'http://localhost/safebrowsing-dummy/update',
-    'browser.safebrowsing.gethashURL': 'http://localhost/safebrowsing-dummy/gethash',
+    'browser.safebrowsing.provider.google.updateURL': 'http://localhost/safebrowsing-dummy/update',
+    'browser.safebrowsing.provider.google.gethashURL': 'http://localhost/safebrowsing-dummy/gethash',
     'browser.safebrowsing.malware.reportURL': 'http://localhost/safebrowsing-dummy/malwarereport',
     'browser.selfsupport.url': 'https://localhost/selfsupport-dummy',
-    'browser.trackingprotection.gethashURL': 'http://localhost/safebrowsing-dummy/gethash',
-    'browser.trackingprotection.updateURL': 'http://localhost/safebrowsing-dummy/update',
+    'browser.safebrowsing.provider.mozilla.gethashURL': 'http://localhost/safebrowsing-dummy/gethash',
+    'browser.safebrowsing.provider.mozilla.updateURL': 'http://localhost/safebrowsing-dummy/update',
 
     
     'app.update.enabled' : False,
@@ -120,8 +120,10 @@ DEFAULT_FIREFOX_PREFS = {
     
     'urlclassifier.updateinterval' : 172800,
     
-    'browser.safebrowsing.provider.0.gethashURL' : 'http://localhost/safebrowsing-dummy/gethash',
-    'browser.safebrowsing.provider.0.updateURL' : 'http://localhost/safebrowsing-dummy/update',
+    'browser.safebrowsing.provider.google.gethashURL' : 'http://localhost/safebrowsing-dummy/gethash',
+    'browser.safebrowsing.provider.google.updateURL' : 'http://localhost/safebrowsing-dummy/update',
+    'browser.safebrowsing.provider.mozilla.gethashURL': 'http://localhost/safebrowsing-dummy/gethash',
+    'browser.safebrowsing.provider.mozilla.updateURL': 'http://localhost/safebrowsing-dummy/update',
 }
 
 
