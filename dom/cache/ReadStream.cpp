@@ -133,7 +133,7 @@ public:
 
   
   
-  NS_IMETHOD Cancel()
+  nsresult Cancel()
   {
     Run();
     return NS_OK;
@@ -168,7 +168,7 @@ public:
 
   
   
-  NS_IMETHOD Cancel()
+  nsresult Cancel()
   {
     Run();
     return NS_OK;

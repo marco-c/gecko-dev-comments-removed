@@ -139,7 +139,7 @@ class nsTimerEvent : public nsCancelableRunnable
 public:
   NS_IMETHOD Run() override;
 
-  NS_IMETHOD Cancel() override
+  nsresult Cancel() override
   {
     
     
