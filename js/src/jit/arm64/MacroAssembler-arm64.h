@@ -1346,8 +1346,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
     void branch(JitCode* target) {
         syncStackPtr();
-        addPendingJump(nextOffset(), ImmPtr(target->raw()), Relocation::JITCODE);
-        b(-1); 
+        BufferOffset loc = b(-1); 
+        addPendingJump(loc, ImmPtr(target->raw()), Relocation::JITCODE);
     }
 
     void branch32(Condition cond, const Operand& lhs, Register rhs, Label* label) {
