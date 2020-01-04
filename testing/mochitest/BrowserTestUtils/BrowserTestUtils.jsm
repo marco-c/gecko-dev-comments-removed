@@ -143,13 +143,29 @@ this.BrowserTestUtils = {
 
 
 
-  browserLoaded(browser, includeSubFrames=false) {
+
+
+
+
+  browserLoaded(browser, includeSubFrames=false, wantLoad=null) {
+    function isWanted(url) {
+      if (!wantLoad) {
+        return true;
+      } else if (typeof(wantLoad) == "function") {
+        return wantLoad(url);
+      } else {
+        
+        return wantLoad == url;
+      }
+    }
+
     return new Promise(resolve => {
       let mm = browser.ownerDocument.defaultView.messageManager;
       mm.addMessageListener("browser-test-utils:loadEvent", function onLoad(msg) {
-        if (msg.target == browser && (!msg.data.subframe || includeSubFrames)) {
+        if (msg.target == browser && (!msg.data.subframe || includeSubFrames) &&
+            isWanted(msg.data.url)) {
           mm.removeMessageListener("browser-test-utils:loadEvent", onLoad);
-          resolve();
+          resolve(msg.data.url);
         }
       });
     });
