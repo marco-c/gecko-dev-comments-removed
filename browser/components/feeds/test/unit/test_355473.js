@@ -36,6 +36,8 @@ function run_test() {
   do_check_true(httpsURI.equals(httpsChannel.URI));
 
   
-  var ftpFeedURI = ios.newURI("feed:ftp://example.com/feed.xml", null, null);
-  var fileFeedURI = ios.newURI("feed:file:///var/feed.xml", null, null);
+  Assert.throws(function() { ios.newURI("feed:ftp://example.com/feed.xml", null, null); },
+      "Should throw an exception when trying to create a feed: URI with an ftp: inner");
+  Assert.throws(function() { ios.newURI("feed:file:///var/feed.xml", null, null); },
+      "Should throw an exception when trying to create a feed: URI with a file: inner");
 }
