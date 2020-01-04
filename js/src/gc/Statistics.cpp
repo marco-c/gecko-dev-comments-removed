@@ -937,13 +937,16 @@ Statistics::endGC()
     for (size_t d = PHASE_DAG_NONE; d < NumTimingArrays; d++)
         PodZero(&phaseTimes[d][PHASE_GC_BEGIN], PHASE_LIMIT - PHASE_GC_BEGIN);
 
-    aborted = false;
+    
+    if (gcDepth == 1)
+        aborted = false;
 }
 
 void
 Statistics::beginSlice(const ZoneGCStats& zoneStats, JSGCInvocationKind gckind,
                        SliceBudget budget, JS::gcreason::Reason reason)
 {
+    gcDepth++;
     this->zoneStats = zoneStats;
 
     bool first = !runtime->gc.isIncrementalGCInProgress();
@@ -960,7 +963,7 @@ Statistics::beginSlice(const ZoneGCStats& zoneStats, JSGCInvocationKind gckind,
     runtime->addTelemetry(JS_TELEMETRY_GC_REASON, reason);
 
     
-    if (++gcDepth == 1) {
+    if (gcDepth == 1) {
         bool wasFullGC = zoneStats.isCollectingAllZones();
         if (sliceCallback)
             (*sliceCallback)(runtime, first ? JS::GC_CYCLE_BEGIN : JS::GC_SLICE_BEGIN,
@@ -999,7 +1002,7 @@ Statistics::endSlice()
         endGC();
 
     
-    if (--gcDepth == 0) {
+    if (gcDepth == 1 && !aborted) {
         bool wasFullGC = zoneStats.isCollectingAllZones();
         if (sliceCallback)
             (*sliceCallback)(runtime, last ? JS::GC_CYCLE_END : JS::GC_SLICE_END,
@@ -1009,6 +1012,9 @@ Statistics::endSlice()
     
     if (last)
         PodArrayZero(counts);
+
+    gcDepth--;
+    MOZ_ASSERT(gcDepth >= 0);
 }
 
 void
