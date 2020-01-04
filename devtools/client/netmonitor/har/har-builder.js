@@ -298,7 +298,15 @@ HarBuilder.prototype = {
 
     response.redirectURL = findValue(headers, "Location");
     response.headersSize = headersSize;
-    response.bodySize = file.transferredSize || -1;
+
+    
+    
+    
+    if (typeof file.transferredSize != "number") {
+      response.bodySize = (response.status == 304) ? 0 : -1;
+    } else {
+      response.bodySize = file.transferredSize;
+    }
 
     return response;
   },
