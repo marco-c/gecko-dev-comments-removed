@@ -10,7 +10,6 @@
 #include "ImageLayers.h"                
 #include "Layers.h"                     
 #include "Units.h"                      
-#include "gfxColor.h"                   
 #include "GraphicsFilter.h"             
 #include "gfxRect.h"                    
 #include "gfxUtils.h"                   

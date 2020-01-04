@@ -5,7 +5,6 @@
 
 #include "mozilla/layers/ContentClient.h"
 #include "BasicLayers.h"                
-#include "gfxColor.h"                   
 #include "gfxContext.h"                 
 #include "gfxPlatform.h"                
 #include "gfxPrefs.h"                   

@@ -13,7 +13,6 @@
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/ScaleFactor.h"    
 #include "mozilla/gfx/Logging.h"        
-#include "gfxColor.h"
 #include "nsString.h"
 
 namespace IPC {

@@ -9,7 +9,6 @@
 #include "ReadbackLayer.h"              
 #include "UnitTransforms.h"             
 #include "Units.h"                      
-#include "gfxColor.h"                   
 #include "gfxContext.h"                 
 #include "gfxUtils.h"
 #include "gfxRect.h"                    

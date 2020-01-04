@@ -17,7 +17,6 @@
 #include "basic/BasicImplData.h"        
 #include "basic/BasicLayers.h"          
 #include "gfxASurface.h"                
-#include "gfxColor.h"                   
 #include "gfxContext.h"                 
 #include "gfxImageSurface.h"            
 #include "gfxMatrix.h"                  

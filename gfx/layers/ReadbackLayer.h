@@ -8,9 +8,8 @@
 
 #include <stdint.h>                     
 #include "Layers.h"                     
-#include "gfxColor.h"                   
-#include "mozilla/gfx/Rect.h"                    
-#include "mozilla/gfx/Point.h"                    
+#include "mozilla/gfx/Rect.h"           
+#include "mozilla/gfx/Point.h"          
 #include "mozilla/mozalloc.h"           
 #include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
