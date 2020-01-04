@@ -13,20 +13,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-'use strict';
-
 var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 var DEFAULT_SCALE_DELTA = 1.1;
 var MIN_SCALE = 0.25;
@@ -51,57 +37,6 @@ var UNKNOWN_SCALE = 0;
 var MAX_AUTO_SCALE = 1.25;
 var SCROLLBAR_PADDING = 40;
 var VERTICAL_PADDING = 5;
-
-
-var CustomStyle = (function CustomStyleClosure() {
-
-  
-  
-  
-  
-  var prefixes = ['ms', 'Moz', 'Webkit', 'O'];
-  var _cache = {};
-
-  function CustomStyle() {}
-
-  CustomStyle.getProp = function get(propName, element) {
-    
-    if (arguments.length === 1 && typeof _cache[propName] === 'string') {
-      return _cache[propName];
-    }
-
-    element = element || document.documentElement;
-    var style = element.style, prefixed, uPropName;
-
-    
-    if (typeof style[propName] === 'string') {
-      return (_cache[propName] = propName);
-    }
-
-    
-    uPropName = propName.charAt(0).toUpperCase() + propName.slice(1);
-
-    
-    for (var i = 0, l = prefixes.length; i < l; i++) {
-      prefixed = prefixes[i] + uPropName;
-      if (typeof style[prefixed] === 'string') {
-        return (_cache[propName] = prefixed);
-      }
-    }
-
-    
-    return (_cache[propName] = 'undefined');
-  };
-
-  CustomStyle.setProp = function set(propName, element, str) {
-    var prop = this.getProp(propName);
-    if (prop !== 'undefined') {
-      element.style[prop] = str;
-    }
-  };
-
-  return CustomStyle;
-})();
 
 var NullCharactersRegExp = /\x00/g;
 
@@ -2640,23 +2575,6 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'use strict';
-
 var GrabToPan = (function GrabToPanClosure() {
   
 
@@ -3518,6 +3436,8 @@ var TEXT_LAYER_RENDER_DELAY = 200;
 
 
 var PDFPageView = (function PDFPageViewClosure() {
+  var CustomStyle = PDFJS.CustomStyle;
+
   
 
 
@@ -3535,7 +3455,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.renderingId = 'page' + id;
 
     this.rotation = 0;
-    this.scale = scale || 1.0;
+    this.scale = scale || DEFAULT_SCALE;
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
@@ -3646,8 +3566,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var isScalingRestricted = false;
       if (this.canvas && PDFJS.maxCanvasPixels > 0) {
-        var ctx = this.canvas.getContext('2d');
-        var outputScale = getOutputScale(ctx);
+        var outputScale = this.outputScale;
         var pixelsInViewport = this.viewport.width * this.viewport.height;
         var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
         if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
@@ -3791,6 +3710,11 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var canvas = document.createElement('canvas');
       canvas.id = 'page' + this.id;
+      
+      
+      canvas.setAttribute('hidden', 'hidden');
+      var isCanvasHidden = true;
+
       canvasWrapper.appendChild(canvas);
       if (this.annotationLayer && this.annotationLayer.div) {
         
@@ -3800,8 +3724,10 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       this.canvas = canvas;
 
-      var ctx = canvas.getContext('2d');
+      canvas.mozOpaque = true;
+      var ctx = canvas.getContext('2d', {alpha: false});
       var outputScale = getOutputScale(ctx);
+      this.outputScale = outputScale;
 
       if (PDFJS.useOnlyCssZoom) {
         var actualSizeViewport = viewport.clone({scale: CSS_UNITS});
@@ -3854,10 +3780,6 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       this.textLayer = textLayer;
 
-      if (outputScale.scaled) {
-        ctx.scale(outputScale.sx, outputScale.sy);
-      }
-
       var resolveRenderPromise, rejectRenderPromise;
       var promise = new Promise(function (resolve, reject) {
         resolveRenderPromise = resolve;
@@ -3881,6 +3803,11 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
 
         self.renderingState = RenderingStates.FINISHED;
+
+        if (isCanvasHidden) {
+          self.canvas.removeAttribute('hidden');
+          isCanvasHidden = false;
+        }
 
         if (self.loadingIconDiv) {
           div.removeChild(self.loadingIconDiv);
@@ -3928,12 +3855,19 @@ var PDFPageView = (function PDFPageViewClosure() {
             };
             return;
           }
+          if (isCanvasHidden) {
+            self.canvas.removeAttribute('hidden');
+            isCanvasHidden = false;
+          }
           cont();
         };
       }
 
+      var transform = !outputScale.scaled ? null :
+        [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
       var renderContext = {
         canvasContext: ctx,
+        transform: transform,
         viewport: this.viewport,
         
       };
@@ -4037,14 +3971,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 })();
 
 
-var MAX_TEXT_DIVS_TO_RENDER = 100000;
-
-var NonWhitespaceRegexp = /\S/;
-
-function isAllWhitespace(str) {
-  return !NonWhitespaceRegexp.test(str);
-}
-
 
 
 
@@ -4071,6 +3997,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.viewport = options.viewport;
     this.textDivs = [];
     this.findController = options.findController || null;
+    this.textLayerRenderTask = null;
     this._bindMouse();
   }
 
@@ -4089,64 +4016,6 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       this.textLayerDiv.dispatchEvent(event);
     },
 
-    renderLayer: function TextLayerBuilder_renderLayer() {
-      var textLayerFrag = document.createDocumentFragment();
-      var textDivs = this.textDivs;
-      var textDivsLength = textDivs.length;
-      var canvas = document.createElement('canvas');
-      var ctx = canvas.getContext('2d');
-
-      
-      
-      if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
-        this._finishRendering();
-        return;
-      }
-
-      var lastFontSize;
-      var lastFontFamily;
-      for (var i = 0; i < textDivsLength; i++) {
-        var textDiv = textDivs[i];
-        if (textDiv.dataset.isWhitespace !== undefined) {
-          continue;
-        }
-
-        var fontSize = textDiv.style.fontSize;
-        var fontFamily = textDiv.style.fontFamily;
-
-        
-        if (fontSize !== lastFontSize || fontFamily !== lastFontFamily) {
-          ctx.font = fontSize + ' ' + fontFamily;
-          lastFontSize = fontSize;
-          lastFontFamily = fontFamily;
-        }
-
-        var width = ctx.measureText(textDiv.textContent).width;
-        if (width > 0) {
-          textLayerFrag.appendChild(textDiv);
-          var transform;
-          if (textDiv.dataset.canvasWidth !== undefined) {
-            
-            var textScale = textDiv.dataset.canvasWidth / width;
-            transform = 'scaleX(' + textScale + ')';
-          } else {
-            transform = '';
-          }
-          var rotation = textDiv.dataset.angle;
-          if (rotation) {
-            transform = 'rotate(' + rotation + 'deg) ' + transform;
-          }
-          if (transform) {
-            CustomStyle.setProp('transform' , textDiv, transform);
-          }
-        }
-      }
-
-      this.textLayerDiv.appendChild(textLayerFrag);
-      this._finishRendering();
-      this.updateMatches();
-    },
-
     
 
 
@@ -4157,87 +4026,35 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         return;
       }
 
-      if (this.renderTimer) {
-        clearTimeout(this.renderTimer);
-        this.renderTimer = null;
+      if (this.textLayerRenderTask) {
+        this.textLayerRenderTask.cancel();
+        this.textLayerRenderTask = null;
       }
 
-      if (!timeout) { 
-        this.renderLayer();
-      } else { 
-        var self = this;
-        this.renderTimer = setTimeout(function() {
-          self.renderLayer();
-          self.renderTimer = null;
-        }, timeout);
-      }
-    },
-
-    appendText: function TextLayerBuilder_appendText(geom, styles) {
-      var style = styles[geom.fontName];
-      var textDiv = document.createElement('div');
-      this.textDivs.push(textDiv);
-      if (isAllWhitespace(geom.str)) {
-        textDiv.dataset.isWhitespace = true;
-        return;
-      }
-      var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
-      var angle = Math.atan2(tx[1], tx[0]);
-      if (style.vertical) {
-        angle += Math.PI / 2;
-      }
-      var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
-      var fontAscent = fontHeight;
-      if (style.ascent) {
-        fontAscent = style.ascent * fontAscent;
-      } else if (style.descent) {
-        fontAscent = (1 + style.descent) * fontAscent;
-      }
-
-      var left;
-      var top;
-      if (angle === 0) {
-        left = tx[4];
-        top = tx[5] - fontAscent;
-      } else {
-        left = tx[4] + (fontAscent * Math.sin(angle));
-        top = tx[5] - (fontAscent * Math.cos(angle));
-      }
-      textDiv.style.left = left + 'px';
-      textDiv.style.top = top + 'px';
-      textDiv.style.fontSize = fontHeight + 'px';
-      textDiv.style.fontFamily = style.fontFamily;
-
-      textDiv.textContent = geom.str;
-      
-      
-      
-      if (PDFJS.pdfBug) {
-        textDiv.dataset.fontName = geom.fontName;
-      }
-      
-      if (angle !== 0) {
-        textDiv.dataset.angle = angle * (180 / Math.PI);
-      }
-      
-      
-      
-      if (geom.str.length > 1) {
-        if (style.vertical) {
-          textDiv.dataset.canvasWidth = geom.height * this.viewport.scale;
-        } else {
-          textDiv.dataset.canvasWidth = geom.width * this.viewport.scale;
-        }
-      }
+      this.textDivs = [];
+      var textLayerFrag = document.createDocumentFragment();
+      this.textLayerRenderTask = PDFJS.renderTextLayer({
+        textContent: this.textContent,
+        container: textLayerFrag,
+        viewport: this.viewport,
+        textDivs: this.textDivs,
+        timeout: timeout
+      });
+      this.textLayerRenderTask.promise.then(function () {
+        this.textLayerDiv.appendChild(textLayerFrag);
+        this._finishRendering();
+        this.updateMatches();
+      }.bind(this), function (reason) {
+        
+      });
     },
 
     setTextContent: function TextLayerBuilder_setTextContent(textContent) {
-      this.textContent = textContent;
-
-      var textItems = textContent.items;
-      for (var i = 0, len = textItems.length; i < len; i++) {
-        this.appendText(textItems[i], textContent.styles);
+      if (this.textLayerRenderTask) {
+        this.textLayerRenderTask.cancel();
+        this.textLayerRenderTask = null;
       }
+      this.textContent = textContent;
       this.divContentDone = true;
     },
 
@@ -4478,6 +4295,8 @@ DefaultTextLayerFactory.prototype = {
 
 
 var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
+  var CustomStyle = PDFJS.CustomStyle;
+
   
 
 
@@ -5442,7 +5261,8 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
     
     
-    var ctx = tempCanvas.getContext('2d');
+    tempCanvas.mozOpaque = true;
+    var ctx = tempCanvas.getContext('2d', {alpha: false});
     ctx.save();
     ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, width, height);
@@ -5582,7 +5402,8 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       var canvas = document.createElement('canvas');
       this.canvas = canvas;
 
-      var ctx = canvas.getContext('2d');
+      canvas.mozOpaque = true;
+      var ctx = canvas.getContext('2d', {alpha: false});
       var outputScale = getOutputScale(ctx);
 
       canvas.width = (this.canvasWidth * outputScale.sx) | 0;

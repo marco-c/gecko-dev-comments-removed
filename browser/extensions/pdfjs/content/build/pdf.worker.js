@@ -16,14 +16,12 @@
 
 
 
-
-
 if (typeof PDFJS === 'undefined') {
   (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
-PDFJS.version = '1.2.109';
-PDFJS.build = '875588d';
+PDFJS.version = '1.3.14';
+PDFJS.build = 'df46b64';
 
 (function pdfjsWrapper() {
   
@@ -4130,7 +4128,7 @@ var FileSpec = (function FileSpecClosure() {
         var filename = pickPlatformItem(this.root) || 'unnamed';
         this._filename = stringToPDFString(filename).
           replace(/\\\\/g, '\\').
-          replace(/\\\
+          replace(/\\\//g, '/').
           replace(/\\/g, '/');
       }
       return this._filename;
@@ -9664,6 +9662,11 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       if (matrix) {
         p0 = Util.applyTransform(p0, matrix);
         p1 = Util.applyTransform(p1, matrix);
+        if (shadingType === ShadingType.RADIAL) {
+          var scale = Util.singularValueDecompose2dScale(matrix);
+          r0 *= scale[0];
+          r1 *= scale[1];
+        }
       }
 
       return ['RadialAxial', type, this.colorStops, p0, p1, r0, r1];
@@ -17151,7 +17154,7 @@ var Font = (function FontClosure() {
       proto[0][3] || 'uniqueID',          
       proto[0][4] || name,                
       proto[0][5] || 'Version 0.11',      
-      proto[0][6] || '',                  // 6.Postscript name
+      proto[0][6] || '',                  
       proto[0][7] || 'Unknown',           
       proto[0][8] || 'Unknown',           
       proto[0][9] || 'Unknown'            
@@ -34555,6 +34558,7 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
 })();
 
 
+
 var JpegImage = (function jpegImage() {
   var dctZigZag = new Uint8Array([
      0,
@@ -39231,6 +39235,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
 
   return bidi;
 })();
+
 
 
 var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
