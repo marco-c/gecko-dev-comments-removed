@@ -694,6 +694,9 @@ public:
       track_id_external_(TRACK_INVALID),
       active_(false),
       enabled_(false),
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+      disabled_frame_sent_(false),
+#endif
       direct_connect_(false),
       packetizer_(nullptr)
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
@@ -770,6 +773,9 @@ private:
   mozilla::Atomic<bool> enabled_;
 
   
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+  bool disabled_frame_sent_;
+#endif
   bool direct_connect_;
 
   nsAutoPtr<AudioPacketizer<int16_t, int16_t>> packetizer_;
@@ -1255,6 +1261,13 @@ void MediaPipelineTransmit::PipelineListener::ProcessVideoChunk(
   }
 
   if (!enabled_ || chunk.mFrame.GetForceBlack()) {
+    if (disabled_frame_sent_) {
+      
+      
+      
+      return;
+    }
+
     IntSize size = img->GetSize();
     uint32_t yPlaneLen = YSIZE(size.width, size.height);
     uint32_t cbcrPlaneLen = 2 * CRSIZE(size.width, size.height);
@@ -1271,9 +1284,13 @@ void MediaPipelineTransmit::PipelineListener::ProcessVideoChunk(
       MOZ_MTLOG(ML_DEBUG, "Sending a black video frame");
       conduit->SendVideoFrame(pixelData.get(), length, size.width, size.height,
                               mozilla::kVideoI420, 0);
+
+      disabled_frame_sent_ = true;
     }
     return;
   }
+
+  disabled_frame_sent_ = false;
 
   
   int32_t serial = img->GetSerial();
