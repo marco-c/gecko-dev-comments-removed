@@ -64,6 +64,7 @@ enum class OperatingSystem {
 
 enum VersionComparisonOp {
   DRIVER_LESS_THAN,             
+  DRIVER_BUILD_ID_LESS_THAN,    
   DRIVER_LESS_THAN_OR_EQUAL,    
   DRIVER_GREATER_THAN,          
   DRIVER_GREATER_THAN_OR_EQUAL, 
