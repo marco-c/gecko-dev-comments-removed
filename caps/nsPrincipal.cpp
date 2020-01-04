@@ -399,19 +399,13 @@ nsPrincipal::Read(nsIObjectInputStream* aStream)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp = do_QueryInterface(supports, &rv);
+  mCSP = do_QueryInterface(supports, &rv);
+  if (mCSP) {
+    mCSP->SetRequestContext(nullptr, this);
+  }
 
   rv = Init(codebase, attrs);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = SetCsp(csp);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  if (csp) {
-    csp->SetRequestContext(nullptr, this);
-  }
 
   SetDomain(domain);
 
