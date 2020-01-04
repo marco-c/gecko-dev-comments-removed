@@ -477,10 +477,13 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
     JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac, bool callHook);
-    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac, MutableHandleValue vp, bool callHook);
+    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac, MutableHandleValue vp, bool callHook,
+                                         const mozilla::Maybe<HandleValue>& thisVForCheck = mozilla::Nothing(),
+                                         AbstractFramePtr frame = NullFramePtr());
 
     JSTrapStatus handleUncaughtExceptionHelper(mozilla::Maybe<AutoCompartment>& ac,
-                                               MutableHandleValue* vp, bool callHook);
+                                               MutableHandleValue* vp, bool callHook,
+                                               const mozilla::Maybe<HandleValue>& thisVForCheck, AbstractFramePtr frame);
 
     
 
@@ -507,8 +510,24 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSTrapStatus parseResumptionValue(mozilla::Maybe<AutoCompartment>& ac, bool ok, const Value& rv,
+    JSTrapStatus parseResumptionValue(mozilla::Maybe<AutoCompartment>& ac, bool OK, const Value& rv,
+                                      AbstractFramePtr frame, MutableHandleValue vp,
+                                      bool callHook = true);
+
+    
+
+
+
+
+
+
+    JSTrapStatus parseResumptionValue(mozilla::Maybe<AutoCompartment>& ac, bool OK, const Value& rv,
+                                      const Value& thisVForCheck, AbstractFramePtr frame,
                                       MutableHandleValue vp, bool callHook = true);
+
+    JSTrapStatus parseResumptionValueHelper(mozilla::Maybe<AutoCompartment>& ac, bool ok, const Value& rv,
+                                            const mozilla::Maybe<HandleValue>& thisVForCheck, AbstractFramePtr frame,
+                                            MutableHandleValue vp, bool callHook);
 
     GlobalObject* unwrapDebuggeeArgument(JSContext* cx, const Value& v);
 

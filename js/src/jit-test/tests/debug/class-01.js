@@ -1,0 +1,15 @@
+
+
+newGlobal().Debugger(this).onExceptionUnwind = function() {
+    return {
+        
+        return: 1
+    }
+}
+
+class forceException extends class {} {
+    
+    
+    constructor() {}
+}
+new forceException;
