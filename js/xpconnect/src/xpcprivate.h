@@ -551,6 +551,7 @@ public:
     static void GCSliceCallback(JSContext* cx,
                                 JS::GCProgress progress,
                                 const JS::GCDescription& desc);
+    static void DoCycleCollectionCallback(JSContext* cx);
     static void FinalizeCallback(JSFreeOp* fop,
                                  JSFinalizeStatus status,
                                  bool isZoneGC,
@@ -628,6 +629,7 @@ private:
     nsTArray<xpcGCCallback> extraGCCallbacks;
     RefPtr<WatchdogManager> mWatchdogManager;
     JS::GCSliceCallback mPrevGCSliceCallback;
+    JS::DoCycleCollectionCallback mPrevDoCycleCollectionCallback;
     JS::PersistentRootedObject mUnprivilegedJunkScope;
     JS::PersistentRootedObject mPrivilegedJunkScope;
     JS::PersistentRootedObject mCompilationScope;
@@ -1270,35 +1272,18 @@ private:
 
 
 
-
-
 class XPCNativeSetKey final
 {
 public:
-    
-    explicit XPCNativeSetKey(XPCNativeSet* baseSet)
-        : mBaseSet(baseSet), mAddition(nullptr)
-    {
-        MOZ_ASSERT(baseSet);
-    }
-
-    
-    
-    explicit XPCNativeSetKey(XPCNativeInterface* addition)
-        : mBaseSet(nullptr), mAddition(addition)
-    {
-        MOZ_ASSERT(addition);
-    }
-
-    
-    
-    
-    explicit XPCNativeSetKey(XPCNativeSet* baseSet,
-                             XPCNativeInterface* addition);
+    explicit XPCNativeSetKey(XPCNativeSet* baseSet = nullptr,
+                             XPCNativeInterface* addition = nullptr,
+                             uint16_t position = 0)
+        : mBaseSet(baseSet), mAddition(addition), mPosition(position) {}
     ~XPCNativeSetKey() {}
 
     XPCNativeSet* GetBaseSet() const {return mBaseSet;}
     XPCNativeInterface* GetAddition() const {return mAddition;}
+    uint16_t GetPosition() const {return mPosition;}
 
     PLDHashNumber Hash() const;
 
@@ -1307,6 +1292,7 @@ public:
 private:
     XPCNativeSet* mBaseSet;
     XPCNativeInterface* mAddition;
+    uint16_t mPosition;
 };
 
 
@@ -1317,7 +1303,9 @@ class XPCNativeSet final
   public:
     static XPCNativeSet* GetNewOrUsed(const nsIID* iid);
     static XPCNativeSet* GetNewOrUsed(nsIClassInfo* classInfo);
-    static XPCNativeSet* GetNewOrUsed(XPCNativeSetKey* key);
+    static XPCNativeSet* GetNewOrUsed(XPCNativeSet* otherSet,
+                                      XPCNativeInterface* newInterface,
+                                      uint16_t position);
 
     
     
@@ -1394,7 +1382,9 @@ class XPCNativeSet final
 
   protected:
     static XPCNativeSet* NewInstance(nsTArray<RefPtr<XPCNativeInterface>>&& array);
-    static XPCNativeSet* NewInstanceMutate(XPCNativeSetKey* key);
+    static XPCNativeSet* NewInstanceMutate(XPCNativeSet*       otherSet,
+                                           XPCNativeInterface* newInterface,
+                                           uint16_t            position);
     XPCNativeSet()
       : mMemberCount(0), mInterfaceCount(0), mMarked(0)
     {
