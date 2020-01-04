@@ -1440,8 +1440,6 @@ public:
   {
     return mInputs.Length();
   }
-  virtual MediaStream* GetInputStreamFor(TrackID aTrackID) { return nullptr; }
-  virtual TrackID GetInputTrackIDFor(TrackID aTrackID) { return TRACK_NONE; }
   void DestroyImpl() override;
   
 
