@@ -675,6 +675,16 @@ function isUsableAddon(aAddon) {
   if (aAddon.blocklistState == Blocklist.STATE_BLOCKED)
     return false;
 
+  
+  
+  
+  
+  
+  
+  
+  if (aAddon.type == "experiment")
+    return true;
+
   if (AddonManager.checkUpdateSecurity && !aAddon.providesUpdatesSecurely)
     return false;
 
