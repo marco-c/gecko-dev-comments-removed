@@ -2079,8 +2079,15 @@ UpdatePluginWindowState(uint64_t aId)
 
   
   if (shouldHidePlugin) {
-    uintptr_t parentWidget = (uintptr_t)lts.mParent->GetWidget();
-    unused << lts.mParent->SendHideAllPlugins(parentWidget);
+    for (uint32_t pluginsIdx = 0; pluginsIdx < lts.mPluginData.Length();
+         pluginsIdx++) {
+      lts.mPluginData[pluginsIdx].visible() = false;
+    }
+    nsIntPoint offset;
+    nsIntRegion region;
+    unused << lts.mParent->SendUpdatePluginConfigurations(offset,
+                                                          region,
+                                                          lts.mPluginData);
     
     
     lts.mPluginData.Clear();
