@@ -722,7 +722,7 @@ struct PendingBinding : public LinkedListElement<PendingBinding>
   }
 #endif
 
-  RefPtr<nsXBLBinding> mBinding;
+  nsRefPtr<nsXBLBinding> mBinding;
 };
 
 
@@ -777,11 +777,12 @@ public:
 
   
   
-  nsFrameConstructorState(nsIPresShell*          aPresShell,
-                          nsContainerFrame*      aFixedContainingBlock,
-                          nsContainerFrame*      aAbsoluteContainingBlock,
-                          nsContainerFrame*      aFloatContainingBlock,
-                          nsILayoutHistoryState* aHistoryState);
+  nsFrameConstructorState(
+    nsIPresShell* aPresShell,
+    nsContainerFrame* aFixedContainingBlock,
+    nsContainerFrame* aAbsoluteContainingBlock,
+    nsContainerFrame* aFloatContainingBlock,
+    already_AddRefed<nsILayoutHistoryState> aHistoryState);
   
   nsFrameConstructorState(nsIPresShell*          aPresShell,
                           nsContainerFrame*      aFixedContainingBlock,
@@ -921,11 +922,12 @@ protected:
   PendingBinding* mCurrentPendingBindingInsertionPoint;
 };
 
-nsFrameConstructorState::nsFrameConstructorState(nsIPresShell*          aPresShell,
-                                                 nsContainerFrame*      aFixedContainingBlock,
-                                                 nsContainerFrame*      aAbsoluteContainingBlock,
-                                                 nsContainerFrame*      aFloatContainingBlock,
-                                                 nsILayoutHistoryState* aHistoryState)
+nsFrameConstructorState::nsFrameConstructorState(
+  nsIPresShell* aPresShell,
+  nsContainerFrame* aFixedContainingBlock,
+  nsContainerFrame* aAbsoluteContainingBlock,
+  nsContainerFrame* aFloatContainingBlock,
+  already_AddRefed<nsILayoutHistoryState> aHistoryState)
   : mPresContext(aPresShell->GetPresContext()),
     mPresShell(aPresShell),
     mFrameManager(aPresShell->FrameManager()),
@@ -961,35 +963,11 @@ nsFrameConstructorState::nsFrameConstructorState(nsIPresShell* aPresShell,
                                                  nsContainerFrame* aFixedContainingBlock,
                                                  nsContainerFrame* aAbsoluteContainingBlock,
                                                  nsContainerFrame* aFloatContainingBlock)
-  : mPresContext(aPresShell->GetPresContext()),
-    mPresShell(aPresShell),
-    mFrameManager(aPresShell->FrameManager()),
-#ifdef MOZ_XUL
-    mPopupItems(nullptr),
-#endif
-    mFixedItems(aFixedContainingBlock),
-    mAbsoluteItems(aAbsoluteContainingBlock),
-    mFloatedItems(aFloatContainingBlock),
-    
-    mAdditionalStateBits(nsFrameState(0)),
-    
-    
-    
-    mFixedPosIsAbsPos(aFixedContainingBlock == aAbsoluteContainingBlock),
-    mHavePendingPopupgroup(false),
-    mCreatingExtraFrames(false),
-    mTreeMatchContext(true, nsRuleWalker::eRelevantLinkUnvisited,
-                      aPresShell->GetDocument()),
-    mCurrentPendingBindingInsertionPoint(nullptr)
+  : nsFrameConstructorState(aPresShell, aFixedContainingBlock,
+                            aAbsoluteContainingBlock,
+                            aFloatContainingBlock,
+                            aPresShell->GetDocument()->GetLayoutHistoryState())
 {
-#ifdef MOZ_XUL
-  nsIRootBox* rootBox = nsIRootBox::GetRootBox(aPresShell);
-  if (rootBox) {
-    mPopupItems.containingBlock = rootBox->GetPopupSetFrame();
-  }
-#endif
-  MOZ_COUNT_CTOR(nsFrameConstructorState);
-  mFrameState = aPresShell->GetDocument()->GetLayoutHistoryState();
 }
 
 nsFrameConstructorState::~nsFrameConstructorState()
@@ -1539,10 +1517,10 @@ struct nsGenConInitializer {
 already_AddRefed<nsIContent>
 nsCSSFrameConstructor::CreateGenConTextNode(nsFrameConstructorState& aState,
                                             const nsString& aString,
-                                            RefPtr<nsTextNode>* aText,
+                                            nsRefPtr<nsTextNode>* aText,
                                             nsGenConInitializer* aInitializer)
 {
-  RefPtr<nsTextNode> content = new nsTextNode(mDocument->NodeInfoManager());
+  nsRefPtr<nsTextNode> content = new nsTextNode(mDocument->NodeInfoManager());
   content->SetText(aString, false);
   if (aText) {
     *aText = content;
@@ -1576,7 +1554,7 @@ nsCSSFrameConstructor::CreateGeneratedContent(nsFrameConstructorState& aState,
     
     
 
-    RefPtr<NodeInfo> nodeInfo;
+    nsRefPtr<NodeInfo> nodeInfo;
     nodeInfo = mDocument->NodeInfoManager()->
       GetNodeInfo(nsGkAtoms::mozgeneratedcontentimage, nullptr,
                   kNameSpaceID_XHTML, nsIDOMNode::ELEMENT_NODE);
@@ -1744,7 +1722,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   nsStyleSet *styleSet = mPresShell->StyleSet();
 
   
-  RefPtr<nsStyleContext> pseudoStyleContext;
+  nsRefPtr<nsStyleContext> pseudoStyleContext;
   pseudoStyleContext =
     styleSet->ProbePseudoElementStyle(aParentContent->AsElement(),
                                       aPseudoElement,
@@ -1757,7 +1735,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
 
   
   
-  RefPtr<NodeInfo> nodeInfo;
+  nsRefPtr<NodeInfo> nodeInfo;
   nsIAtom* elemName = isBefore ?
     nsGkAtoms::mozgeneratedcontentbefore : nsGkAtoms::mozgeneratedcontentafter;
   nodeInfo = mDocument->NodeInfoManager()->GetNodeInfo(elemName, nullptr,
@@ -1977,7 +1955,7 @@ nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
   const uint32_t nameSpaceID = aItem.mNameSpaceID;
 
   
-  RefPtr<nsStyleContext> outerStyleContext;
+  nsRefPtr<nsStyleContext> outerStyleContext;
   outerStyleContext = mPresShell->StyleSet()->
     ResolveAnonymousBoxStyle(nsCSSAnonBoxes::tableOuter, styleContext);
 
@@ -2195,7 +2173,7 @@ nsCSSFrameConstructor::ConstructTableCell(nsFrameConstructorState& aState,
   InitAndRestoreFrame(aState, content, aParentFrame, newFrame);
 
   
-  RefPtr<nsStyleContext> innerPseudoStyle;
+  nsRefPtr<nsStyleContext> innerPseudoStyle;
   innerPseudoStyle = mPresShell->StyleSet()->
     ResolveAnonymousBoxStyle(nsCSSAnonBoxes::cellContent, styleContext);
 
@@ -2302,7 +2280,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   
   {
-    RefPtr<nsStyleContext> sc = mPresShell->StyleSet()->
+    nsRefPtr<nsStyleContext> sc = mPresShell->StyleSet()->
       ResolveAnonymousBoxStyle(nsCSSAnonBoxes::viewport, nullptr);
     GetRootFrame()->SetStyleContextWithoutNotification(sc);
   }
@@ -2322,7 +2300,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   nsFrameConstructorState state(mPresShell,
                                 GetAbsoluteContainingBlock(mDocElementContainingBlock, FIXED_POS),
                                 nullptr,
-                                nullptr, aFrameState);
+                                nullptr, do_AddRef(Move(aFrameState)));
   
   
   state.mTreeMatchContext.InitAncestors(nullptr);
@@ -2343,7 +2321,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   
   
-  RefPtr<nsStyleContext> styleContext;
+  nsRefPtr<nsStyleContext> styleContext;
   styleContext = mPresShell->StyleSet()->ResolveStyleFor(aDocElement,
                                                          nullptr);
 
@@ -2360,7 +2338,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
       return nullptr;
     }
 
-    RefPtr<nsXBLBinding> binding;
+    nsRefPtr<nsXBLBinding> binding;
     rv = xblService->LoadBindings(aDocElement, display->mBinding->GetURI(),
                                   display->mBinding->mOriginPrincipal,
                                   getter_AddRefs(binding), &resolveStyle);
@@ -2452,7 +2430,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     
     static const FrameConstructionData rootSVGData = FCDATA_DECL(0, nullptr);
     already_AddRefed<nsStyleContext> extraRef =
-      RefPtr<nsStyleContext>(styleContext).forget();
+      nsRefPtr<nsStyleContext>(styleContext).forget();
     FrameConstructionItem item(&rootSVGData, aDocElement,
                                aDocElement->NodeInfo()->NameAtom(),
                                kNameSpaceID_SVG, nullptr, extraRef, true,
@@ -2488,7 +2466,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     
     static const FrameConstructionData rootTableData = FCDATA_DECL(0, nullptr);
     already_AddRefed<nsStyleContext> extraRef =
-      RefPtr<nsStyleContext>(styleContext).forget();
+      nsRefPtr<nsStyleContext>(styleContext).forget();
     FrameConstructionItem item(&rootTableData, aDocElement,
                                aDocElement->NodeInfo()->NameAtom(),
                                kNameSpaceID_None, nullptr, extraRef, true,
@@ -2581,7 +2559,7 @@ nsCSSFrameConstructor::ConstructRootFrame()
   }
 
   
-  RefPtr<nsStyleContext> viewportPseudoStyle =
+  nsRefPtr<nsStyleContext> viewportPseudoStyle =
     styleSet->ResolveAnonymousBoxStyle(nsCSSAnonBoxes::viewport, nullptr);
   ViewportFrame* viewportFrame =
     NS_NewViewportFrame(mPresShell, viewportPseudoStyle);
@@ -2734,7 +2712,7 @@ nsCSSFrameConstructor::SetUpDocElementContainingBlock(nsIContent* aDocElement)
                "XUL documents should never be scrollable - see above");
 
   nsContainerFrame* newFrame = rootFrame;
-  RefPtr<nsStyleContext> rootPseudoStyle;
+  nsRefPtr<nsStyleContext> rootPseudoStyle;
   
   
   nsFrameConstructorState state(mPresShell, nullptr, nullptr, nullptr);
@@ -2762,7 +2740,7 @@ nsCSSFrameConstructor::SetUpDocElementContainingBlock(nsIContent* aDocElement)
       
 
       
-      RefPtr<nsStyleContext>  styleContext;
+      nsRefPtr<nsStyleContext>  styleContext;
       styleContext = styleSet->ResolveAnonymousBoxStyle(nsCSSAnonBoxes::viewportScroll,
                                                         viewportPseudoStyle);
 
@@ -2847,7 +2825,7 @@ nsCSSFrameConstructor::ConstructPageFrame(nsIPresShell*  aPresShell,
   nsStyleContext* parentStyleContext = aParentFrame->StyleContext();
   nsStyleSet *styleSet = aPresShell->StyleSet();
 
-  RefPtr<nsStyleContext> pagePseudoStyle;
+  nsRefPtr<nsStyleContext> pagePseudoStyle;
   pagePseudoStyle = styleSet->ResolveAnonymousBoxStyle(nsCSSAnonBoxes::page,
                                                        parentStyleContext);
 
@@ -2857,7 +2835,7 @@ nsCSSFrameConstructor::ConstructPageFrame(nsIPresShell*  aPresShell,
   
   pageFrame->Init(nullptr, aParentFrame, aPrevPageFrame);
 
-  RefPtr<nsStyleContext> pageContentPseudoStyle;
+  nsRefPtr<nsStyleContext> pageContentPseudoStyle;
   pageContentPseudoStyle =
     styleSet->ResolveAnonymousBoxStyle(nsCSSAnonBoxes::pageContent,
                                        pagePseudoStyle);
@@ -2878,7 +2856,7 @@ nsCSSFrameConstructor::ConstructPageFrame(nsIPresShell*  aPresShell,
   pageContentFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
   pageContentFrame->MarkAsAbsoluteContainingBlock();
 
-  RefPtr<nsStyleContext> canvasPseudoStyle;
+  nsRefPtr<nsStyleContext> canvasPseudoStyle;
   canvasPseudoStyle = styleSet->ResolveAnonymousBoxStyle(nsCSSAnonBoxes::canvas,
                                                          pageContentPseudoStyle);
 
@@ -2904,7 +2882,7 @@ nsCSSFrameConstructor::CreatePlaceholderFrameFor(nsIPresShell*     aPresShell,
                                                  nsIFrame*         aPrevInFlow,
                                                  nsFrameState      aTypeBit)
 {
-  RefPtr<nsStyleContext> placeholderStyle = aPresShell->StyleSet()->
+  nsRefPtr<nsStyleContext> placeholderStyle = aPresShell->StyleSet()->
     ResolveStyleForNonElement(aStyleContext->GetParent());
 
   
@@ -2982,7 +2960,7 @@ nsCSSFrameConstructor::ConstructSelectFrame(nsFrameConstructorState& aState,
                  "doesn't implement nsIComboboxControlFrame");
 
     
-    RefPtr<nsStyleContext> listStyle;
+    nsRefPtr<nsStyleContext> listStyle;
     listStyle = mPresShell->StyleSet()->
       ResolveAnonymousBoxStyle(nsCSSAnonBoxes::dropDownList, styleContext);
 
@@ -3126,7 +3104,7 @@ nsCSSFrameConstructor::ConstructFieldSetFrame(nsFrameConstructorState& aState,
                       fieldsetFrame);
 
   
-  RefPtr<nsStyleContext> fieldsetContentStyle;
+  nsRefPtr<nsStyleContext> fieldsetContentStyle;
   fieldsetContentStyle = mPresShell->StyleSet()->
     ResolveAnonymousBoxStyle(nsCSSAnonBoxes::fieldsetContent, styleContext);
 
@@ -3694,7 +3672,7 @@ nsCSSFrameConstructor::ConstructFrameFromItemInternal(FrameConstructionItem& aIt
     nsIFrame* maybeAbsoluteContainingBlock = newFrame;
     nsIFrame* possiblyLeafFrame = newFrame;
     if (bits & FCDATA_CREATE_BLOCK_WRAPPER_FOR_ALL_KIDS) {
-      RefPtr<nsStyleContext> blockContext;
+      nsRefPtr<nsStyleContext> blockContext;
       blockContext =
         mPresShell->StyleSet()->ResolveAnonymousBoxStyle(*data->mAnonBoxPseudo,
                                                          styleContext);
@@ -4300,7 +4278,7 @@ nsCSSFrameConstructor::BeginBuildingScrollFrame(nsFrameConstructorState& aState,
 
   nsFrameItems anonymousItems;
 
-  RefPtr<nsStyleContext> contentStyle = aContentStyle;
+  nsRefPtr<nsStyleContext> contentStyle = aContentStyle;
 
   if (!gfxScrollFrame) {
     
@@ -4331,7 +4309,7 @@ nsCSSFrameConstructor::BeginBuildingScrollFrame(nsFrameConstructorState& aState,
 
   
   nsStyleSet *styleSet = mPresShell->StyleSet();
-  RefPtr<nsStyleContext> scrolledChildStyle =
+  nsRefPtr<nsStyleContext> scrolledChildStyle =
     styleSet->ResolveAnonymousBoxStyle(aScrolledPseudo, contentStyle);
 
   if (gfxScrollFrame) {
@@ -4388,7 +4366,7 @@ nsCSSFrameConstructor::BuildScrollFrame(nsFrameConstructorState& aState,
                                         nsContainerFrame*        aParentFrame,
                                         nsContainerFrame*&       aNewFrame)
 {
-  RefPtr<nsStyleContext> scrolledContentStyle =
+  nsRefPtr<nsStyleContext> scrolledContentStyle =
     BeginBuildingScrollFrame(aState, aContent, aContentStyle, aParentFrame,
                              nsCSSAnonBoxes::scrolledContent,
                              false, aNewFrame);
@@ -4582,7 +4560,7 @@ nsCSSFrameConstructor::ConstructScrollableBlock(nsFrameConstructorState& aState,
   nsStyleContext* const styleContext = aItem.mStyleContext;
 
   nsContainerFrame* newFrame = nullptr;
-  RefPtr<nsStyleContext> scrolledContentStyle
+  nsRefPtr<nsStyleContext> scrolledContentStyle
     = BeginBuildingScrollFrame(aState, content, styleContext,
                                aState.GetGeometricParent(aDisplay, aParentFrame),
                                nsCSSAnonBoxes::scrolledContent,
@@ -4731,7 +4709,7 @@ nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
   nsStyleSet *styleSet = mPresShell->StyleSet();
   aContent->OwnerDoc()->FlushPendingLinkUpdates();
 
-  RefPtr<nsStyleContext> result;
+  nsRefPtr<nsStyleContext> result;
   if (aContent->IsElement()) {
     if (aState) {
       result = styleSet->ResolveStyleFor(aContent->AsElement(),
@@ -4786,7 +4764,7 @@ nsCSSFrameConstructor::FlushAccumulatedBlock(nsFrameConstructorState& aState,
     nsFrame::CorrectStyleParentFrame(aParentFrame,
                                      anonPseudo)->StyleContext();
   nsStyleSet* styleSet = mPresShell->StyleSet();
-  RefPtr<nsStyleContext> blockContext;
+  nsRefPtr<nsStyleContext> blockContext;
   blockContext = styleSet->
     ResolveAnonymousBoxStyle(anonPseudo, parentContext);
 
@@ -4912,7 +4890,7 @@ nsCSSFrameConstructor::ConstructFrameWithAnonymousChild(
                       newFrame);
 
   
-  RefPtr<nsStyleContext> scForAnon;
+  nsRefPtr<nsStyleContext> scForAnon;
   scForAnon = mPresShell->StyleSet()->
     ResolveAnonymousBoxStyle(aInnerPseudo, styleContext);
 
@@ -5247,7 +5225,7 @@ nsCSSFrameConstructor::AddPageBreakItem(nsIContent* aContent,
   
   
   
-  RefPtr<nsStyleContext> pseudoStyle =
+  nsRefPtr<nsStyleContext> pseudoStyle =
     mPresShell->StyleSet()->
       ResolveAnonymousBoxStyle(nsCSSAnonBoxes::pageBreak,
                                aMainStyleContext->GetParent());
@@ -5346,7 +5324,7 @@ nsCSSFrameConstructor::AddFrameConstructionItems(nsFrameConstructorState& aState
   if (!ShouldCreateItemsForChild(aState, aContent, parentFrame)) {
     return;
   }
-  RefPtr<nsStyleContext> styleContext =
+  nsRefPtr<nsStyleContext> styleContext =
     ResolveStyleContext(aInsertion, aContent, &aState);
   DoAddFrameConstructionItems(aState, aContent, styleContext,
                               aSuppressWhiteSpaceOptimizations, parentFrame,
@@ -5398,7 +5376,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   
   
   const nsStyleDisplay* display = aStyleContext->StyleDisplay();
-  RefPtr<nsStyleContext> styleContext(aStyleContext);
+  nsRefPtr<nsStyleContext> styleContext(aStyleContext);
   PendingBinding* pendingBinding = nullptr;
   if ((aFlags & ITEM_ALLOW_XBL_BASE) && display->mBinding)
   {
@@ -5606,7 +5584,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
         }
       }
 
-      RefPtr<nsStyleContext> childContext =
+      nsRefPtr<nsStyleContext> childContext =
         ResolveStyleContext(styleContext, child, &aState);
       DoAddFrameConstructionItems(aState, child, childContext,
                                   aSuppressWhiteSpaceOptimizations,
@@ -6250,7 +6228,7 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
       }
       
       
-      RefPtr<nsStyleContext> styleContext =
+      nsRefPtr<nsStyleContext> styleContext =
         ResolveStyleContext(styleParent, aContent, nullptr);
       const nsStyleDisplay* display = styleContext->StyleDisplay();
       aDisplay = display->mDisplay;
@@ -7548,7 +7526,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
                                 GetAbsoluteContainingBlock(insertion.mParentFrame, FIXED_POS),
                                 GetAbsoluteContainingBlock(insertion.mParentFrame, ABS_POS),
                                 GetFloatContainingBlock(insertion.mParentFrame),
-                                aFrameState);
+                                do_AddRef(Move(aFrameState)));
   state.mTreeMatchContext.InitAncestors(aContainer ?
                                           aContainer->AsElement() :
                                           nullptr);
@@ -8889,7 +8867,7 @@ static bool EqualURIs(mozilla::css::URLValue *aURI1,
 nsStyleContext*
 nsCSSFrameConstructor::MaybeRecreateFramesForElement(Element* aElement)
 {
-  RefPtr<nsStyleContext> oldContext = GetUndisplayedContent(aElement);
+  nsRefPtr<nsStyleContext> oldContext = GetUndisplayedContent(aElement);
   uint8_t oldDisplay = NS_STYLE_DISPLAY_NONE;
   if (!oldContext) {
     oldContext = GetDisplayContentsStyleFor(aElement);
@@ -8900,7 +8878,7 @@ nsCSSFrameConstructor::MaybeRecreateFramesForElement(Element* aElement)
   }
 
   
-  RefPtr<nsStyleContext> newContext = mPresShell->StyleSet()->
+  nsRefPtr<nsStyleContext> newContext = mPresShell->StyleSet()->
     ResolveStyleFor(aElement, oldContext->GetParent());
 
   if (oldDisplay == NS_STYLE_DISPLAY_NONE) {
@@ -10204,7 +10182,7 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
                !content->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION),
                "Why is someone creating garbage anonymous content");
 
-    RefPtr<nsStyleContext> styleContext;
+    nsRefPtr<nsStyleContext> styleContext;
     TreeMatchContext::AutoParentDisplayBasedStyleFixupSkipper
       parentDisplayBasedStyleFixupSkipper(aState.mTreeMatchContext);
     if (aAnonymousItems[i].mStyleContext) {
@@ -10414,7 +10392,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
                                       params, ArrayLength(params));
     }
 
-    RefPtr<nsStyleContext> blockSC = mPresShell->StyleSet()->
+    nsRefPtr<nsStyleContext> blockSC = mPresShell->StyleSet()->
       ResolveAnonymousBoxStyle(nsCSSAnonBoxes::mozXULAnonymousBlock,
                                frameStyleContext);
     nsBlockFrame* blockFrame = NS_NewBlockFrame(mPresShell, blockSC);
@@ -10477,7 +10455,7 @@ nsCSSFrameConstructor::WrapFramesInFirstLineFrame(
       nsFrame::CorrectStyleParentFrame(aBlockFrame,
                                        nsCSSPseudoElements::firstLine)->
         StyleContext();
-    RefPtr<nsStyleContext> firstLineStyle = GetFirstLineStyle(aBlockContent,
+    nsRefPtr<nsStyleContext> firstLineStyle = GetFirstLineStyle(aBlockContent,
                                                                 parentStyle);
 
     aLineFrame = NS_NewFirstLineFrame(mPresShell, firstLineStyle);
@@ -10597,7 +10575,7 @@ nsCSSFrameConstructor::InsertFirstLineFrames(
             nsFrame::CorrectStyleParentFrame(aBlockFrame,
                                              nsCSSPseudoElements::firstLine)->
               StyleContext();
-          RefPtr<nsStyleContext> firstLineStyle =
+          nsRefPtr<nsStyleContext> firstLineStyle =
             GetFirstLineStyle(aContent, parentStyle);
 
           
@@ -10776,7 +10754,7 @@ nsCSSFrameConstructor::CreateFloatingLetterFrame(
   
   
   
-  RefPtr<nsStyleContext> textSC;
+  nsRefPtr<nsStyleContext> textSC;
   nsStyleSet* styleSet = mPresShell->StyleSet();
   textSC = styleSet->ResolveStyleForNonElement(aStyleContext);
   aTextFrame->SetStyleContextWithoutNotification(textSC);
@@ -10796,7 +10774,7 @@ nsCSSFrameConstructor::CreateFloatingLetterFrame(
     
     nsStyleContext* parentStyleContext = aStyleContext->GetParent();
     if (parentStyleContext) {
-      RefPtr<nsStyleContext> newSC;
+      nsRefPtr<nsStyleContext> newSC;
       newSC = styleSet->ResolveStyleForNonElement(parentStyleContext);
       nextTextFrame->SetStyleContext(newSC);
     }
@@ -10847,10 +10825,10 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
   nsIContent* blockContent = aBlockFrame->GetContent();
 
   
-  RefPtr<nsStyleContext> sc = GetFirstLetterStyle(blockContent,
+  nsRefPtr<nsStyleContext> sc = GetFirstLetterStyle(blockContent,
                                                     parentStyleContext);
   if (sc) {
-    RefPtr<nsStyleContext> textSC;
+    nsRefPtr<nsStyleContext> textSC;
     textSC = mPresShell->StyleSet()->ResolveStyleForNonElement(sc);
 
     
@@ -11052,7 +11030,7 @@ nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
   if (!textContent) {
     return NS_OK;
   }
-  RefPtr<nsStyleContext> newSC;
+  nsRefPtr<nsStyleContext> newSC;
   newSC = aPresShell->StyleSet()->ResolveStyleForNonElement(parentSC);
   nsIFrame* newTextFrame = NS_NewTextFrame(aPresShell, newSC);
   newTextFrame->Init(textContent, parentFrame, nullptr);
@@ -11126,7 +11104,7 @@ nsCSSFrameConstructor::RemoveFirstLetterFrames(nsPresContext* aPresContext,
       if (!textContent) {
         break;
       }
-      RefPtr<nsStyleContext> newSC;
+      nsRefPtr<nsStyleContext> newSC;
       newSC = aPresShell->StyleSet()->ResolveStyleForNonElement(parentSC);
       textFrame = NS_NewTextFrame(aPresShell, newSC);
       textFrame->Init(textContent, aFrame, nullptr);
@@ -11264,12 +11242,12 @@ nsCSSFrameConstructor::CreateListBoxContent(nsPresContext*         aPresContext,
     nsFrameConstructorState state(mPresShell, GetAbsoluteContainingBlock(aParentFrame, FIXED_POS),
                                   GetAbsoluteContainingBlock(aParentFrame, ABS_POS),
                                   GetFloatContainingBlock(aParentFrame),
-                                  mTempFrameTreeState);
+                                  do_AddRef(mTempFrameTreeState.get()));
 
     
     
 
-    RefPtr<nsStyleContext> styleContext;
+    nsRefPtr<nsStyleContext> styleContext;
     styleContext = ResolveStyleContext(aParentFrame, aChild, &state);
 
     
@@ -11339,7 +11317,7 @@ nsCSSFrameConstructor::ConstructBlock(nsFrameConstructorState& aState,
   nsContainerFrame* blockFrame = *aNewFrame;
   NS_ASSERTION(blockFrame->GetType() == nsGkAtoms::blockFrame, "not a block frame?");
   nsContainerFrame* parent = aParentFrame;
-  RefPtr<nsStyleContext> blockStyle = aStyleContext;
+  nsRefPtr<nsStyleContext> blockStyle = aStyleContext;
   const nsStyleColumn* columns = aStyleContext->StyleColumn();
 
   if (columns->mColumnCount != NS_STYLE_COLUMN_COUNT_AUTO
@@ -11537,7 +11515,7 @@ nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
   
   
   
-  RefPtr<nsStyleContext> blockSC =
+  nsRefPtr<nsStyleContext> blockSC =
     mPresShell->StyleSet()->
       ResolveAnonymousBoxStyle(aIsPositioned ?
                                  nsCSSAnonBoxes::mozAnonymousPositionedBlock :
@@ -11676,7 +11654,7 @@ nsCSSFrameConstructor::BuildInlineChildItems(nsFrameConstructorState& aState,
         content->UnsetFlags(ELEMENT_ALL_RESTYLE_FLAGS);
       }
 
-      RefPtr<nsStyleContext> childContext =
+      nsRefPtr<nsStyleContext> childContext =
         ResolveStyleContext(parentStyleContext, content, &aState);
 
       AddFrameConstructionItemsInternal(aState, content, nullptr,
