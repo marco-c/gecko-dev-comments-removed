@@ -25,7 +25,6 @@ namespace mozilla {
 
 
 
-
 template <typename Time>
 class SystemTimeConverter {
 public:
@@ -49,7 +48,7 @@ public:
     if (mReferenceTimeStamp.IsNull()) {
       UpdateReferenceTime(aTime, aCurrentTimeGetter);
     }
-    TimeStamp roughlyNow = TimeStamp::NowLoRes();
+    TimeStamp roughlyNow = TimeStamp::Now();
 
     
     
@@ -89,7 +88,6 @@ public:
     Time deltaFromNow;
     bool newer = IsTimeNewerThanTimestamp(aTime, roughlyNow, &deltaFromNow);
 
-    
     
     static const Time kTolerance = 30;
 
