@@ -91,6 +91,8 @@ class gfxUserFontSet;
 class gfxPlatformFontList : public gfxFontInfoLoader
 {
 public:
+    typedef mozilla::unicode::Script Script;
+
     static gfxPlatformFontList* PlatformFontList() {
         return sPlatformFontList;
     }
@@ -126,7 +128,7 @@ public:
 
     gfxFontEntry*
     SystemFindFontForChar(uint32_t aCh, uint32_t aNextCh,
-                          int32_t aRunScript,
+                          Script aRunScript,
                           const gfxFontStyle* aStyle);
 
     
@@ -284,13 +286,13 @@ protected:
 
     
     gfxFontEntry* CommonFontFallback(uint32_t aCh, uint32_t aNextCh,
-                                     int32_t aRunScript,
+                                     Script aRunScript,
                                      const gfxFontStyle* aMatchStyle,
                                      gfxFontFamily** aMatchedFamily);
 
     
     virtual gfxFontEntry* GlobalFontFallback(const uint32_t aCh,
-                                             int32_t aRunScript,
+                                             Script aRunScript,
                                              const gfxFontStyle* aMatchStyle,
                                              uint32_t& aCmapCount,
                                              gfxFontFamily** aMatchedFamily);

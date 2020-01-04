@@ -1689,7 +1689,7 @@ nsMathMLChar::StretchInternal(nsPresContext*           aPresContext,
   
   gfxMissingFontRecorder* MFR = aPresContext->MissingFontRecorder();
   if (MFR && !fm->GetThebesFontGroup()->GetFirstMathFont()) {
-    MFR->RecordScript(MOZ_SCRIPT_MATHEMATICAL_NOTATION);
+    MFR->RecordScript(unicode::Script::MATHEMATICAL_NOTATION);
   }
 
   

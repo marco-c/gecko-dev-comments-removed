@@ -669,7 +669,7 @@ MathMLTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
         
         uint8_t matchType;
         RefPtr<gfxFont> mathFont = fontGroup->
-          FindFontForChar(ch2, 0, 0, MOZ_SCRIPT_COMMON, nullptr, &matchType);
+          FindFontForChar(ch2, 0, 0, unicode::Script::COMMON, nullptr, &matchType);
         if (mathFont) {
           
           
@@ -678,7 +678,7 @@ MathMLTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
           
           ch2 = ch;
           if (aMFR) {
-            aMFR->RecordScript(MOZ_SCRIPT_MATHEMATICAL_NOTATION);
+            aMFR->RecordScript(unicode::Script::MATHEMATICAL_NOTATION);
           }
         }
       }

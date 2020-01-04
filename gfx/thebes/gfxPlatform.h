@@ -11,6 +11,7 @@
 #include "nsTArray.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
+#include "nsUnicodeScriptCodes.h"
 
 #include "gfxTypes.h"
 #include "gfxFontFamilyList.h"
@@ -149,6 +150,7 @@ public:
     typedef mozilla::gfx::DrawTarget DrawTarget;
     typedef mozilla::gfx::IntSize IntSize;
     typedef mozilla::gfx::SourceSurface SourceSurface;
+    typedef mozilla::unicode::Script Script;
 
     
 
@@ -436,7 +438,7 @@ public:
     
     
     virtual void GetCommonFallbackFonts(uint32_t , uint32_t ,
-                                        int32_t ,
+                                        Script ,
                                         nsTArray<const char*>& )
     {
         
