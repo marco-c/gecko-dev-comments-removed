@@ -73,8 +73,6 @@ GMPParent::GMPParent()
 
 GMPParent::~GMPParent()
 {
-  
-  MOZ_ASSERT(NS_IsMainThread());
   LOGD("GMPParent dtor");
 
   MOZ_ASSERT(!mProcess);
