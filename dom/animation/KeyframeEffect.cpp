@@ -186,6 +186,14 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
         RequestRestyle(mTarget, mPseudoType, restyleType,
                        mAnimation->CascadeLevel());
     }
+
+    
+    
+    
+    
+    if (!isRelevant) {
+      mProgressOnLastCompose.SetNull();
+    }
   }
 }
 
