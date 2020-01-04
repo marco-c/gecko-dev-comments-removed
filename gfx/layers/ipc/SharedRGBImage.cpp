@@ -8,9 +8,9 @@
 #include "gfx2DGlue.h"                  
 #include "gfxPlatform.h"                
 #include "mozilla/gfx/Point.h"          
+#include "mozilla/layers/BufferTexture.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/ImageClient.h"  
-#include "mozilla/layers/ImageDataSerializer.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/ImageBridgeChild.h"  
@@ -87,25 +87,17 @@ SharedRGBImage::Allocate(gfx::IntSize aSize, gfx::SurfaceFormat aFormat)
 uint8_t*
 SharedRGBImage::GetBuffer()
 {
-  if (!mTextureClient) {
-    return nullptr;
+  MappedTextureData mapped;
+  if (mTextureClient && mTextureClient->BorrowMappedData(mapped)) {
+    return mapped.data;
   }
-
-  ImageDataSerializer serializer(mTextureClient->GetBuffer(), mTextureClient->GetBufferSize());
-  return serializer.GetData();
+  return 0;
 }
 
 gfx::IntSize
 SharedRGBImage::GetSize()
 {
   return mSize;
-}
-
-size_t
-SharedRGBImage::GetBufferSize()
-{
-  return mTextureClient ? mTextureClient->GetBufferSize()
-                        : 0;
 }
 
 TextureClient*
