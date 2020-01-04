@@ -6012,6 +6012,24 @@ PresShell::AssumeAllFramesVisible()
     return true;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mHaveShutDown && !mIsDestroying &&
+      !mPresContext->IsRootContentDocument()) {
+    nsPresContext* presContext =
+      mPresContext->GetToplevelContentDocumentPresContext();
+    if (presContext && presContext->PresShell()->AssumeAllFramesVisible()) {
+      return true;
+    }
+  }
+
   return false;
 }
 
