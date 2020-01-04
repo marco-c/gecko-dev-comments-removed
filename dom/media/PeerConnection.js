@@ -716,10 +716,11 @@ RTCPeerConnection.prototype = {
       }
 
       if (options && convertLegacyOptions(options)) {
-        this.logWarning(
-          "Mandatory/optional in createOffer options is deprecated! Use " +
+        this.logError(
+          "Mandatory/optional in createOffer options no longer works! Use " +
             JSON.stringify(options) + " instead (note the case difference)!",
           null, 0);
+        options = {};
       }
 
       let origin = Cu.getWebIDLCallerPrincipal().origin;
