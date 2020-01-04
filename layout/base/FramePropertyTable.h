@@ -336,6 +336,9 @@ protected:
 
   static void DeleteAllForEntry(Entry* aEntry);
 
+  
+  
+  
   nsTHashtable<Entry> mEntries;
   const nsIFrame* mLastFrame;
   Entry* mLastEntry;

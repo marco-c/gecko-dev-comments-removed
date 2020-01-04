@@ -123,7 +123,10 @@ FramePropertyTable::RemoveInternal(
   if (entry->mProp.mProperty == aProperty) {
     
     void* value = entry->mProp.mValue;
-    mEntries.RawRemoveEntry(entry);
+
+    
+    
+    mEntries.RemoveEntry(entry);
     mLastEntry = nullptr;
     if (aFoundResult) {
       *aFoundResult = true;
@@ -209,6 +212,9 @@ FramePropertyTable::DeleteAllFor(const nsIFrame* aFrame)
   }
 
   DeleteAllForEntry(entry);
+
+  
+  
   mEntries.RawRemoveEntry(entry);
 }
 
