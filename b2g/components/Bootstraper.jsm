@@ -121,18 +121,26 @@ this.Bootstraper = {
   
 
 
+  isInstallRequired: function(aManifestURL) {
+    try {
+      if (Services.prefs.getCharPref("b2g.system_manifest_url") == aManifestURL) {
+        return false;
+      }
+    } catch(e) { }
+    return true;
+  },
+
+  
+
+
   ensureSystemAppInstall: function(aManifestURL) {
     this._manifestURL = aManifestURL;
     debug("Installing app from " + this._manifestURL);
 
-    
-    
-    try {
-      if (Services.prefs.getCharPref("b2g.system_manifest_url") == this._manifestURL) {
-        debug("Already configured for " + this._manifestURL);
-        return Promise.resolve();
-      }
-    } catch(e) { }
+    if (!this.isInstallRequired(this._manifestURL)) {
+      debug("Already configured for " + this._manifestURL);
+      return Promise.resolve();
+    }
 
     return new Promise((aResolve, aReject) => {
       DOMApplicationRegistry.registryReady
