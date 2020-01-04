@@ -2691,29 +2691,37 @@ public class BrowserApp extends GeckoApp
         }
 
         if (mHomeScreen == null) {
-            final ViewStub homePagerStub = (ViewStub) findViewById(R.id.home_pager_stub);
-            mHomeScreen = (HomePager) homePagerStub.inflate();
+            if (AppConstants.MOZ_ANDROID_ACTIVITY_STREAM) {
+                final ViewStub asStub = (ViewStub) findViewById(R.id.activity_stream_stub);
+                mHomeScreen = (HomeScreen) asStub.inflate();
+            } else {
+                final ViewStub homePagerStub = (ViewStub) findViewById(R.id.home_pager_stub);
+                mHomeScreen = (HomeScreen) homePagerStub.inflate();
 
-            mHomeScreen.setOnPanelChangeListener(new HomeScreen.OnPanelChangeListener() {
-                @Override
-                public void onPanelSelected(String panelId) {
-                    final Tab currentTab = Tabs.getInstance().getSelectedTab();
-                    if (currentTab != null) {
-                        currentTab.setMostRecentHomePanel(panelId);
+                
+                
+                
+                mHomeScreen.setOnPanelChangeListener(new HomeScreen.OnPanelChangeListener() {
+                    @Override
+                    public void onPanelSelected(String panelId) {
+                        final Tab currentTab = Tabs.getInstance().getSelectedTab();
+                        if (currentTab != null) {
+                            currentTab.setMostRecentHomePanel(panelId);
+                        }
                     }
-                }
-            });
+                });
 
-            
-            mHomeScreen.setPanelStateChangeListener(new HomeFragment.PanelStateChangeListener() {
-                @Override
-                public void onStateChanged(Bundle bundle) {
-                    final Tab currentTab = Tabs.getInstance().getSelectedTab();
-                    if (currentTab != null) {
-                        currentTab.setMostRecentHomePanelData(bundle);
+                
+                mHomeScreen.setPanelStateChangeListener(new HomeFragment.PanelStateChangeListener() {
+                    @Override
+                    public void onStateChanged(Bundle bundle) {
+                        final Tab currentTab = Tabs.getInstance().getSelectedTab();
+                        if (currentTab != null) {
+                            currentTab.setMostRecentHomePanelData(bundle);
+                        }
                     }
-                }
-            });
+                });
+            }
 
             
             if (!Restrictions.isUserRestricted()) {
