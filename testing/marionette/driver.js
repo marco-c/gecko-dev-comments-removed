@@ -12,11 +12,7 @@ var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-var {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-this.DevToolsUtils = devtools.require("devtools/shared/DevToolsUtils");
 
 XPCOMUtils.defineLazyServiceGetter(
     this, "cookieManager", "@mozilla.org/cookiemanager;1", "nsICookieManager2");
@@ -24,16 +20,16 @@ XPCOMUtils.defineLazyServiceGetter(
 Cu.import("chrome://marionette/content/action.js");
 Cu.import("chrome://marionette/content/atom.js");
 Cu.import("chrome://marionette/content/element.js");
+Cu.import("chrome://marionette/content/emulator.js");
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/evaluate.js");
 Cu.import("chrome://marionette/content/event.js");
 Cu.import("chrome://marionette/content/frame.js");
 Cu.import("chrome://marionette/content/interaction.js");
+Cu.import("chrome://marionette/content/logging.js");
 Cu.import("chrome://marionette/content/modal.js");
 Cu.import("chrome://marionette/content/proxy.js");
 Cu.import("chrome://marionette/content/simpletest.js");
-
-loader.loadSubScript("chrome://marionette/content/common.js");
 
 this.EXPORTED_SYMBOLS = ["GeckoDriver", "Context"];
 
@@ -94,6 +90,7 @@ this.Context.fromString = function(s) {
 
 
 
+
 this.GeckoDriver = function(appName, device, stopSignal, emulator) {
   this.appName = appName;
   this.stopSignal_ = stopSignal;
@@ -112,9 +109,7 @@ this.GeckoDriver = function(appName, device, stopSignal, emulator) {
   this.pageTimeout = null;
   this.timer = null;
   this.inactivityTimer = null;
-  
-  this.heartbeatCallback = function() {};
-  this.marionetteLog = new MarionetteLogObj();
+  this.marionetteLog = new logging.ContentLogger();
   
   this.mainFrame = null;
   
@@ -124,7 +119,7 @@ this.GeckoDriver = function(appName, device, stopSignal, emulator) {
   this.currentFrameElement = null;
   this.testName = null;
   this.mozBrowserClose = null;
-  this.sandboxes = {};
+  this.sandboxes = new Sandboxes(() => this.getCurrentWindow());
   
   this.oopFrameId = null;
   this.observing = null;
@@ -222,10 +217,10 @@ GeckoDriver.prototype.sendAsync = function(name, msg, cmdId) {
   if (curRemoteFrame === null) {
     this.curBrowser.executeWhenReady(() => {
       if (this.curBrowser.curFrameId) {
-          this.mm.broadcastAsyncMessage(name + this.curBrowser.curFrameId, msg);
-      }
-      else {
-          throw new WebDriverError("Can not send call to listener as it doesnt exist");
+        this.mm.broadcastAsyncMessage(name + this.curBrowser.curFrameId, msg);
+      } else {
+        throw new NoSuchFrameError(
+            "No such content frame; perhaps the listener was not registered?");
       }
     });
   } else {
@@ -254,7 +249,7 @@ GeckoDriver.prototype.getCurrentWindow = function() {
   if (this.curFrame === null) {
     if (this.curBrowser === null) {
       if (this.context == Context.CONTENT) {
-        typ = 'navigator:browser';
+        typ = "navigator:browser";
       }
       return Services.wm.getMostRecentWindow(typ);
     } else {
@@ -690,12 +685,15 @@ GeckoDriver.prototype.setUpProxy = function(proxy) {
 
 
 GeckoDriver.prototype.log = function(cmd, resp) {
-  this.marionetteLog.log(cmd.parameters.value, cmd.parameters.level);
+  
+  this.marionetteLog.log(
+      cmd.parameters.value,
+      cmd.parameters.level || undefined);
 };
 
 
 GeckoDriver.prototype.getLogs = function(cmd, resp) {
-  resp.body = this.marionetteLog.getLogs();
+  resp.body = this.marionetteLog.get();
 };
 
 
@@ -735,39 +733,6 @@ GeckoDriver.prototype.getContext = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.createExecuteSandbox = function(win, mn, sandboxName) {
-  let principal = win;
-  if (sandboxName == 'system') {
-    principal = Cc["@mozilla.org/systemprincipal;1"].
-                createInstance(Ci.nsIPrincipal);
-  }
-  let sb = new Cu.Sandbox(principal,
-      {sandboxPrototype: win, wantXrays: false, sandboxName: ""});
-  sb.global = sb;
-  sb.proto = win;
-
-  mn.exports.forEach(function(fn) {
-    if (typeof mn[fn] === 'function') {
-      sb[fn] = mn[fn].bind(mn);
-    } else {
-      sb[fn] = mn[fn];
-    }
-  });
-
-  sb.isSystemMessageListenerReady = () => systemMessageListenerReady;
-
-  this.sandboxes[sandboxName] = sb;
-};
-
-
-
-
-
-GeckoDriver.prototype.applyArgumentsToSandbox = function(win, sb, args) {
-  sb.__marionetteParams = this.curBrowser.elementManager.convertWrappedArguments(args,
-    { frame: win });
-  sb.__namedArgs = this.curBrowser.elementManager.applyNamedArgs(args);
-};
 
 
 
@@ -789,32 +754,33 @@ GeckoDriver.prototype.applyArgumentsToSandbox = function(win, sb, args) {
 
 
 
-GeckoDriver.prototype.executeScriptInSandbox = function(
-    resp,
-    sandbox,
-    script,
-    directInject,
-    async,
-    timeout,
-    filename) {
-  if (directInject && async && (timeout === null || timeout === 0)) {
-    throw new TimeoutError("Please set a timeout");
-  }
 
-  script = this.importedScripts.for(Context.CHROME).concat(script);
-  let res = Cu.evalInSandbox(script, sandbox, "1.8", filename ? filename : "dummy file", 0);
 
-  if (directInject && !async &&
-      (typeof res == "undefined" || typeof res.passed == "undefined")) {
-    throw new WebDriverError("finish() not called");
-  }
 
-  if (!async) {
-    
-    
-    
-    resp.body.value = this.curBrowser.elementManager.wrapValue(res);
-  }
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.executeScript = function*(cmd, resp) {
+  let {script, args, scriptTimeout} = cmd.parameters;
+  scriptTimeout = scriptTimeout || this.scriptTimeout;
+
+  let opts = {
+    sandboxName: cmd.parameters.sandbox,
+    newSandbox: !!(typeof cmd.parameters.newSandbox == "undefined") ||
+        cmd.parameters.newSandbox,
+    filename: cmd.parameters.filename,
+    line: cmd.parameters.line,
+    debug: cmd.parameters.debug_script,
+  };
+
+  resp.body.value = yield this.execute_(script, args, scriptTimeout, opts);
 };
 
 
@@ -824,96 +790,140 @@ GeckoDriver.prototype.executeScriptInSandbox = function(
 
 
 
-GeckoDriver.prototype.execute = function*(cmd, resp, directInject) {
-  let {inactivityTimeout,
-       scriptTimeout,
-       script,
-       newSandbox,
-       args,
-       filename,
-       line} = cmd.parameters;
-  let sandboxName = cmd.parameters.sandbox || 'default';
 
-  if (!scriptTimeout) {
-    scriptTimeout = this.scriptTimeout;
-  }
-  if (typeof newSandbox == "undefined") {
-    newSandbox = true;
-  }
 
-  if (this.context == Context.CONTENT) {
-    resp.body.value = yield this.listener.executeScript({
-      script: script,
-      args: args,
-      newSandbox: newSandbox,
-      timeout: scriptTimeout,
-      filename: filename,
-      line: line,
-      sandboxName: sandboxName
-    });
-    return;
-  }
 
-  
-  let that = this;
-  if (inactivityTimeout) {
-    let setTimer = function() {
-      that.inactivityTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      if (that.inactivityTimer !== null) {
-        that.inactivityTimer.initWithCallback(function() {
-          throw new ScriptTimeoutError("timed out due to inactivity");
-        }, inactivityTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.executeAsyncScript = function(cmd, resp) {
+  let {script, args, scriptTimeout} = cmd.parameters;
+  scriptTimeout = scriptTimeout || this.scriptTimeout;
+
+  let opts = {
+    sandboxName: cmd.parameters.sandbox,
+    newSandbox: !!(typeof cmd.parameters.newSandbox == "undefined") ||
+        cmd.parameters.newSandbox,
+    filename: cmd.parameters.filename,
+    line: cmd.parameters.line,
+    debug: cmd.parameters.debug_script,
+    async: true,
+  };
+
+  resp.body.value = yield this.execute_(script, args, scriptTimeout, opts);
+};
+
+GeckoDriver.prototype.execute_ = function(script, args, timeout, opts = {}) {
+  switch (this.context) {
+    case Context.CONTENT:
+      
+      if (!opts.sandboxName) {
+        return this.listener.execute(script, args, timeout, opts);
+
+      
+      } else {
+        return this.listener.executeInSandbox(script, args, timeout, opts);
       }
-    };
-    setTimer();
-    this.heartbeatCallback = function() {
-      that.inactivityTimer.cancel();
-      setTimer();
-    };
-  }
 
-  let win = this.getCurrentWindow();
-  if (newSandbox ||
-      !(sandboxName in this.sandboxes) ||
-      (this.sandboxes[sandboxName].proto != win)) {
-    let marionette = new Marionette(
-        win,
-        "chrome",
-        this.marionetteLog,
-        scriptTimeout,
-        this.heartbeatCallback,
-        this.testName);
-    this.createExecuteSandbox(
-        win,
-        marionette,
-        sandboxName);
-    if (!this.sandboxes[sandboxName]) {
-      return;
-    }
-  }
-  this.applyArgumentsToSandbox(win, this.sandboxes[sandboxName], args);
-
-  try {
-    this.sandboxes[sandboxName].finish = () => {
-      if (this.inactivityTimer !== null) {
-        this.inactivityTimer.cancel();
+    case Context.CHROME:
+      let sb = this.sandboxes.get(opts.sandboxName, opts.newSandbox);
+      if (opts.sandboxName) {
+        sb = sandbox.augment(sb, new logging.Adapter(this.marionetteLog));
+        sb = sandbox.augment(sb, {global: sb});
+        sb = sandbox.augment(sb, new emulator.Adapter(this.emulator));
       }
-      return this.sandboxes[sandboxName].generate_results();
-    };
 
-    if (!directInject) {
-      script = "var func = function() { " + script + " }; func.apply(null, __marionetteParams);";
-    }
-    this.executeScriptInSandbox(
-        resp,
-        this.sandboxes[sandboxName],
-        script,
-        directInject,
-        false ,
-        scriptTimeout,
-        filename);
-  } catch (e) {
-    throw new JavaScriptError(e, "execute_script", filename, line, script);
+      opts.timeout = timeout;
+      script = this.importedScripts.for(Context.CHROME).concat(script);
+      let wargs = this.curBrowser.elementManager.convertWrappedArguments(args, {frame: sb.window});
+      let evaluatePromise = evaluate.sandbox(sb, script, wargs, opts);
+      return evaluatePromise.then(res => this.curBrowser.elementManager.wrapValue(res));
+  }
+};
+
+
+
+
+
+
+
+GeckoDriver.prototype.executeJSScript = function(cmd, resp) {
+  let {script, args, scriptTimeout} = cmd.parameters;
+  scriptTimeout = scriptTimeout || this.scriptTimeout;
+
+  let opts = {
+    filename: cmd.parameters.filename,
+    line: cmd.parameters.line,
+    async: cmd.parameters.async,
+  };
+
+  switch (this.context) {
+    case Context.CHROME:
+      let win = this.getCurrentWindow();
+      let wargs = this.curBrowser.elementManager.convertWrappedArguments(args, {frame: win});
+      let harness = new simpletest.Harness(
+          win,
+          Context.CHROME,
+          this.marionetteLog,
+          scriptTimeout,
+          function() {},
+          this.testName);
+
+      let sb = sandbox.createSimpleTest(win, harness);
+      
+      sb = sandbox.augment(sb, new logging.Adapter(this.marionetteLog));
+
+      let res = yield evaluate.sandbox(sb, script, wargs, opts);
+      resp.body.value = this.curBrowser.elementManager.wrapValue(res);
+      break;
+
+    case Context.CONTENT:
+      resp.body.value = yield this.listener.executeSimpleTest(script, args, scriptTimeout, opts);
+      break;
   }
 };
 
@@ -929,217 +939,6 @@ GeckoDriver.prototype.setScriptTimeout = function(cmd, resp) {
     throw new WebDriverError("Not a Number");
   }
   this.scriptTimeout = ms;
-};
-
-
-
-
-
-GeckoDriver.prototype.executeJSScript = function*(cmd, resp) {
-  
-  
-  
-  if (typeof cmd.newSandbox == "undefined") {
-    
-    
-    cmd.newSandbox = true;
-  }
-
-  switch (this.context) {
-    case Context.CHROME:
-      if (cmd.parameters.async) {
-        yield this.executeWithCallback(cmd, resp, cmd.parameters.async);
-      } else {
-        this.execute(cmd, resp, true );
-      }
-      break;
-
-    case Context.CONTENT:
-      resp.body.value = yield this.listener.executeJSScript({
-        script: cmd.parameters.script,
-        args: cmd.parameters.args,
-        newSandbox: cmd.parameters.newSandbox,
-        async: cmd.parameters.async,
-        timeout: cmd.parameters.scriptTimeout ?
-            cmd.parameters.scriptTimeout : this.scriptTimeout,
-        inactivityTimeout: cmd.parameters.inactivityTimeout,
-        filename: cmd.parameters.filename,
-        line: cmd.parameters.line,
-        sandboxName: cmd.parameters.sandbox || 'default',
-      });
-      break;
- }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.executeWithCallback = function*(cmd, resp, directInject) {
-  let {script,
-      args,
-      newSandbox,
-      inactivityTimeout,
-      scriptTimeout,
-      filename,
-      line} = cmd.parameters;
-  let sandboxName = cmd.parameters.sandbox || "default";
-
-  if (!scriptTimeout) {
-    scriptTimeout = this.scriptTimeout;
-  }
-  if (typeof newSandbox == "undefined") {
-    newSandbox = true;
-  }
-
-  if (this.context == Context.CONTENT) {
-    resp.body.value = yield this.listener.executeAsyncScript({
-      script: script,
-      args: args,
-      id: cmd.id,
-      newSandbox: newSandbox,
-      timeout: scriptTimeout,
-      inactivityTimeout: inactivityTimeout,
-      filename: filename,
-      line: line,
-      sandboxName: sandboxName,
-    });
-    return;
-  }
-
-  
-  let that = this;
-  if (inactivityTimeout) {
-    this.inactivityTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    if (this.inactivityTimer !== null) {
-      this.inactivityTimer.initWithCallback(function() {
-       chromeAsyncReturnFunc(new ScriptTimeoutError("timed out due to inactivity"));
-      }, inactivityTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
-    }
-    this.heartbeatCallback = function resetInactivityTimer() {
-      that.inactivityTimer.cancel();
-      that.inactivityTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      if (that.inactivityTimer !== null) {
-        that.inactivityTimer.initWithCallback(function() {
-          chromeAsyncReturnFunc(new ScriptTimeoutError("timed out due to inactivity"));
-        }, inactivityTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
-      }
-    };
-  }
-
-  let win = this.getCurrentWindow();
-  let origOnError = win.onerror;
-  that.timeout = scriptTimeout;
-
-  let res = yield new Promise(function(resolve, reject) {
-    let chromeAsyncReturnFunc = function(val) {
-      if (cmd.id == that.sandboxes[sandboxName].command_id) {
-        if (that.timer !== null) {
-          that.timer.cancel();
-          that.timer = null;
-        }
-
-        win.onerror = origOnError;
-
-        if (error.isError(val)) {
-          reject(val);
-        } else {
-          resolve(val);
-        }
-      }
-
-      if (that.inactivityTimer !== null) {
-        that.inactivityTimer.cancel();
-      }
-    };
-
-    let chromeAsyncFinish = function() {
-      let res = that.sandboxes[sandboxName].generate_results();
-      chromeAsyncReturnFunc(res);
-    };
-
-    let chromeAsyncError = function(e, func, file, line, script) {
-      let err = new JavaScriptError(e, func, file, line, script);
-      chromeAsyncReturnFunc(err);
-    };
-
-    if (newSandbox || !(sandboxName in this.sandboxes)) {
-      let marionette = new Marionette(
-          win,
-          "chrome",
-          this.marionetteLog,
-          scriptTimeout,
-          this.heartbeatCallback,
-          this.testName);
-      this.createExecuteSandbox(win, marionette, sandboxName);
-    }
-    if (!this.sandboxes[sandboxName]) {
-      return;
-    }
-
-    this.sandboxes[sandboxName].command_id = cmd.id;
-    this.sandboxes[sandboxName].runEmulatorCmd =
-        (cmd, cb) => this.emulator.command(cmd, cb, chromeAsyncError);
-    this.sandboxes[sandboxName].runEmulatorShell =
-        (args, cb) => this.emulator.shell(args, cb, chromeAsyncError);
-
-    this.applyArgumentsToSandbox(win, this.sandboxes[sandboxName], args);
-
-    
-    
-    
-    
-    if (cmd.parameters.debug_script) {
-      win.onerror = function(msg, url, line) {
-        let err = new JavaScriptError(`${msg} at: ${url} line: ${line}`);
-        chromeAsyncReturnFunc(err);
-        return true;
-      };
-    }
-
-    try {
-      this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      if (this.timer !== null) {
-        this.timer.initWithCallback(function() {
-          chromeAsyncReturnFunc(new ScriptTimeoutError("timed out"));
-        }, that.timeout, Ci.nsITimer.TYPE_ONE_SHOT);
-      }
-
-      this.sandboxes[sandboxName].returnFunc = chromeAsyncReturnFunc;
-      this.sandboxes[sandboxName].finish = chromeAsyncFinish;
-
-      if (!directInject) {
-        script =  "__marionetteParams.push(returnFunc);" +
-            "var marionetteScriptFinished = returnFunc;" +
-            "var __marionetteFunc = function() {" + script + "};" +
-            "__marionetteFunc.apply(null, __marionetteParams);";
-      }
-
-      this.executeScriptInSandbox(
-          resp,
-          this.sandboxes[sandboxName],
-          script,
-          directInject,
-          true ,
-          scriptTimeout,
-          filename);
-    } catch (e) {
-      chromeAsyncError(e, "execute_async_script", filename, line, script);
-    }
-  }.bind(this));
-
-  resp.body.value = that.curBrowser.elementManager.wrapValue(res) || null;
 };
 
 
@@ -2447,7 +2246,7 @@ GeckoDriver.prototype.sessionTearDown = function(cmd, resp) {
     }
     this.observing = null;
   }
-  this.sandboxes = {};
+  this.sandboxes.clear();
 };
 
 
@@ -2794,7 +2593,7 @@ GeckoDriver.prototype.receiveMessage = function(message) {
     case "Marionette:shareData":
       
       if (message.json.log) {
-        this.marionetteLog.addLogs(message.json.log);
+        this.marionetteLog.addAll(message.json.log);
       }
       break;
 
@@ -2902,13 +2701,13 @@ GeckoDriver.prototype.commands = {
   "getLogs": GeckoDriver.prototype.getLogs,
   "setContext": GeckoDriver.prototype.setContext,
   "getContext": GeckoDriver.prototype.getContext,
-  "executeScript": GeckoDriver.prototype.execute,
+  "executeScript": GeckoDriver.prototype.executeScript,
   "setScriptTimeout": GeckoDriver.prototype.setScriptTimeout,
   "timeouts": GeckoDriver.prototype.timeouts,
   "singleTap": GeckoDriver.prototype.singleTap,
   "actionChain": GeckoDriver.prototype.actionChain,
   "multiAction": GeckoDriver.prototype.multiAction,
-  "executeAsyncScript": GeckoDriver.prototype.executeWithCallback,
+  "executeAsyncScript": GeckoDriver.prototype.executeAsyncScript,
   "executeJSScript": GeckoDriver.prototype.executeJSScript,
   "setSearchTimeout": GeckoDriver.prototype.setSearchTimeout,
   "findElement": GeckoDriver.prototype.findElement,
