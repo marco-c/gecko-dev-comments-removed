@@ -2607,11 +2607,13 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
     
     
     AllocatableRegisterSet regSet(RegisterSet::All());
-    regSet.take(AnyRegister(object));
     if (!value.constant())
-        regSet.takeUnchecked(value.reg());
+        regSet.take(value.reg());
+    bool valueAliasesObject = !regSet.has(object);
+    if (!valueAliasesObject)
+        regSet.take(object);
 
-    regSet.takeUnchecked(tempReg);
+    regSet.take(tempReg);
 
     
     
@@ -2695,7 +2697,8 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
             masm.Push(value.value());
         } else {
             masm.Push(value.reg());
-            regSet.add(value.reg());
+            if (!valueAliasesObject)
+                regSet.add(value.reg());
         }
 
         
