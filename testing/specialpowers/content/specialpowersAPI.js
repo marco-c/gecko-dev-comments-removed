@@ -482,11 +482,6 @@ SpecialPowersAPI.prototype = {
                               { id: id, name: name, message: message });
       },
 
-      sendSyncMessage: (name, message) => {
-        return this._sendSyncMessage("SPChromeScriptMessage",
-                                     { id, name, message });
-      },
-
       destroy: () => {
         listeners = [];
         this._removeMessageListener("SPChromeScriptMessage", chromeScript);
@@ -1576,15 +1571,20 @@ SpecialPowersAPI.prototype = {
       getService(Components.interfaces.nsICategoryManager).
       deleteCategoryEntry(category, entry, persists);
   },
-
   openDialog: function(win, args) {
     return win.openDialog.apply(win, args);
+  },
+  
+  spinEventLoop: function(win) {
+    
+    var syncXHR = new win.XMLHttpRequest();
+    syncXHR.open('GET', win.location, false);
+    syncXHR.send();
   },
 
   
   getPrivilegedProps: function(obj, props) {
     var parts = props.split('.');
-
     for (var i = 0; i < parts.length; i++) {
       var p = parts[i];
       if (obj[p]) {
