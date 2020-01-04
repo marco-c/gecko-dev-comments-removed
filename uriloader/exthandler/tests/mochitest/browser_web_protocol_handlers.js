@@ -46,13 +46,8 @@ add_task(function*() {
   yield BrowserTestUtils.synthesizeMouseAtCenter(link, {button: 1}, browser);
   let tab = yield promiseTabOpened;
   gBrowser.selectedTab = tab;
-  if (browser.isRemoteBrowser) {
-    todo(gURLBar.value == expectedURL,
-         "the location bar should display the handler's URL (bug 1253307)");
-  } else {
-    is(gURLBar.value, expectedURL,
-       "the expected URL is displayed in the location bar");
-  }
+  is(gURLBar.value, expectedURL,
+     "the expected URL is displayed in the location bar");
   yield BrowserTestUtils.removeTab(tab);
 
   
@@ -60,29 +55,16 @@ add_task(function*() {
   yield BrowserTestUtils.synthesizeMouseAtCenter(link, {shiftKey: true},
                                                  browser);
   let win = yield newWindowPromise;
-  if (!browser.isRemoteBrowser) {
-    
-    
-    yield BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
-  }
+  yield BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
   yield BrowserTestUtils.waitForCondition(() => win.gBrowser.currentURI.spec == expectedURL);
-  if (browser.isRemoteBrowser) {
-    todo(win.gURLBar.value == expectedURL,
-         "the location bar should display the handler's URL (bug 1253307)");
-  } else {
-    is(win.gURLBar.value, expectedURL,
-       "the expected URL is displayed in the location bar");
-  }
+  is(win.gURLBar.value, expectedURL,
+     "the expected URL is displayed in the location bar");
   yield BrowserTestUtils.closeWindow(win);
 
   
   let loadPromise = BrowserTestUtils.browserLoaded(browser);
   yield BrowserTestUtils.synthesizeMouseAtCenter(link, {}, browser);
-  if (!browser.isRemoteBrowser) {
-    
-    
-    yield loadPromise;
-  }
+  yield loadPromise;
   yield BrowserTestUtils.waitForCondition(() => gURLBar.value != testURL);
   is(gURLBar.value, expectedURL,
      "the expected URL is displayed in the location bar");

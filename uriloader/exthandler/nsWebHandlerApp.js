@@ -86,7 +86,7 @@ nsWebHandlerApp.prototype = {
         
         
         aWindowContext.getInterface(Ci.nsIRemoteWindowContext)
-                      .openURI(uriToSend, Ci.nsIURILoader.IS_CONTENT_PREFERRED);
+                      .openURI(uriToSend);
         return;
       } catch (e) {
         if (e.result != Cr.NS_NOINTERFACE) {
