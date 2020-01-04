@@ -27,7 +27,6 @@
 #include "nsITimer.h"
 
 #include "AbstractMediaDecoder.h"
-#include "FrameStatistics.h"
 #include "MediaDecoderOwner.h"
 #include "MediaEventSource.h"
 #include "MediaMetadataManager.h"
@@ -484,10 +483,9 @@ private:
 
   
   
-  virtual void NotifyDecodedFrames(uint32_t aParsed, uint32_t aDecoded,
-                                   uint32_t aDropped) override
+  virtual void NotifyDecodedFrames(const FrameStatisticsData& aStats) override
   {
-    GetFrameStatistics().NotifyDecodedFrames(aParsed, aDecoded, aDropped);
+    GetFrameStatistics().NotifyDecodedFrames(aStats);
   }
 
   void UpdateReadyState()

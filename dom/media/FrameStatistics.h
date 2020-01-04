@@ -7,6 +7,8 @@
 #ifndef FrameStatistics_h_
 #define FrameStatistics_h_
 
+#include "mozilla/ReentrantMonitor.h"
+
 namespace mozilla {
 
 struct FrameStatisticsData
@@ -26,6 +28,22 @@ struct FrameStatisticsData
   
   
   uint64_t mDroppedFrames = 0;
+
+  FrameStatisticsData() = default;
+  FrameStatisticsData(uint64_t aParsed, uint64_t aDecoded, uint64_t aDropped)
+    : mParsedFrames(aParsed)
+    , mDecodedFrames(aDecoded)
+    , mDroppedFrames(aDropped)
+  {}
+
+  void
+  Accumulate(const FrameStatisticsData& aStats)
+  {
+    mParsedFrames += aStats.mParsedFrames;
+    mDecodedFrames += aStats.mDecodedFrames;
+    mPresentedFrames += aStats.mPresentedFrames;
+    mDroppedFrames += aStats.mDroppedFrames;
+  }
 };
 
 
@@ -82,16 +100,10 @@ public:
 
   
   
-  void NotifyDecodedFrames(uint64_t aParsed, uint64_t aDecoded,
-                           uint64_t aDropped)
+  void NotifyDecodedFrames(const FrameStatisticsData& aStats)
   {
-    if (aParsed == 0 && aDecoded == 0 && aDropped == 0) {
-      return;
-    }
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    mFrameStatisticsData.mParsedFrames += aParsed;
-    mFrameStatisticsData.mDecodedFrames += aDecoded;
-    mFrameStatisticsData.mDroppedFrames += aDropped;
+    mFrameStatisticsData.Accumulate(aStats);
   }
 
   
