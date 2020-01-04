@@ -178,10 +178,6 @@ protected:
   Type mType;
 
 private:
-  
-  friend class AutoNoJSAPI;
-  ScriptSettingsStackEntry();
-
   ScriptSettingsStackEntry *mOlder;
 };
 
@@ -219,7 +215,7 @@ private:
 
 
 
-class MOZ_STACK_CLASS AutoJSAPI {
+class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
 public:
   
   
@@ -313,14 +309,10 @@ protected:
   
   
   
-  AutoJSAPI(nsIGlobalObject* aGlobalObject, bool aIsMainThread, JSContext* aCx);
+  AutoJSAPI(nsIGlobalObject* aGlobalObject, bool aIsMainThread, JSContext* aCx,
+            Type aType);
 
 private:
-  
-  
-  
-  
-  RefPtr<nsIGlobalObject> mGlobalObject;
   mozilla::Maybe<danger::AutoCxPusher> mCxPusher;
   mozilla::Maybe<JSAutoNullableCompartment> mAutoNullableCompartment;
   JSContext *mCx;
@@ -343,8 +335,7 @@ private:
 
 
 
-class MOZ_STACK_CLASS AutoEntryScript : public AutoJSAPI,
-                                        protected ScriptSettingsStackEntry {
+class MOZ_STACK_CLASS AutoEntryScript : public AutoJSAPI {
 public:
   AutoEntryScript(nsIGlobalObject* aGlobalObject,
                   const char *aReason,
