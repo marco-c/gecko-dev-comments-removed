@@ -688,7 +688,7 @@ PresentationControllingInfo::OnAnswer(nsIPresentationChannelDescription* aDescri
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::NotifyOpened()
+PresentationControllingInfo::NotifyConnected()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -747,7 +747,7 @@ PresentationControllingInfo::NotifyOpened()
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::NotifyClosed(nsresult aReason)
+PresentationControllingInfo::NotifyDisconnected(nsresult aReason)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -755,7 +755,7 @@ PresentationControllingInfo::NotifyClosed(nsresult aReason)
     nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
       builder = do_QueryInterface(mBuilder);
     if (builder) {
-      NS_WARN_IF(NS_FAILED(builder->NotifyClosed(aReason)));
+      NS_WARN_IF(NS_FAILED(builder->NotifyDisconnected(aReason)));
     }
   }
 
@@ -1137,14 +1137,14 @@ PresentationPresentingInfo::OnIceCandidate(const nsAString& aCandidate)
 }
 
 NS_IMETHODIMP
-PresentationPresentingInfo::NotifyOpened()
+PresentationPresentingInfo::NotifyConnected()
 {
   
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PresentationPresentingInfo::NotifyClosed(nsresult aReason)
+PresentationPresentingInfo::NotifyDisconnected(nsresult aReason)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1152,7 +1152,7 @@ PresentationPresentingInfo::NotifyClosed(nsresult aReason)
     nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
       builder = do_QueryInterface(mBuilder);
     if (builder) {
-      NS_WARN_IF(NS_FAILED(builder->NotifyClosed(aReason)));
+      NS_WARN_IF(NS_FAILED(builder->NotifyDisconnected(aReason)));
     }
   }
 
