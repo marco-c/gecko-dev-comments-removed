@@ -58,10 +58,6 @@ public:
     static nsSystemPrincipal*
     SystemPrincipalSingletonConstructor();
 
-    JSContext* GetCurrentJSContext();
-
-    JSContext* GetSafeJSContext();
-
     
 
 
