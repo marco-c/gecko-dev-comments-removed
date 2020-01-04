@@ -42,11 +42,6 @@ public:
   
   
   void UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun);
-  
-  
-  
-  
-  int64_t GetPositionUnlocked() const;
 
   
 
