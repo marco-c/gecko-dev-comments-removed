@@ -58,6 +58,17 @@ HeapAnalysesClient.prototype.readHeapSnapshot = function (snapshotFilePath) {
 
 
 
+HeapAnalysesClient.prototype.deleteHeapSnapshot = function (snapshotFilePath) {
+  return this._worker.performTask("deleteHeapSnapshot", { snapshotFilePath });
+};
+
+
+
+
+
+
+
+
 
 
 
