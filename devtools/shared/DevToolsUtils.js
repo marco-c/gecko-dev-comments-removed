@@ -395,18 +395,10 @@ exports.defineLazyGetter(this, "NetworkHelper", () => {
 
 
 
-
-
-
-
-
-
 function mainThreadFetch(aURL, aOptions={ loadFromCache: true,
                                           policy: Ci.nsIContentPolicy.TYPE_OTHER,
                                           window: null,
-                                          charset: null,
-                                          principal: null,
-                                          cacheKey: null }) {
+                                          charset: null }) {
   
   let url = aURL.split(" -> ").pop();
   let channel;
@@ -420,13 +412,6 @@ function mainThreadFetch(aURL, aOptions={ loadFromCache: true,
   channel.loadFlags = aOptions.loadFromCache
     ? channel.LOAD_FROM_CACHE
     : channel.LOAD_BYPASS_CACHE;
-
-  
-  
-  if (aOptions.loadFromCache &&
-      aOptions.cacheKey && channel instanceof Ci.nsICacheInfoChannel) {
-    channel.cacheKey = aOptions.cacheKey;
-  }
 
   if (aOptions.window) {
     
@@ -512,16 +497,12 @@ function mainThreadFetch(aURL, aOptions={ loadFromCache: true,
 
 
 
-function newChannelForURL(url, { policy, principal }) {
+function newChannelForURL(url, { policy }) {
   let channelOptions = {
-    uri: url,
-    contentPolicyType: policy
+    contentPolicyType: policy,
+    loadUsingSystemPrincipal: true,
+    uri: url
   };
-  if (principal) {
-    channelOptions.loadingPrincipal = principal;
-  } else {
-    channelOptions.loadUsingSystemPrincipal = true;
-  }
 
   try {
     return NetUtil.newChannel(channelOptions);
