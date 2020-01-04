@@ -5605,7 +5605,7 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         touchPoint = gestureinfo->ptsLocation;
         touchPoint.ScreenToClient(mWnd);
         WidgetGestureNotifyEvent gestureNotifyEvent(true, eGestureNotify, this);
-        gestureNotifyEvent.refPoint = LayoutDeviceIntPoint::FromUntyped(touchPoint);
+        gestureNotifyEvent.refPoint = LayoutDeviceIntPoint::FromUnknownPoint(touchPoint);
         nsEventStatus status;
         DispatchEvent(&gestureNotifyEvent, status);
         mDisplayPanFeedback = gestureNotifyEvent.displayPanFeedback;
@@ -6405,7 +6405,7 @@ bool nsWindow::OnTouch(WPARAM wParam, LPARAM lParam)
 
       
       SingleTouchData touchData(pInputs[i].dwID,                                      
-                                ScreenIntPoint::FromUntyped(touchPoint),              
+                                ScreenIntPoint::FromUnknownPoint(touchPoint),         
                                 
                                 pInputs[i].dwFlags & TOUCHINPUTMASKF_CONTACTAREA
                                   ? ScreenSize(

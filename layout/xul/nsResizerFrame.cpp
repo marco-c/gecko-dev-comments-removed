@@ -230,7 +230,7 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
         
         
         nsIntRect screenRectPixels = screenRect.ToInsidePixels(aPresContext->AppUnitsPerDevPixel());
-        rect.IntersectRect(rect, LayoutDevicePixel::FromUntyped(screenRectPixels));
+        rect.IntersectRect(rect, LayoutDeviceIntRect::FromUnknownRect(screenRectPixels));
       }
 
       if (contentToResize) {

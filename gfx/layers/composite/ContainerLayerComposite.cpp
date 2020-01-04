@@ -669,7 +669,7 @@ RenderIntermediate(ContainerT* aContainer,
 
   compositor->SetRenderTarget(surface);
   
-  RenderLayers(aContainer, aManager, RenderTargetPixel::FromUntyped(aClipRect));
+  RenderLayers(aContainer, aManager, RenderTargetIntRect::FromUnknownRect(aClipRect));
   
   compositor->SetRenderTarget(previousTarget);
 }
@@ -725,7 +725,7 @@ ContainerRender(ContainerT* aContainer,
                            container->GetEffectiveTransform());
     });
   } else {
-    RenderLayers(aContainer, aManager, RenderTargetPixel::FromUntyped(aClipRect));
+    RenderLayers(aContainer, aManager, RenderTargetIntRect::FromUnknownRect(aClipRect));
   }
   aContainer->mPrepared = nullptr;
 
