@@ -223,6 +223,20 @@ MacroAssembler::rshift64(Imm32 imm, Register64 dest)
 
 
 void
+MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rhs, Label* label)
+{
+    ScratchRegisterScope scratch(*this);
+    if (rhs != scratch)
+        movePtr(rhs, scratch);
+    
+    rshiftPtr(Imm32(1), scratch);
+    branchPtr(cond, lhs, scratch, label);
+}
+
+
+
+
+void
 MacroAssemblerX64::incrementInt32Value(const Address& addr)
 {
     asMasm().addPtr(Imm32(1), addr);

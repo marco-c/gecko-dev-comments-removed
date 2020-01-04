@@ -393,6 +393,15 @@ MacroAssembler::rshift64(Imm32 imm, Register64 dest)
 
 
 
+void
+MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rhs, Label* label)
+{
+    branchPtr(cond, lhs, rhs, label);
+}
+
+
+
+
 template <typename T>
 void
 MacroAssemblerARMCompat::branchAdd32(Condition cond, T src, Register dest, Label* label)
