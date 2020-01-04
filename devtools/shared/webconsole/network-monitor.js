@@ -18,7 +18,6 @@ loader.lazyImporter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
 loader.lazyServiceGetter(this, "gActivityDistributor",
                          "@mozilla.org/network/http-activity-distributor;1",
                          "nsIHttpActivityDistributor");
-const {NetworkThrottleManager} = require("devtools/shared/webconsole/throttle");
 
 
 
@@ -303,12 +302,50 @@ function NetworkResponseListener(owner, httpActivity) {
   this.receivedData = "";
   this.httpActivity = httpActivity;
   this.bodySize = 0;
+  let channel = this.httpActivity.channel;
+  this._wrappedNotificationCallbacks = channel.notificationCallbacks;
+  channel.notificationCallbacks = this;
 }
 
 NetworkResponseListener.prototype = {
   QueryInterface:
     XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsIInputStreamCallback,
-                           Ci.nsIRequestObserver, Ci.nsISupports]),
+                           Ci.nsIRequestObserver, Ci.nsIInterfaceRequestor,
+                           Ci.nsISupports]),
+
+  
+
+  
+
+
+
+  getInterface(iid) {
+    if (iid.equals(Ci.nsIProgressEventSink)) {
+      return this;
+    }
+    if (this._wrappedNotificationCallbacks) {
+      return this._wrappedNotificationCallbacks.getInterface(iid);
+    }
+    throw Cr.NS_ERROR_NO_INTERFACE;
+  },
+
+  
+
+
+
+  _forwardNotification(iid, method, args) {
+    if (!this._wrappedNotificationCallbacks) {
+      return;
+    }
+    try {
+      let impl = this._wrappedNotificationCallbacks.getInterface(iid);
+      impl[method].apply(impl, args);
+    } catch (e) {
+      if (e.result != Cr.NS_ERROR_NO_INTERFACE) {
+        throw e;
+      }
+    }
+  },
 
   
 
@@ -316,6 +353,12 @@ NetworkResponseListener.prototype = {
 
 
   _foundOpenResponse: false,
+
+  
+
+
+
+  _wrappedNotificationCallbacks: null,
 
   
 
@@ -413,6 +456,9 @@ NetworkResponseListener.prototype = {
     this.request = request;
     this._getSecurityInfo();
     this._findOpenResponse();
+    
+    
+    this.offset = 0;
 
     
     
@@ -471,6 +517,23 @@ NetworkResponseListener.prototype = {
   onStopRequest: function () {
     this._findOpenResponse();
     this.sink.outputStream.close();
+  },
+
+  
+
+  
+
+
+
+  onProgress: function (request, context, progress, progressMax) {
+    this.transferredSize = progress;
+    
+    
+    this._forwardNotification(Ci.nsIProgressEventSink, "onProgress", arguments);
+  },
+
+  onStatus: function () {
+    this._forwardNotification(Ci.nsIProgressEventSink, "onStatus", arguments);
   },
 
   
@@ -580,6 +643,9 @@ NetworkResponseListener.prototype = {
       this.httpActivity.discardResponseBody
     );
 
+    this._wrappedNotificationCallbacks = null;
+    this.httpActivity.channel = null;
+    this.httpActivity.owner = null;
     this.httpActivity = null;
     this.sink = null;
     this.inputStream = null;
@@ -610,23 +676,20 @@ NetworkResponseListener.prototype = {
     }
 
     if (available != -1) {
-      if (this.transferredSize === null) {
-        this.transferredSize = 0;
-      }
-
       if (available != 0) {
         if (this.converter) {
           this.converter.onDataAvailable(this.request, null, stream,
-                                         this.transferredSize, available);
+                                         this.offset, available);
         } else {
-          this.onDataAvailable(this.request, null, stream, this.transferredSize,
+          this.onDataAvailable(this.request, null, stream, this.offset,
                                available);
         }
       }
-      this.transferredSize += available;
+      this.offset += available;
       this.setAsyncListener(stream, this);
     } else {
       this.onStreamClose();
+      this.offset = 0;
     }
   },
 };
@@ -666,11 +729,7 @@ function NetworkMonitor(filters, owner) {
   this.openResponses = {};
   this._httpResponseExaminer =
     DevToolsUtils.makeInfallible(this._httpResponseExaminer).bind(this);
-  this._httpModifyExaminer =
-    DevToolsUtils.makeInfallible(this._httpModifyExaminer).bind(this);
   this._serviceWorkerRequest = this._serviceWorkerRequest.bind(this);
-  this.throttleData = null;
-  this._throttler = null;
 }
 
 exports.NetworkMonitor = NetworkMonitor;
@@ -694,13 +753,6 @@ NetworkMonitor.prototype = {
     0x804b000a: "STATUS_WAITING_FOR",
     0x804b0006: "STATUS_RECEIVING_FROM"
   },
-
-  httpDownloadActivities: [
-    gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_START,
-    gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_HEADER,
-    gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_COMPLETE,
-    gActivityDistributor.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE
-  ],
 
   
   
@@ -738,20 +790,11 @@ NetworkMonitor.prototype = {
                                "http-on-examine-response", false);
       Services.obs.addObserver(this._httpResponseExaminer,
                                "http-on-examine-cached-response", false);
-      Services.obs.addObserver(this._httpModifyExaminer,
-                               "http-on-modify-request", false);
     }
     
     
     Services.obs.addObserver(this._serviceWorkerRequest,
                              "service-worker-synthesized-response", false);
-  },
-
-  _getThrottler: function () {
-    if (this.throttleData !== null && this._throttler === null) {
-      this._throttler = new NetworkThrottleManager(this.throttleData);
-    }
-    return this._throttler;
   },
 
   _serviceWorkerRequest: function (subject, topic, data) {
@@ -876,62 +919,6 @@ NetworkMonitor.prototype = {
 
 
 
-  _httpModifyExaminer: function (subject) {
-    let throttler = this._getThrottler();
-    if (throttler) {
-      let channel = subject.QueryInterface(Ci.nsIHttpChannel);
-      if (matchRequest(channel, this.filters)) {
-        throttler.manageUpload(channel);
-      }
-    }
-  },
-
-  
-
-
-
-
-  _dispatchActivity: function (httpActivity, channel, activityType,
-                               activitySubtype, timestamp, extraSizeData,
-                               extraStringData) {
-    let transCodes = this.httpTransactionCodes;
-
-    
-    if (activitySubtype in transCodes) {
-      let stage = transCodes[activitySubtype];
-      if (stage in httpActivity.timings) {
-        httpActivity.timings[stage].last = timestamp;
-      } else {
-        httpActivity.timings[stage] = {
-          first: timestamp,
-          last: timestamp,
-        };
-      }
-    }
-
-    switch (activitySubtype) {
-      case gActivityDistributor.ACTIVITY_SUBTYPE_REQUEST_BODY_SENT:
-        this._onRequestBodySent(httpActivity);
-        break;
-      case gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_HEADER:
-        this._onResponseHeader(httpActivity, extraStringData);
-        break;
-      case gActivityDistributor.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE:
-        this._onTransactionClose(httpActivity);
-        break;
-      default:
-        break;
-    }
-  },
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -973,20 +960,33 @@ NetworkMonitor.prototype = {
       return;
     }
 
+    let transCodes = this.httpTransactionCodes;
+
     
-    
-    
-    if (httpActivity.downloadThrottle &&
-        this.httpDownloadActivities.indexOf(activitySubtype) >= 0) {
-      let callback = this._dispatchActivity.bind(this);
-      httpActivity.downloadThrottle
-        .addActivityCallback(callback, httpActivity, channel, activityType,
-                             activitySubtype, timestamp, extraSizeData,
-                             extraStringData);
-    } else {
-      this._dispatchActivity(httpActivity, channel, activityType,
-                             activitySubtype, timestamp, extraSizeData,
-                             extraStringData);
+    if (activitySubtype in transCodes) {
+      let stage = transCodes[activitySubtype];
+      if (stage in httpActivity.timings) {
+        httpActivity.timings[stage].last = timestamp;
+      } else {
+        httpActivity.timings[stage] = {
+          first: timestamp,
+          last: timestamp,
+        };
+      }
+    }
+
+    switch (activitySubtype) {
+      case gActivityDistributor.ACTIVITY_SUBTYPE_REQUEST_BODY_SENT:
+        this._onRequestBodySent(httpActivity);
+        break;
+      case gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_HEADER:
+        this._onResponseHeader(httpActivity, extraStringData);
+        break;
+      case gActivityDistributor.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE:
+        this._onTransactionClose(httpActivity);
+        break;
+      default:
+        break;
     }
   }),
 
@@ -1081,7 +1081,7 @@ NetworkMonitor.prototype = {
 
     httpActivity.owner = this.owner.onNetworkEvent(event, channel);
 
-    this._setupResponseListener(httpActivity, fromCache);
+    this._setupResponseListener(httpActivity);
 
     httpActivity.owner.addRequestHeaders(headers, extraStringData);
     httpActivity.owner.addRequestCookies(cookies);
@@ -1151,16 +1151,9 @@ NetworkMonitor.prototype = {
 
 
 
-  _setupResponseListener: function (httpActivity, fromCache) {
+  _setupResponseListener: function (httpActivity) {
     let channel = httpActivity.channel;
     channel.QueryInterface(Ci.nsITraceableChannel);
-
-    if (!fromCache) {
-      let throttler = this._getThrottler();
-      if (throttler) {
-        httpActivity.downloadThrottle = throttler.manage(channel);
-      }
-    }
 
     
     
@@ -1344,10 +1337,12 @@ NetworkMonitor.prototype = {
       harTimings.connect = -1;
     }
 
-    if (timings.STATUS_SENDING_TO) {
-      harTimings.send = timings.STATUS_SENDING_TO.last - timings.STATUS_SENDING_TO.first;
-    } else if (timings.REQUEST_HEADER && timings.REQUEST_BODY_SENT) {
-      harTimings.send = timings.REQUEST_BODY_SENT.last - timings.REQUEST_HEADER.first;
+    if ((timings.STATUS_WAITING_FOR || timings.STATUS_RECEIVING_FROM) &&
+        (timings.STATUS_CONNECTED_TO || timings.STATUS_SENDING_TO)) {
+      harTimings.send = (timings.STATUS_WAITING_FOR ||
+                         timings.STATUS_RECEIVING_FROM).first -
+                        (timings.STATUS_CONNECTED_TO ||
+                         timings.STATUS_SENDING_TO).last;
     } else {
       harTimings.send = -1;
     }
@@ -1393,8 +1388,6 @@ NetworkMonitor.prototype = {
                                   "http-on-examine-response");
       Services.obs.removeObserver(this._httpResponseExaminer,
                                   "http-on-examine-cached-response");
-      Services.obs.removeObserver(this._httpModifyExaminer,
-                                  "http-on-modify-request", false);
     }
 
     Services.obs.removeObserver(this._serviceWorkerRequest,
@@ -1405,7 +1398,6 @@ NetworkMonitor.prototype = {
     this.openResponses = {};
     this.owner = null;
     this.filters = null;
-    this._throttler = null;
   },
 };
 
@@ -1449,7 +1441,6 @@ NetworkMonitorChild.prototype = {
   owner: null,
   _netEvents: null,
   _saveRequestAndResponseBodies: true,
-  _throttleData: null,
 
   get saveRequestAndResponseBodies() {
     return this._saveRequestAndResponseBodies;
@@ -1462,22 +1453,6 @@ NetworkMonitorChild.prototype = {
       action: "setPreferences",
       preferences: {
         saveRequestAndResponseBodies: this._saveRequestAndResponseBodies,
-      },
-    });
-  },
-
-  get throttleData() {
-    return this._throttleData;
-  },
-
-  set throttleData(val) {
-    this._throttleData = val;
-
-    this._messageManager.sendAsyncMessage("debug:netmonitor:" + this.connID, {
-      appId: this.appId,
-      action: "setPreferences",
-      preferences: {
-        throttleData: this._throttleData,
       },
     });
   },
@@ -1666,9 +1641,8 @@ NetworkMonitorManager.prototype = {
       case "setPreferences": {
         let {preferences} = msg.json;
         for (let key of Object.keys(preferences)) {
-          if ((key == "saveRequestAndResponseBodies" ||
-               key == "throttleData") && this.netMonitor) {
-            this.netMonitor[key] = preferences[key];
+          if (key == "saveRequestAndResponseBodies" && this.netMonitor) {
+            this.netMonitor.saveRequestAndResponseBodies = preferences[key];
           }
         }
         break;
