@@ -372,6 +372,9 @@ JO(JSContext* cx, HandleObject obj, StringifyContext* scx)
     bool wroteMember = false;
     RootedId id(cx);
     for (size_t i = 0, len = propertyList.length(); i < len; i++) {
+        if (!CheckForInterrupt(cx))
+            return false;
+
         
 
 
@@ -459,6 +462,9 @@ JA(JSContext* cx, HandleObject obj, StringifyContext* scx)
         
         RootedValue outputValue(cx);
         for (uint32_t i = 0; i < length; i++) {
+            if (!CheckForInterrupt(cx))
+                return false;
+
             
 
 
@@ -776,6 +782,9 @@ Walk(JSContext* cx, HandleObject holder, HandleId name, HandleValue reviver, Mut
             RootedId id(cx);
             RootedValue newElement(cx);
             for (uint32_t i = 0; i < length; i++) {
+                if (!CheckForInterrupt(cx))
+                    return false;
+
                 if (!IndexToId(cx, i, &id))
                     return false;
 
@@ -806,6 +815,9 @@ Walk(JSContext* cx, HandleObject holder, HandleId name, HandleValue reviver, Mut
             RootedId id(cx);
             RootedValue newElement(cx);
             for (size_t i = 0, len = keys.length(); i < len; i++) {
+                if (!CheckForInterrupt(cx))
+                    return false;
+
                 
                 id = keys[i];
                 if (!Walk(cx, obj, id, reviver, &newElement))
