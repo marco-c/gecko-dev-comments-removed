@@ -8,6 +8,7 @@
 #include "mp4_demuxer/AnnexB.h"
 #include "WidevineUtils.h"
 #include "WidevineVideoFrame.h"
+#include "mozilla/Move.h"
 
 using namespace cdm;
 
@@ -19,6 +20,9 @@ WidevineVideoDecoder::WidevineVideoDecoder(GMPVideoHost* aVideoHost,
   , mCDMWrapper(Move(aCDMWrapper))
   , mExtraData(new MediaByteBuffer())
   , mSentInput(false)
+  , mReturnOutputCallDepth(0)
+  , mDrainPending(false)
+  , mResetInProgress(false)
 {
   
   MOZ_ASSERT(mCDMWrapper);
@@ -83,6 +87,8 @@ WidevineVideoDecoder::Decode(GMPVideoEncodedFrame* aInputFrame,
                              int64_t aRenderTimeMs)
 {
   
+  MOZ_ASSERT(!mDrainPending);
+  
   
   
   
@@ -124,73 +130,174 @@ WidevineVideoDecoder::Decode(GMPVideoEncodedFrame* aInputFrame,
       mCallback->Error(GMPDecodeErr);
       return;
     }
-    mCallback->InputDataExhausted();
+    
+    
+    
+    MOZ_ASSERT(!mResetInProgress);
+    
+    if (mFrameAllocationQueue.empty()) {
+      MOZ_ASSERT(mCDMWrapper);
+      mCallback->InputDataExhausted();
+    }
   } else if (rv == kNeedMoreData) {
+    MOZ_ASSERT(mCDMWrapper);
     mCallback->InputDataExhausted();
   } else {
     mCallback->Error(ToGMPErr(rv));
   }
+  
+  if (mDrainPending && mReturnOutputCallDepth == 0) {
+    Drain();
+  }
 }
+
+
+class CounterHelper {
+public:
+  
+  CounterHelper(int32_t& counter)
+    : mCounter(counter)
+  {
+    mCounter++;
+  }
+
+  
+  ~CounterHelper()
+  {
+    mCounter--;
+  }
+
+private:
+  int32_t& mCounter;
+};
+
+
+
+
+class FrameDestroyerHelper {
+public:
+  FrameDestroyerHelper(GMPVideoi420Frame*& frame)
+    : frame(frame)
+  {
+  }
+
+  
+  ~FrameDestroyerHelper()
+  {
+    if (frame) {
+      frame->Destroy();
+    }
+    frame = nullptr;
+  }
+
+  
+  void ForgetFrame()
+  {
+    frame = nullptr;
+  }
+
+private:
+  GMPVideoi420Frame* frame;
+};
+
+
+
+
 
 bool
 WidevineVideoDecoder::ReturnOutput(WidevineVideoFrame& aCDMFrame)
 {
-  GMPVideoFrame* f = nullptr;
-  auto err = mVideoHost->CreateFrame(kGMPI420VideoFrame, &f);
-  if (GMP_FAILED(err) || !f) {
-    Log("Failed to create i420 frame!\n");
-    return false;
+  MOZ_ASSERT(mReturnOutputCallDepth >= 0);
+  CounterHelper counterHelper(mReturnOutputCallDepth);
+  mFrameAllocationQueue.push_back(Move(aCDMFrame));
+  if (mReturnOutputCallDepth > 1) {
+    
+    return true;
   }
-  auto gmpFrame = static_cast<GMPVideoi420Frame*>(f);
-  Size size = aCDMFrame.Size();
-  const int32_t yStride = aCDMFrame.Stride(VideoFrame::kYPlane);
-  const int32_t uStride = aCDMFrame.Stride(VideoFrame::kUPlane);
-  const int32_t vStride = aCDMFrame.Stride(VideoFrame::kVPlane);
-  const int32_t halfHeight = size.height / 2;
-  err = gmpFrame->CreateEmptyFrame(size.width,
-                                   size.height,
-                                   yStride,
-                                   uStride,
-                                   vStride);
-  ENSURE_GMP_SUCCESS(err, false);
+  while (!mFrameAllocationQueue.empty()) {
+    MOZ_ASSERT(mReturnOutputCallDepth == 1);
+    
+    
+    
+    
+    MOZ_ASSERT(!mResetInProgress);
+    WidevineVideoFrame currentCDMFrame = Move(mFrameAllocationQueue.front());
+    mFrameAllocationQueue.pop_front();
+    GMPVideoFrame* f = nullptr;
+    auto err = mVideoHost->CreateFrame(kGMPI420VideoFrame, &f);
+    if (GMP_FAILED(err) || !f) {
+      Log("Failed to create i420 frame!\n");
+      return false;
+    }
+    auto gmpFrame = static_cast<GMPVideoi420Frame*>(f);
+    FrameDestroyerHelper frameDestroyerHelper(gmpFrame);
+    Size size = currentCDMFrame.Size();
+    const int32_t yStride = currentCDMFrame.Stride(VideoFrame::kYPlane);
+    const int32_t uStride = currentCDMFrame.Stride(VideoFrame::kUPlane);
+    const int32_t vStride = currentCDMFrame.Stride(VideoFrame::kVPlane);
+    const int32_t halfHeight = size.height / 2;
+    
+    
+    
+    
+    
+    err = gmpFrame->CreateEmptyFrame(size.width,
+                                     size.height,
+                                     yStride,
+                                     uStride,
+                                     vStride);
+    
+    MOZ_ASSERT(mReturnOutputCallDepth == 1);
+    ENSURE_GMP_SUCCESS(err, false);
 
-  err = gmpFrame->SetWidth(size.width);
-  ENSURE_GMP_SUCCESS(err, false);
+    
+    if (mResetInProgress) {
+      MOZ_ASSERT(mCDMWrapper);
+      MOZ_ASSERT(mFrameAllocationQueue.empty());
+      CompleteReset();
+      return true;
+    }
 
-  err = gmpFrame->SetHeight(size.height);
-  ENSURE_GMP_SUCCESS(err, false);
+    err = gmpFrame->SetWidth(size.width);
+    ENSURE_GMP_SUCCESS(err, false);
 
-  Buffer* buffer = aCDMFrame.FrameBuffer();
-  uint8_t* outBuffer = gmpFrame->Buffer(kGMPYPlane);
-  ENSURE_TRUE(outBuffer != nullptr, false);
-  MOZ_ASSERT(gmpFrame->AllocatedSize(kGMPYPlane) >= yStride*size.height);
-  memcpy(outBuffer,
-         buffer->Data() + aCDMFrame.PlaneOffset(VideoFrame::kYPlane),
-         yStride * size.height);
+    err = gmpFrame->SetHeight(size.height);
+    ENSURE_GMP_SUCCESS(err, false);
 
-  outBuffer = gmpFrame->Buffer(kGMPUPlane);
-  ENSURE_TRUE(outBuffer != nullptr, false);
-  MOZ_ASSERT(gmpFrame->AllocatedSize(kGMPUPlane) >= uStride * halfHeight);
-  memcpy(outBuffer,
-         buffer->Data() + aCDMFrame.PlaneOffset(VideoFrame::kUPlane),
-         uStride * halfHeight);
+    Buffer* buffer = currentCDMFrame.FrameBuffer();
+    uint8_t* outBuffer = gmpFrame->Buffer(kGMPYPlane);
+    ENSURE_TRUE(outBuffer != nullptr, false);
+    MOZ_ASSERT(gmpFrame->AllocatedSize(kGMPYPlane) >= yStride*size.height);
+    memcpy(outBuffer,
+           buffer->Data() + currentCDMFrame.PlaneOffset(VideoFrame::kYPlane),
+           yStride * size.height);
 
-  outBuffer = gmpFrame->Buffer(kGMPVPlane);
-  ENSURE_TRUE(outBuffer != nullptr, false);
-  MOZ_ASSERT(gmpFrame->AllocatedSize(kGMPVPlane) >= vStride * halfHeight);
-  memcpy(outBuffer,
-         buffer->Data() + aCDMFrame.PlaneOffset(VideoFrame::kVPlane),
-         vStride * halfHeight);
+    outBuffer = gmpFrame->Buffer(kGMPUPlane);
+    ENSURE_TRUE(outBuffer != nullptr, false);
+    MOZ_ASSERT(gmpFrame->AllocatedSize(kGMPUPlane) >= uStride * halfHeight);
+    memcpy(outBuffer,
+           buffer->Data() + currentCDMFrame.PlaneOffset(VideoFrame::kUPlane),
+           uStride * halfHeight);
 
-  gmpFrame->SetTimestamp(aCDMFrame.Timestamp());
+    outBuffer = gmpFrame->Buffer(kGMPVPlane);
+    ENSURE_TRUE(outBuffer != nullptr, false);
+    MOZ_ASSERT(gmpFrame->AllocatedSize(kGMPVPlane) >= vStride * halfHeight);
+    memcpy(outBuffer,
+           buffer->Data() + currentCDMFrame.PlaneOffset(VideoFrame::kVPlane),
+           vStride * halfHeight);
 
-  auto d = mFrameDurations.find(aCDMFrame.Timestamp());
-  if (d != mFrameDurations.end()) {
-    gmpFrame->SetDuration(d->second);
-    mFrameDurations.erase(d);
+    gmpFrame->SetTimestamp(currentCDMFrame.Timestamp());
+
+    auto d = mFrameDurations.find(currentCDMFrame.Timestamp());
+    if (d != mFrameDurations.end()) {
+      gmpFrame->SetDuration(d->second);
+      mFrameDurations.erase(d);
+    }
+
+    
+    frameDestroyerHelper.ForgetFrame();
+    mCallback->Decoded(gmpFrame);
   }
-
-  mCallback->Decoded(gmpFrame);
 
   return true;
 }
@@ -199,18 +306,40 @@ void
 WidevineVideoDecoder::Reset()
 {
   Log("WidevineVideoDecoder::Reset() mSentInput=%d", mSentInput);
+  
+  MOZ_ASSERT(!mDrainPending);
+  mResetInProgress = true;
   if (mSentInput) {
     CDM()->ResetDecoder(kStreamTypeVideo);
   }
+  
+  
+  mFrameAllocationQueue.clear();
   mFrameDurations.clear();
+  
+  
+  if (mReturnOutputCallDepth == 0) {
+    CompleteReset();
+  }
+}
+
+void
+WidevineVideoDecoder::CompleteReset()
+{
   mCallback->ResetComplete();
   mSentInput = false;
+  mResetInProgress = false;
 }
 
 void
 WidevineVideoDecoder::Drain()
 {
   Log("WidevineVideoDecoder::Drain()");
+  if (mReturnOutputCallDepth > 0) {
+    Log("Drain call is reentrant, postponing drain");
+    mDrainPending = true;
+    return;
+  }
 
   Status rv = kSuccess;
   while (rv == kSuccess) {
@@ -227,8 +356,11 @@ WidevineVideoDecoder::Drain()
       }
     }
   }
+  
+  MOZ_ASSERT(!mResetInProgress);
 
   CDM()->ResetDecoder(kStreamTypeVideo);
+  mDrainPending = false;
   mCallback->DrainComplete();
 }
 

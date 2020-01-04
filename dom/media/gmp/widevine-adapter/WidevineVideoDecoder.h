@@ -16,6 +16,7 @@
 #include "WidevineDecryptor.h"
 #include "WidevineVideoFrame.h"
 #include <map>
+#include <deque>
 
 namespace mozilla {
 
@@ -52,6 +53,7 @@ private:
   }
 
   bool ReturnOutput(WidevineVideoFrame& aFrame);
+  void CompleteReset();
 
   GMPVideoHost* mVideoHost;
   RefPtr<CDMWrapper> mCDMWrapper;
@@ -60,6 +62,16 @@ private:
   GMPVideoDecoderCallback* mCallback;
   std::map<uint64_t, uint64_t> mFrameDurations;
   bool mSentInput;
+  
+  std::deque<WidevineVideoFrame> mFrameAllocationQueue;
+  
+  int32_t mReturnOutputCallDepth;
+  
+  
+  bool mDrainPending;
+  
+  
+  bool mResetInProgress;
 };
 
 } 
