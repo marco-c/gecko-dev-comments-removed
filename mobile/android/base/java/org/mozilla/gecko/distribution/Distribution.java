@@ -218,7 +218,7 @@ public class Distribution {
             public void run() {
                 boolean distributionSet = distribution.doInit();
                 if (distributionSet) {
-                    GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Distribution:Set", ""));
+                    GeckoAppShell.notifyObservers("Distribution:Set", "");
                 }
             }
         });
@@ -318,7 +318,7 @@ public class Distribution {
         runLateReadyQueue();
 
         
-        GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Distribution:Changed", ""));
+        GeckoAppShell.notifyObservers("Distribution:Changed", "");
     }
 
     

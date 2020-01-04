@@ -220,8 +220,7 @@ public class BrowserLocaleManager implements LocaleManager {
         
         
         final String osLanguageTag = Locales.getLanguageTag(osLocale);
-        final GeckoEvent localeOSEvent = GeckoEvent.createBroadcastEvent("Locale:OS", osLanguageTag);
-        GeckoAppShell.sendEventToGecko(localeOSEvent);
+        GeckoAppShell.notifyObservers("Locale:OS", osLanguageTag);
     }
 
     @Override
@@ -265,8 +264,7 @@ public class BrowserLocaleManager implements LocaleManager {
         persistLocale(context, localeCode);
 
         
-        GeckoEvent ev = GeckoEvent.createBroadcastEvent(EVENT_LOCALE_CHANGED, Locales.getLanguageTag(getCurrentLocale(context)));
-        GeckoAppShell.sendEventToGecko(ev);
+        GeckoAppShell.notifyObservers(EVENT_LOCALE_CHANGED, Locales.getLanguageTag(getCurrentLocale(context)));
 
         return resultant;
     }
@@ -281,8 +279,7 @@ public class BrowserLocaleManager implements LocaleManager {
         updateLocale(context, systemLocale);
 
         
-        GeckoEvent ev = GeckoEvent.createBroadcastEvent(EVENT_LOCALE_CHANGED, "");
-        GeckoAppShell.sendEventToGecko(ev);
+        GeckoAppShell.notifyObservers(EVENT_LOCALE_CHANGED, "");
     }
 
     
