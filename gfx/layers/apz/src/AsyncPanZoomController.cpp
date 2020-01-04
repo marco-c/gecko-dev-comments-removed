@@ -1750,7 +1750,7 @@ AsyncPanZoomController::CanScroll(const InputData& aEvent) const
     delta = GetScrollWheelDelta(aEvent.AsScrollWheelInput());
   } else if (aEvent.mInputType == PANGESTURE_INPUT) {
     const PanGestureInput& panInput = aEvent.AsPanGestureInput();
-    delta = ToParentLayerCoordinates(panInput.mPanDisplacement, panInput.mPanStartPoint);
+    delta = ToParentLayerCoordinates(panInput.UserMultipliedPanDisplacement(), panInput.mPanStartPoint);
   }
   if (!delta.x && !delta.y) {
     return false;
@@ -2023,15 +2023,23 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent, bool 
   
   
   
-  mX.UpdateWithTouchAtDevicePoint(aEvent.mLocalPanStartPoint.x, aEvent.mLocalPanDisplacement.x, aEvent.mTime);
-  mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalPanStartPoint.y, aEvent.mLocalPanDisplacement.y, aEvent.mTime);
+  
+  ScreenPoint physicalPanDisplacement = aEvent.mPanDisplacement;
+  ParentLayerPoint logicalPanDisplacement = aEvent.UserMultipliedLocalPanDisplacement();
 
-  HandlePanningUpdate(aEvent.mPanDisplacement);
+  
+  
+  
+  
+  mX.UpdateWithTouchAtDevicePoint(aEvent.mLocalPanStartPoint.x, logicalPanDisplacement.x, aEvent.mTime);
+  mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalPanStartPoint.y, logicalPanDisplacement.y, aEvent.mTime);
+
+  HandlePanningUpdate(physicalPanDisplacement);
 
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::SCROLL_INPUT_METHODS,
       (uint32_t) ScrollInputMethod::ApzPanGesture);
 
-  ScreenPoint panDistance(fabs(aEvent.mPanDisplacement.x), fabs(aEvent.mPanDisplacement.y));
+  ScreenPoint panDistance(fabs(physicalPanDisplacement.x), fabs(physicalPanDisplacement.y));
   OverscrollHandoffState handoffState(
       *CurrentPanGestureBlock()->GetOverscrollHandoffChain(),
       panDistance,
@@ -2045,7 +2053,7 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent, bool 
   
   
   ParentLayerPoint startPoint = aEvent.mLocalPanStartPoint;
-  ParentLayerPoint endPoint = aEvent.mLocalPanStartPoint - aEvent.mLocalPanDisplacement;
+  ParentLayerPoint endPoint = aEvent.mLocalPanStartPoint - logicalPanDisplacement;
   CallDispatchScroll(startPoint, endPoint, handoffState);
 
   return nsEventStatus_eConsumeNoDefault;
