@@ -236,17 +236,36 @@ EffectCompositor::GetAnimationRule(dom::Element* aElement,
                                    nsCSSPseudoElements::Type aPseudoType,
                                    CascadeLevel aCascadeLevel)
 {
+  
+  
+  
+  
+  
+  
+  
+  
+
   if (!mPresContext || !mPresContext->IsDynamic()) {
+    
+    return nullptr;
+  }
+
+  if (mPresContext->RestyleManager()->SkipAnimationRules()) {
+    
+    
     
     return nullptr;
   }
 
   EffectSet* effectSet = EffectSet::GetEffectSet(aElement, aPseudoType);
   if (!effectSet) {
-    return nullptr;
-  }
+    
+    
+    
+    auto& elementsToRestyle = mElementsToRestyle[aCascadeLevel];
+    PseudoElementHashKey key = { aElement, aPseudoType };
+    elementsToRestyle.Remove(key);
 
-  if (mPresContext->RestyleManager()->SkipAnimationRules()) {
     return nullptr;
   }
 
