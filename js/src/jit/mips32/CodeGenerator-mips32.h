@@ -40,6 +40,7 @@ class CodeGeneratorMIPS : public CodeGeneratorMIPSShared
     virtual void visitCompareBitwiseAndBranch(LCompareBitwiseAndBranch* lir);
 
     
+    void visitOutOfLineBailout(OutOfLineBailout* ool);
     void visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool);
   protected:
     ValueOperand ToValue(LInstruction* ins, size_t pos);
