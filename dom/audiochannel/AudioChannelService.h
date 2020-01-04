@@ -175,7 +175,10 @@ private:
   {
     explicit AudioChannelWindow(uint64_t aWindowID)
       : mWindowID(aWindowID)
-    {}
+    {
+      
+      mChannels[(int16_t)AudioChannel::System].mMuted = false;
+    }
 
     uint64_t mWindowID;
     AudioChannelConfig mChannels[NUMBER_OF_AUDIO_CHANNELS];
