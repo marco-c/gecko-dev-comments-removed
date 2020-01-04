@@ -33,7 +33,7 @@ namespace js {
 
 
 static inline bool
-IsCacheableNonGlobalEnvironment(JSObject* obj)
+IsCacheableEnvironment(JSObject* obj)
 {
     bool cacheable = obj->is<CallObject>() || obj->is<LexicalEnvironmentObject>();
 

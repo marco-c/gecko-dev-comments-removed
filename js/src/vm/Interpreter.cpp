@@ -1350,10 +1350,10 @@ JS_STATIC_ASSERT(JSOP_IFNE == JSOP_IFEQ + 1);
 static inline Value
 ComputeImplicitThis(JSObject* obj)
 {
-    if (IsGlobalLexicalEnvironment(obj))
+    if (obj->is<GlobalObject>())
         return UndefinedValue();
 
-    if (IsCacheableNonGlobalEnvironment(obj))
+    if (IsCacheableEnvironment(obj))
         return UndefinedValue();
 
     return GetThisValue(obj);
