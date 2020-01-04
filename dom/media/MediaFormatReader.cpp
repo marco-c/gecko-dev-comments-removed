@@ -1114,8 +1114,10 @@ MediaFormatReader::Update(TrackType aTrack)
               decoder.mLastSampleTime.ref().ToMicroseconds());
           InternalSeek(aTrack, InternalSeekTarget(decoder.mLastSampleTime.ref(), true));
         }
-        LOG("Rejecting %s promise: WAITING_FOR_DATA", TrackTypeToStr(aTrack));
-        decoder.RejectPromise(WAITING_FOR_DATA, __func__);
+        if (!decoder.mReceivedNewData) {
+          LOG("Rejecting %s promise: WAITING_FOR_DATA", TrackTypeToStr(aTrack));
+          decoder.RejectPromise(WAITING_FOR_DATA, __func__);
+        }
       }
       
       
