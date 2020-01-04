@@ -1055,6 +1055,10 @@ void nsXULWindow::OnChromeLoaded()
       positionSet = false;
 #endif
     if (positionSet) {
+      
+      
+      
+      
       positionSet = LoadPositionFromXUL(specWidth, specHeight);
     }
 
@@ -1076,6 +1080,11 @@ void nsXULWindow::OnChromeLoaded()
           int32_t width = 0, height = 0;
           if (NS_SUCCEEDED(cv->GetContentSize(&width, &height))) {
             treeOwner->SizeShellTo(docShellAsItem, width, height);
+            
+            
+            if (positionSet) {
+              LoadPositionFromXUL(width, height);
+            }
           }
         }
       }
