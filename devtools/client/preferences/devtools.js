@@ -330,10 +330,11 @@ pref("devtools.fontinspector.enabled", true);
 pref("devtools.telemetry.tools.opened.version", "{}");
 
 
-#ifdef MOZ_DEV_EDITION
-  pref("devtools.jsonview.enabled", true);
+
+#ifdef RELEASE_BUILD
+pref("devtools.jsonview.enabled", false);
 #else
-  pref("devtools.jsonview.enabled", false);
+pref("devtools.jsonview.enabled", true);
 #endif
 
 
