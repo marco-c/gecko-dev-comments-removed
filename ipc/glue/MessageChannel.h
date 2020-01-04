@@ -20,6 +20,10 @@
 #include "mozilla/ipc/Neutering.h"
 #endif 
 #include "mozilla/ipc/Transport.h"
+#if defined(MOZ_CRASHREPORTER) && defined(OS_WIN)
+#include "mozilla/mozalloc_oom.h"
+#include "nsExceptionHandler.h"
+#endif
 #include "MessageLink.h"
 
 #include <deque>
@@ -457,9 +461,79 @@ class MessageChannel : HasResultCodes
     }
 
   private:
-    typedef IPC::Message::msgid_t msgid_t;
+#if defined(MOZ_CRASHREPORTER) && defined(OS_WIN)
+    
+    
+    
+    template<class T>
+    struct AnnotateAllocator
+    {
+      typedef T value_type;
+      AnnotateAllocator(MessageChannel& channel) : mChannel(channel) {}
+      template<class U> AnnotateAllocator(const AnnotateAllocator<U>& other) :
+        mChannel(other.mChannel) {}
+      template<class U> bool operator==(const AnnotateAllocator<U>&) { return true; }
+      template<class U> bool operator!=(const AnnotateAllocator<U>&) { return false; }
+      T* allocate(size_t n) {
+        void* p = ::operator new(n * sizeof(T), std::nothrow);
+        if (!p && n) {
+          
+          
+          MessageQueue& q = mChannel.mPending;
+          std::sort(q.begin(), q.end(), [](const Message& a, const Message& b) {
+            return a.type() < b.type();
+          });
+
+          
+          
+          char* topName = nullptr;
+          char* curName = nullptr;
+          msgid_t topType = 0, curType = 0;
+          uint32_t topCount = 0, curCount = 0;
+          for (MessageQueue::iterator it = q.begin(); it != q.end(); ++it) {
+            Message &msg = *it;
+            if (msg.type() == curType) {
+              ++curCount;
+            } else {
+              if (curCount > topCount) {
+                topName = curName;
+                topType = curType;
+                topCount = curCount;
+              }
+              curName = const_cast<char*>(msg.name());
+              curType = msg.type();
+              curCount = 1;
+            }
+          }
+          
+          if (curCount > topCount) {
+            topName = curName;
+            topType = curType;
+            topCount = curCount;
+          }
+
+          CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("NumberOfPendingIPC"),
+                                             nsPrintfCString("%zu", q.size()));
+          CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("TopPendingIPCCount"),
+                                             nsPrintfCString("%u", topCount));
+          CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("TopPendingIPCName"),
+                                             nsPrintfCString("%s(0x%x)", topName, topType));
+
+          mozalloc_handle_oom(n * sizeof(T));
+        }
+        return static_cast<T*>(p);
+      }
+      void deallocate(T* p, size_t n) {
+        ::operator delete(p);
+      }
+      MessageChannel& mChannel;
+    };
+    typedef std::deque<Message, AnnotateAllocator<Message>> MessageQueue;
+#else
     typedef std::deque<Message> MessageQueue;
+#endif
     typedef std::map<size_t, Message> MessageMap;
+    typedef IPC::Message::msgid_t msgid_t;
 
     
     
