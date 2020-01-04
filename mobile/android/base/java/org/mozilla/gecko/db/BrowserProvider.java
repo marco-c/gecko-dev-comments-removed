@@ -1211,6 +1211,10 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
             String[] selectionArgs, String sortOrder) {
         final int match = URI_MATCHER.match(uri);
 
+        
+        
+        
+        
         if (match == TOPSITES) {
             if (uri.getBooleanQueryParameter(BrowserContract.PARAM_TOPSITES_DISABLE_PINNED, false)) {
                 return getPlainTopSites(uri);
