@@ -15,7 +15,6 @@
 #include "nsCSSProperty.h"
 #include "nsStyleStructFwd.h"
 #include "nsCSSKeywords.h"
-#include "mozilla/CSSEnabledState.h"
 #include "mozilla/UseCounter.h"
 
 
@@ -331,8 +330,6 @@ enum nsStyleAnimType {
 
 class nsCSSProps {
 public:
-  typedef mozilla::CSSEnabledState EnabledState;
-
   struct KTableEntry {
     nsCSSKeyword mKeyword;
     int16_t mValue;
@@ -340,6 +337,21 @@ public:
 
   static void AddRefTable(void);
   static void ReleaseTable(void);
+
+  enum EnabledState {
+    
+    
+    eEnabledForAllContent = 0,
+    
+    eEnabledInUASheets    = 0x01,
+    
+    eEnabledInChrome      = 0x02,
+    
+    
+    
+    
+    eIgnoreEnabledState   = 0xff
+  };
 
   
   
@@ -612,15 +624,15 @@ public:
     if (IsEnabled(aProperty)) {
       return true;
     }
-    if (aEnabled == EnabledState::eIgnoreEnabledState) {
+    if (aEnabled == eIgnoreEnabledState) {
       return true;
     }
-    if ((aEnabled & EnabledState::eInUASheets) &&
+    if ((aEnabled & eEnabledInUASheets) &&
         PropHasFlags(aProperty, CSS_PROPERTY_ENABLED_IN_UA_SHEETS))
     {
       return true;
     }
-    if ((aEnabled & EnabledState::eInChrome) &&
+    if ((aEnabled & eEnabledInChrome) &&
         PropHasFlags(aProperty, CSS_PROPERTY_ENABLED_IN_CHROME))
     {
       return true;
@@ -638,7 +650,7 @@ public:
   for (const nsCSSProperty *it_ = nsCSSProps::SubpropertyEntryFor(prop_),     \
                             es_ = (nsCSSProperty) (enabledstate_);            \
        *it_ != eCSSProperty_UNKNOWN; ++it_)                                   \
-    if (nsCSSProps::IsEnabled(*it_, (mozilla::CSSEnabledState) es_))
+    if (nsCSSProps::IsEnabled(*it_, (nsCSSProps::EnabledState) es_))
 
   
   static const KTableEntry kAnimationDirectionKTable[];
@@ -827,5 +839,29 @@ public:
   static const KTableEntry kWordWrapKTable[];
   static const KTableEntry kWritingModeKTable[];
 };
+
+inline nsCSSProps::EnabledState operator|(nsCSSProps::EnabledState a,
+                                          nsCSSProps::EnabledState b)
+{
+  return nsCSSProps::EnabledState(int(a) | int(b));
+}
+
+inline nsCSSProps::EnabledState operator&(nsCSSProps::EnabledState a,
+                                          nsCSSProps::EnabledState b)
+{
+  return nsCSSProps::EnabledState(int(a) & int(b));
+}
+
+inline nsCSSProps::EnabledState& operator|=(nsCSSProps::EnabledState& a,
+                                            nsCSSProps::EnabledState b)
+{
+  return a = a | b;
+}
+
+inline nsCSSProps::EnabledState& operator&=(nsCSSProps::EnabledState& a,
+                                            nsCSSProps::EnabledState b)
+{
+  return a = a & b;
+}
 
 #endif 
