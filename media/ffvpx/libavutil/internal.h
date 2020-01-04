@@ -316,6 +316,22 @@ static av_always_inline float ff_exp10f(float x)
 
 
 
+
+
+
+
+
+
+
+static av_always_inline float ff_fast_powf(float x, float y)
+{
+    return expf(logf(x) * y);
+}
+
+
+
+
+
 av_warn_unused_result
 int avpriv_open(const char *filename, int flags, ...);
 
