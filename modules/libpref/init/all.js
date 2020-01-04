@@ -2149,13 +2149,16 @@ pref("services.blocklist.gfx.checked", 0);
 
 
 
-pref("services.blocklist.signing.enforced", true);
+pref("services.blocklist.signing.enforced", false);
 
 
+#ifdef RELEASE_BUILD
+pref("services.blocklist.update_enabled", false);
+pref("security.onecrl.via.amo", true);
+#else
 pref("services.blocklist.update_enabled", true);
-
-
 pref("security.onecrl.via.amo", false);
+#endif
 
 
 
@@ -4569,6 +4572,7 @@ pref("gfx.apitrace.enabled",false);
 pref("gfx.content.use-native-pushlayer", true);
 #ifdef MOZ_WIDGET_GTK
 pref("gfx.xrender.enabled",false);
+pref("widget.allow-gtk-dark-theme", false);
 #endif
 #endif
 
@@ -4591,7 +4595,7 @@ pref("layers.d3d11.disable-warp", true);
 #endif
 
 
-pref("layers.shared-buffer-provider.enabled", false);
+pref("layers.shared-buffer-provider.enabled", true);
 
 
 pref("layers.force-active", false);
