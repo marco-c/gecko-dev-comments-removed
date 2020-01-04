@@ -176,18 +176,6 @@ class Pickle {
   
   
   char* BeginWriteData(int length);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void TrimWriteData(int length);
-
   void EndRead(void* iter) const {
     DCHECK(iter == end_of_payload());
   }
