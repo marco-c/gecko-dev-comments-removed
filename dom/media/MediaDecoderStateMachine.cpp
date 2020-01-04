@@ -298,7 +298,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
       self->mAudioQueue, self->GetMediaTime(),
       self->mInfo.mAudio, self->mDecoder->GetAudioChannel());
   };
-  mAudioSink = new AudioSinkWrapper(mTaskQueue, audioSinkCreator);
+  mMediaSink = new AudioSinkWrapper(mTaskQueue, audioSinkCreator);
 }
 
 MediaDecoderStateMachine::~MediaDecoderStateMachine()
@@ -377,7 +377,7 @@ int64_t MediaDecoderStateMachine::GetDecodedAudioDuration()
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
   int64_t audioDecoded = AudioQueue().Duration();
-  if (mAudioSink->IsStarted()) {
+  if (mMediaSink->IsStarted()) {
     audioDecoded += AudioEndTime() - GetMediaTime();
   }
   return audioDecoded;
@@ -387,7 +387,7 @@ void MediaDecoderStateMachine::DiscardStreamData()
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
-  MOZ_ASSERT(!mAudioSink->IsStarted(), "Should've been stopped in RunStateMachine()");
+  MOZ_ASSERT(!mMediaSink->IsStarted(), "Should've been stopped in RunStateMachine()");
 
   const auto clockTime = GetClock();
   while (true) {
@@ -1077,7 +1077,7 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
   SetPlayStartTime(TimeStamp::Now());
   MOZ_ASSERT(IsPlaying());
 
-  StartAudioSink();
+  StartMediaSink();
   StartDecodedStream();
 
   DispatchDecodeTasksIfNeeded();
@@ -1152,7 +1152,7 @@ void MediaDecoderStateMachine::VolumeChanged()
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
-  mAudioSink->SetVolume(mVolume);
+  mMediaSink->SetVolume(mVolume);
   mStreamSink->SetVolume(mVolume);
 }
 
@@ -1273,7 +1273,7 @@ void MediaDecoderStateMachine::Shutdown()
 
   Reset();
 
-  mAudioSink->Shutdown();
+  mMediaSink->Shutdown();
 
   
   if (mStartTimeRendezvous) {
@@ -1466,15 +1466,15 @@ MediaDecoderStateMachine::Seek(SeekTarget aTarget)
   return mPendingSeek.mPromise.Ensure(__func__);
 }
 
-void MediaDecoderStateMachine::StopAudioSink()
+void MediaDecoderStateMachine::StopMediaSink()
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
 
-  if (mAudioSink->IsStarted()) {
-    DECODER_LOG("Stop AudioSink");
-    mAudioSink->Stop();
-    mAudioSinkPromise.DisconnectIfExists();
+  if (mMediaSink->IsStarted()) {
+    DECODER_LOG("Stop MediaSink");
+    mMediaSink->Stop();
+    mMediaSinkPromise.DisconnectIfExists();
   }
 }
 
@@ -1752,25 +1752,25 @@ MediaDecoderStateMachine::RequestVideoData()
 }
 
 void
-MediaDecoderStateMachine::StartAudioSink()
+MediaDecoderStateMachine::StartMediaSink()
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
   if (mAudioCaptured) {
-    MOZ_ASSERT(!mAudioSink->IsStarted());
+    MOZ_ASSERT(!mMediaSink->IsStarted());
     return;
   }
 
-  if (!mAudioSink->IsStarted()) {
+  if (!mMediaSink->IsStarted()) {
     mAudioCompleted = false;
-    mAudioSink->Start(GetMediaTime(), mInfo);
+    mMediaSink->Start(GetMediaTime(), mInfo);
 
-    auto promise = mAudioSink->OnEnded(TrackInfo::kAudioTrack);
+    auto promise = mMediaSink->OnEnded(TrackInfo::kAudioTrack);
     if (promise) {
-      mAudioSinkPromise.Begin(promise->Then(
+      mMediaSinkPromise.Begin(promise->Then(
         OwnerThread(), __func__, this,
-        &MediaDecoderStateMachine::OnAudioSinkComplete,
-        &MediaDecoderStateMachine::OnAudioSinkError));
+        &MediaDecoderStateMachine::OnMediaSinkComplete,
+        &MediaDecoderStateMachine::OnMediaSinkError));
     }
   }
 }
@@ -1813,7 +1813,7 @@ int64_t MediaDecoderStateMachine::AudioDecodedUsecs()
   
   
   
-  int64_t pushed = mAudioSink->IsStarted() ? (AudioEndTime() - GetMediaTime()) : 0;
+  int64_t pushed = mMediaSink->IsStarted() ? (AudioEndTime() - GetMediaTime()) : 0;
 
   
   
@@ -1842,7 +1842,7 @@ bool MediaDecoderStateMachine::OutOfDecodedAudio()
     MOZ_ASSERT(OnTaskQueue());
     return IsAudioDecoding() && !AudioQueue().IsFinished() &&
            AudioQueue().GetSize() == 0 &&
-           !mAudioSink->HasUnplayedFrames(TrackInfo::kAudioTrack);
+           !mMediaSink->HasUnplayedFrames(TrackInfo::kAudioTrack);
 }
 
 bool MediaDecoderStateMachine::HasLowUndecodedData()
@@ -2416,7 +2416,7 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
         mSentPlaybackEndedEvent = true;
 
         
-        StopAudioSink();
+        StopMediaSink();
         StopDecodedStream();
       }
 
@@ -2446,7 +2446,7 @@ MediaDecoderStateMachine::Reset()
   
   
   
-  StopAudioSink();
+  StopMediaSink();
   StopDecodedStream();
 
   mVideoFrameEndTime = -1;
@@ -2588,7 +2588,7 @@ int64_t MediaDecoderStateMachine::GetClock(TimeStamp* aTimeStamp) const
     if (mAudioCaptured) {
       clock_time = mStreamSink->GetPosition(&t);
     } else {
-      clock_time = mAudioSink->GetPosition(&t);
+      clock_time = mMediaSink->GetPosition(&t);
     }
     NS_ASSERTION(GetMediaTime() <= clock_time, "Clock should go forwards.");
   }
@@ -2880,7 +2880,7 @@ void MediaDecoderStateMachine::SetPlayStartTime(const TimeStamp& aTimeStamp)
   AssertCurrentThreadInMonitor();
   mPlayStartTime = aTimeStamp;
 
-  mAudioSink->SetPlaying(!mPlayStartTime.IsNull());
+  mMediaSink->SetPlaying(!mPlayStartTime.IsNull());
   mStreamSink->SetPlaying(!mPlayStartTime.IsNull());
 }
 
@@ -2959,7 +2959,7 @@ MediaDecoderStateMachine::LogicalPlaybackRateChanged()
   }
 
   mPlaybackRate = mLogicalPlaybackRate;
-  mAudioSink->SetPlaybackRate(mPlaybackRate);
+  mMediaSink->SetPlaybackRate(mPlaybackRate);
 
   ScheduleStateMachine();
 }
@@ -2968,7 +2968,7 @@ void MediaDecoderStateMachine::PreservesPitchChanged()
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
-  mAudioSink->SetPreservesPitch(mPreservesPitch);
+  mMediaSink->SetPreservesPitch(mPreservesPitch);
 }
 
 bool MediaDecoderStateMachine::IsShutdown()
@@ -2982,8 +2982,8 @@ MediaDecoderStateMachine::AudioEndTime() const
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
-  if (mAudioSink->IsStarted()) {
-    return mAudioSink->GetEndTime(TrackInfo::kAudioTrack);
+  if (mMediaSink->IsStarted()) {
+    return mMediaSink->GetEndTime(TrackInfo::kAudioTrack);
   } else if (mAudioCaptured) {
     return mStreamSink->GetEndTime(TrackInfo::kAudioTrack);
   }
@@ -2991,23 +2991,23 @@ MediaDecoderStateMachine::AudioEndTime() const
   return -1;
 }
 
-void MediaDecoderStateMachine::OnAudioSinkComplete()
+void MediaDecoderStateMachine::OnMediaSinkComplete()
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
   MOZ_ASSERT(!mAudioCaptured, "Should be disconnected when capturing audio.");
 
-  mAudioSinkPromise.Complete();
+  mMediaSinkPromise.Complete();
   mAudioCompleted = true;
 }
 
-void MediaDecoderStateMachine::OnAudioSinkError()
+void MediaDecoderStateMachine::OnMediaSinkError()
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
   MOZ_ASSERT(!mAudioCaptured, "Should be disconnected when capturing audio.");
 
-  mAudioSinkPromise.Complete();
+  mMediaSinkPromise.Complete();
   mAudioCompleted = true;
 
   
@@ -3064,7 +3064,7 @@ void MediaDecoderStateMachine::DispatchAudioCaptured()
     ReentrantMonitorAutoEnter mon(self->mDecoder->GetReentrantMonitor());
     if (!self->mAudioCaptured) {
       
-      self->StopAudioSink();
+      self->StopMediaSink();
       self->mAudioCaptured = true;
       
       
@@ -3089,7 +3089,7 @@ void MediaDecoderStateMachine::DispatchAudioUncaptured()
       
       self->mAudioCaptured = false;
       if (self->IsPlaying()) {
-        self->StartAudioSink();
+        self->StartMediaSink();
       }
       self->ScheduleStateMachine();
     }

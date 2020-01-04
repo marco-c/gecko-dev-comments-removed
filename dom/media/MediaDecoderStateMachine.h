@@ -492,12 +492,12 @@ protected:
   
   
   
-  void StopAudioSink();
+  void StopMediaSink();
 
   
   
   
-  void StartAudioSink();
+  void StartMediaSink();
 
   void StopDecodedStream();
 
@@ -650,10 +650,10 @@ protected:
 private:
   
   
-  void OnAudioSinkComplete();
+  void OnMediaSinkComplete();
 
   
-  void OnAudioSinkError();
+  void OnMediaSinkError();
 
   void OnDecodedStreamFinish();
 
@@ -978,7 +978,7 @@ private:
   int64_t mFragmentEndTime;
 
   
-  nsRefPtr<media::MediaSink> mAudioSink;
+  nsRefPtr<media::MediaSink> mMediaSink;
 
   
   
@@ -1270,7 +1270,7 @@ private:
   
   nsRefPtr<MediaResource> mResource;
 
-  MozPromiseRequestHolder<GenericPromise> mAudioSinkPromise;
+  MozPromiseRequestHolder<GenericPromise> mMediaSinkPromise;
   MozPromiseRequestHolder<GenericPromise> mDecodedStreamPromise;
 
   MediaEventListener mAudioQueueListener;
