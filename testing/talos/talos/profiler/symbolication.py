@@ -118,6 +118,7 @@ class ProfileSymbolicator:
         self.options = options
         self.sym_file_manager = SymFileManager(self.options)
         self.symbol_dumper = self.get_symbol_dumper()
+        self.main_start_time = None
 
     def get_symbol_dumper(self):
         try:
@@ -248,11 +249,31 @@ class ProfileSymbolicator:
             self.symbolicate_profile_v3(profile_json)
         else:
             self.symbolicate_profile_v2(profile_json)
+
+        profile_start_time = profile_json["meta"].get("startTime", 0)
+        delta_time = 0
+
+        
+        
+        
+        
+        if self.main_start_time is None:
+            self.main_start_time = profile_start_time
+        else:
+            
+            
+            
+            delta_time = profile_start_time - self.main_start_time
+
         for i, thread in enumerate(profile_json["threads"]):
             if isinstance(thread, basestring):
                 thread_json = json.loads(thread)
                 self.symbolicate_profile(thread_json)
                 profile_json["threads"][i] = json.dumps(thread_json)
+            else:
+                for marker in thread["markers"]["data"]:
+                    if marker[1]:
+                        marker[1] += delta_time
 
     def symbolicate_profile_v2(self, profile_json):
         shared_libraries = json.loads(profile_json["libs"])
