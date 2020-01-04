@@ -1517,7 +1517,7 @@ MediaDecoderStateMachine::Seek(SeekTarget aTarget)
   
   bool hasStartTime = mSentFirstFrameLoadedEvent || mReader->ForceZeroStartTime();
   
-  bool stateAllowed = mState >= DECODER_STATE_DECODING;
+  bool stateAllowed = mState >= DECODER_STATE_DECODING_FIRSTFRAME;
 
   if (!stateAllowed || !hasStartTime) {
     DECODER_LOG("Seek() Not Enough Data to continue at this stage, queuing seek");
