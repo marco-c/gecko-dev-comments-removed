@@ -17,6 +17,17 @@ public:
   static void Destroy(JSPrincipals *jsprin);
 
   
+  static bool ReadPrincipals(JSContext* aCx, JSStructuredCloneReader* aReader,
+                             JSPrincipals** aOutPrincipals);
+
+  static bool ReadKnownPrincipalType(JSContext* aCx,
+                                     JSStructuredCloneReader* aReader,
+                                     uint32_t aTag,
+                                     JSPrincipals** aOutPrincipals);
+
+  bool write(JSContext* aCx, JSStructuredCloneWriter* aWriter) final;
+
+  
 
 
 

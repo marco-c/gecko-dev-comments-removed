@@ -15,6 +15,8 @@
 
 #include "jspubtd.h"
 
+#include "js/StructuredClone.h"
+
 namespace js {
     struct PerformanceGroup;
 } 
@@ -35,6 +37,12 @@ struct JSPrincipals {
         debugToken = token;
 # endif
     }
+
+    
+
+
+
+    virtual bool write(JSContext* cx, JSStructuredCloneWriter* writer) = 0;
 
     
 
@@ -98,5 +106,27 @@ typedef void
 
 extern JS_PUBLIC_API(void)
 JS_InitDestroyPrincipalsCallback(JSRuntime* rt, JSDestroyPrincipalsOp destroyPrincipals);
+
+
+
+
+
+
+
+
+
+
+
+
+using JSReadPrincipalsOp = bool (*)(JSContext* cx, JSStructuredCloneReader* reader,
+                                    JSPrincipals** outPrincipals);
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+JS_InitReadPrincipalsCallback(JSRuntime* rt, JSReadPrincipalsOp read);
+
 
 #endif  
