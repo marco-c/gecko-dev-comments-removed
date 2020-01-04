@@ -70,18 +70,226 @@ class JS_PUBLIC_API(DominatorTree)
 {
   private:
     
+
     using NodeSet = js::HashSet<Node, js::DefaultHasher<Node>, js::SystemAllocPolicy>;
     using NodeSetPtr = mozilla::UniquePtr<NodeSet, JS::DeletePolicy<NodeSet>>;
     using PredecessorSets = js::HashMap<Node, NodeSetPtr, js::DefaultHasher<Node>,
                                         js::SystemAllocPolicy>;
     using NodeToIndexMap = js::HashMap<Node, uint32_t, js::DefaultHasher<Node>,
                                        js::SystemAllocPolicy>;
+    class DominatedSets;
+
+  public:
+    class DominatedSetRange;
+
+    
+
+
+
+
+
+
+
+
+    class DominatedNodePtr
+    {
+        friend class DominatedSetRange;
+
+        const mozilla::Vector<Node>& postOrder;
+        const uint32_t* ptr;
+
+        DominatedNodePtr(const mozilla::Vector<Node>& postOrder, const uint32_t* ptr)
+          : postOrder(postOrder)
+          , ptr(ptr)
+        { }
+
+      public:
+        bool operator!=(const DominatedNodePtr& rhs) const { return ptr != rhs.ptr; }
+        void operator++() { ptr++; }
+        const Node& operator*() const { return postOrder[*ptr]; }
+    };
+
+    
+
+
+
+
+
+    class DominatedSetRange
+    {
+        friend class DominatedSets;
+
+        const mozilla::Vector<Node>& postOrder;
+        const uint32_t* beginPtr;
+        const uint32_t* endPtr;
+
+        DominatedSetRange(mozilla::Vector<Node>& postOrder, const uint32_t* begin, const uint32_t* end)
+          : postOrder(postOrder)
+          , beginPtr(begin)
+          , endPtr(end)
+        {
+            MOZ_ASSERT(begin <= end);
+        }
+
+      public:
+        DominatedNodePtr begin() const {
+            MOZ_ASSERT(beginPtr <= endPtr);
+            return DominatedNodePtr(postOrder, beginPtr);
+        }
+
+        DominatedNodePtr end() const {
+            return DominatedNodePtr(postOrder, endPtr);
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        void skip(size_t n) {
+            beginPtr += n;
+            if (beginPtr > endPtr)
+                beginPtr = endPtr;
+        }
+    };
+
+  private:
+    
+
+
+
+
+
+
+    class DominatedSets
+    {
+        mozilla::Vector<uint32_t> dominated;
+        mozilla::Vector<uint32_t> indices;
+
+        DominatedSets(mozilla::Vector<uint32_t>&& dominated, mozilla::Vector<uint32_t>&& indices)
+          : dominated(mozilla::Move(dominated))
+          , indices(mozilla::Move(indices))
+        { }
+
+      public:
+        
+        DominatedSets(const DominatedSets& rhs) = delete;
+        DominatedSets& operator=(const DominatedSets& rhs) = delete;
+
+        
+        DominatedSets(DominatedSets&& rhs)
+          : dominated(mozilla::Move(rhs.dominated))
+          , indices(mozilla::Move(rhs.indices))
+        {
+            MOZ_ASSERT(this != &rhs, "self-move not allowed");
+        }
+        DominatedSets& operator=(DominatedSets&& rhs) {
+            this->~DominatedSets();
+            new (this) DominatedSets(mozilla::Move(rhs));
+            return *this;
+        }
+
+        
+
+
+
+
+        static mozilla::Maybe<DominatedSets> Create(const mozilla::Vector<uint32_t>& doms) {
+            auto length = doms.length();
+            MOZ_ASSERT(length < UINT32_MAX);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            mozilla::Vector<uint32_t> dominated;
+            mozilla::Vector<uint32_t> indices;
+            if (!dominated.growBy(length) || !indices.growBy(length))
+                return mozilla::Nothing();
+
+            
+            memset(indices.begin(), 0, length * sizeof(uint32_t));
+            for (uint32_t i = 0; i < length; i++)
+                indices[doms[i]]++;
+
+            
+            uint32_t sumOfSizes = 0;
+            for (uint32_t i = 0; i < length; i++) {
+                sumOfSizes += indices[i];
+                MOZ_ASSERT(sumOfSizes <= length);
+                indices[i] = sumOfSizes;
+            }
+
+            
+            for (uint32_t i = 0; i < length; i++) {
+                auto idxOfDom = doms[i];
+                indices[idxOfDom]--;
+                dominated[indices[idxOfDom]] = i;
+            }
+
+#ifdef DEBUG
+            
+            
+            uint32_t lastIndex = 0;
+            for (uint32_t i = 0; i < length; i++) {
+                MOZ_ASSERT(indices[i] >= lastIndex);
+                MOZ_ASSERT(indices[i] < length);
+                lastIndex = indices[i];
+            }
+#endif
+
+            return mozilla::Some(DominatedSets(mozilla::Move(dominated), mozilla::Move(indices)));
+        }
+
+        
+
+
+
+        DominatedSetRange dominatedSet(mozilla::Vector<Node>& postOrder, uint32_t nodeIndex) const {
+            MOZ_ASSERT(postOrder.length() == indices.length());
+            MOZ_ASSERT(nodeIndex < indices.length());
+            auto end = nodeIndex == indices.length() - 1
+                ? dominated.end()
+                : &dominated[indices[nodeIndex + 1]];
+            return DominatedSetRange(postOrder, &dominated[indices[nodeIndex]], end);
+        }
+    };
 
   private:
     
     mozilla::Vector<Node> postOrder;
     NodeToIndexMap nodeToPostOrderIndex;
     mozilla::Vector<uint32_t> doms;
+    DominatedSets dominatedSets;
 
   private:
     
@@ -90,10 +298,11 @@ class JS_PUBLIC_API(DominatorTree)
     static const uint32_t UNDEFINED = UINT32_MAX;
 
     DominatorTree(mozilla::Vector<Node>&& postOrder, NodeToIndexMap&& nodeToPostOrderIndex,
-                  mozilla::Vector<uint32_t>&& doms)
+                  mozilla::Vector<uint32_t>&& doms, DominatedSets&& dominatedSets)
         : postOrder(mozilla::Move(postOrder))
         , nodeToPostOrderIndex(mozilla::Move(nodeToPostOrderIndex))
         , doms(mozilla::Move(doms))
+        , dominatedSets(mozilla::Move(dominatedSets))
     { }
 
     static uint32_t intersect(mozilla::Vector<uint32_t>& doms, uint32_t finger1, uint32_t finger2) {
@@ -218,6 +427,7 @@ class JS_PUBLIC_API(DominatorTree)
       : postOrder(mozilla::Move(rhs.postOrder))
       , nodeToPostOrderIndex(mozilla::Move(rhs.nodeToPostOrderIndex))
       , doms(mozilla::Move(rhs.doms))
+      , dominatedSets(mozilla::Move(rhs.dominatedSets))
     {
         MOZ_ASSERT(this != &rhs, "self-move is not allowed");
     }
@@ -326,9 +536,14 @@ class JS_PUBLIC_API(DominatorTree)
             }
         }
 
+        auto maybeDominatedSets = DominatedSets::Create(doms);
+        if (maybeDominatedSets.isNothing())
+            return mozilla::Nothing();
+
         return mozilla::Some(DominatorTree(mozilla::Move(postOrder),
                                            mozilla::Move(nodeToPostOrderIndex),
-                                           mozilla::Move(doms)));
+                                           mozilla::Move(doms),
+                                           mozilla::Move(*maybeDominatedSets)));
     }
 
     
@@ -346,6 +561,33 @@ class JS_PUBLIC_API(DominatorTree)
         MOZ_ASSERT(idx < postOrder.length());
         return postOrder[doms[idx]];
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    mozilla::Maybe<DominatedSetRange> getDominatedSet(const Node& node) {
+        assertSanity();
+        auto ptr = nodeToPostOrderIndex.lookup(node);
+        if (!ptr)
+            return mozilla::Nothing();
+
+        auto idx = ptr->value();
+        MOZ_ASSERT(idx < postOrder.length());
+        return mozilla::Some(dominatedSets.dominatedSet(postOrder, idx));
+    };
 };
 
 } 
