@@ -49,6 +49,17 @@ assertIterable([5,5,4,4],
   it => { var [,,...rest] = it; return rest; },
   [3,4]);
 
+
+assertIterable([5,5,4,4],
+  it => {
+    assertThrowsInstanceOf(function () {
+      "use strict";
+      [...{0: "".x}] = it;
+    }, TypeError);
+    return [];
+  },
+  []);
+
 var arraycalls = 0;
 var ArrayIterator = Array.prototype[Symbol.iterator];
 Array.prototype[Symbol.iterator] = function () {
@@ -61,13 +72,17 @@ assertEq(arraycalls, 0, 'calls to Array#@@iterator');
 
 
 
+var [...[...rest]] = iterable;
+assertEq(arraycalls, 1, 'calls to Array#@@iterator');
+
+
 function loop(fn) {
   var i = 1e4;
   while (i--) fn();
 }
 
 loop(() => { doneafter = 4; var [a] = iterable; return a; });
-loop(() => { doneafter = 4; var [a,b,...rest] = iterable; return rest; });
+loop(() => { doneafter = 4; var [a,b,...[...rest]] = iterable; return rest; });
 
 
 
