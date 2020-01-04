@@ -805,6 +805,9 @@ protected:
   
   
   bool                         mDeferNotifyingTSF;
+  
+  
+  bool                         mDestroyed;
 
 
   
