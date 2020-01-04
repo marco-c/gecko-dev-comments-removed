@@ -100,10 +100,7 @@ public:
   
   uint64_t GetAnimationGeneration() const { return mAnimationGeneration; }
 
-  
-  
-  
-  static uint64_t GetMaxAnimationGenerationForFrame(nsIFrame* aFrame);
+  static uint64_t GetAnimationGenerationForFrame(nsIFrame* aFrame);
 
   
   

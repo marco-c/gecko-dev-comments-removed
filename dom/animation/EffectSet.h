@@ -11,6 +11,8 @@
 #include "nsHashKeys.h" 
 #include "nsTHashtable.h" 
 
+class nsPresContext;
+
 namespace mozilla {
 
 namespace dom {
@@ -25,6 +27,7 @@ class EffectSet
 public:
   EffectSet()
     : mCascadeNeedsUpdate(false)
+    , mAnimationGeneration(0)
 #ifdef DEBUG
     , mCalledPropertyDtor(false)
 #endif
@@ -125,6 +128,9 @@ public:
   void MarkCascadeNeedsUpdate() { mCascadeNeedsUpdate = true; }
   void MarkCascadeUpdated() { mCascadeNeedsUpdate = false; }
 
+  void UpdateAnimationGeneration(nsPresContext* aPresContext);
+  uint64_t GetAnimationGeneration() const { return mAnimationGeneration; }
+
   static nsIAtom** GetEffectSetPropertyAtoms();
 
 private:
@@ -139,6 +145,14 @@ private:
   
   
   bool mCascadeNeedsUpdate;
+
+  
+  
+  
+  
+  
+  
+  uint64_t mAnimationGeneration;
 
 #ifdef DEBUG
   bool mCalledPropertyDtor;

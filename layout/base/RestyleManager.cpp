@@ -1337,15 +1337,10 @@ RestyleManager::AttributeChanged(Element* aElement,
 }
 
  uint64_t
-RestyleManager::GetMaxAnimationGenerationForFrame(nsIFrame* aFrame)
+RestyleManager::GetAnimationGenerationForFrame(nsIFrame* aFrame)
 {
-  AnimationCollection* transitions =
-    aFrame->PresContext()->TransitionManager()->GetAnimationCollection(aFrame);
-  AnimationCollection* animations =
-    aFrame->PresContext()->AnimationManager()->GetAnimationCollection(aFrame);
-
-  return std::max(transitions ? transitions->mAnimationGeneration : 0,
-                  animations ? animations->mAnimationGeneration : 0);
+  EffectSet* effectSet = EffectSet::GetEffectSet(aFrame);
+  return effectSet ? effectSet->GetAnimationGeneration() : 0;
 }
 
 void
@@ -2708,7 +2703,7 @@ ElementRestyler::AddLayerChangesForAnimation()
   
   
   uint64_t frameGeneration =
-    RestyleManager::GetMaxAnimationGenerationForFrame(mFrame);
+    RestyleManager::GetAnimationGenerationForFrame(mFrame);
 
   nsChangeHint hint = nsChangeHint(0);
   for (const LayerAnimationInfo::Record& layerInfo :

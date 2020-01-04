@@ -201,7 +201,6 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
     : mElement(aElement)
     , mElementProperty(aElementProperty)
     , mManager(aManager)
-    , mAnimationGeneration(0)
     , mCheckGeneration(0)
     , mStyleChanging(true)
     , mHasPendingAnimationRestyle(false)
@@ -337,17 +336,6 @@ public:
   
   RefPtr<AnimValuesStyleRule> mStyleRule;
 
-  
-  
-  
-  
-  
-  
-  uint64_t mAnimationGeneration;
-  
-  void UpdateAnimationGeneration(nsPresContext* aPresContext);
-
-  
   
   
   

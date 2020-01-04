@@ -6,7 +6,9 @@
 
 #include "EffectSet.h"
 #include "mozilla/dom/Element.h" 
+#include "RestyleManager.h"
 #include "nsCycleCollectionNoteChild.h" 
+#include "nsPresContext.h"
 
 namespace mozilla {
 
@@ -104,6 +106,13 @@ EffectSet::GetOrCreateEffectSet(dom::Element* aElement,
   }
 
   return effectSet;
+}
+
+void
+EffectSet::UpdateAnimationGeneration(nsPresContext* aPresContext)
+{
+  mAnimationGeneration =
+    aPresContext->RestyleManager()->GetAnimationGeneration();
 }
 
  nsIAtom**
