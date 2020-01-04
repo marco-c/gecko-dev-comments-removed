@@ -435,7 +435,9 @@ static const bool isthreaded = true;
 #define JEMALLOC_USES_MAP_ALIGN
 #endif
 
+#ifndef __DECONST
 #define __DECONST(type, var) ((type)(uintptr_t)(const void *)(var))
+#endif
 
 #ifdef MOZ_MEMORY_WINDOWS
    
@@ -1606,6 +1608,12 @@ void	(*_malloc_message)(const char *p1, const char *p2, const char *p3,
 #include "mozilla/TaggedAnonymousMemory.h"
 
 
+
+#ifdef MOZ_MEMORY_ANDROID
+
+extern MOZ_EXPORT
+int pthread_atfork(void (*)(void), void (*)(void), void(*)(void));
+#endif
 
 
 
@@ -4974,7 +4982,7 @@ arena_new(arena_t *arena)
 		bin->runcur = NULL;
 		arena_run_tree_new(&bin->runs);
 
-		bin->reg_size = (1U << (TINY_MIN_2POW + i));
+		bin->reg_size = (1ULL << (TINY_MIN_2POW + i));
 
 		prev_run_size = arena_bin_run_size_calc(bin, prev_run_size);
 
