@@ -79,8 +79,9 @@ Services.cpmm.addMessageListener("performance-stats-service-release", function(m
   if (!isContent) {
     return;
   }
+
   
-  let probes = gMonitor.getProbeNames
+  let probes = gMonitor.probeNames
     .filter(x => msg.data.payload.indexOf(x) == -1);
   gMonitor = PerformanceStats.getMonitor(probes);
 });
