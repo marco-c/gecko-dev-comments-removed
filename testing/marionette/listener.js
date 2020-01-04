@@ -213,9 +213,6 @@ let clearElementFn = dispatch(clearElement);
 let isElementDisplayedFn = dispatch(isElementDisplayed);
 let getElementValueOfCssPropertyFn = dispatch(getElementValueOfCssProperty);
 let switchToShadowRootFn = dispatch(switchToShadowRoot);
-let singleTapFn = dispatch(singleTap);
-let actionChainFn = dispatch(actionChain);
-let multiActionFn = dispatch(multiAction);
 
 
 
@@ -226,9 +223,9 @@ function startListeners() {
   addMessageListenerId("Marionette:executeScript", executeScript);
   addMessageListenerId("Marionette:executeAsyncScript", executeAsyncScript);
   addMessageListenerId("Marionette:executeJSScript", executeJSScript);
-  addMessageListenerId("Marionette:singleTap", singleTapFn);
-  addMessageListenerId("Marionette:actionChain", actionChainFn);
-  addMessageListenerId("Marionette:multiAction", multiActionFn);
+  addMessageListenerId("Marionette:singleTap", singleTap);
+  addMessageListenerId("Marionette:actionChain", actionChain);
+  addMessageListenerId("Marionette:multiAction", multiAction);
   addMessageListenerId("Marionette:get", get);
   addMessageListenerId("Marionette:pollForReadyState", pollForReadyState);
   addMessageListenerId("Marionette:cancelRequest", cancelRequest);
@@ -332,9 +329,9 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:executeScript", executeScript);
   removeMessageListenerId("Marionette:executeAsyncScript", executeAsyncScript);
   removeMessageListenerId("Marionette:executeJSScript", executeJSScript);
-  removeMessageListenerId("Marionette:singleTap", singleTapFn);
-  removeMessageListenerId("Marionette:actionChain", actionChainFn);
-  removeMessageListenerId("Marionette:multiAction", multiActionFn);
+  removeMessageListenerId("Marionette:singleTap", singleTap);
+  removeMessageListenerId("Marionette:actionChain", actionChain);
+  removeMessageListenerId("Marionette:multiAction", multiAction);
   removeMessageListenerId("Marionette:get", get);
   removeMessageListenerId("Marionette:pollForReadyState", pollForReadyState);
   removeMessageListenerId("Marionette:cancelRequest", cancelRequest);
@@ -921,27 +918,34 @@ function checkVisible(el, x, y) {
 
 
 
-function singleTap(id, x, y) {
-  let el = elementManager.getKnownElement(id, curContainer);
-  let acc = accessibility.getAccessibleObject(el, true);
-  
-  let visible = checkVisible(el, x, y);
-  checkVisibleAccessibility(acc, visible);
-  if (!visible) {
-    throw new ElementNotVisibleError("Element is not currently visible and may not be manipulated");
+function singleTap(msg) {
+  let command_id = msg.json.command_id;
+  try {
+    let el = elementManager.getKnownElement(msg.json.id, curContainer);
+    let acc = accessibility.getAccessibleObject(el, true);
+    
+    let visible = checkVisible(el, msg.json.corx, msg.json.cory);
+    checkVisibleAccessibility(acc, visible);
+    if (!visible) {
+      sendError(new ElementNotVisibleError("Element is not currently visible and may not be manipulated"), command_id);
+      return;
+    }
+    checkActionableAccessibility(acc);
+    if (!curContainer.frame.document.createTouch) {
+      actions.mouseEventsOnly = true;
+    }
+    let c = coordinates(el, msg.json.corx, msg.json.cory);
+    if (!actions.mouseEventsOnly) {
+      let touchId = actions.nextTouchId++;
+      let touch = createATouch(el, c.x, c.y, touchId);
+      emitTouchEvent('touchstart', touch);
+      emitTouchEvent('touchend', touch);
+    }
+    actions.mouseTap(el.ownerDocument, c.x, c.y);
+    sendOk(command_id);
+  } catch (e) {
+    sendError(e, command_id);
   }
-  checkActionableAccessibility(acc);
-  if (!curContainer.frame.document.createTouch) {
-    actions.mouseEventsOnly = true;
-  }
-  let c = coordinates(el, x, y);
-  if (!actions.mouseEventsOnly) {
-    let touchId = actions.nextTouchId++;
-    let touch = createATouch(el, c.x, c.y, touchId);
-    emitTouchEvent("touchstart", touch);
-    emitTouchEvent("touchend", touch);
-  }
-  actions.mouseTap(el.ownerDocument, c.x, c.y);
 }
 
 
@@ -1059,20 +1063,30 @@ function createATouch(el, corx, cory, touchId) {
 
 
 
-function actionChain(chain, touchId) {
+function actionChain(msg) {
+  let command_id = msg.json.command_id;
+  let args = msg.json.chain;
+  let touchId = msg.json.nextId;
+
+  let callbacks = {};
+  callbacks.onSuccess = value => sendResponse(value, command_id);
+  callbacks.onError = err => sendError(err, command_id);
+
   let touchProvider = {};
   touchProvider.createATouch = createATouch;
   touchProvider.emitTouchEvent = emitTouchEvent;
 
-  return new Promise((resolve, reject) => {
+  try {
     actions.dispatchActions(
-        chain,
+        args,
         touchId,
         curContainer,
         elementManager,
-        {onSuccess: resolve, onError: reject},
+        callbacks,
         touchProvider);
-  });
+  } catch (e) {
+    sendError(e, command_id);
+  }
 }
 
 
@@ -1111,13 +1125,16 @@ function emitMultiEvents(type, touch, touches) {
 
 
 
-function setDispatch(batches, touches, batchIndex=0) {
+function setDispatch(batches, touches, command_id, batchIndex) {
+  if (typeof batchIndex === "undefined") {
+    batchIndex = 0;
+  }
   
   if (batchIndex >= batches.length) {
     multiLast = {};
+    sendOk(command_id);
     return;
   }
-
   
   let batch = batches[batchIndex];
   
@@ -1136,43 +1153,38 @@ function setDispatch(batches, touches, batchIndex=0) {
   let waitTime = 0;
   let maxTime = 0;
   let c;
-
-  
   batchIndex++;
+  
   for (let i = 0; i < batch.length; i++) {
     pack = batch[i];
     touchId = pack[0];
     command = pack[1];
-
     switch (command) {
-      case "press":
+      case 'press':
         el = elementManager.getKnownElement(pack[2], curContainer);
         c = coordinates(el, pack[3], pack[4]);
         touch = createATouch(el, c.x, c.y, touchId);
         multiLast[touchId] = touch;
         touches.push(touch);
-        emitMultiEvents("touchstart", touch, touches);
+        emitMultiEvents('touchstart', touch, touches);
         break;
-
-      case "release":
+      case 'release':
         touch = multiLast[touchId];
         
         touchIndex = touches.indexOf(touch);
         touches.splice(touchIndex, 1);
-        emitMultiEvents("touchend", touch, touches);
+        emitMultiEvents('touchend', touch, touches);
         break;
-
-      case "move":
+      case 'move':
         el = elementManager.getKnownElement(pack[2], curContainer);
         c = coordinates(el);
         touch = createATouch(multiLast[touchId].target, c.x, c.y, touchId);
         touchIndex = touches.indexOf(lastTouch);
         touches[touchIndex] = touch;
         multiLast[touchId] = touch;
-        emitMultiEvents("touchmove", touch, touches);
+        emitMultiEvents('touchmove', touch, touches);
         break;
-
-      case "moveByOffset":
+      case 'moveByOffset':
         el = multiLast[touchId].target;
         lastTouch = multiLast[touchId];
         touchIndex = touches.indexOf(lastTouch);
@@ -1188,12 +1200,11 @@ function setDispatch(batches, touches, batchIndex=0) {
         touch = doc.createTouch(win, el, touchId, pageX, pageY, screenX, screenY, clientX, clientY);
         touches[touchIndex] = touch;
         multiLast[touchId] = touch;
-        emitMultiEvents("touchmove", touch, touches);
+        emitMultiEvents('touchmove', touch, touches);
         break;
-
-      case "wait":
-        if (typeof pack[2] != "undefined") {
-          waitTime = pack[2] * 1000;
+      case 'wait':
+        if (pack[2] != undefined ) {
+          waitTime = pack[2]*1000;
           if (waitTime > maxTime) {
             maxTime = waitTime;
           }
@@ -1201,45 +1212,47 @@ function setDispatch(batches, touches, batchIndex=0) {
         break;
     }
   }
-
   if (maxTime != 0) {
-    checkTimer.initWithCallback(function() {
-      setDispatch(batches, touches, batchIndex);
-    }, maxTime, Ci.nsITimer.TYPE_ONE_SHOT);
-  } else {
-    setDispatch(batches, touches, batchIndex);
+    checkTimer.initWithCallback(function(){setDispatch(batches, touches, command_id, batchIndex);}, maxTime, Ci.nsITimer.TYPE_ONE_SHOT);
+  }
+  else {
+    setDispatch(batches, touches, command_id, batchIndex);
   }
 }
 
 
 
 
-
-
-
-function multiAction(args, maxLen) {
+function multiAction(msg) {
+  let command_id = msg.json.command_id;
+  let args = msg.json.value;
   
-  let commandArray = elementManager.convertWrappedArguments(args, curContainer);
-  let concurrentEvent = [];
-  let temp;
-  for (let i = 0; i < maxLen; i++) {
-    let row = [];
-    for (let j = 0; j < commandArray.length; j++) {
-      if (typeof commandArray[j][i] != "undefined") {
-        
-        temp = commandArray[j][i];
-        temp.unshift(j);
-        row.push(temp);
+  let maxlen = msg.json.maxlen;
+  try {
+    
+    let commandArray = elementManager.convertWrappedArguments(args, curContainer);
+    let concurrentEvent = [];
+    let temp;
+    for (let i = 0; i < maxlen; i++) {
+      let row = [];
+      for (let j = 0; j < commandArray.length; j++) {
+        if (commandArray[j][i] != undefined) {
+          
+          temp = commandArray[j][i];
+          temp.unshift(j);
+          row.push(temp);
+        }
       }
+      concurrentEvent.push(row);
     }
-    concurrentEvent.push(row);
+    
+    
+    
+    let pendingTouches = [];
+    setDispatch(concurrentEvent, pendingTouches, command_id);
+  } catch (e) {
+    sendError(e, command_id);
   }
-
-  
-  
-  
-  let pendingTouches = [];
-  setDispatch(concurrentEvent, pendingTouches);
 }
 
 
