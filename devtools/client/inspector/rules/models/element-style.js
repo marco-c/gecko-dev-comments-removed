@@ -40,6 +40,8 @@ XPCOMUtils.defineLazyGetter(this, "domUtils", function() {
 
 
 
+
+
 function ElementStyle(element, ruleView, store, pageStyle,
     showUserAgentStyles) {
   this.element = element;

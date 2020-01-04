@@ -40,10 +40,6 @@ XPCOMUtils.defineLazyGetter(this, "domUtils", function() {
 
 
 
-
-
-
-
 function TextProperty(rule, name, value, priority, enabled = true,
                       invisible = false) {
   this.rule = rule;

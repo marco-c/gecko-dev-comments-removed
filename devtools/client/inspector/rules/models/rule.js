@@ -37,6 +37,9 @@ XPCOMUtils.defineLazyGetter(this, "domUtils", function() {
 
 
 
+
+
+
 function Rule(elementStyle, options) {
   this.elementStyle = elementStyle;
   this.domRule = options.rule || null;
