@@ -363,19 +363,6 @@ MediaEngineRemoteVideoSource::DeliverFrame(unsigned char* buffer,
   
   
   
-  
-
-  
-  
-  
-  
-  uint32_t len = mSources.Length();
-  for (uint32_t i = 0; i < len; i++) {
-    if (mSources[i]) {
-      
-      AppendToTrack(mSources[i], mImage, mTrackID, 1, mPrincipalHandles[i]);
-    }
-  }
 
   return 0;
 }
