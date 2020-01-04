@@ -3786,13 +3786,9 @@ PluginInstanceChild::PaintRectToSurface(const nsIntRect& aRect,
         
         dt = CreateDrawTargetForSurface(aSurface);
       }
-      if (dt && dt->IsValid()) {
-          RefPtr<SourceSurface> surface =
-              gfxPlatform::GetSourceSurfaceForSurface(dt, renderSurface);
-          dt->CopySurface(surface, aRect, aRect.TopLeft());
-      } else {
-          gfxWarning() << "PluginInstanceChild::PaintRectToSurface failure";
-      }
+      RefPtr<SourceSurface> surface =
+        gfxPlatform::GetSourceSurfaceForSurface(dt, renderSurface);
+      dt->CopySurface(surface, aRect, aRect.TopLeft());
     }
 }
 

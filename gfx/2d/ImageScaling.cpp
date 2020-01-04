@@ -65,20 +65,20 @@ ImageHalfScaler::ScaleForSize(const IntSize &aSize)
     return;
   }
 
-  delete [] mDataStorage;
-
   IntSize internalSurfSize;
+
   internalSurfSize.width = max(scaleSize.width, mOrigSize.width / 2);
   internalSurfSize.height = max(scaleSize.height, mOrigSize.height / 2);
 
-  size_t bufLen = 0;
-  mStride = GetAlignedStride<16>(internalSurfSize.width, 4);
-  if (mStride > 0) {
-    
-    
-    bufLen = BufferSizeFromStrideAndHeight(mStride, internalSurfSize.height, 15);
+  mStride = internalSurfSize.width * 4;
+  if (mStride % 16) {
+    mStride += 16 - (mStride % 16);
   }
 
+  delete [] mDataStorage;
+  
+  
+  size_t bufLen = BufferSizeFromStrideAndHeight(mStride, internalSurfSize.height, 15);
   if (bufLen == 0) {
     mSize.SizeTo(0, 0);
     mDataStorage = nullptr;
