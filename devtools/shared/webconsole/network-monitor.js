@@ -50,7 +50,7 @@ const RESPONSE_BODY_LIMIT = 1048576;
 
 function matchRequest(channel, filters) {
   
-  if (!filters.topFrame && !filters.window && !filters.appId) {
+  if (!filters.outerWindowID && !filters.window && !filters.appId) {
     return true;
   }
 
@@ -81,27 +81,11 @@ function matchRequest(channel, filters) {
     }
   }
 
-  if (filters.topFrame) {
+  if (filters.outerWindowID) {
     let topFrame = NetworkHelper.getTopFrameForRequest(channel);
-    while (topFrame) {
-      
-      
-      if (topFrame === filters.topFrame) {
-        return true;
-      }
-      
-      
-      
-      
-      
-      
-      if (!topFrame.ownerGlobal) {
-        break;
-      }
-      topFrame = topFrame.ownerGlobal
-                         .QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIDOMWindowUtils)
-                         .containerElement;
+    if (topFrame && topFrame.outerWindowID &&
+        topFrame.outerWindowID == filters.outerWindowID) {
+      return true;
     }
   }
 
@@ -1414,8 +1398,11 @@ NetworkMonitor.prototype = {
 
 
 
-function NetworkMonitorChild(appId, messageManager, connID, owner) {
+
+
+function NetworkMonitorChild(appId, outerWindowID, messageManager, connID, owner) {
   this.appId = appId;
+  this.outerWindowID = outerWindowID;
   this.connID = connID;
   this.owner = owner;
   this._messageManager = messageManager;
@@ -1455,6 +1442,7 @@ NetworkMonitorChild.prototype = {
                           this._onUpdateEvent);
     mm.sendAsyncMessage("debug:netmonitor:" + this.connID, {
       appId: this.appId,
+      outerWindowID: this.outerWindowID,
       action: "start",
     });
   },
@@ -1594,7 +1582,6 @@ function NetworkMonitorManager(frame, id) {
   
   let mm = frame.messageManager || frame.frameLoader.messageManager;
   this.messageManager = mm;
-  this.frame = frame;
   this.onNetMonitorMessage = this.onNetMonitorMessage.bind(this);
   this.onNetworkEvent = this.onNetworkEvent.bind(this);
 
@@ -1604,7 +1591,6 @@ exports.NetworkMonitorManager = NetworkMonitorManager;
 
 NetworkMonitorManager.prototype = {
   netMonitor: null,
-  frame: null,
   messageManager: null,
 
   
@@ -1620,10 +1606,10 @@ NetworkMonitorManager.prototype = {
     switch (action) {
       case "start":
         if (!this.netMonitor) {
-          let {appId} = msg.json;
+          let {appId, outerWindowID} = msg.json;
           this.netMonitor = new NetworkMonitor({
-            topFrame: this.frame,
-            appId: appId,
+            outerWindowID,
+            appId,
           }, this);
           this.netMonitor.init();
         }
@@ -1667,11 +1653,10 @@ NetworkMonitorManager.prototype = {
 
   destroy: function () {
     if (this.messageManager) {
-      this.messageManager.removeMessageListener("debug:netmonitor:" + this.id,
-                                                this.onNetMonitorMessage);
+      let mm = this.messageManager;
+      mm.removeMessageListener("debug:netmonitor:" + this.id, this.onNetMonitorMessage);
     }
     this.messageManager = null;
-    this.filters = null;
 
     if (this.netMonitor) {
       this.netMonitor.destroy();
