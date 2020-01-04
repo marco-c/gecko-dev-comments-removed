@@ -15,7 +15,7 @@
 #include "sigslot.h"
 
 #include "mozilla/RefPtr.h"
-#include "mozilla/Scoped.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
 #include "nsITimer.h"
@@ -177,7 +177,7 @@ class TransportLayerDtls final : public TransportLayer {
 
   
   
-  ScopedDeletePtr<TransportLayerNSPRAdapter> nspr_io_adapter_;
+  UniquePtr<TransportLayerNSPRAdapter> nspr_io_adapter_;
   ScopedPRFileDesc ssl_fd_;
 
   ScopedCERTCertificate peer_cert_;
