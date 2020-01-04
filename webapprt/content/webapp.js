@@ -110,7 +110,8 @@ function onDOMContentLoaded() {
     
     
     
-    gAppBrowser.docShell.setIsApp(WebappRT.appID);
+    gAppBrowser.docShell.frameType = Ci.nsIDocShell.FRAME_TYPE_APP;
+    gAppBrowser.docShell.setOriginAttributes({appId: WebappRT.appID});
   }
 }
 window.addEventListener("DOMContentLoaded", onDOMContentLoaded, false);

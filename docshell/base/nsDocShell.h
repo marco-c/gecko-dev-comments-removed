@@ -270,7 +270,13 @@ public:
   }
   bool InFrameSwap();
 
-  mozilla::DocShellOriginAttributes GetOriginAttributes();
+  const mozilla::DocShellOriginAttributes&
+  GetOriginAttributes()
+  {
+    return mOriginAttributes;
+  }
+
+  void SetOriginAttributes(const mozilla::DocShellOriginAttributes& aAttrs);
 
   void GetInterceptedDocumentId(nsAString& aId)
   {
@@ -764,21 +770,14 @@ protected:
   nsresult CreatePrincipalFromReferrer(nsIURI* aReferrer,
                                        nsIPrincipal** aResult);
 
-  enum FrameType
-  {
-    eFrameTypeRegular,
-    eFrameTypeBrowser,
-    eFrameTypeApp
-  };
-
-  static const nsCString FrameTypeToString(FrameType aFrameType)
+  static const nsCString FrameTypeToString(uint32_t aFrameType)
   {
     switch (aFrameType) {
-      case FrameType::eFrameTypeApp:
+      case FRAME_TYPE_APP:
         return NS_LITERAL_CSTRING("app");
-      case FrameType::eFrameTypeBrowser:
+      case FRAME_TYPE_BROWSER:
         return NS_LITERAL_CSTRING("browser");
-      case FrameType::eFrameTypeRegular:
+      case FRAME_TYPE_REGULAR:
         return NS_LITERAL_CSTRING("regular");
       default:
         NS_ERROR("Unknown frame type");
@@ -786,7 +785,7 @@ protected:
     }
   }
 
-  FrameType GetInheritedFrameType();
+  uint32_t GetInheritedFrameType();
 
   bool HasUnloadedParent();
 
@@ -999,31 +998,14 @@ protected:
   bool mBlankTiming;
 
   
-  FrameType mFrameType;
+  uint32_t mFrameType;
 
   
   bool mIsInIsolatedMozBrowser;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  uint32_t mOwnOrContainingAppId;
-
-  
-  uint32_t mUserContextId;
-
   nsString mPaymentRequestId;
 
   nsString GetInheritedPaymentRequestId();
-
-  
-  
-  nsString mSignedPkg;
 
   nsString mInterceptedDocumentId;
 
@@ -1037,6 +1019,7 @@ private:
   nsTObserverArray<nsWeakPtr> mScrollObservers;
   nsCString mOriginalUriString;
   nsWeakPtr mOpener;
+  mozilla::DocShellOriginAttributes mOriginAttributes;
 
   
   

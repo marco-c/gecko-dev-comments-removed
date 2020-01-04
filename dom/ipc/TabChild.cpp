@@ -859,23 +859,22 @@ TabChild::Init()
 void
 TabChild::NotifyTabContextUpdated()
 {
-    nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
-    MOZ_ASSERT(docShell);
+  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+  MOZ_ASSERT(docShell);
 
-    if (docShell) {
-        
-        
-        if (IsMozBrowserElement()) {
-          docShell->SetIsBrowserInsideApp(BrowserOwnerAppId());
-          docShell->SetIsInIsolatedMozBrowserElement(IsIsolatedMozBrowserElement());
-        } else {
-          docShell->SetIsApp(OwnAppId());
-        }
+  if (!docShell) {
+    return;
+  }
 
-        OriginAttributes attrs = OriginAttributesRef();
-        docShell->SetIsSignedPackage(attrs.mSignedPkg);
-        docShell->SetUserContextId(attrs.mUserContextId);
-    }
+  if (IsMozBrowserElement()) {
+    docShell->SetIsInIsolatedMozBrowserElement(IsIsolatedMozBrowserElement());
+  }
+  docShell->SetFrameType(IsMozBrowserElement() ?
+                           nsIDocShell::FRAME_TYPE_BROWSER :
+                           HasOwnApp() ?
+                             nsIDocShell::FRAME_TYPE_APP :
+                             nsIDocShell::FRAME_TYPE_REGULAR);
+  nsDocShell::Cast(docShell)->SetOriginAttributes(OriginAttributesRef());
 }
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(TabChild)

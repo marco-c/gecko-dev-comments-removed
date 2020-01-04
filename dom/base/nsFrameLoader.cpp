@@ -1849,26 +1849,6 @@ nsFrameLoader::MaybeCreateDocShell()
   }
 
   
-  nsAutoString userContextIdStr;
-  if (namespaceID == kNameSpaceID_XUL) {
-    if (mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::usercontextid)) {
-      mOwnerContent->GetAttr(kNameSpaceID_None,
-                             nsGkAtoms::usercontextid,
-                             userContextIdStr);
-    }
-  }
-
-  if (!userContextIdStr.IsEmpty()) {
-    nsresult rv;
-    uint32_t userContextId =
-      static_cast<uint32_t>(userContextIdStr.ToInteger(&rv));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = mDocShell->SetUserContextId(userContextId);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  
   
   
 
@@ -1938,6 +1918,14 @@ nsFrameLoader::MaybeCreateDocShell()
     webNav->SetSessionHistory(sessionHistory);
   }
 
+  DocShellOriginAttributes attrs;
+
+  if (!mOwnerContent->IsXULElement(nsGkAtoms::browser)) {
+    nsCOMPtr<nsIPrincipal> parentPrin = doc->NodePrincipal();
+    PrincipalOriginAttributes poa = BasePrincipal::Cast(parentPrin)->OriginAttributesRef();
+    attrs.InheritFromDocToChildDocShell(poa);
+  }
+
   if (OwnerIsAppFrame()) {
     
     MOZ_ASSERT(!OwnerIsMozBrowserFrame());
@@ -1949,7 +1937,8 @@ nsFrameLoader::MaybeCreateDocShell()
       NS_ENSURE_SUCCESS(ownApp->GetLocalId(&ownAppId), NS_ERROR_FAILURE);
     }
 
-    mDocShell->SetIsApp(ownAppId);
+    attrs.mAppId = ownAppId;
+    mDocShell->SetFrameType(nsIDocShell::FRAME_TYPE_APP);
   }
 
   if (OwnerIsMozBrowserFrame()) {
@@ -1962,9 +1951,24 @@ nsFrameLoader::MaybeCreateDocShell()
       NS_ENSURE_SUCCESS(containingApp->GetLocalId(&containingAppId),
                         NS_ERROR_FAILURE);
     }
-    mDocShell->SetIsBrowserInsideApp(containingAppId);
+
+    attrs.mAppId = containingAppId;
+    attrs.mInIsolatedMozBrowser = OwnerIsIsolatedMozBrowserFrame();
+    mDocShell->SetFrameType(nsIDocShell::FRAME_TYPE_BROWSER);
     mDocShell->SetIsInIsolatedMozBrowserElement(OwnerIsIsolatedMozBrowserFrame());
   }
+
+  
+  nsAutoString userContextIdStr;
+  if ((namespaceID == kNameSpaceID_XUL) &&
+      mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::usercontextid, userContextIdStr) &&
+      !userContextIdStr.IsEmpty()) {
+    nsresult rv;
+    attrs.mUserContextId = userContextIdStr.ToInteger(&rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  nsDocShell::Cast(mDocShell)->SetOriginAttributes(attrs);
 
   if (OwnerIsMozBrowserOrAppFrame()) {
     
