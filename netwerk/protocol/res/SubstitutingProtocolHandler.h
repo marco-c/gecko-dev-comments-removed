@@ -55,10 +55,7 @@ protected:
 
   
   
-  virtual bool ResolveSpecialCases(const nsACString& aHost,
-                                   const nsACString& aPath,
-                                   const nsACString& aPathname,
-                                   nsACString& aResult)
+  virtual bool ResolveSpecialCases(const nsACString& aHost, const nsACString& aPath, nsACString& aResult)
   {
     return false;
   }

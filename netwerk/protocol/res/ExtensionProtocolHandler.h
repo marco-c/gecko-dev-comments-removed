@@ -28,10 +28,18 @@ public:
 protected:
   ~ExtensionProtocolHandler() {}
 
-  bool ResolveSpecialCases(const nsACString& aHost,
-                           const nsACString& aPath,
-                           const nsACString& aPathname,
-                           nsACString& aResult) override;
+  bool ResolveSpecialCases(const nsACString& aHost, const nsACString& aPath, nsACString& aResult) override
+  {
+    
+    
+    
+    if (SubstitutingProtocolHandler::HasSubstitution(aHost) && aPath.EqualsLiteral("/_blank.html")) {
+      aResult.AssignLiteral("about:blank");
+      return true;
+    }
+
+    return false;
+  }
 
   virtual nsresult SubstituteChannel(nsIURI* uri, nsILoadInfo* aLoadInfo, nsIChannel** result) override;
 };
