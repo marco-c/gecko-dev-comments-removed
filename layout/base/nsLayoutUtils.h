@@ -74,6 +74,7 @@ class Element;
 class HTMLImageElement;
 class HTMLCanvasElement;
 class HTMLVideoElement;
+class OffscreenCanvas;
 class Selection;
 } 
 namespace gfx {
@@ -2115,6 +2116,11 @@ public:
     const RefPtr<mozilla::gfx::SourceSurface>& GetSourceSurface();
   };
 
+  
+  static SurfaceFromElementResult
+  SurfaceFromOffscreenCanvas(mozilla::dom::OffscreenCanvas *aOffscreenCanvas,
+                             uint32_t aSurfaceFlags = 0,
+                             DrawTarget *aTarget = nullptr);
   static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::Element *aElement,
                                                      uint32_t aSurfaceFlags = 0,
                                                      DrawTarget *aTarget = nullptr);
