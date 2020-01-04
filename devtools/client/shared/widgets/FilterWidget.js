@@ -828,7 +828,7 @@ CSSFilterEditorWidget.prototype = {
     
     
     
-    return filter.value.replace(/[ \t(){};]/g, "\\$&");
+    return filter.value.replace(/[\\ \t()"']/g, "\\$&");
   },
 
   removeAt: function(index) {
