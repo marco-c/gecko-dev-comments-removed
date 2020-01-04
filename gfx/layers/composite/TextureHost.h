@@ -363,6 +363,11 @@ public:
 
 
   virtual gfx::SurfaceFormat GetFormat() const = 0;
+  
+
+
+
+  virtual gfx::SurfaceFormat GetReadFormat() const { return GetFormat(); }
 
   
 

@@ -116,6 +116,8 @@ public:
   void DecrementUseCount();
   bool HasAlpha() { return mHasAlpha; }
   mozilla::gfx::SurfaceFormat GetFormat();
+  mozilla::gfx::SurfaceFormat GetReadFormat();
+
   
   
   CGLError CGLTexImageIOSurface2D(CGLContextObj ctxt, size_t plane = 0);
