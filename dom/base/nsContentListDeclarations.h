@@ -46,7 +46,6 @@ typedef void* (*nsFuncStringContentListDataAllocator)(nsINode* aRootNode,
 
 
 
-
 already_AddRefed<nsContentList>
 NS_GetContentList(nsINode* aRootNode,
                   int32_t aMatchNameSpaceId,
