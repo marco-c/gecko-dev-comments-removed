@@ -12,6 +12,7 @@
 #include "gfxRect.h"                    
 #include "mozilla/Assertions.h"         
 #include "mozilla/gfx/BaseSize.h"       
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/LayerMetricsWrapper.h" 
@@ -423,8 +424,7 @@ ClientTiledPaintedLayer::RenderLayer()
   void *data = ClientManager()->GetPaintedLayerCallbackData();
 
   IntSize layerSize = mVisibleRegion.ToUnknownRegion().GetBounds().Size();
-  IntSize tileSize(gfxPlatform::GetPlatform()->GetTileWidth(),
-                   gfxPlatform::GetPlatform()->GetTileHeight());
+  IntSize tileSize = gfx::gfxVars::TileSize();
   bool isHalfTileWidthOrHeight = layerSize.width <= tileSize.width / 2 ||
     layerSize.height <= tileSize.height / 2;
 
@@ -476,9 +476,7 @@ ClientTiledPaintedLayer::RenderLayer()
     
     IntRect bounds = neededRegion.GetBounds();
     IntRect wholeTiles = bounds;
-    wholeTiles.InflateToMultiple(IntSize(
-      gfxPlatform::GetPlatform()->GetTileWidth(),
-      gfxPlatform::GetPlatform()->GetTileHeight()));
+    wholeTiles.InflateToMultiple(gfx::gfxVars::TileSize());
     IntRect padded = bounds;
     padded.Inflate(1);
     padded.IntersectRect(padded, wholeTiles);

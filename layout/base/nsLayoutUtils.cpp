@@ -13,6 +13,7 @@
 #include "mozilla/EffectSet.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/layers/PAPZ.h"
 #include "mozilla/Likely.h"
@@ -1024,8 +1025,8 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
     
     
     
-    alignment = ScreenSize(std::min(256, gfxPlatform::GetPlatform()->GetTileWidth()),
-                           std::min(256, gfxPlatform::GetPlatform()->GetTileHeight()));
+    IntSize tileSize = gfxVars::TileSize();
+    alignment = ScreenSize(std::min(256, tileSize.width), std::min(256, tileSize.height));
   } else {
     
     

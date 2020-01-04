@@ -12,8 +12,8 @@
 
 #include <stdint.h>                     
 #include <sys/types.h>                  
-#include "gfxPlatform.h"                
 #include "LayersLogging.h"              
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/layers/LayersTypes.h" 
 #include "nsDebug.h"                    
@@ -142,8 +142,7 @@ public:
   TiledLayerBuffer()
     : mTiles(0, 0, 0, 0)
     , mResolution(1)
-    , mTileSize(gfxPlatform::GetPlatform()->GetTileWidth(),
-                gfxPlatform::GetPlatform()->GetTileHeight())
+    , mTileSize(gfxVars::TileSize())
   {}
 
   ~TiledLayerBuffer() {}
