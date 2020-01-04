@@ -460,7 +460,6 @@ nsWindow::nsWindow()
 
   mIdleService = nullptr;
 
-  ::InitializeCriticalSection(&mPresentLock);
   mSizeConstraintsScale = GetDefaultScale().scale;
 
   sInstanceCount++;
@@ -497,7 +496,6 @@ nsWindow::~nsWindow()
       sIsOleInitialized = FALSE;
     }
   }
-  ::DeleteCriticalSection(&mPresentLock);
 
   NS_IF_RELEASE(mNativeDragTarget);
 }
@@ -4967,13 +4965,13 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         
         
         
-        EnterCriticalSection(&mPresentLock);
+        mPresentLock.Enter();
         DWORD style = GetWindowLong(mWnd, GWL_STYLE);
         SetWindowLong(mWnd, GWL_STYLE, style & ~WS_VISIBLE);
         *aRetValue = CallWindowProcW(GetPrevWindowProc(), mWnd,
                                      msg, wParam, lParam);
         SetWindowLong(mWnd, GWL_STYLE, style);
-        LeaveCriticalSection(&mPresentLock);
+        mPresentLock.Leave();
 
         return true;
       }
@@ -7837,13 +7835,13 @@ bool nsWindow::PreRender(LayerManagerComposite*)
   
   
   
-  EnterCriticalSection(&mPresentLock);
+  mPresentLock.Enter();
   return true;
 }
 
 void nsWindow::PostRender(LayerManagerComposite*)
 {
-  LeaveCriticalSection(&mPresentLock);
+  mPresentLock.Leave();
 }
 
 bool
