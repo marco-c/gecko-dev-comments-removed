@@ -292,6 +292,12 @@ ToolSidebar.prototype = {
       let id = tab.getAttribute("id") || "untitled-tab-" + (this.untitledTabsIndex++);
 
       
+      
+      if (id.startsWith(this.TAB_ID_PREFIX)) {
+        id = id.split(this.TAB_ID_PREFIX).pop();
+      }
+
+      
       this._tabs.set(id, tab);
       this.emit("new-tab-registered", id);
     }
