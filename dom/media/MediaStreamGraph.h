@@ -897,9 +897,7 @@ protected:
     
     
     nsAutoRef<SpeexResamplerState> mResampler;
-#ifdef DEBUG
     int mResamplerChannelCount;
-#endif
     StreamTime mStart;
     
     StreamTime mEndOfFlushedData;

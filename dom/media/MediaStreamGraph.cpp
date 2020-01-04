@@ -2484,23 +2484,18 @@ SourceMediaStream::ResampleAudioToGraphSampleRate(TrackData* aTrackData, MediaSe
   int channels = segment->ChannelCount();
 
   
-  if (channels) {
-    if (aTrackData->mResampler) {
-      MOZ_ASSERT(aTrackData->mResamplerChannelCount == segment->ChannelCount());
-    } else {
-      SpeexResamplerState* state = speex_resampler_init(channels,
-                                                        aTrackData->mInputRate,
-                                                        GraphImpl()->GraphRate(),
-                                                        SPEEX_RESAMPLER_QUALITY_MIN,
-                                                        nullptr);
-      if (!state) {
-        return;
-      }
-      aTrackData->mResampler.own(state);
-#ifdef DEBUG
-      aTrackData->mResamplerChannelCount = channels;
-#endif
+  
+  if (channels && aTrackData->mResamplerChannelCount != channels) {
+    SpeexResamplerState* state = speex_resampler_init(channels,
+        aTrackData->mInputRate,
+        GraphImpl()->GraphRate(),
+        SPEEX_RESAMPLER_QUALITY_MIN,
+        nullptr);
+    if (!state) {
+      return;
     }
+    aTrackData->mResampler.own(state);
+    aTrackData->mResamplerChannelCount = channels;
   }
   segment->ResampleChunks(aTrackData->mResampler, aTrackData->mInputRate, GraphImpl()->GraphRate());
 }
