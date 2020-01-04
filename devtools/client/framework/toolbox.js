@@ -2092,7 +2092,7 @@ Toolbox.prototype = {
     this._threadClient = null;
 
     
-    let win = this.frame.ownerGlobal;
+    let win = this.frame.ownerDocument.defaultView;
 
     if (this._requisition) {
       CommandUtils.destroyRequisition(this._requisition, this.target);
