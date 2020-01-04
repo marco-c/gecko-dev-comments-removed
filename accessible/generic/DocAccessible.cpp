@@ -1450,6 +1450,11 @@ DocAccessible::DoInitialUpdate()
 
   
   CacheChildrenInSubtree(this);
+#ifdef A11Y_LOG
+  if (logging::IsEnabled(logging::eVerbose)) {
+    logging::Tree("TREE", "Initial subtree", this);
+  }
+#endif
 
   
   
@@ -1761,7 +1766,7 @@ InsertIterator::Next()
 #endif
 
     
-    if (prevNode && prevNode->GetNextSibling() == node) {
+    if (mChild && prevNode && prevNode->GetNextSibling() == node) {
       Accessible* nextChild = mWalker.Scope(node);
       if (nextChild) {
         mChildBefore = mChild;
@@ -2210,9 +2215,6 @@ DocAccessible::CacheChildrenInSubtree(Accessible* aRoot,
 
   Accessible* root = aRoot->IsHTMLCombobox() ? aRoot->FirstChild() : aRoot;
   if (root->KidsFromDOM()) {
-#ifdef A11Y_LOG
-  logging::TreeInfo("caching children", logging::eVerbose, aRoot);
-#endif
     TreeMutation mt(root, TreeMutation::kNoEvents);
     TreeWalker walker(root);
     while (Accessible* child = walker.Next()) {

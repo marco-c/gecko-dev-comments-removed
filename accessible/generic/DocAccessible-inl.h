@@ -157,6 +157,12 @@ DocAccessible::CreateSubtree(Accessible* aChild)
   Accessible* focusedAcc = nullptr;
   CacheChildrenInSubtree(aChild, &focusedAcc);
 
+#ifdef A11Y_LOG
+  if (logging::IsEnabled(logging::eVerbose)) {
+    logging::Tree("TREE", "Created subtree", aChild);
+  }
+#endif
+
   
   if (aChild->HasARIARole()) {
     roles::Role role = aChild->ARIARole();
