@@ -771,6 +771,7 @@ var cookieHelpers = {
 
 
 
+
   editCookie: function(data) {
     let {field, oldValue, newValue} = data;
     let origName = field === "name" ? oldValue : data.items.name;
@@ -1027,6 +1028,45 @@ function getObjectForLocalOrSessionStorage(type) {
       }
       return null;
     },
+
+    
+
+
+
+
+
+    getEditableFields: method(Task.async(function*() {
+      return [
+        "name",
+        "value"
+      ];
+    }), {
+      request: {},
+      response: {
+        value: RetVal("json")
+      }
+    }),
+
+    
+
+
+
+
+
+    editItem: method(Task.async(function*({host, field, oldValue, items}) {
+      let storage = this.hostVsStores.get(host);
+
+      if (field === "name") {
+        storage.removeItem(oldValue);
+      }
+
+      storage.setItem(items.name, items.value);
+    }), {
+      request: {
+        data: Arg(0, "json"),
+      },
+      response: {}
+    }),
 
     observe: function(subject, topic, data) {
       if (topic != "dom-storage2-changed" || data != type) {
