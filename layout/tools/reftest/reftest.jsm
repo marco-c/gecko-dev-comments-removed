@@ -178,6 +178,12 @@ function HasUnexpectedResult()
 
 
 var gLogFile = null;
+var gDumpFn = function(line) {
+  dump(line);
+  if (gLogFile) {
+    gLogFile.write(line, line.length);
+  }
+}
 var gDumpRawLog = function(record) {
   
   var line = "\n" + JSON.stringify(record) + "\n";
@@ -1365,8 +1371,8 @@ function StartCurrentURI(aState)
         var currentTest = gTotalTests - gURLs.length;
         
         
-        dump("REFTEST TEST-LOAD | " + gCurrentURL + " | " + currentTest + " / " + gTotalTests +
-             " (" + Math.floor(100 * (currentTest / gTotalTests)) + "%)\n");
+        gDumpFn("REFTEST TEST-LOAD | " + gCurrentURL + " | " + currentTest + " / " + gTotalTests +
+                " (" + Math.floor(100 * (currentTest / gTotalTests)) + "%)\n");
         TestBuffer("START " + gCurrentURL);
         var type = gURLs[0].type
         if (TYPE_SCRIPT == type) {
@@ -1818,19 +1824,19 @@ function DoAssertionCheck(numAsserts)
 
         if (numAsserts < minAsserts) {
             ++gTestResults.AssertionUnexpectedFixed;
-            dump("REFTEST TEST-UNEXPECTED-PASS | " + gURLs[0].prettyPath +
-                 " | assertion count" + numAsserts + " is less than " +
-                    expectedAssertions + "\n");
+            gDumpFn("REFTEST TEST-UNEXPECTED-PASS | " + gURLs[0].prettyPath +
+                    " | assertion count" + numAsserts + " is less than " +
+                       expectedAssertions + "\n");
         } else if (numAsserts > maxAsserts) {
             ++gTestResults.AssertionUnexpected;
-            dump("REFTEST TEST-UNEXPECTED-FAIL | " + gURLs[0].prettyPath +
-                 " | assertion count " + numAsserts + " is more than " +
-                    expectedAssertions + "\n");
+            gDumpFn("REFTEST TEST-UNEXPECTED-FAIL | " + gURLs[0].prettyPath +
+                    " | assertion count " + numAsserts + " is more than " +
+                       expectedAssertions + "\n");
         } else if (numAsserts != 0) {
             ++gTestResults.AssertionKnown;
-            dump("REFTEST TEST-KNOWN-FAIL | " + gURLs[0].prettyPath +
-                 "assertion count " + numAsserts + " matches " +
-                 expectedAssertions + "\n");
+            gDumpFn("REFTEST TEST-KNOWN-FAIL | " + gURLs[0].prettyPath +
+                    "assertion count " + numAsserts + " matches " +
+                    expectedAssertions + "\n");
         }
     }
 
