@@ -1015,15 +1015,6 @@ nsXBLPrototypeBinding::ReadNewBinding(nsIObjectInputStream* aStream,
   return rv;
 }
 
-static PLDHashOperator
-WriteInterfaceID(const nsIID& aKey, nsIContent* aData, void* aClosure)
-{
-  
-  
-  static_cast<nsIObjectOutputStream *>(aClosure)->WriteID(aKey);
-  return PL_DHASH_NEXT;
-}
-
 nsresult
 nsXBLPrototypeBinding::Write(nsIObjectOutputStream* aStream)
 {
@@ -1092,7 +1083,11 @@ nsXBLPrototypeBinding::Write(nsIObjectOutputStream* aStream)
   rv = aStream->Write32(mInterfaceTable.Count());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mInterfaceTable.EnumerateRead(WriteInterfaceID, aStream);
+  for (auto iter = mInterfaceTable.Iter(); !iter.Done(); iter.Next()) {
+    
+    
+    aStream->WriteID(iter.Key());
+  }
 
   
   if (mImplementation) {
