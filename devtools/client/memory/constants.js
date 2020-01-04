@@ -51,10 +51,6 @@ actions.IMPORT_SNAPSHOT_ERROR = "import-snapshot-error";
 actions.SELECT_SNAPSHOT = "select-snapshot";
 
 
-actions.DELETE_SNAPSHOTS_START = "delete-snapshots-start";
-actions.DELETE_SNAPSHOTS_END = "delete-snapshots-end";
-
-
 actions.TOGGLE_INVERTED = "toggle-inverted";
 
 

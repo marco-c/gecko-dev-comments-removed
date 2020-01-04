@@ -35,24 +35,6 @@ workerHelper.createTask(self, "readHeapSnapshot", ({ snapshotFilePath }) => {
 
 
 
-workerHelper.createTask(self, "deleteHeapSnapshot", ({ snapshotFilePath }) => {
-  let snapshot = snapshots[snapshotFilePath];
-  if (!snapshot) {
-    throw new Error(`No known heap snapshot for '${snapshotFilePath}'`);
-  }
-
-  snapshots[snapshotFilePath] = undefined;
-
-  let dominatorTreeId = dominatorTreeSnapshots.indexOf(snapshot);
-  if (dominatorTreeId != -1) {
-    dominatorTreeSnapshots[dominatorTreeId] = undefined;
-    dominatorTrees[dominatorTreeId] = undefined;
-  }
-});
-
-
-
-
 workerHelper.createTask(self, "takeCensus", ({ snapshotFilePath, censusOptions, requestOptions }) => {
   if (!snapshots[snapshotFilePath]) {
     throw new Error(`No known heap snapshot for '${snapshotFilePath}'`);
