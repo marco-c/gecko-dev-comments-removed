@@ -1567,7 +1567,7 @@ nsScriptLoader::PrepareLoadedRequest(nsScriptLoadRequest* aRequest,
 
   if (!aString.empty()) {
     aRequest->mScriptTextLength = aString.length();
-    aRequest->mScriptTextBuf = aString.extractRawBuffer();
+    aRequest->mScriptTextBuf = aString.extractOrCopyRawBuffer();
   }
 
   

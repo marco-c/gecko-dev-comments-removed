@@ -649,7 +649,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT T* extractRawBuffer();
+  MOZ_WARN_UNUSED_RESULT T* extractOrCopyRawBuffer();
 
   
 
@@ -1301,7 +1301,7 @@ Vector<T, N, AP>::popCopy()
 
 template<typename T, size_t N, class AP>
 inline T*
-Vector<T, N, AP>::extractRawBuffer()
+Vector<T, N, AP>::extractOrCopyRawBuffer()
 {
   T* ret;
   if (usingInlineStorage()) {
