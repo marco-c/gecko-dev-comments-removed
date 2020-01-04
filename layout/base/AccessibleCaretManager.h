@@ -138,6 +138,9 @@ protected:
   void UpdateCaretsForSelectionMode(UpdateCaretsHint aHint);
 
   
+  void ProvideHapticFeedback();
+
+  
   
   nsIFrame* GetFocusableFrame(nsIFrame* aFrame) const;
 
@@ -248,6 +251,9 @@ protected:
   
   
   static bool sCaretsExtendedVisibility;
+
+  
+  static bool sHapticFeedback;
 };
 
 std::ostream& operator<<(std::ostream& aStream,
