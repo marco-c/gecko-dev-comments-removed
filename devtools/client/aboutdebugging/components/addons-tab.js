@@ -8,11 +8,11 @@
 
 loader.lazyRequireGetter(this, "React",
   "devtools/client/shared/vendor/react");
-loader.lazyRequireGetter(this, "TargetListComponent",
+loader.lazyRequireGetter(this, "TargetList",
   "devtools/client/aboutdebugging/components/target-list", true);
-loader.lazyRequireGetter(this, "TabHeaderComponent",
+loader.lazyRequireGetter(this, "TabHeader",
   "devtools/client/aboutdebugging/components/tab-header", true);
-loader.lazyRequireGetter(this, "AddonsControlsComponent",
+loader.lazyRequireGetter(this, "AddonsControls",
   "devtools/client/aboutdebugging/components/addons-controls", true);
 loader.lazyRequireGetter(this, "Services");
 
@@ -23,8 +23,8 @@ const ExtensionIcon = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
 const Strings = Services.strings.createBundle(
   "chrome://devtools/locale/aboutdebugging.properties");
 
-exports.AddonsComponent = React.createClass({
-  displayName: "AddonsComponent",
+exports.AddonsTab = React.createClass({
+  displayName: "AddonsTab",
 
   getInitialState() {
     return {
@@ -55,13 +55,13 @@ exports.AddonsComponent = React.createClass({
     return React.createElement(
       "div", { id: "tab-addons", className: "tab", role: "tabpanel",
         "aria-labelledby": "tab-addons-header-name" },
-        React.createElement(TabHeaderComponent, {
+        React.createElement(TabHeader, {
           id: "tab-addons-header-name",
           name: Strings.GetStringFromName("addons")}),
-        React.createElement(AddonsControlsComponent, { debugDisabled }),
+        React.createElement(AddonsControls, { debugDisabled }),
         React.createElement(
           "div", { id: "addons" },
-          React.createElement(TargetListComponent,
+          React.createElement(TargetList,
             { name, targets, client, debugDisabled })
       )
     );
