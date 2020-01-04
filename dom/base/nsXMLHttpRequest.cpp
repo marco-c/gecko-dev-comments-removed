@@ -3104,13 +3104,8 @@ nsXMLHttpRequest::SetRequestHeader(const nsACString& header,
     mergeHeaders = false;
   }
 
-  nsresult rv;
-  if (value.IsEmpty()) {
-    rv = httpChannel->SetEmptyRequestHeader(header);
-  } else {
-    
-    rv = httpChannel->SetRequestHeader(header, value, mergeHeaders);
-  }
+  
+  nsresult rv = httpChannel->SetRequestHeader(header, value, mergeHeaders);
   if (rv == NS_ERROR_INVALID_ARG) {
     return NS_ERROR_DOM_SYNTAX_ERR;
   }
@@ -3451,13 +3446,9 @@ nsXMLHttpRequest::OnRedirectVerifyCallback(nsresult result)
       
       for (uint32_t i = mModifiedRequestHeaders.Length(); i > 0; ) {
         --i;
-        if (mModifiedRequestHeaders[i].value.IsEmpty()) {
-          httpChannel->SetEmptyRequestHeader(mModifiedRequestHeaders[i].header);
-        } else {
-          httpChannel->SetRequestHeader(mModifiedRequestHeaders[i].header,
-                                        mModifiedRequestHeaders[i].value,
-                                        false);
-        }
+        httpChannel->SetRequestHeader(mModifiedRequestHeaders[i].header,
+                                      mModifiedRequestHeaders[i].value,
+                                      false);
       }
     }
   } else {
