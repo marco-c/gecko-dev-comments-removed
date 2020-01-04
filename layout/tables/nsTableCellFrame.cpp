@@ -628,7 +628,8 @@ void nsTableCellFrame::BlockDirAlignChild(WritingMode aWM, nscoord aMaxAscent)
       kidBStart = (bSize - childBSize - bEndInset + bStartInset) / 2;
   }
   
-  kidBStart = std::max(0, kidBStart);
+  
+  kidBStart = std::max(bStartInset, kidBStart);
 
   if (kidBStart != kidRect.BStart(aWM)) {
     
