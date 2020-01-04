@@ -301,11 +301,12 @@ struct Zone : public JS::shadow::Zone,
     using WeakEdges = js::Vector<js::gc::TenuredCell**, 0, js::SystemAllocPolicy>;
     WeakEdges gcWeakRefs;
 
-    
-
-
-
     js::gc::WeakKeyTable gcWeakKeys;
+
+#ifdef JS_GC_MARKING_VALIDATION
+    
+    js::gc::WeakKeyTable gcSavedWeakKeys;
+#endif
 
     
     
