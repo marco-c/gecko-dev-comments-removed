@@ -1,5 +1,5 @@
 
-gUseRealCertChecks = true;
+Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, true);
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
