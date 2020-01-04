@@ -445,12 +445,17 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
 
   
   if (mIsOpenChanged) {
-    nsIScrollableFrame *scrollframe = do_QueryFrame(nsBox::GetChildXULBox(this));
-    if (scrollframe) {
-      nsWeakFrame weakFrame(this);
-      scrollframe->ScrollTo(nsPoint(0,0), nsIScrollableFrame::INSTANT);
-      if (!weakFrame.IsAlive()) {
-        return;
+    
+    nsCOMPtr<nsIDOMXULMenuListElement> menulist =
+      do_QueryInterface(aParentMenu ? aParentMenu->GetContent() : nullptr);
+    if (!menulist) {
+      nsIScrollableFrame *scrollframe = do_QueryFrame(nsBox::GetChildXULBox(this));
+      if (scrollframe) {
+        nsWeakFrame weakFrame(this);
+        scrollframe->ScrollTo(nsPoint(0,0), nsIScrollableFrame::INSTANT);
+        if (!weakFrame.IsAlive()) {
+          return;
+        }
       }
     }
   }
