@@ -143,25 +143,11 @@ Decoder::Write(const char* aBuffer, uint32_t aCount)
   MOZ_ASSERT(aCount > 0);
 
   
-  MOZ_ASSERT(!HasDecoderError(),
-             "Not allowed to make more decoder calls after error!");
-
-  
   TimeStamp start = TimeStamp::Now();
   mChunkCount++;
 
   
   mBytesDecoded += aCount;
-
-  
-  if (HasDataError()) {
-    return;
-  }
-
-  if (IsMetadataDecode() && HasSize()) {
-    
-    return;
-  }
 
   
   WriteInternal(aBuffer, aCount);
