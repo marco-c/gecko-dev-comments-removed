@@ -510,16 +510,12 @@ function matchVariablesViewProperty(prop, rule) {
 
 function* selectTreeItem(ids) {
   
-  
-  gUI.tree.expandAll();
-
-  let selector = "[data-id='" + JSON.stringify(ids) + "'] > .tree-widget-item";
-  let target = gPanelWindow.document.querySelector(selector);
-  ok(target, "tree item found with ids " + JSON.stringify(ids));
+  if (gUI.tree.isSelected(ids)) {
+    return;
+  }
 
   let updated = gUI.once("store-objects-updated");
-
-  yield click(target);
+  gUI.tree.selectedItem = ids;
   yield updated;
 }
 
@@ -845,8 +841,35 @@ function waitForContextMenu(popup, button, onShown, onHidden) {
   popup.addEventListener("popupshown", onPopupShown);
 
   info("wait for the context menu to open");
+  button.scrollIntoView();
   let eventDetails = {type: "contextmenu", button: 2};
   EventUtils.synthesizeMouse(button, 2, 2, eventDetails,
                              button.ownerDocument.defaultView);
   return deferred.promise;
+}
+
+
+
+
+
+
+
+
+
+
+function* checkState(state) {
+  for (let [store, names] of state) {
+    let storeName = store.join(" > ");
+    info(`Selecting tree item ${storeName}`);
+    yield selectTreeItem(store);
+
+    let items = gUI.table.items;
+
+    is(items.size, names.length,
+      `There is correct number of rows in ${storeName}`);
+    for (let name of names) {
+      ok(items.has(name),
+        `There is item with name '${name}' in ${storeName}`);
+    }
+  }
 }
