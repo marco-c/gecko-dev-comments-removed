@@ -8436,9 +8436,6 @@ CSSParserImpl::ParseGridLineNameListRepeat(nsCSSValueList** aTailPtr)
     kwd.SetIntValue(repeatAutoEnum.value(), eCSSUnit_Enumerated);
     *aTailPtr = (*aTailPtr)->mNext = new nsCSSValueList;
     (*aTailPtr)->mValue.SetPairValue(kwd, listValue);
-    
-    
-    *aTailPtr = (*aTailPtr)->mNext = new nsCSSValueList;
     return true;
   }
 

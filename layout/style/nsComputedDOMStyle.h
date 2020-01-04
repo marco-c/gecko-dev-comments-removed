@@ -180,8 +180,10 @@ private:
   void AppendGridLineNames(nsString& aResult,
                            const nsTArray<nsString>& aLineNames);
   
+  
   void AppendGridLineNames(nsDOMCSSValueList* aValueList,
-                           const nsTArray<nsString>& aLineNames);
+                           const nsTArray<nsString>& aLineNames,
+                           bool aSuppressEmptyList = true);
   
   void AppendGridLineNames(nsDOMCSSValueList* aValueList,
                            const nsTArray<nsString>& aLineNames1,
