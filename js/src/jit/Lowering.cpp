@@ -4682,6 +4682,7 @@ LIRGenerator::updateResumeState(MInstruction* ins)
 void
 LIRGenerator::updateResumeState(MBasicBlock* block)
 {
+    MOZ_ASSERT_IF(!mir()->compilingAsmJS(), block->entryResumePoint());
     lastResumePoint_ = block->entryResumePoint();
     if (JitSpewEnabled(JitSpew_IonSnapshots) && lastResumePoint_)
         SpewResumePoint(block, nullptr, lastResumePoint_);
@@ -4725,27 +4726,6 @@ LIRGenerator::visitBlock(MBasicBlock* block)
     
     if (!visitInstruction(block->lastIns()))
         return false;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (lastResumePoint_) {
-        for (size_t s = 0; s < block->numSuccessors(); s++) {
-            MBasicBlock* succ = block->getSuccessor(s);
-            if (!succ->entryResumePoint() && succ->numPredecessors() == 1) {
-                MOZ_ASSERT(succ->isSplitEdge());
-                MOZ_ASSERT(succ->phisBegin() == succ->phisEnd());
-                succ->setEntryResumePoint(lastResumePoint_);
-            }
-        }
-    }
 
     return true;
 }

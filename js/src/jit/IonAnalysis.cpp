@@ -422,26 +422,10 @@ SplitCriticalEdgesForBlock(MIRGraph& graph, MBasicBlock* block)
             continue;
 
         
-        MBasicBlock* split = MBasicBlock::NewSplitEdge(graph, block->info(), block);
+        
+        MBasicBlock* split = MBasicBlock::NewSplitEdge(graph, block->info(), block, i, target);
         if (!split)
             return false;
-        split->setLoopDepth(block->loopDepth());
-        graph.insertBlockAfter(block, split);
-        split->end(MGoto::New(graph.alloc(), target));
-
-        
-        
-        
-        
-        
-        
-        if (MResumePoint* rp = split->entryResumePoint()) {
-            rp->releaseUses();
-            split->clearEntryResumePoint();
-        }
-
-        block->replaceSuccessor(i, split);
-        target->replacePredecessor(block, split);
     }
     return true;
 }
