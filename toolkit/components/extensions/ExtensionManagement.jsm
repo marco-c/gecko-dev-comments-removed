@@ -264,6 +264,14 @@ function getAPILevelForWindow(window, addonId) {
     
     
     
+    let parentSameAddonPrivileges = getAPILevelForWindow(parentWindow, addonId);
+    if (parentSameAddonPrivileges > NO_PRIVILEGES) {
+      return parentSameAddonPrivileges;
+    }
+
+    
+    
+    
     return CONTENTSCRIPT_PRIVILEGES;
   }
 
