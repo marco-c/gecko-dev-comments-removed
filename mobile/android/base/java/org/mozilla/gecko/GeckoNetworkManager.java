@@ -49,6 +49,10 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
 
     private static GeckoNetworkManager instance;
 
+    
+    
+    private Context context;
+
     public static void destroy() {
         if (instance != null) {
             instance.onDestroy();
@@ -120,7 +124,8 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
         handleManagerEvent(ManagerEvent.receivedUpdate);
     }
 
-    public void start() {
+    public void start(final Context context) {
+        this.context = context;
         handleManagerEvent(ManagerEvent.start);
     }
 
@@ -152,7 +157,26 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
             return false;
         }
 
-        performActionsForStateEvent(currentState, event);
+        
+        
+        
+        
+        
+        
+        
+        final Context contextForAction;
+        if (context != null) {
+            contextForAction = context;
+        } else {
+            contextForAction = GeckoAppShell.getApplicationContext();
+        }
+
+        if (contextForAction == null) {
+            Log.w(LOGTAG, "Context is not available while processing event " + event + " for state " + currentState);
+            return false;
+        }
+
+        performActionsForStateEvent(contextForAction, currentState, event);
         currentState = nextState;
 
         return true;
@@ -221,7 +245,7 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
 
 
 
-    private void performActionsForStateEvent(ManagerState currentState, ManagerEvent event) {
+    private void performActionsForStateEvent(final Context context, final ManagerState currentState, final ManagerEvent event) {
         
         
         
@@ -229,39 +253,39 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
         switch (currentState) {
             case OffNoListeners:
                 if (event == ManagerEvent.start) {
-                    updateNetworkStateAndConnectionType();
-                    registerBroadcastReceiver();
+                    updateNetworkStateAndConnectionType(context);
+                    registerBroadcastReceiver(context, this);
                 }
                 if (event == ManagerEvent.enableNotifications) {
-                    updateNetworkStateAndConnectionType();
+                    updateNetworkStateAndConnectionType(context);
                 }
                 break;
             case OnNoListeners:
                 if (event == ManagerEvent.receivedUpdate) {
-                    updateNetworkStateAndConnectionType();
-                    sendNetworkStateToListeners();
+                    updateNetworkStateAndConnectionType(context);
+                    sendNetworkStateToListeners(context);
                 }
                 if (event == ManagerEvent.enableNotifications) {
-                    updateNetworkStateAndConnectionType();
-                    registerBroadcastReceiver();
+                    updateNetworkStateAndConnectionType(context);
+                    registerBroadcastReceiver(context, this);
                 }
                 if (event == ManagerEvent.stop) {
-                    unregisterBroadcastReceiver();
+                    unregisterBroadcastReceiver(context, this);
                 }
                 break;
             case OnWithListeners:
                 if (event == ManagerEvent.receivedUpdate) {
-                    updateNetworkStateAndConnectionType();
-                    sendNetworkStateToListeners();
+                    updateNetworkStateAndConnectionType(context);
+                    sendNetworkStateToListeners(context);
                 }
                 if (event == ManagerEvent.stop) {
-                    unregisterBroadcastReceiver();
+                    unregisterBroadcastReceiver(context, this);
                 }
                 
                 break;
             case OffWithListeners:
                 if (event == ManagerEvent.start) {
-                    registerBroadcastReceiver();
+                    registerBroadcastReceiver(context, this);
                 }
                 
                 break;
@@ -273,9 +297,8 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
     
 
 
-    private void updateNetworkStateAndConnectionType() {
-        final Context applicationContext = GeckoAppShell.getApplicationContext();
-        final ConnectivityManager connectivityManager = (ConnectivityManager) applicationContext.getSystemService(
+    private void updateNetworkStateAndConnectionType(final Context context) {
+        final ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(
                 Context.CONNECTIVITY_SERVICE);
         
         if (connectivityManager == null) {
@@ -297,7 +320,7 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
     
 
 
-    private void sendNetworkStateToListeners() {
+    private void sendNetworkStateToListeners(final Context context) {
         if (currentConnectionType != previousConnectionType ||
                 currentConnectionSubtype != previousConnectionSubtype) {
             previousConnectionType = currentConnectionType;
@@ -305,7 +328,7 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
 
             final boolean isWifi = currentConnectionType == ConnectionType.WIFI;
             final int gateway = !isWifi ? 0 :
-                    wifiDhcpGatewayAddress(GeckoAppShell.getApplicationContext());
+                    wifiDhcpGatewayAddress(context);
 
             if (GeckoThread.isRunning()) {
                 onConnectionChanged(currentConnectionType.value,
@@ -338,19 +361,19 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
     
 
 
-    private void unregisterBroadcastReceiver() {
-        GeckoAppShell.getApplicationContext().unregisterReceiver(this);
+    private static void unregisterBroadcastReceiver(final Context context, final BroadcastReceiver receiver) {
+        context.unregisterReceiver(receiver);
     }
 
     
 
 
-    private void registerBroadcastReceiver() {
+    private static void registerBroadcastReceiver(final Context context, final BroadcastReceiver receiver) {
         final IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        GeckoAppShell.getApplicationContext().registerReceiver(this, filter);
+        context.registerReceiver(receiver, filter);
     }
 
-    private static int wifiDhcpGatewayAddress(Context context) {
+    private static int wifiDhcpGatewayAddress(final Context context) {
         if (context == null) {
             return 0;
         }
@@ -449,6 +472,8 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
     }
 
     
+
+
 
 
 
