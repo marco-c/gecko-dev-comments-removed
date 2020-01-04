@@ -72,7 +72,8 @@ private:
   virtual ~VideoSink();
 
   
-  void OnVideoQueueEvent(RefPtr<MediaData>&& aSample);
+  void OnVideoQueuePushed(RefPtr<MediaData>&& aSample);
+  void OnVideoQueueFinished();
   void ConnectListener();
   void DisconnectListener();
 
@@ -129,6 +130,7 @@ private:
 
   
   MediaEventListener mPushListener;
+  MediaEventListener mFinishListener;
 
   
   bool mHasVideo;
