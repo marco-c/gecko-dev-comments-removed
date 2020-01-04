@@ -168,6 +168,20 @@ struct DeserializedStackFrame {
   JS::ubi::StackFrame getParentStackFrame() const;
 
   struct HashPolicy;
+
+protected:
+  
+  explicit DeserializedStackFrame()
+    : id(0)
+    , parent(Nothing())
+    , line(0)
+    , column(0)
+    , source(nullptr)
+    , functionDisplayName(nullptr)
+    , isSystem(false)
+    , isSelfHosted(false)
+    , owner(nullptr)
+  { };
 };
 
 struct DeserializedStackFrame::HashPolicy {
