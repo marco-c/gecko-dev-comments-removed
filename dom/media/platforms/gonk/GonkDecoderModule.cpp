@@ -18,13 +18,6 @@ GonkDecoderModule::~GonkDecoderModule()
 {
 }
 
-
-void
-GonkDecoderModule::Init()
-{
-  MOZ_ASSERT(NS_IsMainThread(), "Must be on main thread.");
-}
-
 already_AddRefed<MediaDataDecoder>
 GonkDecoderModule::CreateVideoDecoder(const VideoInfo& aConfig,
                                      mozilla::layers::LayersBackend aLayersBackend,
