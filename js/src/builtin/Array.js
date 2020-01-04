@@ -271,6 +271,7 @@ function ArrayMap(callbackfn) {
     var O = ToObject(this);
 
     
+    
     var len = TO_UINT32(O.length);
 
     
@@ -283,7 +284,7 @@ function ArrayMap(callbackfn) {
     var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
-    var A = std_Array(len);
+    var A = ArraySpeciesCreate(O, len);
 
     
     
