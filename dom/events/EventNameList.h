@@ -568,7 +568,7 @@ WINDOW_ONLY_EVENT(moznetworkdownload,
 #endif 
 
 TOUCH_EVENT(touchstart,
-            NS_TOUCH_START,
+            eTouchStart,
             EventNameType_All,
             eTouchEventClass)
 TOUCH_EVENT(touchend,

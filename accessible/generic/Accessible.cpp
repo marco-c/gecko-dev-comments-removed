@@ -1834,7 +1834,8 @@ Accessible::DispatchClickEvent(nsIContent *aContent, uint32_t aActionIndex)
   int32_t y = presContext->AppUnitsToDevPixels(point.y + size.height / 2);
 
   
-  nsCoreUtils::DispatchTouchEvent(NS_TOUCH_START, x, y, aContent, frame, presShell, widget);
+  nsCoreUtils::DispatchTouchEvent(eTouchStart, x, y, aContent, frame,
+                                  presShell, widget);
   nsCoreUtils::DispatchMouseEvent(eMouseDown, x, y, aContent, frame,
                                   presShell, widget);
   nsCoreUtils::DispatchTouchEvent(NS_TOUCH_END, x, y, aContent, frame, presShell, widget);
