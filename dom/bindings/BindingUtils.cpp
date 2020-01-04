@@ -477,8 +477,7 @@ ErrorResult::SetPendingException(JSContext* cx)
   }
   if (IsJSContextException()) {
     
-    
-    
+    MOZ_ASSERT(JS_IsExceptionPending(cx));
     mResult = NS_OK;
     return;
   }
@@ -511,6 +510,16 @@ ErrorResult::StealExceptionFromJSContext(JSContext* cx)
 
   ThrowJSException(cx, exn);
   JS_ClearPendingException(cx);
+}
+
+void
+ErrorResult::NoteJSContextException(JSContext* aCx)
+{
+  if (JS_IsExceptionPending(aCx)) {
+    mResult = NS_ERROR_DOM_EXCEPTION_ON_JSCONTEXT;
+  } else {
+    mResult = NS_ERROR_UNCATCHABLE_EXCEPTION;
+  }
 }
 
 namespace dom {

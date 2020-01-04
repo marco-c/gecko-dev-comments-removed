@@ -235,9 +235,9 @@ public:
 
   
   
-  void NoteJSContextException() {
-    mResult = NS_ERROR_DOM_EXCEPTION_ON_JSCONTEXT;
-  }
+  
+  void NoteJSContextException(JSContext* aCx);
+
   
   
   bool IsJSContextException() {

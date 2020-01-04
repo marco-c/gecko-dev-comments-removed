@@ -297,6 +297,12 @@ CallbackObject::CallSetup::~CallSetup()
       if (saved) {
         JS_RestoreFrameChain(mCx);
       }
+
+      if (mErrorResult.IsJSContextException()) {
+        
+        
+        mErrorResult.Throw(NS_ERROR_UNEXPECTED);
+      }
     }
   }
 

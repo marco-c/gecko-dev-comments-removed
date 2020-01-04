@@ -341,6 +341,11 @@ WrapperPromiseCallback::Call(JSContext* aCx,
 
   
   if (rv.Failed()) {
+    if (rv.IsUncatchableException()) {
+      
+      return rv.StealNSResult();
+    }
+
     JS::Rooted<JS::Value> value(aCx);
     { 
       
