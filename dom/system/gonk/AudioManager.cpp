@@ -1361,22 +1361,10 @@ AudioManager::VolumeStreamState::SetVolumeIndexToActiveDevices(uint32_t aIndex)
 
   
   
-  nsresult rv = SetVolumeIndex(aIndex, device);
+  nsresult rv;
+  rv = SetVolumeIndexToConsistentDeviceIfNeeded(aIndex, device);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
-  }
-
-  
-  
-  
-  
-  if (device != AUDIO_DEVICE_OUT_SPEAKER &&
-      mStreamType == AUDIO_STREAM_NOTIFICATION) {
-      
-      rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_SPEAKER);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
   }
 
   return NS_OK;
@@ -1393,7 +1381,7 @@ AudioManager::VolumeStreamState::SetVolumeIndexToAliasStreams(uint32_t aIndex,
     return NS_OK;
   }
 
-  nsresult rv = SetVolumeIndex(aIndex, aDevice);
+  nsresult rv = SetVolumeIndexToConsistentDeviceIfNeeded(aIndex, aDevice);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1411,6 +1399,27 @@ AudioManager::VolumeStreamState::SetVolumeIndexToAliasStreams(uint32_t aIndex,
   }
 
   return NS_OK;
+}
+
+nsresult
+AudioManager::VolumeStreamState::SetVolumeIndexToConsistentDeviceIfNeeded(uint32_t aIndex, uint32_t aDevice)
+{
+  nsresult rv;
+  if (aDevice == AUDIO_DEVICE_OUT_SPEAKER || aDevice == AUDIO_DEVICE_OUT_EARPIECE) {
+    
+    rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_SPEAKER);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_EARPIECE);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  } else {
+    
+    rv = SetVolumeIndex(aIndex, aDevice);
+  }
+  return rv;  
 }
 
 nsresult

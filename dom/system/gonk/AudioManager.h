@@ -87,6 +87,7 @@ public:
     nsresult SetVolumeIndexToActiveDevices(uint32_t aIndex);
     
     nsresult SetVolumeIndexToAliasStreams(uint32_t aIndex, uint32_t aDevice);
+    nsresult SetVolumeIndexToConsistentDeviceIfNeeded(uint32_t aIndex, uint32_t aDevice);
     nsresult SetVolumeIndex(uint32_t aIndex, uint32_t aDevice, bool aUpdateCache = true);
     
     void RestoreVolumeIndexToAllDevices();
