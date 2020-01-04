@@ -169,7 +169,7 @@ nsresult
 MediaFormatReader::Init(MediaDecoderReader* aCloneDonor)
 {
   MOZ_ASSERT(NS_IsMainThread(), "Must be on main thread.");
-  PDMFactory::Init();
+  PlatformDecoderModule::Init();
 
   InitLayersBackendType();
 
@@ -234,6 +234,20 @@ MediaFormatReader::IsWaitingOnCDMResource() {
 #else
   return false;
 #endif
+}
+
+bool
+MediaFormatReader::IsSupportedAudioMimeType(const nsACString& aMimeType)
+{
+  return mPlatform && (mPlatform->SupportsMimeType(aMimeType) ||
+    PlatformDecoderModule::AgnosticMimeType(aMimeType));
+}
+
+bool
+MediaFormatReader::IsSupportedVideoMimeType(const nsACString& aMimeType)
+{
+  return mPlatform && (mPlatform->SupportsMimeType(aMimeType) ||
+    PlatformDecoderModule::AgnosticMimeType(aMimeType));
 }
 
 nsRefPtr<MediaDecoderReader::MetadataPromise>
@@ -365,20 +379,33 @@ MediaFormatReader::EnsureDecodersCreated()
   MOZ_ASSERT(OnTaskQueue());
 
   if (!mPlatform) {
-    mPlatform = new PDMFactory();
-    NS_ENSURE_TRUE(mPlatform, false);
     if (IsEncrypted()) {
 #ifdef MOZ_EME
+      
+      
+      
+      
+      
+      
       MOZ_ASSERT(mCDMProxy);
-      mPlatform->SetCDMProxy(mCDMProxy);
+      mPlatform = PlatformDecoderModule::CreateCDMWrapper(mCDMProxy);
+      NS_ENSURE_TRUE(mPlatform, false);
 #else
       
       return false;
 #endif
+    } else {
+      mPlatform = PlatformDecoderModule::Create();
+      NS_ENSURE_TRUE(mPlatform, false);
     }
   }
 
+  MOZ_ASSERT(mPlatform);
+
   if (HasAudio() && !mAudio.mDecoder) {
+    NS_ENSURE_TRUE(IsSupportedAudioMimeType(mInfo.mAudio.mMimeType),
+                   false);
+
     mAudio.mDecoderInitialized = false;
     mAudio.mDecoder =
       mPlatform->CreateDecoder(mAudio.mInfo ?
@@ -390,6 +417,9 @@ MediaFormatReader::EnsureDecodersCreated()
   }
 
   if (HasVideo() && !mVideo.mDecoder) {
+    NS_ENSURE_TRUE(IsSupportedVideoMimeType(mInfo.mVideo.mMimeType),
+                   false);
+
     mVideo.mDecoderInitialized = false;
     
     

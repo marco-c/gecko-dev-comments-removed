@@ -44,16 +44,60 @@ class CDMProxy;
 
 
 
+
+
+
+
 class PlatformDecoderModule {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PlatformDecoderModule)
 
   
   
-  virtual nsresult Startup() { return NS_OK; };
+  static void Init();
 
   
-  virtual bool SupportsMimeType(const nsACString& aMimeType) = 0;
+  
+  
+  
+  
+  
+  static already_AddRefed<PlatformDecoderModule> Create();
+  
+  static already_AddRefed<PlatformDecoderModule> CreatePDM();
+
+  
+  
+  virtual nsresult Startup() { return NS_OK; };
+
+#ifdef MOZ_EME
+  
+  
+  
+  
+  
+  static already_AddRefed<PlatformDecoderModule>
+  CreateCDMWrapper(CDMProxy* aProxy);
+#endif
+
+  
+  
+  virtual already_AddRefed<MediaDataDecoder>
+  CreateDecoder(const TrackInfo& aConfig,
+                FlushableTaskQueue* aTaskQueue,
+                MediaDataDecoderCallback* aCallback,
+                layers::LayersBackend aLayersBackend = layers::LayersBackend::LAYERS_NONE,
+                layers::ImageContainer* aImageContainer = nullptr);
+
+  
+  
+  
+  
+  virtual bool SupportsMimeType(const nsACString& aMimeType);
+
+  
+  static bool AgnosticMimeType(const nsACString& aMimeType);
+
 
   enum ConversionRequired {
     kNeedNone,
@@ -66,13 +110,15 @@ public:
   
   virtual ConversionRequired DecoderNeedsConversion(const TrackInfo& aConfig) const = 0;
 
+  virtual bool SupportsSharedDecoders(const VideoInfo& aConfig) const {
+    return !AgnosticMimeType(aConfig.mMimeType);
+  }
+
 protected:
   PlatformDecoderModule() {}
   virtual ~PlatformDecoderModule() {}
 
   friend class H264Converter;
-  friend class PDMFactory;
-
   
   
   
@@ -105,8 +151,18 @@ protected:
   CreateAudioDecoder(const AudioInfo& aConfig,
                      FlushableTaskQueue* aAudioTaskQueue,
                      MediaDataDecoderCallback* aCallback) = 0;
-};
 
+  
+  static bool sUseBlankDecoder;
+  static bool sFFmpegDecoderEnabled;
+  static bool sGonkDecoderEnabled;
+  static bool sAndroidMCDecoderPreferred;
+  static bool sAndroidMCDecoderEnabled;
+  static bool sGMPDecoderEnabled;
+  static bool sEnableFuzzingWrapper;
+  static uint32_t sVideoOutputMinimumInterval_ms;
+  static bool sDontDelayInputExhausted;
+};
 
 
 
