@@ -2,7 +2,7 @@
 
 
 
-#include "AccCollector.h"
+#include "EmbeddedObjCollector.h"
 
 #include "Accessible.h"
 
