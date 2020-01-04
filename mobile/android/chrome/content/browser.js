@@ -6768,6 +6768,9 @@ var Experiments = {
   
   MALWARE_DOWNLOAD_PROTECTION: "malware-download-protection",
 
+  
+  OFFLINE_CACHE: "offline-cache",
+
   init() {
     Messaging.sendRequestForResult({
       type: "Experiments:GetActive"
@@ -6782,6 +6785,12 @@ var Experiments = {
             let defaults = Services.prefs.getDefaultBranch(null);
             defaults.setBoolPref("browser.safebrowsing.downloads.enabled", true);
             defaults.setBoolPref("browser.safebrowsing.downloads.remote.enabled", true);
+            continue;
+          }
+
+          case this.OFFLINE_CACHE: {
+            let defaults = Services.prefs.getDefaultBranch(null);
+            defaults.setBoolPref("browser.tabs.useCache", true);
             continue;
           }
         }

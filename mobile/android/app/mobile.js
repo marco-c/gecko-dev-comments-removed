@@ -33,7 +33,8 @@ pref("browser.tabs.expireTime", 900);
 
 
 
-pref("browser.tabs.useCache", true);
+
+pref("browser.tabs.useCache", false);
 
 
 pref("zoom.minPercent", 20);
