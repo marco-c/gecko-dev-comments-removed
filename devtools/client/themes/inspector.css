@@ -124,7 +124,7 @@
 
 #inspector-sidebar-container {
   overflow: hidden;
-  min-width: 450px;
+  min-width: 300px;
   position: relative;
 }
 
