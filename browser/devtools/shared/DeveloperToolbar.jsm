@@ -70,6 +70,9 @@ let CommandUtils = {
 
 
   createRequisition: function(target, options) {
+    if (!gcliInit) {
+      return promise.reject("Unable to load gcli");
+    }
     return gcliInit.getSystem(target).then(system => {
       var Requisition = require("gcli/cli").Requisition;
       return new Requisition(system, options);
