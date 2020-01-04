@@ -210,6 +210,7 @@ let findElementsContentFn = dispatch(findElementsContent);
 let isElementSelectedFn = dispatch(isElementSelected);
 let getElementLocationFn = dispatch(getElementLocation);
 let clearElementFn = dispatch(clearElement);
+let isElementDisplayedFn = dispatch(isElementDisplayed);
 
 
 
@@ -239,7 +240,7 @@ function startListeners() {
   addMessageListenerId("Marionette:getElementAttribute", getElementAttributeFn);
   addMessageListenerId("Marionette:getElementText", getElementTextFn);
   addMessageListenerId("Marionette:getElementTagName", getElementTagNameFn);
-  addMessageListenerId("Marionette:isElementDisplayed", isElementDisplayed);
+  addMessageListenerId("Marionette:isElementDisplayed", isElementDisplayedFn);
   addMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssProperty);
   addMessageListenerId("Marionette:getElementSize", getElementSizeFn);  
   addMessageListenerId("Marionette:getElementRect", getElementRectFn);
@@ -344,7 +345,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:getElementAttribute", getElementAttributeFn);
   removeMessageListenerId("Marionette:getElementText", getElementTextFn);
   removeMessageListenerId("Marionette:getElementTagName", getElementTagNameFn);
-  removeMessageListenerId("Marionette:isElementDisplayed", isElementDisplayed);
+  removeMessageListenerId("Marionette:isElementDisplayed", isElementDisplayedFn);
   removeMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssProperty);
   removeMessageListenerId("Marionette:getElementSize", getElementSizeFn); 
   removeMessageListenerId("Marionette:getElementRect", getElementRectFn);
@@ -1507,16 +1508,14 @@ function getElementTagName(id) {
 
 
 
-function isElementDisplayed(msg) {
-  let command_id = msg.json.command_id;
-  try {
-    let el = elementManager.getKnownElement(msg.json.id, curFrame);
-    let displayed = utils.isElementDisplayed(el);
-    checkVisibleAccessibility(accessibility.getAccessibleObject(el), displayed);
-    sendResponse({value: displayed}, command_id);
-  } catch (e) {
-    sendError(e, command_id);
-  }
+
+
+
+function isElementDisplayed(id) {
+  let el = elementManager.getKnownElement(id, curFrame);
+  let displayed = utils.isElementDisplayed(el);
+  checkVisibleAccessibility(accessibility.getAccessibleObject(el), displayed);
+  return displayed;
 }
 
 
