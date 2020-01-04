@@ -108,6 +108,16 @@
 
 #define XRE_SYS_SHARE_EXTENSION_PARENT_DIR "XRESysSExtPD"
 
+#if defined(XP_UNIX) || defined(XP_MACOSX)
+
+
+
+
+
+#define XRE_SYS_NATIVE_MESSAGING_MANIFESTS "XRESysNativeMessaging"
+#define XRE_USER_NATIVE_MESSAGING_MANIFESTS "XREUserNativeMessaging"
+#endif
+
 
 
 
