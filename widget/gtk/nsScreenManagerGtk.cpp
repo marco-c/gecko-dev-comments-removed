@@ -145,7 +145,7 @@ nsScreenManagerGtk :: Init()
 
     _XnrmQueryScreens_fn _XnrmQueryScreens = (_XnrmQueryScreens_fn)
         PR_FindFunctionSymbol(mXineramalib, "XineramaQueryScreens");
-
+        
     
     Display *display = GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
     if (_XnrmIsActive && _XnrmQueryScreens && _XnrmIsActive(display)) {
@@ -279,7 +279,7 @@ nsScreenManagerGtk::ScreenForRect(int32_t aX, int32_t aY,
   *aOutScreen = mCachedScreenArray.SafeObjectAt(which);
   NS_IF_ADDREF(*aOutScreen);
   return NS_OK;
-
+    
 } 
 
 
@@ -289,8 +289,8 @@ nsScreenManagerGtk::ScreenForRect(int32_t aX, int32_t aY,
 
 
 
-NS_IMETHODIMP
-nsScreenManagerGtk :: GetPrimaryScreen(nsIScreen * *aPrimaryScreen)
+NS_IMETHODIMP 
+nsScreenManagerGtk :: GetPrimaryScreen(nsIScreen * *aPrimaryScreen) 
 {
   nsresult rv;
   rv =  EnsureInit();
@@ -301,7 +301,7 @@ nsScreenManagerGtk :: GetPrimaryScreen(nsIScreen * *aPrimaryScreen)
   *aPrimaryScreen = mCachedScreenArray.SafeObjectAt(0);
   NS_IF_ADDREF(*aPrimaryScreen);
   return NS_OK;
-
+  
 } 
 
 
@@ -321,7 +321,7 @@ nsScreenManagerGtk :: GetNumberOfScreens(uint32_t *aNumberOfScreens)
   }
   *aNumberOfScreens = mCachedScreenArray.Count();
   return NS_OK;
-
+  
 } 
 
 NS_IMETHODIMP

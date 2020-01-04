@@ -184,7 +184,7 @@ nsSound::Init()
 {
     
     
-    if (mInited)
+    if (mInited) 
         return NS_OK;
 
     mInited = true;
@@ -429,7 +429,7 @@ NS_IMETHODIMP nsSound::PlaySystemSound(const nsAString &aSoundAlias)
 
     
     nsCOMPtr <nsIFile> soundFile;
-    rv = NS_NewLocalFile(aSoundAlias, true,
+    rv = NS_NewLocalFile(aSoundAlias, true, 
                          getter_AddRefs(soundFile));
     NS_ENSURE_SUCCESS(rv,rv);
 

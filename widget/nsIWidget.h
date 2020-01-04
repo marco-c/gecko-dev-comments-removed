@@ -170,13 +170,13 @@ enum nsTransparencyMode {
 
 
 enum nsCursor {   
-                eCursor_standard,
+                eCursor_standard, 
                   
-                eCursor_wait,
+                eCursor_wait, 
                   
-                eCursor_select,
+                eCursor_select, 
                   
-                eCursor_hyperlink,
+                eCursor_hyperlink, 
                   
                 eCursor_n_resize,
                 eCursor_s_resize,
@@ -212,7 +212,7 @@ enum nsCursor {
                 eCursor_none,
                 
                 eCursorCount
-                };
+                }; 
 
 enum nsTopLevelWidgetZPlacement { 
   eZPlacementBottom = 0,  
@@ -389,7 +389,7 @@ class nsIWidget : public nsISupports
       ClearNativeTouchSequence(nullptr);
     }
 
-
+        
     
 
 
@@ -590,7 +590,7 @@ class nsIWidget : public nsISupports
     nsIWidget* GetFirstChild() const {
         return mFirstChild;
     }
-
+    
     
 
 
@@ -605,14 +605,14 @@ class nsIWidget : public nsISupports
     nsIWidget* GetNextSibling() const {
         return mNextSibling;
     }
-
+    
     
 
 
     void SetNextSibling(nsIWidget* aSibling) {
         mNextSibling = aSibling;
     }
-
+    
     
 
 
@@ -1378,7 +1378,7 @@ class nsIWidget : public nsISupports
 
 
     NS_IMETHOD EnableDragDrop(bool aEnable) = 0;
-
+   
     
 
 
@@ -1752,7 +1752,7 @@ public:
     
 
 
-    bool PluginHasFocus()
+    bool PluginHasFocus() 
     {
       return GetInputContext().mIMEState.mEnabled == IMEState::PLUGIN;
     }

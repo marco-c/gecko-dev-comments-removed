@@ -422,7 +422,7 @@ public:
                                                     nsIObserver* aObserver) override;
 
   
-
+  
   virtual bool      DispatchWindowEvent(mozilla::WidgetGUIEvent& event);
 
   void WillPaintWindow();

@@ -866,7 +866,7 @@ protected:
     DWORD Cookie() const { return mCookie; }
     bool OnMouseButtonEvent(ULONG aEdge, ULONG aQuadrant, DWORD aButtonStatus);
     LONG RangeStart() const { return mStart; }
-
+  
   private:
     RefPtr<ITfMouseSink> mSink;
     LONG mStart;
