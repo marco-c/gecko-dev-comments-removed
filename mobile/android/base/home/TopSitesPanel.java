@@ -342,6 +342,11 @@ public class TopSitesPanel extends HomeFragment {
             
             
             super.onCreateContextMenu(menu, view, menuInfo);
+
+            if (!RestrictedProfiles.isAllowed(view.getContext(), Restriction.DISALLOW_CLEAR_HISTORY)) {
+                menu.findItem(R.id.home_remove).setVisible(false);
+            }
+
             return;
         }
 
