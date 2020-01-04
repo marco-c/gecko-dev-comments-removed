@@ -1309,6 +1309,12 @@ function TypedArrayStaticOf() {
 }
 
 
+function TypedArraySpecies() {
+    
+    return this;
+}
+
+
 function ArrayBufferSlice(start, end) {
     
     var O = this;
@@ -1396,4 +1402,10 @@ function ArrayBufferStaticSlice(buf, start, end) {
     if (arguments.length < 1)
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, 'ArrayBuffer.slice');
     return callFunction(ArrayBufferSlice, buf, start, end);
+}
+
+
+function ArrayBufferSpecies() {
+    
+    return this;
 }
