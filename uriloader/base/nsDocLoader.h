@@ -26,7 +26,7 @@
 #include "nsISecurityEventSink.h"
 #include "nsISupportsPriority.h"
 #include "nsCOMPtr.h"
-#include "pldhash.h"
+#include "PLDHashTable.h"
 #include "nsAutoPtr.h"
 
 #include "mozilla/LinkedList.h"

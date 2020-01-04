@@ -4,7 +4,7 @@
 
 
 
-#include "pldhash.h"
+#include "PLDHashTable.h"
 #include "gtest/gtest.h"
 
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef pldhash_h___
-#define pldhash_h___
+#ifndef PLDHashTable_h
+#define PLDHashTable_h
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h" 

@@ -11,7 +11,7 @@
 
 
 
-#include "pldhash.h"
+#include "PLDHashTable.h"
 #include "nsDebug.h"
 #include "StackArena.h"
 

@@ -8,7 +8,7 @@
 #define nsTHashtable_h__
 
 #include "nscore.h"
-#include "pldhash.h"
+#include "PLDHashTable.h"
 #include "nsDebug.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/MemoryChecking.h"
