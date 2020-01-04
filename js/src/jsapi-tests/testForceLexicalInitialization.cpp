@@ -5,9 +5,9 @@
 
 
 
+#include "jsfriendapi.h"
 #include "jsapi-tests/tests.h"
 #include "vm/ScopeObject.h"
-#include "jsfriendapi.h"
 
 BEGIN_TEST(testForceLexicalInitialization)
 {
