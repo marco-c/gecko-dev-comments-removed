@@ -809,11 +809,8 @@ setReq.onerror = function() {
         if not self.marionette:
             self.start_marionette()
             
-            if not self._capabilities:
-                self.capabilities
             
-            
-            if self._capabilities['device'] == "desktop":
+            if self.capabilities['device'] == "desktop":
                 need_external_ip = False
         self.logger.info('Initial Profile Destination is '
                          '"{}"'.format(self.marionette.profile_path))
