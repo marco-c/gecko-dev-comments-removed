@@ -325,7 +325,10 @@ private:
 
 
 
-  void SetMetadata(const ImageMetadata& aMetadata, bool aFromMetadataDecode);
+
+
+
+  bool SetMetadata(const ImageMetadata& aMetadata, bool aFromMetadataDecode);
 
   
 

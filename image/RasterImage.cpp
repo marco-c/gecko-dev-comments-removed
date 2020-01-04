@@ -811,14 +811,14 @@ RasterImage::OnAddedFrame(uint32_t aNewFrameCount,
   }
 }
 
-void
+bool
 RasterImage::SetMetadata(const ImageMetadata& aMetadata,
                          bool aFromMetadataDecode)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mError) {
-    return;
+    return true;
   }
 
   if (aMetadata.HasSize()) {
@@ -826,7 +826,7 @@ RasterImage::SetMetadata(const ImageMetadata& aMetadata,
     if (size.width < 0 || size.height < 0) {
       NS_WARNING("Image has negative intrinsic size");
       DoError();
-      return;
+      return true;
     }
 
     MOZ_ASSERT(aMetadata.HasOrientation());
@@ -837,7 +837,7 @@ RasterImage::SetMetadata(const ImageMetadata& aMetadata,
       NS_WARNING("Image changed size or orientation on redecode! "
                  "This should not happen!");
       DoError();
-      return;
+      return true;
     }
 
     
@@ -859,7 +859,7 @@ RasterImage::SetMetadata(const ImageMetadata& aMetadata,
       
       
       
-      RecoverFromInvalidFrames(mSize, DECODE_FLAGS_DEFAULT);
+      return false;
     }
   }
 
@@ -881,6 +881,8 @@ RasterImage::SetMetadata(const ImageMetadata& aMetadata,
     Set("hotspotX", intwrapx);
     Set("hotspotY", intwrapy);
   }
+
+  return true;
 }
 
 NS_IMETHODIMP
@@ -1732,7 +1734,18 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder)
   }
 
   
-  SetMetadata(aDecoder->GetImageMetadata(), wasMetadata);
+  bool metadataOK = SetMetadata(aDecoder->GetImageMetadata(), wasMetadata);
+  if (!metadataOK) {
+    
+    
+    
+    aDecoder->TakeProgress();
+    aDecoder->TakeInvalidRect();
+    RecoverFromInvalidFrames(mSize,
+                             FromSurfaceFlags(aDecoder->GetSurfaceFlags()));
+    return;
+  }
+
   MOZ_ASSERT(mError || mHasSize || !aDecoder->HasSize(),
              "SetMetadata should've gotten a size");
 
