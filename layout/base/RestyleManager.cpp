@@ -886,6 +886,19 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         hint |= nsChangeHint_RepaintFrame;
       }
 
+      if (hint & nsChangeHint_UpdateBackgroundPosition) {
+        
+        
+        hint |= nsChangeHint_SchedulePaint;
+        if (frame->IsFrameOfType(nsIFrame::eTablePart) ||
+            frame->IsFrameOfType(nsIFrame::eMathML)) {
+          
+          
+          
+          hint |= nsChangeHint_RepaintFrame;
+        }
+      }
+
       if (hint & (nsChangeHint_RepaintFrame | nsChangeHint_SyncFrameView |
                   nsChangeHint_UpdateOpacityLayer | nsChangeHint_UpdateTransformLayer |
                   nsChangeHint_ChildrenOnlyTransform | nsChangeHint_SchedulePaint)) {
