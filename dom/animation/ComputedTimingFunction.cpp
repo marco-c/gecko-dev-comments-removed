@@ -73,6 +73,14 @@ ComputedTimingFunction::GetValue(
     }
 
     
+    if (aPortion == 0.0) {
+      return 0.0;
+    }
+    if (aPortion == 1.0) {
+      return 1.0;
+    }
+
+    
     
     if (aPortion < 0.0) {
       if (mTimingFunction.X1() > 0.0) {
