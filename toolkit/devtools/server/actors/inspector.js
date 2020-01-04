@@ -224,6 +224,19 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
            this.rawNode.ownerDocument.documentElement === this.rawNode;
   },
 
+  destroy: function () {
+    protocol.Actor.prototype.destroy.call(this);
+
+    if (this.mutationObserver) {
+      if (!Cu.isDeadWrapper(this.mutationObserver)) {
+        this.mutationObserver.disconnect();
+      }
+      this.mutationObserver = null;
+    }
+    this.rawNode = null;
+    this.walker = null;
+  },
+
   
   form: function(detail) {
     if (detail === "actorid") {
@@ -294,6 +307,25 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
     });
 
     return form;
+  },
+
+  
+
+
+
+  watchDocument: function(callback) {
+    let node = this.rawNode;
+    
+    
+    let observer = new node.defaultView.MutationObserver(callback);
+    observer.mergeAttributeRecords = true;
+    observer.observe(node, {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true
+    });
+    this.mutationObserver = observer;
   },
 
   get isBeforePseudoElement() {
@@ -741,12 +773,6 @@ let NodeFront = protocol.FrontClass(NodeActor, {
 
 
   destroy: function() {
-    
-    if (this.observer) {
-      this.observer.disconnect();
-      this.observer = null;
-    }
-
     protocol.Front.prototype.destroy.call(this);
   },
 
@@ -1368,7 +1394,7 @@ var WalkerActor = protocol.ActorClass({
     this._refMap.set(node, actor);
 
     if (node.nodeType === Ci.nsIDOMNode.DOCUMENT_NODE) {
-      this._watchDocument(actor);
+      actor.watchDocument(this.onMutations);
     }
     return actor;
   },
@@ -1462,24 +1488,6 @@ var WalkerActor = protocol.ActorClass({
       nodes: nodeActors,
       newParents: [...newParents]
     };
-  },
-
-  
-
-
-
-  _watchDocument: function(actor) {
-    let node = actor.rawNode;
-    
-    
-    actor.observer = new actor.rawNode.defaultView.MutationObserver(this.onMutations);
-    actor.observer.mergeAttributeRecords = true;
-    actor.observer.observe(node, {
-      attributes: true,
-      characterData: true,
-      childList: true,
-      subtree: true
-    });
   },
 
   
