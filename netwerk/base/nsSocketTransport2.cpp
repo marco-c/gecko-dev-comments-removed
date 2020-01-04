@@ -744,6 +744,7 @@ nsSocketTransport::nsSocketTransport()
     , mOutputClosed(true)
     , mResolving(false)
     , mNetAddrIsSet(false)
+    , mSelfAddrIsSet(false)
     , mLock("nsSocketTransport.mLock")
     , mFD(this)
     , mFDref(0)
@@ -910,6 +911,7 @@ nsSocketTransport::InitWithFilename(const char *filename)
 nsresult
 nsSocketTransport::InitWithConnectedSocket(PRFileDesc *fd, const NetAddr *addr)
 {
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread, "wrong thread");
     NS_ASSERTION(!mFD.IsInitialized(), "already initialized");
 
     char buf[kNetAddrMaxCStrBufSize];
@@ -930,6 +932,7 @@ nsSocketTransport::InitWithConnectedSocket(PRFileDesc *fd, const NetAddr *addr)
     mPollFlags = (PR_POLL_READ | PR_POLL_WRITE | PR_POLL_EXCEPT);
     mPollTimeout = mTimeouts[TIMEOUT_READ_WRITE];
     mState = STATE_TRANSFERRING;
+    SetSocketName(fd);
     mNetAddrIsSet = true;
 
     {
@@ -1649,6 +1652,7 @@ nsSocketTransport::OnMsgOutputClosed(nsresult reason)
 void
 nsSocketTransport::OnSocketConnected()
 {
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread, "wrong thread");
     SOCKET_LOG(("  advancing to STATE_TRANSFERRING\n"));
 
     mPollFlags = (PR_POLL_READ | PR_POLL_WRITE | PR_POLL_EXCEPT);
@@ -1665,6 +1669,7 @@ nsSocketTransport::OnSocketConnected()
         MutexAutoLock lock(mLock);
         NS_ASSERTION(mFD.IsInitialized(), "no socket");
         NS_ASSERTION(mFDref == 1, "wrong socket ref count");
+        SetSocketName(mFD);
         mFDconnected = true;
     }
 
@@ -1677,6 +1682,22 @@ nsSocketTransport::OnSocketConnected()
     }
 
     SendStatus(NS_NET_STATUS_CONNECTED_TO);
+}
+
+void
+nsSocketTransport::SetSocketName(PRFileDesc *fd)
+{
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread, "wrong thread");
+    if (mSelfAddrIsSet) {
+        return;
+    }
+
+    PRNetAddr prAddr;
+    memset(&prAddr, 0, sizeof(prAddr));
+    if (PR_GetSockName(fd, &prAddr) == PR_SUCCESS) {
+        PRNetAddrToNetAddr(&prAddr, &mSelfAddr);
+        mSelfAddrIsSet = true;
+    }
 }
 
 PRFileDesc *
@@ -2328,28 +2349,16 @@ nsSocketTransport::GetSelfAddr(NetAddr *addr)
     
     
     
+    
 
-    PRFileDescAutoLock fd(this);
-    if (!fd.IsInitialized()) {
-        return NS_ERROR_NOT_CONNECTED;
+    if (!mSelfAddrIsSet) {
+        SOCKET_LOG(("nsSocketTransport::GetSelfAddr [this=%p state=%d] "
+                    "NOT_AVAILABLE because not yet connected.", this, mState));
+        return NS_ERROR_NOT_AVAILABLE;
     }
 
-    PRNetAddr prAddr;
-
-    
-    
-    
-    
-    
-    
-    
-    memset(&prAddr, 0, sizeof(prAddr));
-
-    nsresult rv =
-        (PR_GetSockName(fd, &prAddr) == PR_SUCCESS) ? NS_OK : NS_ERROR_FAILURE;
-    PRNetAddrToNetAddr(&prAddr, addr);
-
-    return rv;
+    memcpy(addr, &mSelfAddr, sizeof(NetAddr));
+    return NS_OK;
 }
 
 NS_IMETHODIMP

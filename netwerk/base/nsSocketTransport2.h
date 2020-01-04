@@ -321,8 +321,11 @@ private:
 
     
     
+    void                    SetSocketName(PRFileDesc *fd);
     mozilla::net::NetAddr   mNetAddr;
-    bool                    mNetAddrIsSet;
+    mozilla::net::NetAddr   mSelfAddr; 
+    mozilla::Atomic<bool, mozilla::Relaxed> mNetAddrIsSet;
+    mozilla::Atomic<bool, mozilla::Relaxed> mSelfAddrIsSet;
 
     nsAutoPtr<mozilla::net::NetAddr> mBindAddr;
 
