@@ -1898,6 +1898,8 @@ JS_StringToId(JSContext* cx, JS::HandleString s, JS::MutableHandleId idp);
 extern JS_PUBLIC_API(bool)
 JS_IdToValue(JSContext* cx, jsid id, JS::MutableHandle<JS::Value> vp);
 
+namespace JS {
+
 
 
 
@@ -1908,10 +1910,7 @@ JS_IdToValue(JSContext* cx, jsid id, JS::MutableHandle<JS::Value> vp);
 
 
 extern JS_PUBLIC_API(bool)
-JS_DefaultValue(JSContext* cx, JS::HandleObject obj, JSType hint,
-                JS::MutableHandleValue vp);
-
-namespace JS {
+ToPrimitive(JSContext* cx, JS::HandleObject obj, JSType hint, JS::MutableHandleValue vp);
 
 
 
