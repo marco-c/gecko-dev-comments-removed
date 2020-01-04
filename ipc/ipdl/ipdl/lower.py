@@ -4339,69 +4339,29 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         read = MethodDefn(self.readMethodDecl(outtype, var))
         read.decl.params.append(Decl(Type.BOOL, nullablevar.name))
 
-        
-        
-        
-        
-        
+        actorvar = ExprVar('actor')
         read.addstmts([
-            StmtDecl(Decl(_actorIdType(), idvar.name)),
-            self.checkedRead(None, ExprAddrOf(idvar),
-                             self.msgvar, self.itervar, errfnRead,
-                             '\'id\' for \'' + cxxtype.name + '\''),
+            StmtDecl(Decl(Type('Maybe', T=Type('mozilla::ipc::IProtocol', ptr=1)), actorvar.name),
+                     init=ExprCall(ExprVar('ReadActor'),
+                                   args=[ self.msgvar, self.itervar, nullablevar,
+                                          ExprLiteral.String(actortype.name()),
+                                          _protocolId(actortype) ])),
         ])
 
-        ifbadid = StmtIf(ExprBinary(
-            ExprBinary(_FREED_ACTOR_ID, '==', idvar),
-            '||',
-            ExprBinary(ExprBinary(_NULL_ACTOR_ID, '==', idvar),
-                       '&&',
-                       ExprNot(nullablevar))))
-        ifbadid.addifstmts([
-                _protocolErrorBreakpoint('bad ID for '+ self.protocol.name),
-                StmtReturn.FALSE
+        
+        
+        
+        
+        ifnothing = StmtIf(ExprCall(ExprSelect(actorvar, '.', 'isNothing')))
+        ifnothing.addifstmts([
+            StmtReturn.FALSE,
         ])
-        read.addstmts([ ifbadid, Whitespace.NL ])
 
-        
-        
-        
-        outactor = ExprDeref(var)
-        ifnull = StmtIf(ExprBinary(_NULL_ACTOR_ID, '==', idvar))
-        ifnull.addifstmts([ StmtExpr(ExprAssn(outactor, ExprLiteral.NULL)),
-                            StmtReturn.TRUE ])
-        read.addstmts([ ifnull, Whitespace.NL ])
+        read.addstmts([ ifnothing, Whitespace.NL ])
 
-        
-        
-        
-        listenervar = ExprVar('listener')
-        read.addstmt(StmtDecl(Decl(Type('ChannelListener', ptr=1),
-                                   listenervar.name),
-                              init=_lookupListener(idvar)))
-        ifnotfound = StmtIf(ExprNot(listenervar))
-        ifnotfound.addifstmts([
-                _protocolErrorBreakpoint('could not look up '+ actortype.name()),
-                StmtReturn.FALSE
-        ])
-        read.addstmts([ ifnotfound, Whitespace.NL ])
-
-        
-        
-        ifbadtype = StmtIf(ExprBinary(
-                _protocolId(actortype), '!=',
-                ExprCall(ExprSelect(listenervar, '->', 'GetProtocolTypeId'))))
-        ifbadtype.addifstmts([
-                _protocolErrorBreakpoint('actor that should be of type '+ actortype.name() +' has different type'),
-                StmtReturn.FALSE
-        ])
-        read.addstmts([ ifbadtype, Whitespace.NL ])
-
-        
-        
         read.addstmts([
-                StmtExpr(ExprAssn(outactor,
-                                  ExprCast(listenervar, cxxtype, static=1))),
+                StmtExpr(ExprAssn(ExprDeref(var),
+                                  ExprCast(ExprCall(ExprSelect(actorvar, '.', 'value')), cxxtype, static=1))),
                 StmtReturn.TRUE
         ])
 
