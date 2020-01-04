@@ -426,6 +426,10 @@ struct ParamTraits<nsLiteralString> : ParamTraits<nsAString>
 
 bool ByteLengthIsValid(uint32_t aNumElements, size_t aElementSize, int* aByteLength);
 
+
+
+
+
 template <typename E>
 struct ParamTraits<nsTArray<E>>
 {
