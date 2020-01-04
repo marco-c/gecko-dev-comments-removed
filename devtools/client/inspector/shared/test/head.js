@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 
@@ -77,7 +78,7 @@ registerCleanupFunction(() => {
 
 
 var _addTab = addTab;
-addTab = function(url) {
+addTab = function (url) {
   return _addTab(url).then(tab => {
     info("Loading the helper frame script " + FRAME_SCRIPT_URL);
     let browser = tab.linkedBrowser;
@@ -125,7 +126,8 @@ function waitForContentMessage(name) {
 
 
 
-function executeInContent(name, data={}, objects={}, expectResponse=true) {
+function executeInContent(name, data = {}, objects = {},
+                          expectResponse = true) {
   info("Sending message " + name + " to content");
   let mm = gBrowser.selectedBrowser.messageManager;
 
@@ -184,8 +186,8 @@ function* waitForComputedStyleProperty(selector, pseudo, name, expected) {
 
 
 
-var focusEditableField = Task.async(function*(ruleView, editable, xOffset=1,
-    yOffset=1, options={}) {
+var focusEditableField = Task.async(function* (ruleView, editable, xOffset = 1,
+                                               yOffset = 1, options = {}) {
   let onFocus = once(editable.parentNode, "focus", true);
   info("Clicking on editable field to turn to edit mode");
   EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
@@ -211,7 +213,7 @@ var focusEditableField = Task.async(function*(ruleView, editable, xOffset=1,
 
 
 
-function waitForSuccess(validatorFn, name="untitled") {
+function waitForSuccess(validatorFn, name = "untitled") {
   let def = promise.defer();
 
   function wait(validator) {
@@ -236,7 +238,7 @@ function waitForSuccess(validatorFn, name="untitled") {
 
 
 
-var getFontFamilyDataURL = Task.async(function*(font, nodeFront) {
+var getFontFamilyDataURL = Task.async(function* (font, nodeFront) {
   let fillStyle = (Services.prefs.getCharPref("devtools.theme") === "light") ?
       "black" : "white";
 
@@ -372,7 +374,7 @@ function getRuleViewSelectorHighlighterIcon(view, selectorText) {
 
 
 
-var simulateColorPickerChange = Task.async(function*(ruleView, colorPicker,
+var simulateColorPickerChange = Task.async(function* (ruleView, colorPicker,
     newRgba, expectedChange) {
   let onRuleViewChanged = ruleView.once("ruleview-changed");
   info("Getting the spectrum colorpicker object");
@@ -447,7 +449,7 @@ function getRuleViewRuleEditor(view, childrenIndex, nodeIndex) {
 
 
 
-var focusNewRuleViewProperty = Task.async(function*(ruleEditor) {
+var focusNewRuleViewProperty = Task.async(function* (ruleEditor) {
   info("Clicking on a close ruleEditor brace to start editing a new property");
   ruleEditor.closeBrace.scrollIntoView();
   let editor = yield focusEditableField(ruleEditor.ruleView,
@@ -472,7 +474,7 @@ var focusNewRuleViewProperty = Task.async(function*(ruleEditor) {
 
 
 
-var createNewRuleViewProperty = Task.async(function*(ruleEditor, inputValue) {
+var createNewRuleViewProperty = Task.async(function* (ruleEditor, inputValue) {
   info("Creating a new property editor");
   let editor = yield focusNewRuleViewProperty(ruleEditor);
 
@@ -496,7 +498,7 @@ var createNewRuleViewProperty = Task.async(function*(ruleEditor, inputValue) {
 
 
 
-var setSearchFilter = Task.async(function*(view, searchValue) {
+var setSearchFilter = Task.async(function* (view, searchValue) {
   info("Setting filter text to \"" + searchValue + "\"");
   let win = view.styleWindow;
   let searchField = view.searchField;
