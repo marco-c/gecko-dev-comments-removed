@@ -350,111 +350,6 @@ ClientTiledLayerBuffer::GetContentType(SurfaceMode* aMode) const
   return content;
 }
 
-gfxMemorySharedReadLock::gfxMemorySharedReadLock()
-  : mReadCount(1)
-{
-  MOZ_COUNT_CTOR(gfxMemorySharedReadLock);
-}
-
-gfxMemorySharedReadLock::~gfxMemorySharedReadLock()
-{
-  
-  MOZ_ASSERT(mReadCount == 1);
-  MOZ_COUNT_DTOR(gfxMemorySharedReadLock);
-}
-
-int32_t
-gfxMemorySharedReadLock::ReadLock()
-{
-  NS_ASSERT_OWNINGTHREAD(gfxMemorySharedReadLock);
-
-  return PR_ATOMIC_INCREMENT(&mReadCount);
-}
-
-int32_t
-gfxMemorySharedReadLock::ReadUnlock()
-{
-  int32_t readCount = PR_ATOMIC_DECREMENT(&mReadCount);
-  MOZ_ASSERT(readCount >= 0);
-
-  return readCount;
-}
-
-int32_t
-gfxMemorySharedReadLock::GetReadCount()
-{
-  NS_ASSERT_OWNINGTHREAD(gfxMemorySharedReadLock);
-  return mReadCount;
-}
-
-gfxShmSharedReadLock::gfxShmSharedReadLock(ClientIPCAllocator* aAllocator)
-  : mAllocator(aAllocator)
-  , mAllocSuccess(false)
-{
-  MOZ_COUNT_CTOR(gfxShmSharedReadLock);
-  MOZ_ASSERT(mAllocator);
-  if (mAllocator) {
-#define MOZ_ALIGN_WORD(x) (((x) + 3) & ~3)
-    if (mAllocator->AsLayerForwarder()->GetTileLockAllocator()->AllocShmemSection(
-        MOZ_ALIGN_WORD(sizeof(ShmReadLockInfo)), &mShmemSection)) {
-      ShmReadLockInfo* info = GetShmReadLockInfoPtr();
-      info->readCount = 1;
-      mAllocSuccess = true;
-    }
-  }
-}
-
-gfxShmSharedReadLock::~gfxShmSharedReadLock()
-{
-  auto fwd = mAllocator->AsLayerForwarder();
-  if (fwd) {
-    
-    
-    ReadUnlock();
-  }
-  MOZ_COUNT_DTOR(gfxShmSharedReadLock);
-}
-
-int32_t
-gfxShmSharedReadLock::ReadLock() {
-  NS_ASSERT_OWNINGTHREAD(gfxShmSharedReadLock);
-  if (!mAllocSuccess) {
-    return 0;
-  }
-  ShmReadLockInfo* info = GetShmReadLockInfoPtr();
-  return PR_ATOMIC_INCREMENT(&info->readCount);
-}
-
-int32_t
-gfxShmSharedReadLock::ReadUnlock() {
-  if (!mAllocSuccess) {
-    return 0;
-  }
-  ShmReadLockInfo* info = GetShmReadLockInfoPtr();
-  int32_t readCount = PR_ATOMIC_DECREMENT(&info->readCount);
-  MOZ_ASSERT(readCount >= 0);
-  if (readCount <= 0) {
-    auto fwd = mAllocator->AsLayerForwarder();
-    if (fwd) {
-      fwd->GetTileLockAllocator()->DeallocShmemSection(mShmemSection);
-    } else {
-      
-      FixedSizeSmallShmemSectionAllocator::FreeShmemSection(mShmemSection);
-    }
-  }
-  return readCount;
-}
-
-int32_t
-gfxShmSharedReadLock::GetReadCount() {
-  NS_ASSERT_OWNINGTHREAD(gfxShmSharedReadLock);
-  if (!mAllocSuccess) {
-    return 0;
-  }
-  ShmReadLockInfo* info = GetShmReadLockInfoPtr();
-  return info->readCount;
-}
-
 class TileExpiry final : public nsExpirationTracker<TileClient, 3>
 {
   public:
@@ -599,7 +494,7 @@ TileClient::Flip()
   mFrontBufferOnWhite = mBackBufferOnWhite;
   mBackBuffer.Set(this, frontBuffer);
   mBackBufferOnWhite = frontBufferOnWhite;
-  RefPtr<gfxSharedReadLock> frontLock = mFrontLock;
+  RefPtr<TextureReadLock> frontLock = mFrontLock;
   mFrontLock = mBackLock;
   mBackLock = frontLock;
   nsIntRegion invalidFront = mInvalidFront;
@@ -775,16 +670,9 @@ TileClient::GetBackBuffer(const nsIntRegion& aDirtyRegion,
         }
       }
 
-      
-      if (mManager->AsShadowForwarder()->IsSameProcess()) {
-        
-        
-        mBackLock = new gfxMemorySharedReadLock();
-      } else {
-        mBackLock = new gfxShmSharedReadLock(mManager->AsShadowForwarder());
-      }
+      mBackLock = TextureReadLock::Create(mManager->AsShadowForwarder());
 
-      MOZ_ASSERT(mBackLock->IsValid());
+      MOZ_ASSERT(mBackLock && mBackLock->IsValid());
 
       createdTextureClient = true;
       mInvalidBack = IntRect(0, 0, mBackBuffer->GetSize().width, mBackBuffer->GetSize().height);
@@ -840,27 +728,15 @@ TileClient::GetTileDescriptor()
   MOZ_ASSERT(mFrontLock);
   bool wasPlaceholder = mWasPlaceholder;
   mWasPlaceholder = false;
-  if (mFrontLock->GetType() == gfxSharedReadLock::TYPE_MEMORY) {
-    
-    
-    
-    mFrontLock.get()->AddRef();
-  }
 
-  if (mFrontLock->GetType() == gfxSharedReadLock::TYPE_MEMORY) {
-    return TexturedTileDescriptor(nullptr, mFrontBuffer->GetIPDLActor(),
-                                  mFrontBufferOnWhite ? MaybeTexture(mFrontBufferOnWhite->GetIPDLActor()) : MaybeTexture(null_t()),
-                                  mUpdateRect,
-                                  TileLock(uintptr_t(mFrontLock.get())),
-                                  wasPlaceholder);
-  } else {
-    gfxShmSharedReadLock *lock = static_cast<gfxShmSharedReadLock*>(mFrontLock.get());
-    return TexturedTileDescriptor(nullptr, mFrontBuffer->GetIPDLActor(),
-                                  mFrontBufferOnWhite ? MaybeTexture(mFrontBufferOnWhite->GetIPDLActor()) : MaybeTexture(null_t()),
-                                  mUpdateRect,
-                                  TileLock(lock->GetShmemSection()),
-                                  wasPlaceholder);
-  }
+  TileLock lock;
+  mFrontLock->Serialize(lock);
+
+  return TexturedTileDescriptor(nullptr, mFrontBuffer->GetIPDLActor(),
+                                mFrontBufferOnWhite ? MaybeTexture(mFrontBufferOnWhite->GetIPDLActor()) : MaybeTexture(null_t()),
+                                mUpdateRect,
+                                lock,
+                                wasPlaceholder);
 }
 
 void

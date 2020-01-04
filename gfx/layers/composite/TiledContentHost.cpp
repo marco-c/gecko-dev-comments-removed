@@ -190,24 +190,9 @@ bool
 GetCopyOnWriteLock(const TileLock& ipcLock, TileHost& aTile, ISurfaceAllocator* aAllocator) {
   MOZ_ASSERT(aAllocator);
 
-  RefPtr<gfxSharedReadLock> sharedLock;
-  if (ipcLock.type() == TileLock::TShmemSection) {
-    sharedLock = gfxShmSharedReadLock::Open(aAllocator, ipcLock.get_ShmemSection());
-  } else {
-    if (!aAllocator->IsSameProcess()) {
-      
-      
-      NS_ERROR("A client process may be trying to peek at the host's address space!");
-      return false;
-    }
-    sharedLock = reinterpret_cast<gfxMemorySharedReadLock*>(ipcLock.get_uintptr_t());
-    if (sharedLock) {
-      
-      sharedLock.get()->Release();
-    }
-  }
+  RefPtr<TextureReadLock> sharedLock = TextureReadLock::Open(ipcLock, aAllocator);
   aTile.mSharedLock = sharedLock;
-  return true;
+  return !!sharedLock;
 }
 
 void
@@ -438,7 +423,7 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
 void
 TiledLayerBufferComposite::ProcessDelayedUnlocks()
 {
-  for (gfxSharedReadLock* lock : mDelayedUnlocks) {
+  for (TextureReadLock* lock : mDelayedUnlocks) {
     lock->ReadUnlock();
   }
   mDelayedUnlocks.Clear();
