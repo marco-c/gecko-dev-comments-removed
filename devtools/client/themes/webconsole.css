@@ -128,13 +128,11 @@ a {
 #output-wrapper {
   direction: ltr;
   overflow: auto;
-}
-
-#output-container {
-  
-
   -moz-user-select: text;
 }
+
+
+
 
 #output-container.hideTimestamps > .message {
   -moz-padding-start: 0;
