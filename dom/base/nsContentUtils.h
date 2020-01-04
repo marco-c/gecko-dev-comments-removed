@@ -2647,6 +2647,11 @@ public:
 
   static void GetPresentationURL(nsIDocShell* aDocShell, nsAString& aPresentationUrl);
 
+  
+
+
+  static nsIDocShell* GetDocShellForEventTarget(mozilla::dom::EventTarget* aTarget);
+
 private:
   static bool InitializeEventTable();
 

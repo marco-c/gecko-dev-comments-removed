@@ -1040,6 +1040,10 @@ private:
 
   
   
+  uint32_t mTouchEventsOverride;
+
+  
+  
   nsresult DoFindItemWithName(const char16_t* aName,
                               nsISupports* aRequestor,
                               nsIDocShellTreeItem* aOriginalRequestor,
