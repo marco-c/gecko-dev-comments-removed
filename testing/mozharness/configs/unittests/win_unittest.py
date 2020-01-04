@@ -78,10 +78,12 @@ config = {
                 "--no-slow",
                 "--no-progress",
                 "--format=automation",
-                "--jitflags=all"
+                "--jitflags=all",
+                "--timeout=970" 
             ],
             "run_filename": "jit_test.py",
-            "testsdir": "jit-test/jit-test"
+            "testsdir": "jit-test/jit-test",
+            "run_timeout": 1000 
         },
         "mochitest": {
             "options": [
