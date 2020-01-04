@@ -13,6 +13,7 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TouchEvents.h"
+#include "mozilla/WeakPtr.h"
 
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
@@ -25,15 +26,22 @@ using mozilla::dom::ContentParent;
 using mozilla::dom::ContentChild;
 using mozilla::unused;
 
+#include "nsWindow.h"
+
+#include "nsIObserverService.h"
+#include "nsISelection.h"
+#include "nsISupportsArray.h"
+#include "nsISupportsPrimitives.h"
+#include "nsIWidgetListener.h"
+#include "nsIWindowWatcher.h"
+
 #include "nsAppShell.h"
+#include "nsFocusManager.h"
 #include "nsIdleService.h"
 #include "nsLayoutUtils.h"
-#include "nsWindow.h"
-#include "nsIObserverService.h"
-#include "nsFocusManager.h"
-#include "nsIWidgetListener.h"
 #include "nsViewManager.h"
-#include "nsISelection.h"
+
+#include "WidgetUtils.h"
 
 #include "nsIDOMSimpleGestureEvent.h"
 
@@ -59,6 +67,7 @@ using mozilla::unused;
 #include "AndroidBridge.h"
 #include "AndroidBridgeUtilities.h"
 #include "android_npapi.h"
+#include "GeneratedJNINatives.h"
 
 #include "imgIEncoder.h"
 
@@ -132,11 +141,121 @@ static bool gMenuConsumed;
 
 static nsTArray<nsWindow*> gTopLevelWindows;
 
+
+
+
+
+static nsWindow* gGeckoViewWindow;
+
 static bool sFailedToCreateGLContext = false;
 
 
 static const double SWIPE_MAX_PINCH_DELTA_INCHES = 0.4;
 static const double SWIPE_MIN_DISTANCE_INCHES = 0.6;
+
+
+class nsWindow::Natives
+    : public GeckoView::Window::Natives<Natives>
+    , public SupportsWeakPtr<Natives>
+{
+    typedef GeckoView::Window::Natives<Natives> Base;
+
+    nsWindow& window;
+
+public:
+    MOZ_DECLARE_WEAKREFERENCE_TYPENAME(Natives);
+
+    Natives(nsWindow* w) : window(*w) {}
+
+    
+    void DisposeNative(const GeckoView::Window::LocalRef& instance);
+
+    
+    static void Open(const jni::ClassObject::LocalRef& cls,
+                     GeckoView::Window::Param gvWindow,
+                     int32_t width, int32_t height);
+};
+
+void
+nsWindow::Natives::Open(const jni::ClassObject::LocalRef& cls,
+                        GeckoView::Window::Param gvWindow,
+                        int32_t width, int32_t height)
+{
+    MOZ_ASSERT(NS_IsMainThread());
+
+    PROFILER_LABEL("nsWindow", "Natives::Open",
+                   js::ProfileEntry::Category::OTHER);
+
+    if (gGeckoViewWindow) {
+        
+        MOZ_ASSERT(gGeckoViewWindow->mNatives);
+        AttachNative(GeckoView::Window::LocalRef(cls.Env(), gvWindow),
+                     gGeckoViewWindow->mNatives.get());
+        return;
+    }
+
+    nsCOMPtr<nsIWindowWatcher> ww = do_GetService(NS_WINDOWWATCHER_CONTRACTID);
+    MOZ_ASSERT(ww);
+
+    nsAdoptingCString url = Preferences::GetCString("toolkit.defaultChromeURI");
+    if (!url) {
+        url = NS_LITERAL_CSTRING("chrome://browser/content/browser.xul");
+    }
+
+    nsCOMPtr<nsISupportsArray> args
+            = do_CreateInstance(NS_SUPPORTSARRAY_CONTRACTID);
+    nsCOMPtr<nsISupportsPRInt32> widthArg
+            = do_CreateInstance(NS_SUPPORTS_PRINT32_CONTRACTID);
+    nsCOMPtr<nsISupportsPRInt32> heightArg
+            = do_CreateInstance(NS_SUPPORTS_PRINT32_CONTRACTID);
+
+    
+    if (args && widthArg && heightArg &&
+            NS_SUCCEEDED(widthArg->SetData(width)) &&
+            NS_SUCCEEDED(heightArg->SetData(height)))
+    {
+        args->AppendElement(widthArg);
+        args->AppendElement(heightArg);
+    }
+
+    nsCOMPtr<nsIDOMWindow> window;
+    ww->OpenWindow(nullptr, url, "_blank", "chrome,dialog=no,all",
+                   args, getter_AddRefs(window));
+    MOZ_ASSERT(window);
+
+    nsCOMPtr<nsIWidget> widget = WidgetUtils::DOMWindowToWidget(window);
+    MOZ_ASSERT(widget);
+
+    gGeckoViewWindow = static_cast<nsWindow*>(widget.get());
+    gGeckoViewWindow->mNatives = mozilla::MakeUnique<Natives>(gGeckoViewWindow);
+    AttachNative(GeckoView::Window::LocalRef(cls.Env(), gvWindow),
+                 gGeckoViewWindow->mNatives.get());
+}
+
+void
+nsWindow::Natives::DisposeNative(const GeckoView::Window::LocalRef& instance)
+{
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+    Base::DisposeNative(instance);
+}
+
+void
+nsWindow::InitNatives()
+{
+    nsWindow::Natives::Init();
+}
 
 nsWindow*
 nsWindow::TopWindow()
