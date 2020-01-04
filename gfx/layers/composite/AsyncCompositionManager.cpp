@@ -1459,7 +1459,18 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
   
   
   
-  bool wantNextFrame = SampleAnimations(root, aCurrentFrame);
+  
+  
+  
+  
+  bool wantNextFrame = SampleAnimations(root,
+    !mPreviousFrameTimeStamp.IsNull() ?
+      mPreviousFrameTimeStamp : aCurrentFrame);
+
+  
+  
+  
+  mPreviousFrameTimeStamp = wantNextFrame ? aCurrentFrame : TimeStamp();
 
   if (!(aSkip & TransformsToSkip::APZ)) {
     
