@@ -27,6 +27,7 @@ class nsIDocument;
 typedef nsIDocument RawGeckoDocument;
 struct ServoNodeData;
 struct RawServoStyleSheet;
+struct RawServoStyleSet;
 #else
 struct RawGeckoNode;
 typedef struct RawGeckoNode RawGeckoNode;
@@ -38,6 +39,8 @@ struct ServoNodeData;
 typedef struct ServoNodeData ServoNodeData;
 struct RawServoStyleSheet;
 typedef struct RawServoStyleSheet RawServoStyleSheet;
+struct RawServoStyleSet;
+typedef struct RawServoStyleSet RawServoStyleSet;
 #endif
 
 #ifdef __cplusplus
@@ -75,11 +78,15 @@ void Servo_DropNodeData(ServoNodeData* data);
 
 
 
+
+
 RawServoStyleSheet* Servo_StylesheetFromUTF8Bytes(const uint8_t* bytes, uint32_t length);
 void Servo_ReleaseStylesheet(RawServoStyleSheet* sheet);
+RawServoStyleSet* Servo_InitStyleSet();
+void Servo_DropStyleSet(RawServoStyleSet* set);
 
 
-void Servo_RestyleDocument(RawGeckoDocument* aDoc);
+void Servo_RestyleDocument(RawGeckoDocument* doc, RawServoStyleSet* set);
 
 #ifdef __cplusplus
 } 
