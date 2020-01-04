@@ -469,5 +469,29 @@ TVProgramData::SetSubtitleLanguages(uint32_t aCount,
   return NS_OK;
 }
 
+
+
+
+
+NS_IMPL_ISUPPORTS(TVGonkNativeHandleData, nsITVGonkNativeHandleData)
+
+TVGonkNativeHandleData::TVGonkNativeHandleData() {}
+
+TVGonkNativeHandleData::~TVGonkNativeHandleData() {}
+
+ NS_IMETHODIMP
+TVGonkNativeHandleData::GetHandle(GonkNativeHandle& aHandle)
+{
+  aHandle = mHandle;
+  return NS_OK;
+}
+
+ NS_IMETHODIMP
+TVGonkNativeHandleData::SetHandle(GonkNativeHandle& aHandle)
+{
+  mHandle = aHandle;
+  return NS_OK;
+}
+
 } 
 } 
