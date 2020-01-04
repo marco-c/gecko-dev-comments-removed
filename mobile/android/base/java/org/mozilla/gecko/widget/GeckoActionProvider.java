@@ -207,7 +207,12 @@ public class GeckoActionProvider {
 
         
         if (mOnTargetListener != null) {
-            mOnTargetListener.onTargetSelected();
+            ThreadUtils.postToUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mOnTargetListener.onTargetSelected();
+                }
+            });
         }
     }
 
