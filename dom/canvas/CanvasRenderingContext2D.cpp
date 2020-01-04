@@ -1326,6 +1326,8 @@ bool CanvasRenderingContext2D::SwitchRenderingMode(RenderingMode aRenderingMode)
     return false;
   }
 
+  MOZ_ASSERT(mBufferProvider);
+
 #ifdef USE_SKIA_GPU
   
   if ((aRenderingMode == RenderingMode::OpenGLBackendMode) &&
@@ -1334,36 +1336,22 @@ bool CanvasRenderingContext2D::SwitchRenderingMode(RenderingMode aRenderingMode)
   }
 #endif
 
-  RefPtr<SourceSurface> snapshot;
-  Matrix transform;
   RefPtr<PersistentBufferProvider> oldBufferProvider = mBufferProvider;
-  RefPtr<DrawTarget> oldTarget = mTarget;
 
-  AutoReturnSnapshot autoReturn(nullptr);
-
-  if (mTarget) {
-    snapshot = mTarget->Snapshot();
-    transform = mTarget->GetTransform();
-  } else {
-    MOZ_ASSERT(mBufferProvider);
-    
-    
-    transform = CurrentState().transform;
-    snapshot = mBufferProvider->BorrowSnapshot();
-    autoReturn.mBufferProvider = mBufferProvider;
-    autoReturn.mSnapshot = &snapshot;
-  }
-
+  
+  
+  ReturnTarget();
   mTarget = nullptr;
   mBufferProvider = nullptr;
   mResetLayer = true;
 
   
+  RefPtr<SourceSurface> snapshot = oldBufferProvider->BorrowSnapshot();
+
+  
   RenderingMode attemptedMode = EnsureTarget(nullptr, aRenderingMode);
   if (!IsTargetValid()) {
-    if (oldBufferProvider && oldTarget) {
-      oldBufferProvider->ReturnDrawTarget(oldTarget.forget());
-    }
+    oldBufferProvider->ReturnSnapshot(snapshot.forget());
     return false;
   }
 
@@ -1371,20 +1359,9 @@ bool CanvasRenderingContext2D::SwitchRenderingMode(RenderingMode aRenderingMode)
   mRenderingMode = attemptedMode;
 
   
-  gfx::Rect r(0, 0, mWidth, mHeight);
-  mTarget->DrawSurface(snapshot, r, r);
-
   
-  for (uint32_t i = 0; i < CurrentState().clipsPushed.Length(); i++) {
-    mTarget->PushClip(CurrentState().clipsPushed[i]);
-  }
-
-  mTarget->SetTransform(transform);
-
-  if (oldBufferProvider && oldTarget) {
-    oldBufferProvider->ReturnDrawTarget(oldTarget.forget());
-  }
-
+  mTarget->CopySurface(snapshot, IntRect(0, 0, mWidth, mHeight), IntPoint());
+  oldBufferProvider->ReturnSnapshot(snapshot.forget());
   return true;
 }
 
@@ -1546,6 +1523,10 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
 
   ScheduleStableStateCallback();
 
+  
+  
+  RefPtr<PersistentBufferProvider> oldBufferProvider = mBufferProvider;
+
   if (mBufferProvider && mode == mRenderingMode) {
     gfx::Rect rect(0, 0, mWidth, mHeight);
     if (aCoveredRect && CurrentState().transform.TransformBounds(*aCoveredRect).Contains(rect)) {
@@ -1554,25 +1535,15 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
       mTarget = mBufferProvider->BorrowDrawTarget(IntRect(0, 0, mWidth, mHeight));
     }
 
-    if (mTarget) {
-      
-      for (uint32_t i = 0; i < mStyleStack.Length(); i++) {
-        mTarget->SetTransform(mStyleStack[i].transform);
-        for (uint32_t c = 0; c < mStyleStack[i].clipsPushed.Length(); c++) {
-          mTarget->PushClip(mStyleStack[i].clipsPushed[c]);
-        }
-      }
-      return mRenderingMode;
-    } else {
-      mBufferProvider = nullptr;
-    }
+    mode = mRenderingMode;
   }
 
   mIsSkiaGL = false;
 
    
   IntSize size(mWidth, mHeight);
-  if (size.width <= gfxPrefs::MaxCanvasSize() &&
+  if (!mTarget &&
+      size.width <= gfxPrefs::MaxCanvasSize() &&
       size.height <= gfxPrefs::MaxCanvasSize() &&
       size.width >= 0 && size.height >= 0) {
     SurfaceFormat format = GetSurfaceFormat();
@@ -1627,19 +1598,34 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
   }
 
   if (mTarget) {
-    static bool registered = false;
-    if (!registered) {
-      registered = true;
-      RegisterStrongMemoryReporter(new Canvas2dPixelsReporter());
+    
+    
+    
+    if (mBufferProvider != oldBufferProvider) {
+      static bool registered = false;
+      if (!registered) {
+        registered = true;
+        RegisterStrongMemoryReporter(new Canvas2dPixelsReporter());
+      }
+
+      gCanvasAzureMemoryUsed += mWidth * mHeight * 4;
+      JSContext* context = nsContentUtils::GetCurrentJSContext();
+      if (context) {
+        JS_updateMallocCounter(context, mWidth * mHeight * 4);
+      }
+
+      mTarget->ClearRect(gfx::Rect(Point(0, 0), Size(mWidth, mHeight)));
+
+      
+      
+      if (mCanvasElement) {
+        mCanvasElement->InvalidateCanvas();
+      }
+      
+      
+      Redraw();
     }
 
-    gCanvasAzureMemoryUsed += mWidth * mHeight * 4;
-    JSContext* context = nsContentUtils::GetCurrentJSContext();
-    if (context) {
-      JS_updateMallocCounter(context, mWidth * mHeight * 4);
-    }
-
-    mTarget->ClearRect(gfx::Rect(Point(0, 0), Size(mWidth, mHeight)));
     if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
       
       
@@ -1649,14 +1635,14 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
       
       mTarget->PushClipRect(gfx::Rect(Point(0, 0), Size(mWidth, mHeight)));
     }
+
     
-    
-    if (mCanvasElement) {
-      mCanvasElement->InvalidateCanvas();
+    for (uint32_t i = 0; i < mStyleStack.Length(); i++) {
+      mTarget->SetTransform(mStyleStack[i].transform);
+      for (uint32_t c = 0; c < mStyleStack[i].clipsPushed.Length(); c++) {
+        mTarget->PushClip(mStyleStack[i].clipsPushed[c]);
+      }
     }
-    
-    
-    Redraw();
   } else {
     EnsureErrorTarget();
     mTarget = sErrorTarget;
@@ -1667,6 +1653,7 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
   if (mIsSkiaGL && mTarget && mTarget->GetType() == DrawTargetType::HARDWARE_RASTER) {
     gfxWarningOnce() << "Using SkiaGL canvas.";
   }
+
   return mode;
 }
 
@@ -1770,6 +1757,13 @@ CanvasRenderingContext2D::ReturnTarget()
         mTarget->PopClip();
       }
     }
+
+    if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
+      
+      
+      mTarget->PopClip();
+    }
+
     mBufferProvider->ReturnDrawTarget(mTarget.forget());
   }
 }
