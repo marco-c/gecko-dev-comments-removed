@@ -149,18 +149,6 @@ exports.toObject = function(arr) {
 
 
 
-exports.toObject = function(arr) {
-  const obj = {};
-  for(let pair of arr) {
-    obj[pair[0]] = pair[1];
-  }
-  return obj;
-}
-
-
-
-
-
 
 
 
