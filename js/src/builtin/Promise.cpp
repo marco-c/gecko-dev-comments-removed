@@ -152,13 +152,12 @@ ResolvePromise(JSContext* cx, Handle<PromiseObject*> promise, HandleValue valueO
     
     
     
-    RootedValue reactionsVal(cx, promise->getFixedSlot(PROMISE_REACTIONS_SLOT));
+    RootedValue reactionsVal(cx, promise->getFixedSlot(PROMISE_REACTIONS_OR_RESULT_SLOT));
 
     
-    promise->setFixedSlot(PROMISE_RESULT_SLOT, valueOrReason);
-
     
-    promise->setFixedSlot(PROMISE_REACTIONS_SLOT, UndefinedValue());
+    
+    promise->setFixedSlot(PROMISE_REACTIONS_OR_RESULT_SLOT, valueOrReason);
 
     
     promise->setFixedSlot(PROMISE_STATE_SLOT, Int32Value(int32_t(state)));
@@ -554,7 +553,10 @@ PromiseObject::getID()
 bool
 PromiseObject::dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> values)
 {
-    RootedValue reactionsVal(cx, getReservedSlot(PROMISE_REACTIONS_SLOT));
+    if (state() != JS::PromiseState::Pending)
+        return true;
+
+    RootedValue reactionsVal(cx, getReservedSlot(PROMISE_REACTIONS_OR_RESULT_SLOT));
     if (reactionsVal.isNullOrUndefined())
         return true;
     RootedObject reactions(cx, &reactionsVal.toObject());

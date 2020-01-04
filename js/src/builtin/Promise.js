@@ -480,19 +480,19 @@ function BlockOnPromise(promise, blockedPromise, onResolve, onReject) {
 function AddDependentPromise(dependentPromise) {
     assert(IsPromise(this), "AddDependentPromise expects an unwrapped Promise as the receiver");
 
+    if (GetPromiseState(this) !== PROMISE_STATE_PENDING)
+        return;
+
     let reaction = new PromiseReactionRecord(dependentPromise, NullFunction, NullFunction,
                                              NullFunction, NullFunction, null);
 
-    let reactions = UnsafeGetReservedSlot(this, PROMISE_REACTIONS_SLOT);
+    let reactions = UnsafeGetReservedSlot(this, PROMISE_REACTIONS_OR_RESULT_SLOT);
 
     
-    
-    if (!reactions) {
-        if (GetPromiseState(this) === PROMISE_STATE_PENDING)
-            UnsafeSetReservedSlot(promise, PROMISE_REACTIONS_SLOT, [reaction]);
-        return;
-    }
-    _DefineDataProperty(reactions, reactions.length, reaction);
+    if (!reactions)
+        UnsafeSetReservedSlot(dependentPromise, PROMISE_REACTIONS_OR_RESULT_SLOT, [reaction]);
+    else
+        _DefineDataProperty(reactions, reactions.length, reaction);
 }
 
 
@@ -739,9 +739,9 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) 
     if (state === PROMISE_STATE_PENDING) {
         
         
-        let reactions = UnsafeGetReservedSlot(promise, PROMISE_REACTIONS_SLOT);
+        let reactions = UnsafeGetReservedSlot(promise, PROMISE_REACTIONS_OR_RESULT_SLOT);
         if (!reactions)
-            UnsafeSetReservedSlot(promise, PROMISE_REACTIONS_SLOT, [reaction]);
+            UnsafeSetReservedSlot(promise, PROMISE_REACTIONS_OR_RESULT_SLOT, [reaction]);
         else
             _DefineDataProperty(reactions, reactions.length, reaction);
     }
@@ -749,7 +749,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) 
     
     else if (state === PROMISE_STATE_FULFILLED) {
         
-        let value = UnsafeGetReservedSlot(promise, PROMISE_RESULT_SLOT);
+        let value = UnsafeGetReservedSlot(promise, PROMISE_REACTIONS_OR_RESULT_SLOT);
 
         
         EnqueuePromiseReactionJob(reaction, PROMISE_JOB_TYPE_FULFILL, value);
@@ -761,7 +761,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) 
         assert(state === PROMISE_STATE_REJECTED, "Invalid Promise state " + state);
 
         
-        let reason = UnsafeGetReservedSlot(promise, PROMISE_RESULT_SLOT);
+        let reason = UnsafeGetReservedSlot(promise, PROMISE_REACTIONS_OR_RESULT_SLOT);
 
         
         if (UnsafeGetInt32FromReservedSlot(promise, PROMISE_IS_HANDLED_SLOT) !==
