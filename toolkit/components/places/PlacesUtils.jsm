@@ -1776,6 +1776,7 @@ this.PlacesUtils = {
 
 
 
+
   promiseBookmarksTree: Task.async(function* (aItemGuid = "", aOptions = {}) {
     let createItemInfoObject = function* (aRow, aIncludeParentGuid) {
       let item = {};
