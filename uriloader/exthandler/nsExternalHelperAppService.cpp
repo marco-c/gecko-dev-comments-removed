@@ -497,7 +497,7 @@ struct nsDefaultMimeTypeEntry {
 
 
 
-static nsDefaultMimeTypeEntry defaultMimeEntries [] = 
+static const nsDefaultMimeTypeEntry defaultMimeEntries[] =
 {
   
   
@@ -557,7 +557,7 @@ struct nsExtraMimeTypeEntry {
 
 
 
-static nsExtraMimeTypeEntry extraMimeEntries [] =
+static const nsExtraMimeTypeEntry extraMimeEntries[] =
 {
 #if defined(XP_MACOSX) 
   { APPLICATION_OCTET_STREAM, "exe,com", "Binary File" },
@@ -634,7 +634,7 @@ static nsExtraMimeTypeEntry extraMimeEntries [] =
 
 
 
-static nsDefaultMimeTypeEntry nonDecodableExtensions [] = {
+static const nsDefaultMimeTypeEntry nonDecodableExtensions[] = {
   { APPLICATION_GZIP, "gz" }, 
   { APPLICATION_GZIP, "tgz" },
   { APPLICATION_ZIP, "zip" },
