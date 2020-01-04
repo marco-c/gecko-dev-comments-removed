@@ -180,10 +180,12 @@ var focusEditableField = Task.async(function* (ruleView, editable, xOffset = 1,
 
 
 
-function* hideTooltipAndWaitForRuleViewChanged(tooltip, view) {
+function* hideTooltipAndWaitForRuleViewChanged(editorTooltip, view) {
   let onModified = view.once("ruleview-changed");
-  tooltip.hide();
+  let onHidden = editorTooltip.tooltip.once("hidden");
+  editorTooltip.hide();
   yield onModified;
+  yield onHidden;
 }
 
 
