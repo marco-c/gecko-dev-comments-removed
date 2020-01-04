@@ -112,7 +112,9 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
     return;
   }
 
-  if (!MediaPrefs::EMEEnabled()) {
+  if (!MediaPrefs::EMEEnabled() && !IsClearkeyKeySystem(aKeySystem)) {
+    
+    
     
     MediaKeySystemAccess::NotifyObservers(mWindow,
                                           aKeySystem,
