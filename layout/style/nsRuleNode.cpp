@@ -1520,7 +1520,7 @@ SetFactor(const nsCSSValue& aValue, float& aField, RuleNodeCacheConditions& aCon
 }
 
 void*
-nsRuleNode::operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_NEW
+nsRuleNode::operator new(size_t sz, nsPresContext* aPresContext)
 {
   
   return aPresContext->PresShell()->AllocateByObjectID(eArenaObjectID_nsRuleNode, sz);

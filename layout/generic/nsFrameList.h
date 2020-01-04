@@ -76,7 +76,7 @@ public:
   
 
 
-  void* operator new(size_t sz, nsIPresShell* aPresShell) CPP_THROW_NEW;
+  void* operator new(size_t sz, nsIPresShell* aPresShell);
 
   
 
