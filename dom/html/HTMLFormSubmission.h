@@ -54,8 +54,8 @@ public:
 
 
 
-  virtual nsresult AddNameValuePair(const nsAString& aName,
-                                    const nsAString& aValue) = 0;
+  virtual nsresult
+  AddNameValuePair(const nsAString& aName, const nsAString& aValue) = 0;
 
   
 
@@ -65,8 +65,8 @@ public:
 
 
 
-  virtual nsresult AddNameBlobOrNullPair(const nsAString& aName,
-                                         Blob* aBlob) = 0;
+  virtual nsresult
+  AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob) = 0;
 
   
 
@@ -96,8 +96,8 @@ public:
 
 
 
-  virtual nsresult GetEncodedSubmission(nsIURI* aURI,
-                                        nsIInputStream** aPostDataStream) = 0;
+  virtual nsresult
+  GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream) = 0;
 
   
 
@@ -134,13 +134,13 @@ protected:
   nsCOMPtr<nsIContent> mOriginatingElement;
 };
 
-class nsEncodingFormSubmission : public HTMLFormSubmission
+class EncodingFormSubmission : public HTMLFormSubmission
 {
 public:
-  nsEncodingFormSubmission(const nsACString& aCharset,
-                           nsIContent* aOriginatingElement);
+  EncodingFormSubmission(const nsACString& aCharset,
+                         nsIContent* aOriginatingElement);
 
-  virtual ~nsEncodingFormSubmission();
+  virtual ~EncodingFormSubmission();
 
   
 
@@ -163,22 +163,24 @@ private:
 
 
 
-class nsFSMultipartFormData : public nsEncodingFormSubmission
+class FSMultipartFormData : public EncodingFormSubmission
 {
 public:
   
 
 
-  nsFSMultipartFormData(const nsACString& aCharset,
-                        nsIContent* aOriginatingElement);
-  ~nsFSMultipartFormData();
+  FSMultipartFormData(const nsACString& aCharset,
+                      nsIContent* aOriginatingElement);
+  ~FSMultipartFormData();
  
-  virtual nsresult AddNameValuePair(const nsAString& aName,
-                                    const nsAString& aValue) override;
-  virtual nsresult AddNameBlobOrNullPair(const nsAString& aName,
-                                         Blob* aBlob) override;
-  virtual nsresult GetEncodedSubmission(nsIURI* aURI,
-                                        nsIInputStream** aPostDataStream) override;
+  virtual nsresult
+  AddNameValuePair(const nsAString& aName, const nsAString& aValue) override;
+
+  virtual nsresult
+  AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob) override;
+
+  virtual nsresult
+  GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream) override;
 
   void GetContentType(nsACString& aContentType)
   {
