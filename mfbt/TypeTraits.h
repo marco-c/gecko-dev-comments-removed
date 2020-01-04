@@ -24,6 +24,18 @@ namespace mozilla {
 
 
 template<typename> struct RemoveCV;
+template<typename> struct AddRvalueReference;
+
+
+
+
+
+
+
+
+
+template<typename T>
+typename AddRvalueReference<T>::Type DeclVal();
 
 
 
@@ -632,21 +644,25 @@ struct IsBaseOf
 
 namespace detail {
 
+
+
+template <typename To>
+static void ConvertibleTestHelper(To);
+
 template<typename From, typename To>
 struct ConvertibleTester
 {
 private:
-  static From create();
-
-  template<typename From1, typename To1>
-  static char test(To to);
+  template<typename From1, typename To1,
+           typename = decltype(ConvertibleTestHelper<To1>(DeclVal<From>()))>
+  static char test(int);
 
   template<typename From1, typename To1>
   static int test(...);
 
 public:
   static const bool value =
-    sizeof(test<From, To>(create())) == sizeof(char);
+    sizeof(test<From, To>(0)) == sizeof(char);
 };
 
 } 
@@ -863,17 +879,6 @@ template<typename T>
 struct AddRvalueReference
   : detail::AddRvalueReferenceHelper<T>
 {};
-
-
-
-
-
-
-
-
-
-template<typename T>
-typename AddRvalueReference<T>::Type DeclVal();
 
 
 
