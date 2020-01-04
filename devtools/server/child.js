@@ -4,12 +4,12 @@
 
 "use strict";
 
-try {
 
+
+try {
   var chromeGlobal = this;
 
-
-
+  
   (function () {
     let Cu = Components.utils;
     let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
@@ -17,17 +17,16 @@ try {
     const { dumpn } = DevToolsUtils;
     const { DebuggerServer, ActorPool } = require("devtools/server/main");
 
-  
-  
+    
+    
     if (!DebuggerServer.initialized) {
       DebuggerServer.init();
       DebuggerServer.isInChildProcess = true;
     }
 
-  
-  
-  
-  
+    
+    
+    
     DebuggerServer.addChildActors();
 
     let connections = new Map();
@@ -52,35 +51,32 @@ try {
 
     addMessageListener("debug:connect", onConnect);
 
-  
-  
+    
+    
     let onSetupInChild = DevToolsUtils.makeInfallible(msg => {
       let { module, setupChild, args } = msg.data;
-      let m, fn;
+      let m;
 
       try {
         m = require(module);
 
         if (!setupChild in m) {
-          dumpn("ERROR: module '" + module + "' does not export '" +
-              setupChild + "'");
+          dumpn(`ERROR: module '${module}' does not export 'setupChild'`);
           return false;
         }
 
         m[setupChild].apply(m, args);
-
       } catch (e) {
-        let error_msg = "exception during actor module setup running in the child process: ";
-        DevToolsUtils.reportException(error_msg + e);
-        dumpn("ERROR: " + error_msg + " \n\t module: '" + module +
-            "' \n\t setupChild: '" + setupChild + "'\n" +
-            DevToolsUtils.safeErrorString(e));
+        let errorMessage =
+          "Exception during actor module setup running in the child process: ";
+        DevToolsUtils.reportException(errorMessage + e);
+        dumpn(`ERROR: ${errorMessage}\n\t module: '${module}'\n\t ` +
+              `setupChild: '${setupChild}'\n${DevToolsUtils.safeErrorString(e)}`);
         return false;
       }
       if (msg.data.id) {
-      
-        sendAsyncMessage("debug:setup-in-child-response",
-                       {id: msg.data.id});
+        
+        sendAsyncMessage("debug:setup-in-child-response", {id: msg.data.id});
       }
       return true;
     });
@@ -90,9 +86,9 @@ try {
     let onDisconnect = DevToolsUtils.makeInfallible(function (msg) {
       removeMessageListener("debug:disconnect", onDisconnect);
 
-    
-    
-    
+      
+      
+      
       let prefix = msg.data.prefix;
       let conn = connections.get(prefix);
       if (conn) {
@@ -103,16 +99,14 @@ try {
     addMessageListener("debug:disconnect", onDisconnect);
 
     let onInspect = DevToolsUtils.makeInfallible(function (msg) {
-    
-    
-    
-    
+      
+      
+      
       let inspector = require("devtools/server/actors/inspector");
       inspector.setInspectingNode(msg.objects.node);
     });
     addMessageListener("debug:inspect", onInspect);
   })();
-
 } catch (e) {
-  dump("Exception in app child process: " + e + "\n");
+  dump(`Exception in app child process: ${e}\n`);
 }
