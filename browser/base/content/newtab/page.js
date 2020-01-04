@@ -36,9 +36,6 @@ var gPage = {
 
     
     gCustomize.init();
-
-    
-    gIntro.init();
   },
 
   
@@ -54,7 +51,6 @@ var gPage = {
       
       if (aData == "browser.newtabpage.enhanced") {
         this.update();
-        gIntro.showIfNecessary();
       }
 
       
@@ -255,9 +251,6 @@ var gPage = {
   onPageVisibleAndLoaded() {
     
     this.reportLastVisibleTileIndex();
-
-    
-    gIntro.showIfNecessary();
   },
 
   reportLastVisibleTileIndex() {
