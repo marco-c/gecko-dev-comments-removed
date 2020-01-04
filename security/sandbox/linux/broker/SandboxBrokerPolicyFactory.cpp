@@ -120,7 +120,7 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid)
 {
   
   if (!IsSystemSupported() &&
-      Preferences::GetInt("security.sandbox.content.level") <= 0) {
+      Preferences::GetInt("security.sandbox.content.level") <= 1) {
     return nullptr;
   }
 
