@@ -41,6 +41,13 @@ public:
   static const ViewID START_SCROLL_ID = 2;  
                                         
 
+  enum ScrollOffsetUpdateType : uint8_t {
+    eNone,          
+    eMainThread,    
+
+    eSentinel       
+  };
+
   FrameMetrics()
     : mScrollId(NULL_SCROLL_ID)
     , mScrollParentId(NULL_SCROLL_ID)
@@ -65,9 +72,9 @@ public:
     , mLineScrollAmount(0, 0)
     , mPageScrollAmount(0, 0)
     , mPaintRequestTime()
+    , mScrollUpdateType(eNone)
     , mIsRootContent(false)
     , mHasScrollgrab(false)
-    , mUpdateScrollOffset(false)
     , mDoSmoothScroll(false)
     , mUseDisplayPortMargins(false)
     , mAllowVerticalScrollWithWheel(false)
@@ -106,9 +113,9 @@ public:
            mLineScrollAmount == aOther.mLineScrollAmount &&
            mPageScrollAmount == aOther.mPageScrollAmount &&
            mPaintRequestTime == aOther.mPaintRequestTime &&
+           mScrollUpdateType == aOther.mScrollUpdateType &&
            mIsRootContent == aOther.mIsRootContent &&
            mHasScrollgrab == aOther.mHasScrollgrab &&
-           mUpdateScrollOffset == aOther.mUpdateScrollOffset &&
            mDoSmoothScroll == aOther.mDoSmoothScroll &&
            mUseDisplayPortMargins == aOther.mUseDisplayPortMargins &&
            mAllowVerticalScrollWithWheel == aOther.mAllowVerticalScrollWithWheel &&
@@ -363,7 +370,7 @@ public:
 
   void SetScrollOffsetUpdated(uint32_t aScrollGeneration)
   {
-    mUpdateScrollOffset = true;
+    mScrollUpdateType = eMainThread;
     mScrollGeneration = aScrollGeneration;
   }
 
@@ -375,7 +382,7 @@ public:
 
   bool GetScrollOffsetUpdated() const
   {
-    return mUpdateScrollOffset;
+    return mScrollUpdateType != eNone;
   }
 
   bool GetDoSmoothScroll() const
@@ -720,14 +727,14 @@ private:
   TimeStamp mPaintRequestTime;
 
   
+  
+  ScrollOffsetUpdateType mScrollUpdateType;
+
+  
   bool mIsRootContent:1;
 
   
   bool mHasScrollgrab:1;
-
-  
-  
-  bool mUpdateScrollOffset:1;
 
   
   
@@ -767,9 +774,6 @@ private:
 
 
   
-  void SetUpdateScrollOffset(bool aValue) {
-    mUpdateScrollOffset = aValue;
-  }
   void SetDoSmoothScroll(bool aValue) {
     mDoSmoothScroll = aValue;
   }
