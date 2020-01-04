@@ -9,6 +9,9 @@
 #include "nsHttpHeaderArray.h"
 #include "nsHttp.h"
 #include "nsString.h"
+#include "mozilla/ReentrantMonitor.h"
+
+class nsIHttpHeaderVisitor;
 
 
 
@@ -33,119 +36,128 @@ public:
                          , mCacheControlNoStore(false)
                          , mCacheControlNoCache(false)
                          , mCacheControlImmutable(false)
-                         , mPragmaNoCache(false) {}
+                         , mPragmaNoCache(false)
+                         , mReentrantMonitor("nsHttpResponseHead.mReentrantMonitor")
+                         , mInVisitHeaders(false) {}
 
-    const nsHttpHeaderArray & Headers()   const { return mHeaders; }
-    nsHttpHeaderArray    &Headers()             { return mHeaders; }
-    nsHttpVersion         Version()       const { return mVersion; }
+    nsHttpResponseHead(const nsHttpResponseHead &aOther);
+    nsHttpResponseHead &operator=(const nsHttpResponseHead &aOther);
+
+    void Enter() { mReentrantMonitor.Enter(); }
+    void Exit() { mReentrantMonitor.Exit(); }
+
+    nsHttpVersion Version();
 
 #undef Status
-    uint16_t              Status()        const { return mStatus; }
-    const nsAFlatCString &StatusText()    const { return mStatusText; }
-    int64_t               ContentLength() const { return mContentLength; }
-    const nsAFlatCString &ContentType()   const { return mContentType; }
-    const nsAFlatCString &ContentCharset() const { return mContentCharset; }
-    bool                  Private() const { return mCacheControlPrivate; }
-    bool                  NoStore() const { return mCacheControlNoStore; }
-    bool                  NoCache() const { return (mCacheControlNoCache || mPragmaNoCache); }
-    bool                  Immutable() const { return mCacheControlImmutable; }
+    uint16_t Status();
+    void StatusText(nsACString &aStatusText);
+    int64_t ContentLength();
+    void ContentType(nsACString &aContentType);
+    void ContentCharset(nsACString &aContentCharset);
+    bool Private();
+    bool NoStore();
+    bool NoCache();
+    bool Immutable();
     
 
 
 
 
-    int64_t               TotalEntitySize() const;
+    int64_t TotalEntitySize();
 
-    const char *PeekHeader(nsHttpAtom h) const      { return mHeaders.PeekHeader(h); }
     nsresult SetHeader(nsHttpAtom h, const nsACString &v, bool m=false);
-    nsresult GetHeader(nsHttpAtom h, nsACString &v) const { return mHeaders.GetHeader(h, v); }
-    void     ClearHeader(nsHttpAtom h)              { mHeaders.ClearHeader(h); }
-    void     ClearHeaders()                         { mHeaders.Clear(); }
+    nsresult GetHeader(nsHttpAtom h, nsACString &v);
+    void ClearHeader(nsHttpAtom h);
+    void ClearHeaders();
+    bool HasHeaderValue(nsHttpAtom h, const char *v);
+    bool HasHeader(nsHttpAtom h);
 
-    const char *FindHeaderValue(nsHttpAtom h, const char *v) const
-    {
-      return mHeaders.FindHeaderValue(h, v);
-    }
-    bool        HasHeaderValue(nsHttpAtom h, const char *v) const
-    {
-      return mHeaders.HasHeaderValue(h, v);
-    }
-
-    void     SetContentType(const nsACString &s)    { mContentType = s; }
-    void     SetContentCharset(const nsACString &s) { mContentCharset = s; }
-    void     SetContentLength(int64_t);
+    void SetContentType(const nsACString &s);
+    void SetContentCharset(const nsACString &s);
+    void SetContentLength(int64_t);
 
     
     
     
     
-    void     Flatten(nsACString &, bool pruneTransients);
-    void     FlattenOriginalHeader(nsACString &buf);
+    void Flatten(nsACString &, bool pruneTransients);
+    void FlattenOriginalHeader(nsACString &buf);
 
     
     
     nsresult Parse(char *block);
 
     
-    void     ParseStatusLine(const char *line);
+    void ParseStatusLine(const char *line);
 
     
     nsresult ParseHeaderLine(const char *line);
 
     
-    nsresult ComputeFreshnessLifetime(uint32_t *) const;
-    nsresult ComputeCurrentAge(uint32_t now, uint32_t requestTime, uint32_t *result) const;
-    bool     MustValidate() const;
-    bool     MustValidateIfExpired() const;
+    nsresult ComputeFreshnessLifetime(uint32_t *);
+    nsresult ComputeCurrentAge(uint32_t now, uint32_t requestTime,
+                               uint32_t *result);
+    bool MustValidate();
+    bool MustValidateIfExpired();
 
     
-    bool     IsResumable() const;
+    bool IsResumable();
 
     
     
-    bool     ExpiresInPast() const;
+    bool ExpiresInPast();
 
     
-    nsresult UpdateHeaders(const nsHttpHeaderArray &headers);
+    nsresult UpdateHeaders(nsHttpResponseHead *headers);
 
     
-    void     Reset();
+    void Reset();
+
+    nsresult GetAgeValue(uint32_t *result);
+    nsresult GetMaxAgeValue(uint32_t *result);
+    nsresult GetDateValue(uint32_t *result);
+    nsresult GetExpiresValue(uint32_t *result);
+    nsresult GetLastModifiedValue(uint32_t *result);
+
+    bool operator==(const nsHttpResponseHead& aOther) const;
+
+    
+    
+    nsresult VisitHeaders(nsIHttpHeaderVisitor *visitor,
+                          nsHttpHeaderArray::VisitorFilter filter);
+    nsresult GetOriginalHeader(nsHttpAtom aHeader,
+                               nsIHttpHeaderVisitor *aVisitor);
+
+    bool HasContentType();
+    bool HasContentCharset();
+private:
+    nsresult SetHeader_locked(nsHttpAtom h, const nsACString &v,
+                              bool m=false);
+    void AssignDefaultStatusText();
+    void ParseVersion(const char *);
+    void ParseCacheControl(const char *);
+    void ParsePragma(const char *);
+
+    void ParseStatusLine_locked(const char *line);
+    nsresult ParseHeaderLine_locked(const char *line);
 
     
     nsresult ParseDateHeader(nsHttpAtom header, uint32_t *result) const;
-    nsresult GetAgeValue(uint32_t *result) const;
-    nsresult GetMaxAgeValue(uint32_t *result) const;
-    nsresult GetDateValue(uint32_t *result) const
+
+    bool ExpiresInPast_locked() const;
+    nsresult GetAgeValue_locked(uint32_t *result) const;
+    nsresult GetExpiresValue_locked(uint32_t *result) const;
+    nsresult GetMaxAgeValue_locked(uint32_t *result) const;
+
+    nsresult GetDateValue_locked(uint32_t *result) const
     {
         return ParseDateHeader(nsHttp::Date, result);
     }
-    nsresult GetExpiresValue(uint32_t *result) const ;
-    nsresult GetLastModifiedValue(uint32_t *result) const
+
+    nsresult GetLastModifiedValue_locked(uint32_t *result) const
     {
         return ParseDateHeader(nsHttp::Last_Modified, result);
     }
-
-    bool operator==(const nsHttpResponseHead& aOther) const
-    {
-        return mHeaders == aOther.mHeaders &&
-               mVersion == aOther.mVersion &&
-               mStatus == aOther.mStatus &&
-               mStatusText == aOther.mStatusText &&
-               mContentLength == aOther.mContentLength &&
-               mContentType == aOther.mContentType &&
-               mContentCharset == aOther.mContentCharset &&
-               mCacheControlPrivate == aOther.mCacheControlPrivate &&
-               mCacheControlNoCache == aOther.mCacheControlNoCache &&
-               mCacheControlNoStore == aOther.mCacheControlNoStore &&
-               mCacheControlImmutable == aOther.mCacheControlImmutable &&
-               mPragmaNoCache == aOther.mPragmaNoCache;
-    }
-
-private:
-    void     AssignDefaultStatusText();
-    void     ParseVersion(const char *);
-    void     ParseCacheControl(const char *);
-    void     ParsePragma(const char *);
 
 private:
     
@@ -161,6 +173,12 @@ private:
     bool              mCacheControlNoCache;
     bool              mCacheControlImmutable;
     bool              mPragmaNoCache;
+
+    
+    
+    ReentrantMonitor  mReentrantMonitor;
+    
+    bool              mInVisitHeaders;
 
     friend struct IPC::ParamTraits<nsHttpResponseHead>;
 };

@@ -139,7 +139,7 @@ HeaderCopier::ShouldCopy(const nsACString &aHeader) const
   nsHttpAtom header = nsHttp::ResolveAtom(aHeader);
 
   
-  if (mHead->PeekHeader(header)) {
+  if (mHead->HasHeader(header)) {
     return false;
   }
 
