@@ -100,7 +100,7 @@ private:
                               bool aFoundOpaqueRedirect);
   
   
-  nsresult FailWithNetworkError();
+  void FailWithNetworkError();
 
   void SetRequestHeaders(nsIHttpChannel* aChannel) const;
 };
