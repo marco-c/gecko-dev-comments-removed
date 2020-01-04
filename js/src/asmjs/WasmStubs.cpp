@@ -108,8 +108,6 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe, bool usesHeap)
     masm.push(lr);
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     masm.push(ra);
-#elif defined(JS_CODEGEN_X86)
-    static const unsigned EntryFrameSize = sizeof(void*);
 #endif
 
     
@@ -120,51 +118,40 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe, bool usesHeap)
 
     
     
-    
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    masm.movePtr(IntArgReg1, GlobalReg);
-    masm.addPtr(Imm32(AsmJSGlobalRegBias), GlobalReg);
-#endif
-
-    
-    
-    
-    if (usesHeap)
-        masm.loadAsmJSHeapRegisterFromGlobalData();
-
-    
-    
-#if defined(JS_CODEGEN_X86)
-    masm.loadPtr(
-      Address(masm.getStackPointer(), EntryFrameSize + masm.framePushed() + 2 * sizeof(void*)),
-      WasmTlsReg);
-#else
-    masm.movePtr(IntArgReg2, WasmTlsReg);
-#endif
-    
-    MOZ_ASSERT(WasmTlsReg != ABINonArgReg0, "TLS pointer can't be scratch reg");
-    MOZ_ASSERT(WasmTlsReg != ABINonArgReg1, "TLS pointer can't be scratch reg");
-
-    
-    
-    
-    
     Register argv = ABINonArgReturnReg0;
     Register scratch = ABINonArgReturnReg1;
 
-#if defined(JS_CODEGEN_X86)
-    masm.loadPtr(Address(masm.getStackPointer(), EntryFrameSize + masm.framePushed()), argv);
-#else
-    masm.movePtr(IntArgReg0, argv);
-#endif
+    
+    
+    const unsigned argBase = sizeof(void*) + masm.framePushed();
+    ABIArgGenerator abi;
+    ABIArg arg;
+
+    
+    arg = abi.next(MIRType::Pointer);
+    if (arg.kind() == ABIArg::GPR)
+        masm.movePtr(arg.gpr(), argv);
+    else
+        masm.loadPtr(Address(masm.getStackPointer(), argBase + arg.offsetFromArgBase()), argv);
+
+    
+    arg = abi.next(MIRType::Pointer);
+    if (arg.kind() == ABIArg::GPR)
+        masm.movePtr(arg.gpr(), WasmTlsReg);
+    else
+        masm.loadPtr(Address(masm.getStackPointer(), argBase + arg.offsetFromArgBase()), WasmTlsReg);
+
+    
+    masm.loadWasmPinnedRegsFromTls();
+
+    
+    
     masm.Push(argv);
 
     
     
-    
-    
     MOZ_ASSERT(masm.framePushed() == FramePushedForEntrySP);
-    masm.loadWasmActivation(scratch);
+    masm.loadWasmActivationFromTls(scratch);
     masm.storeStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
 
     
@@ -281,7 +268,7 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe, bool usesHeap)
     masm.call(CallSiteDesc(CallSiteDesc::Relative), fe.funcIndex());
 
     
-    masm.loadWasmActivation(scratch);
+    masm.loadWasmActivationFromTls(scratch);
     masm.loadStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
     masm.setFramePushed(FramePushedForEntrySP);
 
@@ -558,17 +545,26 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
         MOZ_CRASH("Limit");
     }
 
+    
+    
+    MOZ_ASSERT(NonVolatileRegs.has(WasmTlsReg));
+#if defined(JS_CODEGEN_X64) || \
+    defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
+    defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+    MOZ_ASSERT(NonVolatileRegs.has(HeapReg));
+#endif
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
+    defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+    MOZ_ASSERT(NonVolatileRegs.has(GlobalReg));
+#endif
+
     GenerateExitEpilogue(masm, framePushed, ExitReason::ImportInterp, &offsets);
 
     offsets.end = masm.currentOffset();
     return offsets;
 }
 
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-static const unsigned MaybeSavedGlobalReg = sizeof(void*);
-#else
-static const unsigned MaybeSavedGlobalReg = 0;
-#endif
+static const unsigned SavedTlsReg = sizeof(void*);
 
 
 
@@ -589,7 +585,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, bool usesHeap)
     static_assert(AsmJSStackAlignment >= JitStackAlignment, "subsumes");
     unsigned sizeOfRetAddr = sizeof(void*);
     unsigned jitFrameBytes = 3 * sizeof(void*) + (1 + sig.args().length()) * sizeof(Value);
-    unsigned totalJitFrameBytes = sizeOfRetAddr + jitFrameBytes + MaybeSavedGlobalReg;
+    unsigned totalJitFrameBytes = sizeOfRetAddr + jitFrameBytes + SavedTlsReg;
     unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
                               sizeOfRetAddr;
 
@@ -647,12 +643,8 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, bool usesHeap)
     
     
     
-    
-    
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    static_assert(MaybeSavedGlobalReg == sizeof(void*), "stack frame accounting");
-    masm.storePtr(GlobalReg, Address(masm.getStackPointer(), jitFrameBytes));
-#endif
+    static_assert(SavedTlsReg == sizeof(void*), "stack frame accounting");
+    masm.storePtr(WasmTlsReg, Address(masm.getStackPointer(), jitFrameBytes));
 
     {
         
@@ -713,12 +705,6 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, bool usesHeap)
     }
 
     
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    static_assert(MaybeSavedGlobalReg == sizeof(void*), "stack frame accounting");
-    masm.loadPtr(Address(masm.getStackPointer(), jitFrameBytes), GlobalReg);
-#endif
-
-    
     
     
     
@@ -766,8 +752,10 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, bool usesHeap)
 
     
     
-    if (usesHeap)
-        masm.loadAsmJSHeapRegisterFromGlobalData();
+    
+    
+    masm.loadPtr(Address(masm.getStackPointer(), jitFrameBytes + sizeOfRetAddr), WasmTlsReg);
+    masm.loadWasmPinnedRegsFromTls();
 
     GenerateExitEpilogue(masm, masm.framePushed(), ExitReason::ImportJit, &offsets);
 
@@ -849,7 +837,7 @@ GenerateStackOverflow(MacroAssembler& masm)
     
     
     Register activation = ABINonArgReturnReg0;
-    masm.loadWasmActivation(activation);
+    masm.loadWasmActivationFromTls(activation);
     masm.storePtr(masm.getStackPointer(), Address(activation, WasmActivation::offsetOfFP()));
 
     
@@ -919,7 +907,7 @@ GenerateThrow(MacroAssembler& masm)
     
     
     Register scratch = ABINonArgReturnReg0;
-    masm.loadWasmActivation(scratch);
+    masm.loadWasmActivationFromSymbolicAddress(scratch);
     masm.storePtr(ImmWord(0), Address(scratch, WasmActivation::offsetOfFP()));
 
     masm.setFramePushed(FramePushedForEntrySP);
@@ -990,7 +978,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     Register scratch = ABINonArgReturnReg0;
 
     
-    masm.loadWasmActivation(scratch);
+    masm.loadWasmActivationFromSymbolicAddress(scratch);
     masm.loadPtr(Address(scratch, WasmActivation::offsetOfResumePC()), scratch);
     masm.storePtr(scratch, Address(masm.getStackPointer(), masm.framePushed() + sizeof(void*)));
 
@@ -1028,7 +1016,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.ma_and(StackPointer, StackPointer, Imm32(~(ABIStackAlignment - 1)));
 
     
-    masm.loadWasmActivation(IntArgReg0);
+    masm.loadWasmActivationFromSymbolicAddress(IntArgReg0);
     masm.loadPtr(Address(IntArgReg0, WasmActivation::offsetOfResumePC()), IntArgReg1);
     masm.storePtr(IntArgReg1, Address(s0, masm.framePushed()));
 
@@ -1072,7 +1060,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.ma_and(Imm32(~7), sp, sp);
 
     
-    masm.loadWasmActivation(IntArgReg0);
+    masm.loadWasmActivationFromSymbolicAddress(IntArgReg0);
     masm.loadPtr(Address(IntArgReg0, WasmActivation::offsetOfResumePC()), IntArgReg1);
     masm.storePtr(IntArgReg1, Address(r6, 14 * sizeof(uint32_t*)));
 

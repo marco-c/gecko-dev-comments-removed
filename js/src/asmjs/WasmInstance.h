@@ -50,15 +50,9 @@ class Instance
     TlsData                              tlsData_;
 
     
-    JSContext** addressOfContextPtr() const;
-    Instance** addressOfInstancePtr() const;
-    uint8_t** addressOfMemoryBase() const;
     void** addressOfTableBase(size_t tableIndex) const;
     const void** addressOfSigId(const SigIdDesc& sigId) const;
     FuncImportExit& funcImportToExit(const FuncImport& fi);
-
-    
-    TlsData* tlsData() { return &tlsData_; }
 
     
     friend void* AddressOf(SymbolicAddress, ExclusiveContext*);
@@ -81,7 +75,7 @@ class Instance
     bool init(JSContext* cx);
     void trace(JSTracer* trc);
 
-    JSContext* cx() const { return *addressOfContextPtr(); }
+    JSContext* cx() const { return tlsData_.cx; }
     JSCompartment* compartment() const { return compartment_; }
     Code& code() { return *code_; }
     const Code& code() const { return *code_; }

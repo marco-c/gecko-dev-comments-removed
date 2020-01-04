@@ -1045,7 +1045,16 @@ struct ExportArg
 struct TlsData
 {
     
+    JSContext* cx;
+
+    
     Instance* instance;
+
+    
+    uint8_t* globalData;
+
+    
+    uint8_t* memoryBase;
 
     
     
@@ -1053,7 +1062,7 @@ struct TlsData
     void* stackLimit;
 };
 
-typedef int32_t (*ExportFuncPtr)(ExportArg* args, uint8_t* global, TlsData* tls);
+typedef int32_t (*ExportFuncPtr)(ExportArg* args, TlsData* tls);
 
 
 
@@ -1066,9 +1075,7 @@ static const uint64_t Uint32Range = uint64_t(UINT32_MAX) + 1;
 static const uint64_t MappedSize = 2 * Uint32Range + PageSize;
 #endif
 
-static const unsigned ContextPtrGlobalDataOffset  = 0;
-static const unsigned HeapGlobalDataOffset        = ContextPtrGlobalDataOffset + sizeof(void*);
-static const unsigned NaN64GlobalDataOffset       = HeapGlobalDataOffset + sizeof(void*);
+static const unsigned NaN64GlobalDataOffset       = 0;
 static const unsigned NaN32GlobalDataOffset       = NaN64GlobalDataOffset + sizeof(double);
 static const unsigned InitialGlobalDataBytes      = NaN32GlobalDataOffset + sizeof(float);
 
