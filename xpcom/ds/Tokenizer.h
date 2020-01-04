@@ -209,10 +209,11 @@ public:
   
 
 
-  bool ReadChar(char* aValue);
-  bool ReadChar(bool (*aClassifier)(const char aChar), char* aValue);
-  bool ReadWord(nsACString& aValue);
-  bool ReadWord(nsDependentCSubstring& aValue);
+  MOZ_MUST_USE bool ReadChar(char* aValue);
+  MOZ_MUST_USE bool ReadChar(bool (*aClassifier)(const char aChar),
+                             char* aValue);
+  MOZ_MUST_USE bool ReadWord(nsACString& aValue);
+  MOZ_MUST_USE bool ReadWord(nsDependentCSubstring& aValue);
 
   
 
@@ -223,7 +224,7 @@ public:
 
 
   template <typename T>
-  bool ReadInteger(T* aValue)
+  MOZ_MUST_USE bool ReadInteger(T* aValue)
   {
     MOZ_RELEASE_ASSERT(aValue);
 
@@ -299,8 +300,12 @@ public:
 
 
 
-  bool ReadUntil(Token const& aToken, nsDependentCSubstring& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
-  bool ReadUntil(Token const& aToken, nsACString& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
+  MOZ_MUST_USE bool
+  ReadUntil(Token const& aToken, nsDependentCSubstring& aResult,
+            ClaimInclusion aInclude = EXCLUDE_LAST);
+  MOZ_MUST_USE bool
+  ReadUntil(Token const& aToken, nsACString& aResult,
+            ClaimInclusion aInclude = EXCLUDE_LAST);
 
 protected:
   
