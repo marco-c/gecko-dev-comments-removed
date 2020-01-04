@@ -137,7 +137,7 @@ AndroidFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
   
   if (offset != mPreviousOffset) {
     if (aDelta.ToMilliseconds() > 0) {
-      velocity = (mPreviousOffset - offset) / (float)aDelta.ToMilliseconds();
+      velocity = (offset - mPreviousOffset) / (float)aDelta.ToMilliseconds();
       mPreviousVelocity = velocity;
     }
   } else if (hitBoundX || hitBoundY) {
