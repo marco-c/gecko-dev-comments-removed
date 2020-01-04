@@ -161,9 +161,7 @@ public:
     
 
 
-    static void ClearThebesSurface(gfxASurface* aSurface,
-                                   mozilla::gfx::IntRect* aRect = nullptr,
-                                   const gfxRGBA& aColor = gfxRGBA(0.0, 0.0, 0.0, 0.0));
+    static void ClearThebesSurface(gfxASurface* aSurface);
 
     
 
