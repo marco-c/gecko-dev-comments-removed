@@ -35,8 +35,6 @@ typedef struct XPTMethodDescriptor XPTMethodDescriptor;
 typedef struct XPTParamDescriptor XPTParamDescriptor;
 typedef struct XPTTypeDescriptor XPTTypeDescriptor;
 typedef struct XPTTypeDescriptorPrefix XPTTypeDescriptorPrefix;
-typedef struct XPTString XPTString;
-typedef struct XPTAnnotation XPTAnnotation;
 
 #ifndef nsID_h__
 
@@ -65,7 +63,6 @@ struct XPTHeader {
     uint32_t                    file_length;
     XPTInterfaceDirectoryEntry  *interface_directory;
     uint32_t                    data_pool;
-    XPTAnnotation               *annotations;
 };
 
 #define XPT_MAGIC "XPCOM\nTypeLib\r\n\032"
@@ -148,15 +145,6 @@ struct XPTInterfaceDescriptor {
 extern XPT_PUBLIC_API(PRBool)
 XPT_InterfaceDescriptorAddTypes(XPTArena *arena, XPTInterfaceDescriptor *id, 
                                 uint16_t num);
-
-
-
-
-
-struct XPTString {
-    uint16_t length;
-    char   *bytes;
-};
 
 
 
@@ -262,7 +250,6 @@ union XPTConstValue {
     char      ch; 
     uint16_t  wch;
     nsID      *iid;
-    XPTString *string;
     char      *str;
     uint16_t  *wstr;
 }; 
@@ -345,13 +332,8 @@ struct XPTMethodDescriptor {
 
 
 
-struct XPTAnnotation {
-    XPTAnnotation *next;
-    uint8_t       flags;
-    
-    XPTString     *creator;
-    XPTString     *private_data;
-};
+
+
 
 #define XPT_ANN_LAST	                0x80
 #define XPT_ANN_IS_LAST(flags)          (flags & XPT_ANN_LAST)
