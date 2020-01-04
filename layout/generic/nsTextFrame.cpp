@@ -1871,7 +1871,7 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
   uint32_t nextBreakIndex = 0;
   nsTextFrame* nextBreakBeforeFrame = GetNextBreakBeforeFrame(&nextBreakIndex);
   bool isSVG = mLineContainer->IsSVGText();
-  bool enabledJustification = mLineContainer &&
+  bool enabledJustification =
     (mLineContainer->StyleText()->mTextAlign == NS_STYLE_TEXT_ALIGN_JUSTIFY ||
      mLineContainer->StyleText()->mTextAlignLast == NS_STYLE_TEXT_ALIGN_JUSTIFY);
 
@@ -5521,8 +5521,9 @@ nsTextFrame::DrawSelectionDecorations(gfxContext* aContext,
       aWidth, ComputeSelectionUnderlineHeight(aTextPaintStyle.PresContext(),
                                               aFontMetrics, aType));
   params.ascent = aAscent;
-  params.offset = aDecoration == NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE ?
-                  aFontMetrics.underlineOffset : aFontMetrics.maxAscent;
+  gfxFloat offset = aDecoration == NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE ?
+                      aFontMetrics.underlineOffset : aFontMetrics.maxAscent;
+  params.offset = offset * aDecorationOffsetDir;
   params.decoration = aDecoration;
   params.decorationType = DecorationType::Selection;
   params.callbacks = aCallbacks;
@@ -5612,15 +5613,14 @@ nsTextFrame::DrawSelectionDecorations(gfxContext* aContext,
         GetFirstFontMetrics(GetFontGroupForFrame(this, inflation), aVertical);
 
       relativeSize = 2.0f;
-      params.offset = metrics.strikeoutOffset + 0.5;
-      params.decoration = NS_STYLE_TEXT_DECORATION_LINE_LINE_THROUGH;
+      offset = metrics.strikeoutOffset + 0.5;
+      aDecoration = NS_STYLE_TEXT_DECORATION_LINE_LINE_THROUGH;
       break;
     }
     default:
       NS_WARNING("Requested selection decorations when there aren't any");
       return;
   }
-  params.offset *= aDecorationOffsetDir;
   params.lineSize.height *= relativeSize;
   params.icoordInFrame = (aVertical ? params.pt.y - aPt.y
                                     : params.pt.x - aPt.x) + aICoordInFrame;
