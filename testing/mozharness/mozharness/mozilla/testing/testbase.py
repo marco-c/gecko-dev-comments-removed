@@ -202,8 +202,10 @@ class TestingMixin(VirtualenvMixin, BuildbotMixin, ResourceMonitoringMixin,
                 self.warning("Can't figure out symbols_url from installer_url: %s!" %
                              self.installer_url)
 
-        else:
-            self.fatal("Can't figure out symbols_url without an installer_url!")
+        
+        
+        if not self.symbols_url:
+            self.warning("No symbols_url found. Let minidump_stackwalk query for symbols.")
 
         return self.symbols_url
 
