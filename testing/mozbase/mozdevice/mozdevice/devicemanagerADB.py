@@ -23,8 +23,9 @@ class DeviceManagerADB(DeviceManager):
     port.
     """
 
-    _haveRootShell = False
-    _haveSu = False
+    _haveRootShell = None
+    _haveSu = None
+    _suModifier = None
     _useZip = False
     _logcatNeedsRoot = False
     _pollingInterval = 0.01
@@ -101,17 +102,22 @@ class DeviceManagerADB(DeviceManager):
         
 
         
-        if root and not self._haveRootShell and not self._haveSu:
-            raise DMError("Shell command '%s' requested to run as root but root "
-                          "is not available on this device. Root your device or "
-                          "refactor the test/harness to not require root." %
-                          self._escapedCommandLine(cmd))
+        if root:
+            if self._haveRootShell is None and self._haveSu is None:
+                self._checkForRoot()
+            if not self._haveRootShell and not self._haveSu:
+                raise DMError(
+                    "Shell command '%s' requested to run as root but root "
+                    "is not available on this device. Root your device or "
+                    "refactor the test/harness to not require root." %
+                    self._escapedCommandLine(cmd))
 
         
         
         
-        if root and not self._haveRootShell:
-            cmdline = "su -c \"%s\"" % self._escapedCommandLine(cmd)
+        if root and self._haveSu:
+            cmdline = "su %s \"%s\"" % (self._suModifier,
+                                        self._escapedCommandLine(cmd))
         else:
             cmdline = self._escapedCommandLine(cmd)
         cmdline += "; echo $?"
@@ -662,6 +668,13 @@ class DeviceManagerADB(DeviceManager):
             raise DMError("unable to connect to device")
 
     def _checkForRoot(self):
+        self._haveRootShell = False
+        self._haveSu = False
+        
+        
+        if self._runAdbAsRoot:
+            self._adb_root()
+
         
         
         
@@ -673,22 +686,30 @@ class DeviceManagerADB(DeviceManager):
 
         
         
-        proc = self._runCmd(["shell", "su", "-c", "id"], timeout=self.short_timeout)
+        def su_id(su_modifier, timeout):
+            proc = self._runCmd(["shell", "su", su_modifier, "id"],
+                                timeout=timeout)
 
-        
-        
-        start_time = time.time()
-        retcode = None
-        while (time.time() - start_time) <= 15 and retcode is None:
-            retcode = proc.poll()
-        if retcode is None: 
-            proc.kill()
+            
+            
+            
+            start_time = time.time()
+            retcode = None
+            while (time.time() - start_time) <= 15 and retcode is None:
+                retcode = proc.poll()
+            if retcode is None: 
+                proc.kill()
 
-        if proc.output and 'uid=0(root)' in proc.output[0]:
+            if proc.output and 'uid=0(root)' in proc.output[0]:
+                return True
+            return False
+
+        if su_id('0', self.short_timeout):
             self._haveSu = True
-
-        if self._runAdbAsRoot:
-            self._adb_root()
+            self._suModifier = '0'
+        elif su_id('-c', self.short_timeout):
+            self._haveSu = True
+            self._suModifier = '-c'
 
     def _isUnzipAvailable(self):
         data = self._runCmd(["shell", "unzip"]).output
