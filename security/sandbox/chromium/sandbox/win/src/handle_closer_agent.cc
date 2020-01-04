@@ -4,6 +4,9 @@
 
 #include "sandbox/win/src/handle_closer_agent.h"
 
+#include <limits.h>
+#include <stddef.h>
+
 #include "base/logging.h"
 #include "sandbox/win/src/nt_internals.h"
 #include "sandbox/win/src/win_utils.h"
@@ -41,15 +44,68 @@ bool HandleCloserAgent::NeedsHandlesClosed() {
   return g_handles_to_close != NULL;
 }
 
+HandleCloserAgent::HandleCloserAgent()
+    : dummy_handle_(::CreateEvent(NULL, FALSE, FALSE, NULL)) {
+}
 
-void HandleCloserAgent::InitializeHandlesToClose() {
+HandleCloserAgent::~HandleCloserAgent() {
+}
+
+
+
+
+
+bool HandleCloserAgent::AttemptToStuffHandleSlot(HANDLE closed_handle,
+                                                 const base::string16& type) {
+  
+  if (type != L"Event" && type != L"File") {
+    return true;
+  }
+
+  if (!dummy_handle_.IsValid())
+    return false;
+
+  
+  DCHECK(dummy_handle_.Get() != closed_handle);
+
+  std::vector<HANDLE> to_close;
+  HANDLE dup_dummy = NULL;
+  size_t count = 16;
+
+  do {
+    if (!::DuplicateHandle(::GetCurrentProcess(), dummy_handle_.Get(),
+                           ::GetCurrentProcess(), &dup_dummy, 0, FALSE, 0))
+      break;
+    if (dup_dummy != closed_handle)
+      to_close.push_back(dup_dummy);
+  } while (count-- &&
+           reinterpret_cast<uintptr_t>(dup_dummy) <
+               reinterpret_cast<uintptr_t>(closed_handle));
+
+  for (auto h : to_close)
+    ::CloseHandle(h);
+
+  
+  DCHECK(dup_dummy == closed_handle);
+
+  return dup_dummy == closed_handle;
+}
+
+
+void HandleCloserAgent::InitializeHandlesToClose(bool* is_csrss_connected) {
   CHECK(g_handles_to_close != NULL);
+
+  
+  *is_csrss_connected = true;
 
   
   HandleListEntry* entry = g_handles_to_close->handle_entries;
   for (size_t i = 0; i < g_handles_to_close->num_handle_types; ++i) {
     
     base::char16* input = entry->handle_type;
+    if (!wcscmp(input, L"ALPC Port")) {
+      *is_csrss_connected = false;
+    }
     HandleMap::mapped_type& handle_names = handles_to_close_[input];
     input = reinterpret_cast<base::char16*>(reinterpret_cast<char*>(entry)
         + entry->offset_to_names);
@@ -67,7 +123,7 @@ void HandleCloserAgent::InitializeHandlesToClose() {
 
     DCHECK(reinterpret_cast<base::char16*>(entry) >= input);
     DCHECK(reinterpret_cast<base::char16*>(entry) - input <
-           sizeof(size_t) / sizeof(base::char16));
+           static_cast<ptrdiff_t>(sizeof(size_t) / sizeof(base::char16)));
   }
 
   
@@ -136,6 +192,8 @@ bool HandleCloserAgent::CloseHandles() {
         return false;
       if (!::CloseHandle(handle))
         return false;
+      
+      AttemptToStuffHandleSlot(handle, result->first);
     }
   }
 

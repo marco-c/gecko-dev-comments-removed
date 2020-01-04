@@ -8,8 +8,9 @@
 #include <windows.h>
 #include <vector>
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "base/strings/string16.h"
+#include "base/win/scoped_handle.h"
 #include "sandbox/win/src/restricted_token_utils.h"
 #include "sandbox/win/src/security_level.h"
 #include "sandbox/win/src/sid.h"
@@ -41,30 +42,22 @@ namespace sandbox {
 
 
 
-
 class RestrictedToken {
  public:
   
-  RestrictedToken()
-      : init_(false), effective_token_(NULL),
-        integrity_level_(INTEGRITY_LEVEL_LAST) { }
-
-  ~RestrictedToken() {
-    if (effective_token_)
-      CloseHandle(effective_token_);
-  }
+  RestrictedToken();
+  ~RestrictedToken();
 
   
   
   
-  unsigned Init(HANDLE effective_token);
+  DWORD Init(HANDLE effective_token);
 
   
   
   
   
-  
-  unsigned GetRestrictedTokenHandle(HANDLE *token_handle) const;
+  DWORD GetRestrictedToken(base::win::ScopedHandle* token) const;
 
   
   
@@ -74,9 +67,8 @@ class RestrictedToken {
   
   
   
-  
-  
-  unsigned GetRestrictedTokenHandleForImpersonation(HANDLE *token_handle) const;
+  DWORD GetRestrictedTokenForImpersonation(
+      base::win::ScopedHandle* token) const;
 
   
   
@@ -94,7 +86,7 @@ class RestrictedToken {
   
   
   
-  unsigned AddAllSidsForDenyOnly(std::vector<Sid> *exceptions);
+  DWORD AddAllSidsForDenyOnly(std::vector<Sid> *exceptions);
 
   
   
@@ -102,29 +94,13 @@ class RestrictedToken {
   
   
   
-  unsigned AddSidForDenyOnly(const Sid &sid);
+  DWORD AddSidForDenyOnly(const Sid &sid);
 
   
   
   
   
-  unsigned AddUserSidForDenyOnly();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  unsigned DeleteAllPrivileges(
-      const std::vector<base::string16> *exceptions);
+  DWORD AddUserSidForDenyOnly();
 
   
   
@@ -136,7 +112,10 @@ class RestrictedToken {
   
   
   
-  unsigned DeletePrivilege(const wchar_t *privilege);
+  
+  
+  
+  DWORD DeleteAllPrivileges(const std::vector<base::string16> *exceptions);
 
   
   
@@ -148,7 +127,7 @@ class RestrictedToken {
   
   
   
-  unsigned AddRestrictingSid(const Sid &sid);
+  DWORD DeletePrivilege(const wchar_t *privilege);
 
   
   
@@ -156,7 +135,11 @@ class RestrictedToken {
   
   
   
-  unsigned AddRestrictingSidLogonSession();
+  
+  
+  
+  
+  DWORD AddRestrictingSid(const Sid &sid);
 
   
   
@@ -164,18 +147,26 @@ class RestrictedToken {
   
   
   
-  unsigned AddRestrictingSidCurrentUser();
+  DWORD AddRestrictingSidLogonSession();
 
   
   
   
   
   
-  unsigned AddRestrictingSidAllSids();
+  
+  DWORD AddRestrictingSidCurrentUser();
 
   
   
-  unsigned SetIntegrityLevel(IntegrityLevel integrity_level);
+  
+  
+  
+  DWORD AddRestrictingSidAllSids();
+
+  
+  
+  DWORD SetIntegrityLevel(IntegrityLevel integrity_level);
 
  private:
   
@@ -185,7 +176,7 @@ class RestrictedToken {
   
   std::vector<Sid> sids_for_deny_only_;
   
-  HANDLE effective_token_;
+  base::win::ScopedHandle effective_token_;
   
   IntegrityLevel integrity_level_;
   

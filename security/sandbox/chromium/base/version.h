@@ -5,11 +5,11 @@
 #ifndef BASE_VERSION_H_
 #define BASE_VERSION_H_
 
+#include <stdint.h>
 #include <string>
 #include <vector>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
 
 namespace base {
 
@@ -57,10 +57,10 @@ class BASE_EXPORT Version {
   
   const std::string GetString() const;
 
-  const std::vector<uint16>& components() const { return components_; }
+  const std::vector<uint32_t>& components() const { return components_; }
 
  private:
-  std::vector<uint16> components_;
+  std::vector<uint32_t> components_;
 };
 
 }  

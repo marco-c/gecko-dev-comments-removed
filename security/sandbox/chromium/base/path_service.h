@@ -13,9 +13,9 @@
 #include "build/build_config.h"
 
 namespace base {
+
 class FilePath;
 class ScopedPathOverride;
-}  
 
 
 
@@ -29,7 +29,7 @@ class BASE_EXPORT PathService {
   
   
   
-  static bool Get(int key, base::FilePath* path);
+  static bool Get(int key, FilePath* path);
 
   
   
@@ -44,7 +44,7 @@ class BASE_EXPORT PathService {
   
   
   
-  static bool Override(int key, const base::FilePath& path);
+  static bool Override(int key, const FilePath& path);
 
   
   
@@ -56,7 +56,7 @@ class BASE_EXPORT PathService {
   
   
   static bool OverrideAndCreateIfNeeded(int key,
-                                        const base::FilePath& path,
+                                        const FilePath& path,
                                         bool is_absolute,
                                         bool create);
 
@@ -68,7 +68,7 @@ class BASE_EXPORT PathService {
   
   
   
-  typedef bool (*ProviderFunc)(int, base::FilePath*);
+  typedef bool (*ProviderFunc)(int, FilePath*);
 
   
   
@@ -80,7 +80,7 @@ class BASE_EXPORT PathService {
   static void DisableCache();
 
  private:
-  friend class base::ScopedPathOverride;
+  friend class ScopedPathOverride;
   FRIEND_TEST_ALL_PREFIXES(PathServiceTest, RemoveOverride);
 
   
@@ -88,5 +88,10 @@ class BASE_EXPORT PathService {
   
   static bool RemoveOverride(int key);
 };
+
+}  
+
+
+using base::PathService;
 
 #endif  

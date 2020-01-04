@@ -5,9 +5,12 @@
 #ifndef SANDBOX_SRC_POLICY_ENGINE_PROCESSOR_H__
 #define SANDBOX_SRC_POLICY_ENGINE_PROCESSOR_H__
 
-#include "base/basictypes.h"
-#include "sandbox/win/src/policy_engine_params.h"
+#include <stddef.h>
+#include <stdint.h>
+
+#include "base/macros.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
+#include "sandbox/win/src/policy_engine_params.h"
 
 namespace sandbox {
 
@@ -66,15 +69,15 @@ enum PolicyResult {
 
 
 
-const uint32 kStopOnErrors = 0;
+const uint32_t kStopOnErrors = 1;
 
-const uint32 kIgnoreErrors = 1;
-
-
-const uint32 kShortEval = 2;
+const uint32_t kIgnoreErrors = 2;
 
 
-const uint32 kRankedEval = 4;
+const uint32_t kShortEval = 4;
+
+
+const uint32_t kRankedEval = 8;
 
 
 
@@ -119,7 +122,7 @@ class PolicyProcessor {
   
   
   
-  PolicyResult Evaluate(uint32 options,
+  PolicyResult Evaluate(uint32_t options,
                         ParameterSet* parameters,
                         size_t parameter_count);
 

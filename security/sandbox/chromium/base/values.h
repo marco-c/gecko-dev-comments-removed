@@ -18,6 +18,7 @@
 #define BASE_VALUES_H_
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <iosfwd>
 #include <map>
@@ -26,13 +27,15 @@
 #include <vector>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
 #include "base/compiler_specific.h"
+#include "base/macros.h"
 #include "base/memory/scoped_ptr.h"
 #include "base/strings/string16.h"
+#include "base/strings/string_piece.h"
 
 namespace base {
 
+class BinaryValue;
 class DictionaryValue;
 class FundamentalValue;
 class ListValue;
@@ -63,7 +66,7 @@ class BASE_EXPORT Value {
 
   virtual ~Value();
 
-  static Value* CreateNullValue();
+  static scoped_ptr<Value> CreateNullValue();
 
   
   
@@ -85,6 +88,7 @@ class BASE_EXPORT Value {
   virtual bool GetAsString(std::string* out_value) const;
   virtual bool GetAsString(string16* out_value) const;
   virtual bool GetAsString(const StringValue** out_value) const;
+  virtual bool GetAsBinary(const BinaryValue** out_value) const;
   virtual bool GetAsList(ListValue** out_value);
   virtual bool GetAsList(const ListValue** out_value) const;
   virtual bool GetAsDictionary(DictionaryValue** out_value);
@@ -97,6 +101,8 @@ class BASE_EXPORT Value {
   
   
   virtual Value* DeepCopy() const;
+  
+  scoped_ptr<Value> CreateDeepCopy() const;
 
   
   virtual bool Equals(const Value* other) const;
@@ -188,6 +194,7 @@ class BASE_EXPORT BinaryValue: public Value {
   const char* GetBuffer() const { return buffer_.get(); }
 
   
+  bool GetAsBinary(const BinaryValue** out_value) const override;
   BinaryValue* DeepCopy() const override;
   bool Equals(const Value* other) const override;
 
@@ -203,6 +210,9 @@ class BASE_EXPORT BinaryValue: public Value {
 
 class BASE_EXPORT DictionaryValue : public Value {
  public:
+  
+  static scoped_ptr<DictionaryValue> From(scoped_ptr<Value> value);
+
   DictionaryValue();
   ~DictionaryValue() override;
 
@@ -229,7 +239,7 @@ class BASE_EXPORT DictionaryValue : public Value {
   
   
   
-  
+  void Set(const std::string& path, scoped_ptr<Value> in_value);
   
   void Set(const std::string& path, Value* in_value);
 
@@ -242,6 +252,9 @@ class BASE_EXPORT DictionaryValue : public Value {
   void SetString(const std::string& path, const string16& in_value);
 
   
+  
+  void SetWithoutPathExpansion(const std::string& key,
+                               scoped_ptr<Value> in_value);
   
   void SetWithoutPathExpansion(const std::string& key, Value* in_value);
 
@@ -262,8 +275,8 @@ class BASE_EXPORT DictionaryValue : public Value {
   
   
   
-  bool Get(const std::string& path, const Value** out_value) const;
-  bool Get(const std::string& path, Value** out_value);
+  bool Get(StringPiece path, const Value** out_value) const;
+  bool Get(StringPiece path, Value** out_value);
 
   
   
@@ -279,9 +292,9 @@ class BASE_EXPORT DictionaryValue : public Value {
   bool GetStringASCII(const std::string& path, std::string* out_value) const;
   bool GetBinary(const std::string& path, const BinaryValue** out_value) const;
   bool GetBinary(const std::string& path, BinaryValue** out_value);
-  bool GetDictionary(const std::string& path,
+  bool GetDictionary(StringPiece path,
                      const DictionaryValue** out_value) const;
-  bool GetDictionary(const std::string& path, DictionaryValue** out_value);
+  bool GetDictionary(StringPiece path, DictionaryValue** out_value);
   bool GetList(const std::string& path, const ListValue** out_value) const;
   bool GetList(const std::string& path, ListValue** out_value);
 
@@ -330,7 +343,7 @@ class BASE_EXPORT DictionaryValue : public Value {
 
   
   
-  DictionaryValue* DeepCopyWithoutEmptyChildren() const;
+  scoped_ptr<DictionaryValue> DeepCopyWithoutEmptyChildren() const;
 
   
   
@@ -362,6 +375,8 @@ class BASE_EXPORT DictionaryValue : public Value {
 
   
   DictionaryValue* DeepCopy() const override;
+  
+  scoped_ptr<DictionaryValue> CreateDeepCopy() const;
   bool Equals(const Value* other) const override;
 
  private:
@@ -375,6 +390,9 @@ class BASE_EXPORT ListValue : public Value {
  public:
   typedef ValueVector::iterator iterator;
   typedef ValueVector::const_iterator const_iterator;
+
+  
+  static scoped_ptr<ListValue> From(scoped_ptr<Value> value);
 
   ListValue();
   ~ListValue() override;
@@ -394,6 +412,8 @@ class BASE_EXPORT ListValue : public Value {
   
   
   bool Set(size_t index, Value* in_value);
+  
+  bool Set(size_t index, scoped_ptr<Value> in_value);
 
   
   
@@ -439,6 +459,8 @@ class BASE_EXPORT ListValue : public Value {
   iterator Erase(iterator iter, scoped_ptr<Value>* out_value);
 
   
+  void Append(scoped_ptr<Value> in_value);
+  
   void Append(Value* in_value);
 
   
@@ -480,6 +502,9 @@ class BASE_EXPORT ListValue : public Value {
   ListValue* DeepCopy() const override;
   bool Equals(const Value* other) const override;
 
+  
+  scoped_ptr<ListValue> CreateDeepCopy() const;
+
  private:
   ValueVector list_;
 
@@ -493,6 +518,13 @@ class BASE_EXPORT ValueSerializer {
   virtual ~ValueSerializer();
 
   virtual bool Serialize(const Value& root) = 0;
+};
+
+
+
+class BASE_EXPORT ValueDeserializer {
+ public:
+  virtual ~ValueDeserializer();
 
   
   
@@ -500,7 +532,8 @@ class BASE_EXPORT ValueSerializer {
   
   
   
-  virtual Value* Deserialize(int* error_code, std::string* error_str) = 0;
+  virtual scoped_ptr<Value> Deserialize(int* error_code,
+                                        std::string* error_str) = 0;
 };
 
 

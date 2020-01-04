@@ -11,16 +11,18 @@
 
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
+#include "build/build_config.h"
 
 namespace base {
 
 
-BASE_EXPORT std::string StringPrintf(const char* format, ...)
+BASE_EXPORT std::string StringPrintf(_Printf_format_string_ const char* format,
+                                     ...)
     PRINTF_FORMAT(1, 2) WARN_UNUSED_RESULT;
-
-#if !defined(OS_ANDROID)
-BASE_EXPORT std::wstring StringPrintf(const wchar_t* format, ...)
-    WPRINTF_FORMAT(1, 2) WARN_UNUSED_RESULT;
+#if defined(OS_WIN)
+BASE_EXPORT std::wstring StringPrintf(
+    _Printf_format_string_ const wchar_t* format,
+    ...) WPRINTF_FORMAT(1, 2) WARN_UNUSED_RESULT;
 #endif
 
 
@@ -28,30 +30,32 @@ BASE_EXPORT std::string StringPrintV(const char* format, va_list ap)
     PRINTF_FORMAT(1, 0) WARN_UNUSED_RESULT;
 
 
-BASE_EXPORT const std::string& SStringPrintf(std::string* dst,
-                                             const char* format, ...)
-    PRINTF_FORMAT(2, 3);
-#if !defined(OS_ANDROID)
-BASE_EXPORT const std::wstring& SStringPrintf(std::wstring* dst,
-                                              const wchar_t* format, ...)
-    WPRINTF_FORMAT(2, 3);
+BASE_EXPORT const std::string& SStringPrintf(
+    std::string* dst,
+    _Printf_format_string_ const char* format,
+    ...) PRINTF_FORMAT(2, 3);
+#if defined(OS_WIN)
+BASE_EXPORT const std::wstring& SStringPrintf(
+    std::wstring* dst,
+    _Printf_format_string_ const wchar_t* format,
+    ...) WPRINTF_FORMAT(2, 3);
 #endif
 
 
-BASE_EXPORT void StringAppendF(std::string* dst, const char* format, ...)
-    PRINTF_FORMAT(2, 3);
-#if !defined(OS_ANDROID)
-
-
-BASE_EXPORT void StringAppendF(std::wstring* dst, const wchar_t* format, ...)
-    WPRINTF_FORMAT(2, 3);
+BASE_EXPORT void StringAppendF(std::string* dst,
+                               _Printf_format_string_ const char* format,
+                               ...) PRINTF_FORMAT(2, 3);
+#if defined(OS_WIN)
+BASE_EXPORT void StringAppendF(std::wstring* dst,
+                               _Printf_format_string_ const wchar_t* format,
+                               ...) WPRINTF_FORMAT(2, 3);
 #endif
 
 
 
 BASE_EXPORT void StringAppendV(std::string* dst, const char* format, va_list ap)
     PRINTF_FORMAT(2, 0);
-#if !defined(OS_ANDROID)
+#if defined(OS_WIN)
 BASE_EXPORT void StringAppendV(std::wstring* dst,
                                const wchar_t* format, va_list ap)
     WPRINTF_FORMAT(2, 0);

@@ -2,10 +2,13 @@
 
 
 
-#ifndef BASE_SAFE_CONVERSIONS_H_
-#define BASE_SAFE_CONVERSIONS_H_
+#ifndef BASE_NUMERICS_SAFE_CONVERSIONS_H_
+#define BASE_NUMERICS_SAFE_CONVERSIONS_H_
+
+#include <stddef.h>
 
 #include <limits>
+#include <type_traits>
 
 #include "base/logging.h"
 #include "base/numerics/safe_conversions_impl.h"
@@ -22,6 +25,24 @@ inline bool IsValueInRangeForNumericType(Src value) {
 
 
 
+template <typename T>
+typename std::enable_if<std::numeric_limits<T>::is_signed, bool>::type
+IsValueNegative(T value) {
+  static_assert(std::numeric_limits<T>::is_specialized,
+                "Argument must be numeric.");
+  return value < 0;
+}
+
+template <typename T>
+typename std::enable_if<!std::numeric_limits<T>::is_signed, bool>::type
+    IsValueNegative(T) {
+  static_assert(std::numeric_limits<T>::is_specialized,
+                "Argument must be numeric.");
+  return false;
+}
+
+
+
 
 template <typename Dst, typename Src>
 inline Dst checked_cast(Src value) {
@@ -30,9 +51,29 @@ inline Dst checked_cast(Src value) {
 }
 
 
+struct SaturatedCastNaNBehaviorCheck {
+  template <typename T>
+  static T HandleNaN() {
+    CHECK(false);
+    return T();
+  }
+};
 
 
-template <typename Dst, typename Src>
+struct SaturatedCastNaNBehaviorReturnZero {
+  template <typename T>
+  static T HandleNaN() {
+    return T();
+  }
+};
+
+
+
+
+
+template <typename Dst,
+          class NaNHandler = SaturatedCastNaNBehaviorReturnZero,
+          typename Src>
 inline Dst saturated_cast(Src value) {
   
   if (std::numeric_limits<Dst>::is_iec559)
@@ -50,15 +91,75 @@ inline Dst saturated_cast(Src value) {
 
     
     case internal::RANGE_INVALID:
-      CHECK(false);
-      return std::numeric_limits<Dst>::max();
+      return NaNHandler::template HandleNaN<Dst>();
   }
 
   NOTREACHED();
   return static_cast<Dst>(value);
 }
 
+
+
+
+template <typename Dst, typename Src>
+inline Dst strict_cast(Src value) {
+  static_assert(std::numeric_limits<Src>::is_specialized,
+                "Argument must be numeric.");
+  static_assert(std::numeric_limits<Dst>::is_specialized,
+                "Result must be numeric.");
+  static_assert((internal::StaticDstRangeRelationToSrcRange<Dst, Src>::value ==
+                 internal::NUMERIC_RANGE_CONTAINED),
+                "The numeric conversion is out of range for this type. You "
+                "should probably use one of the following conversion "
+                "mechanisms on the value you want to pass:\n"
+                "- base::checked_cast\n"
+                "- base::saturated_cast\n"
+                "- base::CheckedNumeric");
+
+  return static_cast<Dst>(value);
+}
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class StrictNumeric {
+ public:
+  typedef T type;
+
+  StrictNumeric() : value_(0) {}
+
+  
+  template <typename Src>
+  StrictNumeric(const StrictNumeric<Src>& rhs)
+      : value_(strict_cast<T>(rhs.value_)) {}
+
+  
+  
+  template <typename Src>
+  StrictNumeric(Src value)
+      : value_(strict_cast<T>(value)) {}
+
+  
+  template <typename Dst>
+  operator Dst() const {
+    return strict_cast<Dst>(value_);
+  }
+
+ private:
+  T value_;
+};
+
+
+typedef StrictNumeric<size_t> SizeT;
+
 }  
 
 #endif  
-

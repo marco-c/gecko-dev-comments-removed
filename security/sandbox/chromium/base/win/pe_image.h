@@ -69,8 +69,6 @@ class PEImage {
                                                 LPCSTR module,
                                                 PIMAGE_THUNK_DATA name_table,
                                                 PIMAGE_THUNK_DATA iat,
-                                                PIMAGE_THUNK_DATA bound_iat,
-                                                PIMAGE_THUNK_DATA unload_iat,
                                                 PVOID cookie);
 
   
@@ -131,6 +129,9 @@ class PEImage {
 
   
   PIMAGE_EXPORT_DIRECTORY GetExportDirectory() const;
+
+  
+  bool GetDebugId(LPGUID guid, LPDWORD age) const;
 
   
   
@@ -201,8 +202,6 @@ class PEImage {
                                LPCSTR module_name,
                                PIMAGE_THUNK_DATA name_table,
                                PIMAGE_THUNK_DATA iat,
-                               PIMAGE_THUNK_DATA bound_iat,
-                               PIMAGE_THUNK_DATA unload_iat,
                                PVOID cookie) const;
 
   
@@ -235,19 +234,15 @@ class PEImageAsData : public PEImage {
  public:
   explicit PEImageAsData(HMODULE hModule) : PEImage(hModule) {}
 
-  virtual PVOID RVAToAddr(DWORD rva) const;
+  PVOID RVAToAddr(DWORD rva) const override;
 };
 
 inline bool PEImage::IsOrdinal(LPCSTR name) {
-#pragma warning(push)
-#pragma warning(disable: 4311)
-  
-  return reinterpret_cast<DWORD>(name) <= 0xFFFF;
-#pragma warning(pop)
+  return reinterpret_cast<uintptr_t>(name) <= 0xFFFF;
 }
 
 inline WORD PEImage::ToOrdinal(LPCSTR name) {
-  return reinterpret_cast<WORD>(name);
+  return static_cast<WORD>(reinterpret_cast<intptr_t>(name));
 }
 
 inline HMODULE PEImage::module() const {

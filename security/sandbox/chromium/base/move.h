@@ -2,16 +2,20 @@
 
 
 
-#include "base/compiler_specific.h"
-
 #ifndef BASE_MOVE_H_
 #define BASE_MOVE_H_
 
+#include <utility>
 
+#include "base/compiler_specific.h"
+#include "base/macros.h"
+#include "build/build_config.h"
 
 
 
 
+#define MOVE_ONLY_TYPE_FOR_CPP_03(type) \
+  DISALLOW_COPY_AND_ASSIGN_WITH_MOVE_FOR_BIND(type)
 
 
 
@@ -27,203 +31,27 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define MOVE_ONLY_TYPE_FOR_CPP_03(type, rvalue_type) \
- private: \
-  struct rvalue_type { \
-    explicit rvalue_type(type* object) : object(object) {} \
-    type* object; \
-  }; \
-  type(type&); \
-  void operator=(type&); \
- public: \
-  operator rvalue_type() { return rvalue_type(this); } \
-  type Pass() WARN_UNUSED_RESULT { return type(rvalue_type(this)); } \
-  typedef void MoveOnlyTypeForCPP03; \
+#if defined(OS_ANDROID) || defined(OS_LINUX) || defined(OS_MACOSX)
+#define DISALLOW_COPY_AND_ASSIGN_WITH_MOVE_FOR_BIND(type)       \
+ private:                                                       \
+  type(const type&) = delete;                                   \
+  void operator=(const type&) = delete;                         \
+                                                                \
+ public:                                                        \
+  typedef void MoveOnlyTypeForCPP03;                            \
+                                                                \
  private:
-
-#define MOVE_ONLY_TYPE_WITH_MOVE_CONSTRUCTOR_FOR_CPP_03(type) \
- private: \
-  type(type&); \
-  void operator=(type&); \
- public: \
-  type&& Pass() WARN_UNUSED_RESULT { return static_cast<type&&>(*this); } \
-  typedef void MoveOnlyTypeForCPP03; \
+#else
+#define DISALLOW_COPY_AND_ASSIGN_WITH_MOVE_FOR_BIND(type)       \
+ private:                                                       \
+  type(const type&) = delete;                                   \
+  void operator=(const type&) = delete;                         \
+                                                                \
+ public:                                                        \
+  type&& Pass() WARN_UNUSED_RESULT { return std::move(*this); } \
+  typedef void MoveOnlyTypeForCPP03;                            \
+                                                                \
  private:
+#endif
 
 #endif  

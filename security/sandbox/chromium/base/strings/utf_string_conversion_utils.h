@@ -7,12 +7,15 @@
 
 
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "base/base_export.h"
 #include "base/strings/string16.h"
 
 namespace base {
 
-inline bool IsValidCodepoint(uint32 code_point) {
+inline bool IsValidCodepoint(uint32_t code_point) {
   
   
   
@@ -20,7 +23,7 @@ inline bool IsValidCodepoint(uint32 code_point) {
          (code_point >= 0xE000u && code_point <= 0x10FFFFu);
 }
 
-inline bool IsValidCharacter(uint32 code_point) {
+inline bool IsValidCharacter(uint32_t code_point) {
   
   
   return code_point < 0xD800u || (code_point >= 0xE000u &&
@@ -38,40 +41,39 @@ inline bool IsValidCharacter(uint32 code_point) {
 
 
 BASE_EXPORT bool ReadUnicodeCharacter(const char* src,
-                                      int32 src_len,
-                                      int32* char_index,
-                                      uint32* code_point_out);
+                                      int32_t src_len,
+                                      int32_t* char_index,
+                                      uint32_t* code_point_out);
 
 
 BASE_EXPORT bool ReadUnicodeCharacter(const char16* src,
-                                      int32 src_len,
-                                      int32* char_index,
-                                      uint32* code_point);
+                                      int32_t src_len,
+                                      int32_t* char_index,
+                                      uint32_t* code_point);
 
 #if defined(WCHAR_T_IS_UTF32)
 
 BASE_EXPORT bool ReadUnicodeCharacter(const wchar_t* src,
-                                      int32 src_len,
-                                      int32* char_index,
-                                      uint32* code_point);
+                                      int32_t src_len,
+                                      int32_t* char_index,
+                                      uint32_t* code_point);
 #endif  
 
 
 
 
 
-
-BASE_EXPORT size_t WriteUnicodeCharacter(uint32 code_point,
+BASE_EXPORT size_t WriteUnicodeCharacter(uint32_t code_point,
                                          std::string* output);
 
 
 
-BASE_EXPORT size_t WriteUnicodeCharacter(uint32 code_point, string16* output);
+BASE_EXPORT size_t WriteUnicodeCharacter(uint32_t code_point, string16* output);
 
 #if defined(WCHAR_T_IS_UTF32)
 
 
-inline size_t WriteUnicodeCharacter(uint32 code_point, std::wstring* output) {
+inline size_t WriteUnicodeCharacter(uint32_t code_point, std::wstring* output) {
   
   output->push_back(code_point);
   return 1;

@@ -9,16 +9,19 @@
 #define BASE_CALLBACK_INTERNAL_H_
 
 #include <stddef.h>
+#include <memory>
+#include <type_traits>
 
+#include "base/atomic_ref_count.h"
 #include "base/base_export.h"
+#include "base/macros.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/scoped_ptr.h"
-
-template <typename T>
-class ScopedVector;
+#include "base/template_util.h"
 
 namespace base {
 namespace internal {
+class CallbackBase;
 
 
 
@@ -26,16 +29,39 @@ namespace internal {
 
 
 
-class BindStateBase : public RefCountedThreadSafe<BindStateBase> {
+
+
+
+
+
+class BindStateBase {
  protected:
-  friend class RefCountedThreadSafe<BindStateBase>;
-  virtual ~BindStateBase() {}
+  explicit BindStateBase(void (*destructor)(BindStateBase*))
+      : ref_count_(0), destructor_(destructor) {}
+  ~BindStateBase() = default;
+
+ private:
+  friend class scoped_refptr<BindStateBase>;
+  friend class CallbackBase;
+
+  void AddRef();
+  void Release();
+
+  AtomicRefCount ref_count_;
+
+  
+  void (*destructor_)(BindStateBase*);
+
+  DISALLOW_COPY_AND_ASSIGN(BindStateBase);
 };
 
 
 
 class BASE_EXPORT CallbackBase {
  public:
+  CallbackBase(const CallbackBase& c);
+  CallbackBase& operator=(const CallbackBase& c);
+
   
   bool is_null() const { return bind_state_.get() == NULL; }
 
@@ -47,7 +73,7 @@ class BASE_EXPORT CallbackBase {
   
   
   
-  typedef void(*InvokeFuncStorage)(void);
+  using InvokeFuncStorage = void(*)();
 
   
   bool Equals(const CallbackBase& other) const;
@@ -70,6 +96,12 @@ class BASE_EXPORT CallbackBase {
 
 
 
+
+
+
+
+
+
 template <typename T> struct IsMoveOnlyType {
   template <typename U>
   static YesType Test(const typename U::MoveOnlyTypeForCPP03*);
@@ -83,6 +115,14 @@ template <typename T> struct IsMoveOnlyType {
 
 
 
+template <typename T>
+struct IsMoveOnlyType<std::unique_ptr<T>> : std::true_type {};
+
+template <typename>
+struct CallbackParamTraitsForMoveOnlyType;
+
+template <typename>
+struct CallbackParamTraitsForNonMoveOnlyType;
 
 
 
@@ -92,10 +132,24 @@ template <typename T> struct IsMoveOnlyType {
 
 
 
-template <typename T, bool is_move_only = IsMoveOnlyType<T>::value>
-struct CallbackParamTraits {
-  typedef const T& ForwardType;
-  typedef T StorageType;
+
+
+
+
+
+
+
+template <typename T>
+struct CallbackParamTraits
+    : std::conditional<IsMoveOnlyType<T>::value,
+         CallbackParamTraitsForMoveOnlyType<T>,
+         CallbackParamTraitsForNonMoveOnlyType<T>>::type {
+};
+
+template <typename T>
+struct CallbackParamTraitsForNonMoveOnlyType {
+  using ForwardType = const T&;
+  using StorageType = T;
 };
 
 
@@ -104,9 +158,9 @@ struct CallbackParamTraits {
 
 
 template <typename T>
-struct CallbackParamTraits<T&, false> {
-  typedef T& ForwardType;
-  typedef T StorageType;
+struct CallbackParamTraitsForNonMoveOnlyType<T&> {
+  using ForwardType = T&;
+  using StorageType = T;
 };
 
 
@@ -115,35 +169,16 @@ struct CallbackParamTraits<T&, false> {
 
 
 template <typename T, size_t n>
-struct CallbackParamTraits<T[n], false> {
-  typedef const T* ForwardType;
-  typedef const T* StorageType;
+struct CallbackParamTraitsForNonMoveOnlyType<T[n]> {
+  using ForwardType = const T*;
+  using StorageType = const T*;
 };
 
 
 template <typename T>
-struct CallbackParamTraits<T[], false> {
-  typedef const T* ForwardType;
-  typedef const T* StorageType;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct CallbackParamTraits<T, true> {
-  typedef T ForwardType;
-  typedef T StorageType;
+struct CallbackParamTraitsForNonMoveOnlyType<T[]> {
+  using ForwardType = const T*;
+  using StorageType = const T*;
 };
 
 
@@ -159,17 +194,38 @@ struct CallbackParamTraits<T, true> {
 
 
 
+template <typename T>
+struct CallbackParamTraitsForMoveOnlyType {
+  using ForwardType = T;
+  using StorageType = T;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 template <typename T>
-typename enable_if<!IsMoveOnlyType<T>::value, T>::type& CallbackForward(T& t) {
+typename std::enable_if<!IsMoveOnlyType<T>::value, T>::type& CallbackForward(
+    T& t) {
   return t;
 }
 
 template <typename T>
-typename enable_if<IsMoveOnlyType<T>::value, T>::type CallbackForward(T& t) {
-  return t.Pass();
+typename std::enable_if<IsMoveOnlyType<T>::value, T>::type CallbackForward(
+    T& t) {
+  return std::move(t);
 }
 
 }  

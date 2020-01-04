@@ -19,12 +19,6 @@
 
 
 
-
-
-
-
-
-
 #ifndef BASE_STRINGS_STRING_PIECE_H_
 #define BASE_STRINGS_STRING_PIECE_H_
 
@@ -34,10 +28,9 @@
 #include <string>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
 #include "base/containers/hash_tables.h"
+#include "base/logging.h"
 #include "base/strings/string16.h"
-#include "mozilla/Attributes.h"
 
 namespace base {
 
@@ -150,6 +143,14 @@ BASE_EXPORT StringPiece16 substr(const StringPiece16& self,
                                  size_t pos,
                                  size_t n);
 
+#if DCHECK_IS_ON()
+
+BASE_EXPORT void AssertIteratorsInOrder(std::string::const_iterator begin,
+                                        std::string::const_iterator end);
+BASE_EXPORT void AssertIteratorsInOrder(string16::const_iterator begin,
+                                        string16::const_iterator end);
+#endif
+
 }  
 
 
@@ -187,9 +188,18 @@ template <typename STRING_TYPE> class BasicStringPiece {
   BasicStringPiece(const value_type* offset, size_type len)
       : ptr_(offset), length_(len) {}
   BasicStringPiece(const typename STRING_TYPE::const_iterator& begin,
-                    const typename STRING_TYPE::const_iterator& end)
-      : ptr_((end > begin) ? &(*begin) : NULL),
-        length_((end > begin) ? (size_type)(end - begin) : 0) {}
+                   const typename STRING_TYPE::const_iterator& end) {
+#if DCHECK_IS_ON()
+    
+    
+    internal::AssertIteratorsInOrder(begin, end);
+#endif
+    length_ = static_cast<size_t>(std::distance(begin, end));
+
+    
+    
+    ptr_ = length_ > 0 ? &*begin : nullptr;
+  }
 
   
   

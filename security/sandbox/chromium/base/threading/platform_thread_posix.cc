@@ -5,28 +5,25 @@
 #include "base/threading/platform_thread.h"
 
 #include <errno.h>
+#include <pthread.h>
 #include <sched.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/memory/scoped_ptr.h"
-#include "base/safe_strerror_posix.h"
-#include "base/synchronization/waitable_event.h"
+#include "base/threading/platform_thread_internal_posix.h"
 #include "base/threading/thread_id_name_manager.h"
 #include "base/threading/thread_restrictions.h"
-#include "base/tracked_objects.h"
-
-#if defined(OS_MACOSX)
-#include <sys/resource.h>
-#include <algorithm>
-#endif
+#include "build/build_config.h"
 
 #if defined(OS_LINUX)
-#include <sys/prctl.h>
-#include <sys/resource.h>
 #include <sys/syscall.h>
-#include <sys/time.h>
-#include <unistd.h>
+#elif defined(OS_ANDROID)
+#include <sys/types.h>
 #endif
 
 namespace base {
@@ -40,38 +37,28 @@ namespace {
 
 struct ThreadParams {
   ThreadParams()
-      : delegate(NULL),
-        joinable(false),
-        priority(kThreadPriority_Normal),
-        handle(NULL),
-        handle_set(false, false) {
-  }
+      : delegate(NULL), joinable(false), priority(ThreadPriority::NORMAL) {}
 
   PlatformThread::Delegate* delegate;
   bool joinable;
   ThreadPriority priority;
-  PlatformThreadHandle* handle;
-  WaitableEvent handle_set;
 };
 
 void* ThreadFunc(void* params) {
   base::InitOnThread();
-  ThreadParams* thread_params = static_cast<ThreadParams*>(params);
 
-  PlatformThread::Delegate* delegate = thread_params->delegate;
-  if (!thread_params->joinable)
-    base::ThreadRestrictions::SetSingletonAllowed(false);
+  PlatformThread::Delegate* delegate = nullptr;
 
-  if (thread_params->priority != kThreadPriority_Normal) {
-    PlatformThread::SetThreadPriority(PlatformThread::CurrentHandle(),
-                                      thread_params->priority);
+  {
+    scoped_ptr<ThreadParams> thread_params(static_cast<ThreadParams*>(params));
+
+    delegate = thread_params->delegate;
+    if (!thread_params->joinable)
+      base::ThreadRestrictions::SetSingletonAllowed(false);
+
+    if (thread_params->priority != ThreadPriority::NORMAL)
+      PlatformThread::SetCurrentThreadPriority(thread_params->priority);
   }
-
-  
-  
-  *(thread_params->handle) = PlatformThreadHandle(pthread_self(),
-                                                  PlatformThread::CurrentId());
-  thread_params->handle_set.Signal();
 
   ThreadIdNameManager::GetInstance()->RegisterThread(
       PlatformThread::CurrentHandle().platform_handle(),
@@ -87,21 +74,21 @@ void* ThreadFunc(void* params) {
   return NULL;
 }
 
-bool CreateThread(size_t stack_size, bool joinable,
+bool CreateThread(size_t stack_size,
+                  bool joinable,
                   PlatformThread::Delegate* delegate,
                   PlatformThreadHandle* thread_handle,
                   ThreadPriority priority) {
+  DCHECK(thread_handle);
   base::InitThreading();
 
-  bool success = false;
   pthread_attr_t attributes;
   pthread_attr_init(&attributes);
 
   
   
-  if (!joinable) {
+  if (!joinable)
     pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_DETACHED);
-  }
 
   
   if (stack_size == 0)
@@ -110,32 +97,26 @@ bool CreateThread(size_t stack_size, bool joinable,
   if (stack_size > 0)
     pthread_attr_setstacksize(&attributes, stack_size);
 
-  ThreadParams params;
-  params.delegate = delegate;
-  params.joinable = joinable;
-  params.priority = priority;
-  params.handle = thread_handle;
+  scoped_ptr<ThreadParams> params(new ThreadParams);
+  params->delegate = delegate;
+  params->joinable = joinable;
+  params->priority = priority;
 
   pthread_t handle;
-  int err = pthread_create(&handle,
-                           &attributes,
-                           ThreadFunc,
-                           &params);
-  success = !err;
-  if (!success) {
+  int err = pthread_create(&handle, &attributes, ThreadFunc, params.get());
+  bool success = !err;
+  if (success) {
+    
+    ignore_result(params.release());
+  } else {
     
     handle = 0;
     errno = err;
     PLOG(ERROR) << "pthread_create";
   }
+  *thread_handle = PlatformThreadHandle(handle);
 
   pthread_attr_destroy(&attributes);
-
-  
-  
-  if (success)
-    params.handle_set.Wait();
-  CHECK_EQ(handle, thread_handle->platform_handle());
 
   return success;
 }
@@ -158,9 +139,9 @@ PlatformThreadId PlatformThread::CurrentId() {
   return pthread_self();
 #elif defined(OS_NACL) && !defined(__GLIBC__)
   
-  return reinterpret_cast<int32>(pthread_self());
+  return reinterpret_cast<int32_t>(pthread_self());
 #elif defined(OS_POSIX)
-  return reinterpret_cast<int64>(pthread_self());
+  return reinterpret_cast<int64_t>(pthread_self());
 #endif
 }
 
@@ -171,7 +152,7 @@ PlatformThreadRef PlatformThread::CurrentRef() {
 
 
 PlatformThreadHandle PlatformThread::CurrentHandle() {
-  return PlatformThreadHandle(pthread_self(), CurrentId());
+  return PlatformThreadHandle(pthread_self());
 }
 
 
@@ -200,18 +181,9 @@ const char* PlatformThread::GetName() {
 }
 
 
-bool PlatformThread::Create(size_t stack_size, Delegate* delegate,
-                            PlatformThreadHandle* thread_handle) {
-  base::ThreadRestrictions::ScopedAllowWait allow_wait;
-  return CreateThread(stack_size, true ,
-                      delegate, thread_handle, kThreadPriority_Normal);
-}
-
-
 bool PlatformThread::CreateWithPriority(size_t stack_size, Delegate* delegate,
                                         PlatformThreadHandle* thread_handle,
                                         ThreadPriority priority) {
-  base::ThreadRestrictions::ScopedAllowWait allow_wait;
   return CreateThread(stack_size, true,  
                       delegate, thread_handle, priority);
 }
@@ -220,9 +192,8 @@ bool PlatformThread::CreateWithPriority(size_t stack_size, Delegate* delegate,
 bool PlatformThread::CreateNonJoinable(size_t stack_size, Delegate* delegate) {
   PlatformThreadHandle unused;
 
-  base::ThreadRestrictions::ScopedAllowWait allow_wait;
   bool result = CreateThread(stack_size, false ,
-                             delegate, &unused, kThreadPriority_Normal);
+                             delegate, &unused, ThreadPriority::NORMAL);
   return result;
 }
 
@@ -232,7 +203,61 @@ void PlatformThread::Join(PlatformThreadHandle thread_handle) {
   
   
   base::ThreadRestrictions::AssertIOAllowed();
-  CHECK_EQ(0, pthread_join(thread_handle.handle_, NULL));
+  CHECK_EQ(0, pthread_join(thread_handle.platform_handle(), NULL));
 }
+
+
+#if !defined(OS_MACOSX)
+
+
+void PlatformThread::SetCurrentThreadPriority(ThreadPriority priority) {
+#if defined(OS_NACL)
+  NOTIMPLEMENTED();
+#else
+  if (internal::SetCurrentThreadPriorityForPlatform(priority))
+    return;
+
+  
+  
+  
+  
+  
+  
+  const int nice_setting = internal::ThreadPriorityToNiceValue(priority);
+  if (setpriority(PRIO_PROCESS, 0, nice_setting)) {
+    DVPLOG(1) << "Failed to set nice value of thread ("
+              << PlatformThread::CurrentId() << ") to " << nice_setting;
+  }
+#endif  
+}
+
+
+ThreadPriority PlatformThread::GetCurrentThreadPriority() {
+#if defined(OS_NACL)
+  NOTIMPLEMENTED();
+  return ThreadPriority::NORMAL;
+#else
+  
+  ThreadPriority platform_specific_priority;
+  if (internal::GetCurrentThreadPriorityForPlatform(
+          &platform_specific_priority)) {
+    return platform_specific_priority;
+  }
+
+  
+  
+  errno = 0;
+  int nice_value = getpriority(PRIO_PROCESS, 0);
+  if (errno != 0) {
+    DVPLOG(1) << "Failed to get nice value of thread ("
+              << PlatformThread::CurrentId() << ")";
+    return ThreadPriority::NORMAL;
+  }
+
+  return internal::NiceValueToThreadPriority(nice_value);
+#endif  
+}
+
+#endif  
 
 }  

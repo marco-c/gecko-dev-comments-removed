@@ -5,6 +5,7 @@
 #ifndef SANDBOX_SRC_SANDBOX_FACTORY_H__
 #define SANDBOX_SRC_SANDBOX_FACTORY_H__
 
+#include "base/macros.h"
 #include "sandbox/win/src/sandbox.h"
 
 

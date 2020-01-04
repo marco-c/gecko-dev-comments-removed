@@ -5,7 +5,10 @@
 #ifndef SANDBOX_WIN_SRC_POLICY_ENGINE_OPCODES_H_
 #define SANDBOX_WIN_SRC_POLICY_ENGINE_OPCODES_H_
 
-#include "base/basictypes.h"
+#include <stddef.h>
+#include <stdint.h>
+
+#include "base/macros.h"
 #include "base/numerics/safe_conversions.h"
 #include "sandbox/win/src/policy_engine_params.h"
 
@@ -84,22 +87,22 @@ enum OpcodeID {
 
 
 
-const uint32 kPolNone = 0;
+const uint32_t kPolNone = 0;
 
 
 
-const uint32 kPolNegateEval = 1;
+const uint32_t kPolNegateEval = 1;
 
 
 
-const uint32 kPolClearContext = 2;
+const uint32_t kPolClearContext = 2;
 
 
 
 
 
 
-const uint32 kPolUseOREval = 4;
+const uint32_t kPolUseOREval = 4;
 
 
 
@@ -108,7 +111,7 @@ const uint32 kPolUseOREval = 4;
 
 struct MatchContext {
   size_t position;
-  uint32 options;
+  uint32_t options;
 
   MatchContext() {
     Clear();
@@ -154,7 +157,7 @@ class PolicyOpcode {
   
   template <typename T>
   void GetArgument(size_t index, T* argument) const {
-    COMPILE_ASSERT(sizeof(T) <= sizeof(arguments_[0]), invalid_size);
+    static_assert(sizeof(T) <= sizeof(arguments_[0]), "invalid size");
     *argument = *reinterpret_cast<const T*>(&arguments_[index].mem);
   }
 
@@ -162,7 +165,7 @@ class PolicyOpcode {
   
   template <typename T>
   void SetArgument(size_t index, const T& argument) {
-    COMPILE_ASSERT(sizeof(T) <= sizeof(arguments_[0]), invalid_size);
+    static_assert(sizeof(T) <= sizeof(arguments_[0]), "invalid size");
     *reinterpret_cast<T*>(&arguments_[index].mem) = argument;
   }
 
@@ -190,13 +193,11 @@ class PolicyOpcode {
   }
 
   
-  uint32 GetOptions() const {
-    return options_;
-  }
+  uint32_t GetOptions() const { return options_; }
 
   
-  void SetOptions(uint32 options) {
-    options_ = base::checked_cast<uint16>(options);
+  void SetOptions(uint32_t options) {
+    options_ = base::checked_cast<uint16_t>(options);
   }
 
  private:
@@ -218,11 +219,11 @@ class PolicyOpcode {
   EvalResult EvaluateHelper(const ParameterSet* parameters,
                            MatchContext* match);
   OpcodeID opcode_id_;
-  int16 parameter_;
+  int16_t parameter_;
   
   
   
-  uint16 options_;
+  uint16_t options_;
   OpcodeArgument arguments_[PolicyOpcode::kArgumentCount];
 };
 
@@ -297,39 +298,39 @@ class OpcodeFactory {
   }
 
   
-  PolicyOpcode* MakeOpAlwaysFalse(uint32 options);
+  PolicyOpcode* MakeOpAlwaysFalse(uint32_t options);
 
   
-  PolicyOpcode* MakeOpAlwaysTrue(uint32 options);
-
-  
-  
-  PolicyOpcode* MakeOpAction(EvalResult action, uint32 options);
+  PolicyOpcode* MakeOpAlwaysTrue(uint32_t options);
 
   
   
-  
-  
-  PolicyOpcode* MakeOpNumberMatch(int16 selected_param,
-                                  uint32 match,
-                                  uint32 options);
+  PolicyOpcode* MakeOpAction(EvalResult action, uint32_t options);
 
   
   
   
   
-  PolicyOpcode* MakeOpVoidPtrMatch(int16 selected_param,
+  PolicyOpcode* MakeOpNumberMatch(int16_t selected_param,
+                                  uint32_t match,
+                                  uint32_t options);
+
+  
+  
+  
+  
+  PolicyOpcode* MakeOpVoidPtrMatch(int16_t selected_param,
                                    const void* match,
-                                   uint32 options);
+                                   uint32_t options);
 
   
   
   
   
-  PolicyOpcode* MakeOpNumberMatchRange(int16 selected_param,
-                                       uint32 lower_bound,
-                                       uint32 upper_bound,
-                                       uint32 options);
+  PolicyOpcode* MakeOpNumberMatchRange(int16_t selected_param,
+                                       uint32_t lower_bound,
+                                       uint32_t upper_bound,
+                                       uint32_t options);
 
   
   
@@ -344,26 +345,27 @@ class OpcodeFactory {
   
   
   
-  PolicyOpcode* MakeOpWStringMatch(int16 selected_param,
+  PolicyOpcode* MakeOpWStringMatch(int16_t selected_param,
                                    const wchar_t* match_str,
                                    int start_position,
                                    StringMatchOptions match_opts,
-                                   uint32 options);
+                                   uint32_t options);
 
   
   
   
   
-  PolicyOpcode* MakeOpNumberAndMatch(int16 selected_param,
-                                     uint32 match,
-                                     uint32 options);
+  PolicyOpcode* MakeOpNumberAndMatch(int16_t selected_param,
+                                     uint32_t match,
+                                     uint32_t options);
 
  private:
   
   
   
-  PolicyOpcode* MakeBase(OpcodeID opcode_id, uint32 options,
-                         int16 selected_param);
+  PolicyOpcode* MakeBase(OpcodeID opcode_id,
+                         uint32_t options,
+                         int16_t selected_param);
 
   
   

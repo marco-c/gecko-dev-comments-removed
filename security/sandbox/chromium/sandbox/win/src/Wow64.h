@@ -7,7 +7,8 @@
 
 #include <windows.h>
 
-#include "base/basictypes.h"
+#include "base/macros.h"
+#include "base/win/scoped_handle.h"
 #include "sandbox/win/src/sandbox_types.h"
 
 namespace sandbox {
@@ -18,8 +19,7 @@ class TargetProcess;
 
 class Wow64 {
  public:
-  Wow64(TargetProcess* child, HMODULE ntdll)
-      : child_(child), ntdll_(ntdll), dll_load_(NULL), continue_load_(NULL) {}
+  Wow64(TargetProcess* child, HMODULE ntdll);
   ~Wow64();
 
   
@@ -40,8 +40,10 @@ class Wow64 {
 
   TargetProcess* child_;  
   HMODULE ntdll_;         
-  HANDLE dll_load_;       
-  HANDLE continue_load_;  
+  
+  base::win::ScopedHandle dll_load_;
+  
+  base::win::ScopedHandle continue_load_;
   DISALLOW_IMPLICIT_CONSTRUCTORS(Wow64);
 };
 

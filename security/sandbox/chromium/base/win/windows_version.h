@@ -5,10 +5,12 @@
 #ifndef BASE_WIN_WINDOWS_VERSION_H_
 #define BASE_WIN_WINDOWS_VERSION_H_
 
+#include <stddef.h>
+
 #include <string>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
+#include "base/macros.h"
 
 typedef void* HANDLE;
 
@@ -19,16 +21,20 @@ namespace win {
 
 
 
+
+
+
 enum Version {
   VERSION_PRE_XP = 0,  
-  VERSION_XP,
-  VERSION_SERVER_2003, 
-  VERSION_VISTA,       
-  VERSION_WIN7,        
-  VERSION_WIN8,        
-  VERSION_WIN8_1,      
-  VERSION_WIN10,       
-  VERSION_WIN_LAST,    
+  VERSION_XP = 1,
+  VERSION_SERVER_2003 = 2,  
+  VERSION_VISTA = 3,        
+  VERSION_WIN7 = 4,         
+  VERSION_WIN8 = 5,         
+  VERSION_WIN8_1 = 6,       
+  VERSION_WIN10 = 7,        
+  VERSION_WIN10_TH2 = 8,    
+  VERSION_WIN_LAST,         
 };
 
 
@@ -83,6 +89,7 @@ class BASE_EXPORT OSInfo {
   static OSInfo* GetInstance();
 
   Version version() const { return version_; }
+  Version Kernel32Version() const;
   
   VersionNumber version_number() const { return version_number_; }
   VersionType version_type() const { return version_type_; }
@@ -102,6 +109,8 @@ class BASE_EXPORT OSInfo {
   ~OSInfo();
 
   Version version_;
+  mutable Version kernel32_version_;
+  mutable bool got_kernel32_version_;
   VersionNumber version_number_;
   VersionType version_type_;
   ServicePack service_pack_;

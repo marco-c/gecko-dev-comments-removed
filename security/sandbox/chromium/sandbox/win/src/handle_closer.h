@@ -5,10 +5,12 @@
 #ifndef SANDBOX_SRC_HANDLE_CLOSER_H_
 #define SANDBOX_SRC_HANDLE_CLOSER_H_
 
+#include <stddef.h>
+
 #include <map>
 #include <set>
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "base/strings/string16.h"
 #include "sandbox/win/src/interception.h"
 #include "sandbox/win/src/sandbox_types.h"
@@ -19,8 +21,7 @@ namespace sandbox {
 
 
 
-typedef std::map<const base::string16, std::set<base::string16> >
-    HandleMap;
+typedef std::map<const base::string16, std::set<base::string16> > HandleMap;
 
 
 struct HandleListEntry {
@@ -43,6 +44,7 @@ SANDBOX_INTERCEPT HandleCloserInfo* g_handle_closer_info;
 class HandleCloser {
  public:
   HandleCloser();
+  ~HandleCloser();
 
   
   

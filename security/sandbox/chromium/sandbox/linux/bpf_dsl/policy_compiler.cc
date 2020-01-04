@@ -5,7 +5,8 @@
 #include "sandbox/linux/bpf_dsl/policy_compiler.h"
 
 #include <errno.h>
-#include <linux/filter.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/syscall.h>
 
 #include <limits>
@@ -14,14 +15,13 @@
 #include "base/macros.h"
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
 #include "sandbox/linux/bpf_dsl/bpf_dsl_impl.h"
+#include "sandbox/linux/bpf_dsl/codegen.h"
 #include "sandbox/linux/bpf_dsl/policy.h"
-#include "sandbox/linux/seccomp-bpf/codegen.h"
-#include "sandbox/linux/seccomp-bpf/die.h"
-#include "sandbox/linux/seccomp-bpf/errorcode.h"
-#include "sandbox/linux/seccomp-bpf/instruction.h"
-#include "sandbox/linux/seccomp-bpf/linux_seccomp.h"
-#include "sandbox/linux/seccomp-bpf/syscall.h"
-#include "sandbox/linux/seccomp-bpf/syscall_iterator.h"
+#include "sandbox/linux/bpf_dsl/seccomp_macros.h"
+#include "sandbox/linux/bpf_dsl/syscall_set.h"
+#include "sandbox/linux/system_headers/linux_filter.h"
+#include "sandbox/linux/system_headers/linux_seccomp.h"
+#include "sandbox/linux/system_headers/linux_syscalls.h"
 
 namespace sandbox {
 namespace bpf_dsl {
@@ -55,10 +55,8 @@ bool HasExactlyOneBit(uint64_t x) {
   return x != 0 && (x & (x - 1)) == 0;
 }
 
-bool IsDenied(const ErrorCode& code) {
-  return (code.err() & SECCOMP_RET_ACTION) == SECCOMP_RET_TRAP ||
-         (code.err() >= (SECCOMP_RET_ERRNO + ErrorCode::ERR_MIN_ERRNO) &&
-          code.err() <= (SECCOMP_RET_ERRNO + ErrorCode::ERR_MAX_ERRNO));
+ResultExpr DefaultPanic(const char* error) {
+  return Kill();
 }
 
 
@@ -72,11 +70,8 @@ intptr_t ReturnErrno(const struct arch_seccomp_data&, void* aux) {
   return -err;
 }
 
-intptr_t BPFFailure(const struct arch_seccomp_data&, void* aux) {
-  SANDBOX_DIE(static_cast<char*>(aux));
-}
-
 bool HasUnsafeTraps(const Policy* policy) {
+  DCHECK(policy);
   for (uint32_t sysnum : SyscallSet::ValidOnly()) {
     if (policy->EvaluateSyscall(sysnum)->HasUnsafeTraps()) {
       return true;
@@ -88,65 +83,54 @@ bool HasUnsafeTraps(const Policy* policy) {
 }  
 
 struct PolicyCompiler::Range {
-  Range(uint32_t f, const ErrorCode& e) : from(f), err(e) {}
   uint32_t from;
-  ErrorCode err;
+  CodeGen::Node node;
 };
 
 PolicyCompiler::PolicyCompiler(const Policy* policy, TrapRegistry* registry)
     : policy_(policy),
       registry_(registry),
-      conds_(),
+      escapepc_(0),
+      panic_func_(DefaultPanic),
       gen_(),
       has_unsafe_traps_(HasUnsafeTraps(policy_)) {
+  DCHECK(policy);
 }
 
 PolicyCompiler::~PolicyCompiler() {
 }
 
-scoped_ptr<CodeGen::Program> PolicyCompiler::Compile() {
-  if (!IsDenied(policy_->InvalidSyscall()->Compile(this))) {
-    SANDBOX_DIE("Policies should deny invalid system calls.");
-  }
+CodeGen::Program PolicyCompiler::Compile() {
+  CHECK(policy_->InvalidSyscall()->IsDeny())
+      << "Policies should deny invalid system calls";
 
   
   if (has_unsafe_traps_) {
-    
-    
-    
-    
-    if (Syscall::Call(-1) == -1 && errno == ENOSYS) {
-      SANDBOX_DIE(
-          "Support for UnsafeTrap() has not yet been ported to this "
-          "architecture");
-    }
+    CHECK_NE(0U, escapepc_) << "UnsafeTrap() requires a valid escape PC";
 
     for (int sysnum : kSyscallsRequiredForUnsafeTraps) {
-      if (!policy_->EvaluateSyscall(sysnum)->Compile(this)
-               .Equals(ErrorCode(ErrorCode::ERR_ALLOWED))) {
-        SANDBOX_DIE(
-            "Policies that use UnsafeTrap() must unconditionally allow all "
-            "required system calls");
-      }
+      CHECK(policy_->EvaluateSyscall(sysnum)->IsAllow())
+          << "Policies that use UnsafeTrap() must unconditionally allow all "
+             "required system calls";
     }
 
-    if (!registry_->EnableUnsafeTraps()) {
-      
-      
-      
-      
-      
-      SANDBOX_DIE("We'd rather die than enable unsafe traps");
-    }
+    CHECK(registry_->EnableUnsafeTraps())
+        << "We'd rather die than enable unsafe traps";
   }
 
   
-  scoped_ptr<CodeGen::Program> program(new CodeGen::Program());
-  gen_.Compile(AssemblePolicy(), program.get());
-  return program.Pass();
+  return gen_.Compile(AssemblePolicy());
 }
 
-Instruction* PolicyCompiler::AssemblePolicy() {
+void PolicyCompiler::DangerousSetEscapePC(uint64_t escapepc) {
+  escapepc_ = escapepc;
+}
+
+void PolicyCompiler::SetPanicFunc(PanicFunc panic_func) {
+  panic_func_ = panic_func;
+}
+
+CodeGen::Node PolicyCompiler::AssemblePolicy() {
   
   
   
@@ -156,20 +140,17 @@ Instruction* PolicyCompiler::AssemblePolicy() {
   return CheckArch(MaybeAddEscapeHatch(DispatchSyscall()));
 }
 
-Instruction* PolicyCompiler::CheckArch(Instruction* passed) {
+CodeGen::Node PolicyCompiler::CheckArch(CodeGen::Node passed) {
   
   
   return gen_.MakeInstruction(
-      BPF_LD + BPF_W + BPF_ABS,
-      SECCOMP_ARCH_IDX,
-      gen_.MakeInstruction(
-          BPF_JMP + BPF_JEQ + BPF_K,
-          SECCOMP_ARCH,
-          passed,
-          RetExpression(Kill("Invalid audit architecture in BPF filter"))));
+      BPF_LD + BPF_W + BPF_ABS, SECCOMP_ARCH_IDX,
+      gen_.MakeInstruction(BPF_JMP + BPF_JEQ + BPF_K, SECCOMP_ARCH, passed,
+                           CompileResult(panic_func_(
+                               "Invalid audit architecture in BPF filter"))));
 }
 
-Instruction* PolicyCompiler::MaybeAddEscapeHatch(Instruction* rest) {
+CodeGen::Node PolicyCompiler::MaybeAddEscapeHatch(CodeGen::Node rest) {
   
   if (!has_unsafe_traps_) {
     return rest;
@@ -177,10 +158,11 @@ Instruction* PolicyCompiler::MaybeAddEscapeHatch(Instruction* rest) {
 
   
   
-  uint64_t syscall_entry_point =
-      static_cast<uint64_t>(static_cast<uintptr_t>(Syscall::Call(-1)));
-  uint32_t low = static_cast<uint32_t>(syscall_entry_point);
-  uint32_t hi = static_cast<uint32_t>(syscall_entry_point >> 32);
+  CHECK(registry_->EnableUnsafeTraps());
+
+  
+  const uint32_t lopc = static_cast<uint32_t>(escapepc_);
+  const uint32_t hipc = static_cast<uint32_t>(escapepc_ >> 32);
 
   
   
@@ -190,30 +172,24 @@ Instruction* PolicyCompiler::MaybeAddEscapeHatch(Instruction* rest) {
   
   
   return gen_.MakeInstruction(
-      BPF_LD + BPF_W + BPF_ABS,
-      SECCOMP_IP_LSB_IDX,
+      BPF_LD + BPF_W + BPF_ABS, SECCOMP_IP_LSB_IDX,
       gen_.MakeInstruction(
-          BPF_JMP + BPF_JEQ + BPF_K,
-          low,
+          BPF_JMP + BPF_JEQ + BPF_K, lopc,
           gen_.MakeInstruction(
-              BPF_LD + BPF_W + BPF_ABS,
-              SECCOMP_IP_MSB_IDX,
-              gen_.MakeInstruction(
-                  BPF_JMP + BPF_JEQ + BPF_K,
-                  hi,
-                  RetExpression(ErrorCode(ErrorCode::ERR_ALLOWED)),
-                  rest)),
+              BPF_LD + BPF_W + BPF_ABS, SECCOMP_IP_MSB_IDX,
+              gen_.MakeInstruction(BPF_JMP + BPF_JEQ + BPF_K, hipc,
+                                   CompileResult(Allow()), rest)),
           rest));
 }
 
-Instruction* PolicyCompiler::DispatchSyscall() {
+CodeGen::Node PolicyCompiler::DispatchSyscall() {
   
   
   Ranges ranges;
   FindRanges(&ranges);
 
   
-  Instruction* jumptable = AssembleJumpTable(ranges.begin(), ranges.end());
+  CodeGen::Node jumptable = AssembleJumpTable(ranges.begin(), ranges.end());
 
   
   
@@ -221,12 +197,12 @@ Instruction* PolicyCompiler::DispatchSyscall() {
       BPF_LD + BPF_W + BPF_ABS, SECCOMP_NR_IDX, CheckSyscallNumber(jumptable));
 }
 
-Instruction* PolicyCompiler::CheckSyscallNumber(Instruction* passed) {
+CodeGen::Node PolicyCompiler::CheckSyscallNumber(CodeGen::Node passed) {
   if (kIsIntel) {
     
     
-    Instruction* invalidX32 =
-        RetExpression(Kill("Illegal mixing of system call ABIs"));
+    CodeGen::Node invalidX32 =
+        CompileResult(panic_func_("Illegal mixing of system call ABIs"));
     if (kIsX32) {
       
       return gen_.MakeInstruction(
@@ -248,112 +224,105 @@ void PolicyCompiler::FindRanges(Ranges* ranges) {
   
   
   
-  const ErrorCode invalid_err = policy_->InvalidSyscall()->Compile(this);
+  const CodeGen::Node invalid_node = CompileResult(policy_->InvalidSyscall());
   uint32_t old_sysnum = 0;
-  ErrorCode old_err = SyscallSet::IsValid(old_sysnum)
-                          ? policy_->EvaluateSyscall(old_sysnum)->Compile(this)
-                          : invalid_err;
+  CodeGen::Node old_node =
+      SyscallSet::IsValid(old_sysnum)
+          ? CompileResult(policy_->EvaluateSyscall(old_sysnum))
+          : invalid_node;
 
   for (uint32_t sysnum : SyscallSet::All()) {
-    ErrorCode err =
+    CodeGen::Node node =
         SyscallSet::IsValid(sysnum)
-            ? policy_->EvaluateSyscall(static_cast<int>(sysnum))->Compile(this)
-            : invalid_err;
-    if (!err.Equals(old_err)) {
-      ranges->push_back(Range(old_sysnum, old_err));
+            ? CompileResult(policy_->EvaluateSyscall(static_cast<int>(sysnum)))
+            : invalid_node;
+    
+    
+    
+    if (node != old_node) {
+      ranges->push_back(Range{old_sysnum, old_node});
       old_sysnum = sysnum;
-      old_err = err;
+      old_node = node;
     }
   }
-  ranges->push_back(Range(old_sysnum, old_err));
+  ranges->push_back(Range{old_sysnum, old_node});
 }
 
-Instruction* PolicyCompiler::AssembleJumpTable(Ranges::const_iterator start,
-                                               Ranges::const_iterator stop) {
+CodeGen::Node PolicyCompiler::AssembleJumpTable(Ranges::const_iterator start,
+                                                Ranges::const_iterator stop) {
   
   
   
   
-  if (stop - start <= 0) {
-    SANDBOX_DIE("Invalid set of system call ranges");
-  } else if (stop - start == 1) {
+  CHECK(start < stop) << "Invalid iterator range";
+  const auto n = stop - start;
+  if (n == 1) {
     
     
-    return RetExpression(start->err);
+    return start->node;
   }
 
   
   
   
   
-  Ranges::const_iterator mid = start + (stop - start) / 2;
+  Ranges::const_iterator mid = start + n / 2;
 
   
-  Instruction* jf = AssembleJumpTable(start, mid);
-  Instruction* jt = AssembleJumpTable(mid, stop);
+  CodeGen::Node jf = AssembleJumpTable(start, mid);
+  CodeGen::Node jt = AssembleJumpTable(mid, stop);
   return gen_.MakeInstruction(BPF_JMP + BPF_JGE + BPF_K, mid->from, jt, jf);
 }
 
-Instruction* PolicyCompiler::RetExpression(const ErrorCode& err) {
-  switch (err.error_type()) {
-    case ErrorCode::ET_COND:
-      return CondExpression(err);
-    case ErrorCode::ET_SIMPLE:
-    case ErrorCode::ET_TRAP:
-      return gen_.MakeInstruction(BPF_RET + BPF_K, err.err());
-    default:
-      SANDBOX_DIE("ErrorCode is not suitable for returning from a BPF program");
-  }
+CodeGen::Node PolicyCompiler::CompileResult(const ResultExpr& res) {
+  return res->Compile(this);
 }
 
-Instruction* PolicyCompiler::CondExpression(const ErrorCode& cond) {
+CodeGen::Node PolicyCompiler::MaskedEqual(int argno,
+                                          size_t width,
+                                          uint64_t mask,
+                                          uint64_t value,
+                                          CodeGen::Node passed,
+                                          CodeGen::Node failed) {
   
-  if (cond.argno_ < 0 || cond.argno_ >= 6) {
-    SANDBOX_DIE("sandbox_bpf: invalid argument number");
+  CHECK(argno >= 0 && argno < 6) << "Invalid argument number " << argno;
+  CHECK(width == 4 || width == 8) << "Invalid argument width " << width;
+  CHECK_NE(0U, mask) << "Zero mask is invalid";
+  CHECK_EQ(value, value & mask) << "Value contains masked out bits";
+  if (sizeof(void*) == 4) {
+    CHECK_EQ(4U, width) << "Invalid width on 32-bit platform";
   }
-  if (cond.width_ != ErrorCode::TP_32BIT &&
-      cond.width_ != ErrorCode::TP_64BIT) {
-    SANDBOX_DIE("sandbox_bpf: invalid argument width");
+  if (width == 4) {
+    CHECK_EQ(0U, mask >> 32) << "Mask exceeds argument size";
+    CHECK_EQ(0U, value >> 32) << "Value exceeds argument size";
   }
-  if (cond.mask_ == 0) {
-    SANDBOX_DIE("sandbox_bpf: zero mask is invalid");
-  }
-  if ((cond.value_ & cond.mask_) != cond.value_) {
-    SANDBOX_DIE("sandbox_bpf: value contains masked out bits");
-  }
-  if (cond.width_ == ErrorCode::TP_32BIT &&
-      ((cond.mask_ >> 32) != 0 || (cond.value_ >> 32) != 0)) {
-    SANDBOX_DIE("sandbox_bpf: test exceeds argument size");
-  }
-  
-  
-
-  Instruction* passed = RetExpression(*cond.passed_);
-  Instruction* failed = RetExpression(*cond.failed_);
 
   
   
   
   
-  return CondExpressionHalf(cond,
-                            UpperHalf,
-                            CondExpressionHalf(cond, LowerHalf, passed, failed),
-                            failed);
+  return MaskedEqualHalf(argno, width, mask, value, ArgHalf::UPPER,
+                         MaskedEqualHalf(argno, width, mask, value,
+                                         ArgHalf::LOWER, passed, failed),
+                         failed);
 }
 
-Instruction* PolicyCompiler::CondExpressionHalf(const ErrorCode& cond,
-                                                ArgHalf half,
-                                                Instruction* passed,
-                                                Instruction* failed) {
-  if (cond.width_ == ErrorCode::TP_32BIT && half == UpperHalf) {
+CodeGen::Node PolicyCompiler::MaskedEqualHalf(int argno,
+                                              size_t width,
+                                              uint64_t full_mask,
+                                              uint64_t full_value,
+                                              ArgHalf half,
+                                              CodeGen::Node passed,
+                                              CodeGen::Node failed) {
+  if (width == 4 && half == ArgHalf::UPPER) {
     
     
 
     
-    Instruction* invalid_64bit = RetExpression(Unexpected64bitArgument());
+    CodeGen::Node invalid_64bit = Unexpected64bitArgument();
 
-    const uint32_t upper = SECCOMP_ARG_MSB_IDX(cond.argno_);
-    const uint32_t lower = SECCOMP_ARG_LSB_IDX(cond.argno_);
+    const uint32_t upper = SECCOMP_ARG_MSB_IDX(argno);
+    const uint32_t lower = SECCOMP_ARG_LSB_IDX(argno);
 
     if (sizeof(void*) == 4) {
       
@@ -396,10 +365,11 @@ Instruction* PolicyCompiler::CondExpressionHalf(const ErrorCode& cond,
                 invalid_64bit)));
   }
 
-  const uint32_t idx = (half == UpperHalf) ? SECCOMP_ARG_MSB_IDX(cond.argno_)
-                                           : SECCOMP_ARG_LSB_IDX(cond.argno_);
-  const uint32_t mask = (half == UpperHalf) ? cond.mask_ >> 32 : cond.mask_;
-  const uint32_t value = (half == UpperHalf) ? cond.value_ >> 32 : cond.value_;
+  const uint32_t idx = (half == ArgHalf::UPPER) ? SECCOMP_ARG_MSB_IDX(argno)
+                                                : SECCOMP_ARG_LSB_IDX(argno);
+  const uint32_t mask = (half == ArgHalf::UPPER) ? full_mask >> 32 : full_mask;
+  const uint32_t value =
+      (half == ArgHalf::UPPER) ? full_value >> 32 : full_value;
 
   
 
@@ -454,12 +424,12 @@ Instruction* PolicyCompiler::CondExpressionHalf(const ErrorCode& cond,
               BPF_JMP + BPF_JEQ + BPF_K, value, passed, failed)));
 }
 
-ErrorCode PolicyCompiler::Unexpected64bitArgument() {
-  return Kill("Unexpected 64bit argument detected");
+CodeGen::Node PolicyCompiler::Unexpected64bitArgument() {
+  return CompileResult(panic_func_("Unexpected 64bit argument detected"));
 }
 
-ErrorCode PolicyCompiler::Error(int err) {
-  if (has_unsafe_traps_) {
+CodeGen::Node PolicyCompiler::Return(uint32_t ret) {
+  if (has_unsafe_traps_ && (ret & SECCOMP_RET_ACTION) == SECCOMP_RET_ERRNO) {
     
     
     
@@ -469,26 +439,18 @@ ErrorCode PolicyCompiler::Error(int err) {
     
     
     
-    return Trap(ReturnErrno, reinterpret_cast<void*>(err));
+    return Trap(ReturnErrno, reinterpret_cast<void*>(ret & SECCOMP_RET_DATA),
+                true);
   }
 
-  return ErrorCode(err);
+  return gen_.MakeInstruction(BPF_RET + BPF_K, ret);
 }
 
-ErrorCode PolicyCompiler::MakeTrap(TrapRegistry::TrapFnc fnc,
+CodeGen::Node PolicyCompiler::Trap(TrapRegistry::TrapFnc fnc,
                                    const void* aux,
                                    bool safe) {
   uint16_t trap_id = registry_->Add(fnc, aux, safe);
-  return ErrorCode(trap_id, fnc, aux, safe);
-}
-
-ErrorCode PolicyCompiler::Trap(TrapRegistry::TrapFnc fnc, const void* aux) {
-  return MakeTrap(fnc, aux, true );
-}
-
-ErrorCode PolicyCompiler::UnsafeTrap(TrapRegistry::TrapFnc fnc,
-                                     const void* aux) {
-  return MakeTrap(fnc, aux, false );
+  return gen_.MakeInstruction(BPF_RET + BPF_K, SECCOMP_RET_TRAP + trap_id);
 }
 
 bool PolicyCompiler::IsRequiredForUnsafeTrap(int sysno) {
@@ -498,24 +460,6 @@ bool PolicyCompiler::IsRequiredForUnsafeTrap(int sysno) {
     }
   }
   return false;
-}
-
-ErrorCode PolicyCompiler::CondMaskedEqual(int argno,
-                                          ErrorCode::ArgType width,
-                                          uint64_t mask,
-                                          uint64_t value,
-                                          const ErrorCode& passed,
-                                          const ErrorCode& failed) {
-  return ErrorCode(argno,
-                   width,
-                   mask,
-                   value,
-                   &*conds_.insert(passed).first,
-                   &*conds_.insert(failed).first);
-}
-
-ErrorCode PolicyCompiler::Kill(const char* msg) {
-  return Trap(BPFFailure, const_cast<char*>(msg));
 }
 
 }  

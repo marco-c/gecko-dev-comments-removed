@@ -5,9 +5,6 @@
 
 
 
-
-
-
 #ifndef BASE_ATOMIC_REF_COUNT_H_
 #define BASE_ATOMIC_REF_COUNT_H_
 

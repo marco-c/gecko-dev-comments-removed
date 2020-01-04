@@ -5,10 +5,13 @@
 #ifndef SANDBOX_SRC_CROSSCALL_SERVER_H_
 #define SANDBOX_SRC_CROSSCALL_SERVER_H_
 
+#include <stdint.h>
+
 #include <string>
 #include <vector>
-#include "base/basictypes.h"
+
 #include "base/callback.h"
+#include "base/macros.h"
 #include "base/strings/string16.h"
 #include "sandbox/win/src/crosscall_params.h"
 
@@ -94,31 +97,31 @@ class CrossCallParamsEx : public CrossCallParams {
   
   
   static CrossCallParamsEx* CreateFromBuffer(void* buffer_base,
-                                             uint32 buffer_size,
-                                             uint32* output_size);
+                                             uint32_t buffer_size,
+                                             uint32_t* output_size);
 
   
   
   
   
-  void* GetRawParameter(uint32 index, uint32* size, ArgType* type);
+  void* GetRawParameter(uint32_t index, uint32_t* size, ArgType* type);
 
   
   
-  bool GetParameter32(uint32 index, uint32* param);
+  bool GetParameter32(uint32_t index, uint32_t* param);
 
   
   
-  bool GetParameterVoidPtr(uint32 index, void** param);
+  bool GetParameterVoidPtr(uint32_t index, void** param);
 
   
   
-  bool GetParameterStr(uint32 index, base::string16* string);
+  bool GetParameterStr(uint32_t index, base::string16* string);
 
   
   
   
-  bool GetParameterPtr(uint32 index, uint32 expected_size, void** pointer);
+  bool GetParameterPtr(uint32_t index, uint32_t expected_size, void** pointer);
 
   
   static void operator delete(void* raw_memory) throw();
@@ -143,7 +146,6 @@ void SetCallSuccess(CrossCallReturn* call_return);
 
 struct ClientInfo {
   HANDLE process;
-  HANDLE job_object;
   DWORD process_id;
 };
 
@@ -207,7 +209,8 @@ class Dispatcher {
   
   virtual bool SetupService(InterceptionManager* manager, int service) = 0;
 
-  virtual ~Dispatcher() {}
+  Dispatcher();
+  virtual ~Dispatcher();
 
  protected:
   

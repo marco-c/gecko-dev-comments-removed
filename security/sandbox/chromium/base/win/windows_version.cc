@@ -6,16 +6,79 @@
 
 #include <windows.h>
 
+#include "base/file_version_info_win.h"
+#include "base/files/file_path.h"
 #include "base/logging.h"
+#include "base/memory/scoped_ptr.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/win/registry.h"
 
 namespace {
 typedef BOOL (WINAPI *GetProductInfoPtr)(DWORD, DWORD, DWORD, DWORD, PDWORD);
-}
+}  
 
 namespace base {
 namespace win {
+
+namespace {
+
+
+Version MajorMinorBuildToVersion(int major, int minor, int build) {
+  if ((major == 5) && (minor > 0)) {
+    
+    return (minor == 1) ? VERSION_XP : VERSION_SERVER_2003;
+  } else if (major == 6) {
+    switch (minor) {
+      case 0:
+        
+        return VERSION_VISTA;
+      case 1:
+        
+        return VERSION_WIN7;
+      case 2:
+        
+        return VERSION_WIN8;
+      default:
+        DCHECK_EQ(minor, 3);
+        return VERSION_WIN8_1;
+    }
+  } else if (major == 10) {
+    if (build < 10586) {
+      return VERSION_WIN10;
+    } else {
+      return VERSION_WIN10_TH2;
+    }
+  } else if (major > 6) {
+    NOTREACHED();
+    return VERSION_WIN_LAST;
+  }
+
+  return VERSION_PRE_XP;
+}
+
+
+
+
+Version GetVersionFromKernel32() {
+  scoped_ptr<FileVersionInfoWin> file_version_info(
+      static_cast<FileVersionInfoWin*>(
+          FileVersionInfoWin::CreateFileVersionInfo(
+              base::FilePath(FILE_PATH_LITERAL("kernel32.dll")))));
+  if (file_version_info) {
+    const int major =
+        HIWORD(file_version_info->fixed_file_info()->dwFileVersionMS);
+    const int minor =
+        LOWORD(file_version_info->fixed_file_info()->dwFileVersionMS);
+    const int build =
+        HIWORD(file_version_info->fixed_file_info()->dwFileVersionLS);
+    return MajorMinorBuildToVersion(major, minor, build);
+  }
+
+  NOTREACHED();
+  return VERSION_WIN_LAST;
+}
+
+}  
 
 
 OSInfo* OSInfo::GetInstance() {
@@ -35,6 +98,8 @@ OSInfo* OSInfo::GetInstance() {
 
 OSInfo::OSInfo()
     : version_(VERSION_PRE_XP),
+      kernel32_version_(VERSION_PRE_XP),
+      got_kernel32_version_(false),
       architecture_(OTHER_ARCHITECTURE),
       wow64_status_(GetWOW64StatusForProcess(GetCurrentProcess())) {
   OSVERSIONINFOEX version_info = { sizeof version_info };
@@ -42,38 +107,12 @@ OSInfo::OSInfo()
   version_number_.major = version_info.dwMajorVersion;
   version_number_.minor = version_info.dwMinorVersion;
   version_number_.build = version_info.dwBuildNumber;
-  if ((version_number_.major == 5) && (version_number_.minor > 0)) {
-    
-    version_ = (version_number_.minor == 1) ? VERSION_XP : VERSION_SERVER_2003;
-  } else if (version_number_.major == 6) {
-    switch (version_number_.minor) {
-      case 0:
-        
-        version_ = VERSION_VISTA;
-        break;
-      case 1:
-        
-        version_ = VERSION_WIN7;
-        break;
-      case 2:
-        
-        version_ = VERSION_WIN8;
-        break;
-      default:
-        DCHECK_EQ(version_number_.minor, 3);
-        version_ = VERSION_WIN8_1;
-        break;
-    }
-  } else if (version_number_.major == 10) {
-    version_ = VERSION_WIN10;
-  } else if (version_number_.major > 6) {
-    NOTREACHED();
-    version_ = VERSION_WIN_LAST;
-  }
+  version_ = MajorMinorBuildToVersion(
+      version_number_.major, version_number_.minor, version_number_.build);
   service_pack_.major = version_info.wServicePackMajor;
   service_pack_.minor = version_info.wServicePackMinor;
 
-  SYSTEM_INFO system_info = { 0 };
+  SYSTEM_INFO system_info = {};
   ::GetNativeSystemInfo(&system_info);
   switch (system_info.wProcessorArchitecture) {
     case PROCESSOR_ARCHITECTURE_INTEL: architecture_ = X86_ARCHITECTURE; break;
@@ -143,6 +182,14 @@ OSInfo::OSInfo()
 }
 
 OSInfo::~OSInfo() {
+}
+
+Version OSInfo::Kernel32Version() const {
+  if (!got_kernel32_version_) {
+    kernel32_version_ = GetVersionFromKernel32();
+    got_kernel32_version_ = true;
+  }
+  return kernel32_version_;
 }
 
 std::string OSInfo::processor_model_name() {

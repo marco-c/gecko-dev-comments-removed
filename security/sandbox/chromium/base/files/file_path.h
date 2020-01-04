@@ -103,13 +103,17 @@
 #define BASE_FILES_FILE_PATH_H_
 
 #include <stddef.h>
+
+#include <iosfwd>
 #include <string>
 #include <vector>
 
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
 #include "base/containers/hash_tables.h"
+#include "base/macros.h"
 #include "base/strings/string16.h"
-#include "base/strings/string_piece.h"  
+#include "base/strings/string_piece.h"
 #include "build/build_config.h"
 
 
@@ -121,10 +125,19 @@
 #define FILE_PATH_USES_WIN_SEPARATORS
 #endif  
 
-class Pickle;
-class PickleIterator;
+
+
+
+#if defined(OS_POSIX)
+#define PRIsFP "s"
+#elif defined(OS_WIN)
+#define PRIsFP "ls"
+#endif  
 
 namespace base {
+
+class Pickle;
+class PickleIterator;
 
 
 
@@ -141,6 +154,7 @@ class BASE_EXPORT FilePath {
   typedef std::wstring StringType;
 #endif  
 
+  typedef BasicStringPiece<StringType> StringPieceType;
   typedef StringType::value_type CharType;
 
   
@@ -163,7 +177,7 @@ class BASE_EXPORT FilePath {
 
   FilePath();
   FilePath(const FilePath& that);
-  explicit FilePath(const StringType& path);
+  explicit FilePath(StringPieceType path);
   ~FilePath();
   FilePath& operator=(const FilePath& that);
 
@@ -237,7 +251,7 @@ class BASE_EXPORT FilePath {
   
   
   
-  StringType Extension() const;
+  StringType Extension() const WARN_UNUSED_RESULT;
 
   
   
@@ -246,7 +260,7 @@ class BASE_EXPORT FilePath {
   
   
   
-  StringType FinalExtension() const;
+  StringType FinalExtension() const WARN_UNUSED_RESULT;
 
   
   
@@ -265,33 +279,31 @@ class BASE_EXPORT FilePath {
   
   
   FilePath InsertBeforeExtension(
-      const StringType& suffix) const WARN_UNUSED_RESULT;
+      StringPieceType suffix) const WARN_UNUSED_RESULT;
   FilePath InsertBeforeExtensionASCII(
-      const base::StringPiece& suffix) const WARN_UNUSED_RESULT;
+      StringPiece suffix) const WARN_UNUSED_RESULT;
 
   
   
-  FilePath AddExtension(
-      const StringType& extension) const WARN_UNUSED_RESULT;
-
-  
-  
-  
-  
-  FilePath ReplaceExtension(
-      const StringType& extension) const WARN_UNUSED_RESULT;
-
-  
-  
-  bool MatchesExtension(const StringType& extension) const;
+  FilePath AddExtension(StringPieceType extension) const WARN_UNUSED_RESULT;
 
   
   
   
   
+  FilePath ReplaceExtension(StringPieceType extension) const WARN_UNUSED_RESULT;
+
   
   
-  FilePath Append(const StringType& component) const WARN_UNUSED_RESULT;
+  bool MatchesExtension(StringPieceType extension) const;
+
+  
+  
+  
+  
+  
+  
+  FilePath Append(StringPieceType component) const WARN_UNUSED_RESULT;
   FilePath Append(const FilePath& component) const WARN_UNUSED_RESULT;
 
   
@@ -300,8 +312,7 @@ class BASE_EXPORT FilePath {
   
   
   
-  FilePath AppendASCII(const base::StringPiece& component)
-      const WARN_UNUSED_RESULT;
+  FilePath AppendASCII(StringPiece component) const WARN_UNUSED_RESULT;
 
   
   
@@ -385,14 +396,14 @@ class BASE_EXPORT FilePath {
   
   
   
-  static int CompareIgnoreCase(const StringType& string1,
-                               const StringType& string2);
-  static bool CompareEqualIgnoreCase(const StringType& string1,
-                                     const StringType& string2) {
+  static int CompareIgnoreCase(StringPieceType string1,
+                               StringPieceType string2);
+  static bool CompareEqualIgnoreCase(StringPieceType string1,
+                                     StringPieceType string2) {
     return CompareIgnoreCase(string1, string2) == 0;
   }
-  static bool CompareLessIgnoreCase(const StringType& string1,
-                                    const StringType& string2) {
+  static bool CompareLessIgnoreCase(StringPieceType string1,
+                                    StringPieceType string2) {
     return CompareIgnoreCase(string1, string2) < 0;
   }
 
@@ -402,14 +413,14 @@ class BASE_EXPORT FilePath {
   
   
   
-  static StringType GetHFSDecomposedForm(const FilePath::StringType& string);
+  static StringType GetHFSDecomposedForm(StringPieceType string);
 
   
   
   
   
-  static int HFSFastUnicodeCompare(const StringType& string1,
-                                   const StringType& string2);
+  static int HFSFastUnicodeCompare(StringPieceType string1,
+                                   StringPieceType string2);
 #endif
 
 #if defined(OS_ANDROID)
@@ -432,21 +443,22 @@ class BASE_EXPORT FilePath {
   StringType path_;
 };
 
+
+
+
+
+void PrintTo(const FilePath& path, std::ostream* out);
+
 }  
-
-
-BASE_EXPORT extern void PrintTo(const base::FilePath& path, std::ostream* out);
 
 
 
 #if defined(OS_POSIX)
 #define FILE_PATH_LITERAL(x) x
 #define PRFilePath "s"
-#define PRFilePathLiteral "%s"
 #elif defined(OS_WIN)
 #define FILE_PATH_LITERAL(x) L ## x
 #define PRFilePath "ls"
-#define PRFilePathLiteral L"%ls"
 #endif  
 
 

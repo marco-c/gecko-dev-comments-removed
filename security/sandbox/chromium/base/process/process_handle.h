@@ -5,12 +5,13 @@
 #ifndef BASE_PROCESS_PROCESS_HANDLE_H_
 #define BASE_PROCESS_PROCESS_HANDLE_H_
 
+#include <stdint.h>
+#include <sys/types.h>
+
 #include "base/base_export.h"
-#include "base/basictypes.h"
 #include "base/files/file_path.h"
 #include "build/build_config.h"
 
-#include <sys/types.h>
 #if defined(OS_WIN)
 #include <windows.h>
 #endif
@@ -35,58 +36,44 @@ const ProcessId kNullProcessId = 0;
 #endif  
 
 
+
+
 BASE_EXPORT ProcessId GetCurrentProcId();
+
+
+
+
+
+BASE_EXPORT uint32_t GetUniqueIdForProcess();
+
+#if defined(OS_LINUX)
+
+
+
+
+
+
+BASE_EXPORT void InitUniqueIdForProcessInPidNamespace(
+    ProcessId pid_outside_of_namespace);
+#endif
 
 
 BASE_EXPORT ProcessHandle GetCurrentProcessHandle();
 
 
 
-BASE_EXPORT bool OpenProcessHandle(ProcessId pid, ProcessHandle* handle);
-
-
-
-
-
-
-
-BASE_EXPORT bool OpenPrivilegedProcessHandle(ProcessId pid,
-                                             ProcessHandle* handle);
-
-
-
-BASE_EXPORT bool OpenProcessHandleWithAccess(ProcessId pid,
-                                             uint32 access_flags,
-                                             ProcessHandle* handle);
-
-
-BASE_EXPORT void CloseProcessHandle(ProcessHandle process);
 
 
 
 
 BASE_EXPORT ProcessId GetProcId(ProcessHandle process);
 
-#if defined(OS_WIN)
-enum IntegrityLevel {
-  INTEGRITY_UNKNOWN,
-  LOW_INTEGRITY,
-  MEDIUM_INTEGRITY,
-  HIGH_INTEGRITY,
-};
 
-
-
-BASE_EXPORT bool GetProcessIntegrityLevel(ProcessHandle process,
-                                          IntegrityLevel* level);
-#endif
+BASE_EXPORT ProcessId GetParentProcessId(ProcessHandle process);
 
 #if defined(OS_POSIX)
 
 BASE_EXPORT FilePath GetProcessExecutablePath(ProcessHandle process);
-
-
-BASE_EXPORT ProcessId GetParentProcessId(ProcessHandle process);
 #endif
 
 }  

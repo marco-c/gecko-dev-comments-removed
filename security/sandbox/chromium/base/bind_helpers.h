@@ -143,10 +143,15 @@
 #ifndef BASE_BIND_HELPERS_H_
 #define BASE_BIND_HELPERS_H_
 
-#include "base/basictypes.h"
+#include <stddef.h>
+
+#include <type_traits>
+#include <utility>
+
 #include "base/callback.h"
 #include "base/memory/weak_ptr.h"
 #include "base/template_util.h"
+#include "build/build_config.h"
 
 namespace base {
 namespace internal {
@@ -222,8 +227,8 @@ namespace internal {
 
 template <typename T>
 class SupportsAddRefAndRelease {
-  typedef char Yes[1];
-  typedef char No[2];
+  using Yes = char[1];
+  using No = char[2];
 
   struct BaseMixin {
     void AddRef();
@@ -242,7 +247,7 @@ class SupportsAddRefAndRelease {
 #pragma warning(pop)
 #endif
 
-  template <void(BaseMixin::*)(void)> struct Helper {};
+  template <void(BaseMixin::*)()> struct Helper {};
 
   template <typename C>
   static No& Check(Helper<&C::AddRef>*);
@@ -276,8 +281,8 @@ struct UnsafeBindtoRefCountedArg<T*>
 
 template <typename T>
 class HasIsMethodTag {
-  typedef char Yes[1];
-  typedef char No[2];
+  using Yes = char[1];
+  using No = char[2];
 
   template <typename U>
   static Yes& Check(typename U::IsMethod*);
@@ -364,17 +369,19 @@ class OwnedWrapper {
 
 
 
+
+
 template <typename T>
 class PassedWrapper {
  public:
-  explicit PassedWrapper(T scoper) : is_valid_(true), scoper_(scoper.Pass()) {}
+  explicit PassedWrapper(T&& scoper)
+      : is_valid_(true), scoper_(std::move(scoper)) {}
   PassedWrapper(const PassedWrapper& other)
-      : is_valid_(other.is_valid_), scoper_(other.scoper_.Pass()) {
-  }
+      : is_valid_(other.is_valid_), scoper_(std::move(other.scoper_)) {}
   T Pass() const {
     CHECK(is_valid_);
     is_valid_ = false;
-    return scoper_.Pass();
+    return std::move(scoper_);
   }
 
  private:
@@ -385,13 +392,13 @@ class PassedWrapper {
 
 template <typename T>
 struct UnwrapTraits {
-  typedef const T& ForwardType;
+  using ForwardType = const T&;
   static ForwardType Unwrap(const T& o) { return o; }
 };
 
 template <typename T>
 struct UnwrapTraits<UnretainedWrapper<T> > {
-  typedef T* ForwardType;
+  using ForwardType = T*;
   static ForwardType Unwrap(UnretainedWrapper<T> unretained) {
     return unretained.get();
   }
@@ -399,7 +406,7 @@ struct UnwrapTraits<UnretainedWrapper<T> > {
 
 template <typename T>
 struct UnwrapTraits<ConstRefWrapper<T> > {
-  typedef const T& ForwardType;
+  using ForwardType = const T&;
   static ForwardType Unwrap(ConstRefWrapper<T> const_ref) {
     return const_ref.get();
   }
@@ -407,19 +414,19 @@ struct UnwrapTraits<ConstRefWrapper<T> > {
 
 template <typename T>
 struct UnwrapTraits<scoped_refptr<T> > {
-  typedef T* ForwardType;
+  using ForwardType = T*;
   static ForwardType Unwrap(const scoped_refptr<T>& o) { return o.get(); }
 };
 
 template <typename T>
 struct UnwrapTraits<WeakPtr<T> > {
-  typedef const WeakPtr<T>& ForwardType;
+  using ForwardType = const WeakPtr<T>&;
   static ForwardType Unwrap(const WeakPtr<T>& o) { return o; }
 };
 
 template <typename T>
 struct UnwrapTraits<OwnedWrapper<T> > {
-  typedef T* ForwardType;
+  using ForwardType = T*;
   static ForwardType Unwrap(const OwnedWrapper<T>& o) {
     return o.get();
   }
@@ -427,7 +434,7 @@ struct UnwrapTraits<OwnedWrapper<T> > {
 
 template <typename T>
 struct UnwrapTraits<PassedWrapper<T> > {
-  typedef T ForwardType;
+  using ForwardType = T;
   static T Unwrap(PassedWrapper<T>& o) {
     return o.Pass();
   }
@@ -435,61 +442,160 @@ struct UnwrapTraits<PassedWrapper<T> > {
 
 
 
-template <bool is_method, typename T>
-struct MaybeRefcount;
+template <bool is_method, typename... T>
+struct MaybeScopedRefPtr;
 
-template <typename T>
-struct MaybeRefcount<false, T> {
-  static void AddRef(const T&) {}
-  static void Release(const T&) {}
+template <bool is_method>
+struct MaybeScopedRefPtr<is_method> {
+  MaybeScopedRefPtr() {}
 };
 
-template <typename T, size_t n>
-struct MaybeRefcount<false, T[n]> {
-  static void AddRef(const T*) {}
-  static void Release(const T*) {}
+template <typename T, typename... Rest>
+struct MaybeScopedRefPtr<false, T, Rest...> {
+  MaybeScopedRefPtr(const T&, const Rest&...) {}
 };
 
-template <typename T>
-struct MaybeRefcount<true, T> {
-  static void AddRef(const T&) {}
-  static void Release(const T&) {}
+template <typename T, size_t n, typename... Rest>
+struct MaybeScopedRefPtr<false, T[n], Rest...> {
+  MaybeScopedRefPtr(const T*, const Rest&...) {}
 };
 
-template <typename T>
-struct MaybeRefcount<true, T*> {
-  static void AddRef(T* o) { o->AddRef(); }
-  static void Release(T* o) { o->Release(); }
+template <typename T, typename... Rest>
+struct MaybeScopedRefPtr<true, T, Rest...> {
+  MaybeScopedRefPtr(const T& o, const Rest&...) {}
 };
 
-
-
-template <typename T>
-struct MaybeRefcount<true, scoped_refptr<T> > {
-  static void AddRef(const scoped_refptr<T>& o) {}
-  static void Release(const scoped_refptr<T>& o) {}
-};
-
-template <typename T>
-struct MaybeRefcount<true, const T*> {
-  static void AddRef(const T* o) { o->AddRef(); }
-  static void Release(const T* o) { o->Release(); }
+template <typename T, typename... Rest>
+struct MaybeScopedRefPtr<true, T*, Rest...> {
+  MaybeScopedRefPtr(T* o, const Rest&...) : ref_(o) {}
+  scoped_refptr<T> ref_;
 };
 
 
 
+template <typename T, typename... Rest>
+struct MaybeScopedRefPtr<true, scoped_refptr<T>, Rest...> {
+  MaybeScopedRefPtr(const scoped_refptr<T>&, const Rest&...) {}
+};
+
+template <typename T, typename... Rest>
+struct MaybeScopedRefPtr<true, const T*, Rest...> {
+  MaybeScopedRefPtr(const T* o, const Rest&...) : ref_(o) {}
+  scoped_refptr<const T> ref_;
+};
 
 
 
 
-template <bool IsMethod, typename P1>
+
+
+
+
+template <bool IsMethod, typename... Args>
 struct IsWeakMethod : public false_type {};
 
-template <typename T>
-struct IsWeakMethod<true, WeakPtr<T> > : public true_type {};
+template <typename T, typename... Args>
+struct IsWeakMethod<true, WeakPtr<T>, Args...> : public true_type {};
 
-template <typename T>
-struct IsWeakMethod<true, ConstRefWrapper<WeakPtr<T> > > : public true_type {};
+template <typename T, typename... Args>
+struct IsWeakMethod<true, ConstRefWrapper<WeakPtr<T>>, Args...>
+    : public true_type {};
+
+
+
+template <typename... Types>
+struct TypeList {};
+
+
+template <size_t n, typename List>
+struct DropTypeListItemImpl;
+
+
+template <size_t n, typename T, typename... List>
+struct DropTypeListItemImpl<n, TypeList<T, List...>>
+    : DropTypeListItemImpl<n - 1, TypeList<List...>> {};
+
+template <typename T, typename... List>
+struct DropTypeListItemImpl<0, TypeList<T, List...>> {
+  using Type = TypeList<T, List...>;
+};
+
+template <>
+struct DropTypeListItemImpl<0, TypeList<>> {
+  using Type = TypeList<>;
+};
+
+
+template <size_t n, typename List>
+using DropTypeListItem = typename DropTypeListItemImpl<n, List>::Type;
+
+
+template <size_t n, typename List, typename... Accum>
+struct TakeTypeListItemImpl;
+
+
+template <size_t n, typename T, typename... List, typename... Accum>
+struct TakeTypeListItemImpl<n, TypeList<T, List...>, Accum...>
+    : TakeTypeListItemImpl<n - 1, TypeList<List...>, Accum..., T> {};
+
+template <typename T, typename... List, typename... Accum>
+struct TakeTypeListItemImpl<0, TypeList<T, List...>, Accum...> {
+  using Type = TypeList<Accum...>;
+};
+
+template <typename... Accum>
+struct TakeTypeListItemImpl<0, TypeList<>, Accum...> {
+  using Type = TypeList<Accum...>;
+};
+
+
+
+
+template <size_t n, typename List>
+using TakeTypeListItem = typename TakeTypeListItemImpl<n, List>::Type;
+
+
+template <typename List1, typename List2>
+struct ConcatTypeListsImpl;
+
+template <typename... Types1, typename... Types2>
+struct ConcatTypeListsImpl<TypeList<Types1...>, TypeList<Types2...>> {
+  using Type = TypeList<Types1..., Types2...>;
+};
+
+
+template <typename List1, typename List2>
+using ConcatTypeLists = typename ConcatTypeListsImpl<List1, List2>::Type;
+
+
+template <typename R, typename ArgList>
+struct MakeFunctionTypeImpl;
+
+template <typename R, typename... Args>
+struct MakeFunctionTypeImpl<R, TypeList<Args...>> {
+  
+  
+  typedef R Type(Args...);
+};
+
+
+
+template <typename R, typename ArgList>
+using MakeFunctionType = typename MakeFunctionTypeImpl<R, ArgList>::Type;
+
+
+template <typename Signature>
+struct ExtractArgsImpl;
+
+template <typename R, typename... Args>
+struct ExtractArgsImpl<R(Args...)> {
+  using Type = TypeList<Args...>;
+};
+
+
+
+template <typename Signature>
+using ExtractArgs = typename ExtractArgsImpl<Signature>::Type;
 
 }  
 
@@ -512,13 +618,21 @@ static inline internal::OwnedWrapper<T> Owned(T* o) {
 
 
 
-template <typename T>
-static inline internal::PassedWrapper<T> Passed(T scoper) {
-  return internal::PassedWrapper<T>(scoper.Pass());
+
+
+
+template <typename T,
+          typename std::enable_if<internal::IsMoveOnlyType<T>::value &&
+                                  !std::is_lvalue_reference<T>::value>::type* =
+              nullptr>
+static inline internal::PassedWrapper<T> Passed(T&& scoper) {
+  return internal::PassedWrapper<T>(std::move(scoper));
 }
-template <typename T>
+template <typename T,
+          typename std::enable_if<internal::IsMoveOnlyType<T>::value>::type* =
+              nullptr>
 static inline internal::PassedWrapper<T> Passed(T* scoper) {
-  return internal::PassedWrapper<T>(scoper->Pass());
+  return internal::PassedWrapper<T>(std::move(*scoper));
 }
 
 template <typename T>

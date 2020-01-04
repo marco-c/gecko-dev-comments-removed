@@ -9,6 +9,7 @@
 
 
 #include <windows.h>
+#include <stddef.h>
 
 #include <string>
 
@@ -61,7 +62,7 @@ int PatchNtdll(HANDLE child, void* thunk, size_t thunk_bytes) {
 
 
 int wWinMain(HINSTANCE, HINSTANCE, wchar_t* command_line, int) {
-  COMPILE_ASSERT(sizeof(void*) > sizeof(DWORD), unsupported_32_bits);
+  static_assert(sizeof(void*) > sizeof(DWORD), "unsupported 32 bits");
   if (!command_line)
     return 1;
 

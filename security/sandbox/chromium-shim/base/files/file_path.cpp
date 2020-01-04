@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+#include "base/files/file_path.h"
+
+namespace base {
+
+FilePath::FilePath(FilePath::StringPieceType path) {
+}
+
+FilePath::~FilePath() {
+}
+
+} 

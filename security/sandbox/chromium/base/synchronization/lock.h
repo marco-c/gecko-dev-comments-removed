@@ -6,8 +6,11 @@
 #define BASE_SYNCHRONIZATION_LOCK_H_
 
 #include "base/base_export.h"
+#include "base/logging.h"
+#include "base/macros.h"
 #include "base/synchronization/lock_impl.h"
 #include "base/threading/platform_thread.h"
+#include "build/build_config.h"
 
 namespace base {
 
@@ -16,7 +19,7 @@ namespace base {
 
 class BASE_EXPORT Lock {
  public:
-#if defined(NDEBUG) && !defined(DCHECK_ALWAYS_ON)
+#if !DCHECK_IS_ON()
    
   Lock() : lock_() {}
   ~Lock() {}
@@ -70,7 +73,7 @@ class BASE_EXPORT Lock {
 #endif
 
  private:
-#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
+#if DCHECK_IS_ON()
   
   
   

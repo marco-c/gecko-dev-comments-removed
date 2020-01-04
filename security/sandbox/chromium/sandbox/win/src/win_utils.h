@@ -6,9 +6,10 @@
 #define SANDBOX_SRC_WIN_UTILS_H_
 
 #include <windows.h>
+#include <stddef.h>
 #include <string>
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "base/strings/string16.h"
 
 namespace sandbox {
@@ -67,15 +68,14 @@ class SingletonBase {
 
 
 
-bool ConvertToLongPath(const base::string16& short_path,
-                       base::string16* long_path);
+bool ConvertToLongPath(base::string16* path);
 
 
 
 
 
 
-DWORD IsReparsePoint(const base::string16& full_path, bool* result);
+DWORD IsReparsePoint(const base::string16& full_path);
 
 
 bool SameObject(HANDLE handle, const wchar_t* full_path);

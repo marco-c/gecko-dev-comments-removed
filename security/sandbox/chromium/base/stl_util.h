@@ -91,16 +91,11 @@ void STLDeleteContainerPairSecondPointers(ForwardIterator begin,
 }
 
 
-
-
-template<typename T>
-inline T* vector_as_array(std::vector<T>* v) {
-  return v->empty() ? NULL : &*v->begin();
-}
-
-template<typename T>
-inline const T* vector_as_array(const std::vector<T>* v) {
-  return v->empty() ? NULL : &*v->begin();
+template <typename Container, typename T>
+typename std::iterator_traits<
+    typename Container::const_iterator>::difference_type
+STLCount(const Container& container, const T& val) {
+  return std::count(container.begin(), container.end(), val);
 }
 
 
@@ -148,8 +143,7 @@ template <class T>
 void STLDeleteValues(T* container) {
   if (!container)
     return;
-  for (typename T::iterator i(container->begin()); i != container->end(); ++i)
-    delete i->second;
+  STLDeleteContainerPairSecondPointers(container->begin(), container->end());
   container->clear();
 }
 
@@ -194,6 +188,14 @@ class STLValueDeleter {
 template <typename Collection, typename Key>
 bool ContainsKey(const Collection& collection, const Key& key) {
   return collection.find(key) != collection.end();
+}
+
+
+
+template <typename Collection, typename Value>
+bool ContainsValue(const Collection& collection, const Value& value) {
+  return std::find(collection.begin(), collection.end(), value) !=
+      collection.end();
 }
 
 namespace base {

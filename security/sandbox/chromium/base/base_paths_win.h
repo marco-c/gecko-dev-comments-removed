@@ -2,8 +2,8 @@
 
 
 
-#ifndef BASE_BASE_PATHS_WIN_H__
-#define BASE_BASE_PATHS_WIN_H__
+#ifndef BASE_BASE_PATHS_WIN_H_
+#define BASE_BASE_PATHS_WIN_H_
 
 
 
@@ -16,8 +16,14 @@ enum {
 
   DIR_WINDOWS,  
   DIR_SYSTEM,   
+  
+  
+  
+  
+  
   DIR_PROGRAM_FILES,      
   DIR_PROGRAM_FILESX86,   
+  DIR_PROGRAM_FILES6432,  
 
   DIR_IE_INTERNET_CACHE,  
   DIR_COMMON_START_MENU,  

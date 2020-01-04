@@ -2,13 +2,17 @@
 
 
 
+#include "sandbox/win/src/crosscall_server.h"
+
+#include <stddef.h>
+#include <stdint.h>
+
 #include <string>
 #include <vector>
 
-#include "sandbox/win/src/crosscall_server.h"
-#include "sandbox/win/src/crosscall_params.h"
-#include "sandbox/win/src/crosscall_client.h"
 #include "base/logging.h"
+#include "sandbox/win/src/crosscall_client.h"
+#include "sandbox/win/src/crosscall_params.h"
 
 
 
@@ -25,7 +29,7 @@ namespace sandbox {
 
 
 
-uint32 GetActualBufferSize(uint32 param_count, void* buffer_base) {
+uint32_t GetActualBufferSize(uint32_t param_count, void* buffer_base) {
   
   typedef ActualCallParams<1, kMaxBufferSize> ActualCP1;
   typedef ActualCallParams<2, kMaxBufferSize> ActualCP2;
@@ -65,8 +69,9 @@ uint32 GetActualBufferSize(uint32 param_count, void* buffer_base) {
 }
 
 
-bool IsSizeWithinRange(uint32 buffer_size, uint32 min_declared_size,
-                       uint32 declared_size) {
+bool IsSizeWithinRange(uint32_t buffer_size,
+                       uint32_t min_declared_size,
+                       uint32_t declared_size) {
   if ((buffer_size < min_declared_size) ||
       (sizeof(CrossCallParamsEx) > min_declared_size)) {
     
@@ -103,8 +108,8 @@ void CrossCallParamsEx::operator delete(void* raw_memory) throw() {
 
 
 CrossCallParamsEx* CrossCallParamsEx::CreateFromBuffer(void* buffer_base,
-                                                       uint32 buffer_size,
-                                                       uint32* output_size) {
+                                                       uint32_t buffer_size,
+                                                       uint32_t* output_size) {
   
   
   if (NULL == buffer_base) {
@@ -118,9 +123,9 @@ CrossCallParamsEx* CrossCallParamsEx::CreateFromBuffer(void* buffer_base,
   }
 
   char* backing_mem = NULL;
-  uint32 param_count = 0;
-  uint32 declared_size;
-  uint32 min_declared_size;
+  uint32_t param_count = 0;
+  uint32_t declared_size;
+  uint32_t min_declared_size;
   CrossCallParamsEx* copied_params = NULL;
 
   
@@ -175,8 +180,8 @@ CrossCallParamsEx* CrossCallParamsEx::CreateFromBuffer(void* buffer_base,
 
   
   
-  for (uint32 ix =0; ix != param_count; ++ix) {
-    uint32 size = 0;
+  for (uint32_t ix = 0; ix != param_count; ++ix) {
+    uint32_t size = 0;
     ArgType type;
     char* address = reinterpret_cast<char*>(
                         copied_params->GetRawParameter(ix, &size, &type));
@@ -197,7 +202,8 @@ CrossCallParamsEx* CrossCallParamsEx::CreateFromBuffer(void* buffer_base,
 }
 
 
-void* CrossCallParamsEx::GetRawParameter(uint32 index, uint32* size,
+void* CrossCallParamsEx::GetRawParameter(uint32_t index,
+                                         uint32_t* size,
                                          ArgType* type) {
   if (index >= GetParamsCount()) {
     return NULL;
@@ -211,20 +217,20 @@ void* CrossCallParamsEx::GetRawParameter(uint32 index, uint32* size,
 }
 
 
-bool CrossCallParamsEx::GetParameter32(uint32 index, uint32* param) {
-  uint32 size = 0;
+bool CrossCallParamsEx::GetParameter32(uint32_t index, uint32_t* param) {
+  uint32_t size = 0;
   ArgType type;
   void* start = GetRawParameter(index, &size, &type);
   if ((NULL == start) || (4 != size) || (UINT32_TYPE != type)) {
     return false;
   }
   
-  *(reinterpret_cast<uint32*>(param)) = *(reinterpret_cast<uint32*>(start));
+  *(reinterpret_cast<uint32_t*>(param)) = *(reinterpret_cast<uint32_t*>(start));
   return true;
 }
 
-bool CrossCallParamsEx::GetParameterVoidPtr(uint32 index, void** param) {
-  uint32 size = 0;
+bool CrossCallParamsEx::GetParameterVoidPtr(uint32_t index, void** param) {
+  uint32_t size = 0;
   ArgType type;
   void* start = GetRawParameter(index, &size, &type);
   if ((NULL == start) || (sizeof(void*) != size) || (VOIDPTR_TYPE != type)) {
@@ -236,8 +242,9 @@ bool CrossCallParamsEx::GetParameterVoidPtr(uint32 index, void** param) {
 
 
 
-bool CrossCallParamsEx::GetParameterStr(uint32 index, base::string16* string) {
-  uint32 size = 0;
+bool CrossCallParamsEx::GetParameterStr(uint32_t index,
+                                        base::string16* string) {
+  uint32_t size = 0;
   ArgType type;
   void* start = GetRawParameter(index, &size, &type);
   if (WCHAR_TYPE != type) {
@@ -257,9 +264,10 @@ bool CrossCallParamsEx::GetParameterStr(uint32 index, base::string16* string) {
   return true;
 }
 
-bool CrossCallParamsEx::GetParameterPtr(uint32 index, uint32 expected_size,
+bool CrossCallParamsEx::GetParameterPtr(uint32_t index,
+                                        uint32_t expected_size,
                                         void** pointer) {
-  uint32 size = 0;
+  uint32_t size = 0;
   ArgType type;
   void* start = GetRawParameter(index, &size, &type);
 
@@ -295,6 +303,12 @@ Dispatcher* Dispatcher::OnMessageReady(IPCParams* ipc,
     }
   }
   return NULL;
+}
+
+Dispatcher::Dispatcher() {
+}
+
+Dispatcher::~Dispatcher() {
 }
 
 }  

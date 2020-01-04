@@ -5,10 +5,13 @@
 #ifndef SANDBOX_SRC_SHAREDMEM_IPC_SERVER_H_
 #define SANDBOX_SRC_SHAREDMEM_IPC_SERVER_H_
 
+#include <stdint.h>
+
 #include <list>
 
-#include "base/basictypes.h"
 #include "base/gtest_prod_util.h"
+#include "base/macros.h"
+#include "base/win/scoped_handle.h"
 #include "sandbox/win/src/crosscall_params.h"
 #include "sandbox/win/src/crosscall_server.h"
 #include "sandbox/win/src/sharedmem_ipc_client.h"
@@ -41,15 +44,18 @@ class SharedMemIPCServer {
   
   
   
+  
+  
+  
+  
   SharedMemIPCServer(HANDLE target_process, DWORD target_process_id,
-                     HANDLE target_job, ThreadProvider* thread_provider,
-                     Dispatcher* dispatcher);
+                     ThreadProvider* thread_provider, Dispatcher* dispatcher);
 
   ~SharedMemIPCServer();
 
   
   
-  bool Init(void* shared_mem, uint32 shared_size, uint32 channel_size);
+  bool Init(void* shared_mem, uint32_t shared_size, uint32_t channel_size);
 
  private:
   
@@ -63,7 +69,8 @@ class SharedMemIPCServer {
 
   
   
-  bool MakeEvents(HANDLE* server_ping, HANDLE* server_pong,
+  bool MakeEvents(base::win::ScopedHandle* server_ping,
+                  base::win::ScopedHandle* server_pong,
                   HANDLE* client_ping, HANDLE* client_pong);
 
   
@@ -72,12 +79,15 @@ class SharedMemIPCServer {
   
   
   struct ServerControl {
+    ServerControl();
+    ~ServerControl();
+
     
-    HANDLE ping_event;
+    base::win::ScopedHandle ping_event;
     
-    HANDLE pong_event;
+    base::win::ScopedHandle pong_event;
     
-    uint32 channel_size;
+    uint32_t channel_size;
     
     char* channel_buffer;
     
@@ -112,9 +122,6 @@ class SharedMemIPCServer {
 
   
   DWORD target_process_id_;
-
-  
-  HANDLE target_job_object_;
 
   
   Dispatcher* call_dispatcher_;

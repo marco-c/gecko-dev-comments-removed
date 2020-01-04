@@ -10,7 +10,9 @@ namespace base {
 template <typename Sig>
 class Callback;
 
-typedef Callback<void(void)> Closure;
+
+
+using Closure = Callback<void()>;
 
 }  
 

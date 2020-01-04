@@ -49,10 +49,19 @@ class SANDBOX_EXPORT TrapRegistry {
 
   
   
+  
+  
+  
+  
+  
   virtual bool EnableUnsafeTraps() = 0;
 
  protected:
   TrapRegistry() {}
+
+  
+  
+  
   ~TrapRegistry() {}
 
   DISALLOW_COPY_AND_ASSIGN(TrapRegistry);

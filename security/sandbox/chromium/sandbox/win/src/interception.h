@@ -9,11 +9,13 @@
 #ifndef SANDBOX_SRC_INTERCEPTION_H_
 #define SANDBOX_SRC_INTERCEPTION_H_
 
+#include <stddef.h>
+
 #include <list>
 #include <string>
 
-#include "base/basictypes.h"
 #include "base/gtest_prod_util.h"
+#include "base/macros.h"
 #include "base/strings/string16.h"
 #include "sandbox/win/src/sandbox_types.h"
 
@@ -134,6 +136,9 @@ class InterceptionManager {
  private:
   
   struct InterceptionData {
+    InterceptionData();
+    ~InterceptionData();
+
     InterceptionType type;            
     InterceptorId id;                 
     base::string16 dll;               

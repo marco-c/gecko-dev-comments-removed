@@ -5,21 +5,18 @@
 #ifndef SANDBOX_LINUX_BPF_DSL_POLICY_COMPILER_H_
 #define SANDBOX_LINUX_BPF_DSL_POLICY_COMPILER_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
-#include <map>
-#include <set>
 #include <vector>
 
 #include "base/macros.h"
-#include "base/memory/scoped_ptr.h"
-#include "sandbox/linux/seccomp-bpf/codegen.h"
-#include "sandbox/linux/seccomp-bpf/errorcode.h"
+#include "sandbox/linux/bpf_dsl/bpf_dsl_forward.h"
+#include "sandbox/linux/bpf_dsl/codegen.h"
+#include "sandbox/linux/bpf_dsl/trap_registry.h"
 #include "sandbox/sandbox_export.h"
 
 namespace sandbox {
-struct Instruction;
-
 namespace bpf_dsl {
 class Policy;
 
@@ -28,102 +25,88 @@ class Policy;
 
 class SANDBOX_EXPORT PolicyCompiler {
  public:
+  using PanicFunc = bpf_dsl::ResultExpr (*)(const char* error);
+
   PolicyCompiler(const Policy* policy, TrapRegistry* registry);
   ~PolicyCompiler();
 
   
   
-  scoped_ptr<CodeGen::Program> Compile();
+  CodeGen::Program Compile();
 
   
   
-  ErrorCode Error(int err);
-
-  
-  
-  
-  
-  
-  
-  ErrorCode Trap(TrapRegistry::TrapFnc fnc, const void* aux);
+  void DangerousSetEscapePC(uint64_t escapepc);
 
   
   
   
   
-  
-  
-  
-  
-  
-  
-  ErrorCode UnsafeTrap(TrapRegistry::TrapFnc fnc, const void* aux);
+  void SetPanicFunc(PanicFunc panic_func);
 
   
   
   static bool IsRequiredForUnsafeTrap(int sysno);
 
   
+
+  
+  
+  CodeGen::Node Return(uint32_t ret);
+
+  
+  
+  CodeGen::Node Trap(TrapRegistry::TrapFnc fnc, const void* aux, bool safe);
+
   
   
   
   
   
   
-  
-  
-  ErrorCode CondMaskedEqual(int argno,
-                            ErrorCode::ArgType is_32bit,
+  CodeGen::Node MaskedEqual(int argno,
+                            size_t width,
                             uint64_t mask,
                             uint64_t value,
-                            const ErrorCode& passed,
-                            const ErrorCode& failed);
-
-  
-  ErrorCode Kill(const char* msg);
-
-  
-  
-  
-  ErrorCode Unexpected64bitArgument();
+                            CodeGen::Node passed,
+                            CodeGen::Node failed);
 
  private:
   struct Range;
   typedef std::vector<Range> Ranges;
-  typedef std::map<uint32_t, ErrorCode> ErrMap;
-  typedef std::set<ErrorCode, struct ErrorCode::LessThan> Conds;
 
   
   
-  enum ArgHalf {
-    LowerHalf,
-    UpperHalf,
+  enum class ArgHalf {
+    LOWER,
+    UPPER,
   };
 
   
-  Instruction* AssemblePolicy();
+  CodeGen::Node AssemblePolicy();
 
   
   
   
-  Instruction* CheckArch(Instruction* passed);
+  CodeGen::Node CheckArch(CodeGen::Node passed);
 
   
   
   
-  Instruction* MaybeAddEscapeHatch(Instruction* rest);
+  CodeGen::Node MaybeAddEscapeHatch(CodeGen::Node rest);
 
   
   
   
   
-  Instruction* DispatchSyscall();
+  CodeGen::Node DispatchSyscall();
 
   
   
   
-  Instruction* CheckSyscallNumber(Instruction* passed);
+  CodeGen::Node CheckSyscallNumber(CodeGen::Node passed);
 
+  
   
   
   
@@ -132,36 +115,32 @@ class SANDBOX_EXPORT PolicyCompiler {
 
   
   
-  Instruction* AssembleJumpTable(Ranges::const_iterator start,
-                                 Ranges::const_iterator stop);
+  CodeGen::Node AssembleJumpTable(Ranges::const_iterator start,
+                                  Ranges::const_iterator stop);
 
   
   
-  
-  
-  
-  Instruction* RetExpression(const ErrorCode& err);
+  CodeGen::Node CompileResult(const ResultExpr& res);
 
   
   
-  
-  
-  Instruction* CondExpression(const ErrorCode& cond);
+  CodeGen::Node MaskedEqualHalf(int argno,
+                                size_t width,
+                                uint64_t full_mask,
+                                uint64_t full_value,
+                                ArgHalf half,
+                                CodeGen::Node passed,
+                                CodeGen::Node failed);
 
   
   
-  Instruction* CondExpressionHalf(const ErrorCode& cond,
-                                  ArgHalf half,
-                                  Instruction* passed,
-                                  Instruction* failed);
-
-  
-  ErrorCode MakeTrap(TrapRegistry::TrapFnc fnc, const void* aux, bool safe);
+  CodeGen::Node Unexpected64bitArgument();
 
   const Policy* policy_;
   TrapRegistry* registry_;
+  uint64_t escapepc_;
+  PanicFunc panic_func_;
 
-  Conds conds_;
   CodeGen gen_;
   bool has_unsafe_traps_;
 

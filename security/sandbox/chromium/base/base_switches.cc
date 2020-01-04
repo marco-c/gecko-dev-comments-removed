@@ -3,6 +3,7 @@
 
 
 #include "base/base_switches.h"
+#include "build/build_config.h"
 
 namespace switches {
 
@@ -15,12 +16,28 @@ const char kDisableBreakpad[]               = "disable-breakpad";
 const char kEnableCrashReporter[]           = "enable-crash-reporter";
 
 
+
+
+const char kEnableHeapProfiling[]           = "enable-heap-profiling";
+
+
 const char kFullMemoryCrashReport[]         = "full-memory-crash-report";
 
 
+const char kEnableLowEndDeviceMode[]        = "enable-low-end-device-mode";
 
 
-const char kLowEndDeviceMode[]              = "low-end-device-mode";
+const char kDisableLowEndDeviceMode[]       = "disable-low-end-device-mode";
+
+
+
+
+
+
+
+
+
+const char kForceFieldTrials[]              = "force-fieldtrials";
 
 
 const char kNoErrorDialogs[]                = "noerrdialogs";
@@ -48,9 +65,6 @@ const char kVModule[]                       = "vmodule";
 const char kWaitForDebugger[]               = "wait-for-debugger";
 
 
-const char kTraceToConsole[]                = "trace-to-console";
-
-
 
 const char kTraceToFile[]                   = "trace-to-file";
 
@@ -65,6 +79,11 @@ const char kProfilerTiming[]                = "profiler-timing";
 
 
 const char kProfilerTimingDisabledValue[]   = "0";
+
+#if defined(OS_WIN)
+
+const char kDisableUsbKeyboardDetect[]      = "disable-usb-keyboard-detect";
+#endif
 
 #if defined(OS_POSIX)
 

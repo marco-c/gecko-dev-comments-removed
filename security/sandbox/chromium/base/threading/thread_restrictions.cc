@@ -69,7 +69,7 @@ void ThreadRestrictions::DisallowWaiting() {
 
 void ThreadRestrictions::AssertWaitAllowed() {
   if (g_wait_disallowed.Get().Get()) {
-    LOG(FATAL) << "Waiting is not allowed to be used on this thread to prevent"
+    LOG(FATAL) << "Waiting is not allowed to be used on this thread to prevent "
                << "jank and deadlock.";
   }
 }

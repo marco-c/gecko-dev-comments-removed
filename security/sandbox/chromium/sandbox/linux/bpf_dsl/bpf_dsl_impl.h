@@ -7,12 +7,12 @@
 
 #include "base/macros.h"
 #include "base/memory/ref_counted.h"
+#include "sandbox/linux/bpf_dsl/codegen.h"
 #include "sandbox/sandbox_export.h"
 
 namespace sandbox {
-class ErrorCode;
-
 namespace bpf_dsl {
+class ErrorCode;
 class PolicyCompiler;
 
 namespace internal {
@@ -23,9 +23,9 @@ class BoolExprImpl : public base::RefCounted<BoolExprImpl> {
   
   
   
-  virtual ErrorCode Compile(PolicyCompiler* pc,
-                            ErrorCode true_ec,
-                            ErrorCode false_ec) const = 0;
+  virtual CodeGen::Node Compile(PolicyCompiler* pc,
+                                CodeGen::Node then_node,
+                                CodeGen::Node else_node) const = 0;
 
  protected:
   BoolExprImpl() {}
@@ -41,11 +41,17 @@ class ResultExprImpl : public base::RefCounted<ResultExprImpl> {
  public:
   
   
-  virtual ErrorCode Compile(PolicyCompiler* pc) const = 0;
+  virtual CodeGen::Node Compile(PolicyCompiler* pc) const = 0;
 
   
   
   virtual bool HasUnsafeTraps() const;
+
+  
+  virtual bool IsAllow() const;
+
+  
+  virtual bool IsDeny() const;
 
  protected:
   ResultExprImpl() {}

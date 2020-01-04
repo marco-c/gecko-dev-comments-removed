@@ -6,22 +6,24 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/syscall.h>
 
 #include <algorithm>
 #include <limits>
+#include <tuple>
 
+#include "base/compiler_specific.h"
 #include "base/logging.h"
 #include "build/build_config.h"
+#include "sandbox/linux/bpf_dsl/seccomp_macros.h"
 #include "sandbox/linux/seccomp-bpf/die.h"
-#include "sandbox/linux/seccomp-bpf/linux_seccomp.h"
 #include "sandbox/linux/seccomp-bpf/syscall.h"
-
-
-#if defined(OS_ANDROID)
-#include "sandbox/linux/services/android_ucontext.h"
-#endif
+#include "sandbox/linux/services/syscall_wrappers.h"
+#include "sandbox/linux/system_headers/linux_seccomp.h"
+#include "sandbox/linux/system_headers/linux_signal.h"
 
 namespace {
 
@@ -52,13 +54,13 @@ const char kSandboxDebuggingEnv[] = "CHROME_SANDBOX_DEBUGGING";
 
 bool GetIsInSigHandler(const ucontext_t* ctx) {
   
-  return sigismember(const_cast<sigset_t*>(&ctx->uc_sigmask), SIGBUS);
+  return sigismember(const_cast<sigset_t*>(&ctx->uc_sigmask), LINUX_SIGBUS);
 }
 
 void SetIsInSigHandler() {
   sigset_t mask;
-  if (sigemptyset(&mask) || sigaddset(&mask, SIGBUS) ||
-      sigprocmask(SIG_BLOCK, &mask, NULL)) {
+  if (sigemptyset(&mask) || sigaddset(&mask, LINUX_SIGBUS) ||
+      sandbox::sys_sigprocmask(LINUX_SIG_BLOCK, &mask, NULL)) {
     SANDBOX_DIE("Failed to block SIGBUS");
   }
 }
@@ -81,10 +83,13 @@ Trap::Trap()
       has_unsafe_traps_(false) {
   
   struct sigaction sa = {};
-  sa.sa_sigaction = SigSysAction;
-  sa.sa_flags = SA_SIGINFO | SA_NODEFER;
-  struct sigaction old_sa;
-  if (sigaction(SIGSYS, &sa, &old_sa) < 0) {
+  
+  
+  
+  sa.sa_handler = reinterpret_cast<void (*)(int)>(SigSysAction);
+  sa.sa_flags = LINUX_SA_SIGINFO | LINUX_SA_NODEFER;
+  struct sigaction old_sa = {};
+  if (sys_sigaction(LINUX_SIGSYS, &sa, &old_sa) < 0) {
     SANDBOX_DIE("Failed to configure SIGSYS handler");
   }
 
@@ -98,8 +103,8 @@ Trap::Trap()
 
   
   sigset_t mask;
-  if (sigemptyset(&mask) || sigaddset(&mask, SIGSYS) ||
-      sigprocmask(SIG_UNBLOCK, &mask, NULL)) {
+  if (sigemptyset(&mask) || sigaddset(&mask, LINUX_SIGSYS) ||
+      sys_sigprocmask(LINUX_SIG_UNBLOCK, &mask, NULL)) {
     SANDBOX_DIE("Failed to configure SIGSYS handler");
   }
 }
@@ -119,16 +124,27 @@ bpf_dsl::TrapRegistry* Trap::Registry() {
   return global_trap_;
 }
 
-void Trap::SigSysAction(int nr, siginfo_t* info, void* void_context) {
+void Trap::SigSysAction(int nr, LinuxSigInfo* info, void* void_context) {
+  if (info) {
+    MSAN_UNPOISON(info, sizeof(*info));
+  }
+
+  
+  
+  ucontext_t* ctx = reinterpret_cast<ucontext_t*>(void_context);
+  if (ctx) {
+    MSAN_UNPOISON(ctx, sizeof(*ctx));
+  }
+
   if (!global_trap_) {
     RAW_SANDBOX_DIE(
         "This can't happen. Found no global singleton instance "
         "for Trap() handling.");
   }
-  global_trap_->SigSys(nr, info, void_context);
+  global_trap_->SigSys(nr, info, ctx);
 }
 
-void Trap::SigSys(int nr, siginfo_t* info, void* void_context) {
+void Trap::SigSys(int nr, LinuxSigInfo* info, ucontext_t* ctx) {
   
   
   const int old_errno = errno;
@@ -136,7 +152,7 @@ void Trap::SigSys(int nr, siginfo_t* info, void* void_context) {
   
   
   
-  if (nr != SIGSYS || info->si_code != SYS_SECCOMP || !void_context ||
+  if (nr != LINUX_SIGSYS || info->si_code != SYS_SECCOMP || !ctx ||
       info->si_errno <= 0 ||
       static_cast<size_t>(info->si_errno) > trap_array_size_) {
     
@@ -147,9 +163,6 @@ void Trap::SigSys(int nr, siginfo_t* info, void* void_context) {
     return;
   }
 
-  
-  
-  ucontext_t* ctx = reinterpret_cast<ucontext_t*>(void_context);
 
   
   
@@ -241,17 +254,7 @@ void Trap::SigSys(int nr, siginfo_t* info, void* void_context) {
 }
 
 bool Trap::TrapKey::operator<(const TrapKey& o) const {
-  if (fnc != o.fnc) {
-    return fnc < o.fnc;
-  } else if (aux != o.aux) {
-    return aux < o.aux;
-  } else {
-    return safe < o.safe;
-  }
-}
-
-uint16_t Trap::MakeTrap(TrapFnc fnc, const void* aux, bool safe) {
-  return Registry()->Add(fnc, aux, safe);
+  return std::tie(fnc, aux, safe) < std::tie(o.fnc, o.aux, o.safe);
 }
 
 uint16_t Trap::Add(TrapFnc fnc, const void* aux, bool safe) {
@@ -352,13 +355,9 @@ uint16_t Trap::Add(TrapFnc fnc, const void* aux, bool safe) {
   return id;
 }
 
-bool Trap::SandboxDebuggingAllowedByUser() const {
+bool Trap::SandboxDebuggingAllowedByUser() {
   const char* debug_flag = getenv(kSandboxDebuggingEnv);
   return debug_flag && *debug_flag;
-}
-
-bool Trap::EnableUnsafeTrapsInSigSysHandler() {
-  return Registry()->EnableUnsafeTraps();
 }
 
 bool Trap::EnableUnsafeTraps() {

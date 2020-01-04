@@ -22,8 +22,8 @@
 #include "base/at_exit.h"
 #include "base/atomicops.h"
 #include "base/base_export.h"
+#include "base/macros.h"
 #include "base/memory/aligned_memory.h"
-#include "base/third_party/dynamic_annotations/dynamic_annotations.h"
 #include "base/threading/thread_restrictions.h"
 
 namespace base {
@@ -37,9 +37,9 @@ static const subtle::AtomicWord kBeingCreatedMarker = 1;
 
 BASE_EXPORT subtle::AtomicWord WaitForInstance(subtle::AtomicWord* instance);
 
-}  
-}  
+class DeleteTraceLogForTesting;
 
+}  
 
 
 
@@ -111,7 +111,7 @@ struct StaticMemorySingletonTraits {
   
   static Type* New() {
     
-    if (base::subtle::NoBarrier_AtomicExchange(&dead_, 1))
+    if (subtle::NoBarrier_AtomicExchange(&dead_, 1))
       return NULL;
 
     return new(buffer_.void_data()) Type();
@@ -126,20 +126,20 @@ struct StaticMemorySingletonTraits {
   static const bool kAllowedToAccessOnNonjoinableThread = true;
 
   
-  static void Resurrect() {
-    base::subtle::NoBarrier_Store(&dead_, 0);
-  }
+  static void Resurrect() { subtle::NoBarrier_Store(&dead_, 0); }
 
  private:
-  static base::AlignedMemory<sizeof(Type), ALIGNOF(Type)> buffer_;
+  static AlignedMemory<sizeof(Type), ALIGNOF(Type)> buffer_;
   
-  static base::subtle::Atomic32 dead_;
+  static subtle::Atomic32 dead_;
 };
 
-template <typename Type> base::AlignedMemory<sizeof(Type), ALIGNOF(Type)>
+template <typename Type>
+AlignedMemory<sizeof(Type), ALIGNOF(Type)>
     StaticMemorySingletonTraits<Type>::buffer_;
-template <typename Type> base::subtle::Atomic32
-    StaticMemorySingletonTraits<Type>::dead_ = 0;
+template <typename Type>
+subtle::Atomic32 StaticMemorySingletonTraits<Type>::dead_ = 0;
+
 
 
 
@@ -220,7 +220,7 @@ class Singleton {
   friend Type* Type::GetInstance();
 
   
-  friend class DeleteTraceLogForTesting;
+  friend class internal::DeleteTraceLogForTesting;
 
   
   
@@ -230,45 +230,37 @@ class Singleton {
 #ifndef NDEBUG
     
     if (!Traits::kAllowedToAccessOnNonjoinableThread)
-      base::ThreadRestrictions::AssertSingletonAllowed();
+      ThreadRestrictions::AssertSingletonAllowed();
 #endif
 
     
     
-    base::subtle::AtomicWord value = base::subtle::Acquire_Load(&instance_);
-    if (value != 0 && value != base::internal::kBeingCreatedMarker) {
-      
-      ANNOTATE_HAPPENS_AFTER(&instance_);
+    subtle::AtomicWord value = subtle::Acquire_Load(&instance_);
+    if (value != 0 && value != internal::kBeingCreatedMarker) {
       return reinterpret_cast<Type*>(value);
     }
 
     
-    if (base::subtle::Acquire_CompareAndSwap(
-          &instance_, 0, base::internal::kBeingCreatedMarker) == 0) {
+    if (subtle::Acquire_CompareAndSwap(&instance_, 0,
+                                       internal::kBeingCreatedMarker) == 0) {
       
       
       
       Type* newval = Traits::New();
 
       
-      
-      
-      ANNOTATE_HAPPENS_BEFORE(&instance_);
-      
-      base::subtle::Release_Store(
-          &instance_, reinterpret_cast<base::subtle::AtomicWord>(newval));
+      subtle::Release_Store(&instance_,
+                            reinterpret_cast<subtle::AtomicWord>(newval));
 
       if (newval != NULL && Traits::kRegisterAtExit)
-        base::AtExitManager::RegisterCallback(OnExit, NULL);
+        AtExitManager::RegisterCallback(OnExit, NULL);
 
       return newval;
     }
 
     
-    value = base::internal::WaitForInstance(&instance_);
+    value = internal::WaitForInstance(&instance_);
 
-    
-    ANNOTATE_HAPPENS_AFTER(&instance_);
     return reinterpret_cast<Type*>(value);
   }
 
@@ -278,15 +270,15 @@ class Singleton {
   static void OnExit(void* ) {
     
     
-    Traits::Delete(
-        reinterpret_cast<Type*>(base::subtle::NoBarrier_Load(&instance_)));
+    Traits::Delete(reinterpret_cast<Type*>(subtle::NoBarrier_Load(&instance_)));
     instance_ = 0;
   }
-  static base::subtle::AtomicWord instance_;
+  static subtle::AtomicWord instance_;
 };
 
 template <typename Type, typename Traits, typename DifferentiatingType>
-base::subtle::AtomicWord Singleton<Type, Traits, DifferentiatingType>::
-    instance_ = 0;
+subtle::AtomicWord Singleton<Type, Traits, DifferentiatingType>::instance_ = 0;
+
+}  
 
 #endif  

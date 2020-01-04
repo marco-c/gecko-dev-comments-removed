@@ -26,11 +26,13 @@
 
 
 
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
+#include "build/build_config.h"
 
 #if defined(WCHAR_T_IS_UTF16)
 
@@ -46,7 +48,7 @@ typedef std::char_traits<wchar_t> string16_char_traits;
 
 namespace base {
 
-typedef uint16 char16;
+typedef uint16_t char16;
 
 
 
@@ -64,7 +66,8 @@ struct string16_char_traits {
 
   
   
-  COMPILE_ASSERT(sizeof(int_type) > sizeof(char_type), unexpected_type_width);
+  static_assert(sizeof(int_type) > sizeof(char_type),
+                "int must be larger than 16 bits wide");
 
   typedef std::streamoff off_type;
   typedef mbstate_t state_type;
@@ -94,7 +97,7 @@ struct string16_char_traits {
     return c16memchr(s, a, n);
   }
 
-  static char_type* move(char_type* s1, const char_type* s2, int_type n) {
+  static char_type* move(char_type* s1, const char_type* s2, size_t n) {
     return c16memmove(s1, s2, n);
   }
 

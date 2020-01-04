@@ -2,7 +2,9 @@
 
 
 
-#include "sandbox/linux/seccomp-bpf/codegen.h"
+#include <string>
+
+#include "sandbox/linux/bpf_dsl/codegen.h"
 #include "sandbox/sandbox_export.h"
 
 namespace sandbox {
@@ -12,6 +14,10 @@ class SANDBOX_EXPORT DumpBPF {
  public:
   
   static void PrintProgram(const CodeGen::Program& program);
+
+  
+  
+  static std::string StringPrintProgram(const CodeGen::Program& program);
 };
 
 }  

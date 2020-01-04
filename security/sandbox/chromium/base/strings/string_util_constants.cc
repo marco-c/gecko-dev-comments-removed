@@ -52,6 +52,16 @@ const char kWhitespaceASCII[] = {
   0
 };
 
+const char16 kWhitespaceASCIIAs16[] = {
+  0x09,    
+  0x0A,    
+  0x0B,    
+  0x0C,    
+  0x0D,    
+  0x20,    
+  0
+};
+
 const char kUtf8ByteOrderMark[] = "\xEF\xBB\xBF";
 
 }  

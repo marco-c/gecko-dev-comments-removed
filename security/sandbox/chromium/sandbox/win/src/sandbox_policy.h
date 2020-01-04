@@ -5,9 +5,11 @@
 #ifndef SANDBOX_WIN_SRC_SANDBOX_POLICY_H_
 #define SANDBOX_WIN_SRC_SANDBOX_POLICY_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <string>
 
-#include "base/basictypes.h"
 #include "base/strings/string16.h"
 #include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/security_level.h"
@@ -130,7 +132,8 @@ class TargetPolicy {
   
   
   
-  virtual ResultCode SetJobLevel(JobLevel job_level, uint32 ui_exceptions) = 0;
+  virtual ResultCode SetJobLevel(JobLevel job_level,
+                                 uint32_t ui_exceptions) = 0;
 
   
   
@@ -182,6 +185,10 @@ class TargetPolicy {
 
   
   virtual ResultCode SetCapability(const wchar_t* sid) = 0;
+
+  
+  
+  virtual ResultCode SetLowBox(const wchar_t* sid) = 0;
 
   
   
@@ -238,6 +245,12 @@ class TargetPolicy {
   
   virtual ResultCode AddKernelObjectToClose(const wchar_t* handle_type,
                                             const wchar_t* handle_name) = 0;
+
+  
+  
+  
+  
+  virtual void* AddHandleToShare(HANDLE handle) = 0;
 };
 
 }  

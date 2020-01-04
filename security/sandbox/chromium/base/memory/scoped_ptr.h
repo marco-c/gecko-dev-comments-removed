@@ -74,6 +74,7 @@
 
 
 
+
 #ifndef BASE_MEMORY_SCOPED_PTR_H_
 #define BASE_MEMORY_SCOPED_PTR_H_
 
@@ -84,10 +85,13 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <algorithm>  
+#include <iosfwd>
+#include <memory>
+#include <type_traits>
+#include <utility>
 
-#include "base/basictypes.h"
 #include "base/compiler_specific.h"
+#include "base/macros.h"
 #include "base/move.h"
 #include "base/template_util.h"
 
@@ -97,61 +101,6 @@ namespace subtle {
 class RefCountedBase;
 class RefCountedThreadSafeBase;
 }  
-
-
-
-
-template <class T>
-struct DefaultDeleter {
-  DefaultDeleter() {}
-  template <typename U> DefaultDeleter(const DefaultDeleter<U>& other) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    enum { T_must_be_complete = sizeof(T) };
-    enum { U_must_be_complete = sizeof(U) };
-    COMPILE_ASSERT((base::is_convertible<U*, T*>::value),
-                   U_ptr_must_implicitly_convert_to_T_ptr);
-  }
-  inline void operator()(T* ptr) const {
-    enum { type_must_be_complete = sizeof(T) };
-    delete ptr;
-  }
-};
-
-
-template <class T>
-struct DefaultDeleter<T[]> {
-  inline void operator()(T* ptr) const {
-    enum { type_must_be_complete = sizeof(T) };
-    delete[] ptr;
-  }
-
- private:
-  
-  
-  
-  
-  
-  
-  
-  template <typename U> void operator()(U* array) const;
-};
-
-template <class T, int n>
-struct DefaultDeleter<T[n]> {
-  
-  COMPILE_ASSERT(sizeof(T) == -1, do_not_use_array_with_size_as_type);
-};
 
 
 
@@ -172,17 +121,6 @@ template <typename T> struct IsNotRefCounted {
         !base::is_convertible<T*, base::subtle::RefCountedThreadSafeBase*>::
             value
   };
-};
-
-template <typename T>
-struct ShouldAbortOnSelfReset {
-  template <typename U>
-  static NoType Test(const typename U::AllowSelfReset*);
-
-  template <typename U>
-  static YesType Test(...);
-
-  static const bool value = sizeof(Test<T>(0)) == sizeof(YesType);
 };
 
 
@@ -215,37 +153,28 @@ class scoped_ptr_impl {
   }
 
   ~scoped_ptr_impl() {
-    if (data_.ptr != nullptr) {
-      
-      
-      static_cast<D&>(data_)(data_.ptr);
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    reset(nullptr);
   }
 
   void reset(T* p) {
     
     
-    assert(!ShouldAbortOnSelfReset<D>::value || p == nullptr || p != data_.ptr);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     T* old = data_.ptr;
-    data_.ptr = nullptr;
+    data_.ptr = p;
     if (old != nullptr)
       static_cast<D&>(data_)(old);
-    data_.ptr = p;
   }
 
   T* get() const { return data_.ptr; }
@@ -307,17 +236,19 @@ class scoped_ptr_impl {
 
 
 
-template <class T, class D = base::DefaultDeleter<T> >
+template <class T, class D = std::default_delete<T>>
 class scoped_ptr {
-  MOVE_ONLY_TYPE_WITH_MOVE_CONSTRUCTOR_FOR_CPP_03(scoped_ptr)
+  DISALLOW_COPY_AND_ASSIGN_WITH_MOVE_FOR_BIND(scoped_ptr)
 
-  COMPILE_ASSERT(base::internal::IsNotRefCounted<T>::value,
-                 T_is_refcounted_type_and_needs_scoped_refptr);
+  static_assert(!std::is_array<T>::value,
+                "scoped_ptr doesn't support array with size");
+  static_assert(base::internal::IsNotRefCounted<T>::value,
+                "T is a refcounted type and needs a scoped_refptr");
 
  public:
   
-  typedef T element_type;
-  typedef D deleter_type;
+  using element_type = T;
+  using deleter_type = D;
 
   
   scoped_ptr() : impl_(nullptr) {}
@@ -329,7 +260,17 @@ class scoped_ptr {
   scoped_ptr(element_type* p, const D& d) : impl_(p, d) {}
 
   
-  scoped_ptr(decltype(nullptr)) : impl_(nullptr) {}
+  scoped_ptr(std::nullptr_t) : impl_(nullptr) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  scoped_ptr(scoped_ptr&& other) : impl_(&other.impl_) {}
 
   
   
@@ -341,11 +282,23 @@ class scoped_ptr {
   
   
   
-  template <typename U, typename V>
-  scoped_ptr(scoped_ptr<U, V>&& other)
-      : impl_(&other.impl_) {
-    COMPILE_ASSERT(!base::is_array<U>::value, U_cannot_be_an_array);
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename U,
+            typename E,
+            typename std::enable_if<!std::is_array<U>::value &&
+                                    std::is_convertible<U*, T*>::value &&
+                                    std::is_convertible<E, D>::value>::type* =
+                nullptr>
+  scoped_ptr(scoped_ptr<U, E>&& other)
+      : impl_(&other.impl_) {}
 
   
   
@@ -356,17 +309,38 @@ class scoped_ptr {
   
   
   
-  
-  template <typename U, typename V>
-  scoped_ptr& operator=(scoped_ptr<U, V>&& rhs) {
-    COMPILE_ASSERT(!base::is_array<U>::value, U_cannot_be_an_array);
+  scoped_ptr& operator=(scoped_ptr&& rhs) {
     impl_.TakeState(&rhs.impl_);
     return *this;
   }
 
   
   
-  scoped_ptr& operator=(decltype(nullptr)) {
+  
+  
+  
+  
+  
+  
+  template <typename U,
+            typename E,
+            typename std::enable_if<!std::is_array<U>::value &&
+                                    std::is_convertible<U*, T*>::value &&
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    std::is_convertible<D, E>::value>::type* =
+                nullptr>
+  scoped_ptr& operator=(scoped_ptr<U, E>&& rhs) {
+    impl_.TakeState(&rhs.impl_);
+    return *this;
+  }
+
+  
+  
+  scoped_ptr& operator=(std::nullptr_t) {
     reset();
     return *this;
   }
@@ -408,12 +382,6 @@ class scoped_ptr {
   }
 
   
-  
-  
-  bool operator==(const element_type* p) const { return impl_.get() == p; }
-  bool operator!=(const element_type* p) const { return impl_.get() != p; }
-
-  
   void swap(scoped_ptr& p2) {
     impl_.swap(p2.impl_);
   }
@@ -433,23 +401,16 @@ class scoped_ptr {
 
   
   explicit scoped_ptr(int disallow_construction_from_null);
-
-  
-  
-  
-  
-  template <class U> bool operator==(scoped_ptr<U> const& p2) const;
-  template <class U> bool operator!=(scoped_ptr<U> const& p2) const;
 };
 
 template <class T, class D>
 class scoped_ptr<T[], D> {
-  MOVE_ONLY_TYPE_WITH_MOVE_CONSTRUCTOR_FOR_CPP_03(scoped_ptr)
+  DISALLOW_COPY_AND_ASSIGN_WITH_MOVE_FOR_BIND(scoped_ptr)
 
  public:
   
-  typedef T element_type;
-  typedef D deleter_type;
+  using element_type = T;
+  using deleter_type = D;
 
   
   scoped_ptr() : impl_(nullptr) {}
@@ -465,12 +426,10 @@ class scoped_ptr<T[], D> {
   
   
   
-  
-  
   explicit scoped_ptr(element_type* array) : impl_(array) {}
 
   
-  scoped_ptr(decltype(nullptr)) : impl_(nullptr) {}
+  scoped_ptr(std::nullptr_t) : impl_(nullptr) {}
 
   
   scoped_ptr(scoped_ptr&& other) : impl_(&other.impl_) {}
@@ -483,7 +442,7 @@ class scoped_ptr<T[], D> {
 
   
   
-  scoped_ptr& operator=(decltype(nullptr)) {
+  scoped_ptr& operator=(std::nullptr_t) {
     reset();
     return *this;
   }
@@ -513,12 +472,6 @@ class scoped_ptr<T[], D> {
   operator Testable() const {
     return impl_.get() ? &scoped_ptr::impl_ : nullptr;
   }
-
-  
-  
-  
-  bool operator==(element_type* array) const { return impl_.get() == array; }
-  bool operator!=(element_type* array) const { return impl_.get() != array; }
 
   
   void swap(scoped_ptr& p2) {
@@ -552,13 +505,6 @@ class scoped_ptr<T[], D> {
   
   template <typename U> void reset(U* array);
   void reset(int disallow_reset_from_null);
-
-  
-  
-  
-  
-  template <class U> bool operator==(scoped_ptr<U> const& p2) const;
-  template <class U> bool operator!=(scoped_ptr<U> const& p2) const;
 };
 
 
@@ -567,14 +513,82 @@ void swap(scoped_ptr<T, D>& p1, scoped_ptr<T, D>& p2) {
   p1.swap(p2);
 }
 
+template <class T1, class D1, class T2, class D2>
+bool operator==(const scoped_ptr<T1, D1>& p1, const scoped_ptr<T2, D2>& p2) {
+  return p1.get() == p2.get();
+}
 template <class T, class D>
-bool operator==(T* p1, const scoped_ptr<T, D>& p2) {
-  return p1 == p2.get();
+bool operator==(const scoped_ptr<T, D>& p, std::nullptr_t) {
+  return p.get() == nullptr;
+}
+template <class T, class D>
+bool operator==(std::nullptr_t, const scoped_ptr<T, D>& p) {
+  return p.get() == nullptr;
 }
 
+template <class T1, class D1, class T2, class D2>
+bool operator!=(const scoped_ptr<T1, D1>& p1, const scoped_ptr<T2, D2>& p2) {
+  return !(p1 == p2);
+}
 template <class T, class D>
-bool operator!=(T* p1, const scoped_ptr<T, D>& p2) {
-  return p1 != p2.get();
+bool operator!=(const scoped_ptr<T, D>& p, std::nullptr_t) {
+  return !(p == nullptr);
+}
+template <class T, class D>
+bool operator!=(std::nullptr_t, const scoped_ptr<T, D>& p) {
+  return !(p == nullptr);
+}
+
+template <class T1, class D1, class T2, class D2>
+bool operator<(const scoped_ptr<T1, D1>& p1, const scoped_ptr<T2, D2>& p2) {
+  return p1.get() < p2.get();
+}
+template <class T, class D>
+bool operator<(const scoped_ptr<T, D>& p, std::nullptr_t) {
+  return p.get() < nullptr;
+}
+template <class T, class D>
+bool operator<(std::nullptr_t, const scoped_ptr<T, D>& p) {
+  return nullptr < p.get();
+}
+
+template <class T1, class D1, class T2, class D2>
+bool operator>(const scoped_ptr<T1, D1>& p1, const scoped_ptr<T2, D2>& p2) {
+  return p2 < p1;
+}
+template <class T, class D>
+bool operator>(const scoped_ptr<T, D>& p, std::nullptr_t) {
+  return nullptr < p;
+}
+template <class T, class D>
+bool operator>(std::nullptr_t, const scoped_ptr<T, D>& p) {
+  return p < nullptr;
+}
+
+template <class T1, class D1, class T2, class D2>
+bool operator<=(const scoped_ptr<T1, D1>& p1, const scoped_ptr<T2, D2>& p2) {
+  return !(p1 > p2);
+}
+template <class T, class D>
+bool operator<=(const scoped_ptr<T, D>& p, std::nullptr_t) {
+  return !(p > nullptr);
+}
+template <class T, class D>
+bool operator<=(std::nullptr_t, const scoped_ptr<T, D>& p) {
+  return !(nullptr > p);
+}
+
+template <class T1, class D1, class T2, class D2>
+bool operator>=(const scoped_ptr<T1, D1>& p1, const scoped_ptr<T2, D2>& p2) {
+  return !(p1 < p2);
+}
+template <class T, class D>
+bool operator>=(const scoped_ptr<T, D>& p, std::nullptr_t) {
+  return !(p < nullptr);
+}
+template <class T, class D>
+bool operator>=(std::nullptr_t, const scoped_ptr<T, D>& p) {
+  return !(nullptr < p);
 }
 
 
@@ -583,6 +597,11 @@ bool operator!=(T* p1, const scoped_ptr<T, D>& p2) {
 template <typename T>
 scoped_ptr<T> make_scoped_ptr(T* ptr) {
   return scoped_ptr<T>(ptr);
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream& out, const scoped_ptr<T>& p) {
+  return out << p.get();
 }
 
 #endif  

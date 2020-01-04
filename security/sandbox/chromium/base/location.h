@@ -5,10 +5,13 @@
 #ifndef BASE_LOCATION_H_
 #define BASE_LOCATION_H_
 
+#include <stddef.h>
+
+#include <cassert>
 #include <string>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
+#include "base/containers/hash_tables.h"
 
 namespace tracked_objects {
 
@@ -28,17 +31,14 @@ class BASE_EXPORT Location {
   Location();
 
   
+  Location(const Location& other);
+
   
   
   
-  
-  
-  bool operator < (const Location& other) const {
-    if (line_number_ != other.line_number_)
-      return line_number_ < other.line_number_;
-    if (file_name_ != other.file_name_)
-      return file_name_ < other.file_name_;
-    return function_name_ < other.function_name_;
+  bool operator==(const Location& other) const {
+    return line_number_ == other.line_number_ &&
+           file_name_ == other.file_name_;
   }
 
   const char* function_name()   const { return function_name_; }
@@ -47,6 +47,22 @@ class BASE_EXPORT Location {
   const void* program_counter() const { return program_counter_; }
 
   std::string ToString() const;
+
+  
+  struct Hash {
+    size_t operator()(const Location& location) const {
+      
+      
+      
+
+      
+      
+      
+      
+      return base::HashPair(reinterpret_cast<uintptr_t>(location.file_name()),
+                            location.line_number());
+    }
+  };
 
   
   

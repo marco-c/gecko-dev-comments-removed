@@ -48,6 +48,24 @@ typedef LPSTARTUPINFOEXA LPSTARTUPINFOEX;
 #define PROCESS_DEP_ENABLE                          0x00000001
 #define PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION     0x00000002
 
+
+
+WINBASEAPI
+int
+WINAPI
+GetUserDefaultLocaleName(
+    _Out_writes_(cchLocaleName) LPWSTR lpLocaleName,
+    _In_ int cchLocaleName
+);
+
+WINBASEAPI
+BOOL
+WINAPI
+QueryThreadCycleTime(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PULONG64 CycleTime
+    );
+
 #endif 
 
 #if (_WIN32_WINNT < 0x0601)

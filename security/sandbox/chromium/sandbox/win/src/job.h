@@ -5,7 +5,10 @@
 #ifndef SANDBOX_SRC_JOB_H_
 #define SANDBOX_SRC_JOB_H_
 
-#include "base/basictypes.h"
+#include <stddef.h>
+
+#include "base/macros.h"
+#include "base/win/scoped_handle.h"
 #include "sandbox/win/src/restricted_token_utils.h"
 
 namespace sandbox {
@@ -17,7 +20,7 @@ namespace sandbox {
 
 class Job {
  public:
-  Job() : job_handle_(NULL) { }
+  Job();
 
   ~Job();
 
@@ -49,12 +52,11 @@ class Job {
 
   
   
-  
-  HANDLE Detach();
+  base::win::ScopedHandle Take();
 
  private:
   
-  HANDLE job_handle_;
+  base::win::ScopedHandle job_handle_;
 
   DISALLOW_COPY_AND_ASSIGN(Job);
 };

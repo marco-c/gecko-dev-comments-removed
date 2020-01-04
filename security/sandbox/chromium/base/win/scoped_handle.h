@@ -8,9 +8,9 @@
 #include <windows.h>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
 #include "base/location.h"
 #include "base/logging.h"
+#include "base/macros.h"
 #include "base/move.h"
 
 
@@ -30,9 +30,13 @@ namespace win {
 
 
 
+
+
+
+
 template <class Traits, class Verifier>
 class GenericScopedHandle {
-  MOVE_ONLY_TYPE_FOR_CPP_03(GenericScopedHandle, RValue)
+  MOVE_ONLY_TYPE_FOR_CPP_03(GenericScopedHandle)
 
  public:
   typedef typename Traits::Handle Handle;
@@ -43,9 +47,9 @@ class GenericScopedHandle {
     Set(handle);
   }
 
-  
-  GenericScopedHandle(RValue other) : handle_(Traits::NullHandle()) {
-    Set(other.object->Take());
+  GenericScopedHandle(GenericScopedHandle&& other)
+      : handle_(Traits::NullHandle()) {
+    Set(other.Take());
   }
 
   ~GenericScopedHandle() {
@@ -56,16 +60,16 @@ class GenericScopedHandle {
     return Traits::IsHandleValid(handle_);
   }
 
-  
-  GenericScopedHandle& operator=(RValue other) {
-    if (this != other.object) {
-      Set(other.object->Take());
-    }
+  GenericScopedHandle& operator=(GenericScopedHandle&& other) {
+    DCHECK_NE(this, &other);
+    Set(other.Take());
     return *this;
   }
 
   void Set(Handle handle) {
     if (handle_ != handle) {
+      
+      auto last_error = ::GetLastError();
       Close();
 
       if (Traits::IsHandleValid(handle)) {
@@ -73,6 +77,7 @@ class GenericScopedHandle {
         Verifier::StartTracking(handle, this, BASE_WIN_GET_CALLER,
                                 tracked_objects::GetProgramCounter());
       }
+      ::SetLastError(last_error);
     }
   }
 

@@ -6,7 +6,9 @@
 
 
 
-#include "base/basictypes.h"
+#include <stddef.h>
+
+#include "base/macros.h"
 #include "sandbox/win/src/nt_internals.h"
 
 #ifndef SANDBOX_SRC_RESOLVER_H__

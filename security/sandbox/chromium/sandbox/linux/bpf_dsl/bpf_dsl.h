@@ -5,6 +5,7 @@
 #ifndef SANDBOX_LINUX_BPF_DSL_BPF_DSL_H_
 #define SANDBOX_LINUX_BPF_DSL_BPF_DSL_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <utility>
@@ -16,6 +17,8 @@
 #include "sandbox/linux/bpf_dsl/cons.h"
 #include "sandbox/linux/bpf_dsl/trap_registry.h"
 #include "sandbox/sandbox_export.h"
+
+
 
 
 
@@ -90,7 +93,7 @@ SANDBOX_EXPORT ResultExpr Allow();
 SANDBOX_EXPORT ResultExpr Error(int err);
 
 
-SANDBOX_EXPORT ResultExpr Kill(const char* msg);
+SANDBOX_EXPORT ResultExpr Kill();
 
 
 
@@ -118,10 +121,21 @@ SANDBOX_EXPORT ResultExpr
 SANDBOX_EXPORT BoolExpr BoolConst(bool value);
 
 
+SANDBOX_EXPORT BoolExpr Not(const BoolExpr& cond);
 
-SANDBOX_EXPORT BoolExpr operator!(const BoolExpr& cond);
-SANDBOX_EXPORT BoolExpr operator&&(const BoolExpr& lhs, const BoolExpr& rhs);
-SANDBOX_EXPORT BoolExpr operator||(const BoolExpr& lhs, const BoolExpr& rhs);
+
+
+SANDBOX_EXPORT BoolExpr AllOf();
+SANDBOX_EXPORT BoolExpr AllOf(const BoolExpr& lhs, const BoolExpr& rhs);
+template <typename... Rest>
+SANDBOX_EXPORT BoolExpr AllOf(const BoolExpr& first, const Rest&... rest);
+
+
+
+SANDBOX_EXPORT BoolExpr AnyOf();
+SANDBOX_EXPORT BoolExpr AnyOf(const BoolExpr& lhs, const BoolExpr& rhs);
+template <typename... Rest>
+SANDBOX_EXPORT BoolExpr AnyOf(const BoolExpr& first, const Rest&... rest);
 
 template <typename T>
 class SANDBOX_EXPORT Arg {
@@ -144,7 +158,7 @@ class SANDBOX_EXPORT Arg {
 
   
   
-  friend BoolExpr operator!=(const Arg& lhs, T rhs) { return !(lhs == rhs); }
+  friend BoolExpr operator!=(const Arg& lhs, T rhs) { return Not(lhs == rhs); }
 
  private:
   Arg(int num, uint64_t mask) : num_(num), mask_(mask) {}
@@ -199,15 +213,16 @@ class SANDBOX_EXPORT Caser {
   ~Caser() {}
 
   
-  Caser<T> Case(T value, ResultExpr result) const;
+  Caser<T> Case(T value, const ResultExpr& result) const;
 
   
   
   
-  Caser<T> Cases(const std::vector<T>& values, ResultExpr result) const;
+  template <typename... Values>
+  Caser<T> CasesImpl(const ResultExpr& result, const Values&... values) const;
 
   
-  ResultExpr Default(ResultExpr result) const;
+  ResultExpr Default(const ResultExpr& result) const;
 
  private:
   Caser(const Arg<T>& arg, Elser elser) : arg_(arg), elser_(elser) {}
@@ -226,17 +241,10 @@ class SANDBOX_EXPORT Caser {
 
 
 #define SANDBOX_BPF_DSL_CASES(values, result) \
-  Cases(SANDBOX_BPF_DSL_CASES_HELPER values, result)
+  CasesImpl(result, SANDBOX_BPF_DSL_CASES_HELPER values)
 
 
-
-#define SANDBOX_BPF_DSL_CASES_HELPER(value, ...)                           \
-  ({                                                                       \
-    const __typeof__(value) bpf_dsl_cases_values[] = {value, __VA_ARGS__}; \
-    std::vector<__typeof__(value)>(                                        \
-        bpf_dsl_cases_values,                                              \
-        bpf_dsl_cases_values + arraysize(bpf_dsl_cases_values));           \
-  })
+#define SANDBOX_BPF_DSL_CASES_HELPER(...) __VA_ARGS__
 
 
 
@@ -248,9 +256,9 @@ namespace internal {
 
 
 
-using bpf_dsl::operator!;
-using bpf_dsl::operator||;
-using bpf_dsl::operator&&;
+using bpf_dsl::Not;
+using bpf_dsl::AllOf;
+using bpf_dsl::AnyOf;
 
 
 
@@ -278,6 +286,10 @@ Arg<T>::Arg(int num)
 
 template <typename T>
 BoolExpr Arg<T>::EqualTo(T val) const {
+  if (sizeof(T) == 4) {
+    
+    return internal::ArgEq(num_, sizeof(T), mask_, static_cast<uint32_t>(val));
+  }
   return internal::ArgEq(num_, sizeof(T), mask_, static_cast<uint64_t>(val));
 }
 
@@ -287,28 +299,34 @@ SANDBOX_EXPORT Caser<T> Switch(const Arg<T>& arg) {
 }
 
 template <typename T>
-Caser<T> Caser<T>::Case(T value, ResultExpr result) const {
+Caser<T> Caser<T>::Case(T value, const ResultExpr& result) const {
   return SANDBOX_BPF_DSL_CASES((value), result);
 }
 
 template <typename T>
-Caser<T> Caser<T>::Cases(const std::vector<T>& values,
-                         ResultExpr result) const {
+template <typename... Values>
+Caser<T> Caser<T>::CasesImpl(const ResultExpr& result,
+                             const Values&... values) const {
   
   
   
 
-  typedef typename std::vector<T>::const_iterator Iter;
-  BoolExpr test = BoolConst(false);
-  for (Iter i = values.begin(), end = values.end(); i != end; ++i) {
-    test = test || (arg_ == *i);
-  }
-  return Caser<T>(arg_, elser_.ElseIf(test, result));
+  return Caser<T>(arg_, elser_.ElseIf(AnyOf((arg_ == values)...), result));
 }
 
 template <typename T>
-ResultExpr Caser<T>::Default(ResultExpr result) const {
+ResultExpr Caser<T>::Default(const ResultExpr& result) const {
   return elser_.Else(result);
+}
+
+template <typename... Rest>
+BoolExpr AllOf(const BoolExpr& first, const Rest&... rest) {
+  return AllOf(first, AllOf(rest...));
+}
+
+template <typename... Rest>
+BoolExpr AnyOf(const BoolExpr& first, const Rest&... rest) {
+  return AnyOf(first, AnyOf(rest...));
 }
 
 }  

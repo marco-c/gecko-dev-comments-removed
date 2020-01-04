@@ -12,6 +12,7 @@
 #include <intrin.h>
 
 #include "base/macros.h"
+#include "build/build_config.h"
 
 #if defined(ARCH_CPU_64_BITS)
 
@@ -55,9 +56,6 @@ inline Atomic32 NoBarrier_AtomicIncrement(volatile Atomic32* ptr,
   return Barrier_AtomicIncrement(ptr, increment);
 }
 
-#if !(defined(_MSC_VER) && _MSC_VER >= 1400)
-#error "We require at least vs2005 for MemoryBarrier"
-#endif
 inline void MemoryBarrier() {
 #if defined(ARCH_CPU_64_BITS)
   
@@ -112,7 +110,7 @@ inline Atomic32 Release_Load(volatile const Atomic32* ptr) {
 
 
 
-COMPILE_ASSERT(sizeof(Atomic64) == sizeof(PVOID), atomic_word_is_atomic);
+static_assert(sizeof(Atomic64) == sizeof(PVOID), "atomic word is atomic");
 
 inline Atomic64 NoBarrier_CompareAndSwap(volatile Atomic64* ptr,
                                          Atomic64 old_value,

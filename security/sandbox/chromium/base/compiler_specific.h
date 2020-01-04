@@ -10,6 +10,9 @@
 #if defined(COMPILER_MSVC)
 
 
+#include <sal.h>
+
+
 
 
 
@@ -57,6 +60,7 @@
 
 #else  
 
+#define _Printf_format_string_
 #define MSVC_SUPPRESS_WARNING(n)
 #define MSVC_PUSH_DISABLE_WARNING(n)
 #define MSVC_PUSH_WARNING_LEVEL(n)
@@ -74,34 +78,12 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-#if defined(COMPILER_MSVC)
-#define STATIC_CONST_MEMBER_DEFINITION __declspec(selectany)
-#else
-#define STATIC_CONST_MEMBER_DEFINITION
-#endif
-
-
-
-
-
-
-
 #define ALLOW_UNUSED_LOCAL(x) false ? (void)x : (void)0
 
 
 
 
-#if defined(COMPILER_GCC)
+#if defined(COMPILER_GCC) || defined(__clang__)
 #define ALLOW_UNUSED_TYPE __attribute__((unused))
 #else
 #define ALLOW_UNUSED_TYPE
@@ -131,10 +113,8 @@
 
 
 
-
-
 #if defined(COMPILER_MSVC)
-#define ALIGNOF(type) (sizeof(type) - sizeof(type) + __alignof(type))
+#define ALIGNOF(type) __alignof(type)
 #elif defined(COMPILER_GCC)
 #define ALIGNOF(type) __alignof__(type)
 #endif
@@ -143,7 +123,8 @@
 
 
 
-#if defined(COMPILER_GCC)
+#undef WARN_UNUSED_RESULT
+#if defined(COMPILER_GCC) || defined(__clang__)
 #define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #else
 #define WARN_UNUSED_RESULT
@@ -175,9 +156,17 @@
 
 
 
-#define MSAN_UNPOISON(p, s)  __msan_unpoison(p, s)
+#define MSAN_UNPOISON(p, size)  __msan_unpoison(p, size)
+
+
+
+
+
+#define MSAN_CHECK_MEM_IS_INITIALIZED(p, size) \
+    __msan_check_mem_is_initialized(p, size)
 #else  
-#define MSAN_UNPOISON(p, s)
+#define MSAN_UNPOISON(p, size)
+#define MSAN_CHECK_MEM_IS_INITIALIZED(p, size)
 #endif  
 
 

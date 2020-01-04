@@ -2,9 +2,13 @@
 
 
 
+#include <limits.h>
+#include <stddef.h>
+
 #include "base/strings/stringprintf.h"
 #include "base/win/scoped_handle.h"
 #include "sandbox/win/src/handle_closer_agent.h"
+#include "sandbox/win/src/nt_internals.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/sandbox_factory.h"
 #include "sandbox/win/src/target_services.h"
@@ -43,6 +47,26 @@ HANDLE GetMarkerFile(const wchar_t *extension) {
 }
 
 
+
+
+NTSTATUS QueryObjectTypeInformation(HANDLE handle, void* buffer, ULONG* size) {
+  static NtQueryObject QueryObject = NULL;
+  if (!QueryObject)
+    ResolveNTFunctionPtr("NtQueryObject", &QueryObject);
+
+  NTSTATUS status = STATUS_UNSUCCESSFUL;
+  __try {
+    status = QueryObject(handle, ObjectTypeInformation, buffer, *size, size);
+  }
+  __except(GetExceptionCode() == STATUS_INVALID_HANDLE
+               ? EXCEPTION_EXECUTE_HANDLER
+               : EXCEPTION_CONTINUE_SEARCH) {
+    status = STATUS_INVALID_HANDLE;
+  }
+  return status;
+}
+
+
 HANDLE finish_event;
 const int kWaitCount = 20;
 
@@ -57,7 +81,7 @@ SBOX_TESTS_COMMAND int CheckForFileHandles(int argc, wchar_t **argv) {
   if (argc < 2)
     return SBOX_TEST_FAILED_TO_RUN_TEST;
   bool should_find = argv[0][0] == L'Y';
-  if (argv[0][1] != L'\0' || !should_find && argv[0][0] != L'N')
+  if (argv[0][1] != L'\0' || (!should_find && argv[0][0] != L'N'))
     return SBOX_TEST_FAILED_TO_RUN_TEST;
 
   static int state = BEFORE_INIT;
@@ -65,8 +89,8 @@ SBOX_TESTS_COMMAND int CheckForFileHandles(int argc, wchar_t **argv) {
     case BEFORE_INIT:
       
       
-      for (int i = 0; i < arraysize(kFileExtensions); ++i)
-        EXPECT_NE(GetMarkerFile(kFileExtensions[i]), INVALID_HANDLE_VALUE);
+      for (const wchar_t* kExtension : kFileExtensions)
+        CHECK_NE(GetMarkerFile(kExtension), INVALID_HANDLE_VALUE);
       return SBOX_TEST_SUCCEEDED;
 
     case AFTER_REVERT: {
@@ -104,15 +128,79 @@ SBOX_TESTS_COMMAND int CheckForFileHandles(int argc, wchar_t **argv) {
   return SBOX_TEST_SUCCEEDED;
 }
 
+
+
+SBOX_TESTS_COMMAND int CheckForEventHandles(int argc, wchar_t** argv) {
+  static int state = BEFORE_INIT;
+  static std::vector<HANDLE> to_check;
+
+  switch (state++) {
+    case BEFORE_INIT:
+      
+      for (const wchar_t* kExtension : kFileExtensions) {
+        HANDLE handle = GetMarkerFile(kExtension);
+        CHECK_NE(handle, INVALID_HANDLE_VALUE);
+        to_check.push_back(handle);
+      }
+      return SBOX_TEST_SUCCEEDED;
+
+    case AFTER_REVERT:
+      for (auto handle : to_check) {
+        
+        std::vector<BYTE> type_info_buffer(sizeof(OBJECT_TYPE_INFORMATION) +
+                                           32 * sizeof(wchar_t));
+        OBJECT_TYPE_INFORMATION* type_info =
+            reinterpret_cast<OBJECT_TYPE_INFORMATION*>(&(type_info_buffer[0]));
+        NTSTATUS rc;
+
+        
+        ULONG size = static_cast<ULONG>(type_info_buffer.size());
+        rc = QueryObjectTypeInformation(handle, type_info, &size);
+        while (rc == STATUS_INFO_LENGTH_MISMATCH ||
+               rc == STATUS_BUFFER_OVERFLOW) {
+          type_info_buffer.resize(size + sizeof(wchar_t));
+          type_info = reinterpret_cast<OBJECT_TYPE_INFORMATION*>(
+              &(type_info_buffer[0]));
+          rc = QueryObjectTypeInformation(handle, type_info, &size);
+          
+          if (NT_SUCCESS(rc) && size == type_info_buffer.size())
+            rc = STATUS_INFO_LENGTH_MISMATCH;
+        }
+
+        CHECK(NT_SUCCESS(rc));
+        CHECK(type_info->Name.Buffer);
+
+        type_info->Name.Buffer[type_info->Name.Length / sizeof(wchar_t)] =
+            L'\0';
+
+        
+        CHECK_EQ(wcslen(type_info->Name.Buffer), 5U);
+        CHECK_EQ(wcscmp(L"Event", type_info->Name.Buffer), 0);
+
+        
+        CHECK_EQ(WaitForSingleObject(handle, INFINITE), WAIT_FAILED);
+
+        
+        CHECK_EQ(TRUE, CloseHandle(handle));
+      }
+      return SBOX_TEST_SUCCEEDED;
+
+    default:  
+      break;
+  }
+
+  return SBOX_TEST_SUCCEEDED;
+}
+
 TEST(HandleCloserTest, CheckForMarkerFiles) {
   TestRunner runner;
   runner.SetTimeout(2000);
   runner.SetTestState(EVERY_STATE);
 
   base::string16 command = base::string16(L"CheckForFileHandles Y");
-  for (int i = 0; i < arraysize(kFileExtensions); ++i) {
+  for (const wchar_t* kExtension : kFileExtensions) {
     base::string16 handle_name;
-    base::win::ScopedHandle marker(GetMarkerFile(kFileExtensions[i]));
+    base::win::ScopedHandle marker(GetMarkerFile(kExtension));
     CHECK(marker.IsValid());
     CHECK(sandbox::GetHandleName(marker.Get(), &handle_name));
     command += (L" ");
@@ -130,9 +218,9 @@ TEST(HandleCloserTest, CloseMarkerFiles) {
   sandbox::TargetPolicy* policy = runner.GetPolicy();
 
   base::string16 command = base::string16(L"CheckForFileHandles N");
-  for (int i = 0; i < arraysize(kFileExtensions); ++i) {
+  for (const wchar_t* kExtension : kFileExtensions) {
     base::string16 handle_name;
-    base::win::ScopedHandle marker(GetMarkerFile(kFileExtensions[i]));
+    base::win::ScopedHandle marker(GetMarkerFile(kExtension));
     CHECK(marker.IsValid());
     CHECK(sandbox::GetHandleName(marker.Get(), &handle_name));
     CHECK_EQ(policy->AddKernelObjectToClose(L"File", handle_name.c_str()),
@@ -143,6 +231,24 @@ TEST(HandleCloserTest, CloseMarkerFiles) {
 
   EXPECT_EQ(SBOX_TEST_SUCCEEDED, runner.RunTest(command.c_str())) <<
     "Failed: " << command;
+}
+
+TEST(HandleCloserTest, CheckStuffedHandle) {
+  TestRunner runner;
+  runner.SetTimeout(2000);
+  runner.SetTestState(EVERY_STATE);
+  sandbox::TargetPolicy* policy = runner.GetPolicy();
+
+  for (const wchar_t* kExtension : kFileExtensions) {
+    base::string16 handle_name;
+    base::win::ScopedHandle marker(GetMarkerFile(kExtension));
+    CHECK(marker.IsValid());
+    CHECK(sandbox::GetHandleName(marker.Get(), &handle_name));
+    CHECK_EQ(policy->AddKernelObjectToClose(L"File", handle_name.c_str()),
+             SBOX_ALL_OK);
+  }
+
+  EXPECT_EQ(SBOX_TEST_SUCCEEDED, runner.RunTest(L"CheckForEventHandles"));
 }
 
 void WINAPI ThreadPoolTask(void* event, BOOLEAN timeout) {

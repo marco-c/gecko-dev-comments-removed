@@ -7,23 +7,22 @@
 
 #include <windows.h>
 #include <lmaccess.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <memory>
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "sandbox/win/src/internal_types.h"
 #include "sandbox/win/src/sandbox_types.h"
 
-namespace {
 
 
-
-uint32 Align(uint32 value) {
-  uint32 alignment = sizeof(int64);
+inline uint32_t Align(uint32_t value) {
+  uint32_t alignment = sizeof(int64_t);
   return ((value + alignment - 1) / alignment) * alignment;
 }
 
-}
 
 
 
@@ -50,7 +49,7 @@ const size_t kExtendedReturnCount = 8;
 
 
 union MultiType {
-  uint32 unsigned_int;
+  uint32_t unsigned_int;
   void* pointer;
   HANDLE handle;
   ULONG_PTR ulong_ptr;
@@ -66,8 +65,8 @@ const int kMaxIpcParams = 9;
 
 struct ParamInfo {
   ArgType type_;
-  uint32 offset_;
-  uint32 size_;
+  uint32_t offset_;
+  uint32_t size_;
 };
 
 
@@ -76,7 +75,7 @@ struct ParamInfo {
 
 struct CrossCallReturn {
   
-  uint32 tag;
+  uint32_t tag;
   
   ResultCode call_outcome;
   
@@ -86,7 +85,7 @@ struct CrossCallReturn {
     DWORD    win32_result;
   };
   
-  uint32 extended_count;
+  uint32_t extended_count;
   
   HANDLE handle;
   
@@ -107,9 +106,7 @@ struct CrossCallReturn {
 class CrossCallParams {
  public:
   
-  uint32 GetTag() const {
-    return tag_;
-  }
+  uint32_t GetTag() const { return tag_; }
 
   
   
@@ -118,9 +115,7 @@ class CrossCallParams {
   }
 
   
-  const uint32 GetParamsCount() const {
-    return params_count_;
-  }
+  uint32_t GetParamsCount() const { return params_count_; }
 
   
   CrossCallReturn* GetCallReturn() {
@@ -128,9 +123,7 @@ class CrossCallParams {
   }
 
   
-  const bool IsInOut() const {
-    return (1 == is_in_out_);
-  }
+  bool IsInOut() const { return (1 == is_in_out_); }
 
   
   void SetIsInOut(bool value) {
@@ -142,17 +135,14 @@ class CrossCallParams {
 
  protected:
   
-  CrossCallParams(uint32 tag, uint32 params_count)
-      : tag_(tag),
-        params_count_(params_count),
-        is_in_out_(0) {
-  }
+  CrossCallParams(uint32_t tag, uint32_t params_count)
+      : tag_(tag), is_in_out_(0), params_count_(params_count) {}
 
  private:
-  uint32 tag_;
-  uint32 is_in_out_;
+  uint32_t tag_;
+  uint32_t is_in_out_;
   CrossCallReturn call_return;
-  const uint32 params_count_;
+  const uint32_t params_count_;
   DISALLOW_COPY_AND_ASSIGN(CrossCallParams);
 };
 
@@ -198,37 +188,40 @@ template <size_t NUMBER_PARAMS, size_t BLOCK_SIZE>
 class ActualCallParams : public CrossCallParams {
  public:
   
-  explicit ActualCallParams(uint32 tag)
+  explicit ActualCallParams(uint32_t tag)
       : CrossCallParams(tag, NUMBER_PARAMS) {
     param_info_[0].offset_ =
-        static_cast<uint32>(parameters_ - reinterpret_cast<char*>(this));
+        static_cast<uint32_t>(parameters_ - reinterpret_cast<char*>(this));
   }
 
   
   
-  ActualCallParams(uint32 tag, uint32 number_params)
+  ActualCallParams(uint32_t tag, uint32_t number_params)
       : CrossCallParams(tag, number_params) {
     param_info_[0].offset_ =
-        static_cast<uint32>(parameters_ - reinterpret_cast<char*>(this));
+        static_cast<uint32_t>(parameters_ - reinterpret_cast<char*>(this));
   }
 
   
   
-  uint32 OverrideSize(uint32 new_size) {
-    uint32 previous_size = param_info_[NUMBER_PARAMS].offset_;
+  uint32_t OverrideSize(uint32_t new_size) {
+    uint32_t previous_size = param_info_[NUMBER_PARAMS].offset_;
     param_info_[NUMBER_PARAMS].offset_ = new_size;
     return previous_size;
   }
 
   
   
-  bool CopyParamIn(uint32 index, const void* parameter_address, uint32 size,
-                   bool is_in_out, ArgType type) {
+  bool CopyParamIn(uint32_t index,
+                   const void* parameter_address,
+                   uint32_t size,
+                   bool is_in_out,
+                   ArgType type) {
     if (index >= NUMBER_PARAMS) {
       return false;
     }
 
-    if (kuint32max == size) {
+    if (UINT32_MAX == size) {
       
       return false;
     }
@@ -273,9 +266,7 @@ class ActualCallParams : public CrossCallParams {
 
   
   
-  uint32 GetSize() const {
-    return param_info_[NUMBER_PARAMS].offset_;
-  }
+  uint32_t GetSize() const { return param_info_[NUMBER_PARAMS].offset_; }
 
  protected:
   ActualCallParams() : CrossCallParams(0, NUMBER_PARAMS) { }
@@ -287,9 +278,9 @@ class ActualCallParams : public CrossCallParams {
   DISALLOW_COPY_AND_ASSIGN(ActualCallParams);
 };
 
-COMPILE_ASSERT(sizeof(ActualCallParams<1, 1024>) == 1024, bad_size_buffer);
-COMPILE_ASSERT(sizeof(ActualCallParams<2, 1024>) == 1024, bad_size_buffer);
-COMPILE_ASSERT(sizeof(ActualCallParams<3, 1024>) == 1024, bad_size_buffer);
+static_assert(sizeof(ActualCallParams<1, 1024>) == 1024, "bad size buffer");
+static_assert(sizeof(ActualCallParams<2, 1024>) == 1024, "bad size buffer");
+static_assert(sizeof(ActualCallParams<3, 1024>) == 1024, "bad size buffer");
 
 }  
 

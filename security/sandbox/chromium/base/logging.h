@@ -5,14 +5,16 @@
 #ifndef BASE_LOGGING_H_
 #define BASE_LOGGING_H_
 
+#include <stddef.h>
+
 #include <cassert>
-#include <string>
 #include <cstring>
 #include <sstream>
+#include <string>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
 #include "base/debug/debugger.h"
+#include "base/macros.h"
 #include "build/build_config.h"
 
 
@@ -239,6 +241,9 @@ BASE_EXPORT void SetMinLogLevel(int level);
 BASE_EXPORT int GetMinLogLevel();
 
 
+BASE_EXPORT bool ShouldCreateLogMessage(int severity);
+
+
 BASE_EXPORT int GetVlogVerbosity();
 
 
@@ -340,7 +345,7 @@ const LogSeverity LOG_0 = LOG_ERROR;
 
 
 #define LOG_IS_ON(severity) \
-  ((::logging::LOG_ ## severity) >= ::logging::GetMinLogLevel())
+  (::logging::ShouldCreateLogMessage(::logging::LOG_##severity))
 
 
 
@@ -428,6 +433,21 @@ const LogSeverity LOG_0 = LOG_ERROR;
 
 
 
+class CheckOpResult {
+ public:
+  
+  CheckOpResult(std::string* message) : message_(message) {}
+  
+  operator bool() const { return !message_; }
+  
+  std::string* message() { return message_; }
+
+ private:
+  std::string* message_;
+};
+
+
+
 
 
 
@@ -470,9 +490,10 @@ const LogSeverity LOG_0 = LOG_ERROR;
 
 #else  
 
-#define CHECK(condition)                       \
-  LAZY_STREAM(LOG_STREAM(FATAL), !(condition)) \
-  << "Check failed: " #condition ". "
+
+#define CHECK(condition)                                                    \
+  LAZY_STREAM(logging::LogMessage(__FILE__, __LINE__, #condition).stream(), \
+              !(condition))
 
 #define PCHECK(condition)                       \
   LAZY_STREAM(PLOG_STREAM(FATAL), !(condition)) \
@@ -485,11 +506,15 @@ const LogSeverity LOG_0 = LOG_ERROR;
 
 
 
-#define CHECK_OP(name, op, val1, val2)                          \
-  if (std::string* _result =                                    \
-      logging::Check##name##Impl((val1), (val2),                \
-                                 #val1 " " #op " " #val2))      \
-    logging::LogMessage(__FILE__, __LINE__, _result).stream()
+
+#define CHECK_OP(name, op, val1, val2)                                         \
+  switch (0) case 0: default:                                                  \
+  if (logging::CheckOpResult true_if_passed =                                  \
+      logging::Check##name##Impl((val1), (val2),                               \
+                                 #val1 " " #op " " #val2))                     \
+   ;                                                                           \
+  else                                                                         \
+    logging::LogMessage(__FILE__, __LINE__, true_if_passed.message()).stream()
 
 #endif
 
@@ -551,7 +576,6 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define CHECK_LT(val1, val2) CHECK_OP(LT, < , val1, val2)
 #define CHECK_GE(val1, val2) CHECK_OP(GE, >=, val1, val2)
 #define CHECK_GT(val1, val2) CHECK_OP(GT, > , val1, val2)
-#define CHECK_IMPLIES(val1, val2) CHECK(!(val1) || (val2))
 
 #if defined(NDEBUG)
 #define ENABLE_DLOG 0
@@ -560,9 +584,9 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #endif
 
 #if defined(NDEBUG) && !defined(DCHECK_ALWAYS_ON)
-#define DCHECK_IS_ON 0
+#define DCHECK_IS_ON() 0
 #else
-#define DCHECK_IS_ON 1
+#define DCHECK_IS_ON() 1
 #endif
 
 
@@ -576,7 +600,7 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define DVLOG_IF(verboselevel, condition) VLOG_IF(verboselevel, condition)
 #define DVPLOG_IF(verboselevel, condition) VPLOG_IF(verboselevel, condition)
 
-#else
+#else  
 
 
 
@@ -590,7 +614,7 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define DVLOG_IF(verboselevel, condition) EAT_STREAM_PARAMETERS
 #define DVPLOG_IF(verboselevel, condition) EAT_STREAM_PARAMETERS
 
-#endif
+#endif  
 
 
 
@@ -616,7 +640,7 @@ enum { DEBUG_MODE = ENABLE_DLOG };
 
 
 
-#if DCHECK_IS_ON
+#if DCHECK_IS_ON()
 
 #define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...) \
   COMPACT_GOOGLE_LOG_EX_FATAL(ClassName , ##__VA_ARGS__)
@@ -653,26 +677,32 @@ const LogSeverity LOG_DCHECK = LOG_INFO;
 
 #else  
 
-#define DCHECK(condition)                                               \
-  LAZY_STREAM(LOG_STREAM(DCHECK), DCHECK_IS_ON ? !(condition) : false)  \
-  << "Check failed: " #condition ". "
+#define DCHECK(condition)                                                \
+  LAZY_STREAM(LOG_STREAM(DCHECK), DCHECK_IS_ON() ? !(condition) : false) \
+      << "Check failed: " #condition ". "
 
-#define DPCHECK(condition)                                              \
-  LAZY_STREAM(PLOG_STREAM(DCHECK), DCHECK_IS_ON ? !(condition) : false) \
-  << "Check failed: " #condition ". "
+#define DPCHECK(condition)                                                \
+  LAZY_STREAM(PLOG_STREAM(DCHECK), DCHECK_IS_ON() ? !(condition) : false) \
+      << "Check failed: " #condition ". "
 
 #endif  
 
 
 
-#define DCHECK_OP(name, op, val1, val2)                         \
-  if (DCHECK_IS_ON)                                             \
-    if (std::string* _result =                                  \
-        logging::Check##name##Impl((val1), (val2),              \
-                                   #val1 " " #op " " #val2))    \
-      logging::LogMessage(                                      \
-          __FILE__, __LINE__, ::logging::LOG_DCHECK,            \
-          _result).stream()
+
+
+
+
+#define DCHECK_OP(name, op, val1, val2)                               \
+  switch (0) case 0: default:                                         \
+  if (logging::CheckOpResult true_if_passed =                         \
+      DCHECK_IS_ON() ?                                                \
+      logging::Check##name##Impl((val1), (val2),                      \
+                                 #val1 " " #op " " #val2) : nullptr)  \
+   ;                                                                  \
+  else                                                                \
+    logging::LogMessage(__FILE__, __LINE__, ::logging::LOG_DCHECK,    \
+                        true_if_passed.message()).stream()
 
 
 
@@ -699,11 +729,14 @@ const LogSeverity LOG_DCHECK = LOG_INFO;
 #define DCHECK_LT(val1, val2) DCHECK_OP(LT, < , val1, val2)
 #define DCHECK_GE(val1, val2) DCHECK_OP(GE, >=, val1, val2)
 #define DCHECK_GT(val1, val2) DCHECK_OP(GT, > , val1, val2)
-#define DCHECK_IMPLIES(val1, val2) DCHECK(!(val1) || (val2))
 
-#if !DCHECK_IS_ON && defined(OS_CHROMEOS)
-#define NOTREACHED() LOG(ERROR) << "NOTREACHED() hit in " << \
-    __FUNCTION__ << ". "
+#if !DCHECK_IS_ON() && defined(OS_CHROMEOS)
+
+
+void LogErrorNotReached(const char* file, int line);
+#define NOTREACHED()                                       \
+  true ? ::logging::LogErrorNotReached(__FILE__, __LINE__) \
+       : EAT_STREAM_PARAMETERS
 #else
 #define NOTREACHED() DCHECK(false)
 #endif
@@ -724,6 +757,9 @@ class BASE_EXPORT LogMessage {
  public:
   
   LogMessage(const char* file, int line, LogSeverity severity);
+
+  
+  LogMessage(const char* file, int line, const char* condition);
 
   
   
@@ -773,7 +809,7 @@ class BASE_EXPORT LogMessage {
 
 
 
-inline void LogAtLevel(int const log_level, std::string const &msg) {
+inline void LogAtLevel(int log_level, const std::string& msg) {
   LogMessage(__FILE__, __LINE__, log_level).stream() << msg;
 }
 
@@ -860,6 +896,9 @@ BASE_EXPORT void RawLog(int level, const char* message);
 
 #if defined(OS_WIN)
 
+BASE_EXPORT bool IsLoggingToFileEnabled();
+
+
 BASE_EXPORT std::wstring GetLogFileFullPath();
 #endif
 
@@ -918,9 +957,9 @@ inline std::ostream& operator<<(std::ostream& out, const std::wstring& wstr) {
 #define NOTIMPLEMENTED() EAT_STREAM_PARAMETERS
 #elif NOTIMPLEMENTED_POLICY == 1
 
-#define NOTIMPLEMENTED() COMPILE_ASSERT(false, NOT_IMPLEMENTED)
+#define NOTIMPLEMENTED() static_assert(false, "NOT_IMPLEMENTED")
 #elif NOTIMPLEMENTED_POLICY == 2
-#define NOTIMPLEMENTED() COMPILE_ASSERT(false, NOT_IMPLEMENTED)
+#define NOTIMPLEMENTED() static_assert(false, "NOT_IMPLEMENTED")
 #elif NOTIMPLEMENTED_POLICY == 3
 #define NOTIMPLEMENTED() NOTREACHED()
 #elif NOTIMPLEMENTED_POLICY == 4

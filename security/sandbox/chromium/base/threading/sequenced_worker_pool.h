@@ -5,14 +5,17 @@
 #ifndef BASE_THREADING_SEQUENCED_WORKER_POOL_H_
 #define BASE_THREADING_SEQUENCED_WORKER_POOL_H_
 
+#include <stddef.h>
+
 #include <cstddef>
 #include <string>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
 #include "base/callback_forward.h"
+#include "base/macros.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/scoped_ptr.h"
+#include "base/single_thread_task_runner.h"
 #include "base/task_runner.h"
 
 namespace tracked_objects {
@@ -21,11 +24,12 @@ class Location;
 
 namespace base {
 
-class MessageLoopProxy;
+class SingleThreadTaskRunner;
 
 template <class T> class DeleteHelper;
 
 class SequencedTaskRunner;
+
 
 
 
@@ -120,7 +124,7 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
 
   
   
-  class SequenceToken {
+  class BASE_EXPORT SequenceToken {
    public:
     SequenceToken() : id_(0) {}
     ~SequenceToken() {}
@@ -133,6 +137,10 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
     bool IsValid() const {
       return id_ != 0;
     }
+
+    
+    
+    std::string ToString() const;
 
    private:
     friend class SequencedWorkerPool;
@@ -159,6 +167,23 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   
   
   
+  
+  static scoped_refptr<SequencedTaskRunner>
+  GetSequencedTaskRunnerForCurrentThread();
+
+  
+  
+  
+  
+  static SequenceToken GetSequenceToken();
+
+  
+  
+  static scoped_refptr<SequencedWorkerPool> GetWorkerPoolForCurrentThread();
+
+  
+  
+  
 
   
   
@@ -170,10 +195,6 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   SequencedWorkerPool(size_t max_threads,
                       const std::string& thread_name_prefix,
                       TestingObserver* observer);
-
-  
-  
-  SequenceToken GetSequenceToken();
 
   
   
@@ -301,6 +322,10 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
 
   
   
+  bool IsRunningSequence(SequenceToken sequence_token) const;
+
+  
+  
   
   
   
@@ -320,8 +345,6 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   
   void Shutdown() { Shutdown(0); }
 
-  
-  
   
   
   
@@ -347,7 +370,7 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   class Inner;
   class Worker;
 
-  const scoped_refptr<MessageLoopProxy> constructor_message_loop_;
+  const scoped_refptr<SingleThreadTaskRunner> constructor_task_runner_;
 
   
   

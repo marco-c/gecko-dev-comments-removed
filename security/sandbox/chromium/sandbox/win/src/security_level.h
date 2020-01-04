@@ -5,7 +5,7 @@
 #ifndef SANDBOX_SRC_SECURITY_LEVEL_H_
 #define SANDBOX_SRC_SECURITY_LEVEL_H_
 
-#include "base/basictypes.h"
+#include <stdint.h>
 
 namespace sandbox {
 
@@ -138,7 +138,7 @@ enum JobLevel {
 
 
 
-typedef uint64 MitigationFlags;
+typedef uint64_t MitigationFlags;
 
 
 
@@ -198,6 +198,11 @@ const MitigationFlags MITIGATION_EXTENSION_DLL_DISABLE            = 0x00000400;
 
 
 const MitigationFlags MITIGATION_DLL_SEARCH_ORDER        = 0x00000001ULL << 32;
+
+
+
+
+const MitigationFlags MITIGATION_HARDEN_TOKEN_IL_POLICY  = 0x00000001ULL << 33;
 
 }  
 

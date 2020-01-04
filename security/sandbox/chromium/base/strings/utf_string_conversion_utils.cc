@@ -11,15 +11,15 @@ namespace base {
 
 
 bool ReadUnicodeCharacter(const char* src,
-                          int32 src_len,
-                          int32* char_index,
-                          uint32* code_point_out) {
+                          int32_t src_len,
+                          int32_t* char_index,
+                          uint32_t* code_point_out) {
   
   
   
-  int32 code_point;
+  int32_t code_point;
   CBU8_NEXT(src, *char_index, src_len, code_point);
-  *code_point_out = static_cast<uint32>(code_point);
+  *code_point_out = static_cast<uint32_t>(code_point);
 
   
   
@@ -30,9 +30,9 @@ bool ReadUnicodeCharacter(const char* src,
 }
 
 bool ReadUnicodeCharacter(const char16* src,
-                          int32 src_len,
-                          int32* char_index,
-                          uint32* code_point) {
+                          int32_t src_len,
+                          int32_t* char_index,
+                          uint32_t* code_point) {
   if (CBU16_IS_SURROGATE(src[*char_index])) {
     if (!CBU16_IS_SURROGATE_LEAD(src[*char_index]) ||
         *char_index + 1 >= src_len ||
@@ -55,9 +55,9 @@ bool ReadUnicodeCharacter(const char16* src,
 
 #if defined(WCHAR_T_IS_UTF32)
 bool ReadUnicodeCharacter(const wchar_t* src,
-                          int32 src_len,
-                          int32* char_index,
-                          uint32* code_point) {
+                          int32_t src_len,
+                          int32_t* char_index,
+                          uint32_t* code_point) {
   
   *code_point = src[*char_index];
 
@@ -68,7 +68,7 @@ bool ReadUnicodeCharacter(const wchar_t* src,
 
 
 
-size_t WriteUnicodeCharacter(uint32 code_point, std::string* output) {
+size_t WriteUnicodeCharacter(uint32_t code_point, std::string* output) {
   if (code_point <= 0x7f) {
     
     output->push_back(static_cast<char>(code_point));
@@ -89,7 +89,7 @@ size_t WriteUnicodeCharacter(uint32 code_point, std::string* output) {
   return char_offset - original_char_offset;
 }
 
-size_t WriteUnicodeCharacter(uint32 code_point, string16* output) {
+size_t WriteUnicodeCharacter(uint32_t code_point, string16* output) {
   if (CBU16_LENGTH(code_point) == 1) {
     
     output->push_back(static_cast<char16>(code_point));

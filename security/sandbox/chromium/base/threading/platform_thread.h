@@ -9,8 +9,10 @@
 #ifndef BASE_THREADING_PLATFORM_THREAD_H_
 #define BASE_THREADING_PLATFORM_THREAD_H_
 
+#include <stddef.h>
+
 #include "base/base_export.h"
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
 
@@ -73,21 +75,9 @@ class PlatformThreadHandle {
   typedef pthread_t Handle;
 #endif
 
-  PlatformThreadHandle()
-      : handle_(0),
-        id_(0) {
-  }
+  PlatformThreadHandle() : handle_(0) {}
 
-  explicit PlatformThreadHandle(Handle handle)
-      : handle_(handle),
-        id_(0) {
-  }
-
-  PlatformThreadHandle(Handle handle,
-                       PlatformThreadId id)
-      : handle_(handle),
-        id_(id) {
-  }
+  explicit PlatformThreadHandle(Handle handle) : handle_(handle) {}
 
   bool is_equal(const PlatformThreadHandle& other) const {
     return handle_ == other.handle_;
@@ -102,23 +92,22 @@ class PlatformThreadHandle {
   }
 
  private:
-  friend class PlatformThread;
-
   Handle handle_;
-  PlatformThreadId id_;
 };
 
 const PlatformThreadId kInvalidThreadId(0);
 
 
-enum ThreadPriority{
-  kThreadPriority_Normal,
+
+enum class ThreadPriority {
   
-  kThreadPriority_RealtimeAudio,
+  BACKGROUND,
   
-  kThreadPriority_Display,
+  NORMAL,
   
-  kThreadPriority_Background
+  DISPLAY,
+  
+  REALTIME_AUDIO,
 };
 
 
@@ -142,6 +131,9 @@ class BASE_EXPORT PlatformThread {
   static PlatformThreadRef CurrentRef();
 
   
+  
+  
+  
   static PlatformThreadHandle CurrentHandle();
 
   
@@ -152,8 +144,7 @@ class BASE_EXPORT PlatformThread {
 
   
   
-  
-  static void SetName(const char* name);
+  static void SetName(const std::string& name);
 
   
   static const char* GetName();
@@ -166,12 +157,13 @@ class BASE_EXPORT PlatformThread {
   
   
   
-  static bool Create(size_t stack_size, Delegate* delegate,
-                     PlatformThreadHandle* thread_handle);
+  static bool Create(size_t stack_size,
+                     Delegate* delegate,
+                     PlatformThreadHandle* thread_handle) {
+    return CreateWithPriority(stack_size, delegate, thread_handle,
+                              ThreadPriority::NORMAL);
+  }
 
-  
-  
-  
   
   
   static bool CreateWithPriority(size_t stack_size, Delegate* delegate,
@@ -188,8 +180,15 @@ class BASE_EXPORT PlatformThread {
   
   static void Join(PlatformThreadHandle thread_handle);
 
-  static void SetThreadPriority(PlatformThreadHandle handle,
-                                ThreadPriority priority);
+  
+  
+  
+  
+  
+  
+  static void SetCurrentThreadPriority(ThreadPriority priority);
+
+  static ThreadPriority GetCurrentThreadPriority();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(PlatformThread);

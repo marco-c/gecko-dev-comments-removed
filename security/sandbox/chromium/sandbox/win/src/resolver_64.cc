@@ -4,6 +4,8 @@
 
 #include "sandbox/win/src/resolver.h"
 
+#include <stddef.h>
+
 
 
 #include <new>
@@ -12,10 +14,8 @@
 
 namespace {
 
-const BYTE kPushRax = 0x50;
 const USHORT kMovRax = 0xB848;
-const ULONG kMovRspRax = 0x24048948;
-const BYTE kRetNp = 0xC3;
+const USHORT kJmpRax = 0xe0ff;
 
 #pragma pack(push, 1)
 struct InternalThunk {
@@ -24,22 +24,15 @@ struct InternalThunk {
   
   
   
-  
-  
-  
 
   InternalThunk() {
-    push_rax = kPushRax;
     mov_rax = kMovRax;
+    jmp_rax = kJmpRax;
     interceptor_function = 0;
-    mov_rsp_rax = kMovRspRax;
-    ret = kRetNp;
   };
-  BYTE push_rax;        
   USHORT mov_rax;       
   ULONG_PTR interceptor_function;
-  ULONG mov_rsp_rax;    
-  BYTE ret;             
+  USHORT jmp_rax;  
 };
 #pragma pack(pop)
 

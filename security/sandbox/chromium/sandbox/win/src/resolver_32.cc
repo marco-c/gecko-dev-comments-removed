@@ -4,6 +4,8 @@
 
 #include "sandbox/win/src/resolver.h"
 
+#include <stddef.h>
+
 
 
 #include <new>

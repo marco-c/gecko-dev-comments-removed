@@ -5,6 +5,7 @@
 #ifndef SANDBOX_LINUX_SECCOMP_BPF_BPF_TESTER_COMPATIBILITY_DELEGATE_H_
 #define SANDBOX_LINUX_SECCOMP_BPF_BPF_TESTER_COMPATIBILITY_DELEGATE_H_
 
+#include "base/macros.h"
 #include "base/memory/scoped_ptr.h"
 #include "sandbox/linux/seccomp-bpf/sandbox_bpf_test_runner.h"
 
@@ -25,9 +26,9 @@ class BPFTesterCompatibilityDelegate : public BPFTesterDelegate {
   explicit BPFTesterCompatibilityDelegate(TestFunction test_function)
       : aux_(), test_function_(test_function) {}
 
-  virtual ~BPFTesterCompatibilityDelegate() {}
+  ~BPFTesterCompatibilityDelegate() override {}
 
-  virtual scoped_ptr<bpf_dsl::Policy> GetSandboxBPFPolicy() override {
+  scoped_ptr<bpf_dsl::Policy> GetSandboxBPFPolicy() override {
     
     
     
@@ -35,7 +36,7 @@ class BPFTesterCompatibilityDelegate : public BPFTesterDelegate {
     return scoped_ptr<bpf_dsl::Policy>(new Policy(&aux_));
   }
 
-  virtual void RunTestFunction() override {
+  void RunTestFunction() override {
     
     
     

@@ -5,15 +5,18 @@
 #ifndef BASE_RAND_UTIL_H_
 #define BASE_RAND_UTIL_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <string>
 
 #include "base/base_export.h"
-#include "base/basictypes.h"
+#include "build/build_config.h"
 
 namespace base {
 
 
-BASE_EXPORT uint64 RandUint64();
+BASE_EXPORT uint64_t RandUint64();
 
 
 BASE_EXPORT int RandInt(int min, int max);
@@ -23,14 +26,14 @@ BASE_EXPORT int RandInt(int min, int max);
 
 
 
-BASE_EXPORT uint64 RandGenerator(uint64 range);
+BASE_EXPORT uint64_t RandGenerator(uint64_t range);
 
 
 BASE_EXPORT double RandDouble();
 
 
 
-BASE_EXPORT double BitsToOpenEndedUnitInterval(uint64 bits);
+BASE_EXPORT double BitsToOpenEndedUnitInterval(uint64_t bits);
 
 
 

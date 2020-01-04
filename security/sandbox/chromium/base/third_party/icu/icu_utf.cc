@@ -74,32 +74,28 @@ namespace base_icu {
 
 
 
-const uint8
-utf8_countTrailBytes[256]={
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+const uint8_t utf8_countTrailBytes[256] =
+    {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    3, 3, 3, 3, 3,
-    3, 3, 3,    
-    4, 4, 4, 4, 
-    5, 5,       
-    0, 0        
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3,
+        3, 3,       
+        4, 4, 4, 4, 
+        5, 5,       
+        0, 0        
 };
 
 static const UChar32
@@ -133,12 +129,15 @@ utf8_errorValue[6]={
 
 
 
-UChar32
-utf8_nextCharSafeBody(const uint8 *s, int32 *pi, int32 length, UChar32 c, UBool strict) {
-    int32 i=*pi;
-    uint8 count=CBU8_COUNT_TRAIL_BYTES(c);
+UChar32 utf8_nextCharSafeBody(const uint8_t* s,
+                              int32_t* pi,
+                              int32_t length,
+                              UChar32 c,
+                              UBool strict) {
+  int32_t i = *pi;
+  uint8_t count = CBU8_COUNT_TRAIL_BYTES(c);
     if((i)+count<=(length)) {
-        uint8 trail, illegal=0;
+      uint8_t trail, illegal = 0;
 
         CBU8_MASK_LEAD_BYTE((c), count);
         
@@ -192,7 +191,7 @@ utf8_nextCharSafeBody(const uint8 *s, int32 *pi, int32 length, UChar32 c, UBool 
         
         if(illegal || (c)<utf8_minLegal[count] || (CBU_IS_SURROGATE(c) && strict!=-2)) {
             
-            uint8 errorCount=count;
+            uint8_t errorCount = count;
             
             i=*pi;
             while(count>0 && CBU8_IS_TRAIL(s[i])) {
@@ -210,7 +209,7 @@ utf8_nextCharSafeBody(const uint8 *s, int32 *pi, int32 length, UChar32 c, UBool 
         }
     } else  {
         
-        int32 i0=i;
+        int32_t i0 = i;
         
         while((i)<(length) && CBU8_IS_TRAIL(s[i])) {
             ++(i);

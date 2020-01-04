@@ -5,8 +5,11 @@
 #ifndef SANDBOX_SRC_WIN2K_THREADPOOL_H_
 #define SANDBOX_SRC_WIN2K_THREADPOOL_H_
 
-#include <list>
+#include <stddef.h>
+
 #include <algorithm>
+#include <list>
+#include "base/macros.h"
 #include "sandbox/win/src/crosscall_server.h"
 
 namespace sandbox {
@@ -24,16 +27,15 @@ namespace sandbox {
 
 class Win2kThreadPool : public ThreadProvider {
  public:
-  Win2kThreadPool() {
-    ::InitializeCriticalSection(&lock_);
-  }
-  virtual ~Win2kThreadPool();
+  Win2kThreadPool();
+  ~Win2kThreadPool() override;
 
-  virtual bool RegisterWait(const void* cookie, HANDLE waitable_object,
-                            CrossCallIPCCallback callback,
-                            void* context);
+  bool RegisterWait(const void* cookie,
+                    HANDLE waitable_object,
+                    CrossCallIPCCallback callback,
+                    void* context) override;
 
-  virtual bool UnRegisterWaits(void* cookie);
+  bool UnRegisterWaits(void* cookie) override;
 
   
   
@@ -50,6 +52,7 @@ class Win2kThreadPool : public ThreadProvider {
   PoolObjects pool_objects_;
   
   CRITICAL_SECTION lock_;
+
   DISALLOW_COPY_AND_ASSIGN(Win2kThreadPool);
 };
 

@@ -7,15 +7,24 @@
 
 
 #include <windows.h>
+#include <stddef.h>
 
+#include <algorithm>
+#include <set>
+
+#include "base/bits.h"
 #include "base/memory/scoped_ptr.h"
 #include "sandbox/win/src/interception.h"
-#include "sandbox/win/src/interceptors.h"
 #include "sandbox/win/src/interception_internal.h"
+#include "sandbox/win/src/interceptors.h"
 #include "sandbox/win/src/target_process.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace sandbox {
+
+namespace internal {
+size_t GetGranularAlignedRandomOffset(size_t size);
+}
 
 
 
@@ -75,6 +84,45 @@ void WalkBuffer(void* buffer, size_t size, int* num_dlls, int* num_functions,
   }
 }
 
+TEST(InterceptionManagerTest, GetGranularAlignedRandomOffset) {
+  std::set<size_t> sizes;
+
+  
+  
+  const size_t kThunkBytes = 544;
+
+  
+  
+  const size_t kAlignmentBits = base::bits::Log2Ceiling(kThunkBytes);
+  const size_t kAlignment = static_cast<size_t>(1) << kAlignmentBits;
+
+  const size_t kAllocGranularity = 65536;
+
+  
+  
+  for (size_t i = 0; i < 1000000; i++)
+    sizes.insert(internal::GetGranularAlignedRandomOffset(kThunkBytes));
+
+  size_t prev_val = 0;
+  size_t min_val = kAllocGranularity;
+  size_t min_nonzero_val = kAllocGranularity;
+  size_t max_val = 0;
+
+  for (size_t val : sizes) {
+    ASSERT_LT(val, kAllocGranularity);
+    if (prev_val)
+      ASSERT_EQ(val - prev_val, kAlignment);
+    if (val)
+      min_nonzero_val = std::min(val, min_nonzero_val);
+    min_val = std::min(val, min_val);
+    prev_val = val;
+    max_val = std::max(val, max_val);
+  }
+  ASSERT_EQ(max_val, kAllocGranularity - kAlignment);
+  ASSERT_EQ(0u, min_val);
+  ASSERT_EQ(min_nonzero_val, kAlignment);
+}
+
 TEST(InterceptionManagerTest, BufferLayout1) {
   wchar_t exe_name[MAX_PATH];
   ASSERT_NE(0u, GetModuleFileName(NULL, exe_name, MAX_PATH - 1));
@@ -132,7 +180,7 @@ TEST(InterceptionManagerTest, BufferLayout1) {
                                       INTERCEPTION_EAT, function, OPEN_KEY_ID);
 
   
-  ASSERT_EQ(18, interceptions.interceptions_.size());
+  ASSERT_EQ(18u, interceptions.interceptions_.size());
 
   size_t buffer_size = interceptions.GetBufferSize();
   scoped_ptr<BYTE[]> local_buffer(new BYTE[buffer_size]);
@@ -148,7 +196,7 @@ TEST(InterceptionManagerTest, BufferLayout1) {
   
   
   
-  EXPECT_EQ(3, interceptions.interceptions_.size());
+  EXPECT_EQ(3u, interceptions.interceptions_.size());
 
   int num_dlls, num_functions, num_names;
   WalkBuffer(local_buffer.get(), buffer_size, &num_dlls, &num_functions,
@@ -185,7 +233,7 @@ TEST(InterceptionManagerTest, BufferLayout2) {
                                       INTERCEPTION_SMART_SIDESTEP, function,
                                       OPEN_FILE_ID);
   
-  ASSERT_EQ(5, interceptions.interceptions_.size());
+  ASSERT_EQ(5u, interceptions.interceptions_.size());
 
   size_t buffer_size = interceptions.GetBufferSize();
   scoped_ptr<BYTE[]> local_buffer(new BYTE[buffer_size]);
@@ -198,7 +246,7 @@ TEST(InterceptionManagerTest, BufferLayout2) {
   
   
   
-  EXPECT_EQ(1, interceptions.interceptions_.size());
+  EXPECT_EQ(1u, interceptions.interceptions_.size());
 
   int num_dlls, num_functions, num_names;
   WalkBuffer(local_buffer.get(), buffer_size, &num_dlls, &num_functions,

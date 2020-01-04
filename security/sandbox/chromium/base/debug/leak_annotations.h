@@ -5,7 +5,7 @@
 #ifndef BASE_DEBUG_LEAK_ANNOTATIONS_H_
 #define BASE_DEBUG_LEAK_ANNOTATIONS_H_
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "build/build_config.h"
 
 
@@ -21,15 +21,7 @@
 
 #if defined(LEAK_SANITIZER) && !defined(OS_NACL)
 
-
-extern "C" {
-void __lsan_disable();
-void __lsan_enable();
-void __lsan_ignore_object(const void *p);
-
-
-void __lsan_do_leak_check();
-}  
+#include <sanitizer/lsan_interface.h>
 
 class ScopedLeakSanitizerDisabler {
  public:
@@ -45,7 +37,6 @@ class ScopedLeakSanitizerDisabler {
 #define ANNOTATE_LEAKING_OBJECT_PTR(X) __lsan_ignore_object(X);
 
 #else
-
 
 #define ANNOTATE_SCOPED_MEMORY_LEAK ((void)0)
 #define ANNOTATE_LEAKING_OBJECT_PTR(X) ((void)0)

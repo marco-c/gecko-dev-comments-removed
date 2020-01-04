@@ -6,10 +6,9 @@
 
 
 
-#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
-
 #include "base/synchronization/lock.h"
-#include "base/logging.h"
+
+#if DCHECK_IS_ON()
 
 namespace base {
 

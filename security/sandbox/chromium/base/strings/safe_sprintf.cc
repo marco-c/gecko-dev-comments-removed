@@ -4,7 +4,13 @@
 
 #include "base/strings/safe_sprintf.h"
 
+#include <errno.h>
+#include <string.h>
+
 #include <limits>
+
+#include "base/macros.h"
+#include "build/build_config.h"
 
 #if !defined(NDEBUG)
 
@@ -110,15 +116,10 @@ class Buffer {
 
 
 
-
-
-
-
-#if __cplusplus >= 201103 && !defined(OS_ANDROID) && !defined(OS_MACOSX) && \
-    !defined(OS_IOS) && !(defined(__clang__) && defined(OS_WIN))
-    COMPILE_ASSERT(kSSizeMaxConst == \
-                   static_cast<size_t>(std::numeric_limits<ssize_t>::max()),
-                   kSSizeMax_is_the_max_value_of_an_ssize_t);
+#if __cplusplus >= 201103 && !(defined(__clang__) && defined(OS_WIN))
+    static_assert(kSSizeMaxConst ==
+                      static_cast<size_t>(std::numeric_limits<ssize_t>::max()),
+                  "kSSizeMaxConst should be the max value of an ssize_t");
 #endif
     DEBUG_CHECK(size > 0);
     DEBUG_CHECK(size <= kSSizeMax);
@@ -510,11 +511,11 @@ ssize_t SafeSNPrintf(char* buf, size_t sz, const char* fmt, const Arg* args,
         buffer.Pad(' ', padding, 1);
 
         
-        char ch = static_cast<char>(arg.integer.i);
-        if (!ch) {
+        char as_char = static_cast<char>(arg.integer.i);
+        if (!as_char) {
           goto end_of_output_buffer;
         }
-        buffer.Out(ch);
+        buffer.Out(as_char);
         break; }
       case 'd':    
       case 'o':    

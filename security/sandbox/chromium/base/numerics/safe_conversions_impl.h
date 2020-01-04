@@ -2,8 +2,11 @@
 
 
 
-#ifndef BASE_SAFE_CONVERSIONS_IMPL_H_
-#define BASE_SAFE_CONVERSIONS_IMPL_H_
+#ifndef BASE_NUMERICS_SAFE_CONVERSIONS_IMPL_H_
+#define BASE_NUMERICS_SAFE_CONVERSIONS_IMPL_H_
+
+#include <limits.h>
+#include <stdint.h>
 
 #include <limits>
 
@@ -108,6 +111,55 @@ inline RangeConstraint GetRangeConstraint(bool is_in_upper_bound,
                             (is_in_lower_bound ? 0 : RANGE_UNDERFLOW));
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename Dst, typename Src>
+struct NarrowingRange {
+  typedef typename std::numeric_limits<Src> SrcLimits;
+  typedef typename std::numeric_limits<Dst> DstLimits;
+
+  static Dst max() {
+    
+    
+    
+    static const int shift =
+        (MaxExponent<Src>::value > MaxExponent<Dst>::value &&
+         SrcLimits::digits < DstLimits::digits && SrcLimits::is_iec559 &&
+         DstLimits::is_integer)
+            ? (DstLimits::digits - SrcLimits::digits)
+            : 0;
+
+    
+    
+    
+    return DstLimits::max() - static_cast<Dst>((UINTMAX_C(1) << shift) - 1);
+  }
+
+  static Dst min() {
+    return std::numeric_limits<Dst>::is_iec559 ? -DstLimits::max()
+                                               : DstLimits::min();
+  }
+};
+
 template <
     typename Dst,
     typename Src,
@@ -147,11 +199,8 @@ struct DstRangeRelationToSrcRangeImpl<Dst,
                                       INTEGER_REPRESENTATION_SIGNED,
                                       NUMERIC_RANGE_NOT_CONTAINED> {
   static RangeConstraint Check(Src value) {
-    return std::numeric_limits<Dst>::is_iec559
-               ? GetRangeConstraint(value <= std::numeric_limits<Dst>::max(),
-                                    value >= -std::numeric_limits<Dst>::max())
-               : GetRangeConstraint(value <= std::numeric_limits<Dst>::max(),
-                                    value >= std::numeric_limits<Dst>::min());
+    return GetRangeConstraint((value <= NarrowingRange<Dst, Src>::max()),
+                              (value >= NarrowingRange<Dst, Src>::min()));
   }
 };
 
@@ -163,7 +212,7 @@ struct DstRangeRelationToSrcRangeImpl<Dst,
                                       INTEGER_REPRESENTATION_UNSIGNED,
                                       NUMERIC_RANGE_NOT_CONTAINED> {
   static RangeConstraint Check(Src value) {
-    return GetRangeConstraint(value <= std::numeric_limits<Dst>::max(), true);
+    return GetRangeConstraint(value <= NarrowingRange<Dst, Src>::max(), true);
   }
 };
 
@@ -178,7 +227,7 @@ struct DstRangeRelationToSrcRangeImpl<Dst,
     return sizeof(Dst) > sizeof(Src)
                ? RANGE_VALID
                : GetRangeConstraint(
-                     value <= static_cast<Src>(std::numeric_limits<Dst>::max()),
+                     value <= static_cast<Src>(NarrowingRange<Dst, Src>::max()),
                      true);
   }
 };
@@ -195,7 +244,7 @@ struct DstRangeRelationToSrcRangeImpl<Dst,
     return (MaxExponent<Dst>::value >= MaxExponent<Src>::value)
                ? GetRangeConstraint(true, value >= static_cast<Src>(0))
                : GetRangeConstraint(
-                     value <= static_cast<Src>(std::numeric_limits<Dst>::max()),
+                     value <= static_cast<Src>(NarrowingRange<Dst, Src>::max()),
                      value >= static_cast<Src>(0));
   }
 };
@@ -213,4 +262,3 @@ inline RangeConstraint DstRangeRelationToSrcRange(Src value) {
 }  
 
 #endif  
-

@@ -4,6 +4,9 @@
 
 #include "sandbox/win/src/service_resolver.h"
 
+#include <stddef.h>
+
+#include "base/bit_cast.h"
 #include "base/memory/scoped_ptr.h"
 #include "sandbox/win/src/win_utils.h"
 
@@ -18,7 +21,6 @@ const USHORT kCallEdx = 0xD2FF;
 const BYTE kCallEip = 0xE8;
 const BYTE kRet = 0xC2;
 const BYTE kRet2 = 0xC3;
-const BYTE kNop = 0x90;
 const USHORT kJmpEdx = 0xE2FF;
 const USHORT kXorEcx = 0xC933;
 const ULONG kLeaEdx = 0x0424548D;
@@ -29,8 +31,6 @@ const BYTE kAddEsp1 = 0x83;
 const USHORT kAddEsp2 = 0x4C4;
 const BYTE kJmp32 = 0xE9;
 const USHORT kSysenter = 0x340F;
-
-const int kMaxService = 1000;
 
 
 
@@ -122,10 +122,26 @@ struct Wow64EntryW8 {
 };
 
 
+struct Wow64EntryW10 {
+  
+  
+  
+  
+  BYTE mov_eax;         
+  ULONG service_id;
+  BYTE mov_edx;         
+  ULONG mov_edx_param;
+  USHORT call_edx;      
+  BYTE ret;             
+  USHORT num_params;
+};
+
+
 const size_t kMinServiceSize = offsetof(ServiceEntry, ret);
-COMPILE_ASSERT(sizeof(ServiceEntryW8) >= kMinServiceSize, wrong_service_len);
-COMPILE_ASSERT(sizeof(Wow64Entry) >= kMinServiceSize, wrong_service_len);
-COMPILE_ASSERT(sizeof(Wow64EntryW8) >= kMinServiceSize, wrong_service_len);
+static_assert(sizeof(ServiceEntryW8) >= kMinServiceSize,
+              "wrong service length");
+static_assert(sizeof(Wow64Entry) >= kMinServiceSize, "wrong service length");
+static_assert(sizeof(Wow64EntryW8) >= kMinServiceSize, "wrong service length");
 
 struct ServiceFullThunk {
   union {
@@ -164,8 +180,9 @@ NTSTATUS ServiceResolverThunk::Setup(const void* target_module,
                                 thunk_buffer.get());
 
   if (!IsFunctionAService(&thunk->original) &&
-      (!relaxed_ || !SaveOriginalFunction(&thunk->original, thunk_storage)))
+      (!relaxed_ || !SaveOriginalFunction(&thunk->original, thunk_storage))) {
     return STATUS_UNSUCCESSFUL;
+  }
 
   ret = PerformPatch(thunk, thunk_storage);
 
@@ -209,8 +226,9 @@ bool ServiceResolverThunk::IsFunctionAService(void* local_thunk) const {
   ServiceEntry function_code;
   SIZE_T read;
   if (!::ReadProcessMemory(process_, target_, &function_code,
-                           sizeof(function_code), &read))
+                           sizeof(function_code), &read)) {
     return false;
+  }
 
   if (sizeof(function_code) != read)
     return false;
@@ -219,16 +237,18 @@ bool ServiceResolverThunk::IsFunctionAService(void* local_thunk) const {
       kMovEdx != function_code.mov_edx ||
       (kCallPtrEdx != function_code.call_ptr_edx &&
        kCallEdx != function_code.call_ptr_edx) ||
-      kRet != function_code.ret)
+      kRet != function_code.ret) {
     return false;
+  }
 
   
   if (kCallEdx != function_code.call_ptr_edx) {
     DWORD ki_system_call;
     if (!::ReadProcessMemory(process_,
                              bit_cast<const void*>(function_code.stub),
-                             &ki_system_call, sizeof(ki_system_call), &read))
+                             &ki_system_call, sizeof(ki_system_call), &read)) {
       return false;
+    }
 
     if (sizeof(ki_system_call) != read)
       return false;
@@ -237,8 +257,10 @@ bool ServiceResolverThunk::IsFunctionAService(void* local_thunk) const {
     
     if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                                GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                           bit_cast<const wchar_t*>(ki_system_call), &module_1))
+                           bit_cast<const wchar_t*>(ki_system_call),
+                           &module_1)) {
       return false;
+    }
 
     if (NULL != ntdll_base_) {
       
@@ -296,8 +318,9 @@ NTSTATUS ServiceResolverThunk::PerformPatch(void* local_thunk,
   
   SIZE_T written;
   if (!::WriteProcessMemory(process_, remote_thunk, local_thunk,
-                            thunk_size, &written))
+                            thunk_size, &written)) {
     return STATUS_UNSUCCESSFUL;
+  }
 
   if (thunk_size != written)
     return STATUS_UNSUCCESSFUL;
@@ -322,8 +345,9 @@ bool ServiceResolverThunk::SaveOriginalFunction(void* local_thunk,
   ServiceEntry function_code;
   SIZE_T read;
   if (!::ReadProcessMemory(process_, target_, &function_code,
-                           sizeof(function_code), &read))
+                           sizeof(function_code), &read)) {
     return false;
+  }
 
   if (sizeof(function_code) != read)
     return false;
@@ -357,16 +381,19 @@ bool Wow64ResolverThunk::IsFunctionAService(void* local_thunk) const {
   Wow64Entry function_code;
   SIZE_T read;
   if (!::ReadProcessMemory(process_, target_, &function_code,
-                           sizeof(function_code), &read))
+                           sizeof(function_code), &read)) {
     return false;
+  }
 
   if (sizeof(function_code) != read)
     return false;
 
   if (kMovEax != function_code.mov_eax || kXorEcx != function_code.xor_ecx ||
       kLeaEdx != function_code.lea_edx || kCallFs1 != function_code.call_fs1 ||
-      kCallFs2 != function_code.call_fs2 || kCallFs3 != function_code.call_fs3)
+      kCallFs2 != function_code.call_fs2 ||
+      kCallFs3 != function_code.call_fs3) {
     return false;
+  }
 
   if ((kAddEsp1 == function_code.add_esp1 &&
        kAddEsp2 == function_code.add_esp2 &&
@@ -383,8 +410,9 @@ bool Wow64W8ResolverThunk::IsFunctionAService(void* local_thunk) const {
   Wow64EntryW8 function_code;
   SIZE_T read;
   if (!::ReadProcessMemory(process_, target_, &function_code,
-                           sizeof(function_code), &read))
+                           sizeof(function_code), &read)) {
     return false;
+  }
 
   if (sizeof(function_code) != read)
     return false;
@@ -404,8 +432,9 @@ bool Win8ResolverThunk::IsFunctionAService(void* local_thunk) const {
   ServiceEntryW8 function_code;
   SIZE_T read;
   if (!::ReadProcessMemory(process_, target_, &function_code,
-                           sizeof(function_code), &read))
+                           sizeof(function_code), &read)) {
     return false;
+  }
 
   if (sizeof(function_code) != read)
     return false;
@@ -420,6 +449,29 @@ bool Win8ResolverThunk::IsFunctionAService(void* local_thunk) const {
   
   memcpy(local_thunk, &function_code, sizeof(function_code));
 
+  return true;
+}
+
+bool Wow64W10ResolverThunk::IsFunctionAService(void* local_thunk) const {
+  Wow64EntryW10 function_code;
+  SIZE_T read;
+  if (!::ReadProcessMemory(process_, target_, &function_code,
+                           sizeof(function_code), &read)) {
+    return false;
+  }
+
+  if (sizeof(function_code) != read)
+    return false;
+
+  if (kMovEax != function_code.mov_eax ||
+      kMovEdx != function_code.mov_edx ||
+      kCallEdx != function_code.call_edx ||
+      kRet != function_code.ret) {
+    return false;
+  }
+
+  
+  memcpy(local_thunk, &function_code, sizeof(function_code));
   return true;
 }
 

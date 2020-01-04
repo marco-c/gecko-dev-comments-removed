@@ -6,8 +6,10 @@
 #define SANDBOX_SRC_SANDBOX_NT_UTIL_H_
 
 #include <intrin.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "sandbox/win/src/nt_internals.h"
 #include "sandbox/win/src/sandbox_nt_types.h"
 
@@ -101,7 +103,14 @@ NTSTATUS CopyData(void* destination, const void* source, size_t bytes);
 
 
 NTSTATUS AllocAndCopyName(const OBJECT_ATTRIBUTES* in_object,
-                          wchar_t** out_name, uint32* attributes, HANDLE* root);
+                          wchar_t** out_name,
+                          uint32_t* attributes,
+                          HANDLE* root);
+
+
+NTSTATUS AllocAndGetFullPath(HANDLE root,
+                             wchar_t* path,
+                             wchar_t** full_path);
 
 
 bool InitHeap();
@@ -129,7 +138,7 @@ enum MappedModuleFlags {
 
 
 
-UNICODE_STRING* GetImageInfoFromModule(HMODULE module, uint32* flags);
+UNICODE_STRING* GetImageInfoFromModule(HMODULE module, uint32_t* flags);
 
 
 
@@ -177,8 +186,9 @@ class AutoProtectMemory {
 
 
 
-bool IsSupportedRenameCall(FILE_RENAME_INFORMATION* file_info, DWORD length,
-                           uint32 file_info_class);
+bool IsSupportedRenameCall(FILE_RENAME_INFORMATION* file_info,
+                           DWORD length,
+                           uint32_t file_info_class);
 
 }  
 

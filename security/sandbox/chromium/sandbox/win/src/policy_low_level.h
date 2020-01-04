@@ -5,13 +5,16 @@
 #ifndef SANDBOX_SRC_POLICY_LOW_LEVEL_H__
 #define SANDBOX_SRC_POLICY_LOW_LEVEL_H__
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <list>
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "base/strings/string16.h"
 #include "sandbox/win/src/ipc_tags.h"
-#include "sandbox/win/src/policy_engine_params.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
+#include "sandbox/win/src/policy_engine_params.h"
 
 
 
@@ -41,7 +44,8 @@ namespace sandbox {
 
 
 const size_t kMaxServiceCount = 32;
-COMPILE_ASSERT(IPC_LAST_TAG <= kMaxServiceCount, kMaxServiceCount_is_too_low);
+static_assert(IPC_LAST_TAG <= kMaxServiceCount,
+              "kMaxServiceCount is too low");
 
 
 
@@ -81,9 +85,7 @@ class LowLevelPolicy {
  public:
   
   
-  explicit LowLevelPolicy(PolicyGlobal* policy_store)
-      : policy_store_(policy_store) {
-  }
+  explicit LowLevelPolicy(PolicyGlobal* policy_store);
 
   
   ~LowLevelPolicy();
@@ -137,8 +139,10 @@ class PolicyRule {
   
   
   
-  bool AddStringMatch(RuleType rule_type, int16 parameter,
-                      const wchar_t* string, StringMatchOptions match_opts);
+  bool AddStringMatch(RuleType rule_type,
+                      int16_t parameter,
+                      const wchar_t* string,
+                      StringMatchOptions match_opts);
 
   
   
@@ -146,8 +150,8 @@ class PolicyRule {
   
   
   bool AddNumberMatch(RuleType rule_type,
-                      int16 parameter,
-                      uint32 number,
+                      int16_t parameter,
+                      uint32_t number,
                       RuleOp comparison_op);
 
   
@@ -164,9 +168,13 @@ class PolicyRule {
   
   
   
-  bool GenStringOpcode(RuleType rule_type, StringMatchOptions match_opts,
-                       uint16 parameter, int state, bool last_call,
-                       int* skip_count, base::string16* fragment);
+  bool GenStringOpcode(RuleType rule_type,
+                       StringMatchOptions match_opts,
+                       uint16_t parameter,
+                       int state,
+                       bool last_call,
+                       int* skip_count,
+                       base::string16* fragment);
 
   
   

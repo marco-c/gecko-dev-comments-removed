@@ -9,8 +9,8 @@
 #include <map>
 #include <set>
 #include <utility>
-#include "base/basictypes.h"
 #include "base/compiler_specific.h"
+#include "base/macros.h"
 #include "base/win/scoped_handle.h"
 #include "sandbox/win/src/crosscall_server.h"
 #include "sandbox/win/src/job.h"
@@ -45,17 +45,17 @@ class BrokerServicesBase final : public BrokerServices,
   ~BrokerServicesBase();
 
   
-  virtual ResultCode Init() override;
-  virtual TargetPolicy* CreatePolicy() override;
-  virtual ResultCode SpawnTarget(const wchar_t* exe_path,
-                                 const wchar_t* command_line,
-                                 TargetPolicy* policy,
-                                 PROCESS_INFORMATION* target) override;
-  virtual ResultCode WaitForAllTargets() override;
-  virtual ResultCode AddTargetPeer(HANDLE peer_process) override;
-  virtual ResultCode InstallAppContainer(const wchar_t* sid,
-                                         const wchar_t* name) override;
-  virtual ResultCode UninstallAppContainer(const wchar_t* sid) override;
+  ResultCode Init() override;
+  TargetPolicy* CreatePolicy() override;
+  ResultCode SpawnTarget(const wchar_t* exe_path,
+                         const wchar_t* command_line,
+                         TargetPolicy* policy,
+                         PROCESS_INFORMATION* target) override;
+  ResultCode WaitForAllTargets() override;
+  ResultCode AddTargetPeer(HANDLE peer_process) override;
+  ResultCode InstallAppContainer(const wchar_t* sid,
+                                 const wchar_t* name) override;
+  ResultCode UninstallAppContainer(const wchar_t* sid) override;
 
   
   
@@ -64,9 +64,8 @@ class BrokerServicesBase final : public BrokerServices,
   bool IsActiveTarget(DWORD process_id);
 
  private:
-  
-  
-  static void FreeResources(JobTracker* tracker);
+  typedef std::list<JobTracker*> JobTrackerList;
+  typedef std::map<DWORD, PeerTracker*> PeerTrackerMap;
 
   
   
@@ -77,14 +76,14 @@ class BrokerServicesBase final : public BrokerServices,
 
   
   
-  HANDLE job_port_;
+  base::win::ScopedHandle job_port_;
 
   
   
-  HANDLE no_targets_;
+  base::win::ScopedHandle no_targets_;
 
   
-  HANDLE job_thread_;
+  base::win::ScopedHandle job_thread_;
 
   
   
@@ -94,20 +93,15 @@ class BrokerServicesBase final : public BrokerServices,
   ThreadProvider* thread_pool_;
 
   
-  typedef std::list<JobTracker*> JobTrackerList;
   JobTrackerList tracker_list_;
 
   
   
-  typedef std::map<DWORD, PeerTracker*> PeerTrackerMap;
   PeerTrackerMap peer_map_;
 
   
   
   std::set<DWORD> child_process_ids_;
-
-  typedef std::map<uint32_t, std::pair<HANDLE, HANDLE>> TokenCacheMap;
-  TokenCacheMap token_cache_;
 
   DISALLOW_COPY_AND_ASSIGN(BrokerServicesBase);
 };

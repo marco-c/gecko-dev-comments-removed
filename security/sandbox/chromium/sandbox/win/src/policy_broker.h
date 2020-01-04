@@ -12,6 +12,9 @@ namespace sandbox {
 class TargetProcess;
 
 
+bool InitGlobalNt();
+
+
 bool SetupBasicInterceptions(InterceptionManager* manager);
 
 

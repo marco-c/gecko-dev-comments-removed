@@ -6,8 +6,8 @@
 
 
 
-#ifndef BASE_DEBUG_DEBUGGER_H
-#define BASE_DEBUG_DEBUGGER_H
+#ifndef BASE_DEBUG_DEBUGGER_H_
+#define BASE_DEBUG_DEBUGGER_H_
 
 #include "base/base_export.h"
 

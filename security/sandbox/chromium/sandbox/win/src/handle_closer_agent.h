@@ -5,20 +5,25 @@
 #ifndef SANDBOX_SRC_HANDLE_CLOSER_AGENT_H_
 #define SANDBOX_SRC_HANDLE_CLOSER_AGENT_H_
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "base/strings/string16.h"
+#include "base/win/scoped_handle.h"
 #include "sandbox/win/src/handle_closer.h"
 #include "sandbox/win/src/sandbox_types.h"
+#include "sandbox/win/src/target_services.h"
+
 
 namespace sandbox {
 
 
 class HandleCloserAgent {
  public:
-  HandleCloserAgent() {}
+  HandleCloserAgent();
+  ~HandleCloserAgent();
 
   
-  void InitializeHandlesToClose();
+  
+  void InitializeHandlesToClose(bool* is_csrss_connected);
 
   
   bool CloseHandles();
@@ -27,7 +32,12 @@ class HandleCloserAgent {
   static bool NeedsHandlesClosed();
 
  private:
+  
+  bool AttemptToStuffHandleSlot(HANDLE closed_handle,
+                                const base::string16& type);
+
   HandleMap handles_to_close_;
+  base::win::ScopedHandle dummy_handle_;
 
   DISALLOW_COPY_AND_ASSIGN(HandleCloserAgent);
 };

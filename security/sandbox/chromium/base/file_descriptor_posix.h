@@ -18,6 +18,13 @@ namespace base {
 
 
 
+
+
+
+
+
+
+
 struct FileDescriptor {
   FileDescriptor() : fd(-1), auto_close(false) {}
 
