@@ -1187,7 +1187,6 @@ TSFTextStore::TSFTextStore()
   , mContentForTSF(mComposition, mSelection)
   , mRequestedAttrValues(false)
   , mIsRecordingActionsWithoutLock(false)
-  , mPendingOnSelectionChange(false)
   , mHasReturnedNoLayoutError(false)
   , mWaitingQueryLayout(false)
   , mPendingDestroy(false)
@@ -1587,7 +1586,7 @@ TSFTextStore::DidLockGranted()
 
   
   if (mDestroyed || !mWidget || mWidget->Destroyed()) {
-    mPendingOnSelectionChange = false;
+    mPendingSelectionChangeData.Clear();
     mHasReturnedNoLayoutError = false;
   }
 }
@@ -1614,7 +1613,7 @@ TSFTextStore::FlushPendingActions()
     
     
     mPendingActions.Clear();
-    mPendingOnSelectionChange = false;
+    mPendingSelectionChangeData.Clear();
     mHasReturnedNoLayoutError = false;
     return;
   }
@@ -1852,18 +1851,22 @@ TSFTextStore::MaybeFlushPendingNotifications()
             "mContentForTSF is cleared", this));
   }
 
+  
+  
+  if (!mContentForTSF.IsInitialized()) {
+    if (mPendingSelectionChangeData.IsValid()) {
+      MOZ_LOG(sTextStoreLog, LogLevel::Info,
+             ("TSF: 0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
+              "calling TSFTextStore::NotifyTSFOfSelectionChange()...", this));
+      NotifyTSFOfSelectionChange();
+    }
+  }
+
   if (mHasReturnedNoLayoutError) {
     MOZ_LOG(sTextStoreLog, LogLevel::Info,
            ("TSF: 0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
             "calling TSFTextStore::NotifyTSFOfLayoutChange()...", this));
     NotifyTSFOfLayoutChange();
-  }
-
-  if (mPendingOnSelectionChange) {
-    MOZ_LOG(sTextStoreLog, LogLevel::Info,
-           ("TSF: 0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
-            "calling TSFTextStore::NotifyTSFOfSelectionChange()...", this));
-    NotifyTSFOfSelectionChange();
   }
 }
 
@@ -4694,7 +4697,7 @@ TSFTextStore::NotifyTSFOfTextChange(const TS_TEXTCHANGE& aTextChange)
 nsresult
 TSFTextStore::OnSelectionChangeInternal(const IMENotification& aIMENotification)
 {
-  const IMENotification::SelectionChangeDataBase& selectionChangeData =
+  const SelectionChangeDataBase& selectionChangeData =
     aIMENotification.mSelectionChangeData;
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
          ("TSF: 0x%p   TSFTextStore::OnSelectionChangeInternal("
@@ -4721,62 +4724,11 @@ TSFTextStore::OnSelectionChangeInternal(const IMENotification& aIMENotification)
     return NS_OK;
   }
 
-  if (selectionChangeData.mCausedByComposition) {
-    
-    
-    return NS_OK;
-  }
-
   mDeferNotifyingTSF = false;
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  if (mComposition.IsComposing() &&
-      !selectionChangeData.mOccurredDuringComposition) {
-    MOZ_LOG(sTextStoreLog, LogLevel::Warning,
-           ("TSF: 0x%p   TSFTextStore::OnSelectionChangeInternal(), WARNING, "
-            "ignoring selection change notification which occurred before "
-            "composition start.", this));
-    return NS_OK;
-  }
-
-  
-  
-  if (!mSelection.SetSelection(
-                    selectionChangeData.mOffset,
-                    selectionChangeData.Length(),
-                    selectionChangeData.mReversed,
-                    selectionChangeData.GetWritingMode())) {
-    MOZ_LOG(sTextStoreLog, LogLevel::Debug,
-           ("TSF: 0x%p   TSFTextStore::OnSelectionChangeInternal(), selection "
-            "isn't actually changed.", this));
-    return NS_OK;
-  }
-
-  if (!selectionChangeData.mCausedBySelectionEvent) {
-    
-    
-    mPendingOnSelectionChange = true;
-    if (mIsRecordingActionsWithoutLock) {
-      MOZ_LOG(sTextStoreLog, LogLevel::Info,
-             ("TSF: 0x%p   TSFTextStore::OnSelectionChangeInternal(), putting "
-              "off notifying TSF of selection change...", this));
-      return NS_OK;
-    }
-  } else {
-    
-    
-    
-    
-    mPendingOnSelectionChange = false;
-  }
+  mPendingSelectionChangeData.Assign(selectionChangeData);
 
   
   MaybeFlushPendingNotifications();
@@ -4788,26 +4740,26 @@ void
 TSFTextStore::NotifyTSFOfSelectionChange()
 {
   MOZ_ASSERT(!mDestroyed);
+  MOZ_ASSERT(!IsReadLocked());
+  MOZ_ASSERT(!mComposition.IsComposing());
+  MOZ_ASSERT(mPendingSelectionChangeData.IsValid());
 
-  if (NS_WARN_IF(IsReadLocked())) {
+  
+  
+  if (!mSelection.SetSelection(mPendingSelectionChangeData.mOffset,
+                               mPendingSelectionChangeData.Length(),
+                               mPendingSelectionChangeData.mReversed,
+                               mPendingSelectionChangeData.GetWritingMode())) {
+    mPendingSelectionChangeData.Clear();
+    MOZ_LOG(sTextStoreLog, LogLevel::Debug,
+           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfSelectionChange(), "
+            "selection isn't actually changed.", this));
     return;
   }
 
-  mPendingOnSelectionChange = false;
+  mPendingSelectionChangeData.Clear();
 
   if (!mSink || !(mSinkMask & TS_AS_SEL_CHANGE)) {
-    return;
-  }
-
-  
-  
-  
-  if (mComposition.IsComposing()) {
-    MOZ_LOG(sTextStoreLog, LogLevel::Info,
-           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfSelectionChange(), "
-            "committing the composition for avoiding making TIP confused...",
-            this));
-    CommitCompositionInternal(false);
     return;
   }
 

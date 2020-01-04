@@ -53,6 +53,10 @@ class TSFTextStore final : public ITextStoreACP
                          , public ITfContextOwnerCompositionSink
                          , public ITfMouseTrackerACP
 {
+private:
+  typedef IMENotification::SelectionChangeDataBase SelectionChangeDataBase;
+  typedef IMENotification::SelectionChangeData SelectionChangeData;
+
 public: 
   STDMETHODIMP          QueryInterface(REFIID, void**);
 
@@ -108,7 +112,6 @@ public:
   static void     ProcessMessage(nsWindowBase* aWindow, UINT aMessage,
                                  WPARAM& aWParam, LPARAM& aLParam,
                                  MSGResult& aResult);
-
 
   static void     SetIMEOpenState(bool);
   static bool     GetIMEOpenState(void);
@@ -276,9 +279,6 @@ protected:
   bool     InsertTextAtSelectionInternal(const nsAString& aInsertStr,
                                          TS_TEXTCHANGE* aTextChange);
   void     CommitCompositionInternal(bool);
-  nsresult OnTextChangeInternal(const IMENotification& aIMENotification);
-  nsresult OnSelectionChangeInternal(const IMENotification& aIMENotification);
-  nsresult OnMouseButtonEventInternal(const IMENotification& aIMENotification);
   HRESULT  GetDisplayAttribute(ITfProperty* aProperty,
                                ITfRange* aRange,
                                TF_DISPLAYATTRIBUTE* aResult);
@@ -310,8 +310,16 @@ protected:
   
   void     MaybeFlushPendingNotifications();
 
+  nsresult OnTextChangeInternal(const IMENotification& aIMENotification);
+  nsresult OnSelectionChangeInternal(const IMENotification& aIMENotification);
+  nsresult OnMouseButtonEventInternal(const IMENotification& aIMENotification);
   nsresult OnLayoutChangeInternal();
   nsresult OnUpdateCompositionInternal();
+
+  
+  
+  
+  SelectionChangeData mPendingSelectionChangeData;
 
   void     NotifyTSFOfTextChange(const TS_TEXTCHANGE& aTextChange);
   void     NotifyTSFOfSelectionChange();
@@ -877,14 +885,6 @@ protected:
   
   
   bool                         mIsRecordingActionsWithoutLock;
-  
-  
-  
-  
-  
-  
-  
-  bool                         mPendingOnSelectionChange;
   
   
   
