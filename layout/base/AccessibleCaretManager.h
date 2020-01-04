@@ -11,7 +11,7 @@
 #include "nsCoord.h"
 #include "nsIFrame.h"
 #include "nsISelectionListener.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsWeakReference.h"
 #include "mozilla/dom/CaretStateChangedEvent.h"
 #include "mozilla/EventForwards.h"
@@ -158,6 +158,10 @@ protected:
 
   
   
+  nsRect GetContentBoundaryForFrame(nsIFrame* aFrame) const;
+
+  
+  
   
   
   bool CompareRangeWithContentOffset(nsIFrame::ContentOffsets& aOffsets);
@@ -222,6 +226,12 @@ protected:
   CaretMode mLastUpdateCaretMode = CaretMode::None;
 
   static const int32_t kAutoScrollTimerDelay = 30;
+
+  
+  
+  
+  
+  static const int32_t kBoundaryAppUnits = 61;
 };
 
 std::ostream& operator<<(std::ostream& aStream,
