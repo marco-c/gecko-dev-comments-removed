@@ -3730,36 +3730,6 @@ MacroAssemblerARMCompat::storeTypeTag(ImmTag tag, const BaseIndex& dest)
     ma_sub(base, Imm32(NUNBOX32_TYPE_OFFSET + dest.offset), base);
 }
 
-
-
-
-
-
-
-
-
-
-void
-MacroAssemblerARM::ma_callJitHalfPush(const Register r)
-{
-    
-    
-    
-    as_blx(r);
-}
-
-void
-MacroAssemblerARM::ma_callJitHalfPush(Label* label)
-{
-    
-    
-    
-
-    
-
-    as_bl(label, Always);
-}
-
 void
 MacroAssemblerARM::ma_call(ImmPtr dest)
 {
@@ -5100,7 +5070,7 @@ MacroAssembler::call(JitCode* c)
 
     ScratchRegisterScope scratch(*this);
     ma_movPatchable(ImmPtr(c->raw()), scratch, Always, rs);
-    ma_callJitHalfPush(scratch);
+    callJitNoProfiler(scratch);
 }
 
 void

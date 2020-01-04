@@ -405,8 +405,7 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     
     masm.Ldr(x3, MemOperand(x5, JSFunction::offsetOfNativeOrScript()));
     masm.loadBaselineOrIonRaw(r3, r3, nullptr);
-    masm.call(r3);
-    uint32_t returnOffset = masm.currentOffset();
+    uint32_t returnOffset = masm.callJitNoProfiler(r3);
 
     
     
