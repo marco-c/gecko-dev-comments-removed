@@ -591,7 +591,7 @@ this.expandPermissions = function expandPermissions(aPermName, aAccess) {
 
     
     if (tableEntry.additional) {
-      for each (let additional in tableEntry.additional) {
+      for (let additional of tableEntry.additional) {
         permArr = permArr.concat(appendAccessToPermName(additional, requestedSuffixes));
       }
     }

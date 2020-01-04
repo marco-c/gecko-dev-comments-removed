@@ -171,7 +171,7 @@ var LEGACY = {
         aMessageRecord.threadIdIndex = [threadId, timestamp];
         
         aMessageRecord.participantIdsIndex = [];
-        for each (let id in participantIds) {
+        for (let id of participantIds) {
           aMessageRecord.participantIdsIndex.push([id, timestamp]);
         }
 

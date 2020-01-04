@@ -2608,7 +2608,8 @@ WifiWorker.prototype = {
   
   
   _enableAllNetworks: function() {
-    for each (let net in this.configuredNetworks) {
+    for (let key in this.configuredNetworks) {
+      let net = this.configuredNetworks[key];
       WifiManager.enableNetwork(net.netId, false, function(ok) {
         net.disabled = ok ? 1 : 0;
       });

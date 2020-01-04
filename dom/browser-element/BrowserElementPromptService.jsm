@@ -338,7 +338,7 @@ BrowserElementAuthPrompt.prototype = {
         prompt.authInfo.password = password;
       }
 
-      for each (let consumer in prompt.consumers) {
+      for (let consumer of prompt.consumers) {
         if (!consumer.callback) {
           
           
