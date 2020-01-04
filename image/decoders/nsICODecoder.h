@@ -96,10 +96,6 @@ private:
   
   bool FixBitmapWidth(int8_t* bih);
   
-  int32_t ReadBIHSize(const char* aBIH);
-  
-  int32_t ReadBPP(const char* aBIH);
-  
   uint32_t CalcAlphaRowSize();
   
   uint16_t GetNumColors();
