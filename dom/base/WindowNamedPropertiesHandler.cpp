@@ -9,6 +9,7 @@
 #include "mozilla/dom/WindowBinding.h"
 #include "nsContentUtils.h"
 #include "nsDOMClassInfo.h"
+#include "nsDOMWindowList.h"
 #include "nsGlobalWindow.h"
 #include "nsHTMLDocument.h"
 #include "nsJSUtils.h"
@@ -175,14 +176,28 @@ WindowNamedPropertiesHandler::ownPropNames(JSContext* aCx,
   
   nsGlobalWindow* win = xpc::WindowOrNull(JS_GetGlobalForObject(aCx, aProxy));
   nsTArray<nsString> names;
-  win->GetSupportedNames(names);
   
-  
-  for (size_t i = names.Length(); i > 0; ) {
-    --i; 
-    nsCOMPtr<nsPIDOMWindowOuter> childWin = win->GetChildWindow(names[i]);
-    if (!childWin || !ShouldExposeChildWindow(names[i], childWin)) {
-      names.RemoveElementAt(i);
+  nsGlobalWindow* outer = win->GetOuterWindowInternal();
+  if (outer) {
+    nsDOMWindowList* childWindows = outer->GetWindowList();
+    uint32_t length = childWindows->GetLength();
+    for (uint32_t i = 0; i < length; ++i) {
+      nsCOMPtr<nsIDocShellTreeItem> item =
+        childWindows->GetDocShellTreeItemAt(i);
+      
+      
+      
+      
+      
+      nsString name;
+      item->GetName(name);
+      if (!names.Contains(name)) {
+        
+        nsCOMPtr<nsPIDOMWindowOuter> childWin = win->GetChildWindow(name);
+        if (childWin && ShouldExposeChildWindow(name, childWin)) {
+          names.AppendElement(name);
+        }
+      }
     }
   }
   if (!AppendNamedPropertyIds(aCx, aProxy, names, false, aProps)) {
