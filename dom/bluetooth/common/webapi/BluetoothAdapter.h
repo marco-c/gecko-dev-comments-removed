@@ -12,6 +12,7 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/BluetoothAdapterBinding.h"
 #include "mozilla/dom/BluetoothDeviceEvent.h"
+#include "mozilla/dom/BluetoothMapParametersBinding.h"
 #include "mozilla/dom/BluetoothPbapParametersBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "nsCOMPtr.h"
@@ -95,6 +96,12 @@ public:
   IMPL_EVENT_HANDLER(pullvcardlistingreq);
   IMPL_EVENT_HANDLER(requestmediaplaystatus);
   IMPL_EVENT_HANDLER(scostatuschanged);
+  IMPL_EVENT_HANDLER(mapfolderlistingreq);
+  IMPL_EVENT_HANDLER(mapmessageslistingreq);
+  IMPL_EVENT_HANDLER(mapgetmessagereq);
+  IMPL_EVENT_HANDLER(mapsetmessagestatusreq);
+  IMPL_EVENT_HANDLER(mapsendmessagereq);
+  IMPL_EVENT_HANDLER(mapmessageupdatereq);
 
   
 
@@ -341,6 +348,84 @@ private:
 
 
   Sequence<vCardProperties> getVCardProperties(const BluetoothValue &aValue);
+
+   
+
+
+
+
+
+
+
+  void HandleMapFolderListing(const BluetoothValue& aValue);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void HandleMapMessagesListing(const BluetoothValue& aValue);
+
+  
+
+
+
+
+
+
+
+  void HandleMapGetMessage(const BluetoothValue& aValue);
+
+  
+
+
+
+
+
+
+
+
+  void HandleMapSetMessageStatus(const BluetoothValue& aValue);
+
+  
+
+
+
+
+
+
+
+
+  void HandleMapSendMessage(const BluetoothValue& aValue);
+
+  
+
+
+
+
+
+  void HandleMapMessageUpdate(const BluetoothValue& aValue);
+
+  
+
+
+
+
+
+
+  Sequence<ParameterMask> GetParameterMask(const BluetoothValue &aValue);
 
   
 
