@@ -316,7 +316,7 @@ public:
 
   bool RemoveDecoderPrincipalChangeObserver(DecoderPrincipalChangeObserver* aObserver);
 
-  class CaptureStreamTrackSource;
+  class DecoderCaptureTrackSource;
   class CaptureStreamTrackSourceGetter;
 
   
