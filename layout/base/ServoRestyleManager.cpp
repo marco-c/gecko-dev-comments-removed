@@ -98,10 +98,6 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
                                            nsStyleContext* aParentContext,
                                            ServoStyleSet* aStyleSet)
 {
-  if (!(aContent->IsDirtyForServo() || aContent->HasDirtyDescendantsForServo())) {
-    return;
-  }
-
   nsIFrame* primaryFrame = aContent->GetPrimaryFrame();
 
   
@@ -109,27 +105,35 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
   
   
   if (!primaryFrame) {
+    aContent->UnsetFlags(NODE_IS_DIRTY_FOR_SERVO | NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
     return;
   }
 
-  RefPtr<ServoComputedValues> computedValues =
-    dont_AddRef(Servo_GetComputedValues(aContent));
+  if (aContent->IsDirtyForServo()) {
+    RefPtr<ServoComputedValues> computedValues =
+      dont_AddRef(Servo_GetComputedValues(aContent));
 
-  
-  
-  RefPtr<nsStyleContext> context =
-    aStyleSet->GetContext(computedValues.forget(),
-                          aParentContext,
-                          nullptr,
-                          CSSPseudoElementType::NotPseudo);
+    
+    
+    RefPtr<nsStyleContext> context =
+      aStyleSet->GetContext(computedValues.forget(),
+                            aParentContext,
+                            nullptr,
+                            CSSPseudoElementType::NotPseudo);
 
-  
-  
-  primaryFrame->SetStyleContext(context.get());
+    
+    
+    primaryFrame->SetStyleContext(context.get());
 
-  FlattenedChildIterator it(aContent);
-  for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
-    RecreateStyleContexts(n, context.get(), aStyleSet);
+    aContent->UnsetFlags(NODE_IS_DIRTY_FOR_SERVO);
+  }
+
+  if (aContent->HasDirtyDescendantsForServo()) {
+    FlattenedChildIterator it(aContent);
+    for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
+      RecreateStyleContexts(n, primaryFrame->StyleContext(), aStyleSet);
+    }
+    aContent->UnsetFlags(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
   }
 }
 
