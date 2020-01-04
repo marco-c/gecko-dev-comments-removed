@@ -632,10 +632,8 @@ CodeGeneratorShared::encodeSafepoints()
     for (SafepointIndex& index : safepointIndices_) {
         LSafepoint* safepoint = index.safepoint();
 
-        if (!safepoint->encoded()) {
-            safepoint->fixupOffset(&masm);
+        if (!safepoint->encoded())
             safepoints_.encode(safepoint);
-        }
 
         index.resolve();
     }
@@ -709,14 +707,6 @@ CodeGeneratorShared::generateCompactNativeToBytecodeMap(JSContext* cx, JitCode* 
     MOZ_ASSERT(nativeToBytecodeMapSize_ == 0);
     MOZ_ASSERT(nativeToBytecodeTableOffset_ == 0);
     MOZ_ASSERT(nativeToBytecodeNumRegions_ == 0);
-
-    
-    for (unsigned i = 0; i < nativeToBytecodeList_.length(); i++) {
-        NativeToBytecode& entry = nativeToBytecodeList_[i];
-
-        
-        entry.nativeOffset = CodeOffsetLabel(masm.actualOffset(entry.nativeOffset.offset()));
-    }
 
     if (!createNativeToBytecodeScriptList(cx))
         return false;
@@ -864,11 +854,8 @@ CodeGeneratorShared::generateCompactTrackedOptimizationsMap(JSContext* cx, JitCo
         return false;
 
     
-    
     for (size_t i = 0; i < trackedOptimizations_.length(); i++) {
         NativeToTrackedOptimizations& entry = trackedOptimizations_[i];
-        entry.startOffset = CodeOffsetLabel(masm.actualOffset(entry.startOffset.offset()));
-        entry.endOffset = CodeOffsetLabel(masm.actualOffset(entry.endOffset.offset()));
         if (!unique.add(entry.optimizations))
             return false;
     }
