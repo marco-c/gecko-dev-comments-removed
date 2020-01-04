@@ -67,6 +67,8 @@ std::ostream& operator<<(std::ostream& aStream,
  bool
 AccessibleCaretManager::sSelectionBarEnabled = false;
  bool
+AccessibleCaretManager::sCaretShownWhenLongTappingOnEmptyContent = false;
+ bool
 AccessibleCaretManager::sCaretsExtendedVisibility = false;
  bool
 AccessibleCaretManager::sCaretsScriptUpdates = false;
@@ -89,6 +91,8 @@ AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
   if (!addedPrefs) {
     Preferences::AddBoolVarCache(&sSelectionBarEnabled,
                                  "layout.accessiblecaret.bar.enabled");
+    Preferences::AddBoolVarCache(&sCaretShownWhenLongTappingOnEmptyContent,
+      "layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content");
     Preferences::AddBoolVarCache(&sCaretsExtendedVisibility,
                                  "layout.accessiblecaret.extendedvisibility");
     Preferences::AddBoolVarCache(&sCaretsScriptUpdates,
@@ -267,6 +271,22 @@ AccessibleCaretManager::UpdateCaretsForCursorMode(UpdateCaretsHint aHint)
         case UpdateCaretsHint::Default:
           if (HasNonEmptyTextContent(GetEditingHostForFrame(frame))) {
             mFirstCaret->SetAppearance(Appearance::Normal);
+          } else if (sCaretShownWhenLongTappingOnEmptyContent) {
+            if (mFirstCaret->IsLogicallyVisible()) {
+              
+              
+              
+              mFirstCaret->SetAppearance(Appearance::Normal);
+            } else {
+              
+              
+              
+              
+              
+              
+              
+              
+            }
           } else {
             mFirstCaret->SetAppearance(Appearance::NormalNotShown);
           }
@@ -484,6 +504,10 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
   if (focusableFrame && newFocusEditingHost &&
       !HasNonEmptyTextContent(newFocusEditingHost)) {
     ChangeFocusToOrClearOldFocus(focusableFrame);
+
+    if (sCaretShownWhenLongTappingOnEmptyContent) {
+      mFirstCaret->SetAppearance(Appearance::Normal);
+    }
     
     
     UpdateCaretsWithHapticFeedback();

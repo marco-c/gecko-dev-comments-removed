@@ -253,6 +253,12 @@ protected:
 
   
   
+  
+  
+  static bool sCaretShownWhenLongTappingOnEmptyContent;
+
+  
+  
   static bool sCaretsExtendedVisibility;
 
   

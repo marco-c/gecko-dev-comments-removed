@@ -11,6 +11,7 @@
 
 #include "AccessibleCaret.h"
 #include "AccessibleCaretManager.h"
+#include "mozilla/AutoRestore.h"
 
 using ::testing::DefaultValue;
 using ::testing::Eq;
@@ -58,6 +59,7 @@ public:
     using CaretMode = AccessibleCaretManager::CaretMode;
     using AccessibleCaretManager::UpdateCarets;
     using AccessibleCaretManager::HideCarets;
+    using AccessibleCaretManager::sCaretShownWhenLongTappingOnEmptyContent;
 
     MockAccessibleCaretManager()
       : AccessibleCaretManager(nullptr)
@@ -492,6 +494,168 @@ TEST_F(AccessibleCaretManagerTester, TestScrollInCursorModeWhenHidden)
   mManager.OnScrollEnd();
   EXPECT_EQ(FirstCaretAppearance(), Appearance::None);
   check.Call("scrollend2");
+}
+
+TEST_F(AccessibleCaretManagerTester, TestScrollInCursorModeOnEmptyContent)
+{
+  EXPECT_CALL(mManager, GetCaretMode())
+    .WillRepeatedly(Return(CaretMode::Cursor));
+
+  EXPECT_CALL(mManager, HasNonEmptyTextContent(_))
+    .WillRepeatedly(Return(false));
+
+  MockFunction<void(std::string aCheckPointName)> check;
+  {
+    InSequence dummy;
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                   CaretChangedReason::Updateposition));
+    EXPECT_CALL(check, Call("updatecarets"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                   CaretChangedReason::Visibilitychange));
+    EXPECT_CALL(check, Call("scrollstart1"));
+
+    EXPECT_CALL(mManager.FirstCaret(), SetPosition(_, _))
+      .WillOnce(Return(PositionChangedResult::Invisible));
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                   CaretChangedReason::Updateposition));
+    EXPECT_CALL(check, Call("scrollend1"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                   CaretChangedReason::Visibilitychange));
+    EXPECT_CALL(check, Call("scrollstart2"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                   CaretChangedReason::Updateposition));
+    EXPECT_CALL(check, Call("scrollend2"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                   CaretChangedReason::Visibilitychange));
+    EXPECT_CALL(check, Call("scrollstart3"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                   CaretChangedReason::Updateposition));
+    EXPECT_CALL(check, Call("scrollend3"));
+}
+
+  
+  mManager.UpdateCarets();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::NormalNotShown);
+  check.Call("updatecarets");
+
+  
+  mManager.OnScrollStart();
+  check.Call("scrollstart1");
+  mManager.OnScrollEnd();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::NormalNotShown);
+  check.Call("scrollend1");
+
+  
+  mManager.OnScrollStart();
+  check.Call("scrollstart2");
+  mManager.OnScrollEnd();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::NormalNotShown);
+  check.Call("scrollend2");
+
+  
+  mManager.OnScrollStart();
+  check.Call("scrollstart3");
+  mManager.OnScrollEnd();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::NormalNotShown);
+  check.Call("scrollend3");
+}
+
+
+TEST_F(AccessibleCaretManagerTester,
+       TestScrollInCursorModeOnEmptyContentWithSpecialPreference)
+{
+  EXPECT_CALL(mManager, GetCaretMode())
+    .WillRepeatedly(Return(CaretMode::Cursor));
+
+  EXPECT_CALL(mManager, HasNonEmptyTextContent(_))
+    .WillRepeatedly(Return(false));
+
+  MockFunction<void(std::string aCheckPointName)> check;
+  {
+    InSequence dummy;
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                   CaretChangedReason::Updateposition));
+    EXPECT_CALL(check, Call("singletap updatecarets"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                  CaretChangedReason::Updateposition));
+    EXPECT_CALL(check, Call("longtap updatecarets"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                  CaretChangedReason::Visibilitychange));
+    EXPECT_CALL(check, Call("longtap scrollstart1"));
+
+    EXPECT_CALL(mManager.FirstCaret(), SetPosition(_, _))
+      .WillOnce(Return(PositionChangedResult::Invisible));
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                  CaretChangedReason::Updateposition));
+    EXPECT_CALL(check, Call("longtap scrollend1"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                  CaretChangedReason::Visibilitychange));
+    EXPECT_CALL(check, Call("longtap scrollstart2"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                  CaretChangedReason::Updateposition));
+    EXPECT_CALL(check, Call("longtap scrollend2"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                  CaretChangedReason::Visibilitychange));
+    EXPECT_CALL(check, Call("longtap scrollstart3"));
+
+    EXPECT_CALL(mManager, DispatchCaretStateChangedEvent(
+                  CaretChangedReason::Updateposition));
+    EXPECT_CALL(check, Call("longtap scrollend3"));
+  }
+
+  AutoRestore<bool> savePref(
+    MockAccessibleCaretManager::sCaretShownWhenLongTappingOnEmptyContent);
+  MockAccessibleCaretManager::sCaretShownWhenLongTappingOnEmptyContent = true;
+
+  
+  mManager.FirstCaret().SetAppearance(Appearance::None);
+  mManager.UpdateCarets();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::None);
+  check.Call("singletap updatecarets");
+
+  
+  mManager.OnScrollStart();
+  mManager.OnScrollEnd();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::None);
+
+  
+  mManager.FirstCaret().SetAppearance(Appearance::Normal);
+  mManager.UpdateCarets();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::Normal);
+  check.Call("longtap updatecarets");
+
+  
+  mManager.OnScrollStart();
+  check.Call("longtap scrollstart1");
+  mManager.OnScrollEnd();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::NormalNotShown);
+  check.Call("longtap scrollend1");
+
+  
+  mManager.OnScrollStart();
+  check.Call("longtap scrollstart2");
+  mManager.OnScrollEnd();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::Normal);
+  check.Call("longtap scrollend2");
+
+  
+  mManager.OnScrollStart();
+  check.Call("longtap scrollstart3");
+  mManager.OnScrollEnd();
+  EXPECT_EQ(FirstCaretAppearance(), Appearance::Normal);
+  check.Call("longtap scrollend3");
 }
 
 } 

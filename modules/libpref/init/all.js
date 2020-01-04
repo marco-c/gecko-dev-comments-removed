@@ -4948,6 +4948,9 @@ pref("layout.accessiblecaret.bar.width", "2.0");
 pref("layout.accessiblecaret.bar.enabled", true);
 
 
+pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", false);
+
+
 
 pref("layout.accessiblecaret.timeout_ms", 3000);
 

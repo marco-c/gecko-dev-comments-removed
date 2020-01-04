@@ -191,7 +191,7 @@ pref("xpinstall.whitelist.fileRequest", false);
 pref("xpinstall.whitelist.add", "https://addons.mozilla.org");
 pref("xpinstall.whitelist.add.180", "https://marketplace.firefox.com");
 
-pref("xpinstall.signatures.required", true);
+pref("xpinstall.signatures.required", false);
 
 pref("extensions.enabledScopes", 1);
 pref("extensions.autoupdate.enabled", true);
@@ -929,6 +929,9 @@ pref("layout.accessiblecaret.enabled", true);
 #else
 pref("layout.accessiblecaret.enabled", false);
 #endif
+
+
+pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", true);
 
 
 pref("layout.accessiblecaret.timeout_ms", 0);
