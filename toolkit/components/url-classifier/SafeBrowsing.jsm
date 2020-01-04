@@ -24,7 +24,7 @@ function log(...stuff) {
 
   var d = new Date();
   let msg = "SafeBrowsing: " + d.toTimeString() + ": " + stuff.join(" ");
-  dump(msg + "\n");
+  dump(Services.urlFormatter.trimSensitiveURLs(msg) + "\n");
 }
 
 
