@@ -31,8 +31,13 @@ class LCovSource
     explicit LCovSource(LifoAlloc* alloc, JSObject* sso);
 
     
-    bool match(JSObject* sso) {
+    bool match(JSObject* sso) const {
         return sso == source_;
+    }
+
+    
+    bool isComplete() const {
+        return hasFilename_ && hasScripts_;
     }
 
     
@@ -100,7 +105,7 @@ class LCovCompartment
 
     
     
-    void exportInto(GenericPrinter& out) const;
+    void exportInto(GenericPrinter& out, bool* isEmpty) const;
 
   private:
     
@@ -151,6 +156,14 @@ class LCovRuntime
     
     void maybeReopenAfterFork();
 
+    
+    
+    bool fillWithFilename(char *name, size_t length);
+
+    
+    
+    void finishFile();
+
   private:
     
     Fprinter out_;
@@ -158,6 +171,11 @@ class LCovRuntime
     
     
     size_t pid_;
+
+    
+    
+    
+    bool isEmpty_;
 };
 
 } 
