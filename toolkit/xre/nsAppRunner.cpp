@@ -91,7 +91,6 @@
 #include "nsIDocShell.h"
 #include "nsAppShellCID.h"
 #include "mozilla/scache/StartupCache.h"
-#include "nsIGfxInfo.h"
 #include "gfxPrefs.h"
 
 #include "base/histogram.h"
@@ -4634,7 +4633,7 @@ enum {
   kE10sDisabledByUser = 2,
   
   kE10sDisabledForAccessibility = 4,
-  kE10sDisabledForMacGfx = 5,
+  
   kE10sDisabledForBidi = 6,
   kE10sDisabledForAddons = 7,
   kE10sForceDisabled = 8,
@@ -4733,41 +4732,6 @@ MultiprocessBlockPolicy() {
   }
 
 
-#if defined(XP_MACOSX)
-  
-  
-
-  
-  bool accelDisabled = gfxPrefs::GetSingleton().LayersAccelerationDisabled() &&
-                       !gfxPrefs::LayersAccelerationForceEnabled();
-
-  accelDisabled = accelDisabled || !nsCocoaFeatures::AccelerateByDefault();
-
-  
-  if (!accelDisabled) {
-    nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-    if (gfxInfo) {
-      int32_t status;
-      if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_OPENGL_LAYERS, &status)) &&
-          status != nsIGfxInfo::FEATURE_STATUS_OK) {
-        accelDisabled = true;
-      }
-    }
-  }
-
-  
-  if (accelDisabled) {
-    const char *acceleratedEnv = PR_GetEnv("MOZ_ACCELERATED");
-    if (acceleratedEnv && (*acceleratedEnv != '0')) {
-      accelDisabled = false;
-    }
-  }
-
-  if (accelDisabled) {
-    gMultiprocessBlockPolicy = kE10sDisabledForMacGfx;
-    return gMultiprocessBlockPolicy;
-  }
-#endif 
 
   
 

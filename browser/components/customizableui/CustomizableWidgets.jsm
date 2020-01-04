@@ -1212,18 +1212,9 @@ if (Services.prefs.getBoolPref("privacy.panicButton.enabled")) {
 }
 
 if (AppConstants.E10S_TESTING_ONLY) {
-  var e10sDisabled = false;
-
-  if (AppConstants.platform == "macosx") {
-    
-    
-    e10sDisabled |= Services.prefs.getBoolPref("layers.acceleration.disabled");
-  }
-
   if (Services.appinfo.browserTabsRemoteAutostart) {
     CustomizableWidgets.push({
       id: "e10s-button",
-      disabled: e10sDisabled,
       defaultArea: CustomizableUI.AREA_PANEL,
       onBuild: function(aDocument) {
           node.setAttribute("label", CustomizableUI.getLocalizedProperty(this, "label"));
