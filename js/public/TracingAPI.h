@@ -294,18 +294,18 @@ namespace JS {
 
 
 
+
+
+
 template <typename T>
 extern JS_PUBLIC_API(void)
 TraceEdge(JSTracer* trc, JS::Heap<T>* edgep, const char* name);
 
-
-
-template <typename T>
 extern JS_PUBLIC_API(void)
-TraceNullableEdge(JSTracer* trc, JS::Heap<T>* edgep, const char* name);
+TraceEdge(JSTracer* trc, JS::TenuredHeap<JSObject*>* edgep, const char* name);
 
-extern JS_PUBLIC_API(void)
-TraceNullableEdge(JSTracer* trc, JS::TenuredHeap<JSObject*>* edgep, const char* name);
+
+
 
 
 
@@ -332,6 +332,12 @@ JS_GetTraceThingInfo(char* buf, size_t bufsize, JSTracer* trc,
                      void* thing, JS::TraceKind kind, bool includeDetails);
 
 namespace js {
+
+
+
+
+
+
 template <typename T>
 extern JS_PUBLIC_API(void)
 UnsafeTraceManuallyBarrieredEdge(JSTracer* trc, T* edgep, const char* name);
