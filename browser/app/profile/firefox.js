@@ -1318,6 +1318,7 @@ pref("services.sync.prefs.sync.security.OCSP.require", true);
 pref("services.sync.prefs.sync.security.default_personal_cert", true);
 pref("services.sync.prefs.sync.security.tls.version.min", true);
 pref("services.sync.prefs.sync.security.tls.version.max", true);
+pref("services.sync.prefs.sync.services.sync.syncedTabs.showRemoteIcons", true);
 pref("services.sync.prefs.sync.signon.rememberSignons", true);
 pref("services.sync.prefs.sync.spellchecker.dictionary", true);
 pref("services.sync.prefs.sync.xpinstall.whitelist.required", true);
@@ -1327,6 +1328,12 @@ pref("services.sync.syncedTabsUIRefresh", true);
 #else
 pref("services.sync.syncedTabsUIRefresh", false);
 #endif
+
+
+
+
+
+pref("services.sync.syncedTabs.showRemoteIcons", true);
 
 
 #ifdef MOZ_DEV_EDITION
