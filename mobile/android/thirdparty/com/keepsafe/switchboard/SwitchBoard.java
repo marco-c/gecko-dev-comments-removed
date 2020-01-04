@@ -31,6 +31,7 @@ import java.util.zip.CRC32;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -64,11 +65,24 @@ public class SwitchBoard {
     
     public static boolean DEBUG = true;
 
-    private static final String IS_EXPERIMENT_ACTIVE = "isActive";
-    private static final String EXPERIMENT_VALUES = "values";
+    
+    private static final String KEY_DATA = "data";
+    private static final String KEY_NAME = "name";
+    private static final String KEY_MATCH = "match";
+    private static final String KEY_BUCKETS = "buckets";
+    private static final String KEY_VALUES = "values";
 
-    private static final String KEY_SERVER_URL = "mainServerUrl";
-    private static final String KEY_CONFIG_RESULTS = "results";
+    
+    private static final String KEY_APP_ID = "appId";
+    private static final String KEY_COUNTRY = "country";
+    private static final String KEY_DEVICE = "device";
+    private static final String KEY_LANG = "lang";
+    private static final String KEY_MANUFACTURER = "manufacturer";
+    private static final String KEY_VERSION = "version";
+
+    
+    private static final String KEY_MIN = "min";
+    private static final String KEY_MAX = "max";
 
     
 
@@ -77,87 +91,28 @@ public class SwitchBoard {
 
 
 
-    static void loadConfig(Context c, @NonNull String defaultServerUrl) {
-
-        
-        
-        
-        String serverUrl = defaultServerUrl;
-
-        final URL requestUrl = buildConfigRequestUrl(c, serverUrl);
-        if (DEBUG) Log.d(TAG, "Request URL: " + requestUrl);
-        if (requestUrl == null) {
+    static void loadConfig(Context c, @NonNull String serverUrl) {
+        final URL url;
+        try {
+            url = new URL(serverUrl);
+        } catch (MalformedURLException e) {
+            Log.e(TAG, "Exception creating server URL", e);
             return;
         }
 
-
-        final String result = readFromUrlGET(requestUrl);
+        final String result = readFromUrlGET(url);
         if (DEBUG) Log.d(TAG, "Result: " + result);
         if (result == null) {
             return;
         }
 
-        try {
-            final JSONObject json = new JSONObject(result);
-
-            
-            final String newServerUrl = json.getString(KEY_SERVER_URL);
-            if (!defaultServerUrl.equals(newServerUrl)) {
-                Preferences.setDynamicConfigServerUrl(c, newServerUrl);
-            }
-
-            
-            final String config = json.getString(KEY_CONFIG_RESULTS);
-            Preferences.setDynamicConfigJson(c, config);
-        } catch (JSONException e) {
-            Log.e(TAG, "Exception parsing server result", e);
-        }
-    }
-
-    @Nullable private static URL buildConfigRequestUrl(Context c, String serverUrl) {
-        final DeviceUuidFactory df = new DeviceUuidFactory(c);
-        final String uuid = df.getDeviceUuid().toString();
-
-        final String device = Build.DEVICE;
-        final String manufacturer = Build.MANUFACTURER;
-        String lang = "unknown";
-        try {
-            lang = Locale.getDefault().getISO3Language();
-        } catch (MissingResourceException e) {
-            e.printStackTrace();
-        }
-        String country = "unknown";
-        try {
-            country = Locale.getDefault().getISO3Country();
-        } catch (MissingResourceException e) {
-            e.printStackTrace();
-        }
-
-        final String packageName = c.getPackageName();
-        String versionName = "none";
-        try {
-            versionName = c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
-        } catch (NameNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        final String params = "uuid="+uuid+"&device="+device+"&lang="+lang+"&country="+country
-                +"&manufacturer="+manufacturer+"&appId="+packageName+"&version="+versionName;
-
-        try {
-            return new URL(serverUrl + "?" + params);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        }
+        
+        Preferences.setDynamicConfigJson(c, result);
     }
 
     public static boolean isInBucket(Context c, int low, int high) {
-        int userBucket = getUserBucket(c);
-        if (userBucket >= low && userBucket < high)
-            return true;
-        else
-            return false;
+        final int userBucket = getUserBucket(c);
+        return (userBucket >= low) && (userBucket < high);
     }
 
     
@@ -179,8 +134,34 @@ public class SwitchBoard {
         }
 
         try {
-            final JSONObject experiment = new JSONObject(config).getJSONObject(experimentName);
-            return experiment != null && experiment.getBoolean(IS_EXPERIMENT_ACTIVE);
+            
+            final JSONArray experiments = new JSONObject(config).getJSONArray(KEY_DATA);
+            JSONObject experiment = null;
+
+            for (int i = 0; i < experiments.length(); i++) {
+                JSONObject entry = experiments.getJSONObject(i);
+                final String name = entry.getString(KEY_NAME);
+                if (name.equals(experimentName)) {
+                    experiment = entry;
+                    break;
+                }
+            }
+
+            if (experiment == null) {
+                return false;
+            }
+
+            if (!isMatch(c, experiment.optJSONObject(KEY_MATCH))) {
+                return false;
+            }
+
+            final JSONObject buckets = experiment.getJSONObject(KEY_BUCKETS);
+            final boolean inExperiment = isInBucket(c, buckets.getInt(KEY_MIN), buckets.getInt(KEY_MAX));
+
+            if (DEBUG) {
+                Log.d(TAG, experimentName + " = " + inExperiment);
+            }
+            return inExperiment;
         } catch (JSONException e) {
             
             
@@ -189,11 +170,116 @@ public class SwitchBoard {
         }
     }
 
+    private static List<String> getExperimentNames(Context c) throws JSONException {
+        
+        final List<String> returnList = new ArrayList<>();
+        final String config = Preferences.getDynamicConfigJson(c);
+        final JSONArray experiments = new JSONObject(config).getJSONArray(KEY_DATA);
+
+        for (int i = 0; i < experiments.length(); i++) {
+            JSONObject entry = experiments.getJSONObject(i);
+            returnList.add(entry.getString(KEY_NAME));
+        }
+        return returnList;
+    }
+
+    @Nullable
+    private static JSONObject getExperiment(Context c, String experimentName) throws JSONException {
+        
+        final String config = Preferences.getDynamicConfigJson(c);
+        final JSONArray experiments = new JSONObject(config).getJSONArray(KEY_DATA);
+        JSONObject experiment = null;
+
+        for (int i = 0; i < experiments.length(); i++) {
+            JSONObject entry = experiments.getJSONObject(i);
+            if (entry.getString(KEY_NAME).equals(experimentName)) {
+                experiment = entry;
+                break;
+            }
+        }
+        return experiment;
+    }
+
+    private static boolean isMatch(Context c, @Nullable JSONObject matchKeys) {
+        
+        if (matchKeys == null) {
+            return true;
+        }
+
+        if (matchKeys.has(KEY_APP_ID)) {
+            final String packageName = c.getPackageName();
+            try {
+                if (!packageName.matches(matchKeys.getString(KEY_APP_ID))) {
+                    return false;
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, "Exception matching appId", e);
+            }
+        }
+
+        if (matchKeys.has(KEY_COUNTRY)) {
+            try {
+                final String country = Locale.getDefault().getISO3Country();
+                if (!country.matches(matchKeys.getString(KEY_COUNTRY))) {
+                    return false;
+                }
+            } catch (MissingResourceException|JSONException e) {
+                Log.e(TAG, "Exception matching country", e);
+            }
+        }
+
+        if (matchKeys.has(KEY_DEVICE)) {
+            final String device = Build.DEVICE;
+            try {
+                if (!device.matches(matchKeys.getString(KEY_DEVICE))) {
+                    return false;
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, "Exception matching device", e);
+            }
+
+        }
+        if (matchKeys.has(KEY_LANG)) {
+            try {
+                final String lang = Locale.getDefault().getISO3Language();
+                if (!lang.matches(matchKeys.getString(KEY_LANG))) {
+                    return false;
+                }
+            } catch (MissingResourceException|JSONException e) {
+                Log.e(TAG, "Exception matching lang", e);
+            }
+        }
+        if (matchKeys.has(KEY_MANUFACTURER)) {
+            final String manufacturer = Build.MANUFACTURER;
+            try {
+                if (!manufacturer.matches(matchKeys.getString(KEY_MANUFACTURER))) {
+                    return false;
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, "Exception matching manufacturer", e);
+            }
+        }
+
+        if (matchKeys.has(KEY_VERSION)) {
+            try {
+                final String version = c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
+                if (!version.matches(matchKeys.getString(KEY_VERSION))) {
+                    return false;
+                }
+            } catch (NameNotFoundException|JSONException e) {
+                Log.e(TAG, "Exception matching version", e);
+            }
+        }
+
+        
+        return true;
+    }
+
     
 
 
     public static List<String> getActiveExperiments(Context c) {
-        final ArrayList<String> returnList = new ArrayList<>();
+        final List<String> returnList = new ArrayList<>();
 
         final String config = Preferences.getDynamicConfigJson(c);
         if (config == null) {
@@ -201,19 +287,20 @@ public class SwitchBoard {
         }
 
         try {
-            final JSONObject experiments = new JSONObject(config);
-            Iterator<?> iter = experiments.keys();
-            while (iter.hasNext()) {
-                final String key = (String) iter.next();
+            final JSONObject data = new JSONObject(config);
+            final List<String> experiments = getExperimentNames(c);
+
+            for (int i = 0; i < experiments.size(); i++)  {
+                final String name = experiments.get(i);
 
                 
-                Boolean isActive = Preferences.getOverrideValue(c, key);
+                Boolean isActive = Preferences.getOverrideValue(c, name);
                 if (isActive == null) {
-                    final JSONObject experiment = experiments.getJSONObject(key);
-                    isActive = experiment.getBoolean(IS_EXPERIMENT_ACTIVE);
+                    
+                    isActive = isInExperiment(c, name);
                 }
                 if (isActive) {
-                    returnList.add(key);
+                    returnList.add(name);
                 }
             }
         } catch (JSONException e) {
@@ -238,6 +325,7 @@ public class SwitchBoard {
 
 
 
+    @Nullable
     public static JSONObject getExperimentValuesFromJson(Context c, String experimentName) {
         final String config = Preferences.getDynamicConfigJson(c);
 
@@ -246,8 +334,11 @@ public class SwitchBoard {
         }
 
         try {
-            final JSONObject experiment = new JSONObject(config).getJSONObject(experimentName);
-            return experiment.getJSONObject(EXPERIMENT_VALUES);
+            final JSONObject experiment = getExperiment(c, experimentName);
+            if (experiment == null) {
+                return null;
+            }
+            return experiment.getJSONObject(KEY_VALUES);
         } catch (JSONException e) {
             Log.e(TAG, "Could not create JSON object from config string", e);
         }
