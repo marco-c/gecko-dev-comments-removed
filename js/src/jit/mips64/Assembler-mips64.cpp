@@ -320,7 +320,7 @@ void
 Assembler::bind(RepatchLabel* label)
 {
     BufferOffset dest = nextOffset();
-    if (label->used()) {
+    if (label->used() && !oom()) {
         
         
         BufferOffset b(label->offset());

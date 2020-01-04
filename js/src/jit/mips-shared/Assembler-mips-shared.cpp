@@ -1298,6 +1298,10 @@ AssemblerMIPSShared::bind(Label* label, BufferOffset boff)
         
         BufferOffset b(label);
         do {
+            
+            if (oom())
+                return;
+
             Instruction* inst = editSrc(b);
 
             
@@ -1313,7 +1317,7 @@ AssemblerMIPSShared::bind(Label* label, BufferOffset boff)
 void
 AssemblerMIPSShared::retarget(Label* label, Label* target)
 {
-    if (label->used()) {
+    if (label->used() && !oom()) {
         if (target->bound()) {
             bind(label, BufferOffset(target));
         } else if (target->used()) {
