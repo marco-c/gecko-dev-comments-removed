@@ -339,7 +339,11 @@ RenderFrameParent::GetApzcTreeManager()
   
   
   
-  if (!mApzcTreeManager && mAsyncPanZoomEnabled) {
+  
+  
+  
+  
+  if (!mApzcTreeManager && mAsyncPanZoomEnabled && XRE_IsParentProcess()) {
     mApzcTreeManager = CompositorParent::GetAPZCTreeManager(mLayersId);
   }
   return mApzcTreeManager.get();
