@@ -1337,6 +1337,9 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
     }
 
     
+    RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
+
+    
     
     
     
@@ -1347,7 +1350,6 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
         mProcessingKeyEvent->type == GDK_KEY_PRESS) {
         
         
-        nsCOMPtr<nsIWidget> kungFuDeathGrip = mLastFocusedWindow;
         bool isCancelled;
         mLastFocusedWindow->DispatchKeyDownEvent(mProcessingKeyEvent,
                                                  &isCancelled);
@@ -1355,8 +1357,8 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
             ("0x%p   DispatchCompositionStart(), FAILED, keydown event "
              "is dispatched",
              this));
-        if (static_cast<nsWindow*>(kungFuDeathGrip.get())->IsDestroyed() ||
-            kungFuDeathGrip != mLastFocusedWindow) {
+        if (lastFocusedWindow->IsDestroyed() ||
+            lastFocusedWindow != mLastFocusedWindow) {
             MOZ_LOG(gGtkIMLog, LogLevel::Error,
                 ("0x%p   DispatchCompositionStart(), FAILED, the focused "
                  "widget was destroyed/changed by keydown event",
@@ -1381,7 +1383,6 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
          this, mCompositionStart));
     mCompositionState = eCompositionState_CompositionStartDispatched;
     nsEventStatus status;
-    RefPtr<nsWindow> lastFocusedWindow = mLastFocusedWindow;
     dispatcher->StartComposition(status);
     if (lastFocusedWindow->IsDestroyed() ||
         lastFocusedWindow != mLastFocusedWindow) {
@@ -1417,7 +1418,6 @@ IMContextWrapper::DispatchCompositionChangeEvent(
             ("0x%p   DispatchCompositionChangeEvent(), the composition "
              "wasn't started, force starting...",
              this));
-        nsCOMPtr<nsIWidget> kungFuDeathGrip = mLastFocusedWindow;
         if (!DispatchCompositionStart(aContext)) {
             return false;
         }
@@ -1522,7 +1522,6 @@ IMContextWrapper::DispatchCompositionCommitEvent(
             ("0x%p   DispatchCompositionCommitEvent(), "
              "the composition wasn't started, force starting...",
              this));
-        nsCOMPtr<nsIWidget> kungFuDeathGrip(mLastFocusedWindow);
         if (!DispatchCompositionStart(aContext)) {
             return false;
         }
