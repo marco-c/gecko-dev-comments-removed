@@ -4,13 +4,13 @@
 
 
 
-
 "use strict";
 
+const {Cc, Ci, Cu} = require("chrome");
 const {PREF_ORIG_SOURCES} = require("devtools/client/styleeditor/utils");
 
 loader.lazyRequireGetter(this, "overlays",
-  "devtools/client/inspector/shared/style-inspector-overlays");
+  "devtools/client/styleinspector/style-inspector-overlays");
 loader.lazyImporter(this, "Services", "resource://gre/modules/Services.jsm");
 loader.lazyServiceGetter(this, "clipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1", "nsIClipboardHelper");
@@ -71,7 +71,7 @@ StyleInspectorMenu.prototype = {
       this.styleDocument.popupNode = event.explicitOriginalTarget;
       this.styleWindow.focus();
       this._menupopup.openPopupAtScreen(event.screenX, event.screenY, true);
-    } catch (e) {
+    } catch(e) {
       console.error(e);
     }
   },
