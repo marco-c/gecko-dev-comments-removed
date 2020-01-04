@@ -5,8 +5,6 @@
 package org.mozilla.gecko.sync.repositories.android;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -23,15 +21,8 @@ import android.net.Uri;
 public class AndroidBrowserHistoryDataAccessor extends
     AndroidBrowserRepositoryDataAccessor {
 
-  private final AndroidBrowserHistoryDataExtender dataExtender;
-
   public AndroidBrowserHistoryDataAccessor(Context context) {
     super(context);
-    dataExtender = new AndroidBrowserHistoryDataExtender(context);
-  }
-
-  public AndroidBrowserHistoryDataExtender getHistoryDataExtender() {
-    return dataExtender;
   }
 
   @Override
@@ -51,12 +42,12 @@ public class AndroidBrowserHistoryDataAccessor extends
       long mostRecent = 0;
       for (int i = 0; i < visits.size(); i++) {
         JSONObject visit = (JSONObject) visits.get(i);
-        long visitDate = (Long) visit
-            .get(AndroidBrowserHistoryRepositorySession.KEY_DATE);
+        long visitDate = (Long) visit.get(VisitsHelper.SYNC_DATE_KEY);
         if (visitDate > mostRecent) {
           mostRecent = visitDate;
         }
       }
+      
       
       cv.put(BrowserContract.History.DATE_LAST_VISITED, mostRecent / 1000);
       cv.put(BrowserContract.History.VISITS, Long.toString(visits.size()));
@@ -72,38 +63,46 @@ public class AndroidBrowserHistoryDataAccessor extends
   @Override
   public Uri insert(Record record) {
     HistoryRecord rec = (HistoryRecord) record;
-    Logger.debug(LOG_TAG, "Storing visits for " + record.guid);
-    dataExtender.store(record.guid, rec.visits);
+
     Logger.debug(LOG_TAG, "Storing record " + record.guid);
-    return super.insert(record);
-  }
+    Uri newRecordUri = super.insert(record);
 
-  @Override
-  public void update(String oldGUID, Record newRecord) {
-    HistoryRecord rec = (HistoryRecord) newRecord;
-    String newGUID = newRecord.guid;
-    Logger.debug(LOG_TAG, "Storing visits for " + newGUID + ", replacing " + oldGUID);
-    dataExtender.delete(oldGUID);
-    dataExtender.store(newGUID, rec.visits);
-    super.update(oldGUID, newRecord);
-  }
+    Logger.debug(LOG_TAG, "Storing visits for " + record.guid);
+    context.getContentResolver().bulkInsert(
+            BrowserContract.Visits.CONTENT_URI,
+            VisitsHelper.getVisitsContentValues(rec.guid, rec.visits)
+    );
 
-  @Override
-  public int purgeGuid(String guid) {
-    Logger.debug(LOG_TAG, "Purging record with " + guid);
-    dataExtender.delete(guid);
-    return super.purgeGuid(guid);
+    return newRecordUri;
   }
-
-  public void closeExtender() {
-    dataExtender.close();
-  }
-
-  public static String[] GUID_AND_ID = new String[] { BrowserContract.History.GUID, BrowserContract.History._ID };
 
   
 
 
+
+
+
+
+
+  @Override
+  public void update(String oldGUID, Record newRecord) {
+    
+    
+    
+    super.update(oldGUID, newRecord);
+
+    
+    HistoryRecord rec = (HistoryRecord) newRecord;
+    String newGUID = newRecord.guid;
+    Logger.debug(LOG_TAG, "Storing visits for " + newGUID + ", replacing " + oldGUID);
+
+    context.getContentResolver().bulkInsert(
+            BrowserContract.Visits.CONTENT_URI,
+            VisitsHelper.getVisitsContentValues(newGUID, rec.visits)
+    );
+  }
+
+  
 
 
 
@@ -140,8 +139,17 @@ public class AndroidBrowserHistoryDataAccessor extends
                    inserted + " records but expected " +
                    size     + " records; continuing to update visits.");
     }
-    
-    dataExtender.bulkInsert(records);
+
+    for (Record record : records) {
+      HistoryRecord rec = (HistoryRecord) record;
+      if (rec.visits != null && rec.visits.size() != 0) {
+        context.getContentResolver().bulkInsert(
+                BrowserContract.Visits.CONTENT_URI,
+                VisitsHelper.getVisitsContentValues(rec.guid, rec.visits)
+        );
+      }
+    }
+
     return inserted;
   }
 }
