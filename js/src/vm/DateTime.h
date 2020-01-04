@@ -200,6 +200,32 @@ class DateTimeInfo
     void sanityCheck();
 };
 
+enum class IcuTimeZoneStatus : uint32_t
+{
+    
+    Valid = 0,
+
+    
+    
+    NeedsUpdate,
+
+    
+    Updating
+};
+
+
+
+
+
+
+
+
+
+
+
+extern mozilla::Atomic<IcuTimeZoneStatus, mozilla::ReleaseAcquire>
+DefaultTimeZoneStatus;
+
 }  
 
 #endif 

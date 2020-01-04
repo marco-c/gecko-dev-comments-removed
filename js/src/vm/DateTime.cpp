@@ -6,6 +6,8 @@
 
 #include "vm/DateTime.h"
 
+#include "mozilla/Atomics.h"
+
 #include <time.h>
 
 #include "jsutil.h"
@@ -22,6 +24,9 @@ js::DateTimeInfo::instance;
 
  mozilla::Atomic<bool, mozilla::ReleaseAcquire>
 js::DateTimeInfo::AcquireLock::spinLock;
+
+ mozilla::Atomic<js::IcuTimeZoneStatus, mozilla::ReleaseAcquire>
+js::DefaultTimeZoneStatus;
 
 static bool
 ComputeLocalTime(time_t local, struct tm* ptm)
@@ -312,7 +317,11 @@ JS::ResetTimeZone()
 {
     js::DateTimeInfo::updateTimeZoneAdjustment();
 
-#if ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
-    icu::TimeZone::recreateDefault();
-#endif
+    
+    
+    
+    
+    
+    js::DefaultTimeZoneStatus.compareExchange(js::IcuTimeZoneStatus::Valid,
+                                              js::IcuTimeZoneStatus::NeedsUpdate);
 }

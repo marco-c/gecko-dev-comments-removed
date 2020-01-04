@@ -1928,6 +1928,27 @@ NewUDateFormat(JSContext* cx, HandleObject dateTimeFormat)
 
     UErrorCode status = U_ZERO_ERROR;
 
+    if (!uTimeZone) {
+#if ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (js::DefaultTimeZoneStatus.compareExchange(IcuTimeZoneStatus::NeedsUpdate,
+                                                      IcuTimeZoneStatus::Updating))
+        {
+            icu::TimeZone::recreateDefault();
+        }
+#endif
+    }
+
     
     
     UDateFormat* df =
