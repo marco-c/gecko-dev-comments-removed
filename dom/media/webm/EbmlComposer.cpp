@@ -4,6 +4,7 @@
 
 
 #include "EbmlComposer.h"
+#include "mozilla/UniquePtr.h"
 #include "libmkv/EbmlIDs.h"
 #include "libmkv/EbmlWriter.h"
 #include "libmkv/WebMElement.h"
