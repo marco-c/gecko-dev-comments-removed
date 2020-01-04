@@ -44,6 +44,19 @@ class RefCountedMonitor : public Monitor
     ~RefCountedMonitor() {}
 };
 
+enum class SyncSendError {
+    SendSuccess,
+    PreviousTimeout,
+    SendingCPOWWhileDispatchingSync,
+    SendingCPOWWhileDispatchingUrgent,
+    NotConnectedBeforeSend,
+    DisconnectedDuringSend,
+    CancelledBeforeSend,
+    CancelledAfterSend,
+    TimedOut,
+    ReplyError,
+};
+
 class MessageChannel : HasResultCodes
 {
     friend class ProcessLink;
@@ -131,6 +144,13 @@ class MessageChannel : HasResultCodes
     bool WaitForIncomingMessage();
 
     bool CanSend() const;
+
+    
+    
+    SyncSendError LastSendError() const {
+        AssertWorkerThread();
+        return mLastSendError;
+    }
 
     
     ChannelState GetChannelState__TotallyRacy() const {
@@ -520,6 +540,9 @@ class MessageChannel : HasResultCodes
     int32_t mNextSeqno;
 
     static bool sIsPumpingMessages;
+
+    
+    SyncSendError mLastSendError;
 
     template<class T>
     class AutoSetValue {
