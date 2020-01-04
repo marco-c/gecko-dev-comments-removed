@@ -5702,7 +5702,7 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
 
   
   
-  if (!JS::CurrentGlobalOrNull(aCx)) {
+  if (!GlobalScope()) {
     mCloseHandlerStarted = true;
     mCloseHandlerFinished = true;
     return true;
