@@ -480,6 +480,8 @@ Tester.prototype = {
       
       document.popupNode = null;
 
+      yield new Promise(resolve => SpecialPowers.flushPrefEnv(resolve));
+
       
       if (this.currentTest.unexpectedTimeouts && !this.currentTest.timedOut) {
         let msg = "This test exceeded the timeout threshold. It should be " +
