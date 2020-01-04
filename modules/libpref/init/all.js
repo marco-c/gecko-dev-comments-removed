@@ -4901,11 +4901,7 @@ pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 
 pref("image.mozsamplesize.enabled", false);
 
-
-
-#ifndef MOZ_WIDGET_GONK
 pref("beacon.enabled", true);
-#endif
 
 
 pref("camera.control.face_detection.enabled", true);
