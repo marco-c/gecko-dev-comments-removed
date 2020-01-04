@@ -32,6 +32,7 @@ private:
 
   
   nsTArray<UniquePtr<AbstractTimelineMarker>> mTimelineMarkers;
+  bool mPopping;
 
   
   nsTArray<UniquePtr<AbstractTimelineMarker>> mOffTheMainThreadTimelineMarkers;

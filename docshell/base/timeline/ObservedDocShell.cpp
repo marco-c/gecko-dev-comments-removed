@@ -10,12 +10,14 @@
 #include "LayerTimelineMarker.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Move.h"
+#include "mozilla/ScopeExit.h"
 
 namespace mozilla {
 
 ObservedDocShell::ObservedDocShell(nsIDocShell* aDocShell)
   : MarkersStorage("ObservedDocShellMutex")
   , mDocShell(aDocShell)
+  , mPopping(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
 }
@@ -27,7 +29,11 @@ ObservedDocShell::AddMarker(UniquePtr<AbstractTimelineMarker>&& aMarker)
   
   
   MOZ_ASSERT(NS_IsMainThread());
-  mTimelineMarkers.AppendElement(Move(aMarker));
+  
+  
+  if (!mPopping) {
+    mTimelineMarkers.AppendElement(Move(aMarker));
+  }
 }
 
 void
@@ -57,6 +63,10 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
 {
   MOZ_ASSERT(NS_IsMainThread());
   MutexAutoLock lock(GetLock()); 
+
+  MOZ_RELEASE_ASSERT(!mPopping);
+  mPopping = true;
+  auto resetPopping = MakeScopeExit([&] { mPopping = false; });
 
   
   
