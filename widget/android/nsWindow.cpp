@@ -221,7 +221,15 @@ public:
                 WindowEvent<Functor>>(mozilla::Move(aCall)));
     }
 
-    Natives(nsWindow* aWindow) : window(*aWindow) {}
+    Natives(nsWindow* aWindow)
+        : window(*aWindow)
+        , mIMERanges(new TextRangeArray())
+        , mIMEMaskEventsCount(1) 
+        , mIMEUpdatingContext(false)
+        , mIMESelectionChanged(false)
+        , mIMEMaskSelectionUpdate(false)
+    {}
+
     ~Natives();
 
     
@@ -249,6 +257,63 @@ public:
     
 
 
+private:
+    
+
+
+
+
+
+
+
+
+
+
+    struct IMETextChange final {
+        int32_t mStart, mOldEnd, mNewEnd;
+
+        IMETextChange() :
+            mStart(-1), mOldEnd(-1), mNewEnd(-1) {}
+
+        IMETextChange(const IMENotification& aIMENotification)
+            : mStart(aIMENotification.mTextChangeData.mStartOffset)
+            , mOldEnd(aIMENotification.mTextChangeData.mRemovedEndOffset)
+            , mNewEnd(aIMENotification.mTextChangeData.mAddedEndOffset)
+        {
+            MOZ_ASSERT(aIMENotification.mMessage ==
+                           mozilla::widget::NOTIFY_IME_OF_TEXT_CHANGE,
+                       "IMETextChange initialized with wrong notification");
+            MOZ_ASSERT(aIMENotification.mTextChangeData.IsValid(),
+                       "The text change notification isn't initialized");
+            MOZ_ASSERT(aIMENotification.mTextChangeData.IsInInt32Range(),
+                       "The text change notification is out of range");
+        }
+
+        bool IsEmpty() const { return mStart < 0; }
+    };
+
+    
+    mozilla::widget::GeckoEditable::GlobalRef mEditable;
+    nsAutoTArray<mozilla::UniquePtr<mozilla::WidgetEvent>, 8> mIMEKeyEvents;
+    nsAutoTArray<IMETextChange, 4> mIMETextChanges;
+    InputContext mInputContext;
+    RefPtr<mozilla::TextRangeArray> mIMERanges;
+    int32_t mIMEMaskEventsCount; 
+    bool mIMEUpdatingContext;
+    bool mIMESelectionChanged;
+    bool mIMEMaskSelectionUpdate;
+
+    void SendIMEDummyKeyEvents();
+    void AddIMETextChange(const IMETextChange& aChange);
+    void PostFlushIMEChanges();
+    void FlushIMEChanges();
+
+public:
+    bool NotifyIME(const IMENotification& aIMENotification);
+    void SetInputContext(const InputContext& aContext,
+                         const InputContextAction& aAction);
+    InputContext GetInputContext();
+
     
     void OnKeyEvent(int32_t aAction, int32_t aKeyCode, int32_t aScanCode,
                     int32_t aMetaState, int64_t aTime, int32_t aUnicodeChar,
@@ -263,24 +328,23 @@ public:
     void OnImeAcknowledgeFocus();
 
     
-    void OnImeReplaceText(int32_t start, int32_t end,
-                          jni::String::Param text, bool composing);
+    void OnImeReplaceText(int32_t aStart, int32_t aEnd,
+                          jni::String::Param aText, bool aComposing);
 
     
-    void OnImeSetSelection(int32_t start, int32_t end);
+    void OnImeSetSelection(int32_t aStart, int32_t aEnd);
 
     
     void OnImeRemoveComposition();
 
     
-    void OnImeAddCompositionRange(int32_t start, int32_t end, int32_t rangeType,
-                                  int32_t rangeStyle, int32_t rangeLineStyle,
-                                  bool rangeBoldLine, int32_t rangeForeColor,
-                                  int32_t rangeBackColor,
-                                  int32_t rangeLineColor);
+    void OnImeAddCompositionRange(int32_t aStart, int32_t aEnd,
+            int32_t aRangeType, int32_t aRangeStyle, int32_t aRangeLineStyle,
+            bool aRangeBoldLine, int32_t aRangeForeColor,
+            int32_t aRangeBackColor, int32_t aRangeLineColor);
 
     
-    void OnImeUpdateComposition(int32_t start, int32_t end);
+    void OnImeUpdateComposition(int32_t aStart, int32_t aEnd);
 };
 
 nsWindow::Natives::~Natives()
@@ -306,7 +370,7 @@ nsWindow::Natives::Open(const jni::ClassObject::LocalRef& aCls,
         MOZ_ASSERT(gGeckoViewWindow->mNatives);
 
         
-        gGeckoViewWindow->mEditable->OnViewChange(aView);
+        gGeckoViewWindow->mNatives->mEditable->OnViewChange(aView);
 
         Base::AttachNative(GeckoView::Window::LocalRef(aCls.Env(), aWindow),
                            gGeckoViewWindow->mNatives.get());
@@ -346,16 +410,17 @@ nsWindow::Natives::Open(const jni::ClassObject::LocalRef& aCls,
     MOZ_ASSERT(widget);
 
     gGeckoViewWindow = static_cast<nsWindow*>(widget.get());
-    gGeckoViewWindow->mNatives = mozilla::MakeUnique<Natives>(gGeckoViewWindow);
+    UniquePtr<Natives> natives = mozilla::MakeUnique<Natives>(gGeckoViewWindow);
 
     
     GeckoEditable::LocalRef editable = GeckoEditable::New();
-    EditableBase::AttachNative(editable, gGeckoViewWindow->mNatives.get());
+    EditableBase::AttachNative(editable, natives.get());
+    natives->mEditable = editable;
     editable->OnViewChange(aView);
-    gGeckoViewWindow->mEditable = editable;
 
     Base::AttachNative(GeckoView::Window::LocalRef(aCls.Env(), aWindow),
-                       gGeckoViewWindow->mNatives.get());
+                       natives.get());
+    gGeckoViewWindow->mNatives = mozilla::Move(natives);
 }
 
 void
@@ -425,11 +490,6 @@ nsWindow::DumpWindows(const nsTArray<nsWindow*>& wins, int indent)
 nsWindow::nsWindow() :
     mIsVisible(false),
     mParent(nullptr),
-    mIMEMaskSelectionUpdate(false),
-    mIMEMaskEventsCount(1), 
-    mIMERanges(new TextRangeArray()),
-    mIMEUpdatingContext(false),
-    mIMESelectionChanged(false),
     mAwaitingFullScreen(false),
     mIsFullScreen(false)
 {
@@ -1116,11 +1176,6 @@ nsWindow::OnGlobalAndroidEvent(AndroidGeckoEvent *ae)
             break;
         }
 
-        case AndroidGeckoEvent::IME_EVENT:
-            gGeckoViewWindow->UserActivity();
-            gGeckoViewWindow->OnIMEEvent(ae);
-            break;
-
         case AndroidGeckoEvent::COMPOSITOR_PAUSE:
             
             
@@ -1799,7 +1854,7 @@ nsWindow::Natives::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
         
         
         
-        window.mIMEKeyEvents.AppendElement(
+        mIMEKeyEvents.AppendElement(
                 mozilla::UniquePtr<WidgetEvent>(event.Duplicate()));
     } else {
         window.DispatchEvent(&event, status);
@@ -1819,7 +1874,7 @@ nsWindow::Natives::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
                  aRepeatCount, aFlags);
 
     if (aIsSynthesizedImeKey) {
-        window.mIMEKeyEvents.AppendElement(
+        mIMEKeyEvents.AppendElement(
                 mozilla::UniquePtr<WidgetEvent>(pressEvent.Duplicate()));
     } else {
         window.DispatchEvent(&pressEvent, status);
@@ -1833,20 +1888,20 @@ nsWindow::Natives::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
 #endif
 
 static nscolor
-ConvertAndroidColor(uint32_t argb)
+ConvertAndroidColor(uint32_t aArgb)
 {
-    return NS_RGBA((argb & 0x00ff0000) >> 16,
-                   (argb & 0x0000ff00) >> 8,
-                   (argb & 0x000000ff),
-                   (argb & 0xff000000) >> 24);
+    return NS_RGBA((aArgb & 0x00ff0000) >> 16,
+                   (aArgb & 0x0000ff00) >> 8,
+                   (aArgb & 0x000000ff),
+                   (aArgb & 0xff000000) >> 24);
 }
 
 class AutoIMEMask {
 private:
     bool mOldMask, *mMask;
 public:
-    AutoIMEMask(bool &mask) : mOldMask(mask), mMask(&mask) {
-        mask = true;
+    AutoIMEMask(bool &aMask) : mOldMask(aMask), mMask(&aMask) {
+        aMask = true;
     }
     ~AutoIMEMask() {
         *mMask = mOldMask;
@@ -1875,8 +1930,6 @@ nsWindow::RemoveIMEComposition()
     }
 
     RefPtr<nsWindow> kungFuDeathGrip(this);
-    AutoIMEMask selMask(mIMEMaskSelectionUpdate);
-
     WidgetCompositionEvent compositionCommitEvent(true, eCompositionCommitAsIs,
                                                   this);
     InitEvent(compositionCommitEvent, nullptr);
@@ -1889,435 +1942,191 @@ nsWindow::RemoveIMEComposition()
 
 
 void
-nsWindow::SendIMEDummyKeyEvents()
+nsWindow::Natives::SendIMEDummyKeyEvents()
 {
-    WidgetKeyboardEvent downEvent(true, eKeyDown, this);
-    InitEvent(downEvent, nullptr);
+    WidgetKeyboardEvent downEvent(true, eKeyDown, &window);
+    window.InitEvent(downEvent, nullptr);
     MOZ_ASSERT(downEvent.keyCode == 0);
-    DispatchEvent(&downEvent);
+    window.DispatchEvent(&downEvent);
 
-    WidgetKeyboardEvent upEvent(true, eKeyUp, this);
-    InitEvent(upEvent, nullptr);
+    WidgetKeyboardEvent upEvent(true, eKeyUp, &window);
+    window.InitEvent(upEvent, nullptr);
     MOZ_ASSERT(upEvent.keyCode == 0);
-    DispatchEvent(&upEvent);
+    window.DispatchEvent(&upEvent);
 }
 
 void
-nsWindow::Natives::OnImeSynchronize()
+nsWindow::Natives::AddIMETextChange(const IMETextChange& aChange)
 {
+    mIMETextChanges.AppendElement(aChange);
+
     
-}
-
-void
-nsWindow::Natives::OnImeAcknowledgeFocus()
-{
     
-}
-
-void
-nsWindow::Natives::OnImeReplaceText(int32_t start, int32_t end,
-                                    jni::String::Param text, bool composing)
-{
     
-}
-
-void
-nsWindow::Natives::OnImeSetSelection(int32_t start, int32_t end)
-{
     
-}
-
-void
-nsWindow::Natives::OnImeRemoveComposition()
-{
-    
-}
-
-void
-nsWindow::Natives::OnImeAddCompositionRange(
-        int32_t start, int32_t end, int32_t rangeType, int32_t rangeStyle,
-        int32_t rangeLineStyle, bool rangeBoldLine, int32_t rangeForeColor,
-        int32_t rangeBackColor, int32_t rangeLineColor)
-{
-    
-}
-
-void
-nsWindow::Natives::OnImeUpdateComposition(int32_t start, int32_t end)
-{
-    
-}
-
-void
-nsWindow::OnIMEEvent(AndroidGeckoEvent *ae)
-{
-    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
-    
-
-
-
-
-
-
-
-
-
-    RefPtr<nsWindow> kungFuDeathGrip(this);
-
-    if (ae->Action() == AndroidGeckoEvent::IME_ACKNOWLEDGE_FOCUS) {
-        MOZ_ASSERT(mIMEMaskEventsCount > 0);
-        mIMEMaskEventsCount--;
-        if (!mIMEMaskEventsCount) {
-            
-            
-            mIMETextChanges.Clear();
-            mIMESelectionChanged = false;
-            
-            
-            
-            
-            IMENotification notification(NOTIFY_IME_OF_TEXT_CHANGE);
-            notification.mTextChangeData.mStartOffset = 0;
-            notification.mTextChangeData.mRemovedEndOffset =
-                notification.mTextChangeData.mAddedEndOffset = INT32_MAX / 2;
-            NotifyIMEOfTextChange(notification);
-            FlushIMEChanges();
+    const int32_t delta = aChange.mNewEnd - aChange.mOldEnd;
+    for (int32_t i = mIMETextChanges.Length() - 2; i >= 0; i--) {
+        IMETextChange& previousChange = mIMETextChanges[i];
+        if (previousChange.mStart > aChange.mOldEnd) {
+            previousChange.mStart += delta;
+            previousChange.mOldEnd += delta;
+            previousChange.mNewEnd += delta;
         }
-        mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_REPLY_EVENT);
-        return;
-
-    } else if (ae->Action() == AndroidGeckoEvent::IME_UPDATE_CONTEXT) {
-        mEditable->NotifyIMEContext(mInputContext.mIMEState.mEnabled,
-                                    mInputContext.mHTMLInputType,
-                                    mInputContext.mHTMLInputInputmode,
-                                    mInputContext.mActionHint);
-        mIMEUpdatingContext = false;
-        return;
     }
 
-    if (mIMEMaskEventsCount > 0) {
+    
+    
+    
+    int32_t srcIndex = mIMETextChanges.Length() - 1;
+    int32_t dstIndex = srcIndex;
+
+    while (--dstIndex >= 0) {
+        IMETextChange& src = mIMETextChanges[srcIndex];
+        IMETextChange& dst = mIMETextChanges[dstIndex];
         
-        if (ae->Action() == AndroidGeckoEvent::IME_SYNCHRONIZE ||
-            ae->Action() == AndroidGeckoEvent::IME_COMPOSE_TEXT ||
-            ae->Action() == AndroidGeckoEvent::IME_REPLACE_TEXT) {
-            mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_REPLY_EVENT);
-        }
-        return;
-    }
-
-    switch (ae->Action()) {
-    case AndroidGeckoEvent::IME_FLUSH_CHANGES:
-        {
-            FlushIMEChanges();
-        }
-        break;
-
-    case AndroidGeckoEvent::IME_SYNCHRONIZE:
-        {
-            FlushIMEChanges();
-            mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_REPLY_EVENT);
-        }
-        break;
-
-    case AndroidGeckoEvent::IME_REPLACE_TEXT:
-    case AndroidGeckoEvent::IME_COMPOSE_TEXT:
-        {
+        
+        
+        if (src.mOldEnd < dst.mStart || dst.mNewEnd < src.mStart) {
             
-
-
-
-
-
-
-            AutoIMEMask selMask(mIMEMaskSelectionUpdate);
-            const auto composition(GetIMEComposition());
-            MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
-
-            if (!mIMEKeyEvents.IsEmpty() || !composition ||
-                uint32_t(ae->Start()) !=
-                    composition->NativeOffsetOfStartComposition() ||
-                uint32_t(ae->End()) !=
-                    composition->NativeOffsetOfStartComposition() +
-                    composition->String().Length()) {
-
-                
-                
-                
-                RemoveIMEComposition();
-
-                {
-                    WidgetSelectionEvent event(true, eSetSelection, this);
-                    InitEvent(event, nullptr);
-                    event.mOffset = uint32_t(ae->Start());
-                    event.mLength = uint32_t(ae->End() - ae->Start());
-                    event.mExpandToClusterBoundary = false;
-                    DispatchEvent(&event);
-                }
-
-                if (!mIMEKeyEvents.IsEmpty()) {
-                    nsEventStatus status;
-                    for (uint32_t i = 0; i < mIMEKeyEvents.Length(); i++) {
-                        const auto event = static_cast<WidgetGUIEvent*>(
-                                mIMEKeyEvents[i].get());
-                        
-                        event->widget = this;
-                        DispatchEvent(event, status);
-                    }
-                    mIMEKeyEvents.Clear();
-                    FlushIMEChanges();
-                    mEditable->NotifyIME(
-                            GeckoEditableListener::NOTIFY_IME_REPLY_EVENT);
-                    
-                    break;
-                }
-
-                {
-                    WidgetCompositionEvent event(true, eCompositionStart, this);
-                    InitEvent(event, nullptr);
-                    DispatchEvent(&event);
-                }
-
-            } else if (composition->String().Equals(ae->Characters())) {
-                
-
-
-
-                IMEChange dummyChange;
-                dummyChange.mStart = ae->Start();
-                dummyChange.mOldEnd = dummyChange.mNewEnd = ae->End();
-                AddIMETextChange(dummyChange);
-            }
-
-            {
-                WidgetCompositionEvent event(true, eCompositionChange, this);
-                InitEvent(event, nullptr);
-                event.mData = ae->Characters();
-
-                
-                TextRange range;
-                range.mStartOffset = 0;
-                range.mEndOffset = event.mData.Length();
-                range.mRangeType = NS_TEXTRANGE_RAWINPUT;
-                event.mRanges = new TextRangeArray();
-                event.mRanges->AppendElement(range);
-
-                DispatchEvent(&event);
-            }
-
+            continue;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        dst.mStart = std::min(dst.mStart, src.mStart);
+        if (src.mOldEnd < dst.mNewEnd) {
             
-            if (ae->Action() != AndroidGeckoEvent::IME_COMPOSE_TEXT) {
-                WidgetCompositionEvent compositionCommitEvent(
-                        true, eCompositionCommitAsIs, this);
-                InitEvent(compositionCommitEvent, nullptr);
-                DispatchEvent(&compositionCommitEvent);
-            }
-
-            if (mInputContext.mMayBeIMEUnaware) {
-                SendIMEDummyKeyEvents();
-            }
-
-            FlushIMEChanges();
-            mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_REPLY_EVENT);
-        }
-        break;
-
-    case AndroidGeckoEvent::IME_SET_SELECTION:
-        {
+            dst.mNewEnd += src.mNewEnd - src.mOldEnd;
+        } else { 
             
-
-
-
-
-
-            AutoIMEMask selMask(mIMEMaskSelectionUpdate);
-            RemoveIMEComposition();
-            WidgetSelectionEvent selEvent(true, eSetSelection, this);
-            InitEvent(selEvent, nullptr);
-
-            int32_t start = ae->Start(), end = ae->End();
-
-            if (start < 0 || end < 0) {
-                WidgetQueryContentEvent event(true, eQuerySelectedText, this);
-                InitEvent(event, nullptr);
-                DispatchEvent(&event);
-                MOZ_ASSERT(event.mSucceeded);
-
-                if (start < 0)
-                    start = int32_t(event.GetSelectionStart());
-                if (end < 0)
-                    end = int32_t(event.GetSelectionEnd());
-            }
-
-            selEvent.mOffset = std::min(start, end);
-            selEvent.mLength = std::max(start, end) - selEvent.mOffset;
-            selEvent.mReversed = start > end;
-            selEvent.mExpandToClusterBoundary = false;
-
-            DispatchEvent(&selEvent);
+            dst.mOldEnd += src.mOldEnd - dst.mNewEnd;
+            dst.mNewEnd = src.mNewEnd;
         }
-        break;
-    case AndroidGeckoEvent::IME_ADD_COMPOSITION_RANGE:
-        {
-            TextRange range;
-            range.mStartOffset = ae->Start();
-            range.mEndOffset = ae->End();
-            range.mRangeType = ae->RangeType();
-            range.mRangeStyle.mDefinedStyles = ae->RangeStyles();
-            range.mRangeStyle.mLineStyle = ae->RangeLineStyle();
-            range.mRangeStyle.mIsBoldLine = ae->RangeBoldLine();
-            range.mRangeStyle.mForegroundColor =
-                    ConvertAndroidColor(uint32_t(ae->RangeForeColor()));
-            range.mRangeStyle.mBackgroundColor =
-                    ConvertAndroidColor(uint32_t(ae->RangeBackColor()));
-            range.mRangeStyle.mUnderlineColor =
-                    ConvertAndroidColor(uint32_t(ae->RangeLineColor()));
-            mIMERanges->AppendElement(range);
-        }
-        break;
-    case AndroidGeckoEvent::IME_UPDATE_COMPOSITION:
-        {
-            
-
-
-
-
-
-
-
-
-
-
-            AutoIMEMask selMask(mIMEMaskSelectionUpdate);
-            const auto composition(GetIMEComposition());
-            MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
-
-            WidgetCompositionEvent event(true, eCompositionChange, this);
-            InitEvent(event, nullptr);
-
-            event.mRanges = new TextRangeArray();
-            mIMERanges.swap(event.mRanges);
-
-            if (!composition ||
-                uint32_t(ae->Start()) !=
-                    composition->NativeOffsetOfStartComposition() ||
-                uint32_t(ae->End()) !=
-                    composition->NativeOffsetOfStartComposition() +
-                    composition->String().Length()) {
-
-                
-                
-                RemoveIMEComposition();
-
-                {
-                    WidgetSelectionEvent event(true, eSetSelection, this);
-                    InitEvent(event, nullptr);
-                    event.mOffset = uint32_t(ae->Start());
-                    event.mLength = uint32_t(ae->End() - ae->Start());
-                    event.mExpandToClusterBoundary = false;
-                    DispatchEvent(&event);
-                }
-
-                {
-                    WidgetQueryContentEvent queryEvent(true, eQuerySelectedText,
-                                                       this);
-                    InitEvent(queryEvent, nullptr);
-                    DispatchEvent(&queryEvent);
-                    MOZ_ASSERT(queryEvent.mSucceeded);
-                    event.mData = queryEvent.mReply.mString;
-                }
-
-                {
-                    WidgetCompositionEvent event(true, eCompositionStart, this);
-                    InitEvent(event, nullptr);
-                    DispatchEvent(&event);
-                }
-
-            } else {
-                
-                
-                event.mData = composition->String();
-            }
-
-#ifdef DEBUG_ANDROID_IME
-            const NS_ConvertUTF16toUTF8 data(event.mData);
-            const char* text = data.get();
-            ALOGIME("IME: IME_SET_TEXT: text=\"%s\", length=%u, range=%u",
-                    text, event.mData.Length(), event.mRanges->Length());
-#endif 
-
-            DispatchEvent(&event);
-        }
-        break;
-
-    case AndroidGeckoEvent::IME_REMOVE_COMPOSITION:
-        {
-            
-
-
-
-
-
-
-            AutoIMEMask selMask(mIMEMaskSelectionUpdate);
-            RemoveIMEComposition();
-            mIMERanges->Clear();
-        }
-        break;
+        
+        mIMETextChanges.RemoveElementAt(srcIndex);
+        
+        
+        srcIndex = dstIndex;
     }
 }
 
 void
-nsWindow::UserActivity()
+nsWindow::Natives::PostFlushIMEChanges()
 {
-  if (!mIdleService) {
-    mIdleService = do_GetService("@mozilla.org/widget/idleservice;1");
-  }
+    if (!mIMETextChanges.IsEmpty() || mIMESelectionChanged) {
+        
+        return;
+    }
 
-  if (mIdleService) {
-    mIdleService->ResetIdleTimeOut(0);
-  }
+    
+    RefPtr<nsWindow> window(&this->window);
+
+    nsAppShell::gAppShell->PostEvent([this, window] {
+        if (!window->Destroyed()) {
+            FlushIMEChanges();
+        }
+    });
 }
 
-nsresult
-nsWindow::NotifyIMEInternal(const IMENotification& aIMENotification)
+void
+nsWindow::Natives::FlushIMEChanges()
 {
-    MOZ_ASSERT(this == FindTopLevel());
+    
+    
+    NS_ENSURE_TRUE_VOID(!mIMEMaskEventsCount);
 
-    if (!mEditable) {
-        return NS_ERROR_NOT_AVAILABLE;
+    nsCOMPtr<nsISelection> imeSelection;
+    nsCOMPtr<nsIContent> imeRoot;
+
+    
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(IMEStateManager::GetFocusSelectionAndRoot(
+            getter_AddRefs(imeSelection), getter_AddRefs(imeRoot))));
+
+    RefPtr<nsWindow> kungFuDeathGrip(&window);
+    window.UserActivity();
+
+    for (uint32_t i = 0; i < mIMETextChanges.Length(); i++) {
+        IMETextChange &change = mIMETextChanges[i];
+
+        if (change.mStart == change.mOldEnd &&
+                change.mStart == change.mNewEnd) {
+            continue;
+        }
+
+        WidgetQueryContentEvent event(true, eQueryTextContent, &window);
+
+        if (change.mNewEnd != change.mStart) {
+            window.InitEvent(event, nullptr);
+            event.InitForQueryTextContent(change.mStart,
+                                          change.mNewEnd - change.mStart);
+            window.DispatchEvent(&event);
+            NS_ENSURE_TRUE_VOID(event.mSucceeded);
+            NS_ENSURE_TRUE_VOID(event.mReply.mContentsRoot == imeRoot.get());
+        }
+
+        mEditable->OnTextChange(event.mReply.mString, change.mStart,
+                                change.mOldEnd, change.mNewEnd);
     }
+    mIMETextChanges.Clear();
+
+    if (mIMESelectionChanged) {
+        WidgetQueryContentEvent event(true, eQuerySelectedText, &window);
+        window.InitEvent(event, nullptr);
+        window.DispatchEvent(&event);
+
+        NS_ENSURE_TRUE_VOID(event.mSucceeded);
+        NS_ENSURE_TRUE_VOID(event.mReply.mContentsRoot == imeRoot.get());
+
+        mEditable->OnSelectionChange(int32_t(event.GetSelectionStart()),
+                                     int32_t(event.GetSelectionEnd()));
+        mIMESelectionChanged = false;
+    }
+}
+
+bool
+nsWindow::Natives::NotifyIME(const IMENotification& aIMENotification)
+{
+    MOZ_ASSERT(mEditable);
 
     switch (aIMENotification.mMessage) {
-        case REQUEST_TO_COMMIT_COMPOSITION:
-            
-            RemoveIMEComposition();
+        case REQUEST_TO_COMMIT_COMPOSITION: {
+            ALOGIME("IME: REQUEST_TO_COMMIT_COMPOSITION");
+            window.RemoveIMEComposition();
             mEditable->NotifyIME(REQUEST_TO_COMMIT_COMPOSITION);
-            return NS_OK;
+            return true;
+        }
 
-        case REQUEST_TO_CANCEL_COMPOSITION:
+        case REQUEST_TO_CANCEL_COMPOSITION: {
             ALOGIME("IME: REQUEST_TO_CANCEL_COMPOSITION");
 
             
-            if (!!GetIMEComposition()) {
-                RefPtr<nsWindow> kungFuDeathGrip(this);
-
+            if (window.GetIMEComposition()) {
+                RefPtr<nsWindow> kungFuDeathGrip(&window);
                 WidgetCompositionEvent compositionCommitEvent(
-                                         true, eCompositionCommit, this);
-                InitEvent(compositionCommitEvent, nullptr);
+                        true, eCompositionCommit, &window);
+                window.InitEvent(compositionCommitEvent, nullptr);
                 
-                
-                DispatchEvent(&compositionCommitEvent);
+                window.DispatchEvent(&compositionCommitEvent);
             }
 
             mEditable->NotifyIME(REQUEST_TO_CANCEL_COMPOSITION);
-            return NS_OK;
+            return true;
+        }
 
-        case NOTIFY_IME_OF_FOCUS:
+        case NOTIFY_IME_OF_FOCUS: {
             ALOGIME("IME: NOTIFY_IME_OF_FOCUS");
             mEditable->NotifyIME(NOTIFY_IME_OF_FOCUS);
-            return NS_OK;
+            return true;
+        }
 
-        case NOTIFY_IME_OF_BLUR:
+        case NOTIFY_IME_OF_BLUR: {
             ALOGIME("IME: NOTIFY_IME_OF_BLUR");
 
             
@@ -2326,48 +2135,44 @@ nsWindow::NotifyIMEInternal(const IMENotification& aIMENotification)
             mIMEMaskEventsCount++;
 
             mEditable->NotifyIME(NOTIFY_IME_OF_BLUR);
-            return NS_OK;
+            return true;
+        }
 
-        case NOTIFY_IME_OF_SELECTION_CHANGE:
+        case NOTIFY_IME_OF_SELECTION_CHANGE: {
             if (mIMEMaskSelectionUpdate) {
-                return NS_OK;
+                return true;
             }
 
             ALOGIME("IME: NOTIFY_IME_OF_SELECTION_CHANGE");
 
             PostFlushIMEChanges();
             mIMESelectionChanged = true;
-            return NS_OK;
+            return true;
+        }
 
-        case NOTIFY_IME_OF_TEXT_CHANGE:
-            return NotifyIMEOfTextChange(aIMENotification);
+        case NOTIFY_IME_OF_TEXT_CHANGE: {
+            ALOGIME("IME: NotifyIMEOfTextChange: s=%d, oe=%d, ne=%d",
+                    aIMENotification.mTextChangeData.mStartOffset,
+                    aIMENotification.mTextChangeData.mRemovedEndOffset,
+                    aIMENotification.mTextChangeData.mAddedEndOffset);
+
+            
+            PostFlushIMEChanges();
+            mIMESelectionChanged = true;
+            AddIMETextChange(IMETextChange(aIMENotification));
+            return true;
+        }
 
         default:
-            return NS_ERROR_NOT_IMPLEMENTED;
+            return false;
     }
 }
 
-NS_IMETHODIMP_(void)
-nsWindow::SetInputContext(const InputContext& aContext,
-                          const InputContextAction& aAction)
+void
+nsWindow::Natives::SetInputContext(const InputContext& aContext,
+                                   const InputContextAction& aAction)
 {
-#ifdef MOZ_B2GDROID
-    
-    return;
-#endif
-    nsWindow *top = FindTopLevel();
-    if (top && this != top) {
-        
-        
-        
-        
-        top->SetInputContext(aContext, aAction);
-        return;
-    }
-
-    if (!mEditable) {
-        return;
-    }
+    MOZ_ASSERT(mEditable);
 
     ALOGIME("IME: SetInputContext: s=0x%X, 0x%X, action=0x%X, 0x%X",
             aContext.mIMEState.mEnabled, aContext.mIMEState.mOpen,
@@ -2404,21 +2209,27 @@ nsWindow::SetInputContext(const InputContext& aContext,
     if (mIMEUpdatingContext) {
         return;
     }
-    AndroidGeckoEvent *event = AndroidGeckoEvent::MakeIMEEvent(
-            AndroidGeckoEvent::IME_UPDATE_CONTEXT);
-    nsAppShell::gAppShell->PostEvent(event);
+
+    
+    RefPtr<nsWindow> window(&this->window);
     mIMEUpdatingContext = true;
+
+    nsAppShell::gAppShell->PostEvent([this, window] {
+        mIMEUpdatingContext = false;
+        if (window->Destroyed()) {
+            return;
+        }
+        MOZ_ASSERT(mEditable);
+        mEditable->NotifyIMEContext(mInputContext.mIMEState.mEnabled,
+                                    mInputContext.mHTMLInputType,
+                                    mInputContext.mHTMLInputInputmode,
+                                    mInputContext.mActionHint);
+    });
 }
 
-NS_IMETHODIMP_(InputContext)
-nsWindow::GetInputContext()
+InputContext
+nsWindow::Natives::GetInputContext()
 {
-    nsWindow *top = FindTopLevel();
-    if (top && this != top) {
-        
-        
-        return top->GetInputContext();
-    }
     InputContext context = mInputContext;
     context.mIMEState.mOpen = IMEState::OPEN_STATE_NOT_SUPPORTED;
     
@@ -2427,153 +2238,397 @@ nsWindow::GetInputContext()
 }
 
 void
-nsWindow::PostFlushIMEChanges()
+nsWindow::Natives::OnImeSynchronize()
 {
-    if (!mIMETextChanges.IsEmpty() || mIMESelectionChanged) {
+    if (!mIMEMaskEventsCount) {
+        FlushIMEChanges();
+    }
+    mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_REPLY_EVENT);
+}
+
+void
+nsWindow::Natives::OnImeAcknowledgeFocus()
+{
+    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
+    MOZ_ASSERT(mIMEMaskEventsCount > 0);
+
+    if (--mIMEMaskEventsCount > 0) {
+        
+        return OnImeSynchronize();
+    }
+
+    
+    
+    mIMETextChanges.Clear();
+    mIMESelectionChanged = false;
+    
+    
+    
+    
+    IMENotification notification(NOTIFY_IME_OF_TEXT_CHANGE);
+    notification.mTextChangeData.mStartOffset = 0;
+    notification.mTextChangeData.mRemovedEndOffset =
+        notification.mTextChangeData.mAddedEndOffset = INT32_MAX / 2;
+    NotifyIME(notification);
+    OnImeSynchronize();
+}
+
+void
+nsWindow::Natives::OnImeReplaceText(int32_t aStart, int32_t aEnd,
+                                    jni::String::Param aText, bool aComposing)
+{
+    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
+
+    if (mIMEMaskEventsCount > 0) {
+        
+        return OnImeSynchronize();
+    }
+
+    
+
+
+
+
+
+    RefPtr<nsWindow> kungFuDeathGrip(&window);
+    AutoIMEMask selMask(mIMEMaskSelectionUpdate);
+    nsString string(aText);
+
+    const auto composition(window.GetIMEComposition());
+    MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
+
+    if (!mIMEKeyEvents.IsEmpty() || !composition ||
+        uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
+        uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
+                          composition->String().Length())
+    {
+        
+        
+        
+        window.RemoveIMEComposition();
+
+        {
+            WidgetSelectionEvent event(true, eSetSelection, &window);
+            window.InitEvent(event, nullptr);
+            event.mOffset = uint32_t(aStart);
+            event.mLength = uint32_t(aEnd - aStart);
+            event.mExpandToClusterBoundary = false;
+            window.DispatchEvent(&event);
+        }
+
+        if (!mIMEKeyEvents.IsEmpty()) {
+            nsEventStatus status;
+            for (uint32_t i = 0; i < mIMEKeyEvents.Length(); i++) {
+                const auto event = static_cast<WidgetGUIEvent*>(
+                        mIMEKeyEvents[i].get());
+                if (event->mMessage == eKeyPress &&
+                        status == nsEventStatus_eConsumeNoDefault) {
+                    MOZ_ASSERT(i > 0 &&
+                            mIMEKeyEvents[i - 1]->mMessage == eKeyDown);
+                    
+                    
+                    continue;
+                }
+                
+                event->widget = &window;
+                window.DispatchEvent(event, status);
+            }
+            mIMEKeyEvents.Clear();
+            return OnImeSynchronize();
+        }
+
+        {
+            WidgetCompositionEvent event(true, eCompositionStart, &window);
+            window.InitEvent(event, nullptr);
+            window.DispatchEvent(&event);
+        }
+
+    } else if (composition->String().Equals(string)) {
+        
+
+
+
+        IMETextChange dummyChange;
+        dummyChange.mStart = aStart;
+        dummyChange.mOldEnd = dummyChange.mNewEnd = aEnd;
+        AddIMETextChange(dummyChange);
+    }
+
+    
+    if (window.GetIMEComposition()) {
+        WidgetCompositionEvent event(true, eCompositionChange, &window);
+        window.InitEvent(event, nullptr);
+        event.mData = string;
+
+        
+        TextRange range;
+        range.mStartOffset = 0;
+        range.mEndOffset = event.mData.Length();
+        range.mRangeType = NS_TEXTRANGE_RAWINPUT;
+        event.mRanges = new TextRangeArray();
+        event.mRanges->AppendElement(range);
+
+        window.DispatchEvent(&event);
+    }
+
+    
+    if (!aComposing && window.GetIMEComposition()) {
+        WidgetCompositionEvent compositionCommitEvent(
+                true, eCompositionCommitAsIs, &window);
+        window.InitEvent(compositionCommitEvent, nullptr);
+        window.DispatchEvent(&compositionCommitEvent);
+    }
+
+    if (mInputContext.mMayBeIMEUnaware) {
+        SendIMEDummyKeyEvents();
+    }
+    OnImeSynchronize();
+}
+
+void
+nsWindow::Natives::OnImeSetSelection(int32_t aStart, int32_t aEnd)
+{
+    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
+
+    if (mIMEMaskEventsCount > 0) {
         
         return;
     }
-    AndroidGeckoEvent *event = AndroidGeckoEvent::MakeIMEEvent(
-            AndroidGeckoEvent::IME_FLUSH_CHANGES);
-    nsAppShell::gAppShell->PostEvent(event);
+
+    
+
+
+
+
+
+    RefPtr<nsWindow> kungFuDeathGrip(&window);
+    AutoIMEMask selMask(mIMEMaskSelectionUpdate);
+    WidgetSelectionEvent selEvent(true, eSetSelection, &window);
+
+    window.InitEvent(selEvent, nullptr);
+    window.RemoveIMEComposition();
+
+    if (aStart < 0 || aEnd < 0) {
+        WidgetQueryContentEvent event(true, eQuerySelectedText, &window);
+        window.InitEvent(event, nullptr);
+        window.DispatchEvent(&event);
+        MOZ_ASSERT(event.mSucceeded);
+
+        if (aStart < 0)
+            aStart = int32_t(event.GetSelectionStart());
+        if (aEnd < 0)
+            aEnd = int32_t(event.GetSelectionEnd());
+    }
+
+    selEvent.mOffset = std::min(aStart, aEnd);
+    selEvent.mLength = std::max(aStart, aEnd) - selEvent.mOffset;
+    selEvent.mReversed = aStart > aEnd;
+    selEvent.mExpandToClusterBoundary = false;
+
+    window.DispatchEvent(&selEvent);
 }
 
 void
-nsWindow::FlushIMEChanges()
+nsWindow::Natives::OnImeRemoveComposition()
 {
+    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
+
+    if (mIMEMaskEventsCount > 0) {
+        
+        return;
+    }
+
     
+
+
+
+
+
+
+    AutoIMEMask selMask(mIMEMaskSelectionUpdate);
+    window.RemoveIMEComposition();
+    mIMERanges->Clear();
+}
+
+void
+nsWindow::Natives::OnImeAddCompositionRange(
+        int32_t aStart, int32_t aEnd, int32_t aRangeType, int32_t aRangeStyle,
+        int32_t aRangeLineStyle, bool aRangeBoldLine, int32_t aRangeForeColor,
+        int32_t aRangeBackColor, int32_t aRangeLineColor)
+{
+    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
+
+    if (mIMEMaskEventsCount > 0) {
+        
+        return;
+    }
+
+    TextRange range;
+    range.mStartOffset = aStart;
+    range.mEndOffset = aEnd;
+    range.mRangeType = aRangeType;
+    range.mRangeStyle.mDefinedStyles = aRangeStyle;
+    range.mRangeStyle.mLineStyle = aRangeLineStyle;
+    range.mRangeStyle.mIsBoldLine = aRangeBoldLine;
+    range.mRangeStyle.mForegroundColor =
+            ConvertAndroidColor(uint32_t(aRangeForeColor));
+    range.mRangeStyle.mBackgroundColor =
+            ConvertAndroidColor(uint32_t(aRangeBackColor));
+    range.mRangeStyle.mUnderlineColor =
+            ConvertAndroidColor(uint32_t(aRangeLineColor));
+    mIMERanges->AppendElement(range);
+}
+
+void
+nsWindow::Natives::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
+{
+    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
+
+    if (mIMEMaskEventsCount > 0) {
+        
+        return;
+    }
+
     
-    NS_ENSURE_TRUE_VOID(!mIMEMaskEventsCount);
 
-    nsCOMPtr<nsISelection> imeSelection;
-    nsCOMPtr<nsIContent> imeRoot;
 
-    
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(IMEStateManager::GetFocusSelectionAndRoot(
-            getter_AddRefs(imeSelection), getter_AddRefs(imeRoot))));
 
-    RefPtr<nsWindow> kungFuDeathGrip(this);
 
-    for (uint32_t i = 0; i < mIMETextChanges.Length(); i++) {
-        IMEChange &change = mIMETextChanges[i];
 
-        if (change.mStart == change.mOldEnd &&
-                change.mStart == change.mNewEnd) {
-            continue;
+
+
+
+
+
+    RefPtr<nsWindow> kungFuDeathGrip(&window);
+    AutoIMEMask selMask(mIMEMaskSelectionUpdate);
+    const auto composition(window.GetIMEComposition());
+    MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
+
+    WidgetCompositionEvent event(true, eCompositionChange, &window);
+    window.InitEvent(event, nullptr);
+
+    event.mRanges = new TextRangeArray();
+    mIMERanges.swap(event.mRanges);
+
+    if (!composition ||
+        uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
+        uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
+                          composition->String().Length())
+    {
+        
+        
+        window.RemoveIMEComposition();
+
+        {
+            WidgetSelectionEvent event(true, eSetSelection, &window);
+            window.InitEvent(event, nullptr);
+            event.mOffset = uint32_t(aStart);
+            event.mLength = uint32_t(aEnd - aStart);
+            event.mExpandToClusterBoundary = false;
+            window.DispatchEvent(&event);
         }
 
-        WidgetQueryContentEvent event(true, eQueryTextContent, this);
-
-        if (change.mNewEnd != change.mStart) {
-            InitEvent(event, nullptr);
-            event.InitForQueryTextContent(change.mStart,
-                                          change.mNewEnd - change.mStart);
-            DispatchEvent(&event);
-            NS_ENSURE_TRUE_VOID(event.mSucceeded);
-            NS_ENSURE_TRUE_VOID(event.mReply.mContentsRoot == imeRoot.get());
+        {
+            WidgetQueryContentEvent queryEvent(true, eQuerySelectedText,
+                                               &window);
+            window.InitEvent(queryEvent, nullptr);
+            window.DispatchEvent(&queryEvent);
+            MOZ_ASSERT(queryEvent.mSucceeded);
+            event.mData = queryEvent.mReply.mString;
         }
 
-        mEditable->OnTextChange(event.mReply.mString, change.mStart,
-                                change.mOldEnd, change.mNewEnd);
+        {
+            WidgetCompositionEvent event(true, eCompositionStart, &window);
+            window.InitEvent(event, nullptr);
+            window.DispatchEvent(&event);
+        }
+
+    } else {
+        
+        
+        event.mData = composition->String();
     }
-    mIMETextChanges.Clear();
 
-    if (mIMESelectionChanged) {
-        WidgetQueryContentEvent event(true, eQuerySelectedText, this);
-        InitEvent(event, nullptr);
+#ifdef DEBUG_ANDROID_IME
+    const NS_ConvertUTF16toUTF8 data(event.mData);
+    const char* text = data.get();
+    ALOGIME("IME: IME_SET_TEXT: text=\"%s\", length=%u, range=%u",
+            text, event.mData.Length(), event.mRanges->Length());
+#endif 
 
-        DispatchEvent(&event);
-        NS_ENSURE_TRUE_VOID(event.mSucceeded);
-        NS_ENSURE_TRUE_VOID(event.mReply.mContentsRoot == imeRoot.get());
-
-        mEditable->OnSelectionChange(int32_t(event.GetSelectionStart()),
-                                     int32_t(event.GetSelectionEnd()));
-        mIMESelectionChanged = false;
+    
+    if (window.GetIMEComposition()) {
+        window.DispatchEvent(&event);
     }
+}
+
+void
+nsWindow::UserActivity()
+{
+  if (!mIdleService) {
+    mIdleService = do_GetService("@mozilla.org/widget/idleservice;1");
+  }
+
+  if (mIdleService) {
+    mIdleService->ResetIdleTimeOut(0);
+  }
 }
 
 nsresult
-nsWindow::NotifyIMEOfTextChange(const IMENotification& aIMENotification)
+nsWindow::NotifyIMEInternal(const IMENotification& aIMENotification)
 {
     MOZ_ASSERT(this == FindTopLevel());
 
-    MOZ_ASSERT(aIMENotification.mMessage == NOTIFY_IME_OF_TEXT_CHANGE,
-               "NotifyIMEOfTextChange() is called with invaild notification");
+    if (!mNatives) {
+        
+        return NS_ERROR_NOT_AVAILABLE;
+    }
 
-    ALOGIME("IME: NotifyIMEOfTextChange: s=%d, oe=%d, ne=%d",
-            aIMENotification.mTextChangeData.mStartOffset,
-            aIMENotification.mTextChangeData.mRemovedEndOffset,
-            aIMENotification.mTextChangeData.mAddedEndOffset);
-
-    
-    mIMESelectionChanged = false;
-    NotifyIME(NOTIFY_IME_OF_SELECTION_CHANGE);
-
-    PostFlushIMEChanges();
-    AddIMETextChange(IMEChange(aIMENotification));
-    return NS_OK;
+    if (mNatives->NotifyIME(aIMENotification)) {
+        return NS_OK;
+    }
+    return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-void
-nsWindow::AddIMETextChange(const IMEChange& aChange) {
+NS_IMETHODIMP_(void)
+nsWindow::SetInputContext(const InputContext& aContext,
+                          const InputContextAction& aAction)
+{
+#ifdef MOZ_B2GDROID
+    
+    return;
+#endif
 
-    mIMETextChanges.AppendElement(aChange);
+    nsWindow* top = FindTopLevel();
+    MOZ_ASSERT(top);
 
-    
-    
-    
-    
-    const int32_t delta = aChange.mNewEnd - aChange.mOldEnd;
-    for (int32_t i = mIMETextChanges.Length() - 2; i >= 0; i--) {
-        IMEChange &previousChange = mIMETextChanges[i];
-        if (previousChange.mStart > aChange.mOldEnd) {
-            previousChange.mStart += delta;
-            previousChange.mOldEnd += delta;
-            previousChange.mNewEnd += delta;
-        }
+    if (!top->mNatives) {
+        
+        return;
     }
 
     
     
     
-    int32_t srcIndex = mIMETextChanges.Length() - 1;
-    int32_t dstIndex = srcIndex;
+    
+    top->mNatives->SetInputContext(aContext, aAction);
+}
 
-    while (--dstIndex >= 0) {
-        IMEChange &src = mIMETextChanges[srcIndex];
-        IMEChange &dst = mIMETextChanges[dstIndex];
+NS_IMETHODIMP_(InputContext)
+nsWindow::GetInputContext()
+{
+    nsWindow* top = FindTopLevel();
+    MOZ_ASSERT(top);
+
+    if (!top->mNatives) {
         
-        
-        
-        if (src.mOldEnd < dst.mStart || dst.mNewEnd < src.mStart) {
-            
-            continue;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        dst.mStart = std::min(dst.mStart, src.mStart);
-        if (src.mOldEnd < dst.mNewEnd) {
-            
-            dst.mNewEnd += src.mNewEnd - src.mOldEnd;
-        } else { 
-            
-            dst.mOldEnd += src.mOldEnd - dst.mNewEnd;
-            dst.mNewEnd = src.mNewEnd;
-        }
-        
-        mIMETextChanges.RemoveElementAt(srcIndex);
-        
-        
-        srcIndex = dstIndex;
+        return InputContext();
     }
+
+    
+    
+    return top->mNatives->GetInputContext();
 }
 
 nsIMEUpdatePreference
@@ -2581,7 +2636,7 @@ nsWindow::GetIMEUpdatePreference()
 {
     
     
-    if (mInputContext.mIMEState.mEnabled == IMEState::PLUGIN) {
+    if (GetInputContext().mIMEState.mEnabled == IMEState::PLUGIN) {
       return nsIMEUpdatePreference();
     }
     return nsIMEUpdatePreference(
