@@ -111,10 +111,7 @@ protected:
 
   nsresult ReplySuccess();
 
-  bool IsSessionReady()
-  {
-    return mIsResponderReady && mIsTransportReady;
-  }
+  virtual bool IsSessionReady() = 0;
 
   virtual nsresult UntrackFromService();
 
@@ -133,6 +130,11 @@ protected:
     }
   }
 
+  
+  uint8_t mTransportType = 0;
+
+  nsPIDOMWindowInner* GetWindow();
+
   nsString mUrl;
   nsString mSessionId;
   bool mIsResponderReady;
@@ -143,6 +145,7 @@ protected:
   nsCOMPtr<nsIPresentationDevice> mDevice;
   nsCOMPtr<nsIPresentationSessionTransport> mTransport;
   nsCOMPtr<nsIPresentationControlChannel> mControlChannel;
+  nsCOMPtr<nsIPresentationSessionTransportBuilder> mBuilder;
 };
 
 
@@ -177,6 +180,18 @@ private:
   nsresult OnGetAddress(const nsACString& aAddress);
 
   nsCOMPtr<nsIServerSocket> mServerSocket;
+
+protected:
+  bool IsSessionReady() override
+  {
+    if (mTransportType == nsIPresentationChannelDescription::TYPE_TCP) {
+      return mIsResponderReady && mIsTransportReady;
+    } else if (mTransportType == nsIPresentationChannelDescription::TYPE_DATACHANNEL) {
+      
+      return mIsTransportReady;
+    }
+    return false;
+  }
 };
 
 
@@ -236,6 +251,12 @@ private:
   
   
   nsCOMPtr<nsIContentParent> mContentParent;
+
+protected:
+  bool IsSessionReady() override
+  {
+    return mIsResponderReady && mIsTransportReady;
+  }
 };
 
 } 

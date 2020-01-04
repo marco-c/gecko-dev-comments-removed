@@ -13,6 +13,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "nsContentUtils.h"
+#include "nsGlobalWindow.h"
 #include "nsIDocShell.h"
 #include "nsIFrameLoader.h"
 #include "nsIMutableArray.h"
@@ -153,8 +154,6 @@ TCPPresentationChannelDescription::GetType(uint8_t* aRetVal)
     return NS_ERROR_INVALID_POINTER;
   }
 
-  
-  
   *aRetVal = nsIPresentationChannelDescription::TYPE_TCP;
   return NS_OK;
 }
@@ -171,8 +170,6 @@ TCPPresentationChannelDescription::GetTcpAddress(nsIArray** aRetVal)
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  
-  
   
   
   
@@ -202,8 +199,6 @@ TCPPresentationChannelDescription::GetTcpPort(uint16_t* aRetVal)
 NS_IMETHODIMP
 TCPPresentationChannelDescription::GetDataChannelSDP(nsAString& aDataChannelSDP)
 {
-  
-  
   aDataChannelSDP.Truncate();
   return NS_OK;
 }
@@ -241,6 +236,8 @@ PresentationSessionInfo::Shutdown(nsresult aReason)
   }
 
   mIsResponderReady = false;
+
+  mBuilder = nullptr;
 }
 
 nsresult
@@ -331,6 +328,22 @@ PresentationSessionInfo::UntrackFromService()
   static_cast<PresentationService*>(service.get())->UntrackSessionInfo(mSessionId);
 
   return NS_OK;
+}
+
+nsPIDOMWindowInner*
+PresentationSessionInfo::GetWindow()
+{
+  nsCOMPtr<nsIPresentationService> service =
+  do_GetService(PRESENTATION_SERVICE_CONTRACTID);
+  if (NS_WARN_IF(!service)) {
+    return nullptr;
+  }
+  uint64_t windowId = 0;
+  if (NS_WARN_IF(NS_FAILED(service->GetWindowIdBySessionId(mSessionId, &windowId)))) {
+    return nullptr;
+  }
+
+  return nsGlobalWindow::GetInnerWindowWithId(windowId)->AsInner();
 }
 
  bool
@@ -428,9 +441,8 @@ PresentationSessionInfo::OnSessionTransport(nsIPresentationSessionTransport* tra
 NS_IMETHODIMP
 PresentationSessionInfo::OnError(nsresult reason)
 {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  return ReplyError(reason);
 }
-
 
 
 
@@ -530,8 +542,7 @@ PresentationControllingInfo::GetAddress()
   
   
   
-  
-  
+
   nsAutoString ip;
   ip.Assign(ips[0]);
 
@@ -633,7 +644,27 @@ NS_IMETHODIMP
 PresentationControllingInfo::NotifyOpened()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  return GetAddress();
+
+  if (!Preferences::GetBool("dom.presentation.session_transport.data_channel.enable")) {
+    
+    return GetAddress();
+  }
+
+  nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> builder =
+    do_CreateInstance("@mozilla.org/presentation/datachanneltransportbuilder;1");
+
+  if (NS_WARN_IF(!builder)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  mBuilder = builder;
+  mTransportType = nsIPresentationChannelDescription::TYPE_DATACHANNEL;
+
+  return builder->BuildDataChannelTransport(nsIPresentationSessionTransportBuilder::TYPE_SENDER,
+                                            GetWindow(),
+                                            mControlChannel,
+                                            this);
+
 }
 
 NS_IMETHODIMP
@@ -677,6 +708,7 @@ PresentationControllingInfo::OnSocketAccepted(nsIServerSocket* aServerSocket,
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
+  mTransportType = nsIPresentationChannelDescription::TYPE_TCP;
   return builder->BuildTCPSenderTransport(aTransport, this);
 }
 
@@ -766,28 +798,36 @@ PresentationPresentingInfo::Shutdown(nsresult aReason)
 NS_IMETHODIMP
 PresentationPresentingInfo::OnSessionTransport(nsIPresentationSessionTransport* transport)
 {
-  PresentationSessionInfo::OnSessionTransport(transport);
+  nsresult rv = PresentationSessionInfo::OnSessionTransport(transport);
 
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsINetAddr> selfAddr;
-  nsresult rv = mTransport->GetSelfAddress(getter_AddRefs(selfAddr));
-  NS_WARN_IF(NS_FAILED(rv));
-
-  nsCString address;
-  uint16_t port = 0;
-  if (NS_SUCCEEDED(rv)) {
-    selfAddr->GetAddress(address);
-    selfAddr->GetPort(&port);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
-  nsCOMPtr<nsIPresentationChannelDescription> description =
-    new TCPPresentationChannelDescription(address, port);
 
-  return mControlChannel->SendAnswer(description);
+  
+  if (mTransportType == nsIPresentationChannelDescription::TYPE_TCP) {
+    
+    
+    
+    
+    
+    nsCOMPtr<nsINetAddr> selfAddr;
+    rv = mTransport->GetSelfAddress(getter_AddRefs(selfAddr));
+    NS_WARN_IF(NS_FAILED(rv));
+
+    nsCString address;
+    uint16_t port = 0;
+    if (NS_SUCCEEDED(rv)) {
+      selfAddr->GetAddress(address);
+      selfAddr->GetPort(&port);
+    }
+    nsCOMPtr<nsIPresentationChannelDescription> description =
+      new TCPPresentationChannelDescription(address, port);
+
+    return mControlChannel->SendAnswer(description);
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -799,15 +839,56 @@ PresentationPresentingInfo::OnError(nsresult reason)
 nsresult
 PresentationPresentingInfo::InitTransportAndSendAnswer()
 {
-  
-  
-  nsCOMPtr<nsIPresentationTCPSessionTransportBuilder> builder =
-    do_CreateInstance(PRESENTATION_TCP_SESSION_TRANSPORT_CONTRACTID);
-  if (NS_WARN_IF(!builder)) {
-    return NS_ERROR_NOT_AVAILABLE;
+  uint8_t type = 0;
+  nsresult rv = mRequesterDescription->GetType(&type);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
-  return builder->BuildTCPReceiverTransport(mRequesterDescription, this);
+  if (type == nsIPresentationChannelDescription::TYPE_TCP) {
+    
+    
+    nsCOMPtr<nsIPresentationTCPSessionTransportBuilder> builder =
+      do_CreateInstance(PRESENTATION_TCP_SESSION_TRANSPORT_CONTRACTID);
+    if (NS_WARN_IF(!builder)) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+
+    mBuilder = builder;
+    mTransportType = nsIPresentationChannelDescription::TYPE_TCP;
+    return builder->BuildTCPReceiverTransport(mRequesterDescription, this);
+  }
+
+  if (type == nsIPresentationChannelDescription::TYPE_DATACHANNEL) {
+    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> builder =
+      do_CreateInstance("@mozilla.org/presentation/datachanneltransportbuilder;1");
+
+    if (NS_WARN_IF(!builder)) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+
+    mBuilder = builder;
+    mTransportType = nsIPresentationChannelDescription::TYPE_DATACHANNEL;
+    rv = builder->BuildDataChannelTransport(nsIPresentationSessionTransportBuilder::TYPE_RECEIVER,
+                                            GetWindow(),
+                                            mControlChannel,
+                                            this);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    
+    nsCOMPtr<nsIPresentationControlChannelListener> listener(do_QueryInterface(builder));
+
+    if (NS_WARN_IF(!listener)) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+
+    return listener->OnOffer(mRequesterDescription);
+  }
+
+  MOZ_ASSERT(false, "Unknown nsIPresentationChannelDescription type!");
+  return NS_ERROR_UNEXPECTED;
 }
 
 nsresult
@@ -938,7 +1019,7 @@ PresentationPresentingInfo::Notify(nsITimer* aTimer)
 
 void
 PresentationPresentingInfo::ResolvedCallback(JSContext* aCx,
-                                            JS::Handle<JS::Value> aValue)
+                                             JS::Handle<JS::Value> aValue)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1002,7 +1083,7 @@ PresentationPresentingInfo::ResolvedCallback(JSContext* aCx,
 
 void
 PresentationPresentingInfo::RejectedCallback(JSContext* aCx,
-                                            JS::Handle<JS::Value> aValue)
+                                             JS::Handle<JS::Value> aValue)
 {
   MOZ_ASSERT(NS_IsMainThread());
   NS_WARNING("Launching the receiver page has been rejected.");
