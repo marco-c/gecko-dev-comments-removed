@@ -5,6 +5,7 @@
 
 #include "mozilla/KeyframeUtils.h"
 
+#include "mozilla/AnimationUtils.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Move.h"
 #include "mozilla/TimingParams.h"
@@ -12,6 +13,8 @@
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
 #include "jsapi.h" 
+#include "nsClassHashtable.h"
+#include "nsCSSParser.h"
 #include "nsCSSProps.h"
 #include "nsCSSPseudoElements.h" 
 #include "nsTArray.h"
@@ -195,6 +198,20 @@ struct KeyframeValueEntry : KeyframeValue
   };
 };
 
+class ComputedOffsetComparator
+{
+public:
+  static bool Equals(const Keyframe& aLhs, const Keyframe& aRhs)
+  {
+    return aLhs.mComputedOffset == aRhs.mComputedOffset;
+  }
+
+  static bool LessThan(const Keyframe& aLhs, const Keyframe& aRhs)
+  {
+    return aLhs.mComputedOffset < aRhs.mComputedOffset;
+  }
+};
+
 
 
 
@@ -211,10 +228,21 @@ BuildAnimationPropertyListFromKeyframeSequence(
     nsTArray<AnimationProperty>& aResult,
     ErrorResult& aRv);
 
+static void
+GetKeyframeListFromKeyframeSequence(JSContext* aCx,
+                                    JS::ForOfIterator& aIterator,
+                                    nsTArray<Keyframe>& aResult,
+                                    ErrorResult& aRv);
+
 static bool
 ConvertKeyframeSequence(JSContext* aCx,
                         JS::ForOfIterator& aIterator,
                         nsTArray<OffsetIndexedKeyframe>& aResult);
+
+static bool
+ConvertKeyframeSequence(JSContext* aCx,
+                        JS::ForOfIterator& aIterator,
+                        nsTArray<Keyframe>& aResult);
 
 static bool
 GetPropertyValuesPairs(JSContext* aCx,
@@ -233,8 +261,15 @@ AppendValueAsString(JSContext* aCx,
                     nsTArray<nsString>& aValues,
                     JS::Handle<JS::Value> aValue);
 
+static PropertyValuePair
+MakePropertyValuePair(nsCSSProperty aProperty, const nsAString& aStringValue,
+                      nsCSSParser& aParser, nsIDocument* aDocument);
+
 static bool
 HasValidOffsets(const nsTArray<OffsetIndexedKeyframe>& aKeyframes);
+
+static bool
+HasValidOffsets(const nsTArray<Keyframe>& aKeyframes);
 
 static void
 ApplyDistributeSpacing(nsTArray<OffsetIndexedKeyframe>& aKeyframes);
@@ -258,6 +293,16 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
     JS::Handle<JS::Value> aValue,
     InfallibleTArray<AnimationProperty>& aResult,
     ErrorResult& aRv);
+
+static void
+GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
+                                           JS::Handle<JS::Value> aValue,
+                                           nsTArray<Keyframe>& aResult,
+                                           ErrorResult& aRv);
+
+static bool
+RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
+                          nsIDocument* aDocument);
 
 
 
@@ -313,6 +358,65 @@ KeyframeUtils::BuildAnimationPropertyList(
                                                            aRv);
   }
 }
+
+ nsTArray<Keyframe>
+KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
+                                      JS::Handle<JSObject*> aFrames,
+                                      ErrorResult& aRv)
+{
+  MOZ_ASSERT(!aRv.Failed());
+
+  nsTArray<Keyframe> keyframes;
+
+  if (!aFrames) {
+    
+    return keyframes;
+  }
+
+  
+  
+  
+  JS::Rooted<JS::Value> objectValue(aCx, JS::ObjectValue(*aFrames));
+  JS::ForOfIterator iter(aCx);
+  if (!iter.init(objectValue, JS::ForOfIterator::AllowNonIterable)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return keyframes;
+  }
+
+  if (iter.valueIsIterable()) {
+    GetKeyframeListFromKeyframeSequence(aCx, iter, keyframes, aRv);
+  } else {
+    GetKeyframeListFromPropertyIndexedKeyframe(aCx, objectValue, keyframes,
+                                               aRv);
+  }
+
+  if (aRv.Failed()) {
+    MOZ_ASSERT(keyframes.IsEmpty(),
+               "Should not set any keyframes when there is an error");
+    return keyframes;
+  }
+
+  
+  
+  
+  
+  
+
+  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aCx);
+  if (!doc) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    keyframes.Clear();
+    return keyframes;
+  }
+
+  if (RequiresAdditiveAnimation(keyframes, doc)) {
+    aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
+    keyframes.Clear();
+  }
+
+  return keyframes;
+}
+
 
 
 
@@ -384,6 +488,48 @@ BuildAnimationPropertyListFromKeyframeSequence(
 
 
 
+
+
+
+
+
+static void
+GetKeyframeListFromKeyframeSequence(JSContext* aCx,
+                                    JS::ForOfIterator& aIterator,
+                                    nsTArray<Keyframe>& aResult,
+                                    ErrorResult& aRv)
+{
+  MOZ_ASSERT(!aRv.Failed());
+  MOZ_ASSERT(aResult.IsEmpty());
+
+  
+  
+  if (!ConvertKeyframeSequence(aCx, aIterator, aResult)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    aResult.Clear();
+    return;
+  }
+
+  
+  
+  if (aResult.IsEmpty()) {
+    return;
+  }
+
+  
+  
+  if (!HasValidOffsets(aResult)) {
+    aRv.ThrowTypeError<dom::MSG_INVALID_KEYFRAME_OFFSETS>();
+    aResult.Clear();
+    return;
+  }
+}
+
+
+
+
+
+
 static bool
 ConvertKeyframeSequence(JSContext* aCx,
                         JS::ForOfIterator& aIterator,
@@ -422,6 +568,84 @@ ConvertKeyframeSequence(JSContext* aCx,
       }
     }
   }
+  return true;
+}
+
+
+
+
+
+
+static bool
+ConvertKeyframeSequence(JSContext* aCx,
+                        JS::ForOfIterator& aIterator,
+                        nsTArray<Keyframe>& aResult)
+{
+  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aCx);
+  if (!doc) {
+    return false;
+  }
+
+  JS::Rooted<JS::Value> value(aCx);
+  nsCSSParser parser(doc->CSSLoader());
+
+  for (;;) {
+    bool done;
+    if (!aIterator.next(&value, &done)) {
+      return false;
+    }
+    if (done) {
+      break;
+    }
+    
+    
+    
+    if (!value.isObject() && !value.isNullOrUndefined()) {
+      dom::ThrowErrorMessage(aCx, dom::MSG_NOT_OBJECT,
+                             "Element of sequence<Keyframe> argument");
+      return false;
+    }
+
+    
+    dom::binding_detail::FastBaseKeyframe keyframeDict;
+    if (!keyframeDict.Init(aCx, value,
+                           "Element of sequence<Keyframe> argument")) {
+      return false;
+    }
+
+    Keyframe* keyframe = aResult.AppendElement(fallible);
+    if (!keyframe) {
+      return false;
+    }
+    if (!keyframeDict.mOffset.IsNull()) {
+      keyframe->mOffset.emplace(keyframeDict.mOffset.Value());
+    }
+
+    ErrorResult rv;
+    keyframe->mTimingFunction =
+      TimingParams::ParseEasing(keyframeDict.mEasing, doc, rv);
+    if (rv.MaybeSetPendingException(aCx)) {
+      return false;
+    }
+
+    
+    nsTArray<PropertyValuesPair> propertyValuePairs;
+    if (value.isObject()) {
+      JS::Rooted<JSObject*> object(aCx, &value.toObject());
+      if (!GetPropertyValuesPairs(aCx, object,
+                                  ListAllowance::eDisallow,
+                                  propertyValuePairs)) {
+        return false;
+      }
+    }
+
+    for (PropertyValuesPair& pair : propertyValuePairs) {
+      MOZ_ASSERT(pair.mValues.Length() == 1);
+      keyframe->mPropertyValues.AppendElement(
+        MakePropertyValuePair(pair.mProperty, pair.mValues[0], parser, doc));
+    }
+  }
+
   return true;
 }
 
@@ -563,6 +787,49 @@ AppendValueAsString(JSContext* aCx,
 
 
 
+
+
+static PropertyValuePair
+MakePropertyValuePair(nsCSSProperty aProperty, const nsAString& aStringValue,
+                      nsCSSParser& aParser, nsIDocument* aDocument)
+{
+  MOZ_ASSERT(aDocument);
+
+  nsCSSValue value;
+  if (!nsCSSProps::IsShorthand(aProperty)) {
+    aParser.ParseLonghandProperty(aProperty,
+                                  aStringValue,
+                                  aDocument->GetDocumentURI(),
+                                  aDocument->GetDocumentURI(),
+                                  aDocument->NodePrincipal(),
+                                  value);
+  }
+
+  if (value.GetUnit() == eCSSUnit_Null) {
+    
+    
+    nsCSSValueTokenStream* tokenStream = new nsCSSValueTokenStream;
+    tokenStream->mTokenStream = aStringValue;
+    
+    
+    
+    MOZ_ASSERT(tokenStream->mShorthandPropertyID == eCSSProperty_UNKNOWN,
+               "The shorthand property of a token stream should be initialized"
+               " to unknown");
+    value.SetTokenStreamValue(tokenStream);
+  }
+
+  return { aProperty, value };
+}
+
+
+
+
+
+
+
+
+
 static bool
 HasValidOffsets(const nsTArray<OffsetIndexedKeyframe>& aKeyframes)
 {
@@ -570,6 +837,30 @@ HasValidOffsets(const nsTArray<OffsetIndexedKeyframe>& aKeyframes)
   for (const OffsetIndexedKeyframe& keyframe : aKeyframes) {
     if (!keyframe.mKeyframeDict.mOffset.IsNull()) {
       double thisOffset = keyframe.mKeyframeDict.mOffset.Value();
+      if (thisOffset < offset || thisOffset > 1.0f) {
+        return false;
+      }
+      offset = thisOffset;
+    }
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
+
+static bool
+HasValidOffsets(const nsTArray<Keyframe>& aKeyframes)
+{
+  double offset = 0.0;
+  for (const Keyframe& keyframe : aKeyframes) {
+    if (keyframe.mOffset) {
+      double thisOffset = keyframe.mOffset.value();
       if (thisOffset < offset || thisOffset > 1.0f) {
         return false;
       }
@@ -992,6 +1283,177 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
       fromKey = toKey;
     }
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+static void
+GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
+                                           JS::Handle<JS::Value> aValue,
+                                           nsTArray<Keyframe>& aResult,
+                                           ErrorResult& aRv)
+{
+  MOZ_ASSERT(aValue.isObject());
+  MOZ_ASSERT(aResult.IsEmpty());
+  MOZ_ASSERT(!aRv.Failed());
+
+  
+  
+  dom::binding_detail::FastBasePropertyIndexedKeyframe keyframeDict;
+  if (!keyframeDict.Init(aCx, aValue, "BasePropertyIndexedKeyframe argument",
+                         false)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  
+  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aCx);
+  if (!doc) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  Maybe<ComputedTimingFunction> easing =
+    TimingParams::ParseEasing(keyframeDict.mEasing, doc, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  JS::Rooted<JSObject*> object(aCx, &aValue.toObject());
+  nsTArray<PropertyValuesPair> propertyValuesPairs;
+  if (!GetPropertyValuesPairs(aCx, object, ListAllowance::eAllow,
+                              propertyValuesPairs)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  
+  nsCSSParser parser(doc->CSSLoader());
+  nsClassHashtable<nsFloatHashKey, Keyframe> processedKeyframes;
+  for (const PropertyValuesPair& pair : propertyValuesPairs) {
+    size_t count = pair.mValues.Length();
+    if (count == 0) {
+      
+      continue;
+    }
+    if (count == 1) {
+      
+      
+      
+      aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
+      return;
+    }
+
+    size_t n = pair.mValues.Length() - 1;
+    size_t i = 0;
+
+    for (const nsString& stringValue : pair.mValues) {
+      double offset = i++ / double(n);
+      Keyframe* keyframe = processedKeyframes.LookupOrAdd(offset);
+      if (keyframe->mPropertyValues.IsEmpty()) {
+        keyframe->mTimingFunction = easing;
+        keyframe->mComputedOffset = offset;
+      }
+      keyframe->mPropertyValues.AppendElement(
+        MakePropertyValuePair(pair.mProperty, stringValue, parser, doc));
+    }
+  }
+
+  aResult.SetCapacity(processedKeyframes.Count());
+  for (auto iter = processedKeyframes.Iter(); !iter.Done(); iter.Next()) {
+    aResult.AppendElement(Move(*iter.UserData()));
+  }
+
+  aResult.Sort(ComputedOffsetComparator());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
+RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
+                          nsIDocument* aDocument)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  nsCSSPropertySet properties;              
+  nsCSSPropertySet propertiesWithFromValue; 
+  nsCSSPropertySet propertiesWithToValue;   
+
+  auto addToPropertySets = [&](nsCSSProperty aProperty, double aOffset) {
+    properties.AddProperty(aProperty);
+    if (aOffset == 0.0) {
+      propertiesWithFromValue.AddProperty(aProperty);
+    } else if (aOffset == 1.0) {
+      propertiesWithToValue.AddProperty(aProperty);
+    }
+  };
+
+  for (size_t i = 0, len = aKeyframes.Length(); i < len; i++) {
+    const Keyframe& frame = aKeyframes[i];
+
+    
+    
+    
+    
+    double computedOffset = i == len - 1
+                            ? 1.0
+                            : i == 0 ? 0.0 : 0.5;
+    double offsetToUse = frame.mOffset
+                         ? frame.mOffset.value()
+                         : computedOffset;
+
+    for (const PropertyValuePair& pair : frame.mPropertyValues) {
+      if (nsCSSProps::IsShorthand(pair.mProperty)) {
+        nsCSSValueTokenStream* tokenStream = pair.mValue.GetTokenStreamValue();
+        nsCSSParser parser(aDocument->CSSLoader());
+        if (!parser.IsValueValidForProperty(pair.mProperty,
+                                            tokenStream->mTokenStream)) {
+          continue;
+        }
+        CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(
+            prop, pair.mProperty, nsCSSProps::eEnabledForAllContent) {
+          addToPropertySets(*prop, offsetToUse);
+        }
+      } else {
+        if (pair.mValue.GetUnit() == eCSSUnit_TokenStream) {
+          continue;
+        }
+        addToPropertySets(pair.mProperty, offsetToUse);
+      }
+    }
+  }
+
+  return !propertiesWithFromValue.Equals(properties) ||
+         !propertiesWithToValue.Equals(properties);
 }
 
 } 

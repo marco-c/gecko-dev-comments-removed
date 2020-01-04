@@ -16,7 +16,8 @@ class JSObject;
 namespace mozilla {
 struct AnimationProperty;
 enum class CSSPseudoElementType : uint8_t;
-class  ErrorResult;
+class ErrorResult;
+struct Keyframe;
 
 namespace dom {
 class Element;
@@ -50,6 +51,24 @@ public:
                              JS::Handle<JSObject*> aFrames,
                              InfallibleTArray<AnimationProperty>& aResult,
                              ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsTArray<Keyframe>
+  GetKeyframesFromObject(JSContext* aCx,
+                         JS::Handle<JSObject*> aFrames,
+                         ErrorResult& aRv);
 };
 
 } 
