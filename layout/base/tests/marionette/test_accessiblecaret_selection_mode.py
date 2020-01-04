@@ -505,19 +505,6 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
     
     
     
-    def test_input_long_press_to_select_a_word_disabled(self):
-        with self.marionette.using_prefs({self.carets_tested_pref: False}):
-            self.open_test_html()
-            self._test_long_press_to_select_a_word(self._input, self.assertNotEqual)
-
-    def test_input_move_selection_carets_disabled(self):
-        with self.marionette.using_prefs({self.carets_tested_pref: False}):
-            self.open_test_html()
-            self._test_move_selection_carets(self._input, self.assertNotEqual)
-
-    
-    
-    
     def test_textarea_long_press_to_select_a_word(self):
         self.open_test_html()
         self._test_long_press_to_select_a_word(self._textarea, self.assertEqual)
@@ -553,19 +540,6 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
     
     
     
-    def test_textarea_long_press_to_select_a_word_disabled(self):
-        with self.marionette.using_prefs({self.carets_tested_pref: False}):
-            self.open_test_html()
-            self._test_long_press_to_select_a_word(self._textarea, self.assertNotEqual)
-
-    def test_textarea_move_selection_carets_disable(self):
-        with self.marionette.using_prefs({self.carets_tested_pref: False}):
-            self.open_test_html()
-            self._test_move_selection_carets(self._textarea, self.assertNotEqual)
-
-    
-    
-    
     def test_textarea_rtl_long_press_to_select_a_word(self):
         self.open_test_html()
         self._test_long_press_to_select_a_word(self._textarea_rtl, self.assertEqual)
@@ -581,19 +555,6 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
     def test_textarea_rtl_focus_not_changed_by_long_press_on_non_selectable(self):
         self.open_test_html()
         self._test_focus_not_being_changed_by_long_press_on_non_selectable(self._textarea_rtl)
-
-    
-    
-    
-    def test_textarea_rtl_long_press_to_select_a_word_disabled(self):
-        with self.marionette.using_prefs({self.carets_tested_pref: False}):
-            self.open_test_html()
-            self._test_long_press_to_select_a_word(self._textarea_rtl, self.assertNotEqual)
-
-    def test_textarea_rtl_move_selection_carets_disabled(self):
-        with self.marionette.using_prefs({self.carets_tested_pref: False}):
-            self.open_test_html()
-            self._test_move_selection_carets(self._textarea_rtl, self.assertNotEqual)
 
     
     
@@ -629,19 +590,6 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
     def test_contenteditable_focus_not_changed_by_long_press_on_non_selectable(self):
         self.open_test_html()
         self._test_focus_not_being_changed_by_long_press_on_non_selectable(self._contenteditable)
-
-    
-    
-    
-    def test_contenteditable_long_press_to_select_a_word_disabled(self):
-        with self.marionette.using_prefs({self.carets_tested_pref: False}):
-            self.open_test_html()
-            self._test_long_press_to_select_a_word(self._contenteditable, self.assertNotEqual)
-
-    def test_contenteditable_move_selection_carets_disabled(self):
-        with self.marionette.using_prefs({self.carets_tested_pref: False}):
-            self.open_test_html()
-            self._test_move_selection_carets(self._contenteditable, self.assertNotEqual)
 
     
     
