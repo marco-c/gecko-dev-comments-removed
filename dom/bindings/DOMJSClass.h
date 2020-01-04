@@ -39,11 +39,23 @@ typedef bool
                            JS::Handle<JSObject*> obj,
                            JS::AutoIdVector& props);
 
+
+
+
 bool
 CheckAnyPermissions(JSContext* aCx, JSObject* aObj, const char* const aPermissions[]);
 
+
+
+
 bool
 CheckAllPermissions(JSContext* aCx, JSObject* aObj, const char* const aPermissions[]);
+
+
+
+bool
+IsNonExposedGlobal(JSContext* aCx, JSObject* aGlobal,
+                   uint32_t aNonExposedGlobals);
 
 struct ConstantSpec
 {
@@ -68,6 +80,20 @@ static const uint32_t WorkerDebuggerGlobalScope = 1u << 5;
 template<typename T>
 struct Prefable {
   inline bool isEnabled(JSContext* cx, JS::Handle<JSObject*> obj) const {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (nonExposedGlobals &&
+        IsNonExposedGlobal(cx, js::GetGlobalForObjectCrossCompartment(obj),
+                           nonExposedGlobals)) {
+      return false;
+    }
     if (!enabled) {
       return false;
     }

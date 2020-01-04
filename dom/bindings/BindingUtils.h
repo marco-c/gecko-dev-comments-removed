@@ -3162,16 +3162,6 @@ AssertReturnTypeMatchesJitinfo(const JSJitInfo* aJitinfo,
 
 
 
-bool
-CheckAnyPermissions(JSContext* aCx, JSObject* aObj, const char* const aPermissions[]);
-
-
-
-bool
-CheckAllPermissions(JSContext* aCx, JSObject* aObj, const char* const aPermissions[]);
-
-
-
 
 
 
