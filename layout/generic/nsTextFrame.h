@@ -343,7 +343,7 @@ public:
 
     virtual void NotifySelectionBackgroundNeedsFill(const Rect& aBackgroundRect,
                                                     nscolor aColor,
-                                                    DrawTarget& aDrawTarget);
+                                                    DrawTarget& aDrawTarget) { }
 
     
 
@@ -381,8 +381,6 @@ public:
 
 
     virtual void NotifySelectionDecorationLinePathEmitted() { }
-
-    virtual void NotifyGlyphPathEmitted() override {}
   };
 
   struct PaintTextParams
