@@ -4,6 +4,7 @@
 
 package org.mozilla.gecko.widget;
 
+import org.mozilla.gecko.ActivityHandlerHelper;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Tab;
 import org.mozilla.gecko.Tabs;
@@ -55,12 +56,14 @@ public class ExternalIntentDuringPrivateBrowsingPromptFragment extends DialogFra
         return builder.create();
     }
 
-    public static void showDialogOrAndroidChooser(final Context context, final FragmentManager fragmentManager,
+    
+
+
+    public static boolean showDialogOrAndroidChooser(final Context context, final FragmentManager fragmentManager,
             final Intent intent) {
         final Tab selectedTab = Tabs.getInstance().getSelectedTab();
         if (selectedTab == null || !selectedTab.isPrivate()) {
-            context.startActivity(intent);
-            return;
+            return ActivityHandlerHelper.startIntentAndCatch(LOGTAG, context, intent);
         }
 
         final PackageManager pm = context.getPackageManager();
@@ -74,14 +77,17 @@ public class ExternalIntentDuringPrivateBrowsingPromptFragment extends DialogFra
             fragment.setArguments(args);
 
             fragment.show(fragmentManager, FRAGMENT_TAG);
+            
+            return true;
         } else if (matchingActivities.size() > 1) {
             
             
-            context.startActivity(intent);
+            return ActivityHandlerHelper.startIntentAndCatch(LOGTAG, context, intent);
         } else {
             
             
             Log.w(LOGTAG, "showDialogOrAndroidChooser unexpectedly called with Intent that does not resolve");
+            return false;
         }
     }
 }
