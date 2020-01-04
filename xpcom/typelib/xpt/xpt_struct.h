@@ -182,16 +182,9 @@ struct XPTTypeDescriptorPrefix {
 
 
 
-
-#define XPT_TDP_POINTER          0x80
-#define XPT_TDP_REFERENCE        0x20
-
 #define XPT_TDP_FLAGMASK         0xe0
 #define XPT_TDP_TAGMASK          (~XPT_TDP_FLAGMASK)
 #define XPT_TDP_TAG(tdp)         ((tdp).flags & XPT_TDP_TAGMASK)
-
-#define XPT_TDP_IS_POINTER(flags)        (flags & XPT_TDP_POINTER)
-#define XPT_TDP_IS_REFERENCE(flags)      (flags & XPT_TDP_REFERENCE)
 
 
 
@@ -321,7 +314,6 @@ struct XPTMethodDescriptor {
 #define XPT_MD_GETTER   0x80
 #define XPT_MD_SETTER   0x40
 #define XPT_MD_NOTXPCOM 0x20
-#define XPT_MD_CTOR     0x10
 #define XPT_MD_HIDDEN   0x08
 #define XPT_MD_OPT_ARGC 0x04
 #define XPT_MD_CONTEXT  0x02
@@ -330,7 +322,6 @@ struct XPTMethodDescriptor {
 #define XPT_MD_IS_GETTER(flags)      (flags & XPT_MD_GETTER)
 #define XPT_MD_IS_SETTER(flags)      (flags & XPT_MD_SETTER)
 #define XPT_MD_IS_NOTXPCOM(flags)    (flags & XPT_MD_NOTXPCOM)
-#define XPT_MD_IS_CTOR(flags)        (flags & XPT_MD_CTOR)
 #define XPT_MD_IS_HIDDEN(flags)      (flags & XPT_MD_HIDDEN)
 #define XPT_MD_WANTS_OPT_ARGC(flags) (flags & XPT_MD_OPT_ARGC)
 #define XPT_MD_WANTS_CONTEXT(flags)  (flags & XPT_MD_CONTEXT)
