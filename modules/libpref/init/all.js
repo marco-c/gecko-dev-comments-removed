@@ -4414,6 +4414,7 @@ pref("layers.low-precision-buffer", false);
 pref("layers.progressive-paint", false);
 pref("layers.tile-width", 256);
 pref("layers.tile-height", 256);
+pref("layers.child-process-shutdown", true);
 
 pref("layers.max-active", -1);
 
@@ -4484,6 +4485,9 @@ pref("layers.prefer-opengl", false);
 pref("layers.prefer-d3d9", false);
 pref("layers.d3d11.force-warp", false);
 pref("layers.d3d11.disable-warp", true);
+
+
+pref("layers.child-process-shutdown", false);
 #endif
 
 
