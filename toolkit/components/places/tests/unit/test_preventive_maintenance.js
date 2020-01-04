@@ -1074,7 +1074,7 @@ tests.push({
   name: "L.2",
   desc: "Recalculate visit_count and last_visit_date",
 
-  setup: function() {
+  setup: function* () {
     function setVisitCount(aURL, aValue) {
       let stmt = mDBConn.createStatement(
         "UPDATE moz_places SET visit_count = :count WHERE url = :url"
@@ -1267,7 +1267,7 @@ function run_test()
   run_next_test();
 }
 
-add_task(function test_preventive_maintenance()
+add_task(function* test_preventive_maintenance()
 {
   
   

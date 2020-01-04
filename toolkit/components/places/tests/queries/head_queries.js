@@ -42,7 +42,7 @@ const olderthansixmonths = today - (DAY_MICROSEC * 31 * 7);
 function* task_populateDB(aArray)
 {
   
-  for ([, data] in Iterator(aArray)) {
+  for (let data of aArray) {
     try {
       
       

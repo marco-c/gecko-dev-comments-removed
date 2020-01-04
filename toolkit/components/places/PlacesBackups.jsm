@@ -453,7 +453,10 @@ this.PlacesBackups = {
         newFilenameWithMetaData = appendMetaDataToFilename(newBackupFilename,
                                                            { count: nodeCount,
                                                              hash: hash });
-      } catch (ex if ex.becauseSameHash) {
+      } catch (ex) {
+        if (!ex.becauseSameHash) {
+          throw ex;
+        }
         
         
         this._backupFiles.shift();

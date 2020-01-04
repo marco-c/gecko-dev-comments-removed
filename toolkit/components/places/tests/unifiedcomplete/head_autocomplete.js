@@ -449,7 +449,7 @@ function* addTestEngine(basename, httpServer=undefined) {
 
 
 
-add_task(function ensure_search_engine() {
+add_task(function* ensure_search_engine() {
   
   Services.prefs.setBoolPref("keyword.enabled", true);
 

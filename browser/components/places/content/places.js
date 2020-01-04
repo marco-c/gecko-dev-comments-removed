@@ -418,7 +418,7 @@ var PlacesOrganizer = {
     while (restorePopup.childNodes.length > 1)
       restorePopup.removeChild(restorePopup.firstChild);
 
-    Task.spawn(function() {
+    Task.spawn(function* () {
       let backupFiles = yield PlacesBackups.getBackupFiles();
       if (backupFiles.length == 0)
         return;
@@ -465,18 +465,16 @@ var PlacesOrganizer = {
   
 
 
-  onRestoreMenuItemClick: function PO_onRestoreMenuItemClick(aMenuItem) {
-    Task.spawn(function() {
-      let backupName = aMenuItem.getAttribute("value");
-      let backupFilePaths = yield PlacesBackups.getBackupFiles();
-      for (let backupFilePath of backupFilePaths) {
-        if (OS.Path.basename(backupFilePath) == backupName) {
-          PlacesOrganizer.restoreBookmarksFromFile(backupFilePath);
-          break;
-        }
+  onRestoreMenuItemClick: Task.async(function* (aMenuItem) {
+    let backupName = aMenuItem.getAttribute("value");
+    let backupFilePaths = yield PlacesBackups.getBackupFiles();
+    for (let backupFilePath of backupFilePaths) {
+      if (OS.Path.basename(backupFilePath) == backupName) {
+        PlacesOrganizer.restoreBookmarksFromFile(backupFilePath);
+        break;
       }
-    });
-  },
+    }
+  }),
 
   
 
@@ -521,7 +519,7 @@ var PlacesOrganizer = {
                          PlacesUIUtils.getString("bookmarksRestoreAlert")))
       return;
 
-    Task.spawn(function() {
+    Task.spawn(function* () {
       try {
         yield BookmarkJSONUtils.importFromFile(aFilePath, true);
       } catch(ex) {
@@ -633,7 +631,7 @@ var PlacesOrganizer = {
       
       
       if (selectedNode) {
-        var concreteId = PlacesUtils.getConcreteItemId(selectedNode);
+        let concreteId = PlacesUtils.getConcreteItemId(selectedNode);
         var nodeIsSame = gEditItemOverlay.itemId == selectedNode.itemId ||
                          gEditItemOverlay.itemId == concreteId ||
                          (selectedNode.itemId == -1 && gEditItemOverlay.uri &&
@@ -653,7 +651,7 @@ var PlacesOrganizer = {
       
       
       
-      var concreteId = PlacesUtils.getConcreteItemId(selectedNode);
+      let concreteId = PlacesUtils.getConcreteItemId(selectedNode);
       var isRootItem = concreteId != -1 && PlacesUtils.isRootItem(concreteId);
       var readOnly = isRootItem ||
                      selectedNode.parent.itemId == PlacesUIUtils.leftPaneFolderId;
@@ -1206,13 +1204,13 @@ var ViewMenu = {
     if (aColumn) {
       columnId = aColumn.getAttribute("anonid");
       if (!aDirection) {
-        var sortColumn = this._getSortColumn();
+        let sortColumn = this._getSortColumn();
         if (sortColumn)
           aDirection = sortColumn.getAttribute("sortDirection");
       }
     }
     else {
-      var sortColumn = this._getSortColumn();
+      let sortColumn = this._getSortColumn();
       columnId = sortColumn ? sortColumn.getAttribute("anonid") : "title";
     }
 

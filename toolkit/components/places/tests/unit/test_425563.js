@@ -42,12 +42,12 @@ add_task(function* test_execute()
   ]);
 
   
-  count_visited_URIs.forEach(function (visited_uri) {
+  for (let visited_uri of count_visited_URIs) {
     do_check_true(yield promiseIsURIVisited(uri(visited_uri)));
-  });
-  notcount_visited_URIs.forEach(function (visited_uri) {
+  }
+  for (let visited_uri of notcount_visited_URIs) {
     do_check_true(yield promiseIsURIVisited(uri(visited_uri)));
-  });
+  }
 
   
   

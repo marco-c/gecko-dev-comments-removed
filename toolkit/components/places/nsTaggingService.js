@@ -636,7 +636,7 @@ TagAutoCompleteSearch.prototype = {
     
     var self = this;
     
-    function doSearch() {
+    function* doSearch() {
       var i = 0;
       while (i < searchResults.length) {
         if (self._stopped)
@@ -682,8 +682,7 @@ TagAutoCompleteSearch.prototype = {
     
     
     var gen = doSearch();
-    while (gen.next());
-    gen.close();
+    while (gen.next().value);
   },
 
   
