@@ -4562,7 +4562,7 @@ class MOZ_RAII JSAutoByteString
     }
 
     ~JSAutoByteString() {
-        js_free(mBytes);
+        JS_free(nullptr, mBytes);
     }
 
     
@@ -4607,7 +4607,7 @@ class MOZ_RAII JSAutoByteString
     }
 
   private:
-    char*       mBytes;
+    char* mBytes;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 
     
