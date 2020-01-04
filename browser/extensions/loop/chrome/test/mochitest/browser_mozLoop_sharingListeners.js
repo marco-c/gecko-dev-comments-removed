@@ -51,10 +51,16 @@ function* promiseWindowIdReceivedNewTab(handlersParam = []) {
 function promiseNewTabLocation() {
   BrowserOpenTab();
   let tab = gBrowser.selectedTab;
+  let browser = tab.linkedBrowser;
   createdTabs.push(tab);
 
   
-  return ContentTask.spawn(tab.linkedBrowser, null, () => content.location.href);
+  if (browser.contentDocument.readyState === "complete") {
+    return ContentTask.spawn(browser, null, () => content.location.href);
+  }
+
+  
+  return BrowserTestUtils.browserLoaded(browser);
 }
 
 function promiseRemoveTab(tab) {
@@ -200,6 +206,7 @@ add_task(function* test_newtabLocation() {
   
   yield promiseWindowIdReceivedOnAdd(handlers[0]);
   let locationAfterSharing = yield promiseNewTabLocation();
+  info("Location after sharing: " + locationAfterSharing);
   Assert.ok(locationAfterSharing.match(/about:?home/));
 
   
