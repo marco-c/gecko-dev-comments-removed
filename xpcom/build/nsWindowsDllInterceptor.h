@@ -66,6 +66,37 @@
 namespace mozilla {
 namespace internal {
 
+class AutoVirtualProtect
+{
+public:
+  AutoVirtualProtect(void* aFunc, size_t aSize, DWORD aProtect)
+    : mFunc(aFunc), mSize(aSize), mNewProtect(aProtect), mOldProtect(0),
+      mSuccess(false)
+  {}
+
+  ~AutoVirtualProtect()
+  {
+    if (mSuccess) {
+      VirtualProtectEx(GetCurrentProcess(), mFunc, mSize, mOldProtect,
+                       &mOldProtect);
+    }
+  }
+
+  bool Protect()
+  {
+    mSuccess = !!VirtualProtectEx(GetCurrentProcess(), mFunc, mSize,
+                                  mNewProtect, &mOldProtect);
+    return mSuccess;
+  }
+
+private:
+  void* const mFunc;
+  size_t const mSize;
+  DWORD const mNewProtect;
+  DWORD mOldProtect;
+  bool mSuccess;
+};
+
 class WindowsDllNopSpacePatcher
 {
   typedef unsigned char* byteptr_t;
@@ -91,17 +122,14 @@ public:
       byteptr_t fn = mPatchedFns[i];
 
       
-      DWORD op;
-      if (!VirtualProtectEx(GetCurrentProcess(), fn, 2, PAGE_EXECUTE_READWRITE, &op)) {
+      AutoVirtualProtect protect(fn, 2, PAGE_EXECUTE_READWRITE);
+      if (!protect.Protect()) {
         
         continue;
       }
 
       
       *((uint16_t*)fn) = 0xff8b;
-
-      
-      VirtualProtectEx(GetCurrentProcess(), fn, 2, op, &op);
 
       
       FlushInstructionCache(GetCurrentProcess(),
@@ -142,17 +170,13 @@ public:
     
     
     
-    DWORD op;
-    if (!VirtualProtectEx(GetCurrentProcess(), fn - 5, 7,
-                          PAGE_EXECUTE_READWRITE, &op)) {
+    AutoVirtualProtect protect(fn - 5, 7, PAGE_EXECUTE_READWRITE);
+    if (!protect.Protect()) {
       
       return false;
     }
 
     bool rv = WriteHook(fn, aHookDest, aOrigFunc);
-
-    
-    VirtualProtectEx(GetCurrentProcess(), fn - 5, 7, op, &op);
 
     if (rv) {
       mPatchedFns[mPatchedFnsLen] = fn;
@@ -248,13 +272,14 @@ public:
 #error "Unknown processor type"
 #endif
       byteptr_t origBytes = *((byteptr_t*)p);
+
       
-      DWORD op;
-      if (!VirtualProtectEx(GetCurrentProcess(), origBytes, nBytes,
-                            PAGE_EXECUTE_READWRITE, &op)) {
+      AutoVirtualProtect protect(origBytes, nBytes, PAGE_EXECUTE_READWRITE);
+      if (!protect.Protect()) {
         
         continue;
       }
+
       
       
       intptr_t dest = (intptr_t)(p + sizeof(void*));
@@ -266,8 +291,6 @@ public:
 #else
 #error "Unknown processor type"
 #endif
-      
-      VirtualProtectEx(GetCurrentProcess(), origBytes, nBytes, op, &op);
     }
   }
 
@@ -629,9 +652,8 @@ protected:
     *aOutTramp = tramp;
 
     
-    DWORD op;
-    if (!VirtualProtectEx(GetCurrentProcess(), aOrigFunction, nBytes,
-                          PAGE_EXECUTE_READWRITE, &op)) {
+    AutoVirtualProtect protect(aOrigFunction, nBytes, PAGE_EXECUTE_READWRITE);
+    if (!protect.Protect()) {
       
       return;
     }
@@ -653,9 +675,6 @@ protected:
     origBytes[11] = 0xff;
     origBytes[12] = 0xe3;
 #endif
-
-    
-    VirtualProtectEx(GetCurrentProcess(), aOrigFunction, nBytes, op, &op);
   }
 
   byteptr_t FindTrampolineSpace()
