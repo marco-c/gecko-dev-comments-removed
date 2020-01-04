@@ -108,6 +108,15 @@ parseMessage(ZeroCopyInputStream& stream, MessageType& message)
   
   
   
+  
+  
+  
+  codedStream.SetRecursionLimit(HeapSnapshot::MAX_STACK_DEPTH * 3);
+
+  
+  
+  
+  
 
   uint32_t size = 0;
   if (NS_WARN_IF(!codedStream.ReadVarint32(&size)))
@@ -115,7 +124,8 @@ parseMessage(ZeroCopyInputStream& stream, MessageType& message)
 
   auto limit = codedStream.PushLimit(size);
   if (NS_WARN_IF(!message.ParseFromCodedStream(&codedStream)) ||
-      NS_WARN_IF(!codedStream.ConsumedEntireMessage()))
+      NS_WARN_IF(!codedStream.ConsumedEntireMessage()) ||
+      NS_WARN_IF(codedStream.BytesUntilLimit() != 0))
   {
     return false;
   }
@@ -909,7 +919,8 @@ class MOZ_STACK_CLASS StreamWriter : public CoreDumpWriter
     return true;
   }
 
-  protobuf::StackFrame* getProtobufStackFrame(JS::ubi::StackFrame& frame) {
+  protobuf::StackFrame* getProtobufStackFrame(JS::ubi::StackFrame& frame,
+                                              size_t depth = 1) {
     
     
     
@@ -957,8 +968,8 @@ class MOZ_STACK_CLASS StreamWriter : public CoreDumpWriter
     }
 
     auto parent = frame.parent();
-    if (parent) {
-      auto protobufParent = getProtobufStackFrame(parent);
+    if (parent && depth < HeapSnapshot::MAX_STACK_DEPTH) {
+      auto protobufParent = getProtobufStackFrame(parent, depth + 1);
       if (!protobufParent)
         return nullptr;
       data->set_allocated_parent(protobufParent);
