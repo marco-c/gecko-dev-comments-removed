@@ -45,7 +45,7 @@ function run_test()
   run_next_test();
 }
 
-add_task(function test_execute()
+add_task(function* test_execute()
 {
   
   for (let [, transition] in Iterator(transitions)) {

@@ -23,7 +23,7 @@ var ps = Cc["@mozilla.org/preferences-service;1"].
 
 
 
-function task_add_normalized_visit(aURI, aTime, aDayOffset) {
+function* task_add_normalized_visit(aURI, aTime, aDayOffset) {
   var dateObj = new Date(aTime);
   
   dateObj.setHours(0);
@@ -79,7 +79,7 @@ var visibleContainers = containers.filter(
 
 
 
-function task_fill_history() {
+function* task_fill_history() {
   print("\n\n*** TEST Fill History\n");
   
   
@@ -352,7 +352,7 @@ function test_RESULTS_AS_SITE_QUERY() {
 
 
 
-function task_test_date_liveupdate(aResultType) {
+function* task_test_date_liveupdate(aResultType) {
   var midnight = nowObj;
   midnight.setHours(0);
   midnight.setMinutes(0);
@@ -422,7 +422,7 @@ function run_test()
   run_next_test();
 }
 
-add_task(function test_history_sidebar()
+add_task(function* test_history_sidebar()
 {
   
   if (nowObj.getHours() == 23 && nowObj.getMinutes() >= 50) {

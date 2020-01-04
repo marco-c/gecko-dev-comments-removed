@@ -64,7 +64,7 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function test_pref_maxpages() {
+add_task(function* test_pref_maxpages() {
   
   try {
     getMaxPages();

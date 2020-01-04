@@ -62,7 +62,7 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function test_notifications_onDeleteVisits() {
+add_task(function* test_notifications_onDeleteVisits() {
   
   setInterval(3600); 
 

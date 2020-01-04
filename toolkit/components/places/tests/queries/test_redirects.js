@@ -185,7 +185,7 @@ function run_test()
 
 
 
-add_task(function test_add_visits_to_database()
+add_task(function* test_add_visits_to_database()
 {
   yield PlacesUtils.bookmarks.eraseEverything();
 
@@ -280,7 +280,7 @@ add_task(function test_add_visits_to_database()
   yield task_populateDB(visits);
 });
 
-add_task(function test_redirects()
+add_task(function* test_redirects()
 {
   
   yield PlacesTestUtils.promiseAsyncUpdates();

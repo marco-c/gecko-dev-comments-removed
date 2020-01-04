@@ -35,7 +35,7 @@ function run_test()
   run_next_test();
 }
 
-add_task(function test_execute()
+add_task(function* test_execute()
 {
   
   do_check_eq(histsvc.databaseStatus, histsvc.DATABASE_STATUS_CREATE);

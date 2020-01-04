@@ -12,7 +12,7 @@
 
 
 
-function add_visit(aURI, aDayOffset, aTransition) {
+function* add_visit(aURI, aDayOffset, aTransition) {
   yield PlacesTestUtils.addVisits({
     uri: aURI,
     transition: aTransition,
@@ -25,7 +25,7 @@ function run_test()
   run_next_test();
 }
 
-add_task(function test_execute()
+add_task(function* test_execute()
 {
   yield add_visit(uri("http://mirror1.mozilla.com/a"), -1, TRANSITION_LINK);
   yield add_visit(uri("http://mirror2.mozilla.com/b"), -2, TRANSITION_LINK);

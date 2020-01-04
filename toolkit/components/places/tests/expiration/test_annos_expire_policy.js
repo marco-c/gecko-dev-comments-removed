@@ -75,7 +75,7 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function test_annos_expire_policy() {
+add_task(function* test_annos_expire_policy() {
   
   setInterval(3600); 
 

@@ -9,7 +9,7 @@ function run_test() {
 
 
 
-add_task(function test_InsertVisitedURIs_UpdateFrecency_and_History_InsertPlace() {
+add_task(function* test_InsertVisitedURIs_UpdateFrecency_and_History_InsertPlace() {
   
   
   
@@ -21,7 +21,7 @@ add_task(function test_InsertVisitedURIs_UpdateFrecency_and_History_InsertPlace(
 });
 
 
-add_task(function test_nsNavHistory_UpdateFrecency() {
+add_task(function* test_nsNavHistory_UpdateFrecency() {
   let bm = PlacesUtils.bookmarks;
   let uri = NetUtil.newURI("http://example.com/b");
   bm.insertBookmark(bm.unfiledBookmarksFolder, uri,
@@ -30,7 +30,7 @@ add_task(function test_nsNavHistory_UpdateFrecency() {
 });
 
 
-add_task(function test_nsNavHistory_invalidateFrecencies_somePages() {
+add_task(function* test_nsNavHistory_invalidateFrecencies_somePages() {
   let uri = NetUtil.newURI("http://test-nsNavHistory-invalidateFrecencies-somePages.com/");
   
   
@@ -43,12 +43,12 @@ add_task(function test_nsNavHistory_invalidateFrecencies_somePages() {
 });
 
 
-add_task(function test_nsNavHistory_invalidateFrecencies_allPages() {
+add_task(function* test_nsNavHistory_invalidateFrecencies_allPages() {
   yield Promise.all([onManyFrecenciesChanged(), PlacesTestUtils.clearHistory()]);
 });
 
 
-add_task(function test_nsNavHistory_DecayFrecency_and_nsNavHistory_FixInvalidFrecencies() {
+add_task(function* test_nsNavHistory_DecayFrecency_and_nsNavHistory_FixInvalidFrecencies() {
   
   
   

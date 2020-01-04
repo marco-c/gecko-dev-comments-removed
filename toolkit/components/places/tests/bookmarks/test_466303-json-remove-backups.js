@@ -7,7 +7,7 @@
 
 
 
-add_task(function check_max_backups_is_respected() {
+add_task(function* check_max_backups_is_respected() {
   
   let backupFolder = yield PlacesBackups.getBackupFolder();
 
@@ -46,7 +46,7 @@ add_task(function check_max_backups_is_respected() {
   do_check_true(yield OS.File.exists(jsonPath));
 });
 
-add_task(function check_max_backups_greater_than_backups() {
+add_task(function* check_max_backups_greater_than_backups() {
   
   let backupFolder = yield PlacesBackups.getBackupFolder();
 
@@ -71,7 +71,7 @@ add_task(function check_max_backups_greater_than_backups() {
   do_check_neq(lastBackupPath, null);
 });
 
-add_task(function check_max_backups_null() {
+add_task(function* check_max_backups_null() {
   
   let backupFolder = yield PlacesBackups.getBackupFolder();
 
@@ -97,7 +97,7 @@ add_task(function check_max_backups_null() {
   do_check_neq(lastBackupPath, null);
 });
 
-add_task(function check_max_backups_undefined() {
+add_task(function* check_max_backups_undefined() {
   
   let backupFolder = yield PlacesBackups.getBackupFolder();
 

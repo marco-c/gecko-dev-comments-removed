@@ -20,7 +20,7 @@ function run_test()
   run_next_test();
 }
 
-add_task(function test_autocomplete_on_value_removed()
+add_task(function* test_autocomplete_on_value_removed()
 {
   
   var listener = Cc["@mozilla.org/autocomplete/search;1?name=history"].
@@ -44,7 +44,7 @@ add_task(function test_autocomplete_on_value_removed()
   queryRes.root.containerOpen = true;
   
   
-  do_check_eq(queryRes.root.childCount, 1);  
+  do_check_eq(queryRes.root.childCount, 1);
   
   listener.onValueRemoved(null, testUri.spec, true);
   

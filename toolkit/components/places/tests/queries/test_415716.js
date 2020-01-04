@@ -36,7 +36,7 @@ function run_test()
 
 
 
-add_task(function test_buildTestDatabase()
+add_task(function* test_buildTestDatabase()
 {
   
   

@@ -81,7 +81,7 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function test_historyClear() {
+add_task(function* test_historyClear() {
   
   setInterval(3600); 
 
