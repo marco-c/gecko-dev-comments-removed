@@ -697,9 +697,18 @@ PuppetWidget::NotifyIMEOfFocusChange(const IMENotification& aIMENotification)
 
   bool gotFocus = aIMENotification.mMessage == NOTIFY_IME_OF_FOCUS;
   if (gotFocus) {
-    
-    if (NS_WARN_IF(!mContentCache.CacheAll(this, &aIMENotification))) {
-      return NS_ERROR_FAILURE;
+    if (mInputContext.mIMEState.mEnabled != IMEState::PLUGIN) {
+      
+      
+      if (NS_WARN_IF(!mContentCache.CacheAll(this, &aIMENotification))) {
+        return NS_ERROR_FAILURE;
+      }
+    } else {
+      
+      
+      if (NS_WARN_IF(!mContentCache.CacheEditorRect(this, &aIMENotification))) {
+        return NS_ERROR_FAILURE;
+      }
     }
   } else {
     
@@ -724,7 +733,8 @@ PuppetWidget::NotifyIMEOfCompositionUpdate(
 
   NS_ENSURE_TRUE(mTabChild, NS_ERROR_FAILURE);
 
-  if (NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
+  if (mInputContext.mIMEState.mEnabled != IMEState::PLUGIN &&
+      NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
   mTabChild->SendNotifyIMECompositionUpdate(mContentCache, aIMENotification);
@@ -770,6 +780,11 @@ PuppetWidget::NotifyIMEOfTextChange(const IMENotification& aIMENotification)
     return NS_ERROR_FAILURE;
 
   
+  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEState::PLUGIN)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
   
   
 
@@ -805,6 +820,12 @@ PuppetWidget::NotifyIMEOfSelectionChange(
 
   
   
+  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEState::PLUGIN)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
   mContentCache.SetSelection(
     this, 
     aIMENotification.mSelectionChangeData.mOffset,
@@ -830,6 +851,13 @@ PuppetWidget::NotifyIMEOfMouseButtonEvent(
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEState::PLUGIN)) {
+    return NS_ERROR_FAILURE;
+  }
+
+
   bool consumedByIME = false;
   if (!mTabChild->SendNotifyIMEMouseButtonEvent(aIMENotification,
                                                 &consumedByIME)) {
@@ -849,7 +877,12 @@ PuppetWidget::NotifyIMEOfPositionChange(const IMENotification& aIMENotification)
     return NS_ERROR_FAILURE;
   }
 
-  if (NS_WARN_IF(!mContentCache.CacheEditorRect(this, &aIMENotification)) ||
+  if (NS_WARN_IF(!mContentCache.CacheEditorRect(this, &aIMENotification))) {
+    return NS_ERROR_FAILURE;
+  }
+  
+  
+  if (mInputContext.mIMEState.mEnabled != IMEState::PLUGIN &&
       NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
