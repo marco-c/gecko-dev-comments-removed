@@ -184,7 +184,16 @@ function synthesizeNativeTouch(aElement, aX, aY, aType, aObserver = null, aTouch
   return true;
 }
 
-function synthesizeNativeDrag(aElement, aX, aY, aDeltaX, aDeltaY, aObserver = null, aTouchId = 0) {
+
+
+
+
+
+
+
+
+const TOUCH_SLOP = 1;
+function synthesizeNativeTouchDrag(aElement, aX, aY, aDeltaX, aDeltaY, aObserver = null, aTouchId = 0) {
   synthesizeNativeTouch(aElement, aX, aY, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT, null, aTouchId);
   var steps = Math.max(Math.abs(aDeltaX), Math.abs(aDeltaY));
   for (var i = 1; i < steps; i++) {
