@@ -5382,19 +5382,9 @@ BytecodeEmitter::emitIterator()
 }
 
 bool
-BytecodeEmitter::emitForInOrOfVariables(ParseNode* pn, bool* letBlockScope)
+BytecodeEmitter::emitForInOrOfVariables(ParseNode* pn)
 {
-    
-    
-    
-    
-    
-    
-    
-    
-
-    *letBlockScope = pn->isKind(PNK_LEXICALSCOPE);
-    MOZ_ASSERT_IF(*letBlockScope, pn->isLexical());
+    MOZ_ASSERT(pn->isKind(PNK_VAR) || pn->isKind(PNK_LET));
 
     
     
@@ -5406,18 +5396,21 @@ BytecodeEmitter::emitForInOrOfVariables(ParseNode* pn, bool* letBlockScope)
     
     
     
-    if (!*letBlockScope) {
-        emittingForInit = true;
-        if (pn->isKind(PNK_VAR)) {
-            if (!emitVariables(pn, DefineVars))
-                return false;
-        } else {
-            MOZ_ASSERT(pn->isKind(PNK_LET));
-            if (!emitVariables(pn, InitializeVars))
-                return false;
-        }
-        emittingForInit = false;
+    
+    
+    
+    
+    
+    emittingForInit = true;
+    if (pn->isKind(PNK_VAR)) {
+        if (!emitVariables(pn, DefineVars))
+            return false;
+    } else {
+        MOZ_ASSERT(pn->isKind(PNK_LET));
+        if (!emitVariables(pn, InitializeVars))
+            return false;
     }
+    emittingForInit = false;
 
     return true;
 }
@@ -5441,8 +5434,7 @@ BytecodeEmitter::emitForOf(StmtType type, ParseNode* pn)
     ParseNode* forBody = pn ? pn->pn_right : nullptr;
 
     ParseNode* loopDecl = forHead ? forHead->pn_kid1 : nullptr;
-    bool letBlockScope = false;
-    if (loopDecl && !emitForInOrOfVariables(loopDecl, &letBlockScope))
+    if (loopDecl && !emitForInOrOfVariables(loopDecl))
         return false;
 
     if (type == StmtType::FOR_OF_LOOP) {
@@ -5457,15 +5449,6 @@ BytecodeEmitter::emitForOf(StmtType type, ParseNode* pn)
 
         
         if (!emit1(JSOP_UNDEFINED))                
-            return false;
-    }
-
-    
-    
-    
-    StmtInfoBCE letStmt(cx);
-    if (letBlockScope) {
-        if (!enterBlockScope(&letStmt, loopDecl->pn_objbox, JSOP_UNDEFINED, 0))
             return false;
     }
 
@@ -5566,11 +5549,6 @@ BytecodeEmitter::emitForOf(StmtType type, ParseNode* pn)
     if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, top, offset()))
         return false;
 
-    if (letBlockScope) {
-        if (!leaveNestedScope(&letStmt))
-            return false;
-    }
-
     if (type == StmtType::SPREAD) {
         if (!emit2(JSOP_PICK, 3))      
             return false;
@@ -5588,8 +5566,7 @@ BytecodeEmitter::emitForIn(ParseNode* pn)
     ParseNode* forBody = pn->pn_right;
 
     ParseNode* loopDecl = forHead->pn_kid1;
-    bool letBlockScope = false;
-    if (loopDecl && !emitForInOrOfVariables(loopDecl, &letBlockScope))
+    if (loopDecl && !emitForInOrOfVariables(loopDecl))
         return false;
 
     
@@ -5609,15 +5586,6 @@ BytecodeEmitter::emitForIn(ParseNode* pn)
     
     if (!emit1(JSOP_UNDEFINED))
         return false;
-
-    
-    
-    
-    StmtInfoBCE letStmt(cx);
-    if (letBlockScope) {
-        if (!enterBlockScope(&letStmt, loopDecl->pn_objbox, JSOP_UNDEFINED, 0))
-            return false;
-    }
 
     LoopStmtInfo stmtInfo(cx);
     pushLoopStatement(&stmtInfo, StmtType::FOR_IN_LOOP, top);
@@ -5693,11 +5661,6 @@ BytecodeEmitter::emitForIn(ParseNode* pn)
         return false;
     if (!emit1(JSOP_ENDITER))
         return false;
-
-    if (letBlockScope) {
-        if (!leaveNestedScope(&letStmt))
-            return false;
-    }
 
     return true;
 }
