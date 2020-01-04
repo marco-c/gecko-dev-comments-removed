@@ -5295,6 +5295,7 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
 {
   
   *aWindowIsNew = true;
+  *aResult = NS_OK;
 
   
   
