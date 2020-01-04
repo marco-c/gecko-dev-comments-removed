@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/StickyTimeDuration.h"
+#include "mozilla/ComputedTimingFunction.h"
 
 
 #ifdef None
@@ -67,6 +68,9 @@ struct ComputedTiming
     After   
   };
   AnimationPhase      mPhase = AnimationPhase::Null;
+
+  ComputedTimingFunction::BeforeFlag mBeforeFlag =
+    ComputedTimingFunction::BeforeFlag::Unset;
 };
 
 } 

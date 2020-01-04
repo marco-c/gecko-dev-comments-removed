@@ -24,15 +24,44 @@ ComputedTimingFunction::Init(const nsTimingFunction &aFunction)
 }
 
 static inline double
-StepEnd(uint32_t aSteps, double aPortion)
+StepTiming(uint32_t aSteps,
+           double aPortion,
+           ComputedTimingFunction::BeforeFlag aBeforeFlag,
+           nsTimingFunction::Type aType)
 {
   MOZ_ASSERT(0.0 <= aPortion && aPortion <= 1.0, "out of range");
+  MOZ_ASSERT(aType != nsTimingFunction::Type::StepStart ||
+             aType != nsTimingFunction::Type::StepEnd, "invalid type");
+
+  if (aPortion == 1.0) {
+    return 1.0;
+  }
+
+  
   uint32_t step = uint32_t(aPortion * aSteps); 
+
+  
+  if (aType == nsTimingFunction::Type::StepStart) {
+    step++;
+  }
+
+  
+  
+  
+  if (step != 0 &&
+      aBeforeFlag == ComputedTimingFunction::BeforeFlag::Set &&
+      fmod(aPortion * aSteps, 1) == 0) {
+    step--;
+  }
+
+  
   return double(step) / double(aSteps);
 }
 
 double
-ComputedTimingFunction::GetValue(double aPortion) const
+ComputedTimingFunction::GetValue(
+    double aPortion,
+    ComputedTimingFunction::BeforeFlag aBeforeFlag) const
 {
   if (HasSpline()) {
     
@@ -84,17 +113,7 @@ ComputedTimingFunction::GetValue(double aPortion) const
   
   aPortion = clamped(aPortion, 0.0, 1.0);
 
-  if (mType == nsTimingFunction::Type::StepStart) {
-    
-    
-    
-    
-    
-    
-    return 1.0 - StepEnd(mSteps, 1.0 - aPortion);
-  }
-  MOZ_ASSERT(mType == nsTimingFunction::Type::StepEnd, "bad type");
-  return StepEnd(mSteps, aPortion);
+  return StepTiming(mSteps, aPortion, aBeforeFlag, mType);
 }
 
 int32_t

@@ -30,6 +30,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/BasicEvents.h"        
 #include "mozilla/ClearOnShutdown.h"    
+#include "mozilla/ComputedTimingFunction.h" 
 #include "mozilla/EventForwards.h"      
 #include "mozilla/MouseEvents.h"        
 #include "mozilla/Preferences.h"        
@@ -39,7 +40,6 @@
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/dom/CheckerboardReportService.h" 
              
-#include "mozilla/dom/KeyframeEffect.h" 
 #include "mozilla/dom/Touch.h"          
 #include "mozilla/gfx/BasePoint.h"      
 #include "mozilla/gfx/BaseRect.h"       
@@ -622,7 +622,9 @@ public:
 
     
     
-    float sampledPosition = gZoomAnimationFunction->GetValue(animPosition);
+    float sampledPosition =
+      gZoomAnimationFunction->GetValue(animPosition,
+        ComputedTimingFunction::BeforeFlag::Unset);
 
     
     

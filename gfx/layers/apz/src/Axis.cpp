@@ -8,11 +8,11 @@
 #include <math.h>                       
 #include <algorithm>                    
 #include "AsyncPanZoomController.h"     
-#include "mozilla/dom/KeyframeEffect.h" 
 #include "mozilla/layers/APZCTreeManager.h" 
 #include "mozilla/layers/APZThreadUtils.h" 
 #include "FrameMetrics.h"               
 #include "mozilla/Attributes.h"         
+#include "mozilla/ComputedTimingFunction.h" 
 #include "mozilla/Preferences.h"        
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/mozalloc.h"           
@@ -102,7 +102,9 @@ void Axis::UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos, ParentLayerCoord 
         
         float scale = maxVelocity - curveThreshold;
         float funcInput = (newVelocity - curveThreshold) / scale;
-        float funcOutput = gVelocityCurveFunction->GetValue(funcInput);
+        float funcOutput =
+          gVelocityCurveFunction->GetValue(funcInput,
+            ComputedTimingFunction::BeforeFlag::Unset);
         float curvedVelocity = (funcOutput * scale) + curveThreshold;
         AXIS_LOG("%p|%s curving up velocity from %f to %f\n",
           mAsyncPanZoomController, Name(), newVelocity, curvedVelocity);
