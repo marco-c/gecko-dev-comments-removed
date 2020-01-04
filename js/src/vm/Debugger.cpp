@@ -6715,10 +6715,8 @@ DebuggerGenericEval(JSContext* cx, const char* fullMethodName, const Value& code
 
 
 
-        JSObject* thisObj = GetThisObject(cx, scope);
-        if (!thisObj)
+        if (!GetThisValue(cx, scope, &thisv))
             return false;
-        thisv = ObjectValue(*thisObj);
         env = scope;
     }
 

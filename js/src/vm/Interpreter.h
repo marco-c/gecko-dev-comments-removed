@@ -31,8 +31,8 @@ class ScopeIter;
 extern bool
 BoxNonStrictThis(JSContext* cx, const CallReceiver& call);
 
-extern JSObject*
-BoxNonStrictThis(JSContext* cx, HandleValue thisv);
+extern bool
+BoxNonStrictThis(JSContext* cx, HandleValue thisv, MutableHandleValue vp);
 
 
 

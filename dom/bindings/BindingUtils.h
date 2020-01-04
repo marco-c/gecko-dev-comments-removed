@@ -789,6 +789,9 @@ TryToOuterize(JSContext* cx, JS::MutableHandle<JS::Value> rval)
   return true;
 }
 
+bool
+ObjectToOuterObjectValue(JSContext* cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp);
+
 
 
 MOZ_ALWAYS_INLINE

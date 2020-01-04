@@ -1099,12 +1099,14 @@ GetOuterObject(JSContext* cx, HandleObject obj)
 
 
 
-inline JSObject*
-GetThisObject(JSContext* cx, HandleObject obj)
+inline bool
+GetThisValue(JSContext* cx, HandleObject obj, MutableHandleValue vp)
 {
-    if (ObjectOp op = obj->getOps()->thisObject)
-        return op(cx, obj);
-    return obj;
+    if (ThisValueOp op = obj->getOps()->thisValue)
+        return op(cx, obj, vp);
+
+    vp.setObject(*obj);
+    return true;
 }
 
 
