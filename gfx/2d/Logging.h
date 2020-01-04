@@ -141,6 +141,7 @@ enum class LogReason : int {
   InvalidCommandList,
   AsyncTransactionTimeout, 
   TextureCreation,
+  InvalidCacheSurface,
   
   MustBeLessThanThis = 101,
 };
