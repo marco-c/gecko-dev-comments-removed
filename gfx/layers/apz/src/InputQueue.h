@@ -93,16 +93,19 @@ public:
   
 
 
-  CancelableBlockState* CurrentBlock() const;
+
+  CancelableBlockState* GetCurrentBlock() const;
   
 
 
 
 
-  TouchBlockState* CurrentTouchBlock() const;
-  WheelBlockState* CurrentWheelBlock() const;
-  DragBlockState* CurrentDragBlock() const;
-  PanGestureBlockState* CurrentPanGestureBlock() const;
+
+
+  TouchBlockState* GetCurrentTouchBlock() const;
+  WheelBlockState* GetCurrentWheelBlock() const;
+  DragBlockState* GetCurrentDragBlock() const;
+  PanGestureBlockState* GetCurrentPanGestureBlock() const;
   
 
 
