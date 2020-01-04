@@ -25,9 +25,9 @@ class FunctionBox;
 class ModuleBox;
 }
 
-class StaticWithObject;
-class StaticEvalObject;
-class StaticNonSyntacticScopeObjects;
+class StaticWithScope;
+class StaticEvalScope;
+class StaticNonSyntacticScope;
 
 class ModuleObject;
 typedef Handle<ModuleObject*> HandleModuleObject;
@@ -76,7 +76,7 @@ typedef Handle<ModuleObject*> HandleModuleObject;
 
 
 
-class StaticScopeObject : public NativeObject
+class StaticScope : public NativeObject
 {
   public:
     static const uint32_t ENCLOSING_SCOPE_SLOT = 0;
@@ -94,14 +94,14 @@ class StaticScopeObject : public NativeObject
     void setEnclosingScope(HandleObject obj);
 };
 
-class NestedStaticScopeObject : public StaticScopeObject
+class NestedStaticScope : public StaticScope
 {
   public:
     
 
 
 
-    inline NestedStaticScopeObject* enclosingNestedScope() const;
+    inline NestedStaticScope* enclosingNestedScope() const;
 
     
 
@@ -128,9 +128,9 @@ class NestedStaticScopeObject : public StaticScopeObject
 
 
 
-class StaticBlockObject : public NestedStaticScopeObject
+class StaticBlockScope : public NestedStaticScope
 {
-    static const unsigned LOCAL_OFFSET_SLOT = NestedStaticScopeObject::RESERVED_SLOTS;
+    static const unsigned LOCAL_OFFSET_SLOT = NestedStaticScope::RESERVED_SLOTS;
     static const unsigned RESERVED_SLOTS = LOCAL_OFFSET_SLOT + 1;
 
   public:
@@ -154,7 +154,7 @@ class StaticBlockObject : public NestedStaticScopeObject
     }
 
   public:
-    static StaticBlockObject* create(ExclusiveContext* cx);
+    static StaticBlockScope* create(ExclusiveContext* cx);
 
     
 
@@ -181,7 +181,7 @@ class StaticBlockObject : public NestedStaticScopeObject
 
 
 
-    inline StaticBlockObject* enclosingBlock() const;
+    inline StaticBlockScope* enclosingBlock() const;
 
     uint32_t localOffset() {
         return getReservedSlot(LOCAL_OFFSET_SLOT).toPrivateUint32();
@@ -281,38 +281,38 @@ class StaticBlockObject : public NestedStaticScopeObject
 
     static const unsigned LOCAL_INDEX_LIMIT = JS_BIT(16);
 
-    static Shape* addVar(ExclusiveContext* cx, Handle<StaticBlockObject*> block, HandleId id,
+    static Shape* addVar(ExclusiveContext* cx, Handle<StaticBlockScope*> block, HandleId id,
                          bool constant, unsigned index, bool* redeclared);
 };
 
 
-class StaticWithObject : public NestedStaticScopeObject
+class StaticWithScope : public NestedStaticScope
 {
   public:
     static const Class class_;
 
-    static StaticWithObject* create(ExclusiveContext* cx);
+    static StaticWithScope* create(ExclusiveContext* cx);
 };
 
 template <XDRMode mode>
 bool
-XDRStaticWithObject(XDRState<mode>* xdr, HandleObject enclosingScope,
-                    MutableHandle<StaticWithObject*> objp);
+XDRStaticWithScope(XDRState<mode>* xdr, HandleObject enclosingScope,
+                   MutableHandle<StaticWithScope*> objp);
 
 
 
 
 
 
-class StaticEvalObject : public StaticScopeObject
+class StaticEvalScope : public StaticScope
 {
-    static const uint32_t STRICT_SLOT = StaticScopeObject::RESERVED_SLOTS;
+    static const uint32_t STRICT_SLOT = StaticScope::RESERVED_SLOTS;
     static const unsigned RESERVED_SLOTS = STRICT_SLOT + 1;
 
   public:
     static const Class class_;
 
-    static StaticEvalObject* create(JSContext* cx, HandleObject enclosing);
+    static StaticEvalScope* create(JSContext* cx, HandleObject enclosing);
 
     JSObject* enclosingScopeForStaticScopeIter() {
         return getReservedSlot(ENCLOSING_SCOPE_SLOT).toObjectOrNull();
@@ -436,13 +436,13 @@ class StaticEvalObject : public StaticScopeObject
 
 
 
-class StaticNonSyntacticScopeObjects : public StaticScopeObject
+class StaticNonSyntacticScope : public StaticScope
 {
   public:
-    static const unsigned RESERVED_SLOTS = StaticScopeObject::RESERVED_SLOTS;
+    static const unsigned RESERVED_SLOTS = StaticScope::RESERVED_SLOTS;
     static const Class class_;
 
-    static StaticNonSyntacticScopeObjects* create(JSContext* cx, HandleObject enclosing);
+    static StaticNonSyntacticScope* create(JSContext* cx, HandleObject enclosing);
 
     JSObject* enclosingScopeForStaticScopeIter() {
         return getReservedSlot(ENCLOSING_SCOPE_SLOT).toObjectOrNull();
@@ -456,10 +456,10 @@ class StaticScopeIter
     bool onNamedLambda;
 
     static bool IsStaticScope(JSObject* obj) {
-        return obj->is<StaticBlockObject>() ||
-               obj->is<StaticWithObject>() ||
-               obj->is<StaticEvalObject>() ||
-               obj->is<StaticNonSyntacticScopeObjects>() ||
+        return obj->is<StaticBlockScope>() ||
+               obj->is<StaticWithScope>() ||
+               obj->is<StaticEvalScope>() ||
+               obj->is<StaticNonSyntacticScope>() ||
                obj->is<JSFunction>() ||
                obj->is<ModuleObject>();
     }
@@ -511,10 +511,10 @@ class StaticScopeIter
     enum Type { Module, Function, Block, With, NamedLambda, Eval, NonSyntactic };
     Type type() const;
 
-    StaticBlockObject& block() const;
-    StaticWithObject& staticWith() const;
-    StaticEvalObject& eval() const;
-    StaticNonSyntacticScopeObjects& nonSyntactic() const;
+    StaticBlockScope& block() const;
+    StaticWithScope& staticWith() const;
+    StaticEvalScope& eval() const;
+    StaticNonSyntacticScope& nonSyntactic() const;
     JSScript* funScript() const;
     JSFunction& fun() const;
     frontend::FunctionBox* maybeFunctionBox() const;
@@ -845,8 +845,8 @@ class NestedScopeObject : public ScopeObject
 {
   public:
     
-    inline NestedStaticScopeObject* staticScope() {
-        return &getProto()->as<NestedStaticScopeObject>();
+    inline NestedStaticScope* staticScope() {
+        return &getProto()->as<NestedStaticScope>();
     }
 
     void initEnclosingScope(JSObject* obj) {
@@ -875,8 +875,8 @@ class DynamicWithObject : public NestedScopeObject
     create(JSContext* cx, HandleObject object, HandleObject enclosing, HandleObject staticWith,
            WithKind kind = SyntacticWith);
 
-    StaticWithObject& staticWith() const {
-        return getProto()->as<StaticWithObject>();
+    StaticWithScope& staticWith() const {
+        return getProto()->as<StaticWithScope>();
     }
 
     
@@ -939,11 +939,11 @@ class ClonedBlockObject : public BlockObject
 {
     static const unsigned THIS_VALUE_SLOT = 1;
 
-    static ClonedBlockObject* create(JSContext* cx, Handle<StaticBlockObject*> block,
+    static ClonedBlockObject* create(JSContext* cx, Handle<StaticBlockScope*> block,
                                      HandleObject enclosing);
 
   public:
-    static ClonedBlockObject* create(JSContext* cx, Handle<StaticBlockObject*> block,
+    static ClonedBlockObject* create(JSContext* cx, Handle<StaticBlockScope*> block,
                                      AbstractFramePtr frame);
 
     static ClonedBlockObject* createGlobal(JSContext* cx, Handle<GlobalObject*> global);
@@ -952,11 +952,11 @@ class ClonedBlockObject : public BlockObject
                                                  HandleObject enclosingScope);
 
     static ClonedBlockObject* createHollowForDebug(JSContext* cx,
-                                                   Handle<StaticBlockObject*> block);
+                                                   Handle<StaticBlockScope*> block);
 
     
-    StaticBlockObject& staticBlock() const {
-        return getProto()->as<StaticBlockObject>();
+    StaticBlockScope& staticBlock() const {
+        return getProto()->as<StaticBlockScope>();
     }
 
     
@@ -1035,11 +1035,11 @@ class RuntimeLexicalErrorObject : public ScopeObject
 template<XDRMode mode>
 bool
 XDRStaticBlockObject(XDRState<mode>* xdr, HandleObject enclosingScope,
-                     MutableHandle<StaticBlockObject*> objp);
+                     MutableHandle<StaticBlockScope*> objp);
 
 extern JSObject*
 CloneNestedScopeObject(JSContext* cx, HandleObject enclosingScope,
-                       Handle<NestedStaticScopeObject*> src);
+                       Handle<NestedStaticScope*> src);
 
 
 
@@ -1094,10 +1094,10 @@ class MOZ_RAII ScopeIter
     ScopeObject& scope() const;
 
     JSObject* maybeStaticScope() const;
-    StaticBlockObject& staticBlock() const { return ssi_.block(); }
-    StaticWithObject& staticWith() const { return ssi_.staticWith(); }
-    StaticEvalObject& staticEval() const { return ssi_.eval(); }
-    StaticNonSyntacticScopeObjects& staticNonSyntactic() const { return ssi_.nonSyntactic(); }
+    StaticBlockScope& staticBlock() const { return ssi_.block(); }
+    StaticWithScope& staticWith() const { return ssi_.staticWith(); }
+    StaticEvalScope& staticEval() const { return ssi_.eval(); }
+    StaticNonSyntacticScope& staticNonSyntactic() const { return ssi_.nonSyntactic(); }
     JSFunction& fun() const { return ssi_.fun(); }
     ModuleObject& module() const { return ssi_.module(); }
 
@@ -1330,26 +1330,26 @@ class DebugScopes
 
 template<>
 inline bool
-JSObject::is<js::StaticBlockObject>() const
+JSObject::is<js::StaticBlockScope>() const
 {
     return hasClass(&js::ClonedBlockObject::class_) && !getProto();
 }
 
 template<>
 inline bool
-JSObject::is<js::NestedStaticScopeObject>() const
+JSObject::is<js::NestedStaticScope>() const
 {
-    return is<js::StaticBlockObject>() ||
-           is<js::StaticWithObject>();
+    return is<js::StaticBlockScope>() ||
+           is<js::StaticWithScope>();
 }
 
 template<>
 inline bool
-JSObject::is<js::StaticScopeObject>() const
+JSObject::is<js::StaticScope>() const
 {
-    return is<js::NestedStaticScopeObject>() ||
-           is<js::StaticEvalObject>() ||
-           is<js::StaticNonSyntacticScopeObjects>();
+    return is<js::NestedStaticScope>() ||
+           is<js::StaticEvalScope>() ||
+           is<js::StaticNonSyntacticScope>();
 }
 
 template<>
@@ -1413,7 +1413,7 @@ IsSyntacticScope(JSObject* scope)
 inline bool
 IsStaticGlobalLexicalScope(JSObject* scope)
 {
-    return scope->is<StaticBlockObject>() && scope->as<StaticBlockObject>().isGlobal();
+    return scope->is<StaticBlockScope>() && scope->as<StaticBlockScope>().isGlobal();
 }
 
 inline bool
@@ -1428,17 +1428,17 @@ IsGlobalLexicalScope(JSObject* scope)
     return scope->is<ClonedBlockObject>() && scope->as<ClonedBlockObject>().isGlobal();
 }
 
-inline NestedStaticScopeObject*
-NestedStaticScopeObject::enclosingNestedScope() const
+inline NestedStaticScope*
+NestedStaticScope::enclosingNestedScope() const
 {
     JSObject* obj = getReservedSlot(ENCLOSING_SCOPE_SLOT).toObjectOrNull();
-    return obj && obj->is<NestedStaticScopeObject>()
-           ? &obj->as<NestedStaticScopeObject>()
+    return obj && obj->is<NestedStaticScope>()
+           ? &obj->as<NestedStaticScope>()
            : nullptr;
 }
 
 inline bool
-StaticEvalObject::isNonGlobal() const
+StaticEvalScope::isNonGlobal() const
 {
     if (isStrict())
         return true;

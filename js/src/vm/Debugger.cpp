@@ -6698,14 +6698,14 @@ EvaluateInEnv(JSContext* cx, Handle<Env*> env, AbstractFramePtr frame,
 
 
 
-    Rooted<StaticScopeObject*> enclosingStaticScope(cx);
+    Rooted<StaticScope*> enclosingStaticScope(cx);
     if (!IsGlobalLexicalScope(env)) {
         
         
         
         if (IsGlobalLexicalScope(env->enclosingScope()))
             enclosingStaticScope = &cx->global()->lexicalScope().staticBlock();
-        enclosingStaticScope = StaticNonSyntacticScopeObjects::create(cx, enclosingStaticScope);
+        enclosingStaticScope = StaticNonSyntacticScope::create(cx, enclosingStaticScope);
         if (!enclosingStaticScope)
             return false;
     } else {
@@ -6717,9 +6717,9 @@ EvaluateInEnv(JSContext* cx, Handle<Env*> env, AbstractFramePtr frame,
     
     
     
-    Rooted<StaticScopeObject*> staticScope(cx);
+    Rooted<StaticScope*> staticScope(cx);
     if (frame) {
-        staticScope = StaticEvalObject::create(cx, enclosingStaticScope);
+        staticScope = StaticEvalScope::create(cx, enclosingStaticScope);
         if (!staticScope)
             return false;
     } else {
@@ -6745,7 +6745,7 @@ EvaluateInEnv(JSContext* cx, Handle<Env*> env, AbstractFramePtr frame,
     
     if (frame) {
         if (script->strict())
-            staticScope->as<StaticEvalObject>().setStrict();
+            staticScope->as<StaticEvalScope>().setStrict();
         script->setActiveEval();
     }
 

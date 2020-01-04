@@ -386,7 +386,7 @@ struct BytecodeEmitter
     bool enterBlockScope(StmtInfoBCE* stmtInfo, ObjectBox* objbox, JSOp initialValueOp,
                          unsigned alreadyPushed = 0);
 
-    bool computeAliasedSlots(Handle<StaticBlockObject*> blockObj);
+    bool computeAliasedSlots(Handle<StaticBlockScope*> blockObj);
 
     bool lookupAliasedName(HandleScript script, PropertyName* name, uint32_t* pslot,
                            ParseNode* pn = nullptr);
@@ -396,7 +396,7 @@ struct BytecodeEmitter
     
     
     
-    void computeLocalOffset(Handle<StaticBlockObject*> blockObj);
+    void computeLocalOffset(Handle<StaticBlockScope*> blockObj);
 
     bool flushPops(int* npops);
 
@@ -639,7 +639,7 @@ struct BytecodeEmitter
     bool emitLexicalInitialization(ParseNode* pn, JSOp globalDefOp);
 
     bool pushInitialConstants(JSOp op, unsigned n);
-    bool initializeBlockScopedLocalsFromStack(Handle<StaticBlockObject*> blockObj);
+    bool initializeBlockScopedLocalsFromStack(Handle<StaticBlockScope*> blockObj);
 
     
     
