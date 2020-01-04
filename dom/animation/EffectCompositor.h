@@ -115,6 +115,14 @@ public:
   
   
   
+  void UpdateEffectProperties(nsStyleContext* aStyleContext,
+                              dom::Element* aElement,
+                              CSSPseudoElementType aPseudoType);
+
+  
+  
+  
+  
   void MaybeUpdateAnimationRule(dom::Element* aElement,
                                 CSSPseudoElementType aPseudoType,
                                 CascadeLevel aCascadeLevel);
