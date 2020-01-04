@@ -60,9 +60,6 @@ const QUERYTYPE_AUTOFILL_URL        = 2;
 const TITLE_TAGS_SEPARATOR = " \u2013 ";
 
 
-const TITLE_SEARCH_ENGINE_SEPARATOR = " \u00B7\u2013\u00B7 ";
-
-
 const TELEMETRY_1ST_RESULT = "PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS";
 const TELEMETRY_6_FIRST_RESULTS = "PLACES_AUTOCOMPLETE_6_FIRST_RESULTS_TIME_MS";
 
@@ -1386,9 +1383,14 @@ Search.prototype = {
     }
 
     
-    match.style = "search " + match.style;
-    match.comment = parseResult.terms + TITLE_SEARCH_ENGINE_SEPARATOR +
-                    parseResult.engineName;
+    match.value = makeActionURL("searchengine", {
+      engineName: parseResult.engineName,
+      input: parseResult.terms,
+      searchQuery: parseResult.terms,
+    });
+    match.comment = parseResult.engineName;
+    match.icon = match.icon || match.iconUrl;
+    match.style = "action searchengine favicon";
   },
 
   _addMatch(match) {

@@ -447,24 +447,28 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   -moz-binding: url(chrome://browser/content/urlbarBindings.xml#urlbar);
 }
 
-.ac-url-text:-moz-locale-dir(rtl),
-.ac-title:-moz-locale-dir(rtl) > description {
+
+.ac-url-text:-moz-locale-dir(rtl) {
   direction: ltr !important;
 }
 
 
 
-panel:not([noactions]) > richlistbox > richlistitem.overridable-action:-moz-locale-dir(rtl) > .ac-url-box {
-  direction: rtl;
-}
-
-panel[noactions] > richlistbox > richlistitem.overridable-action > .ac-url-box > .ac-url > .ac-action-text,
-panel[noactions] > richlistbox > richlistitem.overridable-action > .ac-url-box > .ac-action-icon {
+.ac-url[actiontype],
+.ac-action:not([actiontype]) {
   visibility: collapse;
 }
 
-panel[noactions] > richlistbox > richlistitem.overridable-action > .ac-url-box > .ac-url > .ac-url-text {
+
+
+#PopupAutoCompleteRichResult[noactions] > richlistbox > richlistitem.overridable-action > .ac-url {
   visibility: visible;
+}
+#PopupAutoCompleteRichResult[noactions] > richlistbox > richlistitem.overridable-action > .ac-action {
+  visibility: collapse;
+}
+#PopupAutoCompleteRichResult[noactions] > richlistbox > richlistitem.overridable-action > .ac-type-icon {
+  list-style-image: none;
 }
 
 #urlbar:not([actiontype="switchtab"]) > #urlbar-display-box {
@@ -663,8 +667,12 @@ window[chromehidden~="toolbar"] toolbar:not(#nav-bar):not(#TabsToolbar):not(#pri
 
 
 #fullscr-toggler {
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 1px;
-  background: black;
+  position: fixed;
+  z-index: 2147483647;
 }
 
 html|*#fullscreen-warning {

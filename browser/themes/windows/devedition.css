@@ -324,3 +324,9 @@
     list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-white);
   }
 }
+
+.ac-type-icon {
+  
+
+  -moz-margin-start: 13px;
+}
