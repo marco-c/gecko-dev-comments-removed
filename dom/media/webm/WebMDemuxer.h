@@ -242,6 +242,7 @@ private:
   TrackInfo::TrackType mType;
   UniquePtr<TrackInfo> mInfo;
   Maybe<media::TimeUnit> mNextKeyframeTime;
+  bool mNeedKeyframe;
 
   
   MediaRawDataQueue mSamples;
