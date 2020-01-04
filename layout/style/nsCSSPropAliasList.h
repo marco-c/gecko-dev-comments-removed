@@ -324,6 +324,12 @@ CSS_PROP_ALIAS(-webkit-box-sizing,
                WEBKIT_PREFIX_PREF)
 
 
+
+
+
+
+
+
 CSS_PROP_ALIAS(-webkit-box-flex,
                flex_grow,
                WebkitBoxFlex,
@@ -333,11 +339,11 @@ CSS_PROP_ALIAS(-webkit-box-ordinal-group,
                WebkitBoxOrdinalGroup,
                WEBKIT_PREFIX_PREF)
 CSS_PROP_ALIAS(-webkit-box-align,
-               align_items,
+               box_align,
                WebkitBoxAlign,
                WEBKIT_PREFIX_PREF)
 CSS_PROP_ALIAS(-webkit-box-pack,
-               justify_content,
+               box_pack,
                WebkitBoxPack,
                WEBKIT_PREFIX_PREF)
 
