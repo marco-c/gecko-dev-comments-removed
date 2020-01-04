@@ -95,7 +95,7 @@ html {
   background-repeat: no-repeat;
   background-position: center;
   padding-top: 5px;
-  width: 9px; 
+  min-width: 9px; 
   height: 9px;
 }
 
