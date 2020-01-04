@@ -4,7 +4,7 @@
 
 
 
-#include "../contentproc/plugin-container.cpp"
+#include "../contentproc/firefox-webcontent.cpp"
  
 int
 main(int argc, char *argv[]) {

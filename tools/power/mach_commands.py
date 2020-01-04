@@ -136,7 +136,7 @@ class MachCommands(MachCommandBase):
             
             
             
-            if re.search(r'(^Name|firefox|plugin-container|Safari\b|WebKit|Chrome|Terminal|WindowServer|kernel)', line):
+            if re.search(r'(^Name|firefox|firefox-plugin-container|firefox-webcontent|Safari\b|WebKit|Chrome|Terminal|WindowServer|kernel)', line):
                 print(line)
 
         return 0
