@@ -1816,16 +1816,22 @@ public:
           
           if (vsync >= now) {
             vsync = vsync - mVsyncRate;
-            return vsync <= now ? vsync : now;
           }
         }
 
         
         
-        
         if (vsync >= now) {
             vsync = now;
         }
+
+        
+        
+        
+        if ((now - vsync).ToMilliseconds() > 4.0) {
+            vsync = now;
+        }
+
         return vsync;
       }
 
@@ -1889,6 +1895,12 @@ public:
 
             if (vsync <= mPrevVsync) {
               vsync = TimeStamp::Now();
+            }
+
+            if ((now - vsync).ToMilliseconds() > 2.0) {
+              
+              
+              vsync = GetVBlankTime();
             }
 
             mPrevVsync = vsync;
