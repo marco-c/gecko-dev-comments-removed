@@ -11,9 +11,8 @@
 #include "mozilla/dom/KeyframeEffect.h" 
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/EffectSet.h"
+#include "mozilla/InitializerList.h"
 #include "mozilla/LayerAnimationInfo.h"
-#include "AnimationCommon.h" 
-#include "nsAnimationManager.h"
 #include "nsComputedDOMStyle.h" 
 #include "nsCSSPropertySet.h"
 #include "nsCSSProps.h"
@@ -21,7 +20,7 @@
 #include "nsLayoutUtils.h"
 #include "nsRuleNode.h" 
 #include "nsTArray.h"
-#include "nsTransitionManager.h"
+#include "RestyleManager.h"
 
 using mozilla::dom::Animation;
 using mozilla::dom::Element;
@@ -155,6 +154,17 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
       PostRestyleForAnimation(aElement, aPseudoType, aCascadeLevel);
     }
     elementsToRestyle.Put(key, true);
+  }
+
+  if (aRestyleType == RestyleType::Layer) {
+    
+    mPresContext->ClearLastStyleUpdateForAllAnimations();
+    mPresContext->RestyleManager()->IncrementAnimationGeneration();
+    EffectSet* effectSet =
+      EffectSet::GetEffectSet(aElement, aPseudoType);
+    if (effectSet) {
+      effectSet->UpdateAnimationGeneration(mPresContext);
+    }
   }
 }
 
@@ -510,24 +520,12 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
   if (changed && presContext) {
     
     
-    
-    
-    AnimationCollection* animations =
-      presContext->AnimationManager()->GetAnimationCollection(aElement,
-                                                              aPseudoType,
-                                                              false);
-                                                             
-    if (animations) {
-      animations->RequestRestyle(RestyleType::Layer);
-    }
-
-    AnimationCollection* transitions =
-      presContext->TransitionManager()->GetAnimationCollection(aElement,
-                                                               aPseudoType,
-                                                               false);
-                                                             
-    if (transitions) {
-      transitions->RequestRestyle(RestyleType::Layer);
+    for (auto level : { CascadeLevel::Animations,
+                        CascadeLevel::Transitions }) {
+      presContext->EffectCompositor()->RequestRestyle(aElement,
+                                                      aPseudoType,
+                                                      RestyleType::Layer,
+                                                      level);
     }
   }
 }

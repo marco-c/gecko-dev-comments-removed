@@ -14,7 +14,6 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/LookAndFeel.h" 
 #include "mozilla/StyleAnimationValue.h"
-#include "AnimationCommon.h"
 #include "Layers.h" 
 #include "nsCSSParser.h"
 #include "nsCSSPropertySet.h"
@@ -164,7 +163,6 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   }
 
   
-  ComputedTiming computedTiming = GetComputedTiming();
   
   
   
@@ -176,29 +174,17 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   
   
   
-  if (computedTiming.mProgress != mProgressOnLastCompose) {
+  
+  if (mAnimation && GetComputedTiming().mProgress != mProgressOnLastCompose) {
     EffectCompositor::RestyleType restyleType =
       CanThrottle() ?
       EffectCompositor::RestyleType::Throttled :
       EffectCompositor::RestyleType::Standard;
-    
-    
-    
-    
-    
-    
-    
-    
-    AnimationCollection* collection = GetCollection();
-    if (collection) {
-      collection->RequestRestyle(restyleType);
-    } else if (mAnimation) {
-      nsPresContext* presContext = GetPresContext();
-      if (presContext) {
-        presContext->EffectCompositor()->
-          RequestRestyle(mTarget, mPseudoType, restyleType,
-                         mAnimation->CascadeLevel());
-      }
+    nsPresContext* presContext = GetPresContext();
+    if (presContext) {
+      presContext->EffectCompositor()->
+        RequestRestyle(mTarget, mPseudoType, restyleType,
+                       mAnimation->CascadeLevel());
     }
   }
 }
@@ -2006,12 +1992,6 @@ KeyframeEffectReadOnly::GetPresContext() const
     return nullptr;
   }
   return shell->GetPresContext();
-}
-
-AnimationCollection *
-KeyframeEffectReadOnly::GetCollection() const
-{
-  return mAnimation ? mAnimation->GetCollection() : nullptr;
 }
 
  bool
