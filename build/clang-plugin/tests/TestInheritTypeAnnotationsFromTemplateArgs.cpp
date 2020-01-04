@@ -25,7 +25,9 @@ static ContainsTemplate e;
 static Template<Normal> f;
 
 template<class T>
-class MOZ_NEEDS_MEMMOVABLE_TYPE Mover { char mForceInstantiation[sizeof(T)]; }; 
+class MOZ_NEEDS_MEMMOVABLE_TYPE Mover { 
+  char mForceInstantiation[sizeof(T)];
+};
 class IndirectTemplatePointery : Template<Pointery> {}; 
 class ContainsTemplatePointery { Template<Pointery> m; }; 
 
@@ -35,3 +37,10 @@ static Mover<Template<ContainsPointery>> p;
 static Mover<IndirectTemplatePointery> q; 
 static Mover<ContainsTemplatePointery> r; 
 static Mover<Template<Normal>> s;
+
+template<class T, class... Ts>
+class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS ManyTs {}; 
+
+static Mover<ManyTs<Pointery>> t; 
+static Mover<ManyTs<Normal, Pointery>> u; 
+static Mover<ManyTs<Normal, Normal, Pointery>> v; 
