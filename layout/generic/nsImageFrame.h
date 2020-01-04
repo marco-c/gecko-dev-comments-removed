@@ -460,13 +460,6 @@ public:
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
 
-  
-
-
-
-  virtual void ConfigureLayer(ImageLayer* aLayer,
-                              const ContainerLayerParameters& aParameters) override;
-
   NS_DISPLAY_DECL_NAME("Image", TYPE_IMAGE)
 private:
   nsCOMPtr<imgIContainer> mImage;
