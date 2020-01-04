@@ -38,6 +38,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",
 Cu.permitCPOWsInScope(this);
 
 var gSendCharCount = 0;
+var gSynthesizeKeyCount = 0;
+var gSynthesizeCompositionCount = 0;
+var gSynthesizeCompositionChangeCount = 0;
 
 this.BrowserTestUtils = {
   
@@ -849,13 +852,106 @@ this.BrowserTestUtils = {
           return;
 
         mm.removeMessageListener("Test:SendCharDone", charMsg);
-        resolve(message.data.sendCharResult);
+        resolve(message.data.result);
       });
 
       mm.sendAsyncMessage("Test:SendChar", {
         char: char,
         seq: seq
       });
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  synthesizeKey(key, event, browser) {
+    return new Promise(resolve => {
+      let seq = ++gSynthesizeKeyCount;
+      let mm = browser.messageManager;
+
+      mm.addMessageListener("Test:SynthesizeKeyDone", function keyMsg(message) {
+        if (message.data.seq != seq)
+          return;
+
+        mm.removeMessageListener("Test:SynthesizeKeyDone", keyMsg);
+        resolve();
+      });
+
+      mm.sendAsyncMessage("Test:SynthesizeKey", { key, event, seq });
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  synthesizeComposition(event, browser) {
+    return new Promise(resolve => {
+      let seq = ++gSynthesizeCompositionCount;
+      let mm = browser.messageManager;
+
+      mm.addMessageListener("Test:SynthesizeCompositionDone", function compMsg(message) {
+        if (message.data.seq != seq)
+          return;
+
+        mm.removeMessageListener("Test:SynthesizeCompositionDone", compMsg);
+        resolve(message.data.result);
+      });
+
+      mm.sendAsyncMessage("Test:SynthesizeComposition", { event, seq });
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  synthesizeCompositionChange(event, browser) {
+    return new Promise(resolve => {
+      let seq = ++gSynthesizeCompositionChangeCount;
+      let mm = browser.messageManager;
+
+      mm.addMessageListener("Test:SynthesizeCompositionChangeDone", function compMsg(message) {
+        if (message.data.seq != seq)
+          return;
+
+        mm.removeMessageListener("Test:SynthesizeCompositionChangeDone", compMsg);
+        resolve();
+      });
+
+      mm.sendAsyncMessage("Test:SynthesizeCompositionChange", { event, seq });
     });
   },
 
