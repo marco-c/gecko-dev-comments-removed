@@ -393,7 +393,7 @@ IMEHandler::OnDestroyWindow(nsWindow* aWindow)
   if (!sIsInTSFMode) {
     
     
-    SetInputScopeForIMM32(aWindow, EmptyString(), EmptyString());
+    SetInputScopeForIMM32(aWindow, EmptyString());
   }
 #endif 
   AssociateIMEContext(aWindow, true);
@@ -444,8 +444,7 @@ IMEHandler::SetInputContext(nsWindow* aWindow,
     }
   } else {
     
-    SetInputScopeForIMM32(aWindow, aInputContext.mHTMLInputType,
-                          aInputContext.mHTMLInputInputmode);
+    SetInputScopeForIMM32(aWindow, aInputContext.mHTMLInputType);
   }
 #endif 
 
@@ -518,8 +517,7 @@ IMEHandler::CurrentKeyboardLayoutHasIME()
 
 void
 IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
-                                  const nsAString& aHTMLInputType,
-                                  const nsAString& aHTMLInputInputmode)
+                                  const nsAString& aHTMLInputType)
 {
   if (sIsInTSFMode || !sSetInputScopes || aWindow->Destroyed()) {
     return;
@@ -528,28 +526,9 @@ IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
   const InputScope* scopes = nullptr;
   
   if (aHTMLInputType.IsEmpty() || aHTMLInputType.EqualsLiteral("text")) {
-    if (aHTMLInputInputmode.EqualsLiteral("url")) {
-      static const InputScope inputScopes[] = { IS_URL };
-      scopes = &inputScopes[0];
-      arraySize = ArrayLength(inputScopes);
-    } else if (aHTMLInputInputmode.EqualsLiteral("email")) {
-      static const InputScope inputScopes[] = { IS_EMAIL_SMTPEMAILADDRESS };
-      scopes = &inputScopes[0];
-      arraySize = ArrayLength(inputScopes);
-    } else if (aHTMLInputInputmode.EqualsLiteral("tel")) {
-      static const InputScope inputScopes[] =
-        {IS_TELEPHONE_LOCALNUMBER, IS_TELEPHONE_FULLTELEPHONENUMBER};
-      scopes = &inputScopes[0];
-      arraySize = ArrayLength(inputScopes);
-    } else if (aHTMLInputInputmode.EqualsLiteral("numeric")) {
-      static const InputScope inputScopes[] = { IS_NUMBER };
-      scopes = &inputScopes[0];
-      arraySize = ArrayLength(inputScopes);
-    } else {
-      static const InputScope inputScopes[] = { IS_DEFAULT };
-      scopes = &inputScopes[0];
-      arraySize = ArrayLength(inputScopes);
-    }
+    static const InputScope inputScopes[] = { IS_DEFAULT };
+    scopes = &inputScopes[0];
+    arraySize = ArrayLength(inputScopes);
   } else if (aHTMLInputType.EqualsLiteral("url")) {
     static const InputScope inputScopes[] = { IS_URL };
     scopes = &inputScopes[0];
@@ -979,7 +958,7 @@ IMEHandler::GetOnScreenKeyboardWindow()
 {
   const wchar_t kOSKClassName[] = L"IPTip_Main_Window";
   HWND osk = ::FindWindowW(kOSKClassName, nullptr);
-  if (::IsWindow(osk) && ::IsWindowEnabled(osk)) {
+  if (::IsWindow(osk) && ::IsWindowEnabled(osk) && ::IsWindowVisible(osk)) {
     return osk;
   }
   return nullptr;
