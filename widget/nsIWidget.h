@@ -1831,17 +1831,6 @@ public:
     
 
 
-
-
-
-
-
-
-    NS_IMETHOD GetToggledKeyState(uint32_t aKeyCode, bool* aLEDState) = 0;
-
-    
-
-
     virtual nsIMEUpdatePreference GetIMEUpdatePreference() = 0;
 
     
