@@ -1229,6 +1229,11 @@ public abstract class GeckoApp
             GeckoThread.ensureInit(args, action,
                     TextUtils.isEmpty(uri) ? null : uri,
                      ACTION_DEBUG.equals(action));
+
+            if (!TextUtils.isEmpty(uri)) {
+                
+                GeckoThread.speculativeConnect(uri);
+            }
         }
 
         

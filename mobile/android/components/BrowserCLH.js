@@ -78,9 +78,6 @@ BrowserCLH.prototype = {
       if (!uri)
         return;
 
-      
-      Services.io.QueryInterface(Ci.nsISpeculativeConnect).speculativeConnect(uri, null);
-
       let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
       if (browserWin) {
         let whereFlags = pinned ? Ci.nsIBrowserDOMWindow.OPEN_SWITCHTAB : Ci.nsIBrowserDOMWindow.OPEN_NEWTAB;
