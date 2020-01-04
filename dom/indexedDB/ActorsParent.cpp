@@ -8768,6 +8768,7 @@ class QuotaClient final
 {
   static QuotaClient* sInstance;
 
+  nsCOMPtr<nsIEventTarget> mBackgroundThread;
   nsTArray<RefPtr<Maintenance>> mMaintenanceQueue;
   RefPtr<Maintenance> mCurrentMaintenance;
   RefPtr<nsThreadPool> mMaintenanceThreadPool;
@@ -8802,6 +8803,13 @@ public:
     MOZ_ASSERT(!IsOnBackgroundThread());
 
     return QuotaManager::IsShuttingDown();
+  }
+
+  nsIEventTarget*
+  BackgroundThread() const
+  {
+    MOZ_ASSERT(mBackgroundThread);
+    return mBackgroundThread;
   }
 
   bool
@@ -8941,45 +8949,32 @@ class Maintenance final
     Complete
   };
 
-  nsCOMPtr<nsIEventTarget> mOwningThread;
   RefPtr<QuotaClient> mQuotaClient;
   PRTime mStartTime;
   RefPtr<DirectoryLock> mDirectoryLock;
   nsTArray<DirectoryInfo> mDirectoryInfos;
   nsDataHashtable<nsStringHashKey, DatabaseMaintenance*> mDatabaseMaintenances;
-  Atomic<bool> mAbortedOnAnyThread;
+  Atomic<bool> mAborted;
   State mState;
-  bool mAborted;
 
 public:
   explicit Maintenance(QuotaClient* aQuotaClient)
-    : mOwningThread(NS_GetCurrentThread())
-    , mQuotaClient(aQuotaClient)
+    : mQuotaClient(aQuotaClient)
     , mStartTime(PR_Now())
-    , mAbortedOnAnyThread(false)
-    , mState(State::Initial)
     , mAborted(false)
+    , mState(State::Initial)
   {
-    AssertIsOnOwningThread();
+    AssertIsOnBackgroundThread();
     MOZ_ASSERT(aQuotaClient);
     MOZ_ASSERT(QuotaClient::GetInstance() == aQuotaClient);
     MOZ_ASSERT(mStartTime);
   }
 
-  bool
-  IsOnOwningThread() const
+  nsIEventTarget*
+  BackgroundThread() const
   {
-    MOZ_ASSERT(mOwningThread);
-
-    bool current;
-    return NS_SUCCEEDED(mOwningThread->IsOnCurrentThread(&current)) && current;
-  }
-
-  void
-  AssertIsOnOwningThread() const
-  {
-    MOZ_ASSERT(IsOnBackgroundThread());
-    MOZ_ASSERT(IsOnOwningThread());
+    MOZ_ASSERT(mQuotaClient);
+    return mQuotaClient->BackgroundThread();
   }
 
   PRTime
@@ -8991,16 +8986,7 @@ public:
   bool
   IsAborted() const
   {
-    MOZ_ASSERT(IsOnOwningThread(), "Use IsAbortedOnAnyThread()");
-
     return mAborted;
-  }
-
-  
-  bool
-  IsAbortedOnAnyThread() const
-  {
-    return mAbortedOnAnyThread;
   }
 
   void
@@ -9014,13 +9000,9 @@ public:
   void
   Abort()
   {
-    AssertIsOnOwningThread();
-    MOZ_ASSERT(mAborted == mAbortedOnAnyThread);
+    AssertIsOnBackgroundThread();
 
-    if (!mAborted) {
-      mAborted = true;
-      mAbortedOnAnyThread = true;
-    }
+    mAborted = true;
   }
 
   void
@@ -9032,7 +9014,7 @@ public:
   already_AddRefed<DatabaseMaintenance>
   GetDatabaseMaintenance(const nsAString& aDatabasePath) const
   {
-    AssertIsOnOwningThread();
+    AssertIsOnBackgroundThread();
 
     RefPtr<DatabaseMaintenance> result =
       mDatabaseMaintenances.Get(aDatabasePath);
@@ -9179,7 +9161,6 @@ class DatabaseMaintenance final
     FullVacuum
   };
 
-  nsCOMPtr<nsIEventTarget> mOwningThread;
   RefPtr<Maintenance> mMaintenance;
   const nsCString mGroup;
   const nsCString mOrigin;
@@ -9193,29 +9174,12 @@ public:
                       const nsCString& aGroup,
                       const nsCString& aOrigin,
                       const nsString& aDatabasePath)
-    : mOwningThread(NS_GetCurrentThread())
-    , mMaintenance(aMaintenance)
+    : mMaintenance(aMaintenance)
     , mGroup(aGroup)
     , mOrigin(aOrigin)
     , mDatabasePath(aDatabasePath)
     , mPersistenceType(aPersistenceType)
   { }
-
-  bool
-  IsOnOwningThread() const
-  {
-    MOZ_ASSERT(mOwningThread);
-
-    bool current;
-    return NS_SUCCEEDED(mOwningThread->IsOnCurrentThread(&current)) && current;
-  }
-
-  void
-  AssertIsOnOwningThread() const
-  {
-    MOZ_ASSERT(IsOnBackgroundThread());
-    MOZ_ASSERT(IsOnOwningThread());
-  }
 
   const nsString&
   DatabasePath() const
@@ -9224,9 +9188,9 @@ public:
   }
 
   void
-  WaitForComplete(nsIRunnable* aCallback)
+  WaitForCompletion(nsIRunnable* aCallback)
   {
-    AssertIsOnOwningThread();
+    AssertIsOnBackgroundThread();
     MOZ_ASSERT(!mCompleteCallback);
 
     mCompleteCallback = aCallback;
@@ -9248,7 +9212,6 @@ private:
   nsresult
   DetermineMaintenanceAction(mozIStorageConnection* aConnection,
                              nsIFile* aDatabaseFile,
-                             PRTime aStartTime,
                              MaintenanceAction* aMaintenanceAction);
 
   
@@ -16937,9 +16900,11 @@ QuotaClient::StartIdleMaintenance()
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!mShutdownRequested);
 
+  mBackgroundThread = do_GetCurrentThread();
+
   RefPtr<Maintenance> maintenance = new Maintenance(this);
 
-  mMaintenanceQueue.AppendElement(maintenance);
+  mMaintenanceQueue.AppendElement(maintenance.forget());
   ProcessMaintenanceQueue();
 }
 
@@ -17135,7 +17100,7 @@ void
 Maintenance::RegisterDatabaseMaintenance(
                                       DatabaseMaintenance* aDatabaseMaintenance)
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
   MOZ_ASSERT(aDatabaseMaintenance);
   MOZ_ASSERT(mState == State::BeginDatabaseMaintenance);
   MOZ_ASSERT(!mDatabaseMaintenances.Get(aDatabaseMaintenance->DatabasePath()));
@@ -17148,7 +17113,7 @@ void
 Maintenance::UnregisterDatabaseMaintenance(
                                       DatabaseMaintenance* aDatabaseMaintenance)
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
   MOZ_ASSERT(aDatabaseMaintenance);
   MOZ_ASSERT(mState == State::WaitingForDatabaseMaintenancesToComplete);
   MOZ_ASSERT(mDatabaseMaintenances.Get(aDatabaseMaintenance->DatabasePath()));
@@ -17166,7 +17131,7 @@ Maintenance::UnregisterDatabaseMaintenance(
 nsresult
 Maintenance::Start()
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
   MOZ_ASSERT(mState == State::Initial);
 
   if (IsAborted()) {
@@ -17193,7 +17158,7 @@ Maintenance::CreateIndexedDatabaseManager()
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == State::CreateIndexedDatabaseManager);
 
-  if (IsAbortedOnAnyThread()) {
+  if (IsAborted()) {
     return NS_ERROR_ABORT;
   }
 
@@ -17203,7 +17168,8 @@ Maintenance::CreateIndexedDatabaseManager()
   }
 
   mState = State::IndexedDatabaseManagerOpen;
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(mOwningThread->Dispatch(this, NS_DISPATCH_NORMAL)));
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
+    mQuotaClient->BackgroundThread()->Dispatch(this, NS_DISPATCH_NORMAL)));
 
   return NS_OK;
 }
@@ -17211,7 +17177,7 @@ Maintenance::CreateIndexedDatabaseManager()
 nsresult
 Maintenance::OpenDirectory()
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
   MOZ_ASSERT(mState == State::Initial ||
              mState == State::IndexedDatabaseManagerOpen);
   MOZ_ASSERT(!mDirectoryLock);
@@ -17237,7 +17203,7 @@ Maintenance::OpenDirectory()
 nsresult
 Maintenance::DirectoryOpen()
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
   MOZ_ASSERT(mState == State::DirectoryOpenPending);
   MOZ_ASSERT(mDirectoryLock);
 
@@ -17271,7 +17237,7 @@ Maintenance::DirectoryWork()
   
   
 
-  if (IsAbortedOnAnyThread()) {
+  if (IsAborted()) {
     return NS_ERROR_ABORT;
   }
 
@@ -17310,7 +17276,7 @@ Maintenance::DirectoryWork()
 
   for (const PersistenceType persistenceType : kPersistenceTypes) {
     
-    if (IsAbortedOnAnyThread()) {
+    if (IsAborted()) {
       return NS_ERROR_ABORT;
     }
 
@@ -17348,7 +17314,7 @@ Maintenance::DirectoryWork()
 
     while (true) {
       
-      if (IsAbortedOnAnyThread()) {
+      if (IsAborted()) {
         return NS_ERROR_ABORT;
       }
 
@@ -17403,7 +17369,7 @@ Maintenance::DirectoryWork()
 
       while (true) {
         
-        if (IsAbortedOnAnyThread()) {
+        if (IsAborted()) {
           return NS_ERROR_ABORT;
         }
 
@@ -17471,8 +17437,8 @@ Maintenance::DirectoryWork()
 
   mState = State::BeginDatabaseMaintenance;
 
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(mOwningThread->Dispatch(this,
-                                                       NS_DISPATCH_NORMAL)));
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
+    mQuotaClient->BackgroundThread()->Dispatch(this, NS_DISPATCH_NORMAL)));
 
   return NS_OK;
 }
@@ -17480,7 +17446,7 @@ Maintenance::DirectoryWork()
 nsresult
 Maintenance::BeginDatabaseMaintenance()
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
   MOZ_ASSERT(mState == State::BeginDatabaseMaintenance);
 
   class MOZ_STACK_CLASS Helper final
@@ -17556,7 +17522,7 @@ Maintenance::BeginDatabaseMaintenance()
 void
 Maintenance::Finish()
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
   MOZ_ASSERT(mState == State::Finishing);
 
   mDirectoryLock = nullptr;
@@ -17609,11 +17575,11 @@ Maintenance::Run()
     
     mState = State::Finishing;
 
-    if (IsOnOwningThread()) {
+    if (IsOnBackgroundThread()) {
       Finish();
     } else {
       MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
-        mOwningThread->Dispatch(this, NS_DISPATCH_NORMAL)));
+        mQuotaClient->BackgroundThread()->Dispatch(this, NS_DISPATCH_NORMAL)));
     }
   }
 
@@ -17623,7 +17589,7 @@ Maintenance::Run()
 void
 Maintenance::DirectoryLockAcquired(DirectoryLock* aLock)
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
   MOZ_ASSERT(mState == State::DirectoryOpenPending);
   MOZ_ASSERT(!mDirectoryLock);
 
@@ -17641,7 +17607,7 @@ Maintenance::DirectoryLockAcquired(DirectoryLock* aLock)
 void
 Maintenance::DirectoryLockFailed()
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
   MOZ_ASSERT(mState == State::DirectoryOpenPending);
   MOZ_ASSERT(!mDirectoryLock);
 
@@ -17695,7 +17661,7 @@ DatabaseMaintenance::PerformMaintenanceOnDatabase()
 
   AutoClose autoClose(connection);
 
-  if (mMaintenance->IsAbortedOnAnyThread()) {
+  if (mMaintenance->IsAborted()) {
     return;
   }
 
@@ -17717,20 +17683,17 @@ DatabaseMaintenance::PerformMaintenanceOnDatabase()
     return;
   }
 
-  if (mMaintenance->IsAbortedOnAnyThread()) {
+  if (mMaintenance->IsAborted()) {
     return;
   }
 
   MaintenanceAction maintenanceAction;
-  rv = DetermineMaintenanceAction(connection,
-                                  databaseFile,
-                                  mMaintenance->StartTime(),
-                                  &maintenanceAction);
+  rv = DetermineMaintenanceAction(connection, databaseFile, &maintenanceAction);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
 
-  if (mMaintenance->IsAbortedOnAnyThread()) {
+  if (mMaintenance->IsAborted()) {
     return;
   }
 
@@ -17876,10 +17839,10 @@ DatabaseMaintenance::CheckIntegrity(mozIStorageConnection* aConnection,
 }
 
 nsresult
-DatabaseMaintenance::DetermineMaintenanceAction(mozIStorageConnection* aConnection,
-                                                nsIFile* aDatabaseFile,
-                                                PRTime aStartTime,
-                                                MaintenanceAction* aMaintenanceAction)
+DatabaseMaintenance::DetermineMaintenanceAction(
+                                          mozIStorageConnection* aConnection,
+                                          nsIFile* aDatabaseFile,
+                                          MaintenanceAction* aMaintenanceAction)
 {
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_ASSERT(!IsOnBackgroundThread());
@@ -17955,13 +17918,15 @@ DatabaseMaintenance::DetermineMaintenanceAction(mozIStorageConnection* aConnecti
 
   NS_ASSERTION(lastVacuumSize > 0, "Thy last vacuum size shall be greater than zero, less than zero shall thy last vacuum size not be. Zero is right out.");
 
+  PRTime startTime = mMaintenance->StartTime();
+
   
-  if (NS_WARN_IF(aStartTime <= lastVacuumTime)) {
+  if (NS_WARN_IF(startTime <= lastVacuumTime)) {
     *aMaintenanceAction = MaintenanceAction::Nothing;
     return NS_OK;
   }
 
-  if (aStartTime - lastVacuumTime < kMinVacuumAge) {
+  if (startTime - lastVacuumTime < kMinVacuumAge) {
     *aMaintenanceAction = MaintenanceAction::IncrementalVacuum;
     return NS_OK;
   }
@@ -18158,7 +18123,7 @@ DatabaseMaintenance::FullVacuum(mozIStorageConnection* aConnection,
 void
 DatabaseMaintenance::RunOnOwningThread()
 {
-  AssertIsOnOwningThread();
+  AssertIsOnBackgroundThread();
 
   if (mCompleteCallback) {
     MOZ_ALWAYS_TRUE(
@@ -18177,14 +18142,14 @@ DatabaseMaintenance::RunOnConnectionThread()
 
   PerformMaintenanceOnDatabase();
 
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(mOwningThread->Dispatch(this,
-                                                       NS_DISPATCH_NORMAL)));
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
+    mMaintenance->BackgroundThread()->Dispatch(this, NS_DISPATCH_NORMAL)));
 }
 
 NS_IMETHODIMP
 DatabaseMaintenance::Run()
 {
-  if (IsOnOwningThread()) {
+  if (IsOnBackgroundThread()) {
     RunOnOwningThread();
   } else {
     RunOnConnectionThread();
@@ -18267,7 +18232,7 @@ AutoProgressHandler::OnProgress(mozIStorageConnection* aConnection,
   MOZ_ASSERT(mConnection == aConnection);
   MOZ_ASSERT(_retval);
 
-  *_retval = mMaintenance->IsAbortedOnAnyThread();
+  *_retval = mMaintenance->IsAborted();
 
   return NS_OK;
 }
@@ -19639,7 +19604,7 @@ FactoryOp::DirectoryOpen()
           quotaClient->GetCurrentMaintenance()) {
       if (RefPtr<DatabaseMaintenance> databaseMaintenance =
             currentMaintenance->GetDatabaseMaintenance(mDatabaseFilePath)) {
-        databaseMaintenance->WaitForComplete(this);
+        databaseMaintenance->WaitForCompletion(this);
         delayed = true;
       }
     }
