@@ -161,7 +161,9 @@ SVGSwitchElement::FindActiveChild() const
           case -2:
             
             
-            defaultChild = child;
+            if (!defaultChild) {
+              defaultChild = child;
+            }
             break;
           default:
             if (bestLanguagePreferenceRank == -1 ||
