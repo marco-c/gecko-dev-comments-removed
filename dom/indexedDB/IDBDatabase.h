@@ -225,13 +225,15 @@ public:
 
   
   already_AddRefed<IDBTransaction>
-  Transaction(const StringOrStringSequence& aStoreNames,
+  Transaction(JSContext* aCx,
+              const StringOrStringSequence& aStoreNames,
               IDBTransactionMode aMode,
               ErrorResult& aRv);
 
   
   nsresult
-  Transaction(const StringOrStringSequence& aStoreNames,
+  Transaction(JSContext* aCx,
+              const StringOrStringSequence& aStoreNames,
               IDBTransactionMode aMode,
               IDBTransaction** aTransaction);
 
@@ -243,16 +245,18 @@ public:
   IMPL_EVENT_HANDLER(versionchange)
 
   already_AddRefed<IDBRequest>
-  CreateMutableFile(const nsAString& aName,
+  CreateMutableFile(JSContext* aCx,
+                    const nsAString& aName,
                     const Optional<nsAString>& aType,
                     ErrorResult& aRv);
 
   already_AddRefed<IDBRequest>
-  MozCreateFileHandle(const nsAString& aName,
+  MozCreateFileHandle(JSContext* aCx,
+                      const nsAString& aName,
                       const Optional<nsAString>& aType,
                       ErrorResult& aRv)
   {
-    return CreateMutableFile(aName, aType, aRv);
+    return CreateMutableFile(aCx, aName, aType, aRv);
   }
 
   void
