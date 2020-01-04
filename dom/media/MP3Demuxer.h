@@ -412,6 +412,9 @@ private:
   void UpdateState(const MediaByteRange& aRange);
 
   
+  int64_t OffsetFromFrameIndex(int64_t aFrameIndex) const;
+
+  
   int64_t FrameIndexFromOffset(int64_t aOffset) const;
 
   
