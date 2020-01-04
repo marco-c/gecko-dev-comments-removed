@@ -963,25 +963,6 @@ OnSharedPreferenceChangeListener
         context.sendBroadcast(intent, GlobalConstants.PER_ANDROID_PACKAGE_PERMISSION);
     }
 
-    
-
-
-
-
-
-
-
-    public static void broadcastPrefAction(final Context context,
-                                           final String action,
-                                           final String pref,
-                                           final boolean value) {
-        final Intent intent = new Intent(action)
-                .putExtra("pref", pref)
-                .putExtra("branch", GeckoSharedPrefs.APP_PREFS_NAME)
-                .putExtra("enabled", value);
-        broadcastAction(context, intent);
-    }
-
     private static void fillIntentWithProfileInfo(final Context context, final Intent intent) {
         
         
