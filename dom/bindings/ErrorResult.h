@@ -119,7 +119,7 @@ public:
   }
 
   ~TErrorResult() {
-    AssertInOwningThread();
+    NS_ASSERT_OWNINGTHREAD(TErrorResult);
 
     if (CleanupPolicy::assertHandled) {
       
@@ -366,10 +366,8 @@ private:
 #endif 
   }
 
-  MOZ_ALWAYS_INLINE void AssertInOwningThread() const {
-#ifdef DEBUG
+  void AssertInOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(TErrorResult);
-#endif
   }
 
   void AssignErrorCode(nsresult aRv) {
