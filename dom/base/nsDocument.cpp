@@ -255,9 +255,7 @@
 
 #include "nsISpeculativeConnect.h"
 
-#ifdef MOZ_MEDIA_NAVIGATOR
 #include "mozilla/MediaManager.h"
-#endif 
 #ifdef MOZ_WEBRTC
 #include "IPeerConnection.h"
 #endif 
@@ -8841,13 +8839,11 @@ nsDocument::CanSavePresentation(nsIRequest *aNewRequest)
     }
   }
 
-#ifdef MOZ_MEDIA_NAVIGATOR
   
   if (MediaManager::Exists() && win &&
       MediaManager::Get()->IsWindowStillActive(win->WindowID())) {
     return false;
   }
-#endif 
 
 #ifdef MOZ_WEBRTC
   

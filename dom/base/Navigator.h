@@ -71,11 +71,9 @@ class MozIdleObserver;
 #ifdef MOZ_GAMEPAD
 class Gamepad;
 #endif 
-#ifdef MOZ_MEDIA_NAVIGATOR
 class NavigatorUserMediaSuccessCallback;
 class NavigatorUserMediaErrorCallback;
 class MozGetUserMediaDevicesSuccessCallback;
-#endif 
 
 namespace network {
 class Connection;
@@ -294,7 +292,6 @@ public:
                   const Nullable<ArrayBufferViewOrBlobOrStringOrFormData>& aData,
                   ErrorResult& aRv);
 
-#ifdef MOZ_MEDIA_NAVIGATOR
   void MozGetUserMedia(const MediaStreamConstraints& aConstraints,
                        NavigatorUserMediaSuccessCallback& aOnSuccess,
                        NavigatorUserMediaErrorCallback& aOnError,
@@ -305,7 +302,6 @@ public:
                               uint64_t aInnerWindowID,
                               const nsAString& aCallID,
                               ErrorResult& aRv);
-#endif 
 
   already_AddRefed<ServiceWorkerContainer> ServiceWorker();
 
@@ -330,10 +326,8 @@ public:
 #ifdef MOZ_NFC
   static bool HasNFCSupport(JSContext* , JSObject* aGlobal);
 #endif 
-#ifdef MOZ_MEDIA_NAVIGATOR
   static bool HasUserMediaSupport(JSContext* ,
                                   JSObject* );
-#endif 
 
   static bool HasDataStoreSupport(nsIPrincipal* aPrincipal);
 
