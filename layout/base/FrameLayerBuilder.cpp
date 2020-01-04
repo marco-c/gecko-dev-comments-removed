@@ -2050,6 +2050,15 @@ FrameLayerBuilder::GetDebugSingleOldPaintedLayerForFrame(nsIFrame* aFrame)
   return layer->AsPaintedLayer();
 }
 
+
+static void
+ResetLayerStateForRecycling(Layer* aLayer) {
+  
+  
+  aLayer->SetMaskLayer(nullptr);
+  aLayer->SetAncestorMaskLayers({});
+}
+
 already_AddRefed<ColorLayer>
 ContainerState::CreateOrRecycleColorLayer(PaintedLayer *aPainted)
 {
@@ -2268,8 +2277,7 @@ ContainerState::RecyclePaintedLayer(PaintedLayer* aLayer,
 {
   
   
-  aLayer->SetMaskLayer(nullptr);
-  aLayer->SetAncestorMaskLayers({});
+  ResetLayerStateForRecycling(aLayer);
   aLayer->ClearExtraDumpInfo();
 
   PaintedDisplayItemLayerUserData* data =
@@ -5230,8 +5238,7 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
         NS_ASSERTION(oldLayer->GetType() == Layer::TYPE_CONTAINER,
                      "Wrong layer type");
         containerLayer = static_cast<ContainerLayer*>(oldLayer);
-        containerLayer->SetMaskLayer(nullptr);
-        containerLayer->SetAncestorMaskLayers({});
+        ResetLayerStateForRecycling(containerLayer);
       }
     }
   }
