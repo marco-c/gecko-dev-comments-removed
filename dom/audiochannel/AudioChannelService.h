@@ -122,8 +122,9 @@ public:
   
   
   
-  void RefreshAgentsCapture(nsPIDOMWindow* aWindow,
-                            uint64_t aInnerWindowID);
+  void SetWindowAudioCaptured(nsPIDOMWindow* aWindow,
+                              uint64_t aInnerWindowID,
+                              bool aCapture);
 
 
 #ifdef MOZ_WIDGET_GONK
@@ -187,13 +188,15 @@ private:
   struct AudioChannelWindow final
   {
     explicit AudioChannelWindow(uint64_t aWindowID)
-      : mWindowID(aWindowID)
+      : mWindowID(aWindowID),
+        mIsAudioCaptured(false)
     {
       
       mChannels[(int16_t)AudioChannel::System].mMuted = false;
     }
 
     uint64_t mWindowID;
+    bool mIsAudioCaptured;
     AudioChannelConfig mChannels[NUMBER_OF_AUDIO_CHANNELS];
 
     
