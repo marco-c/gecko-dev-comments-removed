@@ -1104,7 +1104,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD SetWindowShadowStyle(int32_t aStyle) = 0;
+    virtual void SetWindowShadowStyle(int32_t aStyle) = 0;
 
     
 
@@ -1386,7 +1386,7 @@ class nsIWidget : public nsISupports
     
 
 
-    NS_IMETHOD SetWindowClass(const nsAString& xulWinType) = 0;
+    virtual void SetWindowClass(const nsAString& xulWinType) = 0;
 
     
 
@@ -1432,7 +1432,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD SetWindowTitlebarColor(nscolor aColor, bool aActive) = 0;
+    virtual void SetWindowTitlebarColor(nscolor aColor, bool aActive) = 0;
 
     
 

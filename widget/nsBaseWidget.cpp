@@ -846,17 +846,6 @@ nsBaseWidget::SetWindowClipRegion(const nsTArray<LayoutDeviceIntRect>& aRects,
 
 
 
-
-NS_IMETHODIMP nsBaseWidget::SetWindowShadowStyle(int32_t aMode)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-
-
-
-
-
 NS_IMETHODIMP nsBaseWidget::HideWindowChrome(bool aShouldHide)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
@@ -1458,11 +1447,6 @@ void nsBaseWidget::OnDestroy()
   ReleaseContentController();
 }
 
-NS_IMETHODIMP nsBaseWidget::SetWindowClass(const nsAString& xulWinType)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
 NS_IMETHODIMP nsBaseWidget::MoveClient(double aX, double aY)
 {
   LayoutDeviceIntPoint clientOffset(GetClientOffset());
@@ -1608,12 +1592,6 @@ NS_IMETHODIMP
 nsBaseWidget::SetIcon(const nsAString&)
 {
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsBaseWidget::SetWindowTitlebarColor(nscolor aColor, bool aActive)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 bool
