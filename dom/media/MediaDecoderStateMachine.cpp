@@ -1139,6 +1139,11 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     return;
   }
 
+  bool wasDormant = mState == DECODER_STATE_DORMANT;
+  if (wasDormant == aDormant) {
+    return;
+  }
+
   if (mMetadataRequest.Exists()) {
     mPendingDormant = aDormant;
     return;
@@ -1146,29 +1151,20 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
 
   DECODER_LOG("SetDormant=%d", aDormant);
 
+  
   if (aDormant) {
     if (mState == DECODER_STATE_SEEKING) {
-      if (mQueuedSeek.Exists()) {
-        
-      } else if (mCurrentSeek.Exists()) {
-        
-        
-        
-        
-        if (mCurrentSeek.mTarget.IsVideoOnly()) {
-          mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
-          mCurrentSeek.mTarget.SetVideoOnly(false);
-        }
-        mQueuedSeek = Move(mCurrentSeek);
-        mSeekTaskRequest.DisconnectIfExists();
-      } else {
-        mQueuedSeek.mTarget = SeekTarget(mCurrentPosition,
-                                         SeekTarget::Accurate,
-                                         MediaDecoderEventVisibility::Suppressed);
-        
-        
-        RefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
+      MOZ_ASSERT(!mQueuedSeek.Exists());
+      MOZ_ASSERT(mCurrentSeek.Exists());
+      
+      
+      
+      
+      if (mCurrentSeek.mTarget.IsVideoOnly()) {
+        mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
+        mCurrentSeek.mTarget.SetVideoOnly(false);
       }
+      mQueuedSeek = Move(mCurrentSeek);
     } else {
       mQueuedSeek.mTarget = SeekTarget(mCurrentPosition,
                                        SeekTarget::Accurate,
@@ -1178,10 +1174,11 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
       RefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
     }
 
+    SetState(DECODER_STATE_DORMANT);
+
     
     DiscardSeekTaskIfExist();
 
-    SetState(DECODER_STATE_DORMANT);
     if (IsPlaying()) {
       StopPlayback();
     }
@@ -1195,11 +1192,14 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     
     
     mReader->ReleaseMediaResources();
-  } else if (mState == DECODER_STATE_DORMANT) {
-    mDecodingFirstFrame = true;
-    SetState(DECODER_STATE_DECODING_METADATA);
-    ReadMetadata();
+
+    return;
   }
+
+  
+  SetState(DECODER_STATE_DECODING_METADATA);
+  mDecodingFirstFrame = true;
+  ReadMetadata();
 }
 
 RefPtr<ShutdownPromise>
