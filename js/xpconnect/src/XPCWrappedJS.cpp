@@ -204,6 +204,18 @@ nsXPCWrappedJS::QueryInterface(REFNSIID aIID, void** aInstancePtr)
     if (!IsValid())
         return NS_ERROR_UNEXPECTED;
 
+    if (aIID.Equals(NS_GET_IID(nsIXPConnectWrappedJSUnmarkGray))) {
+        *aInstancePtr = nullptr;
+
+        
+        
+        JS::ExposeObjectToActiveJS(mJSObj);
+
+        
+        
+        return NS_ERROR_FAILURE;
+    }
+
     
     
     if (aIID.Equals(NS_GET_IID(nsIXPConnectWrappedJS))) {
