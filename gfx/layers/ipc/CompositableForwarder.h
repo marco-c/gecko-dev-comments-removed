@@ -15,6 +15,7 @@
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureClient.h"  
+#include "mozilla/layers/TextureForwarder.h"  
 #include "nsRegion.h"                   
 #include "mozilla/gfx/Rect.h"
 #include "nsHashKeys.h"
@@ -42,12 +43,12 @@ class PTextureChild;
 
 
 
-class CompositableForwarder : public ClientIPCAllocator
+class CompositableForwarder : public TextureForwarder
 {
 public:
 
   CompositableForwarder(const char* aName)
-    : ClientIPCAllocator(aName)
+    : TextureForwarder(aName)
     , mSerial(++sSerialCounter)
   {}
 
@@ -64,15 +65,6 @@ public:
 
   virtual void UseTiledLayerBuffer(CompositableClient* aCompositable,
                                    const SurfaceDescriptorTiles& aTiledDescriptor) = 0;
-
-  
-
-
-  virtual PTextureChild* CreateTexture(
-    const SurfaceDescriptor& aSharedData,
-    LayersBackend aLayersBackend,
-    TextureFlags aFlags,
-    uint64_t aSerial) = 0;
 
   
 
@@ -138,36 +130,6 @@ public:
 
   void IdentifyTextureHost(const TextureFactoryIdentifier& aIdentifier);
 
-  virtual int32_t GetMaxTextureSize() const override
-  {
-    return mTextureFactoryIdentifier.mMaxTextureSize;
-  }
-
-  
-
-
-
-
-  LayersBackend GetCompositorBackendType() const
-  {
-    return mTextureFactoryIdentifier.mParentBackend;
-  }
-
-  bool SupportsTextureBlitting() const
-  {
-    return mTextureFactoryIdentifier.mSupportsTextureBlitting;
-  }
-
-  bool SupportsPartialUploads() const
-  {
-    return mTextureFactoryIdentifier.mSupportsPartialUploads;
-  }
-
-  const TextureFactoryIdentifier& GetTextureFactoryIdentifier() const
-  {
-    return mTextureFactoryIdentifier;
-  }
-
   virtual void UpdateFwdTransactionId() = 0;
   virtual uint64_t GetFwdTransactionId() = 0;
 
@@ -178,7 +140,6 @@ public:
   virtual CompositableForwarder* AsCompositableForwarder() override { return this; }
 
 protected:
-  TextureFactoryIdentifier mTextureFactoryIdentifier;
   nsTArray<RefPtr<TextureClient> > mTexturesToRemove;
   nsTArray<RefPtr<CompositableClient>> mCompositableClientsToRemove;
   RefPtr<SyncObject> mSyncObject;

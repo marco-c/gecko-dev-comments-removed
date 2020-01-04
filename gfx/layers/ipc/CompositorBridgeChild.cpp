@@ -14,6 +14,7 @@
 #include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/layers/TextureClient.h"
+#include "mozilla/layers/TextureClientPool.h"
 #include "mozilla/mozalloc.h"           
 #include "nsAutoPtr.h"
 #include "nsDebug.h"                    
@@ -41,10 +42,16 @@ static StaticRefPtr<CompositorBridgeChild> sCompositorBridge;
 Atomic<int32_t> CompositableForwarder::sSerialCounter(0);
 
 CompositorBridgeChild::CompositorBridgeChild(ClientLayerManager *aLayerManager)
-  : mLayerManager(aLayerManager)
+  : TextureForwarder("CompositorBridgeChild")
+  , mLayerManager(aLayerManager)
   , mCanSend(false)
   , mFwdTransactionId(0)
+  , mMessageLoop(MessageLoop::current())
 {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  SetMessageLoopToPostDestructionTo(mMessageLoop);
 }
 
 CompositorBridgeChild::~CompositorBridgeChild()
@@ -77,11 +84,15 @@ void
 CompositorBridgeChild::Destroy()
 {
   
-  MOZ_ASSERT(mRefCnt != 0);
+  MOZ_ASSERT(!IsDead());
   mTexturesWaitingRecycled.Clear();
 
   if (!mCanSend) {
     return;
+  }
+
+  for (size_t i = 0; i < mTexturePools.Length(); i++) {
+    mTexturePools[i]->Destroy();
   }
 
   
@@ -422,6 +433,11 @@ CompositorBridgeChild::RecvDidComposite(const uint64_t& aId, const uint64_t& aTr
       child->DidComposite(aTransactionId, aCompositeStart, aCompositeEnd);
     }
   }
+
+  for (size_t i = 0; i < mTexturePools.Length(); i++) {
+    mTexturePools[i]->ReturnDeferredClients();
+  }
+
   return true;
 }
 
@@ -863,6 +879,74 @@ CompositorBridgeChild::CancelWaitForRecycle(uint64_t aTextureId)
     return;
   }
   mTexturesWaitingRecycled.Remove(aTextureId);
+}
+
+TextureClientPool*
+CompositorBridgeChild::GetTexturePool(SurfaceFormat aFormat, TextureFlags aFlags)
+{
+  for (size_t i = 0; i < mTexturePools.Length(); i++) {
+    if (mTexturePools[i]->GetFormat() == aFormat &&
+        mTexturePools[i]->GetFlags() == aFlags) {
+      return mTexturePools[i];
+    }
+  }
+
+  mTexturePools.AppendElement(
+      new TextureClientPool(aFormat, aFlags,
+                            IntSize(gfxPlatform::GetPlatform()->GetTileWidth(),
+                                    gfxPlatform::GetPlatform()->GetTileHeight()),
+                            gfxPrefs::LayersTileMaxPoolSize(),
+                            gfxPrefs::LayersTileShrinkPoolTimeout(),
+                            this));
+
+  return mTexturePools.LastElement();
+}
+
+void
+CompositorBridgeChild::HandleMemoryPressure()
+{
+  for (size_t i = 0; i < mTexturePools.Length(); i++) {
+    mTexturePools[i]->ShrinkToMinimumSize();
+  }
+}
+
+void
+CompositorBridgeChild::ClearTexturePool()
+{
+  for (size_t i = 0; i < mTexturePools.Length(); i++) {
+    mTexturePools[i]->Clear();
+  }
+}
+
+PTextureChild*
+CompositorBridgeChild::CreateTexture(const SurfaceDescriptor& aSharedData,
+                                     LayersBackend aLayersBackend,
+                                     TextureFlags aFlags,
+                                     uint64_t aSerial)
+{
+  return PCompositorBridgeChild::SendPTextureConstructor(aSharedData, aLayersBackend, aFlags, 0 , aSerial);
+}
+
+bool
+CompositorBridgeChild::AllocUnsafeShmem(size_t aSize,
+                                   ipc::SharedMemory::SharedMemoryType aType,
+                                   ipc::Shmem* aShmem)
+{
+  return PCompositorBridgeChild::AllocUnsafeShmem(aSize, aType, aShmem);
+}
+
+bool
+CompositorBridgeChild::AllocShmem(size_t aSize,
+                             ipc::SharedMemory::SharedMemoryType aType,
+                             ipc::Shmem* aShmem)
+{
+  return PCompositorBridgeChild::AllocShmem(aSize, aType, aShmem);
+}
+
+void
+CompositorBridgeChild::DeallocShmem(ipc::Shmem& aShmem)
+{
+    PCompositorBridgeChild::DeallocShmem(aShmem);
 }
 
 } 
