@@ -3164,6 +3164,15 @@ pref("intl.tsf.hack.google_ja_input.do_not_return_no_layout_error_at_first_char"
 
 
 pref("intl.tsf.hack.google_ja_input.do_not_return_no_layout_error_at_caret", true);
+
+
+
+
+
+
+pref("intl.tsf.hack.ms_simplified_chinese.query_insert_result", true);
+
+pref("intl.tsf.hack.ms_traditional_chinese.query_insert_result", true);
 #endif
 
 
