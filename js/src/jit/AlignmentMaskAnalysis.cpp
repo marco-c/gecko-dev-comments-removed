@@ -65,9 +65,9 @@ AnalyzeAsmHeapAddress(MDefinition* ptr, MIRGraph& graph)
         return;
 
     
-    MInstruction* and_ = MBitAnd::NewAsmJS(graph.alloc(), op0, rhs, MIRType_Int32);
+    MInstruction* and_ = MBitAnd::NewAsmJS(graph.alloc(), op0, rhs, MIRType::Int32);
     ptr->block()->insertBefore(ptr->toBitAnd(), and_);
-    MInstruction* add = MAdd::NewAsmJS(graph.alloc(), and_, op1, MIRType_Int32);
+    MInstruction* add = MAdd::NewAsmJS(graph.alloc(), and_, op1, MIRType::Int32);
     ptr->block()->insertBefore(ptr->toBitAnd(), add);
     ptr->replaceAllUsesWith(add);
     ptr->block()->discard(ptr->toBitAnd());

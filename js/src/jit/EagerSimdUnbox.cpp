@@ -18,7 +18,7 @@ namespace jit {
 static bool
 CanUnboxSimdPhi(const JitCompartment* jitCompartment, MPhi* phi, SimdType unboxType)
 {
-    MOZ_ASSERT(phi->type() == MIRType_Object);
+    MOZ_ASSERT(phi->type() == MIRType::Object);
 
     
     

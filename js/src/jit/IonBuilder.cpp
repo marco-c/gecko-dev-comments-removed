@@ -659,18 +659,18 @@ IonBuilder::analyzeNewLoopTypes(MBasicBlock* entry, jsbytecode* start, jsbytecod
                 }
             }
         } else {
-            MIRType type = MIRType_None;
+            MIRType type = MIRType::None;
             switch (*last) {
               case JSOP_VOID:
               case JSOP_UNDEFINED:
-                type = MIRType_Undefined;
+                type = MIRType::Undefined;
                 break;
               case JSOP_GIMPLICITTHIS:
                 if (!script()->hasNonSyntacticScope())
-                    type = MIRType_Undefined;
+                    type = MIRType::Undefined;
                 break;
               case JSOP_NULL:
-                type = MIRType_Null;
+                type = MIRType::Null;
                 break;
               case JSOP_ZERO:
               case JSOP_ONE:
@@ -685,7 +685,7 @@ IonBuilder::analyzeNewLoopTypes(MBasicBlock* entry, jsbytecode* start, jsbytecod
               case JSOP_RSH:
               case JSOP_LSH:
               case JSOP_URSH:
-                type = MIRType_Int32;
+                type = MIRType::Int32;
                 break;
               case JSOP_FALSE:
               case JSOP_TRUE:
@@ -700,19 +700,19 @@ IonBuilder::analyzeNewLoopTypes(MBasicBlock* entry, jsbytecode* start, jsbytecod
               case JSOP_STRICTNE:
               case JSOP_IN:
               case JSOP_INSTANCEOF:
-                type = MIRType_Boolean;
+                type = MIRType::Boolean;
                 break;
               case JSOP_DOUBLE:
-                type = MIRType_Double;
+                type = MIRType::Double;
                 break;
               case JSOP_STRING:
               case JSOP_TOSTRING:
               case JSOP_TYPEOF:
               case JSOP_TYPEOFEXPR:
-                type = MIRType_String;
+                type = MIRType::String;
                 break;
               case JSOP_SYMBOL:
-                type = MIRType_Symbol;
+                type = MIRType::Symbol;
                 break;
               case JSOP_ADD:
               case JSOP_SUB:
@@ -725,7 +725,7 @@ IonBuilder::analyzeNewLoopTypes(MBasicBlock* entry, jsbytecode* start, jsbytecod
               default:
                 break;
             }
-            if (type != MIRType_None) {
+            if (type != MIRType::None) {
                 if (!phi->addBackedgeType(type, nullptr))
                     return false;
             }
@@ -898,7 +898,7 @@ IonBuilder::build()
     
     for (uint32_t i = 0; i < info().endArgSlot(); i++) {
         MInstruction* ins = current->getEntrySlot(i)->toInstruction();
-        if (ins->type() != MIRType_Value)
+        if (ins->type() != MIRType::Value)
             continue;
 
         MResumePoint* entryRpCopy = MResumePoint::Copy(alloc(), current->entryResumePoint());
@@ -1283,7 +1283,7 @@ IonBuilder::addOsrValueTypeBarrier(uint32_t slot, MInstruction** def_,
     MBasicBlock* osrBlock = def->block();
 
     
-    def->setResultType(MIRType_Value);
+    def->setResultType(MIRType::Value);
     def->setResultTypeSet(nullptr);
 
     if (typeSet && !typeSet->unknown()) {
@@ -1291,9 +1291,9 @@ IonBuilder::addOsrValueTypeBarrier(uint32_t slot, MInstruction** def_,
         osrBlock->insertBefore(osrBlock->lastIns(), barrier);
         osrBlock->rewriteSlot(slot, barrier);
         def = barrier;
-    } else if (type == MIRType_Null ||
-               type == MIRType_Undefined ||
-               type == MIRType_MagicOptimizedArguments)
+    } else if (type == MIRType::Null ||
+               type == MIRType::Undefined ||
+               type == MIRType::MagicOptimizedArguments)
     {
         
         
@@ -1309,12 +1309,12 @@ IonBuilder::addOsrValueTypeBarrier(uint32_t slot, MInstruction** def_,
     }
 
     switch (type) {
-      case MIRType_Boolean:
-      case MIRType_Int32:
-      case MIRType_Double:
-      case MIRType_String:
-      case MIRType_Symbol:
-      case MIRType_Object:
+      case MIRType::Boolean:
+      case MIRType::Int32:
+      case MIRType::Double:
+      case MIRType::String:
+      case MIRType::Symbol:
+      case MIRType::Object:
         if (type != def->type()) {
             MUnbox* unbox = MUnbox::New(alloc(), def, type, MUnbox::Fallible);
             osrBlock->insertBefore(osrBlock->lastIns(), unbox);
@@ -1323,7 +1323,7 @@ IonBuilder::addOsrValueTypeBarrier(uint32_t slot, MInstruction** def_,
         }
         break;
 
-      case MIRType_Null:
+      case MIRType::Null:
       {
         MConstant* c = MConstant::New(alloc(), NullValue());
         osrBlock->insertBefore(osrBlock->lastIns(), c);
@@ -1332,7 +1332,7 @@ IonBuilder::addOsrValueTypeBarrier(uint32_t slot, MInstruction** def_,
         break;
       }
 
-      case MIRType_Undefined:
+      case MIRType::Undefined:
       {
         MConstant* c = MConstant::New(alloc(), UndefinedValue());
         osrBlock->insertBefore(osrBlock->lastIns(), c);
@@ -1341,7 +1341,7 @@ IonBuilder::addOsrValueTypeBarrier(uint32_t slot, MInstruction** def_,
         break;
       }
 
-      case MIRType_MagicOptimizedArguments:
+      case MIRType::MagicOptimizedArguments:
         MOZ_ASSERT(lazyArguments_);
         osrBlock->rewriteSlot(slot, lazyArguments_);
         def = lazyArguments_;
@@ -2618,7 +2618,7 @@ IonBuilder::processWhileCondEnd(CFGState& state)
         if (!nonStringIteration_ && !inspector->hasSeenNonStringIterMore(iterMorePc)) {
             MDefinition* val = current->peek(-1);
             MOZ_ASSERT(val == iterMore);
-            MInstruction* ins = MUnbox::New(alloc(), val, MIRType_String, MUnbox::Fallible,
+            MInstruction* ins = MUnbox::New(alloc(), val, MIRType::String, MUnbox::Fallible,
                                             Bailout_NonStringInputInvalidate);
             current->add(ins);
             current->rewriteAtDepth(-1, ins);
@@ -3570,11 +3570,11 @@ IonBuilder::replaceTypeSet(MDefinition* subject, TemporaryTypeSet* type, MTest* 
             ins->toFilterTypeSet()->setResultType(intersect->getKnownMIRType());
             ins->toFilterTypeSet()->setResultTypeSet(intersect);
 
-            if (ins->type() == MIRType_Undefined)
+            if (ins->type() == MIRType::Undefined)
                 current->setSlot(i, constant(UndefinedValue()));
-            else if (ins->type() == MIRType_Null)
+            else if (ins->type() == MIRType::Null)
                 current->setSlot(i, constant(NullValue()));
-            else if (ins->type() == MIRType_MagicOptimizedArguments)
+            else if (ins->type() == MIRType::MagicOptimizedArguments)
                 current->setSlot(i, constant(MagicValue(JS_OPTIMIZED_ARGUMENTS)));
             else
                 MOZ_ASSERT(!IsMagicType(ins->type()));
@@ -3595,11 +3595,11 @@ IonBuilder::replaceTypeSet(MDefinition* subject, TemporaryTypeSet* type, MTest* 
                 
                 replace->setDependency(test);
 
-                if (replace->type() == MIRType_Undefined)
+                if (replace->type() == MIRType::Undefined)
                     replace = constant(UndefinedValue());
-                else if (replace->type() == MIRType_Null)
+                else if (replace->type() == MIRType::Null)
                     replace = constant(NullValue());
-                else if (replace->type() == MIRType_MagicOptimizedArguments)
+                else if (replace->type() == MIRType::MagicOptimizedArguments)
                     replace = constant(MagicValue(JS_OPTIMIZED_ARGUMENTS));
                 else
                     MOZ_ASSERT(!IsMagicType(ins->type()));
@@ -3697,7 +3697,7 @@ IonBuilder::improveTypesAtTypeOfCompare(MCompare* ins, bool trueBranch, MTest* t
     MTypeOf* typeOf = ins->lhs()->isTypeOf() ? ins->lhs()->toTypeOf() : ins->rhs()->toTypeOf();
     MConstant* constant = ins->lhs()->isConstant() ? ins->lhs()->toConstant() : ins->rhs()->toConstant();
 
-    if (constant->type() != MIRType_String)
+    if (constant->type() != MIRType::String)
         return true;
 
     bool equal = ins->jsop() == JSOP_EQ || ins->jsop() == JSOP_STRICTEQ;
@@ -3716,7 +3716,7 @@ IonBuilder::improveTypesAtTypeOfCompare(MCompare* ins, bool trueBranch, MTest* t
     
     TemporaryTypeSet tmp;
     if (!inputTypes) {
-        if (subject->type() == MIRType_Value)
+        if (subject->type() == MIRType::Value)
             return true;
         inputTypes = &tmp;
         tmp.addType(TypeSet::PrimitiveType(ValueTypeFromMIRType(subject->type())), alloc_->lifoAlloc());
@@ -3798,7 +3798,7 @@ IonBuilder::improveTypesAtNullOrUndefinedCompare(MCompare* ins, bool trueBranch,
     
     TemporaryTypeSet tmp;
     if (!inputTypes) {
-        if (subject->type() == MIRType_Value)
+        if (subject->type() == MIRType::Value)
             return true;
         inputTypes = &tmp;
         tmp.addType(TypeSet::PrimitiveType(ValueTypeFromMIRType(subject->type())), alloc_->lifoAlloc());
@@ -3862,7 +3862,7 @@ IonBuilder::improveTypesAtTest(MDefinition* ins, bool trueBranch, MTest* test)
         
         TemporaryTypeSet tmp;
         if (!oldType) {
-            if (subject->type() == MIRType_Value)
+            if (subject->type() == MIRType::Value)
                 return true;
             oldType = &tmp;
             tmp.addType(TypeSet::PrimitiveType(ValueTypeFromMIRType(subject->type())), alloc_->lifoAlloc());
@@ -3941,7 +3941,7 @@ IonBuilder::improveTypesAtTest(MDefinition* ins, bool trueBranch, MTest* test)
     
     TemporaryTypeSet tmp;
     if (!oldType) {
-        if (ins->type() == MIRType_Value)
+        if (ins->type() == MIRType::Value)
             return true;
         oldType = &tmp;
         tmp.addType(TypeSet::PrimitiveType(ValueTypeFromMIRType(ins->type())), alloc_->lifoAlloc());
@@ -4629,11 +4629,11 @@ IonBuilder::bitnotTrySpecialized(bool* emitted, MDefinition* input)
     
     
 
-    if (input->mightBeType(MIRType_Object) || input->mightBeType(MIRType_Symbol))
+    if (input->mightBeType(MIRType::Object) || input->mightBeType(MIRType::Symbol))
         return true;
 
     MBitNot* ins = MBitNot::New(alloc(), input);
-    ins->setSpecialization(MIRType_Int32);
+    ins->setSpecialization(MIRType::Int32);
 
     current->add(ins);
     current->push(ins);
@@ -4747,18 +4747,18 @@ IonBuilder::binaryArithTryConcat(bool* emitted, JSOp op, MDefinition* left, MDef
     trackOptimizationAttempt(TrackedStrategy::BinaryArith_Concat);
 
     
-    if (left->type() != MIRType_String && right->type() != MIRType_String) {
+    if (left->type() != MIRType::String && right->type() != MIRType::String) {
         trackOptimizationOutcome(TrackedOutcome::OperandNotString);
         return true;
     }
 
     
     
-    if (right->type() != MIRType_String && !IsNumberType(right->type())) {
+    if (right->type() != MIRType::String && !IsNumberType(right->type())) {
         trackOptimizationOutcome(TrackedOutcome::OperandNotStringOrNumber);
         return true;
     }
-    if (left->type() != MIRType_String && !IsNumberType(left->type())) {
+    if (left->type() != MIRType::String && !IsNumberType(left->type())) {
         trackOptimizationOutcome(TrackedOutcome::OperandNotStringOrNumber);
         return true;
     }
@@ -4784,27 +4784,27 @@ IonBuilder::powTrySpecialized(bool* emitted, MDefinition* base, MDefinition* pow
     MIRType baseType = base->type();
     MIRType powerType = power->type();
 
-    if (outputType != MIRType_Int32 && outputType != MIRType_Double)
+    if (outputType != MIRType::Int32 && outputType != MIRType::Double)
         return true;
     if (!IsNumberType(baseType))
         return true;
     if (!IsNumberType(powerType))
         return true;
 
-    if (powerType == MIRType_Float32)
-        powerType = MIRType_Double;
+    if (powerType == MIRType::Float32)
+        powerType = MIRType::Double;
 
     MPow* pow = MPow::New(alloc(), base, power, powerType);
     current->add(pow);
     output = pow;
 
     
-    if (outputType == MIRType_Int32 && output->type() != MIRType_Int32) {
+    if (outputType == MIRType::Int32 && output->type() != MIRType::Int32) {
         MToInt32* toInt = MToInt32::New(alloc(), output);
         current->add(toInt);
         output = toInt;
     }
-    if (outputType == MIRType_Double && output->type() != MIRType_Double) {
+    if (outputType == MIRType::Double && output->type() != MIRType::Double) {
         MToDouble* toDouble = MToDouble::New(alloc(), output);
         current->add(toDouble);
         output = toDouble;
@@ -4818,12 +4818,12 @@ IonBuilder::powTrySpecialized(bool* emitted, MDefinition* base, MDefinition* pow
 static inline bool
 SimpleArithOperand(MDefinition* op)
 {
-    return !op->mightBeType(MIRType_Object)
-        && !op->mightBeType(MIRType_String)
-        && !op->mightBeType(MIRType_Symbol)
-        && !op->mightBeType(MIRType_MagicOptimizedArguments)
-        && !op->mightBeType(MIRType_MagicHole)
-        && !op->mightBeType(MIRType_MagicIsConstructing);
+    return !op->mightBeType(MIRType::Object)
+        && !op->mightBeType(MIRType::String)
+        && !op->mightBeType(MIRType::Symbol)
+        && !op->mightBeType(MIRType::MagicOptimizedArguments)
+        && !op->mightBeType(MIRType::MagicHole)
+        && !op->mightBeType(MIRType::MagicIsConstructing);
 }
 
 bool
@@ -4879,7 +4879,7 @@ IonBuilder::binaryArithTrySpecializedOnBaselineInspector(bool* emitted, JSOp op,
     trackOptimizationAttempt(TrackedStrategy::BinaryArith_SpecializedOnBaselineTypes);
 
     MIRType specialization = inspector->expectedBinaryArithSpecialization(pc);
-    if (specialization == MIRType_None) {
+    if (specialization == MIRType::None) {
         trackOptimizationOutcome(TrackedOutcome::NoTypeInfo);
         return true;
     }
@@ -5018,7 +5018,7 @@ IonBuilder::jsop_pow()
     bool emitted = false;
 
     if (!forceInlineCaches()) {
-        if (!powTrySpecialized(&emitted, base, exponent, MIRType_Double) || emitted)
+        if (!powTrySpecialized(&emitted, base, exponent, MIRType::Double) || emitted)
             return emitted;
     }
 
@@ -5026,7 +5026,7 @@ IonBuilder::jsop_pow()
         return emitted;
 
     
-    MPow* pow = MPow::New(alloc(), base, exponent, MIRType_Double);
+    MPow* pow = MPow::New(alloc(), base, exponent, MIRType::Double);
     current->add(pow);
     current->push(pow);
     return true;
@@ -5067,7 +5067,7 @@ IonBuilder::jsop_neg()
 bool
 IonBuilder::jsop_tostring()
 {
-    if (current->peek(-1)->type() == MIRType_String)
+    if (current->peek(-1)->type() == MIRType::String)
         return true;
 
     MDefinition* value = current->pop();
@@ -5145,9 +5145,9 @@ IonBuilder::inlineScriptedCall(CallInfo& callInfo, JSFunction* target)
                 return false;
             MTypeBarrier* barrier = MTypeBarrier::New(alloc(), callInfo.thisArg(), clonedTypes);
             current->add(barrier);
-            if (barrier->type() == MIRType_Undefined)
+            if (barrier->type() == MIRType::Undefined)
                 callInfo.setThis(constant(UndefinedValue()));
-            else if (barrier->type() == MIRType_Null)
+            else if (barrier->type() == MIRType::Null)
                 callInfo.setThis(constant(NullValue()));
             else
                 callInfo.setThis(barrier);
@@ -5241,12 +5241,12 @@ IonBuilder::patchInlinedReturn(CallInfo& callInfo, MBasicBlock* exit, MBasicBloc
 
     
     if (callInfo.constructing()) {
-        if (rdef->type() == MIRType_Value) {
+        if (rdef->type() == MIRType::Value) {
             
             MReturnFromCtor* filter = MReturnFromCtor::New(alloc(), rdef, callInfo.thisArg());
             exit->add(filter);
             rdef = filter;
-        } else if (rdef->type() != MIRType_Object) {
+        } else if (rdef->type() != MIRType::Object) {
             
             rdef = callInfo.thisArg();
         }
@@ -5289,15 +5289,15 @@ IonBuilder::specializeInlinedReturn(MDefinition* rdef, MBasicBlock* exit)
 
         
         
-        if (observedType == MIRType_Double && rdef->type() == MIRType_Float32)
+        if (observedType == MIRType::Double && rdef->type() == MIRType::Float32)
             return rdef;
 
         
         
         
         if (observedType == rdef->type() &&
-            observedType != MIRType_Value &&
-            (observedType != MIRType_Object || types->unknownObject()))
+            observedType != MIRType::Value &&
+            (observedType != MIRType::Object || types->unknownObject()))
         {
             return rdef;
         }
@@ -5552,7 +5552,7 @@ IonBuilder::selectInliningTargets(const ObjectVector& targets, CallInfo& callInf
 static bool
 CanInlineGetPropertyCache(MGetPropertyCache* cache, MDefinition* thisDef)
 {
-    MOZ_ASSERT(cache->object()->type() == MIRType_Object);
+    MOZ_ASSERT(cache->object()->type() == MIRType::Object);
     if (cache->object() != thisDef)
         return false;
 
@@ -5633,11 +5633,11 @@ IonBuilder::getInlineableGetPropertyCache(CallInfo& callInfo)
         return nullptr;
 
     MDefinition* thisDef = callInfo.thisArg();
-    if (thisDef->type() != MIRType_Object)
+    if (thisDef->type() != MIRType::Object)
         return nullptr;
 
     MDefinition* funcDef = callInfo.fun();
-    if (funcDef->type() != MIRType_Object)
+    if (funcDef->type() != MIRType::Object)
         return nullptr;
 
     
@@ -5652,7 +5652,7 @@ IonBuilder::getInlineableGetPropertyCache(CallInfo& callInfo)
         MTypeBarrier* barrier = funcDef->toTypeBarrier();
         if (barrier->hasUses())
             return nullptr;
-        if (barrier->type() != MIRType_Object)
+        if (barrier->type() != MIRType::Object)
             return nullptr;
         if (!barrier->input()->isGetPropertyCache())
             return nullptr;
@@ -5854,7 +5854,7 @@ IonBuilder::inlineObjectGroupFallback(CallInfo& callInfo, MBasicBlock* dispatchB
         getPropBlock->push(cache);
     } else {
         MTypeBarrier* barrier = callInfo.fun()->toTypeBarrier();
-        MOZ_ASSERT(barrier->type() == MIRType_Object);
+        MOZ_ASSERT(barrier->type() == MIRType::Object);
         MOZ_ASSERT(barrier->input()->isGetPropertyCache());
         MOZ_ASSERT(barrier->input()->toGetPropertyCache() == cache);
 
@@ -6073,7 +6073,7 @@ IonBuilder::inlineCalls(CallInfo& callInfo, const ObjectVector& targets, BoolVec
                 } else {
                     MTypeBarrier* barrier = callInfo.fun()->toTypeBarrier();
                     MOZ_ASSERT(!barrier->hasUses());
-                    MOZ_ASSERT(barrier->type() == MIRType_Object);
+                    MOZ_ASSERT(barrier->type() == MIRType::Object);
                     MOZ_ASSERT(barrier->input()->isGetPropertyCache());
                     MOZ_ASSERT(barrier->input()->toGetPropertyCache() == maybeCache);
                     barrier->block()->discard(barrier);
@@ -6480,14 +6480,14 @@ IonBuilder::jsop_funapply(uint32_t argc)
     
     MDefinition* argument = current->peek(-1);
     if (script()->argumentsHasVarBinding() &&
-        argument->mightBeType(MIRType_MagicOptimizedArguments) &&
-        argument->type() != MIRType_MagicOptimizedArguments)
+        argument->mightBeType(MIRType::MagicOptimizedArguments) &&
+        argument->type() != MIRType::MagicOptimizedArguments)
     {
         return abort("fun.apply with MaybeArguments");
     }
 
     
-    if (argument->type() != MIRType_MagicOptimizedArguments) {
+    if (argument->type() != MIRType::MagicOptimizedArguments) {
         
         TemporaryTypeSet* objTypes = argument->resultTypeSet();
         if (native && native->isNative() && native->native() == fun_apply &&
@@ -6738,14 +6738,14 @@ ArgumentTypesMatch(MDefinition* def, StackTypeSet* calleeTypes)
         return false;
 
     if (def->resultTypeSet()) {
-        MOZ_ASSERT(def->type() == MIRType_Value || def->mightBeType(def->type()));
+        MOZ_ASSERT(def->type() == MIRType::Value || def->mightBeType(def->type()));
         return def->resultTypeSet()->isSubset(calleeTypes);
     }
 
-    if (def->type() == MIRType_Value)
+    if (def->type() == MIRType::Value)
         return false;
 
-    if (def->type() == MIRType_Object)
+    if (def->type() == MIRType::Object)
         return calleeTypes->unknownObject();
 
     return calleeTypes->mightBeMIRType(def->type());
@@ -6770,7 +6770,7 @@ IonBuilder::testNeedsArgumentCheck(JSFunction* target, CallInfo& callInfo)
             return true;
     }
     for (size_t i = callInfo.argc(); i < target->nargs(); i++) {
-        if (!TypeScript::ArgTypes(targetScript, i)->mightBeMIRType(MIRType_Undefined))
+        if (!TypeScript::ArgTypes(targetScript, i)->mightBeMIRType(MIRType::Undefined))
             return true;
     }
 
@@ -6797,7 +6797,7 @@ IonBuilder::makeCallHelper(JSFunction* target, CallInfo& callInfo)
         
         TemporaryTypeSet* thisTypes = callInfo.thisArg()->resultTypeSet();
         if (thisTypes &&
-            thisTypes->getKnownMIRType() == MIRType_Object &&
+            thisTypes->getKnownMIRType() == MIRType::Object &&
             thisTypes->isDOMClass(constraints()) &&
             testShouldDOMCall(thisTypes, target, JSJitInfo::Method))
         {
@@ -6933,7 +6933,7 @@ IonBuilder::jsop_eval(uint32_t argc)
 
         
         
-        if (!string->mightBeType(MIRType_String)) {
+        if (!string->mightBeType(MIRType::String)) {
             current->push(string);
             TemporaryTypeSet* types = bytecodeTypes(pc);
             return pushTypeBarrier(string, types, BarrierKind::TypeSet);
@@ -6947,7 +6947,7 @@ IonBuilder::jsop_eval(uint32_t argc)
         
         
         if (string->isConcat() &&
-            string->getOperand(1)->type() == MIRType_String &&
+            string->getOperand(1)->type() == MIRType::String &&
             string->getOperand(1)->maybeConstantValue())
         {
             JSAtom* atom = &string->getOperand(1)->maybeConstantValue()->toString()->asAtom();
@@ -7021,13 +7021,13 @@ static bool
 ObjectOrSimplePrimitive(MDefinition* op)
 {
     
-    return !op->mightBeType(MIRType_String)
-        && !op->mightBeType(MIRType_Symbol)
-        && !op->mightBeType(MIRType_Double)
-        && !op->mightBeType(MIRType_Float32)
-        && !op->mightBeType(MIRType_MagicOptimizedArguments)
-        && !op->mightBeType(MIRType_MagicHole)
-        && !op->mightBeType(MIRType_MagicIsConstructing);
+    return !op->mightBeType(MIRType::String)
+        && !op->mightBeType(MIRType::Symbol)
+        && !op->mightBeType(MIRType::Double)
+        && !op->mightBeType(MIRType::Float32)
+        && !op->mightBeType(MIRType::MagicOptimizedArguments)
+        && !op->mightBeType(MIRType::MagicHole)
+        && !op->mightBeType(MIRType::MagicIsConstructing);
 }
 
 bool
@@ -7047,13 +7047,13 @@ IonBuilder::compareTrySpecialized(bool* emitted, JSOp op, MDefinition* left, MDe
 
     
     
-    if (type == MCompare::Compare_StrictString && right->type() != MIRType_String)
+    if (type == MCompare::Compare_StrictString && right->type() != MIRType::String)
         ins->swapOperands();
-    else if (type == MCompare::Compare_Null && right->type() != MIRType_Null)
+    else if (type == MCompare::Compare_Null && right->type() != MIRType::Null)
         ins->swapOperands();
-    else if (type == MCompare::Compare_Undefined && right->type() != MIRType_Undefined)
+    else if (type == MCompare::Compare_Undefined && right->type() != MIRType::Undefined)
         ins->swapOperands();
-    else if (type == MCompare::Compare_Boolean && right->type() != MIRType_Boolean)
+    else if (type == MCompare::Compare_Boolean && right->type() != MIRType::Boolean)
         ins->swapOperands();
 
     
@@ -7095,26 +7095,26 @@ IonBuilder::compareTryBitwise(bool* emitted, JSOp op, MDefinition* left, MDefini
 
         
         
-        if ((left->mightBeType(MIRType_Undefined) && right->mightBeType(MIRType_Null)) ||
-            (left->mightBeType(MIRType_Null) && right->mightBeType(MIRType_Undefined)))
+        if ((left->mightBeType(MIRType::Undefined) && right->mightBeType(MIRType::Null)) ||
+            (left->mightBeType(MIRType::Null) && right->mightBeType(MIRType::Undefined)))
         {
             return true;
         }
 
         
         
-        if ((left->mightBeType(MIRType_Int32) && right->mightBeType(MIRType_Boolean)) ||
-            (left->mightBeType(MIRType_Boolean) && right->mightBeType(MIRType_Int32)))
+        if ((left->mightBeType(MIRType::Int32) && right->mightBeType(MIRType::Boolean)) ||
+            (left->mightBeType(MIRType::Boolean) && right->mightBeType(MIRType::Int32)))
         {
             return true;
         }
 
         
         
-        bool simpleLHS = left->mightBeType(MIRType_Boolean) || left->mightBeType(MIRType_Int32);
-        bool simpleRHS = right->mightBeType(MIRType_Boolean) || right->mightBeType(MIRType_Int32);
-        if ((left->mightBeType(MIRType_Object) && simpleRHS) ||
-            (right->mightBeType(MIRType_Object) && simpleLHS))
+        bool simpleLHS = left->mightBeType(MIRType::Boolean) || left->mightBeType(MIRType::Int32);
+        bool simpleRHS = right->mightBeType(MIRType::Boolean) || right->mightBeType(MIRType::Int32);
+        if ((left->mightBeType(MIRType::Object) && simpleRHS) ||
+            (right->mightBeType(MIRType::Object) && simpleLHS))
         {
             return true;
         }
@@ -7181,7 +7181,7 @@ IonBuilder::compareTrySharedStub(bool* emitted, JSOp op, MDefinition* left, MDef
     if (!resumeAfter(stub))
         return false;
 
-    MUnbox* unbox = MUnbox::New(alloc(), current->pop(), MIRType_Boolean, MUnbox::Infallible);
+    MUnbox* unbox = MUnbox::New(alloc(), current->pop(), MIRType::Boolean, MUnbox::Infallible);
     current->add(unbox);
     current->push(unbox);
 
@@ -7461,7 +7461,7 @@ IonBuilder::jsop_initelem_array()
             else
                 unboxedType = initializer->group()->unboxedLayout().elementType();
         }
-        if (value->type() == MIRType_MagicHole) {
+        if (value->type() == MIRType::MagicHole) {
             if (!initializer->hasFlags(constraints(), OBJECT_FLAG_NON_PACKED))
                 needStub = true;
         } else if (!initializer->unknownProperties()) {
@@ -7834,7 +7834,7 @@ IonBuilder::newOsrPreheader(MBasicBlock* predecessor, jsbytecode* loopEntry, jsb
     for (uint32_t i = info().startArgSlot(); i < osrBlock->stackDepth(); i++) {
         MDefinition* existing = current->getSlot(i);
         MDefinition* def = osrBlock->getSlot(i);
-        MOZ_ASSERT_IF(!needsArgsObj || !info().isSlotAliasedAtOsr(i), def->type() == MIRType_Value);
+        MOZ_ASSERT_IF(!needsArgsObj || !info().isSlotAliasedAtOsr(i), def->type() == MIRType::Value);
 
         
         
@@ -7999,7 +7999,7 @@ IonBuilder::maybeInsertResume()
 void
 IonBuilder::maybeMarkEmpty(MDefinition* ins)
 {
-    MOZ_ASSERT(ins->type() == MIRType_Value);
+    MOZ_ASSERT(ins->type() == MIRType::Value);
 
     
     
@@ -8127,29 +8127,29 @@ IonBuilder::testSingletonPropertyTypes(MDefinition* obj, jsid id)
         return testSingletonProperty(objectSingleton, id);
 
     MIRType objType = obj->type();
-    if (objType == MIRType_Value && types)
+    if (objType == MIRType::Value && types)
         objType = types->getKnownMIRType();
 
     JSProtoKey key;
     switch (objType) {
-      case MIRType_String:
+      case MIRType::String:
         key = JSProto_String;
         break;
 
-      case MIRType_Symbol:
+      case MIRType::Symbol:
         key = JSProto_Symbol;
         break;
 
-      case MIRType_Int32:
-      case MIRType_Double:
+      case MIRType::Int32:
+      case MIRType::Double:
         key = JSProto_Number;
         break;
 
-      case MIRType_Boolean:
+      case MIRType::Boolean:
         key = JSProto_Boolean;
         break;
 
-      case MIRType_Object: {
+      case MIRType::Object: {
         if (!types)
             return nullptr;
 
@@ -8206,7 +8206,7 @@ bool
 IonBuilder::testNotDefinedProperty(MDefinition* obj, jsid id)
 {
     TemporaryTypeSet* types = obj->resultTypeSet();
-    if (!types || types->unknownObject() || types->getKnownMIRType() != MIRType_Object)
+    if (!types || types->unknownObject() || types->getKnownMIRType() != MIRType::Object)
         return false;
 
     for (unsigned i = 0, count = types->getObjectCount(); i < count; i++) {
@@ -8294,9 +8294,9 @@ IonBuilder::addTypeBarrier(MDefinition* def, TemporaryTypeSet* observed, Barrier
     if (pbarrier)
         *pbarrier = barrier;
 
-    if (barrier->type() == MIRType_Undefined)
+    if (barrier->type() == MIRType::Undefined)
         return constant(UndefinedValue());
-    if (barrier->type() == MIRType_Null)
+    if (barrier->type() == MIRType::Null)
         return constant(NullValue());
 
     return barrier;
@@ -8318,7 +8318,7 @@ IonBuilder::pushDOMTypeBarrier(MInstruction* ins, TemporaryTypeSet* observed, JS
     
     MDefinition* replace = ins;
     if (jitinfo->returnType() != JSVAL_TYPE_DOUBLE ||
-        observed->getKnownMIRType() != MIRType_Int32) {
+        observed->getKnownMIRType() != MIRType::Int32) {
         replace = ensureDefiniteType(ins, MIRTypeFromValueType(jitinfo->returnType()));
         if (replace != ins) {
             current->pop();
@@ -8337,22 +8337,22 @@ IonBuilder::ensureDefiniteType(MDefinition* def, MIRType definiteType)
 {
     MInstruction* replace;
     switch (definiteType) {
-      case MIRType_Undefined:
+      case MIRType::Undefined:
         def->setImplicitlyUsedUnchecked();
         replace = MConstant::New(alloc(), UndefinedValue());
         break;
 
-      case MIRType_Null:
+      case MIRType::Null:
         def->setImplicitlyUsedUnchecked();
         replace = MConstant::New(alloc(), NullValue());
         break;
 
-      case MIRType_Value:
+      case MIRType::Value:
         return def;
 
       default: {
-        if (def->type() != MIRType_Value) {
-            if (def->type() == MIRType_Int32 && definiteType == MIRType_Double) {
+        if (def->type() != MIRType::Value) {
+            if (def->type() == MIRType::Int32 && definiteType == MIRType::Double) {
                 replace = MToDouble::New(alloc(), def);
                 break;
             }
@@ -8384,7 +8384,7 @@ IonBuilder::ensureDefiniteTypeSet(MDefinition* def, TemporaryTypeSet* types)
 
     
     if (def->type() != types->getKnownMIRType()) {
-        MOZ_ASSERT(types->getKnownMIRType() == MIRType_Value);
+        MOZ_ASSERT(types->getKnownMIRType() == MIRType::Value);
         return def;
     }
 
@@ -8515,9 +8515,9 @@ IonBuilder::loadStaticSlot(JSObject* staticObject, BarrierKind barrier, Temporar
     if (barrier == BarrierKind::NoBarrier) {
         
         MIRType knownType = types->getKnownMIRType();
-        if (knownType == MIRType_Undefined)
+        if (knownType == MIRType::Undefined)
             return pushConstant(UndefinedValue());
-        if (knownType == MIRType_Null)
+        if (knownType == MIRType::Null)
             return pushConstant(NullValue());
     }
 
@@ -8525,7 +8525,7 @@ IonBuilder::loadStaticSlot(JSObject* staticObject, BarrierKind barrier, Temporar
 
     MIRType rvalType = types->getKnownMIRType();
     if (barrier != BarrierKind::NoBarrier)
-        rvalType = MIRType_Value;
+        rvalType = MIRType::Value;
 
     return loadSlot(obj, slot, NumFixedSlots(staticObject), rvalType, barrier, types);
 }
@@ -8536,7 +8536,7 @@ jit::NeedsPostBarrier(MDefinition* value)
 {
     if (!GetJitContext()->runtime->gcNursery().exists())
         return false;
-    return value->mightBeType(MIRType_Object);
+    return value->mightBeType(MIRType::Object);
 }
 
 bool
@@ -8586,9 +8586,9 @@ IonBuilder::setStaticName(JSObject* staticObject, PropertyName* name)
 
     
     
-    MIRType slotType = MIRType_None;
+    MIRType slotType = MIRType::None;
     MIRType knownType = property.knownMIRType(constraints());
-    if (knownType != MIRType_Value)
+    if (knownType != MIRType::Value)
         slotType = knownType;
 
     bool needsBarrier = property.needsBarrier(constraints());
@@ -8801,13 +8801,13 @@ GetElemKnownType(bool needsHoleCheck, TemporaryTypeSet* types)
     
     
     
-    if (knownType == MIRType_Undefined || knownType == MIRType_Null)
-        knownType = MIRType_Value;
+    if (knownType == MIRType::Undefined || knownType == MIRType::Null)
+        knownType = MIRType::Value;
 
     
     
     if (needsHoleCheck && !LIRGenerator::allowTypedElementHoleCheck())
-        knownType = MIRType_Value;
+        knownType = MIRType::Value;
 
     return knownType;
 }
@@ -8839,7 +8839,7 @@ IonBuilder::jsop_getelem()
     }
 
     obj = maybeUnboxForPropertyAccess(obj);
-    if (obj->type() == MIRType_Object)
+    if (obj->type() == MIRType::Object)
         obj = convertUnboxedObjects(obj);
 
     bool emitted = false;
@@ -8879,7 +8879,7 @@ IonBuilder::jsop_getelem()
             return emitted;
     }
 
-    if (script()->argumentsHasVarBinding() && obj->mightBeType(MIRType_MagicOptimizedArguments))
+    if (script()->argumentsHasVarBinding() && obj->mightBeType(MIRType::MagicOptimizedArguments))
         return abort("Type is not definitely lazy arguments.");
 
     trackOptimizationAttempt(TrackedStrategy::GetElem_InlineCache);
@@ -9436,7 +9436,7 @@ IonBuilder::getElemTryString(bool* emitted, MDefinition* obj, MDefinition* index
 {
     MOZ_ASSERT(*emitted == false);
 
-    if (obj->type() != MIRType_String || !IsNumberType(index->type())) {
+    if (obj->type() != MIRType::String || !IsNumberType(index->type())) {
         trackOptimizationOutcome(TrackedOutcome::AccessNotString);
         return true;
     }
@@ -9478,7 +9478,7 @@ IonBuilder::getElemTryArguments(bool* emitted, MDefinition* obj, MDefinition* in
     if (inliningDepth_ > 0)
         return true;
 
-    if (obj->type() != MIRType_MagicOptimizedArguments)
+    if (obj->type() != MIRType::MagicOptimizedArguments)
         return true;
 
     
@@ -9522,7 +9522,7 @@ IonBuilder::getElemTryArgumentsInlined(bool* emitted, MDefinition* obj, MDefinit
     if (inliningDepth_ == 0)
         return true;
 
-    if (obj->type() != MIRType_MagicOptimizedArguments)
+    if (obj->type() != MIRType::MagicOptimizedArguments)
         return true;
 
     
@@ -9532,7 +9532,7 @@ IonBuilder::getElemTryArgumentsInlined(bool* emitted, MDefinition* obj, MDefinit
 
     
     MConstant* indexConst = index->maybeConstantValue();
-    if (indexConst && indexConst->type() == MIRType_Int32) {
+    if (indexConst && indexConst->type() == MIRType::Int32) {
         MOZ_ASSERT(inliningDepth_ > 0);
 
         int32_t id = indexConst->toInt32();
@@ -9558,21 +9558,21 @@ IonBuilder::getElemTryCache(bool* emitted, MDefinition* obj, MDefinition* index)
     MOZ_ASSERT(*emitted == false);
 
     
-    if (!obj->mightBeType(MIRType_Object)) {
+    if (!obj->mightBeType(MIRType::Object)) {
         trackOptimizationOutcome(TrackedOutcome::NotObject);
         return true;
     }
 
     
-    if (obj->mightBeType(MIRType_String)) {
+    if (obj->mightBeType(MIRType::String)) {
         trackOptimizationOutcome(TrackedOutcome::GetElemStringNotCached);
         return true;
     }
 
     
-    if (!index->mightBeType(MIRType_Int32) &&
-        !index->mightBeType(MIRType_String) &&
-        !index->mightBeType(MIRType_Symbol))
+    if (!index->mightBeType(MIRType::Int32) &&
+        !index->mightBeType(MIRType::String) &&
+        !index->mightBeType(MIRType::Symbol))
     {
         trackOptimizationOutcome(TrackedOutcome::IndexType);
         return true;
@@ -9581,7 +9581,7 @@ IonBuilder::getElemTryCache(bool* emitted, MDefinition* obj, MDefinition* index)
     
     
     bool nonNativeGetElement = inspector->hasSeenNonNativeGetElement(pc);
-    if (index->mightBeType(MIRType_Int32) && nonNativeGetElement) {
+    if (index->mightBeType(MIRType::Int32) && nonNativeGetElement) {
         trackOptimizationOutcome(TrackedOutcome::NonNativeReceiver);
         return true;
     }
@@ -9594,7 +9594,7 @@ IonBuilder::getElemTryCache(bool* emitted, MDefinition* obj, MDefinition* index)
 
     
     
-    if (index->mightBeType(MIRType_String) || index->mightBeType(MIRType_Symbol))
+    if (index->mightBeType(MIRType::String) || index->mightBeType(MIRType::Symbol))
         barrier = BarrierKind::TypeSet;
 
     MGetPropertyCache* ins = MGetPropertyCache::New(alloc(), obj, index,
@@ -9606,11 +9606,11 @@ IonBuilder::getElemTryCache(bool* emitted, MDefinition* obj, MDefinition* index)
         return false;
 
     
-    if (index->type() == MIRType_Int32 && barrier == BarrierKind::NoBarrier) {
+    if (index->type() == MIRType::Int32 && barrier == BarrierKind::NoBarrier) {
         bool needHoleCheck = !ElementAccessIsPacked(constraints(), obj);
         MIRType knownType = GetElemKnownType(needHoleCheck, types);
 
-        if (knownType != MIRType_Value && knownType != MIRType_Double)
+        if (knownType != MIRType::Value && knownType != MIRType::Double)
             ins->setResultType(knownType);
     }
 
@@ -9666,7 +9666,7 @@ IonBuilder::jsop_getelem_dense(MDefinition* obj, MDefinition* index, JSValueType
 {
     TemporaryTypeSet* types = bytecodeTypes(pc);
 
-    MOZ_ASSERT(index->type() == MIRType_Int32 || index->type() == MIRType_Double);
+    MOZ_ASSERT(index->type() == MIRType::Int32 || index->type() == MIRType::Double);
     if (JSOp(*pc) == JSOP_CALLELEM) {
         
         
@@ -9685,7 +9685,7 @@ IonBuilder::jsop_getelem_dense(MDefinition* obj, MDefinition* index, JSValueType
         types->hasType(TypeSet::UndefinedType()) &&
         !ElementAccessHasExtraIndexedProperty(this, obj);
 
-    MIRType knownType = MIRType_Value;
+    MIRType knownType = MIRType::Value;
     if (unboxedType == JSVAL_TYPE_MAGIC && barrier == BarrierKind::NoBarrier)
         knownType = GetElemKnownType(needsHoleCheck, types);
 
@@ -9721,7 +9721,7 @@ IonBuilder::jsop_getelem_dense(MDefinition* obj, MDefinition* index, JSValueType
         barrier == BarrierKind::NoBarrier &&
         loopDepth_ &&
         inBounds &&
-        knownType == MIRType_Double &&
+        knownType == MIRType::Double &&
         objTypes &&
         objTypes->convertDoubleElements(constraints()) == TemporaryTypeSet::AlwaysConvertToDoubles;
     if (loadDouble)
@@ -9753,10 +9753,10 @@ IonBuilder::jsop_getelem_dense(MDefinition* obj, MDefinition* index, JSValueType
         
         
         
-        MOZ_ASSERT(knownType == MIRType_Value);
+        MOZ_ASSERT(knownType == MIRType::Value);
     }
 
-    if (knownType != MIRType_Value) {
+    if (knownType != MIRType::Value) {
         load->setResultType(knownType);
         load->setResultTypeSet(types);
     }
@@ -9770,7 +9770,7 @@ IonBuilder::addArrayBufferByteLength(MDefinition* obj)
 {
     MLoadFixedSlot* ins = MLoadFixedSlot::New(alloc(), obj, ArrayBufferObject::BYTE_LENGTH_SLOT);
     current->add(ins);
-    ins->setResultType(MIRType_Int32);
+    ins->setResultType(MIRType::Int32);
     return ins;
 }
 
@@ -9785,7 +9785,7 @@ IonBuilder::addTypedArrayLengthAndData(MDefinition* obj,
     JSObject* tarr = nullptr;
 
     if (MConstant* objConst = obj->maybeConstantValue()) {
-        if (objConst->type() == MIRType_Object)
+        if (objConst->type() == MIRType::Object)
             tarr = &objConst->toObject();
     } else if (TemporaryTypeSet* types = obj->resultTypeSet()) {
         tarr = types->maybeSingleton();
@@ -9847,7 +9847,7 @@ IonBuilder::convertShiftToMaskForStaticTypedArray(MDefinition* id,
     
     
     if (MConstant* idConst = id->maybeConstantValue()) {
-        if (idConst->type() == MIRType_Int32) {
+        if (idConst->type() == MIRType::Int32) {
             int32_t index = idConst->toInt32();
             MConstant* offset = MConstant::New(alloc(), Int32Value(index << TypedArrayShift(viewType)));
             current->add(offset);
@@ -9859,7 +9859,7 @@ IonBuilder::convertShiftToMaskForStaticTypedArray(MDefinition* id,
         return nullptr;
 
     MConstant* shiftAmount = id->toRsh()->rhs()->maybeConstantValue();
-    if (!shiftAmount || shiftAmount->type() != MIRType_Int32)
+    if (!shiftAmount || shiftAmount->type() != MIRType::Int32)
         return nullptr;
     if (uint32_t(shiftAmount->toInt32()) != TypedArrayShift(viewType))
         return nullptr;
@@ -9888,13 +9888,13 @@ MIRTypeForTypedArrayRead(Scalar::Type arrayType, bool observedDouble)
       case Scalar::Int16:
       case Scalar::Uint16:
       case Scalar::Int32:
-        return MIRType_Int32;
+        return MIRType::Int32;
       case Scalar::Uint32:
-        return observedDouble ? MIRType_Double : MIRType_Int32;
+        return observedDouble ? MIRType::Double : MIRType::Int32;
       case Scalar::Float32:
-        return MIRType_Float32;
+        return MIRType::Float32;
       case Scalar::Float64:
-        return MIRType_Double;
+        return MIRType::Double;
       default:
         break;
     }
@@ -10027,7 +10027,7 @@ IonBuilder::jsop_setelem()
     }
 
     if (script()->argumentsHasVarBinding() &&
-        object->mightBeType(MIRType_MagicOptimizedArguments) &&
+        object->mightBeType(MIRType::MagicOptimizedArguments) &&
         info().analysisMode() != Analysis_ArgumentsUsage)
     {
         return abort("Type is not definitely lazy arguments.");
@@ -10252,7 +10252,7 @@ IonBuilder::setElemTryDense(bool* emitted, MDefinition* object,
 
     
     if (conversion == TemporaryTypeSet::AmbiguousDoubleConversion &&
-        value->type() != MIRType_Int32)
+        value->type() != MIRType::Int32)
     {
         trackOptimizationOutcome(TrackedOutcome::ArrayDoubleConversion);
         return true;
@@ -10280,7 +10280,7 @@ IonBuilder::setElemTryArguments(bool* emitted, MDefinition* object,
 {
     MOZ_ASSERT(*emitted == false);
 
-    if (object->type() != MIRType_MagicOptimizedArguments)
+    if (object->type() != MIRType::MagicOptimizedArguments)
         return true;
 
     
@@ -10293,21 +10293,21 @@ IonBuilder::setElemTryCache(bool* emitted, MDefinition* object,
 {
     MOZ_ASSERT(*emitted == false);
 
-    if (!object->mightBeType(MIRType_Object)) {
+    if (!object->mightBeType(MIRType::Object)) {
         trackOptimizationOutcome(TrackedOutcome::NotObject);
         return true;
     }
 
-    if (!index->mightBeType(MIRType_Int32) &&
-        !index->mightBeType(MIRType_String) &&
-        !index->mightBeType(MIRType_Symbol))
+    if (!index->mightBeType(MIRType::Int32) &&
+        !index->mightBeType(MIRType::String) &&
+        !index->mightBeType(MIRType::Symbol))
     {
         trackOptimizationOutcome(TrackedOutcome::IndexType);
         return true;
     }
 
     bool barrier = true;
-    bool indexIsInt32 = index->type() == MIRType_Int32;
+    bool indexIsInt32 = index->type() == MIRType::Int32;
 
     if (indexIsInt32 &&
         !PropertyWriteNeedsTypeBarrier(alloc(), constraints(), current,
@@ -10354,7 +10354,7 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
                                MDefinition* obj, MDefinition* id, MDefinition* value,
                                JSValueType unboxedType, bool writeHole)
 {
-    MIRType elementType = MIRType_None;
+    MIRType elementType = MIRType::None;
     if (unboxedType == JSVAL_TYPE_MAGIC)
         elementType = DenseNativeElementType(constraints(), obj);
     bool packed = ElementAccessIsPacked(constraints(), obj);
@@ -10390,7 +10390,7 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
       }
 
       case TemporaryTypeSet::AmbiguousDoubleConversion: {
-        MOZ_ASSERT(value->type() == MIRType_Int32);
+        MOZ_ASSERT(value->type() == MIRType::Int32);
         MInstruction* maybeDouble = MMaybeToDoubleElement::New(alloc(), elements, value);
         current->add(maybeDouble);
         newValue = maybeDouble;
@@ -10443,7 +10443,7 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
         if (obj->resultTypeSet()->propertyNeedsBarrier(constraints(), JSID_VOID))
             common->setNeedsBarrier();
 
-        if (elementType != MIRType_None && packed)
+        if (elementType != MIRType::None && packed)
             common->setElementType(elementType);
     }
 
@@ -10511,7 +10511,7 @@ IonBuilder::jsop_length_fastPath()
 {
     TemporaryTypeSet* types = bytecodeTypes(pc);
 
-    if (types->getKnownMIRType() != MIRType_Int32)
+    if (types->getKnownMIRType() != MIRType::Int32)
         return false;
 
     MDefinition* obj = current->peek(-1);
@@ -10519,8 +10519,8 @@ IonBuilder::jsop_length_fastPath()
     if (shouldAbortOnPreliminaryGroups(obj))
         return false;
 
-    if (obj->mightBeType(MIRType_String)) {
-        if (obj->mightBeType(MIRType_Object))
+    if (obj->mightBeType(MIRType::String)) {
+        if (obj->mightBeType(MIRType::Object))
             return false;
         current->pop();
         MStringLength* ins = MStringLength::New(alloc(), obj);
@@ -10529,7 +10529,7 @@ IonBuilder::jsop_length_fastPath()
         return true;
     }
 
-    if (obj->mightBeType(MIRType_Object)) {
+    if (obj->mightBeType(MIRType::Object)) {
         TemporaryTypeSet* objTypes = obj->resultTypeSet();
 
         
@@ -10713,16 +10713,16 @@ IonBuilder::jsop_checkobjcoercible()
 {
     MDefinition* toCheck = current->peek(-1);
 
-    if (!toCheck->mightBeType(MIRType_Undefined) &&
-        !toCheck->mightBeType(MIRType_Null))
+    if (!toCheck->mightBeType(MIRType::Undefined) &&
+        !toCheck->mightBeType(MIRType::Null))
     {
         toCheck->setImplicitlyUsedUnchecked();
         return true;
     }
 
-    MOZ_ASSERT(toCheck->type() == MIRType_Value ||
-               toCheck->type() == MIRType_Null  ||
-               toCheck->type() == MIRType_Undefined);
+    MOZ_ASSERT(toCheck->type() == MIRType::Value ||
+               toCheck->type() == MIRType::Null  ||
+               toCheck->type() == MIRType::Undefined);
 
     
     
@@ -11186,7 +11186,7 @@ IonBuilder::storeSlot(MDefinition* obj, size_t slot, size_t nfixed,
     current->push(value);
     if (needsBarrier)
         store->setNeedsBarrier();
-    if (slotType != MIRType_None)
+    if (slotType != MIRType::None)
         store->setSlotType(slotType);
     return resumeAfter(store);
 }
@@ -11233,11 +11233,11 @@ IonBuilder::shouldAbortOnPreliminaryGroups(MDefinition *obj)
 MDefinition*
 IonBuilder::maybeUnboxForPropertyAccess(MDefinition* def)
 {
-    if (def->type() != MIRType_Value)
+    if (def->type() != MIRType::Value)
         return def;
 
     MIRType type = inspector->expectedPropertyAccessInputType(pc);
-    if (type == MIRType_Value || !def->mightBeType(type))
+    if (type == MIRType::Value || !def->mightBeType(type))
         return def;
 
     MUnbox* unbox = MUnbox::New(alloc(), def, type, MUnbox::Fallible);
@@ -11292,7 +11292,7 @@ IonBuilder::jsop_getprop(PropertyName* name)
     }
 
     obj = maybeUnboxForPropertyAccess(obj);
-    if (obj->type() == MIRType_Object)
+    if (obj->type() == MIRType::Object)
         obj = convertUnboxedObjects(obj);
 
     BarrierKind barrier = PropertyReadNeedsTypeBarrier(analysisContext, constraints(),
@@ -11430,8 +11430,8 @@ IonBuilder::improveThisTypesForCall()
 
     
     MDefinition* thisDef = current->peek(-2);
-    if (thisDef->type() != MIRType_Value ||
-        !thisDef->mightBeType(MIRType_Object) ||
+    if (thisDef->type() != MIRType::Value ||
+        !thisDef->mightBeType(MIRType::Object) ||
         !thisDef->resultTypeSet() ||
         !thisDef->resultTypeSet()->objectOrSentinel())
     {
@@ -11457,9 +11457,9 @@ IonBuilder::improveThisTypesForCall()
 bool
 IonBuilder::checkIsDefinitelyOptimizedArguments(MDefinition* obj, bool* isOptimizedArgs)
 {
-    if (obj->type() != MIRType_MagicOptimizedArguments) {
+    if (obj->type() != MIRType::MagicOptimizedArguments) {
         if (script()->argumentsHasVarBinding() &&
-            obj->mightBeType(MIRType_MagicOptimizedArguments))
+            obj->mightBeType(MIRType::MagicOptimizedArguments))
         {
             return abort("Type is not definitely lazy arguments.");
         }
@@ -11573,7 +11573,7 @@ IonBuilder::getPropTryConstant(bool* emitted, MDefinition* obj, jsid id, Tempora
 {
     MOZ_ASSERT(*emitted == false);
 
-    if (!types->mightBeMIRType(MIRType_Object)) {
+    if (!types->mightBeMIRType(MIRType::Object)) {
         
         
         trackOptimizationOutcome(TrackedOutcome::NotObject);
@@ -11601,7 +11601,7 @@ IonBuilder::getPropTryNotDefined(bool* emitted, MDefinition* obj, jsid id, Tempo
 {
     MOZ_ASSERT(*emitted == false);
 
-    if (!types->mightBeMIRType(MIRType_Undefined)) {
+    if (!types->mightBeMIRType(MIRType::Undefined)) {
         
         trackOptimizationOutcome(TrackedOutcome::NotUndefined);
         return true;
@@ -11786,7 +11786,7 @@ IonBuilder::getPropTryDefiniteSlot(bool* emitted, MDefinition* obj, PropertyName
     if (slot == UINT32_MAX)
         return true;
 
-    if (obj->type() != MIRType_Object) {
+    if (obj->type() != MIRType::Object) {
         MGuardObject* guard = MGuardObject::New(alloc(), obj);
         current->add(guard);
         obj = guard;
@@ -11884,20 +11884,20 @@ IonBuilder::loadUnboxedValue(MDefinition* elements, size_t elementsOffset,
       case JSVAL_TYPE_BOOLEAN:
         load = MLoadUnboxedScalar::New(alloc(), elements, index, Scalar::Uint8,
                                        DoesNotRequireMemoryBarrier, elementsOffset);
-        load->setResultType(MIRType_Boolean);
+        load->setResultType(MIRType::Boolean);
         break;
 
       case JSVAL_TYPE_INT32:
         load = MLoadUnboxedScalar::New(alloc(), elements, index, Scalar::Int32,
                                        DoesNotRequireMemoryBarrier, elementsOffset);
-        load->setResultType(MIRType_Int32);
+        load->setResultType(MIRType::Int32);
         break;
 
       case JSVAL_TYPE_DOUBLE:
         load = MLoadUnboxedScalar::New(alloc(), elements, index, Scalar::Float64,
                                        DoesNotRequireMemoryBarrier, elementsOffset,
                                         false);
-        load->setResultType(MIRType_Double);
+        load->setResultType(MIRType::Double);
         break;
 
       case JSVAL_TYPE_STRING:
@@ -11934,7 +11934,7 @@ IonBuilder::getPropTryUnboxed(bool* emitted, MDefinition* obj, PropertyName* nam
     if (offset == UINT32_MAX)
         return true;
 
-    if (obj->type() != MIRType_Object) {
+    if (obj->type() != MIRType::Object) {
         MGuardObject* guard = MGuardObject::New(alloc(), obj);
         current->add(guard);
         obj = guard;
@@ -12050,7 +12050,7 @@ IonBuilder::getPropTryCommonGetter(bool* emitted, MDefinition* obj, PropertyName
     }
 
     
-    if (obj->type() != MIRType_Object) {
+    if (obj->type() != MIRType::Object) {
         MGuardObject* guardObj = MGuardObject::New(alloc(), obj);
         current->add(guardObj);
         obj = guardObj;
@@ -12177,7 +12177,7 @@ IonBuilder::getPropTryInlineAccess(bool* emitted, MDefinition* obj, PropertyName
 
     MIRType rvalType = types->getKnownMIRType();
     if (barrier != BarrierKind::NoBarrier || IsNullOrUndefined(rvalType))
-        rvalType = MIRType_Value;
+        rvalType = MIRType::Value;
 
     if (receivers.length() == 1) {
         if (!receivers[0].group) {
@@ -12289,7 +12289,7 @@ IonBuilder::getPropTryCache(bool* emitted, MDefinition* obj, PropertyName* name,
 
     
     
-    if (obj->type() != MIRType_Object) {
+    if (obj->type() != MIRType::Object) {
         TemporaryTypeSet* types = obj->resultTypeSet();
         if (!types || !types->objectOrSentinel()) {
             trackOptimizationOutcome(TrackedOutcome::NoTypeInfo);
@@ -12318,7 +12318,7 @@ IonBuilder::getPropTryCache(bool* emitted, MDefinition* obj, PropertyName* name,
                                                      barrier == BarrierKind::TypeSet);
 
     
-    if (obj->type() == MIRType_Object && !invalidatedIdempotentCache()) {
+    if (obj->type() == MIRType::Object && !invalidatedIdempotentCache()) {
         if (PropertyReadIsIdempotent(constraints(), obj, name))
             load->setIdempotent();
     }
@@ -12349,7 +12349,7 @@ IonBuilder::getPropTryCache(bool* emitted, MDefinition* obj, PropertyName* name,
 
     MIRType rvalType = types->getKnownMIRType();
     if (barrier != BarrierKind::NoBarrier || IsNullOrUndefined(rvalType))
-        rvalType = MIRType_Value;
+        rvalType = MIRType::Value;
     load->setResultType(rvalType);
 
     if (!pushTypeBarrier(load, types, barrier))
@@ -12399,7 +12399,7 @@ IonBuilder::tryInnerizeWindow(MDefinition* obj)
     
     
 
-    if (obj->type() != MIRType_Object)
+    if (obj->type() != MIRType::Object)
         return obj;
 
     TemporaryTypeSet* types = obj->resultTypeSet();
@@ -12588,7 +12588,7 @@ IonBuilder::setPropTryCommonSetter(bool* emitted, MDefinition* obj,
     }
 
     
-    if (obj->type() != MIRType_Object) {
+    if (obj->type() != MIRType::Object) {
         MGuardObject* guardObj = MGuardObject::New(alloc(), obj);
         current->add(guardObj);
         obj = guardObj;
@@ -12861,10 +12861,10 @@ IonBuilder::storeUnboxedValue(MDefinition* obj, MDefinition* elements, int32_t e
         break;
 
       case JSVAL_TYPE_OBJECT:
-        MOZ_ASSERT(value->type() == MIRType_Object ||
-                   value->type() == MIRType_Null ||
-                   value->type() == MIRType_Value);
-        MOZ_ASSERT(!value->mightBeType(MIRType_Undefined),
+        MOZ_ASSERT(value->type() == MIRType::Object ||
+                   value->type() == MIRType::Null ||
+                   value->type() == MIRType::Value);
+        MOZ_ASSERT(!value->mightBeType(MIRType::Undefined),
                    "MToObjectOrNull slow path is invalid for unboxed objects");
         store = MStoreUnboxedObjectOrNull::New(alloc(), elements, scaledOffset, value, obj,
                                                elementsOffset, preBarrier);
@@ -12895,7 +12895,7 @@ IonBuilder::setPropTryUnboxed(bool* emitted, MDefinition* obj,
     if (offset == UINT32_MAX)
         return true;
 
-    if (obj->type() != MIRType_Object) {
+    if (obj->type() != MIRType::Object) {
         MGuardObject* guard = MGuardObject::New(alloc(), obj);
         current->add(guard);
         obj = guard;
@@ -13228,10 +13228,10 @@ IonBuilder::jsop_setarg(uint32_t arg)
                     MOZ_ASSERT(op->resultTypeSet() == &argTypes[arg]);
                     argTypes[arg].addType(TypeSet::UnknownType(), alloc_->lifoAlloc());
                     if (val->isMul()) {
-                        val->setResultType(MIRType_Double);
-                        val->toMul()->setSpecialization(MIRType_Double);
+                        val->setResultType(MIRType::Double);
+                        val->toMul()->setSpecialization(MIRType::Double);
                     } else {
-                        MOZ_ASSERT(val->type() == MIRType_Int32);
+                        MOZ_ASSERT(val->type() == MIRType::Int32);
                     }
                     val->setResultTypeSet(nullptr);
                 }
@@ -13349,7 +13349,7 @@ IonBuilder::jsop_functionthis()
         return true;
     }
 
-    if (thisTypes && (thisTypes->getKnownMIRType() == MIRType_Object ||
+    if (thisTypes && (thisTypes->getKnownMIRType() == MIRType::Object ||
         (thisTypes->empty() && baselineFrame_ && baselineFrame_->thisType.isSomeObject())))
     {
         
@@ -13370,7 +13370,7 @@ IonBuilder::jsop_functionthis()
     
     MDefinition* def = current->getSlot(info().thisSlot());
 
-    if (def->type() == MIRType_Object) {
+    if (def->type() == MIRType::Object) {
         current->push(def);
         return true;
     }
@@ -13417,7 +13417,7 @@ bool
 IonBuilder::jsop_toid()
 {
     
-    if (current->peek(-1)->type() == MIRType_Int32)
+    if (current->peek(-1)->type() == MIRType::Int32)
         return true;
 
     MDefinition* index = current->pop();
@@ -13775,7 +13775,7 @@ IonBuilder::tryFoldInstanceOf(MDefinition* lhs, JSObject* protoObject)
 {
     
 
-    if (!lhs->mightBeType(MIRType_Object)) {
+    if (!lhs->mightBeType(MIRType::Object)) {
         
         lhs->setImplicitlyUsedUnchecked();
         pushConstant(BooleanValue(false));
@@ -13810,7 +13810,7 @@ IonBuilder::tryFoldInstanceOf(MDefinition* lhs, JSObject* protoObject)
         }
     }
 
-    if (knownIsInstance && lhsTypes->getKnownMIRType() != MIRType_Object) {
+    if (knownIsInstance && lhsTypes->getKnownMIRType() != MIRType::Object) {
         
         
         
@@ -14053,7 +14053,7 @@ TypedObjectPrediction
 IonBuilder::typedObjectPrediction(TemporaryTypeSet* types)
 {
     
-    if (!types || types->getKnownMIRType() != MIRType_Object)
+    if (!types || types->getKnownMIRType() != MIRType::Object)
         return TypedObjectPrediction();
 
     
@@ -14103,7 +14103,7 @@ IonBuilder::loadTypedObjectData(MDefinition* typedObj,
                                 MDefinition** owner,
                                 LinearSum* ownerOffset)
 {
-    MOZ_ASSERT(typedObj->type() == MIRType_Object);
+    MOZ_ASSERT(typedObj->type() == MIRType::Object);
 
     
     
@@ -14176,7 +14176,7 @@ IonBuilder::loadTypedObjectElements(MDefinition* typedObj,
     } else {
         MDefinition* unscaledOffset = ConvertLinearSum(alloc(), current, ownerByteOffset);
         *ownerScaledOffset = MDiv::NewAsmJS(alloc(), unscaledOffset, constantInt(scale),
-                                            MIRType_Int32,  false);
+                                            MIRType::Int32,  false);
         current->add((*ownerScaledOffset)->toInstruction());
     }
 }
@@ -14221,7 +14221,7 @@ IonBuilder::typeObjectForElementFromArrayStructType(MDefinition* typeObj)
     MInstruction* elemType = MLoadFixedSlot::New(alloc(), typeObj, JS_DESCR_SLOT_ARRAY_ELEM_TYPE);
     current->add(elemType);
 
-    MInstruction* unboxElemType = MUnbox::New(alloc(), elemType, MIRType_Object, MUnbox::Infallible);
+    MInstruction* unboxElemType = MUnbox::New(alloc(), elemType, MIRType::Object, MUnbox::Infallible);
     current->add(unboxElemType);
 
     return unboxElemType;
@@ -14236,7 +14236,7 @@ IonBuilder::typeObjectForFieldFromStructType(MDefinition* typeObj,
     MInstruction* fieldTypes = MLoadFixedSlot::New(alloc(), typeObj, JS_DESCR_SLOT_STRUCT_FIELD_TYPES);
     current->add(fieldTypes);
 
-    MInstruction* unboxFieldTypes = MUnbox::New(alloc(), fieldTypes, MIRType_Object, MUnbox::Infallible);
+    MInstruction* unboxFieldTypes = MUnbox::New(alloc(), fieldTypes, MIRType::Object, MUnbox::Infallible);
     current->add(unboxFieldTypes);
 
     
@@ -14249,7 +14249,7 @@ IonBuilder::typeObjectForFieldFromStructType(MDefinition* typeObj,
     MInstruction* fieldType = MLoadElement::New(alloc(), fieldTypesElements, fieldIndexDef, false, false);
     current->add(fieldType);
 
-    MInstruction* unboxFieldType = MUnbox::New(alloc(), fieldType, MIRType_Object, MUnbox::Infallible);
+    MInstruction* unboxFieldType = MUnbox::New(alloc(), fieldType, MIRType::Object, MUnbox::Infallible);
     current->add(unboxFieldType);
 
     return unboxFieldType;
@@ -14297,7 +14297,7 @@ IonBuilder::storeReferenceTypedObjectValue(MDefinition* typedObj,
         MOZ_ASSERT(type == ReferenceTypeDescr::TYPE_ANY ||
                    type == ReferenceTypeDescr::TYPE_OBJECT);
         MIRType implicitType =
-            (type == ReferenceTypeDescr::TYPE_ANY) ? MIRType_Undefined : MIRType_Null;
+            (type == ReferenceTypeDescr::TYPE_ANY) ? MIRType::Undefined : MIRType::Null;
 
         if (PropertyWriteNeedsTypeBarrier(alloc(), constraints(), current, &typedObj, name, &value,
                                            true, implicitType))
@@ -14432,7 +14432,7 @@ IonBuilder::addLexicalCheck(MDefinition* input)
     MInstruction* lexicalCheck;
 
     
-    if (input->type() == MIRType_MagicUninitializedLexical) {
+    if (input->type() == MIRType::MagicUninitializedLexical) {
         
         
         input->setImplicitlyUsedUnchecked();
@@ -14443,7 +14443,7 @@ IonBuilder::addLexicalCheck(MDefinition* input)
         return constant(UndefinedValue());
     }
 
-    if (input->type() == MIRType_Value) {
+    if (input->type() == MIRType::Value) {
         lexicalCheck = MLexicalCheck::New(alloc(), input);
         current->add(lexicalCheck);
         if (failedLexicalCheck_)

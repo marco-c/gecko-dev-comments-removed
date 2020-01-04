@@ -388,41 +388,41 @@ class SimdConstant {
 
 
 
-enum MIRType
+enum class MIRType
 {
-    MIRType_Undefined,
-    MIRType_Null,
-    MIRType_Boolean,
-    MIRType_Int32,
-    MIRType_Int64,
-    MIRType_Double,
-    MIRType_Float32,
+    Undefined,
+    Null,
+    Boolean,
+    Int32,
+    Int64,
+    Double,
+    Float32,
     
-    MIRType_String,
-    MIRType_Symbol,
+    String,
+    Symbol,
     
-    MIRType_Object,
-    MIRType_MagicOptimizedArguments,   
-    MIRType_MagicOptimizedOut,         
-    MIRType_MagicHole,                 
-    MIRType_MagicIsConstructing,       
-    MIRType_MagicUninitializedLexical, 
+    Object,
+    MagicOptimizedArguments,   
+    MagicOptimizedOut,         
+    MagicHole,                 
+    MagicIsConstructing,       
+    MagicUninitializedLexical, 
     
-    MIRType_Value,
-    MIRType_SinCosDouble,              
-    MIRType_ObjectOrNull,
-    MIRType_None,                      
-    MIRType_Slots,                     
-    MIRType_Elements,                  
-    MIRType_Pointer,                   
-    MIRType_Shape,                     
-    MIRType_ObjectGroup,               
-    MIRType_Last = MIRType_ObjectGroup,
-    MIRType_Float32x4 = MIRType_Float32 | (2 << VECTOR_SCALE_SHIFT),
+    Value,
+    SinCosDouble,              
+    ObjectOrNull,
+    None,                      
+    Slots,                     
+    Elements,                  
+    Pointer,                   
+    Shape,                     
+    ObjectGroup,               
+    Last = ObjectGroup,
+    Float32x4 = Float32 | (2 << VECTOR_SCALE_SHIFT),
     
-    MIRType_Int32x4   = MIRType_Int32   | (2 << VECTOR_SCALE_SHIFT),
-    MIRType_Bool32x4  = MIRType_Boolean | (2 << VECTOR_SCALE_SHIFT),
-    MIRType_Doublex2  = MIRType_Double  | (1 << VECTOR_SCALE_SHIFT)
+    Int32x4   = Int32   | (2 << VECTOR_SCALE_SHIFT),
+    Bool32x4  = Boolean | (2 << VECTOR_SCALE_SHIFT),
+    Doublex2  = Double  | (1 << VECTOR_SCALE_SHIFT)
 };
 
 static inline MIRType
@@ -432,23 +432,23 @@ MIRTypeFromValueType(JSValueType type)
     
     switch (type) {
       case JSVAL_TYPE_DOUBLE:
-        return MIRType_Double;
+        return MIRType::Double;
       case JSVAL_TYPE_INT32:
-        return MIRType_Int32;
+        return MIRType::Int32;
       case JSVAL_TYPE_UNDEFINED:
-        return MIRType_Undefined;
+        return MIRType::Undefined;
       case JSVAL_TYPE_STRING:
-        return MIRType_String;
+        return MIRType::String;
       case JSVAL_TYPE_SYMBOL:
-        return MIRType_Symbol;
+        return MIRType::Symbol;
       case JSVAL_TYPE_BOOLEAN:
-        return MIRType_Boolean;
+        return MIRType::Boolean;
       case JSVAL_TYPE_NULL:
-        return MIRType_Null;
+        return MIRType::Null;
       case JSVAL_TYPE_OBJECT:
-        return MIRType_Object;
+        return MIRType::Object;
       case JSVAL_TYPE_UNKNOWN:
-        return MIRType_Value;
+        return MIRType::Value;
       default:
         MOZ_CRASH("unexpected jsval type");
     }
@@ -458,29 +458,29 @@ static inline JSValueType
 ValueTypeFromMIRType(MIRType type)
 {
   switch (type) {
-    case MIRType_Undefined:
+    case MIRType::Undefined:
       return JSVAL_TYPE_UNDEFINED;
-    case MIRType_Null:
+    case MIRType::Null:
       return JSVAL_TYPE_NULL;
-    case MIRType_Boolean:
+    case MIRType::Boolean:
       return JSVAL_TYPE_BOOLEAN;
-    case MIRType_Int32:
+    case MIRType::Int32:
       return JSVAL_TYPE_INT32;
-    case MIRType_Float32: 
-    case MIRType_Double:
+    case MIRType::Float32: 
+    case MIRType::Double:
       return JSVAL_TYPE_DOUBLE;
-    case MIRType_String:
+    case MIRType::String:
       return JSVAL_TYPE_STRING;
-    case MIRType_Symbol:
+    case MIRType::Symbol:
       return JSVAL_TYPE_SYMBOL;
-    case MIRType_MagicOptimizedArguments:
-    case MIRType_MagicOptimizedOut:
-    case MIRType_MagicHole:
-    case MIRType_MagicIsConstructing:
-    case MIRType_MagicUninitializedLexical:
+    case MIRType::MagicOptimizedArguments:
+    case MIRType::MagicOptimizedOut:
+    case MIRType::MagicHole:
+    case MIRType::MagicIsConstructing:
+    case MIRType::MagicUninitializedLexical:
       return JSVAL_TYPE_MAGIC;
     default:
-      MOZ_ASSERT(type == MIRType_Object);
+      MOZ_ASSERT(type == MIRType::Object);
       return JSVAL_TYPE_OBJECT;
   }
 }
@@ -495,61 +495,61 @@ static inline const char*
 StringFromMIRType(MIRType type)
 {
   switch (type) {
-    case MIRType_Undefined:
+    case MIRType::Undefined:
       return "Undefined";
-    case MIRType_Null:
+    case MIRType::Null:
       return "Null";
-    case MIRType_Boolean:
+    case MIRType::Boolean:
       return "Bool";
-    case MIRType_Int32:
+    case MIRType::Int32:
       return "Int32";
-    case MIRType_Int64:
+    case MIRType::Int64:
       return "Int64";
-    case MIRType_Double:
+    case MIRType::Double:
       return "Double";
-    case MIRType_Float32:
+    case MIRType::Float32:
       return "Float32";
-    case MIRType_String:
+    case MIRType::String:
       return "String";
-    case MIRType_Symbol:
+    case MIRType::Symbol:
       return "Symbol";
-    case MIRType_Object:
+    case MIRType::Object:
       return "Object";
-    case MIRType_MagicOptimizedArguments:
+    case MIRType::MagicOptimizedArguments:
       return "MagicOptimizedArguments";
-    case MIRType_MagicOptimizedOut:
+    case MIRType::MagicOptimizedOut:
       return "MagicOptimizedOut";
-    case MIRType_MagicHole:
+    case MIRType::MagicHole:
       return "MagicHole";
-    case MIRType_MagicIsConstructing:
+    case MIRType::MagicIsConstructing:
       return "MagicIsConstructing";
-    case MIRType_MagicUninitializedLexical:
+    case MIRType::MagicUninitializedLexical:
       return "MagicUninitializedLexical";
-    case MIRType_Value:
+    case MIRType::Value:
       return "Value";
-    case MIRType_SinCosDouble:
+    case MIRType::SinCosDouble:
       return "SinCosDouble";
-    case MIRType_ObjectOrNull:
+    case MIRType::ObjectOrNull:
       return "ObjectOrNull";
-    case MIRType_None:
+    case MIRType::None:
       return "None";
-    case MIRType_Slots:
+    case MIRType::Slots:
       return "Slots";
-    case MIRType_Elements:
+    case MIRType::Elements:
       return "Elements";
-    case MIRType_Pointer:
+    case MIRType::Pointer:
       return "Pointer";
-    case MIRType_Shape:
+    case MIRType::Shape:
       return "Shape";
-    case MIRType_ObjectGroup:
+    case MIRType::ObjectGroup:
       return "ObjectGroup";
-    case MIRType_Float32x4:
+    case MIRType::Float32x4:
       return "Float32x4";
-    case MIRType_Int32x4:
+    case MIRType::Int32x4:
       return "Int32x4";
-    case MIRType_Bool32x4:
+    case MIRType::Bool32x4:
       return "Bool32x4";
-    case MIRType_Doublex2:
+    case MIRType::Doublex2:
       return "Doublex2";
   }
   MOZ_CRASH("Unknown MIRType.");
@@ -558,70 +558,70 @@ StringFromMIRType(MIRType type)
 static inline bool
 IsNumberType(MIRType type)
 {
-    return type == MIRType_Int32 ||
-           type == MIRType_Double ||
-           type == MIRType_Float32 ||
-           type == MIRType_Int64;
+    return type == MIRType::Int32 ||
+           type == MIRType::Double ||
+           type == MIRType::Float32 ||
+           type == MIRType::Int64;
 }
 
 static inline bool
 IsTypeRepresentableAsDouble(MIRType type)
 {
-    return type == MIRType_Int32 ||
-           type == MIRType_Double ||
-           type == MIRType_Float32;
+    return type == MIRType::Int32 ||
+           type == MIRType::Double ||
+           type == MIRType::Float32;
 }
 
 static inline bool
 IsFloatType(MIRType type)
 {
-    return type == MIRType_Int32 || type == MIRType_Float32;
+    return type == MIRType::Int32 || type == MIRType::Float32;
 }
 
 static inline bool
 IsFloatingPointType(MIRType type)
 {
-    return type == MIRType_Double || type == MIRType_Float32;
+    return type == MIRType::Double || type == MIRType::Float32;
 }
 
 static inline bool
 IsNullOrUndefined(MIRType type)
 {
-    return type == MIRType_Null || type == MIRType_Undefined;
+    return type == MIRType::Null || type == MIRType::Undefined;
 }
 
 static inline bool
 IsSimdType(MIRType type)
 {
-    return type == MIRType_Int32x4 || type == MIRType_Float32x4 || type == MIRType_Bool32x4;
+    return type == MIRType::Int32x4 || type == MIRType::Float32x4 || type == MIRType::Bool32x4;
 }
 
 static inline bool
 IsFloatingPointSimdType(MIRType type)
 {
-    return type == MIRType_Float32x4;
+    return type == MIRType::Float32x4;
 }
 
 static inline bool
 IsIntegerSimdType(MIRType type)
 {
-    return type == MIRType_Int32x4;
+    return type == MIRType::Int32x4;
 }
 
 static inline bool
 IsBooleanSimdType(MIRType type)
 {
-    return type == MIRType_Bool32x4;
+    return type == MIRType::Bool32x4;
 }
 
 static inline bool
 IsMagicType(MIRType type)
 {
-    return type == MIRType_MagicHole ||
-           type == MIRType_MagicOptimizedOut ||
-           type == MIRType_MagicIsConstructing ||
-           type == MIRType_MagicOptimizedArguments ||
-           type == MIRType_MagicUninitializedLexical;
+    return type == MIRType::MagicHole ||
+           type == MIRType::MagicOptimizedOut ||
+           type == MIRType::MagicIsConstructing ||
+           type == MIRType::MagicOptimizedArguments ||
+           type == MIRType::MagicUninitializedLexical;
 }
 
 
@@ -630,7 +630,7 @@ static inline unsigned
 SimdTypeToLength(MIRType type)
 {
     MOZ_ASSERT(IsSimdType(type));
-    return 1 << ((type >> VECTOR_SCALE_SHIFT) & VECTOR_SCALE_MASK);
+    return 1 << ((unsigned(type) >> VECTOR_SCALE_SHIFT) & VECTOR_SCALE_MASK);
 }
 
 static inline MIRType
@@ -644,15 +644,15 @@ ScalarTypeToMIRType(Scalar::Type type)
       case Scalar::Int32:
       case Scalar::Uint32:
       case Scalar::Uint8Clamped:
-        return MIRType_Int32;
+        return MIRType::Int32;
       case Scalar::Float32:
-        return MIRType_Float32;
+        return MIRType::Float32;
       case Scalar::Float64:
-        return MIRType_Double;
+        return MIRType::Double;
       case Scalar::Float32x4:
-        return MIRType_Float32x4;
+        return MIRType::Float32x4;
       case Scalar::Int32x4:
-        return MIRType_Int32x4;
+        return MIRType::Int32x4;
       case Scalar::MaxTypedArrayViewType:
         break;
     }
@@ -688,9 +688,9 @@ static inline MIRType
 SimdTypeToLaneType(MIRType type)
 {
     MOZ_ASSERT(IsSimdType(type));
-    static_assert(MIRType_Last <= ELEMENT_TYPE_MASK,
+    static_assert(unsigned(MIRType::Last) <= ELEMENT_TYPE_MASK,
                   "ELEMENT_TYPE_MASK should be larger than the last MIRType");
-    return MIRType((type >> ELEMENT_TYPE_SHIFT) & ELEMENT_TYPE_MASK);
+    return MIRType((unsigned(type) >> ELEMENT_TYPE_SHIFT) & ELEMENT_TYPE_MASK);
 }
 
 
@@ -703,7 +703,7 @@ SimdTypeToLaneArgumentType(MIRType type)
 
     
     
-    return laneType == MIRType_Boolean ? MIRType_Int32 : laneType;
+    return laneType == MIRType::Boolean ? MIRType::Int32 : laneType;
 }
 
 

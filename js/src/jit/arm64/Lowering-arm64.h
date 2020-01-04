@@ -34,7 +34,7 @@ class LIRGeneratorARM64 : public LIRGeneratorShared
     bool needTempForPostBarrier() { return true; }
 
     
-    LDefinition tempForDispatchCache(MIRType outputType = MIRType_None) {
+    LDefinition tempForDispatchCache(MIRType outputType = MIRType::None) {
         return LDefinition::BogusTemp();
     }
 

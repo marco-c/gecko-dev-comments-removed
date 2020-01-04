@@ -340,29 +340,29 @@ TypeSet::mightBeMIRType(jit::MIRType type) const
     if (unknown())
         return true;
 
-    if (type == jit::MIRType_Object)
+    if (type == jit::MIRType::Object)
         return unknownObject() || baseObjectCount() != 0;
 
     switch (type) {
-      case jit::MIRType_Undefined:
+      case jit::MIRType::Undefined:
         return baseFlags() & TYPE_FLAG_UNDEFINED;
-      case jit::MIRType_Null:
+      case jit::MIRType::Null:
         return baseFlags() & TYPE_FLAG_NULL;
-      case jit::MIRType_Boolean:
+      case jit::MIRType::Boolean:
         return baseFlags() & TYPE_FLAG_BOOLEAN;
-      case jit::MIRType_Int32:
+      case jit::MIRType::Int32:
         return baseFlags() & TYPE_FLAG_INT32;
-      case jit::MIRType_Float32: 
-      case jit::MIRType_Double:
+      case jit::MIRType::Float32: 
+      case jit::MIRType::Double:
         return baseFlags() & TYPE_FLAG_DOUBLE;
-      case jit::MIRType_String:
+      case jit::MIRType::String:
         return baseFlags() & TYPE_FLAG_STRING;
-      case jit::MIRType_Symbol:
+      case jit::MIRType::Symbol:
         return baseFlags() & TYPE_FLAG_SYMBOL;
-      case jit::MIRType_MagicOptimizedArguments:
+      case jit::MIRType::MagicOptimizedArguments:
         return baseFlags() & TYPE_FLAG_LAZYARGS;
-      case jit::MIRType_MagicHole:
-      case jit::MIRType_MagicIsConstructing:
+      case jit::MIRType::MagicHole:
+      case jit::MIRType::MagicIsConstructing:
         
         
         
@@ -1579,25 +1579,25 @@ GetMIRTypeFromTypeFlags(TypeFlags flags)
 {
     switch (flags) {
       case TYPE_FLAG_UNDEFINED:
-        return jit::MIRType_Undefined;
+        return jit::MIRType::Undefined;
       case TYPE_FLAG_NULL:
-        return jit::MIRType_Null;
+        return jit::MIRType::Null;
       case TYPE_FLAG_BOOLEAN:
-        return jit::MIRType_Boolean;
+        return jit::MIRType::Boolean;
       case TYPE_FLAG_INT32:
-        return jit::MIRType_Int32;
+        return jit::MIRType::Int32;
       case (TYPE_FLAG_INT32 | TYPE_FLAG_DOUBLE):
-        return jit::MIRType_Double;
+        return jit::MIRType::Double;
       case TYPE_FLAG_STRING:
-        return jit::MIRType_String;
+        return jit::MIRType::String;
       case TYPE_FLAG_SYMBOL:
-        return jit::MIRType_Symbol;
+        return jit::MIRType::Symbol;
       case TYPE_FLAG_LAZYARGS:
-        return jit::MIRType_MagicOptimizedArguments;
+        return jit::MIRType::MagicOptimizedArguments;
       case TYPE_FLAG_ANYOBJECT:
-        return jit::MIRType_Object;
+        return jit::MIRType::Object;
       default:
-        return jit::MIRType_Value;
+        return jit::MIRType::Value;
     }
 }
 
@@ -1608,7 +1608,7 @@ TemporaryTypeSet::getKnownMIRType()
     jit::MIRType type;
 
     if (baseObjectCount())
-        type = flags ? jit::MIRType_Value : jit::MIRType_Object;
+        type = flags ? jit::MIRType::Value : jit::MIRType::Object;
     else
         type = GetMIRTypeFromTypeFlags(flags);
 
@@ -1620,7 +1620,7 @@ TemporaryTypeSet::getKnownMIRType()
 
 
     DebugOnly<bool> empty = flags == 0 && baseObjectCount() == 0;
-    MOZ_ASSERT_IF(empty, type == jit::MIRType_Value);
+    MOZ_ASSERT_IF(empty, type == jit::MIRType::Value);
 
     return type;
 }
@@ -1631,17 +1631,17 @@ HeapTypeSetKey::knownMIRType(CompilerConstraintList* constraints)
     TypeSet* types = maybeTypes();
 
     if (!types || types->unknown())
-        return jit::MIRType_Value;
+        return jit::MIRType::Value;
 
     TypeFlags flags = types->baseFlags() & ~TYPE_FLAG_ANYOBJECT;
     jit::MIRType type;
 
     if (types->unknownObject() || types->getObjectCount())
-        type = flags ? jit::MIRType_Value : jit::MIRType_Object;
+        type = flags ? jit::MIRType::Value : jit::MIRType::Object;
     else
         type = GetMIRTypeFromTypeFlags(flags);
 
-    if (type != jit::MIRType_Value)
+    if (type != jit::MIRType::Value)
         freeze(constraints);
 
     
@@ -1651,7 +1651,7 @@ HeapTypeSetKey::knownMIRType(CompilerConstraintList* constraints)
 
 
 
-    MOZ_ASSERT_IF(types->empty(), type == jit::MIRType_Value);
+    MOZ_ASSERT_IF(types->empty(), type == jit::MIRType::Value);
 
     return type;
 }
@@ -2223,7 +2223,7 @@ TemporaryTypeSet::convertDoubleElements(CompilerConstraintList* constraints)
         
         
         
-        if (property.knownMIRType(constraints) == jit::MIRType_Double &&
+        if (property.knownMIRType(constraints) == jit::MIRType::Double &&
             !key->hasFlags(constraints, OBJECT_FLAG_NON_PACKED))
         {
             maybeConvert = true;

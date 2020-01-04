@@ -665,7 +665,7 @@ class TemporaryTypeSet : public TypeSet
     TemporaryTypeSet(LifoAlloc* alloc, jit::MIRType type)
       : TemporaryTypeSet(alloc, PrimitiveType(ValueTypeFromMIRType(type)))
     {
-        MOZ_ASSERT(type != jit::MIRType_Value);
+        MOZ_ASSERT(type != jit::MIRType::Value);
     }
 
     
@@ -680,7 +680,7 @@ class TemporaryTypeSet : public TypeSet
     
     jit::MIRType getKnownMIRType();
 
-    bool isMagicArguments() { return getKnownMIRType() == jit::MIRType_MagicOptimizedArguments; }
+    bool isMagicArguments() { return getKnownMIRType() == jit::MIRType::MagicOptimizedArguments; }
 
     
     bool maybeObject() { return unknownObject() || baseObjectCount() > 0; }

@@ -337,7 +337,7 @@ MAdd::writeRecoverData(CompactBufferWriter& writer) const
 {
     MOZ_ASSERT(canRecoverOnBailout());
     writer.writeUnsigned(uint32_t(RInstruction::Recover_Add));
-    writer.writeByte(specialization_ == MIRType_Float32);
+    writer.writeByte(specialization_ == MIRType::Float32);
     return true;
 }
 
@@ -371,7 +371,7 @@ MSub::writeRecoverData(CompactBufferWriter& writer) const
 {
     MOZ_ASSERT(canRecoverOnBailout());
     writer.writeUnsigned(uint32_t(RInstruction::Recover_Sub));
-    writer.writeByte(specialization_ == MIRType_Float32);
+    writer.writeByte(specialization_ == MIRType::Float32);
     return true;
 }
 
@@ -405,7 +405,7 @@ MMul::writeRecoverData(CompactBufferWriter& writer) const
 {
     MOZ_ASSERT(canRecoverOnBailout());
     writer.writeUnsigned(uint32_t(RInstruction::Recover_Mul));
-    writer.writeByte(specialization_ == MIRType_Float32);
+    writer.writeByte(specialization_ == MIRType::Float32);
     MOZ_ASSERT(Mode(uint8_t(mode_)) == mode_);
     writer.writeByte(uint8_t(mode_));
     return true;
@@ -447,7 +447,7 @@ MDiv::writeRecoverData(CompactBufferWriter& writer) const
 {
     MOZ_ASSERT(canRecoverOnBailout());
     writer.writeUnsigned(uint32_t(RInstruction::Recover_Div));
-    writer.writeByte(specialization_ == MIRType_Float32);
+    writer.writeByte(specialization_ == MIRType::Float32);
     return true;
 }
 
@@ -830,7 +830,7 @@ MSqrt::writeRecoverData(CompactBufferWriter& writer) const
 {
     MOZ_ASSERT(canRecoverOnBailout());
     writer.writeUnsigned(uint32_t(RInstruction::Recover_Sqrt));
-    writer.writeByte(type() == MIRType_Float32);
+    writer.writeByte(type() == MIRType::Float32);
     return true;
 }
 
