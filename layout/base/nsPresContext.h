@@ -163,7 +163,8 @@ public:
 
 
 
-  void SetShell(nsIPresShell* aShell);
+  void AttachShell(nsIPresShell* aShell);
+  void DetachShell();
 
 
   nsPresContextType Type() const { return mType; }

@@ -879,7 +879,7 @@ PresShell::Init(nsIDocument* aDocument,
 
   
   mPresContext = aPresContext;
-  aPresContext->SetShell(this);
+  aPresContext->AttachShell(this);
 
   
   
@@ -1323,7 +1323,7 @@ PresShell::Destroy()
     
     
     
-    mPresContext->SetShell(nullptr);
+    mPresContext->DetachShell();
 
     
     mPresContext->SetLinkHandler(nullptr);

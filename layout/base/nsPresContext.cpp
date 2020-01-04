@@ -335,7 +335,7 @@ nsPresContext::Destroy()
 nsPresContext::~nsPresContext()
 {
   NS_PRECONDITION(!mShell, "Presshell forgot to clear our mShell pointer");
-  SetShell(nullptr);
+  DetachShell();
 
   Destroy();
 }
@@ -903,92 +903,101 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
 
 
 void
-nsPresContext::SetShell(nsIPresShell* aShell)
+nsPresContext::AttachShell(nsIPresShell* aShell)
 {
+  MOZ_ASSERT(!mShell);
+  mShell = aShell;
+
+  
+  
+  
+  mCounterStyleManager = new mozilla::CounterStyleManager(this);
+
+  nsIDocument *doc = mShell->GetDocument();
+  NS_ASSERTION(doc, "expect document here");
+  if (doc) {
+    
+    mDocument = doc;
+  }
+  
+  
+  GetUserPreferences();
+
+  if (doc) {
+    nsIURI *docURI = doc->GetDocumentURI();
+
+    if (IsDynamic() && docURI) {
+      bool isChrome = false;
+      bool isRes = false;
+      docURI->SchemeIs("chrome", &isChrome);
+      docURI->SchemeIs("resource", &isRes);
+
+      if (!isChrome && !isRes)
+        mImageAnimationMode = mImageAnimationModePref;
+      else
+        mImageAnimationMode = imgIContainer::kNormalAnimMode;
+    }
+
+    if (mLangService) {
+      doc->AddCharSetObserver(this);
+      UpdateCharSet(doc->GetDocumentCharacterSet());
+    }
+  }
+}
+
+void
+nsPresContext::DetachShell()
+{
+  
+  
+  nsIDocument *doc = mShell ? mShell->GetDocument() : nullptr;
+  if (doc) {
+    doc->RemoveCharSetObserver(this);
+  }
+
+  
+  
+  
+  
+  
+  
   if (mCounterStyleManager) {
     mCounterStyleManager->Disconnect();
     mCounterStyleManager = nullptr;
   }
 
-  if (mShell) {
+  mShell = nullptr;
+
+  if (mEffectCompositor) {
+    mEffectCompositor->Disconnect();
+    mEffectCompositor = nullptr;
+  }
+  if (mTransitionManager) {
+    mTransitionManager->Disconnect();
+    mTransitionManager = nullptr;
+  }
+  if (mAnimationManager) {
+    mAnimationManager->Disconnect();
+    mAnimationManager = nullptr;
+  }
+  if (mRestyleManager) {
+    mRestyleManager->Disconnect();
+    mRestyleManager = nullptr;
+  }
+  if (mRefreshDriver && mRefreshDriver->PresContext() == this) {
+    mRefreshDriver->Disconnect();
     
-    
-    nsIDocument *doc = mShell->GetDocument();
-    if (doc) {
-      doc->RemoveCharSetObserver(this);
-    }
   }
 
-  mShell = aShell;
+  if (IsRoot()) {
+    nsRootPresContext* thisRoot = static_cast<nsRootPresContext*>(this);
 
-  if (mShell) {
     
     
+    thisRoot->CancelApplyPluginGeometryTimer();
+
     
-    mCounterStyleManager = new mozilla::CounterStyleManager(this);
-
-    nsIDocument *doc = mShell->GetDocument();
-    NS_ASSERTION(doc, "expect document here");
-    if (doc) {
-      
-      mDocument = doc;
-    }
-    
-    
-    GetUserPreferences();
-
-    if (doc) {
-      nsIURI *docURI = doc->GetDocumentURI();
-
-      if (IsDynamic() && docURI) {
-        bool isChrome = false;
-        bool isRes = false;
-        docURI->SchemeIs("chrome", &isChrome);
-        docURI->SchemeIs("resource", &isRes);
-
-        if (!isChrome && !isRes)
-          mImageAnimationMode = mImageAnimationModePref;
-        else
-          mImageAnimationMode = imgIContainer::kNormalAnimMode;
-      }
-
-      if (mLangService) {
-        doc->AddCharSetObserver(this);
-        UpdateCharSet(doc->GetDocumentCharacterSet());
-      }
-    }
-  } else {
-    if (mEffectCompositor) {
-      mEffectCompositor->Disconnect();
-      mEffectCompositor = nullptr;
-    }
-    if (mTransitionManager) {
-      mTransitionManager->Disconnect();
-      mTransitionManager = nullptr;
-    }
-    if (mAnimationManager) {
-      mAnimationManager->Disconnect();
-      mAnimationManager = nullptr;
-    }
-    if (mRestyleManager) {
-      mRestyleManager->Disconnect();
-      mRestyleManager = nullptr;
-    }
-    if (mRefreshDriver && mRefreshDriver->PresContext() == this) {
-      mRefreshDriver->Disconnect();
-      
-    }
-
-    if (IsRoot()) {
-      nsRootPresContext* thisRoot = static_cast<nsRootPresContext*>(this);
-
-      
-      
-      thisRoot->CancelApplyPluginGeometryTimer();
-
-      
-      thisRoot->CancelDidPaintTimer();
-    }
+    thisRoot->CancelDidPaintTimer();
   }
 }
 
