@@ -10,6 +10,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Move.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/TypedEnumBits.h"
 
 #include <algorithm> 
 
@@ -96,6 +97,12 @@ enum class CSSParseResult : int32_t {
   
   Error
 };
+
+enum class GridTrackSizeFlags {
+  eDefaultTrackSize = 0x0,
+  eFixedTrackSize   = 0x1, 
+};
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(GridTrackSizeFlags)
 
 namespace {
 
@@ -927,10 +934,19 @@ protected:
   CSSParseResult ParseGridLineNames(nsCSSValue& aValue);
   bool ParseGridLineNameListRepeat(nsCSSValueList** aTailPtr);
   bool ParseOptionalLineNameListAfterSubgrid(nsCSSValue& aValue);
-  CSSParseResult ParseGridTrackBreadth(nsCSSValue& aValue);
-  CSSParseResult ParseGridTrackSize(nsCSSValue& aValue);
+
+  
+  CSSParseResult ParseGridTrackBreadth(nsCSSValue& aValue,
+    GridTrackSizeFlags aFlags = GridTrackSizeFlags::eDefaultTrackSize);
+  
+  CSSParseResult ParseGridTrackSize(nsCSSValue& aValue,
+    GridTrackSizeFlags aFlags = GridTrackSizeFlags::eDefaultTrackSize);
+
   bool ParseGridAutoColumnsRows(nsCSSProperty aPropID);
   bool ParseGridTrackListRepeat(nsCSSValueList** aTailPtr);
+  bool ParseGridTrackRepeatIntro(bool            aForSubgrid,
+                                 int32_t*        aRepetitions,
+                                 Maybe<int32_t>* aRepeatAutoEnum);
 
   
   
@@ -8377,18 +8393,32 @@ CSSParserImpl::ParseGridLineNames(nsCSSValue& aValue)
 bool
 CSSParserImpl::ParseGridLineNameListRepeat(nsCSSValueList** aTailPtr)
 {
-  if (!(GetToken(true) &&
-        mToken.mType == eCSSToken_Number &&
-        mToken.mIntegerValid &&
-        mToken.mInteger > 0)) {
-    SkipUntil(')');
+  int32_t repetitions;
+  Maybe<int32_t> repeatAutoEnum;
+  if (!ParseGridTrackRepeatIntro(true, &repetitions, &repeatAutoEnum)) {
     return false;
   }
-  int32_t repetitions = std::min(mToken.mInteger,
-                                 GRID_TEMPLATE_MAX_REPETITIONS);
-  if (!ExpectSymbol(',', true)) {
-    SkipUntil(')');
-    return false;
+  if (repeatAutoEnum.isSome()) {
+    
+    nsCSSValue listValue;
+    nsCSSValueList* list = listValue.SetListValue();
+    if (ParseGridLineNames(list->mValue) != CSSParseResult::Ok) {
+      return false;
+    }
+    if (!ExpectSymbol(')', true)) {
+      return false;
+    }
+    
+    
+    
+    nsCSSValue kwd;
+    kwd.SetIntValue(repeatAutoEnum.value(), eCSSUnit_Enumerated);
+    *aTailPtr = (*aTailPtr)->mNext = new nsCSSValueList;
+    (*aTailPtr)->mValue.SetPairValue(kwd, listValue);
+    
+    
+    *aTailPtr = (*aTailPtr)->mNext = new nsCSSValueList;
+    return true;
   }
 
   
@@ -8397,7 +8427,6 @@ CSSParserImpl::ParseGridLineNameListRepeat(nsCSSValueList** aTailPtr)
     tail->mNext = new nsCSSValueList;
     tail = tail->mNext;
     if (ParseGridLineNames(tail->mValue) != CSSParseResult::Ok) {
-      SkipUntil(')');
       return false;
     }
   } while (!ExpectSymbol(')', true));
@@ -8431,15 +8460,26 @@ CSSParserImpl::ParseOptionalLineNameListAfterSubgrid(nsCSSValue& aValue)
   
   item->mValue.SetIntValue(NS_STYLE_GRID_TEMPLATE_SUBGRID,
                            eCSSUnit_Enumerated);
+  bool haveRepeatAuto = false;
   for (;;) {
+    
     
     if (!GetToken(true)) {
       return true;
     }
     if (mToken.mType == eCSSToken_Function &&
         mToken.mIdent.LowerCaseEqualsLiteral("repeat")) {
+      nsCSSValueList* startOfRepeat = item;
       if (!ParseGridLineNameListRepeat(&item)) {
+        SkipUntil(')');
         return false;
+      }
+      if (startOfRepeat->mNext->mValue.GetUnit() == eCSSUnit_Pair) {
+        if (haveRepeatAuto) {
+          REPORT_UNEXPECTED(PEMoreThanOneGridRepeatAutoFillInNameList);
+          return false;
+        }
+        haveRepeatAuto = true;
       }
     } else {
       UngetToken();
@@ -8462,14 +8502,18 @@ CSSParserImpl::ParseOptionalLineNameListAfterSubgrid(nsCSSValue& aValue)
 
 
 CSSParseResult
-CSSParserImpl::ParseGridTrackBreadth(nsCSSValue& aValue)
+CSSParserImpl::ParseGridTrackBreadth(nsCSSValue& aValue,
+                                     GridTrackSizeFlags aFlags)
 {
-  CSSParseResult result =
+  CSSParseResult result = (aFlags & GridTrackSizeFlags::eFixedTrackSize) ?
+      ParseNonNegativeVariant(aValue, VARIANT_LPCALC, nullptr) :
       ParseNonNegativeVariant(aValue,
                               VARIANT_AUTO | VARIANT_LPCALC | VARIANT_KEYWORD,
                               nsCSSProps::kGridTrackBreadthKTable);
+
   if (result == CSSParseResult::Ok ||
-      result == CSSParseResult::Error) {
+      result == CSSParseResult::Error ||
+      (aFlags & GridTrackSizeFlags::eFixedTrackSize)) {
     return result;
   }
 
@@ -8489,10 +8533,11 @@ CSSParserImpl::ParseGridTrackBreadth(nsCSSValue& aValue)
 
 
 CSSParseResult
-CSSParserImpl::ParseGridTrackSize(nsCSSValue& aValue)
+CSSParserImpl::ParseGridTrackSize(nsCSSValue& aValue,
+                                  GridTrackSizeFlags aFlags)
 {
   
-  CSSParseResult result = ParseGridTrackBreadth(aValue);
+  CSSParseResult result = ParseGridTrackBreadth(aValue, aFlags);
   if (result == CSSParseResult::Ok ||
       result == CSSParseResult::Error) {
     return result;
@@ -8508,9 +8553,9 @@ CSSParserImpl::ParseGridTrackSize(nsCSSValue& aValue)
     return CSSParseResult::NotFound;
   }
   nsCSSValue::Array* func = aValue.InitFunction(eCSSKeyword_minmax, 2);
-  if (ParseGridTrackBreadth(func->Item(1)) == CSSParseResult::Ok &&
+  if (ParseGridTrackBreadth(func->Item(1), aFlags) == CSSParseResult::Ok &&
       ExpectSymbol(',', true) &&
-      ParseGridTrackBreadth(func->Item(2)) == CSSParseResult::Ok &&
+      ParseGridTrackBreadth(func->Item(2), aFlags) == CSSParseResult::Ok &&
       ExpectSymbol(')', true)) {
     return CSSParseResult::Ok;
   }
@@ -8549,6 +8594,7 @@ CSSParserImpl::ParseGridTrackListWithFirstLineNames(nsCSSValue& aValue,
   
   
   nsCSSValueList* item = firstLineNamesItem;
+  bool haveRepeatAuto = false;
   for (;;) {
     
     if (!GetToken(true)) {
@@ -8556,8 +8602,17 @@ CSSParserImpl::ParseGridTrackListWithFirstLineNames(nsCSSValue& aValue,
     }
     if (mToken.mType == eCSSToken_Function &&
         mToken.mIdent.LowerCaseEqualsLiteral("repeat")) {
+      nsCSSValueList* startOfRepeat = item;
       if (!ParseGridTrackListRepeat(&item)) {
+        SkipUntil(')');
         return false;
+      }
+      if (startOfRepeat->mNext->mValue.GetUnit() == eCSSUnit_Pair) {
+        if (haveRepeatAuto) {
+          REPORT_UNEXPECTED(PEMoreThanOneGridRepeatAutoFillFitInTrackList);
+          return false;
+        }
+        haveRepeatAuto = true;
       }
     } else {
       UngetToken();
@@ -8635,20 +8690,54 @@ ConcatLineNames(nsCSSValue& aFirst, nsCSSValue& aSecond)
 
 
 
+
+bool
+CSSParserImpl::ParseGridTrackRepeatIntro(bool            aForSubgrid,
+                                         int32_t*        aRepetitions,
+                                         Maybe<int32_t>* aRepeatAutoEnum)
+{
+  if (!GetToken(true)) {
+    return false;
+  }
+  if (mToken.mType == eCSSToken_Ident) {
+    if (mToken.mIdent.LowerCaseEqualsLiteral("auto-fill")) {
+      aRepeatAutoEnum->emplace(NS_STYLE_GRID_REPEAT_AUTO_FILL);
+    } else if (!aForSubgrid &&
+               mToken.mIdent.LowerCaseEqualsLiteral("auto-fit")) {
+      aRepeatAutoEnum->emplace(NS_STYLE_GRID_REPEAT_AUTO_FIT);
+    } else {
+      return false;
+    }
+    *aRepetitions = 1;
+  } else if (mToken.mType == eCSSToken_Number) {
+    if (!(mToken.mIntegerValid &&
+          mToken.mInteger > 0)) {
+      return false;
+    }
+    *aRepetitions = std::min(mToken.mInteger, GRID_TEMPLATE_MAX_REPETITIONS);
+  } else {
+    return false;
+  }
+
+  if (!ExpectSymbol(',', true)) {
+    return false;
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
 bool
 CSSParserImpl::ParseGridTrackListRepeat(nsCSSValueList** aTailPtr)
 {
-  if (!(GetToken(true) &&
-        mToken.mType == eCSSToken_Number &&
-        mToken.mIntegerValid &&
-        mToken.mInteger > 0)) {
-    SkipUntil(')');
-    return false;
-  }
-  int32_t repetitions = std::min(mToken.mInteger,
-                                 GRID_TEMPLATE_MAX_REPETITIONS);
-  if (!ExpectSymbol(',', true)) {
-    SkipUntil(')');
+  int32_t repetitions;
+  Maybe<int32_t> repeatAutoEnum;
+  if (!ParseGridTrackRepeatIntro(false, &repetitions, &repeatAutoEnum)) {
     return false;
   }
 
@@ -8661,12 +8750,13 @@ CSSParserImpl::ParseGridTrackListRepeat(nsCSSValueList** aTailPtr)
   nsCSSValue lastLineNames;
   
   if (ParseGridLineNames(firstLineNames) == CSSParseResult::Error) {
-    SkipUntil(')');
     return false;
   }
   
-  if (ParseGridTrackSize(trackSize) != CSSParseResult::Ok) {
-    SkipUntil(')');
+  GridTrackSizeFlags flags = repeatAutoEnum.isSome()
+    ? GridTrackSizeFlags::eFixedTrackSize
+    : GridTrackSizeFlags::eDefaultTrackSize;
+  if (ParseGridTrackSize(trackSize, flags) != CSSParseResult::Ok) {
     return false;
   }
   
@@ -8677,7 +8767,6 @@ CSSParserImpl::ParseGridTrackListRepeat(nsCSSValueList** aTailPtr)
   for (;;) {
     
     if (ParseGridLineNames(lastLineNames) == CSSParseResult::Error) {
-      SkipUntil(')');
       return false;
     }
 
@@ -8686,8 +8775,14 @@ CSSParserImpl::ParseGridTrackListRepeat(nsCSSValueList** aTailPtr)
     }
 
     
+    
+    if (repeatAutoEnum.isSome()) {
+      REPORT_UNEXPECTED(PEMoreThanOneGridRepeatTrackSize);
+      return false;
+    }
+
+    
     if (ParseGridTrackSize(trackSize) != CSSParseResult::Ok) {
-      SkipUntil(')');
       return false;
     }
 
@@ -8710,6 +8805,30 @@ CSSParserImpl::ParseGridTrackListRepeat(nsCSSValueList** aTailPtr)
   
   
 
+  if (repeatAutoEnum.isSome()) {
+    
+    
+    
+    
+    
+    
+    
+    nsCSSValue listValue;
+    nsCSSValueList* list = listValue.SetListValue();
+    list->mValue = firstLineNames;
+    list = list->mNext = new nsCSSValueList;
+    list->mValue = trackSize;
+    list = list->mNext = new nsCSSValueList;
+    list->mValue = lastLineNames;
+    nsCSSValue kwd;
+    kwd.SetIntValue(repeatAutoEnum.value(), eCSSUnit_Enumerated);
+    *aTailPtr = (*aTailPtr)->mNext = new nsCSSValueList;
+    (*aTailPtr)->mValue.SetPairValue(kwd, listValue);
+    
+    
+    *aTailPtr = (*aTailPtr)->mNext = new nsCSSValueList;
+    return true;
+  }
 
   
   

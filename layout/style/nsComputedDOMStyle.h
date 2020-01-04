@@ -176,7 +176,16 @@ private:
 
   mozilla::dom::CSSValue* GetSVGPaintFor(bool aFill);
 
-  mozilla::dom::CSSValue* GetGridLineNames(const nsTArray<nsString>& aLineNames);
+  
+  void AppendGridLineNames(nsString& aResult,
+                           const nsTArray<nsString>& aLineNames);
+  
+  void AppendGridLineNames(nsDOMCSSValueList* aValueList,
+                           const nsTArray<nsString>& aLineNames);
+  
+  void AppendGridLineNames(nsDOMCSSValueList* aValueList,
+                           const nsTArray<nsString>& aLineNames1,
+                           const nsTArray<nsString>& aLineNames2);
   mozilla::dom::CSSValue* GetGridTrackSize(const nsStyleCoord& aMinSize,
                                            const nsStyleCoord& aMaxSize);
   mozilla::dom::CSSValue* GetGridTemplateColumnsRows(const nsStyleGridTemplate& aTrackList,
