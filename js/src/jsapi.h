@@ -1737,13 +1737,6 @@ typedef enum JSGCParamKey {
 
 
 
-
-    JSGC_DECOMMIT_THRESHOLD = 20,
-
-    
-
-
-
     JSGC_MIN_EMPTY_CHUNK_COUNT = 21,
 
     
