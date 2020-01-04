@@ -298,6 +298,11 @@ static const uint32_t ION_FRAME_SLACK_SIZE = 24;
 
 static const uint32_t ShadowStackSpace = 0;
 
+
+
+
+static const uint32_t JumpImmediateRange = UINT32_MAX;
+
 static const uint32_t ABIStackAlignment = 16;
 static const uint32_t CodeAlignment = 16;
 static const bool StackKeptAligned = false;

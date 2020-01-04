@@ -38,6 +38,10 @@ static const int32_t NUNBOX32_PAYLOAD_OFFSET = 0;
 static const uint32_t ShadowStackSpace = 0;
 
 
+static const uint32_t JumpImmediateRange = 25 * 1024 * 1024;
+
+
+
 
 
 

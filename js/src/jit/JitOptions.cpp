@@ -163,6 +163,10 @@ DefaultJitOptions::DefaultJitOptions()
 
     
     
+    SET_DEFAULT(jumpThreshold, UINT32_MAX);
+
+    
+    
     
     const char* forcedDefaultIonWarmUpThresholdEnv = "JIT_OPTION_forcedDefaultIonWarmUpThreshold";
     if (const char* env = getenv(forcedDefaultIonWarmUpThresholdEnv)) {
