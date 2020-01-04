@@ -20,9 +20,11 @@
 #include "nsNativeCharsetUtils.h"
 #include "nsIWindowsRegKey.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/WindowsVersion.h"
 
 
 #include <shellapi.h>
+#include <shlwapi.h>
 
 #define LOG(args) MOZ_LOG(mLog, mozilla::LogLevel::Debug, args)
 
@@ -163,8 +165,23 @@ NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(const nsACString& 
 
   NS_ConvertASCIItoUTF16 buf(aScheme);
 
-  
+  if (mozilla::IsWin8OrLater()) {
+    wchar_t result[1024];
+    DWORD resultSize = 1024;
+    HRESULT hr = AssocQueryString(0x1000 ,
+                                  ASSOCSTR_FRIENDLYAPPNAME,
+                                  buf.get(),
+                                  NULL,
+                                  result,
+                                  &resultSize);
+    if (SUCCEEDED(hr)) {
+      _retval = result;
+      return NS_OK;
+    }
+  }
+
   if (mAppAssoc) {
+    
     wchar_t * pResult = nullptr;
     
     HRESULT hr = mAppAssoc->QueryCurrentDefault(buf.get(),
