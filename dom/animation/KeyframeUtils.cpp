@@ -309,6 +309,30 @@ public:
 
 
 
+inline bool
+IsInvalidValuePair(const PropertyValuePair& aPair)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return !nsCSSProps::IsShorthand(aPair.mProperty) &&
+         aPair.mValue.GetUnit() == eCSSUnit_TokenStream &&
+         aPair.mValue.GetTokenStreamValue()->mPropertyID
+           == eCSSProperty_UNKNOWN;
+}
+
+
+
+
+
+
+
 
 static void
 GetKeyframeListFromKeyframeSequence(JSContext* aCx,
@@ -476,10 +500,7 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
     nsCSSPropertySet propertiesOnThisKeyframe;
     for (const PropertyValuePair& pair :
            PropertyPriorityIterator(frame.mPropertyValues)) {
-      
-      
-      if (!nsCSSProps::IsShorthand(pair.mProperty) &&
-          pair.mValue.GetUnit() == eCSSUnit_TokenStream) {
+      if (IsInvalidValuePair(pair)) {
         continue;
       }
 
@@ -819,6 +840,15 @@ MakePropertyValuePair(nsCSSProperty aProperty, const nsAString& aStringValue,
     
     nsCSSValueTokenStream* tokenStream = new nsCSSValueTokenStream;
     tokenStream->mTokenStream = aStringValue;
+
+    
+    
+    
+    
+    MOZ_ASSERT(tokenStream->mPropertyID == eCSSProperty_UNKNOWN,
+               "The property of a token stream should be initialized"
+               " to unknown");
+
     
     
     
@@ -1102,6 +1132,10 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
                          : computedOffset;
 
     for (const PropertyValuePair& pair : frame.mPropertyValues) {
+      if (IsInvalidValuePair(pair)) {
+        continue;
+      }
+
       if (nsCSSProps::IsShorthand(pair.mProperty)) {
         nsCSSValueTokenStream* tokenStream = pair.mValue.GetTokenStreamValue();
         nsCSSParser parser(aDocument->CSSLoader());
@@ -1114,9 +1148,6 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
           addToPropertySets(*prop, offsetToUse);
         }
       } else {
-        if (pair.mValue.GetUnit() == eCSSUnit_TokenStream) {
-          continue;
-        }
         addToPropertySets(pair.mProperty, offsetToUse);
       }
     }
