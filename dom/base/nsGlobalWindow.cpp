@@ -3764,6 +3764,28 @@ nsPIDOMWindowOuter::RefreshMediaElements()
   }
 }
 
+void
+nsPIDOMWindowOuter::SetServiceWorkersTestingEnabled(bool aEnabled)
+{
+  
+  
+  
+#ifdef DEBUG
+  nsCOMPtr<nsPIDOMWindowOuter> topWindow = GetScriptableTop();
+  MOZ_ASSERT_IF(aEnabled, this == topWindow);
+#endif
+  mServiceWorkersTestingEnabled = aEnabled;
+}
+
+bool
+nsPIDOMWindowOuter::GetServiceWorkersTestingEnabled()
+{
+  
+  
+  nsCOMPtr<nsPIDOMWindowOuter> topWindow = GetScriptableTop();
+  return topWindow->mServiceWorkersTestingEnabled;
+}
+
 bool
 nsPIDOMWindowInner::GetAudioCaptured() const
 {
