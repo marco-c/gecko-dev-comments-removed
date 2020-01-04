@@ -22,6 +22,7 @@ namespace gfx {
 
 class Job;
 class PosixCondVar;
+class WorkerThread;
 
 class Mutex {
 public:
@@ -129,27 +130,6 @@ protected:
   bool mShuttingDown;
 
   friend class WorkerThread;
-};
-
-
-
-
-
-
-class WorkerThread {
-public:
-  explicit WorkerThread(MultiThreadedJobQueue* aJobQueue);
-
-  ~WorkerThread();
-
-  void Run();
-
-  MultiThreadedJobQueue* GetJobQueue() { return mQueue; }
-protected:
-  void SetName(const char* name);
-
-  MultiThreadedJobQueue* mQueue;
-  pthread_t mThread;
 };
 
 
