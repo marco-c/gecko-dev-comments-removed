@@ -1448,14 +1448,11 @@ MediaStreamGraphImpl::ForceShutDown(ShutdownTicket* aShutdownTicket)
 
 namespace {
 
-class MediaStreamGraphShutDownRunnable : public Runnable
-                                       , public nsITimerCallback {
+class MediaStreamGraphShutDownRunnable : public Runnable {
 public:
   explicit MediaStreamGraphShutDownRunnable(MediaStreamGraphImpl* aGraph)
     : mGraph(aGraph)
   {}
-  NS_DECL_ISUPPORTS_INHERITED
-
   NS_IMETHOD Run() override
   {
     NS_ASSERTION(mGraph->mDetectedNotRunning,
@@ -1474,32 +1471,10 @@ public:
     }
 #endif
 
-    
-    
-    
-    mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-    if (!mTimer) {
-      return NS_ERROR_FAILURE;
-    }
-    mTimer->InitWithCallback(this,
-                             MediaStreamGraph::AUDIO_CALLBACK_DRIVER_SHUTDOWN_TIMEOUT,
-                             nsITimer::TYPE_ONE_SHOT);
-
     mGraph->mDriver->Shutdown(); 
                                  
 
     
-    if (!mGraph->mForceShutdownTicket) {
-      
-      NS_WARNING(
-        "AudioCallbackDriver took too long to shut down and we let shutdown"
-        " continue - freezing and leaking");
-
-      
-      
-      return NS_OK;
-    }
-    mTimer = nullptr;
     mGraph->mForceShutdownTicket = nullptr;
 
     
@@ -1532,29 +1507,9 @@ public:
     }
     return NS_OK;
   }
-
-  NS_IMETHOD Notify(nsITimer* aTimer) override
-  {
-    
-    
-    
-    NS_ASSERTION(!(mGraph->mForceShutdownTicket),
-                 "AudioCallbackDriver took too long to shut down - probably hung");
-
-    mGraph->mForceShutdownTicket = nullptr;
-    return NS_OK;
-  }
-
 private:
-  ~MediaStreamGraphShutDownRunnable() {}
-
-  nsCOMPtr<nsITimer> mTimer;
   RefPtr<MediaStreamGraphImpl> mGraph;
 };
-
-NS_IMPL_ISUPPORTS_INHERITED(MediaStreamGraphShutDownRunnable, Runnable, nsITimerCallback)
-
-
 
 class MediaStreamGraphStableStateRunnable : public Runnable {
 public:
@@ -3308,8 +3263,7 @@ MediaStreamGraph::GetInstance(MediaStreamGraph::GraphDriverType aGraphDriverRequ
       public:
         Blocker()
         : media::ShutdownBlocker(NS_LITERAL_STRING(
-            "MediaStreamGraph shutdown: blocking on msg thread"))
-        {}
+            "MediaStreamGraph shutdown: blocking on msg thread")) {}
 
         NS_IMETHOD
         BlockShutdown(nsIAsyncShutdownClient* aProfileBeforeChange) override
