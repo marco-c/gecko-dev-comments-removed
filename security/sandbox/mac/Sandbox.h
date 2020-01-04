@@ -17,9 +17,10 @@ enum MacSandboxType {
 
 enum MacSandboxPluginType {
   MacSandboxPluginType_Default = 0,
-  MacSandboxPluginType_GMPlugin_Default,  
-  MacSandboxPluginType_GMPlugin_OpenH264, 
-  MacSandboxPluginType_GMPlugin_EME,      
+  MacSandboxPluginType_GMPlugin_Default,      
+  MacSandboxPluginType_GMPlugin_OpenH264,     
+  MacSandboxPluginType_GMPlugin_EME,          
+  MacSandboxPluginType_GMPlugin_EME_Widevine, 
   MacSandboxPluginType_Invalid
 };
 
