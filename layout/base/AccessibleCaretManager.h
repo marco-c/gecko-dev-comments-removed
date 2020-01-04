@@ -155,6 +155,12 @@ protected:
 
   nsresult SelectWord(nsIFrame* aFrame, const nsPoint& aPoint) const;
   void SetSelectionDragState(bool aState) const;
+
+  
+  void SelectMoreIfPhoneNumber() const;
+  
+  void ExtendPhoneNumberSelection(const nsAString& aDirection) const;
+
   void SetSelectionDirection(nsDirection aDir) const;
 
   
@@ -281,6 +287,10 @@ protected:
   
   
   static bool sSelectionBarEnabled;
+
+  
+  
+  static bool sExtendSelectionForPhoneNumber;
 
   
   

@@ -62,16 +62,16 @@ function elementSelection(element) {
 
 
 
-function selectElementFirstChar(doc, element) {
+function selectElementChar(doc, element, char) {
   if (isInputOrTextarea(element)) {
-    element.setSelectionRange(0, 1);
+    element.setSelectionRange(char, char + 1);
     return;
   }
 
   
   let range = doc.createRange();
-  range.setStart(element.firstChild, 0);
-  range.setEnd(element.firstChild, 1);
+  range.setStart(element.firstChild, char);
+  range.setEnd(element.firstChild, char + 1);
 
   let selection = elementSelection(element);
   selection.removeAllRanges();
@@ -84,9 +84,9 @@ function selectElementFirstChar(doc, element) {
 
 
 
-function getFirstCharPressPoint(doc, element, expected) {
+function getCharPressPoint(doc, element, char, expected) {
   
-  selectElementFirstChar(doc, element);
+  selectElementChar(doc, element, char);
 
   
   let selection = elementSelection(element);
@@ -162,17 +162,22 @@ add_task(function* testAccessibleCarets() {
   let i_RTL_elem = doc.getElementById("RTLinput");
   let ta_RTL_elem = doc.getElementById("RTLtextarea");
 
+  let ip_LTR_elem = doc.getElementById("LTRphone");
+  let ip_RTL_elem = doc.getElementById("RTLphone");
+
   
-  let ce_LTR_midPoint = getFirstCharPressPoint(doc, ce_LTR_elem, "F");
-  let tc_LTR_midPoint = getFirstCharPressPoint(doc, tc_LTR_elem, "O");
-  let i_LTR_midPoint = getFirstCharPressPoint(doc, i_LTR_elem, "T");
-  let ta_LTR_midPoint = getFirstCharPressPoint(doc, ta_LTR_elem, "W");
+  let ce_LTR_midPoint = getCharPressPoint(doc, ce_LTR_elem, 0, "F");
+  let tc_LTR_midPoint = getCharPressPoint(doc, tc_LTR_elem, 0, "O");
+  let i_LTR_midPoint = getCharPressPoint(doc, i_LTR_elem, 0, "T");
+  let ta_LTR_midPoint = getCharPressPoint(doc, ta_LTR_elem, 0, "W");
 
-  let ce_RTL_midPoint = getFirstCharPressPoint(doc, ce_RTL_elem, "א");
-  let tc_RTL_midPoint = getFirstCharPressPoint(doc, tc_RTL_elem, "ת");
-  let i_RTL_midPoint = getFirstCharPressPoint(doc, i_RTL_elem, "ל");
-  let ta_RTL_midPoint = getFirstCharPressPoint(doc, ta_RTL_elem, "ה");
+  let ce_RTL_midPoint = getCharPressPoint(doc, ce_RTL_elem, 0, "א");
+  let tc_RTL_midPoint = getCharPressPoint(doc, tc_RTL_elem, 0, "ת");
+  let i_RTL_midPoint = getCharPressPoint(doc, i_RTL_elem, 0, "ל");
+  let ta_RTL_midPoint = getCharPressPoint(doc, ta_RTL_elem, 0, "ה");
 
+  let ip_LTR_midPoint = getCharPressPoint(doc, ip_LTR_elem, 8, "2");
+  let ip_RTL_midPoint = getCharPressPoint(doc, ip_RTL_elem, 9, "2");
 
   
   
@@ -192,6 +197,13 @@ add_task(function* testAccessibleCarets() {
   is(result.focusedElement, ta_LTR_elem, "Focused element should match expected.");
   is(result.text, "Words", "Selected text should match expected text.");
 
+  result = getLongPressResult(browser, ip_LTR_midPoint);
+  is(result.focusedElement, ip_LTR_elem, "Focused element should match expected.");
+  is(result.text, "09876543210 .-.)(wp#*103410341",
+    "Selected phone number should match expected text.");
+  is(result.text.length, 30,
+    "Selected phone number length should match expected maximum.");
+
   
   
   result = getLongPressResult(browser, ce_RTL_midPoint);
@@ -209,6 +221,11 @@ add_task(function* testAccessibleCarets() {
   result = getLongPressResult(browser, ta_RTL_midPoint);
   is(result.focusedElement, ta_RTL_elem, "Focused element should match expected.");
   is(result.text, "הספר", "Selected text should match expected text.");
+
+  result = getLongPressResult(browser, ip_RTL_midPoint);
+  is(result.focusedElement, ip_RTL_elem, "Focused element should match expected.");
+  is(result.text, "+972 3 7347514 ",
+    "Selected phone number should match expected text.");
 
   ok(true, "Finished all tests.");
 });

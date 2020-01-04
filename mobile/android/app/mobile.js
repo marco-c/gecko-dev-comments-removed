@@ -937,6 +937,10 @@ pref("layout.accessiblecaret.allow_script_change_updates", true);
 pref("layout.accessiblecaret.hapticfeedback", true);
 
 
+
+pref("layout.accessiblecaret.extend_selection_for_phone_number", true);
+
+
 #ifdef RELEASE_BUILD
 pref("consoleservice.logcat", false);
 #else
