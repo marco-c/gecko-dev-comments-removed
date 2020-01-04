@@ -51,6 +51,18 @@ class CSSStyleSheet;
     }                                                                          \
   }
 
+#define NS_CSS_NS_RELEASE_LIST_MEMBER(type_, ptr_, member_)                    \
+  {                                                                            \
+    type_ *cur = (ptr_)->member_;                                              \
+    (ptr_)->member_ = nullptr;                                                 \
+    while (cur) {                                                              \
+      type_ *dlm_next = cur->member_;                                          \
+      cur->member_ = nullptr;                                                  \
+      NS_RELEASE(cur);                                                         \
+      cur = dlm_next;                                                          \
+    }                                                                          \
+  }
+
 
 
 
