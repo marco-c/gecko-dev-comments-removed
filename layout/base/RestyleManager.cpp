@@ -494,6 +494,23 @@ RestyleManager::RecomputePosition(nsIFrame* aFrame)
   parentFrame->RemoveStateBits(~nsFrameState(0));
   parentFrame->AddStateBits(savedState);
 
+  
+  
+  
+  
+  Maybe<nsHTMLReflowState> cbReflowState;
+  nsIFrame* cbFrame = parentFrame->GetContainingBlock();
+  if (cbFrame && (aFrame->GetContainingBlock() != parentFrame ||
+                  parentFrame->GetType() == nsGkAtoms::tableFrame)) {
+    LogicalSize cbSize = cbFrame->GetLogicalSize();
+    cbReflowState.emplace(cbFrame->PresContext(), cbFrame, &rc, cbSize);
+    cbReflowState->ComputedPhysicalMargin() = cbFrame->GetUsedMargin();
+    cbReflowState->ComputedPhysicalPadding() = cbFrame->GetUsedPadding();
+    cbReflowState->ComputedPhysicalBorderPadding() =
+      cbFrame->GetUsedBorderAndPadding();
+    parentReflowState.mCBReflowState = cbReflowState.ptr();
+  }
+
   NS_WARN_IF_FALSE(parentSize.ISize(parentWM) != NS_INTRINSICSIZE &&
                    parentSize.BSize(parentWM) != NS_INTRINSICSIZE,
                    "parentSize should be valid");
