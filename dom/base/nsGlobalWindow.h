@@ -1979,6 +1979,10 @@ public:
   nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
   nsCOMPtr<nsIMessageBroadcaster> mMessageManager;
   nsInterfaceHashtable<nsStringHashKey, nsIMessageBroadcaster> mGroupMessageManagers;
+  
+  
+  
+  nsWeakPtr mFullscreenPresShell;
 };
 
 
