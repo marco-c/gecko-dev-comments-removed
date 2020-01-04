@@ -99,7 +99,7 @@ DefaultJitOptions::DefaultJitOptions()
     SET_DEFAULT(disableLoopUnrolling, true);
 
     
-    SET_DEFAULT(disablePgo, true);
+    SET_DEFAULT(disablePgo, false);
 
     
     SET_DEFAULT(disableInstructionReordering, false);
