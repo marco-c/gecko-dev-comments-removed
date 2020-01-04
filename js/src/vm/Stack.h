@@ -2040,6 +2040,9 @@ class FrameIter
     
     inline jit::CommonFrameLayout* physicalIonFrame() const;
 
+    
+    void* rawFramePtr() const;
+
   private:
     Data data_;
     jit::InlineFrameIterator ionInlineFrames_;
