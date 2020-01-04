@@ -230,53 +230,6 @@ nsImageLoadingContent::OnLoadComplete(imgIRequest* aRequest, nsresult aStatus)
              "One way or another, we should be current by now");
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  nsIDocument* doc = GetOurOwnerDoc();
-  nsIPresShell* shell = doc ? doc->GetShell() : nullptr;
-  if (shell && shell->IsVisible() &&
-      (!shell->DidInitialize() || shell->IsPaintingSuppressed())) {
-
-    nsIFrame* f = GetOurPrimaryFrame();
-    
-    
-    
-    
-    
-    
-    
-    if (f) {
-      
-      
-      
-      
-      if (!mFrameCreateCalled || (f->GetStateBits() & NS_FRAME_FIRST_REFLOW) ||
-          mVisibleCount > 0 || shell->AssumeAllImagesVisible()) {
-        mCurrentRequest->StartDecoding();
-      }
-    }
-  }
-
-  
   if (NS_SUCCEEDED(aStatus)) {
     FireEvent(NS_LITERAL_STRING("load"));
   } else {
