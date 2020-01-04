@@ -7,7 +7,7 @@
 
 
 function* runEventPopupTests() {
-  let {inspector, testActor} = yield addTab(TEST_URL).then(openInspector);
+  let {inspector, testActor} = yield openInspectorForURL(TEST_URL);
 
   yield inspector.markup.expandAll();
 

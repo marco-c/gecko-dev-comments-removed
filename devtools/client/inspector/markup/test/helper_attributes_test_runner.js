@@ -17,14 +17,15 @@
 
 
 
-function runAddAttributesTests(tests, nodeOrSelector, inspector) {
+
+function runAddAttributesTests(tests, nodeOrSelector, inspector, testActor) {
   info("Running " + tests.length + " add-attributes tests");
   return Task.spawn(function*() {
     info("Selecting the test node");
     yield selectNode("div", inspector);
 
     for (let test of tests) {
-      yield runAddAttributesTest(test, "div", inspector);
+      yield runAddAttributesTest(test, "div", inspector, testActor);
     }
   });
 }
@@ -49,7 +50,8 @@ function runAddAttributesTests(tests, nodeOrSelector, inspector) {
 
 
 
-function* runAddAttributesTest(test, selector, inspector) {
+
+function* runAddAttributesTest(test, selector, inspector, testActor) {
   if (test.setUp) {
     test.setUp(inspector);
   }
@@ -59,7 +61,7 @@ function* runAddAttributesTest(test, selector, inspector) {
   yield addNewAttributes(selector, test.text, inspector);
 
   info("Assert that the attribute(s) has/have been applied correctly");
-  yield assertAttributes(selector, test.expectedAttributes);
+  yield assertAttributes(selector, test.expectedAttributes, testActor);
 
   if (test.validate) {
     let container = yield getContainerForSelector(selector, inspector);
@@ -70,7 +72,7 @@ function* runAddAttributesTest(test, selector, inspector) {
   yield undoChange(inspector);
 
   info("Assert that the attribute(s) has/have been removed correctly");
-  yield assertAttributes(selector, {});
+  yield assertAttributes(selector, {}, testActor);
   if (test.tearDown) {
     test.tearDown(inspector);
   }
@@ -89,17 +91,16 @@ function* runAddAttributesTest(test, selector, inspector) {
 
 
 
-function runEditAttributesTests(tests, inspector) {
+
+function runEditAttributesTests(tests, inspector, testActor) {
   info("Running " + tests.length + " edit-attributes tests");
   return Task.spawn(function*() {
     info("Expanding all nodes in the markup-view");
     yield inspector.markup.expandAll();
 
     for (let test of tests) {
-      yield runEditAttributesTest(test, inspector);
+      yield runEditAttributesTest(test, inspector, testActor);
     }
-
-    yield inspector.once("inspector-updated");
   });
 }
 
@@ -120,14 +121,15 @@ function runEditAttributesTests(tests, inspector) {
 
 
 
-function* runEditAttributesTest(test, inspector) {
+
+function* runEditAttributesTest(test, inspector, testActor) {
   info("Starting edit-attribute test: " + test.desc);
 
   info("Selecting the test node " + test.node);
   yield selectNode(test.node, inspector);
 
   info("Asserting that the node has the right attributes to start with");
-  yield assertAttributes(test.node, test.originalAttributes);
+  yield assertAttributes(test.node, test.originalAttributes, testActor);
 
   info("Editing attribute " + test.name + " with value " + test.value);
 
@@ -142,13 +144,13 @@ function* runEditAttributesTest(test, inspector) {
   yield nodeMutated;
 
   info("Asserting the new attributes after edition");
-  yield assertAttributes(test.node, test.expectedAttributes);
+  yield assertAttributes(test.node, test.expectedAttributes, testActor);
 
   info("Undo the change and assert that the attributes have been changed back");
   yield undoChange(inspector);
-  yield assertAttributes(test.node, test.originalAttributes);
+  yield assertAttributes(test.node, test.originalAttributes, testActor);
 
   info("Redo the change and assert that the attributes have been changed again");
   yield redoChange(inspector);
-  yield assertAttributes(test.node, test.expectedAttributes);
+  yield assertAttributes(test.node, test.expectedAttributes, testActor);
 }

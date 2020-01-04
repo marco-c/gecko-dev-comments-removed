@@ -7,10 +7,10 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_markup_links.html";
+const TEST_URL = URL_ROOT + "doc_markup_links.html";
 
 add_task(function*() {
-  let {inspector} = yield addTab(TEST_URL).then(openInspector);
+  let {inspector} = yield openInspectorForURL(TEST_URL);
 
   info("Adding a contextmenu attribute to the body node");
   yield addNewAttributes("body", "contextmenu=\"menu1\"", inspector);

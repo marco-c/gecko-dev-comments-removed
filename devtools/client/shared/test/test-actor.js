@@ -556,6 +556,47 @@ var TestActor = exports.TestActor = protocol.ActorClass({
       value: RetVal("json")
     }
   }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getNodeInfo: protocol.method(function(selector) {
+    let node = this._querySelector(selector);
+    let info = null;
+
+    if (node) {
+      info = {
+        tagName: node.tagName,
+        namespaceURI: node.namespaceURI,
+        numChildren: node.children.length,
+        attributes: [...node.attributes].map(({name, value, namespaceURI}) => {
+          return {name, value, namespaceURI};
+        }),
+        outerHTML: node.outerHTML,
+        innerHTML: node.innerHTML,
+        textContent: node.textContent
+      };
+    }
+
+    return info;
+  }, {
+    request: {
+      selector: Arg(0, "string")
+    },
+    response: {
+      value: RetVal("json")
+    }
+  })
 });
 
 var TestActorFront = exports.TestActorFront = protocol.FrontClass(TestActor, {

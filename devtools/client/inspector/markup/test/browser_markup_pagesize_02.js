@@ -8,13 +8,13 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_markup_pagesize_02.html";
+const TEST_URL = URL_ROOT + "doc_markup_pagesize_02.html";
 
 
 Services.prefs.setIntPref("devtools.markup.pagesize", 5);
 
 add_task(function*() {
-  let {inspector} = yield addTab(TEST_URL).then(openInspector);
+  let {inspector} = yield openInspectorForURL(TEST_URL);
 
   info("Selecting the UL node");
   yield clickContainer("ul", inspector);

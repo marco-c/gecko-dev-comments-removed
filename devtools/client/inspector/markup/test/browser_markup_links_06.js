@@ -7,10 +7,10 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_markup_links.html";
+const TEST_URL = URL_ROOT + "doc_markup_links.html";
 
 add_task(function*() {
-  let {toolbox, inspector} = yield addTab(TEST_URL).then(openInspector);
+  let {toolbox, inspector} = yield openInspectorForURL(TEST_URL);
 
   info("Select a node with a cssresource attribute");
   yield selectNode("link", inspector);

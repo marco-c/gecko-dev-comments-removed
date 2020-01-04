@@ -1,30 +1,20 @@
 
 
 
+"use strict";
 
-var Cu = Components.utils;
-var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-var {TargetFactory} = require("devtools/client/framework/target");
-var {console} = Cu.import("resource://gre/modules/Console.jsm", {});
-var promise = require("promise");
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/inspector/test/head.js",
+  this);
+
 var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/inplace-editor");
 var clipboard = require("sdk/clipboard");
 var {setTimeout, clearTimeout} = require("sdk/timers");
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-
-
-waitForExplicitFinish();
 
 
 
 SimpleTest.requestCompleteLog();
-
-
-
-
-
-var testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
-Services.scriptloader.loadSubScript(testDir + "../../../../shared/test/test-actor-registry.js", this);
 
 
 DevToolsUtils.testing = true;
@@ -34,58 +24,10 @@ registerCleanupFunction(() => DevToolsUtils.testing = false);
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.inspector.htmlPanelOpen");
   Services.prefs.clearUserPref("devtools.inspector.sidebarOpen");
-  Services.prefs.clearUserPref("devtools.inspector.activeSidebar");
-  Services.prefs.clearUserPref("devtools.dump.emit");
   Services.prefs.clearUserPref("devtools.markup.pagesize");
   Services.prefs.clearUserPref("dom.webcomponents.enabled");
   Services.prefs.clearUserPref("devtools.inspector.showAllAnonymousContent");
 });
-
-
-registerCleanupFunction(function*() {
-  let target = TargetFactory.forTab(gBrowser.selectedTab);
-  yield gDevTools.closeToolbox(target);
-
-  while (gBrowser.tabs.length > 1) {
-    gBrowser.removeCurrentTab();
-  }
-});
-
-const TEST_URL_ROOT =
-  "http://example.com/browser/devtools/client/inspector/markup/test/";
-const CHROME_BASE =
-  "chrome://mochitests/content/browser/devtools/client/inspector/markup/test/";
-const COMMON_FRAME_SCRIPT_URL =
-  "chrome://devtools/content/shared/frame-script-utils.js";
-
-
-
-
-
-
-function addTab(url) {
-  info("Adding a new tab with URL: '" + url + "'");
-  let def = promise.defer();
-
-  
-  
-  
-  window.focus();
-
-  let tab = window.gBrowser.selectedTab = window.gBrowser.addTab(url);
-  let linkedBrowser = tab.linkedBrowser;
-
-  info("Loading the helper frame script " + COMMON_FRAME_SCRIPT_URL);
-  linkedBrowser.messageManager.loadFrameScript(COMMON_FRAME_SCRIPT_URL, false);
-
-  linkedBrowser.addEventListener("load", function onload() {
-    linkedBrowser.removeEventListener("load", onload, true);
-    info("URL '" + url + "' loading complete");
-    def.resolve(tab);
-  }, true);
-
-  return def.promise;
-}
 
 
 
@@ -120,87 +62,8 @@ function reloadPage(inspector) {
 
 
 
-function openToolbox(toolId) {
-  info("Opening the inspector panel");
-  let deferred = promise.defer();
-
-  let target = TargetFactory.forTab(gBrowser.selectedTab);
-  gDevTools.showToolbox(target, toolId).then(function(toolbox) {
-    info("The toolbox is open");
-    deferred.resolve({toolbox: toolbox});
-  }).then(null, console.error);
-
-  return deferred.promise;
-}
-
-
-
-
-
-function openInspector() {
-  return openToolbox("inspector").then(({toolbox}) => {
-    let inspector = toolbox.getCurrentPanel();
-    let eventId = "inspector-updated";
-    return inspector.once("inspector-updated").then(() => {
-      info("The inspector panel is active and ready");
-      return registerTestActor(toolbox.target.client);
-    }).then(() => {
-      return getTestActor(toolbox);
-    }).then((testActor) => {
-      return {toolbox, inspector, testActor};
-    });
-  });
-}
-
-
-
-
-
-
-
-
-function waitForContentMessage(name) {
-  info("Expecting message " + name + " from content");
-
-  let mm = gBrowser.selectedBrowser.messageManager;
-
-  let def = promise.defer();
-  mm.addMessageListener(name, function onMessage(msg) {
-    mm.removeMessageListener(name, onMessage);
-    def.resolve(msg.data);
-  });
-  return def.promise;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function executeInContent(name, data={}, objects={}, expectResponse=true) {
-  info("Sending message " + name + " to content");
-  let mm = gBrowser.selectedBrowser.messageManager;
-
-  mm.sendAsyncMessage(name, data, objects);
-  if (expectResponse) {
-    return waitForContentMessage(name);
-  } else {
-    return promise.resolve();
-  }
-}
-
-
-
-
-function reloadTab() {
-  return executeInContent("devtools:test:reload", {}, {}, false);
+function reloadTab(testActor) {
+  return testActor.eval("location.reload()");
 }
 
 
@@ -222,22 +85,8 @@ function getNode(nodeOrSelector) {
 
 
 
-
-
-function getNodeFront(selector, {walker}) {
-  if (selector._form) {
-    return selector;
-  }
-  return walker.querySelector(walker.rootNode, selector);
-}
-
-
-
-
-
-
-function getNodeInfo(selector) {
-  return executeInContent("devtools:test:getDomElementInfo", {selector});
+function getNodeInfo(selector, testActor) {
+  return testActor.getNodeInfo(selector);
 }
 
 
@@ -247,9 +96,9 @@ function getNodeInfo(selector) {
 
 
 
-function setNodeAttribute(selector, attributeName, attributeValue) {
-  return executeInContent("devtools:test:setAttribute",
-                          {selector, attributeName, attributeValue});
+
+function setNodeAttribute(selector, attributeName, attributeValue, testActor) {
+  return testActor.setAttribute(selector, attributeName, attributeValue);
 }
 
 
@@ -269,24 +118,6 @@ function selectAndHighlightNode(nodeOrSelector, inspector) {
   inspector.selection.setNode(node, "test-highlight");
   return updated;
 }
-
-
-
-
-
-
-
-
-
-
-
-var selectNode = Task.async(function*(selector, inspector, reason="test") {
-  info("Selecting the node for '" + selector + "'");
-  let nodeFront = yield getNodeFront(selector, inspector);
-  let updated = inspector.once("inspector-updated");
-  inspector.selection.setNodeFront(nodeFront, reason);
-  yield updated;
-});
 
 
 
@@ -414,8 +245,9 @@ var addNewAttributes = Task.async(function*(selector, text, inspector) {
 
 
 
-var assertAttributes = Task.async(function*(selector, expected) {
-  let {attributes: actual} = yield getNodeInfo(selector);
+
+var assertAttributes = Task.async(function*(selector, expected, testActor) {
+  let {attributes: actual} = yield getNodeInfo(selector, testActor);
 
   is(actual.length, Object.keys(expected).length,
     "The node " + selector + " has the expected number of attributes.");
@@ -501,37 +333,6 @@ function wait(ms) {
   let def = promise.defer();
   content.setTimeout(def.resolve, ms);
   return def.promise;
-}
-
-
-
-
-
-
-
-
-
-function once(target, eventName, useCapture=false) {
-  info("Waiting for event: '" + eventName + "' on " + target + ".");
-
-  let deferred = promise.defer();
-
-  for (let [add, remove] of [
-    ["addEventListener", "removeEventListener"],
-    ["addListener", "removeListener"],
-    ["on", "off"]
-  ]) {
-    if ((add in target) && (remove in target)) {
-      target[add](eventName, function onEvent(...aArgs) {
-        info("Got event: '" + eventName + "' on " + target + ".");
-        target[remove](eventName, onEvent, useCapture);
-        deferred.resolve.apply(deferred, aArgs);
-      }, useCapture);
-      break;
-    }
-  }
-
-  return deferred.promise;
 }
 
 

@@ -7,12 +7,12 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_markup_anonymous.html";
+const TEST_URL = URL_ROOT + "doc_markup_anonymous.html";
 
 add_task(function*() {
   Services.prefs.setBoolPref("dom.webcomponents.enabled", true);
 
-  let {inspector} = yield addTab(TEST_URL).then(openInspector);
+  let {inspector} = yield openInspectorForURL(TEST_URL);
 
   let shadow = yield getNodeFront("#shadow", inspector.markup);
   let children = yield inspector.walker.children(shadow);

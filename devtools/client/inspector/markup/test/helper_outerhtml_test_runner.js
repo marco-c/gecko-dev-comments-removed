@@ -15,11 +15,12 @@
 
 
 
-function runEditOuterHTMLTests(tests, inspector) {
+
+function runEditOuterHTMLTests(tests, inspector, testActor) {
   info("Running " + tests.length + " edit-outer-html tests");
   return Task.spawn(function* () {
     for (let step of TEST_DATA) {
-      yield runEditOuterHTMLTest(step, inspector);
+      yield runEditOuterHTMLTest(step, inspector, testActor);
     }
   });
 }
@@ -37,7 +38,8 @@ function runEditOuterHTMLTests(tests, inspector) {
 
 
 
-function* runEditOuterHTMLTest(test, inspector) {
+
+function* runEditOuterHTMLTest(test, inspector, testActor) {
   info("Running an edit outerHTML test on '" + test.selector + "'");
   yield selectNode(test.selector, inspector);
   let oldNodeFront = inspector.selection.nodeFront;
@@ -60,7 +62,7 @@ function* runEditOuterHTMLTest(test, inspector) {
     yield test.validate(pageNode, pageNodeFront, selectedNodeFront, inspector);
   } else {
     is(pageNodeFront, selectedNodeFront, "Original node (grabbed by selector) is selected");
-    let {outerHTML} = yield getNodeInfo(test.selector);
+    let {outerHTML} = yield getNodeInfo(test.selector, testActor);
     is(outerHTML, test.newHTML, "Outer HTML has been updated");
   }
 

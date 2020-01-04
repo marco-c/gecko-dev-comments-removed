@@ -8,10 +8,10 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_markup_search.html";
+const TEST_URL = URL_ROOT + "doc_markup_search.html";
 
 add_task(function*() {
-  let {inspector} = yield addTab(TEST_URL).then(openInspector);
+  let {inspector} = yield openInspectorForURL(TEST_URL);
 
   let container = yield getContainerForSelector("em", inspector);
   ok(!container, "The <em> tag isn't present yet in the markup-view");
