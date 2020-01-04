@@ -14,8 +14,22 @@ const {
 const Services = require("Services");
 
 const CSS_GRID_ENABLED_PREF = "layout.css.grid.enabled";
-const LINE_DASH_ARRAY = [5, 3];
-const LINE_STROKE_STYLE = "#483D88";
+const ROWS = "rows";
+const COLUMNS = "cols";
+const GRID_LINES_PROPERTIES = {
+  "edge": {
+    lineDash: [0, 0],
+    strokeStyle: "#4B0082"
+  },
+  "explicit": {
+    lineDash: [5, 3],
+    strokeStyle: "#8A2BE2"
+  },
+  "implicit": {
+    lineDash: [2, 2],
+    strokeStyle: "#9370DB"
+  }
+};
 
 
 
@@ -172,70 +186,122 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     return fragment.cols.lines[fragment.cols.lines.length - 1].start;
   },
 
-  renderColLines(cols, {bounds}, startRowPos, endRowPos) {
-    let y1 = (bounds.top / getCurrentZoom(this.win)) + startRowPos;
-    let y2 = (bounds.top / getCurrentZoom(this.win)) + endRowPos;
+  
 
-    if (this.options.infiniteLines) {
-      y1 = 0;
-      y2 = parseInt(this.canvas.getAttribute("height"), 10);
+
+
+
+
+
+  getLastEdgeLineIndex(tracks) {
+    let trackIndex = tracks.length - 1;
+
+    
+    while (trackIndex >= 0 && tracks[trackIndex].type != "explicit") {
+      trackIndex--;
     }
 
-    for (let i = 0; i < cols.lines.length; i++) {
-      let line = cols.lines[i];
-      let x = (bounds.left / getCurrentZoom(this.win)) + line.start;
-      this.renderLine(x, y1, x, y2);
-
-      
-      if (line.breadth > 0) {
-        x = x + line.breadth;
-        this.renderLine(x, y1, x, y2);
-      }
-    }
-  },
-
-  renderRowLines(rows, {bounds}, startColPos, endColPos) {
-    let x1 = (bounds.left / getCurrentZoom(this.win)) + startColPos;
-    let x2 = (bounds.left / getCurrentZoom(this.win)) + endColPos;
-
-    if (this.options.infiniteLines) {
-      x1 = 0;
-      x2 = parseInt(this.canvas.getAttribute("width"), 10);
-    }
-
-    for (let i = 0; i < rows.lines.length; i++) {
-      let line = rows.lines[i];
-      let y = (bounds.top / getCurrentZoom(this.win)) + line.start;
-      this.renderLine(x1, y, x2, y);
-
-      
-      if (line.breadth > 0) {
-        y = y + line.breadth;
-        this.renderLine(x1, y, x2, y);
-      }
-    }
-  },
-
-  renderLine(x1, y1, x2, y2) {
-    this.ctx.save();
-    this.ctx.setLineDash(LINE_DASH_ARRAY);
-    this.ctx.beginPath();
-    this.ctx.translate(.5, .5);
-    this.ctx.moveTo(x1, y1);
-    this.ctx.lineTo(x2, y2);
-    this.ctx.strokeStyle = LINE_STROKE_STYLE;
-    this.ctx.stroke();
-    this.ctx.restore();
+    
+    return trackIndex + 1;
   },
 
   renderFragment(fragment, quad) {
-    this.renderColLines(fragment.cols, quad,
-                        this.getFirstRowLinePos(fragment),
-                        this.getLastRowLinePos(fragment));
+    this.renderLines(fragment.cols, quad, COLUMNS, "left", "top", "height",
+                     this.getFirstRowLinePos(fragment),
+                     this.getLastRowLinePos(fragment));
+    this.renderLines(fragment.rows, quad, ROWS, "top", "left", "width",
+                     this.getFirstColLinePos(fragment),
+                     this.getLastColLinePos(fragment));
+  },
 
-    this.renderRowLines(fragment.rows, quad,
-                        this.getFirstColLinePos(fragment),
-                        this.getLastColLinePos(fragment));
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  renderLines(gridDimension, {bounds}, dimensionType, mainSide, crossSide,
+              mainSize, startPos, endPos) {
+    let lineStartPos = (bounds[crossSide] / getCurrentZoom(this.win)) + startPos;
+    let lineEndPos = (bounds[crossSide] / getCurrentZoom(this.win)) + endPos;
+
+    if (this.options.infiniteLines) {
+      lineStartPos = 0;
+      lineEndPos = parseInt(this.canvas.getAttribute(mainSize), 10);
+    }
+
+    let lastEdgeLineIndex = this.getLastEdgeLineIndex(gridDimension.tracks);
+
+    for (let i = 0; i < gridDimension.lines.length; i++) {
+      let line = gridDimension.lines[i];
+      let linePos = (bounds[mainSide] / getCurrentZoom(this.win)) + line.start;
+
+      if (i == 0 || i == lastEdgeLineIndex) {
+        this.renderLine(linePos, lineStartPos, lineEndPos, dimensionType, "edge");
+      } else {
+        this.renderLine(linePos, lineStartPos, lineEndPos, dimensionType,
+                        gridDimension.tracks[i - 1].type);
+      }
+
+      
+      if (line.breadth > 0) {
+        linePos = linePos + line.breadth;
+        this.renderLine(linePos, lineStartPos, lineEndPos, dimensionType,
+                        gridDimension.tracks[i].type);
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  renderLine(linePos, startPos, endPos, dimensionType, lineType) {
+    this.ctx.save();
+    this.ctx.setLineDash(GRID_LINES_PROPERTIES[lineType].lineDash);
+    this.ctx.beginPath();
+    this.ctx.translate(.5, .5);
+
+    if (dimensionType == COLUMNS) {
+      this.ctx.moveTo(linePos, startPos);
+      this.ctx.lineTo(linePos, endPos);
+    } else {
+      this.ctx.moveTo(startPos, linePos);
+      this.ctx.lineTo(endPos, linePos);
+    }
+
+    this.ctx.strokeStyle = GRID_LINES_PROPERTIES[lineType].strokeStyle;
+    this.ctx.stroke();
+    this.ctx.restore();
   },
 
   _hide() {
