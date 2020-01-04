@@ -1034,16 +1034,6 @@ nsHTMLScrollFrame::Reflow(nsPresContext*           aPresContext,
 
   ReflowContents(&state, aDesiredSize);
 
-  aDesiredSize.Width() = state.mInsideBorderSize.width +
-    state.mComputedBorder.LeftRight();
-  aDesiredSize.Height() = state.mInsideBorderSize.height +
-    state.mComputedBorder.TopBottom();
-
-  
-  
-  SetSize(aDesiredSize.GetWritingMode(),
-          aDesiredSize.Size(aDesiredSize.GetWritingMode()));
-
   
   
   
@@ -1082,6 +1072,11 @@ nsHTMLScrollFrame::Reflow(nsPresContext*           aPresContext,
       mHelper.mSkippedScrollbarLayout = true;
     }
   }
+
+  aDesiredSize.Width() = state.mInsideBorderSize.width +
+    state.mComputedBorder.LeftRight();
+  aDesiredSize.Height() = state.mInsideBorderSize.height +
+    state.mComputedBorder.TopBottom();
 
   aDesiredSize.SetOverflowAreasToDesiredBounds();
   if (mHelper.IsIgnoringViewportClipping()) {
