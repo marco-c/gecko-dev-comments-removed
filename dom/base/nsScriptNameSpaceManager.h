@@ -33,21 +33,16 @@
 #include "nsWeakReference.h"
 #include "xpcpublic.h"
 
-
 struct nsGlobalNameStruct
 {
   enum nametype {
     eTypeNotInitialized,
-    eTypeNewDOMBinding,
     eTypeProperty,
     eTypeExternalConstructor,
     eTypeClassConstructor,
     eTypeClassProto,
   } mType;
 
-  
-  
-  
   bool mChromeOnly : 1;
   bool mAllowXBL : 1;
 
@@ -56,12 +51,6 @@ struct nsGlobalNameStruct
     nsIID mIID; 
     nsCID mCID; 
   };
-
-  
-  mozilla::dom::DefineInterface mDefineDOMInterface;
-
-  
-  mozilla::dom::ConstructorEnabled* mConstructorEnabled;
 };
 
 class GlobalNameMapEntry : public PLDHashEntryHdr
@@ -112,19 +101,6 @@ public:
                               const nsIID *aConstructorProtoIID,
                               bool *aFoundOld);
 
-  void RegisterDefineDOMInterface(const nsAFlatString& aName,
-    mozilla::dom::DefineInterface aDefineDOMInterface,
-    mozilla::dom::ConstructorEnabled* aConstructorEnabled);
-  template<size_t N>
-  void RegisterDefineDOMInterface(const char16_t (&aKey)[N],
-    mozilla::dom::DefineInterface aDefineDOMInterface,
-    mozilla::dom::ConstructorEnabled* aConstructorEnabled)
-  {
-    nsLiteralString key(aKey);
-    return RegisterDefineDOMInterface(key, aDefineDOMInterface,
-                                      aConstructorEnabled);
-  }
-
   class NameIterator : public PLDHashTable::Iterator
   {
   public:
@@ -155,22 +131,14 @@ private:
   
   
   
-  nsGlobalNameStruct *AddToHash(const nsAString *aKey,
-                                const char16_t **aClassName = nullptr);
   nsGlobalNameStruct *AddToHash(const char *aKey,
-                                const char16_t **aClassName = nullptr)
-  {
-    NS_ConvertASCIItoUTF16 key(aKey);
-    return AddToHash(&key, aClassName);
-  }
+                                const char16_t **aClassName = nullptr);
+
   
   void RemoveFromHash(const nsAString *aKey);
 
   nsresult FillHash(nsICategoryManager *aCategoryManager,
                     const char *aCategory);
-  nsresult RegisterInterface(const char* aIfName,
-                             const nsIID *aIfIID,
-                             bool* aFoundOld);
 
   
 

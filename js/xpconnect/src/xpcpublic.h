@@ -578,25 +578,6 @@ void RemoveGCCallback(xpcGCCallback cb);
 namespace mozilla {
 namespace dom {
 
-typedef JSObject*
-(*DefineInterface)(JSContext* cx, JS::Handle<JSObject*> global,
-                   JS::Handle<jsid> id, bool defineOnGlobal);
-
-typedef JSObject*
-(*ConstructNavigatorProperty)(JSContext* cx, JS::Handle<JSObject*> naviObj);
-
-
-
-
-
-
-
-typedef bool
-(ConstructorEnabled)(JSContext* cx, JS::Handle<JSObject*> obj);
-
-void
-Register(nsScriptNameSpaceManager* aNameSpaceManager);
-
 
 
 
