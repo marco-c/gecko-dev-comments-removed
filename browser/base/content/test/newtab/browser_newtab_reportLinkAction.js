@@ -13,79 +13,71 @@ gDirectorySource = "data:application/json," + JSON.stringify({
   }]
 });
 
-function runTests() {
-  Services.prefs.setBoolPref(PRELOAD_PREF, false);
+add_task(function* () {
+  yield pushPrefs([PRELOAD_PREF, false]);
 
   let originalReportSitesAction  = DirectoryLinksProvider.reportSitesAction;
   registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(PRELOAD_PREF);
     DirectoryLinksProvider.reportSitesAction = originalReportSitesAction;
   });
 
   let expected = {};
-  DirectoryLinksProvider.reportSitesAction = function(sites, action, siteIndex) {
-    let {link} = sites[siteIndex];
-    is(link.type, expected.type, "got expected type");
-    is(action, expected.action, "got expected action");
-    is(NewTabUtils.pinnedLinks.isPinned(link), expected.pinned, "got expected pinned");
-    executeSoon(TestRunner.next);
+
+  function expectReportSitesAction() {
+    return new Promise(resolve => {
+      DirectoryLinksProvider.reportSitesAction = function(sites, action, siteIndex) {
+        let {link} = sites[siteIndex];
+        is(link.type, expected.type, "got expected type");
+        is(action, expected.action, "got expected action");
+        is(NewTabUtils.pinnedLinks.isPinned(link), expected.pinned, "got expected pinned");
+        resolve();
+      }
+    });
   }
 
   
+  let reportSitesPromise = expectReportSitesAction();
   expected.type = "sponsored";
   expected.action = "view";
   expected.pinned = false;
-  addNewTabPageTab();
+  yield* addNewTabPageTab();
+  yield reportSitesPromise;
 
   
-  yield null;
-  yield null;
-
-  whenPagesUpdated();
-  
-  let siteNode = getCell(1).node.querySelector(".newtab-site");
-  let pinButton = siteNode.querySelector(".newtab-control-pin");
   expected.action = "pin";
   
   expected.type = "history";
   expected.pinned = true;
-  EventUtils.synthesizeMouseAtCenter(pinButton, {}, getContentWindow());
+  let pagesUpdatedPromise = whenPagesUpdated();
+  reportSitesPromise = expectReportSitesAction();
 
-  
-  yield null;
-  yield null;
+  yield BrowserTestUtils.synthesizeMouseAtCenter(".newtab-cell + .newtab-cell .newtab-control-pin", {}, gBrowser.selectedBrowser);
+  yield pagesUpdatedPromise;
+  yield reportSitesPromise;
 
   
   expected.action = "unpin";
   expected.pinned = false;
-  whenPagesUpdated();
-  
-  siteNode = getCell(1).node.querySelector(".newtab-site");
-  pinButton = siteNode.querySelector(".newtab-control-pin");
-  EventUtils.synthesizeMouseAtCenter(pinButton, {}, getContentWindow());
+  pagesUpdatedPromise = whenPagesUpdated();
+  reportSitesPromise = expectReportSitesAction();
+  yield BrowserTestUtils.synthesizeMouseAtCenter(".newtab-cell + .newtab-cell .newtab-control-pin", {}, gBrowser.selectedBrowser);
+  yield pagesUpdatedPromise;
+  yield reportSitesPromise;
 
   
-  yield null;
-  yield null;
-
-  
-  let blockedSite = getCell(0).node.querySelector(".newtab-site");
-  let blockButton = blockedSite.querySelector(".newtab-control-block");
   expected.type = "organic";
   expected.action = "block";
   expected.pinned = false;
-  whenPagesUpdated();
-  EventUtils.synthesizeMouseAtCenter(blockButton, {}, getContentWindow());
-
-  
-  yield null;
-  yield null;
+  pagesUpdatedPromise = whenPagesUpdated();
+  reportSitesPromise = expectReportSitesAction();
+  yield BrowserTestUtils.synthesizeMouseAtCenter(".newtab-site .newtab-control-block", {}, gBrowser.selectedBrowser);
+  yield pagesUpdatedPromise;
+  yield reportSitesPromise;
 
   
   expected.type = "history";
   expected.action = "click";
-  EventUtils.synthesizeMouseAtCenter(siteNode, {}, getContentWindow());
-
-  
-  yield null;
-}
+  reportSitesPromise = expectReportSitesAction();
+  yield BrowserTestUtils.synthesizeMouseAtCenter(".newtab-site", {}, gBrowser.selectedBrowser);
+  yield reportSitesPromise;
+});
