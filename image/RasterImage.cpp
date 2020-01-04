@@ -599,7 +599,7 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
   
   RefPtr<SourceSurface> frameSurf;
   if (!frameRef->NeedsPadding() &&
-      frameRef->GetSize() == aSize) {
+      frameRef->GetSize() == frameRef->GetImageSize()) {
     frameSurf = frameRef->GetSurface();
   }
 
