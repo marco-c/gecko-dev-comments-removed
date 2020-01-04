@@ -3458,7 +3458,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor : public nsBidiPresUtils::BidiProcess
     }
     mTextRun = mFontgrp->MakeTextRun(text,
                                      length,
-                                     mThebes->GetDrawTarget(),
+                                     mDrawTarget,
                                      mAppUnitsPerDevPixel,
                                      flags,
                                      mMissingFonts);
@@ -3471,7 +3471,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor : public nsBidiPresUtils::BidiProcess
                                                                mDoMeasureBoundingBox ?
                                                                  gfxFont::TIGHT_INK_EXTENTS :
                                                                  gfxFont::LOOSE_INK_EXTENTS,
-                                                               mThebes->GetDrawTarget(),
+                                                               mDrawTarget,
                                                                nullptr);
 
     
@@ -3507,7 +3507,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor : public nsBidiPresUtils::BidiProcess
                               mDoMeasureBoundingBox ?
                                   gfxFont::TIGHT_INK_EXTENTS :
                                   gfxFont::LOOSE_INK_EXTENTS,
-                              mThebes->GetDrawTarget(),
+                              mDrawTarget,
                               nullptr);
       inlineCoord += textRunMetrics.mAdvanceWidth;
       
@@ -3706,7 +3706,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor : public nsBidiPresUtils::BidiProcess
   nsAutoPtr<gfxTextRun> mTextRun;
 
   
-  RefPtr<gfxContext> mThebes;
+  RefPtr<DrawTarget> mDrawTarget;
 
   
   CanvasRenderingContext2D *mCtx;
@@ -3832,15 +3832,14 @@ CanvasRenderingContext2D::DrawOrMeasureText(const nsAString& aRawText,
 
   GetAppUnitsValues(&processor.mAppUnitsPerDevPixel, nullptr);
   processor.mPt = gfxPoint(aX, aY);
-  processor.mThebes =
-    new gfxContext(gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget());
+  processor.mDrawTarget =
+    gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
 
   
   
   
   if (mTarget) {
-    Matrix matrix = mTarget->GetTransform();
-    processor.mThebes->SetMatrix(gfxMatrix(matrix._11, matrix._12, matrix._21, matrix._22, matrix._31, matrix._32));
+    processor.mDrawTarget->SetTransform(mTarget->GetTransform());
   }
   processor.mCtx = this;
   processor.mOp = aOp;
