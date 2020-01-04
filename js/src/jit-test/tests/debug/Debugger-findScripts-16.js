@@ -8,5 +8,5 @@ dbg.onDebuggerStatement = function (frame) {
     hits++;
     assertEq(dbg.findScripts().indexOf(dbg.getNewestFrame().script) !== -1, true);
 };
-gw.evalInGlobal("debugger;");
+gw.executeInGlobal("debugger;");
 assertEq(hits, 1);

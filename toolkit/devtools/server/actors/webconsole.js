@@ -1218,7 +1218,7 @@ WebConsoleActor.prototype =
       result = frame.evalWithBindings(aString, bindings, evalOptions);
     }
     else {
-      result = dbgWindow.evalInGlobalWithBindings(aString, bindings, evalOptions);
+      result = dbgWindow.executeInGlobalWithBindings(aString, bindings, evalOptions);
     }
 
     let helperResult = helpers.helperResult;

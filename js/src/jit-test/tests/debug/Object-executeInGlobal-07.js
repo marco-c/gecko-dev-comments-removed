@@ -11,7 +11,7 @@ function testUrl (options, expected) {
         assertEq(script.url, expected);
         count--;
     };
-    debuggee.evalInGlobal("", options);
+    debuggee.executeInGlobal("", options);
 }
 
 

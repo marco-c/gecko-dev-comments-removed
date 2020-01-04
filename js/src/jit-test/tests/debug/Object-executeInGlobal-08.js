@@ -11,7 +11,7 @@ function testLineNumber (options, expected) {
         assertEq(script.startLine, expected);
         count--;
     };
-    debuggee.evalInGlobal("", options);
+    debuggee.executeInGlobal("", options);
 }
 
 
