@@ -263,26 +263,8 @@ CallbackObject::CallSetup::~CallSetup()
       
       
       
-      
-      
-      
-      JS::Rooted<JSObject*> oldGlobal(mCx, JS::CurrentGlobalOrNull(mCx));
-      MOZ_ASSERT(oldGlobal, "How can we not have a global here??");
-      bool saved = JS_SaveFrameChain(mCx);
-      
-      
-      {
-        JSAutoCompartment ac(mCx, oldGlobal);
-        MOZ_ASSERT(!JS::DescribeScriptedCaller(mCx),
-                   "Our comment above about JS_SaveFrameChain having been "
-                   "called is a lie?");
-        mAutoEntryScript->ReportException();
-      }
-      if (saved) {
-        JS_RestoreFrameChain(mCx);
-      }
-
       if (mErrorResult.IsJSContextException()) {
+        
         
         
         mErrorResult.Throw(NS_ERROR_UNEXPECTED);
