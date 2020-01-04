@@ -30,6 +30,9 @@ XPCOMUtils.defineLazyGetter(this, "gPrincipal", function() {
   return Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
 });
 
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+                                  "resource://gre/modules/Task.jsm");
+
 
 const HISTORY_RESULTS_LIMIT = 100;
 
@@ -66,46 +69,6 @@ let LinkChecker = {
     }
     return result;
   }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-const LinkUtils = {
-  _sortProperties: [
-    "frecency",
-    "lastVisitDate",
-    "url",
-  ],
-
-  
-
-
-
-
-
-
-
-
-
-  compareLinks: function LinkUtils_compareLinks(aLink1, aLink2) {
-    for (let prop of LinkUtils._sortProperties) {
-      if (!aLink1.hasOwnProperty(prop) || !aLink2.hasOwnProperty(prop)) {
-        throw new Error("Comparable link missing required property: " + prop);
-      }
-    }
-    return aLink2.frecency - aLink1.frecency ||
-           aLink2.lastVisitDate - aLink1.lastVisitDate ||
-           aLink1.url.localeCompare(aLink2.url);
-  },
 };
 
 
@@ -192,71 +155,86 @@ Links.prototype = {
 
 
 
-  getLinks: function PlacesProvider_getLinks() {
-    let getLinksPromise = new Promise((resolve, reject) => {
-      let options = PlacesUtils.history.getNewQueryOptions();
-      options.maxResults = this.maxNumLinks;
+  getLinks: Task.async(function*() {
+    
+    
+    
+    let sqlQuery = `SELECT url, title, frecency,
+                          last_visit_date as lastVisitDate,
+                          "history" as type
+                   FROM moz_places
+                   WHERE frecency in (
+                     SELECT MAX(frecency) as frecency
+                     FROM moz_places
+                     WHERE hidden = 0 AND last_visit_date NOTNULL
+                     GROUP BY +rev_host
+                     ORDER BY frecency DESC
+                     LIMIT :limit
+                   )
+                   GROUP BY rev_host HAVING MAX(lastVisitDate)
+                   ORDER BY frecency DESC, lastVisitDate DESC, url`;
 
-      
-      options.sortingMode = Ci.nsINavHistoryQueryOptions
-        .SORT_BY_FRECENCY_DESCENDING;
+    let links = yield this.executePlacesQuery(sqlQuery, {
+                  columns: ["url", "title", "lastVisitDate", "frecency", "type"],
+                  params: {limit: this.maxNumLinks}
+                });
 
-      let links = [];
+    return links.filter(link => LinkChecker.checkLoadURI(link.url));
+  }),
 
-      let queryHandlers = {
-        handleResult: function(aResultSet) {
-          for (let row = aResultSet.getNextRow(); row; row = aResultSet.getNextRow()) {
-            let url = row.getResultByIndex(1);
-            if (LinkChecker.checkLoadURI(url)) {
-              let link = {
-                url: url,
-                title: row.getResultByIndex(2),
-                frecency: row.getResultByIndex(12),
-                lastVisitDate: row.getResultByIndex(5),
-                type: "history",
-              };
-              links.push(link);
-            }
-          }
-        },
+  
 
-        handleError: function(aError) {
-          reject(aError);
-        },
 
-        handleCompletion: function(aReason) { 
-          
-          
-          
-          
-          
-          
-          let i = 1;
-          let outOfOrder = [];
-          while (i < links.length) {
-            if (LinkUtils.compareLinks(links[i - 1], links[i]) > 0) {
-              outOfOrder.push(links.splice(i, 1)[0]);
-            } else {
-              i++;
-            }
-          }
-          for (let link of outOfOrder) {
-            i = BinarySearch.insertionIndexOf(LinkUtils.compareLinks, links, link);
-            links.splice(i, 0, link);
-          }
 
-          resolve(links);
+
+
+
+
+
+
+
+
+
+
+  executePlacesQuery: Task.async(function*(aSql, aOptions={}) {
+    let {columns, params, callback} = aOptions;
+    let items = [];
+    let queryError = null;
+    let conn = yield PlacesUtils.promiseDBConnection();
+    yield conn.executeCached(aSql, params, aRow => {
+      try {
+        
+        if (callback) {
+          callback(aRow);
         }
-      };
-
-      
-      let query = PlacesUtils.history.getNewQuery();
-      let db = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase);
-      db.asyncExecuteLegacyQueries([query], 1, options, queryHandlers);
+        
+        else {
+          let item = null;
+          
+          if (columns && Array.isArray(columns)) {
+            item = {};
+            columns.forEach(column => {
+              item[column] = aRow.getResultByName(column);
+            });
+          } else {
+            
+            item = [];
+            for (let i = 0; i < aRow.numEntries; i++) {
+              item.push(aRow.getResultByIndex(i));
+            }
+          }
+          items.push(item);
+        }
+      } catch (e) {
+        queryError = e;
+        throw StopIteration;
+      }
     });
-
-    return getLinksPromise;
-  }
+    if (queryError) {
+      throw new Error(queryError);
+    }
+    return items;
+  }),
 };
 
 
@@ -266,6 +244,5 @@ const gLinks = new Links();
 
 let PlacesProvider = {
   LinkChecker: LinkChecker,
-  LinkUtils: LinkUtils,
   links: gLinks,
 };
