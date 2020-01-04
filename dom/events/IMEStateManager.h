@@ -67,6 +67,11 @@ public:
   
 
 
+  static void WidgetDestroyed(nsIWidget* aWidget);
+
+  
+
+
 
   static void SetInputContextForChildProcess(TabParent* aTabParent,
                                              const InputContext& aInputContext,
@@ -225,7 +230,7 @@ protected:
 
   static StaticRefPtr<nsIContent> sContent;
   static nsPresContext* sPresContext;
-  static StaticRefPtr<nsIWidget> sFocusedIMEWidget;
+  static nsIWidget* sFocusedIMEWidget;
   static StaticRefPtr<TabParent> sActiveTabParent;
   
   
