@@ -25,12 +25,15 @@
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Matrix.h"         
+#include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h" 
 #include "mozilla/layers/LayersMessages.h"  
+#include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/PersistentBufferProvider.h"
+#include "mozilla/layers/ShadowLayers.h"  
 #include "nsAString.h"
 #include "nsCSSValue.h"                 
 #include "nsPrintfCString.h"            
@@ -1665,11 +1668,20 @@ void WriteSnapshotToDumpFile(Compositor* aCompositor, DrawTarget* aTarget)
 void
 Layer::Dump(std::stringstream& aStream, const char* aPrefix, bool aDumpHtml)
 {
+#ifdef MOZ_DUMP_PAINTING
+  bool dumpCompositorTexture = gfxUtils::sDumpCompositorTextures && AsLayerComposite() &&
+                               AsLayerComposite()->GetCompositableHost();
+  bool dumpClientTexture = gfxUtils::sDumpPainting && AsShadowableLayer() &&
+                           AsShadowableLayer()->GetCompositableClient();
+  nsCString layerId(Name());
+  layerId.Append('-');
+  layerId.AppendInt((uint64_t)this);
+#endif
   if (aDumpHtml) {
     aStream << nsPrintfCString("<li><a id=\"%p\" ", this).get();
 #ifdef MOZ_DUMP_PAINTING
-    if (GetType() == TYPE_CONTAINER || GetType() == TYPE_PAINTED) {
-      WriteSnapshotLinkToDumpFile(this, aStream);
+    if (dumpCompositorTexture || dumpClientTexture) {
+      aStream << nsPrintfCString("href=\"javascript:ViewImage('%s')\"", layerId.BeginReading()).get();
     }
 #endif
     aStream << ">";
@@ -1677,8 +1689,17 @@ Layer::Dump(std::stringstream& aStream, const char* aPrefix, bool aDumpHtml)
   DumpSelf(aStream, aPrefix);
 
 #ifdef MOZ_DUMP_PAINTING
-  if (gfxUtils::sDumpCompositorTextures && AsLayerComposite() && AsLayerComposite()->GetCompositableHost()) {
+  if (dumpCompositorTexture) {
     AsLayerComposite()->GetCompositableHost()->Dump(aStream, aPrefix, aDumpHtml);
+  } else if (dumpClientTexture) {
+    if (aDumpHtml) {
+      aStream << nsPrintfCString("<script>array[\"%s\"]=\"", layerId.BeginReading()).get();
+    }
+    AsShadowableLayer()->GetCompositableClient()->Dump(aStream, aPrefix,
+        aDumpHtml, TextureDumpMode::DoNotCompress);
+    if (aDumpHtml) {
+      aStream << "\";</script>";
+    }
   }
 #endif
 
