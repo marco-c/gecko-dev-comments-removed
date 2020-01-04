@@ -374,12 +374,8 @@ public:
 
     
     
-    
-    
-    
     if (AtBottomLayer()) {
       result = mLayer->GetClipRect();
-      result = IntersectMaybeRects(result, mLayer->GetScrolledClipRect());
     }
 
     

@@ -217,20 +217,6 @@ TransformClipRect(Layer* aLayer,
 
 
 
-static void
-TransformFixedClip(Layer* aLayer,
-                   const ParentLayerToParentLayerMatrix4x4& aTransform,
-                   AsyncCompositionManager::ClipParts& aClipParts)
-{
-  MOZ_ASSERT(aTransform.Is2D());
-  if (aClipParts.mFixedClip) {
-    *aClipParts.mFixedClip = TransformBy(aTransform, *aClipParts.mFixedClip);
-    aLayer->AsLayerComposite()->SetShadowClipRect(aClipParts.Intersect());
-  }
-}
-
-
-
 
 
 
@@ -254,8 +240,7 @@ SetShadowTransform(Layer* aLayer, LayerToParentLayerMatrix4x4 aTransform)
 static void
 TranslateShadowLayer(Layer* aLayer,
                      const gfxPoint& aTranslation,
-                     bool aAdjustClipRect,
-                     AsyncCompositionManager::ClipPartsCache* aClipPartsCache = nullptr)
+                     bool aAdjustClipRect)
 {
   
   
@@ -272,21 +257,13 @@ TranslateShadowLayer(Layer* aLayer,
   aLayer->AsLayerComposite()->SetShadowTransformSetByAnimation(false);
 
   if (aAdjustClipRect) {
-    auto transform = ParentLayerToParentLayerMatrix4x4::Translation(aTranslation.x, aTranslation.y, 0);
-    
-    
-    if (aClipPartsCache) {
-      auto iter = aClipPartsCache->find(aLayer);
-      MOZ_ASSERT(iter != aClipPartsCache->end());
-      TransformFixedClip(aLayer, transform, iter->second);
-    } else {
-      TransformClipRect(aLayer, transform);
-    }
+    TransformClipRect(aLayer,
+        ParentLayerToParentLayerMatrix4x4::Translation(aTranslation.x, aTranslation.y, 0));
 
     
     
     if (Layer* maskLayer = aLayer->GetMaskLayer()) {
-      TranslateShadowLayer(maskLayer, aTranslation, false, aClipPartsCache);
+      TranslateShadowLayer(maskLayer, aTranslation, false);
     }
   }
 }
@@ -405,22 +382,6 @@ AsyncTransformShouldBeUnapplied(Layer* aFixedLayer,
   return false;
 }
 
-
-
-static Maybe<FrameMetrics::ViewID>
-IsFixedOrSticky(Layer* aLayer)
-{
-  bool isRootOfFixedSubtree = aLayer->GetIsFixedPosition() &&
-    !aLayer->GetParent()->GetIsFixedPosition();
-  if (isRootOfFixedSubtree) {
-    return Some(aLayer->GetFixedPositionScrollContainerId());
-  }
-  if (aLayer->GetIsStickyPosition()) {
-    return Some(aLayer->GetStickyScrollContainerId());
-  }
-  return Nothing();
-}
-
 void
 AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
                                                    Layer* aTransformedSubtreeRoot,
@@ -428,12 +389,22 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
                                                    const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
                                                    const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
                                                    const ScreenMargin& aFixedLayerMargins,
-                                                   ClipPartsCache* aClipPartsCache)
+                                                   bool aTransformAffectsLayerClip)
 {
+  FrameMetrics::ViewID fixedTo;  
+  bool isRootOfFixedSubtree = aLayer->GetIsFixedPosition() &&
+    !aLayer->GetParent()->GetIsFixedPosition();
+  if (isRootOfFixedSubtree) {
+    fixedTo = aLayer->GetFixedPositionScrollContainerId();
+  }
+  bool isSticky = aLayer->GetIsStickyPosition();
+  if (isSticky) {
+    fixedTo = aLayer->GetStickyScrollContainerId();
+  }
   bool needsAsyncTransformUnapplied = false;
-  if (Maybe<FrameMetrics::ViewID> fixedTo = IsFixedOrSticky(aLayer)) {
+  if (isRootOfFixedSubtree || isSticky) {
     needsAsyncTransformUnapplied = AsyncTransformShouldBeUnapplied(aLayer,
-        *fixedTo, aTransformedSubtreeRoot, aTransformScrollId);
+        fixedTo, aTransformedSubtreeRoot, aTransformScrollId);
   }
 
   
@@ -445,7 +416,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
       AlignFixedAndStickyLayers(child, aTransformedSubtreeRoot, aTransformScrollId,
                                 aPreviousTransformForRoot,
                                 aCurrentTransformForRoot, aFixedLayerMargins,
-                                aClipPartsCache);
+                                true );
     }
     return;
   }
@@ -528,8 +499,11 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   
   
   
-  TranslateShadowLayer(aLayer, ThebesPoint(translation.ToUnknownPoint()),
-      true, aClipPartsCache);
+  
+  
+  
+  bool adjustClipRect = aTransformAffectsLayerClip && aLayer->IsClipFixed();
+  TranslateShadowLayer(aLayer, ThebesPoint(translation.ToUnknownPoint()), adjustClipRect);
 }
 
 static void
@@ -811,8 +785,7 @@ MoveScrollbarForLayerMargin(Layer* aRoot, FrameMetrics::ViewID aRootScrollId,
 bool
 AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
                                                           bool* aOutFoundRoot,
-                                                          Maybe<ParentLayerIntRect>& aClipDeferredToParent,
-                                                          ClipPartsCache& clipPartsCache)
+                                                          Maybe<ParentLayerIntRect>& aClipDeferredToParent)
 {
   Maybe<ParentLayerIntRect> clipDeferredFromChildren;
   bool appliedTransform = false;
@@ -820,7 +793,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
       child; child = child->GetNextSibling()) {
     appliedTransform |=
       ApplyAsyncContentTransformToTree(child, aOutFoundRoot,
-          clipDeferredFromChildren, clipPartsCache);
+          clipDeferredFromChildren);
   }
 
   LayerToParentLayerMatrix4x4 oldTransform = aLayer->GetTransformTyped() *
@@ -836,29 +809,12 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ClipParts& clipParts = clipPartsCache[aLayer];
-  clipParts.mFixedClip = aLayer->GetClipRect();
-  clipParts.mScrolledClip = aLayer->GetScrolledClipRect();
+  Maybe<ParentLayerIntRect> asyncClip = aLayer->GetClipRect();
 
   
   
   
-  
-  
-  clipParts.mScrolledClip = IntersectMaybeRects(
-      clipDeferredFromChildren, clipParts.mScrolledClip);
+  asyncClip = IntersectMaybeRects(asyncClip, clipDeferredFromChildren);
 
   
   
@@ -871,15 +827,6 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
   
   
   nsTArray<Layer*> ancestorMaskLayers;
-
-  
-  
-  if (const Maybe<LayerClip>& scrolledClip = aLayer->GetScrolledClip()) {
-    if (scrolledClip->GetMaskLayerIndex()) {
-      ancestorMaskLayers.AppendElement(
-          aLayer->GetAncestorMaskLayerAt(*scrolledClip->GetMaskLayerIndex()));
-    }
-  }
 
   for (uint32_t i = 0; i < aLayer->GetScrollMetadataCount(); i++) {
     AsyncPanZoomController* controller = aLayer->GetAsyncPanZoomController(i);
@@ -952,18 +899,11 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     
     
-    if (!scrollMetadata.UsesContainerScrolling()) {
+    if (asyncClip && !scrollMetadata.UsesContainerScrolling()) {
       MOZ_ASSERT(asyncTransform.Is2D());
-      if (clipParts.mFixedClip) {
-        clipParts.mFixedClip = Some(TransformBy(asyncTransform, *clipParts.mFixedClip));
-      }
-      if (clipParts.mScrolledClip) {
-        clipParts.mScrolledClip = Some(TransformBy(asyncTransform, *clipParts.mScrolledClip));
-      }
+      asyncClip = Some(TransformBy(asyncTransform, *asyncClip));
     }
-    
-    
-    
+    aLayer->AsLayerComposite()->SetShadowClipRect(asyncClip);
 
     combinedAsyncTransform *= asyncTransform;
 
@@ -982,13 +922,18 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     
     AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
-                              transformWithoutOverscrollOrOmta, fixedLayerMargins);
+                              transformWithoutOverscrollOrOmta, fixedLayerMargins,
+                              asyncClip.isSome());
+
+    
+    
+    asyncClip = aLayer->AsLayerComposite()->GetShadowClipRect();
 
     
     
     
-    if (scrollMetadata.HasScrollClip()) {
-      ParentLayerIntRect clip = scrollMetadata.ScrollClip().GetClipRect();
+    if (scrollMetadata.HasClipRect()) {
+      ParentLayerIntRect clip = scrollMetadata.ClipRect();
       if (aLayer->GetParent() && aLayer->GetParent()->GetTransformIsPerspective()) {
         
         
@@ -1003,7 +948,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
         MOZ_ASSERT(!aClipDeferredToParent);
         aClipDeferredToParent = Some(clip);
       } else {
-        clipParts.mScrolledClip = IntersectMaybeRects(Some(clip), clipParts.mScrolledClip);
+        asyncClip = IntersectMaybeRects(Some(clip), asyncClip);
       }
     }
 
@@ -1016,24 +961,15 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     }
 
     
-    if (scrollMetadata.HasScrollClip()) {
-      const LayerClip& scrollClip = scrollMetadata.ScrollClip();
-      if (scrollClip.GetMaskLayerIndex()) {
-        size_t maskLayerIndex = scrollClip.GetMaskLayerIndex().value();
-        Layer* ancestorMaskLayer = aLayer->GetAncestorMaskLayerAt(maskLayerIndex);
-        ancestorMaskLayers.AppendElement(ancestorMaskLayer);
-      }
+    if (scrollMetadata.GetMaskLayerIndex()) {
+      size_t maskLayerIndex = scrollMetadata.GetMaskLayerIndex().value();
+      Layer* ancestorMaskLayer = aLayer->GetAncestorMaskLayerAt(maskLayerIndex);
+      ancestorMaskLayers.AppendElement(ancestorMaskLayer);
     }
   }
 
-  bool clipChanged = (hasAsyncTransform || clipDeferredFromChildren);
-  if (clipChanged) {
-    
-    
-    
-    
-    
-    aLayer->AsLayerComposite()->SetShadowClipRect(clipParts.Intersect());
+  if (hasAsyncTransform || clipDeferredFromChildren) {
+    aLayer->AsLayerComposite()->SetShadowClipRect(asyncClip);
   }
 
   if (hasAsyncTransform) {
@@ -1421,7 +1357,7 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
   
   AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
                             aLayer->GetLocalTransformTyped(),
-                            fixedLayerMargins);
+                            fixedLayerMargins, false);
 
   ExpandRootClipRect(aLayer, fixedLayerMargins);
 }
@@ -1455,12 +1391,6 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
     
     
     
-    ClipPartsCache clipPartsCache;
-
-    
-    
-    
-    
     
     
     
@@ -1470,8 +1400,7 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
     
     bool foundRoot = false;
     Maybe<ParentLayerIntRect> clipDeferredFromChildren;
-    if (ApplyAsyncContentTransformToTree(root, &foundRoot, clipDeferredFromChildren,
-                                         clipPartsCache)) {
+    if (ApplyAsyncContentTransformToTree(root, &foundRoot, clipDeferredFromChildren)) {
 #if defined(MOZ_ANDROID_APZ)
       MOZ_ASSERT(foundRoot);
       if (foundRoot && mFixedLayerMargins != ScreenMargin()) {

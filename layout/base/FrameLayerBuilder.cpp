@@ -1349,16 +1349,6 @@ protected:
                       const nsIntRegion& aLayerVisibleRegion,
                       uint32_t aRoundedRectClipCount = UINT32_MAX);
 
-  
-
-
-
-
-
-
-  Maybe<size_t> SetupMaskLayerForScrolledClip(Layer* aLayer,
-                                              const DisplayItemClip& aClip);
-
   already_AddRefed<Layer> CreateMaskLayer(
     Layer *aLayer, const DisplayItemClip& aClip,
     const Maybe<size_t>& aForAncestorMaskLayer,
@@ -2189,7 +2179,6 @@ ContainerState::RecyclePaintedLayer(PaintedLayer* aLayer,
   
   
   aLayer->SetMaskLayer(nullptr);
-  aLayer->SetAncestorMaskLayers({});
   aLayer->ClearExtraDumpInfo();
 
   PaintedDisplayItemLayerUserData* data =
@@ -3129,13 +3118,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
     if (data->mSingleItemFixedToViewport && data->mItemClip.HasClip()) {
       nsIntRect layerClipRect = ScaleToNearestPixels(data->mItemClip.GetClipRect());
       layerClipRect.MoveBy(mParameters.mOffset);
-      
-      
-      LayerClip scrolledClip;
-      scrolledClip.SetClipRect(ViewAs<ParentLayerPixel>(layerClipRect));
-      scrolledClip.SetMaskLayerIndex(
-          SetupMaskLayerForScrolledClip(data->mLayer, data->mItemClip));
-      data->mLayer->SetScrolledClip(Some(scrolledClip));
+      data->mLayer->SetClipRect(Some(ViewAs<ParentLayerPixel>(layerClipRect)));
       
       
       
@@ -3144,8 +3127,8 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       commonClipCount = data->mItemClip.GetRoundedRectCount();
     } else {
       commonClipCount = std::max(0, data->mCommonClipCount);
-      SetupMaskLayer(layer, data->mItemClip, data->mVisibleRegion, commonClipCount);
     }
+    SetupMaskLayer(layer, data->mItemClip, data->mVisibleRegion, commonClipCount);
     
     FrameLayerBuilder::PaintedLayerItemsEntry* entry = mLayerBuilder->
       GetPaintedLayerItemsEntry(static_cast<PaintedLayer*>(layer.get()));
@@ -3644,22 +3627,6 @@ InnermostScrollClipApplicableToAGR(const DisplayItemScrollClip* aItemScrollClip,
   return nullptr;
 }
 
-Maybe<size_t>
-ContainerState::SetupMaskLayerForScrolledClip(Layer* aLayer,
-                                              const DisplayItemClip& aClip)
-{
-  if (aClip.GetRoundedRectCount() > 0) {
-    Maybe<size_t> maskLayerIndex = Some(aLayer->GetAncestorMaskLayerCount());
-    if (RefPtr<Layer> maskLayer = CreateMaskLayer(aLayer, aClip, maskLayerIndex,
-                                                  aClip.GetRoundedRectCount())) {
-      aLayer->AddAncestorMaskLayer(maskLayer);
-      return maskLayerIndex;
-    }
-    
-  }
-  return Nothing();
-}
-
 
 
 
@@ -4021,31 +3988,17 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       NS_ASSERTION(layerClip.HasClip() ||
                    layerClip.GetRoundedRectCount() == 0,
                    "If we have rounded rects, we must have a clip rect");
+      
+      if (layerClip.HasClip()) {
+        ownLayer->SetClipRect(Some(layerClipRect));
+      } else {
+        ownLayer->SetClipRect(Nothing());
+      }
 
       
-
-      ownLayer->SetClipRect(Nothing());
-      ownLayer->SetScrolledClip(Nothing());
-      if (layerClip.HasClip()) {
-        if (shouldFixToViewport) {
-          
-          
-          LayerClip scrolledClip;
-          scrolledClip.SetClipRect(layerClipRect);
-          if (layerClip.IsRectClippedByRoundedCorner(itemContent)) {
-            scrolledClip.SetMaskLayerIndex(
-                SetupMaskLayerForScrolledClip(ownLayer.get(), layerClip));
-          }
-          ownLayer->SetScrolledClip(Some(scrolledClip));
-        } else {
-          ownLayer->SetClipRect(Some(layerClipRect));
-
-          
-          
-          if (layerClip.IsRectClippedByRoundedCorner(itemContent)) {
-            SetupMaskLayer(ownLayer, layerClip, itemVisibleRect);
-          }
-        }
+      
+      if (layerClip.IsRectClippedByRoundedCorner(itemContent)) {
+        SetupMaskLayer(ownLayer, layerClip, itemVisibleRect);
       }
 
       ContainerLayer* oldContainer = ownLayer->GetParent();
@@ -4670,14 +4623,11 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
 
     
     
-    MOZ_ASSERT(!aEntry->mBaseScrollMetadata->HasMaskLayer());
+    MOZ_ASSERT(!aEntry->mBaseScrollMetadata->GetMaskLayerIndex());
   }
 
   
-  
-  
-  
-  nsTArray<RefPtr<Layer>> maskLayers(aEntry->mLayer->GetAllAncestorMaskLayers());
+  nsTArray<RefPtr<Layer>> maskLayers;
 
   for (const DisplayItemScrollClip* scrollClip = aEntry->mScrollClip;
        scrollClip && scrollClip != mContainerScrollClip;
@@ -4710,8 +4660,7 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
       RefPtr<Layer> maskLayer =
         CreateMaskLayer(aEntry->mLayer, *clip, nextIndex, clip->GetRoundedRectCount());
       if (maskLayer) {
-        MOZ_ASSERT(metadata->HasScrollClip());
-        metadata->ScrollClip().SetMaskLayerIndex(nextIndex);
+        metadata->SetMaskLayerIndex(nextIndex);
         maskLayers.AppendElement(maskLayer);
       }
     }
@@ -4724,7 +4673,7 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
   aEntry->mLayer->SetAncestorMaskLayers(maskLayers);
 }
 
-static inline Maybe<ParentLayerIntRect>
+static inline const Maybe<ParentLayerIntRect>&
 GetStationaryClipInContainer(Layer* aLayer)
 {
   if (size_t metricsCount = aLayer->GetScrollMetadataCount()) {
@@ -4758,7 +4707,7 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
     if (hideAll) {
       e->mVisibleRegion.SetEmpty();
     } else if (!e->mLayer->IsScrollbarContainer()) {
-      Maybe<ParentLayerIntRect> clipRect = GetStationaryClipInContainer(e->mLayer);
+      const Maybe<ParentLayerIntRect>& clipRect = GetStationaryClipInContainer(e->mLayer);
       if (clipRect && opaqueRegionForContainer >= 0 &&
           opaqueRegions[opaqueRegionForContainer].mOpaqueRegion.Contains(clipRect->ToUnknownRect())) {
         e->mVisibleRegion.SetEmpty();
@@ -4794,7 +4743,7 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
       if (clipRect) {
         clippedOpaque.AndWith(clipRect->ToUnknownRect());
       }
-      if (e->mLayer->GetIsFixedPosition() && e->mLayer->GetScrolledClip()) {
+      if (e->mLayer->GetIsFixedPosition() && !e->mLayer->IsClipFixed()) {
         
         
         clippedOpaque.SetEmpty();
@@ -5147,7 +5096,6 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
                      "Wrong layer type");
         containerLayer = static_cast<ContainerLayer*>(oldLayer);
         containerLayer->SetMaskLayer(nullptr);
-        containerLayer->SetAncestorMaskLayers({});
       }
     }
   }

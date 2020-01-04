@@ -1046,26 +1046,6 @@ public:
 
 
 
-  void SetScrolledClip(const Maybe<LayerClip>& aScrolledClip)
-  {
-    if (mScrolledClip != aScrolledClip) {
-      MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ScrolledClip", this));
-      mScrolledClip = aScrolledClip;
-      Mutated();
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1096,15 +1076,6 @@ public:
       mAncestorMaskLayers = aLayers;
       Mutated();
     }
-  }
-
-  
-
-
-
-  void AddAncestorMaskLayer(const RefPtr<Layer>& aLayer) {
-    mAncestorMaskLayers.AppendElement(aLayer);
-    Mutated();
   }
 
   
@@ -1219,14 +1190,21 @@ public:
 
 
 
+
+
+
+
+
   void SetFixedPositionData(FrameMetrics::ViewID aScrollId,
                             const LayerPoint& aAnchor,
-                            int32_t aSides)
+                            int32_t aSides,
+                            bool aIsClipFixed)
   {
     if (!mFixedPositionData ||
         mFixedPositionData->mScrollId != aScrollId ||
         mFixedPositionData->mAnchor != aAnchor ||
-        mFixedPositionData->mSides != aSides) {
+        mFixedPositionData->mSides != aSides ||
+        mFixedPositionData->mIsClipFixed != aIsClipFixed) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) FixedPositionData", this));
       if (!mFixedPositionData) {
         mFixedPositionData = MakeUnique<FixedPositionData>();
@@ -1234,6 +1212,7 @@ public:
       mFixedPositionData->mScrollId = aScrollId;
       mFixedPositionData->mAnchor = aAnchor;
       mFixedPositionData->mSides = aSides;
+      mFixedPositionData->mIsClipFixed = aIsClipFixed;
       Mutated();
     }
   }
@@ -1302,8 +1281,6 @@ public:
   float GetOpacity() { return mOpacity; }
   gfx::CompositionOp GetMixBlendMode() const { return mMixBlendMode; }
   const Maybe<ParentLayerIntRect>& GetClipRect() const { return mClipRect; }
-  const Maybe<LayerClip>& GetScrolledClip() const { return mScrolledClip; }
-  Maybe<ParentLayerIntRect> GetScrolledClipRect() const;
   uint32_t GetContentFlags() { return mContentFlags; }
   const gfx::IntRect& GetLayerBounds() const { return mLayerBounds; }
   const LayerIntRegion& GetVisibleRegion() const { return mVisibleRegion; }
@@ -1335,6 +1312,7 @@ public:
   FrameMetrics::ViewID GetFixedPositionScrollContainerId() { return mFixedPositionData ? mFixedPositionData->mScrollId : FrameMetrics::NULL_SCROLL_ID; }
   LayerPoint GetFixedPositionAnchor() { return mFixedPositionData ? mFixedPositionData->mAnchor : LayerPoint(); }
   int32_t GetFixedPositionSides() { return mFixedPositionData ? mFixedPositionData->mSides : eSideBitsNone; }
+  bool IsClipFixed() { return mFixedPositionData ? mFixedPositionData->mIsClipFixed : false; }
   FrameMetrics::ViewID GetStickyScrollContainerId() { return mStickyPositionData->mScrollId; }
   const LayerRect& GetStickyScrollRangeOuter() { return mStickyPositionData->mOuter; }
   const LayerRect& GetStickyScrollRangeInner() { return mStickyPositionData->mInner; }
@@ -1351,9 +1329,6 @@ public:
   }
   Layer* GetAncestorMaskLayerAt(size_t aIndex) const {
     return mAncestorMaskLayers.ElementAt(aIndex);
-  }
-  const nsTArray<RefPtr<Layer>>& GetAllAncestorMaskLayers() const {
-    return mAncestorMaskLayers;
   }
 
   bool HasMaskLayers() const {
@@ -1875,7 +1850,6 @@ protected:
   gfx::CompositionOp mMixBlendMode;
   bool mForceIsolatedGroup;
   Maybe<ParentLayerIntRect> mClipRect;
-  Maybe<LayerClip> mScrolledClip;
   gfx::IntRect mTileSourceRect;
   gfx::TiledIntRegion mInvalidRegion;
   nsTArray<RefPtr<AsyncPanZoomController> > mApzcs;
@@ -1887,6 +1861,7 @@ protected:
     FrameMetrics::ViewID mScrollId;
     LayerPoint mAnchor;
     int32_t mSides;
+    bool mIsClipFixed;
   };
   UniquePtr<FixedPositionData> mFixedPositionData;
   struct StickyPositionData {
