@@ -1069,6 +1069,9 @@ nsContextMenu.prototype = {
   },
 
   viewImageInfo: function() {
+    
+    
+    
     BrowserPageInfo(null, "mediaTab", this.target);
   },
 
