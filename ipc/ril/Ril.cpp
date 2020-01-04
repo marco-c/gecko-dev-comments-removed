@@ -89,7 +89,6 @@ RilConsumer::ConnectWorkerToRIL(JSContext* aCx)
 {
   
   
-  NS_ASSERTION(!JS_IsRunning(aCx), "Are we being called somehow?");
   Rooted<JSObject*> workerGlobal(aCx, CurrentGlobalOrNull(aCx));
 
   
