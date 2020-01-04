@@ -401,11 +401,15 @@ class TestRecursiveMakeBackend(BackendTester):
         
         m = InstallManifest(path=mozpath.join(env.topobjdir,
             '_build_manifests', 'install', 'dist_include'))
-        self.assertEqual(len(m), 4)
+        self.assertEqual(len(m), 8)
         self.assertIn('foo.h', m)
         self.assertIn('mozilla/mozilla1.h', m)
         self.assertIn('mozilla/dom/dom1.h', m)
         self.assertIn('gfx/gfx.h', m)
+        self.assertIn('bar.h', m)
+        self.assertIn('mozilla/mozilla2.h', m)
+        self.assertIn('mozilla/dom/dom2.h', m)
+        self.assertIn('mozilla/dom/dom3.h', m)
         
         
         backend_path = mozpath.join(env.topobjdir, 'backend.mk')
