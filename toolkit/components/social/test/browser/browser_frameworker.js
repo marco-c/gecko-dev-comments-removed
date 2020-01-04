@@ -2,6 +2,8 @@
 
 
 
+requestLongerTimeout(2);
+
 
 
 
