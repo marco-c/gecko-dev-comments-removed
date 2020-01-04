@@ -379,6 +379,20 @@ void
 DispatchReplyError(BluetoothReplyRunnable* aRunnable,
                    const enum BluetoothStatus aStatus);
 
+
+
+
+
+
+
+
+
+
+
+void
+DispatchReplyError(BluetoothReplyRunnable* aRunnable,
+                   const enum BluetoothGattStatus aGattStatus);
+
 void
 DispatchStatusChangedEvent(const nsAString& aType,
                            const BluetoothAddress& aDeviceAddress,

@@ -48,14 +48,19 @@ protected:
 
   virtual bool ParseSuccessfulReply(JS::MutableHandle<JS::Value> aValue) = 0;
 
+  virtual nsresult FireErrorString();
+
   
   
   
   nsAutoPtr<BluetoothReply> mReply;
 
+  RefPtr<Promise> mPromise;
+
 private:
+  virtual void ParseErrorStatus();
+
   nsresult FireReplySuccess(JS::Handle<JS::Value> aVal);
-  nsresult FireErrorString();
 
   virtual void OnSuccessFired();
   virtual void OnErrorFired();
@@ -69,7 +74,6 @@ private:
 
 
   nsCOMPtr<nsIDOMDOMRequest> mDOMRequest;
-  RefPtr<Promise> mPromise;
 
   BluetoothStatus mErrorStatus;
   nsString mErrorString;
