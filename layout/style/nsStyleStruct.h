@@ -547,6 +547,13 @@ struct nsStyleImageLayers {
   friend struct Layer;
   struct Layer {
     nsStyleImage  mImage;         
+    nsCOMPtr<nsIURI> mSourceURI;  
+                                  
+                                  
+                                  
+                                  
+                                  
+                                  
     Position      mPosition;      
     Size          mSize;          
     uint8_t       mClip;          
@@ -3479,7 +3486,6 @@ struct nsStyleSVGReset
   nsStyleImageLayers    mLayers;
   nsStyleClipPath mClipPath;          
   nsTArray<nsStyleFilter> mFilters;   
-  nsCOMPtr<nsIURI> mMask;             
   nscolor          mStopColor;        
   nscolor          mFloodColor;       
   nscolor          mLightingColor;    

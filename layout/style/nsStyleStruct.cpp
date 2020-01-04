@@ -1246,7 +1246,6 @@ nsStyleSVGReset::nsStyleSVGReset()
   mStopColor               = NS_RGB(0,0,0);
   mFloodColor              = NS_RGB(0,0,0);
   mLightingColor           = NS_RGB(255,255,255);
-  mMask                    = nullptr;
   mStopOpacity             = 1.0f;
   mFloodOpacity            = 1.0f;
   mDominantBaseline        = NS_STYLE_DOMINANT_BASELINE_AUTO;
@@ -1268,7 +1267,6 @@ nsStyleSVGReset::nsStyleSVGReset(const nsStyleSVGReset& aSource)
   mLightingColor = aSource.mLightingColor;
   mClipPath = aSource.mClipPath;
   mFilters = aSource.mFilters;
-  mMask = aSource.mMask;
   mStopOpacity = aSource.mStopOpacity;
   mFloodOpacity = aSource.mFloodOpacity;
   mDominantBaseline = aSource.mDominantBaseline;
@@ -1289,7 +1287,6 @@ nsChangeHint nsStyleSVGReset::CalcDifference(const nsStyleSVGReset& aOther) cons
   nsChangeHint hint = nsChangeHint(0);
 
   if (mClipPath != aOther.mClipPath ||
-      !EqualURIs(mMask, aOther.mMask) ||
       mFilters != aOther.mFilters) {
     NS_UpdateHint(hint, nsChangeHint_UpdateEffects);
     NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
@@ -2342,7 +2339,7 @@ bool
 nsStyleImageLayers::HasLayerWithImage() const
 {
   for (uint32_t i = 0; i < mImageCount; i++) {
-    if (!mLayers[i].mImage.IsEmpty()) {
+    if (mLayers[i].mSourceURI) {
       return true;
     }
   }
@@ -2536,27 +2533,36 @@ nsStyleImageLayers::Layer::operator==(const Layer& aOther) const
          mSize == aOther.mSize &&
          mImage == aOther.mImage &&
          mMaskMode == aOther.mMaskMode &&
-         mComposite == aOther.mComposite;
+         mComposite == aOther.mComposite &&
+         EqualURIs(mSourceURI, aOther.mSourceURI);
 }
 
 nsChangeHint
 nsStyleImageLayers::Layer::CalcDifference(const nsStyleImageLayers::Layer& aOther) const
 {
   nsChangeHint hint = nsChangeHint(0);
-  if (mAttachment != aOther.mAttachment ||
-      mClip != aOther.mClip ||
-      mOrigin != aOther.mOrigin ||
-      mRepeat != aOther.mRepeat ||
-      mBlendMode != aOther.mBlendMode ||
-      mSize != aOther.mSize ||
-      mImage != aOther.mImage ||
-      mMaskMode != aOther.mMaskMode ||
-      mComposite != aOther.mComposite) {
+  if (!EqualURIs(mSourceURI, aOther.mSourceURI)) {
+    NS_UpdateHint(hint, nsChangeHint_UpdateEffects);
+    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    
+    
+    NS_UpdateHint(hint, nsChangeHint_UpdateOverflow);
+  } else if (mAttachment != aOther.mAttachment ||
+             mClip != aOther.mClip ||
+             mOrigin != aOther.mOrigin ||
+             mRepeat != aOther.mRepeat ||
+             mBlendMode != aOther.mBlendMode ||
+             mSize != aOther.mSize ||
+             mImage != aOther.mImage ||
+             mMaskMode != aOther.mMaskMode ||
+             mComposite != aOther.mComposite) {
     hint |= nsChangeHint_RepaintFrame;
   }
+
   if (mPosition != aOther.mPosition) {
     hint |= nsChangeHint_SchedulePaint;
   }
+
   return hint;
 }
 

@@ -559,8 +559,14 @@ nsSVGEffects::GetEffectProperties(nsIFrame *aFrame)
   } else {
     result.mClipPath = nullptr;
   }
-  result.mMask =
-    GetPaintingProperty(style->mMask, aFrame, MaskProperty());
+
+  
+  
+  MOZ_ASSERT(style->mLayers.mImageCount > 0);
+  nsCOMPtr<nsIURI> uri = style->mLayers.mLayers[0].mSourceURI;
+  result.mMask = uri ? GetPaintingProperty(uri, aFrame, MaskProperty()) :
+                         nullptr;
+
   return result;
 }
 
