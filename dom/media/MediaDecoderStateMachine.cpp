@@ -2073,11 +2073,10 @@ void
 MediaDecoderStateMachine::FinishDecodeFirstFrame()
 {
   MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(!mSentFirstFrameLoadedEvent);
   DECODER_LOG("FinishDecodeFirstFrame");
 
-  if (!mSentFirstFrameLoadedEvent) {
-    mMediaSink->Redraw(mInfo.mVideo);
-  }
+  mMediaSink->Redraw(mInfo.mVideo);
 
   
   if (mDuration.Ref().isNothing()) {
