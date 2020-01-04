@@ -200,18 +200,6 @@ MapIteratorObject::next(JSContext* cx, Handle<MapIteratorObject*> mapIterator,
     MOZ_ASSERT(resultPairObj->getDenseInitializedLength() == 2);
     MOZ_ASSERT(resultPairObj->getDenseCapacity() >= 2);
 
-#ifdef DEBUG
-    
-    
-    RootedValue val(cx);
-    if (!GetElement(cx, resultPairObj, resultPairObj, 0, &val))
-        return false;
-    MOZ_ASSERT(val.isNull());
-    if (!GetElement(cx, resultPairObj, resultPairObj, 1, &val))
-        return false;
-    MOZ_ASSERT(val.isNull());
-#endif
-
     ValueMap::Range* range = MapIteratorObjectRange(mapIterator);
     if (!range || range->empty()) {
         js_delete(range);
