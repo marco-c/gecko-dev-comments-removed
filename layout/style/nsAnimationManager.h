@@ -26,8 +26,8 @@ class Promise;
 } 
 
 struct AnimationEventInfo {
-  RefPtr<dom::Element> mElement;
-  RefPtr<dom::Animation> mAnimation;
+  nsRefPtr<dom::Element> mElement;
+  nsRefPtr<dom::Animation> mAnimation;
   InternalAnimationEvent mEvent;
   TimeStamp mTimeStamp;
 
@@ -126,7 +126,6 @@ public:
 
   void Tick() override;
   void QueueEvents();
-  bool HasEndEventToQueue() const override;
 
   bool IsStylePaused() const { return mIsStylePaused; }
 

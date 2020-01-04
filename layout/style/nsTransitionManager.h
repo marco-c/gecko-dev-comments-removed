@@ -164,7 +164,6 @@ protected:
                     SyncNotifyFlag aSyncNotifyFlag) override;
 
   void QueueEvents();
-  bool HasEndEventToQueue() const override;
 
   
   
@@ -195,8 +194,8 @@ protected:
 } 
 
 struct TransitionEventInfo {
-  RefPtr<dom::Element> mElement;
-  RefPtr<dom::Animation> mAnimation;
+  nsRefPtr<dom::Element> mElement;
+  nsRefPtr<dom::Animation> mAnimation;
   InternalTransitionEvent mEvent;
   TimeStamp mTimeStamp;
 
@@ -263,7 +262,7 @@ public:
 
   void StyleContextChanged(mozilla::dom::Element *aElement,
                            nsStyleContext *aOldStyleContext,
-                           RefPtr<nsStyleContext>* aNewStyleContext );
+                           nsRefPtr<nsStyleContext>* aNewStyleContext );
 
   
 

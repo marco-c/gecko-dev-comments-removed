@@ -293,19 +293,6 @@ public:
                     nsCSSPropertySet& aSetProperties,
                     bool& aStyleChanging);
 
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool HasEndEventToQueue() const { return false; }
-
   void NotifyEffectTimingUpdated();
 
 protected:
