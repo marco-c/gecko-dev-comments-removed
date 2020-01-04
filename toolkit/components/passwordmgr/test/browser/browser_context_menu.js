@@ -139,7 +139,7 @@ add_task(function* test_context_menu_password_fill() {
         let menuItemStatus = form.getAttribute("menuitemStatus");
 
         
-        yield openPasswordContextMenu(browser, passwordField, ()=> {
+        yield openPasswordContextMenu(browser, passwordField, () => {
           let popupHeader = document.getElementById("fill-login");
 
           
@@ -195,7 +195,7 @@ add_task(function* test_context_menu_username_login_fill() {
         let menuItemStatus = form.getAttribute("menuitemStatus");
 
         
-        yield openPasswordContextMenu(browser, usernameField, ()=> {
+        yield openPasswordContextMenu(browser, usernameField, () => {
           let popupHeader = document.getElementById("fill-login");
 
           
@@ -348,7 +348,7 @@ function* assertContextMenuFill(form, usernameField, passwordField, unchangedFie
 
   
   if (unchangedFields.length) {
-    Assert.ok(()=> {
+    Assert.ok(() => {
       for (let field of unchangedFields) {
         if (field.value != field.getAttribute("original-value")) {
           return false;
