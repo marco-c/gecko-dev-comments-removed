@@ -573,14 +573,6 @@ function indexOf(node) {
 function myExtractContents(range) {
     
     
-    try {
-        range.collapsed;
-    } catch (e) {
-        return "INVALID_STATE_ERR";
-    }
-
-    
-    
     var ownerDoc = range.startContainer.nodeType == Node.DOCUMENT_NODE
         ? range.startContainer
         : range.startContainer.ownerDocument;
@@ -605,6 +597,7 @@ function myExtractContents(range) {
     
     if (range.startContainer == range.endContainer
     && (range.startContainer.nodeType == Node.TEXT_NODE
+    || range.startContainer.nodeType == Node.PROCESSING_INSTRUCTION_NODE
     || range.startContainer.nodeType == Node.COMMENT_NODE)) {
         
         
@@ -717,8 +710,10 @@ function myExtractContents(range) {
     }
 
     
+    
     if (firstPartiallyContainedChild
     && (firstPartiallyContainedChild.nodeType == Node.TEXT_NODE
+    || firstPartiallyContainedChild.nodeType == Node.PROCESSING_INSTRUCTION_NODE
     || firstPartiallyContainedChild.nodeType == Node.COMMENT_NODE)) {
         
         
@@ -774,8 +769,10 @@ function myExtractContents(range) {
     }
 
     
+    
     if (lastPartiallyContainedChild
     && (lastPartiallyContainedChild.nodeType == Node.TEXT_NODE
+    || lastPartiallyContainedChild.nodeType == Node.PROCESSING_INSTRUCTION_NODE
     || lastPartiallyContainedChild.nodeType == Node.COMMENT_NODE)) {
         
         
@@ -837,7 +834,8 @@ function myInsertNode(range, node) {
     if (range.startContainer.nodeType == Node.PROCESSING_INSTRUCTION_NODE
             || range.startContainer.nodeType == Node.COMMENT_NODE
             || (range.startContainer.nodeType == Node.TEXT_NODE
-                && !range.startContainer.parentNode)) {
+                && !range.startContainer.parentNode)
+            || range.startContainer == node) {
                     return "HIERARCHY_REQUEST_ERR";
     }
 

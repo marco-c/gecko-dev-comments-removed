@@ -1286,15 +1286,10 @@ IdlInterface.prototype.test_object = function(desc)
         exception = e;
     }
 
-    
-    
-    var expected_typeof = this.members.some(function(member)
-    {
-        return member.legacycaller
-            || ("idlType" in member && member.idlType.legacycaller)
-            || ("idlType" in member && typeof member.idlType == "object"
-            && "idlType" in member.idlType && member.idlType.idlType == "legacycaller");
-    }) ? "function" : "object";
+    var expected_typeof =
+        this.members.some(function(member) { return member.legacycaller; })
+        ? "function"
+        : "object";
 
     this.test_primary_interface_of(desc, obj, exception, expected_typeof);
     var current_interface = this;
