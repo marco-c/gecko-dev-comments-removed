@@ -305,27 +305,24 @@ class NodeBuilder
     }
 
   private:
-    template <size_t N>
-    bool callbackHelper(HandleValue fun, AutoValueArray<N>& args, size_t i,
+    bool callbackHelper(HandleValue fun, const InvokeArgs& args, size_t i,
                         TokenPos* pos, MutableHandleValue dst)
     {
         
         
-        MOZ_ASSERT(i == N - 1);
         if (saveLoc) {
-            RootedValue loc(cx);
-            if (!newNodeLoc(pos, &loc))
+            if (!newNodeLoc(pos, args[i]))
                 return false;
-            args[i++].set(loc);
         }
-        return Invoke(cx, userv, fun, N, args.begin(), dst);
+
+        return js::Call(cx, fun, userv, args, dst);
     }
 
     
     
     
-    template <size_t N, typename... Arguments>
-    bool callbackHelper(HandleValue fun, AutoValueArray<N>& args, size_t i,
+    template <typename... Arguments>
+    bool callbackHelper(HandleValue fun, const InvokeArgs& args, size_t i,
                         HandleValue head, Arguments&&... tail)
     {
         
@@ -340,8 +337,11 @@ class NodeBuilder
     
     template <typename... Arguments>
     bool callback(HandleValue fun, Arguments&&... args) {
-        AutoValueArray<sizeof...(args) - 1> argv(cx);
-        return callbackHelper(fun, argv, 0, Forward<Arguments>(args)...);
+        InvokeArgs iargs(cx);
+        if (!iargs.init(sizeof...(args) - 2 + size_t(saveLoc)))
+            return false;
+
+        return callbackHelper(fun, iargs, 0, Forward<Arguments>(args)...);
     }
 
     
