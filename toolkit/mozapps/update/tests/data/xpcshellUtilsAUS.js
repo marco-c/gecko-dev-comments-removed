@@ -1630,6 +1630,7 @@ function copyTestUpdaterForRunUsingUpdater() {
 
 
 
+
 function logUpdateLog(aLogLeafName) {
   let updateLog = getUpdateLog(aLogLeafName);
   if (updateLog.exists()) {
@@ -1643,6 +1644,25 @@ function logUpdateLog(aLogLeafName) {
     });
   } else {
     logTestInfo("update log doesn't exist, path: " + updateLog.path);
+  }
+
+  if (IS_SERVICE_TEST) {
+    let serviceLog = getMaintSvcDir();
+    serviceLog.append("logs");
+    serviceLog.append("maintenanceservice.log");
+    if (serviceLog.exists()) {
+      
+      let serviceLogContents = readFileBytes(serviceLog).replace(/\r\n/g, "\n");
+      serviceLogContents = replaceLogPaths(serviceLogContents);
+      let aryLogContents = serviceLogContents.split("\n");
+      logTestInfo("contents of " + serviceLog.path + ":");
+      aryLogContents.forEach(function RU_LC_FE(aLine) {
+        logTestInfo(aLine);
+      });
+    } else {
+      logTestInfo("maintenance service log doesn't exist, path: " +
+                  serviceLog.path);
+    }
   }
 }
 
