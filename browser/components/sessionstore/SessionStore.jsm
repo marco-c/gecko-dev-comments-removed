@@ -2088,7 +2088,7 @@ var SessionStoreInternal = {
     this.restoreTab(aTab, tabState);
   },
 
-  duplicateTab: function ssi_duplicateTab(aWindow, aTab, aDelta = 0) {
+  duplicateTab: function ssi_duplicateTab(aWindow, aTab, aDelta = 0, aRestoreImmediately = true) {
     if (!aTab.ownerGlobal.__SSi) {
       throw Components.Exception("Default view is not tracked", Cr.NS_ERROR_INVALID_ARG);
     }
@@ -2137,7 +2137,7 @@ var SessionStoreInternal = {
 
       
       this.restoreTab(newTab, tabState, {
-        restoreImmediately: true 
+        restoreImmediately: aRestoreImmediately
       });
     });
 
@@ -3216,16 +3216,8 @@ var SessionStoreInternal = {
     let tabbrowser = window.gBrowser;
     let forceOnDemand = options.forceOnDemand;
 
-    let willRestoreImmediately = restoreImmediately ||
-                                 tabbrowser.selectedBrowser == browser ||
-                                 loadArguments;
-
-    if (!willRestoreImmediately && !forceOnDemand) {
-      TabRestoreQueue.add(tab);
-    }
-
-    this._maybeUpdateBrowserRemoteness({ tabbrowser, tab,
-                                         willRestoreImmediately });
+    this._maybeUpdateBrowserRemoteness(Object.assign({
+      browser, tabbrowser, tabData }, options));
 
     
     this._setWindowStateBusy(window);
@@ -3335,9 +3327,10 @@ var SessionStoreInternal = {
 
     
     
-    if (willRestoreImmediately) {
+    if (restoreImmediately || tabbrowser.selectedBrowser == browser || loadArguments) {
       this.restoreTabContent(tab, loadArguments);
     } else if (!forceOnDemand) {
+      TabRestoreQueue.add(tab);
       this.restoreNextTab();
     }
 
@@ -3635,31 +3628,29 @@ var SessionStoreInternal = {
 
 
 
-  _maybeUpdateBrowserRemoteness({ tabbrowser, tab,
-                                  willRestoreImmediately }) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let browser = tab.linkedBrowser;
 
-    
-    
-    
-    
-    
-    
-    let willRestore = willRestoreImmediately ||
-                      TabRestoreQueue.willRestoreSoon(tab);
 
-    if (browser.isRemoteBrowser && !willRestore) {
+
+
+
+
+
+  _maybeUpdateBrowserRemoteness({ browser, tabbrowser, tabData,
+                                  restoreImmediately, forceOnDemand }) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (browser.isRemoteBrowser &&
+        !tabData.pinned &&
+        (!restoreImmediately || forceOnDemand)) {
       tabbrowser.updateBrowserRemoteness(browser, false);
     }
   },
@@ -4436,36 +4427,7 @@ var TabRestoreQueue = {
       visible.splice(index, 1);
       hidden.push(tab);
     }
-  },
-
-  
-
-
-
-
-
-
-
-  willRestoreSoon: function (tab) {
-    let { priority, hidden, visible } = this.tabs;
-    let { restoreOnDemand, restorePinnedTabsOnDemand,
-          restoreHiddenTabs } = this.prefs;
-    let restorePinned = !(restoreOnDemand && restorePinnedTabsOnDemand);
-    let candidateSet = [];
-
-    if (restorePinned && priority.length)
-      candidateSet.push(...priority);
-
-    if (!restoreOnDemand) {
-      if (visible.length)
-        candidateSet.push(...visible);
-
-      if (restoreHiddenTabs && hidden.length)
-        candidateSet.push(...hidden);
-    }
-
-    return candidateSet.indexOf(tab) > -1;
-  },
+  }
 };
 
 
