@@ -92,7 +92,8 @@ public:
   };
 
   
-
+  void GetId(nsAString& aResult) const { aResult = mId; }
+  void SetId(const nsAString& aId);
   KeyframeEffectReadOnly* GetEffect() const { return mEffect; }
   void SetEffect(KeyframeEffectReadOnly* aEffect);
   AnimationTimeline* GetTimeline() const { return mTimeline; }
@@ -431,6 +432,8 @@ protected:
   
   
   bool mFinishedIsResolved;
+
+  nsString mId;
 };
 
 } 
