@@ -34,15 +34,15 @@ function test() {
 
         
         NetMonitorView.toggleDetailsPane({ visible: true, animated: false });
-        ok(!detailsPane.hasAttribute("pane-collapsed") &&
-          !detailsPaneToggleButton.hasAttribute("pane-collapsed"),
+        ok(!detailsPane.classList.contains("pane-collapsed") &&
+          !detailsPaneToggleButton.classList.contains("pane-collapsed"),
           "The details pane should be visible after clicking the toggle button.");
 
         
         EventUtils.sendMouseEvent({ type: "click" }, clearButton);
         assertNoRequestState(RequestsMenu, detailsPaneToggleButton);
-        ok(detailsPane.hasAttribute("pane-collapsed") &&
-          detailsPaneToggleButton.hasAttribute("pane-collapsed"),
+        ok(detailsPane.classList.contains("pane-collapsed") &&
+          detailsPaneToggleButton.classList.contains("pane-collapsed"),
           "The details pane should not be visible clicking 'clear'.");
 
         teardown(aMonitor).then(finish);
