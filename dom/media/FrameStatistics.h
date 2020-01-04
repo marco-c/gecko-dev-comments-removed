@@ -11,27 +11,31 @@ namespace mozilla {
 
 
 
-class FrameStatistics {
+class FrameStatistics
+{
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FrameStatistics);
 
-  FrameStatistics() :
-      mReentrantMonitor("FrameStats"),
-      mParsedFrames(0),
-      mDecodedFrames(0),
-      mPresentedFrames(0),
-      mDroppedFrames(0) {}
+  FrameStatistics()
+    : mReentrantMonitor("FrameStats")
+    , mParsedFrames(0)
+    , mDecodedFrames(0)
+    , mPresentedFrames(0)
+    , mDroppedFrames(0)
+  {}
 
   
   
-  uint32_t GetParsedFrames() {
+  uint32_t GetParsedFrames() const
+  {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mParsedFrames;
   }
 
   
   
-  uint32_t GetDecodedFrames() {
+  uint32_t GetDecodedFrames() const
+  {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mDecodedFrames;
   }
@@ -39,14 +43,16 @@ public:
   
   
   
-  uint32_t GetPresentedFrames() {
+  uint32_t GetPresentedFrames() const
+  {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mPresentedFrames;
   }
 
   
   
-  uint32_t GetDroppedFrames() {
+  uint32_t GetDroppedFrames() const
+  {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mDroppedFrames;
   }
@@ -54,9 +60,11 @@ public:
   
   
   void NotifyDecodedFrames(uint32_t aParsed, uint32_t aDecoded,
-                           uint32_t aDropped) {
-    if (aParsed == 0 && aDecoded == 0 && aDropped == 0)
+                           uint32_t aDropped)
+  {
+    if (aParsed == 0 && aDecoded == 0 && aDropped == 0) {
       return;
+    }
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     mParsedFrames += aParsed;
     mDecodedFrames += aDecoded;
@@ -65,7 +73,8 @@ public:
 
   
   
-  void NotifyPresentedFrame() {
+  void NotifyPresentedFrame()
+  {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     ++mPresentedFrames;
   }
@@ -74,7 +83,7 @@ private:
   ~FrameStatistics() {}
 
   
-  ReentrantMonitor mReentrantMonitor;
+  mutable ReentrantMonitor mReentrantMonitor;
 
   
   
@@ -88,9 +97,11 @@ private:
   
   uint32_t mPresentedFrames;
 
+  
+  
   uint32_t mDroppedFrames;
 };
 
 } 
 
-#endif
+#endif 
