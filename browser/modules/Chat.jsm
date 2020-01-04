@@ -198,7 +198,6 @@ var Chat = {
     
     
     
-
     let mostRecent = Services.wm.getMostRecentWindow("navigator:browser");
     if (isWindowGoodForChats(mostRecent))
       return mostRecent;

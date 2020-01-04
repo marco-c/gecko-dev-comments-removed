@@ -999,7 +999,7 @@ var MozLoopServiceInternal = {
 
           
           mm.sendAsyncMessage("Social:HookWindowCloseForPanelClose");
-          messageName = "DOMWindowClose";
+          messageName = "Social:DOMWindowClose";
           mm.addMessageListener(messageName, listeners[messageName] = () => {
             
             for (let name of Object.getOwnPropertyNames(listeners)) {

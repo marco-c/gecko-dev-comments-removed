@@ -27,12 +27,13 @@ addEventListener("DOMContentLoaded", function() {
 var gDOMTitleChangedByUs = false;
 addEventListener("DOMTitleChanged", function(e) {
   if (!gDOMTitleChangedByUs) {
-    sendAsyncMessage("DOMTitleChanged", {
+    sendAsyncMessage("Social:DOMTitleChanged", {
       title: e.target.title
     });
   }
   gDOMTitleChangedByUs = false;
 });
+var gHookedWindowCloseForPanelClose = false;
 
 
 
@@ -117,6 +118,10 @@ SocialErrorListener = {
         sendAsyncMessage("Social:FocusEnsured");
         break;
       case "Social:HookWindowCloseForPanelClose":
+        if (gHookedWindowCloseForPanelClose) {
+          break;
+        }
+        gHookedWindowCloseForPanelClose = true;
         
         
         
@@ -127,7 +132,6 @@ SocialErrorListener = {
         dwu.allowScriptsToClose();
 
         content.addEventListener("DOMWindowClose", function _mozSocialDOMWindowClose(evt) {
-          sendAsyncMessage("DOMWindowClose");
           
           
           
@@ -136,6 +140,8 @@ SocialErrorListener = {
           
           
           evt.preventDefault();
+
+          sendAsyncMessage("Social:DOMWindowClose");
         }, true);
         break;
       case "Social:ListenForEvents":
