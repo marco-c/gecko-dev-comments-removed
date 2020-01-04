@@ -15,6 +15,7 @@
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureClient.h"  
+#include "mozilla/layers/TextureForwarder.h"  
 #include "nsRegion.h"                   
 #include "mozilla/gfx/Rect.h"
 
@@ -40,7 +41,7 @@ class PTextureChild;
 
 
 
-class CompositableForwarder : public ClientIPCAllocator
+class CompositableForwarder : public TextureForwarder
 {
 public:
 
@@ -61,14 +62,6 @@ public:
 
   virtual void UseTiledLayerBuffer(CompositableClient* aCompositable,
                                    const SurfaceDescriptorTiles& aTiledDescriptor) = 0;
-
-  
-
-
-  virtual PTextureChild* CreateTexture(
-    const SurfaceDescriptor& aSharedData,
-    LayersBackend aLayersBackend,
-    TextureFlags aFlags) = 0;
 
   
 
@@ -136,36 +129,6 @@ public:
 
   void IdentifyTextureHost(const TextureFactoryIdentifier& aIdentifier);
 
-  virtual int32_t GetMaxTextureSize() const override
-  {
-    return mTextureFactoryIdentifier.mMaxTextureSize;
-  }
-
-  
-
-
-
-
-  LayersBackend GetCompositorBackendType() const
-  {
-    return mTextureFactoryIdentifier.mParentBackend;
-  }
-
-  bool SupportsTextureBlitting() const
-  {
-    return mTextureFactoryIdentifier.mSupportsTextureBlitting;
-  }
-
-  bool SupportsPartialUploads() const
-  {
-    return mTextureFactoryIdentifier.mSupportsPartialUploads;
-  }
-
-  const TextureFactoryIdentifier& GetTextureFactoryIdentifier() const
-  {
-    return mTextureFactoryIdentifier;
-  }
-
   int32_t GetSerial() { return mSerial; }
 
   SyncObject* GetSyncObject() { return mSyncObject; }
@@ -173,7 +136,6 @@ public:
   virtual CompositableForwarder* AsCompositableForwarder() override { return this; }
 
 protected:
-  TextureFactoryIdentifier mTextureFactoryIdentifier;
   nsTArray<RefPtr<TextureClient> > mTexturesToRemove;
   nsTArray<RefPtr<CompositableClient>> mCompositableClientsToRemove;
   RefPtr<SyncObject> mSyncObject;
