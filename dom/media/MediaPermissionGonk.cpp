@@ -244,7 +244,7 @@ MediaPermissionRequest::Allow(JS::HandleValue aChoices)
   }
   
   AutoJSAPI jsapi;
-  if (!jsapi.init(&aChoices.toObject())) {
+  if (!jsapi.Init(&aChoices.toObject())) {
     return NS_ERROR_UNEXPECTED;
   }
   JSContext* cx = jsapi.cx();
