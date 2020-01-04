@@ -376,6 +376,12 @@ TrackBuffersManager::CompleteResetParserState()
     
     track->mQueuedSamples.Clear();
   }
+
+  
+  if (mSourceBufferAttributes->GetAppendMode() == SourceBufferAppendMode::Sequence) {
+    mGroupStartTimestamp = Some(mGroupEndTimestamp);
+  }
+
   
   mIncomingBuffers.Clear();
   mInputBuffer = nullptr;
