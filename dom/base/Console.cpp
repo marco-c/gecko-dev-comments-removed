@@ -409,7 +409,7 @@ private:
 
       
       
-      NS_IMETHOD
+      nsresult
       Cancel() override
       {
         mRunnable->ReleaseData();
