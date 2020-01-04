@@ -10,7 +10,6 @@
 #define mozilla_OperatorNewExtensions_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 
 
 
@@ -42,7 +41,7 @@ enum NotNullTag {
 
 
 
-MOZ_NONNULL(3)
+
 inline void*
 operator new(size_t, mozilla::NotNullTag, void* p)
 {
