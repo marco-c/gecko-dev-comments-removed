@@ -18,6 +18,7 @@
 #include "VRManagerParent.h"
 #include "VsyncBridgeParent.h"
 #if defined(XP_WIN)
+# include "DeviceManagerD3D9.h"
 # include "mozilla/gfx/DeviceManagerD3D11.h"
 #endif
 
@@ -50,6 +51,7 @@ GPUParent::Init(base::ProcessId aParentPid,
   gfxVars::Initialize();
 #if defined(XP_WIN)
   DeviceManagerD3D11::Init();
+  DeviceManagerD3D9::Init();
 #endif
   CompositorThreadHolder::Start();
   VRManager::ManagerInit();
@@ -225,7 +227,6 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
 #ifndef NS_FREE_PERMANENT_DATA
   
   
-  
   ProcessChild::QuickExit();
 #endif
 
@@ -235,6 +236,7 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
   CompositorThreadHolder::Shutdown();
 #if defined(XP_WIN)
   DeviceManagerD3D11::Shutdown();
+  DeviceManagerD3D9::Shutdown();
 #endif
   gfxVars::Shutdown();
   gfxConfig::Shutdown();
