@@ -2071,7 +2071,7 @@ public:
 
 
 
-  static bool IsInPointerLockContext(nsIDOMWindow* aWin);
+  static bool IsInPointerLockContext(nsPIDOMWindow* aWin);
 
   
 

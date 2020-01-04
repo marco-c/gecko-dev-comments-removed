@@ -889,14 +889,13 @@ nsSVGOuterSVGFrame::IsRootOfReplacedElementSubDoc(nsIFrame **aEmbeddingFrame)
   if (!mContent->GetParent()) {
     
     nsCOMPtr<nsIDocShell> docShell = PresContext()->GetDocShell();
-    nsCOMPtr<nsIDOMWindow> window;
+    nsCOMPtr<nsPIDOMWindow> window;
     if (docShell) {
       window = docShell->GetWindow();
     }
 
     if (window) {
-      nsCOMPtr<nsIDOMElement> frameElement;
-      window->GetFrameElement(getter_AddRefs(frameElement));
+      nsCOMPtr<nsIDOMElement> frameElement = window->GetFrameElement();
       nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(frameElement);
       if (olc) {
         

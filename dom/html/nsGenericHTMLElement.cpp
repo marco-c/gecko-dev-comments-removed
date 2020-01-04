@@ -132,10 +132,8 @@ public:
     }
 
     
-    nsCOMPtr<nsIDOMWindow> top;
-    window->GetTop(getter_AddRefs(top));
-    if (top) {
-      window = static_cast<nsPIDOMWindow*>(top.get());
+    if (nsCOMPtr<nsPIDOMWindow> top = window->GetTop()) {
+      window = top;
     }
 
     if (window->GetFocusedNode()) {

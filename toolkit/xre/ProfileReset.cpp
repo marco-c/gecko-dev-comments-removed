@@ -4,7 +4,6 @@
 
 
 #include "nsIAppStartup.h"
-#include "nsIDOMWindow.h"
 #include "nsIFile.h"
 #include "nsIStringBundle.h"
 #include "nsIToolkitProfile.h"
@@ -14,6 +13,7 @@
 
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
+#include "nsPIDOMWindow.h"
 #include "nsPrintfCString.h"
 #include "nsToolkitCompsCID.h"
 #include "nsXPCOMCIDInternal.h"
@@ -164,7 +164,8 @@ ProfileResetCleanup(nsIToolkitProfile* aOldProfile)
     return rv;
   }
   
-  progressWindow->Close();
+  nsCOMPtr<nsPIDOMWindow> piWindow = do_QueryInterface(progressWindow);
+  piWindow->Close();
 
   
   rv = aOldProfile->Remove(false);

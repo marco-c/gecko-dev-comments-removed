@@ -63,12 +63,10 @@ AddNonJSSizeOfWindowAndItsDescendents(nsGlobalWindow* aWindow,
     innerWindowSizes.addToTabSizes(aSizes);
   }
 
-  nsCOMPtr<nsIDOMWindowCollection> frames;
-  nsresult rv = aWindow->GetFrames(getter_AddRefs(frames));
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIDOMWindowCollection> frames = aWindow->GetFrames();
 
   uint32_t length;
-  rv = frames->GetLength(&length);
+  nsresult rv = frames->GetLength(&length);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -252,8 +250,8 @@ CollectWindowReports(nsGlobalWindow *aWindow,
   nsCOMPtr<nsIURI> location;
   if (aWindow->GetOuterWindow()) {
     
-    MOZ_ASSERT(!!aWindow->GetTop() == !!aWindow->GetDocShell());
-    top = aWindow->GetTop();
+    MOZ_ASSERT(!!aWindow->GetTopInternal() == !!aWindow->GetDocShell());
+    top = aWindow->GetTopInternal();
     if (top) {
       location = GetWindowURI(top);
     }
@@ -747,9 +745,9 @@ CheckForGhostWindowsEnumerator(nsISupports *aKey, TimeStamp& aTimeStamp,
   
   
   
-  nsCOMPtr<nsIDOMWindow> top;
+  nsCOMPtr<nsPIDOMWindow> top;
   if (window->GetOuterWindow()) {
-    window->GetTop(getter_AddRefs(top));
+    top = window->GetOuterWindow()->GetTop();
   }
 
   if (top) {
@@ -806,7 +804,7 @@ GetNonDetachedWindowDomainsEnumerator(const uint64_t& aId, nsGlobalWindow* aWind
 
   
   
-  if (!aWindow->GetOuterWindow() || !aWindow->GetTop()) {
+  if (!aWindow->GetOuterWindow() || !aWindow->GetTopInternal()) {
     
     return PL_DHASH_NEXT;
   }

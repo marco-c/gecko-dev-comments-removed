@@ -193,12 +193,10 @@ ApplicationAccessible::CacheChildren()
   while (hasMore) {
     nsCOMPtr<nsISupports> window;
     windowEnumerator->GetNext(getter_AddRefs(window));
-    nsCOMPtr<nsIDOMWindow> DOMWindow = do_QueryInterface(window);
+    nsCOMPtr<nsPIDOMWindow> DOMWindow = do_QueryInterface(window);
     if (DOMWindow) {
-      nsCOMPtr<nsIDOMDocument> DOMDocument;
-      DOMWindow->GetDocument(getter_AddRefs(DOMDocument));
-      if (DOMDocument) {
-        nsCOMPtr<nsIDocument> docNode(do_QueryInterface(DOMDocument));
+      nsCOMPtr<nsIDocument> docNode = DOMWindow->GetDoc();
+      if (docNode) {
         GetAccService()->GetDocAccessible(docNode); 
       }
     }

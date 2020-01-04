@@ -141,14 +141,12 @@ ThirdPartyUtil::IsThirdPartyWindow(nsIDOMWindow* aWindow,
     }
   }
 
-  nsCOMPtr<nsIDOMWindow> current = aWindow, parent;
+  nsCOMPtr<nsPIDOMWindow> current = do_QueryInterface(aWindow), parent;
   nsCOMPtr<nsIURI> parentURI;
   do {
     
     
-    rv = current->GetScriptableParent(getter_AddRefs(parent));
-    NS_ENSURE_SUCCESS(rv, rv);
-
+    parent = current->GetScriptableParent();
     if (SameCOMIdentity(parent, current)) {
       
       *aResult = false;
@@ -275,9 +273,12 @@ ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel,
   ctx->GetAssociatedWindow(getter_AddRefs(ourWin));
   if (!ourWin) return NS_ERROR_INVALID_ARG;
 
+  nsCOMPtr<nsPIDOMWindow> piOurWin = do_QueryInterface(ourWin);
+  MOZ_ASSERT(piOurWin);
+
   
   
-  ourWin->GetScriptableParent(getter_AddRefs(parentWin));
+  parentWin = piOurWin->GetScriptableParent();
   NS_ENSURE_TRUE(parentWin, NS_ERROR_INVALID_ARG);
 
   
@@ -315,7 +316,6 @@ ThirdPartyUtil::GetTopWindowForChannel(nsIChannel* aChannel, nsIDOMWindow** aWin
 {
   NS_ENSURE_ARG(aWin);
 
-  nsresult rv;
   
   nsCOMPtr<nsILoadContext> ctx;
   NS_QueryNotificationCallbacks(aChannel, ctx);
@@ -324,13 +324,15 @@ ThirdPartyUtil::GetTopWindowForChannel(nsIChannel* aChannel, nsIDOMWindow** aWin
   }
 
   nsCOMPtr<nsIDOMWindow> window;
-  rv = ctx->GetAssociatedWindow(getter_AddRefs(window));
-  if (!window) {
+  ctx->GetAssociatedWindow(getter_AddRefs(window));
+  nsCOMPtr<nsPIDOMWindow> top = do_QueryInterface(window);
+  if (!top) {
     return NS_ERROR_INVALID_ARG;
   }
-
-  rv = window->GetTop(aWin);
-  return rv;
+  
+  top = top->GetTop();
+  top.forget(aWin);
+  return NS_OK;
 }
 
 

@@ -3030,11 +3030,8 @@ NS_IMETHODIMP nsPluginInstanceOwner::CreateWidget(void)
 #ifndef XP_MACOSX
       
       if (XRE_IsContentProcess()) {
-        nsCOMPtr<nsIDOMWindow> window = doc->GetWindow();
-        if (window) {
-          nsCOMPtr<nsIDOMWindow> topWindow;
-          window->GetTop(getter_AddRefs(topWindow));
-          if (topWindow) {
+        if (nsCOMPtr<nsPIDOMWindow> window = doc->GetWindow()) {
+          if (nsCOMPtr<nsPIDOMWindow> topWindow = window->GetTop()) {
             dom::TabChild* tc = dom::TabChild::GetFrom(topWindow);
             if (tc) {
               

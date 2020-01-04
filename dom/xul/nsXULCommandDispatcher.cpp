@@ -160,13 +160,11 @@ nsXULCommandDispatcher::GetFocusedWindow(nsIDOMWindow** aWindow)
 
   
   
-  nsCOMPtr<nsIDOMDocument> domdoc;
-  nsresult rv = window->GetDocument(getter_AddRefs(domdoc));
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIDocument> doc = window->GetDoc();
 
   
   
-  if (domdoc && !nsContentUtils::CanCallerAccess(domdoc))
+  if (doc && !nsContentUtils::CanCallerAccess(doc))
     return NS_ERROR_DOM_SECURITY_ERR;
 
   window.forget(aWindow);
