@@ -1678,11 +1678,6 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
     }
 
     
-    if (mAccessibleCaretEventHub) {
-      mAccessibleCaretEventHub->Init();
-    }
-
-    
     NS_ENSURE_STATE(!mHaveShutDown);
 
     

@@ -7,6 +7,7 @@
 
 #include "nsCanvasFrame.h"
 
+#include "AccessibleCaretEventHub.h"
 #include "gfxUtils.h"
 #include "nsContainerFrame.h"
 #include "nsCSSRendering.h"
@@ -172,6 +173,13 @@ nsCanvasFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   
   if (len == 0) {
     HideCustomContentContainer();
+  }
+
+  RefPtr<AccessibleCaretEventHub> eventHub =
+    PresContext()->GetPresShell()->GetAccessibleCaretEventHub();
+  if (eventHub) {
+    
+    eventHub->Init();
   }
 
   return NS_OK;
