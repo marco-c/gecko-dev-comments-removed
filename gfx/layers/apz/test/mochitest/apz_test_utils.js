@@ -222,3 +222,14 @@ function waitUntilApzStable() {
     }, window);
   });
 }
+
+function isApzEnabled() {
+  var enabled = SpecialPowers.getDOMWindowUtils(window).asyncPanZoomEnabled;
+  if (!enabled) {
+    
+    
+    
+    SimpleTest.ok(true, "APZ is not enabled; this test will be skipped");
+  }
+  return enabled;
+}
