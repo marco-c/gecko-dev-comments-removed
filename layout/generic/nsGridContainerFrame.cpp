@@ -276,6 +276,8 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Tracks
 
 
 
+
+
   static nscoord CollectGrowable(nscoord                    aAvailableSpace,
                                  const nsTArray<TrackSize>& aPlan,
                                  const LineRange&           aRange,
@@ -288,16 +290,15 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Tracks
     const uint32_t end = aRange.mEnd;
     for (uint32_t i = start; i < end; ++i) {
       const TrackSize& sz = aPlan[i];
-      MOZ_ASSERT(!sz.IsFrozen());
       space -= sz.mBase;
       if (space <= 0) {
         return 0;
       }
-      if (sz.mState & aSelector) {
+      if ((sz.mState & aSelector) && !sz.IsFrozen()) {
         aGrowableTracks.AppendElement(i);
       }
     }
-    return space;
+    return aGrowableTracks.IsEmpty() ? 0 : space;
   }
 
   void SetupGrowthPlan(nsTArray<TrackSize>&      aPlan,
