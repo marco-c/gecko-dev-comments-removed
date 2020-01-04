@@ -692,6 +692,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let bounds = this._getOuterBounds();
     let winHeight = this.win.innerHeight * getCurrentZoom(this.win);
     let winWidth = this.win.innerWidth * getCurrentZoom(this.win);
+    let winScrollY = this.win.scrollY;
 
     
     
@@ -705,7 +706,13 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       
       if (containerBottom + NODE_INFOBAR_HEIGHT > winHeight) {
         
-        top = containerTop;
+        if (containerTop < winScrollY) {
+          
+          top = 0;
+        } else {
+          
+          top = containerTop;
+        }
         container.setAttribute("position", "overlap");
       } else {
         
