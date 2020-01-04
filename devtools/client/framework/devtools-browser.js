@@ -228,7 +228,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     }
   },
 
-  _getContentProcessTarget: function () {
+  _getContentProcessTarget: function (processId) {
     
     if (!DebuggerServer.initialized) {
       DebuggerServer.init();
@@ -241,49 +241,54 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
     let deferred = defer();
     client.connect().then(() => {
-      client.mainRoot.listProcesses(response => {
-        
-        let contentProcesses = response.processes.filter(p => (!p.parent));
-        if (contentProcesses.length < 1) {
-          let msg = L10N.getStr("toolbox.noContentProcess.message");
-          Services.prompt.alert(null, "", msg);
-          deferred.reject("No content processes available.");
-          return;
-        }
-        
-        client.getProcess(contentProcesses[0].id)
-              .then(response => {
-                let options = {
-                  form: response.form,
-                  client: client,
-                  chrome: true,
-                  isTabActor: false
-                };
-                return TargetFactory.forRemoteTab(options);
-              })
-              .then(target => {
-                
-                
-                
-                target.on("close", () => {
-                  client.close();
-                });
-                deferred.resolve(target);
+      client.getProcess(processId)
+            .then(response => {
+              let options = {
+                form: response.form,
+                client: client,
+                chrome: true,
+                isTabActor: false
+              };
+              return TargetFactory.forRemoteTab(options);
+            })
+            .then(target => {
+              
+              
+              
+              target.on("close", () => {
+                client.close();
               });
-      });
+              deferred.resolve(target);
+            });
     });
 
     return deferred.promise;
   },
 
    
-  openContentProcessToolbox: function () {
-    this._getContentProcessTarget()
-        .then(target => {
-          
-          return gDevTools.showToolbox(target, "jsdebugger",
-                                       Toolbox.HostType.WINDOW);
-        });
+  openContentProcessToolbox: function (gBrowser) {
+    let { childCount } = Services.ppmm;
+    
+    let mm = gBrowser.selectedBrowser.messageManager.processMessageManager;
+    let processId = null;
+    for (let i = 1; i < childCount; i++) {
+      let child = Services.ppmm.getChildAt(i);
+      if (child == mm) {
+        processId = i;
+        break;
+      }
+    }
+    if (processId) {
+      this._getContentProcessTarget(processId)
+          .then(target => {
+            
+            return gDevTools.showToolbox(target, "jsdebugger",
+                                         Toolbox.HostType.WINDOW);
+          });
+    } else {
+      let msg = L10N.getStr("toolbox.noContentProcessForTab.message");
+      Services.prompt.alert(null, "", msg);
+    }
   },
 
   
