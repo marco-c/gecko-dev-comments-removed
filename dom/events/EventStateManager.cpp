@@ -114,6 +114,10 @@ static uint32_t gMouseOrKeyboardEventCounter = 0;
 static nsITimer* gUserInteractionTimer = nullptr;
 static nsITimerCallback* gUserInteractionTimerCallback = nullptr;
 
+static const double kCursorLoadingTimeout = 1000; 
+static nsWeakFrame gLastCursorSourceFrame;
+static TimeStamp gLastCursorUpdateTime;
+
 static inline int32_t
 RoundDown(double aDouble)
 {
@@ -3545,27 +3549,36 @@ EventStateManager::UpdateCursor(nsPresContext* aPresContext,
   }
   
   else if (aTargetFrame) {
-      nsIFrame::Cursor framecursor;
-      nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent,
-                                                                aTargetFrame);
-      
-      if (NS_FAILED(aTargetFrame->GetCursor(pt, framecursor))) {
-        if (XRE_IsContentProcess()) {
-          mLastFrameConsumedSetCursor = true;
-        }
-        return;
+    nsIFrame::Cursor framecursor;
+    nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent,
+                                                              aTargetFrame);
+    
+    if (NS_FAILED(aTargetFrame->GetCursor(pt, framecursor))) {
+      if (XRE_IsContentProcess()) {
+        mLastFrameConsumedSetCursor = true;
       }
-      
-      
-      if (mLastFrameConsumedSetCursor) {
-        ClearCachedWidgetCursor(aTargetFrame);
-        mLastFrameConsumedSetCursor = false;
-      }
-      cursor = framecursor.mCursor;
-      container = framecursor.mContainer;
-      haveHotspot = framecursor.mHaveHotspot;
-      hotspotX = framecursor.mHotspotX;
-      hotspotY = framecursor.mHotspotY;
+      return;
+    }
+    
+    
+    if (mLastFrameConsumedSetCursor) {
+      ClearCachedWidgetCursor(aTargetFrame);
+      mLastFrameConsumedSetCursor = false;
+    }
+    
+    
+    
+    if (framecursor.mLoading &&
+        gLastCursorSourceFrame == aTargetFrame &&
+        TimeStamp::NowLoRes() - gLastCursorUpdateTime <
+          TimeDuration::FromMilliseconds(kCursorLoadingTimeout)) {
+      return;
+    }
+    cursor = framecursor.mCursor;
+    container = framecursor.mContainer;
+    haveHotspot = framecursor.mHaveHotspot;
+    hotspotX = framecursor.mHotspotX;
+    hotspotY = framecursor.mHotspotY;
   }
 
   if (Preferences::GetBool("ui.use_activity_cursor", false)) {
@@ -3588,6 +3601,8 @@ EventStateManager::UpdateCursor(nsPresContext* aPresContext,
   if (aTargetFrame) {
     SetCursor(cursor, container, haveHotspot, hotspotX, hotspotY,
               aTargetFrame->GetNearestWidget(), false);
+    gLastCursorSourceFrame = aTargetFrame;
+    gLastCursorUpdateTime = TimeStamp::NowLoRes();
   }
 
   if (mLockCursor || NS_STYLE_CURSOR_AUTO != cursor) {
