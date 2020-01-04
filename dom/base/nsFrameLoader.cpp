@@ -157,7 +157,6 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, bool aNetworkCreated)
   , mObservingOwnerContent(false)
   , mVisible(true)
 {
-  ResetPermissionManagerStatus();
   mRemoteFrame = ShouldUseRemoteProcess();
 }
 
@@ -408,6 +407,9 @@ nsFrameLoader::ReallyStartLoadingInternal()
   mNeedsAsyncDestroy = tmpState;
   mURIToLoad = nullptr;
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  ResetPermissionManagerStatus();
 
   return NS_OK;
 }
@@ -2705,7 +2707,9 @@ nsFrameLoader::ResetPermissionManagerStatus()
 {
   
   
-  if (XRE_IsContentProcess()) {
+  
+  
+  if (XRE_IsContentProcess() || mRemoteFrame) {
     return;
   }
 
