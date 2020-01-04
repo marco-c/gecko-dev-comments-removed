@@ -49,7 +49,7 @@ const PING_FORMAT_VERSION = 4;
 
 const TELEMETRY_DELAY = Preferences.get("toolkit.telemetry.initDelay", 60) * 1000;
 
-const TELEMETRY_TEST_DELAY = 100;
+const TELEMETRY_TEST_DELAY = 1;
 
 
 const PING_TYPE_MAIN = "main";
