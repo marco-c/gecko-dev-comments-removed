@@ -85,6 +85,7 @@ public:
  explicit CSSTransition(nsIGlobalObject* aGlobal)
     : dom::Animation(aGlobal)
     , mWasFinishedOnLastTick(false)
+    , mNeedsNewAnimationIndexWhenRun(false)
   {
   }
 
@@ -175,6 +176,10 @@ protected:
   OwningElementRef mOwningElement;
 
   bool mWasFinishedOnLastTick;
+
+  
+  
+  bool mNeedsNewAnimationIndexWhenRun;
 };
 
 } 

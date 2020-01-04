@@ -63,6 +63,7 @@ public:
     , mAnimationName(aAnimationName)
     , mIsStylePaused(false)
     , mPauseShouldStick(false)
+    , mNeedsNewAnimationIndexWhenRun(false)
     , mPreviousPhaseOrIteration(PREVIOUS_PHASE_BEFORE)
   {
     
@@ -222,6 +223,10 @@ protected:
   
   bool mIsStylePaused;
   bool mPauseShouldStick;
+
+  
+  
+  bool mNeedsNewAnimationIndexWhenRun;
 
   enum {
     PREVIOUS_PHASE_BEFORE = uint64_t(-1),
