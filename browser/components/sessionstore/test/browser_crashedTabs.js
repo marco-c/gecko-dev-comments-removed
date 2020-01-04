@@ -253,13 +253,16 @@ add_task(function test_revive_tab_from_session_store() {
 
   
   yield BrowserTestUtils.crashBrowser(browser);
-  is(newTab2.getAttribute("crashed"), "true", "Second tab should be crashed too.");
+  
+  
+  ok(!newTab2.hasAttribute("crashed"), "Second tab should not be crashed.");
+  ok(newTab2.hasAttribute("pending"), "Second tab should be pending.");
 
   
   clickButton(browser, "restoreTab");
   yield promiseTabRestored(newTab);
   ok(!newTab.hasAttribute("crashed"), "Tab shouldn't be marked as crashed anymore.");
-  is(newTab2.getAttribute("crashed"), "true", "Second tab should still be crashed though.");
+  ok(newTab2.hasAttribute("pending"), "Second tab should still be pending.");
 
   
   
@@ -288,7 +291,12 @@ add_task(function test_revive_all_tabs_from_session_store() {
   browser.loadURI(PAGE_1);
   yield promiseBrowserLoaded(browser);
 
-  let newTab2 = gBrowser.addTab(PAGE_1);
+  
+  
+  
+  let win2 = yield BrowserTestUtils.openNewBrowserWindow();
+  let newTab2 = win2.gBrowser.addTab(PAGE_1);
+  win2.gBrowser.selectedTab = newTab2;
   let browser2 = newTab2.linkedBrowser;
   ok(browser2.isRemoteBrowser, "Should be a remote browser");
   yield promiseBrowserLoaded(browser2);
@@ -304,7 +312,9 @@ add_task(function test_revive_all_tabs_from_session_store() {
 
   
   yield BrowserTestUtils.crashBrowser(browser);
-  is(newTab2.getAttribute("crashed"), "true", "Second tab should be crashed too.");
+  
+  is(newTab.getAttribute("crashed"), "true", "First tab should be crashed");
+  is(newTab2.getAttribute("crashed"), "true", "Second window tab should be crashed");
 
   
   clickButton(browser, "restoreAll");
@@ -312,10 +322,6 @@ add_task(function test_revive_all_tabs_from_session_store() {
   ok(!newTab.hasAttribute("crashed"), "Tab shouldn't be marked as crashed anymore.");
   ok(!newTab.hasAttribute("pending"), "Tab shouldn't be pending.");
   ok(!newTab2.hasAttribute("crashed"), "Second tab shouldn't be marked as crashed anymore.");
-  ok(newTab2.hasAttribute("pending"), "Second tab should be pending.");
-
-  gBrowser.selectedTab = newTab2;
-  yield promiseTabRestored(newTab2);
   ok(!newTab2.hasAttribute("pending"), "Second tab shouldn't be pending.");
 
   
@@ -328,8 +334,8 @@ add_task(function test_revive_all_tabs_from_session_store() {
   
   yield promiseHistoryLength(browser, 2);
 
+  yield BrowserTestUtils.closeWindow(win2);
   gBrowser.removeTab(newTab);
-  gBrowser.removeTab(newTab2);
 });
 
 
@@ -358,6 +364,7 @@ add_task(function test_close_tab_after_crash() {
 
   is(gBrowser.tabs.length, 1, "Should have closed the tab");
 });
+
 
 
 
@@ -393,8 +400,16 @@ add_task(function* test_hide_restore_all_button() {
 
   
   
+  let win2 = yield BrowserTestUtils.openNewBrowserWindow();
+  let newTab3 = win2.gBrowser.addTab(PAGE_2);
+  win2.gBrowser.selectedTab = newTab3;
+  let otherWinBrowser = newTab3.linkedBrowser;
+  yield promiseBrowserLoaded(otherWinBrowser);
   
-  let otherBrowserReady = promiseTabCrashedReady(newTab2.linkedBrowser);
+  
+  
+  let otherBrowserReady = promiseTabCrashedReady(otherWinBrowser);
+
   
   yield BrowserTestUtils.crashBrowser(browser);
   yield otherBrowserReady;
@@ -406,6 +421,7 @@ add_task(function* test_hide_restore_all_button() {
   ok(!restoreAllButton.hasAttribute("hidden"), "Restore All button should not be hidden");
   ok(!(restoreOneButton.classList.contains("primary")), "Restore Tab button should not have the primary class");
 
+  yield BrowserTestUtils.closeWindow(win2);
   gBrowser.removeTab(newTab);
   gBrowser.removeTab(newTab2);
 });
