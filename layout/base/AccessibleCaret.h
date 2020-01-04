@@ -182,7 +182,7 @@ protected:
   nsIFrame* CustomContentContainerFrame() const;
 
   
-  static nsString AppearanceString(Appearance aAppearance);
+  static nsAutoString AppearanceString(Appearance aAppearance);
 
   already_AddRefed<dom::Element> CreateCaretElement(nsIDocument* aDocument) const;
 
