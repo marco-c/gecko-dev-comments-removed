@@ -361,15 +361,27 @@ NetworkThrottleQueue.prototype = {
 
 
 
+
+
+
+
 function NetworkThrottleManager({roundTripTimeMean, roundTripTimeMax,
                                  downloadBPSMean, downloadBPSMax,
                                  uploadBPSMean, uploadBPSMax}) {
-  this.downloadQueue =
-    new NetworkThrottleQueue(downloadBPSMean, downloadBPSMax,
-                             roundTripTimeMean, roundTripTimeMax);
-  this.uploadQueue = Cc["@mozilla.org/network/throttlequeue;1"]
-    .createInstance(Ci.nsIInputChannelThrottleQueue);
-  this.uploadQueue.init(uploadBPSMean, uploadBPSMax);
+  if (downloadBPSMax <= 0 && downloadBPSMean <= 0) {
+    this.downloadQueue = null;
+  } else {
+    this.downloadQueue =
+      new NetworkThrottleQueue(downloadBPSMean, downloadBPSMax,
+                               roundTripTimeMean, roundTripTimeMax);
+  }
+  if (uploadBPSMax <= 0 && uploadBPSMean <= 0) {
+    this.uploadQueue = null;
+  } else {
+    this.uploadQueue = Cc["@mozilla.org/network/throttlequeue;1"]
+      .createInstance(Ci.nsIInputChannelThrottleQueue);
+    this.uploadQueue.init(uploadBPSMean, uploadBPSMax);
+  }
 }
 exports.NetworkThrottleManager = NetworkThrottleManager;
 
@@ -381,11 +393,15 @@ NetworkThrottleManager.prototype = {
 
 
 
+
   manage: function (channel) {
-    let listener = new NetworkThrottleListener(this.downloadQueue);
-    let originalListener = channel.setNewListener(listener);
-    listener.setOriginalListener(originalListener);
-    return listener;
+    if (this.downloadQueue) {
+      let listener = new NetworkThrottleListener(this.downloadQueue);
+      let originalListener = channel.setNewListener(listener);
+      listener.setOriginalListener(originalListener);
+      return listener;
+    }
+    return null;
   },
 
   
@@ -394,7 +410,9 @@ NetworkThrottleManager.prototype = {
 
 
   manageUpload: function (channel) {
-    channel = channel.QueryInterface(Ci.nsIThrottledInputChannel);
-    channel.throttleQueue = this.uploadQueue;
+    if (this.uploadQueue) {
+      channel = channel.QueryInterface(Ci.nsIThrottledInputChannel);
+      channel.throttleQueue = this.uploadQueue;
+    }
   },
 };
