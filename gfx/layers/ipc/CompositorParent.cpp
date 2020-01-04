@@ -1750,7 +1750,7 @@ public:
   
   virtual bool RecvRequestOverfill() override { return true; }
   virtual bool RecvWillStop() override { return true; }
-  virtual bool RecvStop() override;
+  virtual bool RecvStop() override { return true; }
   virtual bool RecvPause() override { return true; }
   virtual bool RecvResume() override { return true; }
   virtual bool RecvNotifyHidden(const uint64_t& id) override;
@@ -1830,7 +1830,6 @@ private:
   
   virtual ~CrossProcessCompositorParent();
 
-  void Destroy();
   void DeferredDestroy();
 
   
@@ -1942,27 +1941,14 @@ CrossProcessCompositorParent::RecvRequestNotifyAfterRemotePaint()
 }
 
 void
-CrossProcessCompositorParent::Destroy()
+CrossProcessCompositorParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   RefPtr<CompositorLRU> lru = CompositorLRU::GetSingleton();
   lru->Remove(this);
-}
 
-void
-CrossProcessCompositorParent::ActorDestroy(ActorDestroyReason aWhy)
-{
-  Destroy();
-}
-
-bool
-CrossProcessCompositorParent::RecvStop()
-{
-  Destroy();
-  
-  
-  MessageLoop::current()->PostTask(FROM_HERE,
-      NewRunnableMethod(this, &CrossProcessCompositorParent::DeferredDestroy));
-  return true;
+  MessageLoop::current()->PostTask(
+    FROM_HERE,
+    NewRunnableMethod(this, &CrossProcessCompositorParent::DeferredDestroy));
 }
 
 PLayerTransactionParent*
