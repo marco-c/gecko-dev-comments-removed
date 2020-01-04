@@ -1349,6 +1349,10 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint()
 bool
 KeyframeEffectReadOnly::CanIgnoreIfNotVisible() const
 {
+  if (!AnimationUtils::IsOffscreenThrottlingEnabled()) {
+    return false;
+  }
+
   
   
   return NS_IsHintSubset(

@@ -54,6 +54,12 @@ public:
 
   static nsIDocument*
   GetCurrentRealmDocument(JSContext* aCx);
+
+  
+
+
+  static bool
+  IsOffscreenThrottlingEnabled();
 };
 
 } 

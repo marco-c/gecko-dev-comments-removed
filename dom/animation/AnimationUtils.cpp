@@ -13,6 +13,7 @@
 #include "nsGlobalWindow.h"
 #include "nsString.h"
 #include "xpcpublic.h" 
+#include "mozilla/Preferences.h"
 
 namespace mozilla {
 
@@ -44,6 +45,21 @@ AnimationUtils::GetCurrentRealmDocument(JSContext* aCx)
     return nullptr;
   }
   return win->GetDoc();
+}
+
+ bool
+AnimationUtils::IsOffscreenThrottlingEnabled()
+{
+  static bool sOffscreenThrottlingEnabled;
+  static bool sPrefCached = false;
+
+  if (!sPrefCached) {
+    sPrefCached = true;
+    Preferences::AddBoolVarCache(&sOffscreenThrottlingEnabled,
+                                 "dom.animations.offscreen-throttling");
+  }
+
+  return sOffscreenThrottlingEnabled;
 }
 
 } 
