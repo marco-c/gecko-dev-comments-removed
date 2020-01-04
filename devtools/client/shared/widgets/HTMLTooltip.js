@@ -250,10 +250,12 @@ HTMLTooltip.prototype = {
 
     
     while (win.parent && win.parent != win) {
-      win = win.parent;
-      if (win === tooltipWindow) {
+      if (win.parent === tooltipWindow) {
+        
+        
         return this.panel.contains(win.frameElement);
       }
+      win = win.parent;
     }
 
     return false;
