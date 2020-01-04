@@ -263,107 +263,6 @@ private:
 
 namespace mozilla {
 namespace dom {
-struct LifecycleCallbackArgs
-{
-  nsString name;
-  nsString oldValue;
-  nsString newValue;
-};
-
-struct CustomElementData;
-
-class CustomElementCallback
-{
-public:
-  CustomElementCallback(Element* aThisObject,
-                        nsIDocument::ElementCallbackType aCallbackType,
-                        mozilla::dom::CallbackFunction* aCallback,
-                        CustomElementData* aOwnerData);
-  void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
-  void Call();
-  void SetArgs(LifecycleCallbackArgs& aArgs)
-  {
-    MOZ_ASSERT(mType == nsIDocument::eAttributeChanged,
-               "Arguments are only used by attribute changed callback.");
-    mArgs = aArgs;
-  }
-
-private:
-  
-  RefPtr<mozilla::dom::Element> mThisObject;
-  RefPtr<mozilla::dom::CallbackFunction> mCallback;
-  
-  nsIDocument::ElementCallbackType mType;
-  
-  
-  LifecycleCallbackArgs mArgs;
-  
-  
-  CustomElementData* mOwnerData;
-};
-
-
-
-struct CustomElementData
-{
-  NS_INLINE_DECL_REFCOUNTING(CustomElementData)
-
-  explicit CustomElementData(nsIAtom* aType);
-  
-  
-  nsTArray<nsAutoPtr<CustomElementCallback>> mCallbackQueue;
-  
-  
-  nsCOMPtr<nsIAtom> mType;
-  
-  int32_t mCurrentCallback;
-  
-  bool mElementIsBeingCreated;
-  
-  
-  bool mCreatedCallbackInvoked;
-  
-  
-  
-  int32_t mAssociatedMicroTask;
-
-  
-  void RunCallbackQueue();
-
-private:
-  virtual ~CustomElementData() {}
-};
-
-class Registry : public nsISupports
-{
-public:
-  friend class ::nsDocument;
-
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Registry)
-
-  Registry();
-
-protected:
-  virtual ~Registry();
-
-  typedef nsClassHashtable<mozilla::dom::CustomElementHashKey,
-                           mozilla::dom::CustomElementDefinition>
-    DefinitionMap;
-  typedef nsClassHashtable<mozilla::dom::CustomElementHashKey,
-                           nsTArray<nsWeakPtr>>
-    CandidateMap;
-
-  
-  
-  
-  DefinitionMap mCustomDefinitions;
-
-  
-  
-  
-  CandidateMap mCandidatesMap;
-};
 
 } 
 } 
@@ -1218,36 +1117,6 @@ public:
 
   virtual nsIDOMNode* AsDOMNode() override { return this; }
 
-  virtual void EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
-                                        Element* aCustomElement,
-                                        mozilla::dom::LifecycleCallbackArgs* aArgs = nullptr,
-                                        mozilla::dom::CustomElementDefinition* aDefinition = nullptr) override;
-
-  static void ProcessTopElementQueue();
-
-  void GetCustomPrototype(int32_t aNamespaceID,
-                          nsIAtom* aAtom,
-                          JS::MutableHandle<JSObject*> prototype)
-  {
-    if (!mRegistry) {
-      prototype.set(nullptr);
-      return;
-    }
-
-    mozilla::dom::CustomElementHashKey key(aNamespaceID, aAtom);
-    mozilla::dom::CustomElementDefinition* definition;
-    if (mRegistry->mCustomDefinitions.Get(&key, &definition)) {
-      prototype.set(definition->mPrototype);
-    } else {
-      prototype.set(nullptr);
-    }
-  }
-
-  static bool RegisterEnabled();
-
-  virtual nsresult RegisterUnresolvedElement(mozilla::dom::Element* aElement,
-                                             nsIAtom* aTypeName = nullptr) override;
-
   
   virtual mozilla::dom::DOMImplementation*
     GetImplementation(mozilla::ErrorResult& rv) override;
@@ -1268,7 +1137,6 @@ public:
                                                     const nsAString& aQualifiedName,
                                                     const mozilla::dom::ElementCreationOptions& aOptions,
                                                     mozilla::ErrorResult& rv) override;
-  virtual void UseRegistryFromDocument(nsIDocument* aDocument) override;
 
   virtual nsIDocument* MasterDocument() override
   {
@@ -1280,7 +1148,6 @@ public:
   {
     MOZ_ASSERT(master);
     mMasterDocument = master;
-    UseRegistryFromDocument(mMasterDocument);
   }
 
   virtual bool IsMasterDocument() override
@@ -1397,8 +1264,6 @@ public:
   
   virtual void SetTitle(const nsAString& aTitle, mozilla::ErrorResult& rv) override;
 
-  static void XPCOMShutdown();
-
   bool mIsTopLevelContentDocument: 1;
   bool mIsContentDocument: 1;
 
@@ -1503,22 +1368,7 @@ protected:
   nsWeakPtr mFullscreenRoot;
 
 private:
-  
-  
-  
-  
-  
-  
-  static mozilla::Maybe<nsTArray<RefPtr<mozilla::dom::CustomElementData>>> sProcessingStack;
-
   static bool CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
-
-  
-
-
-
-  mozilla::dom::CustomElementDefinition* LookupCustomElementDefinition(
-    const nsAString& aLocalName, uint32_t aNameSpaceID, const nsAString* aIs);
 
   
 
@@ -1535,17 +1385,10 @@ private:
     ErrorResult& rv);
 
 public:
-  
-  
-  
-  virtual void SetupCustomElement(Element* aElement,
-                                  uint32_t aNamespaceID,
-                                  const nsAString* aTypeExtension) override;
+  virtual already_AddRefed<mozilla::dom::CustomElementsRegistry>
+    GetCustomElementsRegistry() override;
 
   static bool IsWebComponentsEnabled(JSContext* aCx, JSObject* aObject);
-
-  
-  RefPtr<mozilla::dom::Registry> mRegistry;
 
   RefPtr<mozilla::EventListenerManager> mListenerManager;
   RefPtr<mozilla::dom::StyleSheetList> mDOMStyleSheets;

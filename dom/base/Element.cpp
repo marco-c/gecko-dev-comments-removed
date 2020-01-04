@@ -470,8 +470,8 @@ Element::WrapObject(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
     CustomElementData* data = GetCustomElementData();
     if (data) {
       
-      nsDocument* document = static_cast<nsDocument*>(OwnerDoc());
-      document->GetCustomPrototype(NodeInfo()->NamespaceID(), data->mType, &customProto);
+      nsContentUtils::GetCustomPrototype(OwnerDoc(), NodeInfo()->NamespaceID(),
+                                         data->mType, &customProto);
       if (customProto &&
           NodePrincipal()->SubsumesConsideringDomain(nsContentUtils::ObjectPrincipal(customProto))) {
         
@@ -1608,7 +1608,8 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     if (GetCustomElementData() && composedDoc->GetDocShell()) {
       
-      composedDoc->EnqueueLifecycleCallback(nsIDocument::eAttached, this);
+      nsContentUtils::EnqueueLifecycleCallback(
+        composedDoc, nsIDocument::eAttached, this);
     }
   }
 
@@ -1889,7 +1890,8 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     
     if (GetCustomElementData() && document->GetDocShell()) {
       
-      document->EnqueueLifecycleCallback(nsIDocument::eDetached, this);
+      nsContentUtils::EnqueueLifecycleCallback(
+        document, nsIDocument::eDetached, this);
     }
   }
 
@@ -2495,7 +2497,8 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
       nsDependentAtomString(newValueAtom)
     };
 
-    ownerDoc->EnqueueLifecycleCallback(nsIDocument::eAttributeChanged, this, &args);
+    nsContentUtils::EnqueueLifecycleCallback(
+      ownerDoc, nsIDocument::eAttributeChanged, this, &args);
   }
 
   if (aCallAfterSetAttr) {
@@ -2749,7 +2752,8 @@ Element::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       NullString()
     };
 
-    ownerDoc->EnqueueLifecycleCallback(nsIDocument::eAttributeChanged, this, &args);
+    nsContentUtils::EnqueueLifecycleCallback(
+      ownerDoc, nsIDocument::eAttributeChanged, this, &args);
   }
 
   if (aNotify) {

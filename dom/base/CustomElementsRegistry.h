@@ -15,13 +15,86 @@
 #include "nsWrapperCache.h"
 #include "mozilla/dom/FunctionBinding.h"
 
+class nsDocument;
+
 namespace mozilla {
 namespace dom {
 
+struct CustomElementData;
 struct ElementDefinitionOptions;
 struct LifecycleCallbacks;
+class CallbackFunction;
 class Function;
 class Promise;
+
+struct LifecycleCallbackArgs
+{
+  nsString name;
+  nsString oldValue;
+  nsString newValue;
+};
+
+class CustomElementCallback
+{
+public:
+  CustomElementCallback(Element* aThisObject,
+                        nsIDocument::ElementCallbackType aCallbackType,
+                        CallbackFunction* aCallback,
+                        CustomElementData* aOwnerData);
+  void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
+  void Call();
+  void SetArgs(LifecycleCallbackArgs& aArgs)
+  {
+    MOZ_ASSERT(mType == nsIDocument::eAttributeChanged,
+               "Arguments are only used by attribute changed callback.");
+    mArgs = aArgs;
+  }
+
+private:
+  
+  RefPtr<Element> mThisObject;
+  RefPtr<CallbackFunction> mCallback;
+  
+  nsIDocument::ElementCallbackType mType;
+  
+  
+  LifecycleCallbackArgs mArgs;
+  
+  
+  CustomElementData* mOwnerData;
+};
+
+
+
+struct CustomElementData
+{
+  NS_INLINE_DECL_REFCOUNTING(CustomElementData)
+
+  explicit CustomElementData(nsIAtom* aType);
+  
+  
+  nsTArray<nsAutoPtr<CustomElementCallback>> mCallbackQueue;
+  
+  
+  nsCOMPtr<nsIAtom> mType;
+  
+  int32_t mCurrentCallback;
+  
+  bool mElementIsBeingCreated;
+  
+  
+  bool mCreatedCallbackInvoked;
+  
+  
+  
+  int32_t mAssociatedMicroTask;
+
+  
+  void RunCallbackQueue();
+
+private:
+  virtual ~CustomElementData() {}
+};
 
 class CustomElementHashKey : public PLDHashEntryHdr
 {
@@ -101,6 +174,9 @@ struct CustomElementDefinition
 class CustomElementsRegistry final : public nsISupports,
                                      public nsWrapperCache
 {
+  
+  friend class ::nsDocument;
+
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(CustomElementsRegistry)
@@ -108,12 +184,71 @@ public:
 public:
   static bool IsCustomElementsEnabled(JSContext* aCx, JSObject* aObject);
   static already_AddRefed<CustomElementsRegistry> Create(nsPIDOMWindowInner* aWindow);
-  already_AddRefed<nsIDocument> GetOwnerDocument() const;
+  static void ProcessTopElementQueue();
+
+  static void XPCOMShutdown();
+
+  
+
+
+
+  CustomElementDefinition* LookupCustomElementDefinition(
+    const nsAString& aLocalName, const nsAString* aIs = nullptr) const;
+
+  
+
+
+
+
+  void SetupCustomElement(Element* aElement, const nsAString* aTypeExtension);
+
+  void EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
+                                Element* aCustomElement,
+                                LifecycleCallbackArgs* aArgs,
+                                CustomElementDefinition* aDefinition);
+
+  void GetCustomPrototype(nsIAtom* aAtom,
+                          JS::MutableHandle<JSObject*> aPrototype);
 
 private:
   explicit CustomElementsRegistry(nsPIDOMWindowInner* aWindow);
   ~CustomElementsRegistry();
+
+  
+
+
+
+
+
+
+
+  void RegisterUnresolvedElement(Element* aElement,
+                                 nsIAtom* aTypeName = nullptr);
+
+  typedef nsClassHashtable<CustomElementHashKey, CustomElementDefinition>
+    DefinitionMap;
+  typedef nsClassHashtable<CustomElementHashKey, nsTArray<nsWeakPtr>>
+    CandidateMap;
+
+  
+  
+  
+  DefinitionMap mCustomDefinitions;
+
+  
+  
+  
+  CandidateMap mCandidatesMap;
+
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
+
+  
+  
+  
+  
+  
+  
+  static mozilla::Maybe<nsTArray<RefPtr<CustomElementData>>> sProcessingStack;
 
 public:
   nsISupports* GetParentObject() const;

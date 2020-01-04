@@ -218,6 +218,7 @@
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/UndoManager.h"
 #include "mozilla/dom/WebComponentsBinding.h"
+#include "mozilla/dom/CustomElementsRegistry.h"
 #include "nsFrame.h"
 #include "nsDOMCaretPosition.h"
 #include "nsIDOMHTMLTextAreaElement.h"
@@ -367,156 +368,6 @@ nsIdentifierMapEntry::RemoveContentChangeCallback(nsIDocument::IDTargetObserver 
     mChangeCallbacks = nullptr;
   }
 }
-
-namespace mozilla {
-namespace dom {
-
-NS_IMPL_CYCLE_COLLECTION_CLASS(Registry)
-
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(Registry)
-  for (auto iter = tmp->mCustomDefinitions.Iter(); !iter.Done(); iter.Next()) {
-    aCallbacks.Trace(&iter.UserData()->mPrototype,
-                     "mCustomDefinitions prototype",
-                     aClosure);
-  }
-NS_IMPL_CYCLE_COLLECTION_TRACE_END
-
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Registry)
-  for (auto iter = tmp->mCustomDefinitions.Iter(); !iter.Done(); iter.Next()) {
-    nsAutoPtr<LifecycleCallbacks>& callbacks = iter.UserData()->mCallbacks;
-
-    if (callbacks->mAttributeChangedCallback.WasPassed()) {
-      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
-        "mCustomDefinitions->mCallbacks->mAttributeChangedCallback");
-      cb.NoteXPCOMChild(callbacks->mAttributeChangedCallback.Value());
-    }
-
-    if (callbacks->mCreatedCallback.WasPassed()) {
-      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
-        "mCustomDefinitions->mCallbacks->mCreatedCallback");
-      cb.NoteXPCOMChild(callbacks->mCreatedCallback.Value());
-    }
-
-    if (callbacks->mAttachedCallback.WasPassed()) {
-      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
-        "mCustomDefinitions->mCallbacks->mAttachedCallback");
-      cb.NoteXPCOMChild(callbacks->mAttachedCallback.Value());
-    }
-
-    if (callbacks->mDetachedCallback.WasPassed()) {
-      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
-        "mCustomDefinitions->mCallbacks->mDetachedCallback");
-      cb.NoteXPCOMChild(callbacks->mDetachedCallback.Value());
-    }
-  }
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Registry)
-  tmp->mCustomDefinitions.Clear();
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Registry)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(Registry)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(Registry)
-
-Registry::Registry()
-{
-  mozilla::HoldJSObjects(this);
-}
-
-Registry::~Registry()
-{
-  mozilla::DropJSObjects(this);
-}
-
-void
-CustomElementCallback::Call()
-{
-  ErrorResult rv;
-  switch (mType) {
-    case nsIDocument::eCreated:
-    {
-      
-      
-      mOwnerData->mElementIsBeingCreated = true;
-
-      
-      
-      
-      mOwnerData->mCreatedCallbackInvoked = true;
-
-      
-      
-      nsIDocument* document = mThisObject->GetComposedDoc();
-      if (document && document->GetDocShell()) {
-        document->EnqueueLifecycleCallback(nsIDocument::eAttached, mThisObject);
-      }
-
-      static_cast<LifecycleCreatedCallback *>(mCallback.get())->Call(mThisObject, rv);
-      mOwnerData->mElementIsBeingCreated = false;
-      break;
-    }
-    case nsIDocument::eAttached:
-      static_cast<LifecycleAttachedCallback *>(mCallback.get())->Call(mThisObject, rv);
-      break;
-    case nsIDocument::eDetached:
-      static_cast<LifecycleDetachedCallback *>(mCallback.get())->Call(mThisObject, rv);
-      break;
-    case nsIDocument::eAttributeChanged:
-      static_cast<LifecycleAttributeChangedCallback *>(mCallback.get())->Call(mThisObject,
-        mArgs.name, mArgs.oldValue, mArgs.newValue, rv);
-      break;
-  }
-}
-
-void
-CustomElementCallback::Traverse(nsCycleCollectionTraversalCallback& aCb) const
-{
-  NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "mThisObject");
-  aCb.NoteXPCOMChild(mThisObject);
-
-  NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "mCallback");
-  aCb.NoteXPCOMChild(mCallback);
-}
-
-CustomElementCallback::CustomElementCallback(Element* aThisObject,
-                                             nsIDocument::ElementCallbackType aCallbackType,
-                                             mozilla::dom::CallbackFunction* aCallback,
-                                             CustomElementData* aOwnerData)
-  : mThisObject(aThisObject),
-    mCallback(aCallback),
-    mType(aCallbackType),
-    mOwnerData(aOwnerData)
-{
-}
-
-CustomElementData::CustomElementData(nsIAtom* aType)
-  : mType(aType),
-    mCurrentCallback(-1),
-    mElementIsBeingCreated(false),
-    mCreatedCallbackInvoked(true),
-    mAssociatedMicroTask(-1)
-{
-}
-
-void
-CustomElementData::RunCallbackQueue()
-{
-  
-  while (static_cast<uint32_t>(++mCurrentCallback) < mCallbackQueue.Length()) {
-    mCallbackQueue[mCurrentCallback]->Call();
-  }
-
-  mCallbackQueue.Clear();
-  mCurrentCallback = -1;
-}
-
-} 
-} 
 
 void
 nsIdentifierMapEntry::FireChangeCallbacks(Element* aOldElement,
@@ -1494,12 +1345,6 @@ nsDocument::nsDocument(const char* aContentType)
   
   mPreloadPictureFoundSource.SetIsVoid(true);
 
-  if (!sProcessingStack) {
-    sProcessingStack.emplace();
-    
-    sProcessingStack->AppendElement((CustomElementData*) nullptr);
-  }
-
   mEverInForeground = false;
 }
 
@@ -1616,8 +1461,6 @@ nsDocument::~nsDocument()
 
   mInDestructor = true;
   mInUnlinkOrDeletion = true;
-
-  mRegistry = nullptr;
 
   mozilla::DropJSObjects(this);
 
@@ -1890,7 +1733,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingAnimationTracker)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTemplateContentsOwner)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mChildrenCollection)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRegistry)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAnonymousContents)
 
   
@@ -1975,7 +1817,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingAnimationTracker)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTemplateContentsOwner)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mChildrenCollection)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRegistry)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mMasterDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOrientationPendingPromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mImportManager)
@@ -2224,13 +2065,6 @@ nsDocument::ResetToURI(nsIURI *aURI, nsILoadGroup *aLoadGroup,
     mCachedRootElement = nullptr;
   }
   mInUnlinkOrDeletion = oldVal;
-
-  if (!mMasterDocument) {
-    
-    
-    
-    mRegistry = nullptr;
-  }
 
   
   ResetStylesheetsToURI(aURI);
@@ -4732,10 +4566,6 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
     }
 
     MaybeRescheduleAnimationFrameNotifications();
-    if (Preferences::GetBool("dom.webcomponents.enabled") ||
-        Preferences::GetBool("dom.webcomponents.customelements.enabled")) {
-      mRegistry = new Registry();
-    }
   }
 
   
@@ -5561,26 +5391,29 @@ bool IsLowercaseASCII(const nsAString& aValue)
   return true;
 }
 
-CustomElementDefinition*
-nsDocument::LookupCustomElementDefinition(const nsAString& aLocalName,
-                                          uint32_t aNameSpaceID,
-                                          const nsAString* aIs)
+already_AddRefed<mozilla::dom::CustomElementsRegistry>
+nsDocument::GetCustomElementsRegistry()
 {
-  if (!mRegistry || aNameSpaceID != kNameSpaceID_XHTML) {
+  nsAutoString contentType;
+  GetContentType(contentType);
+  if (!IsHTMLDocument() &&
+      !contentType.EqualsLiteral("application/xhtml+xml")) {
     return nullptr;
   }
 
-  nsCOMPtr<nsIAtom> localNameAtom = NS_Atomize(aLocalName);
-  nsCOMPtr<nsIAtom> typeAtom = aIs ? NS_Atomize(*aIs) : localNameAtom;
-
-  CustomElementDefinition* data;
-  CustomElementHashKey key(aNameSpaceID, typeAtom);
-  if (mRegistry->mCustomDefinitions.Get(&key, &data) &&
-      data->mLocalName == localNameAtom) {
-    return data;
+  nsCOMPtr<nsPIDOMWindowInner> window(
+    do_QueryInterface(mScriptGlobalObject ? mScriptGlobalObject
+                                          : GetScopeObject()));
+  if (!window) {
+    return nullptr;
   }
 
-  return nullptr;
+  RefPtr<CustomElementsRegistry> registry = window->CustomElements();
+  if (!registry) {
+    return nullptr;
+  }
+
+  return registry.forget();
 }
 
 already_AddRefed<Element>
@@ -5610,48 +5443,6 @@ nsDocument::CreateElement(const nsAString& aTagName,
     needsLowercase ? lcTagName : aTagName, nullptr, mDefaultElementType, is);
 
   return elem.forget();
-}
-
-void
-nsDocument::SetupCustomElement(Element* aElement,
-                               uint32_t aNamespaceID,
-                               const nsAString* aTypeExtension)
-{
-  if (!mRegistry || aNamespaceID != kNameSpaceID_XHTML) {
-    return;
-  }
-
-  nsCOMPtr<nsIAtom> tagAtom = aElement->NodeInfo()->NameAtom();
-  nsCOMPtr<nsIAtom> typeAtom = aTypeExtension ?
-    NS_Atomize(*aTypeExtension) : tagAtom;
-
-  if (aTypeExtension && !aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::is)) {
-    
-    
-    aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::is, *aTypeExtension, true);
-  }
-
-  CustomElementDefinition* data = LookupCustomElementDefinition(
-    aElement->NodeInfo()->LocalName(), aNamespaceID, aTypeExtension);
-
-  if (!data) {
-    
-    
-    
-    RegisterUnresolvedElement(aElement, typeAtom);
-    return;
-  }
-
-  if (data->mLocalName != tagAtom) {
-    
-    
-    
-    return;
-  }
-
-  
-  
-  EnqueueLifecycleCallback(nsIDocument::eCreated, aElement, nullptr, data);
 }
 
 NS_IMETHODIMP
@@ -5913,11 +5704,15 @@ nsDocument::CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* 
     return true;
   }
 
+  RefPtr<mozilla::dom::CustomElementsRegistry> registry = window->CustomElements();
+  if (!registry) {
+    return true;
+  }
+
   nsCOMPtr<nsIAtom> typeAtom(NS_Atomize(elemName));
   CustomElementHashKey key(kNameSpaceID_Unknown, typeAtom);
-  CustomElementDefinition* definition;
-  if (!document->mRegistry ||
-      !document->mRegistry->mCustomDefinitions.Get(&key, &definition)) {
+  CustomElementDefinition* definition = registry->mCustomDefinitions.Get(&key);
+  if (!definition) {
     return true;
   }
 
@@ -5931,7 +5726,7 @@ nsDocument::CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* 
     
     
     
-    document->SetupCustomElement(element, definition->mNamespaceID, &elemName);
+    nsContentUtils::SetupCustomElement(element, &elemName);
   }
 
   nsresult rv = nsContentUtils::WrapNative(aCx, element, element, args.rval());
@@ -5972,227 +5767,17 @@ nsDocument::IsWebComponentsEnabled(JSContext* aCx, JSObject* aObject)
   return false;
 }
 
-nsresult
-nsDocument::RegisterUnresolvedElement(Element* aElement, nsIAtom* aTypeName)
-{
-  if (!mRegistry) {
-    return NS_OK;
-  }
-
-  mozilla::dom::NodeInfo* info = aElement->NodeInfo();
-
-  
-  
-  
-  nsCOMPtr<nsIAtom> typeName = aTypeName;
-  if (!typeName) {
-    typeName = info->NameAtom();
-  }
-
-  CustomElementHashKey key(info->NamespaceID(), typeName);
-  if (mRegistry->mCustomDefinitions.Get(&key)) {
-    return NS_OK;
-  }
-
-  nsTArray<nsWeakPtr>* unresolved;
-  mRegistry->mCandidatesMap.Get(&key, &unresolved);
-  if (!unresolved) {
-    unresolved = new nsTArray<nsWeakPtr>();
-    
-    mRegistry->mCandidatesMap.Put(&key, unresolved);
-  }
-
-  nsWeakPtr* elem = unresolved->AppendElement();
-  *elem = do_GetWeakReference(aElement);
-  aElement->AddStates(NS_EVENT_STATE_UNRESOLVED);
-
-  return NS_OK;
-}
-
-void
-nsDocument::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
-                                     Element* aCustomElement,
-                                     LifecycleCallbackArgs* aArgs,
-                                     CustomElementDefinition* aDefinition)
-{
-  if (!mRegistry) {
-    
-    
-    return;
-  }
-
-  CustomElementData* elementData = aCustomElement->GetCustomElementData();
-
-  
-  CustomElementDefinition* definition = aDefinition;
-  if (!definition) {
-    mozilla::dom::NodeInfo* info = aCustomElement->NodeInfo();
-
-    
-    
-    nsCOMPtr<nsIAtom> typeAtom = elementData ?
-      elementData->mType.get() : info->NameAtom();
-
-    CustomElementHashKey key(info->NamespaceID(), typeAtom);
-    if (!mRegistry->mCustomDefinitions.Get(&key, &definition) ||
-        definition->mLocalName != info->NameAtom()) {
-      
-      
-      return;
-    }
-  }
-
-  if (!elementData) {
-    
-    
-    elementData = new CustomElementData(definition->mType);
-    
-    aCustomElement->SetCustomElementData(elementData);
-    MOZ_ASSERT(aType == nsIDocument::eCreated,
-               "First callback should be the created callback");
-  }
-
-  
-  CallbackFunction* func = nullptr;
-  switch (aType) {
-    case nsIDocument::eCreated:
-      if (definition->mCallbacks->mCreatedCallback.WasPassed()) {
-        func = definition->mCallbacks->mCreatedCallback.Value();
-      }
-      break;
-
-    case nsIDocument::eAttached:
-      if (definition->mCallbacks->mAttachedCallback.WasPassed()) {
-        func = definition->mCallbacks->mAttachedCallback.Value();
-      }
-      break;
-
-    case nsIDocument::eDetached:
-      if (definition->mCallbacks->mDetachedCallback.WasPassed()) {
-        func = definition->mCallbacks->mDetachedCallback.Value();
-      }
-      break;
-
-    case nsIDocument::eAttributeChanged:
-      if (definition->mCallbacks->mAttributeChangedCallback.WasPassed()) {
-        func = definition->mCallbacks->mAttributeChangedCallback.Value();
-      }
-      break;
-  }
-
-  
-  if (!func) {
-    return;
-  }
-
-  if (aType == nsIDocument::eCreated) {
-    elementData->mCreatedCallbackInvoked = false;
-  } else if (!elementData->mCreatedCallbackInvoked) {
-    
-    
-    return;
-  }
-
-  
-  CustomElementCallback* callback = new CustomElementCallback(aCustomElement,
-                                                              aType,
-                                                              func,
-                                                              elementData);
-  
-  elementData->mCallbackQueue.AppendElement(callback);
-  if (aArgs) {
-    callback->SetArgs(*aArgs);
-  }
-
-  if (!elementData->mElementIsBeingCreated) {
-    CustomElementData* lastData =
-      sProcessingStack->SafeLastElement(nullptr);
-
-    
-    
-    bool shouldPushElementQueue =
-      (!lastData || lastData->mAssociatedMicroTask <
-         static_cast<int32_t>(nsContentUtils::MicroTaskLevel()));
-
-    
-    
-    if (shouldPushElementQueue) {
-      
-      
-      sProcessingStack->AppendElement((CustomElementData*) nullptr);
-    }
-
-    sProcessingStack->AppendElement(elementData);
-    elementData->mAssociatedMicroTask =
-      static_cast<int32_t>(nsContentUtils::MicroTaskLevel());
-
-    
-    
-    if (shouldPushElementQueue) {
-      
-      
-      
-      
-      nsCOMPtr<nsIRunnable> runnable =
-        NS_NewRunnableFunction(&nsDocument::ProcessTopElementQueue);
-      nsContentUtils::AddScriptRunner(runnable);
-    }
-  }
-}
-
-
-void
-nsDocument::ProcessTopElementQueue()
-{
-  MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
-
-  nsTArray<RefPtr<CustomElementData>>& stack = *sProcessingStack;
-  uint32_t firstQueue = stack.LastIndexOf((CustomElementData*) nullptr);
-
-  for (uint32_t i = firstQueue + 1; i < stack.Length(); ++i) {
-    
-    
-    
-    if (stack[i]->mAssociatedMicroTask != -1) {
-      stack[i]->RunCallbackQueue();
-      stack[i]->mAssociatedMicroTask = -1;
-    }
-  }
-
-  
-  
-  if (firstQueue != 0) {
-    stack.SetLength(firstQueue);
-  } else {
-    
-    stack.SetLength(1);
-  }
-}
-
-bool
-nsDocument::RegisterEnabled()
-{
-  static bool sPrefValue =
-    Preferences::GetBool("dom.webcomponents.enabled", false);
-  return sPrefValue;
-}
-
-
-Maybe<nsTArray<RefPtr<mozilla::dom::CustomElementData>>>
-nsDocument::sProcessingStack;
-
 void
 nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
                             const ElementRegistrationOptions& aOptions,
                             JS::MutableHandle<JSObject*> aRetval,
                             ErrorResult& rv)
 {
-  if (!mRegistry) {
+  RefPtr<CustomElementsRegistry> registry(GetCustomElementsRegistry());
+  if (!registry) {
     rv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return;
   }
-
-  Registry::DefinitionMap& definitions = mRegistry->mCustomDefinitions;
 
   
   nsAutoString lcType;
@@ -6217,7 +5802,7 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
   
   
   CustomElementHashKey duplicateFinder(kNameSpaceID_Unknown, typeAtom);
-  if (definitions.Get(&duplicateFinder)) {
+  if (registry->mCustomDefinitions.Get(&duplicateFinder)) {
     rv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return;
   }
@@ -6359,11 +5944,11 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
                                 callbacks,
                                 namespaceID,
                                 0 );
-  definitions.Put(&key, definition);
+  registry->mCustomDefinitions.Put(&key, definition);
 
   
   nsAutoPtr<nsTArray<nsWeakPtr>> candidates;
-  mRegistry->mCandidatesMap.RemoveAndForget(&key, candidates);
+  registry->mCandidatesMap.RemoveAndForget(&key, candidates);
   if (candidates) {
     for (size_t i = 0; i < candidates->Length(); ++i) {
       nsCOMPtr<Element> elem = do_QueryReferent(candidates->ElementAt(i));
@@ -6397,7 +5982,10 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
         }
       }
 
-      EnqueueLifecycleCallback(nsIDocument::eCreated, elem, nullptr, definition);
+      if (GetDocShell()) {
+        nsContentUtils::EnqueueLifecycleCallback(
+          this, nsIDocument::eCreated, elem, nullptr, definition);
+      }
     }
   }
 
@@ -6433,14 +6021,6 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
   }
 
   aRetval.set(wrappedConstructor);
-}
-
-void
-nsDocument::UseRegistryFromDocument(nsIDocument* aDocument)
-{
-  nsDocument* doc = static_cast<nsDocument*>(aDocument);
-  MOZ_ASSERT(!mRegistry, "There should be no existing registry.");
-  mRegistry = doc->mRegistry;
 }
 
 NS_IMETHODIMP
@@ -8987,8 +8567,6 @@ nsDocument::Destroy()
   
   
   mExternalResourceMap.Shutdown();
-
-  mRegistry = nullptr;
 }
 
 void
@@ -12578,12 +12156,6 @@ nsDocument::OnAppThemeChanged()
 }
 
 void
-nsDocument::XPCOMShutdown()
-{
-  sProcessingStack.reset();
-}
-
-void
 nsDocument::UpdateVisibilityState()
 {
   dom::VisibilityState oldState = mVisibilityState;
@@ -13467,7 +13039,8 @@ nsDocument::CheckCustomElementName(const ElementCreationOptions& aOptions,
   nsString* is = const_cast<nsString*>(&(aOptions.mIs.Value()));
 
   
-  if (!LookupCustomElementDefinition(aLocalName, aNamespaceID, is)) {
+  if (!nsContentUtils::LookupCustomElementDefinition(this, aLocalName,
+                                                     aNamespaceID, is)) {
       rv.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
   }
 
