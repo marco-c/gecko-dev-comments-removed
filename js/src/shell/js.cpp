@@ -49,7 +49,6 @@
 #include "jsatom.h"
 #include "jscntxt.h"
 #include "jsfun.h"
-#include "jslock.h"
 #include "jsobj.h"
 #include "jsprf.h"
 #include "jsscript.h"
@@ -7563,7 +7562,7 @@ main(int argc, char** argv, char** envp)
     JS_SetSecurityCallbacks(cx, &ShellPrincipals::securityCallbacks);
     JS_InitDestroyPrincipalsCallback(cx, ShellPrincipals::destroy);
 
-    JS_SetInterruptCallback(cx, ShellInterruptCallback);
+    JS_AddInterruptCallback(cx, ShellInterruptCallback);
     JS::SetBuildIdOp(cx, ShellBuildId);
     JS::SetAsmJSCacheOps(cx, &asmJSCacheOps);
 

@@ -20,8 +20,6 @@
 # include "jit/MIRGraph.h"
 #endif
 
-#include "jslock.h"
-
 
 
 
