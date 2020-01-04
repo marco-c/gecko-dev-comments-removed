@@ -12,6 +12,7 @@
 #define mozilla_RestyleManager_h
 
 #include "mozilla/RestyleLogging.h"
+#include "mozilla/RestyleManagerBase.h"
 #include "nsISupportsImpl.h"
 #include "nsChangeHint.h"
 #include "RestyleTracker.h"
@@ -33,13 +34,10 @@ namespace dom {
   class Element;
 } 
 
-class RestyleManager final
+class RestyleManager final : public RestyleManagerBase
 {
 public:
-  friend class ::nsRefreshDriver;
   friend class RestyleTracker;
-
-  typedef mozilla::dom::Element Element;
 
   explicit RestyleManager(nsPresContext* aPresContext);
 
@@ -55,15 +53,6 @@ private:
 
 public:
   NS_INLINE_DECL_REFCOUNTING(mozilla::RestyleManager)
-
-  void Disconnect() {
-    mPresContext = nullptr;
-  }
-
-  nsPresContext* PresContext() const {
-    MOZ_ASSERT(mPresContext);
-    return mPresContext;
-  }
 
   
   
@@ -87,14 +76,6 @@ public:
                         nsIAtom* aAttribute,
                         int32_t  aModType,
                         const nsAttrValue* aOldValue);
-
-  
-  
-  uint32_t GetRestyleGeneration() const { return mRestyleGeneration; }
-
-  
-  
-  uint32_t GetHoverGeneration() const { return mHoverGeneration; }
 
   
   
@@ -139,15 +120,13 @@ public:
   }
 
 private:
-  nsCSSFrameConstructor* FrameConstructor() const
-    { return PresContext()->FrameConstructor(); }
-
   
   void ComputeAndProcessStyleChange(nsIFrame*              aFrame,
                                     nsChangeHint           aMinChange,
                                     RestyleTracker&        aRestyleTracker,
                                     nsRestyleHint          aRestyleHint,
                                     const RestyleHintData& aRestyleHintData);
+
   
   void ComputeAndProcessStyleChange(nsStyleContext*        aNewContext,
                                     Element*               aElement,
@@ -456,7 +435,7 @@ public:
 
 
   bool ShouldLogRestyle() {
-    return ShouldLogRestyle(mPresContext);
+    return ShouldLogRestyle(PresContext());
   }
 
   
@@ -492,7 +471,12 @@ public:
 #endif
 
 private:
-  inline nsStyleSet* StyleSet() const;
+  inline nsStyleSet* StyleSet() const {
+    MOZ_ASSERT(PresContext()->StyleSet()->IsGecko(),
+               "RestyleManager should only be used with a Gecko-flavored "
+               "style backend");
+    return PresContext()->StyleSet()->AsGecko();
+  }
 
   
   
@@ -527,34 +511,23 @@ private:
     
     
     if (aRestyleTracker.Count() || ShouldStartRebuildAllFor(aRestyleTracker)) {
-      if (++mRestyleGeneration == 0) {
-        
-        
-        
-        ++mRestyleGeneration;
-      }
+      IncrementRestyleGeneration();
       aRestyleTracker.DoProcessRestyles();
     }
   }
 
 private:
-  nsPresContext* mPresContext; 
-
   
   
   bool mDoRebuildAllStyleData : 1;
   
   bool mInRebuildAllStyleData : 1;
   
-  bool mObservingRefreshDriver : 1;
-  
   bool mInStyleRefresh : 1;
   
   bool mSkipAnimationRules : 1;
   bool mHavePendingNonAnimationRestyles : 1;
 
-  uint32_t mRestyleGeneration;
-  uint32_t mHoverGeneration;
   nsChangeHint mRebuildAllExtraHint;
   nsRestyleHint mRebuildAllRestyleHint;
 

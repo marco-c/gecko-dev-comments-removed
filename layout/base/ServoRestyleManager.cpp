@@ -5,13 +5,14 @@
 
 
 #include "mozilla/ServoRestyleManager.h"
+#include "mozilla/ServoStyleSet.h"
 
 using namespace mozilla::dom;
 
 namespace mozilla {
 
-ServoRestyleManager::ServoRestyleManager()
-  : mRestyleGeneration(1)
+ServoRestyleManager::ServoRestyleManager(nsPresContext* aPresContext)
+  : RestyleManagerBase(aPresContext)
 {
 }
 
@@ -26,7 +27,26 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
                                       nsRestyleHint aRestyleHint,
                                       nsChangeHint aMinChangeHint)
 {
-  NS_ERROR("stylo: ServoRestyleManager::PostRestyleEvent not implemented");
+  if (MOZ_UNLIKELY(IsDisconnected()) ||
+      MOZ_UNLIKELY(PresContext()->PresShell()->IsDestroying())) {
+    return;
+  }
+
+  nsIPresShell* presShell = PresContext()->PresShell();
+  if (!ObservingRefreshDriver()) {
+    SetObservingRefreshDriver(PresContext()->RefreshDriver()->
+        AddStyleFlushObserver(presShell));
+  }
+
+  aElement->SetIsDirtyForServo();
+  nsINode* cur = aElement;
+  while ((cur = cur->GetParentNode())) {
+    if (cur->HasDirtyDescendantsForServo())
+      break;
+    cur->SetHasDirtyDescendantsForServo();
+  }
+
+  presShell->GetDocument()->SetNeedStyleFlush();
 }
 
 void
@@ -53,7 +73,7 @@ void
 ServoRestyleManager::ProcessPendingRestyles()
 {
   
-  mRestyleGeneration++;
+  IncrementRestyleGeneration();
 }
 
 void
@@ -82,7 +102,17 @@ nsresult
 ServoRestyleManager::ContentStateChanged(nsIContent* aContent,
                                          EventStates aStateMask)
 {
-  NS_ERROR("stylo: ServoRestyleManager::ContentStateChanged not implemented");
+  if (!aContent->IsElement()) {
+    return NS_OK;
+  }
+
+  Element* aElement = aContent->AsElement();
+  nsChangeHint changeHint;
+  nsRestyleHint restyleHint;
+  ContentStateChangedInternal(aElement, aStateMask, &changeHint, &restyleHint);
+
+  
+  
   return NS_OK;
 }
 
@@ -117,12 +147,6 @@ ServoRestyleManager::HasPendingRestyles()
 {
   NS_ERROR("stylo: ServoRestyleManager::HasPendingRestyles not implemented");
   return false;
-}
-
-uint64_t
-ServoRestyleManager::GetRestyleGeneration() const
-{
-  return mRestyleGeneration;
 }
 
 } 

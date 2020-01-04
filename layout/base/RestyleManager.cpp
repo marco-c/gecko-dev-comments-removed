@@ -83,15 +83,12 @@ ElementTagToString(dom::Element* aElement)
 #endif
 
 RestyleManager::RestyleManager(nsPresContext* aPresContext)
-  : mPresContext(aPresContext)
+  : RestyleManagerBase(aPresContext)
   , mDoRebuildAllStyleData(false)
   , mInRebuildAllStyleData(false)
-  , mObservingRefreshDriver(false)
   , mInStyleRefresh(false)
   , mSkipAnimationRules(false)
   , mHavePendingNonAnimationRestyles(false)
-  , mRestyleGeneration(1)
-  , mHoverGeneration(0)
   , mRebuildAllExtraHint(nsChangeHint(0))
   , mRebuildAllRestyleHint(nsRestyleHint(0))
   , mAnimationGeneration(0)
@@ -220,7 +217,7 @@ SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
 
 
 static nsIFrame*
-GetFrameForChildrenOnlyTransformHint(nsIFrame *aFrame)
+GetFrameForChildrenOnlyTransformHint(nsIFrame* aFrame)
 {
   if (aFrame->GetType() == nsGkAtoms::viewportFrame) {
     
@@ -357,7 +354,7 @@ ApplyRenderingChangeToTree(nsPresContext* aPresContext,
                aFrame->StyleDisplay()->HasTransformStyle(),
                "Unexpected UpdateTransformLayer hint");
 
-  nsIPresShell *shell = aPresContext->PresShell();
+  nsIPresShell* shell = aPresContext->PresShell();
   if (shell->IsPaintingSuppressed()) {
     
     aChange &= ~nsChangeHint_RepaintFrame;
@@ -374,7 +371,7 @@ ApplyRenderingChangeToTree(nsPresContext* aPresContext,
   if (aChange & nsChangeHint_RepaintFrame) {
     
     
-    nsStyleContext *bgSC;
+    nsStyleContext* bgSC;
     nsIFrame* propagatedFrame = aFrame;
     while (!nsCSSRendering::FindBackground(propagatedFrame, &bgSC)) {
       propagatedFrame = propagatedFrame->GetParent();
@@ -442,7 +439,7 @@ RestyleManager::RecomputePosition(nsIFrame* aFrame)
       
       
       
-      nsIFrame *firstContinuation =
+      nsIFrame* firstContinuation =
         nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
 
       StickyScrollContainer::ComputeStickyOffsets(firstContinuation);
@@ -454,7 +451,7 @@ RestyleManager::RecomputePosition(nsIFrame* aFrame)
     } else {
       MOZ_ASSERT(NS_STYLE_POSITION_RELATIVE == display->mPosition,
                  "Unexpected type of positioning");
-      for (nsIFrame *cont = aFrame; cont;
+      for (nsIFrame* cont = aFrame; cont;
            cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
         nsIFrame* cb = cont->GetContainingBlock();
         nsMargin newOffsets;
@@ -642,7 +639,7 @@ RestyleManager::StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint)
   }
 
   do {
-    mPresContext->PresShell()->FrameNeedsReflow(aFrame, dirtyType, dirtyBits,
+    PresContext()->PresShell()->FrameNeedsReflow(aFrame, dirtyType, dirtyBits,
                                                 rootHandling);
     aFrame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame);
   } while (aFrame);
@@ -745,7 +742,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
   
   FrameConstructor()->BeginUpdate();
 
-  FramePropertyTable* propTable = mPresContext->PropertyTable();
+  FramePropertyTable* propTable = PresContext()->PropertyTable();
 
   
   
@@ -798,7 +795,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         
         hint |= nsChangeHint_ReconstructFrame;
       } else {
-        for (nsIFrame *cont = frame; cont;
+        for (nsIFrame* cont = frame; cont;
              cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
           
           
@@ -856,7 +853,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       }
 
       if (hint & nsChangeHint_UpdateEffects) {
-        for (nsIFrame *cont = frame; cont;
+        for (nsIFrame* cont = frame; cont;
              cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
           nsSVGEffects::UpdateEffects(cont);
         }
@@ -903,7 +900,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       if (hint & (nsChangeHint_RepaintFrame | nsChangeHint_SyncFrameView |
                   nsChangeHint_UpdateOpacityLayer | nsChangeHint_UpdateTransformLayer |
                   nsChangeHint_ChildrenOnlyTransform | nsChangeHint_SchedulePaint)) {
-        ApplyRenderingChangeToTree(mPresContext, frame, hint);
+        ApplyRenderingChangeToTree(PresContext(), frame, hint);
       }
       if ((hint & nsChangeHint_RecomputePosition) && !didReflowThisFrame) {
         ActiveLayerTracker::NotifyOffsetRestyle(frame);
@@ -921,7 +918,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
                    nsChangeHint_UpdateParentOverflow |
                    nsChangeHint_UpdateSubtreeOverflow))) {
         if (hint & nsChangeHint_UpdateSubtreeOverflow) {
-          for (nsIFrame *cont = frame; cont; cont =
+          for (nsIFrame* cont = frame; cont; cont =
                  nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
             AddSubtreeToOverflowTracker(cont);
           }
@@ -973,7 +970,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
             } else {
               changeKind = OverflowChangedTracker::TRANSFORM_CHANGED;
             }
-            for (nsIFrame *cont = frame; cont; cont =
+            for (nsIFrame* cont = frame; cont; cont =
                    nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
               mOverflowChangedTracker.AddFrame(cont, changeKind);
             }
@@ -985,7 +982,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
           if (hint & nsChangeHint_UpdateParentOverflow) {
             MOZ_ASSERT(frame->GetParent(),
                        "shouldn't get style hints for the root frame");
-            for (nsIFrame *cont = frame; cont; cont =
+            for (nsIFrame* cont = frame; cont; cont =
                    nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
               mOverflowChangedTracker.AddFrame(cont->GetParent(),
                                    OverflowChangedTracker::CHILDREN_CHANGED);
@@ -994,7 +991,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         }
       }
       if ((hint & nsChangeHint_UpdateCursor) && !didUpdateCursor) {
-        mPresContext->PresShell()->SynthesizeMouseMove(false);
+        PresContext()->PresShell()->SynthesizeMouseMove(false);
         didUpdateCursor = true;
       }
     }
@@ -1053,9 +1050,9 @@ RestyleManager::RestyleElement(Element*               aElement,
 
   
   
-  if (mPresContext->UsesRootEMUnits() && aPrimaryFrame &&
+  if (PresContext()->UsesRootEMUnits() && aPrimaryFrame &&
       !mInRebuildAllStyleData) {
-    nsStyleContext *oldContext = aPrimaryFrame->StyleContext();
+    nsStyleContext* oldContext = aPrimaryFrame->StyleContext();
     if (!oldContext->GetParent()) { 
       RefPtr<nsStyleContext> newContext = StyleSet()->
         ResolveStyleFor(aElement, nullptr );
@@ -1117,7 +1114,7 @@ RestyleManager::ReframingStyleContexts::~ReframingStyleContexts()
   
   
   
-  mRestyleManager->mPresContext->FrameConstructor()->CreateNeededFrames();
+  mRestyleManager->PresContext()->FrameConstructor()->CreateNeededFrames();
 }
 
 RestyleManager::AnimationsWithDestroyedFrame::AnimationsWithDestroyedFrame(
@@ -1186,75 +1183,11 @@ RestyleManager::ContentStateChanged(nsIContent* aContent,
 
   Element* aElement = aContent->AsElement();
 
-  nsStyleSet* styleSet = StyleSet();
-  NS_ASSERTION(styleSet, "couldn't get style set");
+  nsChangeHint changeHint;
+  nsRestyleHint restyleHint;
+  ContentStateChangedInternal(aElement, aStateMask, &changeHint, &restyleHint);
 
-  nsChangeHint hint = NS_STYLE_HINT_NONE;
-  
-  
-  
-  
-  
-  
-  nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
-  CSSPseudoElementType pseudoType = CSSPseudoElementType::NotPseudo;
-  if (primaryFrame) {
-    
-    if (!primaryFrame->IsGeneratedContentFrame() &&
-        aStateMask.HasAtLeastOneOfStates(NS_EVENT_STATE_BROKEN |
-                                         NS_EVENT_STATE_USERDISABLED |
-                                         NS_EVENT_STATE_SUPPRESSED |
-                                         NS_EVENT_STATE_LOADING)) {
-      hint = nsChangeHint_ReconstructFrame;
-    } else {
-      uint8_t app = primaryFrame->StyleDisplay()->mAppearance;
-      if (app) {
-        nsITheme *theme = mPresContext->GetTheme();
-        if (theme && theme->ThemeSupportsWidget(mPresContext,
-                                                primaryFrame, app)) {
-          bool repaint = false;
-          theme->WidgetStateChanged(primaryFrame, app, nullptr, &repaint, nullptr);
-          if (repaint) {
-            hint |= nsChangeHint_RepaintFrame;
-          }
-        }
-      }
-    }
-
-    pseudoType = primaryFrame->StyleContext()->GetPseudoType();
-
-    primaryFrame->ContentStatesChanged(aStateMask);
-  }
-
-
-  nsRestyleHint rshint;
-
-  if (pseudoType >= CSSPseudoElementType::Count) {
-    rshint = styleSet->HasStateDependentStyle(aElement, aStateMask);
-  } else if (nsCSSPseudoElements::PseudoElementSupportsUserActionState(
-                                                                  pseudoType)) {
-    
-    
-    Element* ancestor = ElementForStyleContext(nullptr, primaryFrame,
-                                               pseudoType);
-    rshint = styleSet->HasStateDependentStyle(ancestor, pseudoType, aElement,
-                                              aStateMask);
-  } else {
-    rshint = nsRestyleHint(0);
-  }
-
-  if (aStateMask.HasState(NS_EVENT_STATE_HOVER) && rshint != 0) {
-    ++mHoverGeneration;
-  }
-
-  if (aStateMask.HasState(NS_EVENT_STATE_VISITED)) {
-    
-    
-    
-    hint |= nsChangeHint_RepaintFrame;
-  }
-
-  PostRestyleEvent(aElement, rshint, hint);
+  PostRestyleEvent(aElement, restyleHint, changeHint);
   return NS_OK;
 }
 
@@ -1290,7 +1223,7 @@ RestyleManager::AttributeChanged(Element* aElement,
   
   
   
-  nsCOMPtr<nsIPresShell> shell = mPresContext->GetPresShell();
+  nsCOMPtr<nsIPresShell> shell = PresContext()->GetPresShell();
 
   
   nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
@@ -1312,7 +1245,7 @@ RestyleManager::AttributeChanged(Element* aElement,
   
   if (!primaryFrame && !reframe) {
     int32_t namespaceID;
-    nsIAtom* tag = mPresContext->Document()->BindingManager()->
+    nsIAtom* tag = PresContext()->Document()->BindingManager()->
                      ResolveTag(aElement, &namespaceID);
 
     if (namespaceID == kNameSpaceID_XUL &&
@@ -1324,7 +1257,7 @@ RestyleManager::AttributeChanged(Element* aElement,
   if (aAttribute == nsGkAtoms::tooltiptext ||
       aAttribute == nsGkAtoms::tooltip)
   {
-    nsIRootBox* rootBox = nsIRootBox::GetRootBox(mPresContext->GetPresShell());
+    nsIRootBox* rootBox = nsIRootBox::GetRootBox(PresContext()->GetPresShell());
     if (rootBox) {
       if (aModType == nsIDOMMutationEvent::REMOVAL)
         rootBox->RemoveTooltipSupport(aElement);
@@ -1339,8 +1272,8 @@ RestyleManager::AttributeChanged(Element* aElement,
     
     const nsStyleDisplay* disp = primaryFrame->StyleDisplay();
     if (disp->mAppearance) {
-      nsITheme *theme = mPresContext->GetTheme();
-      if (theme && theme->ThemeSupportsWidget(mPresContext, primaryFrame, disp->mAppearance)) {
+      nsITheme* theme = PresContext()->GetTheme();
+      if (theme && theme->ThemeSupportsWidget(PresContext(), primaryFrame, disp->mAppearance)) {
         bool repaint = false;
         theme->WidgetStateChanged(primaryFrame, disp->mAppearance, aAttribute,
             &repaint, aOldValue);
@@ -1458,7 +1391,7 @@ static void
 RestyleSiblingsStartingWith(RestyleManager* aRestyleManager,
                             nsIContent* aStartingSibling )
 {
-  for (nsIContent *sibling = aStartingSibling; sibling;
+  for (nsIContent* sibling = aStartingSibling; sibling;
        sibling = sibling->GetNextSibling()) {
     if (sibling->IsElement()) {
       aRestyleManager->
@@ -1661,7 +1594,7 @@ RestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
   
   
   
-  nsCOMPtr<nsIPresShell> presShell = mPresContext->GetPresShell();
+  nsCOMPtr<nsIPresShell> presShell = PresContext()->GetPresShell();
   if (!presShell || !presShell->GetRootFrame()) {
     mDoRebuildAllStyleData = false;
     return;
@@ -1686,7 +1619,7 @@ RestyleManager::StartRebuildAllStyleData(RestyleTracker& aRestyleTracker)
 {
   MOZ_ASSERT(mIsProcessingRestyles);
 
-  nsIFrame* rootFrame = mPresContext->PresShell()->GetRootFrame();
+  nsIFrame* rootFrame = PresContext()->PresShell()->GetRootFrame();
   if (!rootFrame) {
     
     return;
@@ -1717,7 +1650,7 @@ RestyleManager::StartRebuildAllStyleData(RestyleTracker& aRestyleTracker)
     
     
     
-    Element* root = mPresContext->Document()->GetRootElement();
+    Element* root = PresContext()->Document()->GetRootElement();
     if (root) {
       
       
@@ -1757,13 +1690,13 @@ RestyleManager::FinishRebuildAllStyleData()
 void
 RestyleManager::ProcessPendingRestyles()
 {
-  NS_PRECONDITION(mPresContext->Document(), "No document?  Pshaw!");
+  NS_PRECONDITION(PresContext()->Document(), "No document?  Pshaw!");
   NS_PRECONDITION(!nsContentUtils::IsSafeToRunScript(),
                   "Missing a script blocker!");
 
   
   
-  mPresContext->FrameConstructor()->CreateNeededFrames();
+  PresContext()->FrameConstructor()->CreateNeededFrames();
 
   
   MOZ_ASSERT(!mIsProcessingRestyles,
@@ -1801,13 +1734,13 @@ RestyleManager::ProcessPendingRestyles()
     
     
     
-    mPresContext->TransitionManager()->SetInAnimationOnlyStyleUpdate(true);
+    PresContext()->TransitionManager()->SetInAnimationOnlyStyleUpdate(true);
   }
 
   ProcessRestyles(mPendingRestyles);
 
   if (!haveNonAnimation) {
-    mPresContext->TransitionManager()->SetInAnimationOnlyStyleUpdate(false);
+    PresContext()->TransitionManager()->SetInAnimationOnlyStyleUpdate(false);
   }
 
   mIsProcessingRestyles = false;
@@ -1835,7 +1768,7 @@ RestyleManager::BeginProcessingRestyles(RestyleTracker& aRestyleTracker)
 {
   
   
-  mPresContext->FrameConstructor()->BeginUpdate();
+  PresContext()->FrameConstructor()->BeginUpdate();
 
   mInStyleRefresh = true;
 
@@ -1862,19 +1795,19 @@ RestyleManager::EndProcessingRestyles()
     FinishRebuildAllStyleData();
   }
 
-  mPresContext->FrameConstructor()->EndUpdate();
+  PresContext()->FrameConstructor()->EndUpdate();
 
 #ifdef DEBUG
-  mPresContext->PresShell()->VerifyStyleTree();
+  PresContext()->PresShell()->VerifyStyleTree();
 #endif
 }
 
 void
 RestyleManager::UpdateOnlyAnimationStyles()
 {
-  bool doCSS = mPresContext->EffectCompositor()->HasPendingStyleUpdates();
+  bool doCSS = PresContext()->EffectCompositor()->HasPendingStyleUpdates();
 
-  nsIDocument* document = mPresContext->Document();
+  nsIDocument* document = PresContext()->Document();
   nsSMILAnimationController* animationController =
     document->HasAnimationController() ?
     document->GetAnimationController() :
@@ -1886,7 +1819,7 @@ RestyleManager::UpdateOnlyAnimationStyles()
     return;
   }
 
-  nsTransitionManager* transitionManager = mPresContext->TransitionManager();
+  nsTransitionManager* transitionManager = PresContext()->TransitionManager();
 
   transitionManager->SetInAnimationOnlyStyleUpdate(true);
 
@@ -1899,7 +1832,7 @@ RestyleManager::UpdateOnlyAnimationStyles()
     
     
     
-    mPresContext->EffectCompositor()->AddStyleUpdatesTo(tracker);
+    PresContext()->EffectCompositor()->AddStyleUpdatesTo(tracker);
   }
 
   if (doSMIL) {
@@ -1917,8 +1850,8 @@ RestyleManager::PostRestyleEvent(Element* aElement,
                                  nsChangeHint aMinChangeHint,
                                  const RestyleHintData* aRestyleHintData)
 {
-  if (MOZ_UNLIKELY(!mPresContext) ||
-      MOZ_UNLIKELY(mPresContext->PresShell()->IsDestroying())) {
+  if (MOZ_UNLIKELY(IsDisconnected()) ||
+      MOZ_UNLIKELY(PresContext()->PresShell()->IsDestroying())) {
     return;
   }
 
@@ -1948,10 +1881,10 @@ RestyleManager::PostRestyleEventInternal(bool aForLazyConstruction)
   
   
   bool inRefresh = !aForLazyConstruction && mInStyleRefresh;
-  nsIPresShell* presShell = mPresContext->PresShell();
-  if (!mObservingRefreshDriver && !inRefresh) {
-    mObservingRefreshDriver = mPresContext->RefreshDriver()->
-      AddStyleFlushObserver(presShell);
+  nsIPresShell* presShell = PresContext()->PresShell();
+  if (!ObservingRefreshDriver() && !inRefresh) {
+    SetObservingRefreshDriver(PresContext()->RefreshDriver()->
+        AddStyleFlushObserver(presShell));
   }
 
   
@@ -2415,9 +2348,9 @@ RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
     
     
     
-    nsIFrame *nextContinuation = aFrame->GetNextContinuation();
+    nsIFrame* nextContinuation = aFrame->GetNextContinuation();
     if (nextContinuation) {
-      nsStyleContext *nextContinuationContext =
+      nsStyleContext* nextContinuationContext =
         nextContinuation->StyleContext();
       NS_ASSERTION(oldContext == nextContinuationContext ||
                    oldContext->GetPseudo() !=
@@ -2429,9 +2362,9 @@ RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
   }
 #endif
 
-  nsIFrame *prevContinuation =
+  nsIFrame* prevContinuation =
     GetPrevContinuationWithPossiblySameStyle(aFrame);
-  nsStyleContext *prevContinuationContext;
+  nsStyleContext* prevContinuationContext;
   bool copyFromContinuation =
     prevContinuation &&
     (prevContinuationContext = prevContinuation->StyleContext())
@@ -3973,9 +3906,9 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
 
   
   RefPtr<nsStyleContext> newContext;
-  nsIFrame *prevContinuation =
+  nsIFrame* prevContinuation =
     GetPrevContinuationWithPossiblySameStyle(aSelf);
-  nsStyleContext *prevContinuationContext;
+  nsStyleContext* prevContinuationContext;
   bool copyFromContinuation =
     prevContinuation &&
     (prevContinuationContext = prevContinuation->StyleContext())
@@ -4440,7 +4373,7 @@ ElementRestyler::RestyleChildren(nsRestyleHint aChildRestyleHint)
   
   
   
-  nsIFrame *lastContinuation;
+  nsIFrame* lastContinuation;
   if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
     InitializeAccessibilityNotifications(mFrame->StyleContext());
 
@@ -5046,15 +4979,6 @@ RestyleManager::ComputeAndProcessStyleChange(nsStyleContext*        aNewContext,
                                             aRestyleHint, aRestyleHintData);
   ProcessRestyledFrames(changeList);
   ClearCachedInheritedStyleDataOnDescendants(contextsToClear);
-}
-
-nsStyleSet*
-RestyleManager::StyleSet() const
-{
-  MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
-             "RestyleManager should only be used with a Gecko-flavored "
-             "style backend");
-  return mPresContext->StyleSet()->AsGecko();
 }
 
 nsStyleSet*

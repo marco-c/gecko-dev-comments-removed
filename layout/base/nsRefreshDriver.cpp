@@ -1746,10 +1746,7 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
           mStyleFlushObservers.RemoveElement(shell);
           RestyleManagerHandle restyleManager =
             shell->GetPresContext()->RestyleManager();
-          
-          if (restyleManager->IsGecko()) {
-            restyleManager->AsGecko()->mObservingRefreshDriver = false;
-          }
+          restyleManager->SetObservingRefreshDriver(false);
           shell->FlushPendingNotifications(ChangesToFlush(Flush_Style, false));
           
           

@@ -3682,13 +3682,8 @@ PresShell::DispatchSynthMouseMove(WidgetGUIEvent* aEvent,
                                   bool aFlushOnHoverChange)
 {
   RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
-  if (restyleManager->IsServo()) {
-    NS_ERROR("stylo: cannot dispatch synthetic mouse moves when using a "
-             "ServoRestyleManager yet");
-    return;
-  }
   uint32_t hoverGenerationBefore =
-    restyleManager->AsGecko()->GetHoverGeneration();
+    restyleManager->GetHoverGeneration();
   nsEventStatus status;
   nsView* targetView = nsView::GetViewFor(aEvent->mWidget);
   if (!targetView)
@@ -3698,7 +3693,7 @@ PresShell::DispatchSynthMouseMove(WidgetGUIEvent* aEvent,
     return;
   }
   if (aFlushOnHoverChange &&
-      hoverGenerationBefore != restyleManager->AsGecko()->GetHoverGeneration()) {
+      hoverGenerationBefore != restyleManager->GetHoverGeneration()) {
     
     
     
