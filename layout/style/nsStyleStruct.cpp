@@ -3069,6 +3069,12 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
 
   
   
+  if (mTouchAction != aOther.mTouchAction) {
+    hint |= nsChangeHint_RepaintFrame;
+  }
+
+  
+  
   
   
   
