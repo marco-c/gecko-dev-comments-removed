@@ -2972,6 +2972,8 @@ this.AddonManager = {
   
   
   
+  SIGNEDSTATE_NOT_REQUIRED: undefined,
+  
   SIGNEDSTATE_BROKEN: -2,
   
   
