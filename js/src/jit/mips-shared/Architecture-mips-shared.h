@@ -32,7 +32,7 @@ namespace js {
 namespace jit {
 
 
-static const uint32_t JumpImmediateRange = UINT32_MAX;
+static const uint32_t JumpImmediateRange = 100 * 1024;
 
 class Registers
 {
