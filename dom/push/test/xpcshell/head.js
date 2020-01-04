@@ -141,8 +141,6 @@ function setPrefs(prefs = {}) {
     userAgentID: '',
     enabled: true,
     
-    'udp.wakeupEnabled': false,
-    
     requestTimeout: 10000,
     retryBaseInterval: 5000,
     pingInterval: 30 * 60 * 1000,
@@ -296,7 +294,6 @@ MockWebSocket.prototype = {
   },
 
   
-
 
 
 

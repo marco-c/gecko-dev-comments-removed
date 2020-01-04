@@ -34,9 +34,9 @@ const kPUSHWSDB_DB_NAME = "pushapi";
 const kPUSHWSDB_DB_VERSION = 5; 
 const kPUSHWSDB_STORE_NAME = "pushapi";
 
-const kUDP_WAKEUP_WS_STATUS_CODE = 4774;  
-                                          
-                                          
+
+
+const kBACKOFF_WS_STATUS_CODE = 4774;
 
 
 
@@ -291,7 +291,7 @@ this.PushServiceWebSocket = {
 
 
 
-  _willBeWokenUpByUDP: false,
+  _skipReconnect: false,
 
   
   _dataEnabled: false,
@@ -340,13 +340,6 @@ this.PushServiceWebSocket = {
       this._makeWebSocket = options.makeWebSocket;
     }
 
-    
-    
-    
-    if (options.makeUDPSocket) {
-      this._makeUDPSocket = options.makeUDPSocket;
-    }
-
     this._requestTimeout = prefs.get("requestTimeout");
 
     return Promise.resolve();
@@ -361,7 +354,7 @@ this.PushServiceWebSocket = {
   _shutdownWS: function(shouldCancelPending = true) {
     console.debug("shutdownWS()");
     this._currentState = STATE_SHUT_DOWN;
-    this._willBeWokenUpByUDP = false;
+    this._skipReconnect = false;
 
     prefs.ignore("userAgentID", this);
 
@@ -390,11 +383,6 @@ this.PushServiceWebSocket = {
   },
 
   uninit: function() {
-    if (this._udpServer) {
-      this._udpServer.close();
-      this._udpServer = null;
-    }
-
     
     
     
@@ -413,8 +401,6 @@ this.PushServiceWebSocket = {
   },
 
   
-
-
 
 
 
@@ -1008,9 +994,8 @@ this.PushServiceWebSocket = {
     console.debug("wsOnStop()");
     this._releaseWakeLock();
 
-    if (statusCode != Cr.NS_OK &&
-        !(statusCode == Cr.NS_BASE_STREAM_CLOSED && this._willBeWokenUpByUDP)) {
-      console.debug("wsOnStop: Socket error", statusCode);
+    if (statusCode != Cr.NS_OK && !this._skipReconnect) {
+      console.debug("wsOnStop: Reconnecting after socket error", statusCode);
       this._reconnect();
       return;
     }
@@ -1089,14 +1074,13 @@ this.PushServiceWebSocket = {
 
 
 
+
   _wsOnServerClose: function(context, aStatusCode, aReason) {
     console.debug("wsOnServerClose()", aStatusCode, aReason);
 
-    
-    if (aStatusCode == kUDP_WAKEUP_WS_STATUS_CODE) {
-      console.debug("wsOnServerClose: Server closed with promise to wake up");
-      this._willBeWokenUpByUDP = true;
-      
+    if (aStatusCode == kBACKOFF_WS_STATUS_CODE) {
+      console.debug("wsOnServerClose: Skipping automatic reconnect");
+      this._skipReconnect = true;
     }
   },
 
@@ -1108,62 +1092,6 @@ this.PushServiceWebSocket = {
       request.reject(new Error("Register request aborted"));
     }
     this._registerRequests.clear();
-  },
-
-  _makeUDPSocket: function() {
-    return Cc["@mozilla.org/network/udp-socket;1"]
-             .createInstance(Ci.nsIUDPSocket);
-  },
-
-  
-
-
-  _listenForUDPWakeup: function() {
-    console.debug("listenForUDPWakeup()");
-
-    if (this._udpServer) {
-      console.warn("listenForUDPWakeup: UDP Server already running");
-      return;
-    }
-
-    if (!prefs.get("udp.wakeupEnabled")) {
-      console.debug("listenForUDPWakeup: UDP support disabled");
-      return;
-    }
-
-    let socket = this._makeUDPSocket();
-    if (!socket) {
-      return;
-    }
-    this._udpServer = socket.QueryInterface(Ci.nsIUDPSocket);
-    this._udpServer.init(-1, false, Services.scriptSecurityManager.getSystemPrincipal());
-    this._udpServer.asyncListen(this);
-    console.debug("listenForUDPWakeup: Listening on", this._udpServer.port);
-
-    return this._udpServer.port;
-  },
-
-  
-
-
-
-  onPacketReceived: function(aServ, aMessage) {
-    console.debug("onPacketReceived: Recv UDP datagram on port",
-      this._udpServer.port);
-    this._beginWSSetup();
-  },
-
-  
-
-
-
-
-
-  onStopListening: function(aServ, aStatus) {
-    console.debug("onStopListening: UDP Server socket was shutdown. Status",
-      aStatus);
-    this._udpServer = undefined;
-    this._beginWSSetup();
   },
 };
 
