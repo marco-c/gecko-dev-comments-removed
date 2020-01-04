@@ -71,9 +71,9 @@ this.PushServiceAndroidGCM = {
     if (serverURI.scheme == "https") {
       return true;
     }
-    if (prefs.get("debug") && serverURI.scheme == "http") {
+    if (serverURI.scheme == "http") {
       
-      return true;
+      return !!prefs.get("testing.allowInsecureServerURL");
     }
     console.info("Unsupported Android GCM dom.push.serverURL scheme", serverURI.scheme);
     return false;
