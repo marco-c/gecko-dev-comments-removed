@@ -1,7 +1,6 @@
 
 
 
-
 function test() {
   Harness.downloadProgressCallback = download_progress;
   Harness.installEndedCallback = install_ended;
@@ -23,11 +22,11 @@ function download_progress(addon, value, maxValue) {
 }
 
 function install_ended(install, addon) {
-  install.cancel();
+  ok(false, "Should not have seen installs complete");
 }
 
 function finish_test(count) {
-  is(count, 1, "1 Add-on should have been successfully installed");
+  is(count, 0, "No add-ons should have been successfully installed");
 
   Services.perms.remove(makeURI("http://example.com"), "install");
 

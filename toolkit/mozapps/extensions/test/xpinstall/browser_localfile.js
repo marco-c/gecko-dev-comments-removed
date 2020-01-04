@@ -14,8 +14,11 @@ function test() {
   } catch (ex) {
     var xpipath = chromeroot + "unsigned.xpi"; 
   }
-  gBrowser.selectedTab = gBrowser.addTab();
-  gBrowser.loadURI(xpipath);
+
+  gBrowser.selectedTab = gBrowser.addTab("about:blank");
+  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(() => {
+    gBrowser.loadURI(xpipath);
+  });
 }
 
 function install_ended(install, addon) {

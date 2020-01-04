@@ -47,6 +47,8 @@ var Harness = {
   
   installCancelledCallback: null,
   
+  installOriginBlockedCallback: null,
+  
   
   
   installBlockedCallback: null,
@@ -90,6 +92,10 @@ var Harness = {
   waitingForFinish: false,
 
   
+  
+  leaveOpen: {},
+
+  
   setup: function() {
     if (!this.waitingForFinish) {
       waitForExplicitFinish();
@@ -100,6 +106,7 @@ var Harness = {
       Services.prefs.setBoolPref(PREF_LOGGING_ENABLED, true);
       Services.obs.addObserver(this, "addon-install-started", false);
       Services.obs.addObserver(this, "addon-install-disabled", false);
+      Services.obs.addObserver(this, "addon-install-origin-blocked", false);
       Services.obs.addObserver(this, "addon-install-blocked", false);
       Services.obs.addObserver(this, "addon-install-failed", false);
       Services.obs.addObserver(this, "addon-install-complete", false);
@@ -114,6 +121,7 @@ var Harness = {
         Services.prefs.clearUserPref(PREF_INSTALL_REQUIRESECUREORIGIN);
         Services.obs.removeObserver(self, "addon-install-started");
         Services.obs.removeObserver(self, "addon-install-disabled");
+        Services.obs.removeObserver(self, "addon-install-origin-blocked");
         Services.obs.removeObserver(self, "addon-install-blocked");
         Services.obs.removeObserver(self, "addon-install-failed");
         Services.obs.removeObserver(self, "addon-install-complete");
@@ -150,6 +158,7 @@ var Harness = {
       info("Install for " + aInstall.sourceURI + " is in state " + aInstall.state);
     });
 
+    this.installOriginBlockedCallback = null;
     this.installBlockedCallback = null;
     this.authenticationCallback = null;
     this.installConfirmCallback = null;
@@ -177,7 +186,14 @@ var Harness = {
 
       
       
-      if (this.installConfirmCallback && !this.installConfirmCallback(window)) {
+      let result = true;
+      if (this.installConfirmCallback) {
+        result = this.installConfirmCallback(window);
+        if (result === this.leaveOpen)
+          return;
+      }
+
+      if (!result) {
         window.document.documentElement.cancelDialog();
       }
       else {
@@ -243,6 +259,13 @@ var Harness = {
     ok(!!this.installCancelledCallback, "Installation shouldn't have been cancelled");
     if (this.installCancelledCallback)
       this.installCancelledCallback(installInfo);
+    this.endTest();
+  },
+
+  installOriginBlocked: function(installInfo) {
+    ok(!!this.installOriginBlockedCallback, "Shouldn't have been blocked");
+    if (this.installOriginBlockedCallback)
+      this.installOriginBlockedCallback(installInfo);
     this.endTest();
   },
 
@@ -370,6 +393,9 @@ var Harness = {
       break;
     case "addon-install-cancelled":
       this.installCancelled(installInfo);
+      break;
+    case "addon-install-origin-blocked":
+      this.installOriginBlocked(installInfo);
       break;
     case "addon-install-blocked":
       this.installBlocked(installInfo);
