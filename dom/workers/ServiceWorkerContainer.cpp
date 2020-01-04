@@ -222,7 +222,6 @@ already_AddRefed<workers::ServiceWorker>
 ServiceWorkerContainer::GetController()
 {
   if (!mControllerWorker) {
-    nsresult rv;
     nsCOMPtr<nsIServiceWorkerManager> swm = mozilla::services::GetServiceWorkerManager();
     if (!swm) {
       return nullptr;
@@ -232,8 +231,8 @@ ServiceWorkerContainer::GetController()
     
     
     nsCOMPtr<nsISupports> serviceWorker;
-    rv = swm->GetDocumentController(GetOwner(),
-                                    getter_AddRefs(serviceWorker));
+    nsresult rv = swm->GetDocumentController(GetOwner(),
+                                             getter_AddRefs(serviceWorker));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return nullptr;
     }
