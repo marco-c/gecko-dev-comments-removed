@@ -16,6 +16,10 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 
+const minDelayMs = 5 * 60 * 1000;
+const maxDelayMs = 24 * 60 * 60 * 1000;
+
+
 this.log = function log(...stuff) {
   var prefs_ = new G_Preferences();
   var debug = prefs_.getPref("browser.safebrowsing.debug");
@@ -232,7 +236,7 @@ PROT_ListManager.prototype.kickoffUpdate_ = function (onDiskTableData)
       let targetPref = "browser.safebrowsing.provider." + provider + ".nextupdatetime";
       let nextUpdate = this.prefs_.getPref(targetPref);
       if (nextUpdate) {
-        updateDelay = Math.max(0, nextUpdate - Date.now());
+        updateDelay = Math.min(maxDelayMs, Math.max(0, nextUpdate - Date.now()));
         log("Next update at " + nextUpdate);
       }
       log("Next update " + updateDelay + "ms from now");
@@ -429,19 +433,23 @@ PROT_ListManager.prototype.updateSuccess_ = function(tableList, updateUrl,
                                                      waitForUpdate) {
   log("update success for " + tableList + " from " + updateUrl + ": " +
       waitForUpdate + "\n");
-  var delay;
+  var delay = 0;
   if (waitForUpdate) {
-    delay = parseInt(waitForUpdate, 10);
+    delay = parseInt(waitForUpdate, 10) * 1000;
   }
   
   
   
-  if (delay >= (5 * 60)) {
-    log("Waiting " + delay + " seconds");
-    delay = delay * 1000;
-  } else {
-    log("Ignoring delay from server, waiting " + this.updateInterval / 1000);
+  if (delay > maxDelayMs) {
+    log("Ignoring delay from server (too long), waiting " +
+        maxDelayMs + "ms");
+    delay = maxDelayMs;
+  } else if (delay < minDelayMs) {
+    log("Ignoring delay from server (too short), waiting " +
+        this.updateInterval + "ms");
     delay = this.updateInterval;
+  } else {
+    log("Waiting " + delay + "ms");
   }
   this.updateCheckers_[updateUrl] =
     new G_Alarm(BindToObject(this.checkForUpdates, this, updateUrl),
