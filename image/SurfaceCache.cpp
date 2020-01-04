@@ -327,7 +327,8 @@ public:
       
       
       
-      int64_t idealArea = idealKey.Size().width * idealKey.Size().height;
+      int64_t idealArea = static_cast<int64_t>(idealKey.Size().width) *
+        static_cast<int64_t>(idealKey.Size().height);
       int64_t surfaceArea = aSurfaceKey.Size().width * aSurfaceKey.Size().height;
       int64_t bestMatchArea =
         bestMatchKey.Size().width * bestMatchKey.Size().height;
