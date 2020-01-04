@@ -29,3 +29,11 @@ assertEq(ws.has(value), false);
 
 
 assertEq(ws.delete(15), false);
+
+
+ws = new (newGlobal().WeakSet);
+WeakSet.prototype.add.call(ws, value);
+assertEq(WeakSet.prototype.has.call(ws, value), true);
+assertEq(WeakSet.prototype.delete.call(ws, value), true);
+assertEq(WeakSet.prototype.has.call(ws, value), false);
+assertEq(WeakSet.prototype.delete.call(ws, value), false);

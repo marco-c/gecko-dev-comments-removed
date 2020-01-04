@@ -7,7 +7,7 @@ function WeakSet_add(value) {
     
     var S = this;
     if (!IsObject(S) || !IsWeakSet(S))
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "WeakSet", "add", typeof S);
+        return callFunction(CallWeakSetMethodIfWrapped, this, value, "WeakSet_add");
 
     
     let entries = UnsafeGetReservedSlot(this, WEAKSET_MAP_SLOT);
@@ -30,7 +30,7 @@ function WeakSet_clear() {
     
     var S = this;
     if (!IsObject(S) || !IsWeakSet(S))
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "WeakSet", "clear", typeof S);
+        return callFunction(CallWeakSetMethodIfWrapped, this, "WeakSet_clear");
 
     
     let entries = UnsafeGetReservedSlot(this, WEAKSET_MAP_SLOT);
@@ -49,7 +49,7 @@ function WeakSet_delete(value) {
     
     var S = this;
     if (!IsObject(S) || !IsWeakSet(S))
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "WeakSet", "delete", typeof S);
+        return callFunction(CallWeakSetMethodIfWrapped, this, value, "WeakSet_delete");
 
     
     let entries = UnsafeGetReservedSlot(this, WEAKSET_MAP_SLOT);
@@ -69,7 +69,7 @@ function WeakSet_has(value) {
     
     var S = this;
     if (!IsObject(S) || !IsWeakSet(S))
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "WeakSet", "has", typeof S);
+        return callFunction(CallWeakSetMethodIfWrapped, this, value, "WeakSet_has");
 
     
     let entries = UnsafeGetReservedSlot(this, WEAKSET_MAP_SLOT);
