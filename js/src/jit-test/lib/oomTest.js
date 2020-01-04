@@ -1,34 +1,39 @@
 
 
 
-const verbose = false;
-
-if (!("oomAtAllocation" in this && "resetOOMFailure" in this))
+if (!("oomAtAllocation" in this && "resetOOMFailure" in this && "oomThreadTypes" in this))
     quit();
 
 if ("gczeal" in this)
     gczeal(0);
 
+const verbose = ("os" in this) && os.getenv("OOM_VERBOSE");
+
 
 
 
 function oomTest(f) {
-    var i = 1;
-    var more;
-    do {
+    for (let thread = 1; thread < oomThreadTypes(); thread++) {
         if (verbose)
-            print("fail at " + i);
-        try {
-            oomAtAllocation(i);
-            f();
-            more = resetOOMFailure();
-        } catch (e) {
-            
-            more = resetOOMFailure();
-        }
-        i++;
-    } while(more);
+            print("testing thread " + thread);
 
-    if (verbose)
-        print("finished after " + i);
+        var i = 1;
+        var more;
+        do {
+            if (verbose)
+                print("fail at " + i);
+            try {
+                oomAtAllocation(i, thread);
+                f();
+                more = resetOOMFailure();
+            } catch (e) {
+                
+                more = resetOOMFailure();
+            }
+            i++;
+        } while(more);
+
+        if (verbose)
+            print("finished after " + (i - 2) + " failures");
+    }
 }
