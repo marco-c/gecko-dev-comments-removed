@@ -144,7 +144,9 @@ var AnimationPlayerActor = ActorClass({
 
 
   getName: function() {
-    if (this.isAnimation()) {
+    if (this.player.id) {
+      return this.player.id;
+    } else if (this.isAnimation()) {
       return this.player.animationName;
     } else if (this.isTransition()) {
       return this.player.transitionProperty;
