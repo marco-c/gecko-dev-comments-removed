@@ -96,14 +96,14 @@ struct PCMappingIndexEntry
 
 
 
-struct DependentAsmJSModuleExit
+struct DependentWasmModuleImport
 {
-    const AsmJSModule* module;
-    size_t exitIndex;
+    wasm::Module* module;
+    size_t importIndex;
 
-    DependentAsmJSModuleExit(const AsmJSModule* module, size_t exitIndex)
+    DependentWasmModuleImport(wasm::Module* module, size_t importIndex)
       : module(module),
-        exitIndex(exitIndex)
+        importIndex(importIndex)
     { }
 };
 
@@ -131,7 +131,7 @@ struct BaselineScript
 
     
     
-    Vector<DependentAsmJSModuleExit>* dependentAsmJSModules_;
+    Vector<DependentWasmModuleImport>* dependentWasmModules_;
 
     
     uint32_t prologueOffset_;
@@ -400,10 +400,10 @@ struct BaselineScript
     
     jsbytecode* approximatePcForNativeAddress(JSScript* script, uint8_t* nativeAddress);
 
-    bool addDependentAsmJSModule(JSContext* cx, DependentAsmJSModuleExit exit);
-    void unlinkDependentAsmJSModules(FreeOp* fop);
-    void clearDependentAsmJSModules();
-    void removeDependentAsmJSModule(DependentAsmJSModuleExit exit);
+    bool addDependentWasmModule(JSContext* cx, wasm::Module& module, uint32_t importIndex);
+    void unlinkDependentWasmModules(FreeOp* fop);
+    void clearDependentWasmModules();
+    void removeDependentWasmModule(wasm::Module& module, uint32_t importIndex);
 
     
     
@@ -480,7 +480,7 @@ struct BaselineScript
         pendingBuilder_ = builder;
 
         
-        clearDependentAsmJSModules();
+        clearDependentWasmModules();
 
         script->updateBaselineOrIonRaw(maybecx);
     }

@@ -20,7 +20,6 @@
 #include "jscntxt.h"
 #include "jslock.h"
 
-#include "asmjs/WasmCompileArgs.h"
 #include "frontend/TokenStream.h"
 #include "jit/Ion.h"
 
@@ -32,11 +31,10 @@ namespace jit {
   class IonBuilder;
 } 
 namespace wasm {
-  struct CompileArgs;
-  class CompileTask;
   class FuncIR;
   class FunctionCompileResults;
-  typedef Vector<CompileTask*, 0, SystemAllocPolicy> CompileTaskVector;
+  class IonCompileTask;
+  typedef Vector<IonCompileTask*, 0, SystemAllocPolicy> IonCompileTaskVector;
 } 
 
 
@@ -70,7 +68,7 @@ class GlobalHelperThreadState
     IonBuilderList ionLazyLinkList_;
 
     
-    wasm::CompileTaskVector wasmWorklist_, wasmFinishedList_;
+    wasm::IonCompileTaskVector wasmWorklist_, wasmFinishedList_;
 
   public:
     
@@ -153,11 +151,11 @@ class GlobalHelperThreadState
         return ionLazyLinkList_;
     }
 
-    wasm::CompileTaskVector& wasmWorklist() {
+    wasm::IonCompileTaskVector& wasmWorklist() {
         MOZ_ASSERT(isLocked());
         return wasmWorklist_;
     }
-    wasm::CompileTaskVector& wasmFinishedList() {
+    wasm::IonCompileTaskVector& wasmFinishedList() {
         MOZ_ASSERT(isLocked());
         return wasmFinishedList_;
     }
@@ -296,7 +294,7 @@ struct HelperThread
 
     
     mozilla::Maybe<mozilla::Variant<jit::IonBuilder*,
-                                    wasm::CompileTask*,
+                                    wasm::IonCompileTask*,
                                     ParseTask*,
                                     SourceCompressionTask*,
                                     GCHelperState*,
@@ -312,8 +310,8 @@ struct HelperThread
     }
 
     
-    wasm::CompileTask* wasmTask() {
-        return maybeCurrentTaskAs<wasm::CompileTask*>();
+    wasm::IonCompileTask* wasmTask() {
+        return maybeCurrentTaskAs<wasm::IonCompileTask*>();
     }
 
     
@@ -383,7 +381,7 @@ PauseCurrentHelperThread();
 
 
 bool
-StartOffThreadWasmCompile(ExclusiveContext* cx, wasm::CompileTask* task);
+StartOffThreadWasmCompile(ExclusiveContext* cx, wasm::IonCompileTask* task);
 
 
 

@@ -24,7 +24,7 @@
 #include "jsscript.h"
 
 #ifdef XP_DARWIN
-# include "asmjs/AsmJSSignalHandlers.h"
+# include "asmjs/WasmSignalHandlers.h"
 #endif
 #include "builtin/AtomicsObject.h"
 #include "ds/FixedSizeHash.h"
@@ -89,7 +89,6 @@ ReportOverRecursed(ExclusiveContext* cx);
 class Activation;
 class ActivationIterator;
 class AsmJSActivation;
-class AsmJSModule;
 class MathCache;
 
 namespace jit {
@@ -104,6 +103,10 @@ typedef vixl::Simulator Simulator;
 #elif defined(JS_SIMULATOR)
 class Simulator;
 #endif
+} 
+
+namespace wasm {
+class Module;
 } 
 
 
@@ -1146,7 +1149,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     void*               data;
 
 #if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
-    js::AsmJSMachExceptionHandler asmJSMachExceptionHandler;
+    js::wasm::MachExceptionHandler wasmMachExceptionHandler;
 #endif
 
   private:
@@ -1188,7 +1191,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     JS::AsmJSCacheOps   asmJSCacheOps;
 
     
-    js::AsmJSModule*   linkedAsmJSModules;
+    js::wasm::Module*   linkedWasmModules;
 
     
 

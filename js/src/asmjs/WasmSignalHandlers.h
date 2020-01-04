@@ -16,8 +16,8 @@
 
 
 
-#ifndef asmjs_AsmJSSignalHandlers_h
-#define asmjs_AsmJSSignalHandlers_h
+#ifndef wasm_signal_handlers_h
+#define wasm_signal_handlers_h
 
 #if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
 # include <mach/mach.h>
@@ -29,15 +29,17 @@ struct JSRuntime;
 namespace js {
 
 
+extern void
+InterruptRunningJitCode(JSRuntime* rt);
+
+namespace wasm {
+
+
 
 
 
 bool
 EnsureSignalHandlersInstalled(JSRuntime* rt);
-
-
-extern void
-InterruptRunningJitCode(JSRuntime* rt);
 
 #if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
 
@@ -46,7 +48,7 @@ InterruptRunningJitCode(JSRuntime* rt);
 
 
 
-class AsmJSMachExceptionHandler
+class MachExceptionHandler
 {
     bool installed_;
     PRThread* thread_;
@@ -55,14 +57,15 @@ class AsmJSMachExceptionHandler
     void uninstall();
 
   public:
-    AsmJSMachExceptionHandler();
-    ~AsmJSMachExceptionHandler() { uninstall(); }
+    MachExceptionHandler();
+    ~MachExceptionHandler() { uninstall(); }
     mach_port_t port() const { return port_; }
     bool installed() const { return installed_; }
     bool install(JSRuntime* rt);
 };
 #endif
 
+} 
 } 
 
 #endif 

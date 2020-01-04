@@ -16,10 +16,10 @@
 
 
 
-#ifndef asmjs_wasm_ir_h
-#define asmjs_wasm_ir_h
+#ifndef wasm_ir_h
+#define wasm_ir_h
 
-#include "asmjs/Wasm.h"
+#include "asmjs/WasmTypes.h"
 
 namespace js {
 
@@ -433,7 +433,6 @@ class FuncIR
     typedef Vector<wasm::Val, 4, LifoAllocPolicy<Fallible>> VarInitVector;
     typedef Vector<uint8_t, 4096, LifoAllocPolicy<Fallible>> Bytecode;
 
-    
     
     
     PropertyName* name_;
