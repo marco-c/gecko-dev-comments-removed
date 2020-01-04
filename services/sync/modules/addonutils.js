@@ -374,6 +374,9 @@ AddonUtilsInternal.prototype = {
     
     
     
+    
+    
+    
     let requireSecureURI = true;
     if (options && options.requireSecureURI !== undefined) {
       requireSecureURI = options.requireSecureURI;

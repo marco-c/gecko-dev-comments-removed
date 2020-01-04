@@ -16,6 +16,7 @@ Cu.import("resource://testing-common/services/sync/utils.js");
 var prefs = new Preferences();
 prefs.set("extensions.getAddons.get.url",
           "http://localhost:8888/search/guid:%IDS%");
+prefs.set("extensions.install.requireSecureOrigin", false);
 
 loadAddonTestFunctions();
 startupManager();
@@ -34,8 +35,6 @@ function advance_test() {
   let cb = Async.makeSpinningCallback();
   reconciler.saveState(null, cb);
   cb.wait();
-
-  Svc.Prefs.reset("addons.ignoreRepositoryChecking");
 
   run_next_test();
 }
@@ -104,7 +103,6 @@ add_test(function test_get_changed_ids() {
   tracker.clearChangedIDs();
 
   _("Ensure reconciler changes are populated.");
-  Svc.Prefs.set("addons.ignoreRepositoryChecking", true);
   let addon = installAddon("test_bootstrap1_1");
   tracker.clearChangedIDs(); 
   changes = engine.getChangedIDs();
@@ -151,9 +149,6 @@ add_test(function test_disabled_install_semantics() {
   
   
   
-
-  Svc.Prefs.set("addons.ignoreRepositoryChecking", true);
-
   const USER       = "foo";
   const PASSWORD   = "password";
   const PASSPHRASE = "abcdeabcdeabcdeabcdeabcdea";

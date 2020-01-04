@@ -31,6 +31,9 @@
 
 
 
+
+
+
 "use strict";
 
 var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
@@ -291,7 +294,7 @@ AddonsStore.prototype = {
       id:               record.addonID,
       syncGUID:         record.id,
       enabled:          record.enabled,
-      requireSecureURI: !Svc.Prefs.get("addons.ignoreRepositoryChecking", false),
+      requireSecureURI: this._extensionsPrefs.get("install.requireSecureOrigin", true),
     }], cb);
 
     
@@ -569,7 +572,7 @@ AddonsStore.prototype = {
     
     
     
-    if (Svc.Prefs.get("addons.ignoreRepositoryChecking", false)) {
+    if (!AddonRepository.cacheEnabled) {
       return true;
     }
 

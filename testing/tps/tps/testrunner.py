@@ -65,10 +65,12 @@ class TPSTestRunner(object):
         
         'extensions.autoDisableScopes': 10,
         'extensions.getAddons.get.url': 'http://127.0.0.1:4567/addons/api/%IDS%.xml',
+        
+        'extensions.getAddons.cache.enabled': False,
+        'extensions.install.requireSecureOrigin': False,
         'extensions.update.enabled': False,
         
         'extensions.update.notifyUser': False,
-        'services.sync.addons.ignoreRepositoryChecking': True,
         'services.sync.firstSync': 'notReady',
         'services.sync.lastversion': '1.0',
         'toolkit.startup.max_resumed_crashes': -1,

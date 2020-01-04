@@ -39,9 +39,6 @@ pref("services.sync.jpake.lastMsgMaxTries", 300);
 pref("services.sync.jpake.maxTries", 10);
 
 
-pref("services.sync.addons.ignoreRepositoryChecking", false);
-
-
 
 
 pref("services.sync.addons.ignoreUserEnabledChanges", false);
