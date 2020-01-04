@@ -356,7 +356,7 @@ public class GeckoActionProvider {
                     IOUtils.safeStreamClose(is);
                 }
             }
-        } catch(IOException ex) {
+        } catch (IOException ex) {
             
         } finally {
             IOUtils.safeStreamClose(os);
