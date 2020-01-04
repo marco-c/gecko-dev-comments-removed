@@ -148,7 +148,6 @@ class mozJSComponentLoader : public mozilla::ModuleLoader,
                                                 mozilla::MallocSizeOf aMallocSizeOf, void* arg);
 
     
-    static PLDHashOperator ClearModules(const nsACString& key, ModuleEntry*& entry, void* cx);
     nsDataHashtable<nsCStringHashKey, ModuleEntry*> mModules;
 
     nsClassHashtable<nsCStringHashKey, ModuleEntry> mImports;
