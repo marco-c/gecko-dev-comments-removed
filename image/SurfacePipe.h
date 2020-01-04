@@ -325,6 +325,7 @@ public:
 
 
 
+
   WriteState WriteEmptyRow()
   {
     if (IsSurfaceFinished()) {
@@ -575,6 +576,7 @@ public:
   }
 
   
+
 
 
 
