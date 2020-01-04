@@ -395,6 +395,9 @@ ContentEventHandler::QueryContentRect(nsIContent* aContent,
 
   aEvent->mReply.mRect = LayoutDeviceIntRect::FromUnknownRect(
       resultRect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
+  
+  
+  EnsureNonEmptyRect(aEvent->mReply.mRect);
   aEvent->mSucceeded = true;
 
   return NS_OK;
@@ -1387,6 +1390,22 @@ ContentEventHandler::OnQueryTextContent(WidgetQueryContentEvent* aEvent)
   return NS_OK;
 }
 
+void
+ContentEventHandler::EnsureNonEmptyRect(nsRect& aRect) const
+{
+  
+  
+  aRect.height = std::max(1, aRect.height);
+  aRect.width = std::max(1, aRect.width);
+}
+
+void
+ContentEventHandler::EnsureNonEmptyRect(LayoutDeviceIntRect& aRect) const
+{
+  aRect.height = std::max(1, aRect.height);
+  aRect.width = std::max(1, aRect.width);
+}
+
 ContentEventHandler::NodePosition
 ContentEventHandler::GetNodePositionHavingFlatText(
                        const NodePosition& aNodePosition)
@@ -1501,10 +1520,9 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
       rect = LayoutDeviceIntRect::FromUnknownRect(
                charRect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
-
       
-      rect.height = std::max(1, rect.height);
-      rect.width = std::max(1, rect.width);
+      
+      EnsureNonEmptyRect(rect);
 
       aEvent->mReply.mRectArray.AppendElement(rect);
       offset++;
@@ -1557,14 +1575,16 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   nsRect frameRect = rect;
   nsPoint ptOffset;
   firstFrame->GetPointFromOffset(startNodePosition.mOffset, &ptOffset);
-  
   if (firstFrame->GetWritingMode().IsVertical()) {
-    rect.y += ptOffset.y - 1;
-    rect.height -= ptOffset.y - 1;
+    rect.y += ptOffset.y;
+    rect.height -= ptOffset.y;
   } else {
-    rect.x += ptOffset.x - 1;
-    rect.width -= ptOffset.x - 1;
+    rect.x += ptOffset.x;
+    rect.width -= ptOffset.x;
   }
+  
+  
+  EnsureNonEmptyRect(rect);
 
   
   NodePosition endNodePosition =
@@ -1600,6 +1620,9 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
     frameRect.SetRect(nsPoint(0, 0), frame->GetRect().Size());
     rv = ConvertToRootRelativeOffset(frame, frameRect);
     NS_ENSURE_SUCCESS(rv, rv);
+    
+    
+    EnsureNonEmptyRect(frameRect);
     if (frame != lastFrame) {
       
       rect.UnionRect(rect, frameRect);
@@ -1608,12 +1631,14 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
 
   
   lastFrame->GetPointFromOffset(endNodePosition.mOffset, &ptOffset);
-  
   if (lastFrame->GetWritingMode().IsVertical()) {
-    frameRect.height -= lastFrame->GetRect().height - ptOffset.y - 1;
+    frameRect.height -= lastFrame->GetRect().height - ptOffset.y;
   } else {
-    frameRect.width -= lastFrame->GetRect().width - ptOffset.x - 1;
+    frameRect.width -= lastFrame->GetRect().width - ptOffset.x;
   }
+  
+  
+  EnsureNonEmptyRect(frameRect);
 
   if (firstFrame == lastFrame) {
     rect.IntersectRect(rect, frameRect);
@@ -1622,6 +1647,9 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   }
   aEvent->mReply.mRect = LayoutDeviceIntRect::FromUnknownRect(
       rect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
+  
+  
+  EnsureNonEmptyRect(aEvent->mReply.mRect);
   aEvent->mReply.mWritingMode = lastFrame->GetWritingMode();
   aEvent->mSucceeded = true;
   return NS_OK;
@@ -1670,6 +1698,9 @@ ContentEventHandler::OnQueryCaretRect(WidgetQueryContentEvent* aEvent)
           caretFrame->PresContext()->AppUnitsPerDevPixel();
         aEvent->mReply.mRect = LayoutDeviceIntRect::FromUnknownRect(
           caretRect.ToOutsidePixels(appUnitsPerDevPixel));
+        
+        
+        EnsureNonEmptyRect(aEvent->mReply.mRect);
         aEvent->mReply.mWritingMode = caretFrame->GetWritingMode();
         aEvent->mReply.mOffset = aEvent->mInput.mOffset;
         aEvent->mSucceeded = true;
@@ -1722,12 +1753,8 @@ ContentEventHandler::OnQueryCaretRect(WidgetQueryContentEvent* aEvent)
   aEvent->mReply.mRect = LayoutDeviceIntRect::FromUnknownRect(
       rect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
   
-  if (!aEvent->mReply.mRect.width) {
-    aEvent->mReply.mRect.width = 1;
-  }
-  if (!aEvent->mReply.mRect.height) {
-    aEvent->mReply.mRect.height = 1;
-  }
+  
+  EnsureNonEmptyRect(aEvent->mReply.mRect);
   aEvent->mSucceeded = true;
   return NS_OK;
 }

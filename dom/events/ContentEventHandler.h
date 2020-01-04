@@ -341,6 +341,13 @@ protected:
   };
   
   FrameAndNodeOffset GetFirstFrameHavingFlatTextInRange(nsRange* aRange);
+
+  
+  
+  
+  
+  void EnsureNonEmptyRect(nsRect& aRect) const;
+  void EnsureNonEmptyRect(LayoutDeviceIntRect& aRect) const;
 };
 
 } 
