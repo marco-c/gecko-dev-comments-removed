@@ -22,7 +22,7 @@ var Microformats;
     var modules = {};
 
 
-    modules.version = '1.3.3';
+    modules.version = '1.4.0';
     modules.livingStandard = '2015-09-25T12:26:04Z';
 
     
@@ -401,23 +401,27 @@ var Microformats;
 
         
         findFilterNodes: function(rootNode, filters) {
+            if(modules.utils.isString(filters)){
+                filters = [filters];
+            }
             var newRootNode = modules.domUtils.createNode('div'),
                 items = this.findRootNodes(rootNode, true),
                 i = 0,
                 x = 0,
                 y = 0;
 
+            
+            y = filters.length;
+            while (y--) {
+                if(this.getMapping(filters[y])){
+                    var v1Name = this.getMapping(filters[y]).root;
+                    filters.push(v1Name);
+                }
+            }
+
             if(items){
                 i = items.length;
                 while(x < i) {
-                    
-                    y = filters.length;
-                    while (y--) {
-                        if(this.getMapping(filters[y])){
-                            var v1Name = this.getMapping(filters[y]).root;
-                            filters.push(v1Name);
-                        }
-                    }
                     
                     y = filters.length;
                     while (y--) {
