@@ -172,9 +172,12 @@ GetBMPLog()
   return sBMPLog;
 }
 
-nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
+
+static const uint32_t BIHSIZE_FIELD_LENGTH = 4;
+
+nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength)
   : Decoder(aImage)
-  , mLexer(Transition::To(State::FILE_HEADER, FILE_HEADER_LENGTH))
+  , mLexer(Transition::To(aState, aLength))
   , mIsWithinICO(false)
   , mMayHaveTransparency(false)
   , mDoesHaveTransparency(false)
@@ -186,6 +189,28 @@ nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
   , mCurrentPos(0)
   , mAbsoluteModeNumPixels(0)
 {
+}
+
+
+nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
+  : nsBMPDecoder(aImage, State::FILE_HEADER, FILE_HEADER_LENGTH)
+{
+}
+
+
+nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, uint32_t aDataOffset)
+  : nsBMPDecoder(aImage, State::INFO_HEADER_SIZE, BIHSIZE_FIELD_LENGTH)
+{
+  SetIsWithinICO();
+
+  
+  
+  
+  mPreGapLength += FILE_HEADER_LENGTH;
+
+  
+  
+  mH.mDataOffset = aDataOffset;
 }
 
 nsBMPDecoder::~nsBMPDecoder()
@@ -463,9 +488,6 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 
   return;
 }
-
-
-static const uint32_t BIHSIZE_FIELD_LENGTH = 4;
 
 LexerTransition<nsBMPDecoder::State>
 nsBMPDecoder::ReadFileHeader(const char* aData, size_t aLength)

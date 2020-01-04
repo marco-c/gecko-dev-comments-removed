@@ -142,6 +142,7 @@ public:
   int32_t GetCompressedImageSize() const;
 
   
+  
   void SetIsWithinICO() { mIsWithinICO = true; }
 
   
@@ -163,14 +164,6 @@ private:
   friend class DecoderFactory;
   friend class nsICODecoder;
 
-  
-  
-  explicit nsBMPDecoder(RasterImage* aImage);
-
-  uint32_t* RowBuffer();
-
-  void FinishRow();
-
   enum class State {
     FILE_HEADER,
     INFO_HEADER_SIZE,
@@ -185,6 +178,21 @@ private:
     SUCCESS,
     FAILURE
   };
+
+  
+  explicit nsBMPDecoder(RasterImage* aImage);
+
+  
+  
+  
+  nsBMPDecoder(RasterImage* aImage, uint32_t aDataOffset);
+
+  
+  nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength);
+
+  uint32_t* RowBuffer();
+
+  void FinishRow();
 
   LexerTransition<State> ReadFileHeader(const char* aData, size_t aLength);
   LexerTransition<State> ReadInfoHeaderSize(const char* aData, size_t aLength);

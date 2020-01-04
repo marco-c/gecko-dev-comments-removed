@@ -21,7 +21,7 @@ namespace image {
 
 
 static const uint32_t ICOHEADERSIZE = 6;
-static const uint32_t BITMAPINFOSIZE = 40;
+static const uint32_t BITMAPINFOSIZE = bmp::InfoHeaderLength::WIN_ICO;
 
 
 
@@ -108,42 +108,6 @@ nsICODecoder::GetFinalStateFromContainedDecoder()
   mCurrentFrame = mContainedDecoder->GetCurrentFrameRef();
 
   MOZ_ASSERT(HasError() || !mCurrentFrame || mCurrentFrame->IsImageComplete());
-}
-
-
-
-
-
-
-
-bool
-nsICODecoder::FillBitmapFileHeaderBuffer(int8_t* bfh)
-{
-  memset(bfh, 0, 14);
-  bfh[0] = 'B';
-  bfh[1] = 'M';
-  int32_t dataOffset = 0;
-  int32_t fileSize = 0;
-  dataOffset = bmp::FILE_HEADER_LENGTH + BITMAPINFOSIZE;
-
-  
-  if (mDirEntry.mBitCount <= 8) {
-    uint16_t numColors = GetNumColors();
-    if (numColors == (uint16_t)-1) {
-      return false;
-    }
-    dataOffset += 4 * numColors;
-    fileSize = dataOffset + GetRealWidth() * GetRealHeight();
-  } else {
-    fileSize = dataOffset + (mDirEntry.mBitCount * GetRealWidth() *
-                             GetRealHeight()) / 8;
-  }
-
-  NativeEndian::swapToLittleEndianInPlace(&fileSize, 1);
-  memcpy(bfh + 2, &fileSize, sizeof(fileSize));
-  NativeEndian::swapToLittleEndianInPlace(&dataOffset, 1);
-  memcpy(bfh + 10, &dataOffset, sizeof(dataOffset));
-  return true;
 }
 
 
@@ -390,19 +354,6 @@ nsICODecoder::SniffResource(const char* aData)
                                     toRead);
   } else {
     
-    
-    nsBMPDecoder* bmpDecoder = new nsBMPDecoder(mImage);
-    mContainedDecoder = bmpDecoder;
-    bmpDecoder->SetIsWithinICO();
-    mContainedDecoder->SetMetadataDecode(IsMetadataDecode());
-    mContainedDecoder->SetDecoderFlags(GetDecoderFlags());
-    mContainedDecoder->SetSurfaceFlags(GetSurfaceFlags());
-    if (mDownscaler) {
-      mContainedDecoder->SetTargetSize(mDownscaler->TargetSize());
-    }
-    mContainedDecoder->Init();
-
-    
     int32_t bihSize = ReadBIHSize(aData);
     if (bihSize != static_cast<int32_t>(BITMAPINFOSIZE)) {
       return Transition::Terminate(ICOState::FAILURE);
@@ -446,15 +397,28 @@ nsICODecoder::ReadBIH(const char* aData)
   
   
   
-  int8_t bfhBuffer[BMPFILEHEADERSIZE];
-  if (!FillBitmapFileHeaderBuffer(bfhBuffer)) {
-    return Transition::Terminate(ICOState::FAILURE);
+  
+  uint32_t dataOffset = bmp::FILE_HEADER_LENGTH + BITMAPINFOSIZE;
+  if (mDirEntry.mBitCount <= 8) {
+    
+    uint16_t numColors = GetNumColors();
+    if (numColors == (uint16_t)-1) {
+      return Transition::Terminate(ICOState::FAILURE);
+    }
+    dataOffset += 4 * numColors;
   }
 
-  if (!WriteToContainedDecoder(reinterpret_cast<const char*>(bfhBuffer),
-                               sizeof(bfhBuffer))) {
-    return Transition::Terminate(ICOState::FAILURE);
+  
+  
+  RefPtr<nsBMPDecoder> bmpDecoder = new nsBMPDecoder(mImage, dataOffset);
+  mContainedDecoder = bmpDecoder;
+  mContainedDecoder->SetMetadataDecode(IsMetadataDecode());
+  mContainedDecoder->SetDecoderFlags(GetDecoderFlags());
+  mContainedDecoder->SetSurfaceFlags(GetSurfaceFlags());
+  if (mDownscaler) {
+    mContainedDecoder->SetTargetSize(mDownscaler->TargetSize());
   }
+  mContainedDecoder->Init();
 
   
   
@@ -477,8 +441,6 @@ nsICODecoder::ReadBIH(const char* aData)
   
   
   
-  RefPtr<nsBMPDecoder> bmpDecoder =
-    static_cast<nsBMPDecoder*>(mContainedDecoder.get());
   mBPP = bmpDecoder->GetBitsPerPixel();
 
   

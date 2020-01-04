@@ -88,8 +88,6 @@ private:
   void GetFinalStateFromContainedDecoder();
 
   
-  bool FillBitmapFileHeaderBuffer(int8_t* bfh);
-  
   
   
   
@@ -120,7 +118,7 @@ private:
   StreamingLexer<ICOState, 32> mLexer; 
   RefPtr<Decoder> mContainedDecoder; 
   UniquePtr<uint8_t[]> mMaskBuffer;    
-  char mBIHraw[40];                    
+  char mBIHraw[bmp::InfoHeaderLength::WIN_ICO]; 
   IconDirEntry mDirEntry;              
   IntSize mBiggestResourceSize;        
   IntSize mBiggestResourceHotSpot;     

@@ -26,6 +26,8 @@ struct InfoHeaderLength {
     
     OS2_V2_MIN = 16,    
     OS2_V2_MAX = 64,    
+
+    WIN_ICO = WIN_V3,
   };
 };
 
