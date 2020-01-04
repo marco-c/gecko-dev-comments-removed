@@ -3425,6 +3425,8 @@ BytecodeEmitter::emitPropIncDec(ParseNode* pn)
 bool
 BytecodeEmitter::emitNameIncDec(ParseNode* pn)
 {
+    MOZ_ASSERT(pn->pn_kid->isKind(PNK_NAME));
+
     bool post;
     JSOp binop = GetIncDecInfo(pn->getKind(), &post);
 
@@ -3646,6 +3648,27 @@ BytecodeEmitter::emitElemIncDec(ParseNode* pn)
         return false;
 
     return true;
+}
+
+bool
+BytecodeEmitter::emitCallIncDec(ParseNode* incDec)
+{
+    MOZ_ASSERT(incDec->isKind(PNK_PREINCREMENT) ||
+               incDec->isKind(PNK_POSTINCREMENT) ||
+               incDec->isKind(PNK_PREDECREMENT) ||
+               incDec->isKind(PNK_POSTDECREMENT));
+
+    MOZ_ASSERT(incDec->pn_kid->isKind(PNK_CALL));
+
+    ParseNode* call = incDec->pn_kid;
+    if (!emitTree(call))                                
+        return false;
+    if (!emit1(JSOP_POS))                               
+        return false;
+
+    
+    
+    return emitUint16Operand(JSOP_THROWMSG, JSMSG_BAD_LEFTSIDE_OF_ASS);
 }
 
 bool
@@ -4418,17 +4441,9 @@ BytecodeEmitter::emitDestructuringLHS(ParseNode* target, DestructuringFlavor fla
           }
 
           case PNK_CALL:
-            MOZ_ASSERT(target->pn_xflags & PNX_SETCALL);
-            if (!emitTree(target))
-                return false;
-
-            
-            
-            
-            
-            
-            if (!emit1(JSOP_POP))
-                return false;
+            MOZ_ASSERT_UNREACHABLE("Parser::reportIfNotValidSimpleAssignmentTarget "
+                                   "rejects function calls as assignment "
+                                   "targets in destructuring assignments");
             break;
 
           default:
@@ -4944,9 +4959,15 @@ BytecodeEmitter::emitAssignment(ParseNode* lhs, JSOp op, ParseNode* rhs)
       case PNK_OBJECT:
         break;
       case PNK_CALL:
-        MOZ_ASSERT(lhs->pn_xflags & PNX_SETCALL);
         if (!emitTree(lhs))
             return false;
+
+        
+        
+        if (!emitUint16Operand(JSOP_THROWMSG, JSMSG_BAD_LEFTSIDE_OF_ASS))
+            return false;
+
+        
         if (!emit1(JSOP_POP))
             return false;
         break;
@@ -4994,11 +5015,8 @@ BytecodeEmitter::emitAssignment(ParseNode* lhs, JSOp op, ParseNode* rhs)
           }
           case PNK_CALL:
             
-
-
-
-
-            MOZ_ASSERT(lhs->pn_xflags & PNX_SETCALL);
+            
+            
             if (!emit1(JSOP_NULL))
                 return false;
             break;
@@ -5029,7 +5047,6 @@ BytecodeEmitter::emitAssignment(ParseNode* lhs, JSOp op, ParseNode* rhs)
       }
       case PNK_CALL:
         
-        MOZ_ASSERT(lhs->pn_xflags & PNX_SETCALL);
         break;
       case PNK_ELEM: {
         JSOp setOp = lhs->as<PropertyByValue>().isSuper() ?
@@ -7527,7 +7544,6 @@ BytecodeEmitter::emitDeleteExpression(ParseNode* node)
         return false;
 
     if (useful) {
-        MOZ_ASSERT_IF(expression->isKind(PNK_CALL), !(expression->pn_xflags & PNX_SETCALL));
         if (!emitTree(expression))
             return false;
         if (!emit1(JSOP_POP))
@@ -7788,9 +7804,6 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn)
       case PNK_NAME:
         if (emitterMode == BytecodeEmitter::SelfHosting && !spread) {
             
-            MOZ_ASSERT(!(pn->pn_xflags & PNX_SETCALL));
-
-            
             
             
             if (pn2->name() == cx->names().callFunction ||
@@ -7953,10 +7966,6 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn)
         if (!emitUint32Operand(JSOP_LINENO, lineNum))
             return false;
     }
-    if (pn->pn_xflags & PNX_SETCALL) {
-        if (!emitUint16Operand(JSOP_THROWMSG, JSMSG_BAD_LEFTSIDE_OF_ASS))
-            return false;
-    }
 
     return true;
 }
@@ -8065,18 +8074,14 @@ BytecodeEmitter::emitSequenceExpr(ParseNode* pn)
 MOZ_NEVER_INLINE bool
 BytecodeEmitter::emitIncOrDec(ParseNode* pn)
 {
-    
-    ParseNode* pn2 = pn->pn_kid;
-    switch (pn2->getKind()) {
+    switch (pn->pn_kid->getKind()) {
       case PNK_DOT:
         return emitPropIncDec(pn);
       case PNK_ELEM:
         return emitElemIncDec(pn);
       case PNK_CALL:
-        MOZ_ASSERT(pn2->pn_xflags & PNX_SETCALL);
-        return emitTree(pn2);
+        return emitCallIncDec(pn);
       default:
-        MOZ_ASSERT(pn2->isKind(PNK_NAME));
         return emitNameIncDec(pn);
     }
 
