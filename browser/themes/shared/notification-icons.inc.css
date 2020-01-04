@@ -106,9 +106,18 @@
   padding-left: 7px;
 }
 
+
 #notification-popup-box:-moz-locale-dir(rtl),
+
+
 .notification-anchor-icon:-moz-locale-dir(rtl) {
   transform: scaleX(-1);
+}
+
+
+
+.notification-anchor-icon.chat-toolbarbutton:-moz-locale-dir(rtl) {
+  transform: none;
 }
 
 .notification-anchor-icon {
