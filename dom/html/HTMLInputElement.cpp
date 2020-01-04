@@ -3940,8 +3940,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
         case eMouseDown:
         case eMouseUp:
-        case NS_MOUSE_DOUBLECLICK:
-        {
+        case eMouseDoubleClick: {
           
           
           WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();

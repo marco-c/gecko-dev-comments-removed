@@ -2106,7 +2106,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
       
       NS_ASSERTION(anEvent.mMessage == eMouseDown ||
                    anEvent.mMessage == eMouseUp ||
-                   anEvent.mMessage == NS_MOUSE_DOUBLECLICK ||
+                   anEvent.mMessage == eMouseDoubleClick ||
                    anEvent.mMessage == NS_MOUSE_OVER ||
                    anEvent.mMessage == NS_MOUSE_OUT ||
                    anEvent.mMessage == eMouseMove,
@@ -2168,7 +2168,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
         switch (anEvent.mMessage)
           {
           case NS_MOUSE_CLICK:
-          case NS_MOUSE_DOUBLECLICK:
+          case eMouseDoubleClick:
             
             return rv;
           default:
@@ -2375,7 +2375,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
         switch (anEvent.mMessage)
           {
           case NS_MOUSE_CLICK:
-          case NS_MOUSE_DOUBLECLICK:
+          case eMouseDoubleClick:
             
             return rv;
           default:
