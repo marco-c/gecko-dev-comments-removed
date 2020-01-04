@@ -9,6 +9,7 @@
 
 const ADD_QUERY = "t1=t2";
 const ADD_HEADER = "Test-header: true";
+const ADD_UA_HEADER = "User-Agent: Custom-Agent";
 const ADD_POSTDATA = "&t3=t4";
 
 add_task(function* () {
@@ -129,6 +130,11 @@ add_task(function* () {
     type(["VK_RETURN"]);
     type(ADD_HEADER);
 
+    
+    
+    type(["VK_RETURN"]);
+    type(ADD_UA_HEADER);
+
     let postData = document.getElementById("custom-postdata-value");
     let postFocus = once(postData, "focus", false);
     postData.focus();
@@ -148,6 +154,9 @@ add_task(function* () {
     let { headers } = data.requestHeaders;
     let hasHeader = headers.some(h => `${h.name}: ${h.value}` == ADD_HEADER);
     ok(hasHeader, "new header added to sent request");
+
+    let hasUAHeader = headers.some(h => `${h.name}: ${h.value}` == ADD_UA_HEADER);
+    ok(hasUAHeader, "User-Agent header added to sent request");
 
     is(data.requestPostData.postData.text,
        origData.requestPostData.postData.text + ADD_POSTDATA,
