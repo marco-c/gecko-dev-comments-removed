@@ -3,42 +3,18 @@
 
 
 
-gBrowser.selectedTab = gBrowser.addTab();
-
-function finishAndCleanUp()
-{
-  gBrowser.removeCurrentTab();
-  PlacesTestUtils.clearHistory().then(finish);
-}
 
 
 
-
-function waitForObserve(name, callback)
-{
-  var observerService = Cc["@mozilla.org/observer-service;1"]
-                        .getService(Ci.nsIObserverService);
-  var observer = {
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
-    observe: function(subject, topic, data) {
-      observerService.removeObserver(observer, name);
-      observer = null;
-      callback(subject, topic, data);
-    }
-  };
-
-  observerService.addObserver(observer, name, false);
-}
-
-
-
-
-function waitForLoad(callback)
-{
-  gBrowser.addEventListener("DOMContentLoaded", function() {
-    gBrowser.removeEventListener("DOMContentLoaded", arguments.callee, true);
-    callback();
-  }, true);
+function promiseObserve(name, checkFn) {
+  return new Promise(resolve => {
+    Services.obs.addObserver(function observer(subject) {
+      if (checkFn(subject)) {
+        Services.obs.removeObserver(observer, name);
+        resolve();
+      }
+    }, name, false);
+  });
 }
 
 var conn = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase).DBConnection;
@@ -46,8 +22,7 @@ var conn = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase).DBConnectio
 
 
 
-function getColumn(table, column, fromColumnName, fromColumnValue)
-{
+function getColumn(table, column, fromColumnName, fromColumnValue) {
   let sql = `SELECT ${column}
              FROM ${table}
              WHERE ${fromColumnName} = :val
@@ -63,12 +38,9 @@ function getColumn(table, column, fromColumnName, fromColumnValue)
   }
 }
 
-function test()
-{
+add_task(function* () {
   
   
-
-  waitForExplicitFinish();
 
   
   
@@ -80,7 +52,7 @@ function test()
   ];
   var currentIndex = 0;
 
-  waitForObserve("uri-visit-saved", function(subject, topic, data) {
+  function checkObserver(subject) {
     var uri = subject.QueryInterface(Ci.nsIURI);
     var expected = expectedUrls[currentIndex];
     is(uri.spec, expected, "Saved URL visit " + uri.spec);
@@ -99,20 +71,18 @@ function test()
     }
 
     currentIndex++;
-    if (currentIndex < expectedUrls.length) {
-      waitForObserve("uri-visit-saved", arguments.callee);
-    }
-    else {
-      finishAndCleanUp();
-    }
-  });
+    return (currentIndex >= expectedUrls.length);
+  }
+  let visitUriPromise = promiseObserve("uri-visit-saved", checkObserver);
+
+  const testUrl = "http://example.com/tests/toolkit/components/places/tests/browser/begin.html";
+  yield BrowserTestUtils.openNewForegroundTab(gBrowser, testUrl);
 
   
-  content.location.href = "http://example.com/tests/toolkit/components/places/tests/browser/begin.html";
-  waitForLoad(function() {
-    EventUtils.sendMouseEvent({type: 'click'}, 'clickme', content.window);
-    waitForLoad(function() {
-      content.location.href = "about:blank";
-    });
-  });
-}
+  yield BrowserTestUtils.synthesizeMouseAtCenter("#clickme", { }, gBrowser.selectedBrowser);
+  yield visitUriPromise;
+
+  yield PlacesTestUtils.clearHistory();
+
+  gBrowser.removeCurrentTab();
+});
