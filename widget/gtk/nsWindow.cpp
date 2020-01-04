@@ -2233,8 +2233,7 @@ nsWindow::OnExposeEvent(cairo_t *cr)
         
         
         boundsRect = region.GetBounds();
-        dt->PushClipRect(Rect(boundsRect.x, boundsRect.y,
-                              boundsRect.width, boundsRect.height));
+        dt->PushClipRect(Rect(boundsRect));
     } else {
         gfxUtils::ClipToRegion(dt, region);
     }
@@ -2244,18 +2243,19 @@ nsWindow::OnExposeEvent(cairo_t *cr)
         
         
         
-        layerBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
-        RefPtr<DrawTarget> destDT = dt->CreateSimilarDrawTarget(IntSize(boundsRect.width, boundsRect.height), SurfaceFormat::B8G8R8A8);
-        ctx = new gfxContext(destDT, Point(boundsRect.x, boundsRect.y));
-#ifdef MOZ_HAVE_SHMIMAGE
+        layerBuffering = BufferMode::BUFFER_NONE;
+        RefPtr<DrawTarget> destDT = dt->CreateSimilarDrawTarget(boundsRect.Size(), SurfaceFormat::B8G8R8A8);
+        ctx = new gfxContext(destDT, boundsRect.TopLeft());
     } else {
+#ifdef MOZ_HAVE_SHMIMAGE
         if (nsShmImage::UseShm()) {
             
-            layerBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
-#endif
-        } else {
+            layerBuffering = BufferMode::BUFFER_NONE;
+        } else
+#endif 
+        {
             
-            layerBuffering = mozilla::layers::BufferMode::BUFFERED;
+            layerBuffering = BufferMode::BUFFERED;
         }
         ctx = new gfxContext(dt);
     }
@@ -2291,8 +2291,7 @@ nsWindow::OnExposeEvent(cairo_t *cr)
 
                 UpdateAlpha(surf, boundsRect);
 
-                dt->DrawSurface(surf, Rect(boundsRect.x, boundsRect.y, boundsRect.width, boundsRect.height),
-                                Rect(0, 0, boundsRect.width, boundsRect.height),
+                dt->DrawSurface(surf, Rect(boundsRect), Rect(0, 0, boundsRect.width, boundsRect.height),
                                 DrawSurfaceOptions(Filter::POINT), DrawOptions(1.0f, CompositionOp::OP_SOURCE));
             }
         }
@@ -2346,7 +2345,7 @@ nsWindow::UpdateAlpha(SourceSurface* aSourceSurface, nsIntRect aBoundsRect)
                                     stride, SurfaceFormat::A8);
 
         if (drawTarget) {
-            drawTarget->DrawSurface(aSourceSurface, Rect(aBoundsRect.x, aBoundsRect.y, aBoundsRect.width, aBoundsRect.height),
+            drawTarget->DrawSurface(aSourceSurface, Rect(0, 0, aBoundsRect.width, aBoundsRect.height),
                                     Rect(0, 0, aSourceSurface->GetSize().width, aSourceSurface->GetSize().height),
                                     DrawSurfaceOptions(Filter::POINT), DrawOptions(1.0f, CompositionOp::OP_SOURCE));
         }
