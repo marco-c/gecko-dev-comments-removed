@@ -188,8 +188,14 @@ def docker_worker_setup(config, test, taskdesc):
         ])
 
     
+    command = [
+        '/home/worker/bin/run-task',
+        
+        '--chown', '/home/worker/workspace',
+        '--',
+        '/home/worker/bin/test-linux.sh',
+    ]
 
-    command = ["bash", "/home/worker/bin/test.sh"]
     if mozharness.get('no-read-buildbot-config'):
         command.append("--no-read-buildbot-config")
     command.extend([
