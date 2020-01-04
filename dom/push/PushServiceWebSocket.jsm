@@ -893,6 +893,15 @@ this.PushServiceWebSocket = {
       debug("handleDataUpdate: Discarding message without channel ID");
       return;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    this._sendAck(update.channelID, update.version);
     if (typeof update.data != "string") {
       promise = this._mainPushService.receivedPushMessage(
         update.channelID,
@@ -914,7 +923,7 @@ this.PushServiceWebSocket = {
         record => record
       );
     }
-    promise.then(() => this._sendAck(update.channelID)).catch(err => {
+    promise.catch(err => {
       debug("handleDataUpdate: Error delivering message: " + err);
     });
   },
