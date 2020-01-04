@@ -5,7 +5,6 @@
 
 "use strict";
 
-const {Cu} = require("chrome");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {LocalizationHelper} = require("devtools/client/shared/l10n");
 
@@ -194,15 +193,12 @@ StorageUI.prototype = {
     return this.storageTypes[type];
   },
 
-  makeFieldsEditable: function() {
+  makeFieldsEditable: function* () {
     let actor = this.getCurrentActor();
 
     if (typeof actor.getEditableFields !== "undefined") {
-      actor.getEditableFields().then(fields => {
-        this.table.makeFieldsEditable(fields);
-      }).catch(() => {
-        
-      });
+      let fields = yield actor.getEditableFields();
+      this.table.makeFieldsEditable(fields);
     } else if (this.table._editableFieldsEngine) {
       this.table._editableFieldsEngine.destroy();
     }
@@ -404,7 +400,7 @@ StorageUI.prototype = {
 
 
 
-  fetchStorageObjects: function(type, host, names, reason) {
+  fetchStorageObjects: Task.async(function* (type, host, names, reason) {
     let fetchOpts = reason === REASON.NEXT_50_ITEMS ? {offset: this.itemOffset}
                                                     : {};
     let storageType = this.storageTypes[type];
@@ -416,21 +412,15 @@ StorageUI.prototype = {
       throw new Error("Invalid reason specified");
     }
 
-    storageType.getStoreObjects(host, names, fetchOpts).then(({data}) => {
-      if (!data.length) {
-        this.emit("store-objects-updated");
-        return;
-      }
+    let {data} = yield storageType.getStoreObjects(host, names, fetchOpts);
+    if (data.length) {
       if (reason === REASON.POPULATE) {
-        this.resetColumns(data[0], type);
-        this.table.host = host;
+        yield this.resetColumns(data[0], type, host);
       }
       this.populateTable(data, reason);
-      this.emit("store-objects-updated");
-
-      this.makeFieldsEditable();
-    }, Cu.reportError);
-  },
+    }
+    this.emit("store-objects-updated");
+  }),
 
   
 
@@ -667,7 +657,9 @@ StorageUI.prototype = {
 
 
 
-  resetColumns: function(data, type) {
+
+
+  resetColumns: function* (data, type, host) {
     let columns = {};
     let uniqueKey = null;
     for (let key in data) {
@@ -684,7 +676,10 @@ StorageUI.prototype = {
     }
     this.table.setColumns(columns, null, HIDDEN_COLUMNS);
     this.table.datatype = type;
+    this.table.host = host;
     this.hideSidebar();
+
+    yield this.makeFieldsEditable();
   },
 
   
