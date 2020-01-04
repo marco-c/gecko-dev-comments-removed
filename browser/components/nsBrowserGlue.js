@@ -2044,6 +2044,20 @@ BrowserGlue.prototype = {
       Services.prefs.clearUserPref("permissions.default.image");
     }
 
+    if (currentUIVersion < 12) {
+      
+      
+      let currentset = xulStore.getValue(BROWSER_DOCURL, "nav-bar", "currentset");
+      
+      if (currentset) {
+        if (currentset.includes("bookmarks-menu-button-container")) {
+          currentset = currentset.replace(/(^|,)bookmarks-menu-button-container($|,)/,
+                                          "$1bookmarks-menu-button$2");
+          xulStore.setValue(BROWSER_DOCURL, "nav-bar", "currentset", currentset);
+        }
+      }
+    }
+
     if (currentUIVersion < 14) {
       
       let path = OS.Path.join(OS.Constants.Path.profileDir,
@@ -2064,10 +2078,7 @@ BrowserGlue.prototype = {
         if (!currentset.includes("bookmarks-menu-button")) {
           
           
-          if (currentset.includes("bookmarks-menu-button-container")) {
-            currentset = currentset.replace(/(^|,)bookmarks-menu-button-container($|,)/,
-                                            "$1bookmarks-menu-button$2");
-          } else if (currentset.includes("downloads-button")) {
+          if (currentset.includes("downloads-button")) {
             currentset = currentset.replace(/(^|,)downloads-button($|,)/,
                                             "$1bookmarks-menu-button,downloads-button$2");
           } else if (currentset.includes("home-button")) {
@@ -2113,12 +2124,6 @@ BrowserGlue.prototype = {
     if (currentUIVersion < 20) {
       
       xulStore.removeValue(BROWSER_DOCURL, "TabsToolbar", "collapsed");
-    }
-
-    if (currentUIVersion < 22) {
-      
-      Services.prefs.clearUserPref("browser.syncPromoViewsLeft");
-      Services.prefs.clearUserPref("browser.syncPromoViewsLeftMap");
     }
 
     if (currentUIVersion < 23) {
