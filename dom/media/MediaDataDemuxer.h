@@ -52,19 +52,6 @@ public:
   virtual nsRefPtr<InitPromise> Init() = 0;
 
   
-  
-  
-  
-  
-  
-  virtual bool IsThreadSafe() { return false; }
-
-  
-  
-  
-  virtual already_AddRefed<MediaDataDemuxer> Clone() const = 0;
-
-  
   virtual bool HasTrackType(TrackInfo::TrackType aType) const = 0;
 
   
