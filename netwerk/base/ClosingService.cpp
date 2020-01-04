@@ -53,7 +53,7 @@ TcpUdpPRCloseLayerClose(PRFileDesc *aFd)
   if (aFd) {
     
     
-    if (gIOService->IsShutdown()) {
+    if (gIOService->IsNetTearingDown()) {
       
       
       PR_Free(aFd);
@@ -281,7 +281,7 @@ ClosingService::SendPRCloseTelemetry(PRIntervalTime aStart,
                                      mozilla::Telemetry::ID aIDOffline)
 {
     PRIntervalTime now = PR_IntervalNow();
-    if (gIOService->IsShutdown()) {
+    if (gIOService->IsNetTearingDown()) {
         Telemetry::Accumulate(aIDShutdown,
                               PR_IntervalToMilliseconds(now - aStart));
 

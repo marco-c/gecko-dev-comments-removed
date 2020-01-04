@@ -396,6 +396,11 @@ nsHttpHandler::MakeNewRequestTokenBucket()
 nsresult
 nsHttpHandler::InitConnectionMgr()
 {
+    
+    if (IsNeckoChild()) {
+        return NS_OK;
+    }
+
     nsresult rv;
 
     if (!mConnMgr) {
@@ -2052,10 +2057,6 @@ nsHttpHandler::Observe(nsISupports *subject,
             mWifiTickler->Cancel();
 
         
-        if (mConnMgr)
-            mConnMgr->Shutdown();
-
-        
         
         mSessionStartTime = NowInSeconds();
 
@@ -2341,6 +2342,15 @@ nsHttpsHandler::AllowPort(int32_t aPort, const char *aScheme, bool *_retval)
     
     *_retval = false;
     return NS_OK;
+}
+
+void
+nsHttpHandler::ShutdownConnectionManager()
+{
+    
+    if (mConnMgr) {
+        mConnMgr->Shutdown();
+    }
 }
 
 } 
