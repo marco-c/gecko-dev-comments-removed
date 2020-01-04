@@ -6,8 +6,8 @@
 const { FrontClassWithSpec, Front } = require("devtools/shared/protocol");
 const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
 const { Task } = require("devtools/shared/task");
-const { CSS_PROPERTIES_DB } = require("devtools/shared/css/properties-db");
-const { cssColors } = require("devtools/shared/css/color-db");
+const { CSS_PROPERTIES_DB } = require("devtools/shared/css-properties-db");
+const { cssColors } = require("devtools/shared/css-color-db");
 
 
 
