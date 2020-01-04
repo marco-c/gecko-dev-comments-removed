@@ -402,15 +402,25 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
     
     
     
+    
+    
+    
+    
+    MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(obj));
+
+    
+    
+    
+    
+    
     HandleObject global = cx->global();
     RootedObject objGlobal(cx, &obj->global());
     MOZ_ASSERT(global);
     MOZ_ASSERT(objGlobal);
 
-    const JSWrapObjectCallbacks* cb = cx->runtime()->wrapObjectCallbacks;
-
     if (obj->compartment() == this) {
         obj.set(ToWindowProxyIfWindow(obj));
+        MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(obj));
         return true;
     }
 
@@ -425,6 +435,12 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
     RootedObject objectPassedToWrap(cx, obj);
     obj.set(UncheckedUnwrap(obj,  true));
 
+    
+    
+    
+    if (!existingArg)
+        ExposeObjectToActiveJS(obj);
+
     if (obj->compartment() == this) {
         MOZ_ASSERT(!IsWindow(obj));
         return true;
@@ -438,8 +454,11 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
         if (!GetBuiltinConstructor(cx, JSProto_StopIteration, &stopIteration))
             return false;
         obj.set(stopIteration);
+        MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(obj));
         return true;
     }
+
+    const JSWrapObjectCallbacks* cb = cx->runtime()->wrapObjectCallbacks;
 
     
     
@@ -448,6 +467,7 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
         obj.set(cb->preWrap(cx, global, obj, objectPassedToWrap));
         if (!obj)
             return false;
+        MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(obj));
     }
     MOZ_ASSERT(!IsWindow(obj));
 
@@ -459,6 +479,9 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
     if (WrapperMap::Ptr p = crossCompartmentWrappers.lookup(CrossCompartmentKey(key))) {
         obj.set(&p->value().get().toObject());
         MOZ_ASSERT(obj->is<CrossCompartmentWrapperObject>());
+        
+        
+        MOZ_ASSERT(!ObjectIsMarkedGray(obj));
         return true;
     }
 
@@ -477,6 +500,7 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
     RootedObject wrapper(cx, cb->wrap(cx, existing, obj));
     if (!wrapper)
         return false;
+    MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(wrapper));
 
     
     

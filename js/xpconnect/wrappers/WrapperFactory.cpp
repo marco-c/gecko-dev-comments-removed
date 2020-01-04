@@ -102,9 +102,11 @@ WrapperFactory::WaiveXray(JSContext* cx, JSObject* objArg)
     MOZ_ASSERT(!js::IsWindow(obj));
 
     JSObject* waiver = GetXrayWaiver(obj);
-    if (waiver)
-        return waiver;
-    return CreateXrayWaiver(cx, obj);
+    if (!waiver) {
+        waiver = CreateXrayWaiver(cx, obj);
+    }
+    MOZ_ASSERT(!ObjectIsMarkedGray(waiver));
+    return waiver;
 }
 
  bool
@@ -168,6 +170,10 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
             return nullptr;
         }
         MOZ_ASSERT(js::IsWindowProxy(obj));
+        
+        
+        
+        ExposeObjectToActiveJS(obj);
     }
 
     
@@ -280,6 +286,7 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
 
     obj.set(&v.toObject());
     MOZ_ASSERT(IS_WN_REFLECTOR(obj), "bad object");
+    MOZ_ASSERT(!ObjectIsMarkedGray(obj), "Should never return gray reflectors");
 
     
     
