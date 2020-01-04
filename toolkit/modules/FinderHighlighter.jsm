@@ -78,7 +78,7 @@ const kModalStyles = {
     ["padding", "0 1px 2px 1px !important"],
     ["position", "absolute"]
   ],
-  maskRectBrightText: [ "background", "#000" ]
+  maskRectBrightText: [ ["background", "#000"] ]
 };
 const kModalOutlineAnim = {
   "keyframes": [
@@ -460,7 +460,6 @@ FinderHighlighter.prototype = {
     let dict = this.getForWindow(window.top);
     if (dict.animation)
       dict.animation.finish();
-    dict.currentFoundRange = null;
     dict.dynamicRangesSet.clear();
     dict.frames.clear();
     dict.modalHighlightRectsMap.clear();
@@ -476,6 +475,7 @@ FinderHighlighter.prototype = {
     let window = this.finder._getWindow();
     let dict = this.getForWindow(window);
     this.clear(window);
+    dict.currentFoundRange = null;
 
     if (!dict.modalHighlightOutline)
       return;
@@ -758,6 +758,7 @@ FinderHighlighter.prototype = {
 
 
 
+
   _updateRangeRects(range, checkIfDynamic = true, dict = null) {
     let window = range.startContainer.ownerDocument.defaultView;
     let bounds;
@@ -785,6 +786,7 @@ FinderHighlighter.prototype = {
         rects.add(rect);
     }
 
+    
     dict = dict || this.getForWindow(window.top);
     dict.modalHighlightRectsMap.set(range, rects);
     if (checkIfDynamic && this._isInDynamicContainer(range))
@@ -960,6 +962,8 @@ FinderHighlighter.prototype = {
       const rectStyle = this._getStyleString(kModalStyles.maskRect,
         dict.brightText ? kModalStyles.maskRectBrightText : []);
       for (let [range, rects] of dict.modalHighlightRectsMap) {
+        if (this._checkOverlap(dict.currentFoundRange, range))
+          continue;
         if (dict.updateAllRanges)
           rects = this._updateRangeRects(range);
         for (let rect of rects) {
@@ -1202,6 +1206,8 @@ FinderHighlighter.prototype = {
 
 
   _checkOverlap(selectionRange, findRange) {
+    if (!selectionRange || !findRange)
+      return false;
     
     
     
