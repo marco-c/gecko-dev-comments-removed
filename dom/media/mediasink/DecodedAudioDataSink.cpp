@@ -56,10 +56,6 @@ DecodedAudioDataSink::DecodedAudioDataSink(AbstractThread* aThread,
   mOutputRate = resampling ? resamplingRate : mInfo.mRate;
   mOutputChannels = mInfo.mChannels > 2 && gfxPrefs::AudioSinkForceStereo()
                       ? 2 : mInfo.mChannels;
-  mConverter =
-    MakeUnique<AudioConverter>(
-      AudioConfig(mInfo.mChannels, mInfo.mRate),
-      AudioConfig(mOutputChannels, mOutputRate));
 }
 
 DecodedAudioDataSink::~DecodedAudioDataSink()
@@ -324,13 +320,36 @@ DecodedAudioDataSink::NotifyAudioNeeded()
       continue;
     }
 
-    
-    if (data->mRate != mConverter->InputConfig().Rate() ||
-        data->mChannels != mConverter->InputConfig().Channels()) {
-      NS_WARNING(nsPrintfCString(
-        "mismatched sample format, data=%p rate=%u channels=%u frames=%u",
-        data->mAudioData.get(), data->mRate, data->mChannels, data->mFrames).get());
-      continue;
+    if (!mConverter ||
+        (data->mRate != mConverter->InputConfig().Rate() ||
+         data->mChannels != mConverter->InputConfig().Channels())) {
+      SINK_LOG_V("Audio format changed from %u@%uHz to %u@%uHz",
+                 mConverter? mConverter->InputConfig().Channels() : 0,
+                 mConverter ? mConverter->InputConfig().Rate() : 0,
+                 data->mChannels, data->mRate);
+
+      
+      
+      if (mFramesParsed) {
+        
+        uint32_t oldRate = mConverter->InputConfig().Rate();
+        uint32_t newRate = data->mRate;
+        int64_t major = mFramesParsed / oldRate;
+        int64_t remainder = mFramesParsed % oldRate;
+        CheckedInt64 result =
+          CheckedInt64(remainder) * newRate / oldRate + major * oldRate;
+        if (!result.isValid()) {
+          NS_WARNING("Int overflow in DecodedAudioDataSink");
+          mErrored = true;
+          return;
+        }
+        mFramesParsed = result.value();
+      }
+
+      mConverter =
+        MakeUnique<AudioConverter>(
+          AudioConfig(data->mChannels, data->mRate),
+          AudioConfig(mOutputChannels, mOutputRate));
     }
 
     
