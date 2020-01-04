@@ -123,7 +123,7 @@ NS_IMETHODIMP nsPlaintextEditor::InsertTextFromTransferable(nsITransferable *aTr
       
       nsContentUtils::PlatformToDOMLineBreaks(stuffToPaste);
 
-      nsAutoEditBatch beginBatching(this);
+      AutoEditBatch beginBatching(this);
       rv = InsertTextAt(stuffToPaste, aDestinationNode, aDestOffset, aDoDeleteSelection);
     }
   }
@@ -152,7 +152,7 @@ nsresult nsPlaintextEditor::InsertFromDataTransfer(DataTransfer *aDataTransfer,
     data->GetAsAString(insertText);
     nsContentUtils::PlatformToDOMLineBreaks(insertText);
 
-    nsAutoEditBatch beginBatching(this);
+    AutoEditBatch beginBatching(this);
     return InsertTextAt(insertText, aDestinationNode, aDestOffset, aDoDeleteSelection);
   }
 
@@ -201,7 +201,7 @@ nsresult nsPlaintextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
   if (numItems < 1) return NS_ERROR_FAILURE;  
 
   
-  nsAutoEditBatch beginBatching(this);
+  AutoEditBatch beginBatching(this);
 
   bool deleteSelection = false;
 

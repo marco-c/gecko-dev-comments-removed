@@ -55,24 +55,27 @@ class MOZ_RAII nsAutoPlaceHolderBatch
     }
 };
 
-
-
-
-
-
-class MOZ_RAII nsAutoEditBatch : public nsAutoPlaceHolderBatch
-{
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-  public:
-    explicit nsAutoEditBatch(nsIEditor *aEd MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : nsAutoPlaceHolderBatch(aEd, nullptr)
-    {
-      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    }
-    ~nsAutoEditBatch() {}
-};
-
 namespace mozilla {
+
+
+
+
+
+
+class MOZ_RAII AutoEditBatch final : public nsAutoPlaceHolderBatch
+{
+private:
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+
+public:
+  explicit AutoEditBatch(nsIEditor* aEditor
+                         MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    : nsAutoPlaceHolderBatch(aEditor, nullptr)
+  {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+  }
+  ~AutoEditBatch() {}
+};
 
 
 

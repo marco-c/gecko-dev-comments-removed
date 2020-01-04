@@ -2203,7 +2203,7 @@ nsEditor::CloneAttributes(Element* aDest, Element* aSource)
 {
   MOZ_ASSERT(aDest && aSource);
 
-  nsAutoEditBatch beginBatching(this);
+  AutoEditBatch beginBatching(this);
 
   
   
