@@ -214,47 +214,13 @@ CodeGeneratorMIPSShared::visitMinMaxD(LMinMaxD* ins)
 {
     FloatRegister first = ToFloatRegister(ins->first());
     FloatRegister second = ToFloatRegister(ins->second());
-    FloatRegister output = ToFloatRegister(ins->output());
 
-    MOZ_ASSERT(first == output);
+    MOZ_ASSERT(first == ToFloatRegister(ins->output()));
 
-    Assembler::DoubleCondition cond = ins->mir()->isMax()
-                                      ? Assembler::DoubleLessThanOrEqual
-                                      : Assembler::DoubleGreaterThanOrEqual;
-    Label nan, equal, returnSecond, done;
-
-    
-    masm.ma_bc1d(first, second, &nan, Assembler::DoubleUnordered, ShortJump);
-    
-    masm.ma_bc1d(first, second, &equal, Assembler::DoubleEqual, ShortJump);
-    masm.ma_bc1d(first, second, &returnSecond, cond, ShortJump);
-    masm.ma_b(&done, ShortJump);
-
-    
-    masm.bind(&equal);
-    masm.loadConstantDouble(0.0, ScratchDoubleReg);
-    
-    masm.ma_bc1d(first, ScratchDoubleReg, &done, Assembler::DoubleNotEqualOrUnordered, ShortJump);
-
-    
-    if (ins->mir()->isMax()) {
-        
-        masm.addDouble(second, first);
-    } else {
-        masm.negateDouble(first);
-        masm.subDouble(second, first);
-        masm.negateDouble(first);
-    }
-    masm.ma_b(&done, ShortJump);
-
-    masm.bind(&nan);
-    masm.loadConstantDouble(GenericNaN(), output);
-    masm.ma_b(&done, ShortJump);
-
-    masm.bind(&returnSecond);
-    masm.moveDouble(second, output);
-
-    masm.bind(&done);
+    if (ins->mir()->isMax())
+        masm.maxDouble(second, first, true);
+    else
+        masm.minDouble(second, first, true);
 }
 
 void
@@ -262,46 +228,13 @@ CodeGeneratorMIPSShared::visitMinMaxF(LMinMaxF* ins)
 {
     FloatRegister first = ToFloatRegister(ins->first());
     FloatRegister second = ToFloatRegister(ins->second());
-    FloatRegister output = ToFloatRegister(ins->output());
 
-    MOZ_ASSERT(first == output);
+    MOZ_ASSERT(first == ToFloatRegister(ins->output()));
 
-    Assembler::DoubleCondition cond = ins->mir()->isMax()
-                                      ? Assembler::DoubleLessThanOrEqual
-                                      : Assembler::DoubleGreaterThanOrEqual;
-    Label nan, equal, returnSecond, done;
-
-    
-    masm.ma_bc1s(first, second, &nan, Assembler::DoubleUnordered, ShortJump);
-    
-    masm.ma_bc1s(first, second, &equal, Assembler::DoubleEqual, ShortJump);
-    masm.ma_bc1s(first, second, &returnSecond, cond, ShortJump);
-    masm.ma_b(&done, ShortJump);
-
-    
-    masm.bind(&equal);
-    masm.loadConstantFloat32(0.0f, ScratchFloat32Reg);
-    
-    masm.ma_bc1s(first, ScratchFloat32Reg, &done, Assembler::DoubleNotEqualOrUnordered, ShortJump);
-
-    
-    if (ins->mir()->isMax()) {
-        
-        masm.as_adds(first, first, second);
-    } else {
-        masm.as_negs(first, first);
-        masm.as_subs(first, first, second);
-        masm.as_negs(first, first);
-    }
-    masm.ma_b(&done, ShortJump);
-
-    masm.bind(&nan);
-    masm.loadConstantFloat32(GenericNaN(), output);
-    masm.ma_b(&done, ShortJump);
-    masm.bind(&returnSecond);
-    masm.as_movs(output, second);
-
-    masm.bind(&done);
+    if (ins->mir()->isMax())
+        masm.maxFloat32(second, first, true);
+    else
+        masm.minFloat32(second, first, true);
 }
 
 void
