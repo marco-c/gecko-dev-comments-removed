@@ -14,15 +14,8 @@ cppunit:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                # Coming soon:
-                # win.*:
-                #    - mozharness/configs/unittests/win_unittest.py
-                #    - mozharness/configs/remove_executables.py
-                # ...
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --cppunittest-suite=cppunittest
 
@@ -35,10 +28,8 @@ crashtest:
         chunked: true
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --reftest-suite=crashtest
 
@@ -96,10 +87,8 @@ gtest:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --gtest-suite=gtest
 
@@ -113,10 +102,8 @@ jittests:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --jittest-suite=jittest-chunked
 
@@ -129,10 +116,8 @@ jsreftest:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --reftest-suite=jsreftest
 
@@ -160,12 +145,12 @@ mochitest:
         no-read-buildbot-config: true
         chunked: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=plain-chunked
+    # Bug 1281241: migrating to m3.large instances
+    instance-size: legacy
 
 mochitest-a11y:
     description: "Mochitest a11y run"
@@ -178,10 +163,8 @@ mochitest-a11y:
         no-read-buildbot-config: true
         chunked: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=a11y
 
@@ -199,12 +182,12 @@ mochitest-browser-chrome:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=browser-chrome-chunked
+    # Bug 1281241: migrating to m3.large instances
+    instance-size: legacy
 
 mochitest-chrome:
     description: "Mochitest chrome run"
@@ -217,10 +200,8 @@ mochitest-chrome:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=chrome
 
@@ -235,10 +216,8 @@ mochitest-clipboard:
         no-read-buildbot-config: true
         chunked: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=plain-clipboard,chrome-clipboard,browser-chrome-clipboard,jetpack-package-clipboard
 
@@ -258,10 +237,8 @@ mochitest-devtools-chrome:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=mochitest-devtools-chrome-chunked
 
@@ -275,10 +252,8 @@ mochitest-gpu:
         no-read-buildbot-config: true
         chunked: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=plain-gpu,chrome-gpu,browser-chrome-gpu
 
@@ -294,10 +269,8 @@ mochitest-jetpack:
         no-read-buildbot-config: true
         chunked: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=jetpack-package
 
@@ -314,10 +287,8 @@ mochitest-media:
         no-read-buildbot-config: true
         chunked: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=mochitest-media
 
@@ -332,10 +303,8 @@ mochitest-webgl:
         no-read-buildbot-config: true
         chunked: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --mochitest-suite=mochitest-gl
 
@@ -348,10 +317,8 @@ reftest:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --reftest-suite=reftest
 
@@ -364,10 +331,8 @@ reftest-no-accel:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --reftest-suite=reftest-no-accel
 
@@ -418,9 +383,7 @@ xpcshell:
         script: mozharness/scripts/desktop_unittest.py
         no-read-buildbot-config: true
         config:
-            by-test-platform:
-                default:
-                    - mozharness/configs/unittests/linux_unittest.py
-                    - mozharness/configs/remove_executables.py
+            - mozharness/configs/unittests/linux_unittest.py
+            - mozharness/configs/remove_executables.py
         extra-options:
             - --xpcshell-suite=xpcshell

@@ -77,8 +77,8 @@ test_description_schema = Schema({
 
     
     Required('instance-size', default='default'): Any(
-        Any('default', 'large', 'xlarge'),
-        {'by-test-platform': {basestring: Any('default', 'large', 'xlarge')}},
+        Any('default', 'large', 'xlarge', 'legacy'),
+        {'by-test-platform': {basestring: Any('default', 'large', 'xlarge', 'legacy')}},
     ),
 
     
