@@ -1058,12 +1058,16 @@ IonBuilder::startTrackingOptimizations()
             
             if (!trackedOptimizationSites_.append(site))
                 site = nullptr;
-        } else {
+        } else if (site->hasOptimizations()) {
             
             
             
             site->optimizations()->clear();
         }
+
+        
+        
+        
 
         if (site)
             current->updateTrackedSite(site);
