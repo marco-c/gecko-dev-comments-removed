@@ -35,7 +35,7 @@ protected:
 
 
 
-class CameraPreviewMediaStream : public MediaStream
+class CameraPreviewMediaStream : public ProcessedMediaStream
 {
   typedef mozilla::layers::Image Image;
 
@@ -55,6 +55,8 @@ public:
   void OnPreviewStateChange(bool aActive);
 
   void Invalidate();
+
+  void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
 
   
   void SetCurrentFrame(const gfx::IntSize& aIntrinsicSize, Image* aImage);
