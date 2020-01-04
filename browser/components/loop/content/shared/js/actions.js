@@ -233,7 +233,7 @@ loop.shared.actions = (function() {
     MediaStreamCreated: Action.define("mediaStreamCreated", {
       hasVideo: Boolean,
       isLocal: Boolean,
-      srcVideoObject: Object
+      srcMediaElement: Object
     }),
 
     
