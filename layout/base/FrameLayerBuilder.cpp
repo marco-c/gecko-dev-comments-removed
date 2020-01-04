@@ -3760,12 +3760,10 @@ GetScrollClipIntersection(nsDisplayListBuilder* aBuilder, AnimatedGeometryRoot* 
                           AnimatedGeometryRoot* aStopAtAnimatedGeometryRoot, bool aIsCaret)
 {
   DisplayItemClip resultClip;
-  nsIFrame* fParent;
   for (AnimatedGeometryRoot* agr = aAnimatedGeometryRoot;
-       agr != aStopAtAnimatedGeometryRoot && agr;
+       agr != aStopAtAnimatedGeometryRoot;
        agr = agr->mParentAGR) {
-    fParent = nsLayoutUtils::GetCrossDocParentFrame(*agr);
-    if (!fParent) {
+    if (!agr) {
       
       
       
