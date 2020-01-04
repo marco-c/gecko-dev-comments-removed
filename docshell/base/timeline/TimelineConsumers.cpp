@@ -294,4 +294,19 @@ TimelineConsumers::AddMarkerForAllObservedDocShells(UniquePtr<AbstractTimelineMa
   }
 }
 
+void
+TimelineConsumers::PopMarkers(nsDocShell* aDocShell,
+                              JSContext* aCx,
+                              nsTArray<dom::ProfileTimelineMarker>& aStore)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  StaticMutexAutoLock lock(sMutex); 
+
+  if (!aDocShell || !aDocShell->mObserved) {
+    return;
+  }
+
+  aDocShell->mObserved->PopMarkers(aCx, aStore);
+}
+
 } 
