@@ -90,6 +90,19 @@ protected:
   
   
   already_AddRefed<mozilla::dom::Element> GetElement(bool* aIsDisabled = nullptr);
+
+  
+
+
+
+
+
+
+
+
+  bool GetElementForHandler(nsXBLPrototypeHandler* aHandler,
+                            mozilla::dom::Element** aElementForHandler);
+
   
   nsWeakPtr              mWeakPtrForElement;
   mozilla::dom::EventTarget* mTarget; 
