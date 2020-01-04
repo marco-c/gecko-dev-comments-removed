@@ -4,18 +4,19 @@
 
 
 
+"use strict";
 
 
 
 
-const { Cu, Cc, Ci } = require("chrome");
+
 const { LocalizationHelper } = require("devtools/client/shared/l10n");
 const ITCHPAD_STRINGS_URI = "chrome://devtools/locale/projecteditor.properties";
-const L10N = new LocalizationHelper(ITCHPAD_STRINGS_URI).stringBundle;
+const L10N = new LocalizationHelper(ITCHPAD_STRINGS_URI);
 
 function getLocalizedString(name) {
   try {
-    return L10N.GetStringFromName(name);
+    return L10N.getStr(name);
   } catch (ex) {
     console.log("Error reading '" + name + "'");
     throw new Error("l10n error with " + name);

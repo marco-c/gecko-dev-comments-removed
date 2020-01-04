@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -16,20 +18,10 @@ function test() {
 
     function testL10N() {
       let { L10N } = aMonitor.panelWin;
-
-      ok(L10N.stringBundle,
-        "The localization object should have a string bundle available.");
-
-      let bundleName = "chrome://devtools/locale/netmonitor.properties";
-      let stringBundle = Services.strings.createBundle(bundleName);
-
-      is(L10N.getStr("netmonitor.label"),
-        stringBundle.GetStringFromName("netmonitor.label"),
-        "The getStr() method didn't return the expected string.");
-
-      is(L10N.getFormatStr("networkMenu.totalMS", "foo"),
-        stringBundle.formatStringFromName("networkMenu.totalMS", ["foo"], 1),
-        "The getFormatStr() method didn't return the expected string.");
+      is(typeof L10N.getStr("netmonitor.label"), "string",
+        "The getStr() method didn't return a valid string.");
+      is(typeof L10N.getFormatStr("networkMenu.totalMS", "foo"), "string",
+        "The getFormatStr() method didn't return a valid string.");
     }
 
     function testPrefs() {
