@@ -433,6 +433,37 @@ RunStatsQuery(
   return rv;
 }
 
+void ClearClosedStats()
+{
+  PeerConnectionCtx* ctx = GetPeerConnectionCtx();
+
+  if (ctx) {
+    ctx->mStatsForClosedPeerConnections.Clear();
+  }
+}
+
+void
+WebrtcGlobalInformation::ClearAllStats(
+  const GlobalObject& aGlobal)
+{
+  if (!NS_IsMainThread()) {
+    return;
+  }
+
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (!WebrtcContentParents::Empty()) {
+    
+    for (auto& cp : WebrtcContentParents::GetAll()) {
+      Unused << cp->SendClearStatsRequest();
+    }
+  }
+
+  
+  ClearClosedStats();
+}
+
 void
 WebrtcGlobalInformation::GetAllStats(
   const GlobalObject& aGlobal,
@@ -457,7 +488,7 @@ WebrtcGlobalInformation::GetAllStats(
     filter = pcIdFilter.Value();
   }
 
-  StatsRequest* request = StatsRequest::Create(callbackHandle, filter);
+  auto* request = StatsRequest::Create(callbackHandle, filter);
 
   if (!request) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -522,6 +553,56 @@ RunLogQuery(const nsCString& aPattern,
                                     aPattern.get()),
                      NS_DISPATCH_NORMAL);
   return rv;
+}
+
+static void ClearLogs_s()
+{
+  
+  RLogRingBuffer* logs = RLogRingBuffer::GetInstance();
+  if (logs) {
+    logs->Clear();
+  }
+}
+
+static nsresult
+RunLogClear()
+{
+  nsresult rv;
+  nsCOMPtr<nsIEventTarget> stsThread =
+    do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
+
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (!stsThread) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return RUN_ON_THREAD(stsThread,
+                       WrapRunnableNM(&ClearLogs_s),
+                       NS_DISPATCH_NORMAL);
+}
+
+void
+WebrtcGlobalInformation::ClearLogging(
+  const GlobalObject& aGlobal)
+{
+  if (!NS_IsMainThread()) {
+    return;
+  }
+
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (!WebrtcContentParents::Empty()) {
+  
+    for (auto& cp : WebrtcContentParents::GetAll()) {
+      Unused << cp->SendClearLogRequest();
+    }
+  }
+
+  
+  Unused << RunLogClear();
 }
 
 void
@@ -747,6 +828,17 @@ WebrtcGlobalChild::RecvGetStatsRequest(const int& aRequestId,
 }
 
 bool
+WebrtcGlobalChild::RecvClearStatsRequest()
+{
+  if (mShutdown) {
+    return true;
+  }
+
+  ClearClosedStats();
+  return true;
+}
+
+bool
 WebrtcGlobalChild::RecvGetLogRequest(const int& aRequestId,
                                      const nsCString& aPattern)
 {
@@ -771,6 +863,17 @@ WebrtcGlobalChild::RecvGetLogRequest(const int& aRequestId,
   Sequence<nsString> empty_log;
   SendGetLogResult(aRequestId, empty_log);
 
+  return true;
+}
+
+bool
+WebrtcGlobalChild::RecvClearLogRequest()
+{
+  if (mShutdown) {
+    return true;
+  }
+
+  RunLogClear();
   return true;
 }
 
