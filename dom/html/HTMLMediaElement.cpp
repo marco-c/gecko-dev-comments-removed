@@ -3831,6 +3831,8 @@ void HTMLMediaElement::CheckProgress(bool aHaveNewProgress)
         ChangeDelayLoadStatus(true);
       }
     }
+    
+    UpdateReadyStateInternal();
   }
 
   if (now - mDataTime >= TimeDuration::FromMilliseconds(STALL_MS)) {
