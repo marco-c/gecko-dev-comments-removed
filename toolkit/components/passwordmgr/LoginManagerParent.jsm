@@ -337,6 +337,15 @@ var LoginManagerParent = {
     
     
     
+    let resolveBy = [
+      "scheme",
+      "timePasswordChanged",
+    ];
+    logins = LoginHelper.dedupeLogins(logins, ["username"], resolveBy, hostname);
+
+    
+    
+    
     if (!usernameField && oldPasswordField && logins.length > 0) {
       var prompter = getPrompter();
 
@@ -355,6 +364,10 @@ var LoginManagerParent = {
 
         prompter.promptToChangePassword(oldLogin, formLogin);
       } else {
+        
+        
+        
+
         prompter.promptToChangePasswordWithUsernames(
                             logins, logins.length, formLogin);
       }
@@ -365,8 +378,8 @@ var LoginManagerParent = {
 
     var existingLogin = null;
     
-    for (var i = 0; i < logins.length; i++) {
-      var same, login = logins[i];
+    for (let login of logins) {
+      let same;
 
       
       
@@ -375,14 +388,23 @@ var LoginManagerParent = {
       if (!login.username && formLogin.username) {
         var restoreMe = formLogin.username;
         formLogin.username = "";
-        same = formLogin.matches(login, false);
+        same = LoginHelper.doLoginsMatch(formLogin, login, {
+          ignorePassword: false,
+          ignoreSchemes: LoginHelper.schemeUpgrades,
+        });
         formLogin.username = restoreMe;
       } else if (!formLogin.username && login.username) {
         formLogin.username = login.username;
-        same = formLogin.matches(login, false);
+        same = LoginHelper.doLoginsMatch(formLogin, login, {
+          ignorePassword: false,
+          ignoreSchemes: LoginHelper.schemeUpgrades,
+        });
         formLogin.username = ""; 
       } else {
-        same = formLogin.matches(login, true);
+        same = LoginHelper.doLoginsMatch(formLogin, login, {
+          ignorePassword: true,
+          ignoreSchemes: LoginHelper.schemeUpgrades,
+        });
       }
 
       if (same) {

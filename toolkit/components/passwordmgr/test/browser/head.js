@@ -23,7 +23,7 @@ registerCleanupFunction(function* cleanup_removeAllLoginsAndResetRecipes() {
 
 
 
-function testSubmittingLoginForm(aPageFile, aTaskFn, aOrigin = "http://mochi.test:8888") {
+function testSubmittingLoginForm(aPageFile, aTaskFn, aOrigin = "http://example.com") {
   return BrowserTestUtils.withNewTab({
     gBrowser,
     url: aOrigin + DIRECTORY_PATH + aPageFile,
