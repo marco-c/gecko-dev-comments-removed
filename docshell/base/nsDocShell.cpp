@@ -9607,6 +9607,11 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
   NS_ENSURE_TRUE(!mIsBeingDestroyed, NS_ERROR_NOT_AVAILABLE);
 
+  rv = EnsureScriptEnvironment();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
   
   
   if (aLoadType & LOAD_CMD_NORMAL) {
@@ -9625,12 +9630,8 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   
   
-  
-  nsCOMPtr<Element> requestingElement;
-  
-  if (mScriptGlobal) {
-    requestingElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
-  }
+  nsCOMPtr<Element> requestingElement =
+    mScriptGlobal->AsOuter()->GetFrameElementInternal();
 
   RefPtr<nsGlobalWindow> MMADeathGrip = mScriptGlobal;
 
@@ -10498,10 +10499,16 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                       nsIURI* aBaseURI,
                       nsContentPolicyType aContentPolicyType)
 {
-  nsresult rv;
-  nsCOMPtr<nsIURILoader> uriLoader;
+  
+  if (mIsBeingDestroyed) {
+    
+    
+    
+    return NS_OK;
+  }
 
-  uriLoader = do_GetService(NS_URI_LOADER_CONTRACTID, &rv);
+  nsresult rv;
+  nsCOMPtr<nsIURILoader> uriLoader = do_GetService(NS_URI_LOADER_CONTRACTID, &rv);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -10540,30 +10547,28 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
   
   
-  if (mScriptGlobal) {
-    
-    
-    
+  
+  
+  
 
-    
-    
-    bool isAbout = false;
-    rv = aURI->SchemeIs("about", &isAbout);
-    if (NS_SUCCEEDED(rv) && !isAbout &&
-        nsIDocShell::GetIsApp()) {
-      nsCOMPtr<Element> frameElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
-      if (frameElement) {
-        nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(frameElement);
-        
-        
-        
-        if (browserFrame && !browserFrame->GetReallyIsApp()) {
-          nsCOMPtr<nsIObserverService> serv = services::GetObserverService();
-          if (serv) {
-              serv->NotifyObservers(GetDocument(), "invalid-widget", nullptr);
-          }
-          return NS_ERROR_MALFORMED_URI;
+  
+  
+  bool isAbout = false;
+  rv = aURI->SchemeIs("about", &isAbout);
+  if (NS_SUCCEEDED(rv) && !isAbout &&
+      nsIDocShell::GetIsApp()) {
+    nsCOMPtr<Element> frameElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
+    if (frameElement) {
+      nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(frameElement);
+      
+      
+      
+      if (browserFrame && !browserFrame->GetReallyIsApp()) {
+        nsCOMPtr<nsIObserverService> serv = services::GetObserverService();
+        if (serv) {
+            serv->NotifyObservers(GetDocument(), "invalid-widget", nullptr);
         }
+        return NS_ERROR_MALFORMED_URI;
       }
     }
   }
@@ -10580,31 +10585,24 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   
   
   
-  
-  
-  
   nsCOMPtr<nsINode> requestingNode;
   nsCOMPtr<nsPIDOMWindowOuter> requestingWindow;
 
   nsCOMPtr<nsIPrincipal> loadingPrincipal;
-  if (mScriptGlobal) {
-    requestingNode = mScriptGlobal->AsOuter()->GetFrameElementInternal();
-    if (requestingNode) {
+  requestingNode = mScriptGlobal->AsOuter()->GetFrameElementInternal();
+  if (requestingNode) {
+    
+    loadingPrincipal = requestingNode->NodePrincipal();
+  } else {
+    if (aContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT) {
       
-      loadingPrincipal = requestingNode->NodePrincipal();
-    } else {
-      if (aContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT) {
-        
-        
-        
-        
-        return NS_OK;
-      }
-      requestingWindow = mScriptGlobal->AsOuter();
+      
+      
+      
+      return NS_OK;
     }
-  }
 
-  if (!loadingPrincipal) {
+    requestingWindow = mScriptGlobal->AsOuter();
     if (mItemType != typeChrome) {
       nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
       ssm->GetDocShellCodebasePrincipal(aURI, this, getter_AddRefs(loadingPrincipal));
