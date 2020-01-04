@@ -74,16 +74,6 @@ function reportTestReason(val) {
   histogram.add(val);
 }
 
-function reportSnapshotContents(canvas) {
-  try {
-    var data = canvas.toDataURL();
-    Cc['@mozilla.org/observer-service;1'].
-        getService(Ci.nsIObserverService).
-        notifyObservers(null, "graphics-sanity-test-failed", data);
-  } catch (e) {
-  }
-}
-
 function annotateCrashReport(value) {
   try {
     
@@ -177,9 +167,7 @@ let listener = {
 
     
     
-    if (!testCompositor(this.win, this.ctx)) {
-      reportSnapshotContents(this.canvas);
-    }
+    testCompositor(this.win, this.ctx);
 
     this.endTest();
   },
