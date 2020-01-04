@@ -433,12 +433,31 @@ class PluginModuleChromeParent
 
 
 
+    void TakeFullMinidump(base::ProcessId aContentPid,
+                          const nsAString& aBrowserDumpId,
+                          nsString& aDumpId);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     void TerminateChildProcess(MessageLoop* aMsgLoop,
                                base::ProcessId aContentPid,
                                const nsCString& aMonitorDescription,
-                               const nsAString& aBrowserDumpId);
+                               const nsAString& aDumpId);
 
 #ifdef XP_WIN
     

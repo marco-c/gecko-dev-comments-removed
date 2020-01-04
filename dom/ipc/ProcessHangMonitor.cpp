@@ -162,14 +162,25 @@ public:
     mActor = nullptr;
   }
 
+  
+
+
+
+
   void SetHangData(const HangData& aHangData) { mHangData = aHangData; }
-  void SetBrowserDumpId(nsAutoString& aId) {
-    mBrowserDumpId = aId;
+
+  
+
+
+
+
+  void SetDumpId(nsString& aId) {
+    mDumpId = aId;
   }
 
   void ClearHang() {
     mHangData = HangData();
-    mBrowserDumpId.Truncate();
+    mDumpId.Truncate();
   }
 
 private:
@@ -179,7 +190,7 @@ private:
   HangMonitorParent* mActor;
   ContentParent* mContentParent;
   HangData mHangData;
-  nsAutoString mBrowserDumpId;
+  nsAutoString mDumpId;
 };
 
 class HangMonitorParent
@@ -551,8 +562,16 @@ public:
   {
     
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+    nsString dumpId;
+    if (mHangData.type() == HangData::TPluginHangData) {
+      const PluginHangData& phd = mHangData.get_PluginHangData();
+      plugins::TakeFullMinidump(phd.pluginId(), phd.contentProcessId(),
+                                mBrowserDumpId, dumpId);
+    }
+
     mProcess->SetHangData(mHangData);
-    mProcess->SetBrowserDumpId(mBrowserDumpId);
+    mProcess->SetDumpId(dumpId);
 
     nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
@@ -862,11 +881,10 @@ HangMonitoredProcess::TerminatePlugin()
   }
 
   
-  
   uint32_t id = mHangData.get_PluginHangData().pluginId();
   base::ProcessId contentPid = mHangData.get_PluginHangData().contentProcessId();
   plugins::TerminatePlugin(id, contentPid, NS_LITERAL_CSTRING("HangMonitor"),
-                           mBrowserDumpId);
+                           mDumpId);
 
   if (mActor) {
     mActor->CleanupPluginHang(id, false);

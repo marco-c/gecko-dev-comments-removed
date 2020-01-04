@@ -353,26 +353,50 @@ bool PluginModuleMapping::sIsLoadModuleOnStack = false;
 
 } 
 
+static PluginModuleChromeParent*
+PluginModuleChromeParentForId(const uint32_t aPluginId)
+{
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
+  nsPluginTag* pluginTag = host->PluginWithId(aPluginId);
+  if (!pluginTag || !pluginTag->mPlugin) {
+    return nullptr;
+  }
+  RefPtr<nsNPAPIPlugin> plugin = pluginTag->mPlugin;
+
+  return static_cast<PluginModuleChromeParent*>(plugin->GetLibrary());
+}
+
+void
+mozilla::plugins::TakeFullMinidump(uint32_t aPluginId,
+                                   base::ProcessId aContentProcessId,
+                                   const nsAString& aBrowserDumpId,
+                                   nsString& aDumpId)
+{
+  PluginModuleChromeParent* chromeParent =
+    PluginModuleChromeParentForId(aPluginId);
+
+  if (chromeParent) {
+    chromeParent->TakeFullMinidump(aContentProcessId, aBrowserDumpId, aDumpId);
+  }
+}
+
 void
 mozilla::plugins::TerminatePlugin(uint32_t aPluginId,
                                   base::ProcessId aContentProcessId,
                                   const nsCString& aMonitorDescription,
-                                  const nsAString& aBrowserDumpId)
+                                  const nsAString& aDumpId)
 {
-    MOZ_ASSERT(XRE_IsParentProcess());
+  PluginModuleChromeParent* chromeParent =
+    PluginModuleChromeParentForId(aPluginId);
 
-    RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
-    nsPluginTag* pluginTag = host->PluginWithId(aPluginId);
-    if (!pluginTag || !pluginTag->mPlugin) {
-        return;
-    }
-    RefPtr<nsNPAPIPlugin> plugin = pluginTag->mPlugin;
-    PluginModuleChromeParent* chromeParent =
-        static_cast<PluginModuleChromeParent*>(plugin->GetLibrary());
+  if (chromeParent) {
     chromeParent->TerminateChildProcess(MessageLoop::current(),
                                         aContentProcessId,
                                         aMonitorDescription,
-                                        aBrowserDumpId);
+                                        aDumpId);
+  }
 }
 
  PluginLibrary*
@@ -1198,38 +1222,19 @@ PluginModuleContentParent::OnExitedSyncSend()
 }
 
 void
-PluginModuleChromeParent::TerminateChildProcess(MessageLoop* aMsgLoop,
-                                                base::ProcessId aContentPid,
-                                                const nsCString& aMonitorDescription,
-                                                const nsAString& aBrowserDumpId)
+PluginModuleChromeParent::TakeFullMinidump(base::ProcessId aContentPid,
+                                           const nsAString& aBrowserDumpId,
+                                           nsString& aDumpId)
 {
 #ifdef MOZ_CRASHREPORTER
 #ifdef XP_WIN
     mozilla::MutexAutoLock lock(mCrashReporterMutex);
-    CrashReporterParent* crashReporter = mCrashReporter;
+#endif 
+
+    CrashReporterParent* crashReporter = CrashReporter();
     if (!crashReporter) {
-        
-        
         return;
     }
-#else
-    CrashReporterParent* crashReporter = CrashReporter();
-#endif
-    crashReporter->AnnotateCrashReport(NS_LITERAL_CSTRING("PluginHang"),
-                                       NS_LITERAL_CSTRING("1"));
-    crashReporter->AnnotateCrashReport(NS_LITERAL_CSTRING("HangMonitorDescription"),
-                                       aMonitorDescription);
-#ifdef XP_WIN
-    if (mHangUIParent) {
-        unsigned int hangUIDuration = mHangUIParent->LastShowDurationMs();
-        if (hangUIDuration) {
-            nsPrintfCString strHangUIDuration("%u", hangUIDuration);
-            crashReporter->AnnotateCrashReport(
-                    NS_LITERAL_CSTRING("PluginHangUIDuration"),
-                    strHangUIDuration);
-        }
-    }
-#endif 
 
     bool reportsReady = false;
 
@@ -1266,6 +1271,7 @@ PluginModuleChromeParent::TerminateChildProcess(MessageLoop* aMsgLoop,
         
         
         mPluginDumpID = crashReporter->ChildDumpID();
+        aDumpId = mPluginDumpID;
         PLUGIN_LOG_DEBUG(
                 ("generated paired browser/plugin minidumps: %s)",
                  NS_ConvertUTF16toUTF8(mPluginDumpID).get()));
@@ -1284,7 +1290,7 @@ PluginModuleChromeParent::TerminateChildProcess(MessageLoop* aMsgLoop,
                                      NS_LITERAL_CSTRING("flash2"))) {
                 additionalDumps.AppendLiteral(",flash2");
             }
-#endif
+#endif 
             if (aContentPid != mozilla::ipc::kInvalidProcessId) {
                 
                 if (CreatePluginMinidump(aContentPid, 0,
@@ -1300,7 +1306,51 @@ PluginModuleChromeParent::TerminateChildProcess(MessageLoop* aMsgLoop,
     } else {
         NS_WARNING("failed to capture paired minidumps from hang");
     }
-#endif
+#endif 
+}
+
+void
+PluginModuleChromeParent::TerminateChildProcess(MessageLoop* aMsgLoop,
+                                                base::ProcessId aContentPid,
+                                                const nsCString& aMonitorDescription,
+                                                const nsAString& aDumpId)
+{
+#ifdef MOZ_CRASHREPORTER
+    
+    
+    
+    nsAutoString dumpId;
+    if (aDumpId.IsEmpty()) {
+        TakeFullMinidump(aContentPid, EmptyString(), dumpId);
+    }
+
+#ifdef XP_WIN
+    mozilla::MutexAutoLock lock(mCrashReporterMutex);
+    CrashReporterParent* crashReporter = mCrashReporter;
+    if (!crashReporter) {
+        
+        
+        return;
+    }
+#else
+    CrashReporterParent* crashReporter = CrashReporter();
+#endif 
+    crashReporter->AnnotateCrashReport(NS_LITERAL_CSTRING("PluginHang"),
+                                       NS_LITERAL_CSTRING("1"));
+    crashReporter->AnnotateCrashReport(NS_LITERAL_CSTRING("HangMonitorDescription"),
+                                       aMonitorDescription);
+#ifdef XP_WIN
+    if (mHangUIParent) {
+        unsigned int hangUIDuration = mHangUIParent->LastShowDurationMs();
+        if (hangUIDuration) {
+            nsPrintfCString strHangUIDuration("%u", hangUIDuration);
+            crashReporter->AnnotateCrashReport(
+                    NS_LITERAL_CSTRING("PluginHangUIDuration"),
+                    strHangUIDuration);
+        }
+    }
+#endif 
+#endif 
 
     mozilla::ipc::ScopedProcessHandle geckoChildProcess;
     bool childOpened = base::OpenProcessHandle(OtherPid(),
