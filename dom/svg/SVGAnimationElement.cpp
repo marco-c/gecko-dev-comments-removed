@@ -372,7 +372,7 @@ SVGAnimationElement::ActivateByHyperlink()
     
     
   } else {
-    ErrorResult rv;
+    IgnoredErrorResult rv;
     BeginElement(rv);
   }
 }
