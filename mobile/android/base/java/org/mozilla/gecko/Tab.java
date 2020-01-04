@@ -84,6 +84,7 @@ public class Tab {
     private volatile int mLoadProgress;
     private volatile int mRecordingCount;
     private volatile boolean mIsAudioPlaying;
+    private volatile boolean mIsMediaPlaying;
     private String mMostRecentHomePanel;
     private boolean mShouldShowToolbarWithoutAnimationOnFirstSelection;
 
@@ -811,6 +812,26 @@ public class Tab {
     public boolean isRecording() {
         return mRecordingCount > 0;
     }
+
+    
+
+
+
+
+
+    public void setIsMediaPlaying(boolean isMediaPlaying) {
+        mIsMediaPlaying = isMediaPlaying;
+    }
+
+    public boolean isMediaPlaying() {
+        return mIsMediaPlaying;
+    }
+
+    
+
+
+
+
 
     public void setIsAudioPlaying(boolean isAudioPlaying) {
         mIsAudioPlaying = isAudioPlaying;

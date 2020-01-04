@@ -3567,6 +3567,7 @@ Tab.prototype = {
     this.browser.addEventListener("VideoBindingCast", this, true, true);
 
     Services.obs.addObserver(this, "before-first-paint", false);
+    Services.obs.addObserver(this, "media-playback", false);
 
     
     
@@ -3676,6 +3677,7 @@ Tab.prototype = {
     this.browser.removeEventListener("VideoBindingCast", this, true, true);
 
     Services.obs.removeObserver(this, "before-first-paint");
+    Services.obs.removeObserver(this, "media-playback", false);
 
     
     
@@ -4451,6 +4453,21 @@ Tab.prototype = {
           if (contentDocument instanceof Ci.nsIImageDocument) {
             contentDocument.shrinkToFit();
           }
+        }
+        break;
+
+      case "media-playback":
+        if (!aSubject) {
+          return;
+        }
+
+        let winId = aSubject.QueryInterface(Ci.nsISupportsPRUint64).data;
+        if (this.browser.outerWindowID == winId) {
+          Messaging.sendRequest({
+            type: "Tab:MediaPlaybackChange",
+            tabID: this.id,
+            active: aData === "active"
+          });
         }
         break;
     }
