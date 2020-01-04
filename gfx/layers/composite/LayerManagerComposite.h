@@ -176,7 +176,13 @@ public:
 
 
 
-  void PostProcessLayers(Layer* aLayer, nsIntRegion& aOpaqueRegion);
+
+
+
+
+  void PostProcessLayers(Layer* aLayer,
+                         nsIntRegion& aOpaqueRegion,
+                         LayerIntRegion& aVisibleRegion);
 
   
 

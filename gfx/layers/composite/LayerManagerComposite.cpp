@@ -205,7 +205,9 @@ LayerManagerComposite::BeginTransactionWithDrawTarget(DrawTarget* aTarget, const
 }
 
 void
-LayerManagerComposite::PostProcessLayers(Layer* aLayer, nsIntRegion& aOpaqueRegion)
+LayerManagerComposite::PostProcessLayers(Layer* aLayer,
+                                         nsIntRegion& aOpaqueRegion,
+                                         LayerIntRegion& aVisibleRegion)
 {
   nsIntRegion localOpaque;
   Matrix transform2d;
@@ -223,18 +225,44 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer, nsIntRegion& aOpaqueRegi
 
   
   
-  LayerComposite* composite = aLayer->AsLayerComposite();
-  if (!localOpaque.IsEmpty()) {
-    nsIntRegion visible = composite->GetShadowVisibleRegion();
-    visible.SubOut(localOpaque);
-    composite->SetShadowVisibleRegion(visible);
-  }
+  nsIntRegion obscured = localOpaque;
 
   
   
+  
+  
+  LayerIntRegion descendantsVisibleRegion;
   for (Layer* child = aLayer->GetLastChild(); child; child = child->GetPrevSibling()) {
-    PostProcessLayers(child, localOpaque);
+    PostProcessLayers(child, localOpaque, descendantsVisibleRegion);
   }
+
+  
+  LayerComposite* composite = aLayer->AsLayerComposite();
+  LayerIntRegion visible = LayerIntRegion::FromUnknownRegion(composite->GetShadowVisibleRegion());
+
+  
+  
+  if (aLayer->GetFirstChild()) {
+    visible = descendantsVisibleRegion;
+  }
+
+  
+  if (!obscured.IsEmpty()) {
+    visible.SubOut(LayerIntRegion::FromUnknownRegion(obscured));
+  }
+
+  composite->SetShadowVisibleRegion(visible.ToUnknownRegion());
+
+  
+  
+  
+  ParentLayerIntRegion visibleParentSpace = TransformTo<ParentLayerPixel>(
+      aLayer->GetLocalTransform(), visible);
+  if (const Maybe<ParentLayerIntRect>& clipRect = composite->GetShadowClipRect()) {
+    visibleParentSpace.AndWith(*clipRect);
+  }
+  aVisibleRegion.OrWith(ViewAs<LayerPixel>(visibleParentSpace,
+      PixelCastJustification::MovingDownToChildren));
 
   
   
@@ -361,7 +389,8 @@ LayerManagerComposite::UpdateAndRender()
   }
 
   nsIntRegion opaque;
-  PostProcessLayers(mRoot, opaque);
+  LayerIntRegion visible;
+  PostProcessLayers(mRoot, opaque, visible);
 
   Render(invalid);
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
@@ -1020,7 +1049,8 @@ LayerManagerComposite::RenderToPresentationSurface()
 
   mRoot->ComputeEffectiveTransforms(matrix);
   nsIntRegion opaque;
-  PostProcessLayers(mRoot, opaque);
+  LayerIntRegion visible;
+  PostProcessLayers(mRoot, opaque, visible);
 
   nsIntRegion invalid;
   Rect bounds(0.0f, 0.0f, scale * pageWidth, (float)actualHeight);
