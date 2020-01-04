@@ -27,6 +27,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.InputFilter;
+import android.text.NoCopySpan;
 import android.text.Selection;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -66,12 +67,11 @@ final class GeckoEditable extends JNIObject
     private Handler mIcPostHandler;
 
     private GeckoEditableListener mListener;
-    private int mIcUpdateSeqno;
-    private int mLastIcUpdateSeqno;
-    private boolean mUpdateGecko;
+     boolean mInBatchMode; 
+     boolean mNeedCompositionUpdate; 
     private boolean mFocused; 
     private boolean mGeckoFocused; 
-    private boolean mIgnoreSelectionChange;
+    private boolean mIgnoreSelectionChange; 
     private volatile boolean mSuppressCompositions;
     private volatile boolean mSuppressKeyUp;
 
@@ -132,13 +132,7 @@ final class GeckoEditable extends JNIObject
     private native void onImeAcknowledgeFocus();
 
     @WrapForJNI
-    private native void onImeReplaceText(int start, int end, String text, boolean composing);
-
-    @WrapForJNI
-    private native void onImeSetSelection(int start, int end);
-
-    @WrapForJNI
-    private native void onImeRemoveComposition();
+    private native void onImeReplaceText(int start, int end, String text);
 
     @WrapForJNI
     private native void onImeAddCompositionRange(int start, int end, int rangeType,
@@ -161,23 +155,21 @@ final class GeckoEditable extends JNIObject
         
         static final int TYPE_REPLACE_TEXT = 1;
         
-        static final int TYPE_COMPOSE_TEXT = 2;
+        static final int TYPE_SET_SPAN = 2;
         
-        static final int TYPE_SET_SPAN = 3;
+        static final int TYPE_REMOVE_SPAN = 3;
         
-        static final int TYPE_REMOVE_SPAN = 4;
+        static final int TYPE_ACKNOWLEDGE_FOCUS = 4;
         
-        static final int TYPE_ACKNOWLEDGE_FOCUS = 5;
-        
-        static final int TYPE_SET_HANDLER = 6;
+        static final int TYPE_SET_HANDLER = 5;
 
         final int mType;
+        boolean mUpdateComposition;
         int mStart;
         int mEnd;
         CharSequence mSequence;
         Object mSpanObject;
         int mSpanFlags;
-        boolean mShouldUpdate;
         Handler mHandler;
 
         Action(int type) {
@@ -190,28 +182,14 @@ final class GeckoEditable extends JNIObject
                 throw new IllegalArgumentException("invalid replace text offsets");
             }
 
-            int actionType = TYPE_REPLACE_TEXT;
-
-            if (text instanceof Spanned) {
-                final Spanned spanned = (Spanned) text;
-                final Object[] spans = spanned.getSpans(0, spanned.length(), Object.class);
-
-                for (Object span : spans) {
-                    if ((spanned.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
-                        actionType = TYPE_COMPOSE_TEXT;
-                        break;
-                    }
-                }
-            }
-
-            final Action action = new Action(actionType);
+            final Action action = new Action(TYPE_REPLACE_TEXT);
             action.mSequence = text;
             action.mStart = start;
             action.mEnd = end;
             return action;
         }
 
-        static Action newSetSpan(Object object, int start, int end, int flags) {
+        static Action newSetSpan(Object object, int start, int end, int flags, boolean update) {
             if (start < 0 || start > end) {
                 Log.e(LOGTAG, "invalid span offsets: " + start + " to " + end);
                 throw new IllegalArgumentException("invalid span offsets");
@@ -221,12 +199,14 @@ final class GeckoEditable extends JNIObject
             action.mStart = start;
             action.mEnd = end;
             action.mSpanFlags = flags;
+            action.mUpdateComposition = update;
             return action;
         }
 
-        static Action newRemoveSpan(Object object) {
+        static Action newRemoveSpan(Object object, boolean update) {
             final Action action = new Action(TYPE_REMOVE_SPAN);
             action.mSpanObject = object;
+            action.mUpdateComposition = update;
             return action;
         }
 
@@ -255,13 +235,7 @@ final class GeckoEditable extends JNIObject
                 Log.d(LOGTAG, "offer: Action(" +
                               getConstantName(Action.class, "TYPE_", action.mType) + ")");
             }
-            
 
-            if (action.mType != Action.TYPE_EVENT &&
-                action.mType != Action.TYPE_ACKNOWLEDGE_FOCUS &&
-                action.mType != Action.TYPE_SET_HANDLER) {
-                action.mShouldUpdate = mUpdateGecko;
-            }
             if (mActions.isEmpty()) {
                 mActionsActive.acquireUninterruptibly();
                 mActions.offer(action);
@@ -281,13 +255,13 @@ final class GeckoEditable extends JNIObject
 
             case Action.TYPE_REPLACE_TEXT:
                 
-                sendCharKeyEvents(action);
-
                 
-
-            case Action.TYPE_COMPOSE_TEXT:
-                onImeReplaceText(action.mStart, action.mEnd, action.mSequence.toString(),
-                                  action.mType == Action.TYPE_COMPOSE_TEXT);
+                if (!icMaybeSendComposition(
+                        action.mSequence,  true,  false)) {
+                    
+                    sendCharKeyEvents(action);
+                }
+                onImeReplaceText(action.mStart, action.mEnd, action.mSequence.toString());
                 break;
 
             case Action.TYPE_ACKNOWLEDGE_FOCUS:
@@ -297,8 +271,6 @@ final class GeckoEditable extends JNIObject
             default:
                 throw new IllegalStateException("Action not processed");
             }
-
-            ++mIcUpdateSeqno;
         }
 
         private KeyEvent [] synthesizeKeyEvents(CharSequence cs) {
@@ -407,7 +379,6 @@ final class GeckoEditable extends JNIObject
             ThreadUtils.assertOnGeckoThread();
         }
         mActionQueue = new ActionQueue();
-        mUpdateGecko = true;
 
         mText = new SpannableStringBuilder();
         mChangedText = new SpannableStringBuilder();
@@ -485,16 +456,6 @@ final class GeckoEditable extends JNIObject
         mIcPostHandler.post(runnable);
     }
 
-    private void geckoUpdateGecko(final boolean force) {
-        geckoPostToIc(new Runnable() {
-            @Override
-            public void run() {
-                mActionQueue.syncWithGecko();
-                icUpdateGecko(force);
-            }
-        });
-    }
-
     private Object getField(Object obj, String field, Object def) {
         try {
             return obj.getClass().getField(field).get(obj);
@@ -503,47 +464,76 @@ final class GeckoEditable extends JNIObject
         }
     }
 
-    private void icUpdateGecko(boolean force) {
+    
 
-        
-        
-        if ((!force && mIcUpdateSeqno == mLastIcUpdateSeqno) ||
-            mSuppressCompositions) {
-            if (DEBUG) {
-                Log.d(LOGTAG, "icUpdateGecko() skipped");
+
+
+
+
+
+
+
+
+    private boolean icMaybeSendComposition(final CharSequence sequence,
+                                           final boolean useEntireText,
+                                           final boolean notifyGecko) {
+        int selStart = Selection.getSelectionStart(sequence);
+        int selEnd = Selection.getSelectionEnd(sequence);
+
+        if (sequence instanceof Spanned) {
+            final Spanned text = (Spanned) sequence;
+            final Object[] spans = text.getSpans(0, text.length(), Object.class);
+            boolean found = false;
+            int composingStart = useEntireText ? 0 : Integer.MAX_VALUE;
+            int composingEnd = useEntireText ? text.length() : 0;
+
+            for (Object span : spans) {
+                if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) == 0) {
+                    continue;
+                }
+                if (!useEntireText) {
+                    composingStart = Math.min(composingStart, text.getSpanStart(span));
+                    composingEnd = Math.max(composingEnd, text.getSpanEnd(span));
+                }
+                found = true;
             }
-            return;
+
+            if (useEntireText && (selStart < 0 || selEnd < 0)) {
+                selStart = composingEnd;
+                selEnd = composingEnd;
+            }
+
+            if (found) {
+                icSendComposition(text, selStart, selEnd, composingStart, composingEnd);
+                if (notifyGecko) {
+                    onImeUpdateComposition(composingStart, composingEnd);
+                }
+                return true;
+            }
         }
-        mLastIcUpdateSeqno = mIcUpdateSeqno;
-        mActionQueue.syncWithGecko();
+
+        if (notifyGecko) {
+            
+            onImeUpdateComposition(selStart, selEnd);
+        }
 
         if (DEBUG) {
-            Log.d(LOGTAG, "icUpdateGecko()");
+            Log.d(LOGTAG, "icSendComposition(): no composition");
         }
+        return false;
+    }
 
-        final int selStart = mText.getSpanStart(Selection.SELECTION_START);
-        final int selEnd = mText.getSpanEnd(Selection.SELECTION_END);
-        int composingStart = mText.length();
-        int composingEnd = 0;
-        Object[] spans = mText.getSpans(0, composingStart, Object.class);
-
-        for (Object span : spans) {
-            if ((mText.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
-                composingStart = Math.min(composingStart, mText.getSpanStart(span));
-                composingEnd = Math.max(composingEnd, mText.getSpanEnd(span));
-            }
+    private void icSendComposition(final Spanned text,
+                                   final int selStart, final int selEnd,
+                                   final int composingStart, final int composingEnd) {
+        if (DEBUG) {
+            assertOnIcThread();
+            Log.d(LOGTAG, "icSendComposition(\"" + text + "\", " +
+                                             composingStart + ", " + composingEnd + ")");
         }
         if (DEBUG) {
             Log.d(LOGTAG, " range = " + composingStart + "-" + composingEnd);
             Log.d(LOGTAG, " selection = " + selStart + "-" + selEnd);
-        }
-        if (composingStart >= composingEnd) {
-            if (selStart >= 0 && selEnd >= 0) {
-                onImeSetSelection(selStart, selEnd);
-            } else {
-                onImeRemoveComposition();
-            }
-            return;
         }
 
         if (selEnd >= composingStart && selEnd <= composingEnd) {
@@ -551,6 +541,7 @@ final class GeckoEditable extends JNIObject
                     selEnd - composingStart, selEnd - composingStart,
                     IME_RANGE_CARETPOSITION, 0, 0, false, 0, 0, 0);
         }
+
         int rangeStart = composingStart;
         TextPaint tp = new TextPaint();
         TextPaint emptyTp = new TextPaint();
@@ -561,7 +552,7 @@ final class GeckoEditable extends JNIObject
             int rangeType, rangeStyles = 0, rangeLineStyle = IME_RANGE_LINE_NONE;
             boolean rangeBoldLine = false;
             int rangeForeColor = 0, rangeBackColor = 0, rangeLineColor = 0;
-            int rangeEnd = mText.nextSpanTransition(rangeStart, composingEnd, Object.class);
+            int rangeEnd = text.nextSpanTransition(rangeStart, composingEnd, Object.class);
 
             if (selStart > rangeStart && selStart < rangeEnd) {
                 rangeEnd = selStart;
@@ -569,7 +560,7 @@ final class GeckoEditable extends JNIObject
                 rangeEnd = selEnd;
             }
             CharacterStyle[] styleSpans =
-                    mText.getSpans(rangeStart, rangeEnd, CharacterStyle.class);
+                    text.getSpans(rangeStart, rangeEnd, CharacterStyle.class);
 
             if (DEBUG) {
                 Log.d(LOGTAG, " found " + styleSpans.length + " spans @ " +
@@ -634,8 +625,6 @@ final class GeckoEditable extends JNIObject
                               " : " + Integer.toHexString(rangeBackColor));
             }
         } while (rangeStart < composingEnd);
-
-        onImeUpdateComposition(composingStart, composingEnd);
     }
 
     
@@ -654,6 +643,10 @@ final class GeckoEditable extends JNIObject
 
 
 
+        if (mNeedCompositionUpdate) {
+            
+            icUpdateComposition();
+        }
         onKeyEvent(event, action, metaState,  false);
         mActionQueue.offer(new Action(Action.TYPE_EVENT));
     }
@@ -671,18 +664,48 @@ final class GeckoEditable extends JNIObject
     }
 
     @Override
-    public void setUpdateGecko(boolean update) {
+    public void setBatchMode(boolean inBatchMode) {
         if (!onIcThread()) {
             
             if (DEBUG) {
-                Log.i(LOGTAG, "setUpdateGecko() called on non-IC thread");
+                Log.i(LOGTAG, "setBatchMode() called on non-IC thread");
             }
             return;
         }
-        if (update) {
-            icUpdateGecko(false);
+        if (!inBatchMode && mNeedCompositionUpdate) {
+            icUpdateComposition();
         }
-        mUpdateGecko = update;
+        mInBatchMode = inBatchMode;
+    }
+
+    private void icUpdateComposition() {
+        if (DEBUG) {
+            assertOnIcThread();
+        }
+        mNeedCompositionUpdate = false;
+        mActionQueue.syncWithGecko();
+        icMaybeSendComposition(mText,  false,  true);
+    }
+
+    private void geckoScheduleCompositionUpdate() {
+        if (DEBUG) {
+            ThreadUtils.assertOnGeckoThread();
+        }
+        
+        geckoPostToIc(new Runnable() {
+            @Override
+            public void run() {
+                if (mInBatchMode || !mNeedCompositionUpdate) {
+                    return;
+                }
+                if (!mActionQueue.isEmpty()) {
+                    
+                    mIcPostHandler.postDelayed(this, 10);
+                    return;
+                }
+                icUpdateComposition();
+            }
+        });
     }
 
     @Override
@@ -792,8 +815,9 @@ final class GeckoEditable extends JNIObject
             geckoSetIcHandler(action.mHandler);
             break;
         }
-        if (action.mShouldUpdate) {
-            geckoUpdateGecko(false);
+
+        if (action.mUpdateComposition) {
+            geckoScheduleCompositionUpdate();
         }
     }
 
@@ -997,8 +1021,7 @@ final class GeckoEditable extends JNIObject
                                     Object.class, mChangedText, 0);
 
             if (action != null &&
-                    (action.mType == Action.TYPE_REPLACE_TEXT ||
-                    action.mType == Action.TYPE_COMPOSE_TEXT) &&
+                    action.mType == Action.TYPE_REPLACE_TEXT &&
                     start <= action.mStart &&
                     action.mStart + action.mSequence.length() <= newEnd) {
 
@@ -1164,12 +1187,26 @@ final class GeckoEditable extends JNIObject
                 what == Selection.SELECTION_END) {
             Log.w(LOGTAG, "selection removed with removeSpan()");
         }
-        mActionQueue.offer(Action.newRemoveSpan(what));
+
+        
+        
+        final boolean update = !mNeedCompositionUpdate && what instanceof NoCopySpan;
+        mActionQueue.offer(Action.newRemoveSpan(what, update));
+        mNeedCompositionUpdate |= update;
     }
 
     @Override
     public void setSpan(Object what, int start, int end, int flags) {
-        mActionQueue.offer(Action.newSetSpan(what, start, end, flags));
+        
+        
+        
+        final boolean update = !mNeedCompositionUpdate &&
+                (flags & Spanned.SPAN_INTERMEDIATE) == 0 && (
+                (flags & Spanned.SPAN_COMPOSING) != 0 ||
+                what == Selection.SELECTION_START ||
+                what == Selection.SELECTION_END);
+        mActionQueue.offer(Action.newSetSpan(what, start, end, flags, update));
+        mNeedCompositionUpdate |= update;
     }
 
     

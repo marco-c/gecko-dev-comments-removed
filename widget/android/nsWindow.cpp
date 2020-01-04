@@ -206,8 +206,6 @@ class nsWindow::Natives final
             
             if (Base::lambda.IsTarget(&Natives::OnKeyEvent) ||
                 Base::lambda.IsTarget(&Natives::OnImeReplaceText) ||
-                Base::lambda.IsTarget(&Natives::OnImeSetSelection) ||
-                Base::lambda.IsTarget(&Natives::OnImeRemoveComposition) ||
                 Base::lambda.IsTarget(&Natives::OnImeUpdateComposition))
             {
                 return nsAppShell::Event::Type::kUIActivity;
@@ -343,13 +341,7 @@ public:
 
     
     void OnImeReplaceText(int32_t aStart, int32_t aEnd,
-                          jni::String::Param aText, bool aComposing);
-
-    
-    void OnImeSetSelection(int32_t aStart, int32_t aEnd);
-
-    
-    void OnImeRemoveComposition();
+                          jni::String::Param aText);
 
     
     void OnImeAddCompositionRange(int32_t aStart, int32_t aEnd,
@@ -2281,7 +2273,7 @@ nsWindow::Natives::OnImeAcknowledgeFocus()
 
 void
 nsWindow::Natives::OnImeReplaceText(int32_t aStart, int32_t aEnd,
-                                    jni::String::Param aText, bool aComposing)
+                                    jni::String::Param aText)
 {
     if (mIMEMaskEventsCount > 0) {
         
@@ -2354,25 +2346,37 @@ nsWindow::Natives::OnImeReplaceText(int32_t aStart, int32_t aEnd,
         AddIMETextChange(dummyChange);
     }
 
+    const bool composing = !mIMERanges->IsEmpty();
+
     
     if (window.GetIMEComposition()) {
         WidgetCompositionEvent event(true, eCompositionChange, &window);
         window.InitEvent(event, nullptr);
         event.mData = string;
 
-        
-        TextRange range;
-        range.mStartOffset = 0;
-        range.mEndOffset = event.mData.Length();
-        range.mRangeType = NS_TEXTRANGE_RAWINPUT;
-        event.mRanges = new TextRangeArray();
-        event.mRanges->AppendElement(range);
+        if (composing) {
+            event.mRanges = new TextRangeArray();
+            mIMERanges.swap(event.mRanges);
+
+        } else if (event.mData.Length()) {
+            
+            TextRange range;
+            range.mStartOffset = 0;
+            range.mEndOffset = event.mData.Length();
+            range.mRangeType = NS_TEXTRANGE_RAWINPUT;
+            event.mRanges = new TextRangeArray();
+            event.mRanges->AppendElement(range);
+        }
 
         window.DispatchEvent(&event);
+
+    } else if (composing) {
+        
+        mIMERanges->Clear();
     }
 
     
-    if (!aComposing) {
+    if (!composing) {
         window.RemoveIMEComposition();
     }
 
@@ -2380,59 +2384,6 @@ nsWindow::Natives::OnImeReplaceText(int32_t aStart, int32_t aEnd,
         SendIMEDummyKeyEvents();
     }
     OnImeSynchronize();
-}
-
-void
-nsWindow::Natives::OnImeSetSelection(int32_t aStart, int32_t aEnd)
-{
-    if (mIMEMaskEventsCount > 0) {
-        
-        return;
-    }
-
-    
-
-
-    RefPtr<nsWindow> kungFuDeathGrip(&window);
-    WidgetSelectionEvent selEvent(true, eSetSelection, &window);
-
-    window.InitEvent(selEvent, nullptr);
-    window.RemoveIMEComposition();
-
-    if (aStart < 0 || aEnd < 0) {
-        WidgetQueryContentEvent event(true, eQuerySelectedText, &window);
-        window.InitEvent(event, nullptr);
-        window.DispatchEvent(&event);
-        MOZ_ASSERT(event.mSucceeded);
-
-        if (aStart < 0)
-            aStart = int32_t(event.GetSelectionStart());
-        if (aEnd < 0)
-            aEnd = int32_t(event.GetSelectionEnd());
-    }
-
-    selEvent.mOffset = std::min(aStart, aEnd);
-    selEvent.mLength = std::max(aStart, aEnd) - selEvent.mOffset;
-    selEvent.mReversed = aStart > aEnd;
-    selEvent.mExpandToClusterBoundary = false;
-
-    window.DispatchEvent(&selEvent);
-}
-
-void
-nsWindow::Natives::OnImeRemoveComposition()
-{
-    if (mIMEMaskEventsCount > 0) {
-        
-        return;
-    }
-
-    
-
-
-
-    window.RemoveIMEComposition();
-    mIMERanges->Clear();
 }
 
 void
@@ -2467,6 +2418,23 @@ nsWindow::Natives::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
 {
     if (mIMEMaskEventsCount > 0) {
         
+        return;
+    }
+
+    
+    if (mIMERanges->IsEmpty()) {
+        MOZ_ASSERT(aStart >= 0 && aEnd >= 0);
+        window.RemoveIMEComposition();
+
+        WidgetSelectionEvent selEvent(true, eSetSelection, &window);
+        window.InitEvent(selEvent, nullptr);
+
+        selEvent.mOffset = std::min(aStart, aEnd);
+        selEvent.mLength = std::max(aStart, aEnd) - selEvent.mOffset;
+        selEvent.mReversed = aStart > aEnd;
+        selEvent.mExpandToClusterBoundary = false;
+
+        window.DispatchEvent(&selEvent);
         return;
     }
 
