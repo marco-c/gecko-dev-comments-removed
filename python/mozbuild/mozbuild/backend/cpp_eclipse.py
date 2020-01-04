@@ -65,14 +65,14 @@ class CppEclipseBackend(CommonBackend):
         return os.path.join(srcdir_parent, workspace_dirname)
 
     def consume_object(self, obj):
-        obj.ack()
-
         reldir = getattr(obj, 'relativedir', None)
 
         
         
         if isinstance(obj, Defines):
             self._paths_to_defines.setdefault(reldir, {}).update(obj.defines)
+
+        return True
 
     def consume_finished(self):
         settings_dir = os.path.join(self._project_dir, '.settings')

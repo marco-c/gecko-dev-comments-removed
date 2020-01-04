@@ -55,20 +55,18 @@ class AndroidEclipseBackend(CommonBackend):
         """Write out Android Eclipse project files."""
 
         if not isinstance(obj, ContextDerived):
-            return
+            return False
 
-        CommonBackend.consume_object(self, obj)
-
-        
-        if obj._ack:
-            return
-
-        
-        obj.ack()
+        if CommonBackend.consume_object(self, obj):
+            
+            return True
 
         
         if isinstance(obj, ContextWrapped) and isinstance(obj.wrapped, AndroidEclipseProjectData):
             self._process_android_eclipse_project_data(obj.wrapped, obj.srcdir, obj.objdir)
+
+        
+        return True
 
     def consume_finished(self):
         """The common backend handles WebIDL and test files. We don't handle
