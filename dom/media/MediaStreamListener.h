@@ -14,7 +14,6 @@ namespace mozilla {
 class AudioSegment;
 class MediaStream;
 class MediaStreamGraph;
-class MediaStreamVideoSink;
 class VideoSegment;
 
 enum MediaStreamGraphEvent : uint32_t {
@@ -250,20 +249,14 @@ public:
 
 
 
-
-
-
   enum class InstallationResult {
     TRACK_NOT_FOUND_AT_SOURCE,
     TRACK_TYPE_NOT_SUPPORTED,
     STREAM_NOT_SUPPORTED,
-    ALREADY_EXISTS,
     SUCCESS
   };
   virtual void NotifyDirectListenerInstalled(InstallationResult aResult) {}
   virtual void NotifyDirectListenerUninstalled() {}
-
-  virtual MediaStreamVideoSink* AsMediaStreamVideoSink() { return nullptr; }
 
 protected:
   virtual ~DirectMediaStreamTrackListener() {}
