@@ -80,6 +80,7 @@ H264Converter::Input(MediaRawData* aSample)
     if (rv == NS_ERROR_NOT_INITIALIZED) {
       
       
+      mCallback->InputExhausted();
       return NS_OK;
     }
   } else {
