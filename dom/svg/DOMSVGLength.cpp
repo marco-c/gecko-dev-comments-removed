@@ -33,10 +33,8 @@ static nsSVGAttrTearoffTable<nsSVGLength2, DOMSVGLength>
 NS_IMPL_CYCLE_COLLECTION_CLASS(DOMSVGLength)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(DOMSVGLength)
-  
-  if (tmp->mList) {
-    tmp->mList->mItems[tmp->mListIndex] = nullptr;
-  }
+  tmp->CleanupWeakRefs();
+  tmp->mVal = nullptr; 
 NS_IMPL_CYCLE_COLLECTION_UNLINK(mList)
 NS_IMPL_CYCLE_COLLECTION_UNLINK(mSVGElement)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
