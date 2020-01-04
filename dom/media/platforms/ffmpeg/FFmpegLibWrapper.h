@@ -52,6 +52,7 @@ struct FFmpegLibWrapper
   int (*av_parser_parse2)(AVCodecParserContext* s, AVCodecContext* avctx, uint8_t** poutbuf, int* poutbuf_size, const uint8_t* buf, int buf_size, int64_t pts, int64_t dts, int64_t pos);
 
   
+  AVFrame* (*avcodec_alloc_frame)();
   void (*avcodec_get_frame_defaults)(AVFrame* pic);
 
   
@@ -60,7 +61,6 @@ struct FFmpegLibWrapper
   void (*av_freep)(void *ptr);
 
   
-  AVFrame* (*avcodec_alloc_frame)();
   void (*avcodec_free_frame)(AVFrame** frame);
 
   
