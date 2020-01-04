@@ -46,6 +46,10 @@ public:
   
   bool IsChrome() const { return mIsChrome; }
 
+  
+  
+  void* ControlledDocument() const { return mControlledDocument; }
+
 private:
   static uint32_t ComputeHash(ImageURL* aURI,
                               const Maybe<uint64_t>& aBlobSerial,
