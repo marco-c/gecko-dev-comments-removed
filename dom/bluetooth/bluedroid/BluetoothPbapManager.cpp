@@ -76,9 +76,9 @@ BluetoothPbapManager::HandleShutdown()
   sPbapManager = nullptr;
 }
 
-BluetoothPbapManager::BluetoothPbapManager() : mConnected(false)
+BluetoothPbapManager::BluetoothPbapManager() : mPhonebookSizeRequired(false)
+                                             , mConnected(false)
                                              , mRemoteMaxPacketLength(0)
-                                             , mPhonebookSizeRequired(false)
 {
   mDeviceAddress.AssignLiteral(BLUETOOTH_ADDRESS_NONE);
   mCurrentPath.AssignLiteral("");
@@ -818,7 +818,13 @@ BluetoothPbapManager::ReplyToPullPhonebook(Blob* aBlob, uint16_t aPhonebookSize)
     return false;
   }
 
-  if (!GetInputStreamFromBlob(aBlob)) {
+  
+
+
+
+
+
+  if (!mPhonebookSizeRequired && !GetInputStreamFromBlob(aBlob)) {
     ReplyError(ObexResponseCode::InternalServerError);
     return false;
   }
@@ -844,7 +850,12 @@ BluetoothPbapManager::ReplyToPullvCardListing(Blob* aBlob,
     return false;
   }
 
-  if (!GetInputStreamFromBlob(aBlob)) {
+  
+
+
+
+
+  if (!mPhonebookSizeRequired && !GetInputStreamFromBlob(aBlob)) {
     ReplyError(ObexResponseCode::InternalServerError);
     return false;
   }
@@ -879,23 +890,29 @@ BluetoothPbapManager::ReplyToPullvCardEntry(Blob* aBlob)
 bool
 BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
 {
-  MOZ_ASSERT(mVCardDataStream);
   MOZ_ASSERT(mRemoteMaxPacketLength >= kObexLeastMaxSize);
 
   
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
 
   uint8_t* res = new uint8_t[mRemoteMaxPacketLength];
+  uint8_t opcode;
 
+  
   
   
   unsigned int index = kObexRespHeaderSize;
 
-  
   if (mPhonebookSizeRequired) {
+    
     
     uint8_t phonebookSize[2];
     phonebookSize[0] = (aPhonebookSize & 0xFF00) >> 8;
@@ -915,43 +932,50 @@ BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
                                        mRemoteMaxPacketLength,
                                        appParameters,
                                        sizeof(appParameters));
-    mPhonebookSizeRequired = false;
-  }
 
-  
-  
-  uint32_t remainingPacketSize = mRemoteMaxPacketLength - kObexBodyHeaderSize
-                                                        - index;
-
-  
-  uint32_t numRead = 0;
-  nsAutoArrayPtr<char> buffer(new char[remainingPacketSize]);
-  nsresult rv = mVCardDataStream->Read(buffer, remainingPacketSize, &numRead);
-  if (NS_FAILED(rv)) {
-    BT_LOGR("Failed to read from input stream. rv=0x%x",
-            static_cast<uint32_t>(rv));
-    return false;
-  }
-
-  if (numRead) {
-    index += AppendHeaderBody(&res[index],
-                              remainingPacketSize,
-                              (uint8_t*) buffer.forget(),
-                              numRead);
-  }
-
-  
-  
-  uint8_t opcode;
-  if (numRead + kObexBodyHeaderSize > remainingPacketSize) {
-    opcode = ObexResponseCode::Continue;
-  } else {
     
     opcode = ObexResponseCode::Success;
     index += AppendHeaderEndOfBody(&res[index]);
 
-    mVCardDataStream->Close();
-    mVCardDataStream = nullptr;
+    mPhonebookSizeRequired = false;
+  } else {
+    MOZ_ASSERT(mVCardDataStream);
+
+    
+    
+    uint32_t remainingPacketSize =
+      mRemoteMaxPacketLength - kObexBodyHeaderSize - index;
+
+    
+    uint32_t numRead = 0;
+    nsAutoArrayPtr<char> buf(new char[remainingPacketSize]);
+    nsresult rv = mVCardDataStream->Read(buf, remainingPacketSize, &numRead);
+    if (NS_FAILED(rv)) {
+      BT_LOGR("Failed to read from input stream. rv=0x%x",
+              static_cast<uint32_t>(rv));
+      return false;
+    }
+
+    if (numRead) {
+      index += AppendHeaderBody(&res[index],
+                                remainingPacketSize,
+                                (uint8_t*) buf.forget(),
+                                numRead);
+    }
+
+    
+    
+    if (numRead + kObexBodyHeaderSize > remainingPacketSize) {
+      opcode = ObexResponseCode::Continue;
+    } else {
+      
+      opcode = ObexResponseCode::Success;
+      index += AppendHeaderEndOfBody(&res[index]);
+
+      
+      mVCardDataStream->Close();
+      mVCardDataStream = nullptr;
+    }
   }
 
   SendObexData(res, opcode, index);

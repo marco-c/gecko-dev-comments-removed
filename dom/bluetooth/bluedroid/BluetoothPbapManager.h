@@ -161,16 +161,22 @@ private:
   void AfterPbapConnected();
   void AfterPbapDisconnected();
 
+
   
 
 
-  nsString mCurrentPath;
+  bool mPhonebookSizeRequired;
 
   
 
 
   bool mConnected;
   nsString mDeviceAddress;
+
+  
+
+
+  nsString mCurrentPath;
 
   
 
@@ -191,11 +197,6 @@ private:
 
 
   nsCOMPtr<nsIInputStream> mVCardDataStream;
-
-  
-
-
-  bool mPhonebookSizeRequired;
 };
 
 END_BLUETOOTH_NAMESPACE
