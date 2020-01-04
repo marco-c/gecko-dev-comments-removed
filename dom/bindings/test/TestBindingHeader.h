@@ -1434,6 +1434,9 @@ public:
 class TestRenamedNamespace {
 };
 
+class TestProtoObjectHackedNamespace {
+};
+
 } 
 } 
 
