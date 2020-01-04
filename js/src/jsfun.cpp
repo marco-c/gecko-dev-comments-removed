@@ -1680,6 +1680,11 @@ JSFunction::maybeRelazify(JSRuntime* rt)
         return;
 
     
+    
+    if (comp->collectCoverageForDebug())
+        return;
+
+    
     if (!u.i.s.script_->isRelazifiable())
         return;
 

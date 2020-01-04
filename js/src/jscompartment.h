@@ -707,6 +707,8 @@ struct JSCompartment
     
     
     bool collectCoverage() const;
+    bool collectCoverageForDebug() const;
+    bool collectCoverageForPGO() const;
     void clearScriptCounts();
 
     bool needsDelazificationForDebugger() const {
