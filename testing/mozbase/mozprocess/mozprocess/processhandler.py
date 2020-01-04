@@ -13,6 +13,7 @@ import time
 import traceback
 from Queue import Queue, Empty
 from datetime import datetime
+
 __all__ = ['ProcessHandlerMixin', 'ProcessHandler', 'LogOutput',
            'StoreOutput', 'StreamOutput']
 
@@ -30,6 +31,7 @@ if isWin:
     from .qijo import JobObjectAssociateCompletionPortInformation,\
     JOBOBJECT_ASSOCIATE_COMPLETION_PORT, JobObjectExtendedLimitInformation,\
     JOBOBJECT_BASIC_LIMIT_INFORMATION, JOBOBJECT_EXTENDED_LIMIT_INFORMATION, IO_COUNTERS
+
 
 class ProcessHandlerMixin(object):
     """
@@ -107,6 +109,12 @@ class ProcessHandlerMixin(object):
                 print >> sys.stderr, args
                 raise
 
+        def debug(self, msg):
+            if not MOZPROCESS_DEBUG:
+                return
+            thread = threading.current_thread().name
+            print("DBG::MOZPROC PID:{} ({}) | {}".format(self.pid, thread, msg))
+
         def __del__(self, _maxint=sys.maxint):
             if isWin:
                 handle = getattr(self, '_handle', None)
@@ -123,18 +131,19 @@ class ProcessHandlerMixin(object):
         def kill(self, sig=None):
             if isWin:
                 if not self._ignore_children and self._handle and self._job:
+                    self.debug("calling TerminateJobObject")
                     winprocess.TerminateJobObject(self._job, winprocess.ERROR_CONTROL_C_EXIT)
                     self.returncode = winprocess.GetExitCodeProcess(self._handle)
                 elif self._handle:
-                    err = None
+                    self.debug("calling TerminateProcess")
                     try:
                         winprocess.TerminateProcess(self._handle, winprocess.ERROR_CONTROL_C_EXIT)
                     except:
-                        err = "Could not terminate process"
-                    winprocess.GetExitCodeProcess(self._handle)
-                    self._cleanup()
-                    if err is not None:
-                        raise OSError(err)
+                        traceback.print_exc()
+                        raise OSError("Could not terminate process")
+                    finally:
+                        winprocess.GetExitCodeProcess(self._handle)
+                        self._cleanup()
             else:
                 def send_sig(sig):
                     if not self._ignore_children:
@@ -364,8 +373,7 @@ falling back to not using job objects for managing child processes"""
                 self._spawned_procs = {}
                 countdowntokill = 0
 
-                if MOZPROCESS_DEBUG:
-                    print "DBG::MOZPROC Self.pid value is: %s" % self.pid
+                self.debug("start polling IO completion port")
 
                 while True:
                     msgid = c_ulong(0)
@@ -390,6 +398,7 @@ falling back to not using job objects for managing child processes"""
                             print >> sys.stderr, "Parent process %s exited with children alive:" % self.pid
                             print >> sys.stderr, "PIDS: %s" %  ', '.join([str(i) for i in self._spawned_procs])
                             print >> sys.stderr, "Attempting to kill them..."
+
                             self.kill()
                             self._process_events.put({self.pid: 'FINISHED'})
 
@@ -410,8 +419,7 @@ falling back to not using job objects for managing child processes"""
                             break
 
                     if compkey.value == winprocess.COMPKEY_TERMINATE.value:
-                        if MOZPROCESS_DEBUG:
-                            print "DBG::MOZPROC compkeyterminate detected"
+                        self.debug("compkeyterminate detected")
                         
                         break
 
@@ -420,8 +428,7 @@ falling back to not using job objects for managing child processes"""
                         if msgid.value == winprocess.JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO:
                             
                             
-                            if MOZPROCESS_DEBUG:
-                                print "DBG::MOZPROC job object msg active processes zero"
+                            self.debug("job object msg active processes zero")
                             self._process_events.put({self.pid: 'FINISHED'})
                             break
                         elif msgid.value == winprocess.JOB_OBJECT_MSG_NEW_PROCESS:
@@ -430,11 +437,9 @@ falling back to not using job objects for managing child processes"""
                             
                             if pid.value != self.pid:
                                 self._spawned_procs[pid.value] = 1
-                                if MOZPROCESS_DEBUG:
-                                    print "DBG::MOZPROC new process detected with pid value: %s" % pid.value
+                                self.debug("new process detected with pid value: %s" % pid.value)
                         elif msgid.value == winprocess.JOB_OBJECT_MSG_EXIT_PROCESS:
-                            if MOZPROCESS_DEBUG:
-                                print "DBG::MOZPROC process id %s exited normally" % pid.value
+                            self.debug("process id %s exited normally" % pid.value)
                             
                             if pid.value == self.pid and len(self._spawned_procs) > 0:
                                 
@@ -444,8 +449,7 @@ falling back to not using job objects for managing child processes"""
                                 del(self._spawned_procs[pid.value])
                         elif msgid.value == winprocess.JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS:
                             
-                            if MOZPROCESS_DEBUG:
-                                print "DBG::MOZPROC process id %s existed abnormally" % pid.value
+                            self.debug("process id %s exited abnormally" % pid.value)
                             if pid.value == self.pid and len(self._spawned_procs) > 0:
                                 
                                 countdowntokill = datetime.now()
@@ -454,12 +458,10 @@ falling back to not using job objects for managing child processes"""
                                 del self._spawned_procs[pid.value]
                         else:
                             
-                            if MOZPROCESS_DEBUG:
-                                print "DBG::MOZPROC We got a message %s" % msgid.value
+                            self.debug("We got a message %s" % msgid.value)
                             pass
 
             def _wait(self):
-
                 
                 if self._handle:
                     self.returncode = winprocess.GetExitCodeProcess(self._handle)
@@ -467,14 +469,11 @@ falling back to not using job objects for managing child processes"""
                     
                     return self.returncode
 
-                
                 threadalive = False
                 if hasattr(self, "_procmgrthread"):
-                    if hasattr(self._procmgrthread, 'is_alive'):
-                        threadalive = self._procmgrthread.is_alive()
-                    else:
-                        threadalive = self._procmgrthread.isAlive()
+                    threadalive = self._procmgrthread.is_alive()
                 if self._job and threadalive:
+                    self.debug("waiting with IO completion port")
                     
                     
                     
@@ -488,24 +487,23 @@ falling back to not using job objects for managing child processes"""
                         item = self._process_events.get(timeout=self.MAX_IOCOMPLETION_PORT_NOTIFICATION_DELAY +
                                                                 self.MAX_PROCESS_KILL_DELAY)
                         if item[self.pid] == 'FINISHED':
+                            self.debug("received 'FINISHED' from _procmgrthread")
                             self._process_events.task_done()
                     except:
-                        err = "IO Completion Port failed to signal process shutdown"
-                    
-                    if self._handle:
-                        self.returncode = winprocess.GetExitCodeProcess(self._handle)
-                    self._cleanup()
-
-                    if err is not None:
-                        raise OSError(err)
-
+                        traceback.print_exc()
+                        raise OSError("IO Completion Port failed to signal process shutdown")
+                    finally:
+                        if self._handle:
+                            self.returncode = winprocess.GetExitCodeProcess(self._handle)
+                        self._cleanup()
 
                 else:
                     
                     
+                    self.debug("waiting without IO completion port")
 
-                    if MOZPROCESS_DEBUG and not self._ignore_children:
-                        print "DBG::MOZPROC NOT USING JOB OBJECTS!!!"
+                    if not self._ignore_children:
+                        self.debug("NOT USING JOB OBJECTS!!!")
                     
                     if self.returncode != winprocess.STILL_ACTIVE:
                         self._cleanup()
