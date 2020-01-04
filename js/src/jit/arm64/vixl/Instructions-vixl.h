@@ -267,6 +267,10 @@ class Instruction {
   ptrdiff_t ImmPCRawOffset() const;
   void SetBits32(int msb, int lsb, unsigned value);
 
+  
+  
+  bool IsStackPtrSync() const;
+
 #define DEFINE_SETTERS(Name, HighBit, LowBit, Func)  \
   inline void Set##Name(unsigned n) { SetBits32(HighBit, LowBit, n); }
 INSTRUCTION_FIELDS_LIST(DEFINE_SETTERS)
@@ -386,6 +390,10 @@ INSTRUCTION_FIELDS_LIST(DEFINE_SETTERS)
   const Instruction* NextInstruction() const {
     return this + kInstructionSize;
   }
+
+  
+  
+  const Instruction *skipPool() const;
 
   const Instruction* InstructionAtOffset(int64_t offset) const {
     VIXL_ASSERT(IsWordAligned(this + offset));

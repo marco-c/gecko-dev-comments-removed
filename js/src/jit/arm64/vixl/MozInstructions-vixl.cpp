@@ -24,6 +24,7 @@
 
 
 
+#include "jit/arm64/Architecture-arm64.h"
 #include "jit/arm64/vixl/Instructions-vixl.h"
 
 namespace vixl {
@@ -127,6 +128,43 @@ ptrdiff_t Instruction::ImmPCRawOffset() const {
     offset = ImmBranch();
   }
   return offset;
+}
+
+
+
+bool
+Instruction::IsStackPtrSync() const
+{
+    
+    
+    return IsAddSubImmediate() && Rd() == js::jit::Registers::sp && ImmAddSub() == 0;
+}
+
+
+
+
+
+
+
+
+
+const Instruction*
+Instruction::skipPool() const
+{
+    
+    
+    if (!IsUncondB() || ImmUncondBranch() <= 0)
+        return this;
+
+    
+    
+    
+    const Instruction *header = InstructionAtOffset(kInstructionSize);
+    if (header->Mask(0xffff8000) != 0xffff0000)
+        return this;
+
+    
+    return ImmPCOffsetTarget();
 }
 
 

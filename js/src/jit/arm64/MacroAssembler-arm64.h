@@ -2870,13 +2870,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         
         BufferOffset offset = nextOffset();
 
-        
-        
-        
-        
-        
-        armbuffer_.flushPool();
-
         syncStackPtr();
 
         BufferOffset loadOffset;

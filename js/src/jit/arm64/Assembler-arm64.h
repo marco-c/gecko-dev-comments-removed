@@ -336,36 +336,6 @@ class Assembler : public vixl::Assembler
     static uint32_t AlignDoubleArg(uint32_t offset) {
         MOZ_CRASH("AlignDoubleArg()");
     }
-    static Instruction* NextInstruction(Instruction* instruction, uint32_t* count = nullptr) {
-        if (count != nullptr)
-            *count += 4;
-        Instruction* cur = instruction;
-        Instruction* next = cur + 4;
-        
-        if (next->IsUncondB()) {
-            uint32_t* snd = (uint32_t*)(instruction + 8);
-            
-            
-            if ((*snd & 0xffff8000) == 0xffff0000) {
-                
-                int poolSize =  (*snd & 0x7fff);
-                return (Instruction*)(snd + poolSize);
-            }
-        } else if (cur->IsBR() || cur->IsUncondB()) {
-            
-            
-            if ((next->InstructionBits() & 0xffff0000) == 0xffff0000) {
-                int poolSize = (next->InstructionBits() & 0x7fff);
-                Instruction* ret = (next + (poolSize << 2));
-                return ret;
-            }
-        }
-        return (instruction + 4);
-
-    }
-    static uint8_t* NextInstruction(uint8_t* instruction, uint32_t* count = nullptr) {
-        return (uint8_t*)NextInstruction((Instruction*)instruction, count);
-    }
     static uintptr_t GetPointer(uint8_t* ptr) {
         Instruction* i = reinterpret_cast<Instruction*>(ptr);
         uint64_t ret = i->Literal64();
