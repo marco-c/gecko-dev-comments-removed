@@ -220,8 +220,10 @@ class MachCommands(MachCommandBase):
             return 1
 
         
+        
+        
         success = self.callProcess("eslint",
-                                   [npmPath, "install", "eslint", "-g"])
+                                   [npmPath, "install", "eslint@1.10.3", "-g"])
         if not success:
             return 1
 
