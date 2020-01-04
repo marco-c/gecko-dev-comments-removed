@@ -35,6 +35,10 @@ public:
   SourceBufferTaskQueue()
   : mMonitor("SourceBufferTaskQueue")
   {}
+  ~SourceBufferTaskQueue()
+  {
+    MOZ_ASSERT(mQueue.IsEmpty(), "All tasks must have been processed");
+  }
 
   void Push(SourceBufferTask* aTask)
   {
@@ -379,7 +383,6 @@ private:
   
   SourceBufferTaskQueue mQueue;
   void ProcessTasks();
-  void CancelAllTasks();
   
   
   RefPtr<SourceBufferTask> mCurrentTask;
