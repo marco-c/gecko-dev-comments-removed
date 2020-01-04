@@ -351,10 +351,7 @@ var gAdvancedPane = {
 
   showConnections: function ()
   {
-    openDialog("chrome://browser/content/preferences/connection.xul",
-               "mozilla:connectionmanager",
-               "modal=yes",
-               null);
+    gSubDialog.open("chrome://browser/content/preferences/connection.xul");
   },
 
   
@@ -506,10 +503,8 @@ var gAdvancedPane = {
                    manageCapability : Components.interfaces.nsIPermissionManager.DENY_ACTION,
                    windowTitle      : bundlePreferences.getString("offlinepermissionstitle"),
                    introText        : bundlePreferences.getString("offlinepermissionstext") };
-    openDialog("chrome://browser/content/preferences/permissions.xul",
-               "Browser:Permissions",
-               "modal=yes",
-               params);
+    gSubDialog.open("chrome://browser/content/preferences/permissions.xul",
+                    null, params);
   },
 
   
@@ -747,7 +742,11 @@ var gAdvancedPane = {
 
   showUpdates: function ()
   {
-    gSubDialog.open("chrome://mozapps/content/update/history.xul");
+    if (AppConstants.MOZ_UPDATER) {
+      var prompter = Components.classes["@mozilla.org/updates/update-prompt;1"]
+                               .createInstance(Components.interfaces.nsIUpdatePrompt);
+      prompter.showUpdateHistory(window);
+    }
   },
 
   
@@ -779,9 +778,7 @@ var gAdvancedPane = {
 
   showSecurityDevices: function ()
   {
-    openDialog("chrome://pippki/content/device_manager.xul",
-               "mozilla:devicemanager",
-               "modal=yes", null);
+    gSubDialog.open("chrome://pippki/content/device_manager.xul");
   },
 
   observe: function (aSubject, aTopic, aData) {

@@ -4,6 +4,7 @@
 
 
 Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/Task.jsm");
 
 function test() {
   waitForExplicitFinish();
@@ -18,53 +19,30 @@ function test() {
   });
 
   let connectionURL = "chrome://browser/content/preferences/connection.xul";
-  let windowWatcher = Services.ww;
-
-  
-  
-  Services.prefs.setBoolPref("browser.preferences.instantApply", true);
-
-  
-  let observer = {
-    observe: function(aSubject, aTopic, aData) {
-      if (aTopic == "domwindowopened") {
-        
-        let win = aSubject.QueryInterface(Components.interfaces.nsIDOMWindow);
-        win.addEventListener("load", function winLoadListener() {
-          win.removeEventListener("load", winLoadListener, false);
-          if (win.location.href == connectionURL) {
-            ok(true, "connection window opened");
-            runConnectionTests(win);
-            win.document.documentElement.acceptDialog();
-          }
-        }, false);
-      } else if (aTopic == "domwindowclosed") {
-        
-        let win = aSubject.QueryInterface(Components.interfaces.nsIDOMWindow);
-        if (win.location.href == connectionURL) {
-          windowWatcher.unregisterNotification(observer);
-          ok(true, "connection window closed");
-          
-          
-          is(Services.prefs.getCharPref("network.proxy.no_proxies_on"),
-             ".a.com,.b.com,.c.com", "no_proxies_on pref has correct value");
-          gBrowser.removeCurrentTab();
-          finish();
-        }
-      }
-    }
-  };
 
   
 
 
 
 
-  open_preferences(function tabOpened(aContentWindow) {
+  open_preferences(Task.async(function* tabOpened(aContentWindow) {
     is(gBrowser.currentURI.spec, "about:preferences", "about:preferences loaded");
-    windowWatcher.registerNotification(observer);
-    gBrowser.contentWindow.gAdvancedPane.showConnections();
-  });
+    let dialog = yield openAndLoadSubDialog(connectionURL);
+    let dialogClosingPromise = waitForEvent(dialog.document.documentElement, "dialogclosing");
+
+    ok(dialog, "connection window opened");
+    runConnectionTests(dialog);
+    dialog.document.documentElement.acceptDialog();
+
+    let dialogClosingEvent = yield dialogClosingPromise;
+    ok(dialogClosingEvent, "connection window closed");
+    
+    
+    is(Services.prefs.getCharPref("network.proxy.no_proxies_on"),
+       ".a.com,.b.com,.c.com", "no_proxies_on pref has correct value");
+    gBrowser.removeCurrentTab();
+    finish();
+  }));
 }
 
 

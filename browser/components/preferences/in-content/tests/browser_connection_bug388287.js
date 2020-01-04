@@ -3,25 +3,13 @@
 
 
 Components.utils.import("resource://gre/modules/Services.jsm");
-
-
-function open_preferences(aCallback) {
-  gBrowser.selectedTab = gBrowser.addTab("about:preferences");
-  let newTabBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
-  newTabBrowser.addEventListener("Initialized", function () {
-    newTabBrowser.removeEventListener("Initialized", arguments.callee, true);
-    aCallback(gBrowser.contentWindow);
-  }, true);
-}
+Components.utils.import("resource://gre/modules/Task.jsm");
 
 function test() {
   waitForExplicitFinish();
-  let connectionTests = runConnectionTestsGen();
-  connectionTests.next();
   const connectionURL = "chrome://browser/content/preferences/connection.xul";
   let closeable = false;
   let finalTest = false;
-  let prefWin;
 
   
   
@@ -38,55 +26,34 @@ function test() {
       Services.prefs.clearUserPref("network.proxy.backup." + proxyType);
       Services.prefs.clearUserPref("network.proxy.backup." + proxyType + "_port");
     }
-    try {
-      Services.ww.unregisterNotification(observer);
-    } catch (e) {
-      
-    }
   });
 
   
-  let observer = {
-    observe: function(aSubject, aTopic, aData) {
-      if (aTopic == "domwindowopened") {
-        
-        let win = aSubject.QueryInterface(Components.interfaces.nsIDOMWindow);
-        win.addEventListener("load", function winLoadListener() {
-          win.removeEventListener("load", winLoadListener);
-          if (win.location.href == connectionURL) {
-            
-            connectionTests.next(win);
-          }
-        });
-      } else if (aTopic == "domwindowclosed") {
-        
-        let win = aSubject.QueryInterface(Components.interfaces.nsIDOMWindow);
-        if (win.location.href == connectionURL) {
-          ok(closeable, "Connection dialog closed");
 
-          
-          if (finalTest) {
-            Services.ww.unregisterNotification(observer);
-            gBrowser.removeCurrentTab();
-            finish();
-            return;
-          }
 
-          
-          gBrowser.contentWindow.gAdvancedPane.showConnections();
-        }
-      }
-    }
-  };
 
-  
-  function* runConnectionTestsGen() {
-    let doc, connectionWin, proxyTypePref, sharePref, httpPref, httpPortPref, ftpPref, ftpPortPref;
+
+  open_preferences(Task.async(function* tabOpened(aContentWindow) {
+    let dialog, dialogClosingPromise;
+    let doc, proxyTypePref, sharePref, httpPref, httpPortPref, ftpPref, ftpPortPref;
 
     
-    function setDoc(win) {
-      doc = win.document;
-      connectionWin = win;
+    function* setDoc() {
+      if (closeable) {
+        let dialogClosingEvent = yield dialogClosingPromise;
+        ok(dialogClosingEvent, "Connection dialog closed");
+      }
+
+      if (finalTest) {
+        gBrowser.removeCurrentTab();
+        finish();
+        return;
+      }
+
+      dialog = yield openAndLoadSubDialog(connectionURL);
+      dialogClosingPromise = waitForEvent(dialog.document.documentElement, "dialogclosing");
+
+      doc = dialog.document;
       proxyTypePref = doc.getElementById("network.proxy.type");
       sharePref = doc.getElementById("network.proxy.share_proxy_settings");
       httpPref = doc.getElementById("network.proxy.http");
@@ -96,7 +63,7 @@ function test() {
     }
 
     
-    setDoc(yield null);
+    yield setDoc();
 
     
     proxyTypePref.value = 1;
@@ -126,7 +93,7 @@ function test() {
     doc.documentElement.acceptDialog();
 
     
-    setDoc(yield null);
+    yield setDoc();
     proxyTypePref.value = 1;
     sharePref.value = true;
     ftpPref.value = "localhost";
@@ -136,7 +103,7 @@ function test() {
     doc.documentElement.acceptDialog();
 
     
-    setDoc(yield null);
+    yield setDoc();
     proxyTypePref.value = 1;
     sharePref.value = true;
     httpPref.value = "";
@@ -144,7 +111,7 @@ function test() {
     doc.documentElement.acceptDialog();
 
     
-    setDoc(yield null);
+    yield setDoc();
     proxyTypePref.value = 0;
     sharePref.value = true;
     httpPref.value = "localhost";
@@ -153,16 +120,6 @@ function test() {
     
     finalTest = true;
     doc.documentElement.acceptDialog();
-    yield null;
-  }
-
-  
-
-
-
-
-  open_preferences(function tabOpened(aContentWindow) {
-    Services.ww.registerNotification(observer);
-    gBrowser.contentWindow.gAdvancedPane.showConnections();
-  });
+    yield setDoc();
+  }));
 }
