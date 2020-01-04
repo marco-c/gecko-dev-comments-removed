@@ -442,6 +442,14 @@ XPCNativeSetKey::Hash() const
         for (uint16_t i = 0; i < count; i++) {
             h ^= HashPointer(*(current++));
         }
+    } else {
+        
+        RefPtr<XPCNativeInterface> isupp = XPCNativeInterface::GetISupports();
+        h ^= HashPointer(isupp);
+
+        
+        if (isupp == mAddition)
+            return h;
     }
 
     if (mAddition) {
