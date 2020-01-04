@@ -79,6 +79,13 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
 
 
 
+XPCOM_API(nsresult)
+NS_InitMinimalXPCOM();
+
+
+
+
+
 
 
 

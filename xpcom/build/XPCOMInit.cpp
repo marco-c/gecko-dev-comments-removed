@@ -474,6 +474,8 @@ TimeSinceProcessCreation()
   return (TimeStamp::Now() - TimeStamp::ProcessCreation(ignore)).ToMilliseconds();
 }
 
+static bool sInitializedJS = false;
+
 
 EXPORT_XPCOM_API(nsresult)
 NS_InitXPCOM2(nsIServiceManager** aResult,
@@ -709,6 +711,7 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   if (jsInitFailureReason) {
     NS_RUNTIMEABORT(jsInitFailureReason);
   }
+  sInitializedJS = true;
 
   rv = nsComponentManagerImpl::gComponentManager->Init();
   if (NS_FAILED(rv)) {
@@ -782,6 +785,37 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   return NS_OK;
 }
 
+EXPORT_XPCOM_API(nsresult)
+NS_InitMinimalXPCOM()
+{
+  mozPoisonValueInit();
+  NS_SetMainThread();
+  mozilla::TimeStamp::Startup();
+  NS_LogInit();
+  NS_InitAtomTable();
+  mozilla::LogModule::Init();
+
+  char aLocal;
+  profiler_init(&aLocal);
+
+  nsresult rv = nsThreadManager::get()->Init();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  rv = nsTimerImpl::Startup();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  if (!nsCycleCollector_init()) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  return NS_OK;
+}
 
 
 
@@ -1003,8 +1037,11 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   }
 #endif
 
-  
-  JS_ShutDown();
+  if (sInitializedJS) {
+    
+    JS_ShutDown();
+    sInitializedJS = false;
+  }
 
   
   
