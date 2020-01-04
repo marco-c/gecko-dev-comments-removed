@@ -12758,9 +12758,18 @@ class CGDictionary(CGThing):
         
         
         conversionReplacements["convert"] += "mIsAnyMemberPresent = true;\n"
-        conversion = ("if (!isNull && !${propGet}) {\n"
-                      "  return false;\n"
-                      "}\n")
+        if isChromeOnly(member):
+            conversion = ("if (!isNull) {\n"
+                          "  if (!nsContentUtils::ThreadsafeIsCallerChrome()) {\n"
+                          "    temp->setUndefined();\n"
+                          "  } else if (!${propGet}) {\n"
+                          "    return false;\n"
+                          "  }\n"
+                          "}\n")
+        else:
+            conversion = ("if (!isNull && !${propGet}) {\n"
+                          "  return false;\n"
+                          "}\n")
         if member.defaultValue:
             if (member.type.isUnion() and
                 (not member.type.nullable() or
@@ -12870,6 +12879,8 @@ class CGDictionary(CGThing):
         if member.canHaveMissingValue():
             
             conversion = CGIfWrapper(conversion, "%s.WasPassed()" % memberLoc)
+        if isChromeOnly(member):
+            conversion = CGIfWrapper(conversion, "nsContentUtils::ThreadsafeIsCallerChrome()")
         return conversion
 
     def getMemberTrace(self, member):
