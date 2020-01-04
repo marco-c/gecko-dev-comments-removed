@@ -2784,6 +2784,18 @@ private:
 
     SECItem salt = { siBuffer, nullptr, 0 };
     ATTEMPT_BUFFER_TO_SECITEM(arena, &salt, mSalt);
+    
+    
+    
+    
+    
+    if (!salt.data) {
+      MOZ_ASSERT(salt.len == 0);
+      salt.data = reinterpret_cast<unsigned char*>(PORT_ArenaAlloc(arena, 1));
+      if (!salt.data) {
+        return NS_ERROR_DOM_UNKNOWN_ERR;
+      }
+    }
 
     
     
