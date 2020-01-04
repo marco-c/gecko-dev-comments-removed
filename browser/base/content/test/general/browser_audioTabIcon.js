@@ -192,7 +192,7 @@ function* test_swapped_browser(oldTab, newBrowser, isPlaying) {
   });
   let AudioPlaybackPromise = new Promise(resolve => {
     let observer = (subject, topic, data) => {
-      ok(true, "Should see an audio-playback notification");
+      ok(false, "Should not see an audio-playback notification");
     };
     Services.obs.addObserver(observer, "audio-playback", false);
     setTimeout(() => {
