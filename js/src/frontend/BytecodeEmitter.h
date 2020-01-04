@@ -519,7 +519,7 @@ struct BytecodeEmitter
     
     
     
-    enum class EmitElemOption { Get, Set, Call, IncDec, SelfAssign };
+    enum class EmitElemOption { Get, Set, Call, IncDec, CompoundAssign };
     bool emitElemOperands(ParseNode* pn, EmitElemOption opts);
 
     bool emitElemOpBase(JSOp op);
