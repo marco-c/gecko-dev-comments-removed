@@ -6622,9 +6622,17 @@ var gIdentityHandler = {
     return this._identityPopupInsecureLoginFormsLearnMore =
       document.getElementById("identity-popup-insecure-login-forms-learn-more");
   },
+  get _identityIconLabels () {
+    delete this._identityIconLabels;
+    return this._identityIconLabels = document.getElementById("identity-icon-labels");
+  },
   get _identityIconLabel () {
     delete this._identityIconLabel;
     return this._identityIconLabel = document.getElementById("identity-icon-label");
+  },
+  get _connectionIcon () {
+    delete this._connectionIcon;
+    return this._connectionIcon = document.getElementById("connection-icon");
   },
   get _overrideService () {
     delete this._overrideService;
@@ -6914,7 +6922,6 @@ var gIdentityHandler = {
         
         this._identityBox.classList.add("insecureLoginForms");
       }
-      tooltip = gNavigatorBundle.getString("identity.unknown.tooltip");
     }
 
     if (this._isCertUserOverridden) {
@@ -6953,7 +6960,8 @@ var gIdentityHandler = {
     }
 
     
-    this._identityBox.tooltipText = tooltip;
+    this._connectionIcon.tooltipText = tooltip;
+    this._identityIconLabels.tooltipText = tooltip;
     this._identityIcon.tooltipText = gNavigatorBundle.getString("identity.icon.tooltip");
     this._identityIconLabel.value = icon_label;
     this._identityIconCountryLabel.value = icon_country_label;
@@ -7112,14 +7120,14 @@ var gIdentityHandler = {
 
     
     if (this._isSecure || this._isCertUserOverridden) {
-      verifier = this._identityBox.tooltipText;
+      verifier = this._identityIconLabels.tooltipText;
     }
 
     
     if (this._isEV) {
       let iData = this.getIdentityData();
       host = owner = iData.subjectOrg;
-      verifier = this._identityBox.tooltipText;
+      verifier = this._identityIconLabels.tooltipText;
 
       
       if (iData.city)
