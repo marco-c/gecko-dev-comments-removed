@@ -643,6 +643,19 @@ protected:
   
 
 
+
+
+
+  void OnStableState();
+
+  
+
+
+  void ScheduleStableStateCallback();
+
+  
+
+
   void ClearTarget();
 
   
@@ -730,6 +743,8 @@ protected:
   
   
   bool mIsSkiaGL;
+
+  bool mHasPendingStableStateCallback;
 
   nsTArray<CanvasRenderingContext2DUserData*> mUserDatas;
 
