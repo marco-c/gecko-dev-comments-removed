@@ -31,18 +31,23 @@ html, body {
   height: 100%;
 }
 
-body {
-  
-  overflow-y: hidden;
+#root {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 #app {
-  height: 100%;
   
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
+
+  
+
+  position: sticky;
+  top: 0;
 }
 
 
@@ -116,11 +121,8 @@ body {
 #viewports {
   
 
+
   position: sticky;
-  top: 0;
-  
-
-
   left: 0;
   
 
