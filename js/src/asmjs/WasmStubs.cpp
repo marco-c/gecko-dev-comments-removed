@@ -747,7 +747,6 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi)
     
     
     masm.loadPtr(Address(masm.getStackPointer(), jitFrameBytes + sizeOfRetAddr), WasmTlsReg);
-    masm.loadWasmPinnedRegsFromTls();
 
     GenerateExitEpilogue(masm, masm.framePushed(), ExitReason::ImportJit, &offsets);
 

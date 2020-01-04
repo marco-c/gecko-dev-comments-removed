@@ -1516,8 +1516,23 @@ CodeGeneratorShared::emitWasmCallBase(LWasmCallBase* ins)
       }
       case MWasmCall::Callee::Import: {
         Register temp = ToRegister(ins->getTemp(0));
-        masm.loadWasmGlobalPtr(callee.importGlobalDataOffset(), temp);
+
+        
+        uint32_t globalDataOffset = callee.importGlobalDataOffset();;
+        masm.loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, code), temp);
+
+        
+        
+        masm.storePtr(WasmTlsReg, Address(masm.getStackPointer(), callee.importTlsStackOffset()));
+
+        
+        masm.loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, tls), WasmTlsReg);
+        masm.loadWasmPinnedRegsFromTls();
         masm.call(mir->desc(), temp);
+
+        
+        masm.loadPtr(Address(masm.getStackPointer(), callee.importTlsStackOffset()), WasmTlsReg);
+        masm.loadWasmPinnedRegsFromTls();
         break;
       }
       case MWasmCall::Callee::Dynamic: {

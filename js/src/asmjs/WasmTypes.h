@@ -1089,8 +1089,20 @@ typedef int32_t (*ExportFuncPtr)(ExportArg* args, TlsData* tls);
 
 struct FuncImportTls
 {
+    
+    
     void* code;
+
+    
+    
+    TlsData* tls;
+
+    
+    
     jit::BaselineScript* baselineScript;
+
+    
+    
     GCPtrFunction fun;
     static_assert(sizeof(GCPtrFunction) == sizeof(void*), "for JIT access");
 };

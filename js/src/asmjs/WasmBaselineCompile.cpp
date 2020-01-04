@@ -2131,11 +2131,23 @@ class BaseCompiler
 
     
 
-    void ffiCall(unsigned globalDataOffset, const FunctionCall& call)
+    void callImport(unsigned globalDataOffset, const FunctionCall& call)
     {
-        Register ptrReg = WasmTableCallPtrReg;
-        masm.loadWasmGlobalPtr(globalDataOffset, ptrReg);
+        
+        Register ptrReg = ABINonArgReg0;
+        masm.loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, code), ptrReg);
+
+        
+        
+
+        
+        masm.loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, tls), WasmTlsReg);
+        masm.loadWasmPinnedRegsFromTls();
         callDynamic(ptrReg, call);
+
+        
+        loadFromFramePtr(WasmTlsReg, frameOffsetFromSlot(tlsSlot_, MIRType::Pointer));
+        masm.loadWasmPinnedRegsFromTls();
     }
 
     void builtinCall(SymbolicAddress builtin, const FunctionCall& call)
@@ -5352,7 +5364,7 @@ BaseCompiler::emitCallImport(uint32_t callOffset)
     if (!iter_.readCallReturn(sig.ret()))
         return false;
 
-    ffiCall(funcImport.globalDataOffset, baselineCall);
+    callImport(funcImport.globalDataOffset, baselineCall);
 
     endCall(baselineCall);
 
