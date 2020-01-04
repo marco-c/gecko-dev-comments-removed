@@ -6,6 +6,7 @@ package org.mozilla.gecko.tests;
 
 import static org.mozilla.gecko.tests.helpers.AssertionHelper.*;
 
+import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.GeckoProfile;
@@ -23,11 +24,17 @@ public class testUnifiedTelemetryClientId extends JavascriptBridgeTest {
 
     private GeckoProfile profile;
     private File profileDir;
+    private File[] filesToDeleteOnReset;
 
     public void setUp() throws Exception {
         super.setUp();
         profile = getTestProfile();
         profileDir = profile.getDir(); 
+        filesToDeleteOnReset = new File[] {
+                getClientIdFile(),
+                getFHRClientIdFile(),
+                getFHRClientIdParentDir(),
+        };
 
         
         
@@ -41,12 +48,17 @@ public class testUnifiedTelemetryClientId extends JavascriptBridgeTest {
     }
 
     private void resetTest(final boolean resetJSCache) {
+        Log.d(LOGTAG, "resetTest: begin");
+
         if (resetJSCache) {
             resetJSCache();
         }
-        getClientIdFile().delete();
-        getFHRClientIdFile().delete();
-        getFHRClientIdParentDir().delete();
+        for (final File file : filesToDeleteOnReset) {
+            file.delete();
+            fAssertFalse("Deleted file in reset does not exist", file.exists()); 
+        }
+
+        Log.d(LOGTAG, "resetTest: end");
     }
 
     public void testUnifiedTelemetryClientId() throws Exception {
