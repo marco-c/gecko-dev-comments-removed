@@ -120,25 +120,12 @@ function TypedArrayEntries() {
     var O = this;
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    if (!IsObject(O) || !IsTypedArray(O)) {
+        return callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayEntries");
+    }
 
     
-    if (!IsObject(O) || !IsTypedArray(O)) {
-        
-        callFunction(CallTypedArrayMethodIfWrapped, O, O, "GetAttachedArrayBuffer");
-    } else {
-        
-        GetAttachedArrayBuffer(O);
-    }
+    GetAttachedArrayBuffer(O);
 
     
     return CreateArrayIterator(O, ITEM_KIND_KEY_AND_VALUE);
@@ -514,12 +501,11 @@ function TypedArrayKeys() {
     var O = this;
 
     
+    if (!IsObject(O) || !IsTypedArray(O)) {
+        return callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayKeys");
+    }
 
-    
-    if (!IsObject(O) || !IsTypedArray(O))
-        callFunction(CallTypedArrayMethodIfWrapped, O, O, "GetAttachedArrayBuffer");
-    else
-        GetAttachedArrayBuffer(O);
+    GetAttachedArrayBuffer(O);
 
     
     return CreateArrayIterator(O, ITEM_KIND_KEY);
@@ -1089,15 +1075,12 @@ function TypedArrayValues() {
     var O = this;
 
     
+    if (!IsObject(O) || !IsTypedArray(O)) {
+        return callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayValues");
+    }
 
     
-    if (!IsObject(O) || !IsTypedArray(O)) {
-        
-        callFunction(CallTypedArrayMethodIfWrapped, O, O, "GetAttachedArrayBuffer");
-    } else {
-        
-        GetAttachedArrayBuffer(O);
-    }
+    GetAttachedArrayBuffer(O);
 
     
     return CreateArrayIterator(O, ITEM_KIND_VALUE);
