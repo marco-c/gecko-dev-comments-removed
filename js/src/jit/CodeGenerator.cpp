@@ -658,7 +658,7 @@ CodeGenerator::getJumpLabelForBranch(MBasicBlock* block)
     
     
     
-    Label* res = alloc().lifoAlloc()->new_<Label>();
+    Label* res = alloc().lifoAlloc()->newInfallible<Label>();
     Label after;
     masm.jump(&after);
     masm.bind(res);
