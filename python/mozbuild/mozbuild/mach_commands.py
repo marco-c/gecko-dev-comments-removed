@@ -493,6 +493,11 @@ class Build(MachCommandBase):
             print('To view resource usage of the build, run |mach '
                 'resource-usage|.')
 
+            telemetry_handler = getattr(self._mach_context,
+                                        'telemetry_handler', None)
+            usage = monitor.record_resource_usage()
+            telemetry_handler(self._mach_context, usage)
+
         
         
         if not what:
