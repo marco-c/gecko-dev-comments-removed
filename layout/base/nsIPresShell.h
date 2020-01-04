@@ -49,6 +49,10 @@
 #include "nsMargin.h"
 #include "nsFrameState.h"
 
+#ifdef MOZ_B2G
+#include "nsIHardwareKeyHandler.h"
+#endif
+
 class nsDocShell;
 class nsIDocument;
 class nsIFrame;
@@ -878,6 +882,12 @@ public:
   virtual void DispatchAfterKeyboardEvent(nsINode* aTarget,
                                           const mozilla::WidgetKeyboardEvent& aEvent,
                                           bool aEmbeddedCancelled) = 0;
+
+  
+
+
+  virtual bool CanDispatchEvent(
+      const mozilla::WidgetGUIEvent* aEvent = nullptr) const = 0;
 
   
 
@@ -1728,6 +1738,11 @@ protected:
   
   
   nsCOMPtr<nsITimer>        mReflowContinueTimer;
+
+#ifdef MOZ_B2G
+  
+  nsCOMPtr<nsIHardwareKeyHandler> mHardwareKeyHandler;
+#endif 
 
 #ifdef DEBUG
   nsIFrame*                 mDrawEventTargetFrame;
