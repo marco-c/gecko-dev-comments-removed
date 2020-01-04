@@ -672,6 +672,7 @@ public:
   typedef void (*FontDescriptorOutput)(const uint8_t *aData, uint32_t aLength, Float aFontSize, void *aBaton);
 
   virtual FontType GetType() const = 0;
+  virtual AntialiasMode GetDefaultAAMode() { return AntialiasMode::DEFAULT; }
 
   
 
