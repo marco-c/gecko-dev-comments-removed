@@ -260,12 +260,14 @@ NoteViewBufferWasDetached(ArrayBufferViewObject* view,
     MarkObjectStateChange(cx, view);
 }
 
- void
+ bool
 ArrayBufferObject::detach(JSContext* cx, Handle<ArrayBufferObject*> buffer,
                           BufferContents newContents)
 {
-    MOZ_ASSERT(!buffer->isWasm(), "WASM/asm.js ArrayBuffers cannot be detached");
-    MOZ_ASSERT(buffer->hasDetachableContents(), "detaching the non-detachable");
+    if (buffer->isWasm()) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_OUT_OF_MEMORY);
+        return false;
+    }
 
     
     
@@ -312,6 +314,7 @@ ArrayBufferObject::detach(JSContext* cx, Handle<ArrayBufferObject*> buffer,
 
     buffer->setByteLength(0);
     buffer->setIsDetached();
+    return true;
 }
 
 void
@@ -726,39 +729,35 @@ ArrayBufferObject::createDataViewForThis(JSContext* cx, unsigned argc, Value* vp
 
  ArrayBufferObject::BufferContents
 ArrayBufferObject::stealContents(JSContext* cx, Handle<ArrayBufferObject*> buffer,
-                                 bool forceCopy)
+                                 bool hasStealableContents)
 {
-    if (buffer->isDetached()) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
-        return BufferContents::createPlain(nullptr);
-    }
-    if (!buffer->hasDetachableContents()) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_BAD_ARGS);
-        return BufferContents::createPlain(nullptr);
-    }
+    MOZ_ASSERT_IF(hasStealableContents, buffer->hasStealableContents());
 
     BufferContents oldContents(buffer->dataPointer(), buffer->bufferKind());
+    BufferContents newContents = AllocateArrayBufferContents(cx, buffer->byteLength());
+    if (!newContents)
+        return BufferContents::createPlain(nullptr);
 
-    if (!forceCopy && buffer->ownsData()) {
+    if (hasStealableContents) {
         
         
-        auto newContents = BufferContents::createPlain(nullptr);
-        buffer->setOwnsData(DoesntOwnData); 
-        ArrayBufferObject::detach(cx, buffer, newContents);
-        buffer->setOwnsData(DoesntOwnData); 
+        
+        buffer->setOwnsData(DoesntOwnData);
+        if (!ArrayBufferObject::detach(cx, buffer, newContents)) {
+            js_free(newContents.data());
+            return BufferContents::createPlain(nullptr);
+        }
         return oldContents;
     }
 
     
     
-    BufferContents contentsCopy = AllocateArrayBufferContents(cx, buffer->byteLength());
-    if (!contentsCopy)
+    memcpy(newContents.data(), oldContents.data(), buffer->byteLength());
+    if (!ArrayBufferObject::detach(cx, buffer, oldContents)) {
+        js_free(newContents.data());
         return BufferContents::createPlain(nullptr);
-
-    if (buffer->byteLength() > 0)
-        memcpy(contentsCopy.data(), oldContents.data(), buffer->byteLength());
-    ArrayBufferObject::detach(cx, buffer, oldContents);
-    return contentsCopy;
+    }
+    return newContents;
 }
 
  void
@@ -1033,11 +1032,10 @@ ArrayBufferViewObject::trace(JSTracer* trc, JSObject* objArg)
         if (IsArrayBuffer(&bufSlot.toObject())) {
             ArrayBufferObject& buf = AsArrayBuffer(MaybeForwarded(&bufSlot.toObject()));
             uint32_t offset = uint32_t(obj->getFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT).toInt32());
+            MOZ_ASSERT(buf.dataPointer() != nullptr);
             MOZ_ASSERT(offset <= INT32_MAX);
 
             if (buf.forInlineTypedObject()) {
-                MOZ_ASSERT(buf.dataPointer() != nullptr);
-
                 
                 
                 JSObject* view = buf.firstView();
@@ -1057,8 +1055,6 @@ ArrayBufferViewObject::trace(JSTracer* trc, JSObject* objArg)
                 trc->runtime()->gc.nursery.maybeSetForwardingPointer(trc, srcData, dstData,
                                                                       false);
             } else {
-                MOZ_ASSERT_IF(buf.dataPointer() == nullptr, offset == 0);
-
                 
                 
                 
@@ -1085,6 +1081,7 @@ JSObject::is<js::ArrayBufferObjectMaybeShared>() const
 void
 ArrayBufferViewObject::notifyBufferDetached(void* newData)
 {
+    MOZ_ASSERT(newData != nullptr);
     if (is<DataViewObject>()) {
         as<DataViewObject>().notifyBufferDetached(newData);
     } else if (is<TypedArrayObject>()) {
@@ -1193,20 +1190,19 @@ JS_DetachArrayBuffer(JSContext* cx, HandleObject obj,
 
     Rooted<ArrayBufferObject*> buffer(cx, &obj->as<ArrayBufferObject>());
 
-    if (buffer->isDetached())
-        return true;
-
-    if (buffer->isWasm()) {
-        JS_ReportError(cx, "Cannot detach WASM ArrayBuffer");
-        return false;
+    if (changeData == ChangeData && buffer->hasStealableContents()) {
+        ArrayBufferObject::BufferContents newContents =
+            AllocateArrayBufferContents(cx, buffer->byteLength());
+        if (!newContents)
+            return false;
+        if (!ArrayBufferObject::detach(cx, buffer, newContents)) {
+            js_free(newContents.data());
+            return false;
+        }
+    } else {
+        if (!ArrayBufferObject::detach(cx, buffer, buffer->contents()))
+            return false;
     }
-
-    if (!buffer->hasDetachableContents()) {
-        JS_ReportError(cx, "Cannot detach ArrayBuffer");
-        return false;
-    }
-
-    ArrayBufferObject::detach(cx, buffer, buffer->contents());
 
     return true;
 }
@@ -1290,14 +1286,18 @@ JS_StealArrayBufferContents(JSContext* cx, HandleObject objArg)
     }
 
     Rooted<ArrayBufferObject*> buffer(cx, &obj->as<ArrayBufferObject>());
+    if (buffer->isDetached()) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
+        return nullptr;
+    }
 
     
     
     
     
-    bool forceCopy = !buffer->ownsData() || !buffer->hasMallocedContents();
+    bool hasStealableContents = buffer->hasStealableContents() && buffer->hasMallocedContents();
 
-    return ArrayBufferObject::stealContents(cx, buffer, forceCopy).data();
+    return ArrayBufferObject::stealContents(cx, buffer, hasStealableContents).data();
 }
 
 JS_PUBLIC_API(JSObject*)

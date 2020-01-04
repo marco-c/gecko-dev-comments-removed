@@ -1339,8 +1339,11 @@ JSStructuredCloneWriter::transferOwnership()
 
             
             
+            bool hasStealableContents = arrayBuffer->hasStealableContents() &&
+                                        (arrayBuffer->isMapped() || arrayBuffer->hasMallocedContents());
+
             ArrayBufferObject::BufferContents bufContents =
-                ArrayBufferObject::stealContents(context(), arrayBuffer, false);
+                ArrayBufferObject::stealContents(context(), arrayBuffer, hasStealableContents);
             if (!bufContents)
                 return false; 
 
