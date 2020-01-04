@@ -18,8 +18,8 @@
 
 
 
-#ifndef AVCODEC_MOTIONEST_H
-#define AVCODEC_MOTIONEST_H
+#ifndef AVCODEC_MOTION_EST_H
+#define AVCODEC_MOTION_EST_H
 
 #include <stdint.h>
 
@@ -29,7 +29,11 @@
 
 struct MpegEncContext;
 
+#if ARCH_IA64 
+#define MAX_MV 1024
+#else
 #define MAX_MV 4096
+#endif
 #define MAX_DMV (2*MAX_MV)
 #define ME_MAP_SIZE 64
 

@@ -34,7 +34,13 @@ void avpriv_emms_yasm(void);
 
 static av_always_inline void emms_c(void)
 {
+
+
+
+
+#if !defined(__MMX__)
     if(av_get_cpu_flags() & AV_CPU_FLAG_MMX)
+#endif
         __asm__ volatile ("emms" ::: "memory");
 }
 #elif HAVE_MMX && HAVE_MM_EMPTY

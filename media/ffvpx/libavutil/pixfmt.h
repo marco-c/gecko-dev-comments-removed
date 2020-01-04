@@ -289,6 +289,9 @@ enum AVPixelFormat {
 
     AV_PIX_FMT_VIDEOTOOLBOX, 
 
+    AV_PIX_FMT_P010LE, 
+    AV_PIX_FMT_P010BE, 
+
     AV_PIX_FMT_NB,        
 };
 
@@ -365,6 +368,7 @@ enum AVPixelFormat {
 #define AV_PIX_FMT_XYZ12      AV_PIX_FMT_NE(XYZ12BE, XYZ12LE)
 #define AV_PIX_FMT_NV20       AV_PIX_FMT_NE(NV20BE,  NV20LE)
 #define AV_PIX_FMT_AYUV64     AV_PIX_FMT_NE(AYUV64BE, AYUV64LE)
+#define AV_PIX_FMT_P010       AV_PIX_FMT_NE(P010BE,  P010LE)
 
 
 

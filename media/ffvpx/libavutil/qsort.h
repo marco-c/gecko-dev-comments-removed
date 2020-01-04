@@ -18,6 +18,9 @@
 
 
 
+#ifndef AVUTIL_QSORT_H
+#define AVUTIL_QSORT_H
+
 #include "common.h"
 
 
@@ -115,3 +118,5 @@
         FFSWAP(type*, p, tmp);\
     }\
 } while (0)
+
+#endif 

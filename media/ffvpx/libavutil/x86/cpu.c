@@ -186,9 +186,7 @@ int ff_get_cpu_flags_x86(void)
 
 
 
-
-
-            if (family == 0x15 && (rval & AV_CPU_FLAG_AVX))
+            if ((family == 0x15 || family == 0x16) && (rval & AV_CPU_FLAG_AVX))
                 rval |= AV_CPU_FLAG_AVXSLOW;
         }
 

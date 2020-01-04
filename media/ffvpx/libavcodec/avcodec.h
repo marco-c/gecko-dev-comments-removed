@@ -315,6 +315,7 @@ enum AVCodecID {
     AV_CODEC_ID_SMVJPEG,
     AV_CODEC_ID_APNG,
     AV_CODEC_ID_DAALA,
+    AV_CODEC_ID_CFHD,
 
     
     AV_CODEC_ID_FIRST_AUDIO = 0x10000,     
@@ -1823,7 +1824,11 @@ typedef struct AVCodecContext {
 #define FF_RC_STRATEGY_XVID 1
 #endif
 
+#if FF_API_PRIVATE_OPT
+    
+    attribute_deprecated
     int b_frame_strategy;
+#endif
 
     
 
@@ -1840,12 +1845,11 @@ typedef struct AVCodecContext {
 
     int has_b_frames;
 
+#if FF_API_PRIVATE_OPT
     
-
-
-
-
+    attribute_deprecated
     int mpeg_quant;
+#endif
 
     
 
@@ -1904,15 +1908,15 @@ typedef struct AVCodecContext {
 
 
     int slice_count;
+
+#if FF_API_PRIVATE_OPT
     
-
-
-
-
+    attribute_deprecated
      int prediction_method;
 #define FF_PRED_LEFT   0
 #define FF_PRED_PLANE  1
 #define FF_PRED_MEDIAN 2
+#endif
 
     
 
@@ -1985,12 +1989,11 @@ typedef struct AVCodecContext {
 
     int last_predictor_count;
 
+#if FF_API_PRIVATE_OPT
     
-
-
-
-
+    attribute_deprecated
     int pre_me;
+#endif
 
     
 
@@ -2099,20 +2102,15 @@ typedef struct AVCodecContext {
 
     uint16_t *inter_matrix;
 
+#if FF_API_PRIVATE_OPT
     
-
-
-
-
-
+    attribute_deprecated
     int scenechange_threshold;
 
     
-
-
-
-
+    attribute_deprecated
     int noise_reduction;
+#endif
 
 #if FF_API_MPV_OPT
     
@@ -2171,12 +2169,13 @@ typedef struct AVCodecContext {
 
     int mb_lmax;
 
+#if FF_API_PRIVATE_OPT
     
 
 
-
-
+    attribute_deprecated
     int me_penalty_compensation;
+#endif
 
     
 
@@ -2185,12 +2184,11 @@ typedef struct AVCodecContext {
 
     int bidir_refine;
 
+#if FF_API_PRIVATE_OPT
     
-
-
-
-
+    attribute_deprecated
     int brd_scale;
+#endif
 
     
 
@@ -2206,12 +2204,11 @@ typedef struct AVCodecContext {
 
     int refs;
 
+#if FF_API_PRIVATE_OPT
     
-
-
-
-
+    attribute_deprecated
     int chromaoffset;
+#endif
 
 #if FF_API_UNUSED_MEMBERS
     
@@ -2230,12 +2227,11 @@ typedef struct AVCodecContext {
 
     int mv0_threshold;
 
+#if FF_API_PRIVATE_OPT
     
-
-
-
-
+    attribute_deprecated
     int b_sensitivity;
+#endif
 
     
 
@@ -2580,12 +2576,11 @@ typedef struct AVCodecContext {
     int coder_type;
 #endif 
 
+#if FF_API_PRIVATE_OPT
     
-
-
-
-
+    attribute_deprecated
     int context_model;
+#endif
 
 #if FF_API_MPV_OPT
     
@@ -2601,33 +2596,23 @@ typedef struct AVCodecContext {
     int lmax;
 #endif
 
+#if FF_API_PRIVATE_OPT
     
-
-
-
-
+    attribute_deprecated
     int frame_skip_threshold;
 
     
-
-
-
-
+    attribute_deprecated
     int frame_skip_factor;
 
     
-
-
-
-
+    attribute_deprecated
     int frame_skip_exp;
 
     
-
-
-
-
+    attribute_deprecated
     int frame_skip_cmp;
+#endif 
 
     
 
@@ -2636,24 +2621,19 @@ typedef struct AVCodecContext {
 
     int trellis;
 
+#if FF_API_PRIVATE_OPT
     
-
-
-
+    attribute_deprecated
     int min_prediction_order;
 
     
-
-
-
+    attribute_deprecated
     int max_prediction_order;
 
     
-
-
-
-
+    attribute_deprecated
     int64_t timecode_frame_start;
+#endif
 
 #if FF_API_RTP_CALLBACK
     
@@ -2669,12 +2649,16 @@ typedef struct AVCodecContext {
     void (*rtp_callback)(struct AVCodecContext *avctx, void *data, int size, int mb_nb);
 #endif
 
+#if FF_API_PRIVATE_OPT
+    
+    attribute_deprecated
     int rtp_payload_size;   
                             
                             
                             
                             
                             
+#endif
 
 #if FF_API_STAT_BITS
     

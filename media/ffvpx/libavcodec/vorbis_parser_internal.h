@@ -25,8 +25,8 @@
 
 
 
-#ifndef AVCODEC_VORBIS_PARSER_H
-#define AVCODEC_VORBIS_PARSER_H
+#ifndef AVCODEC_VORBIS_PARSER_INTERNAL_H
+#define AVCODEC_VORBIS_PARSER_INTERNAL_H
 
 #include "avcodec.h"
 #include "vorbis_parser.h"

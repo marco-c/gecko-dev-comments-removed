@@ -106,12 +106,22 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_SKIP_SAMPLES,
-
     
 
 
 
     AV_FRAME_DATA_AUDIO_SERVICE_TYPE,
+    
+
+
+
+
+    AV_FRAME_DATA_MASTERING_DISPLAY_METADATA,
+    
+
+
+
+    AV_FRAME_DATA_GOP_TIMECODE
 };
 
 enum AVActiveFormatDescription {

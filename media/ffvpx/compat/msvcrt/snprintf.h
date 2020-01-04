@@ -19,8 +19,8 @@
 
 
 
-#ifndef COMPAT_SNPRINTF_H
-#define COMPAT_SNPRINTF_H
+#ifndef COMPAT_MSVCRT_SNPRINTF_H
+#define COMPAT_MSVCRT_SNPRINTF_H
 
 #include <stdarg.h>
 #include <stdio.h>

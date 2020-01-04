@@ -53,7 +53,7 @@ unsigned avutil_version(void)
     av_assert0(((size_t)-1) > 0); 
 
     if (av_sat_dadd32(1, 2) != 5) {
-        av_log(NULL, AV_LOG_FATAL, "Libavutil has been build with a broken binutils, please upgrade binutils and rebuild\n");
+        av_log(NULL, AV_LOG_FATAL, "Libavutil has been built with a broken binutils, please upgrade binutils and rebuild\n");
         abort();
     }
 
