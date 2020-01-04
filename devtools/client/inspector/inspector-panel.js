@@ -98,8 +98,7 @@ function InspectorPanel(iframeWindow, toolbox) {
   this.onNewSelection = this.onNewSelection.bind(this);
   this.onBeforeNewSelection = this.onBeforeNewSelection.bind(this);
   this.onDetached = this.onDetached.bind(this);
-  this.onPaneToggleButtonActivated = this.onPaneToggleButtonActivated.bind(this);
-  this.onPaneToggleButtonPressed = this.onPaneToggleButtonPressed.bind(this);
+  this.onPaneToggleButtonClicked = this.onPaneToggleButtonClicked.bind(this);
   this._onMarkupFrameLoad = this._onMarkupFrameLoad.bind(this);
 
   let doc = this.panelDoc;
@@ -509,8 +508,7 @@ InspectorPanel.prototype = {
       "devtools/client/shared/components/sidebar-toggle"));
 
     let sidebarToggle = SidebarToggle({
-      onClick: this.onPaneToggleButtonActivated,
-      onKeyDown: this.onPaneToggleButtonPressed,
+      onClick: this.onPaneToggleButtonClicked,
       collapsed: false,
       expandPaneTitle: strings.GetStringFromName("inspector.expandPane"),
       collapsePaneTitle: strings.GetStringFromName("inspector.collapsePane"),
@@ -1216,17 +1214,7 @@ InspectorPanel.prototype = {
 
 
 
-  onPaneToggleButtonPressed: function (event) {
-    if (ViewHelpers.isSpaceOrReturn(event)) {
-      this.onPaneToggleButtonActivated(event);
-    }
-  },
-
-  
-
-
-
-  onPaneToggleButtonActivated: function (e) {
+  onPaneToggleButtonClicked: function (e) {
     let sidePaneContainer = this.panelDoc.querySelector("#inspector-sidebar-container");
     let isVisible = !this._sidebarToggle.state.collapsed;
 
