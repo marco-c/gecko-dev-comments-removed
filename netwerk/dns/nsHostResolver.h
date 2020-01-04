@@ -21,6 +21,7 @@
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/DashboardTypes.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
 
 class nsHostResolver;
 class nsHostRecord;
@@ -73,8 +74,8 @@ public:
 
     Mutex        addr_info_lock;
     int          addr_info_gencnt; 
-    mozilla::net::AddrInfo *addr_info;
-    mozilla::net::NetAddr  *addr;
+    mozilla::UniquePtr<mozilla::net::AddrInfo> addr_info;
+    mozilla::UniquePtr<mozilla::net::NetAddr>  addr;
     bool         negative;   
 
 
