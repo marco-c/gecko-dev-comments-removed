@@ -154,6 +154,19 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
         };
       }).api(),
 
+      
+
+
+
+
+
+      onHighlighted: new WindowEventManager(context, "tabs.onHighlighted", "TabSelect", (fire, event) => {
+        let tab = event.originalTarget;
+        let tabIds = [TabManager.getId(tab)];
+        let windowId = WindowManager.getId(tab.ownerDocument.defaultView);
+        fire({tabIds, windowId});
+      }).api(),
+
       onAttached: new EventManager(context, "tabs.onAttached", fire => {
         let fireForTab = tab => {
           let newWindowId = WindowManager.getId(tab.ownerDocument.defaultView);
