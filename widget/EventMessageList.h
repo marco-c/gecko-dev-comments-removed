@@ -354,7 +354,7 @@ NS_EVENT_MESSAGE(NS_MESSAGE,            NS_MESSAGE_EVENT_START)
 
 
 NS_EVENT_MESSAGE(eOpenCloseEventFirst,  4800)
-NS_EVENT_MESSAGE(NS_OPEN,               eOpenCloseEventFirst)
+NS_EVENT_MESSAGE(eOpen,                 eOpenCloseEventFirst)
 NS_EVENT_MESSAGE(NS_CLOSE,              eOpenCloseEventFirst + 1)
 
 
