@@ -2177,7 +2177,6 @@ struct nsStyleVisibility
   nsStyleImageOrientation mImageOrientation;  
   uint8_t mDirection;                  
   uint8_t mVisible;                    
-  uint8_t mPointerEvents;              
   uint8_t mImageRendering;             
   uint8_t mWritingMode;                
   uint8_t mTextOrientation;            
@@ -2191,8 +2190,6 @@ struct nsStyleVisibility
     return ((mVisible == NS_STYLE_VISIBILITY_VISIBLE) ||
             (mVisible == NS_STYLE_VISIBILITY_COLLAPSE));
   }
-
-  inline uint8_t GetEffectivePointerEvents(nsIFrame* aFrame) const;
 };
 
 struct nsTimingFunction
@@ -3048,6 +3045,7 @@ struct nsStyleUserInterface
   uint8_t   mUserInput;       
   uint8_t   mUserModify;      
   uint8_t   mUserFocus;       
+  uint8_t   mPointerEvents;   
 
   uint8_t   mCursor;          
 
@@ -3060,6 +3058,8 @@ struct nsStyleUserInterface
   
   
   void CopyCursorArrayFrom(const nsStyleUserInterface& aSource);
+
+  inline uint8_t GetEffectivePointerEvents(nsIFrame* aFrame) const;
 };
 
 struct nsStyleXUL
