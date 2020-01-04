@@ -103,6 +103,11 @@ public:
 
   static void InitInputContext(nsWindow* aWindow, InputContext& aInputContext);
 
+  
+
+
+  static void SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm);
+
 #ifdef DEBUG
   
 

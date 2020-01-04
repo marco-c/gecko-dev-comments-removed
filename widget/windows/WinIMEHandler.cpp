@@ -948,5 +948,16 @@ IMEHandler::GetOnScreenKeyboardWindow()
   return nullptr;
 }
 
+
+void
+IMEHandler::SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm)
+{
+  if (!sPluginHasFocus) {
+    return;
+  }
+
+  IMMHandler::SetCandidateWindow(aWindow, aForm);
+}
+
 } 
 } 
