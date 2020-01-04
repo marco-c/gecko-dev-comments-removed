@@ -84,8 +84,8 @@ GetTransformToAncestorsParentLayer(Layer* aStart, const LayerMetricsWrapper& aAn
       
       
       
-      const FrameMetrics& metrics = iter.Metrics();
-      transform.PostScale(metrics.GetPresShellResolution(), metrics.GetPresShellResolution(), 1.f);
+      float presShellResolution = iter.GetPresShellResolution();
+      transform.PostScale(presShellResolution, presShellResolution, 1.0f);
     }
   }
   return ViewAs<LayerToParentLayerMatrix4x4>(transform);
