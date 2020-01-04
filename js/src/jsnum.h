@@ -14,6 +14,22 @@
 
 #include "js/Conversions.h"
 
+
+
+
+#if __GNUC__ >= 5
+    
+    #define BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(x) 1
+#else
+    
+    #ifdef __has_builtin
+        #define BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(x) __has_builtin(x)
+    #endif
+#endif
+#ifndef BUILTIN_CHECKED_ARITHMETIC_SUPPORTED
+    #define BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(x) 0
+#endif
+
 namespace js {
 
 class StringBuffer;
@@ -262,27 +278,40 @@ bool ToLengthClamped(T* cx, HandleValue v, uint32_t* out, bool* overflow);
 inline bool
 SafeAdd(int32_t one, int32_t two, int32_t* res)
 {
+#if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_sadd_overflow)
+    
+    return !__builtin_sadd_overflow(one, two, res);
+#else
     
     
     *res = uint32_t(one) + uint32_t(two);
     int64_t ores = (int64_t)one + (int64_t)two;
     return ores == (int64_t)*res;
+#endif
 }
 
 inline bool
 SafeSub(int32_t one, int32_t two, int32_t* res)
 {
+#if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_ssub_overflow)
+    return !__builtin_ssub_overflow(one, two, res);
+#else
     *res = uint32_t(one) - uint32_t(two);
     int64_t ores = (int64_t)one - (int64_t)two;
     return ores == (int64_t)*res;
+#endif
 }
 
 inline bool
 SafeMul(int32_t one, int32_t two, int32_t* res)
 {
+#if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_smul_overflow)
+    return !__builtin_smul_overflow(one, two, res);
+#else
     *res = uint32_t(one) * uint32_t(two);
     int64_t ores = (int64_t)one * (int64_t)two;
     return ores == (int64_t)*res;
+#endif
 }
 
 extern bool
