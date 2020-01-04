@@ -53,12 +53,18 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   , mParentOuterWindowID(0)
   , mEnforceSecurity(false)
   , mInitialSecurityCheckDone(false)
-  , mIsThirdPartyContext(true)
+  , mIsThirdPartyContext(false)
   , mForcePreflight(false)
   , mIsPreflight(false)
 {
   MOZ_ASSERT(mLoadingPrincipal);
   MOZ_ASSERT(mTriggeringPrincipal);
+
+  
+  
+  
+  
+  
 
   
   
