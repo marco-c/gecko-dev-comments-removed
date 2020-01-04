@@ -647,6 +647,9 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
     "-webkit-radial-gradient(contain ellipse, red, blue)",
 
     
+    "-webkit-linear-gradient(left, red, blue)",
+    "-webkit-linear-gradient(right top, red, blue)",
+    "-webkit-linear-gradient(top right, red, blue)",
     "-webkit-radial-gradient(right, red, blue)",
     "-webkit-radial-gradient(left bottom, red, blue)",
     "-webkit-radial-gradient(bottom left, red, blue)",
@@ -666,6 +669,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
     
     "-webkit-repeating-linear-gradient(red 10%, blue 30%)",
     "-webkit-repeating-linear-gradient(30deg, pink 20px, orange 70px)",
+    "-webkit-repeating-linear-gradient(left, red, blue)",
+    "-webkit-repeating-linear-gradient(left, red 10%, blue 30%)",
     "-webkit-repeating-radial-gradient(circle, red, blue 10%, red 20%)",
     "-webkit-repeating-radial-gradient(circle farthest-corner, gray 10px, yellow 20px)",
     "-webkit-repeating-radial-gradient(top left, circle, red, blue 4%, red 8%)"
@@ -686,6 +691,21 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
     
     
     "-webkit-linear-gradient(10px, red, blue)",
+    "-webkit-linear-gradient(10px top, red, blue)",
+    
+    "-webkit-linear-gradient(bottom 30deg, red, blue)",
+    "-webkit-linear-gradient(30deg bottom, red, blue)",
+    "-webkit-linear-gradient(10px top 50deg, red, blue)",
+    "-webkit-linear-gradient(50deg 10px top, red, blue)",
+    
+    "-webkit-linear-gradient(center, red, blue)",
+    "-webkit-linear-gradient(left center, red, blue)",
+    "-webkit-linear-gradient(top center, red, blue)",
+    "-webkit-linear-gradient(center top, red, blue)",
+
+    
+    
+    "-webkit-linear-gradient(to top, red, blue)",
 
     
     "-webkit-radial-gradient(circle 10deg, red, blue)",

@@ -9460,7 +9460,9 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
     return false;
   }
 
-  if (mToken.mType == eCSSToken_Ident &&
+  
+  if (!(aFlags & eGradient_WebkitLegacy) &&
+      mToken.mType == eCSSToken_Ident &&
       mToken.mIdent.LowerCaseEqualsLiteral("to")) {
 
     
@@ -9483,7 +9485,7 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
     return ParseGradientColorStops(cssGradient, aValue);
   }
 
-  if (!(aFlags & eGradient_MozLegacy)) {
+  if (!(aFlags & eGradient_AnyLegacy)) {
     
     
     
@@ -9513,10 +9515,23 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
 
     
     bool haveAngleComma = haveAngle && ExpectSymbol(',', true);
+
     
     
-    if (!haveAngleComma) {
-      if (!ParseBoxPositionValues(cssGradient->mBgPos, false)) {
+    
+    if (((aFlags & eGradient_WebkitLegacy) && !haveAngle) ||
+        ((aFlags & eGradient_MozLegacy) && !haveAngleComma)) {
+      
+      
+      if (!ParseBoxPositionValues(cssGradient->mBgPos, false,
+                                  (aFlags & eGradient_MozLegacy))) {
+        SkipUntil(')');
+        return false;
+      }
+
+      
+      if ((aFlags & eGradient_WebkitLegacy) &&
+          !IsBoxPositionStrictlyEdgeKeywords(cssGradient->mBgPos)) {
         SkipUntil(')');
         return false;
       }
@@ -9525,6 +9540,7 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
           
           
           (haveAngle ||
+           (aFlags & eGradient_WebkitLegacy) ||
            !ParseSingleTokenVariant(cssGradient->mAngle, VARIANT_ANGLE,
                                     nullptr) ||
            
