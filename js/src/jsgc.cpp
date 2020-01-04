@@ -2040,7 +2040,10 @@ static const AllocKind AllocKindsToRelocate[] = {
     AllocKind::OBJECT16,
     AllocKind::OBJECT16_BACKGROUND,
     AllocKind::SHAPE,
-    AllocKind::ACCESSOR_SHAPE
+    AllocKind::ACCESSOR_SHAPE,
+    AllocKind::FAT_INLINE_STRING,
+    AllocKind::STRING,
+    AllocKind::EXTERNAL_STRING
 };
 
 Arena*
@@ -2388,6 +2391,14 @@ MovingTracer::onShapeEdge(Shape** shapep)
 }
 
 void
+MovingTracer::onStringEdge(JSString** stringp)
+{
+    JSString* string = *stringp;
+    if (IsForwarded(string))
+        *stringp = Forwarded(string);
+}
+
+void
 Zone::prepareForCompacting()
 {
     FreeOp* fop = runtimeFromMainThread()->defaultFreeOp();
@@ -2496,6 +2507,9 @@ UpdateCellPointers(MovingTracer* trc, Arena* arena)
       case AllocKind::OBJECT_GROUP:
         UpdateCellPointersTyped<ObjectGroup>(trc, arena, traceKind);
         return;
+      case AllocKind::STRING:
+        UpdateCellPointersTyped<JSString>(trc, arena, traceKind);
+        return;
       case AllocKind::JITCODE:
         UpdateCellPointersTyped<jit::JitCode>(trc, arena, traceKind);
         return;
@@ -2543,8 +2557,9 @@ ArenasToUpdate::updateKind(AllocKind kind)
     MOZ_ASSERT(IsValidAllocKind(kind));
 
     
+    
+    
     if (kind == AllocKind::FAT_INLINE_STRING ||
-        kind == AllocKind::STRING ||
         kind == AllocKind::EXTERNAL_STRING ||
         kind == AllocKind::SYMBOL)
     {
