@@ -59,7 +59,7 @@ private:
                                          
   uint32_t           mLogicalLength;     
 
-  NS_METHOD Seek(int32_t aPosition);
+  nsresult Seek(int32_t aPosition);
   uint32_t SegNum(uint32_t aPosition)
   {
     return aPosition >> mSegmentSizeLog2;

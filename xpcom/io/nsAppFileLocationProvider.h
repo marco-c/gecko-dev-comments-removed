@@ -32,7 +32,7 @@ private:
   }
 
 protected:
-  NS_METHOD CloneMozBinDirectory(nsIFile** aLocalFile);
+  nsresult CloneMozBinDirectory(nsIFile** aLocalFile);
   
 
 
@@ -40,10 +40,10 @@ protected:
 
 
 
-  NS_METHOD GetProductDirectory(nsIFile** aLocalFile,
-                                bool aLocal = false);
-  NS_METHOD GetDefaultUserProfileRoot(nsIFile** aLocalFile,
-                                      bool aLocal = false);
+  nsresult GetProductDirectory(nsIFile** aLocalFile,
+                               bool aLocal = false);
+  nsresult GetDefaultUserProfileRoot(nsIFile** aLocalFile,
+                                     bool aLocal = false);
 
 #if defined(MOZ_WIDGET_COCOA)
   static bool IsOSXLeopard();
