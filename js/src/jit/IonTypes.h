@@ -106,6 +106,10 @@ enum BailoutKind
     Bailout_NonSimdFloat32x4Input,
 
     
+    
+    Bailout_NonSharedTypedArrayInput,
+
+    
     Bailout_InitialState,
 
     
@@ -213,6 +217,8 @@ BailoutKindString(BailoutKind kind)
         return "Bailout_NonSimdInt32x4Input";
       case Bailout_NonSimdFloat32x4Input:
         return "Bailout_NonSimdFloat32x4Input";
+      case Bailout_NonSharedTypedArrayInput:
+        return "Bailout_NonSharedTypedArrayInput";
       case Bailout_InitialState:
         return "Bailout_InitialState";
       case Bailout_Debugger:

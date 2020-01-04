@@ -1862,13 +1862,13 @@ class ConstraintDataFreezeObjectForTypedArrayData
 {
     NativeObject* obj;
 
-    void* viewData;
+    uintptr_t viewData;
     uint32_t length;
 
   public:
     explicit ConstraintDataFreezeObjectForTypedArrayData(TypedArrayObject& tarray)
       : obj(&tarray),
-        viewData(tarray.viewData()),
+        viewData(tarray.viewDataEither().unwrapValue()),
         length(tarray.length())
     {
         MOZ_ASSERT(tarray.isSingleton());
@@ -1881,7 +1881,7 @@ class ConstraintDataFreezeObjectForTypedArrayData
     bool invalidateOnNewObjectState(ObjectGroup* group) {
         MOZ_ASSERT(obj->group() == group);
         TypedArrayObject& tarr = obj->as<TypedArrayObject>();
-        return tarr.viewData() != viewData || tarr.length() != length;
+        return tarr.viewDataEither().unwrapValue() != viewData || tarr.length() != length;
     }
 
     bool constraintHolds(JSContext* cx,
@@ -2206,6 +2206,7 @@ TemporaryTypeSet::convertDoubleElements(CompilerConstraintList* constraints)
         
         
         
+        
         if (!property.maybeTypes() ||
             !property.maybeTypes()->hasType(DoubleType()) ||
             key->clasp() != &ArrayObject::class_)
@@ -2271,6 +2272,14 @@ TemporaryTypeSet::getKnownClass(CompilerConstraintList* constraints)
     return clasp;
 }
 
+void
+TemporaryTypeSet::getTypedArraySharedness(CompilerConstraintList* constraints,
+                                          TypedArraySharedness* sharedness)
+{
+    
+    *sharedness = UnknownSharedness;
+}
+
 TemporaryTypeSet::ForAllResult
 TemporaryTypeSet::forAllClasses(CompilerConstraintList* constraints,
                                 bool (*func)(const Class* clasp))
@@ -2308,22 +2317,16 @@ TemporaryTypeSet::forAllClasses(CompilerConstraintList* constraints,
 }
 
 Scalar::Type
-TemporaryTypeSet::getTypedArrayType(CompilerConstraintList* constraints)
+TemporaryTypeSet::getTypedArrayType(CompilerConstraintList* constraints,
+                                    TypedArraySharedness* sharedness)
 {
     const Class* clasp = getKnownClass(constraints);
 
-    if (clasp && IsTypedArrayClass(clasp))
+    if (clasp && IsTypedArrayClass(clasp)) {
+        if (sharedness)
+            getTypedArraySharedness(constraints, sharedness);
         return (Scalar::Type) (clasp - &TypedArrayObject::classes[0]);
-    return Scalar::MaxTypedArrayViewType;
-}
-
-Scalar::Type
-TemporaryTypeSet::getSharedTypedArrayType(CompilerConstraintList* constraints)
-{
-    const Class* clasp = getKnownClass(constraints);
-
-    if (clasp && IsSharedTypedArrayClass(clasp))
-        return (Scalar::Type) (clasp - &SharedTypedArrayObject::classes[0]);
+    }
     return Scalar::MaxTypedArrayViewType;
 }
 

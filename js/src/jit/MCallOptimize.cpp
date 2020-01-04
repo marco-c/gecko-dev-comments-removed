@@ -307,24 +307,12 @@ IonBuilder::inlineNativeGetter(CallInfo& callInfo, JSFunction* target)
     MOZ_ASSERT(callInfo.argc() == 0);
 
     
-    
-    
-    
     if (thisTypes) {
         Scalar::Type type;
 
         type = thisTypes->getTypedArrayType(constraints());
         if (type != Scalar::MaxTypedArrayViewType &&
             TypedArrayObject::isOriginalLengthGetter(native))
-        {
-            MInstruction* length = addTypedArrayLength(callInfo.thisArg());
-            current->push(length);
-            return InliningStatus_Inlined;
-        }
-
-        type = thisTypes->getSharedTypedArrayType(constraints());
-        if (type != Scalar::MaxTypedArrayViewType &&
-            SharedTypedArrayObject::isOriginalLengthGetter(type, native))
         {
             MInstruction* length = addTypedArrayLength(callInfo.thisArg());
             current->push(length);
@@ -2704,7 +2692,8 @@ IonBuilder::inlineAtomicsCompareExchange(CallInfo& callInfo)
         return InliningStatus_NotInlined;
 
     Scalar::Type arrayType;
-    if (!atomicsMeetsPreconditions(callInfo, &arrayType))
+    bool requiresCheck = false;
+    if (!atomicsMeetsPreconditions(callInfo, &arrayType, &requiresCheck))
         return InliningStatus_NotInlined;
 
     callInfo.setImplicitlyUsedUnchecked();
@@ -2712,6 +2701,9 @@ IonBuilder::inlineAtomicsCompareExchange(CallInfo& callInfo)
     MInstruction* elements;
     MDefinition* index;
     atomicsCheckBounds(callInfo, &elements, &index);
+
+    if (requiresCheck)
+        addSharedTypedArrayGuard(callInfo.getArg(0));
 
     MCompareExchangeTypedArrayElement* cas =
         MCompareExchangeTypedArrayElement::New(alloc(), elements, index, arrayType, oldval, newval);
@@ -2738,7 +2730,8 @@ IonBuilder::inlineAtomicsExchange(CallInfo& callInfo)
         return InliningStatus_NotInlined;
 
     Scalar::Type arrayType;
-    if (!atomicsMeetsPreconditions(callInfo, &arrayType))
+    bool requiresCheck = false;
+    if (!atomicsMeetsPreconditions(callInfo, &arrayType, &requiresCheck))
         return InliningStatus_NotInlined;
 
     callInfo.setImplicitlyUsedUnchecked();
@@ -2746,6 +2739,9 @@ IonBuilder::inlineAtomicsExchange(CallInfo& callInfo)
     MInstruction* elements;
     MDefinition* index;
     atomicsCheckBounds(callInfo, &elements, &index);
+
+    if (requiresCheck)
+        addSharedTypedArrayGuard(callInfo.getArg(0));
 
     MInstruction* exchange =
         MAtomicExchangeTypedArrayElement::New(alloc(), elements, index, value, arrayType);
@@ -2768,7 +2764,8 @@ IonBuilder::inlineAtomicsLoad(CallInfo& callInfo)
     }
 
     Scalar::Type arrayType;
-    if (!atomicsMeetsPreconditions(callInfo, &arrayType))
+    bool requiresCheck = false;
+    if (!atomicsMeetsPreconditions(callInfo, &arrayType, &requiresCheck))
         return InliningStatus_NotInlined;
 
     callInfo.setImplicitlyUsedUnchecked();
@@ -2776,6 +2773,9 @@ IonBuilder::inlineAtomicsLoad(CallInfo& callInfo)
     MInstruction* elements;
     MDefinition* index;
     atomicsCheckBounds(callInfo, &elements, &index);
+
+    if (requiresCheck)
+        addSharedTypedArrayGuard(callInfo.getArg(0));
 
     MLoadUnboxedScalar* load =
         MLoadUnboxedScalar::New(alloc(), elements, index, arrayType,
@@ -2804,7 +2804,8 @@ IonBuilder::inlineAtomicsStore(CallInfo& callInfo)
         return InliningStatus_NotInlined;
 
     Scalar::Type arrayType;
-    if (!atomicsMeetsPreconditions(callInfo, &arrayType, DontCheckAtomicResult))
+    bool requiresCheck = false;
+    if (!atomicsMeetsPreconditions(callInfo, &arrayType, &requiresCheck, DontCheckAtomicResult))
         return InliningStatus_NotInlined;
 
     callInfo.setImplicitlyUsedUnchecked();
@@ -2812,6 +2813,9 @@ IonBuilder::inlineAtomicsStore(CallInfo& callInfo)
     MInstruction* elements;
     MDefinition* index;
     atomicsCheckBounds(callInfo, &elements, &index);
+
+    if (requiresCheck)
+        addSharedTypedArrayGuard(callInfo.getArg(0));
 
     MDefinition* toWrite = value;
     if (value->type() != MIRType_Int32) {
@@ -2867,10 +2871,14 @@ IonBuilder::inlineAtomicsBinop(CallInfo& callInfo, InlinableNative target)
         return InliningStatus_NotInlined;
 
     Scalar::Type arrayType;
-    if (!atomicsMeetsPreconditions(callInfo, &arrayType))
+    bool requiresCheck = false;
+    if (!atomicsMeetsPreconditions(callInfo, &arrayType, &requiresCheck))
         return InliningStatus_NotInlined;
 
     callInfo.setImplicitlyUsedUnchecked();
+
+    if (requiresCheck)
+        addSharedTypedArrayGuard(callInfo.getArg(0));
 
     MInstruction* elements;
     MDefinition* index;
@@ -2929,7 +2937,7 @@ IonBuilder::inlineAtomicsIsLockFree(CallInfo& callInfo)
 
 bool
 IonBuilder::atomicsMeetsPreconditions(CallInfo& callInfo, Scalar::Type* arrayType,
-                                      AtomicCheckResult checkResult)
+                                      bool* requiresTagCheck, AtomicCheckResult checkResult)
 {
     if (!JitSupportsAtomics())
         return false;
@@ -2945,12 +2953,15 @@ IonBuilder::atomicsMeetsPreconditions(CallInfo& callInfo, Scalar::Type* arrayTyp
     
     
     
+    
 
     TemporaryTypeSet* arg0Types = callInfo.getArg(0)->resultTypeSet();
     if (!arg0Types)
         return false;
 
-    *arrayType = arg0Types->getSharedTypedArrayType(constraints());
+    TemporaryTypeSet::TypedArraySharedness sharedness;
+    *arrayType = arg0Types->getTypedArrayType(constraints(), &sharedness);
+    *requiresTagCheck = sharedness != TemporaryTypeSet::KnownShared;
     switch (*arrayType) {
       case Scalar::Int8:
       case Scalar::Uint8:

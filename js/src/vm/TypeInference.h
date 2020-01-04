@@ -719,10 +719,18 @@ class TemporaryTypeSet : public TypeSet
     bool getCommonPrototype(CompilerConstraintList* constraints, JSObject** proto);
 
     
-    Scalar::Type getTypedArrayType(CompilerConstraintList* constraints);
+    enum TypedArraySharedness {
+        UnknownSharedness=1,    
+        KnownShared,            
+        KnownUnshared           
+    };
 
     
-    Scalar::Type getSharedTypedArrayType(CompilerConstraintList* constraints);
+
+
+
+    Scalar::Type getTypedArrayType(CompilerConstraintList* constraints,
+                                   TypedArraySharedness* sharedness = nullptr);
 
     
     bool isDOMClass(CompilerConstraintList* constraints);
@@ -764,6 +772,10 @@ class TemporaryTypeSet : public TypeSet
 
 
     DoubleConversion convertDoubleElements(CompilerConstraintList* constraints);
+
+  private:
+    void getTypedArraySharedness(CompilerConstraintList* constraints,
+                                 TypedArraySharedness* sharedness);
 };
 
 bool
