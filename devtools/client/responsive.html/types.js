@@ -12,56 +12,16 @@ const { PropTypes } = require("devtools/client/shared/vendor/react");
 
 
 
-const device = {
+exports.viewport = {
 
   
-  name: PropTypes.string,
+  id: PropTypes.number.isRequired,
 
   
   width: PropTypes.number,
 
   
   height: PropTypes.number,
-
-  
-  pixelRatio: PropTypes.number,
-
-  
-  userAgent: PropTypes.string,
-
-  
-  touch: PropTypes.bool,
-
-  
-  os: PropTypes.String,
-
-};
-
-
-
-
-exports.devices = {
-
-  
-  types: PropTypes.arrayOf(PropTypes.string),
-
-  
-  phones: PropTypes.arrayOf(PropTypes.shape(device)),
-
-  
-  tablets: PropTypes.arrayOf(PropTypes.shape(device)),
-
-  
-  laptops: PropTypes.arrayOf(PropTypes.shape(device)),
-
-  
-  televisions: PropTypes.arrayOf(PropTypes.shape(device)),
-
-  
-  consoles: PropTypes.arrayOf(PropTypes.shape(device)),
-
-  
-  watches: PropTypes.arrayOf(PropTypes.shape(device)),
 
 };
 
@@ -69,22 +29,3 @@ exports.devices = {
 
 
 exports.location = PropTypes.string;
-
-
-
-
-exports.viewport = {
-
-  
-  id: PropTypes.number.isRequired,
-
-  
-  device: PropTypes.string,
-
-  
-  width: PropTypes.number,
-
-  
-  height: PropTypes.number,
-
-};

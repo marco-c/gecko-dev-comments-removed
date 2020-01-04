@@ -11,20 +11,11 @@
 createEnum([
 
   
-  "ADD_DEVICE",
-
   
-  "ADD_DEVICE_TYPE",
+  "CHANGE_LOCATION",
 
   
   "ADD_VIEWPORT",
-
-  
-  "CHANGE_DEVICE",
-
-  
-  
-  "CHANGE_LOCATION",
 
   
   "RESIZE_VIEWPORT",
