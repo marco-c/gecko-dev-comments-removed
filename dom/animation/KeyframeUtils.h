@@ -69,6 +69,24 @@ public:
   GetKeyframesFromObject(JSContext* aCx,
                          JS::Handle<JSObject*> aFrames,
                          ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static nsTArray<AnimationProperty>
+  GetAnimationPropertiesFromKeyframes(nsStyleContext* aStyleContext,
+                                      dom::Element* aElement,
+                                      CSSPseudoElementType aPseudoType,
+                                      const nsTArray<Keyframe>& aFrames);
 };
 
 } 
