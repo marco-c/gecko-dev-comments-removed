@@ -7171,7 +7171,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       nsWeakFrame weakFrame(frame);
       {  
         nsAutoScriptBlocker scriptBlocker;
-        FlushThrottledStyles(GetRootPresShell()->GetDOcument(), nullptr);
+        FlushThrottledStyles(GetRootPresShell()->GetDocument(), nullptr);
       }
 
 
