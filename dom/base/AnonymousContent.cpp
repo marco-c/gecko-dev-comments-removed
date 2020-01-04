@@ -159,14 +159,14 @@ AnonymousContent::GetElementById(const nsAString& aElementId)
 {
   
   nsCOMPtr<nsIAtom> elementId = NS_Atomize(aElementId);
-  for (nsIContent* kid = mContentNode->GetFirstChild(); kid;
-       kid = kid->GetNextNode(mContentNode)) {
-    if (!kid->IsElement()) {
+  for (nsIContent* node = mContentNode; node;
+       node = node->GetNextNode(mContentNode)) {
+    if (!node->IsElement()) {
       continue;
     }
-    nsIAtom* id = kid->AsElement()->GetID();
+    nsIAtom* id = node->AsElement()->GetID();
     if (id && id == elementId) {
-      return kid->AsElement();
+      return node->AsElement();
     }
   }
   return nullptr;
