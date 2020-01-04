@@ -96,9 +96,11 @@ XPCOMUtils.defineLazyGetter(this, "gApp", function() {
                   .getService(Ci.nsIXULRuntime);
   try {
     appinfo.QueryInterface(Ci.nsIXULAppInfo);
-  } catch (ex if ex instanceof Components.Exception &&
-                 ex.result == Cr.NS_NOINTERFACE) {
+  } catch (ex) {
     
+    if (!(ex instanceof Components.Exception) ||
+        ex.result != Cr.NS_NOINTERFACE)
+      throw ex;
   }
   return appinfo;
 });
