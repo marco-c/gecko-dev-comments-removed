@@ -29,8 +29,6 @@ pref("network.predictor.enabled", true);
 
 
 pref("layout.accessiblecaret.enabled", false);
-pref("selectioncaret.enabled", false);
-pref("touchcaret.enabled", false);
 
 pref("gfx.vsync.hw-vsync.enabled", true);
 pref("gfx.vsync.compositor", true);

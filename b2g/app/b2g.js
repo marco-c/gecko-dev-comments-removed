@@ -1066,19 +1066,6 @@ pref("dom.wakelock.enabled", true);
 
 pref("dom.apps.customization.enabled", true);
 
-#ifdef MOZ_GRAPHENE
-
-pref("touchcaret.enabled", true);
-
-pref("selectioncaret.enabled", true);
-#else
-
-pref("touchcaret.enabled", false);
-
-pref("selectioncaret.enabled", false);
-#endif
-
-
 
 pref("layout.accessiblecaret.enabled", true);
 
