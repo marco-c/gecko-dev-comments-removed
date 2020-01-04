@@ -199,12 +199,10 @@ nsSimpleURI::SetSpec(const nsACString &aSpec)
     
     nsAutoCString filteredSpec;
     net_FilterURIString(aSpec, filteredSpec);
-    const char* specPtr = filteredSpec.get();
-    int32_t specLen = filteredSpec.Length();
 
     
     nsAutoCString spec;
-    NS_EscapeURL(specPtr, specLen, esc_OnlyNonASCII|esc_AlwaysCopy, spec);
+    spec = NS_EscapeURL(filteredSpec, esc_OnlyNonASCII, spec);
 
     int32_t colonPos = spec.FindChar(':');
     if (colonPos < 0 || !net_IsValidScheme(spec.get(), colonPos))
