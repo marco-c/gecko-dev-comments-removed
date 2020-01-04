@@ -5404,6 +5404,8 @@ pref("dom.mozBrowserFramesEnabled", false);
 
 pref("layout.css.color-adjust.enabled", true);
 
+pref("dom.audiochannel.audioCompeting", false);
+
 
 #ifdef RELEASE_BUILD
 pref("dom.node.rootNode.enabled", false);

@@ -22,6 +22,7 @@
 #include "nsThreadUtils.h"
 #include "nsHashPropertyBag.h"
 #include "nsComponentManagerUtils.h"
+#include "nsGlobalWindow.h"
 #include "nsPIDOMWindow.h"
 #include "nsServiceManagerUtils.h"
 #include "mozilla/dom/SettingChangeNotificationBinding.h"
@@ -41,6 +42,7 @@ namespace {
 
 
 bool sAudioChannelMutedByDefault = false;
+bool sAudioChannelCompeting = false;
 bool sXPCOMShuttingDown = false;
 
 class NotifyChannelActiveRunnable final : public Runnable
@@ -210,6 +212,13 @@ AudioChannelService::Shutdown()
   }
 }
 
+ bool
+AudioChannelService::IsEnableAudioCompeting()
+{
+  CreateServiceIfNeeded();
+  return sAudioChannelCompeting;
+}
+
 NS_INTERFACE_MAP_BEGIN(AudioChannelService)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIAudioChannelService)
   NS_INTERFACE_MAP_ENTRY(nsIAudioChannelService)
@@ -241,6 +250,8 @@ AudioChannelService::AudioChannelService()
 
   Preferences::AddBoolVarCache(&sAudioChannelMutedByDefault,
                                "dom.audiochannel.mutedByDefault");
+  Preferences::AddBoolVarCache(&sAudioChannelCompeting,
+                               "dom.audiochannel.audioCompeting");
 }
 
 AudioChannelService::~AudioChannelService()
@@ -336,14 +347,15 @@ AudioChannelService::GetMediaConfig(nsPIDOMWindowOuter* aWindow,
     if (winData) {
       config.mVolume *= winData->mChannels[aAudioChannel].mVolume;
       config.mMuted = config.mMuted || winData->mChannels[aAudioChannel].mMuted;
+      config.mSuspend = winData->mOwningAudioFocus ?
+        config.mSuspend : nsISuspendedTypes::SUSPENDED_STOP_DISPOSABLE;
     }
 
     config.mVolume *= window->GetAudioVolume();
     config.mMuted = config.mMuted || window->GetAudioMuted();
-
-    
-    config.mSuspend = (config.mSuspend == nsISuspendedTypes::NONE_SUSPENDED) ?
-      window->GetMediaSuspend() : config.mSuspend;
+    if (window->GetMediaSuspend() != nsISuspendedTypes::NONE_SUSPENDED) {
+      config.mSuspend = window->GetMediaSuspend();
+    }
 
     nsCOMPtr<nsPIDOMWindowOuter> win = window->GetScriptableParentOrNull();
     if (!win) {
@@ -994,6 +1006,176 @@ AudioChannelService::ChildStatusReceived(uint64_t aChildID,
   data->mActiveContentOrNormalChannel = aContentOrNormalChannel;
 }
 
+void
+AudioChannelService::RefreshAgentsAudioFocusChanged(AudioChannelAgent* aAgent,
+                                                    bool aActive)
+{
+  MOZ_ASSERT(aAgent);
+
+  nsTObserverArray<nsAutoPtr<AudioChannelWindow>>::ForwardIterator
+    iter(mWindows);
+  while (iter.HasMore()) {
+    AudioChannelWindow* winData = iter.GetNext();
+    if (winData->mOwningAudioFocus) {
+      winData->AudioFocusChanged(aAgent, aActive);
+    }
+  }
+}
+
+void
+AudioChannelService::AudioChannelWindow::RequestAudioFocus(AudioChannelAgent* aAgent)
+{
+  MOZ_ASSERT(aAgent);
+
+  
+  if (mOwningAudioFocus) {
+    return;
+  }
+
+  
+  
+  
+  mOwningAudioFocus = !(aAgent->Window()->IsBackground());
+
+  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
+         ("AudioChannelWindow, RequestAudioFocus, this = %p, "
+          "agent = %p, owning audio focus = %d\n",
+          this, aAgent, mOwningAudioFocus));
+}
+
+void
+AudioChannelService::AudioChannelWindow::NotifyAudioCompetingChanged(AudioChannelAgent* aAgent,
+                                                                     bool aActive)
+{
+  
+  
+  
+  MOZ_ASSERT(aAgent);
+
+  RefPtr<AudioChannelService> service = AudioChannelService::GetOrCreate();
+  MOZ_ASSERT(service);
+
+  if (!service->IsEnableAudioCompeting()) {
+    return;
+  }
+
+  if (!IsAgentInvolvingInAudioCompeting(aAgent)) {
+    return;
+  }
+
+  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
+         ("AudioChannelWindow, NotifyAudioCompetingChanged, this = %p, "
+          "agent = %p, active = %d\n",
+          this, aAgent, aActive));
+
+  service->RefreshAgentsAudioFocusChanged(aAgent, aActive);
+}
+
+bool
+AudioChannelService::AudioChannelWindow::IsAgentInvolvingInAudioCompeting(AudioChannelAgent* aAgent) const
+{
+  MOZ_ASSERT(aAgent);
+
+  if(!mOwningAudioFocus) {
+    return false;
+  }
+
+  if (IsAudioCompetingInSameTab()) {
+    return false;
+  }
+
+  
+  
+  return true;
+}
+
+bool
+AudioChannelService::AudioChannelWindow::IsAudioCompetingInSameTab() const
+{
+  return (mOwningAudioFocus && mAudibleAgents.Length() > 1);
+}
+
+void
+AudioChannelService::AudioChannelWindow::AudioFocusChanged(AudioChannelAgent* aNewPlayingAgent,
+                                                           bool aActive)
+{
+  
+  
+  MOZ_ASSERT(aNewPlayingAgent);
+
+  if (mAudibleAgents.IsEmpty()) {
+    
+    
+    
+    
+    mOwningAudioFocus = IsContainingPlayingAgent(aNewPlayingAgent);
+  } else {
+    nsTObserverArray<AudioChannelAgent*>::ForwardIterator iter(mAudibleAgents);
+    while (iter.HasMore()) {
+      AudioChannelAgent* agent = iter.GetNext();
+      MOZ_ASSERT(agent);
+
+      
+      if (agent == aNewPlayingAgent) {
+        continue;
+      }
+
+      uint32_t type = GetCompetingBehavior(agent,
+                                           aNewPlayingAgent->AudioChannelType(),
+                                           aActive);
+
+      
+      
+      
+      mOwningAudioFocus = (type == nsISuspendedTypes::NONE_SUSPENDED);
+
+      
+      switch (type) {
+        case nsISuspendedTypes::NONE_SUSPENDED:
+        case nsISuspendedTypes::SUSPENDED_STOP_DISPOSABLE:
+          agent->WindowSuspendChanged(type);
+          break;
+      }
+    }
+  }
+
+  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
+         ("AudioChannelWindow, AudioFocusChanged, this = %p, "
+          "OwningAudioFocus = %d\n", this, mOwningAudioFocus));
+}
+
+bool
+AudioChannelService::AudioChannelWindow::IsContainingPlayingAgent(AudioChannelAgent* aAgent) const
+{
+  return (aAgent->WindowID() == mWindowID);
+}
+
+uint32_t
+AudioChannelService::AudioChannelWindow::GetCompetingBehavior(AudioChannelAgent* aAgent,
+                                                              int32_t aIncomingChannelType,
+                                                              bool aIncomingChannelActive) const
+{
+  MOZ_ASSERT(aAgent);
+  MOZ_ASSERT(mAudibleAgents.Contains(aAgent));
+
+  uint32_t competingBehavior = nsISuspendedTypes::NONE_SUSPENDED;
+  int32_t presentChannelType = aAgent->AudioChannelType();
+
+  
+  if (presentChannelType == int32_t(AudioChannel::Normal) &&
+      aIncomingChannelType == int32_t(AudioChannel::Normal) &&
+      aIncomingChannelActive) {
+    competingBehavior = nsISuspendedTypes::SUSPENDED_STOP_DISPOSABLE;
+  }
+
+  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
+         ("AudioChannelWindow, GetCompetingBehavior, this = %p, "
+          "present type = %d, incoming channel = %d, behavior = %d\n",
+          this, presentChannelType, aIncomingChannelType, competingBehavior));
+
+  return competingBehavior;
+}
+
  bool
 AudioChannelService::IsAudioChannelMutedByDefault()
 {
@@ -1007,9 +1189,12 @@ AudioChannelService::AudioChannelWindow::AppendAgent(AudioChannelAgent* aAgent,
 {
   MOZ_ASSERT(aAgent);
 
+  RequestAudioFocus(aAgent);
   AppendAgentAndIncreaseAgentsNum(aAgent);
   AudioCapturedChanged(aAgent, AudioCaptureState::eCapturing);
-  AudioAudibleChanged(aAgent, aAudible);
+  if (aAudible) {
+    AudioAudibleChanged(aAgent, AudibleState::eAudible);
+  }
 }
 
 void
@@ -1082,6 +1267,8 @@ AudioChannelService::AudioChannelWindow::AudioAudibleChanged(AudioChannelAgent* 
   } else {
     RemoveAudibleAgentIfContained(aAgent);
   }
+
+  NotifyAudioCompetingChanged(aAgent, aAudible);
 }
 
 void

@@ -1088,6 +1088,8 @@ pref("b2g.multiscreen.chrome_remote_url", "chrome://b2g/content/shell_remote.htm
 pref("b2g.multiscreen.system_remote_url", "index_remote.html");
 
 
+pref("dom.audiochannel.audioCompeting", false);
+
 
 #ifdef MOZ_GRAPHENE
 #include ../graphene/graphene.js

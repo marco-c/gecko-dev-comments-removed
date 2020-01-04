@@ -923,6 +923,7 @@ pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sy
 pref("dom.presentation.enabled", true);
 pref("dom.presentation.discovery.enabled", true);
 
+pref("dom.audiochannel.audioCompeting", true);
 
 
 pref("media.useAudioChannelAPI", true);
