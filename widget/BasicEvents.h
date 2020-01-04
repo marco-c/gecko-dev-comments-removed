@@ -271,7 +271,7 @@ protected:
     : WidgetEventTime()
     , mClass(aEventClassID)
     , mMessage(aMessage)
-    , refPoint(0, 0)
+    , mRefPoint(0, 0)
     , lastRefPoint(0, 0)
     , userType(nullptr)
   {
@@ -293,7 +293,7 @@ public:
     : WidgetEventTime()
     , mClass(eBasicEventClass)
     , mMessage(aMessage)
-    , refPoint(0, 0)
+    , mRefPoint(0, 0)
     , lastRefPoint(0, 0)
     , userType(nullptr)
   {
@@ -329,7 +329,7 @@ public:
   EventMessage mMessage;
   
   
-  LayoutDeviceIntPoint refPoint;
+  LayoutDeviceIntPoint mRefPoint;
   
   LayoutDeviceIntPoint lastRefPoint;
   
@@ -349,7 +349,7 @@ public:
   {
     
     
-    refPoint = aEvent.refPoint;
+    mRefPoint = aEvent.mRefPoint;
     
     AssignEventTime(aEvent);
     

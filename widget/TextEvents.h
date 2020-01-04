@@ -628,7 +628,7 @@ public:
   {
     NS_ASSERTION(mMessage == eQueryDOMWidgetHittest,
                  "wrong initializer is called");
-    refPoint = aPoint;
+    mRefPoint = aPoint;
   }
 
   void RequestFontRanges()

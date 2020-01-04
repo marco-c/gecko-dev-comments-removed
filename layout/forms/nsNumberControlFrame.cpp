@@ -621,7 +621,7 @@ nsNumberControlFrame::GetSpinButtonForPointerEvent(WidgetGUIEvent* aEvent) const
     
     
     
-    LayoutDeviceIntPoint absPoint = aEvent->refPoint;
+    LayoutDeviceIntPoint absPoint = aEvent->mRefPoint;
     nsPoint point =
       nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent,
                        absPoint, mSpinBox->GetPrimaryFrame());

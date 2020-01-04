@@ -128,7 +128,7 @@ HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           
           
           LayoutDeviceIntPoint* curPoint =
-            new LayoutDeviceIntPoint(mouseEvent->refPoint);
+            new LayoutDeviceIntPoint(mouseEvent->mRefPoint);
           SetProperty(nsGkAtoms::labelMouseDownPtProperty,
                       static_cast<void*>(curPoint),
                       nsINode::DeleteProperty<LayoutDeviceIntPoint>);
@@ -146,7 +146,7 @@ HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
             LayoutDeviceIntPoint dragDistance = *mouseDownPoint;
             DeleteProperty(nsGkAtoms::labelMouseDownPtProperty);
 
-            dragDistance -= mouseEvent->refPoint;
+            dragDistance -= mouseEvent->mRefPoint;
             const int CLICK_DISTANCE = 2;
             dragSelect = dragDistance.x > CLICK_DISTANCE ||
                          dragDistance.x < -CLICK_DISTANCE ||

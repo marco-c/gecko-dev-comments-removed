@@ -732,8 +732,9 @@ AndroidGeckoEvent::MakeMouseEvent(nsIWidget* widget)
     
     const LayoutDeviceIntPoint& offset = widget->WidgetToScreenOffset();
     CSSToLayoutDeviceScale scale = widget->GetDefaultScale();
-    event.refPoint = LayoutDeviceIntPoint((Points()[0].x * scale.scale) - offset.x,
-                                          (Points()[0].y * scale.scale) - offset.y);
+    event.mRefPoint =
+        LayoutDeviceIntPoint((Points()[0].x * scale.scale) - offset.x,
+                             (Points()[0].y * scale.scale) - offset.y);
     return event;
 }
 

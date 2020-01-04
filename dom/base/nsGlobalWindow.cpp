@@ -614,7 +614,7 @@ nsPIDOMWindow<T>::nsPIDOMWindow(nsPIDOMWindowOuter *aOuterWindow)
   mMayHavePointerEnterLeaveEventListener(false),
   mInnerObjectsFreed(false),
   mIsModalContentWindow(false),
-  mIsActive(false), mIsBackground(false), mMediaSuspended(false),
+  mIsActive(false), mIsBackground(false),
   mAudioMuted(false), mAudioVolume(1.0), mAudioCaptured(false),
   mDesktopModeViewport(false), mInnerWindow(nullptr),
   mOuterWindow(aOuterWindow),
@@ -3113,8 +3113,8 @@ nsGlobalWindow::PreHandleEvent(EventChainPreVisitor& aVisitor)
       
       int16_t myCoord[2];
 
-      myCoord[0] = aVisitor.mEvent->refPoint.x;
-      myCoord[1] = aVisitor.mEvent->refPoint.y;
+      myCoord[0] = aVisitor.mEvent->mRefPoint.x;
+      myCoord[1] = aVisitor.mEvent->mRefPoint.y;
       gEntropyCollector->RandomUpdate((void*)myCoord, sizeof(myCoord));
       gEntropyCollector->RandomUpdate((void*)&(aVisitor.mEvent->mTime),
                                       sizeof(uint32_t));
@@ -3671,32 +3671,6 @@ nsPIDOMWindowInner::CreatePerformanceObjectIfNeeded()
     mPerformance =
       new nsPerformance(this, timing, timedChannel, parentPerformance);
   }
-}
-
-bool
-nsPIDOMWindowOuter::GetMediaSuspended() const
-{
-  if (IsInnerWindow()) {
-    return mOuterWindow->GetMediaSuspended();
-  }
-
-  return mMediaSuspended;
-}
-
-void
-nsPIDOMWindowOuter::SetMediaSuspended(bool aSuspended)
-{
-  if (IsInnerWindow()) {
-    mOuterWindow->SetMediaSuspended(aSuspended);
-    return;
-  }
-
-  if (mMediaSuspended == aSuspended) {
-    return;
-  }
-
-  mMediaSuspended = aSuspended;
-  RefreshMediaElements();
 }
 
 bool
