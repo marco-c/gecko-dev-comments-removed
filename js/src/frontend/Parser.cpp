@@ -5092,11 +5092,10 @@ Parser<ParseHandler>::doWhileStatement(YieldHandling yieldHandling)
     
     
     
-    bool matched;
-    if (!tokenStream.matchToken(&matched, TOK_SEMI))
+    
+    bool ignored;
+    if (!tokenStream.matchToken(&ignored, TOK_SEMI, TokenStream::Operand))
         return null();
-    if (!matched)
-        tokenStream.addModifierException(TokenStream::OperandIsNone);
     return handler.newDoWhileStatement(body, cond, TokenPos(begin, pos().end));
 }
 
