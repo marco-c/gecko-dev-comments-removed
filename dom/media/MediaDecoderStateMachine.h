@@ -510,11 +510,6 @@ protected:
   
   RefPtr<MediaDecoder::SeekPromise> InitiateSeek(SeekJob aSeekJob);
 
-  
-  
-  
-  void InitiateDecodeRecoverySeek();
-
   nsresult DispatchAudioDecodeTaskIfNeeded();
 
   

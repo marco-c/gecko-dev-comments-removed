@@ -1368,58 +1368,12 @@ void MediaDecoderStateMachine::VisibilityChanged()
     }
 
     
-    InitiateDecodeRecoverySeek();
+    SeekJob seekJob;
+    seekJob.mTarget = SeekTarget(GetMediaTime(),
+                                 SeekTarget::Type::AccurateVideoOnly,
+                                 MediaDecoderEventVisibility::Suppressed);
+    InitiateSeek(Move(seekJob));
   }
-}
-
-
-
-
-
-
-
-void
-MediaDecoderStateMachine::InitiateDecodeRecoverySeek()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  DECODER_LOG("InitiateDecodeRecoverySeek");
-
-  SeekJob seekJob;
-  seekJob.mTarget = SeekTarget(GetMediaTime(),
-                               SeekTarget::Type::AccurateVideoOnly,
-                               MediaDecoderEventVisibility::Suppressed);
-
-  SetState(DECODER_STATE_SEEKING);
-
-  
-  DiscardSeekTaskIfExist();
-
-  mSeekTaskRequest.DisconnectIfExists();
-
-  
-  CancelMediaDecoderReaderWrapperCallback();
-
-  MOZ_ASSERT(!mCurrentSeek.Exists());
-  mCurrentSeek = Move(seekJob);
-  
-  mSeekTask = new AccurateSeekTask(mDecoderID, OwnerThread(),
-                                   mReader.get(), mCurrentSeek.mTarget,
-                                   mInfo, Duration(), GetMediaTime());
-
-  
-  if (mSeekTask->NeedToResetMDSM()) {
-    Reset(TrackInfo::kVideoTrack);
-  }
-
-  
-  mSeekTaskRequest.Begin(
-    mSeekTask->Seek(Duration())->Then(OwnerThread(), __func__, this,
-                                      &MediaDecoderStateMachine::OnSeekTaskResolved,
-                                      &MediaDecoderStateMachine::OnSeekTaskRejected));
-  
-  
-  
-  RefPtr<MediaDecoder::SeekPromise> unused = mCurrentSeek.mPromise.Ensure(__func__);
 }
 
 void MediaDecoderStateMachine::BufferedRangeUpdated()
@@ -1604,7 +1558,9 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
   CancelMediaDecoderReaderWrapperCallback();
 
   
-  if (aSeekJob.mTarget.IsAccurate() || aSeekJob.mTarget.IsFast()) {
+  if (aSeekJob.mTarget.IsAccurate() ||
+      aSeekJob.mTarget.IsFast() ||
+      aSeekJob.mTarget.IsVideoOnly()) {
     mSeekTask = new AccurateSeekTask(mDecoderID, OwnerThread(),
                                      mReader.get(), aSeekJob.mTarget,
                                      mInfo, Duration(), GetMediaTime());
@@ -1617,9 +1573,9 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
   }
 
   
-  
-  
-  StopPlayback();
+  if (!aSeekJob.mTarget.IsVideoOnly()) {
+    StopPlayback();
+  }
 
   
   
@@ -1632,7 +1588,13 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
   }
 
   
-  if (mSeekTask->NeedToResetMDSM()) { Reset(); }
+  if (mSeekTask->NeedToResetMDSM()) {
+    if (aSeekJob.mTarget.IsVideoOnly()) {
+      Reset(TrackInfo::kVideoTrack);
+    } else {
+      Reset();
+    }
+  }
 
   
   mSeekTaskRequest.Begin(mSeekTask->Seek(Duration())
