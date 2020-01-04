@@ -8,7 +8,7 @@
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Move.h"
-#include "mozilla/Sprintf.h"
+#include "mozilla/Snprintf.h"
 #include "mozilla/unused.h"
 
 #include <cmath>
@@ -319,8 +319,8 @@ GC(JSContext* cx, unsigned argc, Value* vp)
 
     char buf[256] = { '\0' };
 #ifndef JS_MORE_DETERMINISTIC
-    SprintfLiteral(buf, "before %" PRIuSIZE ", after %" PRIuSIZE "\n",
-                   preBytes, cx->runtime()->gc.usage.gcBytes());
+    snprintf_literal(buf, "before %" PRIuSIZE ", after %" PRIuSIZE "\n",
+                     preBytes, cx->runtime()->gc.usage.gcBytes());
 #endif
     JSString* str = JS_NewStringCopyZ(cx, buf);
     if (!str)
@@ -473,7 +473,7 @@ SetAllowRelazification(JSContext* cx, bool allow)
     MOZ_ASSERT(rt->allowRelazificationForTesting != allow);
     rt->allowRelazificationForTesting = allow;
 
-    for (AllFramesIter i(cx); !i.done(); ++i)
+    for (AllScriptFramesIter i(cx); !i.done(); ++i)
         i.script()->setDoNotRelazify(allow);
 }
 
@@ -2402,7 +2402,7 @@ ObjectAddress(JSContext* cx, unsigned argc, Value* vp)
 #else
     void* ptr = js::UncheckedUnwrap(&args[0].toObject(), true);
     char buffer[64];
-    SprintfLiteral(buffer, "%p", ptr);
+    snprintf_literal(buffer, "%p", ptr);
 
     JSString* str = JS_NewStringCopyZ(cx, buffer);
     if (!str)
@@ -2443,8 +2443,8 @@ SharedAddress(JSContext* cx, unsigned argc, Value* vp)
     }
     char buffer[64];
     uint32_t nchar =
-        SprintfLiteral(buffer, "%p",
-                       obj->as<SharedArrayBufferObject>().dataPointerShared().unwrap());
+        snprintf_literal(buffer, "%p",
+                         obj->as<SharedArrayBufferObject>().dataPointerShared().unwrap());
 
     JSString* str = JS_NewStringCopyN(cx, buffer, nchar);
     if (!str)

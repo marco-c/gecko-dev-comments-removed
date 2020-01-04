@@ -900,7 +900,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     inline bool observesNewGlobalObject() const;
     inline bool observesGlobal(GlobalObject* global) const;
     bool observesFrame(AbstractFramePtr frame) const;
-    bool observesFrame(const ScriptFrameIter& iter) const;
+    bool observesFrame(const FrameIter& iter) const;
     bool observesScript(JSScript* script) const;
 
     
@@ -1178,11 +1178,6 @@ class DebuggerFrame : public NativeObject
     static DebuggerFrameType getType(HandleDebuggerFrame frame);
     static DebuggerFrameImplementation getImplementation(HandleDebuggerFrame frame);
 
-    static MOZ_MUST_USE bool eval(JSContext* cx, HandleDebuggerFrame frame,
-                                  mozilla::Range<const char16_t> chars, HandleObject bindings,
-                                  const EvalOptions& options, JSTrapStatus& status,
-                                  MutableHandleValue value);
-
     bool isLive() const;
 
   private:
@@ -1208,9 +1203,6 @@ class DebuggerFrame : public NativeObject
     static MOZ_MUST_USE bool thisGetter(JSContext* cx, unsigned argc, Value* vp);
     static MOZ_MUST_USE bool typeGetter(JSContext* cx, unsigned argc, Value* vp);
     static MOZ_MUST_USE bool implementationGetter(JSContext* cx, unsigned argc, Value* vp);
-
-    static MOZ_MUST_USE bool evalMethod(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool evalWithBindingsMethod(JSContext* cx, unsigned argc, Value* vp);
 
     Debugger* owner() const;
 };
@@ -1278,7 +1270,7 @@ class DebuggerObject : public NativeObject
     static MOZ_MUST_USE bool executeInGlobal(JSContext* cx, HandleDebuggerObject object,
                                              mozilla::Range<const char16_t> chars,
                                              HandleObject bindings, const EvalOptions& options,
-                                             JSTrapStatus& status, MutableHandleValue value);
+                                             MutableHandleValue result);
     static MOZ_MUST_USE bool makeDebuggeeValue(JSContext* cx, HandleDebuggerObject object,
                                                HandleValue value, MutableHandleValue result);
     static MOZ_MUST_USE bool unsafeDereference(JSContext* cx, HandleDebuggerObject object,

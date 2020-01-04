@@ -1999,10 +1999,21 @@ class NonBuiltinScriptFrameIter : public ScriptFrameIter
 
 
 
-class AllFramesIter : public ScriptFrameIter
+class AllFramesIter : public FrameIter
 {
   public:
     explicit AllFramesIter(JSContext* cx)
+      : FrameIter(cx, ScriptFrameIter::IGNORE_DEBUGGER_EVAL_PREV_LINK)
+    {}
+};
+
+
+
+
+class AllScriptFramesIter : public ScriptFrameIter
+{
+  public:
+    explicit AllScriptFramesIter(JSContext* cx)
       : ScriptFrameIter(cx, ScriptFrameIter::IGNORE_DEBUGGER_EVAL_PREV_LINK)
     {}
 };

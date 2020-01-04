@@ -4138,7 +4138,7 @@ JSScript::argumentsOptimizationFailed(JSContext* cx, HandleScript script)
 
 
 
-    for (AllFramesIter i(cx); !i.done(); ++i) {
+    for (AllScriptFramesIter i(cx); !i.done(); ++i) {
         
 
 
