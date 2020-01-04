@@ -255,7 +255,7 @@ public class Favicons {
 
 
 
-    public static Bitmap getSizedFaviconFromCache(String faviconURL, int targetSize) {
+    static Bitmap getSizedFaviconFromCache(String faviconURL, int targetSize) {
         return faviconsCache.getFaviconForDimensions(faviconURL, targetSize);
     }
 
