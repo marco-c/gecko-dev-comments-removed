@@ -124,8 +124,6 @@ protected:
   
   void NotifyError(nsresult aRv);
   
-  bool CheckPrincipal();
-  
   void SetMimeType(const nsString &aMimeType);
   void SetOptions(const MediaRecorderOptions& aInitDict);
 
@@ -134,7 +132,6 @@ protected:
   void RemoveSession(Session* aSession);
   
   MediaStream* GetSourceMediaStream();
-  nsIPrincipal* GetSourcePrincipal();
   
   RefPtr<DOMMediaStream> mDOMStream;
   
