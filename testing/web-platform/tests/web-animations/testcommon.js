@@ -15,7 +15,7 @@ var MS_PER_SEC = 1000;
 
 
 
-var TIME_PRECISION = 0.000001;
+var TIME_PRECISION = 0.0005; 
 
 
 
