@@ -119,4 +119,10 @@ final class UnusedResourcesUtil {
             R.style.RemoteTabsPanelItem_TextAppearance_Linkified,
             R.style.RemoteTabsPanelItem_Button,
     };
+
+    
+    
+    public static final int[] TEMPORARY_UNUSED_ACTIVITY_STREAM = {
+            R.string.activity_stream_topsites
+    };
 }
