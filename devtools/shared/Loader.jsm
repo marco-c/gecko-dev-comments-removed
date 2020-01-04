@@ -31,6 +31,7 @@ this.EXPORTED_SYMBOLS = ["DevToolsLoader", "devtools", "BuiltinProvider",
 var loaderModules = {
   "Services": Object.create(Services),
   "toolkit/loader": Loader,
+  promise,
   PromiseDebugging,
   ChromeUtils,
   ThreadSafeChromeUtils,
@@ -105,8 +106,6 @@ BuiltinProvider.prototype = {
         "devtools": "resource://devtools",
         
         "gcli": "resource://devtools/shared/gcli/source/lib/gcli",
-        
-        "promise": "resource://gre/modules/Promise-backend.js",
         
         "acorn": "resource://devtools/acorn",
         
