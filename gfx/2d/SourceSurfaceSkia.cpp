@@ -122,9 +122,13 @@ SourceSurfaceSkia::DrawTargetWillChange()
     MaybeUnlock();
 
     mDrawTarget = nullptr;
-    SkBitmap temp = mBitmap;
-    mBitmap.reset();
-    temp.copyTo(&mBitmap, temp.colorType());
+
+    
+    
+    if (!mBitmap.deepCopyTo(&mBitmap) ||
+        !mBitmap.copyTo(&mBitmap)) {
+      mBitmap.reset();
+    }
   }
 }
 
