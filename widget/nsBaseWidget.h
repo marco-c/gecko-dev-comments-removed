@@ -312,6 +312,8 @@ public:
     return false;
   }
 
+  virtual void StartAsyncScrollbarDrag(const AsyncDragMetrics& aDragMetrics) override;
+
   
 
 
