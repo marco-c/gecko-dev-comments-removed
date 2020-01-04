@@ -878,8 +878,8 @@ CodeGeneratorX86Shared::visitPowHalfD(LPowHalfD* ins)
         masm.branchDouble(cond, input, scratch, &sqrt);
 
         
-        masm.zeroDouble(input);
-        masm.subDouble(scratch, input);
+        masm.zeroDouble(output);
+        masm.subDouble(scratch, output);
         masm.jump(&done);
 
         masm.bind(&sqrt);
@@ -888,10 +888,11 @@ CodeGeneratorX86Shared::visitPowHalfD(LPowHalfD* ins)
     if (!ins->mir()->operandIsNeverNegativeZero()) {
         
         masm.zeroDouble(scratch);
-        masm.addDouble(scratch, input);
+        masm.addDouble(input, scratch);
+        masm.vsqrtsd(scratch, output, output);
+    } else {
+        masm.vsqrtsd(input, output, output);
     }
-
-    masm.vsqrtsd(input, output, output);
 
     masm.bind(&done);
 }
