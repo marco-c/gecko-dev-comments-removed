@@ -698,6 +698,7 @@ exports.SEL_ALL = [
 
 
 
+
 const sheetToUrl = exports.sheetToUrl = function (stylesheet) {
   
   if (stylesheet.href) {
@@ -710,6 +711,11 @@ const sheetToUrl = exports.sheetToUrl = function (stylesheet) {
     let sheets = [...document.querySelectorAll("style")];
     let index = sheets.indexOf(stylesheet.ownerNode);
     return getURL(document) + " → <style> index " + index;
+  }
+
+  
+  if (stylesheet.nodeHref) {
+    return stylesheet.nodeHref + " → <style> index " + stylesheet.styleSheetIndex;
   }
 
   throw new Error("Unknown sheet source");
