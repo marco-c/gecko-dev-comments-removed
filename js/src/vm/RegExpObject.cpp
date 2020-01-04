@@ -920,47 +920,42 @@ js::CloneRegExpObject(JSContext* cx, JSObject* obj_)
 
     
     
-    
-    RegExpStatics* currentStatics = regex->getProto()->global().getRegExpStatics(cx);
-    if (!currentStatics)
+    RootedObjectGroup group(cx, regex->group());
+    Rooted<RegExpObject*> clone(cx, NewObjectWithGroup<RegExpObject>(cx, group, TenuredObject));
+    if (!clone)
         return nullptr;
+    clone->initPrivate(nullptr);
 
     if (!EmptyShape::ensureInitialCustomShape<RegExpObject>(cx, clone))
         return nullptr;
 
     Rooted<JSAtom*> source(cx, regex->getSource());
 
+    
+    RegExpStatics* currentStatics = regex->getProto()->global().getRegExpStatics(cx);
+    if (!currentStatics)
+        return nullptr;
+
     RegExpFlag origFlags = regex->getFlags();
     RegExpFlag staticsFlags = currentStatics->getFlags();
     if ((origFlags & staticsFlags) != staticsFlags) {
-        Rooted<RegExpObject*> clone(cx, RegExpAlloc(cx));
-        if (!clone)
-            return nullptr;
-
+        
+        
         if (!RegExpObject::initFromAtom(cx, clone, source, RegExpFlag(origFlags | staticsFlags)))
             return nullptr;
+    } else {
+        
+        
+        RegExpGuard g(cx);
+        if (!regex->getShared(cx, &g))
+            return nullptr;
 
-        return clone;
+        if (!RegExpObject::initFromAtom(cx, clone, source, g->getFlags()))
+            return nullptr;
+
+        clone->setShared(*g.re());
     }
 
-    
-    RootedObjectGroup group(cx, regex->group());
-
-    
-    
-    Rooted<RegExpObject*> clone(cx, NewObjectWithGroup<RegExpObject>(cx, group, TenuredObject));
-    if (!clone)
-        return nullptr;
-    clone->initPrivate(nullptr);
-
-    RegExpGuard g(cx);
-    if (!regex->getShared(cx, &g))
-        return nullptr;
-
-    if (!RegExpObject::initFromAtom(cx, clone, source, g->getFlags()))
-        return nullptr;
-
-    clone->setShared(*g.re());
     return clone;
 }
 
