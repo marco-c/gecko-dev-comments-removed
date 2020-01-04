@@ -769,7 +769,7 @@
 
 
  \
-    macro(JSOP_NEW,       82, js_new_str,   NULL,         3, -1,  1,  JOF_UINT16|JOF_INVOKE|JOF_TYPESET) \
+    macro(JSOP_NEW,       82, "new",   NULL,         3, -1,  1,  JOF_UINT16|JOF_INVOKE|JOF_TYPESET) \
     
 
 
