@@ -180,10 +180,15 @@ private:
 
 #endif 
 
-
 class nsDumpUtils
 {
 public:
+
+  enum Mode {
+    CREATE,
+    CREATE_UNIQUE
+  };
+
   
 
 
@@ -193,7 +198,8 @@ public:
 
   static nsresult OpenTempFile(const nsACString& aFilename,
                                nsIFile** aFile,
-                               const nsACString& aFoldername = EmptyCString());
+                               const nsACString& aFoldername = EmptyCString(),
+                               Mode aMode = CREATE_UNIQUE);
 };
 
 #endif

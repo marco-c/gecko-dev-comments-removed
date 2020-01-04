@@ -435,7 +435,7 @@ FifoWatcher::OnFileCanReadWithoutBlocking(int aFd)
 
  nsresult
 nsDumpUtils::OpenTempFile(const nsACString& aFilename, nsIFile** aFile,
-                          const nsACString& aFoldername)
+                          const nsACString& aFoldername, Mode aMode)
 {
 #ifdef ANDROID
   
@@ -488,9 +488,13 @@ nsDumpUtils::OpenTempFile(const nsACString& aFilename, nsIFile** aFile,
     return rv;
   }
 
-  rv = file->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0666);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (aMode == CREATE_UNIQUE) {
+    rv = file->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0666);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  } else {
+    file->Create(nsIFile::NORMAL_FILE_TYPE, 0666);
   }
 
 #ifdef ANDROID
