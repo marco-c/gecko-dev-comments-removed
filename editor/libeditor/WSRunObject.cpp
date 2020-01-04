@@ -3,7 +3,7 @@
 
 
 
-#include "nsWSRunObject.h"
+#include "WSRunObject.h"
 
 #include "EditorUtils.h"
 #include "SelectionState.h"
@@ -28,80 +28,60 @@
 #include "nsString.h"
 #include "nsTextFragment.h"
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
+
+using namespace dom;
 
 const char16_t nbsp = 160;
 
-
-nsWSRunObject::nsWSRunObject(nsHTMLEditor* aEd, nsINode* aNode, int32_t aOffset)
+WSRunObject::WSRunObject(nsHTMLEditor* aHTMLEditor,
+                         nsINode* aNode,
+                         int32_t aOffset)
   : mNode(aNode)
   , mOffset(aOffset)
   , mPRE(false)
-  , mStartNode()
   , mStartOffset(0)
-  , mStartReason()
-  , mStartReasonNode()
-  , mEndNode()
   , mEndOffset(0)
-  , mEndReason()
-  , mEndReasonNode()
-  , mFirstNBSPNode()
   , mFirstNBSPOffset(0)
-  , mLastNBSPNode()
   , mLastNBSPOffset(0)
-  , mNodeArray()
   , mStartRun(nullptr)
   , mEndRun(nullptr)
-  , mHTMLEditor(aEd)
+  , mHTMLEditor(aHTMLEditor)
 {
   GetWSNodes();
   GetRuns();
 }
 
-nsWSRunObject::nsWSRunObject(nsHTMLEditor *aEd, nsIDOMNode *aNode, int32_t aOffset) :
-mNode(do_QueryInterface(aNode))
-,mOffset(aOffset)
-,mPRE(false)
-,mStartNode()
-,mStartOffset(0)
-,mStartReason()
-,mStartReasonNode()
-,mEndNode()
-,mEndOffset(0)
-,mEndReason()
-,mEndReasonNode()
-,mFirstNBSPNode()
-,mFirstNBSPOffset(0)
-,mLastNBSPNode()
-,mLastNBSPOffset(0)
-,mNodeArray()
-,mStartRun(nullptr)
-,mEndRun(nullptr)
-,mHTMLEditor(aEd)
+WSRunObject::WSRunObject(nsHTMLEditor* aHTMLEditor,
+                         nsIDOMNode* aNode,
+                         int32_t aOffset)
+  : mNode(do_QueryInterface(aNode))
+  , mOffset(aOffset)
+  , mPRE(false)
+  , mStartOffset(0)
+  , mEndOffset(0)
+  , mFirstNBSPOffset(0)
+  , mLastNBSPOffset(0)
+  , mStartRun(nullptr)
+  , mEndRun(nullptr)
+  , mHTMLEditor(aHTMLEditor)
 {
   GetWSNodes();
   GetRuns();
 }
 
-nsWSRunObject::~nsWSRunObject()
+WSRunObject::~WSRunObject()
 {
   ClearRuns();
 }
 
-
-
-
-
-
-
 nsresult
-nsWSRunObject::ScrubBlockBoundary(nsHTMLEditor* aHTMLEd,
-                                  BlockBoundary aBoundary,
-                                  nsINode* aBlock,
-                                  int32_t aOffset)
+WSRunObject::ScrubBlockBoundary(nsHTMLEditor* aHTMLEditor,
+                                BlockBoundary aBoundary,
+                                nsINode* aBlock,
+                                int32_t aOffset)
 {
-  NS_ENSURE_TRUE(aHTMLEd && aBlock, NS_ERROR_NULL_POINTER);
+  NS_ENSURE_TRUE(aHTMLEditor && aBlock, NS_ERROR_NULL_POINTER);
 
   int32_t offset;
   if (aBoundary == kBlockStart) {
@@ -115,82 +95,81 @@ nsWSRunObject::ScrubBlockBoundary(nsHTMLEditor* aHTMLEd,
     offset = aOffset;
   }
 
-  nsWSRunObject theWSObj(aHTMLEd, aBlock, offset);
+  WSRunObject theWSObj(aHTMLEditor, aBlock, offset);
   return theWSObj.Scrub();
 }
 
 nsresult
-nsWSRunObject::PrepareToJoinBlocks(nsHTMLEditor* aHTMLEd,
-                                   Element* aLeftBlock,
-                                   Element* aRightBlock)
+WSRunObject::PrepareToJoinBlocks(nsHTMLEditor* aHTMLEditor,
+                                 Element* aLeftBlock,
+                                 Element* aRightBlock)
 {
-  NS_ENSURE_TRUE(aLeftBlock && aRightBlock && aHTMLEd, NS_ERROR_NULL_POINTER);
+  NS_ENSURE_TRUE(aLeftBlock && aRightBlock && aHTMLEditor,
+                 NS_ERROR_NULL_POINTER);
 
-  nsWSRunObject leftWSObj(aHTMLEd, aLeftBlock, aLeftBlock->Length());
-  nsWSRunObject rightWSObj(aHTMLEd, aRightBlock, 0);
+  WSRunObject leftWSObj(aHTMLEditor, aLeftBlock, aLeftBlock->Length());
+  WSRunObject rightWSObj(aHTMLEditor, aRightBlock, 0);
 
   return leftWSObj.PrepareToDeleteRangePriv(&rightWSObj);
 }
 
 nsresult
-nsWSRunObject::PrepareToDeleteRange(nsHTMLEditor* aHTMLEd,
-                                    nsCOMPtr<nsINode>* aStartNode,
-                                    int32_t* aStartOffset,
-                                    nsCOMPtr<nsINode>* aEndNode,
-                                    int32_t* aEndOffset)
+WSRunObject::PrepareToDeleteRange(nsHTMLEditor* aHTMLEditor,
+                                  nsCOMPtr<nsINode>* aStartNode,
+                                  int32_t* aStartOffset,
+                                  nsCOMPtr<nsINode>* aEndNode,
+                                  int32_t* aEndOffset)
 {
-  NS_ENSURE_TRUE(aHTMLEd && aStartNode && *aStartNode && aStartOffset &&
+  NS_ENSURE_TRUE(aHTMLEditor && aStartNode && *aStartNode && aStartOffset &&
                  aEndNode && *aEndNode && aEndOffset, NS_ERROR_NULL_POINTER);
 
-  AutoTrackDOMPoint trackerStart(aHTMLEd->mRangeUpdater, aStartNode,
-                                 aStartOffset);
-  AutoTrackDOMPoint trackerEnd(aHTMLEd->mRangeUpdater, aEndNode, aEndOffset);
+  AutoTrackDOMPoint trackerStart(aHTMLEditor->mRangeUpdater,
+                                 aStartNode, aStartOffset);
+  AutoTrackDOMPoint trackerEnd(aHTMLEditor->mRangeUpdater,
+                               aEndNode, aEndOffset);
 
-  nsWSRunObject leftWSObj(aHTMLEd, *aStartNode, *aStartOffset);
-  nsWSRunObject rightWSObj(aHTMLEd, *aEndNode, *aEndOffset);
+  WSRunObject leftWSObj(aHTMLEditor, *aStartNode, *aStartOffset);
+  WSRunObject rightWSObj(aHTMLEditor, *aEndNode, *aEndOffset);
 
   return leftWSObj.PrepareToDeleteRangePriv(&rightWSObj);
 }
 
 nsresult
-nsWSRunObject::PrepareToDeleteNode(nsHTMLEditor* aHTMLEd,
-                                   nsIContent* aContent)
+WSRunObject::PrepareToDeleteNode(nsHTMLEditor* aHTMLEditor,
+                                 nsIContent* aContent)
 {
-  NS_ENSURE_TRUE(aContent && aHTMLEd, NS_ERROR_NULL_POINTER);
+  NS_ENSURE_TRUE(aContent && aHTMLEditor, NS_ERROR_NULL_POINTER);
 
   nsCOMPtr<nsINode> parent = aContent->GetParentNode();
   NS_ENSURE_STATE(parent);
   int32_t offset = parent->IndexOf(aContent);
 
-  nsWSRunObject leftWSObj(aHTMLEd, parent, offset);
-  nsWSRunObject rightWSObj(aHTMLEd, parent, offset + 1);
+  WSRunObject leftWSObj(aHTMLEditor, parent, offset);
+  WSRunObject rightWSObj(aHTMLEditor, parent, offset + 1);
 
   return leftWSObj.PrepareToDeleteRangePriv(&rightWSObj);
 }
 
 nsresult
-nsWSRunObject::PrepareToSplitAcrossBlocks(nsHTMLEditor* aHTMLEd,
-                                          nsCOMPtr<nsINode>* aSplitNode,
-                                          int32_t* aSplitOffset)
+WSRunObject::PrepareToSplitAcrossBlocks(nsHTMLEditor* aHTMLEditor,
+                                        nsCOMPtr<nsINode>* aSplitNode,
+                                        int32_t* aSplitOffset)
 {
-  NS_ENSURE_TRUE(aHTMLEd && aSplitNode && *aSplitNode && aSplitOffset,
+  NS_ENSURE_TRUE(aHTMLEditor && aSplitNode && *aSplitNode && aSplitOffset,
                  NS_ERROR_NULL_POINTER);
 
-  AutoTrackDOMPoint tracker(aHTMLEd->mRangeUpdater, aSplitNode, aSplitOffset);
+  AutoTrackDOMPoint tracker(aHTMLEditor->mRangeUpdater,
+                            aSplitNode, aSplitOffset);
 
-  nsWSRunObject wsObj(aHTMLEd, *aSplitNode, *aSplitOffset);
+  WSRunObject wsObj(aHTMLEditor, *aSplitNode, *aSplitOffset);
 
   return wsObj.PrepareToSplitAcrossBlocksPriv();
 }
 
-
-
-
-
 Element*
-nsWSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
-                           int32_t* aInOutOffset,
-                           nsIEditor::EDirection aSelect)
+WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
+                         int32_t* aInOutOffset,
+                         nsIEditor::EDirection aSelect)
 {
   
   
@@ -255,10 +234,10 @@ nsWSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
 }
 
 nsresult
-nsWSRunObject::InsertText(const nsAString& aStringToInsert,
-                          nsCOMPtr<nsINode>* aInOutParent,
-                          int32_t* aInOutOffset,
-                          nsIDocument* aDoc)
+WSRunObject::InsertText(const nsAString& aStringToInsert,
+                        nsCOMPtr<nsINode>* aInOutParent,
+                        int32_t* aInOutOffset,
+                        nsIDocument* aDoc)
 {
   
   
@@ -384,7 +363,7 @@ nsWSRunObject::InsertText(const nsAString& aStringToInsert,
 }
 
 nsresult
-nsWSRunObject::DeleteWSBackward()
+WSRunObject::DeleteWSBackward()
 {
   WSPoint point = GetCharBefore(mNode, mOffset);
   NS_ENSURE_TRUE(point.mTextNode, NS_OK);  
@@ -410,9 +389,9 @@ nsWSRunObject::DeleteWSBackward()
     nsCOMPtr<nsINode> startNode = startNodeText.get();
     nsCOMPtr<nsINode> endNode = endNodeText.get();
     nsresult res =
-      nsWSRunObject::PrepareToDeleteRange(mHTMLEditor,
-                                          address_of(startNode), &startOffset,
-                                          address_of(endNode), &endOffset);
+      WSRunObject::PrepareToDeleteRange(mHTMLEditor,
+                                        address_of(startNode), &startOffset,
+                                        address_of(endNode), &endOffset);
     NS_ENSURE_SUCCESS(res, res);
 
     
@@ -423,9 +402,9 @@ nsWSRunObject::DeleteWSBackward()
     int32_t startOffset = point.mOffset;
     int32_t endOffset = point.mOffset + 1;
     nsresult res =
-      nsWSRunObject::PrepareToDeleteRange(mHTMLEditor,
-                                          address_of(node), &startOffset,
-                                          address_of(node), &endOffset);
+      WSRunObject::PrepareToDeleteRange(mHTMLEditor,
+                                        address_of(node), &startOffset,
+                                        address_of(node), &endOffset);
     NS_ENSURE_SUCCESS(res, res);
 
     
@@ -435,7 +414,7 @@ nsWSRunObject::DeleteWSBackward()
 }
 
 nsresult
-nsWSRunObject::DeleteWSForward()
+WSRunObject::DeleteWSForward()
 {
   WSPoint point = GetCharAfter(mNode, mOffset);
   NS_ENSURE_TRUE(point.mTextNode, NS_OK); 
@@ -459,7 +438,7 @@ nsWSRunObject::DeleteWSForward()
 
     
     nsCOMPtr<nsINode> startNode(startNodeText), endNode(endNodeText);
-    nsresult res = nsWSRunObject::PrepareToDeleteRange(mHTMLEditor,
+    nsresult res = WSRunObject::PrepareToDeleteRange(mHTMLEditor,
         address_of(startNode), &startOffset, address_of(endNode), &endOffset);
     NS_ENSURE_SUCCESS(res, res);
 
@@ -470,7 +449,7 @@ nsWSRunObject::DeleteWSForward()
     
     int32_t startOffset = point.mOffset;
     int32_t endOffset = point.mOffset+1;
-    nsresult res = nsWSRunObject::PrepareToDeleteRange(mHTMLEditor,
+    nsresult res = WSRunObject::PrepareToDeleteRange(mHTMLEditor,
         address_of(node), &startOffset, address_of(node), &endOffset);
     NS_ENSURE_SUCCESS(res, res);
 
@@ -481,11 +460,11 @@ nsWSRunObject::DeleteWSForward()
 }
 
 void
-nsWSRunObject::PriorVisibleNode(nsINode* aNode,
-                                int32_t aOffset,
-                                nsCOMPtr<nsINode>* outVisNode,
-                                int32_t* outVisOffset,
-                                WSType* outType)
+WSRunObject::PriorVisibleNode(nsINode* aNode,
+                              int32_t aOffset,
+                              nsCOMPtr<nsINode>* outVisNode,
+                              int32_t* outVisOffset,
+                              WSType* outType)
 {
   
   
@@ -525,11 +504,11 @@ nsWSRunObject::PriorVisibleNode(nsINode* aNode,
 
 
 void
-nsWSRunObject::NextVisibleNode(nsINode* aNode,
-                               int32_t aOffset,
-                               nsCOMPtr<nsINode>* outVisNode,
-                               int32_t* outVisOffset,
-                               WSType* outType)
+WSRunObject::NextVisibleNode(nsINode* aNode,
+                             int32_t aOffset,
+                             nsCOMPtr<nsINode>* outVisNode,
+                             int32_t* outVisOffset,
+                             WSType* outType)
 {
   
   
@@ -568,7 +547,7 @@ nsWSRunObject::NextVisibleNode(nsINode* aNode,
 }
 
 nsresult
-nsWSRunObject::AdjustWhitespace()
+WSRunObject::AdjustWhitespace()
 {
   
   
@@ -597,7 +576,7 @@ nsWSRunObject::AdjustWhitespace()
 
 
 nsINode*
-nsWSRunObject::GetWSBoundingParent()
+WSRunObject::GetWSBoundingParent()
 {
   NS_ENSURE_TRUE(mNode, nullptr);
   OwningNonNull<nsINode> wsBoundingParent = *mNode;
@@ -612,7 +591,7 @@ nsWSRunObject::GetWSBoundingParent()
 }
 
 nsresult
-nsWSRunObject::GetWSNodes()
+WSRunObject::GetWSNodes()
 {
   
   
@@ -838,7 +817,7 @@ nsWSRunObject::GetWSNodes()
 }
 
 void
-nsWSRunObject::GetRuns()
+WSRunObject::GetRuns()
 {
   ClearRuns();
 
@@ -968,7 +947,7 @@ nsWSRunObject::GetRuns()
 }
 
 void
-nsWSRunObject::ClearRuns()
+WSRunObject::ClearRuns()
 {
   WSFragment *tmp, *run;
   run = mStartRun;
@@ -983,7 +962,7 @@ nsWSRunObject::ClearRuns()
 }
 
 void
-nsWSRunObject::MakeSingleWSRun(WSType aType)
+WSRunObject::MakeSingleWSRun(WSType aType)
 {
   mStartRun = new WSFragment();
 
@@ -999,8 +978,8 @@ nsWSRunObject::MakeSingleWSRun(WSType aType)
 }
 
 nsIContent*
-nsWSRunObject::GetPreviousWSNodeInner(nsINode* aStartNode,
-                                      nsINode* aBlockParent)
+WSRunObject::GetPreviousWSNodeInner(nsINode* aStartNode,
+                                    nsINode* aBlockParent)
 {
   
   
@@ -1038,8 +1017,8 @@ nsWSRunObject::GetPreviousWSNodeInner(nsINode* aStartNode,
 }
 
 nsIContent*
-nsWSRunObject::GetPreviousWSNode(EditorDOMPoint aPoint,
-                                 nsINode* aBlockParent)
+WSRunObject::GetPreviousWSNode(EditorDOMPoint aPoint,
+                               nsINode* aBlockParent)
 {
   
   
@@ -1083,8 +1062,8 @@ nsWSRunObject::GetPreviousWSNode(EditorDOMPoint aPoint,
 }
 
 nsIContent*
-nsWSRunObject::GetNextWSNodeInner(nsINode* aStartNode,
-                                  nsINode* aBlockParent)
+WSRunObject::GetNextWSNodeInner(nsINode* aStartNode,
+                                nsINode* aBlockParent)
 {
   
   
@@ -1122,7 +1101,8 @@ nsWSRunObject::GetNextWSNodeInner(nsINode* aStartNode,
 }
 
 nsIContent*
-nsWSRunObject::GetNextWSNode(EditorDOMPoint aPoint, nsINode* aBlockParent)
+WSRunObject::GetNextWSNode(EditorDOMPoint aPoint,
+                           nsINode* aBlockParent)
 {
   
   
@@ -1166,7 +1146,7 @@ nsWSRunObject::GetNextWSNode(EditorDOMPoint aPoint, nsINode* aBlockParent)
 }
 
 nsresult
-nsWSRunObject::PrepareToDeleteRangePriv(nsWSRunObject* aEndObject)
+WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
 {
   
   
@@ -1234,7 +1214,7 @@ nsWSRunObject::PrepareToDeleteRangePriv(nsWSRunObject* aEndObject)
 }
 
 nsresult
-nsWSRunObject::PrepareToSplitAcrossBlocksPriv()
+WSRunObject::PrepareToSplitAcrossBlocksPriv()
 {
   
   
@@ -1278,9 +1258,11 @@ nsWSRunObject::PrepareToSplitAcrossBlocksPriv()
 }
 
 nsresult
-nsWSRunObject::DeleteChars(nsINode* aStartNode, int32_t aStartOffset,
-                           nsINode* aEndNode, int32_t aEndOffset,
-                           AreaRestriction aAR)
+WSRunObject::DeleteChars(nsINode* aStartNode,
+                         int32_t aStartOffset,
+                         nsINode* aEndNode,
+                         int32_t aEndOffset,
+                         AreaRestriction aAR)
 {
   
   
@@ -1367,8 +1349,9 @@ nsWSRunObject::DeleteChars(nsINode* aStartNode, int32_t aStartOffset,
   return NS_OK;
 }
 
-nsWSRunObject::WSPoint
-nsWSRunObject::GetCharAfter(nsINode* aNode, int32_t aOffset)
+WSRunObject::WSPoint
+WSRunObject::GetCharAfter(nsINode* aNode,
+                          int32_t aOffset)
 {
   MOZ_ASSERT(aNode);
 
@@ -1382,8 +1365,9 @@ nsWSRunObject::GetCharAfter(nsINode* aNode, int32_t aOffset)
   }
 }
 
-nsWSRunObject::WSPoint
-nsWSRunObject::GetCharBefore(nsINode* aNode, int32_t aOffset)
+WSRunObject::WSPoint
+WSRunObject::GetCharBefore(nsINode* aNode,
+                           int32_t aOffset)
 {
   MOZ_ASSERT(aNode);
 
@@ -1397,8 +1381,8 @@ nsWSRunObject::GetCharBefore(nsINode* aNode, int32_t aOffset)
   }
 }
 
-nsWSRunObject::WSPoint
-nsWSRunObject::GetCharAfter(const WSPoint &aPoint)
+WSRunObject::WSPoint
+WSRunObject::GetCharAfter(const WSPoint &aPoint)
 {
   MOZ_ASSERT(aPoint.mTextNode);
 
@@ -1427,8 +1411,8 @@ nsWSRunObject::GetCharAfter(const WSPoint &aPoint)
   return outPoint;
 }
 
-nsWSRunObject::WSPoint
-nsWSRunObject::GetCharBefore(const WSPoint &aPoint)
+WSRunObject::WSPoint
+WSRunObject::GetCharBefore(const WSPoint &aPoint)
 {
   MOZ_ASSERT(aPoint.mTextNode);
 
@@ -1461,7 +1445,7 @@ nsWSRunObject::GetCharBefore(const WSPoint &aPoint)
 }
 
 nsresult
-nsWSRunObject::ConvertToNBSP(WSPoint aPoint, AreaRestriction aAR)
+WSRunObject::ConvertToNBSP(WSPoint aPoint, AreaRestriction aAR)
 {
   
   
@@ -1500,9 +1484,13 @@ nsWSRunObject::ConvertToNBSP(WSPoint aPoint, AreaRestriction aAR)
 }
 
 void
-nsWSRunObject::GetAsciiWSBounds(int16_t aDir, nsINode* aNode, int32_t aOffset,
-                                Text** outStartNode, int32_t* outStartOffset,
-                                Text** outEndNode, int32_t* outEndOffset)
+WSRunObject::GetAsciiWSBounds(int16_t aDir,
+                              nsINode* aNode,
+                              int32_t aOffset,
+                              Text** outStartNode,
+                              int32_t* outStartOffset,
+                              Text** outEndNode,
+                              int32_t* outEndOffset)
 {
   MOZ_ASSERT(aNode && outStartNode && outStartOffset && outEndNode &&
              outEndOffset);
@@ -1559,8 +1547,10 @@ nsWSRunObject::GetAsciiWSBounds(int16_t aDir, nsINode* aNode, int32_t aOffset,
 
 
 void
-nsWSRunObject::FindRun(nsINode* aNode, int32_t aOffset, WSFragment** outRun,
-                       bool after)
+WSRunObject::FindRun(nsINode* aNode,
+                     int32_t aOffset,
+                     WSFragment** outRun,
+                     bool after)
 {
   MOZ_ASSERT(aNode && outRun);
   *outRun = nullptr;
@@ -1604,7 +1594,8 @@ nsWSRunObject::FindRun(nsINode* aNode, int32_t aOffset, WSFragment** outRun,
 }
 
 char16_t
-nsWSRunObject::GetCharAt(Text* aTextNode, int32_t aOffset)
+WSRunObject::GetCharAt(Text* aTextNode,
+                       int32_t aOffset)
 {
   
   NS_ENSURE_TRUE(aTextNode, 0);
@@ -1616,8 +1607,9 @@ nsWSRunObject::GetCharAt(Text* aTextNode, int32_t aOffset)
   return aTextNode->GetText()->CharAt(aOffset);
 }
 
-nsWSRunObject::WSPoint
-nsWSRunObject::GetWSPointAfter(nsINode* aNode, int32_t aOffset)
+WSRunObject::WSPoint
+WSRunObject::GetWSPointAfter(nsINode* aNode,
+                             int32_t aOffset)
 {
   
 
@@ -1665,8 +1657,9 @@ nsWSRunObject::GetWSPointAfter(nsINode* aNode, int32_t aOffset)
   }
 }
 
-nsWSRunObject::WSPoint
-nsWSRunObject::GetWSPointBefore(nsINode* aNode, int32_t aOffset)
+WSRunObject::WSPoint
+WSRunObject::GetWSPointBefore(nsINode* aNode,
+                              int32_t aOffset)
 {
   
 
@@ -1717,7 +1710,7 @@ nsWSRunObject::GetWSPointBefore(nsINode* aNode, int32_t aOffset)
 }
 
 nsresult
-nsWSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
+WSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
 {
   
   
@@ -1833,8 +1826,9 @@ nsWSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
 }
 
 nsresult
-nsWSRunObject::CheckTrailingNBSP(WSFragment* aRun, nsINode* aNode,
-                                 int32_t aOffset)
+WSRunObject::CheckTrailingNBSP(WSFragment* aRun,
+                               nsINode* aNode,
+                               int32_t aOffset)
 {
   
   
@@ -1872,8 +1866,9 @@ nsWSRunObject::CheckTrailingNBSP(WSFragment* aRun, nsINode* aNode,
 }
 
 nsresult
-nsWSRunObject::CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
-                                int32_t aOffset)
+WSRunObject::CheckLeadingNBSP(WSFragment* aRun,
+                              nsINode* aNode,
+                              int32_t aOffset)
 {
   
   
@@ -1914,7 +1909,7 @@ nsWSRunObject::CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
 
 
 nsresult
-nsWSRunObject::Scrub()
+WSRunObject::Scrub()
 {
   WSFragment *run = mStartRun;
   while (run)
@@ -1930,8 +1925,10 @@ nsWSRunObject::Scrub()
 }
 
 bool
-nsWSRunObject::IsBlockNode(nsINode* aNode)
+WSRunObject::IsBlockNode(nsINode* aNode)
 {
   return aNode && aNode->IsElement() &&
          nsHTMLEditor::NodeIsBlockStatic(aNode->AsElement());
 }
+
+} 

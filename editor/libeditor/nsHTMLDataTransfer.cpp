@@ -10,6 +10,7 @@
 #include "HTMLEditUtils.h"
 #include "SelectionState.h"
 #include "TextEditUtils.h"
+#include "WSRunObject.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/DOMStringList.h"
@@ -81,7 +82,6 @@
 #include "nsSubstringTuple.h"
 #include "nsTextEditRules.h"
 #include "nsTreeSanitizer.h"
-#include "nsWSRunObject.h"
 #include "nsXPCOM.h"
 #include "nscore.h"
 #include "nsContentUtils.h"
@@ -389,7 +389,7 @@ nsHTMLEditor::DoInsertHTMLWithContext(const nsAString & aInputString,
     
     
     
-    nsWSRunObject wsObj(this, parentNode, offsetOfNewNode);
+    WSRunObject wsObj(this, parentNode, offsetOfNewNode);
     if (wsObj.mEndReasonNode &&
         TextEditUtils::IsBreak(wsObj.mEndReasonNode) &&
         !IsVisBreak(wsObj.mEndReasonNode)) {
@@ -647,7 +647,7 @@ nsHTMLEditor::DoInsertHTMLWithContext(const nsAString & aInputString,
       }
 
       
-      nsWSRunObject wsRunObj(this, selNode, selOffset);
+      WSRunObject wsRunObj(this, selNode, selOffset);
       nsCOMPtr<nsINode> visNode;
       int32_t outVisOffset=0;
       WSType visType;
@@ -665,7 +665,7 @@ nsHTMLEditor::DoInsertHTMLWithContext(const nsAString & aInputString,
           
           selNode = GetNodeLocation(GetAsDOMNode(wsRunObj.mStartReasonNode), &selOffset);
           
-          nsWSRunObject wsRunObj(this, selNode, selOffset);
+          WSRunObject wsRunObj(this, selNode, selOffset);
           selNode_ = do_QueryInterface(selNode);
           wsRunObj.PriorVisibleNode(selNode_, selOffset, address_of(visNode),
                                     &outVisOffset, &visType);
