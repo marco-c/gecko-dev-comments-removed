@@ -140,7 +140,7 @@ TextComposition::OnCompositionEventDiscarded(
 
   if (mTabParent) {
     
-    unused << mTabParent->SendCompositionEvent(*aCompositionEvent);
+    Unused << mTabParent->SendCompositionEvent(*aCompositionEvent);
   }
 
   
@@ -218,7 +218,7 @@ TextComposition::DispatchCompositionEvent(
   
   
   if (mTabParent) {
-    unused << mTabParent->SendCompositionEvent(*aCompositionEvent);
+    Unused << mTabParent->SendCompositionEvent(*aCompositionEvent);
     aCompositionEvent->mFlags.mPropagationStopped = true;
     if (aCompositionEvent->CausesDOMTextEvent()) {
       mLastData = aCompositionEvent->mData;
@@ -386,7 +386,7 @@ TextComposition::HandleSelectionEvent(nsPresContext* aPresContext,
   
   
   if (aTabParent) {
-    unused << aTabParent->SendSelectionEvent(*aSelectionEvent);
+    Unused << aTabParent->SendSelectionEvent(*aSelectionEvent);
     aSelectionEvent->mFlags.mPropagationStopped = true;
     return;
   }

@@ -323,8 +323,8 @@ Shmem::AssertInvariants() const
   char checkMappingBack = *(reinterpret_cast<char*>(mData) + mSize - 1);
 
   
-  unused << checkMappingFront;
-  unused << checkMappingBack;
+  Unused << checkMappingFront;
+  Unused << checkMappingBack;
 }
 
 void

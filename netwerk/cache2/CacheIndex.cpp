@@ -3023,7 +3023,7 @@ CacheIndex::FinishUpdate(bool aSucceeded)
       NS_WARNING(("CacheIndex::FinishUpdate() - Leaking mDirEnumerator!"));
       
       
-      unused << mDirEnumerator.forget(); 
+      Unused << mDirEnumerator.forget(); 
     } else {
       mDirEnumerator->Close();
       mDirEnumerator = nullptr;

@@ -630,7 +630,7 @@ CamerasChild::Shutdown()
       
       
       media::NewRunnableFrom([this]() -> nsresult {
-        unused << this->SendAllDone();
+        Unused << this->SendAllDone();
         return NS_OK;
       });
     CamerasSingleton::Thread()->Dispatch(deleteRunnable, NS_DISPATCH_NORMAL);

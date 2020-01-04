@@ -565,7 +565,7 @@ nsresult nsNPAPIPluginInstance::SetWindow(NPWindow* window)
     
     
     
-    mozilla::unused << error;
+    mozilla::Unused << error;
 
     mInPluginInitCall = oldVal;
 

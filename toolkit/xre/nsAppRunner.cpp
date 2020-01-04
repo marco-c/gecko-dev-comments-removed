@@ -257,7 +257,7 @@ int (*RunGTest)() = 0;
 } 
 
 using namespace mozilla;
-using mozilla::unused;
+using mozilla::Unused;
 using mozilla::scache::StartupCache;
 using mozilla::dom::ContentParent;
 using mozilla::dom::ContentChild;
@@ -4481,7 +4481,7 @@ XRE_CreateStatsObject()
   
   base::StatisticsRecorder* statistics_recorder = new base::StatisticsRecorder();
   MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(statistics_recorder);
-  unused << statistics_recorder;
+  Unused << statistics_recorder;
 }
 
 int

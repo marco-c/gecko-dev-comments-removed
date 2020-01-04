@@ -168,7 +168,7 @@ InstallSigSysHandler(void)
   struct sigaction act;
 
   
-  unused << sandbox::Trap::Registry();
+  Unused << sandbox::Trap::Registry();
 
   
   
@@ -439,7 +439,7 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
                       signum, oldHandler);
     MOZ_CRASH();
   }
-  unused << closedir(taskdp);
+  Unused << closedir(taskdp);
   
   SetThreadSandbox();
   gSetSandboxFilter = nullptr;

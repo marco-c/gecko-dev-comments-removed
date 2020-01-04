@@ -222,8 +222,8 @@ void RunWriter(void* arg)
   tmpFilePath.AppendLiteral(".tmp");
 
   
-  unused << PR_Delete(tmpFilePath.get());
-  unused << PR_Delete(destinationPath.get());
+  Unused << PR_Delete(tmpFilePath.get());
+  Unused << PR_Delete(destinationPath.get());
 
   while (true) {
     
@@ -530,7 +530,7 @@ nsTerminator::UpdateCrashReport(const char* aTopic)
   
   nsAutoCString report(aTopic);
 
-  unused << CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ShutdownProgress"),
+  Unused << CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ShutdownProgress"),
                                                report);
 #endif 
 }

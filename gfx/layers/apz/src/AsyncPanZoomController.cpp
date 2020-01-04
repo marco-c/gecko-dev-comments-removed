@@ -902,7 +902,7 @@ AsyncPanZoomController::Destroy()
   PCompositorParent* compositor = GetSharedFrameMetricsCompositor();
   
   if (compositor && mSharedFrameMetricsBuffer) {
-    unused << compositor->SendReleaseSharedCompositorFrameMetrics(mFrameMetrics.GetScrollId(), mAPZCId);
+    Unused << compositor->SendReleaseSharedCompositorFrameMetrics(mFrameMetrics.GetScrollId(), mAPZCId);
   }
 
   { 

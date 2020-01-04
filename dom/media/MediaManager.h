@@ -134,7 +134,7 @@ public:
 
   ~GetUserMediaCallbackMediaStreamListener()
   {
-    unused << mMediaThread;
+    Unused << mMediaThread;
     
     
   }

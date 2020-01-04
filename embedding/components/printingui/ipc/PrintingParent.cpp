@@ -118,9 +118,9 @@ PrintingParent::RecvShowPrintDialog(PPrintSettingsDialogParent* aDialog,
   
   
   if (NS_FAILED(rv)) {
-    mozilla::unused << aDialog->Send__delete__(aDialog, rv);
+    mozilla::Unused << aDialog->Send__delete__(aDialog, rv);
   } else {
-    mozilla::unused << aDialog->Send__delete__(aDialog, resultData);
+    mozilla::Unused << aDialog->Send__delete__(aDialog, resultData);
   }
   return true;
 }

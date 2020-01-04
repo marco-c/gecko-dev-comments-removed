@@ -439,12 +439,12 @@ nsPerformanceStatsService::Dispose()
   
   js::DisposePerformanceMonitoring(mRuntime);
 
-  mozilla::unused << js::SetStopwatchIsMonitoringCPOW(mRuntime, false);
-  mozilla::unused << js::SetStopwatchIsMonitoringJank(mRuntime, false);
+  mozilla::Unused << js::SetStopwatchIsMonitoringCPOW(mRuntime, false);
+  mozilla::Unused << js::SetStopwatchIsMonitoringJank(mRuntime, false);
 
-  mozilla::unused << js::SetStopwatchStartCallback(mRuntime, nullptr, nullptr);
-  mozilla::unused << js::SetStopwatchCommitCallback(mRuntime, nullptr, nullptr);
-  mozilla::unused << js::SetGetPerformanceGroupsCallback(mRuntime, nullptr, nullptr);
+  mozilla::Unused << js::SetStopwatchStartCallback(mRuntime, nullptr, nullptr);
+  mozilla::Unused << js::SetStopwatchCommitCallback(mRuntime, nullptr, nullptr);
+  mozilla::Unused << js::SetGetPerformanceGroupsCallback(mRuntime, nullptr, nullptr);
 
   
   
@@ -674,7 +674,7 @@ nsPerformanceStatsService::GetSnapshot(JSContext* cx, nsIPerformanceSnapshot * *
   js::GetPerfMonitoringTestCpuRescheduling(JS_GetRuntime(cx), &mProcessStayed, &mProcessMoved);
 
   if (++mProcessUpdateCounter % 10 == 0) {
-    mozilla::unused << UpdateTelemetry();
+    mozilla::Unused << UpdateTelemetry();
   }
 
   snapshot.forget(aSnapshot);
@@ -986,7 +986,7 @@ nsPerformanceGroup::nsPerformanceGroup(nsPerformanceStatsService* service,
   , mService(service)
   , mScope(scope)
 {
-  mozilla::unused << mService->mGroups.PutEntry(this);
+  mozilla::Unused << mService->mGroups.PutEntry(this);
 
 #if defined(DEBUG)
   if (scope == GroupScope::ADDON) {

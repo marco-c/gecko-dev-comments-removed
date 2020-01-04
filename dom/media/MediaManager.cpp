@@ -1691,7 +1691,7 @@ MediaManager::NotifyRecordingStatusChange(nsPIDOMWindow* aWindow,
   
   
   if (!XRE_IsParentProcess()) {
-    unused <<
+    Unused <<
       dom::ContentChild::GetSingleton()->SendRecordingDeviceEvents(aMsg,
                                                                    requestURL,
                                                                    aIsAudio,

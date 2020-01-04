@@ -157,7 +157,7 @@ protected:
             event->PostTo(mQueue);
             if (event->isInList()) {
                 
-                mozilla::unused << event.release();
+                mozilla::Unused << event.release();
             }
             lock.NotifyAll();
         }

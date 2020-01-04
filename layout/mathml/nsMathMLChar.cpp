@@ -2033,7 +2033,7 @@ void nsDisplayMathMLCharDebug::Paint(nsDisplayListBuilder* aBuilder,
 
   
   
-  unused <<
+  Unused <<
     nsCSSRendering::PaintBorder(presContext, *aCtx, mFrame, mVisibleRect,
                                 rect, styleContext, flags, skipSides);
 

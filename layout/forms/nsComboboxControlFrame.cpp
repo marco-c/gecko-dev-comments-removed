@@ -843,7 +843,7 @@ nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
   if (NS_SUCCEEDED(aPresContext->PresShell()->PostReflowCallback(resize))) {
     
     
-    unused << resize.forget();
+    Unused << resize.forget();
   }
 
   

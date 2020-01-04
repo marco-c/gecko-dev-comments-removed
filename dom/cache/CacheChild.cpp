@@ -124,7 +124,7 @@ CacheChild::StartDestroy()
   MOZ_ASSERT(!mListener);
 
   
-  unused << SendTeardown();
+  Unused << SendTeardown();
 }
 
 void

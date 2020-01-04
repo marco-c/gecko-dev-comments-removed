@@ -108,7 +108,7 @@ NfcConsumer::Start()
   
   
   
-  unused << NS_WARN_IF(property_set("ctl.stop", "nfcd") < 0);
+  Unused << NS_WARN_IF(property_set("ctl.stop", "nfcd") < 0);
 
   mHandler = new NfcMessageHandler();
 
@@ -592,8 +592,8 @@ NfcService::Shutdown()
   }
 
   
-  unused << mNfcConsumer.forget();
-  unused << mThread.forget();
+  Unused << mNfcConsumer.forget();
+  Unused << mThread.forget();
 
   return NS_OK;
 }

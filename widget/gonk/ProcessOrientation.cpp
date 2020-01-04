@@ -325,9 +325,9 @@ ProcessOrientation::OnSensorChanged(const SensorData& event,
 
   
   
-  unused << isAccelerating;
-  unused << isFlat;
-  unused << isSwinging;
+  Unused << isAccelerating;
+  Unused << isFlat;
+  Unused << isSwinging;
 
   
   if (mProposedRotation != oldProposedRotation && mProposedRotation >= 0) {

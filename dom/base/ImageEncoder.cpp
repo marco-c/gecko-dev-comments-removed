@@ -210,7 +210,7 @@ public:
     rv = NS_DispatchToMainThread(mEncodingCompleteEvent);
     if (NS_FAILED(rv)) {
       
-      unused << mEncodingCompleteEvent.forget();
+      Unused << mEncodingCompleteEvent.forget();
       return rv;
     }
 

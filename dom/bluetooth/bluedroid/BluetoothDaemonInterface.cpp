@@ -445,7 +445,7 @@ BluetoothDaemonInterface::Init(
   
   
   
-  unused << NS_WARN_IF(property_set("ctl.stop", "bluetoothd"));
+  Unused << NS_WARN_IF(property_set("ctl.stop", "bluetoothd"));
 
   mResultHandlerQ.AppendElement(aRes);
 
@@ -1006,7 +1006,7 @@ BluetoothDaemonInterface::OnConnectError(int aIndex)
       mCmdChannel->Close();
     case CMD_CHANNEL:
       
-      unused << NS_WARN_IF(property_set("ctl.stop", "bluetoothd"));
+      Unused << NS_WARN_IF(property_set("ctl.stop", "bluetoothd"));
       mListenSocket->Close();
     case LISTEN_SOCKET:
       if (!mResultHandlerQ.IsEmpty()) {

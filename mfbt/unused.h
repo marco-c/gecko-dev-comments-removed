@@ -24,7 +24,7 @@ struct unused_t
   operator<<(const T& ) const {}
 };
 
-extern MFBT_DATA const unused_t unused;
+extern MFBT_DATA const unused_t Unused;
 
 } 
 

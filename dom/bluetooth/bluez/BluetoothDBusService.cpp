@@ -1234,7 +1234,7 @@ AppendDeviceName(BluetoothSignal& aSignal)
 
   NS_ENSURE_TRUE_VOID(success);
 
-  unused << handler.forget(); 
+  Unused << handler.forget(); 
 }
 
 class SetPairingConfirmationTask : public Task
@@ -1660,7 +1660,7 @@ private:
 
     NS_ENSURE_TRUE(success, false);
 
-    unused << handler.forget(); 
+    Unused << handler.forget(); 
 
     return true;
   }
@@ -1699,7 +1699,7 @@ public:
 
     NS_ENSURE_TRUE_VOID(success);
 
-    unused << handler.forget(); 
+    Unused << handler.forget(); 
   }
 };
 
@@ -2390,7 +2390,7 @@ protected:
       return false;
     }
 
-    unused << handler.forget(); 
+    Unused << handler.forget(); 
 
     return true;
   }
@@ -2450,7 +2450,7 @@ public:
       DBUS_TYPE_INVALID);
     NS_ENSURE_TRUE_VOID(success);
 
-    unused << handler.forget(); 
+    Unused << handler.forget(); 
   }
 
 private:
@@ -2523,7 +2523,7 @@ public:
       DBUS_TYPE_INVALID);
     NS_ENSURE_TRUE_VOID(success);
 
-    unused << mRunnable.forget(); 
+    Unused << mRunnable.forget(); 
   }
 
 private:
@@ -2791,7 +2791,7 @@ protected:
 
     NS_ENSURE_TRUE(success, false);
 
-    unused << handler.forget(); 
+    Unused << handler.forget(); 
 
     return true;
   }
@@ -2954,7 +2954,7 @@ public:
       1000, msg);
     NS_ENSURE_TRUE_VOID(success);
 
-    unused << mRunnable.forget(); 
+    Unused << mRunnable.forget(); 
   }
 
 private:
@@ -3099,7 +3099,7 @@ public:
       DBUS_TYPE_INVALID);
     NS_ENSURE_TRUE_VOID(success);
 
-    unused << mRunnable.forget(); 
+    Unused << mRunnable.forget(); 
 
     
 
@@ -3168,7 +3168,7 @@ public:
       DBUS_TYPE_INVALID);
     NS_ENSURE_TRUE_VOID(success);
 
-    unused << mRunnable.forget(); 
+    Unused << mRunnable.forget(); 
   }
 
 protected:
@@ -3622,7 +3622,7 @@ public:
       DBUS_TYPE_INVALID);
     NS_ENSURE_TRUE_VOID(success);
 
-    unused << handler.forget(); 
+    Unused << handler.forget(); 
   }
 
 private:
@@ -3927,7 +3927,7 @@ public:
       DBUS_TYPE_INVALID);
     NS_ENSURE_TRUE_VOID(success);
 
-    unused << mRunnable.forget(); 
+    Unused << mRunnable.forget(); 
   }
 
 private:
@@ -4057,7 +4057,7 @@ public:
       DBUS_TYPE_INVALID);
     NS_ENSURE_TRUE_VOID(success);
 
-    unused << mRunnable.forget(); 
+    Unused << mRunnable.forget(); 
   }
 
 private:

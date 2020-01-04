@@ -407,7 +407,7 @@ nsBindingManager::DoProcessAttachedQueue()
       NS_ADDREF_THIS();
       
       
-      unused << timer.forget().take();
+      Unused << timer.forget().take();
     }
   }
 

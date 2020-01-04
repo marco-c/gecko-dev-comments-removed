@@ -73,7 +73,7 @@ SendCursorRequest(const IPCMobileMessageCursor& aRequest,
   
   
   RefPtr<MobileMessageCursorChild> actorCopy(actor);
-  mozilla::unused << actorCopy.forget().take();
+  mozilla::Unused << actorCopy.forget().take();
 
   smsChild->SendPMobileMessageCursorConstructor(actor, aRequest);
 

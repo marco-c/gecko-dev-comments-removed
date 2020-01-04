@@ -1343,7 +1343,7 @@ nsImageFrame::DisplayAltFeedback(nsRenderingContext& aRenderingContext,
     
     MOZ_ASSERT(recessedBorder.mBorderImageSource.GetType() == eStyleImageType_Null);
 
-    unused <<
+    Unused <<
       nsCSSRendering::PaintBorderWithStyleBorder(PresContext(), aRenderingContext,
                                                  this, inner, inner,
                                                  recessedBorder, mStyleContext,

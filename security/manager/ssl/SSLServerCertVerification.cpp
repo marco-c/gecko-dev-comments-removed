@@ -454,7 +454,7 @@ CertErrorRunnable::CheckCertOverrides()
                                     mFdForLogging, this));
   
   
-  unused << mFdForLogging;
+  Unused << mFdForLogging;
 
   if (!NS_IsMainThread()) {
     NS_ERROR("CertErrorRunnable::CheckCertOverrides called off main thread");

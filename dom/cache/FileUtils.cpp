@@ -187,7 +187,7 @@ BodyCancelWrite(nsIFile* aBaseDir, nsISupports* aCopyContext)
   MOZ_ASSERT(aCopyContext);
 
   nsresult rv = NS_CancelAsyncCopy(aCopyContext, NS_ERROR_ABORT);
-  unused << NS_WARN_IF(NS_FAILED(rv));
+  Unused << NS_WARN_IF(NS_FAILED(rv));
 
   
   

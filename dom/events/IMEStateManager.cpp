@@ -417,7 +417,7 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
       ("ISM:   IMEStateManager::OnChangeFocusInternal(), notifying previous "
        "focused child process of parent process or another child process "
        "getting focus"));
-    unused << sActiveTabParent->SendStopIMEStateManagement();
+    Unused << sActiveTabParent->SendStopIMEStateManagement();
   }
 
   nsCOMPtr<nsIWidget> widget =
@@ -445,7 +445,7 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
       
       
       
-      unused << newTabParent->
+      Unused << newTabParent->
         SendMenuKeyboardListenerInstalled(sInstalledMenuKeyboardListener);
       setIMEState = sInstalledMenuKeyboardListener;
     } else if (focusActuallyChanging) {

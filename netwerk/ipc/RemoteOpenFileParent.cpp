@@ -53,7 +53,7 @@ RemoteOpenFileParent::OpenSendCloseDelete()
   }
 
   
-  unused << Send__delete__(this, fileDescriptor);
+  Unused << Send__delete__(this, fileDescriptor);
 
   
 #endif 

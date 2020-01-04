@@ -237,7 +237,7 @@ AutoStopwatch::~AutoStopwatch()
         return;
     }
 
-    mozilla::unused << exit(); 
+    mozilla::Unused << exit(); 
 
     for (auto group = groups_.begin(); group < groups_.end(); group++)
         releaseGroup(*group);

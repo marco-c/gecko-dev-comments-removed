@@ -452,7 +452,7 @@ bool TestDataStructuresParent::RecvTest18(RegionArray&& ra)
         
         
         
-        while (const nsIntRect* sr = it.Next()) unused << sr;
+        while (const nsIntRect* sr = it.Next()) Unused << sr;
     }
 
     return true;

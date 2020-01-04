@@ -112,7 +112,7 @@ VRHMDManager::ManagerInit()
   
   
   bool useOculus050 = true;
-  unused << useOculus050;
+  Unused << useOculus050;
 
 #if defined(XP_WIN)
   mgr = new VRHMDManagerOculus();

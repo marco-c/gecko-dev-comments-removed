@@ -2380,7 +2380,7 @@ public:
     if (!NS_IsMainThread() && mConnection) {
       MOZ_ASSERT(false);
       
-      unused << mConnection.forget().take();
+      Unused << mConnection.forget().take();
     }
   }
 

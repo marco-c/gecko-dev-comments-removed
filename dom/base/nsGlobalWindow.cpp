@@ -11623,7 +11623,7 @@ nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
     }
 
     
-    unused << copy.forget();
+    Unused << copy.forget();
   } else {
     
     
@@ -12029,7 +12029,7 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
       
       
       MOZ_ASSERT(dummy_timeout->HasRefCntOne(), "dummy_timeout may leak");
-      unused << timeoutExtraRef.forget().take();
+      Unused << timeoutExtraRef.forget().take();
 
       mTimeoutInsertionPoint = last_insertion_point;
 

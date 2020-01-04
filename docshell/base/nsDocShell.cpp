@@ -5107,7 +5107,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     
     
     if (mScriptGlobal) {
-      unused << mScriptGlobal->GetDoc();
+      Unused << mScriptGlobal->GetDoc();
     }
 
     

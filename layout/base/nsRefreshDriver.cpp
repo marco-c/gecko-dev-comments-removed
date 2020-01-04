@@ -393,7 +393,7 @@ private:
       
       
       
-      unused << mVsyncChild->SendUnobserve();
+      Unused << mVsyncChild->SendUnobserve();
       mVsyncChild->SetVsyncObserver(nullptr);
       mVsyncChild = nullptr;
     }
@@ -412,7 +412,7 @@ private:
     if (XRE_IsParentProcess()) {
       mVsyncDispatcher->SetParentRefreshTimer(mVsyncObserver);
     } else {
-      unused << mVsyncChild->SendObserve();
+      Unused << mVsyncChild->SendObserve();
     }
   }
 
@@ -421,7 +421,7 @@ private:
     if (XRE_IsParentProcess()) {
       mVsyncDispatcher->SetParentRefreshTimer(nullptr);
     } else {
-      unused << mVsyncChild->SendUnobserve();
+      Unused << mVsyncChild->SendUnobserve();
     }
   }
 

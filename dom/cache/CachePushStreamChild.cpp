@@ -192,7 +192,7 @@ CachePushStreamChild::DoRead()
 
     
     if (!buffer.IsEmpty()) {
-      unused << SendBuffer(buffer);
+      Unused << SendBuffer(buffer);
     }
 
     if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
@@ -255,7 +255,7 @@ CachePushStreamChild::OnEnd(nsresult aRv)
   }
 
   
-  unused << SendClose(aRv);
+  Unused << SendClose(aRv);
 }
 
 } 

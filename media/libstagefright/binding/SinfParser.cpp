@@ -39,7 +39,7 @@ SinfParser::ParseSchm(Box& aBox)
     return;
   }
 
-  mozilla::unused << reader->ReadU32(); 
+  mozilla::Unused << reader->ReadU32(); 
   mSinf.mDefaultEncryptionType = reader->ReadU32();
 
   reader->DiscardRemaining();
@@ -64,7 +64,7 @@ SinfParser::ParseTenc(Box& aBox)
     return;
   }
 
-  mozilla::unused << reader->ReadU32(); 
+  mozilla::Unused << reader->ReadU32(); 
 
   uint32_t isEncrypted = reader->ReadU24();
   mSinf.mDefaultIVSize = reader->ReadU8();

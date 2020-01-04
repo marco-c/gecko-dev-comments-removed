@@ -95,7 +95,7 @@ MediaSystemResourceService::Acquire(media::MediaSystemResourceManagerParent* aPa
       resource->mResourceCount == 0) {
     
     
-    mozilla::unused << aParent->SendResponse(aId, false );
+    mozilla::Unused << aParent->SendResponse(aId, false );
     return;
   }
 
@@ -105,12 +105,12 @@ MediaSystemResourceService::Acquire(media::MediaSystemResourceManagerParent* aPa
     resource->mAcquiredRequests.push_back(
       MediaSystemResourceRequest(aParent, aId));
     
-    mozilla::unused << aParent->SendResponse(aId, true );
+    mozilla::Unused << aParent->SendResponse(aId, true );
     return;
   } else if (!aWillWait) {
     
     
-    mozilla::unused << aParent->SendResponse(aId, false );
+    mozilla::Unused << aParent->SendResponse(aId, false );
     return;
   }
   
@@ -246,7 +246,7 @@ MediaSystemResourceService::UpdateRequests(MediaSystemResourceType aResourceType
     MediaSystemResourceRequest& request = waitingRequests.front();
     MOZ_ASSERT(request.mParent);
     
-    mozilla::unused << request.mParent->SendResponse(request.mId, true );
+    mozilla::Unused << request.mParent->SendResponse(request.mId, true );
     
     acquiredRequests.push_back(waitingRequests.front());
     waitingRequests.pop_front();

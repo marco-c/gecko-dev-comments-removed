@@ -117,7 +117,7 @@ CrossProcessMutex::~CrossProcessMutex()
 
   if (count == 0) {
     
-    unused << pthread_mutex_destroy(mMutex);
+    Unused << pthread_mutex_destroy(mMutex);
   }
 
   MOZ_COUNT_DTOR(CrossProcessMutex);

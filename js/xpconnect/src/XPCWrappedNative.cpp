@@ -996,7 +996,7 @@ XPCWrappedNative::SystemIsBeingShutDown()
         }
         
         
-        unused << to->TakeNative().take();
+        Unused << to->TakeNative().take();
         to->SetInterface(nullptr);
     }
 

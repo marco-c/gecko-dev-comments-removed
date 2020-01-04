@@ -25,7 +25,7 @@ nsHtml5Atom::nsHtml5Atom(const nsAString& aString)
   NS_ASSERTION(Equals(aString), "correct data");
 
   
-  mozilla::unused << buf.forget();
+  mozilla::Unused << buf.forget();
 }
 
 nsHtml5Atom::~nsHtml5Atom()

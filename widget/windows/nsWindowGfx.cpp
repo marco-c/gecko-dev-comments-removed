@@ -205,7 +205,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     PluginInstanceParent* instance = reinterpret_cast<PluginInstanceParent*>(
       ::GetPropW(mWnd, L"PluginInstanceParentProperty"));
     if (instance) {
-      unused << instance->CallUpdateWindow();
+      Unused << instance->CallUpdateWindow();
     } else {
       
       

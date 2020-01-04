@@ -368,7 +368,7 @@ AtomImpl::AtomImpl(const nsAString& aString, uint32_t aHash)
   NS_ASSERTION(Equals(aString), "correct data");
 
   
-  mozilla::unused << buf.forget();
+  mozilla::Unused << buf.forget();
 }
 
 AtomImpl::AtomImpl(nsStringBuffer* aStringBuffer, uint32_t aLength,
