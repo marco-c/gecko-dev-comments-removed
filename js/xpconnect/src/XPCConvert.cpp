@@ -820,9 +820,8 @@ XPCConvert::NativeInterface2JSObject(MutableHandleValue d,
     }
 
     
-    AutoMarkingNativeInterfacePtr iface(cx);
-
-    iface = XPCNativeInterface::GetNewOrUsed(iid);
+    RefPtr<XPCNativeInterface> iface =
+        XPCNativeInterface::GetNewOrUsed(iid);
     if (!iface)
         return false;
 
