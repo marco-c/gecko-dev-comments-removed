@@ -207,7 +207,7 @@ nsHTMLScrollFrame::GetType() const
 
 namespace mozilla {
 
-struct MOZ_STACK_CLASS ScrollReflowState {
+struct MOZ_STACK_CLASS ScrollReflowInput {
   const ReflowInput& mReflowState;
   nsBoxLayoutState mBoxState;
   ScrollbarStyles mStyles;
@@ -226,7 +226,7 @@ struct MOZ_STACK_CLASS ScrollReflowState {
   
   bool mShowVScrollbar;
 
-  ScrollReflowState(nsIScrollableFrame* aFrame,
+  ScrollReflowInput(nsIScrollableFrame* aFrame,
                     const ReflowInput& aState) :
     mReflowState(aState),
     
@@ -239,7 +239,7 @@ struct MOZ_STACK_CLASS ScrollReflowState {
 } 
 
 
-static nsSize ComputeInsideBorderSize(ScrollReflowState* aState,
+static nsSize ComputeInsideBorderSize(ScrollReflowInput* aState,
                                       const nsSize& aDesiredInsideBorderSize)
 {
   
@@ -315,7 +315,7 @@ GetScrollbarMetrics(nsBoxLayoutState& aState, nsIFrame* aBox, nsSize* aMin,
 
 
 bool
-nsHTMLScrollFrame::TryLayout(ScrollReflowState* aState,
+nsHTMLScrollFrame::TryLayout(ScrollReflowInput* aState,
                              nsHTMLReflowMetrics* aKidMetrics,
                              bool aAssumeHScroll, bool aAssumeVScroll,
                              bool aForce)
@@ -432,7 +432,7 @@ nsHTMLScrollFrame::TryLayout(ScrollReflowState* aState,
 
 
 bool
-nsHTMLScrollFrame::ScrolledContentDependsOnHeight(ScrollReflowState* aState)
+nsHTMLScrollFrame::ScrolledContentDependsOnHeight(ScrollReflowInput* aState)
 {
   
   
@@ -444,7 +444,7 @@ nsHTMLScrollFrame::ScrolledContentDependsOnHeight(ScrollReflowState* aState)
 }
 
 void
-nsHTMLScrollFrame::ReflowScrolledFrame(ScrollReflowState* aState,
+nsHTMLScrollFrame::ReflowScrolledFrame(ScrollReflowInput* aState,
                                        bool aAssumeHScroll,
                                        bool aAssumeVScroll,
                                        nsHTMLReflowMetrics* aMetrics,
@@ -587,7 +587,7 @@ nsHTMLScrollFrame::ReflowScrolledFrame(ScrollReflowState* aState,
 }
 
 bool
-nsHTMLScrollFrame::GuessHScrollbarNeeded(const ScrollReflowState& aState)
+nsHTMLScrollFrame::GuessHScrollbarNeeded(const ScrollReflowInput& aState)
 {
   if (aState.mStyles.mHorizontal != NS_STYLE_OVERFLOW_AUTO)
     
@@ -597,7 +597,7 @@ nsHTMLScrollFrame::GuessHScrollbarNeeded(const ScrollReflowState& aState)
 }
 
 bool
-nsHTMLScrollFrame::GuessVScrollbarNeeded(const ScrollReflowState& aState)
+nsHTMLScrollFrame::GuessVScrollbarNeeded(const ScrollReflowInput& aState)
 {
   if (aState.mStyles.mVertical != NS_STYLE_OVERFLOW_AUTO)
     
@@ -649,7 +649,7 @@ nsHTMLScrollFrame::InInitialReflow() const
 }
 
 void
-nsHTMLScrollFrame::ReflowContents(ScrollReflowState* aState,
+nsHTMLScrollFrame::ReflowContents(ScrollReflowInput* aState,
                                   const nsHTMLReflowMetrics& aDesiredSize)
 {
   nsHTMLReflowMetrics kidDesiredSize(aDesiredSize.GetWritingMode(), aDesiredSize.mFlags);
@@ -723,7 +723,7 @@ nsHTMLScrollFrame::ReflowContents(ScrollReflowState* aState,
 }
 
 void
-nsHTMLScrollFrame::PlaceScrollArea(const ScrollReflowState& aState,
+nsHTMLScrollFrame::PlaceScrollArea(const ScrollReflowInput& aState,
                                    const nsPoint& aScrollPosition)
 {
   nsIFrame *scrolledFrame = mHelper.mScrolledFrame;
@@ -844,7 +844,7 @@ nsHTMLScrollFrame::Reflow(nsPresContext*           aPresContext,
 
   mHelper.HandleScrollbarStyleSwitching();
 
-  ScrollReflowState state(this, aReflowState);
+  ScrollReflowInput state(this, aReflowState);
   
   
   if (!mHelper.mVScrollbarBox || mHelper.mNeverHasVerticalScrollbar)
