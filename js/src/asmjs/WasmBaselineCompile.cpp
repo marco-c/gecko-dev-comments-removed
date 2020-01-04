@@ -408,6 +408,8 @@ class BaseCompiler
 #endif
 
     
+    
+    
 
     RegI32 joinRegI32;
     RegI64 joinRegI64;
@@ -4618,7 +4620,8 @@ BaseCompiler::emitBrIf()
     
 
     
-    if (type == ExprType::I32)
+    
+    if (type == ExprType::I32 || type == ExprType::I64)
         needI32(joinRegI32);
 
     
@@ -4629,7 +4632,7 @@ BaseCompiler::emitBrIf()
     if (IsVoid(type))
         pushVoid();
 
-    if (type == ExprType::I32)
+    if (type == ExprType::I32 || type == ExprType::I64)
         freeI32(joinRegI32);
 
     
@@ -4681,7 +4684,8 @@ BaseCompiler::emitBrTable()
         return false;
 
     
-    if (type == ExprType::I32)
+    
+    if (type == ExprType::I32 || type == ExprType::I64)
         needI32(joinRegI32);
 
     
@@ -4692,7 +4696,7 @@ BaseCompiler::emitBrTable()
     if (IsVoid(type))
         pushVoid();
 
-    if (type == ExprType::I32)
+    if (type == ExprType::I32 || type == ExprType::I64)
         freeI32(joinRegI32);
 
     AnyReg r = popJoinReg();
