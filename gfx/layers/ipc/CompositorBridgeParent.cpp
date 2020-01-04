@@ -627,8 +627,6 @@ CompositorBridgeParent::CompositorBridgeParent(CSSToLayoutDeviceScale aScale,
   
   MOZ_ASSERT(NS_IsMainThread());
   SetMessageLoopToPostDestructionTo(MessageLoop::current());
-
-  CompositorLRU::Init();
 }
 
 void
