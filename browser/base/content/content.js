@@ -380,7 +380,7 @@ var ClickEventHandler = {
       return;
     }
 
-    let [href, node] = this._hrefAndLinkNodeForClickEvent(event);
+    let [href, node, principal] = this._hrefAndLinkNodeForClickEvent(event);
 
     
     
@@ -402,7 +402,7 @@ var ClickEventHandler = {
 
     if (href) {
       try {
-        BrowserUtils.urlSecurityCheck(href, node.ownerDocument.nodePrincipal);
+        BrowserUtils.urlSecurityCheck(href, principal);
       } catch (e) {
         return;
       }
@@ -493,6 +493,7 @@ var ClickEventHandler = {
 
 
 
+
   _hrefAndLinkNodeForClickEvent: function(event) {
     function isHTMLLink(aNode) {
       
@@ -507,7 +508,7 @@ var ClickEventHandler = {
     }
 
     if (node)
-      return [node.href, node];
+      return [node.href, node, node.ownerDocument.nodePrincipal];
 
     
     let href, baseURI;
@@ -517,6 +518,7 @@ var ClickEventHandler = {
         href = node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
         if (href)
           baseURI = node.ownerDocument.baseURIObject;
+        break;
       }
       node = node.parentNode;
     }
@@ -524,7 +526,8 @@ var ClickEventHandler = {
     
     
     
-    return [href ? BrowserUtils.makeURI(href, null, baseURI).spec : null, null];
+    return [href ? BrowserUtils.makeURI(href, null, baseURI).spec : null, null,
+            node && node.ownerDocument.nodePrincipal];
   }
 };
 ClickEventHandler.init();
