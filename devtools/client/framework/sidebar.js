@@ -144,7 +144,9 @@ ToolSidebar.prototype = {
     
     
     for (let [id, tab] of this._tabs) {
-      let item = this._addItemToAllTabsMenu(id, tab, tab.hasAttribute("selected"));
+      let item = this._addItemToAllTabsMenu(id, tab, {
+        selected: tab.hasAttribute("selected")
+      });
       if (tab.hidden) {
         item.hidden = true;
       }
@@ -179,23 +181,30 @@ ToolSidebar.prototype = {
   
 
 
-  _addItemToAllTabsMenu: function (id, tab, selected = false) {
+  _addItemToAllTabsMenu: function (id, tab, options) {
     if (!this._allTabsBtn) {
       return;
     }
 
     let item = this._panelDoc.createElementNS(XULNS, "menuitem");
-    item.setAttribute("id", "sidebar-alltabs-item-" + id);
+    let idPrefix = "sidebar-alltabs-item-";
+    item.setAttribute("id", idPrefix + id);
     item.setAttribute("label", tab.getAttribute("label"));
     item.setAttribute("type", "checkbox");
-    if (selected) {
+    if (options.selected) {
       item.setAttribute("checked", true);
     }
     
     
     item.setAttribute("autocheck", false);
 
-    this._allTabsBtn.querySelector("menupopup").appendChild(item);
+    let menu = this._allTabsBtn.querySelector("menupopup");
+    if (options.insertBefore) {
+      let referenceItem = menu.querySelector(`#${idPrefix}${options.insertBefore}`);
+      menu.insertBefore(item, referenceItem);
+    } else {
+      menu.appendChild(item);
+    }
 
     item.addEventListener("click", () => {
       this._tabbox.selectedTab = tab;
@@ -213,7 +222,11 @@ ToolSidebar.prototype = {
 
 
 
-  addTab: function (id, url, selected = false) {
+
+
+
+
+  addTab: function (id, url, options = {}) {
     let iframe = this._panelDoc.createElementNS(XULNS, "iframe");
     iframe.className = "iframe-" + id;
     iframe.setAttribute("flex", "1");
@@ -222,13 +235,21 @@ ToolSidebar.prototype = {
 
     
     let tab = this._panelDoc.createElementNS(XULNS, "tab");
-    this._tabbox.tabs.appendChild(tab);
-    tab.setAttribute("label", ""); 
+
     tab.setAttribute("id", this.TAB_ID_PREFIX + id);
     tab.setAttribute("crop", "end");
+    
+    tab.setAttribute("label", "");
+
+    if (options.insertBefore) {
+      let referenceTab = this.getTab(options.insertBefore);
+      this._tabbox.tabs.insertBefore(tab, referenceTab);
+    } else {
+      this._tabbox.tabs.appendChild(tab);
+    }
 
     
-    let allTabsItem = this._addItemToAllTabsMenu(id, tab, selected);
+    let allTabsItem = this._addItemToAllTabsMenu(id, tab, options);
 
     let onIFrameLoaded = (event) => {
       let doc = event.target;
@@ -251,7 +272,13 @@ ToolSidebar.prototype = {
     let tabpanel = this._panelDoc.createElementNS(XULNS, "tabpanel");
     tabpanel.setAttribute("id", this.TABPANEL_ID_PREFIX + id);
     tabpanel.appendChild(iframe);
-    this._tabbox.tabpanels.appendChild(tabpanel);
+
+    if (options.insertBefore) {
+      let referenceTabpanel = this.getTabPanel(options.insertBefore);
+      this._tabbox.tabpanels.insertBefore(tabpanel, referenceTabpanel);
+    } else {
+      this._tabbox.tabpanels.appendChild(tabpanel);
+    }
 
     this._tooltip = this._panelDoc.createElementNS(XULNS, "tooltip");
     this._tooltip.id = "aHTMLTooltip";
@@ -263,7 +290,7 @@ ToolSidebar.prototype = {
     
     this._tabs.set(id, tab);
 
-    if (selected) {
+    if (options.selected) {
       this._selectTabSoon(id);
     }
 
