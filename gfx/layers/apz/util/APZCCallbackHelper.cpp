@@ -422,34 +422,30 @@ APZCCallbackHelper::ApplyCallbackTransform(const CSSPoint& aInput,
     if (aGuid.mScrollId == FrameMetrics::NULL_SCROLL_ID) {
         return input;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     nsCOMPtr<nsIContent> content = nsLayoutUtils::FindContentFor(aGuid.mScrollId);
-    if (!content) {
-        return input;
-    }
-
-    
-    
-    
-    
-    
-    if (nsIPresShell* shell = GetRootContentDocumentPresShellForContent(content)) {
-        input = input / shell->GetResolution();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    void* property = content->GetProperty(nsGkAtoms::apzCallbackTransform);
-    if (property) {
-        CSSPoint delta = (*static_cast<CSSPoint*>(property));
+    if (content) {
+        void* property = content->GetProperty(nsGkAtoms::apzCallbackTransform);
+        CSSPoint delta = property ? (*static_cast<CSSPoint*>(property)) : CSSPoint(0.0f, 0.0f);
+        
+        
+        
+        float resolution = 1.0f;
+        if (nsIPresShell* shell = GetRootContentDocumentPresShellForContent(content)) {
+            resolution = shell->GetResolution();
+        }
+        delta.x = delta.x * resolution;
+        delta.y = delta.y * resolution;
         input += delta;
     }
     return input;

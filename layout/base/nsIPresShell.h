@@ -142,8 +142,8 @@ typedef struct CapturingContentInfo {
 
 
 #define NS_IPRESSHELL_IID \
-{ 0x327d78a0, 0x0680, 0x4709, \
-  { 0xb2, 0x09, 0x1c, 0xf9, 0x57, 0x87, 0x20, 0xe6 } }
+{ 0x5023beaa, 0x0e54, 0x4fc7, \
+  { 0xb9, 0xdc, 0x03, 0x44, 0xdc, 0x4f, 0xb8, 0xbe } }
 
 
 #define VERIFY_REFLOW_ON                    0x01
@@ -1416,6 +1416,7 @@ public:
   virtual nsresult SetResolution(float aResolution) = 0;
   float GetResolution() { return mResolution.valueOr(1.0); }
   virtual float GetCumulativeResolution() = 0;
+  virtual float GetCumulativeScaleResolution() = 0;
 
   
 
