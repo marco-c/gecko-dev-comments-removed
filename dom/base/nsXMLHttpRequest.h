@@ -41,7 +41,6 @@
 #undef Status
 #endif
 
-class AsyncVerifyRedirectCallbackForwarder;
 class nsFormData;
 class nsIJARChannel;
 class nsILoadGroup;
@@ -426,7 +425,8 @@ private:
     return Send(Nullable<RequestBody>(aBody));
   }
 
-  bool IsDeniedCrossSiteRequest();
+  bool IsCrossSiteCORSRequest();
+  bool IsDeniedCrossSiteCORSRequest();
 
   
   
@@ -620,18 +620,9 @@ protected:
 
   void ChangeStateToDone();
 
-  
-
-
-
-
-
-  void CheckChannelForCrossSiteRequest(nsIChannel* aChannel);
-
   void StartProgressEventTimer();
 
-  friend class AsyncVerifyRedirectCallbackForwarder;
-  void OnRedirectVerifyCallback(nsresult result);
+  nsresult OnRedirectVerifyCallback(nsresult result);
 
   nsresult Open(const nsACString& method, const nsACString& url, bool async,
                 const mozilla::dom::Optional<nsAString>& user,
@@ -840,6 +831,7 @@ private:
 
 class nsXMLHttpRequestXPCOMifier final : public nsIStreamListener,
                                          public nsIChannelEventSink,
+                                         public nsIAsyncVerifyRedirectCallback,
                                          public nsIProgressEventSink,
                                          public nsIInterfaceRequestor,
                                          public nsITimerCallback
@@ -864,6 +856,7 @@ public:
   NS_FORWARD_NSISTREAMLISTENER(mXHR->)
   NS_FORWARD_NSIREQUESTOBSERVER(mXHR->)
   NS_FORWARD_NSICHANNELEVENTSINK(mXHR->)
+  NS_FORWARD_NSIASYNCVERIFYREDIRECTCALLBACK(mXHR->)
   NS_FORWARD_NSIPROGRESSEVENTSINK(mXHR->)
   NS_FORWARD_NSITIMERCALLBACK(mXHR->)
 

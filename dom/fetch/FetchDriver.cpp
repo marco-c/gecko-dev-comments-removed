@@ -51,7 +51,6 @@ FetchDriver::FetchDriver(InternalRequest* aRequest, nsIPrincipal* aPrincipal,
   : mPrincipal(aPrincipal)
   , mLoadGroup(aLoadGroup)
   , mRequest(aRequest)
-  , mHasBeenCrossSite(false)
   , mResponseAvailableCalled(false)
   , mFetchCalled(false)
 {
@@ -87,61 +86,6 @@ FetchDriver::Fetch(FetchDriverObserver* aObserver)
 }
 
 nsresult
-FetchDriver::SetTainting()
-{
-  workers::AssertIsOnMainThread();
-
-  
-  if (mHasBeenCrossSite) {
-    return NS_OK;
-  }
-
-  nsAutoCString url;
-  mRequest->GetURL(url);
-  nsCOMPtr<nsIURI> requestURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(requestURI), url,
-                          nullptr, nullptr);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-
-  
-  
-  
-
-  
-  
-  if (NS_IsAboutBlank(requestURI) ||
-       NS_SUCCEEDED(mPrincipal->CheckMayLoad(requestURI, false ,
-                                             true ))) {
-    
-    
-    return NS_OK;
-  }
-
-  mHasBeenCrossSite = true;
-
-  
-  if (mRequest->Mode() == RequestMode::Same_origin) {
-    return NS_ERROR_DOM_BAD_URI;
-  }
-
-  
-  if (mRequest->Mode() == RequestMode::No_cors) {
-    mRequest->MaybeIncreaseResponseTainting(LoadTainting::Opaque);
-    
-    
-    return NS_OK;
-  }
-
-  
-  mRequest->MaybeIncreaseResponseTainting(LoadTainting::CORS);
-
-  return NS_OK;
-}
-
-nsresult
 FetchDriver::ContinueFetch()
 {
   workers::AssertIsOnMainThread();
@@ -152,6 +96,16 @@ FetchDriver::ContinueFetch()
   }
  
   return rv;
+}
+
+static void
+AddLoadFlags(nsIRequest *aRequest, nsLoadFlags aNewFlags)
+{
+  MOZ_ASSERT(aRequest);
+  nsLoadFlags flags;
+  aRequest->GetLoadFlags(&flags);
+  flags |= aNewFlags;
+  aRequest->SetLoadFlags(flags);
 }
 
 
@@ -186,9 +140,6 @@ FetchDriver::HttpFetch()
     return NS_ERROR_DOM_BAD_URI;
   }
 
-  rv = SetTainting();
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   
   
@@ -210,18 +161,6 @@ FetchDriver::HttpFetch()
   
   
   
-
-  
-  
-  
-  
-  
-  const nsLoadFlags credentialsFlag =
-    (mRequest->GetCredentialsMode() == RequestCredentials::Omit ||
-    (mHasBeenCrossSite &&
-     mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
-     mRequest->Mode() == RequestMode::No_cors)) ?
-    nsIRequest::LOAD_ANONYMOUS : 0;
 
   
   
@@ -254,7 +193,7 @@ FetchDriver::HttpFetch()
   MOZ_ASSERT(mLoadGroup);
   nsCOMPtr<nsIChannel> chan;
 
-  nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL | credentialsFlag |
+  nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL |
     bypassFlag | nsIChannel::LOAD_CLASSIFY_URI;
   if (mDocument) {
     MOZ_ASSERT(mDocument->NodePrincipal() == mPrincipal);
@@ -294,6 +233,17 @@ FetchDriver::HttpFetch()
   }
 #endif
   chan->SetNotificationCallbacks(this);
+
+  
+  
+  
+  
+  
+  if (mRequest->GetCredentialsMode() == RequestCredentials::Omit ||
+      (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
+       NS_HasBeenCrossOrigin(chan))) {
+    AddLoadFlags(chan, nsIRequest::LOAD_ANONYMOUS);
+  }
 
   
   
@@ -546,6 +496,23 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
   nsCOMPtr<nsIJARChannel> jarChannel = do_QueryInterface(aRequest);
 
+  
+  
+
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> newURI;
+  rv = NS_GetFinalChannelURI(channel, getter_AddRefs(newURI));
+  if (NS_FAILED(rv)) {
+    FailWithNetworkError();
+    return rv;
+  }
+  nsAutoCString newUrl;
+  newURI->GetSpec(newUrl);
+  mRequest->SetURL(newUrl);
+
   bool foundOpaqueRedirect = false;
 
   if (httpChannel) {
@@ -652,18 +619,13 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
     return rv;
   }
 
-  LoadTainting channelTainting = LoadTainting::Basic;
-  if (loadInfo) {
-    channelTainting = loadInfo->GetTainting();
-  }
-
   
   
   
   
   
   
-  mRequest->MaybeIncreaseResponseTainting(channelTainting);
+  mRequest->MaybeIncreaseResponseTainting(loadInfo->GetTainting());
 
   
   
@@ -745,94 +707,55 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 {
   NS_PRECONDITION(aNewChannel, "Redirect without a channel?");
 
-  if (NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags) ||
-      NS_IsHSTSUpgradeRedirect(aOldChannel, aNewChannel, aFlags)) {
-    aCallback->OnRedirectVerifyCallback(NS_OK);
-    return NS_OK;
+  
+  
+  MOZ_ASSERT(NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags) ||
+             NS_IsHSTSUpgradeRedirect(aOldChannel, aNewChannel, aFlags) ||
+             mRequest->GetRedirectMode() == RequestRedirect::Follow);
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
+      NS_HasBeenCrossOrigin(aNewChannel)) {
+    AddLoadFlags(aNewChannel, nsIRequest::LOAD_ANONYMOUS);
   }
 
-  
-  
-  MOZ_ASSERT(mRequest->GetRedirectMode() == RequestRedirect::Follow);
-
-  
-
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-
-  
-  
-  
-  nsCOMPtr<nsIURI> newURI;
-  nsresult rv = NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
-  if (NS_FAILED(rv)) {
-    aOldChannel->Cancel(rv);
-    return rv;
-  }
-
-  
-  nsAutoCString newUrl;
-  newURI->GetSpec(newUrl);
-  mRequest->SetURL(newUrl);
-
-  
-  rv = SetTainting();
-  if (NS_FAILED(rv)) {
-    aOldChannel->Cancel(rv);
-    return rv;
-  }
-
-  
-  
-  
-  
-  
-
-  
-  
-  
-
-  
-  if (mHasBeenCrossSite &&
-      mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
-      mRequest->Mode() == RequestMode::No_cors) {
-    
-    
-    
-    nsLoadFlags flags;
-    rv = aNewChannel->GetLoadFlags(&flags);
-    if (NS_SUCCEEDED(rv)) {
-      flags |= nsIRequest::LOAD_ANONYMOUS;
-      rv = aNewChannel->SetLoadFlags(flags);
-    }
-    if (NS_FAILED(rv)) {
-      aOldChannel->Cancel(rv);
-      return rv;
-    }
-  }
 #ifdef DEBUG
   {
     
@@ -842,7 +765,7 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
     aNewChannel->GetLoadFlags(&flags);
     bool shouldBeAnon =
       mRequest->GetCredentialsMode() == RequestCredentials::Omit ||
-      (mHasBeenCrossSite &&
+      (NS_HasBeenCrossOrigin(aNewChannel) &&
        mRequest->GetCredentialsMode() == RequestCredentials::Same_origin);
     MOZ_ASSERT(!!(flags & nsIRequest::LOAD_ANONYMOUS) == shouldBeAnon);
   }
