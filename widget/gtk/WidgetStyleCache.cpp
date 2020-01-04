@@ -9,6 +9,14 @@
 #include "WidgetStyleCache.h"
 #include "gtkdrawing.h"
 
+#define STATE_FLAG_DIR_LTR (1U << 7)
+#define STATE_FLAG_DIR_RTL (1U << 8)
+#if GTK_CHECK_VERSION(3,8,0)
+static_assert(GTK_STATE_FLAG_DIR_LTR == STATE_FLAG_DIR_LTR &&
+              GTK_STATE_FLAG_DIR_RTL == STATE_FLAG_DIR_RTL,
+              "incorrect direction state flags");
+#endif
+
 static GtkWidget* sWidgetStorage[MOZ_GTK_WIDGET_NODE_COUNT];
 static GtkStyleContext* sStyleStorage[MOZ_GTK_WIDGET_NODE_COUNT];
 
@@ -824,25 +832,49 @@ ClaimStyleContext(WidgetNodeType aNodeType, GtkTextDirection aDirection,
   MOZ_ASSERT(!sCurrentStyleContext);
   sCurrentStyleContext = style;
 #endif
+  bool stateChanged = false;
+  bool stateHasDirection = gtk_get_minor_version() >= 8;
   GtkStateFlags oldState = gtk_style_context_get_state(style);
-  GtkTextDirection oldDirection = gtk_style_context_get_direction(style);
-  if (oldState != aStateFlags || oldDirection != aDirection) {
-    
-    
-    gtk_style_context_set_state(style, aStateFlags);
-    gtk_style_context_set_direction(style, aDirection);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!sStyleContextNeedsRestore) {
-      gtk_style_context_invalidate(style);
+  MOZ_ASSERT(!(aStateFlags & (STATE_FLAG_DIR_LTR|STATE_FLAG_DIR_RTL)));
+  unsigned newState = aStateFlags;
+  if (stateHasDirection) {
+    switch (aDirection) {
+      case GTK_TEXT_DIR_LTR:
+        newState |= STATE_FLAG_DIR_LTR;
+        break;
+      case GTK_TEXT_DIR_RTL:
+        newState |= STATE_FLAG_DIR_RTL;
+        break;
+      default:
+        MOZ_FALLTHROUGH_ASSERT("Bad GtkTextDirection");
+      case GTK_TEXT_DIR_NONE:
+        
+        
+        
+        
+        newState |= oldState & (STATE_FLAG_DIR_LTR|STATE_FLAG_DIR_RTL);
     }
+  } else if (aDirection != GTK_TEXT_DIR_NONE) {
+    GtkTextDirection oldDirection = gtk_style_context_get_direction(style);
+    if (aDirection != oldDirection) {
+      gtk_style_context_set_direction(style, aDirection);
+      stateChanged = true;
+    }
+  }
+  if (oldState != newState) {
+    gtk_style_context_set_state(style, static_cast<GtkStateFlags>(newState));
+    stateChanged = true;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  if (stateChanged && !sStyleContextNeedsRestore) {
+    gtk_style_context_invalidate(style);
   }
   return style;
 }
