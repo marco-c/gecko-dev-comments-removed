@@ -316,20 +316,35 @@ public:
   }
 
   void SetOwningRule(Rule* aRule) {
-    MOZ_ASSERT(!mOwningRule || !aRule,
+    MOZ_ASSERT(!mContainer.mOwningRule || !aRule,
                "should never overwrite one rule with another");
-    mOwningRule = aRule;
+    mContainer.mOwningRule = aRule;
   }
 
-  Rule* GetOwningRule() { return mOwningRule; }
+  Rule* GetOwningRule() {
+    if (mContainer.mRaw & 0x1) {
+      return nullptr;
+    }
+    return mContainer.mOwningRule;
+  }
 
   void SetHTMLCSSStyleSheet(nsHTMLCSSStyleSheet* aHTMLCSSStyleSheet) {
-    MOZ_ASSERT(!mHTMLCSSStyleSheet || !aHTMLCSSStyleSheet,
+    MOZ_ASSERT(!mContainer.mHTMLCSSStyleSheet || !aHTMLCSSStyleSheet,
                "should never overwrite one sheet with another");
-    mHTMLCSSStyleSheet = aHTMLCSSStyleSheet;
+    mContainer.mHTMLCSSStyleSheet = aHTMLCSSStyleSheet;
+    if (aHTMLCSSStyleSheet) {
+      mContainer.mRaw |= uintptr_t(1);
+    }
   }
 
-  nsHTMLCSSStyleSheet* GetHTMLCSSStyleSheet() { return mHTMLCSSStyleSheet; }
+  nsHTMLCSSStyleSheet* GetHTMLCSSStyleSheet() {
+    if (!(mContainer.mRaw & 0x1)) {
+      return nullptr;
+    }
+    auto c = mContainer;
+    c.mRaw &= ~uintptr_t(1);
+    return c.mHTMLCSSStyleSheet;
+  }
 
   ImportantStyleData* GetImportantStyleData() {
     if (HasImportantData()) {
@@ -413,12 +428,22 @@ private:
   
   nsAutoPtr<CSSVariableDeclarations> mImportantVariables;
 
-  
-  Rule* mOwningRule;
+  union {
+    
+    
+    
 
-  
-  
-  nsHTMLCSSStyleSheet* mHTMLCSSStyleSheet;
+    
+
+    uintptr_t mRaw;
+
+    
+    Rule* mOwningRule;
+
+    
+    
+    nsHTMLCSSStyleSheet* mHTMLCSSStyleSheet;
+  } mContainer;
 
   friend class ImportantStyleData;
   ImportantStyleData mImportantStyleData;
