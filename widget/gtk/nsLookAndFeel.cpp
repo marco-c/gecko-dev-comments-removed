@@ -1095,7 +1095,19 @@ nsLookAndFeel::Init()
     
     
     
-    (void)gtk_settings_get_for_screen(gdk_screen_get_default());
+    GtkSettings *settings = gtk_settings_get_for_screen(gdk_screen_get_default());
+
+    
+    
+    
+    
+    const gchar* dark_setting = "gtk-application-prefer-dark-theme";
+    gboolean dark;
+    g_object_get(settings, dark_setting, &dark, nullptr);
+
+    if (dark) {
+        g_object_set(settings, dark_setting, FALSE, nullptr);
+    }
 
     GtkWidgetPath *path = gtk_widget_path_new();
     gtk_widget_path_append_type(path, GTK_TYPE_WINDOW);
