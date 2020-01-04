@@ -200,6 +200,15 @@
 
 
 
+#undef MALLOC_PROTECTED_REGIONS
+
+
+
+
+
+
+
+
 #if defined(MOZ_MEMORY_LINUX) && !defined(MOZ_MEMORY_ANDROID)
 #define	_GNU_SOURCE
 #if 0 
@@ -774,6 +783,28 @@ struct extent_node_s {
 };
 typedef rb_tree(extent_node_t) extent_tree_t;
 
+#ifdef MALLOC_PROTECTED_REGIONS
+
+typedef struct protected_node_s protected_node_t;
+struct protected_node_s {
+	
+	rb_node(protected_node_t) link_ad;
+
+	
+	rb_node(protected_node_t) link_id;
+
+	
+	uintptr_t	addr;
+
+	
+	size_t		size;
+
+	
+	uint32_t	id;
+};
+typedef rb_tree(protected_node_t) protected_tree_t;
+#endif 
+
 
 
 
@@ -1225,6 +1256,22 @@ static malloc_mutex_t	chunks_mtx;
 
 static extent_tree_t	chunks_szad_mmap;
 static extent_tree_t	chunks_ad_mmap;
+
+#ifdef MALLOC_PROTECTED_REGIONS
+
+static protected_node_t	*protected_nodes;
+
+
+static malloc_mutex_t	protected_tree_mtx;
+
+
+
+
+
+
+static protected_tree_t	protected_tree_ad;
+static protected_tree_t	protected_tree_id;
+#endif 
 
 
 static malloc_mutex_t	huge_mtx;
@@ -1904,7 +1951,7 @@ pow2_ceil(size_t x)
 	return (x);
 }
 
-#ifdef MALLOC_BALANCE
+#if defined(MALLOC_BALANCE) || defined(MALLOC_PROTECTED_REGIONS)
 
 
 
@@ -1953,6 +2000,12 @@ prn_##suffix(uint32_t lg_range)						\
 static __thread uint32_t balance_x;
 PRN_DEFINE(balance, balance_x, 1297, 1301)
 #endif
+
+#ifdef MALLOC_PROTECTED_REGIONS
+
+static uint32_t protected_id_x;
+PRN_DEFINE(protected_id, protected_id_x, 1297, 1301)
+#endif 
 
 #ifdef MALLOC_UTRACE
 static int
@@ -2355,6 +2408,36 @@ extent_ad_comp(extent_node_t *a, extent_node_t *b)
 
 rb_wrap(static, extent_tree_ad_, extent_tree_t, extent_node_t, link_ad,
     extent_ad_comp)
+
+
+
+
+
+
+
+
+
+#ifdef MALLOC_PROTECTED_REGIONS
+static inline int
+protected_ad_comp(protected_node_t *a, protected_node_t *b)
+{
+	return ((a->addr > b->addr) - (a->addr < b->addr));
+}
+
+
+rb_wrap(static, protected_tree_ad_, protected_tree_t, protected_node_t,
+	link_ad, protected_ad_comp)
+
+static inline int
+protected_id_comp(protected_node_t *a, protected_node_t *b)
+{
+	return ((a->id > b->id) - (a->id < b->id));
+}
+
+
+rb_wrap(static, protected_tree_id_, protected_tree_t, protected_node_t,
+	link_id, protected_id_comp)
+#endif 
 
 
 
@@ -4591,6 +4674,37 @@ isalloc(const void *ptr)
 	return (ret);
 }
 
+#ifdef MALLOC_PROTECTED_REGIONS
+static void
+assert_unprotected(void *p)
+{
+	uintptr_t addr;
+	protected_node_t key;
+	protected_node_t *node;
+
+	if (!p)
+		return;
+
+	addr = (uintptr_t)p;
+	key.addr = addr;
+
+	malloc_mutex_lock(&protected_tree_mtx);
+
+	node = protected_tree_ad_psearch(&protected_tree_ad, &key);
+	if (!node)
+		goto RETURN;
+
+	
+	if (addr >= node->addr && addr < node->addr + node->size)
+		jemalloc_crash();
+
+RETURN:
+	malloc_mutex_unlock(&protected_tree_mtx);
+}
+#else 
+static inline void assert_unprotected(void *p) { }
+#endif 
+
 static inline void
 arena_dalloc_small(arena_t *arena, arena_chunk_t *chunk, void *ptr,
     arena_chunk_map_t *mapelm)
@@ -4682,6 +4796,8 @@ arena_dalloc_small(arena_t *arena, arena_chunk_t *chunk, void *ptr,
 static void
 arena_dalloc_large(arena_t *arena, arena_chunk_t *chunk, void *ptr)
 {
+	assert_unprotected(ptr);
+
 	
 	malloc_spin_lock(&arena->lock);
 
@@ -4941,6 +5057,9 @@ iralloc(void *ptr, size_t size)
 	assert(size != 0);
 
 	oldsize = isalloc(ptr);
+
+	if (oldsize > bin_maxclass)
+		assert_unprotected(ptr);
 
 	if (size <= arena_maxclass)
 		return (arena_ralloc(ptr, size, oldsize));
@@ -5260,6 +5379,8 @@ static void
 huge_dalloc(void *ptr)
 {
 	extent_node_t *node, key;
+
+	assert_unprotected(ptr);
 
 	malloc_mutex_lock(&huge_mtx);
 
@@ -5916,6 +6037,16 @@ MALLOC_OUT:
 	extent_tree_szad_new(&chunks_szad_mmap);
 	extent_tree_ad_new(&chunks_ad_mmap);
 
+#ifdef MALLOC_PROTECTED_REGIONS
+	
+	protected_nodes = NULL;
+	malloc_mutex_init(&protected_tree_mtx);
+	protected_tree_ad_new(&protected_tree_ad);
+	protected_tree_id_new(&protected_tree_id);
+	
+	SPRN(protected_id, 42);
+#endif 
+
 	
 	malloc_mutex_init(&huge_mtx);
 	extent_tree_ad_new(&huge);
@@ -6128,6 +6259,88 @@ malloc_shutdown()
 	malloc_print_stats();
 }
 #endif
+
+#ifdef MALLOC_PROTECTED_REGIONS
+static protected_node_t *
+protected_node_alloc()
+{
+	protected_node_t *ret;
+
+	if (protected_nodes) {
+		ret = protected_nodes;
+		protected_nodes = *(protected_node_t **)ret;
+	} else {
+		ret = (protected_node_t *)base_alloc(sizeof(protected_node_t));
+	}
+
+	return (ret);
+}
+
+
+
+
+
+static void
+protected_node_dealloc(protected_node_t *node)
+{
+	*(protected_node_t **)node = protected_nodes;
+	protected_nodes = node;
+}
+
+static void
+create_protected_region(void *p, uint32_t *id)
+{
+	protected_node_t *key;
+	protected_node_t *node;
+	size_t size = isalloc(p);
+	uintptr_t addr = (uintptr_t)p;
+
+	malloc_mutex_lock(&protected_tree_mtx);
+
+	key = protected_node_alloc();
+	key->addr = addr;
+	key->size = size;
+	key->id = PRN(protected_id, 32);
+
+	
+	node = protected_tree_ad_search(&protected_tree_ad, key);
+	if (node)
+		jemalloc_crash();
+
+	
+	while (key->id < 2 || protected_tree_id_search(&protected_tree_id, key))
+		key->id = PRN(protected_id, 32);
+
+	*id = key->id;
+	protected_tree_ad_insert(&protected_tree_ad, key);
+	protected_tree_id_insert(&protected_tree_id, key);
+
+	malloc_mutex_unlock(&protected_tree_mtx);
+}
+
+static void
+remove_protected_region(void *p, uint32_t *id)
+{
+	protected_node_t key;
+	protected_node_t *node;
+	uintptr_t addr = (uintptr_t)p;
+	key.addr = addr;
+
+	malloc_mutex_lock(&protected_tree_mtx);
+
+	node = protected_tree_ad_search(&protected_tree_ad, &key);
+
+	
+	if (!node || node->id != *id)
+		jemalloc_crash();
+
+	protected_tree_ad_remove(&protected_tree_ad, node);
+	protected_tree_id_remove(&protected_tree_id, node);
+	protected_node_dealloc(node);
+
+	malloc_mutex_unlock(&protected_tree_mtx);
+}
+#endif 
 
 
 
@@ -6489,13 +6702,44 @@ free_impl(void *ptr)
 
 
 
-
 #if defined(MOZ_MEMORY_DARWIN) && !defined(MOZ_REPLACE_MALLOC)
-static
+#  define MAYBE_MEMORY_API static inline
 #else
-MOZ_MEMORY_API
+#  define MAYBE_MEMORY_API MOZ_MEMORY_API
 #endif
-size_t
+
+#ifdef MALLOC_PROTECTED_REGIONS
+MAYBE_MEMORY_API void
+malloc_protect_impl(void *ptr, uint32_t *id)
+{
+	if (ptr)
+		create_protected_region(ptr, id);
+}
+
+MAYBE_MEMORY_API void
+malloc_unprotect_impl(void *ptr, uint32_t *id)
+{
+	if (ptr)
+		remove_protected_region(ptr, id);
+	*id = 0;
+}
+#else 
+MAYBE_MEMORY_API void
+malloc_protect_impl(void *ptr, uint32_t *id)
+{
+	if (ptr)
+		*id = 1;
+}
+
+MAYBE_MEMORY_API void
+malloc_unprotect_impl(void *ptr, uint32_t *id)
+{
+	*id = 0;
+}
+#endif 
+
+
+MAYBE_MEMORY_API size_t
 malloc_good_size_impl(size_t size)
 {
 	
