@@ -1304,7 +1304,7 @@ this.PlacesUtils = {
       let conn = yield this.promiseDBConnection();
       const QUERY_STR = `SELECT b.id FROM moz_bookmarks b
                          JOIN moz_places h on h.id = b.fk
-                         WHERE h.url = :url`;
+                         WHERE h.url_hash = hash(:url) AND h.url = :url`;
       let spec = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
       yield conn.executeCached(QUERY_STR, { url: spec }, aRow => {
         if (abort)
@@ -1885,29 +1885,35 @@ XPCOMUtils.defineLazyGetter(this, "bundle", function() {
 function setupDbForShutdown(conn, name) {
   try {
     let state = "0. Not started.";
-    let promiseClosed = new Promise(resolve => {
+    let promiseClosed = new Promise((resolve, reject) => {
       
       
       
-      AsyncShutdown.placesClosingInternalConnection.addBlocker(`${name} closing as part of Places shutdown`,
-        Task.async(function*() {
-          state = "1. Service has initiated shutdown";
+      try {
+        AsyncShutdown.placesClosingInternalConnection.addBlocker(`${name} closing as part of Places shutdown`,
+          Task.async(function*() {
+            state = "1. Service has initiated shutdown";
 
-          
-          
-          yield conn.close();
-          state = "2. Closed Sqlite.jsm connection.";
+            
+            
+            yield conn.close();
+            state = "2. Closed Sqlite.jsm connection.";
 
-          resolve();
-        }),
-        () => state
-      );
+            resolve();
+          }),
+          () => state
+        );
+      } catch (ex) {
+        
+        conn.close();
+        reject(ex);
+      }
     });
 
     
     
     Sqlite.shutdown.addBlocker(`${name} must be closed before Sqlite.jsm`,
-      () => promiseClosed,
+      () => promiseClosed.catch(Cu.reportError),
       () => state
     );
   } catch(ex) {
@@ -1924,7 +1930,7 @@ XPCOMUtils.defineLazyGetter(this, "gAsyncDBConnPromised",
   }).then(conn => {
       setupDbForShutdown(conn, "PlacesUtils read-only connection");
       return conn;
-  })
+  }).catch(Cu.reportError)
 );
 
 XPCOMUtils.defineLazyGetter(this, "gAsyncDBWrapperPromised",
@@ -1933,7 +1939,7 @@ XPCOMUtils.defineLazyGetter(this, "gAsyncDBWrapperPromised",
   }).then(conn => {
     setupDbForShutdown(conn, "PlacesUtils wrapped connection");
     return conn;
-  })
+  }).catch(Cu.reportError)
 );
 
 
@@ -2061,7 +2067,7 @@ var Keywords = {
         if (oldEntry) {
           yield db.executeCached(
             `UPDATE moz_keywords
-             SET place_id = (SELECT id FROM moz_places WHERE url = :url),
+             SET place_id = (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url),
                  post_data = :post_data
              WHERE keyword = :keyword
             `, { url: url.href, keyword: keyword, post_data: postData });
@@ -2070,13 +2076,15 @@ var Keywords = {
           
           
           yield db.executeCached(
-            `INSERT OR IGNORE INTO moz_places (url, rev_host, hidden, frecency, guid)
-             VALUES (:url, :rev_host, 0, :frecency, GENERATE_GUID())
+            `INSERT OR IGNORE INTO moz_places (url, url_hash, rev_host, hidden, frecency, guid)
+             VALUES (:url, hash(:url), :rev_host, 0, :frecency,
+                     IFNULL((SELECT guid FROM moz_places WHERE url_hash = hash(:url) AND url = :url),
+                            GENERATE_GUID()))
             `, { url: url.href, rev_host: PlacesUtils.getReversedHost(url),
                  frecency: url.protocol == "place:" ? 0 : -1 });
           yield db.executeCached(
             `INSERT INTO moz_keywords (keyword, place_id, post_data)
-             VALUES (:keyword, (SELECT id FROM moz_places WHERE url = :url), :post_data)
+             VALUES (:keyword, (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url), :post_data)
             `, { url: url.href, keyword: keyword, post_data: postData });
         }
 
