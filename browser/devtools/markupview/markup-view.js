@@ -2203,9 +2203,6 @@ function MarkupElementContainer(markupView, node) {
   }
 
   this.tagLine.appendChild(this.editor.elt);
-
-  
-  this._prepareImagePreview();
 }
 
 MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
@@ -2237,31 +2234,38 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
 
 
 
-  _prepareImagePreview: function() {
-    if (this.isPreviewable()) {
-      
-      
-      let def = promise.defer();
 
-      let hasSrc = this.editor.getAttributeElement("src");
-      this.tooltipData = {
-        target: hasSrc ? hasSrc.querySelector(".link") : this.editor.tag,
-        data: def.promise
-      };
 
-      let maxDim = Services.prefs.getIntPref("devtools.inspector.imagePreviewTooltipSize");
-      this.node.getImageData(maxDim).then(data => {
-        data.data.string().then(str => {
-          let res = {data: str, size: data.size};
-          
-          
-          def.resolve(res);
-          this.tooltipData.data = promise.resolve(res);
-        });
-      }, () => {
-        this.tooltipData.data = promise.resolve({});
-      });
+
+
+
+
+  _getPreview: function() {
+    if (!this.isPreviewable()) {
+      return promise.reject("_getPreview called on a non-previewable element.");
     }
+
+    if (this.tooltipDataPromise) {
+      
+      return this.tooltipDataPromise;
+    }
+
+    let maxDim =
+      Services.prefs.getIntPref("devtools.inspector.imagePreviewTooltipSize");
+
+    
+    this.tooltipDataPromise = Task.spawn(function*() {
+      let preview = yield this.node.getImageData(maxDim);
+      let data = yield preview.data.string();
+
+      
+      
+      this.tooltipDataPromise = null;
+
+      return { data, size: preview.size };
+    }.bind(this));
+
+    return this.tooltipDataPromise;
   },
 
   
@@ -2274,16 +2278,26 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
 
 
   isImagePreviewTarget: function(target, tooltip) {
-    if (!this.tooltipData || this.tooltipData.target !== target) {
+    
+    if (!this.isPreviewable()) {
       return promise.reject(false);
     }
 
-    return this.tooltipData.data.then(({data, size}) => {
-      if (data && size) {
-        tooltip.setImageContent(data, size);
-      } else {
-        tooltip.setBrokenImageContent();
-      }
+    
+    
+    
+    let src = this.editor.getAttributeElement("src");
+    let expectedTarget = src ? src.querySelector(".link") : this.editor.tag;
+    if (target !== expectedTarget) {
+      return promise.reject(false);
+    }
+
+    return this._getPreview().then(({data, size}) => {
+      
+      tooltip.setImageContent(data, size);
+    }, () => {
+      
+      tooltip.setBrokenImageContent();
     });
   },
 
