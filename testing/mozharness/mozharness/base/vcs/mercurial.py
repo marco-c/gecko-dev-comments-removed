@@ -4,7 +4,11 @@
 
 
 
-"""Mercurial VCS support."""
+"""Mercurial VCS support.
+
+Largely copied/ported from
+https://hg.mozilla.org/build/tools/file/cf265ea8fb5e/lib/python/util/hg.py .
+"""
 
 import os
 import re
@@ -15,16 +19,10 @@ from urlparse import urlsplit
 import sys
 sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.dirname(sys.path[0]))))
 
-import mozharness
 from mozharness.base.errors import HgErrorList, VCSException
-from mozharness.base.log import LogMixin, OutputParser
+from mozharness.base.log import LogMixin
 from mozharness.base.script import ScriptMixin
 from mozharness.base.transfer import TransferMixin
-
-external_tools_path = os.path.join(
-    os.path.abspath(os.path.dirname(os.path.dirname(mozharness.__file__))),
-    'external_tools',
-)
 
 HG_OPTIONS = ['--config', 'ui.merge=internal:merge']
 
@@ -33,17 +31,6 @@ HG_OPTIONS = ['--config', 'ui.merge=internal:merge']
 
 
 REVISION, BRANCH = 0, 1
-
-
-class RepositoryUnrelatedParser(OutputParser):
-    """Parse `hg pull` output for "repository unrelated" errors."""
-    unrelated = False
-
-    def parse_single_line(self, line):
-        if 'abort: repository is unrelated' in line:
-            self.unrelated = True
-
-        return super(RepositoryUnrelatedParser, self).parse_single_line(line)
 
 
 def make_hg_url(hg_host, repo_path, protocol='http', revision=None,
@@ -318,14 +305,130 @@ class MercurialVCS(ScriptMixin, LogMixin, TransferMixin):
             raise VCSException("Can't push %s to %s!" % (src, remote))
         return status
 
-    @property
-    def purgelong_path(self):
-        """Path to the purgelong extension."""
-        ext = os.path.join(external_tools_path, 'purgelong.py')
-        if os.path.exists(ext):
-            return ext
+    
+    def query_can_share(self):
+        if self.can_share is not None:
+            return self.can_share
+        
+        self.can_share = True
+        try:
+            self.info("Checking if share extension works.")
+            output = self.get_output_from_command(self.hg + ['help', 'share'],
+                                                  silent=True,
+                                                  throw_exception=True)
+            if 'no commands defined' in output:
+                
+                self.warning("Disabling sharing since share extension doesn't seem to work (1)")
+                self.can_share = False
+            elif 'unknown command' in output or 'hg help extensions' in output:
+                
+                self.warning("Disabling sharing since share extension doesn't seem to work (2)")
+                self.can_share = False
+        except subprocess.CalledProcessError:
+            
+            self.warning("Disabling sharing since share extension doesn't seem to work (3)")
+            self.can_share = False
+        if self.can_share:
+            self.info("hg share works.")
+        return self.can_share
 
-        return None
+    def _ensure_shared_repo_and_revision(self, share_base):
+        """The shared dir logic is complex enough to warrant its own
+        helper method.
+
+        If allow_unshared_local_clones is True and we're trying to use the
+        share extension but fail, then we will be able to clone from the
+        shared repo to our destination.  If this is False, the default, the
+        if we don't have the share extension we will just clone from the
+        remote repository.
+        """
+        c = self.vcs_config
+        dest = os.path.abspath(c['dest'])
+        repo = c['repo']
+        revision = c.get('revision')
+        branch = c.get('branch')
+        if not self.query_can_share():
+            raise VCSException("%s called when sharing is not allowed!" % __name__)
+
+        
+        
+        
+        
+        
+        
+        
+        if os.path.exists(dest):
+            sppath = os.path.join(dest, ".hg", "sharedpath")
+            if not os.path.exists(sppath):
+                self.info("No file %s; removing %s." % (sppath, dest))
+                self.rmtree(dest)
+        if not os.path.exists(os.path.dirname(dest)):
+            self.mkdir_p(os.path.dirname(dest))
+        shared_repo = os.path.join(share_base, self.get_repo_path(repo))
+        dest_shared_path = os.path.join(dest, '.hg', 'sharedpath')
+        if os.path.exists(dest_shared_path):
+            
+            dest_shared_path_data = os.path.realpath(open(dest_shared_path).read())
+            norm_shared_repo = os.path.realpath(os.path.join(shared_repo, '.hg'))
+            if dest_shared_path_data != norm_shared_repo:
+                
+                self.info("We're currently shared from %s, but are being requested to pull from %s (%s); clobbering" % (dest_shared_path_data, repo, norm_shared_repo))
+                self.rmtree(dest)
+
+        self.info("Updating shared repo")
+        if os.path.exists(shared_repo):
+            try:
+                self.pull(repo, shared_repo)
+            except VCSException:
+                self.warning("Error pulling changes into %s from %s; clobbering" % (shared_repo, repo))
+                self.exception(level='debug')
+                self.clone(repo, shared_repo)
+        else:
+            self.clone(repo, shared_repo)
+
+        if os.path.exists(dest):
+            try:
+                self.pull(shared_repo, dest)
+                status = self.update(dest, branch=branch, revision=revision)
+                return status
+            except VCSException:
+                self.rmtree(dest)
+        try:
+            self.info("Trying to share %s to %s" % (shared_repo, dest))
+            return self.share(shared_repo, dest, branch=branch, revision=revision)
+        except VCSException:
+            if not c.get('allow_unshared_local_clones'):
+                
+                
+                
+                raise
+
+        self.warning("Error calling hg share from %s to %s; falling back to normal clone from shared repo" % (shared_repo, dest))
+        
+        
+        
+        
+        try:
+            self.clone(shared_repo, dest, update_dest=False)
+            return self.update(dest, branch=branch, revision=revision)
+        except VCSException:
+            
+            self.error("Error updating %s from shared_repo (%s): " % (dest, shared_repo))
+            self.exception(level='error')
+            self.rmtree(dest)
+
+    def share(self, source, dest, branch=None, revision=None):
+        """Creates a new working directory in "dest" that shares history
+        with "source" using Mercurial's share extension
+        """
+        self.info("Sharing %s to %s." % (source, dest))
+        self.mkdir_p(dest)
+        if self.run_command(self.hg + ['share', '-U', source, dest],
+                            error_list=HgErrorList):
+            raise VCSException("Unable to share %s to %s!" % (source, dest))
+        return self.update(dest, branch=branch, revision=revision)
+
+    
 
     def ensure_repo_and_revision(self):
         """Makes sure that `dest` is has `revision` or `branch` checked out
@@ -335,150 +438,41 @@ class MercurialVCS(ScriptMixin, LogMixin, TransferMixin):
         dest.
         """
         c = self.vcs_config
-
-        dest = c['dest']
-        repo_url = c['repo']
-        rev = c.get('revision')
+        for conf_item in ('dest', 'repo'):
+            assert self.vcs_config[conf_item]
+        dest = os.path.abspath(c['dest'])
+        repo = c['repo']
+        revision = c.get('revision')
         branch = c.get('branch')
-        purge = c.get('clone_with_purge', False)
-        upstream = c.get('clone_upstream_url')
+        share_base = c.get('vcs_share_base',
+                           os.environ.get("HG_SHARE_BASE_DIR", None))
+        msg = "Setting %s to %s" % (dest, repo)
+        if branch:
+            msg += " on branch %s" % branch
+        if revision:
+            msg += " revision %s" % revision
+        if share_base:
+            msg += " using shared directory %s" % share_base
+        self.info("%s." % msg)
+        if share_base and not self.query_can_share():
+            share_base = None
+
+        if share_base:
+            return self._ensure_shared_repo_and_revision(share_base)
 
         
-        
-        
-        
-        if not rev and not branch:
-            self.warning('did not specify revision or branch; assuming "default"')
-            branch = 'default'
-
-        wanted_rev = rev or branch
-
-        self.info('ensuring %s@%s is available at %s' % (repo_url, wanted_rev, dest))
-
-        share_base = c.get('vcs_share_base', os.environ.get('HG_SHARE_BASE_DIR', None))
-
-        
-        
-        if not share_base:
-            raise VCSException('vcs share base not defined; '
-                               'refusing to operate sub-optimally')
-
-        dest_hg_path = os.path.join(dest, '.hg')
-        dest_hg_sharedpath = os.path.join(dest_hg_path, 'sharedpath')
-        if os.path.exists(dest) and not os.path.exists(dest_hg_path):
-            self.warning('destination exists but has no Mercurial state; deleting')
-            self.rmtree(dest)
-
-        
-        if os.path.exists(dest_hg_path) and not os.path.exists(dest_hg_sharedpath):
-            self.warning('destination is not shared; deleting')
-            self.rmtree(dest)
-
-        
-        if os.path.exists(dest_hg_sharedpath):
-            with open(dest_hg_sharedpath, 'rb') as fh:
-                store_path = fh.read().strip()
-
-            self.info('existing repository shared store: %s' % store_path)
-
-            if not os.path.exists(store_path):
-                self.warning('shared store does not exist; deleting')
+        if os.path.exists(dest):
+            try:
+                self.pull(repo, dest)
+                return self.update(dest, branch=branch, revision=revision)
+            except VCSException:
+                self.warning("Error pulling changes into %s from %s; clobbering" % (dest, repo))
+                self.exception(level='debug')
                 self.rmtree(dest)
-            elif not re.search('[a-f0-9]{40}/\.hg$', store_path.replace('\\', '/')):
-                self.warning('shared store does not belong to pooled storage; '
-                             'deleting to improve efficiency')
-                self.rmtree(dest)
-
-            
-            
-
-        
-        
-        created = False
-
-        
-        if not os.path.exists(dest):
-            
-            
-            
-            
-            clone_url = upstream or repo_url
-            args = self.hg + [
-                '--config', 'extensions.share=',
-                '--config', 'share.pool=%s' % share_base,
-                'clone', '-U', clone_url, dest,
-            ]
-            if self.run_command(args):
-                raise VCSException('clone+share failed')
-
-            
-            
-            if not os.path.exists(dest_hg_sharedpath):
-                raise VCSException('`hg clone` did not use share; '
-                                   'old Mercurial version?')
-
-            created = True
-
-        
-        
-
-        
-        
-        
-        have_wanted_rev = False
-        if wanted_rev == rev and rev:
-            args = self.hg + ['log', '-r', wanted_rev, '-T', '{node}']
-            output = self.get_output_from_command(args, cwd=dest, ignore_errors=True)
-            if output:
-                have_wanted_rev = wanted_rev in output
-
-        if not have_wanted_rev:
-            self.info('pulling to obtain %s' % wanted_rev)
-            args = self.hg + ['pull', '-r', wanted_rev, repo_url]
-
-            parser = RepositoryUnrelatedParser(config=self.config,
-                                               log_obj=self.log_obj)
-
-            if self.run_command(args, cwd=dest, output_parser=parser):
-                
-                
-                if parser.unrelated:
-                    self.warning('destination repository has changed; nuking and '
-                                 'trying again')
-                    self.rmtree(dest)
-                    return self.ensure_repo_and_revision()
-
-                raise VCSException('error pulling wanted revision')
-
-        
-        
-
-        
-        
-        if purge and not created:
-            args = self.hg + ['--config', 'extensions.purge=', 'purge', '--all', '-a']
-
-            
-            
-            
-            
-            purgelong = self.purgelong_path
-            if purgelong:
-                args.extend(['--config', 'extensions.purgelong=%s' % purgelong])
-            else:
-                self.warning('purgelong extension not found; '
-                             'purge may fail on Windows')
-
-            if self.run_command(args, cwd=dest):
-                raise VCSException('error purging')
-
-        
-        args = self.hg + ['update', '-C', '-r', wanted_rev]
-        if self.run_command(args, cwd=dest):
-            raise VCSException('error updating')
-
-        return self.get_output_from_command(self.hg + ['log', '-r', '.', '-T', '{node}'],
-                                            cwd=dest)
+        elif not os.path.exists(os.path.dirname(dest)):
+            self.mkdir_p(os.path.dirname(dest))
+        self.clone(repo, dest)
+        return self.update(dest, branch=branch, revision=revision)
 
     def apply_and_push(self, localrepo, remote, changer, max_attempts=10,
                        ssh_username=None, ssh_key=None):
