@@ -32,8 +32,6 @@ const PROMPT_NEVER = 3;
 
 
 
-
-
 function LoginManagerPromptFactory() {
   Services.obs.addObserver(this, "quit-application-granted", true);
   Services.obs.addObserver(this, "passwordmgr-crypto-login", true);
@@ -197,8 +195,6 @@ XPCOMUtils.defineLazyGetter(this.LoginManagerPromptFactory.prototype, "log", () 
 
 
 
-
-
 function LoginManagerPrompter() {}
 
 LoginManagerPrompter.prototype = {
@@ -283,8 +279,6 @@ LoginManagerPrompter.prototype = {
 
 
 
-
-
   prompt : function (aDialogTitle, aText, aPasswordRealm,
                      aSavePassword, aDefaultText, aResult) {
     if (aSavePassword != Ci.nsIAuthPrompt.SAVE_PASSWORD_NEVER)
@@ -303,8 +297,6 @@ LoginManagerPrompter.prototype = {
 
 
   
-
-
 
 
 
@@ -402,8 +394,6 @@ LoginManagerPrompter.prototype = {
 
 
   
-
-
 
 
 
@@ -509,8 +499,6 @@ LoginManagerPrompter.prototype = {
 
 
   
-
-
 
 
 
@@ -694,11 +682,6 @@ LoginManagerPrompter.prototype = {
 
 
 
-
-  
-
-
-
   init : function (aWindow, aFactory) {
     this._window = aWindow;
     this._factory = aFactory || null;
@@ -715,11 +698,6 @@ LoginManagerPrompter.prototype = {
     this._opener = aOpener;
   },
 
-
-  
-
-
-
   promptToSavePassword : function (aLogin) {
     this.log("promptToSavePassword");
     var notifyObj = this._getPopupNote() || this._getNotifyBox();
@@ -729,11 +707,7 @@ LoginManagerPrompter.prototype = {
       this._showSaveLoginDialog(aLogin);
   },
 
-
   
-
-
-
 
 
   _showLoginNotification : function (aNotifyBox, aName, aText, aButtons) {
@@ -1087,11 +1061,6 @@ LoginManagerPrompter.prototype = {
     }
   },
 
-
-  
-
-
-
   _removeLoginNotifications : function () {
     var popupNote = this._getPopupNote();
     if (popupNote)
@@ -1117,9 +1086,6 @@ LoginManagerPrompter.prototype = {
 
 
   
-
-
-
 
 
 
@@ -1209,9 +1175,6 @@ LoginManagerPrompter.prototype = {
 
 
 
-
-
-
   _showChangeLoginNotification(aNotifyObj, aOldLogin, aNewLogin) {
     var changeButtonText =
           this._getLocalizedString("notifyBarUpdateButtonText");
@@ -1272,9 +1235,6 @@ LoginManagerPrompter.prototype = {
   
 
 
-
-
-
   _showChangeLoginDialog(aOldLogin, aNewLogin) {
     const buttonFlags = Ci.nsIPrompt.STD_YES_NO_BUTTONS;
 
@@ -1303,8 +1263,6 @@ LoginManagerPrompter.prototype = {
 
 
   
-
-
 
 
 
@@ -1375,8 +1333,6 @@ LoginManagerPrompter.prototype = {
   
 
 
-
-
   _getChromeWindow: function (aWindow) {
     
     if (aWindow instanceof Ci.nsIDOMChromeWindow)
@@ -1387,9 +1343,6 @@ LoginManagerPrompter.prototype = {
                            .chromeEventHandler.ownerDocument.defaultView;
     return chromeWin;
   },
-
-
-  
 
 
   _getNotifyWindow: function () {
@@ -1461,8 +1414,6 @@ LoginManagerPrompter.prototype = {
 
 
 
-
-
   _getPopupNote : function () {
     let popupNote = null;
 
@@ -1483,8 +1434,6 @@ LoginManagerPrompter.prototype = {
 
 
   
-
-
 
 
 
@@ -1512,8 +1461,6 @@ LoginManagerPrompter.prototype = {
 
 
 
-
-
   _repickSelectedLogin : function (foundLogins, username) {
     for (var i = 0; i < foundLogins.length; i++)
       if (foundLogins[i].username == username)
@@ -1523,8 +1470,6 @@ LoginManagerPrompter.prototype = {
 
 
   
-
-
 
 
 
@@ -1545,8 +1490,6 @@ LoginManagerPrompter.prototype = {
 
 
   
-
-
 
 
 
@@ -1583,8 +1526,6 @@ LoginManagerPrompter.prototype = {
 
 
 
-
-
   _getShortDisplayHost: function (aURIString) {
     var displayHost;
 
@@ -1608,8 +1549,6 @@ LoginManagerPrompter.prototype = {
 
 
   
-
-
 
 
 
