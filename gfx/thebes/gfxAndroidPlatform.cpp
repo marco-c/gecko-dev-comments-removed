@@ -313,7 +313,7 @@ gfxAndroidPlatform::FontHintingEnabled()
     
     
 
-#ifdef MOZ_WIDGET_ANDROID
+#ifdef MOZ_USING_ANDROID_JAVA_WIDGETS
     
     
     
@@ -339,7 +339,7 @@ gfxAndroidPlatform::FontHintingEnabled()
 bool
 gfxAndroidPlatform::RequiresLinearZoom()
 {
-#ifdef MOZ_WIDGET_ANDROID
+#ifdef MOZ_USING_ANDROID_JAVA_WIDGETS
     
     
     
