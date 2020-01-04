@@ -74,13 +74,19 @@ LCovSource::LCovSource(LifoAlloc* alloc, JSObject* sso)
     numBranchesHit_(0),
     outDA_(alloc),
     numLinesInstrumented_(0),
-    numLinesHit_(0)
+    numLinesHit_(0),
+    hasFilename_(false),
+    hasScripts_(false)
 {
 }
 
 void
 LCovSource::exportInto(GenericPrinter& out) const
 {
+    
+    if (!hasFilename_ || !hasScripts_)
+        return;
+
     outSF_.exportInto(out);
 
     outFN_.exportInto(out);
@@ -156,17 +162,27 @@ LCovSource::writeTopLevelScript(JSScript* script)
         }
     } while (!queue.empty());
 
-    return !(outFN_.hadOutOfMemory() ||
-             outFNDA_.hadOutOfMemory() ||
-             outBRDA_.hadOutOfMemory() ||
-             outDA_.hadOutOfMemory());
+    if (outFN_.hadOutOfMemory() ||
+        outFNDA_.hadOutOfMemory() ||
+        outBRDA_.hadOutOfMemory() ||
+        outDA_.hadOutOfMemory())
+    {
+        return false;
+    }
+
+    hasScripts_ = true;
+    return true;
 }
 
 bool
 LCovSource::writeSourceFilename(ScriptSourceObject* sso)
 {
     outSF_.printf("SF:%s\n", sso->source()->filename());
-    return !outSF_.hadOutOfMemory();
+    if (outSF_.hadOutOfMemory())
+        return false;
+
+    hasFilename_ = true;
+    return true;
 }
 
 bool
@@ -312,7 +328,7 @@ LCovCompartment::collectCodeCoverageInfo(JSCompartment* comp, JSObject* sso,
         return;
 
     
-    LCovSource* source = lookup(sso);
+    LCovSource* source = lookupOrAdd(comp, sso);
     if (!source)
         return;
 
@@ -335,46 +351,48 @@ LCovCompartment::collectSourceFile(JSCompartment* comp, ScriptSourceObject* sso)
         return;
 
     
-    
-    if (!sources_) {
-        if (!writeCompartmentName(comp))
-            return;
-
-        LCovSourceVector* raw = alloc_.pod_malloc<LCovSourceVector>();
-        if (!raw) {
-            outTN_.reportOutOfMemory();
-            return;
-        }
-
-        sources_ = new(raw) LCovSourceVector(alloc_);
-    }
-
-    
-    if (!sources_->append(Move(LCovSource(&alloc_, sso)))) {
-        outTN_.reportOutOfMemory();
+    LCovSource* source = lookupOrAdd(comp, sso);
+    if (!source)
         return;
-    }
 
     
-    if (!sources_->back().writeSourceFilename(sso)) {
+    if (!source->writeSourceFilename(sso)) {
         outTN_.reportOutOfMemory();
         return;
     }
 }
 
 LCovSource*
-LCovCompartment::lookup(JSObject* sso)
+LCovCompartment::lookupOrAdd(JSCompartment* comp, JSObject* sso)
 {
-    if (!sources_)
-        return nullptr;
-
     
-    for (LCovSource& source : *sources_) {
-        if (source.match(sso))
-            return &source;
+    
+    if (!sources_) {
+        if (!writeCompartmentName(comp))
+            return nullptr;
+
+        LCovSourceVector* raw = alloc_.pod_malloc<LCovSourceVector>();
+        if (!raw) {
+            outTN_.reportOutOfMemory();
+            return nullptr;
+        }
+
+        sources_ = new(raw) LCovSourceVector(alloc_);
+    } else {
+        
+        for (LCovSource& source : *sources_) {
+            if (source.match(sso))
+                return &source;
+        }
     }
 
-    return nullptr;
+    
+    if (!sources_->append(Move(LCovSource(&alloc_, sso)))) {
+        outTN_.reportOutOfMemory();
+        return nullptr;
+    }
+
+    return &sources_->back();
 }
 
 void
