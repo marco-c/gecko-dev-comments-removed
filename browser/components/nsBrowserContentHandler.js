@@ -789,7 +789,7 @@ nsDefaultCommandLineHandler.prototype = {
             
             
             
-            var allowedParams = ["WNSGPH", "WNSBOX", "WNSFC2", "WNSHCO", "WNSSSV"];
+            var allowedParams = ["WNSGPH", "WNSBOX", "WNSFC2", "WNSHCO", "WNSSCX", "WNSSSV"];
             var formParam = params.get("form");
             if (!formParam) {
               formParam = params.get("FORM");
