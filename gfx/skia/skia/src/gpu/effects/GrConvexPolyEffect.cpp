@@ -8,6 +8,7 @@
 #include "GrConvexPolyEffect.h"
 #include "GrInvariantOutput.h"
 #include "SkPathPriv.h"
+#include "effects/GrConstColorProcessor.h"
 #include "glsl/GrGLSLFragmentProcessor.h"
 #include "glsl/GrGLSLFragmentShaderBuilder.h"
 #include "glsl/GrGLSLProgramDataManager.h"
@@ -257,7 +258,16 @@ GrFragmentProcessor* GrConvexPolyEffect::Create(GrPrimitiveEdgeType type, const 
     SkScalar edges[3 * kMaxEdges];
 
     SkPathPriv::FirstDirection dir;
-    SkAssertResult(SkPathPriv::CheapComputeFirstDirection(path, &dir));
+    
+    
+    
+    if (!SkPathPriv::CheapComputeFirstDirection(path, &dir)) {
+        if (GrProcessorEdgeTypeIsInverseFill(type)) {
+            return GrConstColorProcessor::Create(0xFFFFFFFF,
+                                                 GrConstColorProcessor::kModulateRGBA_InputMode);
+        }
+        return GrConstColorProcessor::Create(0, GrConstColorProcessor::kIgnore_InputMode);
+    }
 
     SkVector t;
     if (nullptr == offset) {
