@@ -3,6 +3,7 @@
 
 "use strict";
 
+const { Cu } = require("chrome");
 const { Task } = require("devtools/shared/task");
 
 const Services = require("Services");
@@ -13,7 +14,7 @@ const Actors = require("devtools/client/performance/legacy/actors");
 const { LegacyPerformanceRecording } = require("devtools/client/performance/legacy/recording");
 const { importRecording } = require("devtools/client/performance/legacy/recording");
 const { normalizePerformanceFeatures } = require("devtools/shared/performance/recording-utils");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const flags = require("devtools/shared/flags");
 const { getDeviceFront } = require("devtools/shared/device/device");
 const { getSystemInfo } = require("devtools/shared/system");
 const events = require("sdk/event/core");
@@ -82,7 +83,6 @@ const LegacyPerformanceFront = Class({
     yield this._registerListeners();
 
     this._connecting.resolve();
-    return this._connecting.promise;
   }),
 
   
@@ -166,8 +166,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  _onConsoleProfileStart: Task.async(function* (_, { profileLabel,
-                                                     currentTime: startTime }) {
+  _onConsoleProfileStart: Task.async(function* (_, { profileLabel, currentTime: startTime }) {
     let recordings = this._recordings;
 
     
@@ -198,7 +197,7 @@ const LegacyPerformanceFront = Class({
     if (!data) {
       return;
     }
-    let { profileLabel } = data;
+    let { profileLabel, currentTime: endTime } = data;
 
     let pending = this._recordings.filter(r => r.isConsole() && r.isRecording());
     if (pending.length === 0) {
@@ -210,16 +209,16 @@ const LegacyPerformanceFront = Class({
     
     if (profileLabel) {
       model = pending.find(e => e.getLabel() === profileLabel);
-    } else {
-      
+    }
+    
+    else {
       model = pending[pending.length - 1];
     }
 
     
     
     if (!model) {
-      console.error(
-        "console.profileEnd() called with label that does not match a recording.");
+      console.error("console.profileEnd() called with label that does not match a recording.");
       return;
     }
 
@@ -269,10 +268,8 @@ const LegacyPerformanceFront = Class({
 
 
 
-
   startRecording: Task.async(function* (options = {}) {
-    let model = new LegacyPerformanceRecording(
-      normalizePerformanceFeatures(options, this.traits.features));
+    let model = new LegacyPerformanceRecording(normalizePerformanceFeatures(options, this.traits.features));
 
     
     
@@ -306,12 +303,11 @@ const LegacyPerformanceFront = Class({
 
 
 
-
   stopRecording: Task.async(function* (model) {
     
     
     if (this._recordings.indexOf(model) === -1) {
-      return undefined;
+      return;
     }
 
     
@@ -347,6 +343,7 @@ const LegacyPerformanceFront = Class({
       timelineEndTime = yield this._timeline.stop(config);
     }
 
+    let systemDeferred = promise.defer();
     let form = yield this._client.listTabs();
     let systemHost = yield getDeviceFront(this._client, form).getDescription();
     let systemClient = yield getSystemInfo();
@@ -399,18 +396,10 @@ const LegacyPerformanceFront = Class({
     if (!recording.isRecording() || !this._currentBufferStatus) {
       return null;
     }
-    let {
-      position: currentPosition,
-      totalSize,
-      generation: currentGeneration
-    } = this._currentBufferStatus;
-    let {
-      position: origPosition,
-      generation: origGeneration
-    } = recording.getStartingBufferStatus();
+    let { position: currentPosition, totalSize, generation: currentGeneration } = this._currentBufferStatus;
+    let { position: origPosition, generation: origGeneration } = recording.getStartingBufferStatus();
 
-    let normalizedCurrent = (totalSize * (currentGeneration - origGeneration))
-                            + currentPosition;
+    let normalizedCurrent = (totalSize * (currentGeneration - origGeneration)) + currentPosition;
     let percent = (normalizedCurrent - origPosition) / totalSize;
     return percent > 1 ? 1 : percent;
   },
@@ -440,7 +429,7 @@ const LegacyPerformanceFront = Class({
 
 
   _request: function (actorName, method, ...args) {
-    if (!DevToolsUtils.testing) {
+    if (!flags.testing) {
       throw new Error("LegacyPerformanceFront._request may only be used in tests.");
     }
     let actor = this[`_${actorName}`];
@@ -464,20 +453,14 @@ const LegacyPerformanceFront = Class({
 
 
 
-
 function getLegacyPerformanceRecordingPrefs() {
   return {
     withMarkers: true,
-    withMemory: Services.prefs.getBoolPref(
-      "devtools.performance.ui.enable-memory"),
-    withTicks: Services.prefs.getBoolPref(
-      "devtools.performance.ui.enable-framerate"),
-    withAllocations: Services.prefs.getBoolPref(
-      "devtools.performance.ui.enable-allocations"),
-    allocationsSampleProbability: +Services.prefs.getCharPref(
-      "devtools.performance.memory.sample-probability"),
-    allocationsMaxLogLength: Services.prefs.getIntPref(
-      "devtools.performance.memory.max-log-length")
+    withMemory: Services.prefs.getBoolPref("devtools.performance.ui.enable-memory"),
+    withTicks: Services.prefs.getBoolPref("devtools.performance.ui.enable-framerate"),
+    withAllocations: Services.prefs.getBoolPref("devtools.performance.ui.enable-allocations"),
+    allocationsSampleProbability: +Services.prefs.getCharPref("devtools.performance.memory.sample-probability"),
+    allocationsMaxLogLength: Services.prefs.getIntPref("devtools.performance.memory.max-log-length")
   };
 }
 

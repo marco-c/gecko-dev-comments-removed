@@ -19,9 +19,9 @@ var {ActorRegistryFront} = require("devtools/shared/fronts/actor-registry");
 SimpleTest.requestCompleteLog();
 
 
-DevToolsUtils.testing = true;
+flags.testing = true;
 registerCleanupFunction(() => {
-  DevToolsUtils.testing = false;
+  flags.testing = false;
 });
 
 

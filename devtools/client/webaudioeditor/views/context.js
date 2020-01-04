@@ -6,6 +6,7 @@
 
 
 const { debounce } = require("sdk/lang/functional");
+const flags = require("devtools/shared/flags");
 
 
 
@@ -229,7 +230,7 @@ var ContextView = {
       
       
       let info = {};
-      if (DevToolsUtils.testing) {
+      if (flags.testing) {
         info = gAudioNodes.getInfo();
       }
       window.emit(EVENTS.UI_GRAPH_RENDERED, info.nodes, info.edges, info.paramEdges);

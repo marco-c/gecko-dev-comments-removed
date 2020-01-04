@@ -76,6 +76,8 @@ const {
 const {getLayoutChangesObserver, releaseLayoutChangesObserver} = require("devtools/server/actors/layout");
 const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
 
+loader.lazyRequireGetter(this, "CSS", "CSS");
+
 const {EventParsers} = require("devtools/server/event-parsers");
 const {nodeSpec, nodeListSpec, walkerSpec, inspectorSpec} = require("devtools/shared/specs/inspector");
 
@@ -131,6 +133,8 @@ var HELPER_SHEET = `
     outline-offset: -2px !important;
   }
 `;
+
+const flags = require("devtools/shared/flags");
 
 loader.lazyRequireGetter(this, "DevToolsUtils",
                          "devtools/shared/DevToolsUtils");
@@ -3027,7 +3031,7 @@ function ensureImageLoaded(image, timeout) {
   
   let onAbort = new Promise(() => {});
 
-  if (!DevToolsUtils.testing) {
+  if (!flags.testing) {
     
     onAbort = DevToolsUtils.waitForTime(timeout).then(() => {
       return promise.reject("Image '" + image.src + "' took too long to load.");

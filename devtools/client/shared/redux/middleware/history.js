@@ -3,7 +3,7 @@
 
 "use strict";
 
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const flags = require("devtools/shared/flags");
 
 
 
@@ -11,7 +11,7 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 exports.history = (log = []) => ({ dispatch, getState }) => {
-  if (!DevToolsUtils.testing) {
+  if (!flags.testing) {
     console.warn("Using history middleware stores all actions in state for " +
                  "testing and devtools is not currently running in test " +
                  "mode. Be sure this is intentional.");

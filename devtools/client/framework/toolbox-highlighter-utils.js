@@ -8,7 +8,7 @@
 
 const promise = require("promise");
 const {Task} = require("devtools/shared/task");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const flags = require("devtools/shared/flags");
 
 
 
@@ -258,7 +258,7 @@ exports.getHighlighterUtils = function (toolbox) {
 
   let unhighlight = exported.unhighlight = Task.async(
   function* (forceHide = false) {
-    forceHide = forceHide || !DevToolsUtils.testing;
+    forceHide = forceHide || !flags.testing;
 
     
     

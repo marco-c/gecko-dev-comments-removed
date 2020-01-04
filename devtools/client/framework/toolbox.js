@@ -56,8 +56,8 @@ loader.lazyRequireGetter(this, "Selection",
   "devtools/client/framework/selection", true);
 loader.lazyRequireGetter(this, "InspectorFront",
   "devtools/shared/fronts/inspector", true);
-loader.lazyRequireGetter(this, "DevToolsUtils",
-  "devtools/shared/DevToolsUtils");
+loader.lazyRequireGetter(this, "flags",
+  "devtools/shared/flags");
 loader.lazyRequireGetter(this, "showDoorhanger",
   "devtools/client/shared/doorhanger", true);
 loader.lazyRequireGetter(this, "createPerformanceFront",
@@ -70,6 +70,8 @@ loader.lazyRequireGetter(this, "KeyShortcuts",
   "devtools/client/shared/key-shortcuts", true);
 loader.lazyRequireGetter(this, "ZoomKeys",
   "devtools/client/shared/zoom-keys");
+loader.lazyRequireGetter(this, "settleAll",
+  "devtools/shared/ThreadSafeDevToolsUtils", "settleAll");
 
 loader.lazyGetter(this, "registerHarOverlay", () => {
   return require("devtools/client/netmonitor/har/toolbox-overlay").register;
@@ -477,7 +479,7 @@ Toolbox.prototype = {
       
       
       
-      if (DevToolsUtils.testing) {
+      if (flags.testing) {
         yield performanceFrontConnection;
       }
 
@@ -1939,7 +1941,7 @@ Toolbox.prototype = {
           this.walker.on("highlighter-ready", this._highlighterReady);
           this.walker.on("highlighter-hide", this._highlighterHidden);
 
-          let autohide = !DevToolsUtils.testing;
+          let autohide = !flags.testing;
           this._highlighter = yield this._inspector.getHighlighter(autohide);
         }
       }.bind(this));
@@ -2118,39 +2120,39 @@ Toolbox.prototype = {
     
     
     
-    this._destroyer = DevToolsUtils.settleAll(outstanding)
-                                   .catch(console.error)
-                                   .then(() => this.destroyHost())
-                                   .catch(console.error)
-                                   .then(() => {
-      
-      
-      
-      
-                                     if (!this._target) {
-                                       return null;
-                                     }
-                                     let target = this._target;
-                                     this._target = null;
-                                     this.highlighterUtils.release();
-                                     target.off("close", this.destroy);
-                                     return target.destroy();
-                                   }, console.error).then(() => {
-                                     this.emit("destroyed");
+    this._destroyer = settleAll(outstanding)
+        .catch(console.error)
+        .then(() => this.destroyHost())
+        .catch(console.error)
+        .then(() => {
+          
+          
+          
+          
+          if (!this._target) {
+            return null;
+          }
+          let target = this._target;
+          this._target = null;
+          this.highlighterUtils.release();
+          target.off("close", this.destroy);
+          return target.destroy();
+        }, console.error).then(() => {
+          this.emit("destroyed");
 
-      
-      
-                                     this._host = null;
-                                     this._toolPanels.clear();
+          
+          
+          this._host = null;
+          this._toolPanels.clear();
 
-      
-      
-                                     if (DevToolsUtils.testing) {
-                                       win.QueryInterface(Ci.nsIInterfaceRequestor)
-           .getInterface(Ci.nsIDOMWindowUtils)
-           .garbageCollect();
-                                     }
-                                   }).then(null, console.error);
+          
+          
+          if (flags.testing) {
+            win.QueryInterface(Ci.nsIInterfaceRequestor)
+              .getInterface(Ci.nsIDOMWindowUtils)
+              .garbageCollect();
+          }
+        }).then(null, console.error);
 
     let leakCheckObserver = ({wrappedJSObject: barrier}) => {
       

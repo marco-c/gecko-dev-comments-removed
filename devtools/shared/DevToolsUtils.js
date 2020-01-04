@@ -10,6 +10,7 @@ var { Ci, Cu, Cc, components } = require("chrome");
 var Services = require("Services");
 var promise = require("promise");
 var defer = require("devtools/shared/defer");
+var flags = require("./flags");
 
 loader.lazyRequireGetter(this, "FileUtils",
                          "resource://gre/modules/FileUtils.jsm", true);
@@ -30,7 +31,7 @@ exports.executeSoon = function executeSoon(aFn) {
     let executor;
     
     
-    if (AppConstants.DEBUG_JS_MODULES || exports.testing) {
+    if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
       let stack = components.stack;
       executor = () => {
         Cu.callFunctionWithAsyncStack(aFn, stack, "DevToolsUtils.executeSoon");
@@ -234,27 +235,19 @@ exports.isSafeJSObject = function isSafeJSObject(aObj) {
 };
 
 exports.dumpn = function dumpn(str) {
-  if (exports.dumpn.wantLogging) {
+  if (flags.wantLogging) {
     dump("DBG-SERVER: " + str + "\n");
   }
 };
 
 
 
-exports.dumpn.wantLogging = false;
-
-
-
 
 exports.dumpv = function (msg) {
-  if (exports.dumpv.wantVerbose) {
+  if (flags.wantVerbose) {
     exports.dumpn(msg);
   }
 };
-
-
-
-exports.dumpv.wantVerbose = false;
 
 
 
@@ -326,7 +319,7 @@ function reallyAssert(condition, message) {
 
 
 Object.defineProperty(exports, "assert", {
-  get: () => (AppConstants.DEBUG || AppConstants.DEBUG_JS_MODULES || this.testing)
+  get: () => (AppConstants.DEBUG || AppConstants.DEBUG_JS_MODULES || flags.testing)
     ? reallyAssert
     : exports.noop,
 });
@@ -582,93 +575,6 @@ if (!this.isWorker) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-exports.settleAll = values => {
-  if (values === null || typeof (values[Symbol.iterator]) != "function") {
-    throw new Error("settleAll() expects an iterable.");
-  }
-
-  let deferred = defer();
-
-  values = Array.isArray(values) ? values : [...values];
-  let countdown = values.length;
-  let resolutionValues = new Array(countdown);
-  let rejectionValue;
-  let rejectionOccurred = false;
-
-  if (!countdown) {
-    deferred.resolve(resolutionValues);
-    return deferred.promise;
-  }
-
-  function checkForCompletion() {
-    if (--countdown > 0) {
-      return;
-    }
-    if (!rejectionOccurred) {
-      deferred.resolve(resolutionValues);
-    } else {
-      deferred.reject(rejectionValue);
-    }
-  }
-
-  for (let i = 0; i < values.length; i++) {
-    let index = i;
-    let value = values[i];
-    let resolver = result => {
-      resolutionValues[index] = result;
-      checkForCompletion();
-    };
-    let rejecter = error => {
-      if (!rejectionOccurred) {
-        rejectionValue = error;
-        rejectionOccurred = true;
-      }
-      checkForCompletion();
-    };
-
-    if (value && typeof (value.then) == "function") {
-      value.then(resolver, rejecter);
-    } else {
-      
-      resolver(value);
-    }
-  }
-
-  return deferred.promise;
-};
-
-
-
-
-
-var testing = false;
-Object.defineProperty(exports, "testing", {
-  get: function () {
-    return testing;
-  },
-  set: function (state) {
-    testing = state;
-  }
-});
-
-
-
-
-
-
-
-
 exports.openFileStream = function (filePath) {
   return new Promise((resolve, reject) => {
     const uri = NetUtil.newURI(new FileUtils.File(filePath));
@@ -685,3 +591,29 @@ exports.openFileStream = function (filePath) {
     );
   });
 };
+
+
+
+
+
+
+function errorOnFlag(exports, name) {
+  Object.defineProperty(exports, name, {
+    get: () => {
+      const msg = `Cannot get the flag ${name}. ` +
+            `Use the "devtools/shared/flags" module instead`;
+      console.error(msg);
+      throw new Error(msg);
+    },
+    set: () => {
+      const msg = `Cannot set the flag ${name}. ` +
+            `Use the "devtools/shared/flags" module instead`;
+      console.error(msg);
+      throw new Error(msg);
+    }
+  });
+}
+
+errorOnFlag(exports, "testing");
+errorOnFlag(exports, "wantLogging");
+errorOnFlag(exports, "wantVerbose");

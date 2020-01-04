@@ -11,6 +11,7 @@ const {FileUtils} = Cu.import("resource://gre/modules/FileUtils.jsm", {});
 const {NetUtil} = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 const ProjectEditor = require("devtools/client/projecteditor/lib/projecteditor");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const flags = require("devtools/shared/flags");
 
 const TEST_URL_ROOT = "http://mochi.test:8888/browser/devtools/client/projecteditor/test/";
 const SAMPLE_WEBAPP_URL = TEST_URL_ROOT + "/helper_homepage.html";
@@ -24,8 +25,8 @@ waitForExplicitFinish();
 
 
 
-DevToolsUtils.testing = true;
-registerCleanupFunction(() => DevToolsUtils.testing = false);
+flags.testing = true;
+registerCleanupFunction(() => flags.testing = false);
 
 
 registerCleanupFunction(() => {

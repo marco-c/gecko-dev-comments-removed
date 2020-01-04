@@ -5,9 +5,7 @@
 
 "use strict";
 
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { Cu, Ci } = require("chrome");
-let { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
+const { Ci } = require("chrome");
 
 const PANE_APPEARANCE_DELAY = 50;
 const PAGE_SIZE_ITEM_COUNT_RATIO = 5;
@@ -342,6 +340,7 @@ function Item(ownerView, element, value, attachment) {
   this.attachment = attachment;
   this._value = value + "";
   this._prebuiltNode = element;
+  this._itemsByElement = new Map();
 }
 
 Item.prototype = {
@@ -466,11 +465,6 @@ Item.prototype = {
 
 
 
-DevToolsUtils.defineLazyPrototypeGetter(Item.prototype, "_itemsByElement",
-                                        () => new Map());
-
-
-
 
 
 
@@ -531,9 +525,9 @@ const WidgetMethods = exports.WidgetMethods = {
 
     
     
-    XPCOMUtils.defineLazyGetter(this, "_itemsByValue", () => new Map());
-    XPCOMUtils.defineLazyGetter(this, "_itemsByElement", () => new Map());
-    XPCOMUtils.defineLazyGetter(this, "_stagedItems", () => []);
+    this._itemsByValue = new Map();
+    this._itemsByElement = new Map();
+    this._stagedItems = [];
 
     
     if (ViewHelpers.isEventEmitter(widget)) {

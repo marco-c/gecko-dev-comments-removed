@@ -1,0 +1,21 @@
+
+
+
+
+
+
+function makeWritableFlag(exports, name) {
+  let flag = false;
+  Object.defineProperty(exports, name, {
+    get: function () { return flag; },
+    set: function (state) { flag = state; }
+  });
+}
+
+makeWritableFlag(exports, "wantLogging");
+makeWritableFlag(exports, "wantVerbose");
+
+
+
+
+makeWritableFlag(exports, "testing");

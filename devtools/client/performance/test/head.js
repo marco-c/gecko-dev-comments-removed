@@ -5,7 +5,6 @@
 const { require, loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 
 
-
 waitForExplicitFinish();
 
 
@@ -52,18 +51,17 @@ const key = (id, win = window) => {
 
 
 (() => {
-  const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+  const flags = require("devtools/shared/flags");
   const PrefUtils = require("devtools/client/performance/test/helpers/prefs");
 
-  DevToolsUtils.testing = true;
+  flags.testing = true;
 
   
-  let stopObservingPrefs = PrefUtils.whenUnknownPrefChanged("devtools.performance",
-    pref => {
-      ok(false, `Unknown pref changed: ${pref}. Please add it to test/helpers/prefs.js ` +
-        "to make sure it's reverted to its default value when the tests finishes, " +
-        "and avoid interfering with future tests.\n");
-    });
+  let stopObservingPrefs = PrefUtils.whenUnknownPrefChanged("devtools.performance", pref => {
+    ok(false, `Unknown pref changed: ${pref}. Please add it to test/helpers/prefs.js ` +
+      "to make sure it's reverted to its default value when the tests finishes, " +
+      "and avoid interfering with future tests.\n");
+  });
 
   
   
@@ -71,7 +69,7 @@ const key = (id, win = window) => {
 
   registerCleanupFunction(() => {
     info("finish() was called, cleaning up...");
-    DevToolsUtils.testing = false;
+    flags.testing = false;
 
     PrefUtils.rollbackPrefsToDefault();
     stopObservingPrefs();
@@ -80,8 +78,7 @@ const key = (id, win = window) => {
     
     
     
-    let nsIProfilerModule = Cc["@mozilla.org/tools/profiler;1"]
-      .getService(Ci.nsIProfiler);
+    let nsIProfilerModule = Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler);
     nsIProfilerModule.StopProfiler();
 
     

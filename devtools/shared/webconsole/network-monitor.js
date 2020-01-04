@@ -14,6 +14,8 @@ loader.lazyRequireGetter(this, "NetworkHelper",
                          "devtools/shared/webconsole/network-helper");
 loader.lazyRequireGetter(this, "DevToolsUtils",
                          "devtools/shared/DevToolsUtils");
+loader.lazyRequireGetter(this, "flags",
+                         "devtools/shared/flags");
 loader.lazyImporter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
 loader.lazyServiceGetter(this, "gActivityDistributor",
                          "@mozilla.org/network/http-activity-distributor;1",
@@ -57,7 +59,7 @@ function matchRequest(channel, filters) {
   
   
   
-  if (!DevToolsUtils.testing && channel.loadInfo &&
+  if (!flags.testing && channel.loadInfo &&
       channel.loadInfo.loadingDocument === null &&
       channel.loadInfo.loadingPrincipal ===
       Services.scriptSecurityManager.getSystemPrincipal()) {
