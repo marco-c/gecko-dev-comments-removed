@@ -2444,6 +2444,7 @@ gfxWindowsPlatform::InitializeD2D()
   
   VerifyD2DDevice(gfxPrefs::Direct2DForceEnabled());
   if (!mD3D10Device) {
+    mDWriteFactory = nullptr;
     mD2DStatus = FeatureStatus::Failed;
     return;
   }
