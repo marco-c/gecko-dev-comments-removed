@@ -1046,7 +1046,7 @@ public final class GeckoProfile {
 
         
         try {
-            FileOutputStream stream = new FileOutputStream(profileDir.getAbsolutePath() + File.separator + "times.json");
+            FileOutputStream stream = new FileOutputStream(profileDir.getAbsolutePath() + File.separator + TIMES_PATH);
             OutputStreamWriter writer = new OutputStreamWriter(stream, Charset.forName("UTF-8"));
             try {
                 writer.append("{\"created\": " + System.currentTimeMillis() + "}\n");
@@ -1055,7 +1055,7 @@ public final class GeckoProfile {
             }
         } catch (Exception e) {
             
-            Log.w(LOGTAG, "Couldn't write times.json.", e);
+            Log.w(LOGTAG, "Couldn't write " + TIMES_PATH, e);
         }
 
         
