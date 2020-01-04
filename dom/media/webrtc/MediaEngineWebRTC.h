@@ -551,6 +551,9 @@ public:
   
   void Shutdown() override;
 
+  
+  bool SupportsDuplex();
+
   void EnumerateVideoDevices(dom::MediaSourceEnum,
                              nsTArray<RefPtr<MediaEngineVideoSource>>*) override;
   void EnumerateAudioDevices(dom::MediaSourceEnum,
