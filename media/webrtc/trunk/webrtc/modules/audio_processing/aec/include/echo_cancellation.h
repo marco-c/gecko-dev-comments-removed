@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_INCLUDE_ECHO_CANCELLATION_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_INCLUDE_ECHO_CANCELLATION_H_
 
-#include <stddef.h>
-
 #include "webrtc/typedefs.h"
 
 
@@ -69,7 +67,6 @@ extern "C" {
 
 
 
-void* WebRtcAec_Create();
 
 
 
@@ -78,7 +75,22 @@ void* WebRtcAec_Create();
 
 
 
-void WebRtcAec_Free(void* aecInst);
+
+int32_t WebRtcAec_Create(void** aecInst);
+
+
+
+
+
+
+
+
+
+
+
+
+
+int32_t WebRtcAec_Free(void* aecInst);
 
 
 
@@ -113,26 +125,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq);
 
 int32_t WebRtcAec_BufferFarend(void* aecInst,
                                const float* farend,
-                               size_t nrOfSamples);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int32_t WebRtcAec_GetBufferFarendError(void* aecInst,
-                                       const float* farend,
-                                       size_t nrOfSamples);
+                               int16_t nrOfSamples);
 
 
 
@@ -159,9 +152,9 @@ int32_t WebRtcAec_GetBufferFarendError(void* aecInst,
 
 int32_t WebRtcAec_Process(void* aecInst,
                           const float* const* nearend,
-                          size_t num_bands,
+                          int num_bands,
                           float* const* out,
-                          size_t nrOfSamples,
+                          int16_t nrOfSamples,
                           int16_t msInSndCardBuf,
                           int32_t skew);
 
@@ -234,6 +227,19 @@ int WebRtcAec_GetDelayMetrics(void* handle,
                               int* median,
                               int* std,
                               float* fraction_poor_delays);
+
+
+
+
+
+
+
+
+
+
+
+
+int32_t WebRtcAec_get_error_code(void* aecInst);
 
 
 

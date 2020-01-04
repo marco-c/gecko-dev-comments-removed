@@ -139,7 +139,16 @@ typedef struct {
 
 
 
-AecmCore* WebRtcAecm_CreateCore();
+
+
+
+
+
+
+
+
+
+int WebRtcAecm_CreateCore(AecmCore** aecm);
 
 
 
@@ -165,7 +174,11 @@ int WebRtcAecm_InitCore(AecmCore* const aecm, int samplingFreq);
 
 
 
-void WebRtcAecm_FreeCore(AecmCore* aecm);
+
+
+
+
+int WebRtcAecm_FreeCore(AecmCore* aecm);
 
 int WebRtcAecm_Control(AecmCore* aecm, int delay, int nlpFlag);
 

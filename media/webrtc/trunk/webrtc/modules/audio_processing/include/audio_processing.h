@@ -37,18 +37,6 @@ class LevelEstimator;
 class NoiseSuppression;
 class VoiceDetection;
 
-struct ExtendedFilter {
-  ExtendedFilter() : enabled(false) {}
-  explicit ExtendedFilter(bool enabled) : enabled(enabled) {}
-  bool enabled;
-};
-
-struct DelayAgnostic {
-  DelayAgnostic() : enabled(false) {}
-  explicit DelayAgnostic(bool enabled) : enabled(enabled) {}
-  bool enabled;
-};
-
 
 
 

@@ -15,8 +15,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_H_
 
-#include <stddef.h>
-
 #include "webrtc/typedefs.h"
 
 #define FRAME_LEN 80
@@ -53,8 +51,8 @@ typedef struct Stats {
 
 typedef struct AecCore AecCore;
 
-AecCore* WebRtcAec_CreateAec();  
-void WebRtcAec_FreeAec(AecCore* aec);
+int WebRtcAec_CreateAec(AecCore** aec);
+int WebRtcAec_FreeAec(AecCore* aec);
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq);
 void WebRtcAec_InitAec_SSE2(void);
 #if defined(MIPS_FPU_LE)
@@ -67,8 +65,8 @@ void WebRtcAec_InitAec_neon(void);
 void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend);
 void WebRtcAec_ProcessFrames(AecCore* aec,
                              const float* const* nearend,
-                             size_t num_bands,
-                             size_t num_samples,
+                             int num_bands,
+                             int num_samples,
                              int knownDelay,
                              float* const* out);
 
@@ -105,17 +103,19 @@ void WebRtcAec_SetConfigCore(AecCore* self,
                              int delay_logging);
 
 
-void WebRtcAec_enable_delay_agnostic(AecCore* self, int enable);
+void WebRtcAec_enable_reported_delay(AecCore* self, int enable);
+
+
+int WebRtcAec_reported_delay_enabled(AecCore* self);
 
 
 
-int WebRtcAec_delay_agnostic_enabled(AecCore* self);
 
 
-void WebRtcAec_enable_extended_filter(AecCore* self, int enable);
+void WebRtcAec_enable_delay_correction(AecCore* self, int enable);
 
 
-int WebRtcAec_extended_filter_enabled(AecCore* self);
+int WebRtcAec_delay_correction_enabled(AecCore* self);
 
 
 

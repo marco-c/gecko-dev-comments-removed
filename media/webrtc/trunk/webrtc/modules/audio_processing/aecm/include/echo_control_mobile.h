@@ -44,7 +44,6 @@ extern "C" {
 
 
 
-void* WebRtcAecm_Create();
 
 
 
@@ -53,7 +52,22 @@ void* WebRtcAecm_Create();
 
 
 
-void WebRtcAecm_Free(void* aecmInst);
+
+int32_t WebRtcAecm_Create(void **aecmInst);
+
+
+
+
+
+
+
+
+
+
+
+
+
+int32_t WebRtcAecm_Free(void *aecmInst);
 
 
 
@@ -87,26 +101,7 @@ int32_t WebRtcAecm_Init(void* aecmInst, int32_t sampFreq);
 
 int32_t WebRtcAecm_BufferFarend(void* aecmInst,
                                 const int16_t* farend,
-                                size_t nrOfSamples);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int32_t WebRtcAecm_GetBufferFarendError(void* aecmInst,
-                                        const int16_t* farend,
-                                        size_t nrOfSamples);
+                                int16_t nrOfSamples);
 
 
 
@@ -137,7 +132,7 @@ int32_t WebRtcAecm_Process(void* aecmInst,
                            const int16_t* nearendNoisy,
                            const int16_t* nearendClean,
                            int16_t* out,
-                           size_t nrOfSamples,
+                           int16_t nrOfSamples,
                            int16_t msInSndCardBuf);
 
 
@@ -155,6 +150,22 @@ int32_t WebRtcAecm_Process(void* aecmInst,
 
 
 int32_t WebRtcAecm_set_config(void* aecmInst, AecmConfig config);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int32_t WebRtcAecm_get_config(void *aecmInst, AecmConfig *config);
 
 
 
@@ -202,6 +213,18 @@ int32_t WebRtcAecm_GetEchoPath(void* aecmInst,
 
 size_t WebRtcAecm_echo_path_size_bytes();
 
+
+
+
+
+
+
+
+
+
+
+
+int32_t WebRtcAecm_get_error_code(void *aecmInst);
 
 #ifdef __cplusplus
 }
