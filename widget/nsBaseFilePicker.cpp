@@ -17,7 +17,6 @@
 #include "nsCOMArray.h"
 #include "nsIFile.h"
 #include "nsEnumeratorUtils.h"
-#include "mozilla/dom/Directory.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/Services.h"
 #include "WidgetUtils.h"
@@ -30,36 +29,6 @@ using namespace mozilla::dom;
 
 #define FILEPICKER_TITLES "chrome://global/locale/filepicker.properties"
 #define FILEPICKER_FILTERS "chrome://global/content/filepicker.properties"
-
-namespace {
-
-nsresult
-LocalFileToDirectoryOrBlob(nsPIDOMWindowInner* aWindow,
-                           bool aIsDirectory,
-                           nsIFile* aFile,
-                           nsISupports** aResult)
-{
-  if (aIsDirectory) {
-#ifdef DEBUG
-    bool isDir;
-    aFile->IsDirectory(&isDir);
-    MOZ_ASSERT(isDir);
-#endif
-
-    RefPtr<Directory> directory =
-      Directory::Create(aWindow, aFile, Directory::eDOMRootDirectory);
-    MOZ_ASSERT(directory);
-
-    directory.forget(aResult);
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIDOMBlob> blob = File::CreateFromFile(aWindow, aFile);
-  blob.forget(aResult);
-  return NS_OK;
-}
-
-} 
 
 
 
@@ -105,9 +74,9 @@ class nsBaseFilePickerEnumerator : public nsISimpleEnumerator
 public:
   NS_DECL_ISUPPORTS
 
-  nsBaseFilePickerEnumerator(nsPIDOMWindowOuter* aParent,
-                             nsISimpleEnumerator* iterator,
-                             int16_t aMode)
+  explicit nsBaseFilePickerEnumerator(nsPIDOMWindowOuter* aParent,
+                                      nsISimpleEnumerator* iterator,
+                                      int16_t aMode)
     : mIterator(iterator)
     , mParent(aParent->GetCurrentInnerWindow())
     , mMode(aMode)
@@ -129,10 +98,32 @@ public:
       return NS_ERROR_FAILURE;
     }
 
-    return LocalFileToDirectoryOrBlob(mParent,
-                                      mMode == nsIFilePicker::modeGetFolder,
-                                      localFile,
-                                      aResult);
+    RefPtr<File> domFile = File::CreateFromFile(mParent, localFile);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+#ifdef DEBUG
+    bool isDir;
+    localFile->IsDirectory(&isDir);
+    MOZ_ASSERT(isDir == (mMode == nsIFilePicker::modeGetFolder));
+#endif
+    domFile->Impl()->SetIsDirectory(mMode == nsIFilePicker::modeGetFolder);
+
+    nsCOMPtr<nsIDOMBlob>(domFile).forget(aResult);
+    return NS_OK;
   }
 
   NS_IMETHOD
@@ -358,10 +349,10 @@ nsBaseFilePicker::GetDomFileOrDirectory(nsISupports** aValue)
 
   auto* innerParent = mParent ? mParent->GetCurrentInnerWindow() : nullptr;
 
-  return LocalFileToDirectoryOrBlob(innerParent,
-                                    mMode == nsIFilePicker::modeGetFolder,
-                                    localFile,
-                                    aValue);
+  RefPtr<File> domFile = File::CreateFromFile(innerParent, localFile);
+  domFile->Impl()->SetIsDirectory(mMode == nsIFilePicker::modeGetFolder);
+  nsCOMPtr<nsIDOMBlob>(domFile).forget(aValue);
+  return NS_OK;
 }
 
 NS_IMETHODIMP

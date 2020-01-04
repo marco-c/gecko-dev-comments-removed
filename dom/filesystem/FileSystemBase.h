@@ -10,6 +10,8 @@
 #include "nsAutoPtr.h"
 #include "nsString.h"
 
+class nsPIDOMWindowInner;
+
 namespace mozilla {
 namespace dom {
 
@@ -23,7 +25,7 @@ public:
 
   
   static already_AddRefed<FileSystemBase>
-  DeserializeDOMPath(const nsAString& aString);
+  FromString(const nsAString& aString);
 
   FileSystemBase();
 
@@ -31,11 +33,20 @@ public:
   Shutdown();
 
   
-  virtual void
-  SerializeDOMPath(nsAString& aOutput) const = 0;
+  const nsString&
+  ToString() const
+  {
+    return mString;
+  }
 
-  virtual nsISupports*
-  GetParentObject() const;
+  virtual nsPIDOMWindowInner*
+  GetWindow() const;
+
+  
+
+
+  already_AddRefed<nsIFile>
+  GetLocalFile(const nsAString& aRealPath) const;
 
   
 
@@ -62,8 +73,13 @@ public:
   virtual bool
   IsSafeDirectory(Directory* aDir) const;
 
+  
+
+
+
+
   bool
-  GetRealPath(BlobImpl* aFile, nsIFile** aPath) const;
+  GetRealPath(BlobImpl* aFile, nsAString& aRealPath) const;
 
   
 
@@ -87,11 +103,20 @@ public:
 protected:
   virtual ~FileSystemBase();
 
+  bool
+  LocalPathToRealPath(const nsAString& aLocalPath, nsAString& aRealPath) const;
+
   
   
   
   
   nsString mLocalRootPath;
+
+  
+  nsString mNormalizedLocalRootPath;
+
+  
+  nsString mString;
 
   bool mShutdown;
 

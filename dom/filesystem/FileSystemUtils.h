@@ -7,13 +7,12 @@
 #ifndef mozilla_dom_FileSystemUtils_h
 #define mozilla_dom_FileSystemUtils_h
 
-class nsIFile;
+#include "nsString.h"
 
 namespace mozilla {
 namespace dom {
 
-#define FILESYSTEM_DOM_PATH_SEPARATOR_LITERAL "/"
-#define FILESYSTEM_DOM_PATH_SEPARATOR_CHAR '/'
+#define FILESYSTEM_DOM_PATH_SEPARATOR "/"
 
 
 
@@ -25,8 +24,24 @@ public:
   
 
 
+  static void
+  LocalPathToNormalizedPath(const nsAString& aLocal, nsAString& aNorm);
+
+  
+
+
+
+  static void
+  NormalizedPathToLocalPath(const nsAString& aNorm, nsAString& aLocal);
+
+  
+
+
+
   static bool
-  IsDescendantPath(nsIFile* aPath, nsIFile* aDescendantPath);
+  IsDescendantPath(const nsAString& aPath, const nsAString& aDescendantPath);
+
+  static const char16_t kSeparatorChar = char16_t('/');
 };
 
 } 
