@@ -39,6 +39,19 @@ class CompositorWidgetInitData;
 class CompositorWidgetDelegate;
 
 
+#if defined(XP_WIN)
+
+
+class CompositorWidgetParent;
+
+
+
+class CompositorWidgetChild;
+
+# define MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
+#endif
+
+
 
 
 class CompositorWidget

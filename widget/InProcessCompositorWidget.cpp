@@ -10,7 +10,7 @@ namespace widget {
 
 
 
-#if !defined(XP_WIN)
+#if !defined(MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING)
  RefPtr<CompositorWidget>
 CompositorWidget::CreateLocal(const CompositorWidgetInitData& aInitData, nsIWidget* aWidget)
 {
