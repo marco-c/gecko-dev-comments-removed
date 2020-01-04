@@ -80,11 +80,6 @@ class SearchEngineRow extends AnimatedHeightLayout {
     private int mMaxSavedSuggestions;
     private int mMaxSearchSuggestions;
 
-    
-    
-    StyleSpan mPriorToSearchTerm;
-    StyleSpan mAfterSearchTerm;
-
     public SearchEngineRow(Context context) {
         this(context, null);
     }
@@ -150,9 +145,6 @@ class SearchEngineRow extends AnimatedHeightLayout {
         
         mMaxSavedSuggestions = getResources().getInteger(R.integer.max_saved_suggestions);
         mMaxSearchSuggestions = getResources().getInteger(R.integer.max_search_suggestions);
-
-        mPriorToSearchTerm = new StyleSpan(Typeface.BOLD);
-        mAfterSearchTerm = new StyleSpan(Typeface.BOLD);
     }
 
     private void setDescriptionOnSuggestion(View v, String suggestion) {
@@ -165,6 +157,38 @@ class SearchEngineRow extends AnimatedHeightLayout {
         return suggestionText.getText().toString();
     }
 
+    
+
+
+
+
+
+
+    private List<Integer> findAllOccurrencesOf(String pattern, String string) {
+        List<Integer> occurrences = new ArrayList<>();
+        final int patternLength = pattern.length();
+        int indexOfMatch = 0;
+        int lastIndexOfMatch = 0;
+        while(indexOfMatch != -1) {
+            indexOfMatch = string.indexOf(pattern, lastIndexOfMatch);
+            lastIndexOfMatch = indexOfMatch + patternLength;
+            if(indexOfMatch != -1) {
+                occurrences.add(indexOfMatch);
+            }
+        }
+        return occurrences;
+    }
+
+    
+
+
+
+
+
+
+
+
+
     private void setSuggestionOnView(View v, String suggestion, boolean isUserSavedSearch) {
         final ImageView historyIcon = (ImageView) v.findViewById(R.id.suggestion_item_icon);
         if (isUserSavedSearch) {
@@ -176,14 +200,19 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
         final TextView suggestionText = (TextView) v.findViewById(R.id.suggestion_text);
         final String searchTerm = getSuggestionTextFromView(mUserEnteredView);
-        
-        final int startOfSearchTerm = suggestion.indexOf(searchTerm);
-        
-        if (startOfSearchTerm >= 0) {
-            final int endOfSearchTerm = startOfSearchTerm + searchTerm.length();
+        final int searchTermLength = searchTerm.length();
+        final List<Integer> occurrences = findAllOccurrencesOf(searchTerm, suggestion);
+        if (occurrences.size() > 0) {
             final SpannableStringBuilder sb = new SpannableStringBuilder(suggestion);
-            sb.setSpan(mPriorToSearchTerm, 0, startOfSearchTerm, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-            sb.setSpan(mAfterSearchTerm, endOfSearchTerm, suggestion.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+            int nextStartSpanIndex = 0;
+            
+            occurrences.add(suggestion.length());
+            for(int occurrence : occurrences) {
+                
+                StyleSpan boldSpan = new StyleSpan(Typeface.BOLD);
+                sb.setSpan(boldSpan, nextStartSpanIndex, occurrence, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+                nextStartSpanIndex = occurrence + searchTermLength;
+            }
             suggestionText.setText(sb);
         } else {
             suggestionText.setText(suggestion);
