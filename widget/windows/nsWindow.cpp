@@ -6863,6 +6863,11 @@ nsWindow::OnSysColorChanged()
 void
 nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width, int32_t height)
 {
+  
+  
+  if (mWindowType == eWindowType_popup) {
+    return;
+  }
   if (DefaultScaleOverride() > 0.0) {
     return;
   }
