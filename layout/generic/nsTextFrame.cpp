@@ -1607,6 +1607,19 @@ GetFirstFontMetrics(gfxFontGroup* aFontGroup, bool aVerticalMetrics)
                                            : gfxFont::eHorizontal);
 }
 
+static gfxFloat
+GetSpaceWidthAppUnits(gfxTextRun* aTextRun)
+{
+  
+  
+  gfxFloat spaceWidthAppUnits =
+    NS_round(GetFirstFontMetrics(aTextRun->GetFontGroup(),
+                                 aTextRun->UseCenterBaseline()).spaceWidth *
+             aTextRun->GetAppUnitsPerDevUnit());
+
+  return spaceWidthAppUnits;
+}
+
 static nscoord
 LetterSpacing(nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr)
 {
@@ -3225,14 +3238,8 @@ ComputeTabWidthAppUnits(nsIFrame* aFrame, gfxTextRun* aTextRun)
 {
   
   const nsStyleText* textStyle = aFrame->StyleText();
-  
-  
-  
-  gfxFloat spaceWidthAppUnits =
-    NS_round(GetFirstFontMetrics(aTextRun->GetFontGroup(),
-                                 aTextRun->UseCenterBaseline()).spaceWidth *
-             aTextRun->GetAppUnitsPerDevUnit());
-  return textStyle->mTabSize * spaceWidthAppUnits;
+
+  return textStyle->mTabSize * GetSpaceWidthAppUnits(aTextRun);
 }
 
 
