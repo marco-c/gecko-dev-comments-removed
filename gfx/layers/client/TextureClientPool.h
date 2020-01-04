@@ -151,6 +151,11 @@ private:
   RefPtr<nsITimer> mTimer;
   
   TextureForwarder* mSurfaceAllocator;
+
+  
+  
+  
+  bool mDestroyed;
 };
 
 } 
