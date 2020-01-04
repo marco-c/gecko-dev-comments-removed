@@ -200,7 +200,10 @@ protected:
   virtual ~nsPrefBranch();
 
   nsPrefBranch()    
-    { }
+    : mPrefRootLength(0)
+    , mIsDefault(false)
+    , mFreeingObserverList(false)
+  {}
 
   nsresult   GetDefaultFromPropertiesFile(const char *aPrefName, char16_t **return_buf);
   
