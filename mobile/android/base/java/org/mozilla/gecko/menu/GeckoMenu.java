@@ -462,6 +462,17 @@ public class GeckoMenu extends ListView
     }
 
     @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        
+        if (keyCode == KeyEvent.KEYCODE_MENU && isShown()) {
+            close();
+            return true;
+        }
+
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
     public boolean isShortcutKey(int keyCode, KeyEvent event) {
         return true;
     }
