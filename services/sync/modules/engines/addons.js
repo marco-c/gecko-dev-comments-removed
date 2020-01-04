@@ -281,6 +281,14 @@ AddonsStore.prototype = {
       }
     }
 
+    
+    
+    let existingMeta = this.reconciler.addons[record.addonID];
+    if (existingMeta && !this.isAddonSyncable(existingMeta)) {
+      this._log.info("Ignoring incoming record for an existing but non-syncable addon", record.addonID);
+      return;
+    }
+
     Store.prototype.applyIncoming.call(this, record);
   },
 
@@ -535,6 +543,9 @@ AddonsStore.prototype = {
     
     
     
+    
+    
+    
 
     
     
@@ -555,6 +566,12 @@ AddonsStore.prototype = {
     }
 
     
+    if (!addon.isSyncable) {
+      this._log.debug(addon.id + " not syncable: vetoed by the addon manager.");
+      return false;
+    }
+
+    
     
     
     
@@ -563,6 +580,10 @@ AddonsStore.prototype = {
       return false;
     }
 
+    
+    
+    
+    
     
     if (this._extensionsPrefs.get("hotfix.id", null) == addon.id) {
       this._log.debug(addon.id + " not syncable: is a hotfix.");
