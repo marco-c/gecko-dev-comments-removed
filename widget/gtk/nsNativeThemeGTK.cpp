@@ -1095,7 +1095,14 @@ nsNativeThemeGTK::DrawWidgetBackground(nsRenderingContext* aContext,
 {
   GtkWidgetState state;
   WidgetNodeType gtkWidgetType;
-  GtkTextDirection direction = GetTextDirection(aFrame);
+  
+  
+  
+  
+  GtkTextDirection direction =
+    aWidgetType == NS_THEME_RESIZER
+    ? (IsFrameRTL(aFrame) ? GTK_TEXT_DIR_RTL : GTK_TEXT_DIR_LTR)
+    : GetTextDirection(aFrame);
   gint flags;
   if (!GetGtkWidgetAndState(aWidgetType, aFrame, gtkWidgetType, &state,
                             &flags))
