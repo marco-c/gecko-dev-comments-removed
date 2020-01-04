@@ -4,8 +4,8 @@
 
 
 
-#include "mozilla/layers/CompositorChild.h"
-#include "mozilla/layers/CompositorParent.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include <stddef.h>                     
 #include "ClientLayerManager.h"         
 #include "base/message_loop.h"          
@@ -34,28 +34,28 @@ using mozilla::Unused;
 namespace mozilla {
 namespace layers {
 
- CompositorChild* CompositorChild::sCompositor;
+ CompositorBridgeChild* CompositorBridgeChild::sCompositor;
 
 Atomic<int32_t> CompositableForwarder::sSerialCounter(0);
 
-CompositorChild::CompositorChild(ClientLayerManager *aLayerManager)
+CompositorBridgeChild::CompositorBridgeChild(ClientLayerManager *aLayerManager)
   : mLayerManager(aLayerManager)
   , mCanSend(false)
 {
 }
 
-CompositorChild::~CompositorChild()
+CompositorBridgeChild::~CompositorBridgeChild()
 {
   XRE_GetIOMessageLoop()->PostTask(FROM_HERE,
                                    new DeleteTask<Transport>(GetTransport()));
 
   if (mCanSend) {
-    gfxCriticalError() << "CompositorChild was not deinitialized";
+    gfxCriticalError() << "CompositorBridgeChild was not deinitialized";
   }
 }
 
-static void DeferredDestroyCompositor(RefPtr<CompositorParent> aCompositorParent,
-                                      RefPtr<CompositorChild> aCompositorChild)
+static void DeferredDestroyCompositor(RefPtr<CompositorBridgeParent> aCompositorBridgeParent,
+                                      RefPtr<CompositorBridgeChild> aCompositorBridgeChild)
 {
     
     
@@ -63,7 +63,7 @@ static void DeferredDestroyCompositor(RefPtr<CompositorParent> aCompositorParent
 }
 
 void
-CompositorChild::Destroy()
+CompositorBridgeChild::Destroy()
 {
   
   MOZ_ASSERT(mRefCnt != 0);
@@ -77,7 +77,7 @@ CompositorChild::Destroy()
   
   
   
-  RefPtr<CompositorChild> selfRef = this;
+  RefPtr<CompositorBridgeChild> selfRef = this;
 
   SendWillStop();
   
@@ -108,12 +108,12 @@ CompositorChild::Destroy()
   
   
   MessageLoop::current()->PostTask(FROM_HERE,
-             NewRunnableFunction(DeferredDestroyCompositor, mCompositorParent, selfRef));
+             NewRunnableFunction(DeferredDestroyCompositor, mCompositorBridgeParent, selfRef));
 }
 
 bool
-CompositorChild::LookupCompositorFrameMetrics(const FrameMetrics::ViewID aId,
-                                              FrameMetrics& aFrame)
+CompositorBridgeChild::LookupCompositorFrameMetrics(const FrameMetrics::ViewID aId,
+                                                    FrameMetrics& aFrame)
 {
   SharedFrameMetricsData* data = mFrameMetricsTable.Get(aId);
   if (data) {
@@ -124,12 +124,12 @@ CompositorChild::LookupCompositorFrameMetrics(const FrameMetrics::ViewID aId,
 }
 
  PCompositorBridgeChild*
-CompositorChild::Create(Transport* aTransport, ProcessId aOtherPid)
+CompositorBridgeChild::Create(Transport* aTransport, ProcessId aOtherPid)
 {
   
   MOZ_ASSERT(!sCompositor);
 
-  RefPtr<CompositorChild> child(new CompositorChild(nullptr));
+  RefPtr<CompositorBridgeChild> child(new CompositorBridgeChild(nullptr));
   if (!child->Open(aTransport, aOtherPid, XRE_GetIOMessageLoop(), ipc::ChildSide)) {
     NS_RUNTIMEABORT("Couldn't Open() Compositor channel.");
     return nullptr;
@@ -150,19 +150,19 @@ CompositorChild::Create(Transport* aTransport, ProcessId aOtherPid)
 }
 
 bool
-CompositorChild::OpenSameProcess(CompositorParent* aParent)
+CompositorBridgeChild::OpenSameProcess(CompositorBridgeParent* aParent)
 {
   MOZ_ASSERT(aParent);
 
-  mCompositorParent = aParent;
-  mCanSend = Open(mCompositorParent->GetIPCChannel(),
-                  CompositorParent::CompositorLoop(),
+  mCompositorBridgeParent = aParent;
+  mCanSend = Open(mCompositorBridgeParent->GetIPCChannel(),
+                  CompositorBridgeParent::CompositorLoop(),
                   ipc::ChildSide);
   return mCanSend;
 }
 
- CompositorChild*
-CompositorChild::Get()
+ CompositorBridgeChild*
+CompositorBridgeChild::Get()
 {
   
   MOZ_ASSERT(!XRE_IsParentProcess());
@@ -170,10 +170,10 @@ CompositorChild::Get()
 }
 
 PLayerTransactionChild*
-CompositorChild::AllocPLayerTransactionChild(const nsTArray<LayersBackend>& aBackendHints,
-                                             const uint64_t& aId,
-                                             TextureFactoryIdentifier*,
-                                             bool*)
+CompositorBridgeChild::AllocPLayerTransactionChild(const nsTArray<LayersBackend>& aBackendHints,
+                                                   const uint64_t& aId,
+                                                   TextureFactoryIdentifier*,
+                                                   bool*)
 {
   MOZ_ASSERT(mCanSend);
   LayerTransactionChild* c = new LayerTransactionChild(aId);
@@ -182,7 +182,7 @@ CompositorChild::AllocPLayerTransactionChild(const nsTArray<LayersBackend>& aBac
 }
 
 bool
-CompositorChild::DeallocPLayerTransactionChild(PLayerTransactionChild* actor)
+CompositorBridgeChild::DeallocPLayerTransactionChild(PLayerTransactionChild* actor)
 {
   uint64_t childId = static_cast<LayerTransactionChild*>(actor)->GetId();
 
@@ -197,7 +197,7 @@ CompositorChild::DeallocPLayerTransactionChild(PLayerTransactionChild* actor)
 }
 
 bool
-CompositorChild::RecvInvalidateLayers(const uint64_t& aLayersId)
+CompositorBridgeChild::RecvInvalidateLayers(const uint64_t& aLayersId)
 {
   if (mLayerManager) {
     MOZ_ASSERT(aLayersId == 0);
@@ -211,7 +211,7 @@ CompositorChild::RecvInvalidateLayers(const uint64_t& aLayersId)
 }
 
 bool
-CompositorChild::RecvCompositorUpdated(const uint64_t& aLayersId,
+CompositorBridgeChild::RecvCompositorUpdated(const uint64_t& aLayersId,
                                       const TextureFactoryIdentifier& aNewIdentifier)
 {
   if (mLayerManager) {
@@ -263,12 +263,12 @@ static void CalculatePluginClip(const LayoutDeviceIntRect& aBounds,
 #endif
 
 bool
-CompositorChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint& aContentOffset,
-                                                const LayoutDeviceIntRegion& aParentLayerVisibleRegion,
-                                                nsTArray<PluginWindowData>&& aPlugins)
+CompositorBridgeChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint& aContentOffset,
+                                                      const LayoutDeviceIntRegion& aParentLayerVisibleRegion,
+                                                      nsTArray<PluginWindowData>&& aPlugins)
 {
 #if !defined(XP_WIN) && !defined(MOZ_WIDGET_GTK)
-  NS_NOTREACHED("CompositorChild::RecvUpdatePluginConfigurations calls "
+  NS_NOTREACHED("CompositorBridgeChild::RecvUpdatePluginConfigurations calls "
                 "unexpected on this platform.");
   return false;
 #else
@@ -351,10 +351,10 @@ CompositorChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint& aCon
 }
 
 bool
-CompositorChild::RecvHideAllPlugins(const uintptr_t& aParentWidget)
+CompositorBridgeChild::RecvHideAllPlugins(const uintptr_t& aParentWidget)
 {
 #if !defined(XP_WIN) && !defined(MOZ_WIDGET_GTK)
-  NS_NOTREACHED("CompositorChild::RecvHideAllPlugins calls "
+  NS_NOTREACHED("CompositorBridgeChild::RecvHideAllPlugins calls "
                 "unexpected on this platform.");
   return false;
 #else
@@ -369,9 +369,9 @@ CompositorChild::RecvHideAllPlugins(const uintptr_t& aParentWidget)
 }
 
 bool
-CompositorChild::RecvDidComposite(const uint64_t& aId, const uint64_t& aTransactionId,
-                                  const TimeStamp& aCompositeStart,
-                                  const TimeStamp& aCompositeEnd)
+CompositorBridgeChild::RecvDidComposite(const uint64_t& aId, const uint64_t& aTransactionId,
+                                        const TimeStamp& aCompositeStart,
+                                        const TimeStamp& aCompositeEnd)
 {
   if (mLayerManager) {
     MOZ_ASSERT(aId == 0);
@@ -386,7 +386,7 @@ CompositorChild::RecvDidComposite(const uint64_t& aId, const uint64_t& aTransact
 }
 
 bool
-CompositorChild::RecvOverfill(const uint32_t &aOverfill)
+CompositorBridgeChild::RecvOverfill(const uint32_t &aOverfill)
 {
   for (size_t i = 0; i < mOverfillObservers.Length(); i++) {
     mOverfillObservers[i]->RunOverfillCallback(aOverfill);
@@ -396,14 +396,14 @@ CompositorChild::RecvOverfill(const uint32_t &aOverfill)
 }
 
 void
-CompositorChild::AddOverfillObserver(ClientLayerManager* aLayerManager)
+CompositorBridgeChild::AddOverfillObserver(ClientLayerManager* aLayerManager)
 {
   MOZ_ASSERT(aLayerManager);
   mOverfillObservers.AppendElement(aLayerManager);
 }
 
 bool
-CompositorChild::RecvClearCachedResources(const uint64_t& aId)
+CompositorBridgeChild::RecvClearCachedResources(const uint64_t& aId)
 {
   dom::TabChild* child = dom::TabChild::GetFrom(aId);
   if (child) {
@@ -413,7 +413,7 @@ CompositorChild::RecvClearCachedResources(const uint64_t& aId)
 }
 
 void
-CompositorChild::ActorDestroy(ActorDestroyReason aWhy)
+CompositorBridgeChild::ActorDestroy(ActorDestroyReason aWhy)
 {
   MOZ_ASSERT(sCompositor == this);
 
@@ -423,7 +423,7 @@ CompositorChild::ActorDestroy(ActorDestroyReason aWhy)
   
   
   
-    NS_RUNTIMEABORT("ActorDestroy by IPC channel failure at CompositorChild");
+    NS_RUNTIMEABORT("ActorDestroy by IPC channel failure at CompositorBridgeChild");
 #endif
 
     
@@ -434,11 +434,11 @@ CompositorChild::ActorDestroy(ActorDestroyReason aWhy)
 
   MessageLoop::current()->PostTask(
     FROM_HERE,
-    NewRunnableMethod(this, &CompositorChild::Release));
+    NewRunnableMethod(this, &CompositorBridgeChild::Release));
 }
 
 bool
-CompositorChild::RecvSharedCompositorFrameMetrics(
+CompositorBridgeChild::RecvSharedCompositorFrameMetrics(
     const mozilla::ipc::SharedMemoryBasic::Handle& metrics,
     const CrossProcessMutexHandle& handle,
     const uint64_t& aLayersId,
@@ -451,7 +451,7 @@ CompositorChild::RecvSharedCompositorFrameMetrics(
 }
 
 bool
-CompositorChild::RecvReleaseSharedCompositorFrameMetrics(
+CompositorBridgeChild::RecvReleaseSharedCompositorFrameMetrics(
     const ViewID& aId,
     const uint32_t& aAPZCId)
 {
@@ -465,7 +465,7 @@ CompositorChild::RecvReleaseSharedCompositorFrameMetrics(
   return true;
 }
 
-CompositorChild::SharedFrameMetricsData::SharedFrameMetricsData(
+CompositorBridgeChild::SharedFrameMetricsData::SharedFrameMetricsData(
     const ipc::SharedMemoryBasic::Handle& metrics,
     const CrossProcessMutexHandle& handle,
     const uint64_t& aLayersId,
@@ -481,7 +481,7 @@ CompositorChild::SharedFrameMetricsData::SharedFrameMetricsData(
   MOZ_COUNT_CTOR(SharedFrameMetricsData);
 }
 
-CompositorChild::SharedFrameMetricsData::~SharedFrameMetricsData()
+CompositorBridgeChild::SharedFrameMetricsData::~SharedFrameMetricsData()
 {
   
   
@@ -491,7 +491,7 @@ CompositorChild::SharedFrameMetricsData::~SharedFrameMetricsData()
 }
 
 void
-CompositorChild::SharedFrameMetricsData::CopyFrameMetrics(FrameMetrics* aFrame)
+CompositorBridgeChild::SharedFrameMetricsData::CopyFrameMetrics(FrameMetrics* aFrame)
 {
   FrameMetrics* frame = static_cast<FrameMetrics*>(mBuffer->memory());
   MOZ_ASSERT(frame);
@@ -501,7 +501,7 @@ CompositorChild::SharedFrameMetricsData::CopyFrameMetrics(FrameMetrics* aFrame)
 }
 
 FrameMetrics::ViewID
-CompositorChild::SharedFrameMetricsData::GetViewID()
+CompositorBridgeChild::SharedFrameMetricsData::GetViewID()
 {
   FrameMetrics* frame = static_cast<FrameMetrics*>(mBuffer->memory());
   MOZ_ASSERT(frame);
@@ -511,26 +511,26 @@ CompositorChild::SharedFrameMetricsData::GetViewID()
 }
 
 uint64_t
-CompositorChild::SharedFrameMetricsData::GetLayersId() const
+CompositorBridgeChild::SharedFrameMetricsData::GetLayersId() const
 {
   return mLayersId;
 }
 
 uint32_t
-CompositorChild::SharedFrameMetricsData::GetAPZCId()
+CompositorBridgeChild::SharedFrameMetricsData::GetAPZCId()
 {
   return mAPZCId;
 }
 
 
 bool
-CompositorChild::RecvRemotePaintIsReady()
+CompositorBridgeChild::RecvRemotePaintIsReady()
 {
   
   
   
   
-  MOZ_LAYERS_LOG(("[RemoteGfx] CompositorChild received RemotePaintIsReady"));
+  MOZ_LAYERS_LOG(("[RemoteGfx] CompositorBridgeChild received RemotePaintIsReady"));
   RefPtr<nsISupports> iTabChildBase(do_QueryReferent(mWeakTabChild));
   if (!iTabChildBase) {
     MOZ_LAYERS_LOG(("[RemoteGfx] Note: TabChild was released before RemotePaintIsReady. "
@@ -547,15 +547,15 @@ CompositorChild::RecvRemotePaintIsReady()
 
 
 void
-CompositorChild::RequestNotifyAfterRemotePaint(TabChild* aTabChild)
+CompositorBridgeChild::RequestNotifyAfterRemotePaint(TabChild* aTabChild)
 {
-  MOZ_ASSERT(aTabChild, "NULL TabChild not allowed in CompositorChild::RequestNotifyAfterRemotePaint");
+  MOZ_ASSERT(aTabChild, "NULL TabChild not allowed in CompositorBridgeChild::RequestNotifyAfterRemotePaint");
   mWeakTabChild = do_GetWeakReference( static_cast<dom::TabChildBase*>(aTabChild) );
   Unused << SendRequestNotifyAfterRemotePaint();
 }
 
 void
-CompositorChild::CancelNotifyAfterRemotePaint(TabChild* aTabChild)
+CompositorBridgeChild::CancelNotifyAfterRemotePaint(TabChild* aTabChild)
 {
   RefPtr<nsISupports> iTabChildBase(do_QueryReferent(mWeakTabChild));
   if (!iTabChildBase) {
@@ -569,13 +569,13 @@ CompositorChild::CancelNotifyAfterRemotePaint(TabChild* aTabChild)
 }
 
 bool
-CompositorChild::SendWillStop()
+CompositorBridgeChild::SendWillStop()
 {
   return PCompositorBridgeChild::SendWillStop();
 }
 
 bool
-CompositorChild::SendPause()
+CompositorBridgeChild::SendPause()
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -585,7 +585,7 @@ CompositorChild::SendPause()
 }
 
 bool
-CompositorChild::SendResume()
+CompositorBridgeChild::SendResume()
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -595,7 +595,7 @@ CompositorChild::SendResume()
 }
 
 bool
-CompositorChild::SendNotifyHidden(const uint64_t& id)
+CompositorBridgeChild::SendNotifyHidden(const uint64_t& id)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -605,7 +605,7 @@ CompositorChild::SendNotifyHidden(const uint64_t& id)
 }
 
 bool
-CompositorChild::SendNotifyVisible(const uint64_t& id)
+CompositorBridgeChild::SendNotifyVisible(const uint64_t& id)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -615,7 +615,7 @@ CompositorChild::SendNotifyVisible(const uint64_t& id)
 }
 
 bool
-CompositorChild::SendNotifyChildCreated(const uint64_t& id)
+CompositorBridgeChild::SendNotifyChildCreated(const uint64_t& id)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -625,7 +625,7 @@ CompositorChild::SendNotifyChildCreated(const uint64_t& id)
 }
 
 bool
-CompositorChild::SendAdoptChild(const uint64_t& id)
+CompositorBridgeChild::SendAdoptChild(const uint64_t& id)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -635,7 +635,7 @@ CompositorChild::SendAdoptChild(const uint64_t& id)
 }
 
 bool
-CompositorChild::SendMakeSnapshot(const SurfaceDescriptor& inSnapshot, const gfx::IntRect& dirtyRect)
+CompositorBridgeChild::SendMakeSnapshot(const SurfaceDescriptor& inSnapshot, const gfx::IntRect& dirtyRect)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -645,7 +645,7 @@ CompositorChild::SendMakeSnapshot(const SurfaceDescriptor& inSnapshot, const gfx
 }
 
 bool
-CompositorChild::SendFlushRendering()
+CompositorBridgeChild::SendFlushRendering()
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -655,7 +655,7 @@ CompositorChild::SendFlushRendering()
 }
 
 bool
-CompositorChild::SendGetTileSize(int32_t* tileWidth, int32_t* tileHeight)
+CompositorBridgeChild::SendGetTileSize(int32_t* tileWidth, int32_t* tileHeight)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -665,7 +665,7 @@ CompositorChild::SendGetTileSize(int32_t* tileWidth, int32_t* tileHeight)
 }
 
 bool
-CompositorChild::SendStartFrameTimeRecording(const int32_t& bufferSize, uint32_t* startIndex)
+CompositorBridgeChild::SendStartFrameTimeRecording(const int32_t& bufferSize, uint32_t* startIndex)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -675,7 +675,7 @@ CompositorChild::SendStartFrameTimeRecording(const int32_t& bufferSize, uint32_t
 }
 
 bool
-CompositorChild::SendStopFrameTimeRecording(const uint32_t& startIndex, nsTArray<float>* intervals)
+CompositorBridgeChild::SendStopFrameTimeRecording(const uint32_t& startIndex, nsTArray<float>* intervals)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -685,7 +685,7 @@ CompositorChild::SendStopFrameTimeRecording(const uint32_t& startIndex, nsTArray
 }
 
 bool
-CompositorChild::SendNotifyRegionInvalidated(const nsIntRegion& region)
+CompositorBridgeChild::SendNotifyRegionInvalidated(const nsIntRegion& region)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -695,7 +695,7 @@ CompositorChild::SendNotifyRegionInvalidated(const nsIntRegion& region)
 }
 
 bool
-CompositorChild::SendRequestNotifyAfterRemotePaint()
+CompositorBridgeChild::SendRequestNotifyAfterRemotePaint()
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -705,8 +705,8 @@ CompositorChild::SendRequestNotifyAfterRemotePaint()
 }
 
 bool
-CompositorChild::SendClearApproximatelyVisibleRegions(uint64_t aLayersId,
-                                                      uint32_t aPresShellId)
+CompositorBridgeChild::SendClearApproximatelyVisibleRegions(uint64_t aLayersId,
+                                                            uint32_t aPresShellId)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {
@@ -717,8 +717,8 @@ CompositorChild::SendClearApproximatelyVisibleRegions(uint64_t aLayersId,
 }
 
 bool
-CompositorChild::SendNotifyApproximatelyVisibleRegion(const ScrollableLayerGuid& aGuid,
-                                                      const CSSIntRegion& aRegion)
+CompositorBridgeChild::SendNotifyApproximatelyVisibleRegion(const ScrollableLayerGuid& aGuid,
+                                                            const CSSIntRegion& aRegion)
 {
   MOZ_ASSERT(mCanSend);
   if (!mCanSend) {

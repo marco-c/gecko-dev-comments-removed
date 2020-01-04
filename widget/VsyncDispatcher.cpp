@@ -8,7 +8,7 @@
 #include "VsyncSource.h"
 #include "gfxPlatform.h"
 #include "mozilla/layers/Compositor.h"
-#include "mozilla/layers/CompositorParent.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 
 #ifdef MOZ_ENABLE_PROFILER_SPS
 #include "GeckoProfiler.h"
@@ -44,7 +44,7 @@ CompositorVsyncDispatcher::NotifyVsync(TimeStamp aVsyncTimestamp)
 {
   
 #ifdef MOZ_ENABLE_PROFILER_SPS
-  layers::CompositorParent::PostInsertVsyncProfilerMarker(aVsyncTimestamp);
+  layers::CompositorBridgeParent::PostInsertVsyncProfilerMarker(aVsyncTimestamp);
 #endif
 
   MutexAutoLock lock(mCompositorObserverLock);

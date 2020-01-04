@@ -12,7 +12,7 @@
 #include "mozilla/dom/TabChild.h"       
 #include "mozilla/hal_sandbox/PHal.h"   
 #include "mozilla/layers/CompositableClient.h"
-#include "mozilla/layers/CompositorChild.h" 
+#include "mozilla/layers/CompositorBridgeChild.h" 
 #include "mozilla/layers/ContentClient.h"
 #include "mozilla/layers/FrameUniformityData.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
@@ -369,7 +369,7 @@ ClientLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
   return true;
 }
 
-CompositorChild *
+CompositorBridgeChild *
 ClientLayerManager::GetRemoteRenderer()
 {
   if (!mWidget) {
@@ -379,11 +379,11 @@ ClientLayerManager::GetRemoteRenderer()
   return mWidget->GetRemoteRenderer();
 }
 
-CompositorChild*
-ClientLayerManager::GetCompositorChild()
+CompositorBridgeChild*
+ClientLayerManager::GetCompositorBridgeChild()
 {
   if (!XRE_IsParentProcess()) {
-    return CompositorChild::Get();
+    return CompositorBridgeChild::Get();
   }
   return GetRemoteRenderer();
 }
@@ -458,7 +458,7 @@ ClientLayerManager::GetFrameUniformity(FrameUniformityData* aOutData)
   MOZ_ASSERT(XRE_IsParentProcess(), "Frame Uniformity only supported in parent process");
 
   if (HasShadowManager()) {
-    CompositorChild* child = GetRemoteRenderer();
+    CompositorBridgeChild* child = GetRemoteRenderer();
     child->SendGetFrameUniformity(aOutData);
     return;
   }
@@ -473,8 +473,8 @@ ClientLayerManager::RequestOverfill(mozilla::dom::OverfillCallback* aCallback)
   MOZ_ASSERT(HasShadowManager(), "Request Overfill only supported on b2g for now");
 
   if (HasShadowManager()) {
-    CompositorChild* child = GetRemoteRenderer();
-    NS_ASSERTION(child, "Could not get CompositorChild");
+    CompositorBridgeChild* child = GetRemoteRenderer();
+    NS_ASSERTION(child, "Could not get CompositorBridgeChild");
 
     child->AddOverfillObserver(this);
     child->SendRequestOverfill();
@@ -502,7 +502,7 @@ ClientLayerManager::MakeSnapshotIfRequired()
     return;
   }
   if (mWidget) {
-    if (CompositorChild* remoteRenderer = GetRemoteRenderer()) {
+    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
       
       
       
@@ -549,7 +549,7 @@ void
 ClientLayerManager::FlushRendering()
 {
   if (mWidget) {
-    if (CompositorChild* remoteRenderer = mWidget->GetRemoteRenderer()) {
+    if (CompositorBridgeChild* remoteRenderer = mWidget->GetRemoteRenderer()) {
       remoteRenderer->SendFlushRendering();
     }
   }
@@ -565,7 +565,7 @@ void
 ClientLayerManager::SendInvalidRegion(const nsIntRegion& aRegion)
 {
   if (mWidget) {
-    if (CompositorChild* remoteRenderer = mWidget->GetRemoteRenderer()) {
+    if (CompositorBridgeChild* remoteRenderer = mWidget->GetRemoteRenderer()) {
       remoteRenderer->SendNotifyRegionInvalidated(aRegion);
     }
   }
@@ -574,7 +574,7 @@ ClientLayerManager::SendInvalidRegion(const nsIntRegion& aRegion)
 uint32_t
 ClientLayerManager::StartFrameTimeRecording(int32_t aBufferSize)
 {
-  CompositorChild* renderer = GetRemoteRenderer();
+  CompositorBridgeChild* renderer = GetRemoteRenderer();
   if (renderer) {
     uint32_t startIndex;
     renderer->SendStartFrameTimeRecording(aBufferSize, &startIndex);
@@ -587,7 +587,7 @@ void
 ClientLayerManager::StopFrameTimeRecording(uint32_t         aStartIndex,
                                            nsTArray<float>& aFrameIntervals)
 {
-  CompositorChild* renderer = GetRemoteRenderer();
+  CompositorBridgeChild* renderer = GetRemoteRenderer();
   if (renderer) {
     renderer->SendStopFrameTimeRecording(aStartIndex, &aFrameIntervals);
   }

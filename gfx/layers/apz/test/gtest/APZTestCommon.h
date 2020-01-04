@@ -18,7 +18,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/layers/AsyncCompositionManager.h" 
 #include "mozilla/layers/GeckoContentController.h"
-#include "mozilla/layers/CompositorParent.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/APZCTreeManager.h"
 #include "mozilla/layers/LayerMetricsWrapper.h"
 #include "mozilla/layers/APZThreadUtils.h"

@@ -14,7 +14,7 @@
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/layers/APZCTreeManager.h"
 #include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/layers/CompositorParent.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layout/RenderFrameParent.h"
 #include "mozilla/unused.h"
 #include "Units.h"
@@ -376,7 +376,7 @@ RemoteContentController::GetApzcTreeManager()
   
   MutexAutoLock lock(mMutex);
   if (!mApzcTreeManager) {
-    mApzcTreeManager = CompositorParent::GetAPZCTreeManager(mLayersId);
+    mApzcTreeManager = CompositorBridgeParent::GetAPZCTreeManager(mLayersId);
   }
   RefPtr<APZCTreeManager> apzcTreeManager(mApzcTreeManager);
   return apzcTreeManager.forget();

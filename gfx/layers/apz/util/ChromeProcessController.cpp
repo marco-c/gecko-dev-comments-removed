@@ -8,7 +8,7 @@
 #include "MainThreadUtils.h"    
 #include "base/message_loop.h"  
 #include "mozilla/dom/Element.h"
-#include "mozilla/layers/CompositorParent.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZEventState.h"
 #include "mozilla/layers/APZCTreeManager.h"

@@ -54,11 +54,11 @@ def expectedTabProcessLeakCounts():
 
     
     appendExpectedLeakCounts({
-        'CompositorChild': 1,
+        'CompositorBridgeChild': 1,
         'CondVar': 1,
         'IPC::Channel': 1,
         'Mutex': 1,
-        'PCompositorChild': 1,
+        'PCompositorBridgeChild': 1,
         'RefCountedMonitor': 1,
         'RefCountedTask': 2,
         'StoreRef': 1,

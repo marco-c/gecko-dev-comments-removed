@@ -159,7 +159,7 @@
 
 #endif
 
-#include "mozilla/layers/CompositorChild.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 #include "GeckoProfiler.h"
 #include "gfxPlatform.h"
 #include "Layers.h"
@@ -5696,7 +5696,7 @@ NotifyCompositorOfVisibleRegionsChange(PresShell* aPresShell,
     return;
   }
 
-  CompositorChild* compositorChild = clientLayerManager->GetCompositorChild();
+  CompositorBridgeChild* compositorChild = clientLayerManager->GetCompositorBridgeChild();
   if (!compositorChild) {
     return;
   }

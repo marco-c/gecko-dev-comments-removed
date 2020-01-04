@@ -33,7 +33,7 @@
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZCTreeManager.h"
 #include "mozilla/layers/APZEventState.h"
-#include "mozilla/layers/CompositorChild.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/DoubleTapToZoom.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/InputAPZContext.h"
@@ -1214,7 +1214,7 @@ TabChild::ActorDestroy(ActorDestroyReason why)
     mTabChildGlobal->mMessageManager = nullptr;
   }
 
-  CompositorChild* compositorChild = static_cast<CompositorChild*>(CompositorChild::Get());
+  CompositorBridgeChild* compositorChild = static_cast<CompositorBridgeChild*>(CompositorBridgeChild::Get());
   compositorChild->CancelNotifyAfterRemotePaint(this);
 
   if (GetTabId() != 0) {
@@ -2537,9 +2537,9 @@ TabChild::InitRenderingState(const TextureFactoryIdentifier& aTextureFactoryIden
 
     
     
-    PCompositorBridgeChild* compositorChild = CompositorChild::Get();
+    PCompositorBridgeChild* compositorChild = CompositorBridgeChild::Get();
     if (!compositorChild) {
-      NS_WARNING("failed to get CompositorChild instance");
+      NS_WARNING("failed to get CompositorBridgeChild instance");
       PRenderFrameChild::Send__delete__(remoteFrame);
       return false;
     }
@@ -2645,7 +2645,7 @@ TabChild::NotifyPainted()
 void
 TabChild::MakeVisible()
 {
-  CompositorChild* compositor = CompositorChild::Get();
+  CompositorBridgeChild* compositor = CompositorBridgeChild::Get();
   if (UsingCompositorLRU()) {
     compositor->SendNotifyVisible(mLayersId);
   }
@@ -2658,7 +2658,7 @@ TabChild::MakeVisible()
 void
 TabChild::MakeHidden()
 {
-  CompositorChild* compositor = CompositorChild::Get();
+  CompositorBridgeChild* compositor = CompositorBridgeChild::Get();
   if (UsingCompositorLRU()) {
     compositor->SendNotifyHidden(mLayersId);
   } else {
@@ -2898,7 +2898,7 @@ bool
 TabChild::RecvRequestNotifyAfterRemotePaint()
 {
   
-  CompositorChild* compositor = CompositorChild::Get();
+  CompositorBridgeChild* compositor = CompositorBridgeChild::Get();
 
   
   

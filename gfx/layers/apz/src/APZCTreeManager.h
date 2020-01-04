@@ -51,7 +51,7 @@ enum ZoomToRectBehavior : uint32_t {
 class Layer;
 class AsyncDragMetrics;
 class AsyncPanZoomController;
-class CompositorParent;
+class CompositorBridgeParent;
 class OverscrollHandoffChain;
 struct OverscrollHandoffState;
 struct FlingHandoffState;
@@ -137,7 +137,7 @@ public:
 
 
 
-  void UpdateHitTestingTree(CompositorParent* aCompositor,
+  void UpdateHitTestingTree(CompositorBridgeParent* aCompositor,
                             Layer* aRoot,
                             bool aIsFirstPaint,
                             uint64_t aOriginatingLayersId,

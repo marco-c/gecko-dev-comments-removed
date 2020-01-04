@@ -85,7 +85,7 @@
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "mozilla/layers/PAPZParent.h"
-#include "mozilla/layers/CompositorParent.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/ImageBridgeParent.h"
 #include "mozilla/layers/SharedBufferManagerParent.h"
 #include "mozilla/LookAndFeel.h"
@@ -1921,7 +1921,7 @@ ContentParent::AllocateLayerTreeId(ContentParent* aContent,
                                    TabParent* aTopLevel, const TabId& aTabId,
                                    uint64_t* aId)
 {
-  *aId = CompositorParent::AllocateLayerTreeId();
+  *aId = CompositorBridgeParent::AllocateLayerTreeId();
 
   if (!gfxPlatform::AsyncPanZoomEnabled()) {
     return true;
@@ -1931,7 +1931,7 @@ ContentParent::AllocateLayerTreeId(ContentParent* aContent,
     return false;
   }
 
-  return CompositorParent::UpdateRemoteContentController(*aId, aContent,
+  return CompositorBridgeParent::UpdateRemoteContentController(*aId, aContent,
                                                          aTabId, aTopLevel);
 }
 
@@ -1979,7 +1979,7 @@ ContentParent::RecvDeallocateLayerTreeId(const uint64_t& aId)
   auto iter = NestedBrowserLayerIds().find(this);
   if (iter != NestedBrowserLayerIds().end() &&
     iter->second.find(aId) != iter->second.end()) {
-    CompositorParent::DeallocateLayerTreeId(aId);
+    CompositorBridgeParent::DeallocateLayerTreeId(aId);
   } else {
     
     KillHard("DeallocateLayerTreeId");
@@ -2550,7 +2550,7 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
     
     
     
-    bool useOffMainThreadCompositing = !!CompositorParent::CompositorLoop();
+    bool useOffMainThreadCompositing = !!CompositorBridgeParent::CompositorLoop();
     if (useOffMainThreadCompositing) {
       DebugOnly<bool> opened = PCompositorBridge::Open(this);
       MOZ_ASSERT(opened);
@@ -3337,7 +3337,7 @@ PCompositorBridgeParent*
 ContentParent::AllocPCompositorBridgeParent(mozilla::ipc::Transport* aTransport,
                                             base::ProcessId aOtherProcess)
 {
-  return CompositorParent::Create(aTransport, aOtherProcess);
+  return CompositorBridgeParent::Create(aTransport, aOtherProcess);
 }
 
 gfx::PVRManagerParent*

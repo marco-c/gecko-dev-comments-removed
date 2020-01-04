@@ -42,7 +42,7 @@ namespace layers {
 
 class AsyncDragMetrics;
 struct ScrollableLayerGuid;
-class CompositorParent;
+class CompositorBridgeParent;
 class GestureEventListener;
 class PCompositorBridgeParent;
 struct AsyncTransform;
@@ -198,7 +198,7 @@ public:
 
 
 
-  void SetCompositorParent(CompositorParent* aCompositorParent);
+  void SetCompositorBridgeParent(CompositorBridgeParent* aCompositorBridgeParent);
 
   
 
@@ -652,7 +652,7 @@ protected:
   void RequestSnapToDestination();
 
   uint64_t mLayersId;
-  RefPtr<CompositorParent> mCompositorParent;
+  RefPtr<CompositorBridgeParent> mCompositorBridgeParent;
 
   
 

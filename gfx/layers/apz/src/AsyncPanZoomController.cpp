@@ -51,9 +51,8 @@
 #include "mozilla/layers/AsyncCompositionManager.h"  
 #include "mozilla/layers/AxisPhysicsModel.h" 
 #include "mozilla/layers/AxisPhysicsMSDModel.h" 
-#include "mozilla/layers/CompositorParent.h" 
+#include "mozilla/layers/CompositorBridgeParent.h" 
 #include "mozilla/layers/LayerTransactionParent.h" 
-#include "mozilla/layers/PCompositorBridgeParent.h" 
 #include "mozilla/layers/ScrollInputMethods.h" 
 #include "mozilla/mozalloc.h"           
 #include "mozilla/unused.h"             
@@ -891,12 +890,12 @@ AsyncPanZoomController::GetSharedFrameMetricsCompositor()
 
   if (mSharingFrameMetricsAcrossProcesses) {
     
-    if (const CompositorParent::LayerTreeState* state = CompositorParent::GetIndirectShadowTree(mLayersId)) {
+    if (const CompositorBridgeParent::LayerTreeState* state = CompositorBridgeParent::GetIndirectShadowTree(mLayersId)) {
       return state->CrossProcessPCompositorBridge();
     }
     return nullptr;
   }
-  return mCompositorParent.get();
+  return mCompositorBridgeParent.get();
 }
 
 already_AddRefed<GeckoContentController>
@@ -2704,8 +2703,8 @@ void AsyncPanZoomController::ClearOverscroll() {
   mY.ClearOverscroll();
 }
 
-void AsyncPanZoomController::SetCompositorParent(CompositorParent* aCompositorParent) {
-  mCompositorParent = aCompositorParent;
+void AsyncPanZoomController::SetCompositorBridgeParent(CompositorBridgeParent* aCompositorBridgeParent) {
+  mCompositorBridgeParent = aCompositorBridgeParent;
 }
 
 void AsyncPanZoomController::ShareFrameMetricsAcrossProcesses() {
@@ -2849,8 +2848,8 @@ const ScreenMargin AsyncPanZoomController::CalculatePendingDisplayPort(
 }
 
 void AsyncPanZoomController::ScheduleComposite() {
-  if (mCompositorParent) {
-    mCompositorParent->ScheduleRenderOnCompositorThread();
+  if (mCompositorBridgeParent) {
+    mCompositorBridgeParent->ScheduleRenderOnCompositorThread();
   }
 }
 
@@ -3775,16 +3774,16 @@ void AsyncPanZoomController::DispatchStateChangeNotification(PanZoomState aOldSt
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
       
       
-      if (mCompositorParent) {
-        mCompositorParent->ScheduleHideAllPluginWindows();
+      if (mCompositorBridgeParent) {
+        mCompositorBridgeParent->ScheduleHideAllPluginWindows();
       }
 #endif
     } else if (IsTransformingState(aOldState) && !IsTransformingState(aNewState)) {
       controller->NotifyAPZStateChange(
           GetGuid(), APZStateChange::TransformEnd);
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-      if (mCompositorParent) {
-        mCompositorParent->ScheduleShowAllPluginWindows();
+      if (mCompositorBridgeParent) {
+        mCompositorBridgeParent->ScheduleShowAllPluginWindows();
       }
 #endif
     }

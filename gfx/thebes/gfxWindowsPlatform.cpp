@@ -37,7 +37,7 @@
 #include "gfxGDIFontList.h"
 #include "gfxGDIFont.h"
 
-#include "mozilla/layers/CompositorParent.h"   
+#include "mozilla/layers/CompositorBridgeParent.h"   
 #include "DeviceManagerD3D9.h"
 #include "mozilla/layers/ReadbackManagerD3D11.h"
 
@@ -1389,7 +1389,7 @@ gfxWindowsPlatform::GetD3D9DeviceManager()
   
   if (!mDeviceManager &&
       (!gfxPlatform::UsesOffMainThreadCompositing() ||
-       CompositorParent::IsInCompositorThread())) {
+       CompositorBridgeParent::IsInCompositorThread())) {
     mDeviceManager = new DeviceManagerD3D9();
     if (!mDeviceManager->Init()) {
       gfxCriticalError() << "[D3D9] Could not Initialize the DeviceManagerD3D9";

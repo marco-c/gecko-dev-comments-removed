@@ -8,7 +8,7 @@
 #ifndef MOZILLA_GFX_VR_VRMANAGERPARENT_H
 #define MOZILLA_GFX_VR_VRMANAGERPARENT_H
 
-#include "mozilla/layers/CompositorParent.h" 
+#include "mozilla/layers/CompositorBridgeParent.h" 
 #include "mozilla/gfx/PVRManagerParent.h" 
 #include "mozilla/ipc/ProtocolUtils.h"    
 #include "mozilla/TimeStamp.h"            

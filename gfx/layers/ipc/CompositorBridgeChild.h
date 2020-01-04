@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_layers_CompositorChild_h
-#define mozilla_layers_CompositorChild_h
+#ifndef mozilla_layers_CompositorBridgeChild_h
+#define mozilla_layers_CompositorBridgeChild_h
 
 #include "base/basictypes.h"            
 #include "mozilla/Assertions.h"         
@@ -31,15 +31,15 @@ namespace layers {
 using mozilla::dom::TabChild;
 
 class ClientLayerManager;
-class CompositorParent;
+class CompositorBridgeParent;
 struct FrameMetrics;
 
-class CompositorChild final : public PCompositorBridgeChild
+class CompositorBridgeChild final : public PCompositorBridgeChild
 {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(CompositorChild)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(CompositorBridgeChild)
 
 public:
-  explicit CompositorChild(ClientLayerManager *aLayerManager);
+  explicit CompositorBridgeChild(ClientLayerManager *aLayerManager);
 
   void Destroy();
 
@@ -62,9 +62,9 @@ public:
 
 
 
-  bool OpenSameProcess(CompositorParent* aParent);
+  bool OpenSameProcess(CompositorBridgeParent* aParent);
 
-  static CompositorChild* Get();
+  static CompositorBridgeChild* Get();
 
   static bool ChildProcessHasCompositor() { return sCompositor != nullptr; }
 
@@ -132,7 +132,7 @@ public:
 
 private:
   
-  virtual ~CompositorChild();
+  virtual ~CompositorBridgeChild();
 
   virtual PLayerTransactionChild*
     AllocPLayerTransactionChild(const nsTArray<LayersBackend>& aBackendHints,
@@ -184,7 +184,7 @@ private:
   RefPtr<ClientLayerManager> mLayerManager;
   
   
-  RefPtr<CompositorParent> mCompositorParent;
+  RefPtr<CompositorBridgeParent> mCompositorBridgeParent;
 
   
   
@@ -193,13 +193,13 @@ private:
   
   
   
-  static CompositorChild* sCompositor;
+  static CompositorBridgeChild* sCompositor;
 
   
   
   nsWeakPtr mWeakTabChild;      
 
-  DISALLOW_EVIL_CONSTRUCTORS(CompositorChild);
+  DISALLOW_EVIL_CONSTRUCTORS(CompositorBridgeChild);
 
   
   AutoTArray<ClientLayerManager*,0> mOverfillObservers;

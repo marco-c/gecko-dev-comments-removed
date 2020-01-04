@@ -20,7 +20,7 @@
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"
-#include "mozilla/layers/CompositorChild.h" 
+#include "mozilla/layers/CompositorBridgeChild.h" 
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersTypes.h"

@@ -42,8 +42,8 @@ using mozilla::plugins::PluginInstanceParent;
 #include "nsDebug.h"
 #include "nsIXULRuntime.h"
 
-#include "mozilla/layers/CompositorParent.h"
-#include "mozilla/layers/CompositorChild.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 #include "ClientLayerManager.h"
 
 #include "nsUXThemeData.h"
@@ -169,7 +169,7 @@ nsIWidgetListener* nsWindow::GetPaintListener()
 
 void nsWindow::ForcePresent()
 {
-  if (CompositorChild* remoteRenderer = GetRemoteRenderer()) {
+  if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
     remoteRenderer->SendForcePresent();
   }
 }
@@ -230,12 +230,12 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
 
   ClientLayerManager *clientLayerManager = GetLayerManager()->AsClientLayerManager();
 
-  if (clientLayerManager && mCompositorParent &&
+  if (clientLayerManager && mCompositorBridgeParent &&
       !mBounds.IsEqualEdges(mLastPaintBounds))
   {
     
     
-    mCompositorParent->ScheduleRenderOnCompositorThread();
+    mCompositorBridgeParent->ScheduleRenderOnCompositorThread();
   }
   mLastPaintBounds = mBounds;
 
@@ -281,7 +281,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
 #endif
   nsIntRegion region = GetRegionToPaint(forceRepaint, ps, hDC);
 
-  if (clientLayerManager && mCompositorParent) {
+  if (clientLayerManager && mCompositorBridgeParent) {
     
     
     clientLayerManager->SetNeedsComposite(true);
@@ -298,8 +298,8 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     return false;
   }
 
-  if (clientLayerManager && mCompositorParent && clientLayerManager->NeedsComposite()) {
-    mCompositorParent->ScheduleRenderOnCompositorThread();
+  if (clientLayerManager && mCompositorBridgeParent && clientLayerManager->NeedsComposite()) {
+    mCompositorBridgeParent->ScheduleRenderOnCompositorThread();
     clientLayerManager->SetNeedsComposite(false);
   }
 

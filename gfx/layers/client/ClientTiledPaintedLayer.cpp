@@ -13,7 +13,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Rect.h"           
-#include "mozilla/layers/CompositorChild.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/LayerMetricsWrapper.h" 
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/mozalloc.h"           
@@ -218,9 +218,9 @@ ClientTiledPaintedLayer::BeginPaint()
 bool
 ClientTiledPaintedLayer::IsScrollingOnCompositor(const FrameMetrics& aParentMetrics)
 {
-  CompositorChild* compositor = nullptr;
+  CompositorBridgeChild* compositor = nullptr;
   if (Manager() && Manager()->AsClientLayerManager()) {
-    compositor = Manager()->AsClientLayerManager()->GetCompositorChild();
+    compositor = Manager()->AsClientLayerManager()->GetCompositorBridgeChild();
   }
 
   if (!compositor) {

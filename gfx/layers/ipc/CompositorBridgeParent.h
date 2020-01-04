@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_layers_CompositorParent_h
-#define mozilla_layers_CompositorParent_h
+#ifndef mozilla_layers_CompositorBridgeParent_h
+#define mozilla_layers_CompositorBridgeParent_h
 
 
 
@@ -53,11 +53,11 @@ namespace layers {
 class APZCTreeManager;
 class AsyncCompositionManager;
 class Compositor;
-class CompositorParent;
+class CompositorBridgeParent;
 class LayerManagerComposite;
 class LayerTransactionParent;
 class PAPZParent;
-class CrossProcessCompositorParent;
+class CrossProcessCompositorBridgeParent;
 
 struct ScopedLayerTreeRegistration
 {
@@ -90,7 +90,7 @@ private:
   static base::Thread* CreateCompositorThread();
   static void DestroyCompositorThread(base::Thread* aCompositorThread);
 
-  friend class CompositorParent;
+  friend class CompositorBridgeParent;
 };
 
 
@@ -103,7 +103,7 @@ class CompositorVsyncScheduler
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorVsyncScheduler)
 
 public:
-  explicit CompositorVsyncScheduler(CompositorParent* aCompositorParent, nsIWidget* aWidget);
+  explicit CompositorVsyncScheduler(CompositorBridgeParent* aCompositorBridgeParent, nsIWidget* aWidget);
 
 #ifdef MOZ_WIDGET_GONK
   
@@ -174,7 +174,7 @@ private:
     CompositorVsyncScheduler* mOwner;
   };
 
-  CompositorParent* mCompositorParent;
+  CompositorBridgeParent* mCompositorBridgeParent;
   TimeStamp mLastCompose;
 
 #ifdef COMPOSITOR_PERFORMANCE_WARNING
@@ -214,14 +214,14 @@ protected:
   virtual ~CompositorUpdateObserver() {}
 };
 
-class CompositorParent final : public PCompositorBridgeParent,
+class CompositorBridgeParent final : public PCompositorBridgeParent,
                                public ShadowLayersManager
 {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(CompositorParent)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(CompositorBridgeParent)
   friend class CompositorVsyncScheduler;
 
 public:
-  explicit CompositorParent(nsIWidget* aWidget,
+  explicit CompositorBridgeParent(nsIWidget* aWidget,
                             bool aUseExternalSurfaceSize = false,
                             int aSurfaceWidth = -1, int aSurfaceHeight = -1);
 
@@ -353,7 +353,7 @@ public:
   
 
 
-  static CompositorParent* GetCompositor(uint64_t id);
+  static CompositorBridgeParent* GetCompositor(uint64_t id);
 
   
 
@@ -417,12 +417,12 @@ public:
     ~LayerTreeState();
     RefPtr<Layer> mRoot;
     RefPtr<GeckoContentController> mController;
-    CompositorParent* mParent;
+    CompositorBridgeParent* mParent;
     LayerManagerComposite* mLayerManager;
     
     
     
-    CrossProcessCompositorParent* mCrossProcessParent;
+    CrossProcessCompositorBridgeParent* mCrossProcessParent;
     TargetConfig mTargetConfig;
     APZTestData mApzTestData;
     LayerTransactionParent* mLayerTree;
@@ -500,7 +500,7 @@ public:
 
 protected:
   
-  virtual ~CompositorParent();
+  virtual ~CompositorBridgeParent();
 
   void DeferredDestroy();
 
@@ -531,11 +531,11 @@ protected:
   
 
 
-  static void AddCompositor(CompositorParent* compositor, uint64_t* id);
+  static void AddCompositor(CompositorBridgeParent* compositor, uint64_t* id);
   
 
 
-  static CompositorParent* RemoveCompositor(uint64_t id);
+  static CompositorBridgeParent* RemoveCompositor(uint64_t id);
 
    
 
@@ -596,7 +596,7 @@ protected:
   bool mPluginWindowsHidden;
 #endif
 
-  DISALLOW_EVIL_CONSTRUCTORS(CompositorParent);
+  DISALLOW_EVIL_CONSTRUCTORS(CompositorBridgeParent);
 };
 
 } 

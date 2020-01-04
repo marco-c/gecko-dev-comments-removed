@@ -18,7 +18,7 @@
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Tools.h"          
 #include "mozilla/layers/CompositableForwarder.h"
-#include "mozilla/layers/CompositorChild.h" 
+#include "mozilla/layers/CompositorBridgeChild.h" 
 #include "mozilla/layers/LayerMetricsWrapper.h"
 #include "mozilla/layers/ShadowLayers.h"  
 #include "TextureClientPool.h"
@@ -167,10 +167,10 @@ SharedFrameMetricsHelper::UpdateFromCompositorFrameMetrics(
 {
   MOZ_ASSERT(aLayer);
 
-  CompositorChild* compositor = nullptr;
+  CompositorBridgeChild* compositor = nullptr;
   if (aLayer.Manager() &&
       aLayer.Manager()->AsClientLayerManager()) {
-    compositor = aLayer.Manager()->AsClientLayerManager()->GetCompositorChild();
+    compositor = aLayer.Manager()->AsClientLayerManager()->GetCompositorBridgeChild();
   }
 
   if (!compositor) {

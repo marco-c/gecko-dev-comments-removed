@@ -29,7 +29,7 @@
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/Touch.h"
 #include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/layers/CompositorParent.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "nsAppShell.h"
 #include "nsDebug.h"
 #include "nsThreadUtils.h"

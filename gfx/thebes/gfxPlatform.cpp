@@ -4,8 +4,8 @@
 
 
 #include "mozilla/layers/AsyncTransactionTracker.h" 
-#include "mozilla/layers/CompositorChild.h"
-#include "mozilla/layers/CompositorParent.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/SharedBufferManagerChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
@@ -852,7 +852,7 @@ gfxPlatform::InitLayersIPC()
 
     if (XRE_IsParentProcess())
     {
-        mozilla::layers::CompositorParent::StartUp();
+        mozilla::layers::CompositorBridgeParent::StartUp();
 #ifdef MOZ_WIDGET_GONK
         SharedBufferManagerChild::StartUp();
 #endif
@@ -871,15 +871,15 @@ gfxPlatform::ShutdownLayersIPC()
 
     if (XRE_IsParentProcess())
     {
-        
-        
-        gfx::VRManagerChild::ShutDown();
-        layers::ImageBridgeChild::ShutDown();
+      
+      
+      gfx::VRManagerChild::ShutDown();
+      layers::ImageBridgeChild::ShutDown();
 #ifdef MOZ_WIDGET_GONK
-        layers::SharedBufferManagerChild::ShutDown();
+      layers::SharedBufferManagerChild::ShutDown();
 #endif
 
-        layers::CompositorParent::ShutDown();
+      layers::CompositorBridgeParent::ShutDown();
 	} else if (XRE_GetProcessType() == GeckoProcessType_Content) {
 		gfx::VRManagerChild::ShutDown();
 	}

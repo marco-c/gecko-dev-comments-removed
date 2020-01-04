@@ -19,7 +19,7 @@
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/media/MediaSystemResourceManagerParent.h" 
 #include "mozilla/layers/CompositableTransactionParent.h"
-#include "mozilla/layers/CompositorParent.h"  
+#include "mozilla/layers/CompositorBridgeParent.h"  
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
@@ -184,7 +184,7 @@ ConnectImageBridgeInParentProcess(ImageBridgeParent* aBridge,
  PImageBridgeParent*
 ImageBridgeParent::Create(Transport* aTransport, ProcessId aChildProcessId)
 {
-  MessageLoop* loop = CompositorParent::CompositorLoop();
+  MessageLoop* loop = CompositorBridgeParent::CompositorLoop();
   RefPtr<ImageBridgeParent> bridge = new ImageBridgeParent(loop, aTransport, aChildProcessId);
   bridge->mSelfRef = bridge;
   loop->PostTask(FROM_HERE,
