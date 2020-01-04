@@ -1651,6 +1651,12 @@ nsAndroidBridge::Observe(nsISupports* aSubject, const char* aTopic,
     MOZ_ASSERT(window);
 
     nsAutoString activeStr(aData);
+    if (activeStr.EqualsLiteral("inactive-nonaudible")) {
+      
+      
+      return NS_OK;
+    }
+
     bool isPlaying = activeStr.EqualsLiteral("active");
 
     UpdateAudioPlayingWindows(window, isPlaying);
