@@ -866,6 +866,7 @@ BluetoothPbapManager::ReplyToAuthChallenge(const nsAString& aPassword)
   
   if (aPassword.IsEmpty()) {
     ReplyError(ObexResponseCode::Unauthorized);
+    return;
   }
 
   ReplyToConnect(aPassword);
