@@ -102,24 +102,24 @@ private:
 
 protected:
   WidgetKeyboardEvent()
-    : mKeyCode(0)
+    : mNativeKeyEvent(nullptr)
+    , mKeyCode(0)
     , mCharCode(0)
     , mPseudoCharCode(0)
     , mLocation(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
+    , mAccessKeyForwardedToChild(false)
+    , mUniqueId(0)
+#ifdef XP_MACOSX
+    , mNativeModifierFlags(0)
+    , mNativeKeyCode(0)
+#endif 
+    , mKeyNameIndex(mozilla::KEY_NAME_INDEX_Unidentified)
+    , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
+    , mInputMethodAppState(eNotHandled)
     , mIsChar(false)
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
-    , mAccessKeyForwardedToChild(false)
-    , mKeyNameIndex(mozilla::KEY_NAME_INDEX_Unidentified)
-    , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
-    , mNativeKeyEvent(nullptr)
-    , mUniqueId(0)
-#ifdef XP_MACOSX
-    , mNativeKeyCode(0)
-    , mNativeModifierFlags(0)
-#endif
-    , mInputMethodAppState(eNotHandled)
     , mIsSynthesizedByTIP(false)
   {
   }
@@ -131,24 +131,24 @@ public:
                       nsIWidget* aWidget,
                       EventClassID aEventClassID = eKeyboardEventClass)
     : WidgetInputEvent(aIsTrusted, aMessage, aWidget, aEventClassID)
+    , mNativeKeyEvent(nullptr)
     , mKeyCode(0)
     , mCharCode(0)
     , mPseudoCharCode(0)
     , mLocation(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
+    , mAccessKeyForwardedToChild(false)
+    , mUniqueId(0)
+#ifdef XP_MACOSX
+    , mNativeModifierFlags(0)
+    , mNativeKeyCode(0)
+#endif 
+    , mKeyNameIndex(mozilla::KEY_NAME_INDEX_Unidentified)
+    , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
+    , mInputMethodAppState(eNotHandled)
     , mIsChar(false)
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
-    , mAccessKeyForwardedToChild(false)
-    , mKeyNameIndex(mozilla::KEY_NAME_INDEX_Unidentified)
-    , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
-    , mNativeKeyEvent(nullptr)
-    , mUniqueId(0)
-#ifdef XP_MACOSX
-    , mNativeKeyCode(0)
-    , mNativeModifierFlags(0)
-#endif
-    , mInputMethodAppState(eNotHandled)
     , mIsSynthesizedByTIP(false)
   {
     
@@ -195,6 +195,26 @@ public:
 
   
   
+  nsTArray<AlternativeCharCode> mAlternativeCharCodes;
+  
+  nsString mKeyValue;
+  
+  
+  nsString mCodeValue;
+
+#ifdef XP_MACOSX
+  
+  nsString mNativeCharacters;
+  nsString mNativeCharactersIgnoringModifiers;
+  
+  
+  nsString mPluginTextEventString;
+#endif 
+
+  
+  void* mNativeKeyEvent;
+  
+  
   uint32_t mKeyCode;
   
   
@@ -209,7 +229,35 @@ public:
   uint32_t mLocation;
   
   
-  nsTArray<AlternativeCharCode> mAlternativeCharCodes;
+  
+  
+  bool mAccessKeyForwardedToChild;
+  
+  
+  
+  
+  uint32_t mUniqueId;
+
+#ifdef XP_MACOSX
+  
+  uint32_t mNativeModifierFlags;
+  uint16_t mNativeKeyCode;
+#endif 
+
+  
+  KeyNameIndex mKeyNameIndex;
+  
+  CodeNameIndex mCodeNameIndex;
+  
+  typedef uint8_t InputMethodAppStateType;
+  enum InputMethodAppState : InputMethodAppStateType
+  {
+    eNotHandled, 
+    eHandling,   
+    eHandled     
+  };
+  InputMethodAppState mInputMethodAppState;
+
   
   bool mIsChar;
   
@@ -222,49 +270,6 @@ public:
   
   
   bool mIsReserved;
-  
-  
-  
-  
-  bool mAccessKeyForwardedToChild;
-  
-  KeyNameIndex mKeyNameIndex;
-  
-  CodeNameIndex mCodeNameIndex;
-  
-  nsString mKeyValue;
-  
-  
-  nsString mCodeValue;
-  
-  void* mNativeKeyEvent;
-  
-  
-  
-  
-  uint32_t mUniqueId;
-
-#ifdef XP_MACOSX
-  
-  uint16_t mNativeKeyCode;
-  uint32_t mNativeModifierFlags;
-  nsString mNativeCharacters;
-  nsString mNativeCharactersIgnoringModifiers;
-  
-  
-  nsString mPluginTextEventString;
-#endif
-
-  
-  typedef uint8_t InputMethodAppStateType;
-  enum InputMethodAppState : InputMethodAppStateType
-  {
-    eNotHandled, 
-    eHandling,   
-    eHandled     
-  };
-  InputMethodAppState mInputMethodAppState;
-
   
   
   bool mIsSynthesizedByTIP;
