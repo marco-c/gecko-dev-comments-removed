@@ -14,6 +14,7 @@
 #include "nsCoord.h"
 #include "nsColor.h"
 #include "nsCSSProps.h"
+#include "nsCSSPseudoElements.h"
 #include "nsCSSValue.h"
 
 class nsIFrame;
@@ -149,12 +150,17 @@ public:
 
 
 
+
+
+
+
   static bool ComputeValue(nsCSSProperty aProperty,
-                             mozilla::dom::Element* aTargetElement,
-                             const nsAString& aSpecifiedValue,
-                             bool aUseSVGMode,
-                             StyleAnimationValue& aComputedValue,
-                             bool* aIsContextSensitive = nullptr);
+                           mozilla::dom::Element* aTargetElement,
+                           nsCSSPseudoElements::Type aPseudoType,
+                           const nsAString& aSpecifiedValue,
+                           bool aUseSVGMode,
+                           StyleAnimationValue& aComputedValue,
+                           bool* aIsContextSensitive = nullptr);
 
   
 
@@ -169,6 +175,7 @@ public:
   static bool ComputeValues(nsCSSProperty aProperty,
                             nsCSSProps::EnabledState aEnabledState,
                             mozilla::dom::Element* aTargetElement,
+                            nsCSSPseudoElements::Type aPseudoType,
                             const nsAString& aSpecifiedValue,
                             bool aUseSVGMode,
                             nsTArray<PropertyStyleAnimationValuePair>& aResult);
@@ -396,6 +403,7 @@ private:
   static bool ComputeValues(nsCSSProperty aProperty,
                             nsCSSProps::EnabledState aEnabledState,
                             mozilla::dom::Element* aTargetElement,
+                            nsCSSPseudoElements::Type aPseudoType,
                             mozilla::css::StyleRule* aStyleRule,
                             nsTArray<PropertyStyleAnimationValuePair>& aValues,
                             bool* aIsContextSensitive);

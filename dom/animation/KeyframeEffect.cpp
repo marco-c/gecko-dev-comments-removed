@@ -1197,12 +1197,14 @@ GenerateValueEntries(Element* aTarget,
       
       
       nsTArray<PropertyStyleAnimationValuePair> values;
-      if (StyleAnimationValue::ComputeValues(pair.mProperty,
-                                             nsCSSProps::eEnabledForAllContent,
-                                             aTarget,
-                                             pair.mValues[0],
-                                              false,
-                                             values)) {
+      if (StyleAnimationValue::ComputeValues(
+            pair.mProperty,
+            nsCSSProps::eEnabledForAllContent,
+            aTarget,
+            nsCSSPseudoElements::ePseudo_NotPseudoElement,
+            pair.mValues[0],
+             false,
+            values)) {
         for (auto& value : values) {
           
           
@@ -1477,12 +1479,14 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
     
     nsTArray<PropertyStyleAnimationValuePair> fromValues;
     float fromKey = 0.0f;
-    if (!StyleAnimationValue::ComputeValues(pair.mProperty,
-                                            nsCSSProps::eEnabledForAllContent,
-                                            aTarget,
-                                            pair.mValues[0],
-                                             false,
-                                            fromValues)) {
+    if (!StyleAnimationValue::ComputeValues(
+          pair.mProperty,
+          nsCSSProps::eEnabledForAllContent,
+          aTarget,
+          nsCSSPseudoElements::ePseudo_NotPseudoElement,
+          pair.mValues[0],
+           false,
+          fromValues)) {
       
       
       aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
@@ -1529,12 +1533,14 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
     for (size_t i = 0; i < count - 1; ++i) {
       nsTArray<PropertyStyleAnimationValuePair> toValues;
       float toKey = (i + 1) * portion;
-      if (!StyleAnimationValue::ComputeValues(pair.mProperty,
-                                              nsCSSProps::eEnabledForAllContent,
-                                              aTarget,
-                                              pair.mValues[i + 1],
-                                               false,
-                                              toValues)) {
+      if (!StyleAnimationValue::ComputeValues(
+            pair.mProperty,
+            nsCSSProps::eEnabledForAllContent,
+            aTarget,
+            nsCSSPseudoElements::ePseudo_NotPseudoElement,
+            pair.mValues[i + 1],
+             false,
+            toValues)) {
         if (i + 1 == count - 1) {
           
           

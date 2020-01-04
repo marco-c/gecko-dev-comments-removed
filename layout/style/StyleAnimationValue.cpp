@@ -2525,19 +2525,25 @@ BuildStyleRule(nsCSSProperty aProperty,
 
 inline
 already_AddRefed<nsStyleContext>
-LookupStyleContext(dom::Element* aElement)
+LookupStyleContext(dom::Element* aElement,
+                   nsCSSPseudoElements::Type aPseudoType)
 {
   nsIDocument* doc = aElement->GetCurrentDoc();
   nsIPresShell* shell = doc->GetShell();
   if (!shell) {
     return nullptr;
   }
-  return nsComputedDOMStyle::GetStyleContextForElement(aElement, nullptr, shell);
+
+  nsIAtom* pseudo =
+    aPseudoType < nsCSSPseudoElements::ePseudo_PseudoElementCount ?
+    nsCSSPseudoElements::GetPseudoAtom(aPseudoType) : nullptr;
+  return nsComputedDOMStyle::GetStyleContextForElement(aElement, pseudo, shell);
 }
 
  bool
 StyleAnimationValue::ComputeValue(nsCSSProperty aProperty,
                                   dom::Element* aTargetElement,
+                                  nsCSSPseudoElements::Type aPseudoType,
                                   const nsAString& aSpecifiedValue,
                                   bool aUseSVGMode,
                                   StyleAnimationValue& aComputedValue,
@@ -2548,6 +2554,9 @@ StyleAnimationValue::ComputeValue(nsCSSProperty aProperty,
              "we should only be able to actively animate nodes that "
              "are in a document");
 
+  
+  
+  
   
   RefPtr<css::StyleRule> styleRule =
     BuildStyleRule(aProperty, aTargetElement, aSpecifiedValue, aUseSVGMode);
@@ -2569,7 +2578,7 @@ StyleAnimationValue::ComputeValue(nsCSSProperty aProperty,
 
   AutoTArray<PropertyStyleAnimationValuePair,1> values;
   bool ok = ComputeValues(aProperty, nsCSSProps::eIgnoreEnabledState,
-                          aTargetElement, styleRule, values,
+                          aTargetElement, aPseudoType, styleRule, values,
                           aIsContextSensitive);
   if (!ok) {
     return false;
@@ -2586,6 +2595,7 @@ StyleAnimationValue::ComputeValue(nsCSSProperty aProperty,
 StyleAnimationValue::ComputeValues(nsCSSProperty aProperty,
                                    nsCSSProps::EnabledState aEnabledState,
                                    dom::Element* aTargetElement,
+                                   nsCSSPseudoElements::Type aPseudoType,
                                    const nsAString& aSpecifiedValue,
                                    bool aUseSVGMode,
                                    nsTArray<PropertyStyleAnimationValuePair>& aResult)
@@ -2596,6 +2606,9 @@ StyleAnimationValue::ComputeValues(nsCSSProperty aProperty,
              "are in a document");
 
   
+  
+  
+  
   RefPtr<css::StyleRule> styleRule =
     BuildStyleRule(aProperty, aTargetElement, aSpecifiedValue, aUseSVGMode);
   if (!styleRule) {
@@ -2603,8 +2616,8 @@ StyleAnimationValue::ComputeValues(nsCSSProperty aProperty,
   }
 
   aResult.Clear();
-  return ComputeValues(aProperty, aEnabledState, aTargetElement, styleRule,
-                       aResult,  nullptr);
+  return ComputeValues(aProperty, aEnabledState, aTargetElement, aPseudoType,
+                       styleRule, aResult,  nullptr);
 }
 
  bool
@@ -2612,6 +2625,7 @@ StyleAnimationValue::ComputeValues(
     nsCSSProperty aProperty,
     nsCSSProps::EnabledState aEnabledState,
     dom::Element* aTargetElement,
+    nsCSSPseudoElements::Type aPseudoType,
     css::StyleRule* aStyleRule,
     nsTArray<PropertyStyleAnimationValuePair>& aValues,
     bool* aIsContextSensitive)
@@ -2621,7 +2635,8 @@ StyleAnimationValue::ComputeValues(
   }
 
   
-  RefPtr<nsStyleContext> styleContext = LookupStyleContext(aTargetElement);
+  RefPtr<nsStyleContext> styleContext = LookupStyleContext(aTargetElement,
+                                                           aPseudoType);
   if (!styleContext) {
     return false;
   }
