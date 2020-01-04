@@ -28,10 +28,12 @@ from mozbuild.configure.util import (
     LineIO,
 )
 from mozbuild.util import (
+    exec_,
     memoize,
     ReadOnlyDict,
     ReadOnlyNamespace,
 )
+
 import mozpack.path as mozpath
 
 
@@ -200,7 +202,7 @@ class ConfigureSandbox(dict):
 
         code = compile(source, path, 'exec')
 
-        exec(code, self)
+        exec_(code, self)
 
         self._paths.pop(-1)
 
@@ -570,10 +572,7 @@ class ConfigureSandbox(dict):
             import_line += 'import %s' % _import
             if _as:
                 import_line += ' as %s' % _as
-            
-            
-            
-            exec import_line in {}, glob
+            exec_(import_line, {}, glob)
 
     def _resolve_and_set(self, data, name, value):
         

@@ -23,7 +23,10 @@ import os
 import sys
 import weakref
 
-from mozbuild.util import ReadOnlyDict
+from mozbuild.util import (
+    exec_,
+    ReadOnlyDict,
+)
 from .context import Context
 from mozpack.files import FileFinder
 
@@ -174,11 +177,7 @@ class Sandbox(dict):
             old_source = self._current_source
             self._current_source = source
             try:
-                
-                
-                
-                
-                exec code in self
+                exec_(code, self)
             finally:
                 self._current_source = old_source
 
