@@ -756,8 +756,9 @@ nsCORSListenerProxy::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
             do_QueryInterface(aOldChannel);
           if (httpChannelChild) {
             rv = httpChannelChild->RemoveCorsPreflightCacheEntry(oldURI, mRequestingPrincipal);
-            if (NS_WARN_IF(NS_FAILED(rv))) {
-              return rv;
+            if (NS_FAILED(rv)) {
+              
+              NS_WARNING("Failed to remove CORS preflight cache entry!");
             }
           }
         }
