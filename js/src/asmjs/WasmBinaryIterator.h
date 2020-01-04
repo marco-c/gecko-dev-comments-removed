@@ -107,8 +107,6 @@ struct LinearMemoryAddress
     {}
 };
 
-struct Nothing {};
-
 template <typename ControlItem>
 class ControlStackEntry
 {
@@ -1831,8 +1829,8 @@ ExprIter<Policy>::readSimdCtorReturn(ValType simdType)
 namespace mozilla {
 
 
-template<> struct IsPod<js::wasm::TypeAndValue<js::wasm::Nothing>> : TrueType {};
-template<> struct IsPod<js::wasm::ControlStackEntry<js::wasm::Nothing>> : TrueType {};
+template<> struct IsPod<js::wasm::TypeAndValue<Nothing>> : TrueType {};
+template<> struct IsPod<js::wasm::ControlStackEntry<Nothing>> : TrueType {};
 
 } 
 
