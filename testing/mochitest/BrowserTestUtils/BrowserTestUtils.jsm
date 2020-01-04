@@ -595,6 +595,27 @@ this.BrowserTestUtils = {
 
 
 
+
+
+
+
+
+
+  waitForMessage(messageManager, message, checkFn) {
+    return new Promise(resolve => {
+      messageManager.addMessageListener(message, function onMessage(msg) {
+        if (!checkFn || checkFn(msg)) {
+          messageManager.removeMessageListener(message, onMessage);
+          resolve();
+        }
+      });
+    });
+  },
+
+  
+
+
+
   synthesizeMouseAtCenter(target, event, browser)
   {
     
