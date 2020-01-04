@@ -167,7 +167,21 @@ Add(nsStyleContext* aContext, nsCSSProperty aProp, css::ImageValue* aValue)
 inline void
 RemoveAll(nsStyleContext* aContext)
 {
-  detail::GetTable().Remove(aContext);
+  
+  
+  
+  
+  
+  detail::ImageValueArray removedImages;
+  auto& imageTable = detail::GetTable();
+  auto* perPropertyImageTable = imageTable.Get(aContext);
+  if (perPropertyImageTable) {
+    for (auto it = perPropertyImageTable->Iter(); !it.Done(); it.Next()) {
+      auto* imageList = it.UserData();
+      removedImages.AppendElements(Move(*imageList));
+    }
+  }
+  imageTable.Remove(aContext);
 }
 
 } 
