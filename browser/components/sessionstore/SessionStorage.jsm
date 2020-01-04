@@ -151,8 +151,10 @@ var SessionStorageInternal = {
     try {
       let storageManager = aDocShell.QueryInterface(Ci.nsIDOMStorageManager);
       storage = storageManager.getStorage(window, aPrincipal);
+      storage.length; 
     } catch (e) {
       
+      storage = null;
     }
 
     if (storage && storage.length) {
