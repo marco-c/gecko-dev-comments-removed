@@ -524,12 +524,15 @@ ImplCycleCollectionUnlink(CallbackObjectHolder<T, U>& aField)
 
 
 
+
+
+
 template<typename T>
-class RootedCallback : public JS::Rooted<T>
+class RootedCallbackRefPtr : public JS::Rooted<RefPtr<T>>
 {
 public:
-  explicit RootedCallback(JSContext* cx)
-    : JS::Rooted<T>(cx)
+  explicit RootedCallbackRefPtr(JSContext* cx)
+    : JS::Rooted<RefPtr<T>>(cx)
   {}
 
   
@@ -553,13 +556,57 @@ public:
     return this->get()->Callback();
   }
 
-  ~RootedCallback()
+  ~RootedCallbackRefPtr()
   {
     
     
-    
-    
     if (this->get().get()) {
+      this->get()->HoldJSObjectsIfMoreThanOneOwner();
+    }
+  }
+};
+
+
+
+
+
+
+
+
+template<typename T>
+class RootedCallbackOwningNonNull : public JS::Rooted<OwningNonNull<T>>
+{
+public:
+  explicit RootedCallbackOwningNonNull(JSContext* cx)
+    : JS::Rooted<OwningNonNull<T>>(cx)
+  {}
+
+  
+  
+  template<typename S>
+  void operator=(S* arg)
+  {
+    this->get().operator=(arg);
+  }
+
+  
+  
+  void operator=(decltype(nullptr) arg)
+  {
+    this->get().operator=(arg);
+  }
+
+  
+  JS::Handle<JSObject*> Callback() const
+  {
+    return this->get()->Callback();
+  }
+
+  ~RootedCallbackOwningNonNull()
+  {
+    
+    
+    if (this->get().isInitialized()) {
       this->get()->HoldJSObjectsIfMoreThanOneOwner();
     }
   }
