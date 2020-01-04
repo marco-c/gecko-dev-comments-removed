@@ -269,16 +269,6 @@ SVGUseElement::CreateAnonymousContent()
   if (!newcontent)
     return nullptr;
 
-#ifdef DEBUG
-  
-  
-  
-  
-  newcontent->SetProperty(nsGkAtoms::restylableAnonymousNode,
-                          reinterpret_cast<void*>(true));
-#endif 
-
-
   if (newcontent->IsSVGElement(nsGkAtoms::symbol)) {
     nsIDocument *document = GetComposedDoc();
     if (!document)
@@ -341,6 +331,16 @@ SVGUseElement::CreateAnonymousContent()
 
   targetContent->AddMutationObserver(this);
   mClone = newcontent;
+
+#ifdef DEBUG
+  
+  
+  
+  
+  mClone->SetProperty(nsGkAtoms::restylableAnonymousNode,
+                      reinterpret_cast<void*>(true));
+#endif 
+
   return mClone;
 }
 
