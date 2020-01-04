@@ -8,38 +8,29 @@
 #define nsEventQueue_h__
 
 #include <stdlib.h>
-#include "mozilla/Monitor.h"
+#include "mozilla/CondVar.h"
+#include "mozilla/Mutex.h"
 #include "nsIRunnable.h"
 #include "nsCOMPtr.h"
 #include "mozilla/AlreadyAddRefed.h"
 
-template<typename MonitorType>
-struct MonitorAutoEnterChooser;
+class nsThreadPool;
 
-template<>
-struct MonitorAutoEnterChooser<mozilla::Monitor>
+
+class nsEventQueue
 {
-  typedef mozilla::MonitorAutoLock Type;
-};
-
-
-template<typename MonitorType>
-class nsEventQueueBase
-{
+public:
   typedef mozilla::MutexAutoLock MutexAutoLock;
 
-public:
-  typedef MonitorType Monitor;
-  typedef typename MonitorAutoEnterChooser<Monitor>::Type MonitorAutoEnterType;
-
-  nsEventQueueBase();
-  ~nsEventQueueBase();
+  nsEventQueue(mozilla::Mutex& aLock);
+  ~nsEventQueue();
 
   
   
   
+  void PutEvent(nsIRunnable* aEvent, MutexAutoLock& aProofOfLock);
   void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
-                MonitorAutoEnterType& aProofOfLock, MutexAutoLock&);
+                MutexAutoLock& aProofOfLock);
 
   
   
@@ -48,16 +39,21 @@ public:
   
   
   bool GetEvent(bool aMayWait, nsIRunnable** aEvent,
-                MonitorAutoEnterType& aProofOfLock, MutexAutoLock&);
+                MutexAutoLock& aProofOfLock);
 
   
-  bool GetPendingEvent(nsIRunnable** aRunnable,
-                       MonitorAutoEnterType& aProofOfLock, MutexAutoLock& aExtraneousLock)
+  bool HasPendingEvent(MutexAutoLock& aProofOfLock)
   {
-    return GetEvent(false, aRunnable, aProofOfLock, aExtraneousLock);
+    return GetEvent(false, nullptr, aProofOfLock);
   }
 
-  size_t Count(MonitorAutoEnterType& aProofOfLock, MutexAutoLock&);
+  
+  bool GetPendingEvent(nsIRunnable** aRunnable, MutexAutoLock& aProofOfLock)
+  {
+    return GetEvent(false, aRunnable, aProofOfLock);
+  }
+
+  size_t Count(MutexAutoLock&);
 
 private:
   bool IsEmpty()
@@ -96,50 +92,21 @@ private:
 
   uint16_t mOffsetHead;  
   uint16_t mOffsetTail;  
-};
-
-class nsEventQueue : protected nsEventQueueBase<mozilla::Monitor>
-{
-private:
-  typedef nsEventQueueBase<mozilla::Monitor> Base;
-  
-  friend class nsEventQueueBase<mozilla::Monitor>;
-
-  typedef mozilla::MutexAutoLock MutexAutoLock;
-  typedef Base::Monitor MonitorType;
-  typedef Base::MonitorAutoEnterType MonitorAutoEnterType;
-  MonitorType mMonitor;
-
-public:
-  nsEventQueue();
-
-  
-  
-  
-  void PutEvent(nsIRunnable* aEvent, MutexAutoLock&);
-  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent, MutexAutoLock&);
+  mozilla::CondVar mEventsAvailable;
 
   
   
   
   
-  
-  
-  bool GetEvent(bool aMayWait, nsIRunnable** aEvent, MutexAutoLock&);
-
-  
-  bool HasPendingEvent(MutexAutoLock& aProofOfLock)
+  friend class nsThreadPool;
+  void Wait(PRIntervalTime aInterval)
   {
-    return GetEvent(false, nullptr, aProofOfLock);
+    mEventsAvailable.Wait(aInterval);
   }
-
-  
-  bool GetPendingEvent(nsIRunnable** aRunnable, MutexAutoLock& aProofOfLock)
+  void NotifyAll()
   {
-    return GetEvent(false, aRunnable, aProofOfLock);
+    mEventsAvailable.NotifyAll();
   }
-
-  size_t Count(MutexAutoLock&);
 };
 
 #endif  
