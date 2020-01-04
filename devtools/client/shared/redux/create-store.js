@@ -9,6 +9,9 @@ const { waitUntilService } = require("./middleware/wait-service");
 const { task } = require("./middleware/task");
 const { log } = require("./middleware/log");
 const { promise } = require("./middleware/promise");
+const { history } = require("./middleware/history");
+
+
 
 
 
@@ -27,12 +30,16 @@ module.exports = (opts={}) => {
     promise,
   ];
 
-  if (opts.log) {
-    middleware.push(log);
+  if (opts.history) {
+    middleware.push(history(opts.history));
   }
 
   if (opts.middleware) {
     opts.middleware.forEach(fn => middleware.push(fn));
+  }
+
+  if (opts.log) {
+    middleware.push(log);
   }
 
   return applyMiddleware(...middleware)(createStore);

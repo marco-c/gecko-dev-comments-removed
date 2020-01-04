@@ -24,6 +24,12 @@ actions.TOGGLE_RECORD_ALLOCATION_STACKS_START = "toggle-record-allocation-stacks
 actions.TOGGLE_RECORD_ALLOCATION_STACKS_END = "toggle-record-allocation-stacks-end";
 
 
+
+actions.EXPORT_SNAPSHOT_START = "export-snapshot-start";
+actions.EXPORT_SNAPSHOT_END = "export-snapshot-end";
+actions.EXPORT_SNAPSHOT_ERROR = "export-snapshot-error";
+
+
 actions.SELECT_SNAPSHOT = "select-snapshot";
 
 

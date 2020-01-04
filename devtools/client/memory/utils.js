@@ -2,7 +2,7 @@
 
 
 
-const { Cu } = require("chrome");
+const { Cu, Cc, Ci } = require("chrome");
 
 Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
 const STRINGS_URI = "chrome://devtools/locale/memory.properties"
@@ -313,4 +313,41 @@ exports.parseSource = function (source) {
   }
 
   return { short, long, host };
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.openFilePicker = function({ title, filters, defaultName }) {
+  let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+  fp.init(window, title, Ci.nsIFilePicker.modeSave);
+
+  for (let filter of (filters || [])) {
+    fp.appendFilter(filter[0], filter[1]);
+  }
+  fp.defaultString = defaultName;
+
+  return new Promise(resolve => {
+    fp.open({
+      done: result => {
+        if (result === Ci.nsIFilePicker.returnCancel) {
+          resolve(null);
+          return;
+        }
+        resolve(fp.file);
+      }
+    });
+  });
 };
