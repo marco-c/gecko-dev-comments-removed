@@ -45,6 +45,8 @@ const GRID_LINES_PROPERTIES = {
 
 
 
+
+
 function CssGridHighlighter(highlighterEnv) {
   AutoRefreshHighlighter.call(this, highlighterEnv);
 
@@ -243,7 +245,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let lineStartPos = (bounds[crossSide] / getCurrentZoom(this.win)) + startPos;
     let lineEndPos = (bounds[crossSide] / getCurrentZoom(this.win)) + endPos;
 
-    if (this.options.infiniteLines) {
+    if (this.options.showInfiniteLines) {
       lineStartPos = 0;
       lineEndPos = parseInt(this.canvas.getAttribute(mainSize), 10);
     }
@@ -253,6 +255,10 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     for (let i = 0; i < gridDimension.lines.length; i++) {
       let line = gridDimension.lines[i];
       let linePos = (bounds[mainSide] / getCurrentZoom(this.win)) + line.start;
+
+      if (this.options.showGridLineNumbers) {
+        this.renderGridLineNumber(line.number, linePos, lineStartPos, dimensionType);
+      }
 
       if (i == 0 || i == lastEdgeLineIndex) {
         this.renderLine(linePos, lineStartPos, lineEndPos, dimensionType, "edge");
@@ -291,7 +297,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.ctx.beginPath();
     this.ctx.translate(.5, .5);
 
-    if (dimensionType == COLUMNS) {
+    if (dimensionType === COLUMNS) {
       this.ctx.moveTo(linePos, startPos);
       this.ctx.lineTo(linePos, endPos);
     } else {
@@ -302,6 +308,28 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.ctx.strokeStyle = GRID_LINES_PROPERTIES[lineType].strokeStyle;
     this.ctx.stroke();
     this.ctx.restore();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  renderGridLineNumber(lineNumber, linePos, startPos, dimensionType) {
+    if (dimensionType === COLUMNS) {
+      this.ctx.fillText(lineNumber, linePos, startPos);
+    } else {
+      let textWidth = this.ctx.measureText(lineNumber).width;
+      this.ctx.fillText(lineNumber, startPos - textWidth, linePos);
+    }
   },
 
   _hide() {
