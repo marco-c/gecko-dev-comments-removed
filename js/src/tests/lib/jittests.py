@@ -552,10 +552,11 @@ def run_tests(tests, prefix, options):
     
     
     
-    AdaptorOptions = namedtuple("AdaptorOptions", ["worker_count",
-        "passthrough", "timeout", "output_fp", "hide_progress", "run_skipped"])
+    AdaptorOptions = namedtuple("AdaptorOptions", [
+        "worker_count", "passthrough", "timeout", "output_fp",
+        "hide_progress", "run_skipped", "show_cmd"])
     shim_options = AdaptorOptions(options.max_jobs, False, options.timeout,
-                                  sys.stdout, False, True)
+                                  sys.stdout, False, True, options.show_cmd)
 
     
     JitTest.js_cmd_prefix = prefix
