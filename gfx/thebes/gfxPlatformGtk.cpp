@@ -686,6 +686,11 @@ public:
             config,
             false);
 
+        if (!mGLContext) {
+          lock.NotifyAll();
+          return;
+        }
+
         mGLContext->MakeCurrent();
 
         
