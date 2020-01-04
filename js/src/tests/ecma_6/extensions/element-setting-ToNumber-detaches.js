@@ -24,13 +24,9 @@ print(BUGNUMBER + ": " + summary);
 
 
 
-var ab1 = new ArrayBuffer(64);
-var ta1 = new Uint32Array(ab1);
-ta1[4] = { valueOf() { detachArrayBuffer(ab1, "change-data"); return 5; } };
-
-var ab2 = new ArrayBuffer(64);
-var ta2 = new Uint32Array(ab2);
-ta2[4] = { valueOf() { detachArrayBuffer(ab2, "same-data"); return 5; } };
+var ab = new ArrayBuffer(64);
+var ta = new Uint32Array(ab);
+ta[4] = { valueOf() { detachArrayBuffer(ab); return 5; } };
 
 
 

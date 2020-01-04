@@ -8,17 +8,16 @@ load(libdir + "asserts.js")
 
 var {StructType, uint32, Object, Any, storage, objectType} = TypedObject;
 
-function main(variant) { 
+function main() { 
   var Uints = uint32.array(0);
   var Unit = new StructType({});   
   var buffer = new ArrayBuffer(0); 
   var p = new Unit(buffer);        
-  detachArrayBuffer(buffer, variant);
+  detachArrayBuffer(buffer);
   assertThrowsInstanceOf(() => new Unit(buffer), TypeError,
                          "Able to instantiate atop detached buffer");
   assertThrowsInstanceOf(() => new Uints(buffer), TypeError,
                          "Able to instantiate atop detached buffer");
 }
 
-main("same-data");
-main("change-data");
+main();

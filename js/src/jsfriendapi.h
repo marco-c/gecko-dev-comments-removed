@@ -2097,11 +2097,6 @@ JS_GetArrayBufferViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoChe
 extern JS_FRIEND_API(JSObject*)
 JS_GetArrayBufferViewBuffer(JSContext* cx, JS::HandleObject obj, bool* isSharedMemory);
 
-enum DetachDataDisposition {
-    ChangeData,
-    KeepData
-};
-
 
 
 
@@ -2109,8 +2104,7 @@ enum DetachDataDisposition {
 
 
 extern JS_FRIEND_API(bool)
-JS_DetachArrayBuffer(JSContext* cx, JS::HandleObject obj,
-                     DetachDataDisposition changeData);
+JS_DetachArrayBuffer(JSContext* cx, JS::HandleObject obj);
 
 
 

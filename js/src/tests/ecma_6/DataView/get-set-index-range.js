@@ -23,7 +23,7 @@ for (let fun of ['getInt8', 'getInt16']) {
 if ('detachArrayBuffer' in this) {
     
     
-    detachArrayBuffer(buffer, 'same-data');
+    detachArrayBuffer(buffer);
 
     check(view);
 
