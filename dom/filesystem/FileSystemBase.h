@@ -20,7 +20,7 @@ class Directory;
 
 class FileSystemBase
 {
-  NS_INLINE_DECL_REFCOUNTING(FileSystemBase)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FileSystemBase)
 public:
 
   
@@ -95,11 +95,6 @@ public:
   {
     return mRequiresPermissionChecks;
   }
-
-  
-  virtual void Unlink() {}
-  virtual void Traverse(nsCycleCollectionTraversalCallback &cb) {}
-
 protected:
   virtual ~FileSystemBase();
 
