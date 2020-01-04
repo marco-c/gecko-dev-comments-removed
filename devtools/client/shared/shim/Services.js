@@ -426,8 +426,12 @@ PrefBranch.prototype = {
 
 
   _initializeRoot: function () {
-    if (localStorage.length === 0) {
+    if (localStorage.length === 0 && Services._defaultPrefsEnabled) {
       
+      let devtools = require("raw!prefs!devtools/client/preferences/devtools");
+      eval(devtools);
+      let all = require("raw!prefs!modules/libpref/init/all");
+      eval(all);
       
     }
 
@@ -449,12 +453,25 @@ PrefBranch.prototype = {
 };
 
 const Services = {
+  _prefs: null,
+
+  
+  
+  _defaultPrefsEnabled: true,
+
   
 
 
 
 
-  prefs: new PrefBranch(null, "", ""),
+
+
+  get prefs() {
+    if (!this._prefs) {
+      this._prefs = new PrefBranch(null, "", "");
+    }
+    return this._prefs;
+  },
 
   
 
@@ -582,7 +599,5 @@ function pref(name, value) {
 }
 
 module.exports = Services;
-
-
 
 exports.pref = pref;
