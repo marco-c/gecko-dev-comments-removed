@@ -1,7 +1,7 @@
-/* -*- Mode: c++; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef AndroidBridge_h__
 #define AndroidBridge_h__
@@ -38,15 +38,15 @@
 
 #include "Units.h"
 
-// Some debug #defines
-// #define DEBUG_ANDROID_EVENTS
-// #define DEBUG_ANDROID_WIDGET
+
+
+
 
 class nsPIDOMWindowOuter;
 
 namespace base {
 class Thread;
-} // end namespace base
+} 
 
 typedef void* EGLSurface;
 
@@ -58,16 +58,16 @@ class Runnable;
 namespace hal {
 class BatteryInformation;
 class NetworkInformation;
-} // namespace hal
+} 
 
 namespace dom {
 namespace mobilemessage {
 class SmsFilterData;
-} // namespace mobilemessage
-} // namespace dom
+} 
+} 
 
-// The order and number of the members in this structure must correspond
-// to the attrsAppearance array in GeckoAppShell.getSystemColors()
+
+
 typedef struct AndroidSystemColors {
     nscolor textColorPrimary;
     nscolor textColorPrimaryInverse;
@@ -122,15 +122,15 @@ class AndroidBridge final
 {
 public:
     enum {
-        // Values for NotifyIME, in addition to values from the Gecko
-        // IMEMessage enum; use negative values here to prevent conflict
+        
+        
         NOTIFY_IME_OPEN_VKB = -2,
         NOTIFY_IME_REPLY_EVENT = -1,
     };
 
     enum {
         LAYER_CLIENT_TYPE_NONE = 0,
-        LAYER_CLIENT_TYPE_GL = 2            // AndroidGeckoGLLayerClient
+        LAYER_CLIENT_TYPE_GL = 2            
     };
 
     static bool IsJavaUiThread() {
@@ -144,7 +144,7 @@ public:
         return sBridge;
     }
 
-    /* These are all implemented in Java */
+    
     bool GetThreadNameJavaProfiling(uint32_t aThreadId, nsCString & aResult);
     bool GetFrameNameJavaProfiling(uint32_t aThreadId, uint32_t aSampleId, uint32_t aFrameId, nsCString & aResult);
 
@@ -188,14 +188,10 @@ public:
 
     bool GetStaticIntField(const char *className, const char *fieldName, int32_t* aInt, JNIEnv* env = nullptr);
 
-    // Returns a global reference to the Context for Fennec's Activity. The
-    // caller is responsible for ensuring this doesn't leak by calling
-    // DeleteGlobalRef() when the context is no longer needed.
+    
+    
+    
     jobject GetGlobalContextRef(void);
-
-    void *AcquireNativeWindow(JNIEnv* aEnv, jobject aSurface);
-    void ReleaseNativeWindow(void *window);
-    mozilla::gfx::IntSize GetNativeWindowSize(void* window);
 
     void HandleGeckoMessage(JSContext* cx, JS::HandleObject message);
 
@@ -248,10 +244,10 @@ public:
                           bool aLayersUpdated, int32_t aPaintSyncId,
                           ScreenMargin& aFixedLayerMargins);
 
-    // These methods don't use a ScreenOrientation because it's an
-    // enum and that would require including the header which requires
-    // include IPC headers which requires including basictypes.h which
-    // requires a lot of changes...
+    
+    
+    
+    
     uint32_t GetScreenOrientation();
     uint16_t GetScreenAngle();
 
@@ -265,7 +261,7 @@ public:
 
     bool PumpMessageLoop();
 
-    // Utility methods.
+    
     static jstring NewJavaString(JNIEnv* env, const char16_t* string, uint32_t len);
     static jstring NewJavaString(JNIEnv* env, const nsAString& string);
     static jstring NewJavaString(JNIEnv* env, const char* string);
@@ -299,7 +295,7 @@ protected:
 
     java::GeckoLayerClient::GlobalRef mLayerClient;
 
-    // the android.telephony.SmsMessage class
+    
     jclass mAndroidSmsMessageClass;
 
     AndroidBridge();
@@ -310,7 +306,7 @@ protected:
     bool QueueSmsRequest(nsIMobileMessageCallback* aRequest, uint32_t* aRequestIdOut);
     bool QueueSmsCursorRequest(nsIMobileMessageCursorCallback* aRequest, uint32_t* aRequestIdOut);
 
-    // intput stream
+    
     jclass jReadableByteChannel;
     jclass jChannels;
     jmethodID jChannelCreate;
@@ -322,7 +318,7 @@ protected:
 
     jmethodID jCalculateLength;
 
-    // some convinient types to have around
+    
     jclass jStringClass;
 
     jni::Object::GlobalRef mClassLoader;
@@ -454,9 +450,9 @@ public:
         return false;
     }
 
-    // Note! Calling Purge makes all previous local refs created in
-    // the AutoLocalJNIFrame's scope INVALID; be sure that you locked down
-    // any local refs that you need to keep around in global refs!
+    
+    
+    
     void Purge() {
         Pop();
         Push();
@@ -473,9 +469,9 @@ public:
 private:
     void Push() {
         MOZ_ASSERT(!mHasFrameBeenPushed);
-        // Make sure there is enough space to store a local ref to the
-        // exception.  I am not completely sure this is needed, but does
-        // not hurt.
+        
+        
+        
         if (mJNIEnv->PushLocalFrame(mEntries + 1) != 0) {
             CheckForException();
             return;
@@ -517,4 +513,4 @@ private:
 protected:
 };
 
-#endif /* AndroidBridge_h__ */
+#endif 
