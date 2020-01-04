@@ -25,4 +25,4 @@ global.f();
 
 
 
-assertEq(global.log, "14 25 19 37 48 ");
+assertEq(global.log, "14 25 19 37 49 ");
