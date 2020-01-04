@@ -491,6 +491,7 @@ function NetworkMonitor(aFilters, aOwner)
   this.openResponses = {};
   this._httpResponseExaminer =
     DevToolsUtils.makeInfallible(this._httpResponseExaminer).bind(this);
+  this._serviceWorkerRequest = this._serviceWorkerRequest.bind(this);
 }
 exports.NetworkMonitor = NetworkMonitor;
 
@@ -546,14 +547,34 @@ NetworkMonitor.prototype = {
   {
     this.responsePipeSegmentSize = Services.prefs
                                    .getIntPref("network.buffer.cache.size");
-
-    gActivityDistributor.addObserver(this);
+    this.interceptedChannels = new Set();
 
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
+      gActivityDistributor.addObserver(this);
       Services.obs.addObserver(this._httpResponseExaminer,
                                "http-on-examine-response", false);
       Services.obs.addObserver(this._httpResponseExaminer,
                                "http-on-examine-cached-response", false);
+    }
+    
+    
+    Services.obs.addObserver(this._serviceWorkerRequest,
+                             "service-worker-synthesized-response", false);
+  },
+
+  _serviceWorkerRequest: function(aSubject, aTopic, aData)
+  {
+    let channel = aSubject.QueryInterface(Ci.nsIHttpChannel);
+
+    if (!this._matchRequest(channel)) {
+      return;
+    }
+
+    this.interceptedChannels.add(aSubject);
+
+    
+    if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
+      this._httpResponseExaminer(channel, "http-on-examine-cached-response");
     }
   },
 
@@ -630,8 +651,16 @@ NetworkMonitor.prototype = {
     if (aTopic === "http-on-examine-cached-response") {
       
       
+      let fromServiceWorker = this.interceptedChannels.has(channel);
+      this.interceptedChannels.delete(channel);
+
       
-      let httpActivity = this._createNetworkEvent(channel, { fromCache: true });
+      
+      
+      let httpActivity = this._createNetworkEvent(channel, {
+        fromCache: !fromServiceWorker,
+        fromServiceWorker: fromServiceWorker
+      });
       httpActivity.owner.addResponseStart({
         httpVersion: response.httpVersion,
         remoteAddress: "",
@@ -806,7 +835,7 @@ NetworkMonitor.prototype = {
   
 
 
-  _createNetworkEvent: function(aChannel, { timestamp, extraStringData, fromCache }) {
+  _createNetworkEvent: function(aChannel, { timestamp, extraStringData, fromCache, fromServiceWorker }) {
     let win = NetworkHelper.getWindowForRequest(aChannel);
     let httpActivity = this.createActivityObject(aChannel);
 
@@ -830,6 +859,7 @@ NetworkMonitor.prototype = {
     event.headersSize = 0;
     event.startedDateTime = (timestamp ? new Date(Math.round(timestamp / 1000)) : new Date()).toISOString();
     event.fromCache = fromCache;
+    event.fromServiceWorker = fromServiceWorker;
 
     if (extraStringData) {
       event.headersSize = extraStringData.length;
@@ -1189,12 +1219,17 @@ NetworkMonitor.prototype = {
   destroy: function NM_destroy()
   {
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
+      gActivityDistributor.removeObserver(this);
       Services.obs.removeObserver(this._httpResponseExaminer,
                                   "http-on-examine-response");
+      Services.obs.removeObserver(this._httpResponseExaminer,
+                                  "http-on-examine-cached-response");
     }
 
-    gActivityDistributor.removeObserver(this);
+    Services.obs.removeObserver(this._serviceWorkerRequest,
+                                "service-worker-synthesized-response");
 
+    this.interceptedChannels.clear();
     this.openRequests = {};
     this.openResponses = {};
     this.owner = null;

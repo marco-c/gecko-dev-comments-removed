@@ -606,10 +606,10 @@ NetworkEventsHandler.prototype = {
 
 
   _onNetworkEvent: function(type, networkInfo) {
-    let { actor, startedDateTime, request: { method, url }, isXHR, fromCache } = networkInfo;
+    let { actor, startedDateTime, request: { method, url }, isXHR, fromCache, fromServiceWorker } = networkInfo;
 
     NetMonitorView.RequestsMenu.addRequest(
-      actor, startedDateTime, method, url, isXHR, fromCache
+      actor, startedDateTime, method, url, isXHR, fromCache, fromServiceWorker
     );
     window.emit(EVENTS.NETWORK_EVENT, actor);
   },
