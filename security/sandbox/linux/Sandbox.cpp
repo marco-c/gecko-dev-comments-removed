@@ -523,6 +523,7 @@ SandboxEarlyInit(GeckoProcessType aType, bool aIsNuwa)
   }
 
   MOZ_RELEASE_ASSERT(IsSingleThreaded());
+  const SandboxInfo info = SandboxInfo::Get();
 
   
   
@@ -536,9 +537,13 @@ SandboxEarlyInit(GeckoProcessType aType, bool aIsNuwa)
     return;
 #ifdef MOZ_GMP_SANDBOX
   case GeckoProcessType_GMPlugin:
+    if (!info.Test(SandboxInfo::kEnabledForMedia)) {
+      break;
+    }
     canUnshareNet = true;
     canUnshareIPC = true;
-    canChroot = true;
+    
+    canChroot = info.Test(SandboxInfo::kHasSeccompBPF);
     break;
 #endif
     
@@ -554,7 +559,6 @@ SandboxEarlyInit(GeckoProcessType aType, bool aIsNuwa)
   }
 
   
-  const SandboxInfo info = SandboxInfo::Get();
   if (!info.Test(SandboxInfo::kHasUserNamespaces)) {
     return;
   }
