@@ -10384,9 +10384,38 @@ CSSParserImpl::FinalizeRadialWebkitGradient(nsCSSValueGradient* aGradient,
 {
   MOZ_ASSERT(aGradient->mIsRadial, "passed-in gradient must be radial");
 
-  aGradient->mBgPos = aFirstCenter;
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aSecondRadius >= aFirstRadius) {
+    
+    aGradient->mBgPos = aSecondCenter;
+    aGradient->mIsExplicitSize = true;
+    aGradient->GetRadiusX().SetFloatValue(aSecondRadius, eCSSUnit_Pixel);
+    return;
+  }
 
   
+  aGradient->mBgPos = aFirstCenter;
+  aGradient->mIsExplicitSize = true;
+  aGradient->GetRadiusX().SetFloatValue(aFirstRadius, eCSSUnit_Pixel);
+
+  
+  
+  
+  
+  std::reverse(aGradient->mStops.begin(), aGradient->mStops.end());
+
+  
+  for (nsCSSValueGradientStop& colorStop : aGradient->mStops) {
+    float origLocation = colorStop.mLocation.GetPercentValue();
+    colorStop.mLocation.SetPercentValue(1.0f - origLocation);
+  }
 }
 
 bool
