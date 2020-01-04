@@ -1,14 +1,10 @@
 
 
-
-
-
 package org.mozilla.gecko.dlc;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoEvent;
-import org.mozilla.gecko.dlc.DownloadContentHelper;
 import org.mozilla.gecko.dlc.catalog.DownloadContent;
 import org.mozilla.gecko.dlc.catalog.DownloadContentCatalog;
 
@@ -18,30 +14,30 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import ch.boye.httpclientandroidlib.client.HttpClient;
-
-import java.io.File;
-
 
 
 
 public class DownloadContentService extends IntentService {
     private static final String LOGTAG = "GeckoDLCService";
 
+    private static final String ACTION_STUDY_CATALOG = AppConstants.ANDROID_PACKAGE_NAME + ".DLC.STUDY";
+    private static final String ACTION_VERIFY_CONTENT = AppConstants.ANDROID_PACKAGE_NAME + ".DLC.VERIFY";
+    private static final String ACTION_DOWNLOAD_CONTENT = AppConstants.ANDROID_PACKAGE_NAME + ".DLC.DOWNLOAD";
+
     public static void startStudy(Context context) {
-        Intent intent = new Intent(DownloadContentHelper.ACTION_STUDY_CATALOG);
+        Intent intent = new Intent(ACTION_STUDY_CATALOG);
         intent.setComponent(new ComponentName(context, DownloadContentService.class));
         context.startService(intent);
     }
 
     public static void startVerification(Context context) {
-        Intent intent = new Intent(DownloadContentHelper.ACTION_VERIFY_CONTENT);
+        Intent intent = new Intent(ACTION_VERIFY_CONTENT);
         intent.setComponent(new ComponentName(context, DownloadContentService.class));
         context.startService(intent);
     }
 
     public static void startDownloads(Context context) {
-        Intent intent = new Intent(DownloadContentHelper.ACTION_DOWNLOAD_CONTENT);
+        Intent intent = new Intent(ACTION_DOWNLOAD_CONTENT);
         intent.setComponent(new ComponentName(context, DownloadContentService.class));
         context.startService(intent);
     }
@@ -69,156 +65,34 @@ public class DownloadContentService extends IntentService {
             return;
         }
 
+        final BaseAction action;
+
         switch (intent.getAction()) {
-            case DownloadContentHelper.ACTION_STUDY_CATALOG:
-                studyCatalog();
+            case ACTION_STUDY_CATALOG:
+                action = new StudyAction();
                 break;
 
-            case DownloadContentHelper.ACTION_DOWNLOAD_CONTENT:
-                downloadContent();
+            case ACTION_DOWNLOAD_CONTENT:
+                action = new DownloadAction(new DownloadAction.Callback() {
+                    @Override
+                    public void onContentDownloaded(DownloadContent content) {
+                        if (content.isFont()) {
+                            GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Fonts:Reload", ""));
+                        }
+                    }
+                });
                 break;
 
-            case DownloadContentHelper.ACTION_VERIFY_CONTENT:
-                verifyCatalog();
+            case ACTION_VERIFY_CONTENT:
+                action = new VerifyAction();
                 break;
 
             default:
                 Log.e(LOGTAG, "Unknown action: " + intent.getAction());
+                return;
         }
 
+        action.perform(this, catalog);
         catalog.persistChanges();
-    }
-
-    
-
-
-    private void studyCatalog() {
-        Log.d(LOGTAG, "Studying catalog..");
-
-        for (DownloadContent content : catalog.getContentWithoutState()) {
-            if (content.isAssetArchive() && content.isFont()) {
-                catalog.scheduleDownload(content);
-
-                Log.d(LOGTAG, "Scheduled download: " + content);
-            }
-        }
-
-        if (catalog.hasScheduledDownloads()) {
-            startDownloads(this);
-        }
-
-        Log.v(LOGTAG, "Done");
-    }
-
-    
-
-
-    private void verifyCatalog() {
-        Log.d(LOGTAG, "Verifying catalog..");
-
-        for (DownloadContent content : catalog.getDownloadedContent()) {
-            try {
-                File destinationFile = DownloadContentHelper.getDestinationFile(this, content);
-
-                if (!destinationFile.exists()) {
-                    Log.d(LOGTAG, "Downloaded content does not exist anymore: " + content);
-
-                    
-                    
-                    catalog.scheduleDownload(content);
-                }
-
-                if (!DownloadContentHelper.verify(destinationFile, content.getChecksum())) {
-                    catalog.scheduleDownload(content);
-                    Log.d(LOGTAG, "Wrong checksum. Scheduling download: " + content);
-                    continue;
-                }
-
-                Log.v(LOGTAG, "Content okay: " + content);
-            } catch (DownloadContentHelper.UnrecoverableDownloadContentException e) {
-                Log.w(LOGTAG, "Unrecoverable exception while verifying downloaded file", e);
-            } catch (DownloadContentHelper.RecoverableDownloadContentException e) {
-                
-            }
-        }
-
-        if (catalog.hasScheduledDownloads()) {
-            startDownloads(this);
-        }
-
-        Log.v(LOGTAG, "Done");
-    }
-
-    
-
-
-    private void downloadContent() {
-        Log.d(LOGTAG, "Downloading content..");
-
-        if (DownloadContentHelper.isActiveNetworkMetered(this)) {
-            Log.d(LOGTAG, "Network is metered. Postponing download.");
-            
-            return;
-        }
-
-        HttpClient client = DownloadContentHelper.buildHttpClient();
-
-        for (DownloadContent content : catalog.getScheduledDownloads()) {
-            Log.d(LOGTAG, "Downloading: " + content);
-
-            File temporaryFile = null;
-
-            try {
-                File destinationFile = DownloadContentHelper.getDestinationFile(this, content);
-                if (destinationFile.exists() && DownloadContentHelper.verify(destinationFile, content.getChecksum())) {
-                    Log.d(LOGTAG, "Content already exists and is up-to-date.");
-                    continue;
-                }
-
-                temporaryFile = DownloadContentHelper.createTemporaryFile(this, content);
-
-                
-                final String url = DownloadContentHelper.createDownloadURL(content);
-                DownloadContentHelper.download(client, url, temporaryFile);
-
-                if (!DownloadContentHelper.verify(temporaryFile, content.getDownloadChecksum())) {
-                    Log.w(LOGTAG, "Wrong checksum after download, content=" + content.getId());
-                    temporaryFile.delete();
-                    continue;
-                }
-
-                if (!content.isAssetArchive()) {
-                    Log.e(LOGTAG, "Downloaded content is not of type 'asset-archive': " + content.getType());
-                    continue;
-                }
-
-                DownloadContentHelper.extract(temporaryFile, destinationFile, content.getChecksum());
-
-                catalog.markAsDownloaded(content);
-
-                Log.d(LOGTAG, "Successfully downloaded: " + content);
-
-                onContentDownloaded(content);
-            } catch (DownloadContentHelper.RecoverableDownloadContentException e) {
-                Log.w(LOGTAG, "Downloading content failed (Recoverable): " + content, e);
-                
-            } catch (DownloadContentHelper.UnrecoverableDownloadContentException e) {
-                Log.w(LOGTAG, "Downloading content failed (Unrecoverable): " + content, e);
-
-                catalog.markAsPermanentlyFailed(content);
-            } finally {
-                if (temporaryFile != null && temporaryFile.exists()) {
-                    temporaryFile.delete();
-                }
-            }
-        }
-
-        Log.v(LOGTAG, "Done");
-    }
-
-    private void onContentDownloaded(DownloadContent content) {
-        if (content.isFont()) {
-            GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Fonts:Reload", ""));
-        }
     }
 }
