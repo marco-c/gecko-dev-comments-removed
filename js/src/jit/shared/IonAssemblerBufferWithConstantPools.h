@@ -115,6 +115,35 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace js {
 namespace jit {
 
@@ -350,6 +379,13 @@ class BranchDeadlineSet<0u>
 
 
 typedef int32_t PoolAllocUnit;
+
+
+
+
+
+
+const size_t ShortRangeBranchHysteresis = 128;
 
 struct Pool
 {
@@ -885,11 +921,24 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     }
 
   private:
+    
+    bool hasExpirableShortRangeBranches() const
+    {
+        if (branchDeadlines_.empty())
+            return false;
+
+        
+        
+        
+        return this->nextOffset().getOffset() + ShortRangeBranchHysteresis >
+               size_t(branchDeadlines_.earliestDeadline().getOffset());
+    }
+
     void finishPool() {
         JitSpew(JitSpew_Pools, "[%d] Attempting to finish pool %d with %d entries.", id,
                 poolInfo_.length(), pool_.numEntries());
 
-        if (pool_.numEntries() == 0) {
+        if (pool_.numEntries() == 0 && !hasExpirableShortRangeBranches()) {
             
             JitSpew(JitSpew_Pools, "[%d] Aborting because the pool is empty", id);
             return;
@@ -905,6 +954,27 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
           this->putBytesLarge(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
         if (this->oom())
             return;
+
+        
+        
+        while (hasExpirableShortRangeBranches()) {
+            unsigned rangeIdx = branchDeadlines_.earliestDeadlineRange();
+            BufferOffset deadline = branchDeadlines_.earliestDeadline();
+
+            
+            
+            branchDeadlines_.removeDeadline(rangeIdx, deadline);
+
+            
+            BufferOffset veneer = this->putBytes(guardSize_ * InstSize, nullptr);
+            if (this->oom())
+                return;
+
+            
+            
+            
+            Asm::PatchShortRangeBranchToVeneer(this, rangeIdx, deadline, veneer);
+        }
 
         
         

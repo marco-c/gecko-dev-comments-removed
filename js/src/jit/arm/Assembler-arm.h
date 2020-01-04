@@ -1855,6 +1855,13 @@ class Assembler : public AssemblerShared
     
     
     static void PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr);
+
+    
+    static void PatchShortRangeBranchToVeneer(ARMBuffer*, unsigned rangeIdx, BufferOffset deadline,
+                                              BufferOffset veneer)
+    {
+        MOZ_CRASH();
+    }
     
 
     
