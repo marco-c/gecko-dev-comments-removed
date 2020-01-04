@@ -624,11 +624,6 @@ protected:
   
 
 
-  const RefPtr<InputQueue>& GetInputQueue() const;
-
-  
-
-
 
 
 
@@ -819,6 +814,11 @@ public:
 
 
   void ResetTouchInputState();
+
+  
+
+
+  const RefPtr<InputQueue>& GetInputQueue() const;
 
 private:
   void CancelAnimationAndGestureState();

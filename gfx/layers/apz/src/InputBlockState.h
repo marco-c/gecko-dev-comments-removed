@@ -417,9 +417,7 @@ public:
 
 
 
-
-
-  bool SetSingleTapOccurred();
+  void SetSingleTapOccurred();
   
 
 

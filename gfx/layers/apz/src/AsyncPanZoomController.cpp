@@ -2041,6 +2041,7 @@ nsEventStatus AsyncPanZoomController::OnLongPress(const TapGestureInput& aEvent)
     CSSPoint geckoScreenPoint;
     if (ConvertToGecko(aEvent.mPoint, &geckoScreenPoint)) {
       CancelableBlockState* block = CurrentInputBlock();
+      MOZ_ASSERT(block);
       if (!block->AsTouchBlock()) {
         APZC_LOG("%p dropping long-press because some non-touch block interrupted it\n", this);
         return nsEventStatus_eIgnore;
@@ -2067,8 +2068,21 @@ nsEventStatus AsyncPanZoomController::GenerateSingleTap(const ScreenIntPoint& aP
   if (controller) {
     CSSPoint geckoScreenPoint;
     if (ConvertToGecko(aPoint, &geckoScreenPoint)) {
-      if (!CurrentTouchBlock()->SetSingleTapOccurred()) {
-        return nsEventStatus_eIgnore;
+      CancelableBlockState* block = CurrentInputBlock();
+      MOZ_ASSERT(block);
+      TouchBlockState* touch = block->AsTouchBlock();
+      
+      
+      
+      
+      
+      
+      if (touch) {
+        if (touch->IsDuringFastFling()) {
+          APZC_LOG("%p dropping single-tap because it was during a fast-fling\n", this);
+          return nsEventStatus_eIgnore;
+        }
+        touch->SetSingleTapOccurred();
       }
       
       
