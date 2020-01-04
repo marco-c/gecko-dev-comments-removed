@@ -202,10 +202,16 @@ DecodedAudioDataSink::PopFrames(uint32_t aFrames)
     UniquePtr<AudioDataValue[]> mData;
   };
 
-  if (!mCurrentData) {
+  while (!mCurrentData) {
     
     if (AudioQueue().GetSize() == 0) {
       return MakeUnique<Chunk>();
+    }
+
+    
+    if (AudioQueue().PeekFront()->mFrames == 0) {
+      RefPtr<MediaData> releaseMe = AudioQueue().PopFront();
+      continue;
     }
 
     
@@ -239,6 +245,7 @@ DecodedAudioDataSink::PopFrames(uint32_t aFrames)
     mCursor = MakeUnique<AudioBufferCursor>(mCurrentData->mAudioData.get(),
                                             mCurrentData->mChannels,
                                             mCurrentData->mFrames);
+    MOZ_ASSERT(mCurrentData->mFrames > 0);
   }
 
   auto framesToPop = std::min(aFrames, mCursor->Available());
