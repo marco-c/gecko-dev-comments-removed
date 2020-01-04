@@ -2,52 +2,11 @@
 
 
 
-const { DOM: dom, createClass, PropTypes, createFactory } = require("devtools/client/shared/vendor/react");
-const Tree = createFactory(require("./tree"));
-const TreeItem = createFactory(require("./tree-item"));
+const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
 const { getSnapshotStatusText } = require("../utils");
 const { snapshotState: states } = require("../constants");
 const { snapshot: snapshotModel } = require("../models");
 const TAKE_SNAPSHOT_TEXT = "Take snapshot";
-const TREE_ROW_HEIGHT = 10;
-
-
-
-
-
-
-
-
-
-function createParentMap (node, aggregator=Object.create(null)) {
-  for (let child of (node.children || [])) {
-    aggregator[child.id] = node;
-    createParentMap(child, aggregator);
-  }
-
-  return aggregator;
-}
-
-
-
-
-
-
-
-function createTreeProperties (census) {
-  let map = createParentMap(census);
-
-  return {
-    
-    
-    getParent: node => map(node.id),
-    getChildren: node => node.children || [],
-    renderItem: (item, depth, focused, arrow) => new TreeItem({ item, depth, focused, arrow }),
-    getRoots: () => census.children,
-    getKey: node => node.id,
-    itemHeight: TREE_ROW_HEIGHT,
-  };
-}
 
 
 
@@ -84,9 +43,7 @@ const Heap = module.exports = createClass({
           getSnapshotStatusText(snapshot));
         break;
       case states.SAVED_CENSUS:
-        pane = dom.div({ className: "heap-view-panel", "data-state": "loaded" },
-          Tree(createTreeProperties(snapshot.census))
-        );
+        pane = dom.div({ className: "heap-view-panel", "data-state": "loaded" }, JSON.stringify(census || {}));
         break;
     }
 
