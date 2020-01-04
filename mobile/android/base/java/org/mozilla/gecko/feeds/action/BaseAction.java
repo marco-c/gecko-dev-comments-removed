@@ -7,6 +7,8 @@ package org.mozilla.gecko.feeds.action;
 
 import android.content.Intent;
 
+import org.mozilla.gecko.db.BrowserDB;
+
 
 
 
@@ -16,11 +18,16 @@ public interface BaseAction {
 
 
 
-    void perform(Intent intent);
+
+    void perform(BrowserDB browserDB, Intent intent);
 
     
 
 
     boolean requiresNetwork();
+
+	
+
+
     boolean requiresPreferenceEnabled();
 }

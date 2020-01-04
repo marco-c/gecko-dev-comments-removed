@@ -10,14 +10,142 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
+
+import org.json.JSONException;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.db.BrowserContract.UrlAnnotations.Key;
+import org.mozilla.gecko.feeds.subscriptions.FeedSubscription;
 
 public class LocalUrlAnnotations implements UrlAnnotations {
+    private static final String LOGTAG = "LocalUrlAnnotations";
+
     private Uri urlAnnotationsTableWithProfile;
 
     public LocalUrlAnnotations(final String profile) {
         urlAnnotationsTableWithProfile = DBUtils.appendProfile(profile, BrowserContract.UrlAnnotations.CONTENT_URI);
+    }
+
+    
+
+
+    @Override
+    public Cursor getFeedSubscriptions(ContentResolver cr) {
+        return queryByKey(cr,
+                Key.FEED_SUBSCRIPTION,
+                new String[] { BrowserContract.UrlAnnotations.URL, BrowserContract.UrlAnnotations.VALUE },
+                null);
+    }
+
+    
+
+
+    @Override
+    public void insertFeedUrl(ContentResolver cr, String originUrl, String feedUrl) {
+        insertAnnotation(cr, originUrl, Key.FEED, feedUrl);
+    }
+
+    
+
+
+    @Override
+    public boolean hasFeedUrlForWebsite(ContentResolver cr, String websiteUrl) {
+        return hasResultsForSelection(cr,
+                BrowserContract.UrlAnnotations.URL + " = ? AND " + BrowserContract.UrlAnnotations.KEY + " = ?",
+                new String[]{websiteUrl, Key.FEED.getDbValue()});
+    }
+
+    
+
+
+    @Override
+    public boolean hasWebsiteForFeedUrl(ContentResolver cr, String feedUrl) {
+        return hasResultsForSelection(cr,
+                BrowserContract.UrlAnnotations.VALUE + " = ? AND " + BrowserContract.UrlAnnotations.KEY + " = ?",
+                new String[]{feedUrl, Key.FEED.getDbValue()});
+    }
+
+    
+
+
+    @Override
+    public void deleteFeedUrl(ContentResolver cr, String websiteUrl) {
+        deleteAnnotation(cr, websiteUrl, Key.FEED);
+    }
+
+    
+
+
+    @Override
+    public Cursor getWebsitesWithFeedUrl(ContentResolver cr) {
+        return cr.query(urlAnnotationsTableWithProfile,
+                new String[] { BrowserContract.UrlAnnotations.URL },
+                BrowserContract.UrlAnnotations.KEY + " = ?",
+                new String[] { Key.FEED.getDbValue() },
+                null);
+    }
+
+    
+
+
+    @Override
+    public boolean hasFeedSubscription(ContentResolver cr, String feedUrl) {
+        return hasResultsForSelection(cr,
+                BrowserContract.UrlAnnotations.URL + " = ? AND " + BrowserContract.UrlAnnotations.KEY + " = ?",
+                new String[]{feedUrl, Key.FEED_SUBSCRIPTION.getDbValue()});
+    }
+
+    
+
+
+    @Override
+    public void insertFeedSubscription(ContentResolver cr, FeedSubscription subscription) {
+        try {
+            insertAnnotation(cr, subscription.getFeedUrl(), Key.FEED_SUBSCRIPTION, subscription.toJSON().toString());
+        } catch (JSONException e) {
+            Log.w(LOGTAG, "Could not serialize subscription");
+        }
+    }
+
+    
+
+
+    @Override
+    public void updateFeedSubscription(ContentResolver cr, FeedSubscription subscription) {
+        try {
+            updateAnnotation(cr, subscription.getFeedUrl(), Key.FEED_SUBSCRIPTION, subscription.toJSON().toString());
+        } catch (JSONException e) {
+            Log.w(LOGTAG, "Could not serialize subscription");
+        }
+    }
+
+    
+
+
+    @Override
+    public void deleteFeedSubscription(ContentResolver cr, FeedSubscription subscription) {
+        deleteAnnotation(cr, subscription.getFeedUrl(), Key.FEED_SUBSCRIPTION);
+    }
+
+    private int deleteAnnotation(final ContentResolver cr, final String url, final Key key) {
+        return cr.delete(urlAnnotationsTableWithProfile,
+                BrowserContract.UrlAnnotations.KEY + " = ? AND " + BrowserContract.UrlAnnotations.URL + " = ?",
+                new String[] { key.getDbValue(), url  });
+    }
+
+    private int updateAnnotation(final ContentResolver cr, final String url, final Key key, final String value) {
+        ContentValues values = new ContentValues();
+        values.put(BrowserContract.UrlAnnotations.VALUE, value);
+        values.put(BrowserContract.UrlAnnotations.DATE_MODIFIED, System.currentTimeMillis());
+
+        return cr.update(urlAnnotationsTableWithProfile,
+                values,
+                BrowserContract.UrlAnnotations.KEY + " = ? AND " + BrowserContract.UrlAnnotations.URL + " = ?",
+                new String[]{key.getDbValue(), url});
+    }
+
+    private void insertAnnotation(final ContentResolver cr, final String url, final Key key, final String value) {
+        insertAnnotation(cr, url, key.getDbValue(), value);
     }
 
     @RobocopTarget
@@ -31,6 +159,26 @@ public class LocalUrlAnnotations implements UrlAnnotations {
         values.put(BrowserContract.UrlAnnotations.DATE_CREATED, creationTime);
         values.put(BrowserContract.UrlAnnotations.DATE_MODIFIED, creationTime);
         cr.insert(urlAnnotationsTableWithProfile, values);
+    }
+
+    
+
+
+    private boolean hasResultsForSelection(ContentResolver cr, String selection, String[] selectionArgs) {
+        Cursor cursor = cr.query(urlAnnotationsTableWithProfile,
+                new String[] { BrowserContract.UrlAnnotations._ID },
+                selection,
+                selectionArgs,
+                null);
+        if (cursor == null) {
+            return false;
+        }
+
+        try {
+            return cursor.getCount() > 0;
+        } finally {
+            cursor.close();
+        }
     }
 
     private Cursor queryByKey(final ContentResolver cr, @NonNull final Key key, @Nullable final String[] projections,

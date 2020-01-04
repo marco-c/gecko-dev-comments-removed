@@ -517,7 +517,23 @@ public class BrowserContract {
         public enum Key {
             
             
-            SCREENSHOT ("screenshot");
+            SCREENSHOT ("screenshot"),
+
+            
+
+
+
+
+
+            FEED("feed"),
+
+            
+
+
+
+
+
+            FEED_SUBSCRIPTION("feed_subscription");
 
             private final String dbValue;
 
