@@ -1724,33 +1724,31 @@ public abstract class GeckoApp
             
             
             
-            if (mShouldRestore) {
-                final JSONArray tabs = new JSONArray();
-                final JSONObject windowObject = new JSONObject();
-                final boolean sessionDataValid;
+            final JSONArray tabs = new JSONArray();
+            final JSONObject windowObject = new JSONObject();
+            final boolean sessionDataValid;
 
-                LastSessionParser parser = new LastSessionParser(tabs, windowObject, isExternalURL);
+            LastSessionParser parser = new LastSessionParser(tabs, windowObject, isExternalURL);
 
-                if (mPrivateBrowsingSession == null) {
-                    sessionDataValid = parser.parse(sessionString);
-                } else {
-                    sessionDataValid = parser.parse(sessionString, mPrivateBrowsingSession);
+            if (mPrivateBrowsingSession == null) {
+                sessionDataValid = parser.parse(sessionString);
+            } else {
+                sessionDataValid = parser.parse(sessionString, mPrivateBrowsingSession);
+            }
+
+            if (tabs.length() > 0) {
+                windowObject.put("tabs", tabs);
+                sessionString = new JSONObject().put("windows", new JSONArray().put(windowObject)).toString();
+            } else {
+                if (parser.allTabsSkipped() || sessionDataValid) {
+                    
+                    
+                    
+                    
+                    
+                    mShouldRestore = false;
                 }
-
-                if (tabs.length() > 0) {
-                    windowObject.put("tabs", tabs);
-                    sessionString = new JSONObject().put("windows", new JSONArray().put(windowObject)).toString();
-                } else {
-                    if (parser.allTabsSkipped() || sessionDataValid) {
-                        
-                        
-                        
-                        
-                        
-                        mShouldRestore = false;
-                    }
-                    throw new SessionRestoreException("No tabs could be read from session file");
-                }
+                throw new SessionRestoreException("No tabs could be read from session file");
             }
 
             JSONObject restoreData = new JSONObject();
@@ -2573,9 +2571,7 @@ public abstract class GeckoApp
             if (CPU.equals(topic)) {
               wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, topic);
             } else if (SCREEN.equals(topic)) {
-              
-              
-              wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, topic);
+              wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, topic);
             }
 
             if (wl != null) {
