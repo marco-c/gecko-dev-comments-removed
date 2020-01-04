@@ -3,8 +3,7 @@
 
 "use strict";
 
-const { Ci, ChromeWorker } = require("chrome");
-const Services = require("Services");
+const { ChromeWorker } = require("chrome");
 
 function watchFiles(path, onFileChanged) {
   const watchWorker = new ChromeWorker(
@@ -16,8 +15,8 @@ function watchFiles(path, onFileChanged) {
     
     
     
-    const { path } = event.data;
-    onFileChanged(path);
+    const { newPath } = event.data;
+    onFileChanged(newPath);
   };
 
   watchWorker.postMessage({

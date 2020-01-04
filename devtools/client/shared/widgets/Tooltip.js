@@ -493,7 +493,9 @@ Tooltip.prototype = {
     
     widget.commitHierarchy = () => {};
 
-    for (let e in relayEvents) widget.on(e, relayEvents[e]);
+    for (let e in relayEvents) {
+      widget.on(e, relayEvents[e]);
+    }
     VariablesViewController.attach(widget, controllerOptions);
 
     
@@ -517,7 +519,7 @@ Tooltip.prototype = {
 
 
   setRelativeImageContent: Task.async(function* (imageUrl, inspectorFront,
-                                                maxDim) {
+                                                 maxDim) {
     if (imageUrl.startsWith("data:")) {
       
       this.setImageContent(imageUrl, {maxDim: maxDim});
@@ -539,7 +541,9 @@ Tooltip.prototype = {
 
   setBrokenImageContent: function () {
     this.setTextContent({
-      messages: [l10n.strings.GetStringFromName("previewTooltip.image.brokenImage")]
+      messages: [
+        l10n.strings.GetStringFromName("previewTooltip.image.brokenImage")
+      ]
     });
   },
 
@@ -738,7 +742,6 @@ Tooltip.prototype = {
 
     function onLoaded(iframe) {
       let win = iframe.contentWindow.wrappedJSObject;
-      let doc = win.document.documentElement;
       let def = promise.defer();
       let container = win.document.getElementById("container");
       let widget = new CSSFilterEditorWidget(container, filter);
@@ -1008,7 +1011,8 @@ function SwatchColorPickerTooltip(doc) {
 
 module.exports.SwatchColorPickerTooltip = SwatchColorPickerTooltip;
 
-SwatchColorPickerTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.prototype, {
+SwatchColorPickerTooltip.prototype =
+Heritage.extend(SwatchBasedEditorTooltip.prototype, {
   
 
 
@@ -1287,8 +1291,9 @@ EventTooltip.prototype = {
       iframe.setAttribute("style", "width:100%;");
 
       editor.appendTo(content, iframe).then(() => {
+        
         let tidied = beautify.js(handler, { indent_size: 2 });
-
+        
         editor.setText(tidied);
 
         eventEditors.appended = true;
@@ -1335,7 +1340,9 @@ EventTooltip.prototype = {
         );
         if (item) {
           let actor = item.attachment.source.actor;
-          DebuggerView.setEditorLocation(actor, line, {noDebug: true}).then(() => {
+          DebuggerView.setEditorLocation(
+            actor, line, {noDebug: true}
+          ).then(() => {
             if (dom0) {
               let text = DebuggerView.editor.getText();
               let index = text.indexOf(searchString);
@@ -1420,7 +1427,8 @@ function SwatchCubicBezierTooltip(doc) {
 
 module.exports.SwatchCubicBezierTooltip = SwatchCubicBezierTooltip;
 
-SwatchCubicBezierTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.prototype, {
+SwatchCubicBezierTooltip.prototype =
+Heritage.extend(SwatchBasedEditorTooltip.prototype, {
   
 
 
@@ -1517,7 +1525,8 @@ function SwatchFilterTooltip(doc) {
 
 exports.SwatchFilterTooltip = SwatchFilterTooltip;
 
-SwatchFilterTooltip.prototype = Heritage.extend(SwatchBasedEditorTooltip.prototype, {
+SwatchFilterTooltip.prototype =
+Heritage.extend(SwatchBasedEditorTooltip.prototype, {
   show: function () {
     
     SwatchBasedEditorTooltip.prototype.show.call(this);

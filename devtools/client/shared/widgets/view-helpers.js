@@ -6,7 +6,8 @@
 "use strict";
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { Ci } = require("chrome");
+const { Cu, Ci } = require("chrome");
+let { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 
 const PANE_APPEARANCE_DELAY = 50;
 const PAGE_SIZE_ITEM_COUNT_RATIO = 5;
@@ -20,17 +21,17 @@ exports.Heritage = {
   
 
 
-  extend: function (aPrototype, aProperties = {}) {
-    return Object.create(aPrototype, this.getOwnPropertyDescriptors(aProperties));
+  extend: function (prototype, properties = {}) {
+    return Object.create(prototype, this.getOwnPropertyDescriptors(properties));
   },
 
   
 
 
-  getOwnPropertyDescriptors: function (aObject) {
-    return Object.getOwnPropertyNames(aObject).reduce((aDescriptor, aName) => {
-      aDescriptor[aName] = Object.getOwnPropertyDescriptor(aObject, aName);
-      return aDescriptor;
+  getOwnPropertyDescriptors: function (object) {
+    return Object.getOwnPropertyNames(object).reduce((descriptor, name) => {
+      descriptor[name] = Object.getOwnPropertyDescriptor(object, name);
+      return descriptor;
     }, {});
   }
 };
@@ -46,11 +47,11 @@ exports.Heritage = {
 
 
 
-const setNamedTimeout = function setNamedTimeout(aId, aWait, aCallback) {
-  clearNamedTimeout(aId);
+const setNamedTimeout = function setNamedTimeout(id, wait, callback) {
+  clearNamedTimeout(id);
 
-  namedTimeoutsStore.set(aId, setTimeout(() =>
-    namedTimeoutsStore.delete(aId) && aCallback(), aWait));
+  namedTimeoutsStore.set(id, setTimeout(() =>
+    namedTimeoutsStore.delete(id) && callback(), wait));
 };
 exports.setNamedTimeout = setNamedTimeout;
 
@@ -61,12 +62,12 @@ exports.setNamedTimeout = setNamedTimeout;
 
 
 
-const clearNamedTimeout = function clearNamedTimeout(aId) {
+const clearNamedTimeout = function clearNamedTimeout(id) {
   if (!namedTimeoutsStore) {
     return;
   }
-  clearTimeout(namedTimeoutsStore.get(aId));
-  namedTimeoutsStore.delete(aId);
+  clearTimeout(namedTimeoutsStore.get(id));
+  namedTimeoutsStore.delete(id);
 };
 exports.clearNamedTimeout = clearNamedTimeout;
 
@@ -84,13 +85,15 @@ exports.clearNamedTimeout = clearNamedTimeout;
 
 
 
-const setConditionalTimeout = function setConditionalTimeout(aId, aWait, aPredicate, aCallback) {
-  setNamedTimeout(aId, aWait, function maybeCallback() {
-    if (aPredicate()) {
-      aCallback();
+const setConditionalTimeout = function setConditionalTimeout(id, wait,
+                                                             predicate,
+                                                             callback) {
+  setNamedTimeout(id, wait, function maybeCallback() {
+    if (predicate()) {
+      callback();
       return;
     }
-    setConditionalTimeout(aId, aWait, aPredicate, aCallback);
+    setConditionalTimeout(id, wait, predicate, callback);
   });
 };
 exports.setConditionalTimeout = setConditionalTimeout;
@@ -102,8 +105,8 @@ exports.setConditionalTimeout = setConditionalTimeout;
 
 
 
-const clearConditionalTimeout = function clearConditionalTimeout(aId) {
-  clearNamedTimeout(aId);
+const clearConditionalTimeout = function clearConditionalTimeout(id) {
+  clearNamedTimeout(id);
 };
 exports.clearConditionalTimeout = clearConditionalTimeout;
 
@@ -126,15 +129,16 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
 
-  dispatchEvent: function (aTarget, aType, aDetail) {
-    if (!(aTarget instanceof Ci.nsIDOMNode)) {
-      return true; 
+  dispatchEvent: function (target, type, detail) {
+    if (!(target instanceof Ci.nsIDOMNode)) {
+      
+      return true;
     }
-    let document = aTarget.ownerDocument || aTarget;
-    let dispatcher = aTarget.ownerDocument ? aTarget : document.documentElement;
+    let document = target.ownerDocument || target;
+    let dispatcher = target.ownerDocument ? target : document.documentElement;
 
     let event = document.createEvent("CustomEvent");
-    event.initCustomEvent(aType, true, true, aDetail);
+    event.initCustomEvent(type, true, true, detail);
     return dispatcher.dispatchEvent(event);
   },
 
@@ -146,13 +150,13 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
 
-  delegateWidgetAttributeMethods: function (aWidget, aNode) {
-    aWidget.getAttribute =
-      aWidget.getAttribute || aNode.getAttribute.bind(aNode);
-    aWidget.setAttribute =
-      aWidget.setAttribute || aNode.setAttribute.bind(aNode);
-    aWidget.removeAttribute =
-      aWidget.removeAttribute || aNode.removeAttribute.bind(aNode);
+  delegateWidgetAttributeMethods: function (widget, node) {
+    widget.getAttribute =
+      widget.getAttribute || node.getAttribute.bind(node);
+    widget.setAttribute =
+      widget.setAttribute || node.setAttribute.bind(node);
+    widget.removeAttribute =
+      widget.removeAttribute || node.removeAttribute.bind(node);
   },
 
   
@@ -163,11 +167,11 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
 
-  delegateWidgetEventMethods: function (aWidget, aNode) {
-    aWidget.addEventListener =
-      aWidget.addEventListener || aNode.addEventListener.bind(aNode);
-    aWidget.removeEventListener =
-      aWidget.removeEventListener || aNode.removeEventListener.bind(aNode);
+  delegateWidgetEventMethods: function (widget, node) {
+    widget.addEventListener =
+      widget.addEventListener || node.addEventListener.bind(node);
+    widget.removeEventListener =
+      widget.removeEventListener || node.removeEventListener.bind(node);
   },
 
   
@@ -177,8 +181,8 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
 
-  isEventEmitter: function (aObject) {
-    return aObject && aObject.on && aObject.off && aObject.once && aObject.emit;
+  isEventEmitter: function (object) {
+    return object && object.on && object.off && object.once && object.emit;
   },
 
   
@@ -187,10 +191,10 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
 
-  isNode: function (aObject) {
-    return aObject instanceof Ci.nsIDOMNode ||
-           aObject instanceof Ci.nsIDOMElement ||
-           aObject instanceof Ci.nsIDOMDocumentFragment;
+  isNode: function (object) {
+    return object instanceof Ci.nsIDOMNode ||
+           object instanceof Ci.nsIDOMElement ||
+           object instanceof Ci.nsIDOMDocumentFragment;
   },
 
   
@@ -227,29 +231,31 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
 
-  togglePane: function (aFlags, aPane) {
+  togglePane: function (flags, pane) {
     
-    if (!aPane) {
+    if (!pane) {
       return;
     }
 
     
-    aPane.removeAttribute("hidden");
+    pane.removeAttribute("hidden");
 
     
-    aPane.classList.add("generic-toggled-pane");
+    pane.classList.add("generic-toggled-pane");
 
     
-    if (aFlags.visible == !aPane.hasAttribute("pane-collapsed")) {
-      if (aFlags.callback) aFlags.callback();
+    if (flags.visible == !pane.hasAttribute("pane-collapsed")) {
+      if (flags.callback) {
+        flags.callback();
+      }
       return;
     }
 
     
-    if (aFlags.animated) {
-      aPane.setAttribute("animated", "");
+    if (flags.animated) {
+      pane.setAttribute("animated", "");
     } else {
-      aPane.removeAttribute("animated");
+      pane.removeAttribute("animated");
     }
 
     
@@ -257,39 +263,42 @@ const ViewHelpers = exports.ViewHelpers = {
       
       
       
-      if (aFlags.visible) {
-        aPane.style.marginLeft = "0";
-        aPane.style.marginRight = "0";
-        aPane.style.marginBottom = "0";
-        aPane.removeAttribute("pane-collapsed");
+      if (flags.visible) {
+        pane.style.marginLeft = "0";
+        pane.style.marginRight = "0";
+        pane.style.marginBottom = "0";
+        pane.removeAttribute("pane-collapsed");
       } else {
-        let width = Math.floor(aPane.getAttribute("width")) + 1;
-        let height = Math.floor(aPane.getAttribute("height")) + 1;
-        aPane.style.marginLeft = -width + "px";
-        aPane.style.marginRight = -width + "px";
-        aPane.style.marginBottom = -height + "px";
-        aPane.setAttribute("pane-collapsed", "");
+        let width = Math.floor(pane.getAttribute("width")) + 1;
+        let height = Math.floor(pane.getAttribute("height")) + 1;
+        pane.style.marginLeft = -width + "px";
+        pane.style.marginRight = -width + "px";
+        pane.style.marginBottom = -height + "px";
+        pane.setAttribute("pane-collapsed", "");
       }
 
       
-      if (aFlags.animated) {
-        aPane.addEventListener("transitionend", function onEvent() {
-          aPane.removeEventListener("transitionend", onEvent, false);
+      if (flags.animated) {
+        pane.addEventListener("transitionend", function onEvent() {
+          pane.removeEventListener("transitionend", onEvent, false);
           
           
-          aPane.removeAttribute("animated");
-          if (aFlags.callback) aFlags.callback();
+          pane.removeAttribute("animated");
+          if (flags.callback) {
+            flags.callback();
+          }
         }, false);
-      } else {
+      } else if (flags.callback) {
         
-        if (aFlags.callback) aFlags.callback();
+        flags.callback();
       }
     };
 
     
     
-    if (aFlags.delayed) {
-      aPane.ownerDocument.defaultView.setTimeout(doToggle, PANE_APPEARANCE_DELAY);
+    if (flags.delayed) {
+      pane.ownerDocument.defaultView.setTimeout(doToggle,
+                                                PANE_APPEARANCE_DELAY);
     } else {
       doToggle();
     }
@@ -317,17 +326,23 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
 
-function Item(aOwnerView, aElement, aValue, aAttachment) {
-  this.ownerView = aOwnerView;
-  this.attachment = aAttachment;
-  this._value = aValue + "";
-  this._prebuiltNode = aElement;
+function Item(ownerView, element, value, attachment) {
+  this.ownerView = ownerView;
+  this.attachment = attachment;
+  this._value = value + "";
+  this._prebuiltNode = element;
 }
 
 Item.prototype = {
-  get value() { return this._value; },
-  get target() { return this._target; },
-  get prebuiltNode() { return this._prebuiltNode; },
+  get value() {
+    return this._value;
+  },
+  get target() {
+    return this._target;
+  },
+  get prebuiltNode() {
+    return this._prebuiltNode;
+  },
 
   
 
@@ -342,20 +357,20 @@ Item.prototype = {
 
 
 
-  append: function (aElement, aOptions = {}) {
-    let item = new Item(this, aElement, "", aOptions.attachment);
+  append: function (element, options = {}) {
+    let item = new Item(this, element, "", options.attachment);
 
     
     
     
-    this._entangleItem(item, this._target.appendChild(aElement));
+    this._entangleItem(item, this._target.appendChild(element));
 
     
-    if (aOptions.attributes) {
-      aOptions.attributes.forEach(e => item._target.setAttribute(e[0], e[1]));
+    if (options.attributes) {
+      options.attributes.forEach(e => item._target.setAttribute(e[0], e[1]));
     }
-    if (aOptions.finalize) {
-      item.finalize = aOptions.finalize;
+    if (options.finalize) {
+      item.finalize = options.finalize;
     }
 
     
@@ -368,12 +383,12 @@ Item.prototype = {
 
 
 
-  remove: function (aItem) {
-    if (!aItem) {
+  remove: function (item) {
+    if (!item) {
       return;
     }
-    this._target.removeChild(aItem._target);
-    this._untangleItem(aItem);
+    this._target.removeChild(item._target);
+    this._untangleItem(item);
   },
 
   
@@ -384,9 +399,9 @@ Item.prototype = {
 
 
 
-  _entangleItem: function (aItem, aElement) {
-    this._itemsByElement.set(aElement, aItem);
-    aItem._target = aElement;
+  _entangleItem: function (item, element) {
+    this._itemsByElement.set(element, item);
+    item._target = element;
   },
 
   
@@ -395,16 +410,16 @@ Item.prototype = {
 
 
 
-  _untangleItem: function (aItem) {
-    if (aItem.finalize) {
-      aItem.finalize(aItem);
+  _untangleItem: function (item) {
+    if (item.finalize) {
+      item.finalize(item);
     }
-    for (let childItem of aItem) {
-      aItem.remove(childItem);
+    for (let childItem of item) {
+      item.remove(childItem);
     }
 
-    this._unlinkItem(aItem);
-    aItem._target = null;
+    this._unlinkItem(item);
+    item._target = null;
   },
 
   
@@ -413,8 +428,8 @@ Item.prototype = {
 
 
 
-  _unlinkItem: function (aItem) {
-    this._itemsByElement.delete(aItem._target);
+  _unlinkItem: function (item) {
+    this._itemsByElement.delete(item._target);
   },
 
   
@@ -440,7 +455,14 @@ Item.prototype = {
 
 
 
-DevToolsUtils.defineLazyPrototypeGetter(Item.prototype, "_itemsByElement", () => new Map());
+DevToolsUtils.defineLazyPrototypeGetter(Item.prototype, "_itemsByElement",
+                                        () => new Map());
+
+
+
+
+
+
 
 
 
@@ -493,9 +515,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  set widget(aWidget) {
-    this._widget = aWidget;
-
+  set widget(widget) {
+    this._widget = widget;
 
     
     
@@ -504,9 +525,9 @@ const WidgetMethods = exports.WidgetMethods = {
     XPCOMUtils.defineLazyGetter(this, "_stagedItems", () => []);
 
     
-    if (ViewHelpers.isEventEmitter(aWidget)) {
-      aWidget.on("keyPress", this._onWidgetKeyPress.bind(this));
-      aWidget.on("mousePress", this._onWidgetMousePress.bind(this));
+    if (ViewHelpers.isEventEmitter(widget)) {
+      widget.on("keyPress", this._onWidgetKeyPress.bind(this));
+      widget.on("mousePress", this._onWidgetMousePress.bind(this));
     }
   },
 
@@ -548,23 +569,24 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  push: function ([aElement, aValue], aOptions = {}) {
-    let item = new Item(this, aElement, aValue, aOptions.attachment);
+  push: function ([element, value], options = {}) {
+    let item = new Item(this, element, value, options.attachment);
 
     
-    if (aOptions.staged) {
+    if (options.staged) {
       
       
-      aOptions.index = undefined;
-      return void this._stagedItems.push({ item: item, options: aOptions });
+      options.index = undefined;
+      return void this._stagedItems.push({ item: item, options: options });
     }
     
-    if (!("index" in aOptions)) {
-      return this._insertItemAt(this._findExpectedIndexFor(item), item, aOptions);
+    if (!("index" in options)) {
+      return this._insertItemAt(this._findExpectedIndexFor(item), item,
+                                options);
     }
     
     
-    return this._insertItemAt(aOptions.index, item, aOptions);
+    return this._insertItemAt(options.index, item, options);
   },
 
   
@@ -575,16 +597,16 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  commit: function (aOptions = {}) {
+  commit: function (options = {}) {
     let stagedItems = this._stagedItems;
 
     
-    if (aOptions.sorted) {
+    if (options.sorted) {
       stagedItems.sort((a, b) => this._currentSortPredicate(a.item, b.item));
     }
     
-    for (let { item, options } of stagedItems) {
-      this._insertItemAt(-1, item, options);
+    for (let { item, opt } of stagedItems) {
+      this._insertItemAt(-1, item, opt);
     }
     
     this._stagedItems.length = 0;
@@ -596,12 +618,12 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  remove: function (aItem) {
-    if (!aItem) {
+  remove: function (item) {
+    if (!item) {
       return;
     }
-    this._widget.removeChild(aItem._target);
-    this._untangleItem(aItem);
+    this._widget.removeChild(item._target);
+    this._untangleItem(item);
 
     if (!this._itemsByElement.size) {
       this._preferredValue = this.selectedValue;
@@ -616,16 +638,16 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  removeAt: function (aIndex) {
-    this.remove(this.getItemAtIndex(aIndex));
+  removeAt: function (index) {
+    this.remove(this.getItemAtIndex(index));
   },
 
   
 
 
-  removeForPredicate: function (aPredicate) {
+  removeForPredicate: function (predicate) {
     let item;
-    while ((item = this.getItemForPredicate(aPredicate))) {
+    while ((item = this.getItemForPredicate(predicate))) {
       this.remove(item);
     }
   },
@@ -654,8 +676,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  ensureItemIsVisible: function (aItem) {
-    this._widget.ensureElementIsVisible(aItem._target);
+  ensureItemIsVisible: function (item) {
+    this._widget.ensureElementIsVisible(item._target);
   },
 
   
@@ -664,8 +686,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  ensureIndexIsVisible: function (aIndex) {
-    this.ensureItemIsVisible(this.getItemAtIndex(aIndex));
+  ensureIndexIsVisible: function (index) {
+    this.ensureItemIsVisible(this.getItemAtIndex(index));
   },
 
   
@@ -679,12 +701,12 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  set emptyText(aValue) {
-    this._emptyText = aValue;
+  set emptyText(value) {
+    this._emptyText = value;
 
     
     if (!this._itemsByElement.size) {
-      this._widget.setAttribute("emptyText", aValue);
+      this._widget.setAttribute("emptyText", value);
     }
   },
 
@@ -693,9 +715,9 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  set headerText(aValue) {
-    this._headerText = aValue;
-    this._widget.setAttribute("headerText", aValue);
+  set headerText(value) {
+    this._headerText = value;
+    this._widget.setAttribute("headerText", value);
   },
 
   
@@ -707,9 +729,26 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  toggleContents: function (aVisibleFlag) {
+  toggleContents: function (visibleFlag) {
+    for (let [element] of this._itemsByElement) {
+      element.hidden = !visibleFlag;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  filterContents: function (predicate = this._currentFilterPredicate) {
+    this._currentFilterPredicate = predicate;
+
     for (let [element, item] of this._itemsByElement) {
-      element.hidden = !aVisibleFlag;
+      element.hidden = !predicate(item);
     }
   },
 
@@ -721,24 +760,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  filterContents: function (aPredicate = this._currentFilterPredicate) {
-    this._currentFilterPredicate = aPredicate;
-
-    for (let [element, item] of this._itemsByElement) {
-      element.hidden = !aPredicate(item);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  sortContents: function (aPredicate = this._currentSortPredicate) {
-    let sortedItems = this.items.sort(this._currentSortPredicate = aPredicate);
+  sortContents: function (predicate = this._currentSortPredicate) {
+    let sortedItems = this.items.sort(this._currentSortPredicate = predicate);
 
     for (let i = 0, len = sortedItems.length; i < len; i++) {
       this.swapItems(this.getItemAtIndex(i), sortedItems[i]);
@@ -753,13 +776,15 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  swapItems: function (aFirst, aSecond) {
-    if (aFirst == aSecond) { 
+  swapItems: function (first, second) {
+    if (first == second) {
+      
       return;
     }
-    let { _prebuiltNode: firstPrebuiltTarget, _target: firstTarget } = aFirst;
-    let { _prebuiltNode: secondPrebuiltTarget, _target: secondTarget } = aSecond;
+    let { _prebuiltNode: firstPrebuiltTarget, _target: firstTarget } = first;
+    let { _prebuiltNode: secondPrebuiltTarget, _target: secondTarget } = second;
 
+    
     
     
     if (firstPrebuiltTarget instanceof Ci.nsIDOMDocumentFragment) {
@@ -789,22 +814,22 @@ const WidgetMethods = exports.WidgetMethods = {
     
     this._widget.removeChild(firstTarget);
     this._widget.removeChild(secondTarget);
-    this._unlinkItem(aFirst);
-    this._unlinkItem(aSecond);
+    this._unlinkItem(first);
+    this._unlinkItem(second);
 
     
-    this._insertItemAt.apply(this, i < j ? [i, aSecond] : [j, aFirst]);
-    this._insertItemAt.apply(this, i < j ? [j, aFirst] : [i, aSecond]);
+    this._insertItemAt.apply(this, i < j ? [i, second] : [j, first]);
+    this._insertItemAt.apply(this, i < j ? [j, first] : [i, second]);
 
     
     if (selectedIndex == i) {
-      this._widget.selectedItem = aFirst._target;
+      this._widget.selectedItem = first._target;
     } else if (selectedIndex == j) {
-      this._widget.selectedItem = aSecond._target;
+      this._widget.selectedItem = second._target;
     }
 
     
-    ViewHelpers.dispatchEvent(aFirst.target, "swap", [aSecond, aFirst]);
+    ViewHelpers.dispatchEvent(first.target, "swap", [second, first]);
   },
 
   
@@ -815,8 +840,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  swapItemsAtIndices: function (aFirst, aSecond) {
-    this.swapItems(this.getItemAtIndex(aFirst), this.getItemAtIndex(aSecond));
+  swapItemsAtIndices: function (first, second) {
+    this.swapItems(this.getItemAtIndex(first), this.getItemAtIndex(second));
   },
 
   
@@ -828,9 +853,9 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  containsValue: function (aValue) {
-    return this._itemsByValue.has(aValue) ||
-           this._stagedItems.some(({ item }) => item._value == aValue);
+  containsValue: function (value) {
+    return this._itemsByValue.has(value) ||
+           this._stagedItems.some(({ item }) => item._value == value);
   },
 
   
@@ -890,9 +915,9 @@ const WidgetMethods = exports.WidgetMethods = {
     return null;
   },
 
-  _selectItem: function (aItem) {
+  _selectItem: function (item) {
     
-    let targetElement = aItem ? aItem._target : null;
+    let targetElement = item ? item._target : null;
     let prevElement = this._widget.selectedItem;
 
     
@@ -909,14 +934,14 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  set selectedItem(aItem) {
+  set selectedItem(item) {
     
     
-    if (typeof aItem == "function") {
-      aItem = this.getItemForPredicate(aItem);
+    if (typeof item == "function") {
+      item = this.getItemForPredicate(item);
     }
 
-    let targetElement = aItem ? aItem._target : null;
+    let targetElement = item ? item._target : null;
     let prevElement = this._widget.selectedItem;
 
     if (this.maintainSelectionVisible && targetElement) {
@@ -927,14 +952,15 @@ const WidgetMethods = exports.WidgetMethods = {
       }
     }
 
-    this._selectItem(aItem);
+    this._selectItem(item);
 
     
     
     if (targetElement != prevElement) {
       let dispTarget = targetElement || prevElement;
-      let dispName = this.suppressSelectionEvents ? "suppressed-select" : "select";
-      ViewHelpers.dispatchEvent(dispTarget, dispName, aItem);
+      let dispName = this.suppressSelectionEvents ? "suppressed-select"
+                                                  : "select";
+      ViewHelpers.dispatchEvent(dispTarget, dispName, item);
     }
   },
 
@@ -942,8 +968,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  set selectedIndex(aIndex) {
-    let targetElement = this._widget.getItemAtIndex(aIndex);
+  set selectedIndex(index) {
+    let targetElement = this._widget.getItemAtIndex(index);
     if (targetElement) {
       this.selectedItem = this._itemsByElement.get(targetElement);
       return;
@@ -955,8 +981,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  set selectedValue(aValue) {
-    this.selectedItem = this._itemsByValue.get(aValue);
+  set selectedValue(value) {
+    this.selectedItem = this._itemsByValue.get(value);
   },
 
   
@@ -968,9 +994,9 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  forceSelect: function (aItem) {
+  forceSelect: function (item) {
     this.selectedItem = null;
-    this.selectedItem = aItem;
+    this.selectedItem = item;
   },
 
   
@@ -1065,7 +1091,7 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  focusItemAtDelta: function (aDelta) {
+  focusItemAtDelta: function (delta) {
     
     
     
@@ -1074,15 +1100,16 @@ const WidgetMethods = exports.WidgetMethods = {
     if (selectedElement) {
       selectedElement.focus();
     } else {
-      this.selectedIndex = Math.max(0, aDelta - 1);
+      this.selectedIndex = Math.max(0, delta - 1);
       return;
     }
 
-    let direction = aDelta > 0 ? "advanceFocus" : "rewindFocus";
-    let distance = Math.abs(Math[aDelta > 0 ? "ceil" : "floor"](aDelta));
+    let direction = delta > 0 ? "advanceFocus" : "rewindFocus";
+    let distance = Math.abs(Math[delta > 0 ? "ceil" : "floor"](delta));
     while (distance--) {
       if (!this._focusChange(direction)) {
-        break; 
+        
+        break;
       }
     }
 
@@ -1099,14 +1126,14 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _focusChange: function (aDirection) {
+  _focusChange: function (direction) {
     let commandDispatcher = this._commandDispatcher;
     let prevFocusedElement = commandDispatcher.focusedElement;
     let currFocusedElement;
 
     do {
       commandDispatcher.suppressFocusScroll = true;
-      commandDispatcher[aDirection]();
+      commandDispatcher[direction]();
       currFocusedElement = commandDispatcher.focusedElement;
 
       
@@ -1133,7 +1160,8 @@ const WidgetMethods = exports.WidgetMethods = {
     let someElement = this._widget.getItemAtIndex(0);
     if (someElement) {
       let commandDispatcher = someElement.ownerDocument.commandDispatcher;
-      return this._cachedCommandDispatcher = commandDispatcher;
+      this._cachedCommandDispatcher = commandDispatcher;
+      return commandDispatcher;
     }
     return null;
   },
@@ -1160,8 +1188,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  getItemAtIndex: function (aIndex) {
-    return this.getItemForElement(this._widget.getItemAtIndex(aIndex));
+  getItemAtIndex: function (index) {
+    return this.getItemForElement(this._widget.getItemAtIndex(index));
   },
 
   
@@ -1172,8 +1200,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  getItemByValue: function (aValue) {
-    return this._itemsByValue.get(aValue);
+  getItemByValue: function (value) {
+    return this._itemsByValue.get(value);
   },
 
   
@@ -1188,20 +1216,20 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  getItemForElement: function (aElement, aFlags = {}) {
-    while (aElement) {
-      let item = this._itemsByElement.get(aElement);
+  getItemForElement: function (element, flags = {}) {
+    while (element) {
+      let item = this._itemsByElement.get(element);
 
       
-      if (!aFlags.noSiblings) {
+      if (!flags.noSiblings) {
         item = item ||
-          this._itemsByElement.get(aElement.nextElementSibling) ||
-          this._itemsByElement.get(aElement.previousElementSibling);
+          this._itemsByElement.get(element.nextElementSibling) ||
+          this._itemsByElement.get(element.previousElementSibling);
       }
       if (item) {
         return item;
       }
-      aElement = aElement.parentNode;
+      element = element.parentNode;
     }
     return null;
   },
@@ -1214,14 +1242,14 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  getItemForPredicate: function (aPredicate, aOwner = this) {
+  getItemForPredicate: function (predicate, owner = this) {
     
-    for (let [element, item] of aOwner._itemsByElement) {
+    for (let [element, item] of owner._itemsByElement) {
       let match;
-      if (aPredicate(item) && !element.hidden) {
+      if (predicate(item) && !element.hidden) {
         match = item;
       } else {
-        match = this.getItemForPredicate(aPredicate, item);
+        match = this.getItemForPredicate(predicate, item);
       }
       if (match) {
         return match;
@@ -1230,7 +1258,7 @@ const WidgetMethods = exports.WidgetMethods = {
     
     
     for (let { item } of this._stagedItems) {
-      if (aPredicate(item)) {
+      if (predicate(item)) {
         return item;
       }
     }
@@ -1241,8 +1269,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  getItemForAttachment: function (aPredicate, aOwner = this) {
-    return this.getItemForPredicate(e => aPredicate(e.attachment));
+  getItemForAttachment: function (predicate, owner = this) {
+    return this.getItemForPredicate(e => predicate(e.attachment));
   },
 
   
@@ -1253,8 +1281,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  indexOfItem: function (aItem) {
-    return this._indexOfElement(aItem._target);
+  indexOfItem: function (item) {
+    return this._indexOfElement(item._target);
   },
 
   
@@ -1265,9 +1293,9 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _indexOfElement: function (aElement) {
+  _indexOfElement: function (element) {
     for (let i = 0; i < this._itemsByElement.size; i++) {
-      if (this._widget.getItemAtIndex(i) == aElement) {
+      if (this._widget.getItemAtIndex(i) == element) {
         return i;
       }
     }
@@ -1329,8 +1357,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  isUnique: function (aItem) {
-    let value = aItem._value;
+  isUnique: function (item) {
+    let value = item._value;
     if (value == "" || value == "undefined" || value == "null") {
       return true;
     }
@@ -1346,8 +1374,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  isEligible: function (aItem) {
-    return this.isUnique(aItem) && aItem._prebuiltNode;
+  isEligible: function (item) {
+    return this.isUnique(item) && item._prebuiltNode;
   },
 
   
@@ -1359,10 +1387,10 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _findExpectedIndexFor: function (aItem) {
+  _findExpectedIndexFor: function (item) {
     let itemCount = this.itemCount;
     for (let i = 0; i < itemCount; i++) {
-      if (this._currentSortPredicate(this.getItemAtIndex(i), aItem) > 0) {
+      if (this._currentSortPredicate(this.getItemAtIndex(i), item) > 0) {
         return i;
       }
     }
@@ -1383,37 +1411,38 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _insertItemAt: function (aIndex, aItem, aOptions = {}) {
-    if (!this.isEligible(aItem)) {
+  _insertItemAt: function (index, item, options = {}) {
+    if (!this.isEligible(item)) {
       return null;
     }
 
     
     
     
-    let node = aItem._prebuiltNode;
-    let attachment = aItem.attachment;
-    this._entangleItem(aItem, this._widget.insertItemAt(aIndex, node, attachment));
+    let node = item._prebuiltNode;
+    let attachment = item.attachment;
+    this._entangleItem(item,
+                       this._widget.insertItemAt(index, node, attachment));
 
     
-    if (!this._currentFilterPredicate(aItem)) {
-      aItem._target.hidden = true;
+    if (!this._currentFilterPredicate(item)) {
+      item._target.hidden = true;
     }
     if (this.autoFocusOnFirstItem && this._itemsByElement.size == 1) {
-      aItem._target.focus();
+      item._target.focus();
     }
-    if (aOptions.attributes) {
-      aOptions.attributes.forEach(e => aItem._target.setAttribute(e[0], e[1]));
+    if (options.attributes) {
+      options.attributes.forEach(e => item._target.setAttribute(e[0], e[1]));
     }
-    if (aOptions.finalize) {
-      aItem.finalize = aOptions.finalize;
+    if (options.finalize) {
+      item.finalize = options.finalize;
     }
 
     
     this._widget.removeAttribute("emptyText");
 
     
-    return aItem;
+    return item;
   },
 
   
@@ -1424,10 +1453,10 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _entangleItem: function (aItem, aElement) {
-    this._itemsByValue.set(aItem._value, aItem);
-    this._itemsByElement.set(aElement, aItem);
-    aItem._target = aElement;
+  _entangleItem: function (item, element) {
+    this._itemsByValue.set(item._value, item);
+    this._itemsByElement.set(element, item);
+    item._target = element;
   },
 
   
@@ -1436,16 +1465,16 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _untangleItem: function (aItem) {
-    if (aItem.finalize) {
-      aItem.finalize(aItem);
+  _untangleItem: function (item) {
+    if (item.finalize) {
+      item.finalize(item);
     }
-    for (let childItem of aItem) {
-      aItem.remove(childItem);
+    for (let childItem of item) {
+      item.remove(childItem);
     }
 
-    this._unlinkItem(aItem);
-    aItem._target = null;
+    this._unlinkItem(item);
+    item._target = null;
   },
 
   
@@ -1454,9 +1483,9 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _unlinkItem: function (aItem) {
-    this._itemsByValue.delete(aItem._value);
-    this._itemsByElement.delete(aItem._target);
+  _unlinkItem: function (item) {
+    this._itemsByValue.delete(item._value);
+    this._itemsByElement.delete(item._target);
   },
 
   
@@ -1464,29 +1493,31 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _onWidgetKeyPress: function (aName, aEvent) {
+  _onWidgetKeyPress: function (name, event) {
     
-    ViewHelpers.preventScrolling(aEvent);
+    ViewHelpers.preventScrolling(event);
 
-    switch (aEvent.keyCode) {
-      case aEvent.DOM_VK_UP:
-      case aEvent.DOM_VK_LEFT:
+    switch (event.keyCode) {
+      case event.DOM_VK_UP:
+      case event.DOM_VK_LEFT:
         this.focusPrevItem();
         return;
-      case aEvent.DOM_VK_DOWN:
-      case aEvent.DOM_VK_RIGHT:
+      case event.DOM_VK_DOWN:
+      case event.DOM_VK_RIGHT:
         this.focusNextItem();
         return;
-      case aEvent.DOM_VK_PAGE_UP:
-        this.focusItemAtDelta(-(this.pageSize || (this.itemCount / PAGE_SIZE_ITEM_COUNT_RATIO)));
+      case event.DOM_VK_PAGE_UP:
+        this.focusItemAtDelta(-(this.pageSize ||
+                               (this.itemCount / PAGE_SIZE_ITEM_COUNT_RATIO)));
         return;
-      case aEvent.DOM_VK_PAGE_DOWN:
-        this.focusItemAtDelta(+(this.pageSize || (this.itemCount / PAGE_SIZE_ITEM_COUNT_RATIO)));
+      case event.DOM_VK_PAGE_DOWN:
+        this.focusItemAtDelta(+(this.pageSize ||
+                               (this.itemCount / PAGE_SIZE_ITEM_COUNT_RATIO)));
         return;
-      case aEvent.DOM_VK_HOME:
+      case event.DOM_VK_HOME:
         this.focusFirstVisibleItem();
         return;
-      case aEvent.DOM_VK_END:
+      case event.DOM_VK_END:
         this.focusLastVisibleItem();
         return;
     }
@@ -1497,13 +1528,13 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _onWidgetMousePress: function (aName, aEvent) {
-    if (aEvent.button != 0 && !this.allowFocusOnRightClick) {
+  _onWidgetMousePress: function (name, event) {
+    if (event.button != 0 && !this.allowFocusOnRightClick) {
       
       return;
     }
 
-    let item = this.getItemForElement(aEvent.target);
+    let item = this.getItemForElement(event.target);
     if (item) {
       
       this.selectedItem = item;
@@ -1521,7 +1552,7 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _currentFilterPredicate: function (aItem) {
+  _currentFilterPredicate: function (item) {
     return true;
   },
 
@@ -1538,8 +1569,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  _currentSortPredicate: function (aFirst, aSecond) {
-    return +(aFirst._value.toLowerCase() > aSecond._value.toLowerCase());
+  _currentSortPredicate: function (first, second) {
+    return +(first._value.toLowerCase() > second._value.toLowerCase());
   },
 
   
@@ -1551,8 +1582,8 @@ const WidgetMethods = exports.WidgetMethods = {
 
 
 
-  callMethod: function (aMethodName, ...aArgs) {
-    return this._widget[aMethodName].apply(this._widget, aArgs);
+  callMethod: function (methodName, ...args) {
+    return this._widget[methodName].apply(this._widget, args);
   },
 
   _widget: null,

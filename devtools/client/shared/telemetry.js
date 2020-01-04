@@ -39,6 +39,8 @@
 
 
 
+"use strict";
+
 const TOOLS_OPENED_PREF = "devtools.telemetry.tools.opened.version";
 
 this.Telemetry = function () {

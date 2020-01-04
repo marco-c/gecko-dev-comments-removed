@@ -8,7 +8,6 @@ var { Task } = require("devtools/shared/task");
 
 var Services = require("Services");
 var {gDevTools} = require("devtools/client/framework/devtools");
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 
@@ -23,7 +22,8 @@ var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 
-exports.viewSourceInStyleEditor = Task.async(function* (toolbox, sourceURL, sourceLine) {
+exports.viewSourceInStyleEditor = Task.async(function* (toolbox, sourceURL,
+                                                        sourceLine) {
   let panel = yield toolbox.loadTool("styleeditor");
 
   try {
@@ -49,7 +49,8 @@ exports.viewSourceInStyleEditor = Task.async(function* (toolbox, sourceURL, sour
 
 
 
-exports.viewSourceInDebugger = Task.async(function* (toolbox, sourceURL, sourceLine) {
+exports.viewSourceInDebugger = Task.async(function* (toolbox, sourceURL,
+                                                     sourceLine) {
   
   
   
@@ -66,8 +67,11 @@ exports.viewSourceInDebugger = Task.async(function* (toolbox, sourceURL, sourceL
   let item = Sources.getItemForAttachment(a => a.source.url === sourceURL);
   if (item) {
     yield toolbox.selectTool("jsdebugger");
-    const isLoading = dbg.DebuggerController.getState().sources.selectedSource !== item.attachment.source.actor;
-    DebuggerView.setEditorLocation(item.attachment.source.actor, sourceLine, { noDebug: true });
+    const isLoading = dbg.DebuggerController.getState().sources.selectedSource
+                      !== item.attachment.source.actor;
+    DebuggerView.setEditorLocation(item.attachment.source.actor, sourceLine, {
+      noDebug: true
+    });
     if (isLoading) {
       yield dbg.DebuggerController.waitForSourceShown(sourceURL);
     }
@@ -138,4 +142,5 @@ exports.viewSource = Task.async(function* (toolbox, sourceURL, sourceLine) {
   }
   let utils = toolbox.gViewSourceUtils;
   utils.viewSource(sourceURL, null, toolbox.doc, sourceLine || 0);
+  return null;
 });

@@ -9,7 +9,7 @@
 
 
 
-const { Ci, Cu } = require("chrome");
+const { Cu } = require("chrome");
 const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 const Services = require("Services");
 const { gDevTools } = require("devtools/client/framework/devtools");
@@ -32,7 +32,9 @@ function readURI(uri) {
   ).open();
 
   let count = stream.available();
-  let data = NetUtil.readInputStreamToString(stream, count, { charset: "UTF-8" });
+  let data = NetUtil.readInputStreamToString(stream, count, {
+    charset: "UTF-8"
+  });
   stream.close();
   return data;
 }
@@ -48,7 +50,7 @@ function getThemeFile(name) {
 
   
   let selector = THEME_SELECTOR_STRINGS[name] ||
-                 THEME_SELECTOR_STRINGS["light"];
+                 THEME_SELECTOR_STRINGS.light;
 
   
   
@@ -67,7 +69,10 @@ function getThemeFile(name) {
 
 
 
-const getTheme = exports.getTheme = () => Services.prefs.getCharPref("devtools.theme");
+const getTheme = exports.getTheme = () => {
+  return Services.prefs.getCharPref("devtools.theme");
+};
+
 
 
 
@@ -99,3 +104,4 @@ const setTheme = exports.setTheme = (newTheme) => {
     oldValue: oldTheme
   });
 };
+

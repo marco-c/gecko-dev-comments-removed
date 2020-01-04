@@ -6,6 +6,8 @@
 
 
 
+
+
 importScripts("resource://gre/modules/workers/require.js");
 const { createTask } = require("resource://devtools/shared/worker/helper.js");
 
@@ -16,7 +18,8 @@ const { createTask } = require("resource://devtools/shared/worker/helper.js");
 
 
 
-createTask(self, "plotTimestampsGraph", function ({ timestamps, interval, duration }) {
+createTask(self, "plotTimestampsGraph", function ({ timestamps,
+                                                    interval, duration }) {
   let plottedData = plotTimestamps(timestamps, interval);
   let plottedMinMaxSum = getMinMaxAvg(plottedData, timestamps, duration);
 
@@ -30,9 +33,7 @@ createTask(self, "plotTimestampsGraph", function ({ timestamps, interval, durati
 
 
 
-
 function getMinMaxAvg(source, timestamps, duration) {
-  let totalTicks = source.length;
   let totalFrames = timestamps.length;
   let maxValue = Number.MIN_SAFE_INTEGER;
   let minValue = Number.MAX_SAFE_INTEGER;

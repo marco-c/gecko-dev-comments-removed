@@ -2,6 +2,8 @@
 
 
 
+
+"use strict";
 (function () {
   const SCROLLBARS_URL = "chrome://devtools/skin/floating-scrollbars-dark-theme.css";
   let documentElement = document.documentElement;
@@ -33,10 +35,13 @@
       
       return;
     }
-    let display = computedStyle.display; 
+    
+    let display = computedStyle.display;
     documentElement.style.display = "none";
-    window.getComputedStyle(documentElement).display; 
-    documentElement.style.display = display; 
+    
+    window.getComputedStyle(documentElement).display;
+    
+    documentElement.style.display = display;
   }
 
   

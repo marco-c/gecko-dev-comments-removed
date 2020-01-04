@@ -24,7 +24,6 @@
 
 "use strict";
 
-const {Cc, Cu, Ci} = require("chrome");
 const Services = require("Services");
 const Promise = require("promise");
 const {getCSSLexer} = require("devtools/shared/css-lexer");
@@ -37,7 +36,8 @@ var XHR_CSS_URL = "https://developer.mozilla.org/en-US/docs/Web/CSS/";
 
 
 
-const PAGE_LINK_PARAMS = "?utm_source=mozilla&utm_medium=firefox-inspector&utm_campaign=default";
+const PAGE_LINK_PARAMS =
+  "?utm_source=mozilla&utm_medium=firefox-inspector&utm_campaign=default";
 
 var PAGE_LINK_URL = "https://developer.mozilla.org/docs/Web/CSS/";
 exports.PAGE_LINK_URL = PAGE_LINK_URL;
@@ -104,11 +104,8 @@ function appendSyntaxHighlightedCSS(cssText, parentElement) {
   function updateIdentClass(tokenText) {
     if (tokenText === ":") {
       identClass = PROPERTY_VALUE_COLOR;
-    }
-    else {
-      if (tokenText === ";") {
-        identClass = PROPERTY_NAME_COLOR;
-      }
+    } else if (tokenText === ";") {
+      identClass = PROPERTY_NAME_COLOR;
     }
   }
 
@@ -172,8 +169,7 @@ function getMdnPage(pageUrl) {
   function onLoaded(e) {
     if (xhr.status != 200) {
       deferred.reject({page: pageUrl, status: xhr.status});
-    }
-    else {
+    } else {
       deferred.resolve(xhr.responseXML);
     }
   }
@@ -202,7 +198,6 @@ function getMdnPage(pageUrl) {
 
 
 function getCssDocs(cssProperty) {
-
   let deferred = Promise.defer();
   let pageUrl = XHR_CSS_URL + cssProperty + XHR_PARAMS;
 
@@ -214,8 +209,7 @@ function getCssDocs(cssProperty) {
     theDocs.syntax = getSyntax(responseDocument);
     if (theDocs.summary || theDocs.syntax) {
       deferred.resolve(theDocs);
-    }
-    else {
+    } else {
       deferred.reject("Couldn't find the docs in the page.");
     }
   }
@@ -246,7 +240,6 @@ exports.getCssDocs = getCssDocs;
 
 
 function MdnDocsWidget(tooltipDocument) {
-
   
   this.elements = {
     heading: tooltipDocument.getElementById("property-name"),
@@ -296,20 +289,18 @@ MdnDocsWidget.prototype = {
 
 
   loadCssDocs: function (propertyName) {
-
     
 
 
 
 
-    function initializeDocument(propertyName) {
-
+    function initializeDocument(propName) {
       
-      elements.heading.textContent = propertyName;
+      elements.heading.textContent = propName;
 
       
       elements.linkToMdn.setAttribute("href",
-        PAGE_LINK_URL + propertyName + PAGE_LINK_PARAMS);
+        PAGE_LINK_URL + propName + PAGE_LINK_PARAMS);
 
       
       elements.summary.textContent = "";
@@ -346,7 +337,8 @@ MdnDocsWidget.prototype = {
 
     function gotError(error) {
       
-      elements.summary.textContent = l10n.strings.GetStringFromName("docsTooltip.loadDocsError");
+      elements.summary.textContent =
+        l10n.strings.GetStringFromName("docsTooltip.loadDocsError");
 
       
       elements.info.classList.remove("devtools-throbber");
@@ -358,7 +350,6 @@ MdnDocsWidget.prototype = {
 
     let deferred = Promise.defer();
     let elements = this.elements;
-    let doc = this.doc;
 
     initializeDocument(propertyName);
     getCssDocs(propertyName).then(finalizeDocument, gotError);
@@ -402,8 +393,9 @@ function isAllWhitespace(node) {
 
 
 function isIgnorable(node) {
-  return (node.nodeType == 8) || 
-         ((node.nodeType == 3) && isAllWhitespace(node)); 
+  
+  return (node.nodeType == 8) ||
+         ((node.nodeType == 3) && isAllWhitespace(node));
 }
 
 
@@ -415,7 +407,9 @@ function isIgnorable(node) {
 
 function nodeAfter(sib) {
   while ((sib = sib.nextSibling)) {
-    if (!isIgnorable(sib)) return sib;
+    if (!isIgnorable(sib)) {
+      return sib;
+    }
   }
   return null;
 }
@@ -487,7 +481,6 @@ function getSummary(mdnDocument) {
 
 
 function getSyntax(mdnDocument) {
-
   let syntax = mdnDocument.getElementById("Syntax");
   if (!hasTagName(syntax, "H2")) {
     return null;
@@ -502,9 +495,7 @@ function getSyntax(mdnDocument) {
   if (hasTagName(secondParagraph, "PRE")) {
     return secondParagraph.textContent;
   }
-  else {
-    return firstParagraph.textContent;
-  }
+  return firstParagraph.textContent;
 }
 
 

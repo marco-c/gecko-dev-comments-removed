@@ -1,9 +1,12 @@
+"use strict";
+
 const EventEmitter = require("devtools/shared/event-emitter");
 const Services = require("Services");
 const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 const OPTIONS_SHOWN_EVENT = "options-shown";
 const OPTIONS_HIDDEN_EVENT = "options-hidden";
 const PREF_CHANGE_EVENT = "pref-changed";
+
 
 
 

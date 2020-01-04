@@ -32,7 +32,6 @@ const {
   DEFAULT_PRESET_CATEGORY
 } = require("devtools/client/shared/widgets/CubicBezierPresets");
 const {getCSSLexer} = require("devtools/shared/css-lexer");
-const {Cc, Ci} = require("chrome");
 
 
 
@@ -114,10 +113,12 @@ BezierCanvas.prototype = {
 
     return [{
       left: w * (this.bezier.coordinates[0] * (1 - p[3] - p[1]) - p[3]) + "px",
-      top: h * (1 - this.bezier.coordinates[1] * (1 - p[0] - p[2]) - p[0]) + "px"
+      top: h * (1 - this.bezier.coordinates[1] * (1 - p[0] - p[2]) - p[0])
+           + "px"
     }, {
       left: w * (this.bezier.coordinates[2] * (1 - p[3] - p[1]) - p[3]) + "px",
-      top: h * (1 - this.bezier.coordinates[3] * (1 - p[0] - p[2]) - p[0]) + "px"
+      top: h * (1 - this.bezier.coordinates[3] * (1 - p[0] - p[2]) - p[0])
+           + "px"
     }];
   },
 
@@ -400,7 +401,9 @@ CubicBezierWidget.prototype = {
   _updateFromPoints: function () {
     
     let coordinates = this.bezierCanvas.offsetsToCoordinates(this.p1);
-    coordinates = coordinates.concat(this.bezierCanvas.offsetsToCoordinates(this.p2));
+    coordinates = coordinates.concat(
+      this.bezierCanvas.offsetsToCoordinates(this.p2)
+    );
 
     this.presets.refreshMenu(coordinates);
     this._redraw(coordinates);
@@ -602,7 +605,8 @@ CubicBezierPresetWidget.prototype = {
 
     
     let presetLabelElem = doc.createElement("p");
-    let presetDisplayLabel = this._normalizePresetLabel(categoryLabel, presetLabel);
+    let presetDisplayLabel = this._normalizePresetLabel(categoryLabel,
+                                                        presetLabel);
     presetLabelElem.textContent = presetDisplayLabel;
     preset.appendChild(presetLabelElem);
     preset.setAttribute("title", presetDisplayLabel);
@@ -759,7 +763,7 @@ TimingFunctionPreviewWidget.prototype = {
   preview: function (value) {
     
     if (value === this.previousValue) {
-      return false;
+      return;
     }
 
     clearTimeout(this.autoRestartAnimation);
@@ -781,7 +785,6 @@ TimingFunctionPreviewWidget.prototype = {
 
     
     this.dot.classList.remove("animate");
-    let w = this.dot.offsetWidth;
     this.dot.classList.add("animate");
 
     

@@ -4,6 +4,7 @@
 
 
 
+"use strict";
 
 
 
@@ -14,11 +15,8 @@
 
 
 
-
-
-function UndoStack(aMaxUndo)
-{
-  this.maxUndo = aMaxUndo || 50;
+function UndoStack(maxUndo) {
+  this.maxUndo = maxUndo || 50;
   this._stack = [];
 }
 
@@ -32,8 +30,7 @@ UndoStack.prototype = {
   
   _batchDepth: 0,
 
-  destroy: function Undo_destroy()
-  {
+  destroy: function () {
     this.uninstallController();
     delete this._stack;
   },
@@ -47,8 +44,7 @@ UndoStack.prototype = {
 
 
 
-  startBatch: function Undo_startBatch()
-  {
+  startBatch: function () {
     if (this._batchDepth++ === 0) {
       this._batch = [];
     }
@@ -58,8 +54,7 @@ UndoStack.prototype = {
 
 
 
-  endBatch: function Undo_endBatch()
-  {
+  endBatch: function () {
     if (--this._batchDepth > 0) {
       return;
     }
@@ -95,17 +90,16 @@ UndoStack.prototype = {
 
 
 
-  do: function Undo_do(aDo, aUndo) {
+  do: function (toDo, undo) {
     this.startBatch();
-    this._batch.push({ do: aDo, undo: aUndo });
+    this._batch.push({ do: toDo, undo });
     this.endBatch();
   },
 
   
 
 
-  canUndo: function Undo_canUndo()
-  {
+  canUndo: function () {
     return this._index > 0;
   },
 
@@ -114,8 +108,7 @@ UndoStack.prototype = {
 
 
 
-  undo: function Undo_canUndo()
-  {
+  undo: function () {
     if (!this.canUndo()) {
       return false;
     }
@@ -127,8 +120,7 @@ UndoStack.prototype = {
   
 
 
-  canRedo: function Undo_canRedo()
-  {
+  canRedo: function () {
     return this._stack.length > this._index;
   },
 
@@ -137,8 +129,7 @@ UndoStack.prototype = {
 
 
 
-  redo: function Undo_canRedo()
-  {
+  redo: function () {
     if (!this.canRedo()) {
       return false;
     }
@@ -147,8 +138,7 @@ UndoStack.prototype = {
     return true;
   },
 
-  _change: function Undo__change()
-  {
+  _change: function () {
     if (this._controllerWindow) {
       this._controllerWindow.goUpdateCommand("cmd_undo");
       this._controllerWindow.goUpdateCommand("cmd_redo");
@@ -162,45 +152,41 @@ UndoStack.prototype = {
   
 
 
-  installController: function Undo_installController(aControllerWindow)
-  {
-    this._controllerWindow = aControllerWindow;
-    aControllerWindow.controllers.appendController(this);
+  installController: function (controllerWindow) {
+    this._controllerWindow = controllerWindow;
+    controllerWindow.controllers.appendController(this);
   },
 
   
 
 
-  uninstallController: function Undo_uninstallController()
-  {
+  uninstallController: function () {
     if (!this._controllerWindow) {
       return;
     }
     this._controllerWindow.controllers.removeController(this);
   },
 
-  supportsCommand: function Undo_supportsCommand(aCommand)
-  {
-    return (aCommand == "cmd_undo" ||
-            aCommand == "cmd_redo");
+  supportsCommand: function (command) {
+    return (command == "cmd_undo" ||
+            command == "cmd_redo");
   },
 
-  isCommandEnabled: function Undo_isCommandEnabled(aCommand)
-  {
-    switch (aCommand) {
+  isCommandEnabled: function (command) {
+    switch (command) {
       case "cmd_undo": return this.canUndo();
       case "cmd_redo": return this.canRedo();
     }
     return false;
   },
 
-  doCommand: function Undo_doCommand(aCommand)
-  {
-    switch (aCommand) {
+  doCommand: function (command) {
+    switch (command) {
       case "cmd_undo": return this.undo();
       case "cmd_redo": return this.redo();
+      default: return null;
     }
   },
 
-  onEvent: function Undo_onEvent(aEvent) {},
+  onEvent: function (event) {},
 };

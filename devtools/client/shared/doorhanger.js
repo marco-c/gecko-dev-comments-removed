@@ -37,7 +37,9 @@ var TYPES = {
   
   deveditionpromo: {
     predicate: shouldDevEditionPromoShow,
-    success: () => Services.prefs.setBoolPref(DEV_EDITION_PROMO_SHOWN_PREF, true),
+    success: () => {
+      return Services.prefs.setBoolPref(DEV_EDITION_PROMO_SHOWN_PREF, true);
+    },
     action: () => {
       let url = Services.prefs.getCharPref(DEV_EDITION_PROMO_URL_PREF);
       getGBrowser().selectedTab = getGBrowser().addTab(url);
@@ -54,6 +56,7 @@ var panelAttrs = {
   align: "start",
   role: "alert"
 };
+
 
 
 
@@ -118,7 +121,9 @@ exports.showDoorhanger = Task.async(function* ({ window, type, anchor }) {
 });
 
 function setDoorhangerStyle(panel, frame) {
-  Object.keys(panelAttrs).forEach(prop => panel.setAttribute(prop, panelAttrs[prop]));
+  Object.keys(panelAttrs).forEach(prop => {
+    return panel.setAttribute(prop, panelAttrs[prop]);
+  });
   panel.style.margin = "20px";
   panel.style.borderRadius = "5px";
   panel.style.border = "none";

@@ -83,6 +83,7 @@ Poller.prototype.off = function pollerOff() {
 
 
 
+
 Poller.prototype.destroy = function pollerDestroy() {
   return this.off().then(() => {
     this._destroyed = true;
