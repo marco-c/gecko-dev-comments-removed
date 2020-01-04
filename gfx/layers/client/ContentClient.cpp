@@ -352,7 +352,7 @@ ContentClientRemoteBuffer::GetUpdatedRegion(const nsIntRegion& aRegionToDraw,
     
     
     
-    updatedRegion = aVisibleRegion;
+    updatedRegion = aVisibleRegion.GetBounds();
     mIsNewBuffer = false;
   } else {
     updatedRegion = aRegionToDraw;
