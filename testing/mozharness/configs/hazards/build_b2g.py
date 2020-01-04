@@ -14,8 +14,7 @@ config = {
       'setup-analysis',
       'run-analysis',
       'collect-analysis-output',
-      
-      
+      'upload-analysis',
       'check-expectations',
    ],
 
