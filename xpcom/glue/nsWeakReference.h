@@ -29,14 +29,15 @@ private:
   friend class nsWeakReference;
 
   
-  void NoticeProxyDestruction() { mProxy = 0; }
+  
+  void NoticeProxyDestruction() { mProxy = nullptr; }
 
   nsWeakReference* MOZ_NON_OWNING_REF mProxy;
 
 protected:
 
   void ClearWeakReferences();
-  bool HasWeakReferences() const { return mProxy != 0; }
+  bool HasWeakReferences() const { return !!mProxy; }
 };
 
 inline
