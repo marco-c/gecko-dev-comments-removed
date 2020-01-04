@@ -3406,34 +3406,34 @@ IonBuilder::tableSwitch(JSOp op, jssrcnote* sn)
         casepc = pc + GET_JUMP_OFFSET(pc2);
 
         MOZ_ASSERT(casepc >= pc && casepc <= exitpc);
+        MBasicBlock* caseblock;
 
-        MBasicBlock* caseblock = newBlock(current, casepc);
-        if (!caseblock)
-            return ControlStatus_Error;
-
-        
-        
-        
-        
         if (casepc == pc) {
+            
+            
+            
+            
+            caseblock = newBlock(current, defaultpc);
+            if (!caseblock)
+                return ControlStatus_Error;
             caseblock->end(MGoto::New(alloc(), defaultcase));
             if (!defaultcase->addPredecessor(alloc(), caseblock))
                 return ControlStatus_Error;
-        }
+        } else {
+            
+            
+            caseblock = newBlock(current, casepc);
+            if (!caseblock)
+                return ControlStatus_Error;
 
-        tableswitch->addCase(tableswitch->addSuccessor(caseblock));
-
-        
-        
-        if (casepc != pc) {
             tableswitch->addBlock(caseblock);
-
             
             
             MConstant* constant = MConstant::New(alloc(), Int32Value(i + low));
             caseblock->add(constant);
         }
 
+        tableswitch->addCase(tableswitch->addSuccessor(caseblock));
         pc2 += JUMP_OFFSET_LEN;
     }
 
