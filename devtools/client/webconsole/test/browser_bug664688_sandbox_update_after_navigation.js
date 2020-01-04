@@ -42,7 +42,7 @@ add_task(function* () {
   yield waitForMessages(msgForLocation1);
 
   
-  content.location = TEST_URI2;
+  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI2);
   yield loadBrowser(gBrowser.selectedBrowser);
 
   is(hud.outputNode.textContent.indexOf("Permission denied"), -1,
