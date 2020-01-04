@@ -841,10 +841,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     inline void branchPrivatePtr(Condition cond, const Address& lhs, Register rhs, Label* label) PER_ARCH;
 
-    inline void branchTestPtr(Condition cond, Register lhs, Register rhs, Label* label) PER_SHARED_ARCH;
-    inline void branchTestPtr(Condition cond, Register lhs, Imm32 rhs, Label* label) PER_SHARED_ARCH;
-    inline void branchTestPtr(Condition cond, const Address& lhs, Imm32 rhs, Label* label) PER_SHARED_ARCH;
-
     inline void branchTest64(Condition cond, Register64 lhs, Register64 rhs, Register temp,
                              Label* label) PER_ARCH;
 
@@ -993,7 +989,15 @@ class MacroAssembler : public MacroAssemblerSpecific
     }
 
     template <typename T>
-    inline void storeObjectOrNull(Register src, const T& dest);
+    void storeObjectOrNull(Register src, const T& dest) {
+        Label notNull, done;
+        branchTestPtr(Assembler::NonZero, src, src, &notNull);
+        storeValue(NullValue(), dest);
+        jump(&done);
+        bind(&notNull);
+        storeValue(JSVAL_TYPE_OBJECT, src, dest);
+        bind(&done);
+    }
 
     template <typename T>
     void storeConstantOrRegister(ConstantOrRegister src, const T& dest) {
@@ -1359,7 +1363,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     template <typename T>
-    inline void branchTestStackPtr(Condition cond, T t, Label* label);
+    void branchTestStackPtr(Condition cond, T t, Label* label) {
+        branchTestPtr(cond, getStackPointer(), t, label);
+    }
     template <typename T>
     inline void branchStackPtr(Condition cond, T rhs, Label* label);
     template <typename T>
@@ -1691,7 +1697,32 @@ class MacroAssembler : public MacroAssemblerSpecific
     void alignJitStackBasedOnNArgs(Register nargs);
     void alignJitStackBasedOnNArgs(uint32_t nargs);
 
-    inline void assertStackAlignment(uint32_t alignment, int32_t offset = 0);
+    void assertStackAlignment(uint32_t alignment, int32_t offset = 0) {
+#ifdef DEBUG
+        Label ok, bad;
+        MOZ_ASSERT(IsPowerOfTwo(alignment));
+
+        
+        offset %= alignment;
+        if (offset < 0)
+            offset += alignment;
+
+        
+        uint32_t off = offset;
+        while (off) {
+            uint32_t lowestBit = 1 << mozilla::CountTrailingZeroes32(off);
+            branchTestStackPtr(Assembler::Zero, Imm32(lowestBit), &bad);
+            off ^= lowestBit;
+        }
+
+        
+        branchTestStackPtr(Assembler::Zero, Imm32((alignment - 1) ^ offset), &ok);
+
+        bind(&bad);
+        breakpoint();
+        bind(&ok);
+#endif
+    }
 };
 
 static inline Assembler::DoubleCondition
