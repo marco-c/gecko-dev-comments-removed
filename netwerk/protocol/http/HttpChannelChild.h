@@ -166,7 +166,7 @@ private:
   void DoPreOnStopRequest(nsresult aStatus);
   void DoOnStopRequest(nsIRequest* aRequest, nsresult aChannelStatus, nsISupports* aContext);
 
-  bool ShouldInterceptURI(nsIChannel* aChannel, nsIURI* aURI, bool& aShouldUpgrade);
+  bool ShouldInterceptURI(nsIURI* aURI, bool& aShouldUpgrade);
 
   
   void ResetInterception();
