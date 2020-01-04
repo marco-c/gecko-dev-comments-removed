@@ -57,11 +57,11 @@ TabSources.prototype = {
 
 
   reconfigure: function(options) {
-    if('useSourceMaps' in options) {
+    if ('useSourceMaps' in options) {
       this._useSourceMaps = options.useSourceMaps;
     }
 
-    if('autoBlackBox' in options) {
+    if ('autoBlackBox' in options) {
       this._autoBlackBox = options.autoBlackBox;
     }
 
@@ -80,7 +80,7 @@ TabSources.prototype = {
     this._sourceMaps = new Map();
     this._sourceMappedSourceActors = Object.create(null);
 
-    if(opts.sourceMaps) {
+    if (opts.sourceMaps) {
       this._sourceMapCache = Object.create(null);
     }
   },
@@ -185,7 +185,7 @@ TabSources.prototype = {
   },
 
   _emitNewSource: function(actor) {
-    if(!actor.source) {
+    if (!actor.source) {
       
       
       
@@ -201,7 +201,7 @@ TabSources.prototype = {
       
       
       this.fetchSourceMap(actor.source).then(map => {
-        if(!map) {
+        if (!map) {
           this.emit('newSource', actor);
         }
       });

@@ -630,7 +630,7 @@ NetworkMonitor.prototype = {
 
     this.openResponses[response.id] = response;
 
-    if(aTopic === "http-on-examine-cached-response") {
+    if (aTopic === "http-on-examine-cached-response") {
       
       
       
@@ -819,7 +819,7 @@ NetworkMonitor.prototype = {
     aChannel.QueryInterface(Ci.nsIPrivateBrowsingChannel);
     httpActivity.private = aChannel.isChannelPrivate;
 
-    if(timestamp) {
+    if (timestamp) {
       httpActivity.timings.REQUEST_HEADER = {
         first: timestamp,
         last: timestamp
@@ -834,7 +834,7 @@ NetworkMonitor.prototype = {
     event.startedDateTime = (timestamp ? new Date(Math.round(timestamp / 1000)) : new Date()).toISOString();
     event.fromCache = fromCache;
 
-    if(extraStringData) {
+    if (extraStringData) {
       event.headersSize = extraStringData.length;
     }
 
@@ -1101,7 +1101,7 @@ NetworkMonitor.prototype = {
 
   _setupHarTimings: function NM__setupHarTimings(aHttpActivity, fromCache)
   {
-    if(fromCache) {
+    if (fromCache) {
       
       
       return {
