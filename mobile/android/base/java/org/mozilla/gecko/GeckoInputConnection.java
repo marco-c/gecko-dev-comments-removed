@@ -18,6 +18,7 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -382,6 +383,16 @@ class GeckoInputConnection
                             getComposingSpanEnd(editable));
     }
 
+    @Override
+    public void onDefaultKeyEvent(final KeyEvent event) {
+        ThreadUtils.postToUiThread(new Runnable() {
+            @Override
+            public void run() {
+                GeckoInputConnection.this.performDefaultKeyAction(event);
+            }
+        });
+    }
+
     private static synchronized Handler getBackgroundHandler() {
         if (sBackgroundHandler != null) {
             return sBackgroundHandler;
@@ -680,6 +691,8 @@ class GeckoInputConnection
             case KeyEvent.KEYCODE_VOLUME_UP:
             case KeyEvent.KEYCODE_VOLUME_DOWN:
             case KeyEvent.KEYCODE_SEARCH:
+            
+            case KeyEvent.KEYCODE_HEADSETHOOK:
                 return false;
         }
         return true;
@@ -719,6 +732,37 @@ class GeckoInputConnection
         }
 
         return event;
+    }
+
+    
+     void performDefaultKeyAction(KeyEvent event) {
+        switch (event.getKeyCode()) {
+            case KeyEvent.KEYCODE_MUTE:
+            case KeyEvent.KEYCODE_HEADSETHOOK:
+            case KeyEvent.KEYCODE_MEDIA_PLAY:
+            case KeyEvent.KEYCODE_MEDIA_PAUSE:
+            case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+            case KeyEvent.KEYCODE_MEDIA_STOP:
+            case KeyEvent.KEYCODE_MEDIA_NEXT:
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+            case KeyEvent.KEYCODE_MEDIA_REWIND:
+            case KeyEvent.KEYCODE_MEDIA_RECORD:
+            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+            case KeyEvent.KEYCODE_MEDIA_CLOSE:
+            case KeyEvent.KEYCODE_MEDIA_EJECT:
+            case KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK:
+                
+                
+                
+                
+                if (AppConstants.Versions.feature19Plus) {
+                    
+                    Context viewContext = getView().getContext();
+                    AudioManager am = (AudioManager)viewContext.getSystemService(Context.AUDIO_SERVICE);
+                    am.dispatchMediaKeyEvent(event);
+                }
+                break;
+        }
     }
 
     private boolean processKey(final int action, final int keyCode, final KeyEvent event) {
