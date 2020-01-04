@@ -149,7 +149,7 @@ function search(aFolderId, aSearchStr, aExpectedScopeButtonId) {
 
 
 function onLibraryAvailable() {
-  testCases.forEach(function (aTest) aTest());
+  testCases.forEach(aTest => aTest());
 
   gLibrary.close();
   gLibrary = null;
