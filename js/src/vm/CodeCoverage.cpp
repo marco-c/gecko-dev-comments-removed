@@ -263,8 +263,15 @@ LCovSource::writeScript(JSScript* script)
                     firstcasepc = testpc;
             }
 
-            jsbytecode* lastcasepc = firstcasepc;
+            
+            
+            uint64_t defaultHits = hits;
+
+            
             uint64_t fallsThroughHits = 0;
+
+            
+            size_t caseId = 0;
             for (size_t i = 0; i < numCases; i++) {
                 jsbytecode* casepc = pc + GET_JUMP_OFFSET(jumpTable + JUMP_OFFSET_LEN * i);
                 
@@ -272,10 +279,10 @@ LCovSource::writeScript(JSScript* script)
                     continue;
 
                 
-                lastcasepc = firstcasepc - 1;
+                jsbytecode* lastcasepc = firstcasepc - 1;
                 for (size_t j = 0; j < numCases; j++) {
                     jsbytecode* testpc = pc + GET_JUMP_OFFSET(jumpTable + JUMP_OFFSET_LEN * j);
-                    if (lastcasepc < testpc && testpc < casepc)
+                    if (lastcasepc < testpc && (testpc < casepc || (j < i && testpc == casepc)))
                         lastcasepc = testpc;
                 }
 
@@ -301,7 +308,7 @@ LCovSource::writeScript(JSScript* script)
                         caseHits -= fallsThroughHits;
                     }
 
-                    outBRDA_.printf("BRDA:%d,%d,%d,", lineno, branchId, i);
+                    outBRDA_.printf("BRDA:%d,%d,%d,", lineno, branchId, caseId);
                     if (caseHits)
                         outBRDA_.printf("%d\n", caseHits);
                     else
@@ -309,26 +316,32 @@ LCovSource::writeScript(JSScript* script)
 
                     numBranchesFound_++;
                     numBranchesHit_ += !!caseHits;
-                    lastcasepc = casepc;
+                    defaultHits -= caseHits;
+                    caseId++;
                 }
             }
 
             
-            uint64_t defaultHits = 0;
+            
+            bool defaultHasOwnClause = true;
+            if (defaultpc != exitpc) {
+                defaultHits = 0;
 
-            if (sc) {
                 
-                lastcasepc = firstcasepc - 1;
+                jsbytecode* lastcasepc = firstcasepc - 1;
                 for (size_t j = 0; j < numCases; j++) {
                     jsbytecode* testpc = pc + GET_JUMP_OFFSET(jumpTable + JUMP_OFFSET_LEN * j);
-                    if (lastcasepc < testpc && testpc < defaultpc)
+                    if (lastcasepc < testpc && testpc <= defaultpc)
                         lastcasepc = testpc;
                 }
 
+                if (lastcasepc == defaultpc)
+                    defaultHasOwnClause = false;
+
                 
                 
                 
-                if (lastcasepc != pc) {
+                if (sc && lastcasepc != pc) {
                     jsbytecode* endpc = lastcasepc;
                     while (GetNextPc(endpc) < defaultpc)
                         endpc = GetNextPc(endpc);
@@ -337,19 +350,23 @@ LCovSource::writeScript(JSScript* script)
                         fallsThroughHits = script->getHitCount(endpc);
                 }
 
-                const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(defaultpc));
-                if (counts)
-                    defaultHits = counts->numExec();
+                if (sc) {
+                    const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(defaultpc));
+                    if (counts)
+                        defaultHits = counts->numExec();
+                }
                 defaultHits -= fallsThroughHits;
             }
 
-            outBRDA_.printf("BRDA:%d,%d,%d,", lineno, branchId, numCases);
-            if (defaultHits)
-                outBRDA_.printf("%d\n", defaultHits);
-            else
-                outBRDA_.put("-\n", 2);
-            numBranchesFound_++;
-            numBranchesHit_ += !!defaultHits;
+            if (defaultHasOwnClause) {
+                outBRDA_.printf("BRDA:%d,%d,%d,", lineno, branchId, caseId);
+                if (defaultHits)
+                    outBRDA_.printf("%d\n", defaultHits);
+                else
+                    outBRDA_.put("-\n", 2);
+                numBranchesFound_++;
+                numBranchesHit_ += !!defaultHits;
+            }
 
             
             branchId++;
