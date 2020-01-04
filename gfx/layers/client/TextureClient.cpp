@@ -198,6 +198,11 @@ TextureClient::AsTextureClient(PTextureChild* actor)
   return actor ? static_cast<TextureChild*>(actor)->mTextureClient : nullptr;
 }
 
+bool
+TextureClient::IsSharedWithCompositor() const {
+  return mShared && mActor && mActor->IPCOpen();
+}
+
 void
 TextureClient::AddFlags(TextureFlags aFlags)
 {
@@ -639,7 +644,7 @@ TextureClient::ShouldDeallocateInDestructor() const
   
   
   
-  return !IsSharedWithCompositor() || (GetFlags() & TextureFlags::DEALLOCATE_CLIENT);
+  return !mShared || (GetFlags() & TextureFlags::DEALLOCATE_CLIENT);
 }
 
 void
