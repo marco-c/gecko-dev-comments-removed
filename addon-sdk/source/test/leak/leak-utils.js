@@ -31,6 +31,7 @@ function gc() {
     Cu.schedulePreciseGC(genGCCallback());
   });
 }
+exports.gc = gc;
 
 
 
