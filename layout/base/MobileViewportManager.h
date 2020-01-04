@@ -41,6 +41,10 @@ private:
 
   
 
+  void SetInitialViewport();
+
+  
+
   void RefreshViewportSize(bool aForceAdjustResolution);
 
   
