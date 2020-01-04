@@ -2873,7 +2873,7 @@ nsHTMLEditRules::MoveBlock(nsIDOMNode *aLeftBlock, nsIDOMNode *aRightBlock, int3
   
   nsresult res = GetNodesFromPoint(::DOMPoint(aRightBlock,aRightOffset),
                                    EditAction::makeList, arrayOfNodes,
-                                   TouchContent::no);
+                                   TouchContent::yes);
   NS_ENSURE_SUCCESS(res, res);
   for (auto& curNode : arrayOfNodes) {
     
@@ -5614,6 +5614,27 @@ nsHTMLEditRules::GetPromotedPoint(RulesEndpoint aWhere, nsIDOMNode* aNode,
     if (mHTMLEditor->IsVisBreak(nextNode->AsDOMNode())) {
       break;
     }
+
+    
+    bool isPRE;
+    mHTMLEditor->IsPreformatted(nextNode->AsDOMNode(), &isPRE);
+    if (isPRE) {
+      nsCOMPtr<nsIDOMText> textNode = do_QueryInterface(nextNode);
+      if (textNode) {
+        nsAutoString tempString;
+        textNode->GetData(tempString);
+        int32_t newlinePos = tempString.FindChar(nsCRT::LF);
+        if (newlinePos >= 0) {
+          if ((uint32_t)newlinePos + 1 == tempString.Length()) {
+            
+            break;
+          }
+          *outNode = nextNode->AsDOMNode();
+          *outOffset = newlinePos + 1;
+          return;
+        }
+      }
+    }
     NS_ENSURE_TRUE(mHTMLEditor, );
     nextNode = mHTMLEditor->GetNextHTMLNode(node, offset, true);
   }
@@ -5780,6 +5801,38 @@ nsHTMLEditRules::GetNodesForOperation(nsTArray<nsRefPtr<nsRange>>& aArrayOfRange
 
   int32_t rangeCount = aArrayOfRanges.Length();
   nsresult res = NS_OK;
+
+  if (aTouchContent == TouchContent::yes) {
+    
+    
+    
+    for (int32_t i = 0; i < rangeCount; i++) {
+      nsRefPtr<nsRange> r = aArrayOfRanges[i];
+      nsCOMPtr<nsIContent> endParent = do_QueryInterface(r->GetEndParent());
+      if (!mHTMLEditor->IsTextNode(endParent)) {
+        continue;
+      }
+      nsCOMPtr<nsIDOMText> textNode = do_QueryInterface(endParent);
+      if (textNode) {
+        int32_t offset = r->EndOffset();
+        nsAutoString tempString;
+        textNode->GetData(tempString);
+
+        if (0 < offset && offset < (int32_t)(tempString.Length())) {
+          
+          nsCOMPtr<nsIDOMNode> tempNode;
+          res = mHTMLEditor->SplitNode(endParent->AsDOMNode(), offset,
+                                       getter_AddRefs(tempNode));
+          NS_ENSURE_SUCCESS(res, res);
+
+          
+          
+          nsCOMPtr<nsIContent> newParent = endParent->GetParent();
+          r->SetEnd(newParent, newParent->IndexOf(endParent));
+        }
+      }
+    }
+  }
 
   
   
