@@ -64,7 +64,7 @@ Config::Config()
 EGLint ConfigSet::add(const Config &config)
 {
     
-    EGLint id = mConfigs.size() + 1;
+    EGLint id = static_cast<EGLint>(mConfigs.size()) + 1;
 
     Config copyConfig(config);
     copyConfig.configID = id;

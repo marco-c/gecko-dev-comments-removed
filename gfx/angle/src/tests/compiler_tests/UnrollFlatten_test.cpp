@@ -7,6 +7,7 @@
 
 
 
+
 #include "angle_gl.h"
 #include "common/angleutils.h"
 #include "gtest/gtest.h"
@@ -32,7 +33,7 @@ class UnrollFlattenTest : public testing::Test
             FAIL() << "Shader compilation failed " << infoLog;
         }
         
-        mCurrentPosition = mTranslatedSource.find("GL_USES_FRAG_COLOR");
+        mCurrentPosition = static_cast<int>(mTranslatedSource.find("GL_USES_FRAG_COLOR"));
     }
 
     void expect(const char *patterns[], size_t count)
@@ -59,7 +60,7 @@ class UnrollFlattenTest : public testing::Test
                 }
             }
             mExpectationList += " - " + std::string(pattern);
-            mCurrentPosition = position + 1;
+            mCurrentPosition = static_cast<int>(position) + 1;
         }
     }
 
@@ -154,7 +155,7 @@ TEST_F(UnrollFlattenTest, GradientNotInDiscont)
     {
         "fun(", "texture2D(",
         "fun2(", "LOOP", "for", "if", "fun(", "texture2D(",
-        "main(", "if", "fun2("
+        "main(", "FLATTEN", "if", "fun2("
     };
     expect(expectations, ArraySize(expectations));
 }

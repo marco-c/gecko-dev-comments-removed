@@ -153,6 +153,7 @@ class ViewportTest : public ANGLETest
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         
+        glScissor(0, 0, getWindowWidth(), getWindowHeight());
         glViewport(0, 0, getWindowWidth(), getWindowHeight());
 
         glDisable(GL_DEPTH_TEST);

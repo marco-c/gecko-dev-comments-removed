@@ -26,7 +26,7 @@ class TokenLexer : public Lexer
         mIter = mTokens.begin();
     }
 
-    virtual void lex(Token *token)
+    void lex(Token *token) override
     {
         if (mIter == mTokens.end())
         {
@@ -48,10 +48,9 @@ class TokenLexer : public Lexer
 
 MacroExpander::MacroExpander(Lexer *lexer,
                              MacroSet *macroSet,
-                             Diagnostics *diagnostics)
-    : mLexer(lexer),
-      mMacroSet(macroSet),
-      mDiagnostics(diagnostics)
+                             Diagnostics *diagnostics,
+                             bool parseDefined)
+    : mLexer(lexer), mMacroSet(macroSet), mDiagnostics(diagnostics), mParseDefined(parseDefined)
 {
 }
 
@@ -67,10 +66,53 @@ void MacroExpander::lex(Token *token)
 {
     while (true)
     {
+        const char kDefined[] = "defined";
+
         getToken(token);
 
         if (token->type != Token::IDENTIFIER)
             break;
+
+        
+        
+        
+        
+        
+        if (mParseDefined && token->text == kDefined)
+        {
+            bool paren = false;
+            getToken(token);
+            if (token->type == '(')
+            {
+                paren = true;
+                getToken(token);
+            }
+            if (token->type != Token::IDENTIFIER)
+            {
+                mDiagnostics->report(Diagnostics::PP_UNEXPECTED_TOKEN, token->location,
+                                     token->text);
+                break;
+            }
+            auto iter              = mMacroSet->find(token->text);
+            std::string expression = iter != mMacroSet->end() ? "1" : "0";
+
+            if (paren)
+            {
+                getToken(token);
+                if (token->type != ')')
+                {
+                    mDiagnostics->report(Diagnostics::PP_UNEXPECTED_TOKEN, token->location,
+                                         token->text);
+                    break;
+                }
+            }
+
+            
+            
+            token->type = Token::CONST_INT;
+            token->text = expression;
+            break;
+        }
 
         if (token->expansionDisabled())
             break;
@@ -187,6 +229,12 @@ bool MacroExpander::expandMacro(const Macro &macro,
                                 std::vector<Token> *replacements)
 {
     replacements->clear();
+
+    
+    
+    
+    
+    SourceLocation replacementLocation = identifier.location;
     if (macro.type == Macro::kTypeObj)
     {
         replacements->assign(macro.replacements.begin(),
@@ -218,7 +266,7 @@ bool MacroExpander::expandMacro(const Macro &macro,
         assert(macro.type == Macro::kTypeFunc);
         std::vector<MacroArg> args;
         args.reserve(macro.parameters.size());
-        if (!collectMacroArgs(macro, identifier, &args))
+        if (!collectMacroArgs(macro, identifier, &args, &replacementLocation))
             return false;
 
         replaceMacroParams(macro, args, replacements);
@@ -234,14 +282,15 @@ bool MacroExpander::expandMacro(const Macro &macro,
             repl.setAtStartOfLine(identifier.atStartOfLine());
             repl.setHasLeadingSpace(identifier.hasLeadingSpace());
         }
-        repl.location = identifier.location;
+        repl.location = replacementLocation;
     }
     return true;
 }
 
 bool MacroExpander::collectMacroArgs(const Macro &macro,
                                      const Token &identifier,
-                                     std::vector<MacroArg> *args)
+                                     std::vector<MacroArg> *args,
+                                     SourceLocation *closingParenthesisLocation)
 {
     Token token;
     getToken(&token);
@@ -271,6 +320,7 @@ bool MacroExpander::collectMacroArgs(const Macro &macro,
           case ')':
             --openParens;
             isArg = openParens != 0;
+            *closingParenthesisLocation = token.location;
             break;
           case ',':
             
@@ -317,7 +367,7 @@ bool MacroExpander::collectMacroArgs(const Macro &macro,
     {
         MacroArg &arg = args->at(i);
         TokenLexer lexer(&arg);
-        MacroExpander expander(&lexer, mMacroSet, mDiagnostics);
+        MacroExpander expander(&lexer, mMacroSet, mDiagnostics, mParseDefined);
 
         arg.clear();
         expander.lex(&token);

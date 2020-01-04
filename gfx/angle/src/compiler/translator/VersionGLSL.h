@@ -56,8 +56,8 @@ class TVersionGLSL : public TIntermTraverser
     
     int getVersion() const { return mVersion; }
 
-    virtual void visitSymbol(TIntermSymbol *);
-    virtual bool visitAggregate(Visit, TIntermAggregate *);
+    void visitSymbol(TIntermSymbol *) override;
+    bool visitAggregate(Visit, TIntermAggregate *) override;
 
   private:
     void ensureVersionIsAtLeast(int version);

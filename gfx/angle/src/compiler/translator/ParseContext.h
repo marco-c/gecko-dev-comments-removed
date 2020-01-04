@@ -58,7 +58,8 @@ class TParseContext : angle::NonCopyable
           mPreprocessor(&mDiagnostics, &mDirectiveHandler),
           mScanner(nullptr),
           mUsesFragData(false),
-          mUsesFragColor(false)
+          mUsesFragColor(false),
+          mUsesSecondaryOutputs(false)
     {
     }
 
@@ -113,7 +114,6 @@ class TParseContext : angle::NonCopyable
     const TVariable *getNamedVariable(const TSourceLoc &location, const TString *name, const TSymbol *symbol);
 
     bool parseVectorFields(const TString&, int vecSize, TVectorFields&, const TSourceLoc &line);
-    bool parseMatrixFields(const TString&, int matCols, int matRows, TMatrixFields&, const TSourceLoc &line);
 
     bool reservedErrorCheck(const TSourceLoc &line, const TString &identifier);
     void assignError(const TSourceLoc &line, const char *op, TString left, TString right);
@@ -140,6 +140,9 @@ class TParseContext : angle::NonCopyable
     bool layoutLocationErrorCheck(const TSourceLoc &location, const TLayoutQualifier &layoutQualifier);
     bool functionCallLValueErrorCheck(const TFunction *fnCandidate, TIntermAggregate *);
     void es3InvariantErrorCheck(const TQualifier qualifier, const TSourceLoc &invariantLocation);
+    void es3InputOutputTypeCheck(const TQualifier qualifier,
+                                 const TPublicType &type,
+                                 const TSourceLoc &qualifierLocation);
 
     const TPragma &pragma() const { return mDirectiveHandler.pragma(); }
     const TExtensionBehavior &extensionBehavior() const { return mDirectiveHandler.extensionBehavior(); }
@@ -349,6 +352,8 @@ class TParseContext : angle::NonCopyable
     void *mScanner;
     bool mUsesFragData; 
     bool mUsesFragColor;
+    bool mUsesSecondaryOutputs;  
+                                 
 };
 
 int PaParseStrings(

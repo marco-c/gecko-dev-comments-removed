@@ -426,19 +426,27 @@ TIntermBranch* TIntermediate::addBranch(
 
 
 
-bool TIntermediate::postProcess(TIntermNode *root)
+TIntermAggregate *TIntermediate::postProcess(TIntermNode *root)
 {
-    if (root == NULL)
-        return true;
+    if (root == nullptr)
+        return nullptr;
 
     
     
     
     TIntermAggregate *aggRoot = root->getAsAggregate();
-    if (aggRoot && aggRoot->getOp() == EOpNull)
+    if (aggRoot != nullptr && aggRoot->getOp() == EOpNull)
+    {
         aggRoot->setOp(EOpSequence);
+    }
+    else if (aggRoot == nullptr || aggRoot->getOp() != EOpSequence)
+    {
+        aggRoot = new TIntermAggregate(EOpSequence);
+        aggRoot->setLine(root->getLine());
+        aggRoot->getSequence()->push_back(root);
+    }
 
-    return true;
+    return aggRoot;
 }
 
 TIntermTyped *TIntermediate::foldAggregateBuiltIn(TIntermAggregate *aggregate)

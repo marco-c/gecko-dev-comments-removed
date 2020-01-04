@@ -8,6 +8,7 @@
 
 #include "compiler/translator/ArrayReturnValueToOutParameter.h"
 #include "compiler/translator/OutputHLSL.h"
+#include "compiler/translator/RemoveDynamicIndexing.h"
 #include "compiler/translator/RewriteElseBlocks.h"
 #include "compiler/translator/SeparateArrayInitialization.h"
 #include "compiler/translator/SeparateDeclarations.h"
@@ -39,6 +40,12 @@ void TranslatorHLSL::translate(TIntermNode *root, int compileOptions)
     
     
     ArrayReturnValueToOutParameter(root, &temporaryIndex);
+
+    if (!shouldRunLoopAndIndexingValidation(compileOptions))
+    {
+        
+        RemoveDynamicIndexing(root, &temporaryIndex, getSymbolTable(), getShaderVersion());
+    }
 
     
     

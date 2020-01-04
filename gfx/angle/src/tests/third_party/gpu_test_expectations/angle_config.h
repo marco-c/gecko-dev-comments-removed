@@ -21,23 +21,35 @@
 #define DCHECK_NE(A,B) ASSERT((A) != (B))
 #define DCHECK(X) ASSERT(X)
 #define LOG(X) std::cerr
-#define StringPrintf FormatString
 
 #define GPU_EXPORT
-#define base
 
 typedef int32_t int32;
 typedef uint32_t uint32;
 typedef int64_t int64;
 typedef uint64_t uint64;
 
-using namespace angle;
+
+namespace base
+{
+    using angle::HexStringToUInt;
+    using angle::ReadFileToString;
+    using angle::SplitString;
+    using angle::SplitStringAlongWhitespace;
+
+    
+    
+    using ::FormatString;
+    #define StringPrintf FormatString
+}
 
 
 #if defined(_WIN32) || defined(_WIN64)
 #    define OS_WIN
 #elif defined(__linux__)
 #    define OS_LINUX
+#elif defined(__APPLE__)
+#    define OS_MACOSX
 #else
 #    error "Unsupported platform"
 #endif

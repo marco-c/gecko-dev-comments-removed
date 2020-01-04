@@ -22,16 +22,15 @@ struct ASTMetadataHLSL
     ASTMetadataHLSL()
         : mUsesGradient(false),
           mCalledInDiscontinuousLoop(false),
-          mHasDiscontinuousLoopInCallGraph(false),
+          mHasGradientLoopInCallGraph(false),
           mNeedsLod0(false)
     {
     }
 
     
     
-    bool hasGradientInCallGraph(TIntermSelection *node);
     bool hasGradientInCallGraph(TIntermLoop *node);
-    bool hasDiscontinuousLoop(TIntermSelection *node);
+    bool hasGradientLoop(TIntermSelection *node);
 
     
     bool mUsesGradient;
@@ -43,9 +42,9 @@ struct ASTMetadataHLSL
     
     
     bool mCalledInDiscontinuousLoop;
-    bool mHasDiscontinuousLoopInCallGraph;
+    bool mHasGradientLoopInCallGraph;
     std::set<TIntermLoop*> mDiscontinuousLoops;
-    std::set<TIntermSelection*> mIfsContainingDiscontinuousLoop;
+    std::set<TIntermSelection *> mIfsContainingGradientLoop;
 
     
     bool mNeedsLod0;

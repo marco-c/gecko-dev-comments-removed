@@ -229,6 +229,12 @@ struct Extensions
     bool eglImageExternalEssl3;
 
     
+    bool unpackSubimage;
+
+    
+    bool packSubimage;
+
+    
 
     
     bool colorBufferFloat;
@@ -248,6 +254,14 @@ struct Limitations
     bool attributeZeroRequiresZeroDivisorInEXT;
 
     
+    bool noSeparateStencilRefsAndMasks;
+
+    
+    bool shadersRequireIndexedLoopValidation;
+
+    
+    
+    bool noSimultaneousConstantColorAndAlphaBlendFunc;
 };
 
 struct TypePrecision
@@ -409,6 +423,9 @@ struct DisplayExtensions
 
     
     bool glRenderbufferImage;
+
+    
+    bool getAllProcAddresses;
 };
 
 struct DeviceExtensions
@@ -443,6 +460,9 @@ struct ClientExtensions
 
     
     bool platformANGLEOpenGL;
+
+    
+    bool clientGetAllProcAddresses;
 };
 
 }

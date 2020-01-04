@@ -34,6 +34,17 @@ class Platform
     
 
     
+    virtual void logError(const char *errorMessage) {}
+
+    
+    virtual void logWarning(const char *warningMessage) {}
+
+    
+    virtual void logInfo(const char *infoMessage) {}
+
+    
+
+    
     
     
     

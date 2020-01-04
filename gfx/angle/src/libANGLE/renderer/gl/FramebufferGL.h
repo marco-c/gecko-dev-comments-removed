@@ -21,6 +21,13 @@ class FramebufferGL : public FramebufferImpl
 {
   public:
     FramebufferGL(const gl::Framebuffer::Data &data, const FunctionsGL *functions, StateManagerGL *stateManager, bool isDefault);
+    
+    
+    
+    FramebufferGL(GLuint id,
+                  const gl::Framebuffer::Data &data,
+                  const FunctionsGL *functions,
+                  StateManagerGL *stateManager);
     ~FramebufferGL() override;
 
     void onUpdateColorAttachment(size_t index) override;
@@ -57,6 +64,7 @@ class FramebufferGL : public FramebufferImpl
     StateManagerGL *mStateManager;
 
     GLuint mFramebufferID;
+    bool mIsDefault;
 };
 
 }

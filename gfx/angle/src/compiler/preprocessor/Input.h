@@ -33,7 +33,7 @@ class Input
         return mLength[index];
     }
 
-    size_t read(char *buf, size_t maxSize);
+    size_t read(char *buf, size_t maxSize, int *lineNo);
 
     struct Location
     {
@@ -49,6 +49,10 @@ class Input
     const Location &readLoc() const { return mReadLoc; }
 
   private:
+    
+    
+    const char *skipChar();
+
     
     size_t mCount;
     const char * const *mString;

@@ -25,7 +25,7 @@ class UnfoldShortCircuitAST : public TIntermTraverser
     {
     }
 
-    virtual bool visitBinary(Visit visit, TIntermBinary *);
+    bool visitBinary(Visit visit, TIntermBinary *) override;
 };
 
 #endif  

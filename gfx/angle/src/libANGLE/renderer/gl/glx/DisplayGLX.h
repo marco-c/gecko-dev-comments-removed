@@ -72,6 +72,7 @@ class DisplayGLX : public DisplayGL
     
     mutable std::map<int, glx::FBConfig> configIdToGLXConfig;
 
+    glx::FBConfig mContextConfig;
     glx::Context mContext;
     
     glx::Pbuffer mDummyPbuffer;

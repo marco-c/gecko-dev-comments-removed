@@ -117,7 +117,7 @@ gl::Error VertexBuffer11::storeVertexAttributes(const gl::VertexAttribute &attri
         return gl::Error(GL_OUT_OF_MEMORY, "Internal vertex buffer is not initialized.");
     }
 
-    int inputStride = ComputeVertexAttributeStride(attrib);
+    int inputStride = static_cast<int>(ComputeVertexAttributeStride(attrib));
 
     
     gl::Error error = mapResource();

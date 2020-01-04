@@ -52,4 +52,23 @@ size_t ComputeVertexAttributeStride(const VertexAttribute& attrib)
     return attrib.stride ? attrib.stride : ComputeVertexAttributeTypeSize(attrib);
 }
 
+size_t ComputeVertexAttributeElementCount(const VertexAttribute &attrib,
+                                          size_t drawCount,
+                                          size_t instanceCount)
+{
+    
+    
+    
+    
+    
+    if (instanceCount > 0 && attrib.divisor > 0)
+    {
+        
+        
+        
+        return (instanceCount + attrib.divisor - 1u) / attrib.divisor;
+    }
+
+    return drawCount;
+}
 }

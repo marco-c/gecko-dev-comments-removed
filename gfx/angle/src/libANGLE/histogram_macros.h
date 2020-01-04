@@ -63,4 +63,45 @@
 #define ANGLE_HISTOGRAM_SPARSE_SLOWLY(name, sample) \
     ANGLEPlatformCurrent()->histogramSparse(name, sample)
 
+
+
+
+#define SCOPED_ANGLE_HISTOGRAM_TIMER(name) \
+    SCOPED_ANGLE_HISTOGRAM_TIMER_EXPANDER(name, false, __COUNTER__)
+
+
+
+
+#define SCOPED_ANGLE_HISTOGRAM_LONG_TIMER(name) \
+    SCOPED_ANGLE_HISTOGRAM_TIMER_EXPANDER(name, true, __COUNTER__)
+
+
+#define SCOPED_ANGLE_HISTOGRAM_TIMER_EXPANDER(name, is_long, key) \
+    SCOPED_ANGLE_HISTOGRAM_TIMER_UNIQUE(name, is_long, key)
+
+#define SCOPED_ANGLE_HISTOGRAM_TIMER_UNIQUE(name, is_long, key)                              \
+    class ScopedHistogramTimer##key                                                          \
+    {                                                                                        \
+      public:                                                                                \
+        ScopedHistogramTimer##key() : constructed_(ANGLEPlatformCurrent()->currentTime()) {} \
+        ~ScopedHistogramTimer##key()                                                         \
+        {                                                                                    \
+            if (constructed_ == 0)                                                           \
+                return;                                                                      \
+            double elapsed = ANGLEPlatformCurrent()->currentTime() - constructed_;           \
+            int elapsedMS = static_cast<int>(elapsed * 1000.0);                              \
+            if (is_long)                                                                     \
+            {                                                                                \
+                ANGLE_HISTOGRAM_LONG_TIMES_100(name, elapsedMS);                             \
+            }                                                                                \
+            else                                                                             \
+            {                                                                                \
+                ANGLE_HISTOGRAM_TIMES(name, elapsedMS);                                      \
+            }                                                                                \
+        }                                                                                    \
+                                                                                             \
+      private:                                                                               \
+        double constructed_;                                                                 \
+    } scoped_histogram_timer_##key
+
 #endif  

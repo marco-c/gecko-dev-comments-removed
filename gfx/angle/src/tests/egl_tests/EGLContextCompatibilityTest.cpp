@@ -193,9 +193,6 @@ class EGLContextCompatibilityTest : public ANGLETest
 };
 
 
-#if !defined(ANGLE_PLATFORM_LINUX) || defined(ANGLE_STANDALONE_BUILD)
-
-
 
 
 
@@ -256,7 +253,8 @@ TEST_P(EGLContextCompatibilityTest, WindowDifferentConfig)
         for (size_t j = 0; j < mConfigs.size(); j++)
         {
             EGLConfig config2 = mConfigs[j];
-            testPbufferCompatibility(config1, config2, areConfigsCompatible(config1, config2, EGL_WINDOW_BIT));
+            testWindowCompatibility(config1, config2,
+                                    areConfigsCompatible(config1, config2, EGL_WINDOW_BIT));
         }
     }
 }
@@ -284,7 +282,5 @@ TEST_P(EGLContextCompatibilityTest, PbufferDifferentConfig)
         }
     }
 }
-
-#endif 
 
 ANGLE_INSTANTIATE_TEST(EGLContextCompatibilityTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL());

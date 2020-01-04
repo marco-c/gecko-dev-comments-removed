@@ -15,13 +15,47 @@
 namespace rx
 {
 
+class BlitGL;
 class FunctionsGL;
 class StateManagerGL;
+struct WorkaroundsGL;
+
+struct LUMAWorkaroundGL
+{
+    bool enabled;
+    GLenum workaroundFormat;
+
+    LUMAWorkaroundGL();
+    LUMAWorkaroundGL(bool enabled, GLenum workaroundFormat);
+};
+
+
+
+struct LevelInfoGL
+{
+    
+    GLenum sourceFormat;
+
+    
+    bool depthStencilWorkaround;
+
+    
+    LUMAWorkaroundGL lumaWorkaround;
+
+    LevelInfoGL();
+    LevelInfoGL(GLenum sourceFormat,
+                bool depthStencilWorkaround,
+                const LUMAWorkaroundGL &lumaWorkaround);
+};
 
 class TextureGL : public TextureImpl
 {
   public:
-    TextureGL(GLenum type, const FunctionsGL *functions, StateManagerGL *stateManager);
+    TextureGL(GLenum type,
+              const FunctionsGL *functions,
+              const WorkaroundsGL &workarounds,
+              StateManagerGL *stateManager,
+              BlitGL *blitter);
     ~TextureGL() override;
 
     void setUsage(GLenum usage) override;
@@ -43,12 +77,14 @@ class TextureGL : public TextureImpl
 
     gl::Error setStorage(GLenum target, size_t levels, GLenum internalFormat, const gl::Extents &size) override;
 
-    gl::Error generateMipmaps(const gl::SamplerState &samplerState) override;
+    gl::Error generateMipmaps(const gl::TextureState &textureState) override;
 
     void bindTexImage(egl::Surface *surface) override;
     void releaseTexImage() override;
 
-    void syncSamplerState(const gl::SamplerState &samplerState) const;
+    gl::Error setEGLImageTarget(GLenum target, egl::Image *image) override;
+
+    void syncState(size_t textureUnit, const gl::TextureState &textureState) const;
     GLuint getTextureID() const;
 
     gl::Error getAttachmentRenderTarget(const gl::FramebufferAttachment::Target &target,
@@ -61,9 +97,13 @@ class TextureGL : public TextureImpl
     GLenum mTextureType;
 
     const FunctionsGL *mFunctions;
+    const WorkaroundsGL &mWorkarounds;
     StateManagerGL *mStateManager;
+    BlitGL *mBlitter;
 
-    mutable gl::SamplerState mAppliedSamplerState;
+    std::vector<LevelInfoGL> mLevelInfo;
+
+    mutable gl::TextureState mAppliedTextureState;
     GLuint mTextureID;
 };
 

@@ -14,6 +14,8 @@
 
 #include <stdint.h>
 
+#include <bitset>
+
 namespace gl
 {
 class Buffer;
@@ -162,35 +164,57 @@ struct DepthStencilState
     GLuint stencilBackWritemask;
 };
 
+
 struct SamplerState
 {
     SamplerState();
 
     GLenum minFilter;
     GLenum magFilter;
+
     GLenum wrapS;
     GLenum wrapT;
     GLenum wrapR;
+
+    
     float maxAnisotropy;
 
-    GLint baseLevel;
-    GLint maxLevel;
     GLfloat minLod;
     GLfloat maxLod;
 
     GLenum compareMode;
     GLenum compareFunc;
+};
+
+bool operator==(const SamplerState &a, const SamplerState &b);
+bool operator!=(const SamplerState &a, const SamplerState &b);
+
+
+struct TextureState
+{
+    TextureState();
 
     GLenum swizzleRed;
     GLenum swizzleGreen;
     GLenum swizzleBlue;
     GLenum swizzleAlpha;
 
+    SamplerState samplerState;
+
+    GLuint baseLevel;
+    GLuint maxLevel;
+
+    bool immutableFormat;
+    GLuint immutableLevels;
+
+    
+    GLenum usage;
+
     bool swizzleRequired() const;
 };
 
-bool operator==(const SamplerState &a, const SamplerState &b);
-bool operator!=(const SamplerState &a, const SamplerState &b);
+bool operator==(const TextureState &a, const TextureState &b);
+bool operator!=(const TextureState &a, const TextureState &b);
 
 struct PixelUnpackState
 {
@@ -247,16 +271,18 @@ struct PixelPackState
     {}
 };
 
+
+typedef std::bitset<MAX_VERTEX_ATTRIBS> AttributesMask;
 }
 
 namespace rx
 {
-
 enum VendorID : uint32_t
 {
-    VENDOR_ID_AMD = 0x1002,
-    VENDOR_ID_INTEL = 0x8086,
-    VENDOR_ID_NVIDIA = 0x10DE,
+    VENDOR_ID_UNKNOWN = 0x0,
+    VENDOR_ID_AMD     = 0x1002,
+    VENDOR_ID_INTEL   = 0x8086,
+    VENDOR_ID_NVIDIA  = 0x10DE,
 };
 
 
@@ -308,5 +334,51 @@ inline const DestT *GetImplAs(const SrcT *src)
 }
 
 #include "angletypes.inl"
+
+namespace angle
+{
+
+enum FramebufferBinding
+{
+    FramebufferBindingRead = 0,
+    FramebufferBindingDraw,
+    FramebufferBindingSingletonMax,
+    FramebufferBindingBoth = FramebufferBindingSingletonMax,
+    FramebufferBindingMax,
+    FramebufferBindingUnknown = FramebufferBindingMax,
+};
+
+inline FramebufferBinding EnumToFramebufferBinding(GLenum enumValue)
+{
+    switch (enumValue)
+    {
+        case GL_READ_FRAMEBUFFER:
+            return FramebufferBindingRead;
+        case GL_DRAW_FRAMEBUFFER:
+            return FramebufferBindingDraw;
+        case GL_FRAMEBUFFER:
+            return FramebufferBindingBoth;
+        default:
+            UNREACHABLE();
+            return FramebufferBindingUnknown;
+    }
+}
+
+inline GLenum FramebufferBindingToEnum(FramebufferBinding binding)
+{
+    switch (binding)
+    {
+        case FramebufferBindingRead:
+            return GL_READ_FRAMEBUFFER;
+        case FramebufferBindingDraw:
+            return GL_DRAW_FRAMEBUFFER;
+        case FramebufferBindingBoth:
+            return GL_FRAMEBUFFER;
+        default:
+            UNREACHABLE();
+            return GL_NONE;
+    }
+}
+}
 
 #endif 

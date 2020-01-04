@@ -6,8 +6,25 @@
 
 
 
+#ifndef LIBANGLE_QUERY_CONVERSIONS_H_
+#define LIBANGLE_QUERY_CONVERSIONS_H_
+
+#include "angle_gl.h"
+#include "common/angleutils.h"
+
 namespace gl
 {
+class Context;
+
+
+
+
+
+template <typename GLType>
+struct GLTypeToGLenum
+{
+    static GLenum value;
+};
 
 
 template <typename QueryT>
@@ -15,3 +32,5 @@ void CastStateValues(Context *context, GLenum nativeType, GLenum pname,
                      unsigned int numParams, QueryT *outParams);
 
 }
+
+#endif  

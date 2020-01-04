@@ -142,10 +142,13 @@ class PullGradient : public TIntermTraverser
 
 
 
-class PullComputeDiscontinuousLoops : public TIntermTraverser
+
+class PullComputeDiscontinuousAndGradientLoops : public TIntermTraverser
 {
   public:
-    PullComputeDiscontinuousLoops(MetadataList *metadataList, size_t index, const CallDAG &dag)
+    PullComputeDiscontinuousAndGradientLoops(MetadataList *metadataList,
+                                             size_t index,
+                                             const CallDAG &dag)
         : TIntermTraverser(true, false, true),
           mMetadataList(metadataList),
           mMetadata(&(*metadataList)[index]),
@@ -163,13 +166,13 @@ class PullComputeDiscontinuousLoops : public TIntermTraverser
 
     
     
-    void onDiscontinuousLoop()
+    void onGradientLoop()
     {
-        mMetadata->mHasDiscontinuousLoopInCallGraph = true;
+        mMetadata->mHasGradientLoopInCallGraph = true;
         
         if (!mIfs.empty())
         {
-            mMetadata->mIfsContainingDiscontinuousLoop.insert(mIfs.back());
+            mMetadata->mIfsContainingGradientLoop.insert(mIfs.back());
         }
     }
 
@@ -178,6 +181,11 @@ class PullComputeDiscontinuousLoops : public TIntermTraverser
         if (visit == PreVisit)
         {
             mLoopsAndSwitches.push_back(loop);
+
+            if (mMetadata->hasGradientInCallGraph(loop))
+            {
+                onGradientLoop();
+            }
         }
         else if (visit == PostVisit)
         {
@@ -199,9 +207,9 @@ class PullComputeDiscontinuousLoops : public TIntermTraverser
             ASSERT(mIfs.back() == node);
             mIfs.pop_back();
             
-            if (mMetadata->mIfsContainingDiscontinuousLoop.count(node) > 0 && !mIfs.empty())
+            if (mMetadata->mIfsContainingGradientLoop.count(node) > 0 && !mIfs.empty())
             {
-                mMetadata->mIfsContainingDiscontinuousLoop.insert(mIfs.back());
+                mMetadata->mIfsContainingGradientLoop.insert(mIfs.back());
             }
         }
 
@@ -221,7 +229,6 @@ class PullComputeDiscontinuousLoops : public TIntermTraverser
                     if (loop != nullptr)
                     {
                         mMetadata->mDiscontinuousLoops.insert(loop);
-                        onDiscontinuousLoop();
                     }
                 }
                 break;
@@ -237,7 +244,6 @@ class PullComputeDiscontinuousLoops : public TIntermTraverser
                     }
                     ASSERT(loop != nullptr);
                     mMetadata->mDiscontinuousLoops.insert(loop);
-                    onDiscontinuousLoop();
                 }
                 break;
               case EOpKill:
@@ -245,15 +251,14 @@ class PullComputeDiscontinuousLoops : public TIntermTraverser
                 
                 if (!mLoopsAndSwitches.empty())
                 {
-                    for (TIntermNode* node : mLoopsAndSwitches)
+                    for (TIntermNode *intermNode : mLoopsAndSwitches)
                     {
-                        TIntermLoop *loop = node->getAsLoopNode();
+                        TIntermLoop *loop = intermNode->getAsLoopNode();
                         if (loop)
                         {
                             mMetadata->mDiscontinuousLoops.insert(loop);
                         }
                     }
-                    onDiscontinuousLoop();
                 }
                 break;
               default:
@@ -274,9 +279,9 @@ class PullComputeDiscontinuousLoops : public TIntermTraverser
                 ASSERT(calleeIndex != CallDAG::InvalidIndex && calleeIndex < mIndex);
                 UNUSED_ASSERTION_VARIABLE(mIndex);
 
-                if ((*mMetadataList)[calleeIndex].mHasDiscontinuousLoopInCallGraph)
+                if ((*mMetadataList)[calleeIndex].mHasGradientLoopInCallGraph)
                 {
-                    onDiscontinuousLoop();
+                    onGradientLoop();
                 }
             }
         }
@@ -375,19 +380,14 @@ class PushDiscontinuousLoops : public TIntermTraverser
 
 }
 
-bool ASTMetadataHLSL::hasGradientInCallGraph(TIntermSelection *node)
-{
-    return mControlFlowsContainingGradient.count(node) > 0;
-}
-
 bool ASTMetadataHLSL::hasGradientInCallGraph(TIntermLoop *node)
 {
     return mControlFlowsContainingGradient.count(node) > 0;
 }
 
-bool ASTMetadataHLSL::hasDiscontinuousLoop(TIntermSelection *node)
+bool ASTMetadataHLSL::hasGradientLoop(TIntermSelection *node)
 {
-    return mIfsContainingDiscontinuousLoop.count(node) > 0;
+    return mIfsContainingGradientLoop.count(node) > 0;
 }
 
 MetadataList CreateASTMetadataHLSL(TIntermNode *root, const CallDAG &callDag)
@@ -427,7 +427,7 @@ MetadataList CreateASTMetadataHLSL(TIntermNode *root, const CallDAG &callDag)
     
     for (size_t i = 0; i < callDag.size(); i++)
     {
-        PullComputeDiscontinuousLoops pull(&metadataList, i, callDag);
+        PullComputeDiscontinuousAndGradientLoops pull(&metadataList, i, callDag);
         pull.traverse(callDag.getRecordFromIndex(i).node);
     }
 

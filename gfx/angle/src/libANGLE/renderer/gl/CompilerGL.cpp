@@ -6,20 +6,18 @@
 
 
 
+
 #include "libANGLE/renderer/gl/CompilerGL.h"
 
-#include "common/debug.h"
-#include "libANGLE/Caps.h"
-#include "libANGLE/Data.h"
 #include "libANGLE/renderer/gl/FunctionsGL.h"
 
 namespace rx
 {
 
+namespace
+{
 
-static size_t activeCompilerHandles = 0;
-
-static ShShaderOutput GetShaderOutputType(const FunctionsGL *functions)
+ShShaderOutput GetShaderOutputType(const FunctionsGL *functions)
 {
     ASSERT(functions);
 
@@ -83,105 +81,11 @@ static ShShaderOutput GetShaderOutputType(const FunctionsGL *functions)
     }
 }
 
-CompilerGL::CompilerGL(const gl::Data &data, const FunctionsGL *functions)
-    : CompilerImpl(),
-      mSpec(data.clientVersion > 2 ? SH_GLES3_SPEC : SH_GLES2_SPEC),
-      mOutputType(GetShaderOutputType(functions)),
-      mResources(),
-      mFragmentCompiler(nullptr),
-      mVertexCompiler(nullptr)
+}  
+
+CompilerGL::CompilerGL(const FunctionsGL *functions)
+    : mTranslatorOutputType(GetShaderOutputType(functions))
 {
-    ASSERT(data.clientVersion == 2 || data.clientVersion == 3);
-
-    const gl::Caps &caps = *data.caps;
-    const gl::Extensions &extensions = *data.extensions;
-
-    ShInitBuiltInResources(&mResources);
-    mResources.MaxVertexAttribs = caps.maxVertexAttributes;
-    mResources.MaxVertexUniformVectors = caps.maxVertexUniformVectors;
-    mResources.MaxVaryingVectors = caps.maxVaryingVectors;
-    mResources.MaxVertexTextureImageUnits = caps.maxVertexTextureImageUnits;
-    mResources.MaxCombinedTextureImageUnits = caps.maxCombinedTextureImageUnits;
-    mResources.MaxTextureImageUnits = caps.maxTextureImageUnits;
-    mResources.MaxFragmentUniformVectors = caps.maxFragmentUniformVectors;
-    mResources.MaxDrawBuffers = caps.maxDrawBuffers;
-    mResources.OES_standard_derivatives = extensions.standardDerivatives;
-    mResources.EXT_draw_buffers = extensions.drawBuffers;
-    mResources.EXT_shader_texture_lod = extensions.shaderTextureLOD;
-    mResources.OES_EGL_image_external = 0; 
-    mResources.FragmentPrecisionHigh = 1; 
-    mResources.EXT_frag_depth = extensions.fragDepth;
-
-    
-    mResources.MaxVertexOutputVectors = caps.maxVertexOutputComponents / 4;
-    mResources.MaxFragmentInputVectors = caps.maxFragmentInputComponents / 4;
-    mResources.MinProgramTexelOffset = caps.minProgramTexelOffset;
-    mResources.MaxProgramTexelOffset = caps.maxProgramTexelOffset;
 }
 
-CompilerGL::~CompilerGL()
-{
-    release();
-}
-
-gl::Error CompilerGL::release()
-{
-    if (mFragmentCompiler)
-    {
-        ShDestruct(mFragmentCompiler);
-        mFragmentCompiler = NULL;
-
-        ASSERT(activeCompilerHandles > 0);
-        activeCompilerHandles--;
-    }
-
-    if (mVertexCompiler)
-    {
-        ShDestruct(mVertexCompiler);
-        mVertexCompiler = NULL;
-
-        ASSERT(activeCompilerHandles > 0);
-        activeCompilerHandles--;
-    }
-
-    if (activeCompilerHandles == 0)
-    {
-        ShFinalize();
-    }
-
-    return gl::Error(GL_NO_ERROR);
-}
-
-ShHandle CompilerGL::getCompilerHandle(GLenum type)
-{
-    ShHandle *compiler = NULL;
-    switch (type)
-    {
-      case GL_VERTEX_SHADER:
-        compiler = &mVertexCompiler;
-        break;
-
-      case GL_FRAGMENT_SHADER:
-        compiler = &mFragmentCompiler;
-        break;
-
-      default:
-        UNREACHABLE();
-        return NULL;
-    }
-
-    if ((*compiler) == nullptr)
-    {
-        if (activeCompilerHandles == 0)
-        {
-            ShInitialize();
-        }
-
-        *compiler = ShConstructCompiler(type, mSpec, mOutputType, &mResources);
-        activeCompilerHandles++;
-    }
-
-    return *compiler;
-}
-
-}
+}  

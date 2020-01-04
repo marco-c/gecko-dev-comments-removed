@@ -35,7 +35,7 @@ class ValidateConstIndexExpr : public TIntermTraverser
     
     bool isValid() const { return mValid; }
 
-    virtual void visitSymbol(TIntermSymbol *symbol)
+    void visitSymbol(TIntermSymbol *symbol) override
     {
         
         

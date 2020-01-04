@@ -6,8 +6,8 @@
 
 
 
-#ifndef LIBANGLE_RENDERER_WORKAROUNDS_H_
-#define LIBANGLE_RENDERER_WORKAROUNDS_H_
+#ifndef LIBANGLE_RENDERER_D3D_WORKAROUNDSD3D_H_
+#define LIBANGLE_RENDERER_D3D_WORKAROUNDSD3D_H_
 
 
 
@@ -15,20 +15,11 @@
 
 namespace rx
 {
-
-struct D3DCompilerWorkarounds : angle::NonCopyable
+struct D3DCompilerWorkarounds
 {
     D3DCompilerWorkarounds()
-        : skipOptimization(false),
-          useMaxOptimization(false),
-          enableIEEEStrictness(false)
-    {}
-
-    void reset()
+        : skipOptimization(false), useMaxOptimization(false), enableIEEEStrictness(false)
     {
-        skipOptimization = false;
-        useMaxOptimization = false;
-        enableIEEEStrictness = false;
     }
 
     bool skipOptimization;
@@ -38,14 +29,15 @@ struct D3DCompilerWorkarounds : angle::NonCopyable
     bool enableIEEEStrictness;
 };
 
-struct Workarounds
+struct WorkaroundsD3D
 {
-    Workarounds()
+    WorkaroundsD3D()
         : mrtPerfWorkaround(false),
           setDataFasterThanImageUpload(false),
           zeroMaxLodWorkaround(false),
           useInstancedPointSpriteEmulation(false)
-    {}
+    {
+    }
 
     
     
@@ -60,15 +52,15 @@ struct Workarounds
     
     
     
+    
+    
     bool zeroMaxLodWorkaround;
 
     
     
     
-    
     bool useInstancedPointSpriteEmulation;
 };
-
 }
 
-#endif 
+#endif  

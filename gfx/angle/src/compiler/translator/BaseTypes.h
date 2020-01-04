@@ -324,8 +324,9 @@ enum TQualifier
     
     EvqFragColor,
     EvqFragData,
-    EvqFragDepthEXT,  
-    EvqFragDepth,     
+    EvqFragDepth,
+    EvqSecondaryFragColorEXT,  
+    EvqSecondaryFragDataEXT,   
 
     
     EvqLastFragColor,
@@ -389,7 +390,7 @@ struct TLayoutQualifier
 inline const char* getQualifierString(TQualifier q)
 {
     switch(q)
-    { 
+    {
     case EvqTemporary:      return "Temporary";      break;
     case EvqGlobal:         return "Global";         break;
     case EvqConst:          return "const";          break;
@@ -413,8 +414,13 @@ inline const char* getQualifierString(TQualifier q)
     case EvqPointCoord:     return "PointCoord";     break;
     case EvqFragColor:      return "FragColor";      break;
     case EvqFragData:       return "FragData";       break;
-    case EvqFragDepthEXT:   return "FragDepth";      break;
     case EvqFragDepth:      return "FragDepth";      break;
+    case EvqSecondaryFragColorEXT:
+        return "SecondaryFragColorEXT";
+        break;
+    case EvqSecondaryFragDataEXT:
+        return "SecondaryFragDataEXT";
+        break;
     case EvqLastFragColor:  return "LastFragColor";  break;
     case EvqLastFragData:   return "LastFragData";   break;
     case EvqSmoothOut:      return "smooth out";     break;
@@ -424,7 +430,7 @@ inline const char* getQualifierString(TQualifier q)
     case EvqFlatIn:         return "flat in";        break;
     case EvqCentroidIn:     return "centroid in";    break;
     default: UNREACHABLE(); return "unknown qualifier";
-    } 
+    }
 }
 
 inline const char* getMatrixPackingString(TLayoutMatrixPacking mpq)

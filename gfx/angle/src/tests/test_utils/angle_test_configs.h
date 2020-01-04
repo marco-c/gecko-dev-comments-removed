@@ -7,6 +7,13 @@
 #ifndef ANGLE_TEST_CONFIGS_H_
 #define ANGLE_TEST_CONFIGS_H_
 
+
+
+
+
+
+#include <gtest/gtest.h>
+
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 

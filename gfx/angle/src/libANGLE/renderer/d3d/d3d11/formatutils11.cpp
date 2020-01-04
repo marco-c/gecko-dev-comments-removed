@@ -389,11 +389,11 @@ void AddDXGIFormat(DXGIFormatInfoMap *map, DXGI_FORMAT dxgiFormat, GLuint pixelB
     if (colorInfoIter != colorInfoMap.end())
     {
         const DXGIColorFormatInfo &colorInfo = colorInfoIter->second;
-        info.redBits = colorInfo.redBits;
-        info.greenBits = colorInfo.greenBits;
-        info.blueBits = colorInfo.blueBits;
-        info.alphaBits = colorInfo.alphaBits;
-        info.sharedBits = colorInfo.sharedBits;
+        info.redBits                         = static_cast<GLuint>(colorInfo.redBits);
+        info.greenBits                       = static_cast<GLuint>(colorInfo.greenBits);
+        info.blueBits                        = static_cast<GLuint>(colorInfo.blueBits);
+        info.alphaBits                       = static_cast<GLuint>(colorInfo.alphaBits);
+        info.sharedBits                      = static_cast<GLuint>(colorInfo.sharedBits);
     }
 
     static const DepthStencilInfoMap dsInfoMap = BuildDepthStencilInfoMap();
@@ -501,9 +501,10 @@ static DXGIFormatInfoMap BuildDXGIFormatInfoMap()
     AddDXGIFormat(&map, DXGI_FORMAT_BC3_UNORM,                128, 4, 4, GL_UNSIGNED_NORMALIZED, NULL,                       NULL,                              NeverSupported);
 
     
+    
     AddDXGIFormat(&map, DXGI_FORMAT_B5G6R5_UNORM,             16,  1, 1, GL_UNSIGNED_NORMALIZED, GenerateMip<R5G6B5>,        ReadColor<R5G6B5, GLfloat>,        RequiresFeatureLevel<D3D_FEATURE_LEVEL_9_1>);
-    AddDXGIFormat(&map, DXGI_FORMAT_B4G4R4A4_UNORM,           16,  1, 1, GL_UNSIGNED_NORMALIZED, GenerateMip<B4G4R4A4>,      ReadColor<B4G4R4A4, GLfloat>,      NeverSupported);
-    AddDXGIFormat(&map, DXGI_FORMAT_B5G5R5A1_UNORM,           16,  1, 1, GL_UNSIGNED_NORMALIZED, GenerateMip<B5G5R5A1>,      ReadColor<B5G5R5A1, GLfloat>,      NeverSupported);
+    AddDXGIFormat(&map, DXGI_FORMAT_B4G4R4A4_UNORM,           16,  1, 1, GL_UNSIGNED_NORMALIZED, GenerateMip<A4R4G4B4>,      ReadColor<A4R4G4B4, GLfloat>,      NeverSupported);
+    AddDXGIFormat(&map, DXGI_FORMAT_B5G5R5A1_UNORM,           16,  1, 1, GL_UNSIGNED_NORMALIZED, GenerateMip<A1R5G5B5>,      ReadColor<A1R5G5B5, GLfloat>,      NeverSupported);
 
     
     AddDXGIFormat(&map, DXGI_FORMAT_R16_UNORM,                16,  1, 1, GL_UNSIGNED_NORMALIZED, NULL,                       NULL,                              NeverSupported);

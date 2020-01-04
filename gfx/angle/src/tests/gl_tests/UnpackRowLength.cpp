@@ -6,8 +6,6 @@
 
 #include "test_utils/ANGLETest.h"
 
-#include <array>
-
 using namespace angle;
 
 namespace
@@ -72,7 +70,7 @@ class UnpackRowLengthTest : public ANGLETest
     {
         glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
 
-        if (getClientVersion() == 3)
+        if ((getClientVersion() == 3) || extensionEnabled("GL_EXT_unpack_subimage"))
         {
             
             
@@ -120,6 +118,11 @@ TEST_P(UnpackRowLengthTest, RowLength1024)
 }
 
 
-ANGLE_INSTANTIATE_TEST(UnpackRowLengthTest, ES3_D3D11(), ES2_D3D11(), ES2_OPENGL(), ES3_OPENGL());
+ANGLE_INSTANTIATE_TEST(UnpackRowLengthTest,
+                       ES3_D3D11(),
+                       ES2_D3D11(),
+                       ES2_D3D9(),
+                       ES2_OPENGL(),
+                       ES3_OPENGL());
 
 } 

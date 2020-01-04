@@ -4,10 +4,11 @@
 
 ANGLETest::ANGLETest()
     : mEGLWindow(nullptr),
-      mWidth(0),
-      mHeight(0)
+      mWidth(16),
+      mHeight(16)
 {
-    mEGLWindow = new EGLWindow(GetParam().majorVersion, GetParam().eglParameters);
+    mEGLWindow =
+        new EGLWindow(GetParam().majorVersion, GetParam().minorVersion, GetParam().eglParameters);
 }
 
 ANGLETest::~ANGLETest()
@@ -17,28 +18,35 @@ ANGLETest::~ANGLETest()
 
 void ANGLETest::SetUp()
 {
-    if (!createEGLContext())
-    {
-        FAIL() << "egl context creation failed.";
-    }
-
+    
+    
+    bool needSwap = false;
     if (mOSWindow->getWidth() != mWidth || mOSWindow->getHeight() != mHeight)
     {
         if (!mOSWindow->resize(mWidth, mHeight))
         {
             FAIL() << "Failed to resize ANGLE test window.";
         }
+        needSwap = true;
+    }
 
+    if (!createEGLContext())
+    {
+        FAIL() << "egl context creation failed.";
+    }
+
+    if (needSwap)
+    {
         
         
         
         swapBuffers();
-
-        
-        
-        
-        glViewport(0, 0, mWidth, mHeight);
     }
+
+    
+    
+    
+    glViewport(0, 0, mWidth, mHeight);
 }
 
 void ANGLETest::TearDown()
@@ -115,7 +123,7 @@ GLuint ANGLETest::compileShader(GLenum type, const std::string &source)
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
 
         std::vector<GLchar> infoLog(infoLogLength);
-        glGetShaderInfoLog(shader, infoLog.size(), NULL, &infoLog[0]);
+        glGetShaderInfoLog(shader, static_cast<GLsizei>(infoLog.size()), NULL, &infoLog[0]);
 
         std::cerr << "shader compilation failed: " << &infoLog[0];
 
@@ -194,7 +202,7 @@ void ANGLETest::setMultisampleEnabled(bool enabled)
 
 int ANGLETest::getClientVersion() const
 {
-    return mEGLWindow->getClientVersion();
+    return mEGLWindow->getClientMajorVersion();
 }
 
 EGLWindow *ANGLETest::getEGLWindow() const

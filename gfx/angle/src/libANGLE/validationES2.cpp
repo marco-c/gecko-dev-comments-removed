@@ -110,7 +110,7 @@ bool ValidateES2TexImageParameters(Context *context, GLenum target, GLint level,
     }
     else
     {
-        if (texture->isImmutable())
+        if (texture->getImmutableFormat())
         {
             context->recordError(Error(GL_INVALID_OPERATION));
             return false;
@@ -830,7 +830,7 @@ bool ValidateES2TexStorageParameters(Context *context, GLenum target, GLsizei le
         return false;
     }
 
-    if (texture->isImmutable())
+    if (texture->getImmutableFormat())
     {
         context->recordError(Error(GL_INVALID_OPERATION));
         return false;
@@ -903,4 +903,68 @@ bool ValidateDiscardFramebufferEXT(Context *context, GLenum target, GLsizei numA
     return ValidateDiscardFramebufferBase(context, target, numAttachments, attachments, defaultFramebuffer);
 }
 
+bool ValidateDrawBuffers(Context *context, GLsizei n, const GLenum *bufs)
+{
+    
+    if (n < 0 || static_cast<GLuint>(n) > context->getCaps().maxDrawBuffers)
+    {
+        context->recordError(
+            Error(GL_INVALID_VALUE, "n must be non-negative and no greater than MAX_DRAW_BUFFERS"));
+        return false;
+    }
+
+    ASSERT(context->getState().getDrawFramebuffer());
+    GLuint frameBufferId      = context->getState().getDrawFramebuffer()->id();
+    GLuint maxColorAttachment = GL_COLOR_ATTACHMENT0_EXT + context->getCaps().maxColorAttachments;
+
+    
+    
+    
+    for (int colorAttachment = 0; colorAttachment < n; colorAttachment++)
+    {
+        const GLenum attachment = GL_COLOR_ATTACHMENT0_EXT + colorAttachment;
+
+        if (bufs[colorAttachment] != GL_NONE && bufs[colorAttachment] != GL_BACK &&
+            (bufs[colorAttachment] < GL_COLOR_ATTACHMENT0_EXT ||
+             bufs[colorAttachment] >= maxColorAttachment))
+        {
+            
+            
+            
+            context->recordError(Error(GL_INVALID_OPERATION, "Invalid buffer value"));
+            return false;
+        }
+        else if (bufs[colorAttachment] != GL_NONE && bufs[colorAttachment] != attachment &&
+                 frameBufferId != 0)
+        {
+            
+            
+            context->recordError(
+                Error(GL_INVALID_OPERATION, "Ith value does not match COLOR_ATTACHMENTi or NONE"));
+            return false;
+        }
+    }
+
+    
+    
+    if (frameBufferId == 0)
+    {
+        if (n != 1)
+        {
+            context->recordError(Error(GL_INVALID_OPERATION,
+                                       "n must be 1 when GL is bound to the default framebuffer"));
+            return false;
+        }
+
+        if (bufs[0] != GL_NONE && bufs[0] != GL_BACK)
+        {
+            context->recordError(Error(
+                GL_INVALID_OPERATION,
+                "Only NONE or BACK are valid values when drawing to the default framebuffer"));
+            return false;
+        }
+    }
+
+    return true;
+}
 }

@@ -32,6 +32,16 @@ struct IndexConversionPerfParams final : public RenderTestParams
     unsigned int numIndexTris;
 };
 
+
+
+
+std::ostream &operator<<(std::ostream &stream, const IndexConversionPerfParams &param)
+{
+    const PlatformParameters &platform = param;
+    stream << platform << "_" << param.iterations << "_" << param.numIndexTris;
+    return stream;
+}
+
 class IndexConversionPerfTest : public ANGLERenderTest,
                                 public ::testing::WithParamInterface<IndexConversionPerfParams>
 {

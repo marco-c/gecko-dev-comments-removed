@@ -48,6 +48,15 @@ bool numeric_lex_int(const std::string &str, IntType *value)
 template<typename FloatType>
 bool numeric_lex_float(const std::string &str, FloatType *value)
 {
+
+
+
+
+
+#if defined(ANGLE_PLATFORM_ANDROID) && __x86_64__
+    *value = strtod(str.c_str(), nullptr);
+    return errno != ERANGE;
+#else
     std::istringstream stream(str);
     
     
@@ -55,6 +64,7 @@ bool numeric_lex_float(const std::string &str, FloatType *value)
 
     stream >> (*value);
     return !stream.fail();
+#endif
 }
 
 } 

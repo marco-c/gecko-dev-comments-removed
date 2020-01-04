@@ -8,6 +8,7 @@
 
 
 #include "common/angleutils.h"
+#include "GLSLANG/ShaderLang.h"
 #include "libANGLE/Error.h"
 
 #ifndef LIBANGLE_RENDERER_COMPILERIMPL_H_
@@ -23,6 +24,9 @@ class CompilerImpl : angle::NonCopyable
     virtual ~CompilerImpl() {}
 
     virtual gl::Error release() = 0;
+
+    
+    virtual ShShaderOutput getTranslatorOutputType() const = 0;
 };
 
 }
