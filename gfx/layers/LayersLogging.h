@@ -9,6 +9,7 @@
 #include "FrameMetrics.h"               
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
+#include "mozilla/gfx/TiledRegion.h"    
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/CompositorTypes.h"  
 #include "nsAString.h"
@@ -108,6 +109,18 @@ AppendToString(std::stringstream& aStream, const mozilla::gfx::IntRegionTyped<un
   aStream << ">";
 
   aStream << sfx;
+}
+
+template <typename T>
+void
+AppendToString(std::stringstream& aStream, const mozilla::gfx::TiledRegion<T>& r,
+               const char* pfx="", const char* sfx="")
+{
+  aStream << pfx;
+  AppendToString(aStream, r.GetRegion());
+  aStream << " (bounds=";
+  AppendToString(aStream, r.GetBounds());
+  aStream << ", covers=" << r.CoversBounds() << ")" << sfx;
 }
 
 void
