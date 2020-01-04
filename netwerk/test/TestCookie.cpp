@@ -665,8 +665,8 @@ main(int32_t argc, char *argv[])
       rv[10] = NS_SUCCEEDED(cookieMgr->RemoveNative(NS_LITERAL_CSTRING("new.domain"), 
                                                     NS_LITERAL_CSTRING("test3"),      
                                                     NS_LITERAL_CSTRING("/rabbit"),    
-                                                    true,                             
-                                                    &attrs));                         
+                                                    &attrs,                           
+                                                    true));                           
       rv[11] = NS_SUCCEEDED(cookieMgr2->CookieExists(newDomainCookie, &found)) && !found;
       rv[12] = NS_SUCCEEDED(cookieMgr2->Add(NS_LITERAL_CSTRING("new.domain"),     
                                             NS_LITERAL_CSTRING("/rabbit"),        
