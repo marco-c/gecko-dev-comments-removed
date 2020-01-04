@@ -2264,7 +2264,10 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
     }
     int16_t contentPolicy = nsIContentPolicy::ACCEPT;
     
-    if (allowLoad && mURI && !mChannelLoaded) {
+    
+    
+    
+    if (allowLoad && mURI && !mChannelLoaded && mType != eType_Loading) {
       allowLoad = CheckLoadPolicy(&contentPolicy);
     }
     
@@ -2617,8 +2620,6 @@ nsObjectLoadingContent::OpenChannel()
 {
   nsCOMPtr<nsIContent> thisContent =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-  nsCOMPtr<nsIScriptSecurityManager> secMan =
-    nsContentUtils::GetSecurityManager();
   NS_ASSERTION(thisContent, "must be a content");
   nsIDocument* doc = thisContent->OwnerDoc();
   NS_ASSERTION(doc, "No owner document?");
@@ -2631,9 +2632,6 @@ nsObjectLoadingContent::OpenChannel()
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  rv = secMan->CheckLoadURIWithPrincipal(thisContent->NodePrincipal(), mURI, 0);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   nsCOMPtr<nsILoadGroup> group = doc->GetDocumentLoadGroup();
   nsCOMPtr<nsIChannel> chan;
   RefPtr<ObjectInterfaceRequestorShim> shim =
@@ -2644,7 +2642,7 @@ nsObjectLoadingContent::OpenChannel()
                                                                mURI,
                                                                true,   
                                                                false); 
-  nsSecurityFlags securityFlags = nsILoadInfo::SEC_NORMAL;
+  nsSecurityFlags securityFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS;
   if (inherit) {
     securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
@@ -2687,7 +2685,7 @@ nsObjectLoadingContent::OpenChannel()
   }
 
   
-  rv = chan->AsyncOpen(shim, nullptr);
+  rv = chan->AsyncOpen2(shim);
   NS_ENSURE_SUCCESS(rv, rv);
   LOG(("OBJLC [%p]: Channel opened", this));
   mChannel = chan;
