@@ -14,7 +14,6 @@
 #include "MediaInfo.h"
 #include "MediaFormatReader.h"
 #include "MediaResource.h"
-#include "SharedDecoderManager.h"
 #include "mozilla/SharedThreadPool.h"
 #include "VideoUtils.h"
 
@@ -443,31 +442,15 @@ MediaFormatReader::EnsureDecodersCreated()
     mVideo.mDecoderInitialized = false;
     
     
-    if (mSharedDecoderManager &&
-        mPlatform->SupportsSharedDecoders(mInfo.mVideo) &&
-        !mHardwareAccelerationDisabled) {
-      mVideo.mDecoder =
-        mSharedDecoderManager->CreateVideoDecoder(mPlatform,
-                                                  mVideo.mInfo ?
-                                                    *mVideo.mInfo->GetAsVideoInfo() :
-                                                    mInfo.mVideo,
-                                                  mLayersBackendType,
-                                                  mDecoder->GetImageContainer(),
-                                                  mVideo.mTaskQueue,
-                                                  mVideo.mCallback);
-    } else {
-      
-      
-      mVideo.mDecoder =
-        mPlatform->CreateDecoder(mVideo.mInfo ?
-                                   *mVideo.mInfo->GetAsVideoInfo() :
-                                   mInfo.mVideo,
-                                 mVideo.mTaskQueue,
-                                 mVideo.mCallback,
-                                 mHardwareAccelerationDisabled ? LayersBackend::LAYERS_NONE :
-                                                                 mLayersBackendType,
-                                 mDecoder->GetImageContainer());
-    }
+    mVideo.mDecoder =
+      mPlatform->CreateDecoder(mVideo.mInfo ?
+                                 *mVideo.mInfo->GetAsVideoInfo() :
+                                 mInfo.mVideo,
+                               mVideo.mTaskQueue,
+                               mVideo.mCallback,
+                               mHardwareAccelerationDisabled ? LayersBackend::LAYERS_NONE :
+                                                               mLayersBackendType,
+                               mDecoder->GetImageContainer());
     NS_ENSURE_TRUE(mVideo.mDecoder != nullptr, false);
   }
 
@@ -1604,22 +1587,6 @@ void MediaFormatReader::ReleaseMediaResources()
     mVideo.mDecoder->Shutdown();
     mVideo.mDecoder = nullptr;
   }
-}
-
-void
-MediaFormatReader::SetIdle()
-{
-  if (mSharedDecoderManager && mVideo.mDecoder) {
-    mSharedDecoderManager->SetIdle(mVideo.mDecoder);
-  }
-}
-
-void
-MediaFormatReader::SetSharedDecoderManager(SharedDecoderManager* aManager)
-{
-#if !defined(MOZ_WIDGET_ANDROID)
-  mSharedDecoderManager = aManager;
-#endif
 }
 
 bool
