@@ -14,25 +14,29 @@
 
 
 
-"use strict";
+'use strict';
 
-var Cc = require("chrome").Cc;
-var Ci = require("chrome").Ci;
+var Cc = require('chrome').Cc;
+var Ci = require('chrome').Ci;
+var Cu = require('chrome').Cu;
 
-var prefSvc = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService);
+var prefSvc = Cc['@mozilla.org/preferences-service;1']
+                        .getService(Ci.nsIPrefService);
 var prefBranch = prefSvc.getBranch(null).QueryInterface(Ci.nsIPrefBranch);
 
-const {LocalizationHelper} = require("devtools/client/shared/l10n");
-const L10N = new LocalizationHelper("devtools-shared/locale/gclicommands.properties");
+var Services = require("Services");
+var stringBundle = Services.strings.createBundle(
+        'chrome://devtools-shared/locale/gclicommands.properties');
 
 
 
 
-exports.lookup = function (name) {
+exports.lookup = function(name) {
   try {
-    return L10N.getStr(name);
-  } catch (ex) {
-    throw new Error("Failure in lookup('" + name + "')");
+    return stringBundle.GetStringFromName(name);
+  }
+  catch (ex) {
+    throw new Error('Failure in lookup(\'' + name + '\')');
   }
 };
 
@@ -44,7 +48,7 @@ exports.lookup = function (name) {
 
 
 exports.propertyLookup = new Proxy({}, {
-  get: function (rcvr, name) {
+  get: function(rcvr, name) {
     return exports.lookup(name);
   }
 });
@@ -52,11 +56,12 @@ exports.propertyLookup = new Proxy({}, {
 
 
 
-exports.lookupFormat = function (name, swaps) {
+exports.lookupFormat = function(name, swaps) {
   try {
-    return L10N.getFormatStr(name, ...swaps);
-  } catch (ex) {
-    throw new Error("Failure in lookupFormat('" + name + "')");
+    return stringBundle.formatStringFromName(name, swaps, swaps.length);
+  }
+  catch (ex) {
+    throw new Error('Failure in lookupFormat(\'' + name + '\')');
   }
 };
 
@@ -69,6 +74,6 @@ exports.lookupFormat = function (name, swaps) {
 
 
 
-exports.hiddenByChromePref = function () {
-  return !prefBranch.getBoolPref("devtools.chrome.enabled");
+exports.hiddenByChromePref = function() {
+  return !prefBranch.getBoolPref('devtools.chrome.enabled');
 };
