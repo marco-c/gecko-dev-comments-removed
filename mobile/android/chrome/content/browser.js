@@ -4429,7 +4429,7 @@ Tab.prototype = {
     if (appOrigin) {
       let originHost = "";
       try {
-        let originHost = Services.io.newURI(appOrigin, null, null).host;
+        originHost = Services.io.newURI(appOrigin, null, null).host;
       } catch (e if (e.result == Cr.NS_ERROR_FAILURE)) {
         
         
