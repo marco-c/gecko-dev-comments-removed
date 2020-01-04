@@ -463,57 +463,6 @@ var Bookmarks = Object.freeze({
 
 
 
-
-
-
-
-
-
-
-  search(query) {
-    if (!query) {
-      throw new Error("Query object is required");
-    }
-    if (typeof query === "string") {
-      query = { query: query };
-    }
-    if (typeof query !== "object") {
-      throw new Error("Query must be an object or a string");
-    }
-    if (query.query && typeof query.query !== "string") {
-      throw new Error("Query option must be a string");
-    }
-    if (query.title && typeof query.title !== "string") {
-      throw new Error("Title option must be a string");
-    }
-
-    if (query.url) {
-      if (typeof query.url === "string" || (query.url instanceof URL)) {
-        query.url = new URL(query.url).href;
-      } else if (query.url instanceof Ci.nsIURI) {
-        query.url = query.url.spec;
-      } else {
-        throw new Error("Url option must be a string or a URL object");
-      }
-    }
-
-    return Task.spawn(function* () {
-      let results = yield queryBookmarks(query);
-
-      return results;
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
   getRecent(numberOfItems) {
     if (numberOfItems === undefined) {
       throw new Error("numberOfItems argument is required");
@@ -736,7 +685,64 @@ var Bookmarks = Object.freeze({
                                            child.parentGuid ]);
       }
     }.bind(this));
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  search(query) {
+    if (!query) {
+      throw new Error("Query object is required");
+    }
+    if (typeof query === "string") {
+      query = { query: query };
+    }
+    if (typeof query !== "object") {
+      throw new Error("Query must be an object or a string");
+    }
+    if (query.query && typeof query.query !== "string") {
+      throw new Error("Query option must be a string");
+    }
+    if (query.title && typeof query.title !== "string") {
+      throw new Error("Title option must be a string");
+    }
+
+    if (query.url) {
+      if (typeof query.url === "string" || (query.url instanceof URL)) {
+        query.url = new URL(query.url).href;
+      } else if (query.url instanceof Ci.nsIURI) {
+        query.url = query.url.spec;
+      } else {
+        throw new Error("Url option must be a string or a URL object");
+      }
+    }
+
+    return Task.spawn(function* () {
+      let results = yield queryBookmarks(query);
+
+      return results;
+    });
+  },
 });
 
 
@@ -914,7 +920,7 @@ function queryBookmarks(info) {
   }
 
   if (info.url) {
-    queryString += " AND h.url = :url";
+    queryString += " AND h.url_hash = hash(:url) AND h.url = :url";
     queryParams.url = info.url;
   }
 
