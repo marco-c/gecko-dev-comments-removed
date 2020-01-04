@@ -1,0 +1,75 @@
+
+
+
+
+
+
+#include "FileSystem.h"
+#include "RootDirectoryEntry.h"
+#include "mozilla/dom/FileSystemBinding.h"
+#include "nsContentUtils.h"
+
+namespace mozilla {
+namespace dom {
+
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(FileSystem, mParent, mRoot)
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(FileSystem)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(FileSystem)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FileSystem)
+  NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+ already_AddRefed<FileSystem>
+FileSystem::Create(nsIGlobalObject* aGlobalObject)
+
+{
+  MOZ_ASSERT(aGlobalObject);
+
+
+  nsID id;
+  nsresult rv = nsContentUtils::GenerateUUIDInPlace(id);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  char chars[NSID_LENGTH];
+  id.ToProvidedString(chars);
+
+  
+  
+  nsAutoCString name(Substring(chars + 1, chars + NSID_LENGTH - 2));
+
+  RefPtr<FileSystem> fs =
+    new FileSystem(aGlobalObject, NS_ConvertUTF8toUTF16(name));
+
+  return fs.forget();
+}
+
+FileSystem::FileSystem(nsIGlobalObject* aGlobal, const nsAString& aName)
+  : mParent(aGlobal)
+  , mName(aName)
+{
+  MOZ_ASSERT(aGlobal);
+}
+
+FileSystem::~FileSystem()
+{}
+
+JSObject*
+FileSystem::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
+{
+  return FileSystemBinding::Wrap(aCx, this, aGivenProto);
+}
+
+void
+FileSystem::CreateRoot(const Sequence<RefPtr<Entry>>& aEntries)
+{
+  MOZ_ASSERT(!mRoot);
+  mRoot = new RootDirectoryEntry(mParent, aEntries, this);
+}
+
+} 
+} 
