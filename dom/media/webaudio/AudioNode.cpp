@@ -37,19 +37,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(AudioNode,
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_ADDREF_INHERITED(AudioNode, DOMEventTargetHelper)
-
-NS_IMETHODIMP_(MozExternalRefCountType)
-AudioNode::Release()
-{
-  if (mRefCnt.get() == 1) {
-    
-    
-    DisconnectFromGraph();
-  }
-  nsrefcnt r = DOMEventTargetHelper::Release();
-  NS_LOG_RELEASE(this, r, "AudioNode");
-  return r;
-}
+NS_IMPL_RELEASE_INHERITED(AudioNode, DOMEventTargetHelper)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(AudioNode)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
@@ -150,9 +138,8 @@ FindIndexOfNodeWithPorts(const nsTArray<InputNode>& aInputNodes, const AudioNode
 void
 AudioNode::DisconnectFromGraph()
 {
-  
-  
-  nsRefPtr<AudioNode> kungFuDeathGrip = this;
+  MOZ_ASSERT(mRefCnt.get() > mInputNodes.Length(),
+             "Caller should be holding a reference");
 
   
   

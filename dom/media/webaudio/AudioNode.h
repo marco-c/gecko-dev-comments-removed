@@ -211,6 +211,12 @@ public:
   virtual const char* NodeType() const = 0;
 
 private:
+  virtual void LastRelease() override
+  {
+    
+    
+    DisconnectFromGraph();
+  }
   
   void DisconnectFromGraph();
 
