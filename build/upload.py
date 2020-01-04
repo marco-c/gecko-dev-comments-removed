@@ -27,11 +27,16 @@
 
 
 
+
+
+
+
 import sys, os
 import re
 import json
 import errno
 import hashlib
+import shutil
 from optparse import OptionParser
 from subprocess import check_call, check_output, STDOUT
 import redo
@@ -106,7 +111,7 @@ def DoSCPFile(file, remote_path, user, host, port=None, ssh_key=None):
 
     raise Exception("Command %s returned non-zero exit code" % cmdline)
 
-def GetRemotePath(path, local_file, base_path):
+def GetBaseRelativePath(path, local_file, base_path):
     """Given a remote path to upload to, a full path to a local file, and an
     optional full path that is a base path of the local file, construct the
     full remote path to place the file in. If base_path is not None, include
@@ -214,7 +219,7 @@ def UploadFiles(user, host, path, files, verbose=False, port=None, ssh_key=None,
             if not os.path.isfile(file):
                 raise IOError("File not found: %s" % file)
             
-            remote_path = GetRemotePath(path, file, base_path)
+            remote_path = GetBaseRelativePath(path, file, base_path)
             DoSSHCommand("mkdir -p " + remote_path, user, host, port=port, ssh_key=ssh_key)
             if verbose:
                 print "Uploading " + file
@@ -235,6 +240,25 @@ def UploadFiles(user, host, path, files, verbose=False, port=None, ssh_key=None,
     if verbose:
         print "Upload complete"
     return properties
+
+def CopyFilesLocally(path, files, verbose=False, base_path=None, package=None):
+    """Copy each file in the list of files to `path`.  The `base_path` argument is treated
+    as it is by UploadFiles."""
+    if not path.endswith("/"):
+        path += "/"
+    if base_path is not None:
+        base_path = os.path.abspath(base_path)
+    for file in files:
+        file = os.path.abspath(file)
+        if not os.path.isfile(file):
+            raise IOError("File not found: %s" % file)
+        
+        target_path = GetBaseRelativePath(path, file, base_path)
+        if not os.path.exists(target_path):
+            os.makedirs(target_path)
+        if verbose:
+            print "Copying " + file + " to " + target_path
+        shutil.copy(file, target_path)
 
 def WriteProperties(files, properties_file, url_properties, package):
     properties = url_properties
@@ -280,16 +304,30 @@ if __name__ == '__main__':
     if not options.properties_file:
         print "You must specify a --properties-file"
         sys.exit(1)
+
+    if host == "localhost":
+        if upload_to_temp_dir:
+            print "Cannot use UPLOAD_TO_TEMP with UPLOAD_HOST=localhost"
+            sys.exit(1)
+        if post_upload_command:
+            
+            
+            print "Ignoring POST_UPLOAD_COMMAND with UPLOAD_HOST=localhost"
+
     try:
-        url_properties = UploadFiles(user, host, path, args, base_path=options.base_path,
-                                     port=port, ssh_key=key, upload_to_temp_dir=upload_to_temp_dir,
-                                     post_upload_command=post_upload_command,
-                                     package=options.package,
-                                     verbose=True)
-        WriteProperties(args, options.properties_file, url_properties, options.package)
+        if host == "localhost":
+            CopyFilesLocally(path, args, base_path=options.base_path,
+                             package=options.package,
+                             verbose=True)
+        else:
+
+            url_properties = UploadFiles(user, host, path, args,
+                                         base_path=options.base_path, port=port, ssh_key=key,
+                                         upload_to_temp_dir=upload_to_temp_dir,
+                                         post_upload_command=post_upload_command,
+                                         package=options.package, verbose=True)
+
+            WriteProperties(args, options.properties_file, url_properties, options.package)
     except IOError, (strerror):
         print strerror
         sys.exit(1)
-    except Exception, (err):
-        print err
-        sys.exit(2)
