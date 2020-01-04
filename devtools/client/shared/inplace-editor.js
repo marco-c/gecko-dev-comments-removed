@@ -52,6 +52,22 @@ const { findMostRelevantCssPropertyIndex } = require("./suggestion-picker");
 
 
 
+function isKeyIn(key, ...keys) {
+  return keys.some(expectedKey => {
+    return key === Ci.nsIDOMKeyEvent["DOM_VK_" + expectedKey];
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -142,8 +158,7 @@ function editableItem(options, callback) {
   
   
   element.addEventListener("keypress", function(evt) {
-    if (evt.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_RETURN ||
-        evt.charCode === Ci.nsIDOMKeyEvent.DOM_VK_SPACE) {
+    if (isKeyIn(evt.keyCode, "RETURN") || isKeyIn(evt.charCode, "SPACE")) {
       callback(element);
     }
   }, true);
@@ -968,14 +983,17 @@ InplaceEditor.prototype = {
   _onKeyPress: function(event) {
     let prevent = false;
 
-    let isPlainText = this.contentType == CONTENT_TYPES.PLAIN_TEXT;
-    let increment = isPlainText ? 0 : this._getIncrement(event);
+    let key = event.keyCode;
+    let input = this.input;
 
-    
-    if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_HOME ||
-        event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_END ||
-        event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_PAGE_UP ||
-        event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_PAGE_DOWN) {
+    let isPlainText = this.contentType == CONTENT_TYPES.PLAIN_TEXT;
+
+    let increment = 0;
+    if (!isPlainText) {
+      increment = this._getIncrement(event);
+    }
+
+    if (isKeyIn(key, "HOME", "END", "PAGE_UP", "PAGE_DOWN")) {
       this._preventSuggestions = true;
     }
 
@@ -985,16 +1003,13 @@ InplaceEditor.prototype = {
       prevent = true;
       cycling = true;
     } else if (increment && this.popup && this.popup.isOpen) {
-      cycling = true;
       prevent = true;
+      cycling = true;
       this._cycleCSSSuggestion(increment > 0);
       this._doValidation();
     }
 
-    if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_BACK_SPACE ||
-        event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_DELETE ||
-        event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_LEFT ||
-        event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_RIGHT) {
+    if (isKeyIn(key, "BACK_SPACE", "DELETE", "LEFT", "RIGHT")) {
       if (this.popup && this.popup.isOpen) {
         this.popup.hidePopup();
       }
@@ -1002,30 +1017,22 @@ InplaceEditor.prototype = {
       this._maybeSuggestCompletion(true);
     }
 
-    if (this.multiline &&
-        event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_RETURN &&
-        event.shiftKey) {
+    if (this.multiline && event.shiftKey && isKeyIn(key, "RETURN")) {
       prevent = false;
-    } else if (this._advanceChars(event.charCode, this.input.value,
-                                  this.input.selectionStart) ||
-               event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_RETURN ||
-               event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_TAB) {
+    } else if (
+      this._advanceChars(event.charCode, input.value, input.selectionStart) ||
+      isKeyIn(key, "RETURN", "TAB")) {
       prevent = true;
 
-      let direction = FOCUS_FORWARD;
-      if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_TAB &&
-          event.shiftKey) {
-        if (this.stopOnShiftTab) {
-          direction = null;
-        } else {
-          direction = FOCUS_BACKWARD;
-        }
-      }
-      if ((this.stopOnReturn &&
-           event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_RETURN) ||
-          (this.stopOnTab && event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_TAB &&
-           !event.shiftKey)) {
+      let direction;
+      if ((this.stopOnReturn && isKeyIn(key, "RETURN")) ||
+          (this.stopOnTab && !event.shiftKey && isKeyIn(key, "TAB")) ||
+          (this.stopOnShiftTab && event.shiftKey && isKeyIn(key, "TAB"))) {
         direction = null;
+      } else if (event.shiftKey && isKeyIn(key, "TAB")) {
+        direction = FOCUS_BACKWARD;
+      } else {
+        direction = FOCUS_FORWARD;
       }
 
       
@@ -1037,10 +1044,7 @@ InplaceEditor.prototype = {
         this._preventSuggestions = false;
       }
 
-      let input = this.input;
-
-      if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_TAB &&
-          this.contentType == CONTENT_TYPES.CSS_MIXED) {
+      if (isKeyIn(key, "TAB") && this.contentType == CONTENT_TYPES.CSS_MIXED) {
         if (this.popup && input.selectionStart < input.selectionEnd) {
           event.preventDefault();
           input.setSelectionRange(input.selectionEnd, input.selectionEnd);
@@ -1075,7 +1079,7 @@ InplaceEditor.prototype = {
       }
 
       this._clear();
-    } else if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_ESCAPE) {
+    } else if (isKeyIn(key, "ESCAPE")) {
       
       
       this._preventSuggestions = true;
@@ -1088,11 +1092,11 @@ InplaceEditor.prototype = {
       this._apply();
       this._clear();
       event.stopPropagation();
-    } else if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_SPACE) {
+    } else if (isKeyIn(key, "SPACE")) {
       
       
       
-      prevent = !this.input.value;
+      prevent = !input.value;
     }
 
     if (prevent) {
@@ -1109,18 +1113,16 @@ InplaceEditor.prototype = {
     const smallIncrement = 0.1;
 
     let increment = 0;
+    let key = event.keyCode;
 
-    if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_UP ||
-        event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_PAGE_UP) {
+    if (isKeyIn(key, "UP", "PAGE_UP")) {
       increment = 1;
-    } else if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_DOWN ||
-               event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_PAGE_DOWN) {
+    } else if (isKeyIn(key, "DOWN", "PAGE_DOWN")) {
       increment = -1;
     }
 
     if (event.shiftKey && !event.altKey) {
-      if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_PAGE_UP ||
-          event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_PAGE_DOWN) {
+      if (isKeyIn(key, "PAGE_UP", "PAGE_DOWN")) {
         increment *= largeIncrement;
       } else {
         increment *= mediumIncrement;
