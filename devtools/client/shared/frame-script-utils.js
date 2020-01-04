@@ -3,11 +3,14 @@
 
 
 "use strict";
-var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 const {require, loader} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const promise = require("promise");
 loader.lazyImporter(this, "Task", "resource://gre/modules/Task.jsm", "Task");
-
+const subScriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
+                          .getService(Ci.mozIJSSubScriptLoader);
+var EventUtils = {};
+subScriptLoader.loadSubScript("chrome://marionette/content/EventUtils.js", EventUtils);
 loader.lazyGetter(this, "nsIProfilerModule", () => {
   return Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler);
 });
@@ -175,6 +178,20 @@ addMessageListener("devtools:test:setAttribute", function(msg) {
   node.setAttribute(attributeName, attributeValue);
 
   sendAsyncMessage("devtools:test:setAttribute");
+});
+
+
+
+
+
+
+
+
+
+addMessageListener("Test:SynthesizeKey", function(msg) {
+  let {key, options} = msg.data;
+
+  EventUtils.synthesizeKey(key, options, content);
 });
 
 

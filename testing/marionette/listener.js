@@ -5,28 +5,33 @@
 var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 var uuidGen = Cc["@mozilla.org/uuid-generator;1"]
-    .getService(Ci.nsIUUIDGenerator);
+                .getService(Ci.nsIUUIDGenerator);
 
 var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
-    .getService(Ci.mozIJSSubScriptLoader);
+               .getService(Ci.mozIJSSubScriptLoader);
 
 loader.loadSubScript("chrome://marionette/content/simpletest.js");
 loader.loadSubScript("chrome://marionette/content/common.js");
 
-Cu.import("chrome://marionette/content/action.js");
-Cu.import("chrome://marionette/content/atom.js");
+Cu.import("chrome://marionette/content/actions.js");
 Cu.import("chrome://marionette/content/capture.js");
 Cu.import("chrome://marionette/content/cookies.js");
-Cu.import("chrome://marionette/content/element.js");
+Cu.import("chrome://marionette/content/elements.js");
 Cu.import("chrome://marionette/content/error.js");
-Cu.import("chrome://marionette/content/event.js");
 Cu.import("chrome://marionette/content/proxy.js");
-Cu.import("chrome://marionette/content/interaction.js");
+Cu.import("chrome://marionette/content/interactions.js");
 
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+var utils = {};
+utils.window = content;
+
+loader.loadSubScript("chrome://marionette/content/EventUtils.js", utils);
+loader.loadSubScript("chrome://marionette/content/ChromeUtils.js", utils);
+loader.loadSubScript("chrome://marionette/content/atoms.js", utils);
+loader.loadSubScript("chrome://marionette/content/sendkeys.js", utils);
 
 var marionetteLogObj = new MarionetteLogObj();
 
@@ -43,9 +48,9 @@ var elementManager = new ElementManager([]);
 
 
 var capabilities = {};
-var interactions = new Interactions(() => capabilities);
+var interactions = new Interactions(utils, () => capabilities);
 
-var actions = new action.Chain(checkForInterrupted);
+var actions = new actions.Chain(utils, checkForInterrupted);
 var importedScripts = null;
 
 
@@ -524,6 +529,7 @@ function createExecuteContentSandbox(win, timeout) {
   sandbox.window = win;
   sandbox.document = sandbox.window.document;
   sandbox.navigator = sandbox.window.navigator;
+  sandbox.testUtils = utils;
   sandbox.asyncTestCommandId = asyncTestCommandId;
   sandbox.marionette = mn;
 
@@ -890,10 +896,64 @@ function coordinates(target, x, y) {
 
 
 
+
+
+
+function elementInViewport(el, x, y) {
+  let c = coordinates(el, x, y);
+  let curFrame = curContainer.frame;
+  let viewPort = {top: curFrame.pageYOffset,
+                  left: curFrame.pageXOffset,
+                  bottom: (curFrame.pageYOffset + curFrame.innerHeight),
+                  right:(curFrame.pageXOffset + curFrame.innerWidth)};
+  return (viewPort.left <= c.x + curFrame.pageXOffset &&
+          c.x + curFrame.pageXOffset <= viewPort.right &&
+          viewPort.top <= c.y + curFrame.pageYOffset &&
+          c.y + curFrame.pageYOffset <= viewPort.bottom);
+}
+
+
+
+
+
+
+
+function checkVisible(el, x, y) {
+  
+  if (utils.getElementAttribute(el, "namespaceURI").indexOf("there.is.only.xul") == -1) {
+    
+    let visible = utils.isElementDisplayed(el);
+    if (!visible) {
+      return false;
+    }
+  }
+
+  if (el.tagName.toLowerCase() === 'body') {
+    return true;
+  }
+  if (!elementInViewport(el, x, y)) {
+    
+    if (el.scrollIntoView) {
+      el.scrollIntoView(false);
+      if (!elementInViewport(el)) {
+        return false;
+      }
+    }
+    else {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
+
+
 function singleTap(id, corx, cory) {
   let el = elementManager.getKnownElement(id, curContainer);
   
-  let visible = elements.checkVisible(el, curContainer.frame, corx, cory);
+  let visible = checkVisible(el, corx, cory);
   if (!visible) {
     throw new ElementNotVisibleError("Element is not currently visible and may not be manipulated");
   }
@@ -1333,7 +1393,7 @@ function clickElement(id) {
 
 function getElementAttribute(id, name) {
   let el = elementManager.getKnownElement(id, curContainer);
-  return atom.getElementAttribute(el, name, curContainer.frame);
+  return utils.getElementAttribute(el, name);
 }
 
 
@@ -1347,7 +1407,7 @@ function getElementAttribute(id, name) {
 
 function getElementText(id) {
   let el = elementManager.getKnownElement(id, curContainer);
-  return atom.getElementText(el, curContainer.frame);
+  return utils.getElementText(el);
 }
 
 
@@ -1451,11 +1511,11 @@ function sendKeysToElement(msg) {
         
         
         sendSyncMessage("Marionette:getFiles",
-            {value: p, command_id: command_id});
+                        {value: p, command_id: command_id});
   } else {
     interactions.sendKeysToElement(curContainer, elementManager, id, val)
-        .then(() => sendOk(command_id))
-        .catch(e => sendError(e, command_id));
+      .then(() => sendOk(command_id))
+      .catch(e => sendError(e, command_id));
   }
 }
 
@@ -1468,7 +1528,7 @@ function clearElement(id) {
     if (el.type == "file") {
       el.value = null;
     } else {
-      atom.clearElement(el, curContainer.frame);
+      utils.clearElement(el);
     }
   } catch (e) {
     
