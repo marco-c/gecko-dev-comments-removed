@@ -43,7 +43,7 @@ DEF_TEST(SerializesEdgeNames, {
     
     ExpectWriteNode(writer, referent);
 
-    JS::AutoCheckCannotGC noGC(rt);
+    JS::AutoCheckCannotGC noGC(cx);
     ASSERT_TRUE(WriteHeapGraph(cx,
                                JS::ubi::Node(&node),
                                writer,

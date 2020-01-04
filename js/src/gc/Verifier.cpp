@@ -508,7 +508,7 @@ bool
 CheckHeapTracer::check(AutoLockForExclusiveAccess& lock)
 {
     
-    JS::AutoSuppressGCAnalysis nogc(rt);
+    JS::AutoSuppressGCAnalysis nogc;
     rt->gc.markRuntime(this, GCRuntime::TraceRuntime, lock);
 
     while (!stack.empty()) {

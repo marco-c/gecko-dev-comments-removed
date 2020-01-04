@@ -121,7 +121,7 @@ EnterBaseline(JSContext* cx, EnterJitData& data)
     
     
     mozilla::Maybe<JS::AutoAssertOnGC> nogc;
-    nogc.emplace(cx->runtime());
+    nogc.emplace(cx);
 #endif
 
     MOZ_ASSERT(jit::IsBaselineEnabled(cx));

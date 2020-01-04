@@ -53,7 +53,7 @@ DEF_TEST(DoesntCrossCompartmentBoundaries, {
 
     
 
-    JS::AutoCheckCannotGC noGC(rt);
+    JS::AutoCheckCannotGC noGC(cx);
 
     ASSERT_TRUE(WriteHeapGraph(cx,
                                JS::ubi::Node(&nodeA),
