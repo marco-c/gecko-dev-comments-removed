@@ -140,6 +140,7 @@ public:
     inline void SetObservingRefreshDriver(bool aObserving);
     inline nsresult ProcessRestyledFrames(nsStyleChangeList& aChangeList);
     inline void FlushOverflowChangedTracker();
+    inline void NotifyDestroyingFrame(nsIFrame* aFrame);
 
   private:
     

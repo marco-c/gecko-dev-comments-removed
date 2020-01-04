@@ -59,10 +59,6 @@ public:
 
   
   
-  void NotifyDestroyingFrame(nsIFrame* aFrame);
-
-  
-  
   nsresult ContentStateChanged(nsIContent*   aContent,
                                EventStates aStateMask);
 
@@ -395,11 +391,6 @@ public:
     PostRestyleEventInternal(true);
   }
 
-  void FlushOverflowChangedTracker()
-  {
-    mOverflowChangedTracker.Flush();
-  }
-
 #ifdef DEBUG
   static nsCString ChangeHintToString(nsChangeHint aHint);
 #endif
@@ -518,8 +509,6 @@ private:
 
   nsChangeHint mRebuildAllExtraHint;
   nsRestyleHint mRebuildAllRestyleHint;
-
-  OverflowChangedTracker mOverflowChangedTracker;
 
   
   

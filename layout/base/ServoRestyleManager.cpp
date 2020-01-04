@@ -367,17 +367,8 @@ ServoRestyleManager::SnapshotForElement(Element* aElement)
 nsresult
 ServoRestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
 {
-  
-  OverflowChangedTracker overflowChangedTracker;
   return base_type::ProcessRestyledFrames(aChangeList, *PresContext(),
-                                          overflowChangedTracker);
-}
-
-void
-ServoRestyleManager::FlushOverflowChangedTracker()
-{
-  MOZ_CRASH("stylo: ServoRestyleManager::FlushOverflowChangedTracker "
-            "not implemented for Servo-backed style system");
+                                          mOverflowChangedTracker);
 }
 
 } 

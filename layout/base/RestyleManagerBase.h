@@ -7,13 +7,13 @@
 #ifndef mozilla_RestyleManagerBase_h
 #define mozilla_RestyleManagerBase_h
 
+#include "mozilla/OverflowChangedTracker.h"
 #include "nsChangeHint.h"
 
 class nsStyleChangeList;
 
 namespace mozilla {
 
-class OverflowChangedTracker;
 class ServoRestyleManager;
 class RestyleManager;
 
@@ -53,6 +53,16 @@ public:
 
   static void DebugVerifyStyleTree(nsIFrame* aFrame);
 #endif
+
+  void FlushOverflowChangedTracker() {
+    mOverflowChangedTracker.Flush();
+  }
+
+  
+  
+  void NotifyDestroyingFrame(nsIFrame* aFrame) {
+    mOverflowChangedTracker.RemoveFrame(aFrame);
+  }
 
 protected:
   void ContentStateChangedInternal(Element* aElement,
@@ -103,11 +113,13 @@ private:
   
   bool mObservingRefreshDriver;
 
+protected:
+  OverflowChangedTracker mOverflowChangedTracker;
+
   
 
 
 
-protected:
   static nsIFrame*
   GetNearestAncestorFrame(nsIContent* aContent);
 
