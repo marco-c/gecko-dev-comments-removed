@@ -203,6 +203,13 @@ public:
 
   
   
+  virtual int64_t GetEvictionOffset(const media::TimeUnit& aTime)
+  {
+    return INT64_MAX;
+  }
+
+  
+  
   virtual void BreakCycles()
   {
   }
