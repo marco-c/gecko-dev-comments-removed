@@ -21,6 +21,8 @@
 #include "mozilla/dom/StructuredClone.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/MessagePortBinding.h"
+#include "mozilla/dom/OffscreenCanvas.h"
+#include "mozilla/dom/OffscreenCanvasBinding.h"
 #include "mozilla/dom/PMessagePort.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/dom/SubtleCryptoBinding.h"
@@ -425,15 +427,14 @@ StructuredCloneHelper::ReadFullySerializableObjects(JSContext* aCx,
     } else if (aTag == SCTAG_DOM_NULL_PRINCIPAL) {
       info = mozilla::ipc::NullPrincipalInfo();
     } else {
-      uint32_t appId = aIndex;
-
-      uint32_t isInBrowserElement, specLength;
-      if (!JS_ReadUint32Pair(aReader, &isInBrowserElement, &specLength)) {
+      uint32_t suffixLength, specLength;
+      if (!JS_ReadUint32Pair(aReader, &suffixLength, &specLength)) {
         return nullptr;
       }
 
-      uint32_t signedPkgLength, dummy;
-      if (!JS_ReadUint32Pair(aReader, &signedPkgLength, &dummy)) {
+      nsAutoCString suffix;
+      suffix.SetLength(suffixLength);
+      if (!JS_ReadBytes(aReader, suffix.BeginWriting(), suffixLength)) {
         return nullptr;
       }
 
@@ -443,14 +444,9 @@ StructuredCloneHelper::ReadFullySerializableObjects(JSContext* aCx,
         return nullptr;
       }
 
-      nsAutoCString signedPkg;
-      signedPkg.SetLength(signedPkgLength);
-      if (!JS_ReadBytes(aReader, signedPkg.BeginWriting(), signedPkgLength)) {
-        return nullptr;
-      }
-
-      info = mozilla::ipc::ContentPrincipalInfo(appId, isInBrowserElement,
-                                                spec, signedPkg);
+      OriginAttributes attrs;
+      attrs.PopulateFromSuffix(suffix);
+      info = mozilla::ipc::ContentPrincipalInfo(attrs, spec);
     }
 
     nsresult rv;
@@ -577,13 +573,12 @@ StructuredCloneHelper::WriteFullySerializableObjects(JSContext* aCx,
 
       MOZ_ASSERT(info.type() == mozilla::ipc::PrincipalInfo::TContentPrincipalInfo);
       const mozilla::ipc::ContentPrincipalInfo& cInfo = info;
-      return JS_WriteUint32Pair(aWriter, SCTAG_DOM_CONTENT_PRINCIPAL,
-                                cInfo.appId()) &&
-             JS_WriteUint32Pair(aWriter, cInfo.isInBrowserElement(),
-                                cInfo.spec().Length()) &&
-             JS_WriteUint32Pair(aWriter, cInfo.signedPkg().Length(), 0) &&
-             JS_WriteBytes(aWriter, cInfo.spec().get(), cInfo.spec().Length()) &&
-             JS_WriteBytes(aWriter, cInfo.signedPkg().get(), cInfo.signedPkg().Length());
+      nsAutoCString suffix;
+      cInfo.attrs().CreateSuffix(suffix);
+      return JS_WriteUint32Pair(aWriter, SCTAG_DOM_CONTENT_PRINCIPAL, 0) &&
+             JS_WriteUint32Pair(aWriter, suffix.Length(), cInfo.spec().Length()) &&
+             JS_WriteBytes(aWriter, suffix.get(), suffix.Length()) &&
+             JS_WriteBytes(aWriter, cInfo.spec().get(), cInfo.spec().Length());
     }
   }
 
@@ -1069,6 +1064,25 @@ StructuredCloneHelper::ReadTransferCallback(JSContext* aCx,
     return true;
   }
 
+  if (aTag == SCTAG_DOM_CANVAS) {
+    MOZ_ASSERT(mContext == SameProcessSameThread ||
+               mContext == SameProcessDifferentThread);
+    MOZ_ASSERT(aContent);
+    OffscreenCanvasCloneData* data =
+      static_cast<OffscreenCanvasCloneData*>(aContent);
+    nsRefPtr<OffscreenCanvas> canvas = OffscreenCanvas::CreateFromCloneData(data);
+    delete data;
+
+    JS::Rooted<JS::Value> value(aCx);
+    if (!GetOrCreateDOMReflector(aCx, canvas, &value)) {
+      JS_ClearPendingException(aCx);
+      return false;
+    }
+
+    aReturnObject.set(&value.toObject());
+    return true;
+  }
+
   return false;
 }
 
@@ -1100,6 +1114,24 @@ StructuredCloneHelper::WriteTransferCallback(JSContext* aCx,
 
       return true;
     }
+
+    if (mContext == SameProcessSameThread ||
+        mContext == SameProcessDifferentThread) {
+      OffscreenCanvas* canvas = nullptr;
+      rv = UNWRAP_OBJECT(OffscreenCanvas, aObj, canvas);
+      if (NS_SUCCEEDED(rv)) {
+        MOZ_ASSERT(canvas);
+
+        *aExtraData = 0;
+        *aTag = SCTAG_DOM_CANVAS;
+        *aOwnership = JS::SCTAG_TMO_CUSTOM;
+        *aContent = canvas->ToCloneData();
+        MOZ_ASSERT(*aContent);
+        canvas->SetNeutered();
+
+        return true;
+      }
+    }
   }
 
   return false;
@@ -1117,6 +1149,17 @@ StructuredCloneHelper::FreeTransferCallback(uint32_t aTag,
     MOZ_ASSERT(!aContent);
     MOZ_ASSERT(aExtraData < mPortIdentifiers.Length());
     MessagePort::ForceClose(mPortIdentifiers[aExtraData]);
+    return;
+  }
+
+  if (aTag == SCTAG_DOM_CANVAS) {
+    MOZ_ASSERT(mContext == SameProcessSameThread ||
+               mContext == SameProcessDifferentThread);
+    MOZ_ASSERT(aContent);
+    OffscreenCanvasCloneData* data =
+      static_cast<OffscreenCanvasCloneData*>(aContent);
+    delete data;
+    return;
   }
 }
 
