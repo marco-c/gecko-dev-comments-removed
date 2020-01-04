@@ -268,9 +268,9 @@ CSSTransition::GetCurrentTimeAt(const DocumentTimeline& aTimeline,
 }
 
 void
-CSSTransition::SetEffect(AnimationEffectReadOnly* aEffect)
+CSSTransition::SetEffectFromStyle(AnimationEffectReadOnly* aEffect)
 {
-  Animation::SetEffect(aEffect);
+  Animation::SetEffectNoUpdate(aEffect);
 
   
   ElementPropertyTransition* pt = aEffect ? aEffect->AsTransition() : nullptr;
@@ -802,7 +802,7 @@ nsTransitionManager::ConsiderStartingTransition(
   
   
   
-  animation->SetEffect(pt);
+  animation->SetEffectFromStyle(pt);
   animation->PlayFromStyle();
 
   if (!aElementTransitions) {
