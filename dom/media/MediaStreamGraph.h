@@ -982,16 +982,25 @@ protected:
 
 
 
+
+
+
+
+
+
+
+
 class MediaInputPort final
 {
 private:
   
   MediaInputPort(MediaStream* aSource, TrackID& aSourceTrack,
-                 ProcessedMediaStream* aDest,
+                 ProcessedMediaStream* aDest, TrackID& aDestTrack,
                  uint16_t aInputNumber, uint16_t aOutputNumber)
     : mSource(aSource)
     , mSourceTrack(aSourceTrack)
     , mDest(aDest)
+    , mDestTrack(aDestTrack)
     , mInputNumber(aInputNumber)
     , mOutputNumber(aOutputNumber)
     , mGraph(nullptr)
@@ -1025,6 +1034,7 @@ public:
   MediaStream* GetSource() { return mSource; }
   TrackID GetSourceTrackId() { return mSourceTrack; }
   ProcessedMediaStream* GetDestination() { return mDest; }
+  TrackID GetDestinationTrackId() { return mDestTrack; }
 
   
   void BlockTrackId(TrackID aTrackId);
@@ -1086,6 +1096,7 @@ private:
   MediaStream* mSource;
   TrackID mSourceTrack;
   ProcessedMediaStream* mDest;
+  TrackID mDestTrack;
   
   
   const uint16_t mInputNumber;
@@ -1117,10 +1128,18 @@ public:
 
 
 
-  already_AddRefed<MediaInputPort> AllocateInputPort(MediaStream* aStream,
-                                                     TrackID aTrackID = TRACK_ANY,
-                                                     uint16_t aInputNumber = 0,
-                                                     uint16_t aOutputNumber = 0);
+
+
+
+
+
+
+  already_AddRefed<MediaInputPort>
+  AllocateInputPort(MediaStream* aStream,
+                    TrackID aTrackID = TRACK_ANY,
+                    TrackID aDestTrackID = TRACK_ANY,
+                    uint16_t aInputNumber = 0,
+                    uint16_t aOutputNumber = 0);
   
 
 
