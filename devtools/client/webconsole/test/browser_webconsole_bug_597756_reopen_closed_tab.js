@@ -15,7 +15,7 @@ const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
 
 var HUD;
 
-var test = asyncTest(function* () {
+add_task(function* () {
   
   
   if (!Services.appinfo.browserTabsRemoteAutostart) {

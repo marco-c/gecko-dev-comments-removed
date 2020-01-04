@@ -7,7 +7,7 @@
 
 "use strict";
 
-var test = asyncTest(function* () {
+add_task(function* () {
   
   
   if (!Services.appinfo.browserTabsRemoteAutostart) {

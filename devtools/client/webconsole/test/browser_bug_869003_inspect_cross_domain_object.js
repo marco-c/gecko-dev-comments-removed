@@ -11,7 +11,7 @@
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
                  "test/test-bug-869003-top-window.html";
 
-var test = asyncTest(function* () {
+add_task(function* () {
   
   
   
