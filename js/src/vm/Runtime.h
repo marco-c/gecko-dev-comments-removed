@@ -1155,9 +1155,6 @@ struct JSRuntime : public JS::shadow::Runtime,
     JSDestroyPrincipalsOp destroyPrincipals;
 
     
-    const JSStructuredCloneCallbacks* structuredCloneCallbacks;
-
-    
     JSErrorReporter     errorReporter;
 
     
