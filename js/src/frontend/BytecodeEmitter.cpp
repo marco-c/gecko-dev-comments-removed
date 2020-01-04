@@ -4222,6 +4222,8 @@ BytecodeEmitter::emitDestructuringOpsArrayHelper(ParseNode* pattern, VarEmitOpti
                 return false;
             if (!emit1(JSOP_UNDEFINED))                           
                 return false;
+            if (!emit1(JSOP_NOP_DESTRUCTURING))
+                return false;
 
             
             JumpList jmp;

@@ -264,9 +264,14 @@ class BytecodeParser
         
         void mergeOffsetStack(const uint32_t* stack, uint32_t depth) {
             MOZ_ASSERT(depth == stackDepth);
-            for (uint32_t n = 0; n < stackDepth; n++)
+            for (uint32_t n = 0; n < stackDepth; n++) {
+                if (stack[n] == SpecialOffsets::IgnoreOffset)
+                    continue;
+                if (offsetStack[n] == SpecialOffsets::IgnoreOffset)
+                    offsetStack[n] = stack[n];
                 if (offsetStack[n] != stack[n])
-                    offsetStack[n] = UINT32_MAX;
+                    offsetStack[n] = SpecialOffsets::UnknownOffset;
+            }
         }
     };
 
@@ -275,6 +280,14 @@ class BytecodeParser
     RootedScript script_;
 
     Bytecode** codeArray_;
+
+    
+    
+    struct SpecialOffsets {
+        static const uint32_t UnknownOffset = UINT32_MAX;
+        static const uint32_t IgnoreOffset = UINT32_MAX - 1;
+        static const uint32_t FirstSpecialOffset = IgnoreOffset;
+    };
 
   public:
     BytecodeParser(JSContext* cx, JSScript* script)
@@ -309,7 +322,7 @@ class BytecodeParser
     }
     jsbytecode* pcForStackOperand(jsbytecode* pc, int operand) {
         uint32_t offset = offsetForStackOperand(script_->pcToOffset(pc), operand);
-        if (offset == UINT32_MAX)
+        if (offset >= SpecialOffsets::FirstSpecialOffset)
             return nullptr;
         return script_->offsetToPC(offsetForStackOperand(script_->pcToOffset(pc), operand));
     }
@@ -373,6 +386,11 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t* offsetStack, uint
       default:
         for (uint32_t n = 0; n != ndefs; ++n)
             offsetStack[stackDepth + n] = offset;
+        break;
+
+      case JSOP_NOP_DESTRUCTURING:
+        
+        offsetStack[stackDepth - 1] = SpecialOffsets::IgnoreOffset;
         break;
 
       case JSOP_CASE:
