@@ -795,6 +795,7 @@ var Impl = {
     try {
       
       TelemetryReportingPolicy.shutdown();
+      TelemetryEnvironment.shutdown();
 
       
       yield TelemetrySend.shutdown();

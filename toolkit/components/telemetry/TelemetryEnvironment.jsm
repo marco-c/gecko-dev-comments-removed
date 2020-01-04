@@ -77,6 +77,10 @@ this.TelemetryEnvironment = {
     return getGlobal().unregisterChangeListener(name);
   },
 
+  shutdown: function() {
+    return getGlobal().shutdown();
+  },
+
   
   RECORD_PREF_STATE: 1, 
   RECORD_PREF_VALUE: 2, 
@@ -797,6 +801,11 @@ EnvironmentCache.prototype = {
       return;
     }
     this._changeListeners.delete(name);
+  },
+
+  shutdown: function() {
+    this._log.trace("shutdown");
+    this._shutdown = true;
   },
 
   
