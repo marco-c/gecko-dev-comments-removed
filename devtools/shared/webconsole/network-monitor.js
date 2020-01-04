@@ -838,7 +838,8 @@ NetworkMonitor.prototype = {
 
     
     httpActivity.isXHR = event.isXHR =
-        (aChannel.loadInfo.externalContentPolicyType === Ci.nsIContentPolicy.TYPE_XMLHTTPREQUEST);
+        (aChannel.loadInfo.externalContentPolicyType === Ci.nsIContentPolicy.TYPE_XMLHTTPREQUEST ||
+         aChannel.loadInfo.externalContentPolicyType === Ci.nsIContentPolicy.TYPE_FETCH);
 
     
     let httpVersionMaj = {};
