@@ -5,6 +5,7 @@
 
 
 #include "nsAttrValue.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsCSPUtils.h"
 #include "nsDebug.h"

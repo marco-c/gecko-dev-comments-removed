@@ -11,6 +11,7 @@
 #include "cert.h"
 #include "CSTrustDomain.h"
 #include "nsIContentSignatureVerifier.h"
+#include "nsIStreamListener.h"
 #include "nsNSSShutDown.h"
 #include "ScopedNSSTypes.h"
 
@@ -22,15 +23,21 @@
     "@mozilla.org/security/contentsignatureverifier;1"
 
 class ContentSignatureVerifier final : public nsIContentSignatureVerifier
+                                     , public nsIStreamListener
                                      , public nsNSSShutDownObject
+                                     , public nsIInterfaceRequestor
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSICONTENTSIGNATUREVERIFIER
+  NS_DECL_NSIINTERFACEREQUESTOR
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSIREQUESTOBSERVER
 
   ContentSignatureVerifier()
     : mCx(nullptr)
-    , mMutex("CSVerifier::mMutex")
+    , mInitialised(false)
+    , mHasCertChain(false)
   {
   }
 
@@ -44,8 +51,11 @@ private:
   ~ContentSignatureVerifier();
 
   nsresult UpdateInternal(const nsACString& aData,
-                          MutexAutoLock& ,
                           const nsNSSShutDownPreventionLock& );
+  nsresult DownloadCertChain();
+  nsresult CreateContextInternal(const nsACString& aData,
+                                 const nsACString& aCertChain,
+                                 const nsACString& aName);
 
   void destructorSafeDestroyNSSReference()
   {
@@ -57,11 +67,26 @@ private:
 
   
   mozilla::UniqueVFYContext mCx;
+  bool mInitialised;
+  
+  
+  
+  
+  bool mHasCertChain;
   
   nsCString mSignature;
   
+  nsCString mCertChainURL;
+  
+  FallibleTArray<nsCString> mCertChain;
+  
   mozilla::UniqueSECKEYPublicKey mKey;
-  mozilla::Mutex mMutex;
+  
+  nsCString mName;
+  
+  nsCOMPtr<nsIContentSignatureReceiverCallback> mCallback;
+  
+  nsCOMPtr<nsIChannel> mChannel;
 };
 
 #endif 

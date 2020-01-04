@@ -7,12 +7,11 @@
 #define mozilla_dom_ContentVerifier_h
 
 #include "nsCOMPtr.h"
+#include "nsIContentSignatureVerifier.h"
 #include "nsIObserver.h"
 #include "nsIStreamListener.h"
-#include "nsNSSShutDown.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "ScopedNSSTypes.h"
 
 
 
@@ -22,77 +21,44 @@
 
 
 class ContentVerifier : public nsIStreamListener
-                      , public nsNSSShutDownObject
+                      , public nsIContentSignatureReceiverCallback
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSICONTENTSIGNATURERECEIVERCALLBACK
 
   explicit ContentVerifier(nsIStreamListener* aMediatedListener,
                            nsISupports* aMediatedContext)
     : mNextListener(aMediatedListener)
-    , mContext(aMediatedContext)
-    , mCx(nullptr) {}
+    , mContextCreated(false)
+    , mContentRead(false) {}
 
-  nsresult Init(const nsAString& aContentSignatureHeader);
-
-  
-  virtual void virtualDestroyNSSReference() override
-  {
-    destructorSafeDestroyNSSReference();
-  }
+  nsresult Init(const nsACString& aContentSignatureHeader, nsIRequest* aRequest,
+                nsISupports* aContext);
 
 protected:
-  virtual ~ContentVerifier()
-  {
-    nsNSSShutDownPreventionLock locker;
-    if (isAlreadyShutDown()) {
-      return;
-    }
-    destructorSafeDestroyNSSReference();
-    shutdown(calledFromObject);
-  }
-
-  void destructorSafeDestroyNSSReference()
-  {
-    mCx = nullptr;
-  }
+  virtual ~ContentVerifier() {}
 
 private:
-  nsresult ParseContentSignatureHeader(const nsAString& aContentSignatureHeader);
-  nsresult GetVerificationKey(const nsAString& aKeyId);
+  void FinishSignature();
 
-  
-  nsresult ParseInput(mozilla::ScopedSECKEYPublicKey& aPublicKeyOut,
-                      mozilla::ScopedSECItem& aSignatureItemOut,
-                      SECOidTag& aOidOut,
-                      const nsNSSShutDownPreventionLock&);
-
-  
-  nsresult CreateContext();
-
-  
-  nsresult Update(const nsACString& aData);
-
-  
-  
-  nsresult End(bool* _retval);
-
-  
-  nsCOMPtr<nsIStreamListener> mNextListener;
-  nsCOMPtr<nsISupports> mContext;
-
-  
-  mozilla::UniqueVFYContext mCx;
   
   FallibleTArray<nsCString> mContent;
   
-  nsCString mSignature;
+  nsCOMPtr<nsIStreamListener> mNextListener;
   
-  nsCString mKey;
+  nsCOMPtr<nsIContentSignatureVerifier> mVerifier;
   
-  nsString mVks;
+  nsCOMPtr<nsIRequest> mContentRequest;
+  nsCOMPtr<nsISupports> mContentContext;
+  
+  
+  
+  
+  bool mContextCreated;
+  bool mContentRead;
 };
 
 #endif 
