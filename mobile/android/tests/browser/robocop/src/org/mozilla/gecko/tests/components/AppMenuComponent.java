@@ -35,8 +35,6 @@ import com.jayway.android.robotium.solo.Solo;
 public class AppMenuComponent extends BaseComponent {
     private static final long MAX_WAITTIME_FOR_MENU_UPDATE_IN_MS = 7500L;
 
-    private Boolean hasLegacyMenu = null;
-
     public enum MenuItem {
         FORWARD(R.string.forward),
         NEW_TAB(R.string.new_tab),
@@ -88,60 +86,27 @@ public class AppMenuComponent extends BaseComponent {
         fAssertFalse("Menu is not open", isMenuOpen());
     }
 
-    
-
-
-
-
-
-
-
-    private boolean hasLegacyMenu() {
-        if (hasLegacyMenu == null) {
-            hasLegacyMenu = findAppMenuItemView(MenuItem.PAGE.getString(mSolo)) == null;
-        }
-
-        return hasLegacyMenu;
-    }
-
     public void assertMenuItemIsDisabledAndVisible(PageMenuItem pageMenuItem) {
         openAppMenu();
 
-        if (!hasLegacyMenu()) {
-            
-            final View parentMenuItemView = findAppMenuItemView(MenuItem.PAGE.getString(mSolo));
-            if (parentMenuItemView.isEnabled()) {
-                fAssertTrue("The parent 'page' menu item is enabled", parentMenuItemView.isEnabled());
-                fAssertEquals("The parent 'page' menu item is visible", View.VISIBLE,
-                        parentMenuItemView.getVisibility());
+        
+        final View parentMenuItemView = findAppMenuItemView(MenuItem.PAGE.getString(mSolo));
+        if (parentMenuItemView.isEnabled()) {
+            fAssertTrue("The parent 'page' menu item is enabled", parentMenuItemView.isEnabled());
+            fAssertEquals("The parent 'page' menu item is visible", View.VISIBLE,
+            parentMenuItemView.getVisibility());
 
-                
-                pressMenuItem(MenuItem.PAGE.getString(mSolo));
-
-                final View pageMenuItemView = findAppMenuItemView(pageMenuItem.getString(mSolo));
-                fAssertNotNull("The page menu item is not null", pageMenuItemView);
-                fAssertFalse("The page menu item is not enabled", pageMenuItemView.isEnabled());
-                fAssertEquals("The page menu item is visible", View.VISIBLE, pageMenuItemView.getVisibility());
-            } else {
-                fAssertFalse("The parent 'page' menu item is not enabled", parentMenuItemView.isEnabled());
-                fAssertEquals("The parent 'page' menu item is visible", View.VISIBLE, parentMenuItemView.getVisibility());
-            }
-        } else {
             
-            
-            
-            
-            
-            openLegacyMoreMenu();
+            pressMenuItem(MenuItem.PAGE.getString(mSolo));
 
             final View pageMenuItemView = findAppMenuItemView(pageMenuItem.getString(mSolo));
+            fAssertNotNull("The page menu item is not null", pageMenuItemView);
             fAssertFalse("The page menu item is not enabled", pageMenuItemView.isEnabled());
             fAssertEquals("The page menu item is visible", View.VISIBLE, pageMenuItemView.getVisibility());
-
-            
-            mSolo.goBack();
+        } else {
+            fAssertFalse("The parent 'page' menu item is not enabled", parentMenuItemView.isEnabled());
+            fAssertEquals("The parent 'page' menu item is visible", View.VISIBLE, parentMenuItemView.getVisibility());
         }
-
         
         mSolo.goBack();
     }
@@ -207,32 +172,23 @@ public class AppMenuComponent extends BaseComponent {
     }
 
     private void pressMenuItem(final String menuItemTitle) {
-        if (!hasLegacyMenu()) {
             final View menuItemView = findAppMenuItemView(menuItemTitle);
             fAssertTrue("Menu is open", isMenuOpen(menuItemView));
 
             fAssertTrue(String.format("The menu item %s is enabled", menuItemTitle), menuItemView.isEnabled());
             fAssertEquals(String.format("The menu item %s is visible", menuItemTitle), View.VISIBLE,
-                    menuItemView.getVisibility());
+            menuItemView.getVisibility());
 
             mSolo.clickOnView(menuItemView);
-        } else {
-            fAssertTrue("Menu is open", isMenuOpen(menuItemTitle));
-            pressLegacyMenuItem(menuItemTitle);
-        }
     }
 
     private void pressSubMenuItem(final String parentMenuItemTitle, final String childMenuItemTitle) {
         openAppMenu();
 
-        if (!hasLegacyMenu()) {
-            pressMenuItem(parentMenuItemTitle);
+        pressMenuItem(parentMenuItemTitle);
 
-            
-            pressMenuItem(childMenuItemTitle);
-        } else {
-            pressLegacyMenuItem(childMenuItemTitle);
-        }
+        
+        pressMenuItem(childMenuItemTitle);        
     }
 
     public void pressMenuItem(MenuItem menuItem) {
@@ -258,25 +214,6 @@ public class AppMenuComponent extends BaseComponent {
         waitForMenuOpen();
     }
 
-    
-
-
-
-    private void openLegacyMoreMenu() {
-        fAssertTrue("The base menu is already open", isMenuOpen());
-
-        
-        
-        mSolo.clickOnText("^More$");
-
-        WaitHelper.waitFor("legacy \"More\" menu to open", new Condition() {
-            @Override
-            public boolean isSatisfied() {
-                return isLegacyMoreMenuOpen();
-            }
-        });
-    }
-
     private void pressOverflowMenuButton() {
         final View overflowMenuButton = getOverflowMenuButtonView();
 
@@ -295,12 +232,6 @@ public class AppMenuComponent extends BaseComponent {
         
         
         return isMenuOpen(MenuItem.NEW_TAB.getString(mSolo)) || isMenuOpen(MenuItem.PAGE.getString(mSolo));
-    }
-
-    private boolean isLegacyMoreMenuOpen() {
-        
-        final String shareTitle = mSolo.getString(R.string.share);
-        return RobotiumHelper.searchExactText(shareTitle, true);
     }
 
     
