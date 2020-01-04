@@ -321,7 +321,7 @@ public:
   {
     return mMayHavePaintEventListener;
   }
-  
+
   
 
 
@@ -846,6 +846,12 @@ public:
     GetDoc();
     return GetCurrentInnerWindow();
   }
+
+  
+
+
+  void SetInitialKeyboardIndicators(UIStateChangeType aShowAccelerators,
+                                    UIStateChangeType aShowFocusRings);
 
   
   
