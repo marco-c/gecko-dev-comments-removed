@@ -214,22 +214,15 @@ var AddonWatcher = {
         
         let tolerance = Preferences.get("browser.addon-watch.tolerance", 3);
 
-        for (let item of snapshot.componentsData) {
-          let addonId = item.addonId;
-          if (!item.isSystem || !addonId) {
-            
-            continue;
-          }
+        for (let [addonId, item] of snapshot.addons) {
           if (this._ignoreList.has(addonId)) {
             
             
             continue;
           }
 
-          
-          
-          let previous = this._previousPerformanceIndicators[item.groupId];
-          this._previousPerformanceIndicators[item.groupId] = item;
+          let previous = this._previousPerformanceIndicators[addonId];
+          this._previousPerformanceIndicators[addonId] = item;
 
           if (!previous) {
             
@@ -281,7 +274,7 @@ var AddonWatcher = {
 
             stats.alerts[filter] = (stats.alerts[filter] || 0) + 1;
 
-		    if (stats.alerts[filter] % tolerance != 0) {
+            if (stats.alerts[filter] % tolerance != 0) {
               continue;
             }
 
