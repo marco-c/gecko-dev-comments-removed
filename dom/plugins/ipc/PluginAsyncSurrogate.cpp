@@ -565,6 +565,10 @@ PluginAsyncSurrogate::NotifyAsyncInitFailed()
   }
   mPendingNewStreamCalls.Clear();
 
+  
+  
+  mInitCancelled = true;
+
   nsNPAPIPluginInstance* inst =
     static_cast<nsNPAPIPluginInstance*>(mInstance->ndata);
   if (!inst) {
