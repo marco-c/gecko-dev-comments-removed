@@ -215,13 +215,6 @@ ParseTask::init(JSContext* cx, const ReadOnlyCompileOptions& options)
     if (!this->options.copy(cx, options))
         return false;
 
-    
-    
-    
-    
-    if (cx->compartment()->debuggerObservesAsmJS())
-        this->options.asmJSOption = false;
-
     return true;
 }
 
