@@ -336,12 +336,25 @@ using ManagedContainer = nsTHashtable<nsPtrHashKey<Protocol>>;
 
 template<typename Protocol>
 Protocol*
-LoneManagedOrNull(const ManagedContainer<Protocol>& aManagees)
+LoneManagedOrNullAsserts(const ManagedContainer<Protocol>& aManagees)
 {
     if (aManagees.IsEmpty()) {
         return nullptr;
     }
     MOZ_ASSERT(aManagees.Count() == 1);
+    return aManagees.ConstIter().Get()->GetKey();
+}
+
+
+
+
+template<typename Protocol>
+Protocol*
+SingleManagedOrNull(const ManagedContainer<Protocol>& aManagees)
+{
+    if (aManagees.Count() != 1) {
+        return nullptr;
+    }
     return aManagees.ConstIter().Get()->GetKey();
 }
 
