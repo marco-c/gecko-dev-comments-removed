@@ -156,7 +156,7 @@ class NameResolver
 
 
                 pos--;
-                
+                MOZ_FALLTHROUGH;
 
               default:
                 
@@ -727,8 +727,8 @@ class NameResolver
           
           
           
-          case PNK_IMPORT_SPEC_LIST: {
           case PNK_EXPORT_SPEC_LIST:
+          case PNK_IMPORT_SPEC_LIST: {
             MOZ_ASSERT(cur->isArity(PN_LIST));
 #ifdef DEBUG
             bool isImport = cur->isKind(PNK_IMPORT_SPEC_LIST);

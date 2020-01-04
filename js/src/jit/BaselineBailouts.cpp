@@ -1913,7 +1913,7 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
       
       case Bailout_OverflowInvalidate:
         outerScript->setHadOverflowBailout();
-        
+        MOZ_FALLTHROUGH;
       case Bailout_NonStringInputInvalidate:
       case Bailout_DoubleOutput:
       case Bailout_ObjectIdentityOrTypeGuard:

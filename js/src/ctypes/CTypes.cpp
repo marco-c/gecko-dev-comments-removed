@@ -4059,7 +4059,8 @@ CType::Finalize(JSFreeOp* fop, JSObject* obj)
     }
   }
 
-    
+    MOZ_FALLTHROUGH;
+
   case TYPE_array: {
     
     slot = JS_GetReservedSlot(obj, SLOT_FFITYPE);
