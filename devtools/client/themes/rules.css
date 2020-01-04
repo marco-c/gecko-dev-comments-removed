@@ -17,15 +17,17 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
   width: 100%;
+  
+
+  height: calc(100% - 24px);
+  position: absolute;
 }
 
 #ruleview-container {
   -moz-user-select: text;
   overflow: auto;
   flex: auto;
-  height: 0px;
 }
 
 #ruleview-container.non-interactive {
