@@ -2,7 +2,6 @@
 
 
 
-
 var BUGNUMBER = 616294;
 var summary =
   "|delete x| inside a function in eval code, where that eval code includes " +
@@ -23,8 +22,7 @@ function testOuterLet()
 
 f = testOuterLet();
 
-assertEq(f(), true); 
-assertEq(f(), true); 
+assertEq(f(), false); 
 
 
 function testOuterForLet()
@@ -44,18 +42,6 @@ function testOuterForInLet()
 
 f = testOuterForInLet();
 
-assertEq(f(), true); 
-assertEq(f(), true); 
-
-
-function testOuterNestedVarInLetBlock()
-{
-  return eval("let (x = 7) { var x = 9; } (function() { return delete x; })");
-}
-
-f = testOuterNestedVarInLetBlock();
-
-assertEq(f(), true); 
 assertEq(f(), true); 
 assertEq(f(), true); 
 
