@@ -330,6 +330,15 @@ struct Zone : public JS::shadow::Zone,
     
     
     
+    using TypeDescrObjectSet = js::GCHashSet<js::RelocatablePtrObject,
+                                             js::MovableCellHasher<js::RelocatablePtrObject>,
+                                             js::SystemAllocPolicy>;
+    JS::WeakCache<TypeDescrObjectSet> typeDescrObjects;
+
+
+    
+    
+    
     mozilla::Atomic<ptrdiff_t, mozilla::ReleaseAcquire> gcMallocBytes;
 
     
