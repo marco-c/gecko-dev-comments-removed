@@ -112,6 +112,13 @@ static const TCHAR kPluginIgnoreSubclassProperty[] = TEXT("PluginIgnoreSubclassP
 #include "PluginUtilsOSX.h"
 #endif 
 
+template<>
+struct RunnableMethodTraits<PluginInstanceChild>
+{
+    static void RetainCallee(PluginInstanceChild* obj) { }
+    static void ReleaseCallee(PluginInstanceChild* obj) { }
+};
+
 
 
 
@@ -3292,8 +3299,11 @@ PluginInstanceChild::RecvAsyncSetWindow(const gfxSurfaceType& aSurfaceType,
     
     
     mCurrentAsyncSetWindowTask =
-        NS_NewNonOwningCancelableRunnableMethodWithArgs<gfxSurfaceType, NPRemoteWindow, bool>
-        (this, &PluginInstanceChild::DoAsyncSetWindow, aSurfaceType, aWindow, true);
+        NewCancelableRunnableMethod<PluginInstanceChild,
+                                    void (PluginInstanceChild::*)(const gfxSurfaceType&, const NPRemoteWindow&, bool),
+                                    const gfxSurfaceType&, const NPRemoteWindow&, bool>
+        (this, &PluginInstanceChild::DoAsyncSetWindow,
+         aSurfaceType, aWindow, true);
     RefPtr<Runnable> addrefedTask = mCurrentAsyncSetWindowTask;
     MessageLoop::current()->PostTask(addrefedTask.forget());
 
@@ -4213,7 +4223,7 @@ PluginInstanceChild::AsyncShowPluginFrame(void)
     }
 
     mCurrentInvalidateTask =
-        NS_NewNonOwningCancelableRunnableMethod(this, &PluginInstanceChild::InvalidateRectDelayed);
+        NewCancelableRunnableMethod(this, &PluginInstanceChild::InvalidateRectDelayed);
     RefPtr<Runnable> addrefedTask = mCurrentInvalidateTask;
     MessageLoop::current()->PostTask(addrefedTask.forget());
 }
