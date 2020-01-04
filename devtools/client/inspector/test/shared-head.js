@@ -67,6 +67,10 @@ var openInspectorSidebarTab = Task.async(function* (id) {
 
 function openRuleView() {
   return openInspectorSidebarTab("ruleview").then(data => {
+    
+    
+    data.inspector.ruleview.view.throttle = manualThrottle();
+
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
@@ -150,3 +154,33 @@ var selectNode = Task.async(function* (selector, inspector, reason = "test") {
   inspector.selection.setNodeFront(nodeFront, reason);
   yield updated;
 });
+
+
+
+
+
+
+
+
+
+function manualThrottle() {
+  let calls = [];
+
+  function throttle(func, wait, scope) {
+    return function () {
+      let existingCall = calls.find(call => call.func === func);
+      if (existingCall) {
+        existingCall.args = arguments;
+      } else {
+        calls.push({ func, wait, scope, args: arguments });
+      }
+    };
+  }
+
+  throttle.flush = function () {
+    calls.forEach(({func, scope, args}) => func.apply(scope, args));
+    calls = [];
+  };
+
+  return throttle;
+}

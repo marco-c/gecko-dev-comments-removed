@@ -120,6 +120,9 @@ function* testCompletion([key, completion, open, selected],
   info("Synthesizing key " + key);
   EventUtils.synthesizeKey(key, {}, view.styleWindow);
 
+  
+  view.throttle.flush();
+
   yield onSuggest;
   yield onPopupEvent;
 
