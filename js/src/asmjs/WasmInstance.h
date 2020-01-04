@@ -110,9 +110,6 @@ class Instance
     MOZ_MUST_USE bool ensureProfilingState(JSContext* cx, bool enabled);
 
     
-    void updateStackLimit(JSContext*);
-
-    
 
     void addSizeOfMisc(MallocSizeOf mallocSizeOf,
                        Metadata::SeenSet* seenMetadata,
