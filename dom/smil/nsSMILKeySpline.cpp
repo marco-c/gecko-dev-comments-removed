@@ -77,6 +77,10 @@ double
 nsSMILKeySpline::GetTForX(double aX) const
 {
   
+  if (aX == 1.0) {
+    return 1.0;
+  }
+  
   double intervalStart = 0.0;
   const double* currentSample = &mSampleValues[1];
   const double* const lastSample = &mSampleValues[kSplineTableSize - 1];
