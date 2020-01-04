@@ -576,11 +576,13 @@ protected:
   Selection mSelectionForTSF;
 
   
-  
-  
-  
-  
-  Selection& CurrentSelection();
+
+
+
+
+
+
+  Selection& SelectionForTSFRef();
 
   struct PendingAction final
   {
