@@ -72,7 +72,9 @@ public:
 
 
 
-  bool GetIndexForU16Name(const mozilla::u16string& aU16FullName, uint32_t* aIndex);
+
+  bool GetIndexForU16Name(const mozilla::u16string& aU16FullName, uint32_t* aIndex,
+                          size_t aTruncatedLen = 0);
 
 private:
 
