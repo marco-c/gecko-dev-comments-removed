@@ -12,53 +12,22 @@ const { Cc, Ci } = require('chrome');
 const { get, set, exists } = Cc['@mozilla.org/process/environment;1'].
                              getService(Ci.nsIEnvironment);
 
-exports.env = Proxy.create({
-  
-  
-  getPropertyNames: () => [],
-  getOwnPropertyNames: () => [],
-  enumerate: () => [],
-  keys: () => [],
-  
-  
-  fix: () => undefined,
-  
-  
-  getPropertyDescriptor: function(name) {
-    return this.getOwnPropertyDescriptor(name);
-  },
-  
-  
-  
-  getOwnPropertyDescriptor: function(name) {
-    return !exists(name) ? undefined : {
-      value: get(name),
-      enumerable: false,    
-      configurable: true,   
-      writable: true        
-    }
-  },
-
-  
-  
-  defineProperty: (name, { value }) => set(name, value),
-  delete: function(name) {
-    set(name, null);
+exports.env = new Proxy({}, {
+  deleteProperty(target, property) {
+    set(property, null);
     return true;
   },
 
-  
-  has: function(name) {
-    return this.hasOwn(name);
+  get(target, property, receiver) {
+    return get(property) || undefined;
   },
-  
-  
-  hasOwn: name => exists(name),
 
-  
-  
-  
-  
-  get: (proxy, name) => Object.prototype[name] || get(name) || undefined,
-  set: (proxy, name, value) => Object.prototype[name] || set(name, value)
+  has(target, property) {
+    return exists(property);
+  },
+
+  set(target, property, value, receiver) {
+    set(property, value);
+    return true;
+  }
 });
