@@ -10,6 +10,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/Monitor.h"
 
 #include "MediaDataDemuxer.h"
 #include "MediaDecoderReader.h"
@@ -213,6 +214,8 @@ private:
                 uint32_t aDecodeAhead)
       : mOwner(aOwner)
       , mType(aType)
+      , mMonitor("DecoderData")
+      , mDescription("shutdown")
       , mDecodeAhead(aDecodeAhead)
       , mUpdateScheduled(false)
       , mDemuxEOS(false)
@@ -241,12 +244,25 @@ private:
     MediaData::Type mType;
     RefPtr<MediaTrackDemuxer> mTrackDemuxer;
     
-    RefPtr<MediaDataDecoder> mDecoder;
-    
     
     RefPtr<FlushableTaskQueue> mTaskQueue;
     
     nsAutoPtr<DecoderCallback> mCallback;
+
+    
+    Monitor mMonitor;
+    
+    RefPtr<MediaDataDecoder> mDecoder;
+    const char* mDescription;
+    void ShutdownDecoder()
+    {
+      MonitorAutoLock mon(mMonitor);
+      if (mDecoder) {
+        mDecoder->Shutdown();
+      }
+      mDescription = "shutdown";
+      mDecoder = nullptr;
+    }
 
     
     uint32_t mDecodeAhead;
