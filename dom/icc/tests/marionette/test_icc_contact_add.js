@@ -30,6 +30,14 @@ var TEST_ADD_DATA = [{
     name: ["add6"],
     tel: [{value: "01234567890123456789"}, {value: "123456"}, {value: "123"}],
     email:[{value: "test@mozilla.com"}],
+  }, {
+    
+    name: ["add7"],
+    tel: [{value: ""}],
+  }, {
+    
+    name: [""],
+    tel: [{value: "0987654321"}],
   }];
 
 function testAddContact(aIcc, aType, aMozContact, aPin2) {
