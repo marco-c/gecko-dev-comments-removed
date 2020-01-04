@@ -833,7 +833,9 @@ Chunk::init(JSRuntime* rt)
 
     
     info.init();
-    new (&info.trailer) ChunkTrailer(rt);
+    info.trailer.storeBuffer = nullptr;
+    info.trailer.location = ChunkLocationBitTenuredHeap;
+    info.trailer.runtime = rt;
 
     
 }
@@ -1108,7 +1110,6 @@ GCRuntime::GCRuntime(JSRuntime* rt) :
     usage(nullptr),
     mMemProfiler(rt),
     maxMallocBytes(0),
-    nextCellUniqueId_(LargestTaggedNullCellPointer + 1), 
     numArenasFreeCommitted(0),
     verifyPreData(nullptr),
     chunkAllocationSinceLastGC(false),
@@ -2041,9 +2042,6 @@ RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind, size_t thingSize
     
     memcpy(dst, src, thingSize);
 
-    
-    src->zone()->transferUniqueId(dst, src);
-
     if (IsObjectAllocKind(thingKind)) {
         JSObject* srcObj = static_cast<JSObject*>(static_cast<Cell*>(src));
         JSObject* dstObj = static_cast<JSObject*>(static_cast<Cell*>(dst));
@@ -2175,6 +2173,7 @@ bool
 ArenaLists::relocateArenas(Zone* zone, ArenaHeader*& relocatedListOut, JS::gcreason::Reason reason,
                            SliceBudget& sliceBudget, gcstats::Statistics& stats)
 {
+
     
     
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
@@ -3587,29 +3586,6 @@ GCRuntime::shouldReleaseObservedTypes()
         jitReleaseNumber = majorGCNumber + JIT_SCRIPT_RELEASE_TYPES_PERIOD;
 
     return releaseTypes;
-}
-
-struct IsAboutToBeFinalizedFunctor {
-    template <typename T> bool operator()(Cell** t) {
-        mozilla::DebugOnly<const Cell*> prior = *t;
-        bool result = IsAboutToBeFinalizedUnbarriered(reinterpret_cast<T**>(t));
-        
-        
-        MOZ_ASSERT(*t == prior);
-        return result;
-    }
-};
-
-void
-JS::Zone::sweepUniqueIds(js::FreeOp* fop)
-{
-    for (UniqueIdMap::Enum e(uniqueIds_); !e.empty(); e.popFront()) {
-        if (DispatchTraceKindTyped(IsAboutToBeFinalizedFunctor(), e.front().key()->getTraceKind(),
-                                   &e.front().mutableKey()))
-        {
-            e.removeFront();
-        }
-    }
 }
 
 
@@ -5081,12 +5057,6 @@ GCRuntime::beginSweepingZoneGroup()
             for (GCZoneGroupIter zone(rt); !zone.done(); zone.next()) {
                 zone->sweepBreakpoints(&fop);
             }
-        }
-
-        {
-            gcstats::AutoPhase ap(stats, gcstats::PHASE_SWEEP_BREAKPOINT);
-            for (GCZoneGroupIter zone(rt); !zone.done(); zone.next())
-                zone->sweepUniqueIds(&fop);
         }
     }
 
@@ -7180,9 +7150,6 @@ js::gc::CheckHashTablesAfterMovingGC(JSRuntime* rt)
 
 
 
-    for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
-        zone->checkUniqueIdTableAfterMovingGC();
-    }
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
         c->objectGroups.checkTablesAfterMovingGC();
         c->checkInitialShapesTableAfterMovingGC();
@@ -7406,12 +7373,6 @@ JS_PUBLIC_API(bool)
 JS::IsGenerationalGCEnabled(JSRuntime* rt)
 {
     return rt->gc.isGenerationalGCEnabled();
-}
-
-uint64_t
-js::gc::NextCellUniqueId(JSRuntime* rt)
-{
-    return rt->gc.nextCellUniqueId();
 }
 
 namespace js {
