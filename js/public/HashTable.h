@@ -35,6 +35,16 @@ namespace detail {
 
 
 
+
+
+
+
+
+
+
+
+
+
 using Generation = mozilla::Opaque<uint64_t>;
 
 
@@ -210,8 +220,6 @@ class HashMap
         return mallocSizeOf(this) + impl.sizeOfExcludingThis(mallocSizeOf);
     }
 
-    
-    
     Generation generation() const {
         return impl.generation();
     }
@@ -451,8 +459,6 @@ class HashSet
         return mallocSizeOf(this) + impl.sizeOfExcludingThis(mallocSizeOf);
     }
 
-    
-    
     Generation generation() const {
         return impl.generation();
     }
