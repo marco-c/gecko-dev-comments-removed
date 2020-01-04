@@ -29,6 +29,8 @@ namespace mozilla {
 
 struct KeyboardInfo : public RefCounted<KeyboardInfo>
 {
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(KeyboardInfo)
+
   nsINode* mTarget;
   WidgetKeyboardEvent mEvent;
   nsEventStatus mStatus;
