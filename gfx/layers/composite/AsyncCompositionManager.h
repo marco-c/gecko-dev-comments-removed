@@ -178,11 +178,16 @@ private:
 
 
 
+
+
+
+
   void AlignFixedAndStickyLayers(Layer* aLayer, Layer* aTransformedSubtreeRoot,
                                  FrameMetrics::ViewID aTransformScrollId,
                                  const gfx::Matrix4x4& aPreviousTransformForRoot,
                                  const gfx::Matrix4x4& aCurrentTransformForRoot,
-                                 const ScreenMargin& aFixedLayerMargins);
+                                 const ScreenMargin& aFixedLayerMargins,
+                                 bool aTransformAffectsLayerClip);
 
   
 
