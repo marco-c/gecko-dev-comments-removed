@@ -150,6 +150,11 @@ inline JSObject& IncumbentJSGlobal()
   return *GetIncumbentGlobal()->GetGlobalJSObject();
 }
 
+
+
+
+bool IsJSAPIActive();
+
 class ScriptSettingsStack;
 class ScriptSettingsStackEntry {
   friend class ScriptSettingsStack;
