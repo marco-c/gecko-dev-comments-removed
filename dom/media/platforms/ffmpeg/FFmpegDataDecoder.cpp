@@ -91,7 +91,7 @@ FFmpegDataDecoder<LIBAV_VER>::InitDecoder()
   uint32_t major, minor;
   FFmpegRuntimeLinker::GetVersion(major, minor);
   
-  mCodecContext->request_sample_fmt = major == 53 && minor <= 34 ?
+  mCodecContext->request_sample_fmt = major == 53 ?
     AV_SAMPLE_FMT_S16 : AV_SAMPLE_FMT_FLT;
 
   
