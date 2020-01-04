@@ -374,50 +374,49 @@ add_task(function* testSecureURLsDenied() {
 
   yield extension.awaitFinish("setIcon security tests");
   yield extension.unload();
+});
 
 
+add_task(function* testSecureManifestURLsDenied() {
   
 
   let urls = ["chrome://browser/content/browser.xul",
               "javascript:true"];
 
-  let matchURLForbidden = url => ({
-    message: new RegExp(`Loading extension.*Invalid icon data: NS_ERROR_DOM_BAD_URI`),
-  });
+  let apis = ["browser_action", "page_action"];
 
-  
-  
-  let messages = [matchURLForbidden(urls[0]),
-                  matchURLForbidden(urls[1])];
+  for (let url of urls) {
+    for (let api of apis) {
+      info(`TEST ${api} icon url: ${url}`);
 
-  let waitForConsole = new Promise(resolve => {
-    
-    
-    SimpleTest.waitForExplicitFinish();
+      let matchURLForbidden = url => ({
+        message: new RegExp(`String "${url}" must be a relative URL`),
+      });
 
-    SimpleTest.monitorConsole(resolve, messages);
-  });
+      let messages = [matchURLForbidden(url)];
 
-  extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      "browser_action": {
-        "default_icon": {
-          "19": urls[0],
-          "38": urls[1],
+      let waitForConsole = new Promise(resolve => {
+        
+        
+        SimpleTest.waitForExplicitFinish();
+
+        SimpleTest.monitorConsole(resolve, messages);
+      });
+
+      let extension = ExtensionTestUtils.loadExtension({
+        manifest: {
+          [api]: {
+            "default_icon": url,
+          },
         },
-      },
-      "page_action": {
-        "default_icon": {
-          "19": urls[1],
-          "38": urls[0],
-        },
-      },
-    },
-  });
+      });
 
-  yield extension.startup();
-  yield extension.unload();
+      yield Assert.rejects(extension.startup(),
+                           null,
+                           "Manifest rejected");
 
-  SimpleTest.endMonitorConsole();
-  yield waitForConsole;
+      SimpleTest.endMonitorConsole();
+      yield waitForConsole;
+    }
+  }
 });
