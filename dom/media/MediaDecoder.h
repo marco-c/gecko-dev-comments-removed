@@ -415,8 +415,7 @@ private:
   }
 
   
-  
-  void SeekingStarted(MediaDecoderEventVisibility aEventVisibility = MediaDecoderEventVisibility::Observable);
+  void SeekingStarted();
 
   void UpdateLogicalPositionInternal(MediaDecoderEventVisibility aEventVisibility);
   void UpdateLogicalPosition()
@@ -732,7 +731,6 @@ protected:
   MediaEventListener mFirstFrameLoadedListener;
 
   MediaEventListener mOnPlaybackEvent;
-  MediaEventListener mOnSeekingStart;
   MediaEventListener mOnMediaNotSeekable;
 
 protected:
