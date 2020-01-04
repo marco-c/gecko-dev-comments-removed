@@ -82,12 +82,7 @@ const unsigned long SANDBOXED_AUTOMATIC_FEATURES = 0x100;
 
 
 
-
-
-
-
-
-
+const unsigned long SANDBOXED_FULLSCREEN = 0x400;
 
 
 

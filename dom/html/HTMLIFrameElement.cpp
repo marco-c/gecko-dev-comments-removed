@@ -216,7 +216,12 @@ HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                                 const nsAttrValue* aValue,
                                 bool aNotify)
 {
-  if (aName == nsGkAtoms::sandbox && aNameSpaceID == kNameSpaceID_None && mFrameLoader) {
+  if ((aName == nsGkAtoms::sandbox ||
+       
+       
+       aName == nsGkAtoms::allowfullscreen ||
+       aName == nsGkAtoms::mozallowfullscreen) &&
+      aNameSpaceID == kNameSpaceID_None && mFrameLoader) {
     
     
     
@@ -258,11 +263,15 @@ HTMLIFrameElement::GetSandboxFlags()
 
 #define SANDBOX_KEYWORD(string, atom, flags)                             \
   if (sandboxAttr->Contains(nsGkAtoms::atom, eIgnoreCase)) { out &= ~(flags); }
-
 #include "IframeSandboxKeywordList.h"
+#undef SANDBOX_KEYWORD
+
+  if (GetParsedAttr(nsGkAtoms::allowfullscreen) ||
+      GetParsedAttr(nsGkAtoms::mozallowfullscreen)) {
+    out &= ~SANDBOXED_FULLSCREEN;
+  }
 
   return out;
-#undef SANDBOX_KEYWORD
 }
 
 JSObject*
