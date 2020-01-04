@@ -352,9 +352,6 @@ public class HistoryPanel extends HomeFragment {
         final SpannableStringBuilder ssb = new SpannableStringBuilder(text);
 
         
-        ssb.setSpan(new StyleSpan(Typeface.ITALIC), 0, ssb.length(), 0);
-
-        
         final ClickableSpan clickableSpan = new ClickableSpan() {
             @Override
             public void onClick(View widget) {
