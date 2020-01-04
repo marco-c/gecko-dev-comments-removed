@@ -517,11 +517,6 @@ public:
     return mCompositeUntilTime;
   }
 
-  
-  
-  void SetInvalid();
-  bool IsValid() const;
-
 protected:
   void DrawDiagnosticsInternal(DiagnosticFlags aFlags,
                                const gfx::Rect& aVisibleRect,

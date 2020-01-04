@@ -74,12 +74,7 @@ bool
 CompositableParentManager::ReceiveCompositableUpdate(const CompositableOperation& aEdit,
                                                      EditReplyVector& replyv)
 {
-  
-  
   CompositableHost* compositable = CompositableHost::FromIPDLActor(aEdit.compositableParent());
-  if (compositable->GetCompositor() && compositable->GetCompositor()->IsValid()) {
-    return true;
-  }
 
   switch (aEdit.detail().type()) {
     case CompositableOperationDetail::TOpPaintTextureRegion: {
@@ -126,7 +121,6 @@ CompositableParentManager::ReceiveCompositableUpdate(const CompositableOperation
     }
     case CompositableOperationDetail::TOpRemoveTexture: {
       const OpRemoveTexture& op = aEdit.detail().get_OpRemoveTexture();
-
       RefPtr<TextureHost> tex = TextureHost::AsTextureHost(op.textureParent());
 
       MOZ_ASSERT(tex.get());
@@ -189,9 +183,7 @@ CompositableParentManager::ReceiveCompositableUpdate(const CompositableOperation
           }
         }
       }
-      if (textures.Length() > 0) {
-        compositable->UseTextureHost(textures);
-      }
+      compositable->UseTextureHost(textures);
 
       if (UsesImageBridge() && compositable->GetLayer()) {
         ScheduleComposition(compositable);
