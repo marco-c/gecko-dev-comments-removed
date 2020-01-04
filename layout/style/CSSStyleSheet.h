@@ -169,8 +169,6 @@ public:
   nsresult InsertRuleIntoGroup(const nsAString& aRule, css::GroupRule* aGroup, uint32_t aIndex, uint32_t* _retval);
   nsresult ReplaceRuleInGroup(css::GroupRule* aGroup, css::Rule* aOld, css::Rule* aNew);
 
-  int32_t StyleSheetCount() const;
-
   
 
 
