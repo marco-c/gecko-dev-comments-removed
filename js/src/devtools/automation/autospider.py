@@ -46,12 +46,15 @@ parser.add_argument('--timeout', '-t', type=int, metavar='TIMEOUT',
 parser.add_argument('--objdir', type=str, metavar='DIR',
                     default=env.get('OBJDIR', 'obj-spider'),
                     help='object directory')
-parser.add_argument('--skip-tests', '--skip', type=str, metavar='TESTSUITE',
-                    default='',
-                    help="comma-separated set of test suites to remove from the variant's default set")
 parser.add_argument('--run-tests', '--tests', type=str, metavar='TESTSUITE',
                     default='',
                     help="comma-separated set of test suites to add to the variant's default set")
+parser.add_argument('--skip-tests', '--skip', type=str, metavar='TESTSUITE',
+                    default='',
+                    help="comma-separated set of test suites to remove from the variant's default set")
+parser.add_argument('--build-only', '--build',
+                    dest='skip_tests', action='store_const', const='all',
+                    help="only do a build, do not run any tests")
 parser.add_argument('variant', type=str,
                     help='type of job requested, see variants/ subdir')
 args = parser.parse_args()
@@ -143,7 +146,7 @@ OUTDIR = os.path.join(OBJDIR, "out")
 POBJDIR = posixpath.join(PDIR.source, args.objdir)
 AUTOMATION = env.get('AUTOMATION', False)
 MAKE = env.get('MAKE', 'make')
-MAKEFLAGS = '-j6'
+MAKEFLAGS = env.get('MAKEFLAGS', '-j6')
 CONFIGURE_ARGS = variant['configure-args']
 UNAME_M = subprocess.check_output(['uname', '-m']).strip()
 
@@ -280,6 +283,12 @@ def run_test_command(command, **kwargs):
 test_suites = set(['jstests', 'jittest', 'jsapitests', 'checks'])
 
 
+def normalize_tests(tests):
+    if 'all' in tests:
+        return test_suites
+    return tests
+
+
 if args.platform:
     variant_platform = args.platform.split("-")[0]
 elif platform.system() == 'Windows':
@@ -292,16 +301,16 @@ else:
     variant_platform = 'other'
 
 
-test_suites -= set(variant.get('skip-tests', {}).get(variant_platform, []))
-test_suites -= set(variant.get('skip-tests', {}).get('all', []))
+test_suites -= set(normalize_tests(variant.get('skip-tests', {}).get(variant_platform, [])))
+test_suites -= set(normalize_tests(variant.get('skip-tests', {}).get('all', [])))
 
 
-test_suites |= set(variant.get('extra-tests', {}).get(variant_platform, []))
-test_suites |= set(variant.get('extra-tests', {}).get('all', []))
+test_suites |= set(normalize_tests(variant.get('extra-tests', {}).get(variant_platform, [])))
+test_suites |= set(normalize_tests(variant.get('extra-tests', {}).get('all', [])))
 
 
-test_suites |= set(args.run_tests.split(","))
-test_suites -= set(args.skip_tests.split(","))
+test_suites |= set(normalize_tests(args.run_tests.split(",")))
+test_suites -= set(normalize_tests(args.skip_tests.split(",")))
 
 
 

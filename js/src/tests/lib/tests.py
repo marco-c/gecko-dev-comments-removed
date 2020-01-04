@@ -32,6 +32,10 @@ JITFLAGS = {
         ['--ion-eager', '--ion-offthread-compile=off'], 
         ['--baseline-eager'],
     ],
+    
+    'interp': [
+        ['--no-baseline', '--no-asmjs']
+    ],
     'none': [
         [] 
     ]
