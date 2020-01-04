@@ -3,6 +3,7 @@
 
 
 
+
 #include <stdio.h>
 #include "nsNavHistory.h"
 #include "nsNavBookmarks.h"
@@ -3943,46 +3944,32 @@ nsNavHistorySeparatorResultNode::nsNavHistorySeparatorResultNode()
 }
 
 
-static PLDHashOperator
-RemoveBookmarkFolderObserversCallback(nsTrimInt64HashKey::KeyType aKey,
-                                      nsNavHistoryResult::FolderObserverList*& aData,
-                                      void* userArg)
-{
-  delete aData;
-  return PL_DHASH_REMOVE;
-}
-
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsNavHistoryResult)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsNavHistoryResult)
   tmp->StopObserving();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mRootNode)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mObservers)
-  tmp->mBookmarkFolderObservers.Enumerate(&RemoveBookmarkFolderObserversCallback, nullptr);
+  for (auto it = tmp->mBookmarkFolderObservers.Iter(); !it.Done(); it.Next()) {
+    delete it.Data();
+    it.Remove();
+  }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAllBookmarksObservers)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mHistoryObservers)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
-static PLDHashOperator
-TraverseBookmarkFolderObservers(nsTrimInt64HashKey::KeyType aKey,
-                                nsNavHistoryResult::FolderObserverList* &aData,
-                                void *aClosure)
-{
-  nsCycleCollectionTraversalCallback* cb =
-    static_cast<nsCycleCollectionTraversalCallback*>(aClosure);
-  for (uint32_t i = 0; i < aData->Length(); ++i) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(*cb,
-                                       "mBookmarkFolderObservers value[i]");
-    nsNavHistoryResultNode* node = aData->ElementAt(i);
-    cb->NoteXPCOMChild(node);
-  }
-  return PL_DHASH_NEXT;
-}
-
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsNavHistoryResult)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRootNode)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mObservers)
-  tmp->mBookmarkFolderObservers.Enumerate(&TraverseBookmarkFolderObservers, &cb);
+  for (auto it = tmp->mBookmarkFolderObservers.Iter(); !it.Done(); it.Next()) {
+    nsNavHistoryResult::FolderObserverList*& list = it.Data();
+    for (uint32_t i = 0; i < list->Length(); ++i) {
+      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
+                                         "mBookmarkFolderObservers value[i]");
+      nsNavHistoryResultNode* node = list->ElementAt(i);
+      cb.NoteXPCOMChild(node);
+    }
+  }
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAllBookmarksObservers)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHistoryObservers)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
@@ -4015,7 +4002,10 @@ nsNavHistoryResult::nsNavHistoryResult(nsNavHistoryContainerResultNode* aRoot)
 nsNavHistoryResult::~nsNavHistoryResult()
 {
   
-  mBookmarkFolderObservers.Enumerate(&RemoveBookmarkFolderObserversCallback, nullptr);
+  for (auto it = mBookmarkFolderObservers.Iter(); !it.Done(); it.Next()) {
+    delete it.Data();
+    it.Remove();
+  }
 }
 
 void
