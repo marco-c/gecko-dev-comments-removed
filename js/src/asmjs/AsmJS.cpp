@@ -1061,6 +1061,19 @@ class NumLit
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Type
 {
   public:
@@ -1134,6 +1147,42 @@ class Type
         Type t;
         t.which_ = which;
         return t;
+    }
+
+    
+    
+    static Type canonicalize(Type t) {
+        switch(t.which()) {
+          case Fixnum:
+          case Signed:
+          case Unsigned:
+          case Int:
+            return Int;
+
+          case Float:
+            return Float;
+
+          case DoubleLit:
+          case Double:
+            return Double;
+
+          case Void:
+            return Void;
+
+          case Int32x4:
+          case Float32x4:
+          case Bool32x4:
+            return t;
+
+          case MaybeDouble:
+          case MaybeFloat:
+          case Floatish:
+          case Intish:
+            
+            
+            break;
+        }
+        MOZ_CRASH("Invalid vartype");
     }
 
     Which which() const { return which_; }
@@ -1249,20 +1298,42 @@ class Type
         return isInt() || isFloat() || isDouble() || isSimd();
     }
 
-    ValType checkedValueType() const {
-        MOZ_ASSERT(isArgType());
-        if (isInt())
-            return ValType::I32;
-        else if (isFloat())
-            return ValType::F32;
-        else if (isDouble())
-            return ValType::F64;
-        else if (isInt32x4())
-            return ValType::I32x4;
-        else if (isBool32x4())
-            return ValType::B32x4;
-        MOZ_ASSERT(isFloat32x4());
-        return ValType::F32x4;
+    
+    
+    bool isCanonical() const {
+        switch (which()) {
+          case Int:
+          case Float:
+          case Double:
+          case Void:
+            return true;
+          default:
+            return isSimd();
+        }
+    }
+
+    
+    bool isCanonicalValType() const {
+        return !isVoid() && isCanonical();
+    }
+
+    
+    ExprType canonicalToExprType() const {
+        switch (which()) {
+          case Int:       return ExprType::I32;
+          case Float:     return ExprType::F32;
+          case Double:    return ExprType::F64;
+          case Void:      return ExprType::Void;
+          case Int32x4:   return ExprType::I32x4;
+          case Float32x4: return ExprType::F32x4;
+          case Bool32x4:  return ExprType::B32x4;
+          default:        MOZ_CRASH("Need canonical type");
+        }
+    }
+
+    
+    ValType canonicalToValType() const {
+        return NonVoidToValType(canonicalToExprType());
     }
 
     const char* toChars() const {
@@ -4246,7 +4317,7 @@ CheckCallArgs(FunctionValidator& f, ParseNode* callNode, ValTypeVector* args)
         if (!checkArg(f, argNode, type))
             return false;
 
-        if (!args->append(type.checkedValueType()))
+        if (!args->append(Type::canonicalize(type).canonicalToValType()))
             return false;
     }
     return true;
