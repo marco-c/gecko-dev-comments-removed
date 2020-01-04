@@ -457,13 +457,8 @@ extensions.registerAPI((extension, context) => {
         }
 
         let result = [];
-        let e = Services.wm.getEnumerator("navigator:browser");
-        while (e.hasMoreElements()) {
-          let window = e.getNext();
-          if (window.document.readyState != "complete") {
-            continue;
-          }
-          let tabs = TabManager.getTabs(extension, window);
+        for (let window of WindowListManager.browserWindows()) {
+          let tabs = TabManager.for(extension).getTabs(window);
           for (let tab of tabs) {
             if (matches(window, tab)) {
               result.push(tab);
@@ -489,9 +484,15 @@ extensions.registerAPI((extension, context) => {
           
           
           innerWindowID: tab.linkedBrowser.innerWindowID,
-
-          matchesHost: extension.whiteListedHosts.serialize(),
         };
+
+        if (TabManager.for(extension).hasActiveTabPermission(tab)) {
+          
+          
+          options.matchesHost = ["<all_urls>"];
+        } else {
+          options.matchesHost = extension.whiteListedHosts.serialize();
+        }
 
         if (details.code) {
           options[kind + 'Code'] = details.code;
