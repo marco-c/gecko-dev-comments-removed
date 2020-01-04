@@ -478,14 +478,6 @@ Animation::Tick()
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
 
   
-  AnimationCollection* collection = GetCollection();
-  if (collection) {
-    collection->RequestRestyle(CanThrottle() ?
-      AnimationCollection::RestyleType::Throttled :
-      AnimationCollection::RestyleType::Standard);
-  }
-
-  
   if (mEffect &&
       !mEffect->Properties().IsEmpty() &&
       !mFinishedAtLastComposeStyle &&
@@ -677,33 +669,6 @@ Animation::HasLowerCompositeOrderThan(const Animation& aOther) const
              "Animation indices should be unique");
 
   return mAnimationIndex < aOther.mAnimationIndex;
-}
-
-bool
-Animation::CanThrottle() const
-{
-  
-  
-
-  
-  if (!mEffect || mEffect->Properties().IsEmpty()) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!IsInEffect()) {
-    return true;
-  }
-
-  return mEffect->CanThrottle();
 }
 
 void

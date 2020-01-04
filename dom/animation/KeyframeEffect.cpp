@@ -161,6 +161,18 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
     }
     mInEffectOnLastAnimationTimingUpdate = inEffect;
   }
+
+  
+  AnimationCollection* collection = GetCollection();
+  if (collection &&
+      !mProperties.IsEmpty() &&
+      inEffect) {
+    
+    
+    collection->RequestRestyle(CanThrottle() ?
+                               AnimationCollection::RestyleType::Throttled :
+                               AnimationCollection::RestyleType::Standard);
+  }
 }
 
 Nullable<TimeDuration>

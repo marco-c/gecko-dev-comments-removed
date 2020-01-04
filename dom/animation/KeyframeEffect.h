@@ -290,8 +290,6 @@ public:
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
 
-  bool CanThrottle() const;
-
   
   
   
@@ -353,6 +351,7 @@ protected:
 private:
   nsIFrame* GetAnimationFrame() const;
 
+  bool CanThrottle() const;
   bool CanThrottleTransformChanges(nsIFrame& aFrame) const;
 
   
