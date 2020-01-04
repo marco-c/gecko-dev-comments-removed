@@ -433,6 +433,31 @@ this.FxAccountsClient.prototype = {
 
 
 
+  notifyDevices(sessionTokenHex, deviceIds, payload, TTL = 0) {
+    const body = {
+      to: deviceIds,
+      payload,
+      TTL
+    };
+    return this._request("/account/devices/notify", "POST",
+      deriveHawkCredentials(sessionTokenHex, "sessionToken"), body);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

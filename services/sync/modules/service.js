@@ -359,6 +359,7 @@ Sync11Service.prototype = {
     }
 
     Svc.Obs.add("weave:service:setup-complete", this);
+    Svc.Obs.add("sync:collection_changed", this); 
     Svc.Prefs.observe("engine.", this);
 
     this.scheduler = new SyncScheduler(this);
@@ -485,6 +486,13 @@ Sync11Service.prototype = {
 
   observe: function observe(subject, topic, data) {
     switch (topic) {
+      
+      
+      case "sync:collection_changed":
+        if (data.includes("clients")) {
+          this.sync([]); 
+        }
+        break;
       case "weave:service:setup-complete":
         let status = this._checkSetup();
         if (status != STATUS_DISABLED && status != CLIENT_NOT_CONFIGURED)
