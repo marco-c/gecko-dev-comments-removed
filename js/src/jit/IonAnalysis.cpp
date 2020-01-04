@@ -1269,7 +1269,9 @@ GuessPhiType(MPhi* phi, bool* hasInputsWithEmptyTypes)
                 
                 
                 type = MIRType_Float32;
-            } else if (IsNumberType(type) && IsNumberType(in->type())) {
+            } else if (IsTypeRepresentableAsDouble(type) &&
+                       IsTypeRepresentableAsDouble(in->type()))
+            {
                 
                 type = MIRType_Double;
                 convertibleToFloat32 &= in->canProduceFloat32();
@@ -1329,7 +1331,9 @@ TypeAnalyzer::propagateSpecialization(MPhi* phi)
             }
 
             
-            if (IsNumberType(use->type()) && IsNumberType(phi->type())) {
+            if (IsTypeRepresentableAsDouble(use->type()) &&
+                IsTypeRepresentableAsDouble(phi->type()))
+            {
                 if (!respecialize(use, MIRType_Double))
                     return false;
                 continue;
@@ -2501,6 +2505,7 @@ IsResumableMIRType(MIRType type)
       case MIRType_ObjectGroup:
       case MIRType_Doublex2: 
       case MIRType_SinCosDouble:
+      case MIRType_Int64:
         return false;
     }
     MOZ_CRASH("Unknown MIRType.");

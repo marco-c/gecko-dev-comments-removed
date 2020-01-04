@@ -1280,7 +1280,7 @@ IonBuilder::inlineMathPowHelper(MDefinition* lhs, MDefinition* rhs, MIRType outp
 
     
     if (rhs->isConstant()) {
-        double pow = rhs->toConstant()->toNumber();
+        double pow = rhs->toConstant()->numberToDouble();
 
         
         if (pow == 0.5) {
@@ -1486,7 +1486,7 @@ IonBuilder::inlineMathMinMax(CallInfo& callInfo, bool max)
             
             
             if (arg->isConstant()) {
-                double cte = arg->toConstant()->toNumber();
+                double cte = arg->toConstant()->numberToDouble();
                 
                 if (cte >= INT32_MAX && !max)
                     break;
