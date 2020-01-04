@@ -510,10 +510,11 @@ class ObjectGroup : public gc::TenuredCell
     
     
     static ObjectGroup* allocationSiteGroup(JSContext* cx, JSScript* script, jsbytecode* pc,
-                                            JSProtoKey key);
+                                            JSProtoKey key, HandleObject proto = nullptr);
 
     
-    static ObjectGroup* callingAllocationSiteGroup(JSContext* cx, JSProtoKey key);
+    static ObjectGroup* callingAllocationSiteGroup(JSContext* cx, JSProtoKey key,
+                                                   HandleObject proto = nullptr);
 
     
     static bool
