@@ -7934,8 +7934,8 @@ nsDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     ScreenSize viewportSize(viewportWidth, viewportWidth * aspectRatio);
     return nsViewportInfo(RoundedToInt(viewportSize),
                           CSSToScreenScale(scaleToFit),
-                          false,
-                           false);
+                           true,
+                           true);
   }
 
   if (!gfxPrefs::MetaViewportEnabled()) {
