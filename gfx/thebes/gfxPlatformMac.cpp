@@ -430,7 +430,8 @@ bool
 gfxPlatformMac::UseAcceleratedSkiaCanvas()
 {
   
-  return nsCocoaFeatures::OnLionOrLater() && gfxPlatform::UseAcceleratedSkiaCanvas();
+  
+  return nsCocoaFeatures::OnMountainLionOrLater() && gfxPlatform::UseAcceleratedSkiaCanvas();
 }
 
 bool
