@@ -215,6 +215,14 @@ ZoomConstraintsClient::RefreshZoomConstraints()
     }
   }
 
+  
+  
+  MOZ_ASSERT(mPresShell->GetPresContext()->IsRootContentDocument());
+  if (nsIScrollableFrame* rcdrsf = mPresShell->GetRootScrollFrameAsScrollable()) {
+    ZCC_LOG("Notifying RCD-RSF that it is zoomable: %d\n", zoomConstraints.mAllowZoom);
+    rcdrsf->SetZoomableByAPZ(zoomConstraints.mAllowZoom);
+  }
+
   ScrollableLayerGuid newGuid(0, presShellId, viewId);
   if (mGuid && mGuid.value() != newGuid) {
     ZCC_LOG("Clearing old constraints in %p for { %u, %" PRIu64 " }\n",
