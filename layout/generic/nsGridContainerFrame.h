@@ -54,9 +54,6 @@ public:
     nscoord mLimit;
   };
 
-  
-  
-  
   enum Dimension { eColDimension, eRowDimension };
 
   

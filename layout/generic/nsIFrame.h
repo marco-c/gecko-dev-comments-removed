@@ -151,12 +151,6 @@ typedef uint32_t nsSplittableType;
 
 
 
-
-
-#define INFINITE_ISIZE_COORD nscoord(NS_MAXSIZE - (1000000*60))
-
-
-
 enum nsSelectionAmount {
   eSelectCharacter = 0, 
                         
