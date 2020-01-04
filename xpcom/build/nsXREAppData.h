@@ -12,6 +12,12 @@
 
 class nsIFile;
 
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+namespace sandbox {
+class BrokerServices;
+}
+#endif
+
 
 
 
@@ -128,6 +134,13 @@ struct nsXREAppData
 
 
   const char* UAName;
+
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+  
+
+
+  sandbox::BrokerServices* sandboxBrokerServices;
+#endif
 };
 
 

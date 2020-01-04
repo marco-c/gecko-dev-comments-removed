@@ -20,6 +20,7 @@
 #include "mozilla/Vector.h"
 #include "mozilla/TimeStamp.h"
 #include "XREChildData.h"
+#include "XREShellData.h"
 
 
 
@@ -487,7 +488,8 @@ XRE_API(void,
 #endif 
 
 XRE_API(int,
-        XRE_XPCShellMain, (int argc, char** argv, char** envp))
+        XRE_XPCShellMain, (int argc, char** argv, char** envp,
+                           const XREShellData* aShellData))
 
 #if MOZ_WIDGET_GTK == 2
 XRE_API(void,

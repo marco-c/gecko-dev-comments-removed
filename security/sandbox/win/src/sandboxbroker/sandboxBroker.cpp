@@ -7,10 +7,9 @@
 #include "sandboxBroker.h"
 
 #include "base/win/windows_version.h"
+#include "mozilla/Assertions.h"
 #include "sandbox/win/src/sandbox.h"
-#include "sandbox/win/src/sandbox_factory.h"
 #include "sandbox/win/src/security_level.h"
-#include "mozilla/sandboxing/sandboxLogging.h"
 
 namespace mozilla
 {
@@ -18,20 +17,10 @@ namespace mozilla
 sandbox::BrokerServices *SandboxBroker::sBrokerService = nullptr;
 
 
-bool
-SandboxBroker::Initialize()
+void
+SandboxBroker::Initialize(sandbox::BrokerServices* aBrokerServices)
 {
-  sBrokerService = sandbox::SandboxFactory::GetBrokerServices();
-  if (!sBrokerService) {
-    return false;
-  }
-
-  if (sBrokerService->Init() != sandbox::SBOX_ALL_OK) {
-    sBrokerService = nullptr;
-    return false;
-  }
-
-  return true;
+  sBrokerService = aBrokerServices;
 }
 
 SandboxBroker::SandboxBroker()
@@ -59,7 +48,7 @@ SandboxBroker::LaunchApp(const wchar_t *aPath,
 
   
   if (aEnableLogging) {
-    mozilla::sandboxing::ApplyLoggingPolicy(*mPolicy);
+    ApplyLoggingPolicy();
   }
 
 #if defined(DEBUG)
@@ -483,6 +472,28 @@ SandboxBroker::AddTargetPeer(HANDLE aPeerProcess)
 
   sandbox::ResultCode result = sBrokerService->AddTargetPeer(aPeerProcess);
   return (sandbox::SBOX_ALL_OK == result);
+}
+
+void
+SandboxBroker::ApplyLoggingPolicy()
+{
+  MOZ_ASSERT(mPolicy);
+
+  
+  
+  
+  
+  mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_NAMED_PIPES,
+                  sandbox::TargetPolicy::NAMEDPIPES_ALLOW_ANY, L"dummy");
+  mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_PROCESS,
+                  sandbox::TargetPolicy::PROCESS_MIN_EXEC, L"dummy");
+  mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_REGISTRY,
+                  sandbox::TargetPolicy::REG_ALLOW_READONLY,
+                  L"HKEY_CURRENT_USER\\dummy");
+  mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_SYNC,
+                  sandbox::TargetPolicy::EVENTS_ALLOW_READONLY, L"dummy");
+  mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
+                  sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"dummy");
 }
 
 SandboxBroker::~SandboxBroker()

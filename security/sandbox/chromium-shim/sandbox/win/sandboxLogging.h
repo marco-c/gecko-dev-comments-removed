@@ -25,9 +25,6 @@ namespace sandboxing {
 void ProvideLogFunction(LogFunction aLogFunction);
 
 
-void ApplyLoggingPolicy(sandbox::TargetPolicy& aPolicy);
-
-
 
 
 

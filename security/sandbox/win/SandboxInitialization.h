@@ -8,6 +8,7 @@
 #define mozilla_sandboxing_SandboxInitialization_h
 
 namespace sandbox {
+class BrokerServices;
 class TargetServices;
 }
 
@@ -28,6 +29,13 @@ sandbox::TargetServices* GetInitializedTargetServices();
 
 
 void LowerSandbox();
+
+
+
+
+
+
+sandbox::BrokerServices* GetInitializedBrokerServices();
 
 } 
 } 
