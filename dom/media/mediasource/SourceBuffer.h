@@ -238,7 +238,7 @@ private:
 
   
   void AppendData(const uint8_t* aData, uint32_t aLength, ErrorResult& aRv);
-  void BufferAppend();
+  void BufferAppend(uint32_t aAppendID);
 
   
   
@@ -263,9 +263,13 @@ private:
   RefPtr<SourceBufferAttributes> mAttributes;
 
   bool mUpdating;
-  bool mAborting;
 
   mozilla::Atomic<bool> mActive;
+
+  
+  
+  
+  uint32_t mUpdateID;
 
   MozPromiseRequestHolder<SourceBufferContentManager::AppendPromise> mPendingAppend;
   const nsCString mType;

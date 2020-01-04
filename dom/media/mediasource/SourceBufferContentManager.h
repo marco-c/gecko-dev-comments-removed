@@ -44,6 +44,9 @@ public:
   virtual RefPtr<AppendPromise> BufferAppend() = 0;
 
   
+  virtual void AbortAppendData() = 0;
+
+  
   
   
   virtual void ResetParserState() = 0;
@@ -104,6 +107,10 @@ public:
   virtual void SetGroupStartTimestamp(const media::TimeUnit& aGroupStartTimestamp) {}
   virtual void RestartGroupStartTimestamp() {}
   virtual media::TimeUnit GroupEndTimestamp() = 0;
+
+#if defined(DEBUG)
+  virtual void Dump(const char* aPath) { }
+#endif
 
 protected:
   virtual ~SourceBufferContentManager() { }

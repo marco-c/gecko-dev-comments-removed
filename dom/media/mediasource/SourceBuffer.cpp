@@ -39,6 +39,27 @@ using media::TimeUnit;
 
 namespace dom {
 
+class BufferAppendRunnable : public nsRunnable {
+public:
+  BufferAppendRunnable(SourceBuffer* aSourceBuffer,
+                       uint32_t aUpdateID)
+  : mSourceBuffer(aSourceBuffer)
+  , mUpdateID(aUpdateID)
+  {
+  }
+
+  NS_IMETHOD Run() override final {
+
+    mSourceBuffer->BufferAppend(mUpdateID);
+
+    return NS_OK;
+  }
+
+private:
+  RefPtr<SourceBuffer> mSourceBuffer;
+  uint32_t mUpdateID;
+};
+
 void
 SourceBuffer::SetMode(SourceBufferAppendMode aMode, ErrorResult& aRv)
 {
@@ -205,19 +226,10 @@ void
 SourceBuffer::AbortBufferAppend()
 {
   if (mUpdating) {
+    mPendingAppend.DisconnectIfExists();
     
     
-    
-    
-    
-    
-    
-    mAborting = true;
-    
-    
-    while (mAborting) {
-      NS_ProcessNextEvent(NS_GetCurrentThread(), true);
-    }
+    mContentManager->AbortAppendData();
     AbortUpdating();
   }
 }
@@ -257,13 +269,7 @@ SourceBuffer::RangeRemoval(double aStart, double aEnd)
   mContentManager->RangeRemoval(TimeUnit::FromSeconds(aStart),
                                 TimeUnit::FromSeconds(aEnd))
     ->Then(AbstractThread::MainThread(), __func__,
-           [self] (bool) {
-             if (self->mAborting) {
-               self->mAborting = false;
-               return;
-             }
-             self->StopUpdating();
-           },
+           [self] (bool) { self->StopUpdating(); },
            []() { MOZ_ASSERT(false); });
 }
 
@@ -302,8 +308,8 @@ SourceBuffer::SourceBuffer(MediaSource* aMediaSource, const nsACString& aType)
   : DOMEventTargetHelper(aMediaSource->GetParentObject())
   , mMediaSource(aMediaSource)
   , mUpdating(false)
-  , mAborting(false)
   , mActive(false)
+  , mUpdateID(0)
   , mType(aType)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -375,6 +381,7 @@ SourceBuffer::StartUpdating()
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mUpdating);
   mUpdating = true;
+  mUpdateID++;
   QueueAsyncSimpleEvent("updatestart");
 }
 
@@ -431,13 +438,23 @@ SourceBuffer::AppendData(const uint8_t* aData, uint32_t aLength, ErrorResult& aR
 
   StartUpdating();
 
-  BufferAppend();
+  nsCOMPtr<nsIRunnable> task = new BufferAppendRunnable(this, mUpdateID);
+  NS_DispatchToMainThread(task);
 }
 
 void
-SourceBuffer::BufferAppend()
+SourceBuffer::BufferAppend(uint32_t aUpdateID)
 {
-  MOZ_ASSERT(mUpdating);
+  if (!mUpdating || aUpdateID != mUpdateID) {
+    
+    
+    
+    
+    
+    
+    return;
+  }
+
   MOZ_ASSERT(mMediaSource);
   MOZ_ASSERT(!mPendingAppend.Exists());
 
@@ -451,6 +468,10 @@ void
 SourceBuffer::AppendDataCompletedWithSuccess(bool aHasActiveTracks)
 {
   mPendingAppend.Complete();
+  if (!mUpdating) {
+    
+    return;
+  }
 
   if (aHasActiveTracks) {
     if (!mActive) {
@@ -467,11 +488,6 @@ SourceBuffer::AppendDataCompletedWithSuccess(bool aHasActiveTracks)
 
   CheckEndTime();
 
-  if (mAborting) {
-    mAborting = false;
-    return;
-  }
-
   StopUpdating();
 }
 
@@ -479,12 +495,6 @@ void
 SourceBuffer::AppendDataErrored(nsresult aError)
 {
   mPendingAppend.Complete();
-
-  if (mAborting) {
-    mAborting = false;
-    return;
-  }
-
   switch (aError) {
     case NS_ERROR_ABORT:
       
@@ -500,7 +510,10 @@ void
 SourceBuffer::AppendError(bool aDecoderError)
 {
   MOZ_ASSERT(NS_IsMainThread());
-
+  if (!mUpdating) {
+    
+    return;
+  }
   mContentManager->ResetParserState();
 
   mUpdating = false;

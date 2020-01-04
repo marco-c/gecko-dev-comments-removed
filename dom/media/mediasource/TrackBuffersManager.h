@@ -47,6 +47,8 @@ public:
 
   RefPtr<AppendPromise> BufferAppend() override;
 
+  void AbortAppendData() override;
+
   void ResetParserState() override;
 
   RefPtr<RangeRemovalPromise> RangeRemoval(media::TimeUnit aStart,
@@ -310,6 +312,7 @@ private:
   MozPromiseHolder<AppendPromise> mAppendPromise;
   
   
+  
   bool mAppendRunning;
 
   
@@ -349,6 +352,8 @@ private:
   
   Mirror<Maybe<double>> mMediaSourceDuration;
 
+  
+  Atomic<bool> mAbort;
   
   Atomic<bool> mEnded;
 
