@@ -106,7 +106,7 @@ Selection.prototype = {
     }
     if (detached) {
       let rawNode = null;
-      if (parentNode && parentNode.isLocal_toBeDeprecated()) {
+      if (parentNode && parentNode.isLocalToBeDeprecated()) {
         rawNode = parentNode.rawNode();
       }
 
@@ -172,7 +172,7 @@ Selection.prototype = {
     
     
     let rawValue = null;
-    if (value && value.isLocal_toBeDeprecated()) {
+    if (value && value.isLocalToBeDeprecated()) {
       rawValue = value.rawNode();
     }
     this.emit("before-new-node", rawValue, reason);
@@ -226,7 +226,7 @@ Selection.prototype = {
     
     
     let rawNode = null;
-    if (node.isLocal_toBeDeprecated()) {
+    if (node.isLocalToBeDeprecated()) {
       rawNode = node.rawNode();
     }
     if (rawNode) {

@@ -54,7 +54,7 @@ const {Cc, Ci, Cu} = require("chrome");
 const Services = require("Services");
 const protocol = require("devtools/shared/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
-const {LongStringActor, ShortLongString} = require("devtools/server/actors/string");
+const {LongStringActor} = require("devtools/server/actors/string");
 const promise = require("promise");
 const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 const object = require("sdk/util/object");
@@ -67,6 +67,7 @@ const {
   CustomHighlighterActor,
   isTypeRegistered,
 } = require("devtools/server/actors/highlighters");
+const {NodeFront} = require("devtools/client/fronts/inspector");
 const {
   isAnonymous,
   isNativeAnonymous,
@@ -80,8 +81,7 @@ const {getLayoutChangesObserver, releaseLayoutChangesObserver} =
 loader.lazyRequireGetter(this, "CSS", "CSS");
 
 const {EventParsers} = require("devtools/shared/event-parsers");
-const { makeInfallible } = require("devtools/shared/DevToolsUtils");
-
+const {nodeSpec} = require("devtools/shared/specs/inspector");
 const FONT_FAMILY_PREVIEW_TEXT = "The quick brown fox jumps over the lazy dog";
 const FONT_FAMILY_PREVIEW_TEXT_SIZE = 20;
 const PSEUDO_CLASSES = [":hover", ":active", ":focus"];
@@ -153,22 +153,6 @@ loader.lazyGetter(this, "eventListenerService", function () {
 loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/inspector/css-logic").CssLogic);
 
 
-function delayedResolve(value) {
-  let deferred = promise.defer();
-  Services.tm.mainThread.dispatch(makeInfallible(() => {
-    deferred.resolve(value);
-  }), 0);
-  return deferred.promise;
-}
-
-types.addDictType("imageData", {
-  
-  data: "nullable:longstring",
-  
-  size: "json"
-});
-
-
 
 
 
@@ -200,9 +184,7 @@ exports.setInspectingNode = function (val) {
 
 
 
-var NodeActor = exports.NodeActor = protocol.ActorClass({
-  typeName: "domnode",
-
+var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   initialize: function (walker, node) {
     protocol.Actor.prototype.initialize.call(this, null);
     this.walker = walker;
@@ -611,46 +593,30 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
   
 
 
-  getNodeValue: method(function () {
+  getNodeValue: function () {
     return new LongStringActor(this.conn, this.rawNode.nodeValue || "");
-  }, {
-    request: {},
-    response: {
-      value: RetVal("longstring")
-    }
-  }),
+  },
 
   
 
 
-  setNodeValue: method(function (value) {
+  setNodeValue: function (value) {
     this.rawNode.nodeValue = value;
-  }, {
-    request: { value: Arg(0) },
-    response: {}
-  }),
+  },
 
   
 
 
-  getUniqueSelector: method(function () {
+  getUniqueSelector: function () {
     return CssLogic.findCssSelector(this.rawNode);
-  }, {
-    request: {},
-    response: {
-      value: RetVal("string")
-    }
-  }),
+  },
 
   
 
 
-  scrollIntoView: method(function () {
+  scrollIntoView: function () {
     this.rawNode.scrollIntoView(true);
-  }, {
-    request: {},
-    response: {}
-  }),
+  },
 
   
 
@@ -663,32 +629,24 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-  getImageData: method(function (maxDim) {
+  getImageData: function (maxDim) {
     return imageToImageData(this.rawNode, maxDim).then(imageData => {
       return {
         data: LongStringActor(this.conn, imageData.data),
         size: imageData.size
       };
     });
-  }, {
-    request: {maxDim: Arg(0, "nullable:number")},
-    response: RetVal("imageData")
-  }),
+  },
 
   
 
 
-  getEventListenerInfo: method(function () {
+  getEventListenerInfo: function () {
     if (this.rawNode.nodeName.toLowerCase() === "html") {
       return this.getEventListeners(this.rawNode.ownerGlobal);
     }
     return this.getEventListeners(this.rawNode);
-  }, {
-    request: {},
-    response: {
-      events: RetVal("json")
-    }
-  }),
+  },
 
   
 
@@ -703,7 +661,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-  modifyAttributes: method(function (modifications) {
+  modifyAttributes: function (modifications) {
     let rawNode = this.rawNode;
     for (let change of modifications) {
       if (change.newValue == null) {
@@ -720,12 +678,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
         rawNode.setAttribute(change.attributeName, change.newValue);
       }
     }
-  }, {
-    request: {
-      modifications: Arg(0, "array:json")
-    },
-    response: {}
-  }),
+  },
 
   
 
@@ -734,7 +687,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-  getFontFamilyDataURL: method(function (font, fillStyle = "black") {
+  getFontFamilyDataURL: function (font, fillStyle = "black") {
     let doc = this.rawNode.ownerDocument;
     let options = {
       previewText: FONT_FAMILY_PREVIEW_TEXT,
@@ -744,367 +697,6 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
     let { dataURL, size } = getFontPreviewData(font, doc, options);
 
     return { data: LongStringActor(this.conn, dataURL), size: size };
-  }, {
-    request: {font: Arg(0, "string"), fillStyle: Arg(1, "nullable:string")},
-    response: RetVal("imageData")
-  })
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var NodeFront = protocol.FrontClass(NodeActor, {
-  initialize: function (conn, form, detail, ctx) {
-    
-    this._parent = null;
-    
-    this._child = null;
-    
-    this._next = null;
-    
-    this._prev = null;
-    protocol.Front.prototype.initialize.call(this, conn, form, detail, ctx);
-  },
-
-  
-
-
-
-
-  destroy: function () {
-    protocol.Front.prototype.destroy.call(this);
-  },
-
-  
-  form: function (form, detail, ctx) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-    
-    
-    this._form = object.merge(form);
-    this._form.attrs = this._form.attrs ? this._form.attrs.slice() : [];
-
-    if (form.parent) {
-      
-      
-      
-      let parentNodeFront = ctx.marshallPool().ensureParentFront(form.parent);
-      this.reparent(parentNodeFront);
-    }
-
-    if (form.singleTextChild) {
-      this.singleTextChild =
-        types.getType("domnode").read(form.singleTextChild, ctx);
-    } else {
-      this.singleTextChild = undefined;
-    }
-  },
-
-  
-
-
-  parentNode: function () {
-    return this._parent;
-  },
-
-  
-
-
-
-
-
-  updateMutation: function (change) {
-    if (change.type === "attributes") {
-      
-      this._attrMap = undefined;
-
-      
-      let found = false;
-      for (let i = 0; i < this.attributes.length; i++) {
-        let attr = this.attributes[i];
-        if (attr.name == change.attributeName &&
-            attr.namespace == change.attributeNamespace) {
-          if (change.newValue !== null) {
-            attr.value = change.newValue;
-          } else {
-            this.attributes.splice(i, 1);
-          }
-          found = true;
-          break;
-        }
-      }
-      
-      
-      if (!found && change.newValue !== null) {
-        this.attributes.push({
-          name: change.attributeName,
-          namespace: change.attributeNamespace,
-          value: change.newValue
-        });
-      }
-    } else if (change.type === "characterData") {
-      this._form.shortValue = change.newValue;
-      this._form.incompleteValue = change.incompleteValue;
-    } else if (change.type === "pseudoClassLock") {
-      this._form.pseudoClassLocks = change.pseudoClassLocks;
-    } else if (change.type === "events") {
-      this._form.hasEventListeners = change.hasEventListeners;
-    }
-  },
-
-  
-
-  get id() {
-    return this.getAttribute("id");
-  },
-
-  get nodeType() {
-    return this._form.nodeType;
-  },
-  get namespaceURI() {
-    return this._form.namespaceURI;
-  },
-  get nodeName() {
-    return this._form.nodeName;
-  },
-  get doctypeString() {
-    return "<!DOCTYPE " + this._form.name +
-     (this._form.publicId ? " PUBLIC \"" + this._form.publicId + "\"" : "") +
-     (this._form.systemId ? " \"" + this._form.systemId + "\"" : "") +
-     ">";
-  },
-
-  get baseURI() {
-    return this._form.baseURI;
-  },
-
-  get className() {
-    return this.getAttribute("class") || "";
-  },
-
-  get hasChildren() {
-    return this._form.numChildren > 0;
-  },
-  get numChildren() {
-    return this._form.numChildren;
-  },
-  get hasEventListeners() {
-    return this._form.hasEventListeners;
-  },
-
-  get isBeforePseudoElement() {
-    return this._form.isBeforePseudoElement;
-  },
-  get isAfterPseudoElement() {
-    return this._form.isAfterPseudoElement;
-  },
-  get isPseudoElement() {
-    return this.isBeforePseudoElement || this.isAfterPseudoElement;
-  },
-  get isAnonymous() {
-    return this._form.isAnonymous;
-  },
-  get isInHTMLDocument() {
-    return this._form.isInHTMLDocument;
-  },
-  get tagName() {
-    return this.nodeType === Ci.nsIDOMNode.ELEMENT_NODE ? this.nodeName : null;
-  },
-  get shortValue() {
-    return this._form.shortValue;
-  },
-  get incompleteValue() {
-    return !!this._form.incompleteValue;
-  },
-
-  get isDocumentElement() {
-    return !!this._form.isDocumentElement;
-  },
-
-  
-  get name() {
-    return this._form.name;
-  },
-  get publicId() {
-    return this._form.publicId;
-  },
-  get systemId() {
-    return this._form.systemId;
-  },
-
-  getAttribute: function (name) {
-    let attr = this._getAttribute(name);
-    return attr ? attr.value : null;
-  },
-  hasAttribute: function (name) {
-    this._cacheAttributes();
-    return (name in this._attrMap);
-  },
-
-  get hidden() {
-    let cls = this.getAttribute("class");
-    return cls && cls.indexOf(HIDDEN_CLASS) > -1;
-  },
-
-  get attributes() {
-    return this._form.attrs;
-  },
-
-  get pseudoClassLocks() {
-    return this._form.pseudoClassLocks || [];
-  },
-  hasPseudoClassLock: function (pseudo) {
-    return this.pseudoClassLocks.some(locked => locked === pseudo);
-  },
-
-  get isDisplayed() {
-    
-    
-    return "isDisplayed" in this._form ? this._form.isDisplayed : true;
-  },
-
-  get isTreeDisplayed() {
-    let parent = this;
-    while (parent) {
-      if (!parent.isDisplayed) {
-        return false;
-      }
-      parent = parent.parentNode();
-    }
-    return true;
-  },
-
-  getNodeValue: protocol.custom(function () {
-    if (!this.incompleteValue) {
-      return delayedResolve(new ShortLongString(this.shortValue));
-    }
-
-    return this._getNodeValue();
-  }, {
-    impl: "_getNodeValue"
-  }),
-
-  
-
-  getFormProperty: function (name) {
-    return this._form.props ? this._form.props[name] : null;
-  },
-
-  hasFormProperty: function (name) {
-    return this._form.props ? (name in this._form.props) : null;
-  },
-
-  get formProperties() {
-    return this._form.props;
-  },
-
-  
-
-
-  startModifyingAttributes: function () {
-    return AttributeModificationList(this);
-  },
-
-  _cacheAttributes: function () {
-    if (typeof this._attrMap != "undefined") {
-      return;
-    }
-    this._attrMap = {};
-    for (let attr of this.attributes) {
-      this._attrMap[attr.name] = attr;
-    }
-  },
-
-  _getAttribute: function (name) {
-    this._cacheAttributes();
-    return this._attrMap[name] || undefined;
-  },
-
-  
-
-
-
-
-  reparent: function (parent) {
-    if (this._parent === parent) {
-      return;
-    }
-
-    if (this._parent && this._parent._child === this) {
-      this._parent._child = this._next;
-    }
-    if (this._prev) {
-      this._prev._next = this._next;
-    }
-    if (this._next) {
-      this._next._prev = this._prev;
-    }
-    this._next = null;
-    this._prev = null;
-    this._parent = parent;
-    if (!parent) {
-      
-      return;
-    }
-    this._next = parent._child;
-    if (this._next) {
-      this._next._prev = this;
-    }
-    parent._child = this;
-  },
-
-  
-
-
-  treeChildren: function () {
-    let ret = [];
-    for (let child = this._child; child != null; child = child._next) {
-      ret.push(child);
-    }
-    return ret;
-  },
-
-  
-
-
-
-
-
-
-  isLocal_toBeDeprecated: function () {
-    return !!this.conn._transport._serverConnection;
-  },
-
-  
-
-
-
-
-  rawNode: function (rawNode) {
-    if (!this.conn._transport._serverConnection) {
-      console.warn("Tried to use rawNode on a remote connection.");
-      return null;
-    }
-    let actor = this.conn._transport._serverConnection.getActor(this.actorID);
-    if (!actor) {
-      
-      
-      return null;
-    }
-    return actor.rawNode;
   }
 });
 
@@ -3729,47 +3321,6 @@ var WalkerFront = protocol.FrontClass(WalkerActor, {
 });
 
 exports.WalkerFront = WalkerFront;
-
-
-
-
-
-var AttributeModificationList = Class({
-  initialize: function (node) {
-    this.node = node;
-    this.modifications = [];
-  },
-
-  apply: function () {
-    let ret = this.node.modifyAttributes(this.modifications);
-    return ret;
-  },
-
-  destroy: function () {
-    this.node = null;
-    this.modification = null;
-  },
-
-  setAttributeNS: function (ns, name, value) {
-    this.modifications.push({
-      attributeNamespace: ns,
-      attributeName: name,
-      newValue: value
-    });
-  },
-
-  setAttribute: function (name, value) {
-    this.setAttributeNS(undefined, name, value);
-  },
-
-  removeAttributeNS: function (ns, name) {
-    this.setAttributeNS(ns, name, undefined);
-  },
-
-  removeAttribute: function (name) {
-    this.setAttributeNS(undefined, name, undefined);
-  }
-});
 
 
 
