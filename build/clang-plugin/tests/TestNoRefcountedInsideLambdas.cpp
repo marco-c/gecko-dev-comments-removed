@@ -21,7 +21,7 @@ void foo() {
   SmartPtr<R> sp;
   take([&](R* argptr) {
     R* localptr;
-    ptr->method(); 
+    ptr->method();
     argptr->method();
     localptr->method();
   });
@@ -33,7 +33,7 @@ void foo() {
   });
   take([&](R* argptr) {
     R* localptr;
-    take(ptr); 
+    take(ptr);
     take(argptr);
     take(localptr);
   });
@@ -91,4 +91,28 @@ void foo() {
     take(argsp);
     take(localsp);
   });
+  take([&ptr](R* argptr) {
+      R* localptr;
+      ptr->method();
+      argptr->method();
+      localptr->method();
+    });
+  take([&sp](SmartPtr<R> argsp) {
+      SmartPtr<R> localsp;
+      sp->method();
+      argsp->method();
+      localsp->method();
+    });
+  take([&ptr](R* argptr) {
+      R* localptr;
+      take(ptr);
+      take(argptr);
+      take(localptr);
+    });
+  take([&sp](SmartPtr<R> argsp) {
+      SmartPtr<R> localsp;
+      take(sp);
+      take(argsp);
+      take(localsp);
+    });
 }
