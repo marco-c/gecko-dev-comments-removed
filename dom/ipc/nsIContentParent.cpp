@@ -128,9 +128,35 @@ nsIContentParent::AllocPBrowserParent(const TabId& aTabId,
     return nullptr;
   }
 
+  const IPCTabAppBrowserContext& appBrowser = aContext.appBrowserContext();
+  const PopupIPCTabContext& popupContext = appBrowser.get_PopupIPCTabContext();
+
+  uint32_t chromeFlags = aChromeFlags;
+
+  
+  
+  
+  auto opener = TabParent::GetFrom(popupContext.opener().get_PBrowserParent());
+  
+  
+  nsCOMPtr<nsILoadContext> loadContext = opener->GetLoadContext();
+  if (!loadContext) {
+    return nullptr;
+  }
+
+  bool isPrivate;
+  loadContext->GetUsePrivateBrowsing(&isPrivate);
+  if (isPrivate) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
+  }
+
+  
+  
+  chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
+
   MaybeInvalidTabContext tc(aContext);
   MOZ_ASSERT(tc.IsValid());
-  TabParent* parent = new TabParent(this, aTabId, tc.GetTabContext(), aChromeFlags);
+  TabParent* parent = new TabParent(this, aTabId, tc.GetTabContext(), chromeFlags);
 
   
   NS_ADDREF(parent);
