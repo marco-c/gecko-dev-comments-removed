@@ -659,12 +659,14 @@ MDefinition::justReplaceAllUsesWithExcept(MDefinition* dom)
     uses_.pushFront(exceptUse);
 }
 
-void
+bool
 MDefinition::optimizeOutAllUses(TempAllocator& alloc)
 {
     for (MUseIterator i(usesBegin()), e(usesEnd()); i != e;) {
         MUse* use = *i++;
         MConstant* constant = use->consumer()->block()->optimizedOutConstant(alloc);
+        if (!alloc.ensureBallast())
+            return false;
 
         
         use->setProducerUnchecked(constant);
@@ -673,6 +675,7 @@ MDefinition::optimizeOutAllUses(TempAllocator& alloc)
 
     
     this->uses_.clear();
+    return true;
 }
 
 void

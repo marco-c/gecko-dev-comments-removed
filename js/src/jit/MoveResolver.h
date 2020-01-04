@@ -309,7 +309,7 @@ class MoveResolver
     
     
     
-    bool addMove(const MoveOperand& from, const MoveOperand& to, MoveOp::Type type);
+    MOZ_MUST_USE bool addMove(const MoveOperand& from, const MoveOperand& to, MoveOp::Type type);
     bool resolve();
     void sortMemoryToMemoryMoves();
 

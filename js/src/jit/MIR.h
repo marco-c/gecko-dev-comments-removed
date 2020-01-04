@@ -13,6 +13,7 @@
 #define jit_MIR_h
 
 #include "mozilla/Array.h"
+#include "mozilla/Attributes.h"
 
 #include "builtin/SIMD.h"
 #include "jit/AtomicOp.h"
@@ -844,7 +845,7 @@ class MDefinition : public MNode
     
     
     
-    void optimizeOutAllUses(TempAllocator& alloc);
+    MOZ_MUST_USE bool optimizeOutAllUses(TempAllocator& alloc);
 
     
     

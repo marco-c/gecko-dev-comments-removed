@@ -348,7 +348,8 @@ MacroAssembler::callWithABINoProfiler(Register fun, MoveOp::Type result)
     if (IsIntArgReg(fun)) {
         
         
-        moveResolver_.addMove(MoveOperand(fun), MoveOperand(r10), MoveOp::GENERAL);
+        propagateOOM(moveResolver_.addMove(MoveOperand(fun), MoveOperand(r10),
+                                           MoveOp::GENERAL));
         fun = r10;
     }
 
@@ -367,7 +368,8 @@ MacroAssembler::callWithABINoProfiler(const Address& fun, MoveOp::Type result)
     if (IsIntArgReg(safeFun.base)) {
         
         
-        moveResolver_.addMove(MoveOperand(fun.base), MoveOperand(r10), MoveOp::GENERAL);
+        propagateOOM(moveResolver_.addMove(MoveOperand(fun.base), MoveOperand(r10),
+                                           MoveOp::GENERAL));
         safeFun.base = r10;
     }
 
