@@ -425,16 +425,15 @@ function waitForBrowserLoad(browser) {
 
 
 
-
-function* checkGrid(aSitesPattern, aSites) {
+function* checkGrid(aSitesPattern) {
   let length = aSitesPattern.split(",").length;
 
   let foundPattern = 
     yield ContentTask.spawn(gWindow.gBrowser.selectedBrowser,
-                            { length: length, sites: aSites }, function* (args) {
+                            { length: length }, function* (args) {
       let grid = content.wrappedJSObject.gGrid;
 
-      let sites = (args.sites || grid.sites).slice(0, args.length);
+      let sites = grid.sites.slice(0, args.length);
       return sites.map(function (aSite) {
         if (!aSite)
           return "";
