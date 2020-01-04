@@ -132,17 +132,13 @@ abstract class BrowserToolbarTabletBase extends BrowserToolbar {
 
         
         
-        
-        
         final PorterDuffColorFilter colorFilter =
                 isPrivate ? privateBrowsingTabletMenuItemColorFilter : null;
-        backButton.setColorFilter(colorFilter);
-        forwardButton.setColorFilter(colorFilter);
         setTabsCounterPrivateMode(isPrivate, colorFilter);
-        menuIcon.setColorFilter(colorFilter);
 
         backButton.setPrivateMode(isPrivate);
         forwardButton.setPrivateMode(isPrivate);
+        menuIcon.setPrivateMode(isPrivate);
         for (int i = 0; i < actionItemBar.getChildCount(); ++i) {
             final MenuItemActionBar child = (MenuItemActionBar) actionItemBar.getChildAt(i);
             child.setPrivateMode(isPrivate);
