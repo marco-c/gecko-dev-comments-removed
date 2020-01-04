@@ -306,12 +306,12 @@ public:
 
   double DOMTimeToStreamTime(double aTime) const
   {
-    return aTime - ExtraCurrentTime();
+    return aTime;
   }
 
   double StreamTimeToDOMTime(double aTime) const
   {
-    return aTime + ExtraCurrentTime();
+    return aTime;
   }
 
   void OnStateChanged(void* aPromise, AudioContextState aNewState);
@@ -322,15 +322,6 @@ public:
   IMPL_EVENT_HANDLER(mozinterruptend)
 
 private:
-  
-
-
-
-
-
-
-  double ExtraCurrentTime() const;
-
   void RemoveFromDecodeQueue(WebAudioDecodeJob* aDecodeJob);
   void ShutdownDecoder();
 

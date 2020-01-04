@@ -106,6 +106,14 @@ public:
     mAudioParamStream = true;
   }
 
+  
+
+
+
+
+
+  void AdvanceAndResume(StreamTime aAdvance);
+
   virtual AudioNodeStream* AsAudioNodeStream() override { return this; }
   virtual void AddInput(MediaInputPort* aPort) override;
   virtual void RemoveInput(MediaInputPort* aPort) override;
@@ -185,6 +193,8 @@ public:
   void CheckForInactive();
 
 protected:
+  class AdvanceAndResumeMessage;
+
   virtual void DestroyImpl() override;
 
   void AdvanceOutputSegment();
