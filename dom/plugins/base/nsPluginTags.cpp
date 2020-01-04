@@ -699,6 +699,13 @@ nsPluginTag::HasSameNameAndMimes(const nsPluginTag *aPluginTag) const
   return true;
 }
 
+NS_IMETHODIMP
+nsPluginTag::GetLoaded(bool* aIsLoaded)
+{
+  *aIsLoaded = !!mPlugin;
+  return NS_OK;
+}
+
 void nsPluginTag::TryUnloadPlugin(bool inShutdown)
 {
   
@@ -1023,5 +1030,13 @@ nsFakePluginTag::GetLastModifiedTime(PRTime* aLastModifiedTime)
   
   MOZ_ASSERT(aLastModifiedTime);
   *aLastModifiedTime = 0;
+  return NS_OK;
+}
+
+
+NS_IMETHODIMP
+nsFakePluginTag::GetLoaded(bool* ret)
+{
+  *ret = true;
   return NS_OK;
 }
