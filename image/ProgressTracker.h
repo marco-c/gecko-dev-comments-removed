@@ -28,6 +28,11 @@ class AsyncNotifyCurrentStateRunnable;
 class Image;
 
 
+
+
+
+
+
 enum {
   FLAG_SIZE_AVAILABLE     = 1u << 0,  
   FLAG_DECODE_COMPLETE    = 1u << 1,  
