@@ -202,7 +202,11 @@ public:
 
 
   void FinalizeDecoder(Decoder* aDecoder,
-                       const ImageMetadata& aMetadata);
+                       const ImageMetadata& aMetadata,
+                       Progress aProgress,
+                       const gfx::IntRect& aInvalidRect,
+                       const Maybe<uint32_t>& aFrameCount,
+                       SurfaceFlags aSurfaceFlags);
 
   
   void ReportDecoderError(Decoder* aDecoder);

@@ -1563,7 +1563,11 @@ RasterImage::NotifyProgress(Progress aProgress,
 
 void
 RasterImage::FinalizeDecoder(Decoder* aDecoder,
-                             const ImageMetadata& aMetadata)
+                             const ImageMetadata& aMetadata,
+                             Progress aProgress,
+                             const IntRect& aInvalidRect,
+                             const Maybe<uint32_t>& aFrameCount,
+                             SurfaceFlags aSurfaceFlags)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aDecoder);
@@ -1582,10 +1586,8 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder,
     
     
     
-    aDecoder->TakeProgress();
-    aDecoder->TakeInvalidRect();
     RecoverFromInvalidFrames(mSize,
-                             FromSurfaceFlags(aDecoder->GetSurfaceFlags()));
+                             FromSurfaceFlags(aSurfaceFlags));
     return;
   }
 
@@ -1598,10 +1600,7 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder,
   }
 
   
-  NotifyProgress(aDecoder->TakeProgress(),
-                 aDecoder->TakeInvalidRect(),
-                 aDecoder->TakeCompleteFrameCount(),
-                 aDecoder->GetSurfaceFlags());
+  NotifyProgress(aProgress, aInvalidRect, aFrameCount, aSurfaceFlags);
 
   if (mHasBeenDecoded && mAnimationState) {
     
