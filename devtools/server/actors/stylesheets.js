@@ -460,7 +460,10 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     
     
     
-    if (!/^resource:\/\//.test(this.href)) {
+    
+    
+    if (!/^resource:\/\//.test(this.href) &&
+        !/^chrome:\/\//.test(this.href)) {
       options.window = this.window;
       options.principal = this.document.nodePrincipal;
     }
