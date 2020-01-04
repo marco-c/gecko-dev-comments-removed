@@ -493,6 +493,7 @@ gfxWindowsPlatform::HandleDeviceReset()
   
   UpdateDeviceInitData();
   InitializeDevices();
+  BumpDeviceCounter();
   return true;
 }
 

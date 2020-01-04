@@ -650,6 +650,10 @@ public:
       return false;
     }
 
+    uint64_t GetDeviceCounter() const {
+      return mDeviceCounter;
+    }
+
 protected:
     gfxPlatform();
     virtual ~gfxPlatform();
@@ -678,6 +682,11 @@ protected:
 
 
     void UpdateDeviceInitData();
+
+    
+
+
+    void BumpDeviceCounter();
 
     
 
@@ -791,6 +800,9 @@ private:
 
     int32_t mScreenDepth;
     mozilla::gfx::IntSize mScreenSize;
+
+    
+    uint64_t mDeviceCounter;
 };
 
 #endif 
