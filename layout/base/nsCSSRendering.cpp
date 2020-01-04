@@ -3052,7 +3052,7 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
         nsBackgroundLayerState state =
           PrepareImageLayer(aPresContext, aForFrame,
                             aFlags, paintBorderArea, clipState.mBGClipArea,
-                            layer, co);
+                            layer, nullptr, co);
         result &= state.mImageRenderer.PrepareResult();
         if (!state.mFillArea.IsEmpty()) {
           
@@ -3086,7 +3086,8 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
                                                  nsIFrame* aForFrame,
                                                  const nsRect& aBorderArea,
                                                  const nsStyleImageLayers::Layer& aLayer,
-                                                 nsIFrame** aAttachedToFrame)
+                                                 nsIFrame** aAttachedToFrame,
+                                                 bool* aOutIsTransformedFixed)
 {
   
   
@@ -3165,16 +3166,23 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
 
     
     
-    bgPositioningArea =
-      nsRect(-aForFrame->GetOffsetTo(attachedToFrame), attachedToFrame->GetSize());
-
-    if (!pageContentFrame) {
+    if (nsLayoutUtils::IsTransformed(aForFrame, attachedToFrame)) {
+      attachedToFrame = aForFrame;
+      *aOutIsTransformedFixed = true;
+    } else {
       
-      nsIScrollableFrame* scrollableFrame =
-        aPresContext->PresShell()->GetRootScrollFrameAsScrollable();
-      if (scrollableFrame) {
-        nsMargin scrollbars = scrollableFrame->GetActualScrollbarSizes();
-        bgPositioningArea.Deflate(scrollbars);
+      
+      bgPositioningArea =
+        nsRect(-aForFrame->GetOffsetTo(attachedToFrame), attachedToFrame->GetSize());
+
+      if (!pageContentFrame) {
+        
+        nsIScrollableFrame* scrollableFrame =
+          aPresContext->PresShell()->GetRootScrollFrameAsScrollable();
+        if (scrollableFrame) {
+          nsMargin scrollbars = scrollableFrame->GetActualScrollbarSizes();
+          bgPositioningArea.Deflate(scrollbars);
+        }
       }
     }
   }
@@ -3227,6 +3235,7 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
                                   const nsRect& aBorderArea,
                                   const nsRect& aBGClipRect,
                                   const nsStyleImageLayers::Layer& aLayer,
+                                  bool* aOutIsTransformedFixed,
                                   CompositionOp aCompositonOp)
 {
   
@@ -3309,10 +3318,15 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   
   nsIFrame* attachedToFrame = aForFrame;
   
+  bool transformedFixed = false;
+  
   
   nsRect bgPositioningArea =
     ComputeImageLayerPositioningArea(aPresContext, aForFrame, aBorderArea,
-                                     aLayer, &attachedToFrame);
+                                     aLayer, &attachedToFrame, &transformedFixed);
+  if (aOutIsTransformedFixed) {
+    *aOutIsTransformedFixed = transformedFixed;
+  }
 
   
   
@@ -3323,9 +3337,8 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   
   
   nsPoint imageTopLeft;
-  if (NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED == aLayer.mAttachment) {
-    if ((aFlags & nsCSSRendering::PAINTBG_TO_WINDOW) &&
-        !IsTransformed(aForFrame, attachedToFrame)) {
+  if (NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED == aLayer.mAttachment && !transformedFixed) {
+    if (aFlags & nsCSSRendering::PAINTBG_TO_WINDOW) {
       
       
       

@@ -220,7 +220,7 @@ public:
     
     
     
-    return mBackgroundStyle->mImage.mLayers[mLayer].mAttachment == NS_STYLE_IMAGELAYER_ATTACHMENT_FIXED &&
+    return ShouldTreatAsFixed() &&
            !mBackgroundStyle->mImage.mLayers[mLayer].mImage.IsEmpty();
   }
  
