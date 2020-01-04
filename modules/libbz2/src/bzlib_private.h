@@ -36,7 +36,7 @@
 
 
 
-#define BZ_VERSION  "1.0.4, 20-Dec-2006"
+#define BZ_VERSION  "1.0.6, 6-Sept-2010"
 
 typedef char            Char;
 typedef unsigned char   Bool;
@@ -441,12 +441,16 @@ typedef
 
 
 
-#define BZ_GET_FAST(cccc)                     \
+#define BZ_GET_FAST(cccc)
+ \
+    if (s->tPos >= (UInt32)100000 * (UInt32)s->blockSize100k) return True; \
     s->tPos = s->tt[s->tPos];                 \
     cccc = (UChar)(s->tPos & 0xff);           \
     s->tPos >>= 8;
 
-#define BZ_GET_FAST_C(cccc)                   \
+#define BZ_GET_FAST_C(cccc)
+ \
+    if (c_tPos >= (UInt32)100000 * (UInt32)ro_blockSize100k) return True; \
     c_tPos = c_tt[c_tPos];                    \
     cccc = (UChar)(c_tPos & 0xff);            \
     c_tPos >>= 8;
@@ -468,9 +472,11 @@ typedef
 #define GET_LL(i) \
    (((UInt32)s->ll16[i]) | (GET_LL4(i) << 16))
 
-#define BZ_GET_SMALL(cccc)                            \
-      cccc = BZ2_indexIntoF ( s->tPos, s->cftab );    \
-      s->tPos = GET_LL(s->tPos);
+#define BZ_GET_SMALL(cccc)
+ \
+    if (s->tPos >= (UInt32)100000 * (UInt32)s->blockSize100k) return True; \
+    cccc = BZ2_indexIntoF ( s->tPos, s->cftab );    \
+    s->tPos = GET_LL(s->tPos);
 
 
 

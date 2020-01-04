@@ -381,6 +381,13 @@ Int32 BZ2_decompress ( DState* s )
             es = -1;
             N = 1;
             do {
+               
+
+
+
+
+
+               if (N >= 2*1024*1024) RETURN(BZ_DATA_ERROR);
                if (nextSym == BZ_RUNA) es = es + (0+1) * N; else
                if (nextSym == BZ_RUNB) es = es + (1+1) * N;
                N = N * 2;
@@ -485,12 +492,25 @@ Int32 BZ2_decompress ( DState* s )
          RETURN(BZ_DATA_ERROR);
 
       
+      
+      for (i = 0; i <= 255; i++) {
+         if (s->unzftab[i] < 0 || s->unzftab[i] > nblock)
+            RETURN(BZ_DATA_ERROR);
+      }
+      
       s->cftab[0] = 0;
       for (i = 1; i <= 256; i++) s->cftab[i] = s->unzftab[i-1];
       for (i = 1; i <= 256; i++) s->cftab[i] += s->cftab[i-1];
+      
       for (i = 0; i <= 256; i++) {
          if (s->cftab[i] < 0 || s->cftab[i] > nblock) {
             
+            RETURN(BZ_DATA_ERROR);
+         }
+      }
+      
+      for (i = 1; i <= 256; i++) {
+         if (s->cftab[i-1] > s->cftab[i]) {
             RETURN(BZ_DATA_ERROR);
          }
       }

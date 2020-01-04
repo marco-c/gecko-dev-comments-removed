@@ -48,7 +48,7 @@ void BZ2_bz__AssertH__fail ( int errcode )
       "component, you should also report this bug to the author(s)\n"
       "of that program.  Please make an effort to report this bug;\n"
       "timely and accurate bug reports eventually lead to higher\n"
-      "quality software.  Thanks.  Julian Seward, 15 February 2005.\n\n",
+      "quality software.  Thanks.  Julian Seward, 10 December 2007.\n\n",
       errcode,
       BZ2_bzlibVersion()
    );
@@ -598,6 +598,7 @@ Bool unRLE_obuf_to_output_FAST ( DState* s )
       UInt32        c_tPos               = s->tPos;
       char*         cs_next_out          = s->strm->next_out;
       unsigned int  cs_avail_out         = s->strm->avail_out;
+      Int32         ro_blockSize100k     = s->blockSize100k;
       
 
       UInt32       avail_out_INIT = cs_avail_out;
@@ -1371,23 +1372,7 @@ const char * BZ_API(BZ2_bzlibVersion)(void)
 #ifndef BZ_NO_STDIO
 
 
-#ifdef WINCE
-#ifndef setmode
-#define setmode _setmode
-#endif
-#ifndef O_BINARY
-#define O_BINARY _O_BINARY
-#endif
-static
-FILE * fdopen(int fd, const char *mode)
-{
-    wchar_t wMode[10];
-    MultiByteToWideChar(CP_ACP, 0, mode, -1, wMode, 10);
-    return _wfdopen((void*)fd, wMode);
-}
-#endif
-
-#if (defined(_WIN32) || defined(OS2) || defined(MSDOS))
+#if defined(_WIN32) || defined(OS2) || defined(MSDOS)
 #   include <fcntl.h>
 #   include <io.h>
 #   define SET_BINARY_MODE(file) setmode(fileno(file),O_BINARY)
