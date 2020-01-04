@@ -176,6 +176,8 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     
     
 
+    bool isObjectOrFunction = key == JSProto_Function || key == JSProto_Object;
+
     
     
     
@@ -200,14 +202,16 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
         if (!proto)
             return false;
 
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!global->isStandardClassResolved(key));
+        if (isObjectOrFunction) {
+            
+            
+            
+            
+            
+            MOZ_ASSERT(!global->isStandardClassResolved(key));
 
-        global->setPrototype(key, ObjectValue(*proto));
+            global->setPrototype(key, ObjectValue(*proto));
+        }
     }
 
     
@@ -216,13 +220,15 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
         return false;
 
     RootedId id(cx, NameToId(ClassName(key, cx)));
-    if (clasp->specShouldDefineConstructor()) {
-        if (!global->addDataProperty(cx, id, constructorPropertySlot(key), 0))
-            return false;
-    }
+    if (isObjectOrFunction) {
+        if (clasp->specShouldDefineConstructor()) {
+            if (!global->addDataProperty(cx, id, constructorPropertySlot(key), 0))
+                return false;
+        }
 
-    global->setConstructor(key, ObjectValue(*ctor));
-    global->setConstructorPropertySlot(key, ObjectValue(*ctor));
+        global->setConstructor(key, ObjectValue(*ctor));
+        global->setConstructorPropertySlot(key, ObjectValue(*ctor));
+    }
 
     
     
@@ -255,6 +261,23 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     if (FinishClassInitOp finishInit = clasp->specFinishInitHook()) {
         if (!finishInit(cx, ctor, proto))
             return false;
+    }
+
+    if (!isObjectOrFunction) {
+        
+        
+
+        
+        if (clasp->specShouldDefineConstructor()) {
+            if (!global->addDataProperty(cx, id, constructorPropertySlot(key), 0))
+                return false;
+        }
+
+        
+        global->setConstructor(key, ObjectValue(*ctor));
+        global->setConstructorPropertySlot(key, ObjectValue(*ctor));
+        if (proto)
+            global->setPrototype(key, ObjectValue(*proto));
     }
 
     if (clasp->specShouldDefineConstructor()) {
