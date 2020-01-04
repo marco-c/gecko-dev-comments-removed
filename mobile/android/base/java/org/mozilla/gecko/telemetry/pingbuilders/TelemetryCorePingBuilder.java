@@ -172,7 +172,10 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
 
 
     @Nullable
-    public static String getEngineIdentifier(final SearchEngine searchEngine) {
+    public static String getEngineIdentifier(@Nullable final SearchEngine searchEngine) {
+        if (searchEngine == null) {
+            return null;
+        }
         final String identifier = searchEngine.getIdentifier();
         return TextUtils.isEmpty(identifier) ? null : identifier;
     }
