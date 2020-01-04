@@ -694,6 +694,26 @@ public:
     }
   }
 
+  
+  
+  
+  
+  void StopTrack(TrackID aTrackID) override
+  {
+    if (GetSourceStream()) {
+      GetSourceStream()->EndTrack(aTrackID);
+      
+      
+      
+      RefPtr<dom::MediaStreamTrack> ownedTrack = FindOwnedDOMTrack(mOwnedStream, aTrackID);
+      if (ownedTrack) {
+        mListener->StopTrack(aTrackID);
+      } else {
+        LOG(("StopTrack(%d) on non-existent track", aTrackID));
+      }
+    }
+  }
+
   already_AddRefed<Promise>
   ApplyConstraintsToTrack(TrackID aTrackID,
                           const MediaTrackConstraints& aConstraints,
