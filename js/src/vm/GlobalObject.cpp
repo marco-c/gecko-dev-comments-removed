@@ -91,6 +91,21 @@ js::GlobalObject::getTypedObjectModule() const {
 }
 
  bool
+GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key)
+{
+    
+    switch (key) {
+#ifdef ENABLE_SHARED_ARRAY_BUFFER
+      case JSProto_Atomics:
+      case JSProto_SharedArrayBuffer:
+        return !cx->compartment()->creationOptions().getSharedMemoryAndAtomicsEnabled();
+#endif
+      default:
+        return false;
+    }
+}
+
+ bool
 GlobalObject::ensureConstructor(JSContext* cx, Handle<GlobalObject*> global, JSProtoKey key)
 {
     if (global->isStandardClassResolved(key))
@@ -114,6 +129,9 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     const Class* clasp = ProtoKeyToClass(key);
     if (!init && !clasp)
         return true;  
+
+    if (skipDeselectedConstructor(cx, key))
+        return true;
 
     
     
