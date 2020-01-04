@@ -20,41 +20,6 @@ class AudioTrackList;
 class VideoTrackList;
 class AudioTrack;
 class VideoTrack;
-class MediaTrackList;
-
-
-
-
-
-
-class MediaTrackListListener
-{
-public:
-  friend class mozilla::DOMMediaStream;
-
-  explicit MediaTrackListListener(MediaTrackList* aMediaTrackList)
-    : mMediaTrackList(aMediaTrackList) {};
-
-  ~MediaTrackListListener()
-  {
-    mMediaTrackList = nullptr;
-  };
-
-  
-  
-  
-  void NotifyMediaTrackCreated(MediaTrack* aTrack);
-
-  
-  
-  
-  void NotifyMediaTrackEnded(const nsAString& aId);
-
-protected:
-  
-  
-  MediaTrackList* mMediaTrackList;
-};
 
 
 
@@ -120,7 +85,6 @@ public:
   IMPL_EVENT_HANDLER(addtrack)
   IMPL_EVENT_HANDLER(removetrack)
 
-  friend class MediaTrackListListener;
   friend class AudioTrack;
   friend class VideoTrack;
 
