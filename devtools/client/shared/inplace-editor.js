@@ -121,6 +121,7 @@ function isKeyIn(key, ...keys) {
 
 
 
+
 function editableField(options) {
   return editableItem(options, function (element, event) {
     if (!options.element.inplaceEditor) {
@@ -219,7 +220,7 @@ function InplaceEditor(options, event) {
   let doc = this.elt.ownerDocument;
   this.doc = doc;
   this.elt.inplaceEditor = this;
-
+  this.cssProperties = options.cssProperties;
   this.change = options.change;
   this.done = options.done;
   this.destroy = options.destroy;
@@ -1477,7 +1478,7 @@ InplaceEditor.prototype = {
 
 
   _getCSSValuesForPropertyName: function (propertyName) {
-    return domUtils.getCSSValuesForProperty(propertyName);
+    return this.cssProperties.getValues(propertyName);
   },
 };
 

@@ -7,6 +7,7 @@ const { FrontClassWithSpec, Front } = require("devtools/shared/protocol");
 const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
 const { Task } = require("devtools/shared/task");
 const { CSS_PROPERTIES_DB } = require("devtools/shared/css-properties-db");
+const { cssColors } = require("devtools/shared/css-color-db");
 
 
 
@@ -44,8 +45,6 @@ const CssPropertiesFront = FrontClassWithSpec(cssPropertiesSpec, {
     this.manage(this);
   }
 });
-
-exports.CssPropertiesFront = CssPropertiesFront;
 
 
 
@@ -100,10 +99,19 @@ CssProperties.prototype = {
 
   supportsType(property, type) {
     return this.properties[property] && this.properties[property].supports.includes(type);
+  },
+
+  
+
+
+
+
+
+  getValues(property) {
+    return this.properties[property] ? this.properties[property].values : [];
   }
 };
 
-exports.CssProperties = CssProperties;
 
 
 
@@ -115,9 +123,8 @@ exports.CssProperties = CssProperties;
 
 
 
-
-exports.initCssProperties = Task.async(function* (toolbox) {
-  let client = toolbox.target.client;
+const initCssProperties = Task.async(function* (toolbox) {
+  const client = toolbox.target.client;
   if (cachedCssProperties.has(client)) {
     return cachedCssProperties.get(client);
   }
@@ -127,34 +134,22 @@ exports.initCssProperties = Task.async(function* (toolbox) {
   
   if (toolbox.target.hasActor("cssProperties")) {
     front = CssPropertiesFront(client, toolbox.target.form);
-    db = yield front.getCSSDatabase();
+    const serverDB = yield front.getCSSDatabase(getClientBrowserVersion(toolbox));
 
     
-    
-    
-
-    
-    
-    if (!db.properties) {
-      db = { properties: db };
-    }
-
-    
-    db = Object.assign({}, CSS_PROPERTIES_DB, db);
-
-    
-    if (!db.properties.color.supports) {
-      for (let name in db.properties) {
-        if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
-          db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
-        }
-      }
+    if (!serverDB.properties && !serverDB.margin) {
+      db = CSS_PROPERTIES_DB;
+    } else {
+      db = normalizeCssData(serverDB);
     }
   } else {
     
     
     db = CSS_PROPERTIES_DB;
   }
+
+  
+  reattachCssColorValues(db);
 
   const cssProperties = new CssProperties(db);
   cachedCssProperties.set(client, {cssProperties, front});
@@ -167,13 +162,86 @@ exports.initCssProperties = Task.async(function* (toolbox) {
 
 
 
-exports.getCssProperties = function (toolbox) {
+function getCssProperties(toolbox) {
   if (!cachedCssProperties.has(toolbox.target.client)) {
     throw new Error("The CSS database has not been initialized, please make " +
                     "sure initCssDatabase was called once before for this " +
                     "toolbox.");
   }
   return cachedCssProperties.get(toolbox.target.client).cssProperties;
-};
+}
 
-exports.CssPropertiesFront = CssPropertiesFront;
+
+
+
+
+function getClientBrowserVersion(toolbox) {
+  if (!toolbox._host) {
+    return "0";
+  }
+  const regexResult = toolbox._host.frame.contentWindow.navigator
+                             .userAgent.match(/Firefox\/(\d+)\.\d/);
+  return Array.isArray(regexResult) ? regexResult[1] : "0";
+}
+
+
+
+
+
+
+
+function normalizeCssData(db) {
+  
+  
+  if (!db.properties) {
+    db = { properties: db };
+  }
+
+  
+  db = Object.assign({}, CSS_PROPERTIES_DB, db);
+
+  
+  if (!db.properties.color.supports) {
+    for (let name in db.properties) {
+      if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
+        db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
+      }
+    }
+  }
+
+  
+  if (!db.properties.color.values) {
+    for (let name in db.properties) {
+      if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
+        db.properties[name].values = CSS_PROPERTIES_DB.properties[name].values;
+      }
+    }
+  }
+
+  return db;
+}
+
+
+
+
+
+function reattachCssColorValues(db) {
+  if (db.properties.color.values[0] === "COLOR") {
+    const colors = Object.keys(cssColors);
+
+    for (let name in db.properties) {
+      const property = db.properties[name];
+      if (property.values[0] === "COLOR") {
+        property.values.shift();
+        property.values = property.values.concat(colors).sort();
+      }
+    }
+  }
+}
+
+module.exports = {
+  CssPropertiesFront,
+  CssProperties,
+  getCssProperties,
+  initCssProperties
+};
