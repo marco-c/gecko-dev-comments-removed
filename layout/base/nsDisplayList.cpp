@@ -5749,7 +5749,7 @@ nsDisplayTransform::GetAccumulatedPreserved3DTransform(nsDisplayListBuilder* aBu
     }
 
     const nsIFrame* establisher; 
-    for (establisher = nsLayoutUtils::GetCrossDocParentFrame(mFrame);
+    for (establisher = mFrame;
          establisher && establisher->Combines3DTransformWithAncestors();
          establisher = nsLayoutUtils::GetCrossDocParentFrame(establisher)) {
     }
