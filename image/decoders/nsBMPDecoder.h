@@ -142,8 +142,8 @@ public:
   
   bool HasTransparency() const { return mDoesHaveTransparency; }
 
-  Maybe<TerminalState> DoDecode(SourceBufferIterator& aIterator,
-                                IResumable* aOnResume) override;
+  LexerResult DoDecode(SourceBufferIterator& aIterator,
+                       IResumable* aOnResume) override;
   nsresult BeforeFinishInternal() override;
   nsresult FinishInternal() override;
 

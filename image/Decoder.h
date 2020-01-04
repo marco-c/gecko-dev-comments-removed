@@ -297,8 +297,8 @@ protected:
 
 
   virtual nsresult InitInternal();
-  virtual Maybe<TerminalState> DoDecode(SourceBufferIterator& aIterator,
-                                        IResumable* aOnResume) = 0;
+  virtual LexerResult DoDecode(SourceBufferIterator& aIterator,
+                               IResumable* aOnResume) = 0;
   virtual nsresult BeforeFinishInternal();
   virtual nsresult FinishInternal();
   virtual nsresult FinishWithErrorInternal();

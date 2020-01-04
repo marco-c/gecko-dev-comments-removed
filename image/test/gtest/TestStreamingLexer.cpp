@@ -150,10 +150,10 @@ TEST_F(ImageStreamingLexer, ZeroLengthData)
   
   mSourceBuffer->Complete(NS_OK);
 
-  Maybe<TerminalState> result = mLexer.Lex(mIterator, mExpectNoResume, DoLex);
+  LexerResult result = mLexer.Lex(mIterator, mExpectNoResume, DoLex);
 
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::FAILURE), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::FAILURE, result.as<TerminalState>());
 }
 
 TEST_F(ImageStreamingLexer, SingleChunk)
@@ -162,10 +162,10 @@ TEST_F(ImageStreamingLexer, SingleChunk)
   mSourceBuffer->Append(mData, sizeof(mData));
   mSourceBuffer->Complete(NS_OK);
 
-  Maybe<TerminalState> result = mLexer.Lex(mIterator, mExpectNoResume, DoLex);
+  LexerResult result = mLexer.Lex(mIterator, mExpectNoResume, DoLex);
 
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
 }
 
 TEST_F(ImageStreamingLexer, SingleChunkWithUnbuffered)
@@ -176,14 +176,14 @@ TEST_F(ImageStreamingLexer, SingleChunkWithUnbuffered)
   mSourceBuffer->Append(mData, sizeof(mData));
   mSourceBuffer->Complete(NS_OK);
 
-  Maybe<TerminalState> result =
+  LexerResult result =
     mLexer.Lex(mIterator, mExpectNoResume,
                [&](TestState aState, const char* aData, size_t aLength) {
       return DoLexWithUnbuffered(aState, aData, aLength, unbufferedVector);
   });
 
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
 }
 
 TEST_F(ImageStreamingLexer, ChunkPerState)
@@ -191,13 +191,14 @@ TEST_F(ImageStreamingLexer, ChunkPerState)
   
   for (unsigned i = 0; i < 3; ++i) {
     mSourceBuffer->Append(mData + 3 * i, 3);
-    Maybe<TerminalState> result = mLexer.Lex(mIterator, mCountResumes, DoLex);
+    LexerResult result = mLexer.Lex(mIterator, mCountResumes, DoLex);
 
     if (i == 2) {
-      EXPECT_TRUE(result.isSome());
-      EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+      EXPECT_TRUE(result.is<TerminalState>());
+      EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
     } else {
-      EXPECT_TRUE(result.isNothing());
+      EXPECT_TRUE(result.is<Yield>());
+      EXPECT_EQ(Yield::NEED_MORE_DATA, result.as<Yield>());
     }
   }
 
@@ -212,17 +213,18 @@ TEST_F(ImageStreamingLexer, ChunkPerStateWithUnbuffered)
   
   for (unsigned i = 0; i < 3; ++i) {
     mSourceBuffer->Append(mData + 3 * i, 3);
-    Maybe<TerminalState> result =
+    LexerResult result =
       mLexer.Lex(mIterator, mCountResumes,
                  [&](TestState aState, const char* aData, size_t aLength) {
         return DoLexWithUnbuffered(aState, aData, aLength, unbufferedVector);
     });
 
     if (i == 2) {
-      EXPECT_TRUE(result.isSome());
-      EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+      EXPECT_TRUE(result.is<TerminalState>());
+      EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
     } else {
-      EXPECT_TRUE(result.isNothing());
+      EXPECT_TRUE(result.is<Yield>());
+      EXPECT_EQ(Yield::NEED_MORE_DATA, result.as<Yield>());
     }
   }
 
@@ -235,13 +237,14 @@ TEST_F(ImageStreamingLexer, OneByteChunks)
   
   for (unsigned i = 0; i < 9; ++i) {
     mSourceBuffer->Append(mData + i, 1);
-    Maybe<TerminalState> result = mLexer.Lex(mIterator, mCountResumes, DoLex);
+    LexerResult result = mLexer.Lex(mIterator, mCountResumes, DoLex);
 
     if (i == 8) {
-      EXPECT_TRUE(result.isSome());
-      EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+      EXPECT_TRUE(result.is<TerminalState>());
+      EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
     } else {
-      EXPECT_TRUE(result.isNothing());
+      EXPECT_TRUE(result.is<Yield>());
+      EXPECT_EQ(Yield::NEED_MORE_DATA, result.as<Yield>());
     }
   }
 
@@ -256,17 +259,18 @@ TEST_F(ImageStreamingLexer, OneByteChunksWithUnbuffered)
   
   for (unsigned i = 0; i < 9; ++i) {
     mSourceBuffer->Append(mData + i, 1);
-    Maybe<TerminalState> result =
+    LexerResult result =
       mLexer.Lex(mIterator, mCountResumes,
                  [&](TestState aState, const char* aData, size_t aLength) {
         return DoLexWithUnbuffered(aState, aData, aLength, unbufferedVector);
     });
 
     if (i == 8) {
-      EXPECT_TRUE(result.isSome());
-      EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+      EXPECT_TRUE(result.is<TerminalState>());
+      EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
     } else {
-      EXPECT_TRUE(result.isNothing());
+      EXPECT_TRUE(result.is<Yield>());
+      EXPECT_EQ(Yield::NEED_MORE_DATA, result.as<Yield>());
     }
   }
 
@@ -283,11 +287,11 @@ TEST_F(ImageStreamingLexer, ZeroLengthState)
   
   StreamingLexer<TestState> lexer(Transition::To(TestState::ONE, 0));
 
-  Maybe<TerminalState> result =
+  LexerResult result =
     lexer.Lex(mIterator, mExpectNoResume, DoLexWithZeroLengthStates);
 
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
 }
 
 TEST_F(ImageStreamingLexer, ZeroLengthStateWithUnbuffered)
@@ -301,11 +305,11 @@ TEST_F(ImageStreamingLexer, ZeroLengthStateWithUnbuffered)
                                                            TestState::UNBUFFERED,
                                                            0));
 
-  Maybe<TerminalState> result =
+  LexerResult result =
     lexer.Lex(mIterator, mExpectNoResume, DoLexWithZeroLengthStatesUnbuffered);
 
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
 }
 
 TEST_F(ImageStreamingLexer, TerminateSuccess)
@@ -315,14 +319,14 @@ TEST_F(ImageStreamingLexer, TerminateSuccess)
 
   
   SourceBufferIterator iterator = mSourceBuffer->Iterator();
-  Maybe<TerminalState> result =
+  LexerResult result =
     mLexer.Lex(iterator, mExpectNoResume,
                [&](TestState aState, const char* aData, size_t aLength) {
       EXPECT_TRUE(aState == TestState::ONE);
       return Transition::TerminateSuccess();
   });
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
 
   SourceBufferIterator iterator2 = mSourceBuffer->Iterator();
   result =
@@ -331,8 +335,8 @@ TEST_F(ImageStreamingLexer, TerminateSuccess)
       EXPECT_TRUE(false);  
       return Transition::TerminateFailure();
   });
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
 }
 
 TEST_F(ImageStreamingLexer, TerminateFailure)
@@ -342,14 +346,14 @@ TEST_F(ImageStreamingLexer, TerminateFailure)
 
   
   SourceBufferIterator iterator = mSourceBuffer->Iterator();
-  Maybe<TerminalState> result =
+  LexerResult result =
     mLexer.Lex(iterator, mExpectNoResume,
                [&](TestState aState, const char* aData, size_t aLength) {
       EXPECT_TRUE(aState == TestState::ONE);
       return Transition::TerminateFailure();
   });
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::FAILURE), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::FAILURE, result.as<TerminalState>());
 
   SourceBufferIterator iterator2 = mSourceBuffer->Iterator();
   result =
@@ -358,8 +362,8 @@ TEST_F(ImageStreamingLexer, TerminateFailure)
       EXPECT_TRUE(false);  
       return Transition::TerminateFailure();
   });
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::FAILURE), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::FAILURE, result.as<TerminalState>());
 }
 
 TEST_F(ImageStreamingLexer, TerminateUnbuffered)
@@ -367,14 +371,15 @@ TEST_F(ImageStreamingLexer, TerminateUnbuffered)
   
   for (unsigned i = 0; i < 9; ++i) {
     mSourceBuffer->Append(mData + i, 1);
-    Maybe<TerminalState> result =
+    LexerResult result =
       mLexer.Lex(mIterator, mCountResumes, DoLexWithUnbufferedTerminate);
 
     if (i > 2) {
-      EXPECT_TRUE(result.isSome());
-      EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+      EXPECT_TRUE(result.is<TerminalState>());
+      EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
     } else {
-      EXPECT_TRUE(result.isNothing());
+      EXPECT_TRUE(result.is<Yield>());
+      EXPECT_EQ(Yield::NEED_MORE_DATA, result.as<Yield>());
     }
   }
 
@@ -394,10 +399,10 @@ TEST_F(ImageStreamingLexer, SourceBufferImmediateComplete)
   
   mSourceBuffer->Complete(NS_OK);
 
-  Maybe<TerminalState> result = mLexer.Lex(mIterator, mExpectNoResume, DoLex);
+  LexerResult result = mLexer.Lex(mIterator, mExpectNoResume, DoLex);
 
-  EXPECT_TRUE(result.isSome());
-  EXPECT_EQ(Some(TerminalState::FAILURE), result);
+  EXPECT_TRUE(result.is<TerminalState>());
+  EXPECT_EQ(TerminalState::FAILURE, result.as<TerminalState>());
 }
 
 TEST_F(ImageStreamingLexer, SourceBufferTruncatedSuccess)
@@ -411,13 +416,14 @@ TEST_F(ImageStreamingLexer, SourceBufferTruncatedSuccess)
       mSourceBuffer->Complete(NS_OK);
     }
 
-    Maybe<TerminalState> result = mLexer.Lex(mIterator, mCountResumes, DoLex);
+    LexerResult result = mLexer.Lex(mIterator, mCountResumes, DoLex);
 
     if (i >= 2) {
-      EXPECT_TRUE(result.isSome());
-      EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+      EXPECT_TRUE(result.is<TerminalState>());
+      EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
     } else {
-      EXPECT_TRUE(result.isNothing());
+      EXPECT_TRUE(result.is<Yield>());
+      EXPECT_EQ(Yield::NEED_MORE_DATA, result.as<Yield>());
     }
   }
 
@@ -435,13 +441,14 @@ TEST_F(ImageStreamingLexer, SourceBufferTruncatedFailure)
       mSourceBuffer->Complete(NS_ERROR_FAILURE);
     }
 
-    Maybe<TerminalState> result = mLexer.Lex(mIterator, mCountResumes, DoLex);
+    LexerResult result = mLexer.Lex(mIterator, mCountResumes, DoLex);
 
     if (i >= 2) {
-      EXPECT_TRUE(result.isSome());
-      EXPECT_EQ(Some(TerminalState::FAILURE), result);
+      EXPECT_TRUE(result.is<TerminalState>());
+      EXPECT_EQ(TerminalState::FAILURE, result.as<TerminalState>());
     } else {
-      EXPECT_TRUE(result.isNothing());
+      EXPECT_TRUE(result.is<Yield>());
+      EXPECT_EQ(Yield::NEED_MORE_DATA, result.as<Yield>());
     }
   }
 
@@ -453,13 +460,14 @@ TEST_F(ImageStreamingLexer, NoSourceBufferResumable)
   
   for (unsigned i = 0; i < 9; ++i) {
     mSourceBuffer->Append(mData + i, 1);
-    Maybe<TerminalState> result = mLexer.Lex(mIterator, nullptr, DoLex);
+    LexerResult result = mLexer.Lex(mIterator, nullptr, DoLex);
 
     if (i == 8) {
-      EXPECT_TRUE(result.isSome());
-      EXPECT_EQ(Some(TerminalState::SUCCESS), result);
+      EXPECT_TRUE(result.is<TerminalState>());
+      EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
     } else {
-      EXPECT_TRUE(result.isNothing());
+      EXPECT_TRUE(result.is<Yield>());
+      EXPECT_EQ(Yield::NEED_MORE_DATA, result.as<Yield>());
     }
   }
 

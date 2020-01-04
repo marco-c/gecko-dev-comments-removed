@@ -39,7 +39,13 @@ enum class TerminalState
 };
 
 
-typedef Variant<TerminalState> LexerResult;
+enum class Yield
+{
+  NEED_MORE_DATA  
+};
+
+
+typedef Variant<TerminalState, Yield> LexerResult;
 
 
 
@@ -269,14 +275,14 @@ public:
   }
 
   template <typename Func>
-  Maybe<TerminalState> Lex(SourceBufferIterator& aIterator,
-                           IResumable* aOnResume,
-                           Func aFunc)
+  LexerResult Lex(SourceBufferIterator& aIterator,
+                  IResumable* aOnResume,
+                  Func aFunc)
   {
     if (mTransition.NextStateIsTerminal()) {
       
       
-      return Some(mTransition.NextStateAsTerminal());
+      return LexerResult(mTransition.NextStateAsTerminal());
     }
 
     Maybe<LexerResult> result;
@@ -293,7 +299,8 @@ public:
           
           
           
-          return Nothing();
+          result = Some(LexerResult(Yield::NEED_MORE_DATA));
+          break;
 
         case SourceBufferIterator::COMPLETE:
           
@@ -321,9 +328,7 @@ public:
       }
     } while (!result);
 
-    
-    return result->is<TerminalState>() ? Some(result->as<TerminalState>())
-                                       : Nothing();
+    return *result;
   }
 
 private:

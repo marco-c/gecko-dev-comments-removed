@@ -117,26 +117,28 @@ Decoder::Decode(IResumable* aOnResume )
     return HasError() ? NS_ERROR_FAILURE : NS_OK;
   }
 
-  Maybe<TerminalState> terminalState;
+  LexerResult lexerResult(TerminalState::FAILURE);
   {
     PROFILER_LABEL("ImageDecoder", "Decode", js::ProfileEntry::Category::GRAPHICS);
     AutoRecordDecoderTelemetry telemetry(this);
 
-    terminalState = DoDecode(*mIterator, aOnResume);
-  }
+    lexerResult =  DoDecode(*mIterator, aOnResume);
+  };
 
-  if (!terminalState) {
+  if (lexerResult.is<Yield>()) {
     
     
     
+    MOZ_ASSERT(lexerResult.as<Yield>() == Yield::NEED_MORE_DATA);
     return NS_OK;
   }
 
   
+  MOZ_ASSERT(lexerResult.is<TerminalState>());
   mReachedTerminalState = true;
 
   
-  if (terminalState == Some(TerminalState::FAILURE)) {
+  if (lexerResult.as<TerminalState>() == TerminalState::FAILURE) {
     PostError();
   }
 
