@@ -646,7 +646,7 @@ this.AllPossiblePermissions = [];
     AllPossiblePermissions.concat(["indexedDB", "offline-app", "pin-app"]);
 })();
 
-this.isExplicitInPermissionsTable = function(aPermName, aIntStatus, aAppKind) {
+this.isExplicitInPermissionsTable = function(aPermName, aIntStatus) {
 
   
   let appStatus;

@@ -1937,8 +1937,7 @@ this.DOMApplicationRegistry = {
       PermissionsInstaller.installPermissions(
         { manifest: newManifest,
           origin: app.origin,
-          manifestURL: app.manifestURL,
-          kind: app.kind },
+          manifestURL: app.manifestURL },
         true);
     }
     this.updateDataStore(this.webapps[id].localId, app.origin,
@@ -2382,8 +2381,7 @@ this.DOMApplicationRegistry = {
         PermissionsInstaller.installPermissions({
           manifest: aApp.manifest,
           origin: aApp.origin,
-          manifestURL: aData.manifestURL,
-          kind: aApp.kind
+          manifestURL: aData.manifestURL
         }, true);
       }
 
@@ -3738,24 +3736,16 @@ this.DOMApplicationRegistry = {
     
     if (useReviewerCerts) {
       let manifestPath = Services.io.newURI(aManifestURL, null, null).path;
-      let isReviewer = false;
-      
-      
-      try {
-        let reviewerPaths =
-          Services.prefs.getCharPref("dom.apps.reviewer_paths").split(",");
-        isReviewer = reviewerPaths.some(path => { return manifestPath.startsWith(path); });
-      } catch(e) {}
 
       switch (aInstallOrigin) {
         case "https://marketplace.firefox.com":
-          root = isReviewer
+          root = manifestPath.startsWith("/reviewers/")
                ? Ci.nsIX509CertDB.AppMarketplaceProdReviewersRoot
                : Ci.nsIX509CertDB.AppMarketplaceProdPublicRoot;
           break;
 
         case "https://marketplace-dev.allizom.org":
-          root = isReviewer
+          root = manifestPath.startsWith("/reviewers/")
                ? Ci.nsIX509CertDB.AppMarketplaceDevReviewersRoot
                : Ci.nsIX509CertDB.AppMarketplaceDevPublicRoot;
           break;
