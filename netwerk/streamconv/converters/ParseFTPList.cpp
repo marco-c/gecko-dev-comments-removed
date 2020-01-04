@@ -487,7 +487,7 @@ int ParseFTPList(const char *line, struct list_state *state,
 
 
               uint64_t fsz = uint64_t(strtoul(tokens[1], (char **)0, 10) * 512);
-              snprintf_literal(result->fe_size, "%" PRId64, fsz);
+              SprintfLiteral(result->fe_size, "%" PRId64, fsz);
             } 
 
           } 

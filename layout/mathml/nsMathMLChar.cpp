@@ -317,7 +317,7 @@ nsPropertiesTable::ElementAt(DrawTarget*   ,
   if (mCharCache != aChar) {
     
     
-    char key[10]; snprintf_literal(key, "\\u%04X", aChar);
+    char key[10]; SprintfLiteral(key, "\\u%04X", aChar);
     nsAutoString value;
     nsresult rv = mGlyphProperties->GetStringProperty(nsDependentCString(key),
                                                       value);

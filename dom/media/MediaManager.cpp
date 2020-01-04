@@ -2767,7 +2767,7 @@ MediaManager::RemoveWindowID(uint64_t aWindowId)
 
   
   char windowBuffer[32];
-  snprintf_literal(windowBuffer, "%" PRIu64, outerID);
+  SprintfLiteral(windowBuffer, "%" PRIu64, outerID);
   nsString data = NS_ConvertUTF8toUTF16(windowBuffer);
 
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();

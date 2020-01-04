@@ -711,7 +711,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
   
   char pidstring[32];
-  snprintf_literal(pidstring,"%d", base::Process::Current().pid());
+  SprintfLiteral(pidstring,"%d", base::Process::Current().pid());
 
   const char* const childProcessType =
       XRE_ChildProcessTypeToString(mProcessType);

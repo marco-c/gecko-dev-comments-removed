@@ -114,7 +114,7 @@ NS_IMETHODIMP nsScriptableDateFormat::FormatDateTime(
     
     PRTime prtime;
     char string[32];
-    snprintf_literal(string, "%.2d/%.2d/%d %.2d:%.2d:%.2d", month, day, year, hour, minute, second);
+    SprintfLiteral(string, "%.2d/%.2d/%d %.2d:%.2d:%.2d", month, day, year, hour, minute, second);
     if (PR_SUCCESS != PR_ParseTimeString(string, false, &prtime))
       return NS_ERROR_INVALID_ARG;
 

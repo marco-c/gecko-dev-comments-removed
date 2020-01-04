@@ -2574,13 +2574,13 @@ ConvertJSValueToByteString(JSContext* cx, JS::Handle<JS::Value> v,
       
       char index[21];
       static_assert(sizeof(size_t) <= 8, "index array too small");
-      snprintf_literal(index, "%" PRIuSIZE, badCharIndex);
+      SprintfLiteral(index, "%" PRIuSIZE, badCharIndex);
       
       
       
       char badCharArray[6];
       static_assert(sizeof(char16_t) <= 2, "badCharArray too small");
-      snprintf_literal(badCharArray, "%d", badChar);
+      SprintfLiteral(badCharArray, "%d", badChar);
       ThrowErrorMessage(cx, MSG_INVALID_BYTESTRING, index, badCharArray);
       return false;
     }
