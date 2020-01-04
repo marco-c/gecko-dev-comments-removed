@@ -25,6 +25,7 @@
 
 class nsASocketHandler;
 struct PRPollDesc;
+class nsIPrefBranch;
 
 
 
@@ -210,6 +211,7 @@ private:
 
     
     nsresult    UpdatePrefs();
+    void        UpdateSendBufferPref(nsIPrefBranch *);
     int32_t     mSendBufferSize;
     
     int32_t     mKeepaliveIdleTimeS;

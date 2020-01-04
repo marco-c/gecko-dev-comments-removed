@@ -4365,10 +4365,11 @@ pref("gfx.gralloc.fence-with-readpixels", false);
 pref("stagefright.force-enabled", false);
 pref("stagefright.disabled", false);
 
-#ifdef XP_WIN
 
-pref("network.tcp.sendbuffer", 131072);
-#endif
+
+
+
+
 
 pref("network.tcp.keepalive.enabled", true);
 
