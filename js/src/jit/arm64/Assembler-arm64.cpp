@@ -241,7 +241,23 @@ Assembler::bind(Label* label, BufferOffset targetOffset)
         Instruction* link = getInstructionAt(branchOffset);
 
         
-        link->SetImmPCOffsetTarget(link + relativeByteOffset);
+        vixl::ImmBranchType branchType = link->BranchType();
+        vixl::ImmBranchRangeType branchRange = Instruction::ImmBranchTypeToRange(branchType);
+        if (branchRange < vixl::NumShortBranchRangeTypes) {
+            BufferOffset deadline(branchOffset.getOffset() +
+                                  Instruction::ImmBranchMaxForwardOffset(branchRange));
+            armbuffer_.unregisterBranchDeadline(branchRange, deadline);
+        }
+
+        
+        if (link->IsPCRelAddressing() || link->IsTargetReachable(link + relativeByteOffset)) {
+            
+            link->SetImmPCOffsetTarget(link + relativeByteOffset);
+        } else {
+            
+            
+            MOZ_ASSERT(getInstructionAt(nextOffset)->BranchType() == vixl::UncondBranchType);
+        }
 
         branchOffset = nextOffset;
     }

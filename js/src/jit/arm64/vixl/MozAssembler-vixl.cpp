@@ -94,45 +94,106 @@ MozBaseAssembler::SetNextLink(BufferOffset cur, BufferOffset next)
 
 
 
-template <int element_size>
+
+
+
+
+
+
+
 ptrdiff_t
-MozBaseAssembler::LinkAndGetOffsetTo(BufferOffset branch, Label* label)
+MozBaseAssembler::LinkAndGetOffsetTo(BufferOffset branch, ImmBranchRangeType branchRange,
+                                     unsigned elementShift, Label* label)
 {
   if (armbuffer_.oom())
     return kEndOfLabelUseList;
 
   if (label->bound()) {
     
-    ptrdiff_t branch_offset = ptrdiff_t(branch.getOffset() / element_size);
-    ptrdiff_t label_offset = ptrdiff_t(label->offset() / element_size);
+    ptrdiff_t branch_offset = ptrdiff_t(branch.getOffset() >> elementShift);
+    ptrdiff_t label_offset = ptrdiff_t(label->offset() >> elementShift);
     return label_offset - branch_offset;
   }
 
+  
+  
+  if (branchRange < NumShortBranchRangeTypes) {
+      
+      BufferOffset deadline(branch.getOffset() +
+                            Instruction::ImmBranchMaxForwardOffset(branchRange));
+      armbuffer_.registerBranchDeadline(branchRange, deadline);
+  }
+
+  
+  
   if (!label->used()) {
-    
-    
     label->use(branch.getOffset());
     return kEndOfLabelUseList;
   }
 
   
   
-  ptrdiff_t offset = EncodeOffset(branch, BufferOffset(label));
-  label->use(branch.getOffset());
-  MOZ_ASSERT(offset != kEndOfLabelUseList);
-  return offset;
+  
+  
+
+  
+  
+  ptrdiff_t earliestReachable =
+    branch.getOffset() + Instruction::ImmBranchMinBackwardOffset(branchRange);
+
+  
+  
+  if (label->offset() >= earliestReachable) {
+      ptrdiff_t offset = EncodeOffset(branch, BufferOffset(label));
+      label->use(branch.getOffset());
+      MOZ_ASSERT(offset != kEndOfLabelUseList);
+      return offset;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  BufferOffset next(label);
+  BufferOffset exbr;
+  do {
+      exbr = next;
+      next = NextLink(next);
+  } while (next.assigned());
+  SetNextLink(exbr, branch);
+
+  
+  return kEndOfLabelUseList;
 }
 
 ptrdiff_t MozBaseAssembler::LinkAndGetByteOffsetTo(BufferOffset branch, Label* label) {
-  return LinkAndGetOffsetTo<1>(branch, label);
+  return LinkAndGetOffsetTo(branch, UncondBranchRangeType, 0, label);
 }
 
-ptrdiff_t MozBaseAssembler::LinkAndGetInstructionOffsetTo(BufferOffset branch, Label* label) {
-  return LinkAndGetOffsetTo<kInstructionSize>(branch, label);
+ptrdiff_t MozBaseAssembler::LinkAndGetInstructionOffsetTo(BufferOffset branch,
+                                                          ImmBranchRangeType branchRange,
+                                                          Label* label) {
+  return LinkAndGetOffsetTo(branch, branchRange, kInstructionSizeLog2, label);
 }
 
 ptrdiff_t MozBaseAssembler::LinkAndGetPageOffsetTo(BufferOffset branch, Label* label) {
-  return LinkAndGetOffsetTo<kPageSize>(branch, label);
+  return LinkAndGetOffsetTo(branch, UncondBranchRangeType, kPageSizeLog2, label);
 }
 
 BufferOffset Assembler::b(int imm26) {
@@ -157,13 +218,13 @@ void Assembler::b(Instruction* at, int imm19, Condition cond) {
 
 BufferOffset Assembler::b(Label* label) {
   
-  return b(LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
+  return b(LinkAndGetInstructionOffsetTo(nextInstrOffset(), UncondBranchRangeType, label));
 }
 
 
 BufferOffset Assembler::b(Label* label, Condition cond) {
   
-  return b(LinkAndGetInstructionOffsetTo(nextInstrOffset(), label), cond);
+  return b(LinkAndGetInstructionOffsetTo(nextInstrOffset(), CondBranchRangeType, label), cond);
 }
 
 
@@ -186,7 +247,7 @@ void Assembler::bl(Instruction* at, int imm26) {
 
 void Assembler::bl(Label* label) {
   
-  return bl(LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
+  return bl(LinkAndGetInstructionOffsetTo(nextInstrOffset(), UncondBranchRangeType, label));
 }
 
 
@@ -202,7 +263,7 @@ void Assembler::cbz(Instruction* at, const Register& rt, int imm19) {
 
 void Assembler::cbz(const Register& rt, Label* label) {
   
-  return cbz(rt, LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
+  return cbz(rt, LinkAndGetInstructionOffsetTo(nextInstrOffset(), CondBranchRangeType, label));
 }
 
 
@@ -218,7 +279,7 @@ void Assembler::cbnz(Instruction* at, const Register& rt, int imm19) {
 
 void Assembler::cbnz(const Register& rt, Label* label) {
   
-  return cbnz(rt, LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
+  return cbnz(rt, LinkAndGetInstructionOffsetTo(nextInstrOffset(), CondBranchRangeType, label));
 }
 
 
@@ -236,7 +297,7 @@ void Assembler::tbz(Instruction* at, const Register& rt, unsigned bit_pos, int i
 
 void Assembler::tbz(const Register& rt, unsigned bit_pos, Label* label) {
   
-  return tbz(rt, bit_pos, LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
+  return tbz(rt, bit_pos, LinkAndGetInstructionOffsetTo(nextInstrOffset(), TestBranchRangeType, label));
 }
 
 
@@ -254,7 +315,7 @@ void Assembler::tbnz(Instruction* at, const Register& rt, unsigned bit_pos, int 
 
 void Assembler::tbnz(const Register& rt, unsigned bit_pos, Label* label) {
   
-  return tbnz(rt, bit_pos, LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
+  return tbnz(rt, bit_pos, LinkAndGetInstructionOffsetTo(nextInstrOffset(), TestBranchRangeType, label));
 }
 
 
@@ -413,10 +474,35 @@ bool MozBaseAssembler::PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr
 }
 
 void
-MozBaseAssembler::PatchShortRangeBranchToVeneer(ARMBuffer*, unsigned rangeIdx,
+MozBaseAssembler::PatchShortRangeBranchToVeneer(ARMBuffer* buffer, unsigned rangeIdx,
                                                 BufferOffset deadline, BufferOffset veneer)
 {
-    MOZ_CRASH();
+  
+  vixl::ImmBranchRangeType branchRange = static_cast<vixl::ImmBranchRangeType>(rangeIdx);
+  BufferOffset branch(deadline.getOffset() - Instruction::ImmBranchMaxForwardOffset(branchRange));
+  Instruction *branchInst = buffer->getInst(branch);
+  Instruction *veneerInst = buffer->getInst(veneer);
+
+  
+  MOZ_ASSERT(Instruction::ImmBranchTypeToRange(branchInst->BranchType()) == branchRange);
+
+  
+  
+  
+  ptrdiff_t nextElemOffset = branchInst->ImmPCRawOffset();
+
+  
+  if (nextElemOffset != kEndOfLabelUseList) {
+      
+      
+      nextElemOffset *= kInstructionSize;
+      nextElemOffset += branch.getOffset() - veneer.getOffset();
+      nextElemOffset /= kInstructionSize;
+  }
+  Assembler::b(veneerInst, nextElemOffset);
+
+  
+  branchInst->SetImmPCRawOffset(EncodeOffset(branch, veneer));
 }
 
 struct PoolHeader {

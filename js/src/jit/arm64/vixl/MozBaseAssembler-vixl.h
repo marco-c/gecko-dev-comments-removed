@@ -195,13 +195,13 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
   
   
   ptrdiff_t LinkAndGetByteOffsetTo(BufferOffset branch, js::jit::Label* label);
-  ptrdiff_t LinkAndGetInstructionOffsetTo(BufferOffset branch, js::jit::Label* label);
+  ptrdiff_t LinkAndGetInstructionOffsetTo(BufferOffset branch, ImmBranchRangeType branchRange,
+                                          js::jit::Label* label);
   ptrdiff_t LinkAndGetPageOffsetTo(BufferOffset branch, js::jit::Label* label);
 
   
-  template <int element_size>
-  ptrdiff_t LinkAndGetOffsetTo(BufferOffset branch, js::jit::Label* label);
-
+  ptrdiff_t LinkAndGetOffsetTo(BufferOffset branch, ImmBranchRangeType branchRange,
+                               unsigned elementSizeBits, js::jit::Label* label);
 
  protected:
   
