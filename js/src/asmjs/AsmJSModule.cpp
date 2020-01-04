@@ -326,8 +326,6 @@ AsmJSModule::finish(ExclusiveContext* cx, TokenStream& tokenStream, MacroAssembl
     if (!callSites_.appendAll(callSites))
         return false;
 
-    MOZ_ASSERT(pod.functionBytes_ % AsmJSPageSize == 0);
-
     
     
     AbsoluteLinkArray& absoluteLinks = staticLinkData_.absoluteLinks;

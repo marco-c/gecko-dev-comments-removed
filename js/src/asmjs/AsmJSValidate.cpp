@@ -1596,17 +1596,9 @@ class MOZ_STACK_CLASS ModuleValidator
             masm().patchCall(callerOffset, calleeOffset);
         }
 
-        
-        
-        
-        
-        
-        
         MOZ_ASSERT(!finishedFunctionBodies_);
-        masm().haltingAlign(AsmJSPageSize);
         module_->finishFunctionBodies(masm().currentOffset());
         finishedFunctionBodies_ = true;
-
         return true;
     }
 
