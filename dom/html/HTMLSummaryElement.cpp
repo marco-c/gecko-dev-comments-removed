@@ -64,11 +64,9 @@ HTMLSummaryElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
       
       
       
-      if (details->GetPrimaryFrame(Flush_Frames)) {
-        details->ToggleOpen();
-        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-        return NS_OK;
-      }
+      details->ToggleOpen();
+      aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      return NS_OK;
     }
   } 
 
