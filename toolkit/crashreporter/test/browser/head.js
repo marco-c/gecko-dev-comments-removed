@@ -94,7 +94,7 @@ function add_fake_crashes(crD, count) {
   }
   
   
-  results.sort(function(a,b) b.date - a.date);
+  results.sort((a,b) => b.date - a.date);
   return results;
 }
 
