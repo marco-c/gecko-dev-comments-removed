@@ -269,6 +269,10 @@ public:
     nsresult DoApplyContentConversions(nsIStreamListener *aNextListener,
                                        nsIStreamListener **aNewNextListener);
 
+    
+    
+    void EnsureUploadStreamIsCloneableComplete(nsresult aStatus);
+
 protected:
   nsCOMArray<nsISecurityConsoleMessage> mSecurityConsoleMessages;
 
@@ -329,6 +333,7 @@ protected:
 
   nsHttpRequestHead                 mRequestHead;
   nsCOMPtr<nsIInputStream>          mUploadStream;
+  nsCOMPtr<nsIRunnable>             mUploadCloneableCallback;
   nsAutoPtr<nsHttpResponseHead>     mResponseHead;
   nsRefPtr<nsHttpConnectionInfo>    mConnectionInfo;
   nsCOMPtr<nsIProxyInfo>            mProxyInfo;
