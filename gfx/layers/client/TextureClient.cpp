@@ -1111,7 +1111,8 @@ TextureClient::CreateForDrawing(TextureForwarder* aAllocator,
 
   
   return TextureClient::CreateForRawBufferAccess(aAllocator, aFormat, aSize,
-                                                 moz2DBackend, aTextureFlags, aAllocFlags);
+                                                 moz2DBackend, aLayersBackend,
+                                                 aTextureFlags, aAllocFlags);
 }
 
 
@@ -1185,6 +1186,22 @@ TextureClient::CreateForRawBufferAccess(ClientIPCAllocator* aAllocator,
                                         TextureFlags aTextureFlags,
                                         TextureAllocationFlags aAllocFlags)
 {
+  auto fwd = aAllocator->AsCompositableForwarder();
+  auto backend = fwd ? fwd->GetCompositorBackendType() : LayersBackend::LAYERS_NONE;
+  return CreateForRawBufferAccess(aAllocator, aFormat, aSize, aMoz2DBackend,
+                                  backend, aTextureFlags, aAllocFlags);
+}
+
+
+already_AddRefed<TextureClient>
+TextureClient::CreateForRawBufferAccess(ClientIPCAllocator* aAllocator,
+                                        gfx::SurfaceFormat aFormat,
+                                        gfx::IntSize aSize,
+                                        gfx::BackendType aMoz2DBackend,
+                                        LayersBackend aLayersBackend,
+                                        TextureFlags aTextureFlags,
+                                        TextureAllocationFlags aAllocFlags)
+{
   
   MOZ_ASSERT(aAllocator && aAllocator->IPCOpen());
   if (!aAllocator || !aAllocator->IPCOpen()) {
@@ -1206,8 +1223,8 @@ TextureClient::CreateForRawBufferAccess(ClientIPCAllocator* aAllocator,
   }
 
   TextureData* texData = BufferTextureData::Create(aSize, aFormat, aMoz2DBackend,
-                                                   aTextureFlags, aAllocFlags,
-                                                   aAllocator);
+                                                   aLayersBackend, aTextureFlags,
+                                                   aAllocFlags, aAllocator);
   if (!texData) {
     return nullptr;
   }
