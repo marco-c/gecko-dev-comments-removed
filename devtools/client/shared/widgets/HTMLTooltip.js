@@ -288,7 +288,6 @@ HTMLTooltip.prototype = {
 
 
 
-
   setContent: function (content, {width = "auto", height = Infinity} = {}) {
     this.preferredWidth = width;
     this.preferredHeight = height;
@@ -332,6 +331,12 @@ HTMLTooltip.prototype = {
     let isTop = computedPosition === POSITION.TOP;
     this.container.classList.toggle("tooltip-top", isTop);
     this.container.classList.toggle("tooltip-bottom", !isTop);
+
+    
+    
+    this.container.classList.toggle("tooltip-flexible-height",
+      this.preferredHeight === Infinity);
+
     this.container.style.height = height + "px";
 
     let preferredWidth;
