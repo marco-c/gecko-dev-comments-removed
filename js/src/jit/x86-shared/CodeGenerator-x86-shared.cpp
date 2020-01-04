@@ -2454,22 +2454,6 @@ CodeGeneratorX86Shared::visitFloat32x4ToUint32x4(LFloat32x4ToUint32x4* ins)
     
     
     
-    
-    
-    masm.zeroFloat32x4(scratch);
-    masm.vcmpleps(Operand(in), scratch, scratch);
-    masm.vmovmskps(scratch, temp);
-    masm.cmp32(temp, Imm32(15));
-
-    if (gen->compilingAsmJS())
-        masm.j(Assembler::NotEqual, wasm::JumpTarget::ConversionError);
-    else
-        bailoutIf(Assembler::NotEqual, ins->snapshot());
-
-    
-    
-    
-    
 
     
     static const float Adjust = 0x80000000; 
