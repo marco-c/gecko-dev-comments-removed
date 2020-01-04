@@ -5,6 +5,7 @@
 
 "use strict";
 
+const { ActorClass, Arg, RetVal, method } = require("devtools/server/protocol");
 const { createValueGrip } = require("devtools/server/actors/object");
 
 
@@ -17,14 +18,13 @@ const { createValueGrip } = require("devtools/server/actors/object");
 
 
 
-function EnvironmentActor(aEnvironment, aThreadActor)
-{
-  this.obj = aEnvironment;
-  this.threadActor = aThreadActor;
-}
+let EnvironmentActor = ActorClass({
+  typeName: "environment",
 
-EnvironmentActor.prototype = {
-  actorPrefix: "environment",
+  initialize: function (environment, threadActor) {
+    this.obj = environment;
+    this.threadActor = threadActor;
+  },
 
   
 
@@ -61,7 +61,7 @@ EnvironmentActor.prototype = {
 
     
     if (this.obj.type == "declarative") {
-      form.bindings = this._bindings();
+      form.bindings = this.bindings();
     }
 
     return form;
@@ -71,7 +71,44 @@ EnvironmentActor.prototype = {
 
 
 
-  _bindings: function () {
+
+
+
+
+
+  assign: method(function (name, value) {
+    
+    
+    
+
+
+
+
+
+
+
+    try {
+      this.obj.setVariable(name, value);
+    } catch (e) {
+      if (e instanceof Debugger.DebuggeeWouldRun) {
+        throw new Error("Assigning a value would cause the debuggee to run");
+      } else {
+        throw e;
+      }
+    }
+    return { from: this.actorID };
+  }, {
+    request: {
+      name: Arg(1),
+      value: Arg(2)
+    }
+  }),
+
+  
+
+
+
+  bindings: method(function () {
     let bindings = { arguments: [], variables: {} };
 
     
@@ -159,56 +196,12 @@ EnvironmentActor.prototype = {
     }
 
     return bindings;
-  },
-
-  
-
-
-
-
-
-
-  onAssign: function (aRequest) {
-    
-    
-    
-
-
-
-
-
-
-
-    try {
-      this.obj.setVariable(aRequest.name, aRequest.value);
-    } catch (e) {
-      if (e instanceof Debugger.DebuggeeWouldRun) {
-        return { error: "threadWouldRun",
-                 cause: e.cause ? e.cause : "setter",
-                 message: "Assigning a value would cause the debuggee to run" };
-      } else {
-        throw e;
-      }
+  }, {
+    request: {},
+    response: {
+      bindings: RetVal("json")
     }
-    return { from: this.actorID };
-  },
-
-  
-
-
-
-
-
-
-  onBindings: function (aRequest) {
-    return { from: this.actorID,
-             bindings: this._bindings() };
-  }
-};
-
-EnvironmentActor.prototype.requestTypes = {
-  "assign": EnvironmentActor.prototype.onAssign,
-  "bindings": EnvironmentActor.prototype.onBindings
-};
+  })
+});
 
 exports.EnvironmentActor = EnvironmentActor;
