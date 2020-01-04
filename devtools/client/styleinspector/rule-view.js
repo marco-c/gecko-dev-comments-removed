@@ -374,7 +374,9 @@ ElementStyle.prototype = {
       let overridden;
       if (earlier &&
           computedProp.priority === "important" &&
-          earlier.priority !== "important") {
+          earlier.priority !== "important" &&
+          (earlier.textProp.rule.inherited ||
+           !computedProp.textProp.rule.inherited)) {
         
         
         earlier._overriddenDirty = !earlier._overriddenDirty;
