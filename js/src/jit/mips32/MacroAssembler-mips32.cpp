@@ -3063,14 +3063,6 @@ MacroAssemblerMIPSCompat::storeTypeTag(ImmTag tag, const BaseIndex& dest)
     as_sw(ScratchRegister, SecondScratchReg, TAG_OFFSET);
 }
 
-void
-MacroAssemblerMIPS::ma_callJitNoPush(const Register r)
-{
-    
-    as_jalr(r);
-    as_sw(ra, StackPointer, 0);
-}
-
 
 
 void

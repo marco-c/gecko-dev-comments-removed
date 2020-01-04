@@ -316,8 +316,6 @@ class MacroAssemblerMIPS : public Assembler
 
   public:
     
-    void ma_callJitNoPush(const Register reg);
-    
     void ma_callJitHalfPush(const Register reg);
     void ma_callJitHalfPush(Label* label);
 
