@@ -7,10 +7,11 @@
 
 
 const TEST_URL = TEST_URL_ROOT + "doc_markup_dragdrop.html";
-const GRAB_DELAY = 400;
+const GRAB_DELAY = 5;
 
 add_task(function*() {
   let {inspector} = yield addTab(TEST_URL).then(openInspector);
+  inspector.markup.GRAB_DELAY = GRAB_DELAY;
 
   info("Expanding #test");
   let parentFront = yield getNodeFront("#test", inspector);
