@@ -308,7 +308,7 @@ var pktUI = (function() {
         if (subview) {
           
           iframe.style.width = "100%";
-          iframe.style.height = subview.clientHeight + "px";
+          iframe.style.height = subview.parentNode.clientHeight + "px";
         } else {
           
           iframe.style.width  = options.width  + "px";
@@ -535,12 +535,7 @@ var pktUI = (function() {
     }
 
     function getSubview() {
-        var frame = getPanelFrame();
-        var view = frame;
-        while (view && view.localName != "panelview") {
-            view = view.parentNode;
-        }
-
+        var view = document.getElementById("PanelUI-pocketView");
         if (view && view.getAttribute("current") == "true")
             return view;
         return null;
