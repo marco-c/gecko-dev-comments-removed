@@ -210,25 +210,29 @@ module.exports = {
 
 
   addVarToScope: function(name, scope, writable) {
-    
-    if (scope.set && scope.set.has(name)) {
-      return;
-    }
+    scope.__defineGeneric(name, scope.set, scope.variables, null, null);
 
-    writable = writable === undefined ? true : writable;
-    var variables = scope.variables;
-    var variable = new escope.Variable(name, scope);
-
+    let variable = scope.set.get(name);
     variable.eslintExplicitGlobal = false;
     variable.writeable = writable;
-    variables.push(variable);
 
     
-    
-    
-    if (scope.set) {
-      scope.set.set(name, variable);
+    while (scope.type != "global") {
+      scope = scope.upper;
     }
+
+    
+    scope.through = scope.through.filter(function(reference) {
+      if (reference.identifier.name != name) {
+        return true;
+      }
+
+      
+      
+      reference.resolved = variable;
+      variable.references.push(reference);
+      return false;
+    });
   },
 
   
