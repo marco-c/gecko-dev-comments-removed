@@ -184,6 +184,9 @@ protected:
   
   nsAutoPtr<AudioNodeEngine> mEngine;
   
+  
+  OutputChunks mInputChunks;
+  
   OutputChunks mLastChunks;
   
   const TrackRate mSampleRate;

@@ -157,6 +157,16 @@ struct AudioChunk {
     return static_cast<float*>(const_cast<void*>(mChannelData[aChannel]));
   }
 
+  void ReleaseBufferIfShared()
+  {
+    if (mBuffer && mBuffer->IsShared()) {
+      
+      
+      mChannelData.ClearAndRetainStorage();
+      mBuffer = nullptr;
+    }
+  }
+
   bool IsMuted() const { return mVolume == 0.0f; }
 
   size_t SizeOfExcludingThisIfUnshared(MallocSizeOf aMallocSizeOf) const
