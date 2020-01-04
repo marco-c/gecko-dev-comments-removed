@@ -16,6 +16,10 @@
 #define MAX_NUMERIC_INDEX 0x1fffffffffffff // == Math.pow(2, 53) - 1
 
 
+#define FUN_APPLY(FUN, RECEIVER, ARGS) \
+  callFunction(std_Function_apply, FUN, RECEIVER, ARGS)
+
+
 #define ARRAY_PUSH(ARRAY, ELEMENT) \
   callFunction(std_Array_push, ARRAY, ELEMENT);
 #define ARRAY_SLICE(ARRAY, ELEMENT) \
@@ -38,6 +42,10 @@
 
 
 #define HAS_SELFHOSTED_CANONICAL_NAME_SLOT 0
+
+
+
+#define BOUND_FUN_LENGTH_SLOT 1
 
 
 #define WEAKSET_MAP_SLOT 0

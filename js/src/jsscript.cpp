@@ -3407,8 +3407,17 @@ CloneInnerInterpretedFunction(JSContext* cx, HandleObject enclosingScope, Handle
     }
 
     gc::AllocKind allocKind = srcFun->getAllocKind();
-    RootedFunction clone(cx, NewFunctionWithProto(cx, nullptr, 0,
-                                                  JSFunction::INTERPRETED, nullptr, nullptr,
+    uint16_t flags = srcFun->flags();
+    if (srcFun->isSelfHostedBuiltin()) {
+        
+        
+        
+        allocKind = gc::AllocKind::FUNCTION_EXTENDED;
+        flags |= JSFunction::Flags::EXTENDED;
+    }
+    RootedAtom atom(cx, srcFun->displayAtom());
+    RootedFunction clone(cx, NewFunctionWithProto(cx, nullptr, srcFun->nargs(),
+                                                  JSFunction::Flags(flags), nullptr, atom,
                                                   cloneProto, allocKind, TenuredObject));
     if (!clone)
         return nullptr;
@@ -3420,9 +3429,6 @@ CloneInnerInterpretedFunction(JSContext* cx, HandleObject enclosingScope, Handle
     if (!cloneScript)
         return nullptr;
 
-    clone->setArgCount(srcFun->nargs());
-    clone->setFlags(srcFun->flags());
-    clone->initAtom(srcFun->displayAtom());
     if (!JSFunction::setTypeForScriptedFunction(cx, clone))
         return nullptr;
 

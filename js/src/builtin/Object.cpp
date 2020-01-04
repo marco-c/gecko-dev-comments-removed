@@ -1099,6 +1099,11 @@ FinishObjectClassInit(JSContext* cx, JS::HandleObject ctor, JS::HandleObject pro
             return false;
         if (!JS_DefineFunctions(cx, proto, object_methods, OnlyDefineLateProperties))
             return false;
+        RootedObject funProto(cx, global->getOrCreateFunctionPrototype(cx));
+        if (!funProto)
+            return false;
+        if (!JS_DefineFunctions(cx, funProto, function_methods, OnlyDefineLateProperties))
+            return false;
     }
 
     

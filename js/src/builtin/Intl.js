@@ -1596,7 +1596,7 @@ function Intl_Collator_compare_get() {
         var F = collatorCompareToBind;
 
         
-        var bc = callFunction(std_Function_bind, F, this);
+        var bc = callFunction(FunctionBind, F, this);
         internals.boundCompare = bc;
     }
 
@@ -2036,7 +2036,7 @@ function Intl_NumberFormat_format_get() {
         var F = numberFormatFormatToBind;
 
         
-        var bf = callFunction(std_Function_bind, F, this);
+        var bf = callFunction(FunctionBind, F, this);
         internals.boundFormat = bf;
     }
     
@@ -2732,7 +2732,7 @@ function Intl_DateTimeFormat_format_get() {
         var F = dateTimeFormatFormatToBind;
 
         
-        var bf = callFunction(std_Function_bind, F, this);
+        var bf = callFunction(FunctionBind, F, this);
         internals.boundFormat = bf;
     }
 
@@ -2761,7 +2761,7 @@ function Intl_DateTimeFormat_formatToParts_get() {
         var F = dateTimeFormatFormatToPartsToBind;
 
         
-        var bf = callFunction(std_Function_bind, F, this);
+        var bf = callFunction(FunctionBind, F, this);
         internals.boundFormatToParts = bf;
     }
 
