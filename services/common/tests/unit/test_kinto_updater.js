@@ -14,7 +14,7 @@ add_task(function* test_check_maybeSync(){
   const changesPath = "/v1/buckets/monitor/collections/changes/records";
 
   
-  function handleResponse (request, response) {
+  function handleResponse (serverTimeMillis, request, response) {
     try {
       const sampled = getSampleResponse(request, server.identity.primaryPort);
       if (!sampled) {
@@ -30,7 +30,7 @@ add_task(function* test_check_maybeSync(){
       }
 
       
-      response.setHeader("Date", (new Date(2000)).toUTCString());
+      response.setHeader("Date", (new Date(serverTimeMillis)).toUTCString());
 
       response.write(sampled.responseBody);
     } catch (e) {
@@ -38,7 +38,7 @@ add_task(function* test_check_maybeSync(){
     }
   }
 
-  server.registerPathHandler(changesPath, handleResponse);
+  server.registerPathHandler(changesPath, handleResponse.bind(null, 2000));
 
   
   Services.prefs.setCharPref(PREF_KINTO_BASE,
@@ -77,12 +77,11 @@ add_task(function* test_check_maybeSync(){
   let endTime = Date.now();
   let clockDifference = Services.prefs.getIntPref(PREF_CLOCK_SKEW_SECONDS);
   
-  do_check_eq(clockDifference <= endTime / 1000
-              && clockDifference >= Math.floor(startTime / 1000) - 2, true);
+  do_check_true(clockDifference <= endTime / 1000
+              && clockDifference >= Math.floor(startTime / 1000) - 2);
   
   let lastEtag = Services.prefs.getCharPref(PREF_LAST_ETAG);
   do_check_eq(lastEtag, "\"1100\"");
-
 
   
   Services.prefs.setIntPref(PREF_LAST_UPDATE, 0);
@@ -117,6 +116,17 @@ add_task(function* test_check_maybeSync(){
   do_check_eq(error.message, "Polling for changes failed.");
   
   do_check_eq(Services.prefs.getIntPref(PREF_LAST_UPDATE), 2);
+
+  
+
+  
+  server.registerPathHandler(changesPath, handleResponse.bind(null, Date.now() + 10000));
+
+  yield updater.checkVersions();
+
+  clockDifference = Services.prefs.getIntPref(PREF_CLOCK_SKEW_SECONDS);
+  
+  do_check_true(clockDifference <= 0 && clockDifference >= -10);
 });
 
 function run_test() {
