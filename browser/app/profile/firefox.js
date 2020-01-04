@@ -1507,3 +1507,12 @@ pref("print.use_simplify_page", true);
 
 
 pref("webchannel.allowObject.urlWhitelist", "https://accounts.firefox.com https://content.cdn.mozilla.net https://input.mozilla.org https://support.mozilla.org https://install.mozilla.org");
+
+
+
+
+#ifdef RELEASE_BUILD
+pref("browser.crashReports.unsubmittedCheck.enabled", false);
+#else
+pref("browser.crashReports.unsubmittedCheck.enabled", true);
+#endif

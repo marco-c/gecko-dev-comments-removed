@@ -8,7 +8,9 @@ var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
 
-this.EXPORTED_SYMBOLS = [ "TabCrashHandler", "PluginCrashReporter" ];
+this.EXPORTED_SYMBOLS = [ "TabCrashHandler",
+                          "PluginCrashReporter",
+                          "UnsubmittedCrashHandler" ];
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -21,6 +23,21 @@ XPCOMUtils.defineLazyModuleGetter(this, "RemotePages",
   "resource://gre/modules/RemotePageManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SessionStore",
   "resource:///modules/sessionstore/SessionStore.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+  "resource://gre/modules/Task.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
+  "resource:///modules/RecentWindow.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
+  "resource://gre/modules/PluralForm.jsm");
+
+XPCOMUtils.defineLazyGetter(this, "gNavigatorBundle", function() {
+  const url = "chrome://browser/locale/browser.properties";
+  return Services.strings.createBundle(url);
+});
+
+
+
+const PENDING_CRASH_REPORT_DAYS = 28;
 
 this.TabCrashHandler = {
   _crashedTabCount: 0,
@@ -318,6 +335,181 @@ this.TabCrashHandler = {
     return this.childMap.get(this.browserMap.get(browser.permanentKey));
   },
 }
+
+
+
+
+
+
+this.UnsubmittedCrashHandler = {
+  init() {
+    if (this.initialized) {
+      return;
+    }
+
+    this.initialized = true;
+
+    let pref = "browser.crashReports.unsubmittedCheck.enabled";
+    let shouldCheck = Services.prefs.getBoolPref(pref);
+
+    if (shouldCheck) {
+      Services.obs.addObserver(this, "browser-delayed-startup-finished",
+                               false);
+    }
+  },
+
+  observe(subject, topic, data) {
+    if (topic != "browser-delayed-startup-finished") {
+      return;
+    }
+
+    Services.obs.removeObserver(this, topic);
+    this.checkForUnsubmittedCrashReports();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  checkForUnsubmittedCrashReports: Task.async(function*() {
+    let dateLimit = new Date();
+    dateLimit.setDate(dateLimit.getDate() - PENDING_CRASH_REPORT_DAYS);
+
+    let reportIDs = [];
+    try {
+      reportIDs = yield CrashSubmit.pendingIDsAsync(dateLimit);
+    } catch (e) {
+      Cu.reportError(e);
+      return;
+    }
+
+    if (reportIDs.length) {
+      this.showPendingSubmissionsNotification(reportIDs);
+    }
+  }),
+
+  
+
+
+
+
+
+
+  showPendingSubmissionsNotification(reportIDs) {
+    let count = reportIDs.length;
+    if (!count) {
+      return;
+    }
+
+    let messageTemplate =
+      gNavigatorBundle.GetStringFromName("pendingCrashReports.label");
+
+    let message = PluralForm.get(count, messageTemplate).replace("#1", count);
+
+    CrashNotificationBar.show({
+      notificationID: "pending-crash-reports",
+      message,
+      reportIDs,
+    });
+  },
+};
+
+this.CrashNotificationBar = {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  show({ notificationID, message, reportIDs }) {
+    let chromeWin = RecentWindow.getMostRecentBrowserWindow();
+    if (!chromeWin) {
+      
+      
+      
+      return;
+    }
+
+    let nb =  chromeWin.document.getElementById("global-notificationbox");
+    let notification = nb.getNotificationWithValue(notificationID);
+    if (notification) {
+      return;
+    }
+
+    let buttons = [{
+      label: gNavigatorBundle.GetStringFromName("pendingCrashReports.submitAll"),
+      callback: () => {
+        this.submitReports(reportIDs);
+      },
+    },
+    {
+      label: gNavigatorBundle.GetStringFromName("pendingCrashReports.viewAll"),
+      callback: function() {
+        chromeWin.openUILinkIn("about:crashes", "tab");
+        return true;
+      },
+    }];
+
+    let eventCallback = (eventType) => {
+      if (eventType == "dismissed") {
+        
+        
+        
+        
+        reportIDs.forEach(function(reportID) {
+          CrashSubmit.ignore(reportID);
+        });
+      }
+    };
+
+    nb.appendNotification(message, notificationID,
+                          "chrome://browser/skin/tab-crashed.svg",
+                          nb.PRIORITY_INFO_HIGH, buttons,
+                          eventCallback);
+  },
+
+  
+
+
+
+
+
+
+
+  submitReports(reportIDs) {
+    for (let reportID of reportIDs) {
+      CrashSubmit.submit(reportID, {
+        extraExtraKeyVals: {
+          "SubmittedFromInfobar": true,
+        },
+      });
+    }
+  },
+};
 
 this.PluginCrashReporter = {
   
