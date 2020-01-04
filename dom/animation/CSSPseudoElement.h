@@ -44,7 +44,12 @@ public:
     MOZ_ASSERT(nsCSSPseudoElements::GetPseudoAtom(mPseudoType),
                "All pseudo-types allowed by this class should have a"
                " corresponding atom");
-    nsCSSPseudoElements::GetPseudoAtom(mPseudoType)->ToString(aRetVal);
+    
+    
+    
+    aRetVal.Assign(char16_t(':'));
+    aRetVal.Append(
+      nsDependentAtomString(nsCSSPseudoElements::GetPseudoAtom(mPseudoType)));
   }
   already_AddRefed<Element> ParentElement() const
   {
