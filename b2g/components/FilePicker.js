@@ -71,11 +71,12 @@ FilePicker.prototype = {
   
   
 
-  get domfiles() {
+  get domFileOrDirectoryEnumerator() {
     return this.mFilesEnumerator;
   },
 
-  get domfile() {
+  
+  get domFileOrDirectory() {
     return this.mFilesEnumerator ? this.mFilesEnumerator.mFiles[0] : null;
   },
 
