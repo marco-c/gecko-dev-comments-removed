@@ -12,6 +12,7 @@
 #include "nsISupportsImpl.h" 
 #include "nsXULAppAPI.h"
 #include "RilSocketConsumer.h"
+#include "mozilla/Unused.h"
 
 static const size_t MAX_READ_SIZE = 1 << 16;
 
