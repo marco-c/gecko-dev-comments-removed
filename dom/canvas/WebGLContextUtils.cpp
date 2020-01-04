@@ -727,6 +727,8 @@ WebGLContext::AssertCachedBindings()
 
     MOZ_ASSERT(!GetAndFlushUnderlyingGLErrors());
 #endif
+
+    
 }
 
 void

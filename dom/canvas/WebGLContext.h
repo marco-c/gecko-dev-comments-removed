@@ -1114,7 +1114,6 @@ protected:
     int32_t mGLMaxVertexUniformVectors;
     uint32_t  mGLMaxTransformFeedbackSeparateAttribs;
     GLuint  mGLMaxUniformBufferBindings;
-    GLsizei mGLMaxSamples;
 
     
     uint32_t mGLMaxColorAttachments;

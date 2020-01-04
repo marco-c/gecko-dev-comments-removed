@@ -828,10 +828,7 @@ DrawBuffer::Create(GLContext* const gl,
     gl->fGenFramebuffers(1, &fb);
     gl->AttachBuffersToFB(0, colorMSRB, depthRB, stencilRB, fb);
 
-    GLsizei samples = formats.samples;
-    if (!samples)
-        samples = 1;
-
+    const GLsizei samples = formats.samples;
     UniquePtr<DrawBuffer> ret( new DrawBuffer(gl, size, samples, fb, colorMSRB,
                                               depthRB, stencilRB) );
 
