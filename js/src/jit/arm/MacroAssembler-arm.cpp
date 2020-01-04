@@ -273,6 +273,10 @@ MacroAssemblerARM::ma_alu(Register src1, Imm32 imm, Register dest,
                           ALUOp op, SBit s, Condition c)
 {
     
+    MOZ_ASSERT(op != OpMov);
+    MOZ_ASSERT(op != OpMvn);
+
+    
     
     if (dest == InvalidReg)
         MOZ_ASSERT(s == SetCC);
@@ -301,58 +305,6 @@ MacroAssemblerARM::ma_alu(Register src1, Imm32 imm, Register dest,
         return;
     }
 
-    if (HasMOVWT()) {
-        
-        
-        
-        
-        if (s == LeaveCC && (op == OpMov || op == OpMvn)) {
-            
-            
-            
-            if (op == OpMov && ((imm.value & ~ 0xffff) == 0)) {
-                MOZ_ASSERT(src1 == InvalidReg);
-                as_movw(dest, Imm16((uint16_t)imm.value), c);
-                return;
-            }
-
-            
-            
-            if (op == OpMvn && (((~imm.value) & ~ 0xffff) == 0)) {
-                MOZ_ASSERT(src1 == InvalidReg);
-                as_movw(dest, Imm16((uint16_t)~imm.value), c);
-                return;
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            
-            if (op == OpMvn)
-                imm.value = ~imm.value;
-            as_movw(dest, Imm16(imm.value & 0xffff), c);
-            as_movt(dest, Imm16((imm.value >> 16) & 0xffff), c);
-            return;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-    }
-
     
     
     
@@ -364,8 +316,7 @@ MacroAssemblerARM::ma_alu(Register src1, Imm32 imm, Register dest,
         return;
 
     
-    if (negOp != OpInvalid &&
-        alu_dbl(src1, negImm, negDest, negOp, s, c))
+    if (negOp != OpInvalid && alu_dbl(src1, negImm, negDest, negOp, s, c))
         return;
 
     
@@ -381,25 +332,7 @@ MacroAssemblerARM::ma_alu(Register src1, Imm32 imm, Register dest,
     }
 #endif
 
-    
-    
-    if (HasMOVWT()) {
-        
-        as_movw(scratch, Imm16(imm.value & 0xffff), c);
-        if ((imm.value >> 16) != 0)
-            as_movt(scratch, Imm16((imm.value >> 16) & 0xffff), c);
-    } else {
-        
-        
-        if (op == OpMov) {
-            as_Imm32Pool(dest, imm.value, c);
-            return;
-        } else {
-            
-            
-            as_Imm32Pool(scratch, imm.value, c);
-        }
-    }
+    ma_mov(imm, scratch, c);
     as_alu(dest, src1, O2Reg(scratch), op, s, c);
 }
 
@@ -481,7 +414,36 @@ MacroAssemblerARM::ma_mov(Register src, Register dest, SBit s, Assembler::Condit
 void
 MacroAssemblerARM::ma_mov(Imm32 imm, Register dest, Assembler::Condition c)
 {
-    ma_alu(InvalidReg, imm, dest, OpMov, LeaveCC, c);
+    
+    Imm8 imm8 = Imm8(imm.value);
+    if (!imm8.invalid) {
+        as_alu(dest, InvalidReg, imm8, OpMov, LeaveCC, c);
+        return;
+    }
+
+    
+    Imm32 negImm = imm;
+    Register negDest;
+    ALUOp negOp = ALUNeg(OpMov, dest, &negImm, &negDest);
+    Imm8 negImm8 = Imm8(negImm.value);
+    if (negOp != OpInvalid && !negImm8.invalid) {
+        as_alu(negDest, InvalidReg, negImm8, negOp, LeaveCC, c);
+        return;
+    }
+
+    
+    if (HasMOVWT()) {
+        
+        
+        
+        as_movw(dest, Imm16(imm.value & 0xffff), c);
+        if (uint32_t(imm.value) >> 16)
+            as_movt(dest, Imm16(uint32_t(imm.value) >> 16), c);
+        return;
+    }
+
+    
+    as_Imm32Pool(dest, imm.value, c);
 }
 
 void
