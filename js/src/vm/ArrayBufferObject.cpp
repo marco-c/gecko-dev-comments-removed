@@ -551,14 +551,14 @@ class js::WasmArrayRawBuffer
 # ifdef XP_WIN
         if (!VirtualAlloc(dataPointer(), newMapped, MEM_RESERVE, PAGE_NOACCESS))
             return;
-# elif defined(XP_DARWIN)
-        
-        
-        return;
-#else 
+# elif defined(XP_LINUX)
         
         if (MAP_FAILED == mremap(dataPointer(), mappedSize_, newMapped, 0))
             return;
+# else
+        
+        
+        return;
 # endif  
 
         mappedSize_ = newMapped;
