@@ -1,6 +1,15 @@
 
 
 
+const { classes: Cc, interfaces: Ci, results: Cr } = Components;
+
+function setTimeout(callback, delay) {
+  let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  timer.initWithCallback({ notify: callback },
+                           delay,
+                           Ci.nsITimer.TYPE_ONE_SHOT);
+}
+
 function doUpdate(update) {
   const { classes: Cc, interfaces: Ci, results: Cr } = Components;
 
@@ -26,11 +35,17 @@ function doUpdate(update) {
   let dbService = Cc["@mozilla.org/url-classifier/dbservice;1"]
                   .getService(Ci.nsIUrlClassifierDBService);
 
-  dbService.beginUpdate(listener, "test-malware-simple,test-unwanted-simple", "");
-  dbService.beginStream("", "");
-  dbService.updateStream(update);
-  dbService.finishStream();
-  dbService.finishUpdate();
+  try {
+    dbService.beginUpdate(listener, "test-malware-simple,test-unwanted-simple", "");
+    dbService.beginStream("", "");
+    dbService.updateStream(update);
+    dbService.finishStream();
+    dbService.finishUpdate();
+  } catch(e) {
+    
+    
+    setTimeout(() => { doUpdate(update); }, 1000);
+  }
 }
 
 addMessageListener("doUpdate", ({ testUpdate }) => {
