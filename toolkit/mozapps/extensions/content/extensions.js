@@ -203,17 +203,8 @@ function loadView(aViewId) {
 
 function isCorrectlySigned(aAddon) {
   
-  if (aAddon.scope == AddonManager.SCOPE_TEMPORARY)
-      return true;
   
-  
-  
-  if (aAddon.scope == AddonManager.SCOPE_SYSTEM &&
-      Services.appinfo.OS != "Darwin")
-    return true;
-  if (aAddon.signedState <= AddonManager.SIGNEDSTATE_MISSING)
-    return false;
-  return true;
+  return aAddon.isCorrectlySigned !== false;
 }
 
 function isDiscoverEnabled() {
