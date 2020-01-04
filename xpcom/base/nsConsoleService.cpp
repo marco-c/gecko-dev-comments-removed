@@ -75,6 +75,7 @@ void
 nsConsoleService::ClearMessagesForWindowID(const uint64_t innerID)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MutexAutoLock lock(mLock);
 
   for (MessageElement* e = mMessages.getFirst(); e != nullptr; ) {
     
@@ -104,6 +105,8 @@ nsConsoleService::ClearMessagesForWindowID(const uint64_t innerID)
 void
 nsConsoleService::ClearMessages()
 {
+  
+  
   while (!mMessages.isEmpty()) {
     MessageElement* e = mMessages.popFirst();
     delete e;
