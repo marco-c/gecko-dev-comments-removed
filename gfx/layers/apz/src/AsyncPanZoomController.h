@@ -25,6 +25,7 @@
 #include "Layers.h"                     
 #include "LayersTypes.h"
 #include "mozilla/gfx/Matrix.h"
+#include "nsIScrollableFrame.h"
 #include "nsRegion.h"
 #include "PotentialCheckerboardDurationTracker.h"
 
@@ -622,15 +623,6 @@ protected:
   
   void OnTouchEndOrCancel();
 
-  
-  void ScrollSnap();
-  
-  
-  void ScrollSnapToDestination();
-
-  
-  void ScrollSnapNear(const CSSPoint& aDestination);
-
   uint64_t mLayersId;
   RefPtr<CompositorBridgeParent> mCompositorBridgeParent;
 
@@ -761,7 +753,6 @@ public:
 
 
   AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(AsyncMode aMode) const;
-
 
 
   
@@ -1156,6 +1147,35 @@ private:
   
   
   PotentialCheckerboardDurationTracker mPotentialCheckerboardTracker;
+
+
+  
+
+
+
+  
+  
+  
+  bool MaybeAdjustDeltaForScrollSnapping(ParentLayerPoint& aDelta,
+                                         const ScrollWheelInput& aEvent);
+
+  
+  void ScrollSnap();
+
+  
+  
+  void ScrollSnapToDestination();
+
+  
+  void ScrollSnapNear(const CSSPoint& aDestination);
+
+  
+  
+  
+  
+  
+  Maybe<CSSPoint> FindSnapPointNear(const CSSPoint& aDestination,
+                                    nsIScrollableFrame::ScrollUnit aUnit);
 };
 
 } 

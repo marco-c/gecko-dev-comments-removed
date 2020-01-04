@@ -1819,6 +1819,11 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::SCROLL_INPUT_METHODS,
       (uint32_t) ScrollInputMethodForWheelDeltaType(aEvent.mDeltaType));
 
+  
+  
+  
+  bool scrollSnapping = MaybeAdjustDeltaForScrollSnapping(delta, aEvent);
+
   switch (aEvent.mScrollMode) {
     case ScrollWheelInput::SCROLLMODE_INSTANT: {
       ScreenPoint distance = ToScreenCoordinates(
@@ -1850,24 +1855,33 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
       
       ReentrantMonitorAutoEnter lock(mMonitor);
 
-      if (mState != WHEEL_SCROLL) {
-        CancelAnimation();
-        SetState(WHEEL_SCROLL);
+      if (scrollSnapping) {
+        
+        
+        
+        CSSPoint snapPoint = mFrameMetrics.GetScrollOffset() + (delta / mFrameMetrics.GetZoom());
+        SmoothScrollTo(snapPoint);
+      } else {
+        
+        if (mState != WHEEL_SCROLL) {
+          CancelAnimation();
+          SetState(WHEEL_SCROLL);
 
-        nsPoint initialPosition = CSSPoint::ToAppUnits(mFrameMetrics.GetScrollOffset());
-        StartAnimation(new WheelScrollAnimation(
-          *this, initialPosition, aEvent.mDeltaType));
+          nsPoint initialPosition = CSSPoint::ToAppUnits(mFrameMetrics.GetScrollOffset());
+          StartAnimation(new WheelScrollAnimation(
+            *this, initialPosition, aEvent.mDeltaType));
+        }
+
+        nsPoint deltaInAppUnits =
+          CSSPoint::ToAppUnits(delta / mFrameMetrics.GetZoom());
+        
+        
+        nsPoint velocity =
+          CSSPoint::ToAppUnits(CSSPoint(mX.GetVelocity(), mY.GetVelocity())) * 1000.0f;
+
+        WheelScrollAnimation* animation = mAnimation->AsWheelScrollAnimation();
+        animation->Update(aEvent.mTimeStamp, deltaInAppUnits, nsSize(velocity.x, velocity.y));
       }
-
-      nsPoint deltaInAppUnits =
-        CSSPoint::ToAppUnits(delta / mFrameMetrics.GetZoom());
-      
-      
-      nsPoint velocity =
-        CSSPoint::ToAppUnits(CSSPoint(mX.GetVelocity(), mY.GetVelocity())) * 1000.0f;
-
-      WheelScrollAnimation* animation = mAnimation->AsWheelScrollAnimation();
-      animation->Update(aEvent.mTimeStamp, deltaInAppUnits, nsSize(velocity.x, velocity.y));
       break;
     }
   }
@@ -3937,13 +3951,14 @@ void AsyncPanZoomController::ShareCompositorFrameMetrics() {
   }
 }
 
-void AsyncPanZoomController::ScrollSnapNear(const CSSPoint& aDestination) {
+Maybe<CSSPoint> AsyncPanZoomController::FindSnapPointNear(
+    const CSSPoint& aDestination, nsIScrollableFrame::ScrollUnit aUnit) {
   mMonitor.AssertCurrentThreadIn();
   APZC_LOG("%p scroll snapping near %s\n", this, Stringify(aDestination).c_str());
   CSSRect scrollRange = mFrameMetrics.CalculateScrollRange();
   if (Maybe<nsPoint> snapPoint = ScrollSnapUtils::GetSnapPointForDestination(
           mScrollMetadata.GetSnapInfo(),
-          nsIScrollableFrame::DEVICE_PIXELS,
+          aUnit,
           CSSSize::ToAppUnits(mFrameMetrics.CalculateCompositedSizeInCssPixels()),
           CSSRect::ToAppUnits(scrollRange),
           CSSPoint::ToAppUnits(mFrameMetrics.GetScrollOffset()),
@@ -3953,8 +3968,15 @@ void AsyncPanZoomController::ScrollSnapNear(const CSSPoint& aDestination) {
     
     
     
-    cssSnapPoint = scrollRange.ClampPoint(cssSnapPoint);
-    SmoothScrollTo(cssSnapPoint);
+    return Some(scrollRange.ClampPoint(cssSnapPoint));
+  }
+  return Nothing();
+}
+
+void AsyncPanZoomController::ScrollSnapNear(const CSSPoint& aDestination) {
+  if (Maybe<CSSPoint> snapPoint =
+        FindSnapPointNear(aDestination, nsIScrollableFrame::DEVICE_PIXELS)) {
+    SmoothScrollTo(*snapPoint);
   }
 }
 
@@ -3994,6 +4016,30 @@ void AsyncPanZoomController::ScrollSnapToDestination() {
 
     ScrollSnapNear(predictedDestination);
   }
+}
+
+bool AsyncPanZoomController::MaybeAdjustDeltaForScrollSnapping(
+    ParentLayerPoint& aDelta, const ScrollWheelInput& aEvent)
+{
+  
+  
+  if (aEvent.mDeltaType == ScrollWheelInput::SCROLLDELTA_PIXEL) {
+    return false;
+  }
+
+  ReentrantMonitorAutoEnter lock(mMonitor);
+  CSSPoint scrollOffset = mFrameMetrics.GetScrollOffset();
+  CSSToParentLayerScale2D zoom = mFrameMetrics.GetZoom();
+  CSSPoint destination = mFrameMetrics.CalculateScrollRange().ClampPoint(
+      scrollOffset + (aDelta / zoom));
+  nsIScrollableFrame::ScrollUnit unit =
+      ScrollWheelInput::ScrollUnitForDeltaType(aEvent.mDeltaType);
+
+  if (Maybe<CSSPoint> snapPoint = FindSnapPointNear(destination, unit)) {
+    aDelta = (*snapPoint - scrollOffset) * zoom;
+    return true;
+  }
+  return false;
 }
 
 } 
