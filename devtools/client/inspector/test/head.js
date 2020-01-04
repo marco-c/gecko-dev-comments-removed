@@ -403,6 +403,28 @@ function* getNodeFrontForSelector(selector, inspector) {
 
 
 
+function* poll(check, desc, attempts = 10, timeBetweenAttempts = 200) {
+  info(desc);
+
+  for (let i = 0; i < attempts; i++) {
+    if (yield check()) {
+      return;
+    }
+    yield new Promise(resolve => setTimeout(resolve, timeBetweenAttempts));
+  }
+
+  throw new Error(`Timeout while: ${desc}`);
+}
+
+
+
+
+
+
+
+
+
+
 
 
 const getHighlighterHelperFor = (type) => Task.async(
@@ -458,6 +480,22 @@ const getHighlighterHelperFor = (type) => Task.async(
       getElementAttribute: function* (id, name) {
         return yield testActor.getHighlighterNodeAttribute(
           prefix + id, name, highlighter);
+      },
+
+      waitForElementAttributeSet: function* (id, name) {
+        yield poll(function* () {
+          let value = yield testActor.getHighlighterNodeAttribute(
+            prefix + id, name, highlighter);
+          return !!value;
+        }, `Waiting for element ${id} to have attribute ${name} set`);
+      },
+
+      waitForElementAttributeRemoved: function* (id, name) {
+        yield poll(function* () {
+          let value = yield testActor.getHighlighterNodeAttribute(
+            prefix + id, name, highlighter);
+          return !value;
+        }, `Waiting for element ${id} to have attribute ${name} removed`);
       },
 
       synthesizeMouse: function* (options) {

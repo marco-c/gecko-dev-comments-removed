@@ -183,11 +183,11 @@ EyeDropper.prototype = {
   prepareImageCapture() {
     
     let imageData = getWindowAsImageData(this.win);
-    let image = new this.win.Image();
-    image.src = imageData;
 
     
-    image.onload = () => {
+    
+    
+    this.win.createImageBitmap(imageData).then(image => {
       this.pageImage = image;
       
       this.draw();
@@ -195,7 +195,7 @@ EyeDropper.prototype = {
       
       
       this.getElement("root").setAttribute("drawn", "true");
-    };
+    });
   },
 
   
@@ -474,7 +474,7 @@ function getWindowAsImageData(win) {
   ctx.scale(scale, scale);
   ctx.drawWindow(win, win.scrollX, win.scrollY, width, height, "#fff");
 
-  return canvas.toDataURL();
+  return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
 
