@@ -116,10 +116,13 @@ ServiceWorkerPrivate::SendMessageEvent(JSContext* aCx,
     return rv.StealNSResult();
   }
 
-  
-  
+  MOZ_ASSERT(mKeepAliveToken);
+  nsMainThreadPtrHandle<nsISupports> token(
+    new nsMainThreadPtrHolder<nsISupports>(mKeepAliveToken));
+
   mWorkerPrivate->PostMessageToServiceWorker(aCx, aMessage, aTransferable,
-                                             Move(aClientInfo), rv);
+                                             Move(aClientInfo), token,
+                                             rv);
   return rv.StealNSResult();
 }
 
