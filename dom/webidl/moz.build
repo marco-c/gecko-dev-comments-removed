@@ -19,6 +19,7 @@ PREPROCESSED_WEBIDL_FILES = [
 
 WEBIDL_FILES = [
     'AbstractWorker.webidl',
+    'ActivityRequestHandler.webidl',
     'AddonManager.webidl',
     'AnalyserNode.webidl',
     'Animatable.webidl',
@@ -176,6 +177,7 @@ WEBIDL_FILES = [
     'Geolocation.webidl',
     'GeometryUtils.webidl',
     'GetUserMediaRequest.webidl',
+    'Grid.webidl',
     'HDMIInputPort.webidl',
     'Headers.webidl',
     'HeapSnapshot.webidl',
@@ -287,6 +289,7 @@ WEBIDL_FILES = [
     'KeyboardEvent.webidl',
     'KeyEvent.webidl',
     'KeyframeEffect.webidl',
+    'KillSwitch.webidl',
     'LegacyQueryInterface.webidl',
     'LinkStyle.webidl',
     'ListBoxObject.webidl',
@@ -319,6 +322,7 @@ WEBIDL_FILES = [
     'MobileMessageThread.webidl',
     'MouseEvent.webidl',
     'MouseScrollEvent.webidl',
+    'MozActivity.webidl',
     'MozCellBroadcast.webidl',
     'MozCellBroadcastMessage.webidl',
     'MozIcc.webidl',
