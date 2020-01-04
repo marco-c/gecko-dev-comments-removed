@@ -276,152 +276,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PNG_H
 #define PNG_H
 
@@ -437,9 +291,9 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.18"
+#define PNG_LIBPNG_VER_STRING "1.6.19+apng"
 #define PNG_HEADER_VERSION_STRING \
-     " libpng version 1.6.18 - July 23, 2015\n"
+     " libpng version 1.6.19+apng - November 12, 2015\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -447,7 +301,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 18
+#define PNG_LIBPNG_VER_RELEASE 19
 
 
 
@@ -478,7 +332,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10618 /* 1.6.18 */
+#define PNG_LIBPNG_VER 10619 /* 1.6.19 */
 
 
 
@@ -584,6 +438,11 @@ extern "C" {
 
 
 
+
+
+
+
+
 #ifdef PNG_APNG_SUPPORTED
 
 #define PNG_DISPOSE_OP_NONE        0x00
@@ -598,7 +457,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_18;
+typedef char* png_libpng_version_1_6_19;
 
 
 
@@ -914,7 +773,9 @@ typedef png_unknown_chunk * * png_unknown_chunkpp;
 #define PNG_INFO_iCCP 0x1000   /* ESR, 1.0.6 */
 #define PNG_INFO_sPLT 0x2000   /* ESR, 1.0.6 */
 #define PNG_INFO_sCAL 0x4000   /* ESR, 1.0.6 */
+#if INT_MAX >= 0x8000 
 #define PNG_INFO_IDAT 0x8000   /* ESR, 1.0.6 */
+#endif
 #ifdef PNG_APNG_SUPPORTED
 #define PNG_INFO_acTL 0x10000
 #define PNG_INFO_fcTL 0x20000
@@ -1026,7 +887,9 @@ PNG_FUNCTION(void, (PNGCAPI *png_longjmp_ptr), PNGARG((jmp_buf, int)), typedef);
 #define PNG_TRANSFORM_GRAY_TO_RGB   0x2000      /* read only */
 
 #define PNG_TRANSFORM_EXPAND_16     0x4000      /* read only */
+#if INT_MAX >= 0x8000 
 #define PNG_TRANSFORM_SCALE_16      0x8000      /* read only */
+#endif
 
 
 #define PNG_FLAG_MNG_EMPTY_PLTE     0x01
@@ -2747,7 +2610,7 @@ PNG_EXPORT(207, void, png_save_uint_16, (png_bytep buf, unsigned int i));
 
 #  define PNG_get_int_32(buf) \
      ((png_int_32)((*(buf) & 0x80) \
-      ? -((png_int_32)((png_get_uint_32(buf) ^ 0xffffffffL) + 1)) \
+      ? -((png_int_32)(((png_get_uint_32(buf)^0xffffffffU)+1U)&0x7fffffffU)) \
       : (png_int_32)png_get_uint_32(buf)))
 
    
@@ -2767,53 +2630,63 @@ PNG_EXPORT(207, void, png_save_uint_16, (png_bytep buf, unsigned int i));
 #  endif
 #endif
 
+#ifdef PNG_CHECK_FOR_INVALID_INDEX_SUPPORTED
+PNG_EXPORT(242, void, png_set_check_for_invalid_index,
+    (png_structrp png_ptr, int allowed));
+#  ifdef PNG_GET_PALETTE_MAX_SUPPORTED
+PNG_EXPORT(243, int, png_get_palette_max, (png_const_structp png_ptr,
+    png_const_infop info_ptr));
+#  endif
+#endif 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #if defined(PNG_SIMPLIFIED_READ_SUPPORTED) || \
     defined(PNG_SIMPLIFIED_WRITE_SUPPORTED)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #define PNG_IMAGE_VERSION 1
 
@@ -2926,7 +2799,7 @@ typedef struct
 
 #define PNG_FORMAT_FLAG_ALPHA    0x01U /* format with an alpha channel */
 #define PNG_FORMAT_FLAG_COLOR    0x02U /* color format: otherwise grayscale */
-#define PNG_FORMAT_FLAG_LINEAR   0x04U /* 2 byte channels else 1 byte */
+#define PNG_FORMAT_FLAG_LINEAR   0x04U /* 2-byte channels else 1-byte */
 #define PNG_FORMAT_FLAG_COLORMAP 0x08U /* image data is color-mapped */
 
 #ifdef PNG_FORMAT_BGR_SUPPORTED
@@ -3224,15 +3097,6 @@ PNG_EXPORT(240, int, png_image_write_to_stdio, (png_imagep image, FILE *file,
 
 
 
-#endif 
-
-#ifdef PNG_CHECK_FOR_INVALID_INDEX_SUPPORTED
-PNG_EXPORT(242, void, png_set_check_for_invalid_index,
-    (png_structrp png_ptr, int allowed));
-#  ifdef PNG_GET_PALETTE_MAX_SUPPORTED
-PNG_EXPORT(243, int, png_get_palette_max, (png_const_structp png_ptr,
-    png_const_infop info_ptr));
-#  endif
 #endif 
 
 

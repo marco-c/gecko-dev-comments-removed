@@ -210,7 +210,7 @@ png_write_info(png_structrp png_ptr, png_const_inforp info_ptr)
       png_write_PLTE(png_ptr, info_ptr->palette,
           (png_uint_32)info_ptr->num_palette);
 
-   else if ((info_ptr->color_type == PNG_COLOR_TYPE_PALETTE) !=0)
+   else if (info_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
       png_error(png_ptr, "Valid palette required for paletted images");
 
 #ifdef PNG_WRITE_tRNS_SUPPORTED

@@ -976,7 +976,6 @@ png_set_rgb_to_gray_fixed(png_structrp png_ptr, int error_action,
 
       default:
          png_error(png_ptr, "invalid error action to rgb_to_gray");
-         break;
    }
 
    if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
@@ -2098,10 +2097,10 @@ png_read_transform_info(png_structrp png_ptr, png_inforp info_ptr)
 defined(PNG_READ_USER_TRANSFORM_SUPPORTED)
    if ((png_ptr->transformations & PNG_USER_TRANSFORM) != 0)
    {
-      if (info_ptr->bit_depth < png_ptr->user_transform_depth)
+      if (png_ptr->user_transform_depth != 0)
          info_ptr->bit_depth = png_ptr->user_transform_depth;
 
-      if (info_ptr->channels < png_ptr->user_transform_channels)
+      if (png_ptr->user_transform_channels != 0)
          info_ptr->channels = png_ptr->user_transform_channels;
    }
 #endif
@@ -3315,7 +3314,7 @@ png_do_compose(png_row_infop row_info, png_bytep row, png_structrp png_ptr)
                         if ((png_uint_16)((*sp >> shift) & 0x0f)
                             == png_ptr->trans_color.gray)
                         {
-                           unsigned int tmp = *sp & (0xf0f >> (4 - shift));
+                           unsigned int tmp = *sp & (0x0f0f >> (4 - shift));
                            tmp |= png_ptr->background.gray << shift;
                            *sp = (png_byte)(tmp & 0xff);
                         }
@@ -3325,7 +3324,7 @@ png_do_compose(png_row_infop row_info, png_bytep row, png_structrp png_ptr)
                            unsigned int p = (*sp >> shift) & 0x0f;
                            unsigned int g = (gamma_table[p | (p << 4)] >> 4) &
                               0x0f;
-                           unsigned int tmp = *sp & (0xf0f >> (4 - shift));
+                           unsigned int tmp = *sp & (0x0f0f >> (4 - shift));
                            tmp |= g << shift;
                            *sp = (png_byte)(tmp & 0xff);
                         }
@@ -3351,7 +3350,7 @@ png_do_compose(png_row_infop row_info, png_bytep row, png_structrp png_ptr)
                         if ((png_uint_16)((*sp >> shift) & 0x0f)
                             == png_ptr->trans_color.gray)
                         {
-                           unsigned int tmp = *sp & (0xf0f >> (4 - shift));
+                           unsigned int tmp = *sp & (0x0f0f >> (4 - shift));
                            tmp |= png_ptr->background.gray << shift;
                            *sp = (png_byte)(tmp & 0xff);
                         }

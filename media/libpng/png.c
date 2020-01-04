@@ -14,7 +14,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_18 Your_png_h_is_not_version_1_6_18;
+typedef png_libpng_version_1_6_19 Your_png_h_is_not_version_1_6_19;
 
 
 
@@ -26,15 +26,20 @@ typedef png_libpng_version_1_6_18 Your_png_h_is_not_version_1_6_18;
 void PNGAPI
 png_set_sig_bytes(png_structrp png_ptr, int num_bytes)
 {
+   unsigned int nb = (unsigned int)num_bytes;
+
    png_debug(1, "in png_set_sig_bytes");
 
    if (png_ptr == NULL)
       return;
 
-   if (num_bytes > 8)
+   if (num_bytes < 0)
+      nb = 0;
+
+   if (nb > 8)
       png_error(png_ptr, "Too many bytes for PNG signature");
 
-   png_ptr->sig_bytes = (png_byte)((num_bytes < 0 ? 0 : num_bytes) & 0xff);
+   png_ptr->sig_bytes = (png_byte)nb;
 }
 
 
@@ -413,6 +418,8 @@ png_info_init_3,(png_infopp ptr_ptr, png_size_t png_info_struct_size),
       free(info_ptr);
       info_ptr = png_voidcast(png_inforp, png_malloc_base(NULL,
          (sizeof *info_ptr)));
+      if (info_ptr == NULL)
+         return;
       *ptr_ptr = info_ptr;
    }
 
@@ -670,13 +677,14 @@ png_init_io(png_structrp png_ptr, png_FILE_p fp)
 
 
 
+
+
+
+
 void PNGAPI
 png_save_int_32(png_bytep buf, png_int_32 i)
 {
-   buf[0] = (png_byte)((i >> 24) & 0xff);
-   buf[1] = (png_byte)((i >> 16) & 0xff);
-   buf[2] = (png_byte)((i >> 8) & 0xff);
-   buf[3] = (png_byte)(i & 0xff);
+   png_save_uint_32(buf, i);
 }
 #  endif
 
@@ -722,6 +730,7 @@ png_convert_to_rfc1123_buffer(char out[29], png_const_timep ptime)
       APPEND(':');
       APPEND_NUMBER(PNG_NUMBER_FORMAT_02u, (unsigned)ptime->second);
       APPEND_STRING(" +0000"); 
+      PNG_UNUSED (pos)
 
 #     undef APPEND
 #     undef APPEND_NUMBER
@@ -766,16 +775,20 @@ png_get_copyright(png_const_structrp png_ptr)
 #else
 #  ifdef __STDC__
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.18 - July 23, 2015" PNG_STRING_NEWLINE \
+      "libpng version 1.6.19+apng - November 12, 2015" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2015 Glenn Randers-Pehrson" PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
       "Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc." \
-      PNG_STRING_NEWLINE;
+      PNG_STRING_NEWLINE \
+      "Portions Copyright (c) 2006-2007 Andrew Smith" PNG_STRING_NEWLINE \
+      "Portions Copyright (c) 2008-2015 Max Stepin" PNG_STRING_NEWLINE ;
 #  else
-   return "libpng version 1.6.18 - July 23, 2015\
+   return "libpng version 1.6.19+apng - November 12, 2015\
       Copyright (c) 1998-2015 Glenn Randers-Pehrson\
       Copyright (c) 1996-1997 Andreas Dilger\
-      Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.";
+      Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.\
+      Portions Copyright (c) 2006-2007 Andrew Smith\
+      Portions Copyright (c) 2008-2015 Max Stepin";
 #  endif
 #endif
 }
@@ -1703,7 +1716,6 @@ png_colorspace_set_chromaticities(png_const_structrp png_ptr,
 
          colorspace->flags |= PNG_COLORSPACE_INVALID;
          png_error(png_ptr, "internal error checking chromaticities");
-         break;
    }
 
    return 0; 
@@ -1731,7 +1743,6 @@ png_colorspace_set_endpoints(png_const_structrp png_ptr,
       default:
          colorspace->flags |= PNG_COLORSPACE_INVALID;
          png_error(png_ptr, "internal error checking chromaticities");
-         break;
    }
 
    return 0; 
@@ -2057,8 +2068,8 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
    temp = png_get_uint_32(profile+12); 
    switch (temp)
    {
-      case 0x73636E72: 
-      case 0x6D6E7472: 
+      case 0x73636e72: 
+      case 0x6d6e7472: 
       case 0x70727472: 
       case 0x73706163: 
          
@@ -2069,7 +2080,7 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
          return png_icc_profile_error(png_ptr, colorspace, name, temp,
             "invalid embedded Abstract ICC profile");
 
-      case 0x6C696E6B: 
+      case 0x6c696e6b: 
          
 
 
@@ -2079,7 +2090,7 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
          return png_icc_profile_error(png_ptr, colorspace, name, temp,
             "unexpected DeviceLink ICC profile class");
 
-      case 0x6E6D636C: 
+      case 0x6e6d636c: 
          
 
 
@@ -2105,8 +2116,8 @@ png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
    temp = png_get_uint_32(profile+20);
    switch (temp)
    {
-      case 0x58595A20: 
-      case 0x4C616220: 
+      case 0x58595a20: 
+      case 0x4c616220: 
          break;
 
       default:
@@ -2276,7 +2287,7 @@ png_compare_ICC_profile_with_sRGB(png_const_structrp png_ptr,
          }
 
          
-         if (length == png_sRGB_checks[i].length &&
+         if (length == (png_uint_32) png_sRGB_checks[i].length &&
             intent == (png_uint_32) png_sRGB_checks[i].intent)
          {
             
@@ -3144,7 +3155,7 @@ png_ascii_from_fixed(png_const_structrp png_ptr, png_charp ascii,
 
       
       if (fp < 0)
-         *ascii++ = 45, --size, num = -fp;
+         *ascii++ = 45, num = -fp;
       else
          num = fp;
 
@@ -3675,7 +3686,7 @@ png_exp(png_fixed_point x)
    if (x > 0 && x <= 0xfffff) 
    {
       
-      png_uint_32 e = png_32bit_exp[(x >> 12) & 0xf];
+      png_uint_32 e = png_32bit_exp[(x >> 12) & 0x0f];
 
       
 

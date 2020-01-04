@@ -89,7 +89,13 @@ png_get_int_32)(png_const_bytep buf)
       return uval;
 
    uval = (uval ^ 0xffffffff) + 1;  
-   return -(png_int_32)uval;
+   if ((uval & 0x80000000) == 0) 
+       return -(png_int_32)uval;
+   
+
+
+
+   return 0;
 }
 
 
@@ -871,7 +877,7 @@ void
 png_handle_PLTE(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_color palette[PNG_MAX_PALETTE_LENGTH];
-   int num, i;
+   int max_palette_length, num, i;
 #ifdef PNG_POINTER_INDEXING_SUPPORTED
    png_colorp pal_ptr;
 #endif
@@ -932,6 +938,19 @@ png_handle_PLTE(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    
    num = (int)length / 3;
 
+   
+
+
+
+
+   if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
+      max_palette_length = (1 << png_ptr->bit_depth);
+   else
+      max_palette_length = PNG_MAX_PALETTE_LENGTH;
+
+   if (num > max_palette_length)
+      num = max_palette_length;
+
 #ifdef PNG_POINTER_INDEXING_SUPPORTED
    for (i = 0, pal_ptr = palette; i < num; i++, pal_ptr++)
    {
@@ -964,7 +983,7 @@ png_handle_PLTE(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
 #endif
    {
-      png_crc_finish(png_ptr, 0);
+      png_crc_finish(png_ptr, (int) length - num * 3);
    }
 
 #ifndef PNG_READ_OPT_PLTE_SUPPORTED
@@ -1823,7 +1842,7 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          return;
       }
 
-      if (length > png_ptr->num_palette ||
+      if (length > (unsigned int) png_ptr->num_palette ||
          length > (unsigned int) PNG_MAX_PALETTE_LENGTH ||
          length == 0)
       {
@@ -1987,7 +2006,8 @@ png_handle_hIST(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    num = length / 2 ;
 
-   if (num != png_ptr->num_palette || num > (unsigned int) PNG_MAX_PALETTE_LENGTH)
+   if (num != (unsigned int) png_ptr->num_palette ||
+       num > (unsigned int) PNG_MAX_PALETTE_LENGTH)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "invalid");

@@ -123,12 +123,12 @@ png_set_cHRM_XYZ(png_const_structrp png_ptr, png_inforp info_ptr, double red_X,
       png_fixed(png_ptr, red_X, "cHRM Red X"),
       png_fixed(png_ptr, red_Y, "cHRM Red Y"),
       png_fixed(png_ptr, red_Z, "cHRM Red Z"),
-      png_fixed(png_ptr, green_X, "cHRM Red X"),
-      png_fixed(png_ptr, green_Y, "cHRM Red Y"),
-      png_fixed(png_ptr, green_Z, "cHRM Red Z"),
-      png_fixed(png_ptr, blue_X, "cHRM Red X"),
-      png_fixed(png_ptr, blue_Y, "cHRM Red Y"),
-      png_fixed(png_ptr, blue_Z, "cHRM Red Z"));
+      png_fixed(png_ptr, green_X, "cHRM Green X"),
+      png_fixed(png_ptr, green_Y, "cHRM Green Y"),
+      png_fixed(png_ptr, green_Z, "cHRM Green Z"),
+      png_fixed(png_ptr, blue_X, "cHRM Blue X"),
+      png_fixed(png_ptr, blue_Y, "cHRM Blue Y"),
+      png_fixed(png_ptr, blue_Z, "cHRM Blue Z"));
 }
 #  endif 
 
@@ -518,12 +518,17 @@ png_set_PLTE(png_structrp png_ptr, png_inforp info_ptr,
     png_const_colorp palette, int num_palette)
 {
 
+   png_uint_32 max_palette_length;
+
    png_debug1(1, "in %s storage function", "PLTE");
 
    if (png_ptr == NULL || info_ptr == NULL)
       return;
 
-   if (num_palette < 0 || num_palette > PNG_MAX_PALETTE_LENGTH)
+   max_palette_length = (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE) ?
+      (1 << png_ptr->bit_depth) : PNG_MAX_PALETTE_LENGTH;
+
+   if (num_palette < 0 || num_palette > (int) max_palette_length)
    {
       if (info_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
          png_error(png_ptr, "Invalid palette length");
@@ -714,7 +719,7 @@ png_set_text_2(png_const_structrp png_ptr, png_inforp info_ptr,
 {
    int i;
 
-   png_debug1(1, "in %lx storage function", png_ptr == NULL ? 0xabadca11 :
+   png_debug1(1, "in %lx storage function", png_ptr == NULL ? 0xabadca11U :
       (unsigned long)png_ptr->chunk_name);
 
    if (png_ptr == NULL || info_ptr == NULL || num_text <= 0 || text_ptr == NULL)
