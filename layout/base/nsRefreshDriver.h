@@ -304,6 +304,9 @@ public:
 
   bool IsInRefresh() { return mInRefresh; }
 
+  void SetIsResizeSuppressed() { mResizeSuppressed = true; }
+  bool IsResizeSuppressed() const { return mResizeSuppressed; }
+
   
 
 
@@ -419,6 +422,11 @@ private:
   
   
   bool mSkippedPaints;
+
+  
+  
+  
+  bool mResizeSuppressed;
 
   int64_t mMostRecentRefreshEpochTime;
   mozilla::TimeStamp mMostRecentRefresh;
