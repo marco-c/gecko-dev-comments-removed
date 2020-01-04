@@ -76,7 +76,7 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
       
       
       var elementAttributesForDeliveryMethod = {
-        "attr-referrer":  {referrer: t._scenario.referrer_policy},
+        "attr-referrer":  {referrerpolicy: t._scenario.referrer_policy},
         "rel-noreferrer": {rel: "noreferrer"}
       };
 

@@ -276,6 +276,7 @@ ReflectionTests.typeMap = {
 
 
 
+
     "enum": {
         "jsType": "string",
         "defaultVal": "",
@@ -592,9 +593,14 @@ ReflectionTests.doReflects = function(data, idlName, idlObj, domName, domObj) {
 
     var typeInfo = this.typeMap[data.type];
 
+    if (typeof data.isNullable == "undefined") {
+        data.isNullable = false;
+    }
+
     
     
-    if (!ReflectionHarness.test(typeof idlObj[idlName], typeInfo.jsType, "typeof IDL attribute")) {
+    var isDefaultValueNull = data.isNullable && data.defaultVal === null;
+    if (!ReflectionHarness.test(typeof idlObj[idlName], isDefaultValueNull ? "object" : typeInfo.jsType, "typeof IDL attribute")) {
         return;
     }
 
@@ -603,7 +609,7 @@ ReflectionTests.doReflects = function(data, idlName, idlObj, domName, domObj) {
     if (defaultVal === undefined) {
         defaultVal = typeInfo.defaultVal;
     }
-    if (defaultVal !== null) {
+    if (defaultVal !== null || data.isNullable) {
         ReflectionHarness.test(idlObj[idlName], defaultVal, "IDL get with DOM attribute unset");
     }
 
@@ -650,7 +656,14 @@ ReflectionTests.doReflects = function(data, idlName, idlObj, domName, domObj) {
 
         
         
-        idlDomExpected = idlTests.slice(0);
+        if (!data.isNullable) {
+            idlDomExpected = idlTests.slice(0);
+        } else {
+            idlDomExpected = [];
+            for (var i = 0; i < idlTests.length; i++) {
+                idlDomExpected.push((idlTests[i] === null || idlTests[i] === undefined) ? null : idlTests[i]);
+            }
+        }
 
         
         domExpected = [];
@@ -659,7 +672,11 @@ ReflectionTests.doReflects = function(data, idlName, idlObj, domName, domObj) {
             domExpected.push(this.enumExpected(data.keywords, data.nonCanon, data.invalidVal, domTests[i]));
         }
         for (var i = 0; i < idlTests.length; i++) {
-            idlIdlExpected.push(this.enumExpected(data.keywords, data.nonCanon, data.invalidVal, idlTests[i]));
+            if (data.isNullable && (idlTests[i] === null || idlTests[i] === undefined)) {
+                idlIdlExpected.push(null);
+            } else {
+                idlIdlExpected.push(this.enumExpected(data.keywords, data.nonCanon, data.invalidVal, idlTests[i]));
+            }
         }
         break;
 
@@ -687,7 +704,7 @@ ReflectionTests.doReflects = function(data, idlName, idlObj, domName, domObj) {
 
     if (!data.customGetter) {
         for (var i = 0; i < domTests.length; i++) {
-            if (domExpected[i] === null) {
+            if (domExpected[i] === null && !data.isNullable) {
                 
                 
                 
@@ -723,10 +740,14 @@ ReflectionTests.doReflects = function(data, idlName, idlObj, domName, domObj) {
                 if (data.type == "boolean") {
                     
                     ReflectionHarness.test(domObj.hasAttribute(domName), Boolean(idlTests[i]), "IDL set to " + ReflectionHarness.stringRep(idlTests[i]) + " followed by hasAttribute()");
-                } else if (idlDomExpected[i] !== null) {
-                    ReflectionHarness.test(domObj.getAttribute(domName), idlDomExpected[i] + "", "IDL set to " + ReflectionHarness.stringRep(idlTests[i]) + " followed by getAttribute()");
+                } else if (idlDomExpected[i] !== null || data.isNullable) {
+                    var expected = idlDomExpected[i] + "";
+                    if (data.isNullable && idlDomExpected[i] === null) {
+                        expected = null;
+                    }
+                    ReflectionHarness.test(domObj.getAttribute(domName), expected, "IDL set to " + ReflectionHarness.stringRep(idlTests[i]) + " followed by getAttribute()");
                 }
-                if (idlIdlExpected[i] !== null) {
+                if (idlIdlExpected[i] !== null || data.isNullable) {
                     ReflectionHarness.test(idlObj[idlName], idlIdlExpected[i], "IDL set to " + ReflectionHarness.stringRep(idlTests[i]) + " followed by IDL get");
                 }
                 if (ReflectionHarness.catchUnexpectedExceptions) {

@@ -13,7 +13,7 @@ var miscElements = {
     charset: "string",
     
     defer: "boolean",
-    crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}},
+    crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}, isNullable: true, defaultVal: null, invalidVal: "anonymous"},
   },
   noscript: {},
 

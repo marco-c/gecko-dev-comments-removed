@@ -5,7 +5,7 @@ var embeddedElements = {
     alt: "string",
     src: "url",
     srcset: "string",
-    crossOrigin: {type: "enum", keywords: ["", "anonymous", "use-credentials"]},
+    crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}, isNullable: true, defaultVal: null, invalidVal: "anonymous"},
     useMap: "string",
     isMap: "boolean",
     width: {type: "unsigned long", customGetter: true},
@@ -84,7 +84,7 @@ var embeddedElements = {
   video: {
     
     src: "url",
-    crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}},
+    crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}, isNullable: true, defaultVal: null, invalidVal: "anonymous"},
     
     preload: {type: "enum", keywords: ["none", "metadata", "auto"], nonCanon: {"": "auto"}, defaultVal: null},
     autoplay: "boolean",
@@ -100,7 +100,7 @@ var embeddedElements = {
   audio: {
     
     src: "url",
-    crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}},
+    crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}, isNullable: true, defaultVal: null, invalidVal: "anonymous"},
     
     preload: {type: "enum", keywords: ["none", "metadata", "auto"], nonCanon: {"": "auto"}, defaultVal: null},
     autoplay: "boolean",
