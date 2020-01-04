@@ -3,7 +3,7 @@
 
 
 
-var es = 'altGlyph altGlyphDef altGlyphItem animate animateColor animateMotion animateTransform circle color-profile cursor desc ellipse feBlend feColorMatrix feComponentTransfer feComposite feConvolveMatrix feDiffuseLighting feDisplacementMap feDistantLight feFlood feFuncA feFuncB feFuncG feFuncR feGaussianBlur feImage feMerge feMergeNode feMorphology feOffset fePointLight feSpecularLighting feSpotLight feTile feTurbulence filter font font-face font-face-format font-face-name font-face-src font-face-uri glyph glyphRef hkern image line linearGradient metadata missing-glyph mpath path polygon polyline radialGradient rect script set stop style text textPath title tref tspan use view vkern UNKNOWN'.split(' ');
+var es = 'animate animateMotion animateTransform circle color-profile cursor desc ellipse feBlend feColorMatrix feComponentTransfer feComposite feConvolveMatrix feDiffuseLighting feDisplacementMap feDistantLight feDropShadow feFlood feFuncA feFuncB feFuncG feFuncR feGaussianBlur feImage feMerge feMergeNode feMorphology feOffset fePointLight feSpecularLighting feSpotLight feTile feTurbulence filter image line linearGradient metadata mpath path polygon polyline radialGradient rect script set stop style text textPath title tspan use view UNKNOWN'.split(' ');
 var colwidth = 200;
 var size = 40;
 var rows = 14;
