@@ -42,6 +42,7 @@
 #endif
 
 #ifdef XP_WIN
+#include "mozilla/widget/AudioSession.h"
 #include <windows.h>
 #endif
 
@@ -1497,6 +1498,11 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
         gfxPrefs::GetSingleton();
         
         BrowserTabsRemoteAutostart();
+#ifdef XP_WIN
+        
+        
+        widget::StartAudioSession();
+#endif
 
         {
             JS::Rooted<JSObject*> glob(cx, holder->GetJSObject());
@@ -1565,6 +1571,9 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
             JS_GC(rt);
         }
         JS_GC(rt);
+#ifdef XP_WIN
+        widget::StopAudioSession();
+#endif
     } 
 
     if (!XRE_ShutdownTestShell())
