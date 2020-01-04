@@ -151,8 +151,12 @@ struct nsContentAndOffset
 
 
 
-#define REVERSED_DIRECTION_FRAME(frame) \
-  (!IS_SAME_DIRECTION(NS_GET_EMBEDDING_LEVEL(frame), NS_GET_BASE_LEVEL(frame)))
+static bool
+IsReversedDirectionFrame(nsIFrame* aFrame)
+{
+  return !IS_SAME_DIRECTION(nsBidi::GetEmbeddingLevel(aFrame),
+                            nsBidi::GetBaseLevel(aFrame));
+}
 
 #include "nsILineIterator.h"
 
@@ -7041,7 +7045,7 @@ nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct *aPos)
 
 static bool IsMovingInFrameDirection(nsIFrame* frame, nsDirection aDirection, bool aVisual)
 {
-  bool isReverseDirection = aVisual && REVERSED_DIRECTION_FRAME(frame);
+  bool isReverseDirection = aVisual && IsReversedDirectionFrame(frame);
   return aDirection == (isReverseDirection ? eDirPrevious : eDirNext);
 }
 
@@ -7677,7 +7681,7 @@ nsIFrame::GetFrameFromDirection(nsDirection aDirection, bool aVisual,
 
   *aOutOffset = (aDirection == eDirNext) ? 0 : -1;
 
-  if (aVisual && REVERSED_DIRECTION_FRAME(traversedFrame)) {
+  if (aVisual && IsReversedDirectionFrame(traversedFrame)) {
     
     *aOutOffset = -1 - *aOutOffset;
   }
