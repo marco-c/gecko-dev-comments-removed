@@ -894,10 +894,10 @@ StopNeutering()
 }
 
 NeuteredWindowRegion::NeuteredWindowRegion(bool aDoNeuter MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
-  : mNeuteredByThis(!gWindowHook)
+  : mNeuteredByThis(!gWindowHook && aDoNeuter)
 {
   MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-  if (aDoNeuter && mNeuteredByThis) {
+  if (mNeuteredByThis) {
     StartNeutering();
   }
 }
@@ -912,6 +912,11 @@ NeuteredWindowRegion::~NeuteredWindowRegion()
 void
 NeuteredWindowRegion::PumpOnce()
 {
+  if (!gWindowHook) {
+    
+    return;
+  }
+
   MSG msg = {0};
   
   if (gCOMWindow && ::PeekMessageW(&msg, gCOMWindow, 0, 0, PM_REMOVE)) {

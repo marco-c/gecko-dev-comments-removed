@@ -995,7 +995,6 @@ MessageChannel::Call(Message* aMsg, Message* aReply)
 
 #ifdef OS_WIN
     SyncStackFrame frame(this, true);
-    NeuteredWindowRegion neuteredRgn(mFlags & REQUIRE_DEFERRED_MESSAGE_PROTECTION);
 #endif
 
     
@@ -1036,8 +1035,15 @@ MessageChannel::Call(Message* aMsg, Message* aReply)
 
 #ifdef OS_WIN
         
+        
+        
+        
+        {
+            NeuteredWindowRegion neuteredRgn(mFlags & REQUIRE_DEFERRED_MESSAGE_PROTECTION);
+            
 
-        neuteredRgn.PumpOnce();
+            neuteredRgn.PumpOnce();
+        }
 #endif
 
         
