@@ -1344,7 +1344,7 @@ private:
     
     
     uint16_t mIndexInInterface : 12;
-} JS_HAZ_NON_GC_POINTER; 
+};
 
 
 
