@@ -228,7 +228,9 @@ public:
 
   
   already_AddRefed<mozilla::layers::ImageContainer> GetImageContainer();
-
+  
+  
+  bool NeedsScrollImageLayer();
   
   bool UpdateScrollState(bool aIsScrolling);
 

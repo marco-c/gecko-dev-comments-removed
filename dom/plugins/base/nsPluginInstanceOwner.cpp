@@ -212,6 +212,21 @@ AttachToContainerAsSurfaceTexture(ImageContainer* container,
 }
 #endif
 
+bool
+nsPluginInstanceOwner::NeedsScrollImageLayer()
+{
+#if defined(XP_WIN)
+  
+  
+  
+  return XRE_IsContentProcess() &&
+         mPluginWindow &&
+         mPluginWindow->type == NPWindowTypeWindow;
+#else
+  return false;
+#endif
+}
+
 already_AddRefed<ImageContainer>
 nsPluginInstanceOwner::GetImageContainer()
 {
@@ -247,7 +262,15 @@ nsPluginInstanceOwner::GetImageContainer()
     container->SetCurrentImageInTransaction(img);
   }
 #else
-  mInstance->GetImageContainer(getter_AddRefs(container));
+  if (NeedsScrollImageLayer()) {
+    
+#if defined(XP_WIN)
+    mInstance->GetScrollCaptureContainer(getter_AddRefs(container));
+#endif
+  } else {
+    
+    mInstance->GetImageContainer(getter_AddRefs(container));
+  }
 #endif
 
   return container.forget();
@@ -630,13 +653,17 @@ NS_IMETHODIMP nsPluginInstanceOwner::InvalidateRect(NPRect *invalidRect)
 
 #ifndef XP_MACOSX
   
-  
   if (mWidget) {
     mWidget->Invalidate(
       LayoutDeviceIntRect(invalidRect->left, invalidRect->top,
                           invalidRect->right - invalidRect->left,
                           invalidRect->bottom - invalidRect->top));
-    return NS_OK;
+    
+    
+    
+    if (!NeedsScrollImageLayer()) {
+      return NS_OK;
+    }
   }
 #endif
   nsIntRect rect(invalidRect->left,

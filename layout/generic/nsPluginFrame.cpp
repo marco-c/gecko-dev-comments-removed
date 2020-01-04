@@ -417,7 +417,8 @@ nsPluginFrame::GetWidgetConfiguration(nsTArray<nsIWidget::Configuration>* aConfi
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   if (XRE_IsContentProcess()) {
     configuration->mWindowID = (uintptr_t)mWidget->GetNativeData(NS_NATIVE_PLUGIN_PORT);
-    configuration->mVisible = mWidget->IsVisible();
+    configuration->mVisible = !mIsHiddenDueToScroll && mWidget->IsVisible();
+
   }
 #endif 
 }
@@ -1121,11 +1122,13 @@ nsPluginFrame::DidSetWidgetGeometry()
 bool
 nsPluginFrame::IsOpaque() const
 {
+#if defined(MOZ_WIDGET_GTK)
   
   
   if (mIsHiddenDueToScroll) {
     return false;
   }
+#endif
 #if defined(XP_MACOSX)
   return false;
 #elif defined(MOZ_WIDGET_ANDROID)
@@ -1171,11 +1174,13 @@ nsPluginFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists)
 {
+#if defined(MOZ_WIDGET_GTK)
   
   
   if (mIsHiddenDueToScroll) {
     return;
   }
+#endif
 
   
   if (!IsVisibleOrCollapsedForPainting(aBuilder))
@@ -1397,6 +1402,10 @@ nsPluginFrame::GetLayerState(nsDisplayListBuilder* aBuilder,
     return LAYER_ACTIVE;
 #endif
 
+  if (mInstanceOwner->NeedsScrollImageLayer()) {
+    return LAYER_ACTIVE;
+  }
+
   if (!mInstanceOwner->UseAsyncRendering()) {
     return LAYER_NONE;
   }
@@ -1461,9 +1470,12 @@ nsPluginFrame::BuildLayer(nsDisplayListBuilder* aBuilder,
     (aManager->GetLayerBuilder()->GetLeafLayerFor(aBuilder, aItem));
 
   if (aItem->GetType() == nsDisplayItem::TYPE_PLUGIN) {
+    RefPtr<ImageContainer> container;
     
-    RefPtr<ImageContainer> container = mInstanceOwner->GetImageContainer();
+    
+    container = mInstanceOwner->GetImageContainer();
     if (!container) {
+      
       
       return nullptr;
     }
