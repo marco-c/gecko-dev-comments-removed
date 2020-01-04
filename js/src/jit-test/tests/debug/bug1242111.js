@@ -1,5 +1,8 @@
 
 
+if (!('oomAfterAllocations' in this))
+  quit();
+
 var g = newGlobal();
 g.debuggeeGlobal = [];
 g.eval("(" + function() {
