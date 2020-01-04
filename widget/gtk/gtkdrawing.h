@@ -392,7 +392,9 @@ gint moz_gtk_get_tab_scroll_arrow_size(gint* width, gint* height);
 
 
 
-gint moz_gtk_get_arrow_size(gint* width, gint* height);
+void
+moz_gtk_get_arrow_size(GtkThemeWidgetType widgetType,
+                       gint* width, gint* height);
 
 
 
