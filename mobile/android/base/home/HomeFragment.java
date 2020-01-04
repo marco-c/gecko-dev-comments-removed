@@ -197,7 +197,7 @@ public abstract class HomeFragment extends Fragment {
                 return false;
             } else {
                 GeckoAppShell.openUriExternal(info.url, SHARE_MIME_TYPE, "", "",
-                                              Intent.ACTION_SEND, info.getDisplayTitle(), false);
+                                              Intent.ACTION_SEND, info.getDisplayTitle());
 
                 
                 Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.LIST);
