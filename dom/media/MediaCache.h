@@ -183,10 +183,9 @@ class MediaCache;
 
 class MediaCacheStream {
 public:
-  enum {
-    
-    BLOCK_SIZE = 32768
-  };
+  
+  static const int64_t BLOCK_SIZE = 32768;
+
   enum ReadMode {
     MODE_METADATA,
     MODE_PLAYBACK
