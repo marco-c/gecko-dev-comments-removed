@@ -20,6 +20,7 @@ class CacheIndexIterator;
 struct CacheFileContextEvictorEntry
 {
   nsCOMPtr<nsILoadContextInfo> mInfo;
+  bool                         mPinned;
   PRTime                       mTimeStamp; 
   RefPtr<CacheIndexIterator> mIterator;
 };
@@ -40,7 +41,7 @@ public:
   
   uint32_t ContextsCount();
   
-  nsresult AddContext(nsILoadContextInfo *aLoadContextInfo);
+  nsresult AddContext(nsILoadContextInfo *aLoadContextInfo, bool aPinned);
   
   
   
@@ -50,21 +51,22 @@ public:
   
   
   
-  nsresult WasEvicted(const nsACString &aKey, nsIFile *aFile, bool *_retval);
+  nsresult WasEvicted(const nsACString &aKey, nsIFile *aFile,
+                      bool *aEvictedAsPinned, bool *aEvictedAsNonPinned);
 
 private:
   
   
   
   
-  nsresult PersistEvictionInfoToDisk(nsILoadContextInfo *aLoadContextInfo);
+  nsresult PersistEvictionInfoToDisk(nsILoadContextInfo *aLoadContextInfo, bool aPinned);
   
   
-  nsresult RemoveEvictInfoFromDisk(nsILoadContextInfo *aLoadContextInfo);
+  nsresult RemoveEvictInfoFromDisk(nsILoadContextInfo *aLoadContextInfo, bool aPinned);
   
   
   nsresult LoadEvictInfoFromDisk();
-  nsresult GetContextFile(nsILoadContextInfo *aLoadContextInfo,
+  nsresult GetContextFile(nsILoadContextInfo *aLoadContextInfo, bool aPinned,
                           nsIFile **_retval);
 
   void     CreateIterators();

@@ -148,7 +148,7 @@ public:
     mRec->mFlags = 0;
   }
 
-  void Init(uint32_t aAppId, bool aAnonymous, bool aInBrowser)
+  void Init(uint32_t aAppId, bool aAnonymous, bool aInBrowser, bool aPinned)
   {
     MOZ_ASSERT(mRec->mFrecency == 0);
     MOZ_ASSERT(mRec->mExpirationTime == nsICacheEntry::NO_EXPIRATION_TIME);
@@ -163,6 +163,9 @@ public:
     }
     if (aInBrowser) {
       mRec->mFlags |= kInBrowserMask;
+    }
+    if (aPinned) {
+      mRec->mFlags |= kPinnedMask;
     }
   }
 
@@ -183,6 +186,8 @@ public:
 
   bool IsFresh() const { return !!(mRec->mFlags & kFreshMask); }
   void MarkFresh() { mRec->mFlags |= kFreshMask; }
+
+  bool IsPinned() const { return !!(mRec->mFlags & kPinnedMask); }
 
   void     SetFrecency(uint32_t aFrecency) { mRec->mFrecency = aFrecency; }
   uint32_t GetFrecency() const { return mRec->mFrecency; }
@@ -209,6 +214,10 @@ public:
   static uint32_t GetFileSize(CacheIndexRecord *aRec)
   {
     return aRec->mFlags & kFileSizeMask;
+  }
+  static uint32_t IsPinned(CacheIndexRecord *aRec)
+  {
+    return aRec->mFlags & kPinnedMask;
   }
   bool     IsFileEmpty() const { return GetFileSize() == 0; }
 
@@ -301,7 +310,10 @@ private:
   
   static const uint32_t kFreshMask       = 0x04000000;
 
-  static const uint32_t kReservedMask    = 0x03000000;
+  
+  static const uint32_t kPinnedMask      = 0x02000000;
+
+  static const uint32_t kReservedMask    = 0x01000000;
 
   
   static const uint32_t kFileSizeMask    = 0x00FFFFFF;
@@ -610,7 +622,8 @@ public:
   static nsresult InitEntry(const SHA1Sum::Hash *aHash,
                             uint32_t             aAppId,
                             bool                 aAnonymous,
-                            bool                 aInBrowser);
+                            bool                 aInBrowser,
+                            bool                 aPinned);
 
   
   static nsresult RemoveEntry(const SHA1Sum::Hash *aHash);
@@ -635,7 +648,11 @@ public:
 
   
   
-  static nsresult HasEntry(const nsACString &aKey, EntryStatus *_retval);
+  
+  static nsresult HasEntry(const nsACString &aKey, EntryStatus *_retval,
+                           bool *_pinned = nullptr);
+  static nsresult HasEntry(const SHA1Sum::Hash &hash, EntryStatus *_retval,
+                           bool *_pinned = nullptr);
 
   
   
@@ -969,7 +986,7 @@ private:
   char                     *mRWBuf;
   uint32_t                  mRWBufSize;
   uint32_t                  mRWBufPos;
-  RefPtr<CacheHash>       mRWHash;
+  RefPtr<CacheHash>         mRWHash;
 
   
   bool                      mJournalReadSuccessfully;
@@ -981,9 +998,9 @@ private:
   
   RefPtr<CacheFileHandle> mTmpHandle;
 
-  RefPtr<FileOpenHelper>  mIndexFileOpener;
-  RefPtr<FileOpenHelper>  mJournalFileOpener;
-  RefPtr<FileOpenHelper>  mTmpFileOpener;
+  RefPtr<FileOpenHelper>    mIndexFileOpener;
+  RefPtr<FileOpenHelper>    mJournalFileOpener;
+  RefPtr<FileOpenHelper>    mTmpFileOpener;
 
   
   nsCOMPtr<nsIDirectoryEnumerator> mDirEnumerator;

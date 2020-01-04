@@ -55,7 +55,7 @@ public:
   NS_DECL_NSIRUNNABLE
 
   CacheEntry(const nsACString& aStorageID, nsIURI* aURI, const nsACString& aEnhanceID,
-             bool aUseDisk, bool aSkipSizeCheck);
+             bool aUseDisk, bool aSkipSizeCheck, bool aPin);
 
   void AsyncOpen(nsICacheEntryOpenCallback* aCallback, uint32_t aFlags);
 
@@ -92,6 +92,7 @@ public:
     PURGE_WHOLE,
   };
 
+  bool DeferOrBypassRemovalOnPinStatus(bool aPinned);
   bool Purge(uint32_t aWhat);
   void PurgeAndDoom();
   void DoomAlreadyRemoved();
@@ -136,12 +137,19 @@ private:
     Callback(CacheEntry* aEntry,
              nsICacheEntryOpenCallback *aCallback,
              bool aReadOnly, bool aCheckOnAnyThread, bool aSecret);
+    
+    
+    Callback(CacheEntry* aEntry, bool aDoomWhenFoundInPinStatus);
     Callback(Callback const &aThat);
     ~Callback();
 
     
     
     void ExchangeEntry(CacheEntry* aEntry);
+
+    
+    
+    bool DeferDoom(bool *aDoom) const;
 
     
     
@@ -155,6 +163,13 @@ private:
     bool mRecheckAfterWrite : 1;
     bool mNotWanted : 1;
     bool mSecret : 1;
+
+    
+    
+    
+    
+    bool mDoomWhenFoundPinned : 1;
+    bool mDoomWhenFoundNonPinned : 1;
 
     nsresult OnCheckThread(bool *aOnCheckThread) const;
     nsresult OnAvailThread(bool *aOnAvailThread) const;
@@ -274,14 +289,9 @@ private:
   nsCString mStorageID;
 
   
-  bool const mUseDisk;
-
+  bool const mUseDisk : 1;
   
-  bool const mSkipSizeCheck;
-
-  
-  
-  bool mIsDoomed;
+  bool const mSkipSizeCheck : 1;
 
   
 
@@ -296,6 +306,15 @@ private:
   
   
   bool mHasData : 1;
+  
+  bool mPinned : 1;
+  
+  
+  bool mPinningKnown : 1;
+
+  
+  
+  bool mIsDoomed;
 
   static char const * StateString(uint32_t aState);
 

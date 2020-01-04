@@ -103,7 +103,8 @@ CacheStorageService::MemoryPool::Limit() const
 NS_IMPL_ISUPPORTS(CacheStorageService,
                   nsICacheStorageService,
                   nsIMemoryReporter,
-                  nsITimerCallback)
+                  nsITimerCallback,
+                  nsICacheTesting)
 
 CacheStorageService* CacheStorageService::sSelf = nullptr;
 
@@ -536,7 +537,7 @@ void CacheStorageService::DropPrivateBrowsingEntries()
   sGlobalEntryTables->EnumerateRead(&CollectPrivateContexts, &keys);
 
   for (uint32_t i = 0; i < keys.Length(); ++i)
-    DoomStorageEntries(keys[i], nullptr, true, nullptr);
+    DoomStorageEntries(keys[i], nullptr, true, false, nullptr);
 }
 
 namespace {
@@ -681,7 +682,7 @@ NS_IMETHODIMP CacheStorageService::MemoryCacheStorage(nsILoadContextInfo *aLoadC
 
   nsCOMPtr<nsICacheStorage> storage;
   if (CacheObserver::UseNewCache()) {
-    storage = new CacheStorage(aLoadContextInfo, false, false, false);
+    storage = new CacheStorage(aLoadContextInfo, false, false, false, false);
   }
   else {
     storage = new _OldStorage(aLoadContextInfo, false, false, false, nullptr);
@@ -706,12 +707,33 @@ NS_IMETHODIMP CacheStorageService::DiskCacheStorage(nsILoadContextInfo *aLoadCon
 
   nsCOMPtr<nsICacheStorage> storage;
   if (CacheObserver::UseNewCache()) {
-    storage = new CacheStorage(aLoadContextInfo, useDisk, aLookupAppCache, false);
+    storage = new CacheStorage(aLoadContextInfo, useDisk, aLookupAppCache, false , false );
   }
   else {
     storage = new _OldStorage(aLoadContextInfo, useDisk, aLookupAppCache, false, nullptr);
   }
 
+  storage.forget(_retval);
+  return NS_OK;
+}
+
+NS_IMETHODIMP CacheStorageService::PinningCacheStorage(nsILoadContextInfo *aLoadContextInfo,
+                                                       nsICacheStorage * *_retval)
+{
+  NS_ENSURE_ARG(aLoadContextInfo);
+  NS_ENSURE_ARG(_retval);
+
+  if (!CacheObserver::UseNewCache()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  
+  if (!CacheObserver::UseDiskCache()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsCOMPtr<nsICacheStorage> storage = new CacheStorage(
+    aLoadContextInfo, true , false , true , true );
   storage.forget(_retval);
   return NS_OK;
 }
@@ -745,7 +767,7 @@ NS_IMETHODIMP CacheStorageService::SynthesizedCacheStorage(nsILoadContextInfo *a
 
   nsCOMPtr<nsICacheStorage> storage;
   if (CacheObserver::UseNewCache()) {
-    storage = new CacheStorage(aLoadContextInfo, false, false, true );
+    storage = new CacheStorage(aLoadContextInfo, false, false, true , false );
   }
   else {
     storage = new _OldStorage(aLoadContextInfo, false, false, false, nullptr);
@@ -768,12 +790,15 @@ NS_IMETHODIMP CacheStorageService::Clear()
       nsTArray<nsCString> keys;
       sGlobalEntryTables->EnumerateRead(&CollectContexts, &keys);
 
-      for (uint32_t i = 0; i < keys.Length(); ++i)
-        DoomStorageEntries(keys[i], nullptr, true, nullptr);
-    }
+      for (uint32_t i = 0; i < keys.Length(); ++i) {
+        DoomStorageEntries(keys[i], nullptr, true, false, nullptr);
+      }
 
-    rv = CacheFileIOManager::EvictAll();
-    NS_ENSURE_SUCCESS(rv, rv);
+      
+      
+      rv = CacheFileIOManager::EvictByContext(nullptr, false);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
   } else {
     nsCOMPtr<nsICacheService> serv =
         do_GetService(NS_CACHESERVICE_CONTRACTID, &rv);
@@ -811,6 +836,29 @@ NS_IMETHODIMP CacheStorageService::PurgeFromMemory(uint32_t aWhat)
     new PurgeFromMemoryRunnable(this, what);
 
   return Dispatch(event);
+}
+
+NS_IMETHODIMP CacheStorageService::PurgeFromMemoryRunnable::Run()
+{
+  if (NS_IsMainThread()) {
+    nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+    if (observerService) {
+      observerService->NotifyObservers(nullptr, "cacheservice:purge-memory-pools", nullptr);
+    }
+
+    return NS_OK;
+  }
+
+  if (mService) {
+    
+    mService->Pool(true).PurgeAll(mWhat);
+    mService->Pool(false).PurgeAll(mWhat);
+    mService = nullptr;
+  }
+
+  NS_DispatchToMainThread(this);
+  return NS_OK;
 }
 
 NS_IMETHODIMP CacheStorageService::AsyncGetDiskConsumption(
@@ -924,7 +972,7 @@ CacheStorageService::UnregisterEntry(CacheEntry* aEntry)
 
 static bool
 AddExactEntry(CacheEntryTable* aEntries,
-              nsCString const& aKey,
+              nsACString const& aKey,
               CacheEntry* aEntry,
               bool aOverwrite)
 {
@@ -942,7 +990,7 @@ AddExactEntry(CacheEntryTable* aEntries,
 
 static bool
 RemoveExactEntry(CacheEntryTable* aEntries,
-                 nsCString const& aKey,
+                 nsACString const& aKey,
                  CacheEntry* aEntry,
                  bool aOverwrite)
 {
@@ -1357,7 +1405,9 @@ CacheStorageService::AddStorageEntry(CacheStorage const* aStorage,
   CacheFileUtils::AppendKeyPrefix(aStorage->LoadInfo(), contextKey);
 
   return AddStorageEntry(contextKey, aURI, aIdExtension,
-                         aStorage->WriteToDisk(), aStorage->SkipSizeCheck(),
+                         aStorage->WriteToDisk(),
+                         aStorage->SkipSizeCheck(),
+                         aStorage->Pinning(),
                          aCreateIfNotExist, aReplace,
                          aResult);
 }
@@ -1368,6 +1418,7 @@ CacheStorageService::AddStorageEntry(nsCSubstring const& aContextKey,
                                      const nsACString & aIdExtension,
                                      bool aWriteToDisk,
                                      bool aSkipSizeCheck,
+                                     bool aPin,
                                      bool aCreateIfNotExist,
                                      bool aReplace,
                                      CacheEntryHandle** aResult)
@@ -1403,11 +1454,7 @@ CacheStorageService::AddStorageEntry(nsCSubstring const& aContextKey,
 
     if (entryExists && !aReplace) {
       
-      
-      if (MOZ_UNLIKELY(entry->IsFileDoomed())) {
-        LOG(("  file already doomed, replacing the entry"));
-        aReplace = true;
-      } else if (MOZ_UNLIKELY(!aWriteToDisk) && MOZ_LIKELY(entry->IsUsingDisk())) {
+      if (MOZ_UNLIKELY(!aWriteToDisk) && MOZ_LIKELY(entry->IsUsingDisk())) {
         LOG(("  entry is persistnet but we want mem-only, replacing it"));
         aReplace = true;
       }
@@ -1430,7 +1477,7 @@ CacheStorageService::AddStorageEntry(nsCSubstring const& aContextKey,
     
     if (!entryExists && (aCreateIfNotExist || aReplace)) {
       
-      entry = new CacheEntry(aContextKey, aURI, aIdExtension, aWriteToDisk, aSkipSizeCheck);
+      entry = new CacheEntry(aContextKey, aURI, aIdExtension, aWriteToDisk, aSkipSizeCheck, aPin);
       entries->Put(entryKey, entry);
       LOG(("  new entry %p for %s", entry.get(), entryKey.get()));
     }
@@ -1668,15 +1715,19 @@ CacheStorageService::DoomStorageEntries(CacheStorage const* aStorage,
   mozilla::MutexAutoLock lock(mLock);
 
   return DoomStorageEntries(contextKey, aStorage->LoadInfo(),
-                            aStorage->WriteToDisk(), aCallback);
+                            aStorage->WriteToDisk(), aStorage->Pinning(),
+                            aCallback);
 }
 
 nsresult
 CacheStorageService::DoomStorageEntries(nsCSubstring const& aContextKey,
                                         nsILoadContextInfo* aContext,
                                         bool aDiskStorage,
+                                        bool aPinned,
                                         nsICacheEntryDoomCallback* aCallback)
 {
+  LOG(("CacheStorageService::DoomStorageEntries [context=%s]", aContextKey.BeginReading()));
+
   mLock.AssertCurrentThreadOwns();
 
   NS_ENSURE_TRUE(!mShutdown, NS_ERROR_NOT_INITIALIZED);
@@ -1688,28 +1739,29 @@ CacheStorageService::DoomStorageEntries(nsCSubstring const& aContextKey,
     LOG(("  dooming disk+memory storage of %s", aContextKey.BeginReading()));
 
     
-    sGlobalEntryTables->Remove(aContextKey);
-    sGlobalEntryTables->Remove(memoryStorageID);
+    CacheEntryTable *diskEntries, *memoryEntries;
+    if (sGlobalEntryTables->Get(aContextKey, &diskEntries)) {
+      sGlobalEntryTables->Get(memoryStorageID, &memoryEntries);
+
+      for (auto iter = diskEntries->Iter(); !iter.Done(); iter.Next()) {
+        auto entry = iter.Data();
+        if (entry->DeferOrBypassRemovalOnPinStatus(aPinned)) {
+          continue;
+        }
+
+        if (memoryEntries) {
+          RemoveExactEntry(memoryEntries, iter.Key(), entry, false);
+        }
+        iter.Remove();
+      }
+    }
 
     if (aContext && !aContext->IsPrivate()) {
       LOG(("  dooming disk entries"));
-      CacheFileIOManager::EvictByContext(aContext);
+      CacheFileIOManager::EvictByContext(aContext, aPinned);
     }
   } else {
     LOG(("  dooming memory-only storage of %s", aContextKey.BeginReading()));
-
-    class MemoryEntriesRemoval {
-    public:
-      static PLDHashOperator EvictEntry(const nsACString& aKey,
-                                        CacheEntry* aEntry,
-                                        void* aClosure)
-      {
-        CacheEntryTable* entries = static_cast<CacheEntryTable*>(aClosure);
-        nsCString key(aKey);
-        RemoveExactEntry(entries, key, aEntry, false);
-        return PL_DHASH_NEXT;
-      }
-    };
 
     
     
@@ -1718,10 +1770,14 @@ CacheStorageService::DoomStorageEntries(nsCSubstring const& aContextKey,
     nsAutoPtr<CacheEntryTable> memoryEntries;
     sGlobalEntryTables->RemoveAndForget(memoryStorageID, memoryEntries);
 
-    CacheEntryTable* entries;
-    sGlobalEntryTables->Get(aContextKey, &entries);
-    if (memoryEntries && entries)
-      memoryEntries->EnumerateRead(&MemoryEntriesRemoval::EvictEntry, entries);
+    CacheEntryTable* diskEntries;
+    sGlobalEntryTables->Get(aContextKey, &diskEntries);
+    if (memoryEntries && diskEntries) {
+      for (auto iter = memoryEntries->Iter(); !iter.Done(); iter.Next()) {
+        auto entry = iter.Data();
+        RemoveExactEntry(diskEntries, iter.Key(), entry, false);
+      }
+    }
   }
 
   
@@ -1796,9 +1852,6 @@ CacheStorageService::CacheFileDoomed(nsILoadContextInfo* aLoadContextInfo,
     return;
 
   if (!entry->IsFileDoomed())
-    return;
-
-  if (entry->IsReferenced())
     return;
 
   
@@ -2107,6 +2160,47 @@ CacheStorageService::CollectReports(nsIMemoryReporterCallback* aHandleReport,
     sGlobalEntryTables->EnumerateRead(&ReportStorageMemory, &data);
   }
 
+  return NS_OK;
+}
+
+
+
+NS_IMETHODIMP
+CacheStorageService::IOThreadSuspender::Run()
+{
+  MonitorAutoLock mon(mMon);
+  mon.Wait();
+  return NS_OK;
+}
+
+void
+CacheStorageService::IOThreadSuspender::Notify()
+{
+  MonitorAutoLock mon(mMon);
+  mon.Notify();
+}
+
+NS_IMETHODIMP
+CacheStorageService::SuspendCacheIOThread(uint32_t aLevel)
+{
+  RefPtr<CacheIOThread> thread = CacheFileIOManager::IOThread();
+  if (!thread) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  MOZ_ASSERT(!mActiveIOSuspender);
+  mActiveIOSuspender = new IOThreadSuspender();
+  return thread->Dispatch(mActiveIOSuspender, aLevel);
+}
+
+NS_IMETHODIMP
+CacheStorageService::ResumeCacheIOThread()
+{
+  MOZ_ASSERT(mActiveIOSuspender);
+
+  RefPtr<IOThreadSuspender> suspender;
+  suspender.swap(mActiveIOSuspender);
+  suspender->Notify();
   return NS_OK;
 }
 
