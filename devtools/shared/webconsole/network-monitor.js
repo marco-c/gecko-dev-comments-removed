@@ -504,6 +504,14 @@ NetworkResponseListener.prototype = {
     
     
     
+    if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
+      return;
+    }
+
+    
+    
+    
+    
     let secinfo = this.httpActivity.channel.securityInfo;
     let info = NetworkHelper.parseSecurityInfo(secinfo, this.httpActivity);
 
