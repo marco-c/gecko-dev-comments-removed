@@ -389,16 +389,25 @@ public:
   void
   FinishFetch(ServiceWorkerRegistrationInfo* aRegistration);
 
+  void
+  ReportToAllClients(const nsCString& aScope,
+                     const nsString& aMessage,
+                     const nsString& aFilename,
+                     const nsString& aLine,
+                     uint32_t aLineNumber,
+                     uint32_t aColumnNumber,
+                     uint32_t aFlags);
+
   
   
-  bool
+  void
   HandleError(JSContext* aCx,
               nsIPrincipal* aPrincipal,
               const nsCString& aScope,
               const nsString& aWorkerURL,
-              nsString aMessage,
-              nsString aFilename,
-              nsString aLine,
+              const nsString& aMessage,
+              const nsString& aFilename,
+              const nsString& aLine,
               uint32_t aLineNumber,
               uint32_t aColumnNumber,
               uint32_t aFlags,
