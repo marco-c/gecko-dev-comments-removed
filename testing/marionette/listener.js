@@ -13,6 +13,7 @@ var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
 loader.loadSubScript("chrome://marionette/content/simpletest.js");
 loader.loadSubScript("chrome://marionette/content/common.js");
 loader.loadSubScript("chrome://marionette/content/actions.js");
+Cu.import("chrome://marionette/content/capture.js");
 Cu.import("chrome://marionette/content/elements.js");
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("resource://gre/modules/FileUtils.jsm");
@@ -2005,81 +2006,39 @@ function importScript(msg) {
 
 
 
-function takeScreenshot(id, highlights, full) {
-  let node = null;
-  if (id) {
-    node = elementManager.getKnownElement(id, curContainer)
-  } else {
-    node = curContainer.frame;
+
+
+
+
+
+
+
+function takeScreenshot(id, full=true, highlights=[]) {
+  let canvas;
+
+  let highlightEls = [];
+  for (let h of highlights) {
+    let el = elementManager.getKnownElement(h, curContainer);
+    highlightEls.push(el);
   }
 
-  let document = curContainer.frame.document;
-  let rect, win, width, height, left, top;
+  
+  if (!id && !full) {
+    canvas = capture.viewport(curContainer.frame.document, highlightEls);
 
   
-  if (node == curContainer.frame) {
-    
-    win = node;
-    if (full) {
-      
-      width = document.body.scrollWidth;
-      height = document.body.scrollHeight;
-      top = 0;
-      left = 0;
+  } else {
+    let node;
+    if (id) {
+      node = elementManager.getKnownElement(id, curContainer);
     } else {
-      
-      width = document.documentElement.clientWidth;
-      height = document.documentElement.clientHeight;
-      left = curContainer.frame.pageXOffset;
-      top = curContainer.frame.pageYOffset;
+      node = curContainer.frame.document.documentElement;
     }
-  } else {
-    
-    win = node.ownerDocument.defaultView;
-    rect = node.getBoundingClientRect();
-    width = rect.width;
-    height = rect.height;
-    top = rect.top;
-    left = rect.left;
+
+    canvas = capture.element(node, highlightEls);
   }
 
-  let canvas = document.createElementNS(
-      "http://www.w3.org/1999/xhtml", "canvas");
-  canvas.width = width;
-  canvas.height = height;
-  let ctx = canvas.getContext("2d");
-
-  
-  ctx.drawWindow(win, left, top, width, height, "rgb(255,255,255)");
-
-  
-  
-  if (highlights) {
-    ctx.lineWidth = "2";
-    ctx.strokeStyle = "red";
-    ctx.save();
-
-    for (var i = 0; i < highlights.length; ++i) {
-      let elem = elementManager.getKnownElement(highlights[i], curContainer);
-      rect = elem.getBoundingClientRect();
-
-      let offsetY = -top;
-      let offsetX = -left;
-
-      
-      ctx.strokeRect(
-          rect.left + offsetX,
-          rect.top + offsetY,
-          rect.width,
-          rect.height);
-    }
-  }
-
-  
-  
-  let dataUrl = canvas.toDataURL("image/png", "");
-  let encoded = dataUrl.substring(dataUrl.indexOf(",") + 1);
-  return encoded;
+  return capture.toBase64(canvas);
 }
 
 
