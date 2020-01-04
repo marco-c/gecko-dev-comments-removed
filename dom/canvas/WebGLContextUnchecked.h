@@ -39,8 +39,14 @@ public:
     void SamplerParameterf(WebGLSampler* sampler, GLenum pname, GLfloat param);
     void SamplerParameterfv(WebGLSampler* sampler, GLenum pname, const GLfloat* param);
 
-protected: 
-    RefPtr<gl::GLContext> gl;
+protected:
+    
+    
+    
+    RefPtr<gl::GLContext> mGL_OnlyClearInDestroyResourcesAndContext;
+public:
+    
+    const decltype(mGL_OnlyClearInDestroyResourcesAndContext)& gl;
 };
 
 } 
