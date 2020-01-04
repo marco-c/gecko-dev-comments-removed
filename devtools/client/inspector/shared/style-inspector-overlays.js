@@ -12,7 +12,7 @@
 
 
 
-const {Cc, Ci, Cu} = require("chrome");
+const {Cu} = require("chrome");
 const {
   Tooltip,
   SwatchColorPickerTooltip,
