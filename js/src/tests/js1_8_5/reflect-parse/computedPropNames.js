@@ -31,6 +31,15 @@ assertExpr("b = { set [meth](a) { } }", aExpr("=", ident("b"),
               objExpr([{ key: computedName(ident("meth")), value: funExpr(null, [ident("a")],
                 blockStmt([])), method: false, kind: "set"}])));
 
+
+assertExpr("({[x]: function () {}})",
+           objExpr([{
+               key: computedName(ident("x")),
+               value: funExpr(null, [], blockStmt([])),
+               method: false,
+               kind: "init"
+           }]));
+
 }
 
 runtest(test);
