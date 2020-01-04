@@ -141,7 +141,7 @@ TestOpensOpenedParent::ActorDestroy(ActorDestroyReason why)
     
     
     
-    gMainThread->PostTask(
+    gParentThread->message_loop()->PostTask(
         FROM_HERE,
         NewRunnableFunction(ShutdownTestOpensOpenedParent,
                             this, mTransport));
@@ -273,7 +273,7 @@ TestOpensOpenedChild::ActorDestroy(ActorDestroyReason why)
     
     
     
-    gMainThread->PostTask(
+    gChildThread->message_loop()->PostTask(
         FROM_HERE,
         NewRunnableFunction(ShutdownTestOpensOpenedChild,
                             this, mTransport));

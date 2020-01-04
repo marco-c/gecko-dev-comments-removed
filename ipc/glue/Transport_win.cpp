@@ -36,23 +36,50 @@ CreateTransport(base::ProcessId aProcIdOne,
   
   
   
+  
   HANDLE serverDup;
   DWORD access = 0;
   DWORD options = DUPLICATE_SAME_ACCESS;
-  if (!DuplicateHandle(serverPipe, aProcIdOne, &serverDup, access, options)) {
+  if (!DuplicateHandle(serverPipe, base::GetCurrentProcId(), &serverDup, access, options)) {
     return NS_ERROR_DUPLICATE_HANDLE;
   }
 
   aOne->mPipeName = aTwo->mPipeName = id;
-  aOne->mServerPipe = serverDup;
-  aTwo->mServerPipe = INVALID_HANDLE_VALUE;
+  aOne->mServerPipeHandle = serverDup;
+  aOne->mDestinationProcessId = aProcIdOne;
+  aTwo->mServerPipeHandle = INVALID_HANDLE_VALUE;
+  aTwo->mDestinationProcessId = 0;
   return NS_OK;
+}
+
+HANDLE
+TransferHandleToProcess(HANDLE source, base::ProcessId pid)
+{
+  
+
+  if (source == INVALID_HANDLE_VALUE) {
+    return source;
+  }
+  HANDLE handleDup;
+  DWORD access = 0;
+  DWORD options = DUPLICATE_SAME_ACCESS;
+  bool ok = DuplicateHandle(source, pid, &handleDup, access, options);
+  MOZ_RELEASE_ASSERT(ok);
+
+  
+  
+  CloseHandle(source);
+
+  return handleDup;
 }
 
 Transport*
 OpenDescriptor(const TransportDescriptor& aTd, Transport::Mode aMode)
 {
-  return new Transport(aTd.mPipeName, aTd.mServerPipe, aMode, nullptr);
+  if (aTd.mServerPipeHandle != INVALID_HANDLE_VALUE) {
+    MOZ_RELEASE_ASSERT(aTd.mDestinationProcessId == base::GetCurrentProcId());
+  }
+  return new Transport(aTd.mPipeName, aTd.mServerPipeHandle, aMode, nullptr);
 }
 
 Transport*
@@ -62,10 +89,33 @@ OpenDescriptor(const FileDescriptor& aFd, Transport::Mode aMode)
   return nullptr;
 }
 
+TransportDescriptor
+DuplicateDescriptor(const TransportDescriptor& aTd)
+{
+  
+
+  if (aTd.mServerPipeHandle == INVALID_HANDLE_VALUE) {
+    return aTd;
+  }
+
+  HANDLE serverDup;
+  DWORD access = 0;
+  DWORD options = DUPLICATE_SAME_ACCESS;
+  bool ok = DuplicateHandle(aTd.mServerPipeHandle, base::GetCurrentProcId(),
+                            &serverDup, access, options);
+  MOZ_RELEASE_ASSERT(ok);
+
+  TransportDescriptor desc = aTd;
+  desc.mServerPipeHandle = serverDup;
+  return desc;
+}
+
 void
 CloseDescriptor(const TransportDescriptor& aTd)
 {
-  CloseHandle(aTd.mServerPipe);
+  
+
+  CloseHandle(aTd.mServerPipeHandle);
 }
 
 } 
