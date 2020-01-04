@@ -7097,6 +7097,9 @@ var gIdentityHandler = {
     
     if (!host) {
       host = this._uri.specIgnoringRef;
+      
+      
+      crop = "end";
     }
 
     
