@@ -17,6 +17,7 @@
 #include "DeleteRangeTransaction.h"     
 #include "DeleteTextTransaction.h"      
 #include "EditAggregateTransaction.h"   
+#include "EditorEventListener.h"        
 #include "EditorUtils.h"                
 #include "EditTransactionBase.h"        
 #include "InsertNodeTransaction.h"      
@@ -49,7 +50,6 @@
 #include "nsContentUtils.h"             
 #include "nsDOMString.h"                
 #include "nsDebug.h"                    
-#include "nsEditorEventListener.h"      
 #include "nsError.h"                    
 #include "nsFocusManager.h"             
 #include "nsFrameSelection.h"           
@@ -318,8 +318,8 @@ nsEditor::PostCreate()
     
     
     
-    nsEditorEventListener* listener =
-      reinterpret_cast<nsEditorEventListener*> (mEventListener.get());
+    EditorEventListener* listener =
+      reinterpret_cast<EditorEventListener*>(mEventListener.get());
     listener->SpellCheckIfNeeded();
 
     IMEState newState;
@@ -341,7 +341,7 @@ nsEditor::CreateEventListeners()
 {
   
   if (!mEventListener) {
-    mEventListener = new nsEditorEventListener();
+    mEventListener = new EditorEventListener();
   }
 }
 
@@ -357,8 +357,8 @@ nsEditor::InstallEventListeners()
   mEventTarget = do_QueryInterface(rootContent->GetParent());
   NS_ENSURE_TRUE(mEventTarget, NS_ERROR_NOT_AVAILABLE);
 
-  nsEditorEventListener* listener =
-    reinterpret_cast<nsEditorEventListener*>(mEventListener.get());
+  EditorEventListener* listener =
+    reinterpret_cast<EditorEventListener*>(mEventListener.get());
   nsresult rv = listener->Connect(this);
   if (mComposition) {
     
@@ -373,7 +373,7 @@ nsEditor::RemoveEventListeners()
   if (!mDocWeak || !mEventListener) {
     return;
   }
-  reinterpret_cast<nsEditorEventListener*>(mEventListener.get())->Disconnect();
+  reinterpret_cast<EditorEventListener*>(mEventListener.get())->Disconnect();
   if (mComposition) {
     
     

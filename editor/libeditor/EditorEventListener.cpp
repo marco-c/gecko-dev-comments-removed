@@ -4,7 +4,7 @@
 
 
 
-#include "nsEditorEventListener.h"
+#include "EditorEventListener.h"
 
 #include "mozilla/Assertions.h"         
 #include "mozilla/EventListenerManager.h" 
@@ -64,8 +64,9 @@
 
 class nsPresContext;
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
+
+using namespace dom;
 
 static void
 DoCommandCallback(Command aCommand, void* aData)
@@ -96,7 +97,7 @@ DoCommandCallback(Command aCommand, void* aData)
   }
 }
 
-nsEditorEventListener::nsEditorEventListener()
+EditorEventListener::EditorEventListener()
   : mEditor(nullptr)
   , mCommitText(false)
   , mInTransaction(false)
@@ -109,7 +110,7 @@ nsEditorEventListener::nsEditorEventListener()
 {
 }
 
-nsEditorEventListener::~nsEditorEventListener()
+EditorEventListener::~EditorEventListener()
 {
   if (mEditor) {
     NS_WARNING("We're not uninstalled");
@@ -118,7 +119,7 @@ nsEditorEventListener::~nsEditorEventListener()
 }
 
 nsresult
-nsEditorEventListener::Connect(nsEditor* aEditor)
+EditorEventListener::Connect(nsEditor* aEditor)
 {
   NS_ENSURE_ARG(aEditor);
 
@@ -141,7 +142,7 @@ nsEditorEventListener::Connect(nsEditor* aEditor)
 }
 
 nsresult
-nsEditorEventListener::InstallToEditor()
+EditorEventListener::InstallToEditor()
 {
   NS_PRECONDITION(mEditor, "The caller must set mEditor");
 
@@ -211,7 +212,7 @@ nsEditorEventListener::InstallToEditor()
 }
 
 void
-nsEditorEventListener::Disconnect()
+EditorEventListener::Disconnect()
 {
   if (!mEditor) {
     return;
@@ -236,7 +237,7 @@ nsEditorEventListener::Disconnect()
 }
 
 void
-nsEditorEventListener::UninstallFromEditor()
+EditorEventListener::UninstallFromEditor()
 {
   nsCOMPtr<EventTarget> piTarget = mEditor->GetDOMEventTarget();
   if (!piTarget) {
@@ -298,7 +299,7 @@ nsEditorEventListener::UninstallFromEditor()
 }
 
 already_AddRefed<nsIPresShell>
-nsEditorEventListener::GetPresShell()
+EditorEventListener::GetPresShell()
 {
   NS_PRECONDITION(mEditor,
     "The caller must check whether this is connected to an editor");
@@ -306,14 +307,14 @@ nsEditorEventListener::GetPresShell()
 }
 
 nsPresContext*
-nsEditorEventListener::GetPresContext()
+EditorEventListener::GetPresContext()
 {
   nsCOMPtr<nsIPresShell> presShell = GetPresShell();
   return presShell ? presShell->GetPresContext() : nullptr;
 }
 
 nsIContent*
-nsEditorEventListener::GetFocusedRootContent()
+EditorEventListener::GetFocusedRootContent()
 {
   NS_ENSURE_TRUE(mEditor, nullptr);
 
@@ -333,7 +334,7 @@ nsEditorEventListener::GetFocusedRootContent()
 }
 
 bool
-nsEditorEventListener::EditorHasFocus()
+EditorEventListener::EditorHasFocus()
 {
   NS_PRECONDITION(mEditor,
     "The caller must check whether this is connected to an editor");
@@ -345,18 +346,10 @@ nsEditorEventListener::EditorHasFocus()
   return !!composedDoc;
 }
 
-
-
-
-
-NS_IMPL_ISUPPORTS(nsEditorEventListener, nsIDOMEventListener)
-
-
-
-
+NS_IMPL_ISUPPORTS(EditorEventListener, nsIDOMEventListener)
 
 NS_IMETHODIMP
-nsEditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
+EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
 {
   NS_ENSURE_TRUE(mEditor, NS_ERROR_FAILURE);
 
@@ -545,7 +538,7 @@ bool IsCtrlShiftPressed(nsIDOMKeyEvent* aEvent, bool& isRTL)
 
 
 nsresult
-nsEditorEventListener::KeyUp(nsIDOMKeyEvent* aKeyEvent)
+EditorEventListener::KeyUp(nsIDOMKeyEvent* aKeyEvent)
 {
   NS_ENSURE_TRUE(aKeyEvent, NS_OK);
 
@@ -567,7 +560,7 @@ nsEditorEventListener::KeyUp(nsIDOMKeyEvent* aKeyEvent)
 }
 
 nsresult
-nsEditorEventListener::KeyDown(nsIDOMKeyEvent* aKeyEvent)
+EditorEventListener::KeyDown(nsIDOMKeyEvent* aKeyEvent)
 {
   NS_ENSURE_TRUE(aKeyEvent, NS_OK);
 
@@ -592,7 +585,7 @@ nsEditorEventListener::KeyDown(nsIDOMKeyEvent* aKeyEvent)
 #endif
 
 nsresult
-nsEditorEventListener::KeyPress(nsIDOMKeyEvent* aKeyEvent)
+EditorEventListener::KeyPress(nsIDOMKeyEvent* aKeyEvent)
 {
   NS_ENSURE_TRUE(aKeyEvent, NS_OK);
 
@@ -649,7 +642,7 @@ nsEditorEventListener::KeyPress(nsIDOMKeyEvent* aKeyEvent)
 }
 
 nsresult
-nsEditorEventListener::MouseClick(nsIDOMMouseEvent* aMouseEvent)
+EditorEventListener::MouseClick(nsIDOMMouseEvent* aMouseEvent)
 {
   
   if (mEditor->IsReadonly() || mEditor->IsDisabled() ||
@@ -687,7 +680,7 @@ nsEditorEventListener::MouseClick(nsIDOMMouseEvent* aMouseEvent)
 }
 
 nsresult
-nsEditorEventListener::HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent)
+EditorEventListener::HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent)
 {
   if (!Preferences::GetBool("middlemouse.paste", false)) {
     
@@ -747,8 +740,8 @@ nsEditorEventListener::HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent)
 }
 
 bool
-nsEditorEventListener::NotifyIMEOfMouseButtonEvent(
-                         nsIDOMMouseEvent* aMouseEvent)
+EditorEventListener::NotifyIMEOfMouseButtonEvent(
+                       nsIDOMMouseEvent* aMouseEvent)
 {
   if (!EditorHasFocus()) {
     return false;
@@ -768,7 +761,7 @@ nsEditorEventListener::NotifyIMEOfMouseButtonEvent(
 }
 
 nsresult
-nsEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
+EditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
 {
   
   
@@ -777,7 +770,7 @@ nsEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
 }
 
 nsresult
-nsEditorEventListener::HandleText(nsIDOMEvent* aTextEvent)
+EditorEventListener::HandleText(nsIDOMEvent* aTextEvent)
 {
   if (!mEditor->IsAcceptableInputEvent(aTextEvent)) {
     return NS_OK;
@@ -796,7 +789,7 @@ nsEditorEventListener::HandleText(nsIDOMEvent* aTextEvent)
 
 
 nsresult
-nsEditorEventListener::DragEnter(nsIDOMDragEvent* aDragEvent)
+EditorEventListener::DragEnter(nsIDOMDragEvent* aDragEvent)
 {
   NS_ENSURE_TRUE(aDragEvent, NS_OK);
 
@@ -819,7 +812,7 @@ nsEditorEventListener::DragEnter(nsIDOMDragEvent* aDragEvent)
 }
 
 nsresult
-nsEditorEventListener::DragOver(nsIDOMDragEvent* aDragEvent)
+EditorEventListener::DragOver(nsIDOMDragEvent* aDragEvent)
 {
   NS_ENSURE_TRUE(aDragEvent, NS_OK);
 
@@ -864,7 +857,7 @@ nsEditorEventListener::DragOver(nsIDOMDragEvent* aDragEvent)
 }
 
 void
-nsEditorEventListener::CleanupDragDropCaret()
+EditorEventListener::CleanupDragDropCaret()
 {
   if (!mCaret) {
     return;
@@ -882,7 +875,7 @@ nsEditorEventListener::CleanupDragDropCaret()
 }
 
 nsresult
-nsEditorEventListener::DragExit(nsIDOMDragEvent* aDragEvent)
+EditorEventListener::DragExit(nsIDOMDragEvent* aDragEvent)
 {
   NS_ENSURE_TRUE(aDragEvent, NS_OK);
 
@@ -892,7 +885,7 @@ nsEditorEventListener::DragExit(nsIDOMDragEvent* aDragEvent)
 }
 
 nsresult
-nsEditorEventListener::Drop(nsIDOMDragEvent* aDragEvent)
+EditorEventListener::Drop(nsIDOMDragEvent* aDragEvent)
 {
   NS_ENSURE_TRUE(aDragEvent, NS_OK);
 
@@ -928,7 +921,7 @@ nsEditorEventListener::Drop(nsIDOMDragEvent* aDragEvent)
 }
 
 bool
-nsEditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
+EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
 {
   
   if (mEditor->IsReadonly() || mEditor->IsDisabled()) {
@@ -1030,7 +1023,7 @@ nsEditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
 }
 
 nsresult
-nsEditorEventListener::HandleStartComposition(nsIDOMEvent* aCompositionEvent)
+EditorEventListener::HandleStartComposition(nsIDOMEvent* aCompositionEvent)
 {
   if (!mEditor->IsAcceptableInputEvent(aCompositionEvent)) {
     return NS_OK;
@@ -1041,7 +1034,7 @@ nsEditorEventListener::HandleStartComposition(nsIDOMEvent* aCompositionEvent)
 }
 
 void
-nsEditorEventListener::HandleEndComposition(nsIDOMEvent* aCompositionEvent)
+EditorEventListener::HandleEndComposition(nsIDOMEvent* aCompositionEvent)
 {
   if (!mEditor->IsAcceptableInputEvent(aCompositionEvent)) {
     return;
@@ -1051,7 +1044,7 @@ nsEditorEventListener::HandleEndComposition(nsIDOMEvent* aCompositionEvent)
 }
 
 nsresult
-nsEditorEventListener::Focus(nsIDOMEvent* aEvent)
+EditorEventListener::Focus(nsIDOMEvent* aEvent)
 {
   NS_ENSURE_TRUE(aEvent, NS_OK);
 
@@ -1115,7 +1108,7 @@ nsEditorEventListener::Focus(nsIDOMEvent* aEvent)
 }
 
 nsresult
-nsEditorEventListener::Blur(nsIDOMEvent* aEvent)
+EditorEventListener::Blur(nsIDOMEvent* aEvent)
 {
   NS_ENSURE_TRUE(aEvent, NS_OK);
 
@@ -1133,7 +1126,7 @@ nsEditorEventListener::Blur(nsIDOMEvent* aEvent)
 }
 
 void
-nsEditorEventListener::SpellCheckIfNeeded()
+EditorEventListener::SpellCheckIfNeeded()
 {
   
   
@@ -1146,7 +1139,7 @@ nsEditorEventListener::SpellCheckIfNeeded()
 }
 
 bool
-nsEditorEventListener::IsFileControlTextBox()
+EditorEventListener::IsFileControlTextBox()
 {
   dom::Element* root = mEditor->GetRoot();
   if (!root || !root->ChromeOnlyAccess()) {
@@ -1161,7 +1154,7 @@ nsEditorEventListener::IsFileControlTextBox()
 }
 
 bool
-nsEditorEventListener::ShouldHandleNativeKeyBindings(nsIDOMKeyEvent* aKeyEvent)
+EditorEventListener::ShouldHandleNativeKeyBindings(nsIDOMKeyEvent* aKeyEvent)
 {
   
   
@@ -1197,3 +1190,5 @@ nsEditorEventListener::ShouldHandleNativeKeyBindings(nsIDOMKeyEvent* aKeyEvent)
 
   return nsContentUtils::ContentIsDescendantOf(targetContent, editingHost);
 }
+
+} 
