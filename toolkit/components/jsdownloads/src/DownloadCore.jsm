@@ -509,7 +509,12 @@ this.Download.prototype = {
         this.progress = 100;
         this.succeeded = true;
         this.hasPartialData = false;
-      } catch (ex) {
+      } catch (originalEx) {
+        
+        
+        
+        let ex = originalEx;
+
         
         
         
