@@ -866,11 +866,15 @@ nsIFrame*
 GetScrollFrameFromContent(nsIContent* aContent)
 {
   nsIFrame* frame = aContent->GetPrimaryFrame();
-  if (frame && aContent->OwnerDoc()->GetRootElement() == aContent) {
+  if (aContent->OwnerDoc()->GetRootElement() == aContent) {
+    nsIPresShell* presShell = frame ? frame->PresContext()->PresShell() : nullptr;
+    if (!presShell) {
+      presShell = aContent->OwnerDoc()->GetShell();
+    }
     
     
-    if (nsIFrame* rootScrollFrame =
-          frame->PresContext()->PresShell()->GetRootScrollFrame()) {
+    nsIFrame* rootScrollFrame = presShell ? presShell->GetRootScrollFrame() : nullptr;
+    if (rootScrollFrame) {
       frame = rootScrollFrame;
     }
   }
