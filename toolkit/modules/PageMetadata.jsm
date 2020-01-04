@@ -182,7 +182,11 @@ this.PageMetadata = {
       switch (key) {
         case "title":
         case "og:title": {
-          result.title = value;
+          
+          
+          if (!result.title) {
+            result.title = value;
+          }
           break;
         }
 
