@@ -1137,6 +1137,9 @@ private:
   mozilla::RollingMean<uint32_t, uint32_t> mCorruptFrames;
 
   
+  MozPromiseRequestHolder<MediaDecoderReader::BufferedUpdatePromise> mBufferedUpdateRequest;
+
+  
   
   bool mDecodingFirstFrame;
 

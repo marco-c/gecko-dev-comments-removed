@@ -1619,6 +1619,20 @@ MediaFormatReader::GetBuffered()
   return intervals.Shift(media::TimeUnit::FromMicroseconds(-startTime));
 }
 
+
+
+RefPtr<MediaDecoderReader::BufferedUpdatePromise>
+MediaFormatReader::UpdateBufferedWithPromise() {
+  MOZ_ASSERT(OnTaskQueue());
+  
+  
+  
+  
+  
+  NotifyDataArrived();
+  return BufferedUpdatePromise::CreateAndResolve(true, __func__);
+}
+
 void MediaFormatReader::ReleaseMediaResources()
 {
   

@@ -88,6 +88,8 @@ public:
   using WaitForDataPromise =
     MozPromise<MediaData::Type, WaitForDataRejectValue, IsExclusive>;
 
+  using BufferedUpdatePromise = MozPromise<bool, bool, IsExclusive>;
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDecoderReader)
 
   
@@ -230,6 +232,16 @@ public:
     NS_ENSURE_TRUE_VOID(!mShutdown);
     NotifyDataArrivedInternal();
     UpdateBuffered();
+  }
+
+  
+  
+  
+  virtual RefPtr<BufferedUpdatePromise> UpdateBufferedWithPromise()
+  {
+    MOZ_ASSERT(OnTaskQueue());
+    UpdateBuffered();
+    return BufferedUpdatePromise::CreateAndResolve(true, __func__);
   }
 
   virtual MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
