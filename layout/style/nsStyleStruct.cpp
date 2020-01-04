@@ -20,8 +20,6 @@
 #include "nsCRTGlue.h"
 #include "nsCSSParser.h"
 #include "nsCSSProps.h"
-#include "nsDeviceContext.h"
-#include "nsStyleUtil.h"
 
 #include "nsCOMPtr.h"
 
@@ -1914,6 +1912,30 @@ nsStyleGradient::HasCalc()
 
 
 
+void
+CachedBorderImageData::PurgeCachedImages()
+{
+  mSubImages.Clear();
+}
+
+void
+CachedBorderImageData::SetSubImage(uint8_t aIndex, imgIContainer* aSubImage)
+{
+  mSubImages.ReplaceObjectAt(aSubImage, aIndex);
+}
+
+imgIContainer*
+CachedBorderImageData::GetSubImage(uint8_t aIndex)
+{
+  imgIContainer* subImage = nullptr;
+  if (aIndex < mSubImages.Count())
+    subImage = mSubImages[aIndex];
+  return subImage;
+}
+
+
+
+
 
 nsStyleImage::nsStyleImage()
   : mType(eStyleImageType_Null)
@@ -1969,11 +1991,7 @@ nsStyleImage::DoCopy(const nsStyleImage& aOther)
     SetElementId(aOther.mElementId);
   }
 
-  UniquePtr<nsStyleSides> cropRectCopy;
-  if (aOther.mCropRect) {
-    cropRectCopy = MakeUnique<nsStyleSides>(*aOther.mCropRect.get());
-  }
-  SetCropRect(Move(cropRectCopy));
+  SetCropRect(aOther.mCropRect);
 }
 
 void
@@ -2010,7 +2028,9 @@ nsStyleImage::SetImageData(imgRequestProxy* aImage)
     mImage = aImage;
     mType = eStyleImageType_Image;
   }
-  mSubImages.Clear();
+  if (mCachedBIData) {
+    mCachedBIData->PurgeCachedImages();
+  }
 }
 
 void
@@ -2084,9 +2104,14 @@ nsStyleImage::SetElementId(const char16_t* aElementId)
 }
 
 void
-nsStyleImage::SetCropRect(UniquePtr<nsStyleSides> aCropRect)
+nsStyleImage::SetCropRect(nsStyleSides* aCropRect)
 {
-    mCropRect = Move(aCropRect);
+  if (aCropRect) {
+    mCropRect = new nsStyleSides(*aCropRect);
+    
+  } else {
+    mCropRect = nullptr;
+  }
 }
 
 static int32_t
@@ -2238,7 +2263,7 @@ nsStyleImage::IsLoaded() const
 }
 
 static inline bool
-EqualRects(const UniquePtr<nsStyleSides>& aRect1, const UniquePtr<nsStyleSides>& aRect2)
+EqualRects(const nsStyleSides* aRect1, const nsStyleSides* aRect2)
 {
   return aRect1 == aRect2 || 
          (aRect1 && aRect2 && *aRect1 == *aRect2);

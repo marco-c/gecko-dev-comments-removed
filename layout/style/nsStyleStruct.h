@@ -19,6 +19,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StyleStructContext.h"
 #include "mozilla/UniquePtr.h"
+#include "nsAutoPtr.h"
 #include "nsColor.h"
 #include "nsCoord.h"
 #include "nsMargin.h"
@@ -246,6 +247,16 @@ enum nsStyleImageType {
   eStyleImageType_Element
 };
 
+struct CachedBorderImageData
+{
+  void PurgeCachedImages();
+  void SetSubImage(uint8_t aIndex, imgIContainer* aSubImage);
+  imgIContainer* GetSubImage(uint8_t aIndex);
+
+private:
+  nsCOMArray<imgIContainer> mSubImages;
+};
+
 
 
 
@@ -269,7 +280,7 @@ struct nsStyleImage
   void UntrackImage(nsPresContext* aContext);
   void SetGradientData(nsStyleGradient* aGradient);
   void SetElementId(const char16_t* aElementId);
-  void SetCropRect(mozilla::UniquePtr<nsStyleSides> aCropRect);
+  void SetCropRect(nsStyleSides* aCropRect);
 
   nsStyleImageType GetType() const {
     return mType;
@@ -288,7 +299,7 @@ struct nsStyleImage
     NS_ASSERTION(mType == eStyleImageType_Element, "Data is not an element!");
     return mElementId;
   }
-  const mozilla::UniquePtr<nsStyleSides>& GetCropRect() const {
+  nsStyleSides* GetCropRect() const {
     NS_ASSERTION(mType == eStyleImageType_Image,
                  "Only image data can have a crop rect");
     return mCropRect;
@@ -361,9 +372,11 @@ struct nsStyleImage
 
 private:
   void DoCopy(const nsStyleImage& aOther);
+  void EnsureCachedBIData() const;
 
   
-  nsCOMArray<imgIContainer> mSubImages;
+  
+  mozilla::UniquePtr<CachedBorderImageData> mCachedBIData;
 
   nsStyleImageType mType;
   union {
@@ -373,7 +386,7 @@ private:
   };
 
   
-  mozilla::UniquePtr<nsStyleSides> mCropRect;
+  nsAutoPtr<nsStyleSides> mCropRect;
 #ifdef DEBUG
   bool mImageTracked;
 #endif
