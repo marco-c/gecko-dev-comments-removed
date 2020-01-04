@@ -1583,6 +1583,9 @@ FlexItem::FlexItem(nsHTMLReflowState& aFlexItemReflowState,
     mAlignSelf = NS_STYLE_ALIGN_STRETCH;
   }
 
+  
+  mAlignSelf &= ~NS_STYLE_ALIGN_FLAG_BITS;
+
   SetFlexBaseSizeAndMainSize(aFlexBaseSize);
   CheckForMinSizeAuto(aFlexItemReflowState, aAxisTracker);
 
@@ -1836,6 +1839,7 @@ private:
   nscoord  mPackingSpaceRemaining;
   uint32_t mNumAutoMarginsInMainAxis;
   uint32_t mNumPackingSpacesRemaining;
+  
   uint8_t  mJustifyContent;
 };
 
@@ -1869,6 +1873,7 @@ private:
 
   nscoord  mPackingSpaceRemaining;
   uint32_t mNumPackingSpacesRemaining;
+  
   uint8_t  mAlignContent;
 };
 
@@ -2432,6 +2437,14 @@ MainAxisPositionTracker::
     mJustifyContent(aJustifyContent)
 {
   
+  if (mJustifyContent == NS_STYLE_JUSTIFY_AUTO) {
+    mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
+  }
+
+  
+  mJustifyContent &= ~NS_STYLE_JUSTIFY_FLAG_BITS;
+
+  
   
   
   for (const FlexItem* item = aLine->GetFirstItem(); item;
@@ -2457,6 +2470,13 @@ MainAxisPositionTracker::
   }
 
   
+  if (mJustifyContent == NS_STYLE_JUSTIFY_START) {
+    mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
+  } else if (mJustifyContent == NS_STYLE_JUSTIFY_END) {
+    mJustifyContent = NS_STYLE_JUSTIFY_FLEX_END;
+  }
+
+  
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
     if (mJustifyContent == NS_STYLE_JUSTIFY_FLEX_START) {
@@ -2472,6 +2492,12 @@ MainAxisPositionTracker::
       mPackingSpaceRemaining != 0 &&
       !aLine->IsEmpty()) {
     switch (mJustifyContent) {
+      case NS_STYLE_JUSTIFY_LEFT:
+      case NS_STYLE_JUSTIFY_RIGHT:
+      case NS_STYLE_JUSTIFY_BASELINE:
+      case NS_STYLE_JUSTIFY_LAST_BASELINE:
+      case NS_STYLE_JUSTIFY_SPACE_EVENLY:
+        NS_WARNING("NYI: justify-content:left/right/baseline/last-baseline/space-evenly");
       case NS_STYLE_JUSTIFY_FLEX_START:
         
         break;
@@ -2584,6 +2610,14 @@ CrossAxisPositionTracker::
 {
   MOZ_ASSERT(aFirstLine, "null first line pointer");
 
+  
+  if (mAlignContent == NS_STYLE_ALIGN_AUTO) {
+    mAlignContent = NS_STYLE_ALIGN_STRETCH;
+  }
+
+  
+  mAlignContent &= ~NS_STYLE_ALIGN_FLAG_BITS;
+
   if (aIsCrossSizeDefinite && !aFirstLine->getNext()) {
     
     
@@ -2626,6 +2660,13 @@ CrossAxisPositionTracker::
   }
 
   
+  if (mAlignContent == NS_STYLE_ALIGN_START) {
+    mAlignContent = NS_STYLE_ALIGN_FLEX_START;
+  } else if (mAlignContent == NS_STYLE_ALIGN_END) {
+    mAlignContent = NS_STYLE_ALIGN_FLEX_END;
+  }
+
+  
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
     if (mAlignContent == NS_STYLE_ALIGN_FLEX_START) {
@@ -2639,6 +2680,14 @@ CrossAxisPositionTracker::
   
   if (mPackingSpaceRemaining != 0) {
     switch (mAlignContent) {
+      case NS_STYLE_JUSTIFY_LEFT:
+      case NS_STYLE_JUSTIFY_RIGHT:
+      case NS_STYLE_ALIGN_SELF_START:
+      case NS_STYLE_ALIGN_SELF_END:
+      case NS_STYLE_ALIGN_SPACE_EVENLY:
+      case NS_STYLE_ALIGN_BASELINE:
+      case NS_STYLE_ALIGN_LAST_BASELINE:
+        NS_WARNING("NYI: align-self:left/right/self-start/self-end/space-evenly/baseline/last-baseline");
       case NS_STYLE_ALIGN_FLEX_START:
         
         break;
@@ -2902,6 +2951,13 @@ SingleLineCrossAxisPositionTracker::
   }
 
   
+  if (alignSelf == NS_STYLE_ALIGN_START) {
+    alignSelf = NS_STYLE_ALIGN_FLEX_START;
+  } else if (alignSelf == NS_STYLE_ALIGN_END) {
+    alignSelf = NS_STYLE_ALIGN_FLEX_END;
+  }
+
+  
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
     if (alignSelf == NS_STYLE_ALIGN_FLEX_START) {
@@ -2912,6 +2968,12 @@ SingleLineCrossAxisPositionTracker::
   }
 
   switch (alignSelf) {
+    case NS_STYLE_JUSTIFY_LEFT:
+    case NS_STYLE_JUSTIFY_RIGHT:
+    case NS_STYLE_ALIGN_SELF_START:
+    case NS_STYLE_ALIGN_SELF_END:
+    case NS_STYLE_ALIGN_LAST_BASELINE:
+      NS_WARNING("NYI: align-self:left/right/self-start/self-end/last-baseline");
     case NS_STYLE_ALIGN_FLEX_START:
       
       break;
