@@ -2102,6 +2102,10 @@ NS_IMETHODIMP_(void)
 nsWindow::SetInputContext(const InputContext& aContext,
                           const InputContextAction& aAction)
 {
+#ifdef MOZ_B2GDROID
+    
+    return;
+#endif
     nsWindow *top = TopWindow();
     if (top && this != top) {
         
