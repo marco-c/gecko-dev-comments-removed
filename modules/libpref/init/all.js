@@ -1322,7 +1322,7 @@ pref("network.http.redirection-limit", 20);
 
 
 pref("network.http.accept-encoding", "gzip, deflate");
-pref("network.http.accept-encoding.secure", "gzip, deflate");
+pref("network.http.accept-encoding.secure", "gzip, deflate, brotli");
 
 pref("network.http.pipelining"      , false);
 pref("network.http.pipelining.ssl"  , false); 
