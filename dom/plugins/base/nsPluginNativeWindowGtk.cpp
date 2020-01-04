@@ -24,6 +24,7 @@
 #endif
 #include "mozilla/X11Util.h"
 
+static void plug_added_cb(GtkWidget *widget, gpointer data);
 static gboolean plug_removed_cb   (GtkWidget *widget, gpointer data);
 static void socket_unrealize_cb   (GtkWidget *widget, gpointer data);
 
@@ -163,6 +164,9 @@ nsresult nsPluginNativeWindowGtk::CreateXEmbedWindow(bool aEnableXtFocus) {
   
   g_object_set_data(G_OBJECT(mSocketWidget), "enable-xt-focus", (void *)aEnableXtFocus);
 
+  g_signal_connect(mSocketWidget, "plug_added",
+                   G_CALLBACK(plug_added_cb), nullptr);
+
   
   
   
@@ -277,6 +281,32 @@ nsresult nsPluginNativeWindowGtk::CreateXtWindow() {
   return NS_OK;
 }
 #endif
+
+static void
+plug_window_finalize_cb(gpointer socket, GObject* plug_window)
+{
+  g_object_unref(socket);
+}
+
+static void
+plug_added_cb(GtkWidget *socket, gpointer data)
+{
+  
+  
+  
+  
+  
+  
+  g_object_ref(socket);
+  
+  
+  
+  
+  
+  
+  GdkWindow* plugWindow = gtk_socket_get_plug_window(GTK_SOCKET(socket));
+  g_object_weak_ref(G_OBJECT(plugWindow), plug_window_finalize_cb, socket);
+}
 
 
 gboolean
