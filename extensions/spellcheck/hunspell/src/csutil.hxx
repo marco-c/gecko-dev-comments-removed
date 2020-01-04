@@ -1,3 +1,76 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef __CSUTILHXX__
 #define __CSUTILHXX__
 
@@ -5,112 +78,110 @@
 
 
 
+#include <string>
+#include <vector>
 #include <string.h>
 #include "w_char.hxx"
 #include "htypes.hxx"
 
 #ifdef MOZILLA_CLIENT
-#include "nscore.h" 
+#include "nscore.h"  
 #endif
 
 
-#define NOCAP   0
+#define NOCAP 0
 #define INITCAP 1
-#define ALLCAP  2
-#define HUHCAP  3
-#define HUHINITCAP  4
+#define ALLCAP 2
+#define HUHCAP 3
+#define HUHINITCAP 4
 
 
-#define SPELL_ENCODING  "ISO8859-1"
-#define SPELL_KEYSTRING "qwertyuiop|asdfghjkl|zxcvbnm" 
+#define SPELL_ENCODING "ISO8859-1"
+#define SPELL_KEYSTRING "qwertyuiop|asdfghjkl|zxcvbnm"
 
 
-#define MORPH_STEM        "st:"
-#define MORPH_ALLOMORPH   "al:"
-#define MORPH_POS         "po:"
-#define MORPH_DERI_PFX    "dp:"
-#define MORPH_INFL_PFX    "ip:"
-#define MORPH_TERM_PFX    "tp:"
-#define MORPH_DERI_SFX    "ds:"
-#define MORPH_INFL_SFX    "is:"
-#define MORPH_TERM_SFX    "ts:"
-#define MORPH_SURF_PFX    "sp:"
-#define MORPH_FREQ        "fr:"
-#define MORPH_PHON        "ph:"
-#define MORPH_HYPH        "hy:"
-#define MORPH_PART        "pa:"
-#define MORPH_FLAG        "fl:"
-#define MORPH_HENTRY      "_H:"
-#define MORPH_TAG_LEN     strlen(MORPH_STEM)
+#define MORPH_STEM "st:"
+#define MORPH_ALLOMORPH "al:"
+#define MORPH_POS "po:"
+#define MORPH_DERI_PFX "dp:"
+#define MORPH_INFL_PFX "ip:"
+#define MORPH_TERM_PFX "tp:"
+#define MORPH_DERI_SFX "ds:"
+#define MORPH_INFL_SFX "is:"
+#define MORPH_TERM_SFX "ts:"
+#define MORPH_SURF_PFX "sp:"
+#define MORPH_FREQ "fr:"
+#define MORPH_PHON "ph:"
+#define MORPH_HYPH "hy:"
+#define MORPH_PART "pa:"
+#define MORPH_FLAG "fl:"
+#define MORPH_HENTRY "_H:"
+#define MORPH_TAG_LEN strlen(MORPH_STEM)
 
 #define MSEP_FLD ' '
 #define MSEP_REC '\n'
 #define MSEP_ALT '\v'
 
 
-#define DEFAULTFLAGS   65510
-#define FORBIDDENWORD  65510
+#define DEFAULTFLAGS 65510
+#define FORBIDDENWORD 65510
 #define ONLYUPCASEFLAG 65511
 
 
-LIBHUNSPELL_DLL_EXPORTED FILE * myfopen(const char * path, const char * mode);
+LIBHUNSPELL_DLL_EXPORTED FILE* myfopen(const char* path, const char* mode);
 
 
-LIBHUNSPELL_DLL_EXPORTED char * u16_u8(char * dest, int size, const w_char * src, int srclen);
+LIBHUNSPELL_DLL_EXPORTED std::string& u16_u8(std::string& dest,
+                                             const std::vector<w_char>& src);
 
 
-LIBHUNSPELL_DLL_EXPORTED int u8_u16(w_char * dest, int size, const char * src);
+LIBHUNSPELL_DLL_EXPORTED int u8_u16(std::vector<w_char>& dest,
+                                    const std::string& src);
 
 
-LIBHUNSPELL_DLL_EXPORTED void flag_qsort(unsigned short flags[], int begin, int end);
+LIBHUNSPELL_DLL_EXPORTED void mychomp(char* s);
 
 
-LIBHUNSPELL_DLL_EXPORTED int flag_bsearch(unsigned short flags[], unsigned short flag, int right);
+LIBHUNSPELL_DLL_EXPORTED char* mystrdup(const char* s);
 
 
-LIBHUNSPELL_DLL_EXPORTED void mychomp(char * s);
+LIBHUNSPELL_DLL_EXPORTED char* mystrcat(char* dest, const char* st, int max);
 
 
-LIBHUNSPELL_DLL_EXPORTED char * mystrdup(const char * s);
+LIBHUNSPELL_DLL_EXPORTED char* mystrsep(char** sptr, const char delim);
 
 
-LIBHUNSPELL_DLL_EXPORTED char * mystrcat(char * dest, const char * st, int max);
+LIBHUNSPELL_DLL_EXPORTED char* mystrrep(char* word,
+                                        const char* pat,
+                                        const char* rep);
+LIBHUNSPELL_DLL_EXPORTED std::string& mystrrep(std::string& str,
+                                               const std::string& search,
+                                               const std::string& replace);
 
 
-LIBHUNSPELL_DLL_EXPORTED char * myrevstrdup(const char * s);
+LIBHUNSPELL_DLL_EXPORTED std::string& strlinecat(std::string& str,
+                                                 const std::string& apd);
 
 
-LIBHUNSPELL_DLL_EXPORTED char * mystrsep(char ** sptr, const char delim);
-
-LIBHUNSPELL_DLL_EXPORTED char * mystrsep2(char ** sptr, const char delim);
-
-
-LIBHUNSPELL_DLL_EXPORTED char * mystrrep(char *, const char *, const char *);
+LIBHUNSPELL_DLL_EXPORTED int line_tok(const char* text,
+                                      char*** lines,
+                                      char breakchar);
 
 
-LIBHUNSPELL_DLL_EXPORTED void strlinecat(char * lines, const char * s);
+LIBHUNSPELL_DLL_EXPORTED char* line_uniq(char* text, char breakchar);
+LIBHUNSPELL_DLL_EXPORTED char* line_uniq_app(char** text, char breakchar);
 
 
-LIBHUNSPELL_DLL_EXPORTED int line_tok(const char * text, char *** lines, char breakchar);
+LIBHUNSPELL_DLL_EXPORTED size_t reverseword(std::string& word);
 
 
-LIBHUNSPELL_DLL_EXPORTED char * line_uniq(char * text, char breakchar);
-LIBHUNSPELL_DLL_EXPORTED char * line_uniq_app(char ** text, char breakchar);
+LIBHUNSPELL_DLL_EXPORTED size_t reverseword_utf(std::string&);
 
 
-LIBHUNSPELL_DLL_EXPORTED char * tr(char * text, char oldc, char newc);
+LIBHUNSPELL_DLL_EXPORTED int uniqlist(char** list, int n);
 
 
-LIBHUNSPELL_DLL_EXPORTED int reverseword(char *);
-
-
-LIBHUNSPELL_DLL_EXPORTED int reverseword_utf(char *);
-
-
-LIBHUNSPELL_DLL_EXPORTED int uniqlist(char ** list, int n);
-
-
-LIBHUNSPELL_DLL_EXPORTED void freelist(char *** list, int n);
+LIBHUNSPELL_DLL_EXPORTED void freelist(char*** list, int n);
 
 
 struct cs_info {
@@ -121,103 +192,134 @@ struct cs_info {
 
 LIBHUNSPELL_DLL_EXPORTED int initialize_utf_tbl();
 LIBHUNSPELL_DLL_EXPORTED void free_utf_tbl();
-LIBHUNSPELL_DLL_EXPORTED unsigned short unicodetoupper(unsigned short c, int langnum);
-LIBHUNSPELL_DLL_EXPORTED unsigned short unicodetolower(unsigned short c, int langnum);
+LIBHUNSPELL_DLL_EXPORTED unsigned short unicodetoupper(unsigned short c,
+                                                       int langnum);
+LIBHUNSPELL_DLL_EXPORTED w_char upper_utf(w_char u, int langnum);
+LIBHUNSPELL_DLL_EXPORTED w_char lower_utf(w_char u, int langnum);
+LIBHUNSPELL_DLL_EXPORTED unsigned short unicodetolower(unsigned short c,
+                                                       int langnum);
 LIBHUNSPELL_DLL_EXPORTED int unicodeisalpha(unsigned short c);
 
-LIBHUNSPELL_DLL_EXPORTED struct cs_info * get_current_cs(const char * es);
+LIBHUNSPELL_DLL_EXPORTED struct cs_info* get_current_cs(const char* es);
 
 
-LIBHUNSPELL_DLL_EXPORTED int get_lang_num(const char * lang);
+LIBHUNSPELL_DLL_EXPORTED int get_lang_num(const char* lang);
 
 
-LIBHUNSPELL_DLL_EXPORTED char * get_casechars(const char * enc);
+LIBHUNSPELL_DLL_EXPORTED char* get_casechars(const char* enc);
 
 
-LIBHUNSPELL_DLL_EXPORTED void enmkallcap(char * d, const char * p, const char * encoding);
+LIBHUNSPELL_DLL_EXPORTED std::string& mkallcap(std::string& s,
+                                               const struct cs_info* csconv);
 
 
-LIBHUNSPELL_DLL_EXPORTED void enmkallsmall(char * d, const char * p, const char * encoding);
+LIBHUNSPELL_DLL_EXPORTED std::string& mkallsmall(std::string& s,
+                                                 const struct cs_info* csconv);
 
 
-LIBHUNSPELL_DLL_EXPORTED void enmkinitcap(char * d, const char * p, const char * encoding);
+LIBHUNSPELL_DLL_EXPORTED std::string& mkinitsmall(std::string& s,
+                                                 const struct cs_info* csconv);
 
 
-LIBHUNSPELL_DLL_EXPORTED void mkallcap(char * p, const struct cs_info * csconv);
+LIBHUNSPELL_DLL_EXPORTED std::string& mkinitcap(std::string& s,
+                                                const struct cs_info* csconv);
 
 
-LIBHUNSPELL_DLL_EXPORTED void mkallsmall(char * p, const struct cs_info * csconv);
+LIBHUNSPELL_DLL_EXPORTED std::vector<w_char>&
+mkinitcap_utf(std::vector<w_char>& u, int langnum);
 
 
-LIBHUNSPELL_DLL_EXPORTED void mkinitcap(char * p, const struct cs_info * csconv);
+LIBHUNSPELL_DLL_EXPORTED std::vector<w_char>&
+mkallsmall_utf(std::vector<w_char>& u, int langnum);
 
 
-LIBHUNSPELL_DLL_EXPORTED void mkallsmall_utf(w_char * u, int nc, int langnum);
+LIBHUNSPELL_DLL_EXPORTED std::vector<w_char>&
+mkinitsmall_utf(std::vector<w_char>& u, int langnum);
 
 
-LIBHUNSPELL_DLL_EXPORTED void mkallcap_utf(w_char * u, int nc, int langnum);
+LIBHUNSPELL_DLL_EXPORTED std::vector<w_char>&
+mkallcap_utf(std::vector<w_char>& u, int langnum);
 
 
-LIBHUNSPELL_DLL_EXPORTED int get_captype(char * q, int nl, cs_info *);
+LIBHUNSPELL_DLL_EXPORTED int get_captype(const std::string& q, cs_info*);
 
 
-LIBHUNSPELL_DLL_EXPORTED int get_captype_utf8(w_char * q, int nl, int langnum);
+LIBHUNSPELL_DLL_EXPORTED int get_captype_utf8(const std::vector<w_char>& q, int langnum);
 
 
-LIBHUNSPELL_DLL_EXPORTED void remove_ignored_chars_utf(char * word, unsigned short ignored_chars[], int ignored_len);
+LIBHUNSPELL_DLL_EXPORTED size_t remove_ignored_chars_utf(
+    std::string& word,
+    const std::vector<w_char>& ignored_chars);
 
 
-LIBHUNSPELL_DLL_EXPORTED void remove_ignored_chars(char * word, char * ignored_chars);
+LIBHUNSPELL_DLL_EXPORTED size_t remove_ignored_chars(
+    std::string& word,
+    const std::string& ignored_chars);
 
-LIBHUNSPELL_DLL_EXPORTED int parse_string(char * line, char ** out, int ln);
+LIBHUNSPELL_DLL_EXPORTED int parse_string(char* line, char** out, int ln);
 
-LIBHUNSPELL_DLL_EXPORTED int parse_array(char * line, char ** out, unsigned short ** out_utf16,
-    int * out_utf16_len, int utf8, int ln);
+LIBHUNSPELL_DLL_EXPORTED bool parse_array(char* line,
+                                          char** out,
+                                          std::vector<w_char>& out_utf16,
+                                          int utf8,
+                                          int ln);
 
-LIBHUNSPELL_DLL_EXPORTED int fieldlen(const char * r);
-LIBHUNSPELL_DLL_EXPORTED char * copy_field(char * dest, const char * morph, const char * var);
+LIBHUNSPELL_DLL_EXPORTED int fieldlen(const char* r);
 
-LIBHUNSPELL_DLL_EXPORTED int morphcmp(const char * s, const char * t);
+LIBHUNSPELL_DLL_EXPORTED bool copy_field(std::string& dest,
+                                         const std::string& morph,
+                                         const std::string& var);
 
-LIBHUNSPELL_DLL_EXPORTED int get_sfxcount(const char * morph);
+LIBHUNSPELL_DLL_EXPORTED int morphcmp(const char* s, const char* t);
 
-
-LIBHUNSPELL_DLL_EXPORTED void store_pointer(char * dest, char * source);
-
-
-LIBHUNSPELL_DLL_EXPORTED char * get_stored_pointer(const char * s);
+LIBHUNSPELL_DLL_EXPORTED int get_sfxcount(const char* morph);
 
 
-LIBHUNSPELL_DLL_EXPORTED inline char* HENTRY_DATA(struct hentry *h)
-{
-    char *ret;
-    if (!h->var)
-        ret = NULL;
-    else if (h->var & H_OPT_ALIASM)
-        ret = get_stored_pointer(HENTRY_WORD(h) + h->blen + 1);
-    else 
-        ret = HENTRY_WORD(h) + h->blen + 1;
-    return ret;
+LIBHUNSPELL_DLL_EXPORTED void store_pointer(char* dest, char* source);
+
+
+LIBHUNSPELL_DLL_EXPORTED char* get_stored_pointer(const char* s);
+
+
+LIBHUNSPELL_DLL_EXPORTED inline char* HENTRY_DATA(struct hentry* h) {
+  char* ret;
+  if (!h->var)
+    ret = NULL;
+  else if (h->var & H_OPT_ALIASM)
+    ret = get_stored_pointer(HENTRY_WORD(h) + h->blen + 1);
+  else
+    ret = HENTRY_WORD(h) + h->blen + 1;
+  return ret;
+}
+
+LIBHUNSPELL_DLL_EXPORTED inline const char* HENTRY_DATA(
+    const struct hentry* h) {
+  const char* ret;
+  if (!h->var)
+    ret = NULL;
+  else if (h->var & H_OPT_ALIASM)
+    ret = get_stored_pointer(HENTRY_WORD(h) + h->blen + 1);
+  else
+    ret = HENTRY_WORD(h) + h->blen + 1;
+  return ret;
 }
 
 
-LIBHUNSPELL_DLL_EXPORTED inline const char* HENTRY_DATA2(const struct hentry *h)
-{
-    const char *ret;
-    if (!h->var)
-        ret = "";
-    else if (h->var & H_OPT_ALIASM)
-        ret = get_stored_pointer(HENTRY_WORD(h) + h->blen + 1);
-    else
-        ret = HENTRY_WORD(h) + h->blen + 1;
-    return ret;
+LIBHUNSPELL_DLL_EXPORTED inline const char* HENTRY_DATA2(
+    const struct hentry* h) {
+  const char* ret;
+  if (!h->var)
+    ret = "";
+  else if (h->var & H_OPT_ALIASM)
+    ret = get_stored_pointer(HENTRY_WORD(h) + h->blen + 1);
+  else
+    ret = HENTRY_WORD(h) + h->blen + 1;
+  return ret;
 }
 
-LIBHUNSPELL_DLL_EXPORTED inline char* HENTRY_FIND(struct hentry *h, const char *p)
-{
-    return (HENTRY_DATA(h) ? strstr(HENTRY_DATA(h), p) : NULL);
+LIBHUNSPELL_DLL_EXPORTED inline char* HENTRY_FIND(struct hentry* h,
+                                                  const char* p) {
+  return (HENTRY_DATA(h) ? strstr(HENTRY_DATA(h), p) : NULL);
 }
-
-#define w_char_eq(a,b) (((a).l == (b).l) && ((a).h == (b).h))
 
 #endif

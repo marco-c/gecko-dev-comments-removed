@@ -1,4 +1,77 @@
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef _REPLIST_HXX_
 #define _REPLIST_HXX_
 
@@ -6,25 +79,29 @@
 
 #include "w_char.hxx"
 
-class LIBHUNSPELL_DLL_EXPORTED RepList
-{
-private:
-    RepList(const RepList&);
-    RepList& operator = (const RepList&);
-protected:
-    replentry ** dat;
-    int size;
-    int pos;
+#include <string>
+#include <vector>
 
-public:
-    RepList(int n);
-    ~RepList();
+class LIBHUNSPELL_DLL_EXPORTED RepList {
+ private:
+  RepList(const RepList&);
+  RepList& operator=(const RepList&);
 
-    int get_pos();
-    int add(char * pat1, char * pat2);
-    replentry * item(int n);
-    int near(const char * word);
-    int match(const char * word, int n);
-    int conv(const char * word, char * dest);
+ protected:
+  replentry** dat;
+  int size;
+  int pos;
+
+ public:
+  RepList(int n);
+  ~RepList();
+
+  int get_pos();
+  int add(char* pat1, char* pat2);
+  replentry* item(int n);
+  int near(const char* word);
+  int match(const char* word, int n);
+  int conv(const char* word, char* dest, size_t destsize);
+  bool conv(const char* word, std::string& dest);
 };
 #endif
