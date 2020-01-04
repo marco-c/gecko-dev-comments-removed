@@ -91,6 +91,10 @@ app.use("/content/c", express.static(path.join(__dirname, "..", "content")));
 app.use("/test", express.static(path.join(__dirname, "test")));
 app.use("/test", express.static(path.join(__dirname, "..", "test")));
 
+app.use("/test/shared/shared", express.static(path.join(__dirname, "..", "content/shared")));
+app.use("/test/desktop-local/shared", express.static(path.join(__dirname, "..", "content/shared")));
+
+
 
 
 function serveIndex(req, res) {
