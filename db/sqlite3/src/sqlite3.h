@@ -111,9 +111,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.11.0"
-#define SQLITE_VERSION_NUMBER 3011000
-#define SQLITE_SOURCE_ID      "2016-02-15 17:29:24 3d862f207e3adc00f78066799ac5a8c282430a5f"
+#define SQLITE_VERSION        "3.12.1"
+#define SQLITE_VERSION_NUMBER 3012001
+#define SQLITE_SOURCE_ID      "2016-04-08 15:09:49 fe7d3b75fe1bde41511b323925af8ae1b910bc4d"
 
 
 
@@ -1822,6 +1822,20 @@ struct sqlite3_mem_methods {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
 #define SQLITE_CONFIG_MULTITHREAD   2  /* nil */
 #define SQLITE_CONFIG_SERIALIZED    3  /* nil */
@@ -1847,6 +1861,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_WIN32_HEAPSIZE      23  /* int nByte */
 #define SQLITE_CONFIG_PCACHE_HDRSZ        24  /* int *psz */
 #define SQLITE_CONFIG_PMASZ               25  /* unsigned int szPma */
+#define SQLITE_CONFIG_STMTJRNL_SPILL      26  /* int nByte */
 
 
 
@@ -1906,9 +1921,23 @@ struct sqlite3_mem_methods {
 
 
 
-#define SQLITE_DBCONFIG_LOOKASIDE       1001  /* void* int int */
-#define SQLITE_DBCONFIG_ENABLE_FKEY     1002  /* int int* */
-#define SQLITE_DBCONFIG_ENABLE_TRIGGER  1003  /* int int* */
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SQLITE_DBCONFIG_LOOKASIDE             1001 /* void* int int */
+#define SQLITE_DBCONFIG_ENABLE_FKEY           1002 /* int int* */
+#define SQLITE_DBCONFIG_ENABLE_TRIGGER        1003 /* int int* */
+#define SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 1004 /* int int* */
 
 
 
@@ -7896,6 +7925,18 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_cacheflush(sqlite3*);
 
 
 
+SQLITE_API int SQLITE_STDCALL sqlite3_system_errno(sqlite3*);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7939,6 +7980,10 @@ SQLITE_API SQLITE_EXPERIMENTAL int SQLITE_STDCALL sqlite3_snapshot_get(
   const char *zSchema,
   sqlite3_snapshot **ppSnapshot
 );
+
+
+
+
 
 
 
