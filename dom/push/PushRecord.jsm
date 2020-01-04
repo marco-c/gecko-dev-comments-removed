@@ -43,6 +43,7 @@ function PushRecord(props) {
   this.authenticationSecret = props.authenticationSecret;
   this.systemRecord = !!props.systemRecord;
   this.appServerKey = props.appServerKey;
+  this.recentMessageIDs = props.recentMessageIDs;
   this.setQuota(props.quota);
   this.ctime = (typeof props.ctime === "number") ? props.ctime : 0;
 }
@@ -92,6 +93,29 @@ PushRecord.prototype = {
     this.updateQuota(lastVisit);
     this.pushCount++;
     this.lastPush = Date.now();
+  },
+
+  
+
+
+
+
+  noteRecentMessageID(id) {
+    if (this.recentMessageIDs) {
+      this.recentMessageIDs.unshift(id);
+    } else {
+      this.recentMessageIDs = [id];
+    }
+    
+    let maxRecentMessageIDs = Math.min(
+      this.recentMessageIDs.length,
+      Math.max(prefs.get("maxRecentMessageIDsPerSubscription"), 0)
+    );
+    this.recentMessageIDs.length = maxRecentMessageIDs || 0;
+  },
+
+  hasRecentMessageID(id) {
+    return this.recentMessageIDs && this.recentMessageIDs.includes(id);
   },
 
   reduceQuota() {

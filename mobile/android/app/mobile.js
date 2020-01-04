@@ -902,6 +902,7 @@ pref("dom.push.debug", false);
 
 
 pref("dom.push.serverURL", "https://updates-autopush.stage.mozaws.net/v1/gcm/@MOZ_ANDROID_GCM_SENDERID@");
+pref("dom.push.maxRecentMessageIDsPerSubscription", 0);
 
 #ifdef MOZ_ANDROID_GCM
 pref("dom.push.enabled", true);
