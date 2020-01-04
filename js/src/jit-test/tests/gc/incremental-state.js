@@ -6,26 +6,26 @@ gczeal(0);
 
 
 gc();
-assertEq(gcstate(), "none");
+assertEq(gcstate(), "NotActive");
 
 
 
 gcslice(1000000);
-while (gcstate() == "finalize") { gcslice(1); }
-while (gcstate() == "decommit") { gcslice(1); }
-assertEq(gcstate(), "none");
+while (gcstate() == "Finalize") { gcslice(1); }
+while (gcstate() == "Decommit") { gcslice(1); }
+assertEq(gcstate(), "NotActive");
 
 
 
 gczeal(0);
 gcslice(1);
-assertEq(gcstate(), "mark");
+assertEq(gcstate(), "Mark");
 gcslice(1000000);
-assertEq(gcstate(), "mark");
+assertEq(gcstate(), "Mark");
 gcslice(1000000);
-while (gcstate() == "finalize") { gcslice(1); }
-while (gcstate() == "decommit") { gcslice(1); }
-assertEq(gcstate(), "none");
+while (gcstate() == "Finalize") { gcslice(1); }
+while (gcstate() == "Decommit") { gcslice(1); }
+assertEq(gcstate(), "NotActive");
 
 
 
@@ -33,11 +33,11 @@ assertEq(gcstate(), "none");
 
 gczeal(8, 0);
 gcslice(1);
-assertEq(gcstate(), "mark");
+assertEq(gcstate(), "Mark");
 gcslice(1);
-while (gcstate() == "finalize") { gcslice(1); }
-while (gcstate() == "decommit") { gcslice(1); }
-assertEq(gcstate(), "none");
+while (gcstate() == "Finalize") { gcslice(1); }
+while (gcstate() == "Decommit") { gcslice(1); }
+assertEq(gcstate(), "NotActive");
 
 
 
@@ -45,19 +45,19 @@ assertEq(gcstate(), "none");
 
 gczeal(9, 0);
 gcslice(1);
-assertEq(gcstate(), "mark");
+assertEq(gcstate(), "Mark");
 gcslice(1);
-while (gcstate() == "finalize") { gcslice(1); }
-while (gcstate() == "decommit") { gcslice(1); }
-assertEq(gcstate(), "none");
+while (gcstate() == "Finalize") { gcslice(1); }
+while (gcstate() == "Decommit") { gcslice(1); }
+assertEq(gcstate(), "NotActive");
 
 
 
 
 gczeal(10, 0);
 gcslice(1000000);
-assertEq(gcstate(), "sweep");
+assertEq(gcstate(), "Sweep");
 gcslice(1000000);
-while (gcstate() == "finalize") { gcslice(1); }
-while (gcstate() == "decommit") { gcslice(1); }
-assertEq(gcstate(), "none");
+while (gcstate() == "Finalize") { gcslice(1); }
+while (gcstate() == "Decommit") { gcslice(1); }
+assertEq(gcstate(), "NotActive");
