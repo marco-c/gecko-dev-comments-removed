@@ -128,6 +128,10 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout
     private int mSecurityImageLevel;
 
     
+    
+    
+    private final int LEVEL_DEFAULT_GLOBE = 0;
+    
     private final int LEVEL_WARNING_MINOR = 3;
     private final int LEVEL_LOCK_DISABLED = 4;
     
@@ -439,6 +443,14 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout
         
         
         int imageLevel = securityMode.ordinal();
+
+        
+        
+        
+        
+        if (securityMode == SecurityMode.CHROMEUI) {
+            imageLevel = LEVEL_DEFAULT_GLOBE; 
+        }
 
         
         if (loginInsecure) {

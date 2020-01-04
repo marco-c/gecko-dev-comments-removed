@@ -311,7 +311,16 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
 
 
     private void updateConnectionState(final SiteIdentity siteIdentity) {
-        if (!siteIdentity.isSecure()) {
+        if (siteIdentity.getSecurityMode() == SecurityMode.CHROMEUI) {
+            mSecurityState.setText(R.string.identity_connection_chromeui);
+            mSecurityState.setTextColor(ColorUtils.getColor(mContext, R.color.placeholder_active_grey));
+
+            mIcon.setImageResource(R.drawable.icon);
+            clearSecurityStateIcon();
+
+            mMixedContentActivity.setVisibility(View.GONE);
+            mLink.setVisibility(View.GONE);
+        } else if (!siteIdentity.isSecure()) {
             if (siteIdentity.loginInsecure()) {
                 
                 mIcon.setImageResource(R.drawable.lock_disabled);
@@ -466,9 +475,12 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
 
         
         
+        
         final Tab selectedTab = Tabs.getInstance().getSelectedTab();
-        if (selectedTab != null && AboutPages.isAboutPage(selectedTab.getURL())) {
-            Log.d(LOGTAG, "We don't show site identity popups for about: pages");
+        if (selectedTab != null &&
+                AboutPages.isAboutPage(selectedTab.getURL()) &&
+                mSiteIdentity.getSecurityMode() != SecurityMode.CHROMEUI) {
+            Log.d(LOGTAG, "We don't show site identity popups for unverified about: pages");
             return;
         }
 
@@ -485,15 +497,23 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
             Log.e(LOGTAG, "Error adding selectLogin doorhanger", e);
         }
 
-        mTitle.setText(selectedTab.getBaseDomain());
-        final Bitmap favicon = selectedTab.getFavicon();
-        if (favicon != null) {
-            final Drawable faviconDrawable = new BitmapDrawable(mResources, favicon);
-            final int dimen = (int) mResources.getDimension(R.dimen.browser_toolbar_favicon_size);
-            faviconDrawable.setBounds(0, 0, dimen, dimen);
+        if (mSiteIdentity.getSecurityMode() == SecurityMode.CHROMEUI) {
+            
+            
+            
+            mTitle.setText(R.string.moz_app_displayname);
+        } else {
+            mTitle.setText(selectedTab.getBaseDomain());
 
-            mTitle.setCompoundDrawables(faviconDrawable, null, null, null);
-            mTitle.setCompoundDrawablePadding((int) mContext.getResources().getDimension(R.dimen.doorhanger_drawable_padding));
+            final Bitmap favicon = selectedTab.getFavicon();
+            if (favicon != null) {
+                final Drawable faviconDrawable = new BitmapDrawable(mResources, favicon);
+                final int dimen = (int) mResources.getDimension(R.dimen.browser_toolbar_favicon_size);
+                faviconDrawable.setBounds(0, 0, dimen, dimen);
+
+                mTitle.setCompoundDrawables(faviconDrawable, null, null, null);
+                mTitle.setCompoundDrawablePadding((int) mContext.getResources().getDimension(R.dimen.doorhanger_drawable_padding));
+            }
         }
 
         showDividers();
