@@ -11,14 +11,14 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 
 const events = require("sdk/event/core");
 const protocol = require("devtools/shared/protocol");
-const { method, custom, RetVal, Arg } = protocol;
+const { custom } = protocol;
+const { cssUsageSpec } = require("devtools/shared/specs/csscoverage");
 
 loader.lazyGetter(this, "DOMUtils", () => {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
 });
 loader.lazyRequireGetter(this, "stylesheets", "devtools/server/actors/stylesheets");
 loader.lazyRequireGetter(this, "CssLogic", "devtools/shared/inspector/css-logic", true);
-loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
 
 const CSSRule = Ci.nsIDOMCSSRule;
 
@@ -68,16 +68,7 @@ const l10n = exports.l10n = {
 
 
 
-var CSSUsageActor = protocol.ActorClass({
-  typeName: "cssUsage",
-
-  events: {
-    "state-change" : {
-      type: "stateChange",
-      stateChange: Arg(0, "json")
-    }
-  },
-
+var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
@@ -107,7 +98,7 @@ var CSSUsageActor = protocol.ActorClass({
 
 
 
-  start: method(function (noreload) {
+  start: function (noreload) {
     if (this._running) {
       throw new Error(l10n.lookup("csscoverageRunningError"));
     }
@@ -152,14 +143,12 @@ var CSSUsageActor = protocol.ActorClass({
     }
 
     events.emit(this, "state-change", { isRunning: true });
-  }, {
-    request: { url: Arg(0, "boolean") }
-  }),
+  },
 
   
 
 
-  stop: method(function () {
+  stop: function () {
     if (!this._running) {
       throw new Error(l10n.lookup("csscoverageNotRunningError"));
     }
@@ -169,20 +158,20 @@ var CSSUsageActor = protocol.ActorClass({
 
     this._running = false;
     events.emit(this, "state-change", { isRunning: false });
-  }),
+  },
 
   
 
 
-  toggle: method(function () {
+  toggle: function () {
     return this._running ? this.stop() : this.start();
-  }),
+  },
 
   
 
 
 
-  oneshot: method(function () {
+  oneshot: function () {
     if (this._running) {
       throw new Error(l10n.lookup("csscoverageRunningError"));
     }
@@ -193,7 +182,7 @@ var CSSUsageActor = protocol.ActorClass({
 
     this._populateKnownRules(this._tabActor.window.document);
     this._updateUsage(this._tabActor.window.document, false);
-  }),
+  },
 
   
 
@@ -326,7 +315,7 @@ var CSSUsageActor = protocol.ActorClass({
 
 
 
-  createEditorReport: method(function (url) {
+  createEditorReport: function (url) {
     if (this._knownRules == null) {
       return { reports: [] };
     }
@@ -351,10 +340,7 @@ var CSSUsageActor = protocol.ActorClass({
     }
 
     return { reports: reports };
-  }, {
-    request: { url: Arg(0, "string") },
-    response: { reports: RetVal("array:json") }
-  }),
+  },
 
   
 
@@ -391,7 +377,7 @@ var CSSUsageActor = protocol.ActorClass({
 
 
 
-  createPageReport: method(function () {
+  createPageReport: function () {
     if (this._running) {
       throw new Error(l10n.lookup("csscoverageRunningError"));
     }
@@ -475,18 +461,14 @@ var CSSUsageActor = protocol.ActorClass({
       preload: preload,
       unused: unused
     };
-  }, {
-    response: RetVal("json")
-  }),
+  },
 
   
 
 
-  _testOnly_visitedPages: method(function () {
+  _testOnlyVisitedPages: function () {
     return [...this._visitedPages];
-  }, {
-    response: { value: RetVal("array:string") }
-  }),
+  },
 });
 
 exports.CSSUsageActor = CSSUsageActor;
@@ -731,110 +713,4 @@ const sheetToUrl = exports.sheetToUrl = function (stylesheet) {
   }
 
   throw new Error("Unknown sheet source");
-};
-
-
-
-
-
-
-var isRunning = false;
-var notification;
-var target;
-var chromeWindow;
-
-
-
-
-const CSSUsageFront = protocol.FrontClass(CSSUsageActor, {
-  initialize: function (client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-    this.actorID = form.cssUsageActor;
-    this.manage(this);
-  },
-
-  _onStateChange: protocol.preEvent("state-change", function (ev) {
-    isRunning = ev.isRunning;
-    ev.target = target;
-
-    if (isRunning) {
-      let gnb = chromeWindow.document.getElementById("global-notificationbox");
-      notification = gnb.getNotificationWithValue("csscoverage-running");
-
-      if (notification == null) {
-        let notifyStop = reason => {
-          if (reason == "removed") {
-            this.stop();
-          }
-        };
-
-        let msg = l10n.lookup("csscoverageRunningReply");
-        notification = gnb.appendNotification(msg, "csscoverage-running",
-                                              "", 
-                                              gnb.PRIORITY_INFO_HIGH,
-                                              null, 
-                                              notifyStop);
-      }
-    }
-    else {
-      if (notification) {
-        notification.remove();
-        notification = undefined;
-      }
-
-      gDevTools.showToolbox(target, "styleeditor");
-      target = undefined;
-    }
-  }),
-
-  
-
-
-  start: custom(function (newChromeWindow, newTarget, noreload = false) {
-    target = newTarget;
-    chromeWindow = newChromeWindow;
-
-    return this._start(noreload);
-  }, {
-    impl: "_start"
-  }),
-
-  
-
-
-  toggle: custom(function (newChromeWindow, newTarget) {
-    target = newTarget;
-    chromeWindow = newChromeWindow;
-
-    return this._toggle();
-  }, {
-    impl: "_toggle"
-  }),
-
-  
-
-
-  isRunning: function () {
-    return isRunning;
-  }
-});
-
-exports.CSSUsageFront = CSSUsageFront;
-
-const knownFronts = new WeakMap();
-
-
-
-
-
-
-const getUsage = exports.getUsage = function (target) {
-  return target.makeRemote().then(() => {
-    let front = knownFronts.get(target.client);
-    if (front == null && target.form.cssUsageActor != null) {
-      front = new CSSUsageFront(target.client, target.form);
-      knownFronts.set(target.client, front);
-    }
-    return front;
-  });
 };
