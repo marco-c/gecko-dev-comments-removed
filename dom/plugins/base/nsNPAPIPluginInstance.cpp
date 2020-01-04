@@ -1852,8 +1852,6 @@ NS_IMETHODIMP
 nsNPAPIPluginInstance::WindowSuspendChanged(nsSuspendedTypes aSuspend)
 {
   
-  WindowVolumeChanged(1.0, 
-                      aSuspend != nsISuspendedTypes::NONE_SUSPENDED);
   return NS_OK;
 }
 

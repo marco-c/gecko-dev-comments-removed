@@ -1162,6 +1162,11 @@ static bool IsAutoplayEnabled()
   return Preferences::GetBool("media.autoplay.enabled");
 }
 
+static bool UseAudioChannelAPI()
+{
+  return Preferences::GetBool("media.useAudioChannelAPI");
+}
+
 void HTMLMediaElement::UpdatePreloadAction()
 {
   PreloadAction nextAction = PRELOAD_UNDEFINED;
@@ -2239,7 +2244,6 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mAutoplayEnabled(true),
     mPaused(true),
     mMuted(0),
-    mAudioChannelSuspended(nsISuspendedTypes::NONE_SUSPENDED),
     mStatsShowing(false),
     mAllowCasting(false),
     mIsCasting(false),
@@ -2391,7 +2395,20 @@ HTMLMediaElement::Play(ErrorResult& aRv)
 nsresult
 HTMLMediaElement::PlayInternal(bool aCallerIsChrome)
 {
-  if (!IsAllowedToPlay()) {
+  
+  
+  if (!mHasUserInteraction
+      && !IsAutoplayEnabled()
+      && !EventStateManager::IsHandlingUserInput()
+      && !aCallerIsChrome) {
+    LOG(LogLevel::Debug, ("%p Blocked attempt to autoplay media.", this));
+#if defined(MOZ_WIDGET_ANDROID)
+    nsContentUtils::DispatchTrustedEvent(OwnerDoc(),
+                                         static_cast<nsIContent*>(this),
+                                         NS_LITERAL_STRING("MozAutoplayMediaBlocked"),
+                                         false,
+                                         false);
+#endif
     return NS_OK;
   }
 
@@ -2456,8 +2473,6 @@ HTMLMediaElement::PlayInternal(bool aCallerIsChrome)
 
   mPaused = false;
   mAutoplaying = false;
-  SetAudioChannelSuspended(nsISuspendedTypes::NONE_SUSPENDED);
-
   
   
   AddRemoveSelfReference();
@@ -4523,7 +4538,12 @@ bool HTMLMediaElement::IsBeingDestroyed()
 void HTMLMediaElement::NotifyOwnerDocumentActivityChanged()
 {
   bool pauseElement = NotifyOwnerDocumentActivityChangedInternal();
-  if (pauseElement && mAudioChannelAgent) {
+  if (pauseElement && mAudioChannelAgent &&
+      
+      
+      
+      
+      (!UseAudioChannelAPI() || !ComputedMuted())) {
     
     
     
@@ -4547,6 +4567,14 @@ HTMLMediaElement::NotifyOwnerDocumentActivityChangedInternal()
   }
 
   bool pauseElement = !IsActive();
+  
+  
+  
+  
+  if (UseAudioChannelAPI() && mAudioChannelAgent) {
+    pauseElement |= ComputedMuted();
+  }
+
   SuspendOrResumeElement(pauseElement, !IsActive());
 
   if (!mPausedForInactiveDocumentOrChannel &&
@@ -4960,6 +4988,33 @@ ImageContainer* HTMLMediaElement::GetImageContainer()
   return container ? container->GetImageContainer() : nullptr;
 }
 
+nsresult HTMLMediaElement::UpdateChannelMuteState(float aVolume, bool aMuted)
+{
+  if (mAudioChannelVolume != aVolume) {
+    mAudioChannelVolume = aVolume;
+    SetVolumeInternal();
+  }
+
+  
+  if (aMuted && !ComputedMuted()) {
+    SetMutedInternal(mMuted | MUTED_BY_AUDIO_CHANNEL);
+    if (UseAudioChannelAPI()) {
+      DispatchAsyncEvent(NS_LITERAL_STRING("mozinterruptbegin"));
+    }
+  } else if (!aMuted && ComputedMuted()) {
+    SetMutedInternal(mMuted & ~MUTED_BY_AUDIO_CHANNEL);
+    if (UseAudioChannelAPI()) {
+      DispatchAsyncEvent(NS_LITERAL_STRING("mozinterruptend"));
+    }
+  }
+
+  if (UseAudioChannelAPI()) {
+    SuspendOrResumeElement(ComputedMuted(), false);
+  }
+
+  return NS_OK;
+}
+
 bool
 HTMLMediaElement::MaybeCreateAudioChannelAgent()
 {
@@ -4980,11 +5035,6 @@ HTMLMediaElement::MaybeCreateAudioChannelAgent()
 bool
 HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
 {
-  
-  if (IsSuspendedByAudioChannel()) {
-    return true;
-  }
-
   
   if (mPaused || Muted()) {
     return false;
@@ -5071,174 +5121,24 @@ HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
   }
 }
 
-NS_IMETHODIMP
-HTMLMediaElement::WindowVolumeChanged(float aVolume, bool aMuted)
+NS_IMETHODIMP HTMLMediaElement::WindowVolumeChanged(float aVolume, bool aMuted)
 {
-  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-         ("HTMLMediaElement, WindowVolumeChanged, this = %p, "
-          "aVolume = %f, aMuted = %d\n", this, aVolume, aMuted));
+  MOZ_ASSERT(NS_IsMainThread());
 
-  if (mAudioChannelVolume != aVolume) {
-    mAudioChannelVolume = aVolume;
-    SetVolumeInternal();
-  }
+  UpdateChannelMuteState(aVolume, aMuted);
 
-  if (aMuted && !ComputedMuted()) {
-    SetMutedInternal(mMuted | MUTED_BY_AUDIO_CHANNEL);
-  } else if (!aMuted && ComputedMuted()) {
-    SetMutedInternal(mMuted & ~MUTED_BY_AUDIO_CHANNEL);
+  if (UseAudioChannelAPI()) {
+    mPaused.SetCanPlay(!aMuted);
   }
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-HTMLMediaElement::WindowSuspendChanged(SuspendTypes aSuspend)
+HTMLMediaElement::WindowSuspendChanged(nsSuspendedTypes aSuspend)
 {
-  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-         ("HTMLMediaElement, WindowSuspendChanged, this = %p, "
-          "aSuspend = %d\n", this, aSuspend));
-
-  switch (aSuspend) {
-    case nsISuspendedTypes::NONE_SUSPENDED:
-      ResumeFromAudioChannel();
-      break;
-    case nsISuspendedTypes::SUSPENDED_PAUSE:
-    case nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE:
-      PauseByAudioChannel(aSuspend);
-      break;
-    case nsISuspendedTypes::SUSPENDED_BLOCK:
-      BlockByAudioChannel();
-      break;
-    case nsISuspendedTypes::SUSPENDED_STOP_DISPOSABLE:
-      Pause();
-      break;
-    default:
-      MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-             ("HTMLMediaElement, WindowSuspendChanged, this = %p, "
-              "Error : unknown suspended type!\n", this));
-  }
-
+  
   return NS_OK;
-}
-
-void
-HTMLMediaElement::ResumeFromAudioChannel()
-{
-  if (!IsSuspendedByAudioChannel()) {
-    return;
-  }
-
-  switch (mAudioChannelSuspended) {
-    case nsISuspendedTypes::SUSPENDED_PAUSE:
-    case nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE:
-      ResumeFromAudioChannelPaused(mAudioChannelSuspended);
-      break;
-    case nsISuspendedTypes::SUSPENDED_BLOCK:
-      ResumeFromAudioChannelBlocked();
-      break;
-    default:
-      MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-             ("HTMLMediaElement, ResumeFromAudioChannel, this = %p, "
-              "Error : resume without suspended!\n", this));
-  }
-}
-
-void
-HTMLMediaElement::ResumeFromAudioChannelPaused(SuspendTypes aSuspend)
-{
-  MOZ_ASSERT(mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE ||
-             mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE);
-
-  SetAudioChannelSuspended(nsISuspendedTypes::NONE_SUSPENDED);
-  nsresult rv = PlayInternal(nsContentUtils::IsCallerChrome());
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-  DispatchAsyncEvent(NS_LITERAL_STRING("mozinterruptend"));
-}
-
-void
-HTMLMediaElement::ResumeFromAudioChannelBlocked()
-{
-  MOZ_ASSERT(mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK);
-
-  SetAudioChannelSuspended(nsISuspendedTypes::NONE_SUSPENDED);
-  mPaused.SetCanPlay(true);
-  SuspendOrResumeElement(false , false);
-}
-
-void
-HTMLMediaElement::PauseByAudioChannel(SuspendTypes aSuspend)
-{
-  if (IsSuspendedByAudioChannel()) {
-    return;
-  }
-
-  SetAudioChannelSuspended(aSuspend);
-  Pause();
-  DispatchAsyncEvent(NS_LITERAL_STRING("mozinterruptbegin"));
-}
-
-void
-HTMLMediaElement::BlockByAudioChannel()
-{
-  if (IsSuspendedByAudioChannel()) {
-    return;
-  }
-
-  SetAudioChannelSuspended(nsISuspendedTypes::SUSPENDED_BLOCK);
-  SuspendOrResumeElement(true , false);
-  mPaused.SetCanPlay(false);
-}
-
-void
-HTMLMediaElement::SetAudioChannelSuspended(SuspendTypes aSuspend)
-{
-  if (mAudioChannelSuspended == aSuspend) {
-    return;
-  }
-
-  mAudioChannelSuspended = aSuspend;
-  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-         ("HTMLMediaElement, SetAudioChannelSuspended, this = %p, "
-          "aSuspend = %d\n", this, aSuspend));
-}
-
-bool
-HTMLMediaElement::IsSuspendedByAudioChannel() const
-{
-  return (mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE ||
-          mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE ||
-          mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK);
-}
-
-bool
-HTMLMediaElement::IsAllowedToPlay()
-{
-  
-  
-  if (!mHasUserInteraction &&
-      !IsAutoplayEnabled() &&
-      !EventStateManager::IsHandlingUserInput() &&
-      !nsContentUtils::IsCallerChrome()) {
-#if defined(MOZ_WIDGET_ANDROID)
-    nsContentUtils::DispatchTrustedEvent(OwnerDoc(),
-                                         static_cast<nsIContent*>(this),
-                                         NS_LITERAL_STRING("MozAutoplayMediaBlocked"),
-                                         false,
-                                         false);
-#endif
-    return false;
-  }
-
-  
-  if (mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE ||
-      mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
-    return false;
-  }
-
-  return true;
 }
 
 #ifdef MOZ_EME

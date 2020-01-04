@@ -37,7 +37,6 @@
 
 typedef uint16_t nsMediaNetworkState;
 typedef uint16_t nsMediaReadyState;
-typedef uint32_t SuspendTypes;
 
 namespace mozilla {
 class DecoderDoctorDiagnostics;
@@ -1116,6 +1115,9 @@ protected:
   bool CheckAudioChannelPermissions(const nsAString& aType);
 
   
+  nsresult UpdateChannelMuteState(float aVolume, bool aMuted);
+
+  
   
   
   
@@ -1148,38 +1150,6 @@ protected:
   
   
   bool MaybeCreateAudioChannelAgent();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void PauseByAudioChannel(SuspendTypes aSuspend);
-  void BlockByAudioChannel();
-
-  void ResumeFromAudioChannel();
-  void ResumeFromAudioChannelPaused(SuspendTypes aSuspend);
-  void ResumeFromAudioChannelBlocked();
-
-  bool IsSuspendedByAudioChannel() const;
-  void SetAudioChannelSuspended(SuspendTypes aSuspend);
-
-  bool IsAllowedToPlay();
 
   class nsAsyncEventRunner;
   using nsGenericHTMLElement::DispatchEvent;
@@ -1400,7 +1370,6 @@ protected:
   };
 
   uint32_t mMuted;
-  SuspendTypes mAudioChannelSuspended;
 
   
   
