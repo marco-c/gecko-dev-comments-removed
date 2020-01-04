@@ -2895,7 +2895,6 @@ public:
       mLetterSpacing(LetterSpacing(aFrame, aTextStyle)),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(aOffsetFromBlockOriginForTabs),
-      mJustificationSpacing(0),
       mReflowing(true),
       mWhichTextRun(aWhichTextRun)
   {
@@ -2920,7 +2919,6 @@ public:
       mLetterSpacing(LetterSpacing(aFrame)),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(0),
-      mJustificationSpacing(0),
       mReflowing(false),
       mWhichTextRun(aWhichTextRun)
   {
@@ -2953,7 +2951,8 @@ public:
 
 
 
-  void ComputeJustification(Range aRange);
+  JustificationInfo ComputeJustification(
+    Range aRange, nsTArray<JustificationAssignment>* aAssignments = nullptr);
 
   const nsStyleText* StyleText() { return mTextStyle; }
   nsTextFrame* GetFrame() { return mFrame; }
@@ -2983,11 +2982,6 @@ public:
   void CalcTabWidths(Range aTransformedRange);
 
   const gfxSkipCharsIterator& GetEndHint() { return mTempIterator; }
-
-  const JustificationInfo& GetJustificationInfo() const
-  {
-    return mJustificationInfo;
-  }
 
 protected:
   void SetupJustificationSpacing(bool aPostReflow);
@@ -3023,13 +3017,9 @@ protected:
   gfxFloat              mOffsetFromBlockOriginForTabs;
 
   
-  gfxFloat              mJustificationSpacing;
-  int32_t               mTotalJustificationGaps;
-  JustificationInfo     mJustificationInfo;
-  
   
   uint32_t              mJustificationArrayStart;
-  nsTArray<JustificationAssignment> mJustificationAssignments;
+  nsTArray<Spacing>     mJustificationSpacings;
 
   bool                  mReflowing;
   nsTextFrame::TextRunType mWhichTextRun;
@@ -3074,16 +3064,19 @@ static void FindClusterEnd(gfxTextRun* aTextRun, int32_t aOriginalEnd,
   aPos->AdvanceOriginal(-1);
 }
 
-void
-PropertyProvider::ComputeJustification(Range aRange)
+JustificationInfo
+PropertyProvider::ComputeJustification(
+  Range aRange, nsTArray<JustificationAssignment>* aAssignments)
 {
+  JustificationInfo info;
+
   
   
   
   
   
   if (mFrame->StyleContext()->IsTextCombined()) {
-    return;
+    return info;
   }
 
   bool isCJ = IsChineseOrJapanese(mFrame);
@@ -3092,14 +3085,13 @@ PropertyProvider::ComputeJustification(Range aRange)
   run.SetOriginalOffset(aRange.start);
   mJustificationArrayStart = run.GetSkippedOffset();
 
-  MOZ_ASSERT(mJustificationAssignments.IsEmpty());
-  mJustificationAssignments.SetCapacity(aRange.Length());
+  nsTArray<JustificationAssignment> assignments;
+  assignments.SetCapacity(aRange.Length());
   while (run.NextRun()) {
     uint32_t originalOffset = run.GetOriginalOffset();
     uint32_t skippedOffset = run.GetSkippedOffset();
     uint32_t length = run.GetRunLength();
-    mJustificationAssignments.SetLength(
-      skippedOffset + length - mJustificationArrayStart);
+    assignments.SetLength(skippedOffset + length - mJustificationArrayStart);
 
     gfxSkipCharsIterator iter = run.GetPos();
     for (uint32_t i = 0; i < length; ++i) {
@@ -3115,16 +3107,16 @@ PropertyProvider::ComputeJustification(Range aRange)
       uint32_t firstChar = firstCharOffset > mJustificationArrayStart ?
         firstCharOffset - mJustificationArrayStart : 0;
       if (!firstChar) {
-        mJustificationInfo.mIsStartJustifiable = true;
+        info.mIsStartJustifiable = true;
       } else {
-        auto& assign = mJustificationAssignments[firstChar];
-        auto& prevAssign = mJustificationAssignments[firstChar - 1];
+        auto& assign = assignments[firstChar];
+        auto& prevAssign = assignments[firstChar - 1];
         if (prevAssign.mGapsAtEnd) {
           prevAssign.mGapsAtEnd = 1;
           assign.mGapsAtStart = 1;
         } else {
           assign.mGapsAtStart = 2;
-          mJustificationInfo.mInnerOpportunities++;
+          info.mInnerOpportunities++;
         }
       }
 
@@ -3132,22 +3124,26 @@ PropertyProvider::ComputeJustification(Range aRange)
       uint32_t lastChar = iter.GetSkippedOffset() - mJustificationArrayStart;
       
       
-      mJustificationAssignments[lastChar].mGapsAtEnd = 2;
-      mJustificationInfo.mInnerOpportunities++;
+      assignments[lastChar].mGapsAtEnd = 2;
+      info.mInnerOpportunities++;
 
       
       i = iter.GetOriginalOffset() - originalOffset;
     }
   }
 
-  if (!mJustificationAssignments.IsEmpty() &&
-      mJustificationAssignments.LastElement().mGapsAtEnd) {
+  if (!assignments.IsEmpty() && assignments.LastElement().mGapsAtEnd) {
     
     
-    MOZ_ASSERT(mJustificationInfo.mInnerOpportunities > 0);
-    mJustificationInfo.mInnerOpportunities--;
-    mJustificationInfo.mIsEndJustifiable = true;
+    MOZ_ASSERT(info.mInnerOpportunities > 0);
+    info.mInnerOpportunities--;
+    info.mIsEndJustifiable = true;
   }
+
+  if (aAssignments) {
+    *aAssignments = Move(assignments);
+  }
+  return info;
 }
 
 
@@ -3229,22 +3225,20 @@ PropertyProvider::GetSpacingInternal(Range aRange, Spacing* aSpacing,
   }
 
   
-  if (mJustificationSpacing > 0 && mTotalJustificationGaps) {
+  if (mJustificationSpacings.Length() > 0) {
     
     
     
     auto arrayEnd = mJustificationArrayStart +
-      static_cast<uint32_t>(mJustificationAssignments.Length());
+      static_cast<uint32_t>(mJustificationSpacings.Length());
     auto end = std::min(aRange.end, arrayEnd);
     MOZ_ASSERT(aRange.start >= mJustificationArrayStart);
-    JustificationApplicationState state(
-        mTotalJustificationGaps, NSToCoordRound(mJustificationSpacing));
     for (auto i = aRange.start; i < end; i++) {
-      const auto& assign =
-        mJustificationAssignments[i - mJustificationArrayStart];
+      const auto& spacing =
+        mJustificationSpacings[i - mJustificationArrayStart];
       uint32_t offset = i - aRange.start;
-      aSpacing[offset].mBefore += state.Consume(assign.mGapsAtStart);
-      aSpacing[offset].mAfter += state.Consume(assign.mGapsAtEnd);
+      aSpacing[offset].mBefore += spacing.mBefore;
+      aSpacing[offset].mAfter += spacing.mAfter;
     }
   }
 }
@@ -3455,13 +3449,15 @@ PropertyProvider::SetupJustificationSpacing(bool aPostReflow)
     mFrame->GetTrimmedOffsets(mFrag, true, aPostReflow);
   end.AdvanceOriginal(trimmed.mLength);
   gfxSkipCharsIterator realEnd(end);
-  ComputeJustification(Range(uint32_t(start.GetOriginalOffset()),
-                             uint32_t(end.GetOriginalOffset())));
+
+  Range range(uint32_t(start.GetOriginalOffset()),
+              uint32_t(end.GetOriginalOffset()));
+  nsTArray<JustificationAssignment> assignments;
+  JustificationInfo info = ComputeJustification(range, &assignments);
 
   auto assign = mFrame->GetJustificationAssignment();
-  mTotalJustificationGaps =
-    JustificationUtils::CountGaps(mJustificationInfo, assign);
-  if (!mTotalJustificationGaps || mJustificationAssignments.IsEmpty()) {
+  auto totalGaps = JustificationUtils::CountGaps(info, assign);
+  if (!totalGaps || assignments.IsEmpty()) {
     
     
     return;
@@ -3476,14 +3472,23 @@ PropertyProvider::SetupJustificationSpacing(bool aPostReflow)
   if (mFrame->GetStateBits() & TEXT_HYPHEN_BREAK) {
     naturalWidth += GetHyphenWidth();
   }
-  mJustificationSpacing = mFrame->ISize() - naturalWidth;
-  if (mJustificationSpacing <= 0) {
+  nscoord totalSpacing = mFrame->ISize() - naturalWidth;
+  if (totalSpacing <= 0) {
     
     return;
   }
 
-  mJustificationAssignments[0].mGapsAtStart = assign.mGapsAtStart;
-  mJustificationAssignments.LastElement().mGapsAtEnd = assign.mGapsAtEnd;
+  assignments[0].mGapsAtStart = assign.mGapsAtStart;
+  assignments.LastElement().mGapsAtEnd = assign.mGapsAtEnd;
+
+  MOZ_ASSERT(mJustificationSpacings.IsEmpty());
+  JustificationApplicationState state(totalGaps, totalSpacing);
+  mJustificationSpacings.SetCapacity(assignments.Length());
+  for (const JustificationAssignment& assign : assignments) {
+    Spacing* spacing = mJustificationSpacings.AppendElement();
+    spacing->mBefore = state.Consume(assign.mGapsAtStart);
+    spacing->mAfter = state.Consume(assign.mGapsAtEnd);
+  }
 }
 
 
@@ -9134,9 +9139,8 @@ nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
        shouldSuppressLineBreak) &&
       !lineContainer->IsSVGText()) {
     AddStateBits(TEXT_JUSTIFICATION_ENABLED);
-    provider.ComputeJustification(Range(uint32_t(offset),
-                                        uint32_t(offset + charsFit)));
-    aLineLayout.SetJustificationInfo(provider.GetJustificationInfo());
+    Range range(uint32_t(offset), uint32_t(offset + charsFit));
+    aLineLayout.SetJustificationInfo(provider.ComputeJustification(range));
   }
 
   SetLength(contentLength, &aLineLayout, ALLOW_FRAME_CREATION_AND_DESTRUCTION);
