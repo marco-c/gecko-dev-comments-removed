@@ -202,11 +202,7 @@ pref("dom.url.getters_decode_hash", false);
 
 
 
-#ifdef E10S_TESTING_ONLY
 pref("dom.compartment_per_addon", true);
-#else
-pref("dom.compartment_per_addon", false);
-#endif
 
 
 

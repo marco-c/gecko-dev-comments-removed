@@ -1576,11 +1576,9 @@ pref("browser.tabs.crashReporting.email", "");
 pref("layers.async-pan-zoom.enabled", true);
 #endif
 
-#ifdef E10S_TESTING_ONLY
 
 pref("extensions.interposition.enabled", true);
 pref("extensions.interposition.prefetching", true);
-#endif
 
 pref("browser.defaultbrowser.notificationbar", false);
 
