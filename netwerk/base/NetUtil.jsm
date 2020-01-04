@@ -155,8 +155,7 @@ this.NetUtil = {
                 
                 
                 
-                Services.console.logStringMessage(
-                    "Warning: NetUtil.asyncFetch() requires the channel to have " +
+                Cu.reportError("NetUtil.jsm: asyncFetch() requires the channel to have " +
                     "one of the security flags set in the loadinfo (see nsILoadInfo). " +
                     "Please create channel using NetUtil.newChannel()");
                 channel.asyncOpen(listener, null);
