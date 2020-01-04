@@ -271,6 +271,14 @@ nsNullPrincipalURI::CloneIgnoringRef(nsIURI **_newURI)
 }
 
 NS_IMETHODIMP
+nsNullPrincipalURI::CloneWithNewRef(const nsACString& newRef, nsIURI **_newURI)
+{
+  
+  
+  return Clone(_newURI);
+}
+
+NS_IMETHODIMP
 nsNullPrincipalURI::Equals(nsIURI *aOther, bool *_equals)
 {
   *_equals = false;

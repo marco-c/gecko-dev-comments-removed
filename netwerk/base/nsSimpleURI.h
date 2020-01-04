@@ -62,7 +62,8 @@ protected:
     
     enum RefHandlingEnum {
         eIgnoreRef,
-        eHonorRef
+        eHonorRef,
+        eReplaceRef
     };
 
     
@@ -77,11 +78,18 @@ protected:
 
     
     
+    void SetRefOnClone(nsSimpleURI* url, RefHandlingEnum refHandlingMode,
+                       const nsACString& newRef);
+
     
-    virtual nsSimpleURI* StartClone(RefHandlingEnum refHandlingMode);
+    
+    
+    virtual nsSimpleURI* StartClone(RefHandlingEnum refHandlingMode,
+                                    const nsACString& newRef);
 
     
     virtual nsresult CloneInternal(RefHandlingEnum refHandlingMode,
+                                   const nsACString &newRef,
                                    nsIURI** clone);
     
     nsCString mScheme;
