@@ -37,8 +37,9 @@ nsQuoteNode::Text()
   NS_ASSERTION(mType == eStyleContentType_OpenQuote ||
                mType == eStyleContentType_CloseQuote,
                "should only be called when mText should be non-null");
-  const nsStyleQuotes* styleQuotes = mPseudoFrame->StyleQuotes();
-  int32_t quotesCount = styleQuotes->QuotesCount(); 
+  const nsStyleQuoteValues::QuotePairArray& quotePairs =
+    mPseudoFrame->StyleQuotes()->GetQuotePairs();
+  int32_t quotesCount = quotePairs.Length(); 
   int32_t quoteDepth = Depth();
 
   
@@ -47,15 +48,15 @@ nsQuoteNode::Text()
   if (quoteDepth >= quotesCount)
     quoteDepth = quotesCount - 1;
 
-  const nsString *result;
+  const nsString* result;
   if (quoteDepth == -1) {
     
     
-    result = & EmptyString();
+    result = &EmptyString();
   } else {
     result = eStyleContentType_OpenQuote == mType
-               ? styleQuotes->OpenQuoteAt(quoteDepth)
-               : styleQuotes->CloseQuoteAt(quoteDepth);
+               ? &quotePairs[quoteDepth].first
+               : &quotePairs[quoteDepth].second;
   }
   return result;
 }

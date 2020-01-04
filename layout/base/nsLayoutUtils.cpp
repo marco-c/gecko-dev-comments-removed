@@ -7661,6 +7661,9 @@ nsLayoutUtils::Shutdown()
   Preferences::UnregisterCallback(WebkitPrefixEnabledPrefChangeCallback,
                                   WEBKIT_PREFIXES_ENABLED_PREF_NAME);
   nsComputedDOMStyle::UnregisterPrefChangeCallbacks();
+
+  
+  nsStyleQuotes::Shutdown();
 }
 
 

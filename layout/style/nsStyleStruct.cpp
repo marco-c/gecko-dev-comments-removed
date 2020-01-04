@@ -3497,74 +3497,92 @@ nsresult nsStyleContent::AllocateContents(uint32_t aCount)
 
 
 nsStyleQuotes::nsStyleQuotes(StyleStructContext aContext)
-  : mQuotesCount(0),
-    mQuotes(nullptr)
 {
   MOZ_COUNT_CTOR(nsStyleQuotes);
-  SetInitial();
+  SetQuotesInitial();
 }
 
-nsStyleQuotes::~nsStyleQuotes(void)
+nsStyleQuotes::~nsStyleQuotes()
 {
   MOZ_COUNT_DTOR(nsStyleQuotes);
-  DELETE_ARRAY_IF(mQuotes);
 }
 
 nsStyleQuotes::nsStyleQuotes(const nsStyleQuotes& aSource)
-  : mQuotesCount(0),
-    mQuotes(nullptr)
+  : mQuotes(aSource.mQuotes)
 {
   MOZ_COUNT_CTOR(nsStyleQuotes);
-  CopyFrom(aSource);
 }
 
 void
-nsStyleQuotes::SetInitial()
+nsStyleQuotes::SetQuotesInherit(const nsStyleQuotes* aOther)
 {
-  
-  
-  
-  static const char16_t initialQuotes[8] = {
-    0x201C, 0, 0x201D, 0, 0x2018, 0, 0x2019, 0
-  };
-  
-  if (NS_SUCCEEDED(AllocateQuotes(2))) {
-    SetQuotesAt(0,
-                nsDependentString(&initialQuotes[0], 1),
-                nsDependentString(&initialQuotes[2], 1));
-    SetQuotesAt(1,
-                nsDependentString(&initialQuotes[4], 1),
-                nsDependentString(&initialQuotes[6], 1));
-  }
+  mQuotes = aOther->mQuotes;
 }
 
 void
-nsStyleQuotes::CopyFrom(const nsStyleQuotes& aSource)
+nsStyleQuotes::SetQuotesInitial()
 {
-  if (NS_SUCCEEDED(AllocateQuotes(aSource.QuotesCount()))) {
-    uint32_t count = (mQuotesCount * 2);
-    for (uint32_t index = 0; index < count; index += 2) {
-      aSource.GetQuotesAt(index, mQuotes[index], mQuotes[index + 1]);
-    }
+  if (!sInitialQuotes) {
+    
+    
+    
+    static const char16_t initialQuotes[8] = {
+      0x201C, 0, 0x201D, 0, 0x2018, 0, 0x2019, 0
+    };
+
+    sInitialQuotes = new nsStyleQuoteValues;
+    sInitialQuotes->mQuotePairs.AppendElement(
+        std::make_pair(nsDependentString(&initialQuotes[0], 1),
+                       nsDependentString(&initialQuotes[2], 1)));
+    sInitialQuotes->mQuotePairs.AppendElement(
+        std::make_pair(nsDependentString(&initialQuotes[4], 1),
+                       nsDependentString(&initialQuotes[6], 1)));
   }
+
+  mQuotes = sInitialQuotes;
 }
 
-nsChangeHint nsStyleQuotes::CalcDifference(const nsStyleQuotes& aOther) const
+void
+nsStyleQuotes::SetQuotesNone()
+{
+  if (!sNoneQuotes) {
+    sNoneQuotes = new nsStyleQuoteValues;
+  }
+  mQuotes = sNoneQuotes;
+}
+
+void
+nsStyleQuotes::SetQuotes(nsStyleQuoteValues::QuotePairArray&& aValues)
+{
+  mQuotes = new nsStyleQuoteValues;
+  mQuotes->mQuotePairs = Move(aValues);
+}
+
+const nsStyleQuoteValues::QuotePairArray&
+nsStyleQuotes::GetQuotePairs() const
+{
+  return mQuotes->mQuotePairs;
+}
+
+nsChangeHint
+nsStyleQuotes::CalcDifference(const nsStyleQuotes& aOther) const
 {
   
   
-  if (mQuotesCount == aOther.mQuotesCount) {
-    uint32_t ix = (mQuotesCount * 2);
-    while (0 < ix--) {
-      if (mQuotes[ix] != aOther.mQuotes[ix]) {
-        return NS_STYLE_HINT_FRAMECHANGE;
-      }
-    }
-
-    return NS_STYLE_HINT_NONE;
+  if (mQuotes != aOther.mQuotes &&
+      mQuotes->mQuotePairs != aOther.mQuotes->mQuotePairs) {
+    return NS_STYLE_HINT_FRAMECHANGE;
   }
-  return NS_STYLE_HINT_FRAMECHANGE;
+
+  return NS_STYLE_HINT_NONE;
 }
+
+StaticRefPtr<nsStyleQuoteValues>
+nsStyleQuotes::sInitialQuotes;
+
+StaticRefPtr<nsStyleQuoteValues>
+nsStyleQuotes::sNoneQuotes;
+
 
 
 
