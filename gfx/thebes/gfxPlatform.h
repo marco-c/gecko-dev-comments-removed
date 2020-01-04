@@ -173,7 +173,6 @@ public:
 
     static void InitLayersIPC();
     static void ShutdownLayersIPC();
-    static bool IPCAlreadyShutDown();
 
     
 
