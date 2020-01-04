@@ -523,11 +523,6 @@ public:
   }
 
   
-
-
-  static bool GetContentSecurityPolicy(nsIContentSecurityPolicy** aCSP);
-
-  
   
   static nsIPrincipal* SubjectPrincipal();
 
