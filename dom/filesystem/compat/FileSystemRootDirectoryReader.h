@@ -1,0 +1,41 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_FileSystemRootDirectoryReader_h
+#define mozilla_dom_FileSystemRootDirectoryReader_h
+
+#include "FileSystemDirectoryReader.h"
+
+namespace mozilla {
+namespace dom {
+
+class FileSystemRootDirectoryReader final : public FileSystemDirectoryReader
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(FileSystemRootDirectoryReader,
+                                           FileSystemDirectoryReader)
+
+  explicit FileSystemRootDirectoryReader(nsIGlobalObject* aGlobalObject,
+                                                   FileSystem* aFileSystem,
+                                                   const Sequence<RefPtr<FileSystemEntry>>& aEntries);
+
+  virtual void
+  ReadEntries(EntriesCallback& aSuccessCallback,
+              const Optional<OwningNonNull<ErrorCallback>>& aErrorCallback,
+              ErrorResult& aRv) override;
+
+private:
+  ~FileSystemRootDirectoryReader();
+
+  Sequence<RefPtr<FileSystemEntry>> mEntries;
+  bool mAlreadyRead;
+};
+
+} 
+} 
+
+#endif 

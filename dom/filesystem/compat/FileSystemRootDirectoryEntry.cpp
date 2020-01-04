@@ -5,7 +5,7 @@
 
 
 #include "FileSystemRootDirectoryEntry.h"
-#include "RootDirectoryReader.h"
+#include "FileSystemRootDirectoryReader.h"
 #include "mozilla/dom/FileSystemUtils.h"
 
 namespace mozilla {
@@ -44,11 +44,12 @@ FileSystemRootDirectoryEntry::GetFullPath(nsAString& aPath, ErrorResult& aRv) co
   aPath.AssignLiteral(FILESYSTEM_DOM_PATH_SEPARATOR_LITERAL);
 }
 
-already_AddRefed<DirectoryReader>
+already_AddRefed<FileSystemDirectoryReader>
 FileSystemRootDirectoryEntry::CreateReader() const
 {
-  RefPtr<DirectoryReader> reader =
-    new RootDirectoryReader(GetParentObject(), Filesystem(), mEntries);
+  RefPtr<FileSystemDirectoryReader> reader =
+    new FileSystemRootDirectoryReader(GetParentObject(), Filesystem(),
+                                      mEntries);
   return reader.forget();
 }
 
