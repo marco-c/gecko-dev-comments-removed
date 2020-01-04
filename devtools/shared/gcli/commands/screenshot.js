@@ -270,8 +270,8 @@ function createScreenshotData(document, args) {
     
     
     window.scrollTo(0,0);
-    width = window.innerWidth + window.scrollMaxX;
-    height = window.innerHeight + window.scrollMaxY;
+    width = window.innerWidth + window.scrollMaxX - window.scrollMinX;
+    height = window.innerHeight + window.scrollMaxY - window.scrollMinY;
   }
   else if (args.selector) {
     ({ top, left, width, height } = getRect(window, args.selector, window));

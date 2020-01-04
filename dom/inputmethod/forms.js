@@ -261,7 +261,7 @@ var FormVisibility = {
     
     
     
-    if (win.scrollMaxX || win.scrollMaxY) {
+    if (win.scrollMaxX != win.scrollMinX || win.scrollMaxY != win.scrollMinY) {
       return win;
     }
 
