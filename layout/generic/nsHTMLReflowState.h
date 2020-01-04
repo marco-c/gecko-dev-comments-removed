@@ -839,12 +839,12 @@ public:
     }
   }
 
-  void SetComputedHeightWithoutResettingResizeFlags(nscoord aComputedHeight) {
+  void SetComputedBSizeWithoutResettingResizeFlags(nscoord aComputedBSize) {
     
     
     
     
-    ComputedHeight() = aComputedHeight;
+    ComputedBSize() = aComputedBSize;
   }
 
   void SetTruncated(const nsHTMLReflowMetrics& aMetrics, nsReflowStatus* aStatus) const;
