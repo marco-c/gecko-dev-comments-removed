@@ -157,7 +157,7 @@ void
 TrackBuffersManager::ResetParserState()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(!mAppendRunning, "Append is running, abort must have been called");
+  MOZ_ASSERT(!mAppendRunning, "AbortAppendData must have been called");
   MSE_DEBUG("");
 
   
@@ -334,7 +334,7 @@ void
 TrackBuffersManager::CompleteResetParserState()
 {
   MOZ_ASSERT(OnTaskQueue());
-  MOZ_RELEASE_ASSERT(!mAppendRunning);
+  MOZ_ASSERT(!mAppendRunning);
   MSE_DEBUG("");
 
   for (auto& track : GetTracksList()) {
@@ -574,7 +574,7 @@ TrackBuffersManager::InitSegmentParserLoop()
 {
   MOZ_ASSERT(OnTaskQueue());
 
-  MOZ_RELEASE_ASSERT(mAppendPromise.IsEmpty() && !mAppendRunning);
+  MOZ_ASSERT(mAppendPromise.IsEmpty() && !mAppendRunning);
   RefPtr<AppendPromise> p = mAppendPromise.Ensure(__func__);
 
   AppendIncomingBuffers();
@@ -608,9 +608,6 @@ void
 TrackBuffersManager::SegmentParserLoop()
 {
   MOZ_ASSERT(OnTaskQueue());
-
-  mAppendRunning = true;
-
   while (true) {
     
     if (!mInputBuffer || mInputBuffer->IsEmpty()) {
