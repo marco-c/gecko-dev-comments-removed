@@ -177,6 +177,26 @@ function addBreakpoint(ctx, line, cond) {
 
 
 
+
+
+
+
+
+function removeBreakpoints(ctx) {
+  let { ed, cm } = ctx;
+
+  let meta = dbginfo.get(ed);
+  if (meta.breakpoints != null) {
+    meta.breakpoints = {};
+  }
+
+  cm.doc.iter((line) => { removeBreakpoint(ctx, line) });
+}
+
+
+
+
+
 function removeBreakpoint(ctx, line) {
   if (!hasBreakpoint(ctx, line)) {
     return;
@@ -303,7 +323,7 @@ function findPrev(ctx, query) {
 
 [
   initialize, hasBreakpoint, addBreakpoint, removeBreakpoint, moveBreakpoint,
-  setBreakpointCondition, removeBreakpointCondition, getBreakpoints,
+  setBreakpointCondition, removeBreakpointCondition, getBreakpoints, removeBreakpoints,
   setDebugLocation, getDebugLocation, clearDebugLocation, find, findNext,
   findPrev
 ].forEach(func => module.exports[func.name] = func);

@@ -82,6 +82,7 @@ var DebuggerView = {
     this._initializeVariablesView();
 
     this._editorSource = {};
+    this._editorDocuments = {};
 
     document.title = L10N.getStr("DebuggerWindowTitle");
 
@@ -419,11 +420,25 @@ var DebuggerView = {
 
 
 
-  _setEditorText: function(aTextContent = "") {
-    this.editor.setMode(Editor.modes.text);
-    this.editor.setText(aTextContent);
+
+
+
+
+
+
+  _setEditorText: function(documentKey, aTextContent = "", shouldUpdateText = false) {
+    const isNew = this._setEditorDocument(documentKey);
+
     this.editor.clearDebugLocation();
     this.editor.clearHistory();
+    this.editor.setCursor({ line: 0, ch: 0});
+    this.editor.removeBreakpoints();
+
+    
+    if (isNew || shouldUpdateText) {
+      this.editor.setMode(Editor.modes.text);
+      this.editor.setText(aTextContent);
+    }
   },
 
   
@@ -453,6 +468,29 @@ var DebuggerView = {
     this.editor.setMode(Editor.modes.text);
   },
 
+  
+
+
+
+
+
+
+
+  _setEditorDocument: function(key) {
+    let isNew;
+
+    if (!this._editorDocuments[key]) {
+      isNew = true;
+      this._editorDocuments[key] = this.editor.createDocument();
+    } else {
+      isNew = false;
+    }
+
+    const doc = this._editorDocuments[key];
+    this.editor.replaceDocument(doc);
+    return isNew;
+  },
+
   renderBlackBoxed: function(source) {
     this._renderSourceText(
       source,
@@ -478,6 +516,7 @@ var DebuggerView = {
   _renderSourceText: function(source, textInfo, opts = {}) {
     const selectedSource = queries.getSelectedSource(this.controller.getState());
 
+    
     if (!selectedSource || selectedSource.actor !== source.actor) {
       return;
     }
@@ -497,12 +536,12 @@ var DebuggerView = {
       
       
       
-      this._setEditorText(L10N.getStr("loadingText"));
+      this._setEditorText('loading', L10N.getStr("loadingText"));
       return;
     }
     else if (textInfo.error) {
       let msg = L10N.getFormatStr("errorLoadingText2", textInfo.error);
-      this._setEditorText(msg);
+      this._setEditorText('error', msg);
       Cu.reportError(msg);
       dumpn(msg);
 
@@ -529,14 +568,18 @@ var DebuggerView = {
       return;
     }
 
+    let { text, contentType } = textInfo;
+    let shouldUpdateText = this._editorSource.prettyPrinted != source.isPrettyPrinted;
+    this._setEditorText(source.actor, text, shouldUpdateText);
+
     this._editorSource.actor = source.actor;
     this._editorSource.prettyPrinted = source.isPrettyPrinted;
     this._editorSource.blackboxed = source.isBlackBoxed;
+    this._editorSource.prettyPrinted = source.isPrettyPrinted;
 
-    let { text, contentType } = textInfo;
-    this._setEditorText(text);
     this._setEditorMode(source.url, contentType, text);
     this.updateEditorBreakpoints(source);
+
     setTimeout(() => {
       window.emit(EVENTS.SOURCE_SHOWN, source);
     }, 0);
@@ -788,7 +831,6 @@ var DebuggerView = {
 
   handleTabNavigation: function() {
     dumpn("Handling tab navigation in the DebuggerView");
-
     this.Filtering.clearSearch();
     this.GlobalSearch.clearView();
     this.StackFrames.empty();
@@ -801,6 +843,7 @@ var DebuggerView = {
       this.editor.setText("");
       this.editor.clearHistory();
       this._editorSource = {};
+      this._editorDocuments = {};
     }
   },
 

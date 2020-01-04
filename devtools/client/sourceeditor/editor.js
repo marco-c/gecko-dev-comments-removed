@@ -241,6 +241,7 @@ Editor.prototype = {
   container: null,
   version: null,
   config: null,
+  Doc: null,
 
   
 
@@ -302,6 +303,7 @@ Editor.prototype = {
       
 
       cm = win.CodeMirror(win.document.body, this.config);
+      this.Doc = win.CodeMirror.Doc;
 
       
       
@@ -486,6 +488,22 @@ Editor.prototype = {
     }
     let win = this.container.contentWindow.wrappedJSObject;
     Services.scriptloader.loadSubScript(url, win, "utf8");
+  },
+
+  
+
+
+
+  createDocument: function() {
+     return new this.Doc("");
+  },
+
+  
+
+
+  replaceDocument: function(doc) {
+    let cm = editors.get(this);
+    cm.swapDoc(doc);
   },
 
   
