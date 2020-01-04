@@ -279,6 +279,7 @@ APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
       
       
       
+      APZES_LOG("Got a synthetic touch-start!\n");
       break;
     }
     if (isTouchPrevented) {
