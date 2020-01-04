@@ -7,7 +7,7 @@
 const { getJSON } = require("devtools/client/shared/getjson");
 
 const DEVICES_URL = "devtools.devices.url";
-const {LocalizationHelper} = require("devtools/shared/l10n");
+const { LocalizationHelper } = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper("devtools/locale/device.properties");
 
 
@@ -33,20 +33,40 @@ const L10N = new LocalizationHelper("devtools/locale/device.properties");
 
 
 
-var localDevices = {};
+let localDevices = {};
 
 
-function AddDevice(device, type = "phones") {
+function addDevice(device, type = "phones") {
   let list = localDevices[type];
   if (!list) {
     list = localDevices[type] = [];
   }
   list.push(device);
 }
-exports.AddDevice = AddDevice;
+exports.addDevice = addDevice;
 
 
-function GetDevices() {
+
+function removeDevice(device, type = "phones") {
+  let list = localDevices[type];
+  if (!list) {
+    return false;
+  }
+
+  let index = list.findIndex(item => device);
+
+  if (index === -1) {
+    return false;
+  }
+
+  list.splice(index, 1);
+
+  return true;
+}
+exports.removeDevice = removeDevice;
+
+
+function getDevices() {
   
   return getJSON(DEVICES_URL).then(devices => {
     for (let type in localDevices) {
@@ -59,10 +79,10 @@ function GetDevices() {
     return devices;
   });
 }
-exports.GetDevices = GetDevices;
+exports.getDevices = getDevices;
 
 
-function GetDeviceString(deviceType) {
+function getDeviceString(deviceType) {
   return L10N.getStr("device." + deviceType);
 }
-exports.GetDeviceString = GetDeviceString;
+exports.getDeviceString = getDeviceString;

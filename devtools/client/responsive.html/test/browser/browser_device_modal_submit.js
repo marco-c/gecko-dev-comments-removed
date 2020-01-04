@@ -4,7 +4,7 @@
 "use strict";
 
 
-const { GetDevices, AddDevice } = require("devtools/client/shared/devices");
+const { getDevices, addDevice } = require("devtools/client/shared/devices");
 
 const addedDevice = {
   "name": "Fake Phone RDM Test",
@@ -37,7 +37,7 @@ addRDMTask(TEST_URL, function* ({ ui }) {
   let checkedCbs = [...document.querySelectorAll(".device-input-checkbox")]
     .filter(cb => cb.checked);
 
-  let remoteList = yield GetDevices();
+  let remoteList = yield getDevices();
 
   let featuredCount = remoteList.TYPES.reduce((total, type) => {
     return total + remoteList[type].reduce((subtotal, device) => {
@@ -107,7 +107,7 @@ addRDMTask(TEST_URL, function* ({ ui }) {
     checkedVal + " is unchecked in the device modal.");
 
   
-  AddDevice(addedDevice);
+  addDevice(addedDevice);
 });
 
 addRDMTask(TEST_URL, function* ({ ui }) {
@@ -119,7 +119,7 @@ addRDMTask(TEST_URL, function* ({ ui }) {
 
   openDeviceModal(ui);
 
-  let remoteList = yield GetDevices();
+  let remoteList = yield getDevices();
   let featuredCount = remoteList.TYPES.reduce((total, type) => {
     return total + remoteList[type].reduce((subtotal, device) => {
       return subtotal + ((device.os != "fxos" && device.featured) ? 1 : 0);
