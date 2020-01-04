@@ -18,6 +18,7 @@
 
 package org.mozilla.gecko.util;
 
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import java.io.IOException;
@@ -95,13 +96,19 @@ public class ProxySelector {
 
 
 
+    @Nullable
     private Proxy lookupProxy(String hostKey, String portKey, Proxy.Type type, int defaultPort) {
-        String host = System.getProperty(hostKey);
+        final String host = System.getProperty(hostKey);
         if (TextUtils.isEmpty(host)) {
             return null;
         }
 
-        int port = getSystemPropertyInt(portKey, defaultPort);
+        final int port = getSystemPropertyInt(portKey, defaultPort);
+        if (port == -1) {
+            
+            return null;
+        }
+
         return new Proxy(type, InetSocketAddress.createUnresolved(host, port));
     }
 
