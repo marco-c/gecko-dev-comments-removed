@@ -377,11 +377,6 @@ public:
   
   void UpdateOnlyAnimationStyles();
 
-  bool ThrottledAnimationStyleIsUpToDate() const {
-    return mLastUpdateForThrottledAnimations ==
-             mPresContext->RefreshDriver()->MostRecentRefresh();
-  }
-
   
   
   
@@ -552,8 +547,6 @@ private:
   uint32_t mHoverGeneration;
   nsChangeHint mRebuildAllExtraHint;
   nsRestyleHint mRebuildAllRestyleHint;
-
-  mozilla::TimeStamp mLastUpdateForThrottledAnimations;
 
   OverflowChangedTracker mOverflowChangedTracker;
 

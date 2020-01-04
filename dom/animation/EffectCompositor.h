@@ -115,6 +115,9 @@ public:
                                  nsCSSPseudoElements::Type aPseudoType,
                                  CascadeLevel aCascadeLevel);
 
+  bool HasPendingStyleUpdates() const;
+  bool HasThrottledStyleUpdates() const;
+
   
   
   
