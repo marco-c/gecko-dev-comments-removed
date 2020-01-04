@@ -5599,6 +5599,8 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
     ::MergeSortedFrameLists(mFrames, items, GetContent());
   }
 
+  RenumberLists();
+
 #ifdef DEBUG
   mDidPushItemsBitMayLie = false;
   SanityCheckGridItemsBeforeReflow();
@@ -5902,6 +5904,8 @@ nscoord
 nsGridContainerFrame::IntrinsicISize(nsRenderingContext* aRenderingContext,
                                      IntrinsicISizeType  aConstraint)
 {
+  RenumberLists();
+
   
   
   GridReflowInput state(this, *aRenderingContext);
