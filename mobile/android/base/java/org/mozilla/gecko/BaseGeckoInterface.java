@@ -179,4 +179,10 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
         
         return new String[] {};
     }
+
+    @Override
+    public String getDefaultChromeURI() {
+        
+        return "chrome://browser/content/geckoview.xul";
+    }
 }
