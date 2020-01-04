@@ -191,21 +191,10 @@ const Tab = Class({
     if (isDestroyed(this))
       return;
 
-    let { Worker } = require('../content/worker');
-    let { connect, makeChildOptions } = require('../content/utils');
-
-    let frame = frames.getFrameForBrowser(browser(this));
-    let childOptions = makeChildOptions(options);
-
-    frame.port.emit('sdk/tab/attach', childOptions);
-
-    let worker = Worker(options);
-    worker.once("detach", () => {
-      worker.destroy();
-    });
-    connect(worker, frame, { id: childOptions.id, url: this.url });
-
-    return worker;
+    
+    
+    let { Worker } = require('./worker');
+    return Worker(options, browser(this).contentWindow);
   },
 
   destroy: function() {
