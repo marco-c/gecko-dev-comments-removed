@@ -3,6 +3,8 @@
 
 if (SpecialPowers.isMainProcess()) {
   SpecialPowers.Cu.import("resource://gre/modules/ContactService.jsm");
+} else {
+  SpecialPowers.loadChromeScript(SimpleTest.getTestFileURL('contacts_chromescript.js'));
 }
 
 
