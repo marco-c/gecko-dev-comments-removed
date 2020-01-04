@@ -208,11 +208,8 @@ void ReverbConvolver::backgroundThreadEntry()
 
         while ((readIndex = m_backgroundStages[0]->inputReadIndex()) != writeIndex) { 
             
-            const int SliceSize = MinFFTSize / 2;
-
-            
             for (size_t i = 0; i < m_backgroundStages.Length(); ++i)
-                m_backgroundStages[i]->processInBackground(this, SliceSize);
+                m_backgroundStages[i]->processInBackground(this);
         }
     }
 }
@@ -232,7 +229,7 @@ void ReverbConvolver::process(const float* sourceChannelData,
 
     
     for (size_t i = 0; i < m_stages.Length(); ++i)
-        m_stages[i]->process(source, WEBAUDIO_BLOCK_SIZE);
+        m_stages[i]->process(source);
 
     
     m_accumulationBuffer.readAndClear(destination, WEBAUDIO_BLOCK_SIZE);

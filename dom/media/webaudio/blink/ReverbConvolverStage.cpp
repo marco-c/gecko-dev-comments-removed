@@ -100,40 +100,34 @@ size_t ReverbConvolverStage::sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSi
     return amount;
 }
 
-void ReverbConvolverStage::processInBackground(ReverbConvolver* convolver, size_t framesToProcess)
+void ReverbConvolverStage::processInBackground(ReverbConvolver* convolver)
 {
     ReverbInputBuffer* inputBuffer = convolver->inputBuffer();
-    float* source = inputBuffer->directReadFrom(&m_inputReadIndex, framesToProcess);
-    process(source, framesToProcess);
+    float* source = inputBuffer->directReadFrom(&m_inputReadIndex,
+                                                WEBAUDIO_BLOCK_SIZE);
+    process(source);
 }
 
-void ReverbConvolverStage::process(const float* source, size_t framesToProcess)
+void ReverbConvolverStage::process(const float* source)
 {
     MOZ_ASSERT(source);
     if (!source)
         return;
     
-    float* temporaryBuffer;
-    bool isTemporaryBufferSafe = false;
-    isTemporaryBufferSafe = framesToProcess <= m_temporaryBuffer.Length();
-    temporaryBuffer = m_temporaryBuffer.Elements();
+    float* temporaryBuffer = m_temporaryBuffer.Elements();
     
-    MOZ_ASSERT(isTemporaryBufferSafe);
-    if (!isTemporaryBufferSafe)
-        return;
-
     
     
     
     if (!m_directMode)
         m_fftConvolver->process(m_fftKernel, source,
-                                temporaryBuffer, framesToProcess);
+                                temporaryBuffer, WEBAUDIO_BLOCK_SIZE);
     else
         m_directConvolver->process(&m_directKernel, source,
-                                   temporaryBuffer, framesToProcess);
+                                   temporaryBuffer, WEBAUDIO_BLOCK_SIZE);
 
     
-    m_accumulationBuffer->accumulate(temporaryBuffer, framesToProcess,
+    m_accumulationBuffer->accumulate(temporaryBuffer, WEBAUDIO_BLOCK_SIZE,
                                      &m_accumulationReadIndex,
                                      m_postDelayLength);
 }
