@@ -619,6 +619,8 @@ private:
       const bool& aIsForBrowser) override;
   using PContentParent::SendPTestShellConstructor;
 
+  FORWARD_SHMEM_ALLOCATOR_TO(PContentParent)
+
   
   
   ContentParent(mozIApplication* aApp,
