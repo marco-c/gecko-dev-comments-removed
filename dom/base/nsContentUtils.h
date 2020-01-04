@@ -2666,6 +2666,14 @@ public:
 
   static nsIDocShell* GetDocShellForEventTarget(mozilla::dom::EventTarget* aTarget);
 
+  
+
+
+
+
+
+  static bool HttpsStateIsModern(nsIDocument* aDocument);
+
 private:
   static bool InitializeEventTable();
 

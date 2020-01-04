@@ -79,6 +79,7 @@
 #include "nsContentDLF.h"
 #include "nsContentList.h"
 #include "nsContentPolicyUtils.h"
+#include "nsContentSecurityManager.h"
 #include "nsCPrefetchService.h"
 #include "nsCRT.h"
 #include "nsCycleCollectionParticipant.h"
@@ -98,7 +99,6 @@
 #include "nsHostObjectProtocolHandler.h"
 #include "nsHtml5Module.h"
 #include "nsHtml5StringParser.h"
-#include "nsIAddonPolicyService.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsICategoryManager.h"
 #include "nsIChannelEventSink.h"
@@ -6760,12 +6760,9 @@ nsContentUtils::IsRequestFullScreenAllowed()
 bool
 nsContentUtils::IsCutCopyAllowed()
 {
-  if ((!IsCutCopyRestricted() && EventStateManager::IsHandlingUserInput()) ||
-      IsCallerChrome()) {
-    return true;
-  }
-
-  return BasePrincipal::Cast(SubjectPrincipal())->AddonHasPermission(NS_LITERAL_STRING("clipboardWrite"));
+  return (!IsCutCopyRestricted() &&
+          EventStateManager::IsHandlingUserInput()) ||
+         IsCallerChrome();
 }
 
 
@@ -9274,4 +9271,101 @@ nsContentUtils::GetDocShellForEventTarget(EventTarget* aTarget)
   }
 
   return nullptr;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ bool
+nsContentUtils::HttpsStateIsModern(nsIDocument* aDocument)
+{
+  if (!aDocument) {
+    return false;
+  }
+
+  nsCOMPtr<nsIPrincipal> principal = aDocument->NodePrincipal();
+
+  if (principal->GetIsSystemPrincipal()) {
+    return true;
+  }
+
+  
+  
+  if (principal->GetIsNullPrincipal() &&
+      (aDocument->GetSandboxFlags() & SANDBOXED_ORIGIN)) {
+    nsIChannel* channel = aDocument->GetChannel();
+    if (channel) {
+      nsCOMPtr<nsIScriptSecurityManager> ssm =
+        nsContentUtils::GetSecurityManager();
+      nsresult rv =
+        ssm->GetChannelResultPrincipalIfNotSandboxed(channel,
+                                                     getter_AddRefs(principal));
+      if (NS_FAILED(rv)) {
+        return false;
+      }
+      if (principal->GetIsSystemPrincipal()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        return false;
+      }
+    }
+  }
+
+  if (principal->GetIsNullPrincipal()) {
+    return false;
+  }
+
+  MOZ_ASSERT(principal->GetIsCodebasePrincipal());
+
+  nsCOMPtr<nsIContentSecurityManager> csm =
+    do_GetService(NS_CONTENTSECURITYMANAGER_CONTRACTID);
+  NS_WARN_IF(!csm);
+  if (csm) {
+    bool isTrustworthyOrigin = false;
+    csm->IsOriginPotentiallyTrustworthy(principal, &isTrustworthyOrigin);
+    if (isTrustworthyOrigin) {
+      return true;
+    }
+  }
+
+  return false;
 }

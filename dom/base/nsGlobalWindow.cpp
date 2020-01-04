@@ -2340,103 +2340,6 @@ InitializeLegacyNetscapeObject(JSContext* aCx, JS::Handle<JSObject*> aGlobal)
   return JS_DefineFunctions(aCx, obj, EnablePrivilegeSpec);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool HttpsStateIsModern(nsIDocument* aDocument)
-{
-  nsCOMPtr<nsIPrincipal> principal = aDocument->NodePrincipal();
-
-  if (principal->GetIsSystemPrincipal()) {
-    return true;
-  }
-
-  
-  
-  if (principal->GetIsNullPrincipal() &&
-      (aDocument->GetSandboxFlags() & SANDBOXED_ORIGIN)) {
-    nsIChannel* channel = aDocument->GetChannel();
-    if (channel) {
-      nsCOMPtr<nsIScriptSecurityManager> ssm =
-        nsContentUtils::GetSecurityManager();
-      nsresult rv =
-        ssm->GetChannelResultPrincipalIfNotSandboxed(channel,
-                                                     getter_AddRefs(principal));
-      if (NS_FAILED(rv)) {
-        return false;
-      }
-      if (principal->GetIsSystemPrincipal()) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return false;
-      }
-    }
-  }
-
-  if (principal->GetIsNullPrincipal()) {
-    return false;
-  }
-
-  MOZ_ASSERT(principal->GetIsCodebasePrincipal());
-
-  nsCOMPtr<nsIContentSecurityManager> csm =
-    do_GetService(NS_CONTENTSECURITYMANAGER_CONTRACTID);
-  NS_WARN_IF(!csm);
-  if (csm) {
-    bool isTrustworthyOrigin = false;
-    csm->IsOriginPotentiallyTrustworthy(principal, &isTrustworthyOrigin);
-    if (isTrustworthyOrigin) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 bool
 nsGlobalWindow::ComputeIsSecureContext(nsIDocument* aDocument)
 {
@@ -2482,7 +2385,7 @@ nsGlobalWindow::ComputeIsSecureContext(nsIDocument* aDocument)
     return false;
   }
 
-  if (HttpsStateIsModern(aDocument)) {
+  if (nsContentUtils::HttpsStateIsModern(aDocument)) {
     return true;
   }
 
