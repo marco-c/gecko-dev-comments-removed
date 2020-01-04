@@ -327,6 +327,10 @@ void
 LCovCompartment::collectSourceFile(JSCompartment* comp, ScriptSourceObject* sso)
 {
     
+    if (!sso->source()->filename())
+        return;
+
+    
     if (outTN_.hadOutOfMemory())
         return;
 
