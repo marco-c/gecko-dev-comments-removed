@@ -12,10 +12,9 @@
 
 
 
-if (!this.SharedArrayBuffer) {
+if (!this.SharedArrayBuffer)
     reportCompare(true,true);
     quit(0);
-}
 
 var b;
 
