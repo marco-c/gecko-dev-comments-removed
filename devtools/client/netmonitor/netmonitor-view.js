@@ -30,7 +30,9 @@ const {ViewHelpers, Heritage, WidgetMethods, setNamedTimeout} =
 
 
 const NET_STRINGS_URI = "chrome://devtools/locale/netmonitor.properties";
+const WEBCONSOLE_STRINGS_URI = "chrome://devtools/locale/webconsole.properties";
 var L10N = new LocalizationHelper(NET_STRINGS_URI);
+const WEBCONSOLE_L10N = new LocalizationHelper(WEBCONSOLE_STRINGS_URI);
 
 
 const WDA_DEFAULT_VERIFY_INTERVAL = 50;
@@ -61,6 +63,8 @@ const RESIZE_REFRESH_RATE = 50;
 
 const REQUESTS_REFRESH_RATE = 50;
 const REQUESTS_TOOLTIP_POSITION = "topcenter bottomleft";
+
+const REQUESTS_TOOLTIP_TOGGLE_DELAY = 500;
 
 const REQUESTS_TOOLTIP_IMAGE_MAX_DIM = 400;
 
@@ -101,6 +105,31 @@ const CONTENT_MIME_TYPE_MAPPINGS = {
   "/rdf": Editor.modes.css,
   "/rss": Editor.modes.css,
   "/css": Editor.modes.css
+};
+const LOAD_CAUSE_STRINGS = {
+  [Ci.nsIContentPolicy.TYPE_INVALID]: "invalid",
+  [Ci.nsIContentPolicy.TYPE_OTHER]: "other",
+  [Ci.nsIContentPolicy.TYPE_SCRIPT]: "script",
+  [Ci.nsIContentPolicy.TYPE_IMAGE]: "img",
+  [Ci.nsIContentPolicy.TYPE_STYLESHEET]: "stylesheet",
+  [Ci.nsIContentPolicy.TYPE_OBJECT]: "object",
+  [Ci.nsIContentPolicy.TYPE_DOCUMENT]: "document",
+  [Ci.nsIContentPolicy.TYPE_SUBDOCUMENT]: "subdocument",
+  [Ci.nsIContentPolicy.TYPE_REFRESH]: "refresh",
+  [Ci.nsIContentPolicy.TYPE_XBL]: "xbl",
+  [Ci.nsIContentPolicy.TYPE_PING]: "ping",
+  [Ci.nsIContentPolicy.TYPE_XMLHTTPREQUEST]: "xhr",
+  [Ci.nsIContentPolicy.TYPE_OBJECT_SUBREQUEST]: "objectSubdoc",
+  [Ci.nsIContentPolicy.TYPE_DTD]: "dtd",
+  [Ci.nsIContentPolicy.TYPE_FONT]: "font",
+  [Ci.nsIContentPolicy.TYPE_MEDIA]: "media",
+  [Ci.nsIContentPolicy.TYPE_WEBSOCKET]: "websocket",
+  [Ci.nsIContentPolicy.TYPE_CSP_REPORT]: "csp",
+  [Ci.nsIContentPolicy.TYPE_XSLT]: "xslt",
+  [Ci.nsIContentPolicy.TYPE_BEACON]: "beacon",
+  [Ci.nsIContentPolicy.TYPE_FETCH]: "fetch",
+  [Ci.nsIContentPolicy.TYPE_IMAGESET]: "imageset",
+  [Ci.nsIContentPolicy.TYPE_WEB_MANIFEST]: "webManifest"
 };
 const DEFAULT_EDITOR_CONFIG = {
   mode: Editor.modes.text,
@@ -431,6 +460,20 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     this.userInputTimer = Cc["@mozilla.org/timer;1"]
       .createInstance(Ci.nsITimer);
 
+    
+    this.tooltip = new Tooltip(document, {
+      closeOnEvents: [{
+        emitter: $("#requests-menu-contents"),
+        event: "scroll",
+        useCapture: true
+      }]
+    });
+    this.tooltip.startTogglingOnHover(this.widget, this._onHover, {
+      toggleDelay: REQUESTS_TOOLTIP_TOGGLE_DELAY,
+      interactive: true
+    });
+    this.tooltip.defaultPosition = REQUESTS_TOOLTIP_POSITION;
+
     Prefs.filters.forEach(type => this.filterOn(type));
     this.sortContents(this._byTiming);
 
@@ -642,10 +685,15 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  addRequest: function (id, startedDateTime, method, url, isXHR, fromCache,
-    fromServiceWorker) {
-    this._addQueue.push([id, startedDateTime, method, url, isXHR, fromCache,
-      fromServiceWorker]);
+
+
+
+
+
+  addRequest: function (id, startedDateTime, method, url, isXHR, cause,
+    fromCache, fromServiceWorker) {
+    this._addQueue.push([id, startedDateTime, method, url, isXHR, cause,
+      fromCache, fromServiceWorker]);
 
     
     if (!this.lazyUpdate) {
@@ -885,7 +933,8 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     let selected = this.selectedItem.attachment;
 
     
-    let menuView = this._createMenuView(selected.method, selected.url);
+    let menuView = this._createMenuView(selected.method, selected.url,
+      selected.cause);
 
     
     let newItem = this.push([menuView], {
@@ -1457,19 +1506,6 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  refreshTooltip: function (item) {
-    let tooltip = item.attachment.tooltip;
-    tooltip.hide();
-    tooltip.startTogglingOnHover(item.target, this._onHover);
-    tooltip.defaultPosition = REQUESTS_TOOLTIP_POSITION;
-  },
-
-  
-
-
-
-
-
   attachSecurityIconClickListener: function ({ target }) {
     let icon = $(".requests-security-state-icon", target);
     icon.addEventListener("click", this._onSecurityIconClick);
@@ -1510,13 +1546,13 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     let widget = NetMonitorView.RequestsMenu.widget;
     let isScrolledToBottom = widget.isScrolledToBottom();
 
-    for (let [id, startedDateTime, method, url, isXHR, fromCache,
+    for (let [id, startedDateTime, method, url, isXHR, cause, fromCache,
       fromServiceWorker] of this._addQueue) {
       
       let unixTime = Date.parse(startedDateTime);
 
       
-      let menuView = this._createMenuView(method, url);
+      let menuView = this._createMenuView(method, url, cause);
 
       
       this._registerFirstRequestStart(unixTime);
@@ -1530,21 +1566,11 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
           method: method,
           url: url,
           isXHR: isXHR,
+          cause: cause,
           fromCache: fromCache,
           fromServiceWorker: fromServiceWorker
         }
       });
-
-      
-      requestItem.attachment.tooltip = new Tooltip(document, {
-        closeOnEvents: [{
-          emitter: $("#requests-menu-contents"),
-          event: "scroll",
-          useCapture: true
-        }]
-      });
-
-      this.refreshTooltip(requestItem);
 
       if (id == this._preferredItemId) {
         this.selectedItem = requestItem;
@@ -1757,17 +1783,22 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _createMenuView: function (method, url) {
+
+
+
+
+  _createMenuView: function (method, url, cause) {
     let template = $("#requests-menu-item-template");
     let fragment = document.createDocumentFragment();
-
-    this.updateMenuView(template, "method", method);
-    this.updateMenuView(template, "url", url);
 
     
     for (let node of template.childNodes) {
       fragment.appendChild(node.cloneNode(true));
     }
+
+    this.updateMenuView(fragment, "method", method);
+    this.updateMenuView(fragment, "url", url);
+    this.updateMenuView(fragment, "cause", cause);
 
     return fragment;
   },
@@ -1898,6 +1929,20 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
       case "statusText": {
         let node = $(".requests-menu-status", target);
         node.setAttribute("tooltiptext", value);
+        break;
+      }
+      case "cause": {
+        let labelNode = $(".requests-menu-cause-label", target);
+        let text = LOAD_CAUSE_STRINGS[value.type] || "unknown";
+        labelNode.setAttribute("value", text);
+        if (value.loadingDocumentUri) {
+          labelNode.setAttribute("tooltiptext", value.loadingDocumentUri);
+        }
+
+        let stackNode = $(".requests-menu-cause-stack", target);
+        if (value.stacktrace && value.stacktrace.length > 0) {
+          stackNode.removeAttribute("hidden");
+        }
         break;
       }
       case "contentSize": {
@@ -2231,11 +2276,6 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
   _onSwap: function ({ detail: [firstItem, secondItem] }) {
     
-    
-    this.refreshTooltip(firstItem);
-    this.refreshTooltip(secondItem);
-
-    
     this.attachSecurityIconClickListener(firstItem);
     this.attachSecurityIconClickListener(secondItem);
   },
@@ -2252,26 +2292,90 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
   _onHover: Task.async(function* (target, tooltip) {
     let requestItem = this.getItemForElement(target);
-    if (!requestItem || !requestItem.attachment.responseContent) {
+    if (!requestItem) {
       return false;
     }
 
     let hovered = requestItem.attachment;
-    let { mimeType, text, encoding } = hovered.responseContent.content;
-
-    if (mimeType && mimeType.includes("image/") && (
-      target.classList.contains("requests-menu-icon") ||
-      target.classList.contains("requests-menu-file"))) {
-      let string = yield gNetwork.getString(text);
-      let anchor = $(".requests-menu-icon", requestItem.target);
-      let src = formDataURI(mimeType, encoding, string);
-
-      tooltip.setImageContent(src, {
-        maxDim: REQUESTS_TOOLTIP_IMAGE_MAX_DIM
-      });
-      return anchor;
+    if (hovered.responseContent && target.closest(".requests-menu-icon-and-file")) {
+      return this._setTooltipImageContent(tooltip, requestItem);
+    } else if (hovered.cause && target.closest(".requests-menu-cause-stack")) {
+      return this._setTooltipStackTraceContent(tooltip, requestItem);
     }
+
     return false;
+  }),
+
+  _setTooltipImageContent: Task.async(function* (tooltip, requestItem) {
+    let { mimeType, text, encoding } = requestItem.attachment.responseContent.content;
+
+    if (!mimeType || !mimeType.includes("image/")) {
+      return false;
+    }
+
+    let string = yield gNetwork.getString(text);
+    let anchor = $(".requests-menu-icon", requestItem.target);
+    let src = formDataURI(mimeType, encoding, string);
+
+    tooltip.setImageContent(src, {
+      maxDim: REQUESTS_TOOLTIP_IMAGE_MAX_DIM
+    });
+
+    return anchor;
+  }),
+
+  _setTooltipStackTraceContent: Task.async(function* (tooltip, requestItem) {
+    let {stacktrace} = requestItem.attachment.cause;
+
+    if (!stacktrace || stacktrace.length == 0) {
+      return false;
+    }
+
+    let doc = tooltip.doc;
+    let el = doc.createElement("vbox");
+    el.className = "requests-menu-stack-trace";
+
+    for (let f of stacktrace) {
+      let { functionName, filename, lineNumber, columnNumber } = f;
+
+      let frameEl = doc.createElement("hbox");
+      frameEl.className = "requests-menu-stack-frame devtools-monospace";
+
+      let funcEl = doc.createElement("label");
+      funcEl.className = "requests-menu-stack-frame-function-name";
+      funcEl.setAttribute("value",
+        functionName || WEBCONSOLE_L10N.getStr("stacktrace.anonymousFunction"));
+      frameEl.appendChild(funcEl);
+
+      let fileEl = doc.createElement("label");
+      fileEl.className = "requests-menu-stack-frame-file-name";
+      
+      let sourceUrl = filename.split(" -> ").pop();
+      fileEl.setAttribute("value", sourceUrl);
+      fileEl.setAttribute("tooltiptext", sourceUrl);
+      fileEl.setAttribute("crop", "start");
+      frameEl.appendChild(fileEl);
+
+      let lineEl = doc.createElement("label");
+      lineEl.className = "requests-menu-stack-frame-line";
+      lineEl.setAttribute("value", `:${lineNumber}:${columnNumber}`);
+      frameEl.appendChild(lineEl);
+
+      frameEl.addEventListener("click", () => {
+        
+        
+        
+        tooltip.hide();
+        NetMonitorController.viewSourceInDebugger(filename, lineNumber);
+      }, false);
+
+      el.appendChild(frameEl);
+    }
+
+    tooltip.content = el;
+    tooltip.panel.setAttribute("wide", "");
+
+    return true;
   }),
 
   
