@@ -99,7 +99,7 @@ private:
 
 class WindowsDllNopSpacePatcher
 {
-  typedef unsigned char* byteptr_t;
+  typedef uint8_t* byteptr_t;
   HMODULE mModule;
 
   
@@ -371,6 +371,66 @@ protected:
   int mMaxHooks;
   int mCurHooks;
 
+#if defined(_M_X64)
+  
+
+  enum JumpType {
+   Je,
+   Jmp
+  };
+
+  struct JumpPatch {
+    JumpPatch()
+      : mHookOffset(0), mJumpAddress(0), mType(JumpType::Jmp)
+    {
+    }
+
+    JumpPatch(size_t aOffset, intptr_t aAddress, JumpType aType = JumpType::Jmp)
+      : mHookOffset(aOffset), mJumpAddress(aAddress), mType(aType)
+    {
+    }
+
+    void AddJumpPatch(size_t aHookOffset, intptr_t aAbsJumpAddress,
+                     JumpType aType = JumpType::Jmp)
+    {
+      mHookOffset = aHookOffset;
+      mJumpAddress = aAbsJumpAddress;
+      mType = aType;
+    }
+
+    size_t GenerateJump(uint8_t* aCode)
+    {
+      size_t offset = mHookOffset;
+      if (mType == JumpType::Je) {
+        
+        aCode[offset]     = 0x75;
+        aCode[offset + 1] = 14;
+        offset += 2;
+      }
+
+      
+      aCode[offset] = 0xff;
+      aCode[offset + 1] = 0x25;
+      *reinterpret_cast<int32_t*>(aCode + offset + 2) = 0;
+
+      
+      *reinterpret_cast<int64_t*>(aCode + offset + 2 + 4) = mJumpAddress;
+
+      return offset + 2 + 4 + 8;
+    }
+
+    bool HasJumpPatch() const
+    {
+      return !!mJumpAddress;
+    }
+
+    size_t mHookOffset;
+    intptr_t mJumpAddress;
+    JumpType mType;
+  };
+
+#endif
+
   void CreateTrampoline(void* aOrigFunction, intptr_t aDest, void** aOutTramp)
   {
     *aOutTramp = nullptr;
@@ -383,9 +443,9 @@ protected:
     byteptr_t origBytes = (byteptr_t)aOrigFunction;
 
     int nBytes = 0;
-    int pJmp32 = -1;
 
 #if defined(_M_IX86)
+    int pJmp32 = -1;
     while (nBytes < 5) {
       
       
@@ -447,12 +507,12 @@ protected:
       }
     }
 #elif defined(_M_X64)
-    byteptr_t directJmpAddr;
+    JumpPatch jump;
 
     while (nBytes < 13) {
 
       
-      if (pJmp32 >= 0) {
+      if (jump.HasJumpPatch()) {
         if (origBytes[nBytes] == 0x90 || origBytes[nBytes] == 0xcc) {
           nBytes++;
           continue;
@@ -473,6 +533,15 @@ protected:
         } else if (origBytes[nBytes] == 0x05) {
           
           nBytes++;
+        } else if (origBytes[nBytes] == 0x84) {
+          
+          jump.AddJumpPatch(nBytes - 1,
+                            (intptr_t)
+                              origBytes + nBytes + 5 +
+                            *(reinterpret_cast<int32_t*>(origBytes +
+                                                         nBytes + 1)),
+                            JumpType::Je);
+          nBytes += 5;
         } else {
           return;
         }
@@ -516,6 +585,13 @@ protected:
                    (origBytes[nBytes + 1] & 0xf8) == 0x60) {
           
           nBytes += 5;
+        } else if (origBytes[nBytes] == 0x85) {
+          
+          if ((origBytes[nBytes + 1] & 0xc0) == 0xc0) {
+            nBytes += 2;
+          } else {
+            return;
+          }
         } else if ((origBytes[nBytes] & 0xfd) == 0x89) {
           
           if ((origBytes[nBytes + 1] & 0xc0) == 0x40) {
@@ -546,15 +622,16 @@ protected:
             return;
           }
         } else if (origBytes[nBytes] == 0xff) {
-          pJmp32 = nBytes - 1;
           
           if ((origBytes[nBytes + 1] & 0xc0) == 0x0 &&
               (origBytes[nBytes + 1] & 0x07) == 0x5) {
             
             
-            directJmpAddr =
-              (byteptr_t)*((uint64_t*)(origBytes + nBytes + 6 +
-                                       (*((int32_t*)(origBytes + nBytes + 2)))));
+            jump.AddJumpPatch(nBytes - 1,
+                              *reinterpret_cast<intptr_t*>(
+                                origBytes + nBytes + 6 +
+                              *reinterpret_cast<int32_t*>(origBytes + nBytes +
+                                                          2)));
             nBytes += 6;
           } else {
             
@@ -576,11 +653,16 @@ protected:
       } else if (origBytes[nBytes] == 0xc3) {
         
         nBytes++;
+      } else if (origBytes[nBytes] == 0xcc) {
+        
+        nBytes++;
       } else if (origBytes[nBytes] == 0xe9) {
-        pJmp32 = nBytes;
         
-        directJmpAddr = origBytes + pJmp32 + 5 + (*((int32_t*)(origBytes + pJmp32 + 1)));
-        
+        jump.AddJumpPatch(nBytes,
+                          
+                          (intptr_t)
+                            origBytes + nBytes + 5 +
+                          *(reinterpret_cast<int32_t*>(origBytes + nBytes + 1)));
         nBytes += 5;
       } else if (origBytes[nBytes] == 0xff) {
         nBytes++;
@@ -626,26 +708,15 @@ protected:
     }
 #elif defined(_M_X64)
     
-    if (pJmp32 >= 0) {
-      
-      tramp[pJmp32]   = 0x49;
-      tramp[pJmp32 + 1] = 0xbb;
-      *((intptr_t*)(tramp + pJmp32 + 2)) = (intptr_t)directJmpAddr;
-
-      
-      tramp[pJmp32 + 10] = 0x41;
-      tramp[pJmp32 + 11] = 0xff;
-      tramp[pJmp32 + 12] = 0xe3;
+    if (jump.HasJumpPatch()) {
+      size_t offset = jump.GenerateJump(tramp);
+      if (jump.mType != JumpType::Jmp) {
+        JumpPatch patch(offset, reinterpret_cast<intptr_t>(trampDest));
+        patch.GenerateJump(tramp);
+      }
     } else {
-      
-      tramp[nBytes] = 0x49;
-      tramp[nBytes + 1] = 0xbb;
-      *((intptr_t*)(tramp + nBytes + 2)) = (intptr_t)trampDest;
-
-      
-      tramp[nBytes + 10] = 0x41;
-      tramp[nBytes + 11] = 0xff;
-      tramp[nBytes + 12] = 0xe3;
+      JumpPatch patch(nBytes, reinterpret_cast<intptr_t>(trampDest));
+      patch.GenerateJump(tramp);
     }
 #endif
 
