@@ -2532,7 +2532,12 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
 
   if (httpChannel) {
     
-    SetAuthorRequestHeadersOnChannel(httpChannel);
+    if (!mAuthorRequestHeaders.Has("accept")) {
+      mAuthorRequestHeaders.Set("Accept", NS_LITERAL_CSTRING("*/*"));
+    }
+
+    
+    mAuthorRequestHeaders.ApplyToChannel(httpChannel);
 
     httpChannel->GetRequestMethod(method); 
 
@@ -2541,15 +2546,6 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
       nsCOMPtr<nsIDocument> doc = owner ? owner->GetExtantDoc() : nullptr;
       nsContentUtils::SetFetchReferrerURIWithPolicy(mPrincipal, doc,
                                                     httpChannel, mozilla::net::RP_Default);
-    }
-
-    
-    nsAutoCString acceptHeader;
-    GetAuthorRequestHeaderValue("accept", acceptHeader);
-    if (acceptHeader.IsVoid()) {
-      httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Accept"),
-                                    NS_LITERAL_CSTRING("*/*"),
-                                    false);
     }
 
     
@@ -2599,7 +2595,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
       
       nsAutoCString contentType;
 
-      GetAuthorRequestHeaderValue("content-type", contentType);
+      mAuthorRequestHeaders.Get("content-type", contentType);
       if (contentType.IsVoid()) {
         contentType = defaultContentType;
 
@@ -2613,52 +2609,14 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
 
       
       if (!charset.IsEmpty()) {
-        nsAutoCString specifiedCharset;
-        bool haveCharset;
-        int32_t charsetStart, charsetEnd;
-        rv = NS_ExtractCharsetFromContentType(contentType, specifiedCharset,
-                                              &haveCharset, &charsetStart,
-                                              &charsetEnd);
-        while (NS_SUCCEEDED(rv) && haveCharset) {
-          
-          
-          
-          if (specifiedCharset.Length() >= 2 &&
-              specifiedCharset.First() == '\'' &&
-              specifiedCharset.Last() == '\'') {
-            specifiedCharset = Substring(specifiedCharset, 1,
-                                         specifiedCharset.Length() - 2);
+        
+        
+        RequestHeaders::CharsetIterator iter(contentType);
+        const nsCaseInsensitiveCStringComparator cmp;
+        while (iter.Next()) {
+          if (!iter.Equals(charset, cmp)) {
+            iter.Replace(charset);
           }
-
-          
-          
-          
-          
-          
-          
-          
-          if (!specifiedCharset.Equals(charset,
-                                       nsCaseInsensitiveCStringComparator())) {
-            
-            
-            int32_t charIdx =
-              Substring(contentType, charsetStart,
-                        charsetEnd - charsetStart).FindChar('=') + 1;
-            MOZ_ASSERT(charIdx != -1);
-
-            contentType.Replace(charsetStart + charIdx,
-                                charsetEnd - charsetStart - charIdx,
-                                charset);
-          }
-
-          
-          
-          
-          nsDependentCSubstring interestingSection =
-            Substring(contentType, 0, charsetStart);
-          rv = NS_ExtractCharsetFromContentType(interestingSection,
-                                                specifiedCharset, &haveCharset,
-                                                &charsetStart, &charsetEnd);
         }
       }
 
@@ -2782,23 +2740,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   
   if (!IsSystemXHR()) {
     nsTArray<nsCString> CORSUnsafeHeaders;
-    const char *kCrossOriginSafeHeaders[] = {
-      "accept", "accept-language", "content-language", "content-type",
-      "last-event-id"
-    };
-    for (RequestHeader& header : mAuthorRequestHeaders) {
-      bool safe = false;
-      for (uint32_t i = 0; i < ArrayLength(kCrossOriginSafeHeaders); ++i) {
-        if (header.name.LowerCaseEqualsASCII(kCrossOriginSafeHeaders[i])) {
-          safe = true;
-          break;
-        }
-      }
-      if (!safe) {
-        CORSUnsafeHeaders.AppendElement(header.name);
-      }
-    }
-
+    mAuthorRequestHeaders.GetCORSUnsafeHeaders(CORSUnsafeHeaders);
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
     loadInfo->SetCorsPreflightInfo(CORSUnsafeHeaders,
                                    mFlagHadUploadListenersOnSend);
@@ -2969,29 +2911,12 @@ XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
   
 
   
-  bool notAlreadySet = true;
-  const nsCaseInsensitiveCStringComparator ignoreCase;
-  for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.name.Equals(aName, ignoreCase)) {
-      
-      
-      if (isPrivilegedCaller && isForbiddenHeader) {
-        header.value.Assign(value);
-      } else {
-        header.value.AppendLiteral(", ");
-        header.value.Append(value);
-      }
-      notAlreadySet = false;
-      break;
-    }
-  }
-
   
-  if (notAlreadySet) {
-    RequestHeader newHeader = {
-      nsCString(aName), nsCString(value)
-    };
-    mAuthorRequestHeaders.AppendElement(newHeader);
+  
+  if (isPrivilegedCaller && isForbiddenHeader) {
+    mAuthorRequestHeaders.Set(aName, value);
+  } else {
+    mAuthorRequestHeaders.MergeOrSet(aName, value);
   }
 
   return NS_OK;
@@ -3232,32 +3157,6 @@ XMLHttpRequestMainThread::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
   return NS_OK;
 }
 
-void
-XMLHttpRequestMainThread::GetAuthorRequestHeaderValue(const char* aName,
-                                                      nsACString& outValue)
-{
-  for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.name.EqualsIgnoreCase(aName)) {
-      outValue.Assign(header.value);
-      return;
-    }
-  }
-  outValue.SetIsVoid(true);
-}
-
-void
-XMLHttpRequestMainThread::SetAuthorRequestHeadersOnChannel(
-  nsCOMPtr<nsIHttpChannel> aHttpChannel)
-{
-  for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.value.IsEmpty()) {
-      aHttpChannel->SetEmptyRequestHeader(header.name);
-    } else {
-      aHttpChannel->SetRequestHeader(header.name, header.value, false);
-    }
-  }
-}
-
 nsresult
 XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result)
 {
@@ -3270,7 +3169,7 @@ XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result)
     nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
     if (httpChannel) {
       
-      SetAuthorRequestHeadersOnChannel(httpChannel);
+      mAuthorRequestHeaders.ApplyToChannel(httpChannel);
     }
   } else {
     mErrorLoad = true;
@@ -3563,9 +3462,7 @@ XMLHttpRequestMainThread::ShouldBlockAuthPrompt()
   
   
 
-  nsAutoCString contentType;
-  GetAuthorRequestHeaderValue("authorization", contentType);
-  if (!contentType.IsVoid()) {
+  if (mAuthorRequestHeaders.Has("authorization")) {
     return true;
   }
 
@@ -3835,6 +3732,193 @@ ArrayBufferBuilder::areOverlappingRegions(const uint8_t* aStart1,
   const uint8_t* min_end   = end1 < end2 ? end1 : end2;
 
   return max_start < min_end;
+}
+
+RequestHeaders::RequestHeader*
+RequestHeaders::Find(const nsACString& aName)
+{
+  const nsCaseInsensitiveCStringComparator ignoreCase;
+  for (RequestHeaders::RequestHeader& header : mHeaders) {
+    if (header.mName.Equals(aName, ignoreCase)) {
+      return &header;
+    }
+  }
+  return nullptr;
+}
+
+bool
+RequestHeaders::Has(const char* aName)
+{
+  return Has(nsDependentCString(aName));
+}
+
+bool
+RequestHeaders::Has(const nsACString& aName)
+{
+  return !!Find(aName);
+}
+
+void
+RequestHeaders::Get(const char* aName, nsACString& aValue)
+{
+  Get(nsDependentCString(aName), aValue);
+}
+
+void
+RequestHeaders::Get(const nsACString& aName, nsACString& aValue)
+{
+  RequestHeader* header = Find(aName);
+  if (header) {
+    aValue = header->mValue;
+  } else {
+    aValue.SetIsVoid(true);
+  }
+}
+
+void
+RequestHeaders::Set(const char* aName, const nsACString& aValue)
+{
+  Set(nsDependentCString(aName), aValue);
+}
+
+void
+RequestHeaders::Set(const nsACString& aName, const nsACString& aValue)
+{
+  RequestHeader* header = Find(aName);
+  if (header) {
+    header->mValue.Assign(aValue);
+  } else {
+    RequestHeader newHeader = {
+      nsCString(aName), nsCString(aValue)
+    };
+    mHeaders.AppendElement(newHeader);
+  }
+}
+
+void
+RequestHeaders::MergeOrSet(const char* aName, const nsACString& aValue)
+{
+  MergeOrSet(nsDependentCString(aName), aValue);
+}
+
+void
+RequestHeaders::MergeOrSet(const nsACString& aName, const nsACString& aValue)
+{
+  RequestHeader* header = Find(aName);
+  if (header) {
+    header->mValue.AppendLiteral(", ");
+    header->mValue.Append(aValue);
+  } else {
+    RequestHeader newHeader = {
+      nsCString(aName), nsCString(aValue)
+    };
+    mHeaders.AppendElement(newHeader);
+  }
+}
+
+void
+RequestHeaders::Clear()
+{
+  mHeaders.Clear();
+}
+
+void
+RequestHeaders::ApplyToChannel(nsIHttpChannel* aHttpChannel) const
+{
+  for (const RequestHeader& header : mHeaders) {
+    if (header.mValue.IsEmpty()) {
+      aHttpChannel->SetEmptyRequestHeader(header.mName);
+    } else {
+      aHttpChannel->SetRequestHeader(header.mName, header.mValue, false);
+    }
+  }
+}
+
+void
+RequestHeaders::GetCORSUnsafeHeaders(nsTArray<nsCString>& aArray) const
+{
+  static const char *kCrossOriginSafeHeaders[] = {
+    "accept", "accept-language", "content-language", "content-type",
+    "last-event-id"
+  };
+  const uint32_t kCrossOriginSafeHeadersLength =
+    ArrayLength(kCrossOriginSafeHeaders);
+  for (const RequestHeader& header : mHeaders) {
+    bool safe = false;
+    for (uint32_t i = 0; i < kCrossOriginSafeHeadersLength; ++i) {
+      if (header.mName.LowerCaseEqualsASCII(kCrossOriginSafeHeaders[i])) {
+        safe = true;
+        break;
+      }
+    }
+    if (!safe) {
+      aArray.AppendElement(header.mName);
+    }
+  }
+}
+
+RequestHeaders::CharsetIterator::CharsetIterator(nsACString& aSource) :
+  mValid(false),
+  mCurPos(-1),
+  mCurLen(-1),
+  mCutoff(aSource.Length()),
+  mSource(aSource)
+{
+}
+
+bool
+RequestHeaders::CharsetIterator::Equals(const nsACString& aOther,
+                                        const nsCStringComparator& aCmp) const
+{
+  if (mValid) {
+    return Substring(mSource, mCurPos, mCurLen).Equals(aOther, aCmp);
+  } else {
+    return false;
+  }
+}
+
+void
+RequestHeaders::CharsetIterator::Replace(const nsACString& aReplacement)
+{
+  if (mValid) {
+    mSource.Replace(mCurPos, mCurLen, aReplacement);
+    mCurLen = aReplacement.Length();
+  }
+}
+
+bool
+RequestHeaders::CharsetIterator::Next()
+{
+  int32_t start, end;
+  nsAutoCString charset;
+
+  
+  
+  
+  NS_ExtractCharsetFromContentType(Substring(mSource, 0, mCutoff),
+                                   charset, &mValid, &start, &end);
+
+  if (!mValid) {
+    return false;
+  }
+
+  
+  mCurPos = mSource.FindChar('=', start) + 1;
+  mCurLen = end - mCurPos;
+
+  
+  
+  
+  if (charset.Length() >= 2 &&
+      charset.First() == '\'' &&
+      charset.Last() == '\'') {
+    ++mCurPos;
+    mCurLen -= 2;
+  }
+
+  mCutoff = start;
+
+  return true;
 }
 
 } 
