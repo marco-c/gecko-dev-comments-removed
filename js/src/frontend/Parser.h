@@ -236,7 +236,7 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
     OwnedAtomDefnMapPtr lexdeps;    
 
     
-    Rooted<TraceableVector<JSFunction*>> innerFunctions;
+    Rooted<GCVector<JSFunction*>> innerFunctions;
 
     
     
@@ -272,7 +272,7 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
         parserPC(&prs->pc),
         oldpc(prs->pc),
         lexdeps(prs->context),
-        innerFunctions(prs->context, TraceableVector<JSFunction*>(prs->context)),
+        innerFunctions(prs->context, GCVector<JSFunction*>(prs->context)),
         newDirectives(newDirectives),
         inDeclDestructuring(false)
     {

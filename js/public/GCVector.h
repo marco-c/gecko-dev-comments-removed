@@ -4,8 +4,8 @@
 
 
 
-#ifndef js_TraceableVector_h
-#define js_TraceableVector_h
+#ifndef js_GCVector_h
+#define js_GCVector_h
 
 #include "mozilla/Vector.h"
 
@@ -33,20 +33,20 @@ template <typename T,
           size_t MinInlineCapacity = 0,
           typename AllocPolicy = TempAllocPolicy,
           typename GCPolicy = DefaultGCPolicy<T>>
-class TraceableVector : public JS::Traceable
+class GCVector : public JS::Traceable
 {
     mozilla::Vector<T, MinInlineCapacity, AllocPolicy> vector;
 
   public:
-    explicit TraceableVector(AllocPolicy alloc = AllocPolicy())
+    explicit GCVector(AllocPolicy alloc = AllocPolicy())
       : vector(alloc)
     {}
 
-    TraceableVector(TraceableVector&& vec)
+    GCVector(GCVector&& vec)
       : vector(mozilla::Move(vec.vector))
     {}
 
-    TraceableVector& operator=(TraceableVector&& vec) {
+    GCVector& operator=(GCVector&& vec) {
         vector = mozilla::Move(vec.vector);
         return *this;
     }
@@ -118,7 +118,7 @@ class TraceableVector : public JS::Traceable
         return vector.sizeOfIncludingThis(mallocSizeOf);
     }
 
-    static void trace(TraceableVector* vec, JSTracer* trc) { vec->trace(trc); }
+    static void trace(GCVector* vec, JSTracer* trc) { vec->trace(trc); }
 
     void trace(JSTracer* trc) {
         for (auto& elem : vector)
@@ -127,9 +127,9 @@ class TraceableVector : public JS::Traceable
 };
 
 template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename GCPolicy>
-class TraceableVectorOperations
+class GCVectorOperations
 {
-    using Vec = TraceableVector<T, Capacity, AllocPolicy, GCPolicy>;
+    using Vec = GCVector<T, Capacity, AllocPolicy, GCPolicy>;
     const Vec& vec() const { return static_cast<const Outer*>(this)->get(); }
 
   public:
@@ -147,10 +147,10 @@ class TraceableVectorOperations
 };
 
 template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename GCPolicy>
-class MutableTraceableVectorOperations
-  : public TraceableVectorOperations<Outer, T, Capacity, AllocPolicy, GCPolicy>
+class MutableGCVectorOperations
+  : public GCVectorOperations<Outer, T, Capacity, AllocPolicy, GCPolicy>
 {
-    using Vec = TraceableVector<T, Capacity, AllocPolicy, GCPolicy>;
+    using Vec = GCVector<T, Capacity, AllocPolicy, GCPolicy>;
     const Vec& vec() const { return static_cast<const Outer*>(this)->get(); }
     Vec& vec() { return static_cast<Outer*>(this)->get(); }
 
@@ -214,24 +214,24 @@ class MutableTraceableVectorOperations
 };
 
 template <typename T, size_t N, typename AP, typename GP>
-class RootedBase<TraceableVector<T,N,AP,GP>>
-  : public MutableTraceableVectorOperations<JS::Rooted<TraceableVector<T,N,AP,GP>>, T,N,AP,GP>
+class RootedBase<GCVector<T,N,AP,GP>>
+  : public MutableGCVectorOperations<JS::Rooted<GCVector<T,N,AP,GP>>, T,N,AP,GP>
 {};
 
 template <typename T, size_t N, typename AP, typename GP>
-class MutableHandleBase<TraceableVector<T,N,AP,GP>>
-  : public MutableTraceableVectorOperations<JS::MutableHandle<TraceableVector<T,N,AP,GP>>,
+class MutableHandleBase<GCVector<T,N,AP,GP>>
+  : public MutableGCVectorOperations<JS::MutableHandle<GCVector<T,N,AP,GP>>,
                                             T,N,AP,GP>
 {};
 
 template <typename T, size_t N, typename AP, typename GP>
-class HandleBase<TraceableVector<T,N,AP,GP>>
-  : public TraceableVectorOperations<JS::Handle<TraceableVector<T,N,AP,GP>>, T,N,AP,GP>
+class HandleBase<GCVector<T,N,AP,GP>>
+  : public GCVectorOperations<JS::Handle<GCVector<T,N,AP,GP>>, T,N,AP,GP>
 {};
 
 template <typename T, size_t N, typename AP, typename GP>
-class PersistentRootedBase<TraceableVector<T,N,AP,GP>>
-  : public MutableTraceableVectorOperations<JS::PersistentRooted<TraceableVector<T,N,AP,GP>>,
+class PersistentRootedBase<GCVector<T,N,AP,GP>>
+  : public MutableGCVectorOperations<JS::PersistentRooted<GCVector<T,N,AP,GP>>,
                                             T,N,AP,GP>
 {};
 
