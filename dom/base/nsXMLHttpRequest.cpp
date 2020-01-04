@@ -1379,11 +1379,7 @@ nsXMLHttpRequest::GetLoadGroup() const
     return ref.forget();
   }
 
-  nsresult rv = NS_ERROR_FAILURE;
-  nsIScriptContext* sc =
-    const_cast<nsXMLHttpRequest*>(this)->GetContextForEventHandlers(&rv);
-  nsCOMPtr<nsIDocument> doc =
-    nsContentUtils::GetDocumentFromScriptContext(sc);
+  nsIDocument* doc = GetDocumentIfCurrent();
   if (doc) {
     return doc->GetDocumentLoadGroup();
   }
@@ -1552,10 +1548,13 @@ nsXMLHttpRequest::Open(const nsACString& inMethod, const nsACString& url,
     mState &= ~XML_HTTP_REQUEST_ASYNC;
   }
 
-  nsIScriptContext* sc = GetContextForEventHandlers(&rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsIDocument> doc =
-    nsContentUtils::GetDocumentFromScriptContext(sc);
+  nsCOMPtr<nsIDocument> doc = GetDocumentIfCurrent();
+  if (!doc) {
+    
+    
+    nsresult rv = CheckInnerWindowCorrectness();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   nsCOMPtr<nsIURI> baseURI;
   if (mBaseURI) {
@@ -2014,14 +2013,16 @@ nsXMLHttpRequest::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
     NS_ENSURE_SUCCESS(rv, rv);
     baseURI = docURI;
 
-    nsIScriptContext* sc = GetContextForEventHandlers(&rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-    nsCOMPtr<nsIDocument> doc =
-      nsContentUtils::GetDocumentFromScriptContext(sc);
+    nsCOMPtr<nsIDocument> doc = GetDocumentIfCurrent();
     nsCOMPtr<nsIURI> chromeXHRDocURI, chromeXHRDocBaseURI;
     if (doc) {
       chromeXHRDocURI = doc->GetDocumentURI();
       chromeXHRDocBaseURI = doc->GetBaseURI();
+    } else {
+      
+      
+      nsresult rv = CheckInnerWindowCorrectness();
+      NS_ENSURE_SUCCESS(rv, rv);
     }
 
     
