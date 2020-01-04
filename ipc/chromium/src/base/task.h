@@ -215,24 +215,6 @@ class DeleteTask : public CancelableTask {
 };
 
 
-template<class T>
-class ReleaseTask : public CancelableTask {
- public:
-  explicit ReleaseTask(T* obj) : obj_(obj) {
-  }
-  virtual void Run() {
-    if (obj_)
-      obj_->Release();
-  }
-  virtual void Cancel() {
-    obj_ = NULL;
-  }
- private:
-  T* MOZ_UNSAFE_REF("The validity of this pointer must be enforced by "
-                    "external factors.") obj_;
-};
-
-
 
 
 

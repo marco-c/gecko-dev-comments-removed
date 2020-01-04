@@ -117,51 +117,12 @@ public:
   void PostDelayedTask(
       const tracked_objects::Location& from_here, Task* task, int delay_ms);
 
-  void PostNonNestableTask(
-      const tracked_objects::Location& from_here, Task* task);
-
-  void PostNonNestableDelayedTask(
-      const tracked_objects::Location& from_here, Task* task, int delay_ms);
-
   
   void PostIdleTask(
       const tracked_objects::Location& from_here, Task* task);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  template <class T>
-  void DeleteSoon(const tracked_objects::Location& from_here, T* object) {
-    PostNonNestableTask(from_here, new DeleteTask<T>(object));
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  template <class T>
-  void ReleaseSoon(const tracked_objects::Location& from_here, T* object) {
-    PostNonNestableTask(from_here, new ReleaseTask<T>(object));
-  }
-
-  
   void Run();
-
-  
-  
-  void RunAllPending();
 
   
   
@@ -395,7 +356,7 @@ public:
 
   
   void PostTask_Helper(const tracked_objects::Location& from_here, Task* task,
-                       int delay_ms, bool nestable);
+                       int delay_ms);
 
   
   virtual bool DoWork() override;
