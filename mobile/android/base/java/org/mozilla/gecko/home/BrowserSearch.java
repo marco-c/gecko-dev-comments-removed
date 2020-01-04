@@ -253,7 +253,7 @@ public class BrowserSearch extends HomeFragment
     @Override
     public void onHiddenChanged(boolean hidden) {
         if (!hidden) {
-            final Tab tab = Tabs.getInstance().getSelectedTab();
+            Tab tab = Tabs.getInstance().getSelectedTab();
             final boolean isPrivate = (tab != null && tab.isPrivate());
 
             
@@ -593,11 +593,7 @@ public class BrowserSearch extends HomeFragment
     }
 
     private void filterSuggestions() {
-        Tab tab = Tabs.getInstance().getSelectedTab();
-        final boolean isPrivate = (tab != null && tab.isPrivate());
-
-        if (isPrivate || (!mSuggestionsEnabled && !mSavedSearchesEnabled)) {
-            mSearchHistorySuggestions.clear();
+        if (mSuggestClient == null || (!mSuggestionsEnabled && !mSavedSearchesEnabled)) {
             return;
         }
 
@@ -674,7 +670,16 @@ public class BrowserSearch extends HomeFragment
                     
                     searchEngines.add(0, engine);
 
-                    ensureSuggestClientIsSet(suggestTemplate);
+                    
+                    
+                    
+                    
+                    Tab tab = Tabs.getInstance().getSelectedTab();
+                    final boolean isPrivate = (tab != null && tab.isPrivate());
+
+                    
+                    
+                    maybeSetSuggestClient(suggestTemplate, isPrivate);
                 } else {
                     searchEngines.add(engine);
                 }
@@ -691,15 +696,12 @@ public class BrowserSearch extends HomeFragment
                 mAdapter.notifyDataSetChanged();
             }
 
-            final Tab tab = Tabs.getInstance().getSelectedTab();
-            final boolean isPrivate = (tab != null && tab.isPrivate());
-
             
             
             
             
             
-            if (!mSuggestionsEnabled && !suggestionsPrompted && !isPrivate) {
+            if (!mSuggestionsEnabled && !suggestionsPrompted && mSuggestClient != null) {
                 showSuggestionsOptIn();
             } else {
                 removeSuggestionsOptIn();
@@ -733,7 +735,12 @@ public class BrowserSearch extends HomeFragment
         mSearchListener.onSearch(searchEngine, mSearchTerm);
     }
 
-    private void ensureSuggestClientIsSet(final String suggestTemplate) {
+    private void maybeSetSuggestClient(final String suggestTemplate, final boolean isPrivate) {
+        if (isPrivate) {
+            mSuggestClient = null;
+            return;
+        }
+
         if (mSuggestClient != null) {
             return;
         }
