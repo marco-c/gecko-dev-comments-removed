@@ -75,7 +75,8 @@ public final class GeckoProfile {
     
     private static final String SESSION_FILE = "sessionstore.js";
     private static final String SESSION_FILE_BACKUP = "sessionstore.bak";
-    private static final long MAX_BACKUP_FILE_AGE = 1000 * 3600 * 24; 
+    private static final String SESSION_FILE_PREVIOUS = "sessionstore.old";
+    private static final long MAX_PREVIOUS_FILE_AGE = 1000 * 3600 * 24; 
     private static final int SESSION_STORE_EMPTY_JSON_LENGTH = 14; 
 
     private boolean mOldSessionDataProcessed = false;
@@ -599,16 +600,16 @@ public final class GeckoProfile {
 
 
     public void updateSessionFile(boolean shouldRestore) {
-        File sessionFileBackup = getFile(SESSION_FILE_BACKUP);
+        File sessionFilePrevious = getFile(SESSION_FILE_PREVIOUS);
         if (!shouldRestore) {
             File sessionFile = getFile(SESSION_FILE);
             if (sessionFile != null && sessionFile.exists()) {
-                sessionFile.renameTo(sessionFileBackup);
+                sessionFile.renameTo(sessionFilePrevious);
             }
         } else {
-            if (sessionFileBackup != null && sessionFileBackup.exists() &&
-                    System.currentTimeMillis() - sessionFileBackup.lastModified() > MAX_BACKUP_FILE_AGE) {
-                sessionFileBackup.delete();
+            if (sessionFilePrevious != null && sessionFilePrevious.exists() &&
+                    System.currentTimeMillis() - sessionFilePrevious.lastModified() > MAX_PREVIOUS_FILE_AGE) {
+                sessionFilePrevious.delete();
             }
         }
         synchronized (this) {
@@ -642,7 +643,23 @@ public final class GeckoProfile {
 
 
     public String readSessionFile(boolean readBackup) {
-        File sessionFile = getFile(readBackup ? SESSION_FILE_BACKUP : SESSION_FILE);
+        return readSessionFile(readBackup ? SESSION_FILE_BACKUP : SESSION_FILE);
+    }
+
+    
+
+
+
+
+
+
+
+    public String readPreviousSessionFile() {
+        return readSessionFile(SESSION_FILE_PREVIOUS);
+    }
+
+    private String readSessionFile(String fileName) {
+        File sessionFile = getFile(fileName);
 
         try {
             if (sessionFile != null && sessionFile.exists()) {

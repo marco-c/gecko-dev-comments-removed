@@ -150,7 +150,7 @@ public class RecentTabsAdapter extends RecyclerView.Adapter<CombinedHistoryItem>
                 
                 GeckoProfile.get(context).waitForOldSessionDataProcessing();
 
-                final String jsonString = GeckoProfile.get(context).readSessionFile(true);
+                final String jsonString = GeckoProfile.get(context).readPreviousSessionFile();
                 if (jsonString == null) {
                     
                     return;

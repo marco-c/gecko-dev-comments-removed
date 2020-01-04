@@ -85,10 +85,12 @@ SessionStore.prototype = {
     
     this._sessionFile = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
     this._sessionFileBackup = this._sessionFile.clone();
+    this._sessionFilePrevious = this._sessionFile.clone();
     this._sessionFileTemp = this._sessionFile.clone();
-    this._sessionFile.append("sessionstore.js");
-    this._sessionFileBackup.append("sessionstore.bak");
-    this._sessionFileTemp.append(this._sessionFile.leafName + ".tmp");
+    this._sessionFile.append("sessionstore.js"); 
+    this._sessionFileBackup.append("sessionstore.bak"); 
+    this._sessionFilePrevious.append("sessionstore.old"); 
+    this._sessionFileTemp.append(this._sessionFile.leafName + ".tmp"); 
 
     this._loadState = STATE_STOPPED;
     this._startupRestoreFinished = false;
@@ -111,6 +113,7 @@ SessionStore.prototype = {
   _clearDisk: function ss_clearDisk() {
     OS.File.remove(this._sessionFile.path);
     OS.File.remove(this._sessionFileBackup.path);
+    OS.File.remove(this._sessionFilePrevious.path);
     OS.File.remove(this._sessionFileTemp.path);
   },
 
@@ -185,7 +188,7 @@ SessionStore.prototype = {
         this._clearDisk();
 
         
-        for (let [ssid, win] of Object.entries(this._windows))
+        for (let [ssid, win] in Iterator(this._windows))
           win.closedTabs = [];
 
         this._lastClosedTabIndex = -1;
@@ -300,7 +303,7 @@ SessionStore.prototype = {
         break;
       case "last-pb-context-exited":
         
-        for (let window of Object.values(this._windows)) {
+        for (let [, window] in Iterator(this._windows)) {
           window.closedTabs = window.closedTabs.filter(tab => !tab.isPrivate);
         }
         this._lastClosedTabIndex = -1;
