@@ -4,7 +4,7 @@
 "use strict";
 
 const { L10N } = require("devtools/client/performance/modules/global");
-const { Formatters } = require("devtools/client/performance/modules/logic/marker-utils");
+const { Formatters } = require("devtools/client/performance/modules/logic/marker-formatters");
 
 
 

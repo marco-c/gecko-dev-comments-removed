@@ -3,9 +3,8 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "promise");
-loader.lazyRequireGetter(this, "EventEmitter",
-  "devtools/shared/event-emitter");
+const promise = require("promise");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 
 

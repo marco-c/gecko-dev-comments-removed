@@ -17,6 +17,10 @@ const L10N = new ViewHelpers.MultiL10N([
 
 
 
+
+
+
+
 const PREFS = new ViewHelpers.Prefs("devtools.performance", {
   "show-triggers-for-gc-types": ["Char", "ui.show-triggers-for-gc-types"],
   "show-platform-data": ["Bool", "ui.show-platform-data"],
@@ -27,8 +31,6 @@ const PREFS = new ViewHelpers.Prefs("devtools.performance", {
   "profiler-sample-frequency": ["Int", "profiler.sample-frequency-khz"],
   
   "enable-memory-flame": ["Bool", "ui.enable-memory-flame"],
-}, {
-  monitorChanges: true
 });
 
 

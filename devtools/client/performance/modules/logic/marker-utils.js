@@ -10,17 +10,11 @@
 
 const { Cu, Ci } = require("chrome");
 
-loader.lazyRequireGetter(this, "L10N",
-  "devtools/client/performance/modules/global", true);
-loader.lazyRequireGetter(this, "PREFS",
-  "devtools/client/performance/modules/global", true);
-loader.lazyRequireGetter(this, "TIMELINE_BLUEPRINT",
-  "devtools/client/performance/modules/markers", true);
-loader.lazyRequireGetter(this, "WebConsoleUtils",
-  "devtools/shared/webconsole/utils");
-
-
-const GECKO_SYMBOL = "(Gecko)";
+const Services = require("Services");
+const { L10N } = require("devtools/client/performance/modules/global");
+const { TIMELINE_BLUEPRINT } = require("devtools/client/performance/modules/markers");
+const WebConsoleUtils = require("devtools/shared/webconsole/utils");
+const SHOW_TRIGGER_FOR_GC_TYPES_PREF = "devtools.performance.ui.show-triggers-for-gc-types";
 
 
 
@@ -326,141 +320,6 @@ const DOM = {
 
 
 
-const JS_MARKER_MAP = {
-  "<script> element":          L10N.getStr("marker.label.javascript.scriptElement"),
-  "promise callback":          L10N.getStr("marker.label.javascript.promiseCallback"),
-  "promise initializer":       L10N.getStr("marker.label.javascript.promiseInit"),
-  "Worker runnable":           L10N.getStr("marker.label.javascript.workerRunnable"),
-  "javascript: URI":           L10N.getStr("marker.label.javascript.jsURI"),
-  
-  
-  "EventHandlerNonNull":       L10N.getStr("marker.label.javascript.eventHandler"),
-  "EventListener.handleEvent": L10N.getStr("marker.label.javascript.eventHandler"),
-  
-  "setInterval handler":       "setInterval",
-  "setTimeout handler":        "setTimeout",
-  "FrameRequestCallback":      "requestAnimationFrame",
-};
-
-
-
-
-const Formatters = {
-  
-
-
-
-  UnknownLabel: function (marker={}) {
-    return marker.name || L10N.getStr("marker.label.unknown");
-  },
-
-  GCLabel: function (marker) {
-    if (!marker) {
-      return L10N.getStr("marker.label.garbageCollection2");
-    }
-    
-    
-    if ("nonincrementalReason" in marker) {
-      return L10N.getStr("marker.label.garbageCollection.nonIncremental");
-    }
-    return L10N.getStr("marker.label.garbageCollection.incremental");
-  },
-
-  JSLabel: function (marker={}) {
-    let generic = L10N.getStr("marker.label.javascript");
-    if ("causeName" in marker) {
-      return JS_MARKER_MAP[marker.causeName] || generic;
-    }
-    return generic;
-  },
-
-  DOMJSLabel: function (marker={}) {
-    return `Event (${marker.type})`;
-  },
-
-  
-
-
-
-
-
-  JSFields: function (marker) {
-    if ("causeName" in marker && !JS_MARKER_MAP[marker.causeName]) {
-      let cause = PREFS["show-platform-data"] ? marker.causeName : GECKO_SYMBOL;
-      return {
-        [L10N.getStr("marker.field.causeName")]: cause
-      };
-    }
-  },
-
-  GCFields: function (marker) {
-    let fields = Object.create(null);
-    let cause = marker.causeName;
-    let label = L10N.getStr(`marker.gcreason.label.${cause}`) || cause;
-
-    fields[L10N.getStr("marker.field.causeName")] = label;
-
-    if ("nonincrementalReason" in marker) {
-      fields[L10N.getStr("marker.field.nonIncrementalCause")] = marker.nonincrementalReason;
-    }
-
-    return fields;
-  },
-
-  MinorGCFields: function (marker) {
-    const cause = marker.causeName;
-    const label = L10N.getStr(`marker.gcreason.label.${cause}`) || cause;
-    return {
-      [L10N.getStr("marker.field.type")]: L10N.getStr("marker.nurseryCollection"),
-      [L10N.getStr("marker.field.causeName")]: label,
-    };
-  },
-
-  DOMEventFields: function (marker) {
-    let fields = Object.create(null);
-    if ("type" in marker) {
-      fields[L10N.getStr("marker.field.DOMEventType")] = marker.type;
-    }
-    if ("eventPhase" in marker) {
-      let phase;
-      if (marker.eventPhase === Ci.nsIDOMEvent.AT_TARGET) {
-        phase = L10N.getStr("marker.value.DOMEventTargetPhase");
-      } else if (marker.eventPhase === Ci.nsIDOMEvent.CAPTURING_PHASE) {
-        phase = L10N.getStr("marker.value.DOMEventCapturingPhase");
-      } else if (marker.eventPhase === Ci.nsIDOMEvent.BUBBLING_PHASE) {
-        phase = L10N.getStr("marker.value.DOMEventBubblingPhase");
-      }
-      fields[L10N.getStr("marker.field.DOMEventPhase")] = phase;
-    }
-    return fields;
-  },
-
-  StylesFields: function (marker) {
-    if ("restyleHint" in marker) {
-      return {
-        [L10N.getStr("marker.field.restyleHint")]: marker.restyleHint.replace(/eRestyle_/g, "")
-      };
-    }
-  },
-
-  CycleCollectionFields: function (marker) {
-    return {
-      [L10N.getStr("marker.field.type")]: marker.name.replace(/nsCycleCollector::/g, "")
-    };
-  },
-
-  WorkerFields: function(marker) {
-    return {
-      [L10N.getStr("marker.field.type")]:
-        L10N.getStr(`marker.worker.${marker.workerOperation}`)
-    };
-  }
-};
-
-
-
-
-
 
 
 
@@ -477,7 +336,8 @@ function getBlueprintFor (marker) {
 
 function showAllocationsTrigger (marker) {
   return marker.name === "GarbageCollection" &&
-         PREFS["show-triggers-for-gc-types"].split(" ").indexOf(marker.causeName) !== -1;
+         Services.prefs.getCharPref(SHOW_TRIGGER_FOR_GC_TYPES_PREF)
+         .split(" ").indexOf(marker.causeName) !== -1;
 }
 
 exports.isMarkerValid = isMarkerValid;
@@ -485,5 +345,4 @@ exports.getMarkerLabel = getMarkerLabel;
 exports.getMarkerClassName = getMarkerClassName;
 exports.getMarkerFields = getMarkerFields;
 exports.DOM = DOM;
-exports.Formatters = Formatters;
 exports.getBlueprintFor = getBlueprintFor;

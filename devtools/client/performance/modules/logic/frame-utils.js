@@ -3,9 +3,7 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "Services");
-loader.lazyRequireGetter(this, "global",
-  "devtools/client/performance/modules/global");
+const global = require("devtools/client/performance/modules/global");
 const demangle = require("devtools/client/shared/demangle");
 const { isChromeScheme, isContentScheme, parseURL } =
   require("devtools/client/shared/source-utils");
