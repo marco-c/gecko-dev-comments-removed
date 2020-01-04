@@ -1,0 +1,132 @@
+
+
+
+const { console, ConsoleAPI } = Cu.import("resource://gre/modules/Console.jsm");
+
+const { ConsoleAPIListener } = require("devtools/shared/webconsole/utils");
+const Services = require("Services");
+
+var seenMessages = 0;
+var seenTypes = 0;
+
+var callback = {
+  onConsoleAPICall: function(aMessage) {
+    if (aMessage.consoleID && aMessage.consoleID == "addon/foo") {
+      do_check_eq(aMessage.level, "warn");
+      do_check_eq(aMessage.arguments[0], "Warning from foo");
+      seenTypes |= 1;
+    } else if(aMessage.originAttributes &&
+              aMessage.originAttributes.addonId == "bar") {
+      do_check_eq(aMessage.level, "error");
+      do_check_eq(aMessage.arguments[0], "Error from bar");
+      seenTypes |= 2;
+    } else {
+      do_check_eq(aMessage.level, "log");
+      do_check_eq(aMessage.arguments[0], "Hello from default console");
+      seenTypes |= 4;
+    }
+    seenMessages++;
+  }
+};
+
+function createFakeAddonWindow({addonId} = {}) {
+  let baseURI = Services.io.newURI("about:blank", null, null);
+  let originAttributes = {addonId};
+  let principal = Services.scriptSecurityManager
+        .createCodebasePrincipal(baseURI, originAttributes);
+  let chromeWebNav = Services.appShell.createWindowlessBrowser(true);
+  let docShell = chromeWebNav.QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsIDocShell);
+  docShell.createAboutBlankContentViewer(principal);
+  let addonWindow = docShell.contentViewer.DOMDocument.defaultView;
+
+  return {addonWindow, chromeWebNav};
+}
+
+
+
+
+
+function run_test() {
+  
+  
+  let console1 = new ConsoleAPI({
+    consoleID: "addon/foo"
+  });
+
+  
+  
+  let {addonWindow, chromeWebNav} = createFakeAddonWindow({addonId: "bar"});
+  let console2 = addonWindow.console;
+
+  
+  
+  console.log("Hello from default console");
+
+  console1.warn("Warning from foo");
+  console2.error("Error from bar");
+
+  let listener = new ConsoleAPIListener(null, callback);
+  listener.init();
+  let messages = listener.getCachedMessages();
+
+  seenTypes = 0;
+  seenMessages = 0;
+  messages.forEach(callback.onConsoleAPICall);
+  do_check_eq(seenMessages, 3);
+  do_check_eq(seenTypes, 7);
+
+  seenTypes = 0;
+  seenMessages = 0;
+  console.log("Hello from default console");
+  console1.warn("Warning from foo");
+  console2.error("Error from bar");
+  do_check_eq(seenMessages, 3);
+  do_check_eq(seenTypes, 7);
+
+  listener.destroy();
+
+  listener = new ConsoleAPIListener(null, callback, {addonId: "foo"});
+  listener.init();
+  messages = listener.getCachedMessages();
+
+  seenTypes = 0;
+  seenMessages = 0;
+  messages.forEach(callback.onConsoleAPICall);
+  do_check_eq(seenMessages, 2);
+  do_check_eq(seenTypes, 1);
+
+  seenTypes = 0;
+  seenMessages = 0;
+  console.log("Hello from default console");
+  console1.warn("Warning from foo");
+  console2.error("Error from bar");
+  do_check_eq(seenMessages, 1);
+  do_check_eq(seenTypes, 1);
+
+  listener.destroy();
+
+  listener = new ConsoleAPIListener(null, callback, {addonId: "bar"});
+  listener.init();
+  messages = listener.getCachedMessages();
+
+  seenTypes = 0;
+  seenMessages = 0;
+  messages.forEach(callback.onConsoleAPICall);
+  do_check_eq(seenMessages, 3);
+  do_check_eq(seenTypes, 2);
+
+  seenTypes = 0;
+  seenMessages = 0;
+  console.log("Hello from default console");
+  console1.warn("Warning from foo");
+  console2.error("Error from bar");
+
+  do_check_eq(seenMessages, 1);
+  do_check_eq(seenTypes, 2);
+
+  listener.destroy();
+
+  
+  chromeWebNav.close();
+}
