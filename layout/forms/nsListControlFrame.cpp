@@ -1837,6 +1837,17 @@ nsListControlFrame::MouseDown(nsIDOMEvent* aMouseEvent)
   } else {
     
     if (mComboboxFrame) {
+      
+      
+      if (mComboboxFrame->IsOpenInParentProcess()) {
+        nsCOMPtr<nsIDOMEventTarget> etarget;
+        aMouseEvent->GetTarget(getter_AddRefs(etarget));
+        nsCOMPtr<nsIDOMHTMLOptionElement> option = do_QueryInterface(etarget);
+        if (option) {
+          return NS_OK;
+        }
+      }
+
       if (FireShowDropDownEvent(mContent)) {
         return NS_OK;
       }
