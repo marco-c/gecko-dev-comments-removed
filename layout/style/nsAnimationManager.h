@@ -46,7 +46,7 @@ struct AnimationEventInfo {
     , mTimeStamp(aTimeStamp)
   {
     
-    mEvent.animationName = aAnimationName;
+    mEvent.mAnimationName = aAnimationName;
     mEvent.elapsedTime = aElapsedTime.ToSeconds();
     mEvent.pseudoElement =
       AnimationCollection<dom::CSSAnimation>::PseudoTypeAsString(aPseudoType);
