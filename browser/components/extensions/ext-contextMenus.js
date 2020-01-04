@@ -26,6 +26,8 @@ var onClickedCallbacksMap = new WeakMap();
 
 var nextID = 0;
 
+var gMaxLabelLength = 64;
+
 
 
 
@@ -102,8 +104,22 @@ var menuBuilder = {
   },
 
   customizeElement(element, item, contextData) {
-    
-    element.setAttribute("label", item.title);
+    let label = item.title;
+    if (label) {
+      if (contextData.isTextSelected && label.indexOf('%s') > -1) {
+        let selection = contextData.selectionText;
+        
+        
+        
+        let maxSelectionLength = gMaxLabelLength - label.length + 2;
+        if (maxSelectionLength > 4) {
+          selection = selection.substring(0, maxSelectionLength - 3) + "...";
+        }
+        label = label.replace(/%s/g, selection);
+      }
+
+      element.setAttribute("label", label);
+    }
 
     if (!item.enabled) {
       element.setAttribute("disabled", true);
