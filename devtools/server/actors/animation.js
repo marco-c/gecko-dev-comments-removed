@@ -390,6 +390,20 @@ var AnimationPlayerActor = ActorClass({
     response: {
       frames: RetVal("json")
     }
+  }),
+
+  
+
+
+
+
+  getProperties: method(function() {
+    return this.player.effect.getProperties();
+  }, {
+    request: {},
+    response: {
+      frames: RetVal("json")
+    }
   })
 });
 

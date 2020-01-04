@@ -37,12 +37,14 @@ const TIMELINE_BACKGROUND_RESIZE_DEBOUNCE_TIMER = 50;
 
 
 
-function AnimationsTimeline(inspector) {
+
+function AnimationsTimeline(inspector, serverTraits) {
   this.animations = [];
   this.targetNodes = [];
   this.timeBlocks = [];
   this.details = [];
   this.inspector = inspector;
+  this.serverTraits = serverTraits;
 
   this.onAnimationStateChanged = this.onAnimationStateChanged.bind(this);
   this.onScrubberMouseDown = this.onScrubberMouseDown.bind(this);
@@ -132,6 +134,7 @@ AnimationsTimeline.prototype = {
     this.scrubberHandleEl = null;
     this.win = null;
     this.inspector = null;
+    this.serverTraits = null;
   },
 
   
@@ -304,7 +307,7 @@ AnimationsTimeline.prototype = {
         }
       });
 
-      let details = new AnimationDetails();
+      let details = new AnimationDetails(this.serverTraits);
       details.init(detailsEl);
       details.on("frame-selected", this.onFrameSelected);
       this.details.push(details);

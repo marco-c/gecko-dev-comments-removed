@@ -17,12 +17,15 @@ const {Keyframes} = require("devtools/client/animationinspector/components/keyfr
 
 
 
-function AnimationDetails() {
+
+
+function AnimationDetails(serverTraits) {
   EventEmitter.decorate(this);
 
   this.onFrameSelected = this.onFrameSelected.bind(this);
 
   this.keyframeComponents = [];
+  this.serverTraits = serverTraits;
 }
 
 exports.AnimationDetails = AnimationDetails;
@@ -39,6 +42,7 @@ AnimationDetails.prototype = {
   destroy: function() {
     this.unrender();
     this.containerEl = null;
+    this.serverTraits = null;
   },
 
   unrender: function() {
@@ -57,28 +61,58 @@ AnimationDetails.prototype = {
 
 
 
-  getTracksFromFrames: function(frames) {
+
+  getTracks: Task.async(function*() {
     let tracks = {};
 
-    for (let frame of frames) {
-      for (let name in frame) {
-        if (this.NON_PROPERTIES.indexOf(name) != -1) {
-          continue;
-        }
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    if (this.serverTraits.hasGetProperties) {
+      let properties = yield this.animation.getProperties();
+      for (let propertyObject of properties) {
+        let name = propertyObject.property;
 
         if (!tracks[name]) {
           tracks[name] = [];
         }
 
-        tracks[name].push({
-          value: frame[name],
-          offset: frame.computedOffset
-        });
+        for (let {value, offset} of propertyObject.values) {
+          tracks[name].push({value, offset});
+        }
+      }
+    } else {
+      let frames = yield this.animation.getFrames();
+      for (let frame of frames) {
+        for (let name in frame) {
+          if (this.NON_PROPERTIES.indexOf(name) != -1) {
+            continue;
+          }
+
+          if (!tracks[name]) {
+            tracks[name] = [];
+          }
+
+          tracks[name].push({
+            value: frame[name],
+            offset: frame.computedOffset
+          });
+        }
       }
     }
 
     return tracks;
-  },
+  }),
 
   render: Task.async(function*(animation) {
     this.unrender();
@@ -88,18 +122,18 @@ AnimationDetails.prototype = {
     }
     this.animation = animation;
 
-    let frames = yield animation.getFrames();
-
     
     
     if (!this.containerEl || this.animation !== animation) {
       return;
     }
+
+    
+    this.tracks = yield this.getTracks(animation, this.serverTraits);
+
     
     this.emit("keyframes-retrieved");
 
-    
-    this.tracks = this.getTracksFromFrames(frames);
     for (let propertyName in this.tracks) {
       let line = createNode({
         parent: this.containerEl,

@@ -55,16 +55,19 @@ add_task(function*() {
 function* getExpectedKeyframesData(animation) {
   
   
-  let frames = yield animation.getFrames();
+  let properties = yield animation.getProperties();
   let data = {};
 
-  for (let property of EXPECTED_PROPERTIES) {
-    data[property] = [];
-    for (let frame of frames) {
-      if (typeof frame[property] !== "undefined") {
-        data[property].push({
-          offset: frame.computedOffset,
-          value: frame[property]
+  for (let expectedProperty of EXPECTED_PROPERTIES) {
+    data[expectedProperty] = [];
+    for (let propertyObject of properties) {
+      if (propertyObject.property !== expectedProperty) {
+        continue;
+      }
+      for (let valueObject of propertyObject.values) {
+        data[expectedProperty].push({
+          offset: valueObject.offset,
+          value: valueObject.value
         });
       }
     }
