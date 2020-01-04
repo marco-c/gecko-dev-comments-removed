@@ -1168,7 +1168,9 @@ Requisition.prototype.getInputStatusMarkup = function(cursor) {
     var argTrace = argTraces[i];
     var arg = argTrace.arg;
     var status = Status.VALID;
-    if (argTrace.part === 'text') {
+    
+    
+    if (argTrace.part === 'text' && arg.assignment != null) {
       status = arg.assignment.getStatus(arg);
       
       if (status === Status.INCOMPLETE) {
