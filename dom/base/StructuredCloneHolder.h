@@ -210,7 +210,7 @@ public:
     return Move(mTransferredPorts);
   }
 
-  nsTArray<MessagePortIdentifier>& PortIdentifiers()
+  nsTArray<MessagePortIdentifier>& PortIdentifiers() const
   {
     MOZ_ASSERT(mSupportsTransferring);
     return mPortIdentifiers;
@@ -310,7 +310,7 @@ protected:
   
   
   
-  nsTArray<MessagePortIdentifier> mPortIdentifiers;
+  mutable nsTArray<MessagePortIdentifier> mPortIdentifiers;
 
 #ifdef DEBUG
   nsCOMPtr<nsIThread> mCreationThread;
