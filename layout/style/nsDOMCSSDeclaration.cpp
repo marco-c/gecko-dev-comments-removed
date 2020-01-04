@@ -435,21 +435,8 @@ nsDOMCSSDeclaration::RemoveCustomProperty(const nsAString& aPropertyName)
 
 bool IsCSSPropertyExposedToJS(nsCSSProperty aProperty, JSContext* cx, JSObject* obj)
 {
+  MOZ_ASSERT_UNREACHABLE("This is currently not used anywhere, "
+                         "but should be reused soon in bug 1069192");
   nsCSSProps::EnabledState enabledState = nsCSSProps::eEnabledForAllContent;
-
-  
-  
-  
-  bool isEnabledInChromeOrCertifiedApp
-    = nsCSSProps::PropHasFlags(aProperty,
-                               CSS_PROPERTY_ALWAYS_ENABLED_IN_CHROME_OR_CERTIFIED_APP);
-
-  if (isEnabledInChromeOrCertifiedApp) {
-    if (dom::IsInCertifiedApp(cx, obj) ||
-        nsContentUtils::ThreadsafeIsCallerChrome())
-    {
-      enabledState |= nsCSSProps::eEnabledInChromeOrCertifiedApp;
-    }
-  }
   return nsCSSProps::IsEnabled(aProperty, enabledState);
 }
