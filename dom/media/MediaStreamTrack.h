@@ -264,20 +264,10 @@ public:
   already_AddRefed<Promise>
   ApplyConstraints(const dom::MediaTrackConstraints& aConstraints, ErrorResult &aRv);
   already_AddRefed<MediaStreamTrack> Clone();
-  MediaStreamTrackState ReadyState() { return mReadyState; }
 
   IMPL_EVENT_HANDLER(ended)
 
-  
-
-
-  bool Ended() const { return mReadyState == MediaStreamTrackState::Ended; }
-
-  
-
-
-
-  void SetReadyState(MediaStreamTrackState aState) { mReadyState = aState; }
+  bool Ended() const { return mEnded; }
 
 private:
   
@@ -418,9 +408,10 @@ protected:
   nsCOMPtr<nsIPrincipal> mPendingPrincipal;
   RefPtr<PrincipalHandleListener> mPrincipalHandleListener;
   nsString mID;
-  MediaStreamTrackState mReadyState;
+  bool mEnded;
   bool mEnabled;
   const bool mRemote;
+  bool mStopped;
 };
 
 } 
