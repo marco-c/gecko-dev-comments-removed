@@ -36,6 +36,8 @@
 namespace mozilla {
 namespace css {
 
+class Rule;
+
 
 
 
@@ -280,6 +282,14 @@ public:
     mVariableOrder.Clear();
   }
 
+  void SetOwningRule(Rule* aRule) {
+    MOZ_ASSERT(!mOwningRule || !aRule,
+               "should never overwrite one rule with another");
+    mOwningRule = aRule;
+  }
+
+  Rule* GetOwningRule() { return mOwningRule; }
+
 private:
   Declaration& operator=(const Declaration& aCopy) = delete;
   bool operator==(const Declaration& aCopy) const = delete;
@@ -354,6 +364,9 @@ private:
 
   
   nsAutoPtr<CSSVariableDeclarations> mImportantVariables;
+
+  
+  Rule* mOwningRule;
 
   
   
