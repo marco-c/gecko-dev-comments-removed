@@ -422,7 +422,7 @@ public:
 
 
 
-  void AccumulateEventRegions(nsDisplayLayerEventRegions* aEventRegions);
+  void AccumulateEventRegions(ContainerState* aState, nsDisplayLayerEventRegions* aEventRegions);
 
   
 
@@ -486,6 +486,14 @@ public:
 
 
   nsRegion mVerticalPanRegion;
+  
+
+
+
+
+
+  nsIntRegion mScaledHitRegion;
+  nsIntRegion mScaledMaybeHitRegion;
   
 
 
@@ -2589,8 +2597,8 @@ PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
         
         ContainerState& contState = mTree.ContState();
         if (!contState.IsInInactiveLayer()) {
-          visibleRegion.OrWith(contState.ScaleRegionToOutsidePixels(data.mHitRegion));
-          visibleRegion.OrWith(contState.ScaleRegionToOutsidePixels(data.mMaybeHitRegion));
+          visibleRegion.OrWith(data.mScaledHitRegion);
+          visibleRegion.OrWith(data.mScaledMaybeHitRegion);
         }
         if (visibleRegion.Intersects(aVisibleRect)) {
           break;
@@ -3430,7 +3438,7 @@ PaintedLayerData::Accumulate(ContainerState* aState,
 }
 
 void
-PaintedLayerData::AccumulateEventRegions(nsDisplayLayerEventRegions* aEventRegions)
+PaintedLayerData::AccumulateEventRegions(ContainerState* aState, nsDisplayLayerEventRegions* aEventRegions)
 {
   FLB_LOG_PAINTED_LAYER_DECISION(this, "Accumulating event regions %p against pld=%p\n", aEventRegions, this);
 
@@ -3440,6 +3448,16 @@ PaintedLayerData::AccumulateEventRegions(nsDisplayLayerEventRegions* aEventRegio
   mNoActionRegion.Or(mNoActionRegion, aEventRegions->NoActionRegion());
   mHorizontalPanRegion.Or(mHorizontalPanRegion, aEventRegions->HorizontalPanRegion());
   mVerticalPanRegion.Or(mVerticalPanRegion, aEventRegions->VerticalPanRegion());
+
+  
+  
+  
+  mMaybeHitRegion.SimplifyOutward(8);
+
+  
+  
+  mScaledHitRegion = aState->ScaleRegionToOutsidePixels(mHitRegion);
+  mScaledMaybeHitRegion = aState->ScaleRegionToOutsidePixels(mMaybeHitRegion);
 }
 
 PaintedLayerData
@@ -4016,7 +4034,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       if (itemType == nsDisplayItem::TYPE_LAYER_EVENT_REGIONS) {
         nsDisplayLayerEventRegions* eventRegions =
             static_cast<nsDisplayLayerEventRegions*>(item);
-        paintedLayerData->AccumulateEventRegions(eventRegions);
+        paintedLayerData->AccumulateEventRegions(this, eventRegions);
       } else {
         
         
