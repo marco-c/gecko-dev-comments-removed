@@ -102,7 +102,8 @@ DataTransfer::DataTransfer(nsISupports* aParent, EventMessage aEventMessage,
   
   if (aEventMessage == eCut ||
       aEventMessage == eCopy ||
-      aEventMessage == eDragStart) {
+      aEventMessage == eDragStart ||
+      aEventMessage == eLegacyDragGesture) {
     mReadOnly = false;
   } else if (mIsExternal) {
     if (aEventMessage == ePaste) {
@@ -151,7 +152,8 @@ DataTransfer::DataTransfer(nsISupports* aParent,
   
   
   
-  NS_ASSERTION(aEventMessage != eDragStart,
+  NS_ASSERTION(aEventMessage != eLegacyDragGesture &&
+               aEventMessage != eDragStart,
                "invalid event type for DataTransfer constructor");
 }
 

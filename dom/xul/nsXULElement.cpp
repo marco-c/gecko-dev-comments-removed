@@ -1280,7 +1280,8 @@ nsXULElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
          aVisitor.mEvent->mMessage == eMouseDoubleClick ||
          aVisitor.mEvent->mMessage == eXULCommand ||
          aVisitor.mEvent->mMessage == eContextMenu ||
-         aVisitor.mEvent->mMessage == eDragStart)) {
+         aVisitor.mEvent->mMessage == eDragStart ||
+         aVisitor.mEvent->mMessage == eLegacyDragGesture)) {
         
         aVisitor.mCanHandle = true;
         aVisitor.mParentTarget = nullptr;
