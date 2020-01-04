@@ -4621,23 +4621,31 @@ static bool
 DoTypeMonitorFallback(JSContext* cx, BaselineFrame* frame, ICTypeMonitor_Fallback* stub,
                       HandleValue value, MutableHandleValue res)
 {
-    
-    
-    
-    
-    if (stub->monitorsThis()) {
-        MOZ_ASSERT_IF(value.isMagic(), value.isMagic(JS_UNINITIALIZED_LEXICAL));
-    } else {
-        if (value.isMagic(JS_OPTIMIZED_OUT)) {
-            res.set(value);
-            return true;
-        }
-    }
-
     ICStubCompiler::Engine engine = SharedStubEngine(frame);
     RootedScript script(cx, SharedStubScript(frame, stub));
     jsbytecode* pc = stub->icEntry()->pc(script);
     TypeFallbackICSpew(cx, stub, "TypeMonitor");
+
+    if (value.isMagic()) {
+        
+        
+        
+        
+
+        if (value.whyMagic() == JS_OPTIMIZED_OUT) {
+            MOZ_ASSERT(!stub->monitorsThis());
+            res.set(value);
+            return true;
+        }
+
+        
+        
+        MOZ_ASSERT(value.isMagic(JS_UNINITIALIZED_LEXICAL));
+        MOZ_ASSERT(frame->isFunctionFrame());
+        MOZ_ASSERT(stub->monitorsThis() ||
+                   *GetNextPc(pc) == JSOP_CHECKTHIS ||
+                   *GetNextPc(pc) == JSOP_CHECKRETURN);
+    }
 
     uint32_t argument;
     if (stub->monitorsThis()) {
@@ -4648,9 +4656,13 @@ DoTypeMonitorFallback(JSContext* cx, BaselineFrame* frame, ICTypeMonitor_Fallbac
             TypeScript::SetThis(cx, script, value);
     } else if (stub->monitorsArgument(&argument)) {
         MOZ_ASSERT(pc == script->code());
+        MOZ_ASSERT(!value.isMagic(JS_UNINITIALIZED_LEXICAL));
         TypeScript::SetArgument(cx, script, argument, value);
     } else {
-        TypeScript::Monitor(cx, script, pc, value);
+        if (value.isMagic(JS_UNINITIALIZED_LEXICAL))
+            TypeScript::Monitor(cx, script, pc, TypeSet::UnknownType());
+        else
+            TypeScript::Monitor(cx, script, pc, value);
     }
 
     if (!stub->addMonitorStubForValue(cx, script, value, engine))

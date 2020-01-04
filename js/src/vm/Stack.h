@@ -453,8 +453,7 @@ class InterpreterFrame
     bool prologue(JSContext* cx);
     void epilogue(JSContext* cx);
 
-    bool checkReturn(JSContext* cx);
-    bool checkThis(JSContext* cx);
+    bool checkReturn(JSContext* cx, HandleValue thisv);
 
     bool initFunctionScopeObjects(JSContext* cx);
 
@@ -740,14 +739,6 @@ class InterpreterFrame
         if (flags_ & (EVAL | GLOBAL | MODULE))
             return ((Value*)this)[-1];
         return argv()[-1];
-    }
-
-    void setDerivedConstructorThis(HandleObject thisv) {
-        MOZ_ASSERT(isNonEvalFunctionFrame());
-        MOZ_ASSERT(script()->isDerivedClassConstructor());
-        MOZ_ASSERT(callee().isClassConstructor());
-        MOZ_ASSERT(thisValue().isMagic(JS_UNINITIALIZED_LEXICAL));
-        argv()[-1] = ObjectValue(*thisv);
     }
 
     
@@ -2012,16 +2003,10 @@ class FrameIter
     ArgumentsObject& argsObj() const;
 
     
-    bool        computeThis(JSContext* cx) const;
     
     
     
-    
-    
-    
-    
-    Value       computedThisValue() const;
-    Value       thisv(JSContext* cx) const;
+    Value       originalFunctionThis(JSContext* cx) const;
 
     Value       newTarget() const;
 

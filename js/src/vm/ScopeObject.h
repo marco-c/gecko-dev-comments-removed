@@ -874,6 +874,8 @@ class StaticBlockObject : public BlockObject
 
 class ClonedBlockObject : public BlockObject
 {
+    static const unsigned THIS_VALUE_SLOT = 1;
+
     static ClonedBlockObject* create(JSContext* cx, Handle<StaticBlockObject*> block,
                                      HandleObject enclosing);
 
@@ -929,7 +931,7 @@ class ClonedBlockObject : public BlockObject
 
     static ClonedBlockObject* clone(JSContext* cx, Handle<ClonedBlockObject*> block);
 
-    Value thisValue();
+    Value thisValue() const;
 };
 
 
@@ -1180,6 +1182,10 @@ class DebugScopeObject : public ProxyObject
     
     
     bool getMaybeSentinelValue(JSContext* cx, HandleId id, MutableHandleValue vp);
+
+    
+    
+    bool isFunctionScopeWithThis();
 
     
     
@@ -1452,6 +1458,9 @@ bool HasNonSyntacticStaticScopeChain(JSObject* staticScope);
 uint32_t StaticScopeChainLength(JSObject* staticScope);
 
 ModuleEnvironmentObject* GetModuleEnvironmentForScript(JSScript* script);
+
+bool GetThisValueForDebuggerMaybeOptimizedOut(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc,
+                                              MutableHandleValue res);
 
 bool CheckVarNameConflict(JSContext* cx, Handle<ClonedBlockObject*> lexicalScope,
                           HandlePropertyName name);

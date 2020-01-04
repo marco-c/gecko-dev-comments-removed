@@ -173,7 +173,9 @@ class PackedScopeCoordinate
     F(CLASSNAMES) \
     F(NEWTARGET) \
     F(POSHOLDER) \
+    F(SUPERBASE) \
     F(SUPERCALL) \
+    F(SETTHIS) \
     \
     /* Unary operators. */ \
     F(TYPEOFNAME) \
@@ -254,6 +256,10 @@ IsDeleteKind(ParseNodeKind kind)
 {
     return PNK_DELETENAME <= kind && kind <= PNK_DELETEEXPR;
 }
+
+
+
+
 
 
 
@@ -1273,10 +1279,12 @@ class ConditionalExpression : public ParseNode
     }
 };
 
-class ThisLiteral : public ParseNode
+class ThisLiteral : public UnaryNode
 {
   public:
-    explicit ThisLiteral(const TokenPos& pos) : ParseNode(PNK_THIS, JSOP_THIS, PN_NULLARY, pos) { }
+    ThisLiteral(const TokenPos& pos, ParseNode* thisName)
+      : UnaryNode(PNK_THIS, JSOP_NOP, pos, thisName)
+    { }
 };
 
 class NullLiteral : public ParseNode
@@ -1340,7 +1348,7 @@ class PropertyAccess : public ParseNode
 
     bool isSuper() const {
         
-        return expression().isKind(PNK_POSHOLDER);
+        return expression().isKind(PNK_SUPERBASE);
     }
 };
 
@@ -1361,8 +1369,7 @@ class PropertyByValue : public ParseNode
     }
 
     bool isSuper() const {
-        
-        return pn_left->isKind(PNK_POSHOLDER);
+        return pn_left->isKind(PNK_SUPERBASE);
     }
 };
 

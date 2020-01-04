@@ -225,6 +225,10 @@ class JSFunction : public js::NativeObject
         return isLambda() && displayAtom() && !hasGuessedAtom();
     }
 
+    bool hasLexicalThis() const {
+        return isArrow() || nonLazyScript()->isGeneratorExp();
+    }
+
     bool isBuiltinFunctionConstructor();
 
     
@@ -670,17 +674,13 @@ class FunctionExtended : public JSFunction
     static const unsigned NUM_EXTENDED_SLOTS = 2;
 
     
-    static const unsigned ARROW_THIS_SLOT = 0;
-    static const unsigned ARROW_NEWTARGET_SLOT = 1;
+    static const unsigned ARROW_NEWTARGET_SLOT = 0;
 
     static const unsigned METHOD_HOMEOBJECT_SLOT = 0;
 
     static inline size_t offsetOfExtendedSlot(unsigned which) {
         MOZ_ASSERT(which < NUM_EXTENDED_SLOTS);
         return offsetof(FunctionExtended, extendedSlots) + which * sizeof(HeapValue);
-    }
-    static inline size_t offsetOfArrowThisSlot() {
-        return offsetOfExtendedSlot(ARROW_THIS_SLOT);
     }
     static inline size_t offsetOfArrowNewTargetSlot() {
         return offsetOfExtendedSlot(ARROW_NEWTARGET_SLOT);

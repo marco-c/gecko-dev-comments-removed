@@ -34,14 +34,11 @@ BoxNonStrictThis(JSContext* cx, const CallReceiver& call);
 extern bool
 BoxNonStrictThis(JSContext* cx, HandleValue thisv, MutableHandleValue vp);
 
+extern bool
+GetFunctionThis(JSContext* cx, AbstractFramePtr frame, MutableHandleValue res);
 
-
-
-
-
-
-inline bool
-ComputeThis(JSContext* cx, AbstractFramePtr frame);
+extern bool
+GetNonSyntacticGlobalThis(JSContext* cx, HandleObject scopeChain, MutableHandleValue res);
 
 enum MaybeConstruct {
     NO_CONSTRUCT = INITIAL_NONE,
@@ -115,7 +112,7 @@ InternalConstructWithProvidedThis(JSContext* cx, HandleValue fval, HandleValue t
 
 
 extern bool
-ExecuteKernel(JSContext* cx, HandleScript script, JSObject& scopeChain, const Value& thisv,
+ExecuteKernel(JSContext* cx, HandleScript script, JSObject& scopeChain,
               const Value& newTargetVal, ExecuteType type, AbstractFramePtr evalInFrame,
               Value* result);
 
@@ -361,8 +358,7 @@ JSObject*
 Lambda(JSContext* cx, HandleFunction fun, HandleObject parent);
 
 JSObject*
-LambdaArrow(JSContext* cx, HandleFunction fun, HandleObject parent, HandleValue thisv,
-            HandleValue newTargetv);
+LambdaArrow(JSContext* cx, HandleFunction fun, HandleObject parent, HandleValue newTargetv);
 
 bool
 GetElement(JSContext* cx, MutableHandleValue lref, HandleValue rref, MutableHandleValue res);

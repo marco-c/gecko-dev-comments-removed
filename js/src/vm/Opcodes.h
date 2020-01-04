@@ -606,14 +606,7 @@
 
  \
     macro(JSOP_NULL,      64, js_null_str,  js_null_str,  1,  0,  1, JOF_BYTE) \
-    
-
-
-
-
-
- \
-    macro(JSOP_THIS,      65, js_this_str,  js_this_str,  1,  0,  1, JOF_BYTE) \
+    macro(JSOP_UNUSED65,  65, "unused65",   NULL,         1,  0,  1, JOF_BYTE) \
     
 
 
@@ -1340,7 +1333,7 @@
 
 
  \
-    macro(JSOP_LAMBDA_ARROW, 131, "lambda_arrow", NULL,   5,  2,  1, JOF_OBJECT) \
+    macro(JSOP_LAMBDA_ARROW, 131, "lambda_arrow", NULL,   5,  1,  1, JOF_OBJECT) \
     \
     
 
@@ -1666,16 +1659,7 @@
 
  \
     macro(JSOP_DEFLET,        162,"deflet",     NULL,     5,  0,  0,  JOF_ATOM) \
-    \
-    
-
-
-
-
-
-
- \
-    macro(JSOP_SETTHIS,       163,"setthis",    NULL,     1,  1,  1,  JOF_BYTE) \
+    macro(JSOP_UNUSED163,     163,"unused163",  NULL,     1,  0,  1,  JOF_BYTE) \
     
 
 
@@ -1827,9 +1811,24 @@
 
  \
     macro(JSOP_CALLPROP,      184,"callprop",   NULL,     5,  1,  1, JOF_ATOM|JOF_PROP|JOF_TYPESET) \
-    \
-    macro(JSOP_UNUSED185,     185,"unused185",  NULL,     1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED186,     186,"unused186",  NULL,     1,  0,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_FUNCTIONTHIS,  185,"functionthis",NULL,    1,  0,  1,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_GLOBALTHIS,    186,"globalthis", NULL,     1,  0,  1,  JOF_BYTE) \
     macro(JSOP_UNUSED187,     187,"unused187",  NULL,     1,  0,  0,  JOF_BYTE) \
     \
     
@@ -1840,10 +1839,34 @@
 
  \
     macro(JSOP_UINT24,        188,"uint24",     NULL,     4,  0,  1, JOF_UINT24) \
-    \
-    macro(JSOP_UNUSED189,     189,"unused189",   NULL,    1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED190,     190,"unused190",   NULL,    1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED191,     191,"unused191",   NULL,    1,  0,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_CHECKTHIS,     189,"checkthis",   NULL,    1,  1,  1,  JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    macro(JSOP_CHECKRETURN,   190,"checkreturn", NULL,    1,  1,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_CHECKTHISREINIT,191,"checkthisreinit",NULL,1,  1,  1,  JOF_BYTE) \
     macro(JSOP_UNUSED192,     192,"unused192",   NULL,    1,  0,  0,  JOF_BYTE) \
     \
     

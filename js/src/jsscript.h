@@ -333,6 +333,7 @@ class Bindings : public JS::Traceable
 
     
     static BindingIter argumentsBinding(ExclusiveContext* cx, HandleScript script);
+    static BindingIter thisBinding(ExclusiveContext* cx, HandleScript script);
 
     
     bool bindingIsAliased(uint32_t bindingIndex);
@@ -1154,6 +1155,7 @@ class JSScript : public js::gc::TenuredCell
     bool argsHasVarBinding_:1;
     bool needsArgsAnalysis_:1;
     bool needsArgsObj_:1;
+    bool functionHasThisBinding_:1;
 
     
     
@@ -1480,6 +1482,10 @@ class JSScript : public js::gc::TenuredCell
 
     bool hasMappedArgsObj() const {
         return hasMappedArgsObj_;
+    }
+
+    bool functionHasThisBinding() const {
+        return functionHasThisBinding_;
     }
 
     

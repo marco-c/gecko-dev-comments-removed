@@ -260,22 +260,8 @@ EvalKernel(JSContext* cx, const CallArgs& args, EvalType evalType, AbstractFrame
     
     
     
-    RootedValue thisv(cx);
-    if (evalType == DIRECT_EVAL) {
-        MOZ_ASSERT_IF(caller.isInterpreterFrame(), !caller.asInterpreterFrame()->runningInJit());
-
-        
-        
-        
-        if (!ComputeThis(cx, caller))
-            return false;
-        thisv = caller.thisValue();
-    } else {
-        MOZ_ASSERT(args.callee().global() == scopeobj->as<ClonedBlockObject>().global());
-
-        
-        thisv = GetThisValue(scopeobj);
-    }
+    MOZ_ASSERT_IF(evalType != DIRECT_EVAL,
+                  args.callee().global() == scopeobj->as<ClonedBlockObject>().global());
 
     RootedLinearString linearStr(cx, str->ensureLinear(cx));
     if (!linearStr)
@@ -348,15 +334,15 @@ EvalKernel(JSContext* cx, const CallArgs& args, EvalType evalType, AbstractFrame
 
     
     Value newTargetVal = NullValue();
-    return ExecuteKernel(cx, esg.script(), *scopeobj, thisv, newTargetVal, ExecuteType(evalType),
+    return ExecuteKernel(cx, esg.script(), *scopeobj, newTargetVal, ExecuteType(evalType),
                          NullFramePtr() , args.rval().address());
 }
 
 bool
 js::DirectEvalStringFromIon(JSContext* cx,
                             HandleObject scopeobj, HandleScript callerScript,
-                            HandleValue thisValue, HandleValue newTargetValue,
-                            HandleString str, jsbytecode* pc, MutableHandleValue vp)
+                            HandleValue newTargetValue, HandleString str,
+                            jsbytecode* pc, MutableHandleValue vp)
 {
     AssertInnerizedScopeChain(cx, *scopeobj);
 
@@ -428,21 +414,7 @@ js::DirectEvalStringFromIon(JSContext* cx,
         esg.setNewScript(compiled);
     }
 
-    
-    
-    MOZ_ASSERT(thisValue.isObject() || thisValue.isUndefined() || thisValue.isNull());
-
-    
-    
-    
-    
-    RootedValue nthisValue(cx, thisValue);
-    if (!callerScript->strict() && esg.script()->strict() && !thisValue.isObject()) {
-        if (!BoxNonStrictThis(cx, thisValue, &nthisValue))
-            return false;
-    }
-
-    return ExecuteKernel(cx, esg.script(), *scopeobj, nthisValue, newTargetValue,
+    return ExecuteKernel(cx, esg.script(), *scopeobj, newTargetValue,
                          ExecuteType(DIRECT_EVAL), NullFramePtr() , vp.address());
 }
 
@@ -515,10 +487,8 @@ js::ExecuteInGlobalAndReturnScope(JSContext* cx, HandleObject global, HandleScri
     if (!scope)
         return false;
 
-    RootedValue thisv(cx, GetThisValue(global));
-
     RootedValue rval(cx);
-    if (!ExecuteKernel(cx, script, *scope, thisv, UndefinedValue(), EXECUTE_GLOBAL,
+    if (!ExecuteKernel(cx, script, *scope, UndefinedValue(), EXECUTE_GLOBAL,
                        NullFramePtr() , rval.address()))
     {
         return false;
