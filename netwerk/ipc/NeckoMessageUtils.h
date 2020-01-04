@@ -96,10 +96,9 @@ struct ParamTraits<mozilla::net::NetAddr>
                       "https://bugzilla.mozilla.org/show_bug.cgi?id=661158");
       aMsg->WriteBytes(aParam.local.path, sizeof(aParam.local.path));
 #endif
+    } else {
+      NS_RUNTIMEABORT("Unknown socket family");
     }
-
-    
-
   }
 
   static bool Read(const Message* aMsg, void** aIter, mozilla::net::NetAddr* aResult)
@@ -186,4 +185,4 @@ struct ParamTraits<mozilla::net::ResourceTimingStruct>
 
 } 
 
-#endif
+#endif 
