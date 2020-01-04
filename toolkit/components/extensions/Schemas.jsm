@@ -483,7 +483,7 @@ class Type extends Entry {
   
   
   
-  
+
   checkBaseType(baseType) {
     return false;
   }
@@ -1408,8 +1408,7 @@ this.Schemas = {
       checkTypeProperties();
       return new BooleanType(type);
     } else if (type.type == "function") {
-      let isAsync = Boolean(type.async);
-
+      let isAsync = !!type.async;
       let parameters = null;
       if ("parameters" in type) {
         parameters = [];

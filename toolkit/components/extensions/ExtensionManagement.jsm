@@ -86,32 +86,6 @@ var Frames = {
 Frames.init();
 
 
-var Scripts = {
-  scripts: new Set(),
-
-  register(script) {
-    this.scripts.add(script);
-  },
-
-  getScripts() {
-    return this.scripts;
-  },
-};
-
-
-var Schemas = {
-  schemas: new Set(),
-
-  register(schema) {
-    this.schemas.add(schema);
-  },
-
-  getSchemas() {
-    return this.schemas;
-  },
-};
-
-
 
 
 
@@ -299,12 +273,6 @@ function getAPILevelForWindow(window, addonId) {
 this.ExtensionManagement = {
   startupExtension: Service.startupExtension.bind(Service),
   shutdownExtension: Service.shutdownExtension.bind(Service),
-
-  registerScript: Scripts.register.bind(Scripts),
-  getScripts: Scripts.getScripts.bind(Scripts),
-
-  registerSchema: Schemas.register.bind(Schemas),
-  getSchemas: Schemas.getSchemas.bind(Schemas),
 
   getFrameId: Frames.getId.bind(Frames),
   getParentFrameId: Frames.getParentId.bind(Frames),
