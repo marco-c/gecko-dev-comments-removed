@@ -1752,7 +1752,9 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(
     
     
     int card = -1;
+#ifdef WEBRTC_LINUX
     while (!(LATE(snd_card_next)(&card)) && (card >= 0) && keepSearching) {
+#endif
         void **hints;
         err = LATE(snd_device_name_hint)(card, "pcm", &hints);
         if (err != 0)
@@ -1878,7 +1880,9 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(
                          LATE(snd_strerror)(err));
             
         }
+#ifdef WEBRTC_LINUX
       }
+#endif
 
     if (FUNC_GET_NUM_OF_DEVICE == function)
     {
