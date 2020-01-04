@@ -4942,14 +4942,58 @@ CodeOffset
 MacroAssembler::callWithPatch()
 {
     
+    
     as_bl(BOffImm(), Always,  nullptr);
     return CodeOffset(currentOffset());
 }
+
 void
 MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset)
 {
     BufferOffset inst(callerOffset - 4);
     as_bl(BufferOffset(calleeOffset).diffB<BOffImm>(inst), Always, inst);
+}
+
+CodeOffset
+MacroAssembler::thunkWithPatch()
+{
+    
+    
+    
+    
+    
+
+    
+    
+    AutoForbidPools afp(this, 3);
+
+    
+    
+    ScratchRegisterScope scratch(*this);
+    ma_ldr(Address(pc, 0), scratch);
+
+    
+    ma_add(pc, scratch, pc, LeaveCC, Always);
+
+    
+    CodeOffset u32Offset(currentOffset());
+    writeInst(UINT32_MAX);
+
+    return u32Offset;
+}
+
+void
+MacroAssembler::patchThunk(uint32_t u32Offset, uint32_t targetOffset)
+{
+    uint32_t* u32 = reinterpret_cast<uint32_t*>(editSrc(BufferOffset(u32Offset)));
+    MOZ_ASSERT(*u32 == UINT32_MAX);
+
+    uint32_t addOffset = u32Offset - 4;
+    MOZ_ASSERT(editSrc(BufferOffset(addOffset))->is<InstALU>());
+
+    
+    
+    *u32 = (targetOffset - addOffset) - 8;
 }
 
 void

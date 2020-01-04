@@ -507,6 +507,12 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
+    CodeOffset thunkWithPatch() PER_SHARED_ARCH;
+    void patchThunk(uint32_t thunkOffset, uint32_t targetOffset) PER_SHARED_ARCH;
+
+    
+    
+    
     void callAndPushReturnAddress(Register reg) DEFINED_ON(mips_shared, x86_shared);
     void callAndPushReturnAddress(Label* label) DEFINED_ON(mips_shared, x86_shared);
 
