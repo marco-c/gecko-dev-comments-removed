@@ -57,6 +57,7 @@ public:
   
   
   
+  
   virtual JSObject* GetGlobalJSObject() = 0;
 
   
