@@ -2551,17 +2551,16 @@ bool
 BytecodeEmitter::emitPropLHS(ParseNode* pn)
 {
     MOZ_ASSERT(pn->isKind(PNK_DOT));
+    MOZ_ASSERT(!pn->as<PropertyAccess>().isSuper());
+
     ParseNode* pn2 = pn->maybeExpr();
 
     
-    MOZ_ASSERT(!pn2->isKind(PNK_POSHOLDER));
-
-    
 
 
 
 
-    if (pn2->isKind(PNK_DOT)) {
+    if (pn2->isKind(PNK_DOT) && !pn2->as<PropertyAccess>().isSuper()) {
         ParseNode* pndot = pn2;
         ParseNode* pnup = nullptr;
         ParseNode* pndown;
