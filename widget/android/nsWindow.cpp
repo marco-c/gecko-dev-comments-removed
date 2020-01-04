@@ -241,7 +241,6 @@ public:
         , mIMEMaskEventsCount(1) 
         , mIMEUpdatingContext(false)
         , mIMESelectionChanged(false)
-        , mIMETextChangedDuringFlush(false)
     {}
 
     ~Natives();
@@ -317,17 +316,11 @@ private:
     int32_t mIMEMaskEventsCount; 
     bool mIMEUpdatingContext;
     bool mIMESelectionChanged;
-    bool mIMETextChangedDuringFlush;
 
     void SendIMEDummyKeyEvents();
     void AddIMETextChange(const IMETextChange& aChange);
-
-    enum FlushChangesFlag {
-        FLUSH_FLAG_NONE,
-        FLUSH_FLAG_RETRY
-    };
-    void PostFlushIMEChanges(FlushChangesFlag aFlags = FLUSH_FLAG_NONE);
-    void FlushIMEChanges(FlushChangesFlag aFlags = FLUSH_FLAG_NONE);
+    void PostFlushIMEChanges();
+    void FlushIMEChanges();
 
 public:
     bool NotifyIME(const IMENotification& aIMENotification);
@@ -1985,10 +1978,6 @@ nsWindow::Natives::AddIMETextChange(const IMETextChange& aChange)
 
     
     
-    mIMETextChangedDuringFlush = true;
-
-    
-    
     
     
     const int32_t delta = aChange.mNewEnd - aChange.mOldEnd;
@@ -2045,10 +2034,9 @@ nsWindow::Natives::AddIMETextChange(const IMETextChange& aChange)
 }
 
 void
-nsWindow::Natives::PostFlushIMEChanges(FlushChangesFlag aFlags)
+nsWindow::Natives::PostFlushIMEChanges()
 {
-    if (aFlags != FLUSH_FLAG_RETRY &&
-            (!mIMETextChanges.IsEmpty() || mIMESelectionChanged)) {
+    if (!mIMETextChanges.IsEmpty() || mIMESelectionChanged) {
         
         return;
     }
@@ -2056,15 +2044,15 @@ nsWindow::Natives::PostFlushIMEChanges(FlushChangesFlag aFlags)
     
     RefPtr<nsWindow> window(&this->window);
 
-    nsAppShell::gAppShell->PostEvent([this, window, aFlags] {
+    nsAppShell::gAppShell->PostEvent([this, window] {
         if (!window->Destroyed()) {
-            FlushIMEChanges(aFlags);
+            FlushIMEChanges();
         }
     });
 }
 
 void
-nsWindow::Natives::FlushIMEChanges(FlushChangesFlag aFlags)
+nsWindow::Natives::FlushIMEChanges()
 {
     
     
@@ -2080,20 +2068,9 @@ nsWindow::Natives::FlushIMEChanges(FlushChangesFlag aFlags)
     RefPtr<nsWindow> kungFuDeathGrip(&window);
     window.UserActivity();
 
-    struct TextRecord {
-        nsString text;
-        int32_t start;
-        int32_t oldEnd;
-        int32_t newEnd;
-    };
-    nsAutoTArray<TextRecord, 4> textTransaction;
-    if (mIMETextChanges.Length() > textTransaction.Capacity()) {
-        textTransaction.SetCapacity(mIMETextChanges.Length());
-    }
+    for (uint32_t i = 0; i < mIMETextChanges.Length(); i++) {
+        IMETextChange &change = mIMETextChanges[i];
 
-    mIMETextChangedDuringFlush = false;
-
-    for (const IMETextChange &change : mIMETextChanges) {
         if (change.mStart == change.mOldEnd &&
                 change.mStart == change.mNewEnd) {
             continue;
@@ -2110,32 +2087,12 @@ nsWindow::Natives::FlushIMEChanges(FlushChangesFlag aFlags)
             NS_ENSURE_TRUE_VOID(event.mReply.mContentsRoot == imeRoot.get());
         }
 
-        if (mIMETextChangedDuringFlush) {
-            
-            
-            
-            if (!NS_WARN_IF(aFlags == FLUSH_FLAG_RETRY)) {
-                
-                PostFlushIMEChanges(FLUSH_FLAG_RETRY);
-            }
-            return;
-        }
-
-        textTransaction.AppendElement(
-                TextRecord{event.mReply.mString, change.mStart,
-                           change.mOldEnd, change.mNewEnd});
+        mEditable->OnTextChange(event.mReply.mString, change.mStart,
+                                change.mOldEnd, change.mNewEnd);
     }
-
     mIMETextChanges.Clear();
 
-    for (const TextRecord& record : textTransaction) {
-        mEditable->OnTextChange(record.text, record.start,
-                                record.oldEnd, record.newEnd);
-    }
-
     if (mIMESelectionChanged) {
-        mIMESelectionChanged = false;
-
         WidgetQueryContentEvent event(true, eQuerySelectedText, &window);
         window.InitEvent(event, nullptr);
         window.DispatchEvent(&event);
@@ -2145,6 +2102,7 @@ nsWindow::Natives::FlushIMEChanges(FlushChangesFlag aFlags)
 
         mEditable->OnSelectionChange(int32_t(event.GetSelectionStart()),
                                      int32_t(event.GetSelectionEnd()));
+        mIMESelectionChanged = false;
     }
 }
 
