@@ -78,14 +78,14 @@ class Sprinter final : public GenericPrinter
     size_t                size;             
     ptrdiff_t             offset;           
 
-    bool realloc_(size_t newSize);
+    MOZ_MUST_USE bool realloc_(size_t newSize);
 
   public:
     explicit Sprinter(ExclusiveContext* cx, bool shouldReportOOM = true);
     ~Sprinter();
 
     
-    bool init();
+    MOZ_MUST_USE bool init();
 
     void checkInvariants() const;
 
@@ -132,7 +132,7 @@ class Fprinter final : public GenericPrinter
     ~Fprinter();
 
     
-    bool init(const char* path);
+    MOZ_MUST_USE bool init(const char* path);
     void init(FILE* fp);
     bool isInitialized() const {
         return file_ != nullptr;
