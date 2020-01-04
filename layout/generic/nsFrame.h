@@ -676,6 +676,9 @@ private:
 
   NS_IMETHODIMP RefreshSizeCache(nsBoxLayoutState& aState);
 
+  
+  bool HasCSSAnimations();
+
 #ifdef DEBUG_FRAME_DUMP
 public:
   

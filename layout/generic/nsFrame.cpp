@@ -60,6 +60,7 @@
 
 #include "nsBidiPresUtils.h"
 #include "RubyUtils.h"
+#include "nsAnimationManager.h"
 
 
 #include "imgIContainer.h"
@@ -688,7 +689,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     }
   }
 
-  if (nsLayoutUtils::HasCurrentAnimations(static_cast<nsIFrame*>(this))) {
+  if (HasCSSAnimations()) {
     
     
     RestyleManager::AnimationsWithDestroyedFrame* adf =
@@ -9051,6 +9052,14 @@ nsIFrame::CaretPosition::CaretPosition()
 
 nsIFrame::CaretPosition::~CaretPosition()
 {
+}
+
+bool
+nsFrame::HasCSSAnimations()
+{
+  AnimationCollection* collection =
+    PresContext()->AnimationManager()->GetAnimationCollection(this);
+  return collection && collection->mAnimations.Length() > 0;
 }
 
 
