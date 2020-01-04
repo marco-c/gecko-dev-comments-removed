@@ -1,7 +1,3 @@
-
-
-
-
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Promise",
@@ -290,22 +286,27 @@ function isToolbarVisible(aToolbar) {
 
 
 
-let withBookmarksDialog = Task.async(function* (openFn, taskFn) {
+
+
+let withBookmarksDialog = Task.async(function* (autoCancel, openFn, taskFn) {
+  let closed = false;
   let dialogPromise = new Promise(resolve => {
     Services.ww.registerNotification(function winObserver(subject, topic, data) {
-      if (topic != "domwindowopened")
-        return;
-      let win = subject.QueryInterface(Ci.nsIDOMWindow);
-      win.addEventListener("load", function load() {
-        win.removeEventListener("load", load);
-        ok(win.location.href.startsWith("chrome://browser/content/places/bookmarkProperties"),
-           "The bookmark properties dialog is ready");
+      if (topic == "domwindowopened") {
+        let win = subject.QueryInterface(Ci.nsIDOMWindow);
+        win.addEventListener("load", function load() {
+          win.removeEventListener("load", load);
+          ok(win.location.href.startsWith("chrome://browser/content/places/bookmarkProperties"),
+             "The bookmark properties dialog is ready");
+          
+          waitForFocus(() => {
+            resolve(win);
+          }, win);
+        });
+      } else if (topic == "domwindowclosed") {
         Services.ww.unregisterNotification(winObserver);
-        
-        waitForFocus(() => {
-          resolve(win);
-        }, win);
-      });
+        closed = true;
+      }
     });
   });
 
@@ -323,8 +324,13 @@ let withBookmarksDialog = Task.async(function* (openFn, taskFn) {
   try {
     yield taskFn(dialogWin);
   } finally {
-    info("withBookmarksDialog: canceling the dialog");
-    dialogWin.document.documentElement.cancelDialog();
+    if (!closed) {
+      if (!autoCancel) {
+        ok(false, "The test should have closed the dialog!");
+      }
+      info("withBookmarksDialog: canceling the dialog");
+      dialogWin.document.documentElement.cancelDialog();
+    }
   }
 });
 
@@ -402,12 +408,52 @@ let waitForCondition = Task.async(function* (conditionFn, errorMsg) {
 
 
 
-function fillBookmarkTextField(id, text, win) {
+
+
+function fillBookmarkTextField(id, text, win, blur = true) {
   let elt = win.document.getElementById(id);
   elt.focus();
   elt.select();
   for (let c of text.split("")) {
     EventUtils.synthesizeKey(c, {}, win);
   }
-  elt.blur();
+  if (blur)
+    elt.blur();
 }
+
+
+
+
+
+
+
+
+
+
+
+let withSidebarTree = Task.async(function* (type, taskFn) {
+  let sidebar = document.getElementById("sidebar");
+  info("withSidebarTree: waiting sidebar load");
+  let sidebarLoadedPromise = new Promise(resolve => {
+    sidebar.addEventListener("load", function load() {
+      sidebar.removeEventListener("load", load, true);
+      resolve();
+    }, true);
+  });
+  let sidebarId = type == "bookmarks" ? "viewBookmarksSidebar"
+                                      : "viewHistorySidebar";
+  SidebarUI.show(sidebarId);
+  yield sidebarLoadedPromise;
+
+  let treeId = type == "bookmarks" ? "bookmarks-view"
+                                   : "historyTree";
+  let tree = sidebar.contentDocument.getElementById(treeId);
+
+  
+  info("withSidebarTree: executing the task");
+  try {
+    yield taskFn(tree);
+  } finally {
+    SidebarUI.hide();
+  }
+});
