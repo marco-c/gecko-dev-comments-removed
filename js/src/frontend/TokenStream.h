@@ -124,13 +124,12 @@ struct Token
         
         
         
+        
+        
+        
+        
+        
         NoneIsOperand,
-
-        
-        
-        
-        
-        NoneIsOperandYieldEOL,
 
         
         
@@ -437,25 +436,19 @@ class MOZ_STACK_CLASS TokenStream
     typedef Token::ModifierException ModifierException;
     static MOZ_CONSTEXPR_VAR ModifierException NoException = Token::NoException;
     static MOZ_CONSTEXPR_VAR ModifierException NoneIsOperand = Token::NoneIsOperand;
-    static MOZ_CONSTEXPR_VAR ModifierException NoneIsOperandYieldEOL = Token::NoneIsOperandYieldEOL;
     static MOZ_CONSTEXPR_VAR ModifierException OperandIsNone = Token::OperandIsNone;
     static MOZ_CONSTEXPR_VAR ModifierException NoneIsKeywordIsName = Token::NoneIsKeywordIsName;
 
     void addModifierException(ModifierException modifierException) {
 #ifdef DEBUG
         const Token& next = nextToken();
-        if (next.modifierException == NoneIsOperand ||
-            next.modifierException == NoneIsOperandYieldEOL)
+        if (next.modifierException == NoneIsOperand)
         {
             
             
             MOZ_ASSERT(modifierException == OperandIsNone);
-            if (next.modifierException == NoneIsOperand)
-                MOZ_ASSERT(next.type != TOK_DIV && next.type != TOK_REGEXP,
-                           "next token requires contextual specifier to be parsed unambiguously");
-            else
-                MOZ_ASSERT(next.type != TOK_DIV,
-                           "next token requires contextual specifier to be parsed unambiguously");
+            MOZ_ASSERT(next.type != TOK_DIV,
+                       "next token requires contextual specifier to be parsed unambiguously");
 
             
             return;
@@ -464,11 +457,6 @@ class MOZ_STACK_CLASS TokenStream
         MOZ_ASSERT(next.modifierException == NoException);
         switch (modifierException) {
           case NoneIsOperand:
-            MOZ_ASSERT(next.modifier == Operand);
-            MOZ_ASSERT(next.type != TOK_DIV && next.type != TOK_REGEXP,
-                       "next token requires contextual specifier to be parsed unambiguously");
-            break;
-          case NoneIsOperandYieldEOL:
             MOZ_ASSERT(next.modifier == Operand);
             MOZ_ASSERT(next.type != TOK_DIV,
                        "next token requires contextual specifier to be parsed unambiguously");
@@ -502,9 +490,7 @@ class MOZ_STACK_CLASS TokenStream
                 return;
         }
 
-        if (lookaheadToken.modifierException == NoneIsOperand ||
-            lookaheadToken.modifierException == NoneIsOperandYieldEOL)
-        {
+        if (lookaheadToken.modifierException == NoneIsOperand) {
             
             if (modifier == None && lookaheadToken.modifier == Operand)
                 return;
