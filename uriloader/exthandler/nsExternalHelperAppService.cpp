@@ -408,7 +408,7 @@ static nsresult GetDownloadDirectory(nsIFile **_directory,
   
   
 
-  PRUint32 permissions;
+  uint32_t permissions;
   rv = dir->GetPermissions(&permissions);
   NS_ENSURE_SUCCESS(rv, rv);
 

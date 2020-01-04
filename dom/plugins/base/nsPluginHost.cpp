@@ -191,11 +191,11 @@ nsPluginHost *nsPluginHost::sInst;
 
 
 static
-PRInt32
-busy_beaver_PR_Read(PRFileDesc *fd, void * start, PRInt32 len)
+int32_t
+busy_beaver_PR_Read(PRFileDesc *fd, void * start, int32_t len)
 {
     int n;
-    PRInt32 remaining = len;
+    int32_t remaining = len;
 
     while (remaining > 0)
     {
