@@ -301,6 +301,10 @@ NextFrameSeekTask::OnVideoNotDecoded(MediaDecoderReader::NotDecodedReason aReaso
     switch (aReason) {
       case MediaDecoderReader::DECODE_ERROR:
         
+        
+        
+        CancelCallbacks();
+        
         RejectIfExist(__func__);
         break;
       case MediaDecoderReader::WAITING_FOR_DATA:
@@ -359,6 +363,7 @@ NextFrameSeekTask::SetCallbacks()
         EnsureVideoDecodeTaskQueued();
       } else {
         
+        CancelCallbacks();
         RejectIfExist(__func__);
       }
       return;
@@ -371,10 +376,10 @@ void
 NextFrameSeekTask::CancelCallbacks()
 {
   AssertOwnerThread();
-  mAudioCallback.Disconnect();
-  mVideoCallback.Disconnect();
-  mAudioWaitCallback.Disconnect();
-  mVideoWaitCallback.Disconnect();
+  mAudioCallback.DisconnectIfExists();
+  mVideoCallback.DisconnectIfExists();
+  mAudioWaitCallback.DisconnectIfExists();
+  mVideoWaitCallback.DisconnectIfExists();
 }
 
 void
