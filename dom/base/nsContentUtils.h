@@ -938,6 +938,16 @@ public:
   
 
 
+
+
+
+
+
+  static void SandboxFlagsToString(uint32_t aFlags, nsAString& aString);
+
+  
+
+
   static nsresult GenerateUUIDInPlace(nsID& aUUID);
 
   static bool PrefetchEnabled(nsIDocShell* aDocShell);
