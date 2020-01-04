@@ -837,11 +837,6 @@ statuspanel[inactive][previoustype=overLink] {
 }
 
 
-.tabview-menuitem {
-  max-width: 32em;
-}
-
-
 
 html|*#gcli-tooltip-frame,
 html|*#gcli-output-frame,
