@@ -323,8 +323,27 @@ RESTRequest.prototype = {
     
     if (method == "PUT" || method == "POST" || method == "PATCH") {
       
+      
+      let contentType = headers["content-type"];
       if (typeof data != "string") {
         data = JSON.stringify(data);
+        if (!contentType) {
+          contentType = "application/json";
+        }
+        if (!contentType.includes("charset")) {
+          data = CommonUtils.encodeUTF8(data);
+          contentType += "; charset=utf-8";
+        } else {
+          
+          
+          
+          Cu.reportError("rest.js found an object to JSON.stringify but also a " +
+                         "content-type header with a charset specification. " +
+                         "This probably isn't going to do what you expect");
+        }
+      }
+      if (!contentType) {
+        contentType = "text/plain";
       }
 
       this._log.debug(method + " Length: " + data.length);
@@ -336,9 +355,8 @@ RESTRequest.prototype = {
                      .createInstance(Ci.nsIStringInputStream);
       stream.setData(data, data.length);
 
-      let type = headers["content-type"] || "text/plain";
       channel.QueryInterface(Ci.nsIUploadChannel);
-      channel.setUploadStream(stream, type, data.length);
+      channel.setUploadStream(stream, contentType, data.length);
     }
     
     
