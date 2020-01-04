@@ -3463,9 +3463,8 @@ CreateNonSyntacticScopeChain(JSContext* cx, AutoObjectVector& scopeChain,
 
     staticScopeObj.set(&globalLexical->staticBlock());
     if (!scopeChain.empty()) {
-        Rooted<StaticNonSyntacticScope*> scope(cx,
-            StaticNonSyntacticScope::create(cx, staticScopeObj));
-        if (!scope)
+        staticScopeObj.set(StaticNonSyntacticScope::create(cx, staticScopeObj));
+        if (!staticScopeObj)
             return false;
 
         
@@ -3486,11 +3485,10 @@ CreateNonSyntacticScopeChain(JSContext* cx, AutoObjectVector& scopeChain,
         
         
         dynamicScopeObj.set(
-            cx->compartment()->getOrCreateNonSyntacticLexicalScope(cx, scope, dynamicScopeObj));
+            cx->compartment()->getOrCreateNonSyntacticLexicalScope(cx, staticScopeObj,
+                                                                   dynamicScopeObj));
         if (!dynamicScopeObj)
             return false;
-
-        staticScopeObj.set(scope);
     }
 
     return true;
@@ -3504,7 +3502,7 @@ IsFunctionCloneable(HandleFunction fun)
 
     
     
-    if (StaticScope* scope = fun->nonLazyScript()->enclosingStaticScope()) {
+    if (JSObject* scope = fun->nonLazyScript()->enclosingStaticScope()) {
         
         if (IsStaticGlobalLexicalScope(scope))
             return true;
@@ -3521,7 +3519,7 @@ IsFunctionCloneable(HandleFunction fun)
             if (block.needsClone())
                 return false;
 
-            StaticScope* enclosing = block.enclosingScope();
+            JSObject* enclosing = block.enclosingStaticScope();
 
             
             

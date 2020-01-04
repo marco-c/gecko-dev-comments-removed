@@ -50,7 +50,6 @@ class LazyScript;
 class ModuleObject;
 class NestedStaticScope;
 class StaticScope;
-class StaticFunctionScope;
 class RegExpObject;
 struct SourceCompressionTask;
 class Shape;
@@ -67,8 +66,7 @@ namespace detail {
 
 
 bool
-CopyScript(JSContext* cx, Handle<StaticScope*> scriptStaticScope, HandleScript src,
-           HandleScript dst);
+CopyScript(JSContext* cx, HandleObject scriptStaticScope, HandleScript src, HandleScript dst);
 
 } 
 
@@ -148,7 +146,7 @@ struct BlockScopeArray {
 
 class YieldOffsetArray {
     friend bool
-    detail::CopyScript(JSContext* cx, Handle<StaticScope*> scriptStaticScope, HandleScript src,
+    detail::CopyScript(JSContext* cx, HandleObject scriptStaticScope, HandleScript src,
                        HandleScript dst);
 
     uint32_t*       vector_;   
@@ -922,20 +920,20 @@ GeneratorKindFromBits(unsigned val) {
 
 
 
-template <XDRMode mode>
+template<XDRMode mode>
 bool
-XDRScript(XDRState<mode>* xdr, Handle<StaticScope*> enclosingScope,
-          HandleScript enclosingScript, HandleFunction fun, MutableHandleScript scriptp);
+XDRScript(XDRState<mode>* xdr, HandleObject enclosingScope, HandleScript enclosingScript,
+          HandleFunction fun, MutableHandleScript scriptp);
 
-template <XDRMode mode>
+template<XDRMode mode>
 bool
-XDRLazyScript(XDRState<mode>* xdr, Handle<StaticScope*> enclosingScope,
-              HandleScript enclosingScript, HandleFunction fun, MutableHandle<LazyScript*> lazy);
+XDRLazyScript(XDRState<mode>* xdr, HandleObject enclosingScope, HandleScript enclosingScript,
+              HandleFunction fun, MutableHandle<LazyScript*> lazy);
 
 
 
 
-template <XDRMode mode>
+template<XDRMode mode>
 bool
 XDRScriptConst(XDRState<mode>* xdr, MutableHandleValue vp);
 
@@ -946,13 +944,13 @@ class JSScript : public js::gc::TenuredCell
     template <js::XDRMode mode>
     friend
     bool
-    js::XDRScript(js::XDRState<mode>* xdr, js::Handle<js::StaticScope*> enclosingScope,
+    js::XDRScript(js::XDRState<mode>* xdr, js::HandleObject enclosingScope,
                   js::HandleScript enclosingScript,
                   js::HandleFunction fun, js::MutableHandleScript scriptp);
 
     friend bool
-    js::detail::CopyScript(JSContext* cx, js::Handle<js::StaticScope*> scriptStaticScope,
-                           js::HandleScript src, js::HandleScript dst);
+    js::detail::CopyScript(JSContext* cx, js::HandleObject scriptStaticScope, js::HandleScript src,
+                           js::HandleScript dst);
 
   public:
     
@@ -1006,22 +1004,7 @@ class JSScript : public js::gc::TenuredCell
 
     js::HeapPtrFunction function_;
     js::HeapPtr<js::ModuleObject*> module_;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    js::HeapPtr<js::StaticScope*> staticScope_;
+    js::HeapPtrObject   enclosingStaticScope_;
 
     
 
@@ -1229,7 +1212,7 @@ class JSScript : public js::gc::TenuredCell
 
   public:
     static JSScript* Create(js::ExclusiveContext* cx,
-                            js::Handle<js::StaticScope*> staticScope, bool savedCallerFun,
+                            js::HandleObject enclosingScope, bool savedCallerFun,
                             const JS::ReadOnlyCompileOptions& options,
                             js::HandleObject sourceObject, uint32_t sourceStart,
                             uint32_t sourceEnd);
@@ -1713,13 +1696,10 @@ class JSScript : public js::gc::TenuredCell
     inline js::GlobalObject& global() const;
     js::GlobalObject& uninlinedGlobal() const;
 
-    js::StaticScope* staticScope() const { return staticScope_; }
-
     
-
-
-
-    inline js::StaticScope* enclosingStaticScope() const;
+    JSObject* enclosingStaticScope() const {
+        return enclosingStaticScope_;
+    }
 
     
     
@@ -1883,13 +1863,13 @@ class JSScript : public js::gc::TenuredCell
 
     
     
-    js::StaticScope* innermostStaticScopeInScript(jsbytecode* pc);
+    JSObject* innermostStaticScopeInScript(jsbytecode* pc);
 
     
     
-    js::StaticScope* innermostStaticScope(jsbytecode* pc);
+    JSObject* innermostStaticScope(jsbytecode* pc);
 
-    js::StaticScope* innermostStaticScope() { return innermostStaticScope(main()); }
+    JSObject* innermostStaticScope() { return innermostStaticScope(main()); }
 
     
 
@@ -2153,8 +2133,7 @@ class LazyScript : public gc::TenuredCell
     HeapPtrFunction function_;
 
     
-    
-    HeapPtr<StaticFunctionScope*> staticScope_;
+    HeapPtrObject enclosingScope_;
 
     
     
@@ -2206,14 +2185,13 @@ class LazyScript : public gc::TenuredCell
     uint32_t lineno_;
     uint32_t column_;
 
-    LazyScript(JSFunction* fun, StaticFunctionScope* funScope, void* table, uint64_t packedFields,
+    LazyScript(JSFunction* fun, void* table, uint64_t packedFields,
                uint32_t begin, uint32_t end, uint32_t lineno, uint32_t column);
 
     
     
     
     static LazyScript* CreateRaw(ExclusiveContext* cx, HandleFunction fun,
-                                 Handle<StaticFunctionScope*> funScope,
                                  uint64_t packedData, uint32_t begin, uint32_t end,
                                  uint32_t lineno, uint32_t column);
 
@@ -2222,7 +2200,6 @@ class LazyScript : public gc::TenuredCell
     
     
     static LazyScript* CreateRaw(ExclusiveContext* cx, HandleFunction fun,
-                                 Handle<StaticFunctionScope*> funScope,
                                  uint32_t numFreeVariables, uint32_t numInnerFunctions,
                                  JSVersion version, uint32_t begin, uint32_t end,
                                  uint32_t lineno, uint32_t column);
@@ -2237,7 +2214,7 @@ class LazyScript : public gc::TenuredCell
     
     
     static LazyScript* Create(ExclusiveContext* cx, HandleFunction fun,
-                              HandleScript script, Handle<StaticFunctionScope*> funScope,
+                              HandleScript script, HandleObject enclosingScope,
                               HandleScript sourceObjectScript,
                               uint64_t packedData, uint32_t begin, uint32_t end,
                               uint32_t lineno, uint32_t column);
@@ -2262,8 +2239,9 @@ class LazyScript : public gc::TenuredCell
         return bool(script_);
     }
 
-    StaticFunctionScope* staticScope() const { return staticScope_; }
-    StaticScope* enclosingScope() const;
+    JSObject* enclosingScope() const {
+        return enclosingScope_;
+    }
 
     
     
@@ -2282,7 +2260,7 @@ class LazyScript : public gc::TenuredCell
         return (p_.version == JS_BIT(8) - 1) ? JSVERSION_UNKNOWN : JSVersion(p_.version);
     }
 
-    void initSource(ScriptSourceObject* sourceObject);
+    void setParent(JSObject* enclosingScope, ScriptSourceObject* sourceObject);
 
     uint32_t numFreeVariables() const {
         return p_.numFreeVariables;
@@ -2542,7 +2520,7 @@ DescribeScriptedCallerForCompilation(JSContext* cx, MutableHandleScript maybeScr
                                      LineOption opt = NOT_CALLED_FROM_JSOP_EVAL);
 
 JSScript*
-CloneScriptIntoFunction(JSContext* cx, Handle<StaticScope*> enclosingScope, HandleFunction fun,
+CloneScriptIntoFunction(JSContext* cx, HandleObject enclosingScope, HandleFunction fun,
                         HandleScript src);
 
 JSScript*
@@ -2554,7 +2532,7 @@ CloneGlobalScript(JSContext* cx, Handle<StaticScope*> enclosingScope, HandleScri
 
 namespace JS {
 namespace ubi {
-template <>
+template<>
 struct Concrete<js::LazyScript> : TracerConcrete<js::LazyScript> {
     CoarseType coarseType() const final { return CoarseType::Script; }
     Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
