@@ -50,42 +50,12 @@ registerCleanupFunction(() => {
 
 
 
-function addTab(url) {
-  info("Adding a new tab with URL: '" + url + "'");
-  let def = promise.defer();
-
-  
-  
-  
-  window.focus();
-
-  let tab = window.gBrowser.selectedTab = window.gBrowser.addTab(url);
-  let linkedBrowser = tab.linkedBrowser;
-
-  linkedBrowser.addEventListener("load", function onload(event) {
-    if (event.originalTarget.location.href != url) {
-      return;
-    }
-    linkedBrowser.removeEventListener("load", onload, true);
-    info("URL '" + url + "' loading complete");
-    def.resolve(tab.linkedBrowser.contentWindow);
-  }, true);
-
-  return def.promise;
-}
-
-
-
-
-
-
-
-
 
 
 
 function* openTabAndSetupStorage(url) {
-  let content = yield addTab(url);
+  let tab = yield addTab(url);
+  let content = tab.linkedBrowser.contentWindow;
 
   gWindow = content.wrappedJSObject;
 
