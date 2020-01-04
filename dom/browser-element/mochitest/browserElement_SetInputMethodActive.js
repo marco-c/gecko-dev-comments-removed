@@ -9,6 +9,27 @@ SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
 browserElementTestHelpers.addPermission();
 
+
+
+
+
+
+var currentAppId = SpecialPowers.wrap(document).nodePrincipal.appId;
+var inApp =
+  currentAppId !== SpecialPowers.Ci.nsIScriptSecurityManager.NO_APP_ID;
+
+var currentAppManifestURL;
+
+if (inApp) {
+  let appsService = SpecialPowers.Cc["@mozilla.org/AppsService;1"]
+                      .getService(SpecialPowers.Ci.nsIAppsService);
+
+  currentAppManifestURL = appsService.getManifestURLByLocalId(currentAppId);
+};
+
+info('appId=' + currentAppId);
+info('manifestURL=' + currentAppManifestURL);
+
 function setup() {
   let appInfo = SpecialPowers.Cc['@mozilla.org/xre/app-info;1']
                 .getService(SpecialPowers.Ci.nsIXULAppInfo);
@@ -27,110 +48,134 @@ function tearDown() {
 }
 
 function runTest() {
-  let path = location.pathname;
-  let imeUrl = location.protocol + '//' + location.host +
-               path.substring(0, path.lastIndexOf('/')) +
-               '/file_inputmethod.html';
-  SpecialPowers.pushPermissions([{
-    type: 'input',
-    allow: true,
-    context: {
-      url: imeUrl,
-      originAttributes: {inBrowser: true}
-    }
-  }], SimpleTest.waitForFocus.bind(SimpleTest, createFrames));
+  createFrames();
 }
 
-var gFrames = [];
+var gInputMethodFrames = [];
 var gInputFrame;
 
 function createFrames() {
   
   let loadendCount = 0;
   let countLoadend = function() {
-    if (this === gInputFrame) {
-      
-      let appFrameScript = function appFrameScript() {
-        let input = content.document.body.firstElementChild;
-        input.oninput = function() {
-          sendAsyncMessage('test:InputMethod:oninput', {
-            from: 'input',
-            value: this.value
-          });
-        };
-
-        input.onblur = function() {
-          
-          if (input.value === '#0#1hello') {
-            return;
-          }
-
-          sendAsyncMessage('test:InputMethod:oninput', {
-            from: 'input',
-            error: true,
-            value: 'Unexpected lost of focus on the input frame!'
-          });
-        };
-
-        input.focus();
-      }
-
-      
-      let mm = SpecialPowers.getBrowserFrameMessageManager(gInputFrame);
-      mm.loadFrameScript('data:,(' + encodeURIComponent(appFrameScript.toString()) + ')();', false);
-      mm.addMessageListener("test:InputMethod:oninput", next);
-    } else {
-      ok(this.setInputMethodActive, 'Can access setInputMethodActive.');
-
-      
-
-      let appFrameScript = function appFrameScript() {
-        content.addEventListener("message", function(evt) {
-          sendAsyncMessage('test:InputMethod:imFrameMessage', {
-            from: 'im',
-            value: evt.data
-          });
-        });
-      }
-
-      
-      let mm = SpecialPowers.getBrowserFrameMessageManager(this);
-      mm.loadFrameScript('data:,(' + appFrameScript.toString() + ')();', false);
-      mm.addMessageListener("test:InputMethod:imFrameMessage", next);
-    }
-
     loadendCount++;
     if (loadendCount === 3) {
-      startTest();
+      setPermissions();
+     }
+   };
+
+   
+   gInputFrame = document.createElement('iframe');
+   gInputFrame.setAttribute('mozbrowser', 'true');
+   gInputFrame.src =
+     'data:text/html,<input autofocus value="hello" />' +
+     '<p>This is targetted mozbrowser frame.</p>';
+   document.body.appendChild(gInputFrame);
+   gInputFrame.addEventListener('mozbrowserloadend', countLoadend);
+
+   for (let i = 0; i < 2; i++) {
+    let frame = gInputMethodFrames[i] = document.createElement('iframe');
+    frame.setAttribute('mozbrowser', 'true');
+    if (currentAppManifestURL) {
+      frame.setAttribute('mozapp', currentAppManifestURL);
     }
+    frame.src = 'file_empty.html#' + i;
+     document.body.appendChild(frame);
+     frame.addEventListener('mozbrowserloadend', countLoadend);
+   }
+ }
+
+function setPermissions() {
+  let permissions = [{
+    type: 'input',
+    allow: true,
+    context: {
+      url: SimpleTest.getTestFileURL('/file_empty.html'),
+      originAttributes: {
+        appId: currentAppId,
+        inBrowser: true
+      }
+    }
+  }];
+
+  if (inApp) {
+    
+    
+    permissions.push({
+      type: 'input', allow: true, context: document });
+  }
+
+  SpecialPowers.pushPermissions(permissions,
+    SimpleTest.waitForFocus.bind(SimpleTest, startTest));
+}
+
+ function startTest() {
+  
+  let appFrameScript = function appFrameScript() {
+    let input = content.document.body.firstElementChild;
+    input.oninput = function() {
+      sendAsyncMessage('test:InputMethod:oninput', {
+        from: 'input',
+        value: this.value
+      });
+    };
+
+    input.onblur = function() {
+      
+      if (input.value === '#0#1hello') {
+        return;
+      }
+
+      sendAsyncMessage('test:InputMethod:oninput', {
+        from: 'input',
+        error: true,
+        value: 'Unexpected lost of focus on the input frame!'
+      });
+    };
+
+    input.focus();
   };
 
   
-  gInputFrame = document.createElement('iframe');
-  gInputFrame.setAttribute('mozbrowser', 'true');
-  gInputFrame.src =
-    'data:text/html,<input autofocus value="hello" />' +
-    '<p>This is targetted mozbrowser frame.</p>';
-  document.body.appendChild(gInputFrame);
-  gInputFrame.addEventListener('mozbrowserloadend', countLoadend);
+  let mm = SpecialPowers.getBrowserFrameMessageManager(gInputFrame);
+  mm.loadFrameScript('data:,(' + encodeURIComponent(appFrameScript.toString()) + ')();', false);
+  mm.addMessageListener("test:InputMethod:oninput", next);
 
-  for (let i = 0; i < 2; i++) {
-    let frame = gFrames[i] = document.createElement('iframe');
-    gFrames[i].setAttribute('mozbrowser', 'true');
-    
-    
-    
-    frame.src = 'file_inputmethod.html#' + i;
-    document.body.appendChild(frame);
-    frame.addEventListener('mozbrowserloadend', countLoadend);
-  }
-}
+  gInputMethodFrames.forEach((frame) => {
+    ok(frame.setInputMethodActive, 'Can access setInputMethodActive.');
 
-function startTest() {
-  
-  SpecialPowers.DOMWindowUtils.focus(gInputFrame);
+    
+    let appFrameScript = function appFrameScript() {
+      let im = content.navigator.mozInputMethod;
+      im.oninputcontextchange = function() {
+        let ctx = im.inputcontext;
+        
+        
+        
+        content.setTimeout(() => {
+          sendAsyncMessage('test:InputMethod:imFrameMessage', {
+            from: 'im',
+            value: content.location.hash + !!ctx
+          });
+        });
 
-  let req0 = gFrames[0].setInputMethodActive(true);
+        
+        if (ctx) {
+          ctx.replaceSurroundingText(content.location.hash);
+        }
+      };
+    };
+
+    
+    let mm = SpecialPowers.getBrowserFrameMessageManager(frame);
+    mm.loadFrameScript('data:,(' + encodeURIComponent(appFrameScript.toString()) + ')();', false);
+    mm.addMessageListener("test:InputMethod:imFrameMessage", next);
+  });
+
+   
+   SpecialPowers.DOMWindowUtils.focus(gInputFrame);
+
+  let req0 = gInputMethodFrames[0].setInputMethodActive(true);
   req0.onsuccess = function() {
     ok(true, 'setInputMethodActive succeeded (0).');
   };
@@ -203,14 +248,14 @@ function next(msg) {
 
       gCount++;
 
-      let req0 = gFrames[0].setInputMethodActive(false);
+      let req0 = gInputMethodFrames[0].setInputMethodActive(false);
       req0.onsuccess = function() {
         ok(true, 'setInputMethodActive succeeded (0).');
       };
       req0.onerror = function() {
         ok(false, 'setInputMethodActive failed (0): ' + this.error.name);
       };
-      let req1 = gFrames[1].setInputMethodActive(true);
+      let req1 = gInputMethodFrames[1].setInputMethodActive(true);
       req1.onsuccess = function() {
         ok(true, 'setInputMethodActive succeeded (1).');
       };
@@ -259,7 +304,7 @@ function next(msg) {
 
       
       
-      let req3 = gFrames[1].setInputMethodActive(false);
+      let req3 = gInputMethodFrames[1].setInputMethodActive(false);
       req3.onsuccess = function() {
         ok(true, 'setInputMethodActive(false) succeeded (2).');
       };
