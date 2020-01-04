@@ -3499,7 +3499,7 @@ void AsyncPanZoomController::DispatchStateChangeNotification(PanZoomState aOldSt
       
       
       if (mCompositorParent) {
-        mCompositorParent->ScheduleHideAllPluginWindowsAPZ();
+        mCompositorParent->ScheduleHideAllPluginWindows();
       }
 #endif
     } else if (IsTransformingState(aOldState) && !IsTransformingState(aNewState)) {
@@ -3507,7 +3507,7 @@ void AsyncPanZoomController::DispatchStateChangeNotification(PanZoomState aOldSt
           GetGuid(), APZStateChange::TransformEnd);
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
       if (mCompositorParent) {
-        mCompositorParent->ScheduleShowAllPluginWindowsAPZ();
+        mCompositorParent->ScheduleShowAllPluginWindows();
       }
 #endif
     }

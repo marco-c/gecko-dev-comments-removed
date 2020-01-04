@@ -388,10 +388,8 @@ public:
 
 
 
-  void ScheduleShowAllPluginWindowsAPZ();
-  void ScheduleHideAllPluginWindowsAPZ();
-  void ShowAllPluginWindowsAPZ();
-  void HideAllPluginWindowsAPZ();
+  void ScheduleShowAllPluginWindows();
+  void ScheduleHideAllPluginWindows();
   void ShowAllPluginWindows();
   void HideAllPluginWindows();
 #endif
