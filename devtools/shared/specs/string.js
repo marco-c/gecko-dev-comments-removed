@@ -5,9 +5,8 @@
 
 const protocol = require("devtools/shared/protocol");
 const {Arg, RetVal, generateActorSpec} = protocol;
-
-loader.lazyRequireGetter(this, "SimpleStringFront",
-                         "devtools/shared/fronts/string", true);
+const promise = require("promise");
+const {Class} = require("sdk/core/heritage");
 
 const longStringSpec = generateActorSpec({
   typeName: "longstractor",
@@ -25,6 +24,40 @@ const longStringSpec = generateActorSpec({
 });
 
 exports.longStringSpec = longStringSpec;
+
+
+
+
+
+
+const SimpleStringFront = Class({
+  initialize: function (str) {
+    this.str = str;
+  },
+
+  get length() {
+    return this.str.length;
+  },
+
+  get initial() {
+    return this.str;
+  },
+
+  string: function () {
+    return promise.resolve(this.str);
+  },
+
+  substring: function (start, end) {
+    return promise.resolve(this.str.substring(start, end));
+  },
+
+  release: function () {
+    this.str = null;
+    return promise.resolve(undefined);
+  }
+});
+
+exports.SimpleStringFront = SimpleStringFront;
 
 
 
@@ -47,7 +80,7 @@ protocol.types.addType("longstring", {
       throw Error("Passing a longstring as an argument isn't supported.");
     }
     if (typeof (value) === "string") {
-      return SimpleStringFront(value);
+      return new SimpleStringFront(value);
     }
     return stringActorType.read(value, context, detail);
   }

@@ -9,6 +9,9 @@ var {RetVal, Arg, Option} = protocol;
 var events = require("sdk/event/core");
 var {LongStringActor} = require("devtools/server/actors/string");
 
+
+require("devtools/shared/fronts/string");
+
 function simpleHello() {
   return {
     from: "root",
