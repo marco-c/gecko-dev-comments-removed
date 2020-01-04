@@ -19,5 +19,7 @@ add_task(function* () {
   info("Switch the host to side type");
   yield toolbox.switchHost("side");
 
-  ok(!button.getClientRects().length, "The button is hidden");
+  ok(!!button.getClientRects().length, "The button is still visible");
+  ok(!button.hasAttribute("pane-collapsed"),
+     "The button is still in expanded state");
 });

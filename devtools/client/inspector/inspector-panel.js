@@ -90,7 +90,6 @@ function InspectorPanel(iframeWindow, toolbox) {
   this.onNewSelection = this.onNewSelection.bind(this);
   this.onBeforeNewSelection = this.onBeforeNewSelection.bind(this);
   this.onDetached = this.onDetached.bind(this);
-  this.onToolboxHostChanged = this.onToolboxHostChanged.bind(this);
   this.onPaneToggleButtonClicked = this.onPaneToggleButtonClicked.bind(this);
   this._onMarkupFrameLoad = this._onMarkupFrameLoad.bind(this);
 
@@ -166,8 +165,6 @@ InspectorPanel.prototype = {
     this.selection.on("detached-front", this.onDetached);
 
     this.breadcrumbs = new HTMLBreadcrumbs(this);
-
-    this._toolbox.on("host-changed", this.onToolboxHostChanged);
 
     if (this.target.isLocalTab) {
       
@@ -386,7 +383,6 @@ InspectorPanel.prototype = {
     this._paneToggleButton = this.panelDoc.getElementById("inspector-pane-toggle");
     this._paneToggleButton.addEventListener("mousedown",
       this.onPaneToggleButtonClicked);
-    this.updatePaneToggleButton();
   },
 
   
@@ -582,7 +578,6 @@ InspectorPanel.prototype = {
     this.target.off("thread-paused", this.updateDebuggerPausedWarning);
     this.target.off("thread-resumed", this.updateDebuggerPausedWarning);
     this._toolbox.off("select", this.updateDebuggerPausedWarning);
-    this._toolbox.off("host-changed", this.onToolboxHostChanged);
 
     if (this.ruleview) {
       this.ruleview.destroy();
@@ -982,13 +977,6 @@ InspectorPanel.prototype = {
   
 
 
-  onToolboxHostChanged: function() {
-    this.updatePaneToggleButton();
-  },
-
-  
-
-
 
   onPaneToggleButtonClicked: function(e) {
     let sidePane = this.panelDoc.querySelector("#inspector-sidebar");
@@ -1020,14 +1008,6 @@ InspectorPanel.prototype = {
       button.removeAttribute("pane-collapsed");
       button.setAttribute("tooltiptext", strings.GetStringFromName("inspector.collapsePane"));
     }
-  },
-
-  
-
-
-  updatePaneToggleButton: function() {
-    this._paneToggleButton.setAttribute("hidden",
-      this._toolbox.hostType === HostType.SIDE);
   },
 
   

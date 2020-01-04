@@ -5,6 +5,7 @@
 
 
 
+
 add_task(function* () {
   let {inspector} = yield openInspectorForURL("about:blank");
 
