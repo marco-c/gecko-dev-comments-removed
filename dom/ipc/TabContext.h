@@ -9,6 +9,7 @@
 
 #include "mozIApplication.h"
 #include "nsCOMPtr.h"
+#include "mozilla/BasePrincipal.h"
 
 namespace mozilla {
 namespace dom {
@@ -102,6 +103,13 @@ public:
   already_AddRefed<mozIApplication> GetOwnOrContainingApp() const;
   bool HasOwnOrContainingApp() const;
 
+  
+
+
+
+
+  const OriginAttributes& OriginAttributesRef() const;
+
 protected:
   friend class MaybeInvalidTabContext;
 
@@ -123,19 +131,12 @@ protected:
 
 
 
-  bool SetTabContextForAppFrame(mozIApplication* aOwnApp,
-                                mozIApplication* aAppFrameOwnerApp);
-
-  
 
 
 
-  bool SetTabContextForBrowserFrame(mozIApplication* aBrowserFrameOwnerApp);
-
-  
-
-
-  bool SetTabContextForNormalFrame();
+  bool SetTabContext(mozIApplication* aOwnApp,
+                     mozIApplication* aAppFrameOwnerApp,
+                     const OriginAttributes& aOriginAttributes);
 
 private:
   
@@ -153,12 +154,6 @@ private:
 
 
 
-  uint32_t mOwnAppId;
-
-  
-
-
-
 
   nsCOMPtr<mozIApplication> mContainingApp;
 
@@ -170,9 +165,8 @@ private:
   
 
 
+  OriginAttributes mOriginAttributes;
 
-
-  bool mIsBrowser;
 };
 
 
@@ -188,20 +182,13 @@ public:
     return TabContext::SetTabContext(aContext);
   }
 
-  bool SetTabContextForAppFrame(mozIApplication* aOwnApp,
-                                mozIApplication* aAppFrameOwnerApp)
+  bool SetTabContext(mozIApplication* aOwnApp,
+                     mozIApplication* aAppFrameOwnerApp,
+                     const OriginAttributes& aOriginAttributes)
   {
-    return TabContext::SetTabContextForAppFrame(aOwnApp, aAppFrameOwnerApp);
-  }
-
-  bool SetTabContextForBrowserFrame(mozIApplication* aBrowserFrameOwnerApp)
-  {
-    return TabContext::SetTabContextForBrowserFrame(aBrowserFrameOwnerApp);
-  }
-
-  bool SetTabContextForNormalFrame()
-  {
-    return TabContext::SetTabContextForNormalFrame();
+    return TabContext::SetTabContext(aOwnApp,
+                                     aAppFrameOwnerApp,
+                                     aOriginAttributes);
   }
 };
 
