@@ -1,23 +1,18 @@
 
-var normalSize = new function() {
-  this.w = window.outerWidth;
-  this.h = window.outerHeight;
-}();
 
 
 
-
-function inFullscreenMode() {
-  return window.outerWidth == window.screen.width &&
-         window.outerHeight == window.screen.height;
+function inFullscreenMode(win) {
+  return win.outerWidth == win.screen.width &&
+         win.outerHeight == win.screen.height;
 }
 
 
 
 
-function inNormalMode() {
-  return window.outerWidth == normalSize.w &&
-         window.outerHeight == normalSize.h;
+function inNormalMode(win) {
+  return win.outerWidth == win.normalSize.w &&
+         win.outerHeight == win.normalSize.h;
 }
 
 
@@ -31,17 +26,24 @@ function inNormalMode() {
 
 function addFullscreenChangeContinuation(type, callback, inDoc) {
   var doc = inDoc || document;
+  var topWin = doc.defaultView.top;
+  
+  if (!topWin.normalSize) {
+    topWin.normalSize = {
+      w: window.outerWidth,
+      h: window.outerHeight
+    };
+  }
   function checkCondition() {
     if (type == "enter") {
-      return inFullscreenMode();
+      return inFullscreenMode(topWin);
     } else if (type == "exit") {
       
       
       
       
       
-      var topDoc = doc.defaultView.top.document;
-      return topDoc.mozFullScreenElement || inNormalMode();
+      return topWin.document.mozFullScreenElement || inNormalMode(topWin);
     } else {
       throw "'type' must be either 'enter', or 'exit'.";
     }
@@ -57,14 +59,13 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
       invokeCallback(event);
       return;
     }
-    var win = doc.defaultView;
     function onResize() {
       if (checkCondition()) {
-        win.removeEventListener("resize", onResize, false);
+        topWin.removeEventListener("resize", onResize, false);
         invokeCallback(event);
       }
     }
-    win.addEventListener("resize", onResize, false);
+    topWin.addEventListener("resize", onResize, false);
   }
   doc.addEventListener("mozfullscreenchange", onFullscreenChange, false);
 }
