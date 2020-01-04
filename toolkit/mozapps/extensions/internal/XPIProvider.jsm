@@ -3821,6 +3821,7 @@ this.XPIProvider = {
 
 
 
+
   installTemporaryAddon: Task.async(function*(aFile) {
     let addon = yield loadManifestFromFile(aFile, TemporaryInstallLocation);
 
