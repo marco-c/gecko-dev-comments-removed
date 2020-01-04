@@ -270,6 +270,8 @@ LayerTransactionParent::RecvUpdate(InfallibleTArray<Edit>&& cset,
     return true;
   }
 
+  
+  
   AutoLayerTransactionParentAsyncMessageSender autoAsyncMessageSender(this, &aToDestroy);
   EditReplyVector replyv;
 
