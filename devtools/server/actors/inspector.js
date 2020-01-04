@@ -197,7 +197,7 @@ exports.getNodeDisplayName = getNodeDisplayName;
 
 
 
-var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
+var NodeActor = exports.NodeActor = protocol.ActorClass(nodeSpec, {
   initialize: function (walker, node) {
     protocol.Actor.prototype.initialize.call(this, null);
     this.walker = walker;
@@ -708,7 +708,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
 
-var NodeListActor = exports.NodeListActor = protocol.ActorClassWithSpec(nodeListSpec, {
+var NodeListActor = exports.NodeListActor = protocol.ActorClass(nodeListSpec, {
   typeName: "domnodelist",
 
   initialize: function (walker, nodeList) {
@@ -766,7 +766,7 @@ var NodeListActor = exports.NodeListActor = protocol.ActorClassWithSpec(nodeList
 
 
 
-var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
+var WalkerActor = protocol.ActorClass(walkerSpec, {
   
 
 
@@ -2578,7 +2578,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
+exports.InspectorActor = protocol.ActorClass(inspectorSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;

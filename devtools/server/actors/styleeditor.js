@@ -28,7 +28,7 @@ transition-property: all !important;\
 
 var LOAD_ERROR = "error-load";
 
-var OldStyleSheetActor = protocol.ActorClassWithSpec(oldStyleSheetSpec, {
+var OldStyleSheetActor = protocol.ActorClass(oldStyleSheetSpec, {
   toString: function() {
     return "[OldStyleSheetActor " + this.actorID + "]";
   },
@@ -321,7 +321,7 @@ exports.OldStyleSheetActor = OldStyleSheetActor;
 
 
 
-var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(styleEditorSpec, {
+var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass(styleEditorSpec, {
   
 
 

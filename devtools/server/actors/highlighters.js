@@ -82,7 +82,7 @@ exports.register = register;
 
 
 
-var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
+var HighlighterActor = exports.HighlighterActor = protocol.ActorClass(highlighterSpec, {
   initialize: function (inspector, autohide) {
     protocol.Actor.prototype.initialize.call(this, null);
 
@@ -407,7 +407,7 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
 
 
 
-var CustomHighlighterActor = exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSpec, {
+var CustomHighlighterActor = exports.CustomHighlighterActor = protocol.ActorClass(customHighlighterSpec, {
   
 
 

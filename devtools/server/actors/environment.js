@@ -5,7 +5,7 @@
 
 "use strict";
 
-const { ActorClassWithSpec } = require("devtools/shared/protocol");
+const { ActorClass } = require("devtools/shared/protocol");
 const { createValueGrip } = require("devtools/server/actors/object");
 const { environmentSpec } = require("devtools/shared/specs/environment");
 
@@ -19,7 +19,7 @@ const { environmentSpec } = require("devtools/shared/specs/environment");
 
 
 
-let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
+let EnvironmentActor = ActorClass(environmentSpec, {
   initialize: function (environment, threadActor) {
     this.obj = environment;
     this.threadActor = threadActor;

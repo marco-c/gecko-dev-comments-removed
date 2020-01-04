@@ -60,7 +60,7 @@ let modifiedStyleSheets = new WeakMap();
 
 
 
-var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
+var OriginalSourceActor = protocol.ActorClass(originalSourceSpec, {
   initialize: function (aUrl, aSourceMap, aParentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
@@ -113,7 +113,7 @@ var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
 
 
 
-var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
+var MediaRuleActor = protocol.ActorClass(mediaRuleSpec, {
   get window() {
     return this.parentActor.window;
   },
@@ -183,7 +183,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
 
 
 
-var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
+var StyleSheetActor = protocol.ActorClass(styleSheetSpec, {
   
   _originalSources: null,
 
@@ -786,7 +786,7 @@ exports.StyleSheetActor = StyleSheetActor;
 
 
 
-var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
+var StyleSheetsActor = protocol.ActorClass(styleSheetsSpec, {
   
 
 

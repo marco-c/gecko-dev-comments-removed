@@ -36,7 +36,7 @@ const {reflowSpec} = require("devtools/shared/specs/layout");
 
 
 
-var ReflowActor = exports.ReflowActor = protocol.ActorClassWithSpec(reflowSpec, {
+var ReflowActor = exports.ReflowActor = protocol.ActorClass(reflowSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
 

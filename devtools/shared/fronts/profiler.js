@@ -6,7 +6,7 @@
 const { Cu } = require("chrome");
 const {
   Front,
-  FrontClassWithSpec,
+  FrontClass,
   custom
 } = require("devtools/shared/protocol");
 const { profilerSpec } = require("devtools/shared/specs/profiler");
@@ -18,7 +18,7 @@ loader.lazyRequireGetter(this, "extend", "sdk/util/object", true);
 
 
 
-exports.ProfilerFront = FrontClassWithSpec(profilerSpec, {
+exports.ProfilerFront = FrontClass(profilerSpec, {
   initialize: function (client, form) {
     Front.prototype.initialize.call(this, client, form);
     this.actorID = form.profilerActor;

@@ -17,7 +17,7 @@ const { actorActorSpec, actorRegistrySpec } = require("devtools/shared/specs/act
 
 
 
-const ActorActor = protocol.ActorClassWithSpec(actorActorSpec, {
+const ActorActor = protocol.ActorClass(actorActorSpec, {
   initialize: function (conn, options) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
@@ -33,7 +33,7 @@ const ActorActor = protocol.ActorClassWithSpec(actorActorSpec, {
 
 
 
-const ActorRegistryActor = protocol.ActorClassWithSpec(actorRegistrySpec, {
+const ActorRegistryActor = protocol.ActorClass(actorRegistrySpec, {
   initialize: function (conn) {
     protocol.Actor.prototype.initialize.call(this, conn);
   },

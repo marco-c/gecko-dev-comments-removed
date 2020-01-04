@@ -15,7 +15,7 @@ loader.lazyRequireGetter(this, "events", "sdk/event/core");
 
 
 
-var PromisesActor = protocol.ActorClassWithSpec(promisesSpec, {
+var PromisesActor = protocol.ActorClass(promisesSpec, {
   
 
 

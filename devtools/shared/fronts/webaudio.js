@@ -25,7 +25,7 @@ const AUDIO_NODE_DEFINITION = require("devtools/server/actors/utils/audionodes.j
 
 
 
-const AudioNodeFront = protocol.FrontClassWithSpec(audionodeSpec, {
+const AudioNodeFront = protocol.FrontClass(audionodeSpec, {
   form: function (form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
@@ -53,7 +53,7 @@ exports.AudioNodeFront = AudioNodeFront;
 
 
 
-const WebAudioFront = protocol.FrontClassWithSpec(webAudioSpec, {
+const WebAudioFront = protocol.FrontClass(webAudioSpec, {
   initialize: function (client, { webaudioActor }) {
     protocol.Front.prototype.initialize.call(this, client, { actor: webaudioActor });
     this.manage(this);

@@ -3,13 +3,13 @@
 
 "use strict";
 
-const { FrontClassWithSpec } = require("devtools/shared/protocol");
+const { FrontClass } = require("devtools/shared/protocol");
 const {
   customHighlighterSpec,
   highlighterSpec
 } = require("devtools/shared/specs/highlighters");
 
-const HighlighterFront = FrontClassWithSpec(highlighterSpec, {
+const HighlighterFront = FrontClass(highlighterSpec, {
   
   form: function (json) {
     this.actorID = json.actor;
@@ -20,6 +20,6 @@ const HighlighterFront = FrontClassWithSpec(highlighterSpec, {
 
 exports.HighlighterFront = HighlighterFront;
 
-const CustomHighlighterFront = FrontClassWithSpec(customHighlighterSpec, {});
+const CustomHighlighterFront = FrontClass(customHighlighterSpec, {});
 
 exports.CustomHighlighterFront = CustomHighlighterFront;

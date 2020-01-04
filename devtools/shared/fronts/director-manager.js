@@ -13,7 +13,7 @@ const protocol = require("devtools/shared/protocol");
 
 
 
-const MessagePortFront = protocol.FrontClassWithSpec(messagePortSpec, {
+const MessagePortFront = protocol.FrontClass(messagePortSpec, {
   initialize: function (client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
   }
@@ -24,7 +24,7 @@ exports.MessagePortFront = MessagePortFront;
 
 
 
-const DirectorScriptFront = protocol.FrontClassWithSpec(directorScriptSpec, {
+const DirectorScriptFront = protocol.FrontClass(directorScriptSpec, {
   initialize: function (client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
   }
@@ -35,7 +35,7 @@ exports.DirectorScriptFront = DirectorScriptFront;
 
 
 
-const DirectorManagerFront = protocol.FrontClassWithSpec(directorManagerSpec, {
+const DirectorManagerFront = protocol.FrontClass(directorManagerSpec, {
   initialize: function (client, { directorManagerActor }) {
     protocol.Front.prototype.initialize.call(this, client, {
       actor: directorManagerActor

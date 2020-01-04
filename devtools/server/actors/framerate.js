@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
+const { Actor, ActorClass } = require("devtools/shared/protocol");
 const { actorBridgeWithSpec } = require("devtools/server/actors/common");
 const { on, once, off, emit } = require("sdk/event/core");
 const { Framerate } = require("devtools/server/performance/framerate");
@@ -15,7 +15,7 @@ const { framerateSpec } = require("devtools/shared/specs/framerate");
 
 
 
-var FramerateActor = exports.FramerateActor = ActorClassWithSpec(framerateSpec, {
+var FramerateActor = exports.FramerateActor = ActorClass(framerateSpec, {
   initialize: function (conn, tabActor) {
     Actor.prototype.initialize.call(this, conn);
     this.bridge = new Framerate(tabActor);

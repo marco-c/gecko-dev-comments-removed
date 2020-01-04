@@ -28,7 +28,7 @@ const PROGRAM_HIGHLIGHT_TRAIT = 2;
 
 
 
-var ShaderActor = protocol.ActorClassWithSpec(shaderSpec, {
+var ShaderActor = protocol.ActorClass(shaderSpec, {
   
 
 
@@ -83,7 +83,7 @@ var ShaderActor = protocol.ActorClassWithSpec(shaderSpec, {
 
 
 
-var ProgramActor = protocol.ActorClassWithSpec(programSpec, {
+var ProgramActor = protocol.ActorClass(programSpec, {
   
 
 
@@ -184,7 +184,7 @@ var ProgramActor = protocol.ActorClassWithSpec(programSpec, {
 
 
 
-var WebGLActor = exports.WebGLActor = protocol.ActorClassWithSpec(webGLSpec, {
+var WebGLActor = exports.WebGLActor = protocol.ActorClass(webGLSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;

@@ -3,13 +3,13 @@
 
 "use strict";
 
-const { Front, FrontClassWithSpec } = require("devtools/shared/protocol");
+const { Front, FrontClass } = require("devtools/shared/protocol");
 const { framerateSpec } = require("devtools/shared/specs/framerate");
 
 
 
 
-var FramerateFront = exports.FramerateFront = FrontClassWithSpec(framerateSpec, {
+var FramerateFront = exports.FramerateFront = FrontClass(framerateSpec, {
   initialize: function (client, { framerateActor }) {
     Front.prototype.initialize.call(this, client, { actor: framerateActor });
     this.manage(this);

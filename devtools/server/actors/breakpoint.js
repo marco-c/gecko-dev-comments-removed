@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { ActorClassWithSpec } = require("devtools/shared/protocol");
+const { ActorClass } = require("devtools/shared/protocol");
 const { breakpointSpec } = require("devtools/shared/specs/breakpoint");
 
 
@@ -34,7 +34,7 @@ exports.setBreakpointAtEntryPoints = setBreakpointAtEntryPoints;
 
 
 
-let BreakpointActor = ActorClassWithSpec(breakpointSpec, {
+let BreakpointActor = ActorClass(breakpointSpec, {
   
 
 

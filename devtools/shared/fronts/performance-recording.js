@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Front, FrontClassWithSpec } = require("devtools/shared/protocol");
+const { Front, FrontClass } = require("devtools/shared/protocol");
 const { performanceRecordingSpec } = require("devtools/shared/specs/performance-recording");
 
 loader.lazyRequireGetter(this, "PerformanceIO",
@@ -18,7 +18,7 @@ loader.lazyRequireGetter(this, "merge", "sdk/util/object", true);
 
 
 
-const PerformanceRecordingFront = FrontClassWithSpec(performanceRecordingSpec, merge({
+const PerformanceRecordingFront = FrontClass(performanceRecordingSpec, merge({
   form: function (form, detail) {
     if (detail === "actorid") {
       this.actorID = form;

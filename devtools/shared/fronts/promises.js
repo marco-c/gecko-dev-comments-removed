@@ -5,14 +5,14 @@
 
 const {
   Front,
-  FrontClassWithSpec,
+  FrontClass,
 } = require("devtools/shared/protocol");
 const { promisesSpec } = require("devtools/shared/specs/promises");
 
 
 
 
-const PromisesFront = FrontClassWithSpec(promisesSpec, {
+const PromisesFront = FrontClass(promisesSpec, {
   initialize: function (client, form) {
     Front.prototype.initialize.call(this, client, form);
     this.actorID = form.promisesActor;

@@ -30,7 +30,7 @@ const {method, custom, Arg, Option, RetVal} = protocol;
 
 
 
-var FrameSnapshotActor = protocol.ActorClassWithSpec(frameSnapshotSpec, {
+var FrameSnapshotActor = protocol.ActorClass(frameSnapshotSpec, {
   
 
 
@@ -120,7 +120,7 @@ var FrameSnapshotActor = protocol.ActorClassWithSpec(frameSnapshotSpec, {
 
 
 
-var CanvasActor = exports.CanvasActor = protocol.ActorClassWithSpec(canvasSpec, {
+var CanvasActor = exports.CanvasActor = protocol.ActorClass(canvasSpec, {
   
   
   _animationContainsDrawCall: false,
