@@ -88,6 +88,11 @@ public:
                                        int32_t aLength,
                                        nsAString& aMozString);
 
+  
+
+
+  static nsresult UErrorToNsResult(const UErrorCode aErrorCode);
+
 #if 0
   
   
