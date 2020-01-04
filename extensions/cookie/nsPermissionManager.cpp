@@ -720,7 +720,7 @@ nsPermissionManager::AppClearDataObserverInit()
 
 
 #define PERMISSIONS_FILE_NAME "permissions.sqlite"
-#define HOSTS_SCHEMA_VERSION 8
+#define HOSTS_SCHEMA_VERSION 9
 
 #define HOSTPERM_FILE_NAME "hostperm.1"
 
@@ -1343,6 +1343,33 @@ nsPermissionManager::InitDB(bool aRemoveFile)
         
         
         rv = mDBConn->SetSchemaVersion(8);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
+    
+    
+    case 8:
+      {
+        
+        
+        bool hostsIsBackupExists = false;
+        mDBConn->TableExists(NS_LITERAL_CSTRING("moz_hosts_is_backup"),
+                             &hostsIsBackupExists);
+        if (hostsIsBackupExists) {
+          
+          
+          
+          rv = mDBConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING("DELETE FROM moz_hosts"));
+          NS_ENSURE_SUCCESS(rv, rv);
+
+          
+          rv = mDBConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING("DROP TABLE moz_hosts_is_backup"));
+          NS_ENSURE_SUCCESS(rv, rv);
+        }
+
+        rv = mDBConn->SetSchemaVersion(9);
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
