@@ -802,7 +802,8 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
 nsChangeHint
 nsStyleContext::CalcStyleDifference(nsStyleContext* aOther,
                                     nsChangeHint aParentHintsNotHandledForDescendants,
-                                    uint32_t* aEqualStructs)
+                                    uint32_t* aEqualStructs,
+                                    uint32_t* aSamePointerStructs)
 {
   PROFILER_LABEL("nsStyleContext", "CalcStyleDifference",
     js::ProfileEntry::Category::CSS);
@@ -935,6 +936,26 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther,
 
   MOZ_ASSERT(styleStructCount == nsStyleStructID_Length,
              "missing a call to DO_STRUCT_DIFFERENCE");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  *aSamePointerStructs = 0;
+
+#define STYLE_STRUCT(name_, callback_)                                        \
+  {                                                                           \
+    const nsStyle##name_* data = PeekStyle##name_();                          \
+    if (!data || data == aOther->Style##name_()) {                            \
+      *aSamePointerStructs |= NS_STYLE_INHERIT_BIT(name_);                    \
+    }                                                                         \
+  }
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT
 
   
   
