@@ -15,10 +15,17 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 var commandsMap = new WeakMap();
 
-function CommandList(commandsObj, extensionID) {
-  this.commands = this.loadCommandsFromManifest(commandsObj);
-  this.keysetID = `ext-keyset-id-${makeWidgetId(extensionID)}`;
+function CommandList(manifest, extension) {
+  this.extension = extension;
+  this.id = makeWidgetId(extension.id);
   this.windowOpenListener = null;
+
+  
+  this.commands = this.loadCommandsFromManifest(manifest);
+
+  
+  this.keysetsMap = new WeakMap();
+
   this.register();
   EventEmitter.decorate(this);
 }
@@ -30,11 +37,13 @@ CommandList.prototype = {
 
   register() {
     for (let window of WindowListManager.browserWindows()) {
-      this.registerKeysToDocument(window.document);
+      this.registerKeysToDocument(window);
     }
 
     this.windowOpenListener = (window) => {
-      this.registerKeysToDocument(window.document);
+      if (!this.keysetsMap.has(window)) {
+        this.registerKeysToDocument(window);
+      }
     };
 
     WindowListManager.addOpenListener(this.windowOpenListener);
@@ -46,9 +55,8 @@ CommandList.prototype = {
 
   unregister() {
     for (let window of WindowListManager.browserWindows()) {
-      let keyset = window.document.getElementById(this.keysetID);
-      if (keyset) {
-        keyset.remove();
+      if (this.keysetsMap.has(window)) {
+        this.keysetsMap.get(window).remove();
       }
     }
 
@@ -59,13 +67,13 @@ CommandList.prototype = {
 
 
 
-  loadCommandsFromManifest(commandsObj) {
+  loadCommandsFromManifest(manifest) {
     let commands = new Map();
     
     
     let os = PlatformInfo.os == "win" ? "windows" : PlatformInfo.os;
-    for (let name of Object.keys(commandsObj)) {
-      let command = commandsObj[name];
+    for (let name of Object.keys(manifest.commands)) {
+      let command = manifest.commands[name];
       commands.set(name, {
         description: command.description,
         shortcut: command.suggested_key[os] || command.suggested_key.default,
@@ -78,14 +86,16 @@ CommandList.prototype = {
 
 
 
-  registerKeysToDocument(doc) {
+  registerKeysToDocument(window) {
+    let doc = window.document;
     let keyset = doc.createElementNS(XUL_NS, "keyset");
-    keyset.id = this.keysetID;
+    keyset.id = `ext-keyset-id-${this.id}`;
     this.commands.forEach((command, name) => {
       let keyElement = this.buildKey(doc, name, command.shortcut);
       keyset.appendChild(keyElement);
     });
     doc.documentElement.appendChild(keyset);
+    this.keysetsMap.set(window, keyset);
   },
 
   
@@ -110,7 +120,12 @@ CommandList.prototype = {
     
     
     keyElement.addEventListener("command", (event) => {
-      this.emit("command", name);
+      if (name == "_execute_page_action") {
+        let win = event.target.ownerDocument.defaultView;
+        pageActionFor(this.extension).triggerAction(win);
+      } else {
+        this.emit("command", name);
+      }
     });
     
 
@@ -195,7 +210,7 @@ CommandList.prototype = {
 
 
 extensions.on("manifest_commands", (type, directive, extension, manifest) => {
-  commandsMap.set(extension, new CommandList(manifest.commands, extension.id));
+  commandsMap.set(extension, new CommandList(manifest, extension));
 });
 
 extensions.on("shutdown", (type, extension) => {
