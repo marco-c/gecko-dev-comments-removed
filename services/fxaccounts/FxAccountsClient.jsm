@@ -367,12 +367,20 @@ this.FxAccountsClient.prototype = {
 
 
 
-  registerDevice(sessionTokenHex, name, type) {
+
+
+
+
+  registerDevice(sessionTokenHex, name, type, options = {}) {
     let path = "/account/device";
 
     let creds = deriveHawkCredentials(sessionTokenHex, "sessionToken");
     let body = { name, type };
 
+    if (options.pushCallback) {
+      body.pushCallback = options.pushCallback;
+    }
+
     return this._request(path, "POST", creds, body);
   },
 
@@ -393,11 +401,18 @@ this.FxAccountsClient.prototype = {
 
 
 
-  updateDevice(sessionTokenHex, id, name) {
+
+
+
+
+  updateDevice(sessionTokenHex, id, name, options = {}) {
     let path = "/account/device";
 
     let creds = deriveHawkCredentials(sessionTokenHex, "sessionToken");
     let body = { id, name };
+    if (options.pushCallback) {
+      body.pushCallback = options.pushCallback;
+    }
 
     return this._request(path, "POST", creds, body);
   },
@@ -419,7 +434,7 @@ this.FxAccountsClient.prototype = {
 
 
 
-  signOutAndDestroyDevice(sessionTokenHex, id, options={}) {
+  signOutAndDestroyDevice(sessionTokenHex, id, options = {}) {
     let path = "/account/device/destroy";
 
     if (options.service) {

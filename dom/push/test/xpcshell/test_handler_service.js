@@ -12,7 +12,7 @@ let pushService = Cc["@mozilla.org/push/Service;1"].getService(Ci.nsIPushService
 add_test(function test_service_instantiation() {
   do_load_manifest("PushServiceHandler.manifest");
 
-  let scope = "test-scope";
+  let scope = "chrome://test-scope";
   let pushNotifier = Cc["@mozilla.org/push/Notifier;1"].getService(Ci.nsIPushNotifier);
   let principal = Services.scriptSecurityManager.getSystemPrincipal();
   pushNotifier.notifyPush(scope, principal);

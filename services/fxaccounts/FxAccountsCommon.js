@@ -90,6 +90,8 @@ exports.ONLOGOUT_NOTIFICATION = "fxaccounts:onlogout";
 
 exports.ON_FXA_UPDATE_NOTIFICATION = "fxaccounts:update";
 
+exports.FXA_PUSH_SCOPE_ACCOUNT_UPDATE = "chrome://fxa-device-update";
+
 exports.ON_PROFILE_CHANGE_NOTIFICATION = "fxaccounts:profilechange";
 
 
