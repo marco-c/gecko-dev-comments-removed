@@ -471,11 +471,60 @@ ExtensionTabManager.prototype = {
 global.TabManager = {
   _tabs: new WeakMap(),
   _nextId: 1,
+  _initialized: false,
+
+  
+  
+  
+  initListener() {
+    if (this._initialized) {
+      return;
+    }
+
+    AllWindowEvents.addListener("TabOpen", this);
+    AllWindowEvents.addListener("TabClose", this);
+    WindowListManager.addOpenListener(this.handleWindowOpen.bind(this));
+
+    this._initialized = true;
+  },
+
+  handleEvent(event) {
+    if (event.type == "TabOpen") {
+      let {adoptedTab} = event.detail;
+      if (adoptedTab) {
+        
+        
+        this._tabs.set(event.target, this.getId(adoptedTab));
+      }
+    } else if (event.type == "TabClose") {
+      let {adoptedBy} = event.detail;
+      if (adoptedBy) {
+        
+        
+        
+        
+        this._tabs.set(adoptedBy, this.getId(event.target));
+      }
+    }
+  },
+
+  handleWindowOpen(window) {
+    if (window.arguments[0] instanceof window.XULElement) {
+      
+      
+      
+      let adoptedTab = window.arguments[0];
+
+      this._tabs.set(window.gBrowser.tabs[0], this.getId(adoptedTab));
+    }
+  },
 
   getId(tab) {
     if (this._tabs.has(tab)) {
       return this._tabs.get(tab);
     }
+    this.initListener();
+
     let id = this._nextId++;
     this._tabs.set(tab, id);
     return id;
