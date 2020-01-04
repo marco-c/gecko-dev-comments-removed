@@ -159,7 +159,10 @@ public:
   
   nsIDocument* GetImport()
   {
-    return mReady ? mDocument : nullptr;
+    if (!mReady) {
+      return nullptr;
+    }
+    return mDocument;
   }
 
   
@@ -170,7 +173,10 @@ public:
   
   nsINode* GetMainReferrer()
   {
-    return mLinks.IsEmpty() ? nullptr : mLinks[mMainReferrer];
+    if (mLinks.IsEmpty()) {
+      return nullptr;
+    }
+    return mLinks[mMainReferrer];
   }
 
   
