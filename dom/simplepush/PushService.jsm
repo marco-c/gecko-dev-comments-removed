@@ -828,7 +828,7 @@ this.PushService = {
       this._ws.initLoadInfo(null, 
                             Services.scriptSecurityManager.getSystemPrincipal(),
                             null, 
-                            Ci.nsILoadInfo.SEC_NORMAL,
+                            Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                             Ci.nsIContentPolicy.TYPE_WEBSOCKET);
     }
     else if (uri.scheme === "ws") {
