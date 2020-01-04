@@ -121,102 +121,6 @@ static bool AreShadowArraysEqual(nsCSSShadowArray* lhs, nsCSSShadowArray* rhs);
 
 
 
-void
-FragmentOrURL::SetValue(const nsCSSValue* aValue)
-{
-  mozilla::css::URLValue *urlVal = aValue->GetURLStructValue();
-  MOZ_ASSERT_IF(urlVal->GetLocalURLFlag(), urlVal->GetURI());
-  mIsLocalRef = urlVal->GetLocalURLFlag();
-
-  mURL = urlVal->GetURI();
-
-#ifdef DEBUG
-  if (mIsLocalRef) {
-    bool hasRef = false;
-    mURL->GetHasRef(&hasRef);
-    MOZ_ASSERT(hasRef);
-  }
-#endif
-}
-
-void
-FragmentOrURL::SetNull()
-{
-  mURL = nullptr;
-  mIsLocalRef = false;
-}
-
-FragmentOrURL&
-FragmentOrURL::operator=(const FragmentOrURL& aOther)
-{
-  mIsLocalRef = aOther.mIsLocalRef;
-  mURL = aOther.mURL;
-
-  return *this;
-}
-
-bool
-FragmentOrURL::operator==(const FragmentOrURL& aOther) const
-{
-  if (aOther.mIsLocalRef != mIsLocalRef) {
-    return false;
-  }
-
-  return EqualURIs(aOther.mURL, mURL);
-}
-
-bool
-FragmentOrURL::EqualsExceptRef(nsIURI* aURI) const
-{
-  bool ret = false;
-  mURL->EqualsExceptRef(aURI, &ret);
-  return ret;
-}
-
-void
-FragmentOrURL::GetSourceString(nsString &aRef) const
-{
-  MOZ_ASSERT(mURL);
-
-  nsCString cref;
-  if (mIsLocalRef) {
-    mURL->GetRef(cref);
-    cref.Insert('#', 0);
-  } else {
-    mURL->GetSpec(cref);
-  }
-
-  aRef = NS_ConvertUTF8toUTF16(cref);
-}
-
-already_AddRefed<nsIURI>
-FragmentOrURL::Resolve(nsIURI* aURI) const
-{
-  nsCOMPtr<nsIURI> result;
-
-  if (mIsLocalRef) {
-    nsCString ref;
-    mURL->GetRef(ref);
-
-    aURI->Clone(getter_AddRefs(result));
-    result->SetRef(ref);
-  } else {
-    result = mURL;
-  }
-
-  return result.forget();
-}
-
-already_AddRefed<nsIURI>
-FragmentOrURL::Resolve(nsIContent* aContent) const
-{
-  nsCOMPtr<nsIURI> url = aContent->GetBaseURI();
-  return Resolve(url);
-}
-
-
-
-
 nsStyleFont::nsStyleFont(const nsFont& aFont, StyleStructContext aContext)
   : mFont(aFont)
   , mSize(nsStyleFont::ZoomText(aContext, mFont.size))
@@ -1089,7 +993,7 @@ nsStyleSVG::CalcDifference(const nsStyleSVG& aNewData) const
 
 
 nsCSSKeyword
-StyleBasicShape::GetShapeTypeName() const
+nsStyleBasicShape::GetShapeTypeName() const
 {
   switch (mType) {
     case StyleBasicShapeType::Polygon:
@@ -1103,6 +1007,231 @@ StyleBasicShape::GetShapeTypeName() const
   }
   NS_NOTREACHED("unexpected type");
   return eCSSKeyword_UNKNOWN;
+}
+
+
+
+
+
+void
+FragmentOrURL::SetValue(const nsCSSValue* aValue)
+{
+  mozilla::css::URLValue *urlVal = aValue->GetURLStructValue();
+  MOZ_ASSERT_IF(urlVal->GetLocalURLFlag(), urlVal->GetURI());
+  mIsLocalRef = urlVal->GetLocalURLFlag();
+
+  mURL = urlVal->GetURI();
+
+#ifdef DEBUG
+  if (mIsLocalRef) {
+    bool hasRef = false;
+    mURL->GetHasRef(&hasRef);
+    MOZ_ASSERT(hasRef);
+  }
+#endif
+}
+
+void
+FragmentOrURL::SetNull()
+{
+  mURL = nullptr;
+  mIsLocalRef = false;
+}
+
+FragmentOrURL&
+FragmentOrURL::operator=(const FragmentOrURL& aOther)
+{
+  mIsLocalRef = aOther.mIsLocalRef;
+  mURL = aOther.mURL;
+
+  return *this;
+}
+
+bool
+FragmentOrURL::operator==(const FragmentOrURL& aOther) const
+{
+  if (aOther.mIsLocalRef != mIsLocalRef) {
+    return false;
+  }
+
+  return EqualURIs(aOther.mURL, mURL);
+}
+
+bool
+FragmentOrURL::EqualsExceptRef(nsIURI* aURI) const
+{
+  bool ret = false;
+  mURL->EqualsExceptRef(aURI, &ret);
+  return ret;
+}
+
+void
+FragmentOrURL::GetSourceString(nsString &aRef) const
+{
+  MOZ_ASSERT(mURL);
+
+  nsCString cref;
+  if (mIsLocalRef) {
+    mURL->GetRef(cref);
+    cref.Insert('#', 0);
+  } else {
+    mURL->GetSpec(cref);
+  }
+
+  aRef = NS_ConvertUTF8toUTF16(cref);
+}
+
+already_AddRefed<nsIURI>
+FragmentOrURL::Resolve(nsIURI* aURI) const
+{
+  nsCOMPtr<nsIURI> result;
+
+  if (mIsLocalRef) {
+    nsCString ref;
+    mURL->GetRef(ref);
+
+    aURI->Clone(getter_AddRefs(result));
+    result->SetRef(ref);
+  } else {
+    result = mURL;
+  }
+
+  return result.forget();
+}
+
+already_AddRefed<nsIURI>
+FragmentOrURL::Resolve(nsIContent* aContent) const
+{
+  nsCOMPtr<nsIURI> url = aContent->GetBaseURI();
+  return Resolve(url);
+}
+
+
+
+
+nsStyleClipPath::nsStyleClipPath()
+  : mURL(nullptr)
+  , mType(StyleClipPathType::None_)
+  , mSizingBox(StyleClipShapeSizing::NoBox)
+{
+}
+
+nsStyleClipPath::nsStyleClipPath(const nsStyleClipPath& aSource)
+  : mURL(nullptr)
+  , mType(StyleClipPathType::None_)
+  , mSizingBox(StyleClipShapeSizing::NoBox)
+{
+  if (aSource.mType == StyleClipPathType::URL) {
+    CopyURL(aSource);
+  } else if (aSource.mType == StyleClipPathType::Shape) {
+    SetBasicShape(aSource.mBasicShape, aSource.mSizingBox);
+  } else if (aSource.mType == StyleClipPathType::Box) {
+    SetSizingBox(aSource.mSizingBox);
+  }
+}
+
+nsStyleClipPath::~nsStyleClipPath()
+{
+  ReleaseRef();
+}
+
+nsStyleClipPath&
+nsStyleClipPath::operator=(const nsStyleClipPath& aOther)
+{
+  if (this == &aOther) {
+    return *this;
+  }
+
+  if (aOther.mType == StyleClipPathType::URL) {
+    CopyURL(aOther);
+  } else if (aOther.mType == StyleClipPathType::Shape) {
+    SetBasicShape(aOther.mBasicShape, aOther.mSizingBox);
+  } else if (aOther.mType == StyleClipPathType::Box) {
+    SetSizingBox(aOther.mSizingBox);
+  } else {
+    ReleaseRef();
+    mSizingBox = StyleClipShapeSizing::NoBox;
+    mType = StyleClipPathType::None_;
+  }
+  return *this;
+}
+
+bool
+nsStyleClipPath::operator==(const nsStyleClipPath& aOther) const
+{
+  if (mType != aOther.mType) {
+    return false;
+  }
+
+  if (mType == StyleClipPathType::URL) {
+    return EqualURIs(mURL, aOther.mURL);
+  } else if (mType == StyleClipPathType::Shape) {
+    return *mBasicShape == *aOther.mBasicShape &&
+           mSizingBox == aOther.mSizingBox;
+  } else if (mType == StyleClipPathType::Box) {
+    return mSizingBox == aOther.mSizingBox;
+  }
+
+  return true;
+}
+
+void
+nsStyleClipPath::ReleaseRef()
+{
+  if (mType == StyleClipPathType::Shape) {
+    NS_ASSERTION(mBasicShape, "expected pointer");
+    mBasicShape->Release();
+  } else if (mType == StyleClipPathType::URL) {
+    NS_ASSERTION(mURL, "expected pointer");
+    delete mURL;
+  }
+  
+  
+  mURL = nullptr;
+}
+
+void
+nsStyleClipPath::CopyURL(const nsStyleClipPath& aOther)
+{
+  ReleaseRef();
+
+  mURL = new FragmentOrURL(*aOther.mURL);
+  mType = StyleClipPathType::URL;
+}
+
+bool
+nsStyleClipPath::SetURL(const nsCSSValue* aValue)
+{
+  if (!aValue->GetURLValue()) {
+    return false;
+  }
+
+  ReleaseRef();
+
+  mURL = new FragmentOrURL();
+  mURL->SetValue(aValue);
+  mType = StyleClipPathType::URL;
+  return true;
+}
+
+void
+nsStyleClipPath::SetBasicShape(nsStyleBasicShape* aBasicShape,
+                               StyleClipShapeSizing aSizingBox)
+{
+  NS_ASSERTION(aBasicShape, "expected pointer");
+  ReleaseRef();
+  mBasicShape = aBasicShape;
+  mBasicShape->AddRef();
+  mSizingBox = aSizingBox;
+  mType = StyleClipPathType::Shape;
+}
+
+void
+nsStyleClipPath::SetSizingBox(StyleClipShapeSizing aSizingBox)
+{
+  ReleaseRef();
+  mSizingBox = aSizingBox;
+  mType = StyleClipPathType::Box;
 }
 
 
@@ -2479,7 +2608,7 @@ nsStyleImageLayers::HasLayerWithImage() const
     
     
     
-    if (mLayers[i].mSourceURI.GetSourceURL() || !mLayers[i].mImage.IsEmpty()) {
+    if (mLayers[i].mSourceURI || !mLayers[i].mImage.IsEmpty()) {
       return true;
     }
   }
@@ -2627,27 +2756,27 @@ nsStyleImageLayers::Size::operator==(const Size& aOther) const
 bool
 nsStyleImageLayers::Repeat::IsInitialValue(LayerType aType) const
 {
-  if (aType == LayerType::Background) {
+  if (aType == LayerType::Background ||
+      aType == LayerType::Mask) {
+    
     return mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT &&
            mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
-  } else {
-    MOZ_ASSERT(aType == LayerType::Mask);
-    return mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT &&
-           mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT;
   }
+
+  MOZ_ASSERT_UNREACHABLE("unsupported layer type.");
+  return false;
 }
 
 void
 nsStyleImageLayers::Repeat::SetInitialValues(LayerType aType)
 {
-  if (aType == LayerType::Background) {
+  if (aType == LayerType::Background ||
+      aType == LayerType::Mask) {
+    
     mXRepeat = NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
     mYRepeat = NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
   } else {
-    MOZ_ASSERT(aType == LayerType::Mask);
-
-    mXRepeat = NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT;
-    mYRepeat = NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT;
+    MOZ_ASSERT_UNREACHABLE("unsupported layer type.");
   }
 }
 
@@ -2706,7 +2835,7 @@ nsStyleImageLayers::Layer::operator==(const Layer& aOther) const
          mImage == aOther.mImage &&
          mMaskMode == aOther.mMaskMode &&
          mComposite == aOther.mComposite &&
-         mSourceURI == aOther.mSourceURI;
+         EqualURIs(mSourceURI, aOther.mSourceURI);
 }
 
 nsChangeHint
@@ -2714,7 +2843,7 @@ nsStyleImageLayers::Layer::CalcDifference(const nsStyleImageLayers::Layer& aNewL
                                           nsChangeHint aPositionChangeHint) const
 {
   nsChangeHint hint = nsChangeHint(0);
-  if (mSourceURI != aNewLayer.mSourceURI) {
+  if (!EqualURIs(mSourceURI, aNewLayer.mSourceURI)) {
     hint |= nsChangeHint_RepaintFrame;
 
     
@@ -2729,18 +2858,11 @@ nsStyleImageLayers::Layer::CalcDifference(const nsStyleImageLayers::Layer& aNewL
     
     
     bool maybeSVGMask = false;
-    if (mSourceURI.IsLocalRef()) {
-      maybeSVGMask = true;
-    } else if (mSourceURI.GetSourceURL()) {
-      mSourceURI.GetSourceURL()->GetHasRef(&maybeSVGMask);
+    if (mSourceURI) {
+      mSourceURI->GetHasRef(&maybeSVGMask);
     }
-
-    if (!maybeSVGMask) {
-      if (aNewLayer.mSourceURI.IsLocalRef()) {
-        maybeSVGMask = true;
-      } else if (aNewLayer.mSourceURI.GetSourceURL()) {
-        aNewLayer.mSourceURI.GetSourceURL()->GetHasRef(&maybeSVGMask);
-      }
+    if (!maybeSVGMask && aNewLayer.mSourceURI) {
+      aNewLayer.mSourceURI->GetHasRef(&maybeSVGMask);
     }
 
     
@@ -3082,7 +3204,6 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
   , mAnimationFillModeCount(aSource.mAnimationFillModeCount)
   , mAnimationPlayStateCount(aSource.mAnimationPlayStateCount)
   , mAnimationIterationCountCount(aSource.mAnimationIterationCountCount)
-  , mShapeOutside(aSource.mShapeOutside)
 {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 
@@ -3307,8 +3428,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
        mAnimationFillModeCount != aNewData.mAnimationFillModeCount ||
        mAnimationPlayStateCount != aNewData.mAnimationPlayStateCount ||
        mAnimationIterationCountCount != aNewData.mAnimationIterationCountCount ||
-       mScrollSnapCoordinate != aNewData.mScrollSnapCoordinate ||
-       mShapeOutside != aNewData.mShapeOutside)) {
+       mScrollSnapCoordinate != aNewData.mScrollSnapCoordinate)) {
     hint |= nsChangeHint_NeutralChange;
   }
 

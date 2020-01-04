@@ -2145,10 +2145,12 @@ nsComputedDOMStyle::DoGetImageLayerImage(const nsStyleImageLayers& aLayers)
     
     
     
-    if (aLayers.mLayers[i].mSourceURI.IsLocalRef()) {
+    bool isLocalURI = image.GetType() == eStyleImageType_Null &&
+                      aLayers.mLayers[i].mSourceURI;
+    if (isLocalURI) {
       
       
-      SetValueToFragmentOrURL(&aLayers.mLayers[i].mSourceURI, val);
+      val->SetURI(aLayers.mLayers[i].mSourceURI);
     } else {
       SetValueToStyleImage(image, val);
     }
@@ -2385,28 +2387,6 @@ nsComputedDOMStyle::SetValueToPosition(
   RefPtr<nsROCSSPrimitiveValue> valY = new nsROCSSPrimitiveValue;
   SetValueToPositionCoord(aPosition.mYPosition, valY);
   aValueList->AppendCSSValue(valY.forget());
-}
-
-
-void
-nsComputedDOMStyle::SetValueToFragmentOrURL(
-    const FragmentOrURL* aFragmentOrURL,
-    nsROCSSPrimitiveValue* aValue)
-{
-  if (aFragmentOrURL->IsLocalRef()) {
-    nsString fragment;
-    aFragmentOrURL->GetSourceString(fragment);
-    fragment.Insert(u"url(\"", 0);
-    fragment.Append(u"\")");
-    aValue->SetString(fragment);
-  } else {
-    nsCOMPtr<nsIURI> url = aFragmentOrURL->GetSourceURL();
-    if (url) {
-      aValue->SetURI(url);
-    } else {
-      aValue->SetIdent(eCSSKeyword_none);
-    }
-  }
 }
 
 already_AddRefed<CSSValue>
@@ -5582,9 +5562,12 @@ nsComputedDOMStyle::GetSVGPaintFor(bool aFill)
     }
     case eStyleSVGPaintType_Server:
     {
+      
       RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
       RefPtr<nsROCSSPrimitiveValue> fallback = new nsROCSSPrimitiveValue;
-      SetValueToFragmentOrURL(paint->mPaint.mPaintServer, val);
+      nsCOMPtr<nsIURI> paintServerURI =
+        paint->mPaint.mPaintServer->GetSourceURL();
+      val->SetURI(paintServerURI);
       SetToRGBAColor(fallback, paint->mFallbackColor);
 
       valueList->AppendCSSValue(val.forget());
@@ -5622,7 +5605,13 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetMarkerEnd()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-  SetValueToFragmentOrURL(&StyleSVG()->mMarkerEnd, val);
+  
+  nsCOMPtr<nsIURI> markerURI = StyleSVG()->mMarkerEnd.GetSourceURL();
+
+  if (markerURI)
+    val->SetURI(markerURI);
+  else
+    val->SetIdent(eCSSKeyword_none);
 
   return val.forget();
 }
@@ -5631,7 +5620,13 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetMarkerMid()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-  SetValueToFragmentOrURL(&StyleSVG()->mMarkerMid, val);
+  
+  nsCOMPtr<nsIURI> markerURI = StyleSVG()->mMarkerMid.GetSourceURL();
+
+  if (markerURI)
+    val->SetURI(markerURI);
+  else
+    val->SetIdent(eCSSKeyword_none);
 
   return val.forget();
 }
@@ -5640,7 +5635,13 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetMarkerStart()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-  SetValueToFragmentOrURL(&StyleSVG()->mMarkerStart, val);
+  
+  nsCOMPtr<nsIURI> markerURI = StyleSVG()->mMarkerStart.GetSourceURL();
+
+  if (markerURI)
+    val->SetURI(markerURI);
+  else
+    val->SetIdent(eCSSKeyword_none);
 
   return val.forget();
 }
@@ -5916,7 +5917,7 @@ nsComputedDOMStyle::BasicShapeRadiiToString(nsAString& aCssText,
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::CreatePrimitiveValueForBasicShape(
-  const StyleBasicShape* aStyleBasicShape)
+  const nsStyleBasicShape* aStyleBasicShape)
 {
   MOZ_ASSERT(aStyleBasicShape, "Expect a valid basic shape pointer!");
 
@@ -5994,12 +5995,10 @@ nsComputedDOMStyle::CreatePrimitiveValueForBasicShape(
   return functionValue.forget();
 }
 
-template<typename ReferenceBox>
 already_AddRefed<CSSValue>
-nsComputedDOMStyle::CreatePrimitiveValueForShapeSource(
-  const StyleBasicShape* aStyleBasicShape,
-  ReferenceBox aReferenceBox,
-  const KTableEntry aBoxKeywordTable[])
+nsComputedDOMStyle::CreatePrimitiveValueForClipPath(
+  const nsStyleBasicShape* aStyleBasicShape,
+  StyleClipShapeSizing aSizingBox)
 {
   RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
   if (aStyleBasicShape) {
@@ -6007,38 +6006,41 @@ nsComputedDOMStyle::CreatePrimitiveValueForShapeSource(
       CreatePrimitiveValueForBasicShape(aStyleBasicShape));
   }
 
-  if (aReferenceBox == ReferenceBox::NoBox) {
+  if (aSizingBox == StyleClipShapeSizing::NoBox) {
     return valueList.forget();
   }
 
+  nsAutoString boxString;
+  AppendASCIItoUTF16(
+    nsCSSProps::ValueToKeyword(aSizingBox,
+                               nsCSSProps::kClipShapeSizingKTable),
+                               boxString);
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-  val->SetIdent(nsCSSProps::ValueToKeywordEnum(aReferenceBox, aBoxKeywordTable));
+  val->SetString(boxString);
   valueList->AppendCSSValue(val.forget());
 
   return valueList.forget();
 }
 
-template<typename ReferenceBox>
 already_AddRefed<CSSValue>
-nsComputedDOMStyle::GetShapeSource(
-  const StyleShapeSource<ReferenceBox>& aShapeSource,
-  const KTableEntry aBoxKeywordTable[])
+nsComputedDOMStyle::DoGetClipPath()
 {
-  switch (aShapeSource.GetType()) {
-    case StyleShapeSourceType::Shape:
-      return CreatePrimitiveValueForShapeSource(aShapeSource.GetBasicShape(),
-                                                aShapeSource.GetReferenceBox(),
-                                                aBoxKeywordTable);
-    case StyleShapeSourceType::Box:
-      return CreatePrimitiveValueForShapeSource(nullptr,
-                                                aShapeSource.GetReferenceBox(),
-                                                aBoxKeywordTable);
-    case StyleShapeSourceType::URL: {
+  const nsStyleSVGReset* svg = StyleSVGReset();
+  switch (svg->mClipPath.GetType()) {
+    case StyleClipPathType::Shape:
+      return CreatePrimitiveValueForClipPath(svg->mClipPath.GetBasicShape(),
+                                             svg->mClipPath.GetSizingBox());
+    case StyleClipPathType::Box:
+      return CreatePrimitiveValueForClipPath(nullptr,
+                                             svg->mClipPath.GetSizingBox());
+    case StyleClipPathType::URL: {
+      
+      nsCOMPtr<nsIURI> pathURI = svg->mClipPath.GetURL()->GetSourceURL();
       RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-      SetValueToFragmentOrURL(aShapeSource.GetURL(), val);
+      val->SetURI(pathURI);
       return val.forget();
     }
-    case StyleShapeSourceType::None_: {
+    case StyleClipPathType::None_: {
       RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
       val->SetIdent(eCSSKeyword_none);
       return val.forget();
@@ -6047,20 +6049,6 @@ nsComputedDOMStyle::GetShapeSource(
       NS_NOTREACHED("unexpected type");
   }
   return nullptr;
-}
-
-already_AddRefed<CSSValue>
-nsComputedDOMStyle::DoGetClipPath()
-{
-  return GetShapeSource(StyleSVGReset()->mClipPath,
-                        nsCSSProps::kClipPathGeometryBoxKTable);
-}
-
-already_AddRefed<CSSValue>
-nsComputedDOMStyle::DoGetShapeOutside()
-{
-  return GetShapeSource(StyleDisplay()->mShapeOutside,
-                        nsCSSProps::kShapeOutsideShapeBoxKTable);
 }
 
 void
@@ -6080,8 +6068,9 @@ nsComputedDOMStyle::CreatePrimitiveValueForStyleFilter(
   RefPtr<nsROCSSPrimitiveValue> value = new nsROCSSPrimitiveValue;
   
   if (aStyleFilter.GetType() == NS_STYLE_FILTER_URL) {
-    MOZ_ASSERT(aStyleFilter.GetURL()->GetSourceURL());
-    SetValueToFragmentOrURL(aStyleFilter.GetURL(), value);
+    
+    nsCOMPtr<nsIURI> filterURI = aStyleFilter.GetURL()->GetSourceURL();
+    value->SetURI(filterURI);
     return value.forget();
   }
 
@@ -6158,8 +6147,8 @@ nsComputedDOMStyle::DoGetMask()
 
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
 
-  if (firstLayer.mSourceURI.GetSourceURL()) {
-    SetValueToFragmentOrURL(&firstLayer.mSourceURI, val);
+  if (firstLayer.mSourceURI) {
+    val->SetURI(firstLayer.mSourceURI);
   } else {
     val->SetIdent(eCSSKeyword_none);
   }

@@ -23,11 +23,11 @@ nsCSSClipPathInstance::ApplyBasicShapeClip(gfxContext& aContext,
                                            nsIFrame* aFrame)
 {
   auto& clipPathStyle = aFrame->StyleSVGReset()->mClipPath;
-  StyleShapeSourceType type = clipPathStyle.GetType();
-  MOZ_ASSERT(type != StyleShapeSourceType::None_, "unexpected none value");
+  StyleClipPathType type = clipPathStyle.GetType();
+  MOZ_ASSERT(type != StyleClipPathType::None_, "unexpected none value");
   
   
-  if (type == StyleShapeSourceType::URL) {
+  if (type == StyleClipPathType::URL) {
     return;
   }
 
@@ -44,11 +44,11 @@ nsCSSClipPathInstance::HitTestBasicShapeClip(nsIFrame* aFrame,
                                              const gfxPoint& aPoint)
 {
   auto& clipPathStyle = aFrame->StyleSVGReset()->mClipPath;
-  StyleShapeSourceType type = clipPathStyle.GetType();
-  MOZ_ASSERT(type != StyleShapeSourceType::None_, "unexpected none value");
+  StyleClipPathType type = clipPathStyle.GetType();
+  MOZ_ASSERT(type != StyleClipPathType::None_, "unexpected none value");
   
   
-  if (type == StyleShapeSourceType::URL) {
+  if (type == StyleClipPathType::URL) {
     return false;
   }
 
@@ -67,21 +67,21 @@ nsCSSClipPathInstance::CreateClipPath(DrawTarget* aDrawTarget)
 {
   nsRect r;
   
-  switch (mClipPathStyle.GetReferenceBox()) {
-    case StyleClipPathGeometryBox::Content:
+  switch (mClipPathStyle.GetSizingBox()) {
+    case StyleClipShapeSizing::Content:
       r = mTargetFrame->GetContentRectRelativeToSelf();
       break;
-    case StyleClipPathGeometryBox::Padding:
+    case StyleClipShapeSizing::Padding:
       r = mTargetFrame->GetPaddingRectRelativeToSelf();
       break;
-    case StyleClipPathGeometryBox::Margin:
+    case StyleClipShapeSizing::Margin:
       r = mTargetFrame->GetMarginRectRelativeToSelf();
       break;
     default: 
       r = mTargetFrame->GetRectRelativeToSelf();
   }
 
-  if (mClipPathStyle.GetType() != StyleShapeSourceType::Shape) {
+  if (mClipPathStyle.GetType() != StyleClipPathType::Shape) {
     
     
     RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder();
@@ -92,7 +92,7 @@ nsCSSClipPathInstance::CreateClipPath(DrawTarget* aDrawTarget)
     mTargetFrame->PresContext()->AppUnitsPerDevPixel();
   r = ToAppUnits(r.ToNearestPixels(appUnitsPerDevPixel), appUnitsPerDevPixel);
 
-  StyleBasicShape* basicShape = mClipPathStyle.GetBasicShape();
+  nsStyleBasicShape* basicShape = mClipPathStyle.GetBasicShape();
   switch (basicShape->GetShapeType()) {
     case StyleBasicShapeType::Circle:
       return CreateClipPathCircle(aDrawTarget, r);
@@ -134,7 +134,7 @@ already_AddRefed<Path>
 nsCSSClipPathInstance::CreateClipPathCircle(DrawTarget* aDrawTarget,
                                             const nsRect& aRefBox)
 {
-  StyleBasicShape* basicShape = mClipPathStyle.GetBasicShape();
+  nsStyleBasicShape* basicShape = mClipPathStyle.GetBasicShape();
 
   RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder();
 
@@ -177,7 +177,7 @@ already_AddRefed<Path>
 nsCSSClipPathInstance::CreateClipPathEllipse(DrawTarget* aDrawTarget,
                                              const nsRect& aRefBox)
 {
-  StyleBasicShape* basicShape = mClipPathStyle.GetBasicShape();
+  nsStyleBasicShape* basicShape = mClipPathStyle.GetBasicShape();
 
   RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder();
 
@@ -217,7 +217,7 @@ already_AddRefed<Path>
 nsCSSClipPathInstance::CreateClipPathPolygon(DrawTarget* aDrawTarget,
                                              const nsRect& aRefBox)
 {
-  StyleBasicShape* basicShape = mClipPathStyle.GetBasicShape();
+  nsStyleBasicShape* basicShape = mClipPathStyle.GetBasicShape();
   const nsTArray<nsStyleCoord>& coords = basicShape->Coordinates();
   MOZ_ASSERT(coords.Length() % 2 == 0 &&
              coords.Length() >= 2, "wrong number of arguments");
