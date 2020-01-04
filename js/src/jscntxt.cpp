@@ -260,7 +260,7 @@ PopulateReportBlame(JSContext* cx, JSErrorReport* report)
     if (iter.done())
         return;
 
-    report->filename = iter.scriptFilename();
+    report->filename = iter.filename();
     report->lineno = iter.computeLine(&report->column);
     
     

@@ -5208,25 +5208,7 @@ JS_IsIdentifier(const char16_t* chars, size_t length);
 
 namespace JS {
 
-
-
-
-
-class MOZ_STACK_CLASS JS_PUBLIC_API(AutoFilename)
-{
-    void* scriptSource_;
-
-    AutoFilename(const AutoFilename&) = delete;
-    void operator=(const AutoFilename&) = delete;
-
-  public:
-    AutoFilename() : scriptSource_(nullptr) {}
-    ~AutoFilename() { reset(nullptr); }
-
-    const char* get() const;
-
-    void reset(void* newScriptSource);
-};
+typedef js::UniqueChars AutoFilename;
 
 
 

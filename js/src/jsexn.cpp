@@ -361,7 +361,7 @@ Error(JSContext* cx, unsigned argc, Value* vp)
     } else {
         fileName = cx->runtime()->emptyString;
         if (!iter.done()) {
-            if (const char* cfilename = iter.scriptFilename())
+            if (const char* cfilename = iter.filename())
                 fileName = JS_NewStringCopyZ(cx, cfilename);
         }
     }
@@ -936,7 +936,7 @@ ErrorReport::populateUncaughtExceptionReportVA(JSContext* cx, va_list ap)
     
     NonBuiltinFrameIter iter(cx, cx->compartment()->principals());
     if (!iter.done()) {
-        ownedReport.filename = iter.scriptFilename();
+        ownedReport.filename = iter.filename();
         ownedReport.lineno = iter.computeLine(&ownedReport.column);
         
         

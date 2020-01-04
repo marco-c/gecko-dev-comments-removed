@@ -25,7 +25,7 @@ class JSAtom;
 
 namespace js {
 
-class AsmJSActivation;
+class WasmActivation;
 namespace jit { class MacroAssembler; class Label; }
 
 namespace wasm {
@@ -52,7 +52,7 @@ class FrameIterator
 
   public:
     explicit FrameIterator();
-    explicit FrameIterator(const AsmJSActivation& activation);
+    explicit FrameIterator(const WasmActivation& activation);
     void operator++();
     bool done() const { return !fp_; }
     JSAtom* functionDisplayAtom() const;
@@ -81,12 +81,12 @@ class ProfilingFrameIterator
     void* stackAddress_;
     ExitReason exitReason_;
 
-    void initFromFP(const AsmJSActivation& activation);
+    void initFromFP(const WasmActivation& activation);
 
   public:
     ProfilingFrameIterator();
-    explicit ProfilingFrameIterator(const AsmJSActivation& activation);
-    ProfilingFrameIterator(const AsmJSActivation& activation,
+    explicit ProfilingFrameIterator(const WasmActivation& activation);
+    ProfilingFrameIterator(const WasmActivation& activation,
                            const JS::ProfilingFrameIterator::RegisterState& state);
     void operator++();
     bool done() const { return !codeRange_; }

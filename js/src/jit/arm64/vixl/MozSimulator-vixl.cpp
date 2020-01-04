@@ -198,7 +198,7 @@ void Simulator::ExecuteInstruction() {
   increment_pc();
 
   if (MOZ_UNLIKELY(rpc)) {
-    JSRuntime::innermostAsmJSActivation()->setResumePC((void*)pc());
+    JSRuntime::innermostWasmActivation()->setResumePC((void*)pc());
     set_pc(rpc);
     
     

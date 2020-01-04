@@ -25,7 +25,7 @@
 
 namespace js {
 
-class AsmJSActivation;
+class WasmActivation;
 namespace jit { struct BaselineScript; }
 
 namespace wasm {
@@ -297,15 +297,20 @@ typedef Vector<CodeRange, 0, SystemAllocPolicy> CodeRangeVector;
 
 
 
-struct CacheableChars : public UniqueChars
+template <class CharT>
+struct CacheableUniquePtr : public UniquePtr<CharT, JS::FreePolicy>
 {
-    explicit CacheableChars(char* ptr) : UniqueChars(ptr) {}
-    MOZ_IMPLICIT CacheableChars(UniqueChars&& rhs) : UniqueChars(Move(rhs)) {}
-    CacheableChars() = default;
-    CacheableChars(CacheableChars&& rhs) : UniqueChars(Move(rhs)) {}
-    void operator=(CacheableChars&& rhs) { UniqueChars& base = *this; base = Move(rhs); }
-    WASM_DECLARE_SERIALIZABLE(CacheableChars)
+    typedef UniquePtr<CharT, JS::FreePolicy> UPtr;
+    explicit CacheableUniquePtr(CharT* ptr) : UPtr(ptr) {}
+    MOZ_IMPLICIT CacheableUniquePtr(UPtr&& rhs) : UPtr(Move(rhs)) {}
+    CacheableUniquePtr() = default;
+    CacheableUniquePtr(CacheableUniquePtr&& rhs) : UPtr(Move(rhs)) {}
+    void operator=(CacheableUniquePtr&& rhs) { UPtr& base = *this; base = Move(rhs); }
+    WASM_DECLARE_SERIALIZABLE(CacheableUniquePtr)
 };
+
+typedef CacheableUniquePtr<char> CacheableChars;
+typedef CacheableUniquePtr<char16_t> CacheableTwoByteChars;
 typedef Vector<CacheableChars, 0, SystemAllocPolicy> CacheableCharsVector;
 
 
@@ -367,40 +372,42 @@ class Module
 
     
     struct CacheablePod {
-        const uint32_t         functionBytes_;
-        const uint32_t         codeBytes_;
-        const uint32_t         globalBytes_;
-        const bool             usesHeap_;
-        const bool             sharedHeap_;
-        const bool             usesSignalHandlersForOOB_;
-        const bool             usesSignalHandlersForInterrupt_;
+        const uint32_t           functionBytes_;
+        const uint32_t           codeBytes_;
+        const uint32_t           globalBytes_;
+        const bool               usesHeap_;
+        const bool               sharedHeap_;
+        const bool               mutedErrors_;
+        const bool               usesSignalHandlersForOOB_;
+        const bool               usesSignalHandlersForInterrupt_;
     } pod;
-    const UniqueCodePtr        code_;
-    const ImportVector         imports_;
-    const ExportVector         exports_;
-    const HeapAccessVector     heapAccesses_;
-    const CodeRangeVector      codeRanges_;
-    const CallSiteVector       callSites_;
-    const CacheableCharsVector funcNames_;
-    const CacheableChars       filename_;
-    const bool                 loadedFromCache_;
+    const UniqueCodePtr          code_;
+    const ImportVector           imports_;
+    const ExportVector           exports_;
+    const HeapAccessVector       heapAccesses_;
+    const CodeRangeVector        codeRanges_;
+    const CallSiteVector         callSites_;
+    const CacheableCharsVector   funcNames_;
+    const CacheableChars         filename_;
+    const CacheableTwoByteChars  displayURL_;
+    const bool                   loadedFromCache_;
 
     
-    bool                       staticallyLinked_;
-    uint8_t*                   interrupt_;
-    uint8_t*                   outOfBounds_;
-    FuncPtrTableVector         funcPtrTables_;
+    bool                         staticallyLinked_;
+    uint8_t*                     interrupt_;
+    uint8_t*                     outOfBounds_;
+    FuncPtrTableVector           funcPtrTables_;
 
     
-    bool                       dynamicallyLinked_;
-    BufferPtr                  maybeHeap_;
-    Module**                   prev_;
-    Module*                    next_;
+    bool                         dynamicallyLinked_;
+    BufferPtr                    maybeHeap_;
+    Module**                     prev_;
+    Module*                      next_;
 
     
-    bool                       profilingEnabled_;
-    FuncLabelVector            funcLabels_;
-    bool                       interrupted_;
+    bool                         profilingEnabled_;
+    FuncLabelVector              funcLabels_;
+    bool                         interrupted_;
 
     class AutoMutateCode;
 
@@ -426,6 +433,7 @@ class Module
            CallSiteVector&& callSites,
            CacheableCharsVector&& funcNames,
            CacheableChars filename,
+           CacheableTwoByteChars displayURL,
            CacheBool loadedFromCache,
            ProfilingBool profilingEnabled,
            FuncLabelVector&& funcLabels);
@@ -438,6 +446,7 @@ class Module
 
     enum HeapBool { DoesntUseHeap = false, UsesHeap = true };
     enum SharedBool { UnsharedHeap = false, SharedHeap = true };
+    enum MutedBool { DontMuteErrors = false, MuteErrors = true };
 
     Module(CompileArgs args,
            uint32_t functionBytes,
@@ -445,6 +454,7 @@ class Module
            uint32_t globalBytes,
            HeapBool usesHeap,
            SharedBool sharedHeap,
+           MutedBool mutedErrors,
            UniqueCodePtr code,
            ImportVector&& imports,
            ExportVector&& exports,
@@ -452,7 +462,8 @@ class Module
            CodeRangeVector&& codeRanges,
            CallSiteVector&& callSites,
            CacheableCharsVector&& funcNames,
-           CacheableChars filename);
+           CacheableChars filename,
+           CacheableTwoByteChars displayURL);
     ~Module();
     void trace(JSTracer* trc);
 
@@ -461,11 +472,13 @@ class Module
     uint32_t globalBytes() const { return pod.globalBytes_; }
     bool usesHeap() const { return pod.usesHeap_; }
     bool sharedHeap() const { return pod.sharedHeap_; }
+    bool mutedErrors() const { return pod.mutedErrors_; }
     CompileArgs compileArgs() const;
     const ImportVector& imports() const { return imports_; }
     const ExportVector& exports() const { return exports_; }
     const char* functionName(uint32_t i) const { return funcNames_[i].get(); }
     const char* filename() const { return filename_.get(); }
+    const char16_t* displayURL() const { return displayURL_.get(); }
     bool loadedFromCache() const { return loadedFromCache_; }
     bool staticallyLinked() const { return staticallyLinked_; }
     bool dynamicallyLinked() const { return dynamicallyLinked_; }
@@ -525,7 +538,7 @@ class Module
     };
     typedef int32_t (*EntryFuncPtr)(EntryArg* args, uint8_t* global);
     EntryFuncPtr entryTrampoline(const Export& func) const;
-    AsmJSActivation*& activation();
+    WasmActivation*& activation();
 
     
     

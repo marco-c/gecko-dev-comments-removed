@@ -156,8 +156,8 @@ GenerateEntry(ModuleGenerator& mg, unsigned exportIndex, Module::HeapBool usesHe
     
     
     MOZ_ASSERT(masm.framePushed() == FramePushedForEntrySP);
-    masm.loadAsmJSActivation(scratch);
-    masm.storeStackPtr(Address(scratch, AsmJSActivation::offsetOfEntrySP()));
+    masm.loadWasmActivation(scratch);
+    masm.storeStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
 
     
     
@@ -244,8 +244,8 @@ GenerateEntry(ModuleGenerator& mg, unsigned exportIndex, Module::HeapBool usesHe
     masm.call(CallSiteDesc(CallSiteDesc::Relative), &target);
 
     
-    masm.loadAsmJSActivation(scratch);
-    masm.loadStackPtr(Address(scratch, AsmJSActivation::offsetOfEntrySP()));
+    masm.loadWasmActivation(scratch);
+    masm.loadStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
     masm.setFramePushed(FramePushedForEntrySP);
 
     
@@ -575,8 +575,8 @@ GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, Module::HeapBool 
         size_t offsetOfJitJSContext = offsetof(JSRuntime, jitJSContext);
         size_t offsetOfJitActivation = offsetof(JSRuntime, jitActivation);
         size_t offsetOfProfilingActivation = JSRuntime::offsetOfProfilingActivation();
-        masm.loadAsmJSActivation(reg0);
-        masm.loadPtr(Address(reg0, AsmJSActivation::offsetOfContext()), reg3);
+        masm.loadWasmActivation(reg0);
+        masm.loadPtr(Address(reg0, WasmActivation::offsetOfContext()), reg3);
         masm.loadPtr(Address(reg3, JSContext::offsetOfRuntime()), reg0);
         masm.loadPtr(Address(reg0, offsetOfActivation), reg1);
 
@@ -810,8 +810,8 @@ GenerateStackOverflowStub(ModuleGenerator& mg, Label* throwLabel)
     
     
     Register activation = ABIArgGenerator::NonArgReturnReg0;
-    masm.loadAsmJSActivation(activation);
-    masm.storePtr(masm.getStackPointer(), Address(activation, AsmJSActivation::offsetOfFP()));
+    masm.loadWasmActivation(activation);
+    masm.storePtr(masm.getStackPointer(), Address(activation, WasmActivation::offsetOfFP()));
 
     
     if (uint32_t d = StackDecrementForCall(ABIStackAlignment, sizeof(AsmJSFrame), ShadowStackSpace))
@@ -949,8 +949,8 @@ GenerateAsyncInterruptStub(ModuleGenerator& mg, Module::HeapBool usesHeap, Label
     Register scratch = ABIArgGenerator::NonArgReturnReg0;
 
     
-    masm.loadAsmJSActivation(scratch);
-    masm.loadPtr(Address(scratch, AsmJSActivation::offsetOfResumePC()), scratch);
+    masm.loadWasmActivation(scratch);
+    masm.loadPtr(Address(scratch, WasmActivation::offsetOfResumePC()), scratch);
     masm.storePtr(scratch, Address(masm.getStackPointer(), masm.framePushed() + sizeof(void*)));
 
     
@@ -989,8 +989,8 @@ GenerateAsyncInterruptStub(ModuleGenerator& mg, Module::HeapBool usesHeap, Label
     masm.ma_and(StackPointer, StackPointer, Imm32(~(ABIStackAlignment - 1)));
 
     
-    masm.loadAsmJSActivation(IntArgReg0);
-    masm.loadPtr(Address(IntArgReg0, AsmJSActivation::offsetOfResumePC()), IntArgReg1);
+    masm.loadWasmActivation(IntArgReg0);
+    masm.loadPtr(Address(IntArgReg0, WasmActivation::offsetOfResumePC()), IntArgReg1);
     masm.storePtr(IntArgReg1, Address(s0, masm.framePushed()));
 
     
@@ -1029,8 +1029,8 @@ GenerateAsyncInterruptStub(ModuleGenerator& mg, Module::HeapBool usesHeap, Label
     masm.ma_and(Imm32(~7), sp, sp);
 
     
-    masm.loadAsmJSActivation(IntArgReg0);
-    masm.loadPtr(Address(IntArgReg0, AsmJSActivation::offsetOfResumePC()), IntArgReg1);
+    masm.loadWasmActivation(IntArgReg0);
+    masm.loadPtr(Address(IntArgReg0, WasmActivation::offsetOfResumePC()), IntArgReg1);
     masm.storePtr(IntArgReg1, Address(r6, 14 * sizeof(uint32_t*)));
 
     
@@ -1106,11 +1106,11 @@ GenerateThrowStub(ModuleGenerator& mg, Label* throwLabel)
     
     
     Register scratch = ABIArgGenerator::NonArgReturnReg0;
-    masm.loadAsmJSActivation(scratch);
-    masm.storePtr(ImmWord(0), Address(scratch, AsmJSActivation::offsetOfFP()));
+    masm.loadWasmActivation(scratch);
+    masm.storePtr(ImmWord(0), Address(scratch, WasmActivation::offsetOfFP()));
 
     masm.setFramePushed(FramePushedForEntrySP);
-    masm.loadStackPtr(Address(scratch, AsmJSActivation::offsetOfEntrySP()));
+    masm.loadStackPtr(Address(scratch, WasmActivation::offsetOfEntrySP()));
     masm.Pop(scratch);
     masm.PopRegsInMask(NonVolatileRegs);
     MOZ_ASSERT(masm.framePushed() == 0);

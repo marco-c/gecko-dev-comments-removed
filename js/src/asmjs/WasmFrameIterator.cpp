@@ -20,7 +20,8 @@
 
 #include "jsatom.h"
 
-#include "asmjs/AsmJSModule.h"
+#include "asmjs/WasmModule.h"
+
 #include "jit/MacroAssembler-inl.h"
 
 using namespace js;
@@ -55,9 +56,9 @@ FrameIterator::FrameIterator()
     MOZ_ASSERT(done());
 }
 
-FrameIterator::FrameIterator(const AsmJSActivation& activation)
+FrameIterator::FrameIterator(const WasmActivation& activation)
   : cx_(activation.cx()),
-    module_(&activation.module().wasm()),
+    module_(&activation.module()),
     callsite_(nullptr),
     codeRange_(nullptr),
     fp_(activation.fp())
@@ -227,17 +228,17 @@ GenerateProfilingPrologue(MacroAssembler& masm, unsigned framePushed, ExitReason
         PushRetAddr(masm);
         MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - offsets->begin);
 
-        masm.loadAsmJSActivation(scratch);
-        masm.push(Address(scratch, AsmJSActivation::offsetOfFP()));
+        masm.loadWasmActivation(scratch);
+        masm.push(Address(scratch, WasmActivation::offsetOfFP()));
         MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - offsets->begin);
 
-        masm.storePtr(masm.getStackPointer(), Address(scratch, AsmJSActivation::offsetOfFP()));
+        masm.storePtr(masm.getStackPointer(), Address(scratch, WasmActivation::offsetOfFP()));
         MOZ_ASSERT_IF(!masm.oom(), StoredFP == masm.currentOffset() - offsets->begin);
     }
 
     if (reason != ExitReason::None) {
         masm.store32_NoSecondScratch(Imm32(int32_t(reason)),
-                                     Address(scratch, AsmJSActivation::offsetOfExitReason()));
+                                     Address(scratch, WasmActivation::offsetOfExitReason()));
     }
 
 #if defined(JS_CODEGEN_ARM)
@@ -262,11 +263,11 @@ GenerateProfilingEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason
     if (framePushed)
         masm.addToStackPtr(Imm32(framePushed));
 
-    masm.loadAsmJSActivation(scratch);
+    masm.loadWasmActivation(scratch);
 
     if (reason != ExitReason::None) {
         masm.store32(Imm32(int32_t(ExitReason::None)),
-                     Address(scratch, AsmJSActivation::offsetOfExitReason()));
+                     Address(scratch, WasmActivation::offsetOfExitReason()));
     }
 
     
@@ -284,12 +285,12 @@ GenerateProfilingEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
     defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
         masm.loadPtr(Address(masm.getStackPointer(), 0), scratch2);
-        masm.storePtr(scratch2, Address(scratch, AsmJSActivation::offsetOfFP()));
+        masm.storePtr(scratch2, Address(scratch, WasmActivation::offsetOfFP()));
         DebugOnly<uint32_t> prePop = masm.currentOffset();
         masm.addToStackPtr(Imm32(sizeof(void *)));
         MOZ_ASSERT_IF(!masm.oom(), PostStorePrePopFP == masm.currentOffset() - prePop);
 #else
-        masm.pop(Address(scratch, AsmJSActivation::offsetOfFP()));
+        masm.pop(Address(scratch, WasmActivation::offsetOfFP()));
         MOZ_ASSERT(PostStorePrePopFP == 0);
 #endif
 
@@ -422,8 +423,8 @@ ProfilingFrameIterator::ProfilingFrameIterator()
     MOZ_ASSERT(done());
 }
 
-ProfilingFrameIterator::ProfilingFrameIterator(const AsmJSActivation& activation)
-  : module_(&activation.module().wasm()),
+ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation)
+  : module_(&activation.module()),
     codeRange_(nullptr),
     callerFP_(nullptr),
     callerPC_(nullptr),
@@ -461,7 +462,7 @@ AssertMatchesCallSite(const Module& module, void* callerPC, void* callerFP, void
 }
 
 void
-ProfilingFrameIterator::initFromFP(const AsmJSActivation& activation)
+ProfilingFrameIterator::initFromFP(const WasmActivation& activation)
 {
     uint8_t* fp = activation.fp();
 
@@ -519,9 +520,9 @@ ProfilingFrameIterator::initFromFP(const AsmJSActivation& activation)
 
 typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
 
-ProfilingFrameIterator::ProfilingFrameIterator(const AsmJSActivation& activation,
+ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
                                                const RegisterState& state)
-  : module_(&activation.module().wasm()),
+  : module_(&activation.module()),
     codeRange_(nullptr),
     callerFP_(nullptr),
     callerPC_(nullptr),
