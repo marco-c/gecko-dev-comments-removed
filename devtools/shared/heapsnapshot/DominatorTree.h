@@ -52,6 +52,10 @@ public:
 
   
   dom::Nullable<uint64_t> GetRetainedSize(uint64_t aNodeId, ErrorResult& aRv);
+
+  
+  void GetImmediatelyDominated(uint64_t aNodeId, dom::Nullable<nsTArray<uint64_t>>& aOutDominated,
+                               ErrorResult& aRv);
 };
 
 } 

@@ -141,6 +141,11 @@ class JS_PUBLIC_API(DominatorTree)
             return DominatedNodePtr(postOrder, endPtr);
         }
 
+        size_t length() const {
+            MOZ_ASSERT(beginPtr <= endPtr);
+            return endPtr - beginPtr;
+        }
+
         
 
 
