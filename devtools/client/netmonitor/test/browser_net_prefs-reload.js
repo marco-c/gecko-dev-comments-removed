@@ -8,7 +8,7 @@
 
 
 add_task(function* () {
-  let [,, monitor] = yield initNetMonitor(SIMPLE_URL);
+  let { monitor } = yield initNetMonitor(SIMPLE_URL);
   info("Starting test... ");
 
   
@@ -146,15 +146,15 @@ add_task(function* () {
     validateFirstPrefValues();
     modifyFrontend();
 
-    let [,, newMonitor] = yield restartNetMonitor(monitor);
-    monitor = newMonitor;
+    let newMonitor = yield restartNetMonitor(monitor);
+    monitor = newMonitor.monitor;
 
     
     validateNewPrefValues();
     resetFrontend();
 
-    let [,, newMonitor2] = yield restartNetMonitor(monitor);
-    monitor = newMonitor2;
+    newMonitor = yield restartNetMonitor(monitor);
+    monitor = newMonitor.monitor;
 
     
     validateFirstPrefValues();
@@ -171,15 +171,15 @@ add_task(function* () {
     validateFirstPrefValues();
     modifyFrontend();
 
-    let [,, newMonitor] = yield restartNetMonitor(monitor);
-    monitor = newMonitor;
+    let newMonitor = yield restartNetMonitor(monitor);
+    monitor = newMonitor.monitor;
 
     
     validateNewPrefValues();
     resetFrontend();
 
-    let [,, newMonitor2] = yield restartNetMonitor(monitor);
-    monitor = newMonitor2;
+    newMonitor = yield restartNetMonitor(monitor);
+    monitor = newMonitor.monitor;
 
     
     validateFirstPrefValues();
@@ -196,15 +196,15 @@ add_task(function* () {
     validateFirstPrefValues();
     modifyFrontend();
 
-    let [,, newMonitor] = yield restartNetMonitor(monitor);
-    monitor = newMonitor;
+    let newMonitor = yield restartNetMonitor(monitor);
+    monitor = newMonitor.monitor;
 
     
     validateNewPrefValues();
     resetFrontend();
 
-    let [,, newMonitor2] = yield restartNetMonitor(monitor);
-    monitor = newMonitor2;
+    newMonitor = yield restartNetMonitor(monitor);
+    monitor = newMonitor.monitor;
 
     
     validateFirstPrefValues();

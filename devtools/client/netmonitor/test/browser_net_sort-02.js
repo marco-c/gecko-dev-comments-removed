@@ -8,7 +8,7 @@
 
 
 add_task(function* () {
-  let [,, monitor] = yield initNetMonitor(SORTING_URL);
+  let { monitor } = yield initNetMonitor(SORTING_URL);
   info("Starting test... ");
 
   
