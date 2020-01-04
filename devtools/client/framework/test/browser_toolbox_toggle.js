@@ -13,6 +13,10 @@ var {Toolbox} = require("devtools/client/framework/toolbox");
 add_task(function*() {
   
   
+  Services.prefs.clearUserPref("devtools.toolbox.selectedTool");
+
+  
+  
   
   info("Test toggle using CTRL+SHIFT+I/CMD+ALT+I");
   yield testToggle("I", {
@@ -36,7 +40,7 @@ function* testToggle(key, modifiers) {
   yield cleanup();
 }
 
-function* testToggleDockedToolbox (tab, key, modifiers) {
+function* testToggleDockedToolbox(tab, key, modifiers) {
   let toolbox = getToolboxForTab(tab);
 
   isnot(toolbox.hostType, Toolbox.HostType.WINDOW,
@@ -55,7 +59,7 @@ function* testToggleDockedToolbox (tab, key, modifiers) {
   ok(true, "Toolbox is created by using when toggle key");
 }
 
-function* testToggleDetachedToolbox (tab, key, modifiers) {
+function* testToggleDetachedToolbox(tab, key, modifiers) {
   let toolbox = getToolboxForTab(tab);
 
   info("change the toolbox hostType to WINDOW");
