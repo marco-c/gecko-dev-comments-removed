@@ -838,15 +838,6 @@ DumpAnimationProperties(nsTArray<AnimationProperty>& aAnimationProperties)
 }
 #endif
 
-
-
-
-struct KeyframeValue
-{
-  nsCSSProperty mProperty;
-  StyleAnimationValue mValue;
-};
-
  already_AddRefed<KeyframeEffectReadOnly>
 KeyframeEffectReadOnly::Constructor(
     const GlobalObject& aGlobal,
