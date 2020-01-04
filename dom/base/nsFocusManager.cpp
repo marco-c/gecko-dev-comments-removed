@@ -2828,6 +2828,11 @@ nsFocusManager::DetermineElementToMoveFocus(nsPIDOMWindow* aWindow,
       }
 
       
+      
+      
+      mayFocusRoot = true;
+
+      
       startContent = rootContent;
       tabIndex = forward ? 1 : 0;
     }
