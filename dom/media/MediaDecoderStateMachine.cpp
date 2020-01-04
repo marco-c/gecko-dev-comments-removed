@@ -783,17 +783,6 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
                self->WaitRequestRef(aRejection.mType).Complete();
              }));
 
-    
-    
-    
-    if (isAudio) {
-      StopPrerollingAudio();
-    } else {
-      StopPrerollingVideo();
-    }
-    if (mState == DECODER_STATE_BUFFERING || mState == DECODER_STATE_DECODING) {
-        MaybeFinishDecodeFirstFrame();
-    }
     return;
   }
 

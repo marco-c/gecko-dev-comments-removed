@@ -129,10 +129,7 @@ private:
   
   Monitor mMonitor;
   media::TimeUnit mNextRandomAccessPoint;
-  Maybe<RefPtr<MediaRawData>> mNextSample;
-  
-  
-  bool mReset;
+  Maybe<media::TimeUnit> mLastSeek;
 };
 
 } 

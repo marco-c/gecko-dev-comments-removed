@@ -127,8 +127,6 @@ private:
   
   bool DecodeDemuxedSamples(TrackType aTrack,
                             MediaRawData* aSample);
-  void InternalSeek(TrackType aTrack, const media::TimeUnit& aTime);
-
   
   void DrainDecoder(TrackType aTrack);
   void NotifyNewOutput(TrackType aTrack, MediaData* aSample);
@@ -264,10 +262,7 @@ private:
     bool mDrainComplete;
     
     
-    
     Maybe<media::TimeUnit> mTimeThreshold;
-    
-    Maybe<media::TimeUnit> mLastSampleTime;
 
     
     
@@ -305,7 +300,6 @@ private:
       mDraining = false;
       mDrainComplete = false;
       mTimeThreshold.reset();
-      mLastSampleTime.reset();
       mOutput.Clear();
       mNumSamplesInput = 0;
       mNumSamplesOutput = 0;
