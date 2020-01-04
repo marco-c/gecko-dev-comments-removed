@@ -1444,7 +1444,7 @@ nsXULElement::GetAttributeChangeHint(const nsIAtom* aAttribute,
         
         
         
-        retval = NS_STYLE_HINT_FRAMECHANGE;
+        retval = nsChangeHint_ReconstructFrame;
     } else {
         
         
