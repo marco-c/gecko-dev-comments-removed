@@ -290,12 +290,12 @@ template<class T>
 class CoatCheck
 {
 public:
-  typedef std::pair<uint32_t, RefPtr<T>> Element;
+  typedef std::pair<uint32_t, nsRefPtr<T>> Element;
 
   uint32_t Append(T& t)
   {
     uint32_t id = GetNextId();
-    mElements.AppendElement(Element(id, RefPtr<T>(&t)));
+    mElements.AppendElement(Element(id, nsRefPtr<T>(&t)));
     return id;
   }
 
@@ -303,7 +303,7 @@ public:
   {
     for (auto& element : mElements) {
       if (element.first == aId) {
-        RefPtr<T> ref;
+        nsRefPtr<T> ref;
         ref.swap(element.second);
         mElements.RemoveElement(element);
         return ref.forget();
@@ -320,6 +320,41 @@ private:
     return ++counter;
   };
   nsAutoTArray<Element, 3> mElements;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename T>
+class Refcountable : public T
+{
+public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Refcountable<T>)
+private:
+  ~Refcountable<T>() {}
+};
+
+template<typename T>
+class Refcountable<ScopedDeletePtr<T>> : public ScopedDeletePtr<T>
+{
+public:
+  explicit Refcountable<ScopedDeletePtr<T>>(T* aPtr) : ScopedDeletePtr<T>(aPtr) {}
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Refcountable<T>)
+private:
+  ~Refcountable<ScopedDeletePtr<T>>() {}
 };
 
 } 
