@@ -72,38 +72,25 @@ struct AnimationTiming
 
 struct ComputedTiming
 {
-  ComputedTiming()
-    : mProgress(kNullProgress)
-    , mCurrentIteration(0)
-    , mPhase(AnimationPhase_Null)
-  { }
+  
+  
+  
+  StickyTimeDuration  mActiveDuration;
+  
+  
+  
+  
+  Nullable<double>    mProgress;
+  
+  uint64_t            mCurrentIteration = 0;
 
-  static const double kNullProgress;
-
-  
-  
-  
-  StickyTimeDuration mActiveDuration;
-
-  
-  
-  
-  
-  double mProgress;
-
-  
-  uint64_t mCurrentIteration;
-
-  enum {
-    
-    AnimationPhase_Null,
-    
-    AnimationPhase_Before,
-    
-    AnimationPhase_Active,
-    
-    AnimationPhase_After
-  } mPhase;
+  enum class AnimationPhase {
+    Null,   
+    Before, 
+    Active, 
+    After   
+  };
+  AnimationPhase      mPhase = AnimationPhase::Null;
 };
 
 class ComputedTimingFunction
@@ -279,8 +266,9 @@ public:
 
   
   
-  ComputedTiming GetComputedTiming(const AnimationTiming* aTiming
-                                     = nullptr) const {
+  ComputedTiming
+  GetComputedTiming(const AnimationTiming* aTiming = nullptr) const
+  {
     return GetComputedTimingAt(GetLocalTime(), aTiming ? *aTiming : mTiming);
   }
 
