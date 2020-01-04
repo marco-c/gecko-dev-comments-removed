@@ -1414,12 +1414,16 @@ nsGridContainerFrame::ResolveLineRange(
     
     
     r.second = std::min(r.second, nsStyleGridLine::kMaxLine - 1);
-  } else if (r.second <= r.first) {
+  } else {
     
-    if (MOZ_UNLIKELY(r.first == nsStyleGridLine::kMaxLine)) {
-      r.first = nsStyleGridLine::kMaxLine - 1;
+    if (r.second < r.first) {
+      Swap(r.first, r.second);
+    } else if (r.first == r.second) {
+      if (MOZ_UNLIKELY(r.first == nsStyleGridLine::kMaxLine)) {
+        r.first = nsStyleGridLine::kMaxLine - 1;
+      }
+      r.second = r.first + 1; 
     }
-    r.second = r.first + 1; 
   }
   return LineRange(r.first, r.second);
 }
