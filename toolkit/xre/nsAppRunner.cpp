@@ -4421,6 +4421,15 @@ void XRE_GlibInit()
 #endif
 
 
+void
+XRE_CreateStatsObject()
+{
+  
+  
+  Telemetry::CreateStatisticsRecorder();
+}
+
+
 
 
 
@@ -4429,6 +4438,16 @@ int
 XREMain::XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
 {
   ScopedLogging log;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  XRE_CreateStatsObject();
 
 #if defined(MOZ_SANDBOX) && defined(XP_LINUX) && !defined(ANDROID)
   SandboxInfo::ThreadingCheck();
@@ -4581,21 +4600,11 @@ XRE_StopLateWriteChecks(void) {
   mozilla::StopLateWriteChecks();
 }
 
-
-void
-XRE_CreateStatsObject()
-{
-  
-  
-  Telemetry::CreateStatisticsRecorder();
-}
-
 int
 XRE_main(int argc, char* argv[], const nsXREAppData* aAppData, uint32_t aFlags)
 {
   XREMain main;
 
-  XRE_CreateStatsObject();
   int result = main.XRE_main(argc, argv, aAppData);
   mozilla::RecordShutdownEndTimeStamp();
   return result;

@@ -317,9 +317,6 @@ XRE_InitChildProcess(int aArgc,
   setupProfilingStuff();
 #endif
 
-  
-  Telemetry::CreateStatisticsRecorder();
-
 #if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK)
   
   
@@ -364,6 +361,14 @@ XRE_InitChildProcess(int aArgc,
 
   
   NS_LogInit();
+
+  
+  
+  
+  
+  
+  
+  Telemetry::CreateStatisticsRecorder();
 
   mozilla::LogModule::Init();
 

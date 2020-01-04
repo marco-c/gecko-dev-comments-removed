@@ -165,8 +165,8 @@ namespace {
 
 bool gInitDone = false;
 
-bool gCanRecordBase;
-bool gCanRecordExtended;
+bool gCanRecordBase = false;
+bool gCanRecordExtended = false;
 
 HistogramMapType gHistogramMap(mozilla::Telemetry::HistogramCount);
 
