@@ -2319,13 +2319,17 @@ public class GeckoAppShell
     
 
 
-    @WrapForJNI(stubName = "SendMessageWrapper")
-    public static void sendMessage(String aNumber, String aMessage, int aRequestId) {
+    public static void sendMessage(String aNumber, String aMessage, int aRequestId, boolean aShouldNotify) {
         if (!SmsManager.isEnabled()) {
             return;
         }
 
-        SmsManager.getInstance().send(aNumber, aMessage, aRequestId);
+        SmsManager.getInstance().send(aNumber, aMessage, aRequestId, aShouldNotify);
+    }
+
+    @WrapForJNI(stubName = "SendMessageWrapper")
+    public static void sendMessage(String aNumber, String aMessage, int aRequestId) {
+        sendMessage(aNumber, aMessage, aRequestId,  true);
     }
 
     @WrapForJNI(stubName = "GetMessageWrapper")
