@@ -175,11 +175,22 @@ public:
     , mRelativeToBoxTopLeft(aRelativeToBoxTopLeft)
     , mBoxType(aBoxType)
   {
+    if (mBoxType == CSSBoxType::Margin) {
+      
+      
+      mIncludeCaptionBoxForTable = false;
+    }
   }
 
   virtual void AddBox(nsIFrame* aFrame) override
   {
     nsIFrame* f = aFrame;
+    if (mBoxType == CSSBoxType::Margin &&
+        f->GetType() == nsGkAtoms::tableFrame) {
+      
+      
+      f = f->GetParent();
+    }
     nsRect box = GetBoxRectForFrame(&f, mBoxType);
     nsPoint appUnits[4] =
       { box.TopLeft(), box.TopRight(), box.BottomRight(), box.BottomLeft() };
