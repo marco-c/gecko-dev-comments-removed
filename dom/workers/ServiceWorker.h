@@ -27,7 +27,7 @@ ServiceWorkerVisible(JSContext* aCx, JSObject* aObj);
 
 class ServiceWorker final : public DOMEventTargetHelper
 {
-  friend class ServiceWorkerManager;
+  friend class ServiceWorkerInfo;
 public:
   NS_DECL_ISUPPORTS_INHERITED
 
