@@ -497,7 +497,7 @@ let AboutPermissions = {
         while (row = aResults.getNextRow()) {
           let spec = row.getResultByName("url");
           let uri = NetUtil.newURI(spec);
-          let principal = gSecMan.createCodebasePrincipal(uri, {});
+          let principal = gSecMan.getNoAppCodebasePrincipal(uri);
 
           AboutPermissions.addPrincipal(principal);
         }
@@ -548,7 +548,7 @@ let AboutPermissions = {
       try {
         
         let uri = NetUtil.newURI(aLogin.hostname);
-        let principal = gSecMan.createCodebasePrincipal(uri, {});
+        let principal = gSecMan.getNoAppCodebasePrincipal(uri);
         this.addPrincipal(principal);
       } catch (e) {
         
@@ -564,7 +564,7 @@ let AboutPermissions = {
       try {
         
         let uri = NetUtil.newURI(aHostname);
-        let principal = gSecMan.createCodebasePrincipal(uri, {});
+        let principal = gSecMan.getNoAppCodebasePrincipal(uri);
         this.addPrincipal(principal);
       } catch (e) {
         

@@ -457,9 +457,10 @@ function downloadIcon(aIconURI) {
     
     
     let principal =
-      aIconURI.schemeIs("chrome") ?
-        Services.scriptSecurityManager.getSystemPrincipal() :
-        Services.scriptSecurityManager.createCodebasePrincipal(aIconURI, {});
+      aIconURI.schemeIs("chrome") ? Services.scriptSecurityManager
+                                            .getSystemPrincipal()
+                                  : Services.scriptSecurityManager
+                                            .getNoAppCodebasePrincipal(aIconURI);
 
     let channel = NetUtil.newChannel({
       uri: aIconURI,

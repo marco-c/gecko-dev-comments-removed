@@ -124,7 +124,7 @@ add_test(function test_update() {
 
 add_test(function test_url_not_whitelisted() {
   let uri = createURI("http://example.com");
-  let principal = gSecMan.createCodebasePrincipal(uri, {});
+  let principal = gSecMan.getNoAppCodebasePrincipal(uri);
   gDbService.lookup(principal, "goog-downloadwhite-digest256",
     function handleEvent(aEvent) {
       
@@ -137,7 +137,7 @@ add_test(function test_url_whitelisted() {
   
   
   let uri = createURI("http://whitelisted.com");
-  let principal = gSecMan.createCodebasePrincipal(uri, {});
+  let principal = gSecMan.getNoAppCodebasePrincipal(uri);
   gDbService.lookup(principal, "goog-downloadwhite-digest256",
     function handleEvent(aEvent) {
       do_check_eq("goog-downloadwhite-digest256", aEvent);

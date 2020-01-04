@@ -95,12 +95,12 @@ var gPermissionManager = {
       let uri;
       try {
         uri = Services.io.newURI(input_url, null, null);
-        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+        principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
         
         principal.origin;
       } catch(ex) {
         uri = Services.io.newURI("http://" + input_url, null, null);
-        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+        principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
         
         principal.origin;
       }

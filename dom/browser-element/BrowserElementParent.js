@@ -833,16 +833,14 @@ BrowserElementParent.prototype = {
       catch(e) {
         debug('Malformed referrer -- ' + e);
       }
-
-      
-      let attrs = {appId: this._frameLoader.loadContext.appId,
-                   inBrowser: this._frameLoader.loadContext.isInBrowserElement};
       
       
       
-      principal =
-        Services.scriptSecurityManager.createCodebasePrincipal(
-          referrer, attrs);
+      principal = 
+        Services.scriptSecurityManager.getAppCodebasePrincipal(
+          referrer, 
+          this._frameLoader.loadContext.appId, 
+          this._frameLoader.loadContext.isInBrowserElement);
     }
 
     debug('Using principal? ' + !!principal);

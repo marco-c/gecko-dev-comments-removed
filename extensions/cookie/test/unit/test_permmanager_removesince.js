@@ -24,10 +24,10 @@ function do_run_test() {
   
   
   let permURI1 = NetUtil.newURI("http://example.com");
-  let principal1 = Services.scriptSecurityManager.createCodebasePrincipal(permURI1, {});
+  let principal1 = Services.scriptSecurityManager.getNoAppCodebasePrincipal(permURI1);
 
   let permURI2 = NetUtil.newURI("http://example.org");
-  let principal2 = Services.scriptSecurityManager.createCodebasePrincipal(permURI2, {});
+  let principal2 = Services.scriptSecurityManager.getNoAppCodebasePrincipal(permURI2);
 
   
   pm.addFromPrincipal(principal1, "test/remove-since", 1);
