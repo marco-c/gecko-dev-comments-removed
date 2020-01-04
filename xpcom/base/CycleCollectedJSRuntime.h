@@ -417,9 +417,6 @@ inline bool AddToCCKind(JS::TraceKind aKind)
   return aKind == JS::TraceKind::Object || aKind == JS::TraceKind::Script;
 }
 
-bool
-GetBuildId(JS::BuildIdCharVector* aBuildID);
-
 } 
 
 #endif 
