@@ -90,6 +90,7 @@ function run_test() {
 
   Log.repository.getLogger("Sync.Service").level = Log.Level.Trace;
   Log.repository.getLogger("Sync.scheduler").level = Log.Level.Trace;
+  validate_all_future_pings();
 
   
   

@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["BrowserIDManager"];
+this.EXPORTED_SYMBOLS = ["BrowserIDManager", "AuthenticationError"];
 
 var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
@@ -65,8 +65,9 @@ function deriveKeyBundle(kB) {
 
 
 
-function AuthenticationError(details) {
+function AuthenticationError(details, source) {
   this.details = details;
+  this.source = source;
 }
 
 AuthenticationError.prototype = {
@@ -110,6 +111,14 @@ this.BrowserIDManager.prototype = {
     } catch (e) {
       return false;
     }
+  },
+
+  
+  userUID() {
+    if (!this._signedInUser) {
+      throw new Error("userUID(): No signed in user");
+    }
+    return this._signedInUser.uid;
   },
 
   initialize: function() {
@@ -625,13 +634,13 @@ this.BrowserIDManager.prototype = {
         
         
         if (err.response && err.response.status === 401) {
-          err = new AuthenticationError(err);
+          err = new AuthenticationError(err, "tokenserver");
         
         } else if (err.code && err.code === 401) {
-          err = new AuthenticationError(err);
+          err = new AuthenticationError(err, "hawkclient");
         
         } else if (err.message == fxAccountsCommon.ERROR_AUTH_ERROR) {
-          err = new AuthenticationError(err);
+          err = new AuthenticationError(err, "fxaccounts");
         }
 
         
