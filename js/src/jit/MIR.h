@@ -6726,7 +6726,7 @@ class MComputeThis
     explicit MComputeThis(MDefinition* def)
       : MUnaryInstruction(def)
     {
-        setResultType(MIRType_Object);
+        setResultType(MIRType_Value);
     }
 
   public:
