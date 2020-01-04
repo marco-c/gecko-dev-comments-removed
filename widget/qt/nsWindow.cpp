@@ -1211,7 +1211,7 @@ nsWindow::keyPressEvent(QKeyEvent* aEvent)
         case Qt::Key_F9:
             return DispatchContentCommandEvent(eContentCommandPaste);
         case Qt::Key_F14:
-            return DispatchContentCommandEvent(NS_CONTENT_COMMAND_UNDO);
+            return DispatchContentCommandEvent(eContentCommandUndo);
     }
 
     
@@ -1219,7 +1219,7 @@ nsWindow::keyPressEvent(QKeyEvent* aEvent)
         return DispatchContentCommandEvent(NS_CONTENT_COMMAND_REDO);
     }
     if (aEvent->nativeVirtualKey() == 0xff65) {
-        return DispatchContentCommandEvent(NS_CONTENT_COMMAND_UNDO);
+        return DispatchContentCommandEvent(eContentCommandUndo);
     }
 
     WidgetKeyboardEvent event(true, eKeyPress, this);
