@@ -20,8 +20,21 @@
 #include "nsIDocument.h"
 #include "nsIWeakReference.h"
 #include "mozilla/AbstractThread.h"
+#include "nsClassHashtable.h"
 
 template <class> struct already_AddRefed;
+
+
+
+
+class GMPCrashHelper
+{
+public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPCrashHelper)
+  virtual already_AddRefed<nsPIDOMWindowInner> GetPluginCrashedEventTarget() = 0;
+protected:
+  virtual ~GMPCrashHelper() {}
+};
 
 namespace mozilla {
 
@@ -45,19 +58,23 @@ public:
   NS_IMETHOD GetThread(nsIThread** aThread) override;
   NS_IMETHOD HasPluginForAPI(const nsACString& aAPI, nsTArray<nsCString>* aTags,
                              bool *aRetVal) override;
-  NS_IMETHOD GetGMPVideoDecoder(nsTArray<nsCString>* aTags,
+  NS_IMETHOD GetGMPVideoDecoder(GMPCrashHelper* aHelper,
+                                nsTArray<nsCString>* aTags,
                                 const nsACString& aNodeId,
                                 UniquePtr<GetGMPVideoDecoderCallback>&& aCallback)
     override;
-  NS_IMETHOD GetGMPVideoEncoder(nsTArray<nsCString>* aTags,
+  NS_IMETHOD GetGMPVideoEncoder(GMPCrashHelper* aHelper,
+                                nsTArray<nsCString>* aTags,
                                 const nsACString& aNodeId,
                                 UniquePtr<GetGMPVideoEncoderCallback>&& aCallback)
     override;
-  NS_IMETHOD GetGMPAudioDecoder(nsTArray<nsCString>* aTags,
+  NS_IMETHOD GetGMPAudioDecoder(GMPCrashHelper* aHelper,
+                                nsTArray<nsCString>* aTags,
                                 const nsACString& aNodeId,
                                 UniquePtr<GetGMPAudioDecoderCallback>&& aCallback)
     override;
-  NS_IMETHOD GetGMPDecryptor(nsTArray<nsCString>* aTags,
+  NS_IMETHOD GetGMPDecryptor(GMPCrashHelper* aHelper,
+                             nsTArray<nsCString>* aTags,
                              const nsACString& aNodeId,
                              UniquePtr<GetGMPDecryptorCallback>&& aCallback)
     override;
@@ -75,6 +92,9 @@ public:
 
   RefPtr<AbstractThread> GetAbstractGMPThread();
 
+  void ConnectCrashHelper(uint32_t aPluginId, GMPCrashHelper* aHelper);
+  void DisconnectCrashHelper(GMPCrashHelper* aHelper);
+
 protected:
   GeckoMediaPluginService();
   virtual ~GeckoMediaPluginService();
@@ -82,7 +102,8 @@ protected:
   void RemoveObsoletePluginCrashCallbacks(); 
 
   virtual void InitializePlugins(AbstractThread* aAbstractGMPThread) = 0;
-  virtual bool GetContentParentFrom(const nsACString& aNodeId,
+  virtual bool GetContentParentFrom(GMPCrashHelper* aHelper,
+                                    const nsACString& aNodeId,
                                     const nsCString& aAPI,
                                     const nsTArray<nsCString>& aTags,
                                     UniquePtr<GetGMPContentParentCallback>&& aCallback) = 0;
@@ -140,6 +161,8 @@ protected:
   nsTArray<PluginCrash> mPluginCrashes;
 
   nsTArray<RefPtr<GMPCrashCallback>> mPluginCrashCallbacks;
+
+  nsClassHashtable<nsUint32HashKey, nsTArray<RefPtr<GMPCrashHelper>>> mPluginCrashHelpers;
 };
 
 } 

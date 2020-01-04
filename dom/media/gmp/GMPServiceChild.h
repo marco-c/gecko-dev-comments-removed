@@ -60,7 +60,8 @@ protected:
   {
     
   }
-  bool GetContentParentFrom(const nsACString& aNodeId,
+  bool GetContentParentFrom(GMPCrashHelper* aHelper,
+                            const nsACString& aNodeId,
                             const nsCString& aAPI,
                             const nsTArray<nsCString>& aTags,
                             UniquePtr<GetGMPContentParentCallback>&& aCallback)
