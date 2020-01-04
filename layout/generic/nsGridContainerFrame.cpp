@@ -1628,7 +1628,7 @@ struct nsGridContainerFrame::Tracks
     return size;
   }
 
-  nsTArray<nsString> GetLineNamesAtIndex(
+  nsTArray<nsString> GetExplicitLineNamesAtIndex(
     const nsStyleGridTemplate& aGridTemplate,
     const TrackSizingFunctions& aFunctions,
     uint32_t aIndex)
@@ -2315,7 +2315,6 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Grid
 
   uint32_t mExplicitGridOffsetCol;
   uint32_t mExplicitGridOffsetRow;
-
 };
 
 void
@@ -2678,15 +2677,30 @@ nsGridContainerFrame::AddImplicitNamedAreas(
   ImplicitNamedAreas* areas = GetImplicitNamedAreas();
   for (uint32_t i = 0; i < len; ++i) {
     for (const nsString& name : aLineNameLists[i]) {
-      uint32_t index;
-      if (Grid::IsNameWithStartSuffix(name, &index) ||
-          Grid::IsNameWithEndSuffix(name, &index)) {
-        nsDependentSubstring area(name, 0, index);
+      uint32_t indexOfSuffix;
+      if (Grid::IsNameWithStartSuffix(name, &indexOfSuffix) ||
+          Grid::IsNameWithEndSuffix(name, &indexOfSuffix)) {
+        
+        nsDependentSubstring areaName(name, 0, indexOfSuffix);
+
+        
         if (!areas) {
           areas = new ImplicitNamedAreas;
           Properties().Set(ImplicitNamedAreasProperty(), areas);
         }
-        areas->PutEntry(area);
+
+        mozilla::css::GridNamedArea area;
+        if (!areas->Get(areaName, &area)) {
+          
+          
+          area.mName = areaName;
+          area.mRowStart = 0;
+          area.mRowEnd = 0;
+          area.mColumnStart = 0;
+          area.mColumnEnd = 0;
+
+          areas->Put(areaName, area);
+        }
       }
     }
   }
@@ -3456,6 +3470,38 @@ nsGridContainerFrame::Grid::PlaceGridItems(GridReflowInput& aState,
     aState.mColFunctions.SetNumRepeatTracks(finalColRepeatCount);
     auto finalRowRepeatCount = aState.mRowFunctions.NumRepeatTracks() - numEmptyRows;
     aState.mRowFunctions.SetNumRepeatTracks(finalRowRepeatCount);
+  }
+
+  
+  if (mAreas &&
+      aState.mFrame->HasAnyStateBits(NS_STATE_GRID_GENERATE_COMPUTED_VALUES)) {
+    for (auto iter = mAreas->Iter(); !iter.Done(); iter.Next()) {
+      auto& areaInfo = iter.Data();
+
+      
+      
+      
+      nsStyleGridLine lineStartAndEnd;
+      lineStartAndEnd.mLineName = areaInfo.mName;
+
+      LineRange columnLines = ResolveLineRange(
+        lineStartAndEnd, lineStartAndEnd,
+        colLineNameMap,
+        &GridNamedArea::mColumnStart, &GridNamedArea::mColumnEnd,
+        mExplicitGridColEnd, gridStyle);
+
+      LineRange rowLines = ResolveLineRange(
+        lineStartAndEnd, lineStartAndEnd,
+        rowLineNameMap,
+        &GridNamedArea::mRowStart, &GridNamedArea::mRowEnd,
+        mExplicitGridRowEnd, gridStyle);
+
+      
+      areaInfo.mColumnStart = columnLines.mStart + mExplicitGridOffsetCol;
+      areaInfo.mColumnEnd = columnLines.mEnd + mExplicitGridOffsetCol;
+      areaInfo.mRowStart = rowLines.mStart + mExplicitGridOffsetRow;
+      areaInfo.mRowEnd = rowLines.mEnd + mExplicitGridOffsetRow;
+    }
   }
 }
 
@@ -5810,17 +5856,22 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
 
     
     
+    
+    
 
     
     uint32_t capacity = gridReflowInput.mColFunctions.NumRepeatTracks() +
                         gridReflowInput.mCols.mSizes.Length();
     nsTArray<nsTArray<nsString>> columnLineNames(capacity);
     for (col = 0; col <= gridReflowInput.mCols.mSizes.Length(); col++) {
-      columnLineNames.AppendElement(
-        gridReflowInput.mCols.GetLineNamesAtIndex(
+      
+      nsTArray<nsString> explicitNames =
+        gridReflowInput.mCols.GetExplicitLineNamesAtIndex(
           gridReflowInput.mGridStyle->mGridTemplateColumns,
           gridReflowInput.mColFunctions,
-          col));
+          col - gridReflowInput.mColFunctions.mExplicitGridOffset);
+
+      columnLineNames.AppendElement(explicitNames);
     }
     ComputedGridLineInfo* columnLineInfo = new ComputedGridLineInfo(
       Move(columnLineNames));
@@ -5831,11 +5882,14 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
                gridReflowInput.mRows.mSizes.Length();
     nsTArray<nsTArray<nsString>> rowLineNames(capacity);
     for (row = 0; row <= gridReflowInput.mRows.mSizes.Length(); row++) {
-      rowLineNames.AppendElement(
-        gridReflowInput.mRows.GetLineNamesAtIndex(
+      
+      nsTArray<nsString> explicitNames =
+        gridReflowInput.mRows.GetExplicitLineNamesAtIndex(
           gridReflowInput.mGridStyle->mGridTemplateRows,
           gridReflowInput.mRowFunctions,
-          row));
+          row - gridReflowInput.mRowFunctions.mExplicitGridOffset);
+
+      rowLineNames.AppendElement(explicitNames);
     }
     ComputedGridLineInfo* rowLineInfo = new ComputedGridLineInfo(
       Move(rowLineNames));
