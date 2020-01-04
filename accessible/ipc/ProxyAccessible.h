@@ -366,6 +366,12 @@ public:
   
 
 
+
+  void DOMNodeID(nsString& aID);
+
+  
+
+
   uintptr_t GetWrapper() const { return mWrapper; }
   void SetWrapper(uintptr_t aWrapper) { mWrapper = aWrapper; }
 
