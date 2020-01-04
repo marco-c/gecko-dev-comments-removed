@@ -1872,6 +1872,16 @@ JSStructuredCloneReader::readTransferMap()
                 obj = JS_NewMappedArrayBufferWithContents(cx, nbytes, content);
         } else if (tag == SCTAG_TRANSFER_MAP_SHARED_BUFFER) {
             MOZ_ASSERT(data == JS::SCTAG_TMO_SHARED_BUFFER);
+            
+            
+            
+            
+            
+            if (!context()->compartment()->creationOptions().getSharedMemoryAndAtomicsEnabled()) {
+                JS_ReportErrorNumber(context(), GetErrorMessage, nullptr,
+                                     JSMSG_SC_NOT_TRANSFERABLE);
+                return false;
+            }
             obj = SharedArrayBufferObject::New(context(), (SharedArrayRawBuffer*)content);
         } else {
             if (!callbacks || !callbacks->readTransfer) {
