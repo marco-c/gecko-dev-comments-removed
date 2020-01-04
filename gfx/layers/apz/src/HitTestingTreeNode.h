@@ -102,6 +102,11 @@ public:
 
   
 
+  void SetFixedPosData(FrameMetrics::ViewID aFixedPosTarget);
+  FrameMetrics::ViewID GetNearestAncestorFixedPosTargetWithSameLayersId() const;
+
+  
+
   Maybe<LayerPoint> Untransform(const ParentLayerPoint& aPoint) const;
   
 
@@ -128,6 +133,8 @@ private:
   Layer::ScrollDirection mScrollDir;
   int32_t mScrollSize;
   bool mIsScrollbarContainer;
+
+  FrameMetrics::ViewID mFixedPosTarget;
 
   
 

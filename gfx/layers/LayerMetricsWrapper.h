@@ -434,6 +434,13 @@ public:
     return mLayer->IsScrollbarContainer();
   }
 
+  FrameMetrics::ViewID GetFixedPositionScrollContainerId() const
+  {
+    MOZ_ASSERT(IsValid());
+
+    return mLayer->GetFixedPositionScrollContainerId();
+  }
+
   
   
   
