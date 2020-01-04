@@ -2509,7 +2509,7 @@ var SessionStoreInternal = {
       let window = tab.ownerDocument && tab.ownerDocument.defaultView;
 
       
-      if (!window || !window.__SSi) {
+      if (!window || !window.__SSi || window.closed) {
         return;
       }
 
