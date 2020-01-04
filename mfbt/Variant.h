@@ -62,6 +62,54 @@ template<typename Needle, typename T, typename... Haystack>
 struct IsVariant<Needle, T, Haystack...> : public IsVariant<Needle, Haystack...> { };
 
 
+template<typename T, typename... Variants>
+struct SelectVariantTypeHelper;
+
+template<typename T>
+struct SelectVariantTypeHelper<T>
+{ };
+
+template<typename T, typename... Variants>
+struct SelectVariantTypeHelper<T, T, Variants...>
+{
+  typedef T Type;
+};
+
+template<typename T, typename... Variants>
+struct SelectVariantTypeHelper<T, const T, Variants...>
+{
+  typedef const T Type;
+};
+
+template<typename T, typename... Variants>
+struct SelectVariantTypeHelper<T, const T&, Variants...>
+{
+  typedef const T& Type;
+};
+
+template<typename T, typename... Variants>
+struct SelectVariantTypeHelper<T, T&&, Variants...>
+{
+  typedef T&& Type;
+};
+
+template<typename T, typename Head, typename... Variants>
+struct SelectVariantTypeHelper<T, Head, Variants...>
+  : public SelectVariantTypeHelper<T, Variants...>
+{ };
+
+
+
+
+
+
+template <typename T, typename... Variants>
+struct SelectVariantType
+  : public SelectVariantTypeHelper<typename RemoveConst<typename RemoveReference<T>::Type>::Type,
+                                   Variants...>
+{ };
+
+
 
 
 
@@ -336,8 +384,7 @@ public:
            
            
            
-           typename T = typename RemoveReference<typename RemoveConst<RefT>::Type>::Type,
-           typename = typename EnableIf<detail::IsVariant<T, Ts...>::value, void>::Type>
+           typename T = typename detail::SelectVariantType<RefT, Ts...>::Type>
   explicit Variant(RefT&& aT)
     : tag(Impl::template tag<T>())
   {
