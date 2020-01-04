@@ -172,6 +172,9 @@ pref("dom.performance.enable_user_timing_logging", false);
 pref("dom.performance.enable_notify_performance_timing", false);
 
 
+pref("dom.permissions.revoke.enable", false);
+
+
 #ifdef NIGHTLY_BUILD
 pref("dom.enable_performance_observer", true);
 #else
