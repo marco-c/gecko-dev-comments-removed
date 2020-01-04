@@ -144,6 +144,13 @@ var AnimationsController = {
     
     this.traits = yield getServerTraits(target);
 
+    
+    
+    
+    
+    
+    this.nonBlockingPlayerReleases = [];
+
     if (this.destroyed) {
       console.warn("Could not fully initialize the AnimationsController");
       return;
@@ -175,6 +182,9 @@ var AnimationsController = {
     this.stopListeners();
     yield this.destroyAnimationPlayers();
     this.nodeFront = null;
+
+    
+    yield Promise.all(this.nonBlockingPlayerReleases);
 
     if (this.animationsFront) {
       this.animationsFront.destroy();
@@ -331,7 +341,7 @@ var AnimationsController = {
     }
   }),
 
-  onAnimationMutations: Task.async(function*(changes) {
+  onAnimationMutations: function(changes) {
     
     
     for (let {type, player} of changes) {
@@ -340,7 +350,8 @@ var AnimationsController = {
       }
 
       if (type === "removed") {
-        yield player.release();
+        
+        this.nonBlockingPlayerReleases.push(player.release());
         let index = this.animationPlayers.indexOf(player);
         this.animationPlayers.splice(index, 1);
       }
@@ -348,7 +359,7 @@ var AnimationsController = {
 
     
     this.emit(this.PLAYERS_UPDATED_EVENT, this.animationPlayers);
-  }),
+  },
 
   
 
