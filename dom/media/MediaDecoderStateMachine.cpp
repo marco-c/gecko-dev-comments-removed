@@ -1761,15 +1761,17 @@ MediaDecoderStateMachine::StartAudioSink()
     return;
   }
 
-  if (HasAudio() && !mAudioSink->IsStarted()) {
+  if (!mAudioSink->IsStarted()) {
     mAudioCompleted = false;
     mAudioSink->Start(GetMediaTime(), mInfo);
 
-    mAudioSinkPromise.Begin(
-      mAudioSink->OnEnded(TrackInfo::kAudioTrack)->Then(
+    auto promise = mAudioSink->OnEnded(TrackInfo::kAudioTrack);
+    if (promise) {
+      mAudioSinkPromise.Begin(promise->Then(
         OwnerThread(), __func__, this,
         &MediaDecoderStateMachine::OnAudioSinkComplete,
         &MediaDecoderStateMachine::OnAudioSinkError));
+    }
   }
 }
 
@@ -2620,12 +2622,8 @@ int64_t MediaDecoderStateMachine::GetClock(TimeStamp* aTimeStamp) const
   } else {
     if (mAudioCaptured) {
       clock_time = GetStreamClock();
-    } else if (HasAudio() && !mAudioCompleted) {
-      clock_time = GetAudioClock();
     } else {
-      t = TimeStamp::Now();
-      
-      clock_time = GetVideoStreamPosition(t);
+      clock_time = mAudioSink->GetPosition(&t);
     }
     NS_ASSERTION(GetMediaTime() <= clock_time, "Clock should go forwards.");
   }
@@ -2998,17 +2996,6 @@ MediaDecoderStateMachine::LogicalPlaybackRateChanged()
     return;
   }
 
-  
-  
-  
-  if (!HasAudio() && IsPlaying()) {
-    
-    
-    TimeStamp now = TimeStamp::Now();
-    mPlayDuration = GetVideoStreamPosition(now);
-    SetPlayStartTime(now);
-  }
-
   mPlaybackRate = mLogicalPlaybackRate;
   mAudioSink->SetPlaybackRate(mPlaybackRate);
 
@@ -3049,7 +3036,6 @@ void MediaDecoderStateMachine::OnAudioSinkComplete()
   MOZ_ASSERT(!mAudioCaptured, "Should be disconnected when capturing audio.");
 
   mAudioSinkPromise.Complete();
-  ResyncAudioClock();
   mAudioCompleted = true;
 }
 
@@ -3060,7 +3046,6 @@ void MediaDecoderStateMachine::OnAudioSinkError()
   MOZ_ASSERT(!mAudioCaptured, "Should be disconnected when capturing audio.");
 
   mAudioSinkPromise.Complete();
-  ResyncAudioClock();
   mAudioCompleted = true;
 
   

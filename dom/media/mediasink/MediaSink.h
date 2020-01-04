@@ -13,6 +13,9 @@
 #include "MediaInfo.h"
 
 namespace mozilla {
+
+class TimeStamp;
+
 namespace media {
 
 
@@ -65,7 +68,9 @@ public:
   
   
   
-  virtual int64_t GetPosition() const = 0;
+  
+  
+  virtual int64_t GetPosition(TimeStamp* aTimeStamp = nullptr) const = 0;
 
   
   

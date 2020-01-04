@@ -64,11 +64,41 @@ AudioSinkWrapper::GetEndTime(TrackType aType) const
 }
 
 int64_t
-AudioSinkWrapper::GetPosition() const
+AudioSinkWrapper::GetVideoPosition(TimeStamp aNow) const
+{
+  AssertOwnerThread();
+  MOZ_ASSERT(!mPlayStartTime.IsNull());
+  
+  int64_t delta = (aNow - mPlayStartTime).ToMicroseconds();
+  
+  return mPlayDuration + delta * mParams.playbackRate;
+}
+
+int64_t
+AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) const
 {
   AssertOwnerThread();
   MOZ_ASSERT(mIsStarted, "Must be called after playback starts.");
-  return mAudioSink->GetPosition();
+
+  int64_t pos = -1;
+  TimeStamp t = TimeStamp::Now();
+
+  if (mAudioSink) {
+    
+    pos = mAudioSink->GetPosition();
+  } else if (!mPlayStartTime.IsNull()) {
+    
+    pos = GetVideoPosition(t);
+  } else {
+    
+    pos = mPlayDuration;
+  }
+
+  if (aTimeStamp) {
+    *aTimeStamp = t;
+  }
+
+  return pos;
 }
 
 bool
@@ -94,8 +124,17 @@ AudioSinkWrapper::SetPlaybackRate(double aPlaybackRate)
   AssertOwnerThread();
   mParams.playbackRate = aPlaybackRate;
   if (mAudioSink) {
+    
+    
     mAudioSink->SetPlaybackRate(aPlaybackRate);
+  } else if (!mPlayStartTime.IsNull()) {
+    
+    TimeStamp now = TimeStamp::Now();
+    mPlayDuration = GetVideoPosition(now);
+    mPlayStartTime = now;
   }
+  
+  
 }
 
 void
@@ -121,6 +160,17 @@ AudioSinkWrapper::SetPlaying(bool aPlaying)
   if (mAudioSink) {
     mAudioSink->SetPlaying(aPlaying);
   }
+
+  if (aPlaying) {
+    MOZ_ASSERT(mPlayStartTime.IsNull());
+    mPlayStartTime = TimeStamp::Now();
+  } else {
+    
+    mPlayDuration = GetPosition();
+    
+    
+    mPlayStartTime = TimeStamp();
+  }
 }
 
 void
@@ -130,10 +180,14 @@ AudioSinkWrapper::Start(int64_t aStartTime, const MediaInfo& aInfo)
   MOZ_ASSERT(!mIsStarted, "playback already started.");
 
   mIsStarted = true;
+  mPlayDuration = aStartTime;
+  mPlayStartTime = TimeStamp::Now();
 
-  mAudioSink = mCreator->Create();
-  mEndPromise = mAudioSink->Init();
-  SetPlaybackParams(mParams);
+  if (aInfo.HasAudio()) {
+    mAudioSink = mCreator->Create();
+    mEndPromise = mAudioSink->Init();
+    SetPlaybackParams(mParams);
+  }
 }
 
 void
@@ -143,9 +197,12 @@ AudioSinkWrapper::Stop()
   MOZ_ASSERT(mIsStarted, "playback not started.");
 
   mIsStarted = false;
-  mAudioSink->Shutdown();
-  mAudioSink = nullptr;
-  mEndPromise = nullptr;
+
+  if (mAudioSink) {
+    mAudioSink->Shutdown();
+    mAudioSink = nullptr;
+    mEndPromise = nullptr;
+  }
 }
 
 bool
