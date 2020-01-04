@@ -315,7 +315,7 @@ public:
 
 
 
-  RasterImage* GetImage() const { MOZ_ASSERT(mImage); return mImage.get(); }
+  NotNull<RasterImage*> GetImage() const { return WrapNotNull(mImage.get()); }
 
   
 
