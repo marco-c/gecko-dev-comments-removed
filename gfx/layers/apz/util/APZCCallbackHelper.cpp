@@ -892,19 +892,9 @@ APZCCallbackHelper::NotifyMozMouseScrollEvent(const FrameMetrics::ViewID& aScrol
 }
 
 void
-APZCCallbackHelper::NotifyFlushComplete(nsIPresShell* aShell)
+APZCCallbackHelper::NotifyFlushComplete()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  
-  
-  
-  
-  
-  
-  if (aShell && aShell->GetRootFrame()) {
-    aShell->GetRootFrame()->SchedulePaint();
-  }
-
   nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
   MOZ_ASSERT(observerService);
   observerService->NotifyObservers(nullptr, "apz-repaints-flushed", nullptr);
