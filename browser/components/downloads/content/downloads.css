@@ -178,6 +178,15 @@ richlistitem.download button {
 }
 
 
+
+#downloadsPanel-multiView > .panel-viewcontainer,
+#downloadsPanel-multiView > .panel-viewcontainer > .panel-viewstack,
+#downloadsPanel-multiView > .panel-viewcontainer > .panel-viewstack > .panel-mainview {
+  overflow: visible;
+  max-width: unset;
+}
+
+
 #downloadsPanel-mainView .download-state[state="8"] .downloadShowBlockedInfo {
   display: inline;
 }
@@ -186,12 +195,12 @@ richlistitem.download button {
 
 
 #downloadsPanel-multiView > .panel-viewcontainer > .panel-viewstack[viewtype=main] > .panel-subviews {
-  transform: translateX(100%);
+  transform: translateX(101%);
   transition: transform var(--panelui-subview-transition-duration);
 }
 
 #downloadsPanel-multiView > .panel-viewcontainer > .panel-viewstack[viewtype=main] > .panel-subviews:-moz-locale-dir(rtl) {
-  transform: translateX(-100%);
+  transform: translateX(-101%);
 }
 
 
