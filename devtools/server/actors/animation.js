@@ -622,6 +622,15 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
         if (player.playState !== "idle") {
           continue;
         }
+        
+        
+        
+        
+        
+        
+        if (player.effect.target.type) {
+          continue;
+        }
         let index = this.actors.findIndex(a => a.player === player);
         if (index !== -1) {
           eventData.push({
@@ -636,6 +645,15 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
         
         
         if (this.actors.find(a => a.player === player)) {
+          continue;
+        }
+        
+        
+        
+        
+        
+        
+        if (player.effect.target.type) {
           continue;
         }
         
