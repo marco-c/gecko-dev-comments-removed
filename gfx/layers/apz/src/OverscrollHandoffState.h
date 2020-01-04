@@ -72,9 +72,6 @@ public:
   void SnapBackOverscrolledApzc(const AsyncPanZoomController* aStart) const;
 
   
-  void RequestSnapOnLock(Layer::ScrollDirection aAxis) const;
-
-  
   
   bool CanBePanned(const AsyncPanZoomController* aApzc) const;
 
