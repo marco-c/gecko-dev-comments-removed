@@ -3593,7 +3593,7 @@ nsContentUtils::ReportToConsoleNonLocalized(const nsAString& aErrorText,
     }
   }
   if (spec.IsEmpty() && aURI) {
-    aURI->GetSpec(spec);
+    spec = aURI->GetSpecOrDefault();
   }
 
   nsCOMPtr<nsIScriptError> errorObject =
@@ -3675,7 +3675,8 @@ nsContentUtils::GetWrapperSafeScriptFilename(nsIDocument *aDocument,
                                              nsACString& aScriptURI)
 {
   bool scriptFileNameModified = false;
-  aURI->GetSpec(aScriptURI);
+  
+  Unused << aURI->GetSpec(aScriptURI);
 
   if (IsChromeDoc(aDocument)) {
     nsCOMPtr<nsIChromeRegistry> chromeReg =
@@ -3703,7 +3704,8 @@ nsContentUtils::GetWrapperSafeScriptFilename(nsIDocument *aDocument,
       
       
       nsAutoCString spec;
-      docURI->GetSpec(spec);
+      
+      Unused << docURI->GetSpec(spec);
       spec.AppendLiteral(" -> ");
       spec.Append(aScriptURI);
 
@@ -9237,7 +9239,6 @@ nsContentUtils::IsSpecificAboutPage(JSObject* aGlobal, const char* aUri)
     return false;
   }
 
-  
   nsCOMPtr<nsIPrincipal> principal = win->GetPrincipal();
   NS_ENSURE_TRUE(principal, false);
   nsCOMPtr<nsIURI> uri;
@@ -9255,7 +9256,7 @@ nsContentUtils::IsSpecificAboutPage(JSObject* aGlobal, const char* aUri)
 
   
   nsAutoCString spec;
-  uri->GetSpec(spec);
+  uri->GetSpecIgnoringRef(spec);
   return spec.EqualsASCII(aUri);
 }
 

@@ -902,7 +902,8 @@ nsFontTableProtocolHandler::NewURI(const nsACString& aSpec,
     
     
     uri = new mozilla::net::nsSimpleURI();
-    uri->SetSpec(aSpec);
+    nsresult rv = uri->SetSpec(aSpec);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   bool schemeIs;

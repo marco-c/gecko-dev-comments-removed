@@ -1831,7 +1831,7 @@ public:
   
   
   
-  void GetBaseURIFromJS(nsAString& aBaseURI) const;
+  void GetBaseURIFromJS(nsAString& aBaseURI, mozilla::ErrorResult& aRv) const;
   bool HasChildNodes() const
   {
     return HasChildren();
