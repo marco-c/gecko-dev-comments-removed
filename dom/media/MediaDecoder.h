@@ -180,7 +180,7 @@ public:
   
   
   
-  virtual void NotifyOwnerActivityChanged();
+  virtual void NotifyOwnerActivityChanged(bool aIsVisible);
 
   void UpdateDormantState(bool aDormantTimeout, bool aActivity);
 
@@ -250,9 +250,6 @@ protected:
   void UpdateEstimatedMediaDuration(int64_t aDuration) override;
 
 public:
-  
-  virtual void SetElementVisibility(bool aIsVisible) {}
-
   
   void SetMediaSeekable(bool aMediaSeekable);
   
@@ -367,6 +364,9 @@ private:
 
   void SetAudioChannel(dom::AudioChannel aChannel) { mAudioChannel = aChannel; }
   dom::AudioChannel GetAudioChannel() { return mAudioChannel; }
+
+  
+  virtual void SetElementVisibility(bool aIsVisible);
 
   
 
