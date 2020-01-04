@@ -21,7 +21,10 @@ exports.Visitor = Visitor;
 
 
 
-Visitor.prototype.enter = function (breakdown, edge) { };
+
+
+
+Visitor.prototype.enter = function (breakdown, report, edge) { };
 
 
 
@@ -29,7 +32,14 @@ Visitor.prototype.enter = function (breakdown, edge) { };
 
 
 
-Visitor.prototype.exit = function (breakdown) { };
+
+
+
+
+
+
+
+Visitor.prototype.exit = function (breakdown, report, edge) { };
 
 
 
@@ -111,15 +121,15 @@ exports.getReportEdges = getReportEdges;
 
 function recursiveWalk(breakdown, edge, report, visitor) {
   if (breakdown.by === "count") {
-    visitor.enter(breakdown, edge);
+    visitor.enter(breakdown, report, edge);
     visitor.count(breakdown, report, edge);
-    visitor.exit(breakdown, edge);
+    visitor.exit(breakdown, report, edge);
   } else {
-    visitor.enter(breakdown, edge);
+    visitor.enter(breakdown, report, edge);
     for (let { edge, referent, breakdown } of getReportEdges(breakdown, report)) {
       recursiveWalk(breakdown, edge, referent, visitor);
     }
-    visitor.exit(breakdown, edge);
+    visitor.exit(breakdown, report, edge);
   }
 };
 
@@ -206,7 +216,7 @@ DiffVisitor.prototype._set = function (report, edge, val) {
 
 
 
-DiffVisitor.prototype.enter = function (breakdown, edge) {
+DiffVisitor.prototype.enter = function (breakdown, report, edge) {
   const isFirstTimeEntering = this._results === null;
 
   const newResults = breakdown.by === "allocationStack" ? new Map() : {};
@@ -235,7 +245,7 @@ DiffVisitor.prototype.enter = function (breakdown, edge) {
 
 
 
-DiffVisitor.prototype.exit = function (breakdown) {
+DiffVisitor.prototype.exit = function (breakdown, report, edge) {
   
   
   const other = this._otherCensusStack[this._otherCensusStack.length - 1];
