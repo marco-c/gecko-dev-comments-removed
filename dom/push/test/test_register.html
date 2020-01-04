@@ -66,6 +66,8 @@
   var pushSubscription;
   add_task(function* subscribe() {
     pushSubscription = yield registration.pushManager.subscribe();
+    is(pushSubscription.options.applicationServerKey, null,
+       "Subscription should not have an app server key");
   });
 
   add_task(function* resubscribe() {
