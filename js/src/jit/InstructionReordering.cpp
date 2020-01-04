@@ -5,6 +5,7 @@
 
 
 #include "jit/InstructionReordering.h"
+#include "jit/MIRGraph.h"
 
 using namespace js;
 using namespace js::jit;
