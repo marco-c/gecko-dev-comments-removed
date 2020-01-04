@@ -108,11 +108,11 @@ moreData.prototype = {
     content = generateContent(1024*1024);
     this.resp.write(content); 
     this.iter--;
-      if (!this.iter) {
-	  this.resp.end();
-      } else {
-	  setTimeout(executeRunLater, 1, this);
-      }
+    if (!this.iter) {
+      this.resp.end();
+    } else {
+      setTimeout(executeRunLater, 1, this);
+    }
   }
 };
 
@@ -120,12 +120,54 @@ function executeRunLater(arg) {
   arg.onTimeout();
 }
 
+var Compressor = http2_compression.Compressor;
+var HeaderSetCompressor = http2_compression.HeaderSetCompressor;
+var originalCompressHeaders = Compressor.prototype.compress;
+
+function insertSoftIllegalHpack(headers) {
+  var originalCompressed = originalCompressHeaders.apply(this, headers);
+  var illegalLiteral = new Buffer([
+      0x00, 
+      0x08, 
+      0x3a, 0x69, 0x6c, 0x6c, 0x65, 0x67, 0x61, 0x6c, 
+      0x10, 
+      
+      0x52, 0x45, 0x41, 0x4c, 0x4c, 0x59, 0x20, 0x4e, 0x4f, 0x54, 0x20, 0x4c, 0x45, 0x47, 0x41, 0x4c
+  ]);
+  var newBufferLength = originalCompressed.length + illegalLiteral.length;
+  var concatenated = new Buffer(newBufferLength);
+  originalCompressed.copy(concatenated, 0);
+  illegalLiteral.copy(concatenated, originalCompressed.length);
+  return concatenated;
+}
+
+function insertHardIllegalHpack(headers) {
+  var originalCompressed = originalCompressHeaders.apply(this, headers);
+  
+  var illegalIndexed = HeaderSetCompressor.integer(5000, 7);
+  
+  
+  illegalIndexed = illegalIndexed[0];
+  
+  illegalIndexed[0] |= 0x80;
+  var newBufferLength = originalCompressed.length + illegalIndexed.length;
+  var concatenated = new Buffer(newBufferLength);
+  originalCompressed.copy(concatenated, 0);
+  illegalIndexed.copy(concatenated, originalCompressed.length);
+  return concatenated;
+}
+
 var h11required_conn = null;
 var h11required_header = "yes";
 var didRst = false;
 var rstConnection = null;
+var illegalheader_conn = null;
 
 function handleRequest(req, res) {
+  
+  
+  Compressor.prototype.compress = originalCompressHeaders;
+
   var u = url.parse(req.url);
   var content = getHttpContent(u.pathname);
   var push, push1, push1a, push2, push3;
@@ -570,6 +612,35 @@ function handleRequest(req, res) {
     res.writeHead(410, "GONE");
     res.end("");
     return;
+  }
+
+  else if (u.pathname === "/illegalhpacksoft") {
+    
+    
+    illegalheader_conn = req.stream.connection;
+    Compressor.prototype.compress = insertSoftIllegalHpack;
+    
+  }
+
+  else if (u.pathname === "/illegalhpackhard") {
+    
+    
+    Compressor.prototype.compress = insertHardIllegalHpack;
+    
+  }
+
+  else if (u.pathname === "/illegalhpack_validate") {
+    if (req.stream.connection === illegalheader_conn) {
+      res.setHeader('X-Did-Goaway', 'no');
+    } else {
+      res.setHeader('X-Did-Goaway', 'yes');
+    }
+    
+  }
+
+  else if (u.pathname === "/foldedheader") {
+    res.setHeader('X-Folded-Header', 'this is\n folded');
+    
   }
 
   res.setHeader('Content-Type', 'text/html');
