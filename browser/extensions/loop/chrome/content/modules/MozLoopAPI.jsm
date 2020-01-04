@@ -831,6 +831,22 @@ const kMessageHandlers = {
 
 
 
+  GettingStartedURL: function(message, reply) {
+    let aSrc = message.data[0] || null;
+    let aAdditionalParams = message.data[1] || {};
+    reply(MozLoopService.getTourURL(aSrc, aAdditionalParams).href);
+  },
+
+  
+
+
+
+
+
+
+
+
+
   OpenFxASettings: function(message, reply) {
     MozLoopService.openFxASettings();
     reply();
