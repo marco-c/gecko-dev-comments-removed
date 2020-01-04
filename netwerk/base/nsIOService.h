@@ -100,6 +100,8 @@ public:
     
     void SetAppOfflineInternal(uint32_t appId, int32_t status);
 
+    
+    nsresult RecheckCaptivePortal();
 private:
     
     

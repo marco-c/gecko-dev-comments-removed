@@ -6084,6 +6084,13 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
         ProcessSecurityReport(status);
     }
 
+    
+    
+    int32_t nsprError = -1 * NS_ERROR_GET_CODE(status);
+    if (mozilla::psm::IsNSSErrorCode(nsprError)) {
+        gIOService->RecheckCaptivePortal();
+    }
+
     if (mTimingEnabled && request == mCachePump) {
         mCacheReadEnd = TimeStamp::Now();
     }
