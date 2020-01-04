@@ -36,43 +36,54 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class GeckoThread extends Thread {
     private static final String LOGTAG = "GeckoThread";
 
-    @WrapForJNI
     public enum State {
         
-        INITIAL,
+        @WrapForJNI INITIAL(0),
         
-        LAUNCHED,
+        @WrapForJNI LAUNCHED(1),
         
-        MOZGLUE_READY,
+        @WrapForJNI MOZGLUE_READY(2),
         
-        LIBS_READY,
+        @WrapForJNI LIBS_READY(3),
         
-        JNI_READY,
+        @WrapForJNI JNI_READY(4),
         
-        PROFILE_READY,
+        @WrapForJNI PROFILE_READY(5),
         
-        RUNNING,
+        @WrapForJNI RUNNING(6),
         
-        EXITING,
+        @WrapForJNI EXITING(3),
         
-        EXITED;
+        @WrapForJNI EXITED(0);
+
+        
+
+
+
+
+
+
+        private final int rank;
+
+        private State(int rank) {
+            this.rank = rank;
+        }
 
         public boolean is(final State other) {
             return this == other;
         }
 
         public boolean isAtLeast(final State other) {
-            return ordinal() >= other.ordinal();
+            return this.rank >= other.rank;
         }
 
         public boolean isAtMost(final State other) {
-            return ordinal() <= other.ordinal();
+            return this.rank <= other.rank;
         }
 
         
         public boolean isBetween(final State min, final State max) {
-            final int ord = ordinal();
-            return ord >= min.ordinal() && ord <= max.ordinal();
+            return this.rank >= min.rank && this.rank <= max.rank;
         }
     }
 
