@@ -71,10 +71,30 @@ add_task(function* () {
   Assert.equal(Services.prefs.getIntPref("distribution.test.int"), 777);
   Assert.equal(Services.prefs.getBoolPref("distribution.test.bool.true"), true);
   Assert.equal(Services.prefs.getBoolPref("distribution.test.bool.false"), false);
+
+  Assert.throws(() => Services.prefs.getCharPref("distribution.test.empty"));
+  Assert.throws(() => Services.prefs.getIntPref("distribution.test.empty"));
+  Assert.throws(() => Services.prefs.getBoolPref("distribution.test.empty"));
+
+  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.locale"), "en-US");
+  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.language.en"), "en");
+  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.locale.en-US"), "en-US");
+  Assert.throws(() => Services.prefs.getCharPref("distribution.test.pref.language.de"));
+  
+  Assert.throws(() => Services.prefs.getCharPref("distribution.test.pref.language.reset"));
+  
+  Assert.throws(() => Services.prefs.getCharPref("distribution.test.pref.locale.reset"));
+  
+  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.locale.set"), "Locale Set");
+  
+  Assert.equal(Services.prefs.getCharPref("distribution.test.pref.language.set"), "Language Set");
+  
+  Assert.notEqual(Services.prefs.getCharPref("distribution.test.pref.locale.set"), "Language Set");
+
   Assert.equal(Services.prefs.getComplexValue("distribution.test.locale", Ci.nsIPrefLocalizedString).data, "en-US");
   Assert.equal(Services.prefs.getComplexValue("distribution.test.language.en", Ci.nsIPrefLocalizedString).data, "en");
   Assert.equal(Services.prefs.getComplexValue("distribution.test.locale.en-US", Ci.nsIPrefLocalizedString).data, "en-US");
-  Assert.throws(() => Services.prefs.getComplexValue("distribution.test.locale.de", Ci.nsIPrefLocalizedString));
+  Assert.throws(() => Services.prefs.getComplexValue("distribution.test.language.de", Ci.nsIPrefLocalizedString));
   
   Assert.throws(() => Services.prefs.getComplexValue("distribution.test.language.reset", Ci.nsIPrefLocalizedString));
   
