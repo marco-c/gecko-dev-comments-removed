@@ -92,6 +92,12 @@
           #main-window {
             background-color: hsl(0, 0%, 78%);
           }
+
+          :root[tabsintitlebar] .tab-label:-moz-window-inactive {
+            
+
+            opacity: .6;
+          }
         }
 
         @media not all and (-moz-windows-default-theme) {
