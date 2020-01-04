@@ -123,6 +123,17 @@ richlistitem.download button {
                                            .downloadConfirmBlock,
 .download-state[state="8"]:not(.temporary-block)
                                            .downloadConfirmBlock,
+.download-state[state="8"].temporary-block:not([verdict="Malware"])
+                                           .downloadConfirmBlock,
+
+
+
+.download-state:not(          [state="8"]  )
+                                           .downloadUnblock,
+.download-state[state="8"]:not(.temporary-block)
+                                           .downloadUnblock,
+.download-state[state="8"].temporary-block[verdict="Malware"]
+                                           .downloadUnblock,
 
 .download-state:not(:-moz-any([state="2"], 
                               [state="3"]) )
