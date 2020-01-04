@@ -174,9 +174,6 @@ public:
     static void SchedulePauseComposition();
     static void ScheduleResumeComposition();
     static float ComputeRenderIntegrity();
-    static mozilla::layers::APZCTreeManager* GetAPZCTreeManager();
-    
-    static uint64_t RootLayerTreeId();
 
     virtual bool WidgetPaintsBackground() override;
 
@@ -194,7 +191,6 @@ protected:
     RefPtr<mozilla::TextComposition> GetIMEComposition();
     void RemoveIMEComposition();
 
-    void ConfigureAPZCTreeManager() override;
     void ConfigureAPZControllerThread() override;
     void DispatchHitTest(const mozilla::WidgetTouchEvent& aEvent);
 
@@ -228,8 +224,6 @@ private:
     void RedrawAll();
 
     mozilla::widget::LayerRenderer::Frame::GlobalRef mLayerRendererFrame;
-
-    static mozilla::StaticRefPtr<mozilla::layers::APZCTreeManager> sApzcTreeManager;
 };
 
 #endif 
