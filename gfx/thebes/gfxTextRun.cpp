@@ -2640,9 +2640,7 @@ gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh, uint32_t aNextCh,
     
     
     
-    const uint32_t NARROW_NO_BREAK_SPACE = 0x202f;
-    if (aPrevMatchedFont &&
-        (IsClusterExtender(aCh) || aCh == NARROW_NO_BREAK_SPACE) &&
+    if (aPrevMatchedFont && IsClusterExtender(aCh) &&
         aPrevMatchedFont->HasCharacter(aCh)) {
         RefPtr<gfxFont> ret = aPrevMatchedFont;
         return ret.forget();
