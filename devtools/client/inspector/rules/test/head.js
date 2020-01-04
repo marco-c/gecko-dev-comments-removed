@@ -740,12 +740,43 @@ function* reloadPage(inspector, testActor) {
 
 
 
+
 function* addNewRule(inspector, view) {
   info("Adding the new rule using the button");
   view.addRuleButton.click();
 
   info("Waiting for rule view to change");
   yield view.once("ruleview-changed");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function* addNewRuleAndDismissEditor(inspector, view, expectedSelector, expectedIndex) {
+  yield addNewRule(inspector, view);
+
+  info("Getting the new rule at index " + expectedIndex);
+  let ruleEditor = getRuleViewRuleEditor(view, expectedIndex);
+  let editor = ruleEditor.selectorText.ownerDocument.activeElement;
+  is(editor.value, expectedSelector,
+     "The editor for the new selector has the correct value: " + expectedSelector);
+
+  info("Pressing escape to leave the editor");
+  EventUtils.synthesizeKey("VK_ESCAPE", {});
+
+  is(ruleEditor.selectorText.textContent, expectedSelector,
+     "The new selector has the correct text: " + expectedSelector);
 }
 
 
