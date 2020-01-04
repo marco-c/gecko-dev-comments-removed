@@ -132,6 +132,29 @@ MacroAssembler::xorPtr(Imm32 imm, Register dest)
 
 
 void
+MacroAssembler::sub32(Register src, Register dest)
+{
+    ma_sub(src, dest, SetCC);
+}
+
+void
+MacroAssembler::sub32(Imm32 imm, Register dest)
+{
+    ma_sub(imm, dest, SetCC);
+}
+
+void
+MacroAssembler::sub32(const Address& src, Register dest)
+{
+    ScratchRegisterScope scratch(*this);
+    load32(src, scratch);
+    ma_sub(scratch, dest, SetCC);
+}
+
+
+
+
+void
 MacroAssembler::lshiftPtr(Imm32 imm, Register dest)
 {
     ma_lsl(imm, dest, dest);

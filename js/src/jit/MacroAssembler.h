@@ -727,6 +727,13 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
+    inline void sub32(const Address& src, Register dest) PER_SHARED_ARCH;
+    inline void sub32(Register src, Register dest) PER_SHARED_ARCH;
+    inline void sub32(Imm32 imm, Register dest) PER_SHARED_ARCH;
+
+    
+    
+
     inline void lshiftPtr(Imm32 imm, Register dest) PER_ARCH;
 
     inline void lshift64(Imm32 imm, Register64 dest) PER_ARCH;
