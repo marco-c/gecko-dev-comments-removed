@@ -1164,6 +1164,13 @@ private:
 
   nsDataHashtable<nsPtrHashKey<nsIFrame>, AnimatedGeometryRoot*> mFrameToAnimatedGeometryRootMap;
 
+  
+
+
+
+
+  bool AddToAGRBudget(nsIFrame* aFrame);
+
   struct PresShellState {
     nsIPresShell* mPresShell;
     nsIFrame*     mCaretFrame;
@@ -1217,7 +1224,12 @@ private:
 
   
   
-  nsTHashtable<nsPtrHashKey<nsIFrame> > mBudgetSet;
+  nsTHashtable<nsPtrHashKey<nsIFrame> > mWillChangeBudgetSet;
+
+  
+  uint32_t mUsedAGRBudget;
+  
+  nsTHashtable<nsPtrHashKey<nsIFrame> > mAGRBudgetSet;
 
   
   nsDataHashtable<nsPtrHashKey<nsIFrame>, nsRect> mDirtyRectForScrolledContents;
