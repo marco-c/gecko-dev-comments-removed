@@ -1632,6 +1632,10 @@ nsAutoCompleteController::ProcessResult(int32_t aSearchIndex, nsIAutoCompleteRes
     }
 
     
+    
+    CompleteDefaultIndex(aSearchIndex);
+
+    
     nsCOMPtr<nsIAutoCompletePopup> popup;
     input->GetPopup(getter_AddRefs(popup));
     NS_ENSURE_TRUE(popup != nullptr, NS_ERROR_FAILURE);
@@ -1648,10 +1652,8 @@ nsAutoCompleteController::ProcessResult(int32_t aSearchIndex, nsIAutoCompleteRes
     } else if (mSearchesOngoing == 0) {
       ClosePopup();
     }
-  }
-
-  if (searchResult == nsIAutoCompleteResult::RESULT_SUCCESS ||
-      searchResult == nsIAutoCompleteResult::RESULT_SUCCESS_ONGOING) {
+  } else if (searchResult == nsIAutoCompleteResult::RESULT_SUCCESS ||
+             searchResult == nsIAutoCompleteResult::RESULT_SUCCESS_ONGOING) {
     
     CompleteDefaultIndex(aSearchIndex);
   }
@@ -1740,10 +1742,11 @@ nsAutoCompleteController::CompleteDefaultIndex(int32_t aResultIndex)
     return NS_OK;
 
   nsAutoString resultValue;
-  if (NS_SUCCEEDED(GetDefaultCompleteValue(aResultIndex, true, resultValue)))
+  if (NS_SUCCEEDED(GetDefaultCompleteValue(aResultIndex, true, resultValue))) {
     CompleteValue(resultValue);
 
-  mDefaultIndexCompleted = true;
+    mDefaultIndexCompleted = true;
+  }
 
   return NS_OK;
 }

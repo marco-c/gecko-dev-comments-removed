@@ -16,6 +16,13 @@ var pairs = [
 ];
 
 add_task(function*() {
+  
+  let autoFill = Preferences.get("browser.urlbar.autoFill");
+  Preferences.set("browser.urlbar.autoFill", false);
+  registerCleanupFunction(() => {
+    Preferences.set("browser.urlbar.autoFill", autoFill);
+  });
+
   for (let [inputValue, expectedURL] of pairs) {
     let focusEventPromise = BrowserTestUtils.waitForEvent(gURLBar, "focus");
     let messagePromise = BrowserTestUtils.waitForMessage(gBrowser.selectedBrowser.messageManager,
