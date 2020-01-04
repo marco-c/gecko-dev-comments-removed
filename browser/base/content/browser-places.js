@@ -727,8 +727,6 @@ HistoryMenu.prototype = {
 
   toggleTabsFromOtherComputers: function PHM_toggleTabsFromOtherComputers() {
     
-#ifdef MOZ_SERVICES_SYNC
-    
     
     let menuitem = this._rootElt.getElementsByClassName("syncTabsMenuItem")[0];
     if (!menuitem)
@@ -742,7 +740,6 @@ HistoryMenu.prototype = {
     let enabled = PlacesUIUtils.shouldEnableTabsFromOtherComputersMenuitem();
     menuitem.setAttribute("disabled", !enabled);
     menuitem.setAttribute("hidden", false);
-#endif
   },
 
   _onPopupShowing: function HM__onPopupShowing(aEvent) {

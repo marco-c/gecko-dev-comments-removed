@@ -1,11 +1,9 @@
-%if 0
 
 
 
 
 
 
-%endif
 
 
 #BrowserPreferences radio[pane] {
@@ -48,11 +46,9 @@ radio[pane=paneAdvanced] {
   -moz-image-region: rect(0px, 224px, 32px, 192px)
 }
 
-%ifdef MOZ_SERVICES_SYNC
 radio[pane=paneSync] {
   list-style-image: url("chrome://browser/skin/preferences/Options-sync.png") !important;
 }
-%endif
 
 
 label.small {
@@ -165,7 +161,6 @@ label.small {
   margin-top: 0;
 }
 
-%ifdef MOZ_SERVICES_SYNC
 
 
 #syncDesc {
@@ -210,5 +205,3 @@ label.small {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
-%endif
