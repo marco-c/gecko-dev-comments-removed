@@ -97,7 +97,7 @@ static mozilla::LazyLogModule gIOServiceLog("nsIOService");
 
 
 
-int16_t gBadPortList[] = { 
+int16_t gBadPortList[] = {
   1,    
   7,    
   9,    
@@ -154,8 +154,14 @@ int16_t gBadPortList[] = {
   993,  
   995,  
   2049, 
+  3659,    
   4045, 
   6000, 
+  6665,    
+  6666,    
+  6667,    
+  6668,    
+  6669,    
   0,    
 };
 
