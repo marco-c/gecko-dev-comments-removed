@@ -345,8 +345,8 @@ private:
 
   
   Atomic<int64_t> mSizeSourceBuffer;
-  int64_t mVideoEvictionThreshold;
-  int64_t mAudioEvictionThreshold;
+  const int64_t mVideoEvictionThreshold;
+  const int64_t mAudioEvictionThreshold;
   Atomic<bool> mEvictionOccurred;
 
   
