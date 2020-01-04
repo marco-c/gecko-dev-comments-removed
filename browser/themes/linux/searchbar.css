@@ -3,7 +3,14 @@
 
 
 #PopupSearchAutoComplete {
-  margin-inline-start: -24px;
+  
+
+
+
+
+
+  margin-inline-start: -23px;
+  margin-inline-end: -16px;
   padding: 1px;
 }
 
