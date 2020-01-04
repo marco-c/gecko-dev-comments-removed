@@ -608,6 +608,15 @@ public:
 
 
 
+
+  bool MaybeInitNativeKeyWithCompositeChar(
+         NativeKey& aNativeKey,
+         const ModifierKeyState& aModKeyState);
+
+  
+
+
+
   UniCharsAndModifiers GetUniCharsAndModifiers(
                          uint8_t aVirtualKey,
                          const ModifierKeyState& aModKeyState) const;

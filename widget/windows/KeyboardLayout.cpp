@@ -2851,7 +2851,6 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
     
     
     
-    
     if (mActiveDeadKey < 0) {
       aNativeKey.mCommittedCharsAndModifiers =
         mVirtualKeys[virtualKeyIndex].GetUniChars(shiftState);
@@ -2873,6 +2872,15 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
 #endif 
       MOZ_CRASH("Trying to reference out of range of mVirtualKeys");
     }
+
+    
+    
+    if (MaybeInitNativeKeyWithCompositeChar(aNativeKey, aModKeyState)) {
+      return;
+    }
+
+    
+    
     UniCharsAndModifiers prevDeadChars =
       mVirtualKeys[activeDeadKeyIndex].GetUniChars(mDeadKeyShiftState);
     UniCharsAndModifiers newChars =
@@ -2885,6 +2893,10 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
     return;
   }
 
+  if (MaybeInitNativeKeyWithCompositeChar(aNativeKey, aModKeyState)) {
+    return;
+  }
+
   UniCharsAndModifiers baseChars =
     mVirtualKeys[virtualKeyIndex].GetUniChars(shiftState);
   if (mActiveDeadKey < 0) {
@@ -2893,20 +2905,8 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
     return;
   }
 
-  
-  
   int32_t activeDeadKeyIndex = GetKeyIndex(mActiveDeadKey);
-  char16_t compositeChar = (baseChars.mLength == 1 && baseChars.mChars[0]) ?
-    mVirtualKeys[activeDeadKeyIndex].GetCompositeChar(mDeadKeyShiftState,
-                                                      baseChars.mChars[0]) : 0;
-  if (compositeChar) {
-    
-    
-    aNativeKey.mCommittedCharsAndModifiers.Append(compositeChar,
-                                                  baseChars.mModifiers[0]);
-    if (isKeyDown) {
-      DeactivateDeadKeyState();
-    }
+  if (NS_WARN_IF(activeDeadKeyIndex < 0)) {
     return;
   }
 
@@ -2921,6 +2921,51 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
   }
 
   return;
+}
+
+bool
+KeyboardLayout::MaybeInitNativeKeyWithCompositeChar(
+                  NativeKey& aNativeKey,
+                  const ModifierKeyState& aModKeyState)
+{
+  if (mActiveDeadKey < 0) {
+    return false;
+  }
+
+  int32_t activeDeadKeyIndex = GetKeyIndex(mActiveDeadKey);
+  if (NS_WARN_IF(activeDeadKeyIndex < 0)) {
+    return false;
+  }
+
+  int32_t virtualKeyIndex = GetKeyIndex(aNativeKey.mOriginalVirtualKeyCode);
+  if (NS_WARN_IF(virtualKeyIndex < 0)) {
+    return false;
+  }
+
+  uint8_t shiftState =
+    VirtualKey::ModifiersToShiftState(aModKeyState.GetModifiers());
+
+  UniCharsAndModifiers baseChars =
+    mVirtualKeys[virtualKeyIndex].GetUniChars(shiftState);
+  if (baseChars.IsEmpty() || !baseChars.mChars[0]) {
+    return false;
+  }
+
+  char16_t compositeChar =
+    mVirtualKeys[activeDeadKeyIndex].GetCompositeChar(mDeadKeyShiftState,
+                                                      baseChars.mChars[0]);
+  if (!compositeChar) {
+    return false;
+  }
+
+  
+  
+  aNativeKey.mCommittedCharsAndModifiers.Append(compositeChar,
+                                                baseChars.mModifiers[0]);
+  if (aNativeKey.IsKeyDownMessage()) {
+    DeactivateDeadKeyState();
+  }
+  return true;
 }
 
 UniCharsAndModifiers
@@ -3270,19 +3315,58 @@ KeyboardLayout::GetDeadKeyCombinations(uint8_t aDeadKey,
             
             break;
           case 1: {
-            
-            
-            
             char16_t baseChars[5];
             ret = ::ToUnicodeEx(virtualKey, 0, kbdState, (LPWSTR)baseChars,
                                 ArrayLength(baseChars), 0, mKeyboardLayout);
-            NS_ASSERTION(ret == 1, "One base character expected");
-            if (ret == 1 && entries < aMaxEntries &&
-                AddDeadKeyEntry(baseChars[0], compositeChars[0],
-                                aDeadKeyArray, entries)) {
-              entries++;
+            if (entries < aMaxEntries) {
+              switch (ret) {
+                case 1:
+                  
+                  
+                  
+                  if (AddDeadKeyEntry(baseChars[0], compositeChars[0],
+                                      aDeadKeyArray, entries)) {
+                    entries++;
+                  }
+                  deadKeyActive = false;
+                  break;
+                case -1: {
+                  
+                  
+                  
+
+                  
+                  deadKeyActive =
+                    EnsureDeadKeyActive(false, aDeadKey, aDeadKeyKbdState);
+                  if (NS_WARN_IF(deadKeyActive)) {
+                    MOZ_LOG(sKeyboardLayoutLogger, LogLevel::Error,
+                      ("  failed to deactivating the dead-key state..."));
+                    break;
+                  }
+                  for (int32_t i = 0; i < 5; ++i) {
+                    ret = ::ToUnicodeEx(virtualKey, 0, kbdState,
+                                        (LPWSTR)baseChars,
+                                        ArrayLength(baseChars),
+                                        0, mKeyboardLayout);
+                    if (ret >= 0) {
+                      break;
+                    }
+                  }
+                  if (ret > 0 &&
+                      AddDeadKeyEntry(baseChars[0], compositeChars[0],
+                                      aDeadKeyArray, entries)) {
+                    entries++;
+                  }
+                  
+                  EnsureDeadKeyActive(false, virtualKey, kbdState);
+                  break;
+                }
+                default:
+                  NS_WARN_IF("File a bug for this dead-key handling!");
+                  deadKeyActive = false;
+                  break;
+              }
             }
-            deadKeyActive = false;
             MOZ_LOG(sKeyboardLayoutLogger, LogLevel::Debug,
               ("  %s -> %s (%d): DeadKeyEntry(%s, %s) (ret=%d)",
                kVirtualKeyName[aDeadKey], kVirtualKeyName[virtualKey], vki,
