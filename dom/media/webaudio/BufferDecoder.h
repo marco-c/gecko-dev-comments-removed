@@ -31,8 +31,6 @@ public:
   
   void BeginDecoding(TaskQueue* aTaskQueueIdentity);
 
-  virtual ReentrantMonitor& GetReentrantMonitor() final override;
-
   virtual bool OnStateMachineTaskQueue() const final override;
 
   virtual bool OnDecodeTaskQueue() const final override;
@@ -67,11 +65,6 @@ public:
 
 private:
   virtual ~BufferDecoder();
-
-  
-  
-  
-  ReentrantMonitor mReentrantMonitor;
   nsRefPtr<TaskQueue> mTaskQueueIdentity;
   nsRefPtr<MediaResource> mResource;
 };

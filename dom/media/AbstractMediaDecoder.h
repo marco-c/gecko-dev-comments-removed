@@ -50,10 +50,6 @@ class AbstractMediaDecoder : public nsIObserver
 public:
   
   
-  virtual ReentrantMonitor& GetReentrantMonitor() = 0;
-
-  
-  
   virtual bool IsOggDecoderShutdown() { return false; }
 
   virtual bool OnStateMachineTaskQueue() const = 0;

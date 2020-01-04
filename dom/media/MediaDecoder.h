@@ -526,10 +526,6 @@ public:
 
   
   
-  ReentrantMonitor& GetReentrantMonitor() override;
-
-  
-  
   virtual media::TimeIntervals GetBuffered();
 
   
