@@ -3187,7 +3187,21 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
     
     
     
-    int32_t commonClipCount = std::max(0, data->mCommonClipCount);
+    int32_t commonClipCount;
+    
+    
+    
+    if (data->mSingleItemFixedToViewport && data->mItemClip.HasClip()) {
+      data->mLayer->SetClipRect(Some(ViewAs<ParentLayerPixel>(ScaleToNearestPixels(data->mItemClip.GetClipRect()))));
+      
+      
+      
+      
+      MOZ_ASSERT(data->mCommonClipCount == -1 || data->mCommonClipCount == 0);
+      commonClipCount = data->mItemClip.GetRoundedRectCount();
+    } else {
+      commonClipCount = std::max(0, data->mCommonClipCount);
+    }
     SetupMaskLayer(layer, data->mItemClip, data->mVisibleRegion, commonClipCount);
     
     FrameLayerBuilder::PaintedLayerItemsEntry* entry = mLayerBuilder->
@@ -3817,6 +3831,19 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       item->SetClip(mBuilder, clip);
     }
 
+    bool shouldFixToViewport = !animatedGeometryRoot->GetParent() &&
+      item->ShouldFixToViewport(mManager);
+
+    
+    
+    
+    
+    DisplayItemClip fixedToViewportClip = DisplayItemClip::NoClip();
+    if (shouldFixToViewport) {
+      fixedToViewportClip = item->GetClip();
+      item->SetClip(mBuilder, DisplayItemClip::NoClip());
+    }
+
     bool snap;
     nsRect itemContent = item->GetBounds(mBuilder, &snap);
     if (itemType == nsDisplayItem::TYPE_LAYER_EVENT_REGIONS) {
@@ -3846,6 +3873,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         bounds.IntersectRect(bounds, itemClip.GetClipRect());
       }
     }
+    bounds = fixedToViewportClip.ApplyNonRoundedIntersection(bounds);
     ((nsRect&)mAccumulatedChildBounds).UnionRect(mAccumulatedChildBounds, bounds);
 #endif
     
@@ -3853,9 +3881,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     
     nsIntRect itemVisibleRect = itemDrawRect.Intersect(
       ScaleToOutsidePixels(item->GetVisibleRect(), false));
-
-    bool shouldFixToViewport = !animatedGeometryRoot->GetParent() &&
-      item->ShouldFixToViewport(mManager);
 
     if (maxLayers != -1 && layerCount >= maxLayers) {
       forceInactive = true;
@@ -4077,6 +4102,13 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         opaquePixels.AndWith(itemVisibleRect);
         paintedLayerData->Accumulate(this, item, opaquePixels,
             itemVisibleRect, itemClip, layerState);
+
+        
+        
+        
+        if (fixedToViewportClip.HasClip()) {
+          paintedLayerData->mItemClip = fixedToViewportClip;
+        }
 
         if (!paintedLayerData->mLayer) {
           
