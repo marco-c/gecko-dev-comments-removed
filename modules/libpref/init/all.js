@@ -5267,3 +5267,6 @@ pref("plugins.rewrite_youtube_embeds", true);
 
 
 pref("dom.mozBrowserFramesEnabled", false);
+
+
+pref("layout.css.color-adjust.enabled", true);
