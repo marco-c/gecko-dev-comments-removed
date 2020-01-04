@@ -79,7 +79,7 @@ private:
   
 
 
-  nsAutoPtr<UnixSocketConnector> mConnector;
+  UniquePtr<UnixSocketConnector> mConnector;
 
   
 

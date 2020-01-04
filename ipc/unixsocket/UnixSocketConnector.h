@@ -84,6 +84,14 @@ public:
 
   virtual nsresult Duplicate(UnixSocketConnector*& aConnector) = 0;
 
+  
+
+
+
+
+
+  nsresult Duplicate(UniquePtr<UnixSocketConnector>& aConnector);
+
 protected:
   UnixSocketConnector();
 };

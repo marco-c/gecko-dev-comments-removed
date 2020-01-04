@@ -10,6 +10,7 @@
 #include "DataSocket.h"
 #include "ListenSocketConsumer.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/unused.h"
 #include "nsISupportsImpl.h" 
 #include "nsXULAppAPI.h"
 #include "UnixSocketConnector.h"
@@ -76,7 +77,7 @@ private:
   
 
 
-  nsAutoPtr<UnixSocketConnector> mConnector;
+  UniquePtr<UnixSocketConnector> mConnector;
 
   
 
@@ -125,7 +126,7 @@ ListenSocketIO::~ListenSocketIO()
 UnixSocketConnector*
 ListenSocketIO::GetConnector() const
 {
-  return mConnector;
+  return mConnector.get();
 }
 
 void
@@ -360,27 +361,28 @@ ListenSocket::Listen(ConnectionOrientedSocket* aCOSocket)
   
   
 
-  nsAutoPtr<UnixSocketConnector> connector;
-  nsresult rv = mIO->GetConnector()->Duplicate(*connector.StartAssignment());
+  UniquePtr<UnixSocketConnector> connector;
+  nsresult rv = mIO->GetConnector()->Duplicate(connector);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  nsAutoPtr<ConnectionOrientedSocketIO> io;
-  rv = aCOSocket->PrepareAccept(connector,
+  ConnectionOrientedSocketIO* io;
+  rv = aCOSocket->PrepareAccept(connector.get(),
                                 mIO->GetConsumerThread(), mIO->GetIOLoop(),
-                                *io.StartAssignment());
+                                io);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  connector.forget(); 
+
+  Unused << connector.release(); 
 
   
 
   SetConnectionStatus(SOCKET_LISTENING);
 
   mIO->GetIOLoop()->PostTask(
-    FROM_HERE, new ListenSocketIO::ListenTask(mIO, io.forget()));
+    FROM_HERE, new ListenSocketIO::ListenTask(mIO, io));
 
   return NS_OK;
 }
