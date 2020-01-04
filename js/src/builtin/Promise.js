@@ -496,46 +496,8 @@ function AddDependentPromise(dependentPromise) {
 }
 
 
-function Promise_static_reject(r) {
-    
-    let C = this;
-
-    
-    if (!IsObject(C))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, "Receiver of Promise.reject call");
-
-    
-    let promiseCapability = NewPromiseCapability(C);
-
-    
-    callContentFunction(promiseCapability.reject, undefined, r);
-
-    
-    return promiseCapability.promise;
-}
 
 
-function Promise_static_resolve(x) {
-    
-    let C = this;
-
-    
-    if (!IsObject(C))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, "Receiver of Promise.resolve call");
-
-    
-    if (IsObject(x) && (IsPromise(x) || IsWrappedPromise(x)) && x.constructor === C)
-        return x;
-
-    
-    let promiseCapability = NewPromiseCapability(C);
-
-    
-    callContentFunction(promiseCapability.resolve, undefined, x);
-
-    
-    return promiseCapability.promise;
-}
 
 
 function Promise_static_get_species() {
