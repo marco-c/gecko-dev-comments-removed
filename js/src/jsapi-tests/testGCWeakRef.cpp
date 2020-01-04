@@ -32,7 +32,7 @@ BEGIN_TEST(testGCWeakRef)
     JS::Rooted<MyHeap> heap(cx, MyHeap(obj));
     obj = nullptr;
 
-    rt->gc.minorGC(JS::gcreason::API);
+    cx->gc.minorGC(JS::gcreason::API);
 
     
     

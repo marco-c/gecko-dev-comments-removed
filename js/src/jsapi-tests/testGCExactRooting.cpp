@@ -93,7 +93,7 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented)
         bool same;
 
         
-        JS::PersistentRooted<MyContainer> heap(rt, container);
+        JS::PersistentRooted<MyContainer> heap(cx->runtime(), container);
 
         
         container.obj() = nullptr;
@@ -126,7 +126,7 @@ END_TEST(testGCRootedStaticStructInternalStackStorageAugmented)
 static JS::PersistentRooted<JSObject*> sLongLived;
 BEGIN_TEST(testGCPersistentRootedOutlivesRuntime)
 {
-    sLongLived.init(rt, JS_NewObject(cx, nullptr));
+    sLongLived.init(cx, JS_NewObject(cx, nullptr));
     CHECK(sLongLived);
     return true;
 }
@@ -142,7 +142,7 @@ BEGIN_TEST(testGCPersistentRootedTraceableCannotOutliveRuntime)
     JS::Rooted<MyContainer> container(cx);
     container.obj() = JS_NewObject(cx, nullptr);
     container.str() = JS_NewStringCopyZ(cx, "Hello");
-    sContainer.init(rt, container);
+    sContainer.init(cx, container);
 
     
     

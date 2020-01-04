@@ -47,7 +47,7 @@ BEGIN_TEST(testGCOutOfMemory)
     return true;
 }
 
-virtual JSRuntime * createRuntime() override {
+virtual JSContext* createContext() override {
     
     
     
@@ -55,15 +55,15 @@ virtual JSRuntime * createRuntime() override {
     
     
     
-    JSRuntime* rt = JS_NewRuntime(768 * 1024, 128 * 1024);
-    if (!rt)
+    JSContext* cx = JS_NewContext(768 * 1024, 128 * 1024);
+    if (!cx)
         return nullptr;
-    setNativeStackQuota(JS_GetContext(rt));
-    return rt;
+    setNativeStackQuota(cx);
+    return cx;
 }
 
-virtual void destroyRuntime() override {
-    JS_DestroyRuntime(rt);
+virtual void destroyContext() override {
+    JS_DestroyContext(cx);
 }
 
 END_TEST(testGCOutOfMemory)

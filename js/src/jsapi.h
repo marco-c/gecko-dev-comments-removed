@@ -963,13 +963,13 @@ JS_IsBuiltinFunctionConstructor(JSFunction* fun);
 
 
 
-extern JS_PUBLIC_API(JSRuntime*)
-JS_NewRuntime(uint32_t maxbytes,
+extern JS_PUBLIC_API(JSContext*)
+JS_NewContext(uint32_t maxbytes,
               uint32_t maxNurseryBytes = JS::DefaultNurseryBytes,
-              JSRuntime* parentRuntime = nullptr);
+              JSContext* parentContext = nullptr);
 
 extern JS_PUBLIC_API(void)
-JS_DestroyRuntime(JSRuntime* rt);
+JS_DestroyContext(JSContext* cx);
 
 typedef double (*JS_CurrentEmbedderTimeFunction)();
 
@@ -999,8 +999,8 @@ JS_SetContextPrivate(JSContext* cx, void* data);
 extern JS_PUBLIC_API(JSRuntime*)
 JS_GetRuntime(JSContext* cx);
 
-extern JS_PUBLIC_API(JSRuntime*)
-JS_GetParentRuntime(JSRuntime* rt);
+extern JS_PUBLIC_API(JSContext*)
+JS_GetParentContext(JSContext* cx);
 
 extern JS_PUBLIC_API(void)
 JS_BeginRequest(JSContext* cx);
