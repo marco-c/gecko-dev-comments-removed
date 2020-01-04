@@ -553,6 +553,14 @@ CacheFileContextEvictor::EvictEntries()
   }
 
   while (true) {
+    if (CacheObserver::ShuttingDown()) {
+      LOG(("CacheFileContextEvictor::EvictEntries() - Stopping evicting due to "
+           "shutdown."));
+      mEvicting = true; 
+                        
+      return NS_OK;
+    }
+
     if (CacheIOThread::YieldAndRerun()) {
       LOG(("CacheFileContextEvictor::EvictEntries() - Breaking loop for higher "
            "level events."));
