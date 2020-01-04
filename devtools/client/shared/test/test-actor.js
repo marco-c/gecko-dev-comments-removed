@@ -336,9 +336,10 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
+
   synthesizeMouse: protocol.method(function ({ selector, x, y, center, options }) {
     let node = this._querySelector(selector);
-
+    node.scrollIntoView();
     if (center) {
       EventUtils.synthesizeMouseAtCenter(node, options, node.ownerDocument.defaultView);
     } else {
