@@ -3742,6 +3742,14 @@ nsGridContainerFrame::ReflowChildren(GridReflowState&     aState,
 {
   MOZ_ASSERT(aState.mReflowState);
 
+  aStatus = NS_FRAME_COMPLETE;
+  nsOverflowAreas ocBounds;
+  nsReflowStatus ocStatus = NS_FRAME_COMPLETE;
+  if (GetPrevInFlow()) {
+    ReflowOverflowContainerChildren(PresContext(), *aState.mReflowState,
+                                    ocBounds, 0, ocStatus);
+  }
+
   WritingMode wm = aState.mReflowState->GetWritingMode();
   const LogicalPoint gridOrigin(aContentArea.Origin(wm));
   const nsSize containerSize =
@@ -3827,6 +3835,10 @@ nsGridContainerFrame::ReflowChildren(GridReflowState&     aState,
     ConsiderChildOverflow(aDesiredSize.mOverflowAreas, child);
     
   }
+
+  
+  aDesiredSize.mOverflowAreas.UnionWith(ocBounds);
+  NS_MergeReflowStatusInto(&aStatus, ocStatus);
 
   if (IsAbsoluteContainer()) {
     nsFrameList children(GetChildList(GetAbsoluteListID()));
@@ -4048,6 +4060,9 @@ nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                        const nsDisplayListSet& aLists)
 {
   DisplayBorderBackgroundOutline(aBuilder, aLists);
+  if (GetPrevInFlow()) {
+    DisplayOverflowContainers(aBuilder, aDirtyRect, aLists);
+  }
 
   
   
@@ -4102,9 +4117,8 @@ FrameWantsToBeInAnonymousGridItem(nsIFrame* aFrame)
 void
 nsGridContainerFrame::SanityCheckAnonymousGridItems() const
 {
-  
-  
-  ChildListIDs noCheckLists = kAbsoluteList | kFixedList;
+  ChildListIDs noCheckLists = kAbsoluteList | kFixedList |
+    kOverflowContainersList | kExcessOverflowContainersList;
   ChildListIDs checkLists = kPrincipalList | kOverflowList;
   for (nsIFrame::ChildListIterator childLists(this);
        !childLists.IsDone(); childLists.Next()) {
