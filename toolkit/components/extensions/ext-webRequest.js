@@ -11,6 +11,7 @@ Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   SingletonEventManager,
   runSafeSync,
+  ignoreEvent,
 } = ExtensionUtils;
 
 
@@ -126,6 +127,10 @@ extensions.registerPrivilegedAPI("webRequest", (extension, context) => {
       handlerBehaviorChanged: function() {
         
       },
+
+      
+      onBeforeRedirect: ignoreEvent(context, "webRequest.onBeforeRedirect"),
+      onErrorOccurred: ignoreEvent(context, "webRequest.onErrorOccurred"),
     },
   };
 });
