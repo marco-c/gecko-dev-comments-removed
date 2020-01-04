@@ -1896,6 +1896,7 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
         
         
         
+        APZC_LOG("%p wheel scrolling to snap point %s\n", this, Stringify(startPosition).c_str());
         SmoothScrollTo(startPosition);
         break;
       }
@@ -3964,6 +3965,7 @@ void AsyncPanZoomController::ScrollSnapNear(const CSSPoint& aDestination) {
   if (Maybe<CSSPoint> snapPoint =
         FindSnapPointNear(aDestination, nsIScrollableFrame::DEVICE_PIXELS)) {
     if (*snapPoint != mFrameMetrics.GetScrollOffset()) {
+      APZC_LOG("%p smooth scrolling to snap point %s\n", this, Stringify(*snapPoint).c_str());
       SmoothScrollTo(*snapPoint);
     }
   }
