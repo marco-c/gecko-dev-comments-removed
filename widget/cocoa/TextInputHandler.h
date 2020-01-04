@@ -758,6 +758,11 @@ public:
   
 
 
+  bool OnHandleEvent(NSEvent* aEvent);
+
+  
+
+
 
 
 
