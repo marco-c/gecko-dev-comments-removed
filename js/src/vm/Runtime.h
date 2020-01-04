@@ -843,7 +843,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     }
 
     
-    bool handlingSignal;
+    bool handlingSegFault;
 
     JSInterruptCallback interruptCallback;
 

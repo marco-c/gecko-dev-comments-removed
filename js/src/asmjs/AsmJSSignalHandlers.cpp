@@ -58,22 +58,22 @@ RuntimeForCurrentThread()
 
 
 
-class AutoSetHandlingSignal
+class AutoSetHandlingSegFault
 {
     JSRuntime* rt;
 
   public:
-    explicit AutoSetHandlingSignal(JSRuntime* rt)
+    explicit AutoSetHandlingSegFault(JSRuntime* rt)
       : rt(rt)
     {
-        MOZ_ASSERT(!rt->handlingSignal);
-        rt->handlingSignal = true;
+        MOZ_ASSERT(!rt->handlingSegFault);
+        rt->handlingSegFault = true;
     }
 
-    ~AutoSetHandlingSignal()
+    ~AutoSetHandlingSegFault()
     {
-        MOZ_ASSERT(rt->handlingSignal);
-        rt->handlingSignal = false;
+        MOZ_ASSERT(rt->handlingSegFault);
+        rt->handlingSegFault = false;
     }
 };
 
@@ -747,9 +747,9 @@ HandleFault(PEXCEPTION_POINTERS exception)
 
     
     JSRuntime* rt = RuntimeForCurrentThread();
-    if (!rt || rt->handlingSignal)
+    if (!rt || rt->handlingSegFault)
         return false;
-    AutoSetHandlingSignal handling(rt);
+    AutoSetHandlingSegFault handling(rt);
 
     AsmJSActivation* activation = rt->asmJSActivationStack();
     if (!activation)
@@ -855,9 +855,9 @@ static bool
 HandleMachException(JSRuntime* rt, const ExceptionRequest& request)
 {
     
-    if (rt->handlingSignal)
+    if (rt->handlingSegFault)
         return false;
-    AutoSetHandlingSignal handling(rt);
+    AutoSetHandlingSegFault handling(rt);
 
     
     mach_port_t rtThread = request.body.thread.name;
@@ -1104,9 +1104,9 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
 
     
     JSRuntime* rt = RuntimeForCurrentThread();
-    if (!rt || rt->handlingSignal)
+    if (!rt || rt->handlingSegFault)
         return false;
-    AutoSetHandlingSignal handling(rt);
+    AutoSetHandlingSegFault handling(rt);
 
     AsmJSActivation* activation = rt->asmJSActivationStack();
     if (!activation)
