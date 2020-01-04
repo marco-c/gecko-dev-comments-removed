@@ -30,9 +30,27 @@ static const char* kPrefTesting = "device.storage.testing";
 static const char* kPrefPromptTesting = "device.storage.prompt.testing";
 static const char* kPrefWritableName = "device.storage.writable.name";
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const char* kFileWatcherUpdate = "file-watcher-update";
+static const char* kMtpWatcherUpdate = "mtp-watcher-update";
 static const char* kDiskSpaceWatcher = "disk-space-watcher";
 static const char* kFileWatcherNotify = "file-watcher-notify";
+static const char* kMtpWatcherNotify = "mtp-watcher-notify";
 static const char* kDownloadWatcherNotify = "download-watcher-notify";
 
 StaticRefPtr<DeviceStorageStatics> DeviceStorageStatics::sInstance;
@@ -100,6 +118,7 @@ DeviceStorageStatics::Init()
   if (obs) {
     obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
     obs->AddObserver(this, kFileWatcherNotify, false);
+    obs->AddObserver(this, kMtpWatcherNotify, false);
     obs->AddObserver(this, kDownloadWatcherNotify, false);
   }
   DS_LOG_INFO("");
@@ -704,7 +723,8 @@ DeviceStorageStatics::Observe(nsISupports* aSubject,
 #endif
     dsf = new DeviceStorageFile(NS_LITERAL_STRING(DEVICESTORAGE_SDCARD), volName, path);
 
-  } else if (!strcmp(aTopic, kFileWatcherNotify)) {
+  } else if (!strcmp(aTopic, kFileWatcherNotify) ||
+             !strcmp(aTopic, kMtpWatcherNotify)) {
     dsf = static_cast<DeviceStorageFile*>(aSubject);
   } else {
     DS_LOG_WARN("unhandled topic '%s'", aTopic);
@@ -754,6 +774,11 @@ DeviceStorageStatics::Observe(nsISupports* aSubject,
     }
   } else {
     obs->NotifyObservers(dsf, kFileWatcherUpdate, aData);
+  }
+  if (strcmp(aTopic, kMtpWatcherNotify)) {
+    
+    
+    obs->NotifyObservers(dsf, kMtpWatcherUpdate, aData);
   }
   return NS_OK;
 }
