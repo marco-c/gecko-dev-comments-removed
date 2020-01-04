@@ -116,6 +116,9 @@ protected:
 };
 
 
+class EGLImageImage;
+
+
 
 
 
@@ -165,6 +168,9 @@ public:
 
 
   virtual TextureClient* GetTextureClient(CompositableClient* aClient) { return nullptr; }
+
+  
+  virtual EGLImageImage* AsEGLImageImage() { return nullptr; }
 
 protected:
   Image(void* aImplData, ImageFormat aFormat) :
