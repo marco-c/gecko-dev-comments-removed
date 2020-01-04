@@ -85,6 +85,15 @@ void Servo_ReleaseComputedValues(ServoComputedValues*);
 
 void Servo_RestyleDocument(RawGeckoDocument* doc, RawServoStyleSet* set);
 
+
+#define STYLE_STRUCT(name, checkdata_cb) \
+struct nsStyle##name; \
+void Gecko_Construct_nsStyle##name(nsStyle##name* ptr); \
+void Gecko_CopyConstruct_nsStyle##name(nsStyle##name* ptr, const nsStyle##name* other); \
+void Gecko_Destroy_nsStyle##name(nsStyle##name* ptr);
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT
+
 } 
 
 #endif 
