@@ -110,17 +110,20 @@ function* userAgentStylesVisible(inspector, view) {
     ok(uaRules.length > data.numUARules, "Has UA rules");
   }
 
-  ok(userRules.some(rule=> rule.matchedSelectors.length === 1),
+  ok(userRules.some(rule => rule.matchedSelectors.length === 1),
     "There is an inline style for element in user styles");
 
   
   
-  ok(uaRules.some(rule=> rule.matchedSelectors.indexOf(":-moz-any-link") !== -1),
-    "There is a rule for :-moz-any-link");
-  ok(uaRules.some(rule=> rule.matchedSelectors.indexOf("*|*:link") !== -1),
-    "There is a rule for *|*:link");
-  ok(uaRules.some(rule=> rule.matchedSelectors.length === 1),
-    "Inline styles for ua styles");
+  ok(uaRules.some(rule => {
+    return rule.matchedSelectors.indexOf(":-moz-any-link") !== -1;
+  }), "There is a rule for :-moz-any-link");
+  ok(uaRules.some(rule => {
+    return rule.matchedSelectors.indexOf("*|*:link") !== -1;
+  }), "There is a rule for *|*:link");
+  ok(uaRules.some(rule => {
+    return rule.matchedSelectors.length === 1;
+  }), "Inline styles for ua styles");
 }
 
 function* userAgentStylesNotVisible(inspector, view) {
@@ -144,11 +147,13 @@ function* compareAppliedStylesWithUI(inspector, view, filter) {
   info("Making sure that UI is consistent with pageStyle.getApplied");
 
   let entries = yield inspector.pageStyle.getApplied(
-    inspector.selection.nodeFront, {
-    inherited: true,
-    matchedSelectors: true,
-    filter: filter
-  });
+    inspector.selection.nodeFront,
+    {
+      inherited: true,
+      matchedSelectors: true,
+      filter: filter
+    }
+  );
 
   
   
