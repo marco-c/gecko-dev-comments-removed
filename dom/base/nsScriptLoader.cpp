@@ -261,6 +261,11 @@ nsModuleLoadRequest::DependenciesLoaded()
   
   
 
+  if (!mLoader->InstantiateModuleTree(this)) {
+    LoadFailed();
+    return;
+  }
+
   SetReady();
   mLoader->ProcessLoadedModuleTree(this);
   mLoader = nullptr;
@@ -284,9 +289,17 @@ nsModuleLoadRequest::LoadFailed()
 
 class nsModuleScript final : public nsISupports
 {
+  enum InstantiationState {
+    Uninstantiated,
+    Instantiated,
+    Errored
+  };
+
   RefPtr<nsScriptLoader> mLoader;
   nsCOMPtr<nsIURI> mBaseURL;
   JS::Heap<JSObject*> mModuleRecord;
+  JS::Heap<JS::Value> mException;
+  InstantiationState mInstantiationState;
 
   ~nsModuleScript();
 
@@ -300,7 +313,19 @@ public:
 
   nsScriptLoader* Loader() const { return mLoader; }
   JSObject* ModuleRecord() const { return mModuleRecord; }
+  JS::Value Exception() const { return mException; }
   nsIURI* BaseURL() const { return mBaseURL; }
+
+  void SetInstantiationResult(JS::Handle<JS::Value> aMaybeException);
+  bool IsUninstantiated() const {
+    return mInstantiationState == Uninstantiated;
+  }
+  bool IsInstantiated() const {
+    return mInstantiationState == Instantiated;
+  }
+  bool InstantiationFailed() const {
+    return mInstantiationState == Errored;
+  }
 
   void UnlinkModuleRecord();
 };
@@ -323,6 +348,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsModuleScript)
   NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mModuleRecord)
+  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mException)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsModuleScript)
@@ -332,11 +358,13 @@ nsModuleScript::nsModuleScript(nsScriptLoader *aLoader, nsIURI* aBaseURL,
                                JS::Handle<JSObject*> aModuleRecord)
  : mLoader(aLoader),
    mBaseURL(aBaseURL),
-   mModuleRecord(aModuleRecord)
+   mModuleRecord(aModuleRecord),
+   mInstantiationState(Uninstantiated)
 {
   MOZ_ASSERT(mLoader);
   MOZ_ASSERT(mBaseURL);
   MOZ_ASSERT(mModuleRecord);
+  MOZ_ASSERT(mException.isUndefined());
 
   
   
@@ -348,10 +376,13 @@ void
 nsModuleScript::UnlinkModuleRecord()
 {
   
-  MOZ_ASSERT(JS::GetModuleHostDefinedField(mModuleRecord).toPrivate() ==
-             this);
-  JS::SetModuleHostDefinedField(mModuleRecord, JS::UndefinedValue());
+  if (mModuleRecord) {
+    MOZ_ASSERT(JS::GetModuleHostDefinedField(mModuleRecord).toPrivate() ==
+               this);
+    JS::SetModuleHostDefinedField(mModuleRecord, JS::UndefinedValue());
+  }
   mModuleRecord = nullptr;
+  mException.setUndefined();
 }
 
 nsModuleScript::~nsModuleScript()
@@ -362,6 +393,23 @@ nsModuleScript::~nsModuleScript()
   }
   DropJSObjects(this);
 }
+
+void
+nsModuleScript::SetInstantiationResult(JS::Handle<JS::Value> aMaybeException)
+{
+  MOZ_ASSERT(mInstantiationState == Uninstantiated);
+  MOZ_ASSERT(mModuleRecord);
+  MOZ_ASSERT(mException.isUndefined());
+
+  if (aMaybeException.isUndefined()) {
+    mInstantiationState = Instantiated;
+  } else {
+    mModuleRecord = nullptr;
+    mException = aMaybeException;
+    mInstantiationState = Errored;
+  }
+}
+
 
 
 
@@ -1021,12 +1069,18 @@ HostResolveImportedModule(JSContext* aCx, unsigned argc, JS::Value* vp)
     return HandleModuleNotFound(aCx, script, string);
   }
 
+  if (ms->InstantiationFailed()) {
+    JS::Rooted<JS::Value> exception(aCx, ms->Exception());
+    JS_SetPendingException(aCx, exception);
+    return false;
+  }
+
   *vp = JS::ObjectValue(*ms->ModuleRecord());
   return true;
 }
 
 static nsresult
-EnsureModuleResolveHook(JSContext *aCx)
+EnsureModuleResolveHook(JSContext* aCx)
 {
   if (JS::GetModuleResolveHook(aCx)) {
     return NS_OK;
@@ -1054,6 +1108,68 @@ nsScriptLoader::ProcessLoadedModuleTree(nsModuleLoadRequest* aRequest)
   if (aRequest->mWasCompiledOMT) {
     mDocument->UnblockOnload(false);
   }
+}
+
+bool
+nsScriptLoader::InstantiateModuleTree(nsModuleLoadRequest* aRequest)
+{
+  
+
+  MOZ_ASSERT(aRequest);
+
+  nsModuleScript* ms = aRequest->mModuleScript;
+  MOZ_ASSERT(ms);
+  if (!ms->ModuleRecord()) {
+    return false;
+  }
+
+  AutoJSAPI jsapi;
+  if (NS_WARN_IF(!jsapi.Init(ms->ModuleRecord()))) {
+    return false;
+  }
+
+  nsresult rv = EnsureModuleResolveHook(jsapi.cx());
+  NS_ENSURE_SUCCESS(rv, false);
+
+  JS::Rooted<JSObject*> module(jsapi.cx(), ms->ModuleRecord());
+  bool ok = NS_SUCCEEDED(nsJSUtils::ModuleDeclarationInstantiation(jsapi.cx(), module));
+
+  JS::RootedValue exception(jsapi.cx());
+  if (!ok) {
+    MOZ_ASSERT(jsapi.HasException());
+    if (!jsapi.StealException(&exception)) {
+      return false;
+    }
+    MOZ_ASSERT(!exception.isUndefined());
+  }
+
+  
+  
+
+  mozilla::Vector<nsModuleLoadRequest*, 1> requests;
+  if (!requests.append(aRequest)) {
+    return false;
+  }
+
+  while (!requests.empty()) {
+    nsModuleLoadRequest* request = requests.popCopy();
+    nsModuleScript* ms = request->mModuleScript;
+    if (!ms->IsUninstantiated()) {
+      continue;
+    }
+
+    ms->SetInstantiationResult(exception);
+
+    for (auto import : request->mImports) {
+      if (import->mModuleScript->IsUninstantiated() &&
+          !requests.append(import))
+      {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 nsresult
@@ -2018,17 +2134,18 @@ nsScriptLoader::EvaluateScript(nsScriptLoadRequest* aRequest)
     }
 
     if (aRequest->IsModuleRequest()) {
-      rv = EnsureModuleResolveHook(aes.cx());
-      NS_ENSURE_SUCCESS(rv, rv);
-
       nsModuleLoadRequest* request = aRequest->AsModuleRequest();
       MOZ_ASSERT(request->mModuleScript);
       MOZ_ASSERT(!request->mOffThreadToken);
-      JS::Rooted<JSObject*> module(aes.cx(),
-                                   request->mModuleScript->ModuleRecord());
-      MOZ_ASSERT(module);
-      rv = nsJSUtils::ModuleDeclarationInstantiation(aes.cx(), module);
-      if (NS_SUCCEEDED(rv)) {
+      nsModuleScript* ms = request->mModuleScript;
+      MOZ_ASSERT(!ms->IsUninstantiated());
+      if (ms->InstantiationFailed()) {
+        JS::Rooted<JS::Value> exception(aes.cx(), ms->Exception());
+        JS_SetPendingException(aes.cx(), exception);
+        rv = NS_ERROR_FAILURE;
+      } else {
+        JS::Rooted<JSObject*> module(aes.cx(), ms->ModuleRecord());
+        MOZ_ASSERT(module);
         rv = nsJSUtils::ModuleEvaluation(aes.cx(), module);
       }
     } else {
