@@ -228,6 +228,10 @@ BluetoothA2dpManager::InitA2dpInterface(BluetoothProfileResultHandler* aRes)
 }
 
 BluetoothA2dpManager::~BluetoothA2dpManager()
+{ }
+
+void
+BluetoothA2dpManager::Uninit()
 {
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   NS_ENSURE_TRUE_VOID(obs);
@@ -274,8 +278,8 @@ BluetoothA2dpManager::Get()
   NS_ENSURE_FALSE(sInShutdown, nullptr);
 
   
-  BluetoothA2dpManager* manager = new BluetoothA2dpManager();
-  sBluetoothA2dpManager = manager;
+  sBluetoothA2dpManager = new BluetoothA2dpManager();
+
   return sBluetoothA2dpManager;
 }
 
@@ -296,6 +300,8 @@ public:
 
     sBtA2dpInterface->SetNotificationHandler(nullptr);
     sBtA2dpInterface = nullptr;
+
+    sBluetoothA2dpManager->Uninit();
     sBluetoothA2dpManager = nullptr;
 
     if (mRes) {
@@ -309,6 +315,8 @@ public:
 
     sBtA2dpInterface->SetNotificationHandler(nullptr);
     sBtA2dpInterface = nullptr;
+
+    sBluetoothA2dpManager->Uninit();
     sBluetoothA2dpManager = nullptr;
 
     if (mRes) {

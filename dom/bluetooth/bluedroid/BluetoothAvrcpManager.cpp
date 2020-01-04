@@ -268,6 +268,10 @@ BluetoothAvrcpManager::InitAvrcpInterface(BluetoothProfileResultHandler* aRes)
 }
 
 BluetoothAvrcpManager::~BluetoothAvrcpManager()
+{ }
+
+void
+BluetoothAvrcpManager::Uninit()
 {
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   NS_ENSURE_TRUE_VOID(obs);
@@ -295,8 +299,8 @@ BluetoothAvrcpManager::Get()
   NS_ENSURE_FALSE(sInShutdown, nullptr);
 
   
-  BluetoothAvrcpManager* manager = new BluetoothAvrcpManager();
-  sBluetoothAvrcpManager = manager;
+  sBluetoothAvrcpManager = new BluetoothAvrcpManager();
+
   return sBluetoothAvrcpManager;
 }
 
@@ -317,6 +321,8 @@ public:
 
     sBtAvrcpInterface->SetNotificationHandler(nullptr);
     sBtAvrcpInterface = nullptr;
+
+    sBluetoothAvrcpManager->Uninit();
     sBluetoothAvrcpManager = nullptr;
 
     if (mRes) {
@@ -330,6 +336,8 @@ public:
 
     sBtAvrcpInterface->SetNotificationHandler(nullptr);
     sBtAvrcpInterface = nullptr;
+
+    sBluetoothAvrcpManager->Uninit();
     sBluetoothAvrcpManager = nullptr;
 
     if (mRes) {
