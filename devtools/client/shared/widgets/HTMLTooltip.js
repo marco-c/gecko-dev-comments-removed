@@ -222,10 +222,11 @@ function HTMLTooltip(toolbox, {
   this.consumeOutsideClicks = consumeOutsideClicks;
   this.useXulWrapper = this._isXUL() && useXulWrapper;
 
-  this._position = null;
-
   
-  this.topWindow = this.doc.defaultView.top;
+  
+  this.topWindow = this._getTopWindow();
+
+  this._position = null;
 
   this._onClick = this._onClick.bind(this);
 
@@ -382,6 +383,8 @@ HTMLTooltip.prototype = {
     this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
       this._maybeFocusTooltip();
+      
+      this.topWindow = this._getTopWindow();
       this.topWindow.addEventListener("click", this._onClick, true);
       this.emit("shown");
     }, 0);
@@ -548,6 +551,10 @@ HTMLTooltip.prototype = {
     if (this.autofocus && focusableElement) {
       focusableElement.focus();
     }
+  },
+
+  _getTopWindow: function () {
+    return this.doc.defaultView.top;
   },
 
   
