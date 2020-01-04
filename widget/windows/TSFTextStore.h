@@ -248,6 +248,7 @@ protected:
 
   bool     Init(nsWindowBase* aWidget);
   bool     Destroy();
+  void     ReleaseTSFObjects();
 
   bool     IsReadLock(DWORD aLock) const
   {
@@ -347,6 +348,21 @@ protected:
   DWORD                        mLock;
   
   DWORD                        mLockQueued;
+
+  uint32_t mHandlingKeyMessage;
+  void OnStartToHandleKeyMessage() { ++mHandlingKeyMessage; }
+  void OnEndHandlingKeyMessage()
+  {
+    MOZ_ASSERT(mHandlingKeyMessage);
+    if (--mHandlingKeyMessage) {
+      return;
+    }
+    
+    
+    if (mDestroyed) {
+      ReleaseTSFObjects();
+    }
+  }
 
   class Composition final
   {
