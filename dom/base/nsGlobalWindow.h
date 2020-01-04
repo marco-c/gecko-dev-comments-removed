@@ -1639,13 +1639,6 @@ protected:
   
   
   
-
-  
-  
-  
-  
-  
-  
   bool                          mIsFrozen : 1;
 
   
