@@ -702,12 +702,20 @@ nsSiteSecurityService::ProcessPKPHeader(nsIURI* aSourceURI,
   UniqueCERTCertList certList;
   RefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
   NS_ENSURE_TRUE(certVerifier, NS_ERROR_UNEXPECTED);
+  
+  
+  
+  
+  
+  
+  CertVerifier::Flags flags = CertVerifier::FLAG_LOCAL_ONLY |
+                              CertVerifier::FLAG_TLS_IGNORE_STATUS_REQUEST;
   if (certVerifier->VerifySSLServerCert(nssCert, nullptr, 
                                         now, nullptr, 
                                         host.get(), 
                                         certList,
                                         false, 
-                                        CertVerifier::FLAG_LOCAL_ONLY)
+                                        flags)
       != SECSuccess) {
     return NS_ERROR_FAILURE;
   }
