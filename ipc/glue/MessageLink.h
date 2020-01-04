@@ -88,10 +88,6 @@ class MessageListener
     virtual void OnExitedCall() {
         NS_RUNTIMEABORT("default impl shouldn't be invoked");
     }
-    
-
-    virtual void OnBeginSyncTransaction() {
-    }
     virtual RacyInterruptPolicy MediateInterruptRace(const Message& parent,
                                                      const Message& child)
     {
