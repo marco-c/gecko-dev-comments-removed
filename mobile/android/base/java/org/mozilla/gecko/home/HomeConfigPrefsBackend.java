@@ -234,9 +234,20 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
 
 
 
-    private static JSONArray removeReadingListPanel(Context context, JSONArray jsonPanels) throws JSONException {
+
+
+
+
+
+
+
+
+
+
+    private static JSONArray removePanel(Context context, JSONArray jsonPanels,
+                                         PanelType panelToRemove, PanelType replacementPanel, boolean alwaysUnhide) throws JSONException {
         boolean wasDefault = false;
-        int bookmarksIndex = -1;
+        int replacementPanelIndex = -1;
 
         
         
@@ -246,26 +257,33 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
             final JSONObject panelJSON = jsonPanels.getJSONObject(i);
             final PanelConfig panelConfig = new PanelConfig(panelJSON);
 
-            if (panelConfig.getType() == PanelType.DEPRECATED_READING_LIST) {
+            if (panelConfig.getType() == panelToRemove) {
                 
                 wasDefault = panelConfig.isDefault();
             } else {
-                if (panelConfig.getType() == PanelType.BOOKMARKS) {
-                    bookmarksIndex = newJSONPanels.length();
+                if (panelConfig.getType() == replacementPanel) {
+                    replacementPanelIndex = newJSONPanels.length();
                 }
 
                 newJSONPanels.put(panelJSON);
             }
         }
 
-        if (wasDefault) {
-            
-            
-            final JSONObject bookmarksPanelConfig = createBuiltinPanelConfig(context, PanelType.BOOKMARKS, EnumSet.of(PanelConfig.Flags.DEFAULT_PANEL)).toJSON();
-            if (bookmarksIndex != -1) {
-                newJSONPanels.put(bookmarksIndex, bookmarksPanelConfig);
+        
+        
+        
+        if (wasDefault || alwaysUnhide) {
+            final JSONObject replacementPanelConfig;
+            if (wasDefault) {
+                replacementPanelConfig = createBuiltinPanelConfig(context, replacementPanel, EnumSet.of(PanelConfig.Flags.DEFAULT_PANEL)).toJSON();
             } else {
-                newJSONPanels.put(bookmarksPanelConfig);
+                replacementPanelConfig = createBuiltinPanelConfig(context, replacementPanel).toJSON();
+            }
+
+            if (replacementPanelIndex != -1) {
+                newJSONPanels.put(replacementPanelIndex, replacementPanelConfig);
+            } else {
+                newJSONPanels.put(replacementPanelConfig);
             }
         }
 
@@ -382,7 +400,8 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
                     break;
 
                 case 6:
-                    jsonPanels = removeReadingListPanel(context, jsonPanels);
+                    jsonPanels = removePanel(context, jsonPanels,
+                            PanelType.DEPRECATED_READING_LIST, PanelType.BOOKMARKS, false);
                     break;
             }
         }
