@@ -955,7 +955,7 @@ js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope, HandleScript 
             if (mode == XDR_ENCODE)
                 func = innerFunctions[i];
 
-            if (!XDRInterpretedFunction(xdr, enclosingScope, enclosingScript, &func))
+            if (!XDRInterpretedFunction(xdr, nullptr, nullptr, &func))
                 return false;
 
             if (mode == XDR_DECODE)
@@ -3965,7 +3965,7 @@ LazyScript::Create(ExclusiveContext* cx, HandleFunction fun,
  LazyScript*
 LazyScript::Create(ExclusiveContext* cx, HandleFunction fun,
                    HandleScript script, HandleScope enclosingScope,
-                   HandleScript sourceObjectScript,
+                   HandleScript enclosingScript,
                    uint64_t packedFields, uint32_t begin, uint32_t end,
                    uint32_t lineno, uint32_t column)
 {
@@ -3993,8 +3993,13 @@ LazyScript::Create(ExclusiveContext* cx, HandleFunction fun,
 
     
     
+    
+    
+    MOZ_ASSERT(!!enclosingScript == !!enclosingScope);
     MOZ_ASSERT(!res->sourceObject());
-    res->setEnclosingScopeAndSource(enclosingScope, &sourceObjectScript->scriptSourceUnwrap());
+    MOZ_ASSERT(!res->enclosingScope());
+    if (enclosingScript)
+        res->setEnclosingScopeAndSource(enclosingScope, &enclosingScript->scriptSourceUnwrap());
 
     MOZ_ASSERT(!res->hasScript());
     if (script)
