@@ -74,7 +74,7 @@ add_task(function flush_on_settabstate() {
 
   
   
-  TabState.flushAsync(browser);
+  TabStateFlusher.flush(browser);
 
   yield promiseTabState(tab, state);
 
@@ -101,7 +101,7 @@ add_task(function flush_on_tabclose_racy() {
 
   
   
-  TabState.flushAsync(browser);
+  TabStateFlusher.flush(browser);
   yield promiseRemoveTab(tab);
 
   let [{state: {storage}}] = JSON.parse(ss.getClosedTabData(window));
