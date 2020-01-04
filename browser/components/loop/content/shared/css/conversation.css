@@ -430,16 +430,11 @@ html[dir="rtl"] .room-failure > .settings-control {
 
 .screen-share-menu.dropdown-menu,
 .settings-menu.dropdown-menu {
-  left: auto;
   bottom: 3.1rem;
 }
 
-.screen-share-menu.dropdown-menu {
-  
-  right: 40px;
-}
-
 .settings-menu.dropdown-menu {
+  left: auto;
   
   right: 14px;
 }
