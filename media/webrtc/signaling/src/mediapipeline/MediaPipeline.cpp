@@ -1181,33 +1181,24 @@ void MediaPipelineTransmit::PipelineListener::ProcessAudioChunk(
   UniquePtr<int16_t[]> convertedSamples;
 
   
-  if (!enabled_) {
-    chunk.mBufferFormat = AUDIO_FORMAT_SILENCE;
-  }
-
   
   
   
-  
-  if (outputChannels == 1 && chunk.mBufferFormat == AUDIO_FORMAT_S16) {
+  if (enabled_ && outputChannels == 1 && chunk.mBufferFormat == AUDIO_FORMAT_S16) {
     samples = chunk.ChannelData<int16_t>().Elements()[0];
   } else {
     convertedSamples = MakeUnique<int16_t[]>(chunk.mDuration * outputChannels);
 
-    switch (chunk.mBufferFormat) {
-        case AUDIO_FORMAT_FLOAT32:
-          DownmixAndInterleave(chunk.ChannelData<float>(),
-                               chunk.mDuration, chunk.mVolume, outputChannels,
-                               convertedSamples.get());
-          break;
-        case AUDIO_FORMAT_S16:
-          DownmixAndInterleave(chunk.ChannelData<int16_t>(),
-                               chunk.mDuration, chunk.mVolume, outputChannels,
-                               convertedSamples.get());
-          break;
-        case AUDIO_FORMAT_SILENCE:
-          PodZero(convertedSamples.get(), chunk.mDuration * outputChannels);
-          break;
+    if (!enabled_ || chunk.mBufferFormat == AUDIO_FORMAT_SILENCE) {
+      PodZero(convertedSamples.get(), chunk.mDuration * outputChannels);
+    } else if (chunk.mBufferFormat == AUDIO_FORMAT_FLOAT32) {
+      DownmixAndInterleave(chunk.ChannelData<float>(),
+                           chunk.mDuration, chunk.mVolume, outputChannels,
+                           convertedSamples.get());
+    } else if (chunk.mBufferFormat == AUDIO_FORMAT_S16) {
+      DownmixAndInterleave(chunk.ChannelData<int16_t>(),
+                           chunk.mDuration, chunk.mVolume, outputChannels,
+                           convertedSamples.get());
     }
     samples = convertedSamples.get();
   }
