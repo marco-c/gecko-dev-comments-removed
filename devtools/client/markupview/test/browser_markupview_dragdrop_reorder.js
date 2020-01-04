@@ -4,6 +4,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 
 
 const TEST_URL = TEST_URL_ROOT + "doc_markup_dragdrop.html";
