@@ -799,6 +799,11 @@ Layer::CalculateScissorRect(const RenderTargetIntRect& aCurrentScissorRect)
     
     
     
+    
+    
+    
+    
+    
     return RenderTargetIntRect(currentClip.TopLeft(), RenderTargetIntSize(0, 0));
   }
 
@@ -1301,7 +1306,7 @@ ContainerLayer::HasMultipleChildren()
     const Maybe<ParentLayerIntRect>& clipRect = child->GetEffectiveClipRect();
     if (clipRect && clipRect->IsEmpty())
       continue;
-    if (child->GetVisibleRegion().IsEmpty())
+    if (child->GetLocalVisibleRegion().IsEmpty())
       continue;
     ++count;
     if (count > 1)
@@ -1417,7 +1422,7 @@ ContainerLayer::DefaultComputeEffectiveTransforms(const Matrix4x4& aTransformToS
 
 
 
-          if (checkClipRect && (clipRect && !clipRect->IsEmpty() && !child->GetVisibleRegion().IsEmpty())) {
+          if (checkClipRect && (clipRect && !clipRect->IsEmpty() && !child->GetLocalVisibleRegion().IsEmpty())) {
             useIntermediateSurface = true;
             break;
           }
