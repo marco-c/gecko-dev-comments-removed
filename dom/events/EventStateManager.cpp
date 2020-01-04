@@ -684,8 +684,13 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       if (modifierMask &&
           (modifierMask == Prefs::ChromeAccessModifierMask() ||
            modifierMask == Prefs::ContentAccessModifierMask())) {
-        HandleAccessKey(aPresContext, keyEvent, aStatus, nullptr,
-                        eAccessKeyProcessingNormal, modifierMask);
+        nsAutoTArray<uint32_t, 10> accessCharCodes;
+        nsContentUtils::GetAccessKeyCandidates(keyEvent, accessCharCodes);
+
+        if (HandleAccessKey(aPresContext, accessCharCodes,
+                            keyEvent->mFlags.mIsTrusted, modifierMask)) {
+          *aStatus = nsEventStatus_eConsumeNoDefault;
+        }
       }
     }
     
@@ -962,80 +967,67 @@ EventStateManager::GetAccessKeyLabelPrefix(Element* aElement, nsAString& aPrefix
   }
 }
 
-void
+bool
 EventStateManager::HandleAccessKey(nsPresContext* aPresContext,
-                                   WidgetKeyboardEvent* aEvent,
-                                   nsEventStatus* aStatus,
+                                   nsTArray<uint32_t>& aAccessCharCodes,
+                                   bool aIsTrusted,
                                    nsIDocShellTreeItem* aBubbledFrom,
                                    ProcessingAccessKeyState aAccessKeyState,
                                    int32_t aModifierMask)
 {
   nsCOMPtr<nsIDocShell> docShell = aPresContext->GetDocShell();
 
+  if (!docShell) {
+    NS_WARNING("no docShellTreeNode for presContext");
+    return false;
+  }
+
   
   if (mAccessKeys.Count() > 0 &&
       aModifierMask == GetAccessModifierMaskFor(docShell)) {
     
-    nsAutoTArray<uint32_t, 10> accessCharCodes;
-    nsContentUtils::GetAccessKeyCandidates(aEvent, accessCharCodes);
-    if (ExecuteAccessKey(accessCharCodes, aEvent->mFlags.mIsTrusted)) {
-      *aStatus = nsEventStatus_eConsumeNoDefault;
-      return;
+    if (ExecuteAccessKey(aAccessCharCodes, aIsTrusted)) {
+      return true;
     }
   }
 
-  
-  if (nsEventStatus_eConsumeNoDefault != *aStatus) {
+  int32_t childCount;
+  docShell->GetChildCount(&childCount);
+  for (int32_t counter = 0; counter < childCount; counter++) {
     
-
-    if (!docShell) {
-      NS_WARNING("no docShellTreeNode for presContext");
-      return;
+    nsCOMPtr<nsIDocShellTreeItem> subShellItem;
+    docShell->GetChildAt(counter, getter_AddRefs(subShellItem));
+    if (aAccessKeyState == eAccessKeyProcessingUp &&
+        subShellItem == aBubbledFrom) {
+      continue;
     }
 
-    int32_t childCount;
-    docShell->GetChildCount(&childCount);
-    for (int32_t counter = 0; counter < childCount; counter++) {
+    nsCOMPtr<nsIDocShell> subDS = do_QueryInterface(subShellItem);
+    if (subDS && IsShellVisible(subDS)) {
+      nsCOMPtr<nsIPresShell> subPS = subDS->GetPresShell();
+
       
-      nsCOMPtr<nsIDocShellTreeItem> subShellItem;
-      docShell->GetChildAt(counter, getter_AddRefs(subShellItem));
-      if (aAccessKeyState == eAccessKeyProcessingUp &&
-          subShellItem == aBubbledFrom)
+      
+      if (!subPS) {
+        
         continue;
+      }
 
-      nsCOMPtr<nsIDocShell> subDS = do_QueryInterface(subShellItem);
-      if (subDS && IsShellVisible(subDS)) {
-        nsCOMPtr<nsIPresShell> subPS = subDS->GetPresShell();
+      nsPresContext *subPC = subPS->GetPresContext();
 
-        
-        
-        if (!subPS) {
-          
-          continue;
-        }
+      EventStateManager* esm =
+        static_cast<EventStateManager*>(subPC->EventStateManager());
 
-        nsPresContext *subPC = subPS->GetPresContext();
-
-        EventStateManager* esm =
-          static_cast<EventStateManager*>(subPC->EventStateManager());
-
-        if (esm)
-          esm->HandleAccessKey(subPC, aEvent, aStatus, nullptr,
-                               eAccessKeyProcessingDown, aModifierMask);
-
-        if (nsEventStatus_eConsumeNoDefault == *aStatus)
-          break;
+      if (esm &&
+          esm->HandleAccessKey(subPC, aAccessCharCodes, aIsTrusted, nullptr,
+                               eAccessKeyProcessingDown, aModifierMask)) {
+        return true;
       }
     }
   }
 
   
-  if (eAccessKeyProcessingDown != aAccessKeyState && nsEventStatus_eConsumeNoDefault != *aStatus) {
-    if (!docShell) {
-      NS_WARNING("no docShellTreeItem for presContext");
-      return;
-    }
-
+  if (eAccessKeyProcessingDown != aAccessKeyState) {
     nsCOMPtr<nsIDocShellTreeItem> parentShellItem;
     docShell->GetParent(getter_AddRefs(parentShellItem));
     nsCOMPtr<nsIDocShell> parentDS = do_QueryInterface(parentShellItem);
@@ -1048,12 +1040,15 @@ EventStateManager::HandleAccessKey(nsPresContext* aPresContext,
 
       EventStateManager* esm =
         static_cast<EventStateManager*>(parentPC->EventStateManager());
-
-      if (esm)
-        esm->HandleAccessKey(parentPC, aEvent, aStatus, docShell,
-                             eAccessKeyProcessingUp, aModifierMask);
+      if (esm &&
+          esm->HandleAccessKey(parentPC, aAccessCharCodes, aIsTrusted, docShell,
+                               eAccessKeyProcessingUp, aModifierMask)) {
+        return true;
+      }
     }
   }
+
+  return false;
 }
 
 bool

@@ -173,6 +173,15 @@ public:
 
   static void GetAccessKeyLabelPrefix(dom::Element* aElement, nsAString& aPrefix);
 
+  bool HandleAccessKey(nsPresContext* aPresContext,
+                       nsTArray<uint32_t>& aAccessCharCodes,
+                       bool aIsTrusted,
+                       int32_t aModifierMask)
+  {
+    return HandleAccessKey(aPresContext, aAccessCharCodes, aIsTrusted,
+                           nullptr, eAccessKeyProcessingNormal, aModifierMask);
+  }
+
   nsresult SetCursor(int32_t aCursor, imgIContainer* aContainer,
                      bool aHaveHotspot, float aHotspotX, float aHotspotY,
                      nsIWidget* aWidget, bool aLockCursor); 
@@ -399,12 +408,12 @@ protected:
 
 
 
-  void HandleAccessKey(nsPresContext* aPresContext,
-                       WidgetKeyboardEvent* aEvent,
-                       nsEventStatus* aStatus,
-                       nsIDocShellTreeItem* aBubbledFrom,
-                       ProcessingAccessKeyState aAccessKeyState,
-                       int32_t aModifierMask);
+  bool HandleAccessKey(nsPresContext* aPresContext,
+                     nsTArray<uint32_t>& aAccessCharCodes,
+                     bool aIsTrusted,
+                     nsIDocShellTreeItem* aBubbledFrom,
+                     ProcessingAccessKeyState aAccessKeyState,
+                     int32_t aModifierMask);
 
   bool ExecuteAccessKey(nsTArray<uint32_t>& aAccessCharCodes,
                           bool aIsTrustedEvent);
