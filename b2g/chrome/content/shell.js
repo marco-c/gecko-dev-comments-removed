@@ -1357,7 +1357,7 @@ Services.obs.addObserver(function resetProfile(subject, topic, data) {
       }
     }
   },
-  'profile-before-change3', false);
+  'profile-before-change-telemetry', false);
 
   let appStartup = Cc['@mozilla.org/toolkit/app-startup;1']
                      .getService(Ci.nsIAppStartup);
