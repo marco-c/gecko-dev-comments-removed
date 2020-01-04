@@ -125,11 +125,7 @@ this.ForgetAboutSite = {
     }
     
     
-    catch (ex) {
-      if (ex.message.indexOf("User canceled Master Password entry") == -1) {
-        throw ex;
-      }
-    }
+    catch (ex if ex.message.indexOf("User canceled Master Password entry") != -1) { }
 
     
     let disabledHosts = lm.getAllDisabledHosts();

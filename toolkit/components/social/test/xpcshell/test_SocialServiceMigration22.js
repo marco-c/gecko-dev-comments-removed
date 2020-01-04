@@ -40,7 +40,7 @@ function run_test() {
   runner.next();
 }
 
-function* testMigration(manifest, next) {
+function testMigration(manifest, next) {
   
   
   do_check_false(MANIFEST_PREFS.prefHasUserValue(manifest.origin));

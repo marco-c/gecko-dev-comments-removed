@@ -26,7 +26,7 @@ add_task(function* test_rel_searchform() {
   
   
   
-  let items = engineNames.map(e => ({ name: e, xmlFileName: e }));
+  let items = [for (e of engineNames) { name: e, xmlFileName: e }];
   for (let engine of yield addTestEngines(items)) {
     do_check_eq(engine.searchForm, "http://" + engine.name + "/?search");
   }
