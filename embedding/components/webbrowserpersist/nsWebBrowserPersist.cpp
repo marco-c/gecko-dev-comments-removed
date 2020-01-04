@@ -573,7 +573,7 @@ nsWebBrowserPersist::StartUpload(nsIInputStream *aInputStream,
     
     nsresult rv = uploadChannel->SetUploadStream(aInputStream, aContentType, -1);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-    rv = destChannel->AsyncOpen(this, nullptr);
+    rv = destChannel->AsyncOpen2(this);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
     
@@ -1307,7 +1307,7 @@ nsresult nsWebBrowserPersist::SaveURIInternal(
     rv = NS_NewChannel(getter_AddRefs(inputChannel),
                        aURI,
                        nsContentUtils::GetSystemPrincipal(),
-                       nsILoadInfo::SEC_NORMAL,
+                       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                        nsIContentPolicy::TYPE_OTHER,
                        nullptr,  
                        static_cast<nsIInterfaceRequestor*>(this),
@@ -1426,9 +1426,17 @@ nsresult nsWebBrowserPersist::SaveChannelInternal(
     
     nsCOMPtr<nsIFileChannel> fc(do_QueryInterface(aChannel));
     nsCOMPtr<nsIFileURL> fu(do_QueryInterface(aFile));
+
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
     if (fc && !fu) {
         nsCOMPtr<nsIInputStream> fileInputStream, bufferedInputStream;
-        nsresult rv = aChannel->Open(getter_AddRefs(fileInputStream));
+        nsresult rv;
+        if (loadInfo && loadInfo->GetSecurityMode()) {
+          rv = aChannel->Open2(getter_AddRefs(fileInputStream));
+        }
+        else {
+          rv = aChannel->Open(getter_AddRefs(fileInputStream));
+        }
         NS_ENSURE_SUCCESS(rv, rv);
         rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedInputStream),
                                        fileInputStream, BUFFERED_OUTPUT_SIZE);
@@ -1439,7 +1447,13 @@ nsresult nsWebBrowserPersist::SaveChannelInternal(
     }
 
     
-    nsresult rv = aChannel->AsyncOpen(this, nullptr);
+    nsresult rv;
+    if (loadInfo && loadInfo->GetSecurityMode()) {
+        rv = aChannel->AsyncOpen2(this);
+    }
+    else {
+        rv = aChannel->AsyncOpen(this, nullptr);
+    }
     if (rv == NS_ERROR_NO_CONTENT)
     {
         
@@ -2771,7 +2785,7 @@ nsWebBrowserPersist::CreateChannelFromURI(nsIURI *aURI, nsIChannel **aChannel)
     rv = NS_NewChannel(aChannel,
                        aURI,
                        nsContentUtils::GetSystemPrincipal(),
-                       nsILoadInfo::SEC_NORMAL,
+                       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                        nsIContentPolicy::TYPE_OTHER);
     NS_ENSURE_SUCCESS(rv, rv);
     NS_ENSURE_ARG_POINTER(*aChannel);
