@@ -7,7 +7,7 @@
 
 
 
-#include "nsAutoPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsFlexContainerFrame.h"
 #include "nsContentUtils.h"
 #include "nsCSSAnonBoxes.h"
@@ -1177,7 +1177,7 @@ nsFlexContainerFrame::IsHorizontal()
   return axisTracker.IsMainAxisHorizontal();
 }
 
-FlexItem*
+UniquePtr<FlexItem>
 nsFlexContainerFrame::GenerateFlexItemForChild(
   nsPresContext* aPresContext,
   nsIFrame*      aChildFrame,
@@ -1287,12 +1287,12 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
   }
 
   
-  FlexItem* item = new FlexItem(childRS,
-                                flexGrow, flexShrink, flexBaseSize,
-                                mainMinSize, mainMaxSize,
-                                tentativeCrossSize,
-                                crossMinSize, crossMaxSize,
-                                aAxisTracker);
+  auto item = MakeUnique<FlexItem>(childRS,
+                                   flexGrow, flexShrink, flexBaseSize,
+                                   mainMinSize, mainMaxSize,
+                                   tentativeCrossSize,
+                                   crossMinSize, crossMaxSize,
+                                   aAxisTracker);
 
   
   
@@ -3431,13 +3431,13 @@ nsFlexContainerFrame::GenerateFlexLines(
       curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront);
     }
 
-    nsAutoPtr<FlexItem> item;
+    UniquePtr<FlexItem> item;
     if (nextStrutIdx < aStruts.Length() &&
         aStruts[nextStrutIdx].mItemIdx == itemIdxInContainer) {
 
       
-      item = new FlexItem(childFrame, aStruts[nextStrutIdx].mStrutCrossSize,
-                          aReflowState.GetWritingMode());
+      item = MakeUnique<FlexItem>(childFrame, aStruts[nextStrutIdx].mStrutCrossSize,
+                                  aReflowState.GetWritingMode());
       nextStrutIdx++;
     } else {
       item = GenerateFlexItemForChild(aPresContext, childFrame,
@@ -3460,7 +3460,7 @@ nsFlexContainerFrame::GenerateFlexLines(
 
     
     
-    curLine->AddItem(item.forget(), shouldInsertAtFront,
+    curLine->AddItem(item.release(), shouldInsertAtFront,
                      itemInnerHypotheticalMainSize,
                      itemOuterHypotheticalMainSize);
 
