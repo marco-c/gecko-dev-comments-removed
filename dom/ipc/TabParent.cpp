@@ -469,6 +469,13 @@ TabParent::DestroyInternal()
   if (RenderFrameParent* frame = GetRenderFrame()) {
     RemoveTabParentFromTable(frame->GetLayersId());
     frame->Destroy();
+
+    
+    
+    
+    
+    
+    mLayerUpdateObserver->TabParentDestroyed();
   }
 
   
@@ -2262,6 +2269,10 @@ TabParent::GetTabIdFrom(nsIDocShell *docShell)
 RenderFrameParent*
 TabParent::GetRenderFrame()
 {
+  if (!mLayerUpdateObserver) {
+    mLayerUpdateObserver = new LayerTreeUpdateObserver(this);
+  }
+
   PRenderFrameParent* p = LoneManagedOrNullAsserts(ManagedPRenderFrameParent());
   return static_cast<RenderFrameParent*>(p);
 }
@@ -2917,33 +2928,36 @@ TabParent::NavigateByKey(bool aForward, bool aForDocumentNavigation)
 class LayerTreeUpdateRunnable final
   : public mozilla::Runnable
 {
-  uint64_t mLayersId;
+  RefPtr<LayerTreeUpdateObserver> mUpdateObserver;
   bool mActive;
 
 public:
-  explicit LayerTreeUpdateRunnable(uint64_t aLayersId, bool aActive)
-    : mLayersId(aLayersId), mActive(aActive) {}
+  explicit LayerTreeUpdateRunnable(LayerTreeUpdateObserver* aObs, bool aActive)
+    : mUpdateObserver(aObs), mActive(aActive)
+  {
+    MOZ_ASSERT(!NS_IsMainThread());
+  }
 
 private:
   NS_IMETHOD Run() {
     MOZ_ASSERT(NS_IsMainThread());
-    TabParent* tabParent = TabParent::GetTabParentFromLayersId(mLayersId);
-    if (tabParent) {
+    if (RefPtr<TabParent> tabParent = mUpdateObserver->GetTabParent()) {
       tabParent->LayerTreeUpdate(mActive);
     }
     return NS_OK;
   }
 };
 
-
-
-class LayerTreeUpdateObserver : public CompositorUpdateObserver
+void
+LayerTreeUpdateObserver::ObserveUpdate(uint64_t aLayersId, bool aActive)
 {
-  virtual void ObserveUpdate(uint64_t aLayersId, bool aActive) {
-    RefPtr<LayerTreeUpdateRunnable> runnable = new LayerTreeUpdateRunnable(aLayersId, aActive);
-    NS_DispatchToMainThread(runnable);
-  }
-};
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  RefPtr<LayerTreeUpdateRunnable> runnable =
+    new LayerTreeUpdateRunnable(this, aActive);
+  NS_DispatchToMainThread(runnable);
+}
+
 
 bool
 TabParent::RequestNotifyLayerTreeReady()
@@ -2954,7 +2968,7 @@ TabParent::RequestNotifyLayerTreeReady()
   } else {
     CompositorBridgeParent::RequestNotifyLayerTreeReady(
       frame->GetLayersId(),
-      new LayerTreeUpdateObserver());
+      mLayerUpdateObserver);
   }
   return true;
 }
@@ -2969,7 +2983,7 @@ TabParent::RequestNotifyLayerTreeCleared()
 
   CompositorBridgeParent::RequestNotifyLayerTreeCleared(
     frame->GetLayersId(),
-    new LayerTreeUpdateObserver());
+    mLayerUpdateObserver);
   return true;
 }
 
@@ -3008,9 +3022,17 @@ TabParent::SwapLayerTreeObservers(TabParent* aOther)
     return;
   }
 
+  
+  
+  
   CompositorBridgeParent::SwapLayerTreeObservers(
     rfp->GetLayersId(),
     otherRfp->GetLayersId());
+
+  
+  
+  Swap(mLayerUpdateObserver, aOther->mLayerUpdateObserver);
+  mLayerUpdateObserver->SwapTabParent(aOther->mLayerUpdateObserver);
 }
 
 bool
