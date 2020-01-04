@@ -3,19 +3,27 @@ function callByScript() {
   ++counter;
 }
 
-importScripts(['importscript.sjs']);
-importScripts(['importscript.sjs']);
 
+
+importScripts('lorem_script.js', 'importscript.sjs');
+
+importScripts('importscript.sjs');
+
+var missingScriptFailed = false;
 try {
   importScripts(['there-is-nothing-here.js']);
-} catch (ex) {
-  
+} catch(e) {
+  missingScriptFailed = true;
 }
 
 onmessage = function(e) {
   self.clients.matchAll().then(function(res) {
     if (!res.length) {
       dump("ERROR: no clients are currently controlled.\n");
+    }
+
+    if (!missingScriptFailed) {
+      res[0].postMessage("KO");
     }
 
     try {
