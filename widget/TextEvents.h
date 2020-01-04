@@ -105,7 +105,7 @@ protected:
     : mKeyCode(0)
     , mCharCode(0)
     , mPseudoCharCode(0)
-    , location(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
+    , mLocation(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
     , isChar(false)
     , mIsRepeat(false)
     , mIsComposing(false)
@@ -134,7 +134,7 @@ public:
     , mKeyCode(0)
     , mCharCode(0)
     , mPseudoCharCode(0)
-    , location(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
+    , mLocation(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
     , isChar(false)
     , mIsRepeat(false)
     , mIsComposing(false)
@@ -206,7 +206,7 @@ public:
   
   uint32_t mPseudoCharCode;
   
-  uint32_t location;
+  uint32_t mLocation;
   
   
   nsTArray<AlternativeCharCode> mAlternativeCharCodes;
@@ -375,7 +375,7 @@ public:
     mKeyCode = aEvent.mKeyCode;
     mCharCode = aEvent.mCharCode;
     mPseudoCharCode = aEvent.mPseudoCharCode;
-    location = aEvent.location;
+    mLocation = aEvent.mLocation;
     mAlternativeCharCodes = aEvent.mAlternativeCharCodes;
     isChar = aEvent.isChar;
     mIsRepeat = aEvent.mIsRepeat;

@@ -738,13 +738,13 @@ TextInputProcessor::PrepareKeyboardEventToDispatch(
     
     
     
-    if (NS_WARN_IF(aKeyboardEvent.location)) {
+    if (NS_WARN_IF(aKeyboardEvent.mLocation)) {
       return NS_ERROR_INVALID_ARG;
     }
-  } else if (!aKeyboardEvent.location) {
+  } else if (!aKeyboardEvent.mLocation) {
     
     
-    aKeyboardEvent.location =
+    aKeyboardEvent.mLocation =
       WidgetKeyboardEvent::ComputeLocationFromCodeValue(
         aKeyboardEvent.mCodeNameIndex);
   }
