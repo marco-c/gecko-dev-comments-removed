@@ -127,6 +127,27 @@ task_description_schema = Schema({
         
         'max-run-time': int,
     }, {
+        'implementation': 'generic-worker',
+
+        
+        'command': [basestring],
+
+        
+        
+        'artifacts': [{
+            
+            'type': Any('file', 'directory'),
+
+            
+            'path': basestring,
+        }],
+
+        
+        'env': {basestring: taskref_or_string},
+
+        
+        'max-run-time': int,
+    }, {
         'implementation': 'buildbot-bridge',
 
         
@@ -239,6 +260,27 @@ def build_docker_worker_payload(config, task, task_def):
         payload['features'] = features
     if capabilities:
         payload['capabilities'] = capabilities
+
+
+@payload_builder('generic-worker')
+def build_generic_worker_payload(config, task, task_def):
+    worker = task['worker']
+
+    artifacts = []
+
+    for artifact in worker['artifacts']:
+        artifacts.append({
+            'path': artifact['path'],
+            'type': artifact['type'],
+            'expires': task_def['expires'],  
+        })
+
+    task_def['payload'] = {
+        'command': worker['command'],
+        'artifacts': artifacts,
+        'env': worker['env'],
+        'maxRunTime': worker['max-run-time'],
+    }
 
 
 transforms = TransformSequence()
