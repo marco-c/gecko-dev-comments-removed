@@ -6094,6 +6094,13 @@ nsGlobalWindow::SetFullscreenInternal(FullscreenReason aReason,
     }
   }
 
+  
+  
+  if (nsCOMPtr<nsIPresShell> presShell = mDocShell->GetPresShell()) {
+    if (!presShell->IsInFullscreenChange()) {
+      presShell->SetIsInFullscreenChange(true);
+    }
+  }
   FinishFullscreenChange(aFullScreen);
   return NS_OK;
 }
