@@ -44,7 +44,7 @@ HalFormatToSurfaceFormat(int aHalFormat, TextureFlags aFlags)
       
       return gfx::SurfaceFormat::R5G6B5_UINT16;
     } else {
-      MOZ_CRASH("Unhandled HAL pixel format");
+      MOZ_CRASH("GFX: Unhandled HAL pixel format");
       return gfx::SurfaceFormat::UNKNOWN; 
     }
   }
@@ -74,7 +74,7 @@ NeedsConvertFromYUVtoRGB565(int aHalFormat)
       
       return true;
     } else {
-      MOZ_CRASH("Unhandled HAL pixel format");
+      MOZ_CRASH("GFX: Unhandled HAL pixel format YUV");
       return false; 
     }
   }
