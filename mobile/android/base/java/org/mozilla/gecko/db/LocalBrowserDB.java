@@ -765,6 +765,25 @@ public class LocalBrowserDB implements BrowserDB {
         }
     }
 
+    private void assertDefaultBookmarkColumnOrdering() {
+        
+        
+        
+        
+        
+        if (!((DEFAULT_BOOKMARK_COLUMNS[0].equals(Bookmarks._ID)) &&
+                (DEFAULT_BOOKMARK_COLUMNS[1].equals(Bookmarks.GUID)) &&
+                (DEFAULT_BOOKMARK_COLUMNS[2].equals(Bookmarks.URL)) &&
+                (DEFAULT_BOOKMARK_COLUMNS[3].equals(Bookmarks.TITLE)) &&
+                (DEFAULT_BOOKMARK_COLUMNS[4].equals(Bookmarks.TYPE)) &&
+                (DEFAULT_BOOKMARK_COLUMNS[5].equals(Bookmarks.PARENT)) &&
+                (DEFAULT_BOOKMARK_COLUMNS.length == 6))) {
+            
+            
+            throw new IllegalStateException("Fake folder MatrixCursor creation code must be updated to match DEFAULT_BOOKMARK_COLUMNS");
+        }
+    }
+
     @Override
     @RobocopTarget
     public Cursor getBookmarksInFolder(ContentResolver cr, long folderId) {
@@ -809,8 +828,19 @@ public class LocalBrowserDB implements BrowserDB {
         }
 
         if (addDesktopFolder) {
-            
-            return new SpecialFoldersCursorWrapper(c, addDesktopFolder);
+            MatrixCursor desktopFolderCursor = new MatrixCursor(DEFAULT_BOOKMARK_COLUMNS);
+
+            assertDefaultBookmarkColumnOrdering();
+
+            desktopFolderCursor.addRow(
+                    new Object[] { Bookmarks.FAKE_DESKTOP_FOLDER_ID,
+                                   Bookmarks.FAKE_DESKTOP_FOLDER_GUID,
+                                   "",
+                                   "", 
+                                   Bookmarks.TYPE_FOLDER,
+                                   Bookmarks.FIXED_ROOT_ID
+                    });
+            return new MergeCursor(new Cursor[] { desktopFolderCursor, c });
         }
 
         return c;
