@@ -427,6 +427,9 @@ GonkVideoDecoderManager::codecReserved()
   format->setString("mime", mMimeType.get());
   format->setInt32("width", mVideoWidth);
   format->setInt32("height", mVideoHeight);
+  
+  
+  format->setInt32("moz-use-undequeued-bufs", 1);
   if (mNativeWindow != nullptr) {
     surface = new Surface(mNativeWindow->getBufferQueue());
   }
