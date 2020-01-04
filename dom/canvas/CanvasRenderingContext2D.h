@@ -54,7 +54,6 @@ template<typename T> class Optional;
 struct CanvasBidiProcessor;
 class CanvasRenderingContext2DUserData;
 class CanvasDrawObserver;
-class CanvasShutdownObserver;
 
 
 
@@ -546,7 +545,6 @@ public:
   
   bool GetHitRegionRect(Element* aElement, nsRect& aRect) override;
 
-  void OnShutdown();
 protected:
   nsresult GetImageDataArray(JSContext* aCx, int32_t aX, int32_t aY,
                              uint32_t aWidth, uint32_t aHeight,
@@ -750,10 +748,6 @@ protected:
   
   CanvasDrawObserver* mDrawObserver;
   void RemoveDrawObserver();
-
-  RefPtr<CanvasShutdownObserver> mShutdownObserver;
-  void RemoveShutdownObserver();
-  bool AlreadyShutDown() const { return !mShutdownObserver; }
 
   
 
