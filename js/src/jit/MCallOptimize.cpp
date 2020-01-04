@@ -1360,8 +1360,10 @@ IonBuilder::inlineMathRandom(CallInfo& callInfo)
     if (getInlineReturnType() != MIRType_Double)
         return InliningStatus_NotInlined;
 
-    MOZ_ASSERT(script()->compartment()->randomNumberGenerator.isSome(),
-               "MRandom JIT code depends on RNG being initialized");
+    
+    
+    
+    script()->compartment()->ensureRandomNumberGenerator();
 
     callInfo.setImplicitlyUsedUnchecked();
 
