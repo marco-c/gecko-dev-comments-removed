@@ -331,41 +331,50 @@ class FileCopier(FileRegistry):
                 os.umask(umask)
                 os.chmod(d, 0777 & ~umask)
 
-        
-        
-        
-        existing_dirs = set()
-        existing_files = set()
-        for root, dirs, files in os.walk(destination):
+        if isinstance(remove_unaccounted, FileRegistry):
+            existing_files = set(os.path.normpath(os.path.join(destination, p))
+                                 for p in remove_unaccounted.paths())
+            existing_dirs = set(os.path.normpath(os.path.join(destination, p))
+                                for p in remove_unaccounted
+                                         .required_directories())
+            existing_dirs |= {os.path.normpath(destination)}
+        else:
             
             
             
-            if have_symlinks:
-                filtered = []
-                for d in dirs:
-                    full = os.path.join(root, d)
-                    st = os.lstat(full)
-                    if stat.S_ISLNK(st.st_mode):
-                        
-                        
-                        
-                        if remove_all_directory_symlinks:
-                            os.remove(full)
-                            result.removed_files.add(os.path.normpath(full))
+            existing_dirs = set()
+            existing_files = set()
+            for root, dirs, files in os.walk(destination):
+                
+                
+                
+                if have_symlinks:
+                    filtered = []
+                    for d in dirs:
+                        full = os.path.join(root, d)
+                        st = os.lstat(full)
+                        if stat.S_ISLNK(st.st_mode):
+                            
+                            
+                            
+                            if remove_all_directory_symlinks:
+                                os.remove(full)
+                                result.removed_files.add(
+                                    os.path.normpath(full))
+                            else:
+                                existing_files.add(os.path.normpath(full))
                         else:
-                            existing_files.add(os.path.normpath(full))
-                    else:
-                        filtered.append(d)
+                            filtered.append(d)
 
-                dirs[:] = filtered
+                    dirs[:] = filtered
 
-            existing_dirs.add(os.path.normpath(root))
+                existing_dirs.add(os.path.normpath(root))
 
-            for d in dirs:
-                existing_dirs.add(os.path.normpath(os.path.join(root, d)))
+                for d in dirs:
+                    existing_dirs.add(os.path.normpath(os.path.join(root, d)))
 
-            for f in files:
-                existing_files.add(os.path.normpath(os.path.join(root, f)))
+                for f in files:
+                    existing_files.add(os.path.normpath(os.path.join(root, f)))
 
         
 
@@ -420,10 +429,25 @@ class FileCopier(FileRegistry):
 
         
         for d in sorted(remove_dirs, key=len, reverse=True):
-            
-            
-            os.chmod(d, 0700)
-            os.rmdir(d)
+            try:
+                try:
+                    os.rmdir(d)
+                except OSError as e:
+                    if e.errno in (errno.EPERM, errno.EACCES):
+                        
+                        
+                        os.chmod(d, 0700)
+                        os.rmdir(d)
+                    else:
+                        raise
+            except OSError as e:
+                
+                
+                
+                if (isinstance(remove_unaccounted, FileRegistry) and
+                        e.errno == errno.ENOTEMPTY):
+                    continue
+                raise
             result.removed_directories.add(d)
 
         return result
