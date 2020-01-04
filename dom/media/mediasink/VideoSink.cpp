@@ -221,15 +221,9 @@ void
 VideoSink::OnVideoQueueEvent()
 {
   AssertOwnerThread();
-
   
   
-  
-  
-  
-  if (mAudioSink->IsPlaying() && VideoQueue().GetSize() <= 2) {
-    UpdateRenderedVideoFrames();
-  }
+  TryUpdateRenderedVideoFrames();
 }
 
 void

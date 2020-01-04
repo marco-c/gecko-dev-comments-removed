@@ -895,6 +895,19 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample)
       
       
       
+      
+      
+      
+      
+      if (VideoQueue().GetSize() <= 2) {
+        ScheduleStateMachine();
+      }
+
+      
+      
+      
+      
+      
       if (mReader->IsAsync()) {
         return;
       }
