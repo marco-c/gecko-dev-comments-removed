@@ -1021,6 +1021,12 @@ Loader::CheckContentPolicy(nsIPrincipal* aSourcePrincipal,
                           nsISupports* aContext,
                           bool aIsPreload)
 {
+  
+  
+  if (!aSourcePrincipal) {
+    return NS_OK;
+  }
+
   nsContentPolicyType contentPolicyType =
     aIsPreload ? nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD
                : nsIContentPolicy::TYPE_INTERNAL_STYLESHEET;
@@ -1412,11 +1418,6 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
     return NS_BINDING_ABORTED;
   }
 
-  nsIPrincipal* triggeringPrincipal = aLoadData->mLoaderPrincipal;
-  if (!triggeringPrincipal) {
-    triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
-  }
-
   SRIMetadata sriMetadata = aLoadData->mSheet->GetIntegrity();
 
   if (aLoadData->mSyncLoad) {
@@ -1457,11 +1458,11 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
     
     
     
-    if (aLoadData->mRequestingNode) {
+    if (aLoadData->mRequestingNode && aLoadData->mLoaderPrincipal) {
       rv = NS_NewChannelWithTriggeringPrincipal(getter_AddRefs(channel),
                                                 aLoadData->mURI,
                                                 aLoadData->mRequestingNode,
-                                                triggeringPrincipal,
+                                                aLoadData->mLoaderPrincipal,
                                                 securityFlags,
                                                 contentPolicyType);
     }
@@ -1470,10 +1471,9 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
       
       
       
-      MOZ_ASSERT(nsContentUtils::IsSystemPrincipal(triggeringPrincipal));
       rv = NS_NewChannel(getter_AddRefs(channel),
                          aLoadData->mURI,
-                         triggeringPrincipal,
+                         nsContentUtils::GetSystemPrincipal(),
                          securityFlags,
                          contentPolicyType);
     }
@@ -1584,11 +1584,11 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
   
   
   
-  if (aLoadData->mRequestingNode) {
+  if (aLoadData->mRequestingNode && aLoadData->mLoaderPrincipal) {
     rv = NS_NewChannelWithTriggeringPrincipal(getter_AddRefs(channel),
                                               aLoadData->mURI,
                                               aLoadData->mRequestingNode,
-                                              triggeringPrincipal,
+                                              aLoadData->mLoaderPrincipal,
                                               securityFlags,
                                               contentPolicyType,
                                               loadGroup,
@@ -1601,10 +1601,9 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
     
     
     
-    MOZ_ASSERT(nsContentUtils::IsSystemPrincipal(triggeringPrincipal));
     rv = NS_NewChannel(getter_AddRefs(channel),
                        aLoadData->mURI,
-                       triggeringPrincipal,
+                       nsContentUtils::GetSystemPrincipal(),
                        securityFlags,
                        contentPolicyType,
                        loadGroup,
