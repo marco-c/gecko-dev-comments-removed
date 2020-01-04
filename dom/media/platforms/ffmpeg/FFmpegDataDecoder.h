@@ -63,6 +63,21 @@ protected:
   Atomic<bool> mIsFlushing;
   AVCodecParserContext* mCodecParser;
 
+  class PtsCorrectionContext {
+  public:
+    PtsCorrectionContext();
+    int64_t GuessCorrectPts(int64_t aPts, int64_t aDts);
+    void Reset();
+
+  private:
+    int64_t mNumFaultyPts; 
+    int64_t mNumFaultyDts; 
+    int64_t mLastPts;       
+    int64_t mLastDts;       
+  };
+
+  PtsCorrectionContext mPtsContext;
+
 private:
   static bool sFFmpegInitDone;
   static StaticMutex sMonitor;
