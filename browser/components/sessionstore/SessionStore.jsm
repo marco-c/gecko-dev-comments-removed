@@ -404,6 +404,20 @@ var SessionStoreInternal = {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  _saveableClosedWindowData: new WeakSet(),
+
+  
+  
+  
   _remotenessChangingBrowsers: new WeakMap(),
 
   
@@ -1272,6 +1286,10 @@ var SessionStoreInternal = {
 
       
       
+      this._saveableClosedWindowData.add(winData);
+
+      
+      
       
       
       
@@ -1352,6 +1370,7 @@ var SessionStoreInternal = {
     let mm = aWindow.getGroupMessageManager("browsers");
     MESSAGES.forEach(msg => mm.removeMessageListener(msg, this));
 
+    this._saveableClosedWindowData.delete(winData);
     delete aWindow.__SSi;
   },
 
@@ -1373,7 +1392,9 @@ var SessionStoreInternal = {
 
 
   maybeSaveClosedWindow(winData, isLastWindow) {
-    if (RunState.isRunning) {
+    
+    
+    if (RunState.isRunning && this._saveableClosedWindowData.has(winData)) {
       
       let hasSaveableTabs = winData.tabs.some(this._shouldSaveTabState);
 
@@ -1546,6 +1567,7 @@ var SessionStoreInternal = {
     }
 
     this._clearRestoringWindows();
+    this._saveableClosedWindowData.clear();
   },
 
   
@@ -2190,7 +2212,9 @@ var SessionStoreInternal = {
     }
 
     
+    let winData = this._closedWindows[aIndex];
     this._closedWindows.splice(aIndex, 1);
+    this._saveableClosedWindowData.delete(winData);
   },
 
   getWindowValue: function ssi_getWindowValue(aWindow, aKey) {
