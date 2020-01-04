@@ -1998,16 +1998,8 @@ void
 MediaDecoderStateMachine::DecodeError()
 {
   MOZ_ASSERT(OnTaskQueue());
-
-  if (IsShutdown()) {
-    
-    return;
-  }
-
+  MOZ_ASSERT(!IsShutdown());
   DECODER_WARN("Decode error");
-  
-  SetState(DECODER_STATE_SHUTDOWN);
-
   
   mOnPlaybackEvent.Notify(MediaEventType::DecodeError);
 }
