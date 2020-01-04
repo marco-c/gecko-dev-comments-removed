@@ -194,8 +194,7 @@ public:
   bool HasAnimation() const { return mImageMetadata.HasAnimation(); }
 
   
-  bool HasError() const { return HasDataError(); }
-  bool HasDataError() const { return mDataError; }
+  bool HasError() const { return mError; }
   bool ShouldReportError() const { return mShouldReportError; }
 
   
@@ -367,16 +366,6 @@ protected:
   void PostDecodeDone(int32_t aLoopCount = 0);
 
   
-  void PostDataError();
-
-  
-
-
-
-
-  void CompleteDecode();
-
-  
 
 
 
@@ -396,6 +385,17 @@ protected:
     return AllocateFrame(0, size, nsIntRect(nsIntPoint(), size),
                          gfx::SurfaceFormat::B8G8R8A8);
   }
+
+private:
+  
+  void PostError();
+
+  
+
+
+
+
+  void CompleteDecode();
 
   RawAccessFrameRef AllocateFrameInternal(uint32_t aFrameNum,
                                           const nsIntSize& aTargetSize,
@@ -433,7 +433,7 @@ private:
   bool mInFrame : 1;
   bool mReachedTerminalState : 1;
   bool mDecodeDone : 1;
-  bool mDataError : 1;
+  bool mError : 1;
   bool mDecodeAborted : 1;
   bool mShouldReportError : 1;
 };

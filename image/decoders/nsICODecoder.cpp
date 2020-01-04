@@ -655,7 +655,7 @@ nsICODecoder::WriteToContainedDecoder(const char* aBuffer, uint32_t aCount)
   
   mProgress |= mContainedDecoder->TakeProgress();
   mInvalidRect.UnionRect(mInvalidRect, mContainedDecoder->TakeInvalidRect());
-  if (mContainedDecoder->HasDataError()) {
+  if (mContainedDecoder->HasError()) {
     succeeded = false;
   }
 
