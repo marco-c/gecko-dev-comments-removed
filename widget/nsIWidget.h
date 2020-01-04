@@ -1961,6 +1961,22 @@ public:
                        const mozilla::NativeEventData& aKeyEventData,
                        nsIKeyEventInPluginCallback* aCallback);
 
+
+    
+
+
+
+
+
+
+
+    virtual void LookUpDictionary(
+                   const nsAString& aText,
+                   const nsTArray<mozilla::FontRange>& aFontRangeArray,
+                   const bool aIsVertical,
+                   const LayoutDeviceIntPoint& aPoint)
+    { }
+
 protected:
     
 
