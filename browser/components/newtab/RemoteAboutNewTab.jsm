@@ -27,8 +27,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "BackgroundPageThumbs",
   "resource://gre/modules/BackgroundPageThumbs.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PageThumbs",
   "resource://gre/modules/PageThumbs.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "RemoteDirectoryLinksProvider",
-  "resource:///modules/RemoteDirectoryLinksProvider.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "DirectoryLinksProvider",
+  "resource:///modules/DirectoryLinksProvider.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "RemoteNewTabLocation",
   "resource:///modules/RemoteNewTabLocation.jsm");
 
@@ -172,7 +172,7 @@ let RemoteAboutNewTab = {
     let enhancedLinks = [];
     for (let link of RemoteNewTabUtils.links.getLinks()) {
       if (link) {
-        enhancedLinks.push(RemoteDirectoryLinksProvider.getEnhancedLink(link));
+        enhancedLinks.push(DirectoryLinksProvider.getEnhancedLink(link));
       }
     }
     return enhancedLinks;
