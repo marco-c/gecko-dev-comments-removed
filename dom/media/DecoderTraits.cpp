@@ -55,6 +55,8 @@
 #include "ADTSDecoder.h"
 #include "ADTSDemuxer.h"
 
+#include "nsPluginHost.h"
+
 namespace mozilla
 {
 
@@ -354,6 +356,18 @@ bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType)
     
     return false;
   }
+
+  
+  
+  
+  if (nsDependentCString(aMIMEType).EqualsASCII("video/quicktime")) {
+    RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
+    if (pluginHost &&
+        pluginHost->HavePluginForType(nsDependentCString(aMIMEType))) {
+      return false;
+    }
+  }
+
   return CanHandleMediaType(aMIMEType, false, EmptyString()) != CANPLAY_NO;
 }
 
