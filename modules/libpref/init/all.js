@@ -152,7 +152,7 @@ pref("dom.serviceWorkers.enabled", false);
 pref("dom.serviceWorkers.interception.enabled", false);
 
 
-pref("dom.serviceWorkers.interception.opaque.enabled", false);
+pref("dom.serviceWorkers.interception.opaque.enabled", true);
 
 
 pref("dom.serviceWorkers.idle_timeout", 30000);
