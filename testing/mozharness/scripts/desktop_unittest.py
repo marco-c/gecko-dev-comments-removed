@@ -139,12 +139,6 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
             "dest": "this_chunk",
             "help": "Number of this chunk"}
          ],
-        [["--allow-software-gl-layers"], {
-            "action": "store_true",
-            "dest": "allow_software_gl_layers",
-            "default": False,
-            "help": "Permits a software GL implementation (such as LLVMPipe) to use the GL compositor."}
-         ],
     ] + copy.deepcopy(testing_config_options) + \
         copy.deepcopy(blobupload_config_options) + \
         copy.deepcopy(code_coverage_config_options)
@@ -404,6 +398,8 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
                     option = option % str_format_values
                     if not option.endswith('None'):
                         base_cmd.append(option)
+                if self.structured_output(suite_category):
+                    base_cmd.append("--log-raw=-")
                 return base_cmd
             else:
                 self.warning("Suite options for %s could not be determined."
@@ -653,10 +649,6 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
                 env['MINIDUMP_SAVE_PATH'] = self.query_abs_dirs()['abs_blob_upload_dir']
                 if not os.path.isdir(env['MOZ_UPLOAD_DIR']):
                     self.mkdir_p(env['MOZ_UPLOAD_DIR'])
-
-                if self.config['allow_software_gl_layers']:
-                    env['MOZ_LAYERS_ALLOW_SOFTWARE_GL'] = '1'
-
                 env = self.query_env(partial_env=env, log_level=INFO)
                 cmd_timeout = self.get_timeout_for_category(suite_category)
                 return_code = self.run_command(cmd, cwd=dirs['abs_work_dir'],
