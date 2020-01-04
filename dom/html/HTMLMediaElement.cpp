@@ -1031,7 +1031,6 @@ void HTMLMediaElement::NoSupportedMediaSourceError()
   DispatchAsyncEvent(NS_LITERAL_STRING("error"));
   ChangeDelayLoadStatus(false);
   UpdateAudioChannelPlayingState();
-  OpenUnsupportedMediaWithExtenalAppIfNeeded();
 }
 
 typedef void (HTMLMediaElement::*SyncSectionFn)();
@@ -2706,10 +2705,6 @@ HTMLMediaElement::PlayInternal(bool aCallerIsChrome)
   UpdatePreloadAction();
   UpdateSrcMediaStreamPlaying();
   UpdateAudioChannelPlayingState();
-
-  
-  
-  OpenUnsupportedMediaWithExtenalAppIfNeeded();
 
   return NS_OK;
 }
@@ -5473,9 +5468,6 @@ HTMLMediaElement::WindowSuspendChanged(SuspendTypes aSuspend)
               "Error : unknown suspended type!\n", this));
   }
 
-  NotifyAudioPlaybackChanged(
-    AudioChannelService::AudibleChangedReasons::ePauseStateChanged);
-
   return NS_OK;
 }
 
@@ -5560,6 +5552,9 @@ HTMLMediaElement::SetAudioChannelSuspended(SuspendTypes aSuspend)
   MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
          ("HTMLMediaElement, SetAudioChannelSuspended, this = %p, "
           "aSuspend = %d\n", this, aSuspend));
+
+  NotifyAudioPlaybackChanged(
+    AudioChannelService::AudibleChangedReasons::ePauseStateChanged);
 }
 
 bool
@@ -6016,41 +6011,6 @@ HTMLMediaElement::IsAudible() const
   }
 
   return true;
-}
-
-bool
-HTMLMediaElement::HaveFailedWithSourceNotSupportedError() const
-{
-  if (!mError) {
-    return false;
-  }
-
-  uint16_t errorCode;
-  mError->GetCode(&errorCode);
-  return (mNetworkState == nsIDOMHTMLMediaElement::NETWORK_NO_SOURCE &&
-          errorCode == nsIDOMMediaError::MEDIA_ERR_SRC_NOT_SUPPORTED);
-}
-
-void
-HTMLMediaElement::OpenUnsupportedMediaWithExtenalAppIfNeeded()
-{
-  if (!Preferences::GetBool("media.openUnsupportedTypeWithExternalApp")) {
-    return;
-  }
-
-  if (!HaveFailedWithSourceNotSupportedError()) {
-    return;
-  }
-
-  
-  if (mPaused) {
-    return;
-  }
-
-  nsContentUtils::DispatchTrustedEvent(OwnerDoc(), static_cast<nsIContent*>(this),
-                                       NS_LITERAL_STRING("OpenMediaWithExternalApp"),
-                                       true,
-                                       true);
 }
 
 static const char* VisibilityString(Visibility aVisibility) {
