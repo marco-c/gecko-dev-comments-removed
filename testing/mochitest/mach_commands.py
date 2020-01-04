@@ -279,9 +279,10 @@ class MochitestRunner(MozbuildObject):
         options = Namespace(**kwargs)
 
         from manifestparser import TestManifest
-        manifest = TestManifest()
-        manifest.tests.extend(tests)
-        options.manifestFile = manifest
+        if tests:
+            manifest = TestManifest()
+            manifest.tests.extend(tests)
+            options.manifestFile = manifest
 
         if options.desktop:
             return mochitest.run_desktop_mochitests(options)
@@ -335,16 +336,17 @@ class MochitestRunner(MozbuildObject):
             options.xrePath = self.get_webapp_runtime_xre_path()
 
         from manifestparser import TestManifest
-        manifest = TestManifest()
-        manifest.tests.extend(tests)
-        options.manifestFile = manifest
+        if tests:
+            manifest = TestManifest()
+            manifest.tests.extend(tests)
+            options.manifestFile = manifest
 
-        
-        
-        
-        
-        if len(tests) == 1 and options.keep_open is None and suite == 'plain':
-            options.keep_open = True
+            
+            
+            
+            
+            if len(tests) == 1 and options.keep_open is None and suite == 'plain':
+                options.keep_open = True
 
         
         self.log_manager.enable_unstructured()
@@ -367,9 +369,10 @@ class MochitestRunner(MozbuildObject):
         options = Namespace(**kwargs)
 
         from manifestparser import TestManifest
-        manifest = TestManifest()
-        manifest.tests.extend(tests)
-        options.manifestFile = manifest
+        if tests:
+            manifest = TestManifest()
+            manifest.tests.extend(tests)
+            options.manifestFile = manifest
 
         return runtestsremote.run_test_harness(options)
 
@@ -388,9 +391,10 @@ class MochitestRunner(MozbuildObject):
         options = Namespace(**kwargs)
 
         from manifestparser import TestManifest
-        manifest = TestManifest()
-        manifest.tests.extend(tests)
-        options.manifestFile = manifest
+        if tests:
+            manifest = TestManifest()
+            manifest.tests.extend(tests)
+            options.manifestFile = manifest
 
         return runrobocop.run_test_harness(options)
 
@@ -459,7 +463,7 @@ class MachCommands(MachCommandBase):
                      metavar='{{{}}}'.format(', '.join(CANONICAL_FLAVORS)),
                      choices=SUPPORTED_FLAVORS,
                      help='Only run tests of this flavor.')
-    def run_mochitest_general(self, flavor=None, test_objects=None, **kwargs):
+    def run_mochitest_general(self, flavor=None, test_objects=None, resolve_tests=True, **kwargs):
         buildapp = None
         for app in SUPPORTED_APPS:
             if is_buildapp_in(app)(self):
@@ -501,7 +505,9 @@ class MachCommands(MachCommandBase):
                 test_paths = new_paths
 
         mochitest = self._spawn(MochitestRunner)
-        tests = mochitest.resolve_tests(test_paths, test_objects, cwd=self._mach_context.cwd)
+        tests = []
+        if resolve_tests:
+            tests = mochitest.resolve_tests(test_paths, test_objects, cwd=self._mach_context.cwd)
 
         subsuite = kwargs.get('subsuite')
         if subsuite == 'default':
@@ -529,6 +535,14 @@ class MachCommands(MachCommandBase):
                 continue
 
             suites[key].append(test)
+
+        
+        
+        
+        if not resolve_tests:
+            for flavor in flavors:
+                key = (flavor, kwargs.get('subsuite'))
+                suites[key] = []
 
         if not suites:
             
