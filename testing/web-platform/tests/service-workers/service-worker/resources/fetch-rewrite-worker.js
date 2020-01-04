@@ -95,6 +95,33 @@ self.addEventListener('fetch', function(event) {
             })));
           }
 
+          var expectedRedirected = params['expected_redirected'];
+          if (typeof expectedRedirected !== 'undefined') {
+            var expected_redirected = (expectedRedirected === 'true');
+            if(response.redirected !== expected_redirected) {
+              
+              
+              var execptedResolves = params['expected_resolves'];
+              if (execptedResolves === 'true') {
+                
+                
+                reject(new Response(JSON.stringify({
+                  result: 'failure',
+                  detail: 'got '+ response.redirected +
+                          ' Response.redirected instead of ' + expectedRedirected
+                })));
+              } else {
+                
+                
+                resolve(new Response(JSON.stringify({
+                  result: 'failure',
+                  detail: 'got '+ response.redirected +
+                          ' Response.redirected instead of ' + expectedRedirected
+                })));
+              }
+            }
+          }
+
           if (params['cache']) {
             var cacheName = "cached-fetches-" + Date.now();
             var cache;
