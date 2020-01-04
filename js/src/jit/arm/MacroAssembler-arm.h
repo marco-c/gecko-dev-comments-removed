@@ -425,8 +425,6 @@ class MacroAssemblerARM : public Assembler
                          int32_t offset, Condition cc = Always);
 
     
-    void ma_callJitNoPush(const Register reg);
-    
     
     void ma_callJitHalfPush(const Register reg);
     
