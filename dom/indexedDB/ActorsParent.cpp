@@ -151,7 +151,7 @@ static_assert(JS_STRUCTURED_CLONE_VERSION == 6,
               "Need to update the major schema version.");
 
 
-const uint32_t kMajorSchemaVersion = 22;
+const uint32_t kMajorSchemaVersion = 23;
 
 
 
@@ -1054,6 +1054,13 @@ CreateTables(mozIStorageConnection* aConnection)
                  "CreateTables",
                  js::ProfileEntry::Category::STORAGE);
 
+  
+
+  
+  
+  
+  
+  
   
   nsresult rv = aConnection->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "CREATE TABLE database"
@@ -4054,6 +4061,45 @@ UpgradeSchemaFrom21_0To22_0(mozIStorageConnection* aConnection)
 }
 
 nsresult
+UpgradeSchemaFrom22_0To23_0(mozIStorageConnection* aConnection,
+                            const nsACString& aOrigin)
+{
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aConnection);
+  MOZ_ASSERT(!aOrigin.IsEmpty());
+
+  PROFILER_LABEL("IndexedDB",
+                 "UpgradeSchemaFrom22_0To23_0",
+                 js::ProfileEntry::Category::STORAGE);
+
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = aConnection->CreateStatement(NS_LITERAL_CSTRING(
+    "UPDATE database "
+      "SET origin = :origin;"
+  ), getter_AddRefs(stmt));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("origin"), aOrigin);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = stmt->Execute();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = aConnection->SetSchemaVersion(MakeSchemaVersion(23, 0));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+nsresult
 GetDatabaseFileURL(nsIFile* aDatabaseFile,
                    PersistenceType aPersistenceType,
                    const nsACString& aGroup,
@@ -4545,7 +4591,7 @@ CreateStorageConnection(nsIFile* aDBFile,
       }
     } else  {
       
-      static_assert(kSQLiteSchemaVersion == int32_t((22 << 4) + 0),
+      static_assert(kSQLiteSchemaVersion == int32_t((23 << 4) + 0),
                     "Upgrade function needed due to schema version increase.");
 
       while (schemaVersion != kSQLiteSchemaVersion) {
@@ -4587,6 +4633,8 @@ CreateStorageConnection(nsIFile* aDBFile,
           rv = UpgradeSchemaFrom20_0To21_0(connection);
         } else if (schemaVersion == MakeSchemaVersion(21, 0)) {
           rv = UpgradeSchemaFrom21_0To22_0(connection);
+        } else if (schemaVersion == MakeSchemaVersion(22, 0)) {
+          rv = UpgradeSchemaFrom22_0To23_0(connection, aOrigin);
         } else {
           IDB_WARNING("Unable to open IndexedDB database, no upgrade path is "
                       "available!");
@@ -20873,7 +20921,7 @@ OpenDatabaseOp::LoadDatabaseInformation(mozIStorageConnection* aConnection)
   
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = aConnection->CreateStatement(NS_LITERAL_CSTRING(
-    "SELECT name, version "
+    "SELECT name, origin, version "
     "FROM database"
   ), getter_AddRefs(stmt));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -20900,8 +20948,18 @@ OpenDatabaseOp::LoadDatabaseInformation(mozIStorageConnection* aConnection)
     return NS_ERROR_FILE_CORRUPTED;
   }
 
+  nsCString origin;
+  rv = stmt->GetUTF8String(1, origin);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (mOrigin != origin) {
+    NS_WARNING("Origins don't match!");
+  }
+
   int64_t version;
-  rv = stmt->GetInt64(1, &version);
+  rv = stmt->GetInt64(2, &version);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
