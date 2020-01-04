@@ -1218,7 +1218,10 @@ void RemoteSourceStreamInfo::UpdatePrincipal_m(nsIPrincipal* aPrincipal)
   
   
   
-  mMediaStream->SetPrincipal(aPrincipal);
+  for (RefPtr<RemoteTrackSource>& source : mTrackSources) {
+    MOZ_RELEASE_ASSERT(source);
+    source->SetPrincipal(aPrincipal);
+  }
 }
 #endif 
 

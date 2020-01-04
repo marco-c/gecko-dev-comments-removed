@@ -146,6 +146,31 @@ private:
       const std::string& trackId);
 };
 
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+class RemoteTrackSource : public dom::MediaStreamTrackSource
+{
+public:
+  explicit RemoteTrackSource(nsIPrincipal* aPrincipal)
+    : dom::MediaStreamTrackSource(aPrincipal, true) {}
+
+  dom::MediaSourceEnum GetMediaSource() const override
+  {
+    return dom::MediaSourceEnum::Other;
+  }
+
+  void Stop() override { NS_ERROR("Can't stop a remote source!"); }
+
+  void SetPrincipal(nsIPrincipal* aPrincipal)
+  {
+    mPrincipal = aPrincipal;
+    PrincipalChanged();
+  }
+
+protected:
+  virtual ~RemoteTrackSource() {}
+};
+#endif
+
 class RemoteSourceStreamInfo : public SourceStreamInfo {
   ~RemoteSourceStreamInfo() {}
  public:
@@ -161,6 +186,18 @@ class RemoteSourceStreamInfo : public SourceStreamInfo {
 
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
   void UpdatePrincipal_m(nsIPrincipal* aPrincipal);
+
+  
+  
+  bool SetTrackSource(const std::string& track, RemoteTrackSource* source)
+  {
+    size_t nextIndex = mTrackSources.size();
+    if (mTrackIdMap.size() < nextIndex || mTrackIdMap[nextIndex] != track) {
+      return false;
+    }
+    mTrackSources.push_back(source);
+    return true;
+  }
 #endif
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteSourceStreamInfo)
@@ -212,6 +249,12 @@ class RemoteSourceStreamInfo : public SourceStreamInfo {
   
   
   std::vector<std::string> mTrackIdMap;
+
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+  
+  
+  std::vector<RefPtr<RemoteTrackSource>> mTrackSources;
+#endif
 
   
   
