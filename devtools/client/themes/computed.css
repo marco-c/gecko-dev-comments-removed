@@ -11,7 +11,22 @@
   height: 100%;
 }
 
-#sidebar-panel-computedview > .devtools-toolbar {
+#computedview-container {
+  overflow: auto;
+  height: 100%;
+}
+
+
+
+
+
+
+#computedview-container-focusable {
+  height: 100%;
+  outline: none;
+}
+
+#computedview-toolbar {
   display: flex;
 }
 
@@ -32,28 +47,11 @@
   align-items: center;
 }
 
-#computedview-container {
-  overflow: auto;
-  height: 100%;
-}
-
 #propertyContainer {
   -moz-user-select: text;
   overflow-y: auto;
   overflow-x: hidden;
   flex: auto;
-  border-top-width: 1px;
-  border-top-style: dotted;
-}
-
-
-
-
-
-
-#computedview-container-focusable {
-  height: 100%;
-  outline: none;
 }
 
 .row-striped {
