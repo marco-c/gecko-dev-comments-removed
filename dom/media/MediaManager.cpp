@@ -1563,6 +1563,38 @@ MediaManager::Get() {
       prefs->AddObserver("media.navigator.video.default_fps", sSingleton, false);
       prefs->AddObserver("media.navigator.video.default_minfps", sSingleton, false);
     }
+
+    
+
+    nsCOMPtr<nsIAsyncShutdownClient> profileBeforeChange;
+    {
+      nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdown();
+      MOZ_RELEASE_ASSERT(svc);
+      nsresult rv = svc->GetProfileBeforeChange(getter_AddRefs(profileBeforeChange));
+      MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
+    }
+
+    class Blocker : public media::ShutdownBlocker
+    {
+    public:
+      Blocker()
+      : media::ShutdownBlocker(NS_LITERAL_STRING(
+          "Media shutdown: blocking on media thread")) {}
+
+      NS_IMETHOD BlockShutdown(nsIAsyncShutdownClient* aProfileBeforeChange) override
+      {
+        MOZ_RELEASE_ASSERT(MediaManager::GetIfExists());
+        MediaManager::GetIfExists()->Shutdown();
+        return NS_OK;
+      }
+    };
+
+    sSingleton->mShutdownBlocker = new Blocker();
+    nsresult rv = profileBeforeChange->AddBlocker(sSingleton->mShutdownBlocker,
+                                                  NS_LITERAL_STRING(__FILE__),
+                                                  __LINE__,
+                                                  NS_LITERAL_STRING("Media shutdown"));
+    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
 #ifdef MOZ_B2G
     
     (void) MediaPermissionManager::GetInstance();
@@ -2533,12 +2565,119 @@ MediaManager::GetPrefs(nsIPrefBranch *aBranch, const char *aData)
   GetPref(aBranch, "media.navigator.audio.fake_frequency", aData, &mPrefs.mFreq);
 }
 
+void
+MediaManager::Shutdown()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  if (sInShutdown) {
+    return;
+  }
+  sInShutdown = true;
+
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+
+  obs->RemoveObserver(this, "xpcom-will-shutdown");
+  obs->RemoveObserver(this, "last-pb-context-exited");
+  obs->RemoveObserver(this, "getUserMedia:privileged:allow");
+  obs->RemoveObserver(this, "getUserMedia:response:allow");
+  obs->RemoveObserver(this, "getUserMedia:response:deny");
+  obs->RemoveObserver(this, "getUserMedia:revoke");
+
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  if (prefs) {
+    prefs->RemoveObserver("media.navigator.video.default_width", this);
+    prefs->RemoveObserver("media.navigator.video.default_height", this);
+    prefs->RemoveObserver("media.navigator.video.default_fps", this);
+    prefs->RemoveObserver("media.navigator.video.default_minfps", this);
+    prefs->RemoveObserver("media.navigator.audio.fake_frequency", this);
+  }
+
+  
+  GetActiveWindows()->Clear();
+  mActiveCallbacks.Clear();
+  mCallIds.Clear();
+  {
+    MutexAutoLock lock(mMutex);
+    if (mBackend) {
+      mBackend->Shutdown(); 
+    }
+  }
+
+  
+  
+
+  class ShutdownTask : public Task
+  {
+  public:
+    ShutdownTask(already_AddRefed<MediaEngine> aBackend,
+                 nsRunnable* aReply)
+      : mReply(aReply)
+      , mBackend(aBackend) {}
+  private:
+    virtual void
+    Run()
+    {
+      LOG(("MediaManager Thread Shutdown"));
+      MOZ_ASSERT(MediaManager::IsInMediaThread());
+      mozilla::ipc::BackgroundChild::CloseForCurrentThread();
+      
+      mBackend = nullptr; 
+
+      if (NS_FAILED(NS_DispatchToMainThread(mReply.forget()))) {
+        LOG(("Will leak thread: DispatchToMainthread of reply runnable failed in MediaManager shutdown"));
+      }
+    }
+    RefPtr<nsRunnable> mReply;
+    RefPtr<MediaEngine> mBackend;
+  };
+
+  
+  
+  
+  
+  
+  
+
+  
+  RefPtr<MediaManager> that(sSingleton);
+  
+  RefPtr<MediaEngine> temp;
+  {
+    MutexAutoLock lock(mMutex);
+    temp = mBackend.forget();
+  }
+  
+  mMediaThread->message_loop()->PostTask(FROM_HERE, new ShutdownTask(
+      temp.forget(),
+      media::NewRunnableFrom([this, that]() mutable {
+    LOG(("MediaManager shutdown lambda running, releasing MediaManager singleton and thread"));
+    if (mMediaThread) {
+      mMediaThread->Stop();
+    }
+
+    
+
+    nsCOMPtr<nsIAsyncShutdownClient> profileBeforeChange;
+    {
+      nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdown();
+      MOZ_RELEASE_ASSERT(svc);
+      nsresult rv = svc->GetProfileBeforeChange(getter_AddRefs(profileBeforeChange));
+      MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
+    }
+    profileBeforeChange->RemoveBlocker(sSingleton->mShutdownBlocker);
+
+    
+    sSingleton = nullptr;
+
+    return NS_OK;
+  })));
+}
+
 nsresult
 MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
   const char16_t* aData)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
 
   if (!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
     nsCOMPtr<nsIPrefBranch> branch( do_QueryInterface(aSubject) );
@@ -2548,93 +2687,8 @@ MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
            mPrefs.mWidth, mPrefs.mHeight, mPrefs.mFPS, mPrefs.mMinFPS));
     }
   } else if (!strcmp(aTopic, "xpcom-will-shutdown")) {
-    sInShutdown = true;
-
-    obs->RemoveObserver(this, "xpcom-will-shutdown");
-    obs->RemoveObserver(this, "last-pb-context-exited");
-    obs->RemoveObserver(this, "getUserMedia:privileged:allow");
-    obs->RemoveObserver(this, "getUserMedia:response:allow");
-    obs->RemoveObserver(this, "getUserMedia:response:deny");
-    obs->RemoveObserver(this, "getUserMedia:revoke");
-
-    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    if (prefs) {
-      prefs->RemoveObserver("media.navigator.video.default_width", this);
-      prefs->RemoveObserver("media.navigator.video.default_height", this);
-      prefs->RemoveObserver("media.navigator.video.default_fps", this);
-      prefs->RemoveObserver("media.navigator.video.default_minfps", this);
-      prefs->RemoveObserver("media.navigator.audio.fake_frequency", this);
-    }
-
-    
-    GetActiveWindows()->Clear();
-    mActiveCallbacks.Clear();
-    mCallIds.Clear();
-    {
-      MutexAutoLock lock(mMutex);
-      if (mBackend) {
-        mBackend->Shutdown(); 
-      }
-    }
-
-    
-    
-
-    class ShutdownTask : public Task
-    {
-    public:
-      ShutdownTask(already_AddRefed<MediaEngine> aBackend,
-                   nsRunnable* aReply)
-        : mReply(aReply)
-        , mBackend(aBackend) {}
-    private:
-      virtual void
-      Run()
-      {
-        LOG(("MediaManager Thread Shutdown"));
-        MOZ_ASSERT(MediaManager::IsInMediaThread());
-        mozilla::ipc::BackgroundChild::CloseForCurrentThread();
-        
-        mBackend = nullptr; 
-
-        if (NS_FAILED(NS_DispatchToMainThread(mReply.forget()))) {
-          LOG(("Will leak thread: DispatchToMainthread of reply runnable failed in MediaManager shutdown"));
-        }
-      }
-      RefPtr<nsRunnable> mReply;
-      RefPtr<MediaEngine> mBackend;
-    };
-
-    
-    
-    
-    
-    
-    
-
-    
-    RefPtr<MediaManager> that(sSingleton);
-    
-    RefPtr<MediaEngine> temp;
-    {
-      MutexAutoLock lock(mMutex);
-      temp = mBackend.forget();
-    }
-    
-    mMediaThread->message_loop()->PostTask(FROM_HERE, new ShutdownTask(
-        temp.forget(),
-        media::NewRunnableFrom([this, that]() mutable {
-      LOG(("MediaManager shutdown lambda running, releasing MediaManager singleton and thread"));
-      if (mMediaThread) {
-        mMediaThread->Stop();
-      }
-      
-      sSingleton = nullptr;
-
-      return NS_OK;
-    })));
+    Shutdown();
     return NS_OK;
-
   } else if (!strcmp(aTopic, "last-pb-context-exited")) {
     
     media::SanitizeOriginKeys(0, true);
