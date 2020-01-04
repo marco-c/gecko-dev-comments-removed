@@ -280,7 +280,7 @@ Toolbox.prototype = {
 
 
   get win() {
-    return this.doc.defaultView;
+    return this.frame.contentWindow;
   },
 
   
@@ -714,7 +714,7 @@ Toolbox.prototype = {
     zoomValue = Math.max(zoomValue, MIN_ZOOM);
     zoomValue = Math.min(zoomValue, MAX_ZOOM);
 
-    let docShell = this.frame.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+    let docShell = this.win.QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIWebNavigation)
       .QueryInterface(Ci.nsIDocShell);
     let contViewer = docShell.contentViewer;
@@ -1815,7 +1815,7 @@ Toolbox.prototype = {
       
       
       
-      this.frame.contentWindow.focus();
+      this.win.focus();
 
       this._host.off("window-closed", this.destroy);
       this.destroyHost();
@@ -1833,7 +1833,7 @@ Toolbox.prototype = {
 
       
       
-      this.frame.contentWindow.focus();
+      this.win.focus();
 
       this.emit("host-changed");
     });
@@ -2171,8 +2171,7 @@ Toolbox.prototype = {
     if (this.target.chrome) {
       return;
     }
-    let window = this.frame.contentWindow;
-    showDoorhanger({ window, type: "deveditionpromo" });
+    showDoorhanger({ window: this.win, type: "deveditionpromo" });
   },
 
   
@@ -2269,7 +2268,7 @@ Toolbox.prototype = {
 
 
   get gViewSourceUtils() {
-    return this.frame.contentWindow.gViewSourceUtils;
+    return this.win.gViewSourceUtils;
   },
 
   
