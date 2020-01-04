@@ -15,6 +15,7 @@ import sys
 import traceback
 
 from mozbuild.util import FileAvoidWrite
+from mozbuild.makeutil import Makefile
 
 def main(argv):
     parser = argparse.ArgumentParser('Generate a file from a Python script',
@@ -56,6 +57,16 @@ def main(argv):
     try:
         with FileAvoidWrite(args.output_file) as output:
             ret = module.__dict__[method](output, *args.additional_arguments)
+            
+            
+            
+            if isinstance(ret, set) and ret:
+                mk = Makefile()
+                mk.create_rule([args.output_file]).add_dependencies(ret)
+                with FileAvoidWrite(args.dep_file) as dep_file:
+                    mk.dump(dep_file)
+                
+                ret = None
     except IOError as e:
         print('Error opening file "{0}"'.format(e.filename), file=sys.stderr)
         traceback.print_exc()
