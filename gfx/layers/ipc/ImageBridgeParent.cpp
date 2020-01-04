@@ -355,6 +355,7 @@ MessageLoop * ImageBridgeParent::GetMessageLoop() const {
 void
 ImageBridgeParent::DeferredDestroy()
 {
+  MOZ_ASSERT(mCompositorThreadHolder);
   mCompositorThreadHolder = nullptr;
   mSelfRef = nullptr;
 }
@@ -378,6 +379,9 @@ ImageBridgeParent::CloneToplevel(const InfallibleTArray<ProtocolFdMapping>& aFds
       PImageBridgeParent* bridge = Create(transport, base::GetProcId(aPeerProcess));
       bridge->CloneManagees(this, aCtx);
       bridge->IToplevelProtocol::SetTransport(transport);
+      
+      
+      bridge->OnChannelConnected(base::GetProcId(aPeerProcess));
       return bridge;
     }
   }
