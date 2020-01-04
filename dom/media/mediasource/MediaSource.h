@@ -100,6 +100,12 @@ public:
   
   void NotifyEvicted(double aStart, double aEnd);
 
+#if defined(DEBUG)
+  
+  
+  void Dump(const char* aPath);
+#endif
+
   
   
   void GetMozDebugReaderData(nsAString& aString);
