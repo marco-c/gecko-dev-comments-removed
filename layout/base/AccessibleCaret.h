@@ -39,6 +39,7 @@ namespace mozilla {
 
 
 
+
 class AccessibleCaret
 {
 public:
