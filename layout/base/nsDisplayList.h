@@ -3857,6 +3857,10 @@ public:
                     LayerManager* aManager);
 };
 
+
+
+
+
 class nsDisplayFilter : public nsDisplaySVGEffects {
 public:
   nsDisplayFilter(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
