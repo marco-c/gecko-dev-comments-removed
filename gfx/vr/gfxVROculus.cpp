@@ -293,7 +293,7 @@ FromFovPort(const ovrFovPort& aFOV)
 } 
 
 HMDInfoOculus::HMDInfoOculus(ovrSession aSession)
-  : VRHMDInfo(VRHMDType::Oculus, false)
+  : VRHMDInfo(VRHMDType::Oculus)
   , mSession(aSession)
   , mInputFrameID(0)
 {

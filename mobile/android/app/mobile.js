@@ -878,9 +878,6 @@ pref("consoleservice.logcat", false);
 pref("consoleservice.logcat", true);
 #endif
 
-
-pref("dom.vr.cardboard.enabled", true);
-
 #ifndef RELEASE_BUILD
 
 pref("dom.vr.enabled", true);

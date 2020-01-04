@@ -1071,9 +1071,6 @@ pref("dom.webnotifications.serviceworker.enabled", true);
 pref("layers.compositor-lru-size", 10);
 
 
-pref("dom.vr.cardboard.enabled", true);
-
-
 pref("dom.audiochannel.mutedByDefault", true);
 
 

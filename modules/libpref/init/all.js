@@ -4924,8 +4924,6 @@ pref("dom.vr.enabled", true);
 #endif
 pref("dom.vr.oculus.enabled", true);
 
-pref("dom.vr.cardboard.enabled", false);
-
 pref("dom.vr.osvr.enabled", false);
 
 
