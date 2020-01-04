@@ -74,6 +74,7 @@ namespace layers {
 
 class Animation;
 class AnimationData;
+class AsyncCanvasRenderer;
 class AsyncPanZoomController;
 class ClientLayerManager;
 class Layer;
@@ -2273,6 +2274,7 @@ public:
     Data()
       : mBufferProvider(nullptr)
       , mGLContext(nullptr)
+      , mRenderer(nullptr)
       , mFrontbufferGLTex(0)
       , mSize(0,0)
       , mHasAlpha(false)
@@ -2282,6 +2284,7 @@ public:
     
     PersistentBufferProvider* mBufferProvider; 
     mozilla::gl::GLContext* mGLContext; 
+    AsyncCanvasRenderer* mRenderer; 
 
     
     uint32_t mFrontbufferGLTex;
@@ -2397,16 +2400,14 @@ public:
     ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
   }
 
+  bool GetIsAsyncRenderer() const
+  {
+    return !!mAsyncRenderer;
+  }
+
 protected:
-  CanvasLayer(LayerManager* aManager, void* aImplData)
-    : Layer(aManager, aImplData)
-    , mPreTransCallback(nullptr)
-    , mPreTransCallbackData(nullptr)
-    , mPostTransCallback(nullptr)
-    , mPostTransCallbackData(nullptr)
-    , mFilter(GraphicsFilter::FILTER_GOOD)
-    , mDirty(false)
-  {}
+  CanvasLayer(LayerManager* aManager, void* aImplData);
+  virtual ~CanvasLayer();
 
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
 
@@ -2428,6 +2429,7 @@ protected:
   DidTransactionCallback mPostTransCallback;
   void* mPostTransCallbackData;
   GraphicsFilter mFilter;
+  nsRefPtr<AsyncCanvasRenderer> mAsyncRenderer;
 
 private:
   
@@ -2536,7 +2538,6 @@ protected:
 
   virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
 
-  Layer* mTempReferent;
   
   uint64_t mId;
 };
