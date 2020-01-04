@@ -337,9 +337,10 @@ private:
   ~DataChannel();
 
 public:
-  void Destroy(); 
-
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DataChannel)
+
+  
+  void DestroyLocked();
 
   
   

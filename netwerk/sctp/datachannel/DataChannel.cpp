@@ -1778,7 +1778,7 @@ DataChannelConnection::HandleStreamResetEvent(const struct sctp_stream_reset_eve
 
           LOG(("Disconnected DataChannel %p from connection %p",
                (void *) channel.get(), (void *) channel->mConnection.get()));
-          channel->Destroy();
+          channel->DestroyLocked();
           
         } else {
           LOG(("Can't find incoming channel %d",i));
@@ -2502,7 +2502,7 @@ DataChannelConnection::CloseInt(DataChannel *aChannel)
   aChannel->mState = CLOSING;
   if (mState == CLOSED) {
     
-    channel->Destroy();
+    channel->DestroyLocked();
   }
   
 }
@@ -2556,13 +2556,15 @@ void
 DataChannel::Close()
 {
   ENSURE_DATACONNECTION;
+  RefPtr<DataChannelConnection> connection(mConnection);
   mConnection->Close(this);
 }
 
 
 void
-DataChannel::Destroy()
+DataChannel::DestroyLocked()
 {
+  mConnection->mLock.AssertCurrentThreadOwns();
   ENSURE_DATACONNECTION;
 
   LOG(("Destroying Data channel %u", mStream));
