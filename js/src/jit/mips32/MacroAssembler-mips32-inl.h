@@ -79,6 +79,18 @@ MacroAssembler::xorPtr(Imm32 imm, Register dest)
 
 
 void
+MacroAssembler::add64(Register64 src, Register64 dest)
+{
+    as_addu(dest.low, dest.low, src.low);
+    as_sltu(ScratchRegister, dest.low, src.low);
+    as_addu(dest.high, dest.high, src.high);
+    as_addu(dest.high, dest.high, ScratchRegister);
+}
+
+
+
+
+void
 MacroAssembler::lshiftPtr(Imm32 imm, Register dest)
 {
     ma_sll(dest, dest, imm);
