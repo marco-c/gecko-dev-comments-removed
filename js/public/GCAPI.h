@@ -161,6 +161,12 @@ PrepareZoneForGC(Zone* zone);
 
 
 extern JS_PUBLIC_API(void)
+PrepareSystemZoneForGC(JSContext* cx);
+
+
+
+
+extern JS_PUBLIC_API(void)
 PrepareForFullGC(JSContext* cx);
 
 
