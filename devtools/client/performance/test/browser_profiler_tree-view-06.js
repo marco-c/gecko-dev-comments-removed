@@ -22,12 +22,28 @@ function* spawnTest() {
   let B = A.getChild();
   let D = B.getChild();
 
-  let receivedLinkEvent = treeRoot.once("link");
+  let linkEvent = null;
+  let handler = (_, e) => linkEvent = e;
+
+  treeRoot.on("link", handler);
+
+  
+  EventUtils.synthesizeMouseAtCenter(D.target.querySelector(".call-tree-url"), { button: 2, type: "mousedown" }, window);
+
+  
+  yield idleWait(50);
+
+  
+  ok(!linkEvent, "`link` event not fired for right click")
+
+  
   EventUtils.sendMouseEvent({ type: "mousedown" }, D.target.querySelector(".call-tree-url"));
 
-  let eventItem = yield receivedLinkEvent;
-  is(eventItem, D, "The 'link' event target is correct.");
+  
+  yield waitUntil(() => linkEvent);
+  is(linkEvent, D, "The 'link' event target is correct.");
 
+  treeRoot.off("link", handler);
   finish();
 }
 
