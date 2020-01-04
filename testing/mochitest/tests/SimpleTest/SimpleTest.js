@@ -1526,7 +1526,8 @@ var isDeeply = SimpleTest.isDeeply;
 var info = SimpleTest.info;
 
 var gOldOnError = window.onerror;
-window.onerror = function simpletestOnerror(errorMsg, url, lineNumber) {
+window.onerror = function simpletestOnerror(errorMsg, url, lineNumber,
+                                            columnNumber, originalException) {
     
     
     
@@ -1535,7 +1536,13 @@ window.onerror = function simpletestOnerror(errorMsg, url, lineNumber) {
     
     var isExpected = !!SimpleTest._expectingUncaughtException;
     var message = (isExpected ? "expected " : "") + "uncaught exception";
-    var error = errorMsg + " at " + url + ":" + lineNumber;
+    var error = errorMsg + " at ";
+    try {
+        error += originalException.stack;
+    } catch (e) {
+        
+        error += url + ":" + lineNumber + ":" + columnNumber;
+    }
     if (!SimpleTest._ignoringAllUncaughtExceptions) {
         
         if (!SimpleTest._alreadyFinished)
