@@ -24,6 +24,7 @@ BUILD_TYPE_ALIASES = {
 
 BUILD_KINDS = set([
     'build',
+    'artifact-build',
 ])
 
 
