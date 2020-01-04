@@ -26,7 +26,7 @@
 
 #include <algorithm>
 #include <limits>
-#include <math.h>
+#include <cmath>
 #include <string>
 #include <functional>
 #include "inc/Collider.h"
