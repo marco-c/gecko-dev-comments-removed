@@ -158,12 +158,12 @@ add_test(function test_queue() {
   };
 
   
-  var network = {id: "1234", type: Ci.nsIDOMMozNetworkStatsManager.MOBILE};
+  var network = {id: "1234", type: Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE};
   var netId1 = NetworkStatsService.getNetworkId(network.id, network.type);
   NetworkStatsService._networks[netId1] = { network: network,
                                             interfaceName: "net1" };
 
-  network = {id: "5678", type: Ci.nsIDOMMozNetworkStatsManager.MOBILE};
+  network = {id: "5678", type: Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE};
   var netId2 = NetworkStatsService.getNetworkId(network.id, network.type);
   NetworkStatsService._networks[netId2] = { network: network,
                                             interfaceName: "net2" };
