@@ -16,9 +16,9 @@ Components.utils.import("resource://gre/modules/devtools/shared/event-emitter.js
 
 
 
-const EXPORTED_SYMBOLS = ["Simulator"];
+this.EXPORTED_SYMBOLS = ["Simulator"];
 
-const Simulator = {
+let Simulator = this.Simulator = {
   _simulators: {},
 
   register: function (name, simulator) {
