@@ -298,6 +298,7 @@ def all_test_flavors():
 
 class TestInstallInfo(object):
     def __init__(self):
+        self.seen = set()
         self.pattern_installs = []
         self.installs = []
         self.external_installs = set()
@@ -337,15 +338,26 @@ class SupportFilesConverter(object):
         
         
         info = TestInstallInfo()
-        for thing, seen in self._fields:
-            value = test.get(thing, '')
-            
-            
-            if (value, out_dir) in seen:
-                continue
-            seen.add((value, out_dir))
+        for field, seen in self._fields:
+            value = test.get(field, '')
             for pattern in value.split():
-                if thing == 'generated-files':
+
+                
+                
+                
+                
+                
+                
+                key = field, pattern, out_dir
+                if key in info.seen:
+                    raise ValueError("%s appears multiple times in a test manifest under a %s field,"
+                                     " please omit the duplicate entry." % (pattern, field))
+                info.seen.add(key)
+                if key in seen:
+                    continue
+                seen.add(key)
+
+                if field == 'generated-files':
                     info.external_installs.add(mozpath.normpath(mozpath.join(out_dir, pattern)))
                 
                 
@@ -353,7 +365,7 @@ class SupportFilesConverter(object):
                     info.deferred_installs.add(pattern)
                 
                 
-                elif '*' in pattern and thing == 'support-files':
+                elif '*' in pattern and field == 'support-files':
                     info.pattern_installs.append((manifest_dir, pattern, out_dir))
                 
                 
@@ -375,7 +387,7 @@ class SupportFilesConverter(object):
                         
                         
                         
-                        if thing == 'support-files':
+                        if field == 'support-files':
                             dest_path = mozpath.join(out_dir,
                                                      os.path.basename(pattern))
                         
