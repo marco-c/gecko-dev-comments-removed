@@ -31,12 +31,6 @@ ChannelInfo::InitFromDocument(nsIDocument* aDoc)
     SetSecurityInfo(securityInfo);
   }
 
-  
-  
-  
-  
-  
-  mRedirected = false;
   mInited = true;
 }
 
@@ -52,20 +46,6 @@ ChannelInfo::InitFromChannel(nsIChannel* aChannel)
     SetSecurityInfo(securityInfo);
   }
 
-  nsLoadFlags loadFlags = 0;
-  aChannel->GetLoadFlags(&loadFlags);
-  mRedirected = (loadFlags & nsIChannel::LOAD_REPLACE);
-  if (mRedirected) {
-    
-    
-    
-    nsCOMPtr<nsIURI> redirectedURI;
-    aChannel->GetURI(getter_AddRefs(redirectedURI));
-    if (redirectedURI) {
-      redirectedURI->GetSpec(mRedirectedURISpec);
-    }
-  }
-
   mInited = true;
 }
 
@@ -79,7 +59,6 @@ ChannelInfo::InitFromChromeGlobal(nsIGlobalObject* aGlobal)
     nsContentUtils::IsSystemPrincipal(aGlobal->PrincipalOrNull()));
 
   mSecurityInfo.Truncate();
-  mRedirected = false;
   mInited = true;
 }
 
@@ -89,8 +68,6 @@ ChannelInfo::InitFromIPCChannelInfo(const mozilla::ipc::IPCChannelInfo& aChannel
   MOZ_ASSERT(!mInited, "Cannot initialize the object twice");
 
   mSecurityInfo = aChannelInfo.securityInfo();
-  mRedirectedURISpec = aChannelInfo.redirectedURI();
-  mRedirected = aChannelInfo.redirected();
 
   mInited = true;
 }
@@ -142,33 +119,6 @@ ChannelInfo::ResurrectInfoOnChannel(nsIChannel* aChannel)
     }
   }
 
-  if (mRedirected) {
-    nsLoadFlags flags = 0;
-    aChannel->GetLoadFlags(&flags);
-    flags |= nsIChannel::LOAD_REPLACE;
-    aChannel->SetLoadFlags(flags);
-
-    nsCOMPtr<nsIURI> redirectedURI;
-    nsresult rv = NS_NewURI(getter_AddRefs(redirectedURI),
-                            mRedirectedURISpec);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    if (httpChannel) {
-      net::HttpBaseChannel* httpBaseChannel =
-        static_cast<net::HttpBaseChannel*>(httpChannel.get());
-      rv = httpBaseChannel->OverrideURI(redirectedURI);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    } else {
-      if (NS_WARN_IF(!jarChannel)) {
-        return NS_ERROR_FAILURE;
-      }
-      static_cast<nsJARChannel*>(jarChannel.get())->OverrideURI(redirectedURI);
-    }
-  }
-
   return NS_OK;
 }
 
@@ -183,8 +133,6 @@ ChannelInfo::AsIPCChannelInfo() const
   IPCChannelInfo ipcInfo;
 
   ipcInfo.securityInfo() = mSecurityInfo;
-  ipcInfo.redirectedURI() = mRedirectedURISpec;
-  ipcInfo.redirected() = mRedirected;
 
   return ipcInfo;
 }

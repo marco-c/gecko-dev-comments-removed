@@ -256,7 +256,6 @@ public:
     const NetAddr& GetPeerAddr() { return mPeerAddr; }
 
     nsresult OverrideSecurityInfo(nsISupports* aSecurityInfo);
-    nsresult OverrideURI(nsIURI* aRedirectedURI);
 
 public: 
     bool IsNavigation();
