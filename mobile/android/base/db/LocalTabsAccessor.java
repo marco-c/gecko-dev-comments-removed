@@ -72,6 +72,20 @@ public class LocalTabsAccessor implements TabsAccessor {
         clientsRecencyUriWithProfile = DBUtils.appendProfileWithDefault(profileName, BrowserContract.Clients.CONTENT_RECENCY_URI);
     }
 
+    @Override
+    public int getRemoteClientCount(final Context context) {
+        final Cursor remoteClientsCursor = getRemoteClientsByRecencyCursor(context);
+        if (remoteClientsCursor == null) {
+            return 0;
+        }
+
+        try {
+            return remoteClientsCursor.getCount();
+        } finally {
+            remoteClientsCursor.close();
+        }
+    }
+
     
 
 
