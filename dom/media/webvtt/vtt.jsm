@@ -259,18 +259,6 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
     consumeCueSettings(input, cue);
   }
 
-  function onlyContainsWhiteSpaces(input) {
-    return /^[ \f\n\r\t]+$/.test(input);
-  }
-
-  function containsTimeDirectionSymbol(input) {
-    return input.indexOf("-->") !== -1;
-  }
-
-  function maybeIsTimeStampFormat(input) {
-    return /^\s*(\d+:)?(\d{2}):(\d{2})\.(\d+)\s*-->\s*(\d+:)?(\d{2}):(\d{2})\.(\d+)\s*/.test(input);
-  }
-
   var ESCAPE = {
     "&amp;": "&",
     "&lt;": "<",
@@ -1374,49 +1362,15 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
       }
 
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      function parseHeader() {
-        let line = null;
-        while (self.buffer && self.state === "HEADER") {
-          line = collectNextLine();
-
-          if (/^REGION|^STYLE/i.test(line)) {
-            parseOptions(line, function (k, v) {
-              switch (k.toUpperCase()) {
-              case "REGION":
-                parseRegion(v);
-                break;
-              case "STYLE":
-                
-                break;
-              }
-            }, ":");
-          } else if (maybeIsTimeStampFormat(line)) {
-            self.state = "CUE";
-            break;
-          } else if (!line ||
-                     onlyContainsWhiteSpaces(line) ||
-                     containsTimeDirectionSymbol(line)) {
+      function parseHeader(input) {
+        parseOptions(input, function (k, v) {
+          switch (k) {
+          case "Region":
             
+            parseRegion(v);
             break;
           }
-        }
-
-        
-        if (self.state === "HEADER") {
-          self.state = "ID";
-          line = null
-        }
-        return line;
+        }, /:/);
       }
 
       
