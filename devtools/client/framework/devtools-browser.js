@@ -27,6 +27,7 @@ loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/main", 
 loader.lazyRequireGetter(this, "BrowserMenus", "devtools/client/framework/browser-menus");
 
 loader.lazyImporter(this, "CustomizableUI", "resource:///modules/CustomizableUI.jsm");
+loader.lazyImporter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm");
 
 const bundle = Services.strings.createBundle("chrome://devtools/locale/toolbox.properties");
 
@@ -286,6 +287,60 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   
 
 
+  installDeveloperWidget: function () {
+    let id = "developer-button";
+    let widget = CustomizableUI.getWidget(id);
+    if (widget && widget.provider == CustomizableUI.PROVIDER_API) {
+      return;
+    }
+    CustomizableUI.createWidget({
+      id: id,
+      type: "view",
+      viewId: "PanelUI-developer",
+      shortcutId: "key_devToolboxMenuItem",
+      tooltiptext: "developer-button.tooltiptext2",
+      defaultArea: AppConstants.MOZ_DEV_EDITION ?
+                     CustomizableUI.AREA_NAVBAR :
+                     CustomizableUI.AREA_PANEL,
+      onViewShowing: function(aEvent) {
+        
+        
+        
+        let doc = aEvent.target.ownerDocument;
+        let win = doc.defaultView;
+
+        let menu = doc.getElementById("menuWebDeveloperPopup");
+
+        let itemsToDisplay = [...menu.children];
+        
+        itemsToDisplay.push({localName: "menuseparator", getAttribute: () => {}});
+        itemsToDisplay.push(doc.getElementById("goOfflineMenuitem"));
+
+        let developerItems = doc.getElementById("PanelUI-developerItems");
+        
+        let { clearSubview, fillSubviewFromMenuItems } =
+          Cu.import("resource:///modules/CustomizableWidgets.jsm", {});
+        clearSubview(developerItems);
+        fillSubviewFromMenuItems(itemsToDisplay, developerItems);
+      },
+      onBeforeCreated: function(doc) {
+        
+        if (doc.getElementById("PanelUI-developerItems")) {
+          return;
+        }
+        let view = doc.createElement("panelview");
+        view.id = "PanelUI-developerItems";
+        let panel = doc.createElement("vbox");
+        panel.setAttribute("class", "panel-subview-body");
+        view.appendChild(panel);
+        doc.getElementById("PanelUI-multiView").appendChild(view);
+      }
+    });
+  },
+
+  
+
+
   
   installWebIDEWidget: function() {
     if (this.isWebIDEWidgetInstalled()) {
@@ -352,6 +407,10 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     gDevToolsBrowser._trackedBrowserWindows.add(win);
 
     BrowserMenus.addMenus(win.document);
+
+    
+    
+    gDevToolsBrowser.installDeveloperWidget();
 
     
     loader.lazyGetter(win, "DeveloperToolbar", function() {

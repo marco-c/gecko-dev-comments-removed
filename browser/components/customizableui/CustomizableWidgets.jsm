@@ -540,40 +540,11 @@ const CustomizableWidgets = [
       }
     }
   }, {
-    id: "developer-button",
-    type: "view",
-    viewId: "PanelUI-developer",
-    shortcutId: "key_devToolboxMenuItem",
-    tooltiptext: "developer-button.tooltiptext2",
-    defaultArea: AppConstants.MOZ_DEV_EDITION ?
-                   CustomizableUI.AREA_NAVBAR :
-                   CustomizableUI.AREA_PANEL,
-    onViewShowing: function(aEvent) {
-      
-      
-      
-      let doc = aEvent.target.ownerDocument;
-      let win = doc.defaultView;
-
-      let menu = doc.getElementById("menuWebDeveloperPopup");
-
-      let itemsToDisplay = [...menu.children];
-      
-      itemsToDisplay.push({localName: "menuseparator", getAttribute: () => {}});
-      itemsToDisplay.push(doc.getElementById("goOfflineMenuitem"));
-
-      let developerItems = doc.getElementById("PanelUI-developerItems");
-      clearSubview(developerItems);
-      fillSubviewFromMenuItems(itemsToDisplay, developerItems);
-    }
-  }, {
     id: "sidebar-button",
     type: "view",
     viewId: "PanelUI-sidebar",
     tooltiptext: "sidebar-button.tooltiptext2",
     onViewShowing: function(aEvent) {
-      
-      
       
       
       
