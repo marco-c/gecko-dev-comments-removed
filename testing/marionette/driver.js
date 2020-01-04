@@ -1755,6 +1755,9 @@ GeckoDriver.prototype.clickElement = function*(cmd, resp) {
 
 
 
+
+
+
 GeckoDriver.prototype.getElementAttribute = function*(cmd, resp) {
   let {id, name} = cmd.parameters;
 
@@ -1768,6 +1771,29 @@ GeckoDriver.prototype.getElementAttribute = function*(cmd, resp) {
     case Context.CONTENT:
       resp.body.value = yield this.listener.getElementAttribute(id, name);
       break;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.getElementProperty = function*(cmd, resp) {
+  let {id, name} = cmd.parameters;
+
+  switch (this.context) {
+    case Context.CHROME:
+      throw new UnsupportedOperationError();
+
+    case Context.CONTENT:
+      return this.listener.getElementProperty(id, name);
   }
 };
 
@@ -2708,6 +2734,7 @@ GeckoDriver.prototype.commands = {
   "findElements": GeckoDriver.prototype.findElements,
   "clickElement": GeckoDriver.prototype.clickElement,
   "getElementAttribute": GeckoDriver.prototype.getElementAttribute,
+  "getElementProperty": GeckoDriver.prototype.getElementProperty,
   "getElementText": GeckoDriver.prototype.getElementText,
   "getElementTagName": GeckoDriver.prototype.getElementTagName,
   "isElementDisplayed": GeckoDriver.prototype.isElementDisplayed,
