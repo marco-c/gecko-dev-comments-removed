@@ -34,15 +34,9 @@ struct TypeIsGCThing : mozilla::FalseType
 
 template <typename T,
           size_t MinInlineCapacity = 0,
-          class AllocPolicy = TempAllocPolicy
-
-
-
-
-#if !defined(_MSC_VER) || (1800 <= _MSC_VER && _MSC_VER <= 1800)
+          class AllocPolicy = TempAllocPolicy,
          
-         , typename = typename mozilla::EnableIf<!detail::TypeIsGCThing<T>::value>::Type
-#endif
+         typename = typename mozilla::EnableIf<!detail::TypeIsGCThing<T>::value>::Type
          >
 using Vector = mozilla::Vector<T, MinInlineCapacity, AllocPolicy>;
 
