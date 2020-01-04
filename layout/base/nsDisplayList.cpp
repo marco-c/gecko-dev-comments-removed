@@ -2352,6 +2352,20 @@ RegisterThemeGeometry(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   }
 }
 
+
+
+static Maybe<nsRect>
+GetViewportRectRelativeToReferenceFrame(nsDisplayListBuilder* aBuilder,
+                                        nsIFrame* aFrame)
+{
+  nsIFrame* rootFrame = aFrame->PresContext()->PresShell()->GetRootFrame();
+  nsRect rootRect = rootFrame->GetRectRelativeToSelf();
+  if (nsLayoutUtils::TransformRect(rootFrame, aFrame, rootRect) == nsLayoutUtils::TRANSFORM_SUCCEEDED) {
+    return Some(rootRect + aBuilder->ToReferenceFrame(aFrame));
+  }
+  return Nothing();
+}
+
 nsDisplayBackgroundImage::nsDisplayBackgroundImage(nsDisplayListBuilder* aBuilder,
                                                    nsIFrame* aFrame,
                                                    uint32_t aLayer,
@@ -3049,10 +3063,8 @@ nsDisplayBackgroundImage::GetBoundsInternal(nsDisplayListBuilder* aBuilder) {
     
     
     
-    nsIFrame* rootFrame = presContext->PresShell()->GetRootFrame();
-    nsRect rootRect = rootFrame->GetRectRelativeToSelf();
-    if (nsLayoutUtils::TransformRect(rootFrame, mFrame, rootRect) == nsLayoutUtils::TRANSFORM_SUCCEEDED) {
-      clipRect = clipRect.Union(rootRect + aBuilder->ToReferenceFrame(mFrame));
+    if (Maybe<nsRect> viewportRect = GetViewportRectRelativeToReferenceFrame(aBuilder, mFrame)) {
+      clipRect = clipRect.Union(*viewportRect);
     }
   }
   const nsStyleImageLayers::Layer& layer = mBackgroundStyle->mImage.mLayers[mLayer];
