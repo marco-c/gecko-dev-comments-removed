@@ -205,6 +205,8 @@ function onListKeyDown(aEvent) {
   {
   case KeyEvent.DOM_VK_SPACE:
     toggleRowChecked(document.getElementById("tabList").currentIndex);
+    
+    aEvent.preventDefault();
     break;
   case KeyEvent.DOM_VK_RETURN:
     var ix = document.getElementById("tabList").currentIndex;
