@@ -4,7 +4,7 @@
 
 
 
-#include "BluetoothUuid.h"
+#include "BluetoothUuidHelper.h"
 
 #include "BluetoothA2dpManager.h"
 #include "BluetoothAvrcpManager.h"
