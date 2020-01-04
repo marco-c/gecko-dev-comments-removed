@@ -77,6 +77,13 @@ function writeToFile(dir, leafName, contents) {
   outputStream.close();
 }
 
+function createSubDir(dir, subDirName) {
+  let subDir = dir.clone();
+  subDir.append(subDirName);
+  subDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+  return subDir;
+}
+
 function promiseMigrator(name, srcDir, targetDir) {
   let migrator = Cc["@mozilla.org/profile/migrator;1?app=browser&type=firefox"]
                  .createInstance(Ci.nsISupports)
@@ -92,129 +99,110 @@ function promiseMigrator(name, srcDir, targetDir) {
   throw new Error("failed to find the " + name + " migrator");
 }
 
-function promiseFHRMigrator(srcDir, targetDir) {
-  return promiseMigrator("healthreporter", srcDir, targetDir);
+function promiseTelemetryMigrator(srcDir, targetDir) {
+  return promiseMigrator("telemetry", srcDir, targetDir);
 }
 
 add_task(function* test_empty() {
   let [srcDir, targetDir] = getTestDirs();
-  let ok = yield promiseFHRMigrator(srcDir, targetDir);
+  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true with empty directories");
   
   checkDirectoryContains(srcDir, {});
   checkDirectoryContains(targetDir, {});
 });
 
-add_task(function* test_just_sqlite() {
+add_task(function* test_migrate_files() {
   let [srcDir, targetDir] = getTestDirs();
 
-  let contents = "hello there\n\n";
-  writeToFile(srcDir, "healthreport.sqlite", contents);
-
-  let ok = yield promiseFHRMigrator(srcDir, targetDir);
-  Assert.ok(ok, "callback should have been true with sqlite file copied");
-
-  checkDirectoryContains(targetDir, {
-    "healthreport.sqlite": contents,
+  
+  let stateContent = JSON.stringify({
+    clientId: "68d5474e-19dc-45c1-8e9a-81fca592707c",
   });
-});
+  let sessionStateContent = "foobar 5432";
+  let subDir = createSubDir(srcDir, "datareporting");
+  writeToFile(subDir, "state.json", stateContent);
+  writeToFile(subDir, "session-state.json", sessionStateContent);
+  writeToFile(subDir, "other.file", "do not copy");
 
-add_task(function* test_sqlite_extras() {
-  let [srcDir, targetDir] = getTestDirs();
-
-  let contents_sqlite = "hello there\n\n";
-  writeToFile(srcDir, "healthreport.sqlite", contents_sqlite);
-
-  let contents_wal = "this is the wal\n\n";
-  writeToFile(srcDir, "healthreport.sqlite-wal", contents_wal);
+  let archived = createSubDir(subDir, "archived");
+  writeToFile(archived, "other.file", "do not copy");
 
   
-  writeToFile(srcDir, "healthreport.sqlite-shm", "whatever");
+  writeToFile(srcDir, "healthreport.sqlite", "do not copy");
+  writeToFile(srcDir, "healthreport.sqlite-wal", "do not copy");
+  subDir = createSubDir(srcDir, "healthreport");
+  writeToFile(subDir, "state.json", "do not copy");
+  writeToFile(subDir, "other.file", "do not copy");
 
-  let ok = yield promiseFHRMigrator(srcDir, targetDir);
-  Assert.ok(ok, "callback should have been true with sqlite file copied");
+  
+  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  Assert.ok(ok, "callback should have been true with important telemetry files copied");
 
   checkDirectoryContains(targetDir, {
-    "healthreport.sqlite": contents_sqlite,
-    "healthreport.sqlite-wal": contents_wal,
-  });
-});
-
-add_task(function* test_sqlite_healthreport_not_dir() {
-  let [srcDir, targetDir] = getTestDirs();
-
-  let contents = "hello there\n\n";
-  writeToFile(srcDir, "healthreport.sqlite", contents);
-  writeToFile(srcDir, "healthreport", "I'm a file but should be a directory");
-
-  let ok = yield promiseFHRMigrator(srcDir, targetDir);
-  Assert.ok(ok, "callback should have been true even though the directory was a file");
-  
-  checkDirectoryContains(targetDir, {
-    "healthreport.sqlite": contents,
-  });
-});
-
-add_task(function* test_sqlite_healthreport_empty() {
-  let [srcDir, targetDir] = getTestDirs();
-
-  let contents = "hello there\n\n";
-  writeToFile(srcDir, "healthreport.sqlite", contents);
-
-  
-  let subDir = srcDir.clone();
-  subDir.append("healthreport");
-  subDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-
-  let ok = yield promiseFHRMigrator(srcDir, targetDir);
-  Assert.ok(ok, "callback should have been true");
-
-  
-  checkDirectoryContains(targetDir, {
-    "healthreport.sqlite": contents,
-    "healthreport": {},
-  });
-});
-
-add_task(function* test_sqlite_healthreport_contents() {
-  let [srcDir, targetDir] = getTestDirs();
-
-  let contents = "hello there\n\n";
-  writeToFile(srcDir, "healthreport.sqlite", contents);
-
-  
-  let subDir = srcDir.clone();
-  subDir.append("healthreport");
-  subDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-
-  writeToFile(subDir, "file1", "this is file 1");
-  writeToFile(subDir, "file2", "this is file 2");
-
-  let ok = yield promiseFHRMigrator(srcDir, targetDir);
-  Assert.ok(ok, "callback should have been true");
-
-  
-  checkDirectoryContains(targetDir, {
-    "healthreport.sqlite": contents,
-    "healthreport": {
-      "file1": "this is file 1",
-      "file2": "this is file 2",
+    "datareporting": {
+      "state.json": stateContent,
+      "session-state.json": sessionStateContent,
     },
   });
+});
+
+add_task(function* test_fallback_fhr_state() {
+  let [srcDir, targetDir] = getTestDirs();
+
+  
+  
+  let stateContent = JSON.stringify({
+    clientId: "68d5474e-19dc-45c1-8e9a-81fca592707c",
+  });
+  let subDir = createSubDir(srcDir, "healthreport");
+  writeToFile(subDir, "state.json", stateContent);
+
+  
+  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  Assert.ok(ok, "callback should have been true");
+
+  checkDirectoryContains(targetDir, {
+    "healthreport": {
+      "state.json": stateContent,
+    },
+  });
+});
+
+
+add_task(function* test_datareporting_not_dir() {
+  let [srcDir, targetDir] = getTestDirs();
+
+  writeToFile(srcDir, "datareporting", "I'm a file but should be a directory");
+
+  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  Assert.ok(ok, "callback should have been true even though the directory was a file");
+
+  checkDirectoryContains(targetDir, {});
 });
 
 add_task(function* test_datareporting_empty() {
   let [srcDir, targetDir] = getTestDirs();
 
   
-  let subDir = srcDir.clone();
-  subDir.append("datareporting");
-  subDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-
-  let ok = yield promiseFHRMigrator(srcDir, targetDir);
+  let subDir = createSubDir(srcDir, "datareporting");
+  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true");
 
   
+  checkDirectoryContains(targetDir, {
+    "datareporting": {},
+  });
+});
+
+add_task(function* test_healthreport_empty() {
+  let [srcDir, targetDir] = getTestDirs();
+
+  
+  let subDir = createSubDir(srcDir, "healthreport");
+  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  Assert.ok(ok, "callback should have been true");
+
   
   checkDirectoryContains(targetDir, {});
 });
@@ -223,19 +211,56 @@ add_task(function* test_datareporting_many() {
   let [srcDir, targetDir] = getTestDirs();
 
   
-  let subDir = srcDir.clone();
-  subDir.append("datareporting");
-  subDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-
-  writeToFile(subDir, "state.json", "should be copied");
+  let subDir = createSubDir(srcDir, "datareporting");
+  let shouldBeCopied = "should be copied";
+  writeToFile(subDir, "state.json", shouldBeCopied);
+  writeToFile(subDir, "session-state.json", shouldBeCopied);
   writeToFile(subDir, "something.else", "should not");
+  createSubDir(subDir, "emptyDir");
 
-  let ok = yield promiseFHRMigrator(srcDir, targetDir);
+  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true");
 
   checkDirectoryContains(targetDir, {
     "datareporting" : {
-      "state.json": "should be copied",
+      "state.json": shouldBeCopied,
+      "session-state.json": shouldBeCopied,
+    }
+  });
+});
+
+add_task(function* test_no_session_state() {
+  let [srcDir, targetDir] = getTestDirs();
+
+  
+  let subDir = createSubDir(srcDir, "datareporting");
+  let stateContent = "abcd984";
+  writeToFile(subDir, "state.json", stateContent);
+
+  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  Assert.ok(ok, "callback should have been true");
+
+  checkDirectoryContains(targetDir, {
+    "datareporting" : {
+      "state.json": stateContent,
+    }
+  });
+});
+
+add_task(function* test_no_state() {
+  let [srcDir, targetDir] = getTestDirs();
+
+  
+  let subDir = createSubDir(srcDir, "datareporting");
+  let sessionStateContent = "abcd512";
+  writeToFile(subDir, "session-state.json", sessionStateContent);
+
+  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  Assert.ok(ok, "callback should have been true");
+
+  checkDirectoryContains(targetDir, {
+    "datareporting" : {
+      "session-state.json": sessionStateContent,
     }
   });
 });
