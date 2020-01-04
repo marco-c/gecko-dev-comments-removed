@@ -121,27 +121,6 @@ void MacroAssemblerARM::convertDoubleToFloat32(FloatRegister src, FloatRegister 
 
 
 
-
-
-
-
-
-void
-MacroAssemblerARM::branchTruncateDouble(FloatRegister src, Register dest, Label* fail)
-{
-    ScratchDoubleScope scratch(asMasm());
-    FloatRegister scratchSIntReg = scratch.sintOverlay();
-
-    ma_vcvt_F64_I32(src, scratchSIntReg);
-    ma_vxfer(scratchSIntReg, dest);
-    ma_cmp(dest, Imm32(0x7fffffff));
-    ma_cmp(dest, Imm32(0x80000000), Assembler::NotEqual);
-    ma_b(fail, Assembler::Equal);
-}
-
-
-
-
 void
 MacroAssemblerARM::convertDoubleToInt32(FloatRegister src, Register dest,
                                         Label* fail, bool negativeZeroCheck)
