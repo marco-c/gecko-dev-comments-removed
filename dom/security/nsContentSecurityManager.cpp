@@ -430,8 +430,7 @@ nsContentSecurityManager::doContentSecurityCheck(nsIChannel* aChannel,
   
   
   
-  rv = loadInfo->SetEnforceSecurity(true);
-  NS_ENSURE_SUCCESS(rv, rv);
+  loadInfo->SetEnforceSecurity(true);
 
   if (loadInfo->GetSecurityMode() == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
     rv = DoCORSChecks(aChannel, loadInfo, aInAndOutListener);
@@ -446,8 +445,7 @@ nsContentSecurityManager::doContentSecurityCheck(nsIChannel* aChannel,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = loadInfo->SetInitialSecurityCheckDone(true);
-  NS_ENSURE_SUCCESS(rv, rv);
+  loadInfo->SetInitialSecurityCheckDone(true);
 
   
   return NS_OK;

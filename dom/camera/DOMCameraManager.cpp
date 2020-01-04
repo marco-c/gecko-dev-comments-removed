@@ -307,13 +307,12 @@ nsDOMCameraManager::GetCamera(const nsAString& aCamera,
   nsCOMPtr<nsIPrincipal> principal = sop->GetPrincipal();
   
   
-  uint16_t status = nsIPrincipal::APP_STATUS_NOT_INSTALLED;
-  principal->GetAppStatus(&status);
   
   
   bool immediateCheck = false;
   CameraPreferences::GetPref("camera.control.test.permission", immediateCheck);
-  if ((status == nsIPrincipal::APP_STATUS_CERTIFIED || immediateCheck) && CheckPermission(mWindow)) {
+  if ((principal->GetAppStatus() == nsIPrincipal::APP_STATUS_CERTIFIED || immediateCheck) &&
+      CheckPermission(mWindow)) {
     PermissionAllowed(cameraId, aInitialConfig, promise);
     return promise.forget();
   }
