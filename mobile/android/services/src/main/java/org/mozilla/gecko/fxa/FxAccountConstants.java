@@ -56,12 +56,6 @@ public class FxAccountConstants {
 
 
 
-  public static final String PER_ACCOUNT_TYPE_PERMISSION = AppConstants.MOZ_ANDROID_SHARED_FXACCOUNT_TYPE + ".permission.PER_ACCOUNT_TYPE";
-
-  
-
-
-
 
 
 
