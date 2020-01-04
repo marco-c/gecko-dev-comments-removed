@@ -501,15 +501,26 @@ class InnerViewTable
     friend class ArrayBufferObject;
 
   private:
+    
+    
+    
+    
+    
+    
+    
+    
     typedef HashMap<JSObject*,
                     ViewVector,
-                    DefaultHasher<JSObject*>,
+                    MovableCellHasher<JSObject*>,
                     SystemAllocPolicy> Map;
 
     
     
     Map map;
 
+    
+    
+    
     
     
     Vector<JSObject*, 0, SystemAllocPolicy> nurseryKeys;
