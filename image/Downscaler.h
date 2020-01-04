@@ -93,7 +93,10 @@ public:
   }
 
   
-  void ClearRow(uint32_t aStartingAtCol = 0);
+  void ClearRow() { ClearRestOfRow(0); }
+
+  
+  void ClearRestOfRow(uint32_t aStartingAtCol);
 
   
   void CommitRow();
@@ -166,7 +169,8 @@ public:
 
   bool IsFrameComplete() const { return false; }
   uint8_t* RowBuffer() { return nullptr; }
-  void ClearRow(uint32_t = 0) { }
+  void ClearRow() { }
+  void ClearRestOfRow(uint32_t) { }
   void CommitRow() { }
   bool HasInvalidation() const { return false; }
   DownscalerInvalidRect TakeInvalidRect() { return DownscalerInvalidRect(); }

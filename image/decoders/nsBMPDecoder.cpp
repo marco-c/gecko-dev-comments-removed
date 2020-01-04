@@ -994,7 +994,7 @@ nsBMPDecoder::ReadRLEDelta(const char* aData)
   if (mDownscaler) {
     
     
-    mDownscaler->ClearRow( mCurrentPos);
+    mDownscaler->ClearRestOfRow( mCurrentPos);
   }
 
   
