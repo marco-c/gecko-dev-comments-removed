@@ -47,6 +47,7 @@ public:
 
   
   DECL_GFX_ENV_ONCE("MOZ_DISABLE_CRASH_GUARD", DisableCrashGuard);
+  DECL_GFX_ENV_ONCE("MOZ_FORCE_CRASH_GUARD_NIGHTLY", ForceCrashGuardNightly);
 
   
   

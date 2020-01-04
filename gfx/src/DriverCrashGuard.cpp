@@ -70,7 +70,8 @@ AreCrashGuardsEnabled()
   
   
   
-  return false;
+  
+  return gfxEnv::ForceCrashGuardNightly();
 #else
   
   if (gfxEnv::DisableCrashGuard()) {
