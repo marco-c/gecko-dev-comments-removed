@@ -115,8 +115,21 @@ global.makeWidgetId = id => {
 
 
 
-global.openPanel = (node, popupURL, extension) => {
+global.togglePanel = (node, popupURL, extension) => {
+  
+  node.setAttribute("open", "true");
   let document = node.ownerDocument;
+  let id = makeWidgetId(extension.id) + "-panel";
+  let panel = document.getElementById(id);
+  if (panel) {
+    if (panel.state === "open") {
+      
+      return panel.hidePopup();
+    } else if (panel.state === "closed") {
+      
+      return panel.openPopup(anchor, "bottomcenter topright", 0, 0, false, false);
+    }  
+  }
 
   let popupURI = Services.io.newURI(popupURL, null, extension.baseURI);
 
@@ -124,8 +137,8 @@ global.openPanel = (node, popupURL, extension) => {
     extension.principal, popupURI,
     Services.scriptSecurityManager.DISALLOW_SCRIPT);
 
-  let panel = document.createElement("panel");
-  panel.setAttribute("id", makeWidgetId(extension.id) + "-panel");
+  panel = document.createElement("panel");
+  panel.setAttribute("id", id);
   panel.setAttribute("class", "browser-extension-panel");
   panel.setAttribute("type", "arrow");
   panel.setAttribute("role", "group");
@@ -155,6 +168,8 @@ global.openPanel = (node, popupURL, extension) => {
 
   let context;
   panel.addEventListener("popuphidden", () => {
+    
+    node.removeAttribute("open");
     browser.removeEventListener("DOMTitleChanged", titleChangedListener, true);
     context.unload();
     panel.remove();
