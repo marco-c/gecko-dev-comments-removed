@@ -508,7 +508,7 @@ NS_NewLoadGroup(nsILoadGroup **aResult, nsIPrincipal *aPrincipal)
         do_CreateInstance(NS_LOADGROUP_CONTRACTID, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    RefPtr<LoadContext> loadContext = new LoadContext(aPrincipal);
+    nsRefPtr<LoadContext> loadContext = new LoadContext(aPrincipal);
     rv = group->SetNotificationCallbacks(loadContext);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -919,8 +919,8 @@ NS_ParseContentType(const nsACString &rawContentType,
     NS_ENSURE_SUCCESS(rv, rv);
     nsCString charset;
     bool hadCharset;
-    rv = util->ParseContentType(rawContentType, charset, &hadCharset,
-                                contentType);
+    rv = util->ParseResponseContentType(rawContentType, charset, &hadCharset,
+                                        contentType);
     if (NS_SUCCEEDED(rv) && hadCharset)
         contentCharset = charset;
     return rv;
