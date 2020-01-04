@@ -37,6 +37,7 @@ this.LoginHelper = {
 
 
   debug: Services.prefs.getBoolPref("signon.debug"),
+  schemeUpgrades: Services.prefs.getBoolPref("signon.schemeUpgrades"),
 
   createLogger(aLogPrefix) {
     let getMaxLogLevel = () => {
@@ -54,6 +55,7 @@ this.LoginHelper = {
     
     Services.prefs.addObserver("signon.", () => {
       this.debug = Services.prefs.getBoolPref("signon.debug");
+      this.schemeUpgrades = Services.prefs.getBoolPref("signon.schemeUpgrades");
       logger.maxLogLevel = getMaxLogLevel();
     }, false);
 
@@ -343,8 +345,42 @@ this.LoginHelper = {
 
 
 
-  dedupeLogins(logins, uniqueKeys = ["username", "password"]) {
+
+
+
+
+
+
+
+
+
+
+  dedupeLogins(logins, uniqueKeys = ["username", "password"],
+               resolveBy = ["timeLastUsed"],
+               preferredOrigin = undefined) {
     const KEY_DELIMITER = ":";
+
+    if (!preferredOrigin && resolveBy.includes("scheme")) {
+      throw new Error("dedupeLogins: `preferredOrigin` is required in order to "+
+                      "prefer schemes which match it.");
+    }
+
+    let preferredOriginScheme;
+    if (preferredOrigin) {
+      try {
+        preferredOriginScheme = Services.io.newURI(preferredOrigin, null, null).scheme;
+      } catch (ex) {
+        
+      }
+    }
+
+    if (!preferredOriginScheme && resolveBy.includes("scheme")) {
+      throw new Error("dedupeLogins: Deduping with a scheme preference but couldn't " +
+                      "get the preferred origin scheme.");
+    }
+
+    
+    let loginsByKeys = new Map();
 
     
     function getKey(login, uniqueKeys) {
@@ -352,19 +388,78 @@ this.LoginHelper = {
     }
 
     
-    let loginsByKeys = new Map();
+
+
+
+
+
+
+    function isLoginPreferred(existingLogin, login) {
+      if (!resolveBy || resolveBy.length == 0) {
+        
+        return false;
+      }
+
+      for (let preference of resolveBy) {
+        switch (preference) {
+          case "scheme": {
+            if (!preferredOriginScheme) {
+              break;
+            }
+
+            try {
+              
+              let existingLoginURI = Services.io.newURI(existingLogin.hostname, null, null);
+              let loginURI = Services.io.newURI(login.hostname, null, null);
+              
+              
+              if (loginURI.scheme == existingLoginURI.scheme ||
+                  (loginURI.scheme != preferredOriginScheme &&
+                   existingLoginURI.scheme != preferredOriginScheme)) {
+                break;
+              }
+
+              return loginURI.scheme == preferredOriginScheme;
+            } catch (ex) {
+              
+              log.debug("dedupeLogins/shouldReplaceExisting: Error comparing schemes:",
+                        existingLogin.hostname, login.hostname,
+                        "preferredOrigin:", preferredOrigin, ex);
+            }
+            break;
+          }
+          case "timeLastUsed":
+          case "timePasswordChanged": {
+            
+            let loginDate = login.QueryInterface(Ci.nsILoginMetaInfo)[preference];
+            let storedLoginDate = existingLogin.QueryInterface(Ci.nsILoginMetaInfo)[preference];
+            if (loginDate == storedLoginDate) {
+              break;
+            }
+
+            return loginDate > storedLoginDate;
+          }
+          default: {
+            throw new Error("dedupeLogins: Invalid resolveBy preference: " + preference);
+          }
+        }
+      }
+
+      return false;
+    }
+
     for (let login of logins) {
       let key = getKey(login, uniqueKeys);
-      
+
       if (loginsByKeys.has(key)) {
-        let loginDate = login.QueryInterface(Ci.nsILoginMetaInfo).timeLastUsed;
-        let storedLoginDate = loginsByKeys.get(key).QueryInterface(Ci.nsILoginMetaInfo).timeLastUsed;
-        if (loginDate < storedLoginDate) {
+        if (!isLoginPreferred(loginsByKeys.get(key), login)) {
+          
           continue;
         }
       }
       loginsByKeys.set(key, login);
     }
+
     
     return [...loginsByKeys.values()];
   },
@@ -491,14 +586,12 @@ this.LoginHelper = {
 
   loginToVanillaObject(login) {
     let obj = {};
-    for (let i in login) {
+    for (let i in login.QueryInterface(Ci.nsILoginMetaInfo)) {
       if (typeof login[i] !== 'function') {
         obj[i] = login[i];
       }
     }
 
-    login.QueryInterface(Ci.nsILoginMetaInfo);
-    obj.guid = login.guid;
     return obj;
   },
 
@@ -506,15 +599,17 @@ this.LoginHelper = {
 
 
   vanillaObjectToLogin(login) {
-    var formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
-                  createInstance(Ci.nsILoginInfo);
+    let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
+                    createInstance(Ci.nsILoginInfo);
     formLogin.init(login.hostname, login.formSubmitURL,
                    login.httpRealm, login.username,
                    login.password, login.usernameField,
                    login.passwordField);
 
     formLogin.QueryInterface(Ci.nsILoginMetaInfo);
-    formLogin.guid = login.guid;
+    for (let prop of ["guid", "timeCreated", "timeLastUsed", "timePasswordChanged", "timesUsed"]) {
+      formLogin[prop] = login[prop];
+    }
     return formLogin;
   },
 
@@ -552,3 +647,8 @@ this.LoginHelper = {
     }
   }
 };
+
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  let logger = LoginHelper.createLogger("LoginHelper");
+  return logger;
+});

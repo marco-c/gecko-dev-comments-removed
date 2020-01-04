@@ -536,7 +536,7 @@ LoginManagerPrompter.prototype = {
 
       
       var foundLogins = this._pwmgr.findLogins({},
-                                  hostname, null, httpRealm);
+                                               hostname, null, httpRealm);
       this.log("found " + foundLogins.length + " matching logins.");
 
       
@@ -721,6 +721,7 @@ LoginManagerPrompter.prototype = {
 
 
   promptToSavePassword : function (aLogin) {
+    this.log("promptToSavePassword");
     var notifyObj = this._getPopupNote() || this._getNotifyBox();
     if (notifyObj)
       this._showSaveLoginNotification(notifyObj, aLogin);
@@ -1175,6 +1176,7 @@ LoginManagerPrompter.prototype = {
 
 
   promptToChangePassword(aOldLogin, aNewLogin) {
+    this.log("promptToChangePassword");
     let notifyObj = this._getPopupNote() || this._getNotifyBox();
 
     if (notifyObj) {
@@ -1302,6 +1304,7 @@ LoginManagerPrompter.prototype = {
 
 
   promptToChangePasswordWithUsernames : function (logins, count, aNewLogin) {
+    this.log("promptToChangePasswordWithUsernames with count:", count);
     const buttonFlags = Ci.nsIPrompt.STD_YES_NO_BUTTONS;
 
     var usernames = logins.map(l => l.username);

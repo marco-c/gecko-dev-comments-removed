@@ -16,7 +16,7 @@ add_task(function* test_initialize() {
   Services.prefs.setBoolPref("signon.autofillForms", false);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("signon.autofillForms");
-    Services.logins.removeAllLogins();
+    Services.prefs.clearUserPref("signon.schemeUpgrades");
   });
   for (let login of loginList()) {
     Services.logins.addLogin(login);
@@ -27,7 +27,8 @@ add_task(function* test_initialize() {
 
 
 
-add_task(function* test_context_menu_populate_password() {
+add_task(function* test_context_menu_populate_password_noSchemeUpgrades() {
+  Services.prefs.setBoolPref("signon.schemeUpgrades", false);
   yield BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
@@ -38,7 +39,7 @@ add_task(function* test_context_menu_populate_password() {
 
     
     let popupMenu = document.getElementById("fill-login-popup");
-    checkMenu(popupMenu);
+    checkMenu(popupMenu, 2);
 
     let contextMenu = document.getElementById("contentAreaContextMenu");
     contextMenu.hidePopup();
@@ -49,7 +50,31 @@ add_task(function* test_context_menu_populate_password() {
 
 
 
-add_task(function* test_context_menu_populate_username_with_password() {
+add_task(function* test_context_menu_populate_password_schemeUpgrades() {
+  Services.prefs.setBoolPref("signon.schemeUpgrades", true);
+  yield BrowserTestUtils.withNewTab({
+    gBrowser,
+    url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
+  }, function* (browser) {
+    let passwordInput = browser.contentWindow.document.getElementById("test-password-1");
+
+    yield openPasswordContextMenu(browser, passwordInput);
+
+    
+    let popupMenu = document.getElementById("fill-login-popup");
+    checkMenu(popupMenu, 3);
+
+    let contextMenu = document.getElementById("contentAreaContextMenu");
+    contextMenu.hidePopup();
+  });
+});
+
+
+
+
+
+add_task(function* test_context_menu_populate_username_with_password_noSchemeUpgrades() {
+  Services.prefs.setBoolPref("signon.schemeUpgrades", false);
   yield BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_HOSTNAME + "/browser/toolkit/components/" +
@@ -61,7 +86,30 @@ add_task(function* test_context_menu_populate_username_with_password() {
 
     
     let popupMenu = document.getElementById("fill-login-popup");
-    checkMenu(popupMenu);
+    checkMenu(popupMenu, 2);
+
+    let contextMenu = document.getElementById("contentAreaContextMenu");
+    contextMenu.hidePopup();
+  });
+});
+
+
+
+
+add_task(function* test_context_menu_populate_username_with_password_schemeUpgrades() {
+  Services.prefs.setBoolPref("signon.schemeUpgrades", true);
+  yield BrowserTestUtils.withNewTab({
+    gBrowser,
+    url: TEST_HOSTNAME + "/browser/toolkit/components/" +
+         "passwordmgr/test/browser/multiple_forms.html",
+  }, function* (browser) {
+    let passwordInput = browser.contentWindow.document.getElementById("test-username-2");
+
+    yield openPasswordContextMenu(browser, passwordInput);
+
+    
+    let popupMenu = document.getElementById("fill-login-popup");
+    checkMenu(popupMenu, 3);
 
     let contextMenu = document.getElementById("contentAreaContextMenu");
     contextMenu.hidePopup();
@@ -73,6 +121,7 @@ add_task(function* test_context_menu_populate_username_with_password() {
 
 
 add_task(function* test_context_menu_password_fill() {
+  Services.prefs.setBoolPref("signon.schemeUpgrades", true);
   yield BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
@@ -111,7 +160,8 @@ add_task(function* test_context_menu_password_fill() {
         
         
         let unchangedFields = form.querySelectorAll('input:not(#' + passwordField.id + ')');
-        yield assertContextMenuFill(form, null, passwordField, unchangedFields);
+        yield assertContextMenuFill(form, null, passwordField, unchangedFields, 1);
+        Assert.equal(passwordField.value, "password1", "Check upgraded login was actually used");
         contextMenu.hidePopup();
       }
     }
@@ -123,6 +173,7 @@ add_task(function* test_context_menu_password_fill() {
 
 
 add_task(function* test_context_menu_username_login_fill() {
+  Services.prefs.setBoolPref("signon.schemeUpgrades", true);
   yield BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
@@ -168,7 +219,10 @@ add_task(function* test_context_menu_username_login_fill() {
         }
         
         let unchangedFields = form.querySelectorAll('input:not(#' + usernameField.id + '):not(#' + passwordField.id + ')');
-        yield assertContextMenuFill(form, usernameField, passwordField, unchangedFields);
+        yield assertContextMenuFill(form, usernameField, passwordField, unchangedFields, 1);
+        if (!passwordField.hasAttribute("expectedFail")) {
+          Assert.equal(passwordField.value, "password1", "Check upgraded login was actually used");
+        }
         contextMenu.hidePopup();
       }
     }
@@ -179,6 +233,7 @@ add_task(function* test_context_menu_username_login_fill() {
 
 
 add_task(function* test_context_menu_iframe_fill() {
+  Services.prefs.setBoolPref("signon.schemeUpgrades", true);
   yield BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
@@ -262,7 +317,7 @@ function* openPasswordContextMenu(browser, passwordInput, assertCallback = null)
 
 
 
-function* assertContextMenuFill(form, usernameField, passwordField, unchangedFields){
+function* assertContextMenuFill(form, usernameField, passwordField, unchangedFields, loginIndex){
   let popupMenu = document.getElementById("fill-login-popup");
 
   
@@ -273,13 +328,13 @@ function* assertContextMenuFill(form, usernameField, passwordField, unchangedFie
   }
 
   
-  let firstLoginItem = popupMenu.getElementsByClassName("context-login-item")[0];
-  firstLoginItem.doCommand();
+  let loginItem = popupMenu.getElementsByClassName("context-login-item")[loginIndex];
+  loginItem.doCommand();
 
   yield BrowserTestUtils.waitForEvent(form, "input", "Username input value changed");
 
   
-  let login = getLoginFromUsername(firstLoginItem.label);
+  let login = getLoginFromUsername(loginItem.label);
 
   
   if (usernameField && usernameField.getAttribute("expectedFail") == null) {
@@ -307,11 +362,18 @@ function* assertContextMenuFill(form, usernameField, passwordField, unchangedFie
 
 
 
-function checkMenu(contextMenu) {
-  let logins = loginList().filter(login => login.hostname == TEST_HOSTNAME);
+
+
+
+function checkMenu(contextMenu, expectedCount) {
+  let logins = loginList().filter(login => {
+    return LoginHelper.isOriginMatching(login.hostname, TEST_HOSTNAME, {
+      schemeUpgrades: Services.prefs.getBoolPref("signon.schemeUpgrades"),
+    });
+  });
   
   let menuitems = [...contextMenu.getElementsByClassName("context-login-item")];
-  Assert.equal(menuitems.length, logins.length, "Same amount of menu items and expected logins.");
+  Assert.equal(menuitems.length, expectedCount, "Expected number of menu items");
   Assert.ok(logins.every(l => menuitems.some(m => l.username == m.label)), "Every login have an item at the menu.");
 }
 
@@ -330,11 +392,19 @@ function getLoginFromUsername(username) {
 
 
 
+
 function loginList() {
   return [
     LoginTestUtils.testData.formLogin({
       hostname: "https://example.com",
       formSubmitURL: "https://example.com",
+      username: "username",
+      password: "password",
+    }),
+    
+    LoginTestUtils.testData.formLogin({
+      hostname: "http://example.com",
+      formSubmitURL: "http://example.com",
       username: "username",
       password: "password",
     }),
@@ -351,8 +421,8 @@ function loginList() {
       password: "password2",
     }),
     LoginTestUtils.testData.formLogin({
-      hostname: "https://example.org",
-      formSubmitURL: "https://example.org",
+      hostname: "http://example.org",
+      formSubmitURL: "http://example.org",
       username: "username-cross-origin",
       password: "password-cross-origin",
     }),

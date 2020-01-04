@@ -57,7 +57,6 @@ var LoginManagerParent = {
       });
       return this._recipeManager.initializationPromise;
     });
-
   },
 
   receiveMessage: function (msg) {
@@ -207,7 +206,17 @@ var LoginManagerParent = {
       return;
     }
 
-    var logins = Services.logins.findLogins({}, formOrigin, actionOrigin, null);
+    let logins = LoginHelper.searchLoginsWithObject({
+      formSubmitURL: actionOrigin,
+      hostname: formOrigin,
+      schemeUpgrades: LoginHelper.schemeUpgrades,
+    });
+    let resolveBy = [
+      "scheme",
+      "timePasswordChanged",
+    ];
+    logins = LoginHelper.dedupeLogins(logins, ["username"], resolveBy, formOrigin);
+    log("sendLoginDataToChild:", logins.length, "deduped logins");
     
     
     var jsLogins = LoginHelper.loginsToVanillaObjects(logins);
@@ -238,7 +247,16 @@ var LoginManagerParent = {
       log("Creating new autocomplete search result.");
 
       
-      logins = Services.logins.findLogins({}, formOrigin, actionOrigin, null);
+      logins = LoginHelper.searchLoginsWithObject({
+        formSubmitURL: actionOrigin,
+        hostname: formOrigin,
+        schemeUpgrades: LoginHelper.schemeUpgrades,
+      });
+      let resolveBy = [
+        "scheme",
+        "timePasswordChanged",
+      ];
+      logins = LoginHelper.dedupeLogins(logins, ["username"], resolveBy, formOrigin);
     }
 
     let matchingLogins = logins.filter(function(fullMatch) {
@@ -310,7 +328,11 @@ var LoginManagerParent = {
                    (usernameField ? usernameField.name  : ""),
                    newPasswordField.name);
 
-    let logins = Services.logins.findLogins({}, hostname, formSubmitURL, null);
+    let logins = LoginHelper.searchLoginsWithObject({
+      formSubmitURL,
+      hostname,
+      schemeUpgrades: LoginHelper.schemeUpgrades,
+    });
 
     
     
@@ -463,6 +485,7 @@ var LoginManagerParent = {
     }
     state.anchorDeferredTask.arm();
   },
+
   updateLoginAnchor: Task.async(function* (browser) {
     
     
@@ -473,7 +496,11 @@ var LoginManagerParent = {
 
     
     let hasLogins = loginFormOrigin &&
-                    Services.logins.countLogins(loginFormOrigin, "", null) > 0;
+                    LoginHelper.searchLoginsWithObject({
+                      formSubmitURL: "",
+                      hostname: loginFormOrigin,
+                      schemeUpgrades: LoginHelper.schemeUpgrades,
+                    }).length > 0;
 
     
     
