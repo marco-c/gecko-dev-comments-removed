@@ -35,7 +35,8 @@ public class ProfileInformationCache implements ProfileInformationProvider {
 
 
 
-  public static final int FORMAT_VERSION = 3;
+
+  public static final int FORMAT_VERSION = 4;
 
   protected boolean initialized = false;
   protected boolean needsWrite = false;
