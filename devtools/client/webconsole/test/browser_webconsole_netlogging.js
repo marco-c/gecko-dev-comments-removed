@@ -7,6 +7,9 @@
 
 "use strict";
 
+
+requestLongerTimeout(2);
+
 const TEST_NETWORK_REQUEST_URI =
   "http://example.com/browser/devtools/client/webconsole/test/" +
   "test-network-request.html";
