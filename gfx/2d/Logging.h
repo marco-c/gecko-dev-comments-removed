@@ -135,11 +135,12 @@ enum class LogReason : int {
   PAllocTextureBackendMismatch,
   GetFontFileDataFailed,
   MessageChannelCloseFailure,
+  MessageChannelInvalidHandle,
   TextureAliveAfterShutdown,
   InvalidContext,
   InvalidCommandList,
-  AsyncTransactionTimeout,
-  TextureCreation, 
+  AsyncTransactionTimeout, 
+  TextureCreation,
   
   MustBeLessThanThis = 101,
 };
