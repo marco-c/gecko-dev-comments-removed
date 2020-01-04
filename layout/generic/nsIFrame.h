@@ -1632,12 +1632,11 @@ public:
     
     
     
-    void ForceBreak(nsRenderingContext *aRenderingContext);
+    void ForceBreak();
 
     
     
-    void OptionallyBreak(nsRenderingContext *aRenderingContext,
-                         nscoord aHyphenWidth = 0);
+    void OptionallyBreak(nscoord aHyphenWidth = 0);
 
     
     
@@ -1651,7 +1650,7 @@ public:
   };
 
   struct InlinePrefISizeData : public InlineIntrinsicISizeData {
-    void ForceBreak(nsRenderingContext *aRenderingContext);
+    void ForceBreak();
   };
 
   
