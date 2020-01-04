@@ -266,29 +266,6 @@ this.PlacesUtils = {
 
 
 
-  isValidGuid(guid) {
-    return (/^[a-zA-Z0-9\-_]{12}$/.test(guid));
-  },
-
-  
-
-
-
-
-
-
-  toURI(url) {
-    url = (url instanceof URL) ? url.href : url;
-
-    return NetUtil.newURI(url);
-  },
-
-  
-
-
-
-
-
 
   toPRTime(date) {
     return date * 1000;

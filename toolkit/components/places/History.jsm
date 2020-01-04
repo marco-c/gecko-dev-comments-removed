@@ -172,18 +172,6 @@ this.History = Object.freeze({
 
 
 
-  insert: function (pageInfo) {
-    if (typeof pageInfo != "object" || !pageInfo) {
-      throw new TypeError("pageInfo must be an object");
-    }
-
-    let info = validatePageInfo(pageInfo);
-
-    return PlacesUtils.withConnectionWrapper("History.jsm: insert",
-      db => insert(db, info));
-  },
-
-  
 
 
 
@@ -197,61 +185,8 @@ this.History = Object.freeze({
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  insertMany: function (pageInfos, onResult, onError) {
-    let infos = [];
-
-    if (!Array.isArray(pageInfos)) {
-      throw new TypeError("pageInfos must be an array");
-    }
-    if (!pageInfos.length) {
-      throw new TypeError("pageInfos may not be an empty array");
-    }
-
-    if (onResult && typeof onResult != "function") {
-      throw new TypeError(`onResult: ${onResult} is not a valid function`);
-    }
-    if (onError && typeof onError != "function") {
-      throw new TypeError(`onError: ${onError} is not a valid function`);
-    }
-
-    for (let pageInfo of pageInfos) {
-      let info = validatePageInfo(pageInfo);
-      infos.push(info);
-    }
-
-    return PlacesUtils.withConnectionWrapper("History.jsm: insertMany",
-      db => insertMany(db, infos, onResult, onError));
+  update: function (infos, onResult) {
+    throw new Error("Method not implemented");
   },
 
   
@@ -461,110 +396,13 @@ this.History = Object.freeze({
 
 
 
-function validatePageInfo(pageInfo) {
-  let info = {
-    visits: [],
-  };
-
-  if (!pageInfo.url) {
-    throw new TypeError("PageInfo object must have a url property");
-  }
-
-  info.url = normalizeToURLOrGUID(pageInfo.url);
-
-  if (typeof pageInfo.title === "string" && pageInfo.title.length) {
-    info.title = pageInfo.title;
-  } else if (pageInfo.title != null && pageInfo.title != undefined) {
-    throw new TypeError(`title property of PageInfo object: ${pageInfo.title} must be a string if provided`);
-  }
-
-  if (!pageInfo.visits || !Array.isArray(pageInfo.visits) || !pageInfo.visits.length) {
-    throw new TypeError("PageInfo object must have an array of visits");
-  }
-  for (let inVisit of pageInfo.visits) {
-    let visit = {
-      date: new Date(),
-      transition: inVisit.transition || History.TRANSITION_LINK,
-    };
-
-    if (!isValidTransitionType(visit.transition)) {
-      throw new TypeError(`transition: ${visit.transition} is not a valid transition type`);
-    }
-
-    if (inVisit.date) {
-      ensureDate(inVisit.date);
-      if (inVisit.date > Date.now()) {
-        throw new TypeError(`date: ${inVisit.date} cannot be a future date`);
-      }
-      visit.date = inVisit.date;
-    }
-
-    if (inVisit.referrer) {
-      visit.referrer = normalizeToURLOrGUID(inVisit.referrer);
-    }
-    info.visits.push(visit);
-  }
-  return info;
-}
-
-
-
-
-
-
-
-
-
-
-function convertForUpdatePlaces(pageInfo) {
-  let info = {
-    uri: PlacesUtils.toURI(pageInfo.url),
-    title: pageInfo.title,
-    visits: [],
-  };
-
-  for (let inVisit of pageInfo.visits) {
-    let visit = {
-      visitDate: PlacesUtils.toPRTime(inVisit.date),
-      transitionType: inVisit.transition,
-      referrerURI: (inVisit.referrer) ? PlacesUtils.toURI(inVisit.referrer) : undefined,
-    };
-    info.visits.push(visit);
-  }
-  return info;
-}
-
-
-
-
-
-
-
-function isValidTransitionType(transitionType) {
-  return [
-    History.TRANSITION_LINK,
-    History.TRANSITION_TYPED,
-    History.TRANSITION_BOOKMARK,
-    History.TRANSITION_EMBED,
-    History.TRANSITION_REDIRECT_PERMANENT,
-    History.TRANSITION_REDIRECT_TEMPORARY,
-    History.TRANSITION_DOWNLOAD,
-    History.TRANSITION_FRAMED_LINK
-  ].includes(transitionType);
-}
-
-
-
-
-
-
 
 
 
 function normalizeToURLOrGUID(key) {
   if (typeof key === "string") {
     
-    if (PlacesUtils.isValidGuid(key)) {
+    if (/^[a-zA-Z0-9\-_]{12}$/.test(key)) {
       return key;
     }
     return new URL(key);
@@ -928,88 +766,4 @@ var remove = Task.async(function*(db, {guids, urls}, onResult = null) {
   }
 
   return hasPagesToRemove;
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function mergeUpdateInfoIntoPageInfo(updateInfo, pageInfo={}) {
-  pageInfo.guid = updateInfo.guid;
-  if (!pageInfo.url) {
-    pageInfo.url = new URL(updateInfo.uri.spec);
-    pageInfo.title = updateInfo.title;
-    pageInfo.visits = updateInfo.visits.map(visit => {
-      return {
-        date: PlacesUtils.toDate(visit.visitDate),
-        transition: visit.transitionType,
-        referrer: (visit.referrerURI) ? new URL(visit.referrerURI.spec) : null
-      }
-    });
-  }
-  return pageInfo;
-}
-
-
-var insert = Task.async(function*(db, pageInfo) {
-  let info = convertForUpdatePlaces(pageInfo);
-
-  return new Promise((resolve, reject) => {
-    PlacesUtils.asyncHistory.updatePlaces(info, {
-      handleError: error => {
-        reject(error);
-      },
-      handleResult: result => {
-        pageInfo = mergeUpdateInfoIntoPageInfo(result, pageInfo);
-      },
-      handleCompletion: () => {
-        resolve(pageInfo);
-      }
-    });
-  });
-});
-
-
-var insertMany = Task.async(function*(db, pageInfos, onResult, onError) {
-  let infos = [];
-  let onResultData = [];
-  let onErrorData = [];
-
-  for (let pageInfo of pageInfos) {
-    let info = convertForUpdatePlaces(pageInfo);
-    infos.push(info);
-  }
-
-  return new Promise((resolve, reject) => {
-    PlacesUtils.asyncHistory.updatePlaces(infos, {
-      handleError: (resultCode, result) => {
-        let pageInfo = mergeUpdateInfoIntoPageInfo(result);
-        onErrorData.push(pageInfo);
-      },
-      handleResult: result => {
-        let pageInfo = mergeUpdateInfoIntoPageInfo(result);
-        onResultData.push(pageInfo);
-      },
-      handleCompletion: () => {
-        notifyOnResult(onResultData, onResult);
-        notifyOnResult(onErrorData, onError);
-        if (onResultData.length) {
-          resolve();
-        } else {
-          reject({message: "No items were added to history."})
-        }
-      }
-    });
-  });
 });
