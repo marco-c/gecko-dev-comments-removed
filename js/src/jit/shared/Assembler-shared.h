@@ -703,20 +703,6 @@ struct AsmJSAbsoluteAddress
 };
 
 
-
-struct AsmJSInternalCallee
-{
-    uint32_t index;
-
-    
-    AsmJSInternalCallee() = default;
-
-    explicit AsmJSInternalCallee(uint32_t calleeIndex)
-      : index(calleeIndex)
-    {}
-};
-
-
 class AssemblerShared
 {
     wasm::CallSiteAndTargetVector callsites_;

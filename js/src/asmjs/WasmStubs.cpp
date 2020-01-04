@@ -252,7 +252,7 @@ wasm::GenerateEntry(MacroAssembler& masm, unsigned target, const Sig& sig, bool 
 
     
     masm.assertStackAlignment(AsmJSStackAlignment);
-    masm.call(CallSiteDesc(CallSiteDesc::Relative), AsmJSInternalCallee(target));
+    masm.call(CallSiteDesc(CallSiteDesc::Relative), target);
 
     
     masm.loadWasmActivation(scratch);
