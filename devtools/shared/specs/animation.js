@@ -3,24 +3,7 @@
 
 "use strict";
 
-const {
-  Arg,
-  RetVal,
-  generateActorSpec,
-  types
-} = require("devtools/shared/protocol");
-require("devtools/shared/specs/inspector");
-
-
-
-
-
-types.addDictType("animationMutationChange", {
-  
-  type: "string",
-  
-  player: "animationplayer"
-});
+const { Arg, RetVal, generateActorSpec } = require("devtools/shared/protocol");
 
 const animationPlayerSpec = generateActorSpec({
   typeName: "animationplayer",
@@ -80,72 +63,3 @@ const animationPlayerSpec = generateActorSpec({
 });
 
 exports.animationPlayerSpec = animationPlayerSpec;
-
-const animationsSpec = generateActorSpec({
-  typeName: "animations",
-
-  events: {
-    "mutations": {
-      type: "mutations",
-      changes: Arg(0, "array:animationMutationChange")
-    }
-  },
-
-  methods: {
-    setWalkerActor: {
-      request: {
-        walker: Arg(0, "domwalker")
-      },
-      response: {}
-    },
-    getAnimationPlayersForNode: {
-      request: {
-        actorID: Arg(0, "domnode")
-      },
-      response: {
-        players: RetVal("array:animationplayer")
-      }
-    },
-    stopAnimationPlayerUpdates: {
-      request: {},
-      response: {}
-    },
-    pauseAll: {
-      request: {},
-      response: {}
-    },
-    playAll: {
-      request: {},
-      response: {}
-    },
-    toggleAll: {
-      request: {},
-      response: {}
-    },
-    toggleSeveral: {
-      request: {
-        players: Arg(0, "array:animationplayer"),
-        shouldPause: Arg(1, "boolean")
-      },
-      response: {}
-    },
-    setCurrentTimes: {
-      request: {
-        players: Arg(0, "array:animationplayer"),
-        time: Arg(1, "number"),
-        shouldPause: Arg(2, "boolean")
-      },
-      response: {}
-    },
-    setPlaybackRates: {
-      request: {
-        players: Arg(0, "array:animationplayer"),
-        rate: Arg(1, "number")
-      },
-      response: {}
-    }
-  }
-});
-
-exports.animationsSpec = animationsSpec;
-
