@@ -269,6 +269,18 @@ public:
   }
 #endif
 
+  
+
+
+  bool IsCentralBaseline() const { return IsVertical() && !IsSideways(); }
+
+  
+
+
+
+  bool IsAlphabeticalBaseline() const { return !IsCentralBaseline(); }
+
+
   static mozilla::PhysicalAxis PhysicalAxisForLogicalAxis(
                                               uint8_t aWritingModeValue,
                                               LogicalAxis aAxis)
