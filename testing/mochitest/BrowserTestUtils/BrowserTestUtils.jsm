@@ -283,11 +283,43 @@ this.BrowserTestUtils = {
 
 
 
-  waitForNewWindow: Task.async(function* (delayedStartup=true) {
+
+
+
+
+
+
+
+
+  waitForNewWindow: Task.async(function* (delayedStartup=true,
+                                          initialBrowserLoaded=null) {
     let win = yield this.domWindowOpened();
 
-    yield TestUtils.topicObserved("browser-delayed-startup-finished",
-                                   subject => subject == win);
+    let promises = [
+      TestUtils.topicObserved("browser-delayed-startup-finished",
+                              subject => subject == win),
+    ];
+
+    if (initialBrowserLoaded) {
+      yield this.waitForEvent(win, "DOMContentLoaded");
+
+      let browser = win.gBrowser.selectedBrowser;
+
+      
+      let process =
+        browser.isRemoteBrowser ? Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
+                                : Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
+      if (win.gMultiProcessBrowser &&
+          !E10SUtils.canLoadURIInProcess(initialBrowserLoaded, process)) {
+        yield this.waitForEvent(browser, "XULFrameLoaderCreated");
+      }
+
+      let loadPromise = this.browserLoaded(browser, false, initialBrowserLoaded);
+      promises.push(loadPromise);
+    }
+
+    yield Promise.all(promises);
+
     return win;
   }),
 
