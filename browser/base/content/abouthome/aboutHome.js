@@ -273,13 +273,6 @@ function loadSnippets()
     
     let xhr = new XMLHttpRequest();
     xhr.timeout = 5000;
-    try {
-      xhr.open("GET", updateURL, true);
-    } catch (ex) {
-      showSnippets();
-      loadCompleted();
-      return;
-    }
     
     
     gSnippetsMap.set("snippets-last-update", Date.now());
@@ -291,7 +284,14 @@ function loadSnippets()
       showSnippets();
       loadCompleted();
     };
-    xhr.send(null);
+    try {
+      xhr.open("GET", updateURL, true);
+      xhr.send(null);
+    } catch (ex) {
+      showSnippets();
+      loadCompleted();
+      return;
+    }
   } else {
     showSnippets();
     loadCompleted();

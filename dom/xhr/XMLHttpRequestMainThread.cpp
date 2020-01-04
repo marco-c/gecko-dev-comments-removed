@@ -1529,8 +1529,8 @@ XMLHttpRequestMainThread::OpenInternal(const nsACString& aMethod,
   
   
   
-  rv = CreateChannel();
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  CreateChannel();
 
   
   if (mState != State::opened) {
@@ -2632,7 +2632,7 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
 
     
     if (mFlagSynchronous) {
-      return rv;
+      return NS_ERROR_DOM_NETWORK_ERR;
     }
   }
 
@@ -2724,18 +2724,24 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
 {
   NS_ENSURE_TRUE(mPrincipal, NS_ERROR_NOT_INITIALIZED);
 
-  PopulateNetworkInterfaceId();
+  
+  if (mState != State::opened || mFlagSend) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
 
   nsresult rv = CheckInnerWindowCorrectness();
   if (NS_FAILED(rv)) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
-  if (mState != State::opened || 
-      mFlagSend || 
-      !mChannel) { 
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  
+  
+  
+  if (!mChannel) {
+    return NS_ERROR_DOM_NETWORK_ERR;
   }
+
+  PopulateNetworkInterfaceId();
 
   
   
@@ -2893,7 +2899,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   if (!mChannel) {
     
     if (mFlagSynchronous) {
-      return NS_ERROR_FAILURE;
+      return NS_ERROR_DOM_NETWORK_ERR;
     } else {
       
       
