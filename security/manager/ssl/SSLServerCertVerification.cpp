@@ -1243,6 +1243,11 @@ AuthCertificate(CertVerifier& certVerifier,
     savedErrorCode = PR_GetError();
   }
 
+  uint32_t evStatus = (rv != SECSuccess) ? 0                
+                    : (evOidPolicy == SEC_OID_UNKNOWN) ? 1  
+                    : 2;                                    
+  Telemetry::Accumulate(Telemetry::CERT_EV_STATUS, evStatus);
+
   if (ocspStaplingStatus != CertVerifier::OCSP_STAPLING_NEVER_CHECKED) {
     Telemetry::Accumulate(Telemetry::SSL_OCSP_STAPLING, ocspStaplingStatus);
   }
