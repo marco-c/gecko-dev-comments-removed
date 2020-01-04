@@ -1415,13 +1415,12 @@ DecompileExpressionFromStack(JSContext* cx, int spindex, int skipStackHits, Hand
     return true;
 #endif
 
-    FrameIter frameIter(cx, FrameIter::STOP_AT_SAVED);
+    FrameIter frameIter(cx, FrameIter::GO_THROUGH_SAVED);
 
-    if (frameIter.done() || !frameIter.hasScript())
+    if (frameIter.done() || !frameIter.hasScript() || frameIter.compartment() != cx->compartment())
         return true;
 
     RootedScript script(cx, frameIter.script());
-    AutoCompartment ac(cx, &script->global());
     jsbytecode* valuepc = frameIter.pc();
 
     MOZ_ASSERT(script->containsPC(valuepc));
@@ -1486,19 +1485,19 @@ DecompileArgumentFromStack(JSContext* cx, int formalIndex, char** res)
 
 
 
-    FrameIter frameIter(cx, FrameIter::STOP_AT_SAVED);
+    FrameIter frameIter(cx, FrameIter::GO_THROUGH_SAVED);
     MOZ_ASSERT(!frameIter.done());
+    MOZ_ASSERT(frameIter.script()->selfHosted());
 
     
 
 
 
     ++frameIter;
-    if (frameIter.done() || !frameIter.hasScript())
+    if (frameIter.done() || !frameIter.hasScript() || frameIter.compartment() != cx->compartment())
         return true;
 
     RootedScript script(cx, frameIter.script());
-    AutoCompartment ac(cx, &script->global());
     jsbytecode* current = frameIter.pc();
 
     MOZ_ASSERT(script->containsPC(current));
