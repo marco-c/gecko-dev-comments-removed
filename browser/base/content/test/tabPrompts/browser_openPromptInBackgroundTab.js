@@ -43,6 +43,10 @@ add_task(function*() {
   checkbox.checked = true;
   ourPrompt.onButtonClick(0);
   
+  yield new Promise(function(resolve) {
+    Services.tm.mainThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
+  });
+  
   let ps = Services.perms;
   is(ps.ALLOW_ACTION, ps.testPermission(makeURI(pageWithAlert), "focus-tab-by-prompt"),
      "Tab switching should now be allowed");

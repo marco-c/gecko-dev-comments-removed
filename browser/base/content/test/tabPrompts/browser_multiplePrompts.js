@@ -56,6 +56,12 @@ add_task(function*() {
 
       is(prompt.hidden, false, "The last prompt should not be hidden.");
       prompt.onButtonClick(0);
+
+      
+      
+      yield new Promise(function(resolve) {
+        Services.tm.mainThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
+      });
     }
   }
 
