@@ -57,7 +57,7 @@ public:
 
   void AddCue(TextTrackCue& aCue);
   void AddCues(TextTrack* aTextTrack);
-  void NotifyCueRemoved(TextTrackCue& aCue);
+
   
 
 
