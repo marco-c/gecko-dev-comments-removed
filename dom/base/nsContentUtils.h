@@ -1755,16 +1755,6 @@ public:
                                      bool aShift = false,
                                      bool aMeta = false);
 
-  
-
-
-
-
-
-
-  static nsIDocument*
-  GetDocumentFromScriptContext(nsIScriptContext* aScriptContext);
-
   static bool CheckMayLoad(nsIPrincipal* aPrincipal, nsIChannel* aChannel, bool aAllowIfInheritsPrincipal);
 
   
