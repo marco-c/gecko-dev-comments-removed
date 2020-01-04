@@ -46,7 +46,7 @@ Parser.prototype = {
     
     
     
-    let regexp = /<script[^>]*>([^]*?)<\/script\s*>/gim;
+    let regexp = /<script[^>]*?(?:>([^]*?)<\/script\s*>|\/>)/gim;
     let syntaxTrees = [];
     let scriptMatches = [];
     let scriptMatch;
@@ -54,7 +54,9 @@ Parser.prototype = {
     if (aSource.match(/^\s*</)) {
       
       while (scriptMatch = regexp.exec(aSource)) {
-        scriptMatches.push(scriptMatch[1]); 
+        
+        
+        scriptMatches.push(scriptMatch[1] || "");
       }
     }
 
