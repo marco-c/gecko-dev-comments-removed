@@ -527,6 +527,9 @@ protected:
     bool mLocalRulesUsed;
 
     
+    bool mRebuildLocalRules;
+
+    
     uint32_t mDownloadCount;
     uint64_t mDownloadSize;
 };
