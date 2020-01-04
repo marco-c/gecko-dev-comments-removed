@@ -31,7 +31,6 @@ class nsPresContext;
 
 namespace mozilla {
 
-class RestyleTracker;
 struct AnimationCollection;
 
 class CommonAnimationManager : public nsIStyleRuleProcessor {
@@ -64,11 +63,6 @@ public:
 
 
   void Disconnect();
-
-  
-  
-  
-  void AddStyleUpdatesTo(RestyleTracker& aTracker);
 
   
   

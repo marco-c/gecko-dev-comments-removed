@@ -27,6 +27,7 @@ class nsStyleContext;
 namespace mozilla {
 
 class EffectSet;
+class RestyleTracker;
 
 namespace dom {
 class Animation;
@@ -114,6 +115,11 @@ public:
                                  nsCSSPseudoElements::Type aPseudoType,
                                  CascadeLevel aCascadeLevel);
 
+  
+  
+  
+  void AddStyleUpdatesTo(RestyleTracker& aTracker);
+
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSProperty aProperty);
 
@@ -133,6 +139,12 @@ public:
   MaybeUpdateCascadeResults(dom::Element* aElement,
                             nsCSSPseudoElements::Type aPseudoType,
                             nsStyleContext* aStyleContext);
+
+  
+  
+  static void
+  MaybeUpdateCascadeResults(dom::Element* aElement,
+                            nsCSSPseudoElements::Type aPseudoType);
 
   
   

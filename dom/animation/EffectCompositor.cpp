@@ -216,18 +216,7 @@ EffectCompositor::MaybeUpdateAnimationRule(dom::Element* aElement,
 {
   
   
-
-  nsStyleContext* styleContext = nullptr;
-  {
-    dom::Element* elementToRestyle = GetElementToRestyle(aElement, aPseudoType);
-    if (elementToRestyle) {
-      nsIFrame* frame = elementToRestyle->GetPrimaryFrame();
-      if (frame) {
-        styleContext = frame->StyleContext();
-      }
-    }
-  }
-  MaybeUpdateCascadeResults(aElement, aPseudoType, styleContext);
+  MaybeUpdateCascadeResults(aElement, aPseudoType);
 
   auto& elementsToRestyle = mElementsToRestyle[aCascadeLevel];
   PseudoElementHashKey key = { aElement, aPseudoType };
@@ -294,6 +283,51 @@ EffectCompositor::GetElementToRestyle(dom::Element* aElement,
   return pseudoFrame->GetContent()->AsElement();
 }
 
+void
+EffectCompositor::AddStyleUpdatesTo(RestyleTracker& aTracker)
+{
+  if (!mPresContext) {
+    return;
+  }
+
+  for (size_t i = 0; i < kCascadeLevelCount; i++) {
+    CascadeLevel cascadeLevel = CascadeLevel(i);
+    auto& elementSet = mElementsToRestyle[cascadeLevel];
+
+    
+    
+    
+    
+    
+    
+    nsTArray<PseudoElementHashKey> elementsToRestyle(elementSet.Count());
+    for (auto iter = elementSet.Iter(); !iter.Done(); iter.Next()) {
+      elementsToRestyle.AppendElement(iter.Key());
+    }
+
+    for (auto& pseudoElem : elementsToRestyle) {
+      MaybeUpdateCascadeResults(pseudoElem.mElement, pseudoElem.mPseudoType);
+
+      ComposeAnimationRule(pseudoElem.mElement,
+                           pseudoElem.mPseudoType,
+                           cascadeLevel,
+                           mPresContext->RefreshDriver()->MostRecentRefresh());
+
+      dom::Element* elementToRestyle =
+        GetElementToRestyle(pseudoElem.mElement, pseudoElem.mPseudoType);
+      if (elementToRestyle) {
+        nsRestyleHint rshint = cascadeLevel == CascadeLevel::Transitions ?
+                               eRestyle_CSSTransitions :
+                               eRestyle_CSSAnimations;
+        aTracker.AddPendingRestyle(elementToRestyle, rshint, nsChangeHint(0));
+      }
+    }
+
+    elementSet.Clear();
+    
+  }
+}
+
  bool
 EffectCompositor::HasAnimationsForCompositor(const nsIFrame* aFrame,
                                              nsCSSProperty aProperty)
@@ -331,6 +365,25 @@ EffectCompositor::MaybeUpdateCascadeResults(Element* aElement,
   UpdateCascadeResults(*effects, aElement, aPseudoType, aStyleContext);
 
   MOZ_ASSERT(!effects->CascadeNeedsUpdate(), "Failed to update cascade state");
+}
+
+ void
+EffectCompositor::MaybeUpdateCascadeResults(Element* aElement,
+                                            nsCSSPseudoElements::Type
+                                              aPseudoType)
+{
+  nsStyleContext* styleContext = nullptr;
+  {
+    dom::Element* elementToRestyle = GetElementToRestyle(aElement, aPseudoType);
+    if (elementToRestyle) {
+      nsIFrame* frame = elementToRestyle->GetPrimaryFrame();
+      if (frame) {
+        styleContext = frame->StyleContext();
+      }
+    }
+  }
+
+  MaybeUpdateCascadeResults(aElement, aPseudoType, styleContext);
 }
 
 namespace {
