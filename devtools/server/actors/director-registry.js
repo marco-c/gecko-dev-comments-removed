@@ -7,9 +7,10 @@
 "use strict";
 
 const protocol = require("devtools/shared/protocol");
-const { method, Arg, Option, RetVal } = protocol;
 
 const {DebuggerServer} = require("devtools/server/main");
+
+const {directorRegistrySpec} = require("devtools/shared/specs/director-registry");
 
 
 
@@ -199,9 +200,7 @@ function setupChildProcess() {
 
 
 
-const DirectorRegistryActor = exports.DirectorRegistryActor = protocol.ActorClass({
-  typeName: "director-registry",
-
+const DirectorRegistryActor = exports.DirectorRegistryActor = protocol.ActorClassWithSpec(directorRegistrySpec, {
   
   initialize: function (conn, parentActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
@@ -211,11 +210,9 @@ const DirectorRegistryActor = exports.DirectorRegistryActor = protocol.ActorClas
     this.finalize();
   },
 
-  finalize: method(function () {
+  finalize: function () {
     
-  }, {
-    oneway: true
-  }),
+  },
 
   
 
@@ -227,7 +224,7 @@ const DirectorRegistryActor = exports.DirectorRegistryActor = protocol.ActorClas
 
 
 
-  install: method(function (id, { scriptCode, scriptOptions }) {
+  install: function (id, { scriptCode, scriptOptions }) {
     
     if (!id || id.length === 0) {
       throw Error("director-script id is mandatory");
@@ -242,16 +239,7 @@ const DirectorRegistryActor = exports.DirectorRegistryActor = protocol.ActorClas
       scriptCode: scriptCode,
       scriptOptions: scriptOptions
     });
-  }, {
-    request: {
-      scriptId: Arg(0, "string"),
-      scriptCode: Option(1, "string"),
-      scriptOptions: Option(1, "nullable:json")
-    },
-    response: {
-      success: RetVal("boolean")
-    }
-  }),
+  },
 
   
 
@@ -259,37 +247,14 @@ const DirectorRegistryActor = exports.DirectorRegistryActor = protocol.ActorClas
 
 
 
-  uninstall: method(function (id) {
+  uninstall: function (id) {
     return DirectorRegistry.uninstall(id);
-  }, {
-    request: {
-      scritpId: Arg(0, "string")
-    },
-    response: {
-      success: RetVal("boolean")
-    }
-  }),
+  },
 
   
 
 
-  list: method(function () {
+  list: function () {
     return DirectorRegistry.list();
-  }, {
-    response: {
-      directorScripts: RetVal("array:string")
-    }
-  })
-});
-
-
-
-
-exports.DirectorRegistryFront = protocol.FrontClass(DirectorRegistryActor, {
-  initialize: function (client, { directorRegistryActor }) {
-    protocol.Front.prototype.initialize.call(this, client, {
-      actor: directorRegistryActor
-    });
-    this.manage(this);
   }
 });
