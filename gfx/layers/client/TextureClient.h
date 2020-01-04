@@ -12,6 +12,7 @@
 #include "ImageTypes.h"                 
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
+#include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/Point.h"          
@@ -720,17 +721,39 @@ protected:
   size_t mBufSize;
 };
 
-struct TextureClientAutoUnlock
+
+
+class MOZ_RAII TextureClientAutoLock
 {
-  TextureClient* mTexture;
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
 
-  explicit TextureClientAutoUnlock(TextureClient* aTexture)
-  : mTexture(aTexture) {}
-
-  ~TextureClientAutoUnlock()
+public:
+  TextureClientAutoLock(TextureClient* aTexture, OpenMode aMode
+                        MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+   : mTexture(aTexture),
+     mSucceeded(false)
   {
-    mTexture->Unlock();
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+
+    mSucceeded = mTexture->Lock(aMode);
+    mChecked = false;
   }
+  ~TextureClientAutoLock() {
+    MOZ_ASSERT(mChecked);
+    if (mSucceeded) {
+      mTexture->Unlock();
+    }
+  }
+
+  bool Succeeded() {
+    mChecked = true;
+    return mSucceeded;
+  }
+
+private:
+  TextureClient* mTexture;
+  DebugOnly<bool> mChecked;
+  bool mSucceeded;
 };
 
 class KeepAlive
