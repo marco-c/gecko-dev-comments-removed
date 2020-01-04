@@ -53,6 +53,7 @@ using mozilla::dom::quota::QuotaObject;
 using mozilla::dom::quota::UsageInfo;
 using mozilla::ipc::AssertIsOnBackgroundThread;
 using mozilla::ipc::BackgroundChild;
+using mozilla::ipc::IsOnBackgroundThread;
 using mozilla::ipc::PBackgroundChild;
 using mozilla::ipc::PrincipalInfo;
 using mozilla::unused;
@@ -509,16 +510,19 @@ private:
 
 
 
-class MainProcessRunnable
+
+class ParentRunnable final
   : public FileDescriptorHolder
   , public quota::OpenDirectoryListener
+  , public PAsmJSCacheEntryParent
 {
 public:
+  NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIRUNNABLE
 
-  MainProcessRunnable(const PrincipalInfo& aPrincipalInfo,
-                      OpenMode aOpenMode,
-                      WriteParams aWriteParams)
+  ParentRunnable(const PrincipalInfo& aPrincipalInfo,
+                 OpenMode aOpenMode,
+                 WriteParams aWriteParams)
   : mOwningThread(NS_GetCurrentThread()),
     mPrincipalInfo(aPrincipalInfo),
     mOpenMode(aOpenMode),
@@ -527,41 +531,45 @@ public:
     mState(eInitial),
     mResult(JS::AsmJSCache_InternalError),
     mIsApp(false),
-    mEnforcingQuota(true)
+    mEnforcingQuota(true),
+    mActorDestroyed(false),
+    mOpened(false)
   {
     MOZ_ASSERT(XRE_IsParentProcess());
     AssertIsOnOwningThread();
+    MOZ_COUNT_CTOR(ParentRunnable);
   }
 
-  virtual ~MainProcessRunnable()
+private:
+  ~ParentRunnable()
   {
     MOZ_ASSERT(mState == eFinished);
     MOZ_ASSERT(!mDirectoryLock);
+    MOZ_ASSERT(mActorDestroyed);
+    MOZ_COUNT_DTOR(ParentRunnable);
   }
 
-protected:
+  bool
+  IsOnOwningThread() const
+  {
+    MOZ_ASSERT(mOwningThread);
+
+    bool current;
+    return NS_SUCCEEDED(mOwningThread->IsOnCurrentThread(&current)) && current;
+  }
+
   void
   AssertIsOnOwningThread() const
   {
-    AssertIsOnBackgroundThread();
-    MOZ_ASSERT(mOwningThread);
-    DebugOnly<bool> current;
-    MOZ_ASSERT(NS_SUCCEEDED(mOwningThread->IsOnCurrentThread(&current)));
-    MOZ_ASSERT(current);
+    MOZ_ASSERT(IsOnBackgroundThread());
+    MOZ_ASSERT(IsOnOwningThread());
   }
 
-  
-  
   void
-  OpenForRead(unsigned aModuleIndex)
+  AssertIsOnNonOwningThread() const
   {
-    AssertIsOnOwningThread();
-    MOZ_ASSERT(mState == eWaitingToOpenCacheFileForRead);
-    MOZ_ASSERT(mOpenMode == eOpenForRead);
-
-    mModuleIndex = aModuleIndex;
-    mState = eDispatchToMainThread;
-    NS_DispatchToMainThread(this);
+    MOZ_ASSERT(!IsOnBackgroundThread());
+    MOZ_ASSERT(!IsOnOwningThread());
   }
 
   
@@ -591,14 +599,17 @@ protected:
 
   
   
-  
   void
   Close()
   {
+    AssertIsOnOwningThread();
     MOZ_ASSERT(mState == eOpened);
-    mState = eClosing;
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(mOwningThread->Dispatch(this,
-                                                         NS_DISPATCH_NORMAL)));
+
+    mState = eFinished;
+
+    MOZ_ASSERT(mOpened);
+
+    FinishOnOwningThread();
   }
 
   
@@ -606,8 +617,27 @@ protected:
   void
   Fail()
   {
+    AssertIsOnOwningThread();
+    MOZ_ASSERT(mState != eFinished);
+
+    mState = eFinished;
+
+    MOZ_ASSERT(!mOpened);
+
+    FinishOnOwningThread();
+
+    if (!mActorDestroyed) {
+      unused << Send__delete__(this, mResult);
+    }
+  }
+
+  
+  
+  void
+  FailOnNonOwningThread()
+  {
+    AssertIsOnNonOwningThread();
     MOZ_ASSERT(mState != eOpened &&
-               mState != eClosing &&
                mState != eFailing &&
                mState != eFinished);
 
@@ -616,31 +646,6 @@ protected:
                                                          NS_DISPATCH_NORMAL)));
   }
 
-  
-  virtual void
-  OnOpenMetadataForRead(const Metadata& aMetadata) = 0;
-
-  
-  virtual void
-  OnOpenCacheFile() = 0;
-
-  
-  
-  virtual void
-  OnFailure(JS::AsmJSCacheResult aResult)
-  {
-    FinishOnOwningThread();
-  }
-
-  
-  
-  virtual void
-  OnClose()
-  {
-    FinishOnOwningThread();
-  }
-
-private:
   void
   InitPersistenceType();
 
@@ -667,13 +672,13 @@ private:
     
     QuotaManager* qm = QuotaManager::Get();
     if (!qm) {
-      Fail();
+      FailOnNonOwningThread();
       return;
     }
 
     nsresult rv = qm->IOThread()->Dispatch(this, NS_DISPATCH_NORMAL);
     if (NS_FAILED(rv)) {
-      Fail();
+      FailOnNonOwningThread();
       return;
     }
   }
@@ -684,6 +689,74 @@ private:
 
   virtual void
   DirectoryLockFailed() override;
+
+  
+  bool
+  Recv__delete__(const JS::AsmJSCacheResult& aResult) override
+  {
+    AssertIsOnOwningThread();
+    MOZ_ASSERT(mState != eFinished);
+
+    if (mOpened) {
+      Close();
+    } else {
+      Fail();
+    }
+
+    MOZ_ASSERT(mState == eFinished);
+
+    return true;
+  }
+
+  void
+  ActorDestroy(ActorDestroyReason why) override
+  {
+    AssertIsOnOwningThread();
+    MOZ_ASSERT(!mActorDestroyed);
+
+    mActorDestroyed = true;
+
+    
+    
+
+    if (mState == eFinished) {
+      return;
+    }
+
+    if (mOpened) {
+      Close();
+    } else {
+      Fail();
+    }
+
+    MOZ_ASSERT(mState == eFinished);
+  }
+
+  bool
+  RecvSelectCacheFileToRead(const uint32_t& aModuleIndex) override
+  {
+    AssertIsOnOwningThread();
+    MOZ_ASSERT(mState == eWaitingToOpenCacheFileForRead);
+    MOZ_ASSERT(mOpenMode == eOpenForRead);
+
+    
+
+    mModuleIndex = aModuleIndex;
+    mState = eDispatchToMainThread;
+    NS_DispatchToMainThread(this);
+
+    return true;
+  }
+
+  bool
+  RecvCacheMiss() override
+  {
+    AssertIsOnOwningThread();
+
+    CacheMiss();
+
+    return true;
+  }
 
   nsCOMPtr<nsIEventTarget> mOwningThread;
   const PrincipalInfo mPrincipalInfo;
@@ -715,7 +788,6 @@ private:
     eReadyToOpenCacheFileForRead, 
     eSendingCacheFile, 
     eOpened, 
-    eClosing, 
     eFailing, 
     eFinished, 
   };
@@ -724,10 +796,12 @@ private:
 
   bool mIsApp;
   bool mEnforcingQuota;
+  bool mActorDestroyed;
+  bool mOpened;
 };
 
 void
-MainProcessRunnable::InitPersistenceType()
+ParentRunnable::InitPersistenceType()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == eInitial);
@@ -773,7 +847,7 @@ MainProcessRunnable::InitPersistenceType()
 }
 
 nsresult
-MainProcessRunnable::InitOnMainThread()
+ParentRunnable::InitOnMainThread()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == eInitial);
@@ -802,7 +876,7 @@ MainProcessRunnable::InitOnMainThread()
 }
 
 nsresult
-MainProcessRunnable::ReadMetadata()
+ParentRunnable::ReadMetadata()
 {
   AssertIsOnIOThread();
   MOZ_ASSERT(mState == eReadyToReadMetadata);
@@ -865,7 +939,7 @@ MainProcessRunnable::ReadMetadata()
 }
 
 nsresult
-MainProcessRunnable::OpenCacheFileForWrite()
+ParentRunnable::OpenCacheFileForWrite()
 {
   AssertIsOnIOThread();
   MOZ_ASSERT(mState == eReadyToReadMetadata);
@@ -924,7 +998,7 @@ MainProcessRunnable::OpenCacheFileForWrite()
 }
 
 nsresult
-MainProcessRunnable::OpenCacheFileForRead()
+ParentRunnable::OpenCacheFileForRead()
 {
   AssertIsOnIOThread();
   MOZ_ASSERT(mState == eReadyToOpenCacheFileForRead);
@@ -970,7 +1044,7 @@ MainProcessRunnable::OpenCacheFileForRead()
 }
 
 void
-MainProcessRunnable::FinishOnOwningThread()
+ParentRunnable::FinishOnOwningThread()
 {
   AssertIsOnOwningThread();
 
@@ -987,7 +1061,7 @@ MainProcessRunnable::FinishOnOwningThread()
 }
 
 NS_IMETHODIMP
-MainProcessRunnable::Run()
+ParentRunnable::Run()
 {
   nsresult rv;
 
@@ -999,7 +1073,7 @@ MainProcessRunnable::Run()
 
       rv = InitOnMainThread();
       if (NS_FAILED(rv)) {
-        Fail();
+        FailOnNonOwningThread();
         return NS_OK;
       }
 
@@ -1038,7 +1112,7 @@ MainProcessRunnable::Run()
 
       rv = OpenCacheFileForWrite();
       if (NS_FAILED(rv)) {
-        Fail();
+        FailOnNonOwningThread();
         return NS_OK;
       }
 
@@ -1065,7 +1139,12 @@ MainProcessRunnable::Run()
       MOZ_ASSERT(mOpenMode == eOpenForRead);
 
       mState = eWaitingToOpenCacheFileForRead;
-      OnOpenMetadataForRead(mMetadata);
+
+      
+      if (!SendOnOpenMetadataForRead(mMetadata)) {
+        unused << Send__delete__(this, JS::AsmJSCache_InternalError);
+      }
+
       return NS_OK;
     }
 
@@ -1083,7 +1162,7 @@ MainProcessRunnable::Run()
 
       rv = OpenCacheFileForRead();
       if (NS_FAILED(rv)) {
-        Fail();
+        FailOnNonOwningThread();
         return NS_OK;
       }
 
@@ -1097,23 +1176,25 @@ MainProcessRunnable::Run()
       AssertIsOnOwningThread();
 
       mState = eOpened;
-      OnOpenCacheFile();
+
+      
+      MOZ_ASSERT(!mOpened);
+      mOpened = true;
+
+      FileDescriptor::PlatformHandleType handle =
+        FileDescriptor::PlatformHandleType(PR_FileDesc2NativeHandle(mFileDesc));
+      if (!SendOnOpenCacheFile(mFileSize, FileDescriptor(handle))) {
+        unused << Send__delete__(this, JS::AsmJSCache_InternalError);
+      }
+
       return NS_OK;
     }
 
     case eFailing: {
       AssertIsOnOwningThread();
 
-      mState = eFinished;
-      OnFailure(mResult);
-      return NS_OK;
-    }
+      Fail();
 
-    case eClosing: {
-      AssertIsOnOwningThread();
-
-      mState = eFinished;
-      OnClose();
       return NS_OK;
     }
 
@@ -1130,7 +1211,7 @@ MainProcessRunnable::Run()
 }
 
 void
-MainProcessRunnable::DirectoryLockAcquired(DirectoryLock* aLock)
+ParentRunnable::DirectoryLockAcquired(DirectoryLock* aLock)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == eWaitingToOpenMetadata);
@@ -1143,14 +1224,16 @@ MainProcessRunnable::DirectoryLockAcquired(DirectoryLock* aLock)
 }
 
 void
-MainProcessRunnable::DirectoryLockFailed()
+ParentRunnable::DirectoryLockFailed()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == eWaitingToOpenMetadata);
   MOZ_ASSERT(!mDirectoryLock);
 
-  Fail();
+  FailOnNonOwningThread();
 }
+
+NS_IMPL_ISUPPORTS_INHERITED0(ParentRunnable, FileDescriptorHolder)
 
 bool
 FindHashMatch(const Metadata& aMetadata, const ReadParams& aReadParams,
@@ -1196,147 +1279,6 @@ FindHashMatch(const Metadata& aMetadata, const ReadParams& aReadParams,
   return false;
 }
 
-
-
-
-class ParentProcessRunnable final : public PAsmJSCacheEntryParent,
-                                    public MainProcessRunnable
-{
-public:
-  NS_DECL_ISUPPORTS_INHERITED
-
-  ParentProcessRunnable(const PrincipalInfo& aPrincipalInfo,
-                        OpenMode aOpenMode,
-                        WriteParams aWriteParams)
-  : MainProcessRunnable(aPrincipalInfo, aOpenMode, aWriteParams),
-    mActorDestroyed(false),
-    mOpened(false),
-    mFinished(false)
-  {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    AssertIsOnOwningThread();
-    MOZ_COUNT_CTOR(ParentProcessRunnable);
-  }
-
-private:
-  ~ParentProcessRunnable()
-  {
-    MOZ_ASSERT(mActorDestroyed);
-    MOZ_ASSERT(mFinished);
-    MOZ_COUNT_DTOR(ParentProcessRunnable);
-  }
-
-  bool
-  Recv__delete__(const JS::AsmJSCacheResult& aResult) override
-  {
-    MOZ_ASSERT(!mFinished);
-    mFinished = true;
-
-    if (mOpened) {
-      MainProcessRunnable::Close();
-    } else {
-      MainProcessRunnable::Fail();
-    }
-
-    return true;
-  }
-
-  void
-  ActorDestroy(ActorDestroyReason why) override
-  {
-    MOZ_ASSERT(!mActorDestroyed);
-    mActorDestroyed = true;
-
-    
-    
-
-    if (mFinished) {
-      return;
-    }
-
-    mFinished = true;
-
-    if (mOpened) {
-      MainProcessRunnable::Close();
-    } else {
-      MainProcessRunnable::Fail();
-    }
-  }
-
-  void
-  OnOpenMetadataForRead(const Metadata& aMetadata) override
-  {
-    AssertIsOnOwningThread();
-
-    if (!SendOnOpenMetadataForRead(aMetadata)) {
-      unused << Send__delete__(this, JS::AsmJSCache_InternalError);
-    }
-  }
-
-  bool
-  RecvSelectCacheFileToRead(const uint32_t& aModuleIndex) override
-  {
-    MainProcessRunnable::OpenForRead(aModuleIndex);
-    return true;
-  }
-
-  bool
-  RecvCacheMiss() override
-  {
-    MainProcessRunnable::CacheMiss();
-    return true;
-  }
-
-  void
-  OnOpenCacheFile() override
-  {
-    AssertIsOnOwningThread();
-
-    MOZ_ASSERT(!mOpened);
-    mOpened = true;
-
-    FileDescriptor::PlatformHandleType handle =
-      FileDescriptor::PlatformHandleType(PR_FileDesc2NativeHandle(mFileDesc));
-    if (!SendOnOpenCacheFile(mFileSize, FileDescriptor(handle))) {
-      unused << Send__delete__(this, JS::AsmJSCache_InternalError);
-    }
-  }
-
-  void
-  OnClose() override final
-  {
-    AssertIsOnOwningThread();
-    MOZ_ASSERT(mOpened);
-
-    mFinished = true;
-
-    MainProcessRunnable::OnClose();
-
-    MOZ_ASSERT(mActorDestroyed);
-  }
-
-  void
-  OnFailure(JS::AsmJSCacheResult aResult) override
-  {
-    AssertIsOnOwningThread();
-    MOZ_ASSERT(!mOpened);
-
-    mFinished = true;
-
-    MainProcessRunnable::OnFailure(aResult);
-
-    if (!mActorDestroyed) {
-      unused << Send__delete__(this, aResult);
-    }
-  }
-
-  bool mActorDestroyed;
-  bool mOpened;
-  bool mFinished;
-};
-
-NS_IMPL_ISUPPORTS_INHERITED0(ParentProcessRunnable, FileDescriptorHolder)
-
 } 
 
 PAsmJSCacheEntryParent*
@@ -1351,8 +1293,8 @@ AllocEntryParent(OpenMode aOpenMode,
     return nullptr;
   }
 
-  nsRefPtr<ParentProcessRunnable> runnable =
-    new ParentProcessRunnable(aPrincipalInfo, aOpenMode, aWriteParams);
+  nsRefPtr<ParentRunnable> runnable =
+    new ParentRunnable(aPrincipalInfo, aOpenMode, aWriteParams);
 
   nsresult rv = NS_DispatchToMainThread(runnable);
   NS_ENSURE_SUCCESS(rv, nullptr);
@@ -1365,15 +1307,16 @@ void
 DeallocEntryParent(PAsmJSCacheEntryParent* aActor)
 {
   
-  nsRefPtr<ParentProcessRunnable> op =
-    dont_AddRef(static_cast<ParentProcessRunnable*>(aActor));
+  nsRefPtr<ParentRunnable> op =
+    dont_AddRef(static_cast<ParentRunnable*>(aActor));
 }
 
 namespace {
 
-class ChildProcessRunnable final : public File,
-                                   public PAsmJSCacheEntryChild,
-                                   public nsIIPCBackgroundChildCreateCallback
+class ChildRunnable final
+  : public File
+  , public PAsmJSCacheEntryChild
+  , public nsIIPCBackgroundChildCreateCallback
 {
   typedef mozilla::ipc::PBackgroundChild PBackgroundChild;
 
@@ -1382,10 +1325,10 @@ public:
   NS_DECL_NSIRUNNABLE
   NS_DECL_NSIIPCBACKGROUNDCHILDCREATECALLBACK
 
-  ChildProcessRunnable(nsIPrincipal* aPrincipal,
-                       OpenMode aOpenMode,
-                       WriteParams aWriteParams,
-                       ReadParams aReadParams)
+  ChildRunnable(nsIPrincipal* aPrincipal,
+                OpenMode aOpenMode,
+                WriteParams aWriteParams,
+                ReadParams aReadParams)
   : mPrincipal(aPrincipal),
     mOpenMode(aOpenMode),
     mWriteParams(aWriteParams),
@@ -1394,15 +1337,15 @@ public:
     mState(eInitial)
   {
     MOZ_ASSERT(!NS_IsMainThread());
-    MOZ_COUNT_CTOR(ChildProcessRunnable);
+    MOZ_COUNT_CTOR(ChildRunnable);
   }
 
 protected:
-  ~ChildProcessRunnable()
+  ~ChildRunnable()
   {
     MOZ_ASSERT(mState == eFinished);
     MOZ_ASSERT(mActorDestroyed);
-    MOZ_COUNT_DTOR(ChildProcessRunnable);
+    MOZ_COUNT_DTOR(ChildRunnable);
   }
 
 private:
@@ -1495,7 +1438,7 @@ private:
 };
 
 NS_IMETHODIMP
-ChildProcessRunnable::Run()
+ChildRunnable::Run()
 {
   switch (mState) {
     case eInitial: {
@@ -1567,7 +1510,7 @@ ChildProcessRunnable::Run()
 }
 
 void
-ChildProcessRunnable::ActorCreated(PBackgroundChild* aActor)
+ChildRunnable::ActorCreated(PBackgroundChild* aActor)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1588,7 +1531,7 @@ ChildProcessRunnable::ActorCreated(PBackgroundChild* aActor)
 }
 
 void
-ChildProcessRunnable::ActorFailed()
+ChildRunnable::ActorFailed()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == eBackgroundChildPending);
@@ -1596,7 +1539,7 @@ ChildProcessRunnable::ActorFailed()
   Fail(JS::AsmJSCache_InternalError);
 }
 
-NS_IMPL_ISUPPORTS_INHERITED(ChildProcessRunnable,
+NS_IMPL_ISUPPORTS_INHERITED(ChildRunnable,
                             FileDescriptorHolder,
                             nsIIPCBackgroundChildCreateCallback)
 
@@ -1606,7 +1549,7 @@ void
 DeallocEntryChild(PAsmJSCacheEntryChild* aActor)
 {
   
-  static_cast<ChildProcessRunnable*>(aActor)->Release();
+  static_cast<ChildRunnable*>(aActor)->Release();
 }
 
 namespace {
@@ -1641,7 +1584,7 @@ OpenFile(nsIPrincipal* aPrincipal,
   
   
   nsRefPtr<File> file =
-    new ChildProcessRunnable(aPrincipal, aOpenMode, aWriteParams, aReadParams);
+    new ChildRunnable(aPrincipal, aOpenMode, aWriteParams, aReadParams);
 
   JS::AsmJSCacheResult openResult = file->BlockUntilOpen(aFile);
   if (openResult != JS::AsmJSCache_Success) {
