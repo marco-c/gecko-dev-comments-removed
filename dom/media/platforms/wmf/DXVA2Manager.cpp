@@ -281,20 +281,22 @@ D3D9DXVA2Manager::Init(nsACString& aFailureReason)
   }
 
   
+  
+  
   D3DPRESENT_PARAMETERS params = {0};
   params.BackBufferWidth = 1;
   params.BackBufferHeight = 1;
   params.BackBufferFormat = D3DFMT_UNKNOWN;
   params.BackBufferCount = 1;
   params.SwapEffect = D3DSWAPEFFECT_DISCARD;
-  params.hDeviceWindow = ::GetShellWindow();
+  params.hDeviceWindow = nullptr;
   params.Windowed = TRUE;
   params.Flags = D3DPRESENTFLAG_VIDEO;
 
   RefPtr<IDirect3DDevice9Ex> device;
   hr = d3d9Ex->CreateDeviceEx(D3DADAPTER_DEFAULT,
                               D3DDEVTYPE_HAL,
-                              ::GetShellWindow(),
+                              nullptr,
                               D3DCREATE_FPU_PRESERVE |
                               D3DCREATE_MULTITHREADED |
                               D3DCREATE_MIXED_VERTEXPROCESSING,
