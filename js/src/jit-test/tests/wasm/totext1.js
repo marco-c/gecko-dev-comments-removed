@@ -168,3 +168,6 @@ runTest(`
   (export "test" $test)
   (memory 1)
 )`);
+
+
+runTest(`(module (func (nop)) (memory 0 65535))`);
