@@ -133,7 +133,7 @@ UDPSocketParent::Init(const IPC::Principal& aPrincipal,
   if (!aFilter.IsEmpty()) {
     nsAutoCString contractId(NS_NETWORK_UDP_SOCKET_FILTER_HANDLER_PREFIX);
     contractId.Append(aFilter);
-    nsCOMPtr<nsIUDPSocketFilterHandler> filterHandler =
+    nsCOMPtr<nsISocketFilterHandler> filterHandler =
       do_GetService(contractId.get());
     if (filterHandler) {
       nsresult rv = filterHandler->NewFilter(getter_AddRefs(mFilter));
@@ -382,8 +382,6 @@ UDPSocketParent::RecvOutgoingData(const UDPData& aData,
 
   nsresult rv;
   if (mFilter) {
-    
-    
     if (aAddr.type() != UDPSocketAddr::TNetAddr) {
       return true;
     }
@@ -396,7 +394,7 @@ UDPSocketParent::RecvOutgoingData(const UDPData& aData,
     bool allowed;
     const InfallibleTArray<uint8_t>& data(aData.get_ArrayOfuint8_t());
     rv = mFilter->FilterPacket(&aAddr.get_NetAddr(), data.Elements(),
-                               data.Length(), nsIUDPSocketFilter::SF_OUTGOING,
+                               data.Length(), nsISocketFilter::SF_OUTGOING,
                                &allowed);
 
     
@@ -571,7 +569,7 @@ UDPSocketParent::OnPacketReceived(nsIUDPSocket* aSocket, nsIUDPMessage* aMessage
     fromAddr->GetNetAddr(&addr);
     nsresult rv = mFilter->FilterPacket(&addr,
                                         (const uint8_t*)buffer, len,
-                                        nsIUDPSocketFilter::SF_INCOMING,
+                                        nsISocketFilter::SF_INCOMING,
                                         &allowed);
     
     if (NS_WARN_IF(NS_FAILED(rv)) || !allowed) {

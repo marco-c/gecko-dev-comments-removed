@@ -37,7 +37,7 @@
 #include "nr_socket_prsock.h"
 #include "test_nr_socket.h"
 #include "ice_ctx.h"
-#include "stun_udp_socket_filter.h"
+#include "stun_socket_filter.h"
 #include "mozilla/net/DNS.h"
 
 #include "ice_ctx.h"
@@ -1756,7 +1756,8 @@ class WebRtcIcePrioritizerTest : public StunTest {
 
 class WebRtcIcePacketFilterTest : public StunTest {
  public:
-  WebRtcIcePacketFilterTest(): filter_(nullptr) {}
+  WebRtcIcePacketFilterTest(): udp_filter_(nullptr),
+                               tcp_filter_(nullptr) {}
 
   void SetUp() {
     StunTest::SetUp();
@@ -1764,9 +1765,15 @@ class WebRtcIcePacketFilterTest : public StunTest {
     
     ice_ctx_ = NrIceCtx::Create("test", true);
 
-    nsCOMPtr<nsIUDPSocketFilterHandler> handler =
+    nsCOMPtr<nsISocketFilterHandler> udp_handler =
       do_GetService(NS_STUN_UDP_SOCKET_FILTER_HANDLER_CONTRACTID);
-    handler->NewFilter(getter_AddRefs(filter_));
+    ASSERT_TRUE(udp_handler);
+    udp_handler->NewFilter(getter_AddRefs(udp_filter_));
+
+    nsCOMPtr<nsISocketFilterHandler> tcp_handler =
+      do_GetService(NS_STUN_TCP_SOCKET_FILTER_HANDLER_CONTRACTID);
+    ASSERT_TRUE(tcp_handler);
+    tcp_handler->NewFilter(getter_AddRefs(tcp_filter_));
   }
 
   void TearDown() {
@@ -1786,11 +1793,37 @@ class WebRtcIcePacketFilterTest : public StunTest {
     mozilla::net::NetAddr addr;
     MakeNetAddr(&addr, from_addr, from_port);
     bool result;
-    nsresult rv = filter_->FilterPacket(&addr, data, len,
-                                        nsIUDPSocketFilter::SF_INCOMING,
-                                        &result);
+    nsresult rv = udp_filter_->FilterPacket(&addr, data, len,
+                                            nsISocketFilter::SF_INCOMING,
+                                            &result);
     ASSERT_EQ(NS_OK, rv);
     ASSERT_EQ(expected_result, result);
+  }
+
+  void TestIncomingTcp(const uint8_t* data, uint32_t len,
+                       bool expected_result) {
+    mozilla::net::NetAddr addr;
+    bool result;
+    nsresult rv = tcp_filter_->FilterPacket(&addr, data, len,
+                                            nsISocketFilter::SF_INCOMING,
+                                            &result);
+    ASSERT_EQ(NS_OK, rv);
+    ASSERT_EQ(expected_result, result);
+  }
+
+  void TestIncomingTcpFramed(const uint8_t* data, uint32_t len,
+                             bool expected_result) {
+    mozilla::net::NetAddr addr;
+    bool result;
+    uint8_t* framed_data = new uint8_t[len+2];
+    framed_data[0] = htons(len);
+    memcpy(&framed_data[2], data, len);
+    nsresult rv = tcp_filter_->FilterPacket(&addr, framed_data, len+2,
+                                            nsISocketFilter::SF_INCOMING,
+                                            &result);
+    ASSERT_EQ(NS_OK, rv);
+    ASSERT_EQ(expected_result, result);
+    delete[] framed_data;
   }
 
   void TestOutgoing(const uint8_t* data, uint32_t len,
@@ -1799,11 +1832,37 @@ class WebRtcIcePacketFilterTest : public StunTest {
     mozilla::net::NetAddr addr;
     MakeNetAddr(&addr, to_addr, to_port);
     bool result;
-    nsresult rv = filter_->FilterPacket(&addr, data, len,
-                                        nsIUDPSocketFilter::SF_OUTGOING,
-                                        &result);
+    nsresult rv = udp_filter_->FilterPacket(&addr, data, len,
+                                            nsISocketFilter::SF_OUTGOING,
+                                            &result);
     ASSERT_EQ(NS_OK, rv);
     ASSERT_EQ(expected_result, result);
+  }
+
+  void TestOutgoingTcp(const uint8_t* data, uint32_t len,
+                       bool expected_result) {
+    mozilla::net::NetAddr addr;
+    bool result;
+    nsresult rv = tcp_filter_->FilterPacket(&addr, data, len,
+                                            nsISocketFilter::SF_OUTGOING,
+                                            &result);
+    ASSERT_EQ(NS_OK, rv);
+    ASSERT_EQ(expected_result, result);
+  }
+
+  void TestOutgoingTcpFramed(const uint8_t* data, uint32_t len,
+                             bool expected_result) {
+    mozilla::net::NetAddr addr;
+    bool result;
+    uint8_t* framed_data = new uint8_t[len+2];
+    framed_data[0] = htons(len);
+    memcpy(&framed_data[2], data, len);
+    nsresult rv = tcp_filter_->FilterPacket(&addr, framed_data, len+2,
+                                            nsISocketFilter::SF_OUTGOING,
+                                            &result);
+    ASSERT_EQ(NS_OK, rv);
+    ASSERT_EQ(expected_result, result);
+    delete[] framed_data;
   }
 
  private:
@@ -1814,7 +1873,8 @@ class WebRtcIcePacketFilterTest : public StunTest {
     net_addr->inet.port = port;
   }
 
-  nsCOMPtr<nsIUDPSocketFilter> filter_;
+  nsCOMPtr<nsISocketFilter> udp_filter_;
+  nsCOMPtr<nsISocketFilter> tcp_filter_;
   RefPtr<NrIceCtx> ice_ctx_;
 };
 }  
@@ -3212,11 +3272,13 @@ TEST_F(WebRtcIcePrioritizerTest, TestPrioritizer) {
 TEST_F(WebRtcIcePacketFilterTest, TestSendNonStunPacket) {
   const unsigned char data[] = "12345abcde";
   TestOutgoing(data, sizeof(data), 123, 45, false);
+  TestOutgoingTcp(data, sizeof(data), false);
 }
 
 TEST_F(WebRtcIcePacketFilterTest, TestRecvNonStunPacket) {
   const unsigned char data[] = "12345abcde";
   TestIncoming(data, sizeof(data), 123, 45, false);
+  TestIncomingTcp(data, sizeof(data), true);
 }
 
 TEST_F(WebRtcIcePacketFilterTest, TestSendStunPacket) {
@@ -3225,6 +3287,8 @@ TEST_F(WebRtcIcePacketFilterTest, TestSendStunPacket) {
   msg->header.type = NR_STUN_MSG_BINDING_REQUEST;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestOutgoing(msg->buffer, msg->length, 123, 45, true);
+  TestOutgoingTcp(msg->buffer, msg->length, true);
+  TestOutgoingTcpFramed(msg->buffer, msg->length, true);
   ASSERT_EQ(0, nr_stun_message_destroy(&msg));
 }
 
@@ -3236,11 +3300,30 @@ TEST_F(WebRtcIcePacketFilterTest, TestRecvStunPacketWithoutAPendingId) {
   msg->header.type = NR_STUN_MSG_BINDING_REQUEST;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestOutgoing(msg->buffer, msg->length, 123, 45, true);
+  TestOutgoingTcp(msg->buffer, msg->length, true);
 
   msg->header.id.octet[0] = 0;
   msg->header.type = NR_STUN_MSG_BINDING_RESPONSE;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestIncoming(msg->buffer, msg->length, 123, 45, true);
+  TestIncomingTcp(msg->buffer, msg->length, true);
+
+  ASSERT_EQ(0, nr_stun_message_destroy(&msg));
+}
+
+TEST_F(WebRtcIcePacketFilterTest, TestRecvStunPacketWithoutAPendingIdTcpFramed) {
+  nr_stun_message *msg;
+  ASSERT_EQ(0, nr_stun_build_req_no_auth(NULL, &msg));
+
+  msg->header.id.octet[0] = 1;
+  msg->header.type = NR_STUN_MSG_BINDING_REQUEST;
+  ASSERT_EQ(0, nr_stun_encode_message(msg));
+  TestOutgoingTcpFramed(msg->buffer, msg->length, true);
+
+  msg->header.id.octet[0] = 0;
+  msg->header.type = NR_STUN_MSG_BINDING_RESPONSE;
+  ASSERT_EQ(0, nr_stun_encode_message(msg));
+  TestIncomingTcpFramed(msg->buffer, msg->length, true);
 
   ASSERT_EQ(0, nr_stun_message_destroy(&msg));
 }
@@ -3252,6 +3335,7 @@ TEST_F(WebRtcIcePacketFilterTest, TestRecvStunPacketWithoutAPendingAddress) {
   msg->header.type = NR_STUN_MSG_BINDING_REQUEST;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestOutgoing(msg->buffer, msg->length, 123, 45, true);
+  
 
   msg->header.type = NR_STUN_MSG_BINDING_RESPONSE;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
@@ -3268,29 +3352,57 @@ TEST_F(WebRtcIcePacketFilterTest, TestRecvStunPacketWithPendingIdAndAddress) {
   msg->header.type = NR_STUN_MSG_BINDING_REQUEST;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestOutgoing(msg->buffer, msg->length, 123, 45, true);
+  TestOutgoingTcp(msg->buffer, msg->length, true);
 
   msg->header.type = NR_STUN_MSG_BINDING_RESPONSE;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestIncoming(msg->buffer, msg->length, 123, 45, true);
+  TestIncomingTcp(msg->buffer, msg->length, true);
 
   
   const unsigned char data[] = "12345abcde";
 
   
   TestOutgoing(data, sizeof(data), 123, 45, true);
+  TestOutgoingTcp(data, sizeof(data), true);
   TestIncoming(data, sizeof(data), 123, 45, true);
+  TestIncomingTcp(data, sizeof(data), true);
 
   
   msg->header.type = NR_STUN_MSG_BINDING_INDICATION;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestOutgoing(msg->buffer, msg->length, 123, 45, true);
+  TestOutgoingTcp(msg->buffer, msg->length, true);
   TestIncoming(msg->buffer, msg->length, 123, 45, true);
+  TestIncomingTcp(msg->buffer, msg->length, true);
 
+  
   
   TestOutgoing(data, sizeof(data), 123, 46, false);
   TestIncoming(data, sizeof(data), 123, 46, false);
   TestOutgoing(data, sizeof(data), 124, 45, false);
   TestIncoming(data, sizeof(data), 124, 45, false);
+
+  ASSERT_EQ(0, nr_stun_message_destroy(&msg));
+}
+
+TEST_F(WebRtcIcePacketFilterTest, TestRecvStunPacketWithPendingIdTcpFramed) {
+  nr_stun_message *msg;
+  ASSERT_EQ(0, nr_stun_build_req_no_auth(NULL, &msg));
+
+  msg->header.type = NR_STUN_MSG_BINDING_REQUEST;
+  ASSERT_EQ(0, nr_stun_encode_message(msg));
+  TestOutgoingTcpFramed(msg->buffer, msg->length, true);
+
+  msg->header.type = NR_STUN_MSG_BINDING_RESPONSE;
+  ASSERT_EQ(0, nr_stun_encode_message(msg));
+  TestIncomingTcpFramed(msg->buffer, msg->length, true);
+
+  
+  const unsigned char data[] = "12345abcde";
+
+  TestOutgoingTcpFramed(data, sizeof(data), true);
+  TestIncomingTcpFramed(data, sizeof(data), true);
 
   ASSERT_EQ(0, nr_stun_message_destroy(&msg));
 }
@@ -3302,20 +3414,40 @@ TEST_F(WebRtcIcePacketFilterTest, TestSendNonRequestStunPacket) {
   msg->header.type = NR_STUN_MSG_BINDING_RESPONSE;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestOutgoing(msg->buffer, msg->length, 123, 45, false);
+  TestOutgoingTcp(msg->buffer, msg->length, false);
 
   
   msg->header.type = NR_STUN_MSG_BINDING_REQUEST;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestOutgoing(msg->buffer, msg->length, 123, 45, true);
+  TestOutgoingTcp(msg->buffer, msg->length, true);
 
   
   msg->header.type = NR_STUN_MSG_BINDING_REQUEST;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestIncoming(msg->buffer, msg->length, 123, 45, true);
+  TestIncomingTcp(msg->buffer, msg->length, true);
 
   msg->header.type = NR_STUN_MSG_BINDING_RESPONSE;
   ASSERT_EQ(0, nr_stun_encode_message(msg));
   TestOutgoing(msg->buffer, msg->length, 123, 45, true);
+  TestOutgoingTcp(msg->buffer, msg->length, true);
+
+  ASSERT_EQ(0, nr_stun_message_destroy(&msg));
+}
+
+TEST_F(WebRtcIcePacketFilterTest, TestRecvDataPacketWithAPendingAddress) {
+  nr_stun_message *msg;
+  ASSERT_EQ(0, nr_stun_build_req_no_auth(NULL, &msg));
+
+  msg->header.type = NR_STUN_MSG_BINDING_REQUEST;
+  ASSERT_EQ(0, nr_stun_encode_message(msg));
+  TestOutgoing(msg->buffer, msg->length, 123, 45, true);
+  TestOutgoingTcp(msg->buffer, msg->length, true);
+
+  const unsigned char data[] = "12345abcde";
+  TestIncoming(data, sizeof(data), 123, 45, true);
+  TestIncomingTcp(data, sizeof(data), true);
 
   ASSERT_EQ(0, nr_stun_message_destroy(&msg));
 }

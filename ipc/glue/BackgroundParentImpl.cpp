@@ -420,7 +420,7 @@ BackgroundParentImpl::RecvPUDPSocketConstructor(PUDPSocketParent* aActor,
 
   
   
-  if (!aFilter.EqualsASCII("stun")) {
+  if (!aFilter.EqualsASCII(NS_NETWORK_SOCKET_FILTER_HANDLER_STUN_SUFFIX)) {
     return false;
   }
 

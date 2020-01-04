@@ -12,7 +12,7 @@ extern "C" {
 
 #include "mozilla/Attributes.h"
 #include "mozilla/net/DNS.h"
-#include "stun_udp_socket_filter.h"
+#include "stun_socket_filter.h"
 #include "nr_socket_prsock.h"
 
 namespace {
@@ -85,7 +85,7 @@ class PendingSTUNRequest {
   const bool is_id_set_;
 };
 
-class STUNUDPSocketFilter : public nsIUDPSocketFilter {
+class STUNUDPSocketFilter : public nsISocketFilter {
  public:
   STUNUDPSocketFilter()
     : white_list_(),
@@ -93,7 +93,7 @@ class STUNUDPSocketFilter : public nsIUDPSocketFilter {
 
   
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIUDPSOCKETFILTER
+  NS_DECL_NSISOCKETFILTER
 
  private:
   virtual ~STUNUDPSocketFilter() {}
@@ -111,7 +111,7 @@ class STUNUDPSocketFilter : public nsIUDPSocketFilter {
   std::set<PendingSTUNRequest> response_allowed_;
 };
 
-NS_IMPL_ISUPPORTS(STUNUDPSocketFilter, nsIUDPSocketFilter)
+NS_IMPL_ISUPPORTS(STUNUDPSocketFilter, nsISocketFilter)
 
 NS_IMETHODIMP
 STUNUDPSocketFilter::FilterPacket(const mozilla::net::NetAddr *remote_addr,
@@ -120,10 +120,10 @@ STUNUDPSocketFilter::FilterPacket(const mozilla::net::NetAddr *remote_addr,
                                   int32_t direction,
                                   bool *result) {
   switch (direction) {
-    case nsIUDPSocketFilter::SF_INCOMING:
+    case nsISocketFilter::SF_INCOMING:
       *result = filter_incoming_packet(remote_addr, data, len);
       break;
-    case nsIUDPSocketFilter::SF_OUTGOING:
+    case nsISocketFilter::SF_OUTGOING:
       *result = filter_outgoing_packet(remote_addr, data, len);
       break;
     default:
@@ -197,16 +197,163 @@ bool STUNUDPSocketFilter::filter_outgoing_packet(const mozilla::net::NetAddr *re
   return false;
 }
 
+class PendingSTUNId {
+ public:
+  explicit PendingSTUNId(const UINT12 &id)
+    : id_(id) {}
+
+  bool operator<(const PendingSTUNId& rhs) const {
+    return memcmp(id_.octet, rhs.id_.octet, sizeof(id_.octet)) < 0;
+  }
+ private:
+  const UINT12 id_;
+};
+
+class STUNTCPSocketFilter : public nsISocketFilter {
+ public:
+  STUNTCPSocketFilter()
+    : white_listed_(false),
+      pending_request_ids_(),
+      response_allowed_ids_() {}
+
+  
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSISOCKETFILTER
+
+ private:
+  virtual ~STUNTCPSocketFilter() {}
+
+  bool filter_incoming_packet(const uint8_t *data,
+                              uint32_t len);
+
+  bool filter_outgoing_packet(const uint8_t *data,
+                              uint32_t len);
+
+  bool white_listed_;
+  std::set<PendingSTUNId> pending_request_ids_;
+  std::set<PendingSTUNId> response_allowed_ids_;
+};
+
+NS_IMPL_ISUPPORTS(STUNTCPSocketFilter, nsISocketFilter)
+
+NS_IMETHODIMP
+STUNTCPSocketFilter::FilterPacket(const mozilla::net::NetAddr *remote_addr,
+                                  const uint8_t *data,
+                                  uint32_t len,
+                                  int32_t direction,
+                                  bool *result) {
+  switch (direction) {
+    case nsISocketFilter::SF_INCOMING:
+      *result = filter_incoming_packet(data, len);
+      break;
+    case nsISocketFilter::SF_OUTGOING:
+      *result = filter_outgoing_packet(data, len);
+      break;
+    default:
+      MOZ_CRASH("Unknown packet direction");
+  }
+  return NS_OK;
+}
+
+bool STUNTCPSocketFilter::filter_incoming_packet(const uint8_t *data, uint32_t len) {
+  
+  if (white_listed_) {
+    return true;
+  }
+
+  UCHAR* stun = const_cast<uint8_t*>(data);
+  uint32_t length = len;
+  if (!nr_is_stun_message(stun, length)) {
+    stun += 2;
+    length -= 2;
+    if (!nr_is_stun_message(stun, length)) {
+      
+      
+      
+      
+      
+      
+      return true;
+    }
+  }
+
+  const nr_stun_message_header *msg = reinterpret_cast<const nr_stun_message_header*>(stun);
+
+  
+  
+  if (nr_is_stun_response_message(stun, length)) {
+    std::set<PendingSTUNId>::iterator it =
+      pending_request_ids_.find(PendingSTUNId(msg->id));
+    if (it != pending_request_ids_.end()) {
+      pending_request_ids_.erase(it);
+      white_listed_ = true;
+    }
+  } else {
+    
+    
+    response_allowed_ids_.insert(PendingSTUNId(msg->id));
+  }
+
+  return true;
+}
+
+bool STUNTCPSocketFilter::filter_outgoing_packet(const uint8_t *data, uint32_t len) {
+  
+  if (white_listed_) {
+    return true;
+  }
+
+  UCHAR* stun = const_cast<uint8_t*>(data);
+  uint32_t length = len;
+  if (!nr_is_stun_message(stun, length)) {
+    stun += 2;
+    length -= 2;
+    if (!nr_is_stun_message(stun, length)) {
+      return false;
+    }
+  }
+
+  const nr_stun_message_header *msg = reinterpret_cast<const nr_stun_message_header*>(stun);
+
+  
+  
+  if (nr_is_stun_request_message(stun, length)) {
+    pending_request_ids_.insert(PendingSTUNId(msg->id));
+    return true;
+  }
+
+  
+  
+  if (nr_is_stun_response_message(stun, length)) {
+    std::set<PendingSTUNId>::iterator it =
+      response_allowed_ids_.find(PendingSTUNId(msg->id));
+    if (it != response_allowed_ids_.end()) {
+      response_allowed_ids_.erase(it);
+      white_listed_ = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 } 
 
-NS_IMPL_ISUPPORTS(nsStunUDPSocketFilterHandler, nsIUDPSocketFilterHandler)
+NS_IMPL_ISUPPORTS(nsStunUDPSocketFilterHandler, nsISocketFilterHandler)
 
-NS_IMETHODIMP nsStunUDPSocketFilterHandler::NewFilter(nsIUDPSocketFilter **result)
+NS_IMETHODIMP nsStunUDPSocketFilterHandler::NewFilter(nsISocketFilter **result)
 {
-  nsIUDPSocketFilter *ret = new STUNUDPSocketFilter();
-  if (!ret) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  nsISocketFilter *ret = new STUNUDPSocketFilter();
   NS_ADDREF(*result = ret);
   return NS_OK;
 }
+
+NS_IMPL_ISUPPORTS(nsStunTCPSocketFilterHandler, nsISocketFilterHandler)
+
+NS_IMETHODIMP nsStunTCPSocketFilterHandler::NewFilter(nsISocketFilter **result)
+{
+  nsISocketFilter *ret = new STUNTCPSocketFilter();
+  NS_ADDREF(*result = ret);
+  return NS_OK;
+}
+
