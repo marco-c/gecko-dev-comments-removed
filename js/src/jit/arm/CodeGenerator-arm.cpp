@@ -2969,6 +2969,45 @@ CodeGeneratorARM::visitWasmTruncateToInt32(LWasmTruncateToInt32* lir)
 }
 
 void
+CodeGeneratorARM::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir)
+{
+    FloatRegister input = ToFloatRegister(lir->input());
+    FloatRegister inputDouble = input;
+    Register64 output = ToOutRegister64(lir);
+
+    MWasmTruncateToInt64* mir = lir->mir();
+    MIRType fromType = mir->input()->type();
+
+    auto* ool = new(alloc()) OutOfLineWasmTruncateCheck(mir, input);
+    addOutOfLineCode(ool, mir);
+
+    ScratchDoubleScope scratchScope(masm);
+    if (fromType == MIRType::Float32) {
+        inputDouble = ScratchDoubleReg;
+        masm.convertFloat32ToDouble(input, inputDouble);
+    }
+
+    masm.Push(input);
+
+    masm.setupUnalignedABICall(output.high);
+    masm.passABIArg(inputDouble, MoveOp::DOUBLE);
+    if (lir->mir()->isUnsigned())
+        masm.callWithABI(wasm::SymbolicAddress::TruncateDoubleToUint64);
+    else
+        masm.callWithABI(wasm::SymbolicAddress::TruncateDoubleToInt64);
+
+    masm.Pop(input);
+
+    masm.ma_cmp(output.high, Imm32(0x80000000));
+    masm.ma_cmp(output.low, Imm32(0x00000000), Assembler::Equal);
+    masm.ma_b(ool->entry(), Assembler::Equal);
+
+    masm.bind(ool->rejoin());
+
+    MOZ_ASSERT(ReturnReg64 == output);
+}
+
+void
 CodeGeneratorARM::visitOutOfLineWasmTruncateCheck(OutOfLineWasmTruncateCheck* ool)
 {
     MIRType fromType = ool->fromType();
@@ -2989,39 +3028,57 @@ CodeGeneratorARM::visitOutOfLineWasmTruncateCheck(OutOfLineWasmTruncateCheck* oo
     
     Label fail;
 
+    
+    
+    
+    
+    
     double minValue, maxValue;
-    if (ool->isUnsigned()) {
-        minValue = -1;
-        maxValue = double(UINT32_MAX) + 1.0;
+    Assembler::DoubleCondition minCond = Assembler::DoubleLessThanOrEqual;
+    Assembler::DoubleCondition maxCond = Assembler::DoubleGreaterThanOrEqual;
+    if (ool->toType() == MIRType::Int64) {
+        if (ool->isUnsigned()) {
+            minValue = -1;
+            maxValue = double(UINT64_MAX) + 1.0;
+        } else {
+            
+            
+            minValue = double(INT64_MIN);
+            minCond = Assembler::DoubleLessThan;
+            maxValue = double(INT64_MAX) + 1.0;
+        }
     } else {
-        minValue = double(INT32_MIN) - 1.0;
-        maxValue = double(INT32_MAX) + 1.0;
+        if (ool->isUnsigned()) {
+            minValue = -1;
+            maxValue = double(UINT32_MAX) + 1.0;
+        } else {
+            if (fromType == MIRType::Float32) {
+                
+                
+                minValue = double(INT32_MIN);
+                minCond = Assembler::DoubleLessThan;
+            } else {
+                minValue = double(INT32_MIN) - 1.0;
+            }
+            maxValue = double(INT32_MAX) + 1.0;
+        }
     }
 
     if (fromType == MIRType::Double) {
         scratch = scratchScope.doubleOverlay();
         masm.loadConstantDouble(minValue, scratch);
-        masm.branchDouble(Assembler::DoubleLessThanOrEqual, input, scratch, &fail);
+        masm.branchDouble(minCond, input, scratch, &fail);
 
         masm.loadConstantDouble(maxValue, scratch);
-        masm.branchDouble(Assembler::DoubleGreaterThanOrEqual, input, scratch, &fail);
+        masm.branchDouble(maxCond, input, scratch, &fail);
     } else {
         MOZ_ASSERT(fromType == MIRType::Float32);
         scratch = scratchScope.singleOverlay();
-
-        
-        
-        
-        auto condition = minValue == -1.0
-                         ? Assembler::DoubleLessThanOrEqual
-                         : Assembler::DoubleLessThan;
-
         masm.loadConstantFloat32(float(minValue), scratch);
-        masm.branchFloat(condition, input, scratch, &fail);
+        masm.branchFloat(minCond, input, scratch, &fail);
 
-        
         masm.loadConstantFloat32(float(maxValue), scratch);
-        masm.branchFloat(Assembler::DoubleGreaterThanOrEqual, input, scratch, &fail);
+        masm.branchFloat(maxCond, input, scratch, &fail);
     }
 
     
