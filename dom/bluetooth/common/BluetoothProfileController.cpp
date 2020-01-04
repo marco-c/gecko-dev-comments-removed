@@ -7,6 +7,7 @@
 #include "BluetoothProfileController.h"
 
 #include "BluetoothA2dpManager.h"
+#include "BluetoothAvrcpManager.h"
 #include "BluetoothHfpManager.h"
 #include "BluetoothHidManager.h"
 #include "BluetoothReplyRunnable.h"
@@ -111,6 +112,9 @@ BluetoothProfileController::AddProfileWithServiceClass(
     case BluetoothServiceClass::A2DP:
       profile = BluetoothA2dpManager::Get();
       break;
+    case BluetoothServiceClass::AVRCP:
+      profile = BluetoothAvrcpManager::Get();
+      break;
     case BluetoothServiceClass::HID:
       profile = BluetoothHidManager::Get();
       break;
@@ -158,6 +162,7 @@ BluetoothProfileController::SetupProfiles(bool aAssignServiceClass)
   
   if (!mConnect) {
     AddProfile(BluetoothHidManager::Get(), true);
+    AddProfile(BluetoothAvrcpManager::Get(), true);
     AddProfile(BluetoothA2dpManager::Get(), true);
     AddProfile(BluetoothHfpManager::Get(), true);
     return;
@@ -180,6 +185,7 @@ BluetoothProfileController::SetupProfiles(bool aAssignServiceClass)
   if (isInvalid) {
     AddProfile(BluetoothHfpManager::Get());
     AddProfile(BluetoothA2dpManager::Get());
+    AddProfile(BluetoothAvrcpManager::Get()); 
     AddProfile(BluetoothHidManager::Get());
     return;
   }
@@ -196,6 +202,7 @@ BluetoothProfileController::SetupProfiles(bool aAssignServiceClass)
   
   if (hasRendering || (isPeripheral && isRemoteControl)) {
     AddProfile(BluetoothA2dpManager::Get());
+    AddProfile(BluetoothAvrcpManager::Get()); 
   }
 
   
