@@ -422,34 +422,40 @@ nsHttpHandler::AddStandardRequestHeaders(nsHttpHeaderArray *request)
     nsresult rv;
 
     
-    rv = request->SetHeader(nsHttp::User_Agent, UserAgent());
+    rv = request->SetHeader(nsHttp::User_Agent, UserAgent(),
+                            false, nsHttpHeaderArray::eVarietyDefault);
     if (NS_FAILED(rv)) return rv;
 
     
     
-    rv = request->SetHeader(nsHttp::Accept, mAccept);
+    rv = request->SetHeader(nsHttp::Accept, mAccept,
+                            false, nsHttpHeaderArray::eVarietyDefault);
     if (NS_FAILED(rv)) return rv;
 
     
     if (!mAcceptLanguages.IsEmpty()) {
         
-        rv = request->SetHeader(nsHttp::Accept_Language, mAcceptLanguages);
+        rv = request->SetHeader(nsHttp::Accept_Language, mAcceptLanguages,
+                                false, nsHttpHeaderArray::eVarietyDefault);
         if (NS_FAILED(rv)) return rv;
     }
 
     
-    rv = request->SetHeader(nsHttp::Accept_Encoding, mAcceptEncodings);
+    rv = request->SetHeader(nsHttp::Accept_Encoding, mAcceptEncodings,
+                            false, nsHttpHeaderArray::eVarietyDefault);
     if (NS_FAILED(rv)) return rv;
 
     
     if (mDoNotTrackEnabled) {
-      rv = request->SetHeader(nsHttp::DoNotTrack, NS_LITERAL_CSTRING("1"));
+      rv = request->SetHeader(nsHttp::DoNotTrack, NS_LITERAL_CSTRING("1"),
+                              false, nsHttpHeaderArray::eVarietyDefault);
       if (NS_FAILED(rv)) return rv;
     }
 
     
     if (mSafeHintEnabled || mParentalControlEnabled) {
-      rv = request->SetHeader(nsHttp::Prefer, NS_LITERAL_CSTRING("safe"));
+      rv = request->SetHeader(nsHttp::Prefer, NS_LITERAL_CSTRING("safe"),
+                              false, nsHttpHeaderArray::eVarietyDefault);
       if (NS_FAILED(rv)) return rv;
     }
     return NS_OK;

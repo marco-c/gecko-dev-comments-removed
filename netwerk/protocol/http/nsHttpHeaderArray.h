@@ -26,9 +26,15 @@ class nsHttpHeaderArray
 public:
     const char *PeekHeader(nsHttpAtom header) const;
 
+    enum HeaderVariety
+    {
+        eVarietyOverride,
+        eVarietyDefault,
+    };
+
     
     nsresult SetHeader(nsHttpAtom header, const nsACString &value,
-                       bool merge = false);
+                       bool merge = false, HeaderVariety variety = eVarietyOverride);
 
     
     nsresult SetEmptyHeader(nsHttpAtom header);
@@ -53,7 +59,13 @@ public:
         return FindHeaderValue(header, value) != nullptr;
     }
 
-    nsresult VisitHeaders(nsIHttpHeaderVisitor *visitor);
+    enum VisitorFilter
+    {
+        eFilterAll,
+        eFilterSkipDefault,
+    };
+
+    nsresult VisitHeaders(nsIHttpHeaderVisitor *visitor, VisitorFilter filter = eFilterAll);
 
     
     
@@ -76,6 +88,7 @@ public:
     {
         nsHttpAtom header;
         nsCString value;
+        HeaderVariety variety = eVarietyOverride;
 
         struct MatchHeader {
           bool Equals(const nsEntry &entry, const nsHttpAtom &header) const {
@@ -188,6 +201,7 @@ nsHttpHeaderArray::MergeHeader(nsHttpAtom header,
         }
     }
     entry->value.Append(value);
+    entry->variety = eVarietyOverride;
 }
 
 inline bool
