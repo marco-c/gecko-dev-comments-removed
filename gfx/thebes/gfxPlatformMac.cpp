@@ -381,12 +381,7 @@ gfxPlatformMac::UseProgressivePaint()
 bool
 gfxPlatformMac::AccelerateLayersByDefault()
 {
-  
-  
-  
-  
-  
-  return nsCocoaFeatures::AccelerateByDefault();
+  return true;
 }
 
 
