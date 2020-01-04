@@ -1094,6 +1094,14 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
     
     mFirstInitializationSegmentReceived = true;
   } else {
+    
+    
+    if (mAudioTracks.mNumTracks &&
+        (info.mAudio.mChannels != mAudioTracks.mInfo->GetAsAudioInfo()->mChannels ||
+         info.mAudio.mRate != mAudioTracks.mInfo->GetAsAudioInfo()->mRate)) {
+      RejectAppend(NS_ERROR_FAILURE, __func__);
+      return;
+    }
     mAudioTracks.mLastInfo = new SharedTrackInfo(info.mAudio, streamID);
     mVideoTracks.mLastInfo = new SharedTrackInfo(info.mVideo, streamID);
   }
