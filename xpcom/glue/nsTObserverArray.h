@@ -249,6 +249,21 @@ public:
   }
 
   
+  void RemoveElementsBy(mozilla::function<bool(const elem_type&)> aPredicate)
+  {
+    index_type i = 0;
+    mArray.RemoveElementsBy([&](const elem_type& aItem) {
+      if (aPredicate(aItem)) {
+        
+        AdjustIterators(i, -1);
+        return true;
+      }
+      ++i;
+      return false;
+    });
+  }
+
+  
   
   
   void Clear()

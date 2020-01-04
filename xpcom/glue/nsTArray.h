@@ -13,6 +13,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/BinarySearch.h"
 #include "mozilla/fallible.h"
+#include "mozilla/Function.h"
 #include "mozilla/InitializerList.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
@@ -1594,6 +1595,13 @@ public:
   
   
   
+  void RemoveElementsBy(mozilla::function<bool(const elem_type&)> aPredicate);
+
+  
+  
+  
+  
+  
   template<class Item, class Comparator>
   bool RemoveElement(const Item& aItem, const Comparator& aComp)
   {
@@ -1891,6 +1899,30 @@ nsTArray_Impl<E, Alloc>::RemoveElementsAt(index_type aStart, size_type aCount)
   this->template ShiftData<InfallibleAlloc>(aStart, aCount, 0,
                                             sizeof(elem_type),
                                             MOZ_ALIGNOF(elem_type));
+}
+
+template<typename E, class Alloc>
+void
+nsTArray_Impl<E, Alloc>::RemoveElementsBy(mozilla::function<bool(const elem_type&)> aPredicate)
+{
+  if (base_type::mHdr == EmptyHdr()) {
+    return;
+  }
+
+  index_type j = 0;
+  index_type len = Length();
+  for (index_type i = 0; i < len; ++i) {
+    if (aPredicate(Elements()[i])) {
+      elem_traits::Destruct(Elements() + i);
+    } else {
+      if (j < i) {
+        copy_type::MoveNonOverlappingRegion(Elements() + j, Elements() + i,
+                                            1, sizeof(elem_type));
+      }
+      ++j;
+    }
+  }
+  base_type::mHdr->mLength = j;
 }
 
 template<typename E, class Alloc>
