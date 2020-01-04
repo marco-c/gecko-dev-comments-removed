@@ -570,10 +570,10 @@ nsHTMLEditRules::AfterEditInner(EditAction action,
 
   if (!mDidExplicitlySetInterline)
   {
-    res = CheckInterlinePosition(selection);
+    CheckInterlinePosition(*selection);
   }
 
-  return res;
+  return NS_OK;
 }
 
 
@@ -7297,49 +7297,45 @@ nsHTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
   }
 }
 
-nsresult
-nsHTMLEditRules::CheckInterlinePosition(Selection* aSelection)
+void
+nsHTMLEditRules::CheckInterlinePosition(Selection& aSelection)
 {
-  NS_ENSURE_TRUE(aSelection, NS_ERROR_NULL_POINTER);
+  
+  if (!aSelection.Collapsed()) {
+    return;
+  }
+
+  NS_ENSURE_TRUE_VOID(mHTMLEditor);
+  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
 
   
-  if (!aSelection->Collapsed()) {
-    return NS_OK;
+  NS_ENSURE_TRUE_VOID(aSelection.GetRangeAt(0) &&
+                      aSelection.GetRangeAt(0)->GetStartParent());
+  OwningNonNull<nsINode> selNode = *aSelection.GetRangeAt(0)->GetStartParent();
+  int32_t selOffset = aSelection.GetRangeAt(0)->StartOffset();
+
+  
+  
+  
+  nsCOMPtr<nsIContent> node =
+    mHTMLEditor->GetPriorHTMLNode(selNode, selOffset, true);
+  if (node && node->IsHTMLElement(nsGkAtoms::br)) {
+    aSelection.SetInterlinePosition(true);
+    return;
   }
 
   
-  nsCOMPtr<nsIDOMNode> selNode, node;
-  int32_t selOffset;
-  NS_ENSURE_STATE(mHTMLEditor);
-  nsresult res = mHTMLEditor->GetStartNodeAndOffset(aSelection, getter_AddRefs(selNode), &selOffset);
-  NS_ENSURE_SUCCESS(res, res);
-
-  
-  
-  
-  NS_ENSURE_STATE(mHTMLEditor);
-  mHTMLEditor->GetPriorHTMLNode(selNode, selOffset, address_of(node), true);
-  if (node && nsTextEditUtils::IsBreak(node))
-  {
-    aSelection->SetInterlinePosition(true);
-    return NS_OK;
+  node = mHTMLEditor->GetPriorHTMLSibling(selNode, selOffset);
+  if (node && IsBlockNode(node->AsDOMNode())) {
+    aSelection.SetInterlinePosition(true);
+    return;
   }
 
   
-  NS_ENSURE_STATE(mHTMLEditor);
-  mHTMLEditor->GetPriorHTMLSibling(selNode, selOffset, address_of(node));
-  if (node && IsBlockNode(node))
-  {
-    aSelection->SetInterlinePosition(true);
-    return NS_OK;
+  node = mHTMLEditor->GetNextHTMLSibling(selNode, selOffset);
+  if (node && IsBlockNode(node->AsDOMNode())) {
+    aSelection.SetInterlinePosition(false);
   }
-
-  
-  NS_ENSURE_STATE(mHTMLEditor);
-  mHTMLEditor->GetNextHTMLSibling(selNode, selOffset, address_of(node));
-  if (node && IsBlockNode(node))
-    aSelection->SetInterlinePosition(false);
-  return NS_OK;
 }
 
 nsresult
