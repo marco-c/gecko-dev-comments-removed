@@ -1248,13 +1248,15 @@ public:
 #include "nsDisplayItemTypes.h"
 
   struct HitTestState {
-    explicit HitTestState() {}
+    explicit HitTestState() : mInPreserves3D(false) {}
 
     ~HitTestState() {
       NS_ASSERTION(mItemBuffer.Length() == 0,
                    "mItemBuffer should have been cleared");
     }
 
+    
+    bool mInPreserves3D;
     nsAutoTArray<nsDisplayItem*, 100> mItemBuffer;
   };
 
@@ -3757,7 +3759,7 @@ public:
 
 
 
-  const Matrix4x4& GetAccumulatedPreserved3DTransform();
+  const Matrix4x4& GetAccumulatedPreserved3DTransform(nsDisplayListBuilder* aBuilder);
 
   float GetHitDepthAtPoint(nsDisplayListBuilder* aBuilder, const nsPoint& aPoint);
 
