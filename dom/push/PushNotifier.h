@@ -11,8 +11,59 @@
 #include "nsIPrincipal.h"
 #include "nsString.h"
 
+#include "mozilla/Maybe.h"
+
 namespace mozilla {
 namespace dom {
+
+class ContentChild;
+class ContentParent;
+
+
+
+
+
+class MOZ_STACK_CLASS PushDispatcher
+{
+public:
+  
+  
+  virtual nsresult NotifyObservers() = 0;
+
+  
+  
+  virtual nsresult NotifyWorkers() = 0;
+
+  
+  nsresult NotifyObserversAndWorkers();
+
+  
+  
+  
+  virtual bool SendToParent(ContentChild* aParentActor) = 0;
+
+  
+  
+  
+  virtual bool SendToChild(ContentParent* aContentActor) = 0;
+
+  
+  
+  virtual nsresult HandleNoChildProcesses();
+
+protected:
+  PushDispatcher(const nsACString& aScope,
+                 nsIPrincipal* aPrincipal);
+
+  virtual ~PushDispatcher();
+
+  bool ShouldNotifyWorkers();
+  nsresult DoNotifyObservers(nsISupports *aSubject, const char *aTopic,
+                             const nsACString& aScope);
+
+  const nsCString mScope;
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+};
 
 
 
@@ -32,14 +83,9 @@ public:
   NS_DECL_NSIPUSHNOTIFIER
 
 private:
-  virtual ~PushNotifier();
+  ~PushNotifier();
 
-  nsresult NotifyPush(const nsACString& aScope, nsIPrincipal* aPrincipal,
-                      const nsAString& aMessageId,
-                      const Maybe<nsTArray<uint8_t>>& aData);
-  nsresult DoNotifyObservers(nsISupports *aSubject, const char *aTopic,
-                             const nsACString& aScope);
-  bool ShouldNotifyWorkers(nsIPrincipal* aPrincipal);
+  nsresult Dispatch(PushDispatcher& aDispatcher);
 };
 
 
@@ -56,7 +102,7 @@ public:
   NS_DECL_NSIPUSHDATA
 
 private:
-  virtual ~PushData();
+  ~PushData();
 
   nsresult EnsureDecodedText();
 
@@ -79,10 +125,76 @@ public:
   NS_DECL_NSIPUSHMESSAGE
 
 private:
-  virtual ~PushMessage();
+  ~PushMessage();
 
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIPushData> mData;
+};
+
+class PushMessageDispatcher final : public PushDispatcher
+{
+public:
+  PushMessageDispatcher(const nsACString& aScope,
+               nsIPrincipal* aPrincipal,
+               const nsAString& aMessageId,
+               const Maybe<nsTArray<uint8_t>>& aData);
+  ~PushMessageDispatcher();
+
+  nsresult NotifyObservers() override;
+  nsresult NotifyWorkers() override;
+  bool SendToParent(ContentChild* aParentActor) override;
+  bool SendToChild(ContentParent* aContentActor) override;
+
+private:
+  const nsString mMessageId;
+  const Maybe<nsTArray<uint8_t>> mData;
+};
+
+class PushSubscriptionChangeDispatcher final : public PushDispatcher
+{
+public:
+  PushSubscriptionChangeDispatcher(const nsACString& aScope,
+                                 nsIPrincipal* aPrincipal);
+  ~PushSubscriptionChangeDispatcher();
+
+  nsresult NotifyObservers() override;
+  nsresult NotifyWorkers() override;
+  bool SendToParent(ContentChild* aParentActor) override;
+  bool SendToChild(ContentParent* aContentActor) override;
+};
+
+class PushSubscriptionModifiedDispatcher : public PushDispatcher
+{
+public:
+  PushSubscriptionModifiedDispatcher(const nsACString& aScope,
+                                     nsIPrincipal* aPrincipal);
+  ~PushSubscriptionModifiedDispatcher();
+
+  nsresult NotifyObservers() override;
+  nsresult NotifyWorkers() override;
+  bool SendToParent(ContentChild* aParentActor) override;
+  bool SendToChild(ContentParent* aContentActor) override;
+};
+
+class PushErrorDispatcher final : public PushDispatcher
+{
+public:
+  PushErrorDispatcher(const nsACString& aScope,
+                      nsIPrincipal* aPrincipal,
+                      const nsAString& aMessage,
+                      uint32_t aFlags);
+  ~PushErrorDispatcher();
+
+  nsresult NotifyObservers() override;
+  nsresult NotifyWorkers() override;
+  bool SendToParent(ContentChild* aParentActor) override;
+  bool SendToChild(ContentParent* aContentActor) override;
+
+private:
+  nsresult HandleNoChildProcesses() override;
+
+  const nsString mMessage;
+  uint32_t mFlags;
 };
 
 } 
