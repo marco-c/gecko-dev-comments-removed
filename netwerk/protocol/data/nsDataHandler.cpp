@@ -169,7 +169,8 @@ nsDataHandler::ParseURI(nsCString& spec,
 
     
     char *comma = strchr(buffer, ',');
-    if (!comma)
+    char *hash = strchr(buffer, '#');
+    if (!comma || (hash && hash < comma))
         return NS_ERROR_MALFORMED_URI;
 
     *comma = '\0';
@@ -224,7 +225,6 @@ nsDataHandler::ParseURI(nsCString& spec,
 
     
     char *data = comma + 1;
-    char *hash = strchr(data, '#');
     if (!hash) {
         dataBuffer.Assign(data);
         hashRef.Truncate();
