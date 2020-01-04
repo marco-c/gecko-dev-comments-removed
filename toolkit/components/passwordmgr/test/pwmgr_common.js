@@ -289,7 +289,7 @@ if (this.addMessageListener) {
   var SpecialPowers = { Cc, Ci, Cr, Cu, };
   var ok, is;
   
-  ok = is = () => {};
+  ok = is = () => {}; 
 
   Cu.import("resource://gre/modules/Task.jsm");
 
