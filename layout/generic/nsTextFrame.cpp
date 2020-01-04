@@ -350,7 +350,7 @@ public:
         return eIndexSelRawText;
       case SelectionType::eIMEConvertedClause:
         return eIndexConvText;
-      case SelectionType::SELECTION_IME_SELECTEDCONVERTEDTEXT:
+      case SelectionType::eIMESelectedClause:
         return eIndexSelConvText;
       case SelectionType::eSpellCheck:
         return eIndexSpellChecker;
@@ -5433,7 +5433,7 @@ nsTextFrame::ComputeSelectionUnderlineHeight(
     case SelectionType::eIMERawClause:
     case SelectionType::eIMESelectedRawClause:
     case SelectionType::eIMEConvertedClause:
-    case SelectionType::SELECTION_IME_SELECTEDCONVERTEDTEXT:
+    case SelectionType::eIMESelectedClause:
       return aFontMetrics.underlineSize;
     case SelectionType::eSpellCheck: {
       
@@ -5544,7 +5544,7 @@ nsTextFrame::DrawSelectionDecorations(gfxContext* aContext,
     case SelectionType::eIMERawClause:
     case SelectionType::eIMESelectedRawClause:
     case SelectionType::eIMEConvertedClause:
-    case SelectionType::SELECTION_IME_SELECTEDCONVERTEDTEXT: {
+    case SelectionType::eIMESelectedClause: {
       
       
       
@@ -5649,7 +5649,7 @@ nsTextFrame::GetSelectionTextColors(SelectionType aSelectionType,
     case SelectionType::eIMERawClause:
     case SelectionType::eIMESelectedRawClause:
     case SelectionType::eIMEConvertedClause:
-    case SelectionType::SELECTION_IME_SELECTEDCONVERTEDTEXT:
+    case SelectionType::eIMESelectedClause:
       if (aRangeStyle.IsDefined()) {
         if (!aRangeStyle.IsForegroundColorDefined() &&
             !aRangeStyle.IsBackgroundColorDefined()) {
