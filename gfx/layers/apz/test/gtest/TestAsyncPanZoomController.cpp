@@ -154,8 +154,7 @@ public:
 
 protected:
   AsyncPanZoomController* NewAPZCInstance(uint64_t aLayersId,
-                                          GeckoContentController* aController,
-                                          TaskThrottler* aPaintThrottler) override;
+                                          GeckoContentController* aController) override;
 
   TimeStamp GetFrameTime() override {
     return mcc->Time();
@@ -169,10 +168,9 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
 public:
   TestAsyncPanZoomController(uint64_t aLayersId, MockContentControllerDelayed* aMcc,
                              TestAPZCTreeManager* aTreeManager,
-                             TaskThrottler* aPaintThrottler,
                              GestureBehavior aBehavior = DEFAULT_GESTURES)
     : AsyncPanZoomController(aLayersId, aTreeManager, aTreeManager->GetInputQueue(),
-        aMcc, aPaintThrottler, aBehavior)
+        aMcc, aBehavior)
     , mWaitForMainThread(false)
     , mcc(aMcc)
   {}
@@ -261,11 +259,10 @@ private:
 
 AsyncPanZoomController*
 TestAPZCTreeManager::NewAPZCInstance(uint64_t aLayersId,
-                                     GeckoContentController* aController,
-                                     TaskThrottler* aPaintThrottler)
+                                     GeckoContentController* aController)
 {
   MockContentControllerDelayed* mcc = static_cast<MockContentControllerDelayed*>(aController);
-  return new TestAsyncPanZoomController(aLayersId, mcc, this, aPaintThrottler,
+  return new TestAsyncPanZoomController(aLayersId, mcc, this,
       AsyncPanZoomController::USE_GESTURE_DETECTOR);
 }
 
@@ -297,9 +294,8 @@ protected:
     APZThreadUtils::SetControllerThread(MessageLoop::current());
 
     mcc = new NiceMock<MockContentControllerDelayed>();
-    mPaintThrottler = new TaskThrottler(mcc->Time(), TimeDuration::FromMilliseconds(500));
     tm = new TestAPZCTreeManager(mcc);
-    apzc = new TestAsyncPanZoomController(0, mcc, tm, mPaintThrottler, mGestureBehavior);
+    apzc = new TestAsyncPanZoomController(0, mcc, tm, mGestureBehavior);
     apzc->SetFrameMetrics(TestFrameMetrics());
   }
 
@@ -382,7 +378,6 @@ protected:
 
   AsyncPanZoomController::GestureBehavior mGestureBehavior;
   RefPtr<MockContentControllerDelayed> mcc;
-  RefPtr<TaskThrottler> mPaintThrottler;
   RefPtr<TestAPZCTreeManager> tm;
   RefPtr<TestAsyncPanZoomController> apzc;
 };
@@ -1142,7 +1137,7 @@ TEST_F(APZCBasicTester, ComplexTransform) {
   
 
   RefPtr<TestAsyncPanZoomController> childApzc =
-      new TestAsyncPanZoomController(0, mcc, tm, mPaintThrottler);
+      new TestAsyncPanZoomController(0, mcc, tm);
 
   const char* layerTreeSyntax = "c(c)";
   
@@ -3493,89 +3488,3 @@ public:
 private:
   TaskRunMetrics& mMetrics;
 };
-
-class APZTaskThrottlerTester : public ::testing::Test {
-public:
-  APZTaskThrottlerTester()
-  {
-    now = TimeStamp::Now();
-    throttler = new TaskThrottler(now, TimeDuration::FromMilliseconds(100));
-  }
-
-protected:
-  TimeStamp Advance(int aMillis = 5)
-  {
-    now = now + TimeDuration::FromMilliseconds(aMillis);
-    return now;
-  }
-
-  UniquePtr<CancelableTask> NewTask()
-  {
-    return MakeUnique<MockTask>(metrics);
-  }
-
-  TimeStamp now;
-  RefPtr<TaskThrottler> throttler;
-  TaskRunMetrics metrics;
-};
-
-TEST_F(APZTaskThrottlerTester, BasicTest) {
-  
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  EXPECT_EQ(1, metrics.GetAndClearRunCount());
-
-  
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  EXPECT_EQ(0, metrics.GetAndClearRunCount());
-  throttler->TaskComplete(Advance());                           
-  EXPECT_EQ(1, metrics.GetAndClearRunCount());
-  EXPECT_EQ(0, metrics.GetAndClearCancelCount());
-
-  
-  
-  
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  EXPECT_EQ(0, metrics.GetAndClearRunCount());
-  EXPECT_EQ(4, metrics.GetAndClearCancelCount());
-
-  throttler->TaskComplete(Advance());                           
-  EXPECT_EQ(1, metrics.GetAndClearRunCount());
-  throttler->TaskComplete(Advance());                           
-  EXPECT_EQ(0, metrics.GetAndClearRunCount());
-  EXPECT_EQ(0, metrics.GetAndClearCancelCount());
-}
-
-TEST_F(APZTaskThrottlerTester, TimeoutTest) {
-  
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  EXPECT_EQ(1, metrics.GetAndClearRunCount());
-
-  
-  
-  
-  throttler->PostTask(FROM_HERE, NewTask(), Advance(100));      
-  EXPECT_EQ(1, metrics.GetAndClearRunCount());
-  throttler->TaskComplete(Advance());                           
-  throttler->TaskComplete(Advance());                           
-  EXPECT_EQ(0, metrics.GetAndClearRunCount());
-  EXPECT_EQ(0, metrics.GetAndClearCancelCount());
-
-  
-  
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  EXPECT_EQ(1, metrics.GetAndClearRunCount());
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  throttler->PostTask(FROM_HERE, NewTask(), Advance());         
-  EXPECT_EQ(0, metrics.GetAndClearRunCount());
-  throttler->PostTask(FROM_HERE, NewTask(), Advance(100));      
-  EXPECT_EQ(1, metrics.GetAndClearRunCount());
-  EXPECT_EQ(3, metrics.GetAndClearCancelCount());               
-  throttler->TaskComplete(Advance());                           
-  EXPECT_EQ(0, metrics.GetAndClearRunCount());
-  EXPECT_EQ(0, metrics.GetAndClearCancelCount());
-}

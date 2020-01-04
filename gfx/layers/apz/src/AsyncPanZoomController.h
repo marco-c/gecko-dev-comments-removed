@@ -24,7 +24,6 @@
 #include "APZUtils.h"
 #include "Layers.h"                     
 #include "LayersTypes.h"
-#include "TaskThrottler.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsRegion.h"
 
@@ -104,7 +103,6 @@ public:
                          APZCTreeManager* aTreeManager,
                          const RefPtr<InputQueue>& aInputQueue,
                          GeckoContentController* aController,
-                         TaskThrottler* aPaintThrottler,
                          GestureBehavior aGestures = DEFAULT_GESTURES);
 
   
@@ -185,11 +183,6 @@ public:
 
 
   void NotifyLayersUpdated(const FrameMetrics& aLayerMetrics, bool aIsFirstPaint);
-
-  
-
-
-  void FlushRepaintIfPending();
 
   
 
@@ -650,7 +643,6 @@ protected:
 
   uint64_t mLayersId;
   RefPtr<CompositorParent> mCompositorParent;
-  RefPtr<TaskThrottler> mPaintThrottler;
 
   
 

@@ -18,7 +18,6 @@
 #include "InputBlockState.h"            
 #include "InputQueue.h"                 
 #include "OverscrollHandoffState.h"     
-#include "TaskThrottler.h"              
 #include "Units.h"                      
 #include "UnitTransforms.h"             
 #include "base/message_loop.h"          
@@ -848,10 +847,8 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
                                                APZCTreeManager* aTreeManager,
                                                const RefPtr<InputQueue>& aInputQueue,
                                                GeckoContentController* aGeckoContentController,
-                                               TaskThrottler* aPaintThrottler,
                                                GestureBehavior aGestures)
   :  mLayersId(aLayersId),
-     mPaintThrottler(aPaintThrottler),
      mGeckoContentController(aGeckoContentController),
      mRefPtrMonitor("RefPtrMonitor"),
      
@@ -2762,9 +2759,6 @@ void AsyncPanZoomController::FlushRepaintForNewInputBlock() {
   ReentrantMonitorAutoEnter lock(mMonitor);
   RequestContentRepaint(mFrameMetrics);
   UpdateSharedCompositorFrameMetrics();
-}
-
-void AsyncPanZoomController::FlushRepaintIfPending() {
 }
 
 bool AsyncPanZoomController::SnapBackIfOverscrolled() {

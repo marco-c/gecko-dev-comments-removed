@@ -52,7 +52,6 @@ class LayerMetricsWrapper;
 class InputQueue;
 class GeckoContentController;
 class HitTestingTreeNode;
-class TaskThrottler;
 
 
 
@@ -136,17 +135,6 @@ public:
                             bool aIsFirstPaint,
                             uint64_t aOriginatingLayersId,
                             uint32_t aPaintSequenceNumber);
-
-  
-
-
-
-  void InitializeForLayersId(uint64_t aLayersId);
-
-  
-
-
-  void AdoptLayersId(uint64_t aLayersId, APZCTreeManager* aOldManager);
 
   
 
@@ -419,8 +407,7 @@ protected:
 
   
   virtual AsyncPanZoomController* NewAPZCInstance(uint64_t aLayersId,
-                                                  GeckoContentController* aController,
-                                                  TaskThrottler* aPaintThrottler);
+                                                  GeckoContentController* aController);
 public:
   
   virtual TimeStamp GetFrameTime();
@@ -535,10 +522,6 @@ private:
   
 
   std::map<ScrollableLayerGuid, ZoomConstraints> mZoomConstraints;
-  
-
-
-  std::map<uint64_t, RefPtr<TaskThrottler>> mPaintThrottlerMap;
   
 
 

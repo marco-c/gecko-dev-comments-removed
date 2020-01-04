@@ -28,7 +28,6 @@
 #include "nsPoint.h"                    
 #include "nsThreadUtils.h"              
 #include "OverscrollHandoffState.h"     
-#include "TaskThrottler.h"              
 #include "TreeTraversal.h"              
 #include "LayersLogging.h"              
 #include "Units.h"                      
@@ -110,11 +109,10 @@ APZCTreeManager::~APZCTreeManager()
 
 AsyncPanZoomController*
 APZCTreeManager::NewAPZCInstance(uint64_t aLayersId,
-                                 GeckoContentController* aController,
-                                 TaskThrottler* aPaintThrottler)
+                                 GeckoContentController* aController)
 {
   return new AsyncPanZoomController(aLayersId, this, mInputQueue,
-    aController, aPaintThrottler, AsyncPanZoomController::USE_GESTURE_DETECTOR);
+    aController, AsyncPanZoomController::USE_GESTURE_DETECTOR);
 }
 
 TimeStamp
@@ -198,32 +196,6 @@ APZCTreeManager::UpdateHitTestingTree(CompositorParent* aCompositor,
   printf_stderr("APZCTreeManager (%p)\n", this);
   mRootNode->Dump("  ");
 #endif
-}
-
-void
-APZCTreeManager::InitializeForLayersId(uint64_t aLayersId)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  auto throttlerInsertResult = mPaintThrottlerMap.insert(
-    std::make_pair(aLayersId, RefPtr<TaskThrottler>()));
-  if (throttlerInsertResult.second) {
-    throttlerInsertResult.first->second = new TaskThrottler(
-      GetFrameTime(), TimeDuration::FromMilliseconds(500));
-  }
-}
-
-void
-APZCTreeManager::AdoptLayersId(uint64_t aLayersId, APZCTreeManager* aOldManager)
-{
-  MOZ_ASSERT(aOldManager);
-  if (aOldManager == this) {
-    return;
-  }
-  auto iter = aOldManager->mPaintThrottlerMap.find(aLayersId);
-  if (iter != aOldManager->mPaintThrottlerMap.end()) {
-    mPaintThrottlerMap[aLayersId] = iter->second;
-    aOldManager->mPaintThrottlerMap.erase(iter);
-  }
 }
 
 
@@ -461,12 +433,7 @@ APZCTreeManager::PrepareNodeForLayer(const LayerMetricsWrapper& aLayer,
     
     bool newApzc = (apzc == nullptr || apzc->IsDestroyed());
     if (newApzc) {
-      
-      
-      RefPtr<TaskThrottler> throttler = mPaintThrottlerMap[aLayersId];
-      MOZ_ASSERT(throttler);
-
-      apzc = NewAPZCInstance(aLayersId, state->mController, throttler);
+      apzc = NewAPZCInstance(aLayersId, state->mController);
       apzc->SetCompositorParent(aState.mCompositor);
       if (state->mCrossProcessParent != nullptr) {
         apzc->ShareFrameMetricsAcrossProcesses();
@@ -656,23 +623,10 @@ WillHandleInput(const PanGestureOrScrollWheelInput& aPanInput)
 void
 APZCTreeManager::FlushApzRepaints(uint64_t aLayersId)
 {
+  
+  
+  
   APZCTM_LOG("Flushing repaints for layers id %" PRIu64, aLayersId);
-  { 
-    MonitorAutoLock lock(mTreeLock);
-    mTreeLock.AssertCurrentThreadOwns();
-
-    ForEachNode(mRootNode.get(),
-        [aLayersId](HitTestingTreeNode* aNode)
-        {
-          if (aNode->IsPrimaryHolder()) {
-            AsyncPanZoomController* apzc = aNode->GetApzc();
-            MOZ_ASSERT(apzc);
-            if (apzc->GetGuid().mLayersId == aLayersId) {
-              apzc->FlushRepaintIfPending();
-            }
-          }
-        });
-  }
   const CompositorParent::LayerTreeState* state = CompositorParent::GetIndirectShadowTree(aLayersId);
   MOZ_ASSERT(state && state->mController);
   NS_DispatchToMainThread(NS_NewRunnableMethod(
