@@ -422,6 +422,7 @@ JitCode*
 JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
 {
     MacroAssembler masm(cx);
+    masm.pushReturnAddress();
 
     
     
@@ -731,6 +732,10 @@ JitRuntime::generateVMWrapper(JSContext* cx, const VMFunction& f)
     regs.take(cxreg);
 
     
+    if (f.expectTailCall == NonTailCall)
+        masm.pushReturnAddress();
+
+    
     masm.enterExitFrame(&f);
     masm.loadJSContext(cxreg);
 
@@ -930,6 +935,7 @@ JitRuntime::generatePreBarrier(JSContext* cx, MIRType type)
         save.set() = RegisterSet(GeneralRegisterSet(Registers::VolatileMask),
                            FloatRegisterSet());
     }
+    save.add(ra);
     masm.PushRegsInMask(save);
 
     MOZ_ASSERT(PreBarrierReg == a1);
@@ -940,6 +946,7 @@ JitRuntime::generatePreBarrier(JSContext* cx, MIRType type)
     masm.passABIArg(a1);
     masm.callWithABI(IonMarkFunction(type));
 
+    save.take(AnyRegister(ra));
     masm.PopRegsInMask(save);
     masm.ret();
 

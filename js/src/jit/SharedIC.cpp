@@ -732,8 +732,7 @@ ICStubCompiler::getStubCode()
     
     JitContext jctx(cx, nullptr);
     MacroAssembler masm;
-#if !defined(JS_USE_LINK_REGISTER) && \
-    !(defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64))
+#ifndef JS_USE_LINK_REGISTER
     
     
     masm.adjustFrame(sizeof(intptr_t));
