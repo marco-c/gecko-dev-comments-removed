@@ -235,6 +235,7 @@ GMPRemoveTest::Setup()
   
   
   RefPtr<AbstractThread> thread(GetServiceParent()->GetAbstractGMPThread());
+  EXPECT_TRUE(thread);
   GMPTestMonitor* mon = &mTestMonitor;
   GetServiceParent()->EnsureInitialized()->Then(thread, __func__,
     [mon]() { mon->SetFinished(); },

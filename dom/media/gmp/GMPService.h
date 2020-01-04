@@ -83,7 +83,7 @@ protected:
 
   void RemoveObsoletePluginCrashCallbacks(); 
 
-  virtual void InitializePlugins() = 0;
+  virtual void InitializePlugins(AbstractThread* aAbstractGMPThread) = 0;
   virtual bool GetContentParentFrom(const nsACString& aNodeId,
                                     const nsCString& aAPI,
                                     const nsTArray<nsCString>& aTags,
