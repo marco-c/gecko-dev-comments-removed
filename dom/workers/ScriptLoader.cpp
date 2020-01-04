@@ -1752,6 +1752,11 @@ ScriptExecutorRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
       aWorkerPrivate->GetOrCreateGlobalScope(aCx);
     if (NS_WARN_IF(!globalScope)) {
       NS_WARNING("Failed to make global!");
+      
+      
+      
+      
+      JS_ClearPendingException(aCx);
       return false;
     }
 
