@@ -162,6 +162,8 @@ struct Statistics
     
     using PhaseTimeTable = int64_t[NumTimingArrays][PHASE_LIMIT];
 
+    static void initialize();
+
     explicit Statistics(JSRuntime* rt);
     ~Statistics();
 
