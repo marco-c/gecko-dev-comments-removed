@@ -40,6 +40,13 @@ enum TimerResolution {
 
 
 
+
+void CreateStatisticsRecorder();
+void DestroyStatisticsRecorder();
+
+
+
+
 void Init();
 
 
