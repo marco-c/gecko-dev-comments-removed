@@ -5,6 +5,7 @@
 
 
 #include "buffer.h"
+#include "nsDebug.h"
 
 Buffer::Buffer()
  : mBuffer(nullptr),
@@ -59,7 +60,9 @@ Buffer::try_realloc(size_t newlength)
 
   
   
-  MOZ_RELEASE_ASSERT(newlength <= mReserved);
+  if (newlength > mReserved) {
+    NS_ABORT_OOM(newlength);
+  }
 }
 
 void
