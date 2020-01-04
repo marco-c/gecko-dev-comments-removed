@@ -455,8 +455,7 @@ DecodedStream::CreateData(MozPromiseHolder<GenericPromise>&& aPromise)
 
   
   
-  
-  if (!mOutputStreamManager.Graph() || mShuttingDown) {
+  if (!mOutputStreamManager.Graph()) {
     
     aPromise.Resolve(true, __func__);
     return;
@@ -477,6 +476,21 @@ DecodedStream::CreateData(MozPromiseHolder<GenericPromise>&& aPromise)
       return NS_OK;
     }
   private:
+    virtual ~R()
+    {
+      
+      
+      
+      if (mData) {
+        DecodedStreamData* data = mData.release();
+        RefPtr<DecodedStream> self = mThis.forget();
+        nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
+          self->mOutputStreamManager.Disconnect();
+          delete data;
+        });
+        AbstractThread::MainThread()->Dispatch(r.forget());
+      }
+    }
     RefPtr<DecodedStream> mThis;
     Method mMethod;
     UniquePtr<DecodedStreamData> mData;
@@ -484,9 +498,8 @@ DecodedStream::CreateData(MozPromiseHolder<GenericPromise>&& aPromise)
 
   
   
-  
   nsCOMPtr<nsIRunnable> r = new R(this, &DecodedStream::OnDataCreated, data);
-  mOwnerThread->Dispatch(r.forget());
+  mOwnerThread->Dispatch(r.forget(), AbstractThread::DontAssertDispatchSuccess);
 }
 
 bool
