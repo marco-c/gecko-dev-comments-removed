@@ -14,12 +14,14 @@
 #include "jit/InlinableNatives.h"
 #include "vm/RegExpStatics.h"
 #include "vm/StringBuffer.h"
+#include "vm/Unicode.h"
 
 #include "jsobjinlines.h"
 
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
+using namespace js::unicode;
 
 using mozilla::ArrayLength;
 using mozilla::Maybe;
@@ -782,6 +784,29 @@ SetLastIndex(JSContext* cx, Handle<RegExpObject*> reobj, double lastIndex)
     return true;
 }
 
+template <typename CharT>
+static bool
+IsTrailSurrogateWithLeadSurrogateImpl(JSContext* cx, HandleLinearString input, size_t index)
+{
+    JS::AutoCheckCannotGC nogc;
+    MOZ_ASSERT(index > 0 && index < input->length());
+    const CharT* inputChars = input->chars<CharT>(nogc);
+
+    return unicode::IsTrailSurrogate(inputChars[index]) &&
+           unicode::IsLeadSurrogate(inputChars[index - 1]);
+}
+
+static bool
+IsTrailSurrogateWithLeadSurrogate(JSContext* cx, HandleLinearString input, int32_t index)
+{
+    if (index <= 0 || size_t(index) >= input->length())
+        return false;
+
+    return input->hasLatin1Chars()
+           ? IsTrailSurrogateWithLeadSurrogateImpl<Latin1Char>(cx, input, index)
+           : IsTrailSurrogateWithLeadSurrogateImpl<char16_t>(cx, input, index);
+}
+
 
 RegExpRunStatus
 js::ExecuteRegExp(JSContext* cx, HandleObject regexp, HandleString string,
@@ -862,6 +887,33 @@ js::ExecuteRegExp(JSContext* cx, HandleObject regexp, HandleString string,
 
         
         return RegExpRunStatus_Success_NotFound;
+    }
+
+    
+    if (reobj->unicode()) {
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        if (IsTrailSurrogateWithLeadSurrogate(cx, input, searchIndex))
+            searchIndex--;
     }
 
     
