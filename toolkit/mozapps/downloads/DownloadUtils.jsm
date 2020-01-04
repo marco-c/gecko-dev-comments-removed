@@ -486,9 +486,12 @@ this.DownloadUtils = {
       if (typeof Intl != "undefined") {
         aBytes = getLocaleNumberFormat(fractionDigits)
                    .format(aBytes);
-      } else if (gDecimalSymbol != ".") {
+      } else {
         
-        aBytes = aBytes.toFixed(fractionDigits).replace(".", gDecimalSymbol);
+        aBytes = aBytes.toFixed(fractionDigits);
+        if (gDecimalSymbol != ".") {
+          aBytes = aBytes.replace(".", gDecimalSymbol);
+        }
       }
     }
 
