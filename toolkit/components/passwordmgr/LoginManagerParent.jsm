@@ -292,16 +292,9 @@ var LoginManagerParent = {
     function getPrompter() {
       var prompterSvc = Cc["@mozilla.org/login-manager/prompter;1"].
                         createInstance(Ci.nsILoginManagerPrompter);
-      
-      
-      
-      
-      
-      prompterSvc.init(target.isRemoteBrowser ?
-                          target.ownerDocument.defaultView :
-                          target.contentWindow);
-      if (target.isRemoteBrowser)
-        prompterSvc.setE10sData(target, opener);
+      prompterSvc.init(target.ownerDocument.defaultView);
+      prompterSvc.browser = target;
+      prompterSvc.opener = opener;
       return prompterSvc;
     }
 
