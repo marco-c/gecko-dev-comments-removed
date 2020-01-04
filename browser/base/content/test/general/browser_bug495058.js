@@ -28,16 +28,6 @@ add_task(function*() {
       TestUtils.topicObserved("browser-delayed-startup-finished",
                               subject => subject == win);
 
-    if (gMultiProcessBrowser &&
-        E10SUtils.canLoadURIInProcess(uri, Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT)) {
-      
-      
-      
-      
-      yield BrowserTestUtils.waitForEvent(tab, "TabRemotenessChange");
-      contentPainted = BrowserTestUtils.contentPainted(tab.linkedBrowser);
-    }
-
     yield Promise.all([delayedStartup, contentPainted]);
 
     Assert.equal(win.gBrowser.currentURI.spec, uri, uri + ": uri loaded in detached tab");
