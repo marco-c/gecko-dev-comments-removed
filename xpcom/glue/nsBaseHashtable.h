@@ -7,6 +7,7 @@
 #ifndef nsBaseHashtable_h__
 #define nsBaseHashtable_h__
 
+#include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
 #include "nsTHashtable.h"
@@ -19,7 +20,6 @@
 enum PLDHashOperator
 {
   PL_DHASH_NEXT = 0,          
-  PL_DHASH_STOP = 1,          
   PL_DHASH_REMOVE = 2         
 };
 
@@ -164,8 +164,6 @@ public:
 
 
 
-
-
   typedef PLDHashOperator (*EnumReadFunction)(KeyType aKey,
                                               UserDataType aData,
                                               void* aUserArg);
@@ -181,18 +179,15 @@ public:
     uint32_t n = 0;
     for (auto iter = this->mTable.ConstIter(); !iter.Done(); iter.Next()) {
       auto entry = static_cast<EntryType*>(iter.Get());
-      PLDHashOperator op = aEnumFunc(entry->GetKey(), entry->mData, aUserArg);
+      mozilla::DebugOnly<PLDHashOperator> op =
+        aEnumFunc(entry->GetKey(), entry->mData, aUserArg);
       n++;
       MOZ_ASSERT(!(op & PL_DHASH_REMOVE));
-      if (op & PL_DHASH_STOP) {
-        break;
-      }
     }
     return n;
   }
 
   
-
 
 
 
@@ -222,9 +217,6 @@ public:
       n++;
       if (op & PL_DHASH_REMOVE) {
         iter.Remove();
-      }
-      if (op & PL_DHASH_STOP) {
-        break;
       }
     }
     return n;
