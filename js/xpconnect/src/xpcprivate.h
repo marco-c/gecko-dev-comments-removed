@@ -665,6 +665,9 @@ private:
     
     
     mozilla::TimeStamp mSlowScriptCheckpoint;
+    
+    mozilla::TimeDuration mSlowScriptActualWait;
+    bool mTimeoutAccumulated;
 
     friend class Watchdog;
     friend class AutoLockWatchdog;

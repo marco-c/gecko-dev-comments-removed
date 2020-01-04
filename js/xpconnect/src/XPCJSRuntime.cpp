@@ -1365,6 +1365,8 @@ XPCJSRuntime::InterruptCallback(JSContext* cx)
     if (self->mSlowScriptCheckpoint.IsNull()) {
         self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
         self->mSlowScriptSecondHalf = false;
+        self->mSlowScriptActualWait = mozilla::TimeDuration();
+        self->mTimeoutAccumulated = false;
         return true;
     }
 
@@ -1385,6 +1387,8 @@ XPCJSRuntime::InterruptCallback(JSContext* cx)
     
     if (limit == 0 || duration.ToSeconds() < limit / 2.0)
         return true;
+
+    self->mSlowScriptActualWait += duration;
 
     
     
@@ -1429,6 +1433,13 @@ XPCJSRuntime::InterruptCallback(JSContext* cx)
         
         mozilla::dom::HandlePrerenderingViolation(win->AsInner());
         return false;
+    }
+
+    
+    if (!chrome && !self->mTimeoutAccumulated) {
+      uint32_t delay = uint32_t(self->mSlowScriptActualWait.ToMilliseconds() - (limit * 1000.0));
+      Telemetry::Accumulate(Telemetry::SLOW_SCRIPT_NOTIFY_DELAY, delay);
+      self->mTimeoutAccumulated = true;
     }
 
     
@@ -3354,7 +3365,8 @@ XPCJSRuntime::XPCJSRuntime()
    mObjectHolderRoots(nullptr),
    mWatchdogManager(new WatchdogManager(this)),
    mAsyncSnowWhiteFreer(new AsyncFreeSnowWhite()),
-   mSlowScriptSecondHalf(false)
+   mSlowScriptSecondHalf(false),
+   mTimeoutAccumulated(false)
 {
 }
 
@@ -3689,6 +3701,8 @@ XPCJSRuntime::BeforeProcessTask(bool aMightBlock)
     
     mSlowScriptCheckpoint = mozilla::TimeStamp::NowLoRes();
     mSlowScriptSecondHalf = false;
+    mSlowScriptActualWait = mozilla::TimeDuration();
+    mTimeoutAccumulated = false;
 
     
     
