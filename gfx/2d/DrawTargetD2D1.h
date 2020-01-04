@@ -266,7 +266,7 @@ private:
   
   TargetSet mDependingOnTargets;
 
-  uint32_t mPushedLayersSincePurge;
+  uint32_t mUsedCommandListsSincePurge;
 
   static ID2D1Factory1 *mFactory;
   static IDWriteFactory *mDWriteFactory;
