@@ -2,6 +2,8 @@
 
 
 
+requestLongerTimeout(2);
+
 const PREF_RESTORE_ON_DEMAND = "browser.sessionstore.restore_on_demand";
 
 add_task(function* test() {
