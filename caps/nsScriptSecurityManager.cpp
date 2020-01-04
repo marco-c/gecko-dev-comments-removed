@@ -367,8 +367,7 @@ nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
           
           
           if (loadInfo->GetLoadingSandboxed() &&
-              (loadInfo->GetSecurityFlags() &
-               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL_WAS_DROPPED)) {
+              loadInfo->GetForceInheritPrincipalDropped()) {
             forceInterit = true;
           }
         }
