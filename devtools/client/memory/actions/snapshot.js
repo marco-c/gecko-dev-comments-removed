@@ -6,9 +6,23 @@
 const { PROMISE } = require("devtools/client/shared/redux/middleware/promise");
 const { actions } = require("../constants");
 
+
+
+
 const takeSnapshot = exports.takeSnapshot = function takeSnapshot (front) {
   return {
     type: actions.TAKE_SNAPSHOT,
     [PROMISE]: front.saveHeapSnapshot()
+  };
+};
+
+
+
+
+
+const selectSnapshot = exports.selectSnapshot = function takeSnapshot (snapshot) {
+  return {
+    type: actions.SELECT_SNAPSHOT,
+    snapshot
   };
 };

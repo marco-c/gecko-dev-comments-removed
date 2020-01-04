@@ -3,10 +3,15 @@
 
 "use strict";
 
-var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-const { require } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+const BrowserLoaderModule = {};
+Cu.import("resource:///modules/devtools/client/shared/browser-loader.js", BrowserLoaderModule);
+const { require } = BrowserLoaderModule.BrowserLoader("resource:///modules/devtools/client/memory/", this);
 const { Task } = require("resource://gre/modules/Task.jsm");
-const { MemoryController } = require("devtools/client/memory/controller");
+const { createFactory, createElement, render } = require("devtools/client/shared/vendor/react");
+const { Provider } = require("devtools/client/shared/vendor/react-redux");
+const App = createFactory(require("devtools/client/memory/app"));
+const Store = require("devtools/client/memory/store");
 
 
 
@@ -16,15 +21,18 @@ var gToolbox, gTarget, gFront;
 
 
 
-var controller = null;
+var gToolbox, gTarget, gFront;
+
 function initialize () {
-  return Task.spawn(function *() {
-    controller = new MemoryController({ toolbox: gToolbox, target: gTarget, front: gFront });
+  return Task.spawn(function*() {
+    let root = document.querySelector("#app");
+    let store = Store();
+    let app = createElement(App, { front: gFront });
+    let provider = createElement(Provider, { store }, app);
+    render(provider, root);
   });
 }
 
 function destroy () {
-  return Task.spawn(function *() {
-    controller.destroy();
-  });
+  return Task.spawn(function*(){});
 }

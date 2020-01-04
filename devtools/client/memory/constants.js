@@ -7,3 +7,6 @@ const actions = exports.actions = {};
 
 
 actions.TAKE_SNAPSHOT = "take-snapshot";
+
+
+actions.SELECT_SNAPSHOT = "select-snapshot";
