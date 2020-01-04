@@ -671,6 +671,7 @@ protected:
 
   class MediaLoadListener;
   class MediaStreamTracksAvailableCallback;
+  class MediaStreamTrackListener;
   class StreamListener;
   class StreamSizeListener;
 
@@ -759,6 +760,25 @@ protected:
 
   enum { REMOVING_SRC_STREAM = 0x1 };
   void UpdateSrcMediaStreamPlaying(uint32_t aFlags = 0);
+
+  
+
+
+
+
+  void ConstructMediaTracks();
+
+  
+
+
+
+  void NotifyMediaStreamTrackAdded(const nsRefPtr<MediaStreamTrack>& aTrack);
+
+  
+
+
+
+  void NotifyMediaStreamTrackRemoved(const nsRefPtr<MediaStreamTrack>& aTrack);
 
   
 
@@ -1428,6 +1448,8 @@ protected:
   nsRefPtr<AudioTrackList> mAudioTrackList;
 
   nsRefPtr<VideoTrackList> mVideoTrackList;
+
+  nsRefPtr<MediaStreamTrackListener> mMediaStreamTrackListener;
 
   enum ElementInTreeState {
     

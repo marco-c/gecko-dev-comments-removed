@@ -61,6 +61,7 @@ public:
   already_AddRefed<Promise>
   ApplyConstraints(const dom::MediaTrackConstraints& aConstraints, ErrorResult &aRv);
 
+  bool Ended() const { return mEnded; }
   
   void NotifyEnded() { mEnded = true; }
 

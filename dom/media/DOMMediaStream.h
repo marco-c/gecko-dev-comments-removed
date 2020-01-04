@@ -182,11 +182,31 @@ class DOMMediaStream : public DOMEventTargetHelper
   typedef dom::VideoTrack VideoTrack;
   typedef dom::AudioTrackList AudioTrackList;
   typedef dom::VideoTrackList VideoTrackList;
-  typedef dom::MediaTrackListListener MediaTrackListListener;
 
 public:
   typedef dom::MediaTrackConstraints MediaTrackConstraints;
-  typedef uint8_t TrackTypeHints;
+
+  class TrackListener {
+    NS_INLINE_DECL_REFCOUNTING(TrackListener)
+
+  public:
+    
+
+
+
+    virtual void
+    NotifyTrackAdded(const nsRefPtr<MediaStreamTrack>& aTrack) {};
+
+    
+
+
+
+    virtual void
+    NotifyTrackRemoved(const nsRefPtr<MediaStreamTrack>& aTrack) {};
+
+  protected:
+    virtual ~TrackListener() {}
+  };
 
   DOMMediaStream();
 
@@ -394,23 +414,8 @@ public:
     }
   }
 
-  
-
-
-
-
-  void ConstructMediaTracks(AudioTrackList* aAudioTrackList,
-                            VideoTrackList* aVideoTrackList);
-
-  
-
-
-  void DisconnectTrackListListeners(const AudioTrackList* aAudioTrackList,
-                                    const VideoTrackList* aVideoTrackList);
-
-  virtual void NotifyMediaStreamTrackCreated(MediaStreamTrack* aTrack);
-
-  virtual void NotifyMediaStreamTrackEnded(MediaStreamTrack* aTrack);
+  void RegisterTrackListener(TrackListener* aListener);
+  void UnregisterTrackListener(TrackListener* aListener);
 
 protected:
   virtual ~DOMMediaStream();
@@ -420,14 +425,18 @@ protected:
   void InitTrackUnionStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
   void InitAudioCaptureStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
   void InitStreamCommon(MediaStream* aStream, MediaStreamGraph* aGraph);
-  already_AddRefed<AudioTrack> CreateAudioTrack(AudioStreamTrack* aStreamTrack);
-  already_AddRefed<VideoTrack> CreateVideoTrack(VideoStreamTrack* aStreamTrack);
-
-  
-  
-  void TracksCreated();
 
   void CheckTracksAvailable();
+
+  
+  
+  void NotifyTracksCreated();
+
+  
+  void NotifyTrackAdded(const nsRefPtr<MediaStreamTrack>& aTrack);
+
+  
+  void NotifyTrackRemoved(const nsRefPtr<MediaStreamTrack>& aTrack);
 
   class OwnedStreamListener;
   friend class OwnedStreamListener;
@@ -489,8 +498,7 @@ protected:
   bool mNotifiedOfMediaStreamGraphShutdown;
 
   
-  
-  nsTArray<MediaTrackListListener> mMediaTrackListListeners;
+  nsTArray<nsRefPtr<TrackListener>> mTrackListeners;
 
 private:
   void NotifyPrincipalChanged();
