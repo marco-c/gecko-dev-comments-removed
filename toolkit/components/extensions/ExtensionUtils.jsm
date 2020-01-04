@@ -14,6 +14,9 @@ const Cr = Components.results;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
+                                  "resource://gre/modules/AppConstants.jsm");
+
 XPCOMUtils.defineLazyModuleGetter(this, "Locale",
                                   "resource://gre/modules/Locale.jsm");
 
@@ -333,7 +336,9 @@ LocaleData.prototype = {
 
     
     if (message == "@@ui_locale") {
-      return this.uiLocale;
+      
+      
+      return Locale.getLocale().replace(/-/g, "_");
     } else if (message.startsWith("@@bidi_")) {
       let registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIXULChromeRegistry);
       let rtl = registry.isLocaleRTL("global");
@@ -424,13 +429,6 @@ LocaleData.prototype = {
     this.messages.set(locale, result);
     return result;
   },
-
-  get uiLocale() {
-    
-    
-    return Locale.getLocale().replace(/-/g, "_");
-  },
-
 };
 
 
@@ -938,6 +936,26 @@ function flushJarCache(jarFile) {
   Services.obs.notifyObservers(jarFile, "flush-cache-entry", null);
 }
 
+const PlatformInfo = Object.freeze({
+  os: (function() {
+    let os = AppConstants.platform;
+    if (os == "macosx") {
+      os = "mac";
+    }
+    return os;
+  })(),
+  arch: (function() {
+    let abi = Services.appinfo.XPCOMABI;
+    let [arch] = abi.split("-");
+    if (arch == "x86") {
+      arch = "x86-32";
+    } else if (arch == "x86_64") {
+      arch = "x86-64";
+    }
+    return arch;
+  })(),
+});
+
 this.ExtensionUtils = {
   runSafeWithoutClone,
   runSafeSyncWithoutClone,
@@ -952,6 +970,7 @@ this.ExtensionUtils = {
   injectAPI,
   MessageBroker,
   Messenger,
+  PlatformInfo,
   SpreadArgs,
   extend,
   flushJarCache,
