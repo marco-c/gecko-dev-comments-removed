@@ -83,13 +83,22 @@ Assembler::finish()
 
     
     
-    
-    
-    
-    if (jumpRelocations_.length() && !oom()) {
-        MOZ_ASSERT(jumpRelocations_.length() >= sizeof(uint32_t));
-        *(uint32_t*)jumpRelocations_.buffer() = ExtendedJumpTable_.getOffset();
+    if (tmpJumpRelocations_.length())
+        jumpRelocations_.writeFixedUint32_t(toFinalOffset(ExtendedJumpTable_));
+
+    for (unsigned int i = 0; i < tmpJumpRelocations_.length(); i++) {
+        JumpRelocation& reloc = tmpJumpRelocations_[i];
+
+        
+        jumpRelocations_.writeUnsigned(toFinalOffset(reloc.jump));
+        jumpRelocations_.writeUnsigned(reloc.extendedTableIndex);
     }
+
+    for (unsigned int i = 0; i < tmpDataRelocations_.length(); i++)
+        dataRelocations_.writeUnsigned(toFinalOffset(tmpDataRelocations_[i]));
+
+    for (unsigned int i = 0; i < tmpPreBarriers_.length(); i++)
+        preBarriers_.writeUnsigned(toFinalOffset(tmpPreBarriers_[i]));
 }
 
 BufferOffset
@@ -147,9 +156,9 @@ Assembler::executableCopy(uint8_t* buffer)
         }
 
         Instruction* target = (Instruction*)rp.target;
-        Instruction* branch = (Instruction*)(buffer + rp.offset.getOffset());
+        Instruction* branch = (Instruction*)(buffer + toFinalOffset(rp.offset));
         JumpTableEntry* extendedJumpTable =
-            reinterpret_cast<JumpTableEntry*>(buffer + ExtendedJumpTable_.getOffset());
+            reinterpret_cast<JumpTableEntry*>(buffer + toFinalOffset(ExtendedJumpTable_));
         if (branch->BranchType() != vixl::UnknownBranchType) {
             if (branch->IsTargetReachable(target)) {
                 branch->SetImmPCOffsetTarget(target);
@@ -212,10 +221,7 @@ void
 Assembler::bind(Label* label, BufferOffset targetOffset)
 {
     
-    
-    
-    
-    if (!label->used() || oom()) {
+    if (!label->used()) {
         label->bind(targetOffset.getOffset());
         return;
     }
@@ -253,9 +259,7 @@ void
 Assembler::bind(RepatchLabel* label)
 {
     
-    
-    
-    if (!label->used() || oom()) {
+    if (!label->used()) {
         label->bind(nextOffset().getOffset());
         return;
     }
@@ -290,15 +294,7 @@ Assembler::addJumpRelocation(BufferOffset src, Relocation::Kind reloc)
     MOZ_ASSERT(reloc == Relocation::JITCODE);
 
     
-    
-    
-    
-    if (!jumpRelocations_.length())
-        jumpRelocations_.writeFixedUint32_t(0);
-
-    
-    jumpRelocations_.writeUnsigned(src.getOffset());
-    jumpRelocations_.writeUnsigned(pendingJumps_.length());
+    tmpJumpRelocations_.append(JumpRelocation(src, pendingJumps_.length()));
 }
 
 void

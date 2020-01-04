@@ -114,6 +114,7 @@ class AssemblerBuffer
     
     
     uint32_t bufferSize;
+    uint32_t lastInstSize;
 
     
     Slice* finger;
@@ -128,6 +129,7 @@ class AssemblerBuffer
         m_oom(false),
         m_bail(false),
         bufferSize(0),
+        lastInstSize(0),
         finger(nullptr),
         finger_offset(0),
         lifoAlloc_(8192)
@@ -191,34 +193,12 @@ class AssemblerBuffer
     BufferOffset putInt(uint32_t value) {
         return putBytes(sizeof(value), (uint8_t*)&value);
     }
-
-    
-    
     BufferOffset putBytes(uint32_t instSize, uint8_t* inst) {
         if (!ensureSpace(instSize))
             return BufferOffset();
 
         BufferOffset ret = nextOffset();
         tail->putBytes(instSize, inst);
-        return ret;
-    }
-
-    
-    
-    
-    BufferOffset putBytesLarge(size_t numBytes, const uint8_t* data)
-    {
-        BufferOffset ret = nextOffset();
-        while (numBytes > 0) {
-            if (!ensureSpace(1))
-                return BufferOffset();
-            size_t avail = tail->Capacity() - tail->length();
-            size_t xfer = numBytes < avail ? numBytes : avail;
-            MOZ_ASSERT(xfer > 0, "ensureSpace should have allocated a slice");
-            tail->putBytes(xfer, data);
-            data += xfer;
-            numBytes -= xfer;
-        }
         return ret;
     }
 
@@ -344,6 +324,19 @@ class AssemblerBuffer
         if (tail)
             return BufferOffset(bufferSize + tail->length());
         return BufferOffset(bufferSize);
+    }
+
+    
+    void perforate() {
+        Slice* slice = newSlice(lifoAlloc_);
+        if (!slice) {
+            fail_oom();
+            return;
+        }
+
+        bufferSize += tail->length();
+        tail->setNext(slice);
+        tail = slice;
     }
 
     class AssemblerBufferInstIterator
