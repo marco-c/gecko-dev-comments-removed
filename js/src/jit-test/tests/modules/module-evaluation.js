@@ -1,6 +1,7 @@
 
 
 load(libdir + "asserts.js");
+load(libdir + "class.js");
 
 let moduleRepo = new Map();
 setModuleResolveHook(function(module, specifier) {
