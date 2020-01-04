@@ -774,6 +774,11 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
 
   
+  if (aContentType == TYPE_OBJECT_SUBREQUEST) {
+    rootDoc->SetHasMixedContentObjectSubrequest(true);
+  }
+
+  
   if (sBlockMixedDisplay && classification == eMixedDisplay) {
     if (allowMixedContent) {
       LogMixedContentMessage(classification, aContentLocation, rootDoc, eUserOverride);

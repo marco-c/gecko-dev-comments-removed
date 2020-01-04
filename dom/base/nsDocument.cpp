@@ -1574,6 +1574,15 @@ nsDocument::~nsDocument()
       Accumulate(Telemetry::MIXED_CONTENT_PAGE_LOAD, mixedContentLevel);
 
       Accumulate(Telemetry::SCROLL_LINKED_EFFECT_FOUND, mHasScrollLinkedEffect);
+
+      
+      if (mHasMixedContentObjectSubrequest) {
+        
+        Accumulate(Telemetry::MIXED_CONTENT_OBJECT_SUBREQUEST, 1);
+      } else {
+        
+        Accumulate(Telemetry::MIXED_CONTENT_OBJECT_SUBREQUEST, 0);
+      }
     }
   }
 

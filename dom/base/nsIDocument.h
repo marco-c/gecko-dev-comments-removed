@@ -613,6 +613,14 @@ public:
   
 
 
+  void SetHasMixedContentObjectSubrequest(bool aHasMixedContentObjectSubrequest)
+  {
+    mHasMixedContentObjectSubrequest = aHasMixedContentObjectSubrequest;
+  }
+
+  
+
+
   bool GetHasTrackingContentBlocked()
   {
     return mHasTrackingContentBlocked;
@@ -2906,6 +2914,9 @@ protected:
 
   
   bool mHasMixedDisplayContentBlocked : 1;
+
+  
+  bool mHasMixedContentObjectSubrequest : 1;
 
   
   bool mHasTrackingContentBlocked : 1;
