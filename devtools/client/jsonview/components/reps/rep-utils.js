@@ -1,0 +1,29 @@
+
+
+
+
+
+
+"use strict";
+
+define(function(require, exports, module) {
+
+
+const React = require("react");
+
+
+
+
+
+
+function createFactories(args) {
+  var result = {};
+  for (var p in args) {
+    result[p] = React.createFactory(args[p]);
+  }
+  return result;
+}
+
+
+exports.createFactories = createFactories;
+});
