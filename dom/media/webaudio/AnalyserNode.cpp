@@ -65,39 +65,15 @@ public:
   {
     *aOutput = aInput;
 
-    if (aInput.IsNull()) {
-      
-      
-      if (mChunksToProcess <= 0) {
-        if (mChunksToProcess != INT32_MIN) {
-          mChunksToProcess = INT32_MIN;
-          aStream->CheckForInactive();
-        }
-        return;
-      }
-
-      --mChunksToProcess;
-    } else {
-      
-      mChunksToProcess = CHUNK_COUNT;
-    }
-
     nsRefPtr<TransferBuffer> transfer =
       new TransferBuffer(aStream, aInput.AsAudioChunk());
     NS_DispatchToMainThread(transfer);
-  }
-
-  virtual bool IsActive() const override
-  {
-    return mChunksToProcess != INT32_MIN;
   }
 
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override
   {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
-
-  int32_t mChunksToProcess = INT32_MIN;
 };
 
 AnalyserNode::AnalyserNode(AudioContext* aContext)

@@ -106,8 +106,6 @@ public:
   }
 
   virtual AudioNodeStream* AsAudioNodeStream() override { return this; }
-  virtual void AddInput(MediaInputPort* aPort) override;
-  virtual void RemoveInput(MediaInputPort* aPort) override;
 
   
   void SetStreamTimeParameterImpl(uint32_t aIndex, MediaStream* aRelativeToStream,
@@ -167,22 +165,6 @@ public:
   void SizeOfAudioNodesIncludingThis(MallocSizeOf aMallocSizeOf,
                                      AudioNodeSizes& aUsage) const;
 
-  
-
-
-
-
-
-
-  void SetActive();
-  
-
-
-
-
-
-
-  void CheckForInactive();
 
 protected:
   virtual void DestroyImpl() override;
@@ -198,8 +180,6 @@ protected:
 
   uint32_t ComputedNumberOfChannels(uint32_t aInputChannelCount);
   void ObtainInputBlock(AudioBlock& aTmpChunk, uint32_t aPortIndex);
-  void IncrementActiveInputCount();
-  void DecrementActiveInputCount();
 
   
   nsAutoPtr<AudioNodeEngine> mEngine;
@@ -213,15 +193,10 @@ protected:
   
   const Flags mFlags;
   
-  uint32_t mActiveInputCount = 0;
-  
   uint32_t mNumberOfInputChannels;
   
   ChannelCountMode mChannelCountMode;
   ChannelInterpretation mChannelInterpretation;
-  
-  
-  bool mIsActive;
   
   
   bool mMarkAsFinishedAfterThisBlock;

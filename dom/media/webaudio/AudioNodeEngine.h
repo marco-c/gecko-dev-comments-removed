@@ -312,8 +312,6 @@ public:
 
 
 
-
-
   virtual void ProcessBlock(AudioNodeStream* aStream,
                             const AudioBlock& aInput,
                             AudioBlock* aOutput,
@@ -347,12 +345,6 @@ public:
                                     const OutputChunks& aInput,
                                     OutputChunks& aOutput,
                                     bool* aFinished);
-
-  
-  
-  
-  
-  virtual bool IsActive() const { return false; }
 
   bool HasNode() const
   {
