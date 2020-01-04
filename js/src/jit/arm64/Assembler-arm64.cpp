@@ -573,7 +573,11 @@ TraceDataRelocations(JSTracer* trc, uint8_t* buffer, CompactBufferReader& reader
             layout.asBits = literal;
             Value v = IMPL_TO_JSVAL(layout);
             TraceManuallyBarrieredEdge(trc, &v, "ion-masm-value");
-            *literalAddr = JSVAL_TO_IMPL(v).asBits;
+            if (*literalAddr != JSVAL_TO_IMPL(v).asBits) {
+                
+                
+                *literalAddr = JSVAL_TO_IMPL(v).asBits;
+            }
 
             
             continue;
