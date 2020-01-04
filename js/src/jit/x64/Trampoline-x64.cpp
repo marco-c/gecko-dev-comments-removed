@@ -282,7 +282,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.assertStackAlignment(JitStackAlignment, sizeof(uintptr_t));
 
     
-    masm.call(reg_code);
+    masm.callJitNoProfiler(reg_code);
 
     if (type == EnterJitBaseline) {
         

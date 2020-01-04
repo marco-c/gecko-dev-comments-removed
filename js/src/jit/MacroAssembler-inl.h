@@ -155,6 +155,18 @@ MacroAssembler::signature() const
 
 
 
+uint32_t
+MacroAssembler::callJit(Register callee)
+{
+    profilerPreCall();
+    uint32_t ret = callJitNoProfiler(callee);
+    profilerPostReturn();
+    return ret;
+}
+
+
+
+
 void
 MacroAssembler::PushStubCode()
 {

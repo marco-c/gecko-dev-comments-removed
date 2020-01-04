@@ -225,7 +225,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
     
     
-    masm.call(reg_code);
+    masm.callJitNoProfiler(reg_code);
 
     
     if (type == EnterJitBaseline)

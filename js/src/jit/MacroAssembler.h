@@ -563,6 +563,24 @@ class MacroAssembler : public MacroAssemblerSpecific
     uint32_t signature_;
 #endif
 
+  public:
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    uint32_t callJitNoProfiler(Register callee) PER_SHARED_ARCH;
+    inline uint32_t callJit(Register callee);
+
     
   public:
 
@@ -1091,15 +1109,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-
-    
-    uint32_t callJit(Register callee) {
-        profilerPreCall();
-        MacroAssemblerSpecific::callJit(callee);
-        uint32_t ret = currentOffset();
-        profilerPostReturn();
-        return ret;
-    }
 
     
     uint32_t callWithExitFrame(Label* target) {

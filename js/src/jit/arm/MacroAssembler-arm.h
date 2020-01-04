@@ -1207,11 +1207,6 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
     void callWithExitFrame(JitCode* target);
     void callWithExitFrame(JitCode* target, Register dynStack);
 
-    
-    
-    void callJit(Register callee);
-    void callJitFromAsmJS(Register callee) { as_blx(callee); }
-
     void add32(Register src, Register dest);
     void add32(Imm32 imm, Register dest);
     void add32(Imm32 imm, const Address& dest);

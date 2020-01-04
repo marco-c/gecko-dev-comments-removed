@@ -627,5 +627,17 @@ MacroAssembler::callWithABINoProfiler(const Address& fun, MoveOp::Type result)
 
 
 
+
+uint32_t
+MacroAssembler::callJitNoProfiler(Register callee)
+{
+    
+    
+    call(callee);
+    return currentOffset();
+}
+
+
+
 } 
 } 
