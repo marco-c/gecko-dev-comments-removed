@@ -8,7 +8,7 @@
 
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/KeyframeEffect.h" 
+#include "mozilla/dom/KeyframeEffectReadOnly.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/AnimationTarget.h"
 #include "mozilla/AnimationUtils.h"

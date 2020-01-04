@@ -12,7 +12,7 @@
 #include "mozilla/EffectCompositor.h" 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/Animation.h"
-#include "mozilla/dom/KeyframeEffect.h" 
+#include "mozilla/dom/KeyframeEffectReadOnly.h"
 #include "AnimationCommon.h"
 #include "nsCSSProps.h"
 
