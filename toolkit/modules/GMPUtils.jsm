@@ -79,9 +79,8 @@ this.GMPUtils = {
         this.maybeReportTelemetry(aPlugin.id,
                                   "VIDEO_EME_ADOBE_UNSUPPORTED_REASON",
                                   GMPPluginUnsupportedReason.NOT_WINDOWS);
+        return false;
       }
-      
-      return AppConstants.isPlatformAndVersionAtLeast("win", "6");
     } else if (aPlugin.id == WIDEVINE_ID) {
       
       
