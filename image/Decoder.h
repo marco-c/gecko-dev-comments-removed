@@ -437,11 +437,6 @@ protected:
                          gfx::SurfaceFormat aFormat,
                          uint8_t aPaletteDepth = 0);
 
-  
-  nsresult AllocateBasicFrame() {
-    return AllocateFrame(0, Size(), FullFrame(), gfx::SurfaceFormat::B8G8R8A8);
-  }
-
 private:
   
   void PostError();
