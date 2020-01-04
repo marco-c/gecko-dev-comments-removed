@@ -1110,14 +1110,12 @@ nsContextMenu.prototype = {
   },
 
   viewInfo: function() {
-    BrowserPageInfo();
+    BrowserPageInfo(gContextMenuContentData.docLocation, null, null, null, this.browser);
   },
 
   viewImageInfo: function() {
-    
-    
-    
-    BrowserPageInfo(null, "mediaTab", this.target);
+    BrowserPageInfo(gContextMenuContentData.docLocation, "mediaTab",
+                    this.target, null, this.browser);
   },
 
   viewImageDesc: function(e) {
@@ -1130,7 +1128,7 @@ nsContextMenu.prototype = {
 
   viewFrameInfo: function() {
     BrowserPageInfo(gContextMenuContentData.docLocation, null, null,
-                    this.frameOuterWindowID);
+                    this.frameOuterWindowID, this.browser);
   },
 
   reloadImage: function() {

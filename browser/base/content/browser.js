@@ -2322,7 +2322,8 @@ function BrowserViewSource(browser) {
 
 
 
-function BrowserPageInfo(documentURL, initialTab, imageElement, frameOuterWindowID) {
+
+function BrowserPageInfo(documentURL, initialTab, imageElement, frameOuterWindowID, browser) {
   if (documentURL instanceof HTMLDocument) {
     Deprecated.warning("Please pass the location URL instead of the document " +
                        "to BrowserPageInfo() as the first argument.",
@@ -2330,7 +2331,7 @@ function BrowserPageInfo(documentURL, initialTab, imageElement, frameOuterWindow
     documentURL = documentURL.location;
   }
 
-  let args = { initialTab, imageElement, frameOuterWindowID };
+  let args = { initialTab, imageElement, frameOuterWindowID, browser };
   var windows = Services.wm.getEnumerator("Browser:page-info");
 
   documentURL = documentURL || window.gBrowser.selectedBrowser.currentURI.spec;
