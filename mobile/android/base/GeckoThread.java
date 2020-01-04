@@ -50,6 +50,8 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         
         JNI_READY,
         
+        PROFILE_READY,
+        
         RUNNING,
         
         EXITING,
