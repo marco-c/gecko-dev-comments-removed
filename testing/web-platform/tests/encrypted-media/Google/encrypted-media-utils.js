@@ -34,7 +34,7 @@ function getInitData(initDataType)
 
   if (initDataType == 'cenc') {
       return new Uint8Array([
-          0x00, 0x00, 0x00, 0x00,                          
+          0x00, 0x00, 0x00, 0x34,                          
           0x70, 0x73, 0x73, 0x68,                          
           0x01,                                            
           0x00, 0x00, 0x00,                                

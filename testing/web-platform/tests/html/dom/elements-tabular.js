@@ -20,7 +20,7 @@ var tabularElements = {
     align: "string",
   },
   colgroup: {
-    span: "limited unsigned long",
+    span: {type: "limited unsigned long with fallback", defaultVal: 1},
 
     
     align: "string",
@@ -31,7 +31,7 @@ var tabularElements = {
   },
   col: {
     
-    span: "limited unsigned long",
+    span: {type: "limited unsigned long with fallback", defaultVal: 1},
 
     
     align: "string",

@@ -16,8 +16,8 @@ import argparse
 
 TESTTREE = '..'
 DEFDIR   = '../definitions'
-TEMPLATE = 'template'
-
+MANUAL_TEMPLATE = 'template_manual'
+JS_TEMPLATE = 'template_js'
 
 parser = argparse.ArgumentParser()
 
@@ -27,7 +27,8 @@ args = parser.parse_args()
 
 
 
-template = open(TEMPLATE, "r").read()
+manualTemplate = open(MANUAL_TEMPLATE, "r").read()
+autoTemplate = open(JS_TEMPLATE, "r").read()
 
 defList = []
 defnames = ""
@@ -59,23 +60,39 @@ for curdir, subdirList, fileList in os.walk(TESTTREE, topdown=True):
 
   for file in fnmatch.filter(fileList, "*.test"):
 
+
     theFile = os.path.join(curdir, file)
     try:
       testJSON = json.load(open(theFile, "r"))
     except ValueError as e:
       print "parse of " + theFile + " failed: " + e[0]
     else:
+      try:
+        testType = testJSON['testType']
+      except:
+        testType = "manual"
+
+      templateFile = manualTemplate
+      suffix = "-manual.html"
+
+      if testType == "automated":
+        templateFile = autoTemplate
+        suffix = ".html"
+
       rfile = re.sub("\.\./", "", file)
       
-      tcopy = re.sub("{{TESTFILE}}", rfile, template)
+      tcopy = re.sub("{{TESTFILE}}", rfile, templateFile)
 
       tcopy = re.sub("{{SCHEMADEFS}}", defNames, tcopy)
 
-      if testJSON['name']:
-        tcopy = re.sub("{{TESTTITLE}}", testJSON['name'], tcopy)
+      try:
+        title = testJSON['name']
+      except:
+        title = file
+      tcopy = re.sub("{{TESTTITLE}}", title, tcopy)
 
       
-      target = re.sub("\.test","-manual.html", theFile)
+      target = re.sub("\.test",suffix, theFile)
 
       try:
         out = open(target, "w")

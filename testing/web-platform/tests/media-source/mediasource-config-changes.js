@@ -1,4 +1,6 @@
 
+
+
 function resolutionFromFilename(filename)
 {
     resolution = filename.replace(/^.*[^0-9]([0-9]+x[0-9]+)[^0-9].*$/, "$1");

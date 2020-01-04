@@ -146,5 +146,5 @@ var elements = [
   ["video", "Video"],
   ["wbr", ""],
   ["xmp", "Pre"],
-  ["å-bar", "Unknown"], 
+  ["\u00E5-bar", "Unknown"], 
 ];

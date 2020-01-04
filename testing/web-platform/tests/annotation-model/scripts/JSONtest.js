@@ -27,13 +27,30 @@ function JSONtest(params) {
   this.Base = null;         
   this.TestDir = null;      
   this.Params = null;       
+  this.Promise = null;             
   this.Properties = null;   
   this.Test = null;         
   this.AssertionCounter = 0;
 
-  this._assertionText = []; 
   this._assertionCache = [];
+  this._assertionText = []; 
   this._loading = true;
+
+  showdown.extension('strip', function() {
+    return [
+    { type: 'output',
+      regex: /<p>/,
+      replace: ''
+    },
+    { type: 'output',
+      regex: /<\/p>$/,
+      replace: ''
+    }
+    ];
+  });
+
+
+  this.markdown = new showdown.Converter({ extensions: [ 'strip' ] }) ;
 
   var pending = [] ;
 
@@ -105,6 +122,28 @@ function JSONtest(params) {
         this.DescriptionText = test.description;
       }
 
+      if (test.content) {
+        
+        if (typeof test.content === "string") {
+          
+          var cPromise = new Promise(function(resolve, reject) {
+            this.loadDefinition(test.content)
+              .then(function(content) {
+                if (typeof content === 'string') {
+                  content = JSON.parse(content) ;
+                }
+                test.content = content;
+                resolve(true);
+              }.bind(this))
+            .catch(function(err) {
+              reject("Loading " + test.content + ": " + JSON.stringify(err));
+            });
+
+          }.bind(this));
+          pending.push(cPromise);
+        }
+      }
+
       return new Promise(function(resolve, reject) {
         if (test.assertions &&
             typeof test.assertions === "object") {
@@ -121,6 +160,12 @@ function JSONtest(params) {
           .then(function (assertContents) {
             
 
+            var typeMap = {
+              'must'   : "<b>[MANDATORY]</b> ",
+              'may'    : "<b>[OPTIONAL]</b> ",
+              'should' : "<b>[RECOMMENDED]</b> "
+            };
+
             var assertIdx = 0;
 
             
@@ -134,14 +179,22 @@ function JSONtest(params) {
               
               var list = [] ;
 
+              var type = "";
               if (assertions) {
                 if (typeof assertions === "object" && assertions.hasOwnProperty('assertions')) {
                   
                   if (level === 0) {
                     list.push(assertContents[assertIdx]);
                   }
+                  type = assertContents[assertIdx].hasOwnProperty('assertionType') ?
+                    assertContents[assertIdx].assertionType : "must" ;
 
-                  this.AssertionText += "<li>" + assertContents[assertIdx++].title;
+                  
+                  if (!typeMap.hasOwnProperty(type)) {
+                    type = "must";
+                  }
+
+                  this.AssertionText += "<li>" + typeMap[type] + this.markdown.makeHtml(assertContents[assertIdx++].title);
                   this.AssertionText += "<ol>";
                   buildList(assertions.assertions, level+1) ;
                   this.AssertionText += "</ol></li>\n";
@@ -153,12 +206,22 @@ function JSONtest(params) {
                       
                       buildList(assert, level+1) ;
                       this.AssertionText += "</ol>\n";
-                    } else if (typeof assert === "object" && !Array.isArray(assert) && assert.hasOwnProperty('assertions')) {
+                    } else if (typeof assert === "object" &&
+                        !Array.isArray(assert) &&
+                        assert.hasOwnProperty('assertions')) {
                       if (level === 0) {
                         list.push(assertContents[assertIdx]);
                       }
+                      type = assertContents[assertIdx].hasOwnProperty('assertionType') ?
+                        assertContents[assertIdx].assertionType : "must" ;
+
                       
-                      this.AssertionText += "<li>" + assertContents[assertIdx++].title;
+                      if (!typeMap.hasOwnProperty(type)) {
+                        type = "must";
+                      }
+
+                      
+                      this.AssertionText += "<li>" + typeMap[type] + this.markdown.makeHtml(assertContents[assertIdx++].title);
                       this.AssertionText += "<ol>";
                       buildList(assert, level+1) ; 
                       this.AssertionText += "</ol></li>\n";
@@ -166,7 +229,15 @@ function JSONtest(params) {
                       if (level === 0) {
                         list.push(assertContents[assertIdx]);
                       }
-                      this.AssertionText += "<li>" + assertContents[assertIdx++].title + "</li>\n";
+                      type = assertContents[assertIdx].hasOwnProperty('assertionType') ?
+                        assertContents[assertIdx].assertionType : "must" ;
+
+                      
+                      if (!typeMap.hasOwnProperty(type)) {
+                        type = "must";
+                      }
+
+                      this.AssertionText += "<li>" + typeMap[type] + this.markdown.makeHtml(assertContents[assertIdx++].title) + "</li>\n";
                     }
                   }.bind(this));
                 }
@@ -191,19 +262,23 @@ function JSONtest(params) {
       }.bind(this));
     }.bind(this)));
 
-  
-  Promise.all(pending)
-  .then(function() {
-    this.loading = false;
-    this.init();
-  }.bind(this))
-  .catch(function(err) {
+  this.Promise = new Promise(function(resolve, reject) {
     
-    test( function() {
-      assert_true(false, "Loading of test components failed: " +JSON.stringify(err)) ;
-    }, "Loading test components");
-    done() ;
-    return ;
+    Promise.all(pending)
+    .then(function() {
+      this.loading = false;
+      this.init();
+      resolve(this);
+    }.bind(this))
+    .catch(function(err) {
+      
+      test( function() {
+        assert_true(false, "Loading of test components failed: " +JSON.stringify(err)) ;
+      }, "Loading test components");
+      done() ;
+      reject("Loading of test components failed: "+JSON.stringify(err));
+      return ;
+    }.bind(this));
   }.bind(this));
 
   return this;
@@ -224,8 +299,10 @@ JSONtest.prototype = {
     var desc  = document.getElementById("testDescription") ;
 
     if (!this.loading) {
-      runButton.disabled = false;
-      runButton.value = "Check JSON";
+      if (runButton) {
+        runButton.disabled = false;
+        runButton.value = "Check JSON";
+      }
       if (desc) {
         desc.innerHTML = this.DescriptionText;
       }
@@ -251,32 +328,34 @@ JSONtest.prototype = {
       }.bind(this));
     }
 
-    on_event(runButton, "click", function() {
-      
-      var content = testInput.value;
-      runButton.disabled = true;
+    if (runButton) {
+      on_event(runButton, "click", function() {
+        
+        var content = testInput.value;
+        runButton.disabled = true;
 
-      
-      if (typeof content === "string") {
-        try {
-          content = JSON.parse(content) ;
-        } catch(err) {
-          
-          test( function() {
-            assert_true(false, "Parse of JSON failed: " + err) ;
-          }, "Parsing submitted input");
-          
-          done();
-          return ;
+        
+        if (typeof content === "string") {
+          try {
+            content = JSON.parse(content) ;
+          } catch(err) {
+            
+            test( function() {
+              assert_true(false, "Parse of JSON failed: " + err) ;
+            }, "Parsing submitted input");
+            
+            done();
+            return ;
+          }
         }
-      }
 
-      
-      this.runTests(this.Assertions, content);
+        
+        this.runTests(this.Assertions, content);
 
-      
-      done();
-    }.bind(this));
+        
+        done();
+      }.bind(this));
+    }
   },
 
   
@@ -306,6 +385,13 @@ JSONtest.prototype = {
       compareWith = 'and';
     }
 
+    var typeMap = {
+      'must'   : "",
+      'may'    : "INFORMATIONAL: ",
+      'should' : "WARNING: "
+    };
+
+
     
     
     
@@ -316,8 +402,15 @@ JSONtest.prototype = {
 
       assertions.forEach( function(assert, num) {
 
-        var expected = assert.hasOwnProperty('expectedResult') ? assert.expectedResult : 'valid' ;
-        var message = assert.hasOwnProperty('message') ? assert.message : "Result was not " + expected;
+        var expected = assert.hasOwnProperty('expectedResult') ?
+          assert.expectedResult : 'valid' ;
+        var message = assert.hasOwnProperty('errorMessage') ?
+          assert.errorMessage : "Result was not " + expected;
+        var type = assert.hasOwnProperty('assertionType') ?
+          assert.assertionType : "must" ;
+        if (!typeMap.hasOwnProperty(type)) {
+          type = "must";
+        }
 
         
         if (typeof assert === "object" && !Array.isArray(assert)) {
@@ -442,7 +535,7 @@ JSONtest.prototype = {
             }
             if (result === false) {
               
-              assert_true(result, message + err);
+              assert_true(result, typeMap[type] + message + err);
             } else {
               assert_true(result, err) ;
             }
