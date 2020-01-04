@@ -12,15 +12,6 @@
 #include "nsTHashtable.h"
 #include "nsDebug.h"
 
-
-
-
-enum PLDHashOperator
-{
-  PL_DHASH_NEXT = 0,          
-  PL_DHASH_REMOVE = 2         
-};
-
 template<class KeyClass, class DataType, class UserDataType>
 class nsBaseHashtable; 
 
@@ -154,41 +145,6 @@ public:
 
 
   void Remove(KeyType aKey) { this->RemoveEntry(aKey); }
-
-  
-
-
-
-
-
-
-
-
-
-  typedef PLDHashOperator (*EnumFunction)(KeyType aKey,
-                                          DataType& aData,
-                                          void* aUserArg);
-
-  
-
-
-
-
-
-
-  uint32_t Enumerate(EnumFunction aEnumFunc, void* aUserArg)
-  {
-    uint32_t n = 0;
-    for (auto iter = this->mTable.Iter(); !iter.Done(); iter.Next()) {
-      auto entry = static_cast<EntryType*>(iter.Get());
-      PLDHashOperator op = aEnumFunc(entry->GetKey(), entry->mData, aUserArg);
-      n++;
-      if (op & PL_DHASH_REMOVE) {
-        iter.Remove();
-      }
-    }
-    return n;
-  }
 
   
   
