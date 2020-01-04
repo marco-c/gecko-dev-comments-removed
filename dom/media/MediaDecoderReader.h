@@ -82,7 +82,7 @@ public:
 
   
   
-  explicit MediaDecoderReader(AbstractMediaDecoder* aDecoder, TaskQueue* aBorrowedTaskQueue = nullptr);
+  explicit MediaDecoderReader(AbstractMediaDecoder* aDecoder);
 
   
   
