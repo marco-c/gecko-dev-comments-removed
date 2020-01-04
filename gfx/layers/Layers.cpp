@@ -700,6 +700,13 @@ Layer::CalculateScissorRect(const RenderTargetIntRect& aCurrentScissorRect)
     return currentClip;
   }
 
+  if (GetVisibleRegion().IsEmpty()) {
+    
+    
+    
+    return RenderTargetIntRect(currentClip.TopLeft(), RenderTargetIntSize(0, 0));
+  }
+
   const RenderTargetIntRect clipRect =
     ViewAs<RenderTargetPixel>(*GetEffectiveClipRect(),
                               PixelCastJustification::RenderTargetIsParentLayerForRoot);
