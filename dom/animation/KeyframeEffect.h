@@ -324,7 +324,11 @@ public:
   
   
   
-  bool ShouldBlockCompositorAnimations(const nsIFrame* aFrame) const;
+  
+  
+  
+  bool ShouldBlockCompositorAnimations(const nsIFrame* aFrame,
+                                       nsAString& aPerformanceWarning) const;
 
   nsIDocument* GetRenderedDocument() const;
   nsPresContext* GetPresContext() const;
@@ -398,9 +402,8 @@ private:
   
   
   
-  
   static bool CanAnimateTransformOnCompositor(const nsIFrame* aFrame,
-                                              const nsIContent* aContent);
+                                              nsAString& aPerformanceWarning);
   static bool IsGeometricProperty(const nsCSSProperty aProperty);
 
   static const TimeDuration OverflowRegionRefreshInterval();
