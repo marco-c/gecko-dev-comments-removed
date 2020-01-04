@@ -106,7 +106,8 @@ ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
     mSubprocess = nullptr;
   }
 
-  MessageLoop::current()->PostTask(NewRunnableMethod(this, &ImageBridgeParent::DeferredDestroy));
+  RefPtr<Runnable> runnable = NS_NewRunnableMethod(this, &ImageBridgeParent::DeferredDestroy);
+  MessageLoop::current()->PostTask(runnable.forget());
 
   
   

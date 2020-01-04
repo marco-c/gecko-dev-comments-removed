@@ -33,7 +33,7 @@ WebBrowserPersistResourcesParent::ActorDestroy(ActorDestroyReason aWhy)
     if (aWhy != Deletion && mVisitor) {
         
         
-        nsCOMPtr<nsIRunnable> errorLater = NewRunnableMethod
+        nsCOMPtr<nsIRunnable> errorLater = NS_NewRunnableMethodWithArgs
             <nsCOMPtr<nsIWebBrowserPersistDocument>, nsresult>
             (mVisitor, &nsIWebBrowserPersistResourceVisitor::EndVisit,
              mDocument, NS_ERROR_FAILURE);

@@ -293,7 +293,8 @@ AndroidSurfaceTexture::NotifyFrameAvailable()
     
     if (!NS_IsMainThread()) {
       
-      NS_DispatchToCurrentThread(NewRunnableMethod(this, &AndroidSurfaceTexture::NotifyFrameAvailable));
+      nsCOMPtr<nsIRunnable> event = NS_NewRunnableMethod(this, &AndroidSurfaceTexture::NotifyFrameAvailable);
+      NS_DispatchToCurrentThread(event);
     } else {
       mFrameAvailableCallback->Run();
     }

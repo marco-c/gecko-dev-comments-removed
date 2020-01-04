@@ -269,7 +269,9 @@ gboolean nsDeviceContextSpecGTK::PrinterEnumerator(GtkPrinter *aPrinter,
       
       
       
-      NS_DispatchToCurrentThread(NewRunnableMethod(spec, &nsDeviceContextSpecGTK::StartPrintJob));
+      nsCOMPtr<nsIRunnable> event =
+        NS_NewRunnableMethod(spec, &nsDeviceContextSpecGTK::StartPrintJob);
+      NS_DispatchToCurrentThread(event);
       return TRUE;
     }
   }
@@ -327,7 +329,9 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument()
     } else {
       
       
-      NS_DispatchToCurrentThread(NewRunnableMethod(this, &nsDeviceContextSpecGTK::EnumeratePrinters));
+      nsCOMPtr<nsIRunnable> event =
+        NS_NewRunnableMethod(this, &nsDeviceContextSpecGTK::EnumeratePrinters);
+      NS_DispatchToCurrentThread(event);
     }
   } else {
     

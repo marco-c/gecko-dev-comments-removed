@@ -2177,10 +2177,10 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
   
   for(uint32_t i = 0; i < childIDArray.Length(); i++) {
     ContentParent* cp = cpm->GetContentProcessById(childIDArray[i]);
-    MessageLoop::current()->PostTask(NewRunnableMethod
-                                     <ShutDownMethod>(cp,
-                                                      &ContentParent::ShutDownProcess,
-                                                      SEND_SHUTDOWN_MESSAGE));
+    RefPtr<Runnable> runnable =
+      NS_NewRunnableMethodWithArgs<ShutDownMethod>(cp, &ContentParent::ShutDownProcess,
+                                                   SEND_SHUTDOWN_MESSAGE);
+    MessageLoop::current()->PostTask(runnable.forget());
   }
   cpm->RemoveContentProcess(this->ChildID());
 
@@ -2261,10 +2261,10 @@ ContentParent::NotifyTabDestroyed(const TabId& aTabId,
   if (tabIds.Length() == 1) {
     
     
-    MessageLoop::current()->PostTask(NewRunnableMethod
-                                     <ShutDownMethod>(this,
-                                                      &ContentParent::ShutDownProcess,
-                                                      SEND_SHUTDOWN_MESSAGE));
+    RefPtr<Runnable> runnable =
+      NS_NewRunnableMethodWithArgs<ShutDownMethod>(this, &ContentParent::ShutDownProcess,
+                                                   SEND_SHUTDOWN_MESSAGE);
+    MessageLoop::current()->PostTask(runnable.forget());
   }
 }
 

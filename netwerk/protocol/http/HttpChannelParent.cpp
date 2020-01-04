@@ -1433,7 +1433,7 @@ HttpChannelParent::DivertTo(nsIStreamListener *aListener)
   
   
   NS_DispatchToCurrentThread(
-    NewRunnableMethod(this, &HttpChannelParent::StartDiversion));
+    NS_NewRunnableMethod(this, &HttpChannelParent::StartDiversion));
   return;
 }
 

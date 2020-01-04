@@ -171,10 +171,12 @@ GMPDecryptorChild::Decrypted(GMPBuffer* aBuffer, GMPErr aResult)
   if (!ON_GMP_THREAD()) {
     
     
-    mPlugin->GMPMessageLoop()->PostTask(NewRunnableMethod
-                                        <GMPBuffer*, GMPErr>(this,
-                                                             &GMPDecryptorChild::Decrypted,
-                                                             aBuffer, aResult));
+    RefPtr<Runnable> t =
+      NS_NewRunnableMethodWithArgs<GMPBuffer*,
+                                   GMPErr>(this,
+                                           &GMPDecryptorChild::Decrypted,
+                                           aBuffer, aResult);
+    mPlugin->GMPMessageLoop()->PostTask(t.forget());
     return;
   }
 

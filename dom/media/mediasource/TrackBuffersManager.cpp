@@ -201,7 +201,9 @@ TrackBuffersManager::ProcessTasks()
         NS_WARNING("Invalid Task");
     }
   }
-  GetTaskQueue()->Dispatch(NewRunnableMethod(this, &TrackBuffersManager::ProcessTasks));
+  nsCOMPtr<nsIRunnable> task =
+    NS_NewRunnableMethod(this, &TrackBuffersManager::ProcessTasks);
+  GetTaskQueue()->Dispatch(task.forget());
 }
 
 
@@ -791,7 +793,9 @@ TrackBuffersManager::ScheduleSegmentParserLoop()
   if (mDetached) {
     return;
   }
-  GetTaskQueue()->Dispatch(NewRunnableMethod(this, &TrackBuffersManager::SegmentParserLoop));
+  nsCOMPtr<nsIRunnable> task =
+    NS_NewRunnableMethod(this, &TrackBuffersManager::SegmentParserLoop);
+  GetTaskQueue()->Dispatch(task.forget());
 }
 
 void
@@ -967,10 +971,11 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
   int64_t duration = std::max(videoDuration, audioDuration);
   
   
-  AbstractThread::MainThread()->Dispatch(NewRunnableMethod<int64_t>
-                                         (mParentDecoder,
-                                          &MediaSourceDecoder::SetInitialDuration,
-                                          duration ? duration : -1));
+  nsCOMPtr<nsIRunnable> task =
+    NS_NewRunnableMethodWithArg<int64_t>(mParentDecoder,
+                                         &MediaSourceDecoder::SetInitialDuration,
+                                         duration ? duration : -1);
+  AbstractThread::MainThread()->Dispatch(task.forget());
 
   
   

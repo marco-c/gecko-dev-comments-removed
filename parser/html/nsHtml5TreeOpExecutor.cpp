@@ -233,8 +233,11 @@ nsHtml5TreeOpExecutor::MarkAsBroken(nsresult aReason)
   
   
   if (mParser) { 
-    MOZ_ALWAYS_SUCCEEDS(
-      NS_DispatchToMainThread(NewRunnableMethod(GetParser(), &nsHtml5Parser::Terminate)));
+    nsCOMPtr<nsIRunnable> terminator =
+      NS_NewRunnableMethod(GetParser(), &nsHtml5Parser::Terminate);
+    if (NS_FAILED(NS_DispatchToMainThread(terminator))) {
+      NS_WARNING("failed to dispatch executor flush event");
+    }
   }
   return aReason;
 }

@@ -119,7 +119,7 @@ nsFormFillController::AttributeChanged(nsIDocument* aDocument,
     
     
     nsCOMPtr<nsIRunnable> event =
-      mozilla::NewRunnableMethod<nsCOMPtr<nsIDOMHTMLInputElement>>
+      NS_NewRunnableMethodWithArg<nsCOMPtr<nsIDOMHTMLInputElement>>
       (this, &nsFormFillController::MaybeStartControllingInput, focusedInput);
     NS_DispatchToCurrentThread(event);
   }

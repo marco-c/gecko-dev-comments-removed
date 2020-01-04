@@ -34,7 +34,7 @@ AndroidContentController::NotifyDefaultPrevented(APZCTreeManager* aManager,
         
         
         
-        AndroidBridge::Bridge()->PostTaskToUiThread(NewRunnableMethod<uint64_t, bool>(
+        AndroidBridge::Bridge()->PostTaskToUiThread(NewRunnableMethod(
             aManager, &APZCTreeManager::ContentReceivedInputBlock,
             aInputBlockId, aDefaultPrevented), 0);
         return;

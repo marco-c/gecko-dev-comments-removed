@@ -327,9 +327,11 @@ BackgroundFileSaver::GetWorkerThreadAttention(bool aShouldInterruptCopy)
 
   if (!mAsyncCopyContext) {
     
-    rv = mWorkerThread->Dispatch(NewRunnableMethod(this,
-                                                   &BackgroundFileSaver::ProcessAttention),
-                                 NS_DISPATCH_NORMAL);
+    nsCOMPtr<nsIRunnable> event =
+      NS_NewRunnableMethod(this, &BackgroundFileSaver::ProcessAttention);
+    NS_ENSURE_TRUE(event, NS_ERROR_FAILURE);
+
+    rv = mWorkerThread->Dispatch(event, NS_DISPATCH_NORMAL);
     NS_ENSURE_SUCCESS(rv, rv);
   } else if (aShouldInterruptCopy) {
     
@@ -747,9 +749,10 @@ BackgroundFileSaver::CheckCompletion()
   }
 
   
-  if (NS_FAILED(mControlThread->Dispatch(NewRunnableMethod(this,
-                                                           &BackgroundFileSaver::NotifySaveComplete),
-                                         NS_DISPATCH_NORMAL))) {
+  nsCOMPtr<nsIRunnable> event =
+    NS_NewRunnableMethod(this, &BackgroundFileSaver::NotifySaveComplete);
+  if (!event ||
+      NS_FAILED(mControlThread->Dispatch(event, NS_DISPATCH_NORMAL))) {
     NS_WARNING("Unable to post completion event to the control thread.");
   }
 
@@ -1153,9 +1156,10 @@ BackgroundFileSaverStreamListener::AsyncCopyProgressCallback(void *aClosure,
       self->mReceivedTooMuchData = false;
 
       
-      if (NS_FAILED(self->mControlThread->Dispatch(NewRunnableMethod(self,
-                                                                     &BackgroundFileSaverStreamListener::NotifySuspendOrResume),
-                                                   NS_DISPATCH_NORMAL))) {
+      nsCOMPtr<nsIRunnable> event = NS_NewRunnableMethod(self,
+        &BackgroundFileSaverStreamListener::NotifySuspendOrResume);
+      if (!event || NS_FAILED(self->mControlThread->Dispatch(event,
+                                                    NS_DISPATCH_NORMAL))) {
         NS_WARNING("Unable to post resume event to the control thread.");
       }
     }

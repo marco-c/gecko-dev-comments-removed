@@ -489,7 +489,7 @@ ServiceWorkerUpdateJob::Install()
 
   
   nsCOMPtr<nsIRunnable> upr =
-    NewRunnableMethod<RefPtr<ServiceWorkerRegistrationInfo>>(
+    NS_NewRunnableMethodWithArg<RefPtr<ServiceWorkerRegistrationInfo>>(
       swm,
       &ServiceWorkerManager::FireUpdateFoundOnServiceWorkerRegistrations,
       mRegistration);
@@ -497,7 +497,7 @@ ServiceWorkerUpdateJob::Install()
 
   
   
-  nsCOMPtr<nsIRunnable> failRunnable = NewRunnableMethod<bool>
+  nsCOMPtr<nsIRunnable> failRunnable = NS_NewRunnableMethodWithArgs<bool>
     (this, &ServiceWorkerUpdateJob::ContinueAfterInstallEvent, false);
 
   nsMainThreadPtrHandle<ServiceWorkerUpdateJob> handle(

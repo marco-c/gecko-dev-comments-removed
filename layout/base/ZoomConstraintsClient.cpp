@@ -152,7 +152,7 @@ ZoomConstraintsClient::Observe(nsISupports* aSubject, const char* aTopic, const 
     
     
     
-    NS_DispatchToMainThread(NewRunnableMethod(
+    NS_DispatchToMainThread(NS_NewRunnableMethod(
       this, &ZoomConstraintsClient::RefreshZoomConstraints));
   }
   return NS_OK;

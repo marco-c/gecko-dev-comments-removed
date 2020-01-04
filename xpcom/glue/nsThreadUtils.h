@@ -760,35 +760,44 @@ public:
 
 
 
-
-namespace mozilla {
-
 template<typename PtrType, typename Method>
-already_AddRefed<typename nsRunnableMethodTraits<Method, true, false>::base_type>
-NewRunnableMethod(PtrType aPtr, Method aMethod)
+typename nsRunnableMethodTraits<Method, true, false>::base_type*
+NS_NewRunnableMethod(PtrType aPtr, Method aMethod)
 {
-  return do_AddRef(new nsRunnableMethodImpl<Method, true, false>(aPtr, aMethod));
+  return new nsRunnableMethodImpl<Method, true, false>(aPtr, aMethod);
 }
 
 template<typename PtrType, typename Method>
-already_AddRefed<typename nsRunnableMethodTraits<Method, true, true>::base_type>
-NewCancelableRunnableMethod(PtrType aPtr, Method aMethod)
+typename nsRunnableMethodTraits<Method, true, true>::base_type*
+NS_NewCancelableRunnableMethod(PtrType aPtr, Method aMethod)
 {
-  return do_AddRef(new nsRunnableMethodImpl<Method, true, true>(aPtr, aMethod));
+  return new nsRunnableMethodImpl<Method, true, true>(aPtr, aMethod);
 }
 
 template<typename PtrType, typename Method>
-already_AddRefed<typename nsRunnableMethodTraits<Method, false, false>::base_type>
-NewNonOwningRunnableMethod(PtrType&& aPtr, Method aMethod)
+typename nsRunnableMethodTraits<Method, false, false>::base_type*
+NS_NewNonOwningRunnableMethod(PtrType&& aPtr, Method aMethod)
 {
-  return do_AddRef(new nsRunnableMethodImpl<Method, false, false>(aPtr, aMethod));
+  return new nsRunnableMethodImpl<Method, false, false>(aPtr, aMethod);
 }
 
 template<typename PtrType, typename Method>
-already_AddRefed<typename nsRunnableMethodTraits<Method, false, true>::base_type>
-NewNonOwningCancelableRunnableMethod(PtrType&& aPtr, Method aMethod)
+typename nsRunnableMethodTraits<Method, false, true>::base_type*
+NS_NewNonOwningCancelableRunnableMethod(PtrType&& aPtr, Method aMethod)
 {
-  return do_AddRef(new nsRunnableMethodImpl<Method, false, true>(aPtr, aMethod));
+  return new nsRunnableMethodImpl<Method, false, true>(aPtr, aMethod);
+}
+
+
+
+
+
+template<typename Storage, typename Method, typename PtrType, typename Arg>
+typename nsRunnableMethodTraits<Method, true, false>::base_type*
+NS_NewRunnableMethodWithArg(PtrType&& aPtr, Method aMethod, Arg&& aArg)
+{
+  return new nsRunnableMethodImpl<Method, true, false, Storage>(
+      aPtr, aMethod, mozilla::Forward<Arg>(aArg));
 }
 
 
@@ -796,47 +805,46 @@ NewNonOwningCancelableRunnableMethod(PtrType&& aPtr, Method aMethod)
 
 
 template<typename... Storages, typename Method, typename PtrType, typename... Args>
-already_AddRefed<typename nsRunnableMethodTraits<Method, true, false>::base_type>
-NewRunnableMethod(PtrType&& aPtr, Method aMethod, Args&&... aArgs)
+typename nsRunnableMethodTraits<Method, true, false>::base_type*
+NS_NewRunnableMethodWithArgs(PtrType&& aPtr, Method aMethod, Args&&... aArgs)
 {
   static_assert(sizeof...(Storages) == sizeof...(Args),
                 "<Storages...> size should be equal to number of arguments");
-  return do_AddRef(new nsRunnableMethodImpl<Method, true, false, Storages...>(
-      aPtr, aMethod, mozilla::Forward<Args>(aArgs)...));
+  return new nsRunnableMethodImpl<Method, true, false, Storages...>(
+      aPtr, aMethod, mozilla::Forward<Args>(aArgs)...);
 }
 
 template<typename... Storages, typename Method, typename PtrType, typename... Args>
-already_AddRefed<typename nsRunnableMethodTraits<Method, false, false>::base_type>
-NewNonOwningRunnableMethod(PtrType&& aPtr, Method aMethod, Args&&... aArgs)
+typename nsRunnableMethodTraits<Method, false, false>::base_type*
+NS_NewNonOwningRunnableMethodWithArgs(PtrType&& aPtr, Method aMethod,
+                                      Args&&... aArgs)
 {
   static_assert(sizeof...(Storages) == sizeof...(Args),
                 "<Storages...> size should be equal to number of arguments");
-  return do_AddRef(new nsRunnableMethodImpl<Method, false, false, Storages...>(
-      aPtr, aMethod, mozilla::Forward<Args>(aArgs)...));
+  return new nsRunnableMethodImpl<Method, false, false, Storages...>(
+      aPtr, aMethod, mozilla::Forward<Args>(aArgs)...);
 }
 
 template<typename... Storages, typename Method, typename PtrType, typename... Args>
-already_AddRefed<typename nsRunnableMethodTraits<Method, true, true>::base_type>
-NewCancelableRunnableMethod(PtrType&& aPtr, Method aMethod, Args&&... aArgs)
+typename nsRunnableMethodTraits<Method, true, true>::base_type*
+NS_NewCancelableRunnableMethodWithArgs(PtrType&& aPtr, Method aMethod, Args&&... aArgs)
 {
   static_assert(sizeof...(Storages) == sizeof...(Args),
                 "<Storages...> size should be equal to number of arguments");
-  return do_AddRef(new nsRunnableMethodImpl<Method, true, true, Storages...>(
-      aPtr, aMethod, mozilla::Forward<Args>(aArgs)...));
+  return new nsRunnableMethodImpl<Method, true, true, Storages...>(
+      aPtr, aMethod, mozilla::Forward<Args>(aArgs)...);
 }
 
 template<typename... Storages, typename Method, typename PtrType, typename... Args>
-already_AddRefed<typename nsRunnableMethodTraits<Method, false, true>::base_type>
-NewNonOwningCancelableRunnableMethod(PtrType&& aPtr, Method aMethod,
+typename nsRunnableMethodTraits<Method, false, true>::base_type*
+NS_NewNonOwningCancelableRunnableMethodWithArgs(PtrType&& aPtr, Method aMethod,
                                                 Args&&... aArgs)
 {
   static_assert(sizeof...(Storages) == sizeof...(Args),
                 "<Storages...> size should be equal to number of arguments");
-  return do_AddRef(new nsRunnableMethodImpl<Method, false, true, Storages...>(
-      aPtr, aMethod, mozilla::Forward<Args>(aArgs)...));
+  return new nsRunnableMethodImpl<Method, false, true, Storages...>(
+      aPtr, aMethod, mozilla::Forward<Args>(aArgs)...);
 }
-
-} 
 
 #endif  
 
@@ -897,16 +905,6 @@ public:
     if (mEvent != aEvent) {
       Revoke();
       mEvent = aEvent;
-    }
-    return *this;
-  }
-
-  const nsRevocableEventPtr& operator=(already_AddRefed<T> aEvent)
-  {
-    RefPtr<T> event = aEvent;
-    if (mEvent != event) {
-      Revoke();
-      mEvent = event.forget();
     }
     return *this;
   }

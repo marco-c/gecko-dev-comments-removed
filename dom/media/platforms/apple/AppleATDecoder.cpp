@@ -74,7 +74,7 @@ AppleATDecoder::Input(MediaRawData* aSample)
 
   
   nsCOMPtr<nsIRunnable> runnable =
-      NewRunnableMethod<RefPtr<MediaRawData>>(
+      NS_NewRunnableMethodWithArg<RefPtr<MediaRawData>>(
         this,
         &AppleATDecoder::SubmitSample,
         RefPtr<MediaRawData>(aSample));

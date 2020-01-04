@@ -155,7 +155,7 @@ PresentationDeviceManager::GetAvailableDevices(nsIArray** aRetVal)
   
   
   NS_DispatchToMainThread(
-      NewRunnableMethod(this, &PresentationDeviceManager::ForceDiscovery));
+      NS_NewRunnableMethod(this, &PresentationDeviceManager::ForceDiscovery));
 
   nsCOMPtr<nsIMutableArray> devices = do_CreateInstance(NS_ARRAY_CONTRACTID);
   for (uint32_t i = 0; i < mDevices.Length(); ++i) {

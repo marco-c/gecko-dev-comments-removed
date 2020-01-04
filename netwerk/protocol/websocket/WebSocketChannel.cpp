@@ -1248,7 +1248,7 @@ WebSocketChannel::Observe(nsISupports *subject,
         
         if (!IsOnTargetThread()) {
           mTargetThread->Dispatch(
-            NewRunnableMethod(this, &WebSocketChannel::OnNetworkChanged),
+            NS_NewRunnableMethod(this, &WebSocketChannel::OnNetworkChanged),
             NS_DISPATCH_NORMAL);
         } else {
           OnNetworkChanged();
@@ -1272,7 +1272,7 @@ WebSocketChannel::OnNetworkChanged()
     }
 
     return mSocketThread->Dispatch(
-      NewRunnableMethod(this, &WebSocketChannel::OnNetworkChanged),
+      NS_NewRunnableMethod(this, &WebSocketChannel::OnNetworkChanged),
       NS_DISPATCH_NORMAL);
   }
 
@@ -1359,7 +1359,7 @@ WebSocketChannel::BeginOpen(bool aCalledFromAdmissionManager)
     
     
     NS_DispatchToMainThread(
-      NewRunnableMethod(this, &WebSocketChannel::BeginOpenInternal),
+      NS_NewRunnableMethod(this, &WebSocketChannel::BeginOpenInternal),
                            NS_DISPATCH_NORMAL);
   } else {
     BeginOpenInternal();
@@ -2795,7 +2795,7 @@ WebSocketChannel::StartWebsocketData()
 
   if (!IsOnTargetThread()) {
     return mTargetThread->Dispatch(
-      NewRunnableMethod(this, &WebSocketChannel::StartWebsocketData),
+      NS_NewRunnableMethod(this, &WebSocketChannel::StartWebsocketData),
       NS_DISPATCH_NORMAL);
   }
 
@@ -2808,15 +2808,15 @@ WebSocketChannel::StartWebsocketData()
     LOG(("WebSocketChannel::StartWebsocketData mSocketIn->AsyncWait() failed "
          "with error 0x%08x", rv));
     return mSocketThread->Dispatch(
-      NewRunnableMethod<nsresult>(this,
-                                  &WebSocketChannel::AbortSession,
-                                  rv),
+      NS_NewRunnableMethodWithArgs<nsresult>(this,
+                                             &WebSocketChannel::AbortSession,
+                                             rv),
       NS_DISPATCH_NORMAL);
   }
 
   if (mPingInterval) {
     rv = mSocketThread->Dispatch(
-      NewRunnableMethod(this, &WebSocketChannel::StartPinging),
+      NS_NewRunnableMethod(this, &WebSocketChannel::StartPinging),
       NS_DISPATCH_NORMAL);
     if (NS_FAILED(rv)) {
       LOG(("WebSocketChannel::StartWebsocketData Could not start pinging, "

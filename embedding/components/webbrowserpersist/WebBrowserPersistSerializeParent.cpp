@@ -77,7 +77,7 @@ WebBrowserPersistSerializeParent::ActorDestroy(ActorDestroyReason aWhy)
         MOZ_ASSERT(aWhy != Deletion);
         
         
-        nsCOMPtr<nsIRunnable> errorLater = NewRunnableMethod
+        nsCOMPtr<nsIRunnable> errorLater = NS_NewRunnableMethodWithArgs
             <nsCOMPtr<nsIWebBrowserPersistDocument>, nsCOMPtr<nsIOutputStream>,
              nsCString, nsresult>
             (mFinish, &nsIWebBrowserPersistWriteCompletion::OnFinish,
