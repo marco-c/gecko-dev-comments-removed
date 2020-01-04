@@ -1272,7 +1272,7 @@ JitcodeRegionEntry::ExpectedRunLength(const CodeGeneratorShared::NativeToBytecod
 
 struct JitcodeMapBufferWriteSpewer
 {
-#ifdef DEBUG
+#ifdef JS_JITSPEW
     CompactBufferWriter* writer;
     uint32_t startPos;
 
