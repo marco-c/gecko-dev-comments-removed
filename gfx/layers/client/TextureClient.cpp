@@ -1104,6 +1104,11 @@ TextureClient::CreateForDrawing(TextureForwarder* aAllocator,
     return MakeAndAddRef<TextureClient>(data, aTextureFlags, aAllocator);
   }
 
+  if (moz2DBackend == BackendType::SKIA && aFormat == SurfaceFormat::B8G8R8X8) {
+    
+    aAllocFlags = TextureAllocationFlags(aAllocFlags | ALLOC_CLEAR_BUFFER);
+  }
+
   
   return TextureClient::CreateForRawBufferAccess(aAllocator, aFormat, aSize,
                                                  moz2DBackend, aTextureFlags, aAllocFlags);
