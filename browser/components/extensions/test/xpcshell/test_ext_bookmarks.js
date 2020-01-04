@@ -1,16 +1,5 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-  <title>WebExtension test</title>
-  <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
-  <script type="text/javascript" src="/tests/SimpleTest/SpawnTask.js"></script>
-  <script type="text/javascript" src="/tests/SimpleTest/ExtensionTestUtils.js"></script>
-  <script type="text/javascript" src="head.js"></script>
-  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
-</head>
-<body>
 
-<script type="text/javascript">
+
 "use strict";
 
 function backgroundScript() {
@@ -27,7 +16,7 @@ function backgroundScript() {
   function checkOurBookmark(bookmark) {
     browser.test.assertEq(ourId, bookmark.id, "Bookmark has the expected Id");
     browser.test.assertTrue("parentId" in bookmark, "Bookmark has a parentId");
-    browser.test.assertEq(0, bookmark.index, "Bookmark has the expected index"); // We assume there are no other bookmarks.
+    browser.test.assertEq(0, bookmark.index, "Bookmark has the expected index"); 
     browser.test.assertEq("http://example.org/", bookmark.url, "Bookmark has the expected url");
     browser.test.assertEq("test bookmark", bookmark.title, "Bookmark has the expected title");
     browser.test.assertTrue("dateAdded" in bookmark, "Bookmark has a dateAdded");
@@ -87,7 +76,7 @@ function backgroundScript() {
     browser.test.assertEq("Other Bookmarks", folder.title, "Folder has the expected title");
     browser.test.assertTrue("dateAdded" in folder, "Folder has a dateAdded");
     browser.test.assertTrue("dateGroupModified" in folder, "Folder has a dateGroupModified");
-    browser.test.assertFalse("unmodifiable" in folder, "Folder is not unmodifiable"); // TODO: Do we want to enable this?
+    browser.test.assertFalse("unmodifiable" in folder, "Folder is not unmodifiable"); 
 
     return browser.bookmarks.getChildren(unsortedId);
   }).then(results => {
@@ -154,7 +143,7 @@ function backgroundScript() {
       );
     });
   }).then(() => {
-    // test bookmarks.search
+    
     return Promise.all([
       browser.bookmarks.create({title: "MØzillä", url: "http://møzîllä.örg"}),
       browser.bookmarks.create({title: "Example", url: "http://example.org"}),
@@ -182,7 +171,7 @@ function backgroundScript() {
         index: 1,
       });
     }).then(() => {
-      // returns all items on empty object
+      
       return browser.bookmarks.search({});
     }).then(results => {
       browser.test.assertTrue(results.length >= 9, "At least as many bookmarks as added were returned by search({})");
@@ -208,7 +197,7 @@ function backgroundScript() {
     browser.test.assertEq("Mozilla Corporation", children[2].title, "Bookmark has the expected title");
     browser.test.assertEq("Mozilla", children[3].title, "Bookmark has the expected title");
 
-    // throws an error for invalid query objects
+    
     Promise.resolve().then(() => {
       return browser.bookmarks.search();
     }).then(expectedError, error => {
@@ -254,55 +243,55 @@ function backgroundScript() {
         `Expected error ${JSON.stringify(error.message)} to contain ${JSON.stringify(substr)}`);
     });
 
-    // queries the full url
+    
     return browser.bookmarks.search("http://example.org/");
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of results returned for url search");
     checkBookmark({title: "Example", url: "http://example.org/", index: 2}, results[0]);
 
-    // queries a partial url
+    
     return browser.bookmarks.search("example.org");
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of results returned for url search");
     checkBookmark({title: "Example", url: "http://example.org/", index: 2}, results[0]);
 
-    // queries the title
+    
     return browser.bookmarks.search("EFF");
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of results returned for title search");
     checkBookmark({title: "EFF", url: "http://eff.org/", index: 0, parentId: bookmarkGuids.unfiledGuid}, results[0]);
 
-    // finds menu items
+    
     return browser.bookmarks.search("Menu Item");
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of results returned for menu item search");
-    checkBookmark({title: "Menu Item", url: "http://menu.org/", index: 3, parentId: bookmarkGuids.menuGuid}, results[0]);
+    checkBookmark({title: "Menu Item", url: "http://menu.org/", index: 0, parentId: bookmarkGuids.menuGuid}, results[0]);
 
-    // finds toolbar items
+    
     return browser.bookmarks.search("Toolbar Item");
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of results returned for toolbar item search");
-    checkBookmark({title: "Toolbar Item", url: "http://toolbar.org/", index: 2, parentId: bookmarkGuids.toolbarGuid}, results[0]);
+    checkBookmark({title: "Toolbar Item", url: "http://toolbar.org/", index: 0, parentId: bookmarkGuids.toolbarGuid}, results[0]);
 
-    // finds folders
+    
     return browser.bookmarks.search("Mozilla Folder");
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of folders returned");
     browser.test.assertEq("Mozilla Folder", results[0].title, "Folder has the expected title");
 
-    // is case-insensitive
+    
     return browser.bookmarks.search("corporation");
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of results returnedfor case-insensitive search");
     browser.test.assertEq("Mozilla Corporation", results[0].title, "Bookmark has the expected title");
 
-    // is case-insensitive for non-ascii
+    
     return browser.bookmarks.search("MøZILLÄ");
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of results returned for non-ascii search");
     browser.test.assertEq("MØzillä", results[0].title, "Bookmark has the expected title");
 
-    // returns multiple results
+    
     return browser.bookmarks.search("allizom");
   }).then(results => {
     browser.test.assertEq(4, results.length, "Expected number of multiple results returned");
@@ -311,37 +300,37 @@ function backgroundScript() {
     browser.test.assertEq("Firefox", results[2].title, "Bookmark has the expected title");
     browser.test.assertEq("About Mozilla", results[3].title, "Bookmark has the expected title");
 
-    // accepts a url field
+    
     return browser.bookmarks.search({url: "http://allizom.com/"});
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of results returned for url field");
     checkBookmark({title: "Mozilla Corporation", url: "http://allizom.com/", index: 2}, results[0]);
 
-    // normalizes urls
+    
     return browser.bookmarks.search({url: "http://allizom.com"});
   }).then(results => {
     browser.test.assertEq(results.length, 1, "Expected number of results returned for normalized url field");
     checkBookmark({title: "Mozilla Corporation", url: "http://allizom.com/", index: 2}, results[0]);
 
-    // normalizes urls even more
+    
     return browser.bookmarks.search({url: "http:allizom.com"});
   }).then(results => {
     browser.test.assertEq(results.length, 1, "Expected number of results returned for normalized url field");
     checkBookmark({title: "Mozilla Corporation", url: "http://allizom.com/", index: 2}, results[0]);
 
-    // accepts a title field
+    
     return browser.bookmarks.search({title: "Mozilla"});
   }).then(results => {
     browser.test.assertEq(results.length, 1, "Expected number of results returned for title field");
     checkBookmark({title: "Mozilla", url: "http://allizom.org/", index: 3}, results[0]);
 
-    // can combine title and query
+    
     return browser.bookmarks.search({title: "Mozilla", query: "allizom"});
   }).then(results => {
     browser.test.assertEq(1, results.length, "Expected number of results returned for title and query fields");
     checkBookmark({title: "Mozilla", url: "http://allizom.org/", index: 3}, results[0]);
 
-    // uses AND conditions
+    
     return browser.bookmarks.search({title: "EFF", query: "allizom"});
   }).then(results => {
     browser.test.assertEq(
@@ -350,7 +339,7 @@ function backgroundScript() {
       "Expected number of results returned for non-matching title and query fields"
     );
 
-    // returns an empty array on item not found
+    
     return browser.bookmarks.search("microsoft");
   }).then(results => {
     browser.test.assertEq(0, results.length, "Expected number of results returned for non-matching search");
@@ -389,7 +378,7 @@ function backgroundScript() {
       return browser.bookmarks.move(corporationBookmark.id, {parentId: bookmarkGuids.menuGuid});
     }).then(result => {
       browser.test.assertEq(bookmarkGuids.menuGuid, result.parentId, "Bookmark has the expected parent");
-      browser.test.assertEq(childCount + 1, result.index, "Bookmark has the expected index");
+      browser.test.assertEq(childCount, result.index, "Bookmark has the expected index");
 
       return browser.bookmarks.move(corporationBookmark.id, {index: 1});
     }).then(result => {
@@ -463,7 +452,7 @@ function backgroundScript() {
       );
     });
   }).then(() => {
-    // remove all created bookmarks
+    
     let promises = Array.from(createdBookmarks, guid => browser.bookmarks.remove(guid));
     return Promise.all(promises);
   }).then(() => {
@@ -490,8 +479,3 @@ add_task(function* test_contentscript() {
   yield extension.awaitFinish("bookmarks");
   yield extension.unload();
 });
-
-</script>
-
-</body>
-</html>
