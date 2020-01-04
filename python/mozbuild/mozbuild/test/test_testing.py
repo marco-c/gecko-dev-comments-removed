@@ -239,6 +239,10 @@ class TestTestResolver(Base):
 
         o = MozbuildObject(self.FAKE_TOPSRCDIR, None, None, topobjdir=topobjdir)
 
+        
+        
+        TestResolver._run_make = lambda *a, **b: None
+
         return o._spawn(TestResolver)
 
     def test_cwd_children_only(self):

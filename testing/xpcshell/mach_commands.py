@@ -347,13 +347,14 @@ class MachCommands(MachCommandBase):
             m.tests.extend(test_objects)
             params['manifest'] = m
 
+        driver = self._spawn(BuildDriver)
+        driver.install_tests(test_objects)
+
         
         
         
         self._ensure_state_subdir_exists('.')
 
-        driver = self._spawn(BuildDriver)
-        driver.install_tests(remove=False)
 
         params['log'] = structured.commandline.setup_logging("XPCShellTests",
                                                              params,

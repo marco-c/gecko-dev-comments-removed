@@ -562,6 +562,10 @@ class TestManifest(ContextDerived):
         'external_installs',
 
         
+        
+        'deferred_installs',
+
+        
         'path',
 
         
@@ -602,6 +606,7 @@ class TestManifest(ContextDerived):
         self.pattern_installs = []
         self.tests = []
         self.external_installs = set()
+        self.deferred_installs = set()
 
 
 class LocalInclude(ContextDerived):
