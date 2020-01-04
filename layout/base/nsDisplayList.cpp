@@ -72,6 +72,7 @@
 #include "nsDOMTokenList.h"
 #include "mozilla/RuleNodeCacheConditions.h"
 #include "nsCSSProps.h"
+#include "nsPluginFrame.h"
 
 
 
@@ -3215,6 +3216,13 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
   }
   if (aBuilder->GetAncestorHasApzAwareEventHandler()) {
     mDispatchToContentHitRegion.Or(mDispatchToContentHitRegion, borderBox);
+  } else if (aFrame->GetType() == nsGkAtoms::objectFrame) {
+    
+    
+    nsPluginFrame* pluginFrame = do_QueryFrame(aFrame);
+    if (pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
+      mDispatchToContentHitRegion.Or(mDispatchToContentHitRegion, borderBox);
+    }
   }
 
   
