@@ -877,7 +877,8 @@ DOMMediaStream::FindPlaybackDOMTrack(MediaStream* aInputStream, TrackID aInputTr
       
       return info->GetTrack();
     }
-    if (info->GetInputPort()->GetSource() == aInputStream &&
+    if (info->GetInputPort() &&
+        info->GetInputPort()->GetSource() == aInputStream &&
         info->GetSourceTrackId() == aInputTrackID) {
       
       MOZ_ASSERT(aInputTrackID != TRACK_NONE);
