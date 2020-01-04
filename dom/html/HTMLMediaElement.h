@@ -179,7 +179,7 @@ public:
 
   
   
-  virtual void DecodeError() final override;
+  virtual void DecodeError(const MediaResult& aError) final override;
 
   
   virtual bool HasError() const final override;
@@ -1127,7 +1127,7 @@ protected:
 
 
 
-  void Error(uint16_t aErrorCode);
+  void Error(uint16_t aErrorCode, const MediaResult& aErrorDetails = NS_OK);
 
   
 
