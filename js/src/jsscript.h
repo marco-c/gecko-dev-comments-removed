@@ -1671,6 +1671,9 @@ class JSScript : public js::gc::TenuredCell
     bool isForEval() const { return isCachedEval() || isActiveEval(); }
 
     
+    bool isDirectEvalInFunction() const { return isForEval() && savedCallerFun(); }
+
+    
 
 
 
