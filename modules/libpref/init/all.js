@@ -5259,6 +5259,9 @@ pref("reader.font_size", 5);
 pref("reader.content_width", 3);
 
 
+pref("reader.line_height", 4);
+
+
 
 
 pref("reader.color_scheme", "light");
