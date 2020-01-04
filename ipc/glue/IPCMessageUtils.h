@@ -427,9 +427,9 @@ struct ParamTraits<nsLiteralString> : ParamTraits<nsAString>
 bool ByteLengthIsValid(uint32_t aNumElements, size_t aElementSize, int* aByteLength);
 
 template <typename E>
-struct ParamTraits<FallibleTArray<E> >
+struct ParamTraits<nsTArray<E>>
 {
-  typedef FallibleTArray<E> paramType;
+  typedef nsTArray<E> paramType;
 
   
   
@@ -508,19 +508,19 @@ struct ParamTraits<FallibleTArray<E> >
 };
 
 template<typename E>
-struct ParamTraits<InfallibleTArray<E> >
+struct ParamTraits<FallibleTArray<E>>
 {
-  typedef InfallibleTArray<E> paramType;
+  typedef FallibleTArray<E> paramType;
 
   static void Write(Message* aMsg, const paramType& aParam)
   {
-    WriteParam(aMsg, static_cast<const FallibleTArray<E>&>(aParam));
+    WriteParam(aMsg, static_cast<const nsTArray<E>&>(aParam));
   }
 
   
   static bool Read(const Message* aMsg, void** aIter, paramType* aResult)
   {
-    FallibleTArray<E> temp;
+    nsTArray<E> temp;
     if (!ReadParam(aMsg, aIter, &temp))
       return false;
 
@@ -530,7 +530,7 @@ struct ParamTraits<InfallibleTArray<E> >
 
   static void Log(const paramType& aParam, std::wstring* aLog)
   {
-    LogParam(static_cast<const FallibleTArray<E>&>(aParam), aLog);
+    LogParam(static_cast<const nsTArray<E>&>(aParam), aLog);
   }
 };
 
@@ -778,7 +778,7 @@ struct ParamTraits<nsIWidget::TouchPointerState>
 };
 
 template<class T>
-struct ParamTraits< mozilla::Maybe<T> >
+struct ParamTraits<mozilla::Maybe<T>>
 {
   typedef mozilla::Maybe<T> paramType;
 
