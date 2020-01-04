@@ -86,8 +86,13 @@ function addTab(url) {
 
 
 
-function reloadTab() {
-  return executeInContent("devtools:test:reload", {}, {}, false);
+
+
+function* reloadTab(inspector) {
+  let onNewRoot = inspector.once("new-root");
+  yield executeInContent("devtools:test:reload", {}, {}, false);
+  yield onNewRoot;
+  yield inspector.once("inspector-updated");
 }
 
 
