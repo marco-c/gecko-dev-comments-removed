@@ -349,8 +349,10 @@ TraceLoggerEventPayload*
 TraceLoggerThread::getOrCreateEventPayload(TraceLoggerTextId textId)
 {
     TextIdHashMap::AddPtr p = textIdPayloads.lookupForAdd(textId);
-    if (p)
+    if (p) {
+        MOZ_ASSERT(p->value()->textId() == textId); 
         return p->value();
+    }
 
     TraceLoggerEventPayload* payload = js_new<TraceLoggerEventPayload>(textId, (char*)nullptr);
 
@@ -364,8 +366,10 @@ TraceLoggerEventPayload*
 TraceLoggerThread::getOrCreateEventPayload(const char* text)
 {
     PointerHashMap::AddPtr p = pointerMap.lookupForAdd((const void*)text);
-    if (p)
+    if (p) {
+        MOZ_ASSERT(p->value()->textId() < nextTextId); 
         return p->value();
+    }
 
     size_t len = strlen(text);
     char* str = js_pod_malloc<char>(len + 1);
@@ -417,8 +421,10 @@ TraceLoggerThread::getOrCreateEventPayload(TraceLoggerTextId type, const char* f
         return getOrCreateEventPayload(type);
 
     PointerHashMap::AddPtr p = pointerMap.lookupForAdd(ptr);
-    if (p)
+    if (p) {
+        MOZ_ASSERT(p->value()->textId() < nextTextId); 
         return p->value();
+    }
 
     
     size_t lenFilename = strlen(filename);
@@ -564,6 +570,19 @@ TraceLoggerThread::log(uint32_t id)
             EventEntry& entryStop = events.pushUninitialized();
             entryStop.time = rdtsc() - traceLoggerState->startupTime;
             entryStop.textId = TraceLogger_Stop;
+        }
+
+        
+        
+        for (PointerHashMap::Enum e(pointerMap); !e.empty(); e.popFront()) {
+            if (e.front().value()->uses() != 0)
+                continue;
+
+            TextIdHashMap::Ptr p = textIdPayloads.lookup(e.front().value()->textId());
+            MOZ_ASSERT(p);
+            textIdPayloads.remove(p);
+
+            e.removeFront();
         }
 
         
@@ -996,4 +1015,17 @@ TraceLoggerEvent::~TraceLoggerEvent()
 {
     if (payload_)
         payload_->release();
+}
+
+TraceLoggerEvent&
+TraceLoggerEvent::operator=(const TraceLoggerEvent& other)
+{
+    if (hasPayload())
+        payload()->release();
+    if (other.hasPayload())
+        other.payload()->use();
+
+    payload_ = other.payload_;
+
+    return *this;
 }
