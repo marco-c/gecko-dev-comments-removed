@@ -410,6 +410,16 @@ function MultipleCallbacks(number, goon, delayed)
   this.delayed = delayed;
 }
 
+function wait_for_cache_index(continue_func)
+{
+  
+  
+  get_cache_service().asyncGetDiskConsumption({
+    onNetworkCacheDiskConsumption: function() { continue_func(); },
+    QueryInterface() { return this; }
+  });
+}
+
 function finish_cache2_test()
 {
   callbacks.forEach(function(callback, index) {
