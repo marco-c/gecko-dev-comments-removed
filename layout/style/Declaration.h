@@ -157,14 +157,6 @@ public:
 
 
 
-  bool HasVariableDeclaration(const nsAString& aName) const;
-
-  
-
-
-
-
-
 
 
 
