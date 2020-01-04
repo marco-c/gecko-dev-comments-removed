@@ -2249,7 +2249,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                                               this)) {
       dirtyRect = overflow;
     } else {
-      if (overflow.IsEmpty()) {
+      if (overflow.IsEmpty() && !Extend3DContext()) {
         return;
       }
 
@@ -8118,30 +8118,49 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   bool hasTransform = IsTransformed();
   nsSize oldSize = aOldSize ? *aOldSize : mRect.Size();
   bool sizeChanged = (oldSize != aNewSize);
+
+  if (ChildrenHavePerspective() && sizeChanged) {
+    nsRect newBounds(nsPoint(0, 0), aNewSize);
+    RecomputePerspectiveChildrenOverflow(this, &newBounds);
+  }
+
   if (hasTransform) {
     Properties().Set(nsIFrame::PreTransformOverflowAreasProperty(),
                      new nsOverflowAreas(aOverflowAreas));
-    
+
+    if (Combines3DTransformWithAncestors()) {
+      
 
 
 
-    nsRect newBounds(nsPoint(0, 0), aNewSize);
-    
-    NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
-      nsRect& o = aOverflowAreas.Overflow(otype);
-      o = nsDisplayTransform::TransformRect(o, this, &newBounds);
-    }
-    if (Extend3DContext()) {
-      ComputePreserve3DChildrenOverflow(aOverflowAreas, newBounds);
-    } else if (sizeChanged && ChildrenHavePerspective()) {
-      RecomputePerspectiveChildrenOverflow(this, &newBounds);
+
+
+      aOverflowAreas.SetAllTo(nsRect());
+    } else {
+      
+
+
+
+      SetSize(aNewSize);
+
+      NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
+        nsRect& o = aOverflowAreas.Overflow(otype);
+        o = nsDisplayTransform::TransformRect(o, this);
+      }
+
+      
+
+
+
+      if (Extend3DContext()) {
+        ComputePreserve3DChildrenOverflow(aOverflowAreas);
+      }
+
+      
+      SetSize(oldSize);
     }
   } else {
     Properties().Delete(nsIFrame::PreTransformOverflowAreasProperty());
-    if (ChildrenHavePerspective() && sizeChanged) {
-      nsRect newBounds(nsPoint(0, 0), aNewSize);
-      RecomputePerspectiveChildrenOverflow(this, &newBounds);
-    }
   }
 
   bool anyOverflowChanged;
@@ -8199,79 +8218,13 @@ nsIFrame::RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame, cons
   SetSize(oldSize);
 }
 
-
-
-
-
-
-
-static void
-RecomputePreserve3DChildrenOverflow(nsIFrame* aFrame, const nsRect* aBounds)
-{
-  
-  nsSize oldSize = aFrame->GetSize();
-  if (aBounds) {
-    aFrame->SetSize(aBounds->Size());
-  }
-  nsIFrame::ChildListIterator lists(aFrame);
-  for (; !lists.IsDone(); lists.Next()) {
-    nsFrameList::Enumerator childFrames(lists.CurrentList());
-    for (; !childFrames.AtEnd(); childFrames.Next()) {
-      nsIFrame* child = childFrames.get();
-      if (!child->FrameMaintainsOverflow()) {
-        continue; 
-      }
-      if (child->Extend3DContext()) {
-        RecomputePreserve3DChildrenOverflow(child, nullptr);
-      } else if (child->Combines3DTransformWithAncestors()) {
-        nsOverflowAreas* overflow = 
-          static_cast<nsOverflowAreas*>(child->Properties().Get(nsIFrame::InitialOverflowProperty()));
-        nsRect bounds(nsPoint(0, 0), child->GetSize());
-        if (overflow) {
-          nsOverflowAreas overflowCopy = *overflow;
-          child->FinishAndStoreOverflow(overflowCopy, bounds.Size());
-        } else {
-          nsOverflowAreas boundsOverflow;
-          boundsOverflow.SetAllTo(bounds);
-          child->FinishAndStoreOverflow(boundsOverflow, bounds.Size());
-        }
-      }
-    }
-  }
-  
-  aFrame->SetSize(oldSize);
- 
-  
-  
-  if (!aBounds) {
-    nsOverflowAreas* overflow = 
-      static_cast<nsOverflowAreas*>(aFrame->Properties().Get(nsIFrame::InitialOverflowProperty()));
-    nsRect bounds(nsPoint(0, 0), aFrame->GetSize());
-    if (overflow) {
-      nsOverflowAreas overflowCopy = *overflow;
-      overflowCopy.UnionAllWith(bounds); 
-      aFrame->FinishAndStoreOverflow(overflowCopy, bounds.Size());
-    } else {
-      nsOverflowAreas boundsOverflow;
-      boundsOverflow.SetAllTo(bounds);
-      aFrame->FinishAndStoreOverflow(boundsOverflow, bounds.Size());
-    }
-  }
-}
-
 void
-nsIFrame::ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas, const nsRect& aBounds)
+nsIFrame::ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas)
 {
   
   
   
-
   
-  
-  
-  if (!Combines3DTransformWithAncestors()) {
-    RecomputePreserve3DChildrenOverflow(this, &aBounds);
-  }
 
   nsRect childVisual;
   nsRect childScrollable;
@@ -8280,27 +8233,28 @@ nsIFrame::ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas, con
     nsFrameList::Enumerator childFrames(lists.CurrentList());
     for (; !childFrames.AtEnd(); childFrames.Next()) {
       nsIFrame* child = childFrames.get();
-      nsPoint offset = child->GetPosition();
-      nsRect visual = child->GetVisualOverflowRect();
-      nsRect scrollable = child->GetScrollableOverflowRect();
-      visual.MoveBy(offset);
-      scrollable.MoveBy(offset);
+
+      
+      
+      
       if (child->Combines3DTransformWithAncestors()) {
-        childVisual = childVisual.Union(visual);
-        childScrollable = childScrollable.Union(scrollable);
-      } else {
-        childVisual = 
-          childVisual.Union(nsDisplayTransform::TransformRect(visual, 
-                            this, &aBounds));
-        childScrollable = 
-          childScrollable.Union(nsDisplayTransform::TransformRect(scrollable,
-                                this, &aBounds));
+        nsOverflowAreas childOverflow = child->GetOverflowAreasRelativeToSelf();
+
+        NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
+          nsRect& o = childOverflow.Overflow(otype);
+          o = nsDisplayTransform::TransformRect(o, child);
+        }
+
+        aOverflowAreas.UnionWith(childOverflow);
+
+        
+        
+        if (child->Extend3DContext()) {
+          child->ComputePreserve3DChildrenOverflow(aOverflowAreas);
+        }
       }
     }
   }
-
-  aOverflowAreas.Overflow(eVisualOverflow) = aOverflowAreas.Overflow(eVisualOverflow).Union(childVisual);
-  aOverflowAreas.Overflow(eScrollableOverflow) = aOverflowAreas.Overflow(eScrollableOverflow).Union(childScrollable);
 }
 
 uint32_t
