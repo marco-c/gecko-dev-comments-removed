@@ -1828,10 +1828,17 @@ public:
   };
 
   struct InlinePrefISizeData : public InlineIntrinsicISizeData {
+    InlinePrefISizeData()
+      : mLineIsEmpty(true)
+    {}
+
     void ForceBreak();
 
     
     void DefaultAddInlinePrefISize(nscoord aISize);
+
+    
+    bool mLineIsEmpty;
   };
 
   
