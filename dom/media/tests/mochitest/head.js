@@ -602,28 +602,6 @@ function createOneShotEventWrapper(wrapper, obj, event) {
 
 
 
-
-function haveEvent(target, name, cancelPromise) {
-  var listener;
-  var p = Promise.race([
-    (cancelPromise || new Promise()).then(e => Promise.reject(e)),
-    new Promise(resolve => target.addEventListener(name, listener = resolve))
-  ]);
-  p.then(() => target.removeEventListener(name, listener));
-  return p;
-};
-
-
-
-
-
-
-
-
-
-
-
-
 function CommandChain(framework, commandList) {
   this._framework = framework;
   this.commands = commandList || [ ];
