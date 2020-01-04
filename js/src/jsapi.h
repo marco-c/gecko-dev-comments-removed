@@ -3124,19 +3124,22 @@ extern JS_PUBLIC_API(JSFunction*)
 JS_NewFunction(JSContext* cx, JSNative call, unsigned nargs, unsigned flags,
                const char* name);
 
-
-
-
-
-extern JS_PUBLIC_API(JSFunction*)
-JS_NewFunctionById(JSContext* cx, JSNative call, unsigned nargs, unsigned flags,
-                   JS::Handle<jsid> id);
-
 namespace JS {
 
 extern JS_PUBLIC_API(JSFunction*)
-GetSelfHostedFunction(JSContext* cx, const char* selfHostedName, JS::Handle<jsid> id,
+GetSelfHostedFunction(JSContext* cx, const char* selfHostedName, HandleId id,
                       unsigned nargs);
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(JSFunction*)
+NewFunctionFromSpec(JSContext* cx, const JSFunctionSpec* fs, HandleId id);
 
 } 
 
