@@ -23,6 +23,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://testing-common/TestUtils.jsm");
+Cu.import("resource://testing-common/ContentTask.jsm");
 
 Cc["@mozilla.org/globalmessagemanager;1"]
   .getService(Ci.nsIMessageListenerManager)
@@ -448,6 +449,53 @@ this.BrowserTestUtils = {
         }
       }, capture);
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  waitForContentEvent(browser, eventName, capture, checkFn) {
+    let parameters = { eventName,
+                       capture,
+                       checkFnSource: checkFn ? checkFn.toSource() : null };
+    return ContentTask.spawn(browser, parameters,
+        function({ eventName, capture, checkFnSource }) {
+          let checkFn;
+          if (checkFnSource) {
+            checkFn = eval(`(() => (${checkFnSource}))()`);
+          }
+          return new Promise((resolve, reject) => {
+            addEventListener(eventName, function listener(event) {
+              let completion = resolve;
+              try {
+                if (checkFn && !checkFn(event)) {
+                  return;
+                }
+              } catch (e) {
+                completion = () => reject(e);
+              }
+              removeEventListener(eventName, listener, capture);
+              completion();
+            }, capture);
+          });
+        });
   },
 
   

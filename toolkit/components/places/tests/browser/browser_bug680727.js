@@ -12,11 +12,10 @@ var gAsyncHistory =
   Cc["@mozilla.org/browser/history;1"].getService(Ci.mozIAsyncHistory);
 
 var proxyPrefValue;
+var ourTab;
 
 function test() {
   waitForExplicitFinish();
-
-  gBrowser.selectedTab = gBrowser.addTab();
 
   
   
@@ -30,33 +29,34 @@ function test() {
 
   
   Services.io.offline = true;
-  window.addEventListener("DOMContentLoaded", errorListener, false);
-  content.location = kUniqueURI.spec;
+
+  BrowserTestUtils.openNewForegroundTab(gBrowser).then(tab => {
+    ourTab = tab;
+    BrowserTestUtils.waitForContentEvent(ourTab.linkedBrowser, "DOMContentLoaded",
+                    .then(errorListener);
+    BrowserTestUtils.loadURI(ourTab.linkedBrowser, kUniqueURI.spec);
+  });
 }
 
 
 
 function errorListener() {
-  if(content.location == "about:blank") {
-    info("got about:blank, which is expected once, so return");
-    return;
-  }
-
-  window.removeEventListener("DOMContentLoaded", errorListener, false);
   ok(Services.io.offline, "Services.io.offline is true.");
 
   
-  is(gBrowser.contentDocument.documentURI.substring(0, 27),
-     "about:neterror?e=netOffline",
-     "Document URI is the error page.");
+  ContentTask.spawn(ourTab.linkedBrowser, kUniqueURI.spec, function(uri) {
+    is(content.document.documentURI.substring(0, 27),
+       "about:neterror?e=netOffline",
+       "Document URI is the error page.");
 
-  
-  is(content.location.href, kUniqueURI.spec,
-     "Docshell URI is the original URI.");
-
-  
-  PlacesTestUtils.promiseAsyncUpdates().then(() => {
-    gAsyncHistory.isURIVisited(kUniqueURI, errorAsyncListener);
+    
+    is(content.location.href, uri,
+       "Docshell URI is the original URI.");
+  }).then(() => {
+    
+    return PlacesTestUtils.promiseAsyncUpdates().then(() => {
+      gAsyncHistory.isURIVisited(kUniqueURI, errorAsyncListener);
+    });
   });
 }
 
@@ -69,30 +69,33 @@ function errorAsyncListener(aURI, aIsVisited) {
   
   Services.io.offline = false;
 
-  window.addEventListener("DOMContentLoaded", reloadListener, false);
+  BrowserTestUtils.waitForContentEvent(ourTab.linkedBrowser, "DOMContentLoaded")
+                  .then(reloadListener);
 
-  ok(gBrowser.contentDocument.getElementById("errorTryAgain"),
-     "The error page has got a #errorTryAgain element");
-  gBrowser.contentDocument.getElementById("errorTryAgain").click();
+  ContentTask.spawn(ourTab.linkedBrowser, null, function() {
+    ok(content.document.getElementById("errorTryAgain"),
+       "The error page has got a #errorTryAgain element");
+    content.document.getElementById("errorTryAgain").click();
+  });
 }
 
 
 
 function reloadListener() {
-  window.removeEventListener("DOMContentLoaded", reloadListener, false);
-
   
   
   
   ok(!Services.io.offline, "Services.io.offline is false.");
 
-  
-  is(gBrowser.contentDocument.documentURI, kUniqueURI.spec,
-     "Document URI is not the offline-error page, but the original URI.");
-
-  
-  PlacesTestUtils.promiseAsyncUpdates().then(() => {
-    gAsyncHistory.isURIVisited(kUniqueURI, reloadAsyncListener);
+  ContentTask.spawn(ourTab.linkedBrowser, kUniqueURI.spec, function(uri) {
+    
+    is(content.document.documentURI, uri,
+       "Document URI is not the offline-error page, but the original URI.");
+  }).then(() => {
+    
+    PlacesTestUtils.promiseAsyncUpdates().then(() => {
+      gAsyncHistory.isURIVisited(kUniqueURI, reloadAsyncListener);
+    });
   });
 }
 
@@ -101,10 +104,8 @@ function reloadAsyncListener(aURI, aIsVisited) {
   PlacesTestUtils.clearHistory().then(finish);
 }
 
-registerCleanupFunction(function() {
+registerCleanupFunction(function* () {
   Services.prefs.setIntPref("network.proxy.type", proxyPrefValue);
   Services.io.offline = false;
-  window.removeEventListener("DOMContentLoaded", errorListener, false);
-  window.removeEventListener("DOMContentLoaded", reloadListener, false);
-  gBrowser.removeCurrentTab();
+  yield BrowserTestUtils.removeTab(ourTab);
 });
