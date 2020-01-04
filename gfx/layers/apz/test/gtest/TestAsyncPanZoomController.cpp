@@ -553,6 +553,7 @@ Pan(const RefPtr<InputReceiver>& aTarget,
   
   
   gfxPrefs::SetAPZTouchStartTolerance(1.0f / 1000.0f);
+  gfxPrefs::SetAPZTouchMoveTolerance(0.0f);
   const int OVERCOME_TOUCH_TOLERANCE = 1;
 
   const TimeDuration TIME_BETWEEN_TOUCH_EVENT = TimeDuration::FromMilliseconds(50);
