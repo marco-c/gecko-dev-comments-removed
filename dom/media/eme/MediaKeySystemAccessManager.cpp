@@ -81,6 +81,21 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
 {
   EME_LOG("MediaKeySystemAccessManager::Request %s", NS_ConvertUTF16toUTF8(aKeySystem).get());
 
+  if (aKeySystem.IsEmpty()) {
+    aPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
+                          NS_LITERAL_CSTRING("Key system string is empty"));
+    
+    
+    return;
+  }
+  if (aConfigs.IsEmpty()) {
+    aPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
+                          NS_LITERAL_CSTRING("Candidate MediaKeySystemConfigs is empty"));
+    
+    
+    return;
+  }
+
   DecoderDoctorDiagnostics diagnostics;
 
   
@@ -263,31 +278,8 @@ MediaKeySystemAccessManager::Observe(nsISupports* aSubject,
 {
   EME_LOG("MediaKeySystemAccessManager::Observe %s", aTopic);
 
-  if (!strcmp(aTopic, "gmp-changed")) {
-    
-    
-    
-    
-    
-    nsTArray<PendingRequest> requests;
-    for (size_t i = mRequests.Length(); i > 0; i--) {
-      const size_t index = i - i;
-      PendingRequest& request = mRequests[index];
-      nsAutoCString message;
-      nsAutoCString cdmVersion;
-      MediaKeySystemStatus status =
-        MediaKeySystemAccess::GetKeySystemStatus(request.mKeySystem,
-                                                 NO_CDM_VERSION,
-                                                 message,
-                                                 cdmVersion);
-      if (status == MediaKeySystemStatus::Cdm_not_installed) {
-        
-        continue;
-      }
-      
-      requests.AppendElement(Move(request));
-      mRequests.RemoveElementAt(index);
-    }
+  if (!strcmp(aTopic, "gmp-path-added")) {
+    nsTArray<PendingRequest> requests(Move(mRequests));
     
     for (PendingRequest& request : requests) {
       RetryRequest(request);
@@ -319,7 +311,7 @@ MediaKeySystemAccessManager::EnsureObserversAdded()
   if (NS_WARN_IF(!obsService)) {
     return false;
   }
-  mAddedObservers = NS_SUCCEEDED(obsService->AddObserver(this, "gmp-changed", false));
+  mAddedObservers = NS_SUCCEEDED(obsService->AddObserver(this, "gmp-path-added", false));
   return mAddedObservers;
 }
 
@@ -336,7 +328,7 @@ MediaKeySystemAccessManager::Shutdown()
   if (mAddedObservers) {
     nsCOMPtr<nsIObserverService> obsService = mozilla::services::GetObserverService();
     if (obsService) {
-      obsService->RemoveObserver(this, "gmp-changed");
+      obsService->RemoveObserver(this, "gmp-path-added");
       mAddedObservers = false;
     }
   }
