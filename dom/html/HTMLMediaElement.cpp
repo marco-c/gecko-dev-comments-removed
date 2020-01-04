@@ -277,7 +277,7 @@ public:
 
 
 
-class HTMLMediaElement::StreamSizeListener : public DirectMediaStreamTrackListener {
+class HTMLMediaElement::StreamSizeListener : public MediaStreamTrackDirectListener {
 public:
   explicit StreamSizeListener(HTMLMediaElement* aElement) :
     mElement(aElement),

@@ -1074,7 +1074,7 @@ void MediaPipeline::PacketReceived(TransportLayer *layer,
 }
 
 class MediaPipelineTransmit::PipelineListener
-  : public DirectMediaStreamTrackListener
+  : public MediaStreamTrackDirectListener
 {
 friend class MediaPipelineTransmit;
 public:
