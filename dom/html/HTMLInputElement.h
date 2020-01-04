@@ -37,9 +37,7 @@ class EventChainPreVisitor;
 
 namespace dom {
 
-class AfterSetFilesOrDirectoriesRunnable;
 class Date;
-class DispatchChangeEventCallback;
 class File;
 class FileList;
 class GetFilesHelper;
@@ -109,9 +107,6 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
                                public nsIDOMNSEditableElement,
                                public nsIConstraintValidation
 {
-  friend class AfterSetFilesOrDirectoriesCallback;
-  friend class DispatchChangeEventCallback;
-
 public:
   using nsIConstraintValidation::GetValidationMessage;
   using nsIConstraintValidation::CheckValidity;
@@ -705,16 +700,6 @@ public:
     SetHTMLBoolAttr(nsGkAtoms::directory, aValue, aRv);
   }
 
-  bool WebkitDirectoryAttr() const
-  {
-    return HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory);
-  }
-
-  void SetWebkitDirectoryAttr(bool aValue, ErrorResult& aRv)
-  {
-    SetHTMLBoolAttr(nsGkAtoms::webkitdirectory, aValue, aRv);
-  }
-
   bool IsFilesAndDirectoriesSupported() const;
 
   already_AddRefed<Promise> GetFilesAndDirectories(ErrorResult& aRv);
@@ -954,15 +939,7 @@ protected:
   
 
 
-
   void AfterSetFilesOrDirectories(bool aSetValueChanged);
-  void AfterSetFilesOrDirectoriesInternal(bool aSetValueChanged);
-
-  
-
-
-
-  void ExploreDirectoryRecursively(bool aSetValuechanged);
 
   
 
@@ -1278,9 +1255,6 @@ protected:
 
 
   bool IsPopupBlocked() const;
-
-  GetFilesHelper* GetOrCreateGetFilesHelper(bool aRecursiveFlag,
-                                            ErrorResult& aRv);
 
   void ClearGetFilesHelpers();
 
