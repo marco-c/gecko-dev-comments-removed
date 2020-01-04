@@ -466,11 +466,6 @@ WebrtcVideoConduit::Init()
 void
 WebrtcVideoConduit::Destroy()
 {
-  for(std::vector<VideoCodecConfig*>::size_type i=0;i < mRecvCodecList.size();i++)
-  {
-    delete mRecvCodecList[i];
-  }
-
   
   
   if(mPtrViECapture)
@@ -888,13 +883,7 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
       } else {
         CSFLogError(logTag, "%s Successfully Set the codec %s", __FUNCTION__,
                     codecConfigList[i]->mName.c_str());
-        if(CopyCodecToDB(codecConfigList[i]))
-        {
-          success = true;
-        } else {
-          CSFLogError(logTag,"%s Unable to update Codec Database", __FUNCTION__);
-          return kMediaConduitUnknownError;
-        }
+        success = true;
       }
     } else {
       
@@ -913,13 +902,7 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
             } else {
               CSFLogError(logTag, "%s Successfully Set the codec %s", __FUNCTION__,
                           codecConfigList[i]->mName.c_str());
-              if(CopyCodecToDB(codecConfigList[i]))
-              {
-                success = true;
-              } else {
-                CSFLogError(logTag,"%s Unable to update Codec Database", __FUNCTION__);
-                return kMediaConduitUnknownError;
-              }
+              success = true;
             }
             break; 
           }
@@ -1049,7 +1032,6 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
   CSFLogDebug(logTag, "REMB enabled for video stream %s",
               (use_remb ? "yes" : "no"));
   mPtrRTP->SetRembStatus(mChannel, use_remb, true);
-  DumpCodecDB();
   return kMediaConduitNoError;
 }
 
@@ -1999,53 +1981,6 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
 }
 
 
-bool
-WebrtcVideoConduit::CopyCodecToDB(const VideoCodecConfig* codecInfo)
-{
-  VideoCodecConfig* cdcConfig = new VideoCodecConfig(*codecInfo);
-  mRecvCodecList.push_back(cdcConfig);
-  return true;
-}
-
-bool
-WebrtcVideoConduit::CheckCodecsForMatch(const VideoCodecConfig* curCodecConfig,
-                                        const VideoCodecConfig* codecInfo) const
-{
-  if(!curCodecConfig)
-  {
-    return false;
-  }
-
-  if(curCodecConfig->mType  == codecInfo->mType &&
-     curCodecConfig->mName.compare(codecInfo->mName) == 0 &&
-     curCodecConfig->mEncodingConstraints == codecInfo->mEncodingConstraints)
-  {
-    return true;
-  }
-
-  return false;
-}
-
-
-
-
-bool
-WebrtcVideoConduit::CheckCodecForMatch(const VideoCodecConfig* codecInfo) const
-{
-  
-  for(std::vector<VideoCodecConfig*>::size_type i=0;i < mRecvCodecList.size();i++)
-  {
-    if(CheckCodecsForMatch(mRecvCodecList[i],codecInfo))
-    {
-      
-      return true;
-    }
-  }
-  
-  return false;
-}
-
-
 
 
 
@@ -2053,8 +1988,6 @@ MediaConduitErrorCode
 WebrtcVideoConduit::ValidateCodecConfig(const VideoCodecConfig* codecInfo,
                                         bool send)
 {
-  bool codecAppliedAlready = false;
-
   if(!codecInfo)
   {
     CSFLogError(logTag, "%s Null CodecConfig ", __FUNCTION__);
@@ -2068,33 +2001,7 @@ WebrtcVideoConduit::ValidateCodecConfig(const VideoCodecConfig* codecInfo,
     return kMediaConduitMalformedArgument;
   }
 
-  
-  if(send)
-  {
-    MutexAutoLock lock(mCodecMutex);
-
-    codecAppliedAlready = CheckCodecsForMatch(mCurSendCodecConfig,codecInfo);
-  } else {
-    codecAppliedAlready = CheckCodecForMatch(codecInfo);
-  }
-
-  if(codecAppliedAlready)
-  {
-    CSFLogDebug(logTag, "%s Codec %s Already Applied  ", __FUNCTION__, codecInfo->mName.c_str());
-  }
   return kMediaConduitNoError;
-}
-
-void
-WebrtcVideoConduit::DumpCodecDB() const
-{
-  for(std::vector<VideoCodecConfig*>::size_type i=0;i<mRecvCodecList.size();i++)
-  {
-    CSFLogDebug(logTag,"Payload Name: %s", mRecvCodecList[i]->mName.c_str());
-    CSFLogDebug(logTag,"Payload Type: %d", mRecvCodecList[i]->mType);
-    CSFLogDebug(logTag,"Payload Max Frame Size: %d", mRecvCodecList[i]->mEncodingConstraints.maxFs);
-    CSFLogDebug(logTag,"Payload Max Frame Rate: %d", mRecvCodecList[i]->mEncodingConstraints.maxFps);
-  }
 }
 
 void

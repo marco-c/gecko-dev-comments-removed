@@ -346,15 +346,6 @@ private:
                                 webrtc::VideoCodec& cinst);
 
   
-  bool CopyCodecToDB(const VideoCodecConfig* codecInfo);
-
-  
-  
-  bool CheckCodecForMatch(const VideoCodecConfig* codecInfo) const;
-  bool CheckCodecsForMatch(const VideoCodecConfig* curCodecConfig,
-                           const VideoCodecConfig* codecInfo) const;
-
-  
   MediaConduitErrorCode ValidateCodecConfig(const VideoCodecConfig* codecInfo, bool send);
 
   
@@ -388,7 +379,6 @@ private:
 
   int mChannel; 
   int mCapId;   
-  RecvCodecList    mRecvCodecList;
 
   Mutex mCodecMutex; 
   nsAutoPtr<VideoCodecConfig> mCurSendCodecConfig;
