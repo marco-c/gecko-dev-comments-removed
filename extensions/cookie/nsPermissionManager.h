@@ -20,6 +20,10 @@
 #include "nsCOMArray.h"
 #include "nsDataHashtable.h"
 
+namespace mozilla {
+class OriginAttributesPattern;
+}
+
 class nsIPermission;
 class mozIStorageConnection;
 class mozIStorageAsyncStatement;
@@ -199,7 +203,10 @@ public:
 
 
 
-  static void AppClearDataObserverInit();
+  static void ClearOriginDataObserverInit();
+
+  nsresult
+  RemovePermissionsWithAttributes(mozilla::OriginAttributesPattern& aAttrs);
 
 private:
   virtual ~nsPermissionManager();

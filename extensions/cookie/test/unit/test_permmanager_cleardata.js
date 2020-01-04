@@ -4,48 +4,43 @@
 var pm;
 
 
-function createPrincipal(aOrigin, aAppId, aBrowserElement)
+function createPrincipal(aOrigin, aOriginAttributes)
 {
-  var attrs = {appId: aAppId, inBrowser: aBrowserElement};
-  return Services.scriptSecurityManager.createCodebasePrincipal(NetUtil.newURI(aOrigin), attrs);
+  return Services.scriptSecurityManager.createCodebasePrincipal(NetUtil.newURI(aOrigin), aOriginAttributes);
 }
 
 
-function getSubject(aAppId, aBrowserOnly)
+function getData(aPattern)
 {
-  return {
-    appId: aAppId,
-    browserOnly: aBrowserOnly,
-    QueryInterface: XPCOMUtils.generateQI([Ci.mozIApplicationClearPrivateDataParams])
-  };
+  return JSON.stringify(aPattern);
 }
 
 
 
 
-function test(aEntries, aSubject, aResults)
+function test(aEntries, aData, aResults)
 {
   let principals = [];
 
   for (entry of aEntries) {
-    principals.push(createPrincipal(entry.origin, entry.appId, entry.browserElement));
+    principals.push(createPrincipal(entry.origin, entry.originAttributes));
   }
 
   for (principal of principals) {
-    do_check_eq(pm.testPermissionFromPrincipal(principal, "test/webapps-clear"), pm.UNKNOWN_ACTION);
-    pm.addFromPrincipal(principal, "test/webapps-clear", pm.ALLOW_ACTION, pm.EXPIRE_NEVER, 0);
-    do_check_eq(pm.testPermissionFromPrincipal(principal, "test/webapps-clear"), pm.ALLOW_ACTION);
+    do_check_eq(pm.testPermissionFromPrincipal(principal, "test/clear-origin"), pm.UNKNOWN_ACTION);
+    pm.addFromPrincipal(principal, "test/clear-origin", pm.ALLOW_ACTION, pm.EXPIRE_NEVER, 0);
+    do_check_eq(pm.testPermissionFromPrincipal(principal, "test/clear-origin"), pm.ALLOW_ACTION);
   }
 
-  Services.obs.notifyObservers(aSubject, 'webapps-clear-data', null);
+  Services.obs.notifyObservers(null, 'clear-origin-data', aData);
 
   var length = aEntries.length;
   for (let i=0; i<length; ++i) {
-    do_check_eq(pm.testPermissionFromPrincipal(principals[i], 'test/webapps-clear'), aResults[i]);
+    do_check_eq(pm.testPermissionFromPrincipal(principals[i], 'test/clear-origin'), aResults[i]);
 
     
     if (aResults[i] == pm.ALLOW_ACTION) {
-      pm.removeFromPrincipal(principals[i], 'test/webapps-clear');
+      pm.removeFromPrincipal(principals[i], 'test/clear-origin');
     }
   }
 }
@@ -58,16 +53,16 @@ function run_test()
          .getService(Ci.nsIPermissionManager);
 
   let entries = [
-    { origin: 'http://example.com', appId: 1, browserElement: false },
-    { origin: 'http://example.com', appId: 1, browserElement: true },
-    { origin: 'http://example.com', appId: Ci.nsIScriptSecurityManager.NO_APPID, browserElement: false },
-    { origin: 'http://example.com', appId: 2, browserElement: false },
+    { origin: 'http://example.com', originAttributes: { appId: 1 } },
+    { origin: 'http://example.com', originAttributes: { appId: 1, inBrowser: true } },
+    { origin: 'http://example.com', originAttributes: {} },
+    { origin: 'http://example.com', originAttributes: { appId: 2 } },
   ];
 
   
-  test(entries, getSubject(1, false), [ pm.UNKNOWN_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
+  test(entries, getData({appId: 1}), [ pm.UNKNOWN_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
 
   
   
-  test(entries, getSubject(1, true), [ pm.ALLOW_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
+  test(entries, getData({appId: 1, inBrowser: true}), [ pm.ALLOW_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
 }
