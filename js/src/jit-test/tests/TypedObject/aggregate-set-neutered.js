@@ -19,8 +19,9 @@ function main(variant)
 
   assertThrowsInstanceOf(function()
   {
-    line.to = { x: 22, get y() { neuter(buf, variant); return 44; } };
-  }, TypeError, "setting into a neutered buffer is bad mojo");
+    line.to = { x: 22,
+                get y() { detachArrayBuffer(buf, variant); return 44; } };
+  }, TypeError, "setting into a detached buffer is bad mojo");
 }
 
 main("same-data");

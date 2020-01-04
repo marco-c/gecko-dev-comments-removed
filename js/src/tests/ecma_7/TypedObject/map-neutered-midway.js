@@ -6,7 +6,8 @@
 
 var BUGNUMBER = 991981;
 var summary =
-  "Behavior of mapping from an array neutered midway through mapping";
+  "Behavior of mapping from an array whose buffer is detached midway through " +
+  "mapping";
 
 function mapOneDimArrayOfUint8(dataHandling)
 {
@@ -22,10 +23,10 @@ function mapOneDimArrayOfUint8(dataHandling)
     arr.map(function(v)
     {
       if (count++ > 0)
-        neuter(buf, dataHandling);
+        detachArrayBuffer(buf, dataHandling);
       return new FourByteArray();
     });
-  }, TypeError, "mapping of a neutered object worked?");
+  }, TypeError, "mapping of a detached object worked?");
 }
 
 function runTests()

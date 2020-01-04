@@ -5,7 +5,7 @@
 
 let buffer = new ArrayBuffer(32);
 let array  = new Int32Array(buffer);
-neuter(buffer, "change-data");
+detachArrayBuffer(buffer, "change-data");
 
 
 
@@ -34,7 +34,7 @@ assertThrowsInstanceOf(() => {
 }, TypeError);
 
 assertThrowsInstanceOf(() => {
-    array.filter((x) => x);
+    array.filter(POISON);
 }, TypeError);
 
 assertThrowsInstanceOf(() => {
@@ -58,7 +58,7 @@ assertThrowsInstanceOf(() => {
 }, TypeError);
 
 assertThrowsInstanceOf(() => {
-    array.join();
+    array.join(POISON);
 }, TypeError);
 
 assertThrowsInstanceOf(() => {

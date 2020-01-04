@@ -8,8 +8,9 @@ var gTestfile = "set-object-funky-length-neuters.js";
 
 var BUGNUMBER = 991981;
 var summary =
-  "%TypedArray.set(object with funky length property, numeric offset) " +
-  "shouldn't misbehave if the funky length property neuters this typed array";
+  "%TypedArray%.prototype.set(object w/funky length property, offset) " +
+  "shouldn't misbehave if the funky length property detaches this typed " +
+  "array's buffer";
 
 print(BUGNUMBER + ": " + summary);
 
@@ -40,7 +41,7 @@ ctors.forEach(function(TypedArray) {
         9: 0,
         get length()
         {
-          neuter(buf, dataHandling);
+          detachArrayBuffer(buf, dataHandling);
           return 10;
         }
       };

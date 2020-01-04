@@ -13,11 +13,11 @@ function main(variant) {
   var Unit = new StructType({});   
   var buffer = new ArrayBuffer(0); 
   var p = new Unit(buffer);        
-  neuter(buffer, variant);
+  detachArrayBuffer(buffer, variant);
   assertThrowsInstanceOf(() => new Unit(buffer), TypeError,
-                         "Able to instantiate atop neutered buffer");
+                         "Able to instantiate atop detached buffer");
   assertThrowsInstanceOf(() => new Uints(buffer), TypeError,
-                         "Able to instantiate atop neutered buffer");
+                         "Able to instantiate atop detached buffer");
 }
 
 main("same-data");

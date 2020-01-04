@@ -9,7 +9,7 @@ var gTestfile = "ArrayBuffer-slice-arguments-neutering.js";
 var BUGNUMBER = 991981;
 var summary =
   "ArrayBuffer.prototype.slice shouldn't misbehave horribly if " +
-  "index-argument conversion neuters the ArrayBuffer being sliced";
+  "index-argument conversion detaches the ArrayBuffer being sliced";
 
 print(BUGNUMBER + ": " + summary);
 
@@ -25,7 +25,7 @@ function testStart(dataType)
     {
       valueOf: function()
       {
-        neuter(ab, dataType);
+        detachArrayBuffer(ab, dataType);
         gc();
         return 0x800;
       }
@@ -41,7 +41,7 @@ function testStart(dataType)
     ok = true;
   }
   assertEq(ok, true, "start weirdness should have thrown");
-  assertEq(ab.byteLength, 0, "neutering should work for start weirdness");
+  assertEq(ab.byteLength, 0, "detaching should work for start weirdness");
 }
 testStart("change-data");
 testStart("same-data");
@@ -54,7 +54,7 @@ function testEnd(dataType)
     {
       valueOf: function()
       {
-        neuter(ab, dataType);
+        detachArrayBuffer(ab, dataType);
         gc();
         return 0x1000;
       }
@@ -70,7 +70,7 @@ function testEnd(dataType)
     ok = true;
   }
   assertEq(ok, true, "byteLength weirdness should have thrown");
-  assertEq(ab.byteLength, 0, "neutering should work for byteLength weirdness");
+  assertEq(ab.byteLength, 0, "detaching should work for byteLength weirdness");
 }
 testEnd("change-data");
 testEnd("same-data");

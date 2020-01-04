@@ -33,9 +33,12 @@ function test() {
                 assertEq(old_arr.length, size / old_arr.BYTES_PER_ELEMENT);
 
             var copy_arr = deserialize(serialize(old_arr, [ buf ]));
-            assertEq(buf.byteLength, 0, "donor array buffer should be neutered");
-            if (!dataview)
-                assertEq(old_arr.length, 0, "donor typed array should be neutered");
+            assertEq(buf.byteLength, 0,
+                     "donor array buffer should be detached");
+            if (!dataview) {
+                assertEq(old_arr.length, 0,
+                         "donor typed array should be detached");
+            }
             assertEq(copy_arr.buffer.byteLength == size, true);
             if (!dataview)
                 assertEq(copy_arr.length, size / old_arr.BYTES_PER_ELEMENT);
@@ -52,11 +55,17 @@ function test() {
             var old_arr = new ctor(buf);
             var dv = new DataView(buf); 
             var copy_arr = deserialize(serialize(old_arr, [ buf ]));
-            assertEq(buf.byteLength, 0, "donor array buffer should be neutered");
-            assertEq(old_arr.byteLength, 0, "donor typed array should be neutered");
-            if (!dataview)
-                assertEq(old_arr.length, 0, "donor typed array should be neutered");
-            assertEq(dv.byteLength, 0, "all views of donor array buffer should be neutered");
+            assertEq(buf.byteLength, 0,
+                     "donor array buffer should be detached");
+            assertEq(old_arr.byteLength, 0,
+                     "donor typed array should be detached");
+            if (!dataview) {
+                assertEq(old_arr.length, 0,
+                         "donor typed array should be detached");
+            }
+            assertEq(dv.byteLength, 0,
+                     "all views of donor array buffer should have zero " +
+                     "length because their underlying buffer is detached");
 
             buf = null;
             old_arr = null;
@@ -75,6 +84,7 @@ function test() {
             assertEq(viewCopy[0], 2);
         }
 
+        
         
         if (size >= 4) {
             old = new ArrayBuffer(size);

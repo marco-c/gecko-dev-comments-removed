@@ -13,7 +13,7 @@ for (var i = 0; i < ta1.length; i++)
 function q1() { return ta1[NONINLINABLE_AMOUNT - 1]; }
 assertEq(q1(), NONINLINABLE_AMOUNT - 1 + 43);
 assertEq(q1(), NONINLINABLE_AMOUNT - 1 + 43);
-neuter(ab1, "change-data");
+detachArrayBuffer(ab1, "change-data");
 assertEq(q1(), undefined);
 
 
@@ -24,7 +24,7 @@ for (var i = 0; i < ta2.length; i++)
 function q2() { return ta2[NONINLINABLE_AMOUNT - 1]; }
 assertEq(q2(), NONINLINABLE_AMOUNT - 1 + 77);
 assertEq(q2(), NONINLINABLE_AMOUNT - 1 + 77);
-neuter(ab2, "same-data");
+detachArrayBuffer(ab2, "same-data");
 assertEq(q2(), undefined);
 
 
@@ -37,7 +37,7 @@ for (var i = 0; i < ta3.length; i++)
 function q3() { return ta3[INLINABLE_INT8_AMOUNT - 1]; }
 assertEq(q3(), INLINABLE_INT8_AMOUNT - 1 + 13);
 assertEq(q3(), INLINABLE_INT8_AMOUNT - 1 + 13);
-neuter(ab3, "change-data");
+detachArrayBuffer(ab3, "change-data");
 assertEq(q3(), undefined);
 
 
@@ -48,5 +48,5 @@ for (var i = 0; i < ta4.length; i++)
 function q4() { return ta4[INLINABLE_INT8_AMOUNT - 1]; }
 assertEq(q4(), INLINABLE_INT8_AMOUNT - 1 + 17);
 assertEq(q4(), INLINABLE_INT8_AMOUNT - 1 + 17);
-neuter(ab4, "same-data");
+detachArrayBuffer(ab4, "same-data");
 assertEq(q4(), undefined);
