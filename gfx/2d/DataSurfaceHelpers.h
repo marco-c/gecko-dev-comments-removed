@@ -96,6 +96,22 @@ BufferSizeFromStrideAndHeight(int32_t aStride,
 
 
 
+
+
+
+
+
+
+
+size_t
+BufferSizeFromDimensions(int32_t aWidth,
+                         int32_t aHeight,
+                         int32_t aDepth,
+                         int32_t aExtraBytes = 0);
+
+
+
+
 bool
 CopyRect(DataSourceSurface* aSrc, DataSourceSurface* aDest,
          IntRect aSrcRect, IntPoint aDestPoint);
