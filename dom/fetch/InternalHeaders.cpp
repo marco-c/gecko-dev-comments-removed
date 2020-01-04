@@ -153,11 +153,6 @@ InternalHeaders::SetGuard(HeadersGuardEnum aGuard, ErrorResult& aRv)
 {
   
   
-  
-  
-  if (aGuard != HeadersGuardEnum::Immutable && mList.Length() > 0) {
-    aRv.Throw(NS_ERROR_FAILURE);
-  }
   mGuard = aGuard;
 }
 
