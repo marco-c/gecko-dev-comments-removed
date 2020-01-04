@@ -258,7 +258,7 @@ public:
 
 
 
-  int32_t GetChildOffset(Accessible* aChild,
+  int32_t GetChildOffset(const Accessible* aChild,
                          bool aInvalidateAfter = false) const
   {
     int32_t index = GetIndexOf(aChild);

@@ -131,6 +131,12 @@ public:
 
   void Normalize(ETextUnit aUnit);
 
+  
+
+
+
+  bool Crop(Accessible* aContainer);
+
   enum EDirection {
     eBackward,
     eForward
@@ -242,6 +248,14 @@ private:
                     HyperTextAccessible& aContainer, int32_t aOffset,
                     HyperTextAccessible* aStopContainer = nullptr,
                     int32_t aStopOffset = 0);
+
+  
+
+
+
+  Accessible* CommonParent(Accessible* aAcc1, Accessible* aAcc2,
+                           nsTArray<Accessible*>* aParents1, uint32_t* aPos1,
+                           nsTArray<Accessible*>* aParents2, uint32_t* aPos2) const;
 
   RefPtr<HyperTextAccessible> mRoot;
   RefPtr<HyperTextAccessible> mStartContainer;

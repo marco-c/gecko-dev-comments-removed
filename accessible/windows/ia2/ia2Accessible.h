@@ -9,13 +9,13 @@
 
 #include "nsISupports.h"
 
-#include "Accessible2_2.h"
+#include "Accessible2_3.h"
 
 namespace mozilla {
 namespace a11y {
 class Attribute;
 
-class ia2Accessible : public IAccessible2_2
+class ia2Accessible : public IAccessible2_3
 {
 public:
 
@@ -103,6 +103,11 @@ public:
      IUnknown*** targets,
      long* nTargets
   );
+
+  
+  virtual  HRESULT STDMETHODCALLTYPE get_selectionRanges(
+     IA2Range** ranges,
+     long *nRanges);
 
   
   static HRESULT ConvertToIA2Attributes(nsIPersistentProperties* aAttributes,
