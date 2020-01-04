@@ -995,6 +995,11 @@ if (!isContent) {
 
 
 
+if (!isContent) {
+  this.AsyncShutdown.quitApplicationGranted = getPhase("quit-application-granted");
+}
+
+
 if (isContent) {
   this.AsyncShutdown.contentChildShutdown = getPhase("content-child-shutdown");
 }

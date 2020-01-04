@@ -229,6 +229,7 @@ function nsAsyncShutdownService() {
    [
     "profileBeforeChange",
     "profileChangeTeardown",
+    "quitApplicationGranted",
     "sendTelemetry",
 
     
