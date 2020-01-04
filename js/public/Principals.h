@@ -94,7 +94,7 @@ JS_GetSecurityCallbacks(JSContext* cx);
 
 
 extern JS_PUBLIC_API(void)
-JS_SetTrustedPrincipals(JSRuntime* rt, JSPrincipals* prin);
+JS_SetTrustedPrincipals(JSContext* cx, JSPrincipals* prin);
 
 typedef void
 (* JSDestroyPrincipalsOp)(JSPrincipals* principals);
@@ -105,7 +105,7 @@ typedef void
 
 
 extern JS_PUBLIC_API(void)
-JS_InitDestroyPrincipalsCallback(JSRuntime* rt, JSDestroyPrincipalsOp destroyPrincipals);
+JS_InitDestroyPrincipalsCallback(JSContext* cx, JSDestroyPrincipalsOp destroyPrincipals);
 
 
 
@@ -126,7 +126,7 @@ using JSReadPrincipalsOp = bool (*)(JSContext* cx, JSStructuredCloneReader* read
 
 
 extern JS_PUBLIC_API(void)
-JS_InitReadPrincipalsCallback(JSRuntime* rt, JSReadPrincipalsOp read);
+JS_InitReadPrincipalsCallback(JSContext* cx, JSReadPrincipalsOp read);
 
 
 #endif  
