@@ -589,7 +589,7 @@ add_task(function test_clone_readonly()
   
   let stmt = db2.createStatement("INSERT INTO test (name) VALUES (:name)");
   stmt.params.name = "reed";
-  expectError(Cr.NS_ERROR_FILE_READ_ONLY, function() stmt.execute());
+  expectError(Cr.NS_ERROR_FILE_READ_ONLY, () => stmt.execute());
   stmt.finalize();
 
   
@@ -635,7 +635,7 @@ add_task(function test_close_clone_fails()
   calls.forEach(function(methodName) {
     let db = getService()[methodName](getTestDB());
     db.close();
-    expectError(Cr.NS_ERROR_NOT_INITIALIZED, function() db.clone());
+    expectError(Cr.NS_ERROR_NOT_INITIALIZED, () => db.clone());
   });
 });
 
@@ -643,7 +643,7 @@ add_task(function test_memory_clone_fails()
 {
   let db = getService().openSpecialDatabase("memory");
   db.close();
-  expectError(Cr.NS_ERROR_NOT_INITIALIZED, function() db.clone());
+  expectError(Cr.NS_ERROR_NOT_INITIALIZED, () => db.clone());
 });
 
 add_task(function test_clone_copies_functions()
@@ -663,9 +663,9 @@ add_task(function test_clone_copies_functions()
         let db1 = getService()[methodName](getTestDB());
         
         db1[functionMethod](FUNC_NAME, 1, {
-          onFunctionCall: function() 0,
-          onStep: function() 0,
-          onFinal: function() 0,
+          onFunctionCall: () => 0,
+          onStep: () => 0,
+          onFinal: () => 0,
         });
 
         
@@ -693,7 +693,7 @@ add_task(function test_clone_copies_overridden_functions()
     onStep: function() {
       this.called = true;
     },
-    onFinal: function() 0,
+    onFinal: () => 0,
   };
 
   let calls = [
