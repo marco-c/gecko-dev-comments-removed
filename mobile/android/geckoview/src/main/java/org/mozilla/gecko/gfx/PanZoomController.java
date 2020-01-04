@@ -15,10 +15,6 @@ import android.view.View;
 
 public interface PanZoomController {
     
-    
-    public static final float PAN_THRESHOLD = 1 / 16f * GeckoAppShell.getDpi();
-
-    
     public static final float CLICK_THRESHOLD = 1 / 50f * GeckoAppShell.getDpi();
 
     static class Factory {
@@ -31,16 +27,7 @@ public interface PanZoomController {
 
     public boolean onTouchEvent(MotionEvent event);
     public boolean onMotionEvent(MotionEvent event);
-    public boolean onKeyEvent(KeyEvent event);
     public void onMotionEventVelocity(final long aEventTime, final float aSpeedY);
-    public void notifyDefaultActionPrevented(boolean prevented);
-
-    public boolean getRedrawHint();
-    public PointF getVelocityVector();
-
-    public void pageRectUpdated();
-    public void abortPanning();
-    public void abortAnimation();
 
     public void setOverscrollHandler(final Overscroll controller);
 
