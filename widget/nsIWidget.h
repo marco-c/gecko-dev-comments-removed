@@ -31,6 +31,7 @@
 #include "nsIWidgetListener.h"
 #include "FrameMetrics.h"
 #include "Units.h"
+#include "CompositorWidgetProxy.h"
 
 
 class   nsIRollupListener;
@@ -322,7 +323,10 @@ private:
 
 
 
-class nsIWidget : public nsISupports {
+class nsIWidget
+  : public nsISupports,
+    public mozilla::widget::CompositorWidgetProxy
+{
   protected:
     typedef mozilla::dom::TabChild TabChild;
 
@@ -1250,90 +1254,6 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual void CleanupWindowEffects() = 0;
-
-    
-
-
-
-
-
-
-    virtual bool PreRender(LayerManagerComposite* aManager) = 0;
-
-    
-
-
-
-
-
-
-    virtual void PostRender(LayerManagerComposite* aManager) = 0;
-
-    
-
-
-
-
-    virtual void DrawWindowUnderlay(LayerManagerComposite* aManager,
-                                    LayoutDeviceIntRect aRect) = 0;
-
-    
-
-
-
-
-    virtual void DrawWindowOverlay(LayerManagerComposite* aManager,
-                                   LayoutDeviceIntRect aRect) = 0;
-
-    
-
-
-
-
-
-
-
-
-    virtual already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawing() = 0;
-    virtual already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
-                                                                                  mozilla::layers::BufferMode* aBufferMode) {
-      return StartRemoteDrawing();
-    }
-
-    
-
-
-
-
-
-
-    virtual void EndRemoteDrawing() = 0;
-    virtual void EndRemoteDrawingInRegion(mozilla::gfx::DrawTarget* aDrawTarget, LayoutDeviceIntRegion& aInvalidRegion) {
-      EndRemoteDrawing();
-    }
-
-    
-
-
-
-
-
-    virtual void CleanupRemoteDrawing() = 0;
-
-    
-
-
-    virtual already_AddRefed<mozilla::gfx::DrawTarget> CreateBackBufferDrawTarget(mozilla::gfx::DrawTarget* aScreenTarget,
-                                                                                  const LayoutDeviceIntRect& aRect,
-                                                                                  const LayoutDeviceIntRect& aClearRect) = 0;
-
-    
-
-
-
-
-
 
 
     virtual bool InitCompositor(mozilla::layers::Compositor*) { return true; }
@@ -2013,16 +1933,6 @@ public:
 
 
     virtual CompositorBridgeChild* GetRemoteRenderer()
-    { return nullptr; }
-
-    
-
-
-
-
-
-
-    virtual Composer2D* GetComposer2D()
     { return nullptr; }
 
     
