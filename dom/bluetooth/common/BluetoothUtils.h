@@ -100,7 +100,7 @@ UuidToString(const BluetoothUuid& aUuid, nsAString& aString);
 
 
 
-nsresult
+void
 StringToUuid(const nsAString& aString, BluetoothUuid& aUuid);
 
 
