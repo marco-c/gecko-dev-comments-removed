@@ -287,7 +287,7 @@ public:
 
 
 
-  bool HasCachedInheritedStyleData(nsStyleStructID aSID) {
+  bool HasCachedDependentStyleData(nsStyleStructID aSID) {
     return (mBits & nsCachedStyleData::GetBitForSID(aSID)) &&
            GetCachedStyleData(aSID);
   }
