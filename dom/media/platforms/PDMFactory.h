@@ -47,6 +47,7 @@ public:
 private:
   virtual ~PDMFactory();
   void CreatePDMs();
+  void CreateBlankPDM();
   
   bool StartupPDM(PlatformDecoderModule* aPDM);
   
@@ -60,6 +61,7 @@ private:
 
   nsTArray<RefPtr<PlatformDecoderModule>> mCurrentPDMs;
   RefPtr<PlatformDecoderModule> mEMEPDM;
+  RefPtr<PlatformDecoderModule> mBlankPDM;
 
   bool mWMFFailedToLoad = false;
   bool mFFmpegFailedToLoad = false;
