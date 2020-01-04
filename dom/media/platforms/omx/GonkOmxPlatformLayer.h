@@ -153,11 +153,6 @@ public:
 
   nsresult Shutdown() override;
 
-  
-  
-  
-  template<class T> void InitOmxParameter(T* aParam);
-
   static bool FindComponents(const nsACString& aMimeType,
                              nsTArray<ComponentInfo>* aComponents = nullptr);
 
@@ -193,8 +188,6 @@ protected:
   android::IOMX::node_id mNode;
 
   android::OMXClient mOmxClient;
-
-  const TrackInfo* mInfo;
 
   Quirks mQuirks;
 };

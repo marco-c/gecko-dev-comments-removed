@@ -4,19 +4,22 @@
 
 
 
-#include "OmxDataDecoder.h"
 #include "GonkOmxPlatformLayer.h"
-#include "MediaInfo.h"
-#include "ImageContainer.h"
+
+#include <binder/MemoryDealer.h>
+#include <cutils/properties.h>
+#include <media/IOMX.h>
+#include <media/stagefright/MediaCodecList.h>
+#include <utils/List.h>
+
 #include "mozilla/Monitor.h"
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/GrallocTextureClient.h"
 #include "mozilla/layers/ImageBridgeChild.h"
-#include <binder/MemoryDealer.h>
-#include <media/IOMX.h>
-#include <utils/List.h>
-#include <media/stagefright/MediaCodecList.h>
-#include <cutils/properties.h>
+
+#include "ImageContainer.h"
+#include "MediaInfo.h"
+#include "OmxDataDecoder.h"
 
 extern mozilla::LogModule* GetPDMLog();
 
@@ -35,8 +38,6 @@ extern mozilla::LogModule* GetPDMLog();
 using namespace android;
 
 namespace mozilla {
-
-extern void GetPortIndex(nsTArray<uint32_t>& aPortIndex);
 
 
 
@@ -359,7 +360,7 @@ GonkOmxPlatformLayer::AllocateOmxBuffer(OMX_DIRTYPE aType,
   
   OMX_PARAM_PORTDEFINITIONTYPE def;
   nsTArray<uint32_t> portindex;
-  GetPortIndex(portindex);
+  GetOmxPortIndex(portindex);
   for (auto idx : portindex) {
     InitOmxParameter(&def);
     def.nPortIndex = idx;
@@ -570,14 +571,6 @@ GonkOmxPlatformLayer::SendCommand(OMX_COMMANDTYPE aCmd,
                                   OMX_PTR aCmdData)
 {
   return  (OMX_ERRORTYPE)mOmx->sendCommand(mNode, aCmd, aParam1);
-}
-
-template<class T> void
-GonkOmxPlatformLayer::InitOmxParameter(T* aParam)
-{
-  PodZero(aParam);
-  aParam->nSize = sizeof(T);
-  aParam->nVersion.s.nVersionMajor = 1;
 }
 
 bool

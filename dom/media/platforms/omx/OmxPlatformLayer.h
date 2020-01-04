@@ -9,14 +9,15 @@
 
 #include "OMX_Core.h"
 #include "OMX_Types.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/TaskQueue.h"
+
 #include "OmxPromiseLayer.h"
+
+class nsACString;
 
 namespace mozilla {
 
+class TaskQueue;
 class TrackInfo;
-class VideoData;
 
 
 
@@ -32,6 +33,8 @@ public:
   typedef OmxPromiseLayer::BufferData BufferData;
 
   virtual OMX_ERRORTYPE InitOmxToStateLoaded(const TrackInfo* aInfo) = 0;
+
+  OMX_ERRORTYPE Config();
 
   virtual OMX_ERRORTYPE EmptyThisBuffer(BufferData* aData) = 0;
 
@@ -61,6 +64,21 @@ public:
   virtual nsresult Shutdown() = 0;
 
   virtual ~OmxPlatformLayer() {}
+
+  
+  static bool SupportsMimeType(const nsACString& aMimeType);
+
+  
+  static OmxPlatformLayer* Create(OmxDataDecoder* aDataDecoder,
+                                  OmxPromiseLayer* aPromiseLayer,
+                                  TaskQueue* aTaskQueue,
+                                  layers::ImageContainer* aImageContainer);
+
+protected:
+  OmxPlatformLayer() : mInfo(nullptr) {}
+
+  
+  const TrackInfo* mInfo;
 };
 
 }

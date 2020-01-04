@@ -5,7 +5,9 @@
 
 
 #include "OmxDecoderModule.h"
+
 #include "OmxDataDecoder.h"
+#include "OmxPlatformLayer.h"
 
 namespace mozilla {
 
@@ -44,13 +46,7 @@ OmxDecoderModule::DecoderNeedsConversion(const TrackInfo& aConfig) const
 bool
 OmxDecoderModule::SupportsMimeType(const nsACString& aMimeType) const
 {
-  
-  
-  return aMimeType.EqualsLiteral("audio/mp4a-latm") ||
-         aMimeType.EqualsLiteral("video/mp4v-es") ||
-         aMimeType.EqualsLiteral("video/mp4") ||
-         aMimeType.EqualsLiteral("video/3gp") ||
-         aMimeType.EqualsLiteral("video/avc");
+  return OmxPlatformLayer::SupportsMimeType(aMimeType);
 }
 
 }
