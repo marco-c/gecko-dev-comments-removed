@@ -290,6 +290,13 @@ EnumerateGMPStorageDir(const nsACString& aDir, T&& aDirIter)
     return rv;
   }
 
+
+  
+  rv = path->Append(NS_LITERAL_STRING("gmp-fake"));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
   
   rv = path->AppendNative(aDir);
   if (NS_FAILED(rv)) {

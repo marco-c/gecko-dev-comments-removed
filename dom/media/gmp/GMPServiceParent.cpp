@@ -1248,8 +1248,9 @@ GeckoMediaPluginServiceParent::GetNodeId(const nsAString& aOrigin,
     
     
     
+    const uint32_t pbHash = AddToHash(HashString(aGMPName), hash);
     nsCString* salt = nullptr;
-    if (!(salt = mTempNodeIds.Get(hash))) {
+    if (!(salt = mTempNodeIds.Get(pbHash))) {
       
       nsAutoCString newSalt;
       rv = GenerateRandomPathName(newSalt, NodeIdSaltLength);
@@ -1257,7 +1258,7 @@ GeckoMediaPluginServiceParent::GetNodeId(const nsAString& aOrigin,
         return rv;
       }
       salt = new nsCString(newSalt);
-      mTempNodeIds.Put(hash, salt);
+      mTempNodeIds.Put(pbHash, salt);
       mPersistentStorageAllowed.Put(*salt, false);
     }
     aOutId = *salt;
@@ -1269,6 +1270,17 @@ GeckoMediaPluginServiceParent::GetNodeId(const nsAString& aOrigin,
   nsCOMPtr<nsIFile> path; 
   rv = GetStorageDir(getter_AddRefs(path));
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = path->Append(aGMPName);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  rv = path->Create(nsIFile::DIRECTORY_TYPE, 0700);
+  if (rv != NS_ERROR_FILE_ALREADY_EXISTS && NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
@@ -1483,18 +1495,28 @@ private:
 void
 GeckoMediaPluginServiceParent::ClearNodeIdAndPlugin(DirectoryFilter& aFilter)
 {
-  nsresult rv;
-  nsCOMPtr<nsIFile> path;
-
   
-  rv = GetStorageDir(getter_AddRefs(path));
+  nsCOMPtr<nsIFile> path;
+  nsresult rv = GetStorageDir(getter_AddRefs(path));
   if (NS_FAILED(rv)) {
     return;
   }
 
   
-  rv = path->AppendNative(NS_LITERAL_CSTRING("id"));
-  if (NS_FAILED(rv)) {
+  
+  DirectoryEnumerator iter(path, DirectoryEnumerator::DirsOnly);
+  for (nsCOMPtr<nsIFile> pluginDir; (pluginDir = iter.Next()) != nullptr;) {
+    ClearNodeIdAndPlugin(pluginDir, aFilter);
+  }
+}
+
+void
+GeckoMediaPluginServiceParent::ClearNodeIdAndPlugin(nsIFile* aPluginStorageDir,
+                                                    DirectoryFilter& aFilter)
+{
+  
+  nsCOMPtr<nsIFile> path = CloneAndAppend(aPluginStorageDir, NS_LITERAL_STRING("id"));
+  if (!path) {
     return;
   }
 
@@ -1502,6 +1524,8 @@ GeckoMediaPluginServiceParent::ClearNodeIdAndPlugin(DirectoryFilter& aFilter)
   nsTArray<nsCString> nodeIDsToClear;
   DirectoryEnumerator iter(path, DirectoryEnumerator::DirsOnly);
   for (nsCOMPtr<nsIFile> dirEntry; (dirEntry = iter.Next()) != nullptr;) {
+    
+    
     if (!aFilter(dirEntry)) {
       continue;
     }
@@ -1522,24 +1546,19 @@ GeckoMediaPluginServiceParent::ClearNodeIdAndPlugin(DirectoryFilter& aFilter)
   KillPlugins(mPlugins, mMutex, NodeFilter(nodeIDsToClear));
 
   
-  rv = GetStorageDir(getter_AddRefs(path));
-  if (NS_FAILED(rv)) {
+  path = CloneAndAppend(aPluginStorageDir, NS_LITERAL_STRING("storage"));
+  if (!path) {
     return;
   }
 
-  rv = path->AppendNative(NS_LITERAL_CSTRING("storage"));
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  for (size_t i = 0; i < nodeIDsToClear.Length(); i++) {
+  for (const nsCString& nodeId : nodeIDsToClear) {
     nsCOMPtr<nsIFile> dirEntry;
-    rv = path->Clone(getter_AddRefs(dirEntry));
+    nsresult rv = path->Clone(getter_AddRefs(dirEntry));
     if (NS_FAILED(rv)) {
       continue;
     }
 
-    rv = dirEntry->AppendNative(nodeIDsToClear[i]);
+    rv = dirEntry->AppendNative(nodeId);
     if (NS_FAILED(rv)) {
       continue;
     }
@@ -1574,16 +1593,9 @@ GeckoMediaPluginServiceParent::ClearRecentHistoryOnGMPThread(PRTime aSince)
   MOZ_ASSERT(NS_GetCurrentThread() == mGMPThread);
   LOGD(("%s::%s: since=%lld", __CLASS__, __FUNCTION__, (int64_t)aSince));
 
-  nsCOMPtr<nsIFile> storagePath;
-  nsCOMPtr<nsIFile> temp;
-  if (NS_SUCCEEDED(GetStorageDir(getter_AddRefs(temp))) &&
-      NS_SUCCEEDED(temp->AppendNative(NS_LITERAL_CSTRING("storage")))) {
-    storagePath = temp.forget();
-  }
-
   struct MTimeFilter : public DirectoryFilter {
-    explicit MTimeFilter(PRTime aSince, already_AddRefed<nsIFile> aPath)
-      : mSince(aSince), mStoragePath(aPath) {}
+    explicit MTimeFilter(PRTime aSince)
+      : mSince(aSince) {}
 
     
     bool IsModifiedAfter(nsIFile* aPath) {
@@ -1608,29 +1620,31 @@ GeckoMediaPluginServiceParent::ClearRecentHistoryOnGMPThread(PRTime aSince)
       }
 
       nsAutoCString salt;
-      nsresult rv = ReadSalt(aPath, salt);
-      if (NS_FAILED(rv)) {
+      if (NS_FAILED(ReadSalt(aPath, salt))) {
         return false;
       }
 
       
-      if (!mStoragePath) {
+      nsCOMPtr<nsIFile> idDir;
+      if (NS_FAILED(aPath->GetParent(getter_AddRefs(idDir)))) {
         return false;
       }
       
-      nsCOMPtr<nsIFile> path;
-      rv = mStoragePath->Clone(getter_AddRefs(path));
-      if (NS_FAILED(rv)) {
+      nsCOMPtr<nsIFile> temp;
+      if (NS_FAILED(idDir->GetParent(getter_AddRefs(temp)))) {
         return false;
       }
 
-      rv = path->AppendNative(salt);
-      return NS_SUCCEEDED(rv) && IsModifiedAfter(path);
+      
+      if (NS_FAILED(temp->Append(NS_LITERAL_STRING("storage")))) {
+        return false;
+      }
+      
+      return NS_SUCCEEDED(temp->AppendNative(salt)) && IsModifiedAfter(temp);
     }
   private:
     const PRTime mSince;
-    const nsCOMPtr<nsIFile> mStoragePath;
-  } filter(aSince, storagePath.forget());
+  } filter(aSince);
 
   ClearNodeIdAndPlugin(filter);
 
