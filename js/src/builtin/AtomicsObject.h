@@ -7,8 +7,13 @@
 #ifndef builtin_AtomicsObject_h
 #define builtin_AtomicsObject_h
 
-#include "jslock.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/TimeStamp.h"
+
 #include "jsobj.h"
+
+#include "threading/ConditionVariable.h"
+#include "threading/Mutex.h"
 
 namespace js {
 
@@ -45,6 +50,8 @@ int32_t atomics_xchg_asm_callout(wasm::Instance* i, int32_t vt, int32_t offset, 
 
 class FutexRuntime
 {
+    friend class AutoLockFutexAPI;
+
 public:
     static MOZ_MUST_USE bool initialize();
     static void destroy();
@@ -78,7 +85,9 @@ public:
     
     
     
-    MOZ_MUST_USE bool wait(JSContext* cx, double timeout, WaitResult* result);
+    
+    MOZ_MUST_USE bool wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
+                           mozilla::Maybe<mozilla::TimeDuration>& timeout, WaitResult* result);
 
     
     
@@ -123,7 +132,7 @@ public:
     };
 
     
-    PRCondVar* cond_;
+    js::ConditionVariable* cond_;
 
     
     
@@ -133,7 +142,7 @@ public:
     
     
     
-    static mozilla::Atomic<PRLock*> lock_;
+    static mozilla::Atomic<js::Mutex*> lock_;
 
 #ifdef DEBUG
     
