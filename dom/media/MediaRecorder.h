@@ -22,6 +22,7 @@ class ErrorResult;
 class MediaInputPort;
 struct MediaRecorderOptions;
 class MediaStream;
+class GlobalObject;
 
 namespace dom {
 
@@ -77,6 +78,9 @@ public:
   RecordingState State() const { return mState; }
   
   void GetMimeType(nsString &aMimeType);
+
+  static bool IsTypeSupported(GlobalObject& aGlobal, const nsAString& aType);
+  static bool IsTypeSupported(const nsAString& aType);
 
   
   static already_AddRefed<MediaRecorder>
