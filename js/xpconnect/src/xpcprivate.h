@@ -925,8 +925,7 @@ private:
 
 
 
-struct XPCWrappedNativeJSClass;
-extern const XPCWrappedNativeJSClass XPC_WN_NoHelper_JSClass;
+extern const js::Class XPC_WN_NoHelper_JSClass;
 extern const js::Class XPC_WN_NoMods_WithCall_Proto_JSClass;
 extern const js::Class XPC_WN_NoMods_NoCall_Proto_JSClass;
 extern const js::Class XPC_WN_ModsAllowed_WithCall_Proto_JSClass;
@@ -1666,46 +1665,42 @@ public:
 
 
 
-
-
-
-
-
-struct XPCWrappedNativeJSClass
-{
-    js::Class base;
-};
-
 class XPCNativeScriptableShared
 {
 public:
-    const XPCNativeScriptableFlags& GetFlags() const {return mFlags;}
-    const JSClass*                  GetJSClass()
-        {return Jsvalify(&mJSClass.base);}
+    const XPCNativeScriptableFlags& GetFlags() const { return mFlags; }
+
+    const JSClass* GetJSClass() { return Jsvalify(&mJSClass); }
 
     XPCNativeScriptableShared(uint32_t aFlags, char* aName)
         : mFlags(aFlags)
-        {memset(&mJSClass, 0, sizeof(mJSClass));
-         mJSClass.base.name = aName;  
-         MOZ_COUNT_CTOR(XPCNativeScriptableShared);}
+    {
+        memset(&mJSClass, 0, sizeof(mJSClass));
+        mJSClass.name = aName;  
+        MOZ_COUNT_CTOR(XPCNativeScriptableShared);
+    }
 
-    ~XPCNativeScriptableShared()
-        {if (mJSClass.base.name)free((void*)mJSClass.base.name);
-         MOZ_COUNT_DTOR(XPCNativeScriptableShared);}
+    ~XPCNativeScriptableShared() {
+        if (mJSClass.name)
+            free((void*)mJSClass.name);
+        MOZ_COUNT_DTOR(XPCNativeScriptableShared);
+    }
 
-    char* TransferNameOwnership()
-        {char* name=(char*)mJSClass.base.name; mJSClass.base.name = nullptr;
-        return name;}
+    char* TransferNameOwnership() {
+        char* name = (char*)mJSClass.name;
+        mJSClass.name = nullptr;
+        return name;
+    }
 
     void PopulateJSClass();
 
-    void Mark()       {mFlags.Mark();}
-    void Unmark()     {mFlags.Unmark();}
-    bool IsMarked() const {return mFlags.IsMarked();}
+    void Mark()   { mFlags.Mark(); }
+    void Unmark() { mFlags.Unmark(); }
+    bool IsMarked() const { return mFlags.IsMarked(); }
 
 private:
     XPCNativeScriptableFlags mFlags;
-    XPCWrappedNativeJSClass  mJSClass;
+    js::Class mJSClass;
 };
 
 
