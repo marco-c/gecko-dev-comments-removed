@@ -925,5 +925,8 @@ pref("dom.presentation.discovery.enabled", true);
 
 pref("dom.audiochannel.audioCompeting", true);
 
+pref("dom.audiochannel.mediaControl", false);
+
+
 
 pref("media.useAudioChannelAPI", true);
