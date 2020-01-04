@@ -1,0 +1,9 @@
+
+
+var g = newGlobal();
+var dbg = new Debugger(g);
+dbg.onNewGlobalObject = function () {
+  dbg.onNewGlobalObject = function () { throw "yadda"; };
+  newGlobal();
+}
+newGlobal();
