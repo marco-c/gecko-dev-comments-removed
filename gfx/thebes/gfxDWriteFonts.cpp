@@ -462,7 +462,7 @@ gfxDWriteFont::SetupCairoFont(DrawTarget* aDrawTarget)
         
         return false;
     }
-    cairo_set_scaled_font(gfxContext::RefCairo(aDrawTarget), scaledFont);
+    cairo_set_scaled_font(gfxFont::RefCairo(aDrawTarget), scaledFont);
     return true;
 }
 
