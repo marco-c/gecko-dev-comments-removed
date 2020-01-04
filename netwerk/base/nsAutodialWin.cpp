@@ -14,6 +14,7 @@
 #include "nsAutodialWin.h"
 #include "mozilla/Logging.h"
 #include "nsWindowsHelpers.h"
+#include "mozilla/Telemetry.h"
 
 #define AUTODIAL_DEFAULT AUTODIAL_NEVER
 
@@ -188,6 +189,9 @@ int nsAutodial::QueryAutodialBehavior()
 }
 
 
+static bool reportedAutoDial = false;
+
+
 
 
 
@@ -267,6 +271,10 @@ nsresult nsAutodial::DialDefault(const char16_t* hostName)
                 return NS_ERROR_FAILURE;    
             }
 
+            if (!reportedAutoDial) {
+                reportedAutoDial = true;
+                mozilla::Telemetry::Accumulate(mozilla::Telemetry::NETWORK_AUTODIAL, true);
+            }
             LOGD(("Autodial: RAS dialup connection successful."));
         }
 
@@ -298,6 +306,10 @@ nsresult nsAutodial::DialDefault(const char16_t* hostName)
                 return NS_ERROR_FAILURE;    
             }
 
+            if (!reportedAutoDial) {
+                reportedAutoDial = true;
+                mozilla::Telemetry::Accumulate(mozilla::Telemetry::NETWORK_AUTODIAL, true);
+            }
             LOGD(("Autodial: RAS dialup connection successful."));
         }
     }
