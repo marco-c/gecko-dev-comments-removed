@@ -192,19 +192,6 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
 }
 
 static void
-MarkParentsAsHavingDirtyDescendants(Element* aElement)
-{
-  nsINode* cur = aElement;
-  while ((cur = cur->GetParentNode())) {
-    if (cur->HasDirtyDescendantsForServo()) {
-      break;
-    }
-
-    cur->SetHasDirtyDescendantsForServo();
-  }
-}
-
-static void
 MarkChildrenAsDirtyForServo(nsIContent* aContent)
 {
   FlattenedChildIterator it(aContent);
@@ -263,17 +250,17 @@ ServoRestyleManager::NoteRestyleHint(Element* aElement, nsRestyleHint aHint)
   
   if (aHint & (eRestyle_Self | eRestyle_Subtree)) {
     aElement->SetIsDirtyForServo();
-    MarkParentsAsHavingDirtyDescendants(aElement);
+    aElement->MarkAncestorsAsHavingDirtyDescendantsForServo();
   
   
   
   } else if (aHint & eRestyle_SomeDescendants) {
     MarkChildrenAsDirtyForServo(aElement);
-    MarkParentsAsHavingDirtyDescendants(aElement);
+    aElement->MarkAncestorsAsHavingDirtyDescendantsForServo();
   }
 
   if (aHint & eRestyle_LaterSiblings) {
-    MarkParentsAsHavingDirtyDescendants(aElement);
+    aElement->MarkAncestorsAsHavingDirtyDescendantsForServo();
     for (nsIContent* cur = aElement->GetNextSibling(); cur;
          cur = cur->GetNextSibling()) {
       cur->SetIsDirtyForServo();
