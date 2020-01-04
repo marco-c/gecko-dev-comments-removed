@@ -3760,7 +3760,7 @@ AsyncPanZoomController::ResetTouchInputState()
   CancelAnimationAndGestureState();
   
   
-  if (TouchBlockState* block = CurrentTouchBlock()) {
+  if (TouchBlockState* block = CurrentInputBlock()->AsTouchBlock()) {
     block->GetOverscrollHandoffChain()->ClearOverscroll();
   }
 }
