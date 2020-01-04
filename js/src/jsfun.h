@@ -640,11 +640,19 @@ NewScriptedFunction(ExclusiveContext* cx, unsigned nargs, JSFunction::Flags flag
 
 
 
+
+
+
+enum NewFunctionProtoHandling {
+    NewFunctionClassProto,
+    NewFunctionGivenProto
+};
 extern JSFunction*
 NewFunctionWithProto(ExclusiveContext* cx, JSNative native, unsigned nargs,
                      JSFunction::Flags flags, HandleObject enclosingDynamicScope, HandleAtom atom,
                      HandleObject proto, gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
-                     NewObjectKind newKind = GenericObject);
+                     NewObjectKind newKind = GenericObject,
+                     NewFunctionProtoHandling protoHandling = NewFunctionClassProto);
 
 extern JSAtom*
 IdToFunctionName(JSContext* cx, HandleId id);
