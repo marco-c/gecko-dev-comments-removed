@@ -7970,6 +7970,12 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
   cleanDirectories: Task.async(function*() {
+
+    
+    if (!(yield OS.File.exists(this._baseDir.path))) {
+      return;
+    }
+
     let iterator;
     try {
       iterator = new OS.File.DirectoryIterator(this._baseDir.path);
