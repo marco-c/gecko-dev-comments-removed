@@ -1006,6 +1006,17 @@ NeckoParent::OfflineNotification(nsISupports *aSubject)
 
   }
 
+  
+  
+  if (!UsingNeckoIPCSecurity()) {
+    bool offline = false;
+    gIOService->IsAppOffline(targetAppId, &offline);
+    if (!SendAppOfflineStatus(targetAppId, offline)) {
+      printf_stderr("NeckoParent: "
+                    "SendAppOfflineStatus failed for targetAppId: %u\n", targetAppId);
+    }
+  }
+
   return NS_OK;
 }
 
