@@ -2476,6 +2476,15 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
     }
 
     
+    nsAutoCString acceptHeader;
+    GetAuthorRequestHeaderValue("accept", acceptHeader);
+    if (acceptHeader.IsVoid()) {
+      httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Accept"),
+                                    NS_LITERAL_CSTRING("*/*"),
+                                    false);
+    }
+
+    
     
     
     
@@ -3514,10 +3523,10 @@ XMLHttpRequestMainThread::ShouldBlockAuthPrompt()
   
   
 
-  for (RequestHeader& requestHeader : mAuthorRequestHeaders) {
-    if (requestHeader.name.EqualsLiteral("authorization")) {
-      return true;
-    }
+  nsAutoCString contentType;
+  GetAuthorRequestHeaderValue("authorization", contentType);
+  if (!contentType.IsVoid()) {
+    return true;
   }
 
   nsCOMPtr<nsIURI> uri;
