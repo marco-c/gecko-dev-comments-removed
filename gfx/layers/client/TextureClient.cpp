@@ -363,6 +363,24 @@ TextureClient::Lock(OpenMode aMode)
   mIsLocked = mData->Lock(aMode, mReleaseFenceHandle.IsValid() ? &mReleaseFenceHandle : nullptr);
   mOpenMode = aMode;
 
+  auto format = GetFormat();
+  if (mIsLocked && CanExposeDrawTarget() &&
+      aMode == OpenMode::OPEN_READ_WRITE &&
+      NS_IsMainThread() &&
+      
+      
+      (format == SurfaceFormat::A8R8G8B8_UINT32 ||
+      format == SurfaceFormat::X8R8G8B8_UINT32 ||
+      format == SurfaceFormat::A8 ||
+      format == SurfaceFormat::R5G6B5_UINT16)) {
+    if (!BorrowDrawTarget()) {
+      
+      
+      Unlock();
+      return false;
+    }
+  }
+
   return mIsLocked;
 }
 
@@ -427,6 +445,9 @@ TextureClient::UpdateFromSurface(gfx::SourceSurface* aSurface)
   MOZ_ASSERT(IsValid());
   MOZ_ASSERT(mIsLocked);
   MOZ_ASSERT(aSurface);
+  
+  
+  MOZ_ASSERT(!mBorrowedDrawTarget);
 
   
   
