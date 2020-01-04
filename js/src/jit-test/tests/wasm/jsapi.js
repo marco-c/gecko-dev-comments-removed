@@ -195,3 +195,18 @@ const tbl1 = new Table({initial:1});
 assertEq(typeof tbl1, "object");
 assertEq(String(tbl1), "[object WebAssembly.Table]");
 assertEq(Object.getPrototypeOf(tbl1), tableProto);
+
+
+const lengthDesc = Object.getOwnPropertyDescriptor(tableProto, 'length');
+assertEq(typeof lengthDesc.get, "function");
+assertEq(lengthDesc.set, undefined);
+assertEq(lengthDesc.enumerable, false);
+assertEq(lengthDesc.configurable, true);
+
+
+const lengthGetter = lengthDesc.get;
+assertErrorMessage(() => lengthGetter.call(), TypeError, /called on incompatible undefined/);
+assertErrorMessage(() => lengthGetter.call({}), TypeError, /called on incompatible Object/);
+assertEq(typeof lengthGetter.call(tbl1), "number");
+assertEq(lengthGetter.call(tbl1), 1);
+
