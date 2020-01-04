@@ -700,6 +700,9 @@ def keyFromSpecification(specification):
 def main(output, inputPath):
     with open(inputPath) as configStream:
         output.write(keyFromSpecification(configStream.read().strip()).toPEM())
+    
+    
+    output.force_update = True
 
 
 

@@ -589,6 +589,9 @@ class Certificate:
 def main(output, inputPath):
     with open(inputPath) as configStream:
         output.write(Certificate(configStream).toPEM())
+    
+    
+    output.force_update = True
 
 
 
