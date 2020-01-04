@@ -602,7 +602,7 @@ nsWSRunObject::AdjustWhitespace()
 
 
 
-already_AddRefed<nsINode>
+nsINode*
 nsWSRunObject::GetWSBoundingParent()
 {
   NS_ENSURE_TRUE(mNode, nullptr);
@@ -614,7 +614,7 @@ nsWSRunObject::GetWSBoundingParent()
     }
     wsBoundingParent = parent;
   }
-  return wsBoundingParent.forget();
+  return wsBoundingParent;
 }
 
 nsresult
@@ -1763,7 +1763,7 @@ nsWSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
         rightCheck = true;
       }
       if ((aRun->mRightType & WSType::block) &&
-          IsBlockNode(nsCOMPtr<nsINode>(GetWSBoundingParent()))) {
+          IsBlockNode(GetWSBoundingParent())) {
         
         
         

@@ -330,7 +330,7 @@ public:
   }
 
   
-  nsCOMPtr<nsIEventTarget> GetSTSThread() {
+  nsIEventTarget* GetSTSThread() {
     PC_AUTO_ENTER_API_CALL_NO_CHECK();
     return mSTSThread;
   }

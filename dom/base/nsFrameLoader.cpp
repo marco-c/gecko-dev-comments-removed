@@ -1348,9 +1348,9 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   
   
   SetTreeOwnerAndChromeEventHandlerOnDocshellTree(ourDocshell, otherOwner,
-    ourType == nsIDocShellTreeItem::typeContent ? otherChromeEventHandler : nullptr);
+    ourType == nsIDocShellTreeItem::typeContent ? otherChromeEventHandler.get() : nullptr);
   SetTreeOwnerAndChromeEventHandlerOnDocshellTree(otherDocshell, ourOwner,
-    ourType == nsIDocShellTreeItem::typeContent ? ourChromeEventHandler : nullptr);
+    ourType == nsIDocShellTreeItem::typeContent ? ourChromeEventHandler.get() : nullptr);
 
   
   

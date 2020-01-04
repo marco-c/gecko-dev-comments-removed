@@ -304,7 +304,7 @@ class MOZ_STACK_CLASS nsWSRunObject
 
 
 
-    already_AddRefed<nsINode> GetWSBoundingParent();
+    nsINode* GetWSBoundingParent();
 
     nsresult GetWSNodes();
     void     GetRuns();

@@ -2551,8 +2551,8 @@ nsHTMLEditor::CreateElementWithDefaults(const nsAString& aTagName)
   
 
   
-  nsCOMPtr<Element> newElement =
-    CreateHTMLContent(nsCOMPtr<nsIAtom>(NS_Atomize(realTagName)));
+  nsCOMPtr<nsIAtom> realTagAtom = NS_Atomize(realTagName);
+  nsCOMPtr<Element> newElement = CreateHTMLContent(realTagAtom);
   if (!newElement) {
     return nullptr;
   }
