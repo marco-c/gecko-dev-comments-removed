@@ -149,6 +149,8 @@ JS::TraceIncomingCCWs(JSTracer* trc, const JS::CompartmentSet& compartments)
               case CrossCompartmentKey::DebuggerObject:
               case CrossCompartmentKey::DebuggerSource:
               case CrossCompartmentKey::DebuggerEnvironment:
+              case CrossCompartmentKey::DebuggerWasmScript:
+              case CrossCompartmentKey::DebuggerWasmSource:
                 obj = static_cast<JSObject*>(key.wrapped);
                 
                 
