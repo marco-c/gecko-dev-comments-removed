@@ -120,6 +120,11 @@ public class BookmarksListView extends HomeListView
             position--;
         }
 
+        
+        if (adapter.getOpenFolderType() == BookmarksListAdapter.FolderType.SCREENSHOTS) {
+            return false;
+        }
+
         return super.onItemLongClick(parent, view, position, id);
     }
 
