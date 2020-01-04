@@ -15,6 +15,10 @@
 
 @class mozNotificationCenterDelegate;
 
+#if !defined(MAC_OS_X_VERSION_10_8) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_8)
+typedef NSInteger NSUserNotificationActivationType;
+#endif
+
 namespace mozilla {
 
 class OSXNotificationInfo;
@@ -33,7 +37,8 @@ public:
 
   nsresult Init();
   void CloseAlertCocoaString(NSString *aAlertName);
-  void OnClick(NSString *aAlertName);
+  void OnActivate(NSString *aAlertName, NSUserNotificationActivationType aActivationType,
+                  unsigned long long aAdditionalActionIndex);
   void ShowPendingNotification(OSXNotificationInfo *osxni);
 
 protected:
