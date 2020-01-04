@@ -1443,7 +1443,13 @@ class ADBDevice(ADBCommand):
                             
                             self.shell_output('mkdir %s' % name,
                                               timeout=timeout, root=root)
-        self.shell_output('mkdir %s' % path, timeout=timeout, root=root)
+
+        
+        
+        
+        
+        if not parents or not self.is_dir(path, root=root):
+            self.shell_output('mkdir %s' % path, timeout=timeout, root=root)
         if not self.is_dir(path, timeout=timeout, root=root):
             raise ADBError('mkdir %s Failed' % path)
 
