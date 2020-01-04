@@ -1060,6 +1060,7 @@ public:
     mContainerLayer(aContainerLayer),
     mContainerBounds(aContainerBounds),
     mContainerScrollClip(aContainerScrollClip),
+    mScrollClipForPerspectiveChild(aParameters.mScrollClipForPerspectiveChild),
     mParameters(aParameters),
     mPaintedLayerDataTree(*this, aBackgroundColor),
     mFlattenToSingleLayer(aFlattenToSingleLayer)
@@ -1365,6 +1366,7 @@ protected:
   ContainerLayer*                  mContainerLayer;
   nsRect                           mContainerBounds;
   const DisplayItemScrollClip*     mContainerScrollClip;
+  const DisplayItemScrollClip*     mScrollClipForPerspectiveChild;
 #ifdef DEBUG
   nsRect                           mAccumulatedChildBounds;
 #endif
@@ -3941,6 +3943,22 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         continue;
       }
 
+      if (mScrollClipForPerspectiveChild) {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(itemType == nsDisplayItem::TYPE_TRANSFORM);
+        MOZ_ASSERT(!itemScrollClip);
+        MOZ_ASSERT(!agrScrollClip);
+        MOZ_ASSERT(DisplayItemScrollClip::IsAncestor(mContainerScrollClip,
+                                                      mScrollClipForPerspectiveChild));
+        itemScrollClip = mScrollClipForPerspectiveChild;
+        agrScrollClip = mScrollClipForPerspectiveChild;
+      }
+
       
       
       bool mayDrawOutOfOrder = itemType == nsDisplayItem::TYPE_TRANSFORM &&
@@ -3994,6 +4012,21 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
       mParameters.mBackgroundColor = uniformColor;
       mParameters.mScrollClip = agrScrollClip;
+      mParameters.mScrollClipForPerspectiveChild = nullptr;
+
+      if (itemType == nsDisplayItem::TYPE_PERSPECTIVE) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        mParameters.mScrollClipForPerspectiveChild = itemScrollClip;
+      }
 
       
       
