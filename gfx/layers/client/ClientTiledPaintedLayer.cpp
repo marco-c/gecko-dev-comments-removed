@@ -300,12 +300,14 @@ ClientTiledPaintedLayer::RenderHighPrecision(nsIntRegion& aInvalidRegion,
 {
   
   
-  if (aInvalidRegion.IsEmpty() || mPaintData.mLowPrecisionPaintCount != 0) {
+  if (mPaintData.mLowPrecisionPaintCount != 0) {
     return false;
   }
 
   
-  if (UseProgressiveDraw() &&
+  
+  if (!aInvalidRegion.IsEmpty() &&
+      UseProgressiveDraw() &&
       mContentClient->GetTiledBuffer()->GetFrameResolution() == mPaintData.mResolution) {
     
     
@@ -322,6 +324,7 @@ ClientTiledPaintedLayer::RenderHighPrecision(nsIntRegion& aInvalidRegion,
                       oldValidRegion, &mPaintData, aCallback, aCallbackData);
   }
 
+  
   
 
   mValidRegion = aVisibleRegion;
