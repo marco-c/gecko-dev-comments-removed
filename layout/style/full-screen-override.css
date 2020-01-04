@@ -22,14 +22,5 @@
   transform: initial !important;
   transform-style: initial !important;
   
+  will-change: initial !important;
 }
-
-
-
-
-@supports (will-change: initial) {
-  *|*:-moz-full-screen-ancestor {
-    will-change: initial !important;
-  }
-}
-
