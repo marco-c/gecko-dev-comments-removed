@@ -29,7 +29,7 @@ if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
   
   
   
-  EXPECTED_REFLOWS.push("rect@chrome://browser/content/browser.js|" +
+  EXPECTED_REFLOWS.push("TabsInTitlebar._update/rect@chrome://browser/content/browser.js|" +
                           "TabsInTitlebar._update@chrome://browser/content/browser.js|" +
                           "updateAppearance@chrome://browser/content/browser.js|" +
                           "handleEvent@chrome://browser/content/tabbrowser.xml|");
