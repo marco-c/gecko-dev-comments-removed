@@ -22,6 +22,26 @@ registerCleanupFunction(() => {
 
 
 
+
+function openRDM(tab = gBrowser.selectedTab) {
+  return new Promise(resolve => {
+    let manager = ResponsiveUI.ResponsiveUIManager;
+    document.getElementById("Tools:ResponsiveUI").doCommand();
+    executeSoon(() => {
+      let rdm = manager.getResponsiveUIForTab(tab);
+      rdm.stack.setAttribute("notransition", "true");
+      registerCleanupFunction(function() {
+        rdm.stack.removeAttribute("notransition");
+      });
+      resolve({rdm, manager});
+    });
+  });
+}
+
+
+
+
+
 var openInspector = Task.async(function*() {
   info("Opening the inspector");
   let target = TargetFactory.forTab(gBrowser.selectedTab);
@@ -130,7 +150,6 @@ function openRuleView() {
 
 
 
-
 var addTab = Task.async(function* (url) {
   info("Adding a new tab with URL: '" + url + "'");
 
@@ -216,3 +235,36 @@ function waitForDocLoadComplete(aBrowser=gBrowser) {
   info("Waiting for browser load");
   return deferred.promise;
 }
+
+
+
+
+
+
+
+
+
+function getNodeFront(selector, {walker}) {
+  if (selector._form) {
+    return selector;
+  }
+  return walker.querySelector(walker.rootNode, selector);
+}
+
+
+
+
+
+
+
+
+
+
+
+var selectNode = Task.async(function*(selector, inspector, reason = "test") {
+  info("Selecting the node for '" + selector + "'");
+  let nodeFront = yield getNodeFront(selector, inspector);
+  let updated = inspector.once("inspector-updated");
+  inspector.selection.setNodeFront(nodeFront, reason);
+  yield updated;
+});

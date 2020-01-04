@@ -32,10 +32,6 @@ loader.lazyGetter(this, "clipboardHelper", () => {
 
 loader.lazyImporter(this, "CommandUtils", "resource://devtools/client/shared/DeveloperToolbar.jsm");
 
-const LAYOUT_CHANGE_TIMER = 250;
-
-
-
 
 
 
@@ -90,7 +86,6 @@ function InspectorPanel(iframeWindow, toolbox) {
   this.onBeforeNewSelection = this.onBeforeNewSelection.bind(this);
   this.onDetached = this.onDetached.bind(this);
   this.onToolboxHostChanged = this.onToolboxHostChanged.bind(this);
-  this.scheduleLayoutChange = this.scheduleLayoutChange.bind(this);
   this.onPaneToggleButtonClicked = this.onPaneToggleButtonClicked.bind(this);
   this._onMarkupFrameLoad = this._onMarkupFrameLoad.bind(this);
 
@@ -170,9 +165,6 @@ InspectorPanel.prototype = {
     this._toolbox.on("host-changed", this.onToolboxHostChanged);
 
     if (this.target.isLocalTab) {
-      this.browser = this.target.tab.linkedBrowser;
-      this.browser.addEventListener("resize", this.scheduleLayoutChange, true);
-
       
       
       
@@ -469,8 +461,6 @@ InspectorPanel.prototype = {
       return;
     }
 
-    this.cancelLayoutChange();
-
     
     
     let selection = this.selection.nodeFront;
@@ -570,7 +560,6 @@ InspectorPanel.prototype = {
 
 
   onDetached: function(event, parentNode) {
-    this.cancelLayoutChange();
     this.breadcrumbs.cutAfter(this.breadcrumbs.indexOf(parentNode));
     this.selection.setNodeFront(parentNode ? parentNode : this._defaultNode, "detached");
   },
@@ -589,12 +578,6 @@ InspectorPanel.prototype = {
     }
 
     this.cancelUpdate();
-    this.cancelLayoutChange();
-
-    if (this.browser) {
-      this.browser.removeEventListener("resize", this.scheduleLayoutChange, true);
-      this.browser = null;
-    }
 
     this.target.off("will-navigate", this._onBeforeNavigate);
 
@@ -1392,41 +1375,5 @@ InspectorPanel.prototype = {
     this.inspector.resolveRelativeURL(link, this.selection.nodeFront).then(url => {
       clipboardHelper.copyString(url);
     }, console.error);
-  },
-
-  
-
-
-
-  immediateLayoutChange: function() {
-    this.emit("layout-change");
-  },
-
-  
-
-
-
-  scheduleLayoutChange: function(event) {
-    
-    if (this.browser.contentWindow === event.target) {
-      if (this._timer) {
-        return null;
-      }
-      this._timer = this.panelWin.setTimeout(() => {
-        this.emit("layout-change");
-        this._timer = null;
-      }, LAYOUT_CHANGE_TIMER);
-    }
-  },
-
-  
-
-
-
-  cancelLayoutChange: function() {
-    if (this._timer) {
-      this.panelWin.clearTimeout(this._timer);
-      delete this._timer;
-    }
   }
 };

@@ -27,7 +27,7 @@
 const {Ci, Cu} = require("chrome");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 const protocol = require("devtools/server/protocol");
-const {method, Arg, RetVal, types} = protocol;
+const {method, Arg} = protocol;
 const events = require("sdk/event/core");
 const Heritage = require("sdk/core/heritage");
 const {setTimeout, clearTimeout} = require("sdk/timers");
@@ -48,7 +48,7 @@ var ReflowActor = exports.ReflowActor = protocol.ActorClass({
 
 
 
-    "reflows" : {
+    "reflows": {
       type: "reflows",
       reflows: Arg(0, "array:json")
     }
@@ -136,42 +136,86 @@ exports.ReflowFront = protocol.FrontClass(ReflowActor, {
 
 
 
+
 function Observable(tabActor, callback) {
   this.tabActor = tabActor;
   this.callback = callback;
+
+  this._onWindowReady = this._onWindowReady.bind(this);
+  this._onWindowDestroyed = this._onWindowDestroyed.bind(this);
+
+  events.on(this.tabActor, "window-ready", this._onWindowReady);
+  events.on(this.tabActor, "window-destroyed", this._onWindowDestroyed);
 }
 
 Observable.prototype = {
   
 
 
-  observing: false,
+  isObserving: false,
+
+  
+
+
+  destroy: function() {
+    if (this.isDestroyed) {
+      return;
+    }
+    this.isDestroyed = true;
+
+    this.stop();
+
+    events.off(this.tabActor, "window-ready", this._onWindowReady);
+    events.off(this.tabActor, "window-destroyed", this._onWindowDestroyed);
+
+    this.callback = null;
+    this.tabActor = null;
+  },
 
   
 
 
   start: function() {
-    if (!this.observing) {
-      this._start();
-      this.observing = true;
+    if (this.isObserving) {
+      return;
     }
-  },
+    this.isObserving = true;
 
-  _start: function() {
-    
+    this._startListeners(this.tabActor.windows);
   },
 
   
 
 
   stop: function() {
-    if (this.observing) {
-      this._stop();
-      this.observing = false;
+    if (!this.isObserving) {
+      return;
+    }
+    this.isObserving = false;
+
+    if (this.tabActor.attached && this.tabActor.docShell) {
+      
+      this._stopListeners(this.tabActor.windows);
     }
   },
 
-  _stop: function() {
+  _onWindowReady: function({window}) {
+    if (this.isObserving) {
+      this._startListeners([window]);
+    }
+  },
+
+  _onWindowDestroyed: function({window}) {
+    if (this.isObserving) {
+      this._stopListeners([window]);
+    }
+  },
+
+  _startListeners: function(windows) {
+    
+  },
+
+  _stopListeners: function(windows) {
     
   },
 
@@ -179,16 +223,7 @@ Observable.prototype = {
 
 
   notifyCallback: function(...args) {
-    this.observing && this.callback && this.callback.apply(null, args);
-  },
-
-  
-
-
-  destroy: function() {
-    this.stop();
-    this.callback = null;
-    this.tabActor = null;
+    this.isObserving && this.callback && this.callback.apply(null, args);
   }
 };
 
@@ -212,7 +247,8 @@ exports.setIgnoreLayoutChanges = function(ignore, syncReflowNode) {
     let forceSyncReflow = syncReflowNode.offsetWidth;
   }
   gIgnoreLayoutChanges = ignore;
-}
+};
+
 
 
 
@@ -234,22 +270,24 @@ exports.setIgnoreLayoutChanges = function(ignore, syncReflowNode) {
 
 
 function LayoutChangesObserver(tabActor) {
-  Observable.call(this, tabActor);
+  this.tabActor = tabActor;
 
   this._startEventLoop = this._startEventLoop.bind(this);
+  this._onReflow = this._onReflow.bind(this);
+  this._onResize = this._onResize.bind(this);
 
   
   
   
-  this._onReflow = this._onReflow.bind(this);
   this.reflowObserver = new ReflowObserver(this.tabActor, this._onReflow);
+  this.resizeObserver = new WindowResizeObserver(this.tabActor, this._onResize);
 
   EventEmitter.decorate(this);
 }
 
 exports.LayoutChangesObserver = LayoutChangesObserver;
 
-LayoutChangesObserver.prototype = Heritage.extend(Observable.prototype, {
+LayoutChangesObserver.prototype = {
   
 
 
@@ -264,22 +302,45 @@ LayoutChangesObserver.prototype = Heritage.extend(Observable.prototype, {
 
 
   destroy: function() {
+    this.isObserving = false;
+
     this.reflowObserver.destroy();
     this.reflows = null;
 
-    Observable.prototype.destroy.call(this);
+    this.resizeObserver.destroy();
+    this.hasResized = false;
+
+    this.tabActor = null;
   },
 
-  _start: function() {
+  start: function() {
+    if (this.isObserving) {
+      return;
+    }
+    this.isObserving = true;
+
     this.reflows = [];
+    this.hasResized = false;
+
     this._startEventLoop();
+
     this.reflowObserver.start();
+    this.resizeObserver.start();
   },
 
-  _stop: function() {
+  stop: function() {
+    if (!this.isObserving) {
+      return;
+    }
+    this.isObserving = false;
+
     this._stopEventLoop();
+
     this.reflows = [];
+    this.hasResized = false;
+
     this.reflowObserver.stop();
+    this.resizeObserver.stop();
   },
 
   
@@ -290,7 +351,7 @@ LayoutChangesObserver.prototype = Heritage.extend(Observable.prototype, {
   _startEventLoop: function() {
     
     
-    if (!this.tabActor.attached) {
+    if (!this.tabActor || !this.tabActor.attached) {
       return;
     }
 
@@ -299,6 +360,13 @@ LayoutChangesObserver.prototype = Heritage.extend(Observable.prototype, {
       this.emit("reflows", this.reflows);
       this.reflows = [];
     }
+
+    
+    if (this.hasResized) {
+      this.emit("resize");
+      this.hasResized = false;
+    }
+
     this.eventLoopTimer = this._setTimeout(this._startEventLoop,
       this.EVENT_BATCHING_DELAY);
   },
@@ -335,8 +403,21 @@ LayoutChangesObserver.prototype = Heritage.extend(Observable.prototype, {
       end: end,
       isInterruptible: isInterruptible
     });
+  },
+
+  
+
+
+
+
+  _onResize: function() {
+    if (gIgnoreLayoutChanges) {
+      return;
+    }
+
+    this.hasResized = true;
   }
-});
+};
 
 
 
@@ -355,12 +436,13 @@ function getLayoutChangesObserver(tabActor) {
   let obs = new LayoutChangesObserver(tabActor);
   observedWindows.set(tabActor, {
     observer: obs,
-    refCounting: 1 
-                   
+    
+    
+    refCounting: 1
   });
   obs.start();
   return obs;
-};
+}
 exports.getLayoutChangesObserver = getLayoutChangesObserver;
 
 
@@ -380,9 +462,8 @@ function releaseLayoutChangesObserver(tabActor) {
     observerData.observer.destroy();
     observedWindows.delete(tabActor);
   }
-};
+}
 exports.releaseLayoutChangesObserver = releaseLayoutChangesObserver;
-
 
 
 
@@ -392,39 +473,11 @@ exports.releaseLayoutChangesObserver = releaseLayoutChangesObserver;
 
 function ReflowObserver(tabActor, callback) {
   Observable.call(this, tabActor, callback);
-
-  this._onWindowReady = this._onWindowReady.bind(this);
-  events.on(this.tabActor, "window-ready", this._onWindowReady);
-  this._onWindowDestroyed = this._onWindowDestroyed.bind(this);
-  events.on(this.tabActor, "window-destroyed", this._onWindowDestroyed);
 }
 
 ReflowObserver.prototype = Heritage.extend(Observable.prototype, {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIReflowObserver,
     Ci.nsISupportsWeakReference]),
-
-  _onWindowReady: function({window}) {
-    if (this.observing) {
-      this._startListeners([window]);
-    }
-  },
-
-  _onWindowDestroyed: function({window}) {
-    if (this.observing) {
-      this._stopListeners([window]);
-    }
-  },
-
-  _start: function() {
-    this._startListeners(this.tabActor.windows);
-  },
-
-  _stop: function() {
-    if (this.tabActor.attached && this.tabActor.docShell) {
-      
-      this._stopListeners(this.tabActor.windows);
-    }
-  },
 
   _startListeners: function(windows) {
     for (let window of windows) {
@@ -437,14 +490,15 @@ ReflowObserver.prototype = Heritage.extend(Observable.prototype, {
 
   _stopListeners: function(windows) {
     for (let window of windows) {
-      
-      
       try {
         let docshell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIWebNavigation)
                        .QueryInterface(Ci.nsIDocShell);
         docshell.removeWeakReflowObserver(this);
-      } catch (e) {}
+      } catch (e) {
+        
+        
+      }
     }
   },
 
@@ -454,16 +508,43 @@ ReflowObserver.prototype = Heritage.extend(Observable.prototype, {
 
   reflowInterruptible: function(start, end) {
     this.notifyCallback(start, end, true);
+  }
+});
+
+
+
+
+
+
+
+function WindowResizeObserver(tabActor, callback) {
+  Observable.call(this, tabActor, callback);
+  this.onResize = this.onResize.bind(this);
+}
+
+WindowResizeObserver.prototype = Heritage.extend(Observable.prototype, {
+  _startListeners: function() {
+    this.listenerTarget.addEventListener("resize", this.onResize);
   },
 
-  destroy: function() {
-    if (this._isDestroyed) {
-      return;
-    }
-    this._isDestroyed = true;
+  _stopListeners: function() {
+    this.listenerTarget.removeEventListener("resize", this.onResize);
+  },
 
-    events.off(this.tabActor, "window-ready", this._onWindowReady);
-    events.off(this.tabActor, "window-destroyed", this._onWindowDestroyed);
-    Observable.prototype.destroy.call(this);
+  onResize: function() {
+    this.notifyCallback();
+  },
+
+  get listenerTarget() {
+    
+    if (this.tabActor.isRootActor) {
+      return this.tabActor.window;
+    }
+
+    
+    return this.tabActor.window.QueryInterface(Ci.nsIInterfaceRequestor)
+                               .getInterface(Ci.nsIWebNavigation)
+                               .QueryInterface(Ci.nsIDocShell)
+                               .chromeEventHandler;
   }
 });

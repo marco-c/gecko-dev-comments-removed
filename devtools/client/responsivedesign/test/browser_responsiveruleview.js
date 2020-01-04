@@ -1,107 +1,99 @@
 
 
 
-function test() {
-  let instance;
+"use strict";
 
-  let ruleView;
-  let inspector;
-  let mgr = ResponsiveUI.ResponsiveUIManager;
 
-  waitForExplicitFinish();
 
-  gBrowser.selectedTab = gBrowser.addTab();
-  gBrowser.selectedBrowser.addEventListener("load", startTest, true);
 
-  content.location = "data:text/html;charset=utf-8,<html><style>" +
-    "div {" +
-    "  width: 500px;" +
-    "  height: 10px;" +
-    "  background: purple;" +
-    "} " +
-    "@media screen and (max-width: 200px) {" +
-    "  div { " +
-    "    width: 100px;" +
-    "  }" +
-    "};" +
-    "</style><div></div></html>"
 
-  function numberOfRules() {
-    return ruleView.element.querySelectorAll(".ruleview-code").length;
-  }
 
-  function startTest() {
-    gBrowser.selectedBrowser.removeEventListener("load", startTest, true);
-    document.getElementById("Tools:ResponsiveUI").doCommand();
-    executeSoon(onUIOpen);
-  }
+const TEST_URI = "data:text/html;charset=utf-8,<html><style>" +
+                 "div {" +
+                 "  width: 500px;" +
+                 "  height: 10px;" +
+                 "  background: purple;" +
+                 "} " +
+                 "@media screen and (max-width: 200px) {" +
+                 "  div { " +
+                 "    width: 100px;" +
+                 "  }" +
+                 "};" +
+                 "</style><div></div></html>";
 
-  function onUIOpen() {
-    instance = mgr.getResponsiveUIForTab(gBrowser.selectedTab);
-    ok(instance, "instance of the module is attached to the tab.");
+add_task(function*() {
+  yield addTab(TEST_URI);
 
-    instance.stack.setAttribute("notransition", "true");
-    registerCleanupFunction(function() {
-      instance.stack.removeAttribute("notransition");
-    });
+  info("Open the responsive design mode and set its size to 500x500 to start");
+  let {rdm, manager} = yield openRDM();
+  rdm.setSize(500, 500);
 
-    instance.setSize(500, 500);
+  info("Open the inspector, rule-view and select the test node");
+  let {inspector, view} = yield openRuleView();
+  yield selectNode("div", inspector);
 
-    openRuleView().then(onInspectorUIOpen);
-  }
+  info("Try shrinking the viewport and checking the applied styles");
+  yield testShrink(view, rdm);
 
-  function onInspectorUIOpen(args) {
-    inspector = args.inspector;
-    ruleView = args.view;
-    ok(inspector, "Got inspector instance");
+  info("Try growing the viewport and checking the applied styles");
+  yield testGrow(view, rdm);
 
-    let div = content.document.getElementsByTagName("div")[0];
-    inspector.selection.setNode(div);
-    inspector.once("inspector-updated", testShrink);
-  }
+  info("Check that ESC still opens the split console");
+  yield testEscapeOpensSplitConsole(inspector);
 
-  function testShrink() {
+  info("Test the state of the RDM menu item");
+  yield testMenuItem(manager);
 
-    is(numberOfRules(), 2, "Should have two rules initially.");
+  Services.prefs.clearUserPref("devtools.toolbox.splitconsoleEnabled");
+  gBrowser.removeCurrentTab();
+});
 
-    ruleView.on("ruleview-refreshed", function refresh() {
-      ruleView.off("ruleview-refreshed", refresh, false);
-      is(numberOfRules(), 3, "Should have three rules after shrinking.");
-      testGrow();
-    }, false);
+function* testShrink(ruleView, rdm) {
+  is(numberOfRules(ruleView), 2, "Should have two rules initially.");
 
-    instance.setSize(100, 100);
-  }
+  info("Resize to 100x100 and wait for the rule-view to update");
+  let onRefresh = ruleView.once("ruleview-refreshed");
+  rdm.setSize(100, 100);
+  yield onRefresh;
 
-  function testGrow() {
-    ruleView.on("ruleview-refreshed", function refresh() {
-      ruleView.off("ruleview-refreshed", refresh, false);
-      is(numberOfRules(), 2, "Should have two rules after growing.");
-      testEscapeOpensSplitConsole();
-    }, false);
+  is(numberOfRules(ruleView), 3, "Should have three rules after shrinking.");
+}
 
-    instance.setSize(500, 500);
-  }
+function* testGrow(ruleView, rdm) {
+  info("Resize to 500x500 and wait for the rule-view to update");
+  let onRefresh = ruleView.once("ruleview-refreshed");
+  rdm.setSize(500, 500);
+  yield onRefresh;
 
-  function testEscapeOpensSplitConsole() {
-    is(document.getElementById("Tools:ResponsiveUI").getAttribute("checked"), "true", "menu checked");
-    ok(!inspector._toolbox._splitConsole, "Console is not split.");
+  is(numberOfRules(ruleView), 2, "Should have two rules after growing.");
+}
 
-    inspector._toolbox.once("split-console", function() {
-      mgr.once("off", function() {executeSoon(finishUp)});
-      mgr.toggle(window, gBrowser.selectedTab);
-    });
-    EventUtils.synthesizeKey("VK_ESCAPE", {});
-  }
+function* testEscapeOpensSplitConsole(inspector) {
+  ok(!inspector._toolbox._splitConsole, "Console is not split.");
 
-  function finishUp() {
-    ok(inspector._toolbox._splitConsole, "Console is split after pressing escape.");
+  info("Press escape");
+  let onSplit = inspector._toolbox.once("split-console");
+  EventUtils.synthesizeKey("VK_ESCAPE", {});
+  yield onSplit;
 
-    
-    is(document.getElementById("Tools:ResponsiveUI").getAttribute("checked"), "false", "menu unchecked");
+  ok(inspector._toolbox._splitConsole, "Console is split after pressing ESC.");
+}
 
-    Services.prefs.clearUserPref("devtools.toolbox.splitconsoleEnabled");
-    gBrowser.removeCurrentTab();
-    finish();
-  }
+function* testMenuItem(manager) {
+  is(document.getElementById("Tools:ResponsiveUI").getAttribute("checked"),
+     "true",
+     "The menu item is checked");
+
+  info("Toggle off the RDM");
+  let onManagerOff = manager.once("off");
+  manager.toggle(window, gBrowser.selectedTab);
+  yield onManagerOff;
+
+  is(document.getElementById("Tools:ResponsiveUI").getAttribute("checked"),
+     "false",
+     "The menu item is unchecked");
+}
+
+function numberOfRules(ruleView) {
+  return ruleView.element.querySelectorAll(".ruleview-code").length;
 }
