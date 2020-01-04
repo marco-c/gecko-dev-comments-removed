@@ -98,7 +98,7 @@ var menuBuilder = {
         top.setAttribute("ext-type", "top-level-menu");
         let menupopup = doc.createElement("menupopup");
         top.appendChild(menupopup);
-        for (i of topLevelItems) {
+        for (let i of topLevelItems) {
           menupopup.appendChild(i);
         }
         xulMenu.appendChild(top);
@@ -326,13 +326,13 @@ MenuItem.prototype = {
     }
 
     if (this.documentUrlMatchPattern &&
-        !this.documentUrlMatchPattern.matches(contentData.documentURIObject)) {
+        !this.documentUrlMatchPattern.matches(contextData.documentURIObject)) {
       return false;
     }
 
     if (this.targetUrlPatterns &&
         (contextData.onImage || contextData.onAudio || contextData.onVideo) &&
-        !this.targetUrlPatterns.matches(contentData.mediaURL)) {
+        !this.targetUrlPatterns.matches(contextData.mediaURL)) {
       
       return false;
     }
