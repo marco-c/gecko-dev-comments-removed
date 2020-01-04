@@ -30,6 +30,9 @@ const {getCSSLexer} = require("devtools/shared/css-lexer");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {gDevTools} = require("devtools/client/framework/devtools");
 
+const {LocalizationHelper} = require("devtools/shared/l10n");
+const L10N = new LocalizationHelper("devtools/locale/inspector.properties");
+
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
@@ -263,8 +266,7 @@ function MdnDocsWidget(tooltipContainer) {
   };
 
   
-  this.elements.linkToMdn.textContent =
-    l10n.strings.GetStringFromName("docsTooltip.visitMDN");
+  this.elements.linkToMdn.textContent = L10N.getStr("docsTooltip.visitMDN");
 
   
   let mainWindow = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
@@ -348,8 +350,7 @@ MdnDocsWidget.prototype = {
 
     function gotError(error) {
       
-      elements.summary.textContent =
-        l10n.strings.GetStringFromName("docsTooltip.loadDocsError");
+      elements.summary.textContent = L10N.getStr("docsTooltip.loadDocsError");
 
       
       elements.info.classList.remove("devtools-throbber");
@@ -372,19 +373,6 @@ MdnDocsWidget.prototype = {
     this.elements = null;
   }
 };
-
-
-
-
-function L10N() {}
-L10N.prototype = {};
-
-var l10n = new L10N();
-
-loader.lazyGetter(L10N.prototype, "strings", () => {
-  return Services.strings.createBundle(
-    "chrome://devtools/locale/inspector.properties");
-});
 
 
 
