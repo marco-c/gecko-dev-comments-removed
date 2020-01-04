@@ -8,6 +8,7 @@
 #include "mozilla/Attributes.h"
 #include "MediaDataDemuxer.h"
 #include "MediaResource.h"
+#include "mp4_demuxer/ByteReader.h"
 
 namespace mozilla {
 namespace mp3 {
@@ -105,7 +106,7 @@ public:
 
   
   
-  const uint8_t* Parse(const uint8_t* aBeg, const uint8_t* aEnd);
+  uint32_t Parse(mp4_demuxer::ByteReader* aReader);
 
   
   void Reset();
@@ -113,11 +114,6 @@ public:
 private:
   
   ID3Header mHeader;
-};
-
-struct FrameParserResult {
-  const uint8_t* mBufferPos;
-  const uint32_t mBytesToSkip;
 };
 
 
@@ -298,7 +294,7 @@ public:
   
   
   
-  FrameParserResult Parse(const uint8_t* aBeg, const uint8_t* aEnd);
+  bool Parse(mp4_demuxer::ByteReader* aReader, uint32_t* aBytesToSkip);
 
   
   
