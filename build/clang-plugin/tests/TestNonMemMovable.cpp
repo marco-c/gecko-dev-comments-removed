@@ -1,5 +1,6 @@
 #define MOZ_NON_MEMMOVABLE __attribute__((annotate("moz_non_memmovable")))
 #define MOZ_NEEDS_MEMMOVABLE_TYPE __attribute__((annotate("moz_needs_memmovable_type")))
+#define MOZ_NEEDS_MEMMOVABLE_MEMBERS __attribute__((annotate("moz_needs_memmovable_members")))
 
 
 
@@ -810,3 +811,20 @@ void specialization() {
   Defaulted_Templated_NeedyTemplate7<S_SpecializedNonMovable> c7;
   W_Defaulted_Templated_NeedyTemplate8<S_SpecializedNonMovable> c8;
 }
+
+class MOZ_NEEDS_MEMMOVABLE_MEMBERS NeedsMemMovableMembers {
+  Movable m1;
+  NonMovable m2; 
+  S_Movable sm1;
+  S_NonMovable sm2; 
+  W_Movable wm1;
+  W_NonMovable wm2; 
+  SW_Movable swm1;
+  SW_NonMovable swm2; 
+  WS_Movable wsm1;
+  WS_NonMovable wsm2; 
+  SWS_Movable swsm1;
+  SWS_NonMovable swsm2; 
+};
+
+class NeedsMemMovableMembersDerived : public NeedsMemMovableMembers {};

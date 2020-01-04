@@ -99,6 +99,11 @@ private:
     virtual void run(const MatchFinder::MatchResult &Result);
   };
 
+  class NonMemMovableMemberChecker : public MatchFinder::MatchCallback {
+  public:
+    virtual void run(const MatchFinder::MatchResult &Result);
+  };
+
   class ExplicitImplicitChecker : public MatchFinder::MatchCallback {
   public:
     virtual void run(const MatchFinder::MatchResult &Result);
@@ -129,6 +134,7 @@ private:
   NoDuplicateRefCntMemberChecker noDuplicateRefCntMemberChecker;
   NeedsNoVTableTypeChecker needsNoVTableTypeChecker;
   NonMemMovableTemplateArgChecker nonMemMovableTemplateArgChecker;
+  NonMemMovableMemberChecker nonMemMovableMemberChecker;
   ExplicitImplicitChecker explicitImplicitChecker;
   NoAutoTypeChecker noAutoTypeChecker;
   NoExplicitMoveConstructorChecker noExplicitMoveConstructorChecker;
@@ -711,6 +717,11 @@ AST_MATCHER(CXXRecordDecl, needsMemMovableTemplateArg) {
   return MozChecker::hasCustomAnnotation(&Node, "moz_needs_memmovable_type");
 }
 
+
+AST_MATCHER(CXXRecordDecl, needsMemMovableMembers) {
+  return MozChecker::hasCustomAnnotation(&Node, "moz_needs_memmovable_members");
+}
+
 AST_MATCHER(CXXConstructorDecl, isInterestingImplicitCtor) {
   const CXXConstructorDecl *decl = Node.getCanonicalDecl();
   return
@@ -1016,6 +1027,12 @@ DiagnosticsMatcher::DiagnosticsMatcher() {
                 hasAnyTemplateArgument(refersToType(isNonMemMovable()))))
           .bind("specialization"),
       &nonMemMovableTemplateArgChecker);
+
+  
+  astMatcher.addMatcher(
+      cxxRecordDecl(needsMemMovableMembers())
+          .bind("decl"),
+      &nonMemMovableMemberChecker);
 
   astMatcher.addMatcher(cxxConstructorDecl(isInterestingImplicitCtor(),
                                            ofClass(allOf(isConcreteClass(),
@@ -1415,6 +1432,29 @@ void DiagnosticsMatcher::NonMemMovableTemplateArgChecker::run(
       
       Diag.Report(requestLoc, note1ID) << specialization;
       NonMemMovable.dumpAnnotationReason(Diag, argType, requestLoc);
+    }
+  }
+}
+
+void DiagnosticsMatcher::NonMemMovableMemberChecker::run(
+    const MatchFinder::MatchResult &Result) {
+  DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
+  unsigned errorID = Diag.getDiagnosticIDs()->getCustomDiagID(
+      DiagnosticIDs::Error,
+      "class %0 cannot have non-memmovable member %1 of type %2");
+
+  
+  const CXXRecordDecl* Decl =
+      Result.Nodes.getNodeAs<CXXRecordDecl>("decl");
+
+  
+  for (const FieldDecl *Field : Decl->fields()) {
+    QualType Type = Field->getType();
+    if (NonMemMovable.hasEffectiveAnnotation(Type)) {
+      Diag.Report(Field->getLocation(), errorID) << Decl
+                                                 << Field
+                                                 << Type;
+      NonMemMovable.dumpAnnotationReason(Diag, Type, Decl->getLocation());
     }
   }
 }
