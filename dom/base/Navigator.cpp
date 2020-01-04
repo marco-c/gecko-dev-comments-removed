@@ -138,6 +138,7 @@ static bool sDoNotTrackEnabled = false;
 static bool sVibratorEnabled   = false;
 static uint32_t sMaxVibrateMS  = 0;
 static uint32_t sMaxVibrateListLen = 0;
+static const char* kVibrationPermissionType = "vibration";
 
 static void
 AddPermission(nsIPrincipal* aPrincipal, const char* aType, uint32_t aPermission,
@@ -921,6 +922,47 @@ Navigator::RemoveIdleObserver(MozIdleObserver& aIdleObserver, ErrorResult& aRv)
   }
 }
 
+void
+Navigator::SetVibrationPermission(bool aPermitted, bool aPersistent)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsTArray<uint32_t> pattern;
+  pattern.SwapElements(mRequestedVibrationPattern);
+
+  if (!mWindow) {
+    return;
+  }
+
+  nsCOMPtr<nsIDocument> doc = mWindow->GetExtantDoc();
+
+  if (!MayVibrate(doc)) {
+    return;
+  }
+
+  if (aPermitted) {
+    
+    
+    if (!gVibrateWindowListener) {
+      
+      
+      
+      ClearOnShutdown(&gVibrateWindowListener);
+    } else {
+      gVibrateWindowListener->RemoveListener();
+    }
+    gVibrateWindowListener = new VibrateWindowListener(mWindow, doc);
+    hal::Vibrate(pattern, mWindow);
+  }
+
+  if (aPersistent) {
+    AddPermission(doc->NodePrincipal(), kVibrationPermissionType,
+                  aPermitted ? nsIPermissionManager::ALLOW_ACTION :
+                               nsIPermissionManager::DENY_ACTION,
+                  nsIPermissionManager::EXPIRE_SESSION, 0);
+  }
+}
+
 bool
 Navigator::Vibrate(uint32_t aDuration)
 {
@@ -932,6 +974,8 @@ Navigator::Vibrate(uint32_t aDuration)
 bool
 Navigator::Vibrate(const nsTArray<uint32_t>& aPattern)
 {
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (!mWindow) {
     return false;
   }
@@ -949,9 +993,7 @@ Navigator::Vibrate(const nsTArray<uint32_t>& aPattern)
   }
 
   for (size_t i = 0; i < pattern.Length(); ++i) {
-    if (pattern[i] > sMaxVibrateMS) {
-      pattern[i] = sMaxVibrateMS;
-    }
+    pattern[i] = std::min(sMaxVibrateMS, pattern[i]);
   }
 
   
@@ -960,21 +1002,28 @@ Navigator::Vibrate(const nsTArray<uint32_t>& aPattern)
     return true;
   }
 
-  
-  
+  mRequestedVibrationPattern.SwapElements(pattern);
+  uint32_t permission = GetPermission(mWindow, kVibrationPermissionType);
 
-  if (!gVibrateWindowListener) {
+  if (permission == nsIPermissionManager::ALLOW_ACTION ||
+      mRequestedVibrationPattern.IsEmpty() ||
+      (mRequestedVibrationPattern.Length() == 1 &&
+       mRequestedVibrationPattern[0] == 0)) {
     
-    
-    
-    ClearOnShutdown(&gVibrateWindowListener);
+    SetVibrationPermission(true , false );
+    return true;
   }
-  else {
-    gVibrateWindowListener->RemoveListener();
-  }
-  gVibrateWindowListener = new VibrateWindowListener(mWindow, doc);
 
-  hal::Vibrate(pattern, mWindow);
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (!obs || permission == nsIPermissionManager::DENY_ACTION) {
+    
+    SetVibrationPermission(false , false );
+    return true;
+  }
+
+  
+  obs->NotifyObservers(ToSupports(this), "Vibration:Request", nullptr);
+
   return true;
 }
 
