@@ -24,6 +24,7 @@
 #include "GeckoProfiler.h"
 #include "nsIDocument.h"
 #include "nsPrintfCString.h"
+#include "RubyUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ArenaObjectID.h"
 
@@ -511,12 +512,23 @@ nsStyleContext::SetStyle(nsStyleStructID aSID, void* aStruct)
 }
 
 static bool
-ShouldSuppressLineBreak(const nsStyleDisplay* aStyleDisplay,
+ShouldSuppressLineBreak(const nsStyleContext* aContext,
+                        const nsStyleDisplay* aDisplay,
                         const nsStyleContext* aParentContext,
                         const nsStyleDisplay* aParentDisplay)
 {
   
-  if (aStyleDisplay->IsOutOfFlowStyle()) {
+  if (aDisplay->IsOutOfFlowStyle()) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  if (aContext->GetPseudoType() == nsCSSPseudoElements::ePseudo_AnonBox &&
+      aContext->GetPseudo() != nsCSSAnonBoxes::mozNonElement &&
+      !RubyUtils::IsRubyPseudo(aContext->GetPseudo())) {
     return false;
   }
   if (aParentContext->ShouldSuppressLineBreak()) {
@@ -550,12 +562,12 @@ ShouldSuppressLineBreak(const nsStyleDisplay* aStyleDisplay,
   
   
   if ((aParentDisplay->IsRubyDisplayType() &&
-       aStyleDisplay->mDisplay != NS_STYLE_DISPLAY_RUBY_BASE_CONTAINER &&
-       aStyleDisplay->mDisplay != NS_STYLE_DISPLAY_RUBY_TEXT_CONTAINER) ||
+       aDisplay->mDisplay != NS_STYLE_DISPLAY_RUBY_BASE_CONTAINER &&
+       aDisplay->mDisplay != NS_STYLE_DISPLAY_RUBY_TEXT_CONTAINER) ||
       
       
-      aStyleDisplay->mDisplay == NS_STYLE_DISPLAY_RUBY_BASE ||
-      aStyleDisplay->mDisplay == NS_STYLE_DISPLAY_RUBY_TEXT) {
+      aDisplay->mDisplay == NS_STYLE_DISPLAY_RUBY_BASE ||
+      aDisplay->mDisplay == NS_STYLE_DISPLAY_RUBY_TEXT) {
     return true;
   }
   return false;
@@ -714,7 +726,7 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
     mBits |= NS_STYLE_IN_DISPLAY_NONE_SUBTREE;
   }
 
-  if (mParent && ::ShouldSuppressLineBreak(disp, mParent,
+  if (mParent && ::ShouldSuppressLineBreak(this, disp, mParent,
                                            mParent->StyleDisplay())) {
     mBits |= NS_STYLE_SUPPRESS_LINEBREAK;
     uint8_t displayVal = disp->mDisplay;
