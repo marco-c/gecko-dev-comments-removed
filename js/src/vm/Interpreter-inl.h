@@ -396,8 +396,8 @@ inline bool
 CheckEvalDeclarationConflicts(JSContext* cx, HandleScript script,
                               HandleObject scopeChain, HandleObject varObj)
 {
-    MOZ_ASSERT(script->bindings.numBodyLevelLexicals() == 0);
-
+    
+    
     if (script->bindings.numVars() == 0)
         return true;
 

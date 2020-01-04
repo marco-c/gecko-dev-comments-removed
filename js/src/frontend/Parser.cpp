@@ -431,15 +431,27 @@ AppendPackedBindings(const ParseContext<ParseHandler>* pc, const DeclVector& vec
             MOZ_CRASH("unexpected dn->kind");
         }
 
-        
+        bool aliased;
+        if (pc->sc->isGlobalContext()) {
+            
+            
+            
+            
+            
+            
+            
+            aliased = false;
+        } else {
+            
 
 
 
 
-        MOZ_ASSERT_IF(dn->isClosed(), pc->decls().lookupFirst(name) == dn);
-        bool aliased = dn->isClosed() ||
-                       (pc->sc->allLocalsAliased() &&
-                        pc->decls().lookupFirst(name) == dn);
+            MOZ_ASSERT_IF(dn->isClosed(), pc->decls().lookupFirst(name) == dn);
+            aliased = dn->isClosed() ||
+                      (pc->sc->allLocalsAliased() &&
+                       pc->decls().lookupFirst(name) == dn);
+        }
 
         *dst = Binding(name, kind, aliased);
         if (!aliased && numUnaliased)
@@ -466,15 +478,20 @@ ParseContext<ParseHandler>::generateBindings(ExclusiveContext* cx, TokenStream& 
     
     
     
-    for (size_t i = 0; i < vars_.length(); i++)
-        vars_[i]->pn_blockid = bodyid;
+    if (!sc->isGlobalContext()) {
+        
+        
+        
+        for (size_t i = 0; i < vars_.length(); i++)
+            vars_[i]->pn_blockid = bodyid;
 
-    
-    
-    for (size_t i = 0; i < bodyLevelLexicals_.length(); i++) {
-        Definition* dn = bodyLevelLexicals_[i];
-        if (!dn->pn_scopecoord.setSlot(ts, vars_.length() + i))
-            return false;
+        
+        
+        for (size_t i = 0; i < bodyLevelLexicals_.length(); i++) {
+            Definition* dn = bodyLevelLexicals_[i];
+            if (!dn->pn_scopecoord.setSlot(ts, vars_.length() + i))
+                return false;
+        }
     }
 
     uint32_t count = args_.length() + vars_.length() + bodyLevelLexicals_.length();
@@ -496,32 +513,6 @@ ParseContext<ParseHandler>::generateBindings(ExclusiveContext* cx, TokenStream& 
                                               bodyLevelLexicals_.length(), blockScopeDepth,
                                               numUnaliasedVars, numUnaliasedBodyLevelLexicals,
                                               packedBindings, sc->isModuleBox());
-}
-
-template <>
-bool
-ParseContext<FullParseHandler>::drainGlobalOrEvalBindings(ExclusiveContext* cx,
-                                                          MutableHandle<TraceableVector<Binding>> vars,
-                                                          MutableHandle<TraceableVector<Binding>> lexicals)
-{
-    MOZ_ASSERT(sc->isGlobalContext());
-
-    uint32_t newVarsPos = vars.length();
-    uint32_t newLexicalsPos = lexicals.length();
-
-    if (!vars.growBy(vars_.length()))
-        return false;
-    AppendPackedBindings(this, vars_, vars.begin() + newVarsPos);
-    vars_.clear();
-
-    if (!sc->staticScope()->is<StaticEvalObject>()) {
-        if (!lexicals.growBy(bodyLevelLexicals_.length()))
-            return false;
-        AppendPackedBindings(this, bodyLevelLexicals_, lexicals.begin() + newLexicalsPos);
-    }
-    bodyLevelLexicals_.clear();
-
-    return true;
 }
 
 template <typename ParseHandler>

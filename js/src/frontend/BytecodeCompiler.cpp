@@ -92,9 +92,7 @@ class MOZ_STACK_CLASS BytecodeCompiler
     bool maybeSetSourceMap(TokenStream& tokenStream);
     bool maybeSetSourceMapFromOptions();
     bool emitFinalReturn();
-    bool initGlobalOrEvalBindings(ParseContext<FullParseHandler>& pc,
-                                  Handle<TraceableVector<Binding>> vars,
-                                  Handle<TraceableVector<Binding>> lexicals);
+    bool initGlobalOrEvalBindings(ParseContext<FullParseHandler>& pc);
     bool maybeCompleteCompressSource();
 
     AutoCompilationTraceLogger traceLogger;
@@ -524,35 +522,11 @@ BytecodeCompiler::emitFinalReturn()
 }
 
 bool
-BytecodeCompiler::initGlobalOrEvalBindings(ParseContext<FullParseHandler>& pc,
-                                           Handle<TraceableVector<Binding>> vars,
-                                           Handle<TraceableVector<Binding>> lexicals)
+BytecodeCompiler::initGlobalOrEvalBindings(ParseContext<FullParseHandler>& pc)
 {
     Rooted<Bindings> bindings(cx, script->bindings);
-    Binding* packedBindings = alloc->newArrayUninitialized<Binding>(vars.length() +
-                                                                    lexicals.length());
-    if (!packedBindings) {
-        ReportOutOfMemory(cx);
+    if (!pc.generateBindings(cx, parser->tokenStream, *alloc, &bindings))
         return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    Binding* packedIter = packedBindings;
-    for (const Binding& b: vars)
-        *packedIter++ = Binding(b.name(), b.kind(), false);
-    for (const Binding& b: lexicals)
-        *packedIter++ = Binding(b.name(), b.kind(), false);
-
-    if (!Bindings::initWithTemporaryStorage(cx, &bindings, 0, vars.length(), lexicals.length(),
-                                            pc.blockScopeDepth, 0, 0, packedBindings))
-        return false;
-
     script->bindings = bindings;
     return true;
 }
@@ -576,9 +550,6 @@ BytecodeCompiler::compileScript(HandleObject scopeChain, HandleScript evalCaller
     GlobalSharedContext globalsc(cx, enclosingStaticScope, directives, options.extraWarningsOption);
     if (!createEmitter(&globalsc, evalCaller, isNonGlobalEvalCompilationUnit()))
         return nullptr;
-
-    Rooted<TraceableVector<Binding>> vars(cx, TraceableVector<Binding>(cx));
-    Rooted<TraceableVector<Binding>> lexicals(cx, TraceableVector<Binding>(cx));
 
     
     
@@ -605,7 +576,7 @@ BytecodeCompiler::compileScript(HandleObject scopeChain, HandleScript evalCaller
         if (!prepareAndEmitTree(&pn, *pc))
             return nullptr;
 
-        if (!pc->drainGlobalOrEvalBindings(cx, &vars, &lexicals))
+        if (!initGlobalOrEvalBindings(*pc))
             return nullptr;
 
         parser->handler.freeTree(pn);
@@ -616,7 +587,6 @@ BytecodeCompiler::compileScript(HandleObject scopeChain, HandleScript evalCaller
         !maybeSetSourceMap(parser->tokenStream) ||
         !maybeSetSourceMapFromOptions() ||
         !emitFinalReturn() ||
-        !initGlobalOrEvalBindings(pc.ref(), vars, lexicals) ||
         !JSScript::fullyInitFromEmitter(cx, script, emitter.ptr()))
     {
         return nullptr;

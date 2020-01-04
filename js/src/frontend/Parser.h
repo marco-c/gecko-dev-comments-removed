@@ -198,36 +198,27 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
     void updateDecl(TokenStream& ts, JSAtom* atom, Node newDecl);
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     bool generateBindings(ExclusiveContext* cx, TokenStream& ts, LifoAlloc& alloc,
                           MutableHandle<Bindings> bindings) const;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool drainGlobalOrEvalBindings(ExclusiveContext* cx,
-                                   MutableHandle<TraceableVector<Binding>> vars,
-                                   MutableHandle<TraceableVector<Binding>> lexicals);
 
   private:
     ParseContext**  parserPC;     
