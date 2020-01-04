@@ -83,7 +83,7 @@ user_pref("geo.wifi.logging.enabled", true);
 
 user_pref("urlclassifier.updateinterval", 172800);
 
-user_pref("browser.safebrowsing.appRepURL", "http://%(server)s/safebrowsing-dummy/update");
+user_pref("browser.safebrowsing.downloads.remote.url", "http://%(server)s/safebrowsing-dummy/update");
 user_pref("browser.safebrowsing.provider.google.gethashURL", "http://%(server)s/safebrowsing-dummy/gethash");
 user_pref("browser.safebrowsing.provider.google.updateURL", "http://%(server)s/safebrowsing-dummy/update");
 user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://%(server)s/safebrowsing-dummy/gethash");
@@ -254,9 +254,6 @@ user_pref("identity.fxaccounts.settings.uri", "https://%(server)s/fxa-settings")
 user_pref('identity.fxaccounts.remote.webchannel.uri', 'https://%(server)s/');
 
 
-user_pref('identity.fxaccounts.skipDeviceRegistration', true);
-
-
 
 
 
@@ -265,7 +262,7 @@ user_pref('identity.fxaccounts.skipDeviceRegistration', true);
 user_pref("apz.content_response_timeout", 60000);
 
 
-user_pref("security.ssl.errorReporting.url", "https://example.com/browser/browser/base/content/test/general/ssl_error_reports.sjs?succeed");
+user_pref("security.ssl.errorReporting.url", "https://example.com/browser/browser/base/content/test/general/pinning_reports.sjs?succeed");
 
 
 user_pref("browser.translation.bing.authURL", "http://%(server)s/browser/browser/components/translation/test/bing.sjs");
