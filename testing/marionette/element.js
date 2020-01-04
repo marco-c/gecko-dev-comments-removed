@@ -337,64 +337,106 @@ ElementManager.prototype = {
 
 
 
-  find: function EM_find(container, values, searchTimeout, all, on_success, on_error, command_id) {
-    let startTime = values.time ? values.time : new Date().getTime();
-    let rootNode = container.shadowRoot || container.frame.document;
-    let startNode = (values.element != undefined) ?
-                    this.getKnownElement(values.element, container) : rootNode;
-    if (this.elementStrategies.indexOf(values.using) < 0) {
-      throw new InvalidSelectorError(`No such strategy: ${values.using}`);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  find: function(container, strategy, selector, opts = {}) {
+    opts.all = !!opts.all;
+    opts.timeout = opts.timeout || 0;
+
+    let searchFn;
+    if (opts.all) {
+      searchFn = this.findElements.bind(this);
+    } else {
+      searchFn = this.findElement.bind(this);
     }
 
-    let found;
-    try {
-      found = all ? this.findElements(values.using, values.value, rootNode, startNode) :
-                      this.findElement(values.using, values.value, rootNode, startNode);
-    } catch (e) {
-      throw new InvalidSelectorError(`Given ${values.using} expression "${values.value}" is invalid`);
-    }
-    let type = Object.prototype.toString.call(found);
-    let isArrayLike = ((type == '[object Array]') || (type == '[object HTMLCollection]') || (type == '[object NodeList]'));
-    if (found == null || (isArrayLike && found.length <= 0)) {
-      if (!searchTimeout || new Date().getTime() - startTime > searchTimeout) {
-        if (all) {
-          on_success([], command_id); 
-        } else {
-          
-          let message = `Unable to locate element: ${values.value}`
-          if (values.using == ANON) {
-            message = "Unable to locate anonymous children";
-          } else if (values.using == ANON_ATTRIBUTE) {
-            message = `Unable to locate anonymous element: ${JSON.stringify(values.value)}`;
+    return new Promise((resolve, reject) => {
+      let findElements = implicitlyWaitFor(
+          () => this.find_(container, strategy, selector, searchFn, opts),
+          opts.timeout);
+
+      findElements.then(foundEls => {
+        
+        
+        if (foundEls.length == 0 && !opts.all) {
+          let msg;
+          switch (strategy) {
+            case ANON:
+              msg = "Unable to locate anonymous children";
+              break;
+
+            case ANON_ATTRIBUTE:
+              msg = "Unable to locate anonymous element: " + JSON.stringify(selector);
+              break;
+
+            default:
+              msg = "Unable to locate element: " + selector;
           }
-          on_error(new NoSuchElementError(message), command_id);
+
+          reject(new NoSuchElementError(msg));
         }
-      } else {
-        values.time = startTime;
-        this.timer.initWithCallback(this.find.bind(this, container, values,
-                                                   searchTimeout, all,
-                                                   on_success, on_error,
-                                                   command_id),
-                                    100,
-                                    Ci.nsITimer.TYPE_ONE_SHOT);
-      }
+
+        
+        let rv = [];
+        for (let el of foundEls) {
+          let ref = this.addToKnownElements(el);
+          let we = element.makeWebElement(ref);
+          rv.push(we);
+        }
+
+        if (opts.all) {
+          resolve(rv);
+        }
+        resolve(rv[0]);
+      }, reject);
+    });
+  },
+
+  find_: function(container, strategy, selector, searchFn, opts) {
+    let rootNode = container.shadowRoot || container.frame.document;
+    let startNode;
+    if (opts.startNode) {
+      startNode = this.getKnownElement(opts.startNode, container);
     } else {
-      if (isArrayLike) {
-        let ids = []
-        for (let i = 0 ; i < found.length ; i++) {
-          let foundElement = this.addToKnownElements(found[i]);
-          let returnElement = {
-            [this.elementKey] : foundElement,
-            [this.w3cElementKey] : foundElement,
-          };
-          ids.push(returnElement);
-        }
-        on_success(ids, command_id);
-      } else {
-        let id = this.addToKnownElements(found);
-        on_success({[this.elementKey]: id, [this.w3cElementKey]:id}, command_id);
-      }
+      startNode = rootNode;
     }
+
+    if (strategy in element.Strategies) {
+      throw new InvalidSelectorError("No such strategy: " + strategy);
+    }
+
+    let res;
+    try {
+      res = searchFn(strategy, selector, rootNode, startNode);
+    } catch (e) {
+      throw new InvalidSelectorError(`Given ${strategy} expression "${selector}" is invalid`);
+    }
+
+    if (element.isElementCollection(res)) {
+      return res;
+    } else if (res !== null) {
+      return [res];
+    }
+    return [];
   },
 
   
@@ -596,9 +638,106 @@ ElementManager.prototype = {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function implicitlyWaitFor(func, timeout, interval = 100) {
+  let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+
+  return new Promise((resolve, reject) => {
+    let startTime = new Date().getTime();
+    let endTime = startTime + timeout;
+
+    let observer = function() {
+      let res;
+      try {
+        res = func();
+      } catch (e) {
+        reject(e);
+      }
+
+      
+      
+      
+      
+      
+      let col = element.isElementCollection(res);
+      if (((col && res.length > 0 ) || (!col && !!res)) ||
+          (startTime == endTime || new Date().getTime() >= endTime)) {
+        resolve(res);
+      }
+    };
+
+    timer.init(observer, interval, Ci.nsITimer.TYPE_REPEATING_SLACK);
+
+  
+  }).then(res => {
+    timer.cancel();
+    return res;
+  });
+};
+
 this.element = {};
+
 element.LegacyKey = "ELEMENT";
 element.Key = "element-6066-11e4-a52e-4f735466cecf";
+
+element.Strategies = {
+  CLASS_NAME: 0,
+  SELECTOR: 1,
+  ID: 2,
+  NAME: 3,
+  LINK_TEXT: 4,
+  PARTIAL_LINK_TEXT: 5,
+  TAG: 6,
+  XPATH: 7,
+  ANON: 8,
+  ANON_ATTRIBUTE: 9,
+};
+
+element.isElementCollection = function(seq) {
+  if (seq === null) {
+    return false;
+  }
+
+  const arrayLike = {
+    "[object Array]": 0,
+    "[object HTMLCollection]": 1,
+    "[object NodeList]": 2,
+  };
+
+  let typ = Object.prototype.toString.call(seq);
+  return typ in arrayLike;
+};
+
+element.makeWebElement = function(uuid) {
+  return {
+    [element.Key]: uuid,
+    [element.LegacyKey]: uuid,
+  };
+};
+
 element.generateUUID = function() {
   let uuid = uuidGen.generateUUID().toString();
   return uuid.substring(1, uuid.length - 1);
