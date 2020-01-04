@@ -115,6 +115,11 @@ var gPage = {
     this._initialized = true;
 
     
+    
+    document.getElementById("newtab-search-submit").value =
+      document.body.getAttribute("dir") == "ltr" ? "\u25B6" : "\u25C0";
+
+    
     gSearch.init();
 
     if (document.hidden) {

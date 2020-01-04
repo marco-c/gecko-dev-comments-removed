@@ -220,6 +220,11 @@ function setupSearch()
 {
   
   
+  document.getElementById("searchSubmit").value =
+    document.body.getAttribute("dir") == "ltr" ? "\u25B6" : "\u25C0";
+
+  
+  
   
   searchText = document.getElementById("searchText");
   searchText.addEventListener("blur", function searchText_onBlur() {
