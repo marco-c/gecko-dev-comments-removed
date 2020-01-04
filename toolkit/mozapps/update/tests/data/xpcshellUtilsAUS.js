@@ -180,7 +180,7 @@ var gEnvLdLibraryPath;
 
 
 
-var DEBUG_AUS_TEST = false;
+var DEBUG_AUS_TEST = true;
 
 
 
