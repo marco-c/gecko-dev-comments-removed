@@ -639,7 +639,7 @@ this.PushServiceWebSocket = {
     try {
       
       
-      this._ws.asyncOpen(uri, uri.spec, this._wsListener, null);
+      this._ws.asyncOpen(uri, uri.spec, 0, this._wsListener, null);
       this._acquireWakeLock();
       this._currentState = STATE_WAITING_FOR_WS_START;
     } catch(e) {
