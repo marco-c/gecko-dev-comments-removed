@@ -942,9 +942,7 @@ ComputeSizeFromParts(nsPresContext* aPresContext,
   
   nscoord sum = 0;
   for (int32_t i = first; i <= last; i++) {
-    if (aGlyphs[i] != aGlyphs[glue]) {
-      sum += aSizes[i];
-    }
+    sum += aSizes[i];
   }
 
   
