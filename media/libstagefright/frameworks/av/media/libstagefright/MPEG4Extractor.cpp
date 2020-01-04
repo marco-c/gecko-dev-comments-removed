@@ -2462,6 +2462,58 @@ status_t MPEG4Extractor::verifyTrack(Track *track) {
     return OK;
 }
 
+typedef enum {
+    
+    
+    
+    AOT_AAC_LC           = 2,   
+    
+    
+    AOT_SBR              = 5,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AOT_ER_AAC_LC        = 17,   
+    
+    
+    AOT_ER_AAC_SCAL      = 20,   
+    
+    AOT_ER_BSAC          = 22,   
+    AOT_ER_AAC_LD        = 23,   
+    
+    
+    
+    
+    
+    AOT_PS               = 29,   
+    
+
+    AOT_ESCAPE           = 31,   
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+
+    
+} AUDIO_OBJECT_TYPE;
+
 status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
         const void *esds_data, size_t esds_size) {
     ESDS esds(esds_data, esds_size);
@@ -2473,9 +2525,9 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
 
     if (objectTypeIndication == 0xe1) {
         
-        if (!mLastTrack) {
-          return ERROR_MALFORMED;
-        }
+        if (mLastTrack == NULL)
+            return ERROR_MALFORMED;
+
         mLastTrack->meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_AUDIO_QCELP);
         return OK;
     }
@@ -2496,8 +2548,10 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
     }
 
 #if 0
-    printf("ESD of size %d\n", csd_size);
-    hexdump(csd, csd_size);
+    if (kUseHexDump) {
+        printf("ESD of size %zu\n", csd_size);
+        hexdump(csd, csd_size);
+    }
 #endif
 
     if (csd_size == 0) {
@@ -2512,6 +2566,11 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
         return ERROR_MALFORMED;
     }
 
+    static uint32_t kSamplingRate[] = {
+        96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050,
+        16000, 12000, 11025, 8000, 7350
+    };
+
     ABitReader br(csd, csd_size);
     if (br.numBitsLeft() < 5) {
         return ERROR_MALFORMED;
@@ -2525,12 +2584,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
         objectType = 32 + br.getBits(6);
     }
 
+    if (mLastTrack == NULL)
+        return ERROR_MALFORMED;
+
     if (objectType >= 1 && objectType <= 4) {
-        if (!mLastTrack) {
-          return ERROR_MALFORMED;
-        }
         mLastTrack->meta->setInt32(kKeyAACProfile, objectType);
     }
+
+    
+    mLastTrack->meta->setInt32(kKeyAACAOT, objectType);
 
     if (br.numBitsLeft() < 4) {
         return ERROR_MALFORMED;
@@ -2540,47 +2602,179 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
     int32_t sampleRate = 0;
     int32_t numChannels = 0;
     if (freqIndex == 15) {
-        if (csd_size < 5) {
-            return ERROR_MALFORMED;
-        }
-        if (br.numBitsLeft() < 24 + 4) {
-            return ERROR_MALFORMED;
-        }
+        if (br.numBitsLeft() < 28) return ERROR_MALFORMED;
         sampleRate = br.getBits(24);
         numChannels = br.getBits(4);
     } else {
-        if (br.numBitsLeft() < 4) {
+        if (br.numBitsLeft() < 4) return ERROR_MALFORMED;
+        numChannels = br.getBits(4);
+
+        if (freqIndex == 13 || freqIndex == 14) {
             return ERROR_MALFORMED;
         }
-        numChannels = br.getBits(4);
-        if (objectType == 5) {
-            
-            if (br.numBitsLeft() < 4) {
+
+        sampleRate = kSamplingRate[freqIndex];
+    }
+
+    if (objectType == AOT_SBR || objectType == AOT_PS) {
+        if (br.numBitsLeft() < 4) return ERROR_MALFORMED;
+        uint32_t extFreqIndex = br.getBits(4);
+        int32_t extSampleRate;
+        if (extFreqIndex == 15) {
+            if (csd_size < 8) {
                 return ERROR_MALFORMED;
             }
-            freqIndex = br.getBits(4);
-            if (freqIndex == 15) {
-                if (csd_size < 8) {
-                    return ERROR_MALFORMED;
-                }
-                if (br.numBitsLeft() < 24) {
-                    return ERROR_MALFORMED;
-                }
-                sampleRate = br.getBits(24);
+            if (br.numBitsLeft() < 24) return ERROR_MALFORMED;
+            extSampleRate = br.getBits(24);
+        } else {
+            if (extFreqIndex == 13 || extFreqIndex == 14) {
+                return ERROR_MALFORMED;
+            }
+            extSampleRate = kSamplingRate[extFreqIndex];
+        }
+        
+        
+    }
+
+    switch (numChannels) {
+        
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+            
+            break;
+        case 11:
+            numChannels = 7;
+            break;
+        case 7: 
+        case 12:
+        case 14:
+            numChannels = 8;
+            break;
+        default:
+            return ERROR_UNSUPPORTED;
+    }
+
+    {
+        if (objectType == AOT_SBR || objectType == AOT_PS) {
+            if (br.numBitsLeft() < 5) return ERROR_MALFORMED;
+            objectType = br.getBits(5);
+
+            if (objectType == AOT_ESCAPE) {
+                if (br.numBitsLeft() < 6) return ERROR_MALFORMED;
+                objectType = 32 + br.getBits(6);
             }
         }
+        if (objectType == AOT_AAC_LC || objectType == AOT_ER_AAC_LC ||
+                objectType == AOT_ER_AAC_LD || objectType == AOT_ER_AAC_SCAL ||
+                objectType == AOT_ER_BSAC) {
+            if (br.numBitsLeft() < 2) return ERROR_MALFORMED;
+            const int32_t frameLengthFlag = br.getBits(1);
 
-        if (sampleRate == 0) {
-            static uint32_t kSamplingRate[] = {
-                96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050,
-                16000, 12000, 11025, 8000, 7350
-            };
+            const int32_t dependsOnCoreCoder = br.getBits(1);
 
-            if (freqIndex == 13 || freqIndex == 14) {
-                return ERROR_MALFORMED;
+            if (dependsOnCoreCoder ) {
+                if (br.numBitsLeft() < 14) return ERROR_MALFORMED;
+                const int32_t coreCoderDelay = br.getBits(14);
             }
 
-            sampleRate = kSamplingRate[freqIndex];
+            int32_t extensionFlag = -1;
+            if (br.numBitsLeft() > 0) {
+                extensionFlag = br.getBits(1);
+            } else {
+                switch (objectType) {
+                
+                case AOT_AAC_LC:
+                    extensionFlag = 0;
+                    break;
+                case AOT_ER_AAC_LC:
+                case AOT_ER_AAC_SCAL:
+                case AOT_ER_BSAC:
+                case AOT_ER_AAC_LD:
+                    extensionFlag = 1;
+                    break;
+                default:
+                    return ERROR_MALFORMED;
+                    break;
+                }
+                ALOGW("csd missing extension flag; assuming %d for object type %u.",
+                        extensionFlag, objectType);
+            }
+
+            if (numChannels == 0) {
+                int32_t channelsEffectiveNum = 0;
+                int32_t channelsNum = 0;
+                if (br.numBitsLeft() < 32) {
+                    return ERROR_MALFORMED;
+                }
+                const int32_t ElementInstanceTag = br.getBits(4);
+                const int32_t Profile = br.getBits(2);
+                const int32_t SamplingFrequencyIndex = br.getBits(4);
+                const int32_t NumFrontChannelElements = br.getBits(4);
+                const int32_t NumSideChannelElements = br.getBits(4);
+                const int32_t NumBackChannelElements = br.getBits(4);
+                const int32_t NumLfeChannelElements = br.getBits(2);
+                const int32_t NumAssocDataElements = br.getBits(3);
+                const int32_t NumValidCcElements = br.getBits(4);
+
+                const int32_t MonoMixdownPresent = br.getBits(1);
+
+                if (MonoMixdownPresent != 0) {
+                    if (br.numBitsLeft() < 4) return ERROR_MALFORMED;
+                    const int32_t MonoMixdownElementNumber = br.getBits(4);
+                }
+
+                if (br.numBitsLeft() < 1) return ERROR_MALFORMED;
+                const int32_t StereoMixdownPresent = br.getBits(1);
+                if (StereoMixdownPresent != 0) {
+                    if (br.numBitsLeft() < 4) return ERROR_MALFORMED;
+                    const int32_t StereoMixdownElementNumber = br.getBits(4);
+                }
+
+                if (br.numBitsLeft() < 1) return ERROR_MALFORMED;
+                const int32_t MatrixMixdownIndexPresent = br.getBits(1);
+                if (MatrixMixdownIndexPresent != 0) {
+                    if (br.numBitsLeft() < 3) return ERROR_MALFORMED;
+                    const int32_t MatrixMixdownIndex = br.getBits(2);
+                    const int32_t PseudoSurroundEnable = br.getBits(1);
+                }
+
+                int i;
+                for (i=0; i < NumFrontChannelElements; i++) {
+                    if (br.numBitsLeft() < 5) return ERROR_MALFORMED;
+                    const int32_t FrontElementIsCpe = br.getBits(1);
+                    const int32_t FrontElementTagSelect = br.getBits(4);
+                    channelsNum += FrontElementIsCpe ? 2 : 1;
+                }
+
+                for (i=0; i < NumSideChannelElements; i++) {
+                    if (br.numBitsLeft() < 5) return ERROR_MALFORMED;
+                    const int32_t SideElementIsCpe = br.getBits(1);
+                    const int32_t SideElementTagSelect = br.getBits(4);
+                    channelsNum += SideElementIsCpe ? 2 : 1;
+                }
+
+                for (i=0; i < NumBackChannelElements; i++) {
+                    if (br.numBitsLeft() < 5) return ERROR_MALFORMED;
+                    const int32_t BackElementIsCpe = br.getBits(1);
+                    const int32_t BackElementTagSelect = br.getBits(4);
+                    channelsNum += BackElementIsCpe ? 2 : 1;
+                }
+                channelsEffectiveNum = channelsNum;
+
+                for (i=0; i < NumLfeChannelElements; i++) {
+                    if (br.numBitsLeft() < 4) return ERROR_MALFORMED;
+                    const int32_t LfeElementTagSelect = br.getBits(4);
+                    channelsNum += 1;
+                }
+                ALOGV("mpeg4 audio channelsNum = %d", channelsNum);
+                ALOGV("mpeg4 audio channelsEffectiveNum = %d", channelsEffectiveNum);
+                numChannels = channelsNum;
+            }
         }
     }
 
@@ -2588,9 +2782,9 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
         return ERROR_UNSUPPORTED;
     }
 
-    if (!mLastTrack) {
-      return ERROR_MALFORMED;
-    }
+    if (mLastTrack == NULL)
+        return ERROR_MALFORMED;
+
     int32_t prevSampleRate;
     CHECK(mLastTrack->meta->findInt32(kKeySampleRate, &prevSampleRate));
 

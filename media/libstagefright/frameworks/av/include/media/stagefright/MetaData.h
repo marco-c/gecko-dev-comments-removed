@@ -137,6 +137,7 @@ enum {
     kKeyRequiresSecureBuffers = 'secu',  
 
     kKeyIsADTS            = 'adts',  
+    kKeyAACAOT            = 'aaot',  
 
     
     
