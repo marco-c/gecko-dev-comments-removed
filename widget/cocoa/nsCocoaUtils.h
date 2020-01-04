@@ -25,24 +25,11 @@
 - (CGFloat)backingScaleFactor;
 @end
 
-
-#if !defined(MAC_OS_X_VERSION_10_7) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7
-enum {
-  NSEventPhaseNone        = 0,
-  NSEventPhaseBegan       = 0x1 << 0,
-  NSEventPhaseStationary  = 0x1 << 1,
-  NSEventPhaseChanged     = 0x1 << 2,
-  NSEventPhaseEnded       = 0x1 << 3,
-  NSEventPhaseCancelled   = 0x1 << 4,
-};
-typedef NSUInteger NSEventPhase;
-#endif 
-
 #if !defined(MAC_OS_X_VERSION_10_8) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_8
 enum {
   NSEventPhaseMayBegin    = 0x1 << 5
 };
-#endif 
+#endif
 
 class nsIWidget;
 
@@ -98,11 +85,6 @@ private:
 
 
 - (void)_modalSession:(NSModalSession)aSession sendEvent:(NSEvent *)theEvent;
-
-
-
-
-- (void)setHelpMenu:(NSMenu *)helpMenu;
 
 @end
 
