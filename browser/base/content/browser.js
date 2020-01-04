@@ -1217,9 +1217,10 @@ var gBrowserInit = {
     BrowserOffline.init();
     OfflineApps.init();
     IndexedDBPromptHelper.init();
-#ifdef E10S_TESTING_ONLY
-    gRemoteTabsUI.init();
-#endif
+
+    if (AppConstants.E10S_TESTING_ONLY)
+      gRemoteTabsUI.init();
+
     
     
     
@@ -1624,9 +1625,9 @@ if (AppConstants.platform == "macosx") {
     
     gSyncUI.init();
 
-#ifdef E10S_TESTING_ONLY
-    gRemoteTabsUI.init();
-#endif
+    if (AppConstants.E10S_TESTING_ONLY) {
+      gRemoteTabsUI.init();
+    }
   };
 
   gBrowserInit.nonBrowserWindowShutdown = function() {
@@ -7635,13 +7636,12 @@ var gRemoteTabsUI = {
       return;
     }
 
-#ifdef XP_MACOSX
-    if (Services.prefs.getBoolPref("layers.acceleration.disabled")) {
+    if (AppConstants.platform == "macosx" &&
+        Services.prefs.getBoolPref("layers.acceleration.disabled")) {
       
       
       return;
     }
-#endif
 
     let newNonRemoteWindow = document.getElementById("menu_newNonRemoteWindow");
     let autostart = Services.appinfo.browserTabsRemoteAutostart;
@@ -7808,11 +7808,11 @@ var TabContextMenu = {
     for (let menuItem of menuItems)
       menuItem.disabled = disabled;
 
-#ifdef E10S_TESTING_ONLY
-    menuItems = aPopupMenu.getElementsByAttribute("tbattr", "tabbrowser-remote");
-    for (let menuItem of menuItems)
-      menuItem.hidden = !gMultiProcessBrowser;
-#endif
+    if (AppConstants.E10S_TESTING_ONLY) {
+      menuItems = aPopupMenu.getElementsByAttribute("tbattr", "tabbrowser-remote");
+      for (let menuItem of menuItems)
+        menuItem.hidden = !gMultiProcessBrowser;
+    }
 
     disabled = gBrowser.visibleTabs.length == 1;
     menuItems = aPopupMenu.getElementsByAttribute("tbattr", "tabbrowser-multiple-visible");
