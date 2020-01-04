@@ -272,9 +272,10 @@ public:
 
 
 
-  DrawResult PaintTableBorderBackground(nsRenderingContext& aRenderingContext,
+  DrawResult PaintTableBorderBackground(nsDisplayListBuilder* aBuilder,
+                                        nsRenderingContext& aRenderingContext,
                                         const nsRect& aDirtyRect,
-                                        nsPoint aPt, uint32_t aBGPaintFlags);
+                                        nsPoint aPt);
 
   
 
