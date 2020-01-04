@@ -15,72 +15,8 @@ loader.lazyRequireGetter(this, "PerformanceIO",
   "devtools/toolkit/performance/io");
 loader.lazyRequireGetter(this, "RecordingUtils",
   "devtools/toolkit/performance/utils");
-
-
-
-
-
-const PerformanceRecordingCommon = {
-  
-  _console: false,
-  _imported: false,
-  _recording: false,
-  _completed: false,
-  _configuration: {},
-  _startingBufferStatus: null,
-  _localStartTime: null,
-
-  
-  _label: "",
-  _duration: 0,
-  _markers: null,
-  _frames: null,
-  _memory: null,
-  _ticks: null,
-  _allocations: null,
-  _profile: null,
-
-  
-
-
-
-  isRecording: function () { return this._recording; },
-  isCompleted: function () { return this._completed || this.isImported(); },
-  isFinalizing: function () { return !this.isRecording() && !this.isCompleted(); },
-  isConsole: function () { return this._console; },
-  isImported: function () { return this._imported; },
-
-  
-
-
-
-  getConfiguration: function () { return this._configuration; },
-  getLabel: function () { return this._label; },
-
-  
-
-
-
-  getMarkers: function() { return this._markers; },
-  getFrames: function() { return this._frames; },
-  getMemory: function() { return this._memory; },
-  getTicks: function() { return this._ticks; },
-  getAllocations: function() { return this._allocations; },
-  getProfile: function() { return this._profile; },
-
-  getAllData: function () {
-    let label = this.getLabel();
-    let duration = this.getDuration();
-    let markers = this.getMarkers();
-    let frames = this.getFrames();
-    let memory = this.getMemory();
-    let ticks = this.getTicks();
-    let allocations = this.getAllocations();
-    let profile = this.getProfile();
-    let configuration = this.getConfiguration();
-    return { label, duration, markers, frames, memory, ticks, allocations, profile, configuration };
-  },
-};
+loader.lazyRequireGetter(this, "PerformanceRecordingCommon",
+  "devtools/toolkit/performance/recording-common", true);
 
 
 
@@ -111,9 +47,12 @@ let PerformanceRecordingActor = exports.PerformanceRecordingActor = protocol.Act
 
     
     
-    if (this._profile && !this._sentProfilerData) {
-      form.profile = this._profile;
-      this._sentProfilerData = true;
+    if (this._profile && !this._sentFinalizedData) {
+      form.finalizedData = true;
+      form.profile = this.getProfile();
+      form.systemHost = this.getHostSystemInfo();
+      form.systemClient = this.getClientSystemInfo();
+      this._sentFinalizedData = true;
     }
 
     return form;
@@ -164,6 +103,9 @@ let PerformanceRecordingActor = exports.PerformanceRecordingActor = protocol.Act
       this._memory = [];
       this._ticks = [];
       this._allocations = { sites: [], timestamps: [], frames: [], sizes: [] };
+
+      this._systemHost = meta.systemHost || {};
+      this._systemClient = meta.systemClient || {};
     }
   },
 
@@ -233,8 +175,10 @@ let PerformanceRecordingFront = exports.PerformanceRecordingFront = protocol.Fro
     this._completed = form.completed;
     this._duration = form.duration;
 
-    if (form.profile) {
+    if (form.finalizedData) {
       this._profile = form.profile;
+      this._systemHost = form.systemHost;
+      this._systemClient = form.systemClient;
     }
 
     
@@ -268,33 +212,6 @@ let PerformanceRecordingFront = exports.PerformanceRecordingFront = protocol.Fro
   exportRecording: function (file) {
     let recordingData = this.getAllData();
     return PerformanceIO.saveRecordingToFile(recordingData, file);
-  },
-
-  
-
-
-
-
-
-  getStartingBufferStatus: function () {
-    return this._form.startingBufferStatus;
-  },
-
-  
-
-
-
-  getDuration: function () {
-    
-    
-    
-    
-    
-    if (this.isRecording()) {
-      return this._estimatedDuration = Date.now() - this._localStartTime;
-    } else {
-      return this._duration || this._estimatedDuration || 0;
-    }
   },
 
   
