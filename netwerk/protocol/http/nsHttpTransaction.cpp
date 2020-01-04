@@ -33,6 +33,7 @@
 #include "nsIEventTarget.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIInputStream.h"
+#include "nsIThrottledInputChannel.h"
 #include "nsITransport.h"
 #include "nsIOService.h"
 #include "nsIRequestContext.h"
@@ -139,7 +140,6 @@ nsHttpTransaction::nsHttpTransaction()
     , mAppId(NECKO_NO_APP_ID)
     , mIsInIsolatedMozBrowser(false)
     , mClassOfService(0)
-    , m0RTTInProgress(false)
 {
     LOG(("Creating nsHttpTransaction @%p\n", this));
     gHttpHandler->GetMaxPipelineObjectSize(&mMaxPipelineObjectSize);
@@ -233,6 +233,7 @@ nsHttpTransaction::Init(uint32_t caps,
     MOZ_ASSERT(cinfo);
     MOZ_ASSERT(requestHead);
     MOZ_ASSERT(target);
+    MOZ_ASSERT(NS_IsMainThread());
 
     mActivityDistributor = do_GetService(NS_HTTPACTIVITYDISTRIBUTOR_CONTRACTID, &rv);
     if (NS_FAILED(rv)) return rv;
@@ -379,6 +380,25 @@ nsHttpTransaction::Init(uint32_t caps,
     }
     else
         mRequestStream = headers;
+
+    nsCOMPtr<nsIThrottledInputChannel> throttled = do_QueryInterface(mChannel);
+    nsIInputChannelThrottleQueue* queue;
+    if (throttled) {
+        rv = throttled->GetThrottleQueue(&queue);
+        
+        if (NS_SUCCEEDED(rv) && queue) {
+            nsCOMPtr<nsIAsyncInputStream> wrappedStream;
+            rv = queue->WrapStream(mRequestStream, getter_AddRefs(wrappedStream));
+            
+            
+            if (NS_SUCCEEDED(rv)) {
+                MOZ_ASSERT(wrappedStream != nullptr);
+                LOG(("nsHttpTransaction::Init %p wrapping input stream using throttle queue %p\n",
+                     this, queue));
+                mRequestStream = do_QueryInterface(wrappedStream);
+            }
+        }
+    }
 
     uint64_t size_u64;
     rv = mRequestStream->Available(&size_u64);
@@ -693,7 +713,7 @@ nsHttpTransaction::ReadSegments(nsAHttpSegmentReader *reader,
         return mStatus;
     }
 
-    if (!mConnected && !m0RTTInProgress) {
+    if (!mConnected) {
         mConnected = true;
         mConnection->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
     }
@@ -2319,34 +2339,6 @@ nsHttpTransaction::GetNetworkAddresses(NetAddr &self, NetAddr &peer)
     MutexAutoLock lock(mLock);
     self = mSelfAddr;
     peer = mPeerAddr;
-}
-
-bool
-nsHttpTransaction::Do0RTT()
-{
-   if (mRequestHead->IsSafeMethod() &&
-       !mConnection->IsProxyConnectInProgress()) {
-     m0RTTInProgress = true;
-   }
-   return m0RTTInProgress;
-}
-
-nsresult
-nsHttpTransaction::Finish0RTT(bool aRestart)
-{
-    MOZ_ASSERT(m0RTTInProgress);
-    m0RTTInProgress = false;
-    if (aRestart) {
-        
-        nsCOMPtr<nsISeekableStream> seekable =
-            do_QueryInterface(mRequestStream);
-        if (seekable) {
-            seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
-        } else {
-            return NS_ERROR_FAILURE;
-        }
-    }
-    return NS_OK;
 }
 
 } 

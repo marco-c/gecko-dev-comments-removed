@@ -69,6 +69,7 @@ HttpBaseChannel::HttpBaseChannel()
   , mPriority(PRIORITY_NORMAL)
   , mRedirectionLimit(gHttpHandler->RedirectionLimit())
   , mApplyConversion(true)
+  , mHaveListenerForTraceableChannel(false)
   , mCanceled(false)
   , mIsPending(false)
   , mWasOpened(false)
@@ -226,6 +227,7 @@ NS_INTERFACE_MAP_BEGIN(HttpBaseChannel)
   NS_INTERFACE_MAP_ENTRY(nsIPrivateBrowsingChannel)
   NS_INTERFACE_MAP_ENTRY(nsITimedChannel)
   NS_INTERFACE_MAP_ENTRY(nsIConsoleReportCollector)
+  NS_INTERFACE_MAP_ENTRY(nsIThrottledInputChannel)
 NS_INTERFACE_MAP_END_INHERITING(nsHashPropertyBag)
 
 
@@ -2661,6 +2663,7 @@ HttpBaseChannel::SetNewListener(nsIStreamListener *aListener, nsIStreamListener 
 
   wrapper.forget(_retval);
   mListener = aListener;
+  mHaveListenerForTraceableChannel = true;
   return NS_OK;
 }
 
@@ -3458,6 +3461,28 @@ HttpBaseChannel::GetInnerDOMWindow()
 
 
 
+
+
+NS_IMETHODIMP
+HttpBaseChannel::SetThrottleQueue(nsIInputChannelThrottleQueue* aQueue)
+{
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  mThrottleQueue = aQueue;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::GetThrottleQueue(nsIInputChannelThrottleQueue** aQueue)
+{
+  *aQueue = mThrottleQueue;
+  return NS_OK;
+}
+
+
+
 bool
 HttpBaseChannel::EnsureRequestContextID()
 {
@@ -3513,16 +3538,6 @@ HttpBaseChannel::SetBlockAuthPrompt(bool aValue)
   ENSURE_CALLED_BEFORE_CONNECT();
 
   mBlockAuthPrompt = aValue;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-HttpBaseChannel::GetConnectionInfoHashKey(nsACString& aConnectionInfoHashKey)
-{
-  if (!mConnectionInfo) {
-    return NS_ERROR_FAILURE;
-  }
-  aConnectionInfoHashKey.Assign(mConnectionInfo->HashKey());
   return NS_OK;
 }
 
