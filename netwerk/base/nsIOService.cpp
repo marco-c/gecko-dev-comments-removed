@@ -60,17 +60,12 @@
 #include "nsINetworkInterface.h"
 #endif
 
-#if defined(XP_WIN)
-#include "nsNativeConnectionHelper.h"
-#endif
-
 using namespace mozilla;
 using mozilla::net::IsNeckoChild;
 using mozilla::net::CaptivePortalService;
 
 #define PORT_PREF_PREFIX           "network.security.ports."
 #define PORT_PREF(x)               PORT_PREF_PREFIX x
-#define AUTODIAL_PREF              "network.autodial-helper.enabled"
 #define MANAGE_OFFLINE_STATUS_PREF "network.manage-offline-status"
 #define OFFLINE_MIRRORS_CONNECTIVITY "network.offline-mirrors-connectivity"
 
@@ -192,7 +187,6 @@ nsIOService::nsIOService()
     , mHttpHandlerAlreadyShutingDown(false)
     , mNetworkLinkServiceInitialized(false)
     , mChannelEventSinks(NS_CHANNEL_EVENT_SINK_CATEGORY)
-    , mAutoDialEnabled(false)
     , mNetworkNotifyChanged(true)
     , mPreviousWifiState(-1)
     , mLastOfflineStateChange(PR_IntervalNow())
@@ -236,7 +230,6 @@ nsIOService::Init()
     GetPrefBranch(getter_AddRefs(prefBranch));
     if (prefBranch) {
         prefBranch->AddObserver(PORT_PREF_PREFIX, this, true);
-        prefBranch->AddObserver(AUTODIAL_PREF, this, true);
         prefBranch->AddObserver(MANAGE_OFFLINE_STATUS_PREF, this, true);
         prefBranch->AddObserver(NECKO_BUFFER_CACHE_COUNT_PREF, this, true);
         prefBranch->AddObserver(NECKO_BUFFER_CACHE_SIZE_PREF, this, true);
@@ -309,7 +302,6 @@ nsIOService::InitializeSocketTransportService()
     if (mSocketTransportService) {
         rv = mSocketTransportService->Init();
         NS_ASSERTION(NS_SUCCEEDED(rv), "socket transport service init failed");
-        mSocketTransportService->SetAutodialEnabled(mAutoDialEnabled);
         mSocketTransportService->SetOffline(false);
     }
 
@@ -1251,17 +1243,6 @@ nsIOService::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
     if (!pref || strcmp(pref, PORT_PREF("banned.override")) == 0)
         ParsePortList(prefs, PORT_PREF("banned.override"), true);
 
-    if (!pref || strcmp(pref, AUTODIAL_PREF) == 0) {
-        bool enableAutodial = false;
-        nsresult rv = prefs->GetBoolPref(AUTODIAL_PREF, &enableAutodial);
-        
-        mAutoDialEnabled = enableAutodial;
-        if (NS_SUCCEEDED(rv)) {
-            if (mSocketTransportService)
-                mSocketTransportService->SetAutodialEnabled(enableAutodial);
-        }
-    }
-
     if (!pref || strcmp(pref, MANAGE_OFFLINE_STATUS_PREF) == 0) {
         bool manage;
         if (mNetworkLinkServiceInitialized &&
@@ -1711,27 +1692,6 @@ nsIOService::OnNetworkLinkEvent(const char *data)
     if (!mManageLinkStatus) {
         LOG(("nsIOService::OnNetworkLinkEvent mManageLinkStatus=false\n"));
         return NS_OK;
-    }
-
-    if (!strcmp(data, NS_NETWORK_LINK_DATA_DOWN)) {
-        
-        if (mSocketTransportService) {
-            bool autodialEnabled = false;
-            mSocketTransportService->GetAutodialEnabled(&autodialEnabled);
-            
-            
-            
-            if (autodialEnabled) {
-                bool isUp = true;
-#if defined(XP_WIN)
-                
-                
-                
-                isUp = nsNativeConnectionHelper::IsAutodialEnabled();
-#endif
-                return SetConnectivityInternal(isUp);
-            }
-        }
     }
 
     bool isUp = true;

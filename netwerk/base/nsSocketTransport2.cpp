@@ -39,7 +39,6 @@
 
 #if defined(XP_WIN)
 #include "mozilla/WindowsVersion.h"
-#include "nsNativeConnectionHelper.h"
 #include "ShutdownLayer.h"
 #endif
 
@@ -1610,19 +1609,6 @@ nsSocketTransport::RecoverFromError()
             tryAgain = true;
         }
     }
-
-#if defined(XP_WIN)
-    
-    
-    if (!tryAgain) {
-        bool autodialEnabled;
-        mSocketTransportService->GetAutodialEnabled(&autodialEnabled);
-        if (autodialEnabled) {
-          tryAgain = nsNativeConnectionHelper::OnConnectionFailed(
-                       NS_ConvertUTF8toUTF16(SocketHost()).get());
-	    }
-    }
-#endif
 
     
     if (tryAgain) {

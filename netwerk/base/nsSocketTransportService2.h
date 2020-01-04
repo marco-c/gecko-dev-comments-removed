@@ -120,8 +120,6 @@ private:
 
     nsCOMPtr<nsIThread> mThread;    
     mozilla::UniquePtr<mozilla::net::PollableEvent> mPollableEvent;
-    bool        mAutodialEnabled;
-                            
 
     
     already_AddRefed<nsIThread> GetThreadSafely();

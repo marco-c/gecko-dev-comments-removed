@@ -3294,10 +3294,6 @@ pref("plugin.scan.plid.all", true);
 pref("plugin.mousewheel.enabled", true);
 
 
-
-pref("network.autodial-helper.enabled", false);
-
-
 pref("intl.keyboard.per_window_layout", false);
 
 #ifdef NS_ENABLE_TSF
