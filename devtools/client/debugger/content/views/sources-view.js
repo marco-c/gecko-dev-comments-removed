@@ -1087,10 +1087,6 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   },
 
   renderSourceSelected: function (source) {
-    
-    
-    document.title = L10N.getFormatStr("DebuggerWindowScriptTitle", source.url);
-
     if (source.url) {
       this._preferredSourceURL = source.url;
     }
