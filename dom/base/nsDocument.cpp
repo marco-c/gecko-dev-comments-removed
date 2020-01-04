@@ -7609,7 +7609,6 @@ nsIDocument::GetDocumentURIObject() const
 
 
 
-
 NS_IMETHODIMP
 nsDocument::GetCompatMode(nsAString& aCompatMode)
 {
