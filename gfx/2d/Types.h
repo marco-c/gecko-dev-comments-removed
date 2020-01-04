@@ -6,6 +6,8 @@
 #ifndef MOZILLA_GFX_TYPES_H_
 #define MOZILLA_GFX_TYPES_H_
 
+#include "mozilla/Endian.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -38,6 +40,8 @@ enum class SurfaceFormat : int8_t {
   B8G8R8X8,     
   R8G8B8A8,     
   R8G8B8X8,     
+  A8R8G8B8,     
+  X8R8G8B8,     
 
   
   
@@ -52,7 +56,20 @@ enum class SurfaceFormat : int8_t {
   NV12,
 
   
-  UNKNOWN
+  UNKNOWN,
+
+  
+  
+  
+#if MOZ_LITTLE_ENDIAN
+  A8R8G8B8_UINT32 = B8G8R8A8,       
+  X8R8G8B8_UINT32 = B8G8R8X8        
+#elif MOZ_BIG_ENDIAN
+  A8R8G8B8_UINT32 = A8R8G8B8,       
+  X8R8G8B8_UINT32 = X8R8G8B8        
+#else
+# error "bad endianness"
+#endif
 };
 
 inline bool IsOpaque(SurfaceFormat aFormat)
