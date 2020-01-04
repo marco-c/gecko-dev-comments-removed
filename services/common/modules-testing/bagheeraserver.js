@@ -21,7 +21,6 @@ Cu.import("resource://testing-common/httpd.js");
 
 
 
-
 this.BagheeraServer = function BagheeraServer() {
   this._log = Log.repository.getLogger("metrics.BagheeraServer");
 
@@ -159,8 +158,7 @@ BagheeraServer.prototype = {
       if (ex instanceof HttpError) {
         this._log.info("HttpError thrown: " + ex.code + " " + ex.description);
       } else {
-        this._log.warn("Exception processing request: " +
-                       CommonUtils.exceptionStr(ex));
+        this._log.warn("Exception processing request", ex);
       }
 
       throw ex;
