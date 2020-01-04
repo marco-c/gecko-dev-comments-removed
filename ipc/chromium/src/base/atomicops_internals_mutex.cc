@@ -4,7 +4,6 @@
 
 
 
-
 #include "base/atomicops.h"
 
 namespace base {

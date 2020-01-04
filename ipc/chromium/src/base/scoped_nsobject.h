@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef BASE_SCOPED_NSOBJECT_H_
 #define BASE_SCOPED_NSOBJECT_H_
 

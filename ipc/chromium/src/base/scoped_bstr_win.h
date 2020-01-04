@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef BASE_SCOPED_BSTR_WIN_H_
 #define BASE_SCOPED_BSTR_WIN_H_
 

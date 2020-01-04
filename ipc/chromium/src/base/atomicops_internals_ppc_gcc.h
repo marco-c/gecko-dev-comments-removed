@@ -3,6 +3,8 @@
 
 
 
+
+
 #ifndef BASE_ATOMICOPS_INTERNALS_PPC_H_
 #define BASE_ATOMICOPS_INTERNALS_PPC_H_
 namespace base {

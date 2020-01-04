@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef BASE_SINGLETON_H_
 #define BASE_SINGLETON_H_
 
