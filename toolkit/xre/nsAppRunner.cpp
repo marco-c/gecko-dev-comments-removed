@@ -210,8 +210,12 @@
 #include "AndroidBridge.h"
 #endif
 
-#if defined(MOZ_SANDBOX) && defined(XP_LINUX) && !defined(ANDROID)
+#if defined(MOZ_SANDBOX)
+#if defined(XP_LINUX) && !defined(ANDROID)
 #include "mozilla/SandboxInfo.h"
+#elif defined(XP_WIN)
+#include "SandboxBroker.h"
+#endif
 #endif
 
 extern uint32_t gRestartMode;
@@ -4308,6 +4312,20 @@ XREMain::XRE_mainRun()
   }
 #endif 
 
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
+  if (!SandboxBroker::Initialize()) {
+#if defined(MOZ_CONTENT_SANDBOX)
+    
+    
+    if (BrowserTabsRemoteAutostart()) {
+      MOZ_CRASH("Failed to initialize broker services, can't continue.");
+    }
+#endif
+    
+    NS_WARNING("Failed to initialize broker services, sandboxed processes will "
+               "fail to start.");
+  }
+#endif
 #if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   SetUpSandboxEnvironment();
 #endif
