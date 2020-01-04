@@ -577,10 +577,10 @@ MarkupView.prototype = {
         }
         break;
       case Ci.nsIDOMKeyEvent.DOM_VK_DELETE:
-        this.deleteNode(this._selectedContainer.node);
+        this.deleteNodeOrAttribute();
         break;
       case Ci.nsIDOMKeyEvent.DOM_VK_BACK_SPACE:
-        this.deleteNode(this._selectedContainer.node, true);
+        this.deleteNodeOrAttribute(true);
         break;
       case Ci.nsIDOMKeyEvent.DOM_VK_HOME:
         let rootContainer = this.getContainer(this._rootNode);
@@ -675,6 +675,25 @@ MarkupView.prototype = {
   _isInputOrTextarea : function (element) {
     let name = element.tagName.toLowerCase();
     return name === "input" || name === "textarea";
+  },
+
+  
+
+
+
+
+
+  deleteNodeOrAttribute: function(moveBackward) {
+    let focusedAttribute = this.doc.activeElement
+                           ? this.doc.activeElement.closest(".attreditor")
+                           : null;
+    if (focusedAttribute) {
+      
+      let container = focusedAttribute.closest("li.child").container;
+      container.removeAttribute(focusedAttribute.dataset.attr);
+    } else {
+      this.deleteNode(this._selectedContainer.node, moveBackward);
+    }
   },
 
   
