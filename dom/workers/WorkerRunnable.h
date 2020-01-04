@@ -412,6 +412,34 @@ private:
 
 
 
+class WorkerProxyToMainThreadRunnable : public Runnable
+{
+protected:
+  explicit WorkerProxyToMainThreadRunnable(WorkerPrivate* aWorkerPrivate);
+
+  virtual ~WorkerProxyToMainThreadRunnable();
+
+  
+  virtual void RunOnMainThread() = 0;
+
+  
+  virtual void RunBackOnWorkerThread() = 0;
+
+public:
+  bool Dispatch();
+
+private:
+  NS_IMETHOD Run() override;
+
+  void PostDispatchOnMainThread();
+
+protected:
+  WorkerPrivate* mWorkerPrivate;
+};
+
+
+
+
 
 
 
