@@ -48,6 +48,7 @@ function onRequestProperties(state, action) {
 function onReceiveProperties(cache, action) {
   let response = action.response;
   let from = response.from;
+  let className = action.grip.class;
 
   
   mergeProperties(response);
@@ -55,7 +56,13 @@ function onReceiveProperties(cache, action) {
   
   let previewProps = response.preview ? response.preview.ownProperties : null;
   let ownProps = response.ownProperties || previewProps || [];
+
   let props = Object.keys(ownProps).map(key => {
+    
+    
+    if (className === "Array" && isInteger(key)) {
+      key = parseInt(key, 10);
+    }
     return new Property(key, ownProps[key], key);
   });
 
@@ -98,6 +105,11 @@ function sortName(a, b) {
     return -1;
   }
   return a.name > b.name ? 1 : -1;
+}
+
+function isInteger(n) {
+  
+  return isFinite(n) && parseInt(n, 10) == n;
 }
 
 function Property(name, value, key) {
