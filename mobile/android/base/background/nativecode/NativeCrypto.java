@@ -51,7 +51,7 @@ public class NativeCrypto {
   
 
 
-  public native static void sha256update(byte[] ctx, byte[] str);
+  public native static void sha256update(byte[] ctx, byte[] str, int len);
 
   
 
