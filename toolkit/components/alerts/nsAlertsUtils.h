@@ -27,13 +27,6 @@ public:
 
 
   static void
-  GetSource(nsIPrincipal* aPrincipal, nsAString& aSource);
-
-  
-
-
-
-  static void
   GetSourceHostPort(nsIPrincipal* aPrincipal, nsAString& aHostPort);
 };
 #endif 
