@@ -30,14 +30,6 @@ this.TabStateFlusher = Object.freeze({
   
 
 
-
-  flushWindow(window) {
-    return TabStateFlusherInternal.flushWindow(window);
-  },
-
-  
-
-
   resolve(browser, flushID) {
     TabStateFlusherInternal.resolve(browser, flushID);
   },
@@ -81,16 +73,6 @@ var TabStateFlusherInternal = {
       
       this._requests.set(permanentKey, perBrowserRequests);
     });
-  },
-
-  
-
-
-
-  flushWindow(window) {
-    let browsers = window.gBrowser.browsers;
-    let promises = browsers.map((browser) => this.flush(browser));
-    return Promise.all(promises);
   },
 
   

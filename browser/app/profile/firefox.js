@@ -1048,10 +1048,6 @@ pref("browser.sessionstore.upgradeBackup.maxUpgradeBackups", 3);
 
 pref("browser.sessionstore.debug", false);
 
-
-
-pref("browser.sessionstore.debug.no_auto_updates", false);
-
 pref("browser.sessionstore.cleanup.forget_closed_after", 1209600000);
 
 

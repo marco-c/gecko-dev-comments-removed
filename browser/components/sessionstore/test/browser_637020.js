@@ -55,7 +55,7 @@ add_task(function* test() {
   checkWindows();
 
   
-  yield BrowserTestUtils.closeWindow(win);
+  yield promiseWindowClosed(win);
   yield promiseBrowserState(backupState);
 });
 

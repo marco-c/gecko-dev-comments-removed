@@ -261,38 +261,13 @@ this.BrowserTestUtils = {
 
 
 
-
-
-
-
-  domWindowOpened(win) {
+  domWindowOpened() {
     return new Promise(resolve => {
       function observer(subject, topic, data) {
-        if (topic == "domwindowopened" && (!win || subject === win)) {
-          Services.ww.unregisterNotification(observer);
-          resolve(subject.QueryInterface(Ci.nsIDOMWindow));
-        }
-      }
-      Services.ww.registerNotification(observer);
-    });
-  },
+        if (topic != "domwindowopened") { return; }
 
-  
-
-
-
-
-
-
-
-
-  domWindowClosed(win) {
-    return new Promise((resolve) => {
-      function observer(subject, topic, data) {
-        if (topic == "domwindowclosed" && (!win || subject === win)) {
-          Services.ww.unregisterNotification(observer);
-          resolve(subject.QueryInterface(Ci.nsIDOMWindow));
-        }
+        Services.ww.unregisterNotification(observer);
+        resolve(subject.QueryInterface(Ci.nsIDOMWindow));
       }
       Services.ww.registerNotification(observer);
     });
@@ -345,53 +320,17 @@ this.BrowserTestUtils = {
 
 
 
-
-
   closeWindow(win) {
-    let closedPromise = BrowserTestUtils.windowClosed(win);
-    win.close();
-    return closedPromise;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  windowClosed(win)  {
-    let domWinClosedPromise = BrowserTestUtils.domWindowClosed(win);
-    let promises = [domWinClosedPromise];
-    let winType = win.document.documentElement.getAttribute("windowtype");
-
-    if (winType == "navigator:browser") {
-      let finalMsgsPromise = new Promise((resolve) => {
-        let browserSet = new Set(win.gBrowser.browsers);
-        let mm = win.getGroupMessageManager("browsers");
-
-        mm.addMessageListener("SessionStore:update", function onMessage(msg) {
-          if (browserSet.has(msg.target) && msg.data.isFinal) {
-            browserSet.delete(msg.target);
-            if (!browserSet.size) {
-              mm.removeMessageListener("SessionStore:update", onMessage);
-              
-              
-              
-              resolve();
-            }
-          }
-        }, true);
-      });
-
-      promises.push(finalMsgsPromise);
-    }
-
-    return Promise.all(promises);
+    return new Promise(resolve => {
+      function observer(subject, topic, data) {
+        if (topic == "domwindowclosed" && subject === win) {
+          Services.ww.unregisterNotification(observer);
+          resolve();
+        }
+      }
+      Services.ww.registerNotification(observer);
+      win.close();
+    });
   },
 
   
