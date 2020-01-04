@@ -13,7 +13,6 @@ import org.mozilla.gecko.dlc.DownloadContentService;
 import org.mozilla.gecko.home.HomePanelsManager;
 import org.mozilla.gecko.lwt.LightweightTheme;
 import org.mozilla.gecko.mdns.MulticastDNSManager;
-import org.mozilla.gecko.push.PushService;
 import org.mozilla.gecko.util.Clipboard;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -165,27 +164,6 @@ public class GeckoApplication extends Application
         GeckoService.register();
 
         super.onCreate();
-
-        if (AppConstants.MOZ_ANDROID_GCM) {
-            
-            ThreadUtils.postToBackgroundThread(new Runnable() {
-                @Override
-                public void run() {
-                    
-                    
-                    
-                    PushService.createInstance(context);
-                    PushService.registerGeckoEventListener();
-
-                    try {
-                        PushService.getInstance().onStartup();
-                    } catch (Exception e) {
-                        Log.e(LOG_TAG, "Got exception during startup; ignoring.", e);
-                        return;
-                    }
-                }
-            });
-        }
 
         if (AppConstants.MOZ_ANDROID_DOWNLOAD_CONTENT_SERVICE) {
             DownloadContentService.startStudy(this);
