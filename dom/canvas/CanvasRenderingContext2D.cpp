@@ -354,9 +354,16 @@ public:
       aCtx->CurrentState().updateFilterOnWriteOnly = false;
     }
 
-    FilterSupport::ComputeSourceNeededRegions(
-      aCtx->CurrentState().filter, mPostFilterBounds,
-      sourceGraphicNeededRegion, fillPaintNeededRegion, strokePaintNeededRegion);
+    
+    
+    
+    MOZ_ASSERT(!aCtx->CurrentState().filter.mPrimitives.IsEmpty());
+    if (!aCtx->CurrentState().filter.mPrimitives.IsEmpty()) {
+      FilterSupport::ComputeSourceNeededRegions(
+        aCtx->CurrentState().filter, mPostFilterBounds,
+        sourceGraphicNeededRegion, fillPaintNeededRegion,
+        strokePaintNeededRegion);
+    }
 
     mSourceGraphicRect = sourceGraphicNeededRegion.GetBounds();
     mFillPaintRect = fillPaintNeededRegion.GetBounds();
@@ -431,6 +438,7 @@ public:
     AutoRestoreTransform autoRestoreTransform(mFinalTarget);
     mFinalTarget->SetTransform(Matrix());
 
+    MOZ_RELEASE_ASSERT(!mCtx->CurrentState().filter.mPrimitives.IsEmpty());
     gfx::FilterSupport::RenderFilterDescription(
       mFinalTarget, mCtx->CurrentState().filter,
       gfx::Rect(mPostFilterBounds),
@@ -442,7 +450,7 @@ public:
       DrawOptions(1.0f, mCompositionOp));
 
     const gfx::FilterDescription& filter = mCtx->CurrentState().filter;
-    MOZ_ASSERT(!filter.mPrimitives.IsEmpty());
+    MOZ_RELEASE_ASSERT(!filter.mPrimitives.IsEmpty());
     if (filter.mPrimitives.LastElement().IsTainted() && mCtx->mCanvasElement) {
       mCtx->mCanvasElement->SetWriteOnly();
     }
