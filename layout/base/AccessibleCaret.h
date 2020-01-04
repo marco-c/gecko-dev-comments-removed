@@ -145,10 +145,18 @@ public:
 protected:
   
   void SetCaretElementStyle(const nsRect& aRect, float aZoomLevel);
+  void SetTextOverlayElementStyle(const nsRect& aRect, float aZoomLevel);
+  void SetCaretImageElementStyle(const nsRect& aRect, float aZoomLevel);
   void SetSelectionBarElementStyle(const nsRect& aRect, float aZoomLevel);
 
   
   float GetZoomLevel();
+
+  
+  dom::Element* TextOverlayElement() const
+  {
+    return mCaretElementHolder->GetElementById(sTextOverlayElementId);
+  }
 
   
   dom::Element* CaretImageElement() const
@@ -228,6 +236,7 @@ protected:
   static float sHeight;
   static float sMarginLeft;
   static float sBarWidth;
+  static const nsLiteralString sTextOverlayElementId;
   static const nsLiteralString sCaretImageElementId;
   static const nsLiteralString sSelectionBarElementId;
 
