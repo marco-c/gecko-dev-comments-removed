@@ -3,49 +3,39 @@
 
 
 #include <stdio.h>
+#include <string>
 
 #include "common/linux/file_id.h"
+#include "common/memory.h"
 
+using std::string;
 
-
-
-void FormatIdentifier(unsigned char identifier[google_breakpad::kMDGUIDSize],
-                      char result_guid[40]) {
-  char identifier_str[40];
-  google_breakpad::FileID::ConvertIdentifierToString(
-      identifier,
-      identifier_str,
-      sizeof(identifier_str));
-  int bufpos = 0;
-  for (int i = 0; identifier_str[i] != '\0'; ++i)
-    if (identifier_str[i] != '-')
-      result_guid[bufpos++] = identifier_str[i];
-  
-  
-  
-  
-  result_guid[bufpos++] = '0';
-  
-  result_guid[bufpos] = '\0';
-}
-
+using google_breakpad::auto_wasteful_vector;
+using google_breakpad::FileID;
+using google_breakpad::PageAllocator;
 
 int main(int argc, char** argv)
 {
+
   if (argc != 2) {
     fprintf(stderr, "usage: fileid <elf file>\n");
     return 1;
   }
 
-  unsigned char identifier[google_breakpad::kMDGUIDSize];
-  google_breakpad::FileID file_id(argv[1]);
+  PageAllocator allocator;
+  auto_wasteful_vector<uint8_t, sizeof(MDGUID)> identifier(&allocator);
+  FileID file_id(argv[1]);
   if (!file_id.ElfFileIdentifier(identifier)) {
     fprintf(stderr, "%s: unable to generate file identifier\n",
             argv[1]);
     return 1;
   }
-  char result_guid[40];
-  FormatIdentifier(identifier, result_guid);
-  printf("%s\n", result_guid);
+
+  string result_guid = FileID::ConvertIdentifierToUUIDString(identifier);
+
+  
+  
+  
+  printf("%s0\n", result_guid.c_str());
   return 0;
 }

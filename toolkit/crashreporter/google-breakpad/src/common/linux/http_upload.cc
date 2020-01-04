@@ -72,7 +72,9 @@ bool HTTPUpload::SendRequest(const string &url,
   
   
   void* curl_lib = dlopen(NULL, RTLD_NOW);
-  if (!curl_lib || dlsym(curl_lib, "curl_easy_init") == NULL) {
+  if (!CheckCurlLib(curl_lib)) {
+    fprintf(stderr,
+            "Failed to open curl lib from binary, use libcurl.so instead\n");
     dlerror();  
     dlclose(curl_lib);
     curl_lib = NULL;
@@ -113,6 +115,10 @@ bool HTTPUpload::SendRequest(const string &url,
   *(void**) (&curl_easy_setopt) = dlsym(curl_lib, "curl_easy_setopt");
   (*curl_easy_setopt)(curl, CURLOPT_URL, url.c_str());
   (*curl_easy_setopt)(curl, CURLOPT_USERAGENT, kUserAgent);
+  
+  
+  
+  (*curl_easy_setopt)(curl, CURLOPT_NOSIGNAL, 1);
   
   if (!proxy.empty())
     (*curl_easy_setopt)(curl, CURLOPT_PROXY, proxy.c_str());
@@ -195,6 +201,13 @@ bool HTTPUpload::SendRequest(const string &url,
   }
   dlclose(curl_lib);
   return err_code == CURLE_OK;
+}
+
+
+bool HTTPUpload::CheckCurlLib(void* curl_lib) {
+  return curl_lib &&
+      dlsym(curl_lib, "curl_easy_init") &&
+      dlsym(curl_lib, "curl_easy_setopt");
 }
 
 

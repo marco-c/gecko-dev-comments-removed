@@ -39,6 +39,8 @@
 #ifndef COMMON_LINUX_DWARF_CU_TO_MODULE_H__
 #define COMMON_LINUX_DWARF_CU_TO_MODULE_H__
 
+#include <stdint.h>
+
 #include <string>
 
 #include "common/language.h"
@@ -84,7 +86,7 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
 
     
     void AddSectionToSectionMap(const string& name,
-                                const char* contents,
+                                const uint8_t *contents,
                                 uint64 length);
 
     
@@ -140,7 +142,7 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
     
     
     
-    virtual void ReadProgram(const char *program, uint64 length,
+    virtual void ReadProgram(const uint8_t *program, uint64 length,
                              Module *module, vector<Module::Line> *lines) = 0;
   };
 

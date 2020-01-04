@@ -48,6 +48,7 @@ void CallStack::Clear() {
        ++iterator) {
     delete *iterator;
   }
+  tid_ = 0;
 }
 
 }  

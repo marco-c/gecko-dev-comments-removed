@@ -147,6 +147,29 @@ StackFrameAMD64* StackwalkerAMD64::GetCallerByCFIFrameInfo(
   return frame.release();
 }
 
+bool StackwalkerAMD64::IsEndOfStack(uint64_t caller_rip, uint64_t caller_rsp,
+                                    uint64_t callee_rsp) {
+  
+  if (caller_rip == 0) {
+    return true;
+  }
+
+  
+  
+  
+  if (caller_rsp < callee_rsp) {
+    return true;
+  }
+
+  return false;
+}
+
+
+
+static bool is_non_canonical(uint64_t ptr) {
+  return ptr > 0x7FFFFFFFFFFF && ptr < 0xFFFF800000000000;
+}
+
 StackFrameAMD64* StackwalkerAMD64::GetCallerByFramePointerRecovery(
     const vector<StackFrame*>& frames) {
   StackFrameAMD64* last_frame = static_cast<StackFrameAMD64*>(frames.back());
@@ -169,14 +192,28 @@ StackFrameAMD64* StackwalkerAMD64::GetCallerByFramePointerRecovery(
   
   
 
+  
+  if (last_rbp % 8 != 0) {
+    return NULL;
+  }
+
   uint64_t caller_rip, caller_rbp;
   if (memory_->GetMemoryAtAddress(last_rbp + 8, &caller_rip) &&
       memory_->GetMemoryAtAddress(last_rbp, &caller_rbp)) {
     uint64_t caller_rsp = last_rbp + 16;
 
     
-    if (caller_rbp < last_rbp || caller_rsp < last_rsp)
+    
+    if (is_non_canonical(caller_rip)) {
       return NULL;
+    }
+
+    
+    if (IsEndOfStack(caller_rip, caller_rsp, last_rsp) ||
+        caller_rbp < last_rbp) {
+      
+      return NULL;
+    }
 
     StackFrameAMD64* frame = new StackFrameAMD64();
     frame->trust = StackFrame::FRAME_TRUST_FP;
@@ -284,15 +321,11 @@ StackFrame* StackwalkerAMD64::GetCallerFrame(const CallStack* stack,
     new_frame->context.rbp = static_cast<uint32_t>(new_frame->context.rbp);
   }
 
-  
-  if (new_frame->context.rip == 0)
+  if (IsEndOfStack(new_frame->context.rip, new_frame->context.rsp,
+                   last_frame->context.rsp)) {
+    
     return NULL;
-
-  
-  
-  
-  if (new_frame->context.rsp <= last_frame->context.rsp)
-    return NULL;
+  }
 
   
   

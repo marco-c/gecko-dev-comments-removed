@@ -72,8 +72,8 @@ class StackwalkerAMD64Fixture {
     : stack_section(kLittleEndian),
       
       
-      module1(0x40000000c0000000ULL, 0x10000, "module1", "version1"),
-      module2(0x50000000b0000000ULL, 0x10000, "module2", "version2") {
+      module1(0x00007400c0000000ULL, 0x10000, "module1", "version1"),
+      module2(0x00007500b0000000ULL, 0x10000, "module2", "version2") {
     
     system_info.os = "Linux";
     system_info.os_short = "linux";
@@ -149,7 +149,7 @@ TEST_F(SanityCheck, NoResolver) {
   
   
   
-  raw_context.rip = 0x40000000c0000200ULL;
+  raw_context.rip = 0x00007400c0000200ULL;
   raw_context.rbp = 0x8000000080000000ULL;
 
   StackFrameSymbolizer frame_symbolizer(NULL, NULL);
@@ -176,7 +176,7 @@ TEST_F(GetContextFrame, Simple) {
   
   
   
-  raw_context.rip = 0x40000000c0000200ULL;
+  raw_context.rip = 0x00007400c0000200ULL;
   raw_context.rbp = 0x8000000080000000ULL;
 
   StackFrameSymbolizer frame_symbolizer(&supplier, &resolver);
@@ -200,7 +200,7 @@ TEST_F(GetContextFrame, Simple) {
 
 
 TEST_F(GetContextFrame, NoStackMemory) {
-  raw_context.rip = 0x40000000c0000200ULL;
+  raw_context.rip = 0x00007400c0000200ULL;
   raw_context.rbp = 0x8000000080000000ULL;
 
   StackFrameSymbolizer frame_symbolizer(&supplier, &resolver);
@@ -230,23 +230,23 @@ TEST_F(GetCallerFrame, ScanWithoutSymbols) {
   
   
   stack_section.start() = 0x8000000080000000ULL;
-  uint64_t return_address1 = 0x50000000b0000100ULL;
-  uint64_t return_address2 = 0x50000000b0000900ULL;
+  uint64_t return_address1 = 0x00007500b0000100ULL;
+  uint64_t return_address2 = 0x00007500b0000900ULL;
   Label frame1_sp, frame2_sp, frame1_rbp;
   stack_section
     
     .Append(16, 0)                      
 
-    .D64(0x40000000b0000000ULL)         
-    .D64(0x50000000d0000000ULL)         
+    .D64(0x00007400b0000000ULL)         
+    .D64(0x00007500d0000000ULL)         
 
     .D64(return_address1)               
     
     .Mark(&frame1_sp)
     .Append(16, 0)                      
 
-    .D64(0x40000000b0000000ULL)         
-    .D64(0x50000000d0000000ULL)
+    .D64(0x00007400b0000000ULL)         
+    .D64(0x00007500d0000000ULL)
 
     .Mark(&frame1_rbp)
     .D64(stack_section.start())         
@@ -260,7 +260,7 @@ TEST_F(GetCallerFrame, ScanWithoutSymbols) {
 
   RegionFromSection();
 
-  raw_context.rip = 0x40000000c0000200ULL;
+  raw_context.rip = 0x00007400c0000200ULL;
   raw_context.rbp = frame1_rbp.Value();
   raw_context.rsp = stack_section.start().Value();
 
@@ -308,18 +308,18 @@ TEST_F(GetCallerFrame, ScanWithFunctionSymbols) {
   
   
   stack_section.start() = 0x8000000080000000ULL;
-  uint64_t return_address = 0x50000000b0000110ULL;
+  uint64_t return_address = 0x00007500b0000110ULL;
   Label frame1_sp, frame1_rbp;
 
   stack_section
     
     .Append(16, 0)                      
 
-    .D64(0x40000000b0000000ULL)         
-    .D64(0x50000000b0000000ULL)         
+    .D64(0x00007400b0000000ULL)         
+    .D64(0x00007500b0000000ULL)         
 
-    .D64(0x40000000c0001000ULL)         
-    .D64(0x50000000b000aaaaULL)         
+    .D64(0x00007400c0001000ULL)         
+    .D64(0x00007500b000aaaaULL)         
 
     .D64(return_address)                
     
@@ -328,7 +328,7 @@ TEST_F(GetCallerFrame, ScanWithFunctionSymbols) {
     .Mark(&frame1_rbp);
   RegionFromSection();
 
-  raw_context.rip = 0x40000000c0000200ULL;
+  raw_context.rip = 0x00007400c0000200ULL;
   raw_context.rbp = frame1_rbp.Value();
   raw_context.rsp = stack_section.start().Value();
 
@@ -355,7 +355,7 @@ TEST_F(GetCallerFrame, ScanWithFunctionSymbols) {
   EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
   ASSERT_EQ(StackFrameAMD64::CONTEXT_VALID_ALL, frame0->context_validity);
   EXPECT_EQ("platypus", frame0->function_name);
-  EXPECT_EQ(0x40000000c0000100ULL, frame0->function_base);
+  EXPECT_EQ(0x00007400c0000100ULL, frame0->function_base);
 
   StackFrameAMD64 *frame1 = static_cast<StackFrameAMD64 *>(frames->at(1));
   EXPECT_EQ(StackFrame::FRAME_TRUST_SCAN, frame1->trust);
@@ -367,7 +367,240 @@ TEST_F(GetCallerFrame, ScanWithFunctionSymbols) {
   EXPECT_EQ(frame1_sp.Value(), frame1->context.rsp);
   EXPECT_EQ(frame1_rbp.Value(), frame1->context.rbp);
   EXPECT_EQ("echidna", frame1->function_name);
-  EXPECT_EQ(0x50000000b0000100ULL, frame1->function_base);
+  EXPECT_EQ(0x00007500b0000100ULL, frame1->function_base);
+}
+
+
+
+
+
+TEST_F(GetCallerFrame, GetCallerByFramePointerRecovery) {
+  MockCodeModule user32_dll(0x00007ff9cb8a0000ULL, 0x14E000, "user32.dll",
+                            "version1");
+  SetModuleSymbols(&user32_dll,  
+                   "PUBLIC fa60 0 DispatchMessageWorker\n"
+                   "PUBLIC fee0 0 UserCallWinProcCheckWow\n"
+                   "PUBLIC 1cdb0 0 _fnHkINLPMSG\n"
+                   "STACK CFI INIT fa60 340 .cfa: $rsp .ra: .cfa 8 - ^\n"
+                   "STACK CFI fa60 .cfa: $rsp 128 +\n"
+                   "STACK CFI INIT fee0 49f .cfa: $rsp .ra: .cfa 8 - ^\n"
+                   "STACK CFI fee0 .cfa: $rsp 240 +\n"
+                   "STACK CFI INIT 1cdb0 9f .cfa: $rsp .ra: .cfa 8 - ^\n"
+                   "STACK CFI 1cdb0 .cfa: $rsp 80 +\n");
+
+  
+  MockCodeModules local_modules;
+  local_modules.Add(&user32_dll);
+
+  Label frame0_rsp;
+  Label frame0_rbp;
+  Label frame1_rsp;
+  Label frame2_rsp;
+
+  stack_section.start() = 0x00000099abf0f238ULL;
+  stack_section
+    .Mark(&frame0_rsp)
+    .D64(0x00007ff9cb8b00dcULL)
+    .Mark(&frame1_rsp)
+    .D64(0x0000000000000000ULL)
+    .D64(0x0000000000000001ULL)
+    .D64(0x00000099abf0f308ULL)
+    .D64(0x00007ff9cb8bce3aULL)  
+                                 
+    .D64(0x000000000000c2e0ULL)
+    .D64(0x00000099abf0f328ULL)
+    .D64(0x0000000100000001ULL)
+    .D64(0x0000000000000000ULL)
+    .D64(0x0000000000000000ULL)
+    .D64(0x0000000000000000ULL)
+    .D64(0x0000000000000000ULL)
+    .D64(0x0000000000000000ULL)
+    .D64(0x0000000000000000ULL)
+    .D64(0x00007ff9ccad53e4ULL)
+    .D64(0x0000000000000048ULL)
+    .D64(0x0000000000000001ULL)
+    .D64(0x00000099abf0f5e0ULL)
+    .D64(0x00000099b61f7388ULL)
+    .D64(0x0000000000000030ULL)
+    .D64(0xffffff66540f0a1fULL)
+    .D64(0xffffff6649e08c77ULL)
+    .D64(0x00007ff9cb8affb4ULL)  
+                                 
+    .D64(0x0000000000000000ULL)
+    .D64(0x00000099abf0f368ULL)
+    .D64(0x0000000000000000ULL)
+    .D64(0x0000000000000000ULL)
+    .D64(0x0000000000000000ULL)
+    .D64(0x00000099a8150fd8ULL)
+    .D64(0x00000099abf0f3e8ULL)
+    .D64(0x00007ff9cb8afc07ULL)  
+                                 
+    .Mark(&frame2_rsp)
+    .Append(256, 0)
+    .Mark(&frame0_rbp)           
+                                 
+    .D64(0xfffffffffffffffeULL)  
+    .D64(0x0000000000000000ULL)  
+    .D64(0x00000099a3e31040ULL)  
+    .Append(256, 0);
+
+  RegionFromSection();
+  raw_context.rip = 0x00000099a8150fd8ULL;  
+  raw_context.rsp = frame0_rsp.Value();
+  raw_context.rbp = frame0_rbp.Value();
+
+  StackFrameSymbolizer frame_symbolizer(&supplier, &resolver);
+  StackwalkerAMD64 walker(&system_info, &raw_context, &stack_region,
+                          &local_modules, &frame_symbolizer);
+  vector<const CodeModule*> modules_without_symbols;
+  vector<const CodeModule*> modules_with_corrupt_symbols;
+  ASSERT_TRUE(walker.Walk(&call_stack, &modules_without_symbols,
+                          &modules_with_corrupt_symbols));
+  ASSERT_EQ(0U, modules_without_symbols.size());
+  ASSERT_EQ(0U, modules_with_corrupt_symbols.size());
+  frames = call_stack.frames();
+
+  ASSERT_EQ(3U, frames->size());
+
+  {  
+    StackFrameAMD64 *frame = static_cast<StackFrameAMD64 *>(frames->at(0));
+    EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame->trust);
+    ASSERT_EQ(StackFrameAMD64::CONTEXT_VALID_ALL, frame->context_validity);
+    EXPECT_EQ("", frame->function_name);
+    EXPECT_EQ(0x00000099a8150fd8ULL, frame->instruction);
+    EXPECT_EQ(0x00000099a8150fd8ULL, frame->context.rip);
+    EXPECT_EQ(frame0_rsp.Value(), frame->context.rsp);
+    EXPECT_EQ(frame0_rbp.Value(), frame->context.rbp);
+  }
+
+  {  
+    StackFrameAMD64 *frame = static_cast<StackFrameAMD64 *>(frames->at(1));
+    EXPECT_EQ(StackFrame::FRAME_TRUST_SCAN, frame->trust);
+    ASSERT_EQ((StackFrameAMD64::CONTEXT_VALID_RIP |
+               StackFrameAMD64::CONTEXT_VALID_RSP |
+               StackFrameAMD64::CONTEXT_VALID_RBP),
+              frame->context_validity);
+    EXPECT_EQ("UserCallWinProcCheckWow", frame->function_name);
+    EXPECT_EQ(140710838468828ULL, frame->instruction + 1);
+    EXPECT_EQ(140710838468828ULL, frame->context.rip);
+    EXPECT_EQ(frame1_rsp.Value(), frame->context.rsp);
+    EXPECT_EQ(&user32_dll, frame->module);
+  }
+
+  {  
+    StackFrameAMD64 *frame = static_cast<StackFrameAMD64 *>(frames->at(2));
+    EXPECT_EQ(StackFrame::FRAME_TRUST_CFI, frame->trust);
+    ASSERT_EQ((StackFrameAMD64::CONTEXT_VALID_RIP |
+               StackFrameAMD64::CONTEXT_VALID_RSP |
+               StackFrameAMD64::CONTEXT_VALID_RBP),
+              frame->context_validity);
+    EXPECT_EQ("DispatchMessageWorker", frame->function_name);
+    EXPECT_EQ(140710838467591ULL, frame->instruction + 1);
+    EXPECT_EQ(140710838467591ULL, frame->context.rip);
+    EXPECT_EQ(frame2_rsp.Value(), frame->context.rsp);
+    EXPECT_EQ(&user32_dll, frame->module);
+  }
+}
+
+
+
+TEST_F(GetCallerFrame, FramePointerNotAligned) {
+  stack_section.start() = 0x8000000080000000ULL;
+  uint64_t return_address1 = 0x00007500b0000100ULL;
+  Label frame0_rbp, not_frame1_rbp, frame1_sp;
+  stack_section
+    
+    .Align(8, 0)
+    .Append(2, 0)                       
+    .Mark(&frame0_rbp)
+    .D64(not_frame1_rbp)                
+    .D64(0x00007500b0000a00ULL)         
+    .Align(8, 0)
+    .D64(return_address1)               
+    
+    .Mark(&frame1_sp)
+    .Mark(&not_frame1_rbp)
+    .Append(32, 0);                     
+
+
+  RegionFromSection();
+
+  raw_context.rip = 0x00007400c0000200ULL;
+  raw_context.rbp = frame0_rbp.Value();
+  raw_context.rsp = stack_section.start().Value();
+
+  StackFrameSymbolizer frame_symbolizer(&supplier, &resolver);
+  StackwalkerAMD64 walker(&system_info, &raw_context, &stack_region, &modules,
+                          &frame_symbolizer);
+  vector<const CodeModule*> modules_without_symbols;
+  vector<const CodeModule*> modules_with_corrupt_symbols;
+  ASSERT_TRUE(walker.Walk(&call_stack, &modules_without_symbols,
+                          &modules_with_corrupt_symbols));
+  frames = call_stack.frames();
+  ASSERT_EQ(2U, frames->size());
+
+  StackFrameAMD64 *frame0 = static_cast<StackFrameAMD64 *>(frames->at(0));
+  EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
+  ASSERT_EQ(StackFrameAMD64::CONTEXT_VALID_ALL, frame0->context_validity);
+  EXPECT_EQ(0, memcmp(&raw_context, &frame0->context, sizeof(raw_context)));
+
+  StackFrameAMD64 *frame1 = static_cast<StackFrameAMD64 *>(frames->at(1));
+  EXPECT_EQ(StackFrame::FRAME_TRUST_SCAN, frame1->trust);
+  ASSERT_EQ((StackFrameAMD64::CONTEXT_VALID_RIP |
+             StackFrameAMD64::CONTEXT_VALID_RSP),
+            frame1->context_validity);
+  EXPECT_EQ(return_address1, frame1->context.rip);
+  EXPECT_EQ(frame1_sp.Value(), frame1->context.rsp);
+}
+
+
+
+TEST_F(GetCallerFrame, NonCanonicalInstructionPointerFromFramePointer) {
+  stack_section.start() = 0x8000000080000000ULL;
+  uint64_t return_address1 = 0x00007500b0000100ULL;
+  Label frame0_rbp, frame1_sp, not_frame1_bp;
+  stack_section
+    
+    .Align(8, 0)
+    .Mark(&frame0_rbp)
+    .D64(not_frame1_bp)                 
+    .D64(0xDADADADADADADADA)            
+    .D64(return_address1)               
+    
+    .Mark(&frame1_sp)
+    .Append(16, 0)
+    .Mark(&not_frame1_bp)
+    .Append(32, 0);                     
+
+
+  RegionFromSection();
+
+  raw_context.rip = 0x00007400c0000200ULL;
+  raw_context.rbp = frame0_rbp.Value();
+  raw_context.rsp = stack_section.start().Value();
+
+  StackFrameSymbolizer frame_symbolizer(&supplier, &resolver);
+  StackwalkerAMD64 walker(&system_info, &raw_context, &stack_region, &modules,
+                          &frame_symbolizer);
+  vector<const CodeModule*> modules_without_symbols;
+  vector<const CodeModule*> modules_with_corrupt_symbols;
+  ASSERT_TRUE(walker.Walk(&call_stack, &modules_without_symbols,
+                          &modules_with_corrupt_symbols));
+  frames = call_stack.frames();
+  ASSERT_EQ(2U, frames->size());
+
+  StackFrameAMD64 *frame0 = static_cast<StackFrameAMD64 *>(frames->at(0));
+  EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
+  ASSERT_EQ(StackFrameAMD64::CONTEXT_VALID_ALL, frame0->context_validity);
+  EXPECT_EQ(0, memcmp(&raw_context, &frame0->context, sizeof(raw_context)));
+
+  StackFrameAMD64 *frame1 = static_cast<StackFrameAMD64 *>(frames->at(1));
+  EXPECT_EQ(StackFrame::FRAME_TRUST_SCAN, frame1->trust);
+  ASSERT_EQ((StackFrameAMD64::CONTEXT_VALID_RIP |
+             StackFrameAMD64::CONTEXT_VALID_RSP),
+            frame1->context_validity);
+  EXPECT_EQ(return_address1, frame1->context.rip);
+  EXPECT_EQ(frame1_sp.Value(), frame1->context.rsp);
 }
 
 
@@ -377,23 +610,23 @@ TEST_F(GetCallerFrame, ScanningNotAllowed) {
   
   
   stack_section.start() = 0x8000000080000000ULL;
-  uint64_t return_address1 = 0x50000000b0000100ULL;
-  uint64_t return_address2 = 0x50000000b0000900ULL;
+  uint64_t return_address1 = 0x00007500b0000100ULL;
+  uint64_t return_address2 = 0x00007500b0000900ULL;
   Label frame1_sp, frame2_sp, frame1_rbp;
   stack_section
     
     .Append(16, 0)                      
 
-    .D64(0x40000000b0000000ULL)         
-    .D64(0x50000000d0000000ULL)         
+    .D64(0x00007400b0000000ULL)         
+    .D64(0x00007500d0000000ULL)         
 
     .D64(return_address1)               
     
     .Mark(&frame1_sp)
     .Append(16, 0)                      
 
-    .D64(0x40000000b0000000ULL)         
-    .D64(0x50000000d0000000ULL)
+    .D64(0x00007400b0000000ULL)         
+    .D64(0x00007500d0000000ULL)
 
     .Mark(&frame1_rbp)
     .D64(stack_section.start())         
@@ -407,7 +640,7 @@ TEST_F(GetCallerFrame, ScanningNotAllowed) {
 
   RegionFromSection();
 
-  raw_context.rip = 0x40000000c0000200ULL;
+  raw_context.rip = 0x00007400c0000200ULL;
   raw_context.rbp = frame1_rbp.Value();
   raw_context.rsp = stack_section.start().Value();
 
@@ -438,18 +671,18 @@ TEST_F(GetCallerFrame, CallerPushedRBP) {
   
   
   stack_section.start() = 0x8000000080000000ULL;
-  uint64_t return_address = 0x50000000b0000110ULL;
+  uint64_t return_address = 0x00007500b0000110ULL;
   Label frame0_rbp, frame1_sp, frame1_rbp;
 
   stack_section
     
     .Append(16, 0)                      
 
-    .D64(0x40000000b0000000ULL)         
-    .D64(0x50000000b0000000ULL)         
+    .D64(0x00007400b0000000ULL)         
+    .D64(0x00007500b0000000ULL)         
 
-    .D64(0x40000000c0001000ULL)         
-    .D64(0x50000000b000aaaaULL)         
+    .D64(0x00007400c0001000ULL)         
+    .D64(0x00007500b000aaaaULL)         
 
     .Mark(&frame0_rbp)
     .D64(frame1_rbp)                    
@@ -460,7 +693,7 @@ TEST_F(GetCallerFrame, CallerPushedRBP) {
     .Mark(&frame1_rbp);                 
   RegionFromSection();
 
-  raw_context.rip = 0x40000000c0000200ULL;
+  raw_context.rip = 0x00007400c0000200ULL;
   raw_context.rbp = frame0_rbp.Value();
   raw_context.rsp = stack_section.start().Value();
 
@@ -488,7 +721,7 @@ TEST_F(GetCallerFrame, CallerPushedRBP) {
   ASSERT_EQ(StackFrameAMD64::CONTEXT_VALID_ALL, frame0->context_validity);
   EXPECT_EQ(frame0_rbp.Value(), frame0->context.rbp);
   EXPECT_EQ("sasquatch", frame0->function_name);
-  EXPECT_EQ(0x40000000c0000100ULL, frame0->function_base);
+  EXPECT_EQ(0x00007400c0000100ULL, frame0->function_base);
 
   StackFrameAMD64 *frame1 = static_cast<StackFrameAMD64 *>(frames->at(1));
   EXPECT_EQ(StackFrame::FRAME_TRUST_FP, frame1->trust);
@@ -500,7 +733,7 @@ TEST_F(GetCallerFrame, CallerPushedRBP) {
   EXPECT_EQ(frame1_sp.Value(), frame1->context.rsp);
   EXPECT_EQ(frame1_rbp.Value(), frame1->context.rbp);
   EXPECT_EQ("yeti", frame1->function_name);
-  EXPECT_EQ(0x50000000b0000100ULL, frame1->function_base);
+  EXPECT_EQ(0x00007500b0000100ULL, frame1->function_base);
 }
 
 struct CFIFixture: public StackwalkerAMD64Fixture {
@@ -531,7 +764,7 @@ struct CFIFixture: public StackwalkerAMD64Fixture {
 
     
     expected.rsp = 0x8000000080000000ULL;
-    expected.rip = 0x40000000c0005510ULL;
+    expected.rip = 0x00007400c0005510ULL;
     expected.rbp = 0x68995b1de4700266ULL;
     expected.rbx = 0x5a5beeb38de23be8ULL;
     expected.r12 = 0xed1b02e8cc0fc79cULL;
@@ -568,7 +801,7 @@ struct CFIFixture: public StackwalkerAMD64Fixture {
     EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
     ASSERT_EQ(StackFrameAMD64::CONTEXT_VALID_ALL, frame0->context_validity);
     EXPECT_EQ("enchiridion", frame0->function_name);
-    EXPECT_EQ(0x40000000c0004000ULL, frame0->function_base);
+    EXPECT_EQ(0x00007400c0004000ULL, frame0->function_base);
 
     StackFrameAMD64 *frame1 = static_cast<StackFrameAMD64 *>(frames->at(1));
     EXPECT_EQ(StackFrame::FRAME_TRUST_CFI, frame1->trust);
@@ -601,9 +834,9 @@ class CFI: public CFIFixture, public Test { };
 TEST_F(CFI, At4000) {
   Label frame1_rsp = expected.rsp;
   stack_section
-    .D64(0x40000000c0005510ULL) 
+    .D64(0x00007400c0005510ULL) 
     .Mark(&frame1_rsp);         
-  raw_context.rip = 0x40000000c0004000ULL;
+  raw_context.rip = 0x00007400c0004000ULL;
   CheckWalk();
 }
 
@@ -611,9 +844,9 @@ TEST_F(CFI, At4001) {
   Label frame1_rsp = expected.rsp;
   stack_section
     .D64(0x5a5beeb38de23be8ULL) 
-    .D64(0x40000000c0005510ULL) 
+    .D64(0x00007400c0005510ULL) 
     .Mark(&frame1_rsp);         
-  raw_context.rip = 0x40000000c0004001ULL;
+  raw_context.rip = 0x00007400c0004001ULL;
   raw_context.rbx = 0xbe0487d2f9eafe29ULL; 
   CheckWalk();
 }
@@ -622,9 +855,9 @@ TEST_F(CFI, At4002) {
   Label frame1_rsp = expected.rsp;
   stack_section
     .D64(0x5a5beeb38de23be8ULL) 
-    .D64(0x40000000c0005510ULL) 
+    .D64(0x00007400c0005510ULL) 
     .Mark(&frame1_rsp);         
-  raw_context.rip = 0x40000000c0004002ULL;
+  raw_context.rip = 0x00007400c0004002ULL;
   raw_context.rbx = 0xed1b02e8cc0fc79cULL; 
   raw_context.r12 = 0xb0118de918a4bceaULL; 
   CheckWalk();
@@ -637,9 +870,9 @@ TEST_F(CFI, At4003) {
     .D64(0x1d20ad8acacbe930ULL) 
     .D64(0x319e68b49e3ace0fULL) 
     .D64(0x5a5beeb38de23be8ULL) 
-    .D64(0x40000000c0005510ULL) 
+    .D64(0x00007400c0005510ULL) 
     .Mark(&frame1_rsp);         
-  raw_context.rip = 0x40000000c0004003ULL;
+  raw_context.rip = 0x00007400c0004003ULL;
   raw_context.rbx = 0xed1b02e8cc0fc79cULL; 
   raw_context.r12 = 0x89d04fa804c87a43ULL; 
   raw_context.r13 = 0x5118e02cbdb24b03ULL; 
@@ -654,9 +887,9 @@ TEST_F(CFI, At4004) {
     .D64(0x1d20ad8acacbe930ULL) 
     .D64(0x319e68b49e3ace0fULL) 
     .D64(0x5a5beeb38de23be8ULL) 
-    .D64(0x40000000c0005510ULL) 
+    .D64(0x00007400c0005510ULL) 
     .Mark(&frame1_rsp);         
-  raw_context.rip = 0x40000000c0004004ULL;
+  raw_context.rip = 0x00007400c0004004ULL;
   raw_context.rbx = 0xed1b02e8cc0fc79cULL; 
   raw_context.r12 = 0x89d04fa804c87a43ULL; 
   raw_context.r13 = 0x5118e02cbdb24b03ULL; 
@@ -672,10 +905,10 @@ TEST_F(CFI, At4005) {
     .D64(0x5a5beeb38de23be8ULL) 
     .D64(0xaa95fa054aedfbaeULL) 
     .Mark(&frame1_rsp);         
-  raw_context.rip = 0x40000000c0004005ULL;
+  raw_context.rip = 0x00007400c0004005ULL;
   raw_context.rbx = 0xed1b02e8cc0fc79cULL; 
   raw_context.r12 = 0x46b1b8868891b34aULL; 
-  raw_context.r13 = 0x40000000c0005510ULL; 
+  raw_context.r13 = 0x00007400c0005510ULL; 
   CheckWalk();
 }
 
@@ -690,10 +923,10 @@ TEST_F(CFI, At4006) {
     .D64(0x5a5beeb38de23be8ULL) 
     .D64(0xf015ee516ad89eabULL) 
     .Mark(&frame1_rsp);         
-  raw_context.rip = 0x40000000c0004006ULL;
+  raw_context.rip = 0x00007400c0004006ULL;
   raw_context.rbp = frame0_rbp.Value();
   raw_context.rbx = 0xed1b02e8cc0fc79cULL; 
   raw_context.r12 = 0x26e007b341acfebdULL; 
-  raw_context.r13 = 0x40000000c0005510ULL; 
+  raw_context.r13 = 0x00007400c0005510ULL; 
   CheckWalk();
 }

@@ -40,25 +40,30 @@
 #ifndef COMMON_DWARF_DWARF2READER_H__
 #define COMMON_DWARF_DWARF2READER_H__
 
+#include <stdint.h>
+
 #include <list>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
+#include <memory>
 
 #include "common/dwarf/bytereader.h"
 #include "common/dwarf/dwarf2enums.h"
 #include "common/dwarf/types.h"
 #include "common/using_std_string.h"
+#include "common/dwarf/elf_reader.h"
 
 namespace dwarf2reader {
 struct LineStateMachine;
 class Dwarf2Handler;
 class LineInfoHandler;
+class DwpReader;
 
 
 
-typedef std::map<string, std::pair<const char*, uint64> > SectionMap;
+typedef std::map<string, std::pair<const uint8_t *, uint64> > SectionMap;
 typedef std::list<std::pair<enum DwarfAttribute, enum DwarfForm> >
     AttributeList;
 typedef AttributeList::iterator AttributeIterator;
@@ -85,7 +90,7 @@ class LineInfo {
   
   
   
-  LineInfo(const char* buffer_, uint64 buffer_length,
+  LineInfo(const uint8_t *buffer_, uint64 buffer_length,
            ByteReader* reader, LineInfoHandler* handler);
 
   virtual ~LineInfo() {
@@ -111,7 +116,7 @@ class LineInfo {
   static bool ProcessOneOpcode(ByteReader* reader,
                                LineInfoHandler* handler,
                                const struct LineInfoHeader &header,
-                               const char* start,
+                               const uint8_t *start,
                                struct LineStateMachine* lsm,
                                size_t* len,
                                uintptr pc,
@@ -139,9 +144,11 @@ class LineInfo {
   
   
   
-  const char* buffer_;
+  const uint8_t *buffer_;
+#ifndef NDEBUG
   uint64 buffer_length_;
-  const char* after_header_;
+#endif
+  const uint8_t *after_header_;
 };
 
 
@@ -178,6 +185,106 @@ class LineInfoHandler {
   
   virtual void AddLine(uint64 address, uint64 length,
                        uint32 file_num, uint32 line_num, uint32 column_num) { }
+};
+
+
+
+
+
+class Dwarf2Handler {
+ public:
+  Dwarf2Handler() { }
+
+  virtual ~Dwarf2Handler() { }
+
+  
+  
+  
+  virtual bool StartCompilationUnit(uint64 offset, uint8 address_size,
+                                    uint8 offset_size, uint64 cu_length,
+                                    uint8 dwarf_version) { return false; }
+
+  
+  
+  
+  
+  
+  virtual bool NeedSplitDebugInfo() { return true; }
+
+  
+  
+  
+  virtual bool StartSplitCompilationUnit(uint64 offset,
+                                         uint64 cu_length) { return false; }
+
+  
+  
+  virtual bool StartDIE(uint64 offset, enum DwarfTag tag) { return false; }
+
+  
+  
+  
+  
+  virtual void ProcessAttributeUnsigned(uint64 offset,
+                                        enum DwarfAttribute attr,
+                                        enum DwarfForm form,
+                                        uint64 data) { }
+
+  
+  
+  
+  
+  virtual void ProcessAttributeSigned(uint64 offset,
+                                      enum DwarfAttribute attr,
+                                      enum DwarfForm form,
+                                      int64 data) { }
+
+  
+  
+  
+  
+  
+  virtual void ProcessAttributeReference(uint64 offset,
+                                         enum DwarfAttribute attr,
+                                         enum DwarfForm form,
+                                         uint64 data) { }
+
+  
+  
+  
+  
+  
+  
+  virtual void ProcessAttributeBuffer(uint64 offset,
+                                      enum DwarfAttribute attr,
+                                      enum DwarfForm form,
+                                      const uint8_t *data,
+                                      uint64 len) { }
+
+  
+  
+  
+  
+  virtual void ProcessAttributeString(uint64 offset,
+                                      enum DwarfAttribute attr,
+                                      enum DwarfForm form,
+                                      const string& data) { }
+
+  
+  
+  
+  
+  virtual void ProcessAttributeSignature(uint64 offset,
+                                         enum DwarfAttribute attr,
+                                         enum DwarfForm form,
+                                         uint64 signature) { }
+
+  
+  
+  
+  
+  virtual void EndDIE(uint64 offset) { }
+
 };
 
 
@@ -221,11 +328,20 @@ class CompilationUnit {
   
   
   
-  CompilationUnit(const SectionMap& sections, uint64 offset,
+  CompilationUnit(const string& path, const SectionMap& sections, uint64 offset,
                   ByteReader* reader, Dwarf2Handler* handler);
   virtual ~CompilationUnit() {
     if (abbrevs_) delete abbrevs_;
   }
+
+  
+  
+  
+  
+  
+  
+  void SetSplitDwarf(const uint8_t* addr_buffer, uint64 addr_buffer_length,
+                     uint64 addr_base, uint64 ranges_base, uint64 dwo_id);
 
   
   
@@ -266,29 +382,104 @@ class CompilationUnit {
 
   
   
-  const char* ProcessDIE(uint64 dieoffset,
-                                  const char* start,
-                                  const Abbrev& abbrev);
+  const uint8_t *ProcessDIE(uint64 dieoffset,
+                            const uint8_t *start,
+                            const Abbrev& abbrev);
 
   
   
-  const char* ProcessAttribute(uint64 dieoffset,
-                                        const char* start,
-                                        enum DwarfAttribute attr,
-                                        enum DwarfForm form);
+  const uint8_t *ProcessAttribute(uint64 dieoffset,
+                                  const uint8_t *start,
+                                  enum DwarfAttribute attr,
+                                  enum DwarfForm form);
+
+  
+  
+  
+  
+  
+  
+  void ProcessAttributeUnsigned(uint64 offset,
+                                enum DwarfAttribute attr,
+                                enum DwarfForm form,
+                                uint64 data) {
+    if (attr == DW_AT_GNU_dwo_id) {
+      dwo_id_ = data;
+    }
+    else if (attr == DW_AT_GNU_addr_base) {
+      addr_base_ = data;
+    }
+    else if (attr == DW_AT_GNU_ranges_base) {
+      ranges_base_ = data;
+    }
+    
+    
+    
+    else if (attr == DW_AT_ranges && is_split_dwarf_) {
+      data += ranges_base_;
+    }
+    handler_->ProcessAttributeUnsigned(offset, attr, form, data);
+  }
+
+  
+  
+  
+  
+  void ProcessAttributeSigned(uint64 offset,
+                              enum DwarfAttribute attr,
+                              enum DwarfForm form,
+                              int64 data) {
+    handler_->ProcessAttributeSigned(offset, attr, form, data);
+  }
+
+  
+  
+  
+  
+  
+  void ProcessAttributeBuffer(uint64 offset,
+                              enum DwarfAttribute attr,
+                              enum DwarfForm form,
+                              const uint8_t* data,
+                              uint64 len) {
+    handler_->ProcessAttributeBuffer(offset, attr, form, data, len);
+  }
+
+  
+  
+  
+  
+  
+  
+  void ProcessAttributeString(uint64 offset,
+                              enum DwarfAttribute attr,
+                              enum DwarfForm form,
+                              const char* data) {
+    if (attr == DW_AT_GNU_dwo_name)
+      dwo_name_ = data;
+    handler_->ProcessAttributeString(offset, attr, form, data);
+  }
 
   
   void ProcessDIEs();
 
   
   
-  const char* SkipDIE(const char* start,
-                               const Abbrev& abbrev);
+  const uint8_t *SkipDIE(const uint8_t *start, const Abbrev& abbrev);
 
   
   
-  const char* SkipAttribute(const char* start,
-                                     enum DwarfForm form);
+  const uint8_t *SkipAttribute(const uint8_t *start, enum DwarfForm form);
+
+  
+  void ProcessSplitDwarf();
+
+  
+  void ReadDebugSectionsFromDwo(ElfReader* elf_reader,
+                                SectionMap* sections);
+
+  
+  const string path_;
 
   
   
@@ -297,9 +488,9 @@ class CompilationUnit {
   
   
   
-  const char* buffer_;
+  const uint8_t *buffer_;
   uint64 buffer_length_;
-  const char* after_header_;
+  const uint8_t *after_header_;
 
   
   ByteReader* reader_;
@@ -318,8 +509,55 @@ class CompilationUnit {
   
   
   
-  const char* string_buffer_;
+  const uint8_t *string_buffer_;
   uint64 string_buffer_length_;
+
+  
+  
+  const uint8_t* str_offsets_buffer_;
+  uint64 str_offsets_buffer_length_;
+
+  
+  
+  const uint8_t* addr_buffer_;
+  uint64 addr_buffer_length_;
+
+  
+  
+  
+  
+  
+  
+  
+  bool is_split_dwarf_;
+
+  
+  uint64 dwo_id_;
+
+  
+  const char* dwo_name_;
+
+  
+  
+  uint64 skeleton_dwo_id_;
+
+  
+  uint64 ranges_base_;
+
+  
+  uint64 addr_base_;
+
+  
+  bool have_checked_for_dwp_;
+
+  
+  string dwp_path_;
+
+  
+  std::unique_ptr<ByteReader> dwp_byte_reader_;
+
+  
+   std::unique_ptr<DwpReader> dwp_reader_;
 };
 
 
@@ -327,87 +565,87 @@ class CompilationUnit {
 
 
 
-class Dwarf2Handler {
+
+
+
+
+
+
+
+
+class DwpReader {
  public:
-  Dwarf2Handler() { }
+  DwpReader(const ByteReader& byte_reader, ElfReader* elf_reader);
 
-  virtual ~Dwarf2Handler() { }
-
-  
-  
-  
-  virtual bool StartCompilationUnit(uint64 offset, uint8 address_size,
-                                    uint8 offset_size, uint64 cu_length,
-                                    uint8 dwarf_version) { return false; }
+  ~DwpReader();
 
   
-  
-  virtual bool StartDIE(uint64 offset, enum DwarfTag tag) { return false; }
+  void Initialize();
 
   
+  void ReadDebugSectionsForCU(uint64 dwo_id, SectionMap* sections);
+
+ private:
   
   
-  
-  virtual void ProcessAttributeUnsigned(uint64 offset,
-                                        enum DwarfAttribute attr,
-                                        enum DwarfForm form,
-                                        uint64 data) { }
+  int LookupCU(uint64 dwo_id);
 
   
   
-  
-  
-  virtual void ProcessAttributeSigned(uint64 offset,
-                                      enum DwarfAttribute attr,
-                                      enum DwarfForm form,
-                                      int64 data) { }
+  uint32 LookupCUv2(uint64 dwo_id);
 
   
-  
-  
-  
-  
-  virtual void ProcessAttributeReference(uint64 offset,
-                                         enum DwarfAttribute attr,
-                                         enum DwarfForm form,
-                                         uint64 data) { }
+  ElfReader* elf_reader_;
 
   
-  
-  
-  
-  
-  
-  virtual void ProcessAttributeBuffer(uint64 offset,
-                                      enum DwarfAttribute attr,
-                                      enum DwarfForm form,
-                                      const char* data,
-                                      uint64 len) { }
+  const ByteReader& byte_reader_;
 
   
-  
-  
-  
-  virtual void ProcessAttributeString(uint64 offset,
-                                      enum DwarfAttribute attr,
-                                      enum DwarfForm form,
-                                      const string& data) { }
+  const char* cu_index_;
 
   
-  
-  
-  
-  virtual void ProcessAttributeSignature(uint64 offset,
-                                         enum DwarfAttribute attr,
-                                         enum DwarfForm form,
-                                         uint64 signature) { }
+  size_t cu_index_size_;
 
   
-  
-  
-  
-  virtual void EndDIE(uint64 offset) { }
+  const char* string_buffer_;
 
+  
+  size_t string_buffer_size_;
+
+  
+  int version_;
+
+  
+  unsigned int ncolumns_;
+
+  
+  unsigned int nunits_;
+
+  
+  unsigned int nslots_;
+
+  
+  const char* phash_;
+
+  
+  const char* pindex_;
+
+  
+  const char* shndx_pool_;
+
+  
+  const char* offset_table_;
+
+  
+  const char* size_table_;
+
+  
+  const char* abbrev_data_;
+  size_t abbrev_size_;
+  const char* info_data_;
+  size_t info_size_;
+  const char* str_offsets_data_;
+  size_t str_offsets_size_;
 };
 
 
@@ -637,7 +875,7 @@ class CallFrameInfo {
   
   
   
-  CallFrameInfo(const char *buffer, size_t buffer_length,
+  CallFrameInfo(const uint8_t *buffer, size_t buffer_length,
                 ByteReader *reader, Handler *handler, Reporter *reporter,
                 bool eh_frame = false)
       : buffer_(buffer), buffer_length_(buffer_length),
@@ -665,7 +903,7 @@ class CallFrameInfo {
     size_t offset;
 
     
-    const char *start;
+    const uint8_t *start;
     
     
     
@@ -676,16 +914,16 @@ class CallFrameInfo {
 
     
     
-    const char *fields;
+    const uint8_t *fields;
 
     
-    const char *instructions;
+    const uint8_t *instructions;
 
     
     
     
     
-    const char *end;
+    const uint8_t *end;
 
     
     
@@ -762,7 +1000,7 @@ class CallFrameInfo {
   
   
   
-  bool ReadEntryPrologue(const char *cursor, Entry *entry);
+  bool ReadEntryPrologue(const uint8_t *cursor, Entry *entry);
 
   
   
@@ -790,7 +1028,7 @@ class CallFrameInfo {
   }
 
   
-  const char *buffer_;
+  const uint8_t *buffer_;
   size_t buffer_length_;
 
   

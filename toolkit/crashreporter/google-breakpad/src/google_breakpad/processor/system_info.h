@@ -44,7 +44,7 @@ namespace google_breakpad {
 struct SystemInfo {
  public:
   SystemInfo() : os(), os_short(), os_version(), cpu(), cpu_info(),
-    cpu_count(0) {}
+    cpu_count(0), gl_version(), gl_vendor(), gl_renderer() {}
 
   
   void Clear() {
@@ -54,6 +54,9 @@ struct SystemInfo {
     cpu.clear();
     cpu_info.clear();
     cpu_count = 0;
+    gl_version.clear();
+    gl_vendor.clear();
+    gl_renderer.clear();
   }
 
   
@@ -91,6 +94,11 @@ struct SystemInfo {
   
   
   int cpu_count;
+
+  
+  string gl_version;
+  string gl_vendor;
+  string gl_renderer;
 };
 
 }  
