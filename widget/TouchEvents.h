@@ -99,7 +99,7 @@ public:
     : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget,
                            eSimpleGestureEventClass)
     , mAllowedDirections(0)
-    , direction(0)
+    , mDirection(0)
     , clickCount(0)
     , delta(0.0)
   {
@@ -109,7 +109,7 @@ public:
     : WidgetMouseEventBase(aOther.IsTrusted(), aOther.mMessage,
                            aOther.mWidget, eSimpleGestureEventClass)
     , mAllowedDirections(aOther.mAllowedDirections)
-    , direction(aOther.direction)
+    , mDirection(aOther.mDirection)
     , clickCount(0)
     , delta(aOther.delta)
   {
@@ -130,7 +130,7 @@ public:
   
   uint32_t mAllowedDirections;
   
-  uint32_t direction;
+  uint32_t mDirection;
   
   uint32_t clickCount;
   
@@ -143,7 +143,7 @@ public:
     AssignMouseEventBaseData(aEvent, aCopyTargets);
 
     
-    direction = aEvent.direction;
+    mDirection = aEvent.mDirection;
     delta = aEvent.delta;
     clickCount = aEvent.clickCount;
   }
