@@ -686,9 +686,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
 
     
     
-
-    
-    
     
     "-webkit-linear-gradient(10px, red, blue)",
     "-webkit-linear-gradient(10px top, red, blue)",
@@ -726,9 +723,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
     "-webkit-radial-gradient(top 30deg, red, blue)",
     "-webkit-radial-gradient(left top 30deg, red, blue)",
     "-webkit-radial-gradient(10px 20px 30deg, red, blue)"
-
-    
-    
   );
 }
 
