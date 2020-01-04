@@ -1903,19 +1903,6 @@ imgLoader::RemoveFromCache(imgCacheEntry* entry)
   return false;
 }
 
-static PLDHashOperator
-EnumEvictEntries(const ImageCacheKey&,
-                 RefPtr<imgCacheEntry>& aData,
-                 void* data)
-{
-  nsTArray<RefPtr<imgCacheEntry> >* entries =
-    reinterpret_cast<nsTArray<RefPtr<imgCacheEntry> > *>(data);
-
-  entries->AppendElement(aData);
-
-  return PL_DHASH_NEXT;
-}
-
 nsresult
 imgLoader::EvictEntries(imgCacheTable& aCacheToClear)
 {
@@ -1924,7 +1911,10 @@ imgLoader::EvictEntries(imgCacheTable& aCacheToClear)
   
   
   nsTArray<RefPtr<imgCacheEntry> > entries;
-  aCacheToClear.Enumerate(EnumEvictEntries, &entries);
+  for (auto iter = aCacheToClear.Iter(); !iter.Done(); iter.Next()) {
+    RefPtr<imgCacheEntry>& data = iter.Data();
+    entries.AppendElement(data);
+  }
 
   for (uint32_t i = 0; i < entries.Length(); ++i) {
     if (!RemoveFromCache(entries[i])) {
