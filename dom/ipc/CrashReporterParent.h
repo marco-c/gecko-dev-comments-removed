@@ -36,6 +36,7 @@ public:
 
 
 
+
   template<class Toplevel>
   bool
   GenerateCrashReport(Toplevel* t, const AnnotationTable* processNotes);
@@ -241,7 +242,9 @@ CrashReporterParent::GenerateCrashReport(Toplevel* t,
   nsCOMPtr<nsIFile> crashDump;
   if (t->TakeMinidump(getter_AddRefs(crashDump), nullptr) &&
       CrashReporter::GetIDFromMinidump(crashDump, mChildDumpID)) {
-    return GenerateChildData(processNotes);
+    bool result = GenerateChildData(processNotes);
+    FinalizeChildData();
+    return result;
   }
   return false;
 }
@@ -271,9 +274,9 @@ CrashReporterParent::GenerateCompleteMinidump(Toplevel* t)
                                             nullptr, 
                                             getter_AddRefs(childDump)) &&
       CrashReporter::GetIDFromMinidump(childDump, mChildDumpID)) {
-    GenerateChildData(nullptr);
+    bool result = GenerateChildData(nullptr);
     FinalizeChildData();
-    return true;
+    return result;
   }
   return false;
 }

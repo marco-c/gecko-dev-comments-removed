@@ -1291,6 +1291,8 @@ PluginModuleChromeParent::TerminateChildProcess(MessageLoop* aMsgLoop,
     }
 
     if (reportsReady) {
+        
+        
         mPluginDumpID = crashReporter->ChildDumpID();
         PLUGIN_LOG_DEBUG(
                 ("generated paired browser/plugin minidumps: %s)",
@@ -1537,7 +1539,13 @@ PluginModuleChromeParent::ProcessFirstMinidump()
     WriteExtraDataForMinidump(notes);
 
     if (!mPluginDumpID.IsEmpty()) {
+        
+        
+        
+        
+        
         crashReporter->GenerateChildData(&notes);
+        crashReporter->FinalizeChildData();
         return;
     }
 
