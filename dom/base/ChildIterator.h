@@ -64,7 +64,7 @@ public:
   
   
   
-  void Seek(nsIContent* aChildToFind);
+  bool Seek(nsIContent* aChildToFind);
 
   
   
@@ -198,6 +198,8 @@ public:
 #ifdef DEBUG
   ~AllChildrenIterator() { MOZ_ASSERT(!mMutationGuard.Mutated(0)); }
 #endif
+
+  bool Seek(nsIContent* aChildToFind);
 
   nsIContent* GetNextChild();
   nsIContent* Parent() const { return mOriginalContent; }
