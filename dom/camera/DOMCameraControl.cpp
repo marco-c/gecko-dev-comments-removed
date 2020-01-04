@@ -1186,9 +1186,8 @@ nsDOMCameraControl::NotifyRecordingStatusChange(const nsString& aMsg)
     
     mAudioChannelAgent->Init(mWindow, (int32_t)AudioChannel::Content, nullptr);
     
-    float volume = 0.0;
-    bool muted = true;
-    rv = mAudioChannelAgent->NotifyStartedPlaying(&volume, &muted);
+    AudioPlaybackConfig config;
+    rv = mAudioChannelAgent->NotifyStartedPlaying(&config, AudioChannelService::AudibleState::eAudible);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
