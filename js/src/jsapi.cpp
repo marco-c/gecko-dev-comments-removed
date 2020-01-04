@@ -669,10 +669,8 @@ JS_NewRuntime(uint32_t maxbytes, uint32_t maxNurseryBytes, JSRuntime* parentRunt
                "must call JS_Init prior to creating any JSRuntimes");
 
     
-    
-    
-    
-    MOZ_ASSERT_IF(parentRuntime, !parentRuntime->parentRuntime);
+    while (parentRuntime && parentRuntime->parentRuntime)
+        parentRuntime = parentRuntime->parentRuntime;
 
     JSRuntime* rt = js_new<JSRuntime>(parentRuntime);
     if (!rt)
