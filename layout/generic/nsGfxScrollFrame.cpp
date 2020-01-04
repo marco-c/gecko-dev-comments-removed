@@ -2962,11 +2962,16 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   mWillBuildScrollableLayer = usingDisplayPort || nsContentUtils::HasScrollgrab(mOuter->GetContent());
-  bool shouldBuildLayer = false;
+  
+  
+  
+  
+  
+  bool couldBuildLayer = false;
   if (mWillBuildScrollableLayer) {
-    shouldBuildLayer = true;
+    couldBuildLayer = true;
   } else {
-    shouldBuildLayer =
+    couldBuildLayer =
       nsLayoutUtils::AsyncPanZoomEnabled(mOuter) &&
       WantAsyncScroll() &&
       
@@ -3036,7 +3041,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(
         aBuilder,
-        shouldBuildLayer && mScrolledFrame->GetContent()
+        couldBuildLayer && mScrolledFrame->GetContent()
             ? nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent())
             : aBuilder->GetCurrentScrollParentId());
 
@@ -3115,7 +3120,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       
       
       
-      MOZ_ASSERT(shouldBuildLayer && mScrolledFrame->GetContent());
+      MOZ_ASSERT(couldBuildLayer && mScrolledFrame->GetContent());
       mWillBuildScrollableLayer = true;
     }
   }
@@ -3129,13 +3134,12 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                          *contentBoxClipForNonCaretContent, usingDisplayPort);
   }
 
-  if (shouldBuildLayer) {
+  if (couldBuildLayer) {
     
     
     nsDisplayLayerEventRegions* inactiveRegionItem = nullptr;
     if (aBuilder->IsPaintingToWindow() &&
         !mWillBuildScrollableLayer &&
-        shouldBuildLayer &&
         aBuilder->IsBuildingLayerEventRegions())
     {
       inactiveRegionItem = new (aBuilder) nsDisplayLayerEventRegions(aBuilder, mScrolledFrame);
