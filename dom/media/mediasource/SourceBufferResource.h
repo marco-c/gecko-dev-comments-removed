@@ -113,7 +113,7 @@ public:
   }
   
   
-  uint32_t EvictData(uint64_t aPlaybackOffset, int64_t aThreshold,
+  uint32_t EvictData(uint64_t aPlaybackOffset, int64_t aThresholdReduct,
                      ErrorResult& aRv);
 
   

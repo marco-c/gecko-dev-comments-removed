@@ -77,6 +77,7 @@ public:
   void SetGroupStartTimestamp(const media::TimeUnit& aGroupStartTimestamp) override;
   void RestartGroupStartTimestamp() override;
   media::TimeUnit GroupEndTimestamp() override;
+  int64_t EvictionThreshold() const override;
 
   
   MediaInfo GetMetadata();
@@ -344,7 +345,8 @@ private:
 
   
   Atomic<int64_t> mSizeSourceBuffer;
-  uint32_t mEvictionThreshold;
+  int64_t mVideoEvictionThreshold;
+  int64_t mAudioEvictionThreshold;
   Atomic<bool> mEvictionOccurred;
 
   
