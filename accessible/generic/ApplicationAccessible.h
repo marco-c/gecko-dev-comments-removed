@@ -52,8 +52,6 @@ public:
                                    EWhichChildAtPoint aWhichChild) override;
   virtual Accessible* FocusedChild() override;
 
-  virtual void InvalidateChildren() override;
-
   
   virtual KeyBinding AccessKey() const override;
 

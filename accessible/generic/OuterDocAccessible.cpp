@@ -101,21 +101,6 @@ OuterDocAccessible::Shutdown()
   AccessibleWrap::Shutdown();
 }
 
-void
-OuterDocAccessible::InvalidateChildren()
-{
-  
-  
-  
-  
-  
-  
-  
-  
-
-  SetChildrenFlag(eChildrenUninitialized);
-}
-
 bool
 OuterDocAccessible::InsertChildAt(uint32_t aIdx, Accessible* aAccessible)
 {

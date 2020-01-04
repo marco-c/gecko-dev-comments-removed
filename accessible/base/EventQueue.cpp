@@ -266,8 +266,6 @@ EventQueue::CoalesceReorderEvents(AccEvent* aTailEvent)
 
         
         
-        
-        
         if (eventType == nsIAccessibleEvent::EVENT_SHOW ||
             eventType == nsIAccessibleEvent::EVENT_HIDE) {
           AccReorderEvent* thisReorder = downcast_accEvent(thisEvent);
