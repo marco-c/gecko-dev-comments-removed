@@ -3,6 +3,7 @@
 
 
 var TrackingProtection = {
+  
   MAX_INTROS: 0,
   PREF_ENABLED_GLOBALLY: "privacy.trackingprotection.enabled",
   PREF_ENABLED_IN_PRIVATE_WINDOWS: "privacy.trackingprotection.pbmode.enabled",
@@ -106,11 +107,13 @@ var TrackingProtection = {
       this.content.setAttribute("state", "blocked-tracking-content");
 
       
-      let introCount = gPrefService.getIntPref("privacy.trackingprotection.introCount");
-      if (introCount < TrackingProtection.MAX_INTROS) {
-        gPrefService.setIntPref("privacy.trackingprotection.introCount", ++introCount);
-        gPrefService.savePrefFile(null);
-        this.showIntroPanel();
+      if (this.enabledGlobally) {
+        let introCount = gPrefService.getIntPref("privacy.trackingprotection.introCount");
+        if (introCount < TrackingProtection.MAX_INTROS) {
+          gPrefService.setIntPref("privacy.trackingprotection.introCount", ++introCount);
+          gPrefService.savePrefFile(null);
+          this.showIntroPanel();
+        }
       }
 
       this.shieldHistogramAdd(2);
@@ -183,6 +186,16 @@ var TrackingProtection = {
     BrowserReload();
   },
 
+  dontShowIntroPanelAgain() {
+    
+    
+    if (this.enabledGlobally) {
+      gPrefService.setIntPref("privacy.trackingprotection.introCount",
+                              this.MAX_INTROS);
+      gPrefService.savePrefFile(null);
+    }
+  },
+
   showIntroPanel: Task.async(function*() {
     let brandBundle = document.getElementById("bundle_brand");
     let brandShortName = brandBundle.getString("brandShortName");
@@ -190,12 +203,10 @@ var TrackingProtection = {
     let openStep2 = () => {
       
       
-      gPrefService.setIntPref("privacy.trackingprotection.introCount",
-                              this.MAX_INTROS);
-      gPrefService.savePrefFile(null);
+      this.dontShowIntroPanelAgain();
 
       let nextURL = Services.urlFormatter.formatURLPref("privacy.trackingprotection.introURL") +
-                    "#step2";
+                    "?step=2&newtab=true";
       switchToTabHavingURI(nextURL, true, {
         
         
@@ -220,8 +231,9 @@ var TrackingProtection = {
     UITour.initForBrowser(gBrowser.selectedBrowser, window);
     UITour.showInfo(window, panelTarget,
                     gNavigatorBundle.getString("trackingProtection.intro.title"),
-                    gNavigatorBundle.getFormattedString("trackingProtection.intro.description",
+                    gNavigatorBundle.getFormattedString("trackingProtection.intro.description2",
                                                         [brandShortName]),
-                    undefined, buttons);
+                    undefined, buttons,
+                    { closeButtonCallback: () => this.dontShowIntroPanelAgain() });
   }),
 };
