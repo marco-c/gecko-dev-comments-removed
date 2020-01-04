@@ -5,10 +5,6 @@
 
 
 
-
-
-
-
 var FullZoom = {
   
   name: "browser.content.full-zoom",
