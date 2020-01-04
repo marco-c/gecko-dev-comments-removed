@@ -340,27 +340,25 @@ ExecutableAllocator::addSizeOfCode(JS::CodeSizes* sizes) const
 void
 ExecutableAllocator::reprotectAll(ProtectionSetting protection)
 {
-    if (!nonWritableJitCode)
-        return;
-
+#ifdef NON_WRITABLE_JIT_CODE
     if (!m_pools.initialized())
         return;
 
     for (ExecPoolHashSet::Range r = m_pools.all(); !r.empty(); r.popFront())
         reprotectPool(rt_, r.front(), protection);
+#endif
 }
 
  void
 ExecutableAllocator::reprotectPool(JSRuntime* rt, ExecutablePool* pool, ProtectionSetting protection)
 {
+#ifdef NON_WRITABLE_JIT_CODE
     
     MOZ_ASSERT(rt->jitRuntime()->preventBackedgePatching() || rt->handlingJitInterrupt());
 
-    if (!nonWritableJitCode)
-        return;
-
     char* start = pool->m_allocation.pages;
     reprotectRegion(start, pool->m_freePtr - start, protection);
+#endif
 }
 
  void
@@ -407,5 +405,3 @@ ExecutableAllocator::poisonCode(JSRuntime* rt, JitPoisonRangeVector& ranges)
         pool->release();
     }
 }
-
-bool ExecutableAllocator::nonWritableJitCode = true;
