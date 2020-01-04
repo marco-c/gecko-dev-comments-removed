@@ -17,7 +17,6 @@
 #include "nscore.h"
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
-#include "nsIStyleSheet.h"
 #include "nsIDOMCSSStyleSheet.h"
 #include "nsICSSLoaderObserver.h"
 #include "nsTArrayForwardDeclare.h"
@@ -114,12 +113,11 @@ private:
 
 
 #define NS_CSS_STYLE_SHEET_IMPL_CID     \
-{ 0xca926f30, 0x2a7e, 0x477e, \
- { 0x84, 0x67, 0x80, 0x3f, 0xb3, 0x2a, 0xf2, 0x0a } }
+{ 0x7985c7ac, 0x9ddc, 0x444d, \
+  { 0x98, 0x99, 0x0c, 0x86, 0xec, 0x12, 0x2f, 0x54 } }
 
 
-class CSSStyleSheet final : public nsIStyleSheet,
-                            public nsIDOMCSSStyleSheet,
+class CSSStyleSheet final : public nsIDOMCSSStyleSheet,
                             public nsICSSLoaderObserver,
                             public nsWrapperCache
 {
@@ -131,28 +129,50 @@ public:
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(CSSStyleSheet,
-                                                         nsIStyleSheet)
+                                                         nsIDOMCSSStyleSheet)
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_CSS_STYLE_SHEET_IMPL_CID)
 
+  nsIURI* GetSheetURI() const;
+  nsIURI* GetBaseURI() const;
+  void GetTitle(nsString& aTitle) const;
+  void GetType(nsString& aType) const;
+  bool HasRules() const;
+
   
-  virtual nsIURI* GetSheetURI() const override;
-  virtual nsIURI* GetBaseURI() const override;
-  virtual void GetTitle(nsString& aTitle) const override;
-  virtual void GetType(nsString& aType) const override;
-  virtual bool HasRules() const override;
-  virtual bool IsApplicable() const override;
-  virtual void SetEnabled(bool aEnabled) override;
-  virtual bool IsComplete() const override;
-  virtual void SetComplete() override;
-  virtual nsIStyleSheet* GetParentSheet() const override;  
-  virtual nsIDocument* GetOwningDocument() const override;  
-  virtual void SetOwningDocument(nsIDocument* aDocument) override;
+
+
+
+
+
+  bool IsApplicable() const;
+
+  
+
+
+
+
+
+
+
+
+  void SetEnabled(bool aEnabled);
+
+  
+
+
+  bool IsComplete() const;
+  void SetComplete();
+
+  
+  CSSStyleSheet* GetParentSheet() const;  
+  nsIDocument* GetOwningDocument() const;  
+  void SetOwningDocument(nsIDocument* aDocument);
 
   
   uint64_t FindOwningWindowInnerID() const;
 #ifdef DEBUG
-  virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
+  void List(FILE* out = stdout, int32_t aIndent = 0) const;
 #endif
 
   void AppendStyleSheet(CSSStyleSheet* aSheet);
@@ -250,7 +270,7 @@ public:
   
   static bool RebuildChildList(css::Rule* aRule, void* aBuilder);
 
-  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
   
   CORSMode GetCORSMode() const { return mInner->mCORSMode; }
@@ -307,7 +327,7 @@ public:
       return dom::ParentObject(mOwningNode);
     }
 
-    return dom::ParentObject(static_cast<nsIStyleSheet*>(mParent), mParent);
+    return dom::ParentObject(static_cast<nsIDOMCSSStyleSheet*>(mParent), mParent);
   }
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 

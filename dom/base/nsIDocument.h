@@ -72,7 +72,6 @@ class nsIRequest;
 class nsIRunnable;
 class nsIStreamListener;
 class nsIStructuredCloneContainer;
-class nsIStyleSheet;
 class nsIURI;
 class nsIVariant;
 class nsLocation;
@@ -156,8 +155,8 @@ typedef CallbackObjectHolder<NodeFilter, nsIDOMNodeFilter> NodeFilterHolder;
 } 
 
 #define NS_IDOCUMENT_IID \
-{ 0x4307abe8, 0x5386, 0x4024, \
-  { 0xa2, 0xfe, 0x4a, 0x80, 0xe8, 0x47, 0x46, 0x90 } }
+{ 0xecc9e376, 0x6c31, 0x4f04, \
+  { 0xbe, 0xde, 0xd6, 0x27, 0x61, 0xd7, 0x00, 0x84 } }
 
 
 enum DocumentFlavor {
@@ -925,7 +924,7 @@ public:
 
 
 
-  virtual nsIStyleSheet* GetStyleSheetAt(int32_t aIndex) const = 0;
+  virtual mozilla::CSSStyleSheet* GetStyleSheetAt(int32_t aIndex) const = 0;
 
   
 
@@ -934,7 +933,8 @@ public:
 
 
 
-  virtual void InsertStyleSheetAt(nsIStyleSheet* aSheet, int32_t aIndex) = 0;
+  virtual void InsertStyleSheetAt(mozilla::CSSStyleSheet* aSheet,
+                                  int32_t aIndex) = 0;
 
   
 
@@ -942,7 +942,7 @@ public:
 
 
 
-  virtual int32_t GetIndexOfStyleSheet(nsIStyleSheet* aSheet) const = 0;
+  virtual int32_t GetIndexOfStyleSheet(mozilla::CSSStyleSheet* aSheet) const = 0;
 
   
 
@@ -952,24 +952,25 @@ public:
 
 
 
-  virtual void UpdateStyleSheets(nsCOMArray<nsIStyleSheet>& aOldSheets,
-                                 nsCOMArray<nsIStyleSheet>& aNewSheets) = 0;
+  virtual void UpdateStyleSheets(
+      nsTArray<RefPtr<mozilla::CSSStyleSheet>>& aOldSheets,
+      nsTArray<RefPtr<mozilla::CSSStyleSheet>>& aNewSheets) = 0;
 
   
 
 
-  virtual void AddStyleSheet(nsIStyleSheet* aSheet) = 0;
+  virtual void AddStyleSheet(mozilla::CSSStyleSheet* aSheet) = 0;
 
   
 
 
-  virtual void RemoveStyleSheet(nsIStyleSheet* aSheet) = 0;
+  virtual void RemoveStyleSheet(mozilla::CSSStyleSheet* aSheet) = 0;
 
   
 
 
 
-  virtual void SetStyleSheetApplicableState(nsIStyleSheet* aSheet,
+  virtual void SetStyleSheetApplicableState(mozilla::CSSStyleSheet* aSheet,
                                             bool aApplicable) = 0;
 
   enum additionalSheetType {
@@ -979,10 +980,13 @@ public:
     AdditionalSheetTypeCount
   };
 
-  virtual nsresult LoadAdditionalStyleSheet(additionalSheetType aType, nsIURI* aSheetURI) = 0;
-  virtual nsresult AddAdditionalStyleSheet(additionalSheetType aType, nsIStyleSheet* aSheet) = 0;
-  virtual void RemoveAdditionalStyleSheet(additionalSheetType aType, nsIURI* sheetURI) = 0;
-  virtual nsIStyleSheet* FirstAdditionalAuthorSheet() = 0;
+  virtual nsresult LoadAdditionalStyleSheet(additionalSheetType aType,
+                                            nsIURI* aSheetURI) = 0;
+  virtual nsresult AddAdditionalStyleSheet(additionalSheetType aType,
+                                           mozilla::CSSStyleSheet* aSheet) = 0;
+  virtual void RemoveAdditionalStyleSheet(additionalSheetType aType,
+                                          nsIURI* sheetURI) = 0;
+  virtual mozilla::CSSStyleSheet* FirstAdditionalAuthorSheet() = 0;
 
   
 
@@ -1285,12 +1289,12 @@ public:
 
   
   
-  virtual void StyleRuleChanged(nsIStyleSheet* aStyleSheet,
+  virtual void StyleRuleChanged(mozilla::CSSStyleSheet* aStyleSheet,
                                 mozilla::css::Rule* aOldStyleRule,
                                 mozilla::css::Rule* aNewStyleRule) = 0;
-  virtual void StyleRuleAdded(nsIStyleSheet* aStyleSheet,
+  virtual void StyleRuleAdded(mozilla::CSSStyleSheet* aStyleSheet,
                               mozilla::css::Rule* aStyleRule) = 0;
-  virtual void StyleRuleRemoved(nsIStyleSheet* aStyleSheet,
+  virtual void StyleRuleRemoved(mozilla::CSSStyleSheet* aStyleSheet,
                                 mozilla::css::Rule* aStyleRule) = 0;
 
   
