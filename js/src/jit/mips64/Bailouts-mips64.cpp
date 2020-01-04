@@ -4,10 +4,10 @@
 
 
 
+#include "jit/mips64/Bailouts-mips64.h"
+
 #include "jscntxt.h"
 #include "jscompartment.h"
-
-#include "jit/mips-shared/Bailouts-mips-shared.h"
 
 using namespace js;
 using namespace js::jit;
