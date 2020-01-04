@@ -296,11 +296,12 @@ function String_split(separator, limit) {
     var S = ToString(this);
 
     
-    var R = ToString(separator);
-
-    
+    var R;
     if (limit !== undefined) {
         var lim = limit >>> 0;
+
+        
+        R = ToString(separator);
 
         
         if (lim === 0)
@@ -313,6 +314,9 @@ function String_split(separator, limit) {
         
         return StringSplitStringLimit(S, R, lim);
     }
+
+    
+    R = ToString(separator);
 
     
     if (separator === undefined)
