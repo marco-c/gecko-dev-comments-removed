@@ -221,7 +221,14 @@ function downloadQuery(query) {
     if (arg == null) {
       return before ? Number.MAX_VALUE : 0;
     }
-    return parseInt(arg, 10);
+
+    
+    
+    
+    
+    const date = new Date((typeof arg == "string" && /^\d+$/.test(arg))
+                          ? parseInt(arg, 10) : arg);
+    return date.valueOf();
   }
 
   const startedBefore = normalizeTime(query.startedBefore, true);
