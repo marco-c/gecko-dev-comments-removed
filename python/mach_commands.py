@@ -218,6 +218,7 @@ class MachCommands(MachCommandBase):
         return self.run_process(cmd_args,
             pass_thru=True,  
             ensure_exit_code=False,  
+            require_unix_environment=True 
         )
     def eslint_setup(self, update_only=False):
         """Ensure eslint is optimally configured.
