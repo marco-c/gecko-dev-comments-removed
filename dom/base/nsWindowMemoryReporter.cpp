@@ -444,15 +444,6 @@ CollectWindowReports(nsGlobalWindow *aWindow,
 
 typedef nsTArray< RefPtr<nsGlobalWindow> > WindowArray;
 
-static
-PLDHashOperator
-GetWindows(const uint64_t& aId, nsGlobalWindow*& aWindow, void* aClosure)
-{
-  ((WindowArray *)aClosure)->AppendElement(aWindow);
-
-  return PL_DHASH_NEXT;
-}
-
 NS_IMETHODIMP
 nsWindowMemoryReporter::CollectReports(nsIMemoryReporterCallback* aCb,
                                        nsISupports* aClosure, bool aAnonymize)
@@ -464,7 +455,9 @@ nsWindowMemoryReporter::CollectReports(nsIMemoryReporterCallback* aCb,
   
   
   WindowArray windows;
-  windowsById->Enumerate(GetWindows, &windows);
+  for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
+    windows.AppendElement(iter.Data());
+  }
 
   
   
@@ -687,19 +680,6 @@ nsWindowMemoryReporter::AsyncCheckForGhostWindows()
   }
 }
 
-static PLDHashOperator
-BackdateTimeStampsEnumerator(nsISupports *aKey, TimeStamp &aTimeStamp,
-                             void* aClosure)
-{
-  TimeStamp *minTimeStamp = static_cast<TimeStamp*>(aClosure);
-
-  if (!aTimeStamp.IsNull() && aTimeStamp > *minTimeStamp) {
-    aTimeStamp = *minTimeStamp;
-  }
-
-  return PL_DHASH_NEXT;
-}
-
 void
 nsWindowMemoryReporter::ObserveAfterMinimizeMemoryUsage()
 {
@@ -712,78 +692,12 @@ nsWindowMemoryReporter::ObserveAfterMinimizeMemoryUsage()
   TimeStamp minTimeStamp = TimeStamp::Now() -
                            TimeDuration::FromSeconds(GetGhostTimeout());
 
-  mDetachedWindows.Enumerate(BackdateTimeStampsEnumerator,
-                             &minTimeStamp);
-}
-
-struct CheckForGhostWindowsEnumeratorData
-{
-  nsTHashtable<nsCStringHashKey> *nonDetachedDomains;
-  nsTHashtable<nsUint64HashKey> *ghostWindowIDs;
-  nsIEffectiveTLDService *tldService;
-  uint32_t ghostTimeout;
-  TimeStamp now;
-};
-
-static PLDHashOperator
-CheckForGhostWindowsEnumerator(nsISupports *aKey, TimeStamp& aTimeStamp,
-                               void* aClosure)
-{
-  CheckForGhostWindowsEnumeratorData *data =
-    static_cast<CheckForGhostWindowsEnumeratorData*>(aClosure);
-
-  nsWeakPtr weakKey = do_QueryInterface(aKey);
-  nsCOMPtr<mozIDOMWindow> iwindow = do_QueryReferent(weakKey);
-  if (!iwindow) {
-    
-    
-    return PL_DHASH_REMOVE;
-  }
-
-  nsPIDOMWindowInner* window = nsPIDOMWindowInner::From(iwindow);
-
-  
-  
-  
-  nsCOMPtr<nsPIDOMWindowOuter> top;
-  if (window->GetOuterWindow()) {
-    top = window->GetOuterWindow()->GetTop();
-  }
-
-  if (top) {
-    
-    return PL_DHASH_REMOVE;
-  }
-
-  nsCOMPtr<nsIURI> uri = GetWindowURI(nsGlobalWindow::Cast(window));
-
-  nsAutoCString domain;
-  if (uri) {
-    
-    
-    data->tldService->GetBaseDomain(uri, 0, domain);
-  }
-
-  if (data->nonDetachedDomains->Contains(domain)) {
-    
-    
-    aTimeStamp = TimeStamp();
-  } else {
-    
-    
-    if (aTimeStamp.IsNull()) {
-      
-      aTimeStamp = data->now;
-    } else if ((data->now - aTimeStamp).ToSeconds() > data->ghostTimeout) {
-      
-      
-      if (data->ghostWindowIDs && window) {
-        data->ghostWindowIDs->PutEntry(window->WindowID());
-      }
+  for (auto iter = mDetachedWindows.Iter(); !iter.Done(); iter.Next()) {
+    TimeStamp& timeStamp = iter.Data();
+    if (!timeStamp.IsNull() && timeStamp > minTimeStamp) {
+      timeStamp = minTimeStamp;
     }
   }
-
-  return PL_DHASH_NEXT;
 }
 
 
@@ -846,11 +760,64 @@ nsWindowMemoryReporter::CheckForGhostWindows(
 
   
   
-  CheckForGhostWindowsEnumeratorData ghostEnumData =
-    { &nonDetachedWindowDomains, aOutGhostIDs, tldService,
-      GetGhostTimeout(), mLastCheckForGhostWindows };
-  mDetachedWindows.Enumerate(CheckForGhostWindowsEnumerator,
-                             &ghostEnumData);
+  uint32_t ghostTimeout = GetGhostTimeout();
+  TimeStamp now = mLastCheckForGhostWindows;
+  for (auto iter = mDetachedWindows.Iter(); !iter.Done(); iter.Next()) {
+    nsWeakPtr weakKey = do_QueryInterface(iter.Key());
+    nsCOMPtr<mozIDOMWindow> iwindow = do_QueryReferent(weakKey);
+    if (!iwindow) {
+      
+      
+      iter.Remove();
+      continue;
+    }
+
+    nsPIDOMWindowInner* window = nsPIDOMWindowInner::From(iwindow);
+
+    
+    
+    
+    nsCOMPtr<nsPIDOMWindowOuter> top;
+    if (window->GetOuterWindow()) {
+      top = window->GetOuterWindow()->GetTop();
+    }
+
+    if (top) {
+      
+      iter.Remove();
+      continue;
+    }
+
+    nsCOMPtr<nsIURI> uri = GetWindowURI(nsGlobalWindow::Cast(window));
+
+    nsAutoCString domain;
+    if (uri) {
+      
+      
+      tldService->GetBaseDomain(uri, 0, domain);
+    }
+
+    TimeStamp& timeStamp = iter.Data();
+
+    if (nonDetachedWindowDomains.Contains(domain)) {
+      
+      
+      timeStamp = TimeStamp();
+    } else {
+      
+      
+      if (timeStamp.IsNull()) {
+        
+        timeStamp = now;
+      } else if ((now - timeStamp).ToSeconds() > ghostTimeout) {
+        
+        
+        if (aOutGhostIDs && window) {
+          aOutGhostIDs->PutEntry(window->WindowID());
+        }
+      }
+    }
+  }
 }
 
 NS_IMPL_ISUPPORTS(nsWindowMemoryReporter::GhostWindowsReporter,
@@ -890,7 +857,9 @@ nsWindowMemoryReporter::UnlinkGhostWindows()
   
   
   WindowArray windows;
-  windowsById->Enumerate(GetWindows, &windows);
+  for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
+    windows.AppendElement(iter.Data());
+  }
 
   
   nsTHashtable<nsUint64HashKey> ghostWindows;
