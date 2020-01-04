@@ -925,9 +925,9 @@ RasterImage::StartAnimation()
              "Should have a FrameAnimator if we have AnimationState");
 
   
-  if (mFrameAnimator->GetTimeoutForFrame(*mAnimationState,
-                                         GetCurrentFrameIndex())
-        < 0) {
+  
+  if (GetCurrentFrameIndex() == 0 &&
+      mFrameAnimator->GetTimeoutForFrame(*mAnimationState, 0) < 0) {
     mAnimationFinished = true;
     return NS_ERROR_ABORT;
   }
