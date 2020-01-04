@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.db.BrowserContract.Bookmarks;
@@ -797,7 +798,7 @@ public class LocalBrowserDB implements BrowserDB {
             
             
             addDesktopFolder = desktopBookmarksExist(cr);
-            addScreenshotsFolder = true;
+            addScreenshotsFolder = AppConstants.SCREENSHOTS_IN_BOOKMARKS_ENABLED;
         } else {
             addDesktopFolder = false;
             addScreenshotsFolder = false;
