@@ -234,6 +234,10 @@ public:
   
   virtual bool IsEndedOrShutdown() const;
 
+  
+  
+  bool OwnerHasError() const;
+
 protected:
   
   
