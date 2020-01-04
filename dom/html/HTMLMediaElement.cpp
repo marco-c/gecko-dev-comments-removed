@@ -6551,6 +6551,15 @@ void
 HTMLMediaElement::AudioCaptureStreamChangeIfNeeded()
 {
   
+  if (!mAudioChannelAgent) {
+    return;
+  }
+
+  
+  if (!HasAudio()) {
+    return;
+  }
+
   if (mAudioCapturedByWindow && !mCaptureStreamPort) {
     nsCOMPtr<nsPIDOMWindowInner> window = OwnerDoc()->GetInnerWindow();
     if (!OwnerDoc()->GetInnerWindow()) {
