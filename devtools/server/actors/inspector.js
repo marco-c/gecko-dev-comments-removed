@@ -2597,6 +2597,21 @@ var WalkerActor = protocol.ActorClass({
 
 
 
+  duplicateNode: method(function({rawNode}) {
+    let clonedNode = rawNode.cloneNode(true);
+    rawNode.parentNode.insertBefore(clonedNode, rawNode.nextSibling);
+  }, {
+    request: {
+      node: Arg(0, "domnode")
+    },
+    response: {}
+  }),
+
+  
+
+
+
+
 
   isDocumentOrDocumentElementNode: function(node) {
       return ((node.rawNode.ownerDocument &&
