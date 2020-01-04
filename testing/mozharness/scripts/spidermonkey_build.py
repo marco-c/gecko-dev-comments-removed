@@ -5,6 +5,7 @@
 
 import os
 import sys
+import copy
 from datetime import datetime
 from functools import wraps
 
@@ -14,6 +15,7 @@ from mozharness.base.errors import MakefileErrorList
 from mozharness.base.script import BaseScript
 from mozharness.base.transfer import TransferMixin
 from mozharness.base.vcs.vcsbase import VCSMixin
+from mozharness.mozilla.blob_upload import BlobUploadMixin, blobupload_config_options
 from mozharness.mozilla.buildbot import BuildbotMixin
 from mozharness.mozilla.building.hazards import HazardError, HazardAnalysis
 from mozharness.mozilla.purge import PurgeMixin
@@ -45,7 +47,7 @@ nuisance_env_vars = ['TERMCAP', 'LS_COLORS', 'PWD', '_']
 
 class SpidermonkeyBuild(MockMixin,
                         PurgeMixin, BaseScript,
-                        VCSMixin, BuildbotMixin, TooltoolMixin, TransferMixin):
+                        VCSMixin, BuildbotMixin, TooltoolMixin, TransferMixin, BlobUploadMixin):
     config_options = [
         [["--repo"], {
             "dest": "repo",
@@ -71,70 +73,70 @@ class SpidermonkeyBuild(MockMixin,
             "default": 4,
             "help": "number of simultaneous jobs used while building the shell " +
                     "(currently ignored for the analyzed build",
-        }],
+        }] + copy.deepcopy(blobupload_config_options)
     ]
 
     def __init__(self):
-        BaseScript.__init__(self,
-                            config_options=self.config_options,
-                            
-                            all_actions=[
-                                'purge',
-                                'checkout-tools',
+        super(SpidermonkeyBuild, self).__init__(
+            config_options=self.config_options,
+            
+            all_actions=[
+                'purge',
+                'checkout-tools',
 
-                                
-                                'checkout-source',
-                                'get-blobs',
-                                'clobber-shell',
-                                'configure-shell',
-                                'build-shell',
+                
+                'checkout-source',
+                'get-blobs',
+                'clobber-shell',
+                'configure-shell',
+                'build-shell',
 
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                'clobber-analysis',
-                                'setup-analysis',
-                                'run-analysis',
-                                'collect-analysis-output',
-                                'upload-analysis',
-                                'check-expectations',
-                            ],
-                            default_actions=[
-                                'purge',
-                                'checkout-tools',
-                                'checkout-source',
-                                'get-blobs',
-                                'clobber-shell',
-                                'configure-shell',
-                                'build-shell',
-                                'clobber-analysis',
-                                'setup-analysis',
-                                'run-analysis',
-                                'collect-analysis-output',
-                                
-                                
-                                'check-expectations',
-                            ],
-                            config={
-                                'default_vcs': 'hgtool',
-                                'vcs_share_base': os.environ.get('HG_SHARE_BASE_DIR'),
-                                'ccache': True,
-                                'buildbot_json_path': os.environ.get('PROPERTIES_FILE'),
-                                'tools_repo': 'https://hg.mozilla.org/build/tools',
+                
+                
+                
+                
+                
 
-                                'upload_ssh_server': None,
-                                'upload_remote_basepath': None,
-                                'enable_try_uploads': True,
-                                'source': None,
-                                'stage_product': 'firefox',
-                            },
+                'clobber-analysis',
+                'setup-analysis',
+                'run-analysis',
+                'collect-analysis-output',
+                'upload-analysis',
+                'check-expectations',
+            ],
+            default_actions=[
+                'purge',
+                'checkout-tools',
+                'checkout-source',
+                'get-blobs',
+                'clobber-shell',
+                'configure-shell',
+                'build-shell',
+                'clobber-analysis',
+                'setup-analysis',
+                'run-analysis',
+                'collect-analysis-output',
+                
+                
+                'check-expectations',
+            ],
+            config={
+                'default_vcs': 'hgtool',
+                'vcs_share_base': os.environ.get('HG_SHARE_BASE_DIR'),
+                'ccache': True,
+                'buildbot_json_path': os.environ.get('PROPERTIES_FILE'),
+                'tools_repo': 'https://hg.mozilla.org/build/tools',
+
+                'upload_ssh_server': None,
+                'upload_remote_basepath': None,
+                'enable_try_uploads': True,
+                'source': None,
+                'stage_product': 'firefox',
+            },
         )
 
         self.buildid = None
+        self.create_virtualenv()
         self.analysis = HazardAnalysis()
 
     def _pre_config_lock(self, rw_config):
@@ -156,6 +158,7 @@ class SpidermonkeyBuild(MockMixin,
                         ('purge_maxage', 'purge_maxage', None),
                         ('purge_skip', 'purge_skip', None),
                         ('force_clobber', 'force_clobber', None),
+                        ('branch', 'blob_upload_branch', None),
                         ]
             buildbot_props = self.buildbot_config.get('properties', {})
             for bb_prop, cfg_prop, default in bb_props:
@@ -164,6 +167,7 @@ class SpidermonkeyBuild(MockMixin,
             self.config['is_automation'] = True
         else:
             self.config['is_automation'] = False
+            self.config.setdefault('blob_upload_branch', 'devel')
 
         dirs = self.query_abs_dirs()
         replacements = self.config['env_replacements'].copy()
@@ -173,6 +177,7 @@ class SpidermonkeyBuild(MockMixin,
         self.env = self.query_env(replace_dict=replacements,
                                   partial_env=self.config['partial_env'],
                                   purge_env=nuisance_env_vars)
+        self.env['MOZ_UPLOAD_DIR'] = dirs['abs_blob_upload_dir']
 
     def query_abs_dirs(self):
         if self.abs_dirs:
