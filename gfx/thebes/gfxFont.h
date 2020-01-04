@@ -1141,7 +1141,7 @@ protected:
 
 
 
-class gfxShapedWord : public gfxShapedText
+class gfxShapedWord final : public gfxShapedText
 {
 public:
     
