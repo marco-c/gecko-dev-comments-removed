@@ -471,7 +471,7 @@ private:
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
-    return aWorkerPrivate->ModifyBusyCount(aCx, mIncrease);
+    return aWorkerPrivate->ModifyBusyCount(mIncrease);
   }
 
   virtual void
@@ -862,7 +862,7 @@ private:
     aWorkerPrivate->AssertIsOnParentThread();
     
     
-    return aWorkerPrivate->ModifyBusyCount(aCx, true);
+    return aWorkerPrivate->ModifyBusyCount(true);
   }
 
   virtual void
@@ -873,7 +873,7 @@ private:
     if (!aDispatchResult) {
       
       
-      aWorkerPrivate->ModifyBusyCount(aCx, false);
+      aWorkerPrivate->ModifyBusyCount(false);
     }
   }
 
@@ -896,7 +896,7 @@ private:
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     
-    return aWorkerPrivate->ModifyBusyCount(aCx, true) &&
+    return aWorkerPrivate->ModifyBusyCount(true) &&
            aWorkerPrivate->Close();
   }
 };
@@ -2788,8 +2788,7 @@ WorkerPrivateParent<Derived>::Close()
 
 template <class Derived>
 bool
-WorkerPrivateParent<Derived>::ModifyBusyCount(JSContext* ,
-                                              bool aIncrease)
+WorkerPrivateParent<Derived>::ModifyBusyCount(bool aIncrease)
 {
   AssertIsOnParentThread();
 
