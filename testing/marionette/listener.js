@@ -216,7 +216,6 @@ var getElementValueOfCssPropertyFn = dispatch(getElementValueOfCssProperty);
 var switchToShadowRootFn = dispatch(switchToShadowRoot);
 var getCookiesFn = dispatch(getCookies);
 var singleTapFn = dispatch(singleTap);
-var takeScreenshotFn = dispatch(takeScreenshot);
 
 
 
@@ -261,7 +260,7 @@ function startListeners() {
   addMessageListenerId("Marionette:importScript", importScript);
   addMessageListenerId("Marionette:getAppCacheStatus", getAppCacheStatus);
   addMessageListenerId("Marionette:setTestName", setTestName);
-  addMessageListenerId("Marionette:takeScreenshot", takeScreenshotFn);
+  addMessageListenerId("Marionette:takeScreenshot", takeScreenshot);
   addMessageListenerId("Marionette:addCookie", addCookie);
   addMessageListenerId("Marionette:getCookies", getCookiesFn);
   addMessageListenerId("Marionette:deleteAllCookies", deleteAllCookies);
@@ -365,7 +364,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:importScript", importScript);
   removeMessageListenerId("Marionette:getAppCacheStatus", getAppCacheStatus);
   removeMessageListenerId("Marionette:setTestName", setTestName);
-  removeMessageListenerId("Marionette:takeScreenshot", takeScreenshotFn);
+  removeMessageListenerId("Marionette:takeScreenshot", takeScreenshot);
   removeMessageListenerId("Marionette:addCookie", addCookie);
   removeMessageListenerId("Marionette:getCookies", getCookiesFn);
   removeMessageListenerId("Marionette:deleteAllCookies", deleteAllCookies);
@@ -1997,35 +1996,44 @@ function importScript(msg) {
 
 
 
-function takeScreenshot(id, highlights, full) {
-  let node;
-  if (id) {
-    node = elementManager.getKnownElement(id, curContainer);
-  } else {
+function takeScreenshot(msg) {
+  let node = null;
+  if (msg.json.id) {
+    try {
+      node = elementManager.getKnownElement(msg.json.id, curContainer)
+    }
+    catch (e) {
+      sendResponse(e.message, e.code, e.stack, msg.json.command_id);
+      return;
+    }
+  }
+  else {
     node = curContainer.frame;
   }
+  let highlights = msg.json.highlights;
 
-  let document = curContainer.frame.document;
-  let rect, win, width, height, left, top;
-
+  var document = curContainer.frame.document;
+  var rect, win, width, height, left, top;
   
   if (node == curContainer.frame) {
     
     win = node;
-    if (full) {
+    if (msg.json.full) {
       
       width = document.body.scrollWidth;
       height = document.body.scrollHeight;
       top = 0;
       left = 0;
-    } else {
+    }
+    else {
       
       width = document.documentElement.clientWidth;
       height = document.documentElement.clientHeight;
       left = curContainer.frame.pageXOffset;
       top = curContainer.frame.pageYOffset;
     }
-  } else {
+  }
+  else {
     
     win = node.ownerDocument.defaultView;
     rect = node.getBoundingClientRect();
@@ -2035,12 +2043,11 @@ function takeScreenshot(id, highlights, full) {
     left = rect.left;
   }
 
-  let canvas = document.createElementNS(
-      "http://www.w3.org/1999/xhtml", "canvas");
+  var canvas = document.createElementNS("http://www.w3.org/1999/xhtml",
+                                        "canvas");
   canvas.width = width;
   canvas.height = height;
-  let ctx = canvas.getContext("2d");
-
+  var ctx = canvas.getContext("2d");
   
   ctx.drawWindow(win, left, top, width, height, "rgb(255,255,255)");
 
@@ -2052,26 +2059,25 @@ function takeScreenshot(id, highlights, full) {
     ctx.save();
 
     for (var i = 0; i < highlights.length; ++i) {
-      let elem = elementManager.getKnownElement(highlights[i], curContainer);
+      var elem = elementManager.getKnownElement(highlights[i], curContainer);
       rect = elem.getBoundingClientRect();
 
-      let offsetY = -top;
-      let offsetX = -left;
+      var offsetY = -top;
+      var offsetX = -left;
 
       
-      ctx.strokeRect(
-          rect.left + offsetX,
-          rect.top + offsetY,
-          rect.width,
-          rect.height);
+      ctx.strokeRect(rect.left + offsetX,
+                     rect.top + offsetY,
+                     rect.width,
+                     rect.height);
     }
   }
 
   
   
-  let dataUrl = canvas.toDataURL("image/png", "");
-  let encoded = dataUrl.substring(dataUrl.indexOf(",") + 1);
-  return encoded;
+  var dataUrl = canvas.toDataURL("image/png", "");
+  var data = dataUrl.substring(dataUrl.indexOf(",") + 1);
+  sendResponse({value: data}, msg.json.command_id);
 }
 
 
