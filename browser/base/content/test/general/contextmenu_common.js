@@ -245,6 +245,7 @@ let lastElementSelector = null;
 
 
 
+
 function* test_contextmenu(selector, menuItems, options={}) {
   contextMenu = document.getElementById("contentAreaContextMenu");
   is(contextMenu.state, "closed", "checking if popup is closed");
@@ -294,6 +295,11 @@ function* test_contextmenu(selector, menuItems, options={}) {
     gBrowser.selectedBrowser);
   yield awaitPopupShown;
   info("Popup Shown");
+
+  if (options.onContextMenuShown) {
+    yield options.onContextMenuShown();
+    info("Completed onContextMenuShown");
+  }
 
   if (menuItems) {
     if (Services.prefs.getBoolPref("devtools.inspector.enabled")) {
