@@ -288,6 +288,9 @@ function loadUITourTestPage(callback, host = "https://example.org/") {
                 callbackMap.set(index, arg);
                 fnIndices.push(index);
                 let handler = function(msg) {
+                  
+                  
+                  
                   browser.messageManager.removeMessageListener(proxyFunctionName + index, handler);
                   callbackMap.get(index).apply(null, msg.data);
                 };

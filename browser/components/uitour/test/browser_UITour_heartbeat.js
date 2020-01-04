@@ -7,14 +7,6 @@ var gTestTab;
 var gContentAPI;
 var gContentWindow;
 
-function test() {
-  UITourTest();
-  requestLongerTimeout(2);
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("browser.uitour.surveyDuration");
-  });
-}
-
 function getHeartbeatNotification(aId, aChromeWindow = window) {
   let notificationBox = aChromeWindow.document.getElementById("high-priority-global-notificationbox");
   
@@ -102,519 +94,617 @@ function checkTelemetry(aPayload, aFlowId, aExpectedFields) {
   is(extraKeys.size, 0, "No unexpected fields in the Telemetry payload");
 }
 
-var tests = [
-  
 
 
-  function test_heartbeat_stars_show(done) {
-    let flowId = "ui-ratefirefox-" + Math.random();
-    let engagementURL = "http://example.com";
 
-    gContentAPI.observe(function (aEventName, aData) {
-      switch (aEventName) {
-        case "Heartbeat:NotificationOffered": {
-          info("'Heartbeat:Offered' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          cleanUpNotification(flowId);
-          break;
-        }
-        case "Heartbeat:NotificationClosed": {
-          info("'Heartbeat:NotificationClosed' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          done();
-          break;
-        }
-        case "Heartbeat:TelemetrySent": {
-          info("'Heartbeat:TelemetrySent' notification received");
-          checkTelemetry(aData, flowId, ["offeredTS", "closedTS"]);
-          break;
-        }
-        default:
-          
-          ok(false, "Unexpected notification received: " + aEventName);
-      }
-    });
 
-    gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, engagementURL);
-  },
 
-  
 
 
-  function test_heartbeat_null_engagementURL(done) {
-    let flowId = "ui-ratefirefox-" + Math.random();
-    let originalTabCount = gBrowser.tabs.length;
 
-    gContentAPI.observe(function (aEventName, aData) {
-      switch (aEventName) {
-        case "Heartbeat:NotificationOffered": {
-          info("'Heartbeat:Offered' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          
-          simulateVote(flowId, 2);
-          break;
-        }
-        case "Heartbeat:Voted": {
-          info("'Heartbeat:Voted' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          break;
-        }
-        case "Heartbeat:NotificationClosed": {
-          info("'Heartbeat:NotificationClosed' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          is(gBrowser.tabs.length, originalTabCount, "No engagement tab should be opened.");
-          done();
-          break;
-        }
-        case "Heartbeat:TelemetrySent": {
-          info("'Heartbeat:TelemetrySent' notification received.");
-          checkTelemetry(aData, flowId, ["offeredTS", "votedTS", "closedTS", "score"]);
-          is(aData.score, 2, "Checking Telemetry payload.score");
-          break;
-        }
-        default:
-          
-          ok(false, "Unexpected notification received: " + aEventName);
-      }
-    });
 
-    gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, null);
-  },
 
-   
-
-
-  function test_heartbeat_invalid_engagement_URL(done) {
-    let flowId = "ui-ratefirefox-" + Math.random();
-    let originalTabCount = gBrowser.tabs.length;
-    let invalidEngagementURL = "invalidEngagement";
-
-    gContentAPI.observe(function (aEventName, aData) {
-      switch (aEventName) {
-        case "Heartbeat:NotificationOffered": {
-          info("'Heartbeat:Offered' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          
-          simulateVote(flowId, 2);
-          break;
-        }
-        case "Heartbeat:Voted": {
-          info("'Heartbeat:Voted' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          break;
-        }
-        case "Heartbeat:NotificationClosed": {
-          info("'Heartbeat:NotificationClosed' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          is(gBrowser.tabs.length, originalTabCount, "No engagement tab should be opened.");
-          done();
-          break;
-        }
-        case "Heartbeat:TelemetrySent": {
-          info("'Heartbeat:TelemetrySent' notification received.");
-          checkTelemetry(aData, flowId, ["offeredTS", "votedTS", "closedTS", "score"]);
-          is(aData.score, 2, "Checking Telemetry payload.score");
-          break;
-        }
-        default:
-          
-          ok(false, "Unexpected notification received: " + aEventName);
-      }
-    });
-
-    gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, invalidEngagementURL);
-  },
-
-  
-
-
-  function test_heartbeat_stars_vote(done) {
-    const expectedScore = 4;
-    let flowId = "ui-ratefirefox-" + Math.random();
-
-    gContentAPI.observe(function (aEventName, aData) {
-      switch (aEventName) {
-        case "Heartbeat:NotificationOffered": {
-          info("'Heartbeat:Offered' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          
-          simulateVote(flowId, expectedScore);
-          break;
-        }
-        case "Heartbeat:Voted": {
-          info("'Heartbeat:Voted' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          is(aData.score, expectedScore, "Should report a score of " + expectedScore);
-          break;
-        }
-        case "Heartbeat:NotificationClosed": {
-          info("'Heartbeat:NotificationClosed' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          done();
-          break;
-        }
-        case "Heartbeat:TelemetrySent": {
-          info("'Heartbeat:TelemetrySent' notification received.");
-          checkTelemetry(aData, flowId, ["offeredTS", "votedTS", "closedTS", "score"]);
-          is(aData.score, expectedScore, "Checking Telemetry payload.score");
-          break;
-        }
-        default:
-          
-          ok(false, "Unexpected notification received: " + aEventName);
-      }
-    });
-
-    gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, null);
-  },
-
-  
-
-
-  function test_heartbeat_engagement_tab(done) {
-    let engagementURL = "http://example.com";
-    let flowId = "ui-ratefirefox-" + Math.random();
-    let originalTabCount = gBrowser.tabs.length;
-    const expectedTabCount = originalTabCount + 1;
-    let heartbeatVoteSeen = false;
-
-    gContentAPI.observe(function (aEventName, aData) {
-      switch (aEventName) {
-        case "Heartbeat:NotificationOffered": {
-          info("'Heartbeat:Offered' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          
-          simulateVote(flowId, 1);
-          break;
-        }
-        case "Heartbeat:Voted": {
-          info("'Heartbeat:Voted' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          heartbeatVoteSeen = true;
-          break;
-        }
-        case "Heartbeat:NotificationClosed": {
-          ok(heartbeatVoteSeen, "Heartbeat vote should have been received");
-          info("'Heartbeat:NotificationClosed' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          is(gBrowser.tabs.length, expectedTabCount, "Engagement URL should open in a new tab.");
-          gBrowser.removeCurrentTab();
-          done();
-          break;
-        }
-        case "Heartbeat:TelemetrySent": {
-          info("'Heartbeat:TelemetrySent' notification received.");
-          checkTelemetry(aData, flowId, ["offeredTS", "votedTS", "closedTS", "score"]);
-          is(aData.score, 1, "Checking Telemetry payload.score");
-          break;
-        }
-        default:
-          
-          ok(false, "Unexpected notification received: " + aEventName);
-      }
-    });
-
-    gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, engagementURL);
-  },
-
-  
-
-
-  function test_heartbeat_engagement_button(done) {
-    let engagementURL = "http://example.com";
-    let flowId = "ui-engagewithfirefox-" + Math.random();
-    let originalTabCount = gBrowser.tabs.length;
-    const expectedTabCount = originalTabCount + 1;
-    let heartbeatEngagedSeen = false;
-
-    gContentAPI.observe(function (aEventName, aData) {
-      switch (aEventName) {
-        case "Heartbeat:NotificationOffered": {
-          info("'Heartbeat:Offered' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          let notification = getHeartbeatNotification(flowId);
-          is(notification.querySelectorAll(".star-x").length, 0, "No stars should be present");
-          
-          let engagementButton = notification.querySelector(".notification-button");
-          is(engagementButton.label, "Engage Me", "Check engagement button text");
-          engagementButton.doCommand();
-          break;
-        }
-        case "Heartbeat:Engaged": {
-          info("'Heartbeat:Engaged' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          heartbeatEngagedSeen = true;
-          break;
-        }
-        case "Heartbeat:NotificationClosed": {
-          info("'Heartbeat:NotificationClosed' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(heartbeatEngagedSeen, "Heartbeat:Engaged should have been received");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          is(gBrowser.tabs.length, expectedTabCount, "Engagement URL should open in a new tab.");
-          gBrowser.removeCurrentTab();
-          executeSoon(done);
-          break;
-        }
-        case "Heartbeat:TelemetrySent": {
-          info("'Heartbeat:TelemetrySent' notification received.");
-          checkTelemetry(aData, flowId, ["offeredTS", "engagedTS", "closedTS"]);
-          break;
-        }
-        default: {
-          
-          ok(false, "Unexpected notification received: " + aEventName);
-        }
-      }
-    });
-
-    gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL, null, null, {
-      engagementButtonLabel: "Engage Me",
-    });
-  },
-
-  
-
-
-
-  function test_heartbeat_learnmore(done) {
-    let dummyURL = "http://example.com";
-    let flowId = "ui-ratefirefox-" + Math.random();
-    let originalTabCount = gBrowser.tabs.length;
-    const expectedTabCount = originalTabCount + 1;
-
-    gContentAPI.observe(function (aEventName, aData) {
-      switch (aEventName) {
-        case "Heartbeat:NotificationOffered": {
-          info("'Heartbeat:Offered' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          
-          clickLearnMore(flowId);
-          break;
-        }
-        case "Heartbeat:LearnMore": {
-          info("'Heartbeat:LearnMore' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          cleanUpNotification(flowId);
-          break;
-        }
-        case "Heartbeat:NotificationClosed": {
-          info("'Heartbeat:NotificationClosed' notification received (timestamp " + aData.timestamp.toString() + ").");
-          ok(Number.isFinite(aData.timestamp), "Timestamp must be a number.");
-          is(gBrowser.tabs.length, expectedTabCount, "Learn more URL should open in a new tab.");
-          gBrowser.removeCurrentTab();
-          done();
-          break;
-        }
-        case "Heartbeat:TelemetrySent": {
-          info("'Heartbeat:TelemetrySent' notification received.");
-          checkTelemetry(aData, flowId, ["offeredTS", "learnMoreTS", "closedTS"]);
-          break;
-        }
-        default:
-          
-          ok(false, "Unexpected notification received: " + aEventName);
-      }
-    });
-
-    gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, dummyURL,
-                              "What is this?", dummyURL);
-  },
-
-  taskify(function* test_invalidEngagementButtonLabel() {
-    let engagementURL = "http://example.com";
-    let flowId = "invalidEngagementButtonLabel-" + Math.random();
-
-    let eventPromise = promisePageEvent();
-
-    gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL,
-                              null, null, {
-                                engagementButtonLabel: 42,
-                              });
-
-    yield eventPromise;
-    ok(!isTourBrowser(gBrowser.selectedBrowser),
-       "Invalid engagementButtonLabel should prevent init");
-
-  }),
-
-  taskify(function* test_privateWindowsOnly_noneOpen() {
-    let engagementURL = "http://example.com";
-    let flowId = "privateWindowsOnly_noneOpen-" + Math.random();
-
-    let eventPromise = promisePageEvent();
-
-    gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL,
-                              null, null, {
-                                engagementButtonLabel: "Yes!",
-                                privateWindowsOnly: true,
-                              });
-
-    yield eventPromise;
-    ok(!isTourBrowser(gBrowser.selectedBrowser),
-       "If there are no private windows opened, tour init should be prevented");
-  }),
-
-  taskify(function* test_privateWindowsOnly_notMostRecent() {
-    let engagementURL = "http://example.com";
-    let flowId = "notMostRecent-" + Math.random();
-
-    let privateWin = yield BrowserTestUtils.openNewBrowserWindow({ private: true });
-    let mostRecentWin = yield BrowserTestUtils.openNewBrowserWindow();
-
-    let eventPromise = promisePageEvent();
-
-    gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL,
-                              null, null, {
-                                engagementButtonLabel: "Yes!",
-                                privateWindowsOnly: true,
-                              });
-
-    yield eventPromise;
-    is(getHeartbeatNotification(flowId, window), null,
-       "Heartbeat shouldn't appear in the default window");
-    is(!!getHeartbeatNotification(flowId, privateWin), true,
-       "Heartbeat should appear in the most recent private window");
-    is(getHeartbeatNotification(flowId, mostRecentWin), null,
-       "Heartbeat shouldn't appear in the most recent non-private window");
-
-    yield BrowserTestUtils.closeWindow(mostRecentWin);
-    yield BrowserTestUtils.closeWindow(privateWin);
-  }),
-
-  taskify(function* test_privateWindowsOnly() {
-    let engagementURL = "http://example.com";
-    let learnMoreURL = "http://example.org/learnmore/";
-    let flowId = "ui-privateWindowsOnly-" + Math.random();
-
-    let privateWin = yield BrowserTestUtils.openNewBrowserWindow({ private: true });
-
-    yield new Promise((resolve) => {
-      gContentAPI.observe(function(aEventName, aData) {
-        info(aEventName + " notification received: " + JSON.stringify(aData, null, 2));
-        ok(false, "No heartbeat notifications should arrive for privateWindowsOnly");
-      }, resolve);
-    });
-
-    gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL,
-                              "Learn More", learnMoreURL, {
-                                engagementButtonLabel: "Yes!",
-                                privateWindowsOnly: true,
-                              });
-
-    yield promisePageEvent();
-
-    ok(isTourBrowser(gBrowser.selectedBrowser), "UITour should have been init for the browser");
-
-    let notification = getHeartbeatNotification(flowId, privateWin);
-
-    is(notification.querySelectorAll(".star-x").length, 0, "No stars should be present");
-
-    info("Test the learn more link.");
-    let learnMoreLink = notification.querySelector(".text-link");
-    is(learnMoreLink.value, "Learn More", "Check learn more label");
-    let learnMoreTabPromise = BrowserTestUtils.waitForNewTab(privateWin.gBrowser, null);
-    learnMoreLink.click();
-    let learnMoreTab = yield learnMoreTabPromise;
-    is(learnMoreTab.linkedBrowser.currentURI.host, "example.org", "Check learn more site opened");
-    ok(PrivateBrowsingUtils.isBrowserPrivate(learnMoreTab.linkedBrowser), "Ensure the learn more tab is private");
-    yield BrowserTestUtils.removeTab(learnMoreTab);
-
-    info("Test the engagement button's new tab.");
-    let engagementButton = notification.querySelector(".notification-button");
-    is(engagementButton.label, "Yes!", "Check engagement button text");
-    let engagementTabPromise = BrowserTestUtils.waitForNewTab(privateWin.gBrowser, null);
-    engagementButton.doCommand();
-    let engagementTab = yield engagementTabPromise;
-    is(engagementTab.linkedBrowser.currentURI.host, "example.com", "Check enagement site opened");
-    ok(PrivateBrowsingUtils.isBrowserPrivate(engagementTab.linkedBrowser), "Ensure the engagement tab is private");
-    yield BrowserTestUtils.removeTab(engagementTab);
-
-    yield BrowserTestUtils.closeWindow(privateWin);
-  }),
-
-  
-
-
-  taskify(function* test_telemetry_surveyExpired() {
-    let flowId = "survey-expired-" + Math.random();
-    let engagementURL = "http://example.com";
-    let surveyDuration = 1; 
-    Services.prefs.setIntPref("browser.uitour.surveyDuration", surveyDuration);
-
-    let telemetryPromise = new Promise((resolve, reject) => {
-        gContentAPI.observe(function (aEventName, aData) {
-          switch (aEventName) {
-            case "Heartbeat:NotificationOffered":
-              info("'Heartbeat:NotificationOffered' notification received");
-              break;
-            case "Heartbeat:SurveyExpired":
-              info("'Heartbeat:SurveyExpired' notification received");
-              ok(true, "Survey should end on its own after a time out");
-            case "Heartbeat:NotificationClosed":
-              info("'Heartbeat:NotificationClosed' notification received");
-              break;
-            case "Heartbeat:TelemetrySent": {
-              info("'Heartbeat:TelemetrySent' notification received");
-              checkTelemetry(aData, flowId, ["offeredTS", "expiredTS", "closedTS"]);
-              resolve();
-              break;
+function promiseWaitHeartbeatNotification(aEventName) {
+  return ContentTask.spawn(gTestTab.linkedBrowser, { aEventName },
+      function({ aEventName }) {
+        return new Promise(resolve => {
+          addEventListener("mozUITourNotification", function listener(event) {
+            if (event.detail.event !== aEventName) {
+              return;
             }
-            default:
-              
-              ok(false, "Unexpected notification received: " + aEventName);
-              reject();
-          }
+            removeEventListener("mozUITourNotification", listener, false);
+            resolve(event.detail.params);
+          }, false);
         });
-    });
+      });
+}
 
-    gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, engagementURL);
-    yield telemetryPromise;
+
+
+
+
+
+
+
+
+
+
+function promiseWaitExpectedNotifications(events) {
+  return ContentTask.spawn(gTestTab.linkedBrowser, { events },
+      function({ events }) {
+        let stillToReceive = events;
+        return new Promise((res, rej) => {
+          addEventListener("mozUITourNotification", function listener(event) {
+            if (stillToReceive.includes(event.detail.event)) {
+              
+              stillToReceive = stillToReceive.filter(x => x !== event.detail.event);
+            } else {
+              removeEventListener("mozUITourNotification", listener, false);
+              rej(event.detail.event);
+            }
+            
+            if (stillToReceive.length > 0) {
+              return;
+            }
+            
+            removeEventListener("mozUITourNotification", listener, false);
+            res();
+          }, false);
+        });
+      });
+}
+
+function validateTimestamp(eventName, timestamp) {
+  info("'" + eventName + "' notification received (timestamp " + timestamp.toString() + ").");
+  ok(Number.isFinite(timestamp), "Timestamp must be a number.");
+}
+
+add_task(function* test_setup(){
+  yield setup_UITourTest();
+  requestLongerTimeout(2);
+  registerCleanupFunction(() => {
     Services.prefs.clearUserPref("browser.uitour.surveyDuration");
-  }),
+  });
+});
+
+
+
+
+add_UITour_task(function* test_heartbeat_stars_show() {
+  let flowId = "ui-ratefirefox-" + Math.random();
+  let engagementURL = "http://example.com";
 
   
+  
+  gContentAPI.observe(() => {});
+
+  let receivedExpectedPromise = promiseWaitExpectedNotifications(
+    ["Heartbeat:NotificationOffered", "Heartbeat:NotificationClosed", "Heartbeat:TelemetrySent"]);
+
+  
+  let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
+  gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, engagementURL);
+
+  
+  let data = yield shownPromise;
+  validateTimestamp('Heartbeat:Offered', data.timestamp);
+
+  
+  let closedPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationClosed");
+  let pingSentPromise = promiseWaitHeartbeatNotification("Heartbeat:TelemetrySent");
+  cleanUpNotification(flowId);
+
+  data = yield closedPromise;
+  validateTimestamp('Heartbeat:NotificationClosed', data.timestamp);
+
+  data = yield pingSentPromise;
+  info("'Heartbeat:TelemetrySent' notification received");
+  checkTelemetry(data, flowId, ["offeredTS", "closedTS"]);
+
+  
+  yield receivedExpectedPromise;
+})
 
 
 
-  function test_telemetry_params(done) {
-    let flowId = "telemetry-params-" + Math.random();
-    let engagementURL = "http://example.com";
-    let extraParams = {
-      "surveyId": "foo",
-      "surveyVersion": 1.5,
-      "testing": true,
-      "notWhitelisted": 123,
-    };
-    let expectedFields = ["surveyId", "surveyVersion", "testing"];
 
-    gContentAPI.observe(function (aEventName, aData) {
-      switch (aEventName) {
-        case "Heartbeat:NotificationOffered": {
-          info("'Heartbeat:Offered' notification received (timestamp " + aData.timestamp.toString() + ").");
-          cleanUpNotification(flowId);
-          break;
-        }
-        case "Heartbeat:NotificationClosed": {
-          info("'Heartbeat:NotificationClosed' notification received (timestamp " + aData.timestamp.toString() + ").");
-          break;
-        }
-        case "Heartbeat:TelemetrySent": {
-          info("'Heartbeat:TelemetrySent' notification received");
-          checkTelemetry(aData, flowId, ["offeredTS", "closedTS"].concat(expectedFields));
-          for (let param of expectedFields) {
-            is(aData[param], extraParams[param],
-               "Whitelisted experiment configs should be copied into Telemetry pings");
-          }
-          done();
-          break;
-        }
-        default:
-          
-          ok(false, "Unexpected notification received: " + aEventName);
-      }
-    });
+add_UITour_task(function* test_heartbeat_null_engagementURL() {
+  let flowId = "ui-ratefirefox-" + Math.random();
+  let originalTabCount = gBrowser.tabs.length;
 
-    gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!",
-                              flowId, engagementURL, null, null, extraParams);
-  },
-];
+  
+  
+  gContentAPI.observe(() => {});
+
+  let receivedExpectedPromise = promiseWaitExpectedNotifications(["Heartbeat:NotificationOffered",
+    "Heartbeat:NotificationClosed", "Heartbeat:Voted", "Heartbeat:TelemetrySent"]);
+
+  
+  let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
+  gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, null);
+
+  
+  let data = yield shownPromise;
+  validateTimestamp('Heartbeat:Offered', data.timestamp);
+
+  
+  
+  let closedPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationClosed");
+  let votedPromise = promiseWaitHeartbeatNotification("Heartbeat:Voted");
+  let pingSentPromise = promiseWaitHeartbeatNotification("Heartbeat:TelemetrySent");
+
+  
+  simulateVote(flowId, 2);
+  data = yield votedPromise;
+  validateTimestamp('Heartbeat:Voted', data.timestamp);
+
+  
+  data = yield closedPromise;
+  validateTimestamp('Heartbeat:NotificationClosed', data.timestamp);
+  is(gBrowser.tabs.length, originalTabCount, "No engagement tab should be opened.");
+
+  
+  data = yield pingSentPromise;
+  info("'Heartbeat:TelemetrySent' notification received.");
+  checkTelemetry(data, flowId, ["offeredTS", "votedTS", "closedTS", "score"]);
+  is(data.score, 2, "Checking Telemetry payload.score");
+
+  
+  yield receivedExpectedPromise;
+})
+
+
+
+
+add_UITour_task(function* test_heartbeat_invalid_engagement_URL() {
+  let flowId = "ui-ratefirefox-" + Math.random();
+  let originalTabCount = gBrowser.tabs.length;
+  let invalidEngagementURL = "invalidEngagement";
+
+  
+  
+  gContentAPI.observe(() => {});
+
+  let receivedExpectedPromise = promiseWaitExpectedNotifications(["Heartbeat:NotificationOffered",
+    "Heartbeat:NotificationClosed", "Heartbeat:Voted", "Heartbeat:TelemetrySent"]);
+
+  
+  let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
+  gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, invalidEngagementURL);
+
+  
+  let data = yield shownPromise;
+  validateTimestamp('Heartbeat:Offered', data.timestamp);
+
+  
+  
+  let closedPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationClosed");
+  let votedPromise = promiseWaitHeartbeatNotification("Heartbeat:Voted");
+  let pingSentPromise = promiseWaitHeartbeatNotification("Heartbeat:TelemetrySent");
+
+  
+  simulateVote(flowId, 2);
+  data = yield votedPromise;
+  validateTimestamp('Heartbeat:Voted', data.timestamp);
+
+  
+  data = yield closedPromise;
+  validateTimestamp('Heartbeat:NotificationClosed', data.timestamp);
+  is(gBrowser.tabs.length, originalTabCount, "No engagement tab should be opened.");
+
+  
+  data = yield pingSentPromise;
+  info("'Heartbeat:TelemetrySent' notification received.");
+  checkTelemetry(data, flowId, ["offeredTS", "votedTS", "closedTS", "score"]);
+  is(data.score, 2, "Checking Telemetry payload.score");
+
+  
+  yield receivedExpectedPromise;
+})
+
+
+
+
+add_UITour_task(function* test_heartbeat_stars_vote() {
+  const expectedScore = 4;
+  let originalTabCount = gBrowser.tabs.length;
+  let flowId = "ui-ratefirefox-" + Math.random();
+
+  
+  
+  gContentAPI.observe(() => {});
+
+  let receivedExpectedPromise = promiseWaitExpectedNotifications(["Heartbeat:NotificationOffered",
+    "Heartbeat:NotificationClosed", "Heartbeat:Voted", "Heartbeat:TelemetrySent"]);
+
+  
+  let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
+  gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, null);
+
+  
+  let data = yield shownPromise;
+  validateTimestamp('Heartbeat:Offered', data.timestamp);
+
+  
+  
+  let closedPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationClosed");
+  let votedPromise = promiseWaitHeartbeatNotification("Heartbeat:Voted");
+  let pingSentPromise = promiseWaitHeartbeatNotification("Heartbeat:TelemetrySent");
+
+  
+  simulateVote(flowId, expectedScore);
+  data = yield votedPromise;
+  validateTimestamp('Heartbeat:Voted', data.timestamp);
+  is(data.score, expectedScore, "Should report a score of " + expectedScore);
+
+  
+  data = yield closedPromise;
+  validateTimestamp('Heartbeat:NotificationClosed', data.timestamp);
+  is(gBrowser.tabs.length, originalTabCount, "No engagement tab should be opened.");
+
+  
+  data = yield pingSentPromise;
+  info("'Heartbeat:TelemetrySent' notification received.");
+  checkTelemetry(data, flowId, ["offeredTS", "votedTS", "closedTS", "score"]);
+  is(data.score, expectedScore, "Checking Telemetry payload.score");
+
+  
+  yield receivedExpectedPromise;
+})
+
+
+
+
+add_UITour_task(function* test_heartbeat_engagement_tab() {
+  let engagementURL = "http://example.com";
+  let flowId = "ui-ratefirefox-" + Math.random();
+  let originalTabCount = gBrowser.tabs.length;
+  const expectedTabCount = originalTabCount + 1;
+
+  
+  
+  gContentAPI.observe(() => {});
+
+  let receivedExpectedPromise = promiseWaitExpectedNotifications(["Heartbeat:NotificationOffered",
+    "Heartbeat:NotificationClosed", "Heartbeat:Voted", "Heartbeat:TelemetrySent"]);
+
+  
+  let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
+  gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, engagementURL);
+
+  
+  let data = yield shownPromise;
+  validateTimestamp('Heartbeat:Offered', data.timestamp);
+
+  
+  
+  let closedPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationClosed");
+  let votedPromise = promiseWaitHeartbeatNotification("Heartbeat:Voted");
+  let pingSentPromise = promiseWaitHeartbeatNotification("Heartbeat:TelemetrySent");
+
+  
+  simulateVote(flowId, 1);
+  data = yield votedPromise;
+  validateTimestamp('Heartbeat:Voted', data.timestamp);
+
+  
+  data = yield closedPromise;
+  validateTimestamp('Heartbeat:NotificationClosed', data.timestamp);
+  is(gBrowser.tabs.length, expectedTabCount, "Engagement URL should open in a new tab.");
+  gBrowser.removeCurrentTab();
+
+  
+  data = yield pingSentPromise;
+  info("'Heartbeat:TelemetrySent' notification received.");
+  checkTelemetry(data, flowId, ["offeredTS", "votedTS", "closedTS", "score"]);
+  is(data.score, 1, "Checking Telemetry payload.score");
+
+  
+  yield receivedExpectedPromise;
+})
+
+
+
+
+add_UITour_task(function* test_heartbeat_engagement_button() {
+  let engagementURL = "http://example.com";
+  let flowId = "ui-engagewithfirefox-" + Math.random();
+  let originalTabCount = gBrowser.tabs.length;
+  const expectedTabCount = originalTabCount + 1;
+
+  
+  
+  gContentAPI.observe(() => {});
+
+  let receivedExpectedPromise = promiseWaitExpectedNotifications(["Heartbeat:NotificationOffered",
+    "Heartbeat:NotificationClosed", "Heartbeat:Engaged", "Heartbeat:TelemetrySent"]);
+
+  
+  let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
+  gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL, null, null, {
+    engagementButtonLabel: "Engage Me",
+  });
+
+  let data = yield shownPromise;
+  validateTimestamp('Heartbeat:Offered', data.timestamp);
+
+  
+  
+  let closedPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationClosed");
+  let engagedPromise = promiseWaitHeartbeatNotification("Heartbeat:Engaged");
+  let pingSentPromise = promiseWaitHeartbeatNotification("Heartbeat:TelemetrySent");
+
+  
+  let notification = getHeartbeatNotification(flowId);
+  is(notification.querySelectorAll(".star-x").length, 0, "No stars should be present");
+  
+  let engagementButton = notification.querySelector(".notification-button");
+  is(engagementButton.label, "Engage Me", "Check engagement button text");
+  engagementButton.doCommand();
+
+  data = yield engagedPromise;
+  validateTimestamp('Heartbeat:Engaged', data.timestamp);
+
+  
+  data = yield closedPromise;
+  validateTimestamp('Heartbeat:NotificationClosed', data.timestamp);
+  is(gBrowser.tabs.length, expectedTabCount, "Engagement URL should open in a new tab.");
+  gBrowser.removeCurrentTab();
+
+  
+  data = yield pingSentPromise;
+  info("'Heartbeat:TelemetrySent' notification received.");
+  checkTelemetry(data, flowId, ["offeredTS", "engagedTS", "closedTS"]);
+
+  
+  yield receivedExpectedPromise;
+})
+
+
+
+
+
+add_UITour_task(function* test_heartbeat_learnmore() {
+  let dummyURL = "http://example.com";
+  let flowId = "ui-ratefirefox-" + Math.random();
+  let originalTabCount = gBrowser.tabs.length;
+  const expectedTabCount = originalTabCount + 1;
+
+  
+  
+  gContentAPI.observe(() => {});
+
+  let receivedExpectedPromise = promiseWaitExpectedNotifications(["Heartbeat:NotificationOffered",
+    "Heartbeat:NotificationClosed", "Heartbeat:LearnMore", "Heartbeat:TelemetrySent"]);
+
+  
+  let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
+  gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, dummyURL,
+                            "What is this?", dummyURL);
+
+  let data = yield shownPromise;
+  validateTimestamp('Heartbeat:Offered', data.timestamp);
+
+  
+  
+  let closedPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationClosed");
+  let learnMorePromise = promiseWaitHeartbeatNotification("Heartbeat:LearnMore");
+  let pingSentPromise = promiseWaitHeartbeatNotification("Heartbeat:TelemetrySent");
+
+  
+  clickLearnMore(flowId);
+
+  data = yield learnMorePromise;
+  validateTimestamp('Heartbeat:LearnMore', data.timestamp);
+  cleanUpNotification(flowId);
+
+  
+  data = yield closedPromise;
+  validateTimestamp('Heartbeat:NotificationClosed', data.timestamp);
+  is(gBrowser.tabs.length, expectedTabCount, "Learn more URL should open in a new tab.");
+  gBrowser.removeCurrentTab();
+
+  
+  data = yield pingSentPromise;
+  info("'Heartbeat:TelemetrySent' notification received.");
+  checkTelemetry(data, flowId, ["offeredTS", "learnMoreTS", "closedTS"]);
+
+  
+  yield receivedExpectedPromise;
+})
+
+add_UITour_task(function* test_invalidEngagementButtonLabel() {
+  let engagementURL = "http://example.com";
+  let flowId = "invalidEngagementButtonLabel-" + Math.random();
+
+  let eventPromise = promisePageEvent();
+
+  gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL,
+                            null, null, {
+                              engagementButtonLabel: 42,
+                            });
+
+  yield eventPromise;
+  ok(!isTourBrowser(gBrowser.selectedBrowser),
+     "Invalid engagementButtonLabel should prevent init");
+
+})
+
+add_UITour_task(function* test_privateWindowsOnly_noneOpen() {
+  let engagementURL = "http://example.com";
+  let flowId = "privateWindowsOnly_noneOpen-" + Math.random();
+
+  let eventPromise = promisePageEvent();
+
+  gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL,
+                            null, null, {
+                              engagementButtonLabel: "Yes!",
+                              privateWindowsOnly: true,
+                            });
+
+  yield eventPromise;
+  ok(!isTourBrowser(gBrowser.selectedBrowser),
+     "If there are no private windows opened, tour init should be prevented");
+})
+
+add_UITour_task(function* test_privateWindowsOnly_notMostRecent() {
+  let engagementURL = "http://example.com";
+  let flowId = "notMostRecent-" + Math.random();
+
+  let privateWin = yield BrowserTestUtils.openNewBrowserWindow({ private: true });
+  let mostRecentWin = yield BrowserTestUtils.openNewBrowserWindow();
+
+  let eventPromise = promisePageEvent();
+
+  gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL,
+                            null, null, {
+                              engagementButtonLabel: "Yes!",
+                              privateWindowsOnly: true,
+                            });
+
+  yield eventPromise;
+  is(getHeartbeatNotification(flowId, window), null,
+     "Heartbeat shouldn't appear in the default window");
+  is(!!getHeartbeatNotification(flowId, privateWin), true,
+     "Heartbeat should appear in the most recent private window");
+  is(getHeartbeatNotification(flowId, mostRecentWin), null,
+     "Heartbeat shouldn't appear in the most recent non-private window");
+
+  yield BrowserTestUtils.closeWindow(mostRecentWin);
+  yield BrowserTestUtils.closeWindow(privateWin);
+})
+
+add_UITour_task(function* test_privateWindowsOnly() {
+  let engagementURL = "http://example.com";
+  let learnMoreURL = "http://example.org/learnmore/";
+  let flowId = "ui-privateWindowsOnly-" + Math.random();
+
+  let privateWin = yield BrowserTestUtils.openNewBrowserWindow({ private: true });
+
+  yield new Promise((resolve) => {
+    gContentAPI.observe(function(aEventName, aData) {
+      info(aEventName + " notification received: " + JSON.stringify(aData, null, 2));
+      ok(false, "No heartbeat notifications should arrive for privateWindowsOnly");
+    }, resolve);
+  });
+
+  gContentAPI.showHeartbeat("Do you want to engage with us?", "Thank you!", flowId, engagementURL,
+                            "Learn More", learnMoreURL, {
+                              engagementButtonLabel: "Yes!",
+                              privateWindowsOnly: true,
+                            });
+
+  yield promisePageEvent();
+
+  ok(isTourBrowser(gBrowser.selectedBrowser), "UITour should have been init for the browser");
+
+  let notification = getHeartbeatNotification(flowId, privateWin);
+
+  is(notification.querySelectorAll(".star-x").length, 0, "No stars should be present");
+
+  info("Test the learn more link.");
+  let learnMoreLink = notification.querySelector(".text-link");
+  is(learnMoreLink.value, "Learn More", "Check learn more label");
+  let learnMoreTabPromise = BrowserTestUtils.waitForNewTab(privateWin.gBrowser, null);
+  learnMoreLink.click();
+  let learnMoreTab = yield learnMoreTabPromise;
+  is(learnMoreTab.linkedBrowser.currentURI.host, "example.org", "Check learn more site opened");
+  ok(PrivateBrowsingUtils.isBrowserPrivate(learnMoreTab.linkedBrowser), "Ensure the learn more tab is private");
+  yield BrowserTestUtils.removeTab(learnMoreTab);
+
+  info("Test the engagement button's new tab.");
+  let engagementButton = notification.querySelector(".notification-button");
+  is(engagementButton.label, "Yes!", "Check engagement button text");
+  let engagementTabPromise = BrowserTestUtils.waitForNewTab(privateWin.gBrowser, null);
+  engagementButton.doCommand();
+  let engagementTab = yield engagementTabPromise;
+  is(engagementTab.linkedBrowser.currentURI.host, "example.com", "Check enagement site opened");
+  ok(PrivateBrowsingUtils.isBrowserPrivate(engagementTab.linkedBrowser), "Ensure the engagement tab is private");
+  yield BrowserTestUtils.removeTab(engagementTab);
+
+  yield BrowserTestUtils.closeWindow(privateWin);
+})
+
+
+
+
+add_UITour_task(function* test_telemetry_surveyExpired() {
+  let flowId = "survey-expired-" + Math.random();
+  let engagementURL = "http://example.com";
+  let surveyDuration = 1; 
+  Services.prefs.setIntPref("browser.uitour.surveyDuration", surveyDuration);
+
+  
+  
+  gContentAPI.observe(() => {});
+
+  let receivedExpectedPromise = promiseWaitExpectedNotifications(["Heartbeat:NotificationOffered",
+    "Heartbeat:NotificationClosed", "Heartbeat:SurveyExpired", "Heartbeat:TelemetrySent"]);
+
+  
+  let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
+  gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, engagementURL);
+
+  let expiredPromise = promiseWaitHeartbeatNotification("Heartbeat:SurveyExpired");
+  let closedPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationClosed");
+  let pingPromise = promiseWaitHeartbeatNotification("Heartbeat:TelemetrySent");
+
+  yield Promise.all([shownPromise, expiredPromise, closedPromise]);
+  
+  let data = yield pingPromise;
+  checkTelemetry(data, flowId, ["offeredTS", "expiredTS", "closedTS"]);
+
+  Services.prefs.clearUserPref("browser.uitour.surveyDuration");
+
+  
+  yield receivedExpectedPromise;
+})
+
+
+
+
+
+add_UITour_task(function* test_telemetry_params() {
+  let flowId = "telemetry-params-" + Math.random();
+  let engagementURL = "http://example.com";
+  let extraParams = {
+    "surveyId": "foo",
+    "surveyVersion": 1.5,
+    "testing": true,
+    "notWhitelisted": 123,
+  };
+  let expectedFields = ["surveyId", "surveyVersion", "testing"];
+
+  
+  
+  gContentAPI.observe(() => {});
+
+  let receivedExpectedPromise = promiseWaitExpectedNotifications(
+    ["Heartbeat:NotificationOffered", "Heartbeat:NotificationClosed", "Heartbeat:TelemetrySent"]);
+
+  
+  let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
+  gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!",
+                            flowId, engagementURL, null, null, extraParams);
+  yield shownPromise;
+
+  let closedPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationClosed");
+  let pingPromise = promiseWaitHeartbeatNotification("Heartbeat:TelemetrySent");
+  cleanUpNotification(flowId);
+
+  
+  let data = yield closedPromise;
+  validateTimestamp('Heartbeat:NotificationClosed', data.timestamp);
+
+  
+  data = yield pingPromise;
+  info("'Heartbeat:TelemetrySent' notification received.");
+  checkTelemetry(data, flowId, ["offeredTS", "closedTS"].concat(expectedFields));
+  for (let param of expectedFields) {
+    is(data[param], extraParams[param],
+       "Whitelisted experiment configs should be copied into Telemetry pings");
+  }
+
+  
+  yield receivedExpectedPromise;
+})
