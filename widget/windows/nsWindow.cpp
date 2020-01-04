@@ -3629,7 +3629,7 @@ nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
   }
 
   if (!mLayerManager) {
-    MOZ_ASSERT(!mCompositorBridgeParent && !mCompositorBridgeChild);
+    MOZ_ASSERT(!mCompositorSession && !mCompositorBridgeChild);
 
     
     

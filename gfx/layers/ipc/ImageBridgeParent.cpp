@@ -19,8 +19,6 @@
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/media/MediaSystemResourceManagerParent.h" 
 #include "mozilla/layers/CompositableTransactionParent.h"
-#include "mozilla/layers/CompositorBridgeParent.h"  
-#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersSurfaces.h"  

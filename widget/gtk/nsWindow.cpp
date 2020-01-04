@@ -2146,7 +2146,7 @@ nsWindow::OnExposeEvent(cairo_t *cr)
         ? static_cast<ClientLayerManager*>(GetLayerManager())
         : nullptr;
 
-    if (clientLayers && mCompositorBridgeParent) {
+    if (clientLayers && mCompositorSession) {
         
         
         clientLayers->SetNeedsComposite(true);
