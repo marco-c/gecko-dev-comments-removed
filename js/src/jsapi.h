@@ -2815,6 +2815,38 @@ JS_SetImmutablePrototype(JSContext* cx, JS::HandleObject obj, bool* succeeded);
 
 
 
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_GetOwnPropertyDescriptorById(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
+                                JS::MutableHandle<JSPropertyDescriptor> desc);
+
+extern JS_PUBLIC_API(bool)
+JS_GetOwnPropertyDescriptor(JSContext* cx, JS::HandleObject obj, const char* name,
+                            JS::MutableHandle<JSPropertyDescriptor> desc);
+
+extern JS_PUBLIC_API(bool)
+JS_GetOwnUCPropertyDescriptor(JSContext* cx, JS::HandleObject obj, const char16_t* name,
+                              JS::MutableHandle<JSPropertyDescriptor> desc);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_GetPropertyDescriptorById(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
+                             JS::MutableHandle<JSPropertyDescriptor> desc);
+
+extern JS_PUBLIC_API(bool)
+JS_GetPropertyDescriptor(JSContext* cx, JS::HandleObject obj, const char* name,
+                         JS::MutableHandle<JSPropertyDescriptor> desc);
+
+
+
+
 extern JS_PUBLIC_API(bool)
 JS_DefineProperty(JSContext* cx, JS::HandleObject obj, const char* name, JS::HandleValue value,
                   unsigned attrs,
@@ -2916,35 +2948,10 @@ JS_HasPropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id, bool* f
 
 
 extern JS_PUBLIC_API(bool)
-JS_GetOwnPropertyDescriptorById(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                                JS::MutableHandle<JSPropertyDescriptor> desc);
-
-extern JS_PUBLIC_API(bool)
-JS_GetOwnPropertyDescriptor(JSContext* cx, JS::HandleObject obj, const char* name,
-                            JS::MutableHandle<JSPropertyDescriptor> desc);
-
-extern JS_PUBLIC_API(bool)
-JS_GetOwnUCPropertyDescriptor(JSContext* cx, JS::HandleObject obj, const char16_t* name,
-                              JS::MutableHandle<JSPropertyDescriptor> desc);
-
-extern JS_PUBLIC_API(bool)
 JS_HasOwnPropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id, bool* foundp);
 
 extern JS_PUBLIC_API(bool)
 JS_HasOwnProperty(JSContext* cx, JS::HandleObject obj, const char* name, bool* foundp);
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_GetPropertyDescriptorById(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                             JS::MutableHandle<JSPropertyDescriptor> desc);
-
-extern JS_PUBLIC_API(bool)
-JS_GetPropertyDescriptor(JSContext* cx, JS::HandleObject obj, const char* name,
-                         JS::MutableHandle<JSPropertyDescriptor> desc);
 
 extern JS_PUBLIC_API(bool)
 JS_GetProperty(JSContext* cx, JS::HandleObject obj, const char* name, JS::MutableHandleValue vp);
