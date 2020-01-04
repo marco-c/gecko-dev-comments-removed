@@ -1249,7 +1249,6 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
   if (!shadows)
     return;
 
-  gfxContextAutoSaveRestore gfxStateRestorer;
   bool hasBorderRadius;
   bool nativeTheme; 
   const nsStyleDisplay* styleDisplay = aForFrame->StyleDisplay();
