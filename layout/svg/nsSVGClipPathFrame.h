@@ -184,7 +184,9 @@ private:
 
   private:
     nsSVGClipPathFrame* mFrame;
-    DebugOnly<bool> mMarkAsInUseCalled;
+#ifdef DEBUG
+    bool mMarkAsInUseCalled;
+#endif
   };
 
   
