@@ -195,10 +195,8 @@ DynamicImage::GetFrameAtSize(const IntSize& aSize,
 }
 
 NS_IMETHODIMP_(bool)
-DynamicImage::IsOpaque()
+DynamicImage::WillDrawOpaqueNow()
 {
-  
-  
   return false;
 }
 
