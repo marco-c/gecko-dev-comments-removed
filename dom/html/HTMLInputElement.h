@@ -1017,7 +1017,11 @@ protected:
   
 
 
-  bool DoesStepApply() const { return DoesMinMaxApply(); }
+  bool DoesStepApply() const
+  {
+    
+    return DoesMinMaxApply() && mType != NS_FORM_INPUT_MONTH;
+  }
 
   
 
@@ -1027,7 +1031,11 @@ protected:
   
 
 
-  bool DoesValueAsNumberApply() const { return DoesMinMaxApply(); }
+  bool DoesValueAsNumberApply() const
+  {
+    
+    return DoesMinMaxApply() && mType != NS_FORM_INPUT_MONTH;
+  }
 
   
 
@@ -1250,6 +1258,12 @@ protected:
 
 
   static bool IsExperimentalMobileType(uint8_t aType);
+
+  
+
+
+
+  static bool IsDateTimeInputType(uint8_t aType);
 
   
 
