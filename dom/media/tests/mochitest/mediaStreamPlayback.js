@@ -2,13 +2,12 @@
 
 
 
-const TIMEUPDATE_TIMEOUT_LENGTH = 10000;
 const ENDED_TIMEOUT_LENGTH = 30000;
 
 
 
 
-const CANPLAYTHROUGH_TIMEOUT_LENGTH = 60000;
+const VERIFYPLAYING_TIMEOUT_LENGTH = 60000;
 
 
 
@@ -34,7 +33,8 @@ MediaStreamPlayback.prototype = {
 
 
   playMedia : function(isResume) {
-    return this.startMedia(isResume)
+    this.startMedia(isResume);
+    return this.verifyPlaying()
       .then(() => this.stopMediaElement());
   },
 
@@ -45,28 +45,34 @@ MediaStreamPlayback.prototype = {
 
 
   startMedia : function(isResume) {
-    var canPlayThroughFired = false;
 
-    
     
     if (!isResume) {
       is(this.mediaElement.currentTime, 0,
          "Before starting the media element, currentTime = 0");
     }
+    this.canPlayThroughFired = listenUntil(this.mediaElement, 'canplaythrough',
+                                           () => true);
 
-    return new Promise((resolve, reject) => {
-      
+    
+    this.mediaElement.srcObject = this.mediaStream;
+    this.mediaElement.play();
+  },
+
+  
 
 
+  verifyPlaying : function() {
+    var lastStreamTime = this.mediaStream.currentTime;
+    var lastElementTime = this.mediaElement.currentTime;
 
+    var mediaTimeProgressed = listenUntil(this.mediaElement, 'timeupdate',
+        () => this.mediaStream.currentTime > lastStreamTime &&
+              this.mediaElement.currentTime > lastElementTime);
 
-
-      var canPlayThroughCallback = () => {
-        
-        canPlayThroughFired = true;
-        this.mediaElement.removeEventListener('canplaythrough',
-                                              canPlayThroughCallback, false);
-
+    return timeout(Promise.all([this.canPlayThroughFired, mediaTimeProgressed]),
+                   VERIFYPLAYING_TIMEOUT_LENGTH, "verifyPlaying timed out")
+      .then(() => {
         is(this.mediaElement.paused, false,
            "Media element should be playing");
         is(this.mediaElement.duration, Number.POSITIVE_INFINITY,
@@ -93,45 +99,7 @@ MediaStreamPlayback.prototype = {
         is(this.mediaElement.src, "", "No src should be defined");
         is(this.mediaElement.currentSrc, "",
            "Current src should still be an empty string");
-
-        var timeUpdateCallback = () => {
-          if (this.mediaStream.currentTime > 0 &&
-              this.mediaElement.currentTime > 0) {
-            this.mediaElement.removeEventListener('timeupdate',
-                                                  timeUpdateCallback, false);
-            resolve();
-          }
-        };
-
-        
-        
-        this.mediaElement.addEventListener('timeupdate', timeUpdateCallback,
-                                           false);
-
-        
-        setTimeout(() => {
-          this.mediaElement.removeEventListener('timeupdate',
-                                                timeUpdateCallback, false);
-          reject(new Error("timeUpdate event never fired"));
-        }, TIMEUPDATE_TIMEOUT_LENGTH);
-      };
-
-      
-      
-      this.mediaElement.addEventListener('canplaythrough', canPlayThroughCallback,
-                                         false);
-
-      
-      this.mediaElement.srcObject = this.mediaStream;
-      this.mediaElement.play();
-
-      
-      setTimeout(() => {
-        this.mediaElement.removeEventListener('canplaythrough',
-                                              canPlayThroughCallback, false);
-        reject(new Error("canplaythrough event never fired"));
-      }, CANPLAYTHROUGH_TIMEOUT_LENGTH);
-    });
+      });
   },
 
   
@@ -172,7 +140,8 @@ LocalMediaStreamPlayback.prototype = Object.create(MediaStreamPlayback.prototype
 
   playMediaWithMediaStreamTracksStop: {
     value: function(isResume) {
-      return this.startMedia(isResume)
+      this.startMedia(isResume);
+      return this.verifyPlaying()
         .then(() => this.stopTracksForStreamInMediaPlayback())
         .then(() => this.stopMediaElement());
     }
@@ -217,7 +186,8 @@ LocalMediaStreamPlayback.prototype = Object.create(MediaStreamPlayback.prototype
 
   playMediaWithDeprecatedStreamStop : {
     value: function(isResume) {
-      return this.startMedia(isResume)
+      this.startMedia(isResume);
+      return this.verifyPlaying()
         .then(() => this.deprecatedStopStreamInMediaPlayback())
         .then(() => this.stopMediaElement());
     }

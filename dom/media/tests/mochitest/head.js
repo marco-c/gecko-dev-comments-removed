@@ -391,6 +391,18 @@ var timeout = (promise, time, msg) =>
   Promise.race([promise, wait(time).then(() => Promise.reject(new Error(msg)))]);
 
 
+var listenUntil = (target, eventName, onFire) => {
+  return new Promise(resolve => target.addEventListener(eventName,
+                                                        function callback() {
+    var result = onFire();
+    if (result) {
+      target.removeEventListener(eventName, callback, false);
+      resolve(result);
+    }
+  }, false));
+};
+
+
 
 
 
