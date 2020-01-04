@@ -1395,7 +1395,8 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD CaptureRollupEvents(nsIRollupListener* aListener, bool aDoCapture) = 0;
+    virtual void CaptureRollupEvents(nsIRollupListener* aListener,
+                                     bool aDoCapture) = 0;
 
     
 
