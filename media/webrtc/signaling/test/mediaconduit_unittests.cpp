@@ -572,9 +572,8 @@ class TransportConduitTest : public ::testing::Test
 
     
     
-    mozilla::AudioCodecConfig cinst1(124,"opus",48000,960,1,64000);
-    mozilla::AudioCodecConfig cinst2(125,"L16",16000,320,1,256000);
-
+    mozilla::AudioCodecConfig cinst1(124, "opus", 48000, 960, 1, 64000, false);
+    mozilla::AudioCodecConfig cinst2(125, "L16", 16000, 320, 1, 256000, false);
 
     std::vector<mozilla::AudioCodecConfig*> rcvCodecList;
     rcvCodecList.push_back(&cinst1);
