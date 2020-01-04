@@ -173,13 +173,13 @@ var interfaceNamesInGlobalScope =
 
     "Promise",
 
-    { name: "PushEvent", b2g: false, android: false },
+    { name: "PushEvent", b2g: false, android: false, nightlyAndroid: true },
 
-    { name: "PushManager", b2g: false, android: false },
+    { name: "PushManager", b2g: false, android: false, nightlyAndroid: true },
 
-    { name: "PushMessageData", b2g: false, android: false },
+    { name: "PushMessageData", b2g: false, android: false, nightlyAndroid: true },
 
-    { name: "PushSubscription", b2g: false, android: false },
+    { name: "PushSubscription", b2g: false, android: false, nightlyAndroid: true },
 
     "Request",
 
@@ -228,10 +228,11 @@ function createInterfaceMap(permissionMap, version, userAgent, isB2G) {
       } else {
         ok(!("pref" in entry), "Bogus pref annotation for " + entry.name);
         if ((entry.nightly === !isNightly) ||
+            (entry.nightlyAndroid === !(isAndroid && isNightly) && isAndroid) ||
             (entry.nonReleaseB2G === !(isB2G && !isRelease) && isB2G) ||
             (entry.nonReleaseAndroid === !(isAndroid && !isRelease) && isAndroid) ||
             (entry.desktop === !isDesktop) ||
-            (entry.android === !isAndroid && !entry.nonReleaseAndroid) ||
+            (entry.android === !isAndroid && !entry.nonReleaseAndroid && !entry.nightlyAndroid) ||
             (entry.b2g === !isB2G && !entry.nonReleaseB2G) ||
             (entry.release === !isRelease) ||
             (entry.permission && !permissionMap[entry.permission])) {
