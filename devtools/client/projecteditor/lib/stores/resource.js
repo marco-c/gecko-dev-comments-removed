@@ -348,19 +348,15 @@ var FileResource = Class({
 
 
 
-  save: function(content) {
+  save: Task.async(function*(content) {
+    
+    
     let buffer = gEncoder.encode(content);
     let path = this.path;
-
-    
-    
-
-    return Task.spawn(function*() {
-        let pfh = yield OS.File.open(path, {truncate: true});
-        yield pfh.write(buffer);
-        yield pfh.close();
-    });
-  },
+    let file = yield OS.File.open(path, {truncate: true});
+    yield file.write(buffer);
+    yield file.close();
+  }),
 
   
 
