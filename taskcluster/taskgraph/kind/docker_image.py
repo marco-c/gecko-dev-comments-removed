@@ -35,7 +35,7 @@ class DockerImageTask(base.Task):
         super(DockerImageTask, self).__init__(*args, **kwargs)
 
     @classmethod
-    def load_tasks(cls, kind, path, config, params):
+    def load_tasks(cls, kind, path, config, params, loaded_tasks):
         
         pushdate = time.strftime('%Y%m%d%H%M%S', time.gmtime())
 
