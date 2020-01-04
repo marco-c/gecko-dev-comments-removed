@@ -369,8 +369,6 @@ public:
   
   virtual void Suspend();
   virtual void Resume();
-  void BlockStreamIfNeeded();
-  void UnblockStreamIfNeeded();
   
   virtual void AddListener(MediaStreamListener* aListener);
   virtual void RemoveListener(MediaStreamListener* aListener);
@@ -468,26 +466,6 @@ public:
     
     aContainer->ClearFutureFrames();
     mVideoOutputs.RemoveElement(aContainer);
-  }
-  void ChangeExplicitBlockerCountImpl(GraphTime aTime, int32_t aDelta)
-  {
-    mExplicitBlockerCount.SetAtAndAfter(aTime, mExplicitBlockerCount.GetAt(aTime) + aDelta);
-  }
-  void BlockStreamIfNeededImpl(GraphTime aTime)
-  {
-    bool blocked = mExplicitBlockerCount.GetAt(aTime) > 0;
-    if (blocked) {
-      return;
-    }
-    ChangeExplicitBlockerCountImpl(aTime, 1);
-  }
-  void UnblockStreamIfNeededImpl(GraphTime aTime)
-  {
-    bool blocked = mExplicitBlockerCount.GetAt(aTime) > 0;
-    if (!blocked) {
-      return;
-    }
-    ChangeExplicitBlockerCountImpl(aTime, -1);
   }
   void AddListenerImpl(already_AddRefed<MediaStreamListener> aListener);
   void RemoveListenerImpl(MediaStreamListener* aListener);
@@ -598,8 +576,6 @@ protected:
   void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime, GraphTime aBlockedTime)
   {
     mBufferStartTime += aBlockedTime;
-    mExplicitBlockerCount.AdvanceCurrentTime(aCurrentTime);
-
     mBuffer.ForgetUpTo(aCurrentTime - mBufferStartTime);
   }
 
@@ -647,9 +623,6 @@ protected:
   
   
   VideoFrame mLastPlayedVideoFrame;
-  
-  
-  TimeVarying<GraphTime,uint32_t,0> mExplicitBlockerCount;
   nsTArray<nsRefPtr<MediaStreamListener> > mListeners;
   nsTArray<MainThreadMediaStreamListener*> mMainThreadListeners;
   nsTArray<TrackID> mDisabledTrackIDs;
