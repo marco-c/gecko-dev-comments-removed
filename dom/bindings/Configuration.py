@@ -770,6 +770,10 @@ class Descriptor(DescriptorProvider):
                 self.interface.parent)
 
     def hasThreadChecks(self):
+        
+        
+        
+        
         return ((self.isExposedConditionally() and
                  not self.interface.isExposedInWindow()) or
                 self.interface.isExposedInSomeButNotAllWorkers())
