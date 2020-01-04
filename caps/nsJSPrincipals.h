@@ -53,7 +53,7 @@ public:
   
 
 
-  virtual void GetScriptLocation(nsACString &aStr) = 0;
+  virtual nsresult GetScriptLocation(nsACString &aStr) = 0;
   static const uint32_t DEBUG_TOKEN = 0x0bf41760;
 
 protected:
