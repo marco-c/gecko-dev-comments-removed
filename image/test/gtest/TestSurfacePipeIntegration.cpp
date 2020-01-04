@@ -129,7 +129,18 @@ CheckPalettedSurfacePipeMethodResults(SurfacePipe* aPipe,
   EXPECT_TRUE(invalidRect.isNothing());
 }
 
-TEST(ImageSurfacePipeIntegration, SurfacePipe)
+class ImageSurfacePipeIntegration : public ::testing::Test
+{
+  protected:
+  static void SetUpTestCase()
+  {
+    
+    nsCOMPtr<imgITools> imgTools = do_CreateInstance("@mozilla.org/image/tools;1");
+    EXPECT_TRUE(imgTools != nullptr);
+  }
+};
+
+TEST_F(ImageSurfacePipeIntegration, SurfacePipe)
 {
   
   SurfacePipe pipe = TestSurfacePipeFactory::SimpleSurfacePipe();
@@ -213,7 +224,7 @@ TEST(ImageSurfacePipeIntegration, SurfacePipe)
   currentFrame->Finish();
 }
 
-TEST(ImageSurfacePipeIntegration, PalettedSurfacePipe)
+TEST_F(ImageSurfacePipeIntegration, PalettedSurfacePipe)
 {
   
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
@@ -293,7 +304,7 @@ TEST(ImageSurfacePipeIntegration, PalettedSurfacePipe)
   currentFrame->Finish();
 }
 
-TEST(ImageSurfacePipeIntegration, DeinterlaceDownscaleWritePixels)
+TEST_F(ImageSurfacePipeIntegration, DeinterlaceDownscaleWritePixels)
 {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
@@ -311,7 +322,7 @@ TEST(ImageSurfacePipeIntegration, DeinterlaceDownscaleWritePixels)
                                      SurfaceFormat::B8G8R8A8, false });
 }
 
-TEST(ImageSurfacePipeIntegration, RemoveFrameRectBottomRightDownscaleWritePixels)
+TEST_F(ImageSurfacePipeIntegration, RemoveFrameRectBottomRightDownscaleWritePixels)
 {
   
   
@@ -367,7 +378,7 @@ TEST(ImageSurfacePipeIntegration, RemoveFrameRectBottomRightDownscaleWritePixels
                                      SurfaceFormat::B8G8R8A8, false });
 }
 
-TEST(ImageSurfacePipeIntegration, RemoveFrameRectTopLeftDownscaleWritePixels)
+TEST_F(ImageSurfacePipeIntegration, RemoveFrameRectTopLeftDownscaleWritePixels)
 {
   
   
@@ -401,7 +412,7 @@ TEST(ImageSurfacePipeIntegration, RemoveFrameRectTopLeftDownscaleWritePixels)
                                      SurfaceFormat::B8G8R8A8, false });
 }
 
-TEST(ImageSurfacePipeIntegration, DeinterlaceRemoveFrameRectWritePixels)
+TEST_F(ImageSurfacePipeIntegration, DeinterlaceRemoveFrameRectWritePixels)
 {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
@@ -425,7 +436,7 @@ TEST(ImageSurfacePipeIntegration, DeinterlaceRemoveFrameRectWritePixels)
                                      SurfaceFormat::B8G8R8A8, false });
 }
 
-TEST(ImageSurfacePipeIntegration, DeinterlaceRemoveFrameRectDownscaleWritePixels)
+TEST_F(ImageSurfacePipeIntegration, DeinterlaceRemoveFrameRectDownscaleWritePixels)
 {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
@@ -448,7 +459,7 @@ TEST(ImageSurfacePipeIntegration, DeinterlaceRemoveFrameRectDownscaleWritePixels
                                      SurfaceFormat::B8G8R8A8, false });
 }
 
-TEST(ImageSurfacePipeIntegration, ConfiguringPalettedRemoveFrameRectDownscaleFails)
+TEST_F(ImageSurfacePipeIntegration, ConfiguringPalettedRemoveFrameRectDownscaleFails)
 {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
@@ -465,7 +476,7 @@ TEST(ImageSurfacePipeIntegration, ConfiguringPalettedRemoveFrameRectDownscaleFai
                                                          false });
 }
 
-TEST(ImageSurfacePipeIntegration, ConfiguringPalettedDeinterlaceDownscaleFails)
+TEST_F(ImageSurfacePipeIntegration, ConfiguringPalettedDeinterlaceDownscaleFails)
 {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
@@ -480,4 +491,23 @@ TEST(ImageSurfacePipeIntegration, ConfiguringPalettedDeinterlaceDownscaleFails)
                                                          IntRect(0, 0, 20, 20),
                                                          SurfaceFormat::B8G8R8A8, 8,
                                                          false });
+}
+
+TEST_F(ImageSurfacePipeIntegration, ConfiguringHugeDeinterlacingBufferFails)
+{
+  RefPtr<Decoder> decoder = CreateTrivialDecoder();
+  ASSERT_TRUE(decoder != nullptr);
+
+  
+  
+  
+  
+  
+  
+  AssertConfiguringPipelineFails(decoder,
+                                 DeinterlacingConfig<uint32_t> {  true},
+                                 DownscalingConfig { IntSize(60000, 60000),
+                                                     SurfaceFormat::B8G8R8A8 },
+                                 SurfaceConfig { decoder, 0, IntSize(600, 600),
+                                                 SurfaceFormat::B8G8R8A8, false });
 }

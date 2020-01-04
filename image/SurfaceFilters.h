@@ -21,6 +21,7 @@
 #include "mozilla/gfx/2D.h"
 
 #include "DownscalingFilter.h"
+#include "SurfaceCache.h"
 #include "SurfacePipe.h"
 
 namespace mozilla {
@@ -90,6 +91,14 @@ public:
     const uint32_t bufferSize = outputSize.width *
                                 outputSize.height *
                                 sizeof(PixelType);
+
+    
+    
+    
+    
+    if (!SurfaceCache::CanHold(bufferSize)) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
 
     
     
