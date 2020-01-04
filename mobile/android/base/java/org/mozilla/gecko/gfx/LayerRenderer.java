@@ -43,7 +43,6 @@ import javax.microedition.khronos.egl.EGLConfig;
 
 public class LayerRenderer implements Tabs.OnTabsChangedListener {
     private static final String LOGTAG = "GeckoLayerRenderer";
-    private static final String PROFTAG = "GeckoLayerRendererProf";
 
     
 
@@ -77,12 +76,6 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
     
     private final int[] mFrameTimings;
     private int mCurrentFrame, mFrameTimingsSum, mDroppedFrames;
-
-    
-    private int mFramesRendered;
-    private float mCompleteFramesRendered;
-    private boolean mProfileRender;
-    private long mProfileOutputTime;
 
     private IntBuffer mPixelBuffer;
 
@@ -204,7 +197,6 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
     }
 
     void onSurfaceCreated(EGLConfig config) {
-        checkMonitoringEnabled();
         createDefaultProgram();
         activateDefaultProgram();
     }
@@ -308,12 +300,6 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
         }
     }
 
-    private void printCheckerboardStats() {
-        Log.d(PROFTAG, "Frames rendered over last 1000ms: " + mCompleteFramesRendered + "/" + mFramesRendered);
-        mFramesRendered = 0;
-        mCompleteFramesRendered = 0;
-    }
-
     
     IntBuffer getPixels() {
         IntBuffer pixelBuffer = IntBuffer.allocate(mView.getWidth() * mView.getHeight());
@@ -372,10 +358,6 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
         mCurrentFrame = (mCurrentFrame + 1) % mFrameTimings.length;
 
         int averageTime = mFrameTimingsSum / mFrameTimings.length;
-    }
-
-    void checkMonitoringEnabled() {
-        mProfileRender = Log.isLoggable(PROFTAG, Log.DEBUG);
     }
 
     
@@ -552,27 +534,6 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
                 
                 if (mPageRect.width() > mFrameMetrics.getWidth())
                     mHorizScrollLayer.draw(mPageContext);
-            }
-
-            
-            Layer rootLayer = mView.getLayerClient().getRoot();
-            if ((rootLayer != null) &&
-                (mProfileRender || PanningPerfAPI.isRecordingCheckerboard())) {
-                
-                float checkerboard =  1.0f - GeckoAppShell.computeRenderIntegrity();
-
-                PanningPerfAPI.recordCheckerboard(checkerboard);
-                if (checkerboard < 0.0f || checkerboard > 1.0f) {
-                    Log.e(LOGTAG, "Checkerboard value out of bounds: " + checkerboard);
-                }
-
-                mCompleteFramesRendered += 1.0f - checkerboard;
-                mFramesRendered ++;
-
-                if (mFrameStartTime - mProfileOutputTime > NANOS_PER_SECOND) {
-                    mProfileOutputTime = mFrameStartTime;
-                    printCheckerboardStats();
-                }
             }
 
             runRenderTasks(mTasks, true, mFrameStartTime);
