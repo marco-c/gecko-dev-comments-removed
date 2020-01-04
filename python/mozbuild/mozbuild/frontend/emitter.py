@@ -179,8 +179,7 @@ class TreeMetadataEmitter(LoggingMixin):
                 raise Exception('Unhandled output type: %s' % type(out))
 
         
-        
-        if self.config.substs.get('COMPILE_ENVIRONMENT', True):
+        if self.config.substs.get('COMPILE_ENVIRONMENT'):
             start = time.time()
             objs = list(self._emit_libs_derived(contexts))
             self._emitter_time += time.time() - start
