@@ -19,47 +19,32 @@ namespace js {
 
 class TempAllocPolicy;
 
+namespace detail {
+
+template <typename T>
+struct TypeIsGCThing : mozilla::FalseType
+{};
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+} 
 
 template <typename T,
           size_t MinInlineCapacity = 0,
-          class AllocPolicy = TempAllocPolicy>
-class Vector
-  : public mozilla::VectorBase<T,
-                               MinInlineCapacity,
-                               AllocPolicy,
-                               Vector<T, MinInlineCapacity, AllocPolicy> >
-{
-    typedef typename mozilla::VectorBase<T, MinInlineCapacity, AllocPolicy, Vector> Base;
+          class AllocPolicy = TempAllocPolicy
 
-  public:
-    explicit Vector(AllocPolicy alloc = AllocPolicy()) : Base(alloc) {}
-    Vector(Vector&& vec) : Base(mozilla::Move(vec)) {}
-    Vector& operator=(Vector&& vec) {
-        return Base::operator=(mozilla::Move(vec));
-    }
-};
+
+
+
+#if !defined(_MSC_VER) || (1800 <= _MSC_VER && _MSC_VER <= 1800)
+         
+         , typename = typename mozilla::EnableIf<!detail::TypeIsGCThing<T>::value>::Type
+#endif
+         >
+using Vector = mozilla::Vector<T, MinInlineCapacity, AllocPolicy>;
 
 } 
 
