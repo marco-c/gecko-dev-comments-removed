@@ -1360,7 +1360,17 @@ nsContentUtils::ParseSandboxAttributeToFlags(const nsAttrValue* sandboxAttr)
   if (!sandboxAttr) { return 0; }
 
   
-  uint32_t out = SANDBOX_ALL_FLAGS;
+  uint32_t out = SANDBOXED_NAVIGATION
+               | SANDBOXED_AUXILIARY_NAVIGATION
+               | SANDBOXED_TOPLEVEL_NAVIGATION
+               | SANDBOXED_PLUGINS
+               | SANDBOXED_ORIGIN
+               | SANDBOXED_FORMS
+               | SANDBOXED_SCRIPTS
+               | SANDBOXED_AUTOMATIC_FEATURES
+               | SANDBOXED_POINTER_LOCK
+               | SANDBOXED_ORIENTATION_LOCK
+               | SANDBOXED_DOMAIN;
 
 
 #define SANDBOX_KEYWORD(string, atom, flags)                             \

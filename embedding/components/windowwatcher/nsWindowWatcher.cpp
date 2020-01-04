@@ -874,9 +874,7 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
 
   
   
-  
-  if (activeDocsSandboxFlags &
-        SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS) {
+  if (activeDocsSandboxFlags != 0) {
     newDocShell->SetSandboxFlags(activeDocsSandboxFlags);
     if (parentWindow) {
       newDocShell->SetOnePermittedSandboxedNavigator(
