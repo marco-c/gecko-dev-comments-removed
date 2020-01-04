@@ -180,8 +180,8 @@ NewEmptyPropertyIterator(JSContext* cx, unsigned flags, MutableHandleObject objp
 
 
 
-bool
-ValueToIterator(JSContext* cx, unsigned flags, MutableHandleValue vp);
+JSObject*
+ValueToIterator(JSContext* cx, unsigned flags, HandleValue vp);
 
 bool
 CloseIterator(JSContext* cx, HandleObject iterObj);
