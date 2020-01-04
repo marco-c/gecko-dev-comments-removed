@@ -493,17 +493,27 @@ public:
   }
 
   
-  
 
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   void SetDirectionFromBidiLevel(uint8_t level)
   {
-    if (IS_LEVEL_RTL(level)) {
-      
-      mWritingMode |= eBidiMask;
-    } else {
-      
-      mWritingMode &= ~eBidiMask;
+    if (IS_LEVEL_RTL(level) == IsBidiLTR()) {
+      mWritingMode ^= eBidiMask | eInlineFlowMask;
     }
   }
 
