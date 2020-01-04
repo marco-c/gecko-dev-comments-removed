@@ -116,7 +116,6 @@
 #include "nsIWebBrowserFind.h"  
 #include "nsIWindowMediator.h"  
 #include "nsComputedDOMStyle.h"
-#include "nsIEntropyCollector.h"
 #include "nsDOMCID.h"
 #include "nsDOMWindowUtils.h"
 #include "nsIWindowWatcher.h"
@@ -277,7 +276,6 @@ nsGlobalWindow::WindowByIdTable *nsGlobalWindow::sWindowsById = nullptr;
 bool nsGlobalWindow::sWarnedAboutWindowInternal = false;
 bool nsGlobalWindow::sIdleObserversAPIFuzzTimeDisabled = false;
 
-static nsIEntropyCollector *gEntropyCollector          = nullptr;
 static int32_t              gRefCnt                    = 0;
 static int32_t              gOpenPopupSpamCount        = 0;
 static PopupControlState    gPopupControlState         = openAbused;
@@ -1338,10 +1336,6 @@ nsGlobalWindow::Init()
 {
   AssertIsOnMainThread();
 
-  CallGetService(NS_ENTROPYCOLLECTOR_CONTRACTID, &gEntropyCollector);
-  NS_ASSERTION(gEntropyCollector,
-               "gEntropyCollector should have been initialized!");
-
   NS_ASSERTION(gDOMLeakPRLog, "gDOMLeakPRLog should have been initialized!");
 
   sWindowsById = new WindowByIdTable();
@@ -1483,8 +1477,6 @@ nsGlobalWindow::ShutDown()
     fclose(gDumpFile);
   }
   gDumpFile = nullptr;
-
-  NS_IF_RELEASE(gEntropyCollector);
 
   delete sWindowsById;
   sWindowsById = nullptr;
@@ -3317,27 +3309,11 @@ nsresult
 nsGlobalWindow::PreHandleEvent(EventChainPreVisitor& aVisitor)
 {
   NS_PRECONDITION(IsInnerWindow(), "PreHandleEvent is used on outer window!?");
-  static uint32_t count = 0;
   EventMessage msg = aVisitor.mEvent->mMessage;
 
   aVisitor.mCanHandle = true;
   aVisitor.mForceContentDispatch = true; 
-  if (msg == eMouseMove && gEntropyCollector) {
-    
-    
-    
-    if (count++ % 100 == 0) {
-      
-      
-      int16_t myCoord[2];
-
-      myCoord[0] = aVisitor.mEvent->mRefPoint.x;
-      myCoord[1] = aVisitor.mEvent->mRefPoint.y;
-      gEntropyCollector->RandomUpdate((void*)myCoord, sizeof(myCoord));
-      gEntropyCollector->RandomUpdate((void*)&(aVisitor.mEvent->mTime),
-                                      sizeof(uint32_t));
-    }
-  } else if (msg == eResize && aVisitor.mEvent->IsTrusted()) {
+  if (msg == eResize && aVisitor.mEvent->IsTrusted()) {
     
     
     nsCOMPtr<nsPIDOMWindowInner> window =
