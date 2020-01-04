@@ -83,6 +83,12 @@ const MAX_SUGGESTIONS = 6;
 
 
 
+
+
+
+
+
+
 this.ContentSearch = {
 
   
@@ -97,6 +103,10 @@ this.ContentSearch = {
 
   
   _destroyedPromise: null,
+
+  
+  
+  _currentSuggestion: null,
 
   init: function () {
     Cc["@mozilla.org/globalmessagemanager;1"].
@@ -165,6 +175,12 @@ this.ContentSearch = {
     };
     msg.target.addEventListener("SwapDocShells", msg, true);
 
+    
+    
+    if (msg.data.type == "Search") {
+      this._cancelSuggestions(msg);
+    }
+
     this._eventQueue.push({
       type: "Message",
       data: msg,
@@ -206,6 +222,27 @@ this.ContentSearch = {
         this._processEventQueue();
       }
     }.bind(this));
+  },
+
+  _cancelSuggestions: function (msg) {
+    let cancelled = false;
+    
+    if (this._currentSuggestion && this._currentSuggestion.target == msg.target) {
+      this._currentSuggestion.controller.stop();
+      cancelled = true;
+    }
+    
+    for (let i = 0; i < this._eventQueue.length; i++) {
+      let m = this._eventQueue[i].data;
+      if (msg.target == m.target && m.data.type == "GetSuggestions") {
+        this._eventQueue.splice(i, 1);
+        cancelled = true;
+        i--;
+      }
+    }
+    if (cancelled) {
+      this._reply(msg, "SuggestionsCancelled");
+    }
   },
 
   _onMessage: Task.async(function* (msg) {
@@ -302,7 +339,14 @@ this.ContentSearch = {
     let priv = PrivateBrowsingUtils.isBrowserPrivate(msg.target);
     
     
+    this._currentSuggestion = { controller: controller, target: msg.target };
     let suggestions = yield controller.fetch(data.searchString, priv, engine);
+    this._currentSuggestion = null;
+
+    
+    if (!suggestions) {
+      return;
+    }
 
     
     
