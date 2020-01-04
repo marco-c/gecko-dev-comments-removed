@@ -92,6 +92,10 @@
 
 
 
+
+
+
+
 this.EXPORTED_SYMBOLS = ["MessageChannel"];
 
 
@@ -152,19 +156,8 @@ class FilteringMessageManager {
   receiveMessage({data, target}) {
     let handlers = Array.from(this.getHandlers(data.messageName, data.recipient));
 
-    let result = {};
-    if (handlers.length == 0) {
-      result.error = {result: MessageChannel.RESULT_NO_HANDLER,
-                      message: "No matching message handler"};
-    } else if (handlers.length > 1) {
-      result.error = {result: MessageChannel.RESULT_MULTIPLE_HANDLERS,
-                      message: `Multiple matching handlers for ${data.messageName}`};
-    } else {
-      result.handler = handlers[0];
-    }
-
     data.target = target;
-    this.callback(result, data);
+    this.callback(handlers, data);
   }
 
   
@@ -179,13 +172,17 @@ class FilteringMessageManager {
   * getHandlers(messageName, recipient) {
     let handlers = this.handlers.get(messageName) || new Set();
     for (let handler of handlers) {
-      if (MessageChannel.matchesFilter(handler.messageFilter, recipient)) {
+      if (MessageChannel.matchesFilter(handler.messageFilterStrict || {}, recipient) &&
+          MessageChannel.matchesFilter(handler.messageFilterPermissive || {}, recipient, false)) {
         yield handler;
       }
     }
   }
 
   
+
+
+
 
 
 
@@ -298,6 +295,7 @@ this.MessageChannel = {
   RESULT_NO_HANDLER: 2,
   RESULT_MULTIPLE_HANDLERS: 3,
   RESULT_ERROR: 4,
+  RESULT_NO_RESPONSE: 5,
 
   REASON_DISCONNECTED: {
     result: this.RESULT_DISCONNECTED,
@@ -313,11 +311,56 @@ this.MessageChannel = {
 
 
 
+  RESPONSE_SINGLE: 0,
+
+  
 
 
-  matchesFilter(filter, data) {
+
+
+
+
+
+
+
+
+
+
+  RESPONSE_FIRST: 1,
+
+  
+
+
+
+
+
+  RESPONSE_ALL: 2,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  matchesFilter(filter, data, strict = true) {
+    if (strict) {
+      return Object.keys(filter).every(key => {
+        return key in data && data[key] === filter[key];
+      });
+    }
     return Object.keys(filter).every(key => {
-      return key in data && data[key] === filter[key];
+      return !(key in data) || data[key] === filter[key];
     });
   },
 
@@ -369,8 +412,18 @@ this.MessageChannel = {
 
 
 
-  addListener(target, messageName, handler) {
-    this.messageManagers.get(target).addHandler(messageName, handler);
+
+
+
+
+
+
+
+
+  addListener(targets, messageName, handler) {
+    for (let target of [].concat(targets)) {
+      this.messageManagers.get(target).addHandler(messageName, handler);
+    }
   },
 
   
@@ -383,8 +436,11 @@ this.MessageChannel = {
 
 
 
-  removeListener(target, messageName, handler) {
-    this.messageManagers.get(target).removeListener(messageName, handler);
+
+  removeListener(targets, messageName, handler) {
+    for (let target of [].concat(targets)) {
+      this.messageManagers.get(target).removeHandler(messageName, handler);
+    }
   },
 
   
@@ -412,12 +468,21 @@ this.MessageChannel = {
 
 
 
-  sendMessage(target, messageName, data, recipient = {}, sender = {}) {
+
+
+
+
+
+
+  sendMessage(target, messageName, data, options = {}) {
+    let sender = options.sender || {};
+    let recipient = options.recipient || {};
+    let responseType = options.responseType || this.RESPONSE_SINGLE;
+
     let channelId = gChannelId++;
-    let message = {messageName, channelId, sender, recipient, data};
+    let message = {messageName, channelId, sender, recipient, data, responseType};
 
     let deferred = PromiseUtils.defer();
-    deferred.messageFilter = {};
     deferred.sender = recipient;
     deferred.messageManager = target;
 
@@ -438,6 +503,54 @@ this.MessageChannel = {
     return deferred.promise;
   },
 
+  _callHandlers(handlers, data) {
+    let responseType = data.responseType;
+
+    
+    
+    if (handlers.length == 0 && responseType != this.RESPONSE_ALL) {
+      return Promise.reject({result: MessageChannel.RESULT_NO_HANDLER,
+                             message: "No matching message handler"});
+    }
+
+    if (responseType == this.RESPONSE_SINGLE) {
+      if (handlers.length > 1) {
+        return Promise.reject({result: MessageChannel.RESULT_MULTIPLE_HANDLERS,
+                               message: `Multiple matching handlers for ${data.messageName}`});
+      }
+
+      
+      
+      
+      return new Promise(resolve => {
+        resolve(handlers[0].receiveMessage(data));
+      });
+    }
+
+    let responses = handlers.map(handler => {
+      try {
+        return handler.receiveMessage(data);
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    });
+    responses = responses.filter(response => response !== undefined);
+
+    switch (responseType) {
+      case this.RESPONSE_FIRST:
+        if (responses.length == 0) {
+          return Promise.reject({result: MessageChannel.RESULT_NO_RESPONSE,
+                                 message: "No handler returned a response"});
+        }
+
+        return Promise.race(responses);
+
+      case this.RESPONSE_ALL:
+        return Promise.all(responses);
+    }
+    return Promise.reject({message: "Invalid response type"});
+  },
+
   
 
 
@@ -446,7 +559,7 @@ this.MessageChannel = {
 
 
 
-  _handleMessage({handler, error}, data) {
+  _handleMessage(handlers, data) {
     
     
     
@@ -462,12 +575,7 @@ this.MessageChannel = {
     deferred.promise = new Promise((resolve, reject) => {
       deferred.reject = reject;
 
-      if (handler) {
-        let result = handler.receiveMessage(data);
-        resolve(result);
-      } else {
-        reject(error);
-      }
+      this._callHandlers(handlers, data).then(resolve, reject);
     }).then(
       value => {
         let response = {
@@ -513,15 +621,17 @@ this.MessageChannel = {
 
 
 
-  _handleResponse({handler, error}, data) {
-    if (error) {
-      
-      
-      Cu.reportError(error.message);
+  _handleResponse(handlers, data) {
+    
+    
+    if (handlers.length == 0) {
+      Cu.reportError(`No matching message response handler for ${data.messageName}`);
+    } else if (handlers.length > 1) {
+      Cu.reportError(`Multiple matching response handlers for ${data.messageName}`);
     } else if (data.result === this.RESULT_SUCCESS) {
-      handler.resolve(data.value);
+      handlers[0].resolve(data.value);
     } else {
-      handler.reject(data.error);
+      handlers[0].reject(data.error);
     }
   },
 

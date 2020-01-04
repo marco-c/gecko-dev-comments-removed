@@ -20,6 +20,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "LanguageDetector",
                                   "resource:///modules/translation/LanguageDetector.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Locale",
                                   "resource://gre/modules/Locale.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "MessageChannel",
+                                  "resource://gre/modules/MessageChannel.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
                                   "resource://gre/modules/Preferences.jsm");
 
@@ -125,11 +127,14 @@ class SpreadArgs extends Array {
   }
 }
 
+let gContextId = 0;
+
 class BaseContext {
   constructor() {
     this.onClose = new Set();
     this.checkedLastError = false;
     this._lastError = null;
+    this.contextId = ++gContextId;
   }
 
   get cloneScope() {
@@ -168,6 +173,22 @@ class BaseContext {
 
   forgetOnClose(obj) {
     this.onClose.delete(obj);
+  }
+
+  
+
+
+
+
+  sendMessage(target, messageName, data, options = {}) {
+    options.recipient = options.recipient || {};
+    options.sender = options.sender || {};
+
+    options.recipient.extensionId = this.extension.id;
+    options.sender.extensionId = this.extension.id;
+    options.sender.contextId = this.contextId;
+
+    return MessageChannel.sendMessage(target, messageName, data, options);
   }
 
   get lastError() {
@@ -267,6 +288,11 @@ class BaseContext {
   }
 
   unload() {
+    MessageChannel.abortResponses({
+      extensionId: this.extension.id,
+      contextId: this.contextId,
+    });
+
     for (let obj of this.onClose) {
       obj.close();
     }
@@ -656,101 +682,7 @@ function promiseDocumentReady(doc) {
 
 
 
-var nextBrokerId = 1;
-
-var MESSAGES = [
-  "Extension:Message",
-  "Extension:Connect",
-];
-
-
-
-
-
-
-
-
-
-function MessageBroker(messageManagers) {
-  this.messageManagers = messageManagers;
-  for (let mm of this.messageManagers) {
-    for (let message of MESSAGES) {
-      mm.addMessageListener(message, this);
-    }
-  }
-
-  this.listeners = {message: [], connect: []};
-}
-
-MessageBroker.prototype = {
-  uninit() {
-    for (let mm of this.messageManagers) {
-      for (let message of MESSAGES) {
-        mm.removeMessageListener(message, this);
-      }
-    }
-
-    this.listeners = null;
-  },
-
-  makeId() {
-    return nextBrokerId++;
-  },
-
-  addListener(type, listener, filter) {
-    this.listeners[type].push({filter, listener});
-  },
-
-  removeListener(type, listener) {
-    for (let i = 0; i < this.listeners[type].length; i++) {
-      if (this.listeners[type][i].listener == listener) {
-        this.listeners[type].splice(i, 1);
-        return;
-      }
-    }
-  },
-
-  runListeners(type, target, data) {
-    let listeners = [];
-    for (let {listener, filter} of this.listeners[type]) {
-      let pass = true;
-      for (let prop in filter) {
-        if (prop in data.recipient && filter[prop] != data.recipient[prop]) {
-          pass = false;
-          break;
-        }
-      }
-
-      
-      
-      if (pass) {
-        listeners.push(listener);
-      }
-    }
-
-    for (let listener of listeners) {
-      listener(type, target, data.message, data.sender, data.recipient);
-    }
-  },
-
-  receiveMessage({name, data, target}) {
-    switch (name) {
-      case "Extension:Message":
-        this.runListeners("message", target, data);
-        break;
-
-      case "Extension:Connect":
-        this.runListeners("connect", target, data);
-        break;
-    }
-  },
-
-  sendMessage(messageManager, type, message, sender, recipient) {
-    let data = {message, sender, recipient};
-    let names = {message: "Extension:Message", connect: "Extension:Connect"};
-    messageManager.sendAsyncMessage(names[type], data);
-  },
-};
+var nextPortId = 1;
 
 
 function Port(context, messageManager, name, id, sender) {
@@ -869,122 +801,116 @@ function getMessageManager(target) {
 
 
 
-function Messenger(context, broker, sender, filter, delegate) {
+function Messenger(context, messageManagers, sender, filter, delegate) {
   this.context = context;
-  this.broker = broker;
+  this.messageManagers = messageManagers;
   this.sender = sender;
   this.filter = filter;
   this.delegate = delegate;
 }
 
 Messenger.prototype = {
+  _sendMessage(messageManager, message, data, recipient) {
+    let options = {
+      recipient,
+      sender: this.sender,
+      responseType: MessageChannel.RESPONSE_FIRST,
+    };
+
+    return this.context.sendMessage(messageManager, message, data, options);
+  },
+
   sendMessage(messageManager, msg, recipient, responseCallback) {
-    let id = this.broker.makeId();
-    let replyName = `Extension:Reply-${id}`;
-    recipient.messageId = id;
-    this.broker.sendMessage(messageManager, "message", msg, this.sender, recipient);
-
-    let promise = new Promise((resolve, reject) => {
-      let onClose;
-      let listener = ({data: response}) => {
-        messageManager.removeMessageListener(replyName, listener);
-        this.context.forgetOnClose(onClose);
-
-        if (response.gotData) {
-          resolve(response.data);
-        } else if (response.error) {
-          reject(response.error);
-        } else if (!responseCallback) {
-          
-          
-          
-          resolve();
+    let promise = this._sendMessage(messageManager, "Extension:Message", msg, recipient)
+      .catch(error => {
+        if (error.result == MessageChannel.RESULT_NO_HANDLER) {
+          return Promise.reject({message: "Could not establish connection. Receiving end does not exist."});
+        } else if (error.result == MessageChannel.RESULT_NO_RESPONSE) {
+          if (responseCallback) {
+            
+            
+            
+            return new Promise(() => {});
+          }
+        } else {
+          return Promise.reject({message: error.message});
         }
-      };
-      onClose = {
-        close() {
-          messageManager.removeMessageListener(replyName, listener);
-        },
-      };
-
-      messageManager.addMessageListener(replyName, listener);
-      this.context.callOnClose(onClose);
-    });
+      });
 
     return this.context.wrapPromise(promise, responseCallback);
   },
 
   onMessage(name) {
     return new SingletonEventManager(this.context, name, callback => {
-      let listener = (type, target, message, sender, recipient) => {
-        message = Cu.cloneInto(message, this.context.cloneScope);
-        if (this.delegate) {
-          this.delegate.getSender(this.context, target, sender);
-        }
-        sender = Cu.cloneInto(sender, this.context.cloneScope);
+      let listener = {
+        messageFilterPermissive: this.filter,
 
-        let mm = getMessageManager(target);
-        let replyName = `Extension:Reply-${recipient.messageId}`;
+        receiveMessage: ({target, data: message, sender, recipient}) => {
+          if (this.delegate) {
+            this.delegate.getSender(this.context, target, sender);
+          }
 
-        new Promise((resolve, reject) => {
-          let sendResponse = Cu.exportFunction(resolve, this.context.cloneScope);
+          let sendResponse;
+          let response = undefined;
+          let promise = new Promise(resolve => {
+            sendResponse = value => {
+              resolve(value);
+              response = promise;
+            };
+          });
+
+          message = Cu.cloneInto(message, this.context.cloneScope);
+          sender = Cu.cloneInto(sender, this.context.cloneScope);
+          sendResponse = Cu.exportFunction(sendResponse, this.context.cloneScope);
 
           
           
           let result = callback(message, sender, sendResponse);
           if (result instanceof Promise) {
-            resolve(result);
-          } else if (result !== true) {
-            reject();
+            return result;
+          } else if (result === true) {
+            return promise;
           }
-        }).then(
-          data => {
-            mm.sendAsyncMessage(replyName, {data, gotData: true});
-          },
-          error => {
-            if (error) {
-              
-              
-              try {
-                error = {message: String(error.message), stack: String(error.stack)};
-              } catch (e) {
-                error = {message: String(error)};
-              }
-            }
-            mm.sendAsyncMessage(replyName, {error, gotData: false});
-          });
+          return response;
+        },
       };
 
-      this.broker.addListener("message", listener, this.filter);
+      MessageChannel.addListener(this.messageManagers, "Extension:Message", listener);
       return () => {
-        this.broker.removeListener("message", listener);
+        MessageChannel.removeListener(this.messageManagers, "Extension:Message", listener);
       };
     }).api();
   },
 
   connect(messageManager, name, recipient) {
-    let portId = this.broker.makeId();
+    let portId = nextPortId++;
     let port = new Port(this.context, messageManager, name, portId, null);
     let msg = {name, portId};
-    this.broker.sendMessage(messageManager, "connect", msg, this.sender, recipient);
+    
+    this._sendMessage(messageManager, "Extension:Connect", msg, recipient);
     return port.api();
   },
 
   onConnect(name) {
-    return new EventManager(this.context, name, fire => {
-      let listener = (type, target, message, sender, recipient) => {
-        let {name, portId} = message;
-        let mm = getMessageManager(target);
-        if (this.delegate) {
-          this.delegate.getSender(this.context, target, sender);
-        }
-        let port = new Port(this.context, mm, name, portId, sender);
-        fire.withoutClone(port.api());
+    return new SingletonEventManager(this.context, name, callback => {
+      let listener = {
+        messageFilterPermissive: this.filter,
+
+        receiveMessage: ({target, data: message, sender, recipient}) => {
+          let {name, portId} = message;
+          let mm = getMessageManager(target);
+          if (this.delegate) {
+            this.delegate.getSender(this.context, target, sender);
+          }
+          let port = new Port(this.context, mm, name, portId, sender);
+          runSafeSyncWithoutClone(callback, port.api());
+          return true;
+        },
       };
 
-      this.broker.addListener("connect", listener, this.filter);
+      MessageChannel.addListener(this.messageManagers, "Extension:Connect", listener);
       return () => {
-        this.broker.removeListener("connect", listener);
+        MessageChannel.removeListener(this.messageManagers, "Extension:Connect", listener);
       };
     }).api();
   },
@@ -1042,7 +968,6 @@ this.ExtensionUtils = {
   DefaultWeakMap,
   EventManager,
   LocaleData,
-  MessageBroker,
   Messenger,
   PlatformInfo,
   SingletonEventManager,

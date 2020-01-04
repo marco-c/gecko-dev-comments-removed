@@ -92,7 +92,6 @@ Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   BaseContext,
   LocaleData,
-  MessageBroker,
   Messenger,
   injectAPI,
   instanceOf,
@@ -219,12 +218,6 @@ var Management = {
 
 
 
-var globalBroker = new MessageBroker([Services.mm, Services.ppmm]);
-
-var gContextId = 0;
-
-
-
 
 
 
@@ -244,7 +237,6 @@ ExtensionPage = class extends BaseContext {
     this.contentWindow = contentWindow || null;
     this.uri = uri || extension.baseURI;
     this.incognito = params.incognito || false;
-    this.contextId = gContextId++;
     this.unloaded = false;
 
     
@@ -261,7 +253,7 @@ ExtensionPage = class extends BaseContext {
     
     
     let filter = {extensionId: extension.id};
-    this.messenger = new Messenger(this, globalBroker, sender, filter, delegate);
+    this.messenger = new Messenger(this, [Services.mm, Services.ppmm], sender, filter, delegate);
 
     this.extension.views.add(this);
   }
@@ -272,17 +264,6 @@ ExtensionPage = class extends BaseContext {
 
   get principal() {
     return this.contentWindow.document.nodePrincipal;
-  }
-
-  
-  
-  
-  sendMessage(target, messageName, data, recipient = {}, sender = {}) {
-    recipient.extensionId = this.extension.id;
-    sender.extensionId = this.extension.id;
-    sender.contextId = this.contextId;
-
-    return MessageChannel.sendMessage(target, messageName, data, recipient, sender);
   }
 
   
@@ -303,16 +284,11 @@ ExtensionPage = class extends BaseContext {
 
     this.unloaded = true;
 
-    MessageChannel.abortResponses({
-      extensionId: this.extension.id,
-      contextId: this.contextId,
-    });
+    super.unload();
 
     Management.emit("page-unload", this);
 
     this.extension.views.delete(this);
-
-    super.unload();
   }
 };
 
