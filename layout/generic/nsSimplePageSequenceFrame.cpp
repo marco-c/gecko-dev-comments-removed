@@ -26,9 +26,6 @@
 #include "nsServiceManagerUtils.h"
 #include <algorithm>
 
-
-#include "nsDateTimeFormatCID.h"
-
 #define OFFSET_NOT_SET -1
 
 
@@ -314,7 +311,7 @@ nsSimplePageSequenceFrame::Reflow(nsPresContext*          aPresContext,
 
   
   if (!mDateFormatter) {
-    mDateFormatter = do_CreateInstance(NS_DATETIMEFORMAT_CONTRACTID);
+    mDateFormatter = nsIDateTimeFormat::Create();
   }
   if (!mDateFormatter) {
     return;
