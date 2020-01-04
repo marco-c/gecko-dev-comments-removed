@@ -1093,6 +1093,14 @@ public:
     mHasWarnedAboutPositionedTableParts = true;
   }
 
+  bool HasWarnedAboutTooLargeDashedOrDottedRadius() const {
+    return mHasWarnedAboutTooLargeDashedOrDottedRadius;
+  }
+
+  void SetHasWarnedAboutTooLargeDashedOrDottedRadius() {
+    mHasWarnedAboutTooLargeDashedOrDottedRadius = true;
+  }
+
   static bool StyloEnabled()
   {
     
@@ -1381,6 +1389,8 @@ protected:
   mutable unsigned mPaintFlashingInitialized : 1;
 
   unsigned mHasWarnedAboutPositionedTableParts : 1;
+
+  unsigned mHasWarnedAboutTooLargeDashedOrDottedRadius : 1;
 
   
   unsigned              mQuirkSheetAdded : 1;

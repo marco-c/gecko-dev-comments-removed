@@ -797,7 +797,14 @@ nsCSSRendering::PaintBorderWithStyleBorder(nsPresContext* aPresContext,
   aDrawTarget.FillRect(joinedBorderAreaPx, color);
 #endif
 
-  nsCSSBorderRenderer br(aPresContext->Type(),
+  nsIDocument* document = nullptr;
+  nsIContent* content = aForFrame->GetContent();
+  if (content) {
+    document = content->OwnerDoc();
+  }
+
+  nsCSSBorderRenderer br(aPresContext,
+                         document,
                          &aDrawTarget,
                          dirtyRect,
                          joinedBorderAreaPx,
@@ -936,9 +943,16 @@ nsCSSRendering::PaintOutline(nsPresContext* aPresContext,
                              Float(width / twipsPerPixel) };
   Rect dirtyRect = NSRectToRect(aDirtyRect, twipsPerPixel);
 
+  nsIDocument* document = nullptr;
+  nsIContent* content = aForFrame->GetContent();
+  if (content) {
+    document = content->OwnerDoc();
+  }
+
   
 
-  nsCSSBorderRenderer br(aPresContext->Type(),
+  nsCSSBorderRenderer br(aPresContext,
+                         document,
                          aRenderingContext.GetDrawTarget(),
                          dirtyRect,
                          oRect,
@@ -986,7 +1000,8 @@ nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
   
   
   
-  nsCSSBorderRenderer br(aPresContext->Type(),
+  nsCSSBorderRenderer br(aPresContext,
+                         nullptr,
                          aDrawTarget,
                          focusRect,
                          focusRect,
