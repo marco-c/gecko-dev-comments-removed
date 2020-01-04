@@ -294,18 +294,18 @@ TextAlignUnsafeEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
                "Did you misspell " TEXT_ALIGN_UNSAFE_ENABLED_PREF_NAME " ?");
 
   static bool sIsInitialized;
-  static int32_t sIndexOfTrueInTextAlignTable;
-  static int32_t sIndexOfTrueInTextAlignLastTable;
+  static int32_t sIndexOfUnsafeInTextAlignTable;
+  static int32_t sIndexOfUnsafeInTextAlignLastTable;
   bool isTextAlignUnsafeEnabled =
     Preferences::GetBool(TEXT_ALIGN_UNSAFE_ENABLED_PREF_NAME, false);
 
   if (!sIsInitialized) {
     
-    sIndexOfTrueInTextAlignTable =
+    sIndexOfUnsafeInTextAlignTable =
       nsCSSProps::FindIndexOfKeyword(eCSSKeyword_unsafe,
                                      nsCSSProps::kTextAlignKTable);
     
-    sIndexOfTrueInTextAlignLastTable =
+    sIndexOfUnsafeInTextAlignLastTable =
       nsCSSProps::FindIndexOfKeyword(eCSSKeyword_unsafe,
                                      nsCSSProps::kTextAlignLastKTable);
     sIsInitialized = true;
@@ -313,11 +313,11 @@ TextAlignUnsafeEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
 
   
   
-  MOZ_ASSERT(sIndexOfTrueInTextAlignTable >= 0);
-  nsCSSProps::kTextAlignKTable[sIndexOfTrueInTextAlignTable].mKeyword =
+  MOZ_ASSERT(sIndexOfUnsafeInTextAlignTable >= 0);
+  nsCSSProps::kTextAlignKTable[sIndexOfUnsafeInTextAlignTable].mKeyword =
     isTextAlignUnsafeEnabled ? eCSSKeyword_unsafe : eCSSKeyword_UNKNOWN;
-  MOZ_ASSERT(sIndexOfTrueInTextAlignLastTable >= 0);
-  nsCSSProps::kTextAlignLastKTable[sIndexOfTrueInTextAlignLastTable].mKeyword =
+  MOZ_ASSERT(sIndexOfUnsafeInTextAlignLastTable >= 0);
+  nsCSSProps::kTextAlignLastKTable[sIndexOfUnsafeInTextAlignLastTable].mKeyword =
     isTextAlignUnsafeEnabled ? eCSSKeyword_unsafe : eCSSKeyword_UNKNOWN;
 }
 
