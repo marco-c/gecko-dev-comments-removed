@@ -20,7 +20,6 @@
 #include "mozilla/dom/HTMLFormElement.h" 
 #include "mozilla/dom/HTMLInputElementBinding.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/UnionTypes.h"
 #include "nsIFilePicker.h"
 #include "nsIContentPrefService2.h"
 #include "mozilla/Decimal.h"
@@ -221,13 +220,12 @@ public:
 
   void GetDisplayFileName(nsAString& aFileName) const;
 
-  const nsTArray<OwningFileOrDirectory>& GetFilesOrDirectoriesInternal() const
+  const nsTArray<RefPtr<File>>& GetFilesInternal() const
   {
-    return mFilesOrDirectories;
+    return mFiles;
   }
 
-  void SetFilesOrDirectories(const nsTArray<OwningFileOrDirectory>& aFilesOrDirectories,
-                             bool aSetValueChanged);
+  void SetFiles(const nsTArray<RefPtr<File>>& aFiles, bool aSetValueChanged);
   void SetFiles(nsIDOMFileList* aFiles, bool aSetValueChanged);
 
   
@@ -724,7 +722,6 @@ public:
 
   void MozSetFileNameArray(const Sequence< nsString >& aFileNames, ErrorResult& aRv);
   void MozSetFileArray(const Sequence<OwningNonNull<File>>& aFiles);
-  void MozSetDirectory(const nsAString& aDirectoryPath, ErrorResult& aRv);
 
   HTMLInputElement* GetOwnerNumberControl();
 
@@ -925,12 +922,12 @@ protected:
   
 
 
-  void UpdateFileList();
+  nsresult UpdateFileList();
 
   
 
 
-  void AfterSetFilesOrDirectories(bool aSetValueChanged);
+  void AfterSetFiles(bool aSetValueChanged);
 
   
 
@@ -1278,7 +1275,7 @@ protected:
 
 
 
-  nsTArray<OwningFileOrDirectory> mFilesOrDirectories;
+  nsTArray<RefPtr<File>> mFiles;
 
 #ifndef MOZ_CHILD_PERMISSIONS
   

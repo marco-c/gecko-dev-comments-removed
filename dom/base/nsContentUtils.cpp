@@ -7625,6 +7625,7 @@ nsContentUtils::TransferableToIPCTransferable(nsITransferable* aTransferable,
             
             blobImpl->GetSize(rv);
             blobImpl->GetLastModified(rv);
+            blobImpl->LookupAndCacheIsDirectory();
           } else {
             if (aInSyncMessage) {
               
