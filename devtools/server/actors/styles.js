@@ -16,17 +16,11 @@ const events = require("sdk/event/core");
 
 
 const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} = require("devtools/server/actors/stylesheets");
-const {pageStyleSpec, styleRuleSpec} = require("devtools/shared/specs/styles");
+const {pageStyleSpec, styleRuleSpec, ELEMENT_STYLE} = require("devtools/shared/specs/styles");
 
 loader.lazyRequireGetter(this, "CSS", "CSS");
 loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/inspector/css-logic").CssLogic);
 loader.lazyGetter(this, "DOMUtils", () => Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils));
-
-
-
-
-const ELEMENT_STYLE = 100;
-exports.ELEMENT_STYLE = ELEMENT_STYLE;
 
 
 
