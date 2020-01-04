@@ -640,6 +640,21 @@ uint32_t GetTotalSystemMemoryLevel();
 
 bool IsHeadphoneEventFromInputDev();
 
+
+
+
+nsresult StartSystemService(const char* aSvcName, const char* aArgs);
+
+
+
+
+void StopSystemService(const char* aSvcName);
+
+
+
+
+bool SystemServiceIsRunning(const char* aSvcName);
+
 } 
 } 
 
