@@ -969,6 +969,11 @@ nsScriptLoader::ProcessRequest(nsScriptLoadRequest* aRequest)
   
   
   nsCOMPtr<nsIDocument> master = mDocument->MasterDocument();
+  {
+    
+    nsAutoMicroTask mt;
+  }
+
   nsPIDOMWindow *pwin = master->GetInnerWindow();
   bool runScript = !!pwin;
   if (runScript) {
