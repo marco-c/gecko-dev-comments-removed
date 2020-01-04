@@ -37,7 +37,10 @@ namespace dom {
 class RestyleManager final : public RestyleManagerBase
 {
 public:
+  typedef RestyleManagerBase base_type;
+
   friend class RestyleTracker;
+  friend class ElementRestyler;
 
   explicit RestyleManager(nsPresContext* aPresContext);
 
@@ -137,19 +140,16 @@ private:
 
 public:
 
-#ifdef DEBUG
-  
-
-
-  void DebugVerifyStyleTree(nsIFrame* aFrame);
-#endif
-
   
   
   
   
   
-  nsresult ProcessRestyledFrames(nsStyleChangeList& aRestyleArray);
+  nsresult ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
+    return base_type::ProcessRestyledFrames(aChangeList,
+                                            *PresContext(),
+                                            mOverflowChangedTracker);
+  }
 
   
 
@@ -492,11 +492,6 @@ private:
 
   
   void AddSubtreeToOverflowTracker(nsIFrame* aFrame);
-
-  
-  
-  
-  bool RecomputePosition(nsIFrame* aFrame);
 
   bool ShouldStartRebuildAllFor(RestyleTracker& aRestyleTracker) {
     

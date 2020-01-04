@@ -2912,12 +2912,8 @@ PresShell::RecreateFramesFor(nsIContent* aContent)
   
   ++mChangeNestCount;
   RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
-  if (restyleManager->IsServo()) {
-    MOZ_CRASH("stylo: PresShell::RecreateFramesFor not implemented for Servo-"
-              "backed style system");
-  }
-  nsresult rv = restyleManager->AsGecko()->ProcessRestyledFrames(changeList);
-  restyleManager->AsGecko()->FlushOverflowChangedTracker();
+  nsresult rv = restyleManager->ProcessRestyledFrames(changeList);
+  restyleManager->FlushOverflowChangedTracker();
   --mChangeNestCount;
 
   return rv;
