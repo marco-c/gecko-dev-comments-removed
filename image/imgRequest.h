@@ -95,7 +95,7 @@ public:
   void ContinueEvict();
 
   
-  void StartDecoding();
+  void RequestDecode();
 
   inline uint64_t InnerWindowID() const {
     return mInnerWindowId;

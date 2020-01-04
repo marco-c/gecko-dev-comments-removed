@@ -4153,6 +4153,9 @@ pref("image.multithreaded_decoding.limit", -1);
 pref("canvas.image.cache.limit", 0);
 
 
+pref("image.onload.decode.limit", 0);
+
+
 #ifdef ANDROID
 
 pref("gl.msaa-level", 0);
