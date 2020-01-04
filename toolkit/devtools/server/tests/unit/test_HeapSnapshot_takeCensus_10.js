@@ -12,7 +12,7 @@ function run_test() {
   let sizeOfAM = byteSize(allocationMarker());
 
   
-  g.eval('let hold = allocationMarker();');
+  g.eval('var hold = allocationMarker();');
   let census = saveHeapSnapshotAndTakeCensus(dbg, { breakdown: { by: 'objectClass' } });
   equal(census.AllocationMarker.count, 1);
   equal(census.AllocationMarker.bytes, sizeOfAM);
