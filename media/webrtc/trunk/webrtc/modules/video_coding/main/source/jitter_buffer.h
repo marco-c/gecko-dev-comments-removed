@@ -75,6 +75,37 @@ class FrameList
   void Reset(UnorderedFrameList* free_frames);
 };
 
+class Vp9SsMap {
+ public:
+  typedef std::map<uint32_t, GofInfoVP9, TimestampLessThan> SsMap;
+  bool Insert(const VCMPacket& packet);
+  void Reset();
+
+  
+  
+  
+  void RemoveOld(uint32_t timestamp);
+
+  bool UpdatePacket(VCMPacket* packet);
+  void UpdateFrames(FrameList* frames);
+
+  
+  
+  bool Find(uint32_t timestamp, SsMap::iterator* it);
+
+ private:
+  
+  
+  bool TimeForCleanup(uint32_t timestamp) const;
+
+  
+  
+  
+  void AdvanceFront(uint32_t timestamp);
+
+  SsMap ss_map_;
+};
+
 class VCMJitterBuffer {
  public:
   VCMJitterBuffer(Clock* clock,
@@ -214,6 +245,12 @@ class VCMJitterBuffer {
   
   
   bool IsContinuous(const VCMFrameBuffer& frame) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  
+  
+  
+  void FindAndInsertContinuousFramesWithState(
+      const VCMDecodingState& decoded_state)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   

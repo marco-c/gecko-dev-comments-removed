@@ -88,6 +88,8 @@ class VCMSessionInfo {
   int Tl0PicId() const;
   bool NonReference() const;
 
+  void SetGofInfo(const GofInfoVP9& gof_info, size_t idx);
+
   
   
   int packets_not_decodable() const;

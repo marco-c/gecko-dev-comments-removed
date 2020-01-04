@@ -43,11 +43,11 @@ struct CodecSpecificInfoVP8 {
 };
 
 struct CodecSpecificInfoVP9 {
-  bool hasReceivedSLI;
-  uint8_t pictureIdSLI;
-  bool hasReceivedRPSI;
-  uint64_t pictureIdRPSI;
-  int16_t pictureId;  
+  bool has_received_sli;
+  uint8_t picture_id_sli;
+  bool has_received_rpsi;
+  uint64_t picture_id_rpsi;
+  int16_t picture_id;  
 
   bool inter_pic_predicted;  
                              

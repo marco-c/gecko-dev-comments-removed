@@ -35,17 +35,15 @@ class VP9EncoderImpl : public VP9Encoder {
                  int number_of_cores,
                  size_t max_payload_size) override;
 
-  int Encode(const VideoFrame& input_image,
+  int Encode(const I420VideoFrame& input_image,
              const CodecSpecificInfo* codec_specific_info,
-             const std::vector<FrameType>* frame_types) override;
+             const std::vector<VideoFrameType>* frame_types) override;
 
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
 
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
 
   int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) override;
-
-  void OnDroppedFrame() override {}
 
   struct LayerFrameRefSettings {
     int8_t upd_buf = -1;   
@@ -75,6 +73,7 @@ class VP9EncoderImpl : public VP9Encoder {
   bool ExplicitlyConfiguredSpatialLayers() const;
   bool SetSvcRates();
 
+#ifdef LIBVPX_SVC
   
   
   
@@ -83,7 +82,8 @@ class VP9EncoderImpl : public VP9Encoder {
   
   vpx_svc_ref_frame_config GenerateRefsAndFlags(
       const SuperFrameRefSettings& settings);
-
+#endif
+  
   virtual int GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt);
 
   
@@ -110,7 +110,7 @@ class VP9EncoderImpl : public VP9Encoder {
   vpx_codec_enc_cfg_t* config_;
   vpx_image_t* raw_;
   SvcInternal_t svc_internal_;
-  const VideoFrame* input_image_;
+  const I420VideoFrame* input_image_;
   GofInfoVP9 gof_;       
                          
   uint8_t tl0_pic_idx_;  
@@ -151,6 +151,11 @@ class VP9DecoderImpl : public VP9Decoder {
  private:
   int ReturnFrame(const vpx_image_t* img, uint32_t timeStamp);
 
+#ifndef USE_WRAPPED_I420_BUFFER
+  
+  
+  I420VideoFrame decoded_image_;
+#endif
   
   Vp9FrameBufferPool frame_buffer_pool_;
   DecodedImageCallback* decode_complete_callback_;

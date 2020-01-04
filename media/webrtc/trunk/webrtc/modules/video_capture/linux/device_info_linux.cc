@@ -164,7 +164,7 @@ int32_t DeviceInfoLinux::GetDeviceName(
     } else {
         
         if (snprintf(deviceUniqueIdUTF8, deviceUniqueIdUTF8Length, "fake_%u", device_index) >=
-            deviceUniqueIdUTF8Length)
+            (int) deviceUniqueIdUTF8Length)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                        "buffer passed is too small");
