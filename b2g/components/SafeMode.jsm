@@ -10,7 +10,6 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
-Cu.import("resource://gre/modules/Webapps.jsm");
 
 const kSafeModePref = "b2g.safe_mode";
 const kSafeModePage = "safe_mode.html";
@@ -68,71 +67,70 @@ this.SafeMode = {
 
     
     
-    return DOMApplicationRegistry.registryReady.then(() => {
-      let shell = SafeMode.window.shell;
-      let document = SafeMode.window.document;
-      SafeMode.window.screen.mozLockOrientation("portrait");
+    let shell = SafeMode.window.shell;
+    let document = SafeMode.window.document;
+    SafeMode.window.screen.mozLockOrientation("portrait");
 
-      let url = Services.io.newURI(shell.homeURL, null, null)
-                           .resolve(kSafeModePage);
-      debug("Registry is ready, loading " + url);
-      let frame = document.createElementNS("http://www.w3.org/1999/xhtml", "html:iframe");
-      frame.setAttribute("mozbrowser", "true");
-      frame.setAttribute("mozapp", shell.manifestURL);
-      frame.setAttribute("id", "systemapp"); 
-      let contentBrowser = document.body.appendChild(frame);
+    let url = Services.io.newURI(shell.homeURL, null, null)
+                         .resolve(kSafeModePage);
+    debug("Registry is ready, loading " + url);
+    let frame = document.createElementNS("http://www.w3.org/1999/xhtml", "html:iframe");
+    frame.setAttribute("mozbrowser", "true");
+    frame.setAttribute("mozapp", shell.manifestURL);
+    frame.setAttribute("id", "systemapp"); 
+    let contentBrowser = document.body.appendChild(frame);
 
-      return new Promise((aResolve, aReject) => {
-        let content = contentBrowser.contentWindow;
+    return new Promise((aResolve, aReject) => {
+      let content = contentBrowser.contentWindow;
+
+      
+      function handleEvent(e) {
+        switch(e.type) {
+          case "mozbrowserloadstart":
+            if (content.document.location == "about:blank") {
+              contentBrowser.addEventListener("mozbrowserlocationchange", handleEvent, true);
+              contentBrowser.removeEventListener("mozbrowserloadstart", handleEvent, true);
+              return;
+            }
+
+            notifyContentStart();
+            break;
+          case "mozbrowserlocationchange":
+            if (content.document.location == "about:blank") {
+              return;
+            }
+
+            contentBrowser.removeEventListener("mozbrowserlocationchange", handleEvent, true);
+            notifyContentStart();
+            break;
+          case "mozContentEvent":
+            content.removeEventListener("mozContentEvent", handleEvent, true);
+            contentBrowser.parentNode.removeChild(contentBrowser);
+
+            if (e.detail == "safemode-yes")  {
+              
+              
+              aResolve();
+            } else {
+              aResolve();
+            }
+            break;
+        }
+      }
+
+      function notifyContentStart() {
+        let window = SafeMode.window;
+        window.shell.sendEvent(window, "SafeModeStart");
+        contentBrowser.setVisible(true);
 
         
-        function handleEvent(e) {
-          switch(e.type) {
-            case "mozbrowserloadstart":
-              if (content.document.location == "about:blank") {
-                contentBrowser.addEventListener("mozbrowserlocationchange", handleEvent, true);
-                contentBrowser.removeEventListener("mozbrowserloadstart", handleEvent, true);
-                return;
-              }
+        
+        Services.obs.notifyObservers(null, "browser-ui-startup-complete", "");
+        content.addEventListener("mozContentEvent", handleEvent, true);
+      }
 
-              notifyContentStart();
-              break;
-            case "mozbrowserlocationchange":
-              if (content.document.location == "about:blank") {
-                return;
-              }
-
-              contentBrowser.removeEventListener("mozbrowserlocationchange", handleEvent, true);
-              notifyContentStart();
-              break;
-            case "mozContentEvent":
-              content.removeEventListener("mozContentEvent", handleEvent, true);
-              contentBrowser.parentNode.removeChild(contentBrowser);
-
-              if (e.detail == "safemode-yes")  {
-                
-                DOMApplicationRegistry.disableAllAddons().then(aResolve);
-              } else {
-                aResolve();
-              }
-              break;
-          }
-        }
-
-        function notifyContentStart() {
-          let window = SafeMode.window;
-          window.shell.sendEvent(window, "SafeModeStart");
-          contentBrowser.setVisible(true);
-
-          
-          
-          Services.obs.notifyObservers(null, "browser-ui-startup-complete", "");
-          content.addEventListener("mozContentEvent", handleEvent, true);
-        }
-
-        contentBrowser.addEventListener("mozbrowserloadstart", handleEvent, true);
-        contentBrowser.src = url;
-      });
+      contentBrowser.addEventListener("mozbrowserloadstart", handleEvent, true);
+      contentBrowser.src = url;
     });
   },
 
