@@ -781,7 +781,7 @@ AudioBufferSourceNode::NotifyMainThreadStreamFinished()
   public:
     explicit EndedEventDispatcher(AudioBufferSourceNode* aNode)
       : mNode(aNode) {}
-    NS_IMETHODIMP Run() override
+    NS_IMETHOD Run() override
     {
       
       if (!nsContentUtils::IsSafeToRunScript()) {

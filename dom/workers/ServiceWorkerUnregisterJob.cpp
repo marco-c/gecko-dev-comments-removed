@@ -24,7 +24,7 @@ public:
     AssertIsOnMainThread();
   }
 
-  NS_IMETHODIMP
+  NS_IMETHOD
   OnUnsubscribe(nsresult aStatus, bool) override
   {
     
