@@ -1551,6 +1551,19 @@ OpenFile(nsIPrincipal* aPrincipal,
   
   
   
+  
+  uint32_t pbId;
+  if (NS_WARN_IF(NS_FAILED(aPrincipal->GetPrivateBrowsingId(&pbId)))) {
+    return JS::AsmJSCache_InternalError;
+  }
+
+  if (pbId > 0) {
+    return JS::AsmJSCache_Disabled_PrivateBrowsing;
+  }
+
+  
+  
+  
   RefPtr<ChildRunnable> childRunnable =
     new ChildRunnable(aPrincipal, aOpenMode, aWriteParams, aReadParams);
 
