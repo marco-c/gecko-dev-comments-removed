@@ -230,14 +230,6 @@ Shape::fixupDictionaryShapeAfterMovingGC()
     
     
     
-    if (IsInsideNursery(reinterpret_cast<Cell*>(listp))) {
-        listp = nullptr;
-        return;
-    }
-
-    
-    
-    
     
     
     bool listpPointsIntoShape = !MaybeForwarded(base())->isOwned();
