@@ -330,9 +330,9 @@ nsIAtom** const kElementsSVG[] = {
   &nsGkAtoms::font_face_uri, 
   &nsGkAtoms::foreignObject, 
   &nsGkAtoms::g, 
-  &nsGkAtoms::glyph, 
+  
   &nsGkAtoms::glyphRef, 
-  &nsGkAtoms::hkern, 
+  
   &nsGkAtoms::image, 
   &nsGkAtoms::line, 
   &nsGkAtoms::linearGradient, 
@@ -358,7 +358,7 @@ nsIAtom** const kElementsSVG[] = {
   &nsGkAtoms::tspan, 
   &nsGkAtoms::use, 
   &nsGkAtoms::view, 
-  &nsGkAtoms::vkern, 
+  
   nullptr
 };
 
@@ -431,8 +431,8 @@ nsIAtom** const kAttributesSVG[] = {
   
   
   
-  &nsGkAtoms::glyph_orientation_horizontal, 
-  &nsGkAtoms::glyph_orientation_vertical, 
+  
+  
   &nsGkAtoms::gradientTransform, 
   &nsGkAtoms::gradientUnits, 
   &nsGkAtoms::height, 
@@ -450,7 +450,7 @@ nsIAtom** const kAttributesSVG[] = {
   &nsGkAtoms::k2, 
   &nsGkAtoms::k3, 
   &nsGkAtoms::k4, 
-  &nsGkAtoms::kerning, 
+  
   &nsGkAtoms::kernelMatrix, 
   &nsGkAtoms::kernelUnitLength, 
   &nsGkAtoms::keyPoints, 
@@ -580,7 +580,7 @@ nsIAtom** const kAttributesSVG[] = {
   &nsGkAtoms::width, 
   
   &nsGkAtoms::word_spacing, 
-  
+  &nsGkAtoms::writing_mode, 
   &nsGkAtoms::x, 
   
   &nsGkAtoms::x1, 
