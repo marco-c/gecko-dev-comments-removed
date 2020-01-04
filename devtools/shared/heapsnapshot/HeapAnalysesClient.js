@@ -75,6 +75,9 @@ HeapAnalysesClient.prototype.readHeapSnapshot = function (snapshotFilePath) {
 
 
 
+
+
+
 HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
                                                     censusOptions,
                                                     requestOptions={}) {
@@ -84,6 +87,9 @@ HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
     requestOptions,
   });
 };
+
+
+
 
 
 
