@@ -29,6 +29,7 @@ namespace mozilla {
 
 namespace layers {
 class TextureClient;
+class TextureClientRecycleAllocator;
 } 
 
 class GonkVideoDecoderManager : public GonkDecoderManager {
@@ -49,6 +50,16 @@ public:
                           RefPtr<MediaData>& aOutput) override;
 
   nsresult Shutdown() override;
+
+  
+  
+  
+  
+  nsresult Flush() override
+  {
+    mNeedsCopyBuffer = true;
+    return GonkDecoderManager::Flush();
+  }
 
   static void RecycleCallback(TextureClient* aClient, void* aClosure);
 
@@ -94,6 +105,11 @@ private:
   bool SetVideoFormat();
 
   nsresult CreateVideoData(MediaBuffer* aBuffer, int64_t aStreamOffset, VideoData** aOutData);
+  already_AddRefed<VideoData> CreateVideoDataFromGraphicBuffer(android::MediaBuffer* aSource,
+                                                               gfx::IntRect& aPicture);
+  already_AddRefed<VideoData> CreateVideoDataFromDataBuffer(android::MediaBuffer* aSource,
+                                                            gfx::IntRect& aPicture);
+
   uint8_t* GetColorConverterBuffer(int32_t aWidth, int32_t aHeight);
 
   
@@ -112,6 +128,7 @@ private:
   nsIntSize mInitialFrame;
 
   RefPtr<layers::ImageContainer> mImageContainer;
+  RefPtr<layers::TextureClientRecycleAllocator> mCopyAllocator;
 
   MediaInfo mInfo;
   android::sp<VideoResourceListener> mVideoListener;
@@ -143,6 +160,10 @@ private:
   
   
   RefPtr<TaskQueue> mReaderTaskQueue;
+
+  
+  
+  bool mNeedsCopyBuffer;
 };
 
 } 
