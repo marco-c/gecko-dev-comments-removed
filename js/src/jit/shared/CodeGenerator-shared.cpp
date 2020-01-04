@@ -1361,10 +1361,10 @@ CodeGeneratorShared::callVM(const VMFunction& fun, LInstruction* ins, const Regi
     
     if (dynStack) {
         masm.addPtr(Imm32(masm.framePushed()), *dynStack);
-        masm.makeFrameDescriptor(*dynStack, JitFrame_IonJS);
+        masm.makeFrameDescriptor(*dynStack, JitFrame_IonJS, ExitFrameLayout::Size());
         masm.Push(*dynStack); 
     } else {
-        masm.pushStaticFrameDescriptor(JitFrame_IonJS);
+        masm.pushStaticFrameDescriptor(JitFrame_IonJS, ExitFrameLayout::Size());
     }
 
     

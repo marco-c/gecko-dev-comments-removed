@@ -188,9 +188,16 @@ class OsiIndex
 
 
 
-static const uintptr_t FRAMESIZE_SHIFT = 5;
-static const uintptr_t HASCACHEDSAVEDFRAME_BIT = 1 << 4;
 static const uintptr_t FRAMETYPE_BITS = 4;
+static const uintptr_t FRAME_HEADER_SIZE_SHIFT = FRAMETYPE_BITS;
+static const uintptr_t FRAME_HEADER_SIZE_BITS = 3;
+static const uintptr_t FRAME_HEADER_SIZE_MASK = (1 << FRAME_HEADER_SIZE_BITS) - 1;
+static const uintptr_t HASCACHEDSAVEDFRAME_BIT = 1 << (FRAMETYPE_BITS + FRAME_HEADER_SIZE_BITS);
+static const uintptr_t FRAMESIZE_SHIFT = FRAMETYPE_BITS +
+                                         FRAME_HEADER_SIZE_BITS +
+                                         1 ;
+static const uintptr_t FRAMESIZE_BITS = 32 - FRAMESIZE_SHIFT;
+static const uintptr_t FRAMESIZE_MASK = (1 << FRAMESIZE_BITS) - 1;
 
 
 
@@ -286,9 +293,21 @@ TopmostIonActivationCompartment(JSRuntime* rt);
 void UpdateJitActivationsForMinorGC(JSRuntime* rt, JSTracer* trc);
 
 static inline uint32_t
-MakeFrameDescriptor(uint32_t frameSize, FrameType type)
+EncodeFrameHeaderSize(size_t headerSize)
 {
-    return 0 | (frameSize << FRAMESIZE_SHIFT) | type;
+    MOZ_ASSERT((headerSize % sizeof(uintptr_t)) == 0);
+
+    uint32_t headerSizeWords = headerSize / sizeof(uintptr_t);
+    MOZ_ASSERT(headerSizeWords <= FRAME_HEADER_SIZE_MASK);
+    return headerSizeWords;
+}
+
+static inline uint32_t
+MakeFrameDescriptor(uint32_t frameSize, FrameType type, uint32_t headerSize)
+{
+    MOZ_ASSERT(headerSize < FRAMESIZE_MASK);
+    headerSize = EncodeFrameHeaderSize(headerSize);
+    return 0 | (frameSize << FRAMESIZE_SHIFT) | (headerSize << FRAME_HEADER_SIZE_SHIFT) | type;
 }
 
 
@@ -348,8 +367,9 @@ class CommonFrameLayout
     size_t prevFrameLocalSize() const {
         return descriptor_ >> FRAMESIZE_SHIFT;
     }
-    void setFrameDescriptor(size_t size, FrameType type) {
-        descriptor_ = 0 | (size << FRAMESIZE_SHIFT) | type;
+    size_t headerSize() const {
+        return sizeof(uintptr_t) *
+            ((descriptor_ >> FRAME_HEADER_SIZE_SHIFT) & FRAME_HEADER_SIZE_MASK);
     }
     bool hasCachedSavedFrame() const {
         return descriptor_ & HASCACHEDSAVEDFRAME_BIT;

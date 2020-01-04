@@ -163,7 +163,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.subStackPtrFrom(r19);
 
     
-    masm.makeFrameDescriptor(r19, JitFrame_Entry);
+    masm.makeFrameDescriptor(r19, JitFrame_Entry, JitFrameLayout::Size());
     masm.Push(r19);
 
     Label osrReturnPoint;
@@ -186,7 +186,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
         
         masm.addPtr(Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset), r19);
-        masm.makeFrameDescriptor(r19, JitFrame_BaselineJS);
+        masm.makeFrameDescriptor(r19, JitFrame_BaselineJS, ExitFrameLayout::Size());
         masm.asVIXL().Push(x19, xzr); 
         
         masm.enterFakeExitFrame(ExitFrameLayoutBareToken);
@@ -396,7 +396,7 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     masm.Lsl(x6, x6, 3);
 
     
-    masm.makeFrameDescriptor(r6, JitFrame_Rectifier);
+    masm.makeFrameDescriptor(r6, JitFrame_Rectifier, JitFrameLayout::Size());
 
     masm.push(r0,  
               r1,  
@@ -948,7 +948,7 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
     
     
     
-    masm.and32(Imm32((1 << FRAMESIZE_SHIFT) - 1), scratch1, scratch2);
+    masm.and32(Imm32((1 << FRAMETYPE_BITS) - 1), scratch1, scratch2);
     masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), scratch1);
 
     

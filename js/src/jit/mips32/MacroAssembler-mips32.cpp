@@ -711,7 +711,8 @@ MacroAssemblerMIPS::ma_push(FloatRegister fs)
 bool
 MacroAssemblerMIPSCompat::buildOOLFakeExitFrame(void* fakeReturnAddr)
 {
-    uint32_t descriptor = MakeFrameDescriptor(asMasm().framePushed(), JitFrame_IonJS);
+    uint32_t descriptor = MakeFrameDescriptor(asMasm().framePushed(), JitFrame_IonJS,
+                                              ExitFrameLayout::Size());
 
     asMasm().Push(Imm32(descriptor)); 
     asMasm().Push(ImmPtr(fakeReturnAddr));

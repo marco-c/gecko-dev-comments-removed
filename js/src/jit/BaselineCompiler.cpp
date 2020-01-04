@@ -4123,7 +4123,7 @@ BaselineCompiler::emit_JSOP_RESUME()
                                  scratch2);
     masm.subStackPtrFrom(scratch2);
     masm.store32(scratch2, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
-    masm.makeFrameDescriptor(scratch2, JitFrame_BaselineJS);
+    masm.makeFrameDescriptor(scratch2, JitFrame_BaselineJS, JitFrameLayout::Size());
 
     masm.Push(Imm32(0)); 
 
@@ -4257,7 +4257,7 @@ BaselineCompiler::emit_JSOP_RESUME()
 
         
         masm.subStackPtrFrom(scratch1);
-        masm.makeFrameDescriptor(scratch1, JitFrame_BaselineJS);
+        masm.makeFrameDescriptor(scratch1, JitFrame_BaselineJS, ExitFrameLayout::Size());
 
         
         

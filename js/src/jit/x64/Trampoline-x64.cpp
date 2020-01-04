@@ -158,7 +158,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.subq(rsp, r14);
 
     
-    masm.makeFrameDescriptor(r14, JitFrame_Entry);
+    masm.makeFrameDescriptor(r14, JitFrame_Entry, JitFrameLayout::Size());
     masm.push(r14);
 
     CodeLabel returnLabel;
@@ -223,7 +223,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
         
         masm.addPtr(Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset), valuesSize);
-        masm.makeFrameDescriptor(valuesSize, JitFrame_BaselineJS);
+        masm.makeFrameDescriptor(valuesSize, JitFrame_BaselineJS, ExitFrameLayout::Size());
         masm.push(valuesSize);
         masm.push(Imm32(0)); 
         
@@ -516,7 +516,7 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
 
     
     masm.subq(rsp, r9);
-    masm.makeFrameDescriptor(r9, JitFrame_Rectifier);
+    masm.makeFrameDescriptor(r9, JitFrame_Rectifier, JitFrameLayout::Size());
 
     
     masm.push(rdx); 

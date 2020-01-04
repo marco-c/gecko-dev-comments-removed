@@ -3628,7 +3628,7 @@ ICGetProp_CallScripted::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     masm.Push(R0);
-    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
     masm.Push(Imm32(0));  
     masm.Push(callee);
     masm.Push(scratch);

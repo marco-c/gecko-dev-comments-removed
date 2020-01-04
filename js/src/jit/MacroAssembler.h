@@ -619,10 +619,10 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     
-    inline void makeFrameDescriptor(Register frameSizeReg, FrameType type);
+    inline void makeFrameDescriptor(Register frameSizeReg, FrameType type, uint32_t headerSize);
 
     
-    inline void pushStaticFrameDescriptor(FrameType type);
+    inline void pushStaticFrameDescriptor(FrameType type, uint32_t headerSize);
 
     
     
