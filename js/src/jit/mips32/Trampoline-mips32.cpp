@@ -314,7 +314,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     
     
     masm.pop(s0);
-    masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), s0);
+    masm.rshiftPtr(Imm32(4), s0);
     masm.addPtr(s0, StackPointer);
 
     
