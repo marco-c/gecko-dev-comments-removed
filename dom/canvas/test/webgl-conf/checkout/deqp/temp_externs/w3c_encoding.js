@@ -1,0 +1,54 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function TextDecoder(encoding, options) {}
+
+ TextDecoder.prototype.encoding;
+ TextDecoder.prototype.fatal;
+ TextDecoder.prototype.ignoreBOM;
+
+
+
+
+
+
+TextDecoder.prototype.decode = function decode(input, options) {};
+
+
+
+
+
+
+function TextEncoder(encoding, options) {}
+
+ TextEncoder.prototype.encoding;
+
+
+
+
+
+TextEncoder.prototype.encode = function(input) {};
