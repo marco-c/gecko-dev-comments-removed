@@ -107,6 +107,11 @@ AudioCaptureStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
         AudioSegment* inputSegment = tracks->Get<AudioSegment>();
         StreamTime inputStart = s->GraphTimeToStreamTimeWithBlocking(aFrom);
         StreamTime inputEnd = s->GraphTimeToStreamTimeWithBlocking(aTo);
+        if (tracks->IsEnded() && inputSegment->GetDuration() <= inputEnd) {
+          
+          
+          continue;
+        }
         AudioSegment toMix;
         toMix.AppendSlice(*inputSegment, inputStart, inputEnd);
         
