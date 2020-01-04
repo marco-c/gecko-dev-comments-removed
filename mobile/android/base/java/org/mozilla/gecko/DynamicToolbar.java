@@ -6,9 +6,13 @@ import org.mozilla.gecko.PrefsHelper.PrefHandlerBase;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.util.ThreadUtils;
 
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 
 public class DynamicToolbar {
+    private static final String LOGTAG = "DynamicToolbar";
+
     private static final String STATE_ENABLED = "dynamic_toolbar";
     private static final String CHROME_PREF = "browser.chrome.dynamictoolbar";
 
@@ -17,6 +21,9 @@ public class DynamicToolbar {
     
     private volatile boolean prefEnabled;
     private boolean accessibilityEnabled;
+    
+    
+    private final boolean forceDisabled;
 
     private final int prefObserverId;
     private final EnumSet<PinReason> pinFlags = EnumSet.noneOf(PinReason.class);
@@ -48,6 +55,21 @@ public class DynamicToolbar {
     public DynamicToolbar() {
         
         prefObserverId = PrefsHelper.getPref(CHROME_PREF, new PrefHandler());
+        forceDisabled = isForceDisabled();
+        if (forceDisabled) {
+            Log.i(LOGTAG, "Force-disabling dynamic toolbar for " + Build.MODEL + " (" + Build.DEVICE + "/" + Build.PRODUCT + ")");
+        }
+    }
+
+    public static boolean isForceDisabled() {
+        
+        
+        
+        
+        
+        return Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN
+            && (Build.MODEL.startsWith("GT-N80") ||
+                Build.MODEL.startsWith("GT-N51"));
     }
 
     public void destroy() {
@@ -82,6 +104,10 @@ public class DynamicToolbar {
 
     public boolean isEnabled() {
         ThreadUtils.assertOnUiThread();
+
+        if (forceDisabled) {
+            return false;
+        }
 
         return prefEnabled && !accessibilityEnabled;
     }
