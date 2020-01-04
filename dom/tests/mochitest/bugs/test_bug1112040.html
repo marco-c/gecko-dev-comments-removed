@@ -23,7 +23,7 @@
 /** Test for Bug 1112040 **/
 SimpleTest.runTestExpectingConsoleMessages(
     function() { $('i').value = "42"; },
-    [{ errorMessage: "SyntaxError: nothing to repeat" }]
+    [{ errorMessage: /nothing to repeat/ }]
 );
 
 </script>
