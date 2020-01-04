@@ -37,6 +37,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "MessageChannel",
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   runSafeSyncWithoutClone,
+  BaseContext,
   LocaleData,
   MessageBroker,
   Messenger,
@@ -227,109 +228,103 @@ var ExtensionManager;
 
 
 
-function ExtensionContext(extensionId, contentWindow, contextOptions = {}) {
-  let { isExtensionPage } = contextOptions;
+class ExtensionContext extends BaseContext {
+  constructor(extensionId, contentWindow, contextOptions = {}) {
+    super();
 
-  this.isExtensionPage = isExtensionPage;
-  this.extension = ExtensionManager.get(extensionId);
-  this.extensionId = extensionId;
-  this.contentWindow = contentWindow;
+    let { isExtensionPage } = contextOptions;
 
-  this.onClose = new Set();
+    this.isExtensionPage = isExtensionPage;
+    this.extension = ExtensionManager.get(extensionId);
+    this.extensionId = extensionId;
+    this.contentWindow = contentWindow;
 
-  let utils = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                           .getInterface(Ci.nsIDOMWindowUtils);
-  let outerWindowId = utils.outerWindowID;
-  let frameId = contentWindow == contentWindow.top ? 0 : outerWindowId;
-  this.frameId = frameId;
+    let utils = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsIDOMWindowUtils);
+    let outerWindowId = utils.outerWindowID;
+    let frameId = contentWindow == contentWindow.top ? 0 : outerWindowId;
+    this.frameId = frameId;
 
-  let mm = getWindowMessageManager(contentWindow);
-  this.messageManager = mm;
+    let mm = getWindowMessageManager(contentWindow);
+    this.messageManager = mm;
 
-  let prin;
-  let contentPrincipal = contentWindow.document.nodePrincipal;
-  let ssm = Services.scriptSecurityManager;
-  if (ssm.isSystemPrincipal(contentPrincipal)) {
-    
-    prin = Cc["@mozilla.org/nullprincipal;1"].createInstance(Ci.nsIPrincipal);
-  } else {
+    let prin;
+    let contentPrincipal = contentWindow.document.nodePrincipal;
+    let ssm = Services.scriptSecurityManager;
+
     let extensionPrincipal = ssm.createCodebasePrincipal(this.extension.baseURI, {addonId: extensionId});
-    prin = [contentPrincipal, extensionPrincipal];
-  }
+    Object.defineProperty(this, "principal",
+                          {value: extensionPrincipal, enumerable: true, configurable: true});
 
-  if (isExtensionPage) {
-    if (ExtensionManagement.getAddonIdForWindow(this.contentWindow) != extensionId) {
-      throw new Error("Invalid target window for this extension context");
-    }
-    
-    
-    
-    
-    this.sandbox = Cu.Sandbox(contentWindow, {
-      sandboxPrototype: contentWindow,
-      wantXrays: false,
-      isWebExtensionContentScript: true,
-    });
-  } else {
-    this.sandbox = Cu.Sandbox(prin, {
-      sandboxPrototype: contentWindow,
-      wantXrays: true,
-      isWebExtensionContentScript: true,
-      wantGlobalProperties: ["XMLHttpRequest"],
-    });
-  }
-
-  let delegate = {
-    getSender(context, target, sender) {
+    if (ssm.isSystemPrincipal(contentPrincipal)) {
       
-    },
-  };
+      prin = Cc["@mozilla.org/nullprincipal;1"].createInstance(Ci.nsIPrincipal);
+    } else {
+      prin = [contentPrincipal, extensionPrincipal];
+    }
 
-  let url = contentWindow.location.href;
-  let broker = ExtensionContent.getBroker(mm);
-  
-  let sender = {id: this.extension.uuid, frameId, url};
-  
-  
-  let filter = {extensionId, frameId};
-  this.messenger = new Messenger(this, broker, sender, filter, delegate);
+    if (isExtensionPage) {
+      if (ExtensionManagement.getAddonIdForWindow(this.contentWindow) != extensionId) {
+        throw new Error("Invalid target window for this extension context");
+      }
+      
+      
+      
+      
+      this.sandbox = Cu.Sandbox(contentWindow, {
+        sandboxPrototype: contentWindow,
+        wantXrays: false,
+        isWebExtensionContentScript: true,
+      });
+    } else {
+      this.sandbox = Cu.Sandbox(prin, {
+        sandboxPrototype: contentWindow,
+        wantXrays: true,
+        isWebExtensionContentScript: true,
+        wantGlobalProperties: ["XMLHttpRequest"],
+      });
+    }
 
-  this.chromeObj = Cu.createObjectIn(this.sandbox, {defineAs: "browser"});
+    let delegate = {
+      getSender(context, target, sender) {
+        
+      },
+    };
 
-  
-  
-  Cu.waiveXrays(this.sandbox).chrome = this.chromeObj;
+    let url = contentWindow.location.href;
+    let broker = ExtensionContent.getBroker(mm);
+    
+    let sender = {id: this.extension.uuid, frameId, url};
+    
+    
+    let filter = {extensionId, frameId};
+    this.messenger = new Messenger(this, broker, sender, filter, delegate);
 
-  injectAPI(api(this), this.chromeObj);
+    this.chromeObj = Cu.createObjectIn(this.sandbox, {defineAs: "browser"});
 
-  
-  if (isExtensionPage) {
-    Cu.waiveXrays(this.contentWindow).chrome = this.chromeObj;
-    Cu.waiveXrays(this.contentWindow).browser = this.chromeObj;
+    
+    
+    Cu.waiveXrays(this.sandbox).chrome = this.chromeObj;
+
+    injectAPI(api(this), this.chromeObj);
+
+    
+    if (isExtensionPage) {
+      Cu.waiveXrays(this.contentWindow).chrome = this.chromeObj;
+      Cu.waiveXrays(this.contentWindow).browser = this.chromeObj;
+    }
   }
-}
 
-ExtensionContext.prototype = {
   get cloneScope() {
     return this.sandbox;
-  },
+  }
 
   execute(script, shouldRun) {
     script.tryInject(this.extension, this.contentWindow, this.sandbox, shouldRun);
-  },
-
-  callOnClose(obj) {
-    this.onClose.add(obj);
-  },
-
-  forgetOnClose(obj) {
-    this.onClose.delete(obj);
-  },
+  }
 
   close() {
-    for (let obj of this.onClose) {
-      obj.close();
-    }
+    super.unload();
 
     
     
@@ -338,11 +333,10 @@ ExtensionContext.prototype = {
       Cu.createObjectIn(this.contentWindow, { defineAs: "browser" });
       Cu.createObjectIn(this.contentWindow, { defineAs: "chrome" });
     }
-
     Cu.nukeSandbox(this.sandbox);
     this.sandbox = null;
-  },
-};
+  }
+}
 
 function windowId(window) {
   return window.QueryInterface(Ci.nsIInterfaceRequestor)

@@ -81,6 +81,7 @@ ExtensionManagement.registerSchema("chrome://extensions/content/schemas/web_requ
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
+  BaseContext,
   LocaleData,
   MessageBroker,
   Messenger,
@@ -218,63 +219,45 @@ var gContextId = 0;
 
 
 
-ExtensionPage = function(extension, params) {
-  let {type, contentWindow, uri} = params;
-  this.extension = extension;
-  this.type = type;
-  this.contentWindow = contentWindow || null;
-  this.uri = uri || extension.baseURI;
-  this.incognito = params.incognito || false;
-  this.onClose = new Set();
-  this.contextId = gContextId++;
-  this.unloaded = false;
+ExtensionPage = class extends BaseContext {
+  constructor(extension, params) {
+    super();
 
-  
-  
-  let sender = {id: extension.uuid};
-  if (uri) {
-    sender.url = uri.spec;
+    let {type, contentWindow, uri} = params;
+    this.extension = extension;
+    this.type = type;
+    this.contentWindow = contentWindow || null;
+    this.uri = uri || extension.baseURI;
+    this.incognito = params.incognito || false;
+    this.contextId = gContextId++;
+    this.unloaded = false;
+
+    
+    
+    let sender = {id: extension.uuid};
+    if (uri) {
+      sender.url = uri.spec;
+    }
+    let delegate = {
+      getSender() {},
+    };
+    Management.emit("page-load", this, params, sender, delegate);
+
+    
+    
+    let filter = {extensionId: extension.id};
+    this.messenger = new Messenger(this, globalBroker, sender, filter, delegate);
+
+    this.extension.views.add(this);
   }
-  let delegate = {
-    getSender() {},
-  };
-  Management.emit("page-load", this, params, sender, delegate);
 
-  
-  
-  let filter = {extensionId: extension.id};
-  this.messenger = new Messenger(this, globalBroker, sender, filter, delegate);
-
-  this.extension.views.add(this);
-};
-
-ExtensionPage.prototype = {
   get cloneScope() {
     return this.contentWindow;
-  },
+  }
 
   get principal() {
     return this.contentWindow.document.nodePrincipal;
-  },
-
-  checkLoadURL(url, options = {}) {
-    let ssm = Services.scriptSecurityManager;
-
-    let flags = ssm.STANDARD;
-    if (!options.allowScript) {
-      flags |= ssm.DISALLOW_SCRIPT;
-    }
-    if (!options.allowInheritsPrincipal) {
-      flags |= ssm.DISALLOW_INHERIT_PRINCIPAL;
-    }
-
-    try {
-      ssm.checkLoadURIStrWithPrincipal(this.principal, url, flags);
-    } catch (e) {
-      return false;
-    }
-    return true;
-  },
+  }
 
   
   
@@ -285,21 +268,13 @@ ExtensionPage.prototype = {
     sender.contextId = this.contextId;
 
     return MessageChannel.sendMessage(target, messageName, data, recipient, sender);
-  },
-
-  callOnClose(obj) {
-    this.onClose.add(obj);
-  },
-
-  forgetOnClose(obj) {
-    this.onClose.delete(obj);
-  },
+  }
 
   
   shutdown() {
     Management.emit("page-shutdown", this);
     this.unload();
-  },
+  }
 
   
   
@@ -322,10 +297,8 @@ ExtensionPage.prototype = {
 
     this.extension.views.delete(this);
 
-    for (let obj of this.onClose) {
-      obj.close();
-    }
-  },
+    super.unload();
+  }
 };
 
 
