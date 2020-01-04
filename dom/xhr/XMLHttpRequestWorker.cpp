@@ -1498,10 +1498,8 @@ SendRunnable::RunOnMainThread(ErrorResult& aRv)
   mProxy->mSyncLoopTarget.swap(mSyncLoopTarget);
 
   if (mHasUploadListeners) {
-    
-    
-    if (!mProxy->mUploadEventListenersAttached &&
-        !mProxy->AddRemoveEventListeners(true, true)) {
+    NS_ASSERTION(!mProxy->mUploadEventListenersAttached, "Huh?!");
+    if (!mProxy->AddRemoveEventListeners(true, true)) {
       MOZ_ASSERT(false, "This should never fail!");
     }
   }
@@ -1516,10 +1514,8 @@ SendRunnable::RunOnMainThread(ErrorResult& aRv)
     mProxy->mOutstandingSendCount++;
 
     if (!mHasUploadListeners) {
-      
-      
-      if (!mProxy->mUploadEventListenersAttached &&
-          !mProxy->AddRemoveEventListeners(true, true)) {
+      NS_ASSERTION(!mProxy->mUploadEventListenersAttached, "Huh?!");
+      if (!mProxy->AddRemoveEventListeners(true, true)) {
         MOZ_ASSERT(false, "This should never fail!");
       }
     }

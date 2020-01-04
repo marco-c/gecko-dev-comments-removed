@@ -1350,131 +1350,54 @@ XMLHttpRequestMainThread::IsSystemXHR() const
 }
 
 NS_IMETHODIMP
-XMLHttpRequestMainThread::Open(const nsACString& aMethod, const nsACString& aUrl,
-                               bool aAsync, const nsAString& aUsername,
-                               const nsAString& aPassword, uint8_t optional_argc)
+XMLHttpRequestMainThread::Open(const nsACString& method, const nsACString& url,
+                               bool async, const nsAString& user,
+                               const nsAString& password, uint8_t optional_argc)
 {
-  Optional<bool> async;
   if (!optional_argc) {
     
-    async.Construct() = true;
-  } else {
-    async.Construct() = aAsync;
+    async = true;
   }
-  Optional<nsAString> username;
+  Optional<nsAString> realUser;
   if (optional_argc > 1) {
-    username = &aUsername;
+    realUser = &user;
   }
-  Optional<nsAString> password;
+  Optional<nsAString> realPassword;
   if (optional_argc > 2) {
-    password = &aPassword;
+    realPassword = &password;
   }
-  return OpenInternal(aMethod, aUrl, async, username, password);
-}
-
-
-
-void
-XMLHttpRequestMainThread::Open(const nsACString& aMethod, const nsAString& aUrl,
-                               ErrorResult& aRv)
-{
-  aRv = OpenInternal(aMethod, NS_ConvertUTF16toUTF8(aUrl), Optional<bool>(true),
-                     Optional<nsAString>(), Optional<nsAString>());
-}
-
-
-
-
-void
-XMLHttpRequestMainThread::Open(const nsACString& aMethod,
-                               const nsAString& aUrl,
-                               bool aAsync,
-                               const Optional<nsAString>& aUsername,
-                               const Optional<nsAString>& aPassword,
-                               ErrorResult& aRv)
-{
-  aRv = OpenInternal(aMethod, NS_ConvertUTF16toUTF8(aUrl),
-                     Optional<bool>(aAsync), aUsername, aPassword);
+  return Open(method, url, async, realUser, realPassword);
 }
 
 nsresult
-XMLHttpRequestMainThread::OpenInternal(const nsACString& aMethod,
-                                       const nsACString& aUrl,
-                                       const Optional<bool>& aAsync,
-                                       const Optional<nsAString>& aUsername,
-                                       const Optional<nsAString>& aPassword)
+XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url,
+                               bool async, const Optional<nsAString>& user,
+                               const Optional<nsAString>& password)
 {
-  bool async = aAsync.WasPassed() ? aAsync.Value() : true;
+  if (inMethod.IsEmpty()) {
+    return NS_ERROR_DOM_SYNTAX_ERR;
+  }
 
-  
   if (!async && !DontWarnAboutSyncXHR() && GetOwner() &&
       GetOwner()->GetExtantDoc()) {
     GetOwner()->GetExtantDoc()->WarnOnceAbout(nsIDocument::eSyncXMLHttpRequest);
   }
 
-  Telemetry::Accumulate(Telemetry::XMLHTTPREQUEST_ASYNC_OR_SYNC, async ? 0 : 1);
+  Telemetry::Accumulate(Telemetry::XMLHTTPREQUEST_ASYNC_OR_SYNC,
+                        async ? 0 : 1);
 
-  
-  nsCOMPtr<nsIDocument> responsibleDocument = GetDocumentIfCurrent();
-  if (!responsibleDocument) {
-    
-    
-    nsresult rv = CheckInnerWindowCorrectness();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return NS_ERROR_DOM_INVALID_STATE_ERR;
-    }
-  }
   NS_ENSURE_TRUE(mPrincipal, NS_ERROR_NOT_INITIALIZED);
 
-  
   nsAutoCString method;
-  nsresult rv = FetchUtil::GetValidRequestMethod(aMethod, method);
+  nsresult rv = FetchUtil::GetValidRequestMethod(inMethod, method);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
-  nsCOMPtr<nsIURI> baseURI;
-  if (mBaseURI) {
-    baseURI = mBaseURI;
-  } else if (responsibleDocument) {
-    baseURI = responsibleDocument->GetBaseURI();
-  }
-  nsCOMPtr<nsIURI> parsedURL;
-  rv = NS_NewURI(getter_AddRefs(parsedURL), aUrl, nullptr, baseURI);
-  if (NS_FAILED(rv)) {
-    if (rv ==  NS_ERROR_MALFORMED_URI) {
-      return NS_ERROR_DOM_SYNTAX_ERR;
-    }
-    return rv;
-  }
-  if (NS_WARN_IF(NS_FAILED(CheckInnerWindowCorrectness()))) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
-  }
-
   
-  
-  
-
-  
-  if (aAsync.WasPassed()) {
-    nsAutoCString host;
-    parsedURL->GetHost(host);
-    if (!host.IsEmpty()) {
-      nsAutoCString userpass;
-      if (aUsername.WasPassed()) {
-        CopyUTF16toUTF8(aUsername.Value(), userpass);
-      }
-      userpass.AppendLiteral(":");
-      if (aPassword.WasPassed()) {
-        AppendUTF16toUTF8(aPassword.Value(), userpass);
-      }
-      parsedURL->SetUserPass(userpass);
-    }
-  }
-
-  
-  if (!async && HasOrHasHadOwner() && (mTimeoutMilliseconds ||
+  if (!async && HasOrHasHadOwner() &&
+      (mTimeoutMilliseconds ||
        mResponseType != XMLHttpRequestResponseType::_empty)) {
     if (mTimeoutMilliseconds) {
       LogMessage("TimeoutSyncXHRWarning", GetOwner());
@@ -1485,30 +1408,140 @@ XMLHttpRequestMainThread::OpenInternal(const nsACString& aMethod,
     return NS_ERROR_DOM_INVALID_ACCESS_ERR;
   }
 
-  
-  CloseRequest();
+  nsCOMPtr<nsIURI> uri;
 
-  
-  
+  CloseRequest(); 
+  ResetResponse(); 
+
   mFlagSend = false;
-  mRequestMethod.Assign(method);
-  mRequestURL = parsedURL;
-  mFlagSynchronous = !async;
-  mAuthorRequestHeaders.Clear();
-  ResetResponse();
 
   
-  mFlagHadUploadListenersOnSend = false;
   mFlagAborted = false;
   mFlagTimedOut = false;
 
-  rv = InitChannel();
-  NS_ENSURE_SUCCESS(rv, rv);
+  mFlagSynchronous = !async;
+
+  nsCOMPtr<nsIDocument> doc = GetDocumentIfCurrent();
+  if (!doc) {
+    
+    
+    if (NS_WARN_IF(NS_FAILED(CheckInnerWindowCorrectness()))) {
+      return NS_ERROR_DOM_INVALID_STATE_ERR;
+    }
+  }
+
+  nsCOMPtr<nsIURI> baseURI;
+  if (mBaseURI) {
+    baseURI = mBaseURI;
+  }
+  else if (doc) {
+    baseURI = doc->GetBaseURI();
+  }
+
+  rv = NS_NewURI(getter_AddRefs(uri), url, nullptr, baseURI);
+
+  if (NS_FAILED(rv)) {
+    if (rv ==  NS_ERROR_MALFORMED_URI) {
+      return NS_ERROR_DOM_SYNTAX_ERR;
+    }
+    return rv;
+  }
+
+  if (NS_WARN_IF(NS_FAILED(CheckInnerWindowCorrectness()))) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
 
   
+  
+  if (user.WasPassed() && !user.Value().IsEmpty()) {
+    nsAutoCString userpass;
+    CopyUTF16toUTF8(user.Value(), userpass);
+    if (password.WasPassed() && !password.Value().IsEmpty()) {
+      userpass.Append(':');
+      AppendUTF16toUTF8(password.Value(), userpass);
+    }
+    uri->SetUserPass(userpass);
+  }
+
+  
+  
+  mAuthorRequestHeaders.Clear();
+
+  
+  
+  
+  nsCOMPtr<nsILoadGroup> loadGroup = GetLoadGroup();
+
+  nsSecurityFlags secFlags;
+  nsLoadFlags loadFlags = nsIRequest::LOAD_BACKGROUND |
+    nsIChannel::LOAD_CLASSIFY_URI;
+  if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
+    
+    
+    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL |
+               nsILoadInfo::SEC_SANDBOXED;
+  }
+  else if (IsSystemXHR()) {
+    
+    
+    
+    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
+               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+  }
+  else {
+    
+    
+    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS |
+               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+  }
+
+  if (mIsAnon) {
+    secFlags |= nsILoadInfo::SEC_COOKIES_OMIT;
+  }
+
+  
+  
+  
+  if (doc && doc->NodePrincipal() == mPrincipal) {
+    rv = NS_NewChannel(getter_AddRefs(mChannel),
+                       uri,
+                       doc,
+                       secFlags,
+                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                       loadGroup,
+                       nullptr,   
+                       loadFlags);
+  } else {
+    
+    rv = NS_NewChannel(getter_AddRefs(mChannel),
+                       uri,
+                       mPrincipal,
+                       secFlags,
+                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                       loadGroup,
+                       nullptr,   
+                       loadFlags);
+  }
+
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mFlagHadUploadListenersOnSend = false;
+
+  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
+  if (httpChannel) {
+    rv = httpChannel->SetRequestMethod(method);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(httpChannel));
+    if (timedChannel) {
+      timedChannel->SetInitiatorType(kLiteralString_xmlhttprequest);
+    }
+  }
+
   if (mState != State::opened) {
-    mState = State::opened;
-    FireReadystatechangeEvent();
+    ChangeState(State::opened);
   }
 
   return NS_OK;
@@ -2104,81 +2137,6 @@ XMLHttpRequestMainThread::ChangeStateToDone()
     
     mChannel = nullptr;
   }
-}
-
-nsresult
-XMLHttpRequestMainThread::InitChannel()
-{
-  
-  
-  
-  nsCOMPtr<nsILoadGroup> loadGroup = GetLoadGroup();
-
-  nsSecurityFlags secFlags;
-  nsLoadFlags loadFlags = nsIRequest::LOAD_BACKGROUND |
-                          nsIChannel::LOAD_CLASSIFY_URI;
-  if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
-    
-    
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL |
-               nsILoadInfo::SEC_SANDBOXED;
-  } else if (IsSystemXHR()) {
-    
-    
-    
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
-               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
-  } else {
-    
-    
-    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS |
-               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-  }
-
-  if (mIsAnon) {
-    secFlags |= nsILoadInfo::SEC_COOKIES_OMIT;
-  }
-
-  
-  
-  nsresult rv;
-  nsCOMPtr<nsIDocument> responsibleDocument = GetDocumentIfCurrent();
-  if (responsibleDocument && responsibleDocument->NodePrincipal() == mPrincipal) {
-    rv = NS_NewChannel(getter_AddRefs(mChannel),
-                       mRequestURL,
-                       responsibleDocument,
-                       secFlags,
-                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
-                       loadGroup,
-                       nullptr,   
-                       loadFlags);
-  } else {
-    
-    rv = NS_NewChannel(getter_AddRefs(mChannel),
-                       mRequestURL,
-                       mPrincipal,
-                       secFlags,
-                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
-                       loadGroup,
-                       nullptr,   
-                       loadFlags);
-  }
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
-  if (httpChannel) {
-    rv = httpChannel->SetRequestMethod(mRequestMethod);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(httpChannel));
-    if (timedChannel) {
-      timedChannel->SetInitiatorType(NS_LITERAL_STRING("xmlhttprequest"));
-    }
-  }
-
-  return NS_OK;
 }
 
 static nsresult
