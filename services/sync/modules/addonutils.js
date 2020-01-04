@@ -38,20 +38,9 @@ AddonUtilsInternal.prototype = {
 
 
   getInstallFromSearchResult:
-    function getInstallFromSearchResult(addon, cb, requireSecureURI=true) {
+    function getInstallFromSearchResult(addon, cb) {
 
     this._log.debug("Obtaining install for " + addon.id);
-
-    
-    
-    
-    if (requireSecureURI) {
-      let scheme = addon.sourceURI.scheme;
-      if (scheme != "https") {
-        cb(new Error("Insecure source URI scheme: " + scheme), addon.install);
-        return;
-      }
-    }
 
     
     
@@ -99,15 +88,9 @@ AddonUtilsInternal.prototype = {
 
 
 
-
-
   installAddonFromSearchResult:
     function installAddonFromSearchResult(addon, options, cb) {
     this._log.info("Trying to install add-on from search result: " + addon.id);
-
-    if (options.requireSecureURI === undefined) {
-      options.requireSecureURI = true;
-    }
 
     this.getInstallFromSearchResult(addon, function onResult(error, install) {
       if (error) {
@@ -167,7 +150,7 @@ AddonUtilsInternal.prototype = {
         this._log.error("Error installing add-on: " + Utils.exceptionstr(ex));
         cb(ex, null);
       }
-    }.bind(this), options.requireSecureURI);
+    }.bind(this));
   },
 
   
@@ -261,6 +244,7 @@ AddonUtilsInternal.prototype = {
           installedIDs: [],
           installs:     [],
           addons:       [],
+          skipped:      [],
           errors:       []
         };
 
@@ -300,13 +284,19 @@ AddonUtilsInternal.prototype = {
         
         for (let addon of addons) {
           
-          
-          if (!addon.sourceURI) {
-            this._log.info("Skipping install of add-on because missing " +
-                           "sourceURI: " + addon.id);
+          let options;
+          for (let install of installs) {
+            if (install.id == addon.id) {
+              options = install;
+              break;
+            }
+          }
+          if (!this.canInstallAddon(addon, options)) {
+            ourResult.skipped.push(addon.id);
             continue;
           }
 
+          
           toInstall.push(addon);
 
           
@@ -361,6 +351,45 @@ AddonUtilsInternal.prototype = {
       },
     });
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+  canInstallAddon(addon, options) {
+    
+    
+    if (!addon.sourceURI) {
+      this._log.info("Skipping install of add-on because missing " +
+                     "sourceURI: " + addon.id);
+      return false;
+    }
+    
+    
+    
+    let requireSecureURI = true;
+    if (options && options.requireSecureURI !== undefined) {
+      requireSecureURI = options.requireSecureURI;
+    }
+
+    if (requireSecureURI) {
+      let scheme = addon.sourceURI.scheme;
+      if (scheme != "https") {
+        this._log.info(`Skipping install of add-on "${addon.id}" because sourceURI's scheme of "${scheme}" is not trusted`);
+        return false;
+      }
+    }
+    this._log.info(`Add-on "${addon.id}" is able to be installed`);
+    return true;
+  },
+
 
   
 

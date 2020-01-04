@@ -298,6 +298,14 @@ AddonsStore.prototype = {
     
     let results = cb.wait();
 
+    if (results.skipped.includes(record.addonID)) {
+      this._log.info("Add-on skipped: " + record.addonID);
+      
+      
+      
+      return;
+    }
+
     let addon;
     for (let a of results.addons) {
       if (a.id == record.addonID) {
