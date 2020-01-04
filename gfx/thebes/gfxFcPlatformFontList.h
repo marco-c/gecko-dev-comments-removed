@@ -245,8 +245,6 @@ public:
         mGenericMappings.Clear();
     }
 
-    void GetSampleLangForGroup(nsIAtom* aLanguage, nsACString& aLangStr);
-
     static FT_Library GetFTLibrary();
 
 protected:
@@ -262,10 +260,6 @@ protected:
 
     
     bool PrefFontListsUseOnlyGenerics();
-
-    
-    bool TryLangForGroup(const nsACString& aOSLang, nsIAtom* aLangGroup,
-                         nsACString& aFcLang);
 
     static void CheckFontUpdates(nsITimer *aTimer, void *aThis);
 

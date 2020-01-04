@@ -237,6 +237,10 @@ public:
     mozilla::FontFamilyType
     GetDefaultGeneric(eFontPrefLang aLang);
 
+    
+    void GetSampleLangForGroup(nsIAtom* aLanguage, nsACString& aLangStr,
+                               bool aCheckEnvironment = true);
+
 protected:
     class MemoryReporter final : public nsIMemoryReporter
     {
@@ -319,6 +323,10 @@ protected:
 
     
     nsIAtom* GetLangGroup(nsIAtom* aLanguage);
+
+    
+    bool TryLangForGroup(const nsACString& aOSLang, nsIAtom* aLangGroup,
+                         nsACString& aLang);
 
     static const char* GetGenericName(mozilla::FontFamilyType aGenericType);
 
