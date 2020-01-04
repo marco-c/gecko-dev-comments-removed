@@ -6,6 +6,7 @@
 #include "WebGLContext.h"
 #include "WebGLContextUtils.h"
 #include "WebGLExtensions.h"
+#include "gfxPrefs.h"
 #include "GLContext.h"
 
 #include "nsString.h"
@@ -75,11 +76,14 @@ bool WebGLContext::IsExtensionSupported(JSContext* cx,
     
     
     
-    if (xpc::AccessCheck::isChrome(js::GetContextCompartment(cx)))
+    if (NS_IsMainThread() &&
+        xpc::AccessCheck::isChrome(js::GetContextCompartment(cx))) {
         allowPrivilegedExts = true;
+    }
 
-    if (Preferences::GetBool("webgl.enable-privileged-extensions", false))
+    if (gfxPrefs::WebGLPrivilegedExtensionsEnabled()) {
         allowPrivilegedExts = true;
+    }
 
     if (allowPrivilegedExts) {
         switch (ext) {
@@ -181,9 +185,7 @@ WebGLContext::IsExtensionSupported(WebGLExtensionID ext) const
         break;
     }
 
-    if (Preferences::GetBool("webgl.enable-draft-extensions", false) ||
-        IsWebGL2())
-    {
+    if (gfxPrefs::WebGLDraftExtensionsEnabled() || IsWebGL2()) {
         switch (ext) {
         case WebGLExtensionID::EXT_disjoint_timer_query:
             return WebGLExtensionDisjointTimerQuery::IsSupported(this);
