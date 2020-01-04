@@ -157,10 +157,11 @@ const Utils = {
     
     
     let pb = Services.prefs;
-    if ((!pb.prefHasUserValue(PREF_ALLOW_DIFFERENT_HOST) ||
-         !pb.getBoolPref(PREF_ALLOW_DIFFERENT_HOST)) &&
-        aContentWindow.location.hostname != uri.host)
+    if (!pb.getBoolPref(PREF_ALLOW_DIFFERENT_HOST) &&
+        (!["http:", "https:"].includes(aContentWindow.location.protocol) ||
+         aContentWindow.location.hostname != uri.host)) {
       throw("Permission denied to add " + uri.spec + " as a content or protocol handler");
+    }
 
     
     if (uri.spec.indexOf("%s") < 0)
