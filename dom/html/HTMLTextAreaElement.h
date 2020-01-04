@@ -265,7 +265,6 @@ public:
   
   
   using nsIConstraintValidation::CheckValidity;
-  using nsIConstraintValidation::ReportValidity;
   
   
   uint32_t GetSelectionStart(ErrorResult& aError);

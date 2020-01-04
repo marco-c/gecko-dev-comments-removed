@@ -5323,14 +5323,14 @@ var FormAssistant = {
       return;
 
     
-    let currentElement = aInvalidElements.queryElementAt(0, Ci.nsISupports);
     if (BrowserApp.selectedBrowser.contentDocument !=
-        currentElement.ownerDocument.defaultView.top.document)
+        aFormElement.ownerDocument.defaultView.top.document)
       return;
 
     this._invalidSubmit = true;
 
     
+    let currentElement = aInvalidElements.queryElementAt(0, Ci.nsISupports);
     currentElement.focus();
   },
 

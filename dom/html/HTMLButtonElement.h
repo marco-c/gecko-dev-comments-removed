@@ -165,7 +165,6 @@ public:
   
   
   using nsIConstraintValidation::CheckValidity;
-  using nsIConstraintValidation::ReportValidity;
   
 
 protected:
