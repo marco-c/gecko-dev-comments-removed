@@ -289,7 +289,7 @@ function assertHoverTooltipOn(tooltip, element) {
 
 
 
-function* hideTooltipAndWaitForRuleviewChanged(tooltip, view) {
+function* hideTooltipAndWaitForRuleViewChanged(tooltip, view) {
   let onModified = view.once("ruleview-changed");
   tooltip.hide();
   yield onModified;
