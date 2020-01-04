@@ -188,14 +188,14 @@ ResetWidgetCache(void)
     if (sStyleStorage[i])
       g_object_unref(sStyleStorage[i]);
   }
-  PodArrayZero(sStyleStorage);
+  mozilla::PodArrayZero(sStyleStorage);
 
   
   if (sWidgetStorage[MOZ_GTK_WINDOW])
     gtk_widget_destroy(sWidgetStorage[MOZ_GTK_WINDOW]);
 
   
-  PodArrayZero(sWidgetStorage);
+  mozilla::PodArrayZero(sWidgetStorage);
 }
 
 GtkStyleContext*
