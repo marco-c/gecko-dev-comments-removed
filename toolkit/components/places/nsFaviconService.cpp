@@ -31,6 +31,7 @@
 #include "nsILoadInfo.h"
 #include "nsIContentPolicy.h"
 #include "nsContentUtils.h"
+#include "nsNullPrincipal.h"
 
 
 #include "imgITools.h"
@@ -229,7 +230,6 @@ nsFaviconService::SetAndFetchFaviconForPage(nsIURI* aPageURI,
   MOZ_ASSERT(loadingPrincipal, "please provide aLoadingPrincipal for this favicon");
   if (!loadingPrincipal) {
     
-    
     const char16_t* params[] = {
       u"nsFaviconService::setAndFetchFaviconForPage()",
       u"nsFaviconService::setAndFetchFaviconForPage(..., [optional aLoadingPrincipal])"
@@ -240,7 +240,7 @@ nsFaviconService::SetAndFetchFaviconForPage(nsIURI* aPageURI,
                                     nsContentUtils::eNECKO_PROPERTIES,
                                     "APIDeprecationWarning",
                                     params, ArrayLength(params));
-    loadingPrincipal = nsContentUtils::GetSystemPrincipal();
+    loadingPrincipal = nsNullPrincipal::Create();
   }
   NS_ENSURE_TRUE(loadingPrincipal, NS_ERROR_FAILURE);
 
@@ -391,7 +391,6 @@ nsFaviconService::ReplaceFaviconDataFromDataURL(nsIURI* aFaviconURI,
   MOZ_ASSERT(loadingPrincipal, "please provide aLoadingPrincipal for this favicon");
   if (!loadingPrincipal) {
     
-    
     const char16_t* params[] = {
       u"nsFaviconService::ReplaceFaviconDataFromDataURL()",
       u"nsFaviconService::ReplaceFaviconDataFromDataURL(..., [optional aLoadingPrincipal])"
@@ -403,7 +402,7 @@ nsFaviconService::ReplaceFaviconDataFromDataURL(nsIURI* aFaviconURI,
                                     "APIDeprecationWarning",
                                     params, ArrayLength(params));
 
-    loadingPrincipal = nsContentUtils::GetSystemPrincipal();
+    loadingPrincipal = nsNullPrincipal::Create();
   }
   NS_ENSURE_TRUE(loadingPrincipal, NS_ERROR_FAILURE);
 
