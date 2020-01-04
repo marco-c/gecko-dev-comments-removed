@@ -31,12 +31,6 @@ extern "C" char* PrintJSStack();
 using namespace mozilla;
 using namespace std;
 
-template<>
-struct RunnableMethodTraits<mozilla::ipc::ProcessLink>
-{
-    static void RetainCallee(mozilla::ipc::ProcessLink* obj) { }
-    static void ReleaseCallee(mozilla::ipc::ProcessLink* obj) { }
-};
 
 
 
@@ -49,13 +43,6 @@ struct RunnableMethodTraits<mozilla::ipc::ProcessLink>
 
 
 
-
-template<>
-struct RunnableMethodTraits<mozilla::ipc::MessageChannel::Transport>
-{
-    static void RetainCallee(mozilla::ipc::MessageChannel::Transport* obj) { }
-    static void ReleaseCallee(mozilla::ipc::MessageChannel::Transport* obj) { }
-};
 
 namespace mozilla {
 namespace ipc {
@@ -131,14 +118,14 @@ ProcessLink::Open(mozilla::ipc::Transport* aTransport, MessageLoop *aIOLoop, Sid
             
             
             
-            mIOLoop->PostTask(
-                NewRunnableMethod(this, &ProcessLink::OnChannelOpened));
+            RefPtr<Runnable> runnable = NS_NewNonOwningRunnableMethod(this, &ProcessLink::OnChannelOpened);
+            mIOLoop->PostTask(runnable.forget());
         } else {
             
             
             
-            mIOLoop->PostTask(
-                NewRunnableMethod(this, &ProcessLink::OnTakeConnectedChannel));
+            RefPtr<Runnable> runnable = NS_NewNonOwningRunnableMethod(this, &ProcessLink::OnTakeConnectedChannel);
+            mIOLoop->PostTask(runnable.forget());
         }
 
 #ifdef MOZ_NUWA_PROCESS
@@ -165,8 +152,9 @@ ProcessLink::EchoMessage(Message *msg)
     mChan->AssertWorkerThread();
     mChan->mMonitor->AssertCurrentThreadOwns();
 
-    mIOLoop->PostTask(
-        NewRunnableMethod(this, &ProcessLink::OnEchoMessage, msg));
+    RefPtr<Runnable> runnable =
+        NS_NewNonOwningRunnableMethodWithArgs<Message*>(this, &ProcessLink::OnEchoMessage, msg);
+    mIOLoop->PostTask(runnable.forget());
     
 }
 
@@ -212,8 +200,9 @@ ProcessLink::SendMessage(Message *msg)
 #endif
 #endif
 
-    mIOLoop->PostTask(
-        NewRunnableMethod(mTransport, &Transport::Send, msg));
+    RefPtr<Runnable> runnable =
+        NS_NewNonOwningRunnableMethodWithArgs<Message*>(mTransport, &Transport::Send, msg);
+    mIOLoop->PostTask(runnable.forget());
 }
 
 void
@@ -222,7 +211,8 @@ ProcessLink::SendClose()
     mChan->AssertWorkerThread();
     mChan->mMonitor->AssertCurrentThreadOwns();
 
-    mIOLoop->PostTask(NewRunnableMethod(this, &ProcessLink::OnCloseChannel));
+    RefPtr<Runnable> runnable = NS_NewNonOwningRunnableMethod(this, &ProcessLink::OnCloseChannel);
+    mIOLoop->PostTask(runnable.forget());
 }
 
 ThreadLink::ThreadLink(MessageChannel *aChan, MessageChannel *aTargetChan)
