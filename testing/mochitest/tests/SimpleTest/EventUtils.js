@@ -577,7 +577,7 @@ function sendWheelAndPaint(aTarget, aOffsetX, aOffsetY, aEvent, aCallback, aWind
   }
 
   var onwheel = function() {
-    window.removeEventListener("wheel", onwheel);
+    SpecialPowers.removeSystemEventListener(window, "wheel", onwheel);
 
     
     
@@ -604,7 +604,9 @@ function sendWheelAndPaint(aTarget, aOffsetX, aOffsetY, aEvent, aCallback, aWind
     }, 0);
   };
 
-  aWindow.addEventListener("wheel", onwheel);
+  
+  
+  SpecialPowers.addSystemEventListener(aWindow, "wheel", onwheel);
   synthesizeWheel(aTarget, aOffsetX, aOffsetY, aEvent, aWindow);
 }
 
