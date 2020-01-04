@@ -754,6 +754,8 @@ protected:
     PANNING_LOCKED_X,         
     PANNING_LOCKED_Y,         
 
+    PAN_MOMENTUM,             
+
     CROSS_SLIDING_X,          
 
 
