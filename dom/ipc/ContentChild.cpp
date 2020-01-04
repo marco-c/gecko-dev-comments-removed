@@ -588,6 +588,9 @@ ContentChild::Init(MessageLoop* aIOLoop,
   
   
   GetIPCChannel()->SetAbortOnError(true);
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  GetIPCChannel()->SetChannelFlags(MessageChannel::REQUIRE_A11Y_REENTRY);
+#endif
 
 #ifdef MOZ_X11
   
