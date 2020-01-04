@@ -397,9 +397,9 @@ SSL_IMPORT unsigned int SSL_SignatureMaxCount();
 
 
 
-
-SSL_IMPORT SECStatus SSL_NamedGroupPrefSet(PRFileDesc *fd, SSLNamedGroup group,
-                                           PRBool enable);
+SSL_IMPORT SECStatus SSL_NamedGroupConfig(PRFileDesc *fd,
+                                          const SSLNamedGroup *groups,
+                                          unsigned int num_groups);
 
 
 
