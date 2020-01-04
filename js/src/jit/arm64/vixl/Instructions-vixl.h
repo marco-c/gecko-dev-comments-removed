@@ -134,6 +134,19 @@ enum ImmBranchType {
   TestBranchType    = 4
 };
 
+
+
+enum ImmBranchRangeType {
+  TestBranchRangeType,   
+  CondBranchRangeType,   
+  UncondBranchRangeType, 
+  UnknownBranchRangeType,
+
+  
+  
+  NumShortBranchRangeTypes = UncondBranchRangeType
+};
+
 enum AddrMode {
   Offset,
   PreIndex,
@@ -309,7 +322,34 @@ class Instruction {
 
   static int ImmBranchRangeBitwidth(ImmBranchType branch_type);
   static int32_t ImmBranchForwardRange(ImmBranchType branch_type);
+
+  
+  
+  
   static bool IsValidImmPCOffset(ImmBranchType branch_type, int64_t offset);
+
+  
+  static ImmBranchRangeType ImmBranchTypeToRange(ImmBranchType);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static int32_t ImmBranchMaxForwardOffset(ImmBranchRangeType range_type);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static int32_t ImmBranchMinBackwardOffset(ImmBranchRangeType range_type);
 
   
   

@@ -40,8 +40,8 @@ using js::jit::BufferOffset;
 
 
 class MozBaseAssembler;
-typedef js::jit::AssemblerBufferWithConstantPools<1024, 4, Instruction, MozBaseAssembler> ARMBuffer;
-
+typedef js::jit::AssemblerBufferWithConstantPools<1024, 4, Instruction, MozBaseAssembler,
+                                                  NumShortBranchRangeTypes> ARMBuffer;
 
 
 class MozBaseAssembler : public js::jit::AssemblerShared {
