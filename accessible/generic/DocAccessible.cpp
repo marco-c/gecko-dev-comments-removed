@@ -1422,25 +1422,6 @@ if (!aNode->IsContent() || !aNode->AsContent()->IsHTMLElement(nsGkAtoms::area))
 
 
 void
-DocAccessible::CacheChildren()
-{
-  
-  
-  dom::Element* rootElm = mDocumentNode->GetRootElement();
-  if (!rootElm)
-    return;
-
-  TreeWalker walker(this, rootElm);
-  Accessible* child = nullptr;
-  while ((child = walker.Next())) {
-    AppendChild(child);
-  }
-}
-
-
-
-
-void
 DocAccessible::NotifyOfLoading(bool aIsReloading)
 {
   

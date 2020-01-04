@@ -360,9 +360,6 @@ protected:
   void LastRelease();
 
   
-  virtual void CacheChildren() override;
-
-  
   virtual nsresult AddEventListeners();
   virtual nsresult RemoveEventListeners();
 
