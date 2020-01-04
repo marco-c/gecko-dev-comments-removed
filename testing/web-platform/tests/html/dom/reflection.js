@@ -156,7 +156,6 @@ var maxUnsigned = 4294967295;
 
 
 
-
 ReflectionTests.typeMap = {
     
 
@@ -379,8 +378,8 @@ ReflectionTests.typeMap = {
             }
             return parsed;
         },
-        "idlTests":       [minInt, -36,  -1,   0, 1, maxInt],
-        "idlDomExpected": [null,   null, null, 0, 1, maxInt]
+        "idlTests":       [minInt, -36,  -1, 0, 1, maxInt],
+        "idlDomExpected": [null, null, null, 0, 1, maxInt]
     },
     
 
@@ -416,8 +415,9 @@ ReflectionTests.typeMap = {
             }
             return parsed;
         },
-        "idlTests": [0, 1, 257, 2147483647, "-0"],
-        "idlIdlExpected": [0, 1, 257, 2147483647, 0]
+        "idlTests": [0, 1, 257, maxInt, "-0", maxInt + 1, maxUnsigned],
+        "idlIdlExpected": [0, 1, 257, maxInt, 0, null, null],
+        "idlDomExpected": [0, 1, 257, maxInt, 0, null, null],
     },
     
 
@@ -457,8 +457,8 @@ ReflectionTests.typeMap = {
             }
             return parsed;
         },
-        "idlTests":       [0,    1, 2147483647],
-        "idlDomExpected": [null, 1, 2147483647]
+        "idlTests":       [0, 1, maxInt, maxInt + 1, maxUnsigned],
+        "idlDomExpected": [null, 1, maxInt, null, null]
     },
     
 
@@ -610,8 +610,8 @@ ReflectionTests.doReflects = function(data, idlName, idlObj, domName, domObj) {
     var domTests = typeInfo.domTests.slice(0);
     var domExpected = typeInfo.domExpected.map(function(val) { return val === null ? defaultVal : val; });
     var idlTests = typeInfo.idlTests.slice(0);
-    var idlDomExpected = typeInfo.idlDomExpected.slice(0);
-    var idlIdlExpected = typeInfo.idlIdlExpected.slice(0);
+    var idlDomExpected = typeInfo.idlDomExpected.map(function(val) { return val === null ? defaultVal : val; });
+    var idlIdlExpected = typeInfo.idlIdlExpected.map(function(val) { return val === null ? defaultVal : val; });
     switch (data.type) {
         
         case "boolean":
@@ -712,7 +712,8 @@ ReflectionTests.doReflects = function(data, idlName, idlObj, domName, domObj) {
     }
 
     for (var i = 0; i < idlTests.length; i++) {
-        if (idlDomExpected[i] === null && data.type != "enum") {
+        if ((data.type == "limited long" && idlTests[i] < 0) ||
+            (data.type == "limited unsigned long" && idlTests[i] == 0)) {
             ReflectionHarness.testException("INDEX_SIZE_ERR", function() {
                 idlObj[idlName] = idlTests[i];
             }, "IDL set to " + ReflectionHarness.stringRep(idlTests[i]) + " must throw INDEX_SIZE_ERR");
