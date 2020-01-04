@@ -59,6 +59,21 @@ static MOZ_CONSTEXPR_VAR Register ScratchRegister = at;
 static MOZ_CONSTEXPR_VAR Register SecondScratchReg = t8;
 
 
+
+struct ScratchRegisterScope : public AutoRegisterScope
+{
+    ScratchRegisterScope(MacroAssembler& masm)
+      : AutoRegisterScope(masm, ScratchRegister)
+    { }
+};
+struct SecondScratchRegisterScope : public AutoRegisterScope
+{
+    SecondScratchRegisterScope(MacroAssembler& masm)
+      : AutoRegisterScope(masm, SecondScratchReg)
+    { }
+};
+
+
 static MOZ_CONSTEXPR_VAR Register OsrFrameReg = a3;
 static MOZ_CONSTEXPR_VAR Register ArgumentsRectifierReg = s3;
 static MOZ_CONSTEXPR_VAR Register CallTempReg0 = t0;

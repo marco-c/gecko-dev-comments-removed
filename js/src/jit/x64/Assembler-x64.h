@@ -70,8 +70,18 @@ static MOZ_CONSTEXPR_VAR Register JSReturnReg = rcx;
 static MOZ_CONSTEXPR_VAR Register JSReturnReg_Type = JSReturnReg;
 static MOZ_CONSTEXPR_VAR Register JSReturnReg_Data = JSReturnReg;
 
-static MOZ_CONSTEXPR_VAR Register ReturnReg = rax;
 static MOZ_CONSTEXPR_VAR Register ScratchReg = r11;
+
+
+
+struct ScratchRegisterScope : public AutoRegisterScope
+{
+    ScratchRegisterScope(MacroAssembler& masm)
+      : AutoRegisterScope(masm, ScratchReg)
+    { }
+};
+
+static MOZ_CONSTEXPR_VAR Register ReturnReg = rax;
 static MOZ_CONSTEXPR_VAR Register HeapReg = r15;
 static MOZ_CONSTEXPR_VAR FloatRegister ReturnFloat32Reg = FloatRegister(X86Encoding::xmm0, FloatRegisters::Single);
 static MOZ_CONSTEXPR_VAR FloatRegister ReturnDoubleReg = FloatRegister(X86Encoding::xmm0, FloatRegisters::Double);

@@ -46,6 +46,15 @@ static MOZ_CONSTEXPR_VAR Register pc  = { Registers::pc };
 
 static MOZ_CONSTEXPR_VAR Register ScratchRegister = {Registers::ip};
 
+
+
+struct ScratchRegisterScope : public AutoRegisterScope
+{
+    ScratchRegisterScope(MacroAssembler& masm)
+      : AutoRegisterScope(masm, ScratchRegister)
+    { }
+};
+
 static MOZ_CONSTEXPR_VAR Register OsrFrameReg = r3;
 static MOZ_CONSTEXPR_VAR Register ArgumentsRectifierReg = r8;
 static MOZ_CONSTEXPR_VAR Register CallTempReg0 = r5;
@@ -118,6 +127,19 @@ static MOZ_CONSTEXPR_VAR FloatRegister ScratchDoubleReg = { FloatRegisters::d15,
 static MOZ_CONSTEXPR_VAR FloatRegister ScratchSimdReg = InvalidFloatReg;
 static MOZ_CONSTEXPR_VAR FloatRegister ScratchUIntReg = { FloatRegisters::d15, VFPRegister::UInt };
 static MOZ_CONSTEXPR_VAR FloatRegister ScratchIntReg = { FloatRegisters::d15, VFPRegister::Int };
+
+struct ScratchFloat32Scope : public AutoFloatRegisterScope
+{
+    ScratchFloat32Scope(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, ScratchFloat32Reg)
+    { }
+};
+struct ScratchDoubleScope : public AutoFloatRegisterScope
+{
+    ScratchDoubleScope(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, ScratchDoubleReg)
+    { }
+};
 
 
 
