@@ -2476,9 +2476,6 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
   
   
   mDoc = aDocument;
-  if (IsInnerWindow()) {
-    ClearDocumentDependentSlots(cx);
-  }
 
   
   
