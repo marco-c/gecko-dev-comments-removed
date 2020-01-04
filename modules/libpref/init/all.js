@@ -1144,10 +1144,6 @@ pref("dom.forms.number", true);
 pref("dom.forms.color", true);
 
 
-
-pref("dom.forms.datetime", false);
-
-
 pref("dom.forms.autocomplete.experimental", false);
 
 
@@ -5260,6 +5256,10 @@ pref("dom.beforeAfterKeyboardEvent.enabled", false);
 
 
 pref("dom.presentation.enabled", false);
+pref("dom.presentation.controller.enabled", false);
+pref("dom.presentation.receiver.enabled", false);
+
+
 pref("dom.presentation.tcp_server.debug", false);
 pref("dom.presentation.discovery.enabled", false);
 pref("dom.presentation.discovery.legacy.enabled", false);
