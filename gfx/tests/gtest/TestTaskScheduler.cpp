@@ -3,15 +3,16 @@
 
 
 
-#ifndef WIN32
-
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
 #include "mozilla/gfx/TaskScheduler.h"
 
+#ifndef WIN32
 #include <pthread.h>
 #include <sched.h>
+#endif
+
 #include <stdlib.h>
 #include <time.h>
 
@@ -24,9 +25,11 @@ using namespace mozilla;
 
 void MaybeYieldThread()
 {
+#ifndef WIN32
   if (rand() % 5 == 0) {
     sched_yield();
   }
+#endif
 }
 
 
@@ -242,5 +245,3 @@ TEST(Moz2D, TaskScheduler_Chain) {
     }
   }
 }
-
-#endif
