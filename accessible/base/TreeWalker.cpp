@@ -238,7 +238,7 @@ TreeWalker::Prev()
 
       
       if (!skipSubtree && childNode->IsElement()) {
-        top = PushState(childNode, true);
+        top = PushState(childNode, false);
       }
     }
     top = PopState();
