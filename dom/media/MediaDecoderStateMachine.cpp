@@ -2285,11 +2285,6 @@ MediaDecoderStateMachine::FinishShutdown()
   
   mWatchManager.Shutdown();
 
-  
-  if (mVideoFrameContainer) {
-    mVideoFrameContainer->ClearCurrentFrame();
-  }
-
   MOZ_ASSERT(mState == DECODER_STATE_SHUTDOWN,
              "How did we escape from the shutdown state?");
   DECODER_LOG("Shutting down state machine task queue");
