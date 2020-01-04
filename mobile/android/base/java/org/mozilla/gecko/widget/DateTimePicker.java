@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.R;
 
@@ -29,6 +30,7 @@ import android.text.format.DateFormat;
 import android.text.format.DateUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.WindowManager;
@@ -338,7 +340,17 @@ public class DateTimePicker extends FrameLayout {
                 }
             });
 
-            mPickers.addView(mCalendar);
+            final int height;
+            if (Versions.preLollipop) {
+                
+                
+                height =  (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200, getResources().getDisplayMetrics());;
+            } else {
+                height = LayoutParams.WRAP_CONTENT;
+            }
+
+            mPickers.addView(mCalendar, LayoutParams.MATCH_PARENT, height);
+
         } else {
             
             
