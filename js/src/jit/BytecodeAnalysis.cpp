@@ -48,7 +48,8 @@ BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn)
 
     
     
-    usesScopeChain_ = (script_->functionDelazifying() &&
+    usesScopeChain_ = script_->module() ||
+                      (script_->functionDelazifying() &&
                        script_->functionDelazifying()->needsCallObject());
     MOZ_ASSERT_IF(script_->hasAnyAliasedBindings(), usesScopeChain_);
 

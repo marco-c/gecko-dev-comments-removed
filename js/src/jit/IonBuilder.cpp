@@ -1229,6 +1229,9 @@ IonBuilder::initScopeChain(MDefinition* callee)
             if (!scope)
                 return false;
         }
+    } else if (ModuleObject* module = info().module()) {
+        
+        scope = constant(ObjectValue(module->initialEnvironment()));
     } else {
         
         
