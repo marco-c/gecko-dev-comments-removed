@@ -133,7 +133,7 @@ CompositableParentManager::ReceiveCompositableUpdate(const CompositableOperation
       MOZ_ASSERT(tex.get());
       compositable->RemoveTextureHost(tex);
       
-      SendFenceHandleIfPresent(op.textureParent(), compositable);
+      SendFenceHandleIfPresent(op.textureParent());
       break;
     }
     case CompositableOperation::TOpRemoveTextureAsync: {
@@ -150,8 +150,7 @@ CompositableParentManager::ReceiveCompositableUpdate(const CompositableOperation
                              GetChildProcessId(),
                              op.holderId(),
                              op.transactionId(),
-                             op.textureParent(),
-                             compositable);
+                             op.textureParent());
 
         
         
@@ -161,7 +160,7 @@ CompositableParentManager::ReceiveCompositableUpdate(const CompositableOperation
                                                   op.transactionId()));
       } else {
         
-        SendFenceHandleIfPresent(op.textureParent(), compositable);
+        SendFenceHandleIfPresent(op.textureParent());
 
         ReplyRemoveTexture(OpReplyRemoveTexture(op.holderId(),
                                                 op.transactionId()));

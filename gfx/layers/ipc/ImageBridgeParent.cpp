@@ -451,25 +451,22 @@ ImageBridgeParent::ReplyRemoveTexture(base::ProcessId aChildProcessId,
 }
 
 void
-ImageBridgeParent::SendFenceHandleIfPresent(PTextureParent* aTexture,
-                                            CompositableHost* aCompositableHost)
+ImageBridgeParent::SendFenceHandleIfPresent(PTextureParent* aTexture)
 {
   RefPtr<TextureHost> texture = TextureHost::AsTextureHost(aTexture);
-  if (!texture) {
+  if (!texture || !texture->NeedsFenceHandle()) {
     return;
   }
 
   
-  if (aCompositableHost && aCompositableHost->GetCompositor()) {
-    FenceHandle fence = aCompositableHost->GetCompositor()->GetReleaseFence();
-    if (fence.IsValid()) {
-      mPendingAsyncMessage.push_back(OpDeliverFence(aTexture, nullptr,
-                                                    fence));
-    }
+  FenceHandle fence = texture->GetCompositorReleaseFence();
+  if (fence.IsValid()) {
+    mPendingAsyncMessage.push_back(OpDeliverFence(aTexture, nullptr,
+                                                  fence));
   }
 
   
-  FenceHandle fence = texture->GetAndResetReleaseFenceHandle();
+  fence = texture->GetAndResetReleaseFenceHandle();
   if (fence.IsValid()) {
     mPendingAsyncMessage.push_back(OpDeliverFence(aTexture, nullptr,
                                                   fence));
@@ -479,26 +476,23 @@ ImageBridgeParent::SendFenceHandleIfPresent(PTextureParent* aTexture,
 void
 ImageBridgeParent::AppendDeliverFenceMessage(uint64_t aDestHolderId,
                                              uint64_t aTransactionId,
-                                             PTextureParent* aTexture,
-                                             CompositableHost* aCompositableHost)
+                                             PTextureParent* aTexture)
 {
   RefPtr<TextureHost> texture = TextureHost::AsTextureHost(aTexture);
-  if (!texture) {
+  if (!texture || !texture->NeedsFenceHandle()) {
     return;
   }
 
   
-  if (aCompositableHost && aCompositableHost->GetCompositor()) {
-    FenceHandle fence = aCompositableHost->GetCompositor()->GetReleaseFence();
-    if (fence.IsValid()) {
-      mPendingAsyncMessage.push_back(OpDeliverFenceToTracker(aDestHolderId,
-                                                             aTransactionId,
-                                                             fence));
-    }
+  FenceHandle fence = texture->GetCompositorReleaseFence();
+  if (fence.IsValid()) {
+    mPendingAsyncMessage.push_back(OpDeliverFenceToTracker(aDestHolderId,
+                                                           aTransactionId,
+                                                           fence));
   }
 
   
-  FenceHandle fence = texture->GetAndResetReleaseFenceHandle();
+  fence = texture->GetAndResetReleaseFenceHandle();
   if (fence.IsValid()) {
     mPendingAsyncMessage.push_back(OpDeliverFenceToTracker(aDestHolderId,
                                                            aTransactionId,
@@ -510,8 +504,7 @@ ImageBridgeParent::AppendDeliverFenceMessage(uint64_t aDestHolderId,
 ImageBridgeParent::AppendDeliverFenceMessage(base::ProcessId aChildProcessId,
                                              uint64_t aDestHolderId,
                                              uint64_t aTransactionId,
-                                             PTextureParent* aTexture,
-                                             CompositableHost* aCompositableHost)
+                                             PTextureParent* aTexture)
 {
   ImageBridgeParent* imageBridge = ImageBridgeParent::GetInstance(aChildProcessId);
   if (!imageBridge) {
@@ -519,8 +512,7 @@ ImageBridgeParent::AppendDeliverFenceMessage(base::ProcessId aChildProcessId,
   }
   imageBridge->AppendDeliverFenceMessage(aDestHolderId,
                                          aTransactionId,
-                                         aTexture,
-                                         aCompositableHost);
+                                         aTexture);
 }
 
  void
