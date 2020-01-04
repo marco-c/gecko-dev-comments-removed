@@ -4064,6 +4064,31 @@ function updateEditUIVisibility()
 
 
 
+
+
+
+
+function openNewUserContextTab(event)
+{
+  openUILinkIn(BROWSER_NEW_TAB_URL, "tab", {
+    userContextId: event.target.getAttribute('usercontextid'),
+  });
+}
+
+
+
+
+
+function updateUserContextUIVisibility()
+{
+  let userContextEnabled = Services.prefs.getBoolPref("privacy.userContext.enabled");
+  document.getElementById("menu_newUserContext").hidden = !userContextEnabled;
+}
+
+
+
+
+
 function updateCharacterEncodingMenuState()
 {
   let charsetMenu = document.getElementById("charsetMenu");

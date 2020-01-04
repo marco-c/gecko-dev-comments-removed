@@ -174,6 +174,7 @@ function whereToOpenLink( e, ignoreButton, ignoreAlt )
 
 
 
+
 function openUILinkIn(url, where, aAllowThirdPartyFixup, aPostData, aReferrerURI) {
   var params;
 
