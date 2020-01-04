@@ -25,52 +25,51 @@ this.SitePermissions = {
 
 
 
-
-
-  getPermissionsByURI: function (aURI) {
+  getAllByURI: function (aURI) {
+    let result = [];
     if (!this.isSupportedURI(aURI)) {
-      return [];
+      return result;
     }
 
-    let permissions = [];
-    for (let permission of kPermissionIDs) {
-      let state = this.get(aURI, permission);
-      if (state === this.UNKNOWN) {
-        continue;
+    let permissions = Services.perms.getAllForURI(aURI);
+    while (permissions.hasMoreElements()) {
+      let permission = permissions.getNext();
+
+      
+      if (gPermissionObject[permission.type]) {
+        result.push({
+          id: permission.type,
+          state: permission.capability,
+        });
       }
-
-      let availableStates = this.getAvailableStates(permission).map( state => {
-        return { id: state, label: this.getStateLabel(permission, state) };
-      });
-      let label = this.getPermissionLabel(permission);
-
-      permissions.push({
-        id: permission,
-        label: label,
-        state: state,
-        availableStates: availableStates,
-      });
     }
 
-    return permissions;
+    return result;
   },
 
   
 
 
 
-  hasGrantedPermissions: function (aURI) {
-    if (!this.isSupportedURI(aURI)) {
-      return false;
+
+
+
+
+
+
+
+  getPermissionDetailsByURI: function (aURI) {
+    let permissions = [];
+    for (let {state, id} of this.getAllByURI(aURI)) {
+      let availableStates = this.getAvailableStates(id).map( state => {
+        return { id: state, label: this.getStateLabel(id, state) };
+      });
+      let label = this.getPermissionLabel(id);
+
+      permissions.push({id, label, state, availableStates});
     }
 
-    for (let permission of kPermissionIDs) {
-      let state = this.get(aURI, permission);
-      if (state === this.ALLOW || state === this.SESSION) {
-        return true;
-      }
-    }
-    return false;
+    return permissions;
   },
 
   

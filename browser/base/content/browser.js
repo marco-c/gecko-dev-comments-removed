@@ -6647,6 +6647,14 @@ var gIdentityHandler = {
     delete this._permissionList;
     return this._permissionList = document.getElementById("identity-popup-permission-list");
   },
+  get _permissionAnchors () {
+    delete this._permissionAnchors;
+    let permissionAnchors = {};
+    for (let anchor of document.getElementById("blocked-permissions-container").children) {
+      permissionAnchors[anchor.getAttribute("data-permission-id")] = anchor;
+    }
+    return this._permissionAnchors = permissionAnchors;
+  },
 
   
 
@@ -6904,7 +6912,32 @@ var gIdentityHandler = {
       tooltip = gNavigatorBundle.getString("identity.identified.verified_by_you");
     }
 
-    if (SitePermissions.hasGrantedPermissions(this._uri)) {
+    let permissionAnchors = this._permissionAnchors;
+
+    
+    for (let icon of Object.values(permissionAnchors)) {
+      icon.removeAttribute("showing");
+    }
+
+    
+    let hasGrantedPermissions = false;
+
+    
+    for (let permission of SitePermissions.getAllByURI(this._uri)) {
+      if (permission.state === SitePermissions.BLOCK) {
+
+        let icon = permissionAnchors[permission.id];
+        if (icon) {
+          icon.setAttribute("showing", "true");
+        }
+
+      } else if (permission.state === SitePermissions.ALLOW ||
+                 permission.state === SitePermissions.SESSION) {
+        hasGrantedPermissions = true;
+      }
+    }
+
+    if (hasGrantedPermissions) {
       this._identityBox.classList.add("grantedPermissions");
     }
 
@@ -7224,7 +7257,7 @@ var gIdentityHandler = {
 
     let uri = gBrowser.currentURI;
 
-    for (let permission of SitePermissions.getPermissionsByURI(uri)) {
+    for (let permission of SitePermissions.getPermissionDetailsByURI(uri)) {
       let item = this._createPermissionItem(permission);
       this._permissionList.appendChild(item);
     }
