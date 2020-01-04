@@ -679,6 +679,7 @@ uint8_t NativeKey::sDispatchedKeyOfAppCommand = 0;
 NativeKey::NativeKey(nsWindowBase* aWidget,
                      const MSG& aMessage,
                      const ModifierKeyState& aModKeyState,
+                     HKL aOverrideKeyboardLayout,
                      nsTArray<FakeCharMsg>* aFakeCharMsgs)
   : mWidget(aWidget)
   , mDispatcher(aWidget->GetTextEventDispatcher())
@@ -701,6 +702,14 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   MOZ_ASSERT(mDispatcher);
   KeyboardLayout* keyboardLayout = KeyboardLayout::GetInstance();
   mKeyboardLayout = keyboardLayout->GetLayout();
+  if (aOverrideKeyboardLayout && mKeyboardLayout != aOverrideKeyboardLayout) {
+    keyboardLayout->OverrideLayout(aOverrideKeyboardLayout);
+    mKeyboardLayout = keyboardLayout->GetLayout();
+    MOZ_ASSERT(mKeyboardLayout == aOverrideKeyboardLayout);
+    mIsOverridingKeyboardLayout = true;
+  } else {
+    mIsOverridingKeyboardLayout = false;
+  }
 
   if (mMsg.message == WM_APPCOMMAND) {
     InitWithAppCommand();
@@ -712,8 +721,13 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   switch (mMsg.message) {
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
+    case MOZ_WM_KEYDOWN:
     case WM_KEYUP:
-    case WM_SYSKEYUP: {
+    case WM_SYSKEYUP:
+    case MOZ_WM_KEYUP: {
+      
+      
+      
       
       
       
@@ -889,6 +903,14 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   }
 }
 
+NativeKey::~NativeKey()
+{
+  if (mIsOverridingKeyboardLayout) {
+    KeyboardLayout* keyboardLayout = KeyboardLayout::GetInstance();
+    keyboardLayout->RestoreLayout();
+  }
+}
+
 void
 NativeKey::InitWithAppCommand()
 {
@@ -991,6 +1013,8 @@ NativeKey::IsFollowedByDeadCharMessage() const
   MSG nextMsg;
   if (mFakeCharMsgs) {
     nextMsg = mFakeCharMsgs->ElementAt(0).GetCharMsg(mMsg.hwnd);
+  } else if (IsKeyMessageOnPlugin()) {
+    return false;
   } else {
     if (!WinUtils::PeekMessage(&nextMsg, mMsg.hwnd, WM_KEYFIRST, WM_KEYLAST,
                                PM_NOREMOVE | PM_NOYIELD)) {
@@ -1183,12 +1207,14 @@ NativeKey::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
 
   switch (aKeyEvent.mMessage) {
     case eKeyDown:
+    case eKeyDownOnPlugin:
       aKeyEvent.keyCode = mDOMKeyCode;
       
       sUniqueKeyEventId++;
       aKeyEvent.mUniqueId = sUniqueKeyEventId;
       break;
     case eKeyUp:
+    case eKeyUpOnPlugin:
       aKeyEvent.keyCode = mDOMKeyCode;
       
       
@@ -1462,7 +1488,7 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
   }
 
   bool defaultPrevented = false;
-  if (mFakeCharMsgs ||
+  if (mFakeCharMsgs || IsKeyMessageOnPlugin() ||
       !RedirectedKeyDownMessageManager::IsRedirectedMessage(mMsg)) {
     
     if (mModKeyState.IsAlt() && !mModKeyState.IsControl() &&
@@ -1476,7 +1502,9 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
     }
 
     bool isIMEEnabled = WinUtils::IsIMEEnabled(mWidget->GetInputContext());
-    WidgetKeyboardEvent keydownEvent(true, eKeyDown, mWidget);
+    EventMessage keyDownMessage =
+      IsKeyMessageOnPlugin() ? eKeyDownOnPlugin : eKeyDown;
+    WidgetKeyboardEvent keydownEvent(true, keyDownMessage, mWidget);
     nsEventStatus status = InitKeyEvent(keydownEvent, mModKeyState, &mMsg);
     bool dispatched =
       mDispatcher->DispatchKeyboardEvent(eKeyDown, keydownEvent, status,
@@ -1491,6 +1519,12 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
     }
     defaultPrevented = status == nsEventStatus_eConsumeNoDefault;
 
+    
+    
+    if (IsKeyMessageOnPlugin()) {
+      return defaultPrevented;
+    }
+
     if (mWidget->Destroyed()) {
       return true;
     }
@@ -1504,8 +1538,8 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
     
     
     HWND focusedWnd = ::GetFocus();
-    if (!defaultPrevented && !mFakeCharMsgs && focusedWnd &&
-        !mWidget->PluginHasFocus() && !isIMEEnabled &&
+    if (!defaultPrevented && !mFakeCharMsgs && !IsKeyMessageOnPlugin() &&
+        focusedWnd && !mWidget->PluginHasFocus() && !isIMEEnabled &&
         WinUtils::IsIMEEnabled(mWidget->GetInputContext())) {
       RedirectedKeyDownMessageManager::RemoveNextCharMessage(focusedWnd);
 
@@ -1733,6 +1767,7 @@ NativeKey::HandleKeyUpMessage(bool* aEventDispatched) const
 
   WidgetKeyboardEvent keyupEvent(true, eKeyUp, mWidget);
   nsEventStatus status = InitKeyEvent(keyupEvent, mModKeyState, &mMsg);
+  EventMessage keyUpMessage = IsKeyMessageOnPlugin() ? eKeyUpOnPlugin : eKeyUp;
   bool dispatched =
     mDispatcher->DispatchKeyboardEvent(eKeyUp, keyupEvent, status,
                                        const_cast<NativeKey*>(this));
@@ -1746,6 +1781,13 @@ bool
 NativeKey::NeedsToHandleWithoutFollowingCharMessages() const
 {
   MOZ_ASSERT(IsKeyDownMessage());
+
+  
+  
+  
+  if (IsKeyMessageOnPlugin()) {
+    return true;
+  }
 
   
   
@@ -1850,6 +1892,7 @@ bool
 NativeKey::GetFollowingCharMessage(MSG& aCharMsg) const
 {
   MOZ_ASSERT(IsKeyDownMessage());
+  MOZ_ASSERT(!IsKeyMessageOnPlugin());
 
   aCharMsg.message = WM_NULL;
 
@@ -2060,6 +2103,7 @@ bool
 NativeKey::DispatchPluginEventsAndDiscardsCharMessages() const
 {
   MOZ_ASSERT(IsKeyDownMessage());
+  MOZ_ASSERT(!IsKeyMessageOnPlugin());
 
   
   
@@ -3320,6 +3364,8 @@ KeyboardLayout::SynthesizeNativeKeyEvent(nsWindowBase* aWidget,
   keySequence.AppendElement(KeyPair(aNativeKeyCode, argumentKeySpecific));
 
   
+  
+  
   for (uint32_t i = 0; i < keySequence.Length(); ++i) {
     uint8_t key = keySequence[i].mGeneral;
     uint8_t keySpecific = keySequence[i].mSpecific;
@@ -3361,7 +3407,7 @@ KeyboardLayout::SynthesizeNativeKeyEvent(nsWindowBase* aWidget,
           fakeCharMsg->mScanCode = scanCode;
           fakeCharMsg->mIsDeadKey = makeDeadCharMsg;
         }
-        NativeKey nativeKey(aWidget, keyDownMsg, modKeyState, &fakeCharMsgs);
+        NativeKey nativeKey(aWidget, keyDownMsg, modKeyState, 0, &fakeCharMsgs);
         bool dispatched;
         nativeKey.HandleKeyDownMessage(&dispatched);
         
