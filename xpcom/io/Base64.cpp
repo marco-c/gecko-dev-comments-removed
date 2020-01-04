@@ -8,6 +8,7 @@
 
 #include "nsIInputStream.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 #include "plbase64.h"
 
@@ -228,6 +229,36 @@ EncodeInputStream(nsIInputStream* aInputStream,
 static const char kBase64URLAlphabet[] =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
+
+
+static const uint8_t kBase64URLDecodeTable[] = {
+  255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255,
+  62 ,
+  255, 255,
+  52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 
+  255, 255, 255, 255, 255, 255, 255,
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 
+  255, 255, 255, 255,
+  63 ,
+  255,
+  26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+  42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 
+  255, 255, 255, 255,
+};
+
+bool
+Base64URLCharToValue(char aChar, uint8_t* aValue) {
+  uint8_t index = static_cast<uint8_t>(aChar);
+  *aValue = kBase64URLDecodeTable[index & 0x7f];
+  return (*aValue != 255) && !(index & ~0x7f);
+}
+
 } 
 
 namespace mozilla {
@@ -359,7 +390,105 @@ Base64Decode(const nsAString& aBinaryData, nsAString& aString)
 }
 
 nsresult
-Base64URLEncode(uint32_t aLength, const uint8_t* aData, nsACString& aString)
+Base64URLDecode(const nsACString& aString,
+                const dom::Base64URLDecodeOptions& aOptions,
+                FallibleTArray<uint8_t>& aOutput)
+{
+  
+  if (aString.IsEmpty()) {
+    aOutput.Clear();
+    return NS_OK;
+  }
+
+  
+  uint32_t sourceLength = aString.Length();
+  if (sourceLength > UINT32_MAX / 3) {
+    return NS_ERROR_FAILURE;
+  }
+  const char* source = aString.BeginReading();
+
+  
+  uint32_t decodedLength = (sourceLength * 3) / 4;
+
+  
+  bool maybePadded = false;
+  switch (aOptions.mPadding) {
+    case dom::Base64URLDecodePadding::Require:
+      if (sourceLength % 4) {
+        
+        return NS_ERROR_INVALID_ARG;
+      }
+      maybePadded = true;
+      break;
+
+    case dom::Base64URLDecodePadding::Ignore:
+      
+      maybePadded = !(sourceLength % 4);
+      break;
+
+    
+    
+    default:
+      MOZ_FALLTHROUGH_ASSERT("Invalid decode padding option");
+    case dom::Base64URLDecodePadding::Reject:
+      break;
+  }
+  if (maybePadded && source[sourceLength - 1] == '=') {
+    if (source[sourceLength - 2] == '=') {
+      sourceLength -= 2;
+    } else {
+      sourceLength -= 1;
+    }
+  }
+
+  if (NS_WARN_IF(!aOutput.SetCapacity(decodedLength, mozilla::fallible))) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  aOutput.SetLengthAndRetainStorage(decodedLength);
+  uint8_t* output = aOutput.Elements();
+
+  for (; sourceLength >= 4; sourceLength -= 4) {
+    uint8_t w, x, y, z;
+    if (!Base64URLCharToValue(*source++, &w) ||
+        !Base64URLCharToValue(*source++, &x) ||
+        !Base64URLCharToValue(*source++, &y) ||
+        !Base64URLCharToValue(*source++, &z)) {
+      return NS_ERROR_INVALID_ARG;
+    }
+    *output++ = w << 2 | x >> 4;
+    *output++ = x << 4 | y >> 2;
+    *output++ = y << 6 | z;
+  }
+
+  if (sourceLength == 3) {
+    uint8_t w, x, y;
+    if (!Base64URLCharToValue(*source++, &w) ||
+        !Base64URLCharToValue(*source++, &x) ||
+        !Base64URLCharToValue(*source++, &y)) {
+      return NS_ERROR_INVALID_ARG;
+    }
+    *output++ = w << 2 | x >> 4;
+    *output++ = x << 4 | y >> 2;
+  } else if (sourceLength == 2) {
+    uint8_t w, x;
+    if (!Base64URLCharToValue(*source++, &w) ||
+        !Base64URLCharToValue(*source++, &x)) {
+      return NS_ERROR_INVALID_ARG;
+    }
+    *output++ = w << 2 | x >> 4;
+  } else if (sourceLength) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  
+  aOutput.TruncateLength(output - aOutput.Elements());
+  return NS_OK;
+}
+
+nsresult
+Base64URLEncode(uint32_t aLength, const uint8_t* aData,
+                const dom::Base64URLEncodeOptions& aOptions,
+                nsACString& aString)
 {
   
   if (aLength == 0) {
@@ -368,11 +497,14 @@ Base64URLEncode(uint32_t aLength, const uint8_t* aData, nsACString& aString)
   }
 
   
-  if ((static_cast<uint64_t>(aLength) * 6 + 7) / 8 > UINT32_MAX) {
+  if (aLength > (UINT32_MAX / 4) * 3) {
     return NS_ERROR_FAILURE;
   }
 
-  if (!aString.SetLength((aLength * 8 + 5) / 6, fallible)) {
+  
+  
+  uint32_t encodedLength = ((aLength + 2) / 3) * 4;
+  if (NS_WARN_IF(!aString.SetCapacity(encodedLength + 1, fallible))) {
     aString.Truncate();
     return NS_ERROR_FAILURE;
   }
@@ -399,6 +531,22 @@ Base64URLEncode(uint32_t aLength, const uint8_t* aData, nsACString& aString)
                                       (aData[index + 1] >> 4)];
     *rawBuffer++ = kBase64URLAlphabet[((aData[index + 1] & 0xf) << 2)];
   }
+
+  uint32_t length = rawBuffer - aString.BeginWriting();
+  if (aOptions.mPad) {
+    if (length % 4 == 2) {
+      *rawBuffer++ = '=';
+      *rawBuffer++ = '=';
+      length += 2;
+    } else if (length % 4 == 3) {
+      *rawBuffer++ = '=';
+      length += 1;
+    }
+  }
+
+  
+  *rawBuffer = '\0';
+  aString.SetLength(length);
 
   return NS_OK;
 }

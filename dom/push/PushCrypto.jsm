@@ -10,8 +10,7 @@ const Cu = Components.utils;
 Cu.importGlobalProperties(['crypto']);
 
 this.EXPORTED_SYMBOLS = ['PushCrypto', 'concatArray',
-                         'getCryptoParams',
-                         'base64UrlDecode'];
+                         'getCryptoParams'];
 
 var UTF8 = new TextEncoder('utf-8');
 
@@ -118,34 +117,6 @@ function chunkArray(array, size) {
   return result;
 }
 
-this.base64UrlDecode = function(s) {
-  s = s.replace(/-/g, '+').replace(/_/g, '/');
-
-  
-  
-  switch (s.length % 4) {
-    case 0:
-      break; 
-    case 2:
-      s += '==';
-      break; 
-    case 3:
-      s += '=';
-      break; 
-    default:
-      throw new Error('Illegal base64url string!');
-  }
-
-  
-  var decoded = atob(s);
-
-  var array = new Uint8Array(new ArrayBuffer(decoded.length));
-  for (var i = 0; i < decoded.length; i++) {
-    array[i] = decoded.charCodeAt(i);
-  }
-  return array;
-};
-
 this.concatArray = function(arrays) {
   var size = arrays.reduce((total, a) => total + a.byteLength, 0);
   var index = 0;
@@ -226,7 +197,11 @@ this.PushCrypto = {
       return Promise.reject(new Error('Data truncated'));
     }
 
-    let senderKey = base64UrlDecode(aSenderPublicKey)
+    let senderKey = ChromeUtils.base64URLDecode(aSenderPublicKey, {
+      
+      padding: "reject",
+    });
+
     return Promise.all([
       crypto.subtle.importKey('raw', senderKey, ECDH_KEY,
                               false, ['deriveBits']),
@@ -238,7 +213,8 @@ this.PushCrypto = {
                                    subscriptionPrivateKey, 256))
     .then(ikm => this._deriveKeyAndNonce(aPadSize,
                                          new Uint8Array(ikm),
-                                         base64UrlDecode(aSalt),
+                                         ChromeUtils.base64URLDecode(aSalt,
+                                                    { padding: "reject" }),
                                          aPublicKey,
                                          senderKey,
                                          aAuthenticationSecret))
