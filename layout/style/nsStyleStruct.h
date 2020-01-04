@@ -1260,7 +1260,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   }
 
 public:
-  nsBorderColors** mBorderColors;        
+  nsBorderColors** mBorderColors;     
   nsStyleCorners mBorderRadius;       
   nsStyleImage   mBorderImageSource;  
   nsStyleSides   mBorderImageSlice;   
@@ -1270,7 +1270,7 @@ public:
   uint8_t        mBorderImageFill;    
   uint8_t        mBorderImageRepeatH; 
   uint8_t        mBorderImageRepeatV; 
-  uint8_t        mFloatEdge;          
+  mozilla::StyleFloatEdge mFloatEdge; 
   uint8_t        mBoxDecorationBreak; 
 
 protected:

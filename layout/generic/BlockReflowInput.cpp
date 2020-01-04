@@ -264,13 +264,13 @@ BlockReflowInput::ComputeBlockAvailSpace(nsIFrame* aFrame,
       const nsStyleBorder* borderStyle = aFrame->StyleBorder();
       switch (borderStyle->mFloatEdge) {
         default:
-        case NS_STYLE_FLOAT_EDGE_CONTENT_BOX:  
+        case StyleFloatEdge::ContentBox:  
           
           
           aResult.IStart(wm) = mContentArea.IStart(wm);
           aResult.ISize(wm) = mContentArea.ISize(wm);
           break;
-        case NS_STYLE_FLOAT_EDGE_MARGIN_BOX:
+        case StyleFloatEdge::MarginBox:
           {
             
             
