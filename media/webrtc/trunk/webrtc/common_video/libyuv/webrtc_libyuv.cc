@@ -74,7 +74,7 @@ size_t CalcBufferSize(VideoType type, int width, int height) {
   
   assert(width <= 0x7FFF); 
   assert(height <= 0x7FFF);
-  static_assert(std::numeric_limits<std::size_t>::max() >= 0xFFFFFFFF, "size_t max too small!");
+  assert(std::numeric_limits<std::size_t>::max() >= 0xFFFFFFFF);
   
   if (width > 0x7FFF || height > 0x7FFF) {
     return SIZE_MAX; 
