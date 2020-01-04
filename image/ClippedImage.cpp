@@ -520,8 +520,8 @@ ClippedImage::OptimalImageSizeForDest(const gfxSize& aDest,
 
     
     
-    nsIntSize scale(ceil(aDest.width / mClip.width),
-                    ceil(aDest.height / mClip.height));
+    IntSize scale = IntSize::Ceil(aDest.width / mClip.width,
+                                  aDest.height / mClip.height);
 
     if (forceUniformScaling) {
       scale.width = scale.height = max(scale.height, scale.width);
@@ -537,8 +537,8 @@ ClippedImage::OptimalImageSizeForDest(const gfxSize& aDest,
     
     
     
-    nsIntSize finalScale(ceil(double(innerDesiredSize.width) / imgWidth),
-                         ceil(double(innerDesiredSize.height) / imgHeight));
+    IntSize finalScale = IntSize::Ceil(double(innerDesiredSize.width) / imgWidth,
+                                       double(innerDesiredSize.height) / imgHeight);
     return mClip.Size() * finalScale;
   }
 

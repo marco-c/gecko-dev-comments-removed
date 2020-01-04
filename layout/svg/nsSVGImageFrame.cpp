@@ -403,7 +403,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       
       
       
-      SVGImageContext context(CSSIntSize(width, height),
+      SVGImageContext context(CSSIntSize::Truncate(width, height),
                               Some(imgElem->mPreserveAspectRatio.GetAnimValue()),
                               1.0, true);
 

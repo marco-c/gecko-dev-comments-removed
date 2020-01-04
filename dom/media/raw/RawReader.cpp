@@ -60,10 +60,10 @@ nsresult RawReader::ReadMetadata(MediaInfo* aInfo,
   
   float pixelAspectRatio = static_cast<float>(mMetadata.aspectNumerator) /
                             mMetadata.aspectDenominator;
-  nsIntSize display(mMetadata.frameWidth, mMetadata.frameHeight);
+  nsIntSize display(uint32_t(mMetadata.frameWidth), uint32_t(mMetadata.frameHeight));
   ScaleDisplayByAspectRatio(display, pixelAspectRatio);
   mPicture = nsIntRect(0, 0, mMetadata.frameWidth, mMetadata.frameHeight);
-  nsIntSize frameSize(mMetadata.frameWidth, mMetadata.frameHeight);
+  nsIntSize frameSize(uint32_t(mMetadata.frameWidth), uint32_t(mMetadata.frameHeight));
   if (!IsValidVideoRegion(frameSize, mPicture, display)) {
     
     return NS_ERROR_FAILURE;

@@ -6541,7 +6541,7 @@ ComputeSnappedImageDrawingParameters(gfxContext*     aCtx,
   
   CSSIntSize svgViewportSize = currentMatrix.IsIdentity()
     ? CSSIntSize(intImageSize.width, intImageSize.height)
-    : CSSIntSize(devPixelDest.width, devPixelDest.height);
+    : CSSIntSize::Truncate(devPixelDest.width, devPixelDest.height);
 
   
   gfxPoint subimageTopLeft =
