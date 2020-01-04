@@ -144,8 +144,6 @@ Context::Context(const egl::Config *config,
         
         
         
-        mTransformFeedbackZero.set(
-            new TransformFeedback(mRenderer->createTransformFeedback(), 0, mCaps));
         bindTransformFeedback(0);
     }
 
@@ -189,10 +187,12 @@ Context::~Context()
         SafeDelete(vertexArray.second);
     }
 
-    mTransformFeedbackZero.set(NULL);
     for (auto transformFeedback : mTransformFeedbackMap)
     {
-        transformFeedback.second->release();
+        if (transformFeedback.second != nullptr)
+        {
+            transformFeedback.second->release();
+        }
     }
 
     for (auto &zeroTexture : mZeroTextures)
@@ -324,14 +324,9 @@ GLsync Context::createFenceSync()
 
 GLuint Context::createVertexArray()
 {
-    GLuint handle = mVertexArrayHandleAllocator.allocate();
-
-    
-    
-    
-    VertexArray *vertexArray = new VertexArray(mRenderer, handle, MAX_VERTEX_ATTRIBS);
-    mVertexArrayMap[handle] = vertexArray;
-    return handle;
+    GLuint vertexArray           = mVertexArrayHandleAllocator.allocate();
+    mVertexArrayMap[vertexArray] = nullptr;
+    return vertexArray;
 }
 
 GLuint Context::createSampler()
@@ -341,11 +336,9 @@ GLuint Context::createSampler()
 
 GLuint Context::createTransformFeedback()
 {
-    GLuint handle = mTransformFeedbackAllocator.allocate();
-    TransformFeedback *transformFeedback = new TransformFeedback(mRenderer->createTransformFeedback(), handle, mCaps);
-    transformFeedback->addRef();
-    mTransformFeedbackMap[handle] = transformFeedback;
-    return handle;
+    GLuint transformFeedback                 = mTransformFeedbackAllocator.allocate();
+    mTransformFeedbackMap[transformFeedback] = nullptr;
+    return transformFeedback;
 }
 
 
@@ -428,15 +421,18 @@ void Context::deleteFenceSync(GLsync fenceSync)
 
 void Context::deleteVertexArray(GLuint vertexArray)
 {
-    auto vertexArrayObject = mVertexArrayMap.find(vertexArray);
-
-    if (vertexArrayObject != mVertexArrayMap.end())
+    auto iter = mVertexArrayMap.find(vertexArray);
+    if (iter != mVertexArrayMap.end())
     {
-        detachVertexArray(vertexArray);
+        VertexArray *vertexArrayObject = iter->second;
+        if (vertexArrayObject != nullptr)
+        {
+            detachVertexArray(vertexArray);
+            delete vertexArrayObject;
+        }
 
-        mVertexArrayHandleAllocator.release(vertexArrayObject->first);
-        delete vertexArrayObject->second;
-        mVertexArrayMap.erase(vertexArrayObject);
+        mVertexArrayMap.erase(iter);
+        mVertexArrayHandleAllocator.release(vertexArray);
     }
 }
 
@@ -455,10 +451,15 @@ void Context::deleteTransformFeedback(GLuint transformFeedback)
     auto iter = mTransformFeedbackMap.find(transformFeedback);
     if (iter != mTransformFeedbackMap.end())
     {
-        detachTransformFeedback(transformFeedback);
-        mTransformFeedbackAllocator.release(transformFeedback);
-        iter->second->release();
+        TransformFeedback *transformFeedbackObject = iter->second;
+        if (transformFeedbackObject != nullptr)
+        {
+            detachTransformFeedback(transformFeedback);
+            transformFeedbackObject->release();
+        }
+
         mTransformFeedbackMap.erase(iter);
+        mTransformFeedbackAllocator.release(transformFeedback);
     }
 }
 
@@ -535,15 +536,7 @@ FenceSync *Context::getFenceSync(GLsync handle) const
 VertexArray *Context::getVertexArray(GLuint handle) const
 {
     auto vertexArray = mVertexArrayMap.find(handle);
-
-    if (vertexArray == mVertexArrayMap.end())
-    {
-        return NULL;
-    }
-    else
-    {
-        return vertexArray->second;
-    }
+    return (vertexArray != mVertexArrayMap.end()) ? vertexArray->second : nullptr;
 }
 
 Sampler *Context::getSampler(GLuint handle) const
@@ -553,15 +546,8 @@ Sampler *Context::getSampler(GLuint handle) const
 
 TransformFeedback *Context::getTransformFeedback(GLuint handle) const
 {
-    if (handle == 0)
-    {
-        return mTransformFeedbackZero.get();
-    }
-    else
-    {
-        TransformFeedbackMap::const_iterator iter = mTransformFeedbackMap.find(handle);
-        return (iter != mTransformFeedbackMap.end()) ? iter->second : NULL;
-    }
+    auto iter = mTransformFeedbackMap.find(handle);
+    return (iter != mTransformFeedbackMap.end()) ? iter->second : nullptr;
 }
 
 bool Context::isSampler(GLuint samplerName) const
@@ -631,11 +617,7 @@ void Context::bindRenderbuffer(GLuint renderbuffer)
 
 void Context::bindVertexArray(GLuint vertexArray)
 {
-    if (!getVertexArray(vertexArray))
-    {
-        VertexArray *vertexArrayObject = new VertexArray(mRenderer, vertexArray, MAX_VERTEX_ATTRIBS);
-        mVertexArrayMap[vertexArray] = vertexArrayObject;
-    }
+    checkVertexArrayAllocation(vertexArray);
 
     mState.setVertexArrayBinding(getVertexArray(vertexArray));
 }
@@ -711,6 +693,8 @@ void Context::useProgram(GLuint program)
 
 void Context::bindTransformFeedback(GLuint transformFeedback)
 {
+    checkTransformFeedbackAllocation(transformFeedback);
+
     mState.setTransformFeedbackBinding(getTransformFeedback(transformFeedback));
 }
 
@@ -1093,20 +1077,6 @@ bool Context::getQueryParameterInfo(GLenum pname, GLenum *type, unsigned int *nu
             }
         }
         return true;
-      case GL_PIXEL_PACK_BUFFER_BINDING:
-      case GL_PIXEL_UNPACK_BUFFER_BINDING:
-        {
-            if (mExtensions.pixelBufferObject)
-            {
-                *type = GL_INT;
-                *numParams = 1;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        return true;
       case GL_MAX_VIEWPORT_DIMS:
         {
             *type = GL_INT;
@@ -1210,6 +1180,15 @@ bool Context::getQueryParameterInfo(GLenum pname, GLenum *type, unsigned int *nu
             *type      = GL_INT;
             *numParams = 1;
             return true;
+        case GL_PIXEL_PACK_BUFFER_BINDING:
+        case GL_PIXEL_UNPACK_BUFFER_BINDING:
+            if ((mClientVersion < 3) && !mExtensions.pixelBufferObject)
+            {
+                return false;
+            }
+            *type      = GL_INT;
+            *numParams = 1;
+            return true;
     }
 
     if (mClientVersion < 3)
@@ -1271,6 +1250,7 @@ bool Context::getQueryParameterInfo(GLenum pname, GLenum *type, unsigned int *nu
       case GL_TRANSFORM_FEEDBACK_ACTIVE:
       case GL_TRANSFORM_FEEDBACK_PAUSED:
       case GL_PRIMITIVE_RESTART_FIXED_INDEX:
+      case GL_RASTERIZER_DISCARD:
         {
             *type = GL_BOOL;
             *numParams = 1;
@@ -1492,6 +1472,37 @@ EGLenum Context::getRenderBuffer() const
     }
 }
 
+void Context::checkVertexArrayAllocation(GLuint vertexArray)
+{
+    if (!getVertexArray(vertexArray))
+    {
+        VertexArray *vertexArrayObject =
+            new VertexArray(mRenderer, vertexArray, MAX_VERTEX_ATTRIBS);
+        mVertexArrayMap[vertexArray] = vertexArrayObject;
+    }
+}
+
+void Context::checkTransformFeedbackAllocation(GLuint transformFeedback)
+{
+    if (!getTransformFeedback(transformFeedback))
+    {
+        TransformFeedback *transformFeedbackObject =
+            new TransformFeedback(mRenderer->createTransformFeedback(), transformFeedback, mCaps);
+        transformFeedbackObject->addRef();
+        mTransformFeedbackMap[transformFeedback] = transformFeedbackObject;
+    }
+}
+
+bool Context::isVertexArrayGenerated(GLuint vertexArray)
+{
+    return mVertexArrayMap.find(vertexArray) != mVertexArrayMap.end();
+}
+
+bool Context::isTransformFeedbackGenerated(GLuint transformFeedback)
+{
+    return mTransformFeedbackMap.find(transformFeedback) != mTransformFeedbackMap.end();
+}
+
 void Context::detachTexture(GLuint texture)
 {
     
@@ -1505,18 +1516,13 @@ void Context::detachBuffer(GLuint buffer)
 {
     
     
-
-    
-    
     
 
-    mState.removeArrayBufferBinding(buffer);
-
     
-    for (auto &vaoPair : mVertexArrayMap)
-    {
-        vaoPair.second->detachBuffer(buffer);
-    }
+    
+    
+    
+    mState.detachBuffer(buffer);
 }
 
 void Context::detachFramebuffer(GLuint framebuffer)

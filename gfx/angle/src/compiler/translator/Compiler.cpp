@@ -294,12 +294,14 @@ TIntermNode *TCompiler::compileTreeImpl(const char *const shaderStrings[],
         
         if (success && (compileOptions & SH_UNROLL_FOR_LOOP_WITH_INTEGER_INDEX))
         {
-            ForLoopUnrollMarker marker(ForLoopUnrollMarker::kIntegerIndex);
+            ForLoopUnrollMarker marker(ForLoopUnrollMarker::kIntegerIndex,
+                                       shouldRunLoopAndIndexingValidation(compileOptions));
             root->traverse(&marker);
         }
         if (success && (compileOptions & SH_UNROLL_FOR_LOOP_WITH_SAMPLER_ARRAY_INDEX))
         {
-            ForLoopUnrollMarker marker(ForLoopUnrollMarker::kSamplerArrayIndex);
+            ForLoopUnrollMarker marker(ForLoopUnrollMarker::kSamplerArrayIndex,
+                                       shouldRunLoopAndIndexingValidation(compileOptions));
             root->traverse(&marker);
             if (marker.samplerArrayIndexIsFloatLoopIndex())
             {
@@ -423,11 +425,6 @@ bool TCompiler::InitBuiltInSymbolTable(const ShBuiltInResources &resources)
     floatingPoint.secondarySize = 1;
     floatingPoint.array = false;
 
-    TPublicType sampler;
-    sampler.primarySize = 1;
-    sampler.secondarySize = 1;
-    sampler.array = false;
-
     switch(shaderType)
     {
       case GL_FRAGMENT_SHADER:
@@ -442,18 +439,30 @@ bool TCompiler::InitBuiltInSymbolTable(const ShBuiltInResources &resources)
     }
     
     
-    for (int samplerType = EbtGuardSamplerBegin + 1;
-         samplerType < EbtGuardSamplerEnd; ++samplerType)
-    {
-        sampler.type = static_cast<TBasicType>(samplerType);
-        symbolTable.setDefaultPrecision(sampler, EbpLow);
-    }
+    
+    initSamplerDefaultPrecision(EbtSampler2D);
+    initSamplerDefaultPrecision(EbtSamplerCube);
+    
+    initSamplerDefaultPrecision(EbtSamplerExternalOES);
+    
+    initSamplerDefaultPrecision(EbtSampler2DRect);
 
     InsertBuiltInFunctions(shaderType, shaderSpec, resources, symbolTable);
 
     IdentifyBuiltIns(shaderType, shaderSpec, resources, symbolTable);
 
     return true;
+}
+
+void TCompiler::initSamplerDefaultPrecision(TBasicType samplerType)
+{
+    ASSERT(samplerType > EbtGuardSamplerBegin && samplerType < EbtGuardSamplerEnd);
+    TPublicType sampler;
+    sampler.primarySize   = 1;
+    sampler.secondarySize = 1;
+    sampler.array         = false;
+    sampler.type          = samplerType;
+    symbolTable.setDefaultPrecision(sampler, EbpLow);
 }
 
 void TCompiler::setResourceString()
@@ -689,7 +698,7 @@ void TCompiler::rewriteCSSShader(TIntermNode* root)
 
 bool TCompiler::validateLimitations(TIntermNode* root)
 {
-    ValidateLimitations validate(shaderType, infoSink.info);
+    ValidateLimitations validate(shaderType, &infoSink.info);
     root->traverse(&validate);
     return validate.numErrors() == 0;
 }

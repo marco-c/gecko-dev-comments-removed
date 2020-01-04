@@ -50,8 +50,7 @@ class Renderbuffer : public egl::ImageSibling, public gl::FramebufferAttachmentO
     GLuint getStencilSize() const;
 
     
-    GLsizei getAttachmentWidth(const FramebufferAttachment::Target &) const override { return getWidth(); }
-    GLsizei getAttachmentHeight(const FramebufferAttachment::Target &) const override { return getHeight(); }
+    Extents getAttachmentSize(const FramebufferAttachment::Target &target) const override;
     GLenum getAttachmentInternalFormat(const FramebufferAttachment::Target &) const override { return getInternalFormat(); }
     GLsizei getAttachmentSamples(const FramebufferAttachment::Target &) const override { return getSamples(); }
 

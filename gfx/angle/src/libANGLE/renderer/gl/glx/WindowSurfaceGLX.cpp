@@ -54,10 +54,24 @@ egl::Error WindowSurfaceGLX::initialize()
 {
     
     
-    
-    
-    
+    {
+        XWindowAttributes windowAttributes;
+        XGetWindowAttributes(mDisplay, mParent, &windowAttributes);
+        int visualId = windowAttributes.visual->visualid;
 
+        if (!mGLXDisplay->isValidWindowVisualId(visualId))
+        {
+            return egl::Error(EGL_BAD_MATCH,
+                              "The visual of native_window doesn't match the visual given with "
+                              "ANGLE_X11_VISUAL_ID");
+        }
+    }
+
+    
+    
+    
+    
+    
     XVisualInfo *visualInfo = mGLX.getVisualFromFBConfig(mFBConfig);
     if (!visualInfo)
     {
@@ -152,7 +166,7 @@ egl::Error WindowSurfaceGLX::querySurfacePointerANGLE(EGLint attribute, void **v
     return egl::Error(EGL_SUCCESS);
 }
 
-egl::Error WindowSurfaceGLX::bindTexImage(EGLint buffer)
+egl::Error WindowSurfaceGLX::bindTexImage(gl::Texture *texture, EGLint buffer)
 {
     UNIMPLEMENTED();
     return egl::Error(EGL_SUCCESS);

@@ -1,6 +1,16 @@
+
+
+
+
+
+
+
+
+
 #include "ANGLETest.h"
 #include "EGLWindow.h"
 #include "OSWindow.h"
+#include "system_utils.h"
 
 ANGLETest::ANGLETest()
     : mEGLWindow(nullptr),
@@ -47,10 +57,16 @@ void ANGLETest::SetUp()
     
     
     glViewport(0, 0, mWidth, mHeight);
+
+    const auto &info = testing::UnitTest::GetInstance()->current_test_info();
+    angle::WriteDebugMessage("Entering %s.%s\n", info->test_case_name(), info->name());
 }
 
 void ANGLETest::TearDown()
 {
+    const auto &info = testing::UnitTest::GetInstance()->current_test_info();
+    angle::WriteDebugMessage("Exiting %s.%s\n", info->test_case_name(), info->name());
+
     swapBuffers();
     mOSWindow->messageLoop();
 

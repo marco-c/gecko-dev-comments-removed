@@ -549,6 +549,16 @@ void GenerateCaps(const FunctionsGL *functions, gl::Caps *caps, gl::TextureCapsM
     }
 
     
+    
+    
+    caps->maxVertexUniformVectors = std::min(1024u, caps->maxVertexUniformVectors);
+    caps->maxVertexUniformComponents =
+        std::min(caps->maxVertexUniformVectors / 4, caps->maxVertexUniformComponents);
+    caps->maxFragmentUniformVectors = std::min(1024u, caps->maxFragmentUniformVectors);
+    caps->maxFragmentUniformComponents =
+        std::min(caps->maxFragmentUniformVectors / 4, caps->maxFragmentUniformComponents);
+
+    
     extensions->setTextureExtensionSupport(*textureCapsMap);
     extensions->elementIndexUint = functions->standard == STANDARD_GL_DESKTOP ||
                                    functions->isAtLeastGLES(gl::Version(3, 0)) || functions->hasGLESExtension("GL_OES_element_index_uint");

@@ -6,6 +6,9 @@
 
 #include "compiler/translator/ForLoopUnroll.h"
 
+#include "compiler/translator/ValidateLimitations.h"
+#include "angle_gl.h"
+
 bool ForLoopUnrollMarker::visitBinary(Visit, TIntermBinary *node)
 {
     if (mUnrollCondition != kSamplerArrayIndex)
@@ -38,7 +41,12 @@ bool ForLoopUnrollMarker::visitBinary(Visit, TIntermBinary *node)
 
 bool ForLoopUnrollMarker::visitLoop(Visit, TIntermLoop *node)
 {
-    if (mUnrollCondition == kIntegerIndex)
+    bool canBeUnrolled = mHasRunLoopValidation;
+    if (!mHasRunLoopValidation)
+    {
+        canBeUnrolled = ValidateLimitations::IsLimitedForLoop(node);
+    }
+    if (mUnrollCondition == kIntegerIndex && canBeUnrolled)
     {
         
         
@@ -50,11 +58,18 @@ bool ForLoopUnrollMarker::visitLoop(Visit, TIntermLoop *node)
     }
 
     TIntermNode *body = node->getBody();
-    if (body != NULL)
+    if (body != nullptr)
     {
-        mLoopStack.push(node);
-        body->traverse(this);
-        mLoopStack.pop();
+        if (canBeUnrolled)
+        {
+            mLoopStack.push(node);
+            body->traverse(this);
+            mLoopStack.pop();
+        }
+        else
+        {
+            body->traverse(this);
+        }
     }
     
     return false;

@@ -17,33 +17,100 @@ namespace
 {
 
 
-TEST(StringUtilsTest, SplitStringBasic)
+TEST(StringUtilsTest, SplitString_Basics)
 {
-    std::string testString("AxBxCxxxDExxFGHx");
-    std::vector<std::string> tokens;
-    SplitString(testString, 'x', &tokens);
+    std::vector<std::string> r;
 
-    ASSERT_EQ(5u, tokens.size());
-    EXPECT_EQ("A", tokens[0]);
-    EXPECT_EQ("B", tokens[1]);
-    EXPECT_EQ("C", tokens[2]);
-    EXPECT_EQ("DE", tokens[3]);
-    EXPECT_EQ("FGH", tokens[4]);
+    r = SplitString(std::string(), ",:;", KEEP_WHITESPACE, SPLIT_WANT_ALL);
+    EXPECT_TRUE(r.empty());
+
+    
+    r = SplitString("hello, world", "", KEEP_WHITESPACE, SPLIT_WANT_ALL);
+    ASSERT_EQ(1u, r.size());
+    EXPECT_EQ("hello, world", r[0]);
+
+    
+    r = SplitString("::,,;;", ",:;", KEEP_WHITESPACE, SPLIT_WANT_ALL);
+    ASSERT_EQ(7u, r.size());
+    for (auto str : r)
+        ASSERT_TRUE(str.empty());
+
+    r = SplitString("red, green; blue:", ",:;", TRIM_WHITESPACE, SPLIT_WANT_NONEMPTY);
+    ASSERT_EQ(3u, r.size());
+    EXPECT_EQ("red", r[0]);
+    EXPECT_EQ("green", r[1]);
+    EXPECT_EQ("blue", r[2]);
+
+    
+    r = SplitString("  red green   \tblue\n", " \t\n", TRIM_WHITESPACE, SPLIT_WANT_NONEMPTY);
+    ASSERT_EQ(3u, r.size());
+    EXPECT_EQ("red", r[0]);
+    EXPECT_EQ("green", r[1]);
+    EXPECT_EQ("blue", r[2]);
+
+    
+    r = SplitString(" red ", " ", TRIM_WHITESPACE, SPLIT_WANT_ALL);
+    ASSERT_EQ(3u, r.size());
+    EXPECT_EQ("", r[0]);  
+    EXPECT_EQ("red", r[1]);
+    EXPECT_EQ("", r[2]);  
 }
 
 
-TEST(StringUtilsTest, SplitStringAlongWhitespaceBasic)
+TEST(StringUtilsTest, SplitString_WhitespaceAndResultType)
 {
-    std::string testString("A B\nC\r\tDE\v\fFGH \t\r\n");
-    std::vector<std::string> tokens;
-    SplitStringAlongWhitespace(testString, &tokens);
+    std::vector<std::string> r;
 
-    ASSERT_EQ(5u, tokens.size());
-    EXPECT_EQ("A", tokens[0]);
-    EXPECT_EQ("B", tokens[1]);
-    EXPECT_EQ("C", tokens[2]);
-    EXPECT_EQ("DE", tokens[3]);
-    EXPECT_EQ("FGH", tokens[4]);
+    
+    r = SplitString(std::string(), ",", KEEP_WHITESPACE, SPLIT_WANT_ALL);
+    EXPECT_TRUE(r.empty());
+    r = SplitString(std::string(), ",", KEEP_WHITESPACE, SPLIT_WANT_NONEMPTY);
+    EXPECT_TRUE(r.empty());
+
+    
+    r = SplitString(" ", ",", TRIM_WHITESPACE, SPLIT_WANT_ALL);
+    ASSERT_EQ(1u, r.size());
+    EXPECT_EQ("", r[0]);
+    r = SplitString(" ", ",", TRIM_WHITESPACE, SPLIT_WANT_NONEMPTY);
+    EXPECT_TRUE(r.empty());
+
+    
+    r = SplitString(", ,", ",", KEEP_WHITESPACE, SPLIT_WANT_ALL);
+    ASSERT_EQ(3u, r.size());
+    EXPECT_EQ("", r[0]);
+    EXPECT_EQ(" ", r[1]);
+    EXPECT_EQ("", r[2]);
+    r = SplitString(", ,", ",", KEEP_WHITESPACE, SPLIT_WANT_NONEMPTY);
+    ASSERT_EQ(1u, r.size());
+    ASSERT_EQ(" ", r[0]);
+    r = SplitString(", ,", ",", TRIM_WHITESPACE, SPLIT_WANT_ALL);
+    ASSERT_EQ(3u, r.size());
+    EXPECT_EQ("", r[0]);
+    EXPECT_EQ("", r[1]);
+    EXPECT_EQ("", r[2]);
+    r = SplitString(", ,", ",", TRIM_WHITESPACE, SPLIT_WANT_NONEMPTY);
+    ASSERT_TRUE(r.empty());
+}
+
+
+TEST(StringUtilsTest, TrimString)
+{
+    
+    EXPECT_EQ("a", TrimString("a", kWhitespaceASCII));
+    EXPECT_EQ("a", TrimString(" a", kWhitespaceASCII));
+    EXPECT_EQ("a", TrimString("a ", kWhitespaceASCII));
+    EXPECT_EQ("a", TrimString(" a ", kWhitespaceASCII));
+
+    
+    EXPECT_EQ("", TrimString("", kWhitespaceASCII));
+    EXPECT_EQ("", TrimString(" \n\r\t", kWhitespaceASCII));
+    EXPECT_EQ(" foo ", TrimString(" foo ", ""));
+
+    
+    EXPECT_EQ("foo bar", TrimString(" foo bar ", kWhitespaceASCII));
+
+    
+    EXPECT_EQ(" ", TrimString("foo bar", "abcdefghijklmnopqrstuvwxyz"));
 }
 
 

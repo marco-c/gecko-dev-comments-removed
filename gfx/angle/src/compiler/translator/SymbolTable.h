@@ -435,6 +435,8 @@ class TSymbolTable : angle::NonCopyable
     {
         if (!SupportsPrecision(type.type))
             return false;
+        if (type.type == EbtUInt)
+            return false;  
         if (type.isAggregate())
             return false; 
         int indexOfLastElement = static_cast<int>(precisionStack.size()) - 1;

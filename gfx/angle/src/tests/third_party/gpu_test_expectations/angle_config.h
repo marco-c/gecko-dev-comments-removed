@@ -32,10 +32,15 @@ typedef uint64_t uint64;
 
 namespace base
 {
-    using angle::HexStringToUInt;
-    using angle::ReadFileToString;
+    using angle::kWhitespaceASCII;
+    using angle::TRIM_WHITESPACE;
+    using angle::KEEP_WHITESPACE;
+    using angle::SPLIT_WANT_ALL;
+    using angle::SPLIT_WANT_NONEMPTY;
     using angle::SplitString;
     using angle::SplitStringAlongWhitespace;
+    using angle::HexStringToUInt;
+    using angle::ReadFileToString;
 
     
     

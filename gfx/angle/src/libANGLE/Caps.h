@@ -159,6 +159,10 @@ struct Extensions
     bool depthTextures;
 
     
+    
+    bool depth32;
+
+    
     bool textureStorage;
 
     
@@ -468,6 +472,9 @@ struct ClientExtensions
     bool platformBase;
 
     
+    bool platformDevice;
+
+    
     bool platformANGLE;
 
     
@@ -475,6 +482,15 @@ struct ClientExtensions
 
     
     bool platformANGLEOpenGL;
+
+    
+    bool deviceCreation;
+
+    
+    bool deviceCreationD3D11;
+
+    
+    bool x11Visual;
 
     
     bool clientGetAllProcAddresses;

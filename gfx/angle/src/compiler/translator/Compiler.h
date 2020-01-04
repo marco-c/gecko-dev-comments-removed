@@ -179,6 +179,8 @@ class TCompiler : public TShHandleBase
     bool tagUsedFunctions();
     void internalTagUsedFunction(size_t index);
 
+    void initSamplerDefaultPrecision(TBasicType samplerType);
+
     
     class UnusedPredicate;
     bool pruneUnusedFunctions(TIntermNode *root);

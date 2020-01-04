@@ -198,7 +198,6 @@ class State : angle::NonCopyable
     
     void setArrayBufferBinding(Buffer *buffer);
     GLuint getArrayBufferId() const;
-    bool removeArrayBufferBinding(GLuint buffer);
 
     
     void setGenericUniformBufferBinding(Buffer *buffer);
@@ -215,6 +214,8 @@ class State : angle::NonCopyable
 
     
     Buffer *getTargetBuffer(GLenum target) const;
+    
+    void detachBuffer(GLuint bufferName);
 
     
     void setEnableVertexAttribArray(unsigned int attribNum, bool enabled);

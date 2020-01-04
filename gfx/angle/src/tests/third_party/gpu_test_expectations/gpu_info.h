@@ -174,9 +174,14 @@ struct GPU_EXPORT GPUInfo {
   int process_crash_count;
 
   
+  bool in_process_gpu;
+
+  
   
   CollectInfoResult basic_info_state;
   CollectInfoResult context_info_state;
+
+  bool jpeg_decode_accelerator_supported;
 
   
   

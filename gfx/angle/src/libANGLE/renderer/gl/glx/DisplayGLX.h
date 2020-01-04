@@ -79,6 +79,8 @@ class DisplayGLX : public DisplayGL
     
     void setSwapInterval(glx::Drawable drawable, SwapControlData *data);
 
+    bool isValidWindowVisualId(int visualId) const;
+
   private:
     const FunctionsGL *getFunctionsGL() const override;
 
@@ -95,6 +97,7 @@ class DisplayGLX : public DisplayGL
     
     mutable std::map<int, glx::FBConfig> configIdToGLXConfig;
 
+    EGLint mRequestedVisual;
     glx::FBConfig mContextConfig;
     glx::Context mContext;
     

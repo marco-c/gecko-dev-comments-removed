@@ -57,6 +57,7 @@ class FunctionsGLGLX : public FunctionsGL
 DisplayGLX::DisplayGLX()
     : DisplayGL(),
       mFunctionsGL(nullptr),
+      mRequestedVisual(-1),
       mContextConfig(nullptr),
       mContext(nullptr),
       mDummyPbuffer(0),
@@ -80,6 +81,7 @@ egl::Error DisplayGLX::initialize(egl::Display *display)
 {
     mEGLDisplay = display;
     Display *xDisplay = display->getNativeDisplayId();
+    const auto &attribMap = display->getAttributeMap();
 
     
     
@@ -137,14 +139,42 @@ egl::Error DisplayGLX::initialize(egl::Display *display)
         mMinSwapInterval = 1;
     }
 
-    
-    
-    
-    
-    
-    
-    
+    if (attribMap.contains(EGL_X11_VISUAL_ID_ANGLE))
     {
+        mRequestedVisual = attribMap.get(EGL_X11_VISUAL_ID_ANGLE, -1);
+
+        
+        
+        int nConfigs;
+        int attribList[] = {
+            None,
+        };
+        glx::FBConfig *allConfigs = mGLX.chooseFBConfig(attribList, &nConfigs);
+
+        for (int i = 0; i < nConfigs; ++i)
+        {
+            if (getGLXFBConfigAttrib(allConfigs[i], GLX_VISUAL_ID) == mRequestedVisual)
+            {
+                mContextConfig = allConfigs[i];
+                break;
+            }
+        }
+        XFree(allConfigs);
+
+        if (mContextConfig == nullptr)
+        {
+            return egl::Error(EGL_NOT_INITIALIZED, "Invalid visual ID requested.");
+        }
+    }
+    else
+    {
+        
+        
+        
+        
+        
+        
+        
         int nConfigs;
         int attribList[] =
         {
@@ -168,7 +198,7 @@ egl::Error DisplayGLX::initialize(egl::Display *display)
             GLX_CONFIG_CAVEAT, GLX_NONE,
             None
         };
-        glx::FBConfig* candidates = mGLX.chooseFBConfig(attribList, &nConfigs);
+        glx::FBConfig *candidates = mGLX.chooseFBConfig(attribList, &nConfigs);
         if (nConfigs == 0)
         {
             XFree(candidates);
@@ -436,6 +466,14 @@ egl::ConfigSet DisplayGLX::generateConfigs() const
         config.nativeRenderable = EGL_TRUE;
 
         
+        
+        
+        if (mRequestedVisual != -1 && config.nativeVisualID != mRequestedVisual)
+        {
+            continue;
+        }
+
+        
         config.redSize = getGLXFBConfigAttrib(glxConfig, GLX_RED_SIZE);
         config.greenSize = getGLXFBConfigAttrib(glxConfig, GLX_GREEN_SIZE);
         config.blueSize = getGLXFBConfigAttrib(glxConfig, GLX_BLUE_SIZE);
@@ -650,6 +688,11 @@ void DisplayGLX::setSwapInterval(glx::Drawable drawable, SwapControlData *data)
         }
         mCurrentSwapInterval = data->targetSwapInterval;
     }
+}
+
+bool DisplayGLX::isValidWindowVisualId(int visualId) const
+{
+    return mRequestedVisual == -1 || mRequestedVisual == visualId;
 }
 
 const FunctionsGL *DisplayGLX::getFunctionsGL() const

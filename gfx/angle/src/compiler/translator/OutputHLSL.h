@@ -50,7 +50,7 @@ class OutputHLSL : public TIntermTraverser
     static bool canWriteAsHLSLLiteral(TIntermTyped *expression);
 
   protected:
-    void header(const BuiltInFunctionEmulator *builtInFunctionEmulator);
+    void header(TInfoSinkBase &out, const BuiltInFunctionEmulator *builtInFunctionEmulator);
 
     
     void visitSymbol(TIntermSymbol*);
@@ -66,22 +66,31 @@ class OutputHLSL : public TIntermTraverser
     bool visitBranch(Visit visit, TIntermBranch*);
 
     bool isSingleStatement(TIntermNode *node);
-    bool handleExcessiveLoop(TIntermLoop *node);
+    bool handleExcessiveLoop(TInfoSinkBase &out, TIntermLoop *node);
 
     
-    void outputTriplet(Visit visit, const char *preString, const char *inString, const char *postString, TInfoSinkBase &out);
-    void outputTriplet(Visit visit, const char *preString, const char *inString, const char *postString);
-    void outputLineDirective(int line);
+    void outputTriplet(TInfoSinkBase &out,
+                       Visit visit,
+                       const char *preString,
+                       const char *inString,
+                       const char *postString);
+    void outputLineDirective(TInfoSinkBase &out, int line);
     TString argumentString(const TIntermSymbol *symbol);
     int vectorSize(const TType &type) const;
 
     
-    void outputConstructor(Visit visit, const TType &type, const char *name, const TIntermSequence *parameters);
-    const TConstantUnion *writeConstantUnion(const TType &type, const TConstantUnion *constUnion);
+    void outputConstructor(TInfoSinkBase &out,
+                           Visit visit,
+                           const TType &type,
+                           const char *name,
+                           const TIntermSequence *parameters);
+    const TConstantUnion *writeConstantUnion(TInfoSinkBase &out,
+                                             const TType &type,
+                                             const TConstantUnion *constUnion);
 
     void outputEqual(Visit visit, const TType &type, TOperator op, TInfoSinkBase &out);
 
-    void writeEmulatedFunctionTriplet(Visit visit, const char *preStr);
+    void writeEmulatedFunctionTriplet(TInfoSinkBase &out, Visit visit, const char *preStr);
     void makeFlaggedStructMaps(const std::vector<TIntermTyped *> &flaggedStructs);
 
     
@@ -92,7 +101,7 @@ class OutputHLSL : public TIntermTraverser
                                      TIntermTyped *expression);
 
     void writeDeferredGlobalInitializers(TInfoSinkBase &out);
-    void writeSelection(TIntermSelection *node);
+    void writeSelection(TInfoSinkBase &out, TIntermSelection *node);
 
     
     TString addStructEqualityFunction(const TStructure &structure);
