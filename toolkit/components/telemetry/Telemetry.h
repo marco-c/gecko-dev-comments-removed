@@ -86,16 +86,6 @@ void AccumulateTimeDelta(ID id, TimeStamp start, TimeStamp end = TimeStamp::Now(
 
 
 
-
-
-
-
-
-void SetHistogramRecordingEnabled(ID id, bool enabled);
-
-
-
-
 base::Histogram* GetHistogramById(ID id);
 
 const char* GetHistogramName(ID id);
