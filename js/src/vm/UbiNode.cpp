@@ -47,8 +47,7 @@ using JS::ubi::Concrete;
 using JS::ubi::Edge;
 using JS::ubi::EdgeRange;
 using JS::ubi::Node;
-using JS::ubi::SimpleEdge;
-using JS::ubi::SimpleEdgeVector;
+using JS::ubi::EdgeVector;
 using JS::ubi::StackFrame;
 using JS::ubi::TracerConcrete;
 using JS::ubi::TracerConcreteWithCompartment;
@@ -204,9 +203,9 @@ Node::exposeToJS() const
 
 
 
-class SimpleEdgeVectorTracer : public JS::CallbackTracer {
+class EdgeVectorTracer : public JS::CallbackTracer {
     
-    SimpleEdgeVector* vec;
+    EdgeVector* vec;
 
     
     bool wantNames;
@@ -246,7 +245,7 @@ class SimpleEdgeVectorTracer : public JS::CallbackTracer {
         
         
         
-        if (!vec->append(mozilla::Move(SimpleEdge(name16, Node(thing))))) {
+        if (!vec->append(mozilla::Move(Edge(name16, Node(thing))))) {
             okay = false;
             return;
         }
@@ -256,7 +255,7 @@ class SimpleEdgeVectorTracer : public JS::CallbackTracer {
     
     bool okay;
 
-    SimpleEdgeVectorTracer(JSContext* cx, SimpleEdgeVector* vec, bool wantNames)
+    EdgeVectorTracer(JSContext* cx, EdgeVector* vec, bool wantNames)
       : JS::CallbackTracer(JS_GetRuntime(cx)),
         vec(vec),
         wantNames(wantNames),
@@ -268,7 +267,7 @@ class SimpleEdgeVectorTracer : public JS::CallbackTracer {
 
 
 class SimpleEdgeRange : public EdgeRange {
-    SimpleEdgeVector edges;
+    EdgeVector edges;
     size_t i;
 
     void settle() {
@@ -279,7 +278,7 @@ class SimpleEdgeRange : public EdgeRange {
     explicit SimpleEdgeRange(JSContext* cx) : edges(cx), i(0) { }
 
     bool init(JSContext* cx, void* thing, JS::TraceKind kind, bool wantNames = true) {
-        SimpleEdgeVectorTracer tracer(cx, &edges, wantNames);
+        EdgeVectorTracer tracer(cx, &edges, wantNames);
         js::TraceChildren(&tracer, thing, kind);
         settle();
         return tracer.okay;
@@ -407,7 +406,7 @@ RootList::RootList(JSContext* cx, Maybe<AutoCheckCannotGC>& noGC, bool wantNames
 bool
 RootList::init()
 {
-    SimpleEdgeVectorTracer tracer(cx, &edges, wantNames);
+    EdgeVectorTracer tracer(cx, &edges, wantNames);
     JS_TraceRuntime(&tracer);
     if (!tracer.okay)
         return false;
@@ -418,8 +417,8 @@ RootList::init()
 bool
 RootList::init(ZoneSet& debuggees)
 {
-    SimpleEdgeVector allRootEdges(cx);
-    SimpleEdgeVectorTracer tracer(cx, &allRootEdges, wantNames);
+    EdgeVector allRootEdges(cx);
+    EdgeVectorTracer tracer(cx, &allRootEdges, wantNames);
 
     JS_TraceRuntime(&tracer);
     if (!tracer.okay)
@@ -428,8 +427,8 @@ RootList::init(ZoneSet& debuggees)
     if (!tracer.okay)
         return false;
 
-    for (SimpleEdgeVector::Range r = allRootEdges.all(); !r.empty(); r.popFront()) {
-        SimpleEdge& edge = r.front();
+    for (EdgeVector::Range r = allRootEdges.all(); !r.empty(); r.popFront()) {
+        Edge& edge = r.front();
         Zone* zone = edge.referent.zone();
         if (zone && !debuggees.has(zone))
             continue;
@@ -484,7 +483,7 @@ RootList::addRoot(Node node, const char16_t* edgeName)
             return false;
     }
 
-    return edges.append(mozilla::Move(SimpleEdge(name.release(), node)));
+    return edges.append(mozilla::Move(Edge(name.release(), node)));
 }
 
 const char16_t Concrete<RootList>::concreteTypeName[] = MOZ_UTF16("RootList");

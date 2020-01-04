@@ -787,17 +787,36 @@ class Node {
 
 
 
-
-
-
-
-
 class Edge {
-  protected:
-    Edge() : name(nullptr), referent() { }
-    virtual ~Edge() { }
-
   public:
+    Edge() : name(nullptr), referent() { }
+
+    
+    Edge(char16_t* name, const Node& referent) {
+        this->name = name;
+        this->referent = referent;
+    }
+
+    
+    Edge(Edge&& rhs) {
+        name = rhs.name;
+        referent = rhs.referent;
+        rhs.name = nullptr;
+    }
+    Edge& operator=(Edge&& rhs) {
+        MOZ_ASSERT(&rhs != this);
+        this->~Edge();
+        new (this) Edge(mozilla::Move(rhs));
+        return *this;
+    }
+
+    ~Edge() {
+        js_free(const_cast<char16_t*>(name));
+    }
+
+    Edge(const Edge&) = delete;
+    Edge& operator=(const Edge&) = delete;
+
     
     
     
@@ -811,12 +830,7 @@ class Edge {
 
     
     Node referent;
-
-  private:
-    Edge(const Edge&) = delete;
-    Edge& operator=(const Edge&) = delete;
 };
-
 
 
 
@@ -854,55 +868,22 @@ class EdgeRange {
 };
 
 
-
-
-class SimpleEdge : public Edge {
-    SimpleEdge(SimpleEdge&) = delete;
-    SimpleEdge& operator=(const SimpleEdge&) = delete;
-
-  public:
-    SimpleEdge() : Edge() { }
-
-    
-    SimpleEdge(char16_t* name, const Node& referent) {
-        this->name = name;
-        this->referent = referent;
-    }
-    ~SimpleEdge() {
-        js_free(const_cast<char16_t*>(name));
-    }
-
-    
-    SimpleEdge(SimpleEdge&& rhs) {
-        name = rhs.name;
-        referent = rhs.referent;
-
-        rhs.name = nullptr;
-    }
-    SimpleEdge& operator=(SimpleEdge&& rhs) {
-        MOZ_ASSERT(&rhs != this);
-        this->~SimpleEdge();
-        new(this) SimpleEdge(mozilla::Move(rhs));
-        return *this;
-    }
-};
-
-typedef mozilla::Vector<SimpleEdge, 8, js::TempAllocPolicy> SimpleEdgeVector;
+typedef mozilla::Vector<Edge, 8, js::TempAllocPolicy> EdgeVector;
 
 
 
 
 
 class PreComputedEdgeRange : public EdgeRange {
-    SimpleEdgeVector& edges;
-    size_t            i;
+    EdgeVector& edges;
+    size_t      i;
 
     void settle() {
         front_ = i < edges.length() ? &edges[i] : nullptr;
     }
 
   public:
-    explicit PreComputedEdgeRange(JSContext* cx, SimpleEdgeVector& edges)
+    explicit PreComputedEdgeRange(JSContext* cx, EdgeVector& edges)
       : edges(edges),
         i(0)
     {
@@ -951,8 +932,8 @@ class MOZ_STACK_CLASS RootList {
     JSContext*               cx;
 
   public:
-    SimpleEdgeVector edges;
-    bool             wantNames;
+    EdgeVector edges;
+    bool       wantNames;
 
     RootList(JSContext* cx, Maybe<AutoCheckCannotGC>& noGC, bool wantNames = false);
 
