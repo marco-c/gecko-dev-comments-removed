@@ -94,9 +94,9 @@ public:
     
     
     
-    const int sizeY = mFrameWidth * mFrameHeight;
-    const int sizeCbCr = ((mFrameWidth + 1) / 2) * ((mFrameHeight + 1) / 2);
-    auto frame = MakeUnique<uint8_t[]>(sizeY + sizeCbCr);
+    
+    auto frame = MakeUnique<uint8_t[]>(mFrameWidth * mFrameHeight);
+    memset(frame.get(), 0, mFrameWidth * mFrameHeight);
     VideoData::YCbCrBuffer buffer;
 
     
@@ -108,7 +108,7 @@ public:
     buffer.mPlanes[0].mSkip = 0;
 
     
-    buffer.mPlanes[1].mData = frame.get() + sizeY;
+    buffer.mPlanes[1].mData = frame.get();
     buffer.mPlanes[1].mStride = mFrameWidth / 2;
     buffer.mPlanes[1].mHeight = mFrameHeight / 2;
     buffer.mPlanes[1].mWidth = mFrameWidth / 2;
@@ -116,16 +116,12 @@ public:
     buffer.mPlanes[1].mSkip = 0;
 
     
-    buffer.mPlanes[2].mData = frame.get() + sizeY;
+    buffer.mPlanes[2].mData = frame.get();
     buffer.mPlanes[2].mStride = mFrameWidth / 2;
     buffer.mPlanes[2].mHeight = mFrameHeight / 2;
     buffer.mPlanes[2].mWidth = mFrameWidth / 2;
     buffer.mPlanes[2].mOffset = 0;
     buffer.mPlanes[2].mSkip = 0;
-
-    
-    memset(buffer.mPlanes[0].mData, 255, sizeY);
-    memset(buffer.mPlanes[1].mData, 128, sizeCbCr);
 
     return VideoData::Create(mInfo,
                              mImageContainer,
@@ -138,7 +134,6 @@ public:
                              aDTS.ToMicroseconds(),
                              mPicture);
   }
-
 private:
   VideoInfo mInfo;
   gfx::IntRect mPicture;
@@ -146,6 +141,7 @@ private:
   uint32_t mFrameHeight;
   RefPtr<layers::ImageContainer> mImageContainer;
 };
+
 
 class BlankAudioDataCreator {
 public:
