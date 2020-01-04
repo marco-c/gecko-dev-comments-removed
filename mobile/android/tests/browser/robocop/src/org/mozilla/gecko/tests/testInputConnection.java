@@ -44,24 +44,6 @@ public class testInputConnection extends JavascriptBridgeTest {
             .testInputConnection(new BasicInputConnectionTest());
 
         
-        getJS().syncCall("focus_text_area", INITIAL_TEXT);
-        mGeckoView.mTextInput
-            .waitForInputConnection()
-            .testInputConnection(new BasicInputConnectionTest());
-
-        
-        getJS().syncCall("focus_content_editable", INITIAL_TEXT);
-        mGeckoView.mTextInput
-            .waitForInputConnection()
-            .testInputConnection(new BasicInputConnectionTest());
-
-        
-        getJS().syncCall("focus_design_mode", INITIAL_TEXT);
-        mGeckoView.mTextInput
-            .waitForInputConnection()
-            .testInputConnection(new BasicInputConnectionTest());
-
-        
         getJS().syncCall("focus_resetting_input", "");
         mGeckoView.mTextInput
             .waitForInputConnection()
@@ -78,13 +60,9 @@ public class testInputConnection extends JavascriptBridgeTest {
 
     private class BasicInputConnectionTest extends InputConnectionTest {
         @Override
-        public void test(final InputConnection ic, EditorInfo info) {
-            waitFor("focus change", new Condition() {
-                @Override
-                public boolean isSatisfied() {
-                    return INITIAL_TEXT.equals(getText(ic));
-                }
-            });
+        public void test(InputConnection ic, EditorInfo info) {
+            
+            assertText("Initial text matches URL hash", ic, INITIAL_TEXT);
 
             
             ic.setSelection(0, 3);
@@ -280,10 +258,6 @@ public class testInputConnection extends JavascriptBridgeTest {
 
             ic.deleteSurroundingText(3, 0);
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
-
-            
-            processGeckoEvents(ic);
-            processInputConnectionEvents();
         }
     }
 
