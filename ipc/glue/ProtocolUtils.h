@@ -604,10 +604,31 @@ CreateEndpoints(const PrivateIPDLInterface& aPrivate,
   return NS_OK;
 }
 
+void
+TableToArray(const nsTHashtable<nsPtrHashKey<void>>& aTable,
+             nsTArray<void*>& aArray);
+
 } 
 
 template<typename Protocol>
-using ManagedContainer = nsTHashtable<nsPtrHashKey<Protocol>>;
+class ManagedContainer : public nsTHashtable<nsPtrHashKey<Protocol>>
+{
+  typedef nsTHashtable<nsPtrHashKey<Protocol>> BaseClass;
+
+public:
+  
+  
+  
+  
+  
+  
+  
+  void ToArray(nsTArray<Protocol*>& aArray) const {
+    ::mozilla::ipc::TableToArray(*reinterpret_cast<const nsTHashtable<nsPtrHashKey<void>>*>
+                                 (static_cast<const BaseClass*>(this)),
+                                 reinterpret_cast<nsTArray<void*>&>(aArray));
+  }
+};
 
 template<typename Protocol>
 Protocol*
