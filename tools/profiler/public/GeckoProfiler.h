@@ -53,6 +53,7 @@
 #include "js/TypeDecls.h"
 #endif
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Vector.h"
 
 namespace mozilla {
 class TimeStamp;
@@ -62,6 +63,10 @@ class Promise;
 } 
 
 } 
+
+#ifndef SPS_STANDALONE
+class nsIProfilerStartParams;
+#endif
 
 enum TracingMetadata {
   TRACING_DEFAULT,
@@ -182,6 +187,10 @@ static inline JSObject* profiler_get_profile_jsobject(JSContext* aCx,
 
 static inline void profiler_get_profile_jsobject_async(double aSinceTime = 0,
                                                        mozilla::dom::Promise* = 0) {}
+static inline void profiler_get_start_params(int* aEntrySize,
+                                             double* aInterval,
+                                             mozilla::Vector<const char*>* aFilters,
+                                             mozilla::Vector<const char*>* aFeatures) {}
 #endif
 
 
