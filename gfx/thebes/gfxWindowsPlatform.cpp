@@ -690,7 +690,9 @@ gfxWindowsPlatform::CreatePlatformFontList()
 #ifdef CAIRO_HAS_DWRITE_FONT
     
     
-    if (IsNotWin7PreRTM() && GetDWriteFactory()) {
+    if (IsNotWin7PreRTM() && GetDWriteFactory() &&
+        
+       (gfxPlatform::GetDefaultContentBackend() != BackendType::SKIA)) {
         pfl = new gfxDWriteFontList();
         if (NS_SUCCEEDED(pfl->InitFontList())) {
             return pfl;
