@@ -590,6 +590,8 @@ public:
   virtual bool RecvPrint(const uint64_t& aOuterWindowID,
                          const PrintData& aPrintData) override;
 
+  virtual bool RecvUpdateNativeWindowHandle(const uintptr_t& aNewHandle) override;
+
   
 
 
@@ -650,6 +652,10 @@ public:
 
   
   void ForcePaint(uint64_t aLayerObserverEpoch);
+
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  uintptr_t GetNativeWindowHandle() const { return mNativeWindowHandle; }
+#endif
 
 protected:
   virtual ~TabChild();
@@ -788,6 +794,11 @@ private:
 
   
   uint64_t mLayerObserverEpoch;
+
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  
+  uintptr_t mNativeWindowHandle;
+#endif 
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };
