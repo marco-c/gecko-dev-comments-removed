@@ -1222,6 +1222,8 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
                     upgradeDatabaseFrom25to26(db);
                     break;
 
+                
+
                 case 28:
                     upgradeDatabaseFrom27to28(db);
                     break;
