@@ -8134,6 +8134,17 @@ CodeGenerator::emitArrayPopShift(LInstruction* lir, const MArrayPopShift* mir, R
     if (mir->maybeUndefined()) {
         Label notEmpty;
         masm.branchTest32(Assembler::NonZero, lengthTemp, lengthTemp, &notEmpty);
+
+        
+        
+        
+        
+        if (mir->unboxedType() == JSVAL_TYPE_MAGIC) {
+            Address elementFlags(elementsTemp, ObjectElements::offsetOfFlags());
+            Imm32 bit(ObjectElements::NONWRITABLE_ARRAY_LENGTH);
+            masm.branchTest32(Assembler::NonZero, elementFlags, bit, ool->entry());
+        }
+
         masm.moveValue(UndefinedValue(), out.valueReg());
         masm.jump(&done);
         masm.bind(&notEmpty);
