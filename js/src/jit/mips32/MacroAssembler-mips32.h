@@ -1287,28 +1287,7 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
         moveToDoubleHi(zero, reg);
     }
 
-    void clampIntToUint8(Register reg) {
-        
-        
-        
-        Label done;
-        ma_move(ScratchRegister, reg);
-        as_sra(ScratchRegister, ScratchRegister, 8);
-        ma_b(ScratchRegister, ScratchRegister, &done, Assembler::Zero, ShortJump);
-        {
-            Label negative;
-            ma_b(ScratchRegister, ScratchRegister, &negative, Assembler::Signed, ShortJump);
-            {
-                ma_li(reg, Imm32(255));
-                ma_b(&done, ShortJump);
-            }
-            bind(&negative);
-            {
-                ma_move(reg, zero);
-            }
-        }
-        bind(&done);
-    }
+    void clampIntToUint8(Register reg);
 
     void subPtr(Imm32 imm, const Register dest);
     void subPtr(const Address& addr, const Register dest);
