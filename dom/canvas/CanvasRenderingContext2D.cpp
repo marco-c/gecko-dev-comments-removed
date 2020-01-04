@@ -1204,6 +1204,9 @@ bool CanvasRenderingContext2D::SwitchRenderingMode(RenderingMode aRenderingMode)
     transform = mTarget->GetTransform();
   } else {
     MOZ_ASSERT(mBufferProvider);
+    
+    
+    transform = CurrentState().transform;
     snapshot = mBufferProvider->GetSnapshot();
   }
   mTarget = nullptr;
