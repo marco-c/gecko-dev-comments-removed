@@ -297,9 +297,9 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT nsRegion
+  MOZ_MUST_USE nsRegion
     ScaleToOtherAppUnitsRoundOut (int32_t aFromAPP, int32_t aToAPP) const;
-  MOZ_WARN_UNUSED_RESULT nsRegion
+  MOZ_MUST_USE nsRegion
     ScaleToOtherAppUnitsRoundIn (int32_t aFromAPP, int32_t aToAPP) const;
   nsRegion& ScaleRoundOut(float aXScale, float aYScale);
   nsRegion& ScaleInverseRoundOut(float aXScale, float aYScale);

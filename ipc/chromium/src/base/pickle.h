@@ -81,30 +81,30 @@ class Pickle {
   
   
   
-  MOZ_WARN_UNUSED_RESULT bool ReadBool(void** iter, bool* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadInt16(void** iter, int16_t* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadUInt16(void** iter, uint16_t* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadShort(void** iter, short* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadInt(void** iter, int* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadLong(void** iter, long* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadULong(void** iter, unsigned long* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadSize(void** iter, size_t* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadInt32(void** iter, int32_t* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadUInt32(void** iter, uint32_t* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadInt64(void** iter, int64_t* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadUInt64(void** iter, uint64_t* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadDouble(void** iter, double* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadIntPtr(void** iter, intptr_t* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadUnsignedChar(void** iter, unsigned char* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadString(void** iter, std::string* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadWString(void** iter, std::wstring* result) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadData(void** iter, const char** data, int* length) const;
-  MOZ_WARN_UNUSED_RESULT bool ReadBytes(void** iter, const char** data, int length,
+  MOZ_MUST_USE bool ReadBool(void** iter, bool* result) const;
+  MOZ_MUST_USE bool ReadInt16(void** iter, int16_t* result) const;
+  MOZ_MUST_USE bool ReadUInt16(void** iter, uint16_t* result) const;
+  MOZ_MUST_USE bool ReadShort(void** iter, short* result) const;
+  MOZ_MUST_USE bool ReadInt(void** iter, int* result) const;
+  MOZ_MUST_USE bool ReadLong(void** iter, long* result) const;
+  MOZ_MUST_USE bool ReadULong(void** iter, unsigned long* result) const;
+  MOZ_MUST_USE bool ReadSize(void** iter, size_t* result) const;
+  MOZ_MUST_USE bool ReadInt32(void** iter, int32_t* result) const;
+  MOZ_MUST_USE bool ReadUInt32(void** iter, uint32_t* result) const;
+  MOZ_MUST_USE bool ReadInt64(void** iter, int64_t* result) const;
+  MOZ_MUST_USE bool ReadUInt64(void** iter, uint64_t* result) const;
+  MOZ_MUST_USE bool ReadDouble(void** iter, double* result) const;
+  MOZ_MUST_USE bool ReadIntPtr(void** iter, intptr_t* result) const;
+  MOZ_MUST_USE bool ReadUnsignedChar(void** iter, unsigned char* result) const;
+  MOZ_MUST_USE bool ReadString(void** iter, std::string* result) const;
+  MOZ_MUST_USE bool ReadWString(void** iter, std::wstring* result) const;
+  MOZ_MUST_USE bool ReadData(void** iter, const char** data, int* length) const;
+  MOZ_MUST_USE bool ReadBytes(void** iter, const char** data, int length,
 					uint32_t alignment = sizeof(memberAlignmentType)) const;
 
   
   
-  MOZ_WARN_UNUSED_RESULT bool ReadLength(void** iter, int* result) const;
+  MOZ_MUST_USE bool ReadLength(void** iter, int* result) const;
 
   
   

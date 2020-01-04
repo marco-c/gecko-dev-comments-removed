@@ -47,11 +47,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
 
   private:
     MBasicBlock(MIRGraph& graph, const CompileInfo& info, BytecodeSite* site, Kind kind);
-    MOZ_WARN_UNUSED_RESULT bool init();
+    MOZ_MUST_USE bool init();
     void copySlots(MBasicBlock* from);
-    MOZ_WARN_UNUSED_RESULT bool inherit(TempAllocator& alloc, BytecodeAnalysis* analysis, MBasicBlock* pred,
+    MOZ_MUST_USE bool inherit(TempAllocator& alloc, BytecodeAnalysis* analysis, MBasicBlock* pred,
                                         uint32_t popped, unsigned stackPhiCount = 0);
-    MOZ_WARN_UNUSED_RESULT bool inheritResumePoint(MBasicBlock* pred);
+    MOZ_MUST_USE bool inheritResumePoint(MBasicBlock* pred);
     void assertUsesAreNotWithin(MUseIterator use, MUseIterator end);
 
     
@@ -154,8 +154,8 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     MDefinition* argumentsObject();
 
     
-    MOZ_WARN_UNUSED_RESULT bool increaseSlots(size_t num);
-    MOZ_WARN_UNUSED_RESULT bool ensureHasSlots(size_t num);
+    MOZ_MUST_USE bool increaseSlots(size_t num);
+    MOZ_MUST_USE bool ensureHasSlots(size_t num);
 
     
     
@@ -166,7 +166,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
 
     
     
-    MOZ_WARN_UNUSED_RESULT bool linkOsrValues(MStart* start);
+    MOZ_MUST_USE bool linkOsrValues(MStart* start);
 
     
     
@@ -220,17 +220,17 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     
     
     
-    MOZ_WARN_UNUSED_RESULT bool addPredecessor(TempAllocator& alloc, MBasicBlock* pred);
-    MOZ_WARN_UNUSED_RESULT bool addPredecessorPopN(TempAllocator& alloc, MBasicBlock* pred, uint32_t popped);
+    MOZ_MUST_USE bool addPredecessor(TempAllocator& alloc, MBasicBlock* pred);
+    MOZ_MUST_USE bool addPredecessorPopN(TempAllocator& alloc, MBasicBlock* pred, uint32_t popped);
 
     
     
     void addPredecessorSameInputsAs(MBasicBlock* pred, MBasicBlock* existingPred);
 
     
-    MOZ_WARN_UNUSED_RESULT bool addPredecessorWithoutPhis(MBasicBlock* pred);
+    MOZ_MUST_USE bool addPredecessorWithoutPhis(MBasicBlock* pred);
     void inheritSlots(MBasicBlock* parent);
-    MOZ_WARN_UNUSED_RESULT bool initEntrySlots(TempAllocator& alloc);
+    MOZ_MUST_USE bool initEntrySlots(TempAllocator& alloc);
 
     
     
@@ -255,8 +255,8 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     
     
     
-    MOZ_WARN_UNUSED_RESULT AbortReason setBackedge(MBasicBlock* block);
-    MOZ_WARN_UNUSED_RESULT bool setBackedgeAsmJS(MBasicBlock* block);
+    MOZ_MUST_USE AbortReason setBackedge(MBasicBlock* block);
+    MOZ_MUST_USE bool setBackedgeAsmJS(MBasicBlock* block);
 
     
     
@@ -271,10 +271,10 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     void inheritPhis(MBasicBlock* header);
 
     
-    MOZ_WARN_UNUSED_RESULT bool inheritPhisFromBackedge(MBasicBlock* backedge, bool* hadTypeChange);
+    MOZ_MUST_USE bool inheritPhisFromBackedge(MBasicBlock* backedge, bool* hadTypeChange);
 
     
-    MOZ_WARN_UNUSED_RESULT bool specializePhis();
+    MOZ_MUST_USE bool specializePhis();
 
     void insertBefore(MInstruction* at, MInstruction* ins);
     void insertAfter(MInstruction* at, MInstruction* ins);
@@ -773,7 +773,7 @@ class MIRGraph
         return returnAccumulator_;
     }
 
-    MOZ_WARN_UNUSED_RESULT bool addReturn(MBasicBlock* returnBlock) {
+    MOZ_MUST_USE bool addReturn(MBasicBlock* returnBlock) {
         if (!returnAccumulator_)
             return true;
 

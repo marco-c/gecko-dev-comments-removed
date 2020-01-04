@@ -135,7 +135,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendTo(nsAString& aString,
                 const mozilla::fallible_t& aFallible) const {
     if (mState.mIs2b) {
@@ -169,7 +169,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendTo(nsAString& aString, int32_t aOffset, int32_t aLength,
                 const mozilla::fallible_t& aFallible) const
   {

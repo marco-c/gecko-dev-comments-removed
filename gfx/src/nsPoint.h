@@ -35,12 +35,12 @@ struct nsPoint : public mozilla::gfx::BasePoint<nscoord, nsPoint> {
 
 
 
-  MOZ_WARN_UNUSED_RESULT inline nsPoint
+  MOZ_MUST_USE inline nsPoint
     ScaleToOtherAppUnits(int32_t aFromAPP, int32_t aToAPP) const;
 
-  MOZ_WARN_UNUSED_RESULT inline nsPoint
+  MOZ_MUST_USE inline nsPoint
     RemoveResolution(const float resolution) const;
-  MOZ_WARN_UNUSED_RESULT inline nsPoint
+  MOZ_MUST_USE inline nsPoint
     ApplyResolution(const float resolution) const;
 };
 

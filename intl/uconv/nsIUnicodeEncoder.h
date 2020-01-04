@@ -135,9 +135,9 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT NS_IMETHOD GetMaxLength(const char16_t* aSrc,
-                                                 int32_t aSrcLength,
-                                                 int32_t* aDestLength) = 0;
+  MOZ_MUST_USE NS_IMETHOD GetMaxLength(const char16_t* aSrc,
+                                       int32_t aSrcLength,
+                                       int32_t* aDestLength) = 0;
 
   
 

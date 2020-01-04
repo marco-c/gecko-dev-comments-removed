@@ -502,7 +502,7 @@ class SyntaxParseHandler
     void setBlockId(Node pn, unsigned blockid) {}
     void setFlag(Node pn, unsigned flag) {}
     void setListFlag(Node pn, unsigned flag) {}
-    MOZ_WARN_UNUSED_RESULT Node parenthesize(Node node) {
+    MOZ_MUST_USE Node parenthesize(Node node) {
         
         
         
@@ -531,7 +531,7 @@ class SyntaxParseHandler
         
         return node;
     }
-    MOZ_WARN_UNUSED_RESULT Node setLikelyIIFE(Node pn) {
+    MOZ_MUST_USE Node setLikelyIIFE(Node pn) {
         return pn; 
     }
     void setPrologue(Node pn) {}

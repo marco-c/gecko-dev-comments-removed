@@ -1392,7 +1392,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   static bool GetNodeTextContent(nsINode* aNode, bool aDeep,
                                  nsAString& aResult, const mozilla::fallible_t&);
 
@@ -1765,7 +1765,7 @@ public:
 
   static bool CanAccessNativeAnon();
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   static nsresult WrapNative(JSContext *cx, nsISupports *native,
                              const nsIID* aIID, JS::MutableHandle<JS::Value> vp,
                              bool aAllowWrapping = true)
@@ -1774,7 +1774,7 @@ public:
   }
 
   
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   static nsresult WrapNative(JSContext *cx, nsISupports *native,
                              JS::MutableHandle<JS::Value> vp,
                              bool aAllowWrapping = true)
@@ -1782,7 +1782,7 @@ public:
     return WrapNative(cx, native, nullptr, nullptr, vp, aAllowWrapping);
   }
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   static nsresult WrapNative(JSContext *cx, nsISupports *native,
                              nsWrapperCache *cache,
                              JS::MutableHandle<JS::Value> vp,
@@ -1815,7 +1815,7 @@ public:
 
 
   static void PlatformToDOMLineBreaks(nsString &aString);
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   static bool PlatformToDOMLineBreaks(nsString &aString,
                                       const mozilla::fallible_t&);
 

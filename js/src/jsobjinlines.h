@@ -285,7 +285,7 @@ ClassCanHaveFixedData(const Class* clasp)
 
 
 
-static MOZ_ALWAYS_INLINE MOZ_WARN_UNUSED_RESULT JSObject*
+static MOZ_ALWAYS_INLINE MOZ_MUST_USE JSObject*
 SetNewObjectMetadata(ExclusiveContext* cxArg, JSObject* obj)
 {
     MOZ_ASSERT(!cxArg->compartment()->hasObjectPendingMetadata());

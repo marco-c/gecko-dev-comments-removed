@@ -72,14 +72,14 @@ class nsXMLContentSerializer : public nsIContentSerializer {
   
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendToString(const char16_t aChar,
                       nsAString& aOutputStr);
 
   
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendToString(const nsAString& aStr,
                       nsAString& aOutputStr);
 
@@ -88,7 +88,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendToStringConvertLF(const nsAString& aStr,
                                nsAString& aOutputStr);
 
@@ -96,7 +96,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendToStringWrapped(const nsASingleFragmentString& aStr,
                              nsAString& aOutputStr);
 
@@ -104,12 +104,12 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendToStringFormatedWrapped(const nsASingleFragmentString& aStr,
                                      nsAString& aOutputStr);
 
   
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendWrapped_WhitespaceSequence(
           nsASingleFragmentString::const_char_iterator &aPos,
           const nsASingleFragmentString::const_char_iterator aEnd,
@@ -117,7 +117,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
           nsAString &aOutputStr);
 
   
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendFormatedWrapped_WhitespaceSequence(
           nsASingleFragmentString::const_char_iterator &aPos,
           const nsASingleFragmentString::const_char_iterator aEnd,
@@ -126,7 +126,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
           nsAString &aOutputStr);
 
   
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendWrapped_NonWhitespaceSequence(
           nsASingleFragmentString::const_char_iterator &aPos,
           const nsASingleFragmentString::const_char_iterator aEnd,
@@ -139,7 +139,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendNewLineToString(nsAString& aOutputStr);
 
 
@@ -147,7 +147,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   virtual bool AppendAndTranslateEntities(const nsAString& aStr,
                                           nsAString& aOutputStr);
 
@@ -197,7 +197,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
                                      nsIContent *aOriginalElement,
                                      const nsAString& aTagNamespaceURI);
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   virtual bool SerializeAttributes(nsIContent* aContent,
                                    nsIContent *aOriginalElement,
                                    nsAString& aTagPrefix,
@@ -207,7 +207,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
                                    uint32_t aSkipAttr,
                                    bool aAddNSAttr);
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool SerializeAttr(const nsAString& aPrefix,
                      const nsAString& aName,
                      const nsAString& aValue,
@@ -239,7 +239,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendEndOfElementStart(mozilla::dom::Element* aEleemnt,
                                mozilla::dom::Element* aOriginalElement,
                                nsAString& aStr);
@@ -249,7 +249,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   virtual bool AfterElementStart(nsIContent* aContent,
                                  nsIContent* aOriginalElement,
                                  nsAString& aStr) { return true; };
@@ -298,16 +298,16 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool AppendIndentation(nsAString& aStr);
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool IncrIndentation(nsIAtom* aName);
   void DecrIndentation(nsIAtom* aName);
 
   
   
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool MaybeAddNewlineForRootNode(nsAString& aStr);
   void MaybeFlagNewlineForRootNode(nsINode* aNode);
 

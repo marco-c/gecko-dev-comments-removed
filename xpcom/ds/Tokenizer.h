@@ -115,7 +115,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool Next(Token& aToken);
 
   
@@ -123,21 +123,21 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool Check(const TokenType aTokenType, Token& aResult);
   
 
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool Check(const Token& aToken);
 
   
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool HasFailed() const;
 
   
@@ -166,13 +166,13 @@ public:
   
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool CheckWhite() { return Check(Token::Whitespace()); }
   
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool CheckChar(const char aChar) { return Check(Token::Char(aChar)); }
   
 
@@ -181,29 +181,29 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool CheckChar(bool (*aClassifier)(const char aChar));
   
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool CheckWord(const nsACString& aWord) { return Check(Token::Word(aWord)); }
   
 
 
   template <uint32_t N>
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool CheckWord(const char (&aWord)[N]) { return Check(Token::Word(nsDependentCString(aWord, N - 1))); }
   
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool CheckEOL() { return Check(Token::NewLine()); }
   
 
 
 
-  MOZ_WARN_UNUSED_RESULT
+  MOZ_MUST_USE
   bool CheckEOF() { return Check(Token::EndOfFile()); }
 
   

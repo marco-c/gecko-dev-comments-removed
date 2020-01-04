@@ -326,9 +326,9 @@
 
 
 #if defined(__GNUC__) || defined(__clang__)
-#  define MOZ_WARN_UNUSED_RESULT __attribute__ ((warn_unused_result))
+#  define MOZ_MUST_USE __attribute__ ((warn_unused_result))
 #else
-#  define MOZ_WARN_UNUSED_RESULT
+#  define MOZ_MUST_USE
 #endif
 
 

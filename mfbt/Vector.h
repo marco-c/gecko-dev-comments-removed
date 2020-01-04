@@ -268,9 +268,9 @@ class Vector final : private AllocPolicy
 
   friend struct detail::VectorTesting;
 
-  MOZ_WARN_UNUSED_RESULT bool growStorageBy(size_t aIncr);
-  MOZ_WARN_UNUSED_RESULT bool convertToHeapStorage(size_t aNewCap);
-  MOZ_WARN_UNUSED_RESULT bool maybeCheckSimulatedOOM(size_t aRequestedSize);
+  MOZ_MUST_USE bool growStorageBy(size_t aIncr);
+  MOZ_MUST_USE bool convertToHeapStorage(size_t aNewCap);
+  MOZ_MUST_USE bool maybeCheckSimulatedOOM(size_t aRequestedSize);
 
   
 
@@ -515,7 +515,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT bool initCapacity(size_t aRequest);
+  MOZ_MUST_USE bool initCapacity(size_t aRequest);
 
   
 
@@ -525,7 +525,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT bool reserve(size_t aRequest);
+  MOZ_MUST_USE bool reserve(size_t aRequest);
 
   
 
@@ -540,18 +540,18 @@ public:
   void shrinkTo(size_t aNewLength);
 
   
-  MOZ_WARN_UNUSED_RESULT bool growBy(size_t aIncr);
+  MOZ_MUST_USE bool growBy(size_t aIncr);
 
   
-  MOZ_WARN_UNUSED_RESULT bool resize(size_t aNewLength);
+  MOZ_MUST_USE bool resize(size_t aNewLength);
 
   
 
 
 
-  MOZ_WARN_UNUSED_RESULT bool growByUninitialized(size_t aIncr);
+  MOZ_MUST_USE bool growByUninitialized(size_t aIncr);
   void infallibleGrowByUninitialized(size_t aIncr);
-  MOZ_WARN_UNUSED_RESULT bool resizeUninitialized(size_t aNewLength);
+  MOZ_MUST_USE bool resizeUninitialized(size_t aNewLength);
 
   
   void clear();
@@ -574,13 +574,13 @@ public:
 
 
 
-  template<typename U> MOZ_WARN_UNUSED_RESULT bool append(U&& aU);
+  template<typename U> MOZ_MUST_USE bool append(U&& aU);
 
   
 
 
   template<typename... Args>
-  MOZ_WARN_UNUSED_RESULT bool emplaceBack(Args&&... aArgs)
+  MOZ_MUST_USE bool emplaceBack(Args&&... aArgs)
   {
     if (!growByUninitialized(1))
       return false;
@@ -589,10 +589,10 @@ public:
   }
 
   template<typename U, size_t O, class BP>
-  MOZ_WARN_UNUSED_RESULT bool appendAll(const Vector<U, O, BP>& aU);
-  MOZ_WARN_UNUSED_RESULT bool appendN(const T& aT, size_t aN);
-  template<typename U> MOZ_WARN_UNUSED_RESULT bool append(const U* aBegin, const U* aEnd);
-  template<typename U> MOZ_WARN_UNUSED_RESULT bool append(const U* aBegin, size_t aLength);
+  MOZ_MUST_USE bool appendAll(const Vector<U, O, BP>& aU);
+  MOZ_MUST_USE bool appendN(const T& aT, size_t aN);
+  template<typename U> MOZ_MUST_USE bool append(const U* aBegin, const U* aEnd);
+  template<typename U> MOZ_MUST_USE bool append(const U* aBegin, size_t aLength);
 
   
 
@@ -636,7 +636,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT T* extractRawBuffer();
+  MOZ_MUST_USE T* extractRawBuffer();
 
   
 
@@ -654,7 +654,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT T* extractOrCopyRawBuffer();
+  MOZ_MUST_USE T* extractOrCopyRawBuffer();
 
   
 
@@ -682,7 +682,7 @@ public:
 
 
   template<typename U>
-  MOZ_WARN_UNUSED_RESULT T* insert(T* aP, U&& aVal);
+  MOZ_MUST_USE T* insert(T* aP, U&& aVal);
 
   
 

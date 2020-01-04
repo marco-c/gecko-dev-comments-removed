@@ -96,7 +96,7 @@ public:
 
 
 
-  MOZ_WARN_UNUSED_RESULT bool Reference() {
+  MOZ_MUST_USE bool Reference() {
     
     
     MOZ_ASSERT(*mRefCounter >= 0);
