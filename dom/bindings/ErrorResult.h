@@ -184,6 +184,18 @@ public:
     return true;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void StealExceptionFromJSContext(JSContext* cx);
+
   template<dom::ErrNum errorNumber, typename... Ts>
   void ThrowTypeError(Ts&&... messageArgs)
   {
