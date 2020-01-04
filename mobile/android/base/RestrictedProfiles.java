@@ -74,19 +74,9 @@ public class RestrictedProfiles {
             return false;
         }
 
+        
         final UserManager mgr = (UserManager) context.getSystemService(Context.USER_SERVICE);
-        final Bundle restrictions = new Bundle();
-        restrictions.putAll(mgr.getApplicationRestrictions(context.getPackageName()));
-        restrictions.putAll(mgr.getUserRestrictions());
-
-        for (String key : restrictions.keySet()) {
-            if (restrictions.getBoolean(key)) {
-                
-                return true;
-            }
-        }
-
-        return false;
+        return !mgr.getApplicationRestrictions(context.getPackageName()).isEmpty();
     }
 
     public static void update(Context context) {
