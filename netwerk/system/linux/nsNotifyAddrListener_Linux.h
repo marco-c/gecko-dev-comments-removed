@@ -62,6 +62,10 @@ private:
     nsresult SendEvent(const char *aEventID);
 
     
+    void calculateNetworkId(void);
+    nsCString mNetworkId;
+
+    
     void checkLink(void);
 
     
