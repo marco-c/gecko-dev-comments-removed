@@ -318,7 +318,12 @@ class DrawTargetCaptureImpl;
 
 
 
-class SourceSurface : public RefCounted<SourceSurface>
+
+
+
+
+
+class SourceSurface : public external::AtomicRefCounted<SourceSurface>
 {
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SourceSurface)
