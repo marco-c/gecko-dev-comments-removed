@@ -1246,6 +1246,18 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     return;
   }
 
+  if (mMetadataRequest.Exists()) {
+    if (mPendingDormant && mPendingDormant.ref() != aDormant && !aDormant) {
+      
+      
+      mPendingDormant.reset();
+    } else {
+      mPendingDormant = Some(aDormant);
+    }
+    return;
+  }
+  mPendingDormant.reset();
+
   DECODER_LOG("SetDormant=%d", aDormant);
 
   if (aDormant) {
@@ -1905,6 +1917,11 @@ MediaDecoderStateMachine::OnMetadataRead(MetadataHolder* aMetadata)
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(mState == DECODER_STATE_DECODING_METADATA);
   mMetadataRequest.Complete();
+
+  if (mPendingDormant) {
+    SetDormant(mPendingDormant.ref());
+    return;
+  }
 
   
   mResource->SetReadMode(MediaCacheStream::MODE_PLAYBACK);

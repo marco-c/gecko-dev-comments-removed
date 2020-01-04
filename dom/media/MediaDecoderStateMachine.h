@@ -1087,6 +1087,9 @@ private:
   Watchable<bool> mAudioCompleted;
 
   
+  Maybe<bool> mPendingDormant;
+
+  
   
   
   
