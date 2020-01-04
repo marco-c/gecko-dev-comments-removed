@@ -60,15 +60,16 @@ public class TelemetryPingGenerator {
 
 
 
+
     public static TelemetryPing createCorePing(final Context context, final String docId, final String clientId,
-            final String serverURLSchemeHostPort, final int seq) {
+            final String serverURLSchemeHostPort, final int seq, final long profileCreationDateDays) {
         final String serverURL = getTelemetryServerURL(docId, serverURLSchemeHostPort, CorePing.NAME);
-        final ExtendedJSONObject payload = createCorePingPayload(context, clientId, seq);
+        final ExtendedJSONObject payload = createCorePingPayload(context, clientId, seq, profileCreationDateDays);
         return new TelemetryPing(serverURL, payload);
     }
 
     private static ExtendedJSONObject createCorePingPayload(final Context context, final String clientId,
-            final int seq) {
+            final int seq, final long profileCreationDate) {
         final ExtendedJSONObject ping = new ExtendedJSONObject();
         ping.put(CorePing.VERSION_ATTR, CorePing.VERSION_VALUE);
         ping.put(CorePing.OS_ATTR, CorePing.OS_VALUE);
@@ -87,6 +88,12 @@ public class TelemetryPingGenerator {
         ping.put(CorePing.SEQ, seq);
         if (AppConstants.MOZ_SWITCHBOARD) {
             ping.put(CorePing.EXPERIMENTS, getActiveExperiments(context));
+        }
+        
+        
+        
+        if (profileCreationDate >= 0) {
+            ping.put(CorePing.PROFILE_CREATION_DATE, profileCreationDate);
         }
         return ping;
     }
