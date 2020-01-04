@@ -136,13 +136,13 @@ struct StrokeOptions {
 
 struct DrawSurfaceOptions {
   
-  explicit DrawSurfaceOptions(Filter aFilter = Filter::LINEAR,
+  explicit DrawSurfaceOptions(SamplingFilter aSamplingFilter = SamplingFilter::LINEAR,
                               SamplingBounds aSamplingBounds = SamplingBounds::UNBOUNDED)
-    : mFilter(aFilter)
+    : mSamplingFilter(aSamplingFilter)
     , mSamplingBounds(aSamplingBounds)
   { }
 
-  Filter mFilter;                 
+  SamplingFilter mSamplingFilter; 
 
   SamplingBounds mSamplingBounds; 
 
@@ -287,11 +287,12 @@ class SurfacePattern : public Pattern
 public:
   
   SurfacePattern(SourceSurface *aSourceSurface, ExtendMode aExtendMode,
-                 const Matrix &aMatrix = Matrix(), Filter aFilter = Filter::GOOD,
+                 const Matrix &aMatrix = Matrix(),
+                 SamplingFilter aSamplingFilter = SamplingFilter::GOOD,
                  const IntRect &aSamplingRect = IntRect())
     : mSurface(aSourceSurface)
     , mExtendMode(aExtendMode)
-    , mFilter(aFilter)
+    , mSamplingFilter(aSamplingFilter)
     , mMatrix(aMatrix)
     , mSamplingRect(aSamplingRect)
   {}
@@ -304,7 +305,7 @@ public:
   RefPtr<SourceSurface> mSurface; 
   ExtendMode mExtendMode;         
 
-  Filter mFilter;                 
+  SamplingFilter mSamplingFilter; 
   Matrix mMatrix;                 
 
   IntRect mSamplingRect;          

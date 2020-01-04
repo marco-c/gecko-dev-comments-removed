@@ -235,7 +235,8 @@ enum class AntialiasMode : int8_t {
   DEFAULT
 };
 
-enum class Filter : int8_t {
+
+enum class SamplingFilter : int8_t {
   GOOD,
   LINEAR,
   POINT,
