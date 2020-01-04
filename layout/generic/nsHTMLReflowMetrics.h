@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsHTMLReflowMetrics_h___
-#define nsHTMLReflowMetrics_h___
+#ifndef mozilla_nsHTMLReflowMetrics_h
+#define mozilla_nsHTMLReflowMetrics_h
 
 #include "mozilla/WritingModes.h"
 #include "nsBoundingMetrics.h"
@@ -192,6 +192,8 @@ struct nsCollapsingMargin {
       }
 };
 
+namespace mozilla {
+
 
 
 
@@ -199,8 +201,6 @@ struct nsCollapsingMargin {
 
 
 class nsHTMLReflowMetrics {
-  using ReflowInput = mozilla::ReflowInput;
-
 public:
   
   
@@ -342,5 +342,7 @@ public:
 private:
   mozilla::WritingMode mWritingMode;
 };
+
+} 
 
 #endif 
