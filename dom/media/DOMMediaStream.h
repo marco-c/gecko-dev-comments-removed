@@ -476,7 +476,7 @@ public:
 
 
 
-  MediaStreamTrack* CreateOwnDOMTrack(TrackID aTrackID, MediaSegment::Type aType);
+  MediaStreamTrack* CreateOwnDOMTrack(TrackID aTrackID, MediaSegment::Type aType, const nsString& aLabel);
 
   class OnTracksAvailableCallback {
   public:
