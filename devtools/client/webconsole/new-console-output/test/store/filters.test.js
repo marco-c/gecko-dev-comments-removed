@@ -24,7 +24,7 @@ describe("Filtering", () => {
     
     "new Date(0)",
     
-    "ReferenceError"
+    "ReferenceError: asdf is not defined"
   ]);
   
   store.dispatch(messageAdd(new ConsoleCommand({ messageText: `console.warn("x")` })));

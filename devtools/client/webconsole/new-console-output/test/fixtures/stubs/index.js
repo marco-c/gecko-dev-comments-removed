@@ -1,0 +1,22 @@
+
+
+
+"use strict";
+
+let maps = [];
+
+[
+  "consoleApi",
+  "evaluationResult",
+  "pageError",
+].forEach((filename) => {
+  maps[filename] = require(`./${filename}`);
+});
+
+
+module.exports = new Map([
+  ...maps.consoleApi,
+  ...maps.evaluationResult,
+  ...maps.pageError,
+]);
+
