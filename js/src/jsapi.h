@@ -4331,7 +4331,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(AutoSetAsyncStackForNewCalls)
 {
     JSContext* cx;
     RootedObject oldAsyncStack;
-    const char* oldAsyncCause;
+    RootedString oldAsyncCause;
     bool oldAsyncCallIsExplicit;
 
   public:
@@ -4348,13 +4348,8 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(AutoSetAsyncStackForNewCalls)
     
     
     
-    
-    
-    
-    
-    
     AutoSetAsyncStackForNewCalls(JSContext* cx, HandleObject stack,
-                                 const char* asyncCause,
+                                 HandleString asyncCause,
                                  AsyncCallKind kind = AsyncCallKind::IMPLICIT);
     ~AutoSetAsyncStackForNewCalls();
 };

@@ -1183,7 +1183,7 @@ class Activation
     Rooted<SavedFrame*> asyncStack_;
 
     
-    const char* asyncCause_;
+    RootedString asyncCause_;
 
     
     
@@ -1265,7 +1265,7 @@ class Activation
         return asyncStack_;
     }
 
-    const char* asyncCause() const {
+    JSString* asyncCause() {
         return asyncCause_;
     }
 
