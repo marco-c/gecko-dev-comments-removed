@@ -148,13 +148,13 @@ CalculateColumnPrefISize(nsRenderingContext* aRenderingContext,
     if (frame) {
       nsIFrame::InlinePrefISizeData data;
       if (i == 0) {
-        data.lineContainer = aBaseISizeData->lineContainer;
+        data.SetLineContainer(aBaseISizeData->LineContainer());
         data.skipWhitespace = aBaseISizeData->skipWhitespace;
         data.trailingWhitespace = aBaseISizeData->trailingWhitespace;
       } else {
         
         
-        data.lineContainer = frame->GetParent();
+        data.SetLineContainer(frame->GetParent());
       }
       frame->AddInlinePrefISize(aRenderingContext, &data);
       MOZ_ASSERT(data.prevLines == 0, "Shouldn't have prev lines");
@@ -182,7 +182,7 @@ nsRubyBaseContainerFrame::AddInlineMinISize(
       
       
       nsIFrame::InlinePrefISizeData data;
-      data.lineContainer = aData->lineContainer;
+      data.SetLineContainer(aData->LineContainer());
       data.skipWhitespace = aData->skipWhitespace;
       data.trailingWhitespace = aData->trailingWhitespace;
       AddInlinePrefISize(aRenderingContext, &data);

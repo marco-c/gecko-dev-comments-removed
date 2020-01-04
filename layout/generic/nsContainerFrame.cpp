@@ -850,7 +850,7 @@ nsContainerFrame::DoInlineIntrinsicISize(nsRenderingContext *aRenderingContext,
   }
 
   const nsLineList_iterator* savedLine = aData->line;
-  nsIFrame* const savedLineContainer = aData->lineContainer;
+  nsIFrame* const savedLineContainer = aData->LineContainer();
 
   nsContainerFrame *lastInFlow;
   for (nsContainerFrame *nif = this; nif;
@@ -870,13 +870,13 @@ nsContainerFrame::DoInlineIntrinsicISize(nsRenderingContext *aRenderingContext,
     
     
     aData->line = nullptr;
-    aData->lineContainer = nullptr;
+    aData->SetLineContainer(nullptr);
 
     lastInFlow = nif;
   }
 
   aData->line = savedLine;
-  aData->lineContainer = savedLineContainer;
+  aData->SetLineContainer(savedLineContainer);
 
   
   

@@ -1563,8 +1563,8 @@ public:
       , lineContainer(nullptr)
       , prevLines(0)
       , currentLine(0)
-      , skipWhitespace(true)
       , trailingWhitespace(0)
+      , skipWhitespace(true)
     {}
 
     
@@ -1572,7 +1572,24 @@ public:
     const nsLineList_iterator* line;
 
     
+    
+    
+    
+    
+    
+  private:
     nsIFrame* lineContainer;
+
+    
+  public:
+    void SetLineContainer(nsIFrame* aLineContainer)
+    {
+      lineContainer = aLineContainer;
+      if (lineContainer) {
+        lineContainerWM = lineContainer->GetWritingMode();
+      }
+    }
+    nsIFrame* LineContainer() const { return lineContainer; }
 
     
     nscoord prevLines;
@@ -1584,12 +1601,16 @@ public:
 
     
     
+    nscoord trailingWhitespace;
+
+    
+    
     
     bool skipWhitespace;
 
     
     
-    nscoord trailingWhitespace;
+    mozilla::WritingMode lineContainerWM;
 
     
     class FloatInfo {
