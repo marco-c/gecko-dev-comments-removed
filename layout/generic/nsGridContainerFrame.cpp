@@ -4565,21 +4565,18 @@ Maybe<nsGridContainerFrame::Fragmentainer>
 nsGridContainerFrame::GetNearestFragmentainer(const GridReflowInput& aState) const
 {
   Maybe<nsGridContainerFrame::Fragmentainer> data;
-  const ReflowInput* gridRI = aState.mReflowInput;
-  if (gridRI->AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
-    return data;
-  }
   WritingMode wm = aState.mWM;
-  const ReflowInput* cbRI = gridRI->mCBReflowInput;
-  for ( ; cbRI; cbRI = cbRI->mCBReflowInput) {
-    nsIScrollableFrame* sf = do_QueryFrame(cbRI->mFrame);
+  const ReflowInput* gridRI = aState.mReflowInput;
+  const ReflowInput* cbRS = gridRI->mCBReflowInput;
+  for ( ; cbRS; cbRS = cbRS->mCBReflowInput) {
+    nsIScrollableFrame* sf = do_QueryFrame(cbRS->mFrame);
     if (sf) {
       break;
     }
-    if (wm.IsOrthogonalTo(cbRI->GetWritingMode())) {
+    if (wm.IsOrthogonalTo(cbRS->GetWritingMode())) {
       break;
     }
-    nsIAtom* frameType = cbRI->mFrame->GetType();
+    nsIAtom* frameType = cbRS->mFrame->GetType();
     if ((frameType == nsGkAtoms::canvasFrame &&
          PresContext()->IsPaginated()) ||
         frameType == nsGkAtoms::columnSetFrame) {
@@ -5767,6 +5764,16 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
     ComputedGridLineInfo* rowLineInfo = new ComputedGridLineInfo(
       Move(rowLineNames));
     Properties().Set(GridRowLineInfo(), rowLineInfo);
+
+    
+    
+    if (gridReflowInput.mGridStyle->mGridTemplateAreas) {
+      nsTArray<css::GridNamedArea>* areas = new nsTArray<css::GridNamedArea>(
+          gridReflowInput.mGridStyle->mGridTemplateAreas->mNamedAreas);
+      Properties().Set(ExplicitNamedAreasProperty(), areas);
+    } else {
+      Properties().Delete(ExplicitNamedAreasProperty());
+    }
   }
 
   if (!prevInFlow) {

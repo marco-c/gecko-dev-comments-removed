@@ -151,6 +151,20 @@ public:
     return info;
   }
 
+  typedef nsTHashtable<nsStringHashKey> ImplicitNamedAreas;
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(ImplicitNamedAreasProperty,
+                                      ImplicitNamedAreas)
+  ImplicitNamedAreas* GetImplicitNamedAreas() const {
+    return Properties().Get(ImplicitNamedAreasProperty());
+  }
+
+  typedef nsTArray<mozilla::css::GridNamedArea> ExplicitNamedAreas;
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(ExplicitNamedAreasProperty,
+                                      ExplicitNamedAreas)
+  ExplicitNamedAreas* GetExplicitNamedAreas() const {
+    return Properties().Get(ExplicitNamedAreasProperty());
+  }
+
   
 
 
@@ -195,14 +209,8 @@ protected:
 
 
 
-  typedef nsTHashtable<nsStringHashKey> ImplicitNamedAreas;
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(ImplicitNamedAreasProperty,
-                                      ImplicitNamedAreas)
   void InitImplicitNamedAreas(const nsStylePosition* aStyle);
   void AddImplicitNamedAreas(const nsTArray<nsTArray<nsString>>& aLineNameLists);
-  ImplicitNamedAreas* GetImplicitNamedAreas() const {
-    return Properties().Get(ImplicitNamedAreasProperty());
-  }
 
   
 
