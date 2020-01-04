@@ -72,16 +72,9 @@ this.ExtensionStorage = {
   sanitize(value, global) {
     
     
-    
-    
-    
-    
-    
-    
-    let JSON_ = Cu.waiveXrays(Cu.Sandbox(global).JSON);
+    let JSON_ = Cu.waiveXrays(global.JSON);
 
     let json = JSON_.stringify(value, jsonReplacer);
-
     return JSON.parse(json);
   },
 
