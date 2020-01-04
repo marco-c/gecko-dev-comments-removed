@@ -188,7 +188,8 @@ SapiService::Init()
 {
   MOZ_ASSERT(!mInitialized);
 
-  if (Preferences::GetBool("media.webspeech.synth.test")) {
+  if (Preferences::GetBool("media.webspeech.synth.test") ||
+      !Preferences::GetBool("media.webspeech.synth.enabled")) {
     
     return false;
   }
