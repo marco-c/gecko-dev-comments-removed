@@ -194,7 +194,7 @@ function CssComputedView(inspector, document, pageStyle) {
   this.searchClearButton.hidden = true;
 
   
-  this.noResults = this.styleDocument.getElementById("noResults");
+  this.noResults = this.styleDocument.getElementById("computedview-no-results");
 
   
   this._handlePrefChange = this._handlePrefChange.bind(this);
