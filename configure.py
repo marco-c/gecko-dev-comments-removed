@@ -10,6 +10,8 @@ import os
 import subprocess
 import sys
 
+from collections import Iterable
+
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(base_dir, 'python', 'mozbuild'))
@@ -81,12 +83,34 @@ if __name__ == '__main__':
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    def encode(v):
+        if isinstance(v, dict):
+            return {
+                encode(k): encode(val)
+                for k, val in v.iteritems()
+            }
+        if isinstance(v, str):
+            return v
+        if isinstance(v, unicode):
+            return v.encode(encoding)
+        if isinstance(v, Iterable):
+            return [encode(i) for i in v]
+        return v
+
+    
+    
     os.chmod('config.status', 0o755)
     if config.get('MOZ_BUILD_APP') != 'js' or config.get('JS_STANDALONE'):
-        os.environ['WRITE_MOZINFO'] = '1'
-        
-        
-        return subprocess.call([config['PYTHON'], 'config.status'])
+        os.environ[b'WRITE_MOZINFO'] = b'1'
+        from mozbuild.config_status import config_status
+        return config_status(args=[], **encode(sanitized_config))
     return 0
 
 
