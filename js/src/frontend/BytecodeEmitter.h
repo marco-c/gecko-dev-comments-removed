@@ -208,9 +208,11 @@ struct BytecodeEmitter
         uint32_t    currentLine;    
         uint32_t    lastColumn;     
 
+        JumpTarget lastTarget;      
 
         EmitSection(ExclusiveContext* cx, uint32_t lineNum)
-          : code(cx), notes(cx), lastNoteOffset(0), currentLine(lineNum), lastColumn(0)
+          : code(cx), notes(cx), lastNoteOffset(0), currentLine(lineNum), lastColumn(0),
+            lastTarget{ -1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH) }
         {}
     };
     EmitSection prologue, main, *current;
@@ -373,6 +375,19 @@ struct BytecodeEmitter
     ptrdiff_t lastNoteOffset() const { return current->lastNoteOffset; }
     unsigned currentLine() const { return current->currentLine; }
     unsigned lastColumn() const { return current->lastColumn; }
+
+    
+    bool lastOpcodeIsJumpTarget() const {
+        return offset() - current->lastTarget.offset == ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
+    }
+
+    
+    
+    
+    
+    ptrdiff_t lastNonJumpTargetOffset() const {
+        return lastOpcodeIsJumpTarget() ? current->lastTarget.offset : offset();
+    }
 
     void setFunctionBodyEndPos(TokenPos pos) {
         functionBodyEndPos = pos.end;

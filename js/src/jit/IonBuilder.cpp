@@ -1461,6 +1461,7 @@ IonBuilder::traverseBytecode()
             
             
             
+            MOZ_ASSERT_IF(!cfgStack_.empty(), cfgStack_.back().stopAt >= pc);
             if (!cfgStack_.empty() && cfgStack_.back().stopAt == pc) {
                 ControlStatus status = processCfgStack();
                 if (status == ControlStatus_Error)
