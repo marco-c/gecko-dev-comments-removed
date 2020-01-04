@@ -31,10 +31,7 @@ public:
 
 protected:
     CTFontRef mCTFont;
-
-    
-    CFDictionaryRef mAttributesDictLTR;
-    CFDictionaryRef mAttributesDictRTL;
+    CFDictionaryRef mAttributesDict;
 
     nsresult SetGlyphsFromRun(gfxShapedText *aShapedText,
                               uint32_t       aOffset,
@@ -44,9 +41,6 @@ protected:
 
     CTFontRef CreateCTFontWithFeatures(CGFloat aSize,
                                        CTFontDescriptorRef aDescriptor);
-
-    CFDictionaryRef CreateAttrDict(bool aRightToLeft);
-    CFDictionaryRef CreateAttrDictWithoutDirection();
 
     static CTFontDescriptorRef
     CreateFontFeaturesDescriptor(const std::pair<SInt16,SInt16> aFeatures[],
