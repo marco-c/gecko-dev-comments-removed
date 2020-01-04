@@ -122,6 +122,8 @@ protected:
   nsTArray<CallbackHelper*> mCallbacks;
   
   Mutex mCallbackMutex;
+  
+  Mutex mEngineMutex;
 
   
   mozilla::ShmemPool mShmemPool;
