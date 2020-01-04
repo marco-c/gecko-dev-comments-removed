@@ -384,9 +384,17 @@ GlobalManager = {
         injectAPI(api, browserObj);
 
         let schemaApi = Management.generateAPIs(extension, context, Management.schemaApis);
+
+        
+        
+        schemaApi.extensionTypes = {};
+
         function findPath(path) {
           let obj = schemaApi;
           for (let elt of path) {
+            if (!(elt in obj)) {
+              return null;
+            }
             obj = obj[elt];
           }
           return obj;
@@ -421,6 +429,10 @@ GlobalManager = {
             }
 
             return context.wrapPromise(promise || Promise.resolve(), callback);
+          },
+
+          shouldInject(path, name) {
+            return findPath(path) != null;
           },
 
           getProperty(path, name) {
