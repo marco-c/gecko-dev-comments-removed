@@ -11,8 +11,7 @@ from distutils.spawn import find_executable
 
 __all__ = ['get_debugger_info',
            'get_default_debugger_name',
-           'DebuggerSearch',
-           'get_default_valgrind_args']
+           'DebuggerSearch']
 
 '''
 Map of debugging programs to information about them, like default arguments
@@ -50,6 +49,20 @@ _DEBUGGER_INFO = {
     'wdexpress.exe': {
         'interactive': True,
         'args': ['-debugexe']
+    },
+
+    
+    
+    
+    
+    
+    
+    'valgrind': {
+        'interactive': False,
+        'args': ['--leak-check=full',
+                '--show-possibly-lost=no',
+                '--smc-check=all-non-file',
+                '--vex-iropt-register-updates=allregs-at-mem-access']
     }
 }
 
@@ -153,67 +166,3 @@ def get_default_debugger_name(search=DebuggerSearch.OnlyFirst):
             return None
 
     return None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def get_default_valgrind_args():
-    return (['--fair-sched=yes',
-             '--smc-check=all-non-file',
-             '--vex-iropt-register-updates=allregs-at-mem-access',
-             '--trace-children=yes',
-             '--child-silent-after-fork=yes',
-             '--leak-check=full',
-             '--show-possibly-lost=no',
-             ('--trace-children-skip='
-              + '/usr/bin/hg,/bin/rm,*/bin/certutil,*/bin/pk12util,'
-              + '*/bin/ssltunnel,*/bin/uname,*/bin/which,*/bin/ps,'
-              + '*/bin/grep,*/bin/java'),
-            ]
-            + get_default_valgrind_tool_specific_args())
-
-def get_default_valgrind_tool_specific_args():
-    return [
-            '--partial-loads-ok=yes'
-    ]
