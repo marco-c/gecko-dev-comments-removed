@@ -3171,16 +3171,43 @@ js::GetThisValueForDebuggerMaybeOptimizedOut(JSContext* cx, AbstractFramePtr fra
 
         RootedScript script(cx, si.fun().nonLazyScript());
 
-        if (!script->functionHasThisBinding()) {
-            MOZ_ASSERT(!script->isDerivedClassConstructor(),
-                       "Derived class constructors always have a this-binding");
+        if (si.withinInitialFrame() &&
+            (pc < script->main() || !script->functionHasThisBinding()))
+        {
+            
+            
+            
 
             
             
-            if (si.withinInitialFrame() && (frame.thisArgument().isObject() || script->strict()))
+            if (frame.thisArgument().isObject() || script->strict()) {
                 res.set(frame.thisArgument());
-            else
-                res.setMagic(JS_OPTIMIZED_OUT);
+                return true;
+            }
+
+            
+            bool executedInitThisOp = false;
+            if (script->functionHasThisBinding()) {
+                jsbytecode* initThisPc = script->code();
+                while (*initThisPc != JSOP_FUNCTIONTHIS && initThisPc < script->main())
+                    initThisPc = GetNextPc(initThisPc);
+                executedInitThisOp = (pc > initThisPc);
+            }
+
+            if (!executedInitThisOp) {
+                
+                
+                
+                
+                if (!GetFunctionThis(cx, frame, res))
+                    return false;
+                frame.thisArgument() = res;
+                return true;
+            }
+        }
+
+        if (!script->functionHasThisBinding()) {
+            res.setMagic(JS_OPTIMIZED_OUT);
             return true;
         }
 
