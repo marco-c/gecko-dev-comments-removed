@@ -522,7 +522,7 @@ public:
 
   
   
-  nsresult CreateReadystatechangeEvent(nsIDOMEvent** aDOMEvent);
+  nsresult FireReadystatechangeEvent();
   void DispatchProgressEvent(DOMEventTargetHelper* aTarget,
                              const ProgressEventType aType,
                              bool aLengthComputable,
