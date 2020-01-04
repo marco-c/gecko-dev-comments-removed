@@ -512,6 +512,17 @@ public class BrowserContract {
         public static final String VALUE = "value";
         public static final String SYNC_STATUS = "sync_status";
 
+        public enum Key {
+            
+            
+            SCREENSHOT ("screenshot");
+
+            private final String dbValue;
+
+            Key(final String dbValue) { this.dbValue = dbValue; }
+            public String getDbValue() { return dbValue; }
+        }
+
         public enum SyncStatus {
             
             
