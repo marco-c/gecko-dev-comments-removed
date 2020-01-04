@@ -427,7 +427,7 @@ protected:
                            mozilla::dom::CustomElementDefinition>
     DefinitionMap;
   typedef nsClassHashtable<mozilla::dom::CustomElementHashKey,
-                           nsTArray<RefPtr<mozilla::dom::Element>>>
+                           nsTArray<nsWeakPtr>>
     CandidateMap;
 
   
