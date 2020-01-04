@@ -6,50 +6,294 @@
 
 #include "compiler/translator/EmulatePrecision.h"
 
+#include <memory>
+
 namespace
 {
 
-static void writeVectorPrecisionEmulationHelpers(
-    TInfoSinkBase& sink, ShShaderOutput outputLanguage, unsigned int size)
+class RoundingHelperWriter : angle::NonCopyable
 {
-    std::stringstream vecTypeStrStr;
-    if (outputLanguage == SH_ESSL_OUTPUT)
-        vecTypeStrStr << "highp ";
-    vecTypeStrStr << "vec" << size;
-    std::string vecType = vecTypeStrStr.str();
+  public:
+    static RoundingHelperWriter *createHelperWriter(const ShShaderOutput outputLanguage);
 
-    sink <<
-    vecType << " angle_frm(in " << vecType << " v) {\n"
-    "    v = clamp(v, -65504.0, 65504.0);\n"
-    "    " << vecType << " exponent = floor(log2(abs(v) + 1e-30)) - 10.0;\n"
-    "    bvec" << size << " isNonZero = greaterThanEqual(exponent, vec" << size << "(-25.0));\n"
-    "    v = v * exp2(-exponent);\n"
-    "    v = sign(v) * floor(abs(v));\n"
-    "    return v * exp2(exponent) * vec" << size << "(isNonZero);\n"
-    "}\n";
+    void writeCommonRoundingHelpers(TInfoSinkBase &sink, const int shaderVersion);
+    void writeCompoundAssignmentHelper(TInfoSinkBase &sink,
+                                       const char *lType,
+                                       const char *rType,
+                                       const char *opStr,
+                                       const char *opNameStr);
 
-    sink <<
-    vecType << " angle_frl(in " << vecType << " v) {\n"
-    "    v = clamp(v, -2.0, 2.0);\n"
-    "    v = v * 256.0;\n"
-    "    v = sign(v) * floor(abs(v));\n"
-    "    return v * 0.00390625;\n"
-    "}\n";
+    virtual ~RoundingHelperWriter() {}
+
+  protected:
+    RoundingHelperWriter(const ShShaderOutput outputLanguage) : mOutputLanguage(outputLanguage) {}
+    RoundingHelperWriter() = delete;
+
+    const ShShaderOutput mOutputLanguage;
+
+  private:
+    virtual std::string getTypeString(const char *glslType)     = 0;
+    virtual void writeFloatRoundingHelpers(TInfoSinkBase &sink) = 0;
+    virtual void writeVectorRoundingHelpers(TInfoSinkBase &sink, const unsigned int size) = 0;
+    virtual void writeMatrixRoundingHelper(TInfoSinkBase &sink,
+                                           const unsigned int columns,
+                                           const unsigned int rows,
+                                           const char *functionName) = 0;
+};
+
+class RoundingHelperWriterGLSL : public RoundingHelperWriter
+{
+  public:
+    RoundingHelperWriterGLSL(const ShShaderOutput outputLanguage)
+        : RoundingHelperWriter(outputLanguage)
+    {
+    }
+
+  private:
+    std::string getTypeString(const char *glslType) override;
+    void writeFloatRoundingHelpers(TInfoSinkBase &sink) override;
+    void writeVectorRoundingHelpers(TInfoSinkBase &sink, const unsigned int size) override;
+    void writeMatrixRoundingHelper(TInfoSinkBase &sink,
+                                   const unsigned int columns,
+                                   const unsigned int rows,
+                                   const char *functionName) override;
+};
+
+class RoundingHelperWriterESSL : public RoundingHelperWriterGLSL
+{
+  public:
+    RoundingHelperWriterESSL(const ShShaderOutput outputLanguage)
+        : RoundingHelperWriterGLSL(outputLanguage)
+    {
+    }
+
+  private:
+    std::string getTypeString(const char *glslType) override;
+};
+
+class RoundingHelperWriterHLSL : public RoundingHelperWriter
+{
+  public:
+    RoundingHelperWriterHLSL(const ShShaderOutput outputLanguage)
+        : RoundingHelperWriter(outputLanguage)
+    {
+    }
+
+  private:
+    std::string getTypeString(const char *glslType) override;
+    void writeFloatRoundingHelpers(TInfoSinkBase &sink) override;
+    void writeVectorRoundingHelpers(TInfoSinkBase &sink, const unsigned int size) override;
+    void writeMatrixRoundingHelper(TInfoSinkBase &sink,
+                                   const unsigned int columns,
+                                   const unsigned int rows,
+                                   const char *functionName) override;
+};
+
+RoundingHelperWriter *RoundingHelperWriter::createHelperWriter(const ShShaderOutput outputLanguage)
+{
+    switch (outputLanguage)
+    {
+        case SH_HLSL_4_1_OUTPUT:
+            return new RoundingHelperWriterHLSL(outputLanguage);
+        case SH_ESSL_OUTPUT:
+            return new RoundingHelperWriterESSL(outputLanguage);
+        default:
+            
+            ASSERT(outputLanguage == SH_GLSL_COMPATIBILITY_OUTPUT ||
+                   IsGLSL130OrNewer(outputLanguage));
+            return new RoundingHelperWriterGLSL(outputLanguage);
+    }
 }
 
-static void writeMatrixPrecisionEmulationHelper(
-    TInfoSinkBase& sink, ShShaderOutput outputLanguage, unsigned int size, const char *functionName)
+void RoundingHelperWriter::writeCommonRoundingHelpers(TInfoSinkBase &sink, const int shaderVersion)
+{
+    
+    
+    
+
+    writeFloatRoundingHelpers(sink);
+    writeVectorRoundingHelpers(sink, 2);
+    writeVectorRoundingHelpers(sink, 3);
+    writeVectorRoundingHelpers(sink, 4);
+    if (shaderVersion > 100)
+    {
+        for (unsigned int columns = 2; columns <= 4; ++columns)
+        {
+            for (unsigned int rows = 2; rows <= 4; ++rows)
+            {
+                writeMatrixRoundingHelper(sink, columns, rows, "angle_frm");
+                writeMatrixRoundingHelper(sink, columns, rows, "angle_frl");
+            }
+        }
+    }
+    else
+    {
+        for (unsigned int size = 2; size <= 4; ++size)
+        {
+            writeMatrixRoundingHelper(sink, size, size, "angle_frm");
+            writeMatrixRoundingHelper(sink, size, size, "angle_frl");
+        }
+    }
+}
+
+void RoundingHelperWriter::writeCompoundAssignmentHelper(TInfoSinkBase &sink,
+                                                         const char *lType,
+                                                         const char *rType,
+                                                         const char *opStr,
+                                                         const char *opNameStr)
+{
+    std::string lTypeStr = getTypeString(lType);
+    std::string rTypeStr = getTypeString(rType);
+
+    
+    
+    
+    
+    sink <<
+        lTypeStr << " angle_compound_" << opNameStr << "_frm(inout " << lTypeStr << " x, in " << rTypeStr << " y) {\n"
+        "    x = angle_frm(angle_frm(x) " << opStr << " y);\n"
+        "    return x;\n"
+        "}\n";
+    sink <<
+        lTypeStr << " angle_compound_" << opNameStr << "_frl(inout " << lTypeStr << " x, in " << rTypeStr << " y) {\n"
+        "    x = angle_frl(angle_frm(x) " << opStr << " y);\n"
+        "    return x;\n"
+        "}\n";
+    
+}
+
+std::string RoundingHelperWriterGLSL::getTypeString(const char *glslType)
+{
+    return glslType;
+}
+
+std::string RoundingHelperWriterESSL::getTypeString(const char *glslType)
+{
+    std::stringstream typeStrStr;
+    typeStrStr << "highp " << glslType;
+    return typeStrStr.str();
+}
+
+void RoundingHelperWriterGLSL::writeFloatRoundingHelpers(TInfoSinkBase &sink)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    std::string floatType = getTypeString("float");
+
+    
+    sink <<
+        floatType << " angle_frm(in " << floatType << " x) {\n"
+        "    x = clamp(x, -65504.0, 65504.0);\n"
+        "    " << floatType << " exponent = floor(log2(abs(x) + 1e-30)) - 10.0;\n"
+        "    bool isNonZero = (exponent >= -25.0);\n"
+        "    x = x * exp2(-exponent);\n"
+        "    x = sign(x) * floor(abs(x));\n"
+        "    return x * exp2(exponent) * float(isNonZero);\n"
+        "}\n";
+
+    sink <<
+        floatType << " angle_frl(in " << floatType << " x) {\n"
+        "    x = clamp(x, -2.0, 2.0);\n"
+        "    x = x * 256.0;\n"
+        "    x = sign(x) * floor(abs(x));\n"
+        "    return x * 0.00390625;\n"
+        "}\n";
+    
+}
+
+void RoundingHelperWriterGLSL::writeVectorRoundingHelpers(TInfoSinkBase &sink,
+                                                          const unsigned int size)
+{
+    std::stringstream vecTypeStrStr;
+    vecTypeStrStr << "vec" << size;
+    std::string vecType = getTypeString(vecTypeStrStr.str().c_str());
+
+    
+    sink <<
+        vecType << " angle_frm(in " << vecType << " v) {\n"
+        "    v = clamp(v, -65504.0, 65504.0);\n"
+        "    " << vecType << " exponent = floor(log2(abs(v) + 1e-30)) - 10.0;\n"
+        "    bvec" << size << " isNonZero = greaterThanEqual(exponent, vec" << size << "(-25.0));\n"
+        "    v = v * exp2(-exponent);\n"
+        "    v = sign(v) * floor(abs(v));\n"
+        "    return v * exp2(exponent) * vec" << size << "(isNonZero);\n"
+        "}\n";
+
+    sink <<
+        vecType << " angle_frl(in " << vecType << " v) {\n"
+        "    v = clamp(v, -2.0, 2.0);\n"
+        "    v = v * 256.0;\n"
+        "    v = sign(v) * floor(abs(v));\n"
+        "    return v * 0.00390625;\n"
+        "}\n";
+    
+}
+
+void RoundingHelperWriterGLSL::writeMatrixRoundingHelper(TInfoSinkBase &sink,
+                                                         const unsigned int columns,
+                                                         const unsigned int rows,
+                                                         const char *functionName)
 {
     std::stringstream matTypeStrStr;
-    if (outputLanguage == SH_ESSL_OUTPUT)
-        matTypeStrStr << "highp ";
-    matTypeStrStr << "mat" << size;
-    std::string matType = matTypeStrStr.str();
+    matTypeStrStr << "mat" << columns;
+    if (rows != columns)
+    {
+        matTypeStrStr << "x" << rows;
+    }
+    std::string matType = getTypeString(matTypeStrStr.str().c_str());
 
     sink << matType << " " << functionName << "(in " << matType << " m) {\n"
-            "    " << matType << " rounded;\n";
+         << "    " << matType << " rounded;\n";
 
-    for (unsigned int i = 0; i < size; ++i)
+    for (unsigned int i = 0; i < columns; ++i)
     {
         sink << "    rounded[" << i << "] = " << functionName << "(m[" << i << "]);\n";
     }
@@ -58,181 +302,128 @@ static void writeMatrixPrecisionEmulationHelper(
             "}\n";
 }
 
-static void writeCommonPrecisionEmulationHelpers(TInfoSinkBase& sink, ShShaderOutput outputLanguage)
+static const char *GetHLSLTypeStr(const char *floatTypeStr)
 {
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    std::string floatType = "float";
-    if (outputLanguage == SH_ESSL_OUTPUT)
-        floatType = "highp float";
-
-    sink <<
-    floatType << " angle_frm(in " << floatType << " x) {\n"
-    "    x = clamp(x, -65504.0, 65504.0);\n"
-    "    " << floatType << " exponent = floor(log2(abs(x) + 1e-30)) - 10.0;\n"
-    "    bool isNonZero = (exponent >= -25.0);\n"
-    "    x = x * exp2(-exponent);\n"
-    "    x = sign(x) * floor(abs(x));\n"
-    "    return x * exp2(exponent) * float(isNonZero);\n"
-    "}\n";
-
-    sink <<
-    floatType << " angle_frl(in " << floatType << " x) {\n"
-    "    x = clamp(x, -2.0, 2.0);\n"
-    "    x = x * 256.0;\n"
-    "    x = sign(x) * floor(abs(x));\n"
-    "    return x * 0.00390625;\n"
-    "}\n";
-
-    writeVectorPrecisionEmulationHelpers(sink, outputLanguage, 2);
-    writeVectorPrecisionEmulationHelpers(sink, outputLanguage, 3);
-    writeVectorPrecisionEmulationHelpers(sink, outputLanguage, 4);
-    for (unsigned int size = 2; size <= 4; ++size)
+    if (strcmp(floatTypeStr, "float") == 0)
     {
-        writeMatrixPrecisionEmulationHelper(sink, outputLanguage, size, "angle_frm");
-        writeMatrixPrecisionEmulationHelper(sink, outputLanguage, size, "angle_frl");
-    }
-}
-
-static void writeCompoundAssignmentPrecisionEmulation(
-    TInfoSinkBase& sink, ShShaderOutput outputLanguage,
-    const char *lType, const char *rType, const char *opStr, const char *opNameStr)
-{
-    std::string lTypeStr = lType;
-    std::string rTypeStr = rType;
-    if (outputLanguage == SH_ESSL_OUTPUT)
-    {
-        std::stringstream lTypeStrStr;
-        lTypeStrStr << "highp " << lType;
-        lTypeStr = lTypeStrStr.str();
-        std::stringstream rTypeStrStr;
-        rTypeStrStr << "highp " << rType;
-        rTypeStr = rTypeStrStr.str();
-    }
-
-    
-    
-    
-    sink <<
-    lTypeStr << " angle_compound_" << opNameStr << "_frm(inout " << lTypeStr << " x, in " << rTypeStr << " y) {\n"
-    "    x = angle_frm(angle_frm(x) " << opStr << " y);\n"
-    "    return x;\n"
-    "}\n";
-    sink <<
-    lTypeStr << " angle_compound_" << opNameStr << "_frl(inout " << lTypeStr << " x, in " << rTypeStr << " y) {\n"
-    "    x = angle_frl(angle_frm(x) " << opStr << " y);\n"
-    "    return x;\n"
-    "}\n";
-}
-
-const char *getFloatTypeStr(const TType& type)
-{
-    switch (type.getNominalSize())
-    {
-      case 1:
         return "float";
-      case 2:
-        switch(type.getSecondarySize())
-        {
-          case 1:
-            return "vec2";
-          case 2:
-            return "mat2";
-          case 3:
-            return "mat2x3";
-          case 4:
-            return "mat2x4";
-          default:
-            UNREACHABLE();
-            return NULL;
-        }
-      case 3:
-        switch(type.getSecondarySize())
-        {
-          case 1:
-            return "vec3";
-          case 2:
-            return "mat3x2";
-          case 3:
-            return "mat3";
-          case 4:
-            return "mat3x4";
-          default:
-            UNREACHABLE();
-            return NULL;
-        }
-      case 4:
-        switch(type.getSecondarySize())
-        {
-          case 1:
-            return "vec4";
-          case 2:
-            return "mat4x2";
-          case 3:
-            return "mat4x3";
-          case 4:
-            return "mat4";
-          default:
-            UNREACHABLE();
-            return NULL;
-        }
-      default:
-        UNREACHABLE();
-        return NULL;
     }
+    if (strcmp(floatTypeStr, "vec2") == 0)
+    {
+        return "float2";
+    }
+    if (strcmp(floatTypeStr, "vec3") == 0)
+    {
+        return "float3";
+    }
+    if (strcmp(floatTypeStr, "vec4") == 0)
+    {
+        return "float4";
+    }
+    if (strcmp(floatTypeStr, "mat2") == 0)
+    {
+        return "float2x2";
+    }
+    if (strcmp(floatTypeStr, "mat3") == 0)
+    {
+        return "float3x3";
+    }
+    if (strcmp(floatTypeStr, "mat4") == 0)
+    {
+        return "float4x4";
+    }
+    if (strcmp(floatTypeStr, "mat2x3") == 0)
+    {
+        return "float2x3";
+    }
+    if (strcmp(floatTypeStr, "mat2x4") == 0)
+    {
+        return "float2x4";
+    }
+    if (strcmp(floatTypeStr, "mat3x2") == 0)
+    {
+        return "float3x2";
+    }
+    if (strcmp(floatTypeStr, "mat3x4") == 0)
+    {
+        return "float3x4";
+    }
+    if (strcmp(floatTypeStr, "mat4x2") == 0)
+    {
+        return "float4x2";
+    }
+    if (strcmp(floatTypeStr, "mat4x3") == 0)
+    {
+        return "float4x3";
+    }
+    UNREACHABLE();
+    return nullptr;
+}
+
+std::string RoundingHelperWriterHLSL::getTypeString(const char *glslType)
+{
+    return GetHLSLTypeStr(glslType);
+}
+
+void RoundingHelperWriterHLSL::writeFloatRoundingHelpers(TInfoSinkBase &sink)
+{
+    
+    writeVectorRoundingHelpers(sink, 1);
+}
+
+void RoundingHelperWriterHLSL::writeVectorRoundingHelpers(TInfoSinkBase &sink,
+                                                          const unsigned int size)
+{
+    std::stringstream vecTypeStrStr;
+    vecTypeStrStr << "float" << size;
+    std::string vecType = vecTypeStrStr.str();
+
+    
+    sink <<
+        vecType << " angle_frm(" << vecType << " v) {\n"
+        "    v = clamp(v, -65504.0, 65504.0);\n"
+        "    " << vecType << " exponent = floor(log2(abs(v) + 1e-30)) - 10.0;\n"
+        "    bool" << size << " isNonZero = exponent < -25.0;\n"
+        "    v = v * exp2(-exponent);\n"
+        "    v = sign(v) * floor(abs(v));\n"
+        "    return v * exp2(exponent) * (float" << size << ")(isNonZero);\n"
+        "}\n";
+
+    sink <<
+        vecType << " angle_frl(" << vecType << " v) {\n"
+        "    v = clamp(v, -2.0, 2.0);\n"
+        "    v = v * 256.0;\n"
+        "    v = sign(v) * floor(abs(v));\n"
+        "    return v * 0.00390625;\n"
+        "}\n";
+    
+}
+
+void RoundingHelperWriterHLSL::writeMatrixRoundingHelper(TInfoSinkBase &sink,
+                                                         const unsigned int columns,
+                                                         const unsigned int rows,
+                                                         const char *functionName)
+{
+    std::stringstream matTypeStrStr;
+    matTypeStrStr << "float" << columns << "x" << rows;
+    std::string matType = matTypeStrStr.str();
+
+    sink << matType << " " << functionName << "(" << matType << " m) {\n"
+         << "    " << matType << " rounded;\n";
+
+    for (unsigned int i = 0; i < columns; ++i)
+    {
+        sink << "    rounded[" << i << "] = " << functionName << "(m[" << i << "]);\n";
+    }
+
+    sink << "    return rounded;\n"
+            "}\n";
 }
 
 bool canRoundFloat(const TType &type)
 {
-    return type.getBasicType() == EbtFloat && !type.isNonSquareMatrix() && !type.isArray() &&
-        (type.getPrecision() == EbpLow || type.getPrecision() == EbpMedium);
+    return type.getBasicType() == EbtFloat && !type.isArray() &&
+           (type.getPrecision() == EbpLow || type.getPrecision() == EbpMedium);
 }
 
 TIntermAggregate *createInternalFunctionCallNode(TString name, TIntermNode *child)
@@ -253,7 +444,9 @@ TIntermAggregate *createRoundingFunctionCallNode(TIntermTyped *roundedChild)
         roundFunctionName = "angle_frm";
     else
         roundFunctionName = "angle_frl";
-    return createInternalFunctionCallNode(roundFunctionName, roundedChild);
+    TIntermAggregate *callNode = createInternalFunctionCallNode(roundFunctionName, roundedChild);
+    callNode->setType(roundedChild->getType());
+    return callNode;
 }
 
 TIntermAggregate *createCompoundAssignmentFunctionCallNode(TIntermTyped *left, TIntermTyped *right, const char *opNameStr)
@@ -302,9 +495,8 @@ void EmulatePrecision::visitSymbol(TIntermSymbol *node)
 {
     if (canRoundFloat(node->getType()) && !mDeclaringVariables && !isLValueRequiredHere())
     {
-        TIntermNode *parent = getParentNode();
         TIntermNode *replacement = createRoundingFunctionCallNode(node);
-        mReplacements.push_back(NodeUpdateEntry(parent, node, replacement, true));
+        queueReplacement(node, replacement, OriginalNode::BECOMES_CHILD);
     }
 }
 
@@ -350,26 +542,30 @@ bool EmulatePrecision::visitBinary(Visit visit, TIntermBinary *node)
                 break;
             }
             TIntermNode *replacement = createRoundingFunctionCallNode(node);
-            mReplacements.push_back(NodeUpdateEntry(parent, node, replacement, true));
+            queueReplacement(node, replacement, OriginalNode::BECOMES_CHILD);
             break;
           }
 
           
           case EOpAddAssign:
           {
-            mEmulateCompoundAdd.insert(TypePair(getFloatTypeStr(type), getFloatTypeStr(node->getRight()->getType())));
-            TIntermNode *parent = getParentNode();
-            TIntermNode *replacement = createCompoundAssignmentFunctionCallNode(node->getLeft(), node->getRight(), "add");
-            mReplacements.push_back(NodeUpdateEntry(parent, node, replacement, false));
-            break;
+              mEmulateCompoundAdd.insert(
+                  TypePair(type.getBuiltInTypeNameString(),
+                           node->getRight()->getType().getBuiltInTypeNameString()));
+              TIntermNode *replacement = createCompoundAssignmentFunctionCallNode(
+                  node->getLeft(), node->getRight(), "add");
+              queueReplacement(node, replacement, OriginalNode::IS_DROPPED);
+              break;
           }
           case EOpSubAssign:
           {
-            mEmulateCompoundSub.insert(TypePair(getFloatTypeStr(type), getFloatTypeStr(node->getRight()->getType())));
-            TIntermNode *parent = getParentNode();
-            TIntermNode *replacement = createCompoundAssignmentFunctionCallNode(node->getLeft(), node->getRight(), "sub");
-            mReplacements.push_back(NodeUpdateEntry(parent, node, replacement, false));
-            break;
+              mEmulateCompoundSub.insert(
+                  TypePair(type.getBuiltInTypeNameString(),
+                           node->getRight()->getType().getBuiltInTypeNameString()));
+              TIntermNode *replacement = createCompoundAssignmentFunctionCallNode(
+                  node->getLeft(), node->getRight(), "sub");
+              queueReplacement(node, replacement, OriginalNode::IS_DROPPED);
+              break;
           }
           case EOpMulAssign:
           case EOpVectorTimesMatrixAssign:
@@ -377,19 +573,23 @@ bool EmulatePrecision::visitBinary(Visit visit, TIntermBinary *node)
           case EOpMatrixTimesScalarAssign:
           case EOpMatrixTimesMatrixAssign:
           {
-            mEmulateCompoundMul.insert(TypePair(getFloatTypeStr(type), getFloatTypeStr(node->getRight()->getType())));
-            TIntermNode *parent = getParentNode();
-            TIntermNode *replacement = createCompoundAssignmentFunctionCallNode(node->getLeft(), node->getRight(), "mul");
-            mReplacements.push_back(NodeUpdateEntry(parent, node, replacement, false));
-            break;
+              mEmulateCompoundMul.insert(
+                  TypePair(type.getBuiltInTypeNameString(),
+                           node->getRight()->getType().getBuiltInTypeNameString()));
+              TIntermNode *replacement = createCompoundAssignmentFunctionCallNode(
+                  node->getLeft(), node->getRight(), "mul");
+              queueReplacement(node, replacement, OriginalNode::IS_DROPPED);
+              break;
           }
           case EOpDivAssign:
           {
-            mEmulateCompoundDiv.insert(TypePair(getFloatTypeStr(type), getFloatTypeStr(node->getRight()->getType())));
-            TIntermNode *parent = getParentNode();
-            TIntermNode *replacement = createCompoundAssignmentFunctionCallNode(node->getLeft(), node->getRight(), "div");
-            mReplacements.push_back(NodeUpdateEntry(parent, node, replacement, false));
-            break;
+              mEmulateCompoundDiv.insert(
+                  TypePair(type.getBuiltInTypeNameString(),
+                           node->getRight()->getType().getBuiltInTypeNameString()));
+              TIntermNode *replacement = createCompoundAssignmentFunctionCallNode(
+                  node->getLeft(), node->getRight(), "div");
+              queueReplacement(node, replacement, OriginalNode::IS_DROPPED);
+              break;
           }
           default:
             
@@ -444,7 +644,7 @@ bool EmulatePrecision::visitAggregate(Visit visit, TIntermAggregate *node)
                 parentUsesResult(parent, node))
             {
                 TIntermNode *replacement = createRoundingFunctionCallNode(node);
-                mReplacements.push_back(NodeUpdateEntry(parent, node, replacement, true));
+                queueReplacement(node, replacement, OriginalNode::BECOMES_CHILD);
             }
         }
         break;
@@ -454,7 +654,7 @@ bool EmulatePrecision::visitAggregate(Visit visit, TIntermAggregate *node)
         if (canRoundFloat(node->getType()) && visit == PreVisit && parentUsesResult(parent, node))
         {
             TIntermNode *replacement = createRoundingFunctionCallNode(node);
-            mReplacements.push_back(NodeUpdateEntry(parent, node, replacement, true));
+            queueReplacement(node, replacement, OriginalNode::BECOMES_CHILD);
         }
         break;
     }
@@ -476,9 +676,8 @@ bool EmulatePrecision::visitUnary(Visit visit, TIntermUnary *node)
       default:
         if (canRoundFloat(node->getType()) && visit == PreVisit)
         {
-            TIntermNode *parent = getParentNode();
             TIntermNode *replacement = createRoundingFunctionCallNode(node);
-            mReplacements.push_back(NodeUpdateEntry(parent, node, replacement, true));
+            queueReplacement(node, replacement, OriginalNode::BECOMES_CHILD);
         }
         break;
     }
@@ -486,22 +685,23 @@ bool EmulatePrecision::visitUnary(Visit visit, TIntermUnary *node)
     return true;
 }
 
-void EmulatePrecision::writeEmulationHelpers(TInfoSinkBase& sink, ShShaderOutput outputLanguage)
+void EmulatePrecision::writeEmulationHelpers(TInfoSinkBase &sink,
+                                             const int shaderVersion,
+                                             const ShShaderOutput outputLanguage)
 {
-    
-    ASSERT(outputLanguage == SH_GLSL_COMPATIBILITY_OUTPUT ||
-           IsGLSL130OrNewer(outputLanguage) ||
-           outputLanguage == SH_ESSL_OUTPUT);
-    writeCommonPrecisionEmulationHelpers(sink, outputLanguage);
+    std::unique_ptr<RoundingHelperWriter> roundingHelperWriter(
+        RoundingHelperWriter::createHelperWriter(outputLanguage));
+
+    roundingHelperWriter->writeCommonRoundingHelpers(sink, shaderVersion);
 
     EmulationSet::const_iterator it;
     for (it = mEmulateCompoundAdd.begin(); it != mEmulateCompoundAdd.end(); it++)
-        writeCompoundAssignmentPrecisionEmulation(sink, outputLanguage, it->lType, it->rType, "+", "add");
+        roundingHelperWriter->writeCompoundAssignmentHelper(sink, it->lType, it->rType, "+", "add");
     for (it = mEmulateCompoundSub.begin(); it != mEmulateCompoundSub.end(); it++)
-        writeCompoundAssignmentPrecisionEmulation(sink, outputLanguage, it->lType, it->rType, "-", "sub");
+        roundingHelperWriter->writeCompoundAssignmentHelper(sink, it->lType, it->rType, "-", "sub");
     for (it = mEmulateCompoundDiv.begin(); it != mEmulateCompoundDiv.end(); it++)
-        writeCompoundAssignmentPrecisionEmulation(sink, outputLanguage, it->lType, it->rType, "/", "div");
+        roundingHelperWriter->writeCompoundAssignmentHelper(sink, it->lType, it->rType, "/", "div");
     for (it = mEmulateCompoundMul.begin(); it != mEmulateCompoundMul.end(); it++)
-        writeCompoundAssignmentPrecisionEmulation(sink, outputLanguage, it->lType, it->rType, "*", "mul");
+        roundingHelperWriter->writeCompoundAssignmentHelper(sink, it->lType, it->rType, "*", "mul");
 }
 

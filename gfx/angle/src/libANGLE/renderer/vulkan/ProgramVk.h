@@ -88,6 +88,11 @@ class ProgramVk : public ProgramImpl
     
     bool getUniformBlockMemberInfo(const std::string &memberUniformName,
                                    sh::BlockMemberInfo *memberInfoOut) const override;
+
+    void setPathFragmentInputGen(const std::string &inputName,
+                                 GLenum genMode,
+                                 GLint components,
+                                 const GLfloat *coeffs) override;
 };
 
 }  

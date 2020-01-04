@@ -37,10 +37,43 @@ void TranslatorGLSL::translate(TIntermNode *root, int compileOptions)
     
     writeVersion(root);
 
-    writePragma();
-
     
     writeExtensionBehavior(root);
+
+    
+    
+    writePragma(compileOptions);
+
+    
+    
+    
+    
+    if ((compileOptions & SH_FLATTEN_PRAGMA_STDGL_INVARIANT_ALL) && getPragma().stdgl.invariantAll)
+    {
+        collectVariables(root);
+
+        switch (getShaderType())
+        {
+            case GL_VERTEX_SHADER:
+                sink << "invariant gl_Position;\n";
+
+                
+                
+                conditionallyOutputInvariantDeclaration("gl_PointSize");
+                break;
+            case GL_FRAGMENT_SHADER:
+                
+                
+                
+                conditionallyOutputInvariantDeclaration("gl_FragCoord");
+                conditionallyOutputInvariantDeclaration("gl_PointCoord");
+                break;
+            default:
+                
+                ASSERT(false);
+                break;
+        }
+    }
 
     bool precisionEmulation = getResources().WEBGL_debug_shader_precision && getPragma().debugShaderPrecision;
 
@@ -49,7 +82,7 @@ void TranslatorGLSL::translate(TIntermNode *root, int compileOptions)
         EmulatePrecision emulatePrecision(getSymbolTable(), getShaderVersion());
         root->traverse(&emulatePrecision);
         emulatePrecision.updateTree();
-        emulatePrecision.writeEmulationHelpers(sink, getOutputType());
+        emulatePrecision.writeEmulationHelpers(sink, getShaderVersion(), getOutputType());
     }
 
     
@@ -132,6 +165,13 @@ void TranslatorGLSL::translate(TIntermNode *root, int compileOptions)
         }
     }
 
+    if (getShaderType() == GL_COMPUTE_SHADER && isComputeShaderLocalSizeDeclared())
+    {
+        const sh::WorkGroupSize &localSize = getComputeShaderLocalSize();
+        sink << "layout (local_size_x=" << localSize[0] << ", local_size_y=" << localSize[1]
+             << ", local_size_z=" << localSize[2] << ") in;\n";
+    }
+
     
     TOutputGLSL outputGLSL(sink,
                            getArrayIndexClampingStrategy(),
@@ -141,6 +181,13 @@ void TranslatorGLSL::translate(TIntermNode *root, int compileOptions)
                            getShaderVersion(),
                            getOutputType());
     root->traverse(&outputGLSL);
+}
+
+bool TranslatorGLSL::shouldFlattenPragmaStdglInvariantAll()
+{
+    
+    
+    return IsGLSL130OrNewer(getOutputType());
 }
 
 void TranslatorGLSL::writeVersion(TIntermNode *root)
@@ -192,6 +239,23 @@ void TranslatorGLSL::writeExtensionBehavior(TIntermNode *root)
         sink << "#extension GL_ARB_explicit_attrib_location : require\n";
     }
 
+    
+    if (getOutputType() != SH_ESSL_OUTPUT && getOutputType() < SH_GLSL_400_CORE_OUTPUT)
+    {
+        sink << "#extension GL_ARB_gpu_shader5 : ";
+
+        
+        
+        if (getShaderVersion() >= 300)
+        {
+            sink << "require\n";
+        }
+        else
+        {
+            sink << "enable\n";
+        }
+    }
+
     TExtensionGLSL extensionGLSL(getOutputType());
     root->traverse(&extensionGLSL);
 
@@ -202,5 +266,14 @@ void TranslatorGLSL::writeExtensionBehavior(TIntermNode *root)
     for (const auto &ext : extensionGLSL.getRequiredExtensions())
     {
         sink << "#extension " << ext << " : require\n";
+    }
+}
+
+void TranslatorGLSL::conditionallyOutputInvariantDeclaration(const char *builtinVaryingName)
+{
+    if (isVaryingDefined(builtinVaryingName))
+    {
+        TInfoSinkBase &sink = getInfoSink().obj;
+        sink << "invariant " << builtinVaryingName << ";\n";
     }
 }

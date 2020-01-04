@@ -42,61 +42,6 @@ TIntermSymbol *TIntermediate::addSymbol(
 
 
 
-TIntermTyped *TIntermediate::addBinaryMath(
-    TOperator op, TIntermTyped *left, TIntermTyped *right, const TSourceLoc &line)
-{
-    
-    
-    
-    
-    TIntermBinary *node = new TIntermBinary(op);
-    node->setLine(line);
-
-    node->setLeft(left);
-    node->setRight(right);
-    if (!node->promote(mInfoSink))
-        return NULL;
-
-    
-    TIntermTyped *foldedNode = node->fold(mInfoSink);
-    if (foldedNode)
-        return foldedNode;
-
-    return node;
-}
-
-
-
-
-
-
-TIntermTyped *TIntermediate::addAssign(
-    TOperator op, TIntermTyped *left, TIntermTyped *right, const TSourceLoc &line)
-{
-    if (left->getType().getStruct() || right->getType().getStruct())
-    {
-        if (left->getType() != right->getType())
-        {
-            return NULL;
-        }
-    }
-
-    TIntermBinary *node = new TIntermBinary(op);
-    node->setLine(line);
-
-    node->setLeft(left);
-    node->setRight(right);
-    if (!node->promote(mInfoSink))
-        return NULL;
-
-    return node;
-}
-
-
-
-
-
-
 
 
 TIntermTyped *TIntermediate::addIndex(
@@ -503,6 +448,4 @@ TIntermTyped *TIntermediate::foldAggregateBuiltIn(TIntermAggregate *aggregate)
             
             return nullptr;
     }
-
-    return nullptr;
 }

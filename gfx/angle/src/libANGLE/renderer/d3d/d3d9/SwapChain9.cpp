@@ -335,7 +335,7 @@ EGLint SwapChain9::swapRect(EGLint x, EGLint y, EGLint width, EGLint height)
     
     
     
-    if (result == 0x88760873)
+    if (result == static_cast<HRESULT>(0x88760873))
     {
         return EGL_BAD_MATCH;
     }

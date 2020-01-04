@@ -228,4 +228,7 @@ enum TOperator
 
 const char* GetOperatorString(TOperator op);
 
+
+bool IsAssignment(TOperator op);
+
 #endif  

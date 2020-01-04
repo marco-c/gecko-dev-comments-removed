@@ -66,6 +66,27 @@ bool PruneEmptyDeclarationsTraverser::visitAggregate(Visit, TIntermAggregate *no
                     ASSERT(parentAgg != nullptr);
                     mMultiReplacements.push_back(NodeReplaceWithMultipleEntry(parentAgg, node, emptyReplacement));
                 }
+                else if (sym->getType().getQualifier() != EvqGlobal &&
+                         sym->getType().getQualifier() != EvqTemporary)
+                {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    if (mInGlobalScope)
+                    {
+                        sym->getTypePointer()->setQualifier(EvqGlobal);
+                    }
+                    else
+                    {
+                        sym->getTypePointer()->setQualifier(EvqTemporary);
+                    }
+                }
             }
         }
         return false;

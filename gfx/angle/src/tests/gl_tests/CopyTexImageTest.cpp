@@ -300,6 +300,37 @@ TEST_P(CopyTexImageTest, SubImageRGBToL)
 
 
 
+class CopyTexImageTestES3 : public CopyTexImageTest
+{
+};
+
+
+
+
+TEST_P(CopyTexImageTestES3, ReadBufferIsNone)
+{
+    GLfloat color[] = {
+        0.25f, 1.0f, 0.75f, 0.5f,
+    };
+
+    GLuint fbo = createFramebuffer(GL_RGBA, GL_UNSIGNED_BYTE, color);
+    GLuint tex = createTextureFromCopyTexImage(fbo, GL_RGBA);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    glReadBuffer(GL_NONE);
+
+    EXPECT_GL_NO_ERROR();
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, 4, 4);
+    EXPECT_GL_ERROR(GL_INVALID_OPERATION);
+
+    glDeleteFramebuffers(1, &fbo);
+    glDeleteTextures(1, &tex);
+}
+
+
+
 ANGLE_INSTANTIATE_TEST(CopyTexImageTest,
                        ES2_D3D9(),
                        ES2_D3D11(EGL_EXPERIMENTAL_PRESENT_PATH_COPY_ANGLE),
@@ -307,4 +338,6 @@ ANGLE_INSTANTIATE_TEST(CopyTexImageTest,
                        ES2_OPENGL(),
                        ES2_OPENGL(3, 3),
                        ES2_OPENGLES());
+
+ANGLE_INSTANTIATE_TEST(CopyTexImageTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
 }

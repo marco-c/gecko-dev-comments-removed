@@ -27,6 +27,8 @@
 #include "compiler/translator/Operator.h"
 #include "compiler/translator/Types.h"
 
+class TDiagnostics;
+
 class TIntermTraverser;
 class TIntermAggregate;
 class TIntermBinary;
@@ -153,7 +155,7 @@ class TIntermTyped : public TIntermNode
     const char *getBasicString() const { return mType.getBasicString(); }
     TString getCompleteString() const { return mType.getCompleteString(); }
 
-    int getArraySize() const { return mType.getArraySize(); }
+    unsigned int getArraySize() const { return mType.getArraySize(); }
 
     bool isConstructorWithOnlyConstantUnionParameters();
 
@@ -194,6 +196,10 @@ class TIntermLoop : public TIntermNode
     TIntermTyped *getCondition() { return mCond; }
     TIntermTyped *getExpression() { return mExpr; }
     TIntermAggregate *getBody() { return mBody; }
+
+    void setCondition(TIntermTyped *condition) { mCond = condition; }
+    void setExpression(TIntermTyped *expression) { mExpr = expression; }
+    void setBody(TIntermAggregate *body) { mBody = body; }
 
     void setUnrollFlag(bool flag) { mUnrollFlag = flag; }
     bool getUnrollFlag() const { return mUnrollFlag; }
@@ -345,7 +351,9 @@ class TIntermConstantUnion : public TIntermTyped
     void traverse(TIntermTraverser *it) override;
     bool replaceChildNode(TIntermNode *, TIntermNode *) override { return false; }
 
-    TConstantUnion *foldBinary(TOperator op, TIntermConstantUnion *rightNode, TInfoSink &infoSink);
+    TConstantUnion *foldBinary(TOperator op,
+                               TIntermConstantUnion *rightNode,
+                               TDiagnostics *diagnostics);
     TConstantUnion *foldUnaryWithDifferentReturnType(TOperator op, TInfoSink &infoSink);
     TConstantUnion *foldUnaryWithSameReturnType(TOperator op, TInfoSink &infoSink);
 
@@ -402,7 +410,14 @@ class TIntermBinary : public TIntermOperator
         : TIntermOperator(op),
           mAddIndexClamp(false) {}
 
+    
+    
+    TIntermBinary(TOperator op, TIntermTyped *left, TIntermTyped *right);
+
     TIntermTyped *deepCopy() const override { return new TIntermBinary(*this); }
+
+    static TOperator GetMulOpBasedOnOperands(const TType &left, const TType &right);
+    static TOperator GetMulAssignOpBasedOnOperands(const TType &left, const TType &right);
 
     TIntermBinary *getAsBinaryNode() override { return this; };
     void traverse(TIntermTraverser *it) override;
@@ -417,8 +432,7 @@ class TIntermBinary : public TIntermOperator
     void setRight(TIntermTyped *node) { mRight = node; }
     TIntermTyped *getLeft() const { return mLeft; }
     TIntermTyped *getRight() const { return mRight; }
-    bool promote(TInfoSink &);
-    TIntermTyped *fold(TInfoSink &infoSink);
+    TIntermTyped *fold(TDiagnostics *diagnostics);
 
     void setAddIndexClamp() { mAddIndexClamp = true; }
     bool getAddIndexClamp() { return mAddIndexClamp; }
@@ -431,6 +445,8 @@ class TIntermBinary : public TIntermOperator
     bool mAddIndexClamp;
 
   private:
+    void promote();
+
     TIntermBinary(const TIntermBinary &node);  
 };
 
@@ -672,17 +688,8 @@ class TIntermTraverser : angle::NonCopyable
 {
   public:
     POOL_ALLOCATOR_NEW_DELETE();
-    TIntermTraverser(bool preVisit, bool inVisit, bool postVisit)
-        : preVisit(preVisit),
-          inVisit(inVisit),
-          postVisit(postVisit),
-          mDepth(0),
-          mMaxDepth(0),
-          mInGlobalScope(true),
-          mTemporaryIndex(nullptr)
-    {
-    }
-    virtual ~TIntermTraverser() {}
+    TIntermTraverser(bool preVisit, bool inVisit, bool postVisit);
+    virtual ~TIntermTraverser();
 
     virtual void visitSymbol(TIntermSymbol *node) {}
     virtual void visitRaw(TIntermRaw *node) {}
@@ -763,36 +770,6 @@ class TIntermTraverser : angle::NonCopyable
         return !mParentBlockStack.empty() && getParentNode() == mParentBlockStack.back().node;
     }
 
-    const bool preVisit;
-    const bool inVisit;
-    const bool postVisit;
-
-    int mDepth;
-    int mMaxDepth;
-
-    
-    TVector<TIntermNode *> mPath;
-
-    bool mInGlobalScope;
-
-    
-    struct NodeUpdateEntry
-    {
-        NodeUpdateEntry(TIntermNode *_parent,
-                        TIntermNode *_original,
-                        TIntermNode *_replacement,
-                        bool _originalBecomesChildOfReplacement)
-            : parent(_parent),
-              original(_original),
-              replacement(_replacement),
-              originalBecomesChildOfReplacement(_originalBecomesChildOfReplacement) {}
-
-        TIntermNode *parent;
-        TIntermNode *original;
-        TIntermNode *replacement;
-        bool originalBecomesChildOfReplacement;
-    };
-
     
     struct NodeReplaceWithMultipleEntry
     {
@@ -831,13 +808,6 @@ class TIntermTraverser : angle::NonCopyable
     
     
     
-    std::vector<NodeUpdateEntry> mReplacements;
-    std::vector<NodeReplaceWithMultipleEntry> mMultiReplacements;
-    std::vector<NodeInsertMultipleEntry> mInsertions;
-
-    
-    
-    
     
     
     void insertStatementsInParentBlock(const TIntermSequence &insertions);
@@ -846,6 +816,9 @@ class TIntermTraverser : angle::NonCopyable
     
     void insertStatementsInParentBlock(const TIntermSequence &insertionsBefore,
                                        const TIntermSequence &insertionsAfter);
+
+    
+    void insertStatementInParentBlock(TIntermNode *statement);
 
     
     TIntermSymbol *createTempSymbol(const TType &type, TQualifier qualifier);
@@ -862,7 +835,60 @@ class TIntermTraverser : angle::NonCopyable
     
     void nextTemporaryIndex();
 
+    enum class OriginalNode
+    {
+        BECOMES_CHILD,
+        IS_DROPPED
+    };
+
+    void clearReplacementQueue();
+    void queueReplacement(TIntermNode *original,
+                          TIntermNode *replacement,
+                          OriginalNode originalStatus);
+    void queueReplacementWithParent(TIntermNode *parent,
+                                    TIntermNode *original,
+                                    TIntermNode *replacement,
+                                    OriginalNode originalStatus);
+
+    const bool preVisit;
+    const bool inVisit;
+    const bool postVisit;
+
+    int mDepth;
+    int mMaxDepth;
+
+    
+    TVector<TIntermNode *> mPath;
+
+    bool mInGlobalScope;
+
+    
+    
+    
+    std::vector<NodeReplaceWithMultipleEntry> mMultiReplacements;
+    std::vector<NodeInsertMultipleEntry> mInsertions;
+
   private:
+    
+    struct NodeUpdateEntry
+    {
+        NodeUpdateEntry(TIntermNode *_parent,
+                        TIntermNode *_original,
+                        TIntermNode *_replacement,
+                        bool _originalBecomesChildOfReplacement)
+            : parent(_parent),
+              original(_original),
+              replacement(_replacement),
+              originalBecomesChildOfReplacement(_originalBecomesChildOfReplacement)
+        {
+        }
+
+        TIntermNode *parent;
+        TIntermNode *original;
+        TIntermNode *replacement;
+        bool originalBecomesChildOfReplacement;
+    };
+
     struct ParentBlock
     {
         ParentBlock(TIntermAggregate *nodeIn, TIntermSequence::size_type posIn)
@@ -874,6 +900,9 @@ class TIntermTraverser : angle::NonCopyable
         TIntermAggregate *node;
         TIntermSequence::size_type pos;
     };
+
+    std::vector<NodeUpdateEntry> mReplacements;
+
     
     std::vector<ParentBlock> mParentBlockStack;
 
@@ -899,9 +928,9 @@ class TLValueTrackingTraverser : public TIntermTraverser
     }
     virtual ~TLValueTrackingTraverser() {}
 
-    void traverseBinary(TIntermBinary *node) override;
-    void traverseUnary(TIntermUnary *node) override;
-    void traverseAggregate(TIntermAggregate *node) override;
+    void traverseBinary(TIntermBinary *node) final;
+    void traverseUnary(TIntermUnary *node) final;
+    void traverseAggregate(TIntermAggregate *node) final;
 
   protected:
     bool isLValueRequiredHere() const
