@@ -664,12 +664,12 @@ protected:
   WidgetInputEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget,
                    EventClassID aEventClassID)
     : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, aEventClassID)
-    , modifiers(0)
+    , mModifiers(0)
   {
   }
 
   WidgetInputEvent()
-    : modifiers(0)
+    : mModifiers(0)
   {
   }
 
@@ -678,7 +678,7 @@ public:
 
   WidgetInputEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget)
     : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, eInputEventClass)
-    , modifiers(0)
+    , mModifiers(0)
   {
   }
 
@@ -708,81 +708,81 @@ public:
   
   bool IsAccel() const
   {
-    return ((modifiers & AccelModifier()) != 0);
+    return ((mModifiers & AccelModifier()) != 0);
   }
 
   
   bool IsShift() const
   {
-    return ((modifiers & MODIFIER_SHIFT) != 0);
+    return ((mModifiers & MODIFIER_SHIFT) != 0);
   }
   
   bool IsControl() const
   {
-    return ((modifiers & MODIFIER_CONTROL) != 0);
+    return ((mModifiers & MODIFIER_CONTROL) != 0);
   }
   
   bool IsAlt() const
   {
-    return ((modifiers & MODIFIER_ALT) != 0);
+    return ((mModifiers & MODIFIER_ALT) != 0);
   }
   
   bool IsMeta() const
   {
-    return ((modifiers & MODIFIER_META) != 0);
+    return ((mModifiers & MODIFIER_META) != 0);
   }
   
   
   bool IsOS() const
   {
-    return ((modifiers & MODIFIER_OS) != 0);
+    return ((mModifiers & MODIFIER_OS) != 0);
   }
   
   
   
   bool IsAltGraph() const
   {
-    return ((modifiers & MODIFIER_ALTGRAPH) != 0);
+    return ((mModifiers & MODIFIER_ALTGRAPH) != 0);
   }
   
   bool IsCapsLocked() const
   {
-    return ((modifiers & MODIFIER_CAPSLOCK) != 0);
+    return ((mModifiers & MODIFIER_CAPSLOCK) != 0);
   }
   
   bool IsNumLocked() const
   {
-    return ((modifiers & MODIFIER_NUMLOCK) != 0);
+    return ((mModifiers & MODIFIER_NUMLOCK) != 0);
   }
   
   bool IsScrollLocked() const
   {
-    return ((modifiers & MODIFIER_SCROLLLOCK) != 0);
+    return ((mModifiers & MODIFIER_SCROLLLOCK) != 0);
   }
 
   
   
   bool IsFn() const
   {
-    return ((modifiers & MODIFIER_FN) != 0);
+    return ((mModifiers & MODIFIER_FN) != 0);
   }
   
   
   bool IsFnLocked() const
   {
-    return ((modifiers & MODIFIER_FNLOCK) != 0);
+    return ((mModifiers & MODIFIER_FNLOCK) != 0);
   }
   
   
   bool IsSymbol() const
   {
-    return ((modifiers & MODIFIER_SYMBOL) != 0);
+    return ((mModifiers & MODIFIER_SYMBOL) != 0);
   }
   
   
   bool IsSymbolLocked() const
   {
-    return ((modifiers & MODIFIER_SYMBOLLOCK) != 0);
+    return ((mModifiers & MODIFIER_SYMBOLLOCK) != 0);
   }
 
   void InitBasicModifiers(bool aCtrlKey,
@@ -790,28 +790,28 @@ public:
                           bool aShiftKey,
                           bool aMetaKey)
   {
-    modifiers = 0;
+    mModifiers = 0;
     if (aCtrlKey) {
-      modifiers |= MODIFIER_CONTROL;
+      mModifiers |= MODIFIER_CONTROL;
     }
     if (aAltKey) {
-      modifiers |= MODIFIER_ALT;
+      mModifiers |= MODIFIER_ALT;
     }
     if (aShiftKey) {
-      modifiers |= MODIFIER_SHIFT;
+      mModifiers |= MODIFIER_SHIFT;
     }
     if (aMetaKey) {
-      modifiers |= MODIFIER_META;
+      mModifiers |= MODIFIER_META;
     }
   }
 
-  Modifiers modifiers;
+  Modifiers mModifiers;
 
   void AssignInputEventData(const WidgetInputEvent& aEvent, bool aCopyTargets)
   {
     AssignGUIEventData(aEvent, aCopyTargets);
 
-    modifiers = aEvent.modifiers;
+    mModifiers = aEvent.mModifiers;
   }
 };
 
