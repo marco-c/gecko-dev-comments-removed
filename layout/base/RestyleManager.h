@@ -282,19 +282,33 @@ private:
 
 public:
   
+  void ContentInserted(Element* aContainer, nsIContent* aChild)
+  {
+    RestyleForInsertOrChange(aContainer, aChild);
+  }
+
+  
+  void ContentAppended(Element* aContainer, nsIContent* aFirstNewContent)
+  {
+    RestyleForAppend(aContainer, aFirstNewContent);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  void ContentRemoved(Element* aContainer, nsIContent* aOldChild,
+                      nsIContent* aFollowingSibling);
+
+  
   
   
   void RestyleForInsertOrChange(Element* aContainer, nsIContent* aChild);
 
   
-  
-  
-  
-  
-  void RestyleForRemove(Element* aContainer,
-                        nsIContent* aOldChild,
-                        nsIContent* aFollowingSibling);
-
   
   
   void RestyleForAppend(Element* aContainer, nsIContent* aFirstNewContent);

@@ -342,7 +342,29 @@ ServoRestyleManager::RestyleForInsertOrChange(Element* aContainer,
                                               nsIContent* aChild)
 {
   
-  PostRestyleEvent(aContainer, eRestyle_Subtree, nsChangeHint(0));
+  
+  
+  
+  
+  
+  
+}
+
+void
+ServoRestyleManager::ContentInserted(Element* aContainer, nsIContent* aChild)
+{
+  if (!aContainer->ServoData().get()) {
+    
+    
+    return;
+  }
+
+  
+  
+  
+  StyleSet()->StyleNewSubtree(aChild);
+
+  RestyleForInsertOrChange(aContainer, aChild);
 }
 
 void
@@ -350,15 +372,43 @@ ServoRestyleManager::RestyleForAppend(Element* aContainer,
                                       nsIContent* aFirstNewContent)
 {
   
-  PostRestyleEvent(aContainer, eRestyle_Subtree, nsChangeHint(0));
+  
+  
+  
+  
+  
+  
 }
 
 void
-ServoRestyleManager::RestyleForRemove(Element* aContainer,
-                                      nsIContent* aOldChild,
-                                      nsIContent* aFollowingSibling)
+ServoRestyleManager::ContentAppended(Element* aContainer,
+                                     nsIContent* aFirstNewContent)
 {
-  NS_WARNING("stylo: ServoRestyleManager::RestyleForRemove not implemented");
+  if (!aContainer->ServoData().get()) {
+    
+    
+    return;
+  }
+
+  
+  
+  
+  if (aFirstNewContent->GetNextSibling()) {
+    aContainer->SetHasDirtyDescendantsForServo();
+    StyleSet()->StyleNewChildren(aContainer);
+  } else {
+    StyleSet()->StyleNewSubtree(aFirstNewContent);
+  }
+
+  RestyleForAppend(aContainer, aFirstNewContent);
+}
+
+void
+ServoRestyleManager::ContentRemoved(Element* aContainer,
+                                    nsIContent* aOldChild,
+                                    nsIContent* aFollowingSibling)
+{
+  NS_WARNING("stylo: ServoRestyleManager::ContentRemoved not implemented");
 }
 
 nsresult

@@ -568,9 +568,8 @@ RestyleManager::RestyleForInsertOrChange(Element* aContainer,
 }
 
 void
-RestyleManager::RestyleForRemove(Element* aContainer,
-                                 nsIContent* aOldChild,
-                                 nsIContent* aFollowingSibling)
+RestyleManager::ContentRemoved(Element* aContainer, nsIContent* aOldChild,
+                               nsIContent* aFollowingSibling)
 {
   if (aOldChild->IsRootOfAnonymousSubtree()) {
     
