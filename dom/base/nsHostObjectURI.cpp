@@ -135,6 +135,15 @@ nsHostObjectURI::Deserialize(const mozilla::ipc::URIParams& aParams)
   return mPrincipal != nullptr;
 }
 
+NS_IMETHODIMP
+nsHostObjectURI::SetScheme(const nsACString& aScheme)
+{
+  
+  
+  
+  return NS_ERROR_FAILURE;
+}
+
 
 nsresult
 nsHostObjectURI::CloneInternal(nsSimpleURI::RefHandlingEnum aRefHandlingMode,
