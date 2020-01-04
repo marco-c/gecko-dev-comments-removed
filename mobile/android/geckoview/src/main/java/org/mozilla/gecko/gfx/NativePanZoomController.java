@@ -191,55 +191,8 @@ class NativePanZoomController extends JNIObject implements PanZoomController {
     }
 
     @Override
-    public boolean onKeyEvent(KeyEvent event) {
-        
-        return false;
-    }
-
-    @Override
     public void onMotionEventVelocity(final long aEventTime, final float aSpeedY) {
         handleMotionEventVelocity(aEventTime, aSpeedY);
-    }
-
-    @Override
-    public PointF getVelocityVector() {
-        
-        return new PointF(0, 0);
-    }
-
-    @Override
-    public void pageRectUpdated() {
-        
-    }
-
-    @Override
-    public void abortPanning() {
-        
-    }
-
-    @Override
-    public void notifyDefaultActionPrevented(boolean prevented) {
-        
-        
-        
-    }
-
-    @WrapForJNI(stubName = "AbortAnimation", calledFrom = "ui")
-    private native void nativeAbortAnimation();
-
-    @Override 
-    public void abortAnimation()
-    {
-        if (!mDestroyed) {
-            nativeAbortAnimation();
-        }
-    }
-
-    @Override 
-    public boolean getRedrawHint()
-    {
-        
-        return true;
     }
 
     @Override @WrapForJNI(calledFrom = "ui") 
