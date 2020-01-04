@@ -273,6 +273,7 @@ private:
     Atomic<uint32_t>                mCapsToClear;
 
     nsHttpVersion                   mHttpVersion;
+    uint16_t                        mHttpResponseCode;
 
     
     
