@@ -5,9 +5,6 @@
 
 
 
-
-
-
 const TEST_URL = "http://example.org/";
 
 addRDMTask(TEST_URL, function*({ ui }) {

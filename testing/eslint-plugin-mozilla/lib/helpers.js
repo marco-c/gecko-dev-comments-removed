@@ -275,8 +275,52 @@ module.exports = {
 
 
 
+
+
+
+
+
+
+  addGlobalsFromComments: function(currentFilePath, comments, node, context) {
+    comments.forEach(comment => {
+      var value = comment.value.trim();
+      var match = /^import-globals-from\s+(.*)$/.exec(value);
+
+      if (match) {
+        var filePath = match[1];
+
+        if (!path.isAbsolute(filePath)) {
+          var dirName = path.dirname(currentFilePath);
+          filePath = path.resolve(dirName, filePath);
+        }
+
+        try {
+          let globals = this.getGlobalsForFile(filePath);
+          this.addGlobals(globals, context);
+        } catch (e) {
+          context.report(
+            node,
+            "Could not load globals from file {{filePath}}: {{error}}",
+            {
+              filePath: filePath,
+              error: e
+            }
+          );
+        }
+      }
+    });
+  },
+
+  
+
+
+
+
+
+
   getPermissiveConfig: function() {
     return {
+      comment: true,
       range: true,
       loc: true,
       tolerant: true,
