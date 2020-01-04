@@ -1208,6 +1208,13 @@ CompositorD3D11::EndFrame()
     return;
   }
 
+  RefPtr<ID3D11Query> query;
+  CD3D11_QUERY_DESC  desc(D3D11_QUERY_EVENT);
+  mDevice->CreateQuery(&desc, getter_AddRefs(query));
+  if (query) {
+    mContext->End(query);
+  }
+
   UINT presentInterval = 0;
 
   if (gfxWindowsPlatform::GetPlatform()->IsWARP()) {
@@ -1267,6 +1274,23 @@ CompositorD3D11::EndFrame()
       PaintToTarget();
     }
   }
+
+  
+  if (mQuery) {
+    TimeStamp start = TimeStamp::Now();
+    BOOL result;
+    while (mContext->GetData(mQuery, &result, sizeof(BOOL), 0) != S_OK) {
+      if (mDevice->GetDeviceRemovedReason() != S_OK) {
+        break;
+      }
+      if ((TimeStamp::Now() - start) > TimeDuration::FromSeconds(2)) {
+        break;
+      }
+      Sleep(0);
+    }
+  }
+  
+  mQuery = query;
 
   mCurrentRT = nullptr;
 }
