@@ -2448,6 +2448,14 @@ gfxPlatform::BumpDeviceCounter()
 void
 gfxPlatform::InitOpenGLConfig()
 {
+  #ifdef XP_WIN
+  
+  
+  if (!Preferences::GetBool("layers.prefer-opengl")){
+    return;
+  }
+  #endif
+
   FeatureState& openGLFeature = gfxConfig::GetFeature(Feature::OPENGL_COMPOSITING);
 
   
@@ -2458,11 +2466,9 @@ gfxPlatform::InitOpenGLConfig()
   }
 
   #ifdef XP_WIN
-  
-  
   openGLFeature.SetDefaultFromPref(
     gfxPrefs::GetLayersPreferOpenGLPrefName(),
-    false,
+    true,
     gfxPrefs::GetLayersPreferOpenGLPrefDefault());
   #else
     openGLFeature.EnableByDefault();
