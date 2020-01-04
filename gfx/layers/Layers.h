@@ -2273,6 +2273,7 @@ public:
     Data()
       : mBufferProvider(nullptr)
       , mGLContext(nullptr)
+      , mRenderer(nullptr)
       , mFrontbufferGLTex(0)
       , mSize(0,0)
       , mHasAlpha(false)
@@ -2282,6 +2283,7 @@ public:
     
     PersistentBufferProvider* mBufferProvider; 
     mozilla::gl::GLContext* mGLContext; 
+    AsyncCanvasRenderer* mRenderer; 
 
     
     uint32_t mFrontbufferGLTex;
@@ -2401,8 +2403,6 @@ public:
   {
     return !!mAsyncRenderer;
   }
-
-  void SetAsyncRenderer(AsyncCanvasRenderer *aAsyncRenderer);
 
 protected:
   CanvasLayer(LayerManager* aManager, void* aImplData);

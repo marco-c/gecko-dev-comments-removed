@@ -7,14 +7,21 @@
 #ifndef MOZILLA_LAYERS_ASYNCCANVASRENDERER_H_
 #define MOZILLA_LAYERS_ASYNCCANVASRENDERER_H_
 
+#include "LayersTypes.h"
 #include "mozilla/gfx/Point.h"          
+#include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"             
 #include "nsCOMPtr.h"                   
 
 class nsICanvasRenderingContextInternal;
+class nsIInputStream;
 class nsIThread;
 
 namespace mozilla {
+
+namespace gfx {
+class DataSourceSurface;
+}
 
 namespace gl {
 class GLContext;
@@ -39,6 +46,11 @@ class CanvasClient;
 
 
 
+
+
+
+
+
 class AsyncCanvasRenderer final
 {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AsyncCanvasRenderer)
@@ -47,6 +59,7 @@ public:
   AsyncCanvasRenderer();
 
   void NotifyElementAboutAttributesChanged();
+  void NotifyElementAboutInvalidation();
 
   void SetCanvasClient(CanvasClient* aClient);
 
@@ -59,6 +72,28 @@ public:
   {
     mHeight = aHeight;
   }
+
+  void SetIsAlphaPremultiplied(bool aIsAlphaPremultiplied)
+  {
+    mIsAlphaPremultiplied = aIsAlphaPremultiplied;
+  }
+
+  
+  void SetActiveThread();
+  void ResetActiveThread();
+
+  
+  
+  
+  already_AddRefed<gfx::DataSourceSurface> GetSurface();
+
+  
+  
+  
+  nsresult
+  GetInputStream(const char *aMimeType,
+                 const char16_t *aEncoderOptions,
+                 nsIInputStream **aStream);
 
   gfx::IntSize GetSize() const
   {
@@ -75,26 +110,44 @@ public:
     return mCanvasClient;
   }
 
+  already_AddRefed<nsIThread> GetActiveThread();
+
+  
   
   dom::HTMLCanvasElement* mHTMLCanvasElement;
 
+  
   nsICanvasRenderingContextInternal* mContext;
 
   
   
+  
   RefPtr<gl::GLContext> mGLContext;
-
-  nsCOMPtr<nsIThread> mActiveThread;
 private:
 
   virtual ~AsyncCanvasRenderer();
+
+  
+  already_AddRefed<gfx::DataSourceSurface> UpdateTarget();
+
+  bool mIsAlphaPremultiplied;
 
   uint32_t mWidth;
   uint32_t mHeight;
   uint64_t mCanvasClientAsyncID;
 
   
+  
+  
+  
   CanvasClient* mCanvasClient;
+
+
+  
+  Mutex mMutex;
+
+  
+  nsCOMPtr<nsIThread> mActiveThread;
 };
 
 } 
