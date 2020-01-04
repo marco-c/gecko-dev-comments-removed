@@ -64,6 +64,12 @@ Zone::~Zone()
 
     js_delete(debuggers);
     js_delete(jitZone_);
+
+#ifdef DEBUG
+    
+    if (!rt->gc.shutdownCollectedEverything())
+        gcWeakMapList.clear();
+#endif
 }
 
 bool Zone::init(bool isSystemArg)

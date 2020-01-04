@@ -2524,6 +2524,9 @@ js::FreeScriptData(JSRuntime* rt, AutoLockForExclusiveAccess& lock)
     if (!table.initialized())
         return;
 
+    
+    MOZ_ASSERT_IF(rt->gc.shutdownCollectedEverything(), table.empty());
+
     for (ScriptDataTable::Enum e(table); !e.empty(); e.popFront()) {
 #ifdef DEBUG
         SharedScriptData* scriptData = e.front();
