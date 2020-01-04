@@ -126,27 +126,6 @@ this.GMPUtils = {
       hist.add(value);
     }
   },
-
-  ABI: function() {
-    
-    let abi = null;
-    try {
-      abi = Services.appinfo.XPCOMABI;
-    }
-    catch (e) {
-      return "unknown";
-    }
-    if (AppConstants.platform == "macosx") {
-      
-      
-      let macutils = Cc["@mozilla.org/xpcom/mac-utils;1"].
-                     getService(Ci.nsIMacUtils);
-
-      if (macutils.isUniversalBinary)
-        abi += "-u-" + macutils.architecturesInBinary;
-    }
-    return abi;
-  }
 };
 
 

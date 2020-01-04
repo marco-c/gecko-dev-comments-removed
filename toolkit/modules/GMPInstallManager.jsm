@@ -30,14 +30,10 @@ Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/osfile.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
-Cu.import("resource://gre/modules/ctypes.jsm");
 Cu.import("resource://gre/modules/GMPUtils.jsm");
-Cu.import("resource://gre/modules/AppConstants.jsm");
 
 this.EXPORTED_SYMBOLS = ["GMPInstallManager", "GMPExtractor", "GMPDownloader",
                          "GMPAddon"];
-
-var gLocale = null;
 
 
 XPCOMUtils.defineLazyGetter(this, "gCertUtils", function() {
@@ -46,8 +42,8 @@ XPCOMUtils.defineLazyGetter(this, "gCertUtils", function() {
   return temp;
 });
 
-XPCOMUtils.defineLazyModuleGetter(this, "UpdateChannel",
-                                  "resource://gre/modules/UpdateChannel.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
+                                  "resource://gre/modules/UpdateUtils.jsm");
 
 
 
@@ -64,138 +60,6 @@ function getScopedLogger(prefix) {
   
   return Log.repository.getLoggerWithMessagePrefix("Toolkit.GMP", prefix + " ");
 }
-
-
-
-
-XPCOMUtils.defineLazyGetter(this, "gOSVersion", function aus_gOSVersion() {
-  let osVersion;
-  try {
-    osVersion = Services.sysinfo.getProperty("name") + " " +
-                Services.sysinfo.getProperty("version");
-  }
-  catch (e) {
-    LOG("gOSVersion - OS Version unknown: updates are not possible.");
-  }
-
-  if (osVersion) {
-    if (AppConstants.platform == "win") {
-      const BYTE = ctypes.uint8_t;
-      const WORD = ctypes.uint16_t;
-      const DWORD = ctypes.uint32_t;
-      const WCHAR = ctypes.char16_t;
-      const BOOL = ctypes.int;
-
-      
-      
-      const SZCSDVERSIONLENGTH = 128;
-      const OSVERSIONINFOEXW = new ctypes.StructType('OSVERSIONINFOEXW',
-          [
-          {dwOSVersionInfoSize: DWORD},
-          {dwMajorVersion: DWORD},
-          {dwMinorVersion: DWORD},
-          {dwBuildNumber: DWORD},
-          {dwPlatformId: DWORD},
-          {szCSDVersion: ctypes.ArrayType(WCHAR, SZCSDVERSIONLENGTH)},
-          {wServicePackMajor: WORD},
-          {wServicePackMinor: WORD},
-          {wSuiteMask: WORD},
-          {wProductType: BYTE},
-          {wReserved: BYTE}
-          ]);
-
-      
-      
-      const SYSTEM_INFO = new ctypes.StructType('SYSTEM_INFO',
-          [
-          {wProcessorArchitecture: WORD},
-          {wReserved: WORD},
-          {dwPageSize: DWORD},
-          {lpMinimumApplicationAddress: ctypes.voidptr_t},
-          {lpMaximumApplicationAddress: ctypes.voidptr_t},
-          {dwActiveProcessorMask: DWORD.ptr},
-          {dwNumberOfProcessors: DWORD},
-          {dwProcessorType: DWORD},
-          {dwAllocationGranularity: DWORD},
-          {wProcessorLevel: WORD},
-          {wProcessorRevision: WORD}
-          ]);
-
-      let kernel32 = false;
-      try {
-        kernel32 = ctypes.open("Kernel32");
-      } catch (e) {
-        LOG("gOSVersion - Unable to open kernel32! " + e);
-        osVersion += ".unknown (unknown)";
-      }
-
-      if(kernel32) {
-        try {
-          
-          try {
-            let GetVersionEx = kernel32.declare("GetVersionExW",
-                                                ctypes.default_abi,
-                                                BOOL,
-                                                OSVERSIONINFOEXW.ptr);
-            let winVer = OSVERSIONINFOEXW();
-            winVer.dwOSVersionInfoSize = OSVERSIONINFOEXW.size;
-
-            if(0 !== GetVersionEx(winVer.address())) {
-              osVersion += "." + winVer.wServicePackMajor
-                        +  "." + winVer.wServicePackMinor;
-            } else {
-              LOG("gOSVersion - Unknown failure in GetVersionEX (returned 0)");
-              osVersion += ".unknown";
-            }
-          } catch (e) {
-            LOG("gOSVersion - error getting service pack information. Exception: " + e);
-            osVersion += ".unknown";
-          }
-
-          
-          let arch = "unknown";
-          try {
-            let GetNativeSystemInfo = kernel32.declare("GetNativeSystemInfo",
-                                                       ctypes.default_abi,
-                                                       ctypes.void_t,
-                                                       SYSTEM_INFO.ptr);
-            let sysInfo = SYSTEM_INFO();
-            
-            sysInfo.wProcessorArchitecture = 0xffff;
-
-            GetNativeSystemInfo(sysInfo.address());
-            switch(sysInfo.wProcessorArchitecture) {
-              case 9:
-                arch = "x64";
-                break;
-              case 6:
-                arch = "IA64";
-                break;
-              case 0:
-                arch = "x86";
-                break;
-            }
-          } catch (e) {
-            LOG("gOSVersion - error getting processor architecture.  Exception: " + e);
-          } finally {
-            osVersion += " (" + arch + ")";
-          }
-        } finally {
-          kernel32.close();
-        }
-      }
-    }
-
-    try {
-      osVersion += " (" + sysInfo.getProperty("secondaryLibrary") + ")";
-    }
-    catch (e) {
-      
-    }
-    osVersion = encodeURIComponent(osVersion);
-  }
-  return osVersion;
-});
 
 
 
@@ -221,24 +85,8 @@ GMPInstallManager.prototype = {
       log.info("Using url: " + url);
     }
 
-    url =
-      url.replace(/%PRODUCT%/g, Services.appinfo.name)
-         .replace(/%VERSION%/g, Services.appinfo.version)
-         .replace(/%BUILD_ID%/g, Services.appinfo.appBuildID)
-         .replace(/%BUILD_TARGET%/g, Services.appinfo.OS + "_" + GMPUtils.ABI())
-         .replace(/%OS_VERSION%/g, gOSVersion);
-    if (/%LOCALE%/.test(url)) {
-      
-      url = url.replace(/%LOCALE%/g, "en-US");
-    }
-    url =
-      url.replace(/%CHANNEL%/g, UpdateChannel.get())
-         .replace(/%PLATFORM_VERSION%/g, Services.appinfo.platformVersion)
-         .replace(/%DISTRIBUTION%/g,
-                  GMPPrefs.get(GMPPrefs.KEY_APP_DISTRIBUTION))
-         .replace(/%DISTRIBUTION_VERSION%/g,
-                  GMPPrefs.get(GMPPrefs.KEY_APP_DISTRIBUTION_VERSION))
-         .replace(/\+/g, "%2B");
+    url = UpdateUtils.formatUpdateURL(url);
+
     log.info("Using url (with replacement): " + url);
     return url;
   },
@@ -908,7 +756,7 @@ GMPDownloader.prototype = {
         
         
         
-        GMPPrefs.set(GMPPrefs.KEY_PLUGIN_ABI, GMPUtils.ABI(), gmpAddon.id);
+        GMPPrefs.set(GMPPrefs.KEY_PLUGIN_ABI, UpdateUtils.ABI, gmpAddon.id);
         
         
         GMPPrefs.set(GMPPrefs.KEY_PLUGIN_VERSION, gmpAddon.version,
