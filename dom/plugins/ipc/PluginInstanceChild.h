@@ -671,6 +671,14 @@ private:
     
     bool mDestroyed;
 
+#ifdef XP_WIN
+    
+    
+    
+    
+    bool mLastKeyEventConsumed;
+#endif 
+
     
     
     static bool sIsIMEComposing;
