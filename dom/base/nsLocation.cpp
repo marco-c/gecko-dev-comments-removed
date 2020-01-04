@@ -133,46 +133,58 @@ nsLocation::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
 
-    nsCOMPtr<nsIDocument> doc;
-    nsCOMPtr<nsIURI> docOriginalURI, docCurrentURI, principalURI;
     nsCOMPtr<nsPIDOMWindowInner> incumbent =
       do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
-    if (incumbent) {
-      doc = incumbent->GetDoc();
-    }
+    nsCOMPtr<nsIDocument> doc = incumbent ? incumbent->GetDoc() : nullptr;
+
     if (doc) {
+      nsCOMPtr<nsIURI> docOriginalURI, docCurrentURI, principalURI;
       docOriginalURI = doc->GetOriginalURI();
       docCurrentURI = doc->GetDocumentURI();
       rv = doc->NodePrincipal()->GetURI(getter_AddRefs(principalURI));
       NS_ENSURE_SUCCESS(rv, rv);
+
+      owner = doc->NodePrincipal();
       referrerPolicy = doc->GetReferrerPolicy();
-    }
 
-    bool urisEqual = false;
-    if (docOriginalURI && docCurrentURI && principalURI) {
-      principalURI->Equals(docOriginalURI, &urisEqual);
-    }
-
-    if (urisEqual) {
-      sourceURI = docCurrentURI;
+      bool urisEqual = false;
+      if (docOriginalURI && docCurrentURI && principalURI) {
+        principalURI->Equals(docOriginalURI, &urisEqual);
+      }
+      if (urisEqual) {
+        sourceURI = docCurrentURI;
+      }
+      else {
+        
+        
+        
+        
+        if (principalURI) {
+          bool isNullPrincipalScheme;
+          rv = principalURI->SchemeIs(NS_NULLPRINCIPAL_SCHEME,
+                                     &isNullPrincipalScheme);
+          if (NS_SUCCEEDED(rv) && !isNullPrincipalScheme) {
+            sourceURI = principalURI;
+          }
+        }
+      }
     }
     else {
       
       
       
       
-      if (principalURI) {
-        bool isNullPrincipalScheme;
-        rv = principalURI->SchemeIs(NS_NULLPRINCIPAL_SCHEME,
-                                    &isNullPrincipalScheme);
-        if (NS_SUCCEEDED(rv) && !isNullPrincipalScheme) {
-          sourceURI = principalURI;
-        }
-      }
+      owner = nsContentUtils::SubjectPrincipal();
     }
-
-    owner = nsContentUtils::SubjectPrincipal();
   }
 
   

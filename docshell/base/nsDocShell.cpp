@@ -10788,6 +10788,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   
   
   
+  
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = do_QueryInterface(aOwner);
   if (triggeringPrincipal) {
     inherit = nsContentUtils::ChannelShouldInheritPrincipal(
