@@ -7,7 +7,9 @@
 
 
 
-const TEST_URL = "data:text/html;charset=utf8,<div id='attr' a='1' b='2' c='3'></div><div id='delattr' tobeinvalid='1' last='2'></div>";
+const TEST_URL = "data:text/html;charset=utf8," +
+                 "<div id='attr' a='1' b='2' c='3'></div>" +
+                 "<div id='delattr' tobeinvalid='1' last='2'></div>";
 
 add_task(function*() {
   let {inspector} = yield openInspectorForURL(TEST_URL);
