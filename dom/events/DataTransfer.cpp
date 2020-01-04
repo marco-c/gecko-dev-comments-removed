@@ -323,6 +323,10 @@ DataTransfer::GetTypes(ErrorResult& aRv) const
     DataTransferItem* item = items->ElementAt(i);
     MOZ_ASSERT(item);
 
+    if (item->ChromeOnly() && !nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
+      continue;
+    }
+
     nsAutoString type;
     item->GetType(type);
     if (NS_WARN_IF(!types->Add(type))) {
@@ -538,13 +542,26 @@ DataTransfer::MozTypesAt(uint32_t aIndex, ErrorResult& aRv) const
     
     const nsTArray<RefPtr<DataTransferItem>>& items = *mItems->MozItemsAt(aIndex);
 
+    bool addFile = false;
     for (uint32_t i = 0; i < items.Length(); i++) {
+      if (items[i]->ChromeOnly() && !nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
+        continue;
+      }
+
       nsAutoString type;
       items[i]->GetType(type);
       if (NS_WARN_IF(!types->Add(type))) {
         aRv.Throw(NS_ERROR_FAILURE);
         return nullptr;
       }
+
+      if (items[i]->Kind() == DataTransferItem::KIND_FILE) {
+        addFile = true;
+      }
+    }
+
+    if (addFile) {
+      types->Add(NS_LITERAL_STRING("Files"));
     }
   }
 
@@ -594,16 +611,6 @@ DataTransfer::GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
   nsAutoString format;
   GetRealFormat(aFormat, format);
 
-  const nsTArray<RefPtr<DataTransferItem>>& items = *mItems->MozItemsAt(aIndex);
-  if (!aFormat.EqualsLiteral(kFileMime) &&
-      !nsContentUtils::IsSystemPrincipal(aSubjectPrincipal)) {
-    for (uint32_t i = 0; i < items.Length(); ++i) {
-      if (items[i]->IsFile()) {
-        return NS_OK;
-      }
-    }
-  }
-
   
   
   
@@ -619,6 +626,11 @@ DataTransfer::GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
   if (!item) {
     
     
+    return NS_OK;
+  }
+
+  
+  if (!nsContentUtils::IsSystemPrincipal(aSubjectPrincipal) && item->ChromeOnly()) {
     return NS_OK;
   }
 
@@ -1244,7 +1256,10 @@ DataTransfer::SetDataWithPrincipal(const nsAString& aFormat,
 
   ErrorResult rv;
   RefPtr<DataTransferItem> item =
-    mItems->SetDataWithPrincipal(format, aData, aIndex, aPrincipal, false, rv);
+    mItems->SetDataWithPrincipal(format, aData, aIndex, aPrincipal,
+                                  false,
+                                  false,
+                                 rv);
   return rv.StealNSResult();
 }
 
@@ -1282,24 +1297,39 @@ DataTransfer::GetRealFormat(const nsAString& aInFormat,
   aOutFormat.Assign(lowercaseFormat);
 }
 
-void
+nsresult
 DataTransfer::CacheExternalData(const char* aFormat, uint32_t aIndex,
-                                nsIPrincipal* aPrincipal)
+                                nsIPrincipal* aPrincipal, bool aHidden)
 {
+  ErrorResult rv;
+  RefPtr<DataTransferItem> item;
+
   if (strcmp(aFormat, kUnicodeMime) == 0) {
-    SetDataWithPrincipal(NS_LITERAL_STRING("text/plain"), nullptr, aIndex,
-                         aPrincipal);
-    return;
+    item = mItems->SetDataWithPrincipal(NS_LITERAL_STRING("text/plain"), nullptr,
+                                        aIndex, aPrincipal, false, aHidden, rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      return rv.StealNSResult();
+    }
+    return NS_OK;
   }
 
   if (strcmp(aFormat, kURLDataMime) == 0) {
-    SetDataWithPrincipal(NS_LITERAL_STRING("text/uri-list"), nullptr, aIndex,
-                         aPrincipal);
-    return;
+    item = mItems->SetDataWithPrincipal(NS_LITERAL_STRING("text/uri-list"), nullptr,
+                                        aIndex, aPrincipal, false, aHidden, rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      return rv.StealNSResult();
+    }
+    return NS_OK;
   }
 
-  SetDataWithPrincipal(NS_ConvertUTF8toUTF16(aFormat), nullptr, aIndex,
-                       aPrincipal);
+  nsAutoString format;
+  GetRealFormat(NS_ConvertUTF8toUTF16(aFormat), format);
+  item = mItems->SetDataWithPrincipal(format, nullptr, aIndex,
+                                      aPrincipal, false, aHidden, rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    return rv.StealNSResult();
+  }
+  return NS_OK;
 }
 
 
@@ -1337,6 +1367,9 @@ DataTransfer::CacheExternalDragFormats()
   uint32_t count;
   dragSession->GetNumDropItems(&count);
   for (uint32_t c = 0; c < count; c++) {
+    bool hasFileData = false;
+    dragSession->IsDataFlavorSupported(kFileMime, &hasFileData);
+
     
     bool supported;
     dragSession->IsDataFlavorSupported(kCustomTypesMime, &supported);
@@ -1354,7 +1387,7 @@ DataTransfer::CacheExternalDragFormats()
       
       
       if (supported) {
-        CacheExternalData(kFormats[f], c, sysPrincipal);
+        CacheExternalData(kFormats[f], c, sysPrincipal,  f && hasFileData);
       }
     }
   }
@@ -1381,6 +1414,11 @@ DataTransfer::CacheExternalClipboardFormats()
   ssm->GetSystemPrincipal(getter_AddRefs(sysPrincipal));
 
   
+  bool hasFileData = false;
+  const char *fileMime[] = { kFileMime };
+  clipboard->HasDataMatchingFlavors(fileMime, 1, mClipboardType, &hasFileData);
+
+  
   
   
   const char* formats[] = { kCustomTypesMime, kFileMime, kHTMLMime, kRTFMime,
@@ -1398,7 +1436,8 @@ DataTransfer::CacheExternalClipboardFormats()
       if (f == 0) {
         FillInExternalCustomTypes(0, sysPrincipal);
       } else {
-        CacheExternalData(formats[f], 0, sysPrincipal);
+        
+        CacheExternalData(formats[f], 0, sysPrincipal,  f != 1 && hasFileData);
       }
     }
   }
