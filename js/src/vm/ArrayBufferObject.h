@@ -252,6 +252,10 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
                                      HandleObject proto = nullptr,
                                      NewObjectKind newKind = GenericObject);
 
+    
+    
+    static ArrayBufferObject* createEmpty(JSContext* cx);
+
     static bool createDataViewForThisImpl(JSContext* cx, const CallArgs& args);
     static bool createDataViewForThis(JSContext* cx, unsigned argc, Value* vp);
 
@@ -395,6 +399,15 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
         setFlags(0);
         setFirstView(nullptr);
         setDataPointer(contents, ownsState);
+    }
+
+    
+    
+    void initEmpty() {
+        setByteLength(0);
+        setFlags(0);
+        setFirstView(nullptr);
+        setDataPointer(BufferContents::createPlain(nullptr), DoesntOwnData);
     }
 };
 
