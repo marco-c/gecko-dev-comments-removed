@@ -146,6 +146,24 @@ public:
   {
     mNoCrossProcessBoundaryForwarding = true;
   }
+  inline void PreventDefault(bool aCalledByDefaultHandler = true)
+  {
+    mDefaultPrevented = true;
+    
+    
+    
+    
+    if (aCalledByDefaultHandler) {
+      mDefaultPreventedByChrome = true;
+    } else {
+      mDefaultPreventedByContent = true;
+    }
+  }
+  
+  inline void PreventDefaultBeforeDispatch()
+  {
+    mDefaultPrevented = true;
+  }
 
   inline void Clear()
   {
@@ -331,12 +349,11 @@ public:
   void StopPropagation() { mFlags.StopPropagation(); }
   void StopImmediatePropagation() { mFlags.StopImmediatePropagation(); }
   void StopCrossProcessForwarding() { mFlags.StopCrossProcessForwarding(); }
-
-  void PreventDefault()
+  void PreventDefault(bool aCalledByDefaultHandler = true)
   {
-    mFlags.mDefaultPrevented = true;
-    mFlags.mDefaultPreventedByChrome = true;
+    mFlags.PreventDefault(aCalledByDefaultHandler);
   }
+  void PreventDefaultBeforeDispatch() { mFlags.PreventDefaultBeforeDispatch(); }
 
   
 

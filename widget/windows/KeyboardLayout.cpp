@@ -1175,8 +1175,9 @@ NativeKey::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
       
       
       
-      aKeyEvent.mFlags.mDefaultPrevented =
-        (mOriginalVirtualKeyCode == VK_MENU && mMsg.message != WM_SYSKEYUP);
+      if (mOriginalVirtualKeyCode == VK_MENU && mMsg.message != WM_SYSKEYUP) {
+        aKeyEvent.PreventDefaultBeforeDispatch();
+      }
       break;
     case eKeyPress:
       aKeyEvent.mUniqueId = sUniqueKeyEventId;

@@ -1190,8 +1190,11 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
                                           nsEventStatus* aEventStatus)
 {
   
-  if (*aEventStatus == nsEventStatus_eConsumeNoDefault) {
-    aEvent->mFlags.mDefaultPrevented = true;
+  if (!aEvent->mFlags.mDefaultPrevented &&
+      *aEventStatus == nsEventStatus_eConsumeNoDefault) {
+    
+    
+    aEvent->PreventDefault();
   }
 
   Maybe<nsAutoPopupStatePusher> popupStatePusher;

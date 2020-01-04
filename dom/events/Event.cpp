@@ -519,17 +519,7 @@ Event::PreventDefaultInternal(bool aCalledByDefaultHandler)
     return;
   }
 
-  mEvent->mFlags.mDefaultPrevented = true;
-
-  
-  
-  
-  
-  if (!aCalledByDefaultHandler) {
-    mEvent->mFlags.mDefaultPreventedByContent = true;
-  } else {
-    mEvent->mFlags.mDefaultPreventedByChrome = true;
-  }
+  mEvent->PreventDefault(aCalledByDefaultHandler);
 
   if (!IsTrusted()) {
     return;

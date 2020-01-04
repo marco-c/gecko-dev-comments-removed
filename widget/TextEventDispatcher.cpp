@@ -432,7 +432,7 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
     
     
     
-    keyEvent.mFlags.mDefaultPrevented = true;
+    keyEvent.PreventDefaultBeforeDispatch();
   }
 
   
