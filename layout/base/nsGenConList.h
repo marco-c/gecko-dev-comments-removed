@@ -110,6 +110,9 @@ private:
     delete aNode;
     mSize--;
   }
+
+  
+  nsDataHashtable<nsPtrHashKey<nsIFrame>, nsGenConNode*> mNodes;
 };
 
 #endif 
