@@ -579,19 +579,14 @@ protected:
 
 
 
-
-
-
   void RequestContentRepaint();
 
   
 
 
 
-
-
-
-  void RequestContentRepaint(FrameMetrics& aFrameMetrics);
+  void RequestContentRepaint(const FrameMetrics& aFrameMetrics,
+                             const ParentLayerPoint& aVelocity);
 
   
 
