@@ -83,7 +83,7 @@ public class AccountsHelper implements NativeEventListener {
 
     @Override
     public void handleMessage(String event, NativeJSObject message, final EventCallback callback) {
-        if (!Restrictions.isAllowed(mContext, Restrictable.DISALLOW_MODIFY_ACCOUNTS)) {
+        if (!Restrictions.isAllowed(mContext, Restrictable.MODIFY_ACCOUNTS)) {
             
             
             Log.e(LOGTAG, "Profile is not allowed to modify accounts!  Ignoring event: " + event);

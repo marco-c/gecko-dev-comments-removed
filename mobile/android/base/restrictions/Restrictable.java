@@ -16,43 +16,43 @@ import android.support.annotation.StringRes;
 
 
 public enum Restrictable {
-    DISALLOW_DOWNLOADS(1, "no_download_files", 0),
+    DOWNLOAD(1, "downloads", 0),
 
-    DISALLOW_INSTALL_EXTENSION(2, "no_install_extensions", R.string.restriction_disallow_addons_title),
-
-    
-    DISALLOW_INSTALL_APPS(3, "no_install_apps", 0),
-
-    DISALLOW_BROWSE_FILES(4, "no_browse_files", 0),
-
-    DISALLOW_SHARE(5, "no_share", 0),
-
-    DISALLOW_BOOKMARK(6, "no_bookmark", 0),
-
-    DISALLOW_ADD_CONTACTS(7, "no_add_contacts", 0),
-
-    DISALLOW_SET_IMAGE(8, "no_set_image", 0),
+    INSTALL_EXTENSION(2, "no_install_extensions", R.string.restrictable_feature_addons_installation),
 
     
-    DISALLOW_MODIFY_ACCOUNTS(9, "no_modify_accounts", 0),
+    INSTALL_APPS(3, "no_install_apps", 0),
 
-    DISALLOW_REMOTE_DEBUGGING(10, "no_remote_debugging", 0),
+    BROWSE(4, "browse", 0),
 
-    DISALLOW_IMPORT_SETTINGS(11, "no_import_settings", 0),
+    SHARE(5, "share", 0),
 
-    DISALLOW_PRIVATE_BROWSING(12, "no_private_browsing", R.string.restriction_disallow_private_browsing_title),
+    BOOKMARK(6, "bookmark", 0),
 
-    DISALLOW_LOCATION_SERVICE(13, "no_location_service", R.string.restriction_disallow_location_services_title),
+    ADD_CONTACT(7, "add_contact", 0),
 
-    DISALLOW_CLEAR_HISTORY(14, "no_clear_history", R.string.restriction_disallow_clear_history_title),
+    SET_IMAGE(8, "set_image", 0),
 
-    DISALLOW_MASTER_PASSWORD(15, "no_master_password", R.string.restriction_disallow_master_password_title),
+    
+    MODIFY_ACCOUNTS(9, "no_modify_accounts", 0),
 
-    DISALLOW_GUEST_BROWSING(16, "no_guest_browsing",  R.string.restriction_disallow_guest_browsing_title),
+    REMOTE_DEBUGGING(10, "remote_debugging", 0),
 
-    DISALLOW_ADVANCED_SETTINGS(17, "no_advanced_settings", R.string.restriction_disallow_advanced_settings_title),
+    IMPORT_SETTINGS(11, "import_settings", 0),
 
-    DISALLOW_CAMERA_MICROPHONE(18, "no_camera_microphone", R.string.restriction_disallow_camera_microphone_title);
+    PRIVATE_BROWSING(12, "private_browsing", R.string.restrictable_feature_private_browsing),
+
+    LOCATION_SERVICE(13, "location_service", R.string.restrictable_feature_location_services),
+
+    CLEAR_HISTORY(14, "clear_history", R.string.restrictable_feature_clear_history),
+
+    MASTER_PASSWORD(15, "master_password", R.string.restrictable_feature_master_password),
+
+    GUEST_BROWSING(16, "guest_browsing",  R.string.restrictable_feature_guest_browsing),
+
+    ADVANCED_SETTINGS(17, "advanced_settings", R.string.restrictable_feature_advanced_settings),
+
+    CAMERA_MICROPHONE(18, "camera_microphone", R.string.restrictable_feature_camera_microphone);
 
     public final int id;
     public final String name;
