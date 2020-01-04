@@ -256,7 +256,7 @@ class FilePickerResultHandler implements ActivityResultHandler {
         
         
         @Override
-        public void onTabChanged(Tab tab, Tabs.TabEvents msg, Object data) {
+        public void onTabChanged(Tab tab, Tabs.TabEvents msg, String data) {
             if ((tab == null) || (tab.getId() != tabId)) {
                 return;
             }

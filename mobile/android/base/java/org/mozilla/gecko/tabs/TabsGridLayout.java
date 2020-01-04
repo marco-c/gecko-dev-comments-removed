@@ -202,7 +202,7 @@ class TabsGridLayout extends GridView
     }
 
     @Override
-    public void onTabChanged(Tab tab, Tabs.TabEvents msg, Object data) {
+    public void onTabChanged(Tab tab, Tabs.TabEvents msg, String data) {
         switch (msg) {
             case ADDED:
                 

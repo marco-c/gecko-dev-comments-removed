@@ -134,7 +134,7 @@ public class TwoLinePageRow extends LinearLayout
 
 
     @Override
-    public void onTabChanged(final Tab tab, final Tabs.TabEvents msg, final Object data) {
+    public void onTabChanged(final Tab tab, final Tabs.TabEvents msg, final String data) {
         
         final String pageUrl = mPageUrl;
         if (pageUrl == null) {

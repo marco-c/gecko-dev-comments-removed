@@ -655,7 +655,7 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
     }
 
     @Override
-    public void onTabChanged(final Tab tab, Tabs.TabEvents msg, Object data) {
+    public void onTabChanged(final Tab tab, Tabs.TabEvents msg, String data) {
         
         
         

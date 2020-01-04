@@ -274,7 +274,7 @@ public abstract class GeckoApp
     }
 
     @Override
-    public void onTabChanged(Tab tab, Tabs.TabEvents msg, Object data) {
+    public void onTabChanged(Tab tab, Tabs.TabEvents msg, String data) {
         
         
         switch (msg) {

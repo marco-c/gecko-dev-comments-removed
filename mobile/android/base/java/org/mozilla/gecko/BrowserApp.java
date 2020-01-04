@@ -317,7 +317,7 @@ public class BrowserApp extends GeckoApp
     }
 
     @Override
-    public void onTabChanged(Tab tab, Tabs.TabEvents msg, Object data) {
+    public void onTabChanged(Tab tab, TabEvents msg, String data) {
         if (tab == null) {
             
             
