@@ -151,13 +151,6 @@ nsPNGDecoder::CreateFrame(png_uint_32 aXOffset, png_uint_32 aYOffset,
   CheckForTransparency(aFormat, frameRect);
 
   
-  
-  gfx::SurfaceFormat format = aFormat;
-  if (mNumFrames == 0) {
-    format = gfx::SurfaceFormat::B8G8R8A8;
-  }
-
-  
   MOZ_ASSERT_IF(mDownscaler, !GetImageMetadata().HasAnimation());
   MOZ_ASSERT_IF(mDownscaler,
                 IntRect(IntPoint(), GetSize()).IsEqualEdges(frameRect));
@@ -166,7 +159,7 @@ nsPNGDecoder::CreateFrame(png_uint_32 aXOffset, png_uint_32 aYOffset,
                                    : GetSize();
   IntRect targetFrameRect = mDownscaler ? IntRect(IntPoint(), targetSize)
                                         : frameRect;
-  nsresult rv = AllocateFrame(mNumFrames, targetSize, targetFrameRect, format);
+  nsresult rv = AllocateFrame(mNumFrames, targetSize, targetFrameRect, aFormat);
   if (NS_FAILED(rv)) {
     return rv;
   }
