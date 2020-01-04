@@ -345,6 +345,21 @@ this.Utils = {
 
   isInSubtree: function isInSubtree(aAccessible, aSubTreeRoot) {
     let acc = aAccessible;
+
+    
+    
+    if (aSubTreeRoot instanceof Ci.nsIAccessibleDocument) {
+      while (acc) {
+        let parentDoc = acc instanceof Ci.nsIAccessibleDocument ?
+          acc.parentDocument : acc.document;
+        if (parentDoc === aSubTreeRoot) {
+          return true;
+        }
+        acc = parentDoc;
+      }
+      return false;
+    }
+
     while (acc) {
       if (acc == aSubTreeRoot) {
         return true;

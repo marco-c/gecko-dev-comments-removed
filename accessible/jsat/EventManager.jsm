@@ -287,8 +287,12 @@ this.EventManager.prototype = {
       case Events.DOCUMENT_LOAD_COMPLETE:
       {
         let position = this.contentControl.vc.position;
+        
+        
+        let subtreeRoot = aEvent.accessible.role === Roles.DIALOG ?
+          aEvent.accessible : aEvent.accessibleDocument;
         if (aEvent.accessible === aEvent.accessibleDocument ||
-            (position && Utils.isInSubtree(position, aEvent.accessible))) {
+            (position && Utils.isInSubtree(position, subtreeRoot))) {
           
           
           break;
