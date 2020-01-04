@@ -37,14 +37,9 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
   nsresult rv = nsContentUtils::ConvertStringFromEncoding(charset,
                                                           refPart,
                                                           ref);
-  if (NS_FAILED(rv)) {
-    
-    
-    
-    CopyUTF8toUTF16(refPart, ref);
-  }
-  if (ref.IsEmpty())
+  if (NS_FAILED(rv) || ref.IsEmpty()) {
     return;
+  }
 
   
   nsIDocument *doc = aFromContent->OwnerDoc();
