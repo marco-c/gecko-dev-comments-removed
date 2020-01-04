@@ -13,6 +13,7 @@
 #include "mozilla/camera/PCamerasChild.h"
 #include "mozilla/camera/PCamerasParent.h"
 #include "mozilla/Mutex.h"
+#include "base/singleton.h"
 #include "nsCOMPtr.h"
 
 
@@ -79,24 +80,21 @@ public:
   ~CamerasSingleton();
 
   static OffTheBooksMutex& Mutex() {
-    return GetInstance().mCamerasMutex;
+    return gTheInstance.get()->mCamerasMutex;
   }
 
   static CamerasChild*& Child() {
     Mutex().AssertCurrentThreadOwns();
-    return GetInstance().mCameras;
+    return gTheInstance.get()->mCameras;
   }
 
   static nsCOMPtr<nsIThread>& Thread() {
     Mutex().AssertCurrentThreadOwns();
-    return GetInstance().mCamerasChildThread;
+    return gTheInstance.get()->mCamerasChildThread;
   }
 
 private:
-  static CamerasSingleton& GetInstance() {
-    static CamerasSingleton instance;
-    return instance;
-  }
+  static Singleton<CamerasSingleton> gTheInstance;
 
   
   
