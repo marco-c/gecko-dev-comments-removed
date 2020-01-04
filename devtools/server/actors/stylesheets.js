@@ -14,8 +14,6 @@ Cu.import("resource://gre/modules/Task.jsm");
 
 const promise = require("promise");
 const events = require("sdk/event/core");
-const {OriginalSourceFront, MediaRuleFront, StyleSheetFront,
-       StyleSheetsFront} = require("devtools/client/fronts/stylesheets");
 const protocol = require("devtools/shared/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
 const {LongStringActor, ShortLongString} = require("devtools/server/actors/string");
@@ -760,8 +758,6 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 exports.StyleSheetActor = StyleSheetActor;
 
-exports.StyleSheetFront = StyleSheetFront;
-
 
 
 
@@ -952,8 +948,6 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 });
 
 exports.StyleSheetsActor = StyleSheetsActor;
-
-exports.StyleSheetsFront = StyleSheetsFront;
 
 
 
