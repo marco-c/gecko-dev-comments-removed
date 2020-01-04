@@ -4,38 +4,16 @@
 
 if (classesEnabled()) {
 
-
-
-
-
-function statementWrapper() {
-    eval("class Foo { constructor() { } tryBreak() { Foo = 4; } }");
-}
-
-function expressionWrapper() { 
-    
-    eval(`var x = class Foo { constructor() { }; tryBreak() { Foo = 4; } };
-          new x().tryBreak();`);
-}
-
-assertThrowsInstanceOf(statementWrapper, SyntaxError);
-assertThrowsInstanceOf(expressionWrapper, TypeError);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var test = `
+class Foof { constructor() { }; tryBreak() { Foof = 4; } }
+for (let result of [Foof, class Bar { constructor() { }; tryBreak() { Bar = 4; } }])
+    assertThrowsInstanceOf(() => new result().tryBreak(), TypeError);
+
+{
+    class foo { constructor() { }; tryBreak() { foo = 4; } }
+    for (let result of [foo, class Bar { constructor() { }; tryBreak() { Bar = 4 } }])
+        assertThrowsInstanceOf(() => new result().tryBreak(), TypeError);
+}
 
 // TDZ applies to inner bindings
 assertThrowsInstanceOf(()=>eval(\`class Bar {
