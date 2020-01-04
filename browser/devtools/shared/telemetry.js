@@ -277,11 +277,17 @@ Telemetry.prototype = {
 
 
 
-  stopTimer: function(histogramId) {
+
+
+  stopTimer: function(histogramId, key) {
     let startTime = this._timers.get(histogramId);
     if (startTime) {
       let time = (new Date() - startTime) / 1000;
-      this.log(histogramId, time);
+      if (!key) {
+        this.log(histogramId, time);
+      } else {
+        this.logKeyed(histogramId, key, time);
+      }
       this._timers.delete(histogramId);
     }
   },
