@@ -638,7 +638,10 @@ class NativeObject : public JSObject
     void shrinkSlots(ExclusiveContext* cx, uint32_t oldCount, uint32_t newCount);
 
     
-    static bool growSlotsStatic(ExclusiveContext* cx, NativeObject* obj, uint32_t newCount);
+
+
+
+    static bool growSlotsDontReportOOM(ExclusiveContext* cx, NativeObject* obj, uint32_t newCount);
 
     bool hasDynamicSlots() const { return !!slots_; }
 
