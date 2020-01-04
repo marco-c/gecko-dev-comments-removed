@@ -21,6 +21,7 @@
 #include "mozilla/dom/SVGImageElement.h"
 #include "nsContentUtils.h"
 #include "nsIReflowCallback.h"
+#include "mozilla/unused.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -378,7 +379,8 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       
       
       
-      nsLayoutUtils::DrawSingleImage(
+      
+      Unused << nsLayoutUtils::DrawSingleImage(
         aContext,
         PresContext(),
         mImageContainer,
@@ -388,7 +390,8 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
         &context,
         drawFlags);
     } else { 
-      nsLayoutUtils::DrawSingleUnscaledImage(
+      
+      Unused << nsLayoutUtils::DrawSingleUnscaledImage(
         aContext,
         PresContext(),
         mImageContainer,
