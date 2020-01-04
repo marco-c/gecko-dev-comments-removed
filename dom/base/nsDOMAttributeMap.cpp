@@ -196,6 +196,12 @@ nsDOMAttributeMap::GetSupportedNames(unsigned aFlags,
     return;
   }
 
+  
+  
+  
+  bool lowercaseNamesOnly =
+    mContent->IsHTMLElement() && mContent->IsInHTMLDocument();
+
   const uint32_t count = mContent->GetAttrCount();
   bool seenNonAtomName = false;
   for (uint32_t i = 0; i < count; i++) {
@@ -204,9 +210,18 @@ nsDOMAttributeMap::GetSupportedNames(unsigned aFlags,
     nsString qualifiedName;
     name->GetQualifiedName(qualifiedName);
 
+    if (lowercaseNamesOnly &&
+        nsContentUtils::StringContainsASCIIUpper(qualifiedName)) {
+      continue;
+    }
+
+    
+    
+    
     if (seenNonAtomName && aNames.Contains(qualifiedName)) {
       continue;
     }
+
     aNames.AppendElement(qualifiedName);
   }
 }
