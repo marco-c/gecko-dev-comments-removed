@@ -6320,6 +6320,9 @@ var IdentityHandler = {
   IDENTITY_MODE_VERIFIED: "verified",
 
   
+  IDENTITY_MODE_CHROMEUI: "chromeUI",
+
+  
   
 
   
@@ -6383,13 +6386,19 @@ var IdentityHandler = {
   
 
 
-  getIdentityMode: function getIdentityMode(aState) {
+  getIdentityMode: function getIdentityMode(aState, uri) {
     if (aState & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL) {
       return this.IDENTITY_MODE_VERIFIED;
     }
 
     if (aState & Ci.nsIWebProgressListener.STATE_IS_SECURE) {
       return this.IDENTITY_MODE_IDENTIFIED;
+    }
+
+    
+    let whitelist = /^about:($|about|accounts|addons|buildconfig|cache|config|crashes|devices|downloads|fennec|firefox|feedback|healthreport|license|logins|logo|memory|mozilla|networking|plugins|privatebrowsing|rights|serviceworkers|support|telemetry|webrtc)($|\?)/i;
+    if (uri.schemeIs("about") && whitelist.test(uri.spec)) {
+        return this.IDENTITY_MODE_CHROMEUI;
     }
 
     return this.IDENTITY_MODE_UNKNOWN;
@@ -6486,7 +6495,12 @@ var IdentityHandler = {
     }
     this._lastLocation = locationObj;
 
-    let identityMode = this.getIdentityMode(aState);
+    let uri = aBrowser.currentURI;
+    try {
+      uri = Services.uriFixup.createExposableURI(uri);
+    } catch (e) {}
+
+    let identityMode = this.getIdentityMode(aState, uri);
     let mixedDisplay = this.getMixedDisplayMode(aState);
     let mixedActive = this.getMixedActiveMode(aState);
     let trackingMode = this.getTrackingMode(aState, aBrowser);
@@ -6502,7 +6516,12 @@ var IdentityHandler = {
 
     
     
-    if (identityMode == this.IDENTITY_MODE_UNKNOWN || aState & Ci.nsIWebProgressListener.STATE_IS_BROKEN) {
+    
+    
+    
+    if (identityMode == this.IDENTITY_MODE_UNKNOWN ||
+        identityMode == this.IDENTITY_MODE_CHROMEUI ||
+        aState & Ci.nsIWebProgressListener.STATE_IS_BROKEN) {
       result.secure = false;
       return result;
     }
