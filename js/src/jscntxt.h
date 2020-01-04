@@ -99,14 +99,13 @@ class ExclusiveContext : public ContextFriendFields,
     friend struct StackBaseShape;
     friend void JSScript::initCompartment(ExclusiveContext* cx);
     friend class jit::JitContext;
-    friend class Activation;
+
+    
+    
+    JSRuntime* const runtime_;
 
     
     HelperThread* helperThread_;
-
-    
-    
-    using ContextFriendFields::runtime_;
 
   public:
     enum ContextKind {
@@ -214,9 +213,9 @@ class ExclusiveContext : public ContextFriendFields,
     FreeOp* defaultFreeOp() { return runtime_->defaultFreeOp(); }
     void* contextAddressForJit() { return runtime_->unsafeContextFromAnyThread(); }
     void* runtimeAddressOfInterruptUint32() { return runtime_->addressOfInterruptUint32(); }
-    void* stackLimitAddress(StackKind kind) { return &runtime_->mainThread.nativeStackLimit[kind]; }
+    void* stackLimitAddress(StackKind kind) { return &nativeStackLimit[kind]; }
     void* stackLimitAddressForJitCode(StackKind kind);
-    uintptr_t stackLimit(StackKind kind) { return runtime_->mainThread.nativeStackLimit[kind]; }
+    uintptr_t stackLimit(StackKind kind) { return nativeStackLimit[kind]; }
     uintptr_t stackLimitForJitCode(StackKind kind);
     size_t gcSystemPageSize() { return gc::SystemPageSize(); }
     bool jitSupportsFloatingPoint() const { return runtime_->jitSupportsFloatingPoint; }
@@ -393,6 +392,8 @@ struct JSContext : public js::ExclusiveContext,
     
     void* data;
 
+    void resetJitStackLimit();
+
   public:
 
     
@@ -404,6 +405,8 @@ struct JSContext : public js::ExclusiveContext,
 
 
     JSVersion findVersion() const;
+
+    void initJitStackLimit();
 
     JS::ContextOptions& options() {
         return options_;
@@ -418,6 +421,28 @@ struct JSContext : public js::ExclusiveContext,
     bool jitIsBroken;
 
     void updateJITEnabled();
+
+    
+
+
+
+
+
+
+
+
+    JS::PersistentRooted<js::SavedFrame*> asyncStackForNewActivations;
+
+    
+
+
+    const char* asyncCauseForNewActivations;
+
+    
+
+
+
+    bool asyncCallIsExplicit;
 
     
     bool currentlyRunning() const;

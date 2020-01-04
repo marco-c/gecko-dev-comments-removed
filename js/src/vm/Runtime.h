@@ -248,7 +248,7 @@ void DisableExtraThreads();
 
 
 
-class PerThreadData : public PerThreadDataFriendFields
+class PerThreadData
 {
     
 
@@ -372,16 +372,13 @@ struct JSRuntime : public JS::shadow::Runtime,
     js::jit::JitActivation* jitActivation;
 
     
-  private:
+  protected:
     mozilla::Atomic<uintptr_t, mozilla::Relaxed> jitStackLimit_;
-    void resetJitStackLimit();
 
     
     uintptr_t jitStackLimitNoInterrupt_;
 
   public:
-    void initJitStackLimit();
-
     uintptr_t jitStackLimit() const { return jitStackLimit_; }
 
     
@@ -448,28 +445,6 @@ struct JSRuntime : public JS::shadow::Runtime,
     js::WasmActivation * volatile wasmActivationStack_;
 
   public:
-    
-
-
-
-
-
-
-
-
-    JS::PersistentRooted<js::SavedFrame*> asyncStackForNewActivations;
-
-    
-
-
-    const char* asyncCauseForNewActivations;
-
-    
-
-
-
-    bool asyncCallIsExplicit;
-
     
     JS::dbg::AutoEntryMonitor* entryMonitor;
 
