@@ -38,13 +38,13 @@ registerCleanupFunction(() => {
 
 
 add_task(function* test_new_tab() {
-  let normalWindow = yield promiseOpenAndLoadWindow({
-    remote: true
-  }, true);
-  let privateWindow = yield promiseOpenAndLoadWindow({
+  let normalWindow = yield BrowserTestUtils.openNewBrowserWindow({
+    remote: true,
+  });
+  let privateWindow = yield BrowserTestUtils.openNewBrowserWindow({
     remote: true,
     private: true,
-  }, true);
+  });
 
   for (let testWindow of [normalWindow, privateWindow]) {
     yield promiseWaitForFocus(testWindow);
@@ -80,10 +80,10 @@ add_task(function* test_new_tab() {
 
 
 add_task(function* test_new_window() {
-  let normalWindow = yield promiseOpenAndLoadWindow({
+  let normalWindow = yield BrowserTestUtils.openNewBrowserWindow({
     remote: true
   }, true);
-  let privateWindow = yield promiseOpenAndLoadWindow({
+  let privateWindow = yield BrowserTestUtils.openNewBrowserWindow({
     remote: true,
     private: true,
   }, true);
