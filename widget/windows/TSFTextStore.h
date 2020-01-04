@@ -791,7 +791,8 @@ protected:
   
   
   
-  Content mLockedContent;
+  
+  Content mContentForTSF;
 
   Content& LockedContent();
 
