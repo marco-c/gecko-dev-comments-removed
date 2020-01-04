@@ -1109,7 +1109,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     
     const char* getDefaultLocale();
 
-    JSVersion defaultVersion() { return defaultVersion_; }
+    JSVersion defaultVersion() const { return defaultVersion_; }
     void setDefaultVersion(JSVersion v) { defaultVersion_ = v; }
 
     
