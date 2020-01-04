@@ -53,15 +53,15 @@ public:
     typedef BOOL (WINAPI * PFNWGLRELEASETEXIMAGEPROC) (HANDLE hPbuffer, int iBuffer);
     PFNWGLRELEASETEXIMAGEPROC fReleaseTexImage;
 
-    typedef BOOL (WINAPI * PFNWGLCHOOSEPIXELFORMATPROC) (HDC hdc, const int* piAttribIList, const FLOAT* pfAttribFList, UINT nMaxFormats, int* piFormats, UINT* nNumFormats);
+    typedef BOOL (WINAPI * PFNWGLCHOOSEPIXELFORMATPROC) (HDC hdc, const int* piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
     PFNWGLCHOOSEPIXELFORMATPROC fChoosePixelFormat;
-    typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBIVPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int* piAttributes, int* piValues);
+    typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBIVPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int* piAttributes, int *piValues);
     PFNWGLGETPIXELFORMATATTRIBIVPROC fGetPixelFormatAttribiv;
 
-    typedef const char* (WINAPI * PFNWGLGETEXTENSIONSSTRINGPROC) (HDC hdc);
+    typedef const char * (WINAPI * PFNWGLGETEXTENSIONSSTRINGPROC) (HDC hdc);
     PFNWGLGETEXTENSIONSSTRINGPROC fGetExtensionsString;
 
-    typedef HGLRC (WINAPI * PFNWGLCREATECONTEXTATTRIBSPROC) (HDC hdc, HGLRC hShareContext, const int* attribList);
+    typedef HGLRC (WINAPI * PFNWGLCREATECONTEXTATTRIBSPROC) (HDC hdc, HGLRC hShareContext, const int *attribList);
     PFNWGLCREATECONTEXTATTRIBSPROC fCreateContextAttribs;
 
     
@@ -98,7 +98,7 @@ public:
     PFNWGLDXUNLOCKOBJECTSPROC fDXUnlockObjects;
 
     bool EnsureInitialized();
-    HWND CreateDummyWindow(HDC* aWindowDC = nullptr);
+    HWND CreateDummyWindow(HDC *aWindowDC = nullptr);
 
     bool HasRobustness() const { return mHasRobustness; }
     bool HasDXInterop() const { return mHasDXInterop; }
@@ -108,11 +108,11 @@ public:
     HDC GetWindowDC() const {return mWindowDC; }
     HGLRC GetWindowGLContext() const {return mWindowGLContext; }
     int GetWindowPixelFormat() const { return mWindowPixelFormat; }
-    PRLibrary* GetOGLLibrary() { return mOGLLibrary; }
+    PRLibrary *GetOGLLibrary() { return mOGLLibrary; }
 
 private:
     bool mInitialized;
-    PRLibrary* mOGLLibrary;
+    PRLibrary *mOGLLibrary;
     bool mHasRobustness;
     bool mHasDXInterop;
     bool mHasDXInterop2;

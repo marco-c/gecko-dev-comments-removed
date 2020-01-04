@@ -26,7 +26,7 @@ using namespace mozilla::gfx;
 WGLLibrary sWGLLib;
 
 HWND
-WGLLibrary::CreateDummyWindow(HDC* aWindowDC)
+WGLLibrary::CreateDummyWindow(HDC *aWindowDC)
 {
     WNDCLASSW wc;
     if (!GetClassInfoW(GetModuleHandle(nullptr), L"GLContextWGLClass", &wc)) {
@@ -177,24 +177,24 @@ WGLLibrary::EnsureInitialized()
     }
 
     GLLibraryLoader::SymLoadStruct extensionsSymbols[] = {
-        { (PRFuncPtr*) &fGetExtensionsString, { "wglGetExtensionsStringARB", nullptr} },
+        { (PRFuncPtr *) &fGetExtensionsString, { "wglGetExtensionsStringARB", nullptr} },
         { nullptr, { nullptr } }
     };
 
     GLLibraryLoader::SymLoadStruct robustnessSymbols[] = {
-        { (PRFuncPtr*) &fCreateContextAttribs, { "wglCreateContextAttribsARB", nullptr} },
+        { (PRFuncPtr *) &fCreateContextAttribs, { "wglCreateContextAttribsARB", nullptr} },
         { nullptr, { nullptr } }
     };
 
     GLLibraryLoader::SymLoadStruct dxInteropSymbols[] = {
-        { (PRFuncPtr*)&fDXSetResourceShareHandle,{ "wglDXSetResourceShareHandleNV", nullptr } },
-        { (PRFuncPtr*)&fDXOpenDevice,            { "wglDXOpenDeviceNV",             nullptr } },
-        { (PRFuncPtr*)&fDXCloseDevice,           { "wglDXCloseDeviceNV",            nullptr } },
-        { (PRFuncPtr*)&fDXRegisterObject,        { "wglDXRegisterObjectNV",         nullptr } },
-        { (PRFuncPtr*)&fDXUnregisterObject,      { "wglDXUnregisterObjectNV",       nullptr } },
-        { (PRFuncPtr*)&fDXObjectAccess,          { "wglDXObjectAccessNV",           nullptr } },
-        { (PRFuncPtr*)&fDXLockObjects,           { "wglDXLockObjectsNV",            nullptr } },
-        { (PRFuncPtr*)&fDXUnlockObjects,         { "wglDXUnlockObjectsNV",          nullptr } },
+        { (PRFuncPtr *)&fDXSetResourceShareHandle,{ "wglDXSetResourceShareHandleNV", nullptr } },
+        { (PRFuncPtr *)&fDXOpenDevice,            { "wglDXOpenDeviceNV",             nullptr } },
+        { (PRFuncPtr *)&fDXCloseDevice,           { "wglDXCloseDeviceNV",            nullptr } },
+        { (PRFuncPtr *)&fDXRegisterObject,        { "wglDXRegisterObjectNV",         nullptr } },
+        { (PRFuncPtr *)&fDXUnregisterObject,      { "wglDXUnregisterObjectNV",       nullptr } },
+        { (PRFuncPtr *)&fDXObjectAccess,          { "wglDXObjectAccessNV",           nullptr } },
+        { (PRFuncPtr *)&fDXLockObjects,           { "wglDXLockObjectsNV",            nullptr } },
+        { (PRFuncPtr *)&fDXUnlockObjects,         { "wglDXUnlockObjectsNV",          nullptr } },
         { nullptr, { nullptr } }
     };
 
@@ -439,7 +439,7 @@ GLContextProviderWGL::CreateWrappingExisting(void*, void*)
 }
 
 already_AddRefed<GLContext>
-GLContextProviderWGL::CreateForWindow(nsIWidget* aWidget, bool aForceAccelerated)
+GLContextProviderWGL::CreateForWindow(nsIWidget *aWidget, bool aForceAccelerated)
 {
     if (!sWGLLib.EnsureInitialized()) {
         return nullptr;
@@ -456,7 +456,7 @@ GLContextProviderWGL::CreateForWindow(nsIWidget* aWidget, bool aForceAccelerated
     SetPixelFormat(dc, sWGLLib.GetWindowPixelFormat(), nullptr);
     HGLRC context;
 
-    GLContextWGL* shareContext = GetGlobalContextWGL();
+    GLContextWGL *shareContext = GetGlobalContextWGL();
 
     if (sWGLLib.HasRobustness()) {
         int attribs[] = {
@@ -501,7 +501,7 @@ GLContextProviderWGL::CreateForWindow(nsIWidget* aWidget, bool aForceAccelerated
 
 static already_AddRefed<GLContextWGL>
 CreatePBufferOffscreenContext(const IntSize& aSize,
-                              GLContextWGL* aShareContext)
+                              GLContextWGL *aShareContext)
 {
     WGLLibrary& wgl = sWGLLib;
 
@@ -595,7 +595,7 @@ static already_AddRefed<GLContextWGL>
 CreateWindowOffscreenContext()
 {
     
-    GLContextWGL* shareContext = GetGlobalContextWGL();
+    GLContextWGL *shareContext = GetGlobalContextWGL();
     if (!shareContext) {
         return nullptr;
     }
