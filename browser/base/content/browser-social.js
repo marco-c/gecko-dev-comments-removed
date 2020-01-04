@@ -238,7 +238,7 @@ SocialUI = {
       }
     }
     
-    for (let node of SocialMarks.nodes) {
+    for (let node of SocialMarks.nodes()) {
       if (canShare) {
         node.removeAttribute("disabled")
       } else {
@@ -1300,7 +1300,7 @@ var SocialMarksWidgetListener = {
 
 
 SocialMarks = {
-  get nodes() {
+  *nodes() {
     for (let p of Social.providers.filter(p => p.markURL)) {
       let widgetId = SocialMarks._toolbarHelper.idFromOrigin(p.origin);
       let widget = CustomizableUI.getWidget(widgetId);
@@ -1314,7 +1314,7 @@ SocialMarks = {
   update: function() {
     
     
-    for (let node of this.nodes) {
+    for (let node of this.nodes()) {
       
       
       if (node.update) {
