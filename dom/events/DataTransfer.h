@@ -68,7 +68,10 @@ public:
 
   friend class mozilla::EventStateManager;
 
-  static DataTransfer* Cast(nsIDOMDataTransfer* aArg) { return static_cast<DataTransfer*>(aArg); }
+  static DataTransfer* Cast(nsIDOMDataTransfer* aArg)
+  {
+    return static_cast<DataTransfer*>(aArg);
+  }
 
 protected:
 
@@ -108,8 +111,10 @@ public:
   DataTransfer(nsISupports* aParent, EventMessage aEventMessage,
                bool aIsExternal, int32_t aClipboardType);
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-  nsISupports* GetParentObject()
+  virtual JSObject*
+  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+
+  nsISupports* GetParentObject() const
   {
     return mParent;
   }
@@ -131,6 +136,7 @@ public:
   {
     aDropEffect.AssignASCII(sEffects[mDropEffect]);
   }
+
   void GetEffectAllowed(nsString& aEffectAllowed)
   {
     if (mEffectAllowed == nsIDragService::DRAGDROP_ACTION_UNINITIALIZED) {
@@ -139,23 +145,31 @@ public:
       aEffectAllowed.AssignASCII(sEffects[mEffectAllowed]);
     }
   }
+
   void SetDragImage(Element& aElement, int32_t aX, int32_t aY,
                     ErrorResult& aRv);
-  already_AddRefed<DOMStringList> Types();
+
+  already_AddRefed<DOMStringList> Types() const;
+
   void GetData(const nsAString& aFormat, nsAString& aData, ErrorResult& aRv);
+
   void SetData(const nsAString& aFormat, const nsAString& aData,
                ErrorResult& aRv);
+
   void ClearData(const mozilla::dom::Optional<nsAString>& aFormat,
                  mozilla::ErrorResult& aRv);
+
   FileList* GetFiles(mozilla::ErrorResult& aRv);
 
   already_AddRefed<Promise> GetFilesAndDirectories(ErrorResult& aRv);
 
   void AddElement(Element& aElement, mozilla::ErrorResult& aRv);
-  uint32_t MozItemCount()
+
+  uint32_t MozItemCount() const
   {
     return mItems.Length();
   }
+
   void GetMozCursor(nsString& aCursor)
   {
     if (mCursorState) {
@@ -164,23 +178,29 @@ public:
       aCursor.AssignLiteral("auto");
     }
   }
+
   already_AddRefed<DOMStringList> MozTypesAt(uint32_t aIndex,
                                              mozilla::ErrorResult& aRv);
+
   void MozClearDataAt(const nsAString& aFormat, uint32_t aIndex,
                       mozilla::ErrorResult& aRv);
+
   void MozSetDataAt(JSContext* aCx, const nsAString& aFormat,
                     JS::Handle<JS::Value> aData, uint32_t aIndex,
                     mozilla::ErrorResult& aRv);
+
   void MozGetDataAt(JSContext* aCx, const nsAString& aFormat,
                     uint32_t aIndex, JS::MutableHandle<JS::Value> aRetval,
                     mozilla::ErrorResult& aRv);
-  bool MozUserCancelled()
+
+  bool MozUserCancelled() const
   {
     return mUserCancelled;
   }
+
   already_AddRefed<nsINode> GetMozSourceNode();
 
-  mozilla::dom::Element* GetDragTarget()
+  mozilla::dom::Element* GetDragTarget() const
   {
     return mDragTarget;
   }
@@ -195,17 +215,20 @@ public:
   
   
   already_AddRefed<nsISupportsArray> GetTransferables(nsIDOMNode* aDragTarget);
-  already_AddRefed<nsISupportsArray> GetTransferables(nsILoadContext* aLoadContext);
+
+  already_AddRefed<nsISupportsArray>
+  GetTransferables(nsILoadContext* aLoadContext);
 
   
-  already_AddRefed<nsITransferable> GetTransferable(uint32_t aIndex,
-                                                    nsILoadContext* aLoadContext);
+  
+  already_AddRefed<nsITransferable>
+  GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext);
 
   
   
   bool ConvertFromVariant(nsIVariant* aVariant,
-                            nsISupports** aSupports,
-                            uint32_t* aLength);
+                          nsISupports** aSupports,
+                          uint32_t* aLength) const;
 
   
   void ClearAll();
@@ -226,7 +249,7 @@ public:
                                             nsIPrincipal* aPrincipal);
 
   
-  Element* GetDragImage(int32_t* aX, int32_t* aY)
+  Element* GetDragImage(int32_t* aX, int32_t* aY) const
   {
     *aX = mDragImageX;
     *aY = mDragImageY;
@@ -241,11 +264,12 @@ protected:
 
   
   
-  void GetRealFormat(const nsAString& aInFormat, nsAString& aOutFormat);
+  void GetRealFormat(const nsAString& aInFormat, nsAString& aOutFormat) const;
 
   
   
-  void CacheExternalData(const char* aFormat, uint32_t aIndex, nsIPrincipal* aPrincipal);
+  void CacheExternalData(const char* aFormat, uint32_t aIndex,
+                         nsIPrincipal* aPrincipal);
 
   
   
@@ -259,23 +283,29 @@ protected:
   void FillInExternalData(TransferItem& aItem, uint32_t aIndex);
 
 
-  FileList* GetFileListInternal(ErrorResult& aRv, nsIPrincipal* aSubjectPrincipal);
+  FileList* GetFileListInternal(ErrorResult& aRv,
+                                nsIPrincipal* aSubjectPrincipal);
+
   nsresult GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
-                             nsIPrincipal* aSubjectPrincipal, nsIVariant** aData);
-  nsresult SetDataAtInternal(const nsAString& aFormat, nsIVariant* aData, uint32_t aIndex,
-                             nsIPrincipal* aSubjectPrincipal);
+                             nsIPrincipal* aSubjectPrincipal,
+                             nsIVariant** aData);
+
+  nsresult SetDataAtInternal(const nsAString& aFormat, nsIVariant* aData,
+                             uint32_t aIndex, nsIPrincipal* aSubjectPrincipal);
 
   friend class ContentParent;
+
   void FillAllExternalData();
 
   void FillInExternalCustomTypes(uint32_t aIndex, nsIPrincipal* aPrincipal);
-  void FillInExternalCustomTypes(nsIVariant* aData, uint32_t aIndex, nsIPrincipal* aPrincipal);
+
+  void FillInExternalCustomTypes(nsIVariant* aData, uint32_t aIndex,
+                                 nsIPrincipal* aPrincipal);
 
   void MozClearDataAtHelper(const nsAString& aFormat, uint32_t aIndex,
                             mozilla::ErrorResult& aRv);
 
   nsCOMPtr<nsISupports> mParent;
-
 
   
   uint32_t mDropEffect;

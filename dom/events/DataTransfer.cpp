@@ -208,8 +208,9 @@ DataTransfer::SetDropEffect(const nsAString& aDropEffect)
     if (aDropEffect.EqualsASCII(sEffects[e])) {
       
       if (e != (nsIDragService::DRAGDROP_ACTION_COPY |
-                nsIDragService::DRAGDROP_ACTION_MOVE))
+                nsIDragService::DRAGDROP_ACTION_MOVE)) {
         mDropEffect = e;
+      }
       break;
     }
   }
@@ -313,18 +314,20 @@ DataTransfer::GetFileListInternal(ErrorResult& aRv,
       nsCOMPtr<nsIVariant> variant;
       aRv = GetDataAtInternal(NS_ConvertUTF8toUTF16(kFileMime), i,
                               aSubjectPrincipal, getter_AddRefs(variant));
-      if (aRv.Failed()) {
+      if (NS_WARN_IF(aRv.Failed())) {
         return nullptr;
       }
 
-      if (!variant)
+      if (!variant) {
         continue;
+      }
 
       nsCOMPtr<nsISupports> supports;
       nsresult rv = variant->GetAsISupports(getter_AddRefs(supports));
 
-      if (NS_FAILED(rv))
+      if (NS_WARN_IF(NS_FAILED(rv))) {
         continue;
+      }
 
       nsCOMPtr<nsIFile> file = do_QueryInterface(supports);
 
@@ -367,12 +370,13 @@ NS_IMETHODIMP
 DataTransfer::GetFiles(nsIDOMFileList** aFileList)
 {
   ErrorResult rv;
-  NS_IF_ADDREF(*aFileList = GetFileListInternal(rv, nsContentUtils::GetSystemPrincipal()));
+  NS_IF_ADDREF(*aFileList =
+    GetFileListInternal(rv, nsContentUtils::GetSystemPrincipal()));
   return rv.StealNSResult();
 }
 
 already_AddRefed<DOMStringList>
-DataTransfer::Types()
+DataTransfer::Types() const
 {
   RefPtr<DOMStringList> types = new DOMStringList();
   if (mItems.Length()) {
@@ -412,7 +416,9 @@ DataTransfer::GetData(const nsAString& aFormat, nsAString& aData,
   aData.Truncate();
 
   nsCOMPtr<nsIVariant> data;
-  nsresult rv = GetDataAtInternal(aFormat, 0, nsContentUtils::SubjectPrincipal(), getter_AddRefs(data));
+  nsresult rv =
+    GetDataAtInternal(aFormat, 0, nsContentUtils::SubjectPrincipal(),
+                      getter_AddRefs(data));
   if (NS_FAILED(rv)) {
     if (rv != NS_ERROR_DOM_INDEX_SIZE_ERR) {
       aRv.Throw(rv);
@@ -436,15 +442,18 @@ DataTransfer::GetData(const nsAString& aFormat, nsAString& aData,
         idx = stringdata.FindChar('\n', lastidx);
         
         if (stringdata[lastidx] == '#') {
-          if (idx == -1)
+          if (idx == -1) {
             break;
+          }
         }
         else {
-          if (idx == -1)
+          if (idx == -1) {
             aData.Assign(Substring(stringdata, lastidx));
-          else
+          } else {
             aData.Assign(Substring(stringdata, lastidx, idx - lastidx));
-          aData = nsContentUtils::TrimWhitespace<nsCRT::IsAsciiSpace>(aData, true);
+          }
+          aData = nsContentUtils::TrimWhitespace<nsCRT::IsAsciiSpace>(aData,
+                                                                      true);
           return;
         }
         lastidx = idx + 1;
@@ -471,7 +480,8 @@ DataTransfer::SetData(const nsAString& aFormat, const nsAString& aData,
   RefPtr<nsVariantCC> variant = new nsVariantCC();
   variant->SetAsAString(aData);
 
-  aRv = SetDataAtInternal(aFormat, variant, 0, nsContentUtils::SubjectPrincipal());
+  aRv = SetDataAtInternal(aFormat, variant, 0,
+                          nsContentUtils::SubjectPrincipal());
 }
 
 void
@@ -574,8 +584,9 @@ DataTransfer::MozTypesAt(uint32_t aIndex, ErrorResult& aRv)
   if (aIndex < mItems.Length()) {
     
     nsTArray<TransferItem>& item = mItems[aIndex];
-    for (uint32_t i = 0; i < item.Length(); i++)
+    for (uint32_t i = 0; i < item.Length(); i++) {
       types->Add(item[i].mFormat);
+    }
   }
 
   return types.forget();
@@ -591,20 +602,24 @@ DataTransfer::MozTypesAt(uint32_t aIndex, nsISupports** aTypes)
 }
 
 nsresult
-DataTransfer::GetDataAtNoSecurityCheck(const nsAString& aFormat, uint32_t aIndex,
+DataTransfer::GetDataAtNoSecurityCheck(const nsAString& aFormat,
+                                       uint32_t aIndex,
                                        nsIVariant** aData)
 {
-  return GetDataAtInternal(aFormat, aIndex, nsContentUtils::GetSystemPrincipal(), aData);
+  return GetDataAtInternal(aFormat, aIndex,
+                           nsContentUtils::GetSystemPrincipal(), aData);
 }
 
 nsresult
 DataTransfer::GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
-                                nsIPrincipal* aSubjectPrincipal, nsIVariant** aData)
+                                nsIPrincipal* aSubjectPrincipal,
+                                nsIVariant** aData)
 {
   *aData = nullptr;
 
-  if (aFormat.IsEmpty())
+  if (aFormat.IsEmpty()) {
     return NS_OK;
+  }
 
   if (aIndex >= mItems.Length()) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
@@ -659,7 +674,8 @@ DataTransfer::GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
           MOZ_ASSERT(sp, "This cannot fail on the main thread.");
           nsIPrincipal* dataPrincipal = sp->GetPrincipal();
           NS_ENSURE_TRUE(dataPrincipal, NS_ERROR_DOM_SECURITY_ERR);
-          NS_ENSURE_TRUE(aSubjectPrincipal->Subsumes(dataPrincipal), NS_ERROR_DOM_SECURITY_ERR);
+          NS_ENSURE_TRUE(aSubjectPrincipal->Subsumes(dataPrincipal),
+                                                     NS_ERROR_DOM_SECURITY_ERR);
         }
       }
       *aData = formatitem.mData;
@@ -678,7 +694,8 @@ DataTransfer::MozGetDataAt(JSContext* aCx, const nsAString& aFormat,
                            mozilla::ErrorResult& aRv)
 {
   nsCOMPtr<nsIVariant> data;
-  aRv = GetDataAtInternal(aFormat, aIndex, nsContentUtils::SubjectPrincipal(), getter_AddRefs(data));
+  aRv = GetDataAtInternal(aFormat, aIndex, nsContentUtils::SubjectPrincipal(),
+                          getter_AddRefs(data));
   if (aRv.Failed()) {
     return;
   }
@@ -697,7 +714,8 @@ DataTransfer::MozGetDataAt(JSContext* aCx, const nsAString& aFormat,
 
 nsresult
 DataTransfer::SetDataAtInternal(const nsAString& aFormat, nsIVariant* aData,
-                                uint32_t aIndex, nsIPrincipal* aSubjectPrincipal)
+                                uint32_t aIndex,
+                                nsIPrincipal* aSubjectPrincipal)
 {
   if (aFormat.IsEmpty()) {
     return NS_OK;
@@ -753,7 +771,8 @@ DataTransfer::MozSetDataAt(JSContext* aCx, const nsAString& aFormat,
   aRv = nsContentUtils::XPConnect()->JSValToVariant(aCx, aData,
                                                     getter_AddRefs(data));
   if (!aRv.Failed()) {
-    aRv = SetDataAtInternal(aFormat, data, aIndex, nsContentUtils::SubjectPrincipal());
+    aRv = SetDataAtInternal(aFormat, data, aIndex,
+                            nsContentUtils::SubjectPrincipal());
   }
 }
 
@@ -809,7 +828,8 @@ DataTransfer::MozClearDataAtHelper(const nsAString& aFormat, uint32_t aIndex,
       
       bool subsumes;
       if (formatitem.mPrincipal && principal &&
-          (NS_FAILED(principal->Subsumes(formatitem.mPrincipal, &subsumes)) || !subsumes)) {
+          (NS_FAILED(principal->Subsumes(formatitem.mPrincipal, &subsumes)) ||
+           !subsumes)) {
         aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
         return;
       }
@@ -818,14 +838,16 @@ DataTransfer::MozClearDataAtHelper(const nsAString& aFormat, uint32_t aIndex,
 
       
       
-      if (!clearall)
+      if (!clearall) {
         break;
+      }
     }
   }
 
   
-  if (!item.Length())
+  if (!item.Length()) {
      mItems.RemoveElementAt(aIndex);
+  }
 }
 
 NS_IMETHODIMP
@@ -1006,13 +1028,17 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
   bool handlingCustomFormats = true;
   uint32_t totalCustomLength = 0;
 
-  const char* knownFormats[] = { kTextMime, kHTMLMime, kNativeHTMLMime, kRTFMime,
-                                 kURLMime, kURLDataMime, kURLDescriptionMime, kURLPrivateMime,
-                                 kPNGImageMime, kJPEGImageMime, kGIFImageMime, kNativeImageMime,
-                                 kFileMime, kFilePromiseMime, kFilePromiseDirectoryMime,
-                                 kMozTextInternal, kHTMLContext, kHTMLInfo };
+  const char* knownFormats[] = {
+    kTextMime, kHTMLMime, kNativeHTMLMime, kRTFMime,
+    kURLMime, kURLDataMime, kURLDescriptionMime, kURLPrivateMime,
+    kPNGImageMime, kJPEGImageMime, kGIFImageMime, kNativeImageMime,
+    kFileMime, kFilePromiseMime, kFilePromiseDirectoryMime,
+    kMozTextInternal, kHTMLContext, kHTMLInfo };
 
   
+
+
+
 
 
 
@@ -1051,7 +1077,8 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
       nsCOMPtr<nsISupports> convertedData;
 
       if (handlingCustomFormats) {
-        if (!ConvertFromVariant(formatitem.mData, getter_AddRefs(convertedData), &lengthInBytes)) {
+        if (!ConvertFromVariant(formatitem.mData, getter_AddRefs(convertedData),
+                                &lengthInBytes)) {
           continue;
         }
 
@@ -1077,17 +1104,21 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
               stream->SetOutputStream(outputStream);
             }
 
-            int32_t formatLength = formatitem.mFormat.Length() * sizeof(nsString::char_type);
+            int32_t formatLength =
+              formatitem.mFormat.Length() * sizeof(nsString::char_type);
 
             stream->Write32(eCustomClipboardTypeId_String);
             stream->Write32(formatLength);
-            stream->WriteBytes((const char *)formatitem.mFormat.get(), formatLength);
+            stream->WriteBytes((const char *)formatitem.mFormat.get(),
+                               formatLength);
             stream->Write32(lengthInBytes);
             stream->WriteBytes((const char *)data.get(), lengthInBytes);
 
             
             
-            totalCustomLength += formatLength + lengthInBytes + (sizeof(uint32_t) * 3);
+            
+            totalCustomLength +=
+              formatLength + lengthInBytes + (sizeof(uint32_t) * 3);
           }
         }
       } else if (isCustomFormat && stream) {
@@ -1102,19 +1133,25 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
         nsCOMPtr<nsIInputStream> inputStream;
         storageStream->NewInputStream(0, getter_AddRefs(inputStream));
 
-        RefPtr<nsStringBuffer> stringBuffer = nsStringBuffer::Alloc(totalCustomLength + 1);
+        RefPtr<nsStringBuffer> stringBuffer =
+          nsStringBuffer::Alloc(totalCustomLength + 1);
 
         
+        
         uint32_t amountRead;
-        inputStream->Read(static_cast<char*>(stringBuffer->Data()), totalCustomLength, &amountRead);
+        inputStream->Read(static_cast<char*>(stringBuffer->Data()),
+                          totalCustomLength, &amountRead);
         static_cast<char*>(stringBuffer->Data())[amountRead] = 0;
 
         nsCString str;
         stringBuffer->ToString(totalCustomLength, str);
-        nsCOMPtr<nsISupportsCString> strSupports(do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID));
+        nsCOMPtr<nsISupportsCString>
+          strSupports(do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID));
         strSupports->SetData(str);
 
-        nsresult rv = transferable->SetTransferData(kCustomTypesMime, strSupports, totalCustomLength);
+        nsresult rv = transferable->SetTransferData(kCustomTypesMime,
+                                                    strSupports,
+                                                    totalCustomLength);
         if (NS_FAILED(rv)) {
           return nullptr;
         }
@@ -1126,10 +1163,12 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
       } else {
         
         
-        if (!ConvertFromVariant(formatitem.mData, getter_AddRefs(convertedData), &lengthInBytes)) {
+        if (!ConvertFromVariant(formatitem.mData, getter_AddRefs(convertedData),
+                                &lengthInBytes)) {
           continue;
         }
 
+        
         
         const char* format;
         NS_ConvertUTF16toUTF8 utf8format(formatitem.mFormat);
@@ -1141,14 +1180,16 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
 
         
         
-        nsCOMPtr<nsIFormatConverter> converter = do_QueryInterface(convertedData);
+        nsCOMPtr<nsIFormatConverter> converter =
+          do_QueryInterface(convertedData);
         if (converter) {
           transferable->AddDataFlavor(format);
           transferable->SetConverter(converter);
           continue;
         }
 
-        nsresult rv = transferable->SetTransferData(format, convertedData, lengthInBytes);
+        nsresult rv = transferable->SetTransferData(format, convertedData,
+                                                    lengthInBytes);
         if (NS_FAILED(rv)) {
           return nullptr;
         }
@@ -1171,7 +1212,7 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
 bool
 DataTransfer::ConvertFromVariant(nsIVariant* aVariant,
                                  nsISupports** aSupports,
-                                 uint32_t* aLength)
+                                 uint32_t* aLength) const
 {
   *aSupports = nullptr;
   *aLength = 0;
@@ -1181,8 +1222,9 @@ DataTransfer::ConvertFromVariant(nsIVariant* aVariant,
   if (type == nsIDataType::VTYPE_INTERFACE ||
       type == nsIDataType::VTYPE_INTERFACE_IS) {
     nsCOMPtr<nsISupports> data;
-    if (NS_FAILED(aVariant->GetAsISupports(getter_AddRefs(data))))
-       return false;
+    if (NS_FAILED(aVariant->GetAsISupports(getter_AddRefs(data)))) {
+     return false;
+    }
 
     nsCOMPtr<nsIFlavorDataProvider> fdp = do_QueryInterface(data);
     if (fdp) {
@@ -1195,8 +1237,9 @@ DataTransfer::ConvertFromVariant(nsIVariant* aVariant,
       
       nsCOMPtr<nsISupportsInterfacePointer> ptrSupports =
         do_CreateInstance(NS_SUPPORTS_INTERFACE_POINTER_CONTRACTID);
-      if (!ptrSupports)
+      if (!ptrSupports) {
         return false;
+      }
 
       ptrSupports->SetData(data);
       ptrSupports.forget(aSupports);
@@ -1210,16 +1253,18 @@ DataTransfer::ConvertFromVariant(nsIVariant* aVariant,
   char16_t* chrs;
   uint32_t len = 0;
   nsresult rv = aVariant->GetAsWStringWithSize(&len, &chrs);
-  if (NS_FAILED(rv))
+  if (NS_FAILED(rv)) {
     return false;
+  }
 
   nsAutoString str;
   str.Adopt(chrs, len);
 
   nsCOMPtr<nsISupportsString>
     strSupports(do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID));
-  if (!strSupports)
+  if (!strSupports) {
     return false;
+  }
 
   strSupports->SetData(str);
 
@@ -1258,8 +1303,10 @@ DataTransfer::SetDataWithPrincipal(const nsAString& aFormat,
         
         bool subsumes;
         if (itemformat.mPrincipal && aPrincipal &&
-            (NS_FAILED(aPrincipal->Subsumes(itemformat.mPrincipal, &subsumes)) || !subsumes))
+            (NS_FAILED(aPrincipal->Subsumes(itemformat.mPrincipal,
+                                            &subsumes)) || !subsumes)) {
           return NS_ERROR_DOM_SECURITY_ERR;
+        }
 
         itemformat.mPrincipal = aPrincipal;
         itemformat.mData = aData;
@@ -1303,30 +1350,44 @@ DataTransfer::SetDataWithPrincipalFromOtherProcess(const nsAString& aFormat,
 }
 
 void
-DataTransfer::GetRealFormat(const nsAString& aInFormat, nsAString& aOutFormat)
+DataTransfer::GetRealFormat(const nsAString& aInFormat,
+                            nsAString& aOutFormat) const
 {
   
   nsAutoString lowercaseFormat;
   nsContentUtils::ASCIIToLower(aInFormat, lowercaseFormat);
-  if (lowercaseFormat.EqualsLiteral("text") || lowercaseFormat.EqualsLiteral("text/unicode"))
+  if (lowercaseFormat.EqualsLiteral("text") ||
+      lowercaseFormat.EqualsLiteral("text/unicode")) {
     aOutFormat.AssignLiteral("text/plain");
-  else if (lowercaseFormat.EqualsLiteral("url"))
+    return;
+  }
+
+  if (lowercaseFormat.EqualsLiteral("url")) {
     aOutFormat.AssignLiteral("text/uri-list");
-  else
-    aOutFormat.Assign(lowercaseFormat);
+    return;
+  }
+
+  aOutFormat.Assign(lowercaseFormat);
 }
 
 void
-DataTransfer::CacheExternalData(const char* aFormat, uint32_t aIndex, nsIPrincipal* aPrincipal)
+DataTransfer::CacheExternalData(const char* aFormat, uint32_t aIndex,
+                                nsIPrincipal* aPrincipal)
 {
   if (strcmp(aFormat, kUnicodeMime) == 0) {
-    SetDataWithPrincipal(NS_LITERAL_STRING("text/plain"), nullptr, aIndex, aPrincipal);
-  } else {
-    if (strcmp(aFormat, kURLDataMime) == 0) {
-      SetDataWithPrincipal(NS_LITERAL_STRING("text/uri-list"), nullptr, aIndex, aPrincipal);
-    }
-    SetDataWithPrincipal(NS_ConvertUTF8toUTF16(aFormat), nullptr, aIndex, aPrincipal);
+    SetDataWithPrincipal(NS_LITERAL_STRING("text/plain"), nullptr, aIndex,
+                         aPrincipal);
+    return;
   }
+
+  if (strcmp(aFormat, kURLDataMime) == 0) {
+    SetDataWithPrincipal(NS_LITERAL_STRING("text/uri-list"), nullptr, aIndex,
+                         aPrincipal);
+    return;
+  }
+
+  SetDataWithPrincipal(NS_ConvertUTF8toUTF16(aFormat), nullptr, aIndex,
+                       aPrincipal);
 }
 
 void
@@ -1339,8 +1400,9 @@ DataTransfer::CacheExternalDragFormats()
   
 
   nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession();
-  if (!dragSession)
+  if (!dragSession) {
     return;
+  }
 
   
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
@@ -1389,7 +1451,8 @@ DataTransfer::CacheExternalClipboardFormats()
   
   
 
-  nsCOMPtr<nsIClipboard> clipboard = do_GetService("@mozilla.org/widget/clipboard;1");
+  nsCOMPtr<nsIClipboard> clipboard =
+    do_GetService("@mozilla.org/widget/clipboard;1");
   if (!clipboard || mClipboardType < 0) {
     return;
   }
@@ -1407,7 +1470,8 @@ DataTransfer::CacheExternalClipboardFormats()
   for (uint32_t f = 0; f < mozilla::ArrayLength(formats); ++f) {
     
     bool supported;
-    clipboard->HasDataMatchingFlavors(&(formats[f]), 1, mClipboardType, &supported);
+    clipboard->HasDataMatchingFlavors(&(formats[f]), 1, mClipboardType,
+                                      &supported);
     
     
     if (supported) {
@@ -1435,15 +1499,17 @@ DataTransfer::FillInExternalData(TransferItem& aItem, uint32_t aIndex)
 
   NS_ConvertUTF16toUTF8 utf8format(aItem.mFormat);
   const char* format = utf8format.get();
-  if (strcmp(format, "text/plain") == 0)
+  if (strcmp(format, "text/plain") == 0) {
     format = kUnicodeMime;
-  else if (strcmp(format, "text/uri-list") == 0)
+  } else if (strcmp(format, "text/uri-list") == 0) {
     format = kURLDataMime;
+  }
 
   nsCOMPtr<nsITransferable> trans =
     do_CreateInstance("@mozilla.org/widget/transferable;1");
-  if (!trans)
+  if (!trans) {
     return;
+  }
 
   trans->Init(nullptr);
   trans->AddDataFlavor(format);
@@ -1451,7 +1517,8 @@ DataTransfer::FillInExternalData(TransferItem& aItem, uint32_t aIndex)
   if (mEventMessage == ePaste) {
     MOZ_ASSERT(aIndex == 0, "index in clipboard must be 0");
 
-    nsCOMPtr<nsIClipboard> clipboard = do_GetService("@mozilla.org/widget/clipboard;1");
+    nsCOMPtr<nsIClipboard> clipboard =
+      do_GetService("@mozilla.org/widget/clipboard;1");
     if (!clipboard || mClipboardType < 0) {
       return;
     }
@@ -1517,7 +1584,8 @@ DataTransfer::FillAllExternalData()
 }
 
 void
-DataTransfer::FillInExternalCustomTypes(uint32_t aIndex, nsIPrincipal* aPrincipal)
+DataTransfer::FillInExternalCustomTypes(uint32_t aIndex,
+                                        nsIPrincipal* aPrincipal)
 {
   TransferItem item;
   item.mFormat.AssignLiteral(kCustomTypesMime);
@@ -1531,7 +1599,8 @@ DataTransfer::FillInExternalCustomTypes(uint32_t aIndex, nsIPrincipal* aPrincipa
 }
 
 void
-DataTransfer::FillInExternalCustomTypes(nsIVariant* aData, uint32_t aIndex, nsIPrincipal* aPrincipal)
+DataTransfer::FillInExternalCustomTypes(nsIVariant* aData, uint32_t aIndex,
+                                        nsIPrincipal* aPrincipal)
 {
   char* chrs;
   uint32_t len = 0;
@@ -1546,7 +1615,8 @@ DataTransfer::FillInExternalCustomTypes(nsIVariant* aData, uint32_t aIndex, nsIP
   nsCOMPtr<nsIInputStream> stringStream;
   NS_NewCStringInputStream(getter_AddRefs(stringStream), str);
 
-  nsCOMPtr<nsIBinaryInputStream> stream = do_CreateInstance("@mozilla.org/binaryinputstream;1");
+  nsCOMPtr<nsIBinaryInputStream> stream =
+    do_CreateInstance("@mozilla.org/binaryinputstream;1");
   stream->SetInputStream(stringStream);
   if (!stream) {
     return;
@@ -1561,14 +1631,16 @@ DataTransfer::FillInExternalCustomTypes(nsIVariant* aData, uint32_t aIndex, nsIP
       char* formatBytes;
       stream->ReadBytes(formatLength, &formatBytes);
       nsAutoString format;
-      format.Adopt(reinterpret_cast<char16_t*>(formatBytes), formatLength / sizeof(char16_t));
+      format.Adopt(reinterpret_cast<char16_t*>(formatBytes),
+                   formatLength / sizeof(char16_t));
 
       uint32_t dataLength;
       stream->Read32(&dataLength);
       char* dataBytes;
       stream->ReadBytes(dataLength, &dataBytes);
       nsAutoString data;
-      data.Adopt(reinterpret_cast<char16_t*>(dataBytes), dataLength / sizeof(char16_t));
+      data.Adopt(reinterpret_cast<char16_t*>(dataBytes),
+                 dataLength / sizeof(char16_t));
 
       RefPtr<nsVariantCC> variant = new nsVariantCC();
       variant->SetAsAString(data);
