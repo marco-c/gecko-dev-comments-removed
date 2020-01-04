@@ -126,9 +126,11 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
       }
     },
     
-    integer: function(k, v) {
-      if (/^-?\d+$/.test(v)) { 
-        this.set(k, parseInt(v, 10));
+    digitsValue: function(k, v) {
+      if (/^-0+(\.[0]*)?$/.test(v)) { 
+        this.set(k, 0.0);
+      } else if (/^-?\d+(\.[\d]*)?$/.test(v)) {
+        this.set(k, parseFloat(v));
       }
     },
     
@@ -199,7 +201,7 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
         case "line":
           var vals = v.split(","),
               vals0 = vals[0];
-          settings.integer(k, vals0);
+          settings.digitsValue(k, vals0);
           settings.percent(k, vals0) ? settings.set("snapToLines", false) : null;
           settings.alt(k, vals0, ["auto"]);
           if (vals.length === 2) {
@@ -1267,7 +1269,7 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
             settings.percent(k, v);
             break;
           case "lines":
-            settings.integer(k, v);
+            settings.digitsValue(k, v);
             break;
           case "regionanchor":
           case "viewportanchor":
