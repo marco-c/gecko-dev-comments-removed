@@ -150,7 +150,18 @@ fetchXHR('http://example.com/tests/dom/security/test/cors/file_CrossSiteXHR_serv
 });
 
 
+
+
 fetchXHR('http://example.com/tests/dom/security/test/cors/file_CrossSiteXHR_server.sjs?status=200&allowOrigin=*', null, function(xhr) {
+  my_ok(xhr.status == 0, "cross origin load with incorrect headers should be a failure");
+  finish();
+}, [["X-Unsafe", "unsafe"]]);
+
+
+
+
+
+fetchXHR('http://example.org/tests/dom/security/test/cors/file_CrossSiteXHR_server.sjs?status=200&allowOrigin=*', null, function(xhr) {
   my_ok(xhr.status == 0, "cross origin load with incorrect headers should be a failure");
   finish();
 }, [["X-Unsafe", "unsafe"]]);
