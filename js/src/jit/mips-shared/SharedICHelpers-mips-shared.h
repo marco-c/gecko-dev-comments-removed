@@ -108,7 +108,18 @@ EmitBaselineTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t argSize)
 inline void
 EmitIonTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t stackSize)
 {
-    MOZ_CRASH("Not implemented yet.");
+    Register scratch = R2.scratchReg();
+
+    masm.loadPtr(Address(sp, stackSize), scratch);
+    masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), scratch);
+    masm.addPtr(Imm32(stackSize + JitStubFrameLayout::Size() - sizeof(intptr_t)), scratch);
+
+    
+    MOZ_ASSERT(ICTailCallReg == ra);
+    masm.makeFrameDescriptor(scratch, JitFrame_IonJS, ExitFrameLayout::Size());
+    masm.push(scratch);
+    masm.push(ICTailCallReg);
+    masm.branch(target);
 }
 
 inline void
@@ -135,7 +146,17 @@ EmitBaselineCallVM(JitCode* target, MacroAssembler& masm)
 inline void
 EmitIonCallVM(JitCode* target, size_t stackSlots, MacroAssembler& masm)
 {
-    MOZ_CRASH("Not implemented yet.");
+    uint32_t descriptor = MakeFrameDescriptor(masm.framePushed(), JitFrame_IonStub,
+                                              ExitFrameLayout::Size());
+    masm.Push(Imm32(descriptor));
+    masm.callJit(target);
+
+    
+    
+    size_t framePop = sizeof(ExitFrameLayout) - sizeof(void*);
+
+    
+    masm.implicitPop(stackSlots * sizeof(void*) + framePop);
 }
 
 struct BaselineStubFrame {
@@ -184,7 +205,15 @@ EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch)
 inline void
 EmitIonEnterStubFrame(MacroAssembler& masm, Register scratch)
 {
-    MOZ_CRASH("Not implemented yet.");
+    MOZ_ASSERT(ICTailCallReg == ra);
+
+    
+    
+    
+    
+    masm.push(ICTailCallReg);
+
+    masm.Push(ICStubReg);
 }
 
 inline void
@@ -219,7 +248,8 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
 inline void
 EmitIonLeaveStubFrame(MacroAssembler& masm)
 {
-    MOZ_CRASH("Not implemented yet.");
+    masm.Pop(ICStubReg);
+    masm.pop(ICTailCallReg); 
 }
 
 inline void
