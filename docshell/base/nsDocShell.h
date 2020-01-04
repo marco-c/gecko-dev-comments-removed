@@ -232,6 +232,7 @@ public:
   NS_IMETHOD GetUseRemoteTabs(bool*) override;
   NS_IMETHOD SetRemoteTabs(bool) override;
   NS_IMETHOD GetOriginAttributes(JS::MutableHandle<JS::Value>) override;
+  NS_IMETHOD SetUserContextId(uint32_t);
 
   
   
@@ -1001,6 +1002,9 @@ protected:
   
   
   uint32_t mOwnOrContainingAppId;
+
+  
+  uint32_t mUserContextId;
 
   nsString mPaymentRequestId;
 
