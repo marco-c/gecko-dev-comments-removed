@@ -713,11 +713,33 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
     }
 
     private void readActivityState() {
-        activityState = Util.readObject(adjustConfig.context, ACTIVITY_STATE_FILENAME, ACTIVITY_STATE_NAME);
+        try {
+	    
+
+
+
+
+
+
+            activityState = Util.readObject(adjustConfig.context, ACTIVITY_STATE_FILENAME, ACTIVITY_STATE_NAME);
+        } catch (ClassCastException e) {
+            activityState = null;
+        }
     }
 
     private void readAttribution() {
-        attribution = Util.readObject(adjustConfig.context, ATTRIBUTION_FILENAME, ATTRIBUTION_NAME);
+        try {
+	    
+
+
+
+
+
+
+            attribution = Util.readObject(adjustConfig.context, ATTRIBUTION_FILENAME, ATTRIBUTION_NAME);
+        } catch (ClassCastException e) {
+            activityState = null;
+        }
     }
 
     private void writeActivityState() {
