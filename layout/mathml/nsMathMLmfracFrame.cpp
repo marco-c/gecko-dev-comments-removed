@@ -333,6 +333,11 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
                                     gfxFontEntry::StackGapMin,
                                     oneDevPixel);
       }
+      
+      
+      numShift += axisHeight;
+      denShift += axisHeight;
+
       nscoord actualClearance =
         (numShift - bmNum.descent) - (bmDen.ascent - denShift);
       
