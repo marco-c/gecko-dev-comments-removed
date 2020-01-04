@@ -25,20 +25,6 @@ var Promise = require("promise");
 
 
 
-exports.async = function async(func) {
-  return function(...args) {
-    return Task.spawn(func.apply(this, args));
-  };
-};
-
-
-
-
-
-
-
-
-
 
 
 exports.asyncOnce = function asyncOnce(func) {
