@@ -647,7 +647,7 @@ MediaDecoderStateMachine::OnAudioDecoded(MediaData* aAudioSample)
       if (!mDropAudioUntilNextDiscontinuity) {
         
         
-        if (mCurrentSeek.mTarget.mType == SeekTarget::PrevSyncPoint &&
+        if (mCurrentSeek.mTarget.IsFast() &&
             mCurrentSeek.mTarget.GetTime().ToMicroseconds() > mCurrentTimeBeforeSeek &&
             audio->mTime < mCurrentTimeBeforeSeek) {
           
@@ -656,9 +656,9 @@ MediaDecoderStateMachine::OnAudioDecoded(MediaData* aAudioSample)
           
           
           
-          mCurrentSeek.mTarget.mType = SeekTarget::Accurate;
+          mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
         }
-        if (mCurrentSeek.mTarget.mType == SeekTarget::PrevSyncPoint) {
+        if (mCurrentSeek.mTarget.IsFast()) {
           
           Push(audio, MediaData::AUDIO_DATA);
         } else {
@@ -967,7 +967,7 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample)
       if (!mDropVideoUntilNextDiscontinuity) {
         
         
-        if (mCurrentSeek.mTarget.mType == SeekTarget::PrevSyncPoint &&
+        if (mCurrentSeek.mTarget.IsFast() &&
             mCurrentSeek.mTarget.GetTime().ToMicroseconds() > mCurrentTimeBeforeSeek &&
             video->mTime < mCurrentTimeBeforeSeek) {
           
@@ -976,9 +976,9 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample)
           
           
           
-          mCurrentSeek.mTarget.mType = SeekTarget::Accurate;
+          mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
         }
-        if (mCurrentSeek.mTarget.mType == SeekTarget::PrevSyncPoint ||
+        if (mCurrentSeek.mTarget.IsFast() ||
             mPendingSeek.Exists()) {
           
           
@@ -2548,7 +2548,7 @@ MediaDecoderStateMachine::DropAudioUpToSeekTarget(MediaData* aSample)
   RefPtr<AudioData> audio(aSample->As<AudioData>());
   MOZ_ASSERT(audio &&
              mCurrentSeek.Exists() &&
-             mCurrentSeek.mTarget.mType == SeekTarget::Accurate);
+             mCurrentSeek.mTarget.IsAccurate());
 
   CheckedInt64 sampleDuration =
     FramesToUsecs(audio->mFrames, mInfo.mAudio.mRate);
