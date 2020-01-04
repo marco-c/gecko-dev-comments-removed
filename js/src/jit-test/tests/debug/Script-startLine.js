@@ -55,7 +55,9 @@ g.eval("/* Any copyright is dedicated to the Public Domain.\n" +
        "    eval(\"42;\");\n" +
        "    function foo() {}\n" +
        "    if (true) {\n" +
-       "        foo();\n" +  
-       "    }\n" +
-       "}");
-test(g.secondCall, 7);
+       "        foo();\n" +
+       
+       
+       
+       "    } }");
+test(g.secondCall, 8);
