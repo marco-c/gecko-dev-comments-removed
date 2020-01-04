@@ -641,8 +641,8 @@ public class AndroidFxAccount {
 
 
 
-  public Intent makeDeletedAccountIntent() {
-    final Intent intent = new Intent(FxAccountConstants.ACCOUNT_DELETED_ACTION);
+
+  public Intent populateDeletedAccountIntent(final Intent intent) {
     final List<String> tokens = new ArrayList<>();
 
     intent.putExtra(FxAccountConstants.ACCOUNT_DELETED_INTENT_VERSION_KEY,

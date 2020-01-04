@@ -42,23 +42,6 @@ public class FxAccountConstants {
   public static final String ACCOUNT_PICKLE_FILENAME = "fxa.account.json";
 
 
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  public static final String ACCOUNT_DELETED_ACTION = AppConstants.MOZ_ANDROID_SHARED_FXACCOUNT_TYPE + ".accounts.ACCOUNT_DELETED_ACTION";
-
   
 
 
