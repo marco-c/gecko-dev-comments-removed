@@ -1,0 +1,12 @@
+
+
+
+
+
+"use strict";
+
+const { messages } = require("./messages");
+
+exports.reducers = {
+  messages
+};
