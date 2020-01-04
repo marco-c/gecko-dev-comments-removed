@@ -5314,6 +5314,12 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
     AddCookiesToRequest();
 
     
+    
+    
+    
+    
+
+    
     if (!(mLoadFlags & LOAD_REPLACE)) {
         gHttpHandler->OnOpeningRequest(this);
     }
@@ -5327,8 +5333,6 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
     mListener = listener;
     mListenerContext = context;
 
-    
-    
     if (mLoadGroup)
         mLoadGroup->AddRequest(this, nullptr);
 
@@ -5344,14 +5348,18 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
 
     
     
-    if (!mProxyInfo && NS_SUCCEEDED(ResolveProxy()))
+    
+    if (!mProxyInfo && NS_SUCCEEDED(ResolveProxy())) {
         return NS_OK;
+    }
 
     rv = BeginConnect();
-    if (NS_FAILED(rv))
-        ReleaseListeners();
+    if (NS_FAILED(rv)) {
+        CloseCacheEntry(false);
+        AsyncAbort(rv);
+    }
 
-    return rv;
+    return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -5362,8 +5370,6 @@ nsHttpChannel::AsyncOpen2(nsIStreamListener *aListener)
   NS_ENSURE_SUCCESS(rv, rv);
   return AsyncOpen(listener, nullptr);
 }
-
-
 
 
 
@@ -5535,13 +5541,12 @@ nsHttpChannel::BeginConnect()
         nsCOMPtr<nsIPackagedAppService> pas =
             do_GetService("@mozilla.org/network/packaged-app-service;1", &rv);
         if (NS_WARN_IF(NS_FAILED(rv))) {
-            AsyncAbort(rv);
             return rv;
         }
 
         rv = pas->GetResource(this, this);
         if (NS_FAILED(rv)) {
-            AsyncAbort(rv);
+            return rv;
         }
 
         
@@ -5621,8 +5626,7 @@ nsHttpChannel::BeginConnect()
     }
 
     if (!(mLoadFlags & LOAD_CLASSIFY_URI)) {
-        ContinueBeginConnect();
-        return NS_OK;
+        return ContinueBeginConnectWithResult();
     }
 
     
@@ -5648,7 +5652,7 @@ nsHttpChannel::BeginConnect()
          channelClassifier.get(), this));
     channelClassifier->Start(this);
     if (callContinueBeginConnect) {
-        ContinueBeginConnect();
+        return ContinueBeginConnectWithResult();
     }
     return NS_OK;
 }
@@ -5744,7 +5748,7 @@ nsHttpChannel::ContinueBeginConnect()
 {
     nsresult rv = ContinueBeginConnectWithResult();
     if (NS_FAILED(rv)) {
-        CloseCacheEntry(true);
+        CloseCacheEntry(false);
         AsyncAbort(rv);
     }
 }
@@ -5805,8 +5809,8 @@ nsHttpChannel::OnProxyAvailable(nsICancelable *request, nsIChannel *channel,
     }
 
     if (NS_FAILED(rv)) {
+        CloseCacheEntry(false);
         AsyncAbort(rv);
-        Cancel(rv);
     }
     return rv;
 }
