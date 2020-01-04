@@ -46,7 +46,7 @@
 
   var registration;
   add_task(function* start() {
-    yield setupPrefsAndMock(mockSocket);
+    yield setupPrefsAndMockSocket(mockSocket);
     yield setPushPermission(true);
 
     var url = "worker.js" + "?" + (Math.random());
