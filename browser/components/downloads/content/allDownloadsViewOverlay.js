@@ -302,8 +302,11 @@ HistoryDownloadElementShell.prototype = {
 
     if (this.element.selected) {
       goUpdateDownloadCommands();
+    } else {
+      
+      
+      goUpdateCommand("downloadsCmd_clearDownloads");
     }
-    goUpdateCommand("downloadsCmd_clearDownloads");
   },
 
   onChanged() {
@@ -1136,8 +1139,7 @@ DownloadsPlacesView.prototype = {
   
   supportsCommand(aCommand) {
     
-    if (!aCommand.startsWith("cmd_") &&
-        !aCommand.startsWith("downloadsCmd_")) {
+    if (!DownloadsViewUI.isCommandName(aCommand)) {
       return false;
     }
     if (!(aCommand in this) &&
@@ -1418,11 +1420,11 @@ for (let methodName of ["load", "applyFilter", "selectNode", "selectItems"]) {
 function goUpdateDownloadCommands() {
   function updateCommandsForObject(object) {
     for (let name in object) {
-      if (name.startsWith("cmd_") || name.startsWith("downloadsCmd_")) {
+      if (DownloadsViewUI.isCommandName(name)) {
         goUpdateCommand(name);
       }
     }
   }
-  updateCommandsForObject(this);
+  updateCommandsForObject(DownloadsPlacesView.prototype);
   updateCommandsForObject(HistoryDownloadElementShell.prototype);
 }
