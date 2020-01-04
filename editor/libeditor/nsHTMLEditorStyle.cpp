@@ -673,7 +673,7 @@ nsHTMLEditor::ClearStyle(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
       
       nsAutoTrackDOMPoint tracker(mRangeUpdater,
                                   address_of(newSelParent), &newSelOffset);
-      res = RemoveStyleInside(GetAsDOMNode(leftNode), aProperty, aAttribute);
+      res = RemoveStyleInside(*leftNode, aProperty, aAttribute);
       NS_ENSURE_SUCCESS(res, res);
     }
     
@@ -708,19 +708,6 @@ nsresult nsHTMLEditor::ApplyDefaultProperties()
     NS_ENSURE_SUCCESS(res, res);
   }
   return res;
-}
-
-nsresult nsHTMLEditor::RemoveStyleInside(nsIDOMNode *aNode,
-                                         
-                                         nsIAtom *aProperty,
-                                         const nsAString *aAttribute,
-                                         const bool aChildrenOnly)
-{
-  NS_ENSURE_TRUE(aNode, NS_ERROR_NULL_POINTER);
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
-  NS_ENSURE_STATE(content);
-
-  return RemoveStyleInside(*content, aProperty, aAttribute, aChildrenOnly);
 }
 
 nsresult
@@ -832,17 +819,6 @@ nsHTMLEditor::RemoveStyleInside(nsIContent& aNode,
     return RemoveContainer(&aNode);
   }
   return NS_OK;
-}
-
-bool nsHTMLEditor::IsOnlyAttribute(nsIDOMNode *aNode,
-                                     const nsAString *aAttribute)
-{
-  NS_ENSURE_TRUE(aNode && aAttribute, false);  
-
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
-  NS_ENSURE_TRUE(content, false);  
-
-  return IsOnlyAttribute(content, *aAttribute);
 }
 
 bool
@@ -1353,21 +1329,21 @@ nsHTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
         
         nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
 
-        nsTArray<nsCOMPtr<nsINode>> arrayOfNodes;
+        nsTArray<OwningNonNull<nsIContent>> arrayOfNodes;
 
         
         for (iter->Init(range); !iter->IsDone(); iter->Next()) {
           nsCOMPtr<nsINode> node = iter->GetCurrentNode();
           NS_ENSURE_TRUE(node, NS_ERROR_FAILURE);
 
-          if (IsEditable(node)) {
-            arrayOfNodes.AppendElement(node);
+          if (IsEditable(node) && node->IsContent()) {
+            arrayOfNodes.AppendElement(*node->AsContent());
           }
         }
 
         
         for (auto& node : arrayOfNodes) {
-          res = RemoveStyleInside(GetAsDOMNode(node), aProperty, aAttribute);
+          res = RemoveStyleInside(node, aProperty, aAttribute);
           NS_ENSURE_SUCCESS(res, res);
           if (IsCSSEnabled() &&
               mHTMLCSSUtils->IsCSSEditableProperty(node, aProperty,
@@ -1382,8 +1358,7 @@ nsHTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
               
               mHTMLCSSUtils->IsCSSInvertible(*aProperty, aAttribute)) {
             NS_NAMED_LITERAL_STRING(value, "-moz-editor-invert-value");
-            SetInlinePropertyOnNode(*node->AsContent(), *aProperty,
-                                    aAttribute, value);
+            SetInlinePropertyOnNode(node, *aProperty, aAttribute, value);
           }
         }
       }
