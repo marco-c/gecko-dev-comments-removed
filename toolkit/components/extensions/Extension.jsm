@@ -675,10 +675,28 @@ ExtensionData.prototype = {
   readManifest() {
     return Promise.all([
       this.readJSON("manifest.json"),
+      this.readJSON("mozilla.json").catch(err => null),
       Management.lazyInit(),
-    ]).then(([manifest]) => {
+    ]).then(([manifest, mozManifest]) => {
       this.manifest = manifest;
       this.rawManifest = manifest;
+
+      if (mozManifest) {
+        if (typeof mozManifest != "object") {
+          this.logger.warn(`Loading extension '${this.id}': mozilla.json has unexpected type ${typeof mozManifest}`);
+        } else {
+          Object.keys(mozManifest).forEach(key => {
+            if (key != "applications") {
+              throw new Error(`Illegal property "${key}" in mozilla.json`);
+            }
+            if (key in manifest) {
+              this.logger.warn(`Ignoring property "${key}" from mozilla.json`);
+            } else {
+              manifest[key] = mozManifest[key];
+            }
+          });
+        }
+      }
 
       if (manifest && manifest.default_locale) {
         return this.initLocale();
