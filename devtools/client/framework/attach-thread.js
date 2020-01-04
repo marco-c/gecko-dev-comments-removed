@@ -89,15 +89,15 @@ function attachThread(toolbox) {
     });
   };
 
-  if (target.isAddon) {
+  if (target.isTabActor) {
+    
+    target.activeTab.attachThread(threadOptions, handleResponse);
+  } else if (target.isAddon) {
     
     target.client.attachAddon(actor, res => {
       target.client.attachThread(res.threadActor, handleResponse);
     });
-  } else if (target.isTabActor) {
-    
-    target.activeTab.attachThread(threadOptions, handleResponse);
-  } else {
+  }  else {
     
     target.client.attachThread(chromeDebugger, handleResponse);
   }

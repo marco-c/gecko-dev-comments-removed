@@ -594,8 +594,11 @@ WebConsoleActor.prototype =
           break;
         case "ConsoleAPI":
           if (!this.consoleAPIListener) {
+            
+            
             this.consoleAPIListener =
-              new ConsoleAPIListener(window, this);
+              new ConsoleAPIListener(window, this,
+                                     this.parentActor.consoleAPIListenerOptions);
             this.consoleAPIListener.init();
           }
           startedListeners.push(listener);

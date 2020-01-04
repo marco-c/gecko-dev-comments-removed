@@ -134,6 +134,9 @@ BrowserAddonActor.prototype = {
 
     if (this.attached) {
       this.onDetach();
+
+      
+      
       this.conn.send({ from: this.actorID, type: "tabDetached" });
     }
 

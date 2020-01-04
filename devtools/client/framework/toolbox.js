@@ -928,7 +928,7 @@ Toolbox.prototype = {
 
 
   _buildButtons: function () {
-    if (!this.target.isAddon) {
+    if (!this.target.isAddon || this.target.isWebExtension) {
       this._buildPickerButton();
     }
 
