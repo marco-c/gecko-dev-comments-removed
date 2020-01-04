@@ -232,6 +232,8 @@ user_pref("browser.webapps.checkForUpdates", 0);
 
 user_pref("dom.presentation.tcp_server.debug", true);
 
+pref("logging.Presentation", "debug");
+
 
 
 user_pref('browser.contentHandlers.types.0.uri', 'http://test1.example.org/rss?url=%%s')
