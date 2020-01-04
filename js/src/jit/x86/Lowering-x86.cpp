@@ -441,9 +441,8 @@ LIRGeneratorX86::visitSubstr(MSubstr* ins)
 void
 LIRGeneratorX86::visitRandom(MRandom* ins)
 {
-    
-    LRandom *lir = new(alloc()) LRandom(tempFixed(eax),
-                                        tempFixed(edx),
+    LRandom *lir = new(alloc()) LRandom(temp(),
+                                        temp(),
                                         temp(),
                                         temp(),
                                         temp());

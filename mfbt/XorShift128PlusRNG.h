@@ -52,6 +52,12 @@ class XorShift128PlusRNG {
 
   
   uint64_t next() {
+    
+
+
+
+
+
     uint64_t s1 = mState[0];
     const uint64_t s0 = mState[1];
     mState[0] = s0;
@@ -88,6 +94,13 @@ class XorShift128PlusRNG {
     MOZ_ASSERT(aState0 || aState1);
     mState[0] = aState0;
     mState[1] = aState1;
+  }
+
+  static size_t offsetOfState0() {
+    return offsetof(XorShift128PlusRNG, mState[0]);
+  }
+  static size_t offsetOfState1() {
+    return offsetof(XorShift128PlusRNG, mState[1]);
   }
 };
 

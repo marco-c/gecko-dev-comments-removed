@@ -10344,127 +10344,74 @@ CodeGenerator::visitCheckReturn(LCheckReturn* ins)
     masm.bind(&noChecks);
 }
 
-
-class OutOfLineRandom : public OutOfLineCodeBase<CodeGenerator>
-{
-    LRandom* lir_;
-
-  public:
-    explicit OutOfLineRandom(LRandom* lir)
-      : lir_(lir)
-    { }
-
-    void accept(CodeGenerator* codegen) {
-        codegen->visitOutOfLineRandom(this);
-    }
-
-    LRandom* lir() const {
-        return lir_;
-    }
-};
-
-static const uint64_t RNG_HIGH_MASK = (0xFFFFFFFFFFFFFFFFULL >>
-                                       (RNG_STATE_WIDTH - RNG_HIGH_BITS)) << RNG_LOW_BITS;
-static const double RNG_DSCALE_INV = 1 / RNG_DSCALE;
-
 void
 CodeGenerator::visitRandom(LRandom* ins)
 {
+    using mozilla::non_crypto::XorShift128PlusRNG;
+
     FloatRegister output = ToFloatRegister(ins->output());
-    Register JSCompartmentReg = ToRegister(ins->temp1());
+    Register tempReg = ToRegister(ins->temp0());
+
 #ifdef JS_PUNBOX64
-    Register64 rngStateReg = Register64(ToRegister(ins->tempMaybeEAX()));
-    Register64 highReg = Register64(ToRegister(ins->tempMaybeEDX()));
+    Register64 s0Reg(ToRegister(ins->temp1()));
+    Register64 s1Reg(ToRegister(ins->temp2()));
 #else
-    Register64 rngStateReg = Register64(ToRegister(ins->temp2()), ToRegister(ins->temp3()));
-    Register64 highReg = Register64(ToRegister(ins->tempMaybeEAX()), ToRegister(ins->tempMaybeEDX()));
-#endif
-    
-    Register tempReg = ToRegister(ins->tempMaybeEAX());
-
-    
-    masm.loadJSContext(JSCompartmentReg);
-    masm.loadPtr(Address(JSCompartmentReg, JSContext::offsetOfCompartment()), JSCompartmentReg);
-    masm.load64(Address(JSCompartmentReg, JSCompartment::offsetOfRngState()), rngStateReg);
-
-    
-    
-    OutOfLineRandom* ool = new(alloc()) OutOfLineRandom(ins);
-    addOutOfLineCode(ool, ins->mir());
-    masm.branchTest64(Assembler::Zero, rngStateReg, rngStateReg, tempReg, ool->entry());
-
-    
-    masm.mul64(Imm64(RNG_MULTIPLIER), rngStateReg);
-
-    
-    masm.add64(Imm32(RNG_ADDEND), rngStateReg);
-
-    
-    masm.and64(Imm64(RNG_MASK), rngStateReg);
-
-    
-    
-    masm.branchTest64(Assembler::Zero, rngStateReg, rngStateReg, tempReg, ool->entry());
-
-    
-    masm.move64(rngStateReg, highReg);
-    masm.lshift64(Imm32(RNG_LOW_BITS - (RNG_STATE_WIDTH - RNG_HIGH_BITS)), highReg);
-    masm.and64(Imm64(RNG_HIGH_MASK), highReg);
-#ifdef JS_CODEGEN_X86
-    
-    masm.push64(highReg);
+    Register64 s0Reg(ToRegister(ins->temp1()), ToRegister(ins->temp2()));
+    Register64 s1Reg(ToRegister(ins->temp3()), ToRegister(ins->temp4()));
 #endif
 
-    
-    masm.mul64(Imm64(RNG_MULTIPLIER), rngStateReg);
+    const void* rng = gen->compartment->addressOfRandomNumberGenerator();
+    masm.movePtr(ImmPtr(rng), tempReg);
+
+    static_assert(sizeof(XorShift128PlusRNG) == 2 * sizeof(uint64_t),
+                  "Code below assumes XorShift128PlusRNG contains two uint64_t values");
+
+    Address state0Addr(tempReg, XorShift128PlusRNG::offsetOfState0());
+    Address state1Addr(tempReg, XorShift128PlusRNG::offsetOfState1());
 
     
-    masm.add64(Imm32(RNG_ADDEND), rngStateReg);
+    masm.load64(state0Addr, s1Reg);
 
     
-    masm.and64(Imm64(RNG_MASK), rngStateReg);
+    masm.move64(s1Reg, s0Reg);
+    masm.lshift64(Imm32(23), s1Reg);
+    masm.xor64(s0Reg, s1Reg);
 
     
-    masm.store64(rngStateReg, Address(JSCompartmentReg, JSCompartment::offsetOfRngState()));
+    masm.move64(s1Reg, s0Reg);
+    masm.rshift64(Imm32(17), s1Reg);
+    masm.xor64(s0Reg, s1Reg);
 
     
-    const Register64& lowReg = rngStateReg;
-    masm.rshift64(Imm32(RNG_STATE_WIDTH - RNG_LOW_BITS), lowReg);
+    masm.load64(state1Addr, s0Reg);
 
     
-#ifdef JS_CODEGEN_X86
-    masm.pop64(highReg);
-#endif
-    masm.or64(highReg, lowReg);
-    masm.convertUInt64ToDouble(lowReg, tempReg, output);
+    masm.store64(s0Reg, state0Addr);
 
     
-    masm.mulDoublePtr(ImmPtr(&RNG_DSCALE_INV), tempReg, output);
+    masm.xor64(s0Reg, s1Reg);
 
-    masm.bind(ool->rejoin());
-}
+    
+    masm.rshift64(Imm32(26), s0Reg);
+    masm.xor64(s0Reg, s1Reg);
 
-void
-CodeGenerator::visitOutOfLineRandom(OutOfLineRandom* ool)
-{
-    LRandom* ins = ool->lir();
-    Register temp1 = ToRegister(ins->tempMaybeEAX());
-    Register temp2 = ToRegister(ins->tempMaybeEDX());
-    MOZ_ASSERT(ToFloatRegister(ins->output()) == ReturnDoubleReg);
+    
+    masm.store64(s1Reg, state1Addr);
 
-    LiveRegisterSet regs;
-    setReturnDoubleRegs(&regs);
-    saveVolatile(regs);
+    
+    masm.load64(state0Addr, s0Reg);
+    masm.add64(s0Reg, s1Reg);
 
-    masm.loadJSContext(temp1);
+    
+    static const int MantissaBits = FloatingPoint<double>::kExponentShift + 1;
+    static const double ScaleInv = double(1) / (1ULL << MantissaBits);
 
-    masm.setupUnalignedABICall(temp2);
-    masm.passABIArg(temp1);
-    masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, math_random_no_outparam), MoveOp::DOUBLE);
+    masm.and64(Imm64((1ULL << MantissaBits) - 1), s1Reg);
 
-    restoreVolatile(regs);
+    masm.convertUInt64ToDouble(s1Reg, tempReg, output);
 
-    masm.jump(ool->rejoin());
+    
+    masm.mulDoublePtr(ImmPtr(&ScaleInv), tempReg, output);
 }
 
 } 
