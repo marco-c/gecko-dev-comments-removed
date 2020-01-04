@@ -446,6 +446,11 @@ private:
                        RefPtr<CSSStyleSheet>& aSheet,
                        void* aUserData);
 
+  nsresult CheckContentPolicy(nsIPrincipal* aSourcePrincipal,
+                              nsIURI* aTargetURI,
+                              nsISupports* aContext,
+                              bool aIsPreload);
+
   
   
   
