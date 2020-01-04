@@ -59,18 +59,18 @@ element.Strategy = {
   AnonAttribute: "anon attribute",
 };
 
-this.ElementManager = function ElementManager() {
-  this.seenItems = {};
-  this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-};
-
-ElementManager.prototype = {
-  
-
-
-  reset: function EM_clear() {
+this.ElementManager = class {
+  constructor() {
     this.seenItems = {};
-  },
+    this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  }
+
+  
+
+
+  reset() {
+    this.seenItems = {};
+  }
 
   
 
@@ -85,10 +85,10 @@ ElementManager.prototype = {
 
 
 
-  addAll: function(els) {
+  addAll(els) {
     let add = this.add.bind(this);
     return [...els].map(add);
-  },
+  }
 
   
 
@@ -99,7 +99,7 @@ ElementManager.prototype = {
 
 
 
-  add: function(el) {
+  add(el) {
     for (let i in this.seenItems) {
       let foundEl;
       try {
@@ -119,7 +119,7 @@ ElementManager.prototype = {
     let id = element.generateUUID();
     this.seenItems[id] = Cu.getWeakReference(el);
     return id;
-  },
+  }
 
   
 
@@ -132,7 +132,7 @@ ElementManager.prototype = {
 
 
 
-  getKnownElement: function EM_getKnownElement(id, container) {
+  getKnownElement(id, container) {
     let el = this.seenItems[id];
     if (!el) {
       throw new JavaScriptError(`Element has not been seen before. Id given was ${id}`);
@@ -160,7 +160,7 @@ ElementManager.prototype = {
           "is no longer attached to the DOM or the page has been refreshed.");
     }
     return el;
-  },
+  }
 
   
 
@@ -174,7 +174,7 @@ ElementManager.prototype = {
 
 
 
-  isDisconnected: function EM_isDisconnected(el, shadowRoot, frame) {
+  isDisconnected(el, shadowRoot, frame) {
     if (shadowRoot && frame.ShadowRoot) {
       if (el.compareDocumentPosition(shadowRoot) &
         DOCUMENT_POSITION_DISCONNECTED) {
@@ -190,7 +190,7 @@ ElementManager.prototype = {
       return el.compareDocumentPosition(frame.document.documentElement) &
         DOCUMENT_POSITION_DISCONNECTED;
     }
-  },
+  }
 
   
 
@@ -207,7 +207,7 @@ ElementManager.prototype = {
 
 
 
-  wrapValue: function EM_wrapValue(val) {
+  wrapValue(val) {
     let result = null;
 
     switch (typeof(val)) {
@@ -252,7 +252,7 @@ ElementManager.prototype = {
     }
 
     return result;
-  },
+  }
 
   
 
@@ -266,7 +266,7 @@ ElementManager.prototype = {
 
 
 
-  convertWrappedArguments: function EM_convertWrappedArguments(args, container) {
+  convertWrappedArguments(args, container) {
     let converted;
     switch (typeof(args)) {
       case 'number':
