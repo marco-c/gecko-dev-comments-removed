@@ -1427,7 +1427,7 @@ void MediaDecoderStateMachine::InitiateVideoDecodeRecoverySeek()
 
   
   if (mSeekTask->NeedToResetMDSM()) {
-    Reset(MediaDecoderReader::VIDEO_ONLY);
+    Reset(TrackInfo::kVideoTrack);
   }
 
   
@@ -2395,7 +2395,7 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
 }
 
 void
-MediaDecoderStateMachine::Reset(MediaDecoderReader::TargetQueues aQueues )
+MediaDecoderStateMachine::Reset(TrackSet aTracks)
 {
   MOZ_ASSERT(OnTaskQueue());
   DECODER_LOG("MediaDecoderStateMachine::Reset");
@@ -2408,16 +2408,25 @@ MediaDecoderStateMachine::Reset(MediaDecoderReader::TargetQueues aQueues )
              mState == DECODER_STATE_SEEKING ||
              mState == DECODER_STATE_DORMANT);
 
+  
+  
+  MOZ_ASSERT(aTracks.contains(TrackInfo::kVideoTrack));
 
-  mDecodedVideoEndTime = 0;
-  mVideoCompleted = false;
-  VideoQueue().Reset();
-
-  if (aQueues == MediaDecoderReader::AUDIO_VIDEO) {
+  if (aTracks.contains(TrackInfo::kAudioTrack) &&
+      aTracks.contains(TrackInfo::kVideoTrack)) {
     
     
     
     StopMediaSink();
+  }
+
+  if (aTracks.contains(TrackInfo::kVideoTrack)) {
+    mDecodedVideoEndTime = 0;
+    mVideoCompleted = false;
+    VideoQueue().Reset();
+  }
+
+  if (aTracks.contains(TrackInfo::kAudioTrack)) {
     mDecodedAudioEndTime = 0;
     mAudioCompleted = false;
     AudioQueue().Reset();
@@ -2428,7 +2437,7 @@ MediaDecoderStateMachine::Reset(MediaDecoderReader::TargetQueues aQueues )
 
   mPlaybackOffset = 0;
 
-  mReader->ResetDecode(aQueues);
+  mReader->ResetDecode(aTracks);
 }
 
 int64_t

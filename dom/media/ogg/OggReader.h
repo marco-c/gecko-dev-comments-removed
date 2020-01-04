@@ -51,7 +51,8 @@ protected:
 
 public:
   nsresult Init() override;
-  nsresult ResetDecode(TargetQueues aQueues = AUDIO_VIDEO) override;
+  nsresult ResetDecode(TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
+                                                   TrackInfo::kVideoTrack)) override;
   bool DecodeAudioData() override;
 
   
@@ -86,7 +87,9 @@ private:
 
   
   
-  nsresult ResetDecode(bool start, TargetQueues aQueues = AUDIO_VIDEO);
+  nsresult ResetDecode(bool start,
+                       TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
+                                                   TrackInfo::kVideoTrack));
 
   nsresult SeekInternal(int64_t aTime, int64_t aEndTime);
 

@@ -135,6 +135,9 @@ enum class MediaEventType : int8_t {
 class MediaDecoderStateMachine
 {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDecoderStateMachine)
+
+  using TrackSet = MediaDecoderReader::TrackSet;
+
 public:
   typedef MediaDecoderOwner::NextFrameStatus NextFrameStatus;
   typedef mozilla::layers::ImageContainer::FrameID FrameID;
@@ -368,7 +371,8 @@ private:
 
   
   
-  void Reset(MediaDecoderReader::TargetQueues aQueues = MediaDecoderReader::AUDIO_VIDEO);
+  void Reset(TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
+                                         TrackInfo::kVideoTrack));
 
 protected:
   virtual ~MediaDecoderStateMachine();
