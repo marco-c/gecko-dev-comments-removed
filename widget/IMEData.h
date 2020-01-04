@@ -859,6 +859,18 @@ struct IMENotification final
   }
 };
 
+struct CandidateWindowPosition
+{
+  
+  
+  LayoutDeviceIntPoint mPoint;
+  
+  
+  LayoutDeviceIntRect mRect;
+  
+  bool mExcludeRect;
+};
+
 } 
 } 
 
