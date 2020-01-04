@@ -6589,6 +6589,11 @@ class Parser(Tokenizer):
                 
                 
                 
+                itr_iface._exposureGlobalNames = set(iface._exposureGlobalNames)
+                
+                
+                
+                
                 itr_iface.iterableInterface = iface
                 self._productions.append(itr_iface)
                 iterable.iteratorType = IDLWrapperType(iface.location, itr_iface)
