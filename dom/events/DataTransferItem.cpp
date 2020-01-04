@@ -26,6 +26,9 @@ struct FileMimeNameData
 
 FileMimeNameData kFileMimeNameMap[] = {
   { kFileMime, "GenericFileName" },
+  { kJPEGImageMime, "GenericImageNameJPEG" },
+  { kGIFImageMime, "GenericImageNameGIF" },
+  { kPNGImageMime, "GenericImageNamePNG" },
 };
 
 already_AddRefed<mozilla::dom::File>
@@ -190,6 +193,7 @@ DataTransferItem::FillInExternalData()
   }
 
   if (Kind() == KIND_FILE) {
+    
     
     
 
