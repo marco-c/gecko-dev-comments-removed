@@ -1410,6 +1410,8 @@ pref("browser.esedbreader.loglevel", "Error");
 
 pref("browser.laterrun.enabled", false);
 
+pref("browser.migration.automigrate", false);
+
 
 pref("dom.mozBrowserFramesEnabled", true);
 
