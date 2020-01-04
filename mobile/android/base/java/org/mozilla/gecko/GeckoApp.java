@@ -1605,11 +1605,6 @@ public abstract class GeckoApp
                 if (rec != null) {
                     rec.recordJavaStartupTime(javaDuration);
                 }
-
-                
-                
-                
-                GeckoPreferences.broadcastHealthReportUploadPref(GeckoApp.this);
             }
         }, 50);
 
@@ -2145,11 +2140,6 @@ public abstract class GeckoApp
                 }
 
                 editor.apply();
-
-                
-                
-                
-                GeckoPreferences.broadcastHealthReportPrune(context);
             }
         });
 

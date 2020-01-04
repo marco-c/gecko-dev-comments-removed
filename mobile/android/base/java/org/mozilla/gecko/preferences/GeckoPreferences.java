@@ -977,31 +977,6 @@ OnSharedPreferenceChangeListener
 
 
 
-    public static void broadcastHealthReportUploadPref(final Context context, final boolean value) {
-        
-        
-        
-        
-    }
-
-    
-
-
-
-    public static void broadcastHealthReportUploadPref(final Context context) {
-        
-        
-    }
-
-    public static void broadcastHealthReportPrune(final Context context) {
-        
-        
-    }
-
-    
-
-
-
     public static void broadcastStumblerPref(final Context context, final boolean value) {
        Intent intent = new Intent(ACTION_STUMBLER_UPLOAD_PREF)
                 .putExtra("pref", PREFS_GEO_REPORTING)
@@ -1194,12 +1169,7 @@ OnSharedPreferenceChangeListener
         } else if (PREFS_UPDATER_URL.equals(prefName)) {
             UpdateServiceHelper.setUpdateUrl(this, (String) newValue);
         } else if (PREFS_HEALTHREPORT_UPLOAD_ENABLED.equals(prefName)) {
-            
-            
-            
-            
             final Boolean newBooleanValue = (Boolean) newValue;
-            broadcastHealthReportUploadPref(this, newBooleanValue);
             AdjustConstants.getAdjustHelper().setEnabled(newBooleanValue);
         } else if (PREFS_GEO_REPORTING.equals(prefName)) {
             if ((Boolean) newValue) {
