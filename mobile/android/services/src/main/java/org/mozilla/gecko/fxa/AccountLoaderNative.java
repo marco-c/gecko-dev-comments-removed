@@ -4,17 +4,17 @@
 
 package org.mozilla.gecko.fxa;
 
-import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
-import org.mozilla.gecko.sync.setup.SyncAccounts;
-
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
-import android.support.v4.content.AsyncTaskLoader;
+import android.content.AsyncTaskLoader;
+
+import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
 
 
 
@@ -32,11 +32,14 @@ import android.support.v4.content.AsyncTaskLoader;
 
 
 
-public class AccountLoader extends AsyncTaskLoader<Account> {
+
+
+public class AccountLoaderNative extends AsyncTaskLoader<Account> {
   protected Account account = null;
   protected BroadcastReceiver broadcastReceiver = null;
 
-  public AccountLoader(Context context) {
+  @TargetApi(11)
+  public AccountLoaderNative(Context context) {
     super(context);
   }
 
@@ -44,14 +47,7 @@ public class AccountLoader extends AsyncTaskLoader<Account> {
   @Override
   public Account loadInBackground() {
     final Context context = getContext();
-    Account foundAccount = FirefoxAccounts.getFirefoxAccount(context);
-    if (foundAccount == null) {
-      final Account[] syncAccounts = SyncAccounts.syncAccounts(context);
-      if (syncAccounts != null && syncAccounts.length > 0) {
-        foundAccount = syncAccounts[0];
-      }
-    }
-    return foundAccount;
+    return FirefoxAccounts.getFirefoxAccount(context);
   }
 
   
