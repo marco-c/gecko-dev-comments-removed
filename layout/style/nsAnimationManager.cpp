@@ -552,7 +552,6 @@ private:
   nsTArray<PropertyValuePair> GetKeyframePropertyValues(
     nsPresContext* aPresContext,
     nsCSSKeyframeRule* aKeyframeRule,
-    nsCSSCompressedDataBlock* aDataBlock,
     nsCSSPropertySet& aAnimatedProperties);
   void FillInMissingKeyframeValues(
     nsPresContext* aPresContext,
@@ -706,6 +705,11 @@ CSSAnimationBuilder::BuildAnimationFrames(nsPresContext* aPresContext,
   
   
   
+  
+  
+  
+  
+  
 
   
   
@@ -724,8 +728,6 @@ CSSAnimationBuilder::BuildAnimationFrames(nsPresContext* aPresContext,
     MOZ_ASSERT(cssRule->GetType() == css::Rule::KEYFRAME_RULE,
                "must be keyframe rule");
     nsCSSKeyframeRule* keyframeRule = static_cast<nsCSSKeyframeRule*>(cssRule);
-    nsCSSCompressedDataBlock* dataBlock =
-      keyframeRule->Declaration()->GetNormalBlock();
 
     const nsTArray<float>& keys = keyframeRule->GetKeys();
     for (float key : keys) {
@@ -739,7 +741,7 @@ CSSAnimationBuilder::BuildAnimationFrames(nsPresContext* aPresContext,
         GetKeyframeTimingFunction(aPresContext, keyframeRule,
                                   inheritedTimingFunction);
       keyframe.mPropertyValues =
-        GetKeyframePropertyValues(aPresContext, keyframeRule, dataBlock,
+        GetKeyframePropertyValues(aPresContext, keyframeRule,
                                   animatedProperties);
 
       keyframes.AppendElement(Move(keyframe));
@@ -874,10 +876,12 @@ nsTArray<PropertyValuePair>
 CSSAnimationBuilder::GetKeyframePropertyValues(
     nsPresContext* aPresContext,
     nsCSSKeyframeRule* aKeyframeRule,
-    nsCSSCompressedDataBlock* aDataBlock,
     nsCSSPropertySet& aAnimatedProperties)
 {
   nsTArray<PropertyValuePair> result;
+  RefPtr<nsStyleContext> styleContext =
+    mResolvedStyles.Get(aPresContext, mStyleContext,
+                        aKeyframeRule->Declaration());
 
   for (nsCSSProperty prop = nsCSSProperty(0);
        prop < eCSSProperty_COUNT_no_shorthands;
@@ -889,8 +893,17 @@ CSSAnimationBuilder::GetKeyframePropertyValues(
 
     PropertyValuePair pair;
     pair.mProperty = prop;
-    pair.mValue = *aDataBlock->ValueFor(prop);
 
+    StyleAnimationValue computedValue;
+    if (!StyleAnimationValue::ExtractComputedValue(prop, styleContext,
+                                                   computedValue)) {
+      continue;
+    }
+    DebugOnly<bool> uncomputeResult =
+      StyleAnimationValue::UncomputeValue(prop, Move(computedValue),
+                                          pair.mValue);
+    MOZ_ASSERT(uncomputeResult,
+               "Unable to get specified value from computed value");
     MOZ_ASSERT(pair.mValue.GetUnit() != eCSSUnit_Null,
                "Not expecting to read invalid properties");
 
