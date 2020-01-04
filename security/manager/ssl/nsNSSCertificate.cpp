@@ -16,7 +16,7 @@
 #include "pkix/pkixtypes.h"
 #include "nsNSSComponent.h" 
 #include "nsCOMPtr.h"
-#include "nsIMutableArray.h"
+#include "nsArray.h"
 #include "nsNSSCertValidity.h"
 #include "nsPKCS12Blob.h"
 #include "nsPK11TokenDB.h"
@@ -904,9 +904,8 @@ nsNSSCertificate::GetChain(nsIArray** _rvChain)
   }
 
   
-  nsCOMPtr<nsIMutableArray> array =
-    do_CreateInstance(NS_ARRAY_CONTRACTID, &rv);
-  if (NS_FAILED(rv)) {
+  nsCOMPtr<nsIMutableArray> array = nsArrayBase::Create();
+  if (!array) {
     goto done;
   }
   CERTCertListNode* node;
