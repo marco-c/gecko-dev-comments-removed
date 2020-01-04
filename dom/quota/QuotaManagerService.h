@@ -69,7 +69,7 @@ public:
   NoteLiveManager(QuotaManager* aManager);
 
   void
-  NoteFinishedManager();
+  NoteShuttingDownManager();
 
   
   

@@ -513,6 +513,8 @@ private:
   
   nsTArray<nsCString> mInitializedOrigins;
 
+  
+  
   AutoTArray<RefPtr<Client>, Client::TYPE_MAX> mClients;
 
   nsString mBasePath;
