@@ -1379,6 +1379,11 @@ public:
   }
 
   
+  
+  
+  bool IsOpaqueForVisibility();
+
+  
 
 
 
