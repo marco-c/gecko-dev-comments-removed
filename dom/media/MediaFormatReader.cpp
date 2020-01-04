@@ -520,7 +520,10 @@ MediaFormatReader::RequestVideoData(bool aSkipToNextKeyframe,
   }
 
   media::TimeUnit timeThreshold{media::TimeUnit::FromMicroseconds(aTimeThreshold)};
-  if (ShouldSkip(aSkipToNextKeyframe, timeThreshold)) {
+  
+  
+  if (!mVideo.HasInternalSeekPending() &&
+      ShouldSkip(aSkipToNextKeyframe, timeThreshold)) {
     
     mVideo.mDemuxRequest.DisconnectIfExists();
 
@@ -998,6 +1001,9 @@ void
 MediaFormatReader::InternalSeek(TrackType aTrack, const InternalSeekTarget& aTarget)
 {
   MOZ_ASSERT(OnTaskQueue());
+  LOG("%s internal seek to %f",
+      TrackTypeToStr(aTrack), aTarget.mTime.ToSeconds());
+
   auto& decoder = GetDecoderData(aTrack);
   decoder.mTimeThreshold = Some(aTarget);
   RefPtr<MediaFormatReader> self = this;
@@ -1275,8 +1281,6 @@ MediaFormatReader::ResetDecode()
   MOZ_ASSERT(OnTaskQueue());
   LOGV("");
 
-  mAudio.mSeekRequest.DisconnectIfExists();
-  mVideo.mSeekRequest.DisconnectIfExists();
   mSeekPromise.RejectIfExists(NS_OK, __func__);
   mSkipRequest.DisconnectIfExists();
 
