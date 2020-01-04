@@ -1144,12 +1144,6 @@ protected:
     
     
     
-    
-    already_AddRefed<gfxFont>
-    FindNonItalicFaceForChar(gfxFontFamily* aFamily, uint32_t aCh);
-
-    
-    
     already_AddRefed<gfxFont>
     FindFallbackFaceForChar(gfxFontFamily* aFamily, uint32_t aCh,
                             int32_t aRunScript);
