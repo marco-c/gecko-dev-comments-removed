@@ -271,9 +271,33 @@ SdpHelper::AddCandidateToSdp(Sdp* sdp,
   std::string candidate = candidateUntrimmed.substr(begin);
 
   
+  
+  
+  
+  SdpMediaSection* msection = 0;
+  if (!mid.empty()) {
+    
+    msection = FindMsectionByMid(*sdp, mid);
 
-  SdpMediaSection& msection = sdp->GetMediaSection(level);
-  SdpAttributeList& attrList = msection.GetAttributeList();
+    
+    
+    std::string checkMid;
+    nsresult rv = GetMidFromLevel(*sdp, level, &checkMid);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    if (mid != checkMid) {
+      SDP_SET_ERROR("Mismatch between mid and level - \"" << mid
+                     << "\" is not the mid for level " << level
+                     << "; \"" << checkMid << "\" is");
+      return NS_ERROR_INVALID_ARG;
+    }
+  }
+  if (!msection) {
+    msection = &(sdp->GetMediaSection(level));
+  }
+
+  SdpAttributeList& attrList = msection->GetAttributeList();
 
   UniquePtr<SdpMultiStringAttribute> candidates;
   if (!attrList.HasAttribute(SdpAttribute::kCandidateAttribute)) {
