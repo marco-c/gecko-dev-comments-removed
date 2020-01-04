@@ -222,7 +222,12 @@ void
 MobileViewportManager::UpdateDisplayPortMargins()
 {
   if (nsIFrame* root = mPresShell->GetRootScrollFrame()) {
-    if (!nsLayoutUtils::GetDisplayPort(root->GetContent(), nullptr)) {
+    bool hasDisplayPort = nsLayoutUtils::GetDisplayPort(root->GetContent(), nullptr);
+    bool hasResolution = mPresShell->ScaleToResolution() &&
+        mPresShell->GetResolution() != 1.0f;
+    if (!hasDisplayPort && !hasResolution) {
+      
+      
       
       return;
     }
