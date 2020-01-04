@@ -1079,31 +1079,29 @@ struct InitialShapeEntry
 
 
 
-    ReadBarrieredShape shape;
+    ReadBarriered<Shape*> shape;
 
     
 
 
 
-    TaggedProto proto;
+    ReadBarriered<TaggedProto> proto;
 
     
     struct Lookup {
         const Class* clasp;
-        TaggedProto hashProto;
-        TaggedProto matchProto;
+        TaggedProto proto;
         uint32_t nfixed;
         uint32_t baseFlags;
 
         Lookup(const Class* clasp, TaggedProto proto, uint32_t nfixed, uint32_t baseFlags)
-          : clasp(clasp),
-            hashProto(proto), matchProto(proto),
-            nfixed(nfixed), baseFlags(baseFlags)
+          : clasp(clasp), proto(proto), nfixed(nfixed), baseFlags(baseFlags)
         {}
     };
 
     inline InitialShapeEntry();
-    inline InitialShapeEntry(const ReadBarrieredShape& shape, TaggedProto proto);
+    inline InitialShapeEntry(const ReadBarriered<Shape*>& shape,
+                             const ReadBarriered<TaggedProto>& proto);
 
     inline Lookup getLookup() const;
 
