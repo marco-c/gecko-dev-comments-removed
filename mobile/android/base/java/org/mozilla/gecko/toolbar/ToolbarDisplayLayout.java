@@ -22,6 +22,7 @@ import org.mozilla.gecko.Tab;
 import org.mozilla.gecko.animation.PropertyAnimator;
 import org.mozilla.gecko.animation.ViewHelper;
 import org.mozilla.gecko.toolbar.BrowserToolbarTabletBase.ForwardButtonAnimation;
+import org.mozilla.gecko.util.Experiments;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.util.StringUtils;
 import org.mozilla.gecko.widget.themed.ThemedLinearLayout;
@@ -41,6 +42,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+
+import com.keepsafe.switchboard.SwitchBoard;
 
 
 
@@ -280,10 +283,11 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
         setContentDescription(strippedURL);
 
         final SiteIdentity siteIdentity = tab.getSiteIdentity();
-        if (siteIdentity.hasOwner()) {
+        if (siteIdentity.hasOwner() && SwitchBoard.isInExperiment(mActivity, Experiments.URLBAR_SHOW_EV_CERT_OWNER)) {
             
             updateTitleFromSiteIdentity(siteIdentity);
-        } else if (isHttpOrHttps && !HardwareUtils.isTablet() && !TextUtils.isEmpty(baseDomain)) {
+        } else if (isHttpOrHttps && !HardwareUtils.isTablet() && !TextUtils.isEmpty(baseDomain)
+                && SwitchBoard.isInExperiment(mActivity, Experiments.URLBAR_SHOW_ORIGIN_ONLY)) {
             
             setTitle(baseDomain);
         } else if (isHttpOrHttps) {
