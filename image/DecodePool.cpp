@@ -37,25 +37,6 @@ namespace image {
 
 
 
-#ifdef MOZ_NUWA_PROCESS
-
-class RegisterDecodeIOThreadWithNuwaRunnable : public Runnable
-{
-public:
-  NS_IMETHOD Run()
-  {
-    NuwaMarkCurrentThread(static_cast<void(*)(void*)>(nullptr), nullptr);
-    return NS_OK;
-  }
-};
-
-#endif 
-
-
-
-
-
-
  StaticRefPtr<DecodePool> DecodePool::sSingleton;
  uint32_t DecodePool::sNumCores = 0;
 
@@ -291,8 +272,10 @@ DecodePool::DecodePool()
                      "Should successfully create image I/O thread");
 
 #ifdef MOZ_NUWA_PROCESS
-  nsCOMPtr<nsIRunnable> worker = new RegisterDecodeIOThreadWithNuwaRunnable();
-  rv = mIOThread->Dispatch(worker, NS_DISPATCH_NORMAL);
+  rv = mIOThread->Dispatch(NS_NewRunnableFunction([]() -> void {
+    NuwaMarkCurrentThread(static_cast<void(*)(void*)>(nullptr), nullptr);
+  }), NS_DISPATCH_NORMAL);
+
   MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv),
                      "Should register decode IO thread with Nuwa process");
 #endif
