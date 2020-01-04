@@ -1571,15 +1571,12 @@ MediaFormatReader::GetBuffered()
   if (!mInitDone) {
     return intervals;
   }
-  int64_t startTime;
+  int64_t startTime = 0;
   if (!ForceZeroStartTime()) {
     if (!HaveStartTime()) {
       return intervals;
     }
     startTime = StartTime();
-  } else {
-    
-    startTime = 0;
   }
   
   if (HasVideo()) {
@@ -1602,6 +1599,11 @@ MediaFormatReader::GetBuffered()
     intervals = Move(videoti);
   }
 
+  if (!intervals.Length() ||
+      intervals.GetStart() == media::TimeUnit::FromMicroseconds(0)) {
+    
+    return intervals;
+  }
   return intervals.Shift(media::TimeUnit::FromMicroseconds(-startTime));
 }
 

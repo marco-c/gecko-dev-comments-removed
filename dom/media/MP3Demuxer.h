@@ -28,11 +28,6 @@ public:
   bool IsSeekable() const override;
   void NotifyDataArrived() override;
   void NotifyDataRemoved() override;
-  
-  
-  
-  
-  bool ShouldComputeStartTime() const override { return false; }
 
 private:
   
