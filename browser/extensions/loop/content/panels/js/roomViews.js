@@ -622,6 +622,12 @@ loop.roomViews = (function(mozL10n) {
           })
         }));
       }
+
+      
+      if (this.state.roomState !== ROOM_STATES.SESSION_CONNECTED &&
+          nextState.roomState === ROOM_STATES.SESSION_CONNECTED) {
+        this.props.dispatcher.dispatch(new sharedActions.StartBrowserShare());
+      }
     },
 
     

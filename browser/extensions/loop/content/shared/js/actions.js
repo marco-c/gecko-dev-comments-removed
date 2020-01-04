@@ -215,6 +215,12 @@ loop.shared.actions = (function() {
     
 
 
+    StartBrowserShare: Action.define("startBrowserShare", {
+    }),
+
+    
+
+
     EndScreenShare: Action.define("endScreenShare", {
     }),
 
