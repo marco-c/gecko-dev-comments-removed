@@ -1342,7 +1342,9 @@ var CustomizableUIInternal = {
       }
 
       let tooltip = this.getLocalizedProperty(aWidget, "tooltiptext", additionalTooltipArguments);
-      node.setAttribute("tooltiptext", tooltip);
+      if (tooltip) {
+        node.setAttribute("tooltiptext", tooltip);
+      }
       node.setAttribute("class", "toolbarbutton-1 chromeclass-toolbar-additional");
 
       let commandHandler = this.handleWidgetCommand.bind(this, aWidget, node);
@@ -1385,6 +1387,8 @@ var CustomizableUIInternal = {
   },
 
   getLocalizedProperty: function(aWidget, aProp, aFormatArgs, aDef) {
+    const kReqStringProps = ["label"];
+
     if (typeof aWidget == "string") {
       aWidget = gPalette.get(aWidget);
     }
@@ -1395,7 +1399,7 @@ var CustomizableUIInternal = {
     
     
     
-    if (aWidget[aProp]) {
+    if (aWidget[aProp] != null) {
       name = aWidget[aProp];
       
       
@@ -1412,7 +1416,9 @@ var CustomizableUIInternal = {
       }
       return gWidgetsBundle.GetStringFromName(name) || def;
     } catch(ex) {
-      if (!def) {
+      
+      
+      if (!def && (name != "" || kReqStringProps.includes(aProp))) {
         ERROR("Could not localize property '" + name + "'.");
       }
     }
