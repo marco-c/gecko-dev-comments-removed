@@ -3787,6 +3787,8 @@ class MCallDOMNative : public MCall
     MCallDOMNative(JSFunction* target, uint32_t numActualArgs)
         : MCall(target, numActualArgs, false)
     {
+        MOZ_ASSERT(getJitInfo()->type() != JSJitInfo::InlinableNative);
+
         
         
         
