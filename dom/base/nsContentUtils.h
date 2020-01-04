@@ -1667,11 +1667,6 @@ public:
   GetWindowProviderForContentProcess();
 
   
-  
-  static already_AddRefed<nsPIDOMWindow>
-  GetMostRecentNonPBWindow();
-
-  
 
 
 
