@@ -290,7 +290,7 @@ nsTableRowGroupFrame::PlaceChild(nsPresContext*         aPresContext,
                                  WritingMode            aWM,
                                  const LogicalPoint&    aKidPosition,
                                  const nsSize&          aContainerSize,
-                                 nsHTMLReflowMetrics&   aDesiredSize,
+                                 ReflowOutput&   aDesiredSize,
                                  const nsRect&          aOriginalKidRect,
                                  const nsRect&          aOriginalKidVisualOverflow)
 {
@@ -347,7 +347,7 @@ CacheRowBSizesForPrinting(nsPresContext*   aPresContext,
 
 void
 nsTableRowGroupFrame::ReflowChildren(nsPresContext*         aPresContext,
-                                     nsHTMLReflowMetrics&   aDesiredSize,
+                                     ReflowOutput&   aDesiredSize,
                                      TableRowGroupReflowInput& aReflowState,
                                      nsReflowStatus&        aStatus,
                                      bool*                aPageBreakBeforeEnd)
@@ -400,7 +400,7 @@ nsTableRowGroupFrame::ReflowChildren(nsPresContext*         aPresContext,
 
       
       
-      nsHTMLReflowMetrics desiredSize(aReflowState.reflowState,
+      ReflowOutput desiredSize(aReflowState.reflowState,
                                       aDesiredSize.mFlags);
       desiredSize.ClearSize();
 
@@ -540,7 +540,7 @@ UpdateBSizes(RowInfo& aRowInfo,
 }
 
 void
-nsTableRowGroupFrame::DidResizeRows(nsHTMLReflowMetrics& aDesiredSize)
+nsTableRowGroupFrame::DidResizeRows(ReflowOutput& aDesiredSize)
 {
   
   
@@ -561,7 +561,7 @@ nsTableRowGroupFrame::DidResizeRows(nsHTMLReflowMetrics& aDesiredSize)
 
 void
 nsTableRowGroupFrame::CalculateRowBSizes(nsPresContext*           aPresContext,
-                                          nsHTMLReflowMetrics&     aDesiredSize,
+                                          ReflowOutput&     aDesiredSize,
                                           const ReflowInput& aReflowState)
 {
   nsTableFrame* tableFrame = GetTableFrame();
@@ -1095,7 +1095,7 @@ GetRowBefore(nsTableRowFrame& aStartRow,
 
 nsresult
 nsTableRowGroupFrame::SplitRowGroup(nsPresContext*           aPresContext,
-                                    nsHTMLReflowMetrics&     aDesiredSize,
+                                    ReflowOutput&     aDesiredSize,
                                     const ReflowInput& aReflowState,
                                     nsTableFrame*            aTableFrame,
                                     nsReflowStatus&          aStatus,
@@ -1148,7 +1148,7 @@ nsTableRowGroupFrame::SplitRowGroup(nsPresContext*           aPresContext,
 
         InitChildReflowState(*aPresContext, borderCollapse, rowReflowState);
         rowReflowState.mFlags.mIsTopOfPage = isTopOfPage; 
-        nsHTMLReflowMetrics rowMetrics(aReflowState);
+        ReflowOutput rowMetrics(aReflowState);
 
         
         nsRect oldRowRect = rowFrame->GetRect();
@@ -1343,7 +1343,7 @@ nsTableRowGroupFrame::SplitRowGroup(nsPresContext*           aPresContext,
 
 void
 nsTableRowGroupFrame::Reflow(nsPresContext*           aPresContext,
-                             nsHTMLReflowMetrics&     aDesiredSize,
+                             ReflowOutput&     aDesiredSize,
                              const ReflowInput& aReflowState,
                              nsReflowStatus&          aStatus)
 {

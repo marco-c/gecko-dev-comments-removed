@@ -36,7 +36,7 @@ public:
 
   virtual void
   Reflow(nsPresContext*          aPresContext,
-         nsHTMLReflowMetrics&     aDesiredSize,
+         ReflowOutput&     aDesiredSize,
          const ReflowInput& aReflowState,
          nsReflowStatus&          aStatus) override;
 
@@ -46,7 +46,7 @@ public:
 
   virtual void
   GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingContext,
-                           nsHTMLReflowMetrics& aDesiredSize) override;
+                           ReflowOutput& aDesiredSize) override;
 
   virtual nsresult
   AttributeChanged(int32_t         aNameSpaceID,
@@ -59,7 +59,7 @@ public:
 
   
   virtual nscoord
-  FixInterFrameSpacing(nsHTMLReflowMetrics& aDesiredSize) override;
+  FixInterFrameSpacing(ReflowOutput& aDesiredSize) override;
 
   
   static nsresult

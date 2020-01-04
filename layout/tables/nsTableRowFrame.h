@@ -99,7 +99,7 @@ public:
 
 
   virtual void Reflow(nsPresContext*           aPresContext,
-                      nsHTMLReflowMetrics&     aDesiredSize,
+                      ReflowOutput&     aDesiredSize,
                       const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) override;
 
@@ -279,7 +279,7 @@ protected:
 
 
   void ReflowChildren(nsPresContext*           aPresContext,
-                      nsHTMLReflowMetrics&     aDesiredSize,
+                      ReflowOutput&     aDesiredSize,
                       const ReflowInput& aReflowState,
                       nsTableFrame&            aTableFrame,
                       nsReflowStatus&          aStatus);

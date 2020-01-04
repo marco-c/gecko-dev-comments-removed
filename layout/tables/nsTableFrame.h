@@ -369,11 +369,11 @@ public:
 
 
   virtual void Reflow(nsPresContext*           aPresContext,
-                      nsHTMLReflowMetrics&     aDesiredSize,
+                      ReflowOutput&     aDesiredSize,
                       const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) override;
 
-  void ReflowTable(nsHTMLReflowMetrics&     aDesiredSize,
+  void ReflowTable(ReflowOutput&     aDesiredSize,
                    const ReflowInput& aReflowState,
                    nscoord                  aAvailBSize,
                    nsIFrame*&               aLastChildReflowed,
@@ -654,7 +654,7 @@ protected:
 
 
 
-  void AdjustForCollapsingRowsCols(nsHTMLReflowMetrics& aDesiredSize,
+  void AdjustForCollapsingRowsCols(ReflowOutput& aDesiredSize,
                                    const WritingMode aWM,
                                    const LogicalMargin& aBorderPadding);
 
@@ -664,7 +664,7 @@ protected:
 
 
   void FixupPositionedTableParts(nsPresContext*           aPresContext,
-                                 nsHTMLReflowMetrics&     aDesiredSize,
+                                 ReflowOutput&     aDesiredSize,
                                  const ReflowInput& aReflowState);
 
   
@@ -698,7 +698,7 @@ protected:
   
   
   void CalcDesiredBSize(const ReflowInput& aReflowState,
-                        nsHTMLReflowMetrics& aDesiredSize);
+                        ReflowOutput& aDesiredSize);
 
   
 
@@ -708,7 +708,7 @@ protected:
   void PlaceChild(TableReflowInput&  aReflowState,
                   nsIFrame*            aKidFrame,
                   nsPoint              aKidPosition,
-                  nsHTMLReflowMetrics& aKidDesiredSize,
+                  ReflowOutput& aKidDesiredSize,
                   const nsRect&        aOriginalKidRect,
                   const nsRect&        aOriginalKidVisualOverflow);
    void PlaceRepeatedFooter(TableReflowInput& aReflowState,

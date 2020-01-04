@@ -447,7 +447,7 @@ public:
   nscoord GetCrossPosition() const { return mCrossPosn; }
 
   nscoord ResolvedAscent() const {
-    if (mAscent == nsHTMLReflowMetrics::ASK_FOR_BASELINE) {
+    if (mAscent == ReflowOutput::ASK_FOR_BASELINE) {
       
       
       
@@ -1636,7 +1636,7 @@ nsFlexContainerFrame::
     childRSForMeasuringHeight.SetVResize(true);
   }
 
-  nsHTMLReflowMetrics childDesiredSize(childRSForMeasuringHeight);
+  ReflowOutput childDesiredSize(childRSForMeasuringHeight);
   nsReflowStatus childReflowStatus;
   const uint32_t flags = NS_FRAME_NO_MOVE_FRAME;
   ReflowChild(aFlexItem.Frame(), aPresContext,
@@ -3723,7 +3723,7 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
     
     aChildReflowState.SetVResize(true);
   }
-  nsHTMLReflowMetrics childDesiredSize(aChildReflowState);
+  ReflowOutput childDesiredSize(aChildReflowState);
   nsReflowStatus childReflowStatus;
   const uint32_t flags = NS_FRAME_NO_MOVE_FRAME;
   ReflowChild(aItem.Frame(), aPresContext,
@@ -3807,7 +3807,7 @@ FlexLine::PositionItemsInCrossAxis(nscoord aLineStartPosition,
 
 void
 nsFlexContainerFrame::Reflow(nsPresContext*           aPresContext,
-                             nsHTMLReflowMetrics&     aDesiredSize,
+                             ReflowOutput&     aDesiredSize,
                              const ReflowInput& aReflowState,
                              nsReflowStatus&          aStatus)
 {
@@ -3950,7 +3950,7 @@ private:
 
 void
 nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
-                                   nsHTMLReflowMetrics&     aDesiredSize,
+                                   ReflowOutput&     aDesiredSize,
                                    const ReflowInput& aReflowState,
                                    nsReflowStatus&          aStatus,
                                    nscoord aContentBoxMainSize,
@@ -4358,7 +4358,7 @@ nsFlexContainerFrame::ReflowFlexItem(nsPresContext* aPresContext,
   
   
 
-  nsHTMLReflowMetrics childDesiredSize(childReflowState);
+  ReflowOutput childDesiredSize(childReflowState);
   nsReflowStatus childReflowStatus;
   ReflowChild(aItem.Frame(), aPresContext,
               childDesiredSize, childReflowState,

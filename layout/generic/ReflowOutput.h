@@ -5,8 +5,8 @@
 
 
 
-#ifndef mozilla_nsHTMLReflowMetrics_h
-#define mozilla_nsHTMLReflowMetrics_h
+#ifndef mozilla_ReflowOutput_h
+#define mozilla_ReflowOutput_h
 
 #include "mozilla/WritingModes.h"
 #include "nsBoundingMetrics.h"
@@ -200,7 +200,7 @@ namespace mozilla {
 
 
 
-class nsHTMLReflowMetrics {
+class ReflowOutput {
 public:
   
   
@@ -208,7 +208,7 @@ public:
   
   
   
-  explicit nsHTMLReflowMetrics(mozilla::WritingMode aWritingMode, uint32_t aFlags = 0)
+  explicit ReflowOutput(mozilla::WritingMode aWritingMode, uint32_t aFlags = 0)
     : mISize(0)
     , mBSize(0)
     , mBlockStartAscent(ASK_FOR_BASELINE)
@@ -216,7 +216,7 @@ public:
     , mWritingMode(aWritingMode)
   {}
 
-  explicit nsHTMLReflowMetrics(const ReflowInput& aState, uint32_t aFlags = 0);
+  explicit ReflowOutput(const ReflowInput& aState, uint32_t aFlags = 0);
 
   
   

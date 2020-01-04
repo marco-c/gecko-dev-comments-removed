@@ -247,7 +247,7 @@ public:
                                            nscoord* aX,
                                            nscoord* aXMost) override;
   virtual void Reflow(nsPresContext* aPresContext,
-                      nsHTMLReflowMetrics& aMetrics,
+                      ReflowOutput& aMetrics,
                       const ReflowInput& aReflowState,
                       nsReflowStatus& aStatus) override;
   virtual bool CanContinueTextRun() const override;
@@ -579,7 +579,7 @@ public:
   
   void ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
                   DrawTarget* aDrawTarget,
-                  nsHTMLReflowMetrics& aMetrics, nsReflowStatus& aStatus);
+                  ReflowOutput& aMetrics, nsReflowStatus& aStatus);
 
   bool IsFloatingFirstLetterChild() const;
 
@@ -806,7 +806,7 @@ protected:
 
   virtual bool HasAnyNoncollapsedCharacters() override;
 
-  void ClearMetrics(nsHTMLReflowMetrics& aMetrics);
+  void ClearMetrics(ReflowOutput& aMetrics);
 
   
 

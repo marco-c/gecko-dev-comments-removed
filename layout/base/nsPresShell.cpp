@@ -9593,7 +9593,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
   mIsReflowing = true;
 
   nsReflowStatus status;
-  nsHTMLReflowMetrics desiredSize(reflowState);
+  ReflowOutput desiredSize(reflowState);
   target->Reflow(mPresContext, desiredSize, reflowState, status);
 
   

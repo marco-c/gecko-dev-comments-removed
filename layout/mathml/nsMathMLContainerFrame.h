@@ -48,7 +48,7 @@ public:
   Stretch(DrawTarget*          aDrawTarget,
           nsStretchDirection   aStretchDirection,
           nsBoundingMetrics&   aContainerSize,
-          nsHTMLReflowMetrics& aDesiredStretchSize) override;
+          ReflowOutput& aDesiredStretchSize) override;
 
   NS_IMETHOD
   UpdatePresentationDataFromChildAt(int32_t         aFirstIndex,
@@ -108,11 +108,11 @@ public:
 
   virtual void
   GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingContext,
-                           nsHTMLReflowMetrics& aDesiredSize);
+                           ReflowOutput& aDesiredSize);
 
   virtual void
   Reflow(nsPresContext*          aPresContext,
-         nsHTMLReflowMetrics&     aDesiredSize,
+         ReflowOutput&     aDesiredSize,
          const ReflowInput& aReflowState,
          nsReflowStatus&          aStatus) override;
 
@@ -199,7 +199,7 @@ protected:
   virtual nsresult
   Place(DrawTarget*          aDrawTarget,
         bool                 aPlaceOrigin,
-        nsHTMLReflowMetrics& aDesiredSize);
+        ReflowOutput& aDesiredSize);
 
   
   
@@ -211,7 +211,7 @@ protected:
   
   virtual nsresult
   MeasureForWidth(DrawTarget* aDrawTarget,
-                  nsHTMLReflowMetrics& aDesiredSize);
+                  ReflowOutput& aDesiredSize);
 
 
   
@@ -236,7 +236,7 @@ public:
   
   
   nsresult
-  ReflowError(DrawTarget* aDrawTarget, nsHTMLReflowMetrics& aDesiredSize);
+  ReflowError(DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize);
   
 
 
@@ -277,7 +277,7 @@ public:
   void
   ReflowChild(nsIFrame*                aKidFrame,
               nsPresContext*          aPresContext,
-              nsHTMLReflowMetrics&     aDesiredSize,
+              ReflowOutput&     aDesiredSize,
               const ReflowInput& aReflowState,
               nsReflowStatus&          aStatus);
 
@@ -290,17 +290,17 @@ protected:
   
   
   virtual nscoord
-  FixInterFrameSpacing(nsHTMLReflowMetrics& aDesiredSize);
+  FixInterFrameSpacing(ReflowOutput& aDesiredSize);
 
   
   
   virtual nsresult
-  FinalizeReflow(DrawTarget* aDrawTarget, nsHTMLReflowMetrics& aDesiredSize);
+  FinalizeReflow(DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize);
 
   
   static void
   SaveReflowAndBoundingMetricsFor(nsIFrame*                  aFrame,
-                                  const nsHTMLReflowMetrics& aReflowMetrics,
+                                  const ReflowOutput& aReflowMetrics,
                                   const nsBoundingMetrics&   aBoundingMetrics);
 
   
@@ -312,7 +312,7 @@ protected:
   
   static void
   GetReflowAndBoundingMetricsFor(nsIFrame*            aFrame,
-                                 nsHTMLReflowMetrics& aReflowMetrics,
+                                 ReflowOutput& aReflowMetrics,
                                  nsBoundingMetrics&   aBoundingMetrics,
                                  eMathMLFrameType*    aMathMLFrameType = nullptr);
 
@@ -378,7 +378,7 @@ protected:
   
   
   
-  void GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics);
+  void GatherAndStoreOverflow(ReflowOutput* aMetrics);
 
   
 

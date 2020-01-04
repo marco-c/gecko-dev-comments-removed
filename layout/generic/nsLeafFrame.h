@@ -57,7 +57,7 @@ public:
 
 
   virtual void Reflow(nsPresContext*      aPresContext,
-                      nsHTMLReflowMetrics& aDesiredSize,
+                      ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowState,
                       nsReflowStatus&      aStatus) override;
   
@@ -65,7 +65,7 @@ public:
 
 
   virtual void DoReflow(nsPresContext*      aPresContext,
-                        nsHTMLReflowMetrics& aDesiredSize,
+                        ReflowOutput& aDesiredSize,
                         const ReflowInput& aReflowState,
                         nsReflowStatus&      aStatus);
 
@@ -100,7 +100,7 @@ protected:
 
 
   void SizeToAvailSize(const ReflowInput& aReflowState,
-                       nsHTMLReflowMetrics& aDesiredSize);
+                       ReflowOutput& aDesiredSize);
 };
 
 #endif 

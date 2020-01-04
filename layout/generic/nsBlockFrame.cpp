@@ -1020,7 +1020,7 @@ CalculateContainingBlockSizeForAbsolutes(WritingMode aWM,
 
 void
 nsBlockFrame::Reflow(nsPresContext*           aPresContext,
-                     nsHTMLReflowMetrics&     aMetrics,
+                     ReflowOutput&     aMetrics,
                      const ReflowInput& aReflowState,
                      nsReflowStatus&          aStatus)
 {
@@ -1235,7 +1235,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
         mLines.front() != mLines.back() &&
         mLines.begin().next()->IsBlock()))) {
     
-    nsHTMLReflowMetrics metrics(aReflowState);
+    ReflowOutput metrics(aReflowState);
     
     nsLayoutUtils::LinePosition position;
     WritingMode wm = aReflowState.GetWritingMode();
@@ -1479,7 +1479,7 @@ nsBlockFrame::CheckForCollapsedBEndMarginFromClearanceLine()
 void
 nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowState,
                                BlockReflowInput&      aState,
-                               nsHTMLReflowMetrics&     aMetrics,
+                               ReflowOutput&     aMetrics,
                                nscoord*                 aBEndEdgeOfChildren)
 {
   WritingMode wm = aState.mReflowState.GetWritingMode();
@@ -2613,7 +2613,7 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
 
   
   if (HasOutsideBullet() && mLines.empty()) {
-    nsHTMLReflowMetrics metrics(aState.mReflowState);
+    ReflowOutput metrics(aState.mReflowState);
     nsIFrame* bullet = GetOutsideBullet();
     WritingMode wm = aState.mReflowState.GetWritingMode();
     ReflowBullet(bullet, aState, metrics,
@@ -2625,7 +2625,7 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
       
       
 
-      if (metrics.BlockStartAscent() == nsHTMLReflowMetrics::ASK_FOR_BASELINE) {
+      if (metrics.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
         nscoord ascent;
         WritingMode wm = aState.mReflowState.GetWritingMode();
         if (nsLayoutUtils::GetFirstLineBaseline(wm, bullet, &ascent)) {
@@ -4432,7 +4432,7 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
        (mLines.front() != mLines.back() &&
         0 == mLines.front()->BSize() &&
         aLine == mLines.begin().next()))) {
-    nsHTMLReflowMetrics metrics(aState.mReflowState);
+    ReflowOutput metrics(aState.mReflowState);
     nsIFrame* bullet = GetOutsideBullet();
     ReflowBullet(bullet, aState, metrics, aState.mBCoord);
     NS_ASSERTION(!BulletIsEmpty() || metrics.BSize(wm) == 0,
@@ -6205,7 +6205,7 @@ nsBlockFrame::ReflowFloat(BlockReflowInput& aState,
   aFloatOffsets =
     floatRS.ComputedLogicalOffsets().ConvertTo(wm, floatRS.GetWritingMode());
 
-  const nsHTMLReflowMetrics& metrics = brc.GetMetrics();
+  const ReflowOutput& metrics = brc.GetMetrics();
 
   
   
@@ -7174,7 +7174,7 @@ nsBlockFrame::RenumberListsFor(nsPresContext* aPresContext,
 void
 nsBlockFrame::ReflowBullet(nsIFrame* aBulletFrame,
                            BlockReflowInput& aState,
-                           nsHTMLReflowMetrics& aMetrics,
+                           ReflowOutput& aMetrics,
                            nscoord aLineTop)
 {
   const ReflowInput &rs = aState.mReflowState;

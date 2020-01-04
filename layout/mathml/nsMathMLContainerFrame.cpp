@@ -40,7 +40,7 @@ NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 nsresult
 nsMathMLContainerFrame::ReflowError(DrawTarget* aDrawTarget,
-                                    nsHTMLReflowMetrics& aDesiredSize)
+                                    ReflowOutput& aDesiredSize)
 {
   
   mEmbellishData.flags = 0;
@@ -125,14 +125,14 @@ IsForeignChild(const nsIFrame* aFrame)
 }
 
 NS_DECLARE_FRAME_PROPERTY_DELETABLE(HTMLReflowMetricsProperty,
-                                    nsHTMLReflowMetrics)
+                                    ReflowOutput)
 
  void
 nsMathMLContainerFrame::SaveReflowAndBoundingMetricsFor(nsIFrame*                  aFrame,
-                                                        const nsHTMLReflowMetrics& aReflowMetrics,
+                                                        const ReflowOutput& aReflowMetrics,
                                                         const nsBoundingMetrics&   aBoundingMetrics)
 {
-  nsHTMLReflowMetrics *metrics = new nsHTMLReflowMetrics(aReflowMetrics);
+  ReflowOutput *metrics = new ReflowOutput(aReflowMetrics);
   metrics->mBoundingMetrics = aBoundingMetrics;
   aFrame->Properties().Set(HTMLReflowMetricsProperty(), metrics);
 }
@@ -140,13 +140,13 @@ nsMathMLContainerFrame::SaveReflowAndBoundingMetricsFor(nsIFrame*               
 
  void
 nsMathMLContainerFrame::GetReflowAndBoundingMetricsFor(nsIFrame*            aFrame,
-                                                       nsHTMLReflowMetrics& aReflowMetrics,
+                                                       ReflowOutput& aReflowMetrics,
                                                        nsBoundingMetrics&   aBoundingMetrics,
                                                        eMathMLFrameType*    aMathMLFrameType)
 {
   NS_PRECONDITION(aFrame, "null arg");
 
-  nsHTMLReflowMetrics* metrics =
+  ReflowOutput* metrics =
     aFrame->Properties().Get(HTMLReflowMetricsProperty());
 
   
@@ -196,7 +196,7 @@ nsMathMLContainerFrame::GetPreferredStretchSize(DrawTarget*          aDrawTarget
   }
   else if (aOptions & STRETCH_CONSIDER_EMBELLISHMENTS) {
     
-    nsHTMLReflowMetrics metrics(GetWritingMode()); 
+    ReflowOutput metrics(GetWritingMode()); 
     Place(aDrawTarget, false, metrics);
     aPreferredStretchSize = metrics.mBoundingMetrics;
   }
@@ -238,7 +238,7 @@ nsMathMLContainerFrame::GetPreferredStretchSize(DrawTarget*          aDrawTarget
         mathMLFrame->GetBoundingMetrics(bmChild);
       }
       else {
-        nsHTMLReflowMetrics unused(GetWritingMode());
+        ReflowOutput unused(GetWritingMode());
         GetReflowAndBoundingMetricsFor(childFrame, unused, bmChild);
       }
 
@@ -289,7 +289,7 @@ NS_IMETHODIMP
 nsMathMLContainerFrame::Stretch(DrawTarget*          aDrawTarget,
                                 nsStretchDirection   aStretchDirection,
                                 nsBoundingMetrics&   aContainerSize,
-                                nsHTMLReflowMetrics& aDesiredStretchSize)
+                                ReflowOutput& aDesiredStretchSize)
 {
   if (NS_MATHML_IS_EMBELLISH_OPERATOR(mEmbellishData.flags)) {
 
@@ -314,7 +314,7 @@ nsMathMLContainerFrame::Stretch(DrawTarget*          aDrawTarget,
 
         
         
-        nsHTMLReflowMetrics childSize(aDesiredStretchSize);
+        ReflowOutput childSize(aDesiredStretchSize);
         GetReflowAndBoundingMetricsFor(baseFrame, childSize, childSize.mBoundingMetrics);
 
         
@@ -443,7 +443,7 @@ nsMathMLContainerFrame::Stretch(DrawTarget*          aDrawTarget,
 
 nsresult
 nsMathMLContainerFrame::FinalizeReflow(DrawTarget* aDrawTarget,
-                                       nsHTMLReflowMetrics& aDesiredSize)
+                                       ReflowOutput& aDesiredSize)
 {
   
   
@@ -781,7 +781,7 @@ nsMathMLContainerFrame::AttributeChanged(int32_t         aNameSpaceID,
 }
 
 void
-nsMathMLContainerFrame::GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics)
+nsMathMLContainerFrame::GatherAndStoreOverflow(ReflowOutput* aMetrics)
 {
   mBlockStartAscent = aMetrics->BlockStartAscent();
 
@@ -819,7 +819,7 @@ nsMathMLContainerFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
 void
 nsMathMLContainerFrame::ReflowChild(nsIFrame*                aChildFrame,
                                     nsPresContext*           aPresContext,
-                                    nsHTMLReflowMetrics&     aDesiredSize,
+                                    ReflowOutput&     aDesiredSize,
                                     const ReflowInput& aReflowState,
                                     nsReflowStatus&          aStatus)
 {
@@ -842,7 +842,7 @@ nsMathMLContainerFrame::ReflowChild(nsIFrame*                aChildFrame,
          ReflowChild(aChildFrame, aPresContext, aDesiredSize, aReflowState,
                      0, 0, NS_FRAME_NO_MOVE_FRAME, aStatus);
 
-  if (aDesiredSize.BlockStartAscent() == nsHTMLReflowMetrics::ASK_FOR_BASELINE) {
+  if (aDesiredSize.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
     
     nscoord ascent;
     WritingMode wm = aDesiredSize.GetWritingMode();
@@ -868,7 +868,7 @@ nsMathMLContainerFrame::ReflowChild(nsIFrame*                aChildFrame,
 
 void
 nsMathMLContainerFrame::Reflow(nsPresContext*           aPresContext,
-                               nsHTMLReflowMetrics&     aDesiredSize,
+                               ReflowOutput&     aDesiredSize,
                                const ReflowInput& aReflowState,
                                nsReflowStatus&          aStatus)
 {
@@ -885,7 +885,7 @@ nsMathMLContainerFrame::Reflow(nsPresContext*           aPresContext,
   nsReflowStatus childStatus;
   nsIFrame* childFrame = mFrames.FirstChild();
   while (childFrame) {
-    nsHTMLReflowMetrics childDesiredSize(aReflowState, 
+    ReflowOutput childDesiredSize(aReflowState, 
                                          aDesiredSize.mFlags);
     WritingMode wm = childFrame->GetWritingMode();
     LogicalSize availSize = aReflowState.ComputedSize(wm);
@@ -932,7 +932,7 @@ nsMathMLContainerFrame::Reflow(nsPresContext*           aPresContext,
       nsIMathMLFrame* mathMLFrame = do_QueryFrame(childFrame);
       if (mathMLFrame) {
         
-        nsHTMLReflowMetrics childDesiredSize(aReflowState);
+        ReflowOutput childDesiredSize(aReflowState);
         GetReflowAndBoundingMetricsFor(childFrame,
           childDesiredSize, childDesiredSize.mBoundingMetrics);
 
@@ -954,7 +954,7 @@ nsMathMLContainerFrame::Reflow(nsPresContext*           aPresContext,
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
 }
 
-static nscoord AddInterFrameSpacingToSize(nsHTMLReflowMetrics&    aDesiredSize,
+static nscoord AddInterFrameSpacingToSize(ReflowOutput&    aDesiredSize,
                                           nsMathMLContainerFrame* aFrame);
 
  void
@@ -968,7 +968,7 @@ void
 nsMathMLContainerFrame::UpdateIntrinsicWidth(nsRenderingContext* aRenderingContext)
 {
   if (mIntrinsicWidth == NS_INTRINSIC_WIDTH_UNKNOWN) {
-    nsHTMLReflowMetrics desiredSize(GetWritingMode());
+    ReflowOutput desiredSize(GetWritingMode());
     GetIntrinsicISizeMetrics(aRenderingContext, desiredSize);
 
     
@@ -1000,12 +1000,12 @@ nsMathMLContainerFrame::GetPrefISize(nsRenderingContext* aRenderingContext)
 
  void
 nsMathMLContainerFrame::GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingContext,
-                                                 nsHTMLReflowMetrics& aDesiredSize)
+                                                 ReflowOutput& aDesiredSize)
 {
   
   nsIFrame* childFrame = mFrames.FirstChild();
   while (childFrame) {
-    nsHTMLReflowMetrics childDesiredSize(GetWritingMode()); 
+    ReflowOutput childDesiredSize(GetWritingMode()); 
 
     nsMathMLContainerFrame* containerFrame = do_QueryFrame(childFrame);
     if (containerFrame) {
@@ -1049,7 +1049,7 @@ nsMathMLContainerFrame::GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingC
 
  nsresult
 nsMathMLContainerFrame::MeasureForWidth(DrawTarget* aDrawTarget,
-                                        nsHTMLReflowMetrics& aDesiredSize)
+                                        ReflowOutput& aDesiredSize)
 {
   return Place(aDrawTarget, false, aDesiredSize);
 }
@@ -1217,7 +1217,7 @@ public:
 
   nsIFrame* Frame() const { return mChildFrame; }
   nscoord X() const { return mX; }
-  const nsHTMLReflowMetrics& ReflowMetrics() const { return mSize; }
+  const ReflowOutput& ReflowMetrics() const { return mSize; }
   nscoord Ascent() const { return mSize.BlockStartAscent(); }
   nscoord Descent() const { return mSize.Height() - mSize.BlockStartAscent(); }
   const nsBoundingMetrics& BoundingMetrics() const {
@@ -1227,7 +1227,7 @@ public:
 private:
   const nsMathMLContainerFrame* mParentFrame;
   nsIFrame* mChildFrame;
-  nsHTMLReflowMetrics mSize;
+  ReflowOutput mSize;
   nscoord mX;
 
   nscoord mItalicCorrection;
@@ -1264,7 +1264,7 @@ private:
  nsresult
 nsMathMLContainerFrame::Place(DrawTarget*          aDrawTarget,
                               bool                 aPlaceOrigin,
-                              nsHTMLReflowMetrics& aDesiredSize)
+                              ReflowOutput& aDesiredSize)
 {
   
   mBoundingMetrics = nsBoundingMetrics();
@@ -1388,7 +1388,7 @@ GetInterFrameSpacingFor(int32_t         aScriptLevel,
 }
 
 static nscoord
-AddInterFrameSpacingToSize(nsHTMLReflowMetrics&    aDesiredSize,
+AddInterFrameSpacingToSize(ReflowOutput&    aDesiredSize,
                            nsMathMLContainerFrame* aFrame)
 {
   nscoord gap = 0;
@@ -1419,7 +1419,7 @@ AddInterFrameSpacingToSize(nsHTMLReflowMetrics&    aDesiredSize,
 }
 
 nscoord
-nsMathMLContainerFrame::FixInterFrameSpacing(nsHTMLReflowMetrics& aDesiredSize)
+nsMathMLContainerFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize)
 {
   nscoord gap = 0;
   gap = AddInterFrameSpacingToSize(aDesiredSize, this);

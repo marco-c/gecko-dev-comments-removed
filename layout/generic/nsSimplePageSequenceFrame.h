@@ -66,7 +66,7 @@ public:
 
   
   virtual void Reflow(nsPresContext*      aPresContext,
-                      nsHTMLReflowMetrics& aDesiredSize,
+                      ReflowOutput& aDesiredSize,
                       const ReflowInput& aMaxSize,
                       nsReflowStatus&      aStatus) override;
 
@@ -125,7 +125,7 @@ protected:
 
   
   
-  void SetDesiredSize(nsHTMLReflowMetrics& aDesiredSize,
+  void SetDesiredSize(ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowState,
                       nscoord aWidth, nscoord aHeight);
 

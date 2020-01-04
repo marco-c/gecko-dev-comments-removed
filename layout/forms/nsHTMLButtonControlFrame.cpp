@@ -184,7 +184,7 @@ nsHTMLButtonControlFrame::GetPrefISize(nsRenderingContext* aRenderingContext)
 
 void
 nsHTMLButtonControlFrame::Reflow(nsPresContext* aPresContext,
-                                 nsHTMLReflowMetrics& aDesiredSize,
+                                 ReflowOutput& aDesiredSize,
                                  const ReflowInput& aReflowState,
                                  nsReflowStatus& aStatus)
 {
@@ -267,7 +267,7 @@ CloneReflowStateWithReducedContentBox(
 
 void
 nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
-                                               nsHTMLReflowMetrics& aButtonDesiredSize,
+                                               ReflowOutput& aButtonDesiredSize,
                                                const ReflowInput& aButtonReflowState,
                                                nsIFrame* aFirstKid)
 {
@@ -324,7 +324,7 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
                                         aFirstKid, availSize);
 
   nsReflowStatus contentsReflowStatus;
-  nsHTMLReflowMetrics contentsDesiredSize(aButtonReflowState);
+  ReflowOutput contentsDesiredSize(aButtonReflowState);
   childPos.B(wm) = 0; 
                       
 
@@ -392,7 +392,7 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
 
   
   if (contentsDesiredSize.BlockStartAscent() ==
-      nsHTMLReflowMetrics::ASK_FOR_BASELINE) {
+      ReflowOutput::ASK_FOR_BASELINE) {
     WritingMode wm = aButtonReflowState.GetWritingMode();
     contentsDesiredSize.SetBlockStartAscent(aFirstKid->GetLogicalBaseline(wm));
   }

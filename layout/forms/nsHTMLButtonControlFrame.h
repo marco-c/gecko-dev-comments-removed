@@ -35,7 +35,7 @@ public:
   virtual nscoord GetPrefISize(nsRenderingContext *aRenderingContext) override;
 
   virtual void Reflow(nsPresContext*           aPresContext,
-                      nsHTMLReflowMetrics&     aDesiredSize,
+                      ReflowOutput&     aDesiredSize,
                       const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) override;
 
@@ -101,7 +101,7 @@ protected:
   
   
   void ReflowButtonContents(nsPresContext* aPresContext,
-                            nsHTMLReflowMetrics& aButtonDesiredSize,
+                            ReflowOutput& aButtonDesiredSize,
                             const ReflowInput& aButtonReflowState,
                             nsIFrame* aFirstKid);
 

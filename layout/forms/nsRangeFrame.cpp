@@ -314,7 +314,7 @@ nsRangeFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
 void
 nsRangeFrame::Reflow(nsPresContext*           aPresContext,
-                     nsHTMLReflowMetrics&     aDesiredSize,
+                     ReflowOutput&     aDesiredSize,
                      const ReflowInput& aReflowState,
                      nsReflowStatus&          aStatus)
 {
@@ -374,7 +374,7 @@ nsRangeFrame::Reflow(nsPresContext*           aPresContext,
 
 void
 nsRangeFrame::ReflowAnonymousContent(nsPresContext*           aPresContext,
-                                     nsHTMLReflowMetrics&     aDesiredSize,
+                                     ReflowOutput&     aDesiredSize,
                                      const ReflowInput& aReflowState)
 {
   
@@ -419,7 +419,7 @@ nsRangeFrame::ReflowAnonymousContent(nsPresContext*           aPresContext,
     trackY += aReflowState.ComputedPhysicalBorderPadding().top;
 
     nsReflowStatus frameStatus;
-    nsHTMLReflowMetrics trackDesiredSize(aReflowState);
+    ReflowOutput trackDesiredSize(aReflowState);
     ReflowChild(trackFrame, aPresContext, trackDesiredSize,
                 trackReflowState, trackX, trackY, 0, frameStatus);
     MOZ_ASSERT(NS_FRAME_IS_FULLY_COMPLETE(frameStatus),
@@ -441,7 +441,7 @@ nsRangeFrame::ReflowAnonymousContent(nsPresContext*           aPresContext,
     
 
     nsReflowStatus frameStatus;
-    nsHTMLReflowMetrics thumbDesiredSize(aReflowState);
+    ReflowOutput thumbDesiredSize(aReflowState);
     ReflowChild(thumbFrame, aPresContext, thumbDesiredSize,
                 thumbReflowState, 0, 0, 0, frameStatus);
     MOZ_ASSERT(NS_FRAME_IS_FULLY_COMPLETE(frameStatus),
@@ -466,7 +466,7 @@ nsRangeFrame::ReflowAnonymousContent(nsPresContext*           aPresContext,
     
 
     nsReflowStatus frameStatus;
-    nsHTMLReflowMetrics progressDesiredSize(aReflowState);
+    ReflowOutput progressDesiredSize(aReflowState);
     ReflowChild(rangeProgressFrame, aPresContext,
                 progressDesiredSize, progressReflowState, 0, 0,
                 0, frameStatus);

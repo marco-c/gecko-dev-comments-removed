@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+// vim:cindent:ts=2:et:sw=2:
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* rendering object for CSS "::backdrop" */
 
 #include "nsBackdropFrame.h"
 
@@ -12,7 +12,7 @@ using namespace mozilla;
 
 NS_IMPL_FRAMEARENA_HELPERS(nsBackdropFrame)
 
- nsIAtom*
+/* virtual */ nsIAtom*
 nsBackdropFrame::GetType() const
 {
   return nsGkAtoms::backdropFrame;
@@ -26,36 +26,36 @@ nsBackdropFrame::GetFrameName(nsAString& aResult) const
 }
 #endif
 
- nsStyleContext*
+/* virtual */ nsStyleContext*
 nsBackdropFrame::GetParentStyleContext(nsIFrame** aProviderFrame) const
 {
-  
-  
+  // Style context of backdrop pseudo-element does not inherit from
+  // any element, per the Fullscreen API spec.
   *aProviderFrame = nullptr;
   return nullptr;
 }
 
- void
+/* virtual */ void
 nsBackdropFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                   const nsRect& aDirtyRect,
                                   const nsDisplayListSet& aLists)
 {
   DO_GLOBAL_REFLOW_COUNT_DSP("nsBackdropFrame");
-  
-  
-  
+  // We want this frame to always be there even if its display value is
+  // none or contents so that we can respond to style change on it. To
+  // support those values, we skip painting ourselves in those cases.
   auto display = StyleDisplay()->mDisplay;
   if (display == NS_STYLE_DISPLAY_NONE ||
       display == NS_STYLE_DISPLAY_CONTENTS) {
     return;
   }
 
-  
-  
-  
-  
-  
-  
+  // The WebVR specific render path in nsContainerLayerComposite
+  // results in an alternating frame strobing effect when an nsBackdropFrame is
+  // rendered.
+  // Currently, VR content is composed of a fullscreen canvas element that
+  // is expected to cover the entire viewport so a backdrop should not
+  // be necessary.
   if (GetStateBits() & NS_FRAME_HAS_VR_CONTENT) {
     return;
   }
@@ -63,7 +63,7 @@ nsBackdropFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 }
 
- LogicalSize
+/* virtual */ LogicalSize
 nsBackdropFrame::ComputeAutoSize(nsRenderingContext *aRenderingContext,
                                  WritingMode aWM,
                                  const LogicalSize& aCBSize,
@@ -73,7 +73,7 @@ nsBackdropFrame::ComputeAutoSize(nsRenderingContext *aRenderingContext,
                                  const LogicalSize& aPadding,
                                  bool aShrinkWrap)
 {
-  
+  // Note that this frame is a child of the viewport frame.
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
   if (aShrinkWrap) {
     result.ISize(aWM) = 0;
@@ -84,9 +84,9 @@ nsBackdropFrame::ComputeAutoSize(nsRenderingContext *aRenderingContext,
   return result;
 }
 
- void
+/* virtual */ void
 nsBackdropFrame::Reflow(nsPresContext* aPresContext,
-                        nsHTMLReflowMetrics& aDesiredSize,
+                        ReflowOutput& aDesiredSize,
                         const ReflowInput& aReflowState,
                         nsReflowStatus& aStatus)
 {
@@ -94,7 +94,7 @@ nsBackdropFrame::Reflow(nsPresContext* aPresContext,
   DO_GLOBAL_REFLOW_COUNT("nsBackdropFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowState, aDesiredSize, aStatus);
 
-  
+  // Note that this frame is a child of the viewport frame.
   WritingMode wm = aReflowState.GetWritingMode();
   LogicalMargin borderPadding = aReflowState.ComputedLogicalBorderPadding();
   nscoord isize = aReflowState.ComputedISize() + borderPadding.IStartEnd(wm);

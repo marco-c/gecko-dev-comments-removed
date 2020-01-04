@@ -14,7 +14,7 @@ struct nsEmbellishData;
 class nsRenderingContext;
 class nsIFrame;
 namespace mozilla {
-class nsHTMLReflowMetrics;
+class ReflowOutput;
 } 
 
 
@@ -86,7 +86,7 @@ public:
   Stretch(mozilla::gfx::DrawTarget* aDrawTarget,
           nsStretchDirection   aStretchDirection,
           nsBoundingMetrics&   aContainerSize,
-          mozilla::nsHTMLReflowMetrics& aDesiredStretchSize) = 0;
+          mozilla::ReflowOutput& aDesiredStretchSize) = 0;
 
  
  

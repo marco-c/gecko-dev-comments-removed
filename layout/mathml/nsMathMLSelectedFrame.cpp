@@ -134,7 +134,7 @@ nsMathMLSelectedFrame::ComputeSize(nsRenderingContext *aRenderingContext,
 
 void
 nsMathMLSelectedFrame::Reflow(nsPresContext*          aPresContext,
-                              nsHTMLReflowMetrics&     aDesiredSize,
+                              ReflowOutput&     aDesiredSize,
                               const ReflowInput& aReflowState,
                               nsReflowStatus&          aStatus)
 {
@@ -165,7 +165,7 @@ nsMathMLSelectedFrame::Reflow(nsPresContext*          aPresContext,
  nsresult
 nsMathMLSelectedFrame::Place(DrawTarget*          aDrawTarget,
                              bool                 aPlaceOrigin,
-                             nsHTMLReflowMetrics& aDesiredSize)
+                             ReflowOutput& aDesiredSize)
 {
   nsIFrame* childFrame = GetSelectedFrame();
 

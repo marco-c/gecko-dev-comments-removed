@@ -333,7 +333,7 @@ public:
 
 
   virtual void Reflow(nsPresContext*           aPresContext,
-                      nsHTMLReflowMetrics&     aDesiredSize,
+                      ReflowOutput&     aDesiredSize,
                       const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) override;
   virtual void DidReflow(nsPresContext*           aPresContext,
@@ -346,12 +346,12 @@ public:
 
 
   void ReflowAbsoluteFrames(nsPresContext*           aPresContext,
-                            nsHTMLReflowMetrics&     aDesiredSize,
+                            ReflowOutput&     aDesiredSize,
                             const ReflowInput& aReflowState,
                             nsReflowStatus&          aStatus,
                             bool                     aConstrainBSize = true);
   void FinishReflowWithAbsoluteFrames(nsPresContext*           aPresContext,
-                                      nsHTMLReflowMetrics&     aDesiredSize,
+                                      ReflowOutput&     aDesiredSize,
                                       const ReflowInput& aReflowState,
                                       nsReflowStatus&          aStatus,
                                       bool                     aConstrainBSize = true);
@@ -432,7 +432,7 @@ public:
   
   
   bool IsFrameTreeTooDeep(const ReflowInput& aReflowState,
-                            nsHTMLReflowMetrics& aMetrics,
+                            ReflowOutput& aMetrics,
                             nsReflowStatus& aStatus);
 
   
@@ -488,7 +488,7 @@ public:
                                          const char* aType);
   static void  DisplayReflowExit(nsPresContext*      aPresContext,
                                  nsIFrame*            aFrame,
-                                 nsHTMLReflowMetrics& aMetrics,
+                                 ReflowOutput& aMetrics,
                                  uint32_t             aStatus,
                                  void*                aFrameTreeNode);
   static void  DisplayLayoutExit(nsIFrame* aFrame,
@@ -670,7 +670,7 @@ protected:
 private:
   void BoxReflow(nsBoxLayoutState& aState,
                  nsPresContext*    aPresContext,
-                 nsHTMLReflowMetrics&     aDesiredSize,
+                 ReflowOutput&     aDesiredSize,
                  nsRenderingContext* aRenderingContext,
                  nscoord aX,
                  nscoord aY,
@@ -770,7 +770,7 @@ public:
     DR_cookie(nsPresContext*          aPresContext,
               nsIFrame*                aFrame, 
               const mozilla::ReflowInput& aReflowState,
-              mozilla::nsHTMLReflowMetrics&     aMetrics,
+              mozilla::ReflowOutput&     aMetrics,
               nsReflowStatus&          aStatus);     
     ~DR_cookie();
     void Change() const;
@@ -778,7 +778,7 @@ public:
     nsPresContext*          mPresContext;
     nsIFrame*                mFrame;
     const mozilla::ReflowInput& mReflowState;
-    mozilla::nsHTMLReflowMetrics&     mMetrics;
+    mozilla::ReflowOutput&     mMetrics;
     nsReflowStatus&          mStatus;    
     void*                    mValue;
   };

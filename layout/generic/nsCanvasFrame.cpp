@@ -572,7 +572,7 @@ nsCanvasFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 
 void
 nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
-                      nsHTMLReflowMetrics&     aDesiredSize,
+                      ReflowOutput&     aDesiredSize,
                       const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus)
 {
@@ -612,7 +612,7 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  nsHTMLReflowMetrics kidDesiredSize(aReflowState);
+  ReflowOutput kidDesiredSize(aReflowState);
   if (mFrames.IsEmpty()) {
     
     aDesiredSize.Width() = aDesiredSize.Height() = 0;

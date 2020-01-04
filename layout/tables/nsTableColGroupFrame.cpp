@@ -349,7 +349,7 @@ nsTableColGroupFrame::GetLogicalSkipSides(const ReflowInput* aReflowState) const
 
 void
 nsTableColGroupFrame::Reflow(nsPresContext*          aPresContext,
-                             nsHTMLReflowMetrics&     aDesiredSize,
+                             ReflowOutput&     aDesiredSize,
                              const ReflowInput& aReflowState,
                              nsReflowStatus&          aStatus)
 {
@@ -369,7 +369,7 @@ nsTableColGroupFrame::Reflow(nsPresContext*          aPresContext,
   for (nsIFrame *kidFrame = mFrames.FirstChild(); kidFrame;
        kidFrame = kidFrame->GetNextSibling()) {
     
-    nsHTMLReflowMetrics kidSize(aReflowState);
+    ReflowOutput kidSize(aReflowState);
     ReflowInput kidReflowState(aPresContext, aReflowState, kidFrame,
                                      LogicalSize(kidFrame->GetWritingMode()));
 

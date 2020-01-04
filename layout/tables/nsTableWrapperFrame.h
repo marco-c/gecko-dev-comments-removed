@@ -85,7 +85,7 @@ public:
 
 
   virtual void Reflow(nsPresContext*           aPresContext,
-                      nsHTMLReflowMetrics&     aDesiredSize,
+                      ReflowOutput&     aDesiredSize,
                       const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) override;
 
@@ -238,11 +238,11 @@ protected:
   void OuterDoReflowChild(nsPresContext*           aPresContext,
                           nsIFrame*                aChildFrame,
                           const ReflowInput& aChildRS,
-                          nsHTMLReflowMetrics&     aMetrics,
+                          ReflowOutput&     aMetrics,
                           nsReflowStatus&          aStatus);
 
   
-  void UpdateOverflowAreas(nsHTMLReflowMetrics& aMet);
+  void UpdateOverflowAreas(ReflowOutput& aMet);
 
   
   void GetChildMargin(nsPresContext*           aPresContext,
