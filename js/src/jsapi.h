@@ -4754,6 +4754,31 @@ JS_PUBLIC_API(bool)
 JS_Stringify(JSContext* cx, JS::MutableHandleValue value, JS::HandleObject replacer,
              JS::HandleValue space, JSONWriteCallback callback, void* data);
 
+namespace JS {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JS_PUBLIC_API(bool)
+ToJSONMaybeSafely(JSContext* cx, JS::HandleObject input,
+                  JSONWriteCallback callback, void* data);
+
+} 
+
 
 
 
