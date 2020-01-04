@@ -22,8 +22,12 @@ const CONTENT_LOCATIONS = [
 
   
   
-  "hello/<.world (http://localhost:8888/:1",
-  "hello/<.world (http://localhost:8888/:100:50",
+  "hello/<.world (http://localhost:8888/:1)",
+  "hello/<.world (http://localhost:8888/:100:50)",
+
+  
+  "Native[\"arraycopy(blah)\"] (http://localhost:8888/profiler.html:4)",
+  "Native[\"arraycopy(blah)\"] (http://localhost:8888/profiler.html:4:5)",
 ].map(argify);
 
 const CHROME_LOCATIONS = [
@@ -70,6 +74,8 @@ add_task(function () {
     ["hello/<.world", "file.js", "localhost", "http://localhost:8888/file.js", 100, null, "localhost:8888", 8888],
     ["hello/<.world", "/", "localhost", "http://localhost:8888/", 1, null, "localhost:8888", 8888],
     ["hello/<.world", "/", "localhost", "http://localhost:8888/", 100, 50, "localhost:8888", 8888],
+    ["Native[\"arraycopy(blah)\"]", "profiler.html", "localhost", "http://localhost:8888/profiler.html", 4, null, "localhost:8888", 8888],
+    ["Native[\"arraycopy(blah)\"]", "profiler.html", "localhost", "http://localhost:8888/profiler.html", 4, 5, "localhost:8888", 8888],
   ];
 
   for (let i = 0; i < PARSED_CONTENT.length; i++) {

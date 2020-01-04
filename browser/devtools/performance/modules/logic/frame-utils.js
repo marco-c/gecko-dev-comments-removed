@@ -29,8 +29,10 @@ const CHAR_CODE_0 = "0".charCodeAt(0);
 const CHAR_CODE_9 = "9".charCodeAt(0);
 
 const CHAR_CODE_LPAREN = "(".charCodeAt(0);
+const CHAR_CODE_RPAREN = ")".charCodeAt(0);
 const CHAR_CODE_COLON = ":".charCodeAt(0);
 const CHAR_CODE_SLASH = "/".charCodeAt(0);
+const CHAR_CODE_SPACE = " ".charCodeAt(0);
 
 
 const gNSURLStore = new Map();
@@ -71,57 +73,75 @@ function parseLocation(location, fallbackLine, fallbackColumn) {
   
   
   
-  let firstParenIndex = -1;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let parenIndex = -1;
   let lineAndColumnIndex = -1;
 
-  
-  
-  for (let i = 0; i < location.length; i++) {
-    let c = location.charCodeAt(i);
+  let lastCharCode = location.charCodeAt(location.length - 1);
+  let i;
+  if (lastCharCode === CHAR_CODE_RPAREN) {
+    
+    i = location.length - 2;
+  } else if (isNumeric(lastCharCode)) {
+    
+    i = location.length - 1;
+  } else {
+    
+    i = 0;
+  }
+
+  if (i !== 0) {
+    
+    let end = i;
+    while (isNumeric(location.charCodeAt(i))) {
+      i--;
+    }
+    if (location.charCodeAt(i) === CHAR_CODE_COLON) {
+      column = location.substr(i + 1, end - i);
+      i--;
+    }
 
     
-    if (c === CHAR_CODE_LPAREN) {
-      if (firstParenIndex < 0) {
-        firstParenIndex = i;
-      }
-      continue;
+    end = i;
+    while (isNumeric(location.charCodeAt(i))) {
+      i--;
     }
 
     
     
-    if (c === CHAR_CODE_COLON) {
-      if (isNumeric(location.charCodeAt(i + 1))) {
-        
-        if (lineAndColumnIndex < 0) {
-          lineAndColumnIndex = i;
-        }
+    if (location.charCodeAt(i) === CHAR_CODE_COLON) {
+      line = location.substr(i + 1, end - i);
+      lineAndColumnIndex = i;
+      i--;
+    } else {
+      lineAndColumnIndex = i + 1;
+      line = column;
+      column = undefined;
+    }
+  }
 
-        let start = ++i;
-        let length = 1;
-        while (isNumeric(location.charCodeAt(++i))) {
-          length++;
-        }
-
-        
-        if (location.charCodeAt(i) === CHAR_CODE_SLASH) {
-          lineAndColumnIndex = -1;
-          --i;
-          continue;
-        }
-
-        if (!line) {
-          line = location.substr(start, length);
-
-          
-          --i;
-
-          
-          continue;
-        }
-
-        column = location.substr(start, length);
-
-        
+  
+  if (lastCharCode === CHAR_CODE_RPAREN) {
+    for (; i >= 0; i--) {
+      if (location.charCodeAt(i) === CHAR_CODE_LPAREN &&
+          i > 0 &&
+          location.charCodeAt(i - 1) === CHAR_CODE_SPACE) {
+        parenIndex = i;
         break;
       }
     }
@@ -129,7 +149,7 @@ function parseLocation(location, fallbackLine, fallbackColumn) {
 
   let uri;
   if (lineAndColumnIndex > 0) {
-    let resource = location.substring(firstParenIndex + 1, lineAndColumnIndex);
+    let resource = location.substring(parenIndex + 1, lineAndColumnIndex);
     url = resource.split(" -> ").pop();
     if (url) {
       uri = nsIURL(url);
@@ -142,7 +162,7 @@ function parseLocation(location, fallbackLine, fallbackColumn) {
 
   
   if (uri) {
-    functionName = location.substring(0, firstParenIndex - 1);
+    functionName = location.substring(0, parenIndex - 1);
     fileName = uri.fileName || "/";
     hostName = getHost(url, uri.host);
     
@@ -181,31 +201,42 @@ function computeIsContentAndCategory(frame) {
   
   
   
-  for (let i = 0; i < location.length; i++) {
-    if (location.charCodeAt(i) === CHAR_CODE_LPAREN) {
-      if (isContentScheme(location, i + 1)) {
-        frame.isContent = true;
-        return;
+  
+  let lastCharCode = location.charCodeAt(location.length - 1);
+  let schemeStartIndex = -1;
+  if (lastCharCode === CHAR_CODE_RPAREN) {
+    
+    
+    
+    
+    for (let i = location.length - 2; i >= 0; i--) {
+      if (location.charCodeAt(i) === CHAR_CODE_LPAREN &&
+          i > 0 &&
+          location.charCodeAt(i - 1) === CHAR_CODE_SPACE) {
+        schemeStartIndex = i + 1;
+        break;
       }
-
-      for (let j = i + 1; j < location.length; j++) {
-        if (location.charCodeAt(j) === CHAR_CODE_R &&
-            isChromeScheme(location, j) &&
-            (location.indexOf("resource://gre/modules/devtools") !== -1 ||
-             location.indexOf("resource:///modules/devtools") !== -1)) {
-          frame.category = global.CATEGORY_DEVTOOLS;
-          return;
-        }
-      }
-
-      break;
     }
+  } else {
+    
+    schemeStartIndex = 0;
   }
 
-  
-  if (isContentScheme(location, 0)) {
+  if (isContentScheme(location, schemeStartIndex)) {
     frame.isContent = true;
     return;
+  }
+
+  if (schemeStartIndex !== 0) {
+    for (let j = schemeStartIndex; j < location.length; j++) {
+      if (location.charCodeAt(j) === CHAR_CODE_R &&
+          isChromeScheme(location, j) &&
+          (location.indexOf("resource://gre/modules/devtools") !== -1 ||
+           location.indexOf("resource:///modules/devtools") !== -1)) {
+        frame.category = global.CATEGORY_DEVTOOLS;
+        return;
+      }
+    }
   }
 
   if (location === "EnterJIT") {
