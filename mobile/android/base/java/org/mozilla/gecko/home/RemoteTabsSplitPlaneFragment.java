@@ -393,7 +393,7 @@ public class RemoteTabsSplitPlaneFragment extends RemoteTabsBaseFragment {
                 case MotionEvent.ACTION_DOWN:
                     
                     mRefreshLayout.setEnabled(listView.getCount() <= 0
-                    	    || (listView.getFirstVisiblePosition() <= 0 && listView.getChildAt(0).getTop() >= 0));
+                            || (listView.getFirstVisiblePosition() <= 0 && listView.getChildAt(0).getTop() >= 0));
                     break;
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_UP:
