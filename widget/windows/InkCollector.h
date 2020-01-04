@@ -58,6 +58,10 @@ public:
   void SetTarget(HWND aTargetWindow);
   void ClearTarget();
 
+  uint16_t GetPointerId(); 
+  void SetPointerId(uint16_t aPointerId);
+  void ClearPointerId();
+
   static StaticAutoPtr<InkCollector> sInkCollector;
 
 protected:
@@ -75,6 +79,20 @@ private:
   DWORD                       mCookie           = 0;
   bool                        mComInitialized   = false;
   bool                        mEnabled          = false;
+
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  uint16_t mPointerId = 0;
 };
 
 #endif 

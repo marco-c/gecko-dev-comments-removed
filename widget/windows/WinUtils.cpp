@@ -1085,6 +1085,14 @@ WinUtils::GetMouseInputSource()
 }
 
 
+uint16_t
+WinUtils::GetMousePointerID()
+{
+  LPARAM lParamExtraInfo = ::GetMessageExtraInfo();
+  return lParamExtraInfo & TABLET_INK_ID_MASK;
+}
+
+
 bool
 WinUtils::GetIsMouseFromTouch(EventMessage aEventMessage)
 {

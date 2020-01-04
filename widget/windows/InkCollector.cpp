@@ -169,6 +169,21 @@ void InkCollector::ClearTarget()
   }
 }
 
+uint16_t InkCollector::GetPointerId()
+{
+  return mPointerId;
+}
+
+void InkCollector::SetPointerId(uint16_t aPointerId)
+{
+  mPointerId = aPointerId;
+}
+
+void InkCollector::ClearPointerId()
+{
+  mPointerId = 0;
+}
+
 
 
 
