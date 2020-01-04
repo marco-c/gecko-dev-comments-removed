@@ -1282,7 +1282,7 @@ DocAccessible::GetAccessibleOrDescendant(nsINode* aNode) const
 
 void
 DocAccessible::BindToDocument(Accessible* aAccessible,
-                              nsRoleMapEntry* aRoleMapEntry)
+                              const nsRoleMapEntry* aRoleMapEntry)
 {
   
   if (aAccessible->IsNodeMapEntry())

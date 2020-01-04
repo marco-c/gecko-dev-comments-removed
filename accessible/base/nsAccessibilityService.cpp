@@ -142,7 +142,7 @@ New_HTMLLink(nsIContent* aContent, Accessible* aContext)
 {
   
   
-  nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(aContent->AsElement());
+  const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(aContent->AsElement());
   if (roleMapEntry && roleMapEntry->role != roles::NOTHING &&
       roleMapEntry->role != roles::LINK) {
     return new HyperTextAccessibleWrap(aContent, aContext->Document());
@@ -1132,7 +1132,7 @@ nsAccessibilityService::GetOrCreateAccessible(nsINode* aNode,
     return newAcc;
   }
 
-  nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
+  const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
 
   
   
@@ -1184,7 +1184,7 @@ nsAccessibilityService::GetOrCreateAccessible(nsINode* aNode,
     
     if (!roleMapEntry && newAcc && aContext->HasStrongARIARole()) {
       if (frame->AccessibleType() == eHTMLTableRowType) {
-        nsRoleMapEntry* contextRoleMap = aContext->ARIARoleMap();
+        const nsRoleMapEntry* contextRoleMap = aContext->ARIARoleMap();
         if (!contextRoleMap->IsOfType(eTable))
           roleMapEntry = &aria::gEmptyRoleMap;
 
@@ -1196,7 +1196,7 @@ nsAccessibilityService::GetOrCreateAccessible(nsINode* aNode,
                                               nsGkAtoms::li,
                                               nsGkAtoms::dd) ||
                  frame->AccessibleType() == eHTMLLiType) {
-        nsRoleMapEntry* contextRoleMap = aContext->ARIARoleMap();
+        const nsRoleMapEntry* contextRoleMap = aContext->ARIARoleMap();
         if (!contextRoleMap->IsOfType(eList))
           roleMapEntry = &aria::gEmptyRoleMap;
       }

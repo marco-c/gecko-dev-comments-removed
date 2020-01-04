@@ -314,7 +314,8 @@ public:
 
 
 
-  void BindToDocument(Accessible* aAccessible, nsRoleMapEntry* aRoleMapEntry);
+  void BindToDocument(Accessible* aAccessible,
+                      const nsRoleMapEntry* aRoleMapEntry);
 
   
 

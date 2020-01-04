@@ -226,7 +226,7 @@ public:
   
 
 
-  nsRoleMapEntry* ARIARoleMap() const { return mRoleMapEntry; }
+  const nsRoleMapEntry* ARIARoleMap() const { return mRoleMapEntry; }
 
   
 
@@ -372,7 +372,7 @@ public:
   
 
 
-  void SetRoleMapEntry(nsRoleMapEntry* aRoleMapEntry)
+  void SetRoleMapEntry(const nsRoleMapEntry* aRoleMapEntry)
     { mRoleMapEntry = aRoleMapEntry; }
 
   
@@ -1188,7 +1188,7 @@ protected:
   
 
 
-  nsRoleMapEntry* mRoleMapEntry;
+  const nsRoleMapEntry* mRoleMapEntry;
 
 private:
   Accessible() = delete;
