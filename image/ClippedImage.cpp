@@ -405,6 +405,24 @@ ClippedImage::Draw(gfxContext* aContext,
                         aSamplingFilter, aSVGContext, aFlags);
 }
 
+static SVGImageContext
+UnclipViewport(const SVGImageContext& aOldContext,
+               const pair<nsIntSize, nsIntSize>& aInnerAndClipSize)
+{
+  nsIntSize innerSize(aInnerAndClipSize.first);
+  nsIntSize clipSize(aInnerAndClipSize.second);
+
+  
+  
+  CSSIntSize vSize(aOldContext.GetViewportSize());
+  vSize.width = ceil(vSize.width * double(innerSize.width) / clipSize.width);
+  vSize.height =
+    ceil(vSize.height * double(innerSize.height) / clipSize.height);
+
+  return SVGImageContext(vSize,
+                         aOldContext.GetPreserveAspectRatio());
+}
+
 DrawResult
 ClippedImage::DrawSingleTile(gfxContext* aContext,
                              const nsIntSize& aSize,
@@ -450,24 +468,10 @@ ClippedImage::DrawSingleTile(gfxContext* aContext,
   gfxContextMatrixAutoSaveRestore saveMatrix(aContext);
   aContext->Multiply(gfxMatrix::Translation(-clip.x, -clip.y));
 
-  auto unclipViewport = [&](const SVGImageContext& aOldContext) {
-    
-    
-    
-    
-    
-    CSSIntSize vSize(aOldContext.GetViewportSize());
-    vSize.width = ceil(vSize.width * double(innerSize.width) / mClip.width);
-    vSize.height =
-      ceil(vSize.height * double(innerSize.height) / mClip.height);
-
-    return SVGImageContext(vSize,
-                           aOldContext.GetPreserveAspectRatio());
-  };
-
   return InnerImage()->Draw(aContext, size, region,
                             aWhichFrame, aSamplingFilter,
-                            aSVGContext.map(unclipViewport),
+                            aSVGContext.map(UnclipViewport,
+                                            make_pair(innerSize, mClip.Size())),
                             aFlags);
 }
 
