@@ -1537,19 +1537,13 @@ nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI,
   
   
   
-  
   int32_t ampIndex = uri.FindChar('&', 0);
-  bool trimQuery = false;
+  bool replaceQuery = false;
   if (ampIndex != -1) {
     int32_t qmIndex = uri.FindChar('?', 0);
     if (qmIndex == -1 ||
         qmIndex > ampIndex) {
-      if (!nsContentUtils::IsSWFPlayerEnabled()) {
-        trimQuery = true;
-      } else {
-        
-        return;
-      }
+      replaceQuery = true;
     }
   }
 
@@ -1565,8 +1559,11 @@ nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI,
   nsAutoString utf16OldURI = NS_ConvertUTF8toUTF16(uri);
   
   
-  if (trimQuery) {
-    uri.Truncate(ampIndex);
+  if (replaceQuery) {
+    
+    uri.ReplaceChar('?', '&');
+    
+    uri.SetCharAt('?', ampIndex);
   }
   
   
@@ -1584,7 +1581,7 @@ nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI,
   const char* msgName;
   
   
-  if (!trimQuery) {
+  if (!replaceQuery) {
     msgName = "RewriteYoutubeEmbed";
   } else {
     msgName = "RewriteYoutubeEmbedInvalidQuery";
