@@ -9,6 +9,7 @@
 
 #include "nsISecretDecoderRing.h"
 #include "nsNSSShutDown.h"
+#include "nsString.h"
 
 #define NS_SECRETDECODERRING_CONTRACTID "@mozilla.org/security/sdr;1"
 
@@ -31,10 +32,8 @@ protected:
   virtual ~SecretDecoderRing();
 
 private:
-  nsresult Encrypt(unsigned char* data, uint32_t dataLen,
-                    unsigned char** result,  uint32_t* resultLen);
-  nsresult Decrypt(unsigned char* data, uint32_t dataLen,
-                    unsigned char** result,  uint32_t* resultLen);
+  nsresult Encrypt(const nsACString& data,  nsACString& result);
+  nsresult Decrypt(const nsACString& data,  nsACString& result);
 };
 
 #endif 
