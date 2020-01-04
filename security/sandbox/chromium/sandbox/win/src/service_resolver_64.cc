@@ -17,6 +17,10 @@ const BYTE kRetNp = 0xC3;
 const ULONG64 kMov1 = 0x54894808244C8948;
 const ULONG64 kMov2 = 0x4C182444894C1024;
 const ULONG kMov3 = 0x20244C89;
+const USHORT kTestByte = 0x04F6;
+const BYTE kPtr = 0x25;
+const BYTE kRet = 0xC3;
+const USHORT kJne = 0x0375;
 
 
 struct ServiceEntry {
@@ -61,10 +65,36 @@ struct ServiceEntryW8 {
 };
 
 
+struct ServiceEntryWithInt2E {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  ULONG mov_r10_rcx_mov_eax;  
+  ULONG service_id;
+  USHORT test_byte;           
+  BYTE ptr;                   
+  ULONG user_shared_data_ptr;
+  BYTE one;                   
+  USHORT jne_over_syscall;    
+  USHORT syscall;             
+  BYTE ret;                   
+  USHORT int2e;               
+  BYTE ret2;                  
+};
+
+
 struct ServiceFullThunk {
   union {
     ServiceEntry original;
     ServiceEntryW8 original_w8;
+    ServiceEntryWithInt2E original_int2e_fallback;
   };
 };
 
@@ -76,6 +106,25 @@ bool IsService(const void* source) {
 
   return (kMmovR10EcxMovEax == service->mov_r10_rcx_mov_eax &&
           kSyscall == service->syscall && kRetNp == service->ret);
+}
+
+bool IsServiceW8(const void* source) {
+  const ServiceEntryW8* service =
+      reinterpret_cast<const ServiceEntryW8*>(source);
+
+  return (kMmovR10EcxMovEax == service->mov_r10_rcx_mov_eax &&
+          kMov1 == service->mov_1 && kMov2 == service->mov_2 &&
+          kMov3 == service->mov_3);
+}
+
+bool IsServiceWithInt2E(const void* source) {
+  const ServiceEntryWithInt2E* service =
+      reinterpret_cast<const ServiceEntryWithInt2E*>(source);
+
+  return (kMmovR10EcxMovEax == service->mov_r10_rcx_mov_eax &&
+          kTestByte == service->test_byte && kPtr == service->ptr &&
+          kJne == service->jne_over_syscall && kSyscall == service->syscall &&
+          kRet == service->ret && kRet == service->ret2);
 }
 
 };  
@@ -150,15 +199,9 @@ bool ServiceResolverThunk::IsFunctionAService(void* local_thunk) const {
   if (sizeof(function_code) != read)
     return false;
 
-  if (!IsService(&function_code)) {
-    
-    ServiceEntryW8* w8_service = &function_code.original_w8;
-    if (!IsService(&w8_service->mov_r10_rcx_mov_eax) ||
-        w8_service->mov_1 != kMov1 || w8_service->mov_1 != kMov1 ||
-        w8_service->mov_1 != kMov1) {
-      return false;
-    }
-  }
+  if (!IsService(&function_code) && !IsServiceW8(&function_code) &&
+      !IsServiceWithInt2E(&function_code))
+    return false;
 
   
   memcpy(local_thunk, &function_code, sizeof(function_code));
