@@ -206,7 +206,7 @@ class MOZ_STACK_CLASS SavedFrame::AutoLookupVector : public JS::CustomAutoRooter
         lookups(cx)
     { }
 
-    typedef Vector<Lookup, 20> LookupVector;
+    typedef Vector<Lookup, ASYNC_STACK_MAX_FRAME_COUNT> LookupVector;
     inline LookupVector* operator->() { return &lookups; }
     inline HandleLookup operator[](size_t i) { return HandleLookup(lookups[i]); }
 
@@ -1141,29 +1141,50 @@ SavedStacks::adoptAsyncStack(JSContext* cx, HandleSavedFrame asyncStack,
     
     
     
-    if (maxFrameCount == 0)
-        maxFrameCount = ASYNC_STACK_MAX_FRAME_COUNT;
+    unsigned maxFrames = maxFrameCount > 0 ? maxFrameCount : ASYNC_STACK_MAX_FRAME_COUNT;
 
     
     SavedFrame::AutoLookupVector stackChain(cx);
     SavedFrame* currentSavedFrame = asyncStack;
-    for (unsigned i = 0; i < maxFrameCount && currentSavedFrame; i++) {
+    SavedFrame* firstSavedFrameParent = nullptr;
+    for (unsigned i = 0; i < maxFrames && currentSavedFrame; i++) {
         if (!stackChain->emplaceBack(*currentSavedFrame)) {
             ReportOutOfMemory(cx);
             return false;
         }
 
-        
-        if (i == 0)
-            stackChain->back().asyncCause = asyncCauseAtom;
-
         currentSavedFrame = currentSavedFrame->getParent();
+
+        
+        if (i == 0) {
+            stackChain->back().asyncCause = asyncCauseAtom;
+            firstSavedFrameParent = currentSavedFrame;
+        }
+    }
+
+    
+    size_t oldestFramePosition = stackChain->length();
+    RootedSavedFrame parentFrame(cx, nullptr);
+
+    if (currentSavedFrame == nullptr &&
+        asyncStack->compartment() == cx->compartment()) {
+        
+        
+        
+        
+        oldestFramePosition = 1;
+        parentFrame = firstSavedFrameParent;
+    } else if (maxFrameCount == 0 &&
+               oldestFramePosition == ASYNC_STACK_MAX_FRAME_COUNT) {
+        
+        
+        
+        oldestFramePosition = ASYNC_STACK_MAX_FRAME_COUNT / 2;
     }
 
     
     
-    RootedSavedFrame parentFrame(cx, nullptr);
-    for (size_t i = stackChain->length(); i != 0; i--) {
+    for (size_t i = oldestFramePosition; i != 0; i--) {
         SavedFrame::HandleLookup lookup = stackChain[i-1];
         lookup->parent = parentFrame;
         parentFrame.set(getOrCreateSavedFrame(cx, lookup));

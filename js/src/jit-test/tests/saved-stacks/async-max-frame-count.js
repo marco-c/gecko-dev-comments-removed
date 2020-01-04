@@ -25,8 +25,14 @@ function checkRecursion(n, limit) {
   
   
   
+  
   if (limit == 0) {
-    limit = defaultAsyncStackLimit + 1;
+    
+    if (n + 1 < defaultAsyncStackLimit) {
+      limit = defaultAsyncStackLimit + 1;
+    } else {
+      limit = n + 2 - (defaultAsyncStackLimit / 2);
+    }
   }
 
   
@@ -68,6 +74,8 @@ function checkRecursion(n, limit) {
 checkRecursion(0, 0);
 checkRecursion(1, 0);
 checkRecursion(2, 0);
+checkRecursion(defaultAsyncStackLimit - 10, 0);
+checkRecursion(defaultAsyncStackLimit, 0);
 checkRecursion(defaultAsyncStackLimit + 10, 0);
 
 
