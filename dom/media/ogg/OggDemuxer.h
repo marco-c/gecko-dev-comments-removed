@@ -10,7 +10,6 @@
 #include "MediaDataDemuxer.h"
 #include "OggCodecState.h"
 #include "OggCodecStore.h"
-#include "MediaMetadataManager.h"
 
 namespace mozilla {
 
@@ -35,9 +34,6 @@ public:
 
   UniquePtr<EncryptionInfo> GetCrypto() override;
 
-  
-  void SetChainingEvents(TimedMetadataEventProducer* aMetadataEvent,
-                         MediaEventProducer<void>* aOnSeekableEvent);
 
 private:
 
@@ -61,8 +57,7 @@ private:
 
   
   
-  enum IndexedSeekResult
-  {
+  enum IndexedSeekResult {
     SEEK_OK,          
     SEEK_INDEX_FAIL,  
     SEEK_FATAL_ERROR  
@@ -76,24 +71,23 @@ private:
   
   
   
-  class SeekRange
-  {
+  class SeekRange {
   public:
     SeekRange()
-      : mOffsetStart(0)
-      , mOffsetEnd(0)
-      , mTimeStart(0)
-      , mTimeEnd(0)
+      : mOffsetStart(0),
+        mOffsetEnd(0),
+        mTimeStart(0),
+        mTimeEnd(0)
     {}
 
     SeekRange(int64_t aOffsetStart,
               int64_t aOffsetEnd,
               int64_t aTimeStart,
               int64_t aTimeEnd)
-      : mOffsetStart(aOffsetStart)
-      , mOffsetEnd(aOffsetEnd)
-      , mTimeStart(aTimeStart)
-      , mTimeEnd(aTimeEnd)
+      : mOffsetStart(aOffsetStart),
+        mOffsetEnd(aOffsetEnd),
+        mTimeStart(aTimeStart),
+        mTimeEnd(aTimeEnd)
     {}
 
     bool IsNull() const {
@@ -156,8 +150,7 @@ private:
   
   static const int PAGE_STEP = 8192;
 
-  enum PageSyncResult
-  {
+  enum PageSyncResult {
     PAGE_SYNC_ERROR = 1,
     PAGE_SYNC_END_OF_RANGE= 2,
     PAGE_SYNC_OK = 3
@@ -206,7 +199,7 @@ private:
   bool ReadHeaders(TrackInfo::TrackType aType, OggCodecState* aState, OggHeaders& aHeaders);
 
   
-  bool ReadOggChain(const media::TimeUnit& aLastEndTime);
+  bool ReadOggChain();
 
   
   
@@ -248,6 +241,7 @@ private:
   
   int64_t RangeStartTime(TrackInfo::TrackType aType, int64_t aOffset);
 
+
   MediaInfo mInfo;
   nsTArray<RefPtr<OggTrackDemuxer>> mDemuxers;
 
@@ -276,18 +270,14 @@ private:
   SkeletonState* mSkeletonState;
 
   
-  struct OggStateContext
-  {
-    explicit OggStateContext(MediaResource* aResource)
-    : mResource(aResource), mNeedKeyframe(true) {}
+  struct OggStateContext {
+    explicit OggStateContext(MediaResource* aResource) : mResource(aResource) {}
     nsAutoOggSyncState mOggState;
     MediaResourceIndex mResource;
     Maybe<media::TimeUnit> mStartTime;
-    bool mNeedKeyframe;
   };
 
-  OggStateContext& OggState(TrackInfo::TrackType aType);
-  ogg_sync_state* OggSyncState(TrackInfo::TrackType aType);
+  ogg_sync_state* OggState(TrackInfo::TrackType aType);
   MediaResourceIndex* Resource(TrackInfo::TrackType aType);
   MediaResourceIndex* CommonResource();
   OggStateContext mAudioOggState;
@@ -311,8 +301,7 @@ private:
   
   bool HasVideo() const;
   bool HasAudio() const;
-  bool HasSkeleton() const
-  {
+  bool HasSkeleton() const {
     return mSkeletonState != 0 && mSkeletonState->mActive;
   }
   bool HaveStartTime () const;
@@ -328,11 +317,7 @@ private:
   bool mIsChained;
 
   
-  media::TimeUnit mDecodedAudioDuration;
-
-  
-  TimedMetadataEventProducer* mTimedMetadataEvent;
-  MediaEventProducer<void>* mOnSeekableEvent;
+  int64_t mDecodedAudioFrames;
 
   friend class OggTrackDemuxer;
 };

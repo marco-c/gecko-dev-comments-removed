@@ -291,16 +291,6 @@ public:
   
   MediaEventSource<void>& OnMediaNotSeekable() { return mOnMediaNotSeekable; }
 
-  TimedMetadataEventProducer& TimedMetadataProducer()
-  {
-    return mTimedMetadataEvent;
-  }
-
-  MediaEventProducer<void>& MediaNotSeekableProducer()
-  {
-    return mOnMediaNotSeekable;
-  }
-
   bool IsSuspended() const
   {
     MOZ_ASSERT(OnTaskQueue());

@@ -656,10 +656,6 @@ public:
   const CryptoSample& mCrypto;
   RefPtr<MediaByteBuffer> mExtraData;
 
-  
-  
-  bool mEOS = false;
-
   RefPtr<SharedTrackInfo> mTrackInfo;
 
   
