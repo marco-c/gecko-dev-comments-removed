@@ -16,8 +16,6 @@ const SCROLL2_X = Math.round(300 * (1 + Math.random()));
 const SCROLL2_Y = Math.round(400 * (1 + Math.random()));
 const SCROLL2_STR = SCROLL2_X + "," + SCROLL2_Y;
 
-requestLongerTimeout(2);
-
 
 
 
