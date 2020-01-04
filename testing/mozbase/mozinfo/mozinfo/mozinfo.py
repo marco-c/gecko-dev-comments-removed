@@ -90,6 +90,16 @@ elif system == "Linux":
     if not processor:
         processor = machine
     version = "%s %s" % (distro, os_version)
+
+    
+    
+    
+    
+    if not os_version and "ARCH" in release:
+        distro = 'arch'
+        version = release
+        os_version = release
+
     info['os'] = 'linux'
     info['linux_distro'] = distro
 elif system in ['DragonFly', 'FreeBSD', 'NetBSD', 'OpenBSD']:
