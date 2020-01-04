@@ -107,12 +107,6 @@ static PRLogModuleInfo* gMediaElementEventsLog;
 
 #include "mozilla/EventStateManager.h"
 
-#if defined(MOZ_B2G) && !defined(MOZ_GRAPHENE)
-
-
-#define PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
-#endif
-
 using namespace mozilla::layers;
 using mozilla::net::nsMediaFragmentURIParser;
 
@@ -578,6 +572,7 @@ void
 HTMLMediaElement::SetSrcObject(DOMMediaStream* aValue)
 {
   mSrcAttrStream = aValue;
+  UpdateAudioChannelPlayingState();
   DoLoad();
 }
 
@@ -602,6 +597,7 @@ void
 HTMLMediaElement::SetMozSrcObject(DOMMediaStream* aValue)
 {
   mSrcAttrStream = aValue;
+  UpdateAudioChannelPlayingState();
   DoLoad();
 }
 
@@ -768,6 +764,7 @@ void HTMLMediaElement::AbortExistingLoads()
       FireTimeUpdate(false);
     }
     DispatchAsyncEvent(NS_LITERAL_STRING("emptied"));
+    UpdateAudioChannelPlayingState();
   }
 
   
@@ -1711,6 +1708,7 @@ HTMLMediaElement::Pause(ErrorResult& aRv)
   
   AddRemoveSelfReference();
   UpdateSrcMediaStreamPlaying();
+  UpdateAudioChannelPlayingState();
 
   if (!oldPaused) {
     FireTimeUpdate(false);
@@ -2317,6 +2315,7 @@ HTMLMediaElement::PlayInternal(bool aCallerIsChrome)
   AddRemoveSelfReference();
   UpdatePreloadAction();
   UpdateSrcMediaStreamPlaying();
+  UpdateAudioChannelPlayingState();
 
   return NS_OK;
 }
@@ -2897,6 +2896,7 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder,
   
   
   NotifyOwnerDocumentActivityChangedInternal();
+  UpdateAudioChannelPlayingState();
 
   if (!mPaused) {
     SetPlayedOrSeeked(true);
@@ -3993,6 +3993,7 @@ void HTMLMediaElement::CheckAutoplayDataReady()
   
   AddRemoveSelfReference();
   UpdateSrcMediaStreamPlaying();
+  UpdateAudioChannelPlayingState();
 
   if (mDecoder) {
     SetPlayedOrSeeked(true);
@@ -4007,13 +4008,13 @@ void HTMLMediaElement::CheckAutoplayDataReady()
 
 }
 
-bool HTMLMediaElement::IsActive()
+bool HTMLMediaElement::IsActive() const
 {
   nsIDocument* ownerDoc = OwnerDoc();
   return ownerDoc && ownerDoc->IsActive() && ownerDoc->IsVisible();
 }
 
-bool HTMLMediaElement::IsHidden()
+bool HTMLMediaElement::IsHidden() const
 {
   if (mElementInTreeState == ELEMENT_NOT_INTREE_HAD_INTREE) {
     return true;
@@ -4192,6 +4193,7 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement, bool aSuspendE
   if (aPauseElement != mPausedForInactiveDocumentOrChannel) {
     mPausedForInactiveDocumentOrChannel = aPauseElement;
     UpdateSrcMediaStreamPlaying();
+    UpdateAudioChannelPlayingState();
     if (aPauseElement) {
       if (mMediaSource) {
         ReportMSETelemetry();
@@ -4251,15 +4253,12 @@ bool HTMLMediaElement::IsBeingDestroyed()
 void HTMLMediaElement::NotifyOwnerDocumentActivityChanged()
 {
   bool pauseElement = NotifyOwnerDocumentActivityChangedInternal();
-  if (pauseElement && mAudioChannelAgent
-#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
+  if (pauseElement && mAudioChannelAgent &&
       
       
       
       
-      && !ComputedMuted()
-#endif
-      ) {
+      (!UseAudioChannelAPI() || !ComputedMuted())) {
     
     
     
@@ -4283,15 +4282,13 @@ HTMLMediaElement::NotifyOwnerDocumentActivityChangedInternal()
   }
 
   bool pauseElement = !IsActive();
-#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
   
   
   
   
-  if (mAudioChannelAgent) {
+  if (UseAudioChannelAPI() && mAudioChannelAgent) {
     pauseElement |= ComputedMuted();
   }
-#endif
 
   SuspendOrResumeElement(pauseElement, !IsActive());
 
@@ -4725,9 +4722,10 @@ nsresult HTMLMediaElement::UpdateChannelMuteState(float aVolume, bool aMuted)
     }
   }
 
-#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
-  SuspendOrResumeElement(ComputedMuted(), false);
-#endif
+  if (UseAudioChannelAPI()) {
+    SuspendOrResumeElement(ComputedMuted(), false);
+  }
+
   return NS_OK;
 }
 
@@ -4758,6 +4756,11 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
 
   
   if (std::fabs(Volume()) <= 1e-7) {
+    return false;
+  }
+
+  
+  if (!IsActive()) {
     return false;
   }
 
@@ -4837,9 +4840,9 @@ NS_IMETHODIMP HTMLMediaElement::WindowVolumeChanged(float aVolume, bool aMuted)
 
   UpdateChannelMuteState(aVolume, aMuted);
 
-#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
-  mPaused.SetCanPlay(!aMuted);
-#endif
+  if (UseAudioChannelAPI()) {
+    mPaused.SetCanPlay(!aMuted);
+  }
 
   return NS_OK;
 }

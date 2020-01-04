@@ -117,10 +117,10 @@ public:
   };
 
   
-  virtual bool IsActive() = 0;
+  virtual bool IsActive() const = 0;
 
   
-  virtual bool IsHidden() = 0;
+  virtual bool IsHidden() const = 0;
 
   
   
