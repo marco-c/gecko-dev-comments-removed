@@ -23,6 +23,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.content.AsyncTaskLoader;
 
+import org.mozilla.gecko.GeckoApplication;
+
 
 
 
@@ -88,6 +90,10 @@ abstract class SimpleCursorLoader extends AsyncTaskLoader<Cursor> {
 
         if (oldCursor != null && oldCursor != cursor && !oldCursor.isClosed()) {
             oldCursor.close();
+
+            
+            
+            GeckoApplication.getRefWatcher(getContext()).watch(oldCursor);
         }
     }
 
