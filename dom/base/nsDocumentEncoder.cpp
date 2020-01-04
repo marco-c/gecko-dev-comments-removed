@@ -1438,7 +1438,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
       mIsTextWidget = true;
       break;
     }
-#ifdef MOZ_THUNDERBIRD
+#if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
     else if (selContent->IsHTMLElement(nsGkAtoms::body)) {
       
       
