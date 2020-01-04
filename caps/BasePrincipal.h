@@ -11,6 +11,7 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsJSPrincipals.h"
 
+#include "mozilla/Attributes.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"
 
 class nsIContentSecurityPolicy;
@@ -45,11 +46,11 @@ public:
   
   
   void CreateSuffix(nsACString& aStr) const;
-  bool PopulateFromSuffix(const nsACString& aStr);
+  MOZ_MUST_USE bool PopulateFromSuffix(const nsACString& aStr);
 
   
   
-  bool PopulateFromOrigin(const nsACString& aOrigin,
+  MOZ_MUST_USE bool PopulateFromOrigin(const nsACString& aOrigin,
                           nsACString& aOriginNoSuffix);
 
   
