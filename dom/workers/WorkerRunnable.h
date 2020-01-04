@@ -116,9 +116,8 @@ protected:
   
   
   
-  
   virtual bool
-  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate);
+  PreDispatch(WorkerPrivate* aWorkerPrivate);
 
   
   
@@ -185,7 +184,7 @@ private:
   }
 
   virtual bool
-  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override final
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override final
   {
     AssertIsOnMainThread();
 
@@ -251,22 +250,11 @@ protected:
   virtual ~MainThreadWorkerSyncRunnable()
   { }
 
-  
-  
-  
-  
-  
-  
-  virtual void InfalliblePreDispatch(JSContext* aCx)
-  {}
-
 private:
   virtual bool
-  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override final
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override
   {
     AssertIsOnMainThread();
-    InfalliblePreDispatch(aCx);
-    MOZ_ASSERT_IF(aCx, !JS_IsExceptionPending(aCx));
     return true;
   }
 
@@ -341,10 +329,8 @@ protected:
   { }
 
 private:
-  
-  
   virtual bool
-  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override final
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override final
   {
     AssertIsOnMainThread();
     return true;
@@ -404,7 +390,7 @@ protected:
   { }
 
   virtual bool
-  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override
   {
     AssertIsOnMainThread();
     return true;
@@ -432,7 +418,7 @@ protected:
   { }
 
   virtual bool
-  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override;
 
   virtual void
   PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
