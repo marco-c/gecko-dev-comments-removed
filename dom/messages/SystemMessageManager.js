@@ -332,6 +332,16 @@ SystemMessageManager.prototype = {
                                "SystemMessageManager:GetPendingMessages:Return"]);
 
     let principal = aWindow.document.nodePrincipal;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     this._isInBrowserElement = principal.isInIsolatedMozBrowserElement;
     this._pageURL = principal.URI.spec;
 

@@ -260,13 +260,25 @@ uint16_t
 nsScriptSecurityManager::AppStatusForPrincipal(nsIPrincipal *aPrin)
 {
     uint32_t appId = aPrin->GetAppId();
-    bool inMozBrowser = aPrin->GetIsInIsolatedMozBrowserElement();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool inIsolatedMozBrowser = aPrin->GetIsInIsolatedMozBrowserElement();
+
     NS_WARN_IF_FALSE(appId != nsIScriptSecurityManager::UNKNOWN_APP_ID,
                      "Asking for app status on a principal with an unknown app id");
     
     
     if (appId == nsIScriptSecurityManager::NO_APP_ID ||
-        appId == nsIScriptSecurityManager::UNKNOWN_APP_ID || inMozBrowser)
+        appId == nsIScriptSecurityManager::UNKNOWN_APP_ID ||
+        inIsolatedMozBrowser)
     {
         return nsIPrincipal::APP_STATUS_NOT_INSTALLED;
     }
@@ -291,7 +303,7 @@ nsScriptSecurityManager::AppStatusForPrincipal(nsIPrincipal *aPrin)
 
     
     
-    MOZ_ASSERT(inMozBrowser == false, "Checked this above");
+    MOZ_ASSERT(inIsolatedMozBrowser == false, "Checked this above");
     PrincipalOriginAttributes attrs(appId, false);
     nsCOMPtr<nsIPrincipal> appPrin = BasePrincipal::CreateCodebasePrincipal(appURI, attrs);
     NS_ENSURE_TRUE(appPrin, nsIPrincipal::APP_STATUS_NOT_INSTALLED);

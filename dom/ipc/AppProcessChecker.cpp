@@ -91,7 +91,7 @@ AssertAppProcess(PBrowserParent* aActor,
   TabParent* tab = TabParent::GetFrom(aActor);
   nsCOMPtr<mozIApplication> app = tab->GetOwnOrContainingApp();
 
-  return CheckAppTypeHelper(app, aType, aCapability, tab->IsBrowserElement());
+  return CheckAppTypeHelper(app, aType, aCapability, tab->IsMozBrowserElement());
 }
 
 static bool
@@ -173,7 +173,7 @@ AssertAppProcess(TabContext& aContext,
   }
 
   nsCOMPtr<mozIApplication> app = aContext.GetOwnOrContainingApp();
-  return CheckAppTypeHelper(app, aType, aCapability, aContext.IsBrowserElement());
+  return CheckAppTypeHelper(app, aType, aCapability, aContext.IsMozBrowserElement());
 }
 
 bool
@@ -249,7 +249,7 @@ AssertAppPrincipal(PContentParent* aActor,
   }
 
   uint32_t principalAppId = aPrincipal->GetAppId();
-  bool inBrowserElement = aPrincipal->GetIsInBrowserElement();
+  bool inIsolatedBrowser = aPrincipal->GetIsInIsolatedMozBrowserElement();
 
   
   nsTArray<TabContext> contextArray =
@@ -258,7 +258,7 @@ AssertAppPrincipal(PContentParent* aActor,
     if (contextArray[i].OwnOrContainingAppId() == principalAppId) {
       
       
-      if (!contextArray[i].IsBrowserElement() || inBrowserElement) {
+      if (!contextArray[i].IsIsolatedMozBrowserElement() || inIsolatedBrowser) {
         return true;
       }
       break;
@@ -319,8 +319,17 @@ CheckPermission(PContentParent* aActor,
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (appPerm == nsIPermissionManager::PROMPT_ACTION &&
-      aPrincipal->GetIsInBrowserElement()) {
+      aPrincipal->GetIsInIsolatedMozBrowserElement()) {
     return permission;
   }
 
