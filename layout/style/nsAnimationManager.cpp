@@ -537,7 +537,13 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
                                          aStyleContext->GetPseudoType(),
                                          aStyleContext);
 
-  collection->EnsureStyleRuleFor();
+  EffectCompositor::CascadeLevel cascadeLevel =
+    EffectCompositor::CascadeLevel::Animations;
+  mPresContext->EffectCompositor()
+              ->MaybeUpdateAnimationRule(aElement,
+                                         aStyleContext->GetPseudoType(),
+                                         cascadeLevel);
+
   
   
   

@@ -235,9 +235,20 @@ CommonAnimationManager::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
 void
 CommonAnimationManager::AddStyleUpdatesTo(RestyleTracker& aTracker)
 {
+  
+  
+  EffectCompositor::CascadeLevel cascadeLevel =
+    IsAnimationManager() ?
+    EffectCompositor::CascadeLevel::Animations :
+    EffectCompositor::CascadeLevel::Transitions;
+
   for (AnimationCollection* collection = mElementCollections.getFirst();
        collection; collection = collection->getNext()) {
-    collection->EnsureStyleRuleFor();
+
+    mPresContext->EffectCompositor()
+                ->MaybeUpdateAnimationRule(collection->mElement,
+                                           collection->PseudoElementType(),
+                                           cascadeLevel);
 
     dom::Element* elementToRestyle = collection->GetElementToRestyle();
     if (elementToRestyle) {
@@ -325,16 +336,22 @@ CommonAnimationManager::GetAnimationRule(mozilla::dom::Element* aElement,
     return nullptr;
   }
 
-  collection->EnsureStyleRuleFor();
+  
+  
+  EffectCompositor::CascadeLevel cascadeLevel =
+    IsAnimationManager() ?
+    EffectCompositor::CascadeLevel::Animations :
+    EffectCompositor::CascadeLevel::Transitions;
+  mPresContext->EffectCompositor()->MaybeUpdateAnimationRule(aElement,
+                                                             aPseudoType,
+                                                             cascadeLevel);
 
   EffectSet* effectSet = EffectSet::GetEffectSet(aElement, aPseudoType);
   if (!effectSet) {
     return nullptr;
   }
 
-  return IsAnimationManager() ?
-         effectSet->AnimationRule(EffectCompositor::CascadeLevel::Animations) :
-         effectSet->AnimationRule(EffectCompositor::CascadeLevel::Transitions);
+  return effectSet->AnimationRule(cascadeLevel);
 }
 
 void
@@ -419,40 +436,6 @@ AnimationCollection::Tick()
        animIdx != animEnd; animIdx++) {
     mAnimations[animIdx]->Tick();
   }
-}
-
-void
-AnimationCollection::EnsureStyleRuleFor()
-{
-  nsPresContext* presContext = mManager->PresContext();
-  if (!presContext) {
-    
-    return;
-  }
-
-  
-  
-  nsStyleContext* styleContext = nullptr;
-  {
-    dom::Element* elementToRestyle = GetElementToRestyle();
-    if (elementToRestyle) {
-      nsIFrame* frame = elementToRestyle->GetPrimaryFrame();
-      if (frame) {
-        styleContext = frame->StyleContext();
-      }
-    }
-  }
-  EffectCompositor::MaybeUpdateCascadeResults(mElement,
-                                              PseudoElementType(),
-                                              styleContext);
-
-  EffectCompositor::CascadeLevel cascadeLevel =
-    IsForAnimations() ?
-    EffectCompositor::CascadeLevel::Animations :
-    EffectCompositor::CascadeLevel::Transitions;
-  presContext->EffectCompositor()->MaybeUpdateAnimationRule(mElement,
-                                                            PseudoElementType(),
-                                                            cascadeLevel);
 }
 
 void

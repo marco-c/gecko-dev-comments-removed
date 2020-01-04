@@ -473,12 +473,17 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
   MOZ_ASSERT(!startedAny || collection,
              "must have element transitions if we started any transitions");
 
+  EffectCompositor::CascadeLevel cascadeLevel =
+    EffectCompositor::CascadeLevel::Transitions;
+
   if (collection) {
     EffectCompositor::UpdateCascadeResults(aElement, pseudoType,
                                            newStyleContext);
 
     collection->UpdateCheckGeneration(mPresContext);
-    collection->EnsureStyleRuleFor();
+    mPresContext->EffectCompositor()->MaybeUpdateAnimationRule(aElement,
+                                                               pseudoType,
+                                                               cascadeLevel);
   }
 
   
@@ -488,8 +493,6 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     
     
     
-    EffectCompositor::CascadeLevel cascadeLevel =
-      EffectCompositor::CascadeLevel::Transitions;
     mPresContext->EffectCompositor()->PostRestyleForAnimation(aElement,
                                                               pseudoType,
                                                               cascadeLevel);
