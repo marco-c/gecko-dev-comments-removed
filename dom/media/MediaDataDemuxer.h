@@ -12,6 +12,7 @@
 
 #include "MediaData.h"
 #include "MediaInfo.h"
+#include "MediaResult.h"
 #include "TimeUnits.h"
 #include "nsISupportsImpl.h"
 #include "mozilla/RefPtr.h"
@@ -22,16 +23,6 @@ namespace mozilla {
 class MediaTrackDemuxer;
 class TrackMetadataHolder;
 
-enum class DemuxerFailureReason : int8_t
-{
-  WAITING_FOR_DATA,
-  END_OF_STREAM,
-  DEMUXER_ERROR,
-  CANCELED,
-  SHUTDOWN,
-};
-
-
 
 
 
@@ -41,7 +32,7 @@ class MediaDataDemuxer
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataDemuxer)
 
-  typedef MozPromise<nsresult, DemuxerFailureReason,  true> InitPromise;
+  typedef MozPromise<nsresult, MediaResult,  true> InitPromise;
 
   
   
@@ -120,16 +111,16 @@ public:
 
   class SkipFailureHolder {
   public:
-    SkipFailureHolder(DemuxerFailureReason aFailure, uint32_t aSkipped)
+    SkipFailureHolder(const MediaResult& aFailure, uint32_t aSkipped)
       : mFailure(aFailure)
       , mSkipped(aSkipped)
     {}
-    DemuxerFailureReason mFailure;
+    MediaResult mFailure;
     uint32_t mSkipped;
   };
 
-  typedef MozPromise<media::TimeUnit, DemuxerFailureReason,  true> SeekPromise;
-  typedef MozPromise<RefPtr<SamplesHolder>, DemuxerFailureReason,  true> SamplesPromise;
+  typedef MozPromise<media::TimeUnit, MediaResult,  true> SeekPromise;
+  typedef MozPromise<RefPtr<SamplesHolder>, MediaResult,  true> SamplesPromise;
   typedef MozPromise<uint32_t, SkipFailureHolder,  true> SkipAccessPointPromise;
 
   

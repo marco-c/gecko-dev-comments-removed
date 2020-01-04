@@ -125,13 +125,13 @@ MP4Demuxer::Init()
 
   
   if (!mp4_demuxer::MP4Metadata::HasCompleteMetadata(stream)) {
-    return InitPromise::CreateAndReject(DemuxerFailureReason::DEMUXER_ERROR, __func__);
+    return InitPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_DEMUXER_ERR, __func__);
   }
 
   mInitData = mp4_demuxer::MP4Metadata::Metadata(stream);
   if (!mInitData) {
     
-    return InitPromise::CreateAndReject(DemuxerFailureReason::DEMUXER_ERROR, __func__);
+    return InitPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_DEMUXER_ERR, __func__);
   }
 
   RefPtr<mp4_demuxer::BufferStream> bufferstream =
@@ -141,7 +141,7 @@ MP4Demuxer::Init()
 
   if (!mMetadata->GetNumberTracks(mozilla::TrackInfo::kAudioTrack) &&
       !mMetadata->GetNumberTracks(mozilla::TrackInfo::kVideoTrack)) {
-    return InitPromise::CreateAndReject(DemuxerFailureReason::DEMUXER_ERROR, __func__);
+    return InitPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_DEMUXER_ERR, __func__);
   }
 
   return InitPromise::CreateAndResolve(NS_OK, __func__);
@@ -298,7 +298,7 @@ MP4TrackDemuxer::Seek(media::TimeUnit aTime)
   do {
     sample = GetNextSample();
     if (!sample) {
-      return SeekPromise::CreateAndReject(DemuxerFailureReason::END_OF_STREAM, __func__);
+      return SeekPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_END_OF_STREAM, __func__);
     }
     if (!sample->Size()) {
       
@@ -370,7 +370,7 @@ MP4TrackDemuxer::GetSamples(int32_t aNumSamples)
   EnsureUpToDateIndex();
   RefPtr<SamplesHolder> samples = new SamplesHolder;
   if (!aNumSamples) {
-    return SamplesPromise::CreateAndReject(DemuxerFailureReason::DEMUXER_ERROR, __func__);
+    return SamplesPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_DEMUXER_ERR, __func__);
   }
 
   if (mQueuedSample) {
@@ -390,7 +390,7 @@ MP4TrackDemuxer::GetSamples(int32_t aNumSamples)
   }
 
   if (samples->mSamples.IsEmpty()) {
-    return SamplesPromise::CreateAndReject(DemuxerFailureReason::END_OF_STREAM, __func__);
+    return SamplesPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_END_OF_STREAM, __func__);
   } else {
     for (const auto& sample : samples->mSamples) {
       
@@ -461,7 +461,7 @@ MP4TrackDemuxer::SkipToNextRandomAccessPoint(media::TimeUnit aTimeThreshold)
   if (found) {
     return SkipAccessPointPromise::CreateAndResolve(parsed, __func__);
   } else {
-    SkipFailureHolder failure(DemuxerFailureReason::END_OF_STREAM, parsed);
+    SkipFailureHolder failure(NS_ERROR_DOM_MEDIA_END_OF_STREAM, parsed);
     return SkipAccessPointPromise::CreateAndReject(Move(failure), __func__);
   }
 }
