@@ -302,7 +302,11 @@ void
 Nursery::setForwardingPointer(void* oldData, void* newData, bool direct)
 {
     MOZ_ASSERT(isInside(oldData));
-    MOZ_ASSERT(!isInside(newData));
+
+    
+    
+    
+    MOZ_ASSERT(!isInside(newData) || uintptr_t(newData) == heapStart_);
 
     if (direct) {
         *reinterpret_cast<void**>(oldData) = newData;
