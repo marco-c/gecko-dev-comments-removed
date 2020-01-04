@@ -9,15 +9,16 @@
 
 #include "mozilla/dom/Element.h"
 #include "mozilla/HashFunctions.h"
-#include "nsCSSPseudoElements.h"
 #include "PLDHashTable.h"
 
 namespace mozilla {
 
+enum class CSSPseudoElementType : uint8_t;
+
 struct PseudoElementHashKey
 {
   dom::Element* mElement;
-  nsCSSPseudoElements::Type mPseudoType;
+  CSSPseudoElementType mPseudoType;
 };
 
 
@@ -54,7 +55,7 @@ public:
   enum { ALLOW_MEMMOVE = true };
 
   RefPtr<dom::Element> mElement;
-  nsCSSPseudoElements::Type mPseudoType;
+  CSSPseudoElementType mPseudoType;
 };
 
 } 

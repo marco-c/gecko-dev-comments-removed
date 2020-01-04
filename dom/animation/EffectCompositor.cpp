@@ -16,6 +16,7 @@
 #include "nsComputedDOMStyle.h" 
 #include "nsCSSPropertySet.h"
 #include "nsCSSProps.h"
+#include "nsCSSPseudoElements.h"
 #include "nsIPresShell.h"
 #include "nsLayoutUtils.h"
 #include "nsRuleNode.h" 
@@ -80,7 +81,7 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
   
   
   
-  Maybe<Pair<dom::Element*, nsCSSPseudoElements::Type>> pseudoElement =
+  Maybe<Pair<dom::Element*, CSSPseudoElementType>> pseudoElement =
     EffectCompositor::GetAnimationElementAndPseudoForFrame(aFrame);
   if (pseudoElement) {
     EffectCompositor::MaybeUpdateCascadeResults(pseudoElement->first(),
@@ -131,7 +132,7 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
 
 void
 EffectCompositor::RequestRestyle(dom::Element* aElement,
-                                 nsCSSPseudoElements::Type aPseudoType,
+                                 CSSPseudoElementType aPseudoType,
                                  RestyleType aRestyleType,
                                  CascadeLevel aCascadeLevel)
 {
@@ -171,7 +172,7 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
 
 void
 EffectCompositor::PostRestyleForAnimation(dom::Element* aElement,
-                                          nsCSSPseudoElements::Type aPseudoType,
+                                          CSSPseudoElementType aPseudoType,
                                           CascadeLevel aCascadeLevel)
 {
   if (!mPresContext) {
@@ -212,8 +213,7 @@ EffectCompositor::PostRestyleForThrottledAnimations()
 
 void
 EffectCompositor::MaybeUpdateAnimationRule(dom::Element* aElement,
-                                           nsCSSPseudoElements::Type
-                                             aPseudoType,
+                                           CSSPseudoElementType aPseudoType,
                                            CascadeLevel aCascadeLevel)
 {
   
@@ -235,7 +235,7 @@ EffectCompositor::MaybeUpdateAnimationRule(dom::Element* aElement,
 
 nsIStyleRule*
 EffectCompositor::GetAnimationRule(dom::Element* aElement,
-                                   nsCSSPseudoElements::Type aPseudoType,
+                                   CSSPseudoElementType aPseudoType,
                                    CascadeLevel aCascadeLevel)
 {
   
@@ -281,7 +281,7 @@ EffectCompositor::GetAnimationRule(dom::Element* aElement,
 
  dom::Element*
 EffectCompositor::GetElementToRestyle(dom::Element* aElement,
-                                      nsCSSPseudoElements::Type aPseudoType)
+                                      CSSPseudoElementType aPseudoType)
 {
   if (aPseudoType == CSSPseudoElementType::NotPseudo) {
     return aElement;
@@ -417,8 +417,7 @@ EffectCompositor::ClearIsRunningOnCompositor(const nsIFrame *aFrame,
 
  void
 EffectCompositor::MaybeUpdateCascadeResults(Element* aElement,
-                                            nsCSSPseudoElements::Type
-                                              aPseudoType,
+                                            CSSPseudoElementType aPseudoType,
                                             nsStyleContext* aStyleContext)
 {
   EffectSet* effects = EffectSet::GetEffectSet(aElement, aPseudoType);
@@ -433,8 +432,7 @@ EffectCompositor::MaybeUpdateCascadeResults(Element* aElement,
 
  void
 EffectCompositor::MaybeUpdateCascadeResults(Element* aElement,
-                                            nsCSSPseudoElements::Type
-                                              aPseudoType)
+                                            CSSPseudoElementType aPseudoType)
 {
   nsStyleContext* styleContext = nullptr;
   {
@@ -474,7 +472,7 @@ namespace {
 
  void
 EffectCompositor::UpdateCascadeResults(Element* aElement,
-                                       nsCSSPseudoElements::Type aPseudoType,
+                                       CSSPseudoElementType aPseudoType,
                                        nsStyleContext* aStyleContext)
 {
   EffectSet* effects = EffectSet::GetEffectSet(aElement, aPseudoType);
@@ -485,19 +483,18 @@ EffectCompositor::UpdateCascadeResults(Element* aElement,
   UpdateCascadeResults(*effects, aElement, aPseudoType, aStyleContext);
 }
 
- Maybe<Pair<Element*, nsCSSPseudoElements::Type>>
+ Maybe<Pair<Element*, CSSPseudoElementType>>
 EffectCompositor::GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame)
 {
   
-  Maybe<Pair<Element*, nsCSSPseudoElements::Type>> result;
+  Maybe<Pair<Element*, CSSPseudoElementType>> result;
 
   nsIContent* content = aFrame->GetContent();
   if (!content) {
     return result;
   }
 
-  nsCSSPseudoElements::Type pseudoType =
-    CSSPseudoElementType::NotPseudo;
+  CSSPseudoElementType pseudoType = CSSPseudoElementType::NotPseudo;
 
   if (aFrame->IsGeneratedContentFrame()) {
     nsIFrame* parent = aFrame->GetParent();
@@ -534,7 +531,7 @@ EffectCompositor::GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame)
 
  void
 EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
-                                       nsCSSPseudoElements::Type aPseudoType,
+                                       CSSPseudoElementType aPseudoType,
                                        CascadeLevel aCascadeLevel,
                                        TimeStamp aRefreshTime)
 {
@@ -615,7 +612,7 @@ EffectCompositor::GetOverriddenProperties(nsStyleContext* aStyleContext,
  void
 EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
                                        Element* aElement,
-                                       nsCSSPseudoElements::Type aPseudoType,
+                                       CSSPseudoElementType aPseudoType,
                                        nsStyleContext* aStyleContext)
 {
   MOZ_ASSERT(EffectSet::GetEffectSet(aElement, aPseudoType) == &aEffectSet,

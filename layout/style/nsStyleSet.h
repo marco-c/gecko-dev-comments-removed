@@ -25,7 +25,6 @@
 #include "nsCOMArray.h"
 #include "nsAutoPtr.h"
 #include "nsIStyleRule.h"
-#include "nsCSSPseudoElements.h"
 
 class gfxFontFeatureValueSet;
 class nsCSSKeyframesRule;
@@ -41,6 +40,7 @@ struct TreeMatchContext;
 namespace mozilla {
 class CSSStyleSheet;
 class EventStates;
+enum class CSSPseudoElementType : uint8_t;
 } 
 
 class nsEmptyStyleRule final : public nsIStyleRule
@@ -178,7 +178,7 @@ class nsStyleSet final
   
   already_AddRefed<nsStyleContext>
   ResolvePseudoElementStyle(mozilla::dom::Element* aParentElement,
-                            nsCSSPseudoElements::Type aType,
+                            mozilla::CSSPseudoElementType aType,
                             nsStyleContext* aParentContext,
                             mozilla::dom::Element* aPseudoElement);
 
@@ -187,11 +187,11 @@ class nsStyleSet final
   
   already_AddRefed<nsStyleContext>
   ProbePseudoElementStyle(mozilla::dom::Element* aParentElement,
-                          nsCSSPseudoElements::Type aType,
+                          mozilla::CSSPseudoElementType aType,
                           nsStyleContext* aParentContext);
   already_AddRefed<nsStyleContext>
   ProbePseudoElementStyle(mozilla::dom::Element* aParentElement,
-                          nsCSSPseudoElements::Type aType,
+                          mozilla::CSSPseudoElementType aType,
                           nsStyleContext* aParentContext,
                           TreeMatchContext& aTreeMatchContext,
                           mozilla::dom::Element* aPseudoElement = nullptr);
@@ -283,7 +283,7 @@ class nsStyleSet final
   nsRestyleHint HasStateDependentStyle(mozilla::dom::Element* aElement,
                                        mozilla::EventStates aStateMask);
   nsRestyleHint HasStateDependentStyle(mozilla::dom::Element* aElement,
-                                       nsCSSPseudoElements::Type aPseudoType,
+                                       mozilla::CSSPseudoElementType aPseudoType,
                                        mozilla::dom::Element* aPseudoElement,
                                        mozilla::EventStates aStateMask);
 
@@ -419,7 +419,7 @@ private:
 
   
   
-  void WalkRestrictionRule(nsCSSPseudoElements::Type aPseudoType,
+  void WalkRestrictionRule(mozilla::CSSPseudoElementType aPseudoType,
                            nsRuleWalker* aRuleWalker);
 
   void WalkDisableTextZoomRule(mozilla::dom::Element* aElement,
@@ -460,7 +460,7 @@ private:
   nsRuleNode* RuleNodeWithReplacement(mozilla::dom::Element* aElement,
                                       mozilla::dom::Element* aPseudoElement,
                                       nsRuleNode* aOldRuleNode,
-                                      nsCSSPseudoElements::Type aPseudoType,
+                                      mozilla::CSSPseudoElementType aPseudoType,
                                       nsRestyleHint aReplacements);
 
   already_AddRefed<nsStyleContext>
@@ -468,7 +468,7 @@ private:
              nsRuleNode* aRuleNode,
              nsRuleNode* aVisitedRuleNode,
              nsIAtom* aPseudoTag,
-             nsCSSPseudoElements::Type aPseudoType,
+             mozilla::CSSPseudoElementType aPseudoType,
              mozilla::dom::Element* aElementForAnimation,
              uint32_t aFlags);
 

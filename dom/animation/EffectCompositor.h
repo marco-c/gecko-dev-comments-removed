@@ -14,7 +14,6 @@
 #include "mozilla/PseudoElementHashEntry.h"
 #include "mozilla/RefPtr.h"
 #include "nsCSSProperty.h"
-#include "nsCSSPseudoElements.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDataHashtable.h"
 #include "nsIStyleRuleProcessor.h"
@@ -30,6 +29,7 @@ namespace mozilla {
 
 class EffectSet;
 class RestyleTracker;
+enum class CSSPseudoElementType : uint8_t;
 
 namespace dom {
 class Animation;
@@ -94,7 +94,7 @@ public:
   
   
   void RequestRestyle(dom::Element* aElement,
-                      nsCSSPseudoElements::Type aPseudoType,
+                      CSSPseudoElementType aPseudoType,
                       RestyleType aRestyleType,
                       CascadeLevel aCascadeLevel);
 
@@ -103,7 +103,7 @@ public:
   
   
   void PostRestyleForAnimation(dom::Element* aElement,
-                               nsCSSPseudoElements::Type aPseudoType,
+                               CSSPseudoElementType aPseudoType,
                                CascadeLevel aCascadeLevel);
 
   
@@ -116,11 +116,11 @@ public:
   
   
   void MaybeUpdateAnimationRule(dom::Element* aElement,
-                                nsCSSPseudoElements::Type aPseudoType,
+                                CSSPseudoElementType aPseudoType,
                                 CascadeLevel aCascadeLevel);
 
   nsIStyleRule* GetAnimationRule(dom::Element* aElement,
-                                 nsCSSPseudoElements::Type aPseudoType,
+                                 CSSPseudoElementType aPseudoType,
                                  CascadeLevel aCascadeLevel);
 
   bool HasPendingStyleUpdates() const;
@@ -155,14 +155,14 @@ public:
   
   static void
   MaybeUpdateCascadeResults(dom::Element* aElement,
-                            nsCSSPseudoElements::Type aPseudoType,
+                            CSSPseudoElementType aPseudoType,
                             nsStyleContext* aStyleContext);
 
   
   
   static void
   MaybeUpdateCascadeResults(dom::Element* aElement,
-                            nsCSSPseudoElements::Type aPseudoType);
+                            CSSPseudoElementType aPseudoType);
 
   
   
@@ -172,7 +172,7 @@ public:
   
   static void
   UpdateCascadeResults(dom::Element* aElement,
-                       nsCSSPseudoElements::Type aPseudoType,
+                       CSSPseudoElementType aPseudoType,
                        nsStyleContext* aStyleContext);
 
   
@@ -184,7 +184,7 @@ public:
   
   
   
-  static Maybe<Pair<dom::Element*, nsCSSPseudoElements::Type>>
+  static Maybe<Pair<dom::Element*, CSSPseudoElementType>>
   GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame);
 
 private:
@@ -193,12 +193,12 @@ private:
   
   
   static void ComposeAnimationRule(dom::Element* aElement,
-                                   nsCSSPseudoElements::Type aPseudoType,
+                                   CSSPseudoElementType aPseudoType,
                                    CascadeLevel aCascadeLevel,
                                    TimeStamp aRefreshTime);
 
   static dom::Element* GetElementToRestyle(dom::Element* aElement,
-                                           nsCSSPseudoElements::Type
+                                           CSSPseudoElementType
                                              aPseudoType);
 
   
@@ -212,7 +212,7 @@ private:
   static void
   UpdateCascadeResults(EffectSet& aEffectSet,
                        dom::Element* aElement,
-                       nsCSSPseudoElements::Type aPseudoType,
+                       CSSPseudoElementType aPseudoType,
                        nsStyleContext* aStyleContext);
 
   static nsPresContext* GetPresContext(dom::Element* aElement);

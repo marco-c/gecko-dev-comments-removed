@@ -13,7 +13,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 
-#include "nsCSSPseudoElements.h"
 #include "nsDataHashtable.h"
 #include "nsIStyleRuleProcessor.h"
 
@@ -21,6 +20,7 @@ class nsRuleWalker;
 struct MiscContainer;
 
 namespace mozilla {
+enum class CSSPseudoElementType : uint8_t;
 namespace dom {
 class Element;
 } 
@@ -60,7 +60,7 @@ public:
   
   
   void PseudoElementRulesMatching(mozilla::dom::Element* aPseudoElement,
-                                  nsCSSPseudoElements::Type aPseudoType,
+                                  mozilla::CSSPseudoElementType aPseudoType,
                                   nsRuleWalker* aRuleWalker);
 
   void CacheStyleAttr(const nsAString& aSerialized, MiscContainer* aValue);

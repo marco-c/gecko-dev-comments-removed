@@ -38,7 +38,7 @@ public:
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  nsCSSPseudoElements::Type GetType() const { return mPseudoType; }
+  CSSPseudoElementType GetType() const { return mPseudoType; }
   void GetType(nsString& aRetVal) const
   {
     MOZ_ASSERT(nsCSSPseudoElements::GetPseudoAtom(mPseudoType),
@@ -64,20 +64,19 @@ public:
   
   
   static already_AddRefed<CSSPseudoElement>
-    GetCSSPseudoElement(Element* aElement, nsCSSPseudoElements::Type aType);
+    GetCSSPseudoElement(Element* aElement, CSSPseudoElementType aType);
 
 private:
   
-  CSSPseudoElement(Element* aElement, nsCSSPseudoElements::Type aType);
+  CSSPseudoElement(Element* aElement, CSSPseudoElementType aType);
 
-  static nsIAtom*
-  GetCSSPseudoElementPropertyAtom(nsCSSPseudoElements::Type aType);
+  static nsIAtom* GetCSSPseudoElementPropertyAtom(CSSPseudoElementType aType);
 
   
   
   
   RefPtr<Element> mParentElement;
-  nsCSSPseudoElements::Type mPseudoType;
+  CSSPseudoElementType mPseudoType;
 };
 
 } 

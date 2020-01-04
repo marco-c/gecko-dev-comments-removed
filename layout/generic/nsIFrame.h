@@ -90,6 +90,7 @@ struct CharacterDataChangeInfo;
 
 namespace mozilla {
 
+enum class CSSPseudoElementType : uint8_t;
 class EventStates;
 
 namespace layers {
@@ -3094,7 +3095,8 @@ public:
 
 
 
-  virtual mozilla::dom::Element* GetPseudoElement(nsCSSPseudoElements::Type aType);
+  virtual mozilla::dom::Element*
+  GetPseudoElement(mozilla::CSSPseudoElementType aType);
 
   bool BackfaceIsHidden() {
     return StyleDisplay()->BackfaceIsHidden();
