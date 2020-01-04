@@ -529,6 +529,9 @@ protected:
   
   
   bool mDeferPluginWindows;
+  
+  
+  bool mPluginWindowsHidden;
 #endif
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorParent);

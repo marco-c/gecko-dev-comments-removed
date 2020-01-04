@@ -664,6 +664,7 @@ CompositorParent::CompositorParent(nsIWidget* aWidget,
   , mLastPluginUpdateLayerTreeId(0)
   , mPluginUpdateResponsePending(false)
   , mDeferPluginWindows(false)
+  , mPluginWindowsHidden(false)
 #endif
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -2210,6 +2211,14 @@ CompositorParent::UpdatePluginWindowState(uint64_t aId)
     return false;
   }
 
+  
+  
+  if (mPluginWindowsHidden) {
+    PLUGINS_LOG("[%" PRIu64 "] re-showing", aId);
+    mPluginWindowsHidden = false;
+    pluginMetricsChanged = true;
+  }
+
   if (!lts.mPluginData.Length()) {
     
     
@@ -2300,6 +2309,7 @@ CompositorParent::HideAllPluginWindows()
   }
   mDeferPluginWindows = true;
   mPluginUpdateResponsePending = true;
+  mPluginWindowsHidden = true;
   Unused << SendHideAllPlugins((uintptr_t)GetWidget());
   ScheduleComposition();
 }
