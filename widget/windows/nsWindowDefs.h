@@ -42,6 +42,8 @@
 
 #define MOZ_WM_SKEWFIX                    (WM_APP+0x0316)
 
+#define MOZ_WM_DISMISS_ONSCREEN_KEYBOARD  (WM_APP+0x0317)
+
 
 
 #define MOZ_WM_ENSUREVISIBLE              (WM_APP+0x374F)
