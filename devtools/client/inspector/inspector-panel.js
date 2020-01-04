@@ -1228,12 +1228,10 @@ InspectorPanel.prototype = {
       let rect = sidePaneContainer.getBoundingClientRect();
       if (!sidePaneContainer.hasAttribute("width")) {
         sidePaneContainer.setAttribute("width", rect.width);
-        sidePane.style.width = rect.width + "px";
       }
       
       
       sidePaneContainer.setAttribute("height", rect.height);
-      sidePane.style.height = rect.height + "px";
     }
 
     let onAnimationDone = () => {
