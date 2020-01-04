@@ -469,12 +469,8 @@ HTMLImageElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   
   
   WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-  if (mouseEvent && mouseEvent->IsLeftClickEvent()) {
-    bool isMap = false;
-    GetIsMap(&isMap);
-    if (isMap) {
-      aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-    }
+  if (mouseEvent && mouseEvent->IsLeftClickEvent() && IsMap()) {
+    aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
   }
   return nsGenericHTMLElement::PreHandleEvent(aVisitor);
 }
