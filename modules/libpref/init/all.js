@@ -525,6 +525,9 @@ pref("media.video-queue.send-to-compositor-size", 9999);
 pref("media.video_stats.enabled", true);
 
 
+pref("layers.amd-switchable-gfx.enabled", true);
+
+
 pref("layers.async-pan-zoom.enabled", false);
 
 
