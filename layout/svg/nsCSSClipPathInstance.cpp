@@ -68,13 +68,13 @@ nsCSSClipPathInstance::CreateClipPath(DrawTarget* aDrawTarget)
   nsRect r;
   
   switch (mClipPathStyle.GetSizingBox()) {
-    case NS_STYLE_CLIP_SHAPE_SIZING_CONTENT:
+    case StyleClipShapeSizing::Content:
       r = mTargetFrame->GetContentRectRelativeToSelf();
       break;
-    case NS_STYLE_CLIP_SHAPE_SIZING_PADDING:
+    case StyleClipShapeSizing::Padding:
       r = mTargetFrame->GetPaddingRectRelativeToSelf();
       break;
-    case NS_STYLE_CLIP_SHAPE_SIZING_MARGIN:
+    case StyleClipShapeSizing::Margin:
       r = mTargetFrame->GetMarginRectRelativeToSelf();
       break;
     default: 

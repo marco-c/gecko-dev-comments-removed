@@ -643,7 +643,8 @@ private:
     const nsStyleFilter& aStyleFilter);
 
   already_AddRefed<CSSValue> CreatePrimitiveValueForClipPath(
-    const nsStyleBasicShape* aStyleBasicShape, uint8_t aSizingBox);
+    const nsStyleBasicShape* aStyleBasicShape,
+    mozilla::StyleClipShapeSizing aSizingBox);
 
   
   already_AddRefed<CSSValue> CreatePrimitiveValueForBasicShape(
