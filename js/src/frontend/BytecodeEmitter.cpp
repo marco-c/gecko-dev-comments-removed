@@ -5375,9 +5375,9 @@ BytecodeEmitter::emitIterator()
         return false;
     if (!emit1(JSOP_SWAP))                                        
         return false;
-    if (!emitCall(JSOP_CALL, 0))                                  
+    if (!emitCall(JSOP_CALLITER, 0))                              
         return false;
-    checkTypeSet(JSOP_CALL);
+    checkTypeSet(JSOP_CALLITER);
     return true;
 }
 

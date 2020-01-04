@@ -1474,7 +1474,16 @@
 
  \
     macro(JSOP_SETINTRINSIC,  144, "setintrinsic",  NULL, 5,  1,  1, JOF_ATOM|JOF_NAME|JOF_SET|JOF_DETECTING) \
-    macro(JSOP_UNUSED145,     145, "unused145",     NULL, 1,  0,  0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    macro(JSOP_CALLITER,      145, "calliter",      NULL, 3, -1,  1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET) \
     
 
 
