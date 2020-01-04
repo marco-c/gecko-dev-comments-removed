@@ -76,6 +76,15 @@ NeckoParent::NeckoParent()
 
   mObserver = new OfflineObserver(this);
   gNeckoParent = this;
+
+  
+  
+  static bool registeredBool = false;
+  if (!registeredBool) {
+    Preferences::AddBoolVarCache(&NeckoCommonInternal::gSecurityDisabled,
+                                 "network.disable.ipc.security");
+    registeredBool = true;
+  }
 }
 
 NeckoParent::~NeckoParent()
