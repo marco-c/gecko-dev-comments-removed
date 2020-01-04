@@ -543,6 +543,17 @@ extensions.registerSchemaAPI("downloads", "downloads", (extension, context) => {
         });
       },
 
+      show(downloadId) {
+        return DownloadMap.lazyInit().then(() => {
+          let download = DownloadMap.fromId(downloadId);
+          return download.download.showContainingDirectory();
+        }).then(() => {
+          return true;
+        }).catch(error => {
+          return Promise.reject({message: error.message});
+        });
+      },
+
       
       
       
