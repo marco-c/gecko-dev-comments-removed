@@ -16,6 +16,21 @@ namespace jit {
 
 
 
+void
+MacroAssembler::move64(Imm64 imm, Register64 dest)
+{
+    movl(Imm32(imm.value & 0xFFFFFFFFL), dest.low);
+    movl(Imm32((imm.value >> 32) & 0xFFFFFFFFL), dest.high);
+}
+
+void
+MacroAssembler::move64(Register64 src, Register64 dest)
+{
+    movl(src.low, dest.low);
+    movl(src.high, dest.high);
+}
+
+
 
 
 void

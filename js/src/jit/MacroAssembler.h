@@ -675,6 +675,12 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
+    inline void move64(Imm64 imm, Register64 dest) PER_ARCH;
+    inline void move64(Register64 src, Register64 dest) PER_ARCH;
+
+    
+    
+
     inline void not32(Register reg) PER_SHARED_ARCH;
 
     inline void and32(Register src, Register dest) PER_SHARED_ARCH;
