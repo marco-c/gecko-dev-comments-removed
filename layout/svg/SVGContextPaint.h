@@ -109,7 +109,7 @@ private:
 
 
 
-struct SVGTextContextPaint : public SVGContextPaint
+struct SVGContextPaintImpl : public SVGContextPaint
 {
 protected:
   typedef mozilla::gfx::DrawTarget DrawTarget;
