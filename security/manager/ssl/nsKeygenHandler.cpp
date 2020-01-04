@@ -481,7 +481,7 @@ nsKeygenFormProcessor::GetPublicKey(const nsAString& aValue,
     PK11RSAGenParams rsaParams;
     SECOidTag algTag;
     int keysize = 0;
-    void *params;
+    void *params = nullptr;
     SECKEYPrivateKey *privateKey = nullptr;
     SECKEYPublicKey *publicKey = nullptr;
     CERTSubjectPublicKeyInfo *spkInfo = nullptr;
@@ -765,6 +765,12 @@ loser:
     }
     if (pkac.challenge.data) {
         free(pkac.challenge.data);
+    }
+    
+    
+    if (params && params != &rsaParams) {
+        SECITEM_FreeItem(static_cast<SECItem*>(params), true);
+        params = nullptr;
     }
     return rv;
 }
