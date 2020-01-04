@@ -46,6 +46,10 @@ var simulator = {
     "mouseup",
     "touchstart",
     "touchend",
+    "mouseenter",
+    "mouseover",
+    "mouseout",
+    "mouseleave"
   ],
 
   messages: [
@@ -138,6 +142,14 @@ var simulator = {
     let eventTarget = this.target;
     let type = "";
     switch (evt.type) {
+      case "mouseenter":
+      case "mouseover":
+      case "mouseout":
+      case "mouseleave":
+        
+        evt.stopPropagation();
+        break;
+
       case "mousedown":
         this.target = evt.target;
 
@@ -157,6 +169,8 @@ var simulator = {
 
       case "mousemove":
         if (!eventTarget) {
+          
+          evt.stopPropagation();
           return;
         }
 
@@ -208,7 +222,7 @@ var simulator = {
           } catch (e) {
             console.error("Exception in touch event helper: " + e);
           }
-        }, 0, this);
+        }, this.getDelayBeforeMouseEvent(evt), this);
         return;
     }
 
@@ -305,6 +319,53 @@ var simulator = {
       ? target.ownerDocument.defaultView
       : null;
     return win;
+  },
+
+  getDelayBeforeMouseEvent(evt) {
+    
+    
+    
+    
+
+    
+    
+    
+    
+    let savedMetaViewportEnabled =
+      Services.prefs.getBoolPref("dom.meta-viewport.enabled");
+    if (!savedMetaViewportEnabled) {
+      return 300;
+    }
+
+    let content = this.getContent(evt.target);
+    if (!content) {
+      return 0;
+    }
+
+    let utils = content.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIDOMWindowUtils);
+
+    let allowZoom = {},
+        minZoom = {},
+        maxZoom = {},
+        autoSize = {};
+
+    utils.getViewportInfo(content.innerWidth, content.innerHeight, {},
+                          allowZoom, minZoom, maxZoom, {}, {}, autoSize);
+
+    
+    
+    
+    
+    
+    if (!allowZoom.value ||                   
+        minZoom.value === maxZoom.value ||    
+        autoSize.value                        
+    ) {
+      return 0;
+    } else {
+      return 300;
+    }
   }
 };
 
