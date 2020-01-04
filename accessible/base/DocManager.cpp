@@ -470,17 +470,15 @@ DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
 
   
   
-  nsIContent *rootElm = nsCoreUtils::GetRoleContent(aDocument);
   RefPtr<DocAccessible> docAcc = isRootDoc ?
-    new RootAccessibleWrap(aDocument, rootElm, presShell) :
-    new DocAccessibleWrap(aDocument, rootElm, presShell);
+    new RootAccessibleWrap(aDocument, presShell) :
+    new DocAccessibleWrap(aDocument, presShell);
 
   
   mDocAccessibleCache.Put(aDocument, docAcc);
 
   
   docAcc->Init();
-  docAcc->SetRoleMapEntry(aria::GetRoleMap(aDocument));
 
   
   if (isRootDoc) {

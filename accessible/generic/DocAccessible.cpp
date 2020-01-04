@@ -76,9 +76,8 @@ static const uint32_t kRelationAttrsLen = ArrayLength(kRelationAttrs);
 
 
 DocAccessible::
-  DocAccessible(nsIDocument* aDocument, nsIContent* aRootContent,
-                  nsIPresShell* aPresShell) :
-  HyperTextAccessibleWrap(aRootContent, this),
+  DocAccessible(nsIDocument* aDocument, nsIPresShell* aPresShell) :
+  HyperTextAccessibleWrap(nullptr, this),
   
   mAccessibleCache(kDefaultCacheLength),
   mNodeToAccessibleMap(kDefaultCacheLength),
@@ -1465,7 +1464,7 @@ DocAccessible::DoInitialUpdate()
   
   
   nsIContent* contentElm = nsCoreUtils::GetRoleContent(mDocumentNode);
-  if (mContent != contentElm) {
+  if (contentElm) {
     mContent = contentElm;
     SetRoleMapEntry(aria::GetRoleMap(mContent));
   }
