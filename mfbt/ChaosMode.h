@@ -27,6 +27,8 @@ enum ChaosFeature {
   IOAmounts = 0x8,
   
   HashTableIteration = 0x10,
+  
+  ImageCache = 0x20,
   Any = 0xffffffff,
 };
 
