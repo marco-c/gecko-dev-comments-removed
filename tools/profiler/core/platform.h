@@ -61,7 +61,7 @@
 
 
 
-#if defined(__linux__)
+#if defined(__GLIBC__)
 #include <unistd.h>
 #include <sys/syscall.h>
 static inline pid_t gettid()
