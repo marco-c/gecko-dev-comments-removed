@@ -126,6 +126,7 @@ public:
   virtual void Revive() = 0;
   
   virtual void RemoveCallback() = 0;
+  
   void Shutdown();
   
 
@@ -551,11 +552,11 @@ public:
 
   AsyncCubebTask(AudioCallbackDriver* aDriver, AsyncCubebOperation aOperation);
 
-  nsresult Dispatch()
+  nsresult Dispatch(uint32_t aFlags = NS_DISPATCH_NORMAL)
   {
     nsresult rv = EnsureThread();
     if (!NS_FAILED(rv)) {
-      rv = sThreadPool->Dispatch(this, NS_DISPATCH_NORMAL);
+      rv = sThreadPool->Dispatch(this, aFlags);
     }
     return rv;
   }

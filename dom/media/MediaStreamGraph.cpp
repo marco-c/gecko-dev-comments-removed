@@ -1441,7 +1441,8 @@ public:
     }
 #endif
 
-    mGraph->mDriver->Shutdown();
+    mGraph->mDriver->Shutdown(); 
+                                 
 
     
     if (mGraph->IsEmpty()) {
