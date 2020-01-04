@@ -998,13 +998,23 @@ ProcessHasTerminated(ProcessType pt)
   return true;
 #elif defined(XP_UNIX)
   int exitStatus;
-  bool exited = waitpid(pt, &exitStatus, WNOHANG) > 0;
-  if (!exited) {
+  pid_t exited = waitpid(pt, &exitStatus, WNOHANG);
+  if (exited == 0) {
+    
     sleep(1);
-  } else if (WIFEXITED(exitStatus) && (WEXITSTATUS(exitStatus) != 0)) {
+    return false;
+  }
+  if (exited == -1) {
+    LOG(("Error while checking if the updater process is finished"));
+    
+    
+    return true;
+  }
+  
+  if (WIFEXITED(exitStatus) && (WEXITSTATUS(exitStatus) != 0)) {
     LOG(("Error while running the updater process, check update.log"));
   }
-  return exited;
+  return true;
 #else
   
   
