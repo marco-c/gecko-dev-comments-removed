@@ -2,6 +2,9 @@
 
 "use strict";
 
+
+requestLongerTimeout(2);
+
 const ADDON_ID = "test-devtools@mozilla.org";
 const ADDON_NAME = "test-devtools";
 
