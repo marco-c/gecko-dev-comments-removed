@@ -147,7 +147,7 @@ function run_test() {
 }
 
 
-add_task(function test_basic_save_succeeds() {
+add_task(function* test_basic_save_succeeds() {
   setQuickMockTimer();
   let tester = DeferredSaveTester();
   let data = "Test 1 Data";
@@ -159,7 +159,7 @@ add_task(function test_basic_save_succeeds() {
 
 
 
-add_task(function test_two_saves() {
+add_task(function* test_two_saves() {
   setQuickMockTimer();
   let tester = DeferredSaveTester();
   let firstCallback_happened = false;
@@ -182,7 +182,7 @@ add_task(function test_two_saves() {
 
 
 
-add_task(function test_two_saves_delay() {
+add_task(function* test_two_saves_delay() {
   let timerPromise = setPromiseMockTimer();
   let tester = DeferredSaveTester();
   let firstCallback_happened = false;
@@ -219,7 +219,7 @@ add_task(function test_two_saves_delay() {
 
 
 
-add_task(function test_error_immediate() {
+add_task(function* test_error_immediate() {
   let tester = DeferredSaveTester();
   let testError = new Error("Forced failure");
   function writeFail(aTester) {
@@ -243,7 +243,7 @@ add_task(function test_error_immediate() {
 
 
 
-add_task(function dirty_while_writing() {
+add_task(function* dirty_while_writing() {
   let tester = DeferredSaveTester();
   let firstData = "First data";
   let secondData = "Second data";
@@ -317,7 +317,7 @@ function write_then_disable(aTester) {
 
 
 
-add_task(function flush_after_save() {
+add_task(function* flush_after_save() {
   setQuickMockTimer();
   let tester = DeferredSaveTester();
   let dataToSave = "Flush after save";
@@ -328,7 +328,7 @@ add_task(function flush_after_save() {
 });
 
 
-add_task(function flush_during_write() {
+add_task(function* flush_during_write() {
   let tester = DeferredSaveTester();
   let dataToSave = "Flush during write";
   let firstCallback_happened = false;
@@ -361,7 +361,7 @@ add_task(function flush_during_write() {
 
 
 
-add_task(function flush_while_dirty() {
+add_task(function* flush_while_dirty() {
   let timerPromise = setPromiseMockTimer();
   let tester = DeferredSaveTester();
   let firstData = "Flush while dirty, valid data";
@@ -397,7 +397,7 @@ add_task(function flush_while_dirty() {
 
 
 
-add_task(function flush_writing_dirty() {
+add_task(function* flush_writing_dirty() {
   let timerPromise = setPromiseMockTimer();
   let tester = DeferredSaveTester();
   let firstData = "Flush first pass data";
@@ -463,7 +463,7 @@ function badDataProvider() {
 
 
 
-add_task(function data_throw() {
+add_task(function* data_throw() {
   setQuickMockTimer();
   badDataError = expectedDataError;
   let tester = DeferredSaveTester(badDataProvider);
@@ -473,7 +473,7 @@ add_task(function data_throw() {
 });
 
 
-add_task(function data_throw_during_flush() {
+add_task(function* data_throw_during_flush() {
   badDataError = expectedDataError;
   let tester = DeferredSaveTester(badDataProvider);
   let firstCallback_happened = false;
@@ -508,7 +508,7 @@ add_task(function data_throw_during_flush() {
 
 
 
-add_task(function delay_flush_race() {
+add_task(function* delay_flush_race() {
   let timerPromise = setPromiseMockTimer();
   let tester = DeferredSaveTester();
   let firstData = "First save";

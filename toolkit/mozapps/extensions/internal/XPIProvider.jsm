@@ -1797,7 +1797,7 @@ function escapeAddonURI(aAddon, aUri, aUpdateType, aAppVersion)
 }
 
 function removeAsync(aFile) {
-  return Task.spawn(function() {
+  return Task.spawn(function*() {
     let info = null;
     try {
       info = yield OS.File.stat(aFile.path);
@@ -5841,7 +5841,7 @@ AddonInstall.prototype = {
     let stagingDir = this.installLocation.getStagingDir();
     let stagedAddon = stagingDir.clone();
 
-    Task.spawn((function() {
+    Task.spawn((function*() {
       let installedUnpacked = 0;
       yield this.installLocation.requestStagingDir();
 
@@ -7915,7 +7915,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
 
-  installAddonSet: Task.async(function(aAddons) {
+  installAddonSet: Task.async(function*(aAddons) {
     
     yield OS.File.makeDir(this._baseDir.path, { ignoreExisting: true });
 

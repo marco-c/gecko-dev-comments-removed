@@ -56,14 +56,14 @@ function check_empty_state() {
 
 
 
-add_task(function first_run() {
+add_task(function* first_run() {
   startupManager();
   check_empty_state();
   yield true;
 });
 
 
-function trigger_db_load() {
+function* trigger_db_load() {
   let addonDefer = Promise.defer();
   AddonManager.getAddonsByTypes(['extension'], addonDefer.resolve);
   let addonList = yield addonDefer.promise;
@@ -76,7 +76,7 @@ function trigger_db_load() {
 add_task(trigger_db_load);
 
 
-add_task(function restart_and_recheck() {
+add_task(function* restart_and_recheck() {
   restartManager();
   check_empty_state();
   yield true;

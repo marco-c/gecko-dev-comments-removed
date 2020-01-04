@@ -232,7 +232,7 @@ function* check_addons_uninstalled(aAddonList) {
 
 
 
-add_task(function cancel_during_repopulate() {
+add_task(function* cancel_during_repopulate() {
   let a5, a8, a9, a10;
 
   Services.prefs.setBoolPref(PREF_STRICT_COMPAT, true);
@@ -297,7 +297,7 @@ add_task(function cancel_during_repopulate() {
 
 
 
-add_task(function cancel_during_findUpdates() {
+add_task(function* cancel_during_findUpdates() {
   let a5, a8, a9;
 
   Services.prefs.setBoolPref(PREF_STRICT_COMPAT, true);
@@ -357,7 +357,7 @@ add_task(function cancel_during_findUpdates() {
 
 
 
-add_task(function cancel_mismatch() {
+add_task(function* cancel_mismatch() {
   let a3, a5, a7, a8, a9;
 
   Services.prefs.setBoolPref(PREF_STRICT_COMPAT, true);
@@ -416,7 +416,7 @@ add_task(function cancel_mismatch() {
 
 
 
-add_task(function cancel_mismatch_no_updates() {
+add_task(function* cancel_mismatch_no_updates() {
   let a3, a5, a6
 
   Services.prefs.setBoolPref(PREF_STRICT_COMPAT, true);

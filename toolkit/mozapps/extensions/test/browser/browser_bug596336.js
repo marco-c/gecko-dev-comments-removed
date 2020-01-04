@@ -61,7 +61,7 @@ var check_addon = Task.async(function*(aAddon, aVersion) {
 });
 
 
-add_task(function() {
+add_task(function*() {
   yield install_addon("browser_bug596336_1");
   let [aAddon] = yield promiseAddonsByIDs(["addon1@tests.mozilla.org"]);
   yield check_addon(aAddon, "1.0");
@@ -79,7 +79,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield install_addon("browser_bug596336_1");
   let [aAddon] = yield promiseAddonsByIDs(["addon1@tests.mozilla.org"]);
   aAddon.userDisabled = true;
@@ -98,7 +98,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield install_addon("browser_bug596336_1");
   let [aAddon] = yield promiseAddonsByIDs(["addon1@tests.mozilla.org"]);
   yield check_addon(aAddon, "1.0");
@@ -126,7 +126,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield install_addon("browser_bug596336_1");
   let [aAddon] = yield promiseAddonsByIDs(["addon1@tests.mozilla.org"]);
   aAddon.userDisabled = true;
