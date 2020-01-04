@@ -249,23 +249,33 @@ public:
   static imgLoader* Singleton();
   static imgLoader* PBSingleton();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   imgLoader();
-
   nsresult Init();
-
-  static already_AddRefed<imgLoader>
-  Create()
-  {
-      
-      
-      
-      
-      
-      nsCOMPtr<imgILoader> loader = do_CreateInstance("@mozilla.org/image/loader;1");
-      
-      
-      return loader.forget().downcast<imgLoader>();
-  }
 
   nsresult LoadImage(nsIURI* aURI,
                      nsIURI* aInitialDocumentURI,
@@ -369,6 +379,8 @@ public:
   bool SetHasProxies(imgRequest* aRequest);
 
 private: 
+
+  static already_AddRefed<imgLoader> CreateImageLoader();
 
   bool ValidateEntry(imgCacheEntry* aEntry, nsIURI* aKey,
                      nsIURI* aInitialDocumentURI, nsIURI* aReferrerURI,

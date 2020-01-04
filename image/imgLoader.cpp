@@ -11,6 +11,7 @@
  #include "mozilla/ChaosMode.h"
 
 #include "ImageLogging.h"
+#include "nsImageModule.h"
 #include "nsPrintfCString.h"
 #include "imgLoader.h"
 #include "imgRequestProxy.h"
@@ -1136,11 +1137,25 @@ NS_IMPL_ISUPPORTS(imgLoader, imgILoader, nsIContentSniffer, imgICache,
 static imgLoader* gSingleton = nullptr;
 static imgLoader* gPBSingleton = nullptr;
 
+ already_AddRefed<imgLoader>
+imgLoader::CreateImageLoader()
+{
+  
+  
+  
+  mozilla::image::EnsureModuleInitialized();
+
+  RefPtr<imgLoader> loader = new imgLoader();
+  loader->Init();
+
+  return loader.forget();
+}
+
 imgLoader*
 imgLoader::Singleton()
 {
   if (!gSingleton) {
-    gSingleton = imgLoader::Create().take();
+    gSingleton = CreateImageLoader().take();
   }
   return gSingleton;
 }
@@ -1149,7 +1164,7 @@ imgLoader*
 imgLoader::PBSingleton()
 {
   if (!gPBSingleton) {
-    gPBSingleton = imgLoader::Create().take();
+    gPBSingleton = CreateImageLoader().take();
     gPBSingleton->RespectPrivacyNotifications();
   }
   return gPBSingleton;

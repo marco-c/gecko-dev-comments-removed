@@ -29,6 +29,8 @@
 
 using namespace mozilla::image;
 
+
+
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(imgLoader, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR(imgRequestProxy)
 NS_GENERIC_FACTORY_CONSTRUCTOR(imgTools)
@@ -85,9 +87,14 @@ static const mozilla::Module::CategoryEntry kImageCategories[] = {
 
 static bool sInitialized = false;
 nsresult
-mozilla::image::InitModule()
+mozilla::image::EnsureModuleInitialized()
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (sInitialized) {
+    return NS_OK;
+  }
+
   
   gfxPrefs::GetSingleton();
 
@@ -118,7 +125,7 @@ static const mozilla::Module kImageModule = {
   kImageContracts,
   kImageCategories,
   nullptr,
-  mozilla::image::InitModule,
+  mozilla::image::EnsureModuleInitialized,
   
   
   
