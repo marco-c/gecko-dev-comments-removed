@@ -64,8 +64,6 @@ public:
 
 
 
-
-
   static already_AddRefed<Decoder>
   CreateDecoder(DecoderType aType,
                 RasterImage* aImage,
@@ -73,12 +71,9 @@ public:
                 const Maybe<gfx::IntSize>& aTargetSize,
                 DecoderFlags aDecoderFlags,
                 SurfaceFlags aSurfaceFlags,
-                int aSampleSize,
-                const gfx::IntSize& aResolution);
+                int aSampleSize);
 
   
-
-
 
 
 
@@ -96,12 +91,9 @@ public:
                          RasterImage* aImage,
                          SourceBuffer* aSourceBuffer,
                          DecoderFlags aDecoderFlags,
-                         SurfaceFlags aSurfaceFlags,
-                         const gfx::IntSize& aResolution);
+                         SurfaceFlags aSurfaceFlags);
 
   
-
-
 
 
 
@@ -119,8 +111,7 @@ public:
   CreateMetadataDecoder(DecoderType aType,
                         RasterImage* aImage,
                         SourceBuffer* aSourceBuffer,
-                        int aSampleSize,
-                        const gfx::IntSize& aResolution);
+                        int aSampleSize);
 
   
 

@@ -234,11 +234,6 @@ public:
   nsresult SetSourceSizeHint(uint32_t aSizeHint);
 
   
-  void SetRequestedResolution(const nsIntSize requestedResolution) {
-    mRequestedResolution = requestedResolution;
-  }
-
-  
   void SetRequestedSampleSize(int requestedSampleSize) {
     mRequestedSampleSize = requestedSampleSize;
   }
@@ -364,10 +359,6 @@ private:
   
   
   int32_t                        mDecodeCount;
-
-  
-  
-  nsIntSize                  mRequestedResolution;
 
   
   int                        mRequestedSampleSize;

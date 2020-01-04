@@ -335,22 +335,6 @@ bool nsMediaFragmentURIParser::ParseXYWH(nsDependentSubstring aString)
   return false;
 }
 
-bool nsMediaFragmentURIParser::ParseMozResolution(nsDependentSubstring aString)
-{
-  int32_t w, h;
-
-  
-  if (ParseInteger(aString, w) && w >= 0 &&
-      ParseCommaSeparator(aString)       &&
-      ParseInteger(aString, h) && h >= 0 &&
-      aString.Length() == 0) {
-    mResolution.emplace(w,h);
-    return true;
-  }
-
-  return false;
-}
-
 bool nsMediaFragmentURIParser::ParseMozSampleSize(nsDependentSubstring aString)
 {
   int32_t sampleSize;
@@ -384,10 +368,9 @@ void nsMediaFragmentURIParser::Parse(nsACString& aRef)
   }
 
   
-  bool gotTemporal = false, gotSpatial = false,
-      gotResolution = false, gotSampleSize = false;
+  bool gotTemporal = false, gotSpatial = false, gotSampleSize = false;
   for (int i = fragments.Length() - 1 ; i >= 0 ; --i) {
-    if (gotTemporal && gotSpatial && gotResolution && gotSampleSize) {
+    if (gotTemporal && gotSpatial && gotSampleSize) {
       
       break;
     } else if (!gotTemporal && fragments[i].first.EqualsLiteral("t")) {
@@ -396,9 +379,6 @@ void nsMediaFragmentURIParser::Parse(nsACString& aRef)
     } else if (!gotSpatial && fragments[i].first.EqualsLiteral("xywh")) {
       nsAutoString value = NS_ConvertUTF8toUTF16(fragments[i].second);
       gotSpatial = ParseXYWH(nsDependentSubstring(value, 0));
-    } else if (!gotResolution && fragments[i].first.EqualsLiteral("-moz-resolution")) {
-      nsAutoString value = NS_ConvertUTF8toUTF16(fragments[i].second);
-      gotResolution = ParseMozResolution(nsDependentSubstring(value, 0));
     } else if (!gotSampleSize && fragments[i].first.EqualsLiteral("-moz-samplesize")) {
       nsAutoString value = NS_ConvertUTF8toUTF16(fragments[i].second);
       gotSampleSize = ParseMozSampleSize(nsDependentSubstring(value, 0));

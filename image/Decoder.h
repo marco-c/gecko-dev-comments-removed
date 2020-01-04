@@ -136,14 +136,6 @@ public:
 
 
 
-  virtual void SetResolution(const gfx::IntSize& aResolution) { }
-
-  
-
-
-
-
-
 
 
 

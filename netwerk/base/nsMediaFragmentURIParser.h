@@ -56,12 +56,6 @@ public:
   bool HasClip() const { return mClip.isSome(); }
 
   
-  bool HasResolution() const { return mResolution.isSome(); }
-
-  
-  nsIntSize GetResolution() const { return *mResolution; }
-
-  
   
   
   nsIntRect GetClip() const { return *mClip; }
@@ -103,7 +97,6 @@ private:
   Maybe<double>    mEnd;
   Maybe<nsIntRect> mClip;
   ClipUnit         mClipUnit;
-  Maybe<nsIntSize> mResolution;
   Maybe<int>       mSampleSize;
 };
 
