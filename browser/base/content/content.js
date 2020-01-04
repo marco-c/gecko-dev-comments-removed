@@ -406,6 +406,22 @@ var ClickEventHandler = {
       }
       json.noReferrer = BrowserUtils.linkHasNoReferrer(node)
 
+      
+      
+      
+      json.allowMixedContent = false;
+      let docshell = ownerDoc.defaultView.QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsIWebNavigation)
+                             .QueryInterface(Ci.nsIDocShell);
+      if (docShell.mixedContentChannel) {
+        const sm = Services.scriptSecurityManager;
+        try {
+          let targetURI = BrowserUtils.makeURI(href);
+          sm.checkSameOriginURI(docshell.mixedContentChannel.URI, targetURI, false);
+          json.allowMixedContent = true;
+        } catch (e) {}
+      }
+
       sendAsyncMessage("Content:Click", json);
       return;
     }
