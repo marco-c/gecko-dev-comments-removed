@@ -76,7 +76,8 @@ public:
 
   
   Accessible* ActionWalk(bool* aIsLink = nullptr,
-                          bool* aIsOnclick = nullptr);
+                         bool* aIsOnclick = nullptr,
+                         bool* aIsLabelWithControl = nullptr);
   
   virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex) override;
 

@@ -31,6 +31,11 @@ public:
   
 
 
+  static bool IsLabelWithControl(nsIContent *aContent);
+
+  
+
+
 
   static bool HasClickListener(nsIContent *aContent);
 
