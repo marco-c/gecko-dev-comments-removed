@@ -35,11 +35,11 @@ protected:
 
 
 
-  nsresult OpenChannel(nsIChannel* channel,
-                                   uint32_t aFlags,
-                                   nsIInterfaceRequestor* aWindowContext,
-                                   bool aChannelOpen,
-                                   nsIStreamListener** aListener);
+  MOZ_MUST_USE nsresult OpenChannel(nsIChannel* channel,
+                                    uint32_t aFlags,
+                                    nsIInterfaceRequestor* aWindowContext,
+                                    bool aChannelOpen,
+                                    nsIStreamListener** aListener);
 
   
 
