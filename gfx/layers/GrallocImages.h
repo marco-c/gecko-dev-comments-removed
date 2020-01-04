@@ -53,11 +53,6 @@ class GrallocImage : public RecyclingPlanarYCbCrImage
   typedef PlanarYCbCrData Data;
   static int32_t sColorIdMap[];
 public:
-  struct GrallocData {
-    RefPtr<TextureClient> mGraphicBuffer;
-    gfx::IntSize mPicSize;
-  };
-
   GrallocImage();
 
   virtual ~GrallocImage();
@@ -72,7 +67,7 @@ public:
 
 
 
-  virtual bool SetData(const GrallocData& aData);
+  void SetData(TextureClient* aGraphicBuffer, const gfx::IntSize& aSize);
 
   
   enum {

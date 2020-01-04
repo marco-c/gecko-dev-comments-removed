@@ -118,13 +118,14 @@ protected:
 
 
 class EGLImageImage;
+class SharedRGBImage;
 #ifdef MOZ_WIDGET_ANDROID
 class SurfaceTextureImage;
-#endif
-#ifdef XP_MACOSX
+#elif defined(XP_MACOSX)
 class MacIOSurfaceImage;
+#elif defined(MOZ_WIDGET_GONK)
+class OverlayImage;
 #endif
-class SharedRGBImage;
 
 
 
@@ -331,6 +332,10 @@ public:
 
   
   RefPtr<SharedRGBImage> CreateSharedRGBImage();
+
+#ifdef MOZ_WIDGET_GONK
+  RefPtr<OverlayImage> CreateOverlayImage();
+#endif
 
   struct NonOwningImage {
     explicit NonOwningImage(Image* aImage = nullptr,

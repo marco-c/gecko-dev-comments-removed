@@ -56,6 +56,7 @@ class TextureClientRecycleAllocator;
 class TextureClientPool;
 #endif
 class KeepAlive;
+class GrallocTextureClientOGL;
 
 
 
@@ -234,6 +235,7 @@ public:
   }
 
   virtual TextureClientYCbCr* AsTextureClientYCbCr() { return nullptr; }
+  virtual GrallocTextureClientOGL* AsGrallocTextureClientOGL() { return nullptr; }
 
   
 
