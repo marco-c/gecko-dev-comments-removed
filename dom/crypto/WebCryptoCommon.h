@@ -7,12 +7,11 @@
 #ifndef mozilla_dom_WebCryptoCommon_h
 #define mozilla_dom_WebCryptoCommon_h
 
-#include "js/StructuredClone.h"
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/dom/CryptoBuffer.h"
-#include "nsContentUtils.h"
-#include "nsString.h"
 #include "pk11pub.h"
+#include "nsString.h"
+#include "nsContentUtils.h"
+#include "mozilla/dom/CryptoBuffer.h"
+#include "js/StructuredClone.h"
 
 
 #define WEBCRYPTO_ALG_AES_CBC       "AES-CBC"
@@ -107,7 +106,7 @@
 
 static const uint8_t id_ecDH[] = { 0x2b, 0x81, 0x04, 0x70 };
 const SECItem SEC_OID_DATA_EC_DH = { siBuffer, (unsigned char*)id_ecDH,
-                                     mozilla::ArrayLength(id_ecDH) };
+                                     PR_ARRAY_SIZE(id_ecDH) };
 
 
 static const uint8_t dhKeyAgreement[] = {
@@ -115,7 +114,7 @@ static const uint8_t dhKeyAgreement[] = {
 };
 const SECItem SEC_OID_DATA_DH_KEY_AGREEMENT = { siBuffer,
                                                 (unsigned char*)dhKeyAgreement,
-                                                mozilla::ArrayLength(dhKeyAgreement) };
+                                                PR_ARRAY_SIZE(dhKeyAgreement) };
 
 namespace mozilla {
 namespace dom {

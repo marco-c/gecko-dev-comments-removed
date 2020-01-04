@@ -4,15 +4,13 @@
 
 
 
-#include "CryptoKey.h"
-
-#include "ScopedNSSTypes.h"
+#include "pk11pub.h"
 #include "cryptohi.h"
-#include "mozilla/ArrayUtils.h"
+#include "nsNSSComponent.h"
+#include "ScopedNSSTypes.h"
+#include "mozilla/dom/CryptoKey.h"
 #include "mozilla/dom/SubtleCryptoBinding.h"
 #include "mozilla/dom/ToJSValue.h"
-#include "nsNSSComponent.h"
-#include "pk11pub.h"
 
 
 
@@ -363,7 +361,7 @@ CryptoKey::AddPublicKeyData(SECKEYPublicKey* aPublicKey)
   };
 
   mPrivateKey = PrivateKeyFromPrivateKeyTemplate(keyTemplate,
-                                                 ArrayLength(keyTemplate));
+                                                 PR_ARRAY_SIZE(keyTemplate));
   NS_ENSURE_TRUE(mPrivateKey, NS_ERROR_DOM_OPERATION_ERR);
 
   return NS_OK;
@@ -799,7 +797,7 @@ CryptoKey::PrivateKeyFromJwk(const JsonWebKey& aJwk,
     };
 
     return PrivateKeyFromPrivateKeyTemplate(keyTemplate,
-                                            ArrayLength(keyTemplate));
+                                            PR_ARRAY_SIZE(keyTemplate));
   }
 
   if (aJwk.mKty.EqualsLiteral(JWK_TYPE_RSA)) {
@@ -842,7 +840,7 @@ CryptoKey::PrivateKeyFromJwk(const JsonWebKey& aJwk,
     };
 
     return PrivateKeyFromPrivateKeyTemplate(keyTemplate,
-                                            ArrayLength(keyTemplate));
+                                            PR_ARRAY_SIZE(keyTemplate));
   }
 
   return nullptr;
