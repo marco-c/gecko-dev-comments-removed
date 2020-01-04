@@ -67,9 +67,9 @@ public:
 };
 #endif
 
-mozilla::ThreadLocal<PseudoStack *> tlsPseudoStack;
-mozilla::ThreadLocal<GeckoSampler *> tlsTicker;
-mozilla::ThreadLocal<void *> tlsStackTop;
+MOZ_THREAD_LOCAL(PseudoStack *) tlsPseudoStack;
+MOZ_THREAD_LOCAL(GeckoSampler *) tlsTicker;
+MOZ_THREAD_LOCAL(void *) tlsStackTop;
 
 
 

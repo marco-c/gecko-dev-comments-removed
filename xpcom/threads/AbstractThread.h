@@ -85,7 +85,7 @@ public:
 
 protected:
   virtual ~AbstractThread() {}
-  static ThreadLocal<AbstractThread*> sCurrentThreadTLS;
+  static MOZ_THREAD_LOCAL(AbstractThread*) sCurrentThreadTLS;
 
   
   

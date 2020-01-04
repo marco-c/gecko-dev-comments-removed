@@ -60,10 +60,10 @@ public:
 private:
   
   
-  static ThreadLocal<bool> sDispatched;
+  static MOZ_THREAD_LOCAL(bool) sDispatched;
 };
 
- ThreadLocal<bool>
+ MOZ_THREAD_LOCAL(bool)
 FlushRejections::sDispatched;
 
 static Promise*

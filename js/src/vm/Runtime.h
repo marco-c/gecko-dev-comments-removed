@@ -63,7 +63,7 @@ class TraceLoggerThread;
 #endif
 
 
-extern mozilla::ThreadLocal<PerThreadData*> TlsPerThreadData;
+extern MOZ_THREAD_LOCAL(PerThreadData*) TlsPerThreadData;
 
 } 
 

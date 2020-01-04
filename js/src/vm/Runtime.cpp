@@ -63,11 +63,10 @@ using mozilla::NegativeInfinity;
 using mozilla::PodZero;
 using mozilla::PodArrayZero;
 using mozilla::PositiveInfinity;
-using mozilla::ThreadLocal;
 using JS::GenericNaN;
 using JS::DoubleNaNValue;
 
- ThreadLocal<PerThreadData*> js::TlsPerThreadData;
+ MOZ_THREAD_LOCAL(PerThreadData*) js::TlsPerThreadData;
  Atomic<size_t> JSRuntime::liveRuntimesCount;
 
 namespace js {

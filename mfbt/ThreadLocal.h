@@ -42,6 +42,24 @@ typedef unsigned long sig_safe_t;
 typedef sig_atomic_t sig_safe_t;
 #endif
 
+namespace detail {
+
+#if defined(HAVE_THREAD_TLS_KEYWORD)
+#define MOZ_HAS_THREAD_LOCAL
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -72,6 +90,7 @@ typedef sig_atomic_t sig_safe_t;
 template<typename T>
 class ThreadLocal
 {
+#ifndef MOZ_HAS_THREAD_LOCAL
 #if defined(XP_WIN)
   typedef unsigned long key_t;
 #else
@@ -93,11 +112,24 @@ class ThreadLocal
   {
     typedef S *Type;
   };
+#endif
+
+  bool initialized() const {
+#ifdef MOZ_HAS_THREAD_LOCAL
+    return true;
+#else
+    return mInited;
+#endif
+  }
 
 public:
+  
+  
+#ifndef MOZ_HAS_THREAD_LOCAL
   ThreadLocal()
     : mKey(0), mInited(false)
   {}
+#endif
 
   MOZ_WARN_UNUSED_RESULT inline bool init();
 
@@ -105,11 +137,13 @@ public:
 
   inline void set(const T aValue);
 
-  bool initialized() const { return mInited; }
-
 private:
+#ifdef MOZ_HAS_THREAD_LOCAL
+  T mValue;
+#else
   key_t mKey;
   bool mInited;
+#endif
 };
 
 template<typename T>
@@ -122,20 +156,29 @@ ThreadLocal<T>::init()
   static_assert(sizeof(T) <= sizeof(void*),
                 "mozilla::ThreadLocal can't be used for types larger than "
                 "a pointer");
-  MOZ_ASSERT(!initialized());
-#ifdef XP_WIN
-  mKey = TlsAlloc();
-  mInited = mKey != 0xFFFFFFFFUL; 
+
+#ifdef MOZ_HAS_THREAD_LOCAL
+  return true;
 #else
-  mInited = !pthread_key_create(&mKey, nullptr);
+  if (!initialized()) {
+#ifdef XP_WIN
+    mKey = TlsAlloc();
+    mInited = mKey != 0xFFFFFFFFUL; 
+#else
+    mInited = !pthread_key_create(&mKey, nullptr);
 #endif
+  }
   return mInited;
+#endif
 }
 
 template<typename T>
 inline T
 ThreadLocal<T>::get() const
 {
+#ifdef MOZ_HAS_THREAD_LOCAL
+  return mValue;
+#else
   MOZ_ASSERT(initialized());
   void* h;
 #ifdef XP_WIN
@@ -144,12 +187,16 @@ ThreadLocal<T>::get() const
   h = pthread_getspecific(mKey);
 #endif
   return static_cast<T>(reinterpret_cast<typename Helper<T>::Type>(h));
+#endif
 }
 
 template<typename T>
 inline void
 ThreadLocal<T>::set(const T aValue)
 {
+#ifdef MOZ_HAS_THREAD_LOCAL
+  mValue = aValue;
+#else
   MOZ_ASSERT(initialized());
   void* h = reinterpret_cast<void*>(static_cast<typename Helper<T>::Type>(aValue));
 #ifdef XP_WIN
@@ -160,8 +207,16 @@ ThreadLocal<T>::set(const T aValue)
   if (!succeeded) {
     MOZ_CRASH();
   }
+#endif
 }
 
+#ifdef MOZ_HAS_THREAD_LOCAL
+#define MOZ_THREAD_LOCAL(TYPE) __thread mozilla::detail::ThreadLocal<TYPE>
+#else
+#define MOZ_THREAD_LOCAL(TYPE) mozilla::detail::ThreadLocal<TYPE>
+#endif
+
+} 
 } 
 
 #endif 
