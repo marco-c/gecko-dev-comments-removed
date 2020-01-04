@@ -154,6 +154,19 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
         };
       }).api(),
 
+      
+
+
+
+
+
+      onHighlighted: new WindowEventManager(context, "tabs.onHighlighted", "TabSelect", (fire, event) => {
+        let tab = event.originalTarget;
+        let tabIds = [TabManager.getId(tab)];
+        let windowId = WindowManager.getId(tab.ownerDocument.defaultView);
+        fire({tabIds, windowId});
+      }).api(),
+
       onAttached: new EventManager(context, "tabs.onAttached", fire => {
         let fireForTab = tab => {
           let newWindowId = WindowManager.getId(tab.ownerDocument.defaultView);
@@ -397,20 +410,16 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
       }).api(),
 
       create: function(createProperties) {
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
           function createInWindow(window) {
             let url;
-
             if (createProperties.url !== null) {
               url = context.uri.resolve(createProperties.url);
-
-              if (!context.checkLoadURL(url, {dontReportErrors: true})) {
-                reject({message: `URL not allowed: ${url}`});
-                return;
-              }
+            } else {
+              url = window.BROWSER_NEW_TAB_URL;
             }
 
-            let tab = window.gBrowser.addTab(url || window.BROWSER_NEW_TAB_URL);
+            let tab = window.gBrowser.addTab(url);
 
             let active = true;
             if (createProperties.active !== null) {
@@ -464,23 +473,10 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
 
       update: function(tabId, updateProperties) {
         let tab = tabId !== null ? TabManager.getTab(tabId) : TabManager.activeTab;
-
-        if (!tab) {
-          return Promise.reject({message: `No tab found with tabId: ${tabId}`});
-        }
-
         let tabbrowser = tab.ownerDocument.defaultView.gBrowser;
-
         if (updateProperties.url !== null) {
-          let url = context.uri.resolve(updateProperties.url);
-
-          if (!context.checkLoadURL(url, {dontReportErrors: true})) {
-            return Promise.reject({message: `URL not allowed: ${url}`});
-          }
-
-          tab.linkedBrowser.loadURI(url);
+          tab.linkedBrowser.loadURI(updateProperties.url);
         }
-
         if (updateProperties.active !== null) {
           if (updateProperties.active) {
             tabbrowser.selectedTab = tab;
@@ -643,7 +639,7 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
                                    message, recipient);
       },
 
-      _execute: function(tabId, details, kind, method) {
+      _execute: function(tabId, details, kind) {
         let tab = tabId !== null ? TabManager.getTab(tabId) : TabManager.activeTab;
         let mm = tab.linkedBrowser.messageManager;
 
@@ -651,15 +647,6 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
           js: [],
           css: [],
         };
-
-        
-        if ((details.code === null) == (details.file === null)) {
-          return Promise.reject({message: `${method} requires either a 'code' or a 'file' property, but not both`});
-        }
-
-        if (details.frameId !== null && details.allFrames) {
-          return Promise.reject({message: `'frameId' and 'allFrames' are mutually exclusive`});
-        }
 
         let recipient = {
           innerWindowID: tab.linkedBrowser.innerWindowID,
@@ -686,27 +673,22 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
         if (details.allFrames) {
           options.all_frames = details.allFrames;
         }
-        if (details.frameId !== null) {
-          options.frame_id = details.frameId;
-        }
         if (details.matchAboutBlank) {
           options.match_about_blank = details.matchAboutBlank;
         }
         if (details.runAt !== null) {
           options.run_at = details.runAt;
-        } else {
-          options.run_at = "document_idle";
         }
 
         return context.sendMessage(mm, "Extension:Execute", {options}, recipient);
       },
 
       executeScript: function(tabId, details) {
-        return self.tabs._execute(tabId, details, "js", "executeScript");
+        return self.tabs._execute(tabId, details, "js");
       },
 
       insertCSS: function(tabId, details) {
-        return self.tabs._execute(tabId, details, "css", "insertCSS");
+        return self.tabs._execute(tabId, details, "css");
       },
 
       connect: function(tabId, connectInfo) {
