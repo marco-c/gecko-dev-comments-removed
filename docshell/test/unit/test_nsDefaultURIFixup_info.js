@@ -212,11 +212,10 @@ var testcases = [ {
     protocolChange: true
   }, {
     input: "[::1][100",
-    fixedURI: "http://[::1][100/",
-    alternateURI: "http://[::1][100/",
+    fixedURI: null,
+    alternateURI: null,
     keywordLookup: true,
-    protocolChange: true,
-    affectedByDNSForSingleHosts: true,
+    protocolChange: true
   }, {
     input: "[::1]]",
     keywordLookup: true,
@@ -503,13 +502,14 @@ if (Services.appinfo.OS.toLowerCase().startsWith("win")) {
     fixedURI: "file:////mozilla",
     protocolChange: true,
   });
+  
   testcases.push({
     input: "mozilla\\",
-    fixedURI: "http://mozilla\\/",
-    alternateURI: "http://www.mozilla/",
+    
+    
     keywordLookup: true,
     protocolChange: true,
-    affectedByDNSForSingleHosts: true,
+    
   });
 }
 
