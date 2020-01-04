@@ -112,7 +112,7 @@ class GamepadManager final : public nsIObserver,
   
   
   
-  GamepadEventChannelChild MOZ_NON_OWNING_REF *mChild;
+  nsTArray<GamepadEventChannelChild *> mChannelChildren;
 
  private:
 
