@@ -355,6 +355,14 @@ let AboutPermissions = {
 
   _sites: {},
 
+  
+
+
+  get sitesFilter () {
+    delete this.sitesFilter;
+    return this.sitesFilter = document.getElementById("sites-filter");
+  },
+
   sitesList: null,
   _selectedSite: null,
 
@@ -497,7 +505,7 @@ let AboutPermissions = {
         while (row = aResults.getNextRow()) {
           let spec = row.getResultByName("url");
           let uri = NetUtil.newURI(spec);
-          let principal = gSecMan.getNoAppCodebasePrincipal(uri);
+          let principal = gSecMan.createCodebasePrincipal(uri, {});
 
           AboutPermissions.addPrincipal(principal);
         }
@@ -548,7 +556,7 @@ let AboutPermissions = {
       try {
         
         let uri = NetUtil.newURI(aLogin.hostname);
-        let principal = gSecMan.getNoAppCodebasePrincipal(uri);
+        let principal = gSecMan.createCodebasePrincipal(uri, {});
         this.addPrincipal(principal);
       } catch (e) {
         
@@ -564,7 +572,7 @@ let AboutPermissions = {
       try {
         
         let uri = NetUtil.newURI(aHostname);
-        let principal = gSecMan.getNoAppCodebasePrincipal(uri);
+        let principal = gSecMan.createCodebasePrincipal(uri, {});
         this.addPrincipal(principal);
       } catch (e) {
         
@@ -620,7 +628,7 @@ let AboutPermissions = {
     aSite.listitem = item;
 
     
-    let filterValue = document.getElementById("sites-filter").value.toLowerCase();
+    let filterValue = this.sitesFilter.value.toLowerCase();
     item.collapsed = aSite.principal.origin.toLowerCase().indexOf(filterValue) == -1;
 
     (this._listFragment || this.sitesList).appendChild(item);
@@ -643,7 +651,7 @@ let AboutPermissions = {
 
   filterSitesList: function() {
     let siteItems = this.sitesList.children;
-    let filterValue = document.getElementById("sites-filter").value.toLowerCase();
+    let filterValue = this.sitesFilter.value.toLowerCase();
 
     if (filterValue == "") {
       for (let i = 0; i < siteItems.length; i++) {
@@ -880,6 +888,13 @@ let AboutPermissions = {
       window.openDialog("chrome://browser/content/preferences/cookies.xul",
                         "Browser:Cookies", "", {filterString : selectedHost});
     }
+  },
+
+  
+
+
+  focusFilterBox: function() {
+    this.sitesFilter.focus();
   }
 }
 
