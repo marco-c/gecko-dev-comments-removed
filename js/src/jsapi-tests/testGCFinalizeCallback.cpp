@@ -7,7 +7,7 @@
 static const unsigned BufferSize = 20;
 static unsigned FinalizeCalls = 0;
 static JSFinalizeStatus StatusBuffer[BufferSize];
-static bool IsCompartmentGCBuffer[BufferSize];
+static bool IsZoneGCBuffer[BufferSize];
 
 BEGIN_TEST(testGCFinalizeCallback)
 {
@@ -19,7 +19,7 @@ BEGIN_TEST(testGCFinalizeCallback)
     CHECK(cx->gc.isFullGc());
     CHECK(checkSingleGroup());
     CHECK(checkFinalizeStatus());
-    CHECK(checkFinalizeIsCompartmentGC(false));
+    CHECK(checkFinalizeIsZoneGC(false));
 
     
     FinalizeCalls = 0;
@@ -33,7 +33,7 @@ BEGIN_TEST(testGCFinalizeCallback)
     CHECK(cx->gc.isFullGc());
     CHECK(checkMultipleGroups());
     CHECK(checkFinalizeStatus());
-    CHECK(checkFinalizeIsCompartmentGC(false));
+    CHECK(checkFinalizeIsZoneGC(false));
 
     JS::RootedObject global1(cx, createTestGlobal());
     JS::RootedObject global2(cx, createTestGlobal());
@@ -49,7 +49,7 @@ BEGIN_TEST(testGCFinalizeCallback)
     CHECK(!cx->gc.isFullGc());
     CHECK(checkSingleGroup());
     CHECK(checkFinalizeStatus());
-    CHECK(checkFinalizeIsCompartmentGC(true));
+    CHECK(checkFinalizeIsZoneGC(true));
 
     
     FinalizeCalls = 0;
@@ -60,7 +60,7 @@ BEGIN_TEST(testGCFinalizeCallback)
     CHECK(!cx->gc.isFullGc());
     CHECK(checkSingleGroup());
     CHECK(checkFinalizeStatus());
-    CHECK(checkFinalizeIsCompartmentGC(true));
+    CHECK(checkFinalizeIsZoneGC(true));
 
     
     FinalizeCalls = 0;
@@ -74,7 +74,7 @@ BEGIN_TEST(testGCFinalizeCallback)
     CHECK(!cx->gc.isFullGc());
     CHECK(checkSingleGroup());
     CHECK(checkFinalizeStatus());
-    CHECK(checkFinalizeIsCompartmentGC(true));
+    CHECK(checkFinalizeIsZoneGC(true));
 
     
     FinalizeCalls = 0;
@@ -92,7 +92,7 @@ BEGIN_TEST(testGCFinalizeCallback)
     CHECK(!cx->gc.isFullGc());
     CHECK(checkMultipleGroups());
     CHECK(checkFinalizeStatus());
-    CHECK(checkFinalizeIsCompartmentGC(true));
+    CHECK(checkFinalizeIsZoneGC(true));
 
 #ifdef JS_GC_ZEAL
 
@@ -117,8 +117,8 @@ BEGIN_TEST(testGCFinalizeCallback)
     CHECK(checkFinalizeStatus());
 
     for (unsigned i = 0; i < FinalizeCalls - 1; ++i)
-        CHECK(!IsCompartmentGCBuffer[i]);
-    CHECK(IsCompartmentGCBuffer[FinalizeCalls - 1]);
+        CHECK(!IsZoneGCBuffer[i]);
+    CHECK(IsZoneGCBuffer[FinalizeCalls - 1]);
 
     JS_SetGCZeal(cx, 0, 0);
 
@@ -190,20 +190,20 @@ bool checkFinalizeStatus()
     return true;
 }
 
-bool checkFinalizeIsCompartmentGC(bool isCompartmentGC)
+bool checkFinalizeIsZoneGC(bool isZoneGC)
 {
     for (unsigned i = 0; i < FinalizeCalls; ++i)
-        CHECK(IsCompartmentGCBuffer[i] == isCompartmentGC);
+        CHECK(IsZoneGCBuffer[i] == isZoneGC);
 
     return true;
 }
 
 static void
-FinalizeCallback(JSFreeOp* fop, JSFinalizeStatus status, bool isCompartmentGC, void* data)
+FinalizeCallback(JSFreeOp* fop, JSFinalizeStatus status, bool isZoneGC, void* data)
 {
     if (FinalizeCalls < BufferSize) {
         StatusBuffer[FinalizeCalls] = status;
-        IsCompartmentGCBuffer[FinalizeCalls] = isCompartmentGC;
+        IsZoneGCBuffer[FinalizeCalls] = isZoneGC;
     }
     ++FinalizeCalls;
 }

@@ -1292,8 +1292,6 @@ class GCRuntime
 
 
 
-
-
 #ifdef JS_GC_ZEAL
     uint32_t zealModeBits;
     int zealFrequency;

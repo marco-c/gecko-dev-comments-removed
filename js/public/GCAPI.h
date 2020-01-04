@@ -27,7 +27,7 @@ typedef enum JSGCMode {
     JSGC_MODE_GLOBAL = 0,
 
     
-    JSGC_MODE_COMPARTMENT = 1,
+    JSGC_MODE_ZONE = 1,
 
     
 
@@ -333,12 +333,12 @@ enum GCProgress {
 };
 
 struct JS_PUBLIC_API(GCDescription) {
-    bool isCompartment_;
+    bool isZone_;
     JSGCInvocationKind invocationKind_;
     gcreason::Reason reason_;
 
-    GCDescription(bool isCompartment, JSGCInvocationKind kind, gcreason::Reason reason)
-      : isCompartment_(isCompartment), invocationKind_(kind), reason_(reason) {}
+    GCDescription(bool isZone, JSGCInvocationKind kind, gcreason::Reason reason)
+      : isZone_(isZone), invocationKind_(kind), reason_(reason) {}
 
     char16_t* formatSliceMessage(JSContext* cx) const;
     char16_t* formatSummaryMessage(JSContext* cx) const;

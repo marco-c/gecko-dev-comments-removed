@@ -731,7 +731,7 @@ XPCJSRuntime::CustomGCCallback(JSGCStatus status)
  void
 XPCJSRuntime::FinalizeCallback(JSFreeOp* fop,
                                JSFinalizeStatus status,
-                               bool isCompartmentGC,
+                               bool isZoneGC,
                                void* data)
 {
     XPCJSRuntime* self = nsXPConnect::GetRuntimeInstance();
@@ -818,8 +818,7 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp* fop,
             
             
             
-            
-            bool doSweep = !isCompartmentGC;
+            bool doSweep = !isZoneGC;
 
             if (doSweep) {
                 for (auto i = self->mClassInfo2NativeSetMap->Iter(); !i.Done(); i.Next()) {
@@ -3086,7 +3085,7 @@ AccumulateTelemetryCallback(int id, uint32_t sample, const char* key)
       case JS_TELEMETRY_GC_REASON:
         Telemetry::Accumulate(Telemetry::GC_REASON_2, sample);
         break;
-      case JS_TELEMETRY_GC_IS_COMPARTMENTAL:
+      case JS_TELEMETRY_GC_IS_ZONE_GC:
         Telemetry::Accumulate(Telemetry::GC_IS_COMPARTMENTAL, sample);
         break;
       case JS_TELEMETRY_GC_MS:
