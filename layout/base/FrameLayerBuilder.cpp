@@ -2097,18 +2097,30 @@ ContainerState::GetLayerCreationHint(const nsIFrame* aAnimatedGeometryRoot)
   if (mParameters.mInLowPrecisionDisplayPort) {
     return LayerManager::SCROLLABLE;
   }
-  nsIFrame* animatedGeometryRootParent = aAnimatedGeometryRoot->GetParent();
-  nsIScrollableFrame* scrollable = do_QueryFrame(animatedGeometryRootParent);
-  if (scrollable
-#ifdef MOZ_B2G
-      && scrollable->WantAsyncScroll()
-#endif
-     ) {
-    
-    
-    
-    
-    return LayerManager::SCROLLABLE;
+
+  
+  
+  nsIFrame* fParent;
+  for (const nsIFrame* f = aAnimatedGeometryRoot;
+       f != mContainerAnimatedGeometryRoot;
+       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(mBuilder,
+           fParent, mContainerAnimatedGeometryRoot)) {
+    fParent = nsLayoutUtils::GetCrossDocParentFrame(f);
+    if (!fParent) {
+      break;
+    }
+    nsIScrollableFrame* scrollable = do_QueryFrame(fParent);
+    if (scrollable
+  #ifdef MOZ_B2G
+        && scrollable->WantAsyncScroll()
+  #endif
+       ) {
+      
+      
+      
+      
+      return LayerManager::SCROLLABLE;
+    }
   }
   return LayerManager::NONE;
 }
