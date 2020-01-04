@@ -6,28 +6,53 @@
 package org.mozilla.gecko.feeds.action;
 
 import android.content.Intent;
+import android.util.Log;
 
 import org.mozilla.gecko.db.BrowserDB;
 
 
 
 
-public interface BaseAction {
+public abstract class BaseAction {
+    public static final boolean DEBUG_LOG = false;
+
+    
+
+
+
+
+
+    public abstract void perform(BrowserDB browserDB, Intent intent);
+
+    
+
+
+    public abstract boolean requiresNetwork();
+
+    
+
+
+    public abstract boolean requiresPreferenceEnabled();
+
     
 
 
 
 
-
-    void perform(BrowserDB browserDB, Intent intent);
+    public void log(String message) {
+        if (DEBUG_LOG) {
+            Log.d("Gecko" + getClass().getSimpleName(), message);
+        }
+    }
 
     
 
 
-    boolean requiresNetwork();
-
-	
 
 
-    boolean requiresPreferenceEnabled();
+    public void log(String message, Throwable throwable) {
+        if (DEBUG_LOG) {
+            Log.d("Gecko" + getClass().getSimpleName(), message, throwable);
+        }
+    }
 }
