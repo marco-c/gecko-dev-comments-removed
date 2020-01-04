@@ -156,6 +156,32 @@ js::jit::AtomicOperations::fetchXorSeqCst(T* addr, T val)
 
 template<typename T>
 inline T
+js::jit::AtomicOperations::loadSafeWhenRacy(T* addr)
+{
+    return *addr;               
+}
+
+template<typename T>
+inline void
+js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val)
+{
+    *addr = val;                
+}
+
+inline void
+js::jit::AtomicOperations::memcpySafeWhenRacy(void* dest, const void* src, size_t nbytes)
+{
+    ::memcpy(dest, src, nbytes); 
+}
+
+inline void
+js::jit::AtomicOperations::memmoveSafeWhenRacy(void* dest, const void* src, size_t nbytes)
+{
+    ::memmove(dest, src, nbytes); 
+}
+
+template<typename T>
+inline T
 js::jit::AtomicOperations::exchangeSeqCst(T* addr, T val)
 {
     MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
