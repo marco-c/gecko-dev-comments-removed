@@ -4,6 +4,8 @@
 
 
 #include "nsPagePrintTimer.h"
+
+#include "mozilla/unused.h"
 #include "nsIContentViewer.h"
 #include "nsIServiceManager.h"
 #include "nsPrintEngine.h"
@@ -122,21 +124,34 @@ nsPagePrintTimer::Notify(nsITimer *timer)
   
   
   
-  if (timer && timer == mWatchDogTimer) {
+  
+  if (!timer) {
+    
+    mWatchDogCount = 0;
+  } else if (timer == mTimer) {
+    
+    mWatchDogCount = 0;
+    mTimer = nullptr;
+  } else if (timer == mWaitingForRemotePrint) {
+    mWaitingForRemotePrint = nullptr;
+
+    
+    
+    if (mTimer) {
+      return NS_OK;
+    }
+  } else if (timer == mWatchDogTimer) {
     mWatchDogCount++;
     if (mWatchDogCount > WATCH_DOG_MAX_COUNT) {
       Fail();
       return NS_OK;
     }
-  } else if(!timer) {
-    
-    mWatchDogCount = 0;
   }
 
   if (mDocViewerPrint) {
     bool donePrePrint = mPrintEngine->PrePrintPage();
 
-    if (donePrePrint) {
+    if (donePrePrint && !mWaitingForRemotePrint) {
       StopWatchDogTimer();
       NS_DispatchToMainThread(this);
     } else {
@@ -149,11 +164,33 @@ nsPagePrintTimer::Notify(nsITimer *timer)
   return NS_OK;
 }
 
+
+void
+nsPagePrintTimer::WaitForRemotePrint()
+{
+  nsresult result;
+  mWaitingForRemotePrint = do_CreateInstance("@mozilla.org/timer;1", &result);
+  if (NS_FAILED(result)) {
+    NS_WARNING("Failed to wait for remote print, we might time-out.");
+    mWaitingForRemotePrint = nullptr;
+  }
+}
+
+void
+nsPagePrintTimer::RemotePrintFinished()
+{
+  if (!mWaitingForRemotePrint) {
+    return;
+  }
+
+  mozilla::Unused <<
+    mWaitingForRemotePrint->InitWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT);
+}
+
 nsresult 
 nsPagePrintTimer::Start(nsPrintObject* aPO)
 {
   mPrintObj = aPO;
-  mWatchDogCount = 0;
   mDone = false;
   return StartTimer(false);
 }
