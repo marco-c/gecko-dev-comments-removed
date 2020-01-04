@@ -451,7 +451,8 @@ ssl_ConfigCertByUsage(sslSocket *ss, CERTCertificate *cert,
         return SECFailure;
     }
     
-    if (data->authType != ssl_auth_null && data->authType != arg.authType) {
+    if (data && data->authType != ssl_auth_null &&
+        data->authType != arg.authType) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
     }
