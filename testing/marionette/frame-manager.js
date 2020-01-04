@@ -2,17 +2,18 @@
 
 
 
-var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+"use strict";
 
-this.EXPORTED_SYMBOLS = ["FrameManager"];
-
-var FRAME_SCRIPT = "chrome://marionette/content/listener.js";
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
-               .getService(Ci.mozIJSSubScriptLoader);
+this.EXPORTED_SYMBOLS = ["frame"];
+
+this.frame = {};
+
+const FRAME_SCRIPT = "chrome://marionette/content/listener.js";
 
 
 var remoteFrames = [];
@@ -21,10 +22,15 @@ var remoteFrames = [];
 
 
 
-function MarionetteRemoteFrame(windowId, frameId) {
-  this.windowId = windowId; 
-  this.frameId = frameId; 
-  this.targetFrameId = this.frameId; 
+frame.RemoteFrame = function(windowId, frameId) {
+  
+  this.windowId = windowId;
+  
+  this.frameId = frameId;
+  
+  this.targetFrameId = this.frameId;
+  
+  this.remoteFrames = [];
 };
 
 
@@ -34,22 +40,29 @@ function MarionetteRemoteFrame(windowId, frameId) {
 
 
 
-this.FrameManager = function FrameManager(server) {
+frame.Manager = function(server) {
   
-  this.currentRemoteFrame = null; 
-  this.previousRemoteFrame = null; 
-  this.handledModal = false; 
-  this.server = server; 
+  
+
+  
+  
+  this.currentRemoteFrame = null;
+  
+  this.previousRemoteFrame = null;
+  
+  this.handledModal = false;
+  
+  this.server = server;
 };
 
-FrameManager.prototype = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIMessageListener,
-                                         Ci.nsISupportsWeakReference]),
+frame.Manager.prototype = {
+  QueryInterface: XPCOMUtils.generateQI(
+      [Ci.nsIMessageListener, Ci.nsISupportsWeakReference]),
 
   
 
 
-  receiveMessage: function FM_receiveMessage(message) {
+  receiveMessage: function(message) {
     switch (message.name) {
       case "MarionetteFrame:getInterruptedState":
         
@@ -68,6 +81,7 @@ FrameManager.prototype = {
           return {value: this.handledModal};
         }
         return {value: false};
+
       case "MarionetteFrame:handleModal":
         
 
@@ -89,6 +103,7 @@ FrameManager.prototype = {
         this.handledModal = true;
         this.server.sendOk(this.server.command_id);
         return {value: isLocal};
+
       case "MarionetteFrame:getCurrentFrameId":
         if (this.currentRemoteFrame != null) {
           return this.currentRemoteFrame.frameId;
@@ -96,7 +111,7 @@ FrameManager.prototype = {
     }
   },
 
-  getOopFrame: function FM_getOopFrame(winId, frameId) {
+  getOopFrame: function(winId, frameId) {
     
     let outerWin = Services.wm.getOuterWindowWithId(winId);
     
@@ -104,7 +119,7 @@ FrameManager.prototype = {
     return f;
   },
 
-  getFrameMM: function FM_getFrameMM(winId, frameId) {
+  getFrameMM: function(winId, frameId) {
     let oopFrame = this.getOopFrame(winId, frameId);
     let mm = oopFrame.QueryInterface(Ci.nsIFrameLoaderOwner)
         .frameLoader.messageManager;
@@ -115,7 +130,7 @@ FrameManager.prototype = {
 
 
 
-  switchToFrame: function FM_switchToFrame(winId, frameId) {
+  switchToFrame: function(winId, frameId) {
     let oopFrame = this.getOopFrame(winId, frameId);
     let mm = this.getFrameMM(winId, frameId);
 
@@ -145,7 +160,7 @@ FrameManager.prototype = {
     
     
     this.addMessageManagerListeners(mm);
-    let aFrame = new MarionetteRemoteFrame(winId, frameId);
+    let aFrame = new frame.RemoteFrame(winId, frameId);
     aFrame.messageManager = Cu.getWeakReference(mm);
     remoteFrames.push(aFrame);
     this.currentRemoteFrame = aFrame;
@@ -159,7 +174,7 @@ FrameManager.prototype = {
 
 
 
-  switchToModalOrigin: function FM_switchToModalOrigin() {
+  switchToModalOrigin: function() {
     
     if (this.previousRemoteFrame != null) {
       this.currentRemoteFrame = this.previousRemoteFrame;
@@ -179,7 +194,7 @@ FrameManager.prototype = {
 
 
 
-  addMessageManagerListeners: function FM_addMessageManagerListeners(mm) {
+  addMessageManagerListeners: function(mm) {
     mm.addWeakMessageListener("Marionette:ok", this.server);
     mm.addWeakMessageListener("Marionette:done", this.server);
     mm.addWeakMessageListener("Marionette:error", this.server);
@@ -211,7 +226,7 @@ FrameManager.prototype = {
 
 
 
-  removeMessageManagerListeners: function FM_removeMessageManagerListeners(mm) {
+  removeMessageManagerListeners: function(mm) {
     mm.removeWeakMessageListener("Marionette:ok", this.server);
     mm.removeWeakMessageListener("Marionette:done", this.server);
     mm.removeWeakMessageListener("Marionette:error", this.server);
