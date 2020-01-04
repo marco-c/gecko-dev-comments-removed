@@ -611,6 +611,7 @@ DrawTargetSkia::ShouldLCDRenderText(FontType aFontType, AntialiasMode aAntialias
       case FontType::MAC:
       case FontType::GDI:
       case FontType::DWRITE:
+      case FontType::FONTCONFIG:
         return true;
       default:
         
@@ -1001,10 +1002,15 @@ DrawTargetSkia::FillGlyphs(ScaledFont *aFont,
                            const DrawOptions &aOptions,
                            const GlyphRenderingOptions *aRenderingOptions)
 {
-  if (aFont->GetType() != FontType::MAC &&
-      aFont->GetType() != FontType::SKIA &&
-      aFont->GetType() != FontType::GDI &&
-      aFont->GetType() != FontType::DWRITE) {
+  switch (aFont->GetType()) {
+  case FontType::SKIA:
+  case FontType::CAIRO:
+  case FontType::FONTCONFIG:
+  case FontType::MAC:
+  case FontType::GDI:
+  case FontType::DWRITE:
+    break;
+  default:
     return;
   }
 
@@ -1032,26 +1038,18 @@ DrawTargetSkia::FillGlyphs(ScaledFont *aFont,
   bool shouldLCDRenderText = ShouldLCDRenderText(aFont->GetType(), aOptions.mAntialiasMode);
   paint.mPaint.setLCDRenderText(shouldLCDRenderText);
 
-  if (aRenderingOptions && aRenderingOptions->GetType() == FontType::CAIRO) {
-    const GlyphRenderingOptionsCairo* cairoOptions =
-      static_cast<const GlyphRenderingOptionsCairo*>(aRenderingOptions);
+  bool useSubpixelText = true;
 
-    paint.mPaint.setHinting(GfxHintingToSkiaHinting(cairoOptions->GetHinting()));
-
-    if (cairoOptions->GetAutoHinting()) {
-      paint.mPaint.setAutohinted(true);
-    }
-
-    if (cairoOptions->GetAntialiasMode() == AntialiasMode::NONE) {
-      paint.mPaint.setAntiAlias(false);
-    }
-  } else {
+  switch (aFont->GetType()) {
+  case FontType::SKIA:
+  case FontType::CAIRO:
+  case FontType::FONTCONFIG:
     
     
-    paint.mPaint.setSubpixelText(true);
-
-    if (aFont->GetType() == FontType::MAC &&
-       aOptions.mAntialiasMode == AntialiasMode::GRAY) {
+    useSubpixelText = false;
+    break;
+  case FontType::MAC:
+    if (aOptions.mAntialiasMode == AntialiasMode::GRAY) {
       
       
       
@@ -1068,18 +1066,22 @@ DrawTargetSkia::FillGlyphs(ScaledFont *aFont,
       
       
       paint.mPaint.setHinting(SkPaint::kNo_Hinting);
-    } else {
-      paint.mPaint.setHinting(SkPaint::kNormal_Hinting);
     }
+    break;
+  case FontType::GDI:
+    if (!shouldLCDRenderText) {
+      
+      
+      
+      
+      paint.mPaint.setFlags(paint.mPaint.getFlags() | SkPaint::kGenA8FromLCD_Flag);
+    }
+    break;
+  default:
+    break;
   }
 
-  if (!shouldLCDRenderText && aFont->GetType() == FontType::GDI) {
-    
-    
-    
-    
-    paint.mPaint.setFlags(paint.mPaint.getFlags() | SkPaint::kGenA8FromLCD_Flag);
-  }
+  paint.mPaint.setSubpixelText(useSubpixelText);
 
   std::vector<uint16_t> indices;
   std::vector<SkPoint> offsets;

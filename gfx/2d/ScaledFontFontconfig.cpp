@@ -1,0 +1,47 @@
+
+
+
+
+
+#include "ScaledFontFontconfig.h"
+#include "Logging.h"
+
+#ifdef USE_SKIA
+#include "skia/include/ports/SkTypeface_cairo.h"
+#endif
+
+namespace mozilla {
+namespace gfx {
+
+
+
+
+
+ScaledFontFontconfig::ScaledFontFontconfig(cairo_scaled_font_t* aScaledFont,
+                                           FcPattern* aPattern,
+                                           Float aSize)
+  : ScaledFontBase(aSize),
+    mPattern(aPattern)
+{
+  SetCairoScaledFont(aScaledFont);
+  FcPatternReference(aPattern);
+}
+
+ScaledFontFontconfig::~ScaledFontFontconfig()
+{
+  FcPatternDestroy(mPattern);
+}
+
+#ifdef USE_SKIA
+SkTypeface* ScaledFontFontconfig::GetSkTypeface()
+{
+  if (!mTypeface) {
+    mTypeface = SkCreateTypefaceFromCairoFTFontWithFontconfig(mScaledFont, mPattern);
+  }
+
+  return mTypeface;
+}
+#endif
+
+} 
+} 
