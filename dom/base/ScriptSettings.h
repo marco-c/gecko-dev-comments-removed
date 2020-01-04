@@ -136,6 +136,8 @@ JSContext* GetJSContext();
 
 } 
 
+JSRuntime* GetJSRuntime();
+
 class ScriptSettingsStack;
 class ScriptSettingsStackEntry {
   friend class ScriptSettingsStack;
