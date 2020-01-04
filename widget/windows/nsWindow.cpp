@@ -5373,6 +5373,16 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     case WM_MOVING:
       FinishLiveResizing(MOVING);
+      if (WinUtils::IsPerMonitorDPIAware()) {
+        
+        
+        
+        
+        
+        
+        ChangedDPI();
+        ResetLayout();
+      }
       break;
 
     case WM_ENTERSIZEMOVE:
@@ -6924,6 +6934,7 @@ nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width, int32_t height)
     Resize(x, y, width, height, true);
   }
   ChangedDPI();
+  ResetLayout();
 }
 
 
