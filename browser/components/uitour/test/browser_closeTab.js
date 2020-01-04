@@ -11,6 +11,8 @@ add_task(setup_UITourTest);
 add_UITour_task(function* test_closeTab() {
   
   
+  let closePromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabClose");
   yield gContentAPI.closeTab();
+  yield closePromise;
   gTestTab = null;
 });
