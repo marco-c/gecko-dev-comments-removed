@@ -27,8 +27,7 @@
 const {Cc, Cu, Ci} = require("chrome");
 const Services = require("Services");
 const Promise = require("promise");
-const DOMUtils = Cc["@mozilla.org/inspector/dom-utils;1"]
-                 .getService(Ci.inIDOMUtils);
+const {getCSSLexer} = require("devtools/shared/css-lexer");
 
 
 
@@ -83,7 +82,7 @@ const COMMENT_COLOR = "theme-comment";
 function appendSyntaxHighlightedCSS(cssText, parentElement) {
   let doc = parentElement.ownerDocument;
   let identClass = PROPERTY_NAME_COLOR;
-  let lexer = DOMUtils.getCSSLexer(cssText);
+  let lexer = getCSSLexer(cssText);
 
   
 
