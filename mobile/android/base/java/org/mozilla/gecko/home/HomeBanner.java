@@ -125,17 +125,6 @@ public class HomeBanner extends LinearLayout
         EventDispatcher.getInstance().unregisterGeckoThreadListener(this, "HomeBanner:Data");
     }
 
-    @Override
-    public void setVisibility(int visibility) {
-        
-        
-        if (Versions.preHC && visibility == View.GONE) {
-            clearAnimation();
-        }
-
-        super.setVisibility(visibility);
-    }
-
     public void setScrollingPages(boolean scrollingPages) {
         mScrollingPages = scrollingPages;
     }

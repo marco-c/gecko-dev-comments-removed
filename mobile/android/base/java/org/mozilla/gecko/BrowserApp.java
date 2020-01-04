@@ -958,11 +958,9 @@ public class BrowserApp extends GeckoApp
 
     @Override
     public void onAttachedToWindow() {
-        
-        if (!Versions.preHC){
-            mDoorhangerOverlay = findViewById(R.id.doorhanger_overlay);
-            mDoorhangerOverlay.setVisibility(View.VISIBLE);
-        }
+        mDoorhangerOverlay = findViewById(R.id.doorhanger_overlay);
+        mDoorhangerOverlay.setVisibility(View.VISIBLE);
+
         
         checkFirstrun(this, new SafeIntent(getIntent()));
     }
@@ -1085,20 +1083,6 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        
-        
-        
-        
-        if (mInitialized && hasFocus &&
-            Versions.preHC && isHomePagerVisible() &&
-            mLayerView.getVisibility() != View.VISIBLE){
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mLayerView.showSurface();
-                }
-            });
-        }
 
         
         
@@ -1314,9 +1298,6 @@ public class BrowserApp extends GeckoApp
                     Log.e(LOGTAG, "error building json arguments", e);
                 }
                 GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Feeds:Subscribe", args.toString()));
-                if (Versions.preHC) {
-                    Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, TelemetryContract.Method.CONTEXT_MENU, "subscribe");
-                }
             }
             return true;
         }
@@ -1333,10 +1314,6 @@ public class BrowserApp extends GeckoApp
                     return true;
                 }
                 GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("SearchEngines:Add", args.toString()));
-
-                if (Versions.preHC) {
-                    Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, TelemetryContract.Method.CONTEXT_MENU, "add_search_engine");
-                }
             }
             return true;
         }
@@ -1492,10 +1469,6 @@ public class BrowserApp extends GeckoApp
     public void onDoorHangerShow() {
         mDynamicToolbar.setVisible(true, VisibilityTransition.ANIMATE);
 
-        if (Versions.preHC) {
-            return;
-        }
-
         final Animator alphaAnimator = ObjectAnimator.ofFloat(mDoorhangerOverlay, "alpha", 1);
         alphaAnimator.setDuration(250);
         TransitionsTracker.track(alphaAnimator);
@@ -1505,10 +1478,6 @@ public class BrowserApp extends GeckoApp
 
     @Override
     public void onDoorHangerHide() {
-        if (Versions.preHC) {
-            return;
-        }
-
         final Animator alphaAnimator = ObjectAnimator.ofFloat(mDoorhangerOverlay, "alpha", 0);
         alphaAnimator.setDuration(200);
 

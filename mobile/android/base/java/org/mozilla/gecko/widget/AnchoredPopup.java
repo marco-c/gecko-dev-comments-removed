@@ -101,19 +101,6 @@ public abstract class AnchoredPopup extends PopupWindow {
         int offsetY = mContext.getResources().getDimensionPixelOffset(R.dimen.doorhanger_offsetY);
         final View decorView = ((Activity) mContext).getWindow().getDecorView();
 
-        
-        
-        
-        if (Versions.preHC) {
-            setWidth(decorView.getWidth());
-            offsetY = mContext.getResources().getDimensionPixelOffset(R.dimen.doorhanger_GB_offsetY);
-            if (mAnchor == null) {
-              mAnchor = decorView;
-            }
-            showAsDropDown(mAnchor, 0, -offsetY);
-            return;
-        }
-
         final boolean validAnchor = (mAnchor != null) && (anchorLocation[1] > 0);
         if (HardwareUtils.isTablet()) {
             if (validAnchor) {

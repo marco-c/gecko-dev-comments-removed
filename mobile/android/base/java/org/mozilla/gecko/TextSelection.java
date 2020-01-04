@@ -337,17 +337,6 @@ class TextSelection extends Layer implements GeckoEventListener,
                         public void onBitmapFound(Drawable d) {
                             if (d != null) {
                                 menuitem.setIcon(d);
-
-                                
-                                
-                                if (Versions.preHC && "drawable://ic_menu_share".equals(iconString)) {
-                                    final View view = menuitem.getActionView();
-
-                                    final Resources res = view.getContext().getResources();
-                                    final int padding = res.getDimensionPixelSize(R.dimen.ab_share_padding);
-
-                                    view.setPadding(padding, padding, padding, padding);
-                                }
                             }
                         }
                     });

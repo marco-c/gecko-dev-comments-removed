@@ -77,27 +77,6 @@ public class ToolbarProgressView extends ThemedImageView {
     }
 
     @Override
-    public void setVisibility(int visibility) {
-        
-        
-        if (Versions.preHC && visibility != VISIBLE) {
-            clearAnimation();
-        }
-
-        super.setVisibility(visibility);
-    }
-
-    @Override
-    public void setAnimation(Animation animation) {
-        
-        
-        
-        if (Versions.preHC && isShown()) {
-            super.setAnimation(animation);
-        }
-    }
-
-    @Override
     public void onLayout(boolean f, int l, int t, int r, int b) {
         mBounds.left = 0;
         mBounds.right = (r - l) * mCurrentProgress / MAX_PROGRESS;
