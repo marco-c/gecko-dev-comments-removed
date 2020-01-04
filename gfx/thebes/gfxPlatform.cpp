@@ -784,7 +784,7 @@ UserDataKey kThebesSurface;
 
 struct DependentSourceSurfaceUserData
 {
-  RefPtr<gfxASurface> mSurface;
+  nsRefPtr<gfxASurface> mSurface;
 };
 
 void SourceSurfaceDestroyed(void *aData)
@@ -935,7 +935,7 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
 already_AddRefed<DataSourceSurface>
 gfxPlatform::GetWrappedDataSourceSurface(gfxASurface* aSurface)
 {
-  RefPtr<gfxImageSurface> image = aSurface->GetAsImageSurface();
+  nsRefPtr<gfxImageSurface> image = aSurface->GetAsImageSurface();
   if (!image) {
     return nullptr;
   }
@@ -1112,7 +1112,7 @@ gfxPlatform::GetSkiaGLGlue()
 
 
 
-    RefPtr<GLContext> glContext;
+    nsRefPtr<GLContext> glContext;
     glContext = GLContextProvider::CreateHeadless(CreateContextFlags::REQUIRE_COMPAT_PROFILE |
                                                   CreateContextFlags::ALLOW_OFFLINE_RENDERER);
     if (!glContext) {
@@ -1165,7 +1165,7 @@ gfxPlatform::CreateDrawTargetForBackend(BackendType aBackend, const IntSize& aSi
   
   
   if (aBackend == BackendType::CAIRO) {
-    RefPtr<gfxASurface> surf = CreateOffscreenSurface(aSize, SurfaceFormatToImageFormat(aFormat));
+    nsRefPtr<gfxASurface> surf = CreateOffscreenSurface(aSize, SurfaceFormatToImageFormat(aFormat));
     if (!surf || surf->CairoStatus()) {
       return nullptr;
     }
@@ -1501,12 +1501,12 @@ gfxPlatform::TransformPixel(const Color& in, Color& out, qcms_transform *transfo
         out = Color::FromABGR(packed);
 #else
         
-        uint32_t packed = in.ToARGB();
+        uint32_t packed = in.UnusualToARGB();
         
         qcms_transform_data(transform,
                        (uint8_t *)&packed + 1, (uint8_t *)&packed + 1,
                        1);
-        out = Color::FromARGB(packed);
+        out = Color::UnusualFromARGB(packed);
 #endif
     }
 
@@ -2039,7 +2039,7 @@ already_AddRefed<mozilla::gfx::VsyncSource>
 gfxPlatform::CreateHardwareVsyncSource()
 {
   NS_WARNING("Hardware Vsync support not yet implemented. Falling back to software timers");
-  RefPtr<mozilla::gfx::VsyncSource> softwareVsync = new SoftwareVsyncSource();
+  nsRefPtr<mozilla::gfx::VsyncSource> softwareVsync = new SoftwareVsyncSource();
   return softwareVsync.forget();
 }
 

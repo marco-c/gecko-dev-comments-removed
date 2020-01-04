@@ -246,7 +246,9 @@ public:
     return newColor;
   }
 
-  static Color FromARGB(uint32_t aColor)
+  
+  
+  static Color UnusualFromARGB(uint32_t aColor)
   {
     Color newColor(((aColor >> 16) & 0xff) * (1.0f / 255.0f),
                    ((aColor >> 8) & 0xff) * (1.0f / 255.0f),
@@ -262,7 +264,9 @@ public:
            uint32_t(b * 255.0f) << 16 | uint32_t(a * 255.0f) << 24;
   }
 
-  uint32_t ToARGB() const
+  
+  
+  uint32_t UnusualToARGB() const
   {
     return uint32_t(b * 255.0f) | uint32_t(g * 255.0f) << 8 |
            uint32_t(r * 255.0f) << 16 | uint32_t(a * 255.0f) << 24;
