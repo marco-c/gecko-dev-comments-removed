@@ -7082,14 +7082,16 @@ BytecodeEmitter::emitSelfHostedCallFunction(ParseNode* pn)
     
     
     
+    ParseNode* pn2 = pn->pn_head;
+    const char* errorName = pn2->name() == cx->names().callFunction ?
+                            "callFunction" : "callContentFunction";
     if (pn->pn_count < 3) {
-        reportError(pn, JSMSG_MORE_ARGS_NEEDED, "callFunction", "1", "s");
+        reportError(pn, JSMSG_MORE_ARGS_NEEDED, errorName, "2", "s");
         return false;
     }
 
-    ParseNode* pn2 = pn->pn_head;
     if (pn->getOp() != JSOP_CALL) {
-        reportError(pn, JSMSG_NOT_CONSTRUCTOR, pn2->name());
+        reportError(pn, JSMSG_NOT_CONSTRUCTOR, errorName);
         return false;
     }
 
@@ -7200,6 +7202,7 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn)
             
             MOZ_ASSERT(!(pn->pn_xflags & PNX_SETCALL));
 
+            
             
             
             if (pn2->name() == cx->names().callFunction ||
