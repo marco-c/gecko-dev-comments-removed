@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef SelectionState_h
 #define SelectionState_h
@@ -20,17 +20,17 @@ class RangeUpdater;
 namespace dom {
 class Selection;
 class Text;
-} 
+} // namespace dom
 
-
-
-
+/**
+ * A helper struct for saving/setting ranges.
+ */
 struct RangeItem final
 {
   RangeItem();
 
 private:
-  
+  // Private destructor, to discourage deletion outside of Release():
   ~RangeItem();
 
 public:
@@ -46,13 +46,13 @@ public:
   int32_t endOffset;
 };
 
-
-
-
-
-
-
-
+/**
+ * mozilla::SelectionState
+ *
+ * Class for recording selection info.  Stores selection as collection of
+ * { {startnode, startoffset} , {endnode, endoffset} } tuples.  Can't store
+ * ranges since dom gravity will possibly change the ranges.
+ */
 
 class SelectionState final
 {
@@ -103,11 +103,11 @@ public:
   nsresult RegisterSelectionState(SelectionState& aSelState);
   nsresult DropSelectionState(SelectionState& aSelState);
 
-  
-  
-  
-  
-  
+  // editor selection gravity routines.  Note that we can't always depend on
+  // DOM Range gravity to do what we want to the "real" selection.  For instance,
+  // if you move a node, that corresponds to deleting it and reinserting it.
+  // DOM Range gravity will promote the selection out of the node on deletion,
+  // which is not what you want if you know you are reinserting it.
   nsresult SelAdjCreateNode(nsINode* aParent, int32_t aPosition);
   nsresult SelAdjCreateNode(nsIDOMNode* aParent, int32_t aPosition);
   nsresult SelAdjInsertNode(nsINode* aParent, int32_t aPosition);
@@ -127,9 +127,9 @@ public:
                             int32_t aLength);
   nsresult SelAdjDeleteText(nsIDOMCharacterData* aTextNode,
                             int32_t aOffset, int32_t aLength);
-  
-  
-  
+  // the following gravity routines need will/did sandwiches, because the other
+  // gravity routines will be called inside of these sandwiches, but should be
+  // ignored.
   nsresult WillReplaceContainer();
   nsresult DidReplaceContainer(dom::Element* aOriginalNode,
                                dom::Element* aNewNode);
@@ -170,73 +170,69 @@ ImplCycleCollectionUnlink(RangeUpdater& aField)
   ImplCycleCollectionUnlink(aField.mArray);
 }
 
-} 
+/**
+ * Helper class for using SelectionState.  Stack based class for doing
+ * preservation of dom points across editor actions.
+ */
 
-
-
-
-
-
-class MOZ_STACK_CLASS nsAutoTrackDOMPoint
+class MOZ_STACK_CLASS AutoTrackDOMPoint final
 {
-  private:
-    mozilla::RangeUpdater& mRU;
-    
-    nsCOMPtr<nsINode>* mNode;
-    nsCOMPtr<nsIDOMNode>* mDOMNode;
-    int32_t* mOffset;
-    RefPtr<mozilla::RangeItem> mRangeItem;
-  public:
-    nsAutoTrackDOMPoint(mozilla::RangeUpdater& aRangeUpdater,
-                        nsCOMPtr<nsINode>* aNode, int32_t* aOffset)
-      : mRU(aRangeUpdater)
-      , mNode(aNode)
-      , mDOMNode(nullptr)
-      , mOffset(aOffset)
-    {
-      mRangeItem = new mozilla::RangeItem();
-      mRangeItem->startNode = *mNode;
-      mRangeItem->endNode = *mNode;
-      mRangeItem->startOffset = *mOffset;
-      mRangeItem->endOffset = *mOffset;
-      mRU.RegisterRangeItem(mRangeItem);
-    }
+private:
+  RangeUpdater& mRangeUpdater;
+  // Allow tracking either nsIDOMNode or nsINode until nsIDOMNode is gone
+  nsCOMPtr<nsINode>* mNode;
+  nsCOMPtr<nsIDOMNode>* mDOMNode;
+  int32_t* mOffset;
+  RefPtr<RangeItem> mRangeItem;
 
-    nsAutoTrackDOMPoint(mozilla::RangeUpdater& aRangeUpdater,
-                        nsCOMPtr<nsIDOMNode>* aNode, int32_t* aOffset)
-      : mRU(aRangeUpdater)
-      , mNode(nullptr)
-      , mDOMNode(aNode)
-      , mOffset(aOffset)
-    {
-      mRangeItem = new mozilla::RangeItem();
-      mRangeItem->startNode = do_QueryInterface(*mDOMNode);
-      mRangeItem->endNode = do_QueryInterface(*mDOMNode);
-      mRangeItem->startOffset = *mOffset;
-      mRangeItem->endOffset = *mOffset;
-      mRU.RegisterRangeItem(mRangeItem);
-    }
+public:
+  AutoTrackDOMPoint(RangeUpdater& aRangeUpdater,
+                    nsCOMPtr<nsINode>* aNode, int32_t* aOffset)
+    : mRangeUpdater(aRangeUpdater)
+    , mNode(aNode)
+    , mDOMNode(nullptr)
+    , mOffset(aOffset)
+  {
+    mRangeItem = new RangeItem();
+    mRangeItem->startNode = *mNode;
+    mRangeItem->endNode = *mNode;
+    mRangeItem->startOffset = *mOffset;
+    mRangeItem->endOffset = *mOffset;
+    mRangeUpdater.RegisterRangeItem(mRangeItem);
+  }
 
-    ~nsAutoTrackDOMPoint()
-    {
-      mRU.DropRangeItem(mRangeItem);
-      if (mNode) {
-        *mNode = mRangeItem->startNode;
-      } else {
-        *mDOMNode = GetAsDOMNode(mRangeItem->startNode);
-      }
-      *mOffset = mRangeItem->startOffset;
+  AutoTrackDOMPoint(RangeUpdater& aRangeUpdater,
+                    nsCOMPtr<nsIDOMNode>* aNode, int32_t* aOffset)
+    : mRangeUpdater(aRangeUpdater)
+    , mNode(nullptr)
+    , mDOMNode(aNode)
+    , mOffset(aOffset)
+  {
+    mRangeItem = new RangeItem();
+    mRangeItem->startNode = do_QueryInterface(*mDOMNode);
+    mRangeItem->endNode = do_QueryInterface(*mDOMNode);
+    mRangeItem->startOffset = *mOffset;
+    mRangeItem->endOffset = *mOffset;
+    mRangeUpdater.RegisterRangeItem(mRangeItem);
+  }
+
+  ~AutoTrackDOMPoint()
+  {
+    mRangeUpdater.DropRangeItem(mRangeItem);
+    if (mNode) {
+      *mNode = mRangeItem->startNode;
+    } else {
+      *mDOMNode = GetAsDOMNode(mRangeItem->startNode);
     }
+    *mOffset = mRangeItem->startOffset;
+  }
 };
 
+/******************************************************************************
+ * another helper class for SelectionState.  stack based class for doing
+ * Will/DidReplaceContainer()
+ */
 
-
-
-
-
-
-
-namespace mozilla {
 namespace dom {
 class MOZ_STACK_CLASS AutoReplaceContainerSelNotify
 {
@@ -262,14 +258,14 @@ class MOZ_STACK_CLASS AutoReplaceContainerSelNotify
     }
 };
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 
-
-
-
-
+/***************************************************************************
+ * another helper class for SelectionState.  stack based class for doing
+ * Will/DidRemoveContainer()
+ */
 
 class MOZ_STACK_CLASS nsAutoRemoveContainerSelNotify
 {
@@ -301,10 +297,10 @@ class MOZ_STACK_CLASS nsAutoRemoveContainerSelNotify
     }
 };
 
-
-
-
-
+/***************************************************************************
+ * another helper class for SelectionState.  stack based class for doing
+ * Will/DidInsertContainer()
+ */
 
 class MOZ_STACK_CLASS nsAutoInsertContainerSelNotify
 {
@@ -326,10 +322,10 @@ class MOZ_STACK_CLASS nsAutoInsertContainerSelNotify
 };
 
 
-
-
-
-
+/***************************************************************************
+ * another helper class for SelectionState.  stack based class for doing
+ * Will/DidMoveNode()
+ */
 
 class MOZ_STACK_CLASS nsAutoMoveNodeSelNotify
 {
@@ -363,4 +359,4 @@ class MOZ_STACK_CLASS nsAutoMoveNodeSelNotify
     }
 };
 
-#endif 
+#endif // #ifndef SelectionState_h

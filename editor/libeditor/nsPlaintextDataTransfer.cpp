@@ -87,7 +87,7 @@ nsresult nsPlaintextEditor::InsertTextAt(const nsAString &aStringToInsert,
     {
       
       
-      nsAutoTrackDOMPoint tracker(mRangeUpdater, &targetNode, &targetOffset);
+      AutoTrackDOMPoint tracker(mRangeUpdater, &targetNode, &targetOffset);
       res = DeleteSelection(eNone, eStrip);
       NS_ENSURE_SUCCESS(res, res);
     }

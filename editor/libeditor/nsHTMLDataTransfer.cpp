@@ -275,7 +275,7 @@ nsHTMLEditor::DoInsertHTMLWithContext(const nsAString & aInputString,
     {
       
       
-      nsAutoTrackDOMPoint tracker(mRangeUpdater, &targetNode, &targetOffset);
+      AutoTrackDOMPoint tracker(mRangeUpdater, &targetNode, &targetOffset);
       rv = DeleteSelection(eNone, eStrip);
       NS_ENSURE_SUCCESS(rv, rv);
     }

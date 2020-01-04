@@ -531,7 +531,7 @@ nsHTMLEditor::SplitStyleAboveRange(nsRange* inRange, nsIAtom* aProperty,
 
   
   {
-    nsAutoTrackDOMPoint tracker(mRangeUpdater, address_of(endNode), &endOffset);
+    AutoTrackDOMPoint tracker(mRangeUpdater, address_of(endNode), &endOffset);
     res = SplitStyleAbovePoint(address_of(startNode), &startOffset, aProperty,
                                aAttribute);
     NS_ENSURE_SUCCESS(res, res);
@@ -669,8 +669,8 @@ nsHTMLEditor::ClearStyle(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
       
       
       
-      nsAutoTrackDOMPoint tracker(mRangeUpdater,
-                                  address_of(newSelParent), &newSelOffset);
+      AutoTrackDOMPoint tracker(mRangeUpdater,
+                                address_of(newSelParent), &newSelOffset);
       res = RemoveStyleInside(*leftNode, aProperty, aAttribute);
       NS_ENSURE_SUCCESS(res, res);
     }
