@@ -592,6 +592,12 @@ public:
   static nsSVGPaintingProperty *
   GetPaintingPropertyForURI(nsIURI *aURI, nsIFrame *aFrame,
                             URIObserverHashtablePropertyDescriptor aProp);
+
+  
+
+
+  static already_AddRefed<nsIURI>
+  GetMarkerURI(nsIFrame* aFrame, FragmentOrURL nsStyleSVG::* aMarker);
 };
 
 #endif 
