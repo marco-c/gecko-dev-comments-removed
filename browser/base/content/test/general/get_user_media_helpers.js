@@ -1,3 +1,7 @@
+
+
+
+
 const PREF_PERMISSION_FAKE = "media.navigator.permission.fake";
 
 function _mm() {
@@ -157,17 +161,19 @@ function getMediaCaptureState() {
   });
 }
 
-function promiseRequestDevice(aRequestAudio, aRequestVideo) {
+function promiseRequestDevice(aRequestAudio, aRequestVideo, aFrameId) {
   info("requesting devices");
   return ContentTask.spawn(gBrowser.selectedBrowser,
-                           {aRequestAudio, aRequestVideo},
+                           {aRequestAudio, aRequestVideo, aFrameId},
                            function*(args) {
-    content.wrappedJSObject.requestDevice(args.aRequestAudio,
-                                          args.aRequestVideo);
+    let global = content.wrappedJSObject;
+    if (args.aFrameId)
+      global = global.document.getElementById(args.aFrameId).contentWindow;
+    global.requestDevice(args.aRequestAudio, args.aRequestVideo);
   });
 }
 
-function* closeStream(aAlreadyClosed) {
+function* closeStream(aAlreadyClosed, aFrameId) {
   yield expectNoObserverCalled();
 
   let promise;
@@ -175,8 +181,11 @@ function* closeStream(aAlreadyClosed) {
     promise = promiseObserverCalled("recording-device-events");
 
   info("closing the stream");
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
-    content.wrappedJSObject.closeStream();
+  yield ContentTask.spawn(gBrowser.selectedBrowser, aFrameId, function*(aFrameId) {
+    let global = content.wrappedJSObject;
+    if (aFrameId)
+      global = global.document.getElementById(aFrameId).contentWindow;
+    global.closeStream();
   });
 
   if (!aAlreadyClosed)
