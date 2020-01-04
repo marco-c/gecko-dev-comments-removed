@@ -11,13 +11,6 @@ assertEq(ws.delete(value), true);
 assertEq(ws.has(value), false);
 
 
-ws.add(value);
-assertEq(ws.has(value), true);
-ws.clear();
-assertEq(ws.delete(value), false);
-assertEq(ws.has(value), false);
-
-
 for (var i = 0; i < 10; i++)
     ws.add({});
 assertEq(ws.add(value), ws);
