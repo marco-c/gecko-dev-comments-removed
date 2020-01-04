@@ -185,8 +185,8 @@ inline float EvalLanczos(int filter_size, float x) {
       x < std::numeric_limits<float>::epsilon())
     return 1.0f;  
   float xpi = x * static_cast<float>(M_PI);
-  return (sin(xpi) / xpi) *  
-          sin(xpi / filter_size) / (xpi / filter_size);  
+  return (sinf(xpi) / xpi) *  
+          sinf(xpi / filter_size) / (xpi / filter_size);  
 }
 
 
@@ -212,8 +212,8 @@ inline float EvalHamming(int filter_size, float x) {
     return 1.0f;  
   const float xpi = x * static_cast<float>(M_PI);
 
-  return ((sin(xpi) / xpi) *  
-          (0.54f + 0.46f * cos(xpi / filter_size)));  
+  return ((sinf(xpi) / xpi) *  
+          (0.54f + 0.46f * cosf(xpi / filter_size)));  
 }
 
 
