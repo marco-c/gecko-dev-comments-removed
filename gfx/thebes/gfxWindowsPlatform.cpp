@@ -101,13 +101,11 @@ DCFromDrawTarget::DCFromDrawTarget(DrawTarget& aDrawTarget)
         cairo_win32_scaled_font_select_font(scaled, mDC);
       }
     }
-  }
-
-  if (!mDC) {
-    
-    mDC = GetDC(nullptr);
-    SetGraphicsMode(mDC, GM_ADVANCED);
-    mNeedsRelease = true;
+    if (!mDC) {
+      mDC = GetDC(nullptr);
+      SetGraphicsMode(mDC, GM_ADVANCED);
+      mNeedsRelease = true;
+    }
   }
 }
 
@@ -686,13 +684,10 @@ gfxPlatformFontList*
 gfxWindowsPlatform::CreatePlatformFontList()
 {
     gfxPlatformFontList *pfl;
-
 #ifdef CAIRO_HAS_DWRITE_FONT
     
     
-    if (IsNotWin7PreRTM() && GetDWriteFactory() &&
-        
-       (GetContentBackend() != BackendType::SKIA)) {
+    if (IsNotWin7PreRTM() && GetDWriteFactory()) {
         pfl = new gfxDWriteFontList();
         if (NS_SUCCEEDED(pfl->InitFontList())) {
             return pfl;
