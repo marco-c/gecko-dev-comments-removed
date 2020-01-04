@@ -5587,12 +5587,11 @@
     "kind": "enumerated",
     "keyed": true,
     "n_values": 40,
-    "description": "(Bug 1207089) Usage of popup notifications, keyed by ID (0 = Offered, 1..4 = Action, 5 = Click outside, 6 = Leave page, 7 = Use 'X', 8 = Not now, 10 = Open submenu, 11 = Learn more. Add 20 if happened after reopen.)"
+    "description": "Usage of popup notifications, keyed by ID (0 = Offered, 1..4 = Action, 5 = Click outside, 6 = Leave page, 7 = Use 'X', 8 = Not now, 10 = Open submenu, 11 = Learn more. Add 20 if happened after reopen.)"
   },
   "POPUP_NOTIFICATION_MAIN_ACTION_MS": {
     "alert_emails": ["firefox-dev@mozilla.org"],
-    "bug_numbers": [1207089],
-    "expires_in_version": "52",
+    "expires_in_version": "48",
     "kind": "exponential",
     "keyed": true,
     "low": 100,
@@ -5602,8 +5601,7 @@
   },
   "POPUP_NOTIFICATION_DISMISSAL_MS": {
     "alert_emails": ["firefox-dev@mozilla.org"],
-    "bug_numbers": [1207089],
-    "expires_in_version": "52",
+    "expires_in_version": "48",
     "kind": "exponential",
     "keyed": true,
     "low": 200,
@@ -10449,5 +10447,19 @@
     "bug_numbers": [1255934],
     "kind": "count",
     "description": "Remote JAR protocol usage"
+  },
+  "PLUGIN_BLOCKED_FOR_STABILITY": {
+    "alert_emails": ["cpeterson@mozilla.com"],
+    "expires_in_version": "52",
+    "kind": "count",
+    "bug_numbers": [1237198],
+    "description": "Count plugins blocked for stability"
+  },
+  "PLUGIN_TINY_CONTENT": {
+    "alert_emails": ["cpeterson@mozilla.com"],
+    "expires_in_version": "52",
+    "kind": "count",
+    "bug_numbers": [1237198],
+    "description": "Count tiny plugin content"
   }
 }

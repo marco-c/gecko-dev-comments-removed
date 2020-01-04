@@ -47,6 +47,12 @@ var chunk6Urls = [
   ];
 var chunk6 = chunk6Urls.join("\n");
 
+var chunk7Urls = [
+  "l.com/m",
+  "n.com/o",
+  ];
+var chunk7 = chunk7Urls.join("\n");
+
 
 
 
@@ -57,6 +63,7 @@ var phishUnexpected = {};
 var malwareExpected = {};
 var unwantedExpected = {};
 var forbiddenExpected = {};
+var blockedExpected = {};
 for (var i = 0; i < chunk2Urls.length; i++) {
   phishExpected[chunk2Urls[i]] = true;
   malwareExpected[chunk2Urls[i]] = true;
@@ -82,6 +89,11 @@ for (var i = 0; i < chunk5Urls.length; i++) {
 for (var i = 0; i < chunk6Urls.length; i++) {
   
   phishUnexpected[chunk6Urls[i]] = true;
+}
+for (var i = 0; i < chunk7Urls.length; i++) {
+  blockedExpected[chunk7Urls[i]] = true;
+  
+  phishUnexpected[chunk7Urls[i]] = true;
 }
 
 
@@ -120,7 +132,7 @@ function tablesCallbackWithoutSub(tables)
   
   
   do_check_eq(parts.join("\n"),
-              "\ntest-forbid-simple;a:1\ntest-malware-simple;a:1\ntest-phish-simple;a:2\ntest-unwanted-simple;a:1");
+              "\ntest-block-simple;a:1\ntest-forbid-simple;a:1\ntest-malware-simple;a:1\ntest-phish-simple;a:2\ntest-unwanted-simple;a:1");
 
   checkNoHost();
 }
@@ -138,7 +150,7 @@ function tablesCallbackWithSub(tables)
   
   
   do_check_eq(parts.join("\n"),
-              "\ntest-forbid-simple;a:1\ntest-malware-simple;a:1\ntest-phish-simple;a:2:s:3\ntest-unwanted-simple;a:1");
+              "\ntest-block-simple;a:1\ntest-forbid-simple;a:1\ntest-malware-simple;a:1\ntest-phish-simple;a:2:s:3\ntest-unwanted-simple;a:1");
 
   
   var data =
@@ -207,6 +219,16 @@ function forbiddenExists(result) {
   }
 }
 
+function blockedExists(result) {
+  dumpn("blockedExists: " + result);
+
+  try {
+    do_check_true(result.indexOf("test-block-simple") != -1);
+  } finally {
+    checkDone();
+  }
+}
+
 function checkState()
 {
   numExpecting = 0;
@@ -239,6 +261,12 @@ function checkState()
   for (var key in forbiddenExpected) {
     var principal = secMan.createCodebasePrincipal(iosvc.newURI("http://" + key, null, null), {});
     dbservice.lookup(principal, allTables, forbiddenExists, true);
+    numExpecting++;
+  }
+
+  for (var key in blockedExpected) {
+    var principal = secMan.createCodebasePrincipal(iosvc.newURI("http://" + key, null, null), {});
+    dbservice.lookup(principal, allTables, blockedExists, true);
     numExpecting++;
   }
 }
@@ -293,7 +321,10 @@ function do_adds() {
     chunk3 + "\n" +
     "i:test-forbid-simple\n" +
     "a:1:32:" + chunk4.length + "\n" +
-    chunk4 + "\n";
+    chunk4 + "\n" +
+    "i:test-block-simple\n" +
+    "a:1:32:" + chunk7.length + "\n" +
+    chunk7 + "\n";
 
   doSimpleUpdate(data, testAddSuccess, testFailure);
 }

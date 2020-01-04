@@ -124,6 +124,10 @@ private:
 
   
   
+  bool mCheckBlockedURIs;
+
+  
+  
   
   
   bool mInUpdate;
