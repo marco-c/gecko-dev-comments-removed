@@ -111,6 +111,8 @@ public:
 #endif 
 
 private:
+  static bool sPluginHasFocus;
+
 #ifdef NS_ENABLE_TSF
   static decltype(SetInputScopes)* sSetInputScopes;
   static void SetInputScopeForIMM32(nsWindow* aWindow,
@@ -119,7 +121,6 @@ private:
   
   
   static bool sIsIMMEnabled;
-  static bool sPluginHasFocus;
   static bool sShowingOnScreenKeyboard;
 
   static bool IsTSFAvailable() { return (sIsInTSFMode && !sPluginHasFocus); }

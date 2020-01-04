@@ -277,6 +277,12 @@ IMContextWrapper::~IMContextWrapper()
 nsIMEUpdatePreference
 IMContextWrapper::GetIMEUpdatePreference() const
 {
+    
+    
+    if (mInputContext.mIMEState.mEnabled == IMEState::PLUGIN) {
+      return nsIMEUpdatePreference();
+    }
+
     nsIMEUpdatePreference::Notifications notifications =
         nsIMEUpdatePreference::NOTIFY_SELECTION_CHANGE;
     
