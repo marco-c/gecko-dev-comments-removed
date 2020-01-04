@@ -293,35 +293,6 @@ ElementManager.prototype = {
 
 
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  applyNamedArgs: function EM_applyNamedArgs(args) {
-    let namedArgs = {};
-    args.forEach(function(arg) {
-      if (arg && typeof(arg['__marionetteArgs']) === 'object') {
-        for (let prop in arg['__marionetteArgs']) {
-          namedArgs[prop] = arg['__marionetteArgs'][prop];
-        }
-      }
-    });
-    return namedArgs;
-  },
-
-  
-
-
-
 
 
 
