@@ -116,16 +116,6 @@ struct URLValueData
   
   
   
-  bool URIEquals(const URLValueData& aOther) const;
-
-  
-  
-  bool MaybeUnresolvedURIEquals(const URLValueData& aOther) const;
-
-  
-  
-  
-  
   
   
   
