@@ -4798,6 +4798,9 @@ pref("dom.imagecapture.enabled", false);
 pref("media.ondevicechange.enabled", false);
 
 
+pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
+
+
 
 
 

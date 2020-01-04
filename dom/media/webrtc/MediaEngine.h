@@ -76,6 +76,8 @@ public:
 
   virtual void Shutdown() = 0;
 
+  virtual void SetFakeDeviceChangeEvents() {}
+
 protected:
   virtual ~MediaEngine() {}
 };
@@ -101,6 +103,7 @@ public:
     , mFullDuplex(false)
     , mExtendedFilter(false)
     , mDelayAgnostic(false)
+    , mFakeDeviceChangeEventOn(false)
   {}
 
   int32_t mWidth;
@@ -118,6 +121,7 @@ public:
   bool mFullDuplex;
   bool mExtendedFilter;
   bool mDelayAgnostic;
+  bool mFakeDeviceChangeEventOn;
 
   
 

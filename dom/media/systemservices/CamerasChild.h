@@ -160,6 +160,7 @@ public:
                                    const int& w, const int& h) override;
 
   virtual bool RecvDeviceChange() override;
+  int SetFakeDeviceChangeEvents();
 
   
   virtual bool RecvReplyNumberOfCaptureDevices(const int&) override;

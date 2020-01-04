@@ -571,6 +571,8 @@ class MediaEngineWebRTC : public MediaEngine
 public:
   explicit MediaEngineWebRTC(MediaEnginePrefs& aPrefs);
 
+  virtual void SetFakeDeviceChangeEvents() override;
+
   
   
   void Shutdown() override;
