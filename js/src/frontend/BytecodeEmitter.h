@@ -519,7 +519,8 @@ struct BytecodeEmitter
     
     
     
-    bool emitElemOperands(ParseNode* pn, JSOp op);
+    enum class EmitElemOption { Get, Set, Call, IncDec };
+    bool emitElemOperands(ParseNode* pn, EmitElemOption opts);
 
     bool emitElemOpBase(JSOp op);
     bool emitElemOp(ParseNode* pn, JSOp op);
@@ -654,8 +655,7 @@ struct BytecodeEmitter
     bool emitClass(ParseNode* pn);
     bool emitSuperPropLHS(ParseNode* superBase, bool isCall = false);
     bool emitSuperPropOp(ParseNode* pn, JSOp op, bool isCall = false);
-    enum SuperElemOptions { SuperElem_Get, SuperElem_Set, SuperElem_Call, SuperElem_IncDec };
-    bool emitSuperElemOperands(ParseNode* pn, SuperElemOptions opts = SuperElem_Get);
+    bool emitSuperElemOperands(ParseNode* pn, EmitElemOption opts = EmitElemOption::Get);
     bool emitSuperElemOp(ParseNode* pn, JSOp op, bool isCall = false);
 };
 
