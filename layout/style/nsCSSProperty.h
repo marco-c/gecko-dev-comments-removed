@@ -8,6 +8,8 @@
 #ifndef nsCSSProperty_h___
 #define nsCSSProperty_h___
 
+#include <nsHashKeys.h>
+
 
 
 
@@ -63,6 +65,17 @@ enum nsCSSProperty {
   
   eCSSPropertyExtra_variable
 };
+
+namespace mozilla {
+
+template<>
+inline PLDHashNumber
+Hash<nsCSSProperty>(const nsCSSProperty& aValue)
+{
+  return uint32_t(aValue);
+}
+
+} 
 
 
 
