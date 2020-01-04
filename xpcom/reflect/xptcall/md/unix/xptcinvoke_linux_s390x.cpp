@@ -164,6 +164,12 @@ invoke_copy_to_stack(uint32_t paramCount, nsXPTCVariant* s, uint64_t* d_ov, uint
 
 typedef nsresult (*vtable_func)(nsISupports *, uint64_t, uint64_t, uint64_t, uint64_t, double, double, double, double);
 
+
+
+
+
+
+MOZ_ASAN_BLACKLIST
 EXPORT_XPCOM_API(nsresult)
 NS_InvokeByIndex(nsISupports* that, uint32_t methodIndex,
                  uint32_t paramCount, nsXPTCVariant* params)
