@@ -209,6 +209,7 @@ public:
   void GetFrames(JSContext*& aCx,
                  nsTArray<JSObject*>& aResult,
                  ErrorResult& aRv);
+  void GetPropertyState(nsTArray<AnimationPropertyState>& aStates) const;
 
   
   
@@ -303,8 +304,6 @@ public:
   
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
-
-  void GetPropertyState(nsTArray<AnimationPropertyState>& aStates) const;
 
   
   
