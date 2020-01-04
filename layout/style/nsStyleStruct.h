@@ -568,6 +568,10 @@ struct nsStyleImageLayers {
 
     bool IsInitialValue(LayerType aType) const;
 
+    static float GetInitialValue(LayerType aType) {
+      return (aType == LayerType::Background) ? 0.0f : 0.5f;
+    }
+
     
     
     void SetInitialPercentValues(float aPercentVal);
