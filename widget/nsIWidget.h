@@ -846,16 +846,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
-
-    NS_IMETHOD GetRestoredBounds(mozilla::LayoutDeviceIntRect &aRect) {
-      nsIntRect tmp;
-      nsresult rv = GetRestoredBoundsUntyped(tmp);
-      aRect = mozilla::LayoutDeviceIntRect::FromUnknownRect(tmp);
-      return rv;
-    }
-    NS_IMETHOD GetRestoredBoundsUntyped(nsIntRect &aRect) = 0;
+    NS_IMETHOD GetRestoredBounds(mozilla::LayoutDeviceIntRect &aRect) = 0;
 
     
 
