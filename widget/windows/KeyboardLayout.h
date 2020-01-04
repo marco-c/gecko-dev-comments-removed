@@ -509,7 +509,7 @@ private:
 
 
 
-  bool DispatchPluginEventsAndDiscardsCharMessages() const;
+  bool MaybeDispatchPluginEventsForRemovedCharMessages() const;
 
   
 

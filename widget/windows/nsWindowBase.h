@@ -88,6 +88,11 @@ public:
   
 
 
+  bool ShouldDispatchPluginEvent();
+
+  
+
+
   virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
                                               TouchPointerState aPointerState,
                                               LayoutDeviceIntPoint aPoint,
