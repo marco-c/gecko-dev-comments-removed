@@ -135,7 +135,7 @@ protected:
   void DoNotShowCarets();
 
   void UpdateCaretsForCursorMode(UpdateCaretsHint aHint);
-  void UpdateCaretsForSelectionMode();
+  void UpdateCaretsForSelectionMode(UpdateCaretsHint aHint);
 
   
   void ProvideHapticFeedback();
@@ -237,6 +237,8 @@ protected:
   
   
   AccessibleCaret::Appearance mFirstCaretAppearanceOnScrollStart =
+                                 AccessibleCaret::Appearance::None;
+  AccessibleCaret::Appearance mSecondCaretAppearanceOnScrollStart =
                                  AccessibleCaret::Appearance::None;
 
   static const int32_t kAutoScrollTimerDelay = 30;
