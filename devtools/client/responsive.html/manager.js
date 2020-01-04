@@ -9,6 +9,7 @@ const promise = require("promise");
 const { Task } = require("resource://gre/modules/Task.jsm");
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
+const { TouchEventSimulator } = require("devtools/shared/touch/simulator");
 const { getOwnerWindow } = require("sdk/tabs/utils");
 const { on, off } = require("sdk/event/core");
 const { startup } = require("sdk/window/helpers");
@@ -200,6 +201,11 @@ ResponsiveUI.prototype = {
   
 
 
+  touchEventSimulator: null,
+
+  
+
+
 
 
 
@@ -220,15 +226,23 @@ ResponsiveUI.prototype = {
     yield waitForMessage(toolWindow, "init");
     toolWindow.addInitialViewport(contentURI);
     yield waitForMessage(toolWindow, "browser-mounted");
+
+    let browser = toolWindow.document.querySelector("iframe.browser");
+    this.touchEventSimulator = new TouchEventSimulator(browser);
   }),
 
   destroy: Task.async(function* () {
     let tabBrowser = this.tab.linkedBrowser;
     let browserWindow = this.browserWindow;
+
     this.browserWindow = null;
     this.tab = null;
     this.inited = null;
     this.toolWindow = null;
+
+    yield this.touchEventSimulator.stop();
+    this.touchEventSimulator = null;
+
     let loaded = waitForDocLoadComplete(browserWindow.gBrowser);
     tabBrowser.goBack();
     yield loaded;
@@ -254,8 +268,20 @@ ResponsiveUI.prototype = {
         toolWindow.removeEventListener(event.type, this);
         ResponsiveUIManager.closeIfNeeded(window, tab);
         break;
+      case "update-touch-simulation":
+        let { enabled } = event.data;
+        this.updateTouchSimulation(enabled);
+        break;
     }
   },
+
+  updateTouchSimulation: Task.async(function* (enabled) {
+    if (enabled) {
+      this.touchEventSimulator.start();
+    } else {
+      this.touchEventSimulator.stop();
+    }
+  }),
 
   getViewportSize() {
     return this.toolWindow.getViewportSize();
