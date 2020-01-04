@@ -43,10 +43,6 @@
 #include "mozilla/dom/ContentChild.h"
 #endif
 
-#ifdef MOZ_NUWA_PROCESS
-#include "private/pprthred.h"
-#endif
-
 #ifdef XP_LINUX
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -676,12 +672,6 @@ nsThread::PutEvent(already_AddRefed<nsIRunnable> aEvent, nsNestedEventTarget* aT
   
   LeakRefPtr<nsIRunnable> event(Move(aEvent));
   nsCOMPtr<nsIThreadObserver> obs;
-
-#ifdef MOZ_NUWA_PROCESS
-  
-  
-  NuwaAssertNotFrozen(PR_GetThreadID(mThread), PR_GetThreadName(mThread));
-#endif
 
   {
     MutexAutoLock lock(mLock);

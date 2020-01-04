@@ -1926,12 +1926,6 @@ nsMemoryReporterManager::HandleChildReport(
 nsMemoryReporterManager::StartChildReport(mozilla::dom::ContentParent* aChild,
                                           const PendingProcessesState* aState)
 {
-#ifdef MOZ_NUWA_PROCESS
-  if (aChild->IsNuwaProcess()) {
-    return false;
-  }
-#endif
-
   if (!aChild->IsAlive()) {
     MEMORY_REPORTING_LOG("StartChildReports (gen=%u): child exited before"
                          " its report was started\n",

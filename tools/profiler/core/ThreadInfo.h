@@ -30,10 +30,6 @@ class ThreadInfo {
   virtual void SetPendingDelete();
   bool IsPendingDelete() const { return mPendingDelete; }
 
-#ifdef MOZ_NUWA_PROCESS
-  void SetThreadId(int aThreadId) { mThreadId = aThreadId; }
-#endif
-
 #ifndef SPS_STANDALONE
   
 

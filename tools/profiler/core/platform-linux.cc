@@ -92,10 +92,6 @@
 #include <string.h>
 #include <list>
 
-#ifdef MOZ_NUWA_PROCESS
-#include "ipc/Nuwa.h"
-#endif
-
 #define SIGNAL_SAVE_PROFILE SIGUSR2
 
 using namespace mozilla;
@@ -300,18 +296,6 @@ static void* SignalSender(void* arg) {
   
   prctl(PR_SET_NAME, "SamplerThread", 0, 0, 0);
 
-#ifdef MOZ_NUWA_PROCESS
-  
-  
-  
-  if(IsNuwaProcess()) {
-    NuwaMarkCurrentThread(nullptr, nullptr);
-    
-    
-    NuwaFreezeCurrentThread();
-  }
-#endif
-
   int vm_tgid_ = getpid();
   DebugOnly<int> my_tid = gettid();
 
@@ -500,18 +484,6 @@ void Sampler::Stop() {
   }
 }
 
-#ifdef MOZ_NUWA_PROCESS
-static void
-UpdateThreadId(void* aThreadInfo) {
-  ThreadInfo* info = static_cast<ThreadInfo*>(aThreadInfo);
-  
-  
-  
-  
-  info->SetThreadId(gettid());
-}
-#endif
-
 bool Sampler::RegisterCurrentThread(const char* aName,
                                     PseudoStack* aPseudoStack,
                                     bool aIsMainThread, void* stackTop)
@@ -542,20 +514,6 @@ bool Sampler::RegisterCurrentThread(const char* aName,
   }
 
   sRegisteredThreads->push_back(info);
-
-#ifdef MOZ_NUWA_PROCESS
-  if (IsNuwaProcess()) {
-    if (info->IsMainThread()) {
-      
-      
-      
-      NuwaAddConstructor(UpdateThreadId, info);
-    } else {
-      
-      NuwaAddThreadConstructor(UpdateThreadId, info);
-    }
-  }
-#endif
 
   return true;
 }

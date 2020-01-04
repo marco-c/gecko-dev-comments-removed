@@ -506,19 +506,8 @@ SetCurrentProcessSandbox(UniquePtr<sandbox::bpf_dsl::Policy> aPolicy)
 }
 
 void
-SandboxEarlyInit(GeckoProcessType aType, bool aIsNuwa)
+SandboxEarlyInit(GeckoProcessType aType)
 {
-  
-  
-  
-  
-  
-  
-  
-  if (aIsNuwa) {
-    return;
-  }
-
   const SandboxInfo info = SandboxInfo::Get();
   if (info.Test(SandboxInfo::kUnexpectedThreads)) {
     return;

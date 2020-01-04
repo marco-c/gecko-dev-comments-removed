@@ -55,11 +55,6 @@
 
 #endif 
 
-#ifdef MOZ_NUWA_PROCESS
-#include <binder/ProcessState.h>
-#include "ipc/Nuwa.h"
-#endif
-
 #ifdef MOZ_WIDGET_GONK
 static void
 InitializeBinder(void *aDummy) {
@@ -150,11 +145,6 @@ content_process_main(int argc, char* argv[])
       return 3;
     }
 
-    bool isNuwa = false;
-    for (int i = 1; i < argc; i++) {
-        isNuwa |= strcmp(argv[i], "-nuwa") == 0;
-    }
-
     XREChildData childData;
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
@@ -171,20 +161,11 @@ content_process_main(int argc, char* argv[])
 
     XRE_SetProcessType(argv[--argc]);
 
-#ifdef MOZ_NUWA_PROCESS
-    if (isNuwa) {
-        PrepareNuwaProcess();
-    }
-#endif
-
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
     
     
     
-    
-    
-    
-    mozilla::SandboxEarlyInit(XRE_GetProcessType(), isNuwa);
+    mozilla::SandboxEarlyInit(XRE_GetProcessType());
 #endif
 
 #ifdef MOZ_WIDGET_GONK
@@ -193,15 +174,7 @@ content_process_main(int argc, char* argv[])
     
     
 
-#ifdef MOZ_NUWA_PROCESS
-    if (!isNuwa) {
-        InitializeBinder(nullptr);
-    } else {
-        NuwaAddFinalConstructor(&InitializeBinder, nullptr);
-    }
-#else
     InitializeBinder(nullptr);
-#endif
 #endif
 
 #ifdef XP_WIN

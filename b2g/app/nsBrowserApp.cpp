@@ -163,22 +163,9 @@ static int do_main(int argc, char* argv[])
   return XRE_main(argc, argv, &sAppData, 0);
 }
 
-#ifdef MOZ_B2G_LOADER
-
-
-
-
-#define main b2g_main
-#define _CONST const
-#else
-#define _CONST
-#endif
-
-int main(int argc, _CONST char* argv[])
+int main(int argc, char* argv[])
 {
-#ifndef MOZ_B2G_LOADER
   char exePath[MAXPATHLEN];
-#endif
 
 #ifdef MOZ_WIDGET_GONK
   
@@ -189,7 +176,6 @@ int main(int argc, _CONST char* argv[])
 #endif
 
   nsresult rv;
-#ifndef MOZ_B2G_LOADER
   rv = mozilla::BinaryPath::Get(argv[0], exePath);
   if (NS_FAILED(rv)) {
     Output("Couldn't calculate the application directory.\n");
@@ -201,7 +187,6 @@ int main(int argc, _CONST char* argv[])
     return 255;
 
   strcpy(++lastSlash, XPCOM_DLL);
-#endif 
 
 #if defined(XP_UNIX)
   
@@ -217,9 +202,6 @@ int main(int argc, _CONST char* argv[])
 #endif
 
   
-  
-#ifndef MOZ_B2G_LOADER
-  
   XPCOMGlueEnablePreload();
 
   rv = XPCOMGlueStartup(exePath);
@@ -229,7 +211,6 @@ int main(int argc, _CONST char* argv[])
   }
   
   *lastSlash = 0;
-#endif 
 
   rv = XPCOMGlueLoadXULFunctions(kXULFuncs);
   if (NS_FAILED(rv)) {

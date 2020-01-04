@@ -1296,25 +1296,11 @@ HelperThread::destroy()
     threadData.reset();
 }
 
-#ifdef MOZ_NUWA_PROCESS
-extern "C" {
-MFBT_API bool IsNuwaProcess();
-MFBT_API void NuwaMarkCurrentThread(void (*recreate)(void*), void* arg);
-}
-#endif
-
 
 void
 HelperThread::ThreadMain(void* arg)
 {
     PR_SetCurrentThreadName("JS Helper");
-
-#ifdef MOZ_NUWA_PROCESS
-    if (IsNuwaProcess()) {
-        MOZ_ASSERT(NuwaMarkCurrentThread != nullptr);
-        NuwaMarkCurrentThread(nullptr, nullptr);
-    }
-#endif
 
     
     

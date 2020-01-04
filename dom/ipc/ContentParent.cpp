@@ -52,7 +52,6 @@
 #include "mozilla/dom/MediaKeySystemAccess.h"
 #endif
 #include "mozilla/dom/Notification.h"
-#include "mozilla/dom/NuwaParent.h"
 #include "mozilla/dom/PContentBridgeParent.h"
 #include "mozilla/dom/PContentPermissionRequestParent.h"
 #include "mozilla/dom/PCycleCollectWithLogsParent.h"
@@ -326,11 +325,6 @@ const nsIID nsIConsoleService::COMTypeInfo<nsConsoleService, void>::kIID = NS_IC
 namespace mozilla {
 namespace dom {
 
-#ifdef MOZ_NUWA_PROCESS
-int32_t ContentParent::sNuwaPid = 0;
-bool ContentParent::sNuwaReady = false;
-#endif
-
 #define NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC "ipc:network:set-offline"
 #define NS_IPC_IOSERVICE_SET_CONNECTIVITY_TOPIC "ipc:network:set-connectivity"
 
@@ -549,11 +543,6 @@ StaticAutoPtr<LinkedList<ContentParent> > ContentParent::sContentParents;
 UniquePtr<SandboxBrokerPolicyFactory> ContentParent::sSandboxBrokerPolicyFactory;
 #endif
 
-#ifdef MOZ_NUWA_PROCESS
-
-static nsTArray<PrefSetting>* sNuwaPrefUpdates;
-#endif
-
 
 
 static bool sCanLaunchSubprocesses;
@@ -600,45 +589,6 @@ static const char* sObserverTopics[] = {
 #endif
   "gmp-changed",
 };
-
-#ifdef MOZ_NUWA_PROCESS
-
-
-
-static const char* sNuwaSafeObserverTopics[] = {
-  "xpcom-shutdown",
-  "profile-before-change",
-#ifdef MOZ_WIDGET_GONK
-  "phone-state-changed",
-#endif
-#ifdef ACCESSIBILITY
-  "a11y-init-or-shutdown",
-#endif
-  "nsPref:Changed"
-};
-#endif
- already_AddRefed<ContentParent>
-ContentParent::RunNuwaProcess()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  RefPtr<ContentParent> nuwaProcess =
-    new ContentParent( nullptr,
-                       nullptr,
-                       false,
-                       true,
-                       true);
-
-  if (!nuwaProcess->LaunchSubprocess(PROCESS_PRIORITY_BACKGROUND)) {
-    return nullptr;
-  }
-
-  nuwaProcess->Init();
-#ifdef MOZ_NUWA_PROCESS
-  sNuwaPid = nuwaProcess->Pid();
-  sNuwaReady = false;
-#endif
-  return nuwaProcess.forget();
-}
 
 
 
@@ -691,8 +641,6 @@ ContentParent::GetNewOrPreallocatedAppProcess(mozIApplication* aApp,
     }
   }
 
-  
-  
   NS_WARNING("Unable to use pre-allocated app process");
   process = new ContentParent(aApp,
                                aOpener,
@@ -912,11 +860,7 @@ ContentParent::SendAsyncUpdate(nsIWidget* aWidget)
 bool
 ContentParent::PreallocatedProcessReady()
 {
-#ifdef MOZ_NUWA_PROCESS
-  return PreallocatedProcessManager::PreallocatedProcessReady();
-#else
   return true;
-#endif
 }
 
 bool
@@ -1535,9 +1479,6 @@ ContentParent::SetPriorityAndCheckIsAlive(ProcessPriority aPriority)
   
   
   
-  
-  
-  
 #ifdef MOZ_WIDGET_GONK
   siginfo_t info;
   info.si_pid = 0;
@@ -1598,14 +1539,6 @@ ContentParent::TransformPreallocatedIntoBrowser(ContentParent* aOpener)
 void
 ContentParent::ShutDownProcess(ShutDownMethod aMethod)
 {
-#ifdef MOZ_NUWA_PROCESS
-  if (aMethod == SEND_SHUTDOWN_MESSAGE && IsNuwaProcess()) {
-    
-    
-    aMethod = CLOSE_CHANNEL;
-  }
-#endif
-
   
   
   
@@ -1635,13 +1568,6 @@ ContentParent::ShutDownProcess(ShutDownMethod aMethod)
     
     mCalledClose = true;
     Close();
-#ifdef MOZ_NUWA_PROCESS
-    
-    
-    if (IsNuwaProcess()) {
-      KillHard("ShutDownProcess");
-    }
-#endif
   }
 
   const ManagedContainer<POfflineCacheUpdateParent>& ocuParents =
@@ -1724,10 +1650,6 @@ void
 ContentParent::OnChannelError()
 {
   RefPtr<ContentParent> content(this);
-#ifdef MOZ_NUWA_PROCESS
-  
-  PreallocatedProcessManager::MaybeForgetSpare(this);
-#endif
   PContentParent::OnChannelError();
 }
 
@@ -1928,14 +1850,6 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
 
   
   Preferences::RemoveObserver(this, "");
-
-#ifdef MOZ_NUWA_PROCESS
-  
-  if (IsNuwaProcess() && sNuwaPrefUpdates) {
-    delete sNuwaPrefUpdates;
-    sNuwaPrefUpdates = nullptr;
-  }
-#endif
 
   RecvRemoveGeolocationListener();
 
@@ -2198,10 +2112,6 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
 
   std::vector<std::string> extraArgs;
-  if (mIsNuwaProcess) {
-    extraArgs.push_back("-nuwa");
-  }
-
   if (!mSubprocess->LaunchAndWaitForProcessHandle(extraArgs)) {
     MarkAsDead();
     return false;
@@ -2227,12 +2137,10 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 ContentParent::ContentParent(mozIApplication* aApp,
                              ContentParent* aOpener,
                              bool aIsForBrowser,
-                             bool aIsForPreallocated,
-                             bool aIsNuwaProcess )
+                             bool aIsForPreallocated)
   : nsIContentParent()
   , mOpener(aOpener)
   , mIsForBrowser(aIsForBrowser)
-  , mIsNuwaProcess(aIsNuwaProcess)
 {
   InitializeMembers();  
 
@@ -2240,20 +2148,13 @@ ContentParent::ContentParent(mozIApplication* aApp,
   
   MOZ_ASSERT(!!aApp + aIsForBrowser + aIsForPreallocated <= 1);
 
-  
-  MOZ_ASSERT_IF(aIsNuwaProcess, aIsForPreallocated);
-
-  if (!aIsNuwaProcess && !aIsForPreallocated) {
-    mMetamorphosed = true;
-  }
+  mMetamorphosed = true;
 
   
   if (!sContentParents) {
     sContentParents = new LinkedList<ContentParent>();
   }
-  if (!aIsNuwaProcess) {
-    sContentParents->insertBack(this);
-  }
+  sContentParents->insertBack(this);
 
   if (aApp) {
     aApp->GetManifestURL(mAppManifestURL);
@@ -2274,82 +2175,9 @@ ContentParent::ContentParent(mozIApplication* aApp,
 #endif
 
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-  ChildPrivileges privs = aIsNuwaProcess
-    ? base::PRIVILEGES_INHERIT
-    : base::PRIVILEGES_DEFAULT;
+  ChildPrivileges privs = base::PRIVILEGES_DEFAULT;
   mSubprocess = new GeckoChildProcessHost(GeckoProcessType_Content, privs);
 }
-
-#ifdef MOZ_NUWA_PROCESS
-static const mozilla::ipc::FileDescriptor*
-FindFdProtocolFdMapping(const nsTArray<ProtocolFdMapping>& aFds,
-                        ProtocolId aProtoId)
-{
-  for (unsigned int i = 0; i < aFds.Length(); i++) {
-    if (aFds[i].protocolId() == aProtoId) {
-      return &aFds[i].fd();
-    }
-  }
-  return nullptr;
-}
-
-
-
-
-
-
-ContentParent::ContentParent(ContentParent* aTemplate,
-                             const nsAString& aAppManifestURL,
-                             base::ProcessHandle aPid,
-                             InfallibleTArray<ProtocolFdMapping>&& aFds)
-  : mAppManifestURL(aAppManifestURL)
-  , mIsForBrowser(false)
-  , mIsNuwaProcess(false)
-{
-  InitializeMembers();  
-
-  sContentParents->insertBack(this);
-
-  
-  
-  nsDebugImpl::SetMultiprocessMode("Parent");
-
-  NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-
-  const FileDescriptor* fd = FindFdProtocolFdMapping(aFds, GetProtocolId());
-
-  NS_ASSERTION(fd != nullptr, "IPC Channel for PContent is necessary!");
-  mSubprocess = new GeckoExistingProcessHost(GeckoProcessType_Content,
-                                             aPid, *fd);
-
-  mSubprocess->LaunchAndWaitForProcessHandle();
-
-  
-  ProtocolCloneContext cloneContext;
-  cloneContext.SetContentParent(this);
-  CloneManagees(aTemplate, &cloneContext);
-  CloneOpenedToplevels(aTemplate, aFds, aPid, &cloneContext);
-
-  Open(mSubprocess->GetChannel(),
-     base::GetProcId(mSubprocess->GetChildProcessHandle()));
-
-  
-  
-  
-  ProcessPriority priority;
-  if (IsPreallocated()) {
-    priority = PROCESS_PRIORITY_PREALLOC;
-  } else {
-    priority = PROCESS_PRIORITY_FOREGROUND;
-  }
-
-  InitInternal(priority,
-               false, 
-               false  );
-
-  ContentProcessManager::GetSingleton()->AddContentProcess(this);
-}
-#endif  
 
 ContentParent::~ContentParent()
 {
@@ -2372,13 +2200,6 @@ ContentParent::~ContentParent()
     MOZ_ASSERT(!sAppContentParents ||
                sAppContentParents->Get(mAppManifestURL) != this);
   }
-
-#ifdef MOZ_NUWA_PROCESS
-  if (IsNuwaProcess()) {
-    sNuwaReady = false;
-    sNuwaPid = 0;
-  }
-#endif
 }
 
 void
@@ -2491,11 +2312,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
 
 #ifdef MOZ_CONTENT_SANDBOX
   bool shouldSandbox = true;
-#ifdef MOZ_NUWA_PROCESS
-  if (IsNuwaProcess()) {
-    shouldSandbox = false;
-  }
-#endif
   MaybeFileDesc brokerFd = void_t();
 #ifdef XP_LINUX
   
@@ -2565,14 +2381,6 @@ ContentParent::IsForApp() const
 {
   return !mAppManifestURL.IsEmpty();
 }
-
-#ifdef MOZ_NUWA_PROCESS
-bool
-ContentParent::IsNuwaProcess() const
-{
-  return mIsNuwaProcess;
-}
-#endif
 
 int32_t
 ContentParent::Pid() const
@@ -2880,125 +2688,6 @@ ContentParent::RecvAudioChannelServiceStatus(
   return true;
 }
 
-void
-ContentParent::ForkNewProcess(bool aBlocking)
-{
-#ifdef MOZ_NUWA_PROCESS
-  uint32_t pid;
-  auto fds = MakeUnique<nsTArray<ProtocolFdMapping>>();
-
-  MOZ_ASSERT(IsNuwaProcess() && mNuwaParent);
-
-  if (mNuwaParent->ForkNewProcess(pid, mozilla::Move(fds), aBlocking)) {
-    OnNewProcessCreated(pid, mozilla::Move(fds));
-  }
-#else
-  NS_ERROR("ContentParent::ForkNewProcess() not implemented!");
-#endif
-}
-
-#ifdef MOZ_NUWA_PROCESS
-
-
-static void
-KeepNuwaSafeObserverTopics(ContentParent* aNuwaContentParent)
-{
-  MOZ_ASSERT(aNuwaContentParent && aNuwaContentParent->IsNuwaProcess());
-
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (!obs) {
-      return;
-  }
-
-  size_t topicLength = ArrayLength(sObserverTopics);
-  for (size_t i = 0; i < topicLength; ++i) {
-      bool nuwaSafe = false;
-      size_t safeTopicLength = ArrayLength(sNuwaSafeObserverTopics);
-
-      for (size_t j = 0; j < safeTopicLength; j++) {
-          if (!nsCRT::strcmp(sObserverTopics[i],
-                            sNuwaSafeObserverTopics[j])) {
-              
-              nuwaSafe = true;
-              break;
-          }
-      }
-
-      if (!nuwaSafe) {
-          obs->RemoveObserver(aNuwaContentParent, sObserverTopics[i]);
-      }
-  }
-}
-#endif
-
-void
-ContentParent::OnNuwaReady()
-{
-#ifdef MOZ_NUWA_PROCESS
-  
-  
-  MOZ_ASSERT(IsNuwaProcess());
-
-  sNuwaReady = true;
-  KeepNuwaSafeObserverTopics(this);
-
-  PreallocatedProcessManager::OnNuwaReady();
-  return;
-#else
-  NS_ERROR("ContentParent::OnNuwaReady() not implemented!");
-  return;
-#endif
-}
-
-void
-ContentParent::OnNewProcessCreated(uint32_t aPid,
-                                   UniquePtr<nsTArray<ProtocolFdMapping>>&& aFds)
-{
-#ifdef MOZ_NUWA_PROCESS
-  
-  
-  MOZ_ASSERT(IsNuwaProcess());
-
-  RefPtr<ContentParent> content;
-  content = new ContentParent(this,
-                              MAGIC_PREALLOCATED_APP_MANIFEST_URL,
-                              aPid,
-                              Move(*aFds.get()));
-  content->Init();
-
-  size_t numNuwaPrefUpdates = sNuwaPrefUpdates ?
-                              sNuwaPrefUpdates->Length() : 0;
-  
-  for (size_t i = 0; i < numNuwaPrefUpdates; i++) {
-    mozilla::Unused << content->SendPreferenceUpdate(sNuwaPrefUpdates->ElementAt(i));
-  }
-
-  
-  bool isOffline, isLangRTL, haveBidiKeyboards;
-  bool isConnected;
-  InfallibleTArray<nsString> unusedDictionaries;
-  ClipboardCapabilities clipboardCaps;
-  DomainPolicyClone domainPolicy;
-  StructuredCloneData initialData;
-
-  RecvGetXPCOMProcessAttributes(&isOffline, &isConnected,
-                                &isLangRTL, &haveBidiKeyboards,
-                                &unusedDictionaries,
-                                &clipboardCaps, &domainPolicy, &initialData);
-  mozilla::Unused << content->SendSetOffline(isOffline);
-  mozilla::Unused << content->SendSetConnectivity(isConnected);
-  MOZ_ASSERT(!clipboardCaps.supportsSelectionClipboard() &&
-             !clipboardCaps.supportsFindClipboard(),
-             "Unexpected values");
-
-  PreallocatedProcessManager::PublishSpareProcess(content);
-  return;
-#else
-  NS_ERROR("ContentParent::OnNewProcessCreated() not implemented!");
-  return;
-#endif
-}
-
 
 
 NS_IMPL_CYCLE_COLLECTION_0(ContentParent)
@@ -3058,16 +2747,6 @@ ContentParent::Observe(nsISupports* aSubject,
     return NS_OK;
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
   if (!strcmp(aTopic, "memory-pressure") &&
       !StringEndsWith(nsDependentString(aData),
                       NS_LITERAL_STRING("-no-forward"))) {
@@ -3080,22 +2759,9 @@ ContentParent::Observe(nsISupports* aSubject,
 
     PrefSetting pref(strData, null_t(), null_t());
     Preferences::GetPreference(&pref);
-#ifdef MOZ_NUWA_PROCESS
-    if (IsReadyNuwaProcess()) {
-      
-      
-      if (!sNuwaPrefUpdates) {
-        sNuwaPrefUpdates = new nsTArray<PrefSetting>();
-      }
-      sNuwaPrefUpdates->AppendElement(pref);
-    } else if (!SendPreferenceUpdate(pref)) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-#else
     if (!SendPreferenceUpdate(pref)) {
       return NS_ERROR_NOT_AVAILABLE;
     }
-#endif
   }
   else if (!strcmp(aTopic, NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC)) {
     NS_ConvertUTF16toUTF8 dataStr(aData);
@@ -3524,11 +3190,6 @@ void
 ContentParent::FriendlyName(nsAString& aName, bool aAnonymize)
 {
   aName.Truncate();
-#ifdef MOZ_NUWA_PROCESS
-  if (IsNuwaProcess()) {
-    aName.AssignLiteral("(Nuwa)");
-  } else
-#endif
   if (IsPreallocated()) {
     aName.AssignLiteral("(Preallocated)");
   } else if (mIsForBrowser) {
@@ -4641,10 +4302,6 @@ ContentParent::DoSendAsyncMessage(JSContext* aCx,
   jsipc::CPOWManager* mgr = GetCPOWManager();
   if (aCpows && (!mgr || !mgr->Wrap(aCx, aCpows, &cpows))) {
     return NS_ERROR_UNEXPECTED;
-  }
-  if (IsReadyNuwaProcess()) {
-    
-    return NS_OK;
   }
   if (!SendAsyncMessage(nsString(aMessage), cpows, Principal(aPrincipal), data)) {
     return NS_ERROR_UNEXPECTED;

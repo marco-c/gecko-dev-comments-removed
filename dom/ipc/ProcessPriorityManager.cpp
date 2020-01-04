@@ -526,13 +526,6 @@ already_AddRefed<ParticularProcessPriorityManager>
 ProcessPriorityManagerImpl::GetParticularProcessPriorityManager(
   ContentParent* aContentParent)
 {
-#ifdef MOZ_NUWA_PROCESS
-  
-  if (aContentParent->IsNuwaProcess()) {
-    return nullptr;
-  }
-#endif
-
   RefPtr<ParticularProcessPriorityManager> pppm;
   uint64_t cpId = aContentParent->ChildID();
   mParticularManagers.Get(cpId, &pppm);
