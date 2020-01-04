@@ -1,4 +1,7 @@
 
+Services.prefs.setCharPref("identity.fxaccounts.auth.uri", "http://localhost");
+
+
 Cu.import("resource://services-sync/FxaMigrator.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/FxAccounts.jsm");
@@ -80,12 +83,7 @@ function configureLegacySync() {
   return [engine, server];
 }
 
-function configureFxa() {
-  Services.prefs.setCharPref("identity.fxaccounts.auth.uri", "http://localhost");
-}
-
 add_task(function *testMigration() {
-  configureFxa();
 
   
   let oldValue = Services.prefs.getBoolPref("services.sync-testing.startOverKeepIdentity");

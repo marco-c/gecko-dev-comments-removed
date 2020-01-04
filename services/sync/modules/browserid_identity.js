@@ -184,7 +184,7 @@ this.BrowserIDManager.prototype = {
 
     
     this.whenReadyToAuthenticate = Promise.defer();
-    this.whenReadyToAuthenticate.promise.then(null, (err) => {
+    this.whenReadyToAuthenticate.promise.catch(err => {
       this._log.error("Could not authenticate", err);
     });
 
@@ -240,14 +240,25 @@ this.BrowserIDManager.prototype = {
           Services.obs.notifyObservers(null, "weave:service:setup-complete", null);
           Weave.Utils.nextTick(Weave.Service.sync, Weave.Service);
         }
-      }).then(null, err => {
-        this._shouldHaveSyncKeyBundle = true; 
-        this.whenReadyToAuthenticate.reject(err);
+      }).catch(err => {
+        let authErr = err; 
+                           
         
-        this._log.error("Background fetch for key bundle failed", err);
+        this._log.error("Background fetch for key bundle failed", authErr);
+        
+        this._fxaService.accountStatus().then(exists => {
+          if (!exists) {
+            return fxAccounts.signOut(true);
+          }
+        }).catch(err => {
+          this._log.error("Error while trying to determine FXA existence", err);
+        }).then(() => {
+          this._shouldHaveSyncKeyBundle = true; 
+          this.whenReadyToAuthenticate.reject(authErr)
+        });
       });
       
-    }).then(null, err => {
+    }).catch(err => {
       this._log.error("Processing logged in account", err);
     });
   },
@@ -595,7 +606,7 @@ this.BrowserIDManager.prototype = {
         }
         return token;
       })
-      .then(null, err => {
+      .catch(err => {
         
         
         
