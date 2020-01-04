@@ -131,7 +131,6 @@ function CSSFilterEditorWidget(el, value = "") {
   this._presetClick = this._presetClick.bind(this);
   this._savePreset = this._savePreset.bind(this);
   this._togglePresets = this._togglePresets.bind(this);
-  this._resetFocus = this._resetFocus.bind(this);
 
   
   this.renderPresets = this.renderPresets.bind(this);
@@ -280,7 +279,6 @@ CSSFilterEditorWidget.prototype = {
     this.filtersList.addEventListener("click", this._removeButtonClick);
     this.filtersList.addEventListener("mousedown", this._mouseDown);
     this.filtersList.addEventListener("keydown", this._keyDown);
-    this.el.addEventListener("mousedown", this._resetFocus);
 
     this.presetsList.addEventListener("click", this._presetClick);
     this.togglePresets.addEventListener("click", this._togglePresets);
@@ -300,7 +298,6 @@ CSSFilterEditorWidget.prototype = {
     this.filtersList.removeEventListener("click", this._removeButtonClick);
     this.filtersList.removeEventListener("mousedown", this._mouseDown);
     this.filtersList.removeEventListener("keydown", this._keyDown);
-    this.el.removeEventListener("mousedown", this._resetFocus);
 
     this.presetsList.removeEventListener("click", this._presetClick);
     this.togglePresets.removeEventListener("click", this._togglePresets);
@@ -615,14 +612,6 @@ CSSFilterEditorWidget.prototype = {
 
 
 
-  _resetFocus: function () {
-    this.filterSelect.ownerDocument.defaultView.focus();
-  },
-
-  
-
-
-
   render: function () {
     if (!this.filters.length) {
       this.filtersList.innerHTML = `<p> ${L10N.getStr("emptyFilterList")} <br />
@@ -688,9 +677,11 @@ CSSFilterEditorWidget.prototype = {
         this.filtersList.querySelector(".filter:last-of-type input");
     if (lastInput) {
       lastInput.focus();
-      
-      const end = lastInput.value.length;
-      lastInput.setSelectionRange(end, end);
+      if (lastInput.type == "text") {
+        
+        const end = lastInput.value.length;
+        lastInput.setSelectionRange(end, end);
+      }
     }
 
     this.emit("render");
