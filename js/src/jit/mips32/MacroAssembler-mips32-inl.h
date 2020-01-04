@@ -282,6 +282,14 @@ MacroAssembler::branchTestInt32(Condition cond, const ValueOperand& value, Label
 }
 
 
+void
+MacroAssembler::branchTestInt32Truthy(bool b, const ValueOperand& value, Label* label)
+{
+    as_and(ScratchRegister, value.payloadReg(), value.payloadReg());
+    ma_b(ScratchRegister, ScratchRegister, label, b ? NonZero : Zero);
+}
+
+
 
 
 void
