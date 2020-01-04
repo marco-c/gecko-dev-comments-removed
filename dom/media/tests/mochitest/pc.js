@@ -878,7 +878,10 @@ PeerConnectionWrapper.prototype = {
       streamId: stream.id,
     };
 
-    this.ensureMediaElement(track, stream, "local");
+    
+    
+    
+    this.ensureMediaElement(track, new MediaStream([track]), "local");
 
     return this.observedNegotiationNeeded;
   },
