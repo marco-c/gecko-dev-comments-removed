@@ -573,6 +573,8 @@ public:
                                                   const float& aVolume,
                                                   const bool& aMuted) override;
 
+  virtual bool RecvSetUseGlobalHistory(const bool& aUse) override;
+
   
 
 
