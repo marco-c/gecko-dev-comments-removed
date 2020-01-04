@@ -13,18 +13,6 @@ const Cu = Components.utils;
 const COMPLETE_LENGTH = 32;
 const PARTIAL_LENGTH = 4;
 
-
-
-
-
-
-
-
-
-const BACKOFF_ERRORS = 2;
-const BACKOFF_INTERVAL = 30 * 60 * 1000;
-const BACKOFF_MAX = 8 * 60 * 60 * 1000;
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
@@ -208,13 +196,11 @@ HashCompleter.prototype = {
       
       var jslib = Cc["@mozilla.org/url-classifier/jslib;1"]
                   .getService().wrappedJSObject;
-      this._backoffs[aGethashUrl] = new jslib.RequestBackoff(
-        BACKOFF_ERRORS ,
-        60*1000 ,
+
+      
+      this._backoffs[aGethashUrl] = new jslib.RequestBackoffV4(
         10 ,
-        0 ,
-        BACKOFF_INTERVAL ,
-        BACKOFF_MAX );
+        0  );
     }
     
     
