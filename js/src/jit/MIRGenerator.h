@@ -151,13 +151,6 @@ class MIRGenerator
     
     
     bool usesSimd();
-    void initMinAsmJSHeapLength(uint32_t len) {
-        MOZ_ASSERT(minAsmJSHeapLength_ == 0);
-        minAsmJSHeapLength_ = len;
-    }
-    uint32_t minAsmJSHeapLength() const {
-        return minAsmJSHeapLength_;
-    }
 
     bool modifiesFrameArguments() const {
         return modifiesFrameArguments_;
@@ -192,7 +185,6 @@ class MIRGenerator
     bool performsCall_;
     bool usesSimd_;
     bool usesSimdCached_;
-    uint32_t minAsmJSHeapLength_;
 
     
     
