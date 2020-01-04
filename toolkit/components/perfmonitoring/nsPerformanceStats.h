@@ -48,6 +48,11 @@ protected:
   
 
 
+  bool mIsAvailable;
+
+  
+
+
 
 
   const uint64_t mProcessId;
