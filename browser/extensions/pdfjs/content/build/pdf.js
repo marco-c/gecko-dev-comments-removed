@@ -22,8 +22,8 @@ if (typeof PDFJS === 'undefined') {
   (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
-PDFJS.version = '1.2.68';
-PDFJS.build = '8079bdd';
+PDFJS.version = '1.2.109';
+PDFJS.build = '875588d';
 
 (function pdfjsWrapper() {
   
@@ -1381,6 +1381,8 @@ PDFJS.disableWorker = (PDFJS.disableWorker === undefined ?
 
 
 
+
+
 PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
 
 
@@ -1650,8 +1652,8 @@ PDFJS.getDocument = function getDocument(src,
 
 
 
+
 var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
-  
   function PDFDocumentLoadingTask() {
     this._capability = createPromiseCapability();
     this._transport = null;
@@ -1709,12 +1711,10 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
 
 
 
+
+
+
 var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
-  
-
-
-
-
   function PDFDataRangeTransport(length, initialData) {
     this.length = length;
     this.initialData = initialData;
@@ -1783,6 +1783,7 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
 })();
 
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
+
 
 
 
@@ -1921,6 +1922,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   };
   return PDFDocumentProxy;
 })();
+
 
 
 
@@ -2923,6 +2925,7 @@ var PDFObjects = (function PDFObjectsClosure() {
   };
   return PDFObjects;
 })();
+
 
 
 
