@@ -8,7 +8,7 @@
 
 "use strict";
 
-const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+const { classes: Cc, interfaces: Ci } = Components;
 const { loader } = Components.utils.import(
   "resource://devtools/shared/Loader.jsm", {});
 
@@ -144,7 +144,7 @@ var AboutDebugging = {
     }
     try {
       AddonManager.installTemporaryAddon(file);
-    } catch(e) {
+    } catch (e) {
       alert("Error while installing the addon:\n" + e.message + "\n");
       throw e;
     }

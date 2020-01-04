@@ -1,5 +1,9 @@
 
 
+
+
+
+
 "use strict";
 
 
@@ -14,19 +18,20 @@ const SW_TIMEOUT = 1000;
 function assertHasWorker(expected, document, type, name) {
   let names = [...document.querySelectorAll("#" + type + " .target-name")];
   names = names.map(element => element.textContent);
-  is(names.includes(name), expected, "The " + type + " url appears in the list: " + names);
+  is(names.includes(name), expected,
+      "The " + type + " url appears in the list: " + names);
 }
 
-add_task(function *() {
+add_task(function* () {
   yield new Promise(done => {
     let options = {"set": [
-                    
-                    ["dom.serviceWorkers.testing.enabled", true],
-                    
-                    
-                    ["dom.serviceWorkers.idle_timeout", SW_TIMEOUT],
-                    ["dom.serviceWorkers.idle_extended_timeout", SW_TIMEOUT],
-                  ]};
+      
+      ["dom.serviceWorkers.testing.enabled", true],
+      
+      
+      ["dom.serviceWorkers.idle_timeout", SW_TIMEOUT],
+      ["dom.serviceWorkers.idle_extended_timeout", SW_TIMEOUT],
+    ]};
     SpecialPowers.pushPrefEnv(options, done);
   });
 
@@ -40,10 +45,10 @@ add_task(function *() {
   assertHasWorker(true, document, "service-workers", SERVICE_WORKER);
 
   
-  let frameScript = function () {
+  let frameScript = function() {
     
     let { sw } = content.wrappedJSObject;
-    sw.then(function (registration) {
+    sw.then(function() {
       sendAsyncMessage("sw-registered");
     });
   };
@@ -67,7 +72,7 @@ add_task(function *() {
 
   
   let onToolboxReady = new Promise(done => {
-    gDevTools.once("toolbox-ready", function (e, toolbox) {
+    gDevTools.once("toolbox-ready", function(e, toolbox) {
       done(toolbox);
     });
   });
@@ -96,14 +101,14 @@ add_task(function *() {
 
   
   
-  frameScript = function () {
+  frameScript = function() {
     
     let { sw } = content.wrappedJSObject;
-    sw.then(function (registration) {
-      registration.unregister().then(function (success) {
+    sw.then(function(registration) {
+      registration.unregister().then(function() {
         sendAsyncMessage("sw-unregistered");
       },
-      function (e) {
+      function(e) {
         dump("SW not unregistered; " + e + "\n");
       });
     });

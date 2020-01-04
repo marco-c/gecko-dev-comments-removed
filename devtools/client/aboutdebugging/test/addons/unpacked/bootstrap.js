@@ -1,3 +1,11 @@
+
+
+
+
+
+
+"use strict";
+
 Components.utils.import("resource://gre/modules/Services.jsm");
 function startup() {
   Services.obs.notifyObservers(null, "test-devtools", null);
