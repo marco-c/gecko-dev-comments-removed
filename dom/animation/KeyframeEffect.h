@@ -393,6 +393,12 @@ protected:
   
   
   
+  void MaybeUpdateFrameForCompositor();
+
+  
+  
+  
+  
   
   
   already_AddRefed<nsStyleContext>

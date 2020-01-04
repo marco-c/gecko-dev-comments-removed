@@ -493,6 +493,7 @@ KeyframeEffectReadOnly::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
 
   if (aStyleContext) {
     UpdateProperties(aStyleContext);
+    MaybeUpdateFrameForCompositor();
   }
 }
 
@@ -1504,6 +1505,28 @@ KeyframeEffectReadOnly::CanIgnoreIfNotVisible() const
     mCumulativeChangeHint, nsChangeHint_Hints_CanIgnoreIfNotVisible);
 }
 
+void
+KeyframeEffectReadOnly::MaybeUpdateFrameForCompositor()
+{
+  nsIFrame* frame = GetAnimationFrame();
+  if (!frame) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  for (const AnimationProperty& property : mProperties) {
+    if (property.mProperty == eCSSProperty_transform) {
+      frame->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
+      return;
+    }
+  }
+}
+
 
 
 
@@ -1602,6 +1625,8 @@ KeyframeEffect::SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget)
     } else if (mEffectOptions.mSpacingMode == SpacingMode::paced) {
       KeyframeUtils::ApplyDistributeSpacing(mKeyframes);
     }
+
+    MaybeUpdateFrameForCompositor();
 
     RequestRestyle(EffectCompositor::RestyleType::Layer);
 
