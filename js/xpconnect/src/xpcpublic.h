@@ -555,10 +555,8 @@ DispatchScriptErrorEvent(nsPIDOMWindowInner* win, JSRuntime* rt, xpc::ErrorRepor
 
 
 
-
 JSObject*
-FindExceptionStackForConsoleReport(JSContext* cx,
-                                   nsPIDOMWindowInner* win,
+FindExceptionStackForConsoleReport(nsPIDOMWindowInner* win,
                                    JS::HandleValue exceptionValue);
 
 
