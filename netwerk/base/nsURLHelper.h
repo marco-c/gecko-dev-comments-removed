@@ -113,13 +113,7 @@ inline bool net_IsValidScheme(const nsAFlatCString &scheme)
 
 
 
-
-
-
-
-
-
-bool net_FilterURIString(const char *str, nsACString& result);
+void net_FilterURIString(const nsACString& input, nsACString& result);
 
 #if defined(XP_WIN)
 
