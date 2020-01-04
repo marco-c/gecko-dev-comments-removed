@@ -37,10 +37,6 @@ bool
 HasCompilerSupport(ExclusiveContext* cx);
 
 
-bool
-IsI64Implemented();
-
-
 
 
 MOZ_MUST_USE bool

@@ -1,9 +1,6 @@
 
 load(libdir + "wasm.js");
 
-if (!hasI64())
-    quit(0);
-
 
 
 wasmEvalText(
