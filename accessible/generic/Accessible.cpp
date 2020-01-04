@@ -1603,8 +1603,7 @@ Accessible::RelationByType(RelationType aType)
     }
 
     case RelationType::NODE_CHILD_OF: {
-      Relation rel(new ARIAOwnedByIterator(this));
-
+      Relation rel;
       
       
       if (mRoleMapEntry && (mRoleMapEntry->role == roles::OUTLINEITEM ||
@@ -1633,8 +1632,6 @@ Accessible::RelationByType(RelationType aType)
     }
 
     case RelationType::NODE_PARENT_OF: {
-      Relation rel(new ARIAOwnsIterator(this));
-
       
       
       if (mRoleMapEntry &&
@@ -1644,10 +1641,10 @@ Accessible::RelationByType(RelationType aType)
            mRoleMapEntry->role == roles::OUTLINE ||
            mRoleMapEntry->role == roles::LIST ||
            mRoleMapEntry->role == roles::TREE_TABLE)) {
-        rel.AppendIter(new ItemIterator(this));
+        return Relation(new ItemIterator(this));
       }
 
-      return rel;
+      return Relation();
     }
 
     case RelationType::CONTROLLED_BY:
