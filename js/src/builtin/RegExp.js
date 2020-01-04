@@ -604,7 +604,8 @@ function RegExpSplit(string, limit) {
     
     var unicodeMatching = callFunction(std_String_includes, flags, "u");
 
-    var optimizable = IsRegExpSplitOptimizable(rx, C);
+    var optimizable = IsRegExpSplitOptimizable(rx, C) &&
+                      (limit === undefined || typeof limit == "number");
     var splitter;
     if (optimizable) {
         
