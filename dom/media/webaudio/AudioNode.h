@@ -217,6 +217,8 @@ public:
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
+  
+  
   virtual const char* NodeType() const = 0;
 
 private:
