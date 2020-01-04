@@ -7,9 +7,9 @@
 (function(root, mod) {
   if (typeof exports == "object" && typeof module == "object") 
     return mod(exports, require("./infer"), require("./signal"),
-               require("acorn"), require("acorn/dist/walk"));
+               require("acorn/acorn"), require("acorn/walk"));
   if (typeof define == "function" && define.amd) 
-    return define(["exports", "./infer", "./signal", "acorn/dist/acorn", "acorn/dist/walk"], mod);
+    return define(["exports", "./infer", "./signal", "acorn/acorn", "acorn/walk"], mod);
   mod(root.tern || (root.tern = {}), tern, tern.signal, acorn, acorn.walk); 
 })(this, function(exports, infer, signal, acorn, walk) {
   "use strict";
