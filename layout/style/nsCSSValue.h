@@ -122,6 +122,19 @@ struct URLValueData
   
   bool MaybeUnresolvedURIEquals(const URLValueData& aOther) const;
 
+  
+  
+  
+  
+  
+  
+  
+  bool DefinitelyEqualURIs(const URLValueData& aOther) const;
+
+  
+  
+  bool DefinitelyEqualURIsAndPrincipal(const URLValueData& aOther) const;
+
   nsIURI* GetURI() const;
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
