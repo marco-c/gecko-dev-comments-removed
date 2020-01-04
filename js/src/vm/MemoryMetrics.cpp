@@ -356,7 +356,7 @@ StatsArenaCallback(JSRuntime* rt, void* data, gc::Arena* arena,
 
     
     
-    size_t allocationSpace = arena->thingsSpan(thingSize);
+    size_t allocationSpace = Arena::thingsSpan(arena->aheader.getAllocKind());
     rtStats->currZoneStats->gcHeapArenaAdmin += gc::ArenaSize - allocationSpace;
 
     
