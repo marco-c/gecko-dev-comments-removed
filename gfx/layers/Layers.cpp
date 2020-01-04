@@ -602,7 +602,7 @@ Layer::GetEffectiveClipRect()
 }
 
 const LayerIntRegion&
-Layer::GetEffectiveVisibleRegion()
+Layer::GetLocalVisibleRegion()
 {
   if (LayerComposite* shadow = AsLayerComposite()) {
     return shadow->GetShadowVisibleRegion();
@@ -1017,7 +1017,7 @@ Layer::GetVisibleRegionRelativeToRootLayer(nsIntRegion& aResult,
   }
 
   IntPoint offset;
-  aResult = GetEffectiveVisibleRegion().ToUnknownRegion();
+  aResult = GetLocalVisibleRegion().ToUnknownRegion();
   for (Layer* layer = this; layer; layer = layer->GetParent()) {
     gfx::Matrix matrix;
     if (!layer->GetLocalTransform().Is2D(&matrix) ||
@@ -1054,7 +1054,7 @@ Layer::GetVisibleRegionRelativeToRootLayer(nsIntRegion& aResult,
       
       
       IntPoint siblingOffset = RoundedToInt(siblingMatrix.GetTranslation());
-      nsIntRegion siblingVisibleRegion(sibling->GetEffectiveVisibleRegion().ToUnknownRegion());
+      nsIntRegion siblingVisibleRegion(sibling->GetLocalVisibleRegion().ToUnknownRegion());
       
       siblingVisibleRegion.MoveBy(-siblingOffset.x, -siblingOffset.y);
       
@@ -1443,7 +1443,7 @@ ContainerLayer::DefaultComputeEffectiveTransforms(const Matrix4x4& aTransformToS
     
     idealTransform.ProjectTo2D();
   }
-  mUseIntermediateSurface = useIntermediateSurface && !GetEffectiveVisibleRegion().IsEmpty();
+  mUseIntermediateSurface = useIntermediateSurface && !GetLocalVisibleRegion().IsEmpty();
   if (useIntermediateSurface) {
     ComputeEffectiveTransformsForChildren(Matrix4x4::From2D(residual));
   } else {
@@ -1473,7 +1473,7 @@ ContainerLayer::DefaultComputeSupportsComponentAlphaChildren(bool* aNeedsSurface
   bool needsSurfaceCopy = false;
   CompositionOp blendMode = GetEffectiveMixBlendMode();
   if (UseIntermediateSurface()) {
-    if (GetEffectiveVisibleRegion().GetNumRects() == 1 &&
+    if (GetLocalVisibleRegion().GetNumRects() == 1 &&
         (GetContentFlags() & Layer::CONTENT_OPAQUE))
     {
       mSupportsComponentAlphaChildren = true;

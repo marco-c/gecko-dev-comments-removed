@@ -1485,7 +1485,7 @@ public:
   
   
   const Maybe<ParentLayerIntRect>& GetEffectiveClipRect();
-  const LayerIntRegion& GetEffectiveVisibleRegion();
+  const LayerIntRegion& GetLocalVisibleRegion();
 
   bool Extend3DContext() {
     return GetContentFlags() & CONTENT_EXTEND_3D_CONTEXT;
@@ -1507,7 +1507,7 @@ public:
     
     
     
-    return !GetEffectiveVisibleRegion().IsEmpty() || Extend3DContext();
+    return !GetLocalVisibleRegion().IsEmpty() || Extend3DContext();
   }
 
   
@@ -2100,7 +2100,7 @@ public:
   RenderTargetIntRect GetIntermediateSurfaceRect()
   {
     NS_ASSERTION(mUseIntermediateSurface, "Must have intermediate surface");
-    return RenderTargetIntRect::FromUnknownRect(GetEffectiveVisibleRegion().ToUnknownRegion().GetBounds());
+    return RenderTargetIntRect::FromUnknownRect(GetLocalVisibleRegion().ToUnknownRegion().GetBounds());
   }
 
   

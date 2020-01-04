@@ -63,7 +63,7 @@ FindBackgroundLayer(ReadbackLayer* aLayer, nsIntPoint* aOffset)
 
     nsIntPoint backgroundOffset(int32_t(backgroundTransform._31), int32_t(backgroundTransform._32));
     IntRect rectInBackground(transformOffset - backgroundOffset, aLayer->GetSize());
-    const nsIntRegion visibleRegion = l->GetEffectiveVisibleRegion().ToUnknownRegion();
+    const nsIntRegion visibleRegion = l->GetLocalVisibleRegion().ToUnknownRegion();
     if (!visibleRegion.Intersects(rectInBackground))
       continue;
     

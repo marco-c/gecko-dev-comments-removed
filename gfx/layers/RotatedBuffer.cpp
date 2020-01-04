@@ -222,13 +222,13 @@ RotatedContentBuffer::DrawTo(PaintedLayer* aLayer,
   if (!aLayer->GetValidRegion().Contains(BufferRect()) ||
       (ToData(aLayer)->GetClipToVisibleRegion() &&
        !aLayer->GetVisibleRegion().ToUnknownRegion().Contains(BufferRect())) ||
-      IsClippingCheap(aTarget, aLayer->GetEffectiveVisibleRegion().ToUnknownRegion())) {
+      IsClippingCheap(aTarget, aLayer->GetLocalVisibleRegion().ToUnknownRegion())) {
     
     
     
     
     
-    gfxUtils::ClipToRegion(aTarget, aLayer->GetEffectiveVisibleRegion().ToUnknownRegion());
+    gfxUtils::ClipToRegion(aTarget, aLayer->GetLocalVisibleRegion().ToUnknownRegion());
     clipped = true;
   }
 
