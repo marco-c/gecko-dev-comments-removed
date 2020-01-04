@@ -2771,7 +2771,7 @@ MacroAssemblerMIPSCompat::moveValue(const Value& val, const ValueOperand& dest)
 
 
 CodeOffsetJump
-MacroAssemblerMIPSCompat::backedgeJump(RepatchLabel* label)
+MacroAssemblerMIPSCompat::backedgeJump(RepatchLabel* label, Label* documentation)
 {
     
     MOZ_ASSERT(!label->used());
