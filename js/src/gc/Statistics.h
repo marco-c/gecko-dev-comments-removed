@@ -115,15 +115,22 @@ struct ZoneGCStats
     int zoneCount;
 
     
+    int sweptZoneCount;
+
+    
     int collectedCompartmentCount;
 
     
     int compartmentCount;
 
+    
+    int sweptCompartmentCount;
+
     bool isCollectingAllZones() const { return collectedZoneCount == zoneCount; }
 
     ZoneGCStats()
-      : collectedZoneCount(0), zoneCount(0), collectedCompartmentCount(0), compartmentCount(0)
+      : collectedZoneCount(0), zoneCount(0), sweptZoneCount(0),
+        collectedCompartmentCount(0), compartmentCount(0), sweptCompartmentCount(0)
     {}
 };
 
@@ -193,6 +200,10 @@ struct Statistics
 
     MOZ_MUST_USE bool startTimingMutator();
     MOZ_MUST_USE bool stopTimingMutator(double& mutator_ms, double& gc_ms);
+
+    
+    void sweptZone() { ++zoneStats.sweptZoneCount; }
+    void sweptCompartment() { ++zoneStats.sweptCompartmentCount; }
 
     void reset(const char* reason) {
         if (!aborted)
