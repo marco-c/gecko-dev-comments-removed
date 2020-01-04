@@ -113,7 +113,7 @@ Animation::Constructor(const GlobalObject& aGlobal,
     timeline = document->Timeline();
   }
 
-  animation->SetTimeline(timeline);
+  animation->SetTimelineNoUpdate(timeline);
   animation->SetEffect(aEffect);
 
   return animation.forget();
@@ -151,6 +151,13 @@ Animation::SetEffect(KeyframeEffectReadOnly* aEffect)
 void
 Animation::SetTimeline(AnimationTimeline* aTimeline)
 {
+  SetTimelineNoUpdate(aTimeline);
+  PostUpdate();
+}
+
+void
+Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline)
+{
   if (mTimeline == aTimeline) {
     return;
   }
@@ -164,9 +171,6 @@ Animation::SetTimeline(AnimationTimeline* aTimeline)
   
   
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
-
-  
-  
 }
 
 

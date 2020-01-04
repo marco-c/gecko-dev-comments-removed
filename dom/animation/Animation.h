@@ -145,6 +145,7 @@ public:
   
 
   virtual void CancelFromStyle() { CancelNoUpdate(); }
+  void SetTimelineNoUpdate(AnimationTimeline* aTimeline);
 
   virtual void Tick();
   bool NeedsTicks() const
