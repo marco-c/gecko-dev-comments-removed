@@ -8319,13 +8319,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Number times room context is clicked to visit the attached URL"
   },
-  "LOOP_ROOM_SESSION_WITHCHAT": {
-    "alert_emails": ["firefox-dev@mozilla.org", "mdeboer@mozilla.com"],
-    "expires_in_version": "45",
-    "kind": "count",
-    "releaseChannelCollection": "opt-out",
-    "description": "Number of sessions where at least one chat message was exchanged"
-  },
   "E10S_AUTOSTART": {
     "expires_in_version": "never",
     "kind": "boolean",
@@ -9773,6 +9766,13 @@
     "expires_in_version": "55",
     "kind": "count",
     "description": "Attempt to notify ServiceWorker of push notification resubscription."
+  },
+  "D3D11_SYNC_HANDLE_FAILURE": {
+    "alert_emails": ["bschouten@mozilla.com","danderson@mozilla.com","msreckovic@mozilla.com","ashughes@mozilla.com"],
+    "expires_in_version": "50",
+    "releaseChannelCollection": "opt-out",
+    "kind": "count",
+    "description": "Number of times the D3D11 compositor failed to get a texture sync handle."
   },
   "PLUGIN_ACTIVATION_COUNT": {
     "alert_emails": ["cpeterson@mozilla.com"],
