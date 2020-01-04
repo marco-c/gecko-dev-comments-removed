@@ -1,11 +1,9 @@
 
 
 
-const PRELOAD_PREF = "browser.newtab.preload";
-
-function runTests() {
+add_task(function* () {
   
-  Services.prefs.setBoolPref(PRELOAD_PREF, false);
+  yield pushPrefs(["browser.newtab.preload", false]);
 
   
   let afterLoadProvider = {
@@ -17,25 +15,21 @@ function runTests() {
   NewTabUtils.links.addProvider(afterLoadProvider);
 
   
-  addNewTabPageTab();
-  let browser = gWindow.gBrowser.selectedBrowser;
-  yield browser.addEventListener("load", function onLoad() {
-    browser.removeEventListener("load", onLoad, true);
-    
-    
-    executeSoon(() => afterLoadProvider.callback([]));
-  }, true);
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
 
-  let {_cellMargin, _cellHeight, _cellWidth, node} = getGrid();
-  isnot(_cellMargin, null, "grid has a computed cell margin");
-  isnot(_cellHeight, null, "grid has a computed cell height");
-  isnot(_cellWidth, null, "grid has a computed cell width");
-  let {height, maxHeight, maxWidth} = node.style;
-  isnot(height, "", "grid has a computed grid height");
-  isnot(maxHeight, "", "grid has a computed grid max-height");
-  isnot(maxWidth, "", "grid has a computed grid max-width");
+  afterLoadProvider.callback([]);
+
+  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+    let {_cellMargin, _cellHeight, _cellWidth, node} = content.gGrid;
+    isnot(_cellMargin, null, "grid has a computed cell margin");
+    isnot(_cellHeight, null, "grid has a computed cell height");
+    isnot(_cellWidth, null, "grid has a computed cell width");
+    let {height, maxHeight, maxWidth} = node.style;
+    isnot(height, "", "grid has a computed grid height");
+    isnot(maxHeight, "", "grid has a computed grid max-height");
+    isnot(maxWidth, "", "grid has a computed grid max-width");
+  });
 
   
   NewTabUtils.links.removeProvider(afterLoadProvider);
-  Services.prefs.clearUserPref(PRELOAD_PREF);
-}
+});
