@@ -61,12 +61,10 @@ checkKeyParams(const SECAlgorithmID *sigAlgorithm, const SECKEYPublicKey *key)
                     !(policyFlags & NSS_USE_ALG_IN_CERT_SIGNATURE)) {
                     PORT_SetError(SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
                     return SECFailure;
-                }
-                else {
+                } else {
                     return SECSuccess;
                 }
-            }
-            else {
+            } else {
                 PORT_SetError(SEC_ERROR_UNSUPPORTED_ELLIPTIC_CURVE);
                 return SECFailure;
             }
@@ -343,22 +341,19 @@ cert_AddToVerifyLog(CERTVerifyLog *log, CERTCertificate *cert, long error,
             log->head = log->tail = node;
             node->prev = NULL;
             node->next = NULL;
-        }
-        else if (depth >= log->tail->depth) {
+        } else if (depth >= log->tail->depth) {
             
             node->prev = log->tail;
             log->tail->next = node;
             log->tail = node;
             node->next = NULL;
-        }
-        else if (depth < log->head->depth) {
+        } else if (depth < log->head->depth) {
             
             node->prev = NULL;
             node->next = log->head;
             log->head->prev = node;
             log->head = node;
-        }
-        else {
+        } else {
             
             tnode = log->tail;
             while (tnode != NULL) {
@@ -389,8 +384,7 @@ cert_AddToVerifyLog(CERTVerifyLog *log, CERTCertificate *cert, long error,
     if (log != NULL) {                                         \
         cert_AddToVerifyLog(log, cert, PORT_GetError(), depth, \
                             (void *)(PRWord)arg);              \
-    }                                                          \
-    else {                                                     \
+    } else {                                                   \
         goto loser;                                            \
     }
 
@@ -565,8 +559,7 @@ cert_VerifyCertChainOld(CERTCertDBHandle *handle, CERTCertificate *cert,
                 if (PORT_GetError() == SEC_ERROR_EXPIRED_CERTIFICATE) {
                     PORT_SetError(SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE);
                     LOG_ERROR_OR_EXIT(log, issuerCert, count + 1, 0);
-                }
-                else {
+                } else {
                     if (PORT_GetError() !=
                         SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED) {
                         PORT_SetError(SEC_ERROR_BAD_SIGNATURE);
@@ -593,8 +586,7 @@ cert_VerifyCertChainOld(CERTCertDBHandle *handle, CERTCertificate *cert,
             pathLengthLimit = CERT_UNLIMITED_PATH_CONSTRAINT;
             
             isca = PR_FALSE;
-        }
-        else {
+        } else {
             if (basicConstraint.isCA == PR_FALSE) {
                 PORT_SetError(SEC_ERROR_CA_CERT_INVALID);
                 LOG_ERROR_OR_EXIT(log, issuerCert, count + 1, 0);
@@ -629,8 +621,7 @@ cert_VerifyCertChainOld(CERTCertDBHandle *handle, CERTCertificate *cert,
                 *revoked = PR_TRUE;
             }
             LOG_ERROR_OR_EXIT(log, subjectCert, count, 0);
-        }
-        else if (rv == SECWouldBlock) {
+        } else if (rv == SECWouldBlock) {
             
 
 
@@ -659,11 +650,9 @@ cert_VerifyCertChainOld(CERTCertDBHandle *handle, CERTCertificate *cert,
                 if (certUsage == certUsageVerifyCA) {
                     if (subjectCert->nsCertType & NS_CERT_TYPE_EMAIL_CA) {
                         trustType = trustEmail;
-                    }
-                    else if (subjectCert->nsCertType & NS_CERT_TYPE_SSL_CA) {
+                    } else if (subjectCert->nsCertType & NS_CERT_TYPE_SSL_CA) {
                         trustType = trustSSL;
-                    }
-                    else {
+                    } else {
                         trustType = trustObjectSigning;
                     }
                 }
@@ -685,8 +674,7 @@ cert_VerifyCertChainOld(CERTCertDBHandle *handle, CERTCertificate *cert,
                     PORT_SetError(SEC_ERROR_UNTRUSTED_ISSUER);
                     LOG_ERROR_OR_EXIT(log, issuerCert, count + 1, flags);
                 }
-            }
-            else {
+            } else {
                 
 
                 for (trustType = trustSSL; trustType < trustTypeNone;
@@ -892,8 +880,7 @@ CERT_VerifyCACertForUsage(CERTCertDBHandle *handle, CERTCertificate *cert,
         }
         
         isca = PR_FALSE;
-    }
-    else {
+    } else {
         if (basicConstraint.isCA == PR_FALSE) {
             PORT_SetError(SEC_ERROR_CA_CERT_INVALID);
             LOG_ERROR_OR_EXIT(log, cert, 0, 0);
@@ -1045,8 +1032,7 @@ cert_CheckLeafTrust(CERTCertificate *cert, SECCertUsage certUsage,
                     if (flags & CERTDB_TRUSTED) {     
                         *trusted = PR_TRUE;
                         return SECSuccess;
-                    }
-                    else { 
+                    } else { 
                         *failedFlags = flags;
                         return SECFailure;
                     }
@@ -1083,8 +1069,7 @@ cert_CheckLeafTrust(CERTCertificate *cert, SECCertUsage certUsage,
                     if (flags & CERTDB_TRUSTED) {     
                         *trusted = PR_TRUE;
                         return SECSuccess;
-                    }
-                    else { 
+                    } else { 
                         *failedFlags = flags;
                         return SECFailure;
                     }
@@ -1099,8 +1084,7 @@ cert_CheckLeafTrust(CERTCertificate *cert, SECCertUsage certUsage,
                     if (flags & CERTDB_TRUSTED) {     
                         *trusted = PR_TRUE;
                         return SECSuccess;
-                    }
-                    else { 
+                    } else { 
                         *failedFlags = flags;
                         return SECFailure;
                     }
@@ -1207,8 +1191,7 @@ CERT_VerifyCertificate(CERTCertDBHandle *handle, CERTCertificate *cert,
 
     if (returnedUsages) {
         *returnedUsages = 0;
-    }
-    else {
+    } else {
         
 
         checkAllUsages = PR_FALSE;
@@ -1293,8 +1276,7 @@ CERT_VerifyCertificate(CERTCertDBHandle *handle, CERTCertificate *cert,
             }
             LOG_ERROR(log, cert, 0, flags);
             INVALID_USAGE();
-        }
-        else if (trusted) {
+        } else if (trusted) {
             VALID_USAGE();
         }
 
@@ -1434,8 +1416,7 @@ cert_VerifyCertWithFlags(CERTCertDBHandle *handle, CERTCertificate *cert,
     if (rv == SECFailure) {
         PORT_SetError(SEC_ERROR_UNTRUSTED_CERT);
         LOG_ERROR_OR_EXIT(log, cert, 0, failedFlags);
-    }
-    else if (trusted) {
+    } else if (trusted) {
         goto done;
     }
 
@@ -1561,8 +1542,7 @@ CERT_FindMatchingCert(CERTCertDBHandle *handle, SECItem *derName,
 
                 if (CERT_GetCertTrust(cert, &certTrust) != SECSuccess) {
                     flags = 0;
-                }
-                else {
+                } else {
                     flags = SEC_GET_TRUST_FLAGS(&certTrust, requiredTrustType);
                 }
 
@@ -1683,8 +1663,7 @@ CERT_FilterCertListByCANames(CERTCertList *certList, int nCANames,
             freenode = node;
             node = CERT_LIST_NEXT(node);
             CERT_RemoveCertListNode(freenode);
-        }
-        else {
+        } else {
             
             node = CERT_LIST_NEXT(node);
         }
@@ -1719,16 +1698,14 @@ CERT_GetCertNicknameWithValidity(PLArenaPool *arena, CERTCertificate *cert,
     if (validity == secCertTimeValid) {
         if (arena == NULL) {
             nickname = PORT_Strdup(cert->nickname);
-        }
-        else {
+        } else {
             nickname = PORT_ArenaStrdup(arena, cert->nickname);
         }
 
         if (nickname == NULL) {
             goto loser;
         }
-    }
-    else {
+    } else {
 
         
 
@@ -1736,13 +1713,11 @@ CERT_GetCertNicknameWithValidity(PLArenaPool *arena, CERTCertificate *cert,
         if (validity == secCertTimeExpired) {
             tmpstr = PR_smprintf("%s%s", cert->nickname,
                                  expiredString);
-        }
-        else if (validity == secCertTimeNotValidYet) {
+        } else if (validity == secCertTimeNotValidYet) {
             
             tmpstr = PR_smprintf("%s%s", cert->nickname,
                                  notYetGoodString);
-        }
-        else {
+        } else {
             
             tmpstr = PR_smprintf("%s",
                                  "(NULL) (Validity Unknown)");
@@ -1756,8 +1731,7 @@ CERT_GetCertNicknameWithValidity(PLArenaPool *arena, CERTCertificate *cert,
             
             nickname = PORT_ArenaStrdup(arena, tmpstr);
             PORT_Free(tmpstr);
-        }
-        else {
+        } else {
             nickname = tmpstr;
         }
         if (nickname == NULL) {

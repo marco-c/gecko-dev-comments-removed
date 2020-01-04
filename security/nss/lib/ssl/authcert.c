@@ -45,13 +45,11 @@ NSS_GetClientAuthData(void *arg,
             privkey = PK11_FindKeyByAnyCert(cert, proto_win);
             if (privkey) {
                 rv = SECSuccess;
-            }
-            else {
+            } else {
                 CERT_DestroyCertificate(cert);
             }
         }
-    }
-    else { 
+    } else { 
         CERTCertNicknames *names;
         int i;
 

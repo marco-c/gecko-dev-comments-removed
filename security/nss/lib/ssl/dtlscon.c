@@ -287,16 +287,14 @@ dtls_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
                 
                 break;
             }
-        }
-        else {
+        } else {
             if (message_seq < ss->ssl3.hs.recvMessageSeq) {
                 
 
                 if (ss->ssl3.hs.rtTimerCb == NULL) {
                     
-                }
-                else if (ss->ssl3.hs.rtTimerCb ==
-                         dtls_RetransmitTimerExpiredCb) {
+                } else if (ss->ssl3.hs.rtTimerCb ==
+                           dtls_RetransmitTimerExpiredCb) {
                     SSL_TRC(30, ("%d: SSL3[%d]: Retransmit detected",
                                  SSL_GETPID(), ss->fd));
                     
@@ -316,16 +314,14 @@ dtls_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
                         dtls_RetransmitTimerExpiredCb(ss);
                         rv = SECSuccess;
                         break;
-                    }
-                    else {
+                    } else {
                         SSL_TRC(30,
                                 ("%d: SSL3[%d]: We just retransmitted. Ignoring.",
                                  SSL_GETPID(), ss->fd));
                         rv = SECSuccess;
                         break;
                     }
-                }
-                else if (ss->ssl3.hs.rtTimerCb == dtls_FinishedTimerCb) {
+                } else if (ss->ssl3.hs.rtTimerCb == dtls_FinishedTimerCb) {
                     
 
 
@@ -340,8 +336,7 @@ dtls_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
                         return rv;
                     break;
                 }
-            }
-            else if (message_seq > ss->ssl3.hs.recvMessageSeq) {
+            } else if (message_seq > ss->ssl3.hs.recvMessageSeq) {
                 
 
 
@@ -350,8 +345,7 @@ dtls_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
 
 
 
-            }
-            else {
+            } else {
                 
 
 
@@ -410,8 +404,7 @@ dtls_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
 
                     ss->ssl3.hs.recvdHighWater = fragment_offset +
                                                  fragment_length;
-                }
-                else {
+                } else {
                     for (offset = fragment_offset;
                          offset < fragment_offset + fragment_length;
                          offset++) {
@@ -429,8 +422,7 @@ dtls_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
                     if (ss->ssl3.hs.recvdFragments.buf[OFFSET_BYTE(offset)] &
                         OFFSET_MASK(offset)) {
                         ss->ssl3.hs.recvdHighWater++;
-                    }
-                    else {
+                    } else {
                         break;
                     }
                 }
@@ -491,8 +483,7 @@ dtls_QueueMessage(sslSocket *ss, SSL3ContentType type,
     if (!msg) {
         PORT_SetError(SEC_ERROR_NO_MEMORY);
         rv = SECFailure;
-    }
-    else {
+    } else {
         PR_APPEND_LINK(&msg->link, &ss->ssl3.hs.lastMessageFlight);
     }
 
@@ -659,8 +650,7 @@ dtls_TransmitMessageFlight(sslSocket *ss)
             }
 
             room_left = ss->ssl3.mtu - ss->pendingBuf.len;
-        }
-        else {
+        } else {
             
 
 
@@ -825,8 +815,7 @@ dtls_CompressMACEncryptRecord(sslSocket *ss,
             cwSpec = ss->ssl3.pwSpec;
         else
             cwSpec = NULL;
-    }
-    else {
+    } else {
         cwSpec = ss->ssl3.cwSpec;
     }
 
@@ -835,12 +824,10 @@ dtls_CompressMACEncryptRecord(sslSocket *ss,
             rv = ssl3_CompressMACEncryptRecord(cwSpec, ss->sec.isServer, PR_TRUE,
                                                PR_FALSE, type, pIn, contentLen,
                                                wrBuf);
-        }
-        else {
+        } else {
             rv = tls13_ProtectRecord(ss, type, pIn, contentLen, wrBuf);
         }
-    }
-    else {
+    } else {
         PR_NOT_REACHED("Couldn't find a cipher spec matching epoch");
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
     }
@@ -1160,8 +1147,7 @@ DTLS_GetHandshakeTimeout(PRFileDesc *socket, PRIntervalTime *timeout)
     if (elapsed > desired) {
         
         *timeout = PR_INTERVAL_NO_WAIT;
-    }
-    else {
+    } else {
         *timeout = desired - elapsed;
     }
 
