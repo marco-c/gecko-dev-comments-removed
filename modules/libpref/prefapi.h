@@ -30,10 +30,10 @@ typedef union
 
 struct PrefHashEntry : PLDHashEntryHdr
 {
+    uint16_t flags; 
     const char *key;
     PrefValue defaultPref;
     PrefValue userPref;
-    uint16_t  flags;
 };
 
 
