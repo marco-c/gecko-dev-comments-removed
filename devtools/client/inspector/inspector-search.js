@@ -288,12 +288,6 @@ SelectorAutocompleter.prototype = {
           this.searchPopup.selectedIndex = this.searchPopup.itemCount - 1;
           this.searchBox.value = this.searchPopup.selectedItem.label;
           this.hidePopup();
-        } else if (!this.searchPopup.isOpen && event.keyCode === event.DOM_VK_TAB) {
-          
-          
-          
-          this.emit("processing-done");
-          return;
         }
         break;
 

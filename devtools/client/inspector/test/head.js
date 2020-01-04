@@ -655,20 +655,3 @@ function waitForClipboard(setup, expected) {
   SimpleTest.waitForClipboard(expected, setup, def.resolve, def.reject);
   return def.promise;
 }
-
-
-
-
-
-
-
-function containsFocus(doc, container) {
-  let elm = doc.activeElement;
-  while (elm) {
-    if (elm === container) {
-      return true;
-    }
-    elm = elm.parentNode;
-  }
-  return false;
-}
