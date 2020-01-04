@@ -104,6 +104,7 @@ class MediaSink;
 
 class AudioSegment;
 class DecodedStream;
+class MediaDecoderReaderWrapper;
 class OutputStreamManager;
 class TaskQueue;
 
@@ -755,6 +756,8 @@ private:
   
   
   const RefPtr<MediaDecoderReader> mReader;
+
+  const RefPtr<MediaDecoderReaderWrapper> mReaderWrapper;
 
   
   
