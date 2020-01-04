@@ -24,6 +24,7 @@ BEGIN_BLUETOOTH_NAMESPACE
 
 class BluetoothDaemonA2dpInterface;
 class BluetoothDaemonAvrcpInterface;
+class BluetoothDaemonCoreInterface;
 class BluetoothDaemonGattInterface;
 class BluetoothDaemonHandsfreeInterface;
 class BluetoothDaemonProtocol;
@@ -46,92 +47,14 @@ public:
 
   static BluetoothDaemonInterface* GetInstance();
 
-  void SetNotificationHandler(
-    BluetoothCoreNotificationHandler* aNotificationHandler) override;
-
   void Init(BluetoothNotificationHandler* aNotificationHandler,
             BluetoothResultHandler* aRes) override;
   void Cleanup(BluetoothResultHandler* aRes) override;
 
-  void Enable(BluetoothCoreResultHandler* aRes) override;
-  void Disable(BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void GetAdapterProperties(BluetoothCoreResultHandler* aRes) override;
-  void GetAdapterProperty(BluetoothPropertyType aType,
-                          BluetoothCoreResultHandler* aRes) override;
-  void SetAdapterProperty(const BluetoothProperty& aProperty,
-                          BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void GetRemoteDeviceProperties(const BluetoothAddress& aRemoteAddr,
-                                 BluetoothCoreResultHandler* aRes) override;
-  void GetRemoteDeviceProperty(const BluetoothAddress& aRemoteAddr,
-                               BluetoothPropertyType aType,
-                               BluetoothCoreResultHandler* aRes) override;
-  void SetRemoteDeviceProperty(const BluetoothAddress& aRemoteAddr,
-                               const BluetoothProperty& aProperty,
-                               BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void GetRemoteServiceRecord(const BluetoothAddress& aRemoteAddr,
-                              const BluetoothUuid& aUuid,
-                              BluetoothCoreResultHandler* aRes) override;
-  void GetRemoteServices(const BluetoothAddress& aRemoteAddr,
-                         BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void StartDiscovery(BluetoothCoreResultHandler* aRes) override;
-  void CancelDiscovery(BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void CreateBond(const BluetoothAddress& aBdAddr,
-                  BluetoothTransport aTransport,
-                  BluetoothCoreResultHandler* aRes) override;
-  void RemoveBond(const BluetoothAddress& aBdAddr,
-                  BluetoothCoreResultHandler* aRes) override;
-  void CancelBond(const BluetoothAddress& aBdAddr,
-                  BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void GetConnectionState(const BluetoothAddress& aBdAddr,
-                          BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void PinReply(const BluetoothAddress& aBdAddr, bool aAccept,
-                const BluetoothPinCode& aPinCode,
-                BluetoothCoreResultHandler* aRes) override;
-
-  void SspReply(const BluetoothAddress& aBdAddr,
-                BluetoothSspVariant aVariant,
-                bool aAccept, uint32_t aPasskey,
-                BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void DutModeConfigure(bool aEnable, BluetoothCoreResultHandler* aRes);
-  void DutModeSend(uint16_t aOpcode, uint8_t* aBuf, uint8_t aLen,
-                   BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void LeTestMode(uint16_t aOpcode, uint8_t* aBuf, uint8_t aLen,
-                  BluetoothCoreResultHandler* aRes) override;
-
-  
-
-  void ReadEnergyInfo(BluetoothCoreResultHandler* aRes) override;
-
   
 
   BluetoothSetupInterface* GetBluetoothSetupInterface() override;
+  BluetoothCoreInterface* GetBluetoothCoreInterface() override;
   BluetoothSocketInterface* GetBluetoothSocketInterface() override;
   BluetoothHandsfreeInterface* GetBluetoothHandsfreeInterface() override;
   BluetoothA2dpInterface* GetBluetoothA2dpInterface() override;
@@ -156,11 +79,6 @@ protected:
   void OnDisconnect(int aIndex) override;
 
 private:
-  void DispatchError(BluetoothCoreResultHandler* aRes,
-                     BluetoothStatus aStatus);
-  void DispatchError(BluetoothCoreResultHandler* aRes,
-                     nsresult aRv);
-
   void DispatchError(BluetoothResultHandler* aRes, BluetoothStatus aStatus);
   void DispatchError(BluetoothResultHandler* aRes, nsresult aRv);
 
@@ -175,6 +93,7 @@ private:
   nsTArray<RefPtr<BluetoothResultHandler> > mResultHandlerQ;
 
   nsAutoPtr<BluetoothDaemonSetupInterface> mSetupInterface;
+  nsAutoPtr<BluetoothDaemonCoreInterface> mCoreInterface;
   nsAutoPtr<BluetoothDaemonSocketInterface> mSocketInterface;
   nsAutoPtr<BluetoothDaemonHandsfreeInterface> mHandsfreeInterface;
   nsAutoPtr<BluetoothDaemonA2dpInterface> mA2dpInterface;
