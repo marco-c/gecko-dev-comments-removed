@@ -121,6 +121,24 @@ wasmEvalText(code, {a:()=>{}, b:{c:()=>{}}, c:()=>{}});
 
 
 
+wasmEvalText('(module (memory 65536))');
+wasmEvalText('(module (memory 131072))');
+assertErrorMessage(() => wasmEvalText('(module (memory 0))'), TypeError, /not a multiple of 0x10000/);
+assertErrorMessage(() => wasmEvalText('(module (memory 1))'), TypeError, /not a multiple of 0x10000/);
+assertErrorMessage(() => wasmEvalText('(module (memory 65535))'), TypeError, /not a multiple of 0x10000/);
+assertErrorMessage(() => wasmEvalText('(module (memory 131071))'), TypeError, /not a multiple of 0x10000/);
+assertErrorMessage(() => wasmEvalText('(module (memory 2147483648))'), TypeError, /initial memory size too big/);
+
+
+try {
+    wasmEvalText('(module (memory 2147418112))');
+} catch (e) {
+    assertEq(String(e).indexOf("out of memory") != -1, true);
+}
+
+
+
+
 assertEq(wasmEvalText('(module (func (param i32) (result i32) (get_local 0)) (export "" 0))')(), 0);
 assertEq(wasmEvalText('(module (func (param i32) (result i32) (get_local 0)) (export "" 0))')(42), 42);
 assertEq(wasmEvalText('(module (func (param i32) (param i32) (result i32) (get_local 0)) (export "" 0))')(42, 43), 42);

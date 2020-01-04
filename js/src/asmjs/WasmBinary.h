@@ -29,26 +29,30 @@ class PropertyName;
 namespace wasm {
 
 
-static const unsigned MaxSigs        =   4 * 1024;
-static const unsigned MaxFuncs       = 512 * 1024;
-static const unsigned MaxImports     =   4 * 1024;
-static const unsigned MaxExports     =   4 * 1024;
-static const unsigned MaxArgsPerFunc =   4 * 1024;
+static const unsigned MaxSigs         =   4 * 1024;
+static const unsigned MaxFuncs        = 512 * 1024;
+static const unsigned MaxImports      =   4 * 1024;
+static const unsigned MaxExports      =   4 * 1024;
+static const unsigned MaxArgsPerFunc  =   4 * 1024;
 
 
-static const uint32_t MagicNumber = 0x6d736100; 
+static const uint32_t MagicNumber     = 0x6d736100; 
 static const uint32_t EncodingVersion = -1;     
 
 
-static const char SigSection[] =     "sig";
-static const char ImportSection[] =  "import";
-static const char DeclSection[] =    "decl";
-static const char ExportSection[] =  "export";
-static const char CodeSection[] =    "code";
-static const char EndSection[] =     "";
+static const char SigSection[]        = "sig";
+static const char ImportSection[]     = "import";
+static const char DeclSection[]       = "decl";
+static const char MemorySection[]     = "memory";
+static const char ExportSection[]     = "export";
+static const char CodeSection[]       = "code";
+static const char EndSection[]        = "";
 
 
-static const char FuncSubsection[] = "func";
+static const char FuncSubsection[]    = "func";
+
+
+static const char FieldInitial[]      = "initial";
 
 enum class Expr : uint16_t
 {
