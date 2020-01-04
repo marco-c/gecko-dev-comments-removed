@@ -588,82 +588,6 @@ addMessageListener("NetworkPrioritizer:SetPriority", (msg) => {
   loadGroup.priority = msg.data.priority;
 });
 
-var AutoCompletePopup = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompletePopup]),
-
-  init: function() {
-    
-    let controller = Cc["@mozilla.org/satchel/form-fill-controller;1"]
-                       .getService(Ci.nsIFormFillController);
-
-    controller.attachToBrowser(docShell, this.QueryInterface(Ci.nsIAutoCompletePopup));
-
-    this._input = null;
-    this._popupOpen = false;
-
-    addMessageListener("FormAutoComplete:HandleEnter", message => {
-      this.selectedIndex = message.data.selectedIndex;
-
-      let controller = Components.classes["@mozilla.org/autocomplete/controller;1"].
-                  getService(Components.interfaces.nsIAutoCompleteController);
-      controller.handleEnter(message.data.isPopupSelection);
-    });
-
-    addEventListener("unload", function() {
-      AutoCompletePopup.destroy();
-    });
-  },
-
-  destroy: function() {
-    let controller = Cc["@mozilla.org/satchel/form-fill-controller;1"]
-                       .getService(Ci.nsIFormFillController);
-
-    controller.detachFromBrowser(docShell);
-  },
-
-  get input () { return this._input; },
-  get overrideValue () { return null; },
-  set selectedIndex (index) { },
-  get selectedIndex () {
-    
-    
-    
-    
-    
-    
-    return sendSyncMessage("FormAutoComplete:GetSelectedIndex", {});
-  },
-  get popupOpen () {
-    return this._popupOpen;
-  },
-
-  openAutocompletePopup: function (input, element) {
-    if (!this._popupOpen) {
-      
-      
-      
-      sendAsyncMessage("FormAutoComplete:MaybeOpenPopup", {});
-    }
-    this._input = input;
-    this._popupOpen = true;
-  },
-
-  closePopup: function () {
-    this._popupOpen = false;
-    sendAsyncMessage("FormAutoComplete:ClosePopup", {});
-  },
-
-  invalidate: function () {
-  },
-
-  selectBy: function(reverse, page) {
-    this._index = sendSyncMessage("FormAutoComplete:SelectBy", {
-      reverse: reverse,
-      page: page
-    });
-  }
-}
-
 addMessageListener("InPermitUnload", msg => {
   let inPermitUnload = docShell.contentViewer && docShell.contentViewer.inPermitUnload;
   sendAsyncMessage("InPermitUnload", {id: msg.data.id, inPermitUnload});
@@ -686,9 +610,3 @@ var outerWindowID = content.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIDOMWindowUtils)
                            .outerWindowID;
 sendAsyncMessage("Browser:Init", {outerWindowID: outerWindowID});
-addMessageListener("Browser:InitReceived", function onInitReceived(msg) {
-  removeMessageListener("Browser:InitReceived", onInitReceived);
-  if (msg.data.initPopup) {
-    AutoCompletePopup.init();
-  }
-});
