@@ -1852,14 +1852,20 @@ WebSocket::CreateAndDispatchMessageEvent(JSContext* aCx,
     return NS_OK;
   }
 
+  uint16_t messageType = nsIWebSocketEventListener::TYPE_STRING;
+
   
   JS::Rooted<JS::Value> jsData(aCx);
   if (aIsBinary) {
     if (mBinaryType == dom::BinaryType::Blob) {
+      messageType = nsIWebSocketEventListener::TYPE_BLOB;
+
       nsresult rv = nsContentUtils::CreateBlobBuffer(aCx, GetOwner(), aData,
                                                      &jsData);
       NS_ENSURE_SUCCESS(rv, rv);
     } else if (mBinaryType == dom::BinaryType::Arraybuffer) {
+      messageType = nsIWebSocketEventListener::TYPE_ARRAYBUFFER;
+
       JS::Rooted<JSObject*> arrayBuf(aCx);
       nsresult rv = nsContentUtils::CreateArrayBuffer(aCx, aData,
                                                       arrayBuf.address());
@@ -1878,6 +1884,10 @@ WebSocket::CreateAndDispatchMessageEvent(JSContext* aCx,
 
     jsData.setString(jsString);
   }
+
+  mImpl->mService->WebSocketMessageAvailable(mImpl->mChannel->Serial(),
+                                             mImpl->mInnerWindowID,
+                                             aData, messageType);
 
   
   
