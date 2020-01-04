@@ -1173,13 +1173,7 @@ void
 HTMLCanvasElement::SetFrameCapture(already_AddRefed<SourceSurface> aSurface)
 {
   RefPtr<SourceSurface> surface = aSurface;
-
-  CairoImage::Data imageData;
-  imageData.mSize = surface->GetSize();
-  imageData.mSourceSurface = surface;
-
-  RefPtr<CairoImage> image = new CairoImage();
-  image->SetData(imageData);
+  RefPtr<CairoImage> image = new CairoImage(surface->GetSize(), surface);
 
   
   for (int i = mRequestedFrameListeners.Length() - 1; i >= 0; --i) {
