@@ -267,6 +267,13 @@ BRFrame::AccessibleType()
     return a11y::eNoType;
   }
 
+  
+  
+  
+  if (!mContent->GetNextSibling() && !GetNextSibling()) {
+    return a11y::eNoType;
+  }
+
   return a11y::eHTMLBRType;
 }
 #endif

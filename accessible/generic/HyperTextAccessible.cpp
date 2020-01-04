@@ -1935,31 +1935,6 @@ HyperTextAccessible::RelationByType(RelationType aType)
   return rel;
 }
 
-void
-HyperTextAccessible::CacheChildren()
-{
-  
-  
-  
-
-  TreeWalker walker(this, mContent);
-  Accessible* child = nullptr;
-  Accessible* lastChild = nullptr;
-  while ((child = walker.Next())) {
-    if (lastChild)
-      AppendChild(lastChild);
-
-    lastChild = child;
-  }
-
-  if (lastChild) {
-    if (lastChild->IsHTMLBr())
-      Document()->UnbindFromDocument(lastChild);
-    else
-      AppendChild(lastChild);
-  }
-}
-
 
 
 
