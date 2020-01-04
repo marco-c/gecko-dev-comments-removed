@@ -114,6 +114,17 @@ ThrowTypeErrorBehavior(JSContext* cx)
                                  JSMSG_THROW_TYPE_ERROR);
 }
 
+static bool
+IsFunctionInStrictMode(JSFunction* fun)
+{
+    
+    if (fun->isInterpreted() && fun->strict())
+        return true;
+
+    
+    return IsAsmJSStrictModeModuleOrFunction(fun);
+}
+
 
 
 
@@ -126,10 +137,8 @@ ArgumentsRestrictions(JSContext* cx, HandleFunction fun)
     
     
     
-    if (fun->isBuiltin() ||
-        (fun->isInterpreted() && fun->strict()) ||
-        fun->isBoundFunction())
-    {
+    
+    if (fun->isBuiltin() || IsFunctionInStrictMode(fun) || fun->isBoundFunction()) {
         ThrowTypeErrorBehavior(cx);
         return false;
     }
@@ -215,10 +224,8 @@ CallerRestrictions(JSContext* cx, HandleFunction fun)
     
     
     
-    if (fun->isBuiltin() ||
-        (fun->isInterpreted() && fun->strict()) ||
-        fun->isBoundFunction())
-    {
+    
+    if (fun->isBuiltin() || IsFunctionInStrictMode(fun) || fun->isBoundFunction()) {
         ThrowTypeErrorBehavior(cx);
         return false;
     }
