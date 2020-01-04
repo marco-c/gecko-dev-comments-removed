@@ -13,7 +13,7 @@
 """
 
 import httplib2
-
+from oauth2client.service_account import ServiceAccountCredentials
 from apiclient.discovery import build
 from oauth2client import client
 
@@ -24,11 +24,6 @@ class GooglePlayMixin(object):
     def connect_to_play(self):
         """ Connect to the google play interface
         """
-        
-        
-        f = file(self.config["google_play_credentials_file"], 'rb')
-        key = f.read()
-        f.close()
 
         
         
@@ -36,10 +31,7 @@ class GooglePlayMixin(object):
         
         
         scope = 'https://www.googleapis.com/auth/androidpublisher'
-        credentials = client.SignedJwtAssertionCredentials(
-            self.config["service_account"],
-            key,
-            scope)
+        credentials = ServiceAccountCredentials.from_p12_keyfile(self.config["service_account"], self.config["google_play_credentials_file"], scopes=scope)
         http = httplib2.Http()
         http = credentials.authorize(http)
 
