@@ -742,7 +742,7 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     let { mimeType, text, encoding } = selected.responseContent.content;
 
     gNetwork.getString(text).then(aString => {
-      let data = "data:" + mimeType + ";" + encoding + "," + aString;
+      let data = formDataURI(mimeType, encoding, aString);
       clipboardHelper.copyString(data);
     });
   },
@@ -1722,7 +1722,7 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
           let { text, encoding } = aValue.content;
           let responseBody = yield gNetwork.getString(text);
           let node = $(".requests-menu-icon", aItem.target);
-          node.src = "data:" + mimeType + ";" + encoding + "," + responseBody;
+          node.src = formDataURI(mimeType, encoding, responseBody);
           node.setAttribute("type", "thumbnail");
           node.removeAttribute("hidden");
 
@@ -2014,7 +2014,7 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     {
       return gNetwork.getString(text).then(aString => {
         let anchor = $(".requests-menu-icon", requestItem.target);
-        let src = "data:" + mimeType + ";" + encoding + "," + aString;
+        let src = formDataURI(mimeType, encoding, aString);
         aTooltip.setImageContent(src, { maxDim: REQUESTS_TOOLTIP_IMAGE_MAX_DIM });
         return anchor;
       });
@@ -2975,7 +2975,7 @@ NetworkDetailsView.prototype = {
       $("#response-content-image-box").setAttribute("pack", "center");
       $("#response-content-image-box").hidden = false;
       $("#response-content-image").src =
-        "data:" + mimeType + ";" + encoding + "," + responseBody;
+        formDataURI(mimeType, encoding, responseBody);
 
       
       
@@ -3545,6 +3545,23 @@ function getKeyWithEvent(callback) {
       callback.call(null, key);
     }
   };
+}
+
+
+
+
+
+
+
+
+
+
+function formDataURI(mimeType, encoding, text) {
+  if (!encoding) {
+    encoding = "base64";
+    text = btoa(text);
+  }
+  return "data:" + mimeType + ";" + encoding + "," + text;
 }
 
 
