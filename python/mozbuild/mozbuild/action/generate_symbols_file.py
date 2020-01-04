@@ -42,24 +42,7 @@ def generate_symbols_file(output, *args):
 
     symbols = [s.strip() for s in pp.out.getvalue().splitlines() if s.strip()]
 
-    if buildconfig.substs['GCC_USE_GNU_LD']:
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        output.write('{\nglobal:\n  %s;\nlocal:\n  *;\n};'
-                     % ';\n  '.join(symbols))
-    elif buildconfig.substs['OS_TARGET'] == 'Darwin':
-        
-        
-        output.write(''.join('_%s\n' % s for s in symbols))
-    elif buildconfig.substs['OS_TARGET'] == 'WINNT':
+    if buildconfig.substs['OS_TARGET'] == 'WINNT':
         
         
         
@@ -84,8 +67,25 @@ def generate_symbols_file(output, *args):
         
         
         libname, ext = os.path.splitext(os.path.basename(output.name))
-        assert ext == '.symbols'
+        assert ext == '.def'
         output.write('LIBRARY %s\nEXPORTS\n  %s\n'
                      % (libname, '\n  '.join(symbols)))
+    elif buildconfig.substs['GCC_USE_GNU_LD']:
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        output.write('{\nglobal:\n  %s;\nlocal:\n  *;\n};'
+                     % ';\n  '.join(symbols))
+    elif buildconfig.substs['OS_TARGET'] == 'Darwin':
+        
+        
+        output.write(''.join('_%s\n' % s for s in symbols))
 
     return set(pp.includes)
