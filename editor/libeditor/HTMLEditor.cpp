@@ -953,15 +953,13 @@ HTMLEditor::IsVisBreak(nsINode* aNode)
     return false;
   }
   
-  nsCOMPtr<nsINode> priorNode = GetPriorHTMLNode(aNode, true);
-  if (priorNode && TextEditUtils::IsBreak(priorNode)) {
-    return true;
-  }
   nsCOMPtr<nsINode> nextNode = GetNextHTMLNode(aNode, true);
   if (nextNode && TextEditUtils::IsBreak(nextNode)) {
     return true;
   }
 
+  
+  
   
   if (!nextNode) {
     
@@ -970,6 +968,13 @@ HTMLEditor::IsVisBreak(nsINode* aNode)
   if (IsBlockNode(nextNode)) {
     
     return false;
+  }
+
+  
+  
+  nsCOMPtr<nsINode> priorNode = GetPriorHTMLNode(aNode, true);
+  if (priorNode && TextEditUtils::IsBreak(priorNode)) {
+    return true;
   }
 
   

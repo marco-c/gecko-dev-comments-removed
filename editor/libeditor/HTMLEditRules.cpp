@@ -2492,12 +2492,14 @@ HTMLEditRules::InsertBRIfNeeded(Selection* aSelection)
 
 
 
+
 EditorDOMPoint
 HTMLEditRules::GetGoodSelPointForNode(nsINode& aNode,
                                       nsIEditor::EDirection aAction)
 {
   NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
-  if (aNode.GetAsText() || mHTMLEditor->IsContainer(&aNode)) {
+  if (aNode.GetAsText() || mHTMLEditor->IsContainer(&aNode) ||
+      NS_WARN_IF(!aNode.GetParentNode())) {
     return EditorDOMPoint(&aNode,
                           aAction == nsIEditor::ePrevious ? aNode.Length() : 0);
   }
@@ -7358,26 +7360,15 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
   NS_ENSURE_SUCCESS(res, res);
   nearNode = do_QueryInterface(nearNodeDOM);
 
-  if (nearNode)
-  {
-    
-    textNode = do_QueryInterface(nearNode);
-    if (textNode)
-    {
-      int32_t offset = 0;
-      
-      if (aAction == nsIEditor::ePrevious)
-        textNode->GetLength((uint32_t*)&offset);
-      res = aSelection->Collapse(nearNode,offset);
-    }
-    else  
-    {
-      selNode = EditorBase::GetNodeLocation(nearNode, &selOffset);
-      if (aAction == nsIEditor::ePrevious) selOffset++;  
-      res = aSelection->Collapse(selNode, selOffset);
-    }
+  if (!nearNode) {
+    return NS_OK;
   }
-  return res;
+  EditorDOMPoint pt = GetGoodSelPointForNode(*nearNode, aAction);
+  res = aSelection->Collapse(pt.node, pt.offset);
+  if (NS_WARN_IF(NS_FAILED(res))) {
+    return res;
+  }
+  return NS_OK;
 }
 
 
