@@ -175,8 +175,6 @@ public:
     return mSize / sizeof(T);
   }
 
-  int GetSysVID() const;
-
   
   id_t Id(IHadBetterBeIPDLCodeCallingThis_OtherwiseIAmADoodyhead) const {
     return mId;
