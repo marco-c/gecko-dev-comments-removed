@@ -127,6 +127,17 @@ private:
 
 
 
+
+
+enum class LogReason : int {
+  MustBeMoreThanThis = -1,
+  
+  
+
+  
+  MustBeLessThanThis = 101,
+};
+
 struct BasicLogger
 {
   
@@ -150,6 +161,9 @@ struct BasicLogger
     }
     return false;
   }
+
+  
+  static void CrashAction(LogReason aReason) {}
 
   static void OutputMessage(const std::string &aString,
                             int aLevel,
@@ -183,6 +197,7 @@ struct BasicLogger
 
 struct CriticalLogger {
   static void OutputMessage(const std::string &aString, int aLevel, bool aNoNewline);
+  static void CrashAction(LogReason aReason);
 };
 
 
@@ -191,6 +206,7 @@ class LogForwarder {
 public:
   virtual ~LogForwarder() {}
   virtual void Log(const std::string &aString) = 0;
+  virtual void CrashAction(LogReason aReason) = 0;
 
   
   
@@ -215,7 +231,8 @@ public:
 enum class LogOptions : int {
   NoNewline = 0x01,
   AutoPrefix = 0x02,
-  AssertOnCall = 0x04
+  AssertOnCall = 0x04,
+  CrashAction = 0x08,
 };
 
 template<typename T>
@@ -241,8 +258,9 @@ public:
   
   
   
-  explicit Log(int aOptions = Log::DefaultOptions(L == LOG_CRITICAL)) {
-    Init(aOptions, BasicLogger::ShouldOutputMessage(L));
+  explicit Log(int aOptions = Log::DefaultOptions(L == LOG_CRITICAL),
+               LogReason aReason = LogReason::MustBeMoreThanThis) {
+    Init(aOptions, BasicLogger::ShouldOutputMessage(L), aReason);
   }
 
   ~Log() {
@@ -451,22 +469,30 @@ public:
   inline bool LogIt() const { return mLogIt; }
   inline bool NoNewline() const { return mOptions & int(LogOptions::NoNewline); }
   inline bool AutoPrefix() const { return mOptions & int(LogOptions::AutoPrefix); }
+  inline bool ValidReason() const { return (int)mReason > (int)LogReason::MustBeMoreThanThis && (int)mReason < (int)LogReason::MustBeLessThanThis; }
 
   
   
-  MOZ_IMPLICIT Log(const Log& log) { Init(log.mOptions, false); }
+  MOZ_IMPLICIT Log(const Log& log) { Init(log.mOptions, false, log.mReason); }
 
 private:
   
-  void Init(int aOptions, bool aLogIt) {
+  void Init(int aOptions, bool aLogIt, LogReason aReason) {
     mOptions = aOptions;
+    mReason = aReason;
     mLogIt = aLogIt;
-    if (mLogIt && AutoPrefix()) {
-      if (mOptions & int(LogOptions::AssertOnCall)) {
-        mMessage << "[GFX" << L << "]: ";
-      } else {
-        mMessage << "[GFX" << L << "-]: ";
+    if (mLogIt) {
+      if (AutoPrefix()) {
+        if (mOptions & int(LogOptions::AssertOnCall)) {
+          mMessage << "[GFX" << L;
+        } else {
+          mMessage << "[GFX" << L << "-";
+        }
       }
+      if ((mOptions & int(LogOptions::CrashAction)) && ValidReason()) {
+        mMessage << " " << (int)mReason;
+      }
+      mMessage << "]: ";
     }
   }
 
@@ -476,11 +502,15 @@ private:
       if (mOptions & int(LogOptions::AssertOnCall)) {
         MOZ_ASSERT(false, "An assert from the graphics logger");
       }
+      if ((mOptions & int(LogOptions::CrashAction)) && ValidReason()) {
+        Logger::CrashAction(mReason);
+      }
     }
   }
 
   std::stringstream mMessage;
   int mOptions;
+  LogReason mReason;
   bool mLogIt;
 };
 
@@ -530,6 +560,14 @@ typedef Log<LOG_CRITICAL, CriticalLogger> CriticalLog;
 #define gfxWarning if (1) ; else mozilla::gfx::NoLog
 #define gfxWarningOnce if (1) ; else mozilla::gfx::NoLog
 #endif
+
+
+
+
+
+
+
+#define gfxCrash(reason) gfxCriticalError(int(LogOptions::AutoPrefix) | int(LogOptions::AssertOnCall) | int(LogOptions::CrashAction), (reason))
 
 
 
