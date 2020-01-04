@@ -508,7 +508,7 @@ public:
 
   
   
-  bool mShouldBuildScrollableLayer:1;
+  bool mWillBuildScrollableLayer:1;
 
   
   
