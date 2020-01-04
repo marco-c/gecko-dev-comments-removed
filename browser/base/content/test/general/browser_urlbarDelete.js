@@ -1,10 +1,6 @@
-
-
-
-
 add_task(function*() {
   let bm = yield PlacesUtils.bookmarks.insert({ parentGuid: PlacesUtils.bookmarks.unfiledGuid,
-                                                url: "http://example.com/",
+                                                url: "http://bug1105244.example.com/",
                                                 title: "test" });
 
   registerCleanupFunction(function* () {
@@ -38,16 +34,16 @@ function sendDelete() {
 }
 
 function* testDelete() {
-  yield promiseAutocompleteResultPopup("exam");
+  yield promiseAutocompleteResultPopup("bug1105244");
 
   
   sendHome();
   
   sendDelete();
-  Assert.equal(gURLBar.inputField.value, "xam");
+  Assert.equal(gURLBar.inputField.value, "ug1105244");
 
   yield promisePopupShown(gURLBar.popup);
 
   sendDelete();
-  Assert.equal(gURLBar.inputField.value, "am");
+  Assert.equal(gURLBar.inputField.value, "g1105244");
 }
