@@ -150,7 +150,8 @@ var SelectHelper = {
   _isDisabledElement : function(element) {
     let currentElement = element;
     while (currentElement) {
-      if (currentElement.disabled) {
+      
+      if (currentElement.disabled === true) {
         return true;
       }
       currentElement = currentElement.parentElement;
