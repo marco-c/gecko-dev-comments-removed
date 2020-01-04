@@ -164,7 +164,13 @@ public:
   
   void FireEvent(const nsAString& aType);
   
+  void FireDataEvent(const nsAString& aType, const InfallibleTArray<uint8_t>& buffer);
+  void FireDataEvent(const nsAString& aType, const nsAString& aString);
   void FireDataEvent(JSContext* aCx, const nsAString& aType, JS::Handle<JS::Value> aData);
+
+  
+  
+  nsresult InitWithUnconnectedTransport(nsISocketTransport* aTransport);
 
 private:
   ~TCPSocket();
