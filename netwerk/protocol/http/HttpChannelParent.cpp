@@ -1438,11 +1438,21 @@ HttpChannelParent::SuspendForDiversion()
     return NS_ERROR_UNEXPECTED;
   }
 
+  nsresult rv = NS_OK;
+
   
   
-  nsresult rv = mChannel->Suspend();
-  MOZ_ASSERT(NS_SUCCEEDED(rv) || rv == NS_ERROR_NOT_AVAILABLE);
-  mSuspendedForDiversion = NS_SUCCEEDED(rv);
+  
+  
+  if (!mSuspendAfterSynthesizeResponse) {
+    rv = mChannel->Suspend();
+    MOZ_ASSERT(NS_SUCCEEDED(rv) || rv == NS_ERROR_NOT_AVAILABLE);
+    mSuspendedForDiversion = NS_SUCCEEDED(rv);
+  } else {
+    
+    
+    mSuspendedForDiversion = true;
+  }
 
   rv = mParentListener->SuspendForDiversion();
   MOZ_ASSERT(NS_SUCCEEDED(rv));
