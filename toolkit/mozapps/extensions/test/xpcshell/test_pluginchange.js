@@ -31,7 +31,7 @@ PluginTag.prototype = {
   }
 };
 
-PLUGINS = [
+const PLUGINS = [
   
   new PluginTag("Java", "A mock Java plugin"),
 
@@ -40,7 +40,7 @@ PLUGINS = [
   new PluginTag("Flash", "A mock Flash plugin")
 ];
 
-gPluginHost = {
+const gPluginHost = {
   
   getPluginTags: function(count) {
     count.value = PLUGINS.length;

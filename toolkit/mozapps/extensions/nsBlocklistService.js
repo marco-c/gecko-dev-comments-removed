@@ -19,6 +19,7 @@ try {
   
   
   Components.utils.import("resource://gre/modules/AddonManager.jsm");
+  
 } catch (e) {
 }
 

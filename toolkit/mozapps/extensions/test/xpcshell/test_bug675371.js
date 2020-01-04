@@ -35,7 +35,7 @@ function check_test() {
     do_check_true(addon.isActive);
 
     
-    var target = { active: false };
+    var target = { };
     Services.scriptloader.loadSubScript("chrome://bug675371/content/test.js", target);
     do_check_true(target.active);
 

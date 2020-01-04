@@ -2,7 +2,7 @@
 
 
 
-gWindowWatcher = null;
+var gWindowWatcher = null;
 
 function test() {
   Harness.installConfirmCallback = confirm_install;
