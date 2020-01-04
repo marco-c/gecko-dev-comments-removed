@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_filereadersync_h__
-#define mozilla_dom_workers_filereadersync_h__
+#ifndef mozilla_dom_filereadersync_h__
+#define mozilla_dom_filereadersync_h__
 
 #include "Workers.h"
 
@@ -18,10 +18,6 @@ namespace dom {
 class Blob;
 class GlobalObject;
 template<typename> class Optional;
-} 
-} 
-
-BEGIN_WORKERS_NAMESPACE
 
 class FileReaderSync final
 {
@@ -51,6 +47,7 @@ public:
   void ReadAsDataURL(Blob& aBlob, nsAString& aResult, ErrorResult& aRv);
 };
 
-END_WORKERS_NAMESPACE
+} 
+} 
 
 #endif 
