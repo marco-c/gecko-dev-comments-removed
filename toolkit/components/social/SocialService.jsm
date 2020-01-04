@@ -176,7 +176,7 @@ var ActiveProviders = {
       let pref = Services.prefs.getComplexValue("social.activeProviders",
                                                 Ci.nsISupportsString);
       this._providers = JSON.parse(pref);
-    } catch (ex) {}
+    } catch(ex) {}
     return this._providers;
   },
 
@@ -217,7 +217,7 @@ function migrateSettings() {
   let activeProviders, enabled;
   try {
     activeProviders = Services.prefs.getCharPref("social.activeProviders");
-  } catch (e) {
+  } catch(e) {
     
   }
   if (Services.prefs.prefHasUserValue("social.enabled")) {
@@ -233,7 +233,7 @@ function migrateSettings() {
       try {
         prefname = getPrefnameFromOrigin(origin);
         manifest = JSON.parse(Services.prefs.getComplexValue(prefname, Ci.nsISupportsString).data);
-      } catch (e) {
+      } catch(e) {
         
         
         
@@ -248,7 +248,7 @@ function migrateSettings() {
         defaultManifest = Services.prefs.getDefaultBranch(null)
                         .getComplexValue(prefname, Ci.nsISupportsString).data;
         defaultManifest = JSON.parse(defaultManifest);
-      } catch (e) {
+      } catch(e) {
         
       }
       if (defaultManifest) {
@@ -290,7 +290,7 @@ function migrateSettings() {
   let active;
   try {
     active = Services.prefs.getBoolPref("social.active");
-  } catch (e) {}
+  } catch(e) {}
   if (!active)
     return;
 
@@ -303,7 +303,7 @@ function migrateSettings() {
       let manifest;
       try {
         manifest = JSON.parse(manifestPrefs.getComplexValue(pref, Ci.nsISupportsString).data);
-      } catch (e) {
+      } catch(e) {
         
         continue;
       }
@@ -341,7 +341,7 @@ function initService() {
 
   try {
     migrateSettings();
-  } catch (e) {
+  } catch(e) {
     
     
     
@@ -503,7 +503,7 @@ this.SocialService = {
   },
 
   _manifestFromData: function(type, data, installOrigin) {
-    let featureURLs = ['sidebarURL', 'shareURL', 'statusURL', 'markURL'];
+    let featureURLs = ['sidebarURL', 'shareURL'];
     let resolveURLs = featureURLs.concat(['postActivationURL']);
 
     if (type == 'directory' || type == 'internal') {
@@ -538,7 +538,7 @@ this.SocialService = {
             return null;
           }
           data[url] = resolved.spec;
-        } catch (e) {
+        } catch(e) {
           Cu.reportError("SocialService.manifestFromData unable to resolve '" + url + "' for " + principal.origin);
           return null;
         }
@@ -608,7 +608,7 @@ this.SocialService = {
               this._notifyProviderListeners("provider-installed", aManifest.origin);
               installCallback(aManifest);
           });
-        } catch (e) {
+        } catch(e) {
           Cu.reportError("Activation failed: " + e);
           installCallback(null);
         }
@@ -706,10 +706,6 @@ function SocialProvider(input) {
   this.icon64URL = input.icon64URL;
   this.sidebarURL = input.sidebarURL;
   this.shareURL = input.shareURL;
-  this.statusURL = input.statusURL;
-  this.markURL = input.markURL;
-  this.markedIcon = input.markedIcon;
-  this.unmarkedIcon = input.unmarkedIcon;
   this.postActivationURL = input.postActivationURL;
   this.origin = input.origin;
   let originUri = Services.io.newURI(input.origin, null, null);
@@ -720,7 +716,7 @@ function SocialProvider(input) {
 
   try {
     this.domain = etld.getBaseDomainFromHost(originUri.host);
-  } catch (e) {
+  } catch(e) {
     this.domain = originUri.host;
   }
 }
@@ -896,7 +892,7 @@ var SocialAddonProvider = {
             SocialService.disableProvider(manifest.origin);
           }
         }
-      } catch (e) {
+      } catch(e) {
         Cu.reportError(e);
       }
     }
