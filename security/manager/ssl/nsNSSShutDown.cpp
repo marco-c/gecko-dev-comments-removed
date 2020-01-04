@@ -40,7 +40,6 @@ nsNSSShutDownList *nsNSSShutDownList::singleton = nullptr;
 
 nsNSSShutDownList::nsNSSShutDownList()
   : mListLock("nsNSSShutDownList.mListLock")
-  , mActiveSSLSockets(0)
   , mObjects(&gSetOps, sizeof(ObjectHashEntry))
   , mPK11LogoutCancelObjects(&gSetOps, sizeof(ObjectHashEntry))
 {
@@ -92,38 +91,6 @@ void nsNSSShutDownList::forget(nsOnPK11LogoutCancelObject *o)
   singleton->mPK11LogoutCancelObjects.Remove(o);
 }
 
-void nsNSSShutDownList::trackSSLSocketCreate()
-{
-  if (!singleton)
-    return;
-  
-  MutexAutoLock lock(singleton->mListLock);
-  ++singleton->mActiveSSLSockets;
-}
-
-void nsNSSShutDownList::trackSSLSocketClose()
-{
-  if (!singleton)
-    return;
-  
-  MutexAutoLock lock(singleton->mListLock);
-  --singleton->mActiveSSLSockets;
-}
-  
-bool nsNSSShutDownList::areSSLSocketsActive()
-{
-  if (!singleton) {
-    
-    
-    
-    
-    return false;
-  }
-  
-  MutexAutoLock lock(singleton->mListLock);
-  return (singleton->mActiveSSLSockets > 0);
-}
-
 nsresult nsNSSShutDownList::doPK11Logout()
 {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("canceling all open SSL sockets to disallow future IO\n"));
@@ -145,16 +112,9 @@ nsresult nsNSSShutDownList::doPK11Logout()
   return NS_OK;
 }
 
-bool nsNSSShutDownList::isUIActive()
-{
-  bool canDisallow = mActivityState.ifPossibleDisallowUI(nsNSSActivityState::test_only);
-  bool bIsUIActive = !canDisallow;
-  return bIsUIActive;
-}
-
 bool nsNSSShutDownList::ifPossibleDisallowUI()
 {
-  bool isNowDisallowed = mActivityState.ifPossibleDisallowUI(nsNSSActivityState::do_it_for_real);
+  bool isNowDisallowed = mActivityState.ifPossibleDisallowUI();
   return isNowDisallowed;
 }
 
@@ -265,7 +225,7 @@ bool nsNSSActivityState::isUIForbidden()
   return mIsUIForbidden;
 }
 
-bool nsNSSActivityState::ifPossibleDisallowUI(RealOrTesting rot)
+bool nsNSSActivityState::ifPossibleDisallowUI()
 {
   bool retval = false;
   MutexAutoLock lock(mNSSActivityStateLock);
@@ -275,16 +235,10 @@ bool nsNSSActivityState::ifPossibleDisallowUI(RealOrTesting rot)
   if (!mBlockingUICounter) {
     
     retval = true;
-    if (rot == do_it_for_real) {
-      
-      mIsUIForbidden = true;
-        
-      
-      
-      
-      
-      
-    }
+    
+    
+    
+    mIsUIForbidden = true;
   }
   return retval;
 }

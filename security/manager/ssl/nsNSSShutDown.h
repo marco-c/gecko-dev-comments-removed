@@ -40,9 +40,7 @@ public:
   
   
   
-  
-  enum RealOrTesting {test_only, do_it_for_real};
-  bool ifPossibleDisallowUI(RealOrTesting rot);
+  bool ifPossibleDisallowUI();
 
   
   
@@ -118,16 +116,6 @@ public:
 
   
   
-  static void trackSSLSocketCreate();
-  static void trackSSLSocketClose();
-  static bool areSSLSocketsActive();
-  
-  
-  
-  bool isUIActive();
-
-  
-  
   bool ifPossibleDisallowUI();
 
   
@@ -151,7 +139,6 @@ private:
 protected:
   mozilla::Mutex mListLock;
   static nsNSSShutDownList *singleton;
-  uint32_t mActiveSSLSockets;
   PLDHashTable mObjects;
   PLDHashTable mPK11LogoutCancelObjects;
   nsNSSActivityState mActivityState;
