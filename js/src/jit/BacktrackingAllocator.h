@@ -344,11 +344,9 @@ class LiveRange : public TempObject
         hasDefinition_ = true;
     }
 
+#ifdef JS_JITSPEW
     
-#ifdef DEBUG
-    const char* toString() const;
-#else
-    const char* toString() const { return "???"; }
+    UniqueChars toString() const;
 #endif
 
     
@@ -467,11 +465,9 @@ class LiveBundle : public TempObject
         return spillParent_;
     }
 
+#ifdef JS_JITSPEW
     
-#ifdef DEBUG
-    const char* toString() const;
-#else
-    const char* toString() const { return "???"; }
+    UniqueChars toString() const;
 #endif
 };
 
