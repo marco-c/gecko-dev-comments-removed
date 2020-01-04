@@ -9,6 +9,8 @@ import android.content.Context;
 import android.util.Log;
 import org.mozilla.gecko.mozglue.ContextUtils.SafeIntent;
 import android.text.TextUtils;
+
+import com.keepsafe.switchboard.Preferences;
 import com.keepsafe.switchboard.SwitchBoard;
 import org.mozilla.gecko.GeckoSharedPrefs;
 
@@ -113,5 +115,29 @@ public class Experiments {
         }
 
         return experiments;
+    }
+
+    
+
+
+
+
+
+
+
+    public static void setOverride(Context c, String experimentName, boolean isEnabled) {
+        Log.d(LOGTAG, "setOverride: " + experimentName + " = " + isEnabled);
+        Preferences.setOverrideValue(c, experimentName, isEnabled);
+    }
+
+    
+
+
+
+
+
+    public static void clearOverride(Context c, String experimentName) {
+        Log.d(LOGTAG, "clearOverride: " + experimentName);
+        Preferences.clearOverrideValue(c, experimentName);
     }
 }

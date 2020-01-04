@@ -32,6 +32,8 @@ public class Preferences {
     private static final String kDynamicConfigServerUrl = "dynamic-config-server-url";
     private static final String kDynamicConfig = "dynamic-config";
 
+    private static final String OVERRIDE_PREFIX = "experiment.override.";
+
     
 
 
@@ -73,6 +75,54 @@ public class Preferences {
         final SharedPreferences.Editor editor = c.getApplicationContext().
                 getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE).edit();
         editor.putString(kDynamicConfig, configJson);
+        editor.apply();
+    }
+
+    
+
+
+
+
+
+
+    @Nullable public static Boolean getOverrideValue(Context c, String experimentName) {
+        final SharedPreferences prefs = c.getApplicationContext().
+                getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE);
+
+        final String key = OVERRIDE_PREFIX + experimentName;
+        if (prefs.contains(key)) {
+            
+            return prefs.getBoolean(key, false);
+        }
+
+        
+        return null;
+    }
+
+    
+
+
+
+
+
+
+    public static void setOverrideValue(Context c, String experimentName, boolean isEnabled) {
+        final SharedPreferences.Editor editor = c.getApplicationContext().
+                getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE).edit();
+        editor.putBoolean(OVERRIDE_PREFIX + experimentName, isEnabled);
+        editor.apply();
+    }
+
+    
+
+
+
+
+
+    public static void clearOverrideValue(Context c, String experimentName) {
+        final SharedPreferences.Editor editor = c.getApplicationContext().
+                getSharedPreferences(switchBoardSettings, Context.MODE_PRIVATE).edit();
+        editor.remove(OVERRIDE_PREFIX + experimentName);
         editor.apply();
     }
 }
