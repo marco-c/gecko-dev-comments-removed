@@ -826,22 +826,6 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp* fop,
             
             bool doSweep = !isCompartmentGC;
 
-            
-            
-            
-            if (!nsXPConnect::XPConnect()->IsShuttingDown()) {
-                for (auto i = self->mNativeScriptableSharedMap->Iter(); !i.Done(); i.Next()) {
-                    auto entry = static_cast<XPCNativeScriptableSharedMap::Entry*>(i.Get());
-                    XPCNativeScriptableShared* shared = entry->key;
-                    if (shared->IsMarked()) {
-                        shared->Unmark();
-                    } else if (doSweep) {
-                        delete shared;
-                        i.Remove();
-                    }
-                }
-            }
-
             if (doSweep) {
                 for (auto i = self->mClassInfo2NativeSetMap->Iter(); !i.Done(); i.Next()) {
                     auto entry = static_cast<ClassInfo2NativeSetMap::Entry*>(i.Get());
@@ -1629,7 +1613,7 @@ XPCJSRuntime::~XPCJSRuntime()
 {
     
     
-    MOZ_ASSERT(MaybeContext());
+    MOZ_ASSERT(MaybeRuntime());
 
     
     
@@ -1690,7 +1674,7 @@ XPCJSRuntime::~XPCJSRuntime()
 #ifdef MOZ_ENABLE_PROFILER_SPS
     
     if (PseudoStack* stack = mozilla_get_pseudo_stack())
-        stack->sampleContext(nullptr);
+        stack->sampleRuntime(nullptr);
 #endif
 
     Preferences::UnregisterCallback(ReloadPrefsCallback, JS_OPTIONS_DOT_STR, this);
@@ -1790,6 +1774,12 @@ xpc::GetCurrentCompartmentName(JSContext* cx, nsCString& name)
     GetCompartmentName(compartment, name, &anonymizeID, false);
 }
 
+JSRuntime*
+xpc::GetJSRuntime()
+{
+    return XPCJSRuntime::Get()->Runtime();
+}
+
 void
 xpc::AddGCCallback(xpcGCCallback cb)
 {
@@ -1805,7 +1795,7 @@ xpc::RemoveGCCallback(xpcGCCallback cb)
 static int64_t
 JSMainRuntimeGCHeapDistinguishedAmount()
 {
-    JSContext* cx = danger::GetJSContext();
+    JSContext* cx = nsXPConnect::GetRuntimeInstance()->Context();
     return int64_t(JS_GetGCParameter(cx, JSGC_TOTAL_CHUNKS)) *
            js::gc::ChunkSize;
 }
@@ -1813,22 +1803,22 @@ JSMainRuntimeGCHeapDistinguishedAmount()
 static int64_t
 JSMainRuntimeTemporaryPeakDistinguishedAmount()
 {
-    JSContext* cx = danger::GetJSContext();
-    return JS::PeakSizeOfTemporary(cx);
+    JSRuntime* rt = nsXPConnect::GetRuntimeInstance()->Runtime();
+    return JS::PeakSizeOfTemporary(rt);
 }
 
 static int64_t
 JSMainRuntimeCompartmentsSystemDistinguishedAmount()
 {
-    JSContext* cx = danger::GetJSContext();
-    return JS::SystemCompartmentCount(cx);
+    JSRuntime* rt = nsXPConnect::GetRuntimeInstance()->Runtime();
+    return JS::SystemCompartmentCount(rt);
 }
 
 static int64_t
 JSMainRuntimeCompartmentsUserDistinguishedAmount()
 {
-    JSContext* cx = nsXPConnect::GetRuntimeInstance()->Context();
-    return JS::UserCompartmentCount(cx);
+    JSRuntime* rt = nsXPConnect::GetRuntimeInstance()->Runtime();
+    return JS::UserCompartmentCount(rt);
 }
 
 class JSMainRuntimeTemporaryPeakReporter final : public nsIMemoryReporter
@@ -2631,6 +2621,11 @@ ReportJSRuntimeExplicitTreeStats(const JS::RuntimeStats& rtStats,
         "GC arenas in non-empty chunks that is decommitted, i.e. it takes up "
         "address space but no physical memory or swap space.");
 
+    REPORT_BYTES(rtPath2 + NS_LITERAL_CSTRING("runtime/gc/nursery-decommitted"),
+        KIND_NONHEAP, rtStats.runtime.gc.nurseryDecommitted,
+        "Memory allocated to the GC's nursery that is decommitted, i.e. it takes up "
+        "address space but no physical memory or swap space.");
+
     REPORT_GC_BYTES(rtPath + NS_LITERAL_CSTRING("gc-heap/unused-chunks"),
         rtStats.gcHeapUnusedChunks,
         "Empty GC chunks which will soon be released unless claimed for new "
@@ -3204,9 +3199,6 @@ AccumulateTelemetryCallback(int id, uint32_t sample, const char* key)
       case JS_TELEMETRY_GC_NURSERY_BYTES:
         Telemetry::Accumulate(Telemetry::GC_NURSERY_BYTES, sample);
         break;
-      case JS_TELEMETRY_GC_PRETENURE_COUNT:
-        Telemetry::Accumulate(Telemetry::GC_PRETENURE_COUNT, sample);
-        break;
       case JS_TELEMETRY_DEPRECATED_LANGUAGE_EXTENSIONS_IN_CONTENT:
         Telemetry::Accumulate(Telemetry::JS_DEPRECATED_LANGUAGE_EXTENSIONS_IN_CONTENT, sample);
         break;
@@ -3431,12 +3423,14 @@ XPCJSRuntime::Initialize()
       return rv;
     }
 
-    MOZ_ASSERT(Context());
-    JSContext* cx = Context();
+    MOZ_ASSERT(Runtime());
+    JSRuntime* runtime = Runtime();
 
-    mUnprivilegedJunkScope.init(cx, nullptr);
-    mPrivilegedJunkScope.init(cx, nullptr);
-    mCompilationScope.init(cx, nullptr);
+    JSContext* cx = JS_GetContext(runtime);
+
+    mUnprivilegedJunkScope.init(runtime, nullptr);
+    mPrivilegedJunkScope.init(runtime, nullptr);
+    mCompilationScope.init(runtime, nullptr);
 
     
     mStrIDs[0] = JSID_VOID;
@@ -3541,7 +3535,7 @@ XPCJSRuntime::Initialize()
     js::SetPreserveWrapperCallback(cx, PreserveWrapper);
 #ifdef MOZ_ENABLE_PROFILER_SPS
     if (PseudoStack* stack = mozilla_get_pseudo_stack())
-        stack->sampleContext(cx);
+        stack->sampleRuntime(runtime);
 #endif
     JS_SetAccumulateTelemetryCallback(cx, AccumulateTelemetryCallback);
     js::SetActivityCallback(cx, ActivityCallback, this);
@@ -3605,7 +3599,7 @@ XPCJSRuntime::newXPCJSRuntime()
         return nullptr;
     }
 
-    if (self->Context()                         &&
+    if (self->Runtime()                         &&
         self->GetMultiCompartmentWrappedJSMap() &&
         self->GetWrappedJSClassMap()            &&
         self->GetIID2NativeInterfaceMap()       &&
@@ -3748,6 +3742,7 @@ XPCJSRuntime::DebugDump(int16_t depth)
     depth--;
     XPC_LOG_ALWAYS(("XPCJSRuntime @ %x", this));
         XPC_LOG_INDENT();
+        XPC_LOG_ALWAYS(("mJSRuntime @ %x", Runtime()));
         XPC_LOG_ALWAYS(("mJSContext @ %x", Context()));
 
         XPC_LOG_ALWAYS(("mWrappedJSClassMap @ %x with %d wrapperclasses(s)",
