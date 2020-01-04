@@ -8,6 +8,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
   "resource://testing-common/PlacesTestUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TabCrashReporter",
+  "resource:///modules/ContentCrashReporters.jsm");
 
 
 
@@ -1091,5 +1093,90 @@ function promiseOnBookmarkItemAdded(aExpectedURI) {
     };
     info("Waiting for a bookmark to be added");
     PlacesUtils.bookmarks.addObserver(bookmarksObserver, false);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getPropertyBagValue(bag, key) {
+  try {
+    let val = bag.getProperty(key);
+    return val;
+  } catch(e if e.result == Cr.NS_ERROR_FAILURE) {}
+
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function promiseCrashReport(expectedExtra) {
+  return Task.spawn(function*() {
+    info("Starting wait on crash-report-status");
+    let [subject, data] =
+      yield TestUtils.topicObserved("crash-report-status", (subject, data) => {
+        return data == "success";
+      });
+    info("Topic observed!");
+
+    if (!(subject instanceof Ci.nsIPropertyBag2)) {
+      throw new Error("Subject was not a Ci.nsIPropertyBag2");
+    }
+
+    let remoteID = getPropertyBagValue(subject, "serverCrashID");
+    if (!remoteID) {
+      throw new Error("Report should have a server ID");
+    }
+
+    let file = Cc["@mozilla.org/file/local;1"]
+                 .createInstance(Ci.nsILocalFile);
+    file.initWithPath(Services.crashmanager._submittedDumpsDir);
+    file.append(remoteID + ".txt");
+    if (!file.exists()) {
+      throw new Error("Report should have been received by the server");
+    }
+
+    file.remove(false);
+
+    let extra = getPropertyBagValue(subject, "extra");
+    if (!(extra instanceof Ci.nsIPropertyBag2)) {
+      throw new Error("extra was not a Ci.nsIPropertyBag2");
+    }
+
+    info("Iterating crash report extra keys");
+    let enumerator = extra.enumerator;
+    while (enumerator.hasMoreElements()) {
+      let key = enumerator.getNext().QueryInterface(Ci.nsIProperty).name;
+      let value = extra.getPropertyAsAString(key);
+      if (key in expectedExtra) {
+        is(value, expectedExtra[key],
+           `Crash report had the right extra value for ${key}`);
+      }
+    }
   });
 }
