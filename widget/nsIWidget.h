@@ -828,16 +828,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
-
     NS_IMETHOD GetScreenBounds(LayoutDeviceIntRect& aRect) = 0;
-    NS_IMETHOD GetScreenBoundsUntyped(nsIntRect& aRect) {
-      LayoutDeviceIntRect tmp;
-      nsresult rv = GetScreenBounds(tmp);
-      aRect = tmp.ToUnknownRect();
-      return rv;
-    }
 
     
 
