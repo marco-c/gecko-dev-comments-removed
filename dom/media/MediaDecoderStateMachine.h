@@ -640,10 +640,6 @@ protected:
   bool IsAudioDecoding();
   bool IsVideoDecoding();
 
-  
-  
-  void SetPlayStartTime(const TimeStamp& aTimeStamp);
-
 private:
   
   
@@ -877,11 +873,6 @@ private:
   
   
   TaskQueue* DecodeTaskQueue() const { return mReader->OwnerThread(); }
-
-  
-  
-  
-  TimeStamp mPlayStartTime;
 
   
   
