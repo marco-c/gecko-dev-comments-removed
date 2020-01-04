@@ -421,9 +421,6 @@ IsIncrementalGCInProgress(JSRuntime* rt);
 extern JS_PUBLIC_API(bool)
 IsIncrementalBarrierNeeded(JSRuntime* rt);
 
-extern JS_PUBLIC_API(bool)
-IsIncrementalBarrierNeeded(JSContext* cx);
-
 
 
 
