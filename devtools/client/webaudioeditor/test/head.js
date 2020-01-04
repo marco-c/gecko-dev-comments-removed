@@ -421,9 +421,12 @@ function countGraphObjects(win) {
 
 
 function forceCC() {
-  SpecialPowers.DOMWindowUtils.cycleCollect();
-  SpecialPowers.DOMWindowUtils.garbageCollect();
-  SpecialPowers.DOMWindowUtils.garbageCollect();
+  ContentTask.spawn(gBrowser.selectedBrowser, {}, function*() {
+    Cu.forceGC();
+    Cu.forceCC();
+    Cu.forceGC();
+    Cu.forceCC();
+  });
 }
 
 

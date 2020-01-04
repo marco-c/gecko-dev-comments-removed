@@ -10,10 +10,6 @@
 
 
 add_task(function* () {
-  
-  
-  requestLongerTimeout(2);
-
   let { target, panel } = yield initWebAudioEditor(DESTROY_NODES_URL);
   let { panelWin } = panel;
   let { gFront, $, $$, gAudioNodes } = panelWin;
@@ -23,8 +19,6 @@ add_task(function* () {
   reload(target);
 
   let destroyed = getN(gAudioNodes, "remove", 10);
-
-  forceCC();
 
   let [created] = yield Promise.all([
     getNSpread(gAudioNodes, "add", 13),
@@ -39,8 +33,6 @@ add_task(function* () {
   yield clickGraphNode(panelWin, actorIDs[5]);
 
   
-  
-  yield DevToolsUtils.waitForTick();
   forceCC();
 
   
