@@ -69,7 +69,7 @@ def taskgraph_decision(options):
                    taskgraph_to_json(tgg.full_task_graph))
 
     
-    write_artifact('target_tasks.json',
+    write_artifact('target-tasks.json',
                    tgg.target_task_set.tasks.keys())
 
     
