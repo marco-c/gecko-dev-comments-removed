@@ -229,6 +229,8 @@ RemoteOpenFileChild::AsyncRemoteFileOpen(int32_t aFlags,
     MOZ_CRASH("Couldn't get path from file!");
   }
 
+  mListener = aListener;
+
   if (mTabChild) {
     if (mTabChild->GetCachedFileDescriptor(path, this)) {
       
@@ -248,7 +250,6 @@ RemoteOpenFileChild::AsyncRemoteFileOpen(int32_t aFlags,
   
   AddIPDLReference();
 
-  mListener = aListener;
   mAsyncOpenCalled = true;
   return NS_OK;
 #endif
