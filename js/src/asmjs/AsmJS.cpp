@@ -4405,7 +4405,7 @@ static bool
 CheckInternalCall(FunctionValidator& f, ParseNode* callNode, PropertyName* calleeName,
                   ExprType ret, Type* type)
 {
-    if (!f.writeOp(Expr::CallInternal))
+    if (!f.writeOp(Expr::Call))
         return false;
 
     
