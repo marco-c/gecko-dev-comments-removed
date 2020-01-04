@@ -1331,17 +1331,17 @@ NotifyPull(MediaStreamGraph* graph, StreamTime desired_time) {
          desired_time) {
     
     
-#define AUDIO_SAMPLE_BUFFER_MAX 1000
-    MOZ_ASSERT((track_rate_/100)*sizeof(uint16_t) <= AUDIO_SAMPLE_BUFFER_MAX);
+    const size_t AUDIO_SAMPLE_BUFFER_MAX = 1920;
+    MOZ_ASSERT((track_rate_/100)*sizeof(uint16_t) * 2 <= AUDIO_SAMPLE_BUFFER_MAX);
 
-    nsRefPtr<SharedBuffer> samples = SharedBuffer::Create(AUDIO_SAMPLE_BUFFER_MAX);
-    int16_t *samples_data = static_cast<int16_t *>(samples->Data());
+    int16_t scratch_buffer[AUDIO_SAMPLE_BUFFER_MAX];
+
     int samples_length;
 
     
     MediaConduitErrorCode err =
         static_cast<AudioSessionConduit*>(conduit_.get())->GetAudioFrame(
-            samples_data,
+            scratch_buffer,
             track_rate_,
             0,  
             samples_length);
@@ -1353,7 +1353,7 @@ NotifyPull(MediaStreamGraph* graph, StreamTime desired_time) {
                 << " (desired " << desired_time << " -> "
                 << source_->StreamTimeToSeconds(desired_time) << ")");
       samples_length = track_rate_/100; 
-      memset(samples_data, '\0', samples_length * sizeof(uint16_t));
+      PodArrayZero(scratch_buffer);
     }
 
     MOZ_ASSERT(samples_length * sizeof(uint16_t) < AUDIO_SAMPLE_BUFFER_MAX);
@@ -1361,14 +1361,37 @@ NotifyPull(MediaStreamGraph* graph, StreamTime desired_time) {
     MOZ_MTLOG(ML_DEBUG, "Audio conduit returned buffer of length "
               << samples_length);
 
+    nsRefPtr<SharedBuffer> samples = SharedBuffer::Create(samples_length * sizeof(uint16_t));
+    int16_t *samples_data = static_cast<int16_t *>(samples->Data());
     AudioSegment segment;
-    nsAutoTArray<const int16_t*,1> channels;
-    channels.AppendElement(samples_data);
-    segment.AppendFrames(samples.forget(), channels, samples_length);
+    
+    
+    
+    uint32_t channelCount = samples_length / (track_rate_ / 100);
+    nsAutoTArray<int16_t*,2> channels;
+    nsAutoTArray<const int16_t*,2> outputChannels;
+    size_t frames = samples_length / channelCount;
+
+    channels.SetLength(channelCount);
+
+    size_t offset = 0;
+    for (size_t i = 0; i < channelCount; i++) {
+      channels[i] = samples_data + offset;
+      offset += frames;
+    }
+
+    DeinterleaveAndConvertBuffer(scratch_buffer,
+                                 frames,
+                                 channelCount,
+                                 channels.Elements());
+
+    outputChannels.AppendElements(channels);
+
+    segment.AppendFrames(samples.forget(), outputChannels, frames);
 
     
     if (source_->AppendToTrack(track_id_, &segment)) {
-      played_ticks_ += track_rate_/100; 
+      played_ticks_ += frames;
     } else {
       MOZ_MTLOG(ML_ERROR, "AppendToTrack failed");
       
