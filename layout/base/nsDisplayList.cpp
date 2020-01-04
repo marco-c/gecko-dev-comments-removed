@@ -2549,7 +2549,16 @@ nsDisplayBackgroundImage::CanOptimizeToImageLayer(LayerManager* aManager,
   }
 
   
-  if (!state.mDestArea.IsEqualEdges(state.mFillArea)) {
+  if (!state.mDestArea.Contains(state.mFillArea)) {
+    return false;
+  }
+
+  
+  
+  bool allowPartialImages =
+    (layer.mSize.mWidthType == nsStyleBackground::Size::eContain ||
+     layer.mSize.mWidthType == nsStyleBackground::Size::eCover);
+  if (!allowPartialImages && !state.mFillArea.Contains(state.mDestArea)) {
     return false;
   }
 
