@@ -23,168 +23,6 @@ for (let key of Object.keys(ThreadSafeDevToolsUtils)) {
 
 
 
-exports.safeErrorString = function safeErrorString(aError) {
-  try {
-    let errorString = aError.toString();
-    if (typeof errorString == "string") {
-      
-      
-      try {
-        if (aError.stack) {
-          let stack = aError.stack.toString();
-          if (typeof stack == "string") {
-            errorString += "\nStack: " + stack;
-          }
-        }
-      } catch (ee) { }
-
-      
-      
-      if (typeof aError.lineNumber == "number" && typeof aError.columnNumber == "number") {
-        errorString += "Line: " + aError.lineNumber + ", column: " + aError.columnNumber;
-      }
-
-      return errorString;
-    }
-  } catch (ee) { }
-
-  
-  return Object.prototype.toString.call(aError);
-}
-
-
-
-
-exports.reportException = function reportException(aWho, aException) {
-  let msg = aWho + " threw an exception: " + exports.safeErrorString(aException);
-
-  dump(msg + "\n");
-
-  if (Cu && Cu.reportError) {
-    
-
-
-
-
-    Cu.reportError(msg);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-exports.makeInfallible = function makeInfallible(aHandler, aName) {
-  if (!aName)
-    aName = aHandler.name;
-
-  return function () {
-    try {
-      return aHandler.apply(this, arguments);
-    } catch (ex) {
-      let who = "Handler function";
-      if (aName) {
-        who += " " + aName;
-      }
-      return exports.reportException(who, ex);
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-exports.zip = function zip(a, b) {
-  if (!b) {
-    return a;
-  }
-  if (!a) {
-    return b;
-  }
-  const pairs = [];
-  for (let i = 0, aLength = a.length, bLength = b.length;
-       i < aLength || i < bLength;
-       i++) {
-    pairs.push([a[i], b[i]]);
-  }
-  return pairs;
-};
-
-
-
-
-
-
-
-
-
-
-exports.entries = function entries(obj) {
-  return Object.keys(obj).map(k => [k, obj[k]]);
-}
-
-
-
-
-
-exports.toObject = function(arr) {
-  const obj = {};
-  for(let pair of arr) {
-    obj[pair[0]] = pair[1];
-  }
-  return obj;
-}
-
-
-
-
-
-exports.toObject = function(arr) {
-  const obj = {};
-  for(let pair of arr) {
-    obj[pair[0]] = pair[1];
-  }
-  return obj;
-}
-
-
-
-
-
-
-
-
-
-
-exports.compose = function compose(...funcs) {
-  return (...args) => {
-    const initialValue = funcs[funcs.length - 1].apply(null, args);
-    const leftFuncs = funcs.slice(0, -1);
-    return leftFuncs.reduceRight((composed, f) => f(composed),
-                                 initialValue);
-  };
-}
-
-
-
-
-
 exports.executeSoon = function executeSoon(aFn) {
   if (isWorker) {
     setImmediate(aFn);
@@ -279,7 +117,7 @@ exports.yieldingEach = function yieldingEach(aArray, aFn) {
   }());
 
   return promise.all(outstanding);
-}
+};
 
 
 
@@ -399,7 +237,7 @@ exports.dumpn = function dumpn(str) {
   if (exports.dumpn.wantLogging) {
     dump("DBG-SERVER: " + str + "\n");
   }
-}
+};
 
 
 
@@ -417,40 +255,6 @@ exports.dumpv = function(msg) {
 
 
 exports.dumpv.wantVerbose = false;
-
-
-
-
-
-
-
-
-
-
-
-exports.update = function update(aTarget, ...aArgs) {
-  for (let attrs of aArgs) {
-    for (let key in attrs) {
-      let desc = Object.getOwnPropertyDescriptor(attrs, key);
-
-      if (desc) {
-        Object.defineProperty(aTarget, key, desc);
-      }
-    }
-  }
-
-  return aTarget;
-}
-
-
-
-
-
-
-
-exports.values = function values(aObject) {
-  return Object.keys(aObject).map(k => aObject[k]);
-}
 
 
 
@@ -512,14 +316,11 @@ function reallyAssert(condition, message) {
 
 
 
-
-
-
 Object.defineProperty(exports, "assert", {
   get: () => (AppConstants.DEBUG || AppConstants.DEBUG_JS_MODULES || this.testing)
     ? reallyAssert
     : exports.noop,
-})
+});
 
 
 
@@ -716,7 +517,7 @@ if (!this.isWorker) {
   
   exports.fetch = function (url, options) {
     return rpc("fetch", url, options);
-  }
+  };
 }
 
 
@@ -828,30 +629,4 @@ exports.openFileStream = function (filePath) {
       }
     );
   });
-}
-
-exports.isGenerator = function (fn) {
-  if (typeof fn !== "function") {
-    return false;
-  }
-  let proto = Object.getPrototypeOf(fn);
-  if (!proto) {
-    return false;
-  }
-  let ctor = proto.constructor;
-  if (!ctor) {
-    return false;
-  }
-  return ctor.name == "GeneratorFunction";
-};
-
-exports.isPromise = function (p) {
-  return p && typeof p.then === "function";
-};
-
-
-
-
-exports.isSavedFrame = function (thing) {
-  return Object.prototype.toString.call(thing) === "[object SavedFrame]";
 };
