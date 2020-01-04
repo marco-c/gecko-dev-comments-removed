@@ -367,14 +367,6 @@ public abstract class GeckoApp
                     mFormAssistPopup.hide();
                 break;
 
-            case LOADED:
-                
-                
-                LayerView layerView = mLayerView;
-                if (layerView != null && Tabs.getInstance().isSelectedTab(tab))
-                    layerView.setBackgroundColor(tab.getBackgroundColor());
-                break;
-
             case DESKTOP_MODE_CHANGE:
                 if (Tabs.getInstance().isSelectedTab(tab))
                     invalidateOptionsMenu();
@@ -1157,9 +1149,6 @@ public abstract class GeckoApp
         GeckoAppShell.setContextGetter(this);
         GeckoAppShell.setApplicationContext(getApplicationContext());
         GeckoAppShell.setGeckoInterface(this);
-        
-        
-        GeckoAppShell.setNotificationClient(makeNotificationClient());
 
         Tabs.getInstance().attachToContext(this);
         try {
@@ -1433,6 +1422,7 @@ public abstract class GeckoApp
             }
         });
 
+        GeckoAppShell.setNotificationClient(makeNotificationClient());
         IntentHelper.init(this);
     }
 
