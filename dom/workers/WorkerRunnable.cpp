@@ -469,7 +469,18 @@ MainThreadWorkerSyncRunnable::PostDispatch(JSContext* aCx,
                                            WorkerPrivate* aWorkerPrivate,
                                            bool aDispatchResult)
 {
-  MaybeReportMainThreadException(aCx, aDispatchResult);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT_IF(aCx, !JS_IsExceptionPending(aCx));
 }
 
 StopSyncLoopRunnable::StopSyncLoopRunnable(

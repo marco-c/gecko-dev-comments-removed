@@ -213,7 +213,6 @@ protected:
 
   virtual ~WorkerSyncRunnable();
 
-private:
   virtual bool
   DispatchInternal() override;
 };
@@ -242,12 +241,32 @@ protected:
   virtual ~MainThreadWorkerSyncRunnable()
   { }
 
+  
+  
+  
+  
+  
+  
+  virtual void InfalliblePreDispatch(JSContext* aCx)
+  {}
+
 private:
   virtual bool
-  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override final
   {
     AssertIsOnMainThread();
+    InfalliblePreDispatch(aCx);
+    MOZ_ASSERT_IF(aCx, !JS_IsExceptionPending(aCx));
     return true;
+  }
+
+  
+  
+  
+  virtual bool
+  DispatchInternal() override final
+  {
+    return WorkerSyncRunnable::DispatchInternal();
   }
 
   virtual void
