@@ -75,19 +75,40 @@ ShouldZoomToElement(const nsCOMPtr<dom::Element>& aElement) {
 
 
 
+
+
 static CSSRect
-GetBoundingContentRect(const nsCOMPtr<nsIPresShell>& aShell,
-                       const nsCOMPtr<dom::Element>& aElement,
+GetBoundingContentRect(const nsCOMPtr<dom::Element>& aElement,
                        const nsIScrollableFrame* aRootScrollFrame) {
+
+  CSSRect result;
   if (nsIFrame* frame = aElement->GetPrimaryFrame()) {
-    return CSSRect::FromAppUnits(
+    nsIFrame* relativeTo = aRootScrollFrame->GetScrolledFrame();
+    result = CSSRect::FromAppUnits(
         nsLayoutUtils::GetAllInFlowRectsUnion(
             frame,
-            aShell->GetRootFrame(),
-            nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS)
-      + aRootScrollFrame->GetScrollPosition());
+            relativeTo,
+            nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS));
+
+    
+    
+    
+    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetNearestScrollableFrame(frame);
+    if (scrollFrame && scrollFrame != aRootScrollFrame) {
+      nsIFrame* subFrame = do_QueryFrame(scrollFrame);
+      MOZ_ASSERT(subFrame);
+      
+      
+      CSSRect subFrameRect = CSSRect::FromAppUnits(
+          nsLayoutUtils::TransformFrameRectToAncestor(
+              subFrame,
+              subFrame->GetRectRelativeToSelf(),
+              relativeTo));
+
+      result = subFrameRect.Intersect(result);
+    }
   }
-  return CSSRect();
+  return result;
 }
 
 static bool
@@ -143,7 +164,27 @@ CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
   FrameMetrics metrics = nsLayoutUtils::CalculateBasicFrameMetrics(rootScrollFrame);
   CSSRect compositedArea(metrics.GetScrollOffset(), metrics.CalculateCompositedSizeInCssPixels());
   const CSSCoord margin = 15;
-  CSSRect rect = GetBoundingContentRect(shell, element, rootScrollFrame);
+  CSSRect rect = GetBoundingContentRect(element, rootScrollFrame);
+
+  
+  
+  
+  
+  if (!rect.IsEmpty() && compositedArea.width > 0.0f) {
+    const float widthRatio = rect.width / compositedArea.width;
+    float targetHeight = compositedArea.height * widthRatio;
+    if (widthRatio < 0.9 && targetHeight < rect.height) {
+      const CSSPoint scrollPoint = CSSPoint::FromAppUnits(rootScrollFrame->GetScrollPosition());
+      float newY = aPoint.y + scrollPoint.y - (targetHeight * 0.5f);
+      if ((newY + targetHeight) > (rect.y + rect.height)) {
+        rect.y += rect.height - targetHeight;
+      } else if (newY > rect.y) {
+        rect.y = newY;
+      }
+      rect.height = targetHeight;
+    }
+  }
+
   rect = CSSRect(std::max(metrics.GetScrollableRect().x, rect.x - margin),
                  rect.y,
                  rect.width + 2 * margin,
