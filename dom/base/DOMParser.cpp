@@ -422,7 +422,7 @@ DOMParser::InitInternal(nsISupports* aOwner, nsIPrincipal* prin,
     
     
 
-    nsCOMPtr<nsPIDOMWindow> window = do_QueryInterface(aOwner);
+    nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aOwner);
     if (!window) {
       return NS_ERROR_UNEXPECTED;
     }

@@ -54,7 +54,7 @@ class nsIFrame;
 class nsStyleCoord;
 class nsStyleCorners;
 class gfxContext;
-class nsPIDOMWindow;
+class nsPIDOMWindowOuter;
 class imgIRequest;
 class nsIDocument;
 struct gfxPoint;
@@ -1972,7 +1972,7 @@ public:
 
 
   static nsDeviceContext*
-  GetDeviceContextForScreenInfo(nsPIDOMWindow* aWindow);
+  GetDeviceContextForScreenInfo(nsPIDOMWindowOuter* aWindow);
 
   
 

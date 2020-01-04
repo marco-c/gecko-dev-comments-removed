@@ -34,13 +34,13 @@ public:
 
   void Notify(const hal::SwitchEvent& aEvent);
 
-  void Init(nsPIDOMWindow* aWindow);
+  void Init(nsPIDOMWindowInner* aWindow);
 
   
 
 
 
-  nsPIDOMWindow* GetParentObject() const
+  nsPIDOMWindowInner* GetParentObject() const
   {
      return GetOwner();
   }

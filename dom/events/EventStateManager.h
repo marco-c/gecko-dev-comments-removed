@@ -819,7 +819,7 @@ protected:
 
 
 
-  void DetermineDragTargetAndDefaultData(nsPIDOMWindow* aWindow,
+  void DetermineDragTargetAndDefaultData(nsPIDOMWindowOuter* aWindow,
                                          nsIContent* aSelectionTarget,
                                          dom::DataTransfer* aDataTransfer,
                                          nsISelection** aSelection,

@@ -220,8 +220,8 @@ public:
 
   
   
-  NS_IMETHOD GetAssociatedWindow(nsIDOMWindow**) override;
-  NS_IMETHOD GetTopWindow(nsIDOMWindow**) override;
+  NS_IMETHOD GetAssociatedWindow(mozIDOMWindowProxy**) override;
+  NS_IMETHOD GetTopWindow(mozIDOMWindowProxy**) override;
   NS_IMETHOD GetTopFrameElement(nsIDOMElement**) override;
   NS_IMETHOD GetNestedFrameId(uint64_t*) override;
   NS_IMETHOD IsAppOfType(uint32_t, bool*) override;

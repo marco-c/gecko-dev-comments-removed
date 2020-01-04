@@ -11,10 +11,10 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsCOMPtr.h"
-#include "nsIDOMWindow.h"
 #include "nsIWidget.h"
-#include "nsPIDOMWindow.h"
 #include "nsRect.h"
+
+class nsPIDOMWindowOuter;
 
 namespace mozilla {
 
@@ -54,7 +54,7 @@ public:
 
 
 
-  static already_AddRefed<nsIWidget> DOMWindowToWidget(nsIDOMWindow *aDOMWindow);
+  static already_AddRefed<nsIWidget> DOMWindowToWidget(nsPIDOMWindowOuter* aDOMWindow);
 
   
 

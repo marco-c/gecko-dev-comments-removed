@@ -193,8 +193,7 @@ MediaDocument::BecomeInteractive()
   
   
   bool restoring = false;
-  nsPIDOMWindow* window = GetWindow();
-  if (window) {
+  if (nsPIDOMWindowOuter* window = GetWindow()) {
     nsIDocShell* docShell = window->GetDocShell();
     if (docShell) {
       docShell->GetRestoringDocument(&restoring);

@@ -54,7 +54,7 @@ class nsMenuBarFrame;
 class nsMenuParent;
 class nsIDOMKeyEvent;
 class nsIDocShellTreeItem;
-class nsPIDOMWindow;
+class nsPIDOMWindowOuter;
 
 
 
@@ -316,7 +316,7 @@ public:
 
   
   
-  void AdjustPopupsOnWindowChange(nsPIDOMWindow* aWindow);
+  void AdjustPopupsOnWindowChange(nsPIDOMWindowOuter* aWindow);
   void AdjustPopupsOnWindowChange(nsIPresShell* aPresShell);
 
   

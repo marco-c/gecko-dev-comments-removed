@@ -40,7 +40,6 @@
 #include "nsWrapperCacheInlines.h"
 
 class nsIJSID;
-class nsPIDOMWindow;
 
 namespace mozilla {
 
@@ -52,6 +51,9 @@ template<typename DataType> class MozMap;
 nsresult
 UnwrapArgImpl(JS::Handle<JSObject*> src, const nsIID& iid, void** ppArg);
 
+nsresult
+UnwrapWindowProxyImpl(JS::Handle<JSObject*> src, nsPIDOMWindowOuter** ppArg);
+
 
 template <class Interface>
 inline nsresult
@@ -59,6 +61,13 @@ UnwrapArg(JS::Handle<JSObject*> src, Interface** ppArg)
 {
   return UnwrapArgImpl(src, NS_GET_TEMPLATE_IID(Interface),
                        reinterpret_cast<void**>(ppArg));
+}
+
+template <>
+inline nsresult
+UnwrapArg<nsPIDOMWindowOuter>(JS::Handle<JSObject*> src, nsPIDOMWindowOuter** ppArg)
+{
+  return UnwrapWindowProxyImpl(src, ppArg);
 }
 
 bool
@@ -3149,7 +3158,7 @@ EnforceNotInPrerendering(JSContext* aCx, JSObject* aObj);
 
 
 void
-HandlePrerenderingViolation(nsPIDOMWindow* aWindow);
+HandlePrerenderingViolation(nsPIDOMWindowInner* aWindow);
 
 bool
 CallerSubsumes(JSObject* aObject);

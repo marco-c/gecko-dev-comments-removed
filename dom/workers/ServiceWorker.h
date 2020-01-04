@@ -11,7 +11,7 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ServiceWorkerBinding.h" 
 
-class nsPIDOMWindow;
+class nsPIDOMWindowInner;
 
 namespace mozilla {
 namespace dom {
@@ -72,7 +72,7 @@ public:
 
 private:
   
-  ServiceWorker(nsPIDOMWindow* aWindow, ServiceWorkerInfo* aInfo);
+  ServiceWorker(nsPIDOMWindowInner* aWindow, ServiceWorkerInfo* aInfo);
 
   
   ~ServiceWorker();

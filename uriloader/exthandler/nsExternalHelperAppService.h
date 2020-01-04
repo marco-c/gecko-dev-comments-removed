@@ -39,7 +39,7 @@
 class nsExternalAppHandler;
 class nsIMIMEInfo;
 class nsITransfer;
-class nsIDOMWindow;
+class nsPIDOMWindowOuter;
 
 
 
@@ -277,7 +277,7 @@ protected:
 
 
 
-  nsCOMPtr<nsIDOMWindow> mWindowToClose;
+  nsCOMPtr<nsPIDOMWindowOuter> mWindowToClose;
   nsCOMPtr<nsITimer> mTimer;
 
   

@@ -11,7 +11,7 @@
 #include "nsWrapperCache.h"
 #include "nsIAtom.h"
 
-class nsIDOMWindow;
+class nsPIDOMWindowOuter;
 class nsIGlobalObject;
 
 namespace mozilla {
@@ -70,7 +70,7 @@ public:
   
   
   
-  virtual nsIDOMWindow* GetOwnerGlobalForBindings() = 0;
+  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindings() = 0;
 
   
   

@@ -1446,7 +1446,7 @@ XPCJSRuntime::InterruptCallback(JSContext* cx)
     if (win->GetIsPrerendered()) {
         
         
-        mozilla::dom::HandlePrerenderingViolation(win);
+        mozilla::dom::HandlePrerenderingViolation(win->AsInner());
         return false;
     }
 
@@ -2785,7 +2785,7 @@ class XPCJSRuntimeStats : public JS::RuntimeStats
             
             JSAutoCompartment ac(cx, global);
             nsISupports* native = xpc->GetNativeOfWrapper(cx, global);
-            if (nsCOMPtr<nsPIDOMWindow> piwindow = do_QueryInterface(native)) {
+            if (nsCOMPtr<nsPIDOMWindowInner> piwindow = do_QueryInterface(native)) {
                 
                 
                 if (mTopWindowPaths->Get(piwindow->WindowID(),
@@ -2829,7 +2829,7 @@ class XPCJSRuntimeStats : public JS::RuntimeStats
             
             JSAutoCompartment ac(cx, global);
             nsISupports* native = xpc->GetNativeOfWrapper(cx, global);
-            if (nsCOMPtr<nsPIDOMWindow> piwindow = do_QueryInterface(native)) {
+            if (nsCOMPtr<nsPIDOMWindowInner> piwindow = do_QueryInterface(native)) {
                 
                 
                 if (mWindowPaths->Get(piwindow->WindowID(),

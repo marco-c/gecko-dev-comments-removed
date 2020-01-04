@@ -70,6 +70,7 @@
 #include "nsContentUtils.h"
 #include "ChildIterator.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "nsGlobalWindow.h"
 
 using namespace mozilla::dom;
 using namespace mozilla;
@@ -1067,9 +1068,9 @@ nsXULTemplateBuilder::Observe(nsISupports* aSubject,
     
     
     if (!strcmp(aTopic, DOM_WINDOW_DESTROYED_TOPIC)) {
-        nsCOMPtr<nsPIDOMWindow> window = do_QueryInterface(aSubject);
-        if (window) {
-            nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
+        if (nsCOMPtr<mozIDOMWindow> window = do_QueryInterface(aSubject)) {
+            nsCOMPtr<nsIDocument> doc =
+                nsPIDOMWindowInner::From(window)->GetExtantDoc();
             if (doc && doc == mObservedDocument)
                 NodeWillBeDestroyed(doc);
         }

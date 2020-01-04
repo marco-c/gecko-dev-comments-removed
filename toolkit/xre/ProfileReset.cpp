@@ -134,7 +134,7 @@ ProfileResetCleanup(nsIToolkitProfile* aOldProfile)
   nsCOMPtr<nsIAppStartup> appStartup(do_GetService(NS_APPSTARTUP_CONTRACTID));
   if (!appStartup) return NS_ERROR_FAILURE;
 
-  nsCOMPtr<nsIDOMWindow> progressWindow;
+  nsCOMPtr<mozIDOMWindowProxy> progressWindow;
   rv = windowWatcher->OpenWindow(nullptr,
                                  kResetProgressURL,
                                  "_blank",
@@ -164,7 +164,7 @@ ProfileResetCleanup(nsIToolkitProfile* aOldProfile)
     return rv;
   }
   
-  nsCOMPtr<nsPIDOMWindow> piWindow = do_QueryInterface(progressWindow);
+  auto* piWindow = nsPIDOMWindowOuter::From(progressWindow);
   piWindow->Close();
 
   

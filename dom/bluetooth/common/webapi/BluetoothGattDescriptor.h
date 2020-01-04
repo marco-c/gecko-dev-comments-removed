@@ -72,7 +72,7 @@ public:
     return mDescriptorHandle;
   }
 
-  nsPIDOMWindow* GetParentObject() const
+  nsPIDOMWindowInner* GetParentObject() const
   {
      return mOwner;
   }
@@ -98,12 +98,12 @@ public:
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  BluetoothGattDescriptor(nsPIDOMWindow* aOwner,
+  BluetoothGattDescriptor(nsPIDOMWindowInner* aOwner,
                           BluetoothGattCharacteristic* aCharacteristic,
                           const BluetoothGattId& aDescriptorId);
 
   
-  BluetoothGattDescriptor(nsPIDOMWindow* aOwner,
+  BluetoothGattDescriptor(nsPIDOMWindowInner* aOwner,
                           BluetoothGattCharacteristic* aCharacteristic,
                           const nsAString& aDescriptorUuid,
                           const GattPermissions& aPermissions,
@@ -149,7 +149,7 @@ private:
   
 
 
-  nsCOMPtr<nsPIDOMWindow> mOwner;
+  nsCOMPtr<nsPIDOMWindowInner> mOwner;
 
   
 

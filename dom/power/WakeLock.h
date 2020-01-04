@@ -45,7 +45,7 @@ public:
   
   
   
-  nsresult Init(const nsAString &aTopic, nsIDOMWindow* aWindow);
+  nsresult Init(const nsAString &aTopic, nsPIDOMWindowInner* aWindow);
 
   
   
@@ -54,7 +54,7 @@ public:
 
   
 
-  nsISupports* GetParentObject() const;
+  nsPIDOMWindowInner* GetParentObject() const;
 
   virtual JSObject*
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;

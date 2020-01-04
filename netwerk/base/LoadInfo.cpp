@@ -61,7 +61,7 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   }
 
   if (aLoadingContext) {
-    nsCOMPtr<nsPIDOMWindow> outerWindow;
+    nsCOMPtr<nsPIDOMWindowOuter> outerWindow;
 
     
     
@@ -78,11 +78,11 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
     }
 
     if (outerWindow) {
-      nsCOMPtr<nsPIDOMWindow> inner = outerWindow->GetCurrentInnerWindow();
+      nsCOMPtr<nsPIDOMWindowInner> inner = outerWindow->GetCurrentInnerWindow();
       mInnerWindowID = inner ? inner->WindowID() : 0;
       mOuterWindowID = outerWindow->WindowID();
 
-      nsCOMPtr<nsPIDOMWindow> parent = outerWindow->GetScriptableParent();
+      nsCOMPtr<nsPIDOMWindowOuter> parent = outerWindow->GetScriptableParent();
       mParentOuterWindowID = parent->WindowID();
 
       ComputeIsThirdPartyContext(outerWindow);
@@ -174,7 +174,7 @@ LoadInfo::~LoadInfo()
 }
 
 void
-LoadInfo::ComputeIsThirdPartyContext(nsPIDOMWindow* aOuterWindow)
+LoadInfo::ComputeIsThirdPartyContext(nsPIDOMWindowOuter* aOuterWindow)
 {
   nsContentPolicyType type =
     nsContentUtils::InternalContentPolicyTypeToExternal(mInternalContentPolicyType);
@@ -184,7 +184,7 @@ LoadInfo::ComputeIsThirdPartyContext(nsPIDOMWindow* aOuterWindow)
     return;
   }
 
-  nsPIDOMWindow* win = aOuterWindow;
+  nsPIDOMWindowOuter* win = aOuterWindow;
   if (type == nsIContentPolicy::TYPE_SUBDOCUMENT) {
     
     

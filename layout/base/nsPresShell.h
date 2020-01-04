@@ -195,7 +195,7 @@ public:
                   nsIntRect* aScreenRect,
                   uint32_t aFlags) override;
 
-  virtual already_AddRefed<nsPIDOMWindow> GetRootWindow() override;
+  virtual already_AddRefed<nsPIDOMWindowOuter> GetRootWindow() override;
 
   virtual LayerManager* GetLayerManager() override;
 
@@ -666,7 +666,7 @@ protected:
                                  nsEventStatus* aEventStatus);
   
   
-  already_AddRefed<nsPIDOMWindow> GetFocusedDOMWindowInOurWindow();
+  already_AddRefed<nsPIDOMWindowOuter> GetFocusedDOMWindowInOurWindow();
 
   
 

@@ -9,7 +9,6 @@
 #include "mozilla/Attributes.h"
 
 
-#include "nsIDOMWindow.h"
 #include "nsDeviceContext.h"
 #include "nsIPrintProgressParams.h"
 #include "nsIPrintOptions.h"
@@ -63,7 +62,7 @@ public:
   nsCOMArray<nsIWebProgressListener> mPrintProgressListeners;
   nsCOMPtr<nsIPrintProgressParams> mPrintProgressParams;
 
-  nsCOMPtr<nsIDOMWindow> mCurrentFocusWin; 
+  nsCOMPtr<nsPIDOMWindowOuter> mCurrentFocusWin; 
 
   nsTArray<nsPrintObject*>    mPrintDocList;
   bool                        mIsIFrameSelected;

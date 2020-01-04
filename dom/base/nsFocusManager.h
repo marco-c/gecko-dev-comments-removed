@@ -22,7 +22,7 @@
 
 class nsIContent;
 class nsIDocShellTreeItem;
-class nsPIDOMWindow;
+class nsPIDOMWindowOuter;
 class nsIMessageBroadcaster;
 
 namespace mozilla {
@@ -70,12 +70,12 @@ public:
   
 
 
-  nsPIDOMWindow* GetFocusedWindow() const { return mFocusedWindow; }
+  nsPIDOMWindowOuter* GetFocusedWindow() const { return mFocusedWindow; }
 
   
 
 
-  nsPIDOMWindow* GetActiveWindow() const { return mActiveWindow; }
+  nsPIDOMWindowOuter* GetActiveWindow() const { return mActiveWindow; }
 
   
 
@@ -108,8 +108,8 @@ public:
 
 
 
-  static nsIContent* GetFocusedDescendant(nsPIDOMWindow* aWindow, bool aDeep,
-                                          nsPIDOMWindow** aFocusedWindow);
+  static nsIContent* GetFocusedDescendant(nsPIDOMWindowOuter* aWindow, bool aDeep,
+                                          nsPIDOMWindowOuter** aFocusedWindow);
 
   
 
@@ -151,7 +151,7 @@ protected:
   
 
 
-  void ActivateOrDeactivate(nsPIDOMWindow* aWindow, bool aActive);
+  void ActivateOrDeactivate(nsPIDOMWindowOuter* aWindow, bool aActive);
 
   
 
@@ -171,15 +171,15 @@ protected:
 
 
 
-  bool IsSameOrAncestor(nsPIDOMWindow* aPossibleAncestor,
-                          nsPIDOMWindow* aWindow);
+  bool IsSameOrAncestor(nsPIDOMWindowOuter* aPossibleAncestor,
+                        nsPIDOMWindowOuter* aWindow);
 
   
 
 
 
-  already_AddRefed<nsPIDOMWindow> GetCommonAncestor(nsPIDOMWindow* aWindow1,
-                                                    nsPIDOMWindow* aWindow2);
+  already_AddRefed<nsPIDOMWindowOuter>
+  GetCommonAncestor(nsPIDOMWindowOuter* aWindow1, nsPIDOMWindowOuter* aWindow2);
 
   
 
@@ -187,12 +187,12 @@ protected:
 
 
 
-  void AdjustWindowFocus(nsPIDOMWindow* aNewWindow, bool aCheckPermission);
+  void AdjustWindowFocus(nsPIDOMWindowOuter* aNewWindow, bool aCheckPermission);
 
   
 
 
-  bool IsWindowVisible(nsPIDOMWindow* aWindow);
+  bool IsWindowVisible(nsPIDOMWindowOuter* aWindow);
 
   
 
@@ -238,10 +238,10 @@ protected:
 
 
 
-  bool Blur(nsPIDOMWindow* aWindowToClear,
-              nsPIDOMWindow* aAncestorWindowToFocus,
-              bool aIsLeavingDocument,
-              bool aAdjustWidget);
+  bool Blur(nsPIDOMWindowOuter* aWindowToClear,
+            nsPIDOMWindowOuter* aAncestorWindowToFocus,
+            bool aIsLeavingDocument,
+            bool aAdjustWidget);
 
   
 
@@ -269,7 +269,7 @@ protected:
 
 
 
-  void Focus(nsPIDOMWindow* aWindow,
+  void Focus(nsPIDOMWindowOuter* aWindow,
              nsIContent* aContent,
              uint32_t aFlags,
              bool aIsNewDocument,
@@ -303,7 +303,7 @@ protected:
   
 
 
-  void RaiseWindow(nsPIDOMWindow* aWindow);
+  void RaiseWindow(nsPIDOMWindowOuter* aWindow);
 
   
 
@@ -353,7 +353,7 @@ protected:
 
 
 
-  nsresult DetermineElementToMoveFocus(nsPIDOMWindow* aWindow,
+  nsresult DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
                                        nsIContent* aStart,
                                        int32_t aType, bool aNoParentTraversal,
                                        nsIContent** aNextContent);
@@ -438,7 +438,7 @@ protected:
 
 
 
-  nsIContent* GetRootForFocus(nsPIDOMWindow* aWindow,
+  nsIContent* GetRootForFocus(nsPIDOMWindowOuter* aWindow,
                               nsIDocument* aDocument,
                               bool aForDocumentNavigation,
                               bool aCheckVisibility);
@@ -457,7 +457,7 @@ protected:
 
 
 
-  void GetFocusInSelection(nsPIDOMWindow* aWindow,
+  void GetFocusInSelection(nsPIDOMWindowOuter* aWindow,
                            nsIContent* aStartSelection,
                            nsIContent* aEndSelection,
                            nsIContent** aFocusedContent);
@@ -475,15 +475,15 @@ private:
                                      bool aWindowShouldShowFocusRing,
                                      bool aGettingFocus);
 
-  void SetFocusedWindowInternal(nsPIDOMWindow* aWindow);
+  void SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow);
 
   
-  nsCOMPtr<nsPIDOMWindow> mActiveWindow;
+  nsCOMPtr<nsPIDOMWindowOuter> mActiveWindow;
 
   
   
   
-  nsCOMPtr<nsPIDOMWindow> mFocusedWindow;
+  nsCOMPtr<nsPIDOMWindowOuter> mFocusedWindow;
 
   
   
@@ -497,7 +497,7 @@ private:
   nsCOMPtr<nsIContent> mFirstFocusEvent;
 
   
-  nsCOMPtr<nsPIDOMWindow> mWindowBeingLowered;
+  nsCOMPtr<nsPIDOMWindowOuter> mWindowBeingLowered;
 
   
   

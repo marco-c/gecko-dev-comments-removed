@@ -340,7 +340,7 @@ public:
     return mSTSThread;
   }
 
-  nsPIDOMWindow* GetWindow() const {
+  nsPIDOMWindowInner* GetWindow() const {
     PC_AUTO_ENTER_API_CALL_NO_CHECK();
     return mWindow;
   }
@@ -759,7 +759,7 @@ private:
   
   nsWeakPtr mPCObserver;
 
-  nsCOMPtr<nsPIDOMWindow> mWindow;
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
 
   
   std::string mLocalRequestedSDP;

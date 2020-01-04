@@ -8,7 +8,7 @@
 
 #include "nsISupports.h"
 
-class nsIDOMWindow;
+class nsPIDOMWindowOuter;
 class nsIPrintSettings;
 class nsIWebBrowserPrint;
 
@@ -48,7 +48,7 @@ public:
 
 
 
-  NS_IMETHOD Show(nsIDOMWindow *aParent, nsIPrintSettings *aSettings,
+  NS_IMETHOD Show(nsPIDOMWindowOuter *aParent, nsIPrintSettings *aSettings,
                   nsIWebBrowserPrint *aWebBrowserPrint) = 0;
 
   
@@ -61,7 +61,7 @@ public:
 
 
 
-  NS_IMETHOD ShowPageSetup(nsIDOMWindow *aParent, nsIPrintSettings *aSettings) = 0;
+  NS_IMETHOD ShowPageSetup(nsPIDOMWindowOuter *aParent, nsIPrintSettings *aSettings) = 0;
 
 };
 

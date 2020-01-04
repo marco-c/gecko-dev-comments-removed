@@ -847,7 +847,7 @@ nsIContent::PreHandleEvent(EventChainPreVisitor& aVisitor)
       
       
       
-      nsCOMPtr<nsPIDOMWindow> win = OwnerDoc()->GetWindow();
+      nsCOMPtr<nsPIDOMWindowOuter> win = OwnerDoc()->GetWindow();
       EventTarget* parentTarget = win && aVisitor.mEvent->mMessage != eLoad
         ? win->GetParentTarget() : nullptr;
 

@@ -256,7 +256,7 @@ protected:
     while (wp->GetParent()) {
       wp = wp->GetParent();
     }
-    nsPIDOMWindow* window = wp->GetWindow();
+    nsPIDOMWindowInner* window = wp->GetWindow();
 
     
     
@@ -365,7 +365,7 @@ public:
   {
     AssertIsOnMainThread();
 
-    nsCOMPtr<nsPIDOMWindow> window = mWorkerPrivate->GetWindow();
+    nsCOMPtr<nsPIDOMWindowInner> window = mWorkerPrivate->GetWindow();
     nsCOMPtr<nsIURI> uri;
     if (window && window->GetDocShell()) {
       nsIDocument* doc = window->GetExtantDoc();

@@ -61,7 +61,6 @@ class nsIDOMEvent;
 class nsIDOMHTMLInputElement;
 class nsIDOMKeyEvent;
 class nsIDOMNode;
-class nsIDOMWindow;
 class nsIDragSession;
 class nsIEditor;
 class nsIFragmentContentSink;
@@ -92,7 +91,8 @@ class nsIWidget;
 class nsIWordBreaker;
 class nsIXPConnect;
 class nsNodeInfoManager;
-class nsPIDOMWindow;
+class nsPIDOMWindowInner;
+class nsPIDOMWindowOuter;
 class nsPresContext;
 class nsStringBuffer;
 class nsStringHashKey;
@@ -479,7 +479,7 @@ public:
 
   
   
-  static bool CanCallerAccess(nsPIDOMWindow* aWindow);
+  static bool CanCallerAccess(nsPIDOMWindowInner* aWindow);
 
   
 
@@ -1594,7 +1594,7 @@ public:
 
 
 
-  static bool MaybeAllowOfflineAppByDefault(nsIPrincipal *aPrincipal, nsIDOMWindow *aWindow);
+  static bool MaybeAllowOfflineAppByDefault(nsIPrincipal *aPrincipal);
 
   
 
@@ -1643,7 +1643,7 @@ public:
 
   
   
-  static already_AddRefed<nsPIDOMWindow>
+  static already_AddRefed<nsPIDOMWindowOuter>
   GetMostRecentNonPBWindow();
 
   
@@ -2069,7 +2069,7 @@ public:
 
 
 
-  static bool IsInPointerLockContext(nsPIDOMWindow* aWin);
+  static bool IsInPointerLockContext(nsPIDOMWindowOuter* aWin);
 
   
 
@@ -2116,7 +2116,7 @@ public:
 
 
 
-  static void FlushLayoutForTree(nsIDOMWindow* aWindow);
+  static void FlushLayoutForTree(nsPIDOMWindowOuter* aWindow);
 
   
 
@@ -2409,7 +2409,7 @@ public:
 
 
 
-  static void CallOnAllRemoteChildren(nsIDOMWindow* aWindow,
+  static void CallOnAllRemoteChildren(nsPIDOMWindowOuter* aWindow,
                                       CallOnRemoteChildFunction aCallback,
                                       void* aArg);
 
@@ -2548,7 +2548,7 @@ public:
 
 
 
-  static StorageAccess StorageAllowedForWindow(nsPIDOMWindow* aWindow);
+  static StorageAccess StorageAllowedForWindow(nsPIDOMWindowInner* aWindow);
 
   
 
@@ -2622,7 +2622,7 @@ private:
 
 
   static StorageAccess InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
-                                                          nsPIDOMWindow* aWindow);
+                                                          nsPIDOMWindowInner* aWindow);
 
   static nsIXPConnect *sXPConnect;
 

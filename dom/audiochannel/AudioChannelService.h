@@ -18,7 +18,7 @@
 #include "mozilla/dom/AudioChannelBinding.h"
 
 class nsIRunnable;
-class nsPIDOMWindow;
+class nsPIDOMWindowOuter;
 struct PRLogModuleInfo;
 
 namespace mozilla {
@@ -74,21 +74,21 @@ public:
 
 
 
-  void GetState(nsPIDOMWindow* aWindow, uint32_t aChannel,
+  void GetState(nsPIDOMWindowOuter* aWindow, uint32_t aChannel,
                 float* aVolume, bool* aMuted);
 
   
-  float GetAudioChannelVolume(nsPIDOMWindow* aWindow, AudioChannel aChannel);
+  float GetAudioChannelVolume(nsPIDOMWindowOuter* aWindow, AudioChannel aChannel);
 
-  void SetAudioChannelVolume(nsPIDOMWindow* aWindow, AudioChannel aChannel,
+  void SetAudioChannelVolume(nsPIDOMWindowOuter* aWindow, AudioChannel aChannel,
                              float aVolume);
 
-  bool GetAudioChannelMuted(nsPIDOMWindow* aWindow, AudioChannel aChannel);
+  bool GetAudioChannelMuted(nsPIDOMWindowOuter* aWindow, AudioChannel aChannel);
 
-  void SetAudioChannelMuted(nsPIDOMWindow* aWindow, AudioChannel aChannel,
+  void SetAudioChannelMuted(nsPIDOMWindowOuter* aWindow, AudioChannel aChannel,
                             bool aMuted);
 
-  bool IsAudioChannelActive(nsPIDOMWindow* aWindow, AudioChannel aChannel);
+  bool IsAudioChannelActive(nsPIDOMWindowOuter* aWindow, AudioChannel aChannel);
 
   
 
@@ -113,19 +113,18 @@ public:
 
   bool AnyAudioChannelIsActive();
 
-  void RefreshAgentsVolume(nsPIDOMWindow* aWindow);
+  void RefreshAgentsVolume(nsPIDOMWindowOuter* aWindow);
 
   void RefreshAgentsVolumeAndPropagate(AudioChannel aAudioChannel,
-                                       nsPIDOMWindow* aWindow);
+                                       nsPIDOMWindowOuter* aWindow);
 
   
   
   
   
-  void SetWindowAudioCaptured(nsPIDOMWindow* aWindow,
+  void SetWindowAudioCaptured(nsPIDOMWindowOuter* aWindow,
                               uint64_t aInnerWindowID,
                               bool aCapture);
-
 
 #ifdef MOZ_WIDGET_GONK
   void RegisterSpeakerManager(SpeakerManagerService* aSpeakerManager)
@@ -204,7 +203,7 @@ private:
   };
 
   AudioChannelWindow*
-  GetOrCreateWindowData(nsPIDOMWindow* aWindow);
+  GetOrCreateWindowData(nsPIDOMWindowOuter* aWindow);
 
   AudioChannelWindow*
   GetWindowData(uint64_t aWindowID) const;

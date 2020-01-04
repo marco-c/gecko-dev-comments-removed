@@ -103,11 +103,11 @@ public:
 
 
   static OpenWindowResult
-  OpenWindowInProcess(nsIDOMWindow* aOpenerWindow,
+  OpenWindowInProcess(nsPIDOMWindowOuter* aOpenerWindow,
                       nsIURI* aURI,
                       const nsAString& aName,
                       const nsACString& aFeatures,
-                      nsIDOMWindow** aReturnWindow);
+                      mozIDOMWindowProxy** aReturnWindow);
 
 private:
   static OpenWindowResult

@@ -95,7 +95,7 @@ public:
     return mServiceHandle;
   }
 
-  nsPIDOMWindow* GetParentObject() const
+  nsPIDOMWindowInner* GetParentObject() const
   {
      return mOwner;
   }
@@ -106,11 +106,11 @@ public:
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  BluetoothGattService(nsPIDOMWindow* aOwner,
+  BluetoothGattService(nsPIDOMWindowInner* aOwner,
                        const nsAString& aAppUuid,
                        const BluetoothGattServiceId& aServiceId);
   
-  BluetoothGattService(nsPIDOMWindow* aOwner,
+  BluetoothGattService(nsPIDOMWindowInner* aOwner,
                        const BluetoothGattServiceInit& aInit);
 
 private:
@@ -209,7 +209,7 @@ private:
   
 
 
-  nsCOMPtr<nsPIDOMWindow> mOwner;
+  nsCOMPtr<nsPIDOMWindowInner> mOwner;
 
   
 

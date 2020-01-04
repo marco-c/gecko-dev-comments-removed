@@ -90,13 +90,13 @@ nsPrintingPromptService::Init()
 
 
 HWND
-nsPrintingPromptService::GetHWNDForDOMWindow(nsIDOMWindow *aWindow)
+nsPrintingPromptService::GetHWNDForDOMWindow(mozIDOMWindowProxy *aWindow)
 {
     nsCOMPtr<nsIWebBrowserChrome> chrome;
 
     
     if (mWatcher) {
-        nsCOMPtr<nsIDOMWindow> fosterParent;
+        nsCOMPtr<mozIDOMWindowProxy> fosterParent;
         if (!aWindow) 
         {   
             mWatcher->GetActiveWindow(getter_AddRefs(fosterParent));
@@ -116,7 +116,7 @@ nsPrintingPromptService::GetHWNDForDOMWindow(nsIDOMWindow *aWindow)
     }
 
     
-    nsCOMPtr<nsPIDOMWindow> window(do_QueryInterface(aWindow));
+    nsCOMPtr<nsPIDOMWindowOuter> window = nsPIDOMWindowOuter::From(aWindow);
 
     nsCOMPtr<nsIDocShellTreeItem> treeItem =
         do_QueryInterface(window->GetDocShell());
@@ -146,7 +146,7 @@ nsPrintingPromptService::GetHWNDForDOMWindow(nsIDOMWindow *aWindow)
 
 
 NS_IMETHODIMP 
-nsPrintingPromptService::ShowPrintDialog(nsIDOMWindow *parent, nsIWebBrowserPrint *webBrowserPrint, nsIPrintSettings *printSettings)
+nsPrintingPromptService::ShowPrintDialog(mozIDOMWindowProxy *parent, nsIWebBrowserPrint *webBrowserPrint, nsIPrintSettings *printSettings)
 {
     NS_ENSURE_ARG(parent);
 
@@ -158,7 +158,7 @@ nsPrintingPromptService::ShowPrintDialog(nsIDOMWindow *parent, nsIWebBrowserPrin
 
 
 NS_IMETHODIMP 
-nsPrintingPromptService::ShowProgress(nsIDOMWindow*            parent, 
+nsPrintingPromptService::ShowProgress(mozIDOMWindowProxy*      parent, 
                                       nsIWebBrowserPrint*      webBrowserPrint,    
                                       nsIPrintSettings*        printSettings,      
                                       nsIObserver*             openDialogObserver, 
@@ -184,7 +184,7 @@ nsPrintingPromptService::ShowProgress(nsIDOMWindow*            parent,
 
     nsCOMPtr<nsIPrintProgressParams> prtProgressParams = new nsPrintProgressParams();
 
-    nsCOMPtr<nsIDOMWindow> parentWindow = parent;
+    nsCOMPtr<mozIDOMWindowProxy> parentWindow = parent;
 
     if (mWatcher && !parentWindow) {
         mWatcher->GetActiveWindow(getter_AddRefs(parentWindow));
@@ -203,7 +203,7 @@ nsPrintingPromptService::ShowProgress(nsIDOMWindow*            parent,
 }
 
 NS_IMETHODIMP 
-nsPrintingPromptService::ShowPageSetup(nsIDOMWindow *parent, nsIPrintSettings *printSettings, nsIObserver *aObs)
+nsPrintingPromptService::ShowPageSetup(mozIDOMWindowProxy *parent, nsIPrintSettings *printSettings, nsIObserver *aObs)
 {
     NS_ENSURE_ARG(printSettings);
 
@@ -228,7 +228,7 @@ nsPrintingPromptService::ShowPageSetup(nsIDOMWindow *parent, nsIPrintSettings *p
 }
 
 NS_IMETHODIMP 
-nsPrintingPromptService::ShowPrinterProperties(nsIDOMWindow *parent, const char16_t *printerName, nsIPrintSettings *printSettings)
+nsPrintingPromptService::ShowPrinterProperties(mozIDOMWindowProxy *parent, const char16_t *printerName, nsIPrintSettings *printSettings)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -236,7 +236,7 @@ nsPrintingPromptService::ShowPrinterProperties(nsIDOMWindow *parent, const char1
 
 
 nsresult
-nsPrintingPromptService::DoDialog(nsIDOMWindow *aParent,
+nsPrintingPromptService::DoDialog(mozIDOMWindowProxy *aParent,
                                   nsIDialogParamBlock *aParamBlock, 
                                   nsIPrintSettings* aPS,
                                   const char *aChromeURL)
@@ -253,7 +253,7 @@ nsPrintingPromptService::DoDialog(nsIDOMWindow *aParent,
     
     
     
-    nsCOMPtr<nsIDOMWindow> activeParent; 
+    nsCOMPtr<mozIDOMWindowProxy> activeParent; 
     if (!aParent) 
     {
         mWatcher->GetActiveWindow(getter_AddRefs(activeParent));
@@ -278,7 +278,7 @@ nsPrintingPromptService::DoDialog(nsIDOMWindow *aParent,
     NS_ASSERTION(array, "array must be a supports");
 
 
-    nsCOMPtr<nsIDOMWindow> dialog;
+    nsCOMPtr<mozIDOMWindowProxy> dialog;
     rv = mWatcher->OpenWindow(aParent, aChromeURL, "_blank",
                               "centerscreen,chrome,modal,titlebar", arguments,
                               getter_AddRefs(dialog));

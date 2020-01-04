@@ -31,7 +31,7 @@
 
 
 
-class nsIDOMWindow;
+class nsPIDOMWindowInner;
 
 #ifndef MOZ_HAL_NAMESPACE
 # define MOZ_HAL_NAMESPACE hal
@@ -69,7 +69,7 @@ namespace MOZ_HAL_NAMESPACE {
 
 
 void Vibrate(const nsTArray<uint32_t>& pattern,
-             nsIDOMWindow* aWindow);
+             nsPIDOMWindowInner* aWindow);
 void Vibrate(const nsTArray<uint32_t>& pattern,
              const hal::WindowIdentifier &id);
 
@@ -85,7 +85,7 @@ void Vibrate(const nsTArray<uint32_t>& pattern,
 
 
 
-void CancelVibrate(nsIDOMWindow* aWindow);
+void CancelVibrate(nsPIDOMWindowInner* aWindow);
 void CancelVibrate(const hal::WindowIdentifier &id);
 
 

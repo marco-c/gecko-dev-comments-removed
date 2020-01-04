@@ -552,7 +552,7 @@ nsCopySupport::GetSelectionForCopy(nsIDocument* aDocument, nsISelection** aSelec
     return nullptr;
 
   
-  nsCOMPtr<nsPIDOMWindow> focusedWindow;
+  nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
   nsIContent* content =
     nsFocusManager::GetFocusedDescendant(aDocument->GetWindow(), false,
                                          getter_AddRefs(focusedWindow));
@@ -643,7 +643,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
   if (!doc)
     return false;
 
-  nsCOMPtr<nsPIDOMWindow> piWindow = doc->GetWindow();
+  nsCOMPtr<nsPIDOMWindowOuter> piWindow = doc->GetWindow();
   if (!piWindow)
     return false;
 

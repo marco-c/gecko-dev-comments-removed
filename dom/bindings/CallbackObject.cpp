@@ -98,7 +98,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
         
         
         MOZ_ASSERT(win->IsInnerWindow());
-        if (!win->HasActiveDocument()) {
+        if (!win->AsInner()->HasActiveDocument()) {
           
           return;
         }

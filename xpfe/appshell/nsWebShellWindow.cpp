@@ -256,7 +256,7 @@ nsWebShellWindow::WindowMoved(nsIWidget* aWidget, int32_t x, int32_t y)
 {
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
-    nsCOMPtr<nsPIDOMWindow> window =
+    nsCOMPtr<nsPIDOMWindowOuter> window =
       mDocShell ? mDocShell->GetWindow() : nullptr;
     pm->AdjustPopupsOnWindowChange(window);
   }
@@ -296,7 +296,7 @@ nsWebShellWindow::RequestWindowClose(nsIWidget* aWidget)
   
   nsCOMPtr<nsIXULWindow> xulWindow(this);
 
-  nsCOMPtr<nsPIDOMWindow> window(mDocShell ? mDocShell->GetWindow() : nullptr);
+  nsCOMPtr<nsPIDOMWindowOuter> window(mDocShell ? mDocShell->GetWindow() : nullptr);
   nsCOMPtr<EventTarget> eventTarget = do_QueryInterface(window);
 
   nsCOMPtr<nsIPresShell> presShell = mDocShell->GetPresShell();
@@ -338,7 +338,7 @@ nsWebShellWindow::SizeModeChanged(nsSizeMode sizeMode)
   
   
   SetPersistenceTimer(PAD_MISC);
-  nsCOMPtr<nsPIDOMWindow> ourWindow =
+  nsCOMPtr<nsPIDOMWindowOuter> ourWindow =
     mDocShell ? mDocShell->GetWindow() : nullptr;
   if (ourWindow) {
     MOZ_ASSERT(ourWindow->IsOuterWindow());
@@ -356,8 +356,7 @@ nsWebShellWindow::SizeModeChanged(nsSizeMode sizeMode)
         
         
         
-        ourWindow->SetFullscreenInternal(
-          nsPIDOMWindow::eForForceExitFullscreen, false);
+        ourWindow->SetFullscreenInternal(FullscreenReason::ForForceExitFullscreen, false);
         ourWindow->SetFullScreen(false);
       }
     }
@@ -377,7 +376,7 @@ void
 nsWebShellWindow::FullscreenChanged(bool aInFullscreen)
 {
   if (mDocShell) {
-    if (nsCOMPtr<nsPIDOMWindow> ourWindow = mDocShell->GetWindow()) {
+    if (nsCOMPtr<nsPIDOMWindowOuter> ourWindow = mDocShell->GetWindow()) {
       ourWindow->FinishFullscreenChange(aInFullscreen);
     }
   }
@@ -425,7 +424,7 @@ nsWebShellWindow::WindowActivated()
   nsCOMPtr<nsIXULWindow> xulWindow(this);
 
   
-  nsCOMPtr<nsIDOMWindow> window = mDocShell ? mDocShell->GetWindow() : nullptr;
+  nsCOMPtr<nsPIDOMWindowOuter> window = mDocShell ? mDocShell->GetWindow() : nullptr;
   nsCOMPtr<nsIFocusManager> fm = do_GetService(FOCUSMANAGER_CONTRACTID);
   if (fm && window)
     fm->WindowRaised(window);
@@ -441,7 +440,7 @@ nsWebShellWindow::WindowDeactivated()
 {
   nsCOMPtr<nsIXULWindow> xulWindow(this);
 
-  nsCOMPtr<nsPIDOMWindow> window =
+  nsCOMPtr<nsPIDOMWindowOuter> window =
     mDocShell ? mDocShell->GetWindow() : nullptr;
   nsCOMPtr<nsIFocusManager> fm = do_GetService(FOCUSMANAGER_CONTRACTID);
   if (fm && window)
@@ -567,11 +566,11 @@ nsWebShellWindow::OnStateChange(nsIWebProgress *aProgress,
     return NS_OK;
 
   
-  nsCOMPtr<nsIDOMWindow> eventWin;
+  nsCOMPtr<mozIDOMWindowProxy> eventWin;
   aProgress->GetDOMWindow(getter_AddRefs(eventWin));
-  nsCOMPtr<nsPIDOMWindow> eventPWin(do_QueryInterface(eventWin));
+  auto* eventPWin = nsPIDOMWindowOuter::From(eventWin);
   if (eventPWin) {
-    nsPIDOMWindow *rootPWin = eventPWin->GetPrivateRoot();
+    nsPIDOMWindowOuter *rootPWin = eventPWin->GetPrivateRoot();
     if (eventPWin != rootPWin)
       return NS_OK;
   }

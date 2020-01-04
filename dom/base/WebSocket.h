@@ -56,7 +56,7 @@ public:
   virtual void DisconnectFromOwner() override;
 
   
-  nsPIDOMWindow* GetParentObject() { return GetOwner(); }
+  nsPIDOMWindowInner* GetParentObject() { return GetOwner(); }
 
   virtual JSObject* WrapObject(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 
@@ -129,7 +129,7 @@ public:
             ErrorResult& aRv);
 
 private: 
-  explicit WebSocket(nsPIDOMWindow* aOwnerWindow);
+  explicit WebSocket(nsPIDOMWindowInner* aOwnerWindow);
   virtual ~WebSocket();
 
   void SetReadyState(uint16_t aReadyState);

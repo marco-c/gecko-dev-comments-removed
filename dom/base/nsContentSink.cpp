@@ -1125,7 +1125,7 @@ nsContentSink::ProcessOfflineManifest(const nsAString& aManifestSpec)
       
       
       if (!nsContentUtils::OfflineAppAllowed(mDocument->NodePrincipal()) &&
-          !nsContentUtils::MaybeAllowOfflineAppByDefault(mDocument->NodePrincipal(), mDocument->GetWindow()) &&
+          !nsContentUtils::MaybeAllowOfflineAppByDefault(mDocument->NodePrincipal()) &&
           !nsContentUtils::OfflineAppAllowed(mDocument->NodePrincipal())) {
         return;
       }

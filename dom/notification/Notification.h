@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_dom_notification_h__
 #define mozilla_dom_notification_h__
 
@@ -244,7 +243,7 @@ public:
                                               ErrorResult& aRv);
 
   static already_AddRefed<Promise>
-  Get(nsPIDOMWindow* aWindow,
+  Get(nsPIDOMWindowInner* aWindow,
       const GetNotificationOptions& aFilter,
       const nsAString& aScope,
       ErrorResult& aRv);
@@ -269,7 +268,7 @@ public:
 
   void Close();
 
-  nsPIDOMWindow* GetParentObject()
+  nsPIDOMWindowInner* GetParentObject()
   {
     return GetOwner();
   }

@@ -117,9 +117,16 @@ AccessibleCaretManager::OnSelectionChanged(nsIDOMDocument* aDoc,
 
   
   
-  
-  
   if (aReason & nsISelectionListener::IME_REASON) {
+    if (GetCaretMode() == CaretMode::Cursor) {
+      
+      
+      FlushLayout();
+      UpdateCarets();
+    } else {
+      
+      
+    }
     return NS_OK;
   }
 
@@ -717,7 +724,7 @@ AccessibleCaretManager::ChangeFocusToOrClearOldFocus(nsIFrame* aFrame) const
     nsCOMPtr<nsIDOMElement> focusableElement = do_QueryInterface(focusableContent);
     fm->SetFocus(focusableElement, nsIFocusManager::FLAG_BYMOUSE);
   } else {
-    nsIDOMWindow* win = mPresShell->GetDocument()->GetWindow();
+    nsPIDOMWindowOuter* win = mPresShell->GetDocument()->GetWindow();
     if (win) {
       fm->ClearFocus(win);
       fm->SetFocusedWindow(win);

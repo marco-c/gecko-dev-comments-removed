@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPerformanceStats.h"
 
 #include "nsMemory.h"
@@ -62,19 +61,19 @@ namespace {
 
 
 
-already_AddRefed<nsPIDOMWindow>
+already_AddRefed<nsPIDOMWindowOuter>
 GetPrivateWindow(JSContext* cx) {
-  nsCOMPtr<nsPIDOMWindow> win = xpc::CurrentWindowOrNull(cx);
+  nsGlobalWindow* win = xpc::CurrentWindowOrNull(cx);
   if (!win) {
     return nullptr;
   }
 
-  win = win->GetOuterWindow();
-  if (!win) {
+  nsPIDOMWindowOuter* outer = win->AsInner()->GetOuterWindow();
+  if (!outer) {
     return nullptr;
   }
 
-  nsCOMPtr<nsPIDOMWindow> top = win->GetTop();
+  nsCOMPtr<nsPIDOMWindowOuter> top = outer->GetTop();
   if (!top) {
     return nullptr;
   }
@@ -1070,9 +1069,8 @@ nsPerformanceStatsService::GetPerformanceGroups(JSContext* cx, JSGroupVector& ou
 
   
   
-  nsCOMPtr<nsPIDOMWindow> ptop = GetPrivateWindow(cx);
   uint64_t windowId = 0;
-  if (ptop) {
+  if (nsCOMPtr<nsPIDOMWindowOuter> ptop = GetPrivateWindow(cx)) {
     windowId = ptop->WindowID();
     auto entry = mWindowIdToGroup.PutEntry(windowId);
     if (!entry->GetGroup()) {

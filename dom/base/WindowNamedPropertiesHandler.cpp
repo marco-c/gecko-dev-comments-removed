@@ -18,11 +18,9 @@ namespace mozilla {
 namespace dom {
 
 static bool
-ShouldExposeChildWindow(nsString& aNameBeingResolved, nsIDOMWindow *aChild)
+ShouldExposeChildWindow(nsString& aNameBeingResolved, nsPIDOMWindowOuter* aChild)
 {
-  nsCOMPtr<nsPIDOMWindow> piWin = do_QueryInterface(aChild);
-  NS_ENSURE_TRUE(piWin, false);
-  Element* e = piWin->GetFrameElementInternal();
+  Element* e = aChild->GetFrameElementInternal();
   if (e && e->IsInShadowTree()) {
     return false;
   }
@@ -105,7 +103,7 @@ WindowNamedPropertiesHandler::getOwnPropDescriptor(JSContext* aCx,
   JS::Rooted<JSObject*> global(aCx, JS_GetGlobalForObject(aCx, aProxy));
   nsGlobalWindow* win = xpc::WindowOrNull(global);
   if (win->Length() > 0) {
-    nsCOMPtr<nsIDOMWindow> childWin = win->GetChildWindow(str);
+    nsCOMPtr<nsPIDOMWindowOuter> childWin = win->GetChildWindow(str);
     if (childWin && ShouldExposeChildWindow(str, childWin)) {
       
       
@@ -182,7 +180,7 @@ WindowNamedPropertiesHandler::ownPropNames(JSContext* aCx,
   
   for (size_t i = names.Length(); i > 0; ) {
     --i; 
-    nsIDOMWindow* childWin = win->GetChildWindow(names[i]);
+    nsCOMPtr<nsPIDOMWindowOuter> childWin = win->GetChildWindow(names[i]);
     if (!childWin || !ShouldExposeChildWindow(names[i], childWin)) {
       names.RemoveElementAt(i);
     }

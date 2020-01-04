@@ -98,7 +98,7 @@ public:
 
   void GetUuid(BluetoothUuid& aUuid) const;
 
-  nsPIDOMWindow* GetParentObject() const
+  nsPIDOMWindowInner* GetParentObject() const
   {
      return mOwner;
   }
@@ -124,12 +124,12 @@ public:
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  BluetoothGattCharacteristic(nsPIDOMWindow* aOwner,
+  BluetoothGattCharacteristic(nsPIDOMWindowInner* aOwner,
                               BluetoothGattService* aService,
                               const BluetoothGattCharAttribute& aChar);
 
   
-  BluetoothGattCharacteristic(nsPIDOMWindow* aOwner,
+  BluetoothGattCharacteristic(nsPIDOMWindowInner* aOwner,
                               BluetoothGattService* aService,
                               const nsAString& aCharacteristicUuid,
                               const GattPermissions& aPermissions,
@@ -195,7 +195,7 @@ private:
   
 
 
-  nsCOMPtr<nsPIDOMWindow> mOwner;
+  nsCOMPtr<nsPIDOMWindowInner> mOwner;
 
   
 

@@ -52,7 +52,7 @@ public:
 
   
 
-  nsPIDOMWindow*
+  nsPIDOMWindowInner*
   GetParentObject() const;
 
   virtual JSObject*

@@ -68,7 +68,7 @@ const uint16_t BluetoothGattCharacteristic::sHandleCount = 2;
 
 
 BluetoothGattCharacteristic::BluetoothGattCharacteristic(
-  nsPIDOMWindow* aOwner,
+  nsPIDOMWindowInner* aOwner,
   BluetoothGattService* aService,
   const BluetoothGattCharAttribute& aChar)
   : mOwner(aOwner)
@@ -94,7 +94,7 @@ BluetoothGattCharacteristic::BluetoothGattCharacteristic(
 
 
 BluetoothGattCharacteristic::BluetoothGattCharacteristic(
-  nsPIDOMWindow* aOwner,
+  nsPIDOMWindowInner* aOwner,
   BluetoothGattService* aService,
   const nsAString& aCharacteristicUuid,
   const GattPermissions& aPermissions,

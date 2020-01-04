@@ -57,7 +57,7 @@ const uint16_t BluetoothGattDescriptor::sHandleCount = 1;
 
 
 BluetoothGattDescriptor::BluetoothGattDescriptor(
-  nsPIDOMWindow* aOwner,
+  nsPIDOMWindowInner* aOwner,
   BluetoothGattCharacteristic* aCharacteristic,
   const BluetoothGattId& aDescriptorId)
   : mOwner(aOwner)
@@ -80,7 +80,7 @@ BluetoothGattDescriptor::BluetoothGattDescriptor(
 
 
 BluetoothGattDescriptor::BluetoothGattDescriptor(
-  nsPIDOMWindow* aOwner,
+  nsPIDOMWindowInner* aOwner,
   BluetoothGattCharacteristic* aCharacteristic,
   const nsAString& aDescriptorUuid,
   const GattPermissions& aPermissions,

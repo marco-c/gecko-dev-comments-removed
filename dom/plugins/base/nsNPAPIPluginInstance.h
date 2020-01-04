@@ -273,7 +273,7 @@ public:
   
   void SetCached(bool aCache);
 
-  already_AddRefed<nsPIDOMWindow> GetDOMWindow();
+  already_AddRefed<nsPIDOMWindowOuter> GetDOMWindow();
 
   nsresult PrivateModeStateChanged(bool aEnabled);
 

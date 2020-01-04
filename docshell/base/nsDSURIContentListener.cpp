@@ -148,8 +148,8 @@ nsDSURIContentListener::DoContent(const nsACString& aContentType,
   }
 
   if (loadFlags & nsIChannel::LOAD_RETARGETED_DOCUMENT_URI) {
-    nsCOMPtr<nsPIDOMWindow> domWindow = do_QueryInterface(
-      mDocShell ? mDocShell->GetWindow() : nullptr);
+    nsCOMPtr<nsPIDOMWindowOuter> domWindow =
+      mDocShell ? mDocShell->GetWindow() : nullptr;
     NS_ENSURE_TRUE(domWindow, NS_ERROR_FAILURE);
     domWindow->Focus();
   }
@@ -294,7 +294,7 @@ nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   
   
   
-  nsCOMPtr<nsPIDOMWindow> thisWindow = mDocShell->GetWindow();
+  nsCOMPtr<nsPIDOMWindowOuter> thisWindow = mDocShell->GetWindow();
   
   if (!thisWindow) {
     return true;
@@ -302,7 +302,7 @@ nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
 
   
   
-  nsCOMPtr<nsPIDOMWindow> topWindow = thisWindow->GetScriptableTop();
+  nsCOMPtr<nsPIDOMWindowOuter> topWindow = thisWindow->GetScriptableTop();
 
   
   if (thisWindow == topWindow) {
@@ -467,13 +467,12 @@ nsDSURIContentListener::ReportXFOViolation(nsIDocShellTreeItem* aTopDocShellItem
 {
   MOZ_ASSERT(aTopDocShellItem, "Need a top docshell");
 
-  nsCOMPtr<nsPIDOMWindow> topOuterWindow = aTopDocShellItem->GetWindow();
+  nsCOMPtr<nsPIDOMWindowOuter> topOuterWindow = aTopDocShellItem->GetWindow();
   if (!topOuterWindow) {
     return;
   }
 
-  NS_ASSERTION(topOuterWindow->IsOuterWindow(), "Huh?");
-  nsPIDOMWindow* topInnerWindow = topOuterWindow->GetCurrentInnerWindow();
+  nsPIDOMWindowInner* topInnerWindow = topOuterWindow->GetCurrentInnerWindow();
   if (!topInnerWindow) {
     return;
   }

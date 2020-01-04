@@ -975,7 +975,7 @@ private:
       wp = wp->GetParent();
     }
 
-    nsPIDOMWindow* window = wp->GetWindow();
+    nsPIDOMWindowInner* window = wp->GetWindow();
     if (!window) {
       return true;
     }
@@ -1431,7 +1431,7 @@ BackgroundFactoryRequestChild::RecvPermissionChallenge(
   }
 
   if (XRE_IsParentProcess()) {
-    nsCOMPtr<nsPIDOMWindow> window = mFactory->GetParentObject();
+    nsCOMPtr<nsPIDOMWindowInner> window = mFactory->GetParentObject();
     MOZ_ASSERT(window);
 
     nsCOMPtr<Element> ownerElement =
@@ -1794,7 +1794,7 @@ BackgroundDatabaseChild::RecvVersionChange(const uint64_t& aOldVersion,
   RefPtr<IDBDatabase> kungFuDeathGrip = mDatabase;
 
   
-  if (nsPIDOMWindow* owner = mDatabase->GetOwner()) {
+  if (nsPIDOMWindowInner* owner = mDatabase->GetOwner()) {
     
     bool shouldAbortAndClose = owner->IsFrozen();
 

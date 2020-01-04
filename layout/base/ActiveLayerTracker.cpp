@@ -346,7 +346,7 @@ IsPresContextInScriptAnimationCallback(nsPresContext* aPresContext)
   }
   
   
-  nsPIDOMWindow* win = aPresContext->Document()->GetInnerWindow();
+  nsPIDOMWindowInner* win = aPresContext->Document()->GetInnerWindow();
   return win && win->IsRunningTimeout();
 }
 

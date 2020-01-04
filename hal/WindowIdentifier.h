@@ -10,7 +10,8 @@
 #include "mozilla/Types.h"
 #include "nsTArray.h"
 #include "nsCOMPtr.h"
-#include "nsIDOMWindow.h"
+
+class nsPIDOMWindowInner;
 
 namespace mozilla {
 namespace hal {
@@ -59,14 +60,15 @@ public:
 
 
 
-  explicit WindowIdentifier(nsIDOMWindow* window);
+  explicit WindowIdentifier(nsPIDOMWindowInner* window);
 
   
 
 
 
 
-  WindowIdentifier(const InfallibleTArray<uint64_t>& id, nsIDOMWindow* window);
+  WindowIdentifier(const InfallibleTArray<uint64_t>& id,
+                   nsPIDOMWindowInner* window);
 
   
 
@@ -90,7 +92,7 @@ public:
   
 
 
-  nsIDOMWindow* GetWindow() const;
+  nsPIDOMWindowInner* GetWindow() const;
 
 private:
   
@@ -99,7 +101,7 @@ private:
   uint64_t GetWindowID() const;
 
   AutoInfallibleTArray<uint64_t, 3> mID;
-  nsCOMPtr<nsIDOMWindow> mWindow;
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
   bool mIsEmpty;
 };
 

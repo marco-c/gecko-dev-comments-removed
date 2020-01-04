@@ -18,6 +18,7 @@
 #include "nsITypeAheadFind.h"
 #include "nsISound.h"
 
+class nsPIDOMWindowInner;
 class nsIPresShell;
 class nsPresContext;
 
@@ -85,7 +86,7 @@ protected:
   nsCOMPtr<nsIDOMElement> mFoundLink;     
   nsCOMPtr<nsIDOMElement> mFoundEditable; 
   nsCOMPtr<nsIDOMRange> mFoundRange;      
-  nsCOMPtr<nsIDOMWindow> mCurrentWindow;
+  nsCOMPtr<nsPIDOMWindowInner> mCurrentWindow;
   
   
   uint32_t mLastFindLength;
