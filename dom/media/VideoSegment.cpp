@@ -80,7 +80,10 @@ VideoFrame::CreateBlackImage(const gfx::IntSize& aSize)
   data.mStereoMode = StereoMode::MONO;
 
   
-  planar->SetData(data);
+  if (!planar->SetData(data)) {
+    MOZ_ASSERT(false);
+    return nullptr;
+  }
 
   return image.forget();
 }

@@ -656,7 +656,7 @@ public:
 
 
 
-  virtual void SetData(const Data& aData);
+  virtual bool SetData(const Data& aData);
 
   
 
@@ -665,7 +665,7 @@ public:
 
 
 
-  virtual void SetDataNoCopy(const Data &aData);
+  virtual bool SetDataNoCopy(const Data &aData);
 
   
 
@@ -709,7 +709,7 @@ protected:
 
 
 
-  void CopyData(const Data& aData);
+  bool CopyData(const Data& aData);
 
   
 

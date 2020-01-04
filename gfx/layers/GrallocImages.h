@@ -66,13 +66,13 @@ public:
 
 
 
-  virtual void SetData(const Data& aData);
+  virtual bool SetData(const Data& aData);
 
   
 
 
 
-  virtual void SetData(const GrallocData& aData);
+  virtual bool SetData(const GrallocData& aData);
 
   
   enum {
