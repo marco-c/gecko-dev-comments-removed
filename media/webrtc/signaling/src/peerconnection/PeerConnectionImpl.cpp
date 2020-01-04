@@ -2527,6 +2527,11 @@ PeerConnectionImpl::ReplaceTrack(MediaStreamTrack& aThisTrack,
   PrincipalChanged(&aWithTrack);
 #endif
 
+  
+  
+  
+  mMedia->UpdateMediaPipelines(*mJsepSession);
+
   pco->OnReplaceTrackSuccess(jrv);
   if (jrv.Failed()) {
     CSFLogError(logTag, "Error firing replaceTrack success callback");
