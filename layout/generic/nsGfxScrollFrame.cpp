@@ -2121,30 +2121,10 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
         }
 
         if (nsLayoutUtils::AsyncPanZoomEnabled(mOuter)) {
-          if (mApzSmoothScrollDestination == mDestination &&
-              mScrollGeneration == sScrollGenerationCounter) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            return;
-          }
-
           
           
           
           mLastSmoothScrollOrigin = aOrigin;
-          mApzSmoothScrollDestination = mDestination;
           mScrollGeneration = ++sScrollGenerationCounter;
 
           if (!nsLayoutUtils::GetDisplayPort(mOuter->GetContent())) {

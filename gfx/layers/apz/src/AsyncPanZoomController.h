@@ -829,6 +829,11 @@ private:
 
   PanGestureBlockState* CurrentPanGestureBlock();
 
+  
+
+
+
+
 private:
   
 
@@ -883,8 +888,6 @@ private:
 
   
   bool AllowScrollHandoffInCurrentBlock() const;
-
-  void AcknowledgeScrollUpdate() const;
 
   
 

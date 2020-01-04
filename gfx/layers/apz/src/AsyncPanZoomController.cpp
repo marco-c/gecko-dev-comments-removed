@@ -797,12 +797,6 @@ public:
 
     return true;
   }
-
-  void SetDestination(const nsPoint& aNewDestination) {
-    mXAxisModel.SetDestination(static_cast<int32_t>(aNewDestination.x));
-    mYAxisModel.SetDestination(static_cast<int32_t>(aNewDestination.y));
-  }
-
 private:
   AsyncPanZoomController& mApzc;
   AxisPhysicsMSDModel mXAxisModel, mYAxisModel;
@@ -3229,21 +3223,19 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
         ToString(mFrameMetrics.GetScrollOffset()).c_str(),
         ToString(aLayerMetrics.GetScrollOffset()).c_str());
 
-      
-      
-      
-      
-      
-      
-      
       mFrameMetrics.CopyScrollInfoFrom(aLayerMetrics);
-      AcknowledgeScrollUpdate();
-      mLastDispatchedPaintMetrics = aLayerMetrics;
 
       
       
       
       CancelAnimation();
+
+      
+      
+      
+      
+      
+      mLastDispatchedPaintMetrics = aLayerMetrics;
 
       
       
@@ -3261,26 +3253,34 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
     
     
 
-    APZC_LOG("%p smooth scrolling from %s to %s in state %d\n", this,
+    APZC_LOG("%p smooth scrolling from %s to %s\n", this,
       Stringify(mFrameMetrics.GetScrollOffset()).c_str(),
-      Stringify(aLayerMetrics.GetSmoothScrollOffset()).c_str(),
-      mState);
+      Stringify(aLayerMetrics.GetSmoothScrollOffset()).c_str());
 
+    CancelAnimation();
+
+    
+    
+    
     
     
     mFrameMetrics.CopySmoothScrollInfoFrom(aLayerMetrics);
-    AcknowledgeScrollUpdate();
     mLastDispatchedPaintMetrics = aLayerMetrics;
+    StartSmoothScroll(ScrollSource::DOM);
 
-    if (mState == SMOOTH_SCROLL && mAnimation) {
-      APZC_LOG("%p updating destination on existing animation\n", this);
-      RefPtr<SmoothScrollAnimation> animation(
-        static_cast<SmoothScrollAnimation*>(mAnimation.get()));
-      animation->SetDestination(
-        CSSPoint::ToAppUnits(aLayerMetrics.GetSmoothScrollOffset()));
-    } else {
-      CancelAnimation();
-      StartSmoothScroll(ScrollSource::DOM);
+    scrollOffsetUpdated = true; 
+  }
+
+  if (scrollOffsetUpdated) {
+    
+    
+    
+    
+    RefPtr<GeckoContentController> controller = GetGeckoContentController();
+    if (controller) {
+      APZC_LOG("%p sending scroll update acknowledgement with gen %u\n", this, aLayerMetrics.GetScrollGeneration());
+      controller->AcknowledgeScrollUpdate(aLayerMetrics.GetScrollId(),
+                                          aLayerMetrics.GetScrollGeneration());
     }
   }
 
@@ -3288,21 +3288,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
     RequestContentRepaint();
   }
   UpdateSharedCompositorFrameMetrics();
-}
-
-void
-AsyncPanZoomController::AcknowledgeScrollUpdate() const
-{
-  
-  
-  
-  
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
-  if (controller) {
-    APZC_LOG("%p sending scroll update acknowledgement with gen %u\n", this, mFrameMetrics.GetScrollGeneration());
-    controller->AcknowledgeScrollUpdate(mFrameMetrics.GetScrollId(),
-                                        mFrameMetrics.GetScrollGeneration());
-  }
 }
 
 const FrameMetrics& AsyncPanZoomController::GetFrameMetrics() const {
