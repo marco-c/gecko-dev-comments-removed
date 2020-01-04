@@ -10,6 +10,11 @@ const protocol = require("devtools/shared/protocol");
 const { ContentObserver } = require("devtools/shared/content-observer");
 const { on, once, off, emit } = events;
 const { method, Arg, Option, RetVal } = protocol;
+const {
+  shaderSpec,
+  programSpec,
+  webGLSpec,
+} = require("devtools/shared/specs/webgl");
 
 const WEBGL_CONTEXT_NAMES = ["webgl", "experimental-webgl", "moz-webgl"];
 
@@ -23,9 +28,7 @@ const PROGRAM_HIGHLIGHT_TRAIT = 2;
 
 
 
-var ShaderActor = protocol.ActorClass({
-  typeName: "gl-shader",
-
+var ShaderActor = protocol.ActorClassWithSpec(shaderSpec, {
   
 
 
@@ -49,16 +52,14 @@ var ShaderActor = protocol.ActorClass({
   
 
 
-  getText: method(function () {
+  getText: function () {
     return this.text;
-  }, {
-    response: { text: RetVal("string") }
-  }),
+  },
 
   
 
 
-  compile: method(function (text) {
+  compile: function (text) {
     
     let { linkedProxy: proxy, shader, program } = this;
 
@@ -75,18 +76,6 @@ var ShaderActor = protocol.ActorClass({
       return error;
     }
     return undefined;
-  }, {
-    request: { text: Arg(0, "string") },
-    response: { error: RetVal("nullable:json") }
-  })
-});
-
-
-
-
-var ShaderFront = protocol.FrontClass(ShaderActor, {
-  initialize: function (client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
   }
 });
 
@@ -94,9 +83,7 @@ var ShaderFront = protocol.FrontClass(ShaderActor, {
 
 
 
-var ProgramActor = protocol.ActorClass({
-  typeName: "gl-program",
-
+var ProgramActor = protocol.ActorClassWithSpec(programSpec, {
   
 
 
@@ -132,59 +119,46 @@ var ProgramActor = protocol.ActorClass({
 
 
 
-  getVertexShader: method(function () {
+  getVertexShader: function () {
     return this._getShaderActor("vertex");
-  }, {
-    response: { shader: RetVal("gl-shader") }
-  }),
+  },
 
   
 
 
 
-  getFragmentShader: method(function () {
+  getFragmentShader: function () {
     return this._getShaderActor("fragment");
-  }, {
-    response: { shader: RetVal("gl-shader") }
-  }),
+  },
 
   
 
 
-  highlight: method(function (tint) {
+  highlight: function (tint) {
     this.linkedProxy.highlightTint = tint;
     this.linkedCache.setProgramTrait(this.program, PROGRAM_HIGHLIGHT_TRAIT);
-  }, {
-    request: { tint: Arg(0, "array:number") },
-    oneway: true
-  }),
+  },
 
   
 
 
-  unhighlight: method(function () {
+  unhighlight: function () {
     this.linkedCache.unsetProgramTrait(this.program, PROGRAM_HIGHLIGHT_TRAIT);
-  }, {
-    oneway: true
-  }),
+  },
 
   
 
 
-  blackbox: method(function () {
+  blackbox: function () {
     this.linkedCache.setProgramTrait(this.program, PROGRAM_BLACKBOX_TRAIT);
-  }, {
-    oneway: true
-  }),
+  },
 
   
 
 
-  unblackbox: method(function () {
+  unblackbox: function () {
     this.linkedCache.unsetProgramTrait(this.program, PROGRAM_BLACKBOX_TRAIT);
-  }, {
-    oneway: true
-  }),
+  },
 
   
 
@@ -208,19 +182,9 @@ var ProgramActor = protocol.ActorClass({
 
 
 
-var ProgramFront = protocol.FrontClass(ProgramActor, {
-  initialize: function (client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-  }
-});
 
 
-
-
-
-
-var WebGLActor = exports.WebGLActor = protocol.ActorClass({
-  typeName: "webgl",
+var WebGLActor = exports.WebGLActor = protocol.ActorClassWithSpec(webGLSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
@@ -240,7 +204,7 @@ var WebGLActor = exports.WebGLActor = protocol.ActorClass({
 
 
 
-  setup: method(function ({ reload }) {
+  setup: function ({ reload }) {
     if (this._initialized) {
       return;
     }
@@ -256,17 +220,14 @@ var WebGLActor = exports.WebGLActor = protocol.ActorClass({
     if (reload) {
       this.tabActor.window.location.reload();
     }
-  }, {
-    request: { reload: Option(0, "boolean") },
-    oneway: true
-  }),
+  },
 
   
 
 
 
 
-  finalize: method(function () {
+  finalize: function () {
     if (!this._initialized) {
       return;
     }
@@ -279,32 +240,26 @@ var WebGLActor = exports.WebGLActor = protocol.ActorClass({
     this._programActorsCache = null;
     this._contentObserver = null;
     this._webglObserver = null;
-  }, {
-    oneway: true
-  }),
+  },
 
   
 
 
 
-  getPrograms: method(function () {
+  getPrograms: function () {
     let id = ContentObserver.GetInnerWindowID(this.tabActor.window);
     return this._programActorsCache.filter(e => e.ownerWindow == id);
-  }, {
-    response: { programs: RetVal("array:gl-program") }
-  }),
+  },
 
   
 
 
 
-  waitForFrame: method(function () {
+  waitForFrame: function () {
     let deferred = promise.defer();
     this.tabActor.window.requestAnimationFrame(deferred.resolve);
     return deferred.promise;
-  }, {
-    response: { success: RetVal("nullable:json") }
-  }),
+  },
 
   
 
@@ -318,7 +273,7 @@ var WebGLActor = exports.WebGLActor = protocol.ActorClass({
 
 
 
-  getPixel: method(function ({ selector, position }) {
+  getPixel: function ({ selector, position }) {
     let { x, y } = position;
     let canvas = this.tabActor.window.document.querySelector(selector);
     let context = XPCNativeWrapper.unwrap(canvas.getContext("webgl"));
@@ -331,42 +286,15 @@ var WebGLActor = exports.WebGLActor = protocol.ActorClass({
     proxy.readPixels(x, height - y - 1, 1, 1, context.RGBA, context.UNSIGNED_BYTE, buffer);
 
     return { r: buffer[0], g: buffer[1], b: buffer[2], a: buffer[3] };
-  }, {
-    request: {
-      selector: Option(0, "string"),
-      position: Option(0, "json")
-    },
-    response: { pixels: RetVal("json") }
-  }),
-
-  
-
-
-
-  events: {
-    "program-linked": {
-      type: "programLinked",
-      program: Arg(0, "gl-program")
-    },
-    "global-destroyed": {
-      type: "globalDestroyed",
-      program: Arg(0, "number")
-    },
-    "global-created": {
-      type: "globalCreated",
-      program: Arg(0, "number")
-    }
   },
 
   
 
 
 
-  _getAllPrograms: method(function () {
+  _getAllPrograms: function () {
     return this._programActorsCache;
-  }, {
-    response: { programs: RetVal("array:gl-program") }
-  }),
+  },
 
 
   
@@ -397,16 +325,6 @@ var WebGLActor = exports.WebGLActor = protocol.ActorClass({
     let programActor = new ProgramActor(this.conn, args);
     this._programActorsCache.push(programActor);
     events.emit(this, "program-linked", programActor);
-  }
-});
-
-
-
-
-var WebGLFront = exports.WebGLFront = protocol.FrontClass(WebGLActor, {
-  initialize: function (client, { webglActor }) {
-    protocol.Front.prototype.initialize.call(this, client, { actor: webglActor });
-    this.manage(this);
   }
 });
 
