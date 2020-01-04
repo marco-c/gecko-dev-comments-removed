@@ -27,7 +27,14 @@ DragTracker::StartsDrag(const MouseInput& aInput)
  bool
 DragTracker::EndsDrag(const MouseInput& aInput)
 {
-  return aInput.IsLeftButton() && aInput.mType == MouseInput::MOUSE_UP;
+  
+  
+  
+  
+  
+  
+  return (aInput.IsLeftButton() && aInput.mType == MouseInput::MOUSE_UP)
+      || aInput.mType == MouseInput::MOUSE_DRAG_END;
 }
 
 void

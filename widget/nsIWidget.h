@@ -1428,6 +1428,12 @@ class nsIWidget : public nsISupports {
 
 
 
+    virtual void DispatchEventToAPZOnly(mozilla::WidgetInputEvent* aEvent) = 0;
+
+    
+
+
+
 
     virtual nsEventStatus DispatchInputEvent(mozilla::WidgetInputEvent* aEvent) = 0;
 
