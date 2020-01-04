@@ -235,10 +235,10 @@ protected:
 
   
   
-  void UpdateMenuType(nsPresContext* aPresContext);
+  void UpdateMenuType();
   
   
-  void UpdateMenuSpecialState(nsPresContext* aPresContext);
+  void UpdateMenuSpecialState();
 
   
   void BuildAcceleratorText(bool aNotify);

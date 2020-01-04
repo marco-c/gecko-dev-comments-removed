@@ -125,7 +125,7 @@ public:
     nsMenuFrame* frame = static_cast<nsMenuFrame*>(mFrame.GetFrame());
     NS_ENSURE_STATE(frame);
     if (mAttr == nsGkAtoms::checked) {
-      frame->UpdateMenuSpecialState(frame->PresContext());
+      frame->UpdateMenuSpecialState();
     } else if (mAttr == nsGkAtoms::acceltext) {
       
       
@@ -135,7 +135,7 @@ public:
     else if (mAttr == nsGkAtoms::key) {
       frame->BuildAcceleratorText(true);
     } else if (mAttr == nsGkAtoms::type || mAttr == nsGkAtoms::name) {
-      frame->UpdateMenuType(frame->PresContext());
+      frame->UpdateMenuType();
     }
     return NS_OK;
   }
@@ -211,7 +211,7 @@ public:
     bool shouldFlush = false;
     nsMenuFrame* menu = do_QueryFrame(mWeakFrame.GetFrame());
     if (menu) {
-      menu->UpdateMenuType(menu->PresContext());
+      menu->UpdateMenuType();
       shouldFlush = true;
     }
     delete this;
@@ -913,7 +913,7 @@ nsMenuFrame::IsDisabled()
 }
 
 void
-nsMenuFrame::UpdateMenuType(nsPresContext* aPresContext)
+nsMenuFrame::UpdateMenuType()
 {
   static nsIContent::AttrValuesArray strings[] =
     {&nsGkAtoms::checkbox, &nsGkAtoms::radio, nullptr};
@@ -935,12 +935,12 @@ nsMenuFrame::UpdateMenuType(nsPresContext* aPresContext)
       mType = eMenuType_Normal;
       break;
   }
-  UpdateMenuSpecialState(aPresContext);
+  UpdateMenuSpecialState();
 }
 
 
 void
-nsMenuFrame::UpdateMenuSpecialState(nsPresContext* aPresContext)
+nsMenuFrame::UpdateMenuSpecialState()
 {
   bool newChecked =
     mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::checked,

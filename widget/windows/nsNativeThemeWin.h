@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsNativeThemeWin_h
 #define nsNativeThemeWin_h
@@ -26,7 +26,7 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  // The nsITheme interface.
+  
   NS_IMETHOD DrawWidgetBackground(nsRenderingContext* aContext,
                                   nsIFrame* aFrame,
                                   uint8_t aWidgetType,
@@ -101,13 +101,10 @@ protected:
                                nsIFrame* aFrame,
                                uint8_t aWidgetType,
                                nsIntMargin* aResult);
-  nsresult ClassicGetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aFrame,
-                                       uint8_t aWidgetType,
+  nsresult ClassicGetMinimumWidgetSize(nsIFrame* aFrame, uint8_t aWidgetType,
                                        mozilla::LayoutDeviceIntSize* aResult,
                                        bool* aIsOverridable);
-  bool ClassicThemeSupportsWidget(nsPresContext* aPresContext, 
-                                  nsIFrame* aFrame,
-                                  uint8_t aWidgetType);
+  bool ClassicThemeSupportsWidget(nsIFrame* aFrame, uint8_t aWidgetType);
   void DrawCheckedRect(HDC hdc, const RECT& rc, int32_t fore, int32_t back,
                        HBRUSH defaultBack);
   uint32_t GetWidgetNativeDrawingFlags(uint8_t aWidgetType);

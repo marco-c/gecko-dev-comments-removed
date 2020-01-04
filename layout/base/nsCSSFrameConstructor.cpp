@@ -1427,8 +1427,7 @@ nsFrameConstructorSaveState::~nsFrameConstructorSaveState()
 
 
 static void
-MoveChildrenTo(nsPresContext* aPresContext,
-               nsIFrame* aOldParent,
+MoveChildrenTo(nsIFrame* aOldParent,
                nsContainerFrame* aNewParent,
                nsFrameList& aFrameList)
 {
@@ -2815,8 +2814,7 @@ nsCSSFrameConstructor::SetUpDocElementContainingBlock(nsIContent* aDocElement)
     
     nsContainerFrame* canvasFrame;
     nsContainerFrame* pageFrame =
-      ConstructPageFrame(mPresShell, presContext, rootFrame, nullptr,
-                         canvasFrame);
+      ConstructPageFrame(mPresShell, rootFrame, nullptr, canvasFrame);
     SetInitialSingleChild(rootFrame, pageFrame);
 
     
@@ -2857,7 +2855,6 @@ nsCSSFrameConstructor::ConstructAnonymousContentForCanvas(nsFrameConstructorStat
 
 nsContainerFrame*
 nsCSSFrameConstructor::ConstructPageFrame(nsIPresShell*  aPresShell,
-                                          nsPresContext* aPresContext,
                                           nsContainerFrame* aParentFrame,
                                           nsIFrame*      aPrevPageFrame,
                                           nsContainerFrame*& aCanvasFrame)
@@ -6193,7 +6190,7 @@ nsCSSFrameConstructor::AppendFramesToParent(nsFrameConstructorState&       aStat
         prevBlock = static_cast<nsContainerFrame*>(prevBlock->LastContinuation());
         NS_ASSERTION(prevBlock, "Should have previous block here");
 
-        MoveChildrenTo(aState.mPresContext, aParentFrame, prevBlock, blockKids);
+        MoveChildrenTo(aParentFrame, prevBlock, blockKids);
       }
     }
 
@@ -7125,8 +7122,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent*     aContainer,
 
   if (haveFirstLetterStyle) {
     
-    RemoveLetterFrames(state.mPresContext, state.mPresShell,
-                       containingBlock);
+    RemoveLetterFrames(state.mPresShell, containingBlock);
   }
 
   nsIAtom* frameType = parentFrame->GetType();
@@ -7289,7 +7285,7 @@ bool NotifyListBoxBody(nsPresContext*    aPresContext,
         return true;
       }
     } else {
-      listBoxBodyFrame->OnContentInserted(aPresContext, aChild);
+      listBoxBodyFrame->OnContentInserted(aChild);
       return true;
     }
   }
@@ -7621,8 +7617,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
       }
 
       
-      RemoveLetterFrames(state.mPresContext, mPresShell,
-                         state.mFloatedItems.containingBlock);
+      RemoveLetterFrames(mPresShell, state.mFloatedItems.containingBlock);
 
       
       
@@ -8113,7 +8108,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
       
       
       
-      RemoveLetterFrames(presContext, mPresShell, containingBlock);
+      RemoveLetterFrames(mPresShell, containingBlock);
 
       
       childFrame = aChild->GetPrimaryFrame();
@@ -8327,8 +8322,7 @@ nsCSSFrameConstructor::CharacterDataChanged(nsIContent* aContent,
       
       haveFirstLetterStyle = HasFirstLetterStyle(block);
       if (haveFirstLetterStyle) {
-        RemoveLetterFrames(mPresShell->GetPresContext(), mPresShell,
-                           block);
+        RemoveLetterFrames(mPresShell, block);
         
         
         frame = aContent->GetPrimaryFrame();
@@ -8480,7 +8474,6 @@ nsCSSFrameConstructor::CreateContinuingOuterTableFrame(nsIPresShell*     aPresSh
 
 nsIFrame*
 nsCSSFrameConstructor::CreateContinuingTableFrame(nsIPresShell*     aPresShell,
-                                                  nsPresContext*    aPresContext,
                                                   nsIFrame*         aFrame,
                                                   nsContainerFrame* aParentFrame,
                                                   nsIContent*       aContent,
@@ -8533,7 +8526,7 @@ nsCSSFrameConstructor::CreateContinuingTableFrame(nsIPresShell*     aPresShell,
       headerFooterFrame->SetRepeatable(true);
 
       
-      headerFooterFrame->InitRepeatedFrame(aPresContext, rowGroupFrame);
+      headerFooterFrame->InitRepeatedFrame(rowGroupFrame);
 
       
       childFrames.AddChild(headerFooterFrame);
@@ -8588,8 +8581,7 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
     newFrame->Init(content, aParentFrame, aFrame);
   } else if (nsGkAtoms::pageFrame == frameType) {
     nsContainerFrame* canvasFrame;
-    newFrame = ConstructPageFrame(shell, aPresContext, aParentFrame, aFrame,
-                                  canvasFrame);
+    newFrame = ConstructPageFrame(shell, aParentFrame, aFrame, canvasFrame);
   } else if (nsGkAtoms::tableOuterFrame == frameType) {
     newFrame =
       CreateContinuingOuterTableFrame(shell, aPresContext, aFrame, aParentFrame,
@@ -8597,7 +8589,7 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
 
   } else if (nsGkAtoms::tableFrame == frameType) {
     newFrame =
-      CreateContinuingTableFrame(shell, aPresContext, aFrame, aParentFrame,
+      CreateContinuingTableFrame(shell, aFrame, aParentFrame,
                                  content, styleContext);
 
   } else if (nsGkAtoms::tableRowGroupFrame == frameType) {
@@ -11030,7 +11022,6 @@ FindFirstLetterFrame(nsIFrame* aFrame, nsIFrame::ChildListID aListID)
 
 nsresult
 nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
-  nsPresContext* aPresContext,
   nsIPresShell* aPresShell,
   nsIFrame* aBlockFrame,
   bool* aStopLooking)
@@ -11121,8 +11112,7 @@ nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
 }
 
 nsresult
-nsCSSFrameConstructor::RemoveFirstLetterFrames(nsPresContext* aPresContext,
-                                               nsIPresShell* aPresShell,
+nsCSSFrameConstructor::RemoveFirstLetterFrames(nsIPresShell* aPresShell,
                                                nsContainerFrame* aFrame,
                                                nsContainerFrame* aBlockFrame,
                                                bool* aStopLooking)
@@ -11184,8 +11174,7 @@ nsCSSFrameConstructor::RemoveFirstLetterFrames(nsPresContext* aPresContext,
       nsContainerFrame* kidAsContainerFrame = do_QueryFrame(kid);
       if (kidAsContainerFrame) {
         
-        RemoveFirstLetterFrames(aPresContext, aPresShell,
-                                kidAsContainerFrame,
+        RemoveFirstLetterFrames(aPresShell, kidAsContainerFrame,
                                 aBlockFrame, aStopLooking);
         if (*aStopLooking) {
           break;
@@ -11200,8 +11189,7 @@ nsCSSFrameConstructor::RemoveFirstLetterFrames(nsPresContext* aPresContext,
 }
 
 nsresult
-nsCSSFrameConstructor::RemoveLetterFrames(nsPresContext* aPresContext,
-                                          nsIPresShell* aPresShell,
+nsCSSFrameConstructor::RemoveLetterFrames(nsIPresShell* aPresShell,
                                           nsContainerFrame* aBlockFrame)
 {
   aBlockFrame =
@@ -11211,10 +11199,10 @@ nsCSSFrameConstructor::RemoveLetterFrames(nsPresContext* aPresContext,
   bool stopLooking = false;
   nsresult rv;
   do {
-    rv = RemoveFloatingFirstLetterFrames(aPresContext, aPresShell,
+    rv = RemoveFloatingFirstLetterFrames(aPresShell,
                                          continuation, &stopLooking);
     if (NS_SUCCEEDED(rv) && !stopLooking) {
-      rv = RemoveFirstLetterFrames(aPresContext, aPresShell,
+      rv = RemoveFirstLetterFrames(aPresShell,
                                    continuation, aBlockFrame, &stopLooking);
     }
     if (stopLooking) {
@@ -11267,8 +11255,7 @@ nsCSSFrameConstructor::RecoverLetterFrames(nsContainerFrame* aBlockFrame)
 
 
 nsresult
-nsCSSFrameConstructor::CreateListBoxContent(nsPresContext*         aPresContext,
-                                            nsContainerFrame*      aParentFrame,
+nsCSSFrameConstructor::CreateListBoxContent(nsContainerFrame*      aParentFrame,
                                             nsIFrame*              aPrevFrame,
                                             nsIContent*            aChild,
                                             nsIFrame**             aNewFrame,
@@ -11586,7 +11573,7 @@ nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
       FindFirstNonBlock(aChildItems);
     nsFrameList blockKids = aChildItems.ExtractHead(firstNonBlock);
 
-    MoveChildrenTo(aState.mPresContext, aInitialInline, blockFrame, blockKids);
+    MoveChildrenTo(aInitialInline, blockFrame, blockKids);
 
     SetFrameIsIBSplit(lastNewInline, blockFrame);
     aSiblings.AddChild(blockFrame);
@@ -11606,8 +11593,7 @@ nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
       FindFirstBlock(firstBlock);
       nsFrameList inlineKids = aChildItems.ExtractHead(firstBlock);
 
-      MoveChildrenTo(aState.mPresContext, aInitialInline, inlineFrame,
-                     inlineKids);
+      MoveChildrenTo(aInitialInline, inlineFrame, inlineKids);
     }
 
     SetFrameIsIBSplit(blockFrame, inlineFrame);

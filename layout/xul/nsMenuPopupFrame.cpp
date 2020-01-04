@@ -1747,7 +1747,7 @@ void nsMenuPopupFrame::ChangeByPage(bool aIsUp)
       
       nsMenuFrame* menuFrame = do_QueryFrame(currentMenu);
       if (menuFrame &&
-          nsXULPopupManager::IsValidMenuItem(PresContext(), menuFrame->GetContent(), true)) {
+          nsXULPopupManager::IsValidMenuItem(menuFrame->GetContent(), true)) {
 
         
         if ((!aIsUp && currentMenu->GetRect().YMost() > targetPosition) ||

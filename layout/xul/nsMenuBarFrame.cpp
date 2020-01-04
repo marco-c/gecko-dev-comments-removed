@@ -190,7 +190,7 @@ nsMenuBarFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent)
     nsIContent* current = currFrame->GetContent();
 
     
-    if (nsXULPopupManager::IsValidMenuItem(PresContext(), current, false)) {
+    if (nsXULPopupManager::IsValidMenuItem(current, false)) {
       
       nsAutoString shortcutKey;
       current->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, shortcutKey);

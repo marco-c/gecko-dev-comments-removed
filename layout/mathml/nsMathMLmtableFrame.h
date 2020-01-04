@@ -53,8 +53,7 @@ protected:
   
   
   nsIFrame*
-  GetRowFrameAt(nsPresContext* aPresContext,
-                int32_t         aRowIndex);
+  GetRowFrameAt(int32_t aRowIndex);
 }; 
 
 

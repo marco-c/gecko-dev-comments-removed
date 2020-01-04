@@ -133,7 +133,7 @@ nsMathMLmoFrame::ProcessTextData()
   nsPresContext* presContext = PresContext();
   if (mFrames.GetLength() != 1) {
     data.Truncate(); 
-    mMathMLChar.SetData(presContext, data);
+    mMathMLChar.SetData(data);
     ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mMathMLChar);
     return;
   }
@@ -177,7 +177,7 @@ nsMathMLmoFrame::ProcessTextData()
   }
 
   
-  mMathMLChar.SetData(presContext, data);
+  mMathMLChar.SetData(data);
 
   
   

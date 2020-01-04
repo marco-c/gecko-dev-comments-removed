@@ -715,7 +715,7 @@ nsGlyphTableList::GetGlyphTableFor(const nsAString& aFamily)
 
 
 static nsresult
-InitGlobals(nsPresContext* aPresContext)
+InitCharGlobals()
 {
   NS_ASSERTION(!gGlyphTableInitialized, "Error -- already initialized");
   gGlyphTableInitialized = true;
@@ -776,11 +776,10 @@ nsMathMLChar::SetStyleContext(nsStyleContext* aStyleContext)
 }
 
 void
-nsMathMLChar::SetData(nsPresContext* aPresContext,
-                      nsString&       aData)
+nsMathMLChar::SetData(nsString& aData)
 {
   if (!gGlyphTableInitialized) {
-    InitGlobals(aPresContext);
+    InitCharGlobals();
   }
   mData = aData;
   
@@ -878,7 +877,7 @@ nsMathMLChar::SetData(nsPresContext* aPresContext,
 #define NS_MATHML_DELIMITER_SHORTFALL_POINTS   5.0f
 
 static bool
-IsSizeOK(nsPresContext* aPresContext, nscoord a, nscoord b, uint32_t aHint)
+IsSizeOK(nscoord a, nscoord b, uint32_t aHint)
 {
   
   
@@ -1243,8 +1242,7 @@ StretchEnumContext::TryVariants(nsGlyphTable* aGlyphTable,
   }
 
   return haveBetter &&
-    (largeopOnly ||
-     IsSizeOK(mPresContext, bestSize, mTargetSize, mStretchHint));
+    (largeopOnly || IsSizeOK(bestSize, mTargetSize, mStretchHint));
 }
 
 
@@ -1415,7 +1413,7 @@ nsMathMLChar::StretchEnumContext::TryParts(nsGlyphTable* aGlyphTable,
     mChar->mBmData[i] = bmdata[i];
   }
 
-  return IsSizeOK(mPresContext, computedSize, mTargetSize, mStretchHint);
+  return IsSizeOK(computedSize, mTargetSize, mStretchHint);
 }
 
 
@@ -1640,7 +1638,7 @@ nsMathMLChar::StretchInternal(nsPresContext*           aPresContext,
     
     if ((targetSize <= 0) || 
         ((isVertical && charSize >= targetSize) ||
-         IsSizeOK(aPresContext, charSize, targetSize, aStretchHint)))
+         IsSizeOK(charSize, targetSize, aStretchHint)))
       done = true;
   }
 

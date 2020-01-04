@@ -348,9 +348,7 @@ public:
   
   
   
-  static bool IsValidMenuItem(nsPresContext* aPresContext,
-                                nsIContent* aContent,
-                                bool aOnPopup);
+  static bool IsValidMenuItem(nsIContent* aContent, bool aOnPopup);
 
   
   

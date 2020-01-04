@@ -51,7 +51,7 @@ nsMathMLmrootFrame::Init(nsIContent*       aContent,
   
   
   nsAutoString sqrChar; sqrChar.Assign(kSqrChar);
-  mSqrChar.SetData(presContext, sqrChar);
+  mSqrChar.SetData(sqrChar);
   ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mSqrChar);
 }
 

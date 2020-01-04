@@ -155,8 +155,7 @@ public:
 
 
 
-  nsresult  InitRepeatedFrame(nsPresContext*        aPresContext,
-                              nsTableRowGroupFrame* aHeaderFooterFrame);
+  nsresult  InitRepeatedFrame(nsTableRowGroupFrame* aHeaderFooterFrame);
 
 
   
