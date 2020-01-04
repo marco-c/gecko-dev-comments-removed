@@ -35,7 +35,7 @@ public:
   
 
 
-  TreeWalker(Accessible* aContext);
+  explicit TreeWalker(Accessible* aContext);
 
   
 
