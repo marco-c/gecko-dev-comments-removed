@@ -10615,20 +10615,19 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                                   aReferrerURI);
   }
 
-  
-  
-  
-  
-  if (httpChannel) {
-    nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(httpChannel));
-    
-    nsCOMPtr<nsISupports> cacheKey;
-    if (mLSHE) {
-      mLSHE->GetCacheKey(getter_AddRefs(cacheKey));
-    } else if (mOSHE) {  
-      mOSHE->GetCacheKey(getter_AddRefs(cacheKey));
-    }
+  nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(channel));
+  nsCOMPtr<nsIUploadChannel> uploadChannel(do_QueryInterface(channel));
 
+  
+  
+  nsCOMPtr<nsISupports> cacheKey;
+  if (mLSHE) {
+    mLSHE->GetCacheKey(getter_AddRefs(cacheKey));
+  } else if (mOSHE) {  
+    mOSHE->GetCacheKey(getter_AddRefs(cacheKey));
+  }
+  
+  if (uploadChannel) {
     
     
     if (aPostData) {
@@ -10641,9 +10640,6 @@ nsDocShell::DoURILoad(nsIURI* aURI,
         rv = postDataSeekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
         NS_ENSURE_SUCCESS(rv, rv);
       }
-
-      nsCOMPtr<nsIUploadChannel> uploadChannel(do_QueryInterface(httpChannel));
-      NS_ASSERTION(uploadChannel, "http must support nsIUploadChannel");
 
       
       uploadChannel->SetUploadStream(aPostData, EmptyCString(), -1);
@@ -10680,6 +10676,9 @@ nsDocShell::DoURILoad(nsIURI* aURI,
         }
       }
     }
+  }
+  
+  if (httpChannel) {
     if (aHeadersData) {
       rv = AddHeadersToChannel(aHeadersData, httpChannel);
     }
