@@ -18,6 +18,7 @@
 #include "nsISupportsImpl.h"
 #include "nsISupportsUtils.h"
 #include "nsContentUtils.h"
+#include "nsDocShell.h"
 #include "nsGlobalWindow.h"
 
 using namespace mozilla::dom;
@@ -59,6 +60,9 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
 {
   MOZ_ASSERT(mLoadingPrincipal);
   MOZ_ASSERT(mTriggeringPrincipal);
+  
+  
+  MOZ_ASSERT(mInternalContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT);
 
   
   
@@ -134,11 +138,14 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   InheritOriginAttributes(mLoadingPrincipal, mOriginAttributes);
 }
 
+
+
+
+
 LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
-                   nsIPrincipal* aLoadingPrincipal,
                    nsIPrincipal* aTriggeringPrincipal,
                    nsSecurityFlags aSecurityFlags)
-  : mLoadingPrincipal(aLoadingPrincipal)
+  : mLoadingPrincipal(nullptr)
   , mTriggeringPrincipal(aTriggeringPrincipal)
   , mSecurityFlags(aSecurityFlags)
   , mInternalContentPolicyType(nsIContentPolicy::TYPE_DOCUMENT)
@@ -158,6 +165,7 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   
   
   MOZ_ASSERT(aOuterWindow);
+  MOZ_ASSERT(mTriggeringPrincipal);
 
   
   if (mSecurityFlags & nsILoadInfo::SEC_SANDBOXED) {
@@ -172,7 +180,12 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   nsCOMPtr<nsPIDOMWindowOuter> parent = aOuterWindow->GetScriptableParent();
   mParentOuterWindowID = parent ? parent->WindowID() : 0;
 
-  InheritOriginAttributes(mLoadingPrincipal, mOriginAttributes);
+  
+  nsCOMPtr<nsIDocShell> docShell = aOuterWindow->GetDocShell();
+  MOZ_ASSERT(docShell);
+  const DocShellOriginAttributes attrs =
+    nsDocShell::Cast(docShell)->GetOriginAttributes();
+  mOriginAttributes.InheritFromDocShellToNecko(attrs);
 }
 
 LoadInfo::LoadInfo(const LoadInfo& rhs)
@@ -240,7 +253,8 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   , mForcePreflight(aForcePreflight)
   , mIsPreflight(aIsPreflight)
 {
-  MOZ_ASSERT(mLoadingPrincipal);
+  
+  MOZ_ASSERT(mLoadingPrincipal || aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT);
   MOZ_ASSERT(mTriggeringPrincipal);
 
   mRedirectChainIncludingInternalRedirects.SwapElements(

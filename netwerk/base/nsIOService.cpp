@@ -867,9 +867,14 @@ nsIOService::NewChannelFromURIWithProxyFlags2(nsIURI* aURI,
     
     
     
+    
+    
     nsCOMPtr<nsILoadInfo> loadInfo;
 
-    if (aLoadingNode || aLoadingPrincipal) {
+    
+    
+    if (aLoadingNode || aLoadingPrincipal ||
+        aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
       nsCOMPtr<nsINode> loadingNode(do_QueryInterface(aLoadingNode));
       loadInfo = new mozilla::LoadInfo(aLoadingPrincipal,
                                        aTriggeringPrincipal,

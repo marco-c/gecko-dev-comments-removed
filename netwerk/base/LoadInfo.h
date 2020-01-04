@@ -55,8 +55,8 @@ public:
            nsContentPolicyType aContentPolicyType);
 
   
+  
   LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
-           nsIPrincipal* aLoadingPrincipal,
            nsIPrincipal* aTriggeringPrincipal,
            nsSecurityFlags aSecurityFlags);
 
