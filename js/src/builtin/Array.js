@@ -774,7 +774,7 @@ function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
         
         while (true) {
             
-            var next = iterator.next();
+            var next = callFunction(iterator.next, iterator);
             if (!IsObject(next))
                 ThrowTypeError(JSMSG_NEXT_RETURNED_PRIMITIVE);
 
