@@ -38,7 +38,10 @@ enum class FeatureStatus
   Disabled,
 
   
-  Available
+  Available,
+
+  
+  ForceEnabled
 };
 
 const char* FeatureStatusToString(FeatureStatus aStatus);

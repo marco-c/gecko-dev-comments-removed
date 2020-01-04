@@ -455,10 +455,6 @@ public:
     static bool CanUseDirect3D11ANGLE();
 
     
-    
-    bool ShouldUseLayersAcceleration();
-
-    
     void GetCompositorBackends(bool useAcceleration, nsTArray<mozilla::layers::LayersBackend>& aBackends);
 
     
@@ -779,6 +775,8 @@ private:
 
 
     void PopulateScreenInfo();
+
+    void InitCompositorAccelerationPrefs();
 
     RefPtr<gfxASurface> mScreenReferenceSurface;
     nsCOMPtr<nsIObserver> mSRGBOverrideObserver;
