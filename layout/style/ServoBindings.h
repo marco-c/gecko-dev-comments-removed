@@ -225,6 +225,11 @@ void Gecko_StoreStyleDifference(RawGeckoNode* node, nsChangeHint change);
 void Gecko_EnsureTArrayCapacity(void* array, size_t capacity, size_t elem_size);
 
 
+
+
+
+void Gecko_ClearPODTArray(void* array, size_t elem_size, size_t elem_align);
+
 void Gecko_EnsureImageLayersLength(nsStyleImageLayers* layers, size_t len);
 
 void Gecko_InitializeImageLayer(nsStyleImageLayers::Layer* layer,
