@@ -1273,7 +1273,8 @@ SetAddonInterposition(const nsACString& addonIdStr, nsIAddonInterposition* inter
     
     
     AutoJSAPI jsapi;
-    jsapi.Init(xpc::PrivilegedJunkScope());
+    if (!jsapi.Init(xpc::PrivilegedJunkScope()))
+        return false;
     addonId = NewAddonId(jsapi.cx(), addonIdStr);
     if (!addonId)
         return false;
@@ -1287,7 +1288,8 @@ AllowCPOWsInAddon(const nsACString& addonIdStr, bool allow)
     
     
     AutoJSAPI jsapi;
-    jsapi.Init(xpc::PrivilegedJunkScope());
+    if (!jsapi.Init(xpc::PrivilegedJunkScope()))
+        return false;
     addonId = NewAddonId(jsapi.cx(), addonIdStr);
     if (!addonId)
         return false;

@@ -225,11 +225,11 @@ public:
   
   
   
-  bool Init(nsIGlobalObject* aGlobalObject);
+  MOZ_MUST_USE bool Init(nsIGlobalObject* aGlobalObject);
 
   
   
-  bool Init(JSObject* aObject);
+  MOZ_MUST_USE bool Init(JSObject* aObject);
 
   
   
@@ -239,15 +239,15 @@ public:
   
   
   
-  bool Init(nsIGlobalObject* aGlobalObject, JSContext* aCx);
+  MOZ_MUST_USE bool Init(nsIGlobalObject* aGlobalObject, JSContext* aCx);
 
   
   
-  bool Init(nsPIDOMWindowInner* aWindow);
-  bool Init(nsPIDOMWindowInner* aWindow, JSContext* aCx);
+  MOZ_MUST_USE bool Init(nsPIDOMWindowInner* aWindow);
+  MOZ_MUST_USE bool Init(nsPIDOMWindowInner* aWindow, JSContext* aCx);
 
-  bool Init(nsGlobalWindow* aWindow);
-  bool Init(nsGlobalWindow* aWindow, JSContext* aCx);
+  MOZ_MUST_USE bool Init(nsGlobalWindow* aWindow);
+  MOZ_MUST_USE bool Init(nsGlobalWindow* aWindow, JSContext* aCx);
 
   JSContext* cx() const {
     MOZ_ASSERT(mCx, "Must call Init before using an AutoJSAPI");
@@ -273,7 +273,7 @@ public:
   
   
   
-  bool StealException(JS::MutableHandle<JS::Value> aVal);
+  MOZ_MUST_USE bool StealException(JS::MutableHandle<JS::Value> aVal);
 
   
   
@@ -281,7 +281,7 @@ public:
   
   
   
-  bool PeekException(JS::MutableHandle<JS::Value> aVal);
+  MOZ_MUST_USE bool PeekException(JS::MutableHandle<JS::Value> aVal);
 
   void ClearException() {
     MOZ_ASSERT(IsStackTop());

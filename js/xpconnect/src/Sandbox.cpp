@@ -1786,7 +1786,9 @@ xpc::EvalInSandbox(JSContext* cx, HandleObject sandboxArg, const nsAString& sour
 
         
         if (aes.HasException()) {
-            aes.StealException(&exn);
+            if (!aes.StealException(&exn)) {
+                return NS_ERROR_OUT_OF_MEMORY;
+            }
         }
     }
 
