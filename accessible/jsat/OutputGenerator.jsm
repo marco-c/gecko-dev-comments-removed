@@ -52,7 +52,7 @@ var OutputGenerator = {
       output.push.apply(output, self.genForObject(aAccessible, aContext));
     };
     let ignoreSubtree = function ignoreSubtree(aAccessible) {
-      let roleString = Utils.AccRetrieval.getStringRole(aAccessible.role);
+      let roleString = Utils.AccService.getStringRole(aAccessible.role);
       let nameRule = self.roleRuleMap[roleString] || 0;
       
       
@@ -108,7 +108,7 @@ var OutputGenerator = {
 
 
   genForObject: function genForObject(aAccessible, aContext) {
-    let roleString = Utils.AccRetrieval.getStringRole(aAccessible.role);
+    let roleString = Utils.AccService.getStringRole(aAccessible.role);
     let func = this.objectOutputFunctions[
       OutputGenerator._getOutputName(roleString)] ||
       this.objectOutputFunctions.defaultFunc;
