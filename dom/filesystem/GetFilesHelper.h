@@ -36,9 +36,39 @@ protected:
   virtual ~GetFilesCallback() {}
 };
 
+class GetFilesHelperBase
+{
+protected:
+  explicit GetFilesHelperBase(bool aRecursiveFlag)
+    : mRecursiveFlag(aRecursiveFlag)
+  {}
+
+  virtual ~GetFilesHelperBase() {}
+
+  virtual bool
+  IsCanceled()
+  {
+    return false;
+  }
+
+  nsresult
+  ExploreDirectory(const nsAString& aDOMPath, nsIFile* aFile);
+
+  bool mRecursiveFlag;
+
+  
+  
+  struct FileData {
+    nsString mDomPath;
+    nsString mRealPath;
+  };
+  FallibleTArray<FileData> mTargetPathArray;
+};
+
 
 
 class GetFilesHelper : public Runnable
+                     , public GetFilesHelperBase
 {
   friend class GetFilesHelperParent;
 
@@ -69,8 +99,8 @@ protected:
     mDirectoryPath = aDirectoryPath;
   }
 
-  bool
-  IsCanceled()
+  virtual bool
+  IsCanceled() override
   {
     MutexAutoLock lock(mMutex);
     return mCanceled;
@@ -94,8 +124,6 @@ protected:
   void
   OperationCompleted();
 
-  nsresult
-  ExploreDirectory(const nsAString& aDOMPath, nsIFile* aFile);
   void
   ResolveOrRejectPromise(Promise* aPromise);
 
@@ -104,17 +132,8 @@ protected:
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
-  bool mRecursiveFlag;
   bool mListingCompleted;
   nsString mDirectoryPath;
-
-  
-  
-  struct FileData {
-    nsString mDomPath;
-    nsString mRealPath;
-  };
-  FallibleTArray<FileData> mTargetPathArray;
 
   
   Sequence<RefPtr<File>> mFiles;
