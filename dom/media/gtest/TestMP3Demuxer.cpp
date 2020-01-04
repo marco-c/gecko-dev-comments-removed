@@ -12,6 +12,8 @@
 
 using namespace mozilla;
 using namespace mozilla::mp3;
+using media::TimeUnit;
+
 
 
 class MockMP3MediaResource : public MockMediaResource {
@@ -345,11 +347,34 @@ TEST_F(MP3DemuxerTest, Duration) {
       frameData = target.mDemuxer->DemuxSample();
     }
   }
+
+  
+  for (const auto& target: mTargets) {
+    
+    if (target.mFileSize <= 0) {
+      continue;
+    }
+
+    target.mDemuxer->Reset();
+    RefPtr<MediaRawData> frameData(target.mDemuxer->DemuxSample());
+    ASSERT_TRUE(frameData);
+
+    const int64_t duration = target.mDemuxer->Duration().ToMicroseconds();
+    const int64_t pos = duration + 1e6;
+
+    
+    target.mDemuxer->Seek(TimeUnit::FromMicroseconds(pos));
+    
+    EXPECT_NEAR(duration, target.mDemuxer->SeekPosition().ToMicroseconds(),
+                target.mSeekError * duration);
+
+    
+    frameData = target.mDemuxer->DemuxSample();
+    ASSERT_FALSE(frameData);
+  }
 }
 
 TEST_F(MP3DemuxerTest, Seek) {
-  using media::TimeUnit;
-
   for (const auto& target: mTargets) {
     RefPtr<MediaRawData> frameData(target.mDemuxer->DemuxSample());
     ASSERT_TRUE(frameData);
