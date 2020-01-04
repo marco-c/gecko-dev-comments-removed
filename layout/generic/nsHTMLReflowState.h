@@ -583,6 +583,7 @@ public:
                                         
                                         
                                         
+    uint16_t mShrinkWrap:1; 
   } mFlags;
 
   
@@ -673,7 +674,11 @@ public:
 
     
     
-    CALLER_WILL_INIT = (1<<1)
+    CALLER_WILL_INIT = (1<<1),
+
+    
+    
+    COMPUTE_SIZE_SHRINK_WRAP = (1<<2),
   };
 
   
