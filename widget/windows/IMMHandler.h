@@ -355,6 +355,11 @@ protected:
   
 
 
+  static void DispatchEvent(nsWindow* aWindow, WidgetGUIEvent& aEvent);
+
+  
+
+
 
 
 
