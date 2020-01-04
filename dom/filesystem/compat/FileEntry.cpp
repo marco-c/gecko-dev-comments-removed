@@ -1,0 +1,26 @@
+
+
+
+
+
+
+#include "FileEntry.h"
+
+namespace mozilla {
+namespace dom {
+
+FileEntry::FileEntry(nsIGlobalObject* aGlobal)
+  : Entry(aGlobal)
+{}
+
+FileEntry::~FileEntry()
+{}
+
+JSObject*
+FileEntry::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
+{
+  return FileEntryBinding::Wrap(aCx, this, aGivenProto);
+}
+
+} 
+} 
