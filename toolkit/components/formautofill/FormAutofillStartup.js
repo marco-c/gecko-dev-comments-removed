@@ -49,7 +49,7 @@ FormAutofillStartup.prototype = {
     
     
     FormAutofill.processRequestAutocomplete(aMessage.data)
-      .catch(ex => { exception: ex })
+      .catch(ex => { return { exception: ex } })
       .then(result => {
         
         
