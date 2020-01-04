@@ -2427,6 +2427,41 @@ AddWeightedShadowList(double aCoeff1,
   return result;
 }
 
+static UniquePtr<nsCSSValueList>
+AddWeightedFilterList(double aCoeff1, const nsCSSValueList* aList1,
+                      double aCoeff2, const nsCSSValueList* aList2)
+{
+  UniquePtr<nsCSSValueList> result;
+  nsCSSValueList* tail = nullptr;
+  while (aList1 || aList2) {
+    if ((aList1 && aList1->mValue.GetUnit() != eCSSUnit_Function) ||
+        (aList2 && aList2->mValue.GetUnit() != eCSSUnit_Function)) {
+      
+      
+      return nullptr;
+    }
+
+    UniquePtr<nsCSSValueList> resultFunction =
+      AddWeightedFilterFunction(aCoeff1, aList1, aCoeff2, aList2);
+    if (!resultFunction) {
+      
+      return nullptr;
+    }
+
+    AppendToCSSValueList(result, Move(resultFunction), &tail);
+
+    
+    if (aList1) {
+      aList1 = aList1->mNext;
+    }
+    if (aList2) {
+      aList2 = aList2->mNext;
+    }
+  }
+
+  return result;
+}
+
 bool
 StyleAnimationValue::AddWeighted(nsCSSPropertyID aProperty,
                                  double aCoeff1,
@@ -2749,35 +2784,11 @@ StyleAnimationValue::AddWeighted(nsCSSPropertyID aProperty,
       return true;
     }
     case eUnit_Filter: {
-      const nsCSSValueList *list1 = aValue1.GetCSSValueListValue();
-      const nsCSSValueList *list2 = aValue2.GetCSSValueListValue();
-
-      UniquePtr<nsCSSValueList> result;
-      nsCSSValueList* tail = nullptr;
-      while (list1 || list2) {
-        if ((list1 && list1->mValue.GetUnit() != eCSSUnit_Function) ||
-            (list2 && list2->mValue.GetUnit() != eCSSUnit_Function)) {
-          
-          
-          return false;
-        }
-
-        UniquePtr<nsCSSValueList> resultFunction =
-          AddWeightedFilterFunction(aCoeff1, list1, aCoeff2, list2);
-        if (!resultFunction) {
-          
-          return false;
-        }
-
-        AppendToCSSValueList(result, Move(resultFunction), &tail);
-
-        
-        if (list1) {
-          list1 = list1->mNext;
-        }
-        if (list2) {
-          list2 = list2->mNext;
-        }
+      UniquePtr<nsCSSValueList> result =
+        AddWeightedFilterList(aCoeff1, aValue1.GetCSSValueListValue(),
+                              aCoeff2, aValue2.GetCSSValueListValue());
+      if (!result) {
+        return false;
       }
 
       aResultValue.SetAndAdoptCSSValueListValue(result.release(),
