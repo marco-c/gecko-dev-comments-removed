@@ -339,6 +339,12 @@ if 'jsapitests' in test_suites:
 if 'jstests' in test_suites:
     results.append(run_test_command([MAKE, 'check-jstests']))
 
+
+
+if variant.get('ignore-test-failures'):
+    print("Ignoring test results %s" % (results,))
+    results = [0]
+
 if args.variant in ('tsan', 'msan'):
     files = filter(lambda f: f.startswith("sanitize_log."), os.listdir(OUTDIR))
     fullfiles = [os.path.join(OUTDIR, f) for f in files]
