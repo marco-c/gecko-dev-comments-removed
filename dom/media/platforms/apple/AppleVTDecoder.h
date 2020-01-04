@@ -91,6 +91,11 @@ private:
   const uint32_t mDisplayHeight;
 
   
+  
+  
+  Atomic<uint32_t> mQueuedSamples;
+
+  
   nsresult InitializeSession();
   nsresult WaitForAsynchronousFrames();
   CFDictionaryRef CreateDecoderSpecification();
@@ -101,6 +106,9 @@ private:
   const RefPtr<TaskQueue> mTaskQueue;
   const uint32_t mMaxRefFrames;
   const RefPtr<layers::ImageContainer> mImageContainer;
+  
+  
+  Atomic<uint32_t> mInputIncoming;
   Atomic<bool> mIsShutDown;
   const bool mUseSoftwareImages;
 
