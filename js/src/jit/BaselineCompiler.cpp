@@ -248,7 +248,7 @@ BaselineCompiler::compile()
 
     
     for (size_t i = 0; i < icLoadLabels_.length(); i++) {
-        CodeOffset label = icLoadLabels_[i].label;
+        CodeOffsetLabel label = icLoadLabels_[i].label;
         size_t icEntry = icLoadLabels_[i].icEntry;
         ICEntry* entryAddr = &(baselineScript->icEntry(icEntry));
         Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, label),
@@ -416,7 +416,7 @@ BaselineCompiler::emitPrologue()
 
     
     
-    prologueOffset_ = CodeOffset(masm.currentOffset());
+    prologueOffset_ = CodeOffsetLabel(masm.currentOffset());
 
     
     
@@ -447,7 +447,7 @@ BaselineCompiler::emitEpilogue()
 {
     
     
-    epilogueOffset_ = CodeOffset(masm.currentOffset());
+    epilogueOffset_ = CodeOffsetLabel(masm.currentOffset());
 
     masm.bind(&return_);
 
@@ -509,9 +509,9 @@ BaselineCompiler::emitIC(ICStub* stub, ICEntry::Kind kind)
     if (!entry)
         return false;
 
-    CodeOffset patchOffset;
+    CodeOffsetLabel patchOffset;
     EmitCallIC(&patchOffset, masm);
-    entry->setReturnOffset(CodeOffset(masm.currentOffset()));
+    entry->setReturnOffset(CodeOffsetLabel(masm.currentOffset()));
     if (!addICLoadLabel(patchOffset))
         return false;
 
@@ -624,7 +624,7 @@ BaselineCompiler::emitDebugPrologue()
         masm.bind(&done);
     }
 
-    postDebugPrologueOffset_ = CodeOffset(masm.currentOffset());
+    postDebugPrologueOffset_ = CodeOffsetLabel(masm.currentOffset());
 
     return true;
 }
@@ -798,7 +798,7 @@ BaselineCompiler::emitDebugTrap()
     JitCode* handler = cx->runtime()->jitRuntime()->debugTrapHandler(cx);
     if (!handler)
         return false;
-    mozilla::DebugOnly<CodeOffset> offset = masm.toggledCall(handler, enabled);
+    mozilla::DebugOnly<CodeOffsetLabel> offset = masm.toggledCall(handler, enabled);
 
 #ifdef DEBUG
     
@@ -886,12 +886,12 @@ BaselineCompiler::emitProfilerEnterFrame()
     
     
     Label noInstrument;
-    CodeOffset toggleOffset = masm.toggledJump(&noInstrument);
+    CodeOffsetLabel toggleOffset = masm.toggledJump(&noInstrument);
     masm.profilerEnterFrame(masm.getStackPointer(), R0.scratchReg());
     masm.bind(&noInstrument);
 
     
-    MOZ_ASSERT(!profilerEnterFrameToggleOffset_.bound());
+    MOZ_ASSERT(!profilerEnterFrameToggleOffset_.used());
     profilerEnterFrameToggleOffset_ = toggleOffset;
 }
 
@@ -901,12 +901,12 @@ BaselineCompiler::emitProfilerExitFrame()
     
     
     Label noInstrument;
-    CodeOffset toggleOffset = masm.toggledJump(&noInstrument);
+    CodeOffsetLabel toggleOffset = masm.toggledJump(&noInstrument);
     masm.profilerExitFrame();
     masm.bind(&noInstrument);
 
     
-    MOZ_ASSERT(!profilerExitFrameToggleOffset_.bound());
+    MOZ_ASSERT(!profilerExitFrameToggleOffset_.used());
     profilerExitFrameToggleOffset_ = toggleOffset;
 }
 

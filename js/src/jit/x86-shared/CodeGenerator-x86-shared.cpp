@@ -1631,7 +1631,7 @@ CodeGeneratorX86Shared::visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool)
         
         CodeLabel cl;
         masm.writeCodePointer(cl.patchAt());
-        cl.target()->bind(caseoffset);
+        cl.target()->use(caseoffset);
         masm.addCodeLabel(cl);
     }
 }

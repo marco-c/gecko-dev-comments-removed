@@ -459,8 +459,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     void Push(JSValueType type, Register reg);
     void PushValue(const Address& addr);
     void PushEmptyRooted(VMFunction::RootType rootType);
-    inline CodeOffset PushWithPatch(ImmWord word);
-    inline CodeOffset PushWithPatch(ImmPtr imm);
+    inline CodeOffsetLabel PushWithPatch(ImmWord word);
+    inline CodeOffsetLabel PushWithPatch(ImmPtr imm);
 
     void Pop(const Operand op) DEFINED_ON(x86_shared);
     void Pop(Register reg) PER_SHARED_ARCH;
@@ -491,8 +491,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
-    CodeOffset call(Register reg) PER_SHARED_ARCH;
-    CodeOffset call(Label* label) PER_SHARED_ARCH;
+    CodeOffsetLabel call(Register reg) PER_SHARED_ARCH;
+    CodeOffsetLabel call(Label* label) PER_SHARED_ARCH;
     void call(const Address& addr) DEFINED_ON(x86_shared);
     void call(ImmWord imm) PER_SHARED_ARCH;
     
@@ -505,7 +505,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void call(const CallSiteDesc& desc, Label* label);
     inline void call(const CallSiteDesc& desc, AsmJSInternalCallee callee);
 
-    CodeOffset callWithPatch() PER_SHARED_ARCH;
+    CodeOffsetLabel callWithPatch() PER_SHARED_ARCH;
     void patchCall(uint32_t callerOffset, uint32_t calleeOffset) PER_SHARED_ARCH;
 
     
@@ -690,7 +690,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    CodeOffset selfReferencePatch_;
+    CodeOffsetLabel selfReferencePatch_;
 
   public:
     
@@ -1050,7 +1050,7 @@ class MacroAssembler : public MacroAssemblerSpecific
 
         
         
-        CodeOffset nopJump = toggledJump(&done);
+        CodeOffsetLabel nopJump = toggledJump(&done);
         writePrebarrierOffset(nopJump);
 
         callPreBarrier(address, type);
@@ -1309,7 +1309,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     };
     friend class AutoProfilerCallInstrumentation;
 
-    void appendProfilerCallSite(CodeOffset label) {
+    void appendProfilerCallSite(CodeOffsetLabel label) {
         propagateOOM(profilerCallSites_.append(label));
     }
 
@@ -1323,7 +1323,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     bool emitProfilingInstrumentation_;
 
     
-    Vector<CodeOffset, 0, SystemAllocPolicy> profilerCallSites_;
+    Vector<CodeOffsetLabel, 0, SystemAllocPolicy> profilerCallSites_;
 
   public:
     void loadBaselineOrIonRaw(Register script, Register dest, Label* failure);

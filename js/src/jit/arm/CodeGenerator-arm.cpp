@@ -1031,7 +1031,7 @@ CodeGeneratorARM::visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool)
         
         
         CodeLabel cl = ool->codeLabel(i);
-        cl.target()->bind(caseoffset);
+        cl.target()->use(caseoffset);
         masm.addCodeLabel(cl);
     }
 }

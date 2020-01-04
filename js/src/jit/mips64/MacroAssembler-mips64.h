@@ -295,32 +295,32 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64
     
     
     
-    CodeOffset toggledJump(Label* label);
+    CodeOffsetLabel toggledJump(Label* label);
 
     
     
-    CodeOffset toggledCall(JitCode* target, bool enabled);
+    CodeOffsetLabel toggledCall(JitCode* target, bool enabled);
 
     static size_t ToggledCallSize(uint8_t* code) {
         
         return 6 * sizeof(uint32_t);
     }
 
-    CodeOffset pushWithPatch(ImmWord imm) {
-        CodeOffset offset = movWithPatch(imm, ScratchRegister);
+    CodeOffsetLabel pushWithPatch(ImmWord imm) {
+        CodeOffsetLabel label = movWithPatch(imm, ScratchRegister);
         ma_push(ScratchRegister);
-        return offset;
+        return label;
     }
 
-    CodeOffset movWithPatch(ImmWord imm, Register dest) {
-        CodeOffset offset = CodeOffset(currentOffset());
+    CodeOffsetLabel movWithPatch(ImmWord imm, Register dest) {
+        CodeOffsetLabel label = CodeOffsetLabel(currentOffset());
         ma_liPatchable(dest, imm, Li64);
-        return offset;
+        return label;
     }
-    CodeOffset movWithPatch(ImmPtr imm, Register dest) {
-        CodeOffset offset = CodeOffset(currentOffset());
+    CodeOffsetLabel movWithPatch(ImmPtr imm, Register dest) {
+        CodeOffsetLabel label = CodeOffsetLabel(currentOffset());
         ma_liPatchable(dest, imm);
-        return offset;
+        return label;
     }
 
     void jump(Label* label) {
@@ -1332,8 +1332,8 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64
     bool buildOOLFakeExitFrame(void* fakeReturnAddr);
 
   public:
-    CodeOffset labelForPatch() {
-        return CodeOffset(nextOffset().getOffset());
+    CodeOffsetLabel labelForPatch() {
+        return CodeOffsetLabel(nextOffset().getOffset());
     }
 
     void memIntToValue(Address Source, Address Dest) {

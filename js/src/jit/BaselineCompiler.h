@@ -226,15 +226,15 @@ class BaselineCompiler : public BaselineCompilerSpecific
     NonAssertingLabel           postBarrierSlot_;
 
     
-    CodeOffset prologueOffset_;
+    CodeOffsetLabel prologueOffset_;
 
     
     
-    CodeOffset epilogueOffset_;
+    CodeOffsetLabel epilogueOffset_;
 
     
     
-    CodeOffset postDebugPrologueOffset_;
+    CodeOffsetLabel postDebugPrologueOffset_;
 
     
     
