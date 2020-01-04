@@ -373,13 +373,10 @@ function attachTestThread(aClient, aTitle, aCallback) {
 
 
 
-function attachTestTabAndResume(aClient, aTitle, aCallback = () => {}) {
-  return new Promise((resolve, reject) => {
-    attachTestThread(aClient, aTitle, function(aResponse, aTabClient, aThreadClient) {
-      aThreadClient.resume(function (aResponse) {
-        aCallback(aResponse, aTabClient, aThreadClient);
-        resolve([aResponse, aTabClient, aThreadClient]);
-      });
+function attachTestTabAndResume(aClient, aTitle, aCallback) {
+  attachTestThread(aClient, aTitle, function(aResponse, aTabClient, aThreadClient) {
+    aThreadClient.resume(function (aResponse) {
+      aCallback(aResponse, aTabClient, aThreadClient);
     });
   });
 }
@@ -749,21 +746,6 @@ function stepIn(client, threadClient) {
   dumpn("Stepping in.");
   const paused = waitForPause(client);
   return rdpRequest(threadClient, threadClient.stepIn)
-    .then(() => paused);
-}
-
-
-
-
-
-
-
-
-
-function stepOver(client, threadClient) {
-  dumpn("Stepping over.");
-  const paused = waitForPause(client);
-  return rdpRequest(threadClient, threadClient.stepOver)
     .then(() => paused);
 }
 
