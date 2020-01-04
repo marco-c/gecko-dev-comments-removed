@@ -1544,9 +1544,9 @@ EventListenerManager::GetListenerInfo(nsCOMArray<nsIEventListenerInfo>* aList)
   nsCOMPtr<EventTarget> target = do_QueryInterface(mTarget);
   NS_ENSURE_STATE(target);
   aList->Clear();
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    const Listener& listener = mListeners.ElementAt(i);
+  nsAutoTObserverArray<Listener, 2>::ForwardIterator iter(mListeners);
+  while (iter.HasMore()) {
+    const Listener& listener = iter.GetNext();
     
     
     if (listener.mListenerType == Listener::eJSEventListener &&
