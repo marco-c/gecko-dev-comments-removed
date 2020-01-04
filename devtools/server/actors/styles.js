@@ -213,6 +213,9 @@ var PageStyleActor = protocol.ActorClass({
 
 
   _styleApplied: function(kind, styleSheet) {
+    
+    
+    this.cssLogic.reset();
     if (kind === UPDATE_GENERAL) {
       events.emit(this, "stylesheet-updated", styleSheet);
     }
@@ -1108,8 +1111,8 @@ var StyleRuleActor = protocol.ActorClass({
     if (item instanceof (Ci.nsIDOMCSSRule)) {
       this.type = item.type;
       this.rawRule = item;
-      if ((this.rawRule instanceof Ci.nsIDOMCSSStyleRule ||
-           this.rawRule instanceof Ci.nsIDOMMozCSSKeyframeRule) &&
+      if ((this.type === Ci.nsIDOMCSSRule.STYLE_RULE ||
+           this.type === Ci.nsIDOMCSSRule.KEYFRAME_RULE) &&
           this.rawRule.parentStyleSheet) {
         this.line = DOMUtils.getRelativeRuleLine(this.rawRule);
         this.column = DOMUtils.getRuleColumn(this.rawRule);
@@ -1274,16 +1277,59 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
+
+
   _computeRuleIndex: function() {
     let rule = this.rawRule;
-    let cssRules = this._parentSheet.cssRules;
-    this._ruleIndex = -1;
-    for (let i = 0; i < cssRules.length; i++) {
-      if (rule === cssRules.item(i)) {
-        this._ruleIndex = i;
-        break;
+    let result = [];
+
+    while (rule) {
+      let cssRules;
+      if (rule.parentRule) {
+        cssRules = rule.parentRule.cssRules;
+      } else {
+        cssRules = rule.parentStyleSheet.cssRules;
+      }
+
+      let found = false;
+      for (let i = 0; i < cssRules.length; i++) {
+        if (rule === cssRules.item(i)) {
+          found = true;
+          result.unshift(i);
+          break;
+        }
+      }
+
+      if (!found) {
+        this._ruleIndex = null;
+        return;
+      }
+
+      rule = rule.parentRule;
+    }
+
+    this._ruleIndex = result;
+  },
+
+  
+
+
+
+
+
+
+
+
+  _getRuleFromIndex: function(parentSheet) {
+    let currentRule = null;
+    for (let i of this._ruleIndex) {
+      if (currentRule === null) {
+        currentRule = parentSheet.cssRules[i];
+      } else {
+        currentRule = currentRule.cssRules.item(i);
       }
     }
+    return currentRule;
   },
 
   
@@ -1297,12 +1343,12 @@ var StyleRuleActor = protocol.ActorClass({
       if (this.sheetActor) {
         this.sheetActor.off("style-applied", this._onStyleApplied);
       }
-    } else if (this._ruleIndex >= 0) {
+    } else if (this._ruleIndex) {
       
       
       
       let oldRule = this.rawRule;
-      this.rawRule = this._parentSheet.cssRules[this._ruleIndex];
+      this.rawRule = this._getRuleFromIndex(this._parentSheet);
       
       
       this.pageStyle.updateStyleRef(oldRule, this.rawRule, this);
@@ -1488,7 +1534,7 @@ var StyleRuleActor = protocol.ActorClass({
       }
     }
 
-    return parentStyleSheet.cssRules[this._ruleIndex];
+    return this._getRuleFromIndex(parentStyleSheet);
   }),
 
   
