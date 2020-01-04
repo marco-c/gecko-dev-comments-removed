@@ -383,6 +383,7 @@ ClientEngine.prototype = {
       if (!commands) {
         return true;
       }
+      let URIsToDisplay = [];
       for (let key in commands) {
         let {command, args} = commands[key];
         this._log.debug("Processing command: " + command + "(" + args + ")");
@@ -405,12 +406,16 @@ ClientEngine.prototype = {
             this.service.logout();
             return false;
           case "displayURI":
-            this._handleDisplayURI.apply(this, args);
+            let [uri, clientId, title] = args;
+            URIsToDisplay.push({ uri, clientId, title });
             break;
           default:
             this._log.debug("Received an unknown command: " + command);
             break;
         }
+      }
+      if (URIsToDisplay.length) {
+        this._handleDisplayURIs(URIsToDisplay);
       }
 
       return true;
@@ -501,12 +506,10 @@ ClientEngine.prototype = {
 
 
 
-  _handleDisplayURI: function _handleDisplayURI(uri, clientId, title) {
-    this._log.info("Received a URI for display: " + uri + " (" + title +
-                   ") from " + clientId);
 
-    let subject = {uri: uri, client: clientId, title: title};
-    Svc.Obs.notify("weave:engine:clients:display-uri", subject);
+
+  _handleDisplayURIs: function _handleDisplayURIs(uris) {
+    Svc.Obs.notify("weave:engine:clients:display-uris", uris);
   },
 
   _removeRemoteClient(id) {
