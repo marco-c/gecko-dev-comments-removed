@@ -11,6 +11,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsCycleCollectionTraversalCallback.h"
 #include "nsTArray.h"
+#include "nsTHashtable.h"
 
 class nsIGlobalObject;
 
@@ -54,6 +55,12 @@ protected:
   nsresult
   ExploreDirectory(const nsAString& aDOMPath, nsIFile* aFile);
 
+  nsresult
+  AddExploredDirectory(nsIFile* aDirectory);
+
+  bool
+  ShouldFollowSymLink(nsIFile* aDirectory);
+
   bool mRecursiveFlag;
 
   
@@ -63,6 +70,7 @@ protected:
     nsString mRealPath;
   };
   FallibleTArray<FileData> mTargetPathArray;
+  nsTHashtable<nsCStringHashKey> mExploredDirectories;
 };
 
 
