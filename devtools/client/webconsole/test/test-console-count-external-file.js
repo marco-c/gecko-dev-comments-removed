@@ -1,3 +1,7 @@
+
+
+"use strict";
+
 function counterExternalFile() {
   console.count("console.count() testcounter");
 }
