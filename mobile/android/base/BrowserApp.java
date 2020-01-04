@@ -553,6 +553,12 @@ public class BrowserApp extends GeckoApp
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        if (!isSupportedSDK()) {
+            
+            super.onCreate(savedInstanceState);
+            return;
+        }
+
         final Intent intent = getIntent();
 
         
@@ -1217,6 +1223,12 @@ public class BrowserApp extends GeckoApp
 
     @Override
     public void onDestroy() {
+        if (!isSupportedSDK()) {
+            
+            super.onDestroy();
+            return;
+        }
+
         mDynamicToolbar.destroy();
 
         if (mBrowserToolbar != null)
