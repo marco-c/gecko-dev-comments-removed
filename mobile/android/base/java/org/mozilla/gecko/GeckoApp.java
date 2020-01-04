@@ -1119,8 +1119,6 @@ public abstract class GeckoApp
         mGeckoReadyStartupTimer = new Telemetry.UptimeTimer("FENNEC_STARTUP_TIME_GECKOREADY");
 
         final SafeIntent intent = new SafeIntent(getIntent());
-        final String action = intent.getAction();
-        final String args = intent.getStringExtra("args");
 
         earlyStartJavaSampler(intent);
 
@@ -1128,26 +1126,6 @@ public abstract class GeckoApp
         
         
         GeckoLoader.setLastIntent(intent);
-
-        
-        
-        
-        
-        
-        if (mProfile == null && args != null) {
-            final GeckoProfile p = GeckoProfile.getFromArgs(this, args);
-            if (p != null) {
-                mProfile = p;
-            }
-        }
-
-        
-        ThreadUtils.postToBackgroundThread(new Runnable() {
-            @Override
-            public void run() {
-                getProfile();
-            }
-        });
 
         
         try {
@@ -1194,12 +1172,30 @@ public abstract class GeckoApp
             Telemetry.addToHistogram("FENNEC_RESTORING_ACTIVITY", 1);
 
         } else {
-            final String uri = getURIFromIntent(intent);
+            final String action = intent.getAction();
+            final String args = intent.getStringExtra("args");
+
+            
+            
+            
+            
+            
+            final GeckoProfile profile = (args != null) ?
+                GeckoProfile.getFromArgs(getApplicationContext(), args) : null;
 
             sAlreadyLoaded = true;
-            GeckoThread.ensureInit(args, action,
+            GeckoThread.ensureInit(profile, args, action,
                      ACTION_DEBUG.equals(action));
 
+            
+            ThreadUtils.postToBackgroundThread(new Runnable() {
+                @Override
+                public void run() {
+                    getProfile();
+                }
+            });
+
+            final String uri = getURIFromIntent(intent);
             if (!TextUtils.isEmpty(uri)) {
                 
                 GeckoThread.speculativeConnect(uri);
