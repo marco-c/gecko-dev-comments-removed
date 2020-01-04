@@ -1795,34 +1795,9 @@ DocAccessible::UpdateTreeOnRemoval(Accessible* aContainer, nsIContent* aChildNod
   if (child) {
     updateFlags |= UpdateTreeInternal(child, false, reorderEvent);
   } else {
-    
-    
-    
-    
-    
-    
-    
-    nsINode* containerNode = aContainer->GetNode();
-    for (uint32_t idx = 0; idx < aContainer->ContentChildCount();) {
-      Accessible* child = aContainer->ContentChildAt(idx);
-
-      
-      
-      
-      if (!child->HasOwnContent() || child->IsDoc()) {
-        idx++;
-        continue;
-      }
-
-      nsINode* childNode = child->GetContent();
-      while (childNode != aChildNode && childNode != containerNode &&
-             (childNode = childNode->GetParentNode()));
-
-      if (childNode != containerNode) {
-        updateFlags |= UpdateTreeInternal(child, false, reorderEvent);
-      } else {
-        idx++;
-      }
+    TreeWalker walker(aContainer, aChildNode, TreeWalker::eWalkCache);
+    while (Accessible* child = walker.Next()) {
+      updateFlags |= UpdateTreeInternal(child, false, reorderEvent);
     }
   }
 
