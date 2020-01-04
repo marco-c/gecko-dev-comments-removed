@@ -145,6 +145,36 @@ private:
   bool    mIsLocalRef;
 };
 
+struct Position {
+  typedef nsStyleCoord::CalcValue PositionCoord;
+  PositionCoord mXPosition, mYPosition;
+
+  
+  Position() {}
+
+  
+  
+  void SetInitialPercentValues(float aPercentVal);
+
+  
+  
+  void SetInitialZeroValues();
+
+  
+  
+  bool DependsOnPositioningAreaSize() const {
+    return mXPosition.mPercent != 0.0f || mYPosition.mPercent != 0.0f;
+  }
+
+  bool operator==(const Position& aOther) const {
+    return mXPosition == aOther.mXPosition &&
+      mYPosition == aOther.mYPosition;
+  }
+  bool operator!=(const Position& aOther) const {
+    return !(*this == aOther);
+  }
+};
+
 } 
 
 
@@ -561,39 +591,7 @@ struct nsStyleImageLayers {
     MOZ_COUNT_DTOR(nsStyleImageLayers);
   }
 
-  struct Position;
-  friend struct Position;
-  struct Position {
-    typedef nsStyleCoord::CalcValue PositionCoord;
-    PositionCoord mXPosition, mYPosition;
-
-    
-    Position() {}
-
-    
-    
-    void SetInitialPercentValues(float aPercentVal);
-
-    
-    
-    void SetInitialZeroValues();
-
-    
-    
-    bool DependsOnPositioningAreaSize() const {
-      return mXPosition.mPercent != 0.0f || mYPosition.mPercent != 0.0f;
-    }
-
-    bool operator==(const Position& aOther) const {
-      return mXPosition == aOther.mXPosition &&
-             mYPosition == aOther.mYPosition;
-    }
-    bool operator!=(const Position& aOther) const {
-      return !(*this == aOther);
-    }
-  };
-
-  static bool IsInitialPositionForLayerType(Position aPosition, LayerType aType);
+  static bool IsInitialPositionForLayerType(mozilla::Position aPosition, LayerType aType);
 
   static float GetInitialPositionForLayerType(LayerType aType) {
     return (aType == LayerType::Background) ? 0.0f : 0.5f;
@@ -700,7 +698,7 @@ struct nsStyleImageLayers {
                                   
                                   
                                   
-    Position      mPosition;      
+    mozilla::Position mPosition;  
     Size          mSize;          
     uint8_t       mClip;          
     MOZ_INIT_OUTSIDE_CTOR
@@ -1746,10 +1744,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   }
 
   
-  
-  typedef nsStyleImageLayers::Position Position;
-
-  
 
 
   uint16_t ComputedAlignContent() const { return mAlignContent; }
@@ -1782,7 +1776,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
 
   uint8_t ComputedJustifySelf(nsStyleContext* aParent) const;
 
-  Position      mObjectPosition;        
+  mozilla::Position mObjectPosition;    
   nsStyleSides  mOffset;                
   nsStyleCoord  mWidth;                 
   nsStyleCoord  mMinWidth;              
@@ -2551,7 +2545,6 @@ public:
     mFillRule = aFillRule;
   }
 
-  typedef nsStyleImageLayers::Position Position;
   Position& GetPosition() {
     MOZ_ASSERT(mType == StyleBasicShapeType::Circle ||
                mType == StyleBasicShapeType::Ellipse,
@@ -2828,11 +2821,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   
   
-  
-  typedef nsStyleImageLayers::Position Position;
-
-  
-  
   RefPtr<mozilla::css::URLValue> mBinding;    
   uint8_t mDisplay;             
   uint8_t mOriginalDisplay;     
@@ -2872,8 +2860,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   uint8_t mScrollSnapTypeY;     
   nsStyleCoord mScrollSnapPointsX; 
   nsStyleCoord mScrollSnapPointsY; 
-  Position mScrollSnapDestination; 
-  nsTArray<Position> mScrollSnapCoordinate; 
+  mozilla::Position mScrollSnapDestination; 
+  nsTArray<mozilla::Position> mScrollSnapCoordinate; 
 
   
   
