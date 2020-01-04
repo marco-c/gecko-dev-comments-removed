@@ -4850,6 +4850,9 @@ HTMLInputElement::ChooseDirectory(ErrorResult& aRv)
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
+  
+  
+  
   InitFilePicker(
 #if defined(ANDROID) || defined(MOZ_B2G)
                  
