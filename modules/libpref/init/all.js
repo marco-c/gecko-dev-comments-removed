@@ -3402,12 +3402,6 @@ pref("intl.tsf.hack.atok.create_native_caret", true);
 
 
 
-
-pref("intl.tsf.hack.atok.do_not_return_no_layout_error_of_composition_string", true);
-
-
-
-
 pref("intl.tsf.hack.free_chang_jie.do_not_return_no_layout_error", true);
 
 pref("intl.tsf.hack.ms_simplified_chinese.do_not_return_no_layout_error", true);
@@ -4796,12 +4790,6 @@ pref("dom.w3c_pointer_events.enabled", false);
 pref("dom.imagecapture.enabled", false);
 
 
-pref("media.ondevicechange.enabled", false);
-
-
-pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
-
-
 
 
 
@@ -5267,10 +5255,6 @@ pref("dom.beforeAfterKeyboardEvent.enabled", false);
 
 
 pref("dom.presentation.enabled", false);
-pref("dom.presentation.controller.enabled", false);
-pref("dom.presentation.receiver.enabled", false);
-
-
 pref("dom.presentation.tcp_server.debug", false);
 pref("dom.presentation.discovery.enabled", false);
 pref("dom.presentation.discovery.legacy.enabled", false);
@@ -5481,6 +5465,9 @@ pref("dom.input.fallbackUploadDir", "");
 
 
 pref("plugins.rewrite_youtube_embeds", true);
+
+
+pref("plugins.navigator_hide_disabled_flash", false);
 
 
 pref("dom.mozBrowserFramesEnabled", false);
