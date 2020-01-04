@@ -1427,8 +1427,8 @@
   "HTTP_AUTH_DIALOG_STATS": {
     "expires_in_version": "never",
     "kind": "enumerated",
-    "n_values": 3,
-    "description": "Stats about what kind of resource requested http authentication. (0=top-level doc, 1=same origin subresources 2=cross-origin subresources)"
+    "n_values": 4,
+    "description": "Stats about what kind of resource requested http authentication. (0=top-level doc, 1=same origin subresources, 2=cross-origin subresources, 3=xhr)"
   },
   "HTTP_AUTH_TYPE_STATS": {
     "alert_emails": ["rbarnes@mozilla.com"],
@@ -4452,13 +4452,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "The browser that was the default on the initial profile migration. The values correspond to the internal browser ID (see MigrationUtils.jsm)"
   },
-  "FX_STARTUP_EXTERNAL_CONTENT_HANDLER": {
-    "bug_numbers": [1276027],
-    "alert_emails": ["jaws@mozilla.com"],
-    "expires_in_version": "53",
-    "kind": "count",
-    "description": "Count how often the browser is opened as an external app handler. This is generally used when the browser is set as the default browser."
-  },
   "INPUT_EVENT_RESPONSE_MS": {
     "alert_emails": ["perf-telemetry-alerts@mozilla.com"],
     "bug_numbers": [1235908],
@@ -5593,7 +5586,7 @@
   },
   "SEARCH_SERVICE_HAS_UPDATES": {
     "alert_emails": ["florian@mozilla.com"],
-    "expires_in_version": "55",
+    "expires_in_version": "50",
     "kind": "boolean",
     "bug_numbers": [1259510],
     "description": "Recorded once per session near startup: records true/false whether the search service has engines with update URLs.",
@@ -5601,7 +5594,7 @@
   },
   "SEARCH_SERVICE_HAS_ICON_UPDATES": {
     "alert_emails": ["florian@mozilla.com"],
-    "expires_in_version": "55",
+    "expires_in_version": "50",
     "kind": "boolean",
     "bug_numbers": [1259510],
     "description": "Recorded once per session near startup: records true/false whether the search service has engines with icon update URLs.",
