@@ -4,6 +4,8 @@
 
 
 
+
+
 function test() {
   Task.spawn(function* () {
     const TAB_URL = EXAMPLE_URL + "doc_inline-script.html";

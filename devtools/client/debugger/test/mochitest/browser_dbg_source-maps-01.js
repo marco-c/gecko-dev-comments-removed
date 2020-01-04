@@ -6,6 +6,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_binary_search.html";
 const COFFEE_URL = EXAMPLE_URL + "code_binary_search.coffee";
 

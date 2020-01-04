@@ -5,6 +5,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_scope-variable-4.html";
 
 function test() {

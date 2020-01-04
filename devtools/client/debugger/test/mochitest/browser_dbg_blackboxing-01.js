@@ -5,6 +5,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_binary_search.html";
 
 var gTab, gPanel, gDebugger;

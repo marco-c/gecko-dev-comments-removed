@@ -5,6 +5,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_minified_bogus_map.html";
 const JS_URL = EXAMPLE_URL + "code_math_bogus_map.js";
 

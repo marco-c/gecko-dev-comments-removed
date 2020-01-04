@@ -3,6 +3,8 @@
 
 
 
+
+
 const ADDON_URL = EXAMPLE_URL + "addon5.xpi";
 
 function test() {

@@ -6,6 +6,8 @@
 
 
 
+
+
 function test() {
   initDebugger('data:text/html,hi').then(([aTab,, aPanel]) => {
     const gPanel = aPanel;

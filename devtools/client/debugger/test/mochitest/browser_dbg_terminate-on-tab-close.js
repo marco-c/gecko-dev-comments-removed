@@ -5,6 +5,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_terminate-on-tab-close.html";
 
 function test() {

@@ -7,6 +7,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_auto-pretty-print-02.html";
 
 var gTab, gDebuggee, gPanel, gDebugger;

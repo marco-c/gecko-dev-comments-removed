@@ -5,6 +5,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_editor-mode.html";
 
 var gTab, gPanel, gDebugger;

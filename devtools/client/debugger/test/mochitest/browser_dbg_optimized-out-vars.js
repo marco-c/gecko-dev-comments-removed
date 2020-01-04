@@ -3,6 +3,8 @@
 
 
 
+
+
 function test() {
   Task.spawn(function* () {
     const TAB_URL = EXAMPLE_URL + "doc_closure-optimized-out.html";

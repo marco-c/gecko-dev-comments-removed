@@ -7,6 +7,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_script-switching-01.html";
 
 function test() {

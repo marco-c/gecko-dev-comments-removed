@@ -4,6 +4,8 @@
 
 
 
+
+
 const ADDON1_URL = EXAMPLE_URL + "addon1.xpi";
 const ADDON2_URL = EXAMPLE_URL + "addon2.xpi";
 

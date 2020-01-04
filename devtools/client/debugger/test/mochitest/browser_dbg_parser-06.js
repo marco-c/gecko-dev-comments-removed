@@ -6,6 +6,8 @@
 
 
 
+
+
 function test() {
   let { Parser, ParserHelpers, SyntaxTreeVisitor } =
     Cu.import("resource://devtools/shared/Parser.jsm", {});

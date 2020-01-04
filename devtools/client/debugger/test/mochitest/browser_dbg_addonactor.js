@@ -3,6 +3,8 @@
 
 
 
+
+
 const ADDON3_URL = EXAMPLE_URL + "addon3.xpi";
 const ADDON_MODULE_URL = "resource://jid1-ami3akps3baaeg-at-jetpack/browser_dbg_addon3/lib/main.js";
 

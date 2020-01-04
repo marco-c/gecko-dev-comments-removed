@@ -7,6 +7,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_global-method-override.html";
 
 function test() {

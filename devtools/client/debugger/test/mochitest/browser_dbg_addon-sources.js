@@ -4,6 +4,8 @@
 
 
 
+
+
 const ADDON_URL = EXAMPLE_URL + "addon3.xpi";
 var gClient;
 

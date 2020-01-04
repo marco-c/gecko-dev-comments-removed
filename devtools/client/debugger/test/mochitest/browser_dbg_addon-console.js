@@ -3,6 +3,8 @@
 
 
 
+
+
 const ADDON_URL = EXAMPLE_URL + "addon4.xpi";
 
 function getCachedMessages(webConsole) {

@@ -5,6 +5,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_script-bookmarklet.html";
 
 const BOOKMARKLET_SCRIPT_CODE = "console.log('bookmarklet executed');";

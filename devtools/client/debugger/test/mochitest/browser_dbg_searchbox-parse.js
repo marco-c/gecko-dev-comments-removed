@@ -5,6 +5,8 @@
 
 
 
+
+
 function test() {
   initDebugger("about:blank").then(([aTab,, aPanel]) => {
     let filterView = aPanel.panelWin.DebuggerView.Filtering;

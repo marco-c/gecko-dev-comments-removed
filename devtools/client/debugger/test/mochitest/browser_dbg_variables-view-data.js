@@ -6,6 +6,8 @@
 
 
 
+
+
 var gTab, gPanel, gDebugger;
 var gVariablesView, gScope, gVariable;
 

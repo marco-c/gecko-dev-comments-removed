@@ -6,6 +6,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_pretty-print-on-paused.html";
 
 var gTab, gPanel, gDebugger, gThreadClient, gSources;

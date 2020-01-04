@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 const { reportException } = require("devtools/shared/DevToolsUtils");

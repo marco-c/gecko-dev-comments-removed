@@ -5,6 +5,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_inline-script.html";
 
 var gTab, gPanel, gDebugger;

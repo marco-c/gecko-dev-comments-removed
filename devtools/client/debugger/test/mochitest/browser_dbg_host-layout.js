@@ -6,6 +6,8 @@
 
 
 
+
+
 "use strict";
 
 var gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");

@@ -5,6 +5,8 @@
 
 
 
+
+
 const TAB_URL = EXAMPLE_URL + "doc_pause-exceptions.html";
 
 var gTab, gPanel, gDebugger;
