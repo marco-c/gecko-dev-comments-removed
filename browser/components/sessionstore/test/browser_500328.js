@@ -42,9 +42,9 @@ function checkState(tab) {
       
       
       
-      runInContent(tab.linkedBrowser, function(win, state) {
+      ContentTask.spawn(tab.linkedBrowser, aEvent.state, function(state) {
         return Cu.waiveXrays(state).obj3.toString();
-      }, aEvent.state).then(function(stateStr) {
+      }).then(function(stateStr) {
         is(stateStr, '/^a$/', "second popstate object.");
 
         
@@ -92,13 +92,13 @@ function test() {
       
       
       
-      function contentTest(win) {
-        let history = win.history;
+      function contentTest() {
+        let history = content.window.history;
         history.pushState({obj1:1}, "title-obj1");
         history.pushState({obj2:2}, "title-obj2", "?page2");
         history.replaceState({obj3:/^a$/}, "title-obj3");
       }
-      runInContent(browser, contentTest, null).then(function() {
+      ContentTask.spawn(browser, null, contentTest).then(function() {
         return TabStateFlusher.flush(tab.linkedBrowser);
       }).then(() => {
         let state = ss.getTabState(tab);
