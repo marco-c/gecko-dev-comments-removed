@@ -317,6 +317,15 @@ MacroAssembler::hasSelfReference() const
 
 
 void
+MacroAssembler::addPtr(ImmPtr imm, Register dest)
+{
+    addPtr(ImmWord(uintptr_t(imm.value)), dest);
+}
+
+
+
+
+void
 MacroAssembler::branchFunctionKind(Condition cond, JSFunction::FunctionKind kind, Register fun,
                                    Register scratch, Label* label)
 {
