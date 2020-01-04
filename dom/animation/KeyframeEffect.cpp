@@ -545,33 +545,34 @@ struct KeyframeStringValueEntry : KeyframeValueEntry
   nsString mValue;
   const ComputedTimingFunction* mTimingFunction;
 
-  bool operator==(const KeyframeStringValueEntry& aRhs) const
+  struct OffsetEasingPropertyComparator
   {
-    NS_ASSERTION(mOffset != aRhs.mOffset || mProperty != aRhs.mProperty,
-                 "shouldn't have duplicate (offset, property) pairs");
-    return false;
-  }
-
-  bool operator<(const KeyframeStringValueEntry& aRhs) const
-  {
-    NS_ASSERTION(mOffset != aRhs.mOffset || mProperty != aRhs.mProperty,
-                 "shouldn't have duplicate (offset, property) pairs");
-
-    
-    if (mOffset != aRhs.mOffset) {
-      return mOffset < aRhs.mOffset;
+    bool Equals(const KeyframeStringValueEntry& aLhs,
+                const KeyframeStringValueEntry& aRhs) const
+    {
+      return aLhs.mOffset == aRhs.mOffset &&
+             aLhs.mProperty == aRhs.mProperty &&
+             *aLhs.mTimingFunction == *aRhs.mTimingFunction;
     }
+    bool LessThan(const KeyframeStringValueEntry& aLhs,
+                  const KeyframeStringValueEntry& aRhs) const
+    {
+      
+      if (aLhs.mOffset != aRhs.mOffset) {
+        return aLhs.mOffset < aRhs.mOffset;
+      }
 
-    
-    int32_t order = mTimingFunction->Compare(*aRhs.mTimingFunction);
-    if (order != 0) {
-      return order < 0;
+      
+      int32_t order = aLhs.mTimingFunction->Compare(*aRhs.mTimingFunction);
+      if (order != 0) {
+        return order < 0;
+      }
+
+      
+      return nsCSSProps::PropertyIDLNameSortPosition(aLhs.mProperty) <
+             nsCSSProps::PropertyIDLNameSortPosition(aRhs.mProperty);
     }
-
-    
-    return nsCSSProps::PropertyIDLNameSortPosition(mProperty) <
-           nsCSSProps::PropertyIDLNameSortPosition(aRhs.mProperty);
-  }
+  };
 };
 
 void
@@ -611,7 +612,7 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
                                         segment.mToValue,
                                         entry->mValue);
   }
-  entries.Sort();
+  entries.Sort(KeyframeStringValueEntry::OffsetEasingPropertyComparator());
 
   for (size_t i = 0, n = entries.Length(); i < n; ) {
     
