@@ -159,18 +159,18 @@ assertEq(bufferGetter.call(mem1) instanceof ArrayBuffer, true);
 assertEq(bufferGetter.call(mem1).byteLength, WasmPage);
 
 
-const growDesc = Object.getOwnPropertyDescriptor(memoryProto, 'grow');
-assertEq(typeof growDesc.value, "function");
-assertEq(growDesc.enumerable, false);
-assertEq(growDesc.configurable, true);
+const memGrowDesc = Object.getOwnPropertyDescriptor(memoryProto, 'grow');
+assertEq(typeof memGrowDesc.value, "function");
+assertEq(memGrowDesc.enumerable, false);
+assertEq(memGrowDesc.configurable, true);
 
 
-const grow = growDesc.value;
-assertEq(grow.length, 1);
-assertErrorMessage(() => grow.call(), TypeError, /called on incompatible undefined/);
-assertErrorMessage(() => grow.call({}), TypeError, /called on incompatible Object/);
-assertErrorMessage(() => grow.call(mem1, -1), Error, /failed to grow memory/);
-assertErrorMessage(() => grow.call(mem1, Math.pow(2,32)), Error, /failed to grow memory/);
+const memGrow = memGrowDesc.value;
+assertEq(memGrow.length, 1);
+assertErrorMessage(() => memGrow.call(), TypeError, /called on incompatible undefined/);
+assertErrorMessage(() => memGrow.call({}), TypeError, /called on incompatible Object/);
+assertErrorMessage(() => memGrow.call(mem1, -1), Error, /failed to grow memory/);
+assertErrorMessage(() => memGrow.call(mem1, Math.pow(2,32)), Error, /failed to grow memory/);
 var mem = new Memory({initial:1, maximum:2});
 var buf = mem.buffer;
 assertEq(buf.byteLength, WasmPage);
@@ -286,6 +286,27 @@ assertErrorMessage(() => set.call(tbl1, 0, Math.sin), TypeError, /can only assig
 assertErrorMessage(() => set.call(tbl1, {valueOf() { throw Error("hai") }}, null), Error, "hai");
 assertEq(set.call(tbl1, 0, null), undefined);
 assertEq(set.call(tbl1, 1, null), undefined);
+
+
+const tblGrowDesc = Object.getOwnPropertyDescriptor(tableProto, 'grow');
+assertEq(typeof tblGrowDesc.value, "function");
+assertEq(tblGrowDesc.enumerable, false);
+assertEq(tblGrowDesc.configurable, true);
+
+
+const tblGrow = tblGrowDesc.value;
+assertEq(tblGrow.length, 1);
+assertErrorMessage(() => tblGrow.call(), TypeError, /called on incompatible undefined/);
+assertErrorMessage(() => tblGrow.call({}), TypeError, /called on incompatible Object/);
+assertErrorMessage(() => tblGrow.call(tbl1, -1), Error, /failed to grow table/);
+assertErrorMessage(() => tblGrow.call(tbl1, Math.pow(2,32)), Error, /failed to grow table/);
+var tbl = new Table({element:"anyfunc", initial:1, maximum:2});
+assertEq(tbl.length, 1);
+assertEq(tbl.grow(0), 1);
+assertEq(tbl.length, 1);
+assertEq(tbl.grow(1), 1);
+assertEq(tbl.length, 2);
+assertErrorMessage(() => tbl.grow(1), Error, /failed to grow table/);
 
 
 const compileDesc = Object.getOwnPropertyDescriptor(WebAssembly, 'compile');

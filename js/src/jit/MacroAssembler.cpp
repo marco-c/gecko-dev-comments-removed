@@ -2777,7 +2777,7 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
     if (callee.which() == wasm::CalleeDesc::AsmJSTable) {
         
         
-        loadWasmGlobalPtr(callee.tableGlobalDataOffset(), scratch);
+        loadWasmGlobalPtr(callee.tableBaseGlobalDataOffset(), scratch);
         loadPtr(BaseIndex(scratch, index, ScalePointer), scratch);
         call(desc, scratch);
         return;
@@ -2799,12 +2799,11 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
     }
 
     
-    branch32(Assembler::Condition::AboveOrEqual,
-             index, Imm32(callee.wasmTableLength()),
-             wasm::JumpTarget::OutOfBounds);
+    loadWasmGlobalPtr(callee.tableLengthGlobalDataOffset(), scratch);
+    branch32(Assembler::Condition::AboveOrEqual, index, scratch, wasm::JumpTarget::OutOfBounds);
 
     
-    loadWasmGlobalPtr(callee.tableGlobalDataOffset(), scratch);
+    loadWasmGlobalPtr(callee.tableBaseGlobalDataOffset(), scratch);
 
     
     if (callee.wasmTableIsExternal()) {

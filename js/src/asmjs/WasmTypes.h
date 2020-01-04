@@ -947,6 +947,14 @@ enum ModuleKind
 
 
 
+struct ResizableLimits
+{
+    uint32_t initial;
+    Maybe<uint32_t> maximum;
+};
+
+
+
 
 
 enum class TableKind
@@ -960,131 +968,18 @@ struct TableDesc
     TableKind kind;
     bool external;
     uint32_t globalDataOffset;
-    uint32_t initial;
-    uint32_t maximum;
+    ResizableLimits limits;
 
-    TableDesc() { PodZero(this); }
+    TableDesc() = default;
+    TableDesc(TableKind kind, ResizableLimits limits)
+     : kind(kind),
+       external(false),
+       globalDataOffset(UINT32_MAX),
+       limits(limits)
+    {}
 };
 
-WASM_DECLARE_POD_VECTOR(TableDesc, TableDescVector)
-
-
-
-
-class CalleeDesc
-{
-  public:
-    enum Which {
-        
-        Definition,
-
-        
-        
-        Import,
-
-        
-        
-        WasmTable,
-
-        
-        AsmJSTable,
-
-        
-        Builtin,
-
-        
-        BuiltinInstanceMethod
-    };
-
-  private:
-    Which which_;
-    union U {
-        U() {}
-        uint32_t funcDefIndex_;
-        struct {
-            uint32_t globalDataOffset_;
-        } import;
-        struct {
-            TableDesc desc_;
-            SigIdDesc sigId_;
-        } table;
-        SymbolicAddress builtin_;
-    } u;
-
-  public:
-    CalleeDesc() {}
-    static CalleeDesc definition(uint32_t funcDefIndex) {
-        CalleeDesc c;
-        c.which_ = Definition;
-        c.u.funcDefIndex_ = funcDefIndex;
-        return c;
-    }
-    static CalleeDesc import(uint32_t globalDataOffset) {
-        CalleeDesc c;
-        c.which_ = Import;
-        c.u.import.globalDataOffset_ = globalDataOffset;
-        return c;
-    }
-    static CalleeDesc wasmTable(const TableDesc& desc, SigIdDesc sigId) {
-        CalleeDesc c;
-        c.which_ = WasmTable;
-        c.u.table.desc_ = desc;
-        c.u.table.sigId_ = sigId;
-        return c;
-    }
-    static CalleeDesc asmJSTable(const TableDesc& desc) {
-        CalleeDesc c;
-        c.which_ = AsmJSTable;
-        c.u.table.desc_ = desc;
-        return c;
-    }
-    static CalleeDesc builtin(SymbolicAddress callee) {
-        CalleeDesc c;
-        c.which_ = Builtin;
-        c.u.builtin_ = callee;
-        return c;
-    }
-    static CalleeDesc builtinInstanceMethod(SymbolicAddress callee) {
-        CalleeDesc c;
-        c.which_ = BuiltinInstanceMethod;
-        c.u.builtin_ = callee;
-        return c;
-    }
-    Which which() const {
-        return which_;
-    }
-    uint32_t funcDefIndex() const {
-        MOZ_ASSERT(which_ == Definition);
-        return u.funcDefIndex_;
-    }
-    uint32_t importGlobalDataOffset() const {
-        MOZ_ASSERT(which_ == Import);
-        return u.import.globalDataOffset_;
-    }
-    bool isTable() const {
-        return which_ == WasmTable || which_ == AsmJSTable;
-    }
-    uint32_t tableGlobalDataOffset() const {
-        MOZ_ASSERT(isTable());
-        return u.table.desc_.globalDataOffset;
-    }
-    uint32_t wasmTableLength() const {
-        MOZ_ASSERT(which_ == WasmTable);
-        return u.table.desc_.initial;
-    }
-    bool wasmTableIsExternal() const {
-        MOZ_ASSERT(which_ == WasmTable);
-        return u.table.desc_.external;
-    }
-    SigIdDesc wasmTableSigId() const {
-        MOZ_ASSERT(which_ == WasmTable);
-        return u.table.sigId_;
-    }
-    SymbolicAddress builtin() const {
-        MOZ_ASSERT(which_ == Builtin || which_ == BuiltinInstanceMethod);
-        return u.builtin_;
-    }
-};
+typedef Vector<TableDesc, 0, SystemAllocPolicy> TableDescVector;
 
 
 
@@ -1159,6 +1054,20 @@ struct FuncImportTls
 
 
 
+struct TableTls
+{
+    
+    uint32_t length;
+
+    
+    
+    void* base;
+};
+
+
+
+
+
 struct ExternalTableElem
 {
     
@@ -1171,6 +1080,126 @@ struct ExternalTableElem
     
     
     TlsData* tls;
+};
+
+
+
+
+class CalleeDesc
+{
+  public:
+    enum Which {
+        
+        Definition,
+
+        
+        
+        Import,
+
+        
+        
+        WasmTable,
+
+        
+        AsmJSTable,
+
+        
+        Builtin,
+
+        
+        BuiltinInstanceMethod
+    };
+
+  private:
+    Which which_;
+    union U {
+        U() {}
+        uint32_t funcDefIndex_;
+        struct {
+            uint32_t globalDataOffset_;
+        } import;
+        struct {
+            uint32_t globalDataOffset_;
+            bool external_;
+            SigIdDesc sigId_;
+        } table;
+        SymbolicAddress builtin_;
+    } u;
+
+  public:
+    CalleeDesc() {}
+    static CalleeDesc definition(uint32_t funcDefIndex) {
+        CalleeDesc c;
+        c.which_ = Definition;
+        c.u.funcDefIndex_ = funcDefIndex;
+        return c;
+    }
+    static CalleeDesc import(uint32_t globalDataOffset) {
+        CalleeDesc c;
+        c.which_ = Import;
+        c.u.import.globalDataOffset_ = globalDataOffset;
+        return c;
+    }
+    static CalleeDesc wasmTable(const TableDesc& desc, SigIdDesc sigId) {
+        CalleeDesc c;
+        c.which_ = WasmTable;
+        c.u.table.globalDataOffset_ = desc.globalDataOffset;
+        c.u.table.external_ = desc.external;
+        c.u.table.sigId_ = sigId;
+        return c;
+    }
+    static CalleeDesc asmJSTable(const TableDesc& desc) {
+        CalleeDesc c;
+        c.which_ = AsmJSTable;
+        c.u.table.globalDataOffset_ = desc.globalDataOffset;
+        return c;
+    }
+    static CalleeDesc builtin(SymbolicAddress callee) {
+        CalleeDesc c;
+        c.which_ = Builtin;
+        c.u.builtin_ = callee;
+        return c;
+    }
+    static CalleeDesc builtinInstanceMethod(SymbolicAddress callee) {
+        CalleeDesc c;
+        c.which_ = BuiltinInstanceMethod;
+        c.u.builtin_ = callee;
+        return c;
+    }
+    Which which() const {
+        return which_;
+    }
+    uint32_t funcDefIndex() const {
+        MOZ_ASSERT(which_ == Definition);
+        return u.funcDefIndex_;
+    }
+    uint32_t importGlobalDataOffset() const {
+        MOZ_ASSERT(which_ == Import);
+        return u.import.globalDataOffset_;
+    }
+    bool isTable() const {
+        return which_ == WasmTable || which_ == AsmJSTable;
+    }
+    uint32_t tableLengthGlobalDataOffset() const {
+        MOZ_ASSERT(isTable());
+        return u.table.globalDataOffset_ + offsetof(TableTls, length);
+    }
+    uint32_t tableBaseGlobalDataOffset() const {
+        MOZ_ASSERT(isTable());
+        return u.table.globalDataOffset_ + offsetof(TableTls, base);
+    }
+    bool wasmTableIsExternal() const {
+        MOZ_ASSERT(which_ == WasmTable);
+        return u.table.external_;
+    }
+    SigIdDesc wasmTableSigId() const {
+        MOZ_ASSERT(which_ == WasmTable);
+        return u.table.sigId_;
+    }
+    SymbolicAddress builtin() const {
+        MOZ_ASSERT(which_ == Builtin || which_ == BuiltinInstanceMethod);
+        return u.builtin_;
+    }
 };
 
 

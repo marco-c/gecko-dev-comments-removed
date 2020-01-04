@@ -46,9 +46,9 @@ class Instance
     TlsData                              tlsData_;
 
     
-    void** addressOfTableBase(size_t tableIndex) const;
     const void** addressOfSigId(const SigIdDesc& sigId) const;
     FuncImportTls& funcImportTls(const FuncImport& fi);
+    TableTls& tableTls(const TableDesc& td) const;
 
     
     friend void* AddressOf(SymbolicAddress, ExclusiveContext*);
@@ -64,14 +64,6 @@ class Instance
     
     friend class js::WasmInstanceObject;
     void tracePrivate(JSTracer* trc);
-
-    
-    friend class js::WasmMemoryObject;
-    void onMovingGrow(uint8_t* prevMemoryBase);
-
-    
-    friend class Table;
-    WasmInstanceObject* objectUnbarriered() const;
 
   public:
     Instance(JSContext* cx,
@@ -103,8 +95,10 @@ class Instance
     
     
     
+    
 
     WasmInstanceObject* object() const;
+    WasmInstanceObject* objectUnbarriered() const;
 
     
     
@@ -123,6 +117,11 @@ class Instance
     
 
     bool memoryAccessWouldFault(uint8_t* addr, unsigned numBytes);
+
+    
+
+    void onMovingGrowMemory(uint8_t* prevMemoryBase);
+    void onMovingGrowTable();
 
     
 
