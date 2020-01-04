@@ -105,7 +105,8 @@ function initializeAutoCompletion(ctx, options = {}) {
     
     return;
   } else if (ed.config.mode == Editor.modes.css) {
-    completer = new CSSCompleter({walker: options.walker});
+    completer = new CSSCompleter({walker: options.walker,
+                                  cssProperties: options.cssProperties});
   }
 
   function insertSelectedPopupItem() {

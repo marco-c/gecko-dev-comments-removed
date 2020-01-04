@@ -6,10 +6,6 @@
 
 "use strict";
 
-
-const {Cc, Ci} = require("chrome");
-
-
 const {
   EXPAND_TAB,
   TAB_SIZE,
@@ -113,8 +109,6 @@ const CM_MAPPING = [
   "getScrollInfo",
   "getViewport"
 ];
-
-const { cssProperties, cssValues, cssColors } = getCSSKeywords();
 
 const editors = new WeakMap();
 
@@ -240,6 +234,11 @@ function Editor(config) {
     this.config.externalScripts = [];
   }
 
+  
+  if (this.config.cssProperties) {
+    this.config.autocompleteOpts.cssProperties = this.config.cssProperties;
+  }
+
   events.decorate(this);
 }
 
@@ -288,21 +287,35 @@ Editor.prototype = {
           Services.scriptloader.loadSubScript(url, win, "utf8");
         }
       });
-      
-      
-      let cssSpec = win.CodeMirror.resolveMode("text/css");
-      cssSpec.propertyKeywords = cssProperties;
-      cssSpec.colorKeywords = cssColors;
-      cssSpec.valueKeywords = cssValues;
-      win.CodeMirror.defineMIME("text/css", cssSpec);
+      if (this.config.cssProperties) {
+        
+        
+        
 
-      let scssSpec = win.CodeMirror.resolveMode("text/x-scss");
-      scssSpec.propertyKeywords = cssProperties;
-      scssSpec.colorKeywords = cssColors;
-      scssSpec.valueKeywords = cssValues;
-      win.CodeMirror.defineMIME("text/x-scss", scssSpec);
+        const {
+          propertyKeywords,
+          colorKeywords,
+          valueKeywords
+        } = getCSSKeywords(this.config.cssProperties);
 
-      win.CodeMirror.commands.save = () => this.emit("saveRequested");
+        let cssSpec = win.CodeMirror.resolveMode("text/css");
+        cssSpec.propertyKeywords = propertyKeywords;
+        cssSpec.colorKeywords = colorKeywords;
+        cssSpec.valueKeywords = valueKeywords;
+        win.CodeMirror.defineMIME("text/css", cssSpec);
+
+        let scssSpec = win.CodeMirror.resolveMode("text/x-scss");
+        scssSpec.propertyKeywords = propertyKeywords;
+        scssSpec.colorKeywords = colorKeywords;
+        scssSpec.valueKeywords = valueKeywords;
+        win.CodeMirror.defineMIME("text/x-scss", scssSpec);
+
+        win.CodeMirror.commands.save = () => this.emit("saveRequested");
+      } else if (this.config.mode === Editor.modes.css) {
+        console.warn("The CSS properties are defaulting to the those provided by " +
+                     "CodeMirror as no CSS database was provided for CSS values " +
+                     "specific to the target platform.");
+      }
 
       
       
@@ -517,6 +530,12 @@ Editor.prototype = {
 
 
   setMode: function (value) {
+    if (value === Editor.modes.css && !this.config.cssProperties) {
+      console.warn("Switching to CSS mode in the editor, but no CSS properties " +
+                   "database was provided to CodeMirror. CodeMirror will default" +
+                   "to its built-in values, and not use the values specific to the " +
+                   "target platform.");
+    }
     this.setOption("mode", value);
 
     
@@ -1284,7 +1303,9 @@ Editor.keyFor = function (cmd, opts = { noaccel: false }) {
 
 
 
-function getCSSKeywords() {
+
+
+function getCSSKeywords(cssProperties) {
   function keySet(array) {
     let keys = {};
     for (let i = 0; i < array.length; ++i) {
@@ -1293,26 +1314,26 @@ function getCSSKeywords() {
     return keys;
   }
 
-  let domUtils = Cc["@mozilla.org/inspector/dom-utils;1"]
-                   .getService(Ci.inIDOMUtils);
-  let properties = domUtils.getCSSPropertyNames(domUtils.INCLUDE_ALIASES);
-  let colors = {};
-  let values = {};
-  properties.forEach(property => {
+  let propertyKeywords = cssProperties.getNames();
+  let colorKeywords = {};
+  let valueKeywords = {};
+
+  propertyKeywords.forEach(property => {
     if (property.includes("color")) {
-      domUtils.getCSSValuesForProperty(property).forEach(value => {
-        colors[value] = true;
+      cssProperties.getValues(property).forEach(value => {
+        colorKeywords[value] = true;
       });
     } else {
-      domUtils.getCSSValuesForProperty(property).forEach(value => {
-        values[value] = true;
+      cssProperties.getValues(property).forEach(value => {
+        valueKeywords[value] = true;
       });
     }
   });
+
   return {
-    cssProperties: keySet(properties),
-    cssValues: values,
-    cssColors: colors
+    propertyKeywords: keySet(propertyKeywords),
+    colorKeywords: colorKeywords,
+    valueKeywords: valueKeywords
   };
 }
 

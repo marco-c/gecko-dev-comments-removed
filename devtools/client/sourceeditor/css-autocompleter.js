@@ -5,10 +5,6 @@
 "use strict";
 
 
-
-
-const { Cc, Ci } = require("chrome");
-
 const {cssTokenizer, cssTokenizerWithLineColumn} = require("devtools/shared/css-parsing-utils");
 
 
@@ -78,7 +74,6 @@ const SELECTOR_STATES = {
 };
 
 
-const { properties, propertyNames } = getCSSKeywords();
 
 
 
@@ -91,6 +86,9 @@ const { properties, propertyNames } = getCSSKeywords();
 function CSSCompleter(options = {}) {
   this.walker = options.walker;
   this.maxEntries = options.maxEntries || 15;
+  this.cssProperties = options.cssProperties;
+
+  this.propertyNames = this.cssProperties.getNames().sort();
 
   
   
@@ -844,18 +842,18 @@ CSSCompleter.prototype = {
       return Promise.resolve(finalList);
     }
 
-    let length = propertyNames.length;
+    let length = this.propertyNames.length;
     let i = 0, count = 0;
     for (; i < length && count < this.maxEntries; i++) {
-      if (propertyNames[i].startsWith(startProp)) {
+      if (this.propertyNames[i].startsWith(startProp)) {
         count++;
-        let propName = propertyNames[i];
+        let propName = this.propertyNames[i];
         finalList.push({
           preLabel: startProp,
           label: propName,
           text: propName + ": "
         });
-      } else if (propertyNames[i] > startProp) {
+      } else if (this.propertyNames[i] > startProp) {
         
         break;
       }
@@ -872,7 +870,7 @@ CSSCompleter.prototype = {
 
   completeValues: function (propName, startValue) {
     let finalList = [];
-    let list = ["!important;", ...(properties[propName] || [])];
+    let list = ["!important;", ...this.cssProperties.getValues(propName)];
     
     
     if (!startValue) {
@@ -1210,30 +1208,5 @@ CSSCompleter.prototype = {
     return null;
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-function getCSSKeywords() {
-  let domUtils = Cc["@mozilla.org/inspector/dom-utils;1"]
-                   .getService(Ci.inIDOMUtils);
-  let props = {};
-  let propNames = domUtils.getCSSPropertyNames(domUtils.INCLUDE_ALIASES);
-  propNames.forEach(prop => {
-    props[prop] = domUtils.getCSSValuesForProperty(prop).sort();
-  });
-  return {
-    properties: props,
-    propertyNames: propNames.sort()
-  };
-}
 
 module.exports = CSSCompleter;

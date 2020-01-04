@@ -421,7 +421,9 @@ StyleSheetEditor.prototype = {
 
 
 
-  load: function (inputElement) {
+
+
+  load: function (inputElement, cssProperties) {
     if (this._isDestroyed) {
       return promise.reject("Won't load source editor as the style sheet has " +
                             "already been removed from Style Editor.");
@@ -438,7 +440,8 @@ StyleSheetEditor.prototype = {
       extraKeys: this._getKeyBindings(),
       contextMenu: "sourceEditorContextMenu",
       autocomplete: Services.prefs.getBoolPref(AUTOCOMPLETION_PREF),
-      autocompleteOpts: { walker: this.walker }
+      autocompleteOpts: { walker: this.walker, cssProperties },
+      cssProperties
     };
     let sourceEditor = this._sourceEditor = new Editor(config);
 

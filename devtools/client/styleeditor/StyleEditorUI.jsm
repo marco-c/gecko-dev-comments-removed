@@ -58,12 +58,14 @@ const PREF_NAV_WIDTH = "devtools.styleeditor.navSidebarWidth";
 
 
 
-function StyleEditorUI(debuggee, target, panelDoc) {
+
+function StyleEditorUI(debuggee, target, panelDoc, cssProperties) {
   EventEmitter.decorate(this);
 
   this._debuggee = debuggee;
   this._target = target;
   this._panelDoc = panelDoc;
+  this._cssProperties = cssProperties;
   this._window = this._panelDoc.defaultView;
   this._root = this._panelDoc.getElementById("style-editor-chrome");
 
@@ -603,7 +605,7 @@ StyleEditorUI.prototype = {
             
             let inputElement =
                 details.querySelector(".stylesheet-editor-input");
-            yield showEditor.load(inputElement);
+            yield showEditor.load(inputElement, this._cssProperties);
           }
 
           showEditor.onShow();

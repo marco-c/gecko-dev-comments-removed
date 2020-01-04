@@ -12,6 +12,7 @@ var EventEmitter = require("devtools/shared/event-emitter");
 
 var {StyleEditorUI} = require("resource://devtools/client/styleeditor/StyleEditorUI.jsm");
 var {getString} = require("resource://devtools/client/styleeditor/StyleEditorUtil.jsm");
+var {initCssProperties} = require("devtools/shared/fronts/css-properties");
 
 loader.lazyGetter(this, "StyleSheetsFront",
   () => require("devtools/shared/fronts/stylesheets").StyleSheetsFront);
@@ -61,7 +62,11 @@ StyleEditorPanel.prototype = {
     }
 
     
-    this.UI = new StyleEditorUI(this._debuggee, this.target, this._panelDoc);
+    const {cssProperties} = yield initCssProperties(this._toolbox);
+
+    
+    this.UI = new StyleEditorUI(this._debuggee, this.target, this._panelDoc,
+                                cssProperties);
     this.UI.on("error", this._showError);
     yield this.UI.initialize();
 
