@@ -41,6 +41,7 @@
 #include "gfxPlatform.h"
 #include "nsCSSRules.h"
 #include "nsFontFaceLoader.h"
+#include "mozilla/EffectCompositor.h"
 #include "mozilla/EventListenerManager.h"
 #include "prenv.h"
 #include "nsPluginFrame.h"
@@ -366,6 +367,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsPresContext)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAnimationManager);
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocument);
   
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEffectCompositor);
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventManager);
   
 
@@ -379,6 +381,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsPresContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAnimationManager);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDeviceContext); 
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEffectCompositor);
   
   
   
@@ -1001,8 +1004,8 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
 
   mEventManager = new mozilla::EventStateManager();
 
+  mEffectCompositor = new mozilla::EffectCompositor(this);
   mTransitionManager = new nsTransitionManager(this);
-
   mAnimationManager = new nsAnimationManager(this);
 
   if (mDocument->GetDisplayDocument()) {
@@ -1180,6 +1183,10 @@ nsPresContext::SetShell(nsIPresShell* aShell)
       }
     }
   } else {
+    if (mEffectCompositor) {
+      mEffectCompositor->Disconnect();
+      mEffectCompositor = nullptr;
+    }
     if (mTransitionManager) {
       mTransitionManager->Disconnect();
       mTransitionManager = nullptr;

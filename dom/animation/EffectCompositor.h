@@ -12,6 +12,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsCSSProperty.h"
 #include "nsCSSPseudoElements.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
 
 class nsCSSPropertySet;
@@ -31,6 +32,17 @@ class Element;
 class EffectCompositor
 {
 public:
+  explicit EffectCompositor(nsPresContext* aPresContext)
+    : mPresContext(aPresContext)
+  { }
+
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(EffectCompositor)
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(EffectCompositor)
+
+  void Disconnect() {
+    mPresContext = nullptr;
+  }
+
   
   enum class CascadeLevel {
     
@@ -43,6 +55,9 @@ public:
   
   static const size_t kCascadeLevelCount =
     static_cast<size_t>(CascadeLevel::Transitions) + 1;
+
+  
+  nsPresContext* PresContext() const { return mPresContext; }
 
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSProperty aProperty);
@@ -95,6 +110,8 @@ public:
                                    bool& aStyleChanging);
 
 private:
+  ~EffectCompositor() = default;
+
   
   
   
@@ -110,6 +127,8 @@ private:
                        nsStyleContext* aStyleContext);
 
   static nsPresContext* GetPresContext(dom::Element* aElement);
+
+  nsPresContext* mPresContext;
 };
 
 } 
