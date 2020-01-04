@@ -75,7 +75,7 @@ add_task(function* () {
 });
 
 function editSCSS(editor) {
-  let deferred = promise.defer();
+  let deferred = defer();
 
   editor.sourceEditor.setText(CSS_TEXT);
 
@@ -92,7 +92,7 @@ function editCSSFile(CSSFile) {
 }
 
 function pauseForTimeChange() {
-  let deferred = promise.defer();
+  let deferred = defer();
 
   
   
@@ -140,7 +140,7 @@ function read(srcChromeURL) {
 }
 
 function write(data, file) {
-  let deferred = promise.defer();
+  let deferred = defer();
 
   let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
     .createInstance(Ci.nsIScriptableUnicodeConverter);
