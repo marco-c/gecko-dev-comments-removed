@@ -821,9 +821,17 @@ Accessible::XULElmName(DocAccessible* aDocument,
   nsIContent *bindingParent = aElm->GetBindingParent();
   nsIContent* parent =
     bindingParent? bindingParent->GetParent() : aElm->GetParent();
+  nsAutoString ancestorTitle;
   while (parent) {
     if (parent->IsXULElement(nsGkAtoms::toolbaritem) &&
-        parent->GetAttr(kNameSpaceID_None, nsGkAtoms::title, aName)) {
+        parent->GetAttr(kNameSpaceID_None, nsGkAtoms::title, ancestorTitle)) {
+      
+      if (aElm->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext, aName)) {
+        aName.CompressWhitespace();
+        return;
+      }
+
+      aName.Assign(ancestorTitle);
       aName.CompressWhitespace();
       return;
     }
