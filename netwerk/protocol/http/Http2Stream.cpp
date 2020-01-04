@@ -555,8 +555,7 @@ Http2Stream::GenerateOpen()
     firstFrameFlags |= Http2Session::kFlag_END_STREAM;
   } else if (head->IsPost() ||
              head->IsPut() ||
-             head->IsConnect() ||
-             head->IsOptions()) {
+             head->IsConnect()) {
     
   } else if (!mRequestBodyLenRemaining) {
     
