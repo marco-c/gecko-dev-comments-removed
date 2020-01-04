@@ -967,11 +967,8 @@ nsDisplayListBuilder::MarkFramesForDisplayList(nsIFrame* aDirtyFrame,
 
 
 
-
-
-
 void
-nsDisplayListBuilder::MarkPreserve3DFramesForDisplayList(nsIFrame* aDirtyFrame, const nsRect& aDirtyRect)
+nsDisplayListBuilder::MarkPreserve3DFramesForDisplayList(nsIFrame* aDirtyFrame)
 {
   AutoTArray<nsIFrame::ChildList,4> childListArray;
   aDirtyFrame->GetChildLists(&childListArray);
@@ -982,10 +979,6 @@ nsDisplayListBuilder::MarkPreserve3DFramesForDisplayList(nsIFrame* aDirtyFrame, 
       nsIFrame *child = childFrames.get();
       if (child->Combines3DTransformWithAncestors()) {
         mFramesMarkedForDisplay.AppendElement(child);
-        nsRect dirty = aDirtyRect - child->GetOffsetTo(aDirtyFrame);
-        child->Properties().Set(nsDisplayListBuilder::Preserve3DDirtyRectProperty(),
-                           new nsRect(dirty));
-
         MarkFrameForDisplay(child, aDirtyFrame);
       }
     }
