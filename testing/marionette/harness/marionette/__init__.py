@@ -2,7 +2,7 @@
 
 
 
-__version__ = '2.3.0'
+__version__ = '3.0.0'
 
 from .marionette_test import (
     CommonTestCase,
