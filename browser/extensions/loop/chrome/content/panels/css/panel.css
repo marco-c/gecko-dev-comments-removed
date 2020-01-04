@@ -697,8 +697,7 @@ img.fte-hello-web-share {
 }
 
 .fte-get-started-container {
-  height: 410px;
-  width: 330px;
+  width: 330px; 
   display: flex;
   flex-flow: column nowrap;
   background: #fbfbfb;
