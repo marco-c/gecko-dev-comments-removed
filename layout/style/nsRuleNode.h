@@ -12,6 +12,7 @@
 #define nsRuleNode_h___
 
 #include "mozilla/ArenaObjectID.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/RangedArray.h"
 #include "mozilla/RuleNodeCacheConditions.h"
@@ -389,7 +390,10 @@ enum nsFontSizeType {
   eFontSize_CSS = 2
 };
 
-class nsRuleNode {
+
+
+
+class nsRuleNode : public mozilla::LinkedListElement<nsRuleNode> {
 public:
   enum RuleDetail {
     eRuleNone, 
@@ -415,11 +419,11 @@ public:
 private:
   nsPresContext* const mPresContext; 
 
-  nsRuleNode* const mParent; 
-                             
-                             
-                             
-                             
+  const RefPtr<nsRuleNode> mParent; 
+                                    
+                                    
+                                    
+                                    
 
   const nsCOMPtr<nsIStyleRule> mRule; 
 
@@ -456,9 +460,6 @@ private:
 
   static bool
   ChildrenHashMatchEntry(const PLDHashEntryHdr *aHdr, const void *aKey);
-
-  void SweepChildren(nsTArray<nsRuleNode*>& aSweepQueue);
-  bool DestroyIfNotMarked();
 
   static const PLDHashTableOps ChildrenHashOps;
 
@@ -515,6 +516,8 @@ private:
   }
   void ConvertChildrenToHash(int32_t aNumKids);
 
+  void RemoveChild(nsRuleNode* aNode);
+
   nsCachedStyleData mStyleData;   
 
   uint32_t mDependentBits; 
@@ -543,17 +546,12 @@ private:
   
   
   
-  
-  
-  
-  
-  
   uint32_t mRefCnt;
 
 public:
   
   void* operator new(size_t sz, nsPresContext* aContext) CPP_THROW_NEW;
-  void Destroy() { DestroyInternal(nullptr); }
+  void Destroy();
 
   
   inline void AddRef();
@@ -562,7 +560,6 @@ public:
   inline void Release();
 
 protected:
-  void DestroyInternal(nsRuleNode ***aDestroyQueueTail);
   void PropagateDependentBit(nsStyleStructID aSID, nsRuleNode* aHighestNode,
                              void* aStruct);
   void PropagateNoneBit(uint32_t aBit, nsRuleNode* aHighestNode);
@@ -809,7 +806,7 @@ private:
 
 public:
   
-  static nsRuleNode* CreateRootNode(nsPresContext* aPresContext);
+  static already_AddRefed<nsRuleNode> CreateRootNode(nsPresContext* aPresContext);
 
   static void EnsureBlockDisplay(uint8_t& display,
                                  bool aConvertListItem = false);
@@ -959,17 +956,6 @@ public:
 
   #undef STYLE_STRUCT_RESET
   #undef STYLE_STRUCT_INHERITED
-
-  
-
-
-
-
-
-
-
-  void Mark();
-  bool Sweep();
 
   static bool
     HasAuthorSpecifiedRules(nsStyleContext* aStyleContext,

@@ -15,6 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/CSSStyleSheet.h"
 #include "mozilla/EnumeratedArray.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/SheetType.h"
 
@@ -264,14 +265,6 @@ class nsStyleSet final
   
   
   
-  void AddStyleContextRoot(nsStyleContext* aStyleContext);
-
-  
-  void NotifyStyleContextDestroyed(nsStyleContext* aStyleContext);
-
-  
-  
-  
   
   
   
@@ -363,6 +356,14 @@ class nsStyleSet final
     return mInReconstruct;
   }
 
+  void RootStyleContextAdded() {
+    ++mRootStyleContextCount;
+  }
+  void RootStyleContextRemoved() {
+    MOZ_ASSERT(mRootStyleContextCount > 0);
+    --mRootStyleContextCount;
+  }
+
   
   
   
@@ -370,18 +371,25 @@ class nsStyleSet final
   
   
   bool HasCachedStyleData() const {
-    return (mRuleTree && mRuleTree->TreeHasCachedData()) || !mRoots.IsEmpty();
+    return (mRuleTree && mRuleTree->TreeHasCachedData()) || mRootStyleContextCount > 0;
   }
 
   
   
-  void RuleNodeUnused() {
+  static const uint32_t kGCInterval = 300;
+  void RuleNodeUnused(nsRuleNode* aNode, bool aMayGC) {
     ++mUnusedRuleNodeCount;
+    mUnusedRuleNodeList.insertBack(aNode);
+    if (aMayGC && mUnusedRuleNodeCount >= kGCInterval && !mInGC && !mInReconstruct) {
+      GCRuleTrees();
+    }
   }
 
   
-  void RuleNodeInUse() {
+  void RuleNodeInUse(nsRuleNode* aNode) {
+    MOZ_ASSERT(mUnusedRuleNodeCount > 0);
     --mUnusedRuleNodeCount;
+    aNode->removeFrom(mUnusedRuleNodeList);
   }
 
   
@@ -411,6 +419,10 @@ private:
   nsStyleSet(const nsStyleSet& aCopy) = delete;
   nsStyleSet& operator=(const nsStyleSet& aCopy) = delete;
 
+  
+  
+  
+  
   
   void GCRuleTrees();
 
@@ -498,21 +510,36 @@ private:
 
   RefPtr<nsBindingManager> mBindingManager;
 
-  nsRuleNode* mRuleTree; 
-                         
-                         
+  RefPtr<nsRuleNode> mRuleTree; 
+                                
+                                
 
   uint16_t mBatching;
 
   unsigned mInShutdown : 1;
+  unsigned mInGC : 1;
   unsigned mAuthorStyleDisabled: 1;
   unsigned mInReconstruct : 1;
   unsigned mInitFontFeatureValuesLookup : 1;
   unsigned mNeedsRestyleAfterEnsureUniqueInner : 1;
   unsigned mDirty : int(mozilla::SheetType::Count);  
 
-  uint32_t mUnusedRuleNodeCount; 
-  nsTArray<nsStyleContext*> mRoots; 
+  uint32_t mRootStyleContextCount;
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  nsRuleNode* mOldRootNode;
+#endif
+
+  
+  
+  
+  mozilla::LinkedList<nsRuleNode> mUnusedRuleNodeList;
+  uint32_t mUnusedRuleNodeCount;
 
   
   
@@ -527,11 +554,6 @@ private:
   RefPtr<nsDisableTextZoomStyleRule> mDisableTextZoomStyleRule;
 
   
-  
-  
-  nsTArray<nsRuleNode*> mOldRuleTrees;
-
-  
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
 };
 
@@ -539,20 +561,20 @@ private:
 inline
 void nsRuleNode::AddRef()
 {
-  if (mRefCnt++ == 0 && !IsRoot()) {
+  if (mRefCnt++ == 0) {
     MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
                "ServoStyleSets should not have rule nodes");
-    mPresContext->StyleSet()->AsGecko()->RuleNodeInUse();
+    mPresContext->StyleSet()->AsGecko()->RuleNodeInUse(this);
   }
 }
 
 inline
 void nsRuleNode::Release()
 {
-  if (--mRefCnt == 0 && !IsRoot()) {
+  if (--mRefCnt == 0) {
     MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
                "ServoStyleSets should not have rule nodes");
-    mPresContext->StyleSet()->AsGecko()->RuleNodeUnused();
+    mPresContext->StyleSet()->AsGecko()->RuleNodeUnused(this,  true);
   }
 }
 #endif

@@ -158,6 +158,9 @@ public:
         dom::Element* aPseudoElement,
         EventStates aStateMask);
 
+    inline void RootStyleContextAdded();
+    inline void RootStyleContextRemoved();
+
   private:
     
     

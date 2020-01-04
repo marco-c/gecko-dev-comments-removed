@@ -234,6 +234,26 @@ StyleSetHandle::Ptr::HasStateDependentStyle(dom::Element* aElement,
                                    aStateMask));
 }
 
+void
+StyleSetHandle::Ptr::RootStyleContextAdded()
+{
+  if (IsGecko()) {
+    AsGecko()->RootStyleContextAdded();
+  } else {
+    
+  }
+}
+
+void
+StyleSetHandle::Ptr::RootStyleContextRemoved()
+{
+  if (IsGecko()) {
+    RootStyleContextAdded();
+  } else {
+    
+  }
+}
+
 } 
 
 #undef FORWARD

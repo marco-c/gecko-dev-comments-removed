@@ -39,8 +39,6 @@ enum class CSSPseudoElementType : uint8_t;
 
 
 
-
-
 class nsStyleContext final
 {
 public:
@@ -277,12 +275,6 @@ public:
 
   nsRuleNode* RuleNode() { return mRuleNode; }
   void AddStyleBit(const uint64_t& aBit) { mBits |= aBit; }
-
-  
-
-
-
-  void Mark();
 
   
 
@@ -590,7 +582,7 @@ private:
   
   
   
-  nsRuleNode* const       mRuleNode;
+  const RefPtr<nsRuleNode> mRuleNode;
 
   
   

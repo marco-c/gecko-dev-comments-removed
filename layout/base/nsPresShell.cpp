@@ -869,8 +869,10 @@ PresShell::Init(nsIDocument* aDocument,
   aPresContext->SetShell(this);
 
   
-  aStyleSet->Init(aPresContext);
+  
+  
   mStyleSet = aStyleSet;
+  mStyleSet->Init(aPresContext);
 
   
   

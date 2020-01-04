@@ -187,11 +187,16 @@ nsStyleSet::nsStyleSet()
   : mRuleTree(nullptr),
     mBatching(0),
     mInShutdown(false),
+    mInGC(false),
     mAuthorStyleDisabled(false),
     mInReconstruct(false),
     mInitFontFeatureValuesLookup(true),
     mNeedsRestyleAfterEnsureUniqueInner(false),
     mDirty(0),
+    mRootStyleContextCount(0),
+#ifdef DEBUG
+    mOldRootNode(nullptr),
+#endif
     mUnusedRuleNodeCount(0)
 {
 }
@@ -246,9 +251,6 @@ nsStyleSet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   }
   n += mScopedDocSheetRuleProcessors.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
-  n += mRoots.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  n += mOldRuleTrees.ShallowSizeOfExcludingThis(aMallocSizeOf);
-
   return n;
 }
 
@@ -277,26 +279,21 @@ nsStyleSet::BeginReconstruct()
 {
   NS_ASSERTION(!mInReconstruct, "Unmatched begin/end?");
   NS_ASSERTION(mRuleTree, "Reconstructing before first construction?");
+  mInReconstruct = true;
 
   
   
   PresContext()->PresShell()->ClearArenaRefPtrs(eArenaObjectID_nsStyleContext);
 
-  
-  nsRuleNode* newTree = nsRuleNode::CreateRootNode(mRuleTree->PresContext());
-
-  
-  if (!mOldRuleTrees.AppendElement(mRuleTree)) {
-    newTree->Destroy();
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+#ifdef DEBUG
+  MOZ_ASSERT(!mOldRootNode);
+  mOldRootNode = mRuleTree;
+#endif
 
   
   
   
-
-  mInReconstruct = true;
-  mRuleTree = newTree;
+  mRuleTree = nsRuleNode::CreateRootNode(mRuleTree->PresContext());
 
   return NS_OK;
 }
@@ -306,22 +303,6 @@ nsStyleSet::EndReconstruct()
 {
   NS_ASSERTION(mInReconstruct, "Unmatched begin/end?");
   mInReconstruct = false;
-#ifdef DEBUG
-  for (int32_t i = mRoots.Length() - 1; i >= 0; --i) {
-    
-    
-    
-    
-    
-    
-
-    NS_ASSERTION(mRoots[i]->RuleNode()->RuleTree() == mRuleTree,
-                 "style context has old rule node");
-  }
-#endif
-  
-  
-  
   GCRuleTrees();
 }
 
@@ -2197,87 +2178,39 @@ void
 nsStyleSet::BeginShutdown()
 {
   mInShutdown = 1;
-  mRoots.Clear(); 
 }
 
 void
 nsStyleSet::Shutdown()
 {
-  mRuleTree->Destroy();
   mRuleTree = nullptr;
-
-  
-  
-  
-  for (uint32_t i = mOldRuleTrees.Length(); i > 0; ) {
-    --i;
-    mOldRuleTrees[i]->Destroy();
-  }
-  mOldRuleTrees.Clear();
+  GCRuleTrees();
+  MOZ_ASSERT(mUnusedRuleNodeList.isEmpty());
+  MOZ_ASSERT(mUnusedRuleNodeCount == 0);
 }
 
-static const uint32_t kGCInterval = 300;
-
-
-void
-nsStyleSet::AddStyleContextRoot(nsStyleContext* aStyleContext)
-{
-  
-  
-  MOZ_ASSERT(!aStyleContext->GetParent());
-  mRoots.AppendElement(aStyleContext);
-}
-
-void
-nsStyleSet::NotifyStyleContextDestroyed(nsStyleContext* aStyleContext)
-{
-  if (mInShutdown)
-    return;
-
-  
-  
-  if (!aStyleContext->GetParent()) {
-    mRoots.RemoveElement(aStyleContext);
-  }
-
-  if (mInReconstruct)
-    return;
-
-  if (mUnusedRuleNodeCount >= kGCInterval) {
-    GCRuleTrees();
-  }
-}
 
 void
 nsStyleSet::GCRuleTrees()
 {
-  mUnusedRuleNodeCount = 0;
+  MOZ_ASSERT(!mInReconstruct);
+  MOZ_ASSERT(!mInGC);
+  mInGC = true;
 
-  
-  
-  
-  
-  for (int32_t i = mRoots.Length() - 1; i >= 0; --i) {
-    mRoots[i]->Mark();
-  }
-
-  
+  while (!mUnusedRuleNodeList.isEmpty()) {
+    nsRuleNode* node = mUnusedRuleNodeList.popFirst();
 #ifdef DEBUG
-  bool deleted =
-#endif
-    mRuleTree->Sweep();
-  NS_ASSERTION(!deleted, "Root node must not be gc'd");
-
-  
-  for (uint32_t i = mOldRuleTrees.Length(); i > 0; ) {
-    --i;
-    if (mOldRuleTrees[i]->Sweep()) {
+    if (node == mOldRootNode) {
       
-      mOldRuleTrees.RemoveElementAt(i);
-    } else {
-      NS_NOTREACHED("old rule tree still referenced");
+      mOldRootNode = nullptr;
     }
+#endif
+    node->Destroy();
   }
+
+  MOZ_ASSERT(!mOldRootNode, "Should have GCed old root node");
+  mUnusedRuleNodeCount = 0;
+  mInGC = false;
 }
 
 already_AddRefed<nsStyleContext>
