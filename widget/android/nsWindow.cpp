@@ -246,11 +246,13 @@ public:
 
     ~Natives();
 
+    using Base::DisposeNative;
+    using EditableBase::DisposeNative;
+
     
 
 
-    using Base::DisposeNative;
-
+public:
     
     static void Open(const jni::ClassObject::LocalRef& aCls,
                      GeckoView::Window::Param aWindow,
@@ -364,8 +366,10 @@ public:
 nsWindow::Natives::~Natives()
 {
     
+    
+    
     MOZ_ASSERT(mEditable);
-    EditableBase::DisposeNative(mEditable);
+    mEditable->OnDestroy();
 }
 
 void
