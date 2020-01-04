@@ -191,7 +191,11 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   mCx = cx;
 
   
-  mAutoEntryScript->TakeOwnershipOfErrorReporting();
+  if ((mCompartment && mExceptionHandling == eRethrowContentExceptions) ||
+      mExceptionHandling == eRethrowExceptions) {
+    mSavedJSContextOptions = JS::ContextOptionsRef(cx);
+    JS::ContextOptionsRef(cx).setDontReportUncaught(true);
+  }
 }
 
 bool
@@ -249,26 +253,24 @@ CallbackObject::CallSetup::~CallSetup()
   
   
   if (mCx) {
-    bool needToDealWithException = mAutoEntryScript->HasException();
+    bool needToDealWithException = JS_IsExceptionPending(mCx);
     if ((mCompartment && mExceptionHandling == eRethrowContentExceptions) ||
         mExceptionHandling == eRethrowExceptions) {
+      
+      JS::ContextOptionsRef(mCx) = mSavedJSContextOptions;
       mErrorResult.MightThrowJSException();
-      MOZ_ASSERT(mAutoEntryScript->OwnsErrorReporting());
       if (needToDealWithException) {
         JS::Rooted<JS::Value> exn(mCx);
-        if (mAutoEntryScript->PeekException(&exn) &&
+        if (JS_GetPendingException(mCx, &exn) &&
             ShouldRethrowException(exn)) {
-          mAutoEntryScript->ClearException();
-          MOZ_ASSERT(!mAutoEntryScript->HasException());
           mErrorResult.ThrowJSException(mCx, exn);
+          JS_ClearPendingException(mCx);
           needToDealWithException = false;
         }
       }
     }
 
     if (needToDealWithException) {
-      
-      
       
       
       
@@ -292,10 +294,7 @@ CallbackObject::CallSetup::~CallSetup()
         MOZ_ASSERT(!JS::DescribeScriptedCaller(mCx),
                    "Our comment above about JS_SaveFrameChain having been "
                    "called is a lie?");
-        
-        
-        
-        mAutoEntryScript->ReportException();
+        JS_ReportPendingException(mCx);
       }
       if (saved) {
         JS_RestoreFrameChain(mCx);
