@@ -307,6 +307,7 @@ ResponsiveUI.prototype = {
 
     
     this.tab.addEventListener("TabClose", this);
+    this.browserWindow.addEventListener("unload", this);
 
     
     this.swap = swapToInnerBrowser({
@@ -348,7 +349,8 @@ ResponsiveUI.prototype = {
     
     
     
-    let isTabClosing = options && options.reason == "TabClose";
+    let isWindowClosing = options && options.reason === "unload";
+    let isTabClosing = (options && options.reason === "TabClose") || isWindowClosing;
 
     
     if (!isTabClosing) {
@@ -356,6 +358,7 @@ ResponsiveUI.prototype = {
     }
 
     this.tab.removeEventListener("TabClose", this);
+    this.browserWindow.removeEventListener("unload", this);
     this.toolWindow.removeEventListener("message", this);
 
     if (!isTabClosing) {
@@ -381,8 +384,10 @@ ResponsiveUI.prototype = {
     }
     this.client = this.emulationFront = null;
 
-    
-    swap.stop();
+    if (!isWindowClosing) {
+      
+      swap.stop();
+    }
 
     this.destroyed = true;
 
@@ -407,6 +412,7 @@ ResponsiveUI.prototype = {
       case "message":
         this.handleMessage(event);
         break;
+      case "unload":
       case "TabClose":
         ResponsiveUIManager.closeIfNeeded(browserWindow, tab, {
           reason: event.type,
