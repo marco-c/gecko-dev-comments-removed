@@ -815,7 +815,7 @@ public class BrowserSearch extends HomeFragment
         mSearchTerm = searchTerm;
         mAutocompleteHandler = handler;
 
-        if (isVisible()) {
+        if (mAdapter != null) {
             if (isNewFilter) {
                 
                 
