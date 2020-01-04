@@ -13,23 +13,19 @@ namespace sandbox {
 
 class ProcessState {
  public:
-  ProcessState() : process_state_(0) {}
-
+  ProcessState();
   
-  bool IsKernel32Loaded();
-
+  bool IsKernel32Loaded() const;
   
-  bool InitCalled();
-
+  bool InitCalled() const;
   
-  bool RevertedToSelf();
-
+  bool RevertedToSelf() const;
   
   void SetKernel32Loaded();
   void SetInitCalled();
   void SetRevertedToSelf();
 
- public:
+ private:
   int process_state_;
   DISALLOW_COPY_AND_ASSIGN(ProcessState);
 };
