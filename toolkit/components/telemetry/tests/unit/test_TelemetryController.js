@@ -143,7 +143,7 @@ add_task(function* test_simplePing() {
   checkPingFormat(ping, TEST_PING_TYPE, false, false);
 });
 
-add_task(function* test_deletionPing() {
+add_task(function* test_disableDataUpload() {
   const isUnified = Preferences.get(PREF_UNIFIED, false);
   if (!isUnified) {
     
@@ -166,11 +166,25 @@ add_task(function* test_deletionPing() {
 
   
   yield PingServer.stop();
+
+  
+  TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
+
   
   Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
+
   
+  yield TelemetrySend.testWaitOnOutgoingPings();
+  
+  
+  yield TelemetryStorage.shutdown();
   
   yield TelemetryController.reset();
+
+  
+  let pendingPings = yield TelemetryStorage.loadPendingPingList();
+  Assert.equal(pendingPings.length, 1,
+               "All the pending pings but the deletion ping should have been deleted");
 
   
   PingServer.start();
