@@ -1039,7 +1039,7 @@ ContactDB.prototype = {
           contactsArray.push(aContacts[i]);
         }
 
-        let contactIdsArray = contactsArray.map(function(el) el.id);
+        let contactIdsArray = contactsArray.map(el => el.id);
 
         
         this.newTxn("readwrite", SAVED_GETALL_STORE_NAME, function(txn, store) {
