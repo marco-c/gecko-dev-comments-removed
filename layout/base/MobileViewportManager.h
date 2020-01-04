@@ -30,7 +30,11 @@ public:
   
 
 
-  void SetRestoreResolution(float aResolution);
+
+
+
+  void SetRestoreResolution(float aResolution,
+                            mozilla::LayoutDeviceIntSize aDisplaySize);
 
   
 
@@ -86,6 +90,7 @@ private:
   mozilla::LayoutDeviceIntSize mDisplaySize;
   mozilla::CSSSize mMobileViewportSize;
   mozilla::Maybe<float> mRestoreResolution;
+  mozilla::Maybe<mozilla::ScreenIntSize> mRestoreDisplaySize;
 };
 
 #endif

@@ -48,6 +48,7 @@
 #include "nsPresArena.h"
 #include "nsMargin.h"
 #include "nsFrameState.h"
+#include "Units.h"
 #include "Visibility.h"
 
 #ifdef MOZ_B2G
@@ -1446,7 +1447,8 @@ public:
 
 
 
-  virtual void SetRestoreResolution(float aResolution) = 0;
+  virtual void SetRestoreResolution(float aResolution,
+                                    mozilla::LayoutDeviceIntSize aDisplaySize) = 0;
 
   
 
