@@ -17,7 +17,7 @@ from mozlog import get_proxy_logger
 
 from talos.results import TalosResults
 from talos.ttest import TTest
-from talos.utils import TalosError, TalosRegression
+from talos.utils import TalosError, TalosCrash, TalosRegression
 from talos.config import get_configs, ConfigurationError
 
 
@@ -184,36 +184,34 @@ def run_tests(config, browser_config):
     httpd.start()
 
     testname = None
-    
-    timer = utils.Timer()
-    LOG.suite_start(tests=[test['name'] for test in tests])
     try:
+        
+        timer = utils.Timer()
+        LOG.info("Starting test suite %s" % title)
         for test in tests:
             testname = test['name']
-            LOG.test_start(testname)
+            testtimer = utils.Timer()
+            LOG.info("Starting test %s" % testname)
 
             mytest = TTest()
             talos_results.add(mytest.runTest(browser_config, test))
 
-            LOG.test_end(testname, status='OK')
+            LOG.info("Completed test %s (%s)"
+                     % (testname,  testtimer.elapsed()))
 
-    except TalosRegression as exc:
+    except TalosRegression:
         LOG.error("Detected a regression for %s" % testname)
         
         
-        LOG.test_end(testname, status='FAIL', message=unicode(exc),
-                     stack=traceback.format_exc())
         return 1
-    except Exception as exc:
+    except (TalosCrash, TalosError):
         
         
         
-        LOG.test_end(testname, status='ERROR', message=unicode(exc),
-                     stack=traceback.format_exc())
+        traceback.print_exception(*sys.exc_info())
         
         return 2
     finally:
-        LOG.suite_end()
         httpd.stop()
 
     LOG.info("Completed test suite (%s)" % timer.elapsed())
