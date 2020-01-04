@@ -46,34 +46,9 @@ History.prototype = {
 
   get exists() true,
 
-  __typedURLs: null,
-  get _typedURLs() {
-    if (!this.__typedURLs) {
-      
-      
-      
-      
-      this.__typedURLs = {};
-      let registry = Cc["@mozilla.org/windows-registry-key;1"].
-                     createInstance(Ci.nsIWindowsRegKey);
-      try {
-        registry.open(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-                      "Software\\Microsoft\\Internet Explorer\\TypedURLs",
-                      Ci.nsIWindowsRegKey.ACCESS_READ);
-        for (let entry = 1; registry.hasValue("url" + entry); entry++) {
-          let url = registry.readStringValue("url" + entry);
-          this.__typedURLs[url] = true;
-        }
-      } catch (ex) {
-      } finally {
-        registry.close();
-      }
-    }
-    return this.__typedURLs;
-  },
-
   migrate: function H_migrate(aCallback) {
     let places = [];
+    let typedURLs = MSMigrationUtils.getTypedURLs("Software\\Microsoft\\Internet Explorer");
     let historyEnumerator = Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"].
                             createInstance(Ci.nsISimpleEnumerator);
     while (historyEnumerator.hasMoreElements()) {
@@ -93,11 +68,14 @@ History.prototype = {
       }
 
       
-      let transitionType = this._typedURLs[uri.spec] ?
+      let transitionType = typedURLs.has(uri.spec) ?
                              Ci.nsINavHistoryService.TRANSITION_TYPED :
                              Ci.nsINavHistoryService.TRANSITION_LINK;
       
-      let lastVisitTime = entry.get("time") || Date.now();
+      
+      
+      
+      let lastVisitTime = entry.get("time") || (Date.now() * 1000);
 
       places.push(
         { uri: uri,
