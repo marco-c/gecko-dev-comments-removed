@@ -330,9 +330,16 @@ pref_SetPref(const dom::PrefSetting& aPref)
 }
 
 UniquePtr<char*[]>
-pref_savePrefs(PLDHashTable* aTable)
+pref_savePrefs(PLDHashTable* aTable, uint32_t* aPrefCount)
 {
+    
+    
+    
+    
+    MOZ_ASSERT(aPrefCount);
     auto savedPrefs = MakeUnique<char*[]>(aTable->EntryCount());
+
+    
     memset(savedPrefs.get(), 0, aTable->EntryCount() * sizeof(char*));
 
     int32_t j = 0;
@@ -380,6 +387,7 @@ pref_savePrefs(PLDHashTable* aTable)
                                        prefValue +
                                        NS_LITERAL_CSTRING(");"));
     }
+    *aPrefCount = j;
 
     return savedPrefs;
 }

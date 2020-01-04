@@ -20,7 +20,7 @@ class PrefSetting;
 } 
 
 mozilla::UniquePtr<char*[]>
-pref_savePrefs(PLDHashTable* aTable);
+pref_savePrefs(PLDHashTable* aTable, uint32_t* aPrefCount);
 
 nsresult
 pref_SetPref(const mozilla::dom::PrefSetting& aPref);
