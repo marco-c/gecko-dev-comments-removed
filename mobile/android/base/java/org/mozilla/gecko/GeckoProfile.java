@@ -51,6 +51,9 @@ public final class GeckoProfile {
     
     private static final String CLIENT_ID_JSON_ATTR = "clientID";
 
+    private static final String TIMES_PATH = "times.json";
+    private static final String PROFILE_CREATION_DATE_JSON_ATTR = "created";
+
     
     
     private static volatile boolean sAcceptDirectoryChanges = true;
@@ -620,6 +623,40 @@ public final class GeckoProfile {
             
             throw new IOException("Client ID does not exist in JSONObject");
         }
+    }
+
+    
+
+
+
+    @WorkerThread
+    public long getProfileCreationDate() {
+        try {
+            return getProfileCreationDateFromTimesFile();
+        } catch (final IOException e) {
+            return getAndPersistProfileCreationDateFromFilesystem();
+        }
+    }
+
+    @WorkerThread
+    private long getProfileCreationDateFromTimesFile() throws IOException {
+        final JSONObject obj = readJSONObjectFromFile(TIMES_PATH);
+        try {
+            return obj.getLong(PROFILE_CREATION_DATE_JSON_ATTR);
+        } catch (final JSONException e) {
+            
+            throw new IOException("Profile creation does not exist in JSONObject");
+        }
+    }
+
+    
+
+
+
+
+    @WorkerThread
+    private long getAndPersistProfileCreationDateFromFilesystem() {
+        return -1;
     }
 
     
