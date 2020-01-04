@@ -211,9 +211,6 @@ public:
   
   int64_t GetPositionInFrames();
 
-  
-  bool IsPaused();
-
   static uint32_t GetPreferredRate()
   {
     CubebUtils::InitPreferredSampleRate();

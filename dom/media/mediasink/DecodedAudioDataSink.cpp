@@ -183,9 +183,9 @@ DecodedAudioDataSink::SetPlaying(bool aPlaying)
     return;
   }
   
-  if (!aPlaying && !mAudioStream->IsPaused()) {
+  if (!aPlaying) {
     mAudioStream->Pause();
-  } else if (aPlaying && mAudioStream->IsPaused()) {
+  } else if (aPlaying) {
     mAudioStream->Resume();
   }
   mPlaying = aPlaying;
