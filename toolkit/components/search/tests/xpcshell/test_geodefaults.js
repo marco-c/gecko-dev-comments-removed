@@ -177,9 +177,7 @@ add_task(function* should_recheck_when_broken_hash() {
   
   yield asyncReInit();
   checkNoRequest();
-  commitPromise = promiseAfterCache();
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield commitPromise;
 });
 
 add_task(function* should_remember_cohort_id() {

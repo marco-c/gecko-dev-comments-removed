@@ -4133,8 +4133,7 @@ SearchService.prototype = {
 
   get currentEngine() {
     this._ensureInitialized();
-    let currentEngine = this._currentEngine;
-    if (!currentEngine) {
+    if (!this._currentEngine) {
       let name = this.getGlobalAttr("current");
       let engine = this.getEngineByName(name);
       if (engine && (this.getGlobalAttr("hash") == getVerificationHash(name) ||
@@ -4142,32 +4141,38 @@ SearchService.prototype = {
         
         
         
-        currentEngine = engine;
+        this._currentEngine = engine;
       }
+      if (!name)
+        this._currentEngine = this._originalDefaultEngine;
     }
 
-    if (!currentEngine || currentEngine.hidden)
-      currentEngine = this._originalDefaultEngine;
-    if (!currentEngine || currentEngine.hidden)
-      currentEngine = this._getSortedEngines(false)[0];
-
-    if (!currentEngine) {
+    
+    if (!this._currentEngine || this._currentEngine.hidden) {
       
-      currentEngine = this._originalDefaultEngine;
-      if (currentEngine)
-        currentEngine.hidden = false;
+      let originalDefault = this._originalDefaultEngine;
+      if (!originalDefault || originalDefault.hidden) {
+        
+        let firstVisible = this._getSortedEngines(false)[0];
+        if (firstVisible && !firstVisible.hidden) {
+          this.currentEngine = firstVisible;
+          return firstVisible;
+        }
+        
+        if (originalDefault)
+          originalDefault.hidden = false;
+      }
+      if (!originalDefault)
+        return null;
+
+      
+      
+      
+      
+      this.currentEngine = originalDefault;
     }
 
-    if (currentEngine) {
-      
-      
-      
-      
-      
-      this.currentEngine = currentEngine;
-    }
-
-    return currentEngine;
+    return this._currentEngine;
   },
 
   set currentEngine(val) {
