@@ -3647,7 +3647,7 @@ CASE(JSOP_POPBLOCKSCOPE)
 {
 #ifdef DEBUG
     
-    NestedScopeObject* scope = script->getStaticBlockScope(REGS.pc);
+    NestedStaticScopeObject* scope = script->getStaticBlockScope(REGS.pc);
     MOZ_ASSERT(scope && scope->is<StaticBlockObject>());
     StaticBlockObject& blockObj = scope->as<StaticBlockObject>();
     MOZ_ASSERT(blockObj.needsClone());
@@ -4828,7 +4828,7 @@ js::ReportRuntimeLexicalError(JSContext* cx, unsigned errorNumber,
         
         if (!name) {
             
-            Rooted<NestedScopeObject*> scope(cx, script->getStaticBlockScope(pc));
+            Rooted<NestedStaticScopeObject*> scope(cx, script->getStaticBlockScope(pc));
             MOZ_ASSERT(scope && scope->is<StaticBlockObject>());
             Rooted<StaticBlockObject*> block(cx, &scope->as<StaticBlockObject>());
             while (slot < block->localOffset())

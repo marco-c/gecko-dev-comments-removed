@@ -48,7 +48,8 @@ class BindingIter;
 class Debugger;
 class LazyScript;
 class ModuleObject;
-class NestedScopeObject;
+class NestedStaticScopeObject;
+class StaticScopeObject;
 class RegExpObject;
 struct SourceCompressionTask;
 class Shape;
@@ -1868,7 +1869,7 @@ class JSScript : public js::gc::TenuredCell
     
     
 
-    js::NestedScopeObject* getStaticBlockScope(jsbytecode* pc);
+    js::NestedStaticScopeObject* getStaticBlockScope(jsbytecode* pc);
 
     
     
@@ -2533,7 +2534,7 @@ CloneScriptIntoFunction(JSContext* cx, HandleObject enclosingScope, HandleFuncti
                         HandleScript src);
 
 JSScript*
-CloneGlobalScript(JSContext* cx, Handle<ScopeObject*> enclosingScope, HandleScript src);
+CloneGlobalScript(JSContext* cx, Handle<StaticScopeObject*> enclosingScope, HandleScript src);
 
 } 
 

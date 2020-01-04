@@ -75,6 +75,380 @@ typedef Handle<ModuleObject*> HandleModuleObject;
 
 
 
+
+class StaticScopeObject : public NativeObject
+{
+  public:
+    static const uint32_t ENCLOSING_SCOPE_SLOT = 0;
+    static const unsigned RESERVED_SLOTS = ENCLOSING_SCOPE_SLOT + 1;
+
+    inline JSObject* enclosingScope() const {
+        return getFixedSlot(ENCLOSING_SCOPE_SLOT).toObjectOrNull();
+    }
+
+    void initEnclosingScope(JSObject* obj) {
+        MOZ_ASSERT(getReservedSlot(ENCLOSING_SCOPE_SLOT).isUndefined());
+        setReservedSlot(ENCLOSING_SCOPE_SLOT, ObjectOrNullValue(obj));
+    }
+
+    void setEnclosingScope(HandleObject obj);
+};
+
+class NestedStaticScopeObject : public StaticScopeObject
+{
+  public:
+    
+
+
+
+    inline NestedStaticScopeObject* enclosingNestedScope() const;
+
+    
+
+
+
+
+
+    void initEnclosingScopeFromParser(JSObject* prev) {
+        setReservedSlot(ENCLOSING_SCOPE_SLOT, ObjectOrNullValue(prev));
+    }
+
+    void resetEnclosingScopeFromParser() {
+        setReservedSlot(ENCLOSING_SCOPE_SLOT, UndefinedValue());
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
+class StaticBlockObject : public NestedStaticScopeObject
+{
+    static const unsigned LOCAL_OFFSET_SLOT = NestedStaticScopeObject::RESERVED_SLOTS;
+    static const unsigned RESERVED_SLOTS = LOCAL_OFFSET_SLOT + 1;
+
+  public:
+    
+    uint32_t numVariables() const {
+        
+        return propertyCount();
+    }
+
+  private:
+    
+
+
+
+    const Value& slotValue(unsigned i) {
+        return getSlotRef(RESERVED_SLOTS + i);
+    }
+
+    void setSlotValue(unsigned i, const Value& v) {
+        setSlot(RESERVED_SLOTS + i, v);
+    }
+
+  public:
+    static StaticBlockObject* create(ExclusiveContext* cx);
+
+    
+
+
+
+    bool isExtensible() const;
+
+    
+    JSObject* enclosingStaticScope() const {
+        return getFixedSlot(ENCLOSING_SCOPE_SLOT).toObjectOrNull();
+    }
+
+    
+
+
+
+    uint32_t shapeToIndex(const Shape& shape) {
+        uint32_t slot = shape.slot();
+        MOZ_ASSERT(slot - RESERVED_SLOTS < numVariables());
+        return slot - RESERVED_SLOTS;
+    }
+
+    
+
+
+
+    inline StaticBlockObject* enclosingBlock() const;
+
+    uint32_t localOffset() {
+        return getReservedSlot(LOCAL_OFFSET_SLOT).toPrivateUint32();
+    }
+
+    
+    
+    uint32_t blockIndexToLocalIndex(uint32_t index) {
+        MOZ_ASSERT(index < numVariables());
+        return getReservedSlot(LOCAL_OFFSET_SLOT).toPrivateUint32() + index;
+    }
+
+    
+    
+    
+    uint32_t blockIndexToSlot(uint32_t index) {
+        MOZ_ASSERT(index < numVariables());
+        return RESERVED_SLOTS + index;
+    }
+
+    
+    
+    
+    uint32_t localIndexToSlot(uint32_t local) {
+        MOZ_ASSERT(local >= localOffset());
+        return blockIndexToSlot(local - localOffset());
+    }
+
+    
+
+
+
+    bool isAliased(unsigned i) {
+        return slotValue(i).isTrue();
+    }
+
+    
+    Shape* lookupAliasedName(PropertyName* name);
+
+    
+
+
+
+    bool needsClone() {
+        return numVariables() > 0 && !getSlot(RESERVED_SLOTS).isFalse();
+    }
+
+    
+    bool isGlobal() const {
+        return !enclosingStaticScope();
+    }
+
+    bool isSyntactic() const {
+        return !isExtensible() || isGlobal();
+    }
+
+    
+
+    
+    void setAliased(unsigned i, bool aliased) {
+        MOZ_ASSERT_IF(i > 0, slotValue(i-1).isBoolean());
+        setSlotValue(i, BooleanValue(aliased));
+        if (aliased && !needsClone()) {
+            setSlotValue(0, MagicValue(JS_BLOCK_NEEDS_CLONE));
+            MOZ_ASSERT(needsClone());
+        }
+    }
+
+    void setLocalOffset(uint32_t offset) {
+        MOZ_ASSERT(getReservedSlot(LOCAL_OFFSET_SLOT).isUndefined());
+        initReservedSlot(LOCAL_OFFSET_SLOT, PrivateUint32Value(offset));
+    }
+
+    
+
+
+
+    void setDefinitionParseNode(unsigned i, frontend::Definition* def) {
+        MOZ_ASSERT(slotValue(i).isUndefined());
+        setSlotValue(i, PrivateValue(def));
+    }
+
+    frontend::Definition* definitionParseNode(unsigned i) {
+        Value v = slotValue(i);
+        return reinterpret_cast<frontend::Definition*>(v.toPrivate());
+    }
+
+    
+    
+    bool makeNonExtensible(ExclusiveContext* cx);
+
+    
+
+
+
+
+
+    static const unsigned LOCAL_INDEX_LIMIT = JS_BIT(16);
+
+    static Shape* addVar(ExclusiveContext* cx, Handle<StaticBlockObject*> block, HandleId id,
+                         bool constant, unsigned index, bool* redeclared);
+};
+
+
+class StaticWithObject : public NestedStaticScopeObject
+{
+  public:
+    static const Class class_;
+
+    static StaticWithObject* create(ExclusiveContext* cx);
+};
+
+template <XDRMode mode>
+bool
+XDRStaticWithObject(XDRState<mode>* xdr, HandleObject enclosingScope,
+                    MutableHandle<StaticWithObject*> objp);
+
+
+
+
+
+
+class StaticEvalObject : public StaticScopeObject
+{
+    static const uint32_t STRICT_SLOT = StaticScopeObject::RESERVED_SLOTS;
+    static const unsigned RESERVED_SLOTS = STRICT_SLOT + 1;
+
+  public:
+    static const Class class_;
+
+    static StaticEvalObject* create(JSContext* cx, HandleObject enclosing);
+
+    JSObject* enclosingScopeForStaticScopeIter() {
+        return getReservedSlot(ENCLOSING_SCOPE_SLOT).toObjectOrNull();
+    }
+
+    void setStrict() {
+        setReservedSlot(STRICT_SLOT, BooleanValue(true));
+    }
+
+    bool isStrict() const {
+        return getReservedSlot(STRICT_SLOT).isTrue();
+    }
+
+    inline bool isNonGlobal() const;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class StaticNonSyntacticScopeObjects : public StaticScopeObject
+{
+  public:
+    static const unsigned RESERVED_SLOTS = StaticScopeObject::RESERVED_SLOTS;
+    static const Class class_;
+
+    static StaticNonSyntacticScopeObjects* create(JSContext* cx, HandleObject enclosing);
+
+    JSObject* enclosingScopeForStaticScopeIter() {
+        return getReservedSlot(ENCLOSING_SCOPE_SLOT).toObjectOrNull();
+    }
+};
+
 template <AllowGC allowGC>
 class StaticScopeIter
 {
@@ -156,6 +530,7 @@ class StaticScopeIter
 
 
 
+
 class ScopeCoordinate
 {
     uint32_t hops_;
@@ -203,6 +578,9 @@ ScopeCoordinateName(ScopeCoordinateNameCache& cache, JSScript* script, jsbytecod
 
 extern JSScript*
 ScopeCoordinateFunctionScript(JSScript* script, jsbytecode* pc);
+
+
+
 
 
 
@@ -449,154 +827,6 @@ class DeclEnvObject : public ScopeObject
 
 
 
-class StaticEvalObject : public ScopeObject
-{
-    static const uint32_t STRICT_SLOT = 1;
-
-  public:
-    static const unsigned RESERVED_SLOTS = 2;
-    static const Class class_;
-
-    static StaticEvalObject* create(JSContext* cx, HandleObject enclosing);
-
-    JSObject* enclosingScopeForStaticScopeIter() {
-        return getReservedSlot(SCOPE_CHAIN_SLOT).toObjectOrNull();
-    }
-
-    void setStrict() {
-        setReservedSlot(STRICT_SLOT, BooleanValue(true));
-    }
-
-    bool isStrict() const {
-        return getReservedSlot(STRICT_SLOT).isTrue();
-    }
-
-    inline bool isNonGlobal() const;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class StaticNonSyntacticScopeObjects : public ScopeObject
-{
-  public:
-    static const unsigned RESERVED_SLOTS = 1;
-    static const Class class_;
-
-    static StaticNonSyntacticScopeObjects* create(JSContext* cx, HandleObject enclosing);
-
-    JSObject* enclosingScopeForStaticScopeIter() {
-        return getReservedSlot(SCOPE_CHAIN_SLOT).toObjectOrNull();
-    }
-};
-
-
-
-
 
 
 
@@ -615,53 +845,14 @@ class NestedScopeObject : public ScopeObject
 {
   public:
     
-
-
-
-    inline NestedScopeObject* enclosingNestedScope() const;
-
-    
-    inline bool isStatic() { return !getProto(); }
-
-    
-    inline NestedScopeObject* staticScope() {
-        MOZ_ASSERT(!isStatic());
-        return &getProto()->as<NestedScopeObject>();
-    }
-
-    
-    JSObject* enclosingScopeForStaticScopeIter() {
-        return getReservedSlot(SCOPE_CHAIN_SLOT).toObjectOrNull();
+    inline NestedStaticScopeObject* staticScope() {
+        return &getProto()->as<NestedStaticScopeObject>();
     }
 
     void initEnclosingScope(JSObject* obj) {
         MOZ_ASSERT(getReservedSlot(SCOPE_CHAIN_SLOT).isUndefined());
         setReservedSlot(SCOPE_CHAIN_SLOT, ObjectOrNullValue(obj));
     }
-
-    
-
-
-
-
-
-    void initEnclosingScopeFromParser(JSObject* prev) {
-        setReservedSlot(SCOPE_CHAIN_SLOT, ObjectOrNullValue(prev));
-    }
-
-    void resetEnclosingScopeFromParser() {
-        setReservedSlot(SCOPE_CHAIN_SLOT, UndefinedValue());
-    }
-};
-
-
-class StaticWithObject : public NestedScopeObject
-{
-  public:
-    static const unsigned RESERVED_SLOTS = 1;
-    static const Class class_;
-
-    static StaticWithObject* create(ExclusiveContext* cx);
 };
 
 
@@ -742,136 +933,6 @@ class BlockObject : public NestedScopeObject
     void setSlotValue(unsigned i, const Value& v) {
         setSlot(RESERVED_SLOTS + i, v);
     }
-};
-
-class StaticBlockObject : public BlockObject
-{
-    static const unsigned LOCAL_OFFSET_SLOT = 1;
-
-  public:
-    static StaticBlockObject* create(ExclusiveContext* cx);
-
-    
-    JSObject* enclosingStaticScope() const {
-        return getFixedSlot(SCOPE_CHAIN_SLOT).toObjectOrNull();
-    }
-
-    
-
-
-
-    uint32_t shapeToIndex(const Shape& shape) {
-        uint32_t slot = shape.slot();
-        MOZ_ASSERT(slot - RESERVED_SLOTS < numVariables());
-        return slot - RESERVED_SLOTS;
-    }
-
-    
-
-
-
-    inline StaticBlockObject* enclosingBlock() const;
-
-    uint32_t localOffset() {
-        return getReservedSlot(LOCAL_OFFSET_SLOT).toPrivateUint32();
-    }
-
-    
-    
-    uint32_t blockIndexToLocalIndex(uint32_t index) {
-        MOZ_ASSERT(index < numVariables());
-        return getReservedSlot(LOCAL_OFFSET_SLOT).toPrivateUint32() + index;
-    }
-
-    
-    
-    
-    uint32_t blockIndexToSlot(uint32_t index) {
-        MOZ_ASSERT(index < numVariables());
-        return RESERVED_SLOTS + index;
-    }
-
-    
-    
-    
-    uint32_t localIndexToSlot(uint32_t local) {
-        MOZ_ASSERT(local >= localOffset());
-        return blockIndexToSlot(local - localOffset());
-    }
-
-    
-
-
-
-    bool isAliased(unsigned i) {
-        return slotValue(i).isTrue();
-    }
-
-    
-    Shape* lookupAliasedName(PropertyName* name);
-
-    
-
-
-
-    bool needsClone() {
-        return numVariables() > 0 && !getSlot(RESERVED_SLOTS).isFalse();
-    }
-
-    
-    bool isGlobal() const {
-        return !enclosingStaticScope();
-    }
-
-    bool isSyntactic() const {
-        return !isExtensible() || isGlobal();
-    }
-
-    
-
-    
-    void setAliased(unsigned i, bool aliased) {
-        MOZ_ASSERT_IF(i > 0, slotValue(i-1).isBoolean());
-        setSlotValue(i, BooleanValue(aliased));
-        if (aliased && !needsClone()) {
-            setSlotValue(0, MagicValue(JS_BLOCK_NEEDS_CLONE));
-            MOZ_ASSERT(needsClone());
-        }
-    }
-
-    void setLocalOffset(uint32_t offset) {
-        MOZ_ASSERT(getReservedSlot(LOCAL_OFFSET_SLOT).isUndefined());
-        initReservedSlot(LOCAL_OFFSET_SLOT, PrivateUint32Value(offset));
-    }
-
-    
-
-
-
-    void setDefinitionParseNode(unsigned i, frontend::Definition* def) {
-        MOZ_ASSERT(slotValue(i).isUndefined());
-        setSlotValue(i, PrivateValue(def));
-    }
-
-    frontend::Definition* definitionParseNode(unsigned i) {
-        Value v = slotValue(i);
-        return reinterpret_cast<frontend::Definition*>(v.toPrivate());
-    }
-
-    
-    
-    bool makeNonExtensible(ExclusiveContext* cx);
-
-    
-
-
-
-
-
-    static const unsigned LOCAL_INDEX_LIMIT = JS_BIT(16);
-
-    static Shape* addVar(ExclusiveContext* cx, Handle<StaticBlockObject*> block, HandleId id,
-                         bool constant, unsigned index, bool* redeclared);
 };
 
 class ClonedBlockObject : public BlockObject
@@ -976,13 +1037,10 @@ bool
 XDRStaticBlockObject(XDRState<mode>* xdr, HandleObject enclosingScope,
                      MutableHandle<StaticBlockObject*> objp);
 
-template<XDRMode mode>
-bool
-XDRStaticWithObject(XDRState<mode>* xdr, HandleObject enclosingScope,
-                    MutableHandle<StaticWithObject*> objp);
-
 extern JSObject*
-CloneNestedScopeObject(JSContext* cx, HandleObject enclosingScope, Handle<NestedScopeObject*> src);
+CloneNestedScopeObject(JSContext* cx, HandleObject enclosingScope,
+                       Handle<NestedStaticScopeObject*> src);
+
 
 
 
@@ -1145,6 +1203,7 @@ class LiveScopeVal
 
 
 
+
 extern JSObject*
 GetDebugScopeForFunction(JSContext* cx, HandleFunction fun);
 
@@ -1271,10 +1330,40 @@ class DebugScopes
 
 template<>
 inline bool
+JSObject::is<js::StaticBlockObject>() const
+{
+    return hasClass(&js::ClonedBlockObject::class_) && !getProto();
+}
+
+template<>
+inline bool
+JSObject::is<js::NestedStaticScopeObject>() const
+{
+    return is<js::StaticBlockObject>() ||
+           is<js::StaticWithObject>();
+}
+
+template<>
+inline bool
+JSObject::is<js::StaticScopeObject>() const
+{
+    return is<js::NestedStaticScopeObject>() ||
+           is<js::StaticEvalObject>() ||
+           is<js::StaticNonSyntacticScopeObjects>();
+}
+
+template<>
+inline bool
+JSObject::is<js::ClonedBlockObject>() const
+{
+    return hasClass(&js::ClonedBlockObject::class_) && !!getProto();
+}
+
+template<>
+inline bool
 JSObject::is<js::NestedScopeObject>() const
 {
-    return is<js::BlockObject>() ||
-           is<js::StaticWithObject>() ||
+    return is<js::ClonedBlockObject>() ||
            is<js::DynamicWithObject>();
 }
 
@@ -1301,20 +1390,6 @@ template<>
 bool
 JSObject::is<js::DebugScopeObject>() const;
 
-template<>
-inline bool
-JSObject::is<js::ClonedBlockObject>() const
-{
-    return is<js::BlockObject>() && !!getProto();
-}
-
-template<>
-inline bool
-JSObject::is<js::StaticBlockObject>() const
-{
-    return is<js::BlockObject>() && !getProto();
-}
-
 namespace js {
 
 inline bool
@@ -1336,6 +1411,12 @@ IsSyntacticScope(JSObject* scope)
 }
 
 inline bool
+IsStaticGlobalLexicalScope(JSObject* scope)
+{
+    return scope->is<StaticBlockObject>() && scope->as<StaticBlockObject>().isGlobal();
+}
+
+inline bool
 IsExtensibleLexicalScope(JSObject* scope)
 {
     return scope->is<ClonedBlockObject>() && scope->as<ClonedBlockObject>().isExtensible();
@@ -1347,24 +1428,13 @@ IsGlobalLexicalScope(JSObject* scope)
     return scope->is<ClonedBlockObject>() && scope->as<ClonedBlockObject>().isGlobal();
 }
 
-inline bool
-IsStaticGlobalLexicalScope(JSObject* scope)
+inline NestedStaticScopeObject*
+NestedStaticScopeObject::enclosingNestedScope() const
 {
-    return scope->is<StaticBlockObject>() && scope->as<StaticBlockObject>().isGlobal();
-}
-
-inline const Value&
-ScopeObject::aliasedVar(ScopeCoordinate sc)
-{
-    MOZ_ASSERT(is<LexicalScopeBase>() || is<ClonedBlockObject>());
-    return getSlot(sc.slot());
-}
-
-inline NestedScopeObject*
-NestedScopeObject::enclosingNestedScope() const
-{
-    JSObject* obj = getReservedSlot(SCOPE_CHAIN_SLOT).toObjectOrNull();
-    return obj && obj->is<NestedScopeObject>() ? &obj->as<NestedScopeObject>() : nullptr;
+    JSObject* obj = getReservedSlot(ENCLOSING_SCOPE_SLOT).toObjectOrNull();
+    return obj && obj->is<NestedStaticScopeObject>()
+           ? &obj->as<NestedStaticScopeObject>()
+           : nullptr;
 }
 
 inline bool
@@ -1372,7 +1442,14 @@ StaticEvalObject::isNonGlobal() const
 {
     if (isStrict())
         return true;
-    return !IsStaticGlobalLexicalScope(&getReservedSlot(SCOPE_CHAIN_SLOT).toObject());
+    return !IsStaticGlobalLexicalScope(&getReservedSlot(ENCLOSING_SCOPE_SLOT).toObject());
+}
+
+inline const Value&
+ScopeObject::aliasedVar(ScopeCoordinate sc)
+{
+    MOZ_ASSERT(is<LexicalScopeBase>() || is<ClonedBlockObject>());
+    return getSlot(sc.slot());
 }
 
 inline bool

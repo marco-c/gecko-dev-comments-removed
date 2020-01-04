@@ -38,6 +38,128 @@ typedef MutableHandle<ArgumentsObject*> MutableHandleArgumentsObject;
 
 
 
+
+void
+StaticScopeObject::setEnclosingScope(HandleObject obj)
+{
+    MOZ_ASSERT_IF(obj->is<StaticBlockObject>(), obj->isDelegate());
+    setFixedSlot(ENCLOSING_SCOPE_SLOT, ObjectValue(*obj));
+}
+
+bool
+StaticBlockObject::isExtensible() const
+{
+    return nonProxyIsExtensible();
+}
+
+StaticBlockObject*
+StaticBlockObject::create(ExclusiveContext* cx)
+{
+    Rooted<TaggedProto> nullProto(cx, TaggedProto(nullptr));
+    JSObject* obj = NewObjectWithGivenTaggedProto(cx, &ClonedBlockObject::class_, nullProto,
+                                                  TenuredObject, BaseShape::DELEGATE);
+    return obj ? &obj->as<StaticBlockObject>() : nullptr;
+}
+
+Shape*
+StaticBlockObject::lookupAliasedName(PropertyName* name)
+{
+    Shape::Range<NoGC> r(lastProperty());
+    while (!r.empty()) {
+        jsid id = r.front().propidRaw();
+        if (JSID_TO_ATOM(id)->asPropertyName() == name && isAliased(shapeToIndex(r.front())))
+            return &r.front();
+        r.popFront();
+    }
+    return nullptr;
+}
+
+bool
+StaticBlockObject::makeNonExtensible(ExclusiveContext* cx)
+{
+    
+    
+    
+    
+    if (!isExtensible())
+        return true;
+    return setFlags(cx, BaseShape::NOT_EXTENSIBLE, JSObject::GENERATE_SHAPE);
+}
+
+ Shape*
+StaticBlockObject::addVar(ExclusiveContext* cx, Handle<StaticBlockObject*> block, HandleId id,
+                          bool constant, unsigned index, bool* redeclared)
+{
+    MOZ_ASSERT(JSID_IS_ATOM(id));
+    MOZ_ASSERT(index < LOCAL_INDEX_LIMIT);
+
+    *redeclared = false;
+
+    
+    ShapeTable::Entry* entry;
+    if (Shape::search<MaybeAdding::Adding>(cx, block->lastProperty(), id, &entry)) {
+        *redeclared = true;
+        return nullptr;
+    }
+
+    
+
+
+
+    uint32_t slot = JSSLOT_FREE(&BlockObject::class_) + index;
+    uint32_t readonly = constant ? JSPROP_READONLY : 0;
+    uint32_t propFlags = readonly | JSPROP_ENUMERATE | JSPROP_PERMANENT;
+    return NativeObject::addPropertyInternal(cx, block, id,
+                                              nullptr,
+                                              nullptr,
+                                             slot,
+                                             propFlags,
+                                              0,
+                                             entry,
+                                              false);
+}
+
+const Class StaticWithObject::class_ = {
+    "WithTemplate",
+    JSCLASS_HAS_RESERVED_SLOTS(StaticWithObject::RESERVED_SLOTS) |
+    JSCLASS_IS_ANONYMOUS
+};
+
+StaticWithObject*
+StaticWithObject::create(ExclusiveContext* cx)
+{
+    return NewObjectWithNullTaggedProto<StaticWithObject>(cx, TenuredObject, BaseShape::DELEGATE);
+}
+
+template<XDRMode mode>
+bool
+js::XDRStaticWithObject(XDRState<mode>* xdr, HandleObject enclosingScope,
+                        MutableHandle<StaticWithObject*> objp)
+{
+    if (mode == XDR_DECODE) {
+        JSContext* cx = xdr->cx();
+        Rooted<StaticWithObject*> obj(cx, StaticWithObject::create(cx));
+        if (!obj)
+            return false;
+        obj->initEnclosingScope(enclosingScope);
+        objp.set(obj);
+    }
+    
+    
+    
+
+    return true;
+}
+
+template bool
+js::XDRStaticWithObject(XDRState<XDR_ENCODE>*, HandleObject, MutableHandle<StaticWithObject*>);
+
+template bool
+js::XDRStaticWithObject(XDRState<XDR_DECODE>*, HandleObject, MutableHandle<StaticWithObject*>);
+
+
+
+
 Shape*
 js::ScopeCoordinateToStaticScopeShape(JSScript* script, jsbytecode* pc)
 {
@@ -585,38 +707,6 @@ DeclEnvObject::create(JSContext* cx, HandleObject enclosing, HandleFunction call
     return obj;
 }
 
-template<XDRMode mode>
-bool
-js::XDRStaticWithObject(XDRState<mode>* xdr, HandleObject enclosingScope,
-                        MutableHandle<StaticWithObject*> objp)
-{
-    if (mode == XDR_DECODE) {
-        JSContext* cx = xdr->cx();
-        Rooted<StaticWithObject*> obj(cx, StaticWithObject::create(cx));
-        if (!obj)
-            return false;
-        obj->initEnclosingScope(enclosingScope);
-        objp.set(obj);
-    }
-    
-    
-    
-
-    return true;
-}
-
-template bool
-js::XDRStaticWithObject(XDRState<XDR_ENCODE>*, HandleObject, MutableHandle<StaticWithObject*>);
-
-template bool
-js::XDRStaticWithObject(XDRState<XDR_DECODE>*, HandleObject, MutableHandle<StaticWithObject*>);
-
-StaticWithObject*
-StaticWithObject::create(ExclusiveContext* cx)
-{
-    return NewObjectWithNullTaggedProto<StaticWithObject>(cx, TenuredObject, BaseShape::DELEGATE);
-}
-
 static JSObject*
 CloneStaticWithObject(JSContext* cx, HandleObject enclosingScope, Handle<StaticWithObject*> srcWith)
 {
@@ -723,12 +813,6 @@ with_DeleteProperty(JSContext* cx, HandleObject obj, HandleId id, ObjectOpResult
     return DeleteProperty(cx, actual, id, result);
 }
 
-const Class StaticWithObject::class_ = {
-    "WithTemplate",
-    JSCLASS_HAS_RESERVED_SLOTS(StaticWithObject::RESERVED_SLOTS) |
-    JSCLASS_IS_ANONYMOUS
-};
-
 const Class DynamicWithObject::class_ = {
     "With",
     JSCLASS_HAS_RESERVED_SLOTS(DynamicWithObject::RESERVED_SLOTS) |
@@ -770,7 +854,7 @@ StaticEvalObject::create(JSContext* cx, HandleObject enclosing)
     if (!obj)
         return nullptr;
 
-    obj->setReservedSlot(SCOPE_CHAIN_SLOT, ObjectOrNullValue(enclosing));
+    obj->setReservedSlot(ENCLOSING_SCOPE_SLOT, ObjectOrNullValue(enclosing));
     obj->setReservedSlot(STRICT_SLOT, BooleanValue(false));
     return obj;
 }
@@ -790,7 +874,7 @@ StaticNonSyntacticScopeObjects::create(JSContext*cx, HandleObject enclosing)
     if (!obj)
         return nullptr;
 
-    obj->setReservedSlot(SCOPE_CHAIN_SLOT, ObjectOrNullValue(enclosing));
+    obj->setReservedSlot(ENCLOSING_SCOPE_SLOT, ObjectOrNullValue(enclosing));
     return obj;
 }
 
@@ -963,70 +1047,6 @@ ClonedBlockObject::clone(JSContext* cx, Handle<ClonedBlockObject*> clonedBlock)
         copy->setVar(i, clonedBlock->var(i, DONT_CHECK_ALIASING), DONT_CHECK_ALIASING);
 
     return copy;
-}
-
-StaticBlockObject*
-StaticBlockObject::create(ExclusiveContext* cx)
-{
-    return NewObjectWithNullTaggedProto<StaticBlockObject>(cx, TenuredObject, BaseShape::DELEGATE);
-}
-
-Shape*
-StaticBlockObject::lookupAliasedName(PropertyName* name)
-{
-    Shape::Range<NoGC> r(lastProperty());
-    while (!r.empty()) {
-        jsid id = r.front().propidRaw();
-        if (JSID_TO_ATOM(id)->asPropertyName() == name && isAliased(shapeToIndex(r.front())))
-            return &r.front();
-        r.popFront();
-    }
-    return nullptr;
-}
-
-bool
-StaticBlockObject::makeNonExtensible(ExclusiveContext* cx)
-{
-    
-    
-    
-    
-    if (!isExtensible())
-        return true;
-    return setFlags(cx, BaseShape::NOT_EXTENSIBLE, JSObject::GENERATE_SHAPE);
-}
-
- Shape*
-StaticBlockObject::addVar(ExclusiveContext* cx, Handle<StaticBlockObject*> block, HandleId id,
-                          bool constant, unsigned index, bool* redeclared)
-{
-    MOZ_ASSERT(JSID_IS_ATOM(id));
-    MOZ_ASSERT(index < LOCAL_INDEX_LIMIT);
-
-    *redeclared = false;
-
-    
-    ShapeTable::Entry* entry;
-    if (Shape::search<MaybeAdding::Adding>(cx, block->lastProperty(), id, &entry)) {
-        *redeclared = true;
-        return nullptr;
-    }
-
-    
-
-
-
-    uint32_t slot = JSSLOT_FREE(&BlockObject::class_) + index;
-    uint32_t readonly = constant ? JSPROP_READONLY : 0;
-    uint32_t propFlags = readonly | JSPROP_ENUMERATE | JSPROP_PERMANENT;
-    return NativeObject::addPropertyInternal(cx, block, id,
-                                              nullptr,
-                                              nullptr,
-                                             slot,
-                                             propFlags,
-                                              0,
-                                             entry,
-                                              false);
 }
 
 Value
@@ -1233,7 +1253,8 @@ CloneStaticBlockObject(JSContext* cx, HandleObject enclosingScope, Handle<Static
 }
 
 JSObject*
-js::CloneNestedScopeObject(JSContext* cx, HandleObject enclosingScope, Handle<NestedScopeObject*> srcBlock)
+js::CloneNestedScopeObject(JSContext* cx, HandleObject enclosingScope,
+                           Handle<NestedStaticScopeObject*> srcBlock)
 {
     if (srcBlock->is<StaticBlockObject>()) {
         Rooted<StaticBlockObject*> blockObj(cx, &srcBlock->as<StaticBlockObject>());

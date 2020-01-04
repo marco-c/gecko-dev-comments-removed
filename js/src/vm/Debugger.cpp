@@ -6698,7 +6698,7 @@ EvaluateInEnv(JSContext* cx, Handle<Env*> env, AbstractFramePtr frame,
 
 
 
-    Rooted<ScopeObject*> enclosingStaticScope(cx);
+    Rooted<StaticScopeObject*> enclosingStaticScope(cx);
     if (!IsGlobalLexicalScope(env)) {
         
         
@@ -6717,7 +6717,7 @@ EvaluateInEnv(JSContext* cx, Handle<Env*> env, AbstractFramePtr frame,
     
     
     
-    Rooted<ScopeObject*> staticScope(cx);
+    Rooted<StaticScopeObject*> staticScope(cx);
     if (frame) {
         staticScope = StaticEvalObject::create(cx, enclosingStaticScope);
         if (!staticScope)

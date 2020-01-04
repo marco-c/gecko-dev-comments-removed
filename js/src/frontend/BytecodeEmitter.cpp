@@ -803,7 +803,7 @@ BytecodeEmitter::computeLocalOffset(Handle<StaticBlockObject*> blockObj)
     unsigned localOffset = nbodyfixed;
 
     if (StmtInfoBCE* stmt = innermostScopeStmt()) {
-        Rooted<NestedScopeObject*> outer(cx, stmt->staticScope);
+        Rooted<NestedStaticScopeObject*> outer(cx, stmt->staticScope);
         for (; outer; outer = outer->enclosingNestedScope()) {
             if (outer->is<StaticBlockObject>() && !IsStaticGlobalLexicalScope(outer)) {
                 StaticBlockObject& outerBlock = outer->as<StaticBlockObject>();
@@ -874,7 +874,7 @@ BytecodeEmitter::computeLocalOffset(Handle<StaticBlockObject*> blockObj)
 bool
 BytecodeEmitter::enterNestedScope(StmtInfoBCE* stmt, ObjectBox* objbox, StmtType stmtType)
 {
-    Rooted<NestedScopeObject*> scopeObj(cx, &objbox->object->as<NestedScopeObject>());
+    Rooted<NestedStaticScopeObject*> scopeObj(cx, &objbox->object->as<NestedStaticScopeObject>());
     uint32_t scopeObjectIndex = objectList.add(objbox);
 
     switch (stmtType) {
@@ -948,7 +948,7 @@ BytecodeEmitter::leaveNestedScope(StmtInfoBCE* stmt)
     MOZ_ASSERT(blockScopeList.list[blockScopeIndex].length == 0);
     uint32_t blockObjIndex = blockScopeList.list[blockScopeIndex].index;
     ObjectBox* blockObjBox = objectList.find(blockObjIndex);
-    NestedScopeObject* staticScope = &blockObjBox->object->as<NestedScopeObject>();
+    NestedStaticScopeObject* staticScope = &blockObjBox->object->as<NestedStaticScopeObject>();
     MOZ_ASSERT(stmt->staticScope == staticScope);
     MOZ_ASSERT_IF(!stmt->isBlockScope, staticScope->is<StaticWithObject>());
 #endif
