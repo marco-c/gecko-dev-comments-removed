@@ -160,6 +160,8 @@ typedef enum {
   
   MOZ_GTK_FRAME,
   
+  MOZ_GTK_FRAME_BORDER,
+  
   MOZ_GTK_RESIZER,
   
   MOZ_GTK_PROGRESSBAR,
