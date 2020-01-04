@@ -390,19 +390,20 @@ SelectorAutocompleter.prototype = {
     let items = [];
 
     for (let [value, , state] of list) {
-      
       if (query.match(/[\s>+]$/)) {
+        
         value = query + value;
-      }
-      
-      else if (query.match(/[\s>+][\.#a-zA-Z][^\s>+\.#]*$/)) {
-        let lastPart = query.match(/[\s>+][\.#a-zA-Z][^>\s+\.#]*$/)[0];
+      } else if (query.match(/[\s>+][\.#a-zA-Z][^\s>+\.#\[]*$/)) {
+        
+        let lastPart = query.match(/[\s>+][\.#a-zA-Z][^\s>+\.#\[]*$/)[0];
         value = query.slice(0, -1 * lastPart.length + 1) + value;
-      }
-      
-      else if (query.match(/[a-zA-Z][#\.][^#\.\s+>]*$/)) {
-        let lastPart = query.match(/[a-zA-Z][#\.][^#\.\s>+]*$/)[0];
+      } else if (query.match(/[a-zA-Z][#\.][^#\.\s+>]*$/)) {
+        
+        let lastPart = query.match(/[a-zA-Z][#\.][^#\.\s+>]*$/)[0];
         value = query.slice(0, -1 * lastPart.length + 1) + value;
+      } else if (query.match(/[a-zA-Z]\[[^\]]*\]?$/)) {
+        
+        value = query;
       }
 
       let item = {
@@ -456,6 +457,13 @@ SelectorAutocompleter.prototype = {
     let query = this.searchBox.value;
     let state = this.state;
     let firstPart = "";
+
+    if (query.endsWith("*")) {
+      
+      
+      this.hidePopup();
+      return;
+    }
 
     if (state === this.States.TAG) {
       
