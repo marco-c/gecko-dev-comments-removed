@@ -13,16 +13,18 @@ add_task(function*() {
   yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   let {inspector, view} = yield openRuleView();
   yield selectNode("div", inspector);
-  yield testCreateNewMultiDuplicates(inspector, view);
-});
 
-function* testCreateNewMultiDuplicates(inspector, view) {
   let ruleEditor = getRuleViewRuleEditor(view, 0);
+  
+  
+  
   let onMutation = inspector.once("markupmutation");
+  let onRuleViewChanged = view.once("ruleview-changed");
   yield createNewRuleViewProperty(ruleEditor,
     "color:red;color:orange;color:yellow;color:green;color:blue;color:indigo;" +
     "color:violet;");
   yield onMutation;
+  yield onRuleViewChanged;
 
   is(ruleEditor.rule.textProps.length, 7,
     "Should have created new text properties.");
@@ -63,4 +65,4 @@ function* testCreateNewMultiDuplicates(inspector, view) {
     "Should have correct property name");
   is(ruleEditor.rule.textProps[6].value, "violet",
     "Should have correct property value");
-}
+});

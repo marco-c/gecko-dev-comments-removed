@@ -13,15 +13,17 @@ add_task(function*() {
   yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   let {inspector, view} = yield openRuleView();
   yield selectNode("div", inspector);
-  yield testCreateNewMultiPriority(inspector, view);
-});
 
-function* testCreateNewMultiPriority(inspector, view) {
   let ruleEditor = getRuleViewRuleEditor(view, 0);
+  
+  
+  
   let onMutation = inspector.once("markupmutation");
+  let onRuleViewChanged = view.once("ruleview-changed");
   yield createNewRuleViewProperty(ruleEditor,
     "color:red;width:100px;height: 100px;");
   yield onMutation;
+  yield onRuleViewChanged;
 
   is(ruleEditor.rule.textProps.length, 3,
     "Should have created new text properties.");
@@ -42,4 +44,4 @@ function* testCreateNewMultiPriority(inspector, view) {
     "Should have correct property name");
   is(ruleEditor.rule.textProps[2].value, "100px",
     "Should have correct property value");
-}
+});
