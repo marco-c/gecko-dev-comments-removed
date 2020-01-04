@@ -169,7 +169,7 @@ public:
   
 
 
-  NS_IMETHOD_(void) OnValueChanged(bool aNotify) = 0;
+  NS_IMETHOD_(void) OnValueChanged(bool aNotify, bool aWasInteractiveUserChange) = 0;
 
   static const int32_t DEFAULT_COLS = 20;
   static const int32_t DEFAULT_ROWS = 1;

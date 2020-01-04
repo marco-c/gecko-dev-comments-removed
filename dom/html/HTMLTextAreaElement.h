@@ -106,7 +106,7 @@ public:
   NS_IMETHOD_(void) UpdatePlaceholderVisibility(bool aNotify) override;
   NS_IMETHOD_(bool) GetPlaceholderVisibility() override;
   NS_IMETHOD_(void) InitializeKeyboardEventListeners() override;
-  NS_IMETHOD_(void) OnValueChanged(bool aNotify) override;
+  NS_IMETHOD_(void) OnValueChanged(bool aNotify, bool aWasInteractiveUserChange) override;
   NS_IMETHOD_(bool) HasCachedSelection() override;
 
   
@@ -293,6 +293,8 @@ protected:
   nsCOMPtr<nsIControllers> mControllers;
   
   bool                     mValueChanged;
+  
+  bool                     mLastValueChangeWasInteractive;
   
   bool                     mHandlingSelect;
   

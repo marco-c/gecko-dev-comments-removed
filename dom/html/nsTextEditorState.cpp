@@ -978,7 +978,8 @@ nsTextInputListener::EditAction()
   }
 
   if (!mSettingValue) {
-    mTxtCtrlElement->OnValueChanged(true);
+    mTxtCtrlElement->OnValueChanged( true,
+                                     true);
   }
 
   return NS_OK;
@@ -2182,7 +2183,8 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
   
   ValueWasChanged(!!mRootNode);
 
-  mTextCtrlElement->OnValueChanged(!!mRootNode);
+  mTextCtrlElement->OnValueChanged( !!mRootNode,
+                                    false);
 
   return true;
 }
