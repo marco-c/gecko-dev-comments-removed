@@ -44,6 +44,18 @@ def set_treeherder_machine_platform(config, tests):
 
 
 @transforms.add
+def set_asan_docker_image(config, tests):
+    """Set the appropriate task.extra.treeherder.docker-image"""
+    
+    
+    for test in tests:
+        if test['suite'] == 'mochitest/mochitest-media' and \
+           test['build-platform'] == 'linux64-asan/opt':
+            test['docker-image'] = {"in-tree": "desktop-test"}
+        yield test
+
+
+@transforms.add
 def split_e10s(config, tests):
     for test in tests:
         e10s = get_keyed_by(item=test, field='e10s',
