@@ -90,26 +90,18 @@ nsresult runTest(uint32_t aExpectedPolicyCount,
                  const char* aPolicy,
                  const char* aExpextedResult) {
 
-  
-  nsCOMPtr<nsIURI> selfURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(selfURI), "http://www.selfuri.com");
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  nsresult rv;
   nsCOMPtr<nsIScriptSecurityManager> secman =
     do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
-     nsCOMPtr<nsIPrincipal> systemPrincipal;
-  rv = secman->GetSystemPrincipal(getter_AddRefs(systemPrincipal));
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
-  
-  nsCOMPtr<nsIChannel> dummyChannel;
-  rv = NS_NewChannel(getter_AddRefs(dummyChannel),
-                     selfURI,
-                     systemPrincipal,
-                     nsILoadInfo::SEC_NORMAL,
-                     nsIContentPolicy::TYPE_OTHER);
+  nsCOMPtr<nsIURI> selfURI;
+  rv = NS_NewURI(getter_AddRefs(selfURI), "http://www.selfuri.com");
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIPrincipal> selfURIPrincipal;
+  rv = secman->GetSimpleCodebasePrincipal(selfURI, getter_AddRefs(selfURIPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -119,10 +111,7 @@ nsresult runTest(uint32_t aExpectedPolicyCount,
 
   
   
-  
-  csp->SetRequestContext(selfURI,
-                         nullptr,  
-                         dummyChannel);
+  rv = csp->SetRequestContext(nullptr, selfURIPrincipal);
   NS_ENSURE_SUCCESS(rv, rv);
 
   

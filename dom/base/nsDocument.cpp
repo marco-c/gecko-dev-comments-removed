@@ -240,8 +240,6 @@
 #include "gfxVR.h"
 #include "gfxPrefs.h"
 
-#include "mozilla/DocLoadingTimelineMarker.h"
-
 #include "nsISpeculativeConnect.h"
 
 #ifdef MOZ_MEDIA_NAVIGATOR
@@ -2781,7 +2779,7 @@ nsDocument::InitCSP(nsIChannel* aChannel)
   aChannel->GetURI(getter_AddRefs(selfURI));
 
   
-  csp->SetRequestContext(nullptr, nullptr, aChannel);
+  csp->SetRequestContext(this, nullptr);
 
   
   if (applyAppDefaultCSP) {
@@ -4999,8 +4997,8 @@ nsDocument::DispatchContentLoadedEvents()
   nsIDocShell* docShell = this->GetDocShell();
 
   if (timelines && timelines->HasConsumer(docShell)) {
-    timelines->AddMarkerForDocShell(docShell,
-      MakeUnique<DocLoadingTimelineMarker>("document::DOMContentLoaded"));
+    timelines->AddMarkerForDocShell(
+      docShell, "document::DOMContentLoaded", MarkerTracingType::TIMESTAMP);
   }
 
   if (mTiming) {

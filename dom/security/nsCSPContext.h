@@ -57,6 +57,13 @@ class nsCSPContext : public nsIContentSecurityPolicy
                                   const nsAString& aScriptSample,
                                   uint32_t aLineNum);
 
+    
+    
+    
+    void clearLoadingPrincipal() {
+      mLoadingPrincipal = nullptr;
+    }
+
   private:
     bool permitsInternal(CSPDirective aDir,
                          nsIURI* aContentLocation,
@@ -76,13 +83,17 @@ class nsCSPContext : public nsIContentSecurityPolicy
                                uint32_t aViolatedPolicyIndex,
                                uint32_t aLineNumber);
 
-    nsCOMPtr<nsIURI>                           mReferrer;
+    nsString                                   mReferrer;
     uint64_t                                   mInnerWindowID; 
     nsTArray<nsCSPPolicy*>                     mPolicies;
     nsCOMPtr<nsIURI>                           mSelfURI;
     nsDataHashtable<nsCStringHashKey, int16_t> mShouldLoadCache;
     nsCOMPtr<nsILoadGroup>                     mCallingChannelLoadGroup;
     nsWeakPtr                                  mLoadingContext;
+    
+    
+    
+    nsIPrincipal*                              mLoadingPrincipal;
 };
 
 
