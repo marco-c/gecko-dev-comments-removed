@@ -3383,7 +3383,9 @@ this.XPIProvider = {
 
 
 
-  installDistributionAddons: function(aManifests) {
+
+
+  installDistributionAddons: function(aManifests, aAppChanged) {
     let distroDir;
     try {
       distroDir = FileUtils.getDir(KEY_APP_DISTRIBUTION, [DIR_EXTENSIONS]);
@@ -3426,6 +3428,12 @@ this.XPIProvider = {
       if (!gIDTest.test(id)) {
         logger.debug("Ignoring distribution add-on whose name is not a valid add-on ID: " +
             entry.path);
+        continue;
+      }
+
+      
+
+      if (!aAppChanged && Preferences.isSet(PREF_BRANCH_INSTALLED_ADDON + id)) {
         continue;
       }
 
@@ -3560,10 +3568,9 @@ this.XPIProvider = {
     }
 
     
-    if (aAppChanged !== false &&
-        Preferences.get(PREF_INSTALL_DISTRO_ADDONS, true))
+    if (Preferences.get(PREF_INSTALL_DISTRO_ADDONS, true))
     {
-      updated = this.installDistributionAddons(manifests);
+      updated = this.installDistributionAddons(manifests, aAppChanged);
       if (updated) {
         updateReasons.push("installDistributionAddons");
       }
