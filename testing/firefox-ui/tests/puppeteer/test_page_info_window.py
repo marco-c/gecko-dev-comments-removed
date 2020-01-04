@@ -2,7 +2,6 @@
 
 
 
-from marionette_driver import By
 from firefox_ui_harness.testcases import FirefoxTestCase
 
 
