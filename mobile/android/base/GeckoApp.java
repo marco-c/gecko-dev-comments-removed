@@ -170,6 +170,8 @@ public abstract class GeckoApp
     
     private static final int CLEANUP_DEFERRAL_SECONDS = 15;
 
+    private static boolean sAlreadyLoaded;
+
     protected RelativeLayout mRootLayout;
     protected RelativeLayout mMainLayout;
 
@@ -1301,7 +1303,7 @@ public abstract class GeckoApp
             return;
         }
 
-        if (GeckoThread.isLaunched()) {
+        if (sAlreadyLoaded) {
             
             
             mIsRestoringActivity = true;
@@ -1310,6 +1312,7 @@ public abstract class GeckoApp
         } else {
             final String uri = getURIFromIntent(intent);
 
+            sAlreadyLoaded = true;
             GeckoThread.ensureInit(args, action,
                      ACTION_DEBUG.equals(action));
 
