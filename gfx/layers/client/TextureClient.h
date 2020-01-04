@@ -372,8 +372,14 @@ public:
 
   already_AddRefed<gfx::DataSourceSurface> GetAsSurface() {
     Lock(OpenMode::OPEN_READ);
-    RefPtr<gfx::SourceSurface> surf = BorrowDrawTarget()->Snapshot();
-    RefPtr<gfx::DataSourceSurface> data = surf->GetDataSurface();
+    RefPtr<gfx::DataSourceSurface> data;
+    RefPtr<gfx::DrawTarget> dt = BorrowDrawTarget();
+    if (dt) {
+      RefPtr<gfx::SourceSurface> surf = dt->Snapshot();
+      if (surf) {
+        data = surf->GetDataSurface();
+      }
+    }
     Unlock();
     return data.forget();
   }
@@ -415,6 +421,8 @@ public:
 
   static PTextureChild* CreateIPDLActor();
   static bool DestroyIPDLActor(PTextureChild* actor);
+  
+  static bool DestroyFallback(PTextureChild* actor);
 
   
 
