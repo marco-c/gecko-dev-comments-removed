@@ -85,6 +85,9 @@ private:
     unsigned m_periodicWaveSize;
     unsigned m_numberOfRanges;
     float m_centsPerRange;
+    unsigned m_numberOfComponents;
+    nsAutoPtr<AudioFloatArray> m_realComponents;
+    nsAutoPtr<AudioFloatArray> m_imagComponents;
 
     
     
@@ -102,7 +105,7 @@ private:
     unsigned numberOfPartialsForRange(unsigned rangeIndex) const;
 
     
-    void createBandLimitedTables(const float* real, const float* imag, unsigned numberOfComponents);
+    void createBandLimitedTables();
     nsTArray<nsAutoPtr<AlignedAudioFloatArray> > m_bandLimitedTables;
 };
 

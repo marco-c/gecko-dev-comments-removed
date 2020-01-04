@@ -51,7 +51,20 @@ PeriodicWave::create(float sampleRate,
     if (isGood) {
         RefPtr<PeriodicWave> periodicWave =
             new PeriodicWave(sampleRate, numberOfComponents);
-        periodicWave->createBandLimitedTables(real, imag, numberOfComponents);
+
+        
+        
+        size_t halfSize = periodicWave->m_periodicWaveSize / 2;
+        numberOfComponents = std::min(numberOfComponents, halfSize);
+        periodicWave->m_numberOfComponents = numberOfComponents;
+        periodicWave->m_realComponents = new AudioFloatArray(numberOfComponents);
+        periodicWave->m_imagComponents = new AudioFloatArray(numberOfComponents);
+        memcpy(periodicWave->m_realComponents->Elements(), real,
+               numberOfComponents * sizeof(float));
+        memcpy(periodicWave->m_imagComponents->Elements(), imag,
+               numberOfComponents * sizeof(float));
+
+        periodicWave->createBandLimitedTables();
         return periodicWave.forget();
     }
     return nullptr;
@@ -179,17 +192,15 @@ unsigned PeriodicWave::numberOfPartialsForRange(unsigned rangeIndex) const
 
 
 
-void PeriodicWave::createBandLimitedTables(const float* realData, const float* imagData, unsigned numberOfComponents)
+void PeriodicWave::createBandLimitedTables()
 {
     float normalizationScale = 1;
 
     unsigned fftSize = m_periodicWaveSize;
-    unsigned halfSize = fftSize / 2;
     unsigned i;
 
-    
-    
-    numberOfComponents = std::min(numberOfComponents, halfSize);
+    const float *realData = m_realComponents->Elements();
+    const float *imagData = m_imagComponents->Elements();
 
     m_bandLimitedTables.SetCapacity(m_numberOfRanges);
 
@@ -202,7 +213,7 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
         
         unsigned numberOfPartials = numberOfPartialsForRange(rangeIndex);
         
-        numberOfPartials = std::min(numberOfPartials, numberOfComponents - 1);
+        numberOfPartials = std::min(numberOfPartials, m_numberOfComponents - 1);
 
         
         
@@ -247,10 +258,11 @@ void PeriodicWave::generateBasicWaveform(OscillatorType shape)
     unsigned fftSize = periodicWaveSize();
     unsigned halfSize = fftSize / 2;
 
-    AudioFloatArray real(halfSize);
-    AudioFloatArray imag(halfSize);
-    float* realP = real.Elements();
-    float* imagP = imag.Elements();
+    m_numberOfComponents = halfSize;
+    m_realComponents = new AudioFloatArray(halfSize);
+    m_imagComponents = new AudioFloatArray(halfSize);
+    float* realP = m_realComponents->Elements();
+    float* imagP = m_imagComponents->Elements();
 
     
     realP[0] = 0;
@@ -306,7 +318,7 @@ void PeriodicWave::generateBasicWaveform(OscillatorType shape)
         imagP[n] = b;
     }
 
-    createBandLimitedTables(realP, imagP, halfSize);
+    createBandLimitedTables();
 }
 
 } 
