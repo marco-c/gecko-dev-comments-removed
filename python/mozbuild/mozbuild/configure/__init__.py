@@ -640,12 +640,31 @@ class ConfigureSandbox(dict):
             log=self.log_impl,
         )
         self._apply_imports(func, glob)
+
+        
+        
+        
+        
+        
+        
+        
+        
+        closure = None
+        if func.func_closure:
+            def makecell(content):
+                def f():
+                    content
+                return f.func_closure[0]
+
+            closure = tuple(makecell(cell.cell_contents)
+                            for cell in func.func_closure)
+
         func = wraps(func)(types.FunctionType(
             func.func_code,
             glob,
             func.__name__,
             func.func_defaults,
-            func.func_closure
+            closure
         ))
         self._prepared_functions.add(func)
         return func, glob
