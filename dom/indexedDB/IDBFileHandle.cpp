@@ -75,7 +75,7 @@ IDBFileHandle::GetMetadata(const IDBFileMetadataParameters& aParameters,
 
   
   if (!aParameters.mSize && !aParameters.mLastModified) {
-    aRv.ThrowTypeError(MSG_METADATA_NOT_CONFIGURED);
+    aRv.ThrowTypeError<MSG_METADATA_NOT_CONFIGURED>();
     return nullptr;
   }
 
