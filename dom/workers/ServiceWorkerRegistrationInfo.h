@@ -92,9 +92,6 @@ public:
   Clear();
 
   void
-  PurgeActiveWorker();
-
-  void
   TryToActivateAsync();
 
   void
@@ -113,7 +110,7 @@ public:
   IsLastUpdateCheckTimeOverOneDay() const;
 
   void
-  NotifyListenersOnChange();
+  NotifyListenersOnChange(WhichServiceWorker aChangedWorkers);
 
   void
   MaybeScheduleTimeCheckAndUpdate();
@@ -133,14 +130,34 @@ public:
   ServiceWorkerInfo*
   GetActive() const;
 
+  
+  
+  void
+  ClearInstalling();
+
+  
+  
+  
   void
   SetInstalling(ServiceWorkerInfo* aServiceWorker);
 
+  
+  
   void
-  SetWaiting(ServiceWorkerInfo* aServiceWorker);
+  TransitionInstallingToWaiting();
 
+  
+  
+  
+  
+  
   void
   SetActive(ServiceWorkerInfo* aServiceWorker);
+
+  
+  
+  void
+  TransitionWaitingToActive();
 };
 
 } 
