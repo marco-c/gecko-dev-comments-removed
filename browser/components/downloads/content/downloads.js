@@ -287,8 +287,14 @@ const DownloadsPanel = {
 
 
   handleEvent(aEvent) {
-    if (aEvent.type == "mousemove") {
-      this.keyFocusing = false;
+    switch (aEvent.type) {
+      case "mousemove":
+        this.keyFocusing = false;
+        break;
+      case "keydown":
+        return this._onKeyDown(aEvent);
+      case "keypress":
+        return this._onKeyPress(aEvent);
     }
   },
 
@@ -378,10 +384,10 @@ const DownloadsPanel = {
 
   _attachEventListeners() {
     
-    this.panel.addEventListener("keydown", this._onKeyDown.bind(this), false);
+    this.panel.addEventListener("keydown", this, false);
     
     
-    this.panel.addEventListener("keypress", this._onKeyPress.bind(this), false);
+    this.panel.addEventListener("keypress", this, false);
   },
 
   
@@ -389,10 +395,8 @@ const DownloadsPanel = {
 
 
   _unattachEventListeners() {
-    this.panel.removeEventListener("keydown", this._onKeyDown.bind(this),
-                                   false);
-    this.panel.removeEventListener("keypress", this._onKeyPress.bind(this),
-                                   false);
+    this.panel.removeEventListener("keydown", this, false);
+    this.panel.removeEventListener("keypress", this, false);
   },
 
   _onKeyPress(aEvent) {
