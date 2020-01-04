@@ -1102,6 +1102,15 @@ public:
 
 
 
+  void AddAncestorMaskLayer(const RefPtr<Layer>& aLayer) {
+    mAncestorMaskLayers.AppendElement(aLayer);
+    Mutated();
+  }
+
+  
+
+
+
 
   void SetBaseTransform(const gfx::Matrix4x4& aMatrix)
   {
@@ -1351,6 +1360,9 @@ public:
   }
   Layer* GetAncestorMaskLayerAt(size_t aIndex) const {
     return mAncestorMaskLayers.ElementAt(aIndex);
+  }
+  const nsTArray<RefPtr<Layer>>& GetAllAncestorMaskLayers() const {
+    return mAncestorMaskLayers;
   }
 
   bool HasMaskLayers() const {
