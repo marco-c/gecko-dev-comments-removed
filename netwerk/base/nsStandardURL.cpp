@@ -2927,22 +2927,8 @@ nsStandardURL::Init(uint32_t urlType,
 
     mOriginCharset.Truncate();
 
-    if (charset == nullptr || *charset == '\0') {
-        
-        if (baseURI)
-            baseURI->GetOriginCharset(mOriginCharset);
-
-        
-        
-        
-        
-
-        if (mOriginCharset.Length() > 3 &&
-            IsUTFCharset(mOriginCharset.get())) {
-            mOriginCharset.Truncate();
-        }
-    }
-    else if (!IsUTFCharset(charset)) {
+    
+    if (charset != nullptr && *charset != '\0' && !IsUTFCharset(charset)) {
         mOriginCharset = charset;
     }
 
