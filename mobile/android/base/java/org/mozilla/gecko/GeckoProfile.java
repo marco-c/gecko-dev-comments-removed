@@ -265,7 +265,7 @@ public final class GeckoProfile {
                 
                 throw new RuntimeException(e);
             }
-        } else {
+        } else if (AppConstants.DEBUG_BUILD) {
             Log.v(LOGTAG, "Fetching profile: '" + profileName + "', '" + profileDir + "'");
         }
 
