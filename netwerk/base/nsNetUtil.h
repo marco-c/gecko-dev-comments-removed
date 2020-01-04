@@ -585,6 +585,9 @@ nsresult NS_NewBufferedOutputStream(nsIOutputStream **result,
 already_AddRefed<nsIOutputStream>
 NS_BufferOutputStream(nsIOutputStream *aOutputStream,
                       uint32_t aBufferSize);
+already_AddRefed<nsIInputStream>
+NS_BufferInputStream(nsIInputStream *aInputStream,
+                      uint32_t aBufferSize);
 
 
 nsresult NS_NewPostDataStream(nsIInputStream  **result,
