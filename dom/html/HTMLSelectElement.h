@@ -502,37 +502,11 @@ protected:
                                  int32_t aListIndex,
                                  int32_t aDepth,
                                  bool aNotify);
-  
-
-
-
-
-
-  void InsertOptionsIntoListRecurse(nsIContent* aOptions,
-                                    int32_t* aInsertIndex,
-                                    int32_t aDepth);
-  
-
-
-
-
-
-
-  nsresult RemoveOptionsFromListRecurse(nsIContent* aOptions,
-                                        int32_t aRemoveIndex,
-                                        int32_t* aNumRemoved,
-                                        int32_t aDepth);
 
   
   void UpdateBarredFromConstraintValidation();
   bool IsValueMissing();
 
-  
-
-
-
-
-  int32_t GetContentDepth(nsIContent* aContent);
   
 
 

@@ -76,7 +76,7 @@ protected:
 
 
 
-  nsIContent* GetSelect();
+  Element* GetSelect();
 };
 
 } 
