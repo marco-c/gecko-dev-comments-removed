@@ -10341,10 +10341,12 @@ void ReflowCountMgr::PaintCount(const char*     aName,
       
       
       nsFont font(eFamily_serif, nsPresContext::CSSPixelsToAppUnits(11));
+      nsFontMetrics::Params params;
+      params.language = nsGkAtoms::x_western;
+      params.textPerf = aPresContext->GetTextPerfMetrics();
       RefPtr<nsFontMetrics> fm;
-      aPresContext->DeviceContext()->GetMetricsFor(font,
-        nsGkAtoms::x_western, false, gfxFont::eHorizontal, nullptr,
-        aPresContext->GetTextPerfMetrics(), *getter_AddRefs(fm));
+      aPresContext->DeviceContext()->
+        GetMetricsFor(font, params, *getter_AddRefs(fm));
 
       char buf[16];
       int len = snprintf_literal(buf, "%d", counter->mCount);

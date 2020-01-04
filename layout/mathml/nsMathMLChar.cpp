@@ -991,15 +991,14 @@ nsMathMLChar::SetFontFamily(nsPresContext*          aPresContext,
     nsFont font = aFont;
     font.fontlist = familyList;
     const nsStyleFont* styleFont = mStyleContext->StyleFont();
+    nsFontMetrics::Params params;
+    params.language = styleFont->mLanguage;
+    params.explicitLanguage = styleFont->mExplicitLanguage;
+    params.userFontSet = aPresContext->GetUserFontSet();
+    params.textPerf = aPresContext->GetTextPerfMetrics();
     RefPtr<nsFontMetrics> fm;
     aPresContext->DeviceContext()->
-      GetMetricsFor(font,
-                    styleFont->mLanguage,
-                    styleFont->mExplicitLanguage,
-                    gfxFont::eHorizontal,
-                    aPresContext->GetUserFontSet(),
-                    aPresContext->GetTextPerfMetrics(),
-                    *getter_AddRefs(fm));
+      GetMetricsFor(font, params, *getter_AddRefs(fm));
     
     
     gfxFont *firstFont = fm->GetThebesFontGroup()->GetFirstValidFont();
@@ -1533,15 +1532,14 @@ nsMathMLChar::StretchInternal(nsPresContext*           aPresContext,
   NormalizeDefaultFont(font, aFontSizeInflation);
 
   const nsStyleFont* styleFont = mStyleContext->StyleFont();
+  nsFontMetrics::Params params;
+  params.language = styleFont->mLanguage;
+  params.explicitLanguage = styleFont->mExplicitLanguage;
+  params.userFontSet = aPresContext->GetUserFontSet();
+  params.textPerf = aPresContext->GetTextPerfMetrics();
   RefPtr<nsFontMetrics> fm;
   aPresContext->DeviceContext()->
-    GetMetricsFor(font,
-                  styleFont->mLanguage,
-                  styleFont->mExplicitLanguage,
-                  gfxFont::eHorizontal,
-                  aPresContext->GetUserFontSet(),
-                  aPresContext->GetTextPerfMetrics(),
-                  *getter_AddRefs(fm));
+    GetMetricsFor(font, params, *getter_AddRefs(fm));
   uint32_t len = uint32_t(mData.Length());
   nsAutoPtr<gfxTextRun> textRun;
   textRun = fm->GetThebesFontGroup()->

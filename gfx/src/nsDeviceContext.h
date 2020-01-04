@@ -19,6 +19,7 @@
 #include "nsMathUtils.h"                
 #include "nscore.h"                     
 #include "mozilla/AppUnits.h"           
+#include "nsFontMetrics.h"              
 
 class gfxASurface;
 class gfxContext;
@@ -26,7 +27,6 @@ class gfxTextPerfMetrics;
 class gfxUserFontSet;
 struct nsFont;
 class nsFontCache;
-class nsFontMetrics;
 class nsIAtom;
 class nsIDeviceContextSpec;
 class nsIScreen;
@@ -116,13 +116,8 @@ public:
 
 
 
-
-
     nsresult GetMetricsFor(const nsFont& aFont,
-                           nsIAtom* aLanguage, bool aExplicitLanguage,
-                           gfxFont::Orientation aOrientation,
-                           gfxUserFontSet* aUserFontSet,
-                           gfxTextPerfMetrics* aTextPerf,
+                           const nsFontMetrics::Params& aParams,
                            nsFontMetrics*& aMetrics);
 
     

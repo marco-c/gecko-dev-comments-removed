@@ -49,6 +49,15 @@ public:
     typedef gfxTextRun::Range Range;
     typedef mozilla::gfx::DrawTarget DrawTarget;
 
+    struct Params
+    {
+      nsIAtom* language = nullptr;
+      bool explicitLanguage = false;
+      gfxFont::Orientation orientation = gfxFont::eHorizontal;
+      gfxUserFontSet* userFontSet = nullptr;
+      gfxTextPerfMetrics* textPerf = nullptr;
+    };
+
     nsFontMetrics();
 
     NS_INLINE_DECL_REFCOUNTING(nsFontMetrics)
@@ -57,14 +66,8 @@ public:
 
 
 
-
-
-    nsresult Init(const nsFont& aFont,
-                  nsIAtom* aLanguage, bool aExplicitLanguage,
-                  gfxFont::Orientation aOrientation,
-                  nsDeviceContext *aContext,
-                  gfxUserFontSet *aUserFontSet,
-                  gfxTextPerfMetrics *aTextPerf);
+    nsresult Init(const nsFont& aFont, const Params& aParams,
+                  nsDeviceContext *aContext);
 
     
 
