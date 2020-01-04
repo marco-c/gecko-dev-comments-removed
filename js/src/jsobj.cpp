@@ -2433,6 +2433,13 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
     }
 
     
+
+
+
+    if (proto == obj->staticPrototype())
+        return result.succeed();
+
+    
     if (obj->staticPrototypeIsImmutable() && ImmutablePrototypesEnabled)
         return result.fail(JSMSG_CANT_SET_PROTO);
 
@@ -2465,13 +2472,6 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
                              "incompatible Location object");
         return false;
     }
-
-    
-
-
-
-    if (proto == obj->staticPrototype())
-        return result.succeed();
 
     
     bool extensible;
