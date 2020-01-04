@@ -27,20 +27,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "Utils",
 
 
 this.TabState = Object.freeze({
-  setSyncHandler: function (browser, handler) {
-    TabStateInternal.setSyncHandler(browser, handler);
-  },
-
   update: function (browser, data) {
     TabStateInternal.update(browser, data);
-  },
-
-  flushAsync: function (browser) {
-    TabStateInternal.flushAsync(browser);
-  },
-
-  flushWindow: function (window) {
-    TabStateInternal.flushWindow(window);
   },
 
   collect: function (tab) {
@@ -53,62 +41,15 @@ this.TabState = Object.freeze({
 
   copyFromCache(browser, tabData, options) {
     TabStateInternal.copyFromCache(browser, tabData, options);
-  }
+  },
 });
 
 var TabStateInternal = {
   
-  
-  
-  _syncHandlers: new WeakMap(),
-
-  
-  
-  _latestMessageID: new WeakMap(),
-
-  
 
 
-  setSyncHandler: function (browser, handler) {
-    this._syncHandlers.set(browser.permanentKey, handler);
-    this._latestMessageID.set(browser.permanentKey, 0);
-  },
-
-  
-
-
-  update: function (browser, {id, data}) {
-    
-    
-    
-    if (id > this._latestMessageID.get(browser.permanentKey)) {
-      this._latestMessageID.set(browser.permanentKey, id);
-      TabStateCache.update(browser, data);
-    }
-  },
-
-  
-
-
-
-
-
-  flushAsync: function(browser) {
-    if (this._syncHandlers.has(browser.permanentKey)) {
-      this._syncHandlers.get(browser.permanentKey).flushAsync();
-    }
-  },
-
-  
-
-
-  flushWindow: function (window) {
-    for (let browser of window.gBrowser.browsers) {
-      if (this._syncHandlers.has(browser.permanentKey)) {
-        let lastID = this._latestMessageID.get(browser.permanentKey);
-        this._syncHandlers.get(browser.permanentKey).flush(lastID);
-      }
-    }
+  update: function (browser, {data}) {
+    TabStateCache.update(browser, data);
   },
 
   
