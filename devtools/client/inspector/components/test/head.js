@@ -54,7 +54,7 @@ function selectAndHighlightNode(nodeOrSelector, inspector) {
 
 
 
-function openLayoutView() {
+function openBoxModelView() {
   return openInspectorSidebarTab("computedview").then(data => {
     
     
@@ -71,7 +71,7 @@ function openLayoutView() {
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
-      view: data.inspector.computedview.layoutView,
+      view: data.inspector.computedview.boxModelView,
       testActor: data.testActor
     };
   });
@@ -82,7 +82,7 @@ function openLayoutView() {
 
 
 function waitForUpdate(inspector) {
-  return inspector.once("layoutview-updated");
+  return inspector.once("boxmodel-view-updated");
 }
 
 function getStyle(testActor, selector, propertyName) {

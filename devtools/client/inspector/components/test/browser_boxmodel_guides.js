@@ -19,7 +19,7 @@ var highlightedNodeFront, highlighterOptions;
 
 add_task(function* () {
   yield addTab(TEST_URL);
-  let {toolbox, inspector, view} = yield openLayoutView();
+  let {toolbox, inspector, view} = yield openBoxModelView();
   yield selectNode("div", inspector);
 
   
@@ -28,21 +28,21 @@ add_task(function* () {
     highlighterOptions = options;
   };
 
-  let elt = view.doc.getElementById("layout-margins");
+  let elt = view.doc.getElementById("boxmodel-margins");
   yield testGuideOnLayoutHover(elt, "margin", inspector, view);
 
-  elt = view.doc.getElementById("layout-borders");
+  elt = view.doc.getElementById("boxmodel-borders");
   yield testGuideOnLayoutHover(elt, "border", inspector, view);
 
-  elt = view.doc.getElementById("layout-padding");
+  elt = view.doc.getElementById("boxmodel-padding");
   yield testGuideOnLayoutHover(elt, "padding", inspector, view);
 
-  elt = view.doc.getElementById("layout-content");
+  elt = view.doc.getElementById("boxmodel-content");
   yield testGuideOnLayoutHover(elt, "content", inspector, view);
 });
 
 function* testGuideOnLayoutHover(elt, expectedRegion, inspector) {
-  info("Synthesizing mouseover on the layout-view");
+  info("Synthesizing mouseover on the boxmodel-view");
   EventUtils.synthesizeMouse(elt, 2, 2, {type: "mouseover"},
     elt.ownerDocument.defaultView);
 
