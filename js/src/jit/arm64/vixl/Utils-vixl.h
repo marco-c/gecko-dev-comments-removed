@@ -29,7 +29,6 @@
 
 #include "mozilla/FloatingPoint.h"
 
-#include "jit/arm64/vixl/CompilerIntrinsics-vixl.h"
 #include "jit/arm64/vixl/Globals-vixl.h"
 
 namespace vixl {
@@ -54,9 +53,9 @@ inline bool is_uintn(unsigned n, int64_t x) {
   return !(x >> n);
 }
 
-inline uint32_t truncate_to_intn(unsigned n, int64_t x) {
+inline unsigned truncate_to_intn(unsigned n, int64_t x) {
   VIXL_ASSERT((0 < n) && (n < 64));
-  return static_cast<uint32_t>(x & ((INT64_C(1) << n) - 1));
+  return (x & ((INT64_C(1) << n) - 1));
 }
 
 #define INT_1_TO_63_LIST(V)                                                    \
@@ -74,7 +73,7 @@ inline bool is_int##N(int64_t x) { return is_intn(N, x); }
 #define DECLARE_IS_UINT_N(N)                                                   \
 inline bool is_uint##N(int64_t x) { return is_uintn(N, x); }
 #define DECLARE_TRUNCATE_TO_INT_N(N)                                           \
-inline uint32_t truncate_to_int##N(int x) { return truncate_to_intn(N, x); }
+inline int truncate_to_int##N(int x) { return truncate_to_intn(N, x); }
 INT_1_TO_63_LIST(DECLARE_IS_INT_N)
 INT_1_TO_63_LIST(DECLARE_IS_UINT_N)
 INT_1_TO_63_LIST(DECLARE_TRUNCATE_TO_INT_N)
@@ -105,52 +104,27 @@ uint64_t double_to_rawbits(double value);
 float rawbits_to_float(uint32_t bits);
 double rawbits_to_double(uint64_t bits);
 
-uint32_t float_sign(float val);
-uint32_t float_exp(float val);
-uint32_t float_mantissa(float val);
-uint32_t double_sign(double val);
-uint32_t double_exp(double val);
-uint64_t double_mantissa(double val);
-
-float float_pack(uint32_t sign, uint32_t exp, uint32_t mantissa);
-double double_pack(uint64_t sign, uint64_t exp, uint64_t mantissa);
-
-
-int float16classify(float16 value);
-
 
 inline bool IsSignallingNaN(double num) {
   const uint64_t kFP64QuietNaNMask = UINT64_C(0x0008000000000000);
   uint64_t raw = double_to_rawbits(num);
-  if (mozilla::IsNaN(num) && ((raw & kFP64QuietNaNMask) == 0)) {
+  if (mozilla::IsNaN(num) && ((raw & kFP64QuietNaNMask) == 0))
     return true;
-  }
   return false;
 }
-
 
 inline bool IsSignallingNaN(float num) {
   const uint32_t kFP32QuietNaNMask = 0x00400000;
   uint32_t raw = float_to_rawbits(num);
-  if (mozilla::IsNaN(num) && ((raw & kFP32QuietNaNMask) == 0)) {
+  if (mozilla::IsNaN(num) && ((raw & kFP32QuietNaNMask) == 0))
     return true;
-  }
   return false;
 }
-
-
-inline bool IsSignallingNaN(float16 num) {
-  const uint16_t kFP16QuietNaNMask = 0x0200;
-  return (float16classify(num) == FP_NAN) &&
-         ((num & kFP16QuietNaNMask) == 0);
-}
-
 
 template <typename T>
 inline bool IsQuietNaN(T num) {
   return mozilla::IsNaN(num) && !IsSignallingNaN(num);
 }
-
 
 
 inline double ToQuietNaN(double num) {
@@ -159,7 +133,6 @@ inline double ToQuietNaN(double num) {
   return rawbits_to_double(double_to_rawbits(num) | kFP64QuietNaNMask);
 }
 
-
 inline float ToQuietNaN(float num) {
   const uint32_t kFP32QuietNaNMask = 0x00400000;
   VIXL_ASSERT(mozilla::IsNaN(num));
@@ -167,88 +140,27 @@ inline float ToQuietNaN(float num) {
 }
 
 
-
 inline double FusedMultiplyAdd(double op1, double op2, double a) {
   return fma(op1, op2, a);
 }
-
 
 inline float FusedMultiplyAdd(float op1, float op2, float a) {
   return fmaf(op1, op2, a);
 }
 
 
-inline uint64_t LowestSetBit(uint64_t value) {
-  return value & -value;
-}
-
-
-template<typename T>
-inline int HighestSetBitPosition(T value) {
-  VIXL_ASSERT(value != 0);
-  return (sizeof(value) * 8 - 1) - CountLeadingZeros(value);
-}
-
-
-template<typename V>
-inline int WhichPowerOf2(V value) {
-  VIXL_ASSERT(IsPowerOf2(value));
-  return CountTrailingZeros(value);
-}
-
-
-unsigned CountClearHalfWords(uint64_t imm, unsigned reg_size);
-
-
-template <typename T>
-T ReverseBits(T value) {
-  VIXL_ASSERT((sizeof(value) == 1) || (sizeof(value) == 2) ||
-              (sizeof(value) == 4) || (sizeof(value) == 8));
-  T result = 0;
-  for (unsigned i = 0; i < (sizeof(value) * 8); i++) {
-    result = (result << 1) | (value & 1);
-    value >>= 1;
-  }
-  return result;
-}
-
-
-template <typename T>
-T ReverseBytes(T value, int block_bytes_log2) {
-  VIXL_ASSERT((sizeof(value) == 4) || (sizeof(value) == 8));
-  VIXL_ASSERT((1U << block_bytes_log2) <= sizeof(value));
-  
-  
-  uint8_t bytes[8];
-  uint64_t mask = 0xff00000000000000;
-  for (int i = 7; i >= 0; i--) {
-    bytes[i] = (static_cast<uint64_t>(value) & mask) >> (i * 8);
-    mask >>= 8;
-  }
-
-  
-  
-  
-  
-  VIXL_ASSERT((0 < block_bytes_log2) && (block_bytes_log2 < 4));
-  static const uint8_t permute_table[3][8] = { {6, 7, 4, 5, 2, 3, 0, 1},
-                                               {4, 5, 6, 7, 0, 1, 2, 3},
-                                               {0, 1, 2, 3, 4, 5, 6, 7} };
-  T result = 0;
-  for (int i = 0; i < 8; i++) {
-    result <<= 8;
-    result |= bytes[permute_table[block_bytes_log2 - 1][i]];
-  }
-  return result;
-}
-
+int CountLeadingZeros(uint64_t value, int width);
+int CountLeadingSignBits(int64_t value, int width);
+int CountTrailingZeros(uint64_t value, int width);
+int CountSetBits(uint64_t value, int width);
+uint64_t LowestSetBit(uint64_t value);
 
 
 
 template<typename T>
 bool IsWordAligned(T pointer) {
   VIXL_ASSERT(sizeof(pointer) == sizeof(intptr_t));   
-  return ((intptr_t)(pointer) & 3) == 0;
+  return (reinterpret_cast<intptr_t>(pointer) & 3) == 0;
 }
 
 
@@ -257,8 +169,8 @@ T AlignUp(T pointer, size_t alignment) {
   
   
 
-  uint64_t pointer_raw = (uint64_t)pointer;
-  VIXL_STATIC_ASSERT(sizeof(pointer) <= sizeof(pointer_raw));
+  uintptr_t pointer_raw = (uintptr_t)pointer;
+  JS_STATIC_ASSERT(sizeof(pointer) == sizeof(pointer_raw));
 
   size_t align_step = (alignment - pointer_raw) % alignment;
   VIXL_ASSERT((pointer_raw + align_step) % alignment == 0);
@@ -272,8 +184,8 @@ T AlignDown(T pointer, size_t alignment) {
   
   
 
-  uint64_t pointer_raw = (uint64_t)pointer;
-  VIXL_STATIC_ASSERT(sizeof(pointer) <= sizeof(pointer_raw));
+  uintptr_t pointer_raw = (uintptr_t)pointer;
+  JS_STATIC_ASSERT(sizeof(pointer) == sizeof(pointer_raw));
 
   size_t align_step = pointer_raw % alignment;
   VIXL_ASSERT((pointer_raw - align_step) % alignment == 0);
@@ -284,3 +196,4 @@ T AlignDown(T pointer, size_t alignment) {
 }  
 
 #endif  
+

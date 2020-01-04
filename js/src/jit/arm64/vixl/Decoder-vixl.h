@@ -81,31 +81,6 @@
   V(FPDataProcessing3Source)        \
   V(FPIntegerConvert)               \
   V(FPFixedPointConvert)            \
-  V(Crypto2RegSHA)                  \
-  V(Crypto3RegSHA)                  \
-  V(CryptoAES)                      \
-  V(NEON2RegMisc)                   \
-  V(NEON3Different)                 \
-  V(NEON3Same)                      \
-  V(NEONAcrossLanes)                \
-  V(NEONByIndexedElement)           \
-  V(NEONCopy)                       \
-  V(NEONExtract)                    \
-  V(NEONLoadStoreMultiStruct)       \
-  V(NEONLoadStoreMultiStructPostIndex)  \
-  V(NEONLoadStoreSingleStruct)      \
-  V(NEONLoadStoreSingleStructPostIndex) \
-  V(NEONModifiedImmediate)          \
-  V(NEONScalar2RegMisc)             \
-  V(NEONScalar3Diff)                \
-  V(NEONScalar3Same)                \
-  V(NEONScalarByIndexedElement)     \
-  V(NEONScalarCopy)                 \
-  V(NEONScalarPairwise)             \
-  V(NEONScalarShiftImmediate)       \
-  V(NEONShiftImmediate)             \
-  V(NEONTable)                      \
-  V(NEONPerm)                       \
   V(Unallocated)                    \
   V(Unimplemented)
 
@@ -180,10 +155,6 @@ class Decoder {
   
   
   
-  
-  
-  
-  
   void InsertVisitorBefore(DecoderVisitor* new_visitor,
                            DecoderVisitor* registered_visitor);
   void InsertVisitorAfter(DecoderVisitor* new_visitor,
@@ -196,7 +167,6 @@ class Decoder {
   #define DECLARE(A) void Visit##A(const Instruction* instr);
   VISITOR_LIST(DECLARE)
   #undef DECLARE
-
 
  private:
   
@@ -246,17 +216,12 @@ class Decoder {
   
   
   
-  void DecodeNEONLoadStore(const Instruction* instr);
+  void DecodeAdvSIMDLoadStore(const Instruction* instr);
 
   
   
   
-  void DecodeNEONVectorDataProcessing(const Instruction* instr);
-
-  
-  
-  
-  void DecodeNEONScalarDataProcessing(const Instruction* instr);
+  void DecodeAdvSIMDDataProcessing(const Instruction* instr);
 
  private:
   

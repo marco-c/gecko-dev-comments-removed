@@ -44,16 +44,16 @@ using js::jit::Label;
 using js::jit::Address;
 using js::jit::BaseIndex;
 
+
+
+
 typedef uint64_t RegList;
 static const int kRegListSizeInBits = sizeof(RegList) * 8;
 
 
 
-
-
-
 class Register;
-class VRegister;
+class FPRegister;
 
 class CPURegister {
  public:
@@ -62,16 +62,16 @@ class CPURegister {
     
     kInvalid = 0,
     kRegister,
-    kVRegister,
-    kFPRegister = kVRegister,
+    kFPRegister,
     kNoRegister
   };
 
-  constexpr CPURegister() : code_(0), size_(0), type_(kNoRegister) {
+  constexpr CPURegister()
+    : code_(0), size_(0), type_(kNoRegister) {
   }
 
   constexpr CPURegister(unsigned code, unsigned size, RegisterType type)
-      : code_(code), size_(size), type_(type) {
+    : code_(code), size_(size), type_(type) {
   }
 
   unsigned code() const {
@@ -105,16 +105,6 @@ class CPURegister {
     return size_;
   }
 
-  bool Is8Bits() const {
-    VIXL_ASSERT(IsValid());
-    return size_ == 8;
-  }
-
-  bool Is16Bits() const {
-    VIXL_ASSERT(IsValid());
-    return size_ == 16;
-  }
-
   bool Is32Bits() const {
     VIXL_ASSERT(IsValid());
     return size_ == 32;
@@ -125,22 +115,14 @@ class CPURegister {
     return size_ == 64;
   }
 
-  bool Is128Bits() const {
-    VIXL_ASSERT(IsValid());
-    return size_ == 128;
-  }
-
   bool IsValid() const {
-    if (IsValidRegister() || IsValidVRegister()) {
+    if (IsValidRegister() || IsValidFPRegister()) {
       VIXL_ASSERT(!IsNone());
       return true;
-    } else {
-      
-      
-      
-      VIXL_ASSERT(IsNone());
-      return false;
     }
+
+    VIXL_ASSERT(IsNone());
+    return false;
   }
 
   bool IsValidRegister() const {
@@ -149,16 +131,10 @@ class CPURegister {
            ((code_ < kNumberOfRegisters) || (code_ == kSPRegInternalCode));
   }
 
-  bool IsValidVRegister() const {
-    return IsVRegister() &&
-           ((size_ == kBRegSize) || (size_ == kHRegSize) ||
-            (size_ == kSRegSize) || (size_ == kDRegSize) ||
-            (size_ == kQRegSize)) &&
-           (code_ < kNumberOfVRegisters);
-  }
-
   bool IsValidFPRegister() const {
-    return IsFPRegister() && (code_ < kNumberOfVRegisters);
+    return IsFPRegister() &&
+           ((size_ == kSRegSize) || (size_ == kDRegSize)) &&
+           (code_ < kNumberOfFPRegisters);
   }
 
   bool IsNone() const {
@@ -179,54 +155,30 @@ class CPURegister {
     return Aliases(other) && (size_ == other.size_);
   }
 
-  bool IsZero() const {
+  inline bool IsZero() const {
     VIXL_ASSERT(IsValid());
     return IsRegister() && (code_ == kZeroRegCode);
   }
 
-  bool IsSP() const {
+  inline bool IsSP() const {
     VIXL_ASSERT(IsValid());
     return IsRegister() && (code_ == kSPRegInternalCode);
   }
 
-  bool IsRegister() const {
+  inline bool IsRegister() const {
     return type_ == kRegister;
   }
 
-  bool IsVRegister() const {
-    return type_ == kVRegister;
+  inline bool IsFPRegister() const {
+    return type_ == kFPRegister;
   }
-
-  bool IsFPRegister() const {
-    return IsS() || IsD();
-  }
-
-  bool IsW() const { return IsValidRegister() && Is32Bits(); }
-  bool IsX() const { return IsValidRegister() && Is64Bits(); }
-
-  
-  
-  
-  
-  
-  
-  bool IsV() const { return IsVRegister(); }
-  bool IsB() const { return IsV() && Is8Bits(); }
-  bool IsH() const { return IsV() && Is16Bits(); }
-  bool IsS() const { return IsV() && Is32Bits(); }
-  bool IsD() const { return IsV() && Is64Bits(); }
-  bool IsQ() const { return IsV() && Is128Bits(); }
 
   const Register& W() const;
   const Register& X() const;
-  const VRegister& V() const;
-  const VRegister& B() const;
-  const VRegister& H() const;
-  const VRegister& S() const;
-  const VRegister& D() const;
-  const VRegister& Q() const;
+  const FPRegister& S() const;
+  const FPRegister& D() const;
 
-  bool IsSameSizeAndType(const CPURegister& other) const {
+  inline bool IsSameSizeAndType(const CPURegister& other) const {
     return (size_ == other.size_) && (type_ == other.type_);
   }
 
@@ -241,19 +193,22 @@ class CPURegister {
   }
 };
 
-
 class Register : public CPURegister {
  public:
-  Register() : CPURegister() {}
-  explicit Register(const CPURegister& other)
-      : CPURegister(other.code(), other.size(), other.type()) {
+  explicit Register() : CPURegister() {}
+
+  inline explicit Register(const CPURegister& other)
+    : CPURegister(other.code(), other.size(), other.type()) {
     VIXL_ASSERT(IsValidRegister());
   }
+
   constexpr Register(unsigned code, unsigned size)
-      : CPURegister(code, size, kRegister) {}
+    : CPURegister(code, size, kRegister) {
+  }
 
   constexpr Register(js::jit::Register r, unsigned size)
-    : CPURegister(r.code(), size, kRegister) {}
+    : CPURegister(r.code(), size, kRegister) {
+  }
 
   bool IsValid() const {
     VIXL_ASSERT(IsRegister() || IsNone());
@@ -266,137 +221,59 @@ class Register : public CPURegister {
     return js::jit::Register::FromCode((js::jit::Register::Code)code_);
   }
 
-
   static const Register& WRegFromCode(unsigned code);
   static const Register& XRegFromCode(unsigned code);
+
+  
+  static const int kNumRegisters = kNumberOfRegisters;
+  static const int kNumAllocatableRegisters = kNumberOfRegisters - 1;
 
  private:
   static const Register wregisters[];
   static const Register xregisters[];
 };
 
-
-class VRegister : public CPURegister {
+class FPRegister : public CPURegister {
  public:
-  VRegister() : CPURegister(), lanes_(1) {}
-  explicit VRegister(const CPURegister& other)
-      : CPURegister(other.code(), other.size(), other.type()), lanes_(1) {
-    VIXL_ASSERT(IsValidVRegister());
-    VIXL_ASSERT(IsPowerOf2(lanes_) && (lanes_ <= 16));
+  inline FPRegister() : CPURegister() {}
+
+  inline explicit FPRegister(const CPURegister& other)
+    : CPURegister(other.code(), other.size(), other.type()) {
+    VIXL_ASSERT(IsValidFPRegister());
   }
-  constexpr VRegister(unsigned code, unsigned size, unsigned lanes = 1)
-      : CPURegister(code, size, kVRegister), lanes_(lanes) {
-    
+  constexpr inline FPRegister(js::jit::FloatRegister r, unsigned size)
+    : CPURegister(r.code_, size, kFPRegister) {
   }
-  constexpr VRegister(js::jit::FloatRegister r)
-      : CPURegister(r.code_, r.size() * 8, kVRegister), lanes_(1) {
+  constexpr inline FPRegister(js::jit::FloatRegister r)
+    : CPURegister(r.code_, r.size() * 8, kFPRegister) {
   }
-  constexpr VRegister(js::jit::FloatRegister r, unsigned size)
-      : CPURegister(r.code_, size, kVRegister), lanes_(1) {
-  }
-  VRegister(unsigned code, VectorFormat format)
-      : CPURegister(code, RegisterSizeInBitsFromFormat(format), kVRegister),
-        lanes_(IsVectorFormat(format) ? LaneCountFromFormat(format) : 1) {
-    VIXL_ASSERT(IsPowerOf2(lanes_) && (lanes_ <= 16));
+  constexpr inline FPRegister(unsigned code, unsigned size)
+    : CPURegister(code, size, kFPRegister) {
   }
 
   bool IsValid() const {
-    VIXL_ASSERT(IsVRegister() || IsNone());
-    return IsValidVRegister();
+    VIXL_ASSERT(IsFPRegister() || IsNone());
+    return IsValidFPRegister();
   }
 
-  static const VRegister& BRegFromCode(unsigned code);
-  static const VRegister& HRegFromCode(unsigned code);
-  static const VRegister& SRegFromCode(unsigned code);
-  static const VRegister& DRegFromCode(unsigned code);
-  static const VRegister& QRegFromCode(unsigned code);
-  static const VRegister& VRegFromCode(unsigned code);
-
-  VRegister V8B() const { return VRegister(code_, kDRegSize, 8); }
-  VRegister V16B() const { return VRegister(code_, kQRegSize, 16); }
-  VRegister V4H() const { return VRegister(code_, kDRegSize, 4); }
-  VRegister V8H() const { return VRegister(code_, kQRegSize, 8); }
-  VRegister V2S() const { return VRegister(code_, kDRegSize, 2); }
-  VRegister V4S() const { return VRegister(code_, kQRegSize, 4); }
-  VRegister V2D() const { return VRegister(code_, kQRegSize, 2); }
-  VRegister V1D() const { return VRegister(code_, kDRegSize, 1); }
-
-  bool Is8B() const { return (Is64Bits() && (lanes_ == 8)); }
-  bool Is16B() const { return (Is128Bits() && (lanes_ == 16)); }
-  bool Is4H() const { return (Is64Bits() && (lanes_ == 4)); }
-  bool Is8H() const { return (Is128Bits() && (lanes_ == 8)); }
-  bool Is2S() const { return (Is64Bits() && (lanes_ == 2)); }
-  bool Is4S() const { return (Is128Bits() && (lanes_ == 4)); }
-  bool Is1D() const { return (Is64Bits() && (lanes_ == 1)); }
-  bool Is2D() const { return (Is128Bits() && (lanes_ == 2)); }
+  static const FPRegister& SRegFromCode(unsigned code);
+  static const FPRegister& DRegFromCode(unsigned code);
 
   
-  
-  
-  bool Is1B() const {
-    VIXL_ASSERT(!(Is8Bits() && IsVector()));
-    return Is8Bits();
-  }
-  bool Is1H() const {
-    VIXL_ASSERT(!(Is16Bits() && IsVector()));
-    return Is16Bits();
-  }
-  bool Is1S() const {
-    VIXL_ASSERT(!(Is32Bits() && IsVector()));
-    return Is32Bits();
-  }
-
-  bool IsLaneSizeB() const { return LaneSizeInBits() == kBRegSize; }
-  bool IsLaneSizeH() const { return LaneSizeInBits() == kHRegSize; }
-  bool IsLaneSizeS() const { return LaneSizeInBits() == kSRegSize; }
-  bool IsLaneSizeD() const { return LaneSizeInBits() == kDRegSize; }
-
-  int lanes() const {
-    return lanes_;
-  }
-
-  bool IsScalar() const {
-    return lanes_ == 1;
-  }
-
-  bool IsVector() const {
-    return lanes_ > 1;
-  }
-
-  bool IsSameFormat(const VRegister& other) const {
-    return (size_ == other.size_) && (lanes_ == other.lanes_);
-  }
-
-  unsigned LaneSizeInBytes() const {
-    return SizeInBytes() / lanes_;
-  }
-
-  unsigned LaneSizeInBits() const {
-    return LaneSizeInBytes() * 8;
-  }
+  static const int kNumRegisters = kNumberOfFPRegisters;
+  static const int kNumAllocatableRegisters = kNumberOfFPRegisters - 1;
 
  private:
-  static const VRegister bregisters[];
-  static const VRegister hregisters[];
-  static const VRegister sregisters[];
-  static const VRegister dregisters[];
-  static const VRegister qregisters[];
-  static const VRegister vregisters[];
-  int lanes_;
+  static const FPRegister sregisters[];
+  static const FPRegister dregisters[];
 };
-
-
-
-typedef VRegister FPRegister;
 
 
 
 
 const Register NoReg;
-const VRegister NoVReg;
-const FPRegister NoFPReg;  
+const FPRegister NoFPReg;
 const CPURegister NoCPUReg;
-
 
 #define DEFINE_REGISTERS(N)  \
 constexpr Register w##N(N, kWRegSize);  \
@@ -406,17 +283,11 @@ REGISTER_CODE_LIST(DEFINE_REGISTERS)
 constexpr Register wsp(kSPRegInternalCode, kWRegSize);
 constexpr Register sp(kSPRegInternalCode, kXRegSize);
 
-
-#define DEFINE_VREGISTERS(N)  \
-constexpr VRegister b##N(N, kBRegSize);  \
-constexpr VRegister h##N(N, kHRegSize);  \
-constexpr VRegister s##N(N, kSRegSize);  \
-constexpr VRegister d##N(N, kDRegSize);  \
-constexpr VRegister q##N(N, kQRegSize);  \
-constexpr VRegister v##N(N, kQRegSize);
-REGISTER_CODE_LIST(DEFINE_VREGISTERS)
-#undef DEFINE_VREGISTERS
-
+#define DEFINE_FPREGISTERS(N)  \
+constexpr FPRegister s##N(N, kSRegSize);  \
+constexpr FPRegister d##N(N, kDRegSize);
+REGISTER_CODE_LIST(DEFINE_FPREGISTERS)
+#undef DEFINE_FPREGISTERS
 
 
 constexpr Register ip0 = x16;
@@ -424,7 +295,6 @@ constexpr Register ip1 = x17;
 constexpr Register lr = x30;
 constexpr Register xzr = x31;
 constexpr Register wzr = w31;
-
 
 
 
@@ -441,7 +311,6 @@ bool AreAliased(const CPURegister& reg1,
 
 
 
-
 bool AreSameSizeAndType(const CPURegister& reg1,
                         const CPURegister& reg2,
                         const CPURegister& reg3 = NoCPUReg,
@@ -452,57 +321,37 @@ bool AreSameSizeAndType(const CPURegister& reg1,
                         const CPURegister& reg8 = NoCPUReg);
 
 
-
-
-
-bool AreSameFormat(const VRegister& reg1,
-                   const VRegister& reg2,
-                   const VRegister& reg3 = NoVReg,
-                   const VRegister& reg4 = NoVReg);
-
-
-
-
-
-
-bool AreConsecutive(const VRegister& reg1,
-                    const VRegister& reg2,
-                    const VRegister& reg3 = NoVReg,
-                    const VRegister& reg4 = NoVReg);
-
-
-
 class CPURegList {
  public:
-  explicit CPURegList(CPURegister reg1,
-                      CPURegister reg2 = NoCPUReg,
-                      CPURegister reg3 = NoCPUReg,
-                      CPURegister reg4 = NoCPUReg)
-      : list_(reg1.Bit() | reg2.Bit() | reg3.Bit() | reg4.Bit()),
-        size_(reg1.size()), type_(reg1.type()) {
+  inline explicit CPURegList(CPURegister reg1,
+                             CPURegister reg2 = NoCPUReg,
+                             CPURegister reg3 = NoCPUReg,
+                             CPURegister reg4 = NoCPUReg)
+    : list_(reg1.Bit() | reg2.Bit() | reg3.Bit() | reg4.Bit()),
+      size_(reg1.size()), type_(reg1.type()) {
     VIXL_ASSERT(AreSameSizeAndType(reg1, reg2, reg3, reg4));
     VIXL_ASSERT(IsValid());
   }
 
-  CPURegList(CPURegister::RegisterType type, unsigned size, RegList list)
-      : list_(list), size_(size), type_(type) {
+  inline CPURegList(CPURegister::RegisterType type, unsigned size, RegList list)
+    : list_(list), size_(size), type_(type) {
     VIXL_ASSERT(IsValid());
   }
 
-  CPURegList(CPURegister::RegisterType type, unsigned size,
-             unsigned first_reg, unsigned last_reg)
-      : size_(size), type_(type) {
+  inline CPURegList(CPURegister::RegisterType type, unsigned size,
+                    unsigned first_reg, unsigned last_reg)
+    : size_(size), type_(type) {
     VIXL_ASSERT(((type == CPURegister::kRegister) &&
-                 (last_reg < kNumberOfRegisters)) ||
-                ((type == CPURegister::kVRegister) &&
-                 (last_reg < kNumberOfVRegisters)));
+                (last_reg < kNumberOfRegisters)) ||
+               ((type == CPURegister::kFPRegister) &&
+                (last_reg < kNumberOfFPRegisters)));
     VIXL_ASSERT(last_reg >= first_reg);
     list_ = (UINT64_C(1) << (last_reg + 1)) - 1;
     list_ &= ~((UINT64_C(1) << first_reg) - 1);
     VIXL_ASSERT(IsValid());
   }
 
-  CPURegister::RegisterType type() const {
+  inline CPURegister::RegisterType type() const {
     VIXL_ASSERT(IsValid());
     return type_;
   }
@@ -528,13 +377,13 @@ class CPURegList {
   }
 
   
-  void Combine(const CPURegister& other) {
+  inline void Combine(const CPURegister& other) {
     VIXL_ASSERT(other.type() == type_);
     VIXL_ASSERT(other.size() == size_);
     Combine(other.code());
   }
 
-  void Remove(const CPURegister& other) {
+  inline void Remove(const CPURegister& other) {
     VIXL_ASSERT(other.type() == type_);
     VIXL_ASSERT(other.size() == size_);
     Remove(other.code());
@@ -542,55 +391,24 @@ class CPURegList {
 
   
   
-  void Combine(int code) {
+  inline void Combine(int code) {
     VIXL_ASSERT(IsValid());
     VIXL_ASSERT(CPURegister(code, size_, type_).IsValid());
     list_ |= (UINT64_C(1) << code);
   }
 
-  void Remove(int code) {
+  inline void Remove(int code) {
     VIXL_ASSERT(IsValid());
     VIXL_ASSERT(CPURegister(code, size_, type_).IsValid());
     list_ &= ~(UINT64_C(1) << code);
   }
 
-  static CPURegList Union(const CPURegList& list_1, const CPURegList& list_2) {
-    VIXL_ASSERT(list_1.type_ == list_2.type_);
-    VIXL_ASSERT(list_1.size_ == list_2.size_);
-    return CPURegList(list_1.type_, list_1.size_, list_1.list_ | list_2.list_);
-  }
-  static CPURegList Union(const CPURegList& list_1,
-                          const CPURegList& list_2,
-                          const CPURegList& list_3);
-  static CPURegList Union(const CPURegList& list_1,
-                          const CPURegList& list_2,
-                          const CPURegList& list_3,
-                          const CPURegList& list_4);
-
-  static CPURegList Intersection(const CPURegList& list_1,
-                                 const CPURegList& list_2) {
-    VIXL_ASSERT(list_1.type_ == list_2.type_);
-    VIXL_ASSERT(list_1.size_ == list_2.size_);
-    return CPURegList(list_1.type_, list_1.size_, list_1.list_ & list_2.list_);
-  }
-  static CPURegList Intersection(const CPURegList& list_1,
-                                 const CPURegList& list_2,
-                                 const CPURegList& list_3);
-  static CPURegList Intersection(const CPURegList& list_1,
-                                 const CPURegList& list_2,
-                                 const CPURegList& list_3,
-                                 const CPURegList& list_4);
-
-  bool Overlaps(const CPURegList& other) const {
-    return (type_ == other.type_) && ((list_ & other.list_) != 0);
-  }
-
-  RegList list() const {
+  inline RegList list() const {
     VIXL_ASSERT(IsValid());
     return list_;
   }
 
-  void set_list(RegList new_list) {
+  inline void set_list(RegList new_list) {
     VIXL_ASSERT(IsValid());
     list_ = new_list;
   }
@@ -604,46 +422,44 @@ class CPURegList {
 
   
   static CPURegList GetCalleeSaved(unsigned size = kXRegSize);
-  static CPURegList GetCalleeSavedV(unsigned size = kDRegSize);
+  static CPURegList GetCalleeSavedFP(unsigned size = kDRegSize);
 
-  
-  
   
   static CPURegList GetCallerSaved(unsigned size = kXRegSize);
-  static CPURegList GetCallerSavedV(unsigned size = kDRegSize);
+  static CPURegList GetCallerSavedFP(unsigned size = kDRegSize);
 
-  bool IsEmpty() const {
+  inline bool IsEmpty() const {
     VIXL_ASSERT(IsValid());
     return list_ == 0;
   }
 
-  bool IncludesAliasOf(const CPURegister& other) const {
+  inline bool IncludesAliasOf(const CPURegister& other) const {
     VIXL_ASSERT(IsValid());
     return (type_ == other.type()) && ((other.Bit() & list_) != 0);
   }
 
-  bool IncludesAliasOf(int code) const {
+  inline bool IncludesAliasOf(int code) const {
     VIXL_ASSERT(IsValid());
     return ((code & list_) != 0);
   }
 
-  int Count() const {
+  inline int Count() const {
     VIXL_ASSERT(IsValid());
-    return CountSetBits(list_);
+    return CountSetBits(list_, kRegListSizeInBits);
   }
 
-  unsigned RegisterSizeInBits() const {
+  inline unsigned RegisterSizeInBits() const {
     VIXL_ASSERT(IsValid());
     return size_;
   }
 
-  unsigned RegisterSizeInBytes() const {
+  inline unsigned RegisterSizeInBytes() const {
     int size_in_bits = RegisterSizeInBits();
     VIXL_ASSERT((size_in_bits % 8) == 0);
     return size_in_bits / 8;
   }
 
-  unsigned TotalSizeInBytes() const {
+  inline unsigned TotalSizeInBytes() const {
     VIXL_ASSERT(IsValid());
     return RegisterSizeInBytes() * Count();
   }
@@ -657,15 +473,12 @@ class CPURegList {
 };
 
 
-
 extern const CPURegList kCalleeSaved;
-extern const CPURegList kCalleeSavedV;
-
+extern const CPURegList kCalleeSavedFP;
 
 
 extern const CPURegList kCallerSaved;
-extern const CPURegList kCallerSavedV;
-
+extern const CPURegList kCallerSavedFP;
 
 
 class Operand {
@@ -674,7 +487,7 @@ class Operand {
   
   
   
-  Operand(int64_t immediate = 0);           
+  Operand(int64_t immediate);           
 
   
   
@@ -756,51 +569,62 @@ class Operand {
 class MemOperand {
  public:
   explicit MemOperand(Register base,
-                      int64_t offset = 0,
+                      ptrdiff_t offset = 0,
                       AddrMode addrmode = Offset);
-  MemOperand(Register base,
-             Register regoffset,
-             Shift shift = LSL,
-             unsigned shift_amount = 0);
-  MemOperand(Register base,
-             Register regoffset,
-             Extend extend,
-             unsigned shift_amount = 0);
-  MemOperand(Register base,
-             const Operand& offset,
-             AddrMode addrmode = Offset);
+  explicit MemOperand(Register base,
+                      Register regoffset,
+                      Shift shift = LSL,
+                      unsigned shift_amount = 0);
+  explicit MemOperand(Register base,
+                      Register regoffset,
+                      Extend extend,
+                      unsigned shift_amount = 0);
+  explicit MemOperand(Register base,
+                      const Operand& offset,
+                      AddrMode addrmode = Offset);
 
   
   
   explicit MemOperand(js::jit::Address addr)
     : MemOperand(addr.base.code() == 31 ? sp : Register(addr.base, 64),
-                 (ptrdiff_t)addr.offset) {
+		 (ptrdiff_t)addr.offset) {
   }
 
-  const Register& base() const { return base_; }
-  const Register& regoffset() const { return regoffset_; }
-  int64_t offset() const { return offset_; }
-  AddrMode addrmode() const { return addrmode_; }
-  Shift shift() const { return shift_; }
-  Extend extend() const { return extend_; }
-  unsigned shift_amount() const { return shift_amount_; }
+  const Register& base() const {
+    return base_;
+  }
+  const Register& regoffset() const {
+    return regoffset_;
+  }
+  ptrdiff_t offset() const {
+    return offset_;
+  }
+  AddrMode addrmode() const {
+    return addrmode_;
+  }
+  Shift shift() const {
+    return shift_;
+  }
+  Extend extend() const {
+    return extend_;
+  }
+  unsigned shift_amount() const {
+    return shift_amount_;
+  }
   bool IsImmediateOffset() const;
   bool IsRegisterOffset() const;
   bool IsPreIndex() const;
   bool IsPostIndex() const;
 
-  void AddOffset(int64_t offset);
-
  private:
   Register base_;
   Register regoffset_;
-  int64_t offset_;
+  ptrdiff_t offset_;
   AddrMode addrmode_;
   Shift shift_;
   Extend extend_;
   unsigned shift_amount_;
 };
-
 
 
 enum PositionIndependentCodeOption {
@@ -822,7 +646,6 @@ enum PositionIndependentCodeOption {
 };
 
 
-
 enum LoadStoreScalingOption {
   
   
@@ -840,12 +663,32 @@ enum LoadStoreScalingOption {
 };
 
 
-
 class Assembler : public MozBaseAssembler {
  public:
-  Assembler(PositionIndependentCodeOption pic = PositionIndependentCode);
+  Assembler()
+    : pc_(nullptr) { 
+#ifdef DEBUG
+    finalized_ = false;
+#endif
+  }
 
   
+  
+  
+  
+  ~Assembler() {
+    
+    
+  }
+
+  
+
+  
+  
+  
+  
+  
+  void Reset();
 
   
   
@@ -904,7 +747,6 @@ class Assembler : public MozBaseAssembler {
     VIXL_ASSERT((cond != al) && (cond != nv));
     return static_cast<Condition>(cond ^ 1);
   }
-
   
   static inline Condition InvertCmpCondition(Condition cond) {
     
@@ -948,13 +790,13 @@ class Assembler : public MozBaseAssembler {
 
   
   
+
   void br(const Register& xn);
   static void br(Instruction* at, const Register& xn);
 
   
   void blr(const Register& xn);
-  static void blr(Instruction* at, const Register& blr);
-
+  static void blr(Instruction* at, const Register& xn);
   
   void ret(const Register& xn = lr);
 
@@ -970,7 +812,7 @@ class Assembler : public MozBaseAssembler {
 
   
   BufferOffset b(int imm19, Condition cond);
-  static void b(Instruction*at, int imm19, Condition cond);
+  static void b(Instruction* at, int imm19, Condition cond);
 
   
   void bl(Label* label);
@@ -992,58 +834,6 @@ class Assembler : public MozBaseAssembler {
   
   void cbnz(const Register& rt, int imm19);
   static void cbnz(Instruction* at, const Register& rt, int imm19);
-
-  
-  void tbl(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void tbl(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vn2,
-           const VRegister& vm);
-
-  
-  void tbl(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vn2,
-           const VRegister& vn3,
-           const VRegister& vm);
-
-  
-  void tbl(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vn2,
-           const VRegister& vn3,
-           const VRegister& vn4,
-           const VRegister& vm);
-
-  
-  void tbx(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void tbx(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vn2,
-           const VRegister& vm);
-
-  
-  void tbx(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vn2,
-           const VRegister& vn3,
-           const VRegister& vm);
-
-  
-  void tbx(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vn2,
-           const VRegister& vn3,
-           const VRegister& vn4,
-           const VRegister& vm);
 
   
   void tbz(const Register& rt, unsigned bit_pos, Label* label);
@@ -1079,90 +869,62 @@ class Assembler : public MozBaseAssembler {
 
   
   
-  void add(const Register& rd,
-           const Register& rn,
-           const Operand& operand);
+  void add(const Register& rd, const Register& rn, const Operand& operand);
 
   
-  void adds(const Register& rd,
-            const Register& rn,
-            const Operand& operand);
+  void adds(const Register& rd, const Register& rn, const Operand& operand);
 
   
   void cmn(const Register& rn, const Operand& operand);
 
   
-  void sub(const Register& rd,
-           const Register& rn,
-           const Operand& operand);
+  void sub(const Register& rd, const Register& rn, const Operand& operand);
 
   
-  void subs(const Register& rd,
-            const Register& rn,
-            const Operand& operand);
+  void subs(const Register& rd, const Register& rn, const Operand& operand);
 
   
   void cmp(const Register& rn, const Operand& operand);
 
   
-  void neg(const Register& rd,
-           const Operand& operand);
+  void neg(const Register& rd, const Operand& operand);
 
   
-  void negs(const Register& rd,
-            const Operand& operand);
+  void negs(const Register& rd, const Operand& operand);
 
   
-  void adc(const Register& rd,
-           const Register& rn,
-           const Operand& operand);
+  void adc(const Register& rd, const Register& rn, const Operand& operand);
 
   
-  void adcs(const Register& rd,
-            const Register& rn,
-            const Operand& operand);
+  void adcs(const Register& rd, const Register& rn, const Operand& operand);
 
   
-  void sbc(const Register& rd,
-           const Register& rn,
-           const Operand& operand);
+  void sbc(const Register& rd, const Register& rn, const Operand& operand);
 
   
-  void sbcs(const Register& rd,
-            const Register& rn,
-            const Operand& operand);
+  void sbcs(const Register& rd, const Register& rn, const Operand& operand);
 
   
-  void ngc(const Register& rd,
-           const Operand& operand);
+  void ngc(const Register& rd, const Operand& operand);
 
   
-  void ngcs(const Register& rd,
-            const Operand& operand);
+  void ngcs(const Register& rd, const Operand& operand);
 
   
   
-  void and_(const Register& rd,
-            const Register& rn,
-            const Operand& operand);
+  void and_(const Register& rd, const Register& rn, const Operand& operand);
 
   
-  BufferOffset ands(const Register& rd,
-                    const Register& rn,
-                    const Operand& operand);
+  BufferOffset ands(const Register& rd, const Register& rn, const Operand& operand);
 
   
   BufferOffset tst(const Register& rn, const Operand& operand);
 
   
-  void bic(const Register& rd,
-           const Register& rn,
-           const Operand& operand);
+  void bic(const Register& rd, const Register& rn, const Operand& operand);
 
   
-  void bics(const Register& rd,
-            const Register& rn,
-            const Operand& operand);
+  void bics(const Register& rd, const Register& rn, const Operand& operand);
 
   
   void orr(const Register& rd, const Register& rn, const Operand& operand);
@@ -1190,39 +952,24 @@ class Assembler : public MozBaseAssembler {
 
   
   
-  void bfm(const Register& rd,
-           const Register& rn,
-           unsigned immr,
-           unsigned imms);
+  void bfm(const Register& rd, const Register& rn, unsigned immr, unsigned imms);
 
   
-  void sbfm(const Register& rd,
-            const Register& rn,
-            unsigned immr,
-            unsigned imms);
+  void sbfm(const Register& rd, const Register& rn, unsigned immr, unsigned imms);
 
   
-  void ubfm(const Register& rd,
-            const Register& rn,
-            unsigned immr,
-            unsigned imms);
+  void ubfm(const Register& rd, const Register& rn, unsigned immr, unsigned imms);
 
   
   
-  void bfi(const Register& rd,
-           const Register& rn,
-           unsigned lsb,
-           unsigned width) {
+  inline void bfi(const Register& rd, const Register& rn, unsigned lsb, unsigned width) {
     VIXL_ASSERT(width >= 1);
     VIXL_ASSERT(lsb + width <= rn.size());
     bfm(rd, rn, (rd.size() - lsb) & (rd.size() - 1), width - 1);
   }
 
   
-  void bfxil(const Register& rd,
-             const Register& rn,
-             unsigned lsb,
-             unsigned width) {
+  inline void bfxil(const Register& rd, const Register& rn, unsigned lsb, unsigned width) {
     VIXL_ASSERT(width >= 1);
     VIXL_ASSERT(lsb + width <= rn.size());
     bfm(rd, rn, lsb, lsb + width - 1);
@@ -1230,124 +977,97 @@ class Assembler : public MozBaseAssembler {
 
   
   
-  void asr(const Register& rd, const Register& rn, unsigned shift) {
+  inline void asr(const Register& rd, const Register& rn, unsigned shift) {
     VIXL_ASSERT(shift < rd.size());
     sbfm(rd, rn, shift, rd.size() - 1);
   }
 
   
-  void sbfiz(const Register& rd,
-             const Register& rn,
-             unsigned lsb,
-             unsigned width) {
+  inline void sbfiz(const Register& rd, const Register& rn, unsigned lsb, unsigned width) {
     VIXL_ASSERT(width >= 1);
     VIXL_ASSERT(lsb + width <= rn.size());
     sbfm(rd, rn, (rd.size() - lsb) & (rd.size() - 1), width - 1);
   }
 
   
-  void sbfx(const Register& rd,
-            const Register& rn,
-            unsigned lsb,
-            unsigned width) {
+  inline void sbfx(const Register& rd, const Register& rn, unsigned lsb, unsigned width) {
     VIXL_ASSERT(width >= 1);
     VIXL_ASSERT(lsb + width <= rn.size());
     sbfm(rd, rn, lsb, lsb + width - 1);
   }
 
   
-  void sxtb(const Register& rd, const Register& rn) {
+  inline void sxtb(const Register& rd, const Register& rn) {
     sbfm(rd, rn, 0, 7);
   }
 
   
-  void sxth(const Register& rd, const Register& rn) {
+  inline void sxth(const Register& rd, const Register& rn) {
     sbfm(rd, rn, 0, 15);
   }
 
   
-  void sxtw(const Register& rd, const Register& rn) {
+  inline void sxtw(const Register& rd, const Register& rn) {
     sbfm(rd, rn, 0, 31);
   }
 
   
   
-  void lsl(const Register& rd, const Register& rn, unsigned shift) {
+  inline void lsl(const Register& rd, const Register& rn, unsigned shift) {
     unsigned reg_size = rd.size();
     VIXL_ASSERT(shift < reg_size);
     ubfm(rd, rn, (reg_size - shift) % reg_size, reg_size - shift - 1);
   }
 
   
-  void lsr(const Register& rd, const Register& rn, unsigned shift) {
+  inline void lsr(const Register& rd, const Register& rn, unsigned shift) {
     VIXL_ASSERT(shift < rd.size());
     ubfm(rd, rn, shift, rd.size() - 1);
   }
 
   
-  void ubfiz(const Register& rd,
-             const Register& rn,
-             unsigned lsb,
-             unsigned width) {
+  inline void ubfiz(const Register& rd, const Register& rn, unsigned lsb, unsigned width) {
     VIXL_ASSERT(width >= 1);
     VIXL_ASSERT(lsb + width <= rn.size());
     ubfm(rd, rn, (rd.size() - lsb) & (rd.size() - 1), width - 1);
   }
 
   
-  void ubfx(const Register& rd,
-            const Register& rn,
-            unsigned lsb,
-            unsigned width) {
+  inline void ubfx(const Register& rd, const Register& rn, unsigned lsb, unsigned width) {
     VIXL_ASSERT(width >= 1);
     VIXL_ASSERT(lsb + width <= rn.size());
     ubfm(rd, rn, lsb, lsb + width - 1);
   }
 
   
-  void uxtb(const Register& rd, const Register& rn) {
+  inline void uxtb(const Register& rd, const Register& rn) {
     ubfm(rd, rn, 0, 7);
   }
 
   
-  void uxth(const Register& rd, const Register& rn) {
+  inline void uxth(const Register& rd, const Register& rn) {
     ubfm(rd, rn, 0, 15);
   }
 
   
-  void uxtw(const Register& rd, const Register& rn) {
+  inline void uxtw(const Register& rd, const Register& rn) {
     ubfm(rd, rn, 0, 31);
   }
 
   
-  void extr(const Register& rd,
-            const Register& rn,
-            const Register& rm,
-            unsigned lsb);
+  void extr(const Register& rd, const Register& rn, const Register& rm, unsigned lsb);
 
   
-  void csel(const Register& rd,
-            const Register& rn,
-            const Register& rm,
-            Condition cond);
+  void csel(const Register& rd, const Register& rn, const Register& rm, Condition cond);
 
   
-  void csinc(const Register& rd,
-             const Register& rn,
-             const Register& rm,
-             Condition cond);
+  void csinc(const Register& rd, const Register& rn, const Register& rm, Condition cond);
 
   
-  void csinv(const Register& rd,
-             const Register& rn,
-             const Register& rm,
-             Condition cond);
+  void csinv(const Register& rd, const Register& rn, const Register& rm, Condition cond);
 
   
-  void csneg(const Register& rd,
-             const Register& rn,
-             const Register& rm,
-             Condition cond);
+  void csneg(const Register& rd, const Register& rn, const Register& rm, Condition cond);
 
   
   void cset(const Register& rd, Condition cond);
@@ -1365,62 +1085,16 @@ class Assembler : public MozBaseAssembler {
   void cneg(const Register& rd, const Register& rn, Condition cond);
 
   
-  void ror(const Register& rd, const Register& rs, unsigned shift) {
+  inline void ror(const Register& rd, const Register& rs, unsigned shift) {
     extr(rd, rs, rs, shift);
   }
 
   
   
-  void ccmn(const Register& rn,
-            const Operand& operand,
-            StatusFlags nzcv,
-            Condition cond);
+  void ccmn(const Register& rn, const Operand& operand, StatusFlags nzcv, Condition cond);
 
   
-  void ccmp(const Register& rn,
-            const Operand& operand,
-            StatusFlags nzcv,
-            Condition cond);
-
-  
-  void crc32b(const Register& rd,
-              const Register& rn,
-              const Register& rm);
-
-  
-  void crc32h(const Register& rd,
-              const Register& rn,
-              const Register& rm);
-
-  
-  void crc32w(const Register& rd,
-              const Register& rn,
-              const Register& rm);
-
-  
-  void crc32x(const Register& rd,
-              const Register& rn,
-              const Register& rm);
-
-  
-  void crc32cb(const Register& rd,
-               const Register& rn,
-               const Register& rm);
-
-  
-  void crc32ch(const Register& rd,
-               const Register& rn,
-               const Register& rm);
-
-  
-  void crc32cw(const Register& rd,
-               const Register& rn,
-               const Register& rm);
-
-  
-  void crc32cx(const Register& rd,
-               const Register& rn,
-               const Register& rm);
+  void ccmp(const Register& rn, const Operand& operand, StatusFlags nzcv, Condition cond);
 
   
   void mul(const Register& rd, const Register& rn, const Register& rm);
@@ -1435,52 +1109,28 @@ class Assembler : public MozBaseAssembler {
   void smulh(const Register& xd, const Register& xn, const Register& xm);
 
   
-  void madd(const Register& rd,
-            const Register& rn,
-            const Register& rm,
-            const Register& ra);
+  void madd(const Register& rd, const Register& rn,
+            const Register& rm, const Register& ra);
 
   
-  void msub(const Register& rd,
-            const Register& rn,
-            const Register& rm,
-            const Register& ra);
+  void msub(const Register& rd, const Register& rn,
+            const Register& rm, const Register& ra);
 
   
-  void smaddl(const Register& rd,
-              const Register& rn,
-              const Register& rm,
-              const Register& ra);
+  void smaddl(const Register& rd, const Register& rn,
+              const Register& rm, const Register& ra);
 
   
-  void umaddl(const Register& rd,
-              const Register& rn,
-              const Register& rm,
-              const Register& ra);
+  void umaddl(const Register& rd, const Register& rn,
+              const Register& rm, const Register& ra);
 
   
-  void umull(const Register& rd,
-             const Register& rn,
-             const Register& rm) {
-    umaddl(rd, rn, rm, xzr);
-  }
+  void smsubl(const Register& rd, const Register& rn,
+              const Register& rm, const Register& ra);
 
   
-  void umulh(const Register& xd,
-             const Register& xn,
-             const Register& xm);
-
-  
-  void smsubl(const Register& rd,
-              const Register& rn,
-              const Register& rm,
-              const Register& ra);
-
-  
-  void umsubl(const Register& rd,
-              const Register& rn,
-              const Register& rm,
-              const Register& ra);
+  void umsubl(const Register& rd, const Register& rn,
+              const Register& rm, const Register& ra);
 
   
   void sdiv(const Register& rd, const Register& rn, const Register& rm);
@@ -1580,23 +1230,19 @@ class Assembler : public MozBaseAssembler {
               LoadStoreScalingOption option = PreferUnscaledOffset);
 
   
-  void ldp(const CPURegister& rt, const CPURegister& rt2,
-           const MemOperand& src);
+  void ldp(const CPURegister& rt, const CPURegister& rt2, const MemOperand& src);
 
   
-  void stp(const CPURegister& rt, const CPURegister& rt2,
-           const MemOperand& dst);
+  void stp(const CPURegister& rt, const CPURegister& rt2, const MemOperand& dst);
 
   
   void ldpsw(const Register& rt, const Register& rt2, const MemOperand& src);
 
   
-  void ldnp(const CPURegister& rt, const CPURegister& rt2,
-            const MemOperand& src);
+  void ldnp(const CPURegister& rt, const CPURegister& rt2, const MemOperand& src);
 
   
-  void stnp(const CPURegister& rt, const CPURegister& rt2,
-            const MemOperand& dst);
+  void stnp(const CPURegister& rt, const CPURegister& rt2, const MemOperand& dst);
 
   
   void ldr(const CPURegister& rt, int imm19);
@@ -1624,10 +1270,8 @@ class Assembler : public MozBaseAssembler {
   void ldxr(const Register& rt, const MemOperand& src);
 
   
-  void stxp(const Register& rs,
-            const Register& rt,
-            const Register& rt2,
-            const MemOperand& dst);
+  void stxp(const Register& rs, const Register& rt,
+            const Register& rt2, const MemOperand& dst);
 
   
   void ldxp(const Register& rt, const Register& rt2, const MemOperand& src);
@@ -1651,10 +1295,8 @@ class Assembler : public MozBaseAssembler {
   void ldaxr(const Register& rt, const MemOperand& src);
 
   
-  void stlxp(const Register& rs,
-             const Register& rt,
-             const Register& rt2,
-             const MemOperand& dst);
+  void stlxp(const Register& rs, const Register& rt,
+             const Register& rt2, const MemOperand& dst);
 
   
   void ldaxp(const Register& rt, const Register& rt2, const MemOperand& src);
@@ -1676,17 +1318,6 @@ class Assembler : public MozBaseAssembler {
 
   
   void ldar(const Register& rt, const MemOperand& src);
-
-  
-  void prfm(PrefetchOperation op, const MemOperand& addr,
-            LoadStoreScalingOption option = PreferScaledOffset);
-
-  
-  void prfum(PrefetchOperation op, const MemOperand& addr,
-             LoadStoreScalingOption option = PreferUnscaledOffset);
-
-  
-  void prfm(PrefetchOperation op, int imm19);
 
   
   
@@ -1718,11 +1349,11 @@ class Assembler : public MozBaseAssembler {
   void brk(int code);
 
   
-  void hlt(int code);
-
-  
   void svc(int code);
   static void svc(Instruction* at, int code);
+
+  
+  void hlt(int code);
 
   
   void mov(const Register& rd, const Register& rn);
@@ -1738,21 +1369,8 @@ class Assembler : public MozBaseAssembler {
   void msr(SystemRegister sysreg, const Register& rt);
 
   
-  void sys(int op1, int crn, int crm, int op2, const Register& rt = xzr);
-
-  
-  void sys(int op, const Register& rt = xzr);
-
-  
-  void dc(DataCacheOp op, const Register& rt);
-
-  
-  void ic(InstructionCacheOp op, const Register& rt);
-
-  
   BufferOffset hint(SystemHint code);
   static void hint(Instruction* at, SystemHint code);
-
   
   void clrex(int imm4 = 0xf);
 
@@ -1771,1745 +1389,168 @@ class Assembler : public MozBaseAssembler {
     return hint(NOP);
   }
   static void nop(Instruction* at);
-
-  
-  
-  void fmov(const VRegister& vd, double imm);
-
-  
-  void fmov(const VRegister& vd, float imm);
-
-  
-  void fmov(const Register& rd, const VRegister& fn);
-
-  
-  void fmov(const VRegister& vd, const Register& rn);
-
-  
-  void fmov(const VRegister& vd, const VRegister& fn);
-
-  
-  void fmov(const VRegister& vd, int index, const Register& rn);
-
-  
-  void fmov(const Register& rd, const VRegister& vn, int index);
-
-  
-  void fadd(const VRegister& vd, const VRegister& vn, const VRegister& vm);
-
-  
-  void fsub(const VRegister& vd, const VRegister& vn, const VRegister& vm);
-
-  
-  void fmul(const VRegister& vd, const VRegister& vn, const VRegister& vm);
-
-  
-  void fmadd(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             const VRegister& va);
-
-  
-  void fmsub(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             const VRegister& va);
-
-  
-  void fnmadd(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm,
-              const VRegister& va);
-
-  
-  void fnmsub(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm,
-              const VRegister& va);
-
-  
-  void fnmul(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void frecpx(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void fdiv(const VRegister& vd, const VRegister& fn, const VRegister& vm);
-
-  
-  void fmax(const VRegister& vd, const VRegister& fn, const VRegister& vm);
-
-  
-  void fmin(const VRegister& vd, const VRegister& fn, const VRegister& vm);
-
-  
-  void fmaxnm(const VRegister& vd, const VRegister& fn, const VRegister& vm);
-
-  
-  void fminnm(const VRegister& vd, const VRegister& fn, const VRegister& vm);
-
-  
-  void fabs(const VRegister& vd, const VRegister& vn);
-
-  
-  void fneg(const VRegister& vd, const VRegister& vn);
-
-  
-  void fsqrt(const VRegister& vd, const VRegister& vn);
-
-  
-  void frinta(const VRegister& vd, const VRegister& vn);
-
-  
-  void frinti(const VRegister& vd, const VRegister& vn);
-
-  
-  void frintm(const VRegister& vd, const VRegister& vn);
-
-  
-  void frintn(const VRegister& vd, const VRegister& vn);
-
-  
-  void frintp(const VRegister& vd, const VRegister& vn);
-
-  
-  void frintx(const VRegister& vd, const VRegister& vn);
-
-  
-  void frintz(const VRegister& vd, const VRegister& vn);
-
-  void FPCompareMacro(const VRegister& vn,
-                      double value,
-                      FPTrapFlags trap);
-
-  void FPCompareMacro(const VRegister& vn,
-                      const VRegister& vm,
-                      FPTrapFlags trap);
-
-  
-  void fcmp(const VRegister& vn, const VRegister& vm);
-
-  
-  void fcmp(const VRegister& vn, double value);
-
-  void FPCCompareMacro(const VRegister& vn,
-                       const VRegister& vm,
-                       StatusFlags nzcv,
-                       Condition cond,
-                       FPTrapFlags trap);
-
-  
-  void fccmp(const VRegister& vn,
-             const VRegister& vm,
-             StatusFlags nzcv,
-             Condition cond);
-
-  
-  void fcmpe(const VRegister& vn, const VRegister& vm);
-
-  
-  void fcmpe(const VRegister& vn, double value);
-
-  
-  void fccmpe(const VRegister& vn,
-              const VRegister& vm,
-              StatusFlags nzcv,
-              Condition cond);
-
-  
-  void fcsel(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             Condition cond);
-
-  
-  void NEONFPConvertToInt(const Register& rd,
-                          const VRegister& vn,
-                          Instr op);
-  void NEONFPConvertToInt(const VRegister& vd,
-                          const VRegister& vn,
-                          Instr op);
-
-  
-  void fcvt(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtl(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtl2(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtn(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtn2(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtxn(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtxn2(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtas(const Register& rd, const VRegister& vn);
-
-  
-  void fcvtau(const Register& rd, const VRegister& vn);
-
-  
-  void fcvtas(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtau(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtms(const Register& rd, const VRegister& vn);
-
-  
-  void fcvtmu(const Register& rd, const VRegister& vn);
-
-  
-  void fcvtms(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtmu(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtns(const Register& rd, const VRegister& vn);
-
-  
-  void fcvtnu(const Register& rd, const VRegister& vn);
-
-  
-  void fcvtns(const VRegister& rd, const VRegister& vn);
-
-  
-  void fcvtnu(const VRegister& rd, const VRegister& vn);
-
-  
-  void fcvtzs(const Register& rd, const VRegister& vn, int fbits = 0);
-
-  
-  void fcvtzu(const Register& rd, const VRegister& vn, int fbits = 0);
-
-  
-  void fcvtzs(const VRegister& vd, const VRegister& vn, int fbits = 0);
-
-  
-  void fcvtzu(const VRegister& vd, const VRegister& vn, int fbits = 0);
-
-  
-  void fcvtps(const Register& rd, const VRegister& vn);
-
-  
-  void fcvtpu(const Register& rd, const VRegister& vn);
-
-  
-  void fcvtps(const VRegister& vd, const VRegister& vn);
-
-  
-  void fcvtpu(const VRegister& vd, const VRegister& vn);
-
-  
-  void scvtf(const VRegister& fd, const Register& rn, int fbits = 0);
-
-  
-  void ucvtf(const VRegister& fd, const Register& rn, int fbits = 0);
-
-  
-  void scvtf(const VRegister& fd, const VRegister& vn, int fbits = 0);
-
-  
-  void ucvtf(const VRegister& fd, const VRegister& vn, int fbits = 0);
-
-  
-  void uabd(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void sabd(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void uaba(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void saba(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void add(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void sub(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void uhadd(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void shadd(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void urhadd(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void srhadd(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void uhsub(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void shsub(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void uqadd(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void sqadd(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void uqsub(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void sqsub(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void addp(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void addp(const VRegister& vd,
-            const VRegister& vn);
-
-  
-  void mla(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void mls(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void mul(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void mul(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm,
-           int vm_index);
-
-  
-  void mla(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm,
-           int vm_index);
-
-  
-  void mls(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm,
-           int vm_index);
-
-  
-  void smlal(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             int vm_index);
-
-  
-  void smlal2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm,
-              int vm_index);
-
-  
-  void umlal(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             int vm_index);
-
-  
-  void umlal2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm,
-              int vm_index);
-
-  
-  void smlsl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             int vm_index);
-
-  
-  void smlsl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm,
-              int vm_index);
-
-  
-  void umlsl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             int vm_index);
-
-  
-  void umlsl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm,
-              int vm_index);
-
-  
-  void smull(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             int vm_index);
-
-  
-  void smull2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm,
-              int vm_index);
-
-  
-  void umull(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             int vm_index);
-
-  
-  void umull2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm,
-              int vm_index);
-
-  
-  void sqdmull(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm,
-               int vm_index);
-
-  
-  void sqdmull2(const VRegister& vd,
-                const VRegister& vn,
-                const VRegister& vm,
-                int vm_index);
-
-  
-  void sqdmlal(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm,
-               int vm_index);
-
-  
-  void sqdmlal2(const VRegister& vd,
-                const VRegister& vn,
-                const VRegister& vm,
-                int vm_index);
-
-  
-  void sqdmlsl(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm,
-               int vm_index);
-
-  
-  void sqdmlsl2(const VRegister& vd,
-                const VRegister& vn,
-                const VRegister& vm,
-                int vm_index);
-
-  
-  void cmeq(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void cmge(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void cmgt(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void cmhi(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void cmhs(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void cmtst(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void cmeq(const VRegister& vd,
-            const VRegister& vn,
-            int value);
-
-  
-  void cmge(const VRegister& vd,
-            const VRegister& vn,
-            int value);
-
-  
-  void cmgt(const VRegister& vd,
-            const VRegister& vn,
-            int value);
-
-  
-  void cmle(const VRegister& vd,
-            const VRegister& vn,
-            int value);
-
-  
-  void cmlt(const VRegister& vd,
-            const VRegister& vn,
-            int value);
-
-  
-  void sshl(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void ushl(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void sqshl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void uqshl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void srshl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void urshl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void sqrshl(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void uqrshl(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void and_(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void orr(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void orr(const VRegister& vd,
-           const int imm8,
-           const int left_shift = 0);
-
-  
-  void mov(const VRegister& vd,
-           const VRegister& vn);
-
-  
-  void orn(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void eor(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void bic(const VRegister& vd,
-           const int imm8,
-           const int left_shift = 0);
-
-  
-  void bic(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void bif(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void bit(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void bsl(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm);
-
-  
-  void pmul(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void movi(const VRegister& vd,
-            const uint64_t imm,
-            Shift shift = LSL,
-            const int shift_amount = 0);
-
-  
-  void mvn(const VRegister& vd,
-           const VRegister& vn);
-
-  
-  void mvni(const VRegister& vd,
-            const int imm8,
-            Shift shift = LSL,
-            const int shift_amount = 0);
-
-  
-  void suqadd(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void usqadd(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void abs(const VRegister& vd,
-           const VRegister& vn);
-
-  
-  void sqabs(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void neg(const VRegister& vd,
-           const VRegister& vn);
-
-  
-  void sqneg(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void not_(const VRegister& vd,
-            const VRegister& vn);
-
-  
-  void xtn(const VRegister& vd,
-           const VRegister& vn);
-
-  
-  void xtn2(const VRegister& vd,
-            const VRegister& vn);
-
-  
-  void sqxtn(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void sqxtn2(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void uqxtn(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void uqxtn2(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void sqxtun(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void sqxtun2(const VRegister& vd,
-               const VRegister& vn);
-
-  
-  void ext(const VRegister& vd,
-           const VRegister& vn,
-           const VRegister& vm,
-           int index);
-
-  
-  void dup(const VRegister& vd,
-           const VRegister& vn,
-           int vn_index);
-
-  
-  void mov(const VRegister& vd,
-           const VRegister& vn,
-           int vn_index);
-
-  
-  void dup(const VRegister& vd,
-           const Register& rn);
-
-  
-  void ins(const VRegister& vd,
-           int vd_index,
-           const VRegister& vn,
-           int vn_index);
-
-  
-  void mov(const VRegister& vd,
-           int vd_index,
-           const VRegister& vn,
-           int vn_index);
-
-  
-  void ins(const VRegister& vd,
-           int vd_index,
-           const Register& rn);
-
-  
-  void mov(const VRegister& vd,
-           int vd_index,
-           const Register& rn);
-
-  
-  void umov(const Register& rd,
-            const VRegister& vn,
-            int vn_index);
-
-  
-  void mov(const Register& rd,
-           const VRegister& vn,
-           int vn_index);
-
-  
-  void smov(const Register& rd,
-            const VRegister& vn,
-            int vn_index);
-
-  
-  void ld1(const VRegister& vt,
-           const MemOperand& src);
-
-  
-  void ld1(const VRegister& vt,
-           const VRegister& vt2,
-           const MemOperand& src);
-
-  
-  void ld1(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const MemOperand& src);
-
-  
-  void ld1(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const VRegister& vt4,
-           const MemOperand& src);
-
-  
-  void ld1(const VRegister& vt,
-           int lane,
-           const MemOperand& src);
-
-  
-  void ld1r(const VRegister& vt,
-            const MemOperand& src);
-
-  
-  void ld2(const VRegister& vt,
-           const VRegister& vt2,
-           const MemOperand& src);
-
-  
-  void ld2(const VRegister& vt,
-           const VRegister& vt2,
-           int lane,
-           const MemOperand& src);
-
-  
-  void ld2r(const VRegister& vt,
-            const VRegister& vt2,
-            const MemOperand& src);
-
-  
-  void ld3(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const MemOperand& src);
-
-  
-  void ld3(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           int lane,
-           const MemOperand& src);
-
-  
-  void ld3r(const VRegister& vt,
-            const VRegister& vt2,
-            const VRegister& vt3,
-            const MemOperand& src);
-
-  
-  void ld4(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const VRegister& vt4,
-           const MemOperand& src);
-
-  
-  void ld4(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const VRegister& vt4,
-           int lane,
-           const MemOperand& src);
-
-  
-  void ld4r(const VRegister& vt,
-            const VRegister& vt2,
-            const VRegister& vt3,
-            const VRegister& vt4,
-            const MemOperand& src);
-
-  
-  void cls(const VRegister& vd,
-           const VRegister& vn);
-
-  
-  void clz(const VRegister& vd,
-           const VRegister& vn);
-
-  
-  void cnt(const VRegister& vd,
-           const VRegister& vn);
-
-  
-  void rbit(const VRegister& vd,
-            const VRegister& vn);
-
-  
-  void rev16(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void rev32(const VRegister& vd,
-             const VRegister& vn);
-
   
-  void rev64(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void ursqrte(const VRegister& vd,
-               const VRegister& vn);
-
-  
-  void urecpe(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void saddlp(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void uaddlp(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void sadalp(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void uadalp(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void shl(const VRegister& vd,
-           const VRegister& vn,
-           int shift);
-
-  
-  void sqshl(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void sqshlu(const VRegister& vd,
-              const VRegister& vn,
-              int shift);
-
-  
-  void uqshl(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void sshll(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void sshll2(const VRegister& vd,
-              const VRegister& vn,
-              int shift);
-
-  
-  void sxtl(const VRegister& vd,
-            const VRegister& vn);
-
-  
-  void sxtl2(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void ushll(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void ushll2(const VRegister& vd,
-              const VRegister& vn,
-              int shift);
-
-  
-  void shll(const VRegister& vd,
-            const VRegister& vn,
-            int shift);
-
-  
-  void shll2(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void uxtl(const VRegister& vd,
-            const VRegister& vn);
-
-  
-  void uxtl2(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void sli(const VRegister& vd,
-           const VRegister& vn,
-           int shift);
-
-  
-  void sri(const VRegister& vd,
-           const VRegister& vn,
-           int shift);
-
-  
-  void smax(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void smaxp(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void addv(const VRegister& vd,
-            const VRegister& vn);
-
-  
-  void saddlv(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void uaddlv(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void fmaxnmv(const VRegister& vd,
-               const VRegister& vn);
-
-  
-  void fmaxv(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void fminnmv(const VRegister& vd,
-               const VRegister& vn);
-
-  
-  void fminv(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void smaxv(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void smin(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void sminp(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void sminv(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void st1(const VRegister& vt,
-           const MemOperand& src);
-
-  
-  void st1(const VRegister& vt,
-           const VRegister& vt2,
-           const MemOperand& src);
-
-  
-  void st1(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const MemOperand& src);
-
-  
-  void st1(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const VRegister& vt4,
-           const MemOperand& src);
-
-  
-  void st1(const VRegister& vt,
-           int lane,
-           const MemOperand& src);
-
-  
-  void st2(const VRegister& vt,
-           const VRegister& vt2,
-           const MemOperand& src);
-
-  
-  void st2(const VRegister& vt,
-           const VRegister& vt2,
-           int lane,
-           const MemOperand& src);
-
-  
-  void st3(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const MemOperand& src);
-
-  
-  void st3(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           int lane,
-           const MemOperand& src);
-
-  
-  void st4(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const VRegister& vt4,
-           const MemOperand& src);
-
-  
-  void st4(const VRegister& vt,
-           const VRegister& vt2,
-           const VRegister& vt3,
-           const VRegister& vt4,
-           int lane,
-           const MemOperand& src);
-
-  
-  void uaddl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void uaddl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void uaddw(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void uaddw2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void saddl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void saddl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void saddw(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void saddw2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void usubl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void usubl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void usubw(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void usubw2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void ssubl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void ssubl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void ssubw(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void ssubw2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void umax(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void umaxp(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void umaxv(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void umin(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void uminp(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void uminv(const VRegister& vd,
-             const VRegister& vn);
-
-  
-  void trn1(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void trn2(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void uzp1(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void uzp2(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void zip1(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void zip2(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
-
-  
-  void sshr(const VRegister& vd,
-            const VRegister& vn,
-            int shift);
-
-  
-  void ushr(const VRegister& vd,
-            const VRegister& vn,
-            int shift);
-
-  
-  void srshr(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void urshr(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void ssra(const VRegister& vd,
-            const VRegister& vn,
-            int shift);
-
-  
-  void usra(const VRegister& vd,
-            const VRegister& vn,
-            int shift);
-
-  
-  void srsra(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void ursra(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void shrn(const VRegister& vd,
-            const VRegister& vn,
-            int shift);
-
-  
-  void shrn2(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void rshrn(const VRegister& vd,
-             const VRegister& vn,
-             int shift);
-
-  
-  void rshrn2(const VRegister& vd,
-              const VRegister& vn,
-              int shift);
-
-  
-  void uqshrn(const VRegister& vd,
-              const VRegister& vn,
-              int shift);
-
-  
-  void uqshrn2(const VRegister& vd,
-               const VRegister& vn,
-               int shift);
-
-  
-  void uqrshrn(const VRegister& vd,
-               const VRegister& vn,
-               int shift);
-
-  
-  void uqrshrn2(const VRegister& vd,
-                const VRegister& vn,
-                int shift);
-
-  
-  void sqshrn(const VRegister& vd,
-              const VRegister& vn,
-              int shift);
-
-  
-  void sqshrn2(const VRegister& vd,
-               const VRegister& vn,
-               int shift);
-
-  
-  void sqrshrn(const VRegister& vd,
-               const VRegister& vn,
-               int shift);
-
-  
-  void sqrshrn2(const VRegister& vd,
-                const VRegister& vn,
-                int shift);
-
-  
-  void sqshrun(const VRegister& vd,
-               const VRegister& vn,
-               int shift);
-
-  
-  void sqshrun2(const VRegister& vd,
-                const VRegister& vn,
-                int shift);
-
-  
-  void sqrshrun(const VRegister& vd,
-                const VRegister& vn,
-                int shift);
-
-  
-  void sqrshrun2(const VRegister& vd,
-                 const VRegister& vn,
-                 int shift);
-
-  
-  void frecps(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void frecpe(const VRegister& vd,
-              const VRegister& vn);
-
-  
-  void frsqrte(const VRegister& vd,
-               const VRegister& vn);
-
-  
-  void frsqrts(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm);
-
-  
-  void sabal(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void sabal2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void uabal(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void uabal2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void sabdl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void sabdl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void uabdl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void uabdl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void pmull(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void pmull2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void smlal(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void smlal2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void umlal(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void umlal2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void smlsl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void smlsl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void umlsl(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void umlsl2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void smull(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
-
-  
-  void smull2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
-
-  
-  void sqdmlal(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm);
-
-  
-  void sqdmlal2(const VRegister& vd,
-                const VRegister& vn,
-                const VRegister& vm);
-
-  
-  void sqdmlsl(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm);
-
-  
-  void sqdmlsl2(const VRegister& vd,
-                const VRegister& vn,
-                const VRegister& vm);
-
-  
-  void sqdmull(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm);
-
-  
-  void sqdmull2(const VRegister& vd,
-                const VRegister& vn,
-                const VRegister& vm);
-
   
-  void sqdmulh(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm);
+  void fmov(const FPRegister& fd, double imm);
 
   
-  void sqrdmulh(const VRegister& vd,
-                const VRegister& vn,
-                const VRegister& vm);
+  void fmov(const FPRegister& fd, float imm);
 
   
-  void sqdmulh(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm,
-               int vm_index);
+  void fmov(const Register& rd, const FPRegister& fn);
 
   
-  void sqrdmulh(const VRegister& vd,
-                const VRegister& vn,
-                const VRegister& vm,
-                int vm_index);
+  void fmov(const FPRegister& fd, const Register& rn);
 
   
-  void umull(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fmov(const FPRegister& fd, const FPRegister& fn);
 
   
-  void umull2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
+  void fadd(const FPRegister& fd, const FPRegister& fn, const FPRegister& fm);
 
   
-  void addhn(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fsub(const FPRegister& fd, const FPRegister& fn, const FPRegister& fm);
 
   
-  void addhn2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
+  void fmul(const FPRegister& fd, const FPRegister& fn, const FPRegister& fm);
 
   
-  void raddhn(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
+  void fmadd(const FPRegister& fd, const FPRegister& fn,
+             const FPRegister& fm, const FPRegister& fa);
 
   
-  void raddhn2(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm);
+  void fmsub(const FPRegister& fd, const FPRegister& fn,
+             const FPRegister& fm, const FPRegister& fa);
 
   
-  void subhn(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fnmadd(const FPRegister& fd, const FPRegister& fn,
+              const FPRegister& fm, const FPRegister& fa);
 
   
-  void subhn2(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
+  void fnmsub(const FPRegister& fd, const FPRegister& fn,
+              const FPRegister& fm, const FPRegister& fa);
 
   
-  void rsubhn(const VRegister& vd,
-              const VRegister& vn,
-              const VRegister& vm);
+  void fdiv(const FPRegister& fd, const FPRegister& fn, const FPRegister& fm);
 
   
-  void rsubhn2(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm);
+  void fmax(const FPRegister& fd, const FPRegister& fn, const FPRegister& fm);
 
   
-  void fmla(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
+  void fmin(const FPRegister& fd, const FPRegister& fn, const FPRegister& fm);
 
   
-  void fmls(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
+  void fmaxnm(const FPRegister& fd, const FPRegister& fn, const FPRegister& fm);
 
   
-  void fmulx(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fminnm(const FPRegister& fd, const FPRegister& fn, const FPRegister& fm);
 
   
-  void facge(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fabs(const FPRegister& fd, const FPRegister& fn);
 
   
-  void facgt(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fneg(const FPRegister& fd, const FPRegister& fn);
 
   
-  void fmul(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm,
-            int vm_index);
+  void fsqrt(const FPRegister& fd, const FPRegister& fn);
 
   
-  void fmla(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm,
-            int vm_index);
+  void frinta(const FPRegister& fd, const FPRegister& fn);
 
   
-  void fmls(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm,
-            int vm_index);
+  void frintm(const FPRegister& fd, const FPRegister& fn);
 
   
-  void fmulx(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm,
-             int vm_index);
+  void frintn(const FPRegister& fd, const FPRegister& fn);
 
   
-  void fcmeq(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void frintz(const FPRegister& fd, const FPRegister& fn);
 
   
-  void fcmgt(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fcmp(const FPRegister& fn, const FPRegister& fm);
 
   
-  void fcmge(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fcmp(const FPRegister& fn, double value);
 
   
-  void fcmeq(const VRegister& vd,
-             const VRegister& vn,
-             double imm);
+  void fccmp(const FPRegister& fn, const FPRegister& fm, StatusFlags nzcv, Condition cond);
 
   
-  void fcmgt(const VRegister& vd,
-             const VRegister& vn,
-             double imm);
+  void fcsel(const FPRegister& fd, const FPRegister& fn,
+             const FPRegister& fm, Condition cond);
 
   
-  void fcmge(const VRegister& vd,
-             const VRegister& vn,
-             double imm);
+  void FPConvertToInt(const Register& rd, const FPRegister& fn, FPIntegerConvertOp op);
 
   
-  void fcmle(const VRegister& vd,
-             const VRegister& vn,
-             double imm);
+  void fcvt(const FPRegister& fd, const FPRegister& fn);
 
   
-  void fcmlt(const VRegister& vd,
-             const VRegister& vn,
-             double imm);
+  void fcvtas(const Register& rd, const FPRegister& fn);
 
   
-  void fabd(const VRegister& vd,
-            const VRegister& vn,
-            const VRegister& vm);
+  void fcvtau(const Register& rd, const FPRegister& fn);
 
   
-  void faddp(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fcvtms(const Register& rd, const FPRegister& fn);
 
   
-  void faddp(const VRegister& vd,
-             const VRegister& vn);
+  void fcvtmu(const Register& rd, const FPRegister& fn);
 
   
-  void fmaxp(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fcvtps(const Register& rd, const FPRegister& fn);
 
   
-  void fmaxp(const VRegister& vd,
-             const VRegister& vn);
+  void fcvtpu(const Register& rd, const FPRegister& fn);
 
   
-  void fminp(const VRegister& vd,
-             const VRegister& vn,
-             const VRegister& vm);
+  void fcvtns(const Register& rd, const FPRegister& fn);
 
   
-  void fminp(const VRegister& vd,
-             const VRegister& vn);
+  void fcvtnu(const Register& rd, const FPRegister& fn);
 
   
-  void fmaxnmp(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm);
+  void fcvtzs(const Register& rd, const FPRegister& fn);
 
   
-  void fmaxnmp(const VRegister& vd,
-               const VRegister& vn);
+  void fcvtzu(const Register& rd, const FPRegister& fn);
 
   
-  void fminnmp(const VRegister& vd,
-               const VRegister& vn,
-               const VRegister& vm);
+  void scvtf(const FPRegister& fd, const Register& rn, unsigned fbits = 0);
 
   
-  void fminnmp(const VRegister& vd,
-               const VRegister& vn);
+  void ucvtf(const FPRegister& fd, const Register& rn, unsigned fbits = 0);
 
   
   
-  void dci(Instr raw_inst) { Emit(raw_inst); }
+  inline void dci(Instr raw_inst) {
+    Emit(raw_inst);
+  }
 
   
-  void dc32(uint32_t data) {
+  inline void dc32(uint32_t data) {
     EmitData(&data, sizeof(data));
   }
 
   
-  void dc64(uint64_t data) {
+  inline void dc64(uint64_t data) {
     EmitData(&data, sizeof(data));
+  }
+
+  
+  
+  
+  void EmitStringData(const char * string) {
+    VIXL_ASSERT(string != NULL);
+
+    size_t len = strlen(string) + 1;
+    EmitData(string, len);
+
+    
+    const char pad[] = {'\0', '\0', '\0', '\0'};
+    JS_STATIC_ASSERT(sizeof(pad) == kInstructionSize);
+    Instruction* next_pc = AlignUp(pc_, kInstructionSize);
+    EmitData(&pad, next_pc - pc_);
   }
 
   
@@ -3528,12 +1569,6 @@ class Assembler : public MozBaseAssembler {
   static Instr Rm(CPURegister rm) {
     VIXL_ASSERT(rm.code() != kSPRegInternalCode);
     return rm.code() << Rm_offset;
-  }
-
-  static Instr RmNot31(CPURegister rm) {
-    VIXL_ASSERT(rm.code() != kSPRegInternalCode);
-    VIXL_ASSERT(!rm.IsZero());
-    return Rm(rm);
   }
 
   static Instr Ra(CPURegister ra) {
@@ -3570,11 +1605,12 @@ class Assembler : public MozBaseAssembler {
 
   
   static Instr Flags(FlagsUpdate S) {
-    if (S == SetFlags) {
+    if (S == SetFlags)
       return 1 << FlagsUpdate_offset;
-    } else if (S == LeaveFlags) {
+
+    if (S == LeaveFlags)
       return 0 << FlagsUpdate_offset;
-    }
+
     VIXL_UNREACHABLE();
     return 0;
   }
@@ -3625,35 +1661,32 @@ class Assembler : public MozBaseAssembler {
 
   
   static Instr SF(Register rd) {
-      return rd.Is64Bits() ? SixtyFourBits : ThirtyTwoBits;
+    return rd.Is64Bits() ? SixtyFourBits : ThirtyTwoBits;
   }
 
-  static Instr ImmAddSub(int imm) {
+  static Instr ImmAddSub(int64_t imm) {
     VIXL_ASSERT(IsImmAddSub(imm));
-    if (is_uint12(imm)) {  
-      imm <<= ImmAddSub_offset;
-    } else {
-      imm = ((imm >> 12) << ImmAddSub_offset) | (1 << ShiftAddSub_offset);
-    }
-    return imm;
+    if (is_uint12(imm)) 
+      return imm << ImmAddSub_offset;
+    return ((imm >> 12) << ImmAddSub_offset) | (1 << ShiftAddSub_offset);
   }
 
-  static Instr ImmS(unsigned imms, unsigned reg_size) {
+  static inline Instr ImmS(unsigned imms, unsigned reg_size) {
     VIXL_ASSERT(((reg_size == kXRegSize) && is_uint6(imms)) ||
-           ((reg_size == kWRegSize) && is_uint5(imms)));
+               ((reg_size == kWRegSize) && is_uint5(imms)));
     USE(reg_size);
     return imms << ImmS_offset;
   }
 
-  static Instr ImmR(unsigned immr, unsigned reg_size) {
+  static inline Instr ImmR(unsigned immr, unsigned reg_size) {
     VIXL_ASSERT(((reg_size == kXRegSize) && is_uint6(immr)) ||
-           ((reg_size == kWRegSize) && is_uint5(immr)));
+               ((reg_size == kWRegSize) && is_uint5(immr)));
     USE(reg_size);
     VIXL_ASSERT(is_uint6(immr));
     return immr << ImmR_offset;
   }
 
-  static Instr ImmSetBits(unsigned imms, unsigned reg_size) {
+  static inline Instr ImmSetBits(unsigned imms, unsigned reg_size) {
     VIXL_ASSERT((reg_size == kWRegSize) || (reg_size == kXRegSize));
     VIXL_ASSERT(is_uint6(imms));
     VIXL_ASSERT((reg_size == kXRegSize) || is_uint6(imms + 3));
@@ -3661,20 +1694,20 @@ class Assembler : public MozBaseAssembler {
     return imms << ImmSetBits_offset;
   }
 
-  static Instr ImmRotate(unsigned immr, unsigned reg_size) {
+  static inline Instr ImmRotate(unsigned immr, unsigned reg_size) {
     VIXL_ASSERT((reg_size == kWRegSize) || (reg_size == kXRegSize));
     VIXL_ASSERT(((reg_size == kXRegSize) && is_uint6(immr)) ||
-           ((reg_size == kWRegSize) && is_uint5(immr)));
+               ((reg_size == kWRegSize) && is_uint5(immr)));
     USE(reg_size);
     return immr << ImmRotate_offset;
   }
 
-  static Instr ImmLLiteral(int imm19) {
+  static inline Instr ImmLLiteral(int imm19) {
     VIXL_ASSERT(is_int19(imm19));
     return truncate_to_int19(imm19) << ImmLLiteral_offset;
   }
 
-  static Instr BitN(unsigned bitn, unsigned reg_size) {
+  static inline Instr BitN(unsigned bitn, unsigned reg_size) {
     VIXL_ASSERT((reg_size == kWRegSize) || (reg_size == kXRegSize));
     VIXL_ASSERT((reg_size == kXRegSize) || (bitn == 0));
     USE(reg_size);
@@ -3720,9 +1753,9 @@ class Assembler : public MozBaseAssembler {
     return truncate_to_int9(imm9) << ImmLS_offset;
   }
 
-  static Instr ImmLSPair(int imm7, unsigned access_size) {
-    VIXL_ASSERT(((imm7 >> access_size) << access_size) == imm7);
-    int scaled_imm7 = imm7 >> access_size;
+  static Instr ImmLSPair(int imm7, LSDataSize size) {
+    VIXL_ASSERT(((imm7 >> size) << size) == imm7);
+    int scaled_imm7 = imm7 >> size;
     VIXL_ASSERT(is_int7(scaled_imm7));
     return truncate_to_int7(scaled_imm7) << ImmLSPair_offset;
   }
@@ -3730,11 +1763,6 @@ class Assembler : public MozBaseAssembler {
   static Instr ImmShiftLS(unsigned shift_amount) {
     VIXL_ASSERT(is_uint1(shift_amount));
     return shift_amount << ImmShiftLS_offset;
-  }
-
-  static Instr ImmPrefetchOperation(int imm5) {
-    VIXL_ASSERT(is_uint5(imm5));
-    return imm5 << ImmPrefetchOperation_offset;
   }
 
   static Instr ImmException(int imm16) {
@@ -3757,26 +1785,6 @@ class Assembler : public MozBaseAssembler {
     return imm4 << CRm_offset;
   }
 
-  static Instr CRn(int imm4) {
-    VIXL_ASSERT(is_uint4(imm4));
-    return imm4 << CRn_offset;
-  }
-
-  static Instr SysOp(int imm14) {
-    VIXL_ASSERT(is_uint14(imm14));
-    return imm14 << SysOp_offset;
-  }
-
-  static Instr ImmSysOp1(int imm3) {
-    VIXL_ASSERT(is_uint3(imm3));
-    return imm3 << SysOp1_offset;
-  }
-
-  static Instr ImmSysOp2(int imm3) {
-    VIXL_ASSERT(is_uint3(imm3));
-    return imm3 << SysOp2_offset;
-  }
-
   static Instr ImmBarrierDomain(int imm2) {
     VIXL_ASSERT(is_uint2(imm2));
     return imm2 << ImmBarrierDomain_offset;
@@ -3787,15 +1795,20 @@ class Assembler : public MozBaseAssembler {
     return imm2 << ImmBarrierType_offset;
   }
 
+  static LSDataSize CalcLSDataSize(LoadStoreOp op) {
+    VIXL_ASSERT((SizeLS_offset + SizeLS_width) == (kInstructionSize * 8));
+    return static_cast<LSDataSize>(op >> SizeLS_offset);
+  }
+
   
   static Instr ImmMoveWide(uint64_t imm) {
     VIXL_ASSERT(is_uint16(imm));
-    return static_cast<Instr>(imm << ImmMoveWide_offset);
+    return imm << ImmMoveWide_offset;
   }
 
   static Instr ShiftMoveWide(int64_t shift) {
     VIXL_ASSERT(is_uint2(shift));
-    return static_cast<Instr>(shift << ShiftMoveWide_offset);
+    return shift << ShiftMoveWide_offset;
   }
 
   
@@ -3812,429 +1825,124 @@ class Assembler : public MozBaseAssembler {
     return scale << FPScale_offset;
   }
 
-  
-  static bool IsImmAddSub(int64_t immediate);
-  static bool IsImmConditionalCompare(int64_t immediate);
-  static bool IsImmFP32(float imm);
-  static bool IsImmFP64(double imm);
-  static bool IsImmLogical(uint64_t value,
-                           unsigned width,
-                           unsigned* n = NULL,
-                           unsigned* imm_s = NULL,
-                           unsigned* imm_r = NULL);
-  static bool IsImmLSPair(int64_t offset, unsigned access_size);
-  static bool IsImmLSScaled(int64_t offset, unsigned access_size);
-  static bool IsImmLSUnscaled(int64_t offset);
-  static bool IsImmMovn(uint64_t imm, unsigned reg_size);
-  static bool IsImmMovz(uint64_t imm, unsigned reg_size);
-
-  
-  static Instr VFormat(VRegister vd) {
-    if (vd.Is64Bits()) {
-      switch (vd.lanes()) {
-        case 2: return NEON_2S;
-        case 4: return NEON_4H;
-        case 8: return NEON_8B;
-        default: return 0xffffffff;
-      }
-    } else {
-      VIXL_ASSERT(vd.Is128Bits());
-      switch (vd.lanes()) {
-        case 2: return NEON_2D;
-        case 4: return NEON_4S;
-        case 8: return NEON_8H;
-        case 16: return NEON_16B;
-        default: return 0xffffffff;
-      }
-    }
-  }
-
-  
-  
-  static Instr FPFormat(VRegister vd) {
-    if (vd.lanes() == 1) {
-      
-      VIXL_ASSERT(vd.Is32Bits() || vd.Is64Bits());
-      return vd.Is64Bits() ? FP64 : FP32;
-    }
-
-    
-    if (vd.lanes() == 2) {
-      VIXL_ASSERT(vd.Is64Bits() || vd.Is128Bits());
-      return vd.Is128Bits() ? NEON_FP_2D : NEON_FP_2S;
-    }
-
-    
-    VIXL_ASSERT((vd.lanes() == 4) && vd.Is128Bits());
-    return NEON_FP_4S;
-  }
-
-  
-  static Instr LSVFormat(VRegister vd) {
-    if (vd.Is64Bits()) {
-      switch (vd.lanes()) {
-        case 1: return LS_NEON_1D;
-        case 2: return LS_NEON_2S;
-        case 4: return LS_NEON_4H;
-        case 8: return LS_NEON_8B;
-        default: return 0xffffffff;
-      }
-    } else {
-      VIXL_ASSERT(vd.Is128Bits());
-      switch (vd.lanes()) {
-        case 2: return LS_NEON_2D;
-        case 4: return LS_NEON_4S;
-        case 8: return LS_NEON_8H;
-        case 16: return LS_NEON_16B;
-        default: return 0xffffffff;
-      }
-    }
-  }
-
-  
-  static Instr SFormat(VRegister vd) {
-    VIXL_ASSERT(vd.lanes() == 1);
-    switch (vd.SizeInBytes()) {
-      case 1: return NEON_B;
-      case 2: return NEON_H;
-      case 4: return NEON_S;
-      case 8: return NEON_D;
-      default: return 0xffffffff;
-    }
-  }
-
-  static Instr ImmNEONHLM(int index, int num_bits) {
-    int h, l, m;
-    if (num_bits == 3) {
-      VIXL_ASSERT(is_uint3(index));
-      h  = (index >> 2) & 1;
-      l  = (index >> 1) & 1;
-      m  = (index >> 0) & 1;
-    } else if (num_bits == 2) {
-      VIXL_ASSERT(is_uint2(index));
-      h  = (index >> 1) & 1;
-      l  = (index >> 0) & 1;
-      m  = 0;
-    } else {
-      VIXL_ASSERT(is_uint1(index) && (num_bits == 1));
-      h  = (index >> 0) & 1;
-      l  = 0;
-      m  = 0;
-    }
-    return (h << NEONH_offset) | (l << NEONL_offset) | (m << NEONM_offset);
-  }
-
-  static Instr ImmNEONExt(int imm4) {
-    VIXL_ASSERT(is_uint4(imm4));
-    return imm4 << ImmNEONExt_offset;
-  }
-
-  static Instr ImmNEON5(Instr format, int index) {
-    VIXL_ASSERT(is_uint4(index));
-    int s = LaneSizeInBytesLog2FromFormat(static_cast<VectorFormat>(format));
-    int imm5 = (index << (s + 1)) | (1 << s);
-    return imm5 << ImmNEON5_offset;
-  }
-
-  static Instr ImmNEON4(Instr format, int index) {
-    VIXL_ASSERT(is_uint4(index));
-    int s = LaneSizeInBytesLog2FromFormat(static_cast<VectorFormat>(format));
-    int imm4 = index << s;
-    return imm4 << ImmNEON4_offset;
-  }
-
-  static Instr ImmNEONabcdefgh(int imm8) {
-    VIXL_ASSERT(is_uint8(imm8));
-    Instr instr;
-    instr  = ((imm8 >> 5) & 7) << ImmNEONabc_offset;
-    instr |= (imm8 & 0x1f) << ImmNEONdefgh_offset;
-    return instr;
-  }
-
-  static Instr NEONCmode(int cmode) {
-    VIXL_ASSERT(is_uint4(cmode));
-    return cmode << NEONCmode_offset;
-  }
-
-  static Instr NEONModImmOp(int op) {
-    VIXL_ASSERT(is_uint1(op));
-    return op << NEONModImmOp_offset;
-  }
-
   size_t size() const {
     return SizeOfCodeGenerated();
   }
 
+  
   size_t SizeOfCodeGenerated() const {
     return armbuffer_.size();
   }
 
-  PositionIndependentCodeOption pic() const {
+  inline PositionIndependentCodeOption pic() {
     return pic_;
   }
 
-  bool AllowPageOffsetDependentCode() const {
+  inline bool AllowPageOffsetDependentCode() {
     return (pic() == PageOffsetDependentCode) ||
            (pic() == PositionDependentCode);
   }
 
-  static const Register& AppropriateZeroRegFor(const CPURegister& reg) {
+ protected:
+  inline const Register& AppropriateZeroRegFor(const CPURegister& reg) const {
     return reg.Is64Bits() ? xzr : wzr;
   }
 
+  BufferOffset LoadStore(const CPURegister& rt, const MemOperand& addr, LoadStoreOp op,
+                         LoadStoreScalingOption option = PreferScaledOffset);
 
- protected:
-  void LoadStore(const CPURegister& rt,
-                 const MemOperand& addr,
-                 LoadStoreOp op,
-                 LoadStoreScalingOption option = PreferScaledOffset);
+  static bool IsImmLSUnscaled(ptrdiff_t offset);
+  static bool IsImmLSScaled(ptrdiff_t offset, LSDataSize size);
 
-  void LoadStorePair(const CPURegister& rt,
-                     const CPURegister& rt2,
-                     const MemOperand& addr,
-                     LoadStorePairOp op);
-  void LoadStoreStruct(const VRegister& vt,
-                       const MemOperand& addr,
-                       NEONLoadStoreMultiStructOp op);
-  void LoadStoreStruct1(const VRegister& vt,
-                        int reg_count,
-                        const MemOperand& addr);
-  void LoadStoreStructSingle(const VRegister& vt,
-                             uint32_t lane,
-                             const MemOperand& addr,
-                             NEONLoadStoreSingleStructOp op);
-  void LoadStoreStructSingleAllLanes(const VRegister& vt,
-                                     const MemOperand& addr,
-                                     NEONLoadStoreSingleStructOp op);
-  void LoadStoreStructVerify(const VRegister& vt,
-                             const MemOperand& addr,
-                             Instr op);
+  BufferOffset Logical(const Register& rd, const Register& rn,
+                       const Operand& operand, LogicalOp op);
+  BufferOffset LogicalImmediate(const Register& rd, const Register& rn, unsigned n,
+                                unsigned imm_s, unsigned imm_r, LogicalOp op);
+  static bool IsImmLogical(uint64_t value, unsigned width, unsigned* n = nullptr,
+                           unsigned* imm_s = nullptr, unsigned* imm_r = nullptr);
 
-  void Prefetch(PrefetchOperation op,
-                const MemOperand& addr,
-                LoadStoreScalingOption option = PreferScaledOffset);
+  void ConditionalCompare(const Register& rn, const Operand& operand, StatusFlags nzcv,
+                          Condition cond, ConditionalCompareOp op);
+  static bool IsImmConditionalCompare(int64_t immediate);
+
+  void AddSubWithCarry(const Register& rd, const Register& rn, const Operand& operand,
+                       FlagsUpdate S, AddSubWithCarryOp op);
+
+  static bool IsImmFP32(float imm);
+  static bool IsImmFP64(double imm);
 
   
   
-  BufferOffset Logical(const Register& rd,
-                       const Register& rn,
-                       const Operand operand,
-                       LogicalOp op);
-  BufferOffset LogicalImmediate(const Register& rd,
-                                const Register& rn,
-                                unsigned n,
-                                unsigned imm_s,
-                                unsigned imm_r,
-                                LogicalOp op);
+  void EmitShift(const Register& rd, const Register& rn, Shift shift, unsigned amount);
+  void EmitExtendShift(const Register& rd, const Register& rn,
+                       Extend extend, unsigned left_shift);
 
-  void ConditionalCompare(const Register& rn,
-                          const Operand& operand,
-                          StatusFlags nzcv,
-                          Condition cond,
-                          ConditionalCompareOp op);
-
-  void AddSubWithCarry(const Register& rd,
-                       const Register& rn,
-                       const Operand& operand,
-                       FlagsUpdate S,
-                       AddSubWithCarryOp op);
-
-
-  
-  
-  void EmitShift(const Register& rd,
-                 const Register& rn,
-                 Shift shift,
-                 unsigned amount);
-  void EmitExtendShift(const Register& rd,
-                       const Register& rn,
-                       Extend extend,
-                       unsigned left_shift);
-
-  void AddSub(const Register& rd,
-              const Register& rn,
-              const Operand& operand,
-              FlagsUpdate S,
-              AddSubOp op);
-
-  void NEONTable(const VRegister& vd,
-                 const VRegister& vn,
-                 const VRegister& vm,
-                 NEONTableOp op);
+  void AddSub(const Register& rd, const Register& rn, const Operand& operand,
+              FlagsUpdate S, AddSubOp op);
+  static bool IsImmAddSub(int64_t immediate);
 
   
   
   
   static LoadStoreOp LoadOpFor(const CPURegister& rt);
-  static LoadStorePairOp LoadPairOpFor(const CPURegister& rt,
-                                       const CPURegister& rt2);
+  static LoadStorePairOp LoadPairOpFor(const CPURegister& rt, const CPURegister& rt2);
   static LoadStoreOp StoreOpFor(const CPURegister& rt);
-  static LoadStorePairOp StorePairOpFor(const CPURegister& rt,
-                                        const CPURegister& rt2);
+  static LoadStorePairOp StorePairOpFor(const CPURegister& rt, const CPURegister& rt2);
+
   static LoadStorePairNonTemporalOp LoadPairNonTemporalOpFor(
     const CPURegister& rt, const CPURegister& rt2);
+
   static LoadStorePairNonTemporalOp StorePairNonTemporalOpFor(
     const CPURegister& rt, const CPURegister& rt2);
+
   static LoadLiteralOp LoadLiteralOpFor(const CPURegister& rt);
 
 
  private:
-  static uint32_t FP32ToImm8(float imm);
-  static uint32_t FP64ToImm8(double imm);
-
   
-  void MoveWide(const Register& rd,
-                uint64_t imm,
-                int shift,
-                MoveWideImmediateOp mov_op);
-  BufferOffset DataProcShiftedRegister(const Register& rd,
-                                       const Register& rn,
-                                       const Operand& operand,
-                                       FlagsUpdate S,
-                                       Instr op);
-  void DataProcExtendedRegister(const Register& rd,
-                                const Register& rn,
-                                const Operand& operand,
-                                FlagsUpdate S,
-                                Instr op);
-  void LoadStorePairNonTemporal(const CPURegister& rt,
-                                const CPURegister& rt2,
-                                const MemOperand& addr,
-                                LoadStorePairNonTemporalOp op);
+  void MoveWide(const Register& rd, uint64_t imm, int shift, MoveWideImmediateOp mov_op);
+  BufferOffset DataProcShiftedRegister(const Register& rd, const Register& rn,
+                                       const Operand& operand, FlagsUpdate S, Instr op);
+  void DataProcExtendedRegister(const Register& rd, const Register& rn,
+                                const Operand& operand, FlagsUpdate S, Instr op);
+  void LoadStorePair(const CPURegister& rt, const CPURegister& rt2,
+                     const MemOperand& addr, LoadStorePairOp op);
+  void LoadStorePairNonTemporal(const CPURegister& rt, const CPURegister& rt2,
+                                const MemOperand& addr, LoadStorePairNonTemporalOp op);
   void LoadLiteral(const CPURegister& rt, uint64_t imm, LoadLiteralOp op);
-  void ConditionalSelect(const Register& rd,
-                         const Register& rn,
-                         const Register& rm,
-                         Condition cond,
-                         ConditionalSelectOp op);
-  void DataProcessing1Source(const Register& rd,
-                             const Register& rn,
+  void LoadPCLiteral(const CPURegister& rt, ptrdiff_t PCInsOffset, LoadLiteralOp op);
+  void ConditionalSelect(const Register& rd, const Register& rn,
+                         const Register& rm, Condition cond, ConditionalSelectOp op);
+  void DataProcessing1Source(const Register& rd, const Register& rn,
                              DataProcessing1SourceOp op);
-  void DataProcessing3Source(const Register& rd,
-                             const Register& rn,
-                             const Register& rm,
-                             const Register& ra,
+  void DataProcessing3Source(const Register& rd, const Register& rn,
+                             const Register& rm, const Register& ra,
                              DataProcessing3SourceOp op);
-  void FPDataProcessing1Source(const VRegister& fd,
-                               const VRegister& fn,
+  void FPDataProcessing1Source(const FPRegister& fd, const FPRegister& fn,
                                FPDataProcessing1SourceOp op);
-  void FPDataProcessing3Source(const VRegister& fd,
-                               const VRegister& fn,
-                               const VRegister& fm,
-                               const VRegister& fa,
+  void FPDataProcessing2Source(const FPRegister& fd, const FPRegister& fn,
+                               const FPRegister& fm, FPDataProcessing2SourceOp op);
+  void FPDataProcessing3Source(const FPRegister& fd, const FPRegister& fn,
+                               const FPRegister& fm, const FPRegister& fa,
                                FPDataProcessing3SourceOp op);
-  void NEONAcrossLanesL(const VRegister& vd,
-                        const VRegister& vn,
-                        NEONAcrossLanesOp op);
-  void NEONAcrossLanes(const VRegister& vd,
-                       const VRegister& vn,
-                       NEONAcrossLanesOp op);
-  void NEONModifiedImmShiftLsl(const VRegister& vd,
-                               const int imm8,
-                               const int left_shift,
-                               NEONModifiedImmediateOp op);
-  void NEONModifiedImmShiftMsl(const VRegister& vd,
-                               const int imm8,
-                               const int shift_amount,
-                               NEONModifiedImmediateOp op);
-  void NEONFP2Same(const VRegister& vd,
-                   const VRegister& vn,
-                   Instr vop);
-  void NEON3Same(const VRegister& vd,
-                 const VRegister& vn,
-                 const VRegister& vm,
-                 NEON3SameOp vop);
-  void NEONFP3Same(const VRegister& vd,
-                   const VRegister& vn,
-                   const VRegister& vm,
-                   Instr op);
-  void NEON3DifferentL(const VRegister& vd,
-                       const VRegister& vn,
-                       const VRegister& vm,
-                       NEON3DifferentOp vop);
-  void NEON3DifferentW(const VRegister& vd,
-                       const VRegister& vn,
-                       const VRegister& vm,
-                       NEON3DifferentOp vop);
-  void NEON3DifferentHN(const VRegister& vd,
-                        const VRegister& vn,
-                        const VRegister& vm,
-                        NEON3DifferentOp vop);
-  void NEONFP2RegMisc(const VRegister& vd,
-                      const VRegister& vn,
-                      NEON2RegMiscOp vop,
-                      double value = 0.0);
-  void NEON2RegMisc(const VRegister& vd,
-                    const VRegister& vn,
-                    NEON2RegMiscOp vop,
-                    int value = 0);
-  void NEONFP2RegMisc(const VRegister& vd,
-                      const VRegister& vn,
-                      Instr op);
-  void NEONAddlp(const VRegister& vd,
-                 const VRegister& vn,
-                 NEON2RegMiscOp op);
-  void NEONPerm(const VRegister& vd,
-                const VRegister& vn,
-                const VRegister& vm,
-                NEONPermOp op);
-  void NEONFPByElement(const VRegister& vd,
-                       const VRegister& vn,
-                       const VRegister& vm,
-                       int vm_index,
-                       NEONByIndexedElementOp op);
-  void NEONByElement(const VRegister& vd,
-                     const VRegister& vn,
-                     const VRegister& vm,
-                     int vm_index,
-                     NEONByIndexedElementOp op);
-  void NEONByElementL(const VRegister& vd,
-                      const VRegister& vn,
-                      const VRegister& vm,
-                      int vm_index,
-                      NEONByIndexedElementOp op);
-  void NEONShiftImmediate(const VRegister& vd,
-                          const VRegister& vn,
-                          NEONShiftImmediateOp op,
-                          int immh_immb);
-  void NEONShiftLeftImmediate(const VRegister& vd,
-                              const VRegister& vn,
-                              int shift,
-                              NEONShiftImmediateOp op);
-  void NEONShiftRightImmediate(const VRegister& vd,
-                               const VRegister& vn,
-                               int shift,
-                               NEONShiftImmediateOp op);
-  void NEONShiftImmediateL(const VRegister& vd,
-                           const VRegister& vn,
-                           int shift,
-                           NEONShiftImmediateOp op);
-  void NEONShiftImmediateN(const VRegister& vd,
-                           const VRegister& vn,
-                           int shift,
-                           NEONShiftImmediateOp op);
-  void NEONXtn(const VRegister& vd,
-               const VRegister& vn,
-               NEON2RegMiscOp vop);
 
-  Instr LoadStoreStructAddrModeField(const MemOperand& addr);
-
-  
-  
-  Instr LoadStoreMemOperand(const MemOperand& addr,
-                            unsigned access_size,
-                            LoadStoreScalingOption option);
+  void RecordLiteral(int64_t imm, unsigned size);
 
   
   
   
-  ptrdiff_t LinkAndGetByteOffsetTo(BufferOffset branch, Label * label);
-  ptrdiff_t LinkAndGetInstructionOffsetTo(BufferOffset branch, Label * label);
-  ptrdiff_t LinkAndGetPageOffsetTo(BufferOffset branch, Label * label);
+  ptrdiff_t LinkAndGetByteOffsetTo(BufferOffset branch, Label* label);
+  ptrdiff_t LinkAndGetInstructionOffsetTo(BufferOffset branch, Label* label);
+  ptrdiff_t LinkAndGetPageOffsetTo(BufferOffset branch, Label* label);
 
   
   template <int element_size>
   ptrdiff_t LinkAndGetOffsetTo(BufferOffset branch, Label* label);
+
+ private:
+  inline void CheckBufferSpace() {
+    VIXL_ASSERT(!armbuffer_.oom());
+  }
 
  protected:
   
@@ -4253,14 +1961,16 @@ class Assembler : public MozBaseAssembler {
   };
 
  protected:
-  
   PositionIndependentCodeOption pic_;
+
+  
+  Instruction* pc_;
 
 #ifdef DEBUG
   bool finalized_;
 #endif
 };
 
-}  
+} 
 
 #endif  
