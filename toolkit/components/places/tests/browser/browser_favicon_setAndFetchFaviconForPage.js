@@ -33,8 +33,6 @@ function test() {
     NetUtil.asyncFetch({
       uri: favIconLocation,
       loadUsingSystemPrincipal: true,
-      
-      securityFlags: Ci.nsILoadInfo.SEC_NORMAL,
       contentPolicyType: Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE
     }, function(inputStream, status) {
         if (!Components.isSuccessCode(status)) {
