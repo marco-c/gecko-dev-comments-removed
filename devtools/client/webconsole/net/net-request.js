@@ -39,7 +39,8 @@ function NetRequest(log) {
 
 NetRequest.prototype = {
   initialize: function (log) {
-    this.client = log.client;
+    this.client = log.consoleFrame.webConsoleClient;
+    this.owner = log.consoleFrame.owner;
 
     
     
@@ -275,6 +276,10 @@ NetRequest.prototype = {
   onResponseCookies: function (response) {
     this.file.response.cookies = response.cookies;
     return this.resolveHeaders(this.file.response.cookies);
+  },
+
+  onViewSourceInDebugger: function (frame) {
+    this.owner.viewSourceInDebugger(frame.source, frame.line);
   },
 
   resolveHeaders: function (headers) {
