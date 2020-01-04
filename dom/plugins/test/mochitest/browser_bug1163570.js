@@ -39,20 +39,18 @@ function promiseWaitForEvent(object, eventName, capturing = false, chrome = fals
 
 add_task(function* () {
   registerCleanupFunction(function () {
-    Services.prefs.clearUserPref("browser.uiCustomization.disableAnimation");
     window.focus();
   });
 });
 
 add_task(function* () {
-  Services.prefs.setBoolPref("browser.uiCustomization.disableAnimation", true);
   setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED, "Test Plug-in");
 
   let pluginTab = gBrowser.selectedTab = gBrowser.addTab();
-  let customizeTab = gBrowser.addTab();
+  let prefTab = gBrowser.addTab();
 
   yield promiseTabLoad(pluginTab, gTestRoot + "plugin_test.html");
-  yield promiseTabLoad(customizeTab, "about:customizing");
+  yield promiseTabLoad(prefTab, "about:preferences");
 
   let result = yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
     let doc = content.document;
@@ -62,10 +60,8 @@ add_task(function* () {
 
   is(result, true, "plugin is loaded");
 
-  let cpromise = promiseWaitForEvent(window.gNavToolbox, "customizationready");
   let ppromise = promiseWaitForEvent(window, "MozAfterPaint");
-  gBrowser.selectedTab = customizeTab;
-  yield cpromise;
+  gBrowser.selectedTab = prefTab;
   yield ppromise;
 
   
@@ -80,10 +76,8 @@ add_task(function* () {
   info("-> " + tabStripContainer.childNodes[2].label); 
 
   for (let iteration = 0; iteration < 5; iteration++) {
-    cpromise = promiseWaitForEvent(window.gNavToolbox, "aftercustomization");
     ppromise = promiseWaitForEvent(window, "MozAfterPaint");
     EventUtils.synthesizeMouseAtCenter(tabStripContainer.childNodes[1], {}, window);
-    yield cpromise;
     yield ppromise;
 
     result = yield ContentTask.spawn(pluginTab.linkedBrowser, null, function*() {
@@ -94,10 +88,8 @@ add_task(function* () {
 
     is(result, true, "plugin is visible");
 
-    cpromise = promiseWaitForEvent(window.gNavToolbox, "customizationready");
     ppromise = promiseWaitForEvent(window, "MozAfterPaint");
     EventUtils.synthesizeMouseAtCenter(tabStripContainer.childNodes[2], {}, window);
-    yield cpromise;
     yield ppromise;
 
     result = yield ContentTask.spawn(pluginTab.linkedBrowser, null, function*() {
@@ -108,11 +100,6 @@ add_task(function* () {
     is(result, false, "plugin is hidden");
   }
 
-  
-  
-  cpromise = promiseWaitForEvent(window.gNavToolbox, "aftercustomization");
-  gBrowser.removeTab(customizeTab);
-  yield cpromise;
-
+  gBrowser.removeTab(prefTab);
   gBrowser.removeTab(pluginTab);
 });
