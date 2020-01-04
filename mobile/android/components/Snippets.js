@@ -204,12 +204,11 @@ function updateBanner(messages) {
       weight: message.weight,
       onclick: function() {
         gChromeWin.BrowserApp.loadURI(message.url);
+        removeSnippet(id, message.id);
         UITelemetry.addEvent("action.1", "banner", null, message.id);
       },
       ondismiss: function() {
-        
-        Home.banner.remove(id);
-        removeSnippet(message.id);
+        removeSnippet(id, message.id);
         UITelemetry.addEvent("cancel.1", "banner", null, message.id);
       },
       onshown: function() {
@@ -229,7 +228,15 @@ function updateBanner(messages) {
 
 
 
-function removeSnippet(snippetId) {
+
+
+function removeSnippet(messageId, snippetId) {
+  
+  Home.banner.remove(messageId);
+
+  
+  gMessageIds.splice(gMessageIds.indexOf(messageId), 1);
+
   let removedSnippetIds;
   try {
     removedSnippetIds = JSON.parse(Services.prefs.getCharPref(SNIPPETS_REMOVED_IDS_PREF));
