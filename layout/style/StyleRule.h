@@ -326,10 +326,6 @@ public:
   already_AddRefed<StyleRule>
   DeclarationChanged(Declaration* aDecl, bool aHandleContainer);
 
-  nsIStyleRule* GetImportantRule() const {
-    return mDeclaration->GetImportantStyleData();
-  }
-
   
 
 
