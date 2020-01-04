@@ -40,7 +40,7 @@ var gMenuBuilder = {
     this.xulMenu = xulMenu;
     for (let [, root] of gRootItems) {
       let rootElement = this.buildElementWithChildren(root, contextData);
-      if (!rootElement.childNodes.length) {
+      if (!rootElement.firstChild.childNodes.length) {
         
         
         continue;
