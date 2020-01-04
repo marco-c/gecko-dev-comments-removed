@@ -52,9 +52,15 @@ namespace js {
 
 
 
+
 template <typename T>
 void
 TraceEdge(JSTracer* trc, WriteBarrieredBase<T>* thingp, const char* name);
+
+
+template <typename T>
+void
+TraceNullableEdge(JSTracer* trc, WriteBarrieredBase<T>* thingp, const char* name);
 
 
 
