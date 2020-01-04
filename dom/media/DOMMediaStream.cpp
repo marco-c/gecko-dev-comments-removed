@@ -240,10 +240,7 @@ public:
 
     RefPtr<TrackPort> endedPort = mStream->FindPlaybackTrackPort(*track);
     NS_ASSERTION(endedPort, "Playback track should have a TrackPort");
-    if (endedPort &&
-        endedPort->GetSourceTrackId() != TRACK_ANY &&
-        endedPort->GetSourceTrackId() != TRACK_INVALID &&
-        endedPort->GetSourceTrackId() != TRACK_NONE) {
+    if (endedPort && IsTrackIDExplicit(endedPort->GetSourceTrackId())) {
       
       
       
@@ -871,9 +868,7 @@ DOMMediaStream::FindPlaybackDOMTrack(MediaStream* aInputStream, TrackID aInputTr
         info->GetInputPort()->GetSource() == aInputStream &&
         info->GetSourceTrackId() == aInputTrackID) {
       
-      MOZ_ASSERT(aInputTrackID != TRACK_NONE);
-      MOZ_ASSERT(aInputTrackID != TRACK_INVALID);
-      MOZ_ASSERT(aInputTrackID != TRACK_ANY);
+      MOZ_ASSERT(IsTrackIDExplicit(aInputTrackID));
       return info->GetTrack();
     }
   }
