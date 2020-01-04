@@ -20,6 +20,10 @@ class nsSVGClipPathFrame : public nsSVGClipPathFrameBase
 {
   friend nsIFrame*
   NS_NewSVGClipPathFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+
+  typedef mozilla::gfx::Matrix Matrix;
+  typedef mozilla::gfx::SourceSurface SourceSurface;
+
 protected:
   explicit nsSVGClipPathFrame(nsStyleContext* aContext)
     : nsSVGClipPathFrameBase(aContext)
@@ -47,9 +51,12 @@ public:
 
 
 
-  nsresult ApplyClipOrPaintClipMask(gfxContext& aContext,
-                                    nsIFrame* aClippedFrame,
-                                    const gfxMatrix &aMatrix);
+
+
+
+  void ApplyClipPath(gfxContext& aContext,
+                     nsIFrame* aClippedFrame,
+                     const gfxMatrix &aMatrix);
 
   
 
@@ -59,11 +66,23 @@ public:
 
 
 
-  already_AddRefed<mozilla::gfx::SourceSurface>
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<SourceSurface>
     GetClipMask(gfxContext& aReferenceContext, nsIFrame* aClippedFrame,
                 const gfxMatrix& aMatrix, Matrix* aMaskTransform,
-                mozilla::gfx::SourceSurface* aInputMask = nullptr,
-                const mozilla::gfx::Matrix& aInputMaskTransform = mozilla::gfx::Matrix());
+                SourceSurface* aExtraMask = nullptr,
+                const Matrix& aExtraMasksTransform = Matrix());
 
   
 
