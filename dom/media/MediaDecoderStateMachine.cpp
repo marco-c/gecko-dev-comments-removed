@@ -213,7 +213,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mObservedDuration(TimeUnit(), "MediaDecoderStateMachine::mObservedDuration"),
   mFragmentEndTime(-1),
   mReader(aReader),
-  mDecodedAudioEndTime(-1),
+  mDecodedAudioEndTime(0),
   mDecodedVideoEndTime(-1),
   mPlaybackRate(1.0),
   mLowAudioThresholdUsecs(detail::LOW_AUDIO_USECS),
@@ -426,7 +426,8 @@ MediaDecoderStateMachine::GetDecodedAudioDuration()
   if (mMediaSink->IsStarted()) {
     
     
-    return mDecodedAudioEndTime != -1 ? mDecodedAudioEndTime - GetClock() : 0;
+    
+    return std::max<int64_t>(mDecodedAudioEndTime - GetClock(), 0);
   }
   
   return AudioQueue().Duration();
@@ -606,7 +607,9 @@ MediaDecoderStateMachine::OnAudioDecoded(MediaData* aAudioSample)
   MOZ_ASSERT(audio);
   mAudioDataRequest.Complete();
   aAudioSample->AdjustForStartTime(StartTime());
-  mDecodedAudioEndTime = audio->GetEndTime();
+
+  
+  mDecodedAudioEndTime = std::max(audio->GetEndTime(), mDecodedAudioEndTime);
 
   SAMPLE_LOG("OnAudioDecoded [%lld,%lld] disc=%d",
              (audio ? audio->mTime : -1),
@@ -1878,9 +1881,6 @@ bool MediaDecoderStateMachine::HasLowUndecodedData(int64_t aUsecs)
   }
   int64_t endOfDecodedAudioData = INT64_MAX;
   if (HasAudio() && !AudioQueue().AtEndOfStream()) {
-    
-    
-    
     endOfDecodedAudioData = mDecodedAudioEndTime;
   }
   int64_t endOfDecodedData = std::min(endOfDecodedVideoData, endOfDecodedAudioData);
@@ -2390,7 +2390,7 @@ MediaDecoderStateMachine::Reset()
   StopMediaSink();
 
   mDecodedVideoEndTime = -1;
-  mDecodedAudioEndTime = -1;
+  mDecodedAudioEndTime = 0;
   mAudioCompleted = false;
   mVideoCompleted = false;
   AudioQueue().Reset();
