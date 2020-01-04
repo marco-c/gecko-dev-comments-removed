@@ -52,8 +52,8 @@ const EVENTS = {
   BREAKPOINT_HIDDEN_IN_PANE: "Debugger:BreakpointHiddenInPane",
 
   
-  CONDITIONAL_BREAKPOINT_POPUP_SHOWING: "Debugger:ConditionalBreakpointPopupShowing",
-  CONDITIONAL_BREAKPOINT_POPUP_HIDING: "Debugger:ConditionalBreakpointPopupHiding",
+  CONDITIONAL_BREAKPOINT_POPUP_SHOWN: "Debugger:ConditionalBreakpointPopupShown",
+  CONDITIONAL_BREAKPOINT_POPUP_HIDDEN: "Debugger:ConditionalBreakpointPopupHidden",
 
   
   EVENT_LISTENERS_FETCHED: "Debugger:EventListenersFetched",
