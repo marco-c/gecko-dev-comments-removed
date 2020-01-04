@@ -1324,16 +1324,22 @@ GLContextProviderGLX::CreateOffscreen(const IntSize& size,
 GLContextProviderGLX::GetGlobalContext()
 {
     
-    if (gfxEnv::DisableContextSharingGlx())
+    if (gfxEnv::DisableContextSharingGlx()) {
         return nullptr;
+    }
 
     static bool triedToCreateContext = false;
-    if (!triedToCreateContext) {
+    if (!triedToCreateContext && !gGlobalContext) {
         triedToCreateContext = true;
 
-        MOZ_RELEASE_ASSERT(!gGlobalContext);
-        RefPtr<GLContext> temp = CreateHeadless(CreateContextFlags::NONE);
-        gGlobalContext = temp;
+        IntSize dummySize = IntSize(16, 16);
+        SurfaceCaps dummyCaps = SurfaceCaps::Any();
+        
+        
+        
+        RefPtr<GLContext> holder;
+        holder = CreateOffscreenPixmapContext(dummySize, dummyCaps);
+        gGlobalContext = holder;
     }
 
     return gGlobalContext;
