@@ -2072,9 +2072,10 @@ var SessionStoreInternal = {
     }
 
     
+    let userContextId = aTab.getAttribute("usercontextid");
     let newTab = aTab == aWindow.gBrowser.selectedTab ?
-      aWindow.gBrowser.addTab(null, {relatedToCurrent: true, ownerTab: aTab}) :
-      aWindow.gBrowser.addTab();
+      aWindow.gBrowser.addTab(null, {relatedToCurrent: true, ownerTab: aTab, userContextId}) :
+      aWindow.gBrowser.addTab(null, {userContextId});
 
     
     
@@ -3201,10 +3202,6 @@ var SessionStoreInternal = {
       tabbrowser.hideTab(tab);
     } else {
       tabbrowser.showTab(tab);
-    }
-
-    if (tabData.userContextId) {
-      tab.setUserContextId(tabData.userContextId);
     }
 
     if (!!tabData.muted != browser.audioMuted) {
