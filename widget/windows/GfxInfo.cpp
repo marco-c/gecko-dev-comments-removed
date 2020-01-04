@@ -1116,19 +1116,19 @@ GfxInfo::GetGfxDriverInfo()
     
 
     
-    APPEND_TO_DRIVER_BLOCKLIST2(DRIVER_OS_ALL,
+    APPEND_TO_DRIVER_BLOCKLIST2(OperatingSystem::Windows,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorAMD), GfxDriverInfo::allDevices,
       nsIGfxInfo::FEATURE_WEBGL_OPENGL, nsIGfxInfo::FEATURE_DISCOURAGED, DRIVER_LESS_THAN,
       V(16,200,1010,1002), "WEBGL_NATIVE_GL_OLD_AMD");
 
     
-    APPEND_TO_DRIVER_BLOCKLIST2(DRIVER_OS_ALL,
+    APPEND_TO_DRIVER_BLOCKLIST2(OperatingSystem::Windows,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorIntel), GfxDriverInfo::allDevices,
       nsIGfxInfo::FEATURE_WEBGL_OPENGL, nsIGfxInfo::FEATURE_DISCOURAGED, DRIVER_LESS_THAN,
       V(20,19,15,4331), "WEBGL_NATIVE_GL_OLD_INTEL");
 
     
-    APPEND_TO_DRIVER_BLOCKLIST2(DRIVER_OS_ALL,
+    APPEND_TO_DRIVER_BLOCKLIST2(OperatingSystem::Windows,
       (nsAString&) GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), GfxDriverInfo::allDevices,
       nsIGfxInfo::FEATURE_WEBGL_OPENGL, nsIGfxInfo::FEATURE_DISCOURAGED, DRIVER_LESS_THAN,
       V(10,18,13,6200), "WEBGL_NATIVE_GL_OLD_NVIDIA");
