@@ -705,9 +705,36 @@ SessionStore.prototype = {
     log("onTabScroll() zoom level: " + zoom.value);
 
     
+    
+    let viewportInfo = this._getViewportInfo(aWindow.outerWidth, aWindow.outerHeight, content);
+    scrolldata.zoom.autoSize = viewportInfo.autoSize;
+    log("onTabScroll() autoSize: " + scrolldata.zoom.autoSize);
+    scrolldata.zoom.windowWidth = aWindow.outerWidth;
+    log("onTabScroll() windowWidth: " + scrolldata.zoom.windowWidth);
+
+    
     data.scrolldata = scrolldata;
     log("onTabScroll() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
     this.saveStateDelayed();
+  },
+
+  _getViewportInfo: function ss_getViewportInfo(aDisplayWidth, aDisplayHeight, aWindow) {
+    let viewportInfo = {};
+    let defaultZoom = {}, allowZoom = {}, minZoom = {}, maxZoom ={},
+        width = {}, height = {}, autoSize = {};
+    aWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(
+      Ci.nsIDOMWindowUtils).getViewportInfo(aDisplayWidth, aDisplayHeight,
+        defaultZoom, allowZoom, minZoom, maxZoom, width, height, autoSize);
+
+    viewportInfo.defaultZoom = defaultZoom.value;
+    viewportInfo.allowZoom = allowZoom.value;
+    viewportInfo.minZoom = maxZoom.value;
+    viewportInfo.maxZoom = maxZoom.value;
+    viewportInfo.width = width.value;
+    viewportInfo.height = height.value;
+    viewportInfo.autoSize = autoSize.value;
+
+    return viewportInfo;
   },
 
   saveStateDelayed: function ss_saveStateDelayed() {
@@ -1314,12 +1341,33 @@ SessionStore.prototype = {
 
   _restoreZoom: function ss_restoreZoom(aScrollData, aBrowser) {
     if (aScrollData && aScrollData.zoom) {
-      log("_restoreZoom(), resolution: " + aScrollData.zoom.resolution);
+      let recalculatedZoom = this._recalculateZoom(aScrollData.zoom);
+      log("_restoreZoom(), resolution: " + recalculatedZoom);
+
       let utils = aBrowser.contentWindow.QueryInterface(
         Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
       
-      utils.setRestoreResolution(aScrollData.zoom.resolution);
+      utils.setRestoreResolution(recalculatedZoom);
     }
+  },
+
+  
+
+
+
+  _recalculateZoom: function ss_recalculateZoom(aZoomData) {
+    let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
+
+    
+    if (!aZoomData.autoSize) {
+      let oldWidth = aZoomData.windowWidth;
+      let newWidth = browserWin.outerWidth;
+      if (oldWidth != newWidth && oldWidth > 0 && newWidth > 0) {
+        log("_recalculateZoom(), old resolution: " + aZoomData.resolution);
+        return newWidth / oldWidth * aZoomData.resolution;
+      }
+    }
+    return aZoomData.resolution;
   },
 
   
