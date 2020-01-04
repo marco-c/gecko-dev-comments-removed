@@ -129,14 +129,14 @@ FetchDriver::SetTainting()
 
   
   if (mRequest->Mode() == RequestMode::No_cors) {
-    mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_OPAQUE);
+    mRequest->MaybeIncreaseResponseTainting(LoadTainting::Opaque);
     
     
     return NS_OK;
   }
 
   
-  mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_CORS);
+  mRequest->MaybeIncreaseResponseTainting(LoadTainting::CORS);
 
   return NS_OK;
 }
@@ -445,20 +445,18 @@ FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse, nsIURI* aF
   DebugOnly<nsresult> rv = aResponse->StripFragmentAndSetUrl(reqURL);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-  
-
   RefPtr<InternalResponse> filteredResponse;
   if (mFoundOpaqueRedirect) {
     filteredResponse = aResponse->OpaqueRedirectResponse();
   } else {
     switch (mRequest->GetResponseTainting()) {
-      case InternalRequest::RESPONSETAINT_BASIC:
+      case LoadTainting::Basic:
         filteredResponse = aResponse->BasicResponse();
         break;
-      case InternalRequest::RESPONSETAINT_CORS:
+      case LoadTainting::CORS:
         filteredResponse = aResponse->CORSResponse();
         break;
-      case InternalRequest::RESPONSETAINT_OPAQUE:
+      case LoadTainting::Opaque:
         filteredResponse = aResponse->OpaqueResponse();
         break;
       default:
@@ -631,6 +629,26 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
     
     return rv;
   }
+
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  rv = channel->GetLoadInfo(getter_AddRefs(loadInfo));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    FailWithNetworkError();
+    return rv;
+  }
+
+  LoadTainting channelTainting = LoadTainting::Basic;
+  if (loadInfo) {
+    channelTainting = loadInfo->GetTainting();
+  }
+
+  
+  
+  
+  
+  
+  
+  mRequest->MaybeIncreaseResponseTainting(channelTainting);
 
   
   
