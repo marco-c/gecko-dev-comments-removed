@@ -8,16 +8,19 @@
 #define vm_ProxyObject_h
 
 #include "js/Proxy.h"
-#include "vm/NativeObject.h"
+#include "vm/ShapedObject.h"
 
 namespace js {
 
 
 
-class ProxyObject : public JSObject
-{
-    GCPtrShape shape;
 
+
+
+
+
+class ProxyObject : public ShapedObject
+{
     
     detail::ProxyDataLayout data;
 

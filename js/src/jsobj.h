@@ -187,13 +187,6 @@ class JSObject : public js::gc::Cell
     
     
     
-    inline void setInitialShapeMaybeNonNative(js::Shape* shape);
-    inline void setShapeMaybeNonNative(js::Shape* shape);
-
-    
-    
-    
-    
     inline void setInitialSlotsMaybeNonNative(js::HeapSlot* slots);
     inline void setInitialElementsMaybeNonNative(js::HeapSlot* elements);
 
@@ -569,7 +562,6 @@ class JSObject : public js::gc::Cell
     
 
     static size_t offsetOfGroup() { return offsetof(JSObject, group_); }
-    static size_t offsetOfShape() { return sizeof(JSObject); }
 
     
     static const size_t MAX_BYTE_SIZE = 4 * sizeof(void*) + 16 * sizeof(JS::Value);

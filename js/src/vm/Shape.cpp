@@ -1198,7 +1198,10 @@ JSObject::setFlags(ExclusiveContext* cx, BaseShape::Flag flags, GenerateShape ge
     if (!newShape)
         return false;
 
-    self->setShapeMaybeNonNative(newShape);
+    
+    
+    self->as<ShapedObject>().setShape(newShape);
+
     return true;
 }
 
