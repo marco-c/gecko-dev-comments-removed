@@ -10,6 +10,20 @@
 
 
 
+
+
+{
+  let c = Object.getOwnPropertyDescriptor(this, 'Components');
+  if ((!c.value || c.writable) && typeof SpecialPowers === 'object')
+    Components = SpecialPowers.wrap(SpecialPowers.Components);
+}
+
+
+
+
+
+
+
 var _quit = false;
 var _tests_pending = 0;
 var _pendingTimers = [];
