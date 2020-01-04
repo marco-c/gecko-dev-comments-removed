@@ -1,4 +1,5 @@
 #filter substitution
+#include @TOPOBJDIR@/source-repo.h
 
 
 
@@ -308,7 +309,10 @@ this.AppConstants = Object.freeze({
   
   
   
-  SOURCE_REVISION_URL: "@SOURCE_REV_URL@",
+#ifndef MOZ_SOURCE_URL
+#define MOZ_SOURCE_URL
+#endif
+  SOURCE_REVISION_URL: "@MOZ_SOURCE_URL@",
 
   MOZ_NUWA_PROCESS:
 #ifdef MOZ_NUWA_PROCESS
