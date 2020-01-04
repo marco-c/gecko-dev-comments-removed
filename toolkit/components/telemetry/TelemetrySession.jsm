@@ -224,9 +224,10 @@ function toLocalTimeISOString(date) {
 
 function annotateCrashReport(sessionId) {
   try {
-    const cr = Cc["@mozilla.org/toolkit/crash-reporter;1"]
-            .getService(Ci.nsICrashReporter);
-    cr.setTelemetrySessionId(sessionId);
+    const cr = Cc["@mozilla.org/toolkit/crash-reporter;1"];
+    if (cr) {
+      cr.getService(Ci.nsICrashReporter).setTelemetrySessionId(sessionId);
+    }
   } catch (e) {
     
   }
@@ -411,7 +412,6 @@ var TelemetryScheduler = {
         return this._onSchedulerTick();
         break;
     }
-    return undefined;
   },
 
   
@@ -1885,7 +1885,6 @@ var Impl = {
       TelemetryController.addPendingPing(getPingType(payload), payload, options);
       break;
     }
-    return undefined;
   },
 
   
