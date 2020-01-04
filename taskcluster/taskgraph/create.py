@@ -54,6 +54,7 @@ def create_tasks(taskgraph, label_to_taskid):
         
         for task_id in taskgraph.graph.visit_postorder():
             task_def = taskgraph.tasks[task_id].task
+            attributes = taskgraph.tasks[task_id].attributes
             
             
             
@@ -71,6 +72,12 @@ def create_tasks(taskgraph, label_to_taskid):
 
             fs[task_id] = e.submit(_create_task, session, task_id,
                                    taskid_to_label[task_id], task_def)
+
+            
+            for i in range(1, attributes.get('task_duplicates', 1)):
+                
+                fs[task_id] = e.submit(_create_task, session, slugid(),
+                                       taskid_to_label[task_id], task_def)
 
         
         for f in futures.as_completed(fs.values()):
