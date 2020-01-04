@@ -448,13 +448,12 @@ bool TestDataStructuresParent::RecvTest17(InfallibleTArray<Op>&& sa)
 bool TestDataStructuresParent::RecvTest18(RegionArray&& ra)
 {
     for (RegionArray::index_type i = 0; i < ra.Length(); ++i) {
-        nsIntRegionRectIterator it(ra[i]);
         
         
-        
-        while (const nsIntRect* sr = it.Next()) Unused << sr;
+        for (auto iter = ra[i].RectIter(); !iter.Done(); iter.Next()) {
+            Unused << iter.Get();
+        }
     }
-
     return true;
 }
 

@@ -1627,10 +1627,9 @@ AppendToString(nsACString& s, const nsIntRegion& r,
 {
   s += pfx;
 
-  nsIntRegionRectIterator it(r);
   s += "< ";
-  while (const nsIntRect* sr = it.Next()) {
-    AppendToString(s, *sr) += "; ";
+  for (auto iter = r.RectIter(); !iter.Done(); iter.Next()) {
+    AppendToString(s, iter.Get()) += "; ";
   }
   s += ">";
 
@@ -3449,15 +3448,14 @@ PaintedLayerData::Accumulate(ContainerState* aState,
   }
 
   if (!aClippedOpaqueRegion.IsEmpty()) {
-    nsIntRegionRectIterator iter(aClippedOpaqueRegion);
-    for (const nsIntRect* r = iter.Next(); r; r = iter.Next()) {
+    for (auto iter = aClippedOpaqueRegion.RectIter(); !iter.Done(); iter.Next()) {
       
       
       
       
       
       nsIntRegion tmp;
-      tmp.Or(mOpaqueRegion, *r);
+      tmp.Or(mOpaqueRegion, iter.Get());
        
        
        
@@ -3653,9 +3651,9 @@ ContainerState::ComputeOpaqueRect(nsDisplayItem* aItem,
   nsIntRegion opaquePixels;
   if (!opaque.IsEmpty()) {
     nsRegion opaqueClipped;
-    nsRegionRectIterator iter(opaque);
-    for (const nsRect* r = iter.Next(); r; r = iter.Next()) {
-      opaqueClipped.Or(opaqueClipped, aClip.ApproximateIntersectInward(*r));
+    for (auto iter = opaque.RectIter(); !iter.Done(); iter.Next()) {
+      opaqueClipped.Or(opaqueClipped,
+                       aClip.ApproximateIntersectInward(iter.Get()));
     }
     if (aAnimatedGeometryRoot == mContainerAnimatedGeometryRoot &&
         opaqueClipped.Contains(mContainerBounds)) {
@@ -5802,11 +5800,11 @@ FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
   nsRenderingContext rc(aContext);
 
   if (shouldDrawRectsSeparately) {
-    nsIntRegionRectIterator it(aRegionToDraw);
-    while (const nsIntRect* iterRect = it.Next()) {
+    for (auto iter = aRegionToDraw.RectIter(); !iter.Done(); iter.Next()) {
+      const nsIntRect& iterRect = iter.Get();
       gfxContextAutoSaveRestore save(aContext);
       aContext->NewPath();
-      aContext->Rectangle(ThebesRect(*iterRect));
+      aContext->Rectangle(ThebesRect(iterRect));
       aContext->Clip();
 
       DrawForcedBackgroundColor(aDrawTarget, aLayer,
@@ -5819,7 +5817,7 @@ FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
         aContext->CurrentMatrix().Translate(aLayer->GetResidualTranslation() - gfxPoint(offset.x, offset.y)).
                                   Scale(userData->mXScale, userData->mYScale));
 
-      layerBuilder->PaintItems(entry->mItems, *iterRect, aContext, &rc,
+      layerBuilder->PaintItems(entry->mItems, iterRect, aContext, &rc,
                                builder, presContext,
                                offset, userData->mXScale, userData->mYScale,
                                entry->mCommonClipCount);
