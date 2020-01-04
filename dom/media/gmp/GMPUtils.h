@@ -37,6 +37,12 @@ SplitAt(const char* aDelims,
 nsCString
 ToBase64(const nsTArray<uint8_t>& aBytes);
 
+enum GMPCrashReason {
+  kPrefChange, 
+  kGmpApiTimeout, 
+  kInvalid,
+};
+
 } 
 
 #endif
