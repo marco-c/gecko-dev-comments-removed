@@ -91,7 +91,7 @@ private:
     
     uint8_t mRenderState;
 
-    gfxPoint mDeviceOffset;
+    mozilla::gfx::Point mDeviceOffset;
     RefPtr<gfxPattern> mBlackPattern, mWhitePattern;
 
     enum TransformType {
