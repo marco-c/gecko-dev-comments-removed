@@ -3407,6 +3407,36 @@ function hackDebugger(Debugger) {
 
 
 
+
+function ChromeDebuggerActor(aConnection, aParent)
+{
+  ThreadActor.call(this, aParent);
+}
+
+ChromeDebuggerActor.prototype = Object.create(ThreadActor.prototype);
+
+update(ChromeDebuggerActor.prototype, {
+  constructor: ChromeDebuggerActor,
+
+  
+  actorPrefix: "chromeDebugger"
+});
+
+exports.ChromeDebuggerActor = ChromeDebuggerActor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function AddonThreadActor(aConnect, aParent) {
   ThreadActor.call(this, aParent);
 }
