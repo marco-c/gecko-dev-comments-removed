@@ -2395,7 +2395,7 @@ IMMHandler::SetIMERelatedWindowsPosOnPlugin(nsWindow* aWindow,
   
   winRectInScreen.width--;
   winRectInScreen.height--;
-  nsIntRect clippedPluginRect;
+  LayoutDeviceIntRect clippedPluginRect;
   clippedPluginRect.x =
     std::min(std::max(pluginRectInScreen.x, winRectInScreen.x),
              winRectInScreen.XMost());
@@ -2406,7 +2406,7 @@ IMMHandler::SetIMERelatedWindowsPosOnPlugin(nsWindow* aWindow,
   int32_t yMost = std::min(pluginRectInScreen.YMost(), winRectInScreen.YMost());
   clippedPluginRect.width = std::max(0, xMost - clippedPluginRect.x);
   clippedPluginRect.height = std::max(0, yMost - clippedPluginRect.y);
-  clippedPluginRect -= aWindow->WidgetToScreenOffsetUntyped();
+  clippedPluginRect -= aWindow->WidgetToScreenOffset();
 
   
   
