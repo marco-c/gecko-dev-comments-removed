@@ -53,6 +53,10 @@ public:
     ev_status_unknown = 2
   };
 
+  
+  
+  static nsresult GetDbKey(CERTCertificate* cert, nsACString& aDbKey);
+
 private:
   virtual ~nsNSSCertificate();
 

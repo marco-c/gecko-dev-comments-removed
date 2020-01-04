@@ -35,6 +35,11 @@ public:
   ImportValidCACerts(int numCACerts, SECItem *CACerts, nsIInterfaceRequestor *ctx,
                      const nsNSSShutDownPreventionLock &proofOfLock);
 
+  
+  
+  static nsresult
+  FindCertByDBKey(const char* aDBKey, mozilla::UniqueCERTCertificate& cert);
+
 protected:
   virtual ~nsNSSCertificateDB();
 
