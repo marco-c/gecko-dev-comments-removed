@@ -1531,9 +1531,9 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     UnsetFlags(NODE_FORCE_XBL_BINDINGS |
                
-               NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
-               
-               ELEMENT_ALL_RESTYLE_FLAGS);
+               NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
+    
+    UnsetRestyleFlagsIfGecko();
   } else if (IsInShadowTree()) {
     
     
@@ -1542,8 +1542,8 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     UnsetFlags(NODE_FORCE_XBL_BINDINGS |
-               NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
-               ELEMENT_ALL_RESTYLE_FLAGS);
+               NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
+    UnsetRestyleFlagsIfGecko();
   } else {
     
     
