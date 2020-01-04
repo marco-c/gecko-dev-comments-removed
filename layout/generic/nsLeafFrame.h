@@ -85,11 +85,6 @@ protected:
 
 
 
-
-
-
-
-
   virtual nscoord GetIntrinsicISize() = 0;
 
   
@@ -100,12 +95,6 @@ protected:
 
 
   virtual nscoord GetIntrinsicBSize();
-
-  
-
-
-  void AddBordersAndPadding(const nsHTMLReflowState& aReflowState,
-                            mozilla::LogicalSize& aDesiredSize);
 
   
 
