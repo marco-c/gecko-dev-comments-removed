@@ -40,6 +40,7 @@ public class LocalURLMetadata implements URLMetadata {
             add(URLMetadataTable.URL_COLUMN);
             add(URLMetadataTable.TILE_IMAGE_URL_COLUMN);
             add(URLMetadataTable.TILE_COLOR_COLUMN);
+            add(URLMetadataTable.TOUCH_ICON_COLUMN);
         }};
     }
 
@@ -96,14 +97,14 @@ public class LocalURLMetadata implements URLMetadata {
     @Override
     public Map<String, Map<String, Object>> getForURLs(final ContentResolver cr,
                                                        final List<String> urls,
-                                                       final List<String> columns) {
+                                                       final List<String> requestedColumns) {
         ThreadUtils.assertNotOnUiThread();
         ThreadUtils.assertNotOnGeckoThread();
 
         final Map<String, Map<String, Object>> data = new HashMap<String, Map<String, Object>>();
 
         
-        if (urls.isEmpty() || columns.isEmpty()) {
+        if (urls.isEmpty() || requestedColumns.isEmpty()) {
             Log.e(LOGTAG, "Queried metadata for nothing");
             return data;
         }
@@ -114,7 +115,21 @@ public class LocalURLMetadata implements URLMetadata {
             final Map<String, Object> hit = cache.get(url);
             if (hit != null) {
                 
-                data.put(url, hit);
+                
+                
+                
+                
+                boolean useCache = true;
+                for (String c: requestedColumns) {
+                    if (!hit.containsKey(c)) {
+                        useCache = false;
+                    }
+                }
+                if (useCache) {
+                    data.put(url, hit);
+                } else {
+                    urlsToQuery.add(url);
+                }
             } else {
                 urlsToQuery.add(url);
             }
@@ -128,8 +143,12 @@ public class LocalURLMetadata implements URLMetadata {
         }
 
         final String selection = DBUtils.computeSQLInClause(urlsToQuery.size(), URLMetadataTable.URL_COLUMN);
+        List<String> columns = requestedColumns;
         
         if (!columns.contains(URLMetadataTable.URL_COLUMN)) {
+            
+            
+            columns = new ArrayList<String>(columns);
             columns.add(URLMetadataTable.URL_COLUMN);
         }
 
