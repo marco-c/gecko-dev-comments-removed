@@ -351,6 +351,11 @@ UnboxedPlainObject::ensureExpando(JSContext* cx, Handle<UnboxedPlainObject*> obj
     
     
     
+    MarkObjectGroupUnknownProperties(cx, expando->group());
+
+    
+    
+    
     
     MOZ_ASSERT_IF(!IsInsideNursery(expando), !IsInsideNursery(obj));
 
