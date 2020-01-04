@@ -2,7 +2,7 @@
 
 
 
-from marionette import MarionetteTestCase, skip_if_b2g
+from marionette import MarionetteTestCase
 from marionette_driver.by import By
 
 
@@ -16,7 +16,6 @@ class TestElementSize(MarionetteTestCase):
         self.assertTrue(size['height'] > 0)
 
 
-@skip_if_b2g
 class TestElementSizeChrome(MarionetteTestCase):
     def setUp(self):
         MarionetteTestCase.setUp(self)

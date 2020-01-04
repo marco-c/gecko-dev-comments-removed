@@ -2,9 +2,8 @@
 
 
 
-from marionette import MarionetteTestCase, skip_if_b2g
+from marionette import MarionetteTestCase
 
-@skip_if_b2g
 class TestTitleChrome(MarionetteTestCase):
     def setUp(self):
         MarionetteTestCase.setUp(self)
