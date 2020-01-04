@@ -456,8 +456,7 @@ void
 BaselineScript::trace(JSTracer* trc)
 {
     TraceEdge(trc, &method_, "baseline-method");
-    if (templateScope_)
-        TraceEdge(trc, &templateScope_, "baseline-template-scope");
+    TraceNullableEdge(trc, &templateScope_, "baseline-template-scope");
 
     
     for (size_t i = 0; i < numICEntries(); i++) {
