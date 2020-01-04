@@ -1004,7 +1004,7 @@ XMLHttpRequestMainThread::GetStatusText(nsACString& aStatusText,
 }
 
 void
-XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType)
+XMLHttpRequestMainThread::CloseRequest()
 {
   if (mChannel) {
     mChannel->Cancel(NS_BINDING_ABORTED);
@@ -1012,6 +1012,13 @@ XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType)
   if (mTimeoutTimer) {
     mTimeoutTimer->Cancel();
   }
+}
+
+void
+XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType)
+{
+  CloseRequest();
+
   uint32_t responseLength = mResponseBody.Length();
   ResetResponse();
 
@@ -1404,17 +1411,8 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
 
   nsCOMPtr<nsIURI> uri;
 
-  if (mState == State::opened || mState == State::headers_received ||
-      mState == State::loading) {
-    
-    Abort();
-
-    
-    
-    
-    
-    
-  }
+  CloseRequest(); 
+  ResetResponse(); 
 
   mFlagSend = false;
 
@@ -1542,7 +1540,9 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
     }
   }
 
-  ChangeState(State::opened);
+  if (mState != State::opened) {
+    ChangeState(State::opened);
+  }
 
   return NS_OK;
 }
