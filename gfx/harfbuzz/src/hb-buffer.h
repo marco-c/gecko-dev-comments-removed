@@ -171,6 +171,9 @@ void
 hb_buffer_guess_segment_properties (hb_buffer_t *buffer);
 
 
+
+
+
 typedef enum { 
   HB_BUFFER_FLAG_DEFAULT			= 0x00000000u,
   HB_BUFFER_FLAG_BOT				= 0x00000001u, 
@@ -184,6 +187,9 @@ hb_buffer_set_flags (hb_buffer_t       *buffer,
 
 hb_buffer_flags_t
 hb_buffer_get_flags (hb_buffer_t *buffer);
+
+
+
 
 typedef enum {
   HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES	= 0,
@@ -313,6 +319,9 @@ hb_buffer_get_glyph_positions (hb_buffer_t  *buffer,
 
 void
 hb_buffer_normalize_glyphs (hb_buffer_t *buffer);
+
+
+
 
 
 
