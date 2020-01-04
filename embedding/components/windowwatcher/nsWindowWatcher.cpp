@@ -1651,7 +1651,7 @@ nsWindowWatcher::CalculateChromeFlags(nsIDOMWindow* aParent,
   if (aParent) {
     aParent->GetFullScreen(&isFullScreen);
   }
-  if (openedFromContentScript) {
+  if (isFullScreen && openedFromContentScript) {
     
     
     disableDialogFeature = true;
