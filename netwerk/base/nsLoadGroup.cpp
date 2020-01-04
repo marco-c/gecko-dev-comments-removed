@@ -582,7 +582,7 @@ nsLoadGroup::RemoveRequest(nsIRequest *request, nsISupports* ctxt,
         return NS_ERROR_FAILURE;
     }
 
-    PL_DHashTableRawRemove(&mRequests, entry);
+    mRequests.RemoveEntry(entry);
 
     
     
