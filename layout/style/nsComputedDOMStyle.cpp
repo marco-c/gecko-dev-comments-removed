@@ -6100,14 +6100,14 @@ nsComputedDOMStyle::DoGetMask()
   
   if (svg->mMask.mImageCount > 1 ||
       firstLayer.mClip != NS_STYLE_IMAGELAYER_CLIP_BORDER ||
-      firstLayer.mOrigin != NS_STYLE_IMAGELAYER_ORIGIN_PADDING ||
+      firstLayer.mOrigin != NS_STYLE_IMAGELAYER_ORIGIN_BORDER ||
       firstLayer.mComposite != NS_STYLE_MASK_COMPOSITE_ADD ||
       firstLayer.mMaskMode != NS_STYLE_MASK_MODE_MATCH_SOURCE ||
       !firstLayer.mPosition.IsInitialValue() ||
-      !firstLayer.mRepeat.IsInitialValue() ||
+      !firstLayer.mRepeat.IsInitialValue(nsStyleImageLayers::LayerType::Mask) ||
       !firstLayer.mSize.IsInitialValue() ||
       !(firstLayer.mImage.GetType() == eStyleImageType_Null ||
-          firstLayer.mImage.GetType() == eStyleImageType_Image)){
+        firstLayer.mImage.GetType() == eStyleImageType_Image)) {
     return nullptr;
   }
 
