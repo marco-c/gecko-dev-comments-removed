@@ -85,6 +85,7 @@ struct PerformanceMonitoring {
       , isMonitoringCPOW_(false)
       , iteration_(0)
       , startedAtIteration_(0)
+      , highestTimestampCounter_(0)
     { }
 
     
@@ -216,6 +217,13 @@ struct PerformanceMonitoring {
 
 
 
+    uint64_t monotonicReadTimestampCounter();
+
+    
+
+
+
+
 
 
 
@@ -285,6 +293,12 @@ struct PerformanceMonitoring {
 
 
     GroupVector recentGroups_;
+
+    
+
+
+
+    uint64_t highestTimestampCounter_;
 };
 
 #if WINVER >= 0x0600
@@ -377,7 +391,7 @@ class AutoStopwatch final {
 
     
     
-    uint64_t inline getCycles() const;
+    uint64_t inline getCycles(JSRuntime*) const;
 
 
     

@@ -40,6 +40,14 @@ PerformanceMonitoring::reset()
     
     ++iteration_;
     recentGroups_.clear();
+
+    
+    
+    
+    
+    
+    
+    highestTimestampCounter_ = 0;
 }
 
 void
@@ -158,6 +166,19 @@ PerformanceMonitoring::commit()
     return success;
 }
 
+uint64_t
+PerformanceMonitoring::monotonicReadTimestampCounter()
+{
+#if defined(MOZ_HAVE_RDTSC)
+    const uint64_t hardware = ReadTimestampCounter();
+    if (highestTimestampCounter_ < hardware)
+        highestTimestampCounter_ = hardware;
+    return highestTimestampCounter_;
+#else
+    return 0;
+#endif 
+}
+
 void
 PerformanceMonitoring::dispose(JSRuntime* rt)
 {
@@ -272,7 +293,7 @@ AutoStopwatch::enter()
     }
 
     if (runtime->performanceMonitoring.isMonitoringJank()) {
-        cyclesStart_ = this->getCycles();
+        cyclesStart_ = this->getCycles(runtime);
         cpuStart_ = this->getCPU();
         isMonitoringJank_ = true;
     }
@@ -295,8 +316,8 @@ AutoStopwatch::exit()
         
         const cpuid_t cpuEnd = this->getCPU();
         if (isSameCPU(cpuStart_, cpuEnd)) {
-            const uint64_t cyclesEnd = getCycles();
-            cyclesDelta = getDelta(cyclesEnd, cyclesStart_);
+            const uint64_t cyclesEnd = getCycles(runtime);
+            cyclesDelta = cyclesEnd - cyclesStart_; 
         }
 #if WINVER >= 0x600
         updateTelemetry(cpuStart_, cpuEnd);
@@ -382,13 +403,9 @@ AutoStopwatch::getDelta(const uint64_t end, const uint64_t start) const
 }
 
 uint64_t
-AutoStopwatch::getCycles() const
+AutoStopwatch::getCycles(JSRuntime* runtime) const
 {
-#if defined(MOZ_HAVE_RDTSC)
-    return ReadTimestampCounter();
-#else
-    return 0;
-#endif 
+    return runtime->performanceMonitoring.monotonicReadTimestampCounter();
 }
 
 cpuid_t inline
