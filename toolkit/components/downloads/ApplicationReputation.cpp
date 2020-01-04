@@ -401,13 +401,13 @@ PendingLookup::IsBinaryFile()
     
     
     
-    StringEndsWith(fileName, NS_LITERAL_STRING(".action")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".ad")) || 
+    
+    
     StringEndsWith(fileName, NS_LITERAL_STRING(".ade")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".adp")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".apk")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".app")) || 
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".application")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".appref-ms")) || 
     
     
@@ -420,20 +420,20 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".bash")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".bat")) || 
     
-    StringEndsWith(fileName, NS_LITERAL_STRING(".bin")) || 
     
+    StringEndsWith(fileName, NS_LITERAL_STRING(".bz")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".bz2")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".bzip2")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".cab")) || 
-    
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".cdr")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".cfg")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".chi")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".chm")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".class")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".cmd")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".com")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".command")) || 
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".cpgz")) || 
     
     StringEndsWith(fileName, NS_LITERAL_STRING(".cpl")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".crt")) || 
@@ -448,18 +448,18 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".dmg")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".dmgpart")) || 
     
-    StringEndsWith(fileName, NS_LITERAL_STRING(".docm")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".docx")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".dotm")) || 
+    
+    
+    
     
     StringEndsWith(fileName, NS_LITERAL_STRING(".drv")) || 
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".dvdr")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".efi")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".eml")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".exe")) || 
     
     StringEndsWith(fileName, NS_LITERAL_STRING(".fon")) || 
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".fxp")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".gadget")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".grp")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".gz")) || 
@@ -472,21 +472,21 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".img")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".imgpart")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".inf")) || 
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ini")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".ins")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".inx")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".iso")) || 
     
-    StringEndsWith(fileName, NS_LITERAL_STRING(".isu")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".iso")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".isp")) || 
+    
     StringEndsWith(fileName, NS_LITERAL_STRING(".jar")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".jnlp")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".job")) || 
+    
     StringEndsWith(fileName, NS_LITERAL_STRING(".js")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".jse")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".ksh")) || 
     
     StringEndsWith(fileName, NS_LITERAL_STRING(".lnk")) || 
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".local")) || 
     
     
     
@@ -496,12 +496,12 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".maf")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".mag")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".mam")) || 
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".manifest")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".maq")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".mar")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".mas")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".mat")) || 
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mau")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".mav")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".maw")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".mda")) || 
@@ -514,8 +514,8 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".mhtml")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".mim")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".mmc")) || 
-    
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mof")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mpkg")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".msc")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".msg")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".msh")) || 
@@ -531,29 +531,29 @@ PendingLookup::IsBinaryFile()
     
     StringEndsWith(fileName, NS_LITERAL_STRING(".ocx")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".ops")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".out")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".paf")) || 
+    
+    
     
     
     
     
     StringEndsWith(fileName, NS_LITERAL_STRING(".partial")) || 
-    
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pax")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pcd")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".pdf")) || 
     
     StringEndsWith(fileName, NS_LITERAL_STRING(".pet")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".pif")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".pkg")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".pl")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".plg")) || 
     
-    StringEndsWith(fileName, NS_LITERAL_STRING(".potx")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".ppam")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".ppsx")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".pptm")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".pptx")) || 
+    
+    
+    
+    
     StringEndsWith(fileName, NS_LITERAL_STRING(".prf")) || 
-    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".prg")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".ps1")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".ps1xml")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".ps2")) || 
@@ -600,10 +600,10 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".rb")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".reg")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".rels")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".rgs")) || 
+    
     StringEndsWith(fileName, NS_LITERAL_STRING(".rpm")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".rtf")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".run")) || 
+    
+    
     StringEndsWith(fileName, NS_LITERAL_STRING(".scf")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".scr")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".sct")) || 
@@ -612,8 +612,8 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".shar")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".shb")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".shs")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".sldm")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".sldx")) || 
+    
+    
     StringEndsWith(fileName, NS_LITERAL_STRING(".slp")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".smi")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".sparsebundle")) || 
@@ -644,7 +644,7 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".vb")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".vbe")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".vbs")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".vbscript")) || 
+    
     StringEndsWith(fileName, NS_LITERAL_STRING(".vhd")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".vhdx")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".vmdk")) || 
@@ -655,7 +655,7 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".vsw")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".website")) ||  
     StringEndsWith(fileName, NS_LITERAL_STRING(".wim")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".workflow")) || 
+    
     
     StringEndsWith(fileName, NS_LITERAL_STRING(".ws")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".wsc")) || 
@@ -663,11 +663,11 @@ PendingLookup::IsBinaryFile()
     StringEndsWith(fileName, NS_LITERAL_STRING(".wsh")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".xar")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".xbap")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xip")) || 
     
-    StringEndsWith(fileName, NS_LITERAL_STRING(".xlsm")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".xlsx")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".xltm")) || 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".xltx")) || 
+    
+    
+    
     StringEndsWith(fileName, NS_LITERAL_STRING(".xml")) ||
     StringEndsWith(fileName, NS_LITERAL_STRING(".xnk")) || 
     StringEndsWith(fileName, NS_LITERAL_STRING(".xrm-ms")) || 
