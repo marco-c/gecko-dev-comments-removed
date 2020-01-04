@@ -222,6 +222,8 @@ namespace mozilla {
 class VideoFrameContainer;
 class MediaDecoderStateMachine;
 
+enum class MediaEventType : int8_t;
+
 
 
 #ifdef GetCurrentTime
@@ -800,17 +802,7 @@ private:
   MediaEventSource<void>*
   DataArrivedEvent() override { return &mDataArrivedEvent; }
 
-  
-  
-  void OnPlaybackStarted() { mPlaybackStatistics->Start(); }
-
-  
-  
-  void OnPlaybackStopped()
-  {
-    mPlaybackStatistics->Stop();
-    ComputePlaybackRate();
-  }
+  void OnPlaybackEvent(MediaEventType aEvent);
 
   MediaEventProducer<void> mDataArrivedEvent;
 
@@ -933,11 +925,7 @@ protected:
   MediaEventListener mMetadataLoadedListener;
   MediaEventListener mFirstFrameLoadedListener;
 
-  MediaEventListener mOnPlaybackStart;
-  MediaEventListener mOnPlaybackStop;
-  MediaEventListener mOnPlaybackEnded;
-  MediaEventListener mOnDecodeError;
-  MediaEventListener mOnInvalidate;
+  MediaEventListener mOnPlaybackEvent;
   MediaEventListener mOnSeekingStart;
 
 protected:
@@ -1094,7 +1082,7 @@ private:
   
   
   void NotifyDownloadEnded(nsresult aStatus);
-  
+
   bool mTelemetryReported;
 };
 
