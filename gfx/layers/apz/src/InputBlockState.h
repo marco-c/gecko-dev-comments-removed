@@ -442,6 +442,11 @@ public:
   bool UpdateSlopState(const MultiTouchInput& aInput,
                        bool aApzcCanConsumeEvents);
 
+  
+
+
+  uint32_t GetActiveTouchCount() const;
+
   bool HasEvents() const override;
   void DropEvents() override;
   void HandleEvents() override;

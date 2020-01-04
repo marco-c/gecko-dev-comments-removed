@@ -1337,10 +1337,18 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) 
     
     mX.SetVelocity(0);
     mY.SetVelocity(0);
+    APZC_LOG("%p still has %u touch points active\n", this,
+        CurrentTouchBlock()->GetActiveTouchCount());
     
     
-    if (!SnapBackIfOverscrolled()) {
-      SetState(NOTHING);
+    
+    
+    if (CurrentTouchBlock()->GetActiveTouchCount() == 0) {
+      
+      
+      if (!SnapBackIfOverscrolled()) {
+        SetState(NOTHING);
+      }
     }
     return nsEventStatus_eIgnore;
 
