@@ -595,17 +595,9 @@ private:
 
     
     if (mRecorder->mMimeType.EqualsLiteral(AUDIO_3GPP) && Check3gppPermission()) {
-      mEncoder = MediaEncoder::CreateEncoder(NS_LITERAL_STRING(AUDIO_3GPP),
-                                             mRecorder->GetAudioBitrate(),
-                                             mRecorder->GetVideoBitrate(),
-                                             mRecorder->GetBitrate(),
-                                             aTrackTypes);
+      mEncoder = MediaEncoder::CreateEncoder(NS_LITERAL_STRING(AUDIO_3GPP), aTrackTypes);
     } else {
-      mEncoder = MediaEncoder::CreateEncoder(NS_LITERAL_STRING(""),
-                                             mRecorder->GetAudioBitrate(),
-                                             mRecorder->GetVideoBitrate(),
-                                             mRecorder->GetBitrate(),
-                                             aTrackTypes);
+      mEncoder = MediaEncoder::CreateEncoder(NS_LITERAL_STRING(""), aTrackTypes);
     }
 
     if (!mEncoder) {
@@ -973,7 +965,7 @@ MediaRecorder::Constructor(const GlobalObject& aGlobal,
   }
 
   nsRefPtr<MediaRecorder> object = new MediaRecorder(aStream, ownerWindow);
-  object->SetOptions(aInitDict);
+  object->SetMimeType(aInitDict.mMimeType);
   return object.forget();
 }
 
@@ -1009,31 +1001,8 @@ MediaRecorder::Constructor(const GlobalObject& aGlobal,
   nsRefPtr<MediaRecorder> object = new MediaRecorder(aSrcAudioNode,
                                                      aSrcOutput,
                                                      ownerWindow);
-  object->SetOptions(aInitDict);
+  object->SetMimeType(aInitDict.mMimeType);
   return object.forget();
-}
-
-void
-MediaRecorder::SetOptions(const MediaRecorderOptions& aInitDict)
-{
-  SetMimeType(aInitDict.mMimeType);
-  mAudioBitsPerSecond = aInitDict.mAudioBitsPerSecond.WasPassed() ?
-                        aInitDict.mAudioBitsPerSecond.Value() : 0;
-  mVideoBitsPerSecond = aInitDict.mVideoBitsPerSecond.WasPassed() ?
-                        aInitDict.mVideoBitsPerSecond.Value() : 0;
-  mBitsPerSecond = aInitDict.mBitsPerSecond.WasPassed() ?
-                   aInitDict.mBitsPerSecond.Value() : 0;
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aInitDict.mBitsPerSecond.WasPassed() && !aInitDict.mVideoBitsPerSecond.WasPassed()) {
-    mVideoBitsPerSecond = mBitsPerSecond;
-  }
 }
 
 nsresult

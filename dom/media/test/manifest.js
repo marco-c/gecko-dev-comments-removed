@@ -127,11 +127,6 @@ var gMediaRecorderTests = [
 ];
 
 
-var gMediaRecorderVideoTests = [
-  { name:"seek.webm", type:"video/webm", width:320, height:240, duration:3.966 },
-];
-
-
 
 
 
