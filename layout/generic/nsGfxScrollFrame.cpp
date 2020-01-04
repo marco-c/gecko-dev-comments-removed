@@ -1414,7 +1414,7 @@ ScrollFrameHelper::ThumbMoved(nsScrollbarFrame* aScrollbar,
   nsPoint current = GetScrollPosition();
   nsPoint dest = current;
   if (isHorizontal) {
-    dest.x = IsLTR() ? aNewPos : aNewPos - GetScrollRange().width;
+    dest.x = IsPhysicalLTR() ? aNewPos : aNewPos - GetScrollRange().width;
   } else {
     dest.y = aNewPos;
   }
@@ -4216,10 +4216,11 @@ ScrollFrameHelper::ScrollToRestoredPosition()
     
     if (mRestorePos != mLastPos ) {
       nsPoint scrollToPos = mRestorePos;
-      if (!IsLTR())
+      if (!IsPhysicalLTR()) {
         
         scrollToPos.x = mScrollPort.x -
           (mScrollPort.XMost() - scrollToPos.x - mScrolledFrame->GetRect().width);
+      }
       nsWeakFrame weakFrame(mOuter);
       ScrollToWithOrigin(scrollToPos, nsIScrollableFrame::INSTANT,
                          nsGkAtoms::restore, nullptr);
@@ -4918,7 +4919,7 @@ void ScrollFrameHelper::PostOverflowEvent()
 }
 
 bool
-ScrollFrameHelper::IsLTR() const
+ScrollFrameHelper::IsPhysicalLTR() const
 {
   
 
@@ -4957,15 +4958,16 @@ ScrollFrameHelper::IsScrollbarOnRight() const
   
   
   
-  if (!mIsRoot)
-    return IsLTR();
+  if (!mIsRoot) {
+    return IsPhysicalLTR();
+  }
   switch (presContext->GetCachedIntPref(kPresContext_ScrollbarSide)) {
     default:
     case 0: 
       return presContext->GetCachedIntPref(kPresContext_BidiDirection)
              == IBMBIDI_TEXTDIRECTION_LTR;
     case 1: 
-      return IsLTR();
+      return IsPhysicalLTR();
     case 2: 
       return true;
     case 3: 
@@ -5820,7 +5822,7 @@ ScrollFrameHelper::GetScrolledFrameDir() const
     }
   }
 
-  return IsLTR() ? NS_STYLE_DIRECTION_LTR : NS_STYLE_DIRECTION_RTL;
+  return IsPhysicalLTR() ? NS_STYLE_DIRECTION_LTR : NS_STYLE_DIRECTION_RTL;
 }
 
 nsRect
