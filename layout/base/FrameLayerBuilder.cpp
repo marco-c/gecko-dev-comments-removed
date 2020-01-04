@@ -4010,9 +4010,10 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
                                              &itemVisibleRect, uniformColorPtr);
       }
 
-      mParameters.mBackgroundColor = uniformColor;
-      mParameters.mScrollClip = agrScrollClip;
-      mParameters.mScrollClipForPerspectiveChild = nullptr;
+      ContainerLayerParameters params = mParameters;
+      params.mBackgroundColor = uniformColor;
+      params.mScrollClip = agrScrollClip;
+      params.mScrollClipForPerspectiveChild = nullptr;
 
       if (itemType == nsDisplayItem::TYPE_PERSPECTIVE) {
         
@@ -4025,7 +4026,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         
         
         
-        mParameters.mScrollClipForPerspectiveChild = itemScrollClip;
+        params.mScrollClipForPerspectiveChild = itemScrollClip;
       }
 
       
@@ -4033,8 +4034,8 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       
       
       nsIntRect layerContentsVisibleRect(0, 0, -1, -1);
-      mParameters.mLayerContentsVisibleRect = &layerContentsVisibleRect;
-      RefPtr<Layer> ownLayer = item->BuildLayer(mBuilder, mManager, mParameters);
+      params.mLayerContentsVisibleRect = &layerContentsVisibleRect;
+      RefPtr<Layer> ownLayer = item->BuildLayer(mBuilder, mManager, params);
       if (!ownLayer) {
         continue;
       }
