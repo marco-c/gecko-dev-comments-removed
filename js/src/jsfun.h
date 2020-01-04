@@ -477,7 +477,7 @@ class JSFunction : public js::NativeObject
         
         
         MOZ_ASSERT(isInterpretedLazy());
-        if (!lazyScript()->maybeScript())
+        if (lazyScriptOrNull() && !lazyScript()->maybeScript())
             lazyScript()->initScript(script);
         flags_ &= ~INTERPRETED_LAZY;
         flags_ |= INTERPRETED;
