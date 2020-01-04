@@ -64,9 +64,11 @@ var SessionHistoryInternal = {
 
 
   collect: function (docShell) {
-    let data = {entries: [], userContextId: docShell.userContextId };
+    let loadContext = docShell.QueryInterface(Ci.nsILoadContext);
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory.QueryInterface(Ci.nsISHistoryInternal);
+
+    let data = {entries: [], userContextId: loadContext.originAttributes.userContextId };
 
     if (history && history.count > 0) {
       
