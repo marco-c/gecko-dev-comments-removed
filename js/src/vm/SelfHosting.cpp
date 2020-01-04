@@ -2038,7 +2038,7 @@ CloneObject(JSContext* cx, HandleNativeObject selfHostedObject)
     
     
     
-    Maybe<AutoCycleDetector> detect;
+    mozilla::Maybe<AutoCycleDetector> detect;
     if (js::CurrentThreadCanAccessZone(selfHostedObject->zoneFromAnyThread())) {
         detect.emplace(cx, selfHostedObject);
         if (!detect->init())
