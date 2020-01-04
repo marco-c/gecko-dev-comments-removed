@@ -31,9 +31,20 @@ static const int sLionThemeColors[][2] = {
   { 0x59, 0x87 }, 
 };
 
+static const int sYosemiteThemeColors[][2] = {
+  
+  
+  { 0xBD, 0xDF }, 
+  { 0xD3, 0xF6 }, 
+  { 0xB3, 0xD1 }, 
+};
+
 __attribute__((unused))
 static int NativeGreyColorAsInt(ColorName name, BOOL isMain)
 {
+  if (nsCocoaFeatures::OnYosemiteOrLater())
+    return sYosemiteThemeColors[name][isMain ? 0 : 1];
+
   if (nsCocoaFeatures::OnLionOrLater())
     return sLionThemeColors[name][isMain ? 0 : 1];
 
