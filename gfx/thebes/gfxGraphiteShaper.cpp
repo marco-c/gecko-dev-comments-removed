@@ -159,6 +159,21 @@ gfxGraphiteShaper::ShapeText(DrawTarget      *aDrawTarget,
                       AddFeature,
                       &f);
 
+    
+    
+    
+    
+    nsAutoString transformed;
+    const char16_t NO_BREAK_SPACE = 0x00a0;
+    if (!entry->HasCharacter(NO_BREAK_SPACE)) {
+        nsDependentSubstring src(aText, aLength);
+        if (src.FindChar(NO_BREAK_SPACE) != kNotFound) {
+            transformed = src;
+            transformed.ReplaceChar(NO_BREAK_SPACE, ' ');
+            aText = transformed.BeginReading();
+        }
+    }
+
     size_t numChars = gr_count_unicode_characters(gr_utf16,
                                                   aText, aText + aLength,
                                                   nullptr);
