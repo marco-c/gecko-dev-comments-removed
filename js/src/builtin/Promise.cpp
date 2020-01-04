@@ -49,28 +49,353 @@ MillisecondsSinceStartup()
     return (now - mozilla::TimeStamp::ProcessCreation(ignored)).ToMilliseconds();
 }
 
+enum ResolutionFunctionSlots {
+    ResolutionFunctionSlot_Promise = 0,
+    ResolutionFunctionSlot_OtherFunction,
+};
+
+
+static MOZ_MUST_USE bool
+TriggerPromiseReactions(JSContext* cx, HandleValue reactionsVal, JS::PromiseState state,
+                        HandleValue valueOrReason)
+{
+    RootedObject reactions(cx, &reactionsVal.toObject());
+
+    AutoIdVector keys(cx);
+    if (!GetPropertyKeys(cx, reactions, JSITER_OWNONLY, &keys))
+        return false;
+    MOZ_ASSERT(keys.length() > 0, "Reactions list should be created lazily");
+
+    RootedPropertyName handlerName(cx);
+    handlerName = state == JS::PromiseState::Fulfilled
+                  ? cx->names().fulfillHandler
+                  : cx->names().rejectHandler;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RootedValue val(cx);
+    RootedObject reaction(cx);
+    RootedValue handler(cx);
+    RootedObject promise(cx);
+    RootedObject resolve(cx);
+    RootedObject reject(cx);
+    RootedObject objectFromIncumbentGlobal(cx);
+
+    for (size_t i = 0; i < keys.length(); i++) {
+        if (!GetProperty(cx, reactions, reactions, keys[i], &val))
+            return false;
+        reaction = &val.toObject();
+
+        if (!GetProperty(cx, reaction, reaction, cx->names().promise, &val))
+            return false;
+
+        
+        
+        
+        promise = val.toObjectOrNull();
+
+        if (!GetProperty(cx, reaction, reaction, handlerName, &handler))
+            return false;
+
+#ifdef DEBUG
+        if (handler.isNumber()) {
+            MOZ_ASSERT(handler.toNumber() == PROMISE_HANDLER_IDENTITY ||
+                       handler.toNumber() == PROMISE_HANDLER_THROWER);
+        } else {
+            MOZ_ASSERT(handler.toObject().isCallable());
+        }
+#endif
+
+        if (!GetProperty(cx, reaction, reaction, cx->names().resolve, &val))
+            return false;
+        resolve = &val.toObject();
+        MOZ_ASSERT(IsCallable(resolve));
+
+        if (!GetProperty(cx, reaction, reaction, cx->names().reject, &val))
+            return false;
+        reject = &val.toObject();
+        MOZ_ASSERT(IsCallable(reject));
+
+        if (!GetProperty(cx, reaction, reaction, cx->names().incumbentGlobal, &val))
+            return false;
+        objectFromIncumbentGlobal = val.toObjectOrNull();
+
+        if (!EnqueuePromiseReactionJob(cx, handler, valueOrReason, resolve, reject, promise,
+                                       objectFromIncumbentGlobal))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+static MOZ_MUST_USE bool
+ResolvePromise(JSContext* cx, Handle<PromiseObject*> promise, HandleValue valueOrReason,
+               JS::PromiseState state)
+{
+    
+    MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
+    MOZ_ASSERT(state == JS::PromiseState::Fulfilled || state == JS::PromiseState::Rejected);
+
+    
+    
+    
+    
+    
+    RootedValue reactionsVal(cx, promise->getFixedSlot(PROMISE_REACTIONS_SLOT));
+
+    
+    promise->setFixedSlot(PROMISE_RESULT_SLOT, valueOrReason);
+
+    
+    promise->setFixedSlot(PROMISE_REACTIONS_SLOT, UndefinedValue());
+
+    
+    promise->setFixedSlot(PROMISE_STATE_SLOT, Int32Value(int32_t(state)));
+
+    
+    promise->setFixedSlot(PROMISE_RESOLVE_FUNCTION_SLOT, UndefinedValue());
+    promise->setFixedSlot(PROMISE_REJECT_FUNCTION_SLOT, UndefinedValue());
+
+    
+    
+    promise->onSettled(cx);
+
+    
+    
+    if (reactionsVal.isObject())
+        return TriggerPromiseReactions(cx, reactionsVal, state, valueOrReason);
+
+    return true;
+}
+
+
+static MOZ_MUST_USE bool
+FulfillMaybeWrappedPromise(JSContext *cx, HandleObject promiseObj, HandleValue value_) {
+    Rooted<PromiseObject*> promise(cx);
+    RootedValue value(cx, value_);
+
+    mozilla::Maybe<AutoCompartment> ac;
+    if (!IsWrapper(promiseObj)) {
+        promise = &promiseObj->as<PromiseObject>();
+    } else {
+        promise = &UncheckedUnwrap(promiseObj)->as<PromiseObject>();
+        ac.emplace(cx, promise);
+        if (!promise->compartment()->wrap(cx, &value))
+            return false;
+    }
+
+    MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
+
+    return ResolvePromise(cx, promise, value, JS::PromiseState::Fulfilled);
+}
+
+
+static MOZ_MUST_USE bool
+RejectMaybeWrappedPromise(JSContext *cx, HandleObject promiseObj, HandleValue reason_) {
+    Rooted<PromiseObject*> promise(cx);
+    RootedValue reason(cx, reason_);
+
+    mozilla::Maybe<AutoCompartment> ac;
+    if (!IsWrapper(promiseObj)) {
+        promise = &promiseObj->as<PromiseObject>();
+    } else {
+        promise = &UncheckedUnwrap(promiseObj)->as<PromiseObject>();
+        ac.emplace(cx, promise);
+
+        
+        
+        
+        
+        
+        
+        
+        if (!promise->compartment()->wrap(cx, &reason))
+            return false;
+        if (reason.isObject() && !CheckedUnwrap(&reason.toObject())) {
+            
+            
+            
+            
+            FixedInvokeArgs<1> getErrorArgs(cx);
+            getErrorArgs[0].set(Int32Value(JSMSG_PROMISE_ERROR_IN_WRAPPED_REJECTION_REASON));
+            if (!CallSelfHostedFunction(cx, "GetInternalError", reason, getErrorArgs, &reason))
+                return false;
+        }
+    }
+
+    MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
+
+    return ResolvePromise(cx, promise, reason, JS::PromiseState::Rejected);
+}
+
+static void
+ClearResolutionFunctionSlots(JSFunction* resolutionFun)
+{
+    JSFunction* otherFun = &resolutionFun->getExtendedSlot(ResolutionFunctionSlot_OtherFunction)
+                           .toObject().as<JSFunction>();
+    resolutionFun->setExtendedSlot(ResolutionFunctionSlot_Promise, UndefinedValue());
+    otherFun->setExtendedSlot(ResolutionFunctionSlot_Promise, UndefinedValue());
+
+    
+    resolutionFun->setExtendedSlot(ResolutionFunctionSlot_OtherFunction, UndefinedValue());
+    otherFun->setExtendedSlot(ResolutionFunctionSlot_OtherFunction, UndefinedValue());
+}
+
 static bool
+RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    RootedFunction reject(cx, &args.callee().as<JSFunction>());
+    RootedValue reasonVal(cx, args.get(0));
+
+    
+    RootedValue promiseVal(cx, reject->getExtendedSlot(ResolutionFunctionSlot_Promise));
+
+    
+    
+    
+    if (promiseVal.isUndefined()) {
+        args.rval().setUndefined();
+        return true;
+    }
+
+    RootedObject promise(cx, &promiseVal.toObject());
+
+    
+    ClearResolutionFunctionSlots(reject);
+
+    
+    bool result = RejectMaybeWrappedPromise(cx, promise, reasonVal);
+    if (result)
+        args.rval().setUndefined();
+    return result;
+}
+
+
+static bool
+ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    RootedFunction resolve(cx, &args.callee().as<JSFunction>());
+    RootedValue resolutionVal(cx, args.get(0));
+
+    
+    RootedValue promiseVal(cx, resolve->getExtendedSlot(ResolutionFunctionSlot_Promise));
+
+    
+    
+    
+    if (promiseVal.isUndefined()) {
+        args.rval().setUndefined();
+        return true;
+    }
+
+    RootedObject promise(cx, &promiseVal.toObject());
+
+    
+    ClearResolutionFunctionSlots(resolve);
+
+    
+    if (resolutionVal == promiseVal) {
+        
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr,
+                             JSMSG_CANNOT_RESOLVE_PROMISE_WITH_ITSELF);
+        RootedValue selfResolutionError(cx);
+        bool status = GetAndClearException(cx, &selfResolutionError);
+        MOZ_ASSERT(status);
+
+        
+        status = RejectMaybeWrappedPromise(cx, promise, selfResolutionError);
+        if (status)
+            args.rval().setUndefined();
+        return status;
+    }
+
+    
+    if (!resolutionVal.isObject()) {
+        bool status = FulfillMaybeWrappedPromise(cx, promise, resolutionVal);
+        if (status)
+            args.rval().setUndefined();
+        return status;
+    }
+
+    RootedObject resolution(cx, &resolutionVal.toObject());
+
+    
+    RootedValue thenVal(cx);
+    bool status = GetProperty(cx, resolution, resolution, cx->names().then, &thenVal);
+
+    
+    if (!status) {
+        RootedValue error(cx);
+        if (!GetAndClearException(cx, &error))
+            return false;
+
+        return RejectMaybeWrappedPromise(cx, promise, error);
+    }
+
+    
+
+    
+    if (!IsCallable(thenVal)) {
+        bool status = FulfillMaybeWrappedPromise(cx, promise, resolutionVal);
+        if (status)
+            args.rval().setUndefined();
+        return status;
+    }
+
+    
+    if (!EnqueuePromiseResolveThenableJob(cx, promiseVal, resolutionVal, thenVal))
+        return false;
+
+    
+    args.rval().setUndefined();
+    return true;
+}
+
+
+static MOZ_MUST_USE bool
 CreateResolvingFunctions(JSContext* cx, HandleValue promise,
                          MutableHandleValue resolveVal,
                          MutableHandleValue rejectVal)
 {
-    FixedInvokeArgs<1> args(cx);
-    args[0].set(promise);
-
-    RootedValue rval(cx);
-
-    if (!CallSelfHostedFunction(cx, cx->names().CreateResolvingFunctions, UndefinedHandleValue,
-                                args, &rval))
-    {
+    RootedAtom funName(cx, cx->names().empty);
+    RootedFunction resolve(cx, NewNativeFunction(cx, ResolvePromiseFunction, 1, funName,
+                                                 gc::AllocKind::FUNCTION_EXTENDED));
+    if (!resolve)
         return false;
-    }
 
-    RootedArrayObject resolvingFunctions(cx, &args.rval().toObject().as<ArrayObject>());
-    resolveVal.set(resolvingFunctions->getDenseElement(0));
-    rejectVal.set(resolvingFunctions->getDenseElement(1));
+    RootedFunction reject(cx, NewNativeFunction(cx, RejectPromiseFunction, 1, funName,
+                                                 gc::AllocKind::FUNCTION_EXTENDED));
+    if (!reject)
+        return false;
 
-    MOZ_ASSERT(IsCallable(resolveVal));
-    MOZ_ASSERT(IsCallable(rejectVal));
+    
+    
+    resolve->setFlags(resolve->flags() | JSFunction::SELF_HOSTED);
+    reject->setFlags(reject->flags() | JSFunction::SELF_HOSTED);
+
+    resolve->setExtendedSlot(ResolutionFunctionSlot_Promise, promise);
+    resolve->setExtendedSlot(ResolutionFunctionSlot_OtherFunction, ObjectValue(*reject));
+
+    reject->setExtendedSlot(ResolutionFunctionSlot_Promise, promise);
+    reject->setExtendedSlot(ResolutionFunctionSlot_OtherFunction, ObjectValue(*resolve));
+
+    resolveVal.setObject(*resolve);
+    rejectVal.setObject(*reject);
 
     return true;
 }
@@ -237,9 +562,9 @@ bool
 PromiseObject::dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> values)
 {
     RootedValue reactionsVal(cx, getReservedSlot(PROMISE_REACTIONS_SLOT));
-    RootedObject reactions(cx, reactionsVal.toObjectOrNull());
-    if (!reactions)
+    if (reactionsVal.isNullOrUndefined())
         return true;
+    RootedObject reactions(cx, &reactionsVal.toObject());
 
     AutoIdVector keys(cx);
     if (!GetPropertyKeys(cx, reactions, JSITER_OWNONLY, &keys))
@@ -261,12 +586,15 @@ PromiseObject::dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> v
     
     
     
+    
+    
+    
     for (size_t i = 0; i < keys.length(); i++) {
         MutableHandleValue val = values[i];
         if (!GetProperty(cx, reactions, reactions, keys[i], val))
             return false;
         RootedObject reaction(cx, &val.toObject());
-        if (!GetProperty(cx, reaction, reaction, cx->runtime()->commonNames->promise, val))
+        if (!GetProperty(cx, reaction, reaction, cx->names().promise, val))
             return false;
     }
 
@@ -737,8 +1065,6 @@ EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve_,
     AutoCompartment ac(cx, then);
 
     RootedAtom funName(cx, cx->names().empty);
-    if (!funName)
-        return false;
     RootedFunction job(cx, NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
                                              gc::AllocKind::FUNCTION_EXTENDED));
     if (!job)
