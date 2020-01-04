@@ -26,14 +26,18 @@ public class Experiments {
     public static final String BOOKMARKS_HISTORY_MENU = "bookmark-history-menu";
 
     
+    public static final String SEARCH_TERM = "search-term";
+
+    
+    public static final String WHATSNEW_NOTIFICATION = "whatsnew-notification";
+
+    
+    
     public static final String ONBOARDING2_A = "onboarding2-a"; 
     public static final String ONBOARDING2_B = "onboarding2-b"; 
     public static final String ONBOARDING2_C = "onboarding2-c"; 
 
     public static final String PREF_ONBOARDING_VERSION = "onboarding_version";
-
-    
-    public static final String SEARCH_TERM = "search-term";
 
     private static volatile Boolean disabled = null;
 
