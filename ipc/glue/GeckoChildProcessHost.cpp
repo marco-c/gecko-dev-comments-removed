@@ -730,6 +730,14 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   if (privs == base::PRIVILEGES_DEFAULT) {
     privs = DefaultChildPrivileges();
   }
+
+#if defined(MOZ_WIDGET_GTK)
+  if (mProcessType == GeckoProcessType_Content) {
+    
+    newEnvVars["GTK_IM_MODULE"] = "gtk-im-context-simple";
+  }
+#endif
+
   
   
   
