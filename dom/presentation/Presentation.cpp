@@ -38,6 +38,7 @@ NS_IMPL_ADDREF_INHERITED(Presentation, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(Presentation, DOMEventTargetHelper)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(Presentation)
+  NS_INTERFACE_MAP_ENTRY(nsIPresentationRespondingListener)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 
  already_AddRefed<Presentation>
@@ -66,26 +67,31 @@ Presentation::Init()
     return false;
   }
 
+  if (NS_WARN_IF(!GetOwner())) {
+    return false;
+  }
+  mWindowId = GetOwner()->WindowID();
+
   
   
   
   nsAutoString sessionId;
-  nsresult rv = service->GetExistentSessionIdAtLaunch(GetOwner()->WindowID(),
-                                                      sessionId);
+  nsresult rv = service->GetExistentSessionIdAtLaunch(mWindowId, sessionId);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }
   if (!sessionId.IsEmpty()) {
-    nsRefPtr<PresentationSession> session =
-      PresentationSession::Create(GetOwner(), sessionId,
-                                  PresentationSessionState::Disconnected);
-    if (NS_WARN_IF(!session)) {
+    rv = NotifySessionConnect(mWindowId, sessionId);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return false;
     }
-    mSessions.AppendElement(session);
   }
 
   
+  rv = service->RegisterRespondingListener(mWindowId, this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
 
   return true;
 }
@@ -97,6 +103,21 @@ void Presentation::Shutdown()
   mPendingGetSessionPromises.Clear();
 
   
+  nsCOMPtr<nsIPresentationService> service =
+    do_GetService(PRESENTATION_SERVICE_CONTRACTID);
+  if (NS_WARN_IF(!service)) {
+    return;
+  }
+
+  nsresult rv = service->UnregisterRespondingListener(mWindowId);
+  NS_WARN_IF(NS_FAILED(rv));
+}
+
+ void
+Presentation::DisconnectFromOwner()
+{
+  Shutdown();
+  DOMEventTargetHelper::DisconnectFromOwner();
 }
 
  JSObject*
@@ -161,4 +182,39 @@ Presentation::GetSessions(ErrorResult& aRv) const
 
   promise->MaybeResolve(mSessions);
   return promise.forget();
+}
+
+NS_IMETHODIMP
+Presentation::NotifySessionConnect(uint64_t aWindowId,
+                                   const nsAString& aSessionId)
+{
+  if (NS_WARN_IF(aWindowId != GetOwner()->WindowID())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsRefPtr<PresentationSession> session =
+    PresentationSession::Create(GetOwner(), aSessionId,
+                                PresentationSessionState::Disconnected);
+  if (NS_WARN_IF(!session)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  mSessions.AppendElement(session);
+
+  
+  if (!mPendingGetSessionPromises.IsEmpty()) {
+    for(uint32_t i = 0; i < mPendingGetSessionPromises.Length(); i++) {
+      mPendingGetSessionPromises[i]->MaybeResolve(session);
+    }
+    mPendingGetSessionPromises.Clear();
+  }
+
+  return DispatchSessionAvailableEvent();
+}
+
+nsresult
+Presentation::DispatchSessionAvailableEvent()
+{
+  nsRefPtr<AsyncEventDispatcher> asyncDispatcher =
+    new AsyncEventDispatcher(this, NS_LITERAL_STRING("sessionavailable"), false);
+  return asyncDispatcher->PostDOMEvent();
 }

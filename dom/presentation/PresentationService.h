@@ -19,6 +19,8 @@ class nsIURI;
 namespace mozilla {
 namespace dom {
 
+class PresentationRespondingInfo;
+
 class PresentationService final : public nsIPresentationService
                                 , public nsIObserver
 {
@@ -50,8 +52,16 @@ private:
   bool IsAppInstalled(nsIURI* aUri);
 
   bool mIsAvailable;
+  nsTObserverArray<nsCOMPtr<nsIPresentationAvailabilityListener>> mAvailabilityListeners;
+
+  
+  
+  
+  
+  
+  nsRefPtrHashtable<nsUint64HashKey, nsIPresentationRespondingListener> mRespondingListeners;
+
   nsRefPtrHashtable<nsStringHashKey, PresentationSessionInfo> mSessionInfo;
-  nsTObserverArray<nsCOMPtr<nsIPresentationListener>> mListeners;
 
   
   

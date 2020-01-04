@@ -88,6 +88,13 @@ PresentationSession::Shutdown()
   NS_WARN_IF(NS_FAILED(rv));
 }
 
+ void
+PresentationSession::DisconnectFromOwner()
+{
+  Shutdown();
+  DOMEventTargetHelper::DisconnectFromOwner();
+}
+
  JSObject*
 PresentationSession::WrapObject(JSContext* aCx,
                                 JS::Handle<JSObject*> aGivenProto)
