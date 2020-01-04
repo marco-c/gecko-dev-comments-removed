@@ -222,11 +222,27 @@ public:
                     bool* aFinished) override
   {
     uint32_t channelCount = aInput.ChannelCount();
-    if (!mCurve.Length() || !channelCount) {
-      
+    if (!mCurve.Length()) {
       
       *aOutput = aInput;
       return;
+    }
+
+    
+    bool nullInput = false;
+    if (channelCount == 0) {
+      float index = (mCurve.Length() - 1) * 0.5;
+      uint32_t indexLower = index;
+      uint32_t indexHigher = indexLower + 1;
+      float interpolationFactor = index - indexLower;
+      if ((1.0f - interpolationFactor) * mCurve[indexLower] +
+          interpolationFactor * mCurve[indexHigher] == 0.0) {
+        *aOutput = aInput;
+        return;
+      } else {
+        nullInput = true;
+        channelCount = 1;
+      }
     }
 
     aOutput->AllocateChannels(channelCount);
@@ -235,14 +251,19 @@ public:
       float scaledInput[WEBAUDIO_BLOCK_SIZE + 4];
       float* alignedScaledInput = ALIGNED16(scaledInput);
       ASSERT_ALIGNED16(alignedScaledInput);
-      if (aInput.mVolume != 1.0f) {
-        AudioBlockCopyChannelWithScale(
-            static_cast<const float*>(aInput.mChannelData[i]),
-                                      aInput.mVolume,
-                                      alignedScaledInput);
-        inputSamples = alignedScaledInput;
+      if (!nullInput) {
+        if (aInput.mVolume != 1.0f) {
+          AudioBlockCopyChannelWithScale(
+              static_cast<const float*>(aInput.mChannelData[i]),
+                                        aInput.mVolume,
+                                        alignedScaledInput);
+          inputSamples = alignedScaledInput;
+        } else {
+          inputSamples = static_cast<const float*>(aInput.mChannelData[i]);
+        }
       } else {
-        inputSamples = static_cast<const float*>(aInput.mChannelData[i]);
+        PodZero(alignedScaledInput);
+        inputSamples = alignedScaledInput;
       }
       float* outputBuffer = aOutput->ChannelFloatsForWrite(i);
       float* sampleBuffer;
