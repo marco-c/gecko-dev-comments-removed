@@ -9,7 +9,7 @@
 #include "nspr.h"
 #include "PLDHashTable.h"
 #include "mozilla/CondVar.h"
-#include "mozilla/Mutex.h"
+#include "mozilla/StaticMutex.h"
 
 class nsNSSShutDownObject;
 class nsOnPK11LogoutCancelObject;
@@ -62,9 +62,7 @@ public:
 class nsNSSShutDownList
 {
 public:
-  ~nsNSSShutDownList();
-
-  static nsNSSShutDownList *construct();
+  static void shutdown();
   
   
   static void remember(nsNSSShutDownObject *o);
@@ -76,22 +74,24 @@ public:
   static void forget(nsOnPK11LogoutCancelObject *o);
 
   
-  nsresult evaporateAllNSSResources();
+  static nsresult evaporateAllNSSResources();
 
   
   
-  nsresult doPK11Logout();
+  static nsresult doPK11Logout();
+
   
-  static nsNSSActivityState *getActivityState()
-  {
-    return singleton ? &singleton->mActivityState : nullptr;
-  }
+  static void enterActivityState();
+  static void leaveActivityState();
   
 private:
   nsNSSShutDownList();
+  ~nsNSSShutDownList();
+
+  static void construct(const mozilla::StaticMutexAutoLock& );
 
 protected:
-  mozilla::Mutex mListLock;
+  static mozilla::StaticMutex sListLock;
   static nsNSSShutDownList *singleton;
   PLDHashTable mObjects;
   PLDHashTable mPK11LogoutCancelObjects;
