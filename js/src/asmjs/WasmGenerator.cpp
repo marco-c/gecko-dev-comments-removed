@@ -517,8 +517,7 @@ ModuleGenerator::finishLinkData(Bytes& code)
     
     
     
-    for (size_t i = 0; i < masm_.numAsmJSGlobalAccesses(); i++) {
-        AsmJSGlobalAccess a = masm_.asmJSGlobalAccess(i);
+    for (GlobalAccess a : masm_.globalAccesses()) {
         LinkData::InternalLink inLink(LinkData::InternalLink::RawPointer);
         inLink.patchAtOffset = masm_.labelToPatchOffset(a.patchAt);
         inLink.targetOffset = code.length() + a.globalDataOffset;
@@ -528,15 +527,14 @@ ModuleGenerator::finishLinkData(Bytes& code)
 #elif defined(JS_CODEGEN_X64)
     
     
-    for (size_t i = 0; i < masm_.numAsmJSGlobalAccesses(); i++) {
-        AsmJSGlobalAccess a = masm_.asmJSGlobalAccess(i);
+    for (GlobalAccess a : masm_.globalAccesses()) {
         void* from = code.begin() + a.patchAt.offset();
         void* to = code.end() + a.globalDataOffset;
         X86Encoding::SetRel32(from, to);
     }
 #else
     
-    MOZ_ASSERT(masm_.numAsmJSGlobalAccesses() == 0);
+    MOZ_ASSERT(masm_.globalAccesses().length() == 0);
 #endif
 
     return true;
