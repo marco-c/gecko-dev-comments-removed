@@ -224,7 +224,7 @@ JitRuntime::~JitRuntime()
 bool
 JitRuntime::initialize(JSContext* cx, AutoLockForExclusiveAccess& lock)
 {
-    AutoCompartment ac(cx, cx->atomsCompartment(lock));
+    AutoCompartment ac(cx, cx->atomsCompartment(lock), &lock);
 
     JitContext jctx(cx, nullptr);
 
@@ -358,7 +358,7 @@ JitRuntime::debugTrapHandler(JSContext* cx)
         
         
         AutoLockForExclusiveAccess lock(cx);
-        AutoCompartment ac(cx, cx->runtime()->atomsCompartment(lock));
+        AutoCompartment ac(cx, cx->runtime()->atomsCompartment(lock), &lock);
         debugTrapHandler_ = generateDebugTrapHandler(cx);
     }
     return debugTrapHandler_;

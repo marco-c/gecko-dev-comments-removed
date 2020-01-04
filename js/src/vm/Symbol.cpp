@@ -47,7 +47,7 @@ Symbol::new_(ExclusiveContext* cx, JS::SymbolCode code, JSString* description)
     
     
     AutoLockForExclusiveAccess lock(cx);
-    AutoCompartment ac(cx, cx->atomsCompartment(lock));
+    AutoCompartment ac(cx, cx->atomsCompartment(lock), &lock);
     return newInternal(cx, code, atom, lock);
 }
 
@@ -65,7 +65,7 @@ Symbol::for_(js::ExclusiveContext* cx, HandleString description)
     if (p)
         return *p;
 
-    AutoCompartment ac(cx, cx->atomsCompartment(lock));
+    AutoCompartment ac(cx, cx->atomsCompartment(lock), &lock);
     Symbol* sym = newInternal(cx, SymbolCode::InSymbolRegistry, atom, lock);
     if (!sym)
         return nullptr;

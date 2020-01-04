@@ -383,11 +383,13 @@ JSContext::runningWithTrustedPrincipals() const
 }
 
 inline void
-js::ExclusiveContext::enterCompartment(JSCompartment* c)
+js::ExclusiveContext::enterCompartment(
+    JSCompartment* c,
+    const js::AutoLockForExclusiveAccess* maybeLock )
 {
     enterCompartmentDepth_++;
     c->enter();
-    setCompartment(c);
+    setCompartment(c, maybeLock);
 }
 
 inline void
@@ -398,7 +400,9 @@ js::ExclusiveContext::enterNullCompartment()
 }
 
 inline void
-js::ExclusiveContext::leaveCompartment(JSCompartment* oldCompartment)
+js::ExclusiveContext::leaveCompartment(
+    JSCompartment* oldCompartment,
+    const js::AutoLockForExclusiveAccess* maybeLock )
 {
     MOZ_ASSERT(hasEnteredCompartment());
     enterCompartmentDepth_--;
@@ -406,13 +410,14 @@ js::ExclusiveContext::leaveCompartment(JSCompartment* oldCompartment)
     
     
     JSCompartment* startingCompartment = compartment_;
-    setCompartment(oldCompartment);
+    setCompartment(oldCompartment, maybeLock);
     if (startingCompartment)
         startingCompartment->leave();
 }
 
 inline void
-js::ExclusiveContext::setCompartment(JSCompartment* comp)
+js::ExclusiveContext::setCompartment(JSCompartment* comp,
+                                     const AutoLockForExclusiveAccess* maybeLock )
 {
     
     MOZ_ASSERT_IF(!isJSContext() && !runtime_->isAtomsCompartment(comp),
@@ -421,6 +426,9 @@ js::ExclusiveContext::setCompartment(JSCompartment* comp)
     
     MOZ_ASSERT_IF(isJSContext() && comp,
                   !comp->zone()->usedByExclusiveThread);
+
+    
+    MOZ_ASSERT_IF(runtime_->isAtomsCompartment(comp), maybeLock != nullptr);
 
     
     MOZ_ASSERT_IF(comp && !runtime_->isAtomsCompartment(comp),
