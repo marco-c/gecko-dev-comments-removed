@@ -11,6 +11,9 @@
 
 
 
+
+
+
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
@@ -232,7 +235,8 @@ function loadIntermediates(intermediatesFile) {
 
 
 if (arguments.length != 2) {
-  throw "Usage: makeCNNICHashes.js <intermediates file> <path to list of certificates>";
+  throw new Error("Usage: makeCNNICHashes.js <PEM intermediates file> " +
+                  "<path to list of certificates>");
 }
 
 Services.prefs.setIntPref("security.OCSP.enabled", 0);
