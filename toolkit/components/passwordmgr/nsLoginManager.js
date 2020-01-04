@@ -6,8 +6,6 @@
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
-const PERMISSION_SAVE_LOGINS = "login-saving";
-
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -356,22 +354,7 @@ LoginManager.prototype = {
 
   getAllDisabledHosts(count) {
     log.debug("Getting a list of all disabled origins");
-
-    let disabledHosts = [];
-    let enumerator = Services.perms.enumerator;
-
-    while (enumerator.hasMoreElements()) {
-      let perm = enumerator.getNext();
-      if (perm.type == PERMISSION_SAVE_LOGINS && perm.capability == Services.perms.DENY_ACTION) {
-        disabledHosts.push(perm.principal.URI.prePath);
-      }
-    }
-
-    if (count)
-      count.value = disabledHosts.length; 
-
-    log.debug("getAllDisabledHosts: returning", disabledHosts.length, "disabled hosts.");
-    return disabledHosts;
+    return this._storage.getAllDisabledHosts(count);
   },
 
 
@@ -440,8 +423,7 @@ LoginManager.prototype = {
       return false;
     }
 
-    let uri = Services.io.newURI(origin, null, null);
-    return Services.perms.testPermission(uri, PERMISSION_SAVE_LOGINS) != Services.perms.DENY_ACTION;
+    return this._storage.getLoginSavingEnabled(origin);
   },
 
 
@@ -450,17 +432,12 @@ LoginManager.prototype = {
 
   setLoginSavingEnabled(origin, enabled) {
     
-    LoginHelper.checkHostnameValue(origin);
-
-    let uri = Services.io.newURI(origin, null, null);
-    if (enabled) {
-      Services.perms.remove(uri, PERMISSION_SAVE_LOGINS);
-    } else {
-      Services.perms.add(uri, PERMISSION_SAVE_LOGINS, Services.perms.DENY_ACTION);
+    if (origin.indexOf("\0") != -1) {
+      throw new Error("Invalid hostname");
     }
 
     log.debug("Login saving for", origin, "now enabled?", enabled);
-    LoginHelper.notifyStorageChanged(enabled ? "hostSavingEnabled" : "hostSavingDisabled", origin);
+    return this._storage.setLoginSavingEnabled(origin, enabled);
   },
 
   
