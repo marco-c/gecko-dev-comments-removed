@@ -6356,13 +6356,6 @@ function checkEmptyPageOrigin(browser = gBrowser.selectedBrowser,
     return false;
   }
   let contentPrincipal = browser.contentPrincipal;
-  if (gMultiProcessBrowser && browser.isRemoteBrowser &&
-      !contentPrincipal && uri.spec == "about:blank") {
-    
-    
-    
-    return true;
-  }
   
   if (contentPrincipal.URI) {
     
