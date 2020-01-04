@@ -728,7 +728,8 @@ WorkerProxyToMainThreadRunnable::PostDispatchOnMainThread()
 
       mRunnable->RunBackOnWorkerThread();
 
-      aWorkerPrivate->ModifyBusyCountFromWorker(true);
+      
+      aWorkerPrivate->ModifyBusyCountFromWorker(false);
       return true;
     }
 
