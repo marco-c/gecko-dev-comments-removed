@@ -182,9 +182,14 @@ VideoSink::Start(int64_t aStartTime, const MediaInfo& aInfo)
         [self] () {
           self->mVideoSinkEndRequest.Complete();
           self->TryUpdateRenderedVideoFrames();
+          
+          
+          
+          self->MaybeResolveEndPromise();
         }, [self] () {
           self->mVideoSinkEndRequest.Complete();
           self->TryUpdateRenderedVideoFrames();
+          self->MaybeResolveEndPromise();
         }));
     }
 
