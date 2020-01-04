@@ -130,7 +130,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
 
 
   _onViewSource: function (_, data) {
-    gToolbox.viewSourceInDebugger(data.file, data.line);
+    gToolbox.viewSourceInDebugger(data.url, data.line);
   },
 
   
