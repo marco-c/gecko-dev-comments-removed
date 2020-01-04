@@ -997,7 +997,7 @@ let FormAssistant = {
   unhandleFocus: function fa_unhandleFocus() {
     this.setFocusedElement(null);
     this.isHandlingFocus = false;
-    sendAsyncMessage("Forms:Input", { "type": "blur" });
+    sendAsyncMessage("Forms:Blur", {});
   },
 
   isFocusableElement: function fa_isFocusableElement(element) {
@@ -1026,7 +1026,7 @@ let FormAssistant = {
   },
 
   sendInputState: function(element) {
-    sendAsyncMessage("Forms:Input", getJSON(element, this._focusCounter));
+    sendAsyncMessage("Forms:Focus", getJSON(element, this._focusCounter));
   },
 
   getSelectionInfo: function fa_getSelectionInfo() {
@@ -1113,28 +1113,30 @@ function getJSON(element, focusCounter) {
   
   element = element.ownerNumberControl || element;
 
-  let type = element.type || "";
+  let type = element.tagName.toLowerCase();
+  let inputType = (element.type || "").toLowerCase();
   let value = element.value || "";
   let max = element.max || "";
   let min = element.min || "";
 
   
   if (isContentEditable(element)) {
-    type = "textarea";
+    type = "contenteditable";
+    inputType = "textarea";
     value = getContentEditableText(element);
   }
 
   
   
-  let attributeType = element.getAttribute("type") || "";
+  let attributeInputType = element.getAttribute("type") || "";
 
-  if (attributeType) {
-    var typeLowerCase = attributeType.toLowerCase();
-    switch (typeLowerCase) {
+  if (attributeInputType) {
+    let inputTypeLowerCase = attributeInputType.toLowerCase();
+    switch (inputTypeLowerCase) {
       case "datetime":
       case "datetime-local":
       case "range":
-        type = typeLowerCase;
+        inputType = inputTypeLowerCase;
         break;
     }
   }
@@ -1145,11 +1147,11 @@ function getJSON(element, focusCounter) {
   
   
   
-  let inputmode = element.getAttribute('x-inputmode');
-  if (inputmode) {
-    inputmode = inputmode.toLowerCase();
+  let inputMode = element.getAttribute('x-inputmode');
+  if (inputMode) {
+    inputMode = inputMode.toLowerCase();
   } else {
-    inputmode = '';
+    inputMode = '';
   }
 
   let range = getSelectionRange(element);
@@ -1158,10 +1160,12 @@ function getJSON(element, focusCounter) {
   return {
     "contextId": focusCounter,
 
-    "type": type.toLowerCase(),
+    "type": type,
+    "inputType": inputType,
+    "inputMode": inputMode,
+
     "choices": getListForElement(element),
     "value": value,
-    "inputmode": inputmode,
     "selectionStart": range[0],
     "selectionEnd": range[1],
     "max": max,
