@@ -62,6 +62,8 @@ let gHttpServV4 = null;
 let gUpdatedCntForTableData = 0; 
 let gIsV4Updated = false;   
 
+const NEW_CLIENT_STATE = 'sta\0te';
+
 prefBranch.setBoolPref("browser.safebrowsing.debug", true);
 
 
@@ -143,6 +145,22 @@ const SERVER_INVOLVED_TEST_CASE_LIST = [
 
 SERVER_INVOLVED_TEST_CASE_LIST.forEach(t => add_test(t));
 
+add_test(function test_partialUpdateV4() {
+  disableAllUpdates();
+
+  gListManager.enableUpdate(TEST_TABLE_DATA_V4.tableName);
+
+  
+  
+  
+  let requestV4 = gUrlUtils.makeUpdateRequestV4([TEST_TABLE_DATA_V4.tableName],
+                                                [NEW_CLIENT_STATE],
+                                                1);
+  gExpectedQueryV4 = "&$req=" + btoa(requestV4);
+
+  forceTableUpdate();
+});
+
 
 add_test(function test_getGethashUrl() {
   TEST_TABLE_DATA_LIST.forEach(function (t) {
@@ -213,18 +231,44 @@ function run_test() {
     response.setHeader("Content-Type",
                        "application/vnd.google.safebrowsing-update", false);
     response.setStatusLine(request.httpVersion, 200, "OK");
-    let content = "n:1000\n";
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let content = "\x0A\x0C\x08\x02\x20\x02\x3A\x06\x73\x74\x61\x00\x74\x65";
+
     response.bodyOutputStream.write(content, content.length);
 
-    gIsV4Updated = true;
-
-    if (gUpdatedCntForTableData === SERVER_INVOLVED_TEST_CASE_LIST.length) {
+    if (gIsV4Updated) {
+      
+      
       
       run_next_test();
       return;
     }
 
-    do_print("Wait for all sever-involved tests to be done ...");
+    
+    
+    
+    waitUntilStateSavedToPref(NEW_CLIENT_STATE, () => {
+      gIsV4Updated = true;
+
+      if (gUpdatedCntForTableData === SERVER_INVOLVED_TEST_CASE_LIST.length) {
+        
+        run_next_test();
+        return;
+      }
+
+      do_print("Wait for all sever-involved tests to be done ...");
+    });
+
   });
 
   gHttpServV4.start(5555);
@@ -273,4 +317,27 @@ function buildUpdateRequestV4InBase64() {
                                               [""],
                                               1);
   return btoa(request);
+}
+
+function waitUntilStateSavedToPref(expectedState, callback) {
+  const STATE_PREF_NAME_PREFIX = 'browser.safebrowsing.provider.google4.state.';
+
+  let stateBase64 = '';
+
+  try {
+    
+    
+    
+    
+    stateBase64 =
+      prefBranch.getCharPref(STATE_PREF_NAME_PREFIX + 'test-phish-proto');
+  } catch (e) {}
+
+  if (stateBase64 === btoa(expectedState)) {
+    do_print('State has been saved to pref!');
+    callback();
+    return;
+  }
+
+  do_timeout(1000, waitUntilStateSavedToPref.bind(null, expectedState, callback));
 }

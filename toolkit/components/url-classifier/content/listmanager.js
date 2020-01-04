@@ -396,13 +396,19 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
     
     
     let stateArray = [];
-    tableArray.forEach(() => stateArray.push(''));
+    tableArray.forEach(listName => {
+      
+      
+      let statePrefName = "browser.safebrowsing.provider.google4.state." + listName;
+      let stateBase64 = this.prefs_.getPref(statePrefName, "");
+      stateArray.push(stateBase64 ? atob(stateBase64) : "");
+    });
 
     let urlUtils = Cc["@mozilla.org/url-classifier/utils;1"]
                      .getService(Ci.nsIUrlClassifierUtils);
     let requestPayload =  urlUtils.makeUpdateRequestV4(tableArray,
-                                                stateArray,
-                                                tableArray.length);
+                                                       stateArray,
+                                                       tableArray.length);
     
     streamerMap.requestPayload = btoa(requestPayload);
     streamerMap.isPostRequest = false;
