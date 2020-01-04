@@ -7,8 +7,9 @@
 #ifndef DecoderDoctorDiagnostics_h_
 #define DecoderDoctorDiagnostics_h_
 
+#include "nsString.h"
+
 class nsIDocument;
-class nsAString;
 
 namespace mozilla {
 
@@ -40,6 +41,18 @@ public:
                               bool aCanPlay,
                               const char* aCallSite);
 
+  void StoreMediaKeySystemAccess(nsIDocument* aDocument,
+                                 const nsAString& aKeySystem,
+                                 bool aIsSupported,
+                                 const char* aCallSite);
+
+  enum DiagnosticsType {
+    eUnsaved,
+    eFormatSupportCheck,
+    eMediaKeySystemAccessRequest
+  };
+  DiagnosticsType Type() const { return mDiagnosticsType; }
+
   
   nsCString GetDescription() const;
 
@@ -54,13 +67,37 @@ public:
   void SetFFmpegFailedToLoad() { mFFmpegFailedToLoad = true; }
   bool DidFFmpegFailToLoad() const { return mFFmpegFailedToLoad; }
 
+  const nsAString& KeySystem() const { return mKeySystem; }
+  bool IsKeySystemSupported() const { return mIsKeySystemSupported; }
+  enum KeySystemIssue {
+    eUnset,
+    eWidevineWithNoWMF
+  };
+  void SetKeySystemIssue(KeySystemIssue aKeySystemIssue)
+  {
+    mKeySystemIssue = aKeySystemIssue;
+  }
+  KeySystemIssue GetKeySystemIssue() const
+  {
+    return mKeySystemIssue;
+  }
+
 private:
+  
+  
+  
+  DiagnosticsType mDiagnosticsType = eUnsaved;
+
   nsString mFormat;
   
   bool mCanPlay = false;
 
   bool mWMFFailedToLoad = false;
   bool mFFmpegFailedToLoad = false;
+
+  nsString mKeySystem;
+  bool mIsKeySystemSupported = false;
+  KeySystemIssue mKeySystemIssue = eUnset;
 };
 
 } 
