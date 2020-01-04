@@ -326,7 +326,9 @@ public:
   already_AddRefed<StyleRule>
   DeclarationChanged(Declaration* aDecl, bool aHandleContainer);
 
-  nsIStyleRule* GetImportantRule() const { return mImportantRule; }
+  nsIStyleRule* GetImportantRule() const {
+    return mDeclaration->GetImportantStyleData();
+  }
 
   
 
@@ -363,7 +365,6 @@ private:
 private:
   nsCSSSelectorList*      mSelector; 
   RefPtr<Declaration>     mDeclaration;
-  RefPtr<ImportantStyleData> mImportantRule; 
   RefPtr<DOMCSSStyleRule> mDOMRule;
 
 private:

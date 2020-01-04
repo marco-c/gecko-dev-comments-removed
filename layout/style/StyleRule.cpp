@@ -1452,13 +1452,8 @@ void
 StyleRule::RuleMatched()
 {
   if (!mWasMatched) {
-    MOZ_ASSERT(!mImportantRule, "should not have important rule yet");
-
     mWasMatched = true;
     mDeclaration->SetImmutable();
-    if (mDeclaration->HasImportantData()) {
-      mImportantRule = new ImportantStyleData(mDeclaration);
-    }
   }
 }
 
@@ -1620,7 +1615,6 @@ StyleRule::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   n += mSelector ? mSelector->SizeOfIncludingThis(aMallocSizeOf) : 0;
   n += mDeclaration ? mDeclaration->SizeOfIncludingThis(aMallocSizeOf) : 0;
 
-  
   
   
   
