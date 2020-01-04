@@ -53,7 +53,6 @@
 
 
 
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/GuardObjects.h"
@@ -234,19 +233,6 @@ struct ScopedFreePtrTraits
   static void release(T* aPtr) { free(aPtr); }
 };
 SCOPED_TEMPLATE(ScopedFreePtr, ScopedFreePtrTraits)
-
-
-
-
-
-
-
-template<typename T>
-struct ScopedDeletePtrTraits : public ScopedFreePtrTraits<T>
-{
-  static void release(T* aPtr) { delete aPtr; }
-};
-SCOPED_TEMPLATE(ScopedDeletePtr, ScopedDeletePtrTraits)
 
 
 
