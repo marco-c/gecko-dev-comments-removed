@@ -13,6 +13,8 @@ typedef enum {
     SDP_RTCP_FB_CCM,
     SDP_RTCP_FB_NACK,
     SDP_RTCP_FB_TRR_INT,
+    
+    SDP_RTCP_FB_REMB,
     SDP_MAX_RTCP_FB,
     SDP_RTCP_FB_UNKNOWN
 } sdp_rtcp_fb_type_e;
@@ -39,6 +41,7 @@ typedef enum {
     SDP_MAX_RTCP_FB_ACK,
     SDP_RTCP_FB_ACK_UNKNOWN
 } sdp_rtcp_fb_ack_type_e;
+
 
 typedef enum {
     SDP_RTCP_FB_CCM_NOT_FOUND = -1,

@@ -485,7 +485,8 @@ const sdp_namearray_t sdp_rtcp_fb_type_val[SDP_MAX_RTCP_FB] =
     SDP_NAME("ack"),
     SDP_NAME("ccm"),
     SDP_NAME("nack"),
-    SDP_NAME("trr-int")
+    SDP_NAME("trr-int"),
+    SDP_NAME("goog-remb")
 };
 
 
