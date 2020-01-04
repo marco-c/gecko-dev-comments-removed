@@ -441,6 +441,11 @@ public:
 private:
   friend class SheetLoadData;
 
+  nsresult CheckContentPolicy(nsIPrincipal* aSourcePrincipal,
+                              nsIURI* aTargetURI,
+                              nsISupports* aContext,
+                              bool aIsPreload);
+
   
   
   
