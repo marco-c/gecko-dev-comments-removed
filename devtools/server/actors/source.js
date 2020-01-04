@@ -137,6 +137,8 @@ function resolveURIToLocalPath(aURI) {
 
 
 
+
+
 let SourceActor = ActorClass({
   typeName: "source",
 
@@ -345,7 +347,36 @@ let SourceActor = ActorClass({
         
         
         
-        let sourceFetched = fetch(this.url, { loadFromCache: this.isInlineSource });
+        let loadFromCache = this.isInlineSource;
+
+        
+        let win = this.threadActor._parent.window;
+        let principal, cacheKey;
+        
+        if (!isWorker && win instanceof Ci.nsIDOMWindow) {
+          let webNav = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                          .getInterface(Ci.nsIWebNavigation);
+          let channel = webNav.currentDocumentChannel;
+          principal = channel.loadInfo.loadingPrincipal;
+
+          
+          
+          if (loadFromCache &&
+            webNav.currentDocumentChannel instanceof Ci.nsICacheInfoChannel) {
+            cacheKey = webNav.currentDocumentChannel.cacheKey;
+            assert(
+              cacheKey,
+              "Could not fetch the cacheKey from the related document."
+            );
+          }
+        }
+
+        let sourceFetched = fetch(this.url, {
+          policy: isWorker ? null : Ci.nsIContentPolicy.TYPE_DOCUMENT,
+          principal,
+          cacheKey,
+          loadFromCache
+        });
 
         
         return sourceFetched
