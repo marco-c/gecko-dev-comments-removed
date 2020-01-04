@@ -1505,7 +1505,7 @@ public:
   
   
   
-  const Maybe<ParentLayerIntRect>& GetEffectiveClipRect();
+  const Maybe<ParentLayerIntRect>& GetLocalClipRect();
   const LayerIntRegion& GetLocalVisibleRegion();
 
   bool Extend3DContext() {
