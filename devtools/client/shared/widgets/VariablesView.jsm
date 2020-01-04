@@ -402,13 +402,17 @@ VariablesView.prototype = {
 
 
 
-  set searchEnabled(aFlag) aFlag ? this._enableSearch() : this._disableSearch(),
+  set searchEnabled(aFlag) {
+    aFlag ? this._enableSearch() : this._disableSearch();
+  },
 
   
 
 
 
-  get searchEnabled() !!this._searchboxContainer,
+  get searchEnabled() {
+    return !!this._searchboxContainer;
+  },
 
   
 
@@ -425,7 +429,9 @@ VariablesView.prototype = {
 
 
 
-  get searchPlaceholder() this._searchboxPlaceholder,
+  get searchPlaceholder() {
+    return this._searchboxPlaceholder;
+  },
 
   
 
@@ -997,25 +1003,33 @@ VariablesView.prototype = {
 
 
 
-  get boxObject() this._list.boxObject,
+  get boxObject() {
+    return this._list.boxObject;
+  },
 
   
 
 
 
-  get parentNode() this._parent,
+  get parentNode() {
+    return this._parent;
+  },
 
   
 
 
 
-  get document() this._document || (this._document = this._parent.ownerDocument),
+  get document() {
+    return this._document || (this._document = this._parent.ownerDocument);
+  },
 
   
 
 
 
-  get window() this._window || (this._window = this.document.defaultView),
+  get window() {
+    return this._window || (this._window = this.document.defaultView);
+  },
 
   _document: null,
   _window: null,
@@ -1587,61 +1601,81 @@ Scope.prototype = {
 
 
 
-  get visible() this._isContentVisible,
+  get visible() {
+    return this._isContentVisible;
+  },
 
   
 
 
 
-  get expanded() this._isExpanded,
+  get expanded() {
+    return this._isExpanded;
+  },
 
   
 
 
 
-  get header() this._isHeaderVisible,
+  get header() {
+    return this._isHeaderVisible;
+  },
 
   
 
 
 
-  get twisty() this._isArrowVisible,
+  get twisty() {
+    return this._isArrowVisible;
+  },
 
   
 
 
 
-  get locked() this._isLocked,
+  get locked() {
+    return this._isLocked;
+  },
 
   
 
 
 
-  set visible(aFlag) aFlag ? this.show() : this.hide(),
+  set visible(aFlag) {
+    aFlag ? this.show() : this.hide();
+  },
 
   
 
 
 
-  set expanded(aFlag) aFlag ? this.expand() : this.collapse(),
+  set expanded(aFlag) {
+    aFlag ? this.expand() : this.collapse();
+  },
 
   
 
 
 
-  set header(aFlag) aFlag ? this.showHeader() : this.hideHeader(),
+  set header(aFlag) {
+    aFlag ? this.showHeader() : this.hideHeader();
+  },
 
   
 
 
 
-  set twisty(aFlag) aFlag ? this.showArrow() : this.hideArrow(),
+  set twisty(aFlag) {
+    aFlag ? this.showArrow() : this.hideArrow();
+  },
 
   
 
 
 
-  set locked(aFlag) this._isLocked = aFlag,
+  set locked(aFlag) {
+    this._isLocked = aFlag;
+  },
 
   
 
@@ -1698,31 +1732,41 @@ Scope.prototype = {
 
 
 
-  get id() this._idString,
+  get id() {
+    return this._idString;
+  },
 
   
 
 
 
-  get name() this._nameString,
+  get name() {
+    return this._nameString;
+  },
 
   
 
 
 
-  get displayValue() this._valueString,
+  get displayValue() {
+    return this._valueString;
+  },
 
   
 
 
 
-  get displayValueClassName() this._valueClassName,
+  get displayValueClassName() {
+    return this._valueClassName;
+  },
 
   
 
 
 
-  get target() this._target,
+  get target() {
+    return this._target;
+  },
 
   
 
@@ -2004,33 +2048,41 @@ Scope.prototype = {
 
 
 
-  get _variablesView() this._topView || (this._topView = (function(self) {
-    let parentView = self.ownerView;
-    let topView;
+  get _variablesView() {
+    return this._topView || (this._topView = (() => {
+      let parentView = this.ownerView;
+      let topView;
 
-    while ((topView = parentView.ownerView)) {
-      parentView = topView;
-    }
-    return parentView;
-  })(this)),
-
-  
-
-
-
-  get parentNode() this.ownerView._list,
+      while ((topView = parentView.ownerView)) {
+        parentView = topView;
+      }
+      return parentView;
+    })());
+  },
 
   
 
 
 
-  get document() this._document || (this._document = this.ownerView.document),
+  get parentNode() {
+    return this.ownerView._list;
+  },
 
   
 
 
 
-  get window() this._window || (this._window = this.ownerView.window),
+  get document() {
+    return this._document || (this._document = this.ownerView.document);
+  },
+
+  
+
+
+
+  get window() {
+    return this._window || (this._window = this.ownerView.window);
+  },
 
   _topView: null,
   _document: null,
@@ -2333,19 +2385,25 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
 
 
 
-  get value() this._initialDescriptor.value,
+  get value() {
+    return this._initialDescriptor.value;
+  },
 
   
 
 
 
-  get getter() this._initialDescriptor.get,
+  get getter() {
+    return this._initialDescriptor.get;
+  },
 
   
 
 
 
-  get setter() this._initialDescriptor.set,
+  get setter() {
+    return this._initialDescriptor.set;
+  },
 
   
 

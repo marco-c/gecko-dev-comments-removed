@@ -771,7 +771,9 @@ this.WidgetMethods = {
 
 
 
-  get widget() this._widget,
+  get widget() {
+    return this._widget;
+  },
 
   
 

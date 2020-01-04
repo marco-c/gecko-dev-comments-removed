@@ -86,21 +86,30 @@ SplitView.prototype = {
 
 
 
-  get isLandscape() this._mql.matches,
+  get isLandscape()
+  {
+    return this._mql.matches;
+  },
 
   
 
 
 
 
-  get rootElement() this._root,
+  get rootElement()
+  {
+    return this._root;
+  },
 
   
 
 
 
 
-  get activeSummary() this._activeSummary,
+  get activeSummary()
+  {
+    return this._activeSummary;
+  },
 
   
 

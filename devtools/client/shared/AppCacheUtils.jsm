@@ -616,8 +616,8 @@ ManifestParser.prototype = {
   },
 };
 
-XPCOMUtils.defineLazyGetter(this, "l10n", function() Services.strings
-  .createBundle("chrome:
+XPCOMUtils.defineLazyGetter(this, "l10n", () => Services.strings
+  .createBundle("chrome://browser/locale/devtools/appcacheutils.properties"));
 
 XPCOMUtils.defineLazyGetter(this, "appcacheservice", function() {
   return Cc["@mozilla.org/network/application-cache-service;1"]
