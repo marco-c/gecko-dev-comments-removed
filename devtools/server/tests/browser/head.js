@@ -61,7 +61,9 @@ function initDebuggerServer() {
     
     
     DebuggerServer.destroy();
-  } catch (ex) { }
+  } catch (e) {
+    info(`DebuggerServer destroy error: ${e}\n${e.stack}`);
+  }
   DebuggerServer.init();
   DebuggerServer.addBrowserActors();
 }
