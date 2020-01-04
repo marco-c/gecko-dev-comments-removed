@@ -279,7 +279,7 @@ public:
     mFrame->Properties().Delete(nsIFrame::CachedBackgroundImageDT());
   }
 
-  virtual bool ShouldFixToViewport(nsDisplayListBuilder* aBuilder) override
+  virtual bool ShouldFixToViewport(LayerManager* aManager) override
   {
     
     

@@ -154,8 +154,6 @@ public:
     mMode = PLUGIN_GEOMETRY;
   }
 
-  mozilla::layers::LayerManager* GetWidgetLayerManager(nsView** aView = nullptr, bool* aAllowRetaining = nullptr);
-
   
 
 
@@ -1067,7 +1065,6 @@ public:
     : mFrame(aFrame)
     , mClip(nullptr)
     , mReferenceFrame(nullptr)
-    , mAnimatedGeometryRoot(nullptr)
 #ifdef MOZ_DUMP_PAINTING
     , mPainted(false)
 #endif
@@ -1287,7 +1284,7 @@ public:
 
 
 
-  virtual bool ShouldFixToViewport(nsDisplayListBuilder* aBuilder)
+  virtual bool ShouldFixToViewport(LayerManager* aManager)
   { return false; }
 
   virtual bool ClearsBackground()
@@ -1514,11 +1511,6 @@ public:
 
   virtual const nsIFrame* ReferenceFrameForChildren() const { return mReferenceFrame; }
 
-  nsIFrame* AnimatedGeometryRoot() const {
-    MOZ_ASSERT(mAnimatedGeometryRoot, "Must have cached AGR before accessing it!");
-    return mAnimatedGeometryRoot;
-  }
-
   
 
 
@@ -1574,7 +1566,6 @@ protected:
   const DisplayItemClip* mClip;
   
   const nsIFrame* mReferenceFrame;
-  nsIFrame* mAnimatedGeometryRoot;
   
   nsPoint   mToReferenceFrame;
   
@@ -2402,7 +2393,7 @@ public:
   static nsRegion GetInsideClipRegion(nsDisplayItem* aItem, nsPresContext* aPresContext, uint8_t aClip,
                                       const nsRect& aRect, bool* aSnap);
 
-  virtual bool ShouldFixToViewport(nsDisplayListBuilder* aBuilder) override;
+  virtual bool ShouldFixToViewport(LayerManager* aManager) override;
 
 protected:
   typedef class mozilla::layers::ImageContainer ImageContainer;
