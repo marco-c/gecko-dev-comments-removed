@@ -1804,7 +1804,7 @@ class AsmJSActivation : public Activation
     void* entrySP_;
     void* resumePC_;
     uint8_t* fp_;
-    AsmJSExit::Reason exitReason_;
+    uint32_t packedExitReason_;
 
   public:
     AsmJSActivation(JSContext* cx, AsmJSModule& module);
@@ -1823,7 +1823,7 @@ class AsmJSActivation : public Activation
     uint8_t* fp() const { return fp_; }
 
     
-    AsmJSExit::Reason exitReason() const { return exitReason_; }
+    wasm::ExitReason exitReason() const { return wasm::ExitReason::unpack(packedExitReason_); }
 
     
     static unsigned offsetOfContext() { return offsetof(AsmJSActivation, cx_); }
@@ -1832,7 +1832,7 @@ class AsmJSActivation : public Activation
     
     static unsigned offsetOfEntrySP() { return offsetof(AsmJSActivation, entrySP_); }
     static unsigned offsetOfFP() { return offsetof(AsmJSActivation, fp_); }
-    static unsigned offsetOfExitReason() { return offsetof(AsmJSActivation, exitReason_); }
+    static unsigned offsetOfPackedExitReason() { return offsetof(AsmJSActivation, packedExitReason_); }
 
     
     void setResumePC(void* pc) { resumePC_ = pc; }

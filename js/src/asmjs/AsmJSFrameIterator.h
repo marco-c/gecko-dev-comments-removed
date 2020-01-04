@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 
+#include "asmjs/Wasm.h"
 #include "js/ProfilingFrameIterator.h"
 
 class JSAtom;
@@ -29,7 +30,8 @@ namespace js {
 
 class AsmJSActivation;
 class AsmJSModule;
-namespace jit { class CallSite; class MacroAssembler; class Label; }
+namespace jit { class MacroAssembler; class Label; }
+namespace wasm { class CallSite; }
 
 
 
@@ -38,7 +40,7 @@ namespace jit { class CallSite; class MacroAssembler; class Label; }
 class AsmJSFrameIterator
 {
     const AsmJSModule* module_;
-    const jit::CallSite* callsite_;
+    const wasm::CallSite* callsite_;
     uint8_t* fp_;
 
     
@@ -56,74 +58,6 @@ class AsmJSFrameIterator
     unsigned computeLine(uint32_t* column) const;
 };
 
-namespace AsmJSExit
-{
-    
-    
-    
-    
-    
-    enum ReasonKind {
-        Reason_None,
-        Reason_JitFFI,
-        Reason_SlowFFI,
-        Reason_Interrupt,
-        Reason_Builtin
-    };
-
-    
-    
-    enum BuiltinKind {
-        Builtin_ToInt32,
-#if defined(JS_CODEGEN_ARM)
-        Builtin_IDivMod,
-        Builtin_UDivMod,
-        Builtin_AtomicCmpXchg,
-        Builtin_AtomicXchg,
-        Builtin_AtomicFetchAdd,
-        Builtin_AtomicFetchSub,
-        Builtin_AtomicFetchAnd,
-        Builtin_AtomicFetchOr,
-        Builtin_AtomicFetchXor,
-#endif
-        Builtin_ModD,
-        Builtin_SinD,
-        Builtin_CosD,
-        Builtin_TanD,
-        Builtin_ASinD,
-        Builtin_ACosD,
-        Builtin_ATanD,
-        Builtin_CeilD,
-        Builtin_CeilF,
-        Builtin_FloorD,
-        Builtin_FloorF,
-        Builtin_ExpD,
-        Builtin_LogD,
-        Builtin_PowD,
-        Builtin_ATan2D,
-        Builtin_Limit
-    };
-
-    
-    
-    typedef uint32_t Reason;
-
-    static const uint32_t None = Reason_None;
-    static const uint32_t JitFFI = Reason_JitFFI;
-    static const uint32_t SlowFFI = Reason_SlowFFI;
-    static const uint32_t Interrupt = Reason_Interrupt;
-    static inline Reason Builtin(BuiltinKind builtin) {
-        return uint16_t(Reason_Builtin) | (uint16_t(builtin) << 16);
-    }
-    static inline ReasonKind ExtractReasonKind(Reason reason) {
-        return ReasonKind(uint16_t(reason));
-    }
-    static inline BuiltinKind ExtractBuiltinKind(Reason reason) {
-        MOZ_ASSERT(ExtractReasonKind(reason) == Reason_Builtin);
-        return BuiltinKind(uint16_t(reason >> 16));
-    }
-} 
-
 
 
 
@@ -133,7 +67,7 @@ class AsmJSProfilingFrameIterator
     uint8_t* callerFP_;
     void* callerPC_;
     void* stackAddress_;
-    AsmJSExit::Reason exitReason_;
+    wasm::ExitReason exitReason_;
 
     
     
@@ -208,10 +142,10 @@ struct AsmJSFunctionOffsets : AsmJSProfilingOffsets
 };
 
 void
-GenerateAsmJSExitPrologue(jit::MacroAssembler& masm, unsigned framePushed, AsmJSExit::Reason reason,
+GenerateAsmJSExitPrologue(jit::MacroAssembler& masm, unsigned framePushed, wasm::ExitReason reason,
                           AsmJSProfilingOffsets* offsets, jit::Label* maybeEntry = nullptr);
 void
-GenerateAsmJSExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed, AsmJSExit::Reason reason,
+GenerateAsmJSExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed, wasm::ExitReason reason,
                           AsmJSProfilingOffsets* offsets);
 
 void

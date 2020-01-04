@@ -47,7 +47,7 @@ class JS_PUBLIC_API(ProfilingFrameIterator)
     
     void* savedPrevJitTop_;
 
-    static const unsigned StorageSpace = 6 * sizeof(void*);
+    static const unsigned StorageSpace = 8 * sizeof(void*);
     mozilla::AlignedStorage<StorageSpace> storage_;
     js::AsmJSProfilingFrameIterator& asmJSIter() {
         MOZ_ASSERT(!done());

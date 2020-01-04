@@ -653,80 +653,6 @@ class CodeLocationLabel
 
 
 
-class CallSiteDesc
-{
-    uint32_t line_;
-    uint32_t column_ : 31;
-    uint32_t kind_ : 1;
-  public:
-    enum Kind {
-        Relative,  
-        Register   
-    };
-    CallSiteDesc() {}
-    explicit CallSiteDesc(Kind kind)
-      : line_(0), column_(0), kind_(kind)
-    {}
-    CallSiteDesc(uint32_t line, uint32_t column, Kind kind)
-      : line_(line), column_(column), kind_(kind)
-    {
-        MOZ_ASSERT(column_ == column, "column must fit in 31 bits");
-    }
-    uint32_t line() const { return line_; }
-    uint32_t column() const { return column_; }
-    Kind kind() const { return Kind(kind_); }
-};
-
-
-
-class CallSite : public CallSiteDesc
-{
-    uint32_t returnAddressOffset_;
-    uint32_t stackDepth_;
-
-  public:
-    CallSite() {}
-
-    CallSite(CallSiteDesc desc, uint32_t returnAddressOffset, uint32_t stackDepth)
-      : CallSiteDesc(desc),
-        returnAddressOffset_(returnAddressOffset),
-        stackDepth_(stackDepth)
-    { }
-
-    void setReturnAddressOffset(uint32_t r) { returnAddressOffset_ = r; }
-    void offsetReturnAddressBy(int32_t o) { returnAddressOffset_ += o; }
-    uint32_t returnAddressOffset() const { return returnAddressOffset_; }
-
-    
-    
-    
-    
-    uint32_t stackDepth() const { return stackDepth_; }
-};
-
-typedef Vector<CallSite, 0, SystemAllocPolicy> CallSiteVector;
-
-class CallSiteAndTarget : public CallSite
-{
-    uint32_t targetIndex_;
-
-  public:
-    explicit CallSiteAndTarget(CallSite cs, uint32_t targetIndex)
-      : CallSite(cs), targetIndex_(targetIndex)
-    { }
-
-    static const uint32_t NOT_INTERNAL = UINT32_MAX;
-
-    bool isInternal() const { return targetIndex_ != NOT_INTERNAL; }
-    uint32_t targetIndex() const { MOZ_ASSERT(isInternal()); return targetIndex_; }
-};
-
-typedef Vector<CallSiteAndTarget, 0, SystemAllocPolicy> CallSiteAndTargetVector;
-
-
-
-
-
 
 struct AsmJSFrame
 {
@@ -743,103 +669,6 @@ struct AsmJSFrame
 static_assert(sizeof(AsmJSFrame) == 2 * sizeof(void*), "?!");
 static const uint32_t AsmJSFrameBytesAfterReturnAddress = sizeof(void*);
 
-
-
-static const unsigned AsmJSActivationGlobalDataOffset = 0;
-static const unsigned AsmJSHeapGlobalDataOffset = sizeof(void*);
-static const unsigned AsmJSNaN64GlobalDataOffset = 2 * sizeof(void*);
-static const unsigned AsmJSNaN32GlobalDataOffset = 2 * sizeof(void*) + sizeof(double);
-
-
-
-
-
-
-class AsmJSHeapAccess
-{
-#if defined(JS_CODEGEN_X64)
-  public:
-    enum WhatToDoOnOOB {
-        CarryOn, 
-        Throw    
-    };
-#endif
-
-  private:
-    uint32_t insnOffset_;
-#if defined(JS_CODEGEN_X86)
-    uint8_t opLength_;  
-#endif
-#if defined(JS_CODEGEN_X64)
-    uint8_t offsetWithinWholeSimdVector_; 
-    bool throwOnOOB_;   
-#endif
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-    uint8_t cmpDelta_;  
-#endif
-
-    JS_STATIC_ASSERT(AnyRegister::Total < UINT8_MAX);
-
-  public:
-    AsmJSHeapAccess() {}
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-    static const uint32_t NoLengthCheck = UINT32_MAX;
-#endif
-
-#if defined(JS_CODEGEN_X86)
-    
-    
-    AsmJSHeapAccess(uint32_t insnOffset, uint32_t after, uint32_t cmp = NoLengthCheck)
-    {
-        mozilla::PodZero(this);  
-        insnOffset_ = insnOffset;
-        opLength_ = after - insnOffset;
-        cmpDelta_ = cmp == NoLengthCheck ? 0 : insnOffset - cmp;
-    }
-#elif defined(JS_CODEGEN_X64)
-    
-    
-    AsmJSHeapAccess(uint32_t insnOffset, WhatToDoOnOOB oob,
-                    uint32_t cmp = NoLengthCheck,
-                    uint32_t offsetWithinWholeSimdVector = 0)
-    {
-        mozilla::PodZero(this);  
-        insnOffset_ = insnOffset;
-        offsetWithinWholeSimdVector_ = offsetWithinWholeSimdVector;
-        throwOnOOB_ = oob == Throw;
-        cmpDelta_ = cmp == NoLengthCheck ? 0 : insnOffset - cmp;
-        MOZ_ASSERT(offsetWithinWholeSimdVector_ == offsetWithinWholeSimdVector);
-    }
-#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
-      defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    explicit AsmJSHeapAccess(uint32_t insnOffset)
-    {
-        mozilla::PodZero(this);  
-        insnOffset_ = insnOffset;
-    }
-#endif
-
-    uint32_t insnOffset() const { return insnOffset_; }
-    void setInsnOffset(uint32_t insnOffset) { insnOffset_ = insnOffset; }
-    void offsetInsnOffsetBy(uint32_t offset) { insnOffset_ += offset; }
-#if defined(JS_CODEGEN_X86)
-    void* patchHeapPtrImmAt(uint8_t* code) const { return code + (insnOffset_ + opLength_); }
-#endif
-#if defined(JS_CODEGEN_X64)
-    bool throwOnOOB() const { return throwOnOOB_; }
-    uint32_t offsetWithinWholeSimdVector() const { return offsetWithinWholeSimdVector_; }
-#endif
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-    bool hasLengthCheck() const { return cmpDelta_ > 0; }
-    void* patchLengthAt(uint8_t* code) const {
-        MOZ_ASSERT(hasLengthCheck());
-        return code + (insnOffset_ - cmpDelta_);
-    }
-#endif
-};
-
-typedef Vector<AsmJSHeapAccess, 0, SystemAllocPolicy> AsmJSHeapAccessVector;
-
 struct AsmJSGlobalAccess
 {
     CodeOffset patchAt;
@@ -853,97 +682,13 @@ struct AsmJSGlobalAccess
 
 
 
-enum AsmJSImmKind
-{
-    AsmJSImm_ToInt32         = AsmJSExit::Builtin_ToInt32,
-#if defined(JS_CODEGEN_ARM)
-    AsmJSImm_aeabi_idivmod   = AsmJSExit::Builtin_IDivMod,
-    AsmJSImm_aeabi_uidivmod  = AsmJSExit::Builtin_UDivMod,
-    AsmJSImm_AtomicCmpXchg   = AsmJSExit::Builtin_AtomicCmpXchg,
-    AsmJSImm_AtomicXchg      = AsmJSExit::Builtin_AtomicXchg,
-    AsmJSImm_AtomicFetchAdd  = AsmJSExit::Builtin_AtomicFetchAdd,
-    AsmJSImm_AtomicFetchSub  = AsmJSExit::Builtin_AtomicFetchSub,
-    AsmJSImm_AtomicFetchAnd  = AsmJSExit::Builtin_AtomicFetchAnd,
-    AsmJSImm_AtomicFetchOr   = AsmJSExit::Builtin_AtomicFetchOr,
-    AsmJSImm_AtomicFetchXor  = AsmJSExit::Builtin_AtomicFetchXor,
-#endif
-    AsmJSImm_ModD            = AsmJSExit::Builtin_ModD,
-    AsmJSImm_SinD            = AsmJSExit::Builtin_SinD,
-    AsmJSImm_CosD            = AsmJSExit::Builtin_CosD,
-    AsmJSImm_TanD            = AsmJSExit::Builtin_TanD,
-    AsmJSImm_ASinD           = AsmJSExit::Builtin_ASinD,
-    AsmJSImm_ACosD           = AsmJSExit::Builtin_ACosD,
-    AsmJSImm_ATanD           = AsmJSExit::Builtin_ATanD,
-    AsmJSImm_CeilD           = AsmJSExit::Builtin_CeilD,
-    AsmJSImm_CeilF           = AsmJSExit::Builtin_CeilF,
-    AsmJSImm_FloorD          = AsmJSExit::Builtin_FloorD,
-    AsmJSImm_FloorF          = AsmJSExit::Builtin_FloorF,
-    AsmJSImm_ExpD            = AsmJSExit::Builtin_ExpD,
-    AsmJSImm_LogD            = AsmJSExit::Builtin_LogD,
-    AsmJSImm_PowD            = AsmJSExit::Builtin_PowD,
-    AsmJSImm_ATan2D          = AsmJSExit::Builtin_ATan2D,
-    AsmJSImm_Runtime,
-    AsmJSImm_RuntimeInterruptUint32,
-    AsmJSImm_StackLimit,
-    AsmJSImm_ReportOverRecursed,
-    AsmJSImm_OnDetached,
-    AsmJSImm_OnOutOfBounds,
-    AsmJSImm_OnImpreciseConversion,
-    AsmJSImm_HandleExecutionInterrupt,
-    AsmJSImm_InvokeFromAsmJS_Ignore,
-    AsmJSImm_InvokeFromAsmJS_ToInt32,
-    AsmJSImm_InvokeFromAsmJS_ToNumber,
-    AsmJSImm_CoerceInPlace_ToInt32,
-    AsmJSImm_CoerceInPlace_ToNumber,
-    AsmJSImm_Limit
-};
-
-static inline AsmJSImmKind
-BuiltinToImmKind(AsmJSExit::BuiltinKind builtin)
-{
-    return AsmJSImmKind(builtin);
-}
-
-static inline bool
-ImmKindIsBuiltin(AsmJSImmKind imm, AsmJSExit::BuiltinKind* builtin)
-{
-    if (unsigned(imm) >= unsigned(AsmJSExit::Builtin_Limit))
-        return false;
-    *builtin = AsmJSExit::BuiltinKind(imm);
-    return true;
-}
-
-
-class AsmJSImmPtr
-{
-    AsmJSImmKind kind_;
-  public:
-    AsmJSImmKind kind() const { return kind_; }
-    
-    MOZ_IMPLICIT AsmJSImmPtr(AsmJSImmKind kind) : kind_(kind) { MOZ_ASSERT(IsCompilingAsmJS()); }
-    AsmJSImmPtr() {}
-};
-
-
-
-class AsmJSAbsoluteAddress
-{
-    AsmJSImmKind kind_;
-  public:
-    AsmJSImmKind kind() const { return kind_; }
-    explicit AsmJSAbsoluteAddress(AsmJSImmKind kind) : kind_(kind) { MOZ_ASSERT(IsCompilingAsmJS()); }
-    AsmJSAbsoluteAddress() {}
-};
-
-
-
-
 struct AsmJSAbsoluteLink
 {
-    AsmJSAbsoluteLink(CodeOffset patchAt, AsmJSImmKind target)
+    AsmJSAbsoluteLink(CodeOffset patchAt, wasm::SymbolicAddress target)
       : patchAt(patchAt), target(target) {}
+
     CodeOffset patchAt;
-    AsmJSImmKind target;
+    wasm::SymbolicAddress target;
 };
 
 
@@ -963,8 +708,8 @@ struct AsmJSInternalCallee
 
 class AssemblerShared
 {
-    CallSiteAndTargetVector callsites_;
-    Vector<AsmJSHeapAccess, 0, SystemAllocPolicy> asmJSHeapAccesses_;
+    wasm::CallSiteAndTargetVector callsites_;
+    wasm::HeapAccessVector heapAccesses_;
     Vector<AsmJSGlobalAccess, 0, SystemAllocPolicy> asmJSGlobalAccesses_;
     Vector<AsmJSAbsoluteLink, 0, SystemAllocPolicy> asmJSAbsoluteLinks_;
 
@@ -996,18 +741,18 @@ class AssemblerShared
         return embedsNurseryPointers_;
     }
 
-    void append(const CallSiteDesc& desc, CodeOffset label, size_t framePushed,
-                uint32_t targetIndex = CallSiteAndTarget::NOT_INTERNAL)
+    void append(const wasm::CallSiteDesc& desc, CodeOffset label, size_t framePushed,
+                uint32_t targetIndex = wasm::CallSiteAndTarget::NOT_INTERNAL)
     {
         
         
-        CallSite callsite(desc, label.offset(), framePushed + sizeof(AsmJSFrame));
-        enoughMemory_ &= callsites_.append(CallSiteAndTarget(callsite, targetIndex));
+        wasm::CallSite callsite(desc, label.offset(), framePushed + sizeof(AsmJSFrame));
+        enoughMemory_ &= callsites_.append(wasm::CallSiteAndTarget(callsite, targetIndex));
     }
-    CallSiteAndTargetVector& callSites() { return callsites_; }
+    wasm::CallSiteAndTargetVector& callSites() { return callsites_; }
 
-    void append(AsmJSHeapAccess access) { enoughMemory_ &= asmJSHeapAccesses_.append(access); }
-    AsmJSHeapAccessVector&& extractAsmJSHeapAccesses() { return Move(asmJSHeapAccesses_); }
+    void append(wasm::HeapAccess access) { enoughMemory_ &= heapAccesses_.append(access); }
+    wasm::HeapAccessVector&& extractHeapAccesses() { return Move(heapAccesses_); }
 
     void append(AsmJSGlobalAccess access) { enoughMemory_ &= asmJSGlobalAccesses_.append(access); }
     size_t numAsmJSGlobalAccesses() const { return asmJSGlobalAccesses_.length(); }
@@ -1037,10 +782,10 @@ class AssemblerShared
         for (; i < callsites_.length(); i++)
             callsites_[i].offsetReturnAddressBy(delta);
 
-        i = asmJSHeapAccesses_.length();
-        enoughMemory_ &= asmJSHeapAccesses_.appendAll(other.asmJSHeapAccesses_);
-        for (; i < asmJSHeapAccesses_.length(); i++)
-            asmJSHeapAccesses_[i].offsetInsnOffsetBy(delta);
+        i = heapAccesses_.length();
+        enoughMemory_ &= heapAccesses_.appendAll(other.heapAccesses_);
+        for (; i < heapAccesses_.length(); i++)
+            heapAccesses_[i].offsetInsnOffsetBy(delta);
 
         i = asmJSGlobalAccesses_.length();
         enoughMemory_ &= asmJSGlobalAccesses_.appendAll(other.asmJSGlobalAccesses_);
