@@ -1008,7 +1008,15 @@ pref("security.exthelperapp.disable_background_handling", true);
 pref("osfile.reset_worker_delay", 5000);
 
 
-pref("apz.axis_lock.mode", 2); 
+#ifdef MOZ_WIDGET_GONK
+pref("apz.allow_zooming", true);
+#endif
+
+
+
+pref("apz.pan_repaint_interval", 16);
+
+
 pref("apz.fling_curve_function_x1", "0.41");
 pref("apz.fling_curve_function_y1", "0.0");
 pref("apz.fling_curve_function_x2", "0.80");
@@ -1016,7 +1024,29 @@ pref("apz.fling_curve_function_y2", "1.0");
 pref("apz.fling_curve_threshold_inches_per_ms", "0.01");
 pref("apz.fling_friction", "0.0019");
 pref("apz.max_velocity_inches_per_ms", "0.07");
+pref("apz.touch_start_tolerance", "0.1");
+
+#ifdef MOZ_WIDGET_GONK
+pref("apz.touch_move_tolerance", "0.03");
+#endif
+
+
+
+pref("apz.x_skate_size_multiplier", "1.25");
+pref("apz.y_skate_size_multiplier", "1.5");
+pref("apz.x_stationary_size_multiplier", "1.5");
+pref("apz.y_stationary_size_multiplier", "1.8");
+pref("apz.enlarge_displayport_when_clipped", true);
+
+pref("apz.axis_lock.mode", 2);
+
+
 pref("apz.overscroll.enabled", true);
+pref("apz.overscroll.stretch_factor", "0.35");
+pref("apz.overscroll.spring_stiffness", "0.0018");
+pref("apz.overscroll.spring_friction", "0.015");
+pref("apz.overscroll.stop_distance_threshold", "5.0");
+pref("apz.overscroll.stop_velocity_threshold", "0.01");
 
 
 pref("layout.event-regions.enabled", true);
