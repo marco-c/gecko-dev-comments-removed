@@ -136,7 +136,7 @@ JSContext* GetJSContext();
 
 } 
 
-js::RootingContext* RootingCx();
+JS::RootingContext* RootingCx();
 
 class ScriptSettingsStack;
 class ScriptSettingsStackEntry {

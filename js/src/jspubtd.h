@@ -321,12 +321,29 @@ class RootLists
     void finishPersistentRoots();
 };
 
+} 
+
+namespace JS {
+
+
+
+
+
+
 struct RootingContext
 {
-    RootLists roots;
+    js::RootLists roots;
+
+    static RootingContext* get(JSContext* cx) {
+        return reinterpret_cast<RootingContext*>(cx);
+    }
 };
 
-struct ContextFriendFields : public RootingContext
+} 
+
+namespace js {
+
+struct ContextFriendFields : public JS::RootingContext
 {
   protected:
     JSRuntime* const     runtime_;

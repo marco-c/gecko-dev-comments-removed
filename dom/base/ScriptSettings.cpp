@@ -293,7 +293,7 @@ GetJSContext()
 }
 } 
 
-js::RootingContext*
+JS::RootingContext*
 RootingCx()
 {
   return CycleCollectedJSRuntime::Get()->RootingCx();
