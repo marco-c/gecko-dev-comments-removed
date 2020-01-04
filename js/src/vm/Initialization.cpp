@@ -140,7 +140,10 @@ JS_ShutDown(void)
 
     js::DestroyHelperThreadsState();
 
-    JS_DestroyTraceLogger();
+#ifdef JS_TRACE_LOGGING
+    js::DestroyTraceLoggerThreadState();
+    js::DestroyTraceLoggerGraphState();
+#endif
 
     
     
@@ -158,15 +161,6 @@ JS_ShutDown(void)
 #endif 
 
     libraryInitState = InitState::ShutDown;
-}
-
-JS_PUBLIC_API(void)
-JS_DestroyTraceLogger(void)
-{
-#ifdef JS_TRACE_LOGGING
-    js::DestroyTraceLoggerThreadState();
-    js::DestroyTraceLoggerGraphState();
-#endif
 }
 
 JS_PUBLIC_API(bool)
