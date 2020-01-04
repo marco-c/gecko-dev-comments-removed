@@ -432,7 +432,6 @@ public:
     , mThread(aThread)
     , mCapIndex(aIndex)
     , mChannel(-1)
-    , mNrAllocations(0)
     , mStarted(false)
     , mSampleFrequency(MediaEngine::DEFAULT_SAMPLE_RATE)
     , mPlayoutDelay(0)
@@ -450,12 +449,6 @@ public:
   void GetName(nsAString& aName) const override;
   void GetUUID(nsACString& aUUID) const override;
 
-  nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
-                    const MediaEnginePrefs& aPrefs,
-                    const nsString& aDeviceId,
-                    const nsACString& aOrigin,
-                    AllocationHandle** aOutHandle,
-                    const char** aOutBadConstraint) override;
   nsresult Deallocate(AllocationHandle* aHandle) override;
   nsresult Start(SourceMediaStream* aStream,
                  TrackID aID,
@@ -514,6 +507,13 @@ protected:
   ~MediaEngineWebRTCMicrophoneSource() {}
 
 private:
+  nsresult
+  UpdateSingleSource(const AllocationHandle* aHandle,
+                     const NormalizedConstraints& aNetConstraints,
+                     const MediaEnginePrefs& aPrefs,
+                     const nsString& aDeviceId,
+                     const char** aOutBadConstraint) override;
+
   
   bool AllocChannel();
   void FreeChannel();
@@ -564,7 +564,6 @@ private:
   nsCOMPtr<nsIThread> mThread;
   int mCapIndex;
   int mChannel;
-  int mNrAllocations; 
   TrackID mTrackID;
   bool mStarted;
 
