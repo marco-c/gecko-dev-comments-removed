@@ -989,7 +989,13 @@ WebGLFramebuffer::ValidateAndInitAttachments(const char* funcName)
     }
 
     
-    mContext->ForceClearFramebufferWithDefaultValues(clearBits, false);
+    {
+        
+        
+        
+        gl::ScopedBindFramebuffer autoFB(mContext->gl, mGLName);
+        mContext->ForceClearFramebufferWithDefaultValues(clearBits, false);
+    }
 
     if (hasDrawBuffers) {
         fnDrawBuffers(mDrawBuffers);
