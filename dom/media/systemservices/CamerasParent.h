@@ -119,9 +119,13 @@ public:
 protected:
   virtual ~CamerasParent();
 
+  
+  void StopCapture(const int& aCapEngine, const int& capnum);
+  int ReleaseCaptureDevice(const int& aCapEngine, const int& capnum);
+
   bool SetupEngine(CaptureEngine aCapEngine);
-  void CloseEngines();
   bool EnsureInitialized(int aEngine);
+  void CloseEngines();
   void StopIPC();
   void StopVideoCapture();
   nsresult DispatchToVideoCaptureThread(nsRunnable *event);
