@@ -1039,7 +1039,9 @@ GenerateCacheName(nsAString& aName)
 
   char chars[NSID_LENGTH];
   id.ToProvidedString(chars);
-  aName.AssignASCII(chars, NSID_LENGTH);
+
+  
+  aName.AssignASCII(chars, NSID_LENGTH - 1);
 
   return NS_OK;
 }
