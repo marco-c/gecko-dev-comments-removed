@@ -275,7 +275,6 @@ enum class Expr
     F64Atan2,
 
     
-    AtomicsFence,
     I32AtomicsCompareExchange,
     I32AtomicsExchange,
     I32AtomicsLoad,

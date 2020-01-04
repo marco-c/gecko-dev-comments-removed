@@ -9997,6 +9997,20 @@ class MArrayJoin
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum MemoryBarrierRequirement
 {
     DoesNotRequireMemoryBarrier,
@@ -13645,49 +13659,6 @@ class MRecompileCheck : public MNullaryInstruction
 
     AliasSet getAliasSet() const override {
         return AliasSet::None();
-    }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MMemoryBarrier
-  : public MNullaryInstruction
-{
-    
-    const MemoryBarrierBits type_;
-
-    explicit MMemoryBarrier(MemoryBarrierBits type)
-      : type_(type)
-    {
-        MOZ_ASSERT((type_ & ~MembarAllbits) == MembarNobits);
-        setGuard();             
-    }
-
-  public:
-    INSTRUCTION_HEADER(MemoryBarrier)
-
-    static MMemoryBarrier* New(TempAllocator& alloc, MemoryBarrierBits type = MembarFull) {
-        return new(alloc) MMemoryBarrier(type);
-    }
-    MemoryBarrierBits type() const {
-        return type_;
-    }
-
-    AliasSet getAliasSet() const override {
-        return AliasSet::Store(AliasSet::UnboxedElement);
     }
 };
 
