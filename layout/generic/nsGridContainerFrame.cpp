@@ -1199,14 +1199,14 @@ struct nsGridContainerFrame::Tracks
 
 
 
-  nscoord CollectGrowable(nscoord                    aAvailableSpace,
-                          const nsTArray<TrackSize>& aPlan,
-                          const LineRange&           aRange,
-                          TrackSize::StateBits       aSelector,
-                          nsTArray<uint32_t>&        aGrowableTracks) const
+  static nscoord CollectGrowable(nscoord                    aAvailableSpace,
+                                 const nsTArray<TrackSize>& aPlan,
+                                 const LineRange&           aRange,
+                                 TrackSize::StateBits       aSelector,
+                                 nsTArray<uint32_t>&        aGrowableTracks)
   {
     MOZ_ASSERT(aAvailableSpace > 0, "why call me?");
-    nscoord space = aAvailableSpace - mGridGap * (aRange.Extent() - 1);
+    nscoord space = aAvailableSpace;
     const uint32_t start = aRange.mStart;
     const uint32_t end = aRange.mEnd;
     for (uint32_t i = start; i < end; ++i) {
