@@ -4075,7 +4075,13 @@ HTMLMediaElement::NotifyOwnerDocumentActivityChangedInternal()
 
   bool pauseElement = !IsActive();
 #ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
-  pauseElement |= ComputedMuted();
+  
+  
+  
+  
+  if (mAudioChannelAgent) {
+    pauseElement |= ComputedMuted();
+  }
 #endif
 
   SuspendOrResumeElement(pauseElement, !IsActive());
