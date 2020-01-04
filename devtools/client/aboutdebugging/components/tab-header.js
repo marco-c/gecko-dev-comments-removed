@@ -1,0 +1,22 @@
+
+
+
+
+
+
+"use strict";
+
+loader.lazyRequireGetter(this, "React",
+  "devtools/client/shared/vendor/react");
+
+exports.TabHeaderComponent = React.createClass({
+  displayName: "TabHeaderComponent",
+
+  render() {
+    let { name, id } = this.props;
+
+    return React.createElement(
+      "div", { className: "header" }, React.createElement(
+        "h1", { id, className: "header-name" }, name));
+  },
+});
