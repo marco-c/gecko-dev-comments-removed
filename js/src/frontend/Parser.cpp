@@ -1038,7 +1038,44 @@ Parser<ParseHandler>::tryDeclareVar(HandlePropertyName name, DeclarationKind kin
     {
         if (AddDeclaredNamePtr p = scope->lookupDeclaredNameForAdd(name)) {
             DeclarationKind declaredKind = p->value()->kind();
-            if (!DeclarationKindIsVar(declaredKind) && !DeclarationKindIsParameter(declaredKind)) {
+            if (DeclarationKindIsVar(declaredKind)) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if (kind == DeclarationKind::BodyLevelFunction)
+                    p->value()->alterKind(kind);
+            } else if (!DeclarationKindIsParameter(declaredKind)) {
                 
                 
                 
