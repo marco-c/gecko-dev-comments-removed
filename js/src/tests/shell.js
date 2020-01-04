@@ -191,6 +191,12 @@
 
 
 
+  var PASSED = " PASSED! ";
+  global.PASSED = PASSED;
+
+  var FAILED = " FAILED! ";
+  global.FAILED = FAILED;
+
   
   function startTest() {
     if (global.BUGNUMBER)
@@ -250,6 +256,14 @@
   global.currentFunc = currentFunc;
 
   
+  
+  var writeFormattedResult =
+    function writeFormattedResult(expect, actual, string, passed) {
+      print((passed ? PASSED : FAILED) + string + ' expected: ' + expect);
+    };
+  global.writeFormattedResult = writeFormattedResult;
+
+  
 
 
 
@@ -288,8 +302,6 @@ var msg = '';
 
 
 var GLOBAL = this + '';
-var PASSED = " PASSED! ";
-var FAILED = " FAILED! ";
 
 var DESCRIPTION;
 var EXPECTED;
@@ -785,11 +797,6 @@ function writeTestCaseResult( expect, actual, string ) {
       !document.location.href.match(/jsreftest.html/)) {
     writeFormattedResult( expect, actual, string, passed );
   }
-  return passed;
-}
-function writeFormattedResult( expect, actual, string, passed ) {
-  var s = ( passed ? PASSED : FAILED ) + string + ' expected: ' + expect;
-  print(s);
   return passed;
 }
 
