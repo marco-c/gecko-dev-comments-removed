@@ -15,6 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ComputedTimingFunction.h" 
 #include "mozilla/LayerAnimationInfo.h"     
+#include "mozilla/NonOwningAnimationTarget.h"
 #include "mozilla/OwningNonNull.h"          
 #include "mozilla/StickyTimeDuration.h"
 #include "mozilla/StyleAnimationValue.h"
@@ -206,19 +207,19 @@ public:
               ErrorResult& aRv);
 
   void GetTarget(Nullable<OwningElementOrCSSPseudoElement>& aRv) const;
+  Maybe<NonOwningAnimationTarget> GetTarget() const
+  {
+    Maybe<NonOwningAnimationTarget> result;
+    if (mTarget) {
+      result.emplace(mTarget, mPseudoType);
+    }
+    return result;
+  }
   void GetFrames(JSContext*& aCx,
                  nsTArray<JSObject*>& aResult,
                  ErrorResult& aRv);
   void GetProperties(nsTArray<AnimationPropertyDetails>& aProperties,
                      ErrorResult& aRv) const;
-
-  
-  
-  void GetTarget(Element*& aTarget,
-                 CSSPseudoElementType& aPseudoType) const {
-    aTarget = mTarget;
-    aPseudoType = mPseudoType;
-  }
 
   IterationCompositeOperation IterationComposite() const;
   CompositeOperation Composite() const;

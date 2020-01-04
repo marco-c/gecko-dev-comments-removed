@@ -7,6 +7,8 @@
 #ifndef nsNodeUtils_h___
 #define nsNodeUtils_h___
 
+#include "mozilla/Maybe.h"
+#include "mozilla/NonOwningAnimationTarget.h"
 #include "nsIContent.h"          
 #include "nsIMutationObserver.h" 
 #include "js/TypeDecls.h"
@@ -142,7 +144,12 @@ public:
     }
   }
 
-  static mozilla::dom::Element*
+  
+
+
+
+
+  static mozilla::Maybe<mozilla::NonOwningAnimationTarget>
     GetTargetForAnimation(const mozilla::dom::Animation* aAnimation);
   static void AnimationAdded(mozilla::dom::Animation* aAnimation);
   static void AnimationChanged(mozilla::dom::Animation* aAnimation);
