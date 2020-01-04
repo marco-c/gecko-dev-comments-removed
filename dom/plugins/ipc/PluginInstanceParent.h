@@ -32,7 +32,9 @@ class nsPluginInstanceOwner;
 
 namespace mozilla {
 namespace layers {
+class Image;
 class ImageContainer;
+class TextureClientRecycleAllocator;
 } 
 namespace plugins {
 
@@ -166,6 +168,16 @@ public:
 
     virtual bool
     RecvNPN_InvalidateRect(const NPRect& rect) override;
+
+    virtual bool
+    RecvRevokeCurrentDirectSurface() override;
+
+    virtual bool
+    RecvShowDirectBitmap(Shmem&& buffer,
+                         const gfx::SurfaceFormat& format,
+                         const uint32_t& stride,
+                         const gfx::IntSize& size,
+                         const gfx::IntRect& dirty) override;
 
     
     virtual bool
@@ -346,6 +358,8 @@ private:
 
     nsPluginInstanceOwner* GetOwner();
 
+    void SetCurrentImage(layers::Image* aImage);
+
 private:
     PluginModuleParent* mParent;
     RefPtr<PluginAsyncSurrogate> mSurrogate;
@@ -358,6 +372,9 @@ private:
     int16_t mDrawingModel;
 
     nsDataHashtable<nsPtrHashKey<NPObject>, PluginScriptableObjectParent*> mScriptableObjects;
+
+    
+    uint32_t mFrameID;
 
 #if defined(OS_WIN)
 private:
@@ -380,9 +397,6 @@ private:
     HWND               mChildPluginsParentHWND;
     WNDPROC            mPluginWndProc;
     bool               mNestedEventState;
-
-    
-    nsRefPtrHashtable<nsPtrHashKey<void>, ID3D10Texture2D> mTextureMap;
 #endif 
 #if defined(MOZ_WIDGET_COCOA)
 private:

@@ -132,6 +132,10 @@ public:
     
     uint32_t MaxGenericSubstitions();
 
+    bool SupportsPluginDirectBitmapDrawing() override {
+      return true;
+    }
+
 protected:
     static gfxFontconfigUtils *sFontconfigUtils;
 
