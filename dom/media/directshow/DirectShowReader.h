@@ -60,9 +60,6 @@ public:
   RefPtr<SeekPromise>
   Seek(SeekTarget aTarget, int64_t aEndTime) override;
 
-protected:
-  void NotifyDataArrivedInternal() override;
-
 private:
   
   
@@ -104,11 +101,6 @@ private:
 
   
   uint32_t mBytesPerSample;
-
-  
-  int64_t mDuration;
-
-  MediaByteRangeSet mLastCachedRanges;
 };
 
 } 
