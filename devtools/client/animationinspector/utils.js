@@ -9,7 +9,9 @@
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 const { LocalizationHelper } = require("devtools/client/shared/l10n");
-const L10N = new LocalizationHelper("devtools/locale/animationinspector.properties");
+
+const STRINGS_URI = "devtools/locale/animationinspector.properties";
+const L10N = new LocalizationHelper(STRINGS_URI);
 
 
 

@@ -32,9 +32,10 @@ const clipboardHelper = require("devtools/shared/platform/clipboard");
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
                                   "resource://gre/modules/PluralForm.jsm");
 
-const STYLE_INSPECTOR_PROPERTIES = "devtools-shared/locale/styleinspector.properties";
-const {LocalizationHelper} = require("devtools/client/shared/l10n");
-const STYLE_INSPECTOR_L10N = new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
+XPCOMUtils.defineLazyGetter(CssComputedView, "_strings", function () {
+  return Services.strings.createBundle(
+    "chrome://devtools-shared/locale/styleinspector.properties");
+});
 
 const FILTER_CHANGED_TIMEOUT = 150;
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -217,7 +218,7 @@ function CssComputedView(inspector, document, pageStyle) {
 
 CssComputedView.l10n = function (name) {
   try {
-    return STYLE_INSPECTOR_L10N.getStr(name);
+    return CssComputedView._strings.GetStringFromName(name);
   } catch (ex) {
     console.log("Error reading '" + name + "'");
     throw new Error("l10n error with " + name);
