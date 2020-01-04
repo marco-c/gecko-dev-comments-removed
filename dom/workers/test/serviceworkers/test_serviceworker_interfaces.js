@@ -187,6 +187,8 @@ var interfaceNamesInGlobalScope =
 
     { name: "PushSubscription", b2g: false, android: false, nightlyAndroid: true },
 
+    { name: "PushSubscriptionOptions", b2g: false, android: false, nightlyAndroid: true },
+
     "Request",
 
     "Response",
