@@ -342,6 +342,22 @@ this.MessageChannel = {
 
 
 
+  setupMessageManagers(messageManagers) {
+    for (let mm of messageManagers) {
+      
+      
+      
+      
+      
+      this.messageManagers.get(mm);
+    }
+  },
+
+  
+
+
+
+
 
 
 
