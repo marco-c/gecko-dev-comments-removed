@@ -106,8 +106,6 @@ private:
     enum EErrorType {
       ERROR_MANIFEST_VERIFIED_FAILED,
       ERROR_RESOURCE_VERIFIED_FAILED,
-      ERROR_GET_INSTALLER_FAILED,
-      ERROR_INSTALL_RESOURCE_FAILED,
     };
 
   public:
@@ -174,7 +172,7 @@ private:
 
     
     
-    void InstallSignedPackagedApp(const ResourceCacheInfo* aInfo);
+    void InstallSignedPackagedApp();
 
     
     
@@ -213,15 +211,6 @@ private:
     
     
     nsCString mPackageOrigin;
-
-    
-    uint32_t mAppId;
-
-    
-    bool mProcessingFirstRequest;
-
-    
-    nsCString mManifestContent;
   };
 
   
