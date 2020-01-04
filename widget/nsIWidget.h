@@ -42,7 +42,6 @@ class   nsIRunnable;
 class   nsIKeyEventInPluginCallback;
 
 namespace mozilla {
-class CompositorVsyncDispatcher;
 namespace dom {
 class TabChild;
 } 
@@ -347,7 +346,6 @@ class nsIWidget : public nsISupports
     typedef mozilla::widget::TextEventDispatcher TextEventDispatcher;
     typedef mozilla::widget::TextEventDispatcherListener
       TextEventDispatcherListener;
-    typedef mozilla::CompositorVsyncDispatcher CompositorVsyncDispatcher;
     typedef mozilla::LayoutDeviceIntMargin LayoutDeviceIntMargin;
     typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
     typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
@@ -556,11 +554,6 @@ class nsIWidget : public nsISupports
 
 
     virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() = 0;
-
-    
-
-
-    virtual CompositorVsyncDispatcher* GetCompositorVsyncDispatcher() = 0;
 
     
 
