@@ -645,6 +645,19 @@ BufferTextureHost::BindTextureSource(CompositableTextureSourceRef& aTexture)
   return !!aTexture;
 }
 
+void
+BufferTextureHost::UnbindTextureSource()
+{
+  
+  
+  
+  
+  
+  
+  
+  ReadUnlock();
+}
+
 gfx::SurfaceFormat
 BufferTextureHost::GetFormat() const
 {
