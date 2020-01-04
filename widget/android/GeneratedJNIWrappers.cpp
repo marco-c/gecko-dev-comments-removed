@@ -86,12 +86,12 @@ auto DownloadsIntegration::ScanMedia(mozilla::jni::String::Param a0, mozilla::jn
 const char GeckoAppShell::name[] =
         "org/mozilla/gecko/GeckoAppShell";
 
-constexpr char GeckoAppShell::AddPluginView_t::name[];
-constexpr char GeckoAppShell::AddPluginView_t::signature[];
+constexpr char GeckoAppShell::AddFullScreenPluginView_t::name[];
+constexpr char GeckoAppShell::AddFullScreenPluginView_t::signature[];
 
-auto GeckoAppShell::AddPluginView(mozilla::jni::Object::Param a0, float a1, float a2, float a3, float a4, bool a5) -> void
+auto GeckoAppShell::AddFullScreenPluginView(mozilla::jni::Object::Param a0) -> void
 {
-    return mozilla::jni::Method<AddPluginView_t>::Call(GeckoAppShell::Context(), nullptr, a0, a1, a2, a3, a4, a5);
+    return mozilla::jni::Method<AddFullScreenPluginView_t>::Call(GeckoAppShell::Context(), nullptr, a0);
 }
 
 constexpr char GeckoAppShell::CancelVibrate_t::name[];
@@ -637,12 +637,12 @@ auto GeckoAppShell::RegisterSurfaceTextureFrameListener(mozilla::jni::Object::Pa
     return mozilla::jni::Method<RegisterSurfaceTextureFrameListener_t>::Call(GeckoAppShell::Context(), nullptr, a0, a1);
 }
 
-constexpr char GeckoAppShell::RemovePluginView_t::name[];
-constexpr char GeckoAppShell::RemovePluginView_t::signature[];
+constexpr char GeckoAppShell::RemoveFullScreenPluginView_t::name[];
+constexpr char GeckoAppShell::RemoveFullScreenPluginView_t::signature[];
 
-auto GeckoAppShell::RemovePluginView(mozilla::jni::Object::Param a0, bool a1) -> void
+auto GeckoAppShell::RemoveFullScreenPluginView(mozilla::jni::Object::Param a0) -> void
 {
-    return mozilla::jni::Method<RemovePluginView_t>::Call(GeckoAppShell::Context(), nullptr, a0, a1);
+    return mozilla::jni::Method<RemoveFullScreenPluginView_t>::Call(GeckoAppShell::Context(), nullptr, a0);
 }
 
 constexpr char GeckoAppShell::RequestUiThreadCallback_t::name[];
@@ -2020,67 +2020,6 @@ auto AudioFocusAgent::NotifyStoppedPlaying() -> void
 {
     return mozilla::jni::Method<NotifyStoppedPlaying_t>::Call(AudioFocusAgent::Context(), nullptr);
 }
-
-const char CodecProxy::name[] =
-        "org/mozilla/gecko/media/CodecProxy";
-
-constexpr char CodecProxy::Create_t::name[];
-constexpr char CodecProxy::Create_t::signature[];
-
-auto CodecProxy::Create(mozilla::jni::Object::Param a0, mozilla::jni::Object::Param a1, mozilla::jni::Object::Param a2) -> CodecProxy::LocalRef
-{
-    return mozilla::jni::Method<Create_t>::Call(CodecProxy::Context(), nullptr, a0, a1, a2);
-}
-
-constexpr char CodecProxy::Flush_t::name[];
-constexpr char CodecProxy::Flush_t::signature[];
-
-auto CodecProxy::Flush() const -> bool
-{
-    return mozilla::jni::Method<Flush_t>::Call(CodecProxy::mCtx, nullptr);
-}
-
-constexpr char CodecProxy::Input_t::name[];
-constexpr char CodecProxy::Input_t::signature[];
-
-auto CodecProxy::Input(mozilla::jni::ByteArray::Param a0, mozilla::jni::Object::Param a1) const -> bool
-{
-    return mozilla::jni::Method<Input_t>::Call(CodecProxy::mCtx, nullptr, a0, a1);
-}
-
-constexpr char CodecProxy::Release_t::name[];
-constexpr char CodecProxy::Release_t::signature[];
-
-auto CodecProxy::Release() const -> bool
-{
-    return mozilla::jni::Method<Release_t>::Call(CodecProxy::mCtx, nullptr);
-}
-
-const char CodecProxy::NativeCallbacks::name[] =
-        "org/mozilla/gecko/media/CodecProxy$NativeCallbacks";
-
-constexpr char CodecProxy::NativeCallbacks::New_t::name[];
-constexpr char CodecProxy::NativeCallbacks::New_t::signature[];
-
-auto CodecProxy::NativeCallbacks::New() -> NativeCallbacks::LocalRef
-{
-    return mozilla::jni::Constructor<New_t>::Call(NativeCallbacks::Context(), nullptr);
-}
-
-constexpr char CodecProxy::NativeCallbacks::DisposeNative_t::name[];
-constexpr char CodecProxy::NativeCallbacks::DisposeNative_t::signature[];
-
-constexpr char CodecProxy::NativeCallbacks::OnError_t::name[];
-constexpr char CodecProxy::NativeCallbacks::OnError_t::signature[];
-
-constexpr char CodecProxy::NativeCallbacks::OnInputExhausted_t::name[];
-constexpr char CodecProxy::NativeCallbacks::OnInputExhausted_t::signature[];
-
-constexpr char CodecProxy::NativeCallbacks::OnOutput_t::name[];
-constexpr char CodecProxy::NativeCallbacks::OnOutput_t::signature[];
-
-constexpr char CodecProxy::NativeCallbacks::OnOutputFormatChanged_t::name[];
-constexpr char CodecProxy::NativeCallbacks::OnOutputFormatChanged_t::signature[];
 
 const char Restrictions::name[] =
         "org/mozilla/gecko/restrictions/Restrictions";

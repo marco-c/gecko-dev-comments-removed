@@ -246,8 +246,6 @@ public:
                           bool aLayersUpdated, int32_t aPaintSyncId,
                           ScreenMargin& aFixedLayerMargins);
 
-    void AddPluginView(jobject view, const LayoutDeviceRect& rect, bool isFullScreen);
-
     
     
     

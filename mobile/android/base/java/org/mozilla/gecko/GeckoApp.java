@@ -357,7 +357,6 @@ public abstract class GeckoApp
         
         switch (msg) {
             case UNSELECTED:
-                hidePlugins(tab);
                 break;
 
             case LOCATION_CHANGE:
@@ -917,30 +916,18 @@ public abstract class GeckoApp
     }
 
     @Override
-    public void addPluginView(final View view, final RectF rect, final boolean isFullScreen) {
-        ThreadUtils.postToUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Tabs tabs = Tabs.getInstance();
-                Tab tab = tabs.getSelectedTab();
+    public void addPluginView(final View view) {
 
-                if (isFullScreen) {
+        if (ThreadUtils.isOnUiThread()) {
+            addFullScreenPluginView(view);
+        } else {
+            ThreadUtils.postToUiThread(new Runnable() {
+                @Override
+                public void run() {
                     addFullScreenPluginView(view);
-                    return;
                 }
-
-                PluginLayer layer = (PluginLayer) tab.getPluginLayer(view);
-                if (layer == null) {
-                    layer = new PluginLayer(view, rect, mLayerView.getRenderer().getMaxTextureSize());
-                    tab.addPluginLayer(view, layer);
-                } else {
-                    layer.reset(rect);
-                    layer.setVisible(true);
-                }
-
-                mLayerView.addLayer(layer);
-            }
-        });
+            });
+        }
     }
 
      void removeFullScreenPluginView(View view) {
@@ -975,24 +962,17 @@ public abstract class GeckoApp
     }
 
     @Override
-    public void removePluginView(final View view, final boolean isFullScreen) {
-        ThreadUtils.postToUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Tabs tabs = Tabs.getInstance();
-                Tab tab = tabs.getSelectedTab();
-
-                if (isFullScreen) {
+    public void removePluginView(final View view) {
+        if (ThreadUtils.isOnUiThread()) {
+            removePluginView(view);
+        } else {
+            ThreadUtils.postToUiThread(new Runnable() {
+                @Override
+                public void run() {
                     removeFullScreenPluginView(view);
-                    return;
                 }
-
-                PluginLayer layer = (PluginLayer) tab.removePluginLayer(view);
-                if (layer != null) {
-                    layer.destroy();
-                }
-            }
-        });
+            });
+        }
     }
 
     
@@ -1096,51 +1076,8 @@ public abstract class GeckoApp
         return inSampleSize;
     }
 
-    private void hidePluginLayer(Layer layer) {
-        LayerView layerView = mLayerView;
-        layerView.removeLayer(layer);
-        layerView.requestRender();
-    }
-
-    private void showPluginLayer(Layer layer) {
-        LayerView layerView = mLayerView;
-        layerView.addLayer(layer);
-        layerView.requestRender();
-    }
-
     public void requestRender() {
         mLayerView.requestRender();
-    }
-
-    public void hidePlugins(Tab tab) {
-        for (Layer layer : tab.getPluginLayers()) {
-            if (layer instanceof PluginLayer) {
-                ((PluginLayer) layer).setVisible(false);
-            }
-
-            hidePluginLayer(layer);
-        }
-
-        requestRender();
-    }
-
-    public void showPlugins() {
-        Tabs tabs = Tabs.getInstance();
-        Tab tab = tabs.getSelectedTab();
-
-        showPlugins(tab);
-    }
-
-    public void showPlugins(Tab tab) {
-        for (Layer layer : tab.getPluginLayers()) {
-            showPluginLayer(layer);
-
-            if (layer instanceof PluginLayer) {
-                ((PluginLayer) layer).setVisible(true);
-            }
-        }
-
-        requestRender();
     }
 
     @Override
@@ -1377,7 +1314,6 @@ public abstract class GeckoApp
                 
                 String restoreMessage = null;
                 if (!mIsRestoringActivity && mShouldRestore) {
-                    final boolean isExternalURL = invokedWithExternalURL(getIntentURI(new SafeIntent(getIntent())));
                     try {
                         
                         
@@ -1385,37 +1321,23 @@ public abstract class GeckoApp
                         
                         
                         
-                        restoreMessage = restoreSessionTabs(isExternalURL, false);
+                        final SafeIntent intent = new SafeIntent(getIntent());
+                        restoreMessage = restoreSessionTabs(invokedWithExternalURL(getIntentURI(intent)));
                     } catch (SessionRestoreException e) {
                         
+                        Log.e(LOGTAG, "An error occurred during restore", e);
                         
                         
                         
                         
-                        if (mShouldRestore) {
-                            Log.e(LOGTAG, "An error occurred during restore, switching to backup file", e);
+                        if (mShouldRestore && getProfile().sessionFileExistsAndNotEmptyWindow()) {
                             
                             
                             
-                            
-                            
-                            if (getProfile().sessionFileExists()) {
-                                Telemetry.addToHistogram("FENNEC_SESSIONSTORE_DAMAGED_SESSION_FILE", 1);
-                            }
-                            try {
-                                restoreMessage = restoreSessionTabs(isExternalURL, true);
-                                Telemetry.addToHistogram("FENNEC_SESSIONSTORE_RESTORING_FROM_BACKUP", 1);
-                            } catch (SessionRestoreException ex) {
-                                if (!mShouldRestore) {
-                                    
-                                    Telemetry.addToHistogram("FENNEC_SESSIONSTORE_RESTORING_FROM_BACKUP", 1);
-                                } else {
-                                    
-                                    Log.e(LOGTAG, "An error occurred during restore", ex);
-                                    mShouldRestore = false;
-                                }
-                            }
+                            Log.d(LOGTAG, "Suspecting a damaged session store file.");
+                            Telemetry.addToHistogram("FENNEC_SESSIONSTORE_DAMAGED_SESSION_FILE", 1);
                         }
+                        mShouldRestore = false;
                     }
                 }
 
@@ -1794,9 +1716,9 @@ public abstract class GeckoApp
     }
 
     @WorkerThread
-    private String restoreSessionTabs(final boolean isExternalURL, boolean useBackup) throws SessionRestoreException {
+    private String restoreSessionTabs(final boolean isExternalURL) throws SessionRestoreException {
         try {
-            String sessionString = getProfile().readSessionFile(useBackup);
+            String sessionString = getProfile().readSessionFile(false);
             if (sessionString == null) {
                 throw new SessionRestoreException("Could not read from session file");
             }
@@ -1807,23 +1729,20 @@ public abstract class GeckoApp
             if (mShouldRestore) {
                 final JSONArray tabs = new JSONArray();
                 final JSONObject windowObject = new JSONObject();
-                final boolean sessionDataValid;
 
                 LastSessionParser parser = new LastSessionParser(tabs, windowObject, isExternalURL);
 
                 if (mPrivateBrowsingSession == null) {
-                    sessionDataValid = parser.parse(sessionString);
+                    parser.parse(sessionString);
                 } else {
-                    sessionDataValid = parser.parse(sessionString, mPrivateBrowsingSession);
+                    parser.parse(sessionString, mPrivateBrowsingSession);
                 }
 
                 if (tabs.length() > 0) {
                     windowObject.put("tabs", tabs);
                     sessionString = new JSONObject().put("windows", new JSONArray().put(windowObject)).toString();
                 } else {
-                    if (parser.allTabsSkipped() || sessionDataValid) {
-                        
-                        
+                    if (parser.allTabsSkipped()) {
                         
                         
                         

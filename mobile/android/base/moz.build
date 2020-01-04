@@ -240,7 +240,6 @@ geckoview_java_files = [
     'gfx/GeckoLayerClient.java',
     'gfx/ImmutableViewportMetrics.java',
     'gfx/IntSize.java',
-    'gfx/JavaPanZoomController.java',
     'gfx/Layer.java',
     'gfx/LayerRenderer.java',
     'gfx/LayerView.java',
@@ -255,13 +254,9 @@ geckoview_java_files = [
     'gfx/ProgressiveUpdateData.java',
     'gfx/RectUtils.java',
     'gfx/RenderTask.java',
-    'gfx/ScrollbarLayer.java',
     'gfx/SimpleScaleGestureDetector.java',
     'gfx/StackScroller.java',
     'gfx/SubdocumentScrollHelper.java',
-    'gfx/TextureGenerator.java',
-    'gfx/TextureReaper.java',
-    'gfx/TouchEventHandler.java',
     'gfx/ViewTransform.java',
     'gfx/VirtualLayer.java',
     'InputConnectionListener.java',
@@ -504,16 +499,8 @@ gbjar.sources += ['java/org/mozilla/gecko/' + x for x in [
     'lwt/LightweightTheme.java',
     'lwt/LightweightThemeDrawable.java',
     'mdns/MulticastDNSManager.java',
-    'media/AsyncCodec.java',
-    'media/AsyncCodecFactory.java',
     'media/AudioFocusAgent.java',
-    'media/Codec.java',
-    'media/CodecManager.java',
-    'media/CodecProxy.java',
-    'media/FormatParam.java',
-    'media/JellyBeanAsyncCodec.java',
     'media/MediaControlService.java',
-    'media/Sample.java',
     'MediaCastingBar.java',
     'MemoryMonitor.java',
     'menu/GeckoMenu.java',
@@ -1042,9 +1029,3 @@ DEFINES['TOPOBJDIR'] = TOPOBJDIR
 OBJDIR_PP_FILES.mobile.android.base += [
     'AndroidManifest.xml.in',
 ]
-
-gbjar.sources += ['generated/org/mozilla/gecko/' + x for x in [
-    'media/ICodec.java',
-    'media/ICodecCallbacks.java',
-    'media/ICodecManager.java',
-]]

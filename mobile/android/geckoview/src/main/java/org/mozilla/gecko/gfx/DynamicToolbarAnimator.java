@@ -112,11 +112,6 @@ public class DynamicToolbarAnimator {
             }
         };
         PrefsHelper.addObserver(new String[] { PREF_SCROLL_TOOLBAR_THRESHOLD }, mPrefObserver);
-
-        
-        if (!AppConstants.MOZ_ANDROID_APZ) {
-            mScrollingRootContent = true;
-        }
     }
 
     public void destroy() {

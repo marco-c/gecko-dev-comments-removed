@@ -67,11 +67,11 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
 
     
     @Override
-    public void addPluginView(final View view, final RectF rect, final boolean isFullScreen) {}
+    public void addPluginView(final View view) {}
 
     
     @Override
-    public void removePluginView(final View view, final boolean isFullScreen) {}
+    public void removePluginView(final View view) {}
 
     
     @Override

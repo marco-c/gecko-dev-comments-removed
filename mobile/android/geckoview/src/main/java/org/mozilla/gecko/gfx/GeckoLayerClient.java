@@ -331,29 +331,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         });
     }
 
-    private void adjustViewport(DisplayPortMetrics displayPort) {
-        
-        
-        if (AppConstants.MOZ_ANDROID_APZ)
-            return;
-
-        ImmutableViewportMetrics metrics = getViewportMetrics();
-        ImmutableViewportMetrics clampedMetrics = metrics.clamp();
-
-        if (displayPort == null) {
-            displayPort = DisplayPortCalculator.calculate(metrics, mPanZoomController.getVelocityVector());
-        }
-
-        mDisplayPort = displayPort;
-        mGeckoViewport = clampedMetrics;
-
-        if (mRecordDrawTimes) {
-            mDrawTimingQueue.add(displayPort);
-        }
-
-        GeckoAppShell.sendEventToGecko(GeckoEvent.createViewportEvent(clampedMetrics, displayPort));
-    }
-
     
     private void abortPanZoomAnimation() {
         if (mPanZoomController != null) {
@@ -639,8 +616,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
             RectF cssPageRect = new RectF(cssPageLeft, cssPageTop, cssPageRight, cssPageBottom);
             float ourZoom = getViewportMetrics().zoomFactor;
             setPageRect(RectUtils.scale(cssPageRect, ourZoom), cssPageRect);
-            
-            
             
             
         }
@@ -965,9 +940,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     private void geometryChanged(DisplayPortMetrics displayPort) {
         
         sendResizeEventIfNecessary(false, null);
-        if (getRedrawHint()) {
-            adjustViewport(displayPort);
-        }
     }
 
     
@@ -1027,7 +999,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
             
             
             DisplayPortMetrics displayPort = DisplayPortCalculator.calculate(metrics, null);
-            adjustViewport(displayPort);
         }
     }
 
@@ -1150,7 +1121,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         ImmutableViewportMetrics viewportMetrics = mViewportMetrics;
         PointF origin = viewportMetrics.getOrigin();
         float zoom = viewportMetrics.zoomFactor;
-        ImmutableViewportMetrics geckoViewport = (AppConstants.MOZ_ANDROID_APZ ? mViewportMetrics : mGeckoViewport);
+        ImmutableViewportMetrics geckoViewport = mViewportMetrics;
         PointF geckoOrigin = geckoViewport.getOrigin();
         float geckoZoom = geckoViewport.zoomFactor;
 
@@ -1175,7 +1146,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         ImmutableViewportMetrics viewportMetrics = mViewportMetrics;
         PointF origin = viewportMetrics.getOrigin();
         float zoom = viewportMetrics.zoomFactor;
-        ImmutableViewportMetrics geckoViewport = (AppConstants.MOZ_ANDROID_APZ ? mViewportMetrics : mGeckoViewport);
+        ImmutableViewportMetrics geckoViewport = mViewportMetrics;
         PointF geckoOrigin = geckoViewport.getOrigin();
         float geckoZoom = geckoViewport.zoomFactor;
 
