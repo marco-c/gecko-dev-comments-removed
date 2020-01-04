@@ -54,8 +54,6 @@ public:
 
   virtual bool OnStateMachineTaskQueue() const = 0;
 
-  virtual bool OnDecodeTaskQueue() const = 0;
-
   
   
   virtual MediaResource* GetResource() const = 0;

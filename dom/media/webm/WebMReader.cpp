@@ -248,10 +248,7 @@ WebMReader::AsyncReadMetadata()
 nsresult
 WebMReader::RetrieveWebMMetadata(MediaInfo* aInfo)
 {
-  
-  
-  
-  MOZ_ASSERT(mDecoder->OnDecodeTaskQueue());
+  MOZ_ASSERT(OnTaskQueue());
 
   nestegg_io io;
   io.read = webm_read;
