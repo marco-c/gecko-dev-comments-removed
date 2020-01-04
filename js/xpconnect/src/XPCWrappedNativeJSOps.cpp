@@ -962,6 +962,8 @@ XPCNativeScriptableShared::XPCNativeScriptableShared(uint32_t aFlags,
                                                      bool aPopulate)
     : mFlags(aFlags)
 {
+    MOZ_COUNT_CTOR(XPCNativeScriptableShared);
+
     
 
     memset(&mJSClass, 0, sizeof(mJSClass));
@@ -1055,21 +1057,6 @@ XPCNativeScriptableShared::XPCNativeScriptableShared(uint32_t aFlags,
 
     if (mFlags.WantNewEnumerate())
         mJSClass.oOps = &XPC_WN_ObjectOpsWithEnumerate;
-}
-
-XPCNativeScriptableShared::~XPCNativeScriptableShared()
-{
-    
-    
-    
-    
-
-    if (mJSClass.cOps) {
-        XPCJSRuntime::Get()->GetNativeScriptableSharedMap()->Remove(this);
-        free((void*)mJSClass.cOps);
-    }
-
-    free((void*)mJSClass.name);
 }
 
 

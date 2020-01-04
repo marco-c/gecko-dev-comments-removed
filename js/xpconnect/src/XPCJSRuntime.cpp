@@ -826,6 +826,22 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp* fop,
             
             bool doSweep = !isCompartmentGC;
 
+            
+            
+            
+            if (!nsXPConnect::XPConnect()->IsShuttingDown()) {
+                for (auto i = self->mNativeScriptableSharedMap->Iter(); !i.Done(); i.Next()) {
+                    auto entry = static_cast<XPCNativeScriptableSharedMap::Entry*>(i.Get());
+                    XPCNativeScriptableShared* shared = entry->key;
+                    if (shared->IsMarked()) {
+                        shared->Unmark();
+                    } else if (doSweep) {
+                        delete shared;
+                        i.Remove();
+                    }
+                }
+            }
+
             if (doSweep) {
                 for (auto i = self->mClassInfo2NativeSetMap->Iter(); !i.Done(); i.Next()) {
                     auto entry = static_cast<ClassInfo2NativeSetMap::Entry*>(i.Get());

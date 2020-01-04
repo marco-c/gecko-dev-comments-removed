@@ -497,8 +497,6 @@ class XPCNativeScriptableSharedMap
 public:
     struct Entry : public PLDHashEntryHdr
     {
-        
-        
         XPCNativeScriptableShared* key;
 
         static PLDHashNumber
@@ -516,7 +514,7 @@ public:
 
     inline uint32_t Count() { return mTable.EntryCount(); }
 
-    void Remove(XPCNativeScriptableShared* key) { mTable.Remove(key); }
+    PLDHashTable::Iterator Iter() { return mTable.Iter(); }
 
 private:
     XPCNativeScriptableSharedMap();    
