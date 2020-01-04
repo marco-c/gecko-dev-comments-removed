@@ -28,13 +28,15 @@ function parseError(err) {
   }
 }
 
+let entityRegex = /&[\w][\w-\.]*;/g;
+
 
 function XMLParser(parser) {
   this.parser = parser;
   parser.onopentag = this.onOpenTag.bind(this);
   parser.onclosetag = this.onCloseTag.bind(this);
   parser.ontext = this.onText.bind(this);
-  parser.oncdata = this.onText.bind(this);
+  parser.oncdata = this.onCDATA.bind(this);
 
   this.document = {
     local: "#document",
@@ -73,6 +75,11 @@ XMLParser.prototype = {
   },
 
   onText: function(text) {
+    
+    this.onCDATA(text.replace(entityRegex, "null"));
+  },
+
+  onCDATA: function(text) {
     this._currentNode.textContent += text;
   }
 }
@@ -173,7 +180,7 @@ module.exports = {
                 continue;
               }
               blockLines.push(item.textStart);
-              scripts.push(`let ${item.attributes.name} = ${def}\n`);
+              scripts.push(`${def}\n`);
               break;
             }
             case "constructor":
@@ -213,7 +220,7 @@ module.exports = {
               
               blockLines.push(item.textStart);
               let content = reindent(item.textContent);
-              scripts.push(`function on${item.attributes.event}(event) {${content}}\n`);
+              scripts.push(`function onevent(event) {${content}}\n`);
               break;
             }
             default:
