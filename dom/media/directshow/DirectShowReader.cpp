@@ -56,13 +56,6 @@ DirectShowReader::~DirectShowReader()
 #endif
 }
 
-nsresult
-DirectShowReader::Init(MediaDecoderReader* aCloneDonor)
-{
-  MOZ_ASSERT(NS_IsMainThread(), "Must be on main thread.");
-  return NS_OK;
-}
-
 
 
 

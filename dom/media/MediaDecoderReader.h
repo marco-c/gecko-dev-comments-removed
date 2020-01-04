@@ -92,7 +92,7 @@ public:
 
   
   
-  virtual nsresult Init(MediaDecoderReader* aCloneDonor) = 0;
+  virtual nsresult Init() { return NS_OK; }
 
   
   

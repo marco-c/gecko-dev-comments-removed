@@ -61,10 +61,6 @@ public:
   virtual ~MediaCodecReader();
 
   
-  
-  virtual nsresult Init(MediaDecoderReader* aCloneDonor);
-
-  
   virtual void ReleaseMediaResources();
 
   
