@@ -78,7 +78,13 @@ class ADBAndroid(ADBDevice):
         :raises: * ADBTimeoutError
                  * ADBError
         """
-        self.command_output(["wait-for-device"], timeout=timeout)
+        
+        
+        
+        
+        
+        
+        self.command_output([], timeout=timeout)
         pm_error_string = "Error: Could not access the Package Manager"
         pm_list_commands = ["packages", "permission-groups", "permissions",
                             "instrumentation", "features", "libraries"]

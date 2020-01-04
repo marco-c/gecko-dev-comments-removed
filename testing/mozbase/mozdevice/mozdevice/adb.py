@@ -1853,7 +1853,13 @@ class ADBDevice(ADBCommand):
         to determine if the device has completed booting.
         """
         self.command_output(["reboot"], timeout=timeout)
-        self.command_output(["wait-for-device"], timeout=timeout)
+        
+        
+        
+        
+        
+        
+        self.command_output([], timeout=timeout)
         return self.is_device_ready(timeout=timeout)
 
     @abstractmethod
