@@ -1116,13 +1116,8 @@ let Cmds = {
     }
 
     
-    
-    
-    
     if (!projectList.sidebarsEnabled && AppManager.connected) {
-      return AppManager.listTabs().then(() => {
-        projectList.updateTabs();
-      }).catch(console.error);
+      projectList.refreshTabs();
     }
 
     return promise.resolve();
