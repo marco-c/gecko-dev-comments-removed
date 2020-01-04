@@ -68,7 +68,7 @@ private:
   void NuwaFork();
 
   
-  CancelableTask* mPreallocateAppProcessTask;
+  CancelableRunnable* mPreallocateAppProcessTask;
 
   
   
@@ -243,7 +243,7 @@ PreallocatedProcessManagerImpl::ScheduleDelayedNuwaFork()
     return;
   }
 
-  RefPtr<CancelableTask> task = NewRunnableMethod(
+  RefPtr<CancelableRunnable> task = NewRunnableMethod(
     this, &PreallocatedProcessManagerImpl::DelayedNuwaFork);
   mPreallocateAppProcessTask = task;
   MessageLoop::current()->PostDelayedTask(task.forget(),

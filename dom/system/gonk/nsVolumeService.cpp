@@ -80,7 +80,6 @@ nsVolumeService::Shutdown()
   }
 
   XRE_GetIOMessageLoop()->PostTask(
-      FROM_HERE,
       NewRunnableFunction(ShutdownVolumeServiceIOThread));
 
   sSingleton = nullptr;
@@ -101,7 +100,6 @@ nsVolumeService::nsVolumeService()
   
   
   XRE_GetIOMessageLoop()->PostTask(
-      FROM_HERE,
       NewRunnableFunction(InitVolumeServiceIOThread, this));
 
   nsCOMPtr<nsIPowerManagerService> pmService =

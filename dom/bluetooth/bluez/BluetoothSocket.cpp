@@ -43,7 +43,7 @@ public:
   
   
 
-  void SetDelayedConnectTask(CancelableTask* aTask);
+  void SetDelayedConnectTask(CancelableRunnable* aTask);
   void ClearDelayedConnectTask();
   void CancelDelayedConnectTask();
 
@@ -126,7 +126,7 @@ private:
 
 
 
-  CancelableTask* mDelayedConnectTask;
+  CancelableRunnable* mDelayedConnectTask;
 
   
 
@@ -193,7 +193,7 @@ BluetoothSocket::BluetoothSocketIO::GetDataSocket()
 }
 
 void
-BluetoothSocket::BluetoothSocketIO::SetDelayedConnectTask(CancelableTask* aTask)
+BluetoothSocket::BluetoothSocketIO::SetDelayedConnectTask(CancelableRunnable* aTask)
 {
   MOZ_ASSERT(IsConsumerThread());
 
@@ -285,7 +285,7 @@ BluetoothSocket::BluetoothSocketIO::OnConnected()
   MOZ_ASSERT(GetConnectionStatus() == SOCKET_IS_CONNECTED);
 
   GetConsumerThread()->PostTask(
-    FROM_HERE, new SocketEventTask(this, SocketEventTask::CONNECT_SUCCESS));
+    MakeAndAddRef<SocketEventTask>(this, SocketEventTask::CONNECT_SUCCESS));
 
   AddWatchers(READ_WATCHER, true);
   if (HasPendingData()) {
@@ -334,7 +334,7 @@ BluetoothSocket::BluetoothSocketIO::OnSocketCanAcceptWithoutBlocking()
   SetSocket(fd, SOCKET_IS_CONNECTED);
 
   GetConsumerThread()->PostTask(
-    FROM_HERE, new SocketEventTask(this, SocketEventTask::CONNECT_SUCCESS));
+    MakeAndAddRef<SocketEventTask>(this, SocketEventTask::CONNECT_SUCCESS));
 
   AddWatchers(READ_WATCHER, true);
   if (HasPendingData()) {
@@ -384,7 +384,7 @@ BluetoothSocket::BluetoothSocketIO::FireSocketError()
 
   
   GetConsumerThread()->PostTask(
-    FROM_HERE, new SocketEventTask(this, SocketEventTask::CONNECT_ERROR));
+    MakeAndAddRef<SocketEventTask>(this, SocketEventTask::CONNECT_ERROR));
 }
 
 
@@ -416,7 +416,7 @@ public:
     , mBuffer(aBuffer)
   { }
 
-  void Run() override
+  NS_IMETHOD Run() override
   {
     BluetoothSocketIO* io = SocketTask<BluetoothSocketIO>::GetIO();
 
@@ -425,13 +425,15 @@ public:
     if (NS_WARN_IF(io->IsShutdownOnConsumerThread())) {
       
       
-      return;
+      return NS_OK;
     }
 
     BluetoothSocket* bluetoothSocket = io->GetBluetoothSocket();
     MOZ_ASSERT(bluetoothSocket);
 
     bluetoothSocket->ReceiveSocketData(mBuffer);
+
+    return NS_OK;
   }
 
 private:
@@ -441,8 +443,8 @@ private:
 void
 BluetoothSocket::BluetoothSocketIO::ConsumeBuffer()
 {
-  GetConsumerThread()->PostTask(FROM_HERE,
-                                new ReceiveTask(this, mBuffer.release()));
+  GetConsumerThread()->PostTask(
+    MakeAndAddRef<ReceiveTask>(this, mBuffer.release()));
 }
 
 void
@@ -505,13 +507,14 @@ public:
     : SocketIOTask<BluetoothSocketIO>(aIO)
   { }
 
-  void Run() override
+  NS_IMETHOD Run() override
   {
     MOZ_ASSERT(!GetIO()->IsConsumerThread());
 
     if (!IsCanceled()) {
       GetIO()->Listen();
     }
+    return NS_OK;
   }
 };
 
@@ -523,12 +526,14 @@ public:
     : SocketIOTask<BluetoothSocketIO>(aIO)
   { }
 
-  void Run() override
+  NS_IMETHOD Run() override
   {
     MOZ_ASSERT(!GetIO()->IsConsumerThread());
     MOZ_ASSERT(!IsCanceled());
 
     GetIO()->Connect();
+
+    return NS_OK;
   }
 };
 
@@ -540,21 +545,23 @@ public:
     : SocketIOTask<BluetoothSocketIO>(aIO)
   { }
 
-  void Run() override
+  NS_IMETHOD Run() override
   {
     MOZ_ASSERT(GetIO()->IsConsumerThread());
 
     if (IsCanceled()) {
-      return;
+      return NS_OK;
     }
 
     BluetoothSocketIO* io = GetIO();
     if (io->IsShutdownOnConsumerThread()) {
-      return;
+      return NS_OK;
     }
 
     io->ClearDelayedConnectTask();
-    io->GetIOLoop()->PostTask(FROM_HERE, new ConnectTask(io));
+    io->GetIOLoop()->PostTask(MakeAndAddRef<ConnectTask>(io));
+
+    return NS_OK;
   }
 };
 
@@ -670,11 +677,12 @@ BluetoothSocket::Connect(BluetoothUnixSocketConnector* aConnector,
   SetConnectionStatus(SOCKET_CONNECTING);
 
   if (aDelayMs > 0) {
-    DelayedConnectTask* connectTask = new DelayedConnectTask(mIO);
+    RefPtr<DelayedConnectTask> connectTask =
+      MakeAndAddRef<DelayedConnectTask>(mIO);
     mIO->SetDelayedConnectTask(connectTask);
-    MessageLoop::current()->PostDelayedTask(FROM_HERE, connectTask, aDelayMs);
+    MessageLoop::current()->PostDelayedTask(connectTask.forget(), aDelayMs);
   } else {
-    aIOLoop->PostTask(FROM_HERE, new ConnectTask(mIO));
+    aIOLoop->PostTask(MakeAndAddRef<ConnectTask>(mIO));
   }
 
   return NS_OK;
@@ -700,7 +708,7 @@ BluetoothSocket::Listen(BluetoothUnixSocketConnector* aConnector,
   mIO = new BluetoothSocketIO(aConsumerLoop, aIOLoop, this, aConnector);
   SetConnectionStatus(SOCKET_LISTENING);
 
-  aIOLoop->PostTask(FROM_HERE, new ListenTask(mIO));
+  aIOLoop->PostTask(MakeAndAddRef<ListenTask>(mIO));
 
   return NS_OK;
 }
@@ -733,8 +741,7 @@ BluetoothSocket::SendSocketData(UnixSocketIOBuffer* aBuffer)
   MOZ_ASSERT(!mIO->IsShutdownOnConsumerThread());
 
   mIO->GetIOLoop()->PostTask(
-    FROM_HERE,
-    new SocketIOSendTask<BluetoothSocketIO, UnixSocketIOBuffer>(mIO, aBuffer));
+    MakeAndAddRef<SocketIOSendTask<BluetoothSocketIO, UnixSocketIOBuffer>>(mIO, aBuffer));
 }
 
 
@@ -754,7 +761,7 @@ BluetoothSocket::Close()
   
   
   mIO->ShutdownOnConsumerThread();
-  mIO->GetIOLoop()->PostTask(FROM_HERE, new SocketIOShutdownTask(mIO));
+  mIO->GetIOLoop()->PostTask(MakeAndAddRef<SocketIOShutdownTask>(mIO));
   mIO = nullptr;
 
   NotifyDisconnect();

@@ -326,7 +326,7 @@ SocketEventTask::~SocketEventTask()
   MOZ_COUNT_DTOR(SocketEventTask);
 }
 
-void
+NS_IMETHODIMP
 SocketEventTask::Run()
 {
   SocketIOBase* io = SocketTask<SocketIOBase>::GetIO();
@@ -336,7 +336,7 @@ SocketEventTask::Run()
   if (NS_WARN_IF(io->IsShutdownOnConsumerThread())) {
     
     
-    return;
+    return NS_OK;
   }
 
   SocketBase* socketBase = io->GetSocketBase();
@@ -349,6 +349,8 @@ SocketEventTask::Run()
   } else if (mEvent == DISCONNECT) {
     socketBase->NotifyDisconnect();
   }
+
+  return NS_OK;
 }
 
 
@@ -366,7 +368,7 @@ SocketRequestClosingTask::~SocketRequestClosingTask()
   MOZ_COUNT_DTOR(SocketRequestClosingTask);
 }
 
-void
+NS_IMETHODIMP
 SocketRequestClosingTask::Run()
 {
   SocketIOBase* io = SocketTask<SocketIOBase>::GetIO();
@@ -376,13 +378,15 @@ SocketRequestClosingTask::Run()
   if (NS_WARN_IF(io->IsShutdownOnConsumerThread())) {
     
     
-    return;
+    return NS_OK;
   }
 
   SocketBase* socketBase = io->GetSocketBase();
   MOZ_ASSERT(socketBase);
 
   socketBase->Close();
+
+  return NS_OK;
 }
 
 
@@ -400,10 +404,11 @@ SocketDeleteInstanceTask::~SocketDeleteInstanceTask()
   MOZ_COUNT_DTOR(SocketDeleteInstanceTask);
 }
 
-void
+NS_IMETHODIMP
 SocketDeleteInstanceTask::Run()
 {
   mIO.reset(); 
+  return NS_OK;
 }
 
 
@@ -421,7 +426,7 @@ SocketIOShutdownTask::~SocketIOShutdownTask()
   MOZ_COUNT_DTOR(SocketIOShutdownTask);
 }
 
-void
+NS_IMETHODIMP
 SocketIOShutdownTask::Run()
 {
   SocketIOBase* io = SocketIOTask<SocketIOBase>::GetIO();
@@ -435,8 +440,9 @@ SocketIOShutdownTask::Run()
   
   
   io->ShutdownOnIOThread();
-  io->GetConsumerThread()->PostTask(FROM_HERE,
-                                    new SocketDeleteInstanceTask(io));
+  io->GetConsumerThread()->PostTask(
+    MakeAndAddRef<SocketDeleteInstanceTask>(io));
+  return NS_OK;
 }
 
 }

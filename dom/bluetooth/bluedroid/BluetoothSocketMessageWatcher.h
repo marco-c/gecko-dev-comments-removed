@@ -84,12 +84,12 @@ private:
 
 
 
-class SocketMessageWatcherTask final : public Task
+class SocketMessageWatcherTask final : public Runnable
 {
 public:
   SocketMessageWatcherTask(SocketMessageWatcher* aWatcher);
 
-  void Run() override;
+  NS_IMETHOD Run() override;
 
 private:
   SocketMessageWatcher* mWatcher;
@@ -98,12 +98,12 @@ private:
 
 
 
-class DeleteSocketMessageWatcherTask final : public Task
+class DeleteSocketMessageWatcherTask final : public Runnable
 {
 public:
   DeleteSocketMessageWatcherTask(BluetoothSocketResultHandler* aRes);
 
-  void Run() override;
+  NS_IMETHOD Run() override;
 
 private:
   BluetoothSocketResultHandler* mRes;

@@ -88,16 +88,17 @@ BluetoothDaemonSocketModule::ConnectCmd(const BluetoothAddress& aBdAddr,
 
 
 template <typename T>
-class DeleteTask final : public Task
+class DeleteTask final : public Runnable
 {
 public:
   DeleteTask(T* aPtr)
   : mPtr(aPtr)
   { }
 
-  void Run() override
+  NS_IMETHOD Run() override
   {
     mPtr = nullptr;
+    return NS_OK;
   }
 
 private:
@@ -134,7 +135,7 @@ public:
     }
 
     MessageLoopForIO::current()->PostTask(
-      FROM_HERE, new DeleteTask<AcceptWatcher>(this));
+      MakeAndAddRef<DeleteTask<AcceptWatcher>>(this));
   }
 };
 
@@ -145,8 +146,8 @@ BluetoothDaemonSocketModule::AcceptCmd(int aFd,
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  Task* t = new SocketMessageWatcherTask(new AcceptWatcher(aFd, aRes));
-  XRE_GetIOMessageLoop()->PostTask(FROM_HERE, t);
+  XRE_GetIOMessageLoop()->PostTask(
+    MakeAndAddRef<SocketMessageWatcherTask>(new AcceptWatcher(aFd, aRes)));
 
   return NS_OK;
 }
@@ -157,8 +158,8 @@ BluetoothDaemonSocketModule::CloseCmd(BluetoothSocketResultHandler* aRes)
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  Task* t = new DeleteSocketMessageWatcherTask(aRes);
-  XRE_GetIOMessageLoop()->PostTask(FROM_HERE, t);
+  XRE_GetIOMessageLoop()->PostTask(
+    MakeAndAddRef<DeleteSocketMessageWatcherTask>(aRes));
 
   return NS_OK;
 }
@@ -273,7 +274,7 @@ public:
     }
 
     MessageLoopForIO::current()->PostTask(
-      FROM_HERE, new DeleteTask<ConnectWatcher>(this));
+      MakeAndAddRef<DeleteTask<ConnectWatcher>>(this));
   }
 };
 
@@ -298,8 +299,8 @@ BluetoothDaemonSocketModule::ConnectRsp(const DaemonSocketPDUHeader& aHeader,
   }
 
   
-  Task* t = new SocketMessageWatcherTask(new ConnectWatcher(fd, aRes));
-  XRE_GetIOMessageLoop()->PostTask(FROM_HERE, t);
+  XRE_GetIOMessageLoop()->PostTask(
+    MakeAndAddRef<SocketMessageWatcherTask>(new ConnectWatcher(fd, aRes)));
 }
 
 

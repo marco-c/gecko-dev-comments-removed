@@ -53,8 +53,8 @@ DataSocketIO::ReceiveData(int aFd)
   nsresult rv = QueryReceiveBuffer(&incoming);
   if (NS_FAILED(rv)) {
     
-    GetConsumerThread()->PostTask(FROM_HERE,
-                                  new SocketRequestClosingTask(this));
+    GetConsumerThread()->PostTask(
+      MakeAndAddRef<SocketRequestClosingTask>(this));
     return -1;
   }
 
@@ -62,14 +62,14 @@ DataSocketIO::ReceiveData(int aFd)
   if (res < 0) {
     
     DiscardBuffer();
-    GetConsumerThread()->PostTask(FROM_HERE,
-                                  new SocketRequestClosingTask(this));
+    GetConsumerThread()->PostTask(
+      MakeAndAddRef<SocketRequestClosingTask>(this));
     return -1;
   } else if (!res) {
     
     DiscardBuffer();
-    GetConsumerThread()->PostTask(FROM_HERE,
-                                  new SocketRequestClosingTask(this));
+    GetConsumerThread()->PostTask(
+      MakeAndAddRef<SocketRequestClosingTask>(this));
     return 0;
   }
 
@@ -96,8 +96,8 @@ DataSocketIO::SendPendingData(int aFd)
     ssize_t res = outgoing->Send(aFd);
     if (res < 0) {
       
-      GetConsumerThread()->PostTask(FROM_HERE,
-                                    new SocketRequestClosingTask(this));
+      GetConsumerThread()->PostTask(
+        MakeAndAddRef<SocketRequestClosingTask>(this));
       return NS_ERROR_FAILURE;
     } else if (!res && outgoing->GetSize()) {
       
