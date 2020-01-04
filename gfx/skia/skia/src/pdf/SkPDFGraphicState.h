@@ -12,9 +12,9 @@
 
 #include "SkPaint.h"
 #include "SkPDFTypes.h"
-#include "SkChecksum.h"
+#include "SkTemplates.h"
+#include "SkThread.h"
 
-class SkPDFCanon;
 class SkPDFFormXObject;
 
 
@@ -22,29 +22,28 @@ class SkPDFFormXObject;
 
 
 
-class SkPDFGraphicState final : public SkPDFObject {
-    
+
+
+
+
+class SkPDFGraphicState : public SkPDFDict {
+    SK_DECLARE_INST_COUNT(SkPDFGraphicState)
 public:
     enum SkPDFSMaskMode {
         kAlpha_SMaskMode,
         kLuminosity_SMaskMode
     };
 
-    
-    
-    void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap,
-                    const SkPDFSubstituteMap& substitutes) const override;
+    virtual ~SkPDFGraphicState();
+
+    virtual void getResources(const SkTSet<SkPDFObject*>& knownResourceObjects,
+                              SkTSet<SkPDFObject*>* newResourceObjects);
 
     
-
-
-
-
-
-
-    static SkPDFGraphicState* GetGraphicStateForPaint(SkPDFCanon* canon,
-                                                      const SkPaint& paint);
+    
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+    virtual size_t getOutputSize(SkPDFCatalog* catalog, bool indirect);
 
     
 
@@ -53,11 +52,7 @@ public:
 
 
 
-
-
-    static SkPDFDict* GetSMaskGraphicState(SkPDFFormXObject* sMask,
-                                           bool invert,
-                                           SkPDFSMaskMode sMaskMode);
+    static SkPDFGraphicState* GetGraphicStateForPaint(const SkPaint& paint);
 
     
 
@@ -66,24 +61,50 @@ public:
 
 
 
+    static SkPDFGraphicState* GetSMaskGraphicState(SkPDFFormXObject* sMask,
+                                                   bool invert,
+                                                   SkPDFSMaskMode sMaskMode);
 
-    static SkPDFDict* GetNoSMaskGraphicState();
+    
 
-    bool operator==(const SkPDFGraphicState& rhs) const {
-        return 0 == memcmp(&fStrokeWidth, &rhs.fStrokeWidth, 12);
-    }
-    uint32_t hash() const { return SkChecksum::Murmur3(&fStrokeWidth, 12); }
+
+
+
+
+    static SkPDFGraphicState* GetNoSMaskGraphicState();
 
 private:
-    const SkScalar fStrokeWidth;
-    const SkScalar fStrokeMiter;
-    const uint8_t fAlpha;
-    const uint8_t fStrokeCap;   
-    const uint8_t fStrokeJoin;  
-    const uint8_t fMode;        
+    const SkPaint fPaint;
+    SkTDArray<SkPDFObject*> fResources;
+    bool fPopulated;
+    bool fSMask;
 
-    SkPDFGraphicState(const SkPaint&);
+    class GSCanonicalEntry {
+    public:
+        SkPDFGraphicState* fGraphicState;
+        const SkPaint* fPaint;
 
+        bool operator==(const GSCanonicalEntry& b) const;
+        explicit GSCanonicalEntry(SkPDFGraphicState* gs)
+            : fGraphicState(gs),
+              fPaint(&gs->fPaint) {}
+        explicit GSCanonicalEntry(const SkPaint* paint)
+            : fGraphicState(NULL),
+              fPaint(paint) {}
+    };
+
+    
+    static SkTDArray<GSCanonicalEntry>& CanonicalPaints();
+    static SkBaseMutex& CanonicalPaintsMutex();
+
+    SkPDFGraphicState();
+    explicit SkPDFGraphicState(const SkPaint& paint);
+
+    void populateDict();
+
+    static SkPDFObject* GetInvertFunction();
+
+    static int Find(const SkPaint& paint);
     typedef SkPDFDict INHERITED;
 };
 

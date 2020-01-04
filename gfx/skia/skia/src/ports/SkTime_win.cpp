@@ -5,8 +5,6 @@
 
 
 
-#include "SkTypes.h"
-#if defined(SK_BUILD_FOR_WIN32)
 
 
 #include "SkTime.h"
@@ -16,24 +14,10 @@ void SkTime::GetDateTime(DateTime* dt)
     if (dt)
     {
         SYSTEMTIME      st;
-        TIME_ZONE_INFORMATION timeZoneInfo;
-        int tz_bias;
-        GetLocalTime(&st);
-        
-        switch (GetTimeZoneInformation(&timeZoneInfo)) {
-            case TIME_ZONE_ID_STANDARD:
-                tz_bias = -timeZoneInfo.Bias - timeZoneInfo.StandardBias;
-                break;
-            case TIME_ZONE_ID_DAYLIGHT:
-                tz_bias = -timeZoneInfo.Bias - timeZoneInfo.DaylightBias;
-                break;
-            default:
-                tz_bias = -timeZoneInfo.Bias;
-                break;
-        }
-        dt->fTimeZoneMinutes = SkToS16(tz_bias);
+        GetSystemTime(&st);
+
         dt->fYear       = st.wYear;
-        dt->fMonth      = SkToU8(st.wMonth);
+        dt->fMonth      = SkToU8(st.wMonth + 1);
         dt->fDayOfWeek  = SkToU8(st.wDayOfWeek);
         dt->fDay        = SkToU8(st.wDay);
         dt->fHour       = SkToU8(st.wHour);
@@ -41,4 +25,14 @@ void SkTime::GetDateTime(DateTime* dt)
         dt->fSecond     = SkToU8(st.wSecond);
     }
 }
-#endif
+
+SkMSec SkTime::GetMSecs()
+{
+    FILETIME        ft;
+    LARGE_INTEGER   li;
+    GetSystemTimeAsFileTime(&ft);
+    li.LowPart  = ft.dwLowDateTime;
+    li.HighPart = ft.dwHighDateTime;
+    __int64 t  = li.QuadPart;       
+    return (SkMSec)(t / 10000);               
+}

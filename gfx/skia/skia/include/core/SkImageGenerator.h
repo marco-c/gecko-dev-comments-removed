@@ -8,19 +8,12 @@
 #ifndef SkImageGenerator_DEFINED
 #define SkImageGenerator_DEFINED
 
-#include "SkBitmap.h"
-#include "SkColor.h"
 #include "SkImageInfo.h"
+#include "SkColor.h"
 
-class GrContext;
-class GrTexture;
-class GrTextureParams;
 class SkBitmap;
 class SkData;
 class SkImageGenerator;
-class SkMatrix;
-class SkPaint;
-class SkPicture;
 
 
 
@@ -40,19 +33,20 @@ class SkPicture;
 
 
 
-SK_API bool SkDEPRECATED_InstallDiscardablePixelRef(SkImageGenerator*, SkBitmap* destination);
+SK_API bool SkInstallDiscardablePixelRef(SkImageGenerator*, SkBitmap* destination);
 
 
 
 
 
-SK_API bool SkDEPRECATED_InstallDiscardablePixelRef(SkData* encoded, SkBitmap* destination);
+SK_API void SkPurgeGlobalDiscardableMemoryPool();
 
 
 
 
 
-class SK_API SkImageGenerator : public SkNoncopyable {
+
+class SK_API SkImageGenerator {
 public:
     
 
@@ -60,8 +54,13 @@ public:
 
     virtual ~SkImageGenerator() { }
 
-    uint32_t uniqueID() const { return fUniqueID; }
-
+#ifdef SK_SUPPORT_LEGACY_IMAGEGENERATORAPI
+    virtual SkData* refEncodedData() { return this->onRefEncodedData(); }
+    virtual bool getInfo(SkImageInfo* info) { return this->onGetInfo(info); }
+    virtual bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes) {
+        return this->onGetPixels(info, pixels, rowBytes, NULL, NULL);
+    }
+#else
     
 
 
@@ -74,12 +73,15 @@ public:
     
 
 
-    const SkImageInfo& getInfo() const { return fInfo; }
+
+
+
+
+
+
+    bool getInfo(SkImageInfo* info);
 
     
-
-
-
 
 
 
@@ -111,8 +113,8 @@ public:
     
 
 
-
     bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes);
+#endif
 
     
 
@@ -125,140 +127,15 @@ public:
 
 
 
-    bool getYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3],
-                       SkYUVColorSpace* colorSpace);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    GrTexture* generateTexture(GrContext*, const SkIRect* subset = nullptr);
-
-    struct SupportedSizes {
-        SkISize fSizes[2];
-    };
-
-    
-
-
-
-
-
-
-
-
-    bool computeScaledDimensions(SkScalar scale, SupportedSizes*);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool generateScaledPixels(const SkISize& scaledSize, const SkIPoint& subsetOrigin,
-                              const SkPixmap& subsetPixels);
-
-    bool generateScaledPixels(const SkPixmap& scaledPixels) {
-        return this->generateScaledPixels(SkISize::Make(scaledPixels.width(),
-                                                        scaledPixels.height()),
-                                          SkIPoint::Make(0, 0), scaledPixels);
-    }
-
-    
-
-
-
-
-    static SkImageGenerator* NewFromEncoded(SkData*);
-
-    
-
-
-
-
-    static SkImageGenerator* NewFromPicture(const SkISize&, const SkPicture*, const SkMatrix*,
-                                            const SkPaint*);
-
-    bool tryGenerateBitmap(SkBitmap* bm) {
-        return this->tryGenerateBitmap(bm, nullptr, nullptr);
-    }
-    bool tryGenerateBitmap(SkBitmap* bm, const SkImageInfo& info, SkBitmap::Allocator* allocator) {
-        return this->tryGenerateBitmap(bm, &info, allocator);
-    }
-    void generateBitmap(SkBitmap* bm) {
-        if (!this->tryGenerateBitmap(bm, nullptr, nullptr)) {
-            sk_throw();
-        }
-    }
-    void generateBitmap(SkBitmap* bm, const SkImageInfo& info) {
-        if (!this->tryGenerateBitmap(bm, &info, nullptr)) {
-            sk_throw();
-        }
-    }
+    bool getYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3]);
 
 protected:
-    SkImageGenerator(const SkImageInfo& info);
-
     virtual SkData* onRefEncodedData();
-
-    virtual bool onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
+    virtual bool onGetInfo(SkImageInfo* info);
+    virtual bool onGetPixels(const SkImageInfo& info,
+                             void* pixels, size_t rowBytes,
                              SkPMColor ctable[], int* ctableCount);
     virtual bool onGetYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3]);
-    virtual bool onGetYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3],
-                                 SkYUVColorSpace* colorSpace);
-
-    virtual GrTexture* onGenerateTexture(GrContext*, const SkIRect*) {
-        return nullptr;
-    }
-
-    virtual bool onComputeScaledDimensions(SkScalar, SupportedSizes*) {
-        return false;
-    }
-    virtual bool onGenerateScaledPixels(const SkISize&, const SkIPoint&, const SkPixmap&) {
-        return false;
-    }
-
-    bool tryGenerateBitmap(SkBitmap* bm, const SkImageInfo* optionalInfo, SkBitmap::Allocator*);
-
-private:
-    const SkImageInfo fInfo;
-    const uint32_t fUniqueID;
-
-    
-    
-    
-    static SkImageGenerator* NewFromEncodedImpl(SkData*);
 };
 
 #endif  

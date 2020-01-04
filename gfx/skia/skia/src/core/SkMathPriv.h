@@ -10,14 +10,10 @@
 
 #include "SkMath.h"
 
-#if defined(SK_BUILD_FOR_IOS) && (defined(SK_BUILD_FOR_ARM32) || defined(SK_BUILD_FOR_ARM64))
+#ifdef SK_BUILD_FOR_IOS
 
 
-
-
-
-
-#define SK_CPU_FLUSH_TO_ZERO
+#define SK_DISCARD_DENORMALIZED_FOR_SPEED
 #endif
 
 
@@ -57,7 +53,7 @@ static inline unsigned SkClampUMax(unsigned value, unsigned max) {
 static inline U8CPU SkMulDiv255Trunc(U8CPU a, U8CPU b) {
     SkASSERT((uint8_t)a == a);
     SkASSERT((uint8_t)b == b);
-    unsigned prod = a*b + 1;
+    unsigned prod = SkMulS16(a, b) + 1;
     return (prod + (prod >> 8)) >> 8;
 }
 
@@ -67,7 +63,7 @@ static inline U8CPU SkMulDiv255Trunc(U8CPU a, U8CPU b) {
 static inline U8CPU SkMulDiv255Ceiling(U8CPU a, U8CPU b) {
     SkASSERT((uint8_t)a == a);
     SkASSERT((uint8_t)b == b);
-    unsigned prod = a*b + 255;
+    unsigned prod = SkMulS16(a, b) + 255;
     return (prod + (prod >> 8)) >> 8;
 }
 

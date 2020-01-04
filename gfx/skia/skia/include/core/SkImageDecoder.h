@@ -10,13 +10,10 @@
 
 #include "SkBitmap.h"
 #include "SkImage.h"
-#include "SkPngChunkReader.h"
 #include "SkRect.h"
 #include "SkRefCnt.h"
 #include "SkTRegistry.h"
 #include "SkTypes.h"
-
-
 
 class SkStream;
 class SkStreamRewindable;
@@ -29,7 +26,6 @@ class SkImageDecoder : SkNoncopyable {
 public:
     virtual ~SkImageDecoder();
 
-    
     enum Format {
         kUnknown_Format,
         kBMP_Format,
@@ -41,7 +37,6 @@ public:
         kWEBP_Format,
         kPKM_Format,
         kKTX_Format,
-        kASTC_Format,
 
         kLastKnownFormat = kKTX_Format,
     };
@@ -50,15 +45,6 @@ public:
 
 
     virtual Format getFormat() const;
-
-    
-
-
-
-
-
-    bool decodeYUV8Planes(SkStream* stream, SkISize componentSizes[3], void* planes[3],
-                          size_t rowBytes[3], SkYUVColorSpace*);
 
     
 
@@ -129,20 +115,95 @@ public:
 
     bool getRequireUnpremultipliedColors() const { return fRequireUnpremultipliedColors; }
 
-#ifdef SK_LEGACY_PEEKER
     
-    
-    
-    class Peeker : public SkPngChunkReader {
+
+
+
+
+    class Peeker : public SkRefCnt {
     public:
-        bool readChunk(const char tag[], const void* data, size_t length) final {
-            return this->peek(tag, data, length);
-        }
+        SK_DECLARE_INST_COUNT(Peeker)
+
+        
+
+
         virtual bool peek(const char tag[], const void* data, size_t length) = 0;
+    private:
+        typedef SkRefCnt INHERITED;
     };
+
+    Peeker* getPeeker() const { return fPeeker; }
+    Peeker* setPeeker(Peeker*);
+
+#ifdef SK_SUPPORT_LEGACY_IMAGEDECODER_CHOOSER
+    
+
+
+
+
+    class Chooser : public SkRefCnt {
+    public:
+        SK_DECLARE_INST_COUNT(Chooser)
+
+        virtual void begin(int count) {}
+        virtual void inspect(int index, SkBitmap::Config config, int width, int height) {}
+        
+
+        virtual int choose() = 0;
+
+    private:
+        typedef SkRefCnt INHERITED;
+    };
+
+    Chooser* getChooser() const { return fChooser; }
+    Chooser* setChooser(Chooser*);
 #endif
-    SkPngChunkReader* getPeeker() const { return fPeeker; }
-    SkPngChunkReader* setPeeker(SkPngChunkReader*);
+
+#ifdef SK_SUPPORT_LEGACY_BITMAP_CONFIG
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    struct PrefConfigTable {
+        SkBitmap::Config fPrefFor_8Index_NoAlpha_src;
+        SkBitmap::Config fPrefFor_8Index_YesAlpha_src;
+        SkBitmap::Config fPrefFor_8Gray_src;
+        SkBitmap::Config fPrefFor_8bpc_NoAlpha_src;
+        SkBitmap::Config fPrefFor_8bpc_YesAlpha_src;
+    };
+
+    
+
+
+
+
+
+
+    void setPrefConfigTable(const PrefConfigTable&);
+
+    
+
+
+
+
+    void resetPrefConfigTable() { fUsePrefTable = false; }
+#endif
 
     
 
@@ -203,15 +264,26 @@ public:
     
 
 
-    enum Result {
-        kFailure        = 0,    
-                                
-        kPartialSuccess = 1,    
-                                
-        kSuccess        = 2     
-                                
-                                
-    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool decode(SkStream*, SkBitmap* bitmap, SkColorType pref, Mode);
+    bool decode(SkStream* stream, SkBitmap* bitmap, Mode mode) {
+        return this->decode(stream, bitmap, kUnknown_SkColorType, mode);
+    }
 
     
 
@@ -220,22 +292,16 @@ public:
 
 
 
+    bool buildTileIndex(SkStreamRewindable*, int *width, int *height);
+
+    
 
 
 
 
 
 
-
-
-
-
-
-
-    Result decode(SkStream*, SkBitmap* bitmap, SkColorType pref, Mode);
-    Result decode(SkStream* stream, SkBitmap* bitmap, Mode mode) {
-        return this->decode(stream, bitmap, kUnknown_SkColorType, mode);
-    }
+    bool decodeSubset(SkBitmap* bm, const SkIRect& subset, SkColorType pref);
 
     
 
@@ -243,6 +309,7 @@ public:
     static SkImageDecoder* Factory(SkStreamRewindable*);
 
     
+
 
 
 
@@ -264,6 +331,7 @@ public:
 
 
 
+
     static bool DecodeMemory(const void* buffer, size_t size, SkBitmap* bitmap, SkColorType pref,
                              Mode, Format* format = NULL);
     static bool DecodeMemory(const void* buffer, size_t size, SkBitmap* bitmap){
@@ -271,6 +339,22 @@ public:
     }
 
     
+
+
+    struct Target {
+        
+
+
+        void*  fAddr;
+
+        
+
+
+        size_t fRowBytes;
+    };
+
+    
+
 
 
 
@@ -286,7 +370,19 @@ public:
 
 protected:
     
-    virtual Result onDecode(SkStream*, SkBitmap* bitmap, Mode) = 0;
+    virtual bool onDecode(SkStream*, SkBitmap* bitmap, Mode) = 0;
+
+    
+    
+    virtual bool onBuildTileIndex(SkStreamRewindable*, int *width, int *height) {
+        return false;
+    }
+
+    
+    
+    virtual bool onDecodeSubset(SkBitmap* bitmap, const SkIRect& rect) {
+        return false;
+    }
 
     
 
@@ -294,11 +390,18 @@ protected:
 
 
 
-    virtual bool onDecodeYUV8Planes(SkStream*, SkISize[3] ,
-                                    void*[3] , size_t[3] ,
-                                    SkYUVColorSpace*) {
-        return false;
-    }
+
+
+
+
+
+
+
+
+
+    bool cropBitmap(SkBitmap *dst, SkBitmap *src, int sampleSize,
+                    int dstX, int dstY, int width, int height,
+                    int srcX, int srcY);
 
     
 
@@ -325,6 +428,12 @@ protected:
 
 
     SkColorType getDefaultPref() { return fDefaultPref; }
+    
+#ifdef SK_SUPPORT_LEGACY_IMAGEDECODER_CHOOSER
+    
+    
+    bool chooseFromOneChoice(SkColorType, int width, int height) const;
+#endif
 
     
 
@@ -350,10 +459,17 @@ protected:
     SkColorType getPrefColorType(SrcDepth, bool hasAlpha) const;
 
 private:
-    SkPngChunkReader*       fPeeker;
+    Peeker*                 fPeeker;
+#ifdef SK_SUPPORT_LEGACY_IMAGEDECODER_CHOOSER
+    Chooser*                fChooser;
+#endif
     SkBitmap::Allocator*    fAllocator;
     int                     fSampleSize;
     SkColorType             fDefaultPref;   
+#ifdef SK_SUPPORT_LEGACY_BITMAP_CONFIG
+    PrefConfigTable         fPrefTable;     
+    bool                    fUsePrefTable;
+#endif
     bool                    fPreserveSrcDepth;
     bool                    fDitherImage;
     bool                    fSkipWritingZeroes;
@@ -370,7 +486,7 @@ private:
 
 class SkImageDecoderFactory : public SkRefCnt {
 public:
-    
+    SK_DECLARE_INST_COUNT(SkImageDecoderFactory)
 
     virtual SkImageDecoder* newDecoder(SkStreamRewindable*) = 0;
 
@@ -393,8 +509,10 @@ public:
 
 
 
-#define DEFINE_DECODER_CREATOR(codec) \
-    SkImageDecoder* Create##codec() { return new Sk##codec; }
+#define DEFINE_DECODER_CREATOR(codec)           \
+    SkImageDecoder *Create ## codec () {        \
+        return SkNEW( Sk ## codec );            \
+    }
 
 
 
@@ -407,7 +525,6 @@ DECLARE_DECODER_CREATOR(WBMPImageDecoder);
 DECLARE_DECODER_CREATOR(WEBPImageDecoder);
 DECLARE_DECODER_CREATOR(PKMImageDecoder);
 DECLARE_DECODER_CREATOR(KTXImageDecoder);
-DECLARE_DECODER_CREATOR(ASTCImageDecoder);
 
 
 

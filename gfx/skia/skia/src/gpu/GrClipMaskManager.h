@@ -4,13 +4,17 @@
 
 
 
+
 #ifndef GrClipMaskManager_DEFINED
 #define GrClipMaskManager_DEFINED
 
-#include "GrPipelineBuilder.h"
+#include "GrClipMaskCache.h"
+#include "GrContext.h"
+#include "GrDrawState.h"
 #include "GrReducedClip.h"
 #include "GrStencil.h"
 #include "GrTexture.h"
+
 #include "SkClipStack.h"
 #include "SkDeque.h"
 #include "SkPath.h"
@@ -18,32 +22,11 @@
 #include "SkTLList.h"
 #include "SkTypes.h"
 
-class GrDrawTarget;
+class GrGpu;
 class GrPathRenderer;
 class GrPathRendererChain;
-class GrResourceProvider;
 class GrTexture;
 class SkPath;
-
-
-
-
-
-
-
-class GrAppliedClip : public SkNoncopyable {
-public:
-    GrAppliedClip() {}
-    const GrFragmentProcessor* clipCoverageFragmentProcessor() const { return fClipCoverageFP; }
-    const GrScissorState& scissorState() const { return fScissorState; }
-
-private:
-    SkAutoTUnref<const GrFragmentProcessor> fClipCoverageFP;
-    GrScissorState                          fScissorState;
-    friend class GrClipMaskManager;
-
-    typedef SkNoncopyable INHERITED;
-};
 
 
 
@@ -55,7 +38,10 @@ private:
 
 class GrClipMaskManager : SkNoncopyable {
 public:
-    GrClipMaskManager(GrDrawTarget* owner, bool debugClipBatchToBounds);
+    GrClipMaskManager()
+        : fGpu(NULL)
+        , fCurrClipMaskType(kNone_ClipMaskType) {
+    }
 
     
 
@@ -64,30 +50,32 @@ public:
 
 
 
-    bool setupClipping(const GrPipelineBuilder&,
-                       GrPipelineBuilder::AutoRestoreStencil*,
-                       const SkRect* devBounds,
-                       GrAppliedClip*);
+    bool setupClipping(const GrClipData* clipDataIn, GrDrawState::AutoRestoreEffects*,
+                       const SkRect* devBounds);
 
-    void adjustPathStencilParams(const GrStencilAttachment*, GrStencilSettings*);
+    void releaseResources();
 
+    bool isClipInStencil() const {
+        return kStencil_ClipMaskType == fCurrClipMaskType;
+    }
+    bool isClipInAlpha() const {
+        return kAlpha_ClipMaskType == fCurrClipMaskType;
+    }
+
+    void invalidateStencilMask() {
+        if (kStencil_ClipMaskType == fCurrClipMaskType) {
+            fCurrClipMaskType = kNone_ClipMaskType;
+        }
+    }
+
+    GrContext* getContext() {
+        return fAACache.getContext();
+    }
+
+    void setGpu(GrGpu* gpu);
+
+    void adjustPathStencilParams(GrStencilSettings* settings);
 private:
-    inline GrContext* getContext();
-    inline const GrCaps* caps() const;
-    inline GrResourceProvider* resourceProvider();
-
-    static bool PathNeedsSWRenderer(GrContext* context,
-                                    bool isStencilDisabled,
-                                    const GrRenderTarget* rt,
-                                    const SkMatrix& viewMatrix,
-                                    const SkClipStack::Element* element,
-                                    GrPathRenderer** prOut,
-                                    bool needsStencil);
-    static GrPathRenderer* GetPathRenderer(GrContext* context,
-                                           GrTexture* texture,
-                                           const SkMatrix& viewMatrix,
-                                           const SkClipStack::Element* element);
-
     
 
 
@@ -102,60 +90,86 @@ private:
         kIgnoreClip_StencilClipMode,
     };
 
-    
-    
-    
-    
-    
-    bool getAnalyticClipProcessor(const GrReducedClip::ElementList&,
-                                  bool abortIfAA,
-                                  SkVector& clipOffset,
-                                  const SkRect* devBounds,
-                                  const GrFragmentProcessor** fp);
+    GrGpu* fGpu;
 
     
-    bool createStencilClipMask(GrRenderTarget*,
-                               int32_t elementsGenID,
+
+
+
+
+    enum ClipMaskType {
+        kNone_ClipMaskType,
+        kStencil_ClipMaskType,
+        kAlpha_ClipMaskType,
+    } fCurrClipMaskType;
+
+    GrClipMaskCache fAACache;       
+
+    
+    
+    bool installClipEffects(const GrReducedClip::ElementList&,
+                            GrDrawState::AutoRestoreEffects*,
+                            const SkVector& clipOffset,
+                            const SkRect* devBounds);
+
+    
+    bool createStencilClipMask(int32_t elementsGenID,
                                GrReducedClip::InitialState initialState,
                                const GrReducedClip::ElementList& elements,
                                const SkIRect& clipSpaceIBounds,
                                const SkIPoint& clipSpaceToStencilOffset);
-
     
     
     GrTexture* createAlphaClipMask(int32_t elementsGenID,
                                    GrReducedClip::InitialState initialState,
                                    const GrReducedClip::ElementList& elements,
-                                   const SkVector& clipToMaskOffset,
                                    const SkIRect& clipSpaceIBounds);
-
     
     GrTexture* createSoftwareClipMask(int32_t elementsGenID,
                                       GrReducedClip::InitialState initialState,
                                       const GrReducedClip::ElementList& elements,
-                                      const SkVector& clipToMaskOffset,
                                       const SkIRect& clipSpaceIBounds);
 
-   bool useSWOnlyPath(const GrPipelineBuilder&,
-                      const GrRenderTarget* rt,
-                      const SkVector& clipToMaskOffset,
-                      const GrReducedClip::ElementList& elements);
+    
+    
+    GrTexture* getCachedMaskTexture(int32_t elementsGenID, const SkIRect& clipSpaceIBounds);
+
+
+    
+    
+    GrTexture* allocMaskTexture(int32_t elementsGenID,
+                                const SkIRect& clipSpaceIBounds,
+                                bool willUpload);
+
+    bool useSWOnlyPath(const GrReducedClip::ElementList& elements);
 
     
     
     
-    bool drawElement(GrPipelineBuilder*,
-                     const SkMatrix& viewMatrix,
-                     GrTexture* target,
-                     const SkClipStack::Element*,
-                     GrPathRenderer* pr = nullptr);
+    bool drawElement(GrTexture* target, const SkClipStack::Element*, GrPathRenderer* = NULL);
+
+    
+    
+    
+    bool canStencilAndDrawElement(GrTexture* target, const SkClipStack::Element*, GrPathRenderer**);
+
+    void mergeMask(GrTexture* dstMask,
+                   GrTexture* srcMask,
+                   SkRegion::Op op,
+                   const SkIRect& dstBound,
+                   const SkIRect& srcBound);
+
+    void getTemp(int width, int height, GrAutoScratchTexture* temp);
+
+    void setupCache(const SkClipStack& clip,
+                    const SkIRect& bounds);
 
     
 
 
 
-    void setPipelineBuilderStencil(const GrPipelineBuilder&,
-                                   GrPipelineBuilder::AutoRestoreStencil*);
+
+    void setGpuStencil();
 
     
 
@@ -165,14 +179,7 @@ private:
                              StencilClipMode mode,
                              int stencilBitCnt);
 
-    GrTexture* createCachedMask(int width, int height, const GrUniqueKey& key, bool renderTarget);
-
-    static const int kMaxAnalyticElements = 4;
-
-    GrDrawTarget*   fDrawTarget;    
-    StencilClipMode fClipMode;
-    bool            fDebugClipBatchToBounds;
-
     typedef SkNoncopyable INHERITED;
 };
+
 #endif 

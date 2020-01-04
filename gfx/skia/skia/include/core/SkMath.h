@@ -79,9 +79,6 @@ int SkCLZ_portable(uint32_t);
             if (mask) {
                 DWORD index;
                 _BitScanReverse(&index, mask);
-                
-                
-#pragma warning(suppress : 6102) // Using 'index' from failed function call
                 return index ^ 0x1F;
             } else {
                 return 32;
@@ -150,7 +147,7 @@ static inline int SkNextLog2(uint32_t value) {
 
 
 
-template <typename T> inline bool SkIsPow2(T value) {
+static inline bool SkIsPow2(int value) {
     return (value & (value - 1)) == 0;
 }
 
@@ -160,11 +157,39 @@ template <typename T> inline bool SkIsPow2(T value) {
 
 
 
+
+#ifdef SK_ARM_HAS_EDSP
+    static inline int32_t SkMulS16(S16CPU x, S16CPU y) {
+        SkASSERT((int16_t)x == x);
+        SkASSERT((int16_t)y == y);
+        int32_t product;
+        asm("smulbb %0, %1, %2 \n"
+            : "=r"(product)
+            : "r"(x), "r"(y)
+            );
+        return product;
+    }
+#else
+    #ifdef SK_DEBUG
+        static inline int32_t SkMulS16(S16CPU x, S16CPU y) {
+            SkASSERT((int16_t)x == x);
+            SkASSERT((int16_t)y == y);
+            return x * y;
+        }
+    #else
+        #define SkMulS16(x, y)  ((x) * (y))
+    #endif
+#endif
+
+
+
+
+
 static inline unsigned SkMul16ShiftRound(U16CPU a, U16CPU b, int shift) {
     SkASSERT(a <= 32767);
     SkASSERT(b <= 32767);
     SkASSERT(shift > 0 && shift <= 8);
-    unsigned prod = a*b + (1 << (shift - 1));
+    unsigned prod = SkMulS16(a, b) + (1 << (shift - 1));
     return (prod + (prod >> shift)) >> shift;
 }
 
@@ -175,7 +200,7 @@ static inline unsigned SkMul16ShiftRound(U16CPU a, U16CPU b, int shift) {
 static inline U8CPU SkMulDiv255Round(U16CPU a, U16CPU b) {
     SkASSERT(a <= 32767);
     SkASSERT(b <= 32767);
-    unsigned prod = a*b + 128;
+    unsigned prod = SkMulS16(a, b) + 128;
     return (prod + (prod >> 8)) >> 8;
 }
 

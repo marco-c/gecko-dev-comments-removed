@@ -13,9 +13,8 @@
 #include "SkFlattenable.h"
 #include "SkColor.h"
 
-class GrFragmentProcessor;
+class GrEffect;
 class GrTexture;
-class GrXPFactory;
 class SkString;
 
 
@@ -31,6 +30,8 @@ class SkString;
 
 class SK_API SkXfermode : public SkFlattenable {
 public:
+    SK_DECLARE_INST_COUNT(SkXfermode)
+
     virtual void xfer32(SkPMColor dst[], const SkPMColor src[], int count,
                         const SkAlpha aa[]) const;
     virtual void xfer16(uint16_t dst[], const SkPMColor src[], int count,
@@ -54,6 +55,29 @@ public:
 
         kCoeffCount
     };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual bool asCoeff(Coeff* src, Coeff* dst) const;
+
+    
+
+
+
+    static bool AsCoeff(const SkXfermode*, Coeff* src, Coeff* dst);
 
     
 
@@ -150,6 +174,13 @@ public:
 
 
 
+    static SkXfermodeProc16 GetProc16(Mode mode, SkColor srcColor);
+
+    
+
+
+
+
 
     static bool ModeAsCoeff(Mode mode, Coeff* src, Coeff* dst);
 
@@ -161,69 +192,24 @@ public:
     
 
 
-    virtual bool supportsCoverageAsAlpha() const;
-
-    
 
 
 
-    static bool SupportsCoverageAsAlpha(const SkXfermode* xfer);
 
-    enum SrcColorOpacity {
-        
-        kOpaque_SrcColorOpacity = 0,
-        
-        kTransparentBlack_SrcColorOpacity = 1,
-        
-        kTransparentAlpha_SrcColorOpacity = 2,
-        
-        kUnknown_SrcColorOpacity = 3
-    };
+
+
+    virtual bool asNewEffect(GrEffect** effect, GrTexture* background = NULL) const;
 
     
 
 
 
 
-    virtual bool isOpaque(SrcColorOpacity opacityType) const;
-
-    
-
-
-
-    static bool IsOpaque(const SkXfermode* xfer, SrcColorOpacity opacityType);
-
-    
-
-
-
-
-
-
-    virtual bool asFragmentProcessor(const GrFragmentProcessor** output,
-                                     const GrFragmentProcessor* dst) const;
-
-    
-
-
-
-
-
-    virtual bool asXPFactory(GrXPFactory** xpf) const;
-
-    
-
-
-
-    static inline bool AsXPFactory(SkXfermode* xfermode, GrXPFactory** xpf) {
-        if (nullptr == xfermode) {
-            if (xpf) {
-                *xpf = nullptr;
-            }
-            return true;
-        }
-        return xfermode->asXPFactory(xpf);
-    }
+    static bool AsNewEffectOrCoeff(SkXfermode*,
+                                   GrEffect** effect,
+                                   Coeff* src,
+                                   Coeff* dst,
+                                   GrTexture* background = NULL);
 
     SK_TO_STRING_PUREVIRT()
     SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
@@ -231,6 +217,8 @@ public:
 
 protected:
     SkXfermode() {}
+    explicit SkXfermode(SkReadBuffer& rb) : SkFlattenable(rb) {}
+
     
 
 

@@ -4,6 +4,9 @@
 
 
 
+
+
+
 #ifndef SkGlyphCache_DEFINED
 #define SkGlyphCache_DEFINED
 
@@ -11,15 +14,15 @@
 #include "SkChunkAlloc.h"
 #include "SkDescriptor.h"
 #include "SkGlyph.h"
-#include "SkTHash.h"
 #include "SkScalerContext.h"
 #include "SkTemplates.h"
 #include "SkTDArray.h"
 
+struct SkDeviceProperties;
 class SkPaint;
-class SkTraceMemoryDump;
 
 class SkGlyphCache_Globals;
+
 
 
 
@@ -46,10 +49,12 @@ public:
 
 
 
+
     const SkGlyph& getUnicharMetrics(SkUnichar);
     const SkGlyph& getGlyphIDMetrics(uint16_t);
 
     
+
 
 
 
@@ -59,28 +64,38 @@ public:
     
 
 
+
     uint16_t unicharToGlyph(SkUnichar);
 
     
+
 
     SkUnichar glyphToUnichar(uint16_t);
 
     
 
-    unsigned getGlyphCount() const;
+    unsigned getGlyphCount();
 
+#ifdef SK_BUILD_FOR_ANDROID
     
-    int countCachedGlyphs() const;
+
+    unsigned getBaseGlyphCount(SkUnichar charCode) const {
+        return fScalerContext->getBaseGlyphCount(charCode);
+    }
+#endif
 
     
 
 
     const void* findImage(const SkGlyph&);
-
     
 
 
     const SkPath* findPath(const SkGlyph&);
+    
+
+
+    const void* findDistanceField(const SkGlyph&);
 
     
 
@@ -99,11 +114,7 @@ public:
     }
 
     
-    size_t getMemoryUsed() const { return fMemoryUsed; }
 
-    void dump() const;
-
-    
 
 
 
@@ -113,11 +124,16 @@ public:
 
     
     bool getAuxProcData(void (*auxProc)(void*), void** dataPtr) const;
-
     
     void setAuxProc(void (*auxProc)(void*), void* auxData);
 
     SkScalerContext* getScalerContext() const { return fScalerContext; }
+
+    
+
+
+
+    static void VisitAllCaches(bool (*proc)(SkGlyphCache*, void*), void* ctx);
 
     
 
@@ -130,6 +146,7 @@ public:
     
 
 
+
     static void AttachCache(SkGlyphCache*);
 
     
@@ -139,19 +156,12 @@ public:
 
 
 
-    static SkGlyphCache* DetachCache(SkTypeface* typeface, const SkDescriptor* desc) {
-        return VisitCache(typeface, desc, DetachProc, nullptr);
+
+
+    static SkGlyphCache* DetachCache(SkTypeface* typeface,
+                                     const SkDescriptor* desc) {
+        return VisitCache(typeface, desc, DetachProc, NULL);
     }
-
-    static void Dump();
-
-    
-
-
-    static void DumpMemoryStatistics(SkTraceMemoryDump* dump);
-
-    typedef void (*Visitor)(const SkGlyphCache&, void* context);
-    static void VisitAll(Visitor, void* context);
 
 #ifdef SK_DEBUG
     void validate() const;
@@ -172,83 +182,66 @@ public:
             }
         }
         void forget() {
-            fCache = nullptr;
+            fCache = NULL;
         }
     private:
         const SkGlyphCache* fCache;
     };
 
 private:
-    friend class SkGlyphCache_Globals;
+    
+    SkGlyphCache(SkTypeface*, const SkDescriptor*, SkScalerContext*);
+    ~SkGlyphCache();
 
     enum MetricsType {
         kJustAdvance_MetricsType,
         kFull_MetricsType
     };
 
-    enum {
-        kHashBits           = 8,
-        kHashCount          = 1 << kHashBits,
-        kHashMask           = kHashCount - 1
-    };
+    SkGlyph* lookupMetrics(uint32_t id, MetricsType);
+    static bool DetachProc(const SkGlyphCache*, void*) { return true; }
 
-    typedef uint32_t PackedGlyphID;    
-    typedef uint32_t PackedUnicharID;  
+    SkGlyphCache*       fNext, *fPrev;
+    SkDescriptor*       fDesc;
+    SkScalerContext*    fScalerContext;
+    SkPaint::FontMetrics fFontMetrics;
+
+    enum {
+        kHashBits   = 8,
+        kHashCount  = 1 << kHashBits,
+        kHashMask   = kHashCount - 1
+    };
+    SkGlyph*            fGlyphHash[kHashCount];
+    SkTDArray<SkGlyph*> fGlyphArray;
+    SkChunkAlloc        fGlyphAlloc;
 
     struct CharGlyphRec {
-        PackedUnicharID    fPackedUnicharID;
-        PackedGlyphID      fPackedGlyphID;
+        uint32_t    fID;    
+        SkGlyph*    fGlyph;
     };
+    
+    CharGlyphRec    fCharToGlyphHash[kHashCount];
+
+    static inline unsigned ID2HashIndex(uint32_t id) {
+        id ^= id >> 16;
+        id ^= id >> 8;
+        return id & kHashMask;
+    }
+
+    
+    size_t  fMemoryUsed;
 
     struct AuxProcRec {
         AuxProcRec* fNext;
         void (*fProc)(void*);
         void* fData;
     };
-
-    
-    SkGlyphCache(SkTypeface*, const SkDescriptor*, SkScalerContext*);
-    ~SkGlyphCache();
-
-    
-    
-    
-    SkGlyph* lookupByPackedGlyphID(PackedGlyphID packedGlyphID, MetricsType type);
-
-    
-    SkGlyph* lookupByChar(SkUnichar id, MetricsType type, SkFixed x = 0, SkFixed y = 0);
-
-    
-    
-    
-    SkGlyph* allocateNewGlyph(PackedGlyphID packedGlyphID, MetricsType type);
-
-    static bool DetachProc(const SkGlyphCache*, void*) { return true; }
-
-    
-    CharGlyphRec* getCharGlyphRec(PackedUnicharID id);
-
+    AuxProcRec* fAuxProcList;
     void invokeAndRemoveAuxProcs();
 
     inline static SkGlyphCache* FindTail(SkGlyphCache* head);
 
-    SkGlyphCache*          fNext;
-    SkGlyphCache*          fPrev;
-    SkDescriptor* const    fDesc;
-    SkScalerContext* const fScalerContext;
-    SkPaint::FontMetrics   fFontMetrics;
-
-    
-    SkTHashTable<SkGlyph, PackedGlyphID, SkGlyph::HashTraits> fGlyphMap;
-
-    SkChunkAlloc           fGlyphAlloc;
-
-    SkAutoTArray<CharGlyphRec> fPackedUnicharIDToPackedGlyphID;
-
-    
-    size_t                 fMemoryUsed;
-
-    AuxProcRec*            fAuxProcList;
+    friend class SkGlyphCache_Globals;
 };
 
 class SkAutoGlyphCacheBase {
@@ -258,7 +251,7 @@ public:
     void release() {
         if (fCache) {
             SkGlyphCache::AttachCache(fCache);
-            fCache = nullptr;
+            fCache = NULL;
         }
     }
 
@@ -269,13 +262,13 @@ protected:
     SkAutoGlyphCacheBase(SkTypeface* typeface, const SkDescriptor* desc) {
         fCache = SkGlyphCache::DetachCache(typeface, desc);
     }
-    SkAutoGlyphCacheBase(const SkPaint& ,
-                         const SkSurfaceProps* ,
-                         const SkMatrix* ) {
-        fCache = nullptr;
+    SkAutoGlyphCacheBase(const SkPaint& paint,
+                         const SkDeviceProperties* deviceProperties,
+                         const SkMatrix* matrix) {
+        fCache = NULL;
     }
     SkAutoGlyphCacheBase() {
-        fCache = nullptr;
+        fCache = NULL;
     }
     ~SkAutoGlyphCacheBase() {
         if (fCache) {
@@ -295,9 +288,9 @@ public:
     SkAutoGlyphCache(SkTypeface* typeface, const SkDescriptor* desc) :
         SkAutoGlyphCacheBase(typeface, desc) {}
     SkAutoGlyphCache(const SkPaint& paint,
-                     const SkSurfaceProps* surfaceProps,
+                     const SkDeviceProperties* deviceProperties,
                      const SkMatrix* matrix) {
-        fCache = paint.detachCache(surfaceProps, matrix, false);
+        fCache = paint.detachCache(deviceProperties, matrix, false);
     }
 
 private:
@@ -311,9 +304,9 @@ public:
     SkAutoGlyphCacheNoGamma(SkTypeface* typeface, const SkDescriptor* desc) :
         SkAutoGlyphCacheBase(typeface, desc) {}
     SkAutoGlyphCacheNoGamma(const SkPaint& paint,
-                            const SkSurfaceProps* surfaceProps,
+                            const SkDeviceProperties* deviceProperties,
                             const SkMatrix* matrix) {
-        fCache = paint.detachCache(surfaceProps, matrix, true);
+        fCache = paint.detachCache(deviceProperties, matrix, true);
     }
 
 private:

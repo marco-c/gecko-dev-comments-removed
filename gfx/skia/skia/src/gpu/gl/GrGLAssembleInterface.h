@@ -8,24 +8,11 @@
 
 #include "gl/GrGLInterface.h"
 
+typedef void(*GrGLFuncPtr)();
 typedef GrGLFuncPtr (*GrGLGetProc)(void* ctx, const char name[]);
 
 
 
 
 
-
-const GrGLInterface* GrGLAssembleInterface(void* ctx, GrGLGetProc get);
-
-
-
-
-
 const GrGLInterface* GrGLAssembleGLInterface(void* ctx, GrGLGetProc get);
-
-
-
-
-
-
-const GrGLInterface* GrGLAssembleGLESInterface(void* ctx, GrGLGetProc get);

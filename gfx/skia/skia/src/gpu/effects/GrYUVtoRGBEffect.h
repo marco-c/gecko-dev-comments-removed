@@ -8,17 +8,14 @@
 #ifndef GrYUVtoRGBEffect_DEFINED
 #define GrYUVtoRGBEffect_DEFINED
 
-#include "SkImageInfo.h"
-
-class GrFragmentProcessor;
+class GrEffect;
 class GrTexture;
 
 namespace GrYUVtoRGBEffect {
     
 
 
-    GrFragmentProcessor* Create(GrTexture* yTexture, GrTexture* uTexture, GrTexture* vTexture,
-                                const SkISize sizes[3], SkYUVColorSpace colorSpace);
+    GrEffect* Create(GrTexture* yTexture, GrTexture* uTexture, GrTexture* vTexture);
 };
 
 #endif

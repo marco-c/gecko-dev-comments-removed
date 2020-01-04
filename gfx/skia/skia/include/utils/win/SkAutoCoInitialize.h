@@ -5,12 +5,14 @@
 
 
 
+
+
 #ifndef SkAutoCo_DEFINED
 #define SkAutoCo_DEFINED
 
-#include "SkTypes.h"
-
-#ifdef SK_BUILD_FOR_WIN
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include "SkTemplates.h"
 
 
 
@@ -25,5 +27,4 @@ public:
     bool succeeded();
 };
 
-#endif  
-#endif  
+#endif

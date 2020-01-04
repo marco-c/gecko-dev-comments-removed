@@ -34,9 +34,7 @@ struct SkOTUtils {
 
 
 
-
-
-    static SkData* RenameFont(SkStreamAsset* fontData, const char* fontName, int fontNameLen);
+    static SkData* RenameFont(SkStream* fontData, const char* fontName, int fontNameLen);
 
     
     class LocalizedStrings_NameTable : public SkTypeface::LocalizedStrings {
@@ -54,7 +52,7 @@ struct SkOTUtils {
 
         static LocalizedStrings_NameTable* CreateForFamilyNames(const SkTypeface& typeface);
 
-        bool next(SkTypeface::LocalizedString* localizedString) override;
+        virtual bool next(SkTypeface::LocalizedString* localizedString) SK_OVERRIDE;
     private:
         static SkOTTableName::Record::NameID::Predefined::Value familyNameTypes[3];
 
@@ -72,7 +70,7 @@ struct SkOTUtils {
             : fName(name), fLanguage(language), fHasNext(true)
         { }
 
-        bool next(SkTypeface::LocalizedString* localizedString) override {
+        virtual bool next(SkTypeface::LocalizedString* localizedString) SK_OVERRIDE {
             localizedString->fString = fName;
             localizedString->fLanguage = fLanguage;
 

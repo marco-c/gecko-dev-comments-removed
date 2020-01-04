@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 #ifndef SkColor_opts_neon_DEFINED
 #define SkColor_opts_neon_DEFINED
 

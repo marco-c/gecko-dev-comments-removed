@@ -8,61 +8,51 @@
 #ifndef GrGpu_DEFINED
 #define GrGpu_DEFINED
 
-#include "GrPipelineBuilder.h"
-#include "GrProgramDesc.h"
-#include "GrStencil.h"
-#include "GrTextureParamsAdjuster.h"
-#include "GrXferProcessor.h"
+#include "GrDrawTarget.h"
+#include "GrClipMaskManager.h"
 #include "SkPath.h"
 
-class GrBatchTracker;
 class GrContext;
-class GrGLContext;
-class GrIndexBuffer;
-class GrNonInstancedVertices;
+class GrIndexBufferAllocPool;
 class GrPath;
 class GrPathRange;
 class GrPathRenderer;
 class GrPathRendererChain;
-class GrPathRendering;
-class GrPipeline;
-class GrPrimitiveProcessor;
-class GrRenderTarget;
-class GrStencilAttachment;
-class GrSurface;
-class GrTexture;
-class GrVertexBuffer;
-class GrVertices;
+class GrStencilBuffer;
+class GrVertexBufferAllocPool;
 
-class GrGpu : public SkRefCnt {
+class GrGpu : public GrDrawTarget {
 public:
+
+    
+
+
+
+    enum ExtendedBlendCoeffs {
+        
+        
+        kS2C_GrBlendCoeff = kPublicGrBlendCoeffCount,
+        kIS2C_GrBlendCoeff,
+        kS2A_GrBlendCoeff,
+        kIS2A_GrBlendCoeff,
+
+        kTotalGrBlendCoeffCount
+    };
+
     
 
 
 
 
-    static GrGpu* Create(GrBackend, GrBackendContext, const GrContextOptions&, GrContext* context);
+    static GrGpu* Create(GrBackend, GrBackendContext, GrContext* context);
 
     
 
     GrGpu(GrContext* context);
-    ~GrGpu() override;
+    virtual ~GrGpu();
 
-    GrContext* getContext() { return fContext; }
-    const GrContext* getContext() const { return fContext; }
-
-    
-
-
-    const GrCaps* caps() const { return fCaps.get(); }
-
-    GrPathRendering* pathRendering() { return fPathRendering.get();  }
-
-    
-    
-    
-    
-    virtual void contextAbandoned();
+    GrContext* getContext() { return this->INHERITED::getContext(); }
+    const GrContext* getContext() const { return this->INHERITED::getContext(); }
 
     
 
@@ -70,7 +60,11 @@ public:
 
 
 
-    void markContextDirty(uint32_t state = kAll_GrBackendState) { fResetBits |= state; }
+    void markContextDirty(uint32_t state = kAll_GrBackendState) {
+        fResetBits |= state;
+    }
+
+    void unimpl(const char[]);
 
     
 
@@ -91,18 +85,27 @@ public:
 
 
 
-    GrTexture* createTexture(const GrSurfaceDesc& desc, bool budgeted,
+
+
+
+
+
+
+
+
+
+    GrTexture* createTexture(const GrTextureDesc& desc,
                              const void* srcData, size_t rowBytes);
 
     
 
 
-    GrTexture* wrapBackendTexture(const GrBackendTextureDesc&, GrWrapOwnership);
+    GrTexture* wrapBackendTexture(const GrBackendTextureDesc&);
 
     
 
 
-    GrRenderTarget* wrapBackendRenderTarget(const GrBackendRenderTargetDesc&, GrWrapOwnership);
+    GrRenderTarget* wrapBackendRenderTarget(const GrBackendRenderTargetDesc&);
 
     
 
@@ -131,47 +134,49 @@ public:
     
 
 
+
+    GrPath* createPath(const SkPath& path, const SkStrokeRec& stroke);
+
+    
+
+
+
+
+    GrPathRange* createPathRange(size_t size, const SkStrokeRec&);
+
+    
+
+
+
+
+
+
+    const GrIndexBuffer* getQuadIndexBuffer() const;
+
+    
+
+
     void resolveRenderTarget(GrRenderTarget* target);
 
     
 
-    struct ReadPixelTempDrawInfo {
-        
-
-
-        GrSurfaceDesc   fTempSurfaceDesc;
-        
-
-        bool            fUseExactScratch;
-        
 
 
 
+    virtual GrPixelConfig preferredReadPixelsConfig(GrPixelConfig readConfig,
+                                                    GrPixelConfig surfaceConfig) const {
+        return readConfig;
+    }
+    virtual GrPixelConfig preferredWritePixelsConfig(GrPixelConfig writeConfig,
+                                                     GrPixelConfig surfaceConfig) const {
+        return writeConfig;
+    }
 
-        bool            fSwapRAndB;
-    };
     
-    enum DrawPreference {
-        
-
-
-        kNoDraw_DrawPreference,
-        
 
 
 
-        kCallerPrefersDraw_DrawPreference,
-        
-
-
-        kGpuPrefersDraw_DrawPreference,
-        
-
-
-
-
-        kRequireDraw_DrawPreference
-    };
+    virtual bool canWriteTexturePixels(const GrTexture*, GrPixelConfig srcConfig) const = 0;
 
     
 
@@ -179,33 +184,28 @@ public:
 
 
 
-    bool getReadPixelsInfo(GrSurface* srcSurface, int readWidth, int readHeight, size_t rowBytes,
-                           GrPixelConfig readConfig, DrawPreference*, ReadPixelTempDrawInfo*);
-
-    
-
-    struct WritePixelTempDrawInfo {
-        
-
-
-
-        GrSurfaceDesc   fTempSurfaceDesc;
-        
-
-
-
-
-        bool            fSwapRAndB;
-    };
-
-    
 
 
 
 
 
-    bool getWritePixelsInfo(GrSurface* dstSurface, int width, int height, size_t rowBytes,
-                            GrPixelConfig srcConfig, DrawPreference*, WritePixelTempDrawInfo*);
+
+
+
+
+
+
+     virtual bool readPixelsWillPayForYFlip(GrRenderTarget* renderTarget,
+                                            int left, int top,
+                                            int width, int height,
+                                            GrPixelConfig config,
+                                            size_t rowBytes) const = 0;
+     
+
+
+
+
+     virtual bool fullReadPixelsIsFasterThanPartial() const { return false; };
 
     
 
@@ -226,7 +226,8 @@ public:
 
 
 
-    bool readPixels(GrSurface* surface,
+
+    bool readPixels(GrRenderTarget* renderTarget,
                     int left, int top, int width, int height,
                     GrPixelConfig config, void* buffer, size_t rowBytes);
 
@@ -242,33 +243,46 @@ public:
 
 
 
-
-    bool writePixels(GrSurface* surface,
-                     int left, int top, int width, int height,
-                     GrPixelConfig config, const void* buffer,
-                     size_t rowBytes);
-
-    
-
-
-    void clear(const SkIRect& rect, GrColor color, GrRenderTarget* renderTarget);
-
-
-    void clearStencilClip(const SkIRect& rect, bool insideClip, GrRenderTarget* renderTarget);
+    bool writeTexturePixels(GrTexture* texture,
+                            int left, int top, int width, int height,
+                            GrPixelConfig config, const void* buffer,
+                            size_t rowBytes);
 
     
 
 
 
-    virtual void discard(GrRenderTarget* = nullptr) = 0;
+    virtual void abandonResources();
 
     
 
 
 
+    void releaseResources();
+
+    
 
 
-    virtual bool initCopySurfaceDstDesc(const GrSurface* src, GrSurfaceDesc* desc) const = 0;
+
+    void insertObject(GrGpuResource* object);
+
+    
+
+
+
+    void removeObject(GrGpuResource* object);
+
+    
+    virtual void clear(const SkIRect* rect,
+                       GrColor color,
+                       bool canIgnoreRect,
+                       GrRenderTarget* renderTarget = NULL) SK_OVERRIDE;
+
+    virtual void purgeResources() SK_OVERRIDE {
+        
+        
+        fClipMaskManager.releaseResources();
+    }
 
     
     
@@ -283,124 +297,82 @@ public:
     
     
     
-    ResetTimestamp getResetTimestamp() const { return fResetTimestamp; }
-
-    virtual void buildProgramDesc(GrProgramDesc*,
-                                  const GrPrimitiveProcessor&,
-                                  const GrPipeline&) const = 0;
+    ResetTimestamp getResetTimestamp() const {
+        return fResetTimestamp;
+    }
 
     
-    
-    
-    
-    bool copySurface(GrSurface* dst,
-                     GrSurface* src,
-                     const SkIRect& srcRect,
-                     const SkIPoint& dstPoint);
 
-    struct DrawArgs {
-        DrawArgs(const GrPrimitiveProcessor* primProc,
-                 const GrPipeline* pipeline,
-                 const GrProgramDesc* desc)
-            : fPrimitiveProcessor(primProc)
-            , fPipeline(pipeline)
-            , fDesc(desc) {
-            SkASSERT(primProc && pipeline && desc);
-        }
-        const GrPrimitiveProcessor* fPrimitiveProcessor;
-        const GrPipeline* fPipeline;
-        const GrProgramDesc* fDesc;
+
+
+
+
+    void enableScissor(const SkIRect& rect) {
+        fScissorState.fEnabled = true;
+        fScissorState.fRect = rect;
+    }
+    void disableScissor() { fScissorState.fEnabled = false; }
+
+    
+
+
+
+
+
+
+    void setStencilSettings(const GrStencilSettings& settings) {
+        fStencilSettings = settings;
+    }
+    void disableStencil() { fStencilSettings.setDisabled(); }
+
+    
+    
+    
+    virtual void clearStencilClip(const SkIRect& rect, bool insideClip) = 0;
+
+    enum PrivateDrawStateStateBits {
+        kFirstBit = (GrDrawState::kLastPublicStateBit << 1),
+
+        kModifyStencilClip_StateBit = kFirstBit, 
+                                                 
+                                                 
     };
 
-    void draw(const DrawArgs&, const GrVertices&);
+    void getPathStencilSettingsForFillType(SkPath::FillType fill, GrStencilSettings* outStencilSettings);
 
-    
-    
-
-    class Stats {
-    public:
-#if GR_GPU_STATS
-        Stats() { this->reset(); }
-
-        void reset() {
-            fRenderTargetBinds = 0;
-            fShaderCompilations = 0;
-            fTextureCreates = 0;
-            fTextureUploads = 0;
-            fStencilAttachmentCreates = 0;
-            fNumDraws = 0;
-        }
-
-        int renderTargetBinds() const { return fRenderTargetBinds; }
-        void incRenderTargetBinds() { fRenderTargetBinds++; }
-        int shaderCompilations() const { return fShaderCompilations; }
-        void incShaderCompilations() { fShaderCompilations++; }
-        int textureCreates() const { return fTextureCreates; }
-        void incTextureCreates() { fTextureCreates++; }
-        int textureUploads() const { return fTextureUploads; }
-        void incTextureUploads() { fTextureUploads++; }
-        void incStencilAttachmentCreates() { fStencilAttachmentCreates++; }
-        void incNumDraws() { fNumDraws++; }
-        void dump(SkString*);
-        void dumpKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* values);
-
-    private:
-        int fRenderTargetBinds;
-        int fShaderCompilations;
-        int fTextureCreates;
-        int fTextureUploads;
-        int fStencilAttachmentCreates;
-        int fNumDraws;
-#else
-        void dump(SkString*) {}
-        void dumpKeyValuePairs(SkTArray<SkString>*, SkTArray<double>*) {}
-        void incRenderTargetBinds() {}
-        void incShaderCompilations() {}
-        void incTextureCreates() {}
-        void incTextureUploads() {}
-        void incStencilAttachmentCreates() {}
-        void incNumDraws() {}
-#endif
+    enum DrawType {
+        kDrawPoints_DrawType,
+        kDrawLines_DrawType,
+        kDrawTriangles_DrawType,
+        kStencilPath_DrawType,
+        kDrawPath_DrawType,
+        kDrawPaths_DrawType,
     };
-
-    Stats* stats() { return &fStats; }
-
-    
-
-
-    virtual GrBackendObject createTestingOnlyBackendTexture(void* pixels, int w, int h,
-                                                            GrPixelConfig config) const = 0;
-    
-    virtual bool isTestingOnlyBackendTexture(GrBackendObject) const = 0;
-    
-
-
-    virtual void deleteTestingOnlyBackendTexture(GrBackendObject,
-                                                 bool abandonTexture = false) const = 0;
-
-    
-    
-    
-    virtual GrStencilAttachment* createStencilAttachmentForRenderTarget(const GrRenderTarget*,
-                                                                        int width,
-                                                                        int height) = 0;
-    
-    virtual void clearStencil(GrRenderTarget* target) = 0;
-
-
-    
-    
-    
-    bool makeCopyForTextureParams(int width, int height, const GrTextureParams&,
-                                  GrTextureProducer::CopyParams*) const;
-
-    
-    virtual const GrGLContext* glContextForTesting() const { return nullptr; }
-
-    
-    virtual void resetShaderCacheForTesting() const {}
 
 protected:
+    DrawType PrimTypeToDrawType(GrPrimitiveType type) {
+        switch (type) {
+            case kTriangles_GrPrimitiveType:
+            case kTriangleStrip_GrPrimitiveType:
+            case kTriangleFan_GrPrimitiveType:
+                return kDrawTriangles_DrawType;
+            case kPoints_GrPrimitiveType:
+                return kDrawPoints_DrawType;
+            case kLines_GrPrimitiveType:
+            case kLineStrip_GrPrimitiveType:
+                return kDrawLines_DrawType;
+            default:
+                SkFAIL("Unexpected primitive type");
+                return kDrawTriangles_DrawType;
+        }
+    }
+
+    
+    bool setupClipAndFlushState(DrawType,
+                                const GrDeviceCoordTexture* dstCopy,
+                                GrDrawState::AutoRestoreEffects* are,
+                                const SkRect* devBounds);
+
     
     
     static GrStencilFunc ConvertStencilFunc(bool stencilInClip,
@@ -412,14 +384,137 @@ protected:
                                           unsigned int* ref,
                                           unsigned int* mask);
 
-    static void ElevateDrawPreference(GrGpu::DrawPreference* preference,
-                                      GrGpu::DrawPreference elevation) {
-        GR_STATIC_ASSERT(GrGpu::kCallerPrefersDraw_DrawPreference > GrGpu::kNoDraw_DrawPreference);
-        GR_STATIC_ASSERT(GrGpu::kGpuPrefersDraw_DrawPreference >
-                         GrGpu::kCallerPrefersDraw_DrawPreference);
-        GR_STATIC_ASSERT(GrGpu::kRequireDraw_DrawPreference >
-                         GrGpu::kGpuPrefersDraw_DrawPreference);
-        *preference = SkTMax(*preference, elevation);
+    GrClipMaskManager           fClipMaskManager;
+
+    struct GeometryPoolState {
+        const GrVertexBuffer* fPoolVertexBuffer;
+        int                   fPoolStartVertex;
+
+        const GrIndexBuffer*  fPoolIndexBuffer;
+        int                   fPoolStartIndex;
+    };
+    const GeometryPoolState& getGeomPoolState() {
+        return fGeomPoolStateStack.back();
+    }
+
+    
+    struct ScissorState {
+        bool    fEnabled;
+        SkIRect fRect;
+    } fScissorState;
+
+    
+    GrStencilSettings fStencilSettings;
+
+    
+    void finalizeReservedVertices();
+    void finalizeReservedIndices();
+
+private:
+    
+    virtual bool onReserveVertexSpace(size_t vertexSize, int vertexCount, void** vertices) SK_OVERRIDE;
+    virtual bool onReserveIndexSpace(int indexCount, void** indices) SK_OVERRIDE;
+    virtual void releaseReservedVertexSpace() SK_OVERRIDE;
+    virtual void releaseReservedIndexSpace() SK_OVERRIDE;
+    virtual void onSetVertexSourceToArray(const void* vertexArray, int vertexCount) SK_OVERRIDE;
+    virtual void onSetIndexSourceToArray(const void* indexArray, int indexCount) SK_OVERRIDE;
+    virtual void releaseVertexArray() SK_OVERRIDE;
+    virtual void releaseIndexArray() SK_OVERRIDE;
+    virtual void geometrySourceWillPush() SK_OVERRIDE;
+    virtual void geometrySourceWillPop(const GeometrySrcState& restoredState) SK_OVERRIDE;
+
+
+    
+    
+    virtual void onResetContext(uint32_t resetBits) = 0;
+
+    
+    virtual GrTexture* onCreateTexture(const GrTextureDesc& desc,
+                                       const void* srcData,
+                                       size_t rowBytes) = 0;
+    virtual GrTexture* onCreateCompressedTexture(const GrTextureDesc& desc,
+                                                 const void* srcData) = 0;
+    virtual GrTexture* onWrapBackendTexture(const GrBackendTextureDesc&) = 0;
+    virtual GrRenderTarget* onWrapBackendRenderTarget(const GrBackendRenderTargetDesc&) = 0;
+    virtual GrVertexBuffer* onCreateVertexBuffer(size_t size, bool dynamic) = 0;
+    virtual GrIndexBuffer* onCreateIndexBuffer(size_t size, bool dynamic) = 0;
+    virtual GrPath* onCreatePath(const SkPath& path, const SkStrokeRec&) = 0;
+    virtual GrPathRange* onCreatePathRange(size_t size, const SkStrokeRec&) = 0;
+
+    
+    
+    
+    virtual void onClear(const SkIRect* rect, GrColor color, bool canIgnoreRect) = 0;
+
+    
+    virtual void onGpuDraw(const DrawInfo&) = 0;
+
+    
+    virtual void onGpuStencilPath(const GrPath*, SkPath::FillType) = 0;
+    virtual void onGpuDrawPath(const GrPath*, SkPath::FillType) = 0;
+    virtual void onGpuDrawPaths(const GrPathRange*,
+                                const uint32_t indices[], int count,
+                                const float transforms[], PathTransformType,
+                                SkPath::FillType) = 0;
+
+    
+    virtual bool onReadPixels(GrRenderTarget* target,
+                              int left, int top, int width, int height,
+                              GrPixelConfig,
+                              void* buffer,
+                              size_t rowBytes) = 0;
+
+    
+    virtual bool onWriteTexturePixels(GrTexture* texture,
+                                      int left, int top, int width, int height,
+                                      GrPixelConfig config, const void* buffer,
+                                      size_t rowBytes) = 0;
+
+    
+    virtual void onResolveRenderTarget(GrRenderTarget* target) = 0;
+
+    
+    
+    
+    virtual bool createStencilBufferForRenderTarget(GrRenderTarget*, int width, int height) = 0;
+
+    
+    virtual bool attachStencilBufferToRenderTarget(GrStencilBuffer*, GrRenderTarget*) = 0;
+
+    
+    
+    
+    
+    virtual bool flushGraphicsState(DrawType, const GrDeviceCoordTexture* dstCopy) = 0;
+
+    
+    virtual void clearStencil() = 0;
+
+    
+    bool attachStencilBufferToRenderTarget(GrRenderTarget* target);
+
+    
+    virtual void onDraw(const DrawInfo&) SK_OVERRIDE;
+    virtual void onStencilPath(const GrPath*, SkPath::FillType) SK_OVERRIDE;
+    virtual void onDrawPath(const GrPath*, SkPath::FillType,
+                            const GrDeviceCoordTexture* dstCopy) SK_OVERRIDE;
+    virtual void onDrawPaths(const GrPathRange*,
+                             const uint32_t indices[], int count,
+                             const float transforms[], PathTransformType,
+                             SkPath::FillType, const GrDeviceCoordTexture*) SK_OVERRIDE;
+
+    
+    void prepareVertexPool();
+    void prepareIndexPool();
+
+    void resetContext() {
+        
+        
+        
+        fClipMaskManager.invalidateStencilMask();
+        this->onResetContext(fResetBits);
+        fResetBits = 0;
+        ++fResetTimestamp;
     }
 
     void handleDirtyContext() {
@@ -428,88 +523,25 @@ protected:
         }
     }
 
-    Stats                                   fStats;
-    SkAutoTDelete<GrPathRendering>          fPathRendering;
-    
-    SkAutoTUnref<const GrCaps>    fCaps;
-
-private:
-    
-    
-    virtual void onResetContext(uint32_t resetBits) = 0;
-
-    
-    virtual void xferBarrier(GrRenderTarget*, GrXferBarrierType) = 0;
-
-    
-    
-    
-    virtual GrTexture* onCreateTexture(const GrSurfaceDesc& desc,
-                                       GrGpuResource::LifeCycle lifeCycle,
-                                       const void* srcData, size_t rowBytes) = 0;
-    virtual GrTexture* onCreateCompressedTexture(const GrSurfaceDesc& desc,
-                                                 GrGpuResource::LifeCycle lifeCycle,
-                                                 const void* srcData) = 0;
-    virtual GrTexture* onWrapBackendTexture(const GrBackendTextureDesc&, GrWrapOwnership) = 0;
-    virtual GrRenderTarget* onWrapBackendRenderTarget(const GrBackendRenderTargetDesc&,
-                                                      GrWrapOwnership) = 0;
-    virtual GrVertexBuffer* onCreateVertexBuffer(size_t size, bool dynamic) = 0;
-    virtual GrIndexBuffer* onCreateIndexBuffer(size_t size, bool dynamic) = 0;
-
-    
-    virtual void onClear(GrRenderTarget*, const SkIRect& rect, GrColor color) = 0;
-
-
-    
-    
-    virtual void onClearStencilClip(GrRenderTarget*, const SkIRect& rect, bool insideClip) = 0;
-
-    
-    virtual void onDraw(const DrawArgs&, const GrNonInstancedVertices&) = 0;
-
-    virtual bool onGetReadPixelsInfo(GrSurface* srcSurface, int readWidth, int readHeight,
-                                     size_t rowBytes, GrPixelConfig readConfig, DrawPreference*,
-                                     ReadPixelTempDrawInfo*) = 0;
-    virtual bool onGetWritePixelsInfo(GrSurface* dstSurface, int width, int height, size_t rowBytes,
-                                      GrPixelConfig srcConfig, DrawPreference*,
-                                      WritePixelTempDrawInfo*) = 0;
-
-    
-    virtual bool onReadPixels(GrSurface*,
-                              int left, int top,
-                              int width, int height,
-                              GrPixelConfig,
-                              void* buffer,
-                              size_t rowBytes) = 0;
-
-    
-    virtual bool onWritePixels(GrSurface*,
-                               int left, int top, int width, int height,
-                               GrPixelConfig config, const void* buffer,
-                               size_t rowBytes) = 0;
-
-    
-    virtual void onResolveRenderTarget(GrRenderTarget* target) = 0;
-
-    
-    virtual bool onCopySurface(GrSurface* dst,
-                               GrSurface* src,
-                               const SkIRect& srcRect,
-                               const SkIPoint& dstPoint) = 0;
-
-    void resetContext() {
-        this->onResetContext(fResetBits);
-        fResetBits = 0;
-        ++fResetTimestamp;
-    }
-
+    enum {
+        kPreallocGeomPoolStateStackCnt = 4,
+    };
+    typedef SkTInternalLList<GrGpuResource> ObjectList;
+    SkSTArray<kPreallocGeomPoolStateStackCnt, GeometryPoolState, true>  fGeomPoolStateStack;
     ResetTimestamp                                                      fResetTimestamp;
     uint32_t                                                            fResetBits;
+    GrVertexBufferAllocPool*                                            fVertexPool;
+    GrIndexBufferAllocPool*                                             fIndexPool;
     
-    GrContext*                                                          fContext;
+    int                                                                 fVertexPoolUseCnt;
+    int                                                                 fIndexPoolUseCnt;
+    
+    mutable GrIndexBuffer*                                              fQuadIndexBuffer;
+    
+    
+    ObjectList                                                          fObjectList;
 
-    friend class GrPathRendering;
-    typedef SkRefCnt INHERITED;
+    typedef GrDrawTarget INHERITED;
 };
 
 #endif

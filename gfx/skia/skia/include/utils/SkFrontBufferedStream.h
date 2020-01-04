@@ -31,7 +31,5 @@ public:
 
 
 
-
-
     static SkStreamRewindable* Create(SkStream* stream, size_t minBufferSize);
 };

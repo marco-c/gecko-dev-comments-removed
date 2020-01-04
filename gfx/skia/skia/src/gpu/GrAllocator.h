@@ -29,7 +29,7 @@ public:
     GrAllocator(size_t itemSize, int itemsPerBlock, void* initialBlock)
         : fItemSize(itemSize)
         , fItemsPerBlock(itemsPerBlock)
-        , fOwnFirstBlock(nullptr == initialBlock)
+        , fOwnFirstBlock(NULL == initialBlock)
         , fCount(0)
         , fInsertionIndexInBlock(0) {
         SkASSERT(itemsPerBlock > 0);
@@ -58,24 +58,6 @@ public:
         ++fCount;
         ++fInsertionIndexInBlock;
         return ret;
-    }
-
-    
-
-
-    void pop_back() {
-        SkASSERT(fCount);
-        SkASSERT(fInsertionIndexInBlock > 0);
-        --fInsertionIndexInBlock;
-        --fCount;
-        if (0 == fInsertionIndexInBlock) {
-            
-            if (fBlocks.count() > 1) {
-                sk_free(fBlocks.back());
-                fBlocks.pop_back();
-                fInsertionIndexInBlock = fItemsPerBlock;
-            }
-        }
     }
 
     
@@ -126,6 +108,7 @@ public:
         SkASSERT(fInsertionIndexInBlock > 0);
         return (const char*)(fBlocks.back()) + (fInsertionIndexInBlock - 1) * fItemSize;
     }
+
 
     
 
@@ -224,10 +207,8 @@ private:
     typedef SkNoncopyable INHERITED;
 };
 
-template <typename T> class GrTAllocator;
-template <typename T> void* operator new(size_t, GrTAllocator<T>*);
-
-template <typename T> class GrTAllocator : SkNoncopyable {
+template <typename T>
+class GrTAllocator : SkNoncopyable {
 public:
     virtual ~GrTAllocator() { this->reset(); };
 
@@ -237,7 +218,7 @@ public:
 
 
     explicit GrTAllocator(int itemsPerBlock)
-        : fAllocator(sizeof(T), itemsPerBlock, nullptr) {}
+        : fAllocator(sizeof(T), itemsPerBlock, NULL) {}
 
     
 
@@ -246,24 +227,16 @@ public:
 
     T& push_back() {
         void* item = fAllocator.push_back();
-        SkASSERT(item);
-        new (item) T;
+        SkASSERT(NULL != item);
+        SkNEW_PLACEMENT(item, T);
         return *(T*)item;
     }
 
     T& push_back(const T& t) {
         void* item = fAllocator.push_back();
-        SkASSERT(item);
-        new (item) T(t);
+        SkASSERT(NULL != item);
+        SkNEW_PLACEMENT_ARGS(item, T, (t));
         return *(T*)item;
-    }
-
-    
-
-
-    void pop_back() {
-        this->back().~T();
-        fAllocator.pop_back();
     }
 
     
@@ -362,8 +335,6 @@ protected:
     }
 
 private:
-    friend void* operator new<T>(size_t, GrTAllocator*);
-
     GrAllocator fAllocator;
     typedef SkNoncopyable INHERITED;
 };
@@ -380,19 +351,5 @@ public:
 private:
     SkAlignedSTStorage<N, T> fStorage;
 };
-
-template <typename T> void* operator new(size_t size, GrTAllocator<T>* allocator) {
-    return allocator->fAllocator.push_back();
-}
-
-
-
-
-template <typename T> void operator delete(void*, GrTAllocator<T>*) {
-    SK_CRASH();
-}
-
-#define GrNEW_APPEND_TO_ALLOCATOR(allocator_ptr, type_name, args) \
-    new (allocator_ptr) type_name args
 
 #endif

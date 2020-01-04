@@ -14,26 +14,24 @@ public:
     
     FrontBufferedStream(SkStream*, size_t bufferSize);
 
-    size_t read(void* buffer, size_t size) override;
+    virtual size_t read(void* buffer, size_t size) SK_OVERRIDE;
 
-    bool peek(void* buffer, size_t size) const override;
+    virtual bool isAtEnd() const SK_OVERRIDE;
 
-    bool isAtEnd() const override;
+    virtual bool rewind() SK_OVERRIDE;
 
-    bool rewind() override;
+    virtual bool hasPosition() const SK_OVERRIDE { return true; }
 
-    bool hasPosition() const override { return true; }
+    virtual size_t getPosition() const SK_OVERRIDE { return fOffset; }
 
-    size_t getPosition() const override { return fOffset; }
+    virtual bool hasLength() const SK_OVERRIDE { return fHasLength; }
 
-    bool hasLength() const override { return fHasLength; }
+    virtual size_t getLength() const SK_OVERRIDE { return fLength; }
 
-    size_t getLength() const override { return fLength; }
-
-    SkStreamRewindable* duplicate() const override { return nullptr; }
+    virtual SkStreamRewindable* duplicate() const SK_OVERRIDE { return NULL; }
 
 private:
-    SkAutoTDelete<SkStream> fStream;
+    SkAutoTUnref<SkStream>  fStream;
     const bool              fHasLength;
     const size_t            fLength;
     
@@ -66,14 +64,14 @@ private:
 };
 
 SkStreamRewindable* SkFrontBufferedStream::Create(SkStream* stream, size_t bufferSize) {
-    if (nullptr == stream) {
-        return nullptr;
+    if (NULL == stream) {
+        return NULL;
     }
-    return new FrontBufferedStream(stream, bufferSize);
+    return SkNEW_ARGS(FrontBufferedStream, (stream, bufferSize));
 }
 
 FrontBufferedStream::FrontBufferedStream(SkStream* stream, size_t bufferSize)
-    : fStream(stream)
+    : fStream(SkRef(stream))
     , fHasLength(stream->hasPosition() && stream->hasLength())
     , fLength(stream->getLength() - stream->getPosition())
     , fOffset(0)
@@ -106,7 +104,7 @@ size_t FrontBufferedStream::readFromBuffer(char* dst, size_t size) {
     
     
     const size_t bytesToCopy = SkTMin(size, fBufferedSoFar - fOffset);
-    if (dst != nullptr) {
+    if (dst != NULL) {
         memcpy(dst, fBuffer + fOffset, bytesToCopy);
     }
 
@@ -121,7 +119,6 @@ size_t FrontBufferedStream::readFromBuffer(char* dst, size_t size) {
 size_t FrontBufferedStream::bufferAndWriteTo(char* dst, size_t size) {
     SkASSERT(size > 0);
     SkASSERT(fOffset >= fBufferedSoFar);
-    SkASSERT(fBuffer);
     
     
     const size_t bytesToBuffer = SkTMin(size, fBufferSize - fBufferedSoFar);
@@ -133,7 +130,7 @@ size_t FrontBufferedStream::bufferAndWriteTo(char* dst, size_t size) {
     SkASSERT(fBufferedSoFar <= fBufferSize);
 
     
-    if (dst != nullptr) {
+    if (dst != NULL) {
         memcpy(dst, buffer, buffered);
     }
 
@@ -151,24 +148,10 @@ size_t FrontBufferedStream::readDirectlyFromStream(char* dst, size_t size) {
     
     
     if (bytesReadDirectly > 0) {
-        sk_free(fBuffer.detach());
+        fBuffer.reset(0);
     }
 
     return bytesReadDirectly;
-}
-
-bool FrontBufferedStream::peek(void* dst, size_t size) const {
-    
-    const size_t start = fOffset;
-    if (start + size > fBufferSize) {
-        
-        return false;
-    }
-    FrontBufferedStream* nonConstThis = const_cast<FrontBufferedStream*>(this);
-    SkDEBUGCODE(const size_t bytesRead =) nonConstThis->read(dst, size);
-    SkASSERT(bytesRead == size);
-    nonConstThis->fOffset = start;
-    return true;
 }
 
 size_t FrontBufferedStream::read(void* voidDst, size_t size) {
@@ -185,21 +168,21 @@ size_t FrontBufferedStream::read(void* voidDst, size_t size) {
         
         size -= bytesCopied;
         SkASSERT(size + (fOffset - start) == totalSize);
-        if (dst != nullptr) {
+        if (dst != NULL) {
             dst += bytesCopied;
         }
     }
 
     
     
-    if (size > 0 && fBufferedSoFar < fBufferSize && !fStream->isAtEnd()) {
+    if (size > 0 && fBufferedSoFar < fBufferSize) {
         const size_t buffered = this->bufferAndWriteTo(dst, size);
 
         
         
         size -= buffered;
         SkASSERT(size + (fOffset - start) == totalSize);
-        if (dst != nullptr) {
+        if (dst != NULL) {
             dst += buffered;
         }
     }

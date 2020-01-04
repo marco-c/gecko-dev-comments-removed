@@ -8,11 +8,10 @@
 #ifndef SkTextureCompressor_DEFINED
 #define SkTextureCompressor_DEFINED
 
-#include "SkBitmapProcShader.h"
 #include "SkImageInfo.h"
+#include "SkBlitter.h"
 
 class SkBitmap;
-class SkBlitter;
 class SkData;
 
 namespace SkTextureCompressor {
@@ -21,28 +20,6 @@ namespace SkTextureCompressor {
         
         kLATC_Format,       
         kR11_EAC_Format,    
-
-        
-        kETC1_Format,       
-                            
-                            
-                            
-                            
-
-        
-        kASTC_4x4_Format,   
-        kASTC_5x4_Format,   
-        kASTC_5x5_Format,   
-        kASTC_6x5_Format,   
-        kASTC_6x6_Format,   
-        kASTC_8x5_Format,   
-        kASTC_8x6_Format,   
-        kASTC_8x8_Format,   
-        kASTC_10x5_Format,  
-        kASTC_10x6_Format,  
-        kASTC_10x8_Format,  
-        kASTC_10x10_Format, 
-        kASTC_12x10_Format, 
         kASTC_12x12_Format, 
 
         kLast_Format = kASTC_12x12_Format
@@ -58,54 +35,26 @@ namespace SkTextureCompressor {
     
     
     
-    SkData* CompressBitmapToFormat(const SkPixmap&, Format format);
+    SkData* CompressBitmapToFormat(const SkBitmap& bitmap, Format format);
 
     
     
     
     bool CompressBufferToFormat(uint8_t* dst, const uint8_t* src, SkColorType srcColorType,
-                                int width, int height, size_t rowBytes, Format format);
+                                int width, int height, int rowBytes, Format format,
+                                bool opt = true );
 
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    bool DecompressBufferFromFormat(uint8_t* dst, int dstRowBytes, const uint8_t* src,
-                                    int width, int height, Format format);
-
-    
-    inline bool ExistsBlitterForFormat(Format format) {
-        switch (format) {
-            case kLATC_Format:
-            case kR11_EAC_Format:
-            case kASTC_12x12_Format:
-                return true;
-
-            default:
-                return false;
-        }
-    }
+    typedef bool (*CompressionProc)(uint8_t* dst, const uint8_t* src,
+                                    int width, int height, int rowBytes);
 
     
     
     
     SkBlitter* CreateBlitterForFormat(int width, int height, void* compressedBuffer,
-                                      SkTBlitterAllocator *allocator, Format format);
-
-    
-    
-    
-    
-    
-    
-    void GetBlockDimensions(Format format, int* dimX, int* dimY, bool matchSpec = false);
+                                      Format format);
 }
 
 #endif

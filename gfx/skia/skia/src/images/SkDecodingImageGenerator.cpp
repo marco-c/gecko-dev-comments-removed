@@ -24,11 +24,11 @@ class DecodingImageGenerator : public SkImageGenerator {
 public:
     virtual ~DecodingImageGenerator();
 
-    SkData*                             fData;
-    SkAutoTDelete<SkStreamRewindable>   fStream;
-    const SkImageInfo                   fInfo;
-    const int                           fSampleSize;
-    const bool                          fDitherImage;
+    SkData*                fData;
+    SkStreamRewindable*    fStream;
+    const SkImageInfo      fInfo;
+    const int              fSampleSize;
+    const bool             fDitherImage;
 
     DecodingImageGenerator(SkData* data,
                            SkStreamRewindable* stream,
@@ -37,11 +37,14 @@ public:
                            bool ditherImage);
 
 protected:
-    SkData* onRefEncodedData() override;
-    bool onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
-                     SkPMColor ctable[], int* ctableCount) override;
-    bool onGetYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3],
-                         SkYUVColorSpace* colorSpace) override;
+    virtual SkData* onRefEncodedData() SK_OVERRIDE;
+    virtual bool onGetInfo(SkImageInfo* info) SK_OVERRIDE {
+        *info = fInfo;
+        return true;
+    }
+    virtual bool onGetPixels(const SkImageInfo& info,
+                             void* pixels, size_t rowBytes,
+                             SkPMColor ctable[], int* ctableCount) SK_OVERRIDE;
 
 private:
     typedef SkImageGenerator INHERITED;
@@ -61,20 +64,20 @@ public:
         , fRowBytes(rowBytes)
     {}
 
-    bool isReady() { return (fTarget != nullptr); }
+    bool isReady() { return (fTarget != NULL); }
 
     virtual bool allocPixelRef(SkBitmap* bm, SkColorTable* ct) {
-        if (nullptr == fTarget || !equal_modulo_alpha(fInfo, bm->info())) {
+        if (NULL == fTarget || !equal_modulo_alpha(fInfo, bm->info())) {
             
-            return bm->tryAllocPixels(nullptr, ct);
+            return bm->allocPixels(NULL, ct);
         }
 
         
         
         
-        bm->installPixels(fInfo, fTarget, fRowBytes, ct, nullptr, nullptr);
+        bm->installPixels(fInfo, fTarget, fRowBytes, ct, NULL, NULL);
 
-        fTarget = nullptr;  
+        fTarget = NULL;  
         return true;
     }
 
@@ -111,39 +114,44 @@ DecodingImageGenerator::DecodingImageGenerator(
         const SkImageInfo& info,
         int sampleSize,
         bool ditherImage)
-    : INHERITED(info)
-    , fData(data)
+    : fData(data)
     , fStream(stream)
     , fInfo(info)
     , fSampleSize(sampleSize)
     , fDitherImage(ditherImage)
 {
-    SkASSERT(stream != nullptr);
+    SkASSERT(stream != NULL);
     SkSafeRef(fData);  
 }
 
 DecodingImageGenerator::~DecodingImageGenerator() {
     SkSafeUnref(fData);
+    fStream->unref();
 }
 
 SkData* DecodingImageGenerator::onRefEncodedData() {
     
     
-    if (nullptr == fData) {
-        
-        
-        if (!fStream->rewind()) {
-            return nullptr;
-        }
-        size_t length = fStream->getLength();
-        if (length) {
-            fData = SkData::NewFromStream(fStream, length);
-        }
+    if (fData != NULL) {
+        return SkSafeRef(fData);
     }
+    
+    
+    if (!fStream->rewind()) {
+        return NULL;
+    }
+    size_t length = fStream->getLength();
+    if (0 == length) {
+        return NULL;
+    }
+    void* buffer = sk_malloc_flags(length, 0);
+    SkCheckResult(fStream->read(buffer, length), length);
+    fData = SkData::NewFromMalloc(buffer, length);
     return SkSafeRef(fData);
 }
 
-bool DecodingImageGenerator::onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
+bool DecodingImageGenerator::onGetPixels(const SkImageInfo& info,
+                                         void* pixels, size_t rowBytes,
                                          SkPMColor ctableEntries[], int* ctableCount) {
     if (fInfo != info) {
         
@@ -154,20 +162,21 @@ bool DecodingImageGenerator::onGetPixels(const SkImageInfo& info, void* pixels, 
 
     SkAssertResult(fStream->rewind());
     SkAutoTDelete<SkImageDecoder> decoder(SkImageDecoder::Factory(fStream));
-    if (nullptr == decoder.get()) {
+    if (NULL == decoder.get()) {
         return false;
     }
     decoder->setDitherImage(fDitherImage);
     decoder->setSampleSize(fSampleSize);
-    decoder->setRequireUnpremultipliedColors(info.alphaType() == kUnpremul_SkAlphaType);
+    decoder->setRequireUnpremultipliedColors(
+            info.fAlphaType == kUnpremul_SkAlphaType);
 
     SkBitmap bitmap;
     TargetAllocator allocator(fInfo, pixels, rowBytes);
     decoder->setAllocator(&allocator);
-    const SkImageDecoder::Result decodeResult = decoder->decode(fStream, &bitmap, info.colorType(),
-                                                                SkImageDecoder::kDecodePixels_Mode);
-    decoder->setAllocator(nullptr);
-    if (SkImageDecoder::kFailure == decodeResult) {
+    bool success = decoder->decode(fStream, &bitmap, info.colorType(),
+                                   SkImageDecoder::kDecodePixels_Mode);
+    decoder->setAllocator(NULL);
+    if (!success) {
         return false;
     }
     if (allocator.isReady()) {  
@@ -186,32 +195,18 @@ bool DecodingImageGenerator::onGetPixels(const SkImageInfo& info, void* pixels, 
 
     if (kIndex_8_SkColorType == info.colorType()) {
         if (kIndex_8_SkColorType != bitmap.colorType()) {
-            
-            return false;
+            return false;   
         }
         SkColorTable* ctable = bitmap.getColorTable();
-        if (nullptr == ctable) {
+        if (NULL == ctable) {
             return false;
         }
         const int count = ctable->count();
-        memcpy(ctableEntries, ctable->readColors(), count * sizeof(SkPMColor));
+        memcpy(ctableEntries, ctable->lockColors(), count * sizeof(SkPMColor));
+        ctable->unlockColors();
         *ctableCount = count;
     }
     return true;
-}
-
-bool DecodingImageGenerator::onGetYUV8Planes(SkISize sizes[3], void* planes[3],
-                                             size_t rowBytes[3], SkYUVColorSpace* colorSpace) {
-    if (!fStream->rewind()) {
-        return false;
-    }
-
-    SkAutoTDelete<SkImageDecoder> decoder(SkImageDecoder::Factory(fStream));
-    if (nullptr == decoder.get()) {
-        return false;
-    }
-
-    return decoder->decodeYUV8Planes(fStream, sizes, planes, rowBytes, colorSpace);
 }
 
 
@@ -222,20 +217,20 @@ SkImageGenerator* CreateDecodingImageGenerator(
         SkStreamRewindable* stream,
         const SkDecodingImageGenerator::Options& opts) {
     SkASSERT(stream);
-    SkAutoTDelete<SkStreamRewindable> autoStream(stream);  
+    SkAutoTUnref<SkStreamRewindable> autoStream(stream);  
     SkAssertResult(autoStream->rewind());
     SkAutoTDelete<SkImageDecoder> decoder(SkImageDecoder::Factory(autoStream));
-    if (nullptr == decoder.get()) {
-        return nullptr;
+    if (NULL == decoder.get()) {
+        return NULL;
     }
     SkBitmap bitmap;
     decoder->setSampleSize(opts.fSampleSize);
     decoder->setRequireUnpremultipliedColors(opts.fRequireUnpremul);
     if (!decoder->decode(stream, &bitmap, SkImageDecoder::kDecodeBounds_Mode)) {
-        return nullptr;
+        return NULL;
     }
     if (kUnknown_SkColorType == bitmap.colorType()) {
-        return nullptr;
+        return NULL;
     }
 
     SkImageInfo info = bitmap.info();
@@ -243,22 +238,22 @@ SkImageGenerator* CreateDecodingImageGenerator(
     if (opts.fUseRequestedColorType && (opts.fRequestedColorType != info.colorType())) {
         if (!bitmap.canCopyTo(opts.fRequestedColorType)) {
             SkASSERT(bitmap.colorType() != opts.fRequestedColorType);
-            return nullptr;  
+            return NULL;  
         }
-        info = info.makeColorType(opts.fRequestedColorType);
+        info.fColorType = opts.fRequestedColorType;
     }
 
-    if (opts.fRequireUnpremul && info.alphaType() != kOpaque_SkAlphaType) {
-        info = info.makeAlphaType(kUnpremul_SkAlphaType);
+    if (opts.fRequireUnpremul && info.fAlphaType != kOpaque_SkAlphaType) {
+        info.fAlphaType = kUnpremul_SkAlphaType;
     }
 
-    SkAlphaType newAlphaType = info.alphaType();
-    if (!SkColorTypeValidateAlphaType(info.colorType(), info.alphaType(), &newAlphaType)) {
-        return nullptr;
+    if (!SkColorTypeValidateAlphaType(info.fColorType, info.fAlphaType, &info.fAlphaType)) {
+        return NULL;
     }
 
-    return new DecodingImageGenerator(data, autoStream.detach(), info.makeAlphaType(newAlphaType),
-                                      opts.fSampleSize, opts.fDitherImage);
+    return SkNEW_ARGS(DecodingImageGenerator,
+                      (data, autoStream.detach(), info,
+                       opts.fSampleSize, opts.fDitherImage));
 }
 
 }  
@@ -268,21 +263,24 @@ SkImageGenerator* CreateDecodingImageGenerator(
 SkImageGenerator* SkDecodingImageGenerator::Create(
         SkData* data,
         const SkDecodingImageGenerator::Options& opts) {
-    SkASSERT(data != nullptr);
-    if (nullptr == data) {
-        return nullptr;
+    SkASSERT(data != NULL);
+    if (NULL == data) {
+        return NULL;
     }
-    SkStreamRewindable* stream = new SkMemoryStream(data);
-    SkASSERT(stream != nullptr);
+    SkStreamRewindable* stream = SkNEW_ARGS(SkMemoryStream, (data));
+    SkASSERT(stream != NULL);
+    SkASSERT(stream->unique());
     return CreateDecodingImageGenerator(data, stream, opts);
 }
 
 SkImageGenerator* SkDecodingImageGenerator::Create(
         SkStreamRewindable* stream,
         const SkDecodingImageGenerator::Options& opts) {
-    SkASSERT(stream != nullptr);
-    if (stream == nullptr) {
-        return nullptr;
+    SkASSERT(stream != NULL);
+    SkASSERT(stream->unique());
+    if ((stream == NULL) || !stream->unique()) {
+        SkSafeUnref(stream);
+        return NULL;
     }
-    return CreateDecodingImageGenerator(nullptr, stream, opts);
+    return CreateDecodingImageGenerator(NULL, stream, opts);
 }

@@ -11,31 +11,30 @@
 #include "SkTypes.h"
 #include "SkBitmap.h"
 #include "SkDeque.h"
+#include "SkClipStack.h"
 #include "SkPaint.h"
 #include "SkRefCnt.h"
+#include "SkPath.h"
 #include "SkRegion.h"
-#include "SkSurfaceProps.h"
 #include "SkXfermode.h"
 
-class GrContext;
-class GrRenderTarget;
-class SkBaseDevice;
+#ifdef SK_SUPPORT_LEGACY_DRAWTEXT_VIRTUAL
+    #define SK_LEGACY_DRAWTEXT_VIRTUAL  virtual
+#else
+    #define SK_LEGACY_DRAWTEXT_VIRTUAL
+#endif
+
 class SkCanvasClipVisitor;
-class SkClipStack;
+class SkBaseDevice;
 class SkDraw;
-class SkDrawable;
 class SkDrawFilter;
-class SkImage;
-class SkImageFilter;
 class SkMetaData;
-class SkPath;
 class SkPicture;
-class SkPixmap;
 class SkRRect;
-struct SkRSXform;
 class SkSurface;
 class SkSurface_Base;
-class SkTextBlob;
+class GrContext;
+class GrRenderTarget;
 
 
 
@@ -54,6 +53,37 @@ class SkTextBlob;
 
 class SK_API SkCanvas : public SkRefCnt {
 public:
+    SK_DECLARE_INST_COUNT(SkCanvas)
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static SkCanvas* NewRaster(const SkImageInfo&);
+
+    static SkCanvas* NewRasterN32(int width, int height) {
+        return NewRaster(SkImageInfo::MakeN32Premul(width, height));
+    }
+
     
 
 
@@ -86,7 +116,7 @@ public:
 
 
 
-    SkCanvas(int width, int height, const SkSurfaceProps* = NULL);
+    SkCanvas(int width, int height);
 
     
 
@@ -99,14 +129,6 @@ public:
 
 
     explicit SkCanvas(const SkBitmap& bitmap);
-
-    
-
-
-
-
-    SkCanvas(const SkBitmap& bitmap, const SkSurfaceProps& props);
-
     virtual ~SkCanvas();
 
     SkMetaData& getMetaData();
@@ -129,7 +151,7 @@ public:
 
 
 
-    virtual SkISize getBaseLayerSize() const;
+    SkISize getBaseLayerSize() const;
 
     
 
@@ -147,9 +169,6 @@ protected:
 #endif
     SkBaseDevice* getDevice() const;
 public:
-    SkBaseDevice* getDevice_just_for_deprecated_compatibility_testing() const {
-        return this->getDevice();
-    }
 
     
 
@@ -175,11 +194,7 @@ public:
 
 
 
-
-
-
-
-    SkSurface* newSurface(const SkImageInfo&, const SkSurfaceProps* = NULL);
+    SkSurface* newSurface(const SkImageInfo&);
 
     
 
@@ -332,9 +347,6 @@ public:
 
 
     int saveLayer(const SkRect* bounds, const SkPaint* paint);
-    int saveLayer(const SkRect& bounds, const SkPaint* paint) {
-        return this->saveLayer(&bounds, paint);
-    }
 
     
 
@@ -404,6 +416,11 @@ public:
 
 
     void restoreToCount(int saveCount);
+
+    
+
+
+    virtual bool isDrawingToLayer() const;
 
     
 
@@ -592,15 +609,24 @@ public:
 
 
 
-    void drawColor(SkColor color, SkXfermode::Mode mode = SkXfermode::kSrcOver_Mode);
+    void drawColor(SkColor color,
+                   SkXfermode::Mode mode = SkXfermode::kSrcOver_Mode);
 
     
 
 
 
-    void clear(SkColor color) {
-        this->drawColor(color, SkXfermode::kSrc_Mode);
-    }
+
+
+
+
+
+
+
+
+
+
+    virtual void clear(SkColor);
 
     
 
@@ -621,7 +647,7 @@ public:
 
 
 
-    void drawPaint(const SkPaint& paint);
+    virtual void drawPaint(const SkPaint& paint);
 
     enum PointMode {
         
@@ -653,7 +679,8 @@ public:
 
 
 
-    void drawPoints(PointMode mode, size_t count, const SkPoint pts[], const SkPaint& paint);
+    virtual void drawPoints(PointMode mode, size_t count, const SkPoint pts[],
+                            const SkPaint& paint);
 
     
 
@@ -684,7 +711,7 @@ public:
 
 
 
-    void drawRect(const SkRect& rect, const SkPaint& paint);
+    virtual void drawRect(const SkRect& rect, const SkPaint& paint);
 
     
 
@@ -713,7 +740,7 @@ public:
 
 
 
-    void drawOval(const SkRect& oval, const SkPaint&);
+    virtual void drawOval(const SkRect& oval, const SkPaint&);
 
     
 
@@ -722,7 +749,7 @@ public:
 
 
 
-    void drawRRect(const SkRRect& rrect, const SkPaint& paint);
+    virtual void drawRRect(const SkRRect& rrect, const SkPaint& paint);
 
     
 
@@ -770,17 +797,7 @@ public:
 
 
 
-    void drawPath(const SkPath& path, const SkPaint& paint);
-
-    
-
-
-
-
-
-
-
-    void drawImage(const SkImage* image, SkScalar left, SkScalar top, const SkPaint* paint = NULL);
+    virtual void drawPath(const SkPath& path, const SkPaint& paint);
 
     
 
@@ -795,20 +812,20 @@ public:
 
 
 
-    enum SrcRectConstraint {
+
+
+
+    virtual void drawBitmap(const SkBitmap& bitmap, SkScalar left, SkScalar top,
+                            const SkPaint* paint = NULL);
+
+    enum DrawBitmapRectFlags {
+        kNone_DrawBitmapRectFlag            = 0x0,
         
 
 
 
 
-        kStrict_SrcRectConstraint,
-
-        
-
-
-
-
-        kFast_SrcRectConstraint,
+        kBleed_DrawBitmapRectFlag           = 0x1,
     };
 
     
@@ -819,35 +836,30 @@ public:
 
 
 
+    virtual void drawBitmapRectToRect(const SkBitmap& bitmap, const SkRect* src,
+                                      const SkRect& dst,
+                                      const SkPaint* paint = NULL,
+                                      DrawBitmapRectFlags flags = kNone_DrawBitmapRectFlag);
 
+    void drawBitmapRect(const SkBitmap& bitmap, const SkRect& dst,
+                        const SkPaint* paint = NULL) {
+        this->drawBitmapRectToRect(bitmap, NULL, dst, paint, kNone_DrawBitmapRectFlag);
+    }
 
+    void drawBitmapRect(const SkBitmap& bitmap, const SkIRect* isrc,
+                        const SkRect& dst, const SkPaint* paint = NULL,
+                        DrawBitmapRectFlags flags = kNone_DrawBitmapRectFlag) {
+        SkRect realSrcStorage;
+        SkRect* realSrcPtr = NULL;
+        if (isrc) {
+            realSrcStorage.set(*isrc);
+            realSrcPtr = &realSrcStorage;
+        }
+        this->drawBitmapRectToRect(bitmap, realSrcPtr, dst, paint, flags);
+    }
 
-    void drawImageRect(const SkImage* image, const SkRect& src, const SkRect& dst,
-                       const SkPaint* paint,
-                       SrcRectConstraint constraint = kStrict_SrcRectConstraint);
-    
-    void drawImageRect(const SkImage* image, const SkIRect& isrc, const SkRect& dst,
-                       const SkPaint* paint, SrcRectConstraint = kStrict_SrcRectConstraint);
-    
-    void drawImageRect(const SkImage* image, const SkRect& dst, const SkPaint* paint,
-                       SrcRectConstraint = kStrict_SrcRectConstraint);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void drawImageNine(const SkImage*, const SkIRect& center, const SkRect& dst,
-                        const SkPaint* paint = NULL);
+    virtual void drawBitmapMatrix(const SkBitmap& bitmap, const SkMatrix& m,
+                                  const SkPaint* paint = NULL);
 
     
 
@@ -863,10 +875,8 @@ public:
 
 
 
-
-
-    void drawBitmap(const SkBitmap& bitmap, SkScalar left, SkScalar top,
-                    const SkPaint* paint = NULL);
+    virtual void drawBitmapNine(const SkBitmap& bitmap, const SkIRect& center,
+                                const SkRect& dst, const SkPaint* paint = NULL);
 
     
 
@@ -879,13 +889,8 @@ public:
 
 
 
-    void drawBitmapRect(const SkBitmap& bitmap, const SkRect& src, const SkRect& dst,
-                        const SkPaint* paint, SrcRectConstraint = kStrict_SrcRectConstraint);
-    
-    void drawBitmapRect(const SkBitmap& bitmap, const SkIRect& isrc, const SkRect& dst,
-                        const SkPaint* paint, SrcRectConstraint = kStrict_SrcRectConstraint);
-    void drawBitmapRect(const SkBitmap& bitmap, const SkRect& dst, const SkPaint* paint,
-                        SrcRectConstraint = kStrict_SrcRectConstraint);
+    virtual void drawSprite(const SkBitmap& bitmap, int left, int top,
+                            const SkPaint* paint = NULL);
 
     
 
@@ -895,14 +900,8 @@ public:
 
 
 
-
-
-
-
-
-
-    void drawBitmapNine(const SkBitmap& bitmap, const SkIRect& center, const SkRect& dst,
-                        const SkPaint* paint = NULL);
+    SK_LEGACY_DRAWTEXT_VIRTUAL void drawText(const void* text, size_t byteLength, SkScalar x,
+                          SkScalar y, const SkPaint& paint);
 
     
 
@@ -911,32 +910,8 @@ public:
 
 
 
-
-
-
-
-    void drawSprite(const SkBitmap& bitmap, int left, int top, const SkPaint* paint = NULL);
-
-    
-
-
-
-
-
-
-
-    void drawText(const void* text, size_t byteLength, SkScalar x, SkScalar y,
-                  const SkPaint& paint);
-
-    
-
-
-
-
-
-
-    void drawPosText(const void* text, size_t byteLength, const SkPoint pos[],
-                     const SkPaint& paint);
+    SK_LEGACY_DRAWTEXT_VIRTUAL void drawPosText(const void* text, size_t byteLength,
+                             const SkPoint pos[], const SkPaint& paint);
 
     
 
@@ -947,8 +922,9 @@ public:
 
 
 
-    void drawPosTextH(const void* text, size_t byteLength, const SkScalar xpos[], SkScalar constY,
-                      const SkPaint& paint);
+    SK_LEGACY_DRAWTEXT_VIRTUAL void drawPosTextH(const void* text, size_t byteLength,
+                              const SkScalar xpos[], SkScalar constY,
+                              const SkPaint& paint);
 
     
 
@@ -962,7 +938,8 @@ public:
 
 
 
-    void drawTextOnPathHV(const void* text, size_t byteLength, const SkPath& path, SkScalar hOffset,
+    void drawTextOnPathHV(const void* text, size_t byteLength,
+                          const SkPath& path, SkScalar hOffset,
                           SkScalar vOffset, const SkPaint& paint);
 
     
@@ -975,8 +952,9 @@ public:
 
 
 
-    void drawTextOnPath(const void* text, size_t byteLength, const SkPath& path,
-                        const SkMatrix* matrix, const SkPaint& paint);
+    SK_LEGACY_DRAWTEXT_VIRTUAL void drawTextOnPath(const void* text, size_t byteLength,
+                                const SkPath& path, const SkMatrix* matrix,
+                                const SkPaint& paint);
 
     
 
@@ -984,7 +962,7 @@ public:
 
 
 
-    void drawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y, const SkPaint& paint);
+    void EXPERIMENTAL_optimize(const SkPicture* picture);
 
     
 
@@ -992,23 +970,7 @@ public:
 
 
 
-    void drawPicture(const SkPicture* picture) {
-        this->drawPicture(picture, NULL, NULL);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    void drawPicture(const SkPicture*, const SkMatrix* matrix, const SkPaint* paint);
+    void drawPicture(const SkPicture* picture);
 
     enum VertexMode {
         kTriangles_VertexMode,
@@ -1039,11 +1001,11 @@ public:
 
 
 
-    void drawVertices(VertexMode vmode, int vertexCount,
-                      const SkPoint vertices[], const SkPoint texs[],
-                      const SkColor colors[], SkXfermode* xmode,
-                      const uint16_t indices[], int indexCount,
-                      const SkPaint& paint);
+    virtual void drawVertices(VertexMode vmode, int vertexCount,
+                              const SkPoint vertices[], const SkPoint texs[],
+                              const SkColor colors[], SkXfermode* xmode,
+                              const uint16_t indices[], int indexCount,
+                              const SkPaint& paint);
 
     
 
@@ -1051,40 +1013,22 @@ public:
 
 
 
-
-
-
-
-
-
-
-    void drawPatch(const SkPoint cubics[12], const SkColor colors[4],
-                   const SkPoint texCoords[4], SkXfermode* xmode, const SkPaint& paint);
+    virtual void drawData(const void* data, size_t length) {
+        
+    }
 
     
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void drawAtlas(const SkImage* atlas, const SkRSXform xform[], const SkRect tex[],
-                   const SkColor colors[], int count, SkXfermode::Mode, const SkRect* cullRect,
-                   const SkPaint* paint);
-
-    void drawAtlas(const SkImage* atlas, const SkRSXform xform[], const SkRect tex[], int count,
-                   const SkRect* cullRect, const SkPaint* paint) {
-        this->drawAtlas(atlas, xform, tex, NULL, count, SkXfermode::kDst_Mode, cullRect, paint);
+    virtual void beginCommentGroup(const char* description) {
+        
+    }
+    virtual void addComment(const char* kywd, const char* value) {
+        
+    }
+    virtual void endCommentGroup() {
+        
     }
 
     
@@ -1093,10 +1037,12 @@ public:
 
 
 
+    void pushCull(const SkRect& cullRect);
+
+    
 
 
-    void drawDrawable(SkDrawable* drawable, const SkMatrix* = NULL);
-    void drawDrawable(SkDrawable*, SkScalar x, SkScalar y);
+    void popCull();
 
     
 
@@ -1139,13 +1085,25 @@ public:
 
     const SkMatrix& getTotalMatrix() const;
 
+#ifdef SK_SUPPORT_LEGACY_GETCLIPTYPE
+    enum ClipType {
+        kEmpty_ClipType = 0,
+        kRect_ClipType,
+        kComplex_ClipType
+    };
+    
+
+
+    virtual ClipType getClipType() const;
+#endif
+
     
 
 
 
 
     const SkClipStack* getClipStack() const {
-        return fClipStack;
+        return &fClipStack;
     }
 
     typedef SkCanvasClipVisitor ClipVisitor;
@@ -1197,29 +1155,19 @@ public:
     };
 
     
+    const SkRegion& internal_private_getTotalClip() const;
+    
+    void internal_private_getTotalClipAsPath(SkPath*) const;
+    
     GrRenderTarget* internal_private_accessTopLayerRenderTarget();
-
-    
-    static void Internal_Private_SetIgnoreSaveLayerBounds(bool);
-    static bool Internal_Private_GetIgnoreSaveLayerBounds();
-    static void Internal_Private_SetTreatSpriteAsBitmap(bool);
-    static bool Internal_Private_GetTreatSpriteAsBitmap();
-
-    
-    void legacy_drawImageRect(const SkImage* image, const SkRect* src, const SkRect& dst,
-                              const SkPaint* paint,
-                              SrcRectConstraint constraint = kStrict_SrcRectConstraint);
-    void legacy_drawBitmapRect(const SkBitmap& bitmap, const SkRect* src, const SkRect& dst,
-                               const SkPaint* paint,
-                               SrcRectConstraint constraint = kStrict_SrcRectConstraint);
 
 protected:
     
-    virtual SkSurface* onNewSurface(const SkImageInfo&, const SkSurfaceProps&);
+    virtual SkSurface* onNewSurface(const SkImageInfo&);
 
     
-    virtual bool onPeekPixels(SkPixmap*);
-    virtual bool onAccessTopLayerPixels(SkPixmap*);
+    virtual const void* onPeekPixels(SkImageInfo*, size_t* rowBytes);
+    virtual void* onAccessTopLayerPixels(SkImageInfo*, size_t* rowBytes);
 
     
     
@@ -1234,7 +1182,6 @@ protected:
         return kFullLayer_SaveLayerStrategy;
     }
     virtual void willRestore() {}
-    virtual void didRestore() {}
     virtual void didConcat(const SkMatrix&) {}
     virtual void didSetMatrix(const SkMatrix&) {}
 
@@ -1254,39 +1201,6 @@ protected:
                                   const SkPath& path, const SkMatrix* matrix,
                                   const SkPaint& paint);
 
-    virtual void onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
-                                const SkPaint& paint);
-
-    virtual void onDrawPatch(const SkPoint cubics[12], const SkColor colors[4],
-                           const SkPoint texCoords[4], SkXfermode* xmode, const SkPaint& paint);
-
-    virtual void onDrawDrawable(SkDrawable*, const SkMatrix*);
-
-    virtual void onDrawPaint(const SkPaint&);
-    virtual void onDrawRect(const SkRect&, const SkPaint&);
-    virtual void onDrawOval(const SkRect&, const SkPaint&);
-    virtual void onDrawRRect(const SkRRect&, const SkPaint&);
-    virtual void onDrawPoints(PointMode, size_t count, const SkPoint pts[], const SkPaint&);
-    virtual void onDrawVertices(VertexMode, int vertexCount, const SkPoint vertices[],
-                                const SkPoint texs[], const SkColor colors[], SkXfermode*,
-                                const uint16_t indices[], int indexCount, const SkPaint&);
-
-    virtual void onDrawAtlas(const SkImage*, const SkRSXform[], const SkRect[], const SkColor[],
-                             int count, SkXfermode::Mode, const SkRect* cull, const SkPaint*);
-    virtual void onDrawPath(const SkPath&, const SkPaint&);
-    virtual void onDrawImage(const SkImage*, SkScalar dx, SkScalar dy, const SkPaint*);
-    virtual void onDrawImageRect(const SkImage*, const SkRect*, const SkRect&, const SkPaint*,
-                                 SrcRectConstraint);
-    virtual void onDrawImageNine(const SkImage*, const SkIRect& center, const SkRect& dst,
-                                 const SkPaint*);
-
-    virtual void onDrawBitmap(const SkBitmap&, SkScalar dx, SkScalar dy, const SkPaint*);
-    virtual void onDrawBitmapRect(const SkBitmap&, const SkRect*, const SkRect&, const SkPaint*,
-                                  SrcRectConstraint);
-    virtual void onDrawBitmapNine(const SkBitmap&, const SkIRect& center, const SkRect& dst,
-                                  const SkPaint*);
-    virtual void onDrawSprite(const SkBitmap&, int left, int top, const SkPaint*);
-
     enum ClipEdgeStyle {
         kHard_ClipEdgeStyle,
         kSoft_ClipEdgeStyle
@@ -1299,7 +1213,7 @@ protected:
 
     virtual void onDiscard();
 
-    virtual void onDrawPicture(const SkPicture*, const SkMatrix*, const SkPaint*);
+    virtual void onDrawPicture(const SkPicture* picture);
 
     
     
@@ -1315,40 +1229,30 @@ protected:
                         SkIRect* intersection,
                         const SkImageFilter* imageFilter = NULL);
 
+    
+    
+    void updateClipConservativelyUsingBounds(const SkRect&, SkRegion::Op,
+                                             bool inverseFilled);
+
+    
+    
+    void predrawNotify();
+
+    virtual void onPushCull(const SkRect& cullRect);
+    virtual void onPopCull();
+
 private:
-    enum ShaderOverrideOpacity {
-        kNone_ShaderOverrideOpacity,        
-        kOpaque_ShaderOverrideOpacity,      
-        kNotOpaque_ShaderOverrideOpacity,   
-    };
-
-    
-    
-    void predrawNotify(bool willOverwritesEntireSurface = false);
-    void predrawNotify(const SkRect* rect, const SkPaint* paint, ShaderOverrideOpacity);
-    void predrawNotify(const SkRect* rect, const SkPaint* paint, bool shaderOverrideIsOpaque) {
-        this->predrawNotify(rect, paint, shaderOverrideIsOpaque ? kOpaque_ShaderOverrideOpacity
-                                                                : kNotOpaque_ShaderOverrideOpacity);
-    }
-
     class MCRec;
 
-    SkAutoTUnref<SkClipStack> fClipStack;
+    SkClipStack fClipStack;
     SkDeque     fMCStack;
     
     MCRec*      fMCRec;
     
-    enum {
-        kMCRecSize      = 128,  
-        kMCRecCount     = 32,   
-        kDeviceCMSize   = 136,  
-    };
-    intptr_t fMCRecStorage[kMCRecSize * kMCRecCount / sizeof(intptr_t)];
-    intptr_t fDeviceCMStorage[kDeviceCMSize / sizeof(intptr_t)];
+    uint32_t    fMCRecStorage[32];
 
-    const SkSurfaceProps fProps;
-
-    int         fSaveCount;         
+    int         fSaveLayerCount;    
+    int         fCullCount;         
 
     SkMetaData* fMetaData;
 
@@ -1363,37 +1267,25 @@ private:
     bool fDeviceCMDirty;            
     void updateDeviceCMCache();
 
-    void doSave();
-    void checkForDeferredSave();
-
     friend class SkDrawIter;        
     friend class AutoDrawLooper;
     friend class SkLua;             
     friend class SkDebugCanvas;     
+    friend class SkDeferredDevice;  
     friend class SkSurface_Raster;  
-    friend class SkRecorder;        
-    friend class SkNoSaveLayerCanvas;   
-    friend class SkPictureImageFilter;  
-    friend class SkPictureRecord;   
 
-    enum InitFlags {
-        kDefault_InitFlags                  = 0,
-        kConservativeRasterClip_InitFlag    = 1 << 0,
-    };
-    SkCanvas(const SkIRect& bounds, InitFlags);
-    SkCanvas(SkBaseDevice* device, InitFlags);
+    SkBaseDevice* createLayerDevice(const SkImageInfo&);
 
-    void resetForNextPicture(const SkIRect& bounds);
+    SkBaseDevice* init(SkBaseDevice*);
 
     
-    friend class SkCanvasStateUtils;
 
-    
-    
-    
-    void setupDevice(SkBaseDevice*);
 
-    SkBaseDevice* init(SkBaseDevice*, InitFlags);
+
+
+
+
+    SkBaseDevice* setRootDevice(SkBaseDevice* device);
 
     
 
@@ -1402,15 +1294,21 @@ private:
     SkISize getTopLayerSize() const;
     SkIPoint getTopLayerOrigin() const;
 
+    
+    
+    void internalDrawBitmap(const SkBitmap&, const SkMatrix& m, const SkPaint* paint);
     void internalDrawBitmapRect(const SkBitmap& bitmap, const SkRect* src,
                                 const SkRect& dst, const SkPaint* paint,
-                                SrcRectConstraint);
+                                DrawBitmapRectFlags flags);
+    void internalDrawBitmapNine(const SkBitmap& bitmap, const SkIRect& center,
+                                const SkRect& dst, const SkPaint* paint);
     void internalDrawPaint(const SkPaint& paint);
-    void internalSaveLayer(const SkRect* bounds, const SkPaint*, SaveFlags, SaveLayerStrategy);
-    void internalDrawDevice(SkBaseDevice*, int x, int y, const SkPaint*, bool isBitmapDevice);
+    int internalSaveLayer(const SkRect* bounds, const SkPaint* paint,
+                          SaveFlags, bool justForImageFilter, SaveLayerStrategy strategy);
+    void internalDrawDevice(SkBaseDevice*, int x, int y, const SkPaint*);
 
     
-    void internalSave();
+    int internalSave();
     void internalRestore();
     static void DrawRect(const SkDraw& draw, const SkPaint& paint,
                          const SkRect& r, SkScalar textSize);
@@ -1419,24 +1317,12 @@ private:
                                     SkScalar x, SkScalar y);
 
     
-    const SkRegion& internal_private_getTotalClip() const;
-
-    
-
-
-
-
-    bool wouldOverwriteEntireSurface(const SkRect*, const SkPaint*, ShaderOverrideOpacity) const;
-
-
-    
 
 
     mutable SkRect fCachedLocalClipBounds;
     mutable bool   fCachedLocalClipBoundsDirty;
     bool fAllowSoftClip;
     bool fAllowSimplifyClip;
-    const bool fConservativeRasterClip;
 
     const SkRect& getLocalClipBounds() const {
         if (fCachedLocalClipBoundsDirty) {
@@ -1460,6 +1346,9 @@ private:
     };
 
 #ifdef SK_DEBUG
+    
+    SkTDArray<SkIRect> fCullStack;
+    void validateCull(const SkIRect&);
     void validateClip() const;
 #else
     void validateClip() const {}
@@ -1504,6 +1393,28 @@ private:
     int         fSaveCount;
 };
 #define SkAutoCanvasRestore(...) SK_REQUIRE_LOCAL_VAR(SkAutoCanvasRestore)
+
+
+
+class SkAutoCommentBlock : SkNoncopyable {
+public:
+    SkAutoCommentBlock(SkCanvas* canvas, const char* description) {
+        fCanvas = canvas;
+        if (NULL != fCanvas) {
+            fCanvas->beginCommentGroup(description);
+        }
+    }
+
+    ~SkAutoCommentBlock() {
+        if (NULL != fCanvas) {
+            fCanvas->endCommentGroup();
+        }
+    }
+
+private:
+    SkCanvas* fCanvas;
+};
+#define SkAutoCommentBlock(...) SK_REQUIRE_LOCAL_VAR(SkAutoCommentBlock)
 
 
 

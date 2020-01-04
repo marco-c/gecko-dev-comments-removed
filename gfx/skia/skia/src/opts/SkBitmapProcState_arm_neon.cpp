@@ -66,17 +66,7 @@ const SkBitmapProcState::SampleProc32 gSkBitmapProcStateSample32_neon[] = {
     SA8_alpha_D32_filter_DXDY_neon,
     SA8_alpha_D32_filter_DXDY_neon,
     SA8_alpha_D32_filter_DX_neon,
-    SA8_alpha_D32_filter_DX_neon,
-
-    
-    SG8_alpha_D32_nofilter_DXDY_neon,
-    SG8_alpha_D32_nofilter_DXDY_neon,
-    SG8_alpha_D32_nofilter_DX_neon,
-    SG8_alpha_D32_nofilter_DX_neon,
-    SG8_alpha_D32_filter_DXDY_neon,
-    SG8_alpha_D32_filter_DXDY_neon,
-    SG8_alpha_D32_filter_DX_neon,
-    SG8_alpha_D32_filter_DX_neon,
+    SA8_alpha_D32_filter_DX_neon
 };
 
 const SkBitmapProcState::SampleProc16 gSkBitmapProcStateSample16_neon[] = {
@@ -96,11 +86,9 @@ const SkBitmapProcState::SampleProc16 gSkBitmapProcStateSample16_neon[] = {
     SI8_D16_filter_DX_neon,
 
     
-    nullptr, nullptr, nullptr, nullptr,
+    NULL, NULL, NULL, NULL,
     
-    nullptr, nullptr, nullptr, nullptr,
-    
-    nullptr, nullptr, nullptr, nullptr,
+    NULL, NULL, NULL, NULL
 };
 
 
@@ -389,8 +377,7 @@ void convolveVertically_neon(const SkConvolutionFilter1D::ConvolutionFixed* filt
 
 void convolve4RowsHorizontally_neon(const unsigned char* srcData[4],
                                     const SkConvolutionFilter1D& filter,
-                                    unsigned char* outRow[4],
-                                    size_t outRowBytes) {
+                                    unsigned char* outRow[4]) {
 
     uint8x8_t coeff_mask0 = vcreate_u8(0x0100010001000100);
     uint8x8_t coeff_mask1 = vcreate_u8(0x0302030203020302);

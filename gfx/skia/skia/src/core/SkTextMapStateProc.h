@@ -13,22 +13,20 @@
 
 class SkTextMapStateProc {
 public:
-    SkTextMapStateProc(const SkMatrix& matrix, const SkPoint& offset, int scalarsPerPosition)
+    SkTextMapStateProc(const SkMatrix& matrix, SkScalar y, int scalarsPerPosition)
         : fMatrix(matrix)
         , fProc(matrix.getMapXYProc())
-        , fOffset(offset)
-        , fScaleX(fMatrix.getScaleX()) {
+        , fY(y)
+        , fScaleX(fMatrix.getScaleX())
+        , fTransX(fMatrix.getTranslateX()) {
         SkASSERT(1 == scalarsPerPosition || 2 == scalarsPerPosition);
         if (1 == scalarsPerPosition) {
             unsigned mtype = fMatrix.getType();
             if (mtype & (SkMatrix::kAffine_Mask | SkMatrix::kPerspective_Mask)) {
                 fMapCase = kX;
             } else {
-                
-                
-                fOffset.set(SkScalarMul(offset.x(), fMatrix.getScaleX()) + fMatrix.getTranslateX(),
-                            SkScalarMul(offset.y(), fMatrix.getScaleY()) + fMatrix.getTranslateY());
-
+                fY = SkScalarMul(y, fMatrix.getScaleY()) +
+                    fMatrix.getTranslateY();
                 if (mtype & SkMatrix::kScale_Mask) {
                     fMapCase = kOnlyScaleX;
                 } else {
@@ -51,25 +49,25 @@ private:
         kX
     } fMapCase;
     const SkMatrix::MapXYProc fProc;
-    SkPoint  fOffset; 
-    SkScalar fScaleX; 
+    SkScalar fY; 
+    SkScalar fScaleX, fTransX; 
 };
 
 inline void SkTextMapStateProc::operator()(const SkScalar pos[], SkPoint* loc) const {
     switch(fMapCase) {
     case kXY:
-        fProc(fMatrix, pos[0] + fOffset.x(), pos[1] + fOffset.y(), loc);
+        fProc(fMatrix, pos[0], pos[1], loc);
         break;
     case kOnlyScaleX:
-        loc->set(SkScalarMul(fScaleX, *pos) + fOffset.x(), fOffset.y());
+        loc->set(SkScalarMul(fScaleX, *pos) + fTransX, fY);
         break;
     case kOnlyTransX:
-        loc->set(*pos + fOffset.x(), fOffset.y());
+        loc->set(*pos + fTransX, fY);
         break;
     default:
         SkASSERT(false);
     case kX:
-        fProc(fMatrix, *pos + fOffset.x(), fOffset.y(), loc);
+        fProc(fMatrix, *pos, fY, loc);
         break;
     }
 }

@@ -11,7 +11,7 @@
 #include "SkReadBuffer.h"
 #include "SkWriteBuffer.h"
 #include "SkPathMeasure.h"
-#include "SkStrokeRec.h"
+#include "SkRandom.h"
 
 static void Perterb(SkPoint* p, const SkVector& tangent, SkScalar scale) {
     SkVector normal = tangent;
@@ -27,48 +27,6 @@ SkDiscretePathEffect::SkDiscretePathEffect(SkScalar segLength,
 {
 }
 
-
-
-
-
-
-
-
-
-
-
-
-class LCGRandom {
-public:
-    LCGRandom(uint32_t seed) : fSeed(seed) {}
-
-    
-
-
-    SkScalar nextSScalar1() { return SkFixedToScalar(this->nextSFixed1()); }
-
-private:
-    
-
-    uint32_t nextU() { uint32_t r = fSeed * kMul + kAdd; fSeed = r; return r; }
-
-    
-
-    int32_t nextS() { return (int32_t)this->nextU(); }
-
-    
-
-
-    SkFixed nextSFixed1() { return this->nextS() >> 15; }
-
-    
-    enum {
-        kMul = 1664525,
-        kAdd = 1013904223
-    };
-    uint32_t fSeed;
-};
-
 bool SkDiscretePathEffect::filterPath(SkPath* dst, const SkPath& src,
                                       SkStrokeRec* rec, const SkRect*) const {
     bool doFill = rec->isFillStyle();
@@ -78,10 +36,10 @@ bool SkDiscretePathEffect::filterPath(SkPath* dst, const SkPath& src,
     
     uint32_t seed = fSeedAssist ^ SkScalarRoundToInt(meas.getLength());
 
-    LCGRandom   rand(seed ^ ((seed << 16) | (seed >> 16)));
-    SkScalar    scale = fPerterb;
-    SkPoint     p;
-    SkVector    v;
+    SkLCGRandom     rand(seed ^ ((seed << 16) | (seed >> 16)));
+    SkScalar        scale = fPerterb;
+    SkPoint         p;
+    SkVector        v;
 
     do {
         SkScalar    length = meas.getLength();
@@ -117,23 +75,15 @@ bool SkDiscretePathEffect::filterPath(SkPath* dst, const SkPath& src,
     return true;
 }
 
-SkFlattenable* SkDiscretePathEffect::CreateProc(SkReadBuffer& buffer) {
-    SkScalar segLength = buffer.readScalar();
-    SkScalar perterb = buffer.readScalar();
-    uint32_t seed = buffer.readUInt();
-    return Create(segLength, perterb, seed);
-}
-
 void SkDiscretePathEffect::flatten(SkWriteBuffer& buffer) const {
+    this->INHERITED::flatten(buffer);
     buffer.writeScalar(fSegLength);
     buffer.writeScalar(fPerterb);
     buffer.writeUInt(fSeedAssist);
 }
 
-#ifndef SK_IGNORE_TO_STRING
-void SkDiscretePathEffect::toString(SkString* str) const {
-    str->appendf("SkDiscretePathEffect: (");
-    str->appendf("segLength: %.2f deviation: %.2f seed %d", fSegLength, fPerterb, fSeedAssist);
-    str->append(")");
+SkDiscretePathEffect::SkDiscretePathEffect(SkReadBuffer& buffer) {
+    fSegLength = buffer.readScalar();
+    fPerterb = buffer.readScalar();
+    fSeedAssist = buffer.readUInt();
 }
-#endif

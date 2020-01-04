@@ -24,7 +24,7 @@ class SkCanvasClipVisitor;
 
 
 
-class SK_API SkClipStack : public SkNVRefCnt<SkClipStack> {
+class SK_API SkClipStack {
 public:
     enum BoundsType {
         
@@ -314,13 +314,14 @@ public:
 
 
 
-    bool quickContains(const SkRect& devRect) const;
+    bool intersectRectWithClip(SkRect* devRect) const;
 
     
 
 
 
-    bool asPath(SkPath* path) const;
+
+    bool quickContains(const SkRect& devRect) const;
 
     void clipDevRect(const SkIRect& ir, SkRegion::Op op) {
         SkRect r;

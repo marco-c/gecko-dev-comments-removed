@@ -11,17 +11,21 @@
 #include "SkColorPriv.h"
 #include "SkDescriptor.h"
 #include "SkDraw.h"
+#include "SkFontHost.h"
 #include "SkGlyph.h"
 #include "SkMaskFilter.h"
 #include "SkMaskGamma.h"
-#include "SkMatrix22.h"
 #include "SkReadBuffer.h"
 #include "SkWriteBuffer.h"
 #include "SkPathEffect.h"
 #include "SkRasterizer.h"
 #include "SkRasterClip.h"
 #include "SkStroke.h"
-#include "SkStrokeRec.h"
+#include "SkThread.h"
+
+#ifdef SK_BUILD_FOR_ANDROID
+    #include "SkTypeface_android.h"
+#endif
 
 #define ComputeBWRowBytes(width)        (((unsigned)(width) + 7) >> 3)
 
@@ -64,7 +68,7 @@ void SkGlyph::zeroMetrics() {
 
 static SkFlattenable* load_flattenable(const SkDescriptor* desc, uint32_t tag,
                                        SkFlattenable::Type ft) {
-    SkFlattenable*  obj = nullptr;
+    SkFlattenable*  obj = NULL;
     uint32_t        len;
     const void*     data = desc->findEntry(tag, &len);
 
@@ -77,8 +81,9 @@ static SkFlattenable* load_flattenable(const SkDescriptor* desc, uint32_t tag,
 }
 
 SkScalerContext::SkScalerContext(SkTypeface* typeface, const SkDescriptor* desc)
-    : fRec(*static_cast<const Rec*>(desc->findEntry(kRec_SkDescriptorTag, nullptr)))
+    : fRec(*static_cast<const Rec*>(desc->findEntry(kRec_SkDescriptorTag, NULL)))
 
+    , fBaseGlyphCount(0)
     , fTypeface(SkRef(typeface))
     , fPathEffect(static_cast<SkPathEffect*>(load_flattenable(desc, kPathEffect_SkDescriptorTag,
                                              SkFlattenable::kSkPathEffect_Type)))
@@ -87,7 +92,9 @@ SkScalerContext::SkScalerContext(SkTypeface* typeface, const SkDescriptor* desc)
     , fRasterizer(static_cast<SkRasterizer*>(load_flattenable(desc, kRasterizer_SkDescriptorTag,
                                              SkFlattenable::kSkRasterizer_Type)))
       
-    , fGenerateImageFromPath(fRec.fFrameWidth > 0 || fPathEffect != nullptr || fRasterizer != nullptr)
+    , fGenerateImageFromPath(fRec.fFrameWidth > 0 || fPathEffect != NULL || fRasterizer != NULL)
+
+    , fNextContext(NULL)
 
     , fPreBlend(fMaskFilter ? SkMaskGamma::PreBlend() : SkScalerContext::GetMaskPreBlend(fRec))
     , fPreBlendForFilter(fMaskFilter ? SkScalerContext::GetMaskPreBlend(fRec)
@@ -104,15 +111,182 @@ SkScalerContext::SkScalerContext(SkTypeface* typeface, const SkDescriptor* desc)
         rec->fFrameWidth, rec->fMiterLimit, rec->fHints, rec->fFrameAndFill,
         rec->fMaskFormat, rec->fStrokeJoin);
     SkDebugf("  pathEffect %x maskFilter %x\n",
-             desc->findEntry(kPathEffect_SkDescriptorTag, nullptr),
-        desc->findEntry(kMaskFilter_SkDescriptorTag, nullptr));
+             desc->findEntry(kPathEffect_SkDescriptorTag, NULL),
+        desc->findEntry(kMaskFilter_SkDescriptorTag, NULL));
+#endif
+#ifdef SK_BUILD_FOR_ANDROID
+    uint32_t len;
+    const void* data = desc->findEntry(kAndroidOpts_SkDescriptorTag, &len);
+    if (data) {
+        SkReadBuffer buffer(data, len);
+        fPaintOptionsAndroid.unflatten(buffer);
+        SkASSERT(buffer.offset() == buffer.size());
+    }
 #endif
 }
 
 SkScalerContext::~SkScalerContext() {
+    SkDELETE(fNextContext);
+
     SkSafeUnref(fPathEffect);
     SkSafeUnref(fMaskFilter);
     SkSafeUnref(fRasterizer);
+}
+
+
+
+SkScalerContext* SkScalerContext::allocNextContext() const {
+#ifdef SK_BUILD_FOR_ANDROID
+    SkTypeface* newFace = SkAndroidNextLogicalTypeface(fRec.fFontID,
+                                                       fRec.fOrigFontID,
+                                                       fPaintOptionsAndroid);
+    if (0 == newFace) {
+        return NULL;
+    }
+
+    SkAutoTUnref<SkTypeface> aur(newFace);
+    uint32_t newFontID = newFace->uniqueID();
+
+    SkWriteBuffer androidBuffer;
+    fPaintOptionsAndroid.flatten(androidBuffer);
+
+    SkAutoDescriptor    ad(sizeof(fRec) + androidBuffer.bytesWritten()
+                           + SkDescriptor::ComputeOverhead(2));
+    SkDescriptor*       desc = ad.getDesc();
+
+    desc->init();
+    SkScalerContext::Rec* newRec =
+    (SkScalerContext::Rec*)desc->addEntry(kRec_SkDescriptorTag,
+                                          sizeof(fRec), &fRec);
+    androidBuffer.writeToMemory(desc->addEntry(kAndroidOpts_SkDescriptorTag,
+                                               androidBuffer.bytesWritten(), NULL));
+
+    newRec->fFontID = newFontID;
+    desc->computeChecksum();
+
+    return newFace->createScalerContext(desc);
+#else
+    return NULL;
+#endif
+}
+
+
+
+
+SkScalerContext* SkScalerContext::getNextContext() {
+    SkScalerContext* next = fNextContext;
+    
+    
+    if (NULL == next) {
+        next = this->allocNextContext();
+        if (NULL == next) {
+            return NULL;
+        }
+        
+        next->setBaseGlyphCount(fBaseGlyphCount + this->getGlyphCount());
+        
+        fNextContext = next;
+    }
+    return next;
+}
+
+SkScalerContext* SkScalerContext::getGlyphContext(const SkGlyph& glyph) {
+    unsigned glyphID = glyph.getGlyphID();
+    SkScalerContext* ctx = this;
+    for (;;) {
+        unsigned count = ctx->getGlyphCount();
+        if (glyphID < count) {
+            break;
+        }
+        glyphID -= count;
+        ctx = ctx->getNextContext();
+        if (NULL == ctx) {
+
+            
+            return this;
+        }
+    }
+    return ctx;
+}
+
+SkScalerContext* SkScalerContext::getContextFromChar(SkUnichar uni,
+                                                     uint16_t* glyphID) {
+    SkScalerContext* ctx = this;
+    for (;;) {
+        const uint16_t glyph = ctx->generateCharToGlyph(uni);
+        if (glyph) {
+            if (NULL != glyphID) {
+                *glyphID = glyph;
+            }
+            break;  
+        }
+        ctx = ctx->getNextContext();
+        if (NULL == ctx) {
+            return NULL;
+        }
+    }
+    return ctx;
+}
+
+#ifdef SK_BUILD_FOR_ANDROID
+SkFontID SkScalerContext::findTypefaceIdForChar(SkUnichar uni) {
+    SkScalerContext* ctx = this->getContextFromChar(uni, NULL);
+    if (NULL != ctx) {
+        return ctx->fRec.fFontID;
+    } else {
+        return 0;
+    }
+}
+
+
+
+
+
+
+
+unsigned SkScalerContext::getBaseGlyphCount(SkUnichar uni) {
+    SkScalerContext* ctx = this->getContextFromChar(uni, NULL);
+    if (NULL != ctx) {
+        return ctx->fBaseGlyphCount;
+    } else {
+        SkDEBUGF(("--- no context for char %x\n", uni));
+        return this->fBaseGlyphCount;
+    }
+}
+#endif
+
+
+
+
+uint16_t SkScalerContext::charToGlyphID(SkUnichar uni) {
+
+    uint16_t tempID;
+    SkScalerContext* ctx = this->getContextFromChar(uni, &tempID);
+    if (NULL == ctx) {
+        return 0; 
+    }
+    
+    unsigned glyphID = tempID + ctx->fBaseGlyphCount;
+    
+    if (glyphID > 0xFFFF) {
+        glyphID = 0;
+    }
+    return SkToU16(glyphID);
+}
+
+SkUnichar SkScalerContext::glyphIDToChar(uint16_t glyphID) {
+    SkScalerContext* ctx = this;
+    unsigned rangeEnd = 0;
+    do {
+        unsigned rangeStart = rangeEnd;
+
+        rangeEnd += ctx->getGlyphCount();
+        if (rangeStart <= glyphID && glyphID < rangeEnd) {
+            return ctx->generateGlyphToChar(glyphID - rangeStart);
+        }
+        ctx = ctx->getNextContext();
+    } while (NULL != ctx);
+    return 0;
 }
 
 void SkScalerContext::getAdvance(SkGlyph* glyph) {
@@ -121,11 +295,11 @@ void SkScalerContext::getAdvance(SkGlyph* glyph) {
     
     
     
-    generateAdvance(glyph);
+    this->getGlyphContext(*glyph)->generateAdvance(glyph);
 }
 
 void SkScalerContext::getMetrics(SkGlyph* glyph) {
-    generateMetrics(glyph);
+    this->getGlyphContext(*glyph)->generateMetrics(glyph);
 
     
     
@@ -155,7 +329,7 @@ void SkScalerContext::getMetrics(SkGlyph* glyph) {
         if (fRasterizer) {
             SkMask  mask;
 
-            if (fRasterizer->rasterize(fillPath, fillToDevMatrix, nullptr,
+            if (fRasterizer->rasterize(fillPath, fillToDevMatrix, NULL,
                                        fMaskFilter, &mask,
                                        SkMask::kJustComputeBounds_CreateMode)) {
                 glyph->fLeft    = mask.fBounds.fLeft;
@@ -167,7 +341,8 @@ void SkScalerContext::getMetrics(SkGlyph* glyph) {
             }
         } else {
             
-            const SkIRect ir = devPath.getBounds().roundOut();
+            SkIRect ir;
+            devPath.getBounds().roundOut(&ir);
 
             if (ir.isEmpty() || !ir.is16Bit()) {
                 goto SK_ERROR;
@@ -180,6 +355,7 @@ void SkScalerContext::getMetrics(SkGlyph* glyph) {
             if (glyph->fWidth > 0) {
                 switch (fRec.fMaskFormat) {
                 case SkMask::kLCD16_Format:
+                case SkMask::kLCD32_Format:
                     glyph->fWidth += 2;
                     glyph->fLeft -= 1;
                     break;
@@ -207,12 +383,12 @@ void SkScalerContext::getMetrics(SkGlyph* glyph) {
         glyph->toMask(&src);
         fRec.getMatrixFrom2x2(&matrix);
 
-        src.fImage = nullptr;  
-        if (fMaskFilter->filterMask(&dst, src, matrix, nullptr)) {
+        src.fImage = NULL;  
+        if (fMaskFilter->filterMask(&dst, src, matrix, NULL)) {
             if (dst.fBounds.isEmpty() || !dst.fBounds.is16Bit()) {
                 goto SK_ERROR;
             }
-            SkASSERT(dst.fImage == nullptr);
+            SkASSERT(dst.fImage == NULL);
             glyph->fLeft    = dst.fBounds.fLeft;
             glyph->fTop     = dst.fBounds.fTop;
             glyph->fWidth   = SkToU16(dst.fBounds.width());
@@ -248,7 +424,7 @@ static void applyLUTToA8Mask(const SkMask& mask, const uint8_t* lut) {
 }
 
 template<bool APPLY_PREBLEND>
-static void pack4xHToLCD16(const SkPixmap& src, const SkMask& dst,
+static void pack4xHToLCD16(const SkBitmap& src, const SkMask& dst,
                            const SkMaskGamma::PreBlend& maskPreBlend) {
 #define SAMPLES_PER_PIXEL 4
 #define LCD_PER_PIXEL 3
@@ -291,7 +467,7 @@ static void pack4xHToLCD16(const SkPixmap& src, const SkMask& dst,
     };
 
     for (int y = 0; y < height; ++y) {
-        const uint8_t* srcP = src.addr8(0, y);
+        const uint8_t* srcP = src.getAddr8(0, y);
 
         
         
@@ -320,6 +496,31 @@ static void pack4xHToLCD16(const SkPixmap& src, const SkMask& dst,
             dstP[pixel_x] = SkPack888ToRGB16(r, g, b);
         }
         dstP = (uint16_t*)((char*)dstP + dstRB);
+    }
+}
+
+template<bool APPLY_PREBLEND>
+static void pack4xHToLCD32(const SkBitmap& src, const SkMask& dst,
+                           const SkMaskGamma::PreBlend& maskPreBlend) {
+    SkASSERT(kAlpha_8_SkColorType == src.colorType());
+    SkASSERT(SkMask::kLCD32_Format == dst.fFormat);
+
+    const int width = dst.fBounds.width();
+    const int height = dst.fBounds.height();
+    SkPMColor* dstP = (SkPMColor*)dst.fImage;
+    size_t dstRB = dst.fRowBytes;
+
+    for (int y = 0; y < height; ++y) {
+        const uint8_t* srcP = src.getAddr8(0, y);
+
+        
+        for (int x = 0; x < width; ++x) {
+            U8CPU r = sk_apply_lut_if<APPLY_PREBLEND>(*srcP++, maskPreBlend.fR);
+            U8CPU g = sk_apply_lut_if<APPLY_PREBLEND>(*srcP++, maskPreBlend.fG);
+            U8CPU b = sk_apply_lut_if<APPLY_PREBLEND>(*srcP++, maskPreBlend.fB);
+            dstP[x] = SkPackARGB32(0xFF, r, g, b);
+        }
+        dstP = (SkPMColor*)((char*)dstP + dstRB);
     }
 }
 
@@ -391,6 +592,7 @@ static void generateMask(const SkMask& mask, const SkPath& path,
         case SkMask::kA8_Format:
             break;
         case SkMask::kLCD16_Format:
+        case SkMask::kLCD32_Format:
             
             dstW = 4*dstW - 8;
             matrix.setTranslate(-SkIntToScalar(mask.fBounds.fLeft + 1),
@@ -406,29 +608,29 @@ static void generateMask(const SkMask& mask, const SkPath& path,
     clip.setRect(SkIRect::MakeWH(dstW, dstH));
 
     const SkImageInfo info = SkImageInfo::MakeA8(dstW, dstH);
-    SkAutoPixmapStorage dst;
+    SkBitmap bm;
 
     if (0 == dstRB) {
-        if (!dst.tryAlloc(info)) {
+        if (!bm.allocPixels(info)) {
             
             sk_bzero(mask.fImage, mask.computeImageSize());
             return;
         }
     } else {
-        dst.reset(info, mask.fImage, dstRB);
+        bm.installPixels(info, mask.fImage, dstRB);
     }
-    sk_bzero(dst.writable_addr(), dst.getSafeSize());
+    sk_bzero(bm.getPixels(), bm.getSafeSize());
 
     SkDraw  draw;
-    draw.fDst   = dst;
     draw.fRC    = &clip;
     draw.fClip  = &clip.bwRgn();
     draw.fMatrix = &matrix;
+    draw.fBitmap = &bm;
     draw.drawPath(path, paint);
 
     switch (mask.fFormat) {
         case SkMask::kBW_Format:
-            packA8ToA1(mask, dst.addr8(0, 0), dst.rowBytes());
+            packA8ToA1(mask, bm.getAddr8(0, 0), bm.rowBytes());
             break;
         case SkMask::kA8_Format:
             if (maskPreBlend.isApplicable()) {
@@ -437,9 +639,16 @@ static void generateMask(const SkMask& mask, const SkPath& path,
             break;
         case SkMask::kLCD16_Format:
             if (maskPreBlend.isApplicable()) {
-                pack4xHToLCD16<true>(dst, mask, maskPreBlend);
+                pack4xHToLCD16<true>(bm, mask, maskPreBlend);
             } else {
-                pack4xHToLCD16<false>(dst, mask, maskPreBlend);
+                pack4xHToLCD16<false>(bm, mask, maskPreBlend);
+            }
+            break;
+        case SkMask::kLCD32_Format:
+            if (maskPreBlend.isApplicable()) {
+                pack4xHToLCD32<true>(bm, mask, maskPreBlend);
+            } else {
+                pack4xHToLCD32<false>(bm, mask, maskPreBlend);
             }
             break;
         default:
@@ -482,11 +691,11 @@ void SkScalerContext::getImage(const SkGlyph& origGlyph) {
              SkMask::kARGB32_Format != origGlyph.fMaskFormat);
 
     if (fMaskFilter) {   
-        tmpGlyph.initGlyphIdFrom(origGlyph);
+        tmpGlyph.init(origGlyph.fID);
 
         
         SkMaskFilter* mf = fMaskFilter;
-        fMaskFilter = nullptr;             
+        fMaskFilter = NULL;             
         this->getMetrics(&tmpGlyph);
         fMaskFilter = mf;               
 
@@ -515,7 +724,7 @@ void SkScalerContext::getImage(const SkGlyph& origGlyph) {
             mask.fFormat = SkMask::kA8_Format;
             sk_bzero(glyph->fImage, mask.computeImageSize());
 
-            if (!fRasterizer->rasterize(fillPath, fillToDevMatrix, nullptr,
+            if (!fRasterizer->rasterize(fillPath, fillToDevMatrix, NULL,
                                         fMaskFilter, &mask,
                                         SkMask::kJustRenderImage_CreateMode)) {
                 return;
@@ -528,7 +737,7 @@ void SkScalerContext::getImage(const SkGlyph& origGlyph) {
             generateMask(mask, devPath, fPreBlend);
         }
     } else {
-        generateImage(*glyph);
+        this->getGlyphContext(*glyph)->generateImage(*glyph);
     }
 
     if (fMaskFilter) {
@@ -554,7 +763,7 @@ void SkScalerContext::getImage(const SkGlyph& origGlyph) {
 
         fRec.getMatrixFrom2x2(&matrix);
 
-        if (fMaskFilter->filterMask(&dstM, srcM, matrix, nullptr)) {
+        if (fMaskFilter->filterMask(&dstM, srcM, matrix, NULL)) {
             int width = SkFastMin32(origGlyph.fWidth, dstM.fBounds.width());
             int height = SkFastMin32(origGlyph.fHeight, dstM.fBounds.height());
             int dstRB = origGlyph.rowBytes();
@@ -586,7 +795,7 @@ void SkScalerContext::getImage(const SkGlyph& origGlyph) {
 }
 
 void SkScalerContext::getPath(const SkGlyph& glyph, SkPath* path) {
-    this->internalGetPath(glyph, nullptr, path, nullptr);
+    this->internalGetPath(glyph, NULL, path, NULL);
 }
 
 void SkScalerContext::getFontMetrics(SkPaint::FontMetrics* fm) {
@@ -602,7 +811,8 @@ SkUnichar SkScalerContext::generateGlyphToChar(uint16_t glyph) {
 void SkScalerContext::internalGetPath(const SkGlyph& glyph, SkPath* fillPath,
                                   SkPath* devPath, SkMatrix* fillToDevMatrix) {
     SkPath  path;
-    generatePath(glyph, &path);
+
+    this->getGlyphContext(glyph)->generatePath(glyph, &path);
 
     if (fRec.fFlags & SkScalerContext::kSubpixelPositioning_Flag) {
         SkFixed dx = glyph.getSubXFixed();
@@ -612,7 +822,7 @@ void SkScalerContext::internalGetPath(const SkGlyph& glyph, SkPath* fillPath,
         }
     }
 
-    if (fRec.fFrameWidth > 0 || fPathEffect != nullptr) {
+    if (fRec.fFrameWidth > 0 || fPathEffect != NULL) {
         
         
         
@@ -642,7 +852,7 @@ void SkScalerContext::internalGetPath(const SkGlyph& glyph, SkPath* fillPath,
 
         if (fPathEffect) {
             SkPath effectPath;
-            if (fPathEffect->filterPath(&effectPath, localPath, &rec, nullptr)) {
+            if (fPathEffect->filterPath(&effectPath, localPath, &rec, NULL)) {
                 localPath.swap(effectPath);
             }
         }
@@ -669,7 +879,7 @@ void SkScalerContext::internalGetPath(const SkGlyph& glyph, SkPath* fillPath,
             fillToDevMatrix->reset();
         }
         if (devPath) {
-            if (fillPath == nullptr) {
+            if (fillPath == NULL) {
                 devPath->swap(path);
             } else {
                 *devPath = path;
@@ -693,7 +903,7 @@ void SkScalerContext::internalGetPath(const SkGlyph& glyph, SkPath* fillPath,
 void SkScalerContextRec::getMatrixFrom2x2(SkMatrix* dst) const {
     dst->setAll(fPost2x2[0][0], fPost2x2[0][1], 0,
                 fPost2x2[1][0], fPost2x2[1][1], 0,
-                0,              0,              1);
+                0,              0,              SkScalarToPersp(SK_Scalar1));
 }
 
 void SkScalerContextRec::getLocalMatrix(SkMatrix* m) const {
@@ -709,127 +919,13 @@ void SkScalerContextRec::getSingleMatrix(SkMatrix* m) const {
     m->postConcat(deviceMatrix);
 }
 
-void SkScalerContextRec::computeMatrices(PreMatrixScale preMatrixScale, SkVector* s, SkMatrix* sA,
-                                         SkMatrix* GsA, SkMatrix* G_inv, SkMatrix* A_out)
-{
-    
-    SkMatrix A;
-    this->getSingleMatrix(&A);
-
-    
-    if (A_out) {
-        *A_out = A;
-    }
-
-    
-    
-
-    
-    
-    
-    SkVector diag[2] = { { A.getScaleX() + A.getSkewX(), A.getScaleY() + A.getSkewY() },
-                         { A.getScaleX() - A.getSkewX(), A.getScaleY() - A.getSkewY() }, };
-    if (diag[0].lengthSqd() <= SK_ScalarNearlyZero * SK_ScalarNearlyZero ||
-        diag[1].lengthSqd() <= SK_ScalarNearlyZero * SK_ScalarNearlyZero)
-    {
-        s->fX = SK_Scalar1;
-        s->fY = SK_Scalar1;
-        sA->setScale(0, 0);
-        if (GsA) {
-            GsA->setScale(0, 0);
-        }
-        if (G_inv) {
-            G_inv->reset();
-        }
-        return;
-    }
-
-    
-    SkMatrix GA;
-    bool skewedOrFlipped = A.getSkewX() || A.getSkewY() || A.getScaleX() < 0 || A.getScaleY() < 0;
-    if (skewedOrFlipped) {
-        
-        SkPoint h = SkPoint::Make(SK_Scalar1, 0);
-        A.mapPoints(&h, 1);
-
-        
-        SkMatrix G;
-        SkComputeGivensRotation(h, &G);
-
-        GA = G;
-        GA.preConcat(A);
-
-        
-        if (G_inv) {
-            G_inv->setAll(
-                G.get(SkMatrix::kMScaleX), -G.get(SkMatrix::kMSkewX), G.get(SkMatrix::kMTransX),
-                -G.get(SkMatrix::kMSkewY), G.get(SkMatrix::kMScaleY), G.get(SkMatrix::kMTransY),
-                G.get(SkMatrix::kMPersp0), G.get(SkMatrix::kMPersp1), G.get(SkMatrix::kMPersp2));
-        }
-    } else {
-        GA = A;
-        if (G_inv) {
-            G_inv->reset();
-        }
-    }
-
-    
-    switch (preMatrixScale) {
-        case kFull_PreMatrixScale:
-            s->fX = SkScalarAbs(GA.get(SkMatrix::kMScaleX));
-            s->fY = SkScalarAbs(GA.get(SkMatrix::kMScaleY));
-            break;
-        case kVertical_PreMatrixScale: {
-            SkScalar yScale = SkScalarAbs(GA.get(SkMatrix::kMScaleY));
-            s->fX = yScale;
-            s->fY = yScale;
-            break;
-        }
-        case kVerticalInteger_PreMatrixScale: {
-            SkScalar realYScale = SkScalarAbs(GA.get(SkMatrix::kMScaleY));
-            SkScalar intYScale = SkScalarRoundToScalar(realYScale);
-            if (intYScale == 0) {
-                intYScale = SK_Scalar1;
-            }
-            s->fX = intYScale;
-            s->fY = intYScale;
-            break;
-        }
-    }
-
-    
-    if (!skewedOrFlipped && (
-            (kFull_PreMatrixScale == preMatrixScale) ||
-            (kVertical_PreMatrixScale == preMatrixScale && A.getScaleX() == A.getScaleY())))
-    {
-        
-        
-        sA->reset();
-    } else if (!skewedOrFlipped && kVertical_PreMatrixScale == preMatrixScale) {
-        
-        sA->reset();
-        sA->setScaleX(A.getScaleX() / s->fY);
-    } else {
-        
-        *sA = A;
-        sA->preScale(SkScalarInvert(s->fX), SkScalarInvert(s->fY));
-    }
-
-    
-    if (GsA) {
-        *GsA = GA;
-         
-        GsA->preScale(SkScalarInvert(s->fX), SkScalarInvert(s->fY));
-    }
-}
-
 SkAxisAlignment SkComputeAxisAlignmentForHText(const SkMatrix& matrix) {
     SkASSERT(!matrix.hasPerspective());
 
     if (0 == matrix[SkMatrix::kMSkewY]) {
         return kX_SkAxisAlignment;
     }
-    if (0 == matrix[SkMatrix::kMSkewX]) {
+    if (0 == matrix[SkMatrix::kMScaleX]) {
         return kY_SkAxisAlignment;
     }
     return kNone_SkAxisAlignment;
@@ -837,27 +933,29 @@ SkAxisAlignment SkComputeAxisAlignmentForHText(const SkMatrix& matrix) {
 
 
 
+#include "SkFontHost.h"
+
 class SkScalerContext_Empty : public SkScalerContext {
 public:
     SkScalerContext_Empty(SkTypeface* face, const SkDescriptor* desc)
         : SkScalerContext(face, desc) {}
 
 protected:
-    unsigned generateGlyphCount() override {
+    virtual unsigned generateGlyphCount() SK_OVERRIDE {
         return 0;
     }
-    uint16_t generateCharToGlyph(SkUnichar uni) override {
+    virtual uint16_t generateCharToGlyph(SkUnichar uni) SK_OVERRIDE {
         return 0;
     }
-    void generateAdvance(SkGlyph* glyph) override {
+    virtual void generateAdvance(SkGlyph* glyph) SK_OVERRIDE {
         glyph->zeroMetrics();
     }
-    void generateMetrics(SkGlyph* glyph) override {
+    virtual void generateMetrics(SkGlyph* glyph) SK_OVERRIDE {
         glyph->zeroMetrics();
     }
-    void generateImage(const SkGlyph& glyph) override {}
-    void generatePath(const SkGlyph& glyph, SkPath* path) override {}
-    void generateFontMetrics(SkPaint::FontMetrics* metrics) override {
+    virtual void generateImage(const SkGlyph& glyph) SK_OVERRIDE {}
+    virtual void generatePath(const SkGlyph& glyph, SkPath* path) SK_OVERRIDE {}
+    virtual void generateFontMetrics(SkPaint::FontMetrics* metrics) SK_OVERRIDE {
         if (metrics) {
             sk_bzero(metrics, sizeof(*metrics));
         }
@@ -871,7 +969,8 @@ SkScalerContext* SkTypeface::createScalerContext(const SkDescriptor* desc,
     SkScalerContext* c = this->onCreateScalerContext(desc);
 
     if (!c && !allowFailure) {
-        c = new SkScalerContext_Empty(const_cast<SkTypeface*>(this), desc);
+        c = SkNEW_ARGS(SkScalerContext_Empty,
+                       (const_cast<SkTypeface*>(this), desc));
     }
     return c;
 }

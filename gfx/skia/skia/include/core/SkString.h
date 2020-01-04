@@ -39,12 +39,6 @@ static int SkStrFind(const char string[], const char substring[]) {
     return SkToS32(first - &string[0]);
 }
 
-static int SkStrFindLastOf(const char string[], const char subchar) {
-    const char* last = strrchr(string, subchar);
-    if (NULL == last) return -1;
-    return SkToS32(last - &string[0]);
-}
-
 static bool SkStrContains(const char string[], const char substring[]) {
     SkASSERT(string);
     SkASSERT(substring);
@@ -63,22 +57,6 @@ static inline char *SkStrDup(const char string[]) {
     memcpy(ret,string,strlen(string)+1);
     return ret;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -158,9 +136,6 @@ public:
     int find(const char substring[]) const {
         return SkStrFind(fRec->data(), substring);
     }
-    int findLastOf(const char subchar) const {
-        return SkStrFindLastOf(fRec->data(), subchar);
-    }
 
     friend bool operator==(const SkString& a, const SkString& b) {
         return a.equals(b);
@@ -178,7 +153,6 @@ public:
     char& operator[](size_t n) { return this->writable_str()[n]; }
 
     void reset();
-    
     void resize(size_t len) { this->set(NULL, len); }
     void set(const SkString& src) { *this = src; }
     void set(const char text[]);
@@ -221,7 +195,6 @@ public:
     void appendf(const char format[], ...) SK_PRINTF_LIKE(2, 3);
     void appendVAList(const char format[], va_list);
     void prependf(const char format[], ...) SK_PRINTF_LIKE(2, 3);
-    void prependVAList(const char format[], va_list);
 
     void remove(size_t offset, size_t length);
 
@@ -248,6 +221,7 @@ private:
     Rec* fRec;
 
 #ifdef SK_DEBUG
+    const char* fStr;
     void validate() const;
 #else
     void validate() const {}

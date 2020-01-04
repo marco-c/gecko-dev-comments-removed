@@ -8,12 +8,11 @@
 #ifndef SkImagePriv_DEFINED
 #define SkImagePriv_DEFINED
 
+#include "SkBitmap.h"
 #include "SkImage.h"
-#include "SkSurface.h"
 
 
 extern SkImage* SkNewImageFromPixelRef(const SkImageInfo&, SkPixelRef*,
-                                       const SkIPoint& pixelRefOrigin,
                                        size_t rowBytes);
 
 
@@ -26,44 +25,25 @@ extern SkImage* SkNewImageFromPixelRef(const SkImageInfo&, SkPixelRef*,
 
 
 
-
-
-
-
-
-
-
-
-enum ForceCopyMode {
-    kNo_ForceCopyMode,
-    kYes_ForceCopyMode, 
-};
-extern SkImage* SkNewImageFromRasterBitmap(const SkBitmap&, ForceCopyMode = kNo_ForceCopyMode);
+extern SkImage* SkNewImageFromBitmap(const SkBitmap&, bool canSharePixelRef);
 
 static inline size_t SkImageMinRowBytes(const SkImageInfo& info) {
-    size_t minRB = info.minRowBytes();
-    if (kIndex_8_SkColorType != info.colorType()) {
-        minRB = SkAlign4(minRB);
-    }
-    return minRB;
+    return SkAlign4(info.minRowBytes());
 }
 
 
 
 
-extern const SkPixelRef* SkBitmapImageGetPixelRef(const SkImage* rasterImage);
+extern SkPixelRef* SkBitmapImageGetPixelRef(SkImage* rasterImage);
 
 
 
 
-
-extern void SkTextureImageApplyBudgetedDecision(SkImage* textureImage);
+extern GrTexture* SkTextureImageGetTexture(SkImage* textureImage);
 
 
 
 
 extern void SkTextureImageSetTexture(SkImage* image, GrTexture* texture);
-
-GrTexture* GrDeepCopyTexture(GrTexture* src, bool isBudgeted);
 
 #endif

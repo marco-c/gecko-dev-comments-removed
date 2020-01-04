@@ -16,11 +16,11 @@
 class SkBlurMask {
 public:
     static bool BlurRect(SkScalar sigma, SkMask *dst, const SkRect &src, SkBlurStyle,
-                         SkIPoint *margin = nullptr,
+                         SkIPoint *margin = NULL,
                          SkMask::CreateMode createMode =
                                                 SkMask::kComputeBoundsAndRenderImage_CreateMode);
     static bool BlurRRect(SkScalar sigma, SkMask *dst, const SkRRect &src, SkBlurStyle,
-                         SkIPoint *margin = nullptr,
+                         SkIPoint *margin = NULL,
                          SkMask::CreateMode createMode =
                                                 SkMask::kComputeBoundsAndRenderImage_CreateMode);
 
@@ -32,12 +32,12 @@ public:
 
     static bool BoxBlur(SkMask* dst, const SkMask& src,
                         SkScalar sigma, SkBlurStyle style, SkBlurQuality quality,
-                        SkIPoint* margin = nullptr, bool force_quality=false);
+                        SkIPoint* margin = NULL, bool force_quality=false);
 
     
     
     static bool BlurGroundTruth(SkScalar sigma, SkMask* dst, const SkMask& src, SkBlurStyle,
-                                SkIPoint* margin = nullptr);
+                                SkIPoint* margin = NULL);
 
     
     static SkScalar ConvertRadiusToSigma(SkScalar radius);
@@ -54,14 +54,15 @@ public:
 
 
 
-    static uint8_t ProfileLookup(const uint8_t* profile, int loc, int blurredWidth, int sharpWidth);
+    static uint8_t ProfileLookup(const uint8_t* profile, int loc, int blurred_width, int sharp_width);
 
     
 
 
 
 
-    static uint8_t* ComputeBlurProfile(SkScalar sigma);
+
+    static void ComputeBlurProfile(SkScalar sigma, uint8_t** profile_out);
 
     
 

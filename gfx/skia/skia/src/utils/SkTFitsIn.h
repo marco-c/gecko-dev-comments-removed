@@ -16,22 +16,15 @@ namespace sktfitsin {
 namespace Private {
 
 
-template <bool a, bool b, typename Both, typename A, typename B, typename Neither>
-struct SkTMux {
-    using type = skstd::conditional_t<a, skstd::conditional_t<b, Both, A>,
-                                         skstd::conditional_t<b, B, Neither>>;
+template<typename A, typename B> struct SkTHasMoreDigits {
+    typedef SkTBool<std::numeric_limits<A>::digits >= std::numeric_limits<B>::digits> type;
 };
-
-
-template<typename A, typename B> struct SkTHasMoreDigits
-    : skstd::bool_constant<std::numeric_limits<A>::digits >= std::numeric_limits<B>::digits>
-{ };
 
 
 
 
 template <typename S> struct SkTOutOfRange_False {
-    typedef skstd::false_type can_be_true;
+    typedef SkFalse can_be_true;
     typedef S source_type;
     static bool apply(S s) {
         return false;
@@ -42,11 +35,11 @@ template <typename S> struct SkTOutOfRange_False {
 
 
 template <typename D, typename S> struct SkTOutOfRange_LT_MinD {
-    typedef skstd::true_type can_be_true;
+    typedef SkTrue can_be_true;
     typedef S source_type;
     static bool apply(S s) {
-        typedef SkTHasMoreDigits<S, D> precondition;
-        static_assert(precondition::value, "SkTOutOfRange_LT_MinD__minS_gt_minD");
+        typedef typename SkTHasMoreDigits<S, D>::type precondition;
+        SK_COMPILE_ASSERT(precondition::value, SkTOutOfRange_LT_MinD__minS_gt_minD);
 
         return s < static_cast<S>((std::numeric_limits<D>::min)());
     }
@@ -54,7 +47,7 @@ template <typename D, typename S> struct SkTOutOfRange_LT_MinD {
 
 
 template <typename D, typename S> struct SkTOutOfRange_LT_Zero {
-    typedef skstd::true_type can_be_true;
+    typedef SkTrue can_be_true;
     typedef S source_type;
     static bool apply(S s) {
         return s < static_cast<S>(0);
@@ -65,11 +58,11 @@ template <typename D, typename S> struct SkTOutOfRange_LT_Zero {
 
 
 template <typename D, typename S> struct SkTOutOfRange_GT_MaxD {
-    typedef skstd::true_type can_be_true;
+    typedef SkTrue can_be_true;
     typedef S source_type;
     static bool apply(S s) {
-        typedef SkTHasMoreDigits<S, D> precondition;
-        static_assert(precondition::value, "SkTOutOfRange_GT_MaxD__maxS_lt_maxD");
+        typedef typename SkTHasMoreDigits<S, D>::type precondition;
+        SK_COMPILE_ASSERT(precondition::value, SkTOutOfRange_GT_MaxD__maxS_lt_maxD);
 
         return s > static_cast<S>((std::numeric_limits<D>::max)());
     }
@@ -79,7 +72,7 @@ template <typename D, typename S> struct SkTOutOfRange_GT_MaxD {
 
 
 template<class OutOfRange_Low, class OutOfRange_High> struct SkTOutOfRange_Either {
-    typedef skstd::true_type can_be_true;
+    typedef SkTrue can_be_true;
     typedef typename OutOfRange_Low::source_type source_type;
     static bool apply(source_type s) {
         bool outOfRange = OutOfRange_Low::apply(s);
@@ -100,7 +93,7 @@ template<class OutOfRange_Low, class OutOfRange_High> struct SkTCombineOutOfRang
     typedef typename OutOfRange_Low::can_be_true apply_low;
     typedef typename OutOfRange_High::can_be_true apply_high;
 
-    typedef typename SkTMux<apply_low::value, apply_high::value,
+    typedef typename SkTMux<apply_low, apply_high,
                             Both, OutOfRange_Low, OutOfRange_High, Neither>::type type;
 };
 
@@ -126,8 +119,8 @@ template<typename D, typename S> struct SkTFitsIn_Unsigned2Unsiged {
 
     
     
-    typedef SkTHasMoreDigits<D, S> sourceFitsInDesitination;
-    typedef skstd::conditional_t<sourceFitsInDesitination::value, NoCheck, HighSideOnlyCheck> type;
+    typedef typename SkTHasMoreDigits<D, S>::type sourceFitsInDesitination;
+    typedef typename SkTIf<sourceFitsInDesitination, NoCheck, HighSideOnlyCheck>::type type;
 };
 
 
@@ -143,8 +136,8 @@ template<typename D, typename S> struct SkTFitsIn_Signed2Signed {
 
     
     
-    typedef SkTHasMoreDigits<D, S> sourceFitsInDesitination;
-    typedef skstd::conditional_t<sourceFitsInDesitination::value, NoCheck, FullCheck> type;
+    typedef typename SkTHasMoreDigits<D, S>::type sourceFitsInDesitination;
+    typedef typename SkTIf<sourceFitsInDesitination, NoCheck, FullCheck>::type type;
 };
 
 
@@ -161,8 +154,8 @@ template<typename D, typename S> struct SkTFitsIn_Signed2Unsigned {
     
     
     
-    typedef SkTHasMoreDigits<D, S> sourceCannotExceedDest;
-    typedef skstd::conditional_t<sourceCannotExceedDest::value, LowSideOnlyCheck, FullCheck> type;
+    typedef typename SkTHasMoreDigits<D, S>::type sourceCannotExceedDesitination;
+    typedef typename SkTIf<sourceCannotExceedDesitination, LowSideOnlyCheck, FullCheck>::type type;
 };
 
 
@@ -179,8 +172,8 @@ template<typename D, typename S> struct SkTFitsIn_Unsigned2Signed {
     
     
     
-    typedef SkTHasMoreDigits<D, S> sourceCannotExceedDest;
-    typedef skstd::conditional_t<sourceCannotExceedDest::value, NoCheck, HighSideOnlyCheck> type;
+    typedef typename SkTHasMoreDigits<D, S>::type sourceCannotExceedDesitination;
+    typedef typename SkTIf<sourceCannotExceedDesitination, NoCheck, HighSideOnlyCheck>::type type;
 };
 
 
@@ -194,11 +187,10 @@ template<typename D, typename S> struct SkTFitsIn {
     typedef SkTFitsIn_Unsigned2Signed<D, S> U2S;
     typedef SkTFitsIn_Unsigned2Unsiged<D, S> U2U;
 
-    typedef skstd::bool_constant<std::numeric_limits<S>::is_signed> S_is_signed;
-    typedef skstd::bool_constant<std::numeric_limits<D>::is_signed> D_is_signed;
+    typedef SkTBool<std::numeric_limits<S>::is_signed> S_is_signed;
+    typedef SkTBool<std::numeric_limits<D>::is_signed> D_is_signed;
 
-    typedef typename SkTMux<S_is_signed::value, D_is_signed::value,
-                            S2S, S2U, U2S, U2U>::type selector;
+    typedef typename SkTMux<S_is_signed, D_is_signed, S2S, S2U, U2S, U2U>::type selector;
     
     typedef typename selector::type type;
 };
@@ -208,8 +200,8 @@ template<typename D, typename S> struct SkTFitsIn {
 
 
 template <typename D, typename S> inline bool SkTFitsIn(S s) {
-    static_assert(std::numeric_limits<S>::is_integer, "SkTFitsIn_source_must_be_integer");
-    static_assert(std::numeric_limits<D>::is_integer, "SkTFitsIn_destination_must_be_integer");
+    SK_COMPILE_ASSERT(std::numeric_limits<S>::is_integer, SkTFitsIn_source_must_be_integer);
+    SK_COMPILE_ASSERT(std::numeric_limits<D>::is_integer, SkTFitsIn_destination_must_be_integer);
 
     return !sktfitsin::Private::SkTFitsIn<D, S>::type::OutOfRange(s);
 }

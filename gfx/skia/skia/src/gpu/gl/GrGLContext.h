@@ -12,54 +12,74 @@
 #include "gl/GrGLExtensions.h"
 #include "gl/GrGLInterface.h"
 #include "GrGLCaps.h"
+#include "GrGLSL.h"
 #include "GrGLUtil.h"
 
-struct GrContextOptions;
+#include "SkString.h"
 
 
 
 
 
-class GrGLContextInfo : public SkRefCnt {
+class GrGLContextInfo {
 public:
+    
+
+
+    GrGLContextInfo() {
+        fGLCaps.reset(SkNEW(GrGLCaps));
+        this->reset();
+    }
+
+    GrGLContextInfo(const GrGLContextInfo& that) {
+        fGLCaps.reset(SkNEW(GrGLCaps));
+        *this = that;
+    }
+
+    GrGLContextInfo& operator= (const GrGLContextInfo&);
+
+    
+
+
+
+    bool initialize(const GrGLInterface* interface);
+    bool isInitialized() const;
+
     GrGLStandard standard() const { return fInterface->fStandard; }
     GrGLVersion version() const { return fGLVersion; }
     GrGLSLGeneration glslGeneration() const { return fGLSLGeneration; }
     GrGLVendor vendor() const { return fVendor; }
     GrGLRenderer renderer() const { return fRenderer; }
     
+    bool isMesa() const { return fIsMesa; }
+    
 
-    GrGLDriver driver() const { return fDriver; }
-    GrGLDriverVersion driverVersion() const { return fDriverVersion; }
+
+    bool isChromium() const { return fIsChromium; }
     const GrGLCaps* caps() const { return fGLCaps.get(); }
     GrGLCaps* caps() { return fGLCaps; }
     bool hasExtension(const char* ext) const {
+        if (!this->isInitialized()) {
+            return false;
+        }
         return fInterface->hasExtension(ext);
     }
 
     const GrGLExtensions& extensions() const { return fInterface->fExtensions; }
 
+    
+
+
+    void reset();
+
 protected:
-    struct ConstructorArgs {
-        const GrGLInterface*                fInterface;
-        GrGLVersion                         fGLVersion;
-        GrGLSLGeneration                    fGLSLGeneration;
-        GrGLVendor                          fVendor;
-        GrGLRenderer                        fRenderer;
-        GrGLDriver                          fDriver;
-        GrGLDriverVersion                   fDriverVersion;
-        const  GrContextOptions*            fContextOptions;
-    };
-
-    GrGLContextInfo(const ConstructorArgs& args);
-
     SkAutoTUnref<const GrGLInterface>   fInterface;
     GrGLVersion                         fGLVersion;
     GrGLSLGeneration                    fGLSLGeneration;
     GrGLVendor                          fVendor;
     GrGLRenderer                        fRenderer;
-    GrGLDriver                          fDriver;
-    GrGLDriverVersion                   fDriverVersion;
+    bool                                fIsMesa;
+    bool                                fIsChromium;
     SkAutoTUnref<GrGLCaps>              fGLCaps;
 };
 
@@ -72,13 +92,20 @@ public:
 
 
 
-    static GrGLContext* Create(const GrGLInterface* interface, const GrContextOptions& options);
+    explicit GrGLContext(const GrGLInterface* interface) {
+        this->initialize(interface);
+    }
 
-    const GrGLInterface* interface() const { return fInterface; }
+    GrGLContext(const GrGLContext& that) : INHERITED(that) {}
+
+    GrGLContext& operator= (const GrGLContext& that) {
+        this->INHERITED::operator=(that);
+        return *this;
+    }
+
+    const GrGLInterface* interface() const { return fInterface.get(); }
 
 private:
-    GrGLContext(const ConstructorArgs& args) : INHERITED(args) {}
-
     typedef GrGLContextInfo INHERITED;
 };
 

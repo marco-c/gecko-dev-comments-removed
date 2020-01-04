@@ -8,165 +8,45 @@
 #ifndef GrGpuResource_DEFINED
 #define GrGpuResource_DEFINED
 
-#include "GrResourceKey.h"
-#include "GrTypesPriv.h"
-#include "SkData.h"
+#include "SkInstCnt.h"
+#include "SkTInternalLList.h"
 
-class GrContext;
+class GrResourceCacheEntry;
 class GrGpu;
-class GrResourceCache;
-class SkTraceMemoryDump;
+class GrContext;
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename DERIVED> class GrIORef : public SkNoncopyable {
+class GrGpuResource : public SkNoncopyable {
 public:
+    SK_DECLARE_INST_COUNT_ROOT(GrGpuResource)
+
     
     
     
     
-    void ref() const {
-        this->validate();
-        ++fRefCnt;
-    }
-
-    void unref() const {
-        this->validate();
-
-        if (!(--fRefCnt)) {
-            if (!static_cast<const DERIVED*>(this)->notifyRefCountIsZero()) {
-                return;
-            }
-        }
-
-        this->didRemoveRefOrPendingIO(kRef_CntType);
-    }
-
-    void validate() const {
+    void ref() const { ++fRefCnt; }
+    void unref() const { --fRefCnt; if (0 == fRefCnt) { this->internal_dispose(); } }
+    virtual void internal_dispose() const { SkDELETE(this); }
+    bool unique() const { return 1 == fRefCnt; }
 #ifdef SK_DEBUG
-        SkASSERT(fRefCnt >= 0);
-        SkASSERT(fPendingReads >= 0);
-        SkASSERT(fPendingWrites >= 0);
-        SkASSERT(fRefCnt + fPendingReads + fPendingWrites >= 0);
+    void validate() const {
+        SkASSERT(fRefCnt > 0);
+    }
 #endif
-    }
-
-protected:
-    GrIORef() : fRefCnt(1), fPendingReads(0), fPendingWrites(0) { }
-
-    enum CntType {
-        kRef_CntType,
-        kPendingRead_CntType,
-        kPendingWrite_CntType,
-    };
-
-    bool isPurgeable() const { return !this->internalHasRef() && !this->internalHasPendingIO(); }
-
-    bool internalHasPendingRead() const { return SkToBool(fPendingReads); }
-    bool internalHasPendingWrite() const { return SkToBool(fPendingWrites); }
-    bool internalHasPendingIO() const { return SkToBool(fPendingWrites | fPendingReads); }
-
-    bool internalHasRef() const { return SkToBool(fRefCnt); }
-
-private:
-    void addPendingRead() const {
-        this->validate();
-        ++fPendingReads;
-    }
-
-    void completedRead() const {
-        this->validate();
-        --fPendingReads;
-        this->didRemoveRefOrPendingIO(kPendingRead_CntType);
-    }
-
-    void addPendingWrite() const {
-        this->validate();
-        ++fPendingWrites;
-    }
-
-    void completedWrite() const {
-        this->validate();
-        --fPendingWrites;
-        this->didRemoveRefOrPendingIO(kPendingWrite_CntType);
-    }
-
-private:
-    void didRemoveRefOrPendingIO(CntType cntTypeRemoved) const {
-        if (0 == fPendingReads && 0 == fPendingWrites && 0 == fRefCnt) {
-            static_cast<const DERIVED*>(this)->notifyAllCntsAreZero(cntTypeRemoved);
-        }
-    }
-
-    mutable int32_t fRefCnt;
-    mutable int32_t fPendingReads;
-    mutable int32_t fPendingWrites;
 
     
-    friend class GrGpuResourceRef;
-    friend class GrResourceCache; 
-
-    template <typename, GrIOType> friend class GrPendingIOResource;
-};
 
 
 
+    void release();
 
-class SK_API GrGpuResource : public GrIORef<GrGpuResource> {
-public:
-
-
-    enum LifeCycle {
-        
+    
 
 
 
-
-        kCached_LifeCycle,
-
-        
-
-
-
-        kUncached_LifeCycle,
-
-        
-
-
-
-
-        kBorrowed_LifeCycle,
-
-        
-
-
-        kAdopted_LifeCycle,
-    };
+    void abandon();
 
     
 
@@ -196,13 +76,10 @@ public:
 
 
 
-    size_t gpuMemorySize() const {
-        if (kInvalidGpuMemorySize == fGpuMemorySize) {
-            fGpuMemorySize = this->onGpuMemorySize();
-            SkASSERT(kInvalidGpuMemorySize != fGpuMemorySize);
-        }
-        return fGpuMemorySize;
-    }
+    virtual size_t gpuMemorySize() const = 0;
+
+    void setCacheEntry(GrResourceCacheEntry* cacheEntry) { fCacheEntry = cacheEntry; }
+    GrResourceCacheEntry* getCacheEntry() { return fCacheEntry; }
 
     
 
@@ -211,114 +88,30 @@ public:
 
     uint32_t getUniqueID() const { return fUniqueID; }
 
-    
-
-    const GrUniqueKey& getUniqueKey() const { return fUniqueKey; }
-
-    
-
-
-
-
-
-    const SkData* setCustomData(const SkData* data);
-
-    
-
-
-
-    const SkData* getCustomData() const { return fData.get(); }
-
-    
-
-
-    class CacheAccess;
-    inline CacheAccess cacheAccess();
-    inline const CacheAccess cacheAccess() const;
-
-    
-
-
-    class ResourcePriv;
-    inline ResourcePriv resourcePriv();
-    inline const ResourcePriv resourcePriv() const;
-
-    
-
-
-
-
-
-
-
-    void abandon();
-
-    
-
-
-
-
-    virtual void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
-
 protected:
-    
-    
-    void registerWithCache();
-
-    GrGpuResource(GrGpu*, LifeCycle);
+    GrGpuResource(GrGpu*, bool isWrapped);
     virtual ~GrGpuResource();
+
+    bool isInCache() const { return NULL != fCacheEntry; }
 
     GrGpu* getGpu() const { return fGpu; }
 
     
-    virtual void onRelease() { }
+    
+    virtual void onRelease() {};
+    virtual void onAbandon() {};
+
+    bool isWrapped() const { return kWrapped_FlagBit & fFlags; }
+
     
 
 
-    virtual void onAbandon() { }
-
-    bool shouldFreeResources() const { return fLifeCycle != kBorrowed_LifeCycle; }
-
-    bool isExternal() const {
-        return GrGpuResource::kAdopted_LifeCycle == fLifeCycle ||
-               GrGpuResource::kBorrowed_LifeCycle == fLifeCycle;
-    }
-
-    
 
 
 
     void didChangeGpuMemorySize() const;
 
-    
-
-
-
-    void setScratchKey(const GrScratchKey& scratchKey);
-
-    
-
-
-
-    virtual void setMemoryBacking(SkTraceMemoryDump*, const SkString&) const {}
-
 private:
-    
-
-
-    void release();
-
-    virtual size_t onGpuMemorySize() const = 0;
-
-    
-    void setUniqueKey(const GrUniqueKey&);
-    void removeUniqueKey();
-    void notifyAllCntsAreZero(CntType) const;
-    bool notifyRefCountIsZero() const;
-    void removeScratchKey();
-    void makeBudgeted();
-    void makeUnbudgeted();
-
 #ifdef SK_DEBUG
     friend class GrGpu; 
 #endif
@@ -326,28 +119,27 @@ private:
     static uint32_t CreateUniqueID();
 
     
-    
-    int                         fCacheArrayIndex;
-    
-    
-    uint32_t                    fTimestamp;
+    SK_DECLARE_INTERNAL_LLIST_INTERFACE(GrGpuResource);
 
-    static const size_t kInvalidGpuMemorySize = ~static_cast<size_t>(0);
-    GrScratchKey                fScratchKey;
-    GrUniqueKey                 fUniqueKey;
+    GrGpu*              fGpu;               
+                                            
+                                            
+    enum Flags {
+        
 
-    
-    
-    GrGpu*                      fGpu;
-    mutable size_t              fGpuMemorySize;
 
-    LifeCycle                   fLifeCycle;
-    const uint32_t              fUniqueID;
 
-    SkAutoTUnref<const SkData>  fData;
 
-    typedef GrIORef<GrGpuResource> INHERITED;
-    friend class GrIORef<GrGpuResource>; 
+        kWrapped_FlagBit         = 0x1,
+    };
+
+    uint32_t                fFlags;
+
+    mutable int32_t         fRefCnt;
+    GrResourceCacheEntry*   fCacheEntry;  
+    const uint32_t          fUniqueID;
+
+    typedef SkNoncopyable INHERITED;
 };
 
 #endif

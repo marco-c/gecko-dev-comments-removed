@@ -10,7 +10,9 @@
 #include "SkPDFFormXObject.h"
 
 #include "SkMatrix.h"
+#include "SkPDFCatalog.h"
 #include "SkPDFDevice.h"
+#include "SkPDFResourceDict.h"
 #include "SkPDFUtils.h"
 #include "SkStream.h"
 #include "SkTypes.h"
@@ -19,13 +21,15 @@ SkPDFFormXObject::SkPDFFormXObject(SkPDFDevice* device) {
     
     
     
-    SkAutoTUnref<SkPDFDict> resourceDict(device->createResourceDict());
+    SkTSet<SkPDFObject*> emptySet;
+    SkPDFResourceDict* resourceDict = device->getResourceDict();
+    resourceDict->getReferencedResources(emptySet, &fResources, false);
 
-    SkAutoTDelete<SkStreamAsset> content(device->content());
-    this->setData(content.get());
+    SkAutoTUnref<SkStream> content(device->content());
+    setData(content.get());
 
     SkAutoTUnref<SkPDFArray> bboxArray(device->copyMediaBox());
-    this->init(nullptr, resourceDict.get(), bboxArray);
+    init(NULL, resourceDict, bboxArray);
 
     
     
@@ -37,7 +41,7 @@ SkPDFFormXObject::SkPDFFormXObject(SkPDFDevice* device) {
             SkASSERT(false);
             inverse.reset();
         }
-        this->insertObject("Matrix", SkPDFUtils::MatrixToArray(inverse));
+        insert("Matrix", SkPDFUtils::MatrixToArray(inverse))->unref();
     }
 }
 
@@ -45,7 +49,10 @@ SkPDFFormXObject::SkPDFFormXObject(SkPDFDevice* device) {
 
 
 SkPDFFormXObject::SkPDFFormXObject(SkStream* content, SkRect bbox,
-                                   SkPDFDict* resourceDict) {
+                                   SkPDFResourceDict* resourceDict) {
+    SkTSet<SkPDFObject*> emptySet;
+    resourceDict->getReferencedResources(emptySet, &fResources, false);
+
     setData(content);
 
     SkAutoTUnref<SkPDFArray> bboxArray(SkPDFUtils::RectToArray(bbox));
@@ -58,21 +65,31 @@ SkPDFFormXObject::SkPDFFormXObject(SkStream* content, SkRect bbox,
 
 void SkPDFFormXObject::init(const char* colorSpace,
                             SkPDFDict* resourceDict, SkPDFArray* bbox) {
-    this->insertName("Type", "XObject");
-    this->insertName("Subtype", "Form");
-    this->insertObject("Resources", SkRef(resourceDict));
-    this->insertObject("BBox", SkRef(bbox));
+    insertName("Type", "XObject");
+    insertName("Subtype", "Form");
+    insert("Resources", resourceDict);
+    insert("BBox", bbox);
 
     
     
     SkAutoTUnref<SkPDFDict> group(new SkPDFDict("Group"));
     group->insertName("S", "Transparency");
 
-    if (colorSpace != nullptr) {
+    if (colorSpace != NULL) {
         group->insertName("CS", colorSpace);
     }
-    group->insertBool("I", true);  
-    this->insertObject("Group", group.detach());
+    group->insert("I", new SkPDFBool(true))->unref();  
+    insert("Group", group.get());
 }
 
-SkPDFFormXObject::~SkPDFFormXObject() {}
+SkPDFFormXObject::~SkPDFFormXObject() {
+    fResources.unrefAll();
+}
+
+void SkPDFFormXObject::getResources(
+        const SkTSet<SkPDFObject*>& knownResourceObjects,
+        SkTSet<SkPDFObject*>* newResourceObjects) {
+    GetResourcesHelper(&fResources.toArray(),
+                       knownResourceObjects,
+                       newResourceObjects);
+}

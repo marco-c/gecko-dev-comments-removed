@@ -11,14 +11,14 @@
 #include "GrTypes.h"
 #include "GrTypesPriv.h"
 
-class GrFragmentProcessor;
+class GrEffect;
 struct SkRect;
 
 namespace GrOvalEffect {
     
 
 
-    GrFragmentProcessor* Create(GrPrimitiveEdgeType, const SkRect&);
+    GrEffect* Create(GrEffectEdgeType, const SkRect&);
 };
 
 #endif

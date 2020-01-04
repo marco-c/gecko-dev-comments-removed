@@ -28,7 +28,7 @@ typedef int32_t             SkFixed;
 #define SK_FixedTanPIOver8  (0x6A0A)
 #define SK_FixedRoot2Over2  (0xB505)
 
-#define SkFixedToFloat(x)   ((x) * 1.52587890625e-5f)
+#define SkFixedToFloat(x)   ((x) * 1.5258789e-5f)
 #if 1
     #define SkFloatToFixed(x)   ((SkFixed)((x) * SK_Fixed1))
 #else
@@ -50,7 +50,7 @@ typedef int32_t             SkFixed;
     #define SkFloatToFixed_Check(x) SkFloatToFixed(x)
 #endif
 
-#define SkFixedToDouble(x)  ((x) * 1.52587890625e-5)
+#define SkFixedToDouble(x)  ((x) * 1.5258789e-5)
 #define SkDoubleToFixed(x)  ((SkFixed)((x) * SK_Fixed1))
 
 
@@ -60,15 +60,11 @@ typedef int32_t             SkFixed;
     inline SkFixed SkIntToFixed(int n)
     {
         SkASSERT(n >= -32768 && n <= 32767);
-        
-        
-        return (unsigned)n << 16;
+        return n << 16;
     }
 #else
     
-    
-    
-    #define SkIntToFixed(n)     (SkFixed)((unsigned)(n) << 16)
+    #define SkIntToFixed(n)     (SkFixed)((n) << 16)
 #endif
 
 #define SkFixedRoundToInt(x)    (((x) + SK_FixedHalf) >> 16)
@@ -82,23 +78,32 @@ typedef int32_t             SkFixed;
 #define SkFixedAbs(x)       SkAbs32(x)
 #define SkFixedAve(a, b)    (((a) + (b)) >> 1)
 
+SkFixed SkFixedMul_portable(SkFixed, SkFixed);
 
-#if defined(SK_SUPPORT_LEGACY_DIVBITS_UB)
-    #define SkFixedDiv(numer, denom) SkDivBits(numer, denom, 16)
-#else
-    
-    #define SkFixedDiv(numer, denom) \
-        SkTPin<int32_t>(((int64_t)numer << 16) / denom, SK_MinS32, SK_MaxS32)
-#endif
+#define SkFixedDiv(numer, denom)    SkDivBits(numer, denom, 16)
 
 
 
 
-inline SkFixed SkFixedMul_longlong(SkFixed a, SkFixed b) {
-    return (SkFixed)((int64_t)a * b >> 16);
+
+SkFixed SkFixedSinCos(SkFixed radians, SkFixed* cosValueOrNull);
+#define SkFixedSin(radians)         SkFixedSinCos(radians, NULL)
+static inline SkFixed SkFixedCos(SkFixed radians) {
+    SkFixed cosValue;
+    (void)SkFixedSinCos(radians, &cosValue);
+    return cosValue;
 }
-#define SkFixedMul(a,b)     SkFixedMul_longlong(a,b)
 
+
+
+
+#ifdef SkLONGLONG
+    inline SkFixed SkFixedMul_longlong(SkFixed a, SkFixed b)
+    {
+        return (SkFixed)((int64_t)a * b >> 16);
+    }
+    #define SkFixedMul(a,b)     SkFixedMul_longlong(a,b)
+#endif
 
 #if defined(SK_CPU_ARM32)
     
@@ -141,31 +146,20 @@ inline SkFixed SkFixedMul_longlong(SkFixed a, SkFixed b) {
     #define SkFloatToFixed(x)  SkFloatToFixed_arm(x)
 #endif
 
-
-
-typedef int64_t SkFixed3232;   
-
-#define SkIntToFixed3232(x)       ((SkFixed3232)(x) << 32)
-#define SkFixed3232ToInt(x)       ((int)((x) >> 32))
-#define SkFixedToFixed3232(x)     ((SkFixed3232)(x) << 16)
-#define SkFixed3232ToFixed(x)     ((SkFixed)((x) >> 16))
-#define SkFloatToFixed3232(x)     ((SkFixed3232)((x) * (65536.0f * 65536.0f)))
-
-#define SkScalarToFixed3232(x)    SkFloatToFixed3232(x)
+#ifndef SkFixedMul
+    #define SkFixedMul(x, y)    SkFixedMul_portable(x, y)
+#endif
 
 
 
+typedef int64_t SkFixed48;
 
+#define SkIntToFixed48(x)       ((SkFixed48)(x) << 48)
+#define SkFixed48ToInt(x)       ((int)((x) >> 48))
+#define SkFixedToFixed48(x)     ((SkFixed48)(x) << 32)
+#define SkFixed48ToFixed(x)     ((SkFixed)((x) >> 32))
+#define SkFloatToFixed48(x)     ((SkFixed48)((x) * (65536.0f * 65536.0f * 65536.0f)))
 
-typedef int64_t Sk48Dot16;
-
-#define Sk48Dot16FloorToInt(x)    static_cast<int>((x) >> 16)
-
-static inline float Sk48Dot16ToScalar(Sk48Dot16 x) {
-    return static_cast<float>(x * 1.5258789e-5);  
-}
-#define SkFloatTo48Dot16(x)       (static_cast<Sk48Dot16>((x) * (1 << 16)))
-
-#define SkScalarTo48Dot16(x)      SkFloatTo48Dot16(x)
+#define SkScalarToFixed48(x)    SkFloatToFixed48(x)
 
 #endif

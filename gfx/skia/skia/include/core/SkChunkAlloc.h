@@ -22,11 +22,6 @@ public:
 
 
     void reset();
-    
-
-
-
-    void rewind();
 
     enum AllocFailType {
         kReturnNil_AllocFailType,
@@ -48,8 +43,7 @@ public:
 
     size_t totalCapacity() const { return fTotalCapacity; }
     size_t totalUsed() const { return fTotalUsed; }
-    SkDEBUGCODE(int blockCount() const { return fBlockCount; })
-    SkDEBUGCODE(size_t totalLost() const { return fTotalLost; })
+    int blockCount() const { return fBlockCount; }
 
     
 
@@ -66,13 +60,9 @@ private:
     size_t  fChunkSize;
     size_t  fTotalCapacity;
     size_t  fTotalUsed;     
-    SkDEBUGCODE(int     fBlockCount;)
-    SkDEBUGCODE(size_t  fTotalLost;)     
+    int     fBlockCount;
 
     Block* newBlock(size_t bytes, AllocFailType ftype);
-    Block* addBlockIfNecessary(size_t bytes, AllocFailType ftype);
-
-    SkDEBUGCODE(void validate();)
 };
 
 #endif

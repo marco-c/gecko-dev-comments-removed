@@ -22,7 +22,7 @@ template <typename T,
           int kGrowPercent = 75>  
 class SkTDynamicHash {
 public:
-    SkTDynamicHash() : fCount(0), fDeleted(0), fCapacity(0), fArray(nullptr) {
+    SkTDynamicHash() : fCount(0), fDeleted(0), fCapacity(0), fArray(NULL) {
         SkASSERT(this->validate());
     }
 
@@ -93,7 +93,7 @@ public:
             SkASSERT(index >= 0 && index < fCapacity);
             T* candidate = fArray[index];
             if (Empty() == candidate) {
-                return nullptr;
+                return NULL;
             }
             if (Deleted() != candidate && GetKey(*candidate) == key) {
                 return candidate;
@@ -101,12 +101,12 @@ public:
             index = this->nextIndex(index, round);
         }
         SkASSERT(fCapacity == 0);
-        return nullptr;
+        return NULL;
     }
 
     
     void add(T* newEntry) {
-        SkASSERT(nullptr == this->find(GetKey(*newEntry)));
+        SkASSERT(NULL == this->find(GetKey(*newEntry)));
         this->maybeGrow();
         this->innerAdd(newEntry);
         SkASSERT(this->validate());
@@ -114,13 +114,13 @@ public:
 
     
     void remove(const Key& key) {
-        SkASSERT(this->find(key));
+        SkASSERT(NULL != this->find(key));
         this->innerRemove(key);
         SkASSERT(this->validate());
     }
 
     void rewind() {
-        if (fArray) {
+        if (NULL != fArray) {
             sk_bzero(fArray, sizeof(T*)* fCapacity);
         }
         fCount = 0;
@@ -132,7 +132,7 @@ public:
         fDeleted = 0; 
         fCapacity = 0; 
         sk_free(fArray); 
-        fArray = nullptr; 
+        fArray = NULL; 
     }
 
 protected:
@@ -161,7 +161,7 @@ private:
     static T* Deleted() { return reinterpret_cast<T*>(1); }  
 
     bool validate() const {
-        #define SKTDYNAMICHASH_CHECK(x) SkASSERT(x); if (!(x)) return false
+        #define SKTDYNAMICHASH_CHECK(x) SkASSERT((x)); if (!(x)) return false
         static const int kLarge = 50;  
 
         
@@ -177,7 +177,7 @@ private:
                     deleted++;
                 } else if (Empty() != fArray[i]) {
                     count++;
-                    SKTDYNAMICHASH_CHECK(this->find(GetKey(*fArray[i])));
+                    SKTDYNAMICHASH_CHECK(NULL != this->find(GetKey(*fArray[i])));
                 }
             }
             SKTDYNAMICHASH_CHECK(count == fCount);

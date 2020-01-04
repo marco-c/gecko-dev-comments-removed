@@ -6,71 +6,73 @@
 
 
 #include "GrGLContext.h"
-#include "GrGLGLSL.h"
 
 
 
-GrGLContext* GrGLContext::Create(const GrGLInterface* interface, const GrContextOptions& options) {
-    
-    if (!interface->fFunctions.fGetString) {
-        return nullptr;
-    }
-    ConstructorArgs args;
-    args.fInterface = interface;
-
-    const GrGLubyte* verUByte;
-    GR_GL_CALL_RET(interface, verUByte, GetString(GR_GL_VERSION));
-    const char* ver = reinterpret_cast<const char*>(verUByte);
-
-    const GrGLubyte* rendererUByte;
-    GR_GL_CALL_RET(interface, rendererUByte, GetString(GR_GL_RENDERER));
-    const char* renderer = reinterpret_cast<const char*>(rendererUByte);
-
-    if (!interface->validate()) {
-        return nullptr;
-    }
-
-    args.fGLVersion = GrGLGetVersionFromString(ver);
-    if (GR_GL_INVALID_VER == args.fGLVersion) {
-        return nullptr;
-    }
-
-    if (!GrGLGetGLSLGeneration(interface, &args.fGLSLGeneration)) {
-        return nullptr;
-    }
-
-    args.fVendor = GrGLGetVendor(interface);
-
-    args.fRenderer = GrGLGetRendererFromString(renderer);
-
-    
-
-
-
-
-
-
-
-    if (kAdreno3xx_GrGLRenderer == args.fRenderer) {
-        args.fGLSLGeneration = k110_GrGLSLGeneration;
-    }
-
-    GrGLGetDriverInfo(interface->fStandard, args.fVendor, renderer, ver,
-                      &args.fDriver, &args.fDriverVersion);
-
-    args.fContextOptions = &options;
-
-    return new GrGLContext(args);
+GrGLContextInfo& GrGLContextInfo::operator= (const GrGLContextInfo& that) {
+    fInterface.reset(SkSafeRef(that.fInterface.get()));
+    fGLVersion      = that.fGLVersion;
+    fGLSLGeneration = that.fGLSLGeneration;
+    fVendor         = that.fVendor;
+    fRenderer       = that.fRenderer;
+    fIsMesa         = that.fIsMesa;
+    fIsChromium     = that.fIsChromium;
+    *fGLCaps        = *that.fGLCaps.get();
+    return *this;
 }
 
-GrGLContextInfo::GrGLContextInfo(const ConstructorArgs& args) {
-    fInterface.reset(SkRef(args.fInterface));
-    fGLVersion = args.fGLVersion;
-    fGLSLGeneration = args.fGLSLGeneration;
-    fVendor = args.fVendor;
-    fRenderer = args.fRenderer;
-    fDriver = args.fDriver;
-    fDriverVersion = args.fDriverVersion;
+bool GrGLContextInfo::initialize(const GrGLInterface* interface) {
+    this->reset();
+    
+    
+    if (interface->fFunctions.fGetString) {
+        const GrGLubyte* verUByte;
+        GR_GL_CALL_RET(interface, verUByte, GetString(GR_GL_VERSION));
+        const char* ver = reinterpret_cast<const char*>(verUByte);
 
-    fGLCaps.reset(new GrGLCaps(*args.fContextOptions, *this, fInterface));
+        const GrGLubyte* rendererUByte;
+        GR_GL_CALL_RET(interface, rendererUByte, GetString(GR_GL_RENDERER));
+        const char* renderer = reinterpret_cast<const char*>(rendererUByte);
+
+        if (interface->validate()) {
+
+            fGLVersion = GrGLGetVersionFromString(ver);
+            if (GR_GL_INVALID_VER == fGLVersion) {
+                return false;
+            }
+
+            if (!GrGetGLSLGeneration(interface, &fGLSLGeneration)) {
+                return false;
+            }
+
+            fVendor = GrGLGetVendor(interface);
+
+            fRenderer = GrGLGetRendererFromString(renderer);
+
+            fIsMesa = GrGLIsMesaFromVersionString(ver);
+
+            fIsChromium = GrGLIsChromiumFromRendererString(renderer);
+
+            
+            fInterface.reset(SkRef(interface));
+
+            return fGLCaps->init(*this, interface);
+        }
+    }
+    return false;
+}
+
+bool GrGLContextInfo::isInitialized() const {
+    return NULL != fInterface.get();
+}
+
+void GrGLContextInfo::reset() {
+    fInterface.reset(NULL);
+    fGLVersion = GR_GL_VER(0, 0);
+    fGLSLGeneration = static_cast<GrGLSLGeneration>(0);
+    fVendor = kOther_GrGLVendor;
+    fRenderer = kOther_GrGLRenderer;
+    fIsMesa = false;
+    fIsChromium = false;
+    fGLCaps->reset();
 }

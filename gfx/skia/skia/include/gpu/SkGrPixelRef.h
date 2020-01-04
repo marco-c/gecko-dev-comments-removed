@@ -20,13 +20,14 @@
 
 class SK_API SkROLockPixelsPixelRef : public SkPixelRef {
 public:
+    SK_DECLARE_INST_COUNT(SkROLockPixelsPixelRef)
     SkROLockPixelsPixelRef(const SkImageInfo&);
     virtual ~SkROLockPixelsPixelRef();
 
 protected:
-    bool onNewLockPixels(LockRec*) override;
-    void onUnlockPixels() override;
-    bool onLockPixelsAreWritable() const override;   
+    virtual bool onNewLockPixels(LockRec*) SK_OVERRIDE;
+    virtual void onUnlockPixels() SK_OVERRIDE;
+    virtual bool onLockPixelsAreWritable() const SK_OVERRIDE;   
 
 private:
     SkBitmap    fBitmap;
@@ -38,24 +39,27 @@ private:
 
 class SK_API SkGrPixelRef : public SkROLockPixelsPixelRef {
 public:
+    SK_DECLARE_INST_COUNT(SkGrPixelRef)
     
 
 
-    SkGrPixelRef(const SkImageInfo&, GrSurface*);
+
+
+    SkGrPixelRef(const SkImageInfo&, GrSurface*, bool transferCacheLock = false);
     virtual ~SkGrPixelRef();
 
     
-    GrTexture* getTexture() override;
+    virtual GrTexture* getTexture() SK_OVERRIDE;
 
 protected:
     
-    bool onReadPixels(SkBitmap* dst, const SkIRect* subset) override;
-    SkPixelRef* deepCopy(SkColorType, SkColorProfileType,
-                         const SkIRect* subset) override;
-    void onNotifyPixelsChanged() override;
+    virtual bool onReadPixels(SkBitmap* dst, const SkIRect* subset) SK_OVERRIDE;
+    virtual SkPixelRef* deepCopy(SkColorType, const SkIRect* subset) SK_OVERRIDE;
 
 private:
     GrSurface*  fSurface;
+    bool        fUnlock;   
+
     typedef SkROLockPixelsPixelRef INHERITED;
 };
 

@@ -16,7 +16,7 @@
 
 #if defined(SK_BUILD_FOR_UNIX) || defined(SK_BUILD_FOR_ANDROID)
 
-struct FT_FaceRec_;
+struct FT_FaceRec;
 typedef struct FT_FaceRec_* FT_Face;
 #endif
 
@@ -148,7 +148,7 @@ SkAdvancedTypefaceMetrics::AdvanceMetric<Data>* getAdvanceData(
 
     SkAutoTDelete<SkAdvancedTypefaceMetrics::AdvanceMetric<Data> > result;
     SkAdvancedTypefaceMetrics::AdvanceMetric<Data>* curRange;
-    SkAdvancedTypefaceMetrics::AdvanceMetric<Data>* prevRange = nullptr;
+    SkAdvancedTypefaceMetrics::AdvanceMetric<Data>* prevRange = NULL;
     Data lastAdvance = kInvalidAdvance;
     int repeatedAdvances = 0;
     int wildCardsInRun = 0;

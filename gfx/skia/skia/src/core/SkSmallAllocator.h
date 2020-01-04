@@ -11,7 +11,11 @@
 #include "SkTDArray.h"
 #include "SkTypes.h"
 
-#include <new>
+
+
+template<typename T> void destroyT(void* ptr) {
+   static_cast<T*>(ptr)->~T();
+}
 
 
 
@@ -51,13 +55,55 @@ public:
 
 
 
-    template<typename T, typename... Args>
-    T* createT(const Args&... args) {
+
+
+    template<typename T>
+    T* createT() {
         void* buf = this->reserveT<T>();
-        if (nullptr == buf) {
-            return nullptr;
+        if (NULL == buf) {
+            return NULL;
         }
-        return new (buf) T(args...);
+        SkNEW_PLACEMENT(buf, T);
+        return static_cast<T*>(buf);
+    }
+
+    template<typename T, typename A1> T* createT(const A1& a1) {
+        void* buf = this->reserveT<T>();
+        if (NULL == buf) {
+            return NULL;
+        }
+        SkNEW_PLACEMENT_ARGS(buf, T, (a1));
+        return static_cast<T*>(buf);
+    }
+
+    template<typename T, typename A1, typename A2>
+    T* createT(const A1& a1, const A2& a2) {
+        void* buf = this->reserveT<T>();
+        if (NULL == buf) {
+            return NULL;
+        }
+        SkNEW_PLACEMENT_ARGS(buf, T, (a1, a2));
+        return static_cast<T*>(buf);
+    }
+
+    template<typename T, typename A1, typename A2, typename A3>
+    T* createT(const A1& a1, const A2& a2, const A3& a3) {
+        void* buf = this->reserveT<T>();
+        if (NULL == buf) {
+            return NULL;
+        }
+        SkNEW_PLACEMENT_ARGS(buf, T, (a1, a2, a3));
+        return static_cast<T*>(buf);
+    }
+
+    template<typename T, typename A1, typename A2, typename A3, typename A4>
+    T* createT(const A1& a1, const A2& a2, const A3& a3, const A4& a4) {
+        void* buf = this->reserveT<T>();
+        if (NULL == buf) {
+            return NULL;
+        }
+        SkNEW_PLACEMENT_ARGS(buf, T, (a1, a2, a3, a4));
+        return static_cast<T*>(buf);
     }
 
     
@@ -71,7 +117,7 @@ public:
         SkASSERT(fNumObjects < kMaxObjects);
         SkASSERT(storageRequired >= sizeof(T));
         if (kMaxObjects == fNumObjects) {
-            return nullptr;
+            return NULL;
         }
         const size_t storageRemaining = SkAlign4(kTotalBytes) - fStorageUsed;
         storageRequired = SkAlign4(storageRequired);
@@ -87,12 +133,12 @@ public:
         } else {
             
             rec->fStorageSize = storageRequired;
-            rec->fHeapStorage = nullptr;
+            rec->fHeapStorage = NULL;
             SkASSERT(SkIsAlign4(fStorageUsed));
             rec->fObj = static_cast<void*>(fStorage + (fStorageUsed / 4));
             fStorageUsed += storageRequired;
         }
-        rec->fKillProc = DestroyT<T>;
+        rec->fKillProc = destroyT<T>;
         fNumObjects++;
         return rec->fObj;
     }
@@ -118,12 +164,6 @@ private:
         void*  fHeapStorage;
         void   (*fKillProc)(void*);
     };
-
-    
-    template<typename T>
-    static void DestroyT(void* ptr) {
-        static_cast<T*>(ptr)->~T();
-    }
 
     
     size_t              fStorageUsed;

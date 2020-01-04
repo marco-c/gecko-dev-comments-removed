@@ -92,6 +92,18 @@ namespace SkDecodingImageGenerator {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     SkImageGenerator* Create(SkStreamRewindable* stream,
                              const Options& opt);
 

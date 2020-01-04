@@ -15,14 +15,10 @@
 #include "SkMask.h"
 #include "SkPaint.h"
 
-class GrClip;
-class GrDrawContext;
+class GrContext;
 class GrPaint;
-class GrRenderTarget;
-class GrTextureProvider;
 class SkBitmap;
 class SkBlitter;
-class SkCachedData;
 class SkMatrix;
 class SkPath;
 class SkRasterClip;
@@ -42,6 +38,8 @@ class SkStrokeRec;
 
 class SK_API SkMaskFilter : public SkFlattenable {
 public:
+    SK_DECLARE_INST_COUNT(SkMaskFilter)
+
     
 
 
@@ -74,7 +72,9 @@ public:
 
 
 
-    virtual bool asFragmentProcessor(GrFragmentProcessor**, GrTexture*, const SkMatrix& ctm) const;
+    virtual bool asNewEffect(GrEffect** effect,
+                             GrTexture*,
+                             const SkMatrix& ctm) const;
 
     
 
@@ -88,21 +88,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual bool canFilterMaskGPU(const SkRRect& devRRect,
+    virtual bool canFilterMaskGPU(const SkRect& devBounds,
                                   const SkIRect& clipBounds,
                                   const SkMatrix& ctm,
                                   SkRect* maskRect) const;
@@ -111,22 +97,16 @@ public:
 
 
 
-    virtual bool directFilterMaskGPU(GrTextureProvider* texProvider,
-                                     GrDrawContext* drawContext,
+    virtual bool directFilterMaskGPU(GrContext* context,
                                      GrPaint* grp,
-                                     const GrClip&,
-                                     const SkMatrix& viewMatrix,
                                      const SkStrokeRec& strokeRec,
                                      const SkPath& path) const;
     
 
 
 
-    virtual bool directFilterRRectMaskGPU(GrTextureProvider* texProvider,
-                                          GrDrawContext* drawContext,
+    virtual bool directFilterRRectMaskGPU(GrContext* context,
                                           GrPaint* grp,
-                                          const GrClip&,
-                                          const SkMatrix& viewMatrix,
                                           const SkStrokeRec& strokeRec,
                                           const SkRRect& rrect) const;
 
@@ -175,6 +155,8 @@ public:
 
 protected:
     SkMaskFilter() {}
+    
+    SkMaskFilter(SkReadBuffer& buffer) : INHERITED(buffer) {}
 
     enum FilterReturn {
         kFalse_FilterReturn,
@@ -182,17 +164,10 @@ protected:
         kUnimplemented_FilterReturn
     };
 
-    class NinePatch : ::SkNoncopyable {
-    public:
-        NinePatch() : fCache(NULL) {
-            fMask.fImage = NULL;
-        }
-        ~NinePatch();
-
+    struct NinePatch {
         SkMask      fMask;      
         SkIRect     fOuterRect; 
         SkIPoint    fCenter;    
-        SkCachedData* fCache;
     };
 
     

@@ -5,26 +5,27 @@
 
 
 
+
+
 #ifndef SkGeometry_DEFINED
 #define SkGeometry_DEFINED
 
 #include "SkMatrix.h"
-#include "SkNx.h"
 
-static inline Sk2s from_point(const SkPoint& point) {
-    return Sk2s::Load(&point.fX);
-}
 
-static inline SkPoint to_point(const Sk2s& x) {
-    SkPoint point;
-    x.store(&point.fX);
-    return point;
-}
 
-static inline Sk2s sk2s_cubic_eval(const Sk2s& A, const Sk2s& B, const Sk2s& C, const Sk2s& D,
-                                   const Sk2s& t) {
-    return ((A * t + B) * t + C) * t + D;
-}
+
+
+typedef SkPoint SkXRay;
+
+
+
+
+
+
+
+bool SkXRayCrossesLine(const SkXRay& pt, const SkPoint pts[2],
+                       bool* ambiguous = NULL);
 
 
 
@@ -33,23 +34,13 @@ int SkFindUnitQuadRoots(SkScalar A, SkScalar B, SkScalar C, SkScalar roots[2]);
 
 
 
-SkPoint SkEvalQuadAt(const SkPoint src[3], SkScalar t);
-SkPoint SkEvalQuadTangentAt(const SkPoint src[3], SkScalar t);
 
 
 
-
-void SkEvalQuadAt(const SkPoint src[3], SkScalar t, SkPoint* pt, SkVector* tangent = nullptr);
-
-
-
-
-void SkQuadToCoeff(const SkPoint pts[3], SkPoint coeff[3]);
-
-
-
-
-void SkCubicToCoeff(const SkPoint pts[4], SkPoint coeff[4]);
+void SkEvalQuadAt(const SkPoint src[3], SkScalar t, SkPoint* pt,
+                  SkVector* tangent = NULL);
+void SkEvalQuadAtHalf(const SkPoint src[3], SkPoint* pt,
+                      SkVector* tangent = NULL);
 
 
 
@@ -85,7 +76,7 @@ int SkChopQuadAtXExtrema(const SkPoint src[3], SkPoint dst[5]);
 
 
 
-SkScalar SkFindQuadMaxCurvature(const SkPoint src[3]);
+float SkFindQuadMaxCurvature(const SkPoint src[3]);
 
 
 
@@ -107,6 +98,11 @@ SK_API void SkConvertQuadToCubic(const SkPoint src[3], SkPoint dst[4]);
 
 
 
+void SkGetCubicCoeff(const SkPoint pts[4], SkScalar cx[4], SkScalar cy[4]);
+
+
+
+
 void SkEvalCubicAt(const SkPoint src[4], SkScalar t, SkPoint* locOrNull,
                    SkVector* tangentOrNull, SkVector* curvatureOrNull);
 
@@ -115,7 +111,6 @@ void SkEvalCubicAt(const SkPoint src[4], SkScalar t, SkPoint* locOrNull,
 
 
 void SkChopCubicAt(const SkPoint src[4], SkPoint dst[7], SkScalar t);
-
 
 
 
@@ -164,24 +159,37 @@ int SkChopCubicAtInflections(const SkPoint src[4], SkPoint dst[10]);
 
 int SkFindCubicMaxCurvature(const SkPoint src[4], SkScalar tValues[3]);
 int SkChopCubicAtMaxCurvature(const SkPoint src[4], SkPoint dst[13],
-                              SkScalar tValues[3] = nullptr);
-
-bool SkChopMonoCubicAtX(SkPoint src[4], SkScalar y, SkPoint dst[7]);
-bool SkChopMonoCubicAtY(SkPoint src[4], SkScalar x, SkPoint dst[7]);
-
-enum SkCubicType {
-    kSerpentine_SkCubicType,
-    kCusp_SkCubicType,
-    kLoop_SkCubicType,
-    kQuadratic_SkCubicType,
-    kLine_SkCubicType,
-    kPoint_SkCubicType
-};
+                              SkScalar tValues[3] = NULL);
 
 
 
 
-SkCubicType SkClassifyCubic(const SkPoint p[4], SkScalar inflection[3]);
+
+
+
+
+
+
+
+
+
+bool SkXRayCrossesMonotonicCubic(const SkXRay& pt, const SkPoint cubic[4],
+                                 bool* ambiguous = NULL);
+
+
+
+
+
+
+
+
+
+
+
+
+
+int SkNumXRayCrossingsForCubic(const SkXRay& pt, const SkPoint cubic[4],
+                               bool* ambiguous = NULL);
 
 
 
@@ -204,31 +212,13 @@ enum SkRotationDirection {
 int SkBuildQuadArc(const SkVector& unitStart, const SkVector& unitStop,
                    SkRotationDirection, const SkMatrix*, SkPoint quadPoints[]);
 
-struct SkConic {
-    SkConic() {}
-    SkConic(const SkPoint& p0, const SkPoint& p1, const SkPoint& p2, SkScalar w) {
-        fPts[0] = p0;
-        fPts[1] = p1;
-        fPts[2] = p2;
-        fW = w;
-    }
-    SkConic(const SkPoint pts[3], SkScalar w) {
-        memcpy(fPts, pts, sizeof(fPts));
-        fW = w;
-    }
 
+struct SkConic {
     SkPoint  fPts[3];
     SkScalar fW;
 
     void set(const SkPoint pts[3], SkScalar w) {
         memcpy(fPts, pts, 3 * sizeof(SkPoint));
-        fW = w;
-    }
-
-    void set(const SkPoint& p0, const SkPoint& p1, const SkPoint& p2, SkScalar w) {
-        fPts[0] = p0;
-        fPts[1] = p1;
-        fPts[2] = p2;
         fW = w;
     }
 
@@ -239,12 +229,9 @@ struct SkConic {
 
 
 
-    void evalAt(SkScalar t, SkPoint* pos, SkVector* tangent = nullptr) const;
+    void evalAt(SkScalar t, SkPoint* pos, SkVector* tangent = NULL) const;
     void chopAt(SkScalar t, SkConic dst[2]) const;
     void chop(SkConic dst[2]) const;
-
-    SkPoint evalAt(SkScalar t) const;
-    SkVector evalTangentAt(SkScalar t) const;
 
     void computeAsQuadError(SkVector* err) const;
     bool asQuadTol(SkScalar tol) const;
@@ -276,15 +263,7 @@ struct SkConic {
 
 
 
-
-
-    static SkScalar TransformW(const SkPoint[3], SkScalar w, const SkMatrix&);
-
-    enum {
-        kMaxConicsForArc = 5
-    };
-    static int BuildUnitArc(const SkVector& start, const SkVector& stop, SkRotationDirection,
-                            const SkMatrix*, SkConic conics[kMaxConicsForArc]);
+    bool findMaxCurvature(SkScalar* t) const;
 };
 
 #include "SkTemplates.h"

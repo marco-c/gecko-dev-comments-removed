@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 #ifndef SkTableColorFilter_DEFINED
 #define SkTableColorFilter_DEFINED
 

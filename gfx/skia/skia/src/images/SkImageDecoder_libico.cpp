@@ -15,12 +15,12 @@ class SkICOImageDecoder : public SkImageDecoder {
 public:
     SkICOImageDecoder();
 
-    Format getFormat() const override {
+    virtual Format getFormat() const SK_OVERRIDE {
         return kICO_Format;
     }
 
 protected:
-    Result onDecode(SkStream* stream, SkBitmap* bm, Mode) override;
+    virtual bool onDecode(SkStream* stream, SkBitmap* bm, Mode) SK_OVERRIDE;
 
 private:
     typedef SkImageDecoder INHERITED;
@@ -72,13 +72,12 @@ static int calculateRowBytesFor8888(int w, int bitCount)
     return 0;
 }
 
-SkImageDecoder::Result SkICOImageDecoder::onDecode(SkStream* stream, SkBitmap* bm, Mode mode)
+bool SkICOImageDecoder::onDecode(SkStream* stream, SkBitmap* bm, Mode mode)
 {
     SkAutoMalloc autoMal;
     const size_t length = SkCopyStreamToStorage(&autoMal, stream);
-    
-    if (length < 6) {
-        return kFailure;
+    if (0 == length) {
+        return false;
     }
 
     unsigned char* buf = (unsigned char*)autoMal.get();
@@ -87,60 +86,87 @@ SkImageDecoder::Result SkICOImageDecoder::onDecode(SkStream* stream, SkBitmap* b
     
     int reserved = read2Bytes(buf, 0);    
     int type = read2Bytes(buf, 2);        
-    if (reserved != 0 || type != 1) {
-        return kFailure;
-    }
-
+    if (reserved != 0 || type != 1)
+        return false;
     int count = read2Bytes(buf, 4);
+
     
-    if (count < 1) {
-        return kFailure;
+    if (length < (size_t)(6 + count*16))
+        return false;
+
+#ifdef SK_SUPPORT_LEGACY_IMAGEDECODER_CHOOSER
+    int choice;
+    Chooser* chooser = this->getChooser();
+    
+    
+    if (NULL == chooser) {
+        choice = 0;
+    } else {
+        chooser->begin(count);
+        for (int i = 0; i < count; i++)
+        {
+            
+            int width = readByte(buf, 6 + i*16);
+            int height = readByte(buf, 7 + i*16);
+            int offset = read4Bytes(buf, 18 + i*16);
+            int bitCount = read2Bytes(buf, offset+14);
+            SkBitmap::Config c;
+            
+            
+            switch (bitCount)
+            {
+                case 1:
+                case 4:
+                    
+                    
+                    
+                    c = SkBitmap::kIndex8_Config;
+                    break;
+                case 8:
+                case 24:
+                case 32:
+                    c = SkBitmap::kARGB_8888_Config;
+                    break;
+                default:
+                    SkDEBUGF(("Image with %ibpp not supported\n", bitCount));
+                    continue;
+            }
+            chooser->inspect(i, c, width, height);
+        }
+        choice = chooser->choose();
     }
+
+    
+    if (choice >= count || choice < 0)
+        return false;
+#else
+    const int choice = 0;   
+#endif
 
     
     
     
-    
-    if (length < (size_t)(6 + count*16)) {
-        return kFailure;
-    }
-
+    int w = readByte(buf, 6 + choice*16);
+    int h = readByte(buf, 7 + choice*16);
+    int colorCount = readByte(buf, 8 + choice*16);
     
     
     
-    int w = readByte(buf, 6);
-    int h = readByte(buf, 7);
-    SkASSERT(w >= 0 && h >= 0);
-    int colorCount = readByte(buf, 8);
-    
-    
-    
-    const size_t size = read4Bytes(buf, 14);           
-    const size_t offset = read4Bytes(buf, 18);
-    
-    
-    if (offset > length || size > length || ((uint64_t)offset + size) > length) {
-        return kFailure;
+    const size_t size = read4Bytes(buf, 14 + choice*16);           
+    const size_t offset = read4Bytes(buf, 18 + choice*16);
+    if ((offset + size) > length) {
+        return false;
     }
 
     
     {
         SkMemoryStream subStream(buf + offset, size, false);
         SkAutoTDelete<SkImageDecoder> otherDecoder(SkImageDecoder::Factory(&subStream));
-        if (otherDecoder.get() != nullptr) {
-            
-            
-            if (otherDecoder->getFormat() == SkImageDecoder::kICO_Format) {
-                return kFailure;
-            }
+        if (otherDecoder.get() != NULL) {
             
             this->copyFieldsToOther(otherDecoder.get());
-            const Result result = otherDecoder->decode(&subStream, bm, this->getDefaultPref(),
-                                                       mode);
-            
-            
-            if (result != kFailure) {
-                return result;
+            if(otherDecoder->decode(&subStream, bm, this->getDefaultPref(), mode)) {
+                return true;
             }
         }
     }
@@ -149,25 +175,11 @@ SkImageDecoder::Result SkICOImageDecoder::onDecode(SkStream* stream, SkBitmap* b
     
     
     
-    
-    
-    
-    if (w == 0) {
-        w = 256;
-    }
-    if (h == 0) {
-        h = 256;
-    }
-
-    
-    if (length < offset + 16) {
-        return kFailure;
-    }
     int bitCount = read2Bytes(buf, offset+14);
 
     void (*placePixel)(const int pixelNo, const unsigned char* buf,
         const int xorOffset, int& x, int y, const int w,
-        SkBitmap* bm, int alphaByte, int m, int shift, SkPMColor* colors) = nullptr;
+        SkBitmap* bm, int alphaByte, int m, int shift, SkPMColor* colors) = NULL;
     switch (bitCount)
     {
         case 1:
@@ -192,7 +204,7 @@ SkImageDecoder::Result SkICOImageDecoder::onDecode(SkStream* stream, SkBitmap* b
             break;
         default:
             SkDEBUGF(("Decoding %ibpp is unimplemented\n", bitCount));
-            return kFailure;
+            return false;
     }
 
     
@@ -203,16 +215,10 @@ SkImageDecoder::Result SkICOImageDecoder::onDecode(SkStream* stream, SkBitmap* b
     
     
 
-    int begin = SkToInt(offset + 40);
+    int begin = offset + 40;
     
     
-    if (length < (size_t) (begin + 4*colorCount)) {
-        return kFailure;
-    }
-
-    
-    
-    SkPMColor* colors = nullptr;
+    SkPMColor* colors = NULL;
     int blue, green, red;
     if (colorCount)
     {
@@ -249,53 +255,14 @@ SkImageDecoder::Result SkICOImageDecoder::onDecode(SkStream* stream, SkBitmap* b
 
     if (SkImageDecoder::kDecodeBounds_Mode == mode) {
         delete[] colors;
-        return kSuccess;
+        return true;
     }
 
-    if (!this->allocPixelRef(bm, nullptr))
+    if (!this->allocPixelRef(bm, NULL))
     {
         delete[] colors;
-        return kFailure;
+        return false;
     }
-
-    
-    
-    
-    
-    size_t maxAndOffset = andOffset + ((andLineWidth*(h-1)+(w-1)) >> 3);
-    if (length <= maxAndOffset) {
-        return kFailure;
-    }
-
-    
-    
-    
-#ifdef SK_DEBUG
-    int maxPixelNum = lineWidth*(h-1)+w-1;
-    int maxByte;
-    switch (bitCount) {
-        case 1:
-            maxByte = maxPixelNum >> 3;
-            break;
-        case 4:
-            maxByte = maxPixelNum >> 1;
-            break;
-        case 8:
-            maxByte = maxPixelNum;
-            break;
-        case 24:
-            maxByte = maxPixelNum * 3 + 2;
-            break;
-        case 32:
-            maxByte = maxPixelNum * 4 + 3;
-            break;
-        default:
-            SkASSERT(false);
-            return kFailure;
-    }
-    int maxXOROffset = xorOffset + maxByte;
-    SkASSERT(maxXOROffset < andOffset);
-#endif
 
     SkAutoLockPixels alp(*bm);
 
@@ -324,7 +291,7 @@ SkImageDecoder::Result SkICOImageDecoder::onDecode(SkStream* stream, SkBitmap* b
     
     
     
-    return kSuccess;
+    return true;
 }   
 
 
@@ -424,20 +391,23 @@ DEFINE_DECODER_CREATOR(ICOImageDecoder);
 static bool is_ico(SkStreamRewindable* stream) {
     
     
-    char buf[4];
-    if (stream->read((void*)buf, 4) != 4) {
-        return false;
-    }
+    SkAutoMalloc autoMal(4);
+    unsigned char* buf = (unsigned char*)autoMal.get();
+    stream->read((void*)buf, 4);
     int reserved = read2Bytes(buf, 0);
     int type = read2Bytes(buf, 2);
-    return 0 == reserved && 1 == type;
+    if (reserved != 0 || type != 1) {
+        
+        return false;
+    }
+    return true;
 }
 
 static SkImageDecoder* sk_libico_dfactory(SkStreamRewindable* stream) {
     if (is_ico(stream)) {
-        return new SkICOImageDecoder;
+        return SkNEW(SkICOImageDecoder);
     }
-    return nullptr;
+    return NULL;
 }
 
 static SkImageDecoder_DecodeReg gReg(sk_libico_dfactory);

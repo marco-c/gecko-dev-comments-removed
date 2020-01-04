@@ -22,7 +22,7 @@
 
 class SkPtrSet : public SkRefCnt {
 public:
-    
+    SK_DECLARE_INST_COUNT(SkPtrSet)
 
     
 
@@ -57,27 +57,6 @@ public:
 
 
     void reset();
-
-    
-
-
-    class Iter {
-    public:
-        Iter(const SkPtrSet& set)
-            : fSet(set)
-            , fIndex(0) {}
-
-        
-
-
-        void* next() {
-            return fIndex < fSet.fList.count() ? fSet.fList[fIndex++].fPtr : nullptr;
-        }
-
-    private:
-        const SkPtrSet& fSet;
-        int             fIndex;
-    };
 
 protected:
     virtual void incPtr(void*) {}
@@ -144,7 +123,7 @@ class SkFactorySet : public SkTPtrSet<SkFlattenable::Factory> {};
 
 class SkNamedFactorySet : public SkRefCnt {
 public:
-    
+    SK_DECLARE_INST_COUNT(SkNamedFactorySet)
 
     SkNamedFactorySet();
 

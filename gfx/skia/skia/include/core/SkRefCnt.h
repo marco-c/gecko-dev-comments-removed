@@ -5,12 +5,15 @@
 
 
 
+
+
 #ifndef SkRefCnt_DEFINED
 #define SkRefCnt_DEFINED
 
-#include "../private/SkAtomics.h"
-#include "../private/SkUniquePtr.h"
-#include "SkTypes.h"
+#include "SkDynamicAnnotations.h"
+#include "SkThread.h"
+#include "SkInstCnt.h"
+#include "SkTemplates.h"
 
 
 
@@ -24,6 +27,8 @@
 
 class SK_API SkRefCntBase : SkNoncopyable {
 public:
+    SK_DECLARE_INST_COUNT_ROOT(SkRefCntBase)
+
     
 
     SkRefCntBase() : fRefCnt(1) {}
@@ -44,28 +49,22 @@ public:
 
 
     bool unique() const {
-        if (1 == sk_atomic_load(&fRefCnt, sk_memory_order_acquire)) {
+        
+        
+        bool const unique = (1 == SK_ANNOTATE_UNPROTECTED_READ(fRefCnt));
+        if (unique) {
             
             
             
-            return true;
         }
-        return false;
+        return unique;
     }
 
     
 
     void ref() const {
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-        
-        
-        
-        
-        SkASSERT(fRefCnt >= 0);
-#else
         SkASSERT(fRefCnt > 0);
-#endif
-        (void)sk_atomic_fetch_add(&fRefCnt, +1, sk_memory_order_relaxed);  
+        sk_atomic_inc(&fRefCnt);  
     }
 
     
@@ -75,10 +74,11 @@ public:
     void unref() const {
         SkASSERT(fRefCnt > 0);
         
-        if (1 == sk_atomic_fetch_add(&fRefCnt, -1, sk_memory_order_acq_rel)) {
+        if (sk_atomic_dec(&fRefCnt) == 1) {
             
             
-            this->internal_dispose();
+            sk_membar_acquire__after_atomic_dec();
+            internal_dispose();
         }
     }
 
@@ -108,7 +108,7 @@ private:
 
     virtual void internal_dispose() const {
         this->internal_dispose_restore_refcnt_to_1();
-        delete this;
+        SkDELETE(this);
     }
 
     
@@ -168,27 +168,76 @@ template <typename T> static inline void SkSafeUnref(T* obj) {
 }
 
 template<typename T> static inline void SkSafeSetNull(T*& obj) {
-    if (obj) {
+    if (NULL != obj) {
         obj->unref();
-        obj = nullptr;
+        obj = NULL;
     }
 }
 
 
 
-template <typename T> struct SkTUnref {
-    void operator()(T* t) { t->unref(); }
-};
 
 
 
-
-template <typename T> class SkAutoTUnref : public skstd::unique_ptr<T, SkTUnref<T>> {
+template <typename T> class SkAutoTUnref : SkNoncopyable {
 public:
-    explicit SkAutoTUnref(T* obj = nullptr) : skstd::unique_ptr<T, SkTUnref<T>>(obj) {}
+    explicit SkAutoTUnref(T* obj = NULL) : fObj(obj) {}
+    ~SkAutoTUnref() { SkSafeUnref(fObj); }
 
-    T* detach() { return this->release(); }
-    operator T*() const { return this->get(); }
+    T* get() const { return fObj; }
+
+    T* reset(T* obj) {
+        SkSafeUnref(fObj);
+        fObj = obj;
+        return obj;
+    }
+
+    void swap(SkAutoTUnref* other) {
+        T* tmp = fObj;
+        fObj = other->fObj;
+        other->fObj = tmp;
+    }
+
+    
+
+
+
+
+
+    T* detach() {
+        T* obj = fObj;
+        fObj = NULL;
+        return obj;
+    }
+
+    
+
+
+
+    template<typename B> class BlockRef : public B {
+    private:
+        BlockRef();
+        ~BlockRef();
+        void ref() const;
+        void unref() const;
+    };
+
+    
+    typedef typename SkTConstType<BlockRef<T>, SkTIsConst<T>::value>::type BlockRefType;
+
+    
+
+
+
+
+
+    BlockRefType *operator->() const {
+        return static_cast<BlockRefType*>(fObj);
+    }
+    operator T*() { return fObj; }
+
+private:
+    T*  fObj;
 };
 
 
@@ -197,32 +246,5 @@ public:
     SkAutoUnref(SkRefCnt* obj) : SkAutoTUnref<SkRefCnt>(obj) {}
 };
 #define SkAutoUnref(...) SK_REQUIRE_LOCAL_VAR(SkAutoUnref)
-
-
-
-template <typename Derived>
-class SkNVRefCnt : SkNoncopyable {
-public:
-    SkNVRefCnt() : fRefCnt(1) {}
-    ~SkNVRefCnt() { SkASSERTF(1 == fRefCnt, "NVRefCnt was %d", fRefCnt); }
-
-    
-    
-    
-    
-
-    bool unique() const { return 1 == sk_atomic_load(&fRefCnt, sk_memory_order_acquire); }
-    void    ref() const { (void)sk_atomic_fetch_add(&fRefCnt, +1, sk_memory_order_relaxed); }
-    void  unref() const {
-        if (1 == sk_atomic_fetch_add(&fRefCnt, -1, sk_memory_order_acq_rel)) {
-            SkDEBUGCODE(fRefCnt = 1;)  
-                    delete (const Derived*)this;
-        }
-    }
-    void  deref() const { this->unref(); }
-
-private:
-    mutable int32_t fRefCnt;
-};
 
 #endif

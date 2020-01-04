@@ -27,17 +27,18 @@ public:
 
     
     
-    SkMask::Format getFormat() const override;
+    virtual SkMask::Format getFormat() const SK_OVERRIDE;
     
     virtual bool filterMask(SkMask* dst, const SkMask& src, const SkMatrix&,
-                            SkIPoint* margin) const override;
+                            SkIPoint* margin) const SK_OVERRIDE;
 
     SK_TO_STRING_OVERRIDE()
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkEmbossMaskFilter)
 
 protected:
     SkEmbossMaskFilter(SkScalar blurSigma, const Light& light);
-    void flatten(SkWriteBuffer&) const override;
+    explicit SkEmbossMaskFilter(SkReadBuffer&);
+    virtual void flatten(SkWriteBuffer&) const SK_OVERRIDE;
 
 private:
     Light       fLight;

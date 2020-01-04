@@ -31,7 +31,7 @@ public:
 
 
 
-    typedef bool(*FindProc)(SkTypeface*, const SkFontStyle&, void* context);
+    typedef bool (*FindProc)(SkTypeface*, SkTypeface::Style, void* context);
 
     
 
@@ -39,7 +39,15 @@ public:
 
 
 
-    void add(SkTypeface*, const SkFontStyle& requested);
+    void add(SkTypeface*, SkTypeface::Style requested, bool strong = true);
+
+    
+
+
+
+
+
+    SkTypeface* findByID(SkFontID findID) const;
 
     
 
@@ -64,7 +72,10 @@ public:
 
     
 
-    static void Add(SkTypeface*, const SkFontStyle& requested);
+    static void Add(SkTypeface*,
+                    SkTypeface::Style requested,
+                    bool strong = true);
+    static SkTypeface* FindByID(SkFontID fontID);
     static SkTypeface* FindByProcAndRef(FindProc proc, void* ctx);
     static void PurgeAll();
 
@@ -79,8 +90,9 @@ private:
     void purge(int count);
 
     struct Rec {
-        SkTypeface* fFace;
-        SkFontStyle fRequestedStyle;
+        SkTypeface*         fFace;
+        bool                fStrong;
+        SkTypeface::Style   fRequestedStyle;
     };
     SkTDArray<Rec> fArray;
 };

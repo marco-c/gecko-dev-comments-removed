@@ -10,19 +10,14 @@
 #ifndef SkTypeface_DEFINED
 #define SkTypeface_DEFINED
 
-#include "../private/SkOncePtr.h"
-#include "../private/SkWeakRefCnt.h"
-#include "SkFontStyle.h"
-#include "SkRect.h"
-#include "SkString.h"
+#include "SkAdvancedTypefaceMetrics.h"
+#include "SkWeakRefCnt.h"
 
 class SkDescriptor;
-class SkFontData;
 class SkFontDescriptor;
 class SkScalerContext;
 struct SkScalerContextRec;
 class SkStream;
-class SkStreamAsset;
 class SkAdvancedTypefaceMetrics;
 class SkWStream;
 
@@ -41,6 +36,8 @@ typedef uint32_t SkFontTableTag;
 
 class SK_API SkTypeface : public SkWeakRefCnt {
 public:
+    SK_DECLARE_INST_COUNT(SkTypeface)
+
     
 
     enum Style {
@@ -53,24 +50,16 @@ public:
     };
 
     
-    SkFontStyle fontStyle() const {
-        return fStyle;
-    }
+
+    Style style() const { return fStyle; }
 
     
 
-
-    Style style() const {
-        return static_cast<Style>(
-            (fStyle.weight() >= SkFontStyle::kSemiBold_Weight ? kBold : kNormal) |
-            (fStyle.slant()  != SkFontStyle::kUpright_Slant ? kItalic : kNormal));
-    }
+    bool isBold() const { return (fStyle & kBold) != 0; }
 
     
-    bool isBold() const { return fStyle.weight() >= SkFontStyle::kSemiBold_Weight; }
 
-    
-    bool isItalic() const { return fStyle.slant() != SkFontStyle::kUpright_Slant; }
+    bool isItalic() const { return (fStyle & kItalic) != 0; }
 
     
 
@@ -125,19 +114,13 @@ public:
     
 
 
-    static SkTypeface* CreateFromFile(const char path[], int index = 0);
+    static SkTypeface* CreateFromFile(const char path[]);
 
     
 
 
 
-    static SkTypeface* CreateFromStream(SkStreamAsset* stream, int index = 0);
-
-    
-
-
-
-    static SkTypeface* CreateFromFontData(SkFontData*);
+    static SkTypeface* CreateFromStream(SkStream* stream);
 
     
 
@@ -145,7 +128,6 @@ public:
     void serialize(SkWStream*) const;
 
     
-
 
 
 
@@ -259,7 +241,7 @@ public:
     public:
         virtual ~LocalizedStrings() { }
         virtual bool next(LocalizedString* localizedString) = 0;
-        void unref() { delete this; }
+        void unref() { SkDELETE(this); }
     };
     
 
@@ -281,14 +263,7 @@ public:
 
 
 
-
-    SkStreamAsset* openStream(int* ttcIndex) const;
-
-    
-
-
-
-    SkFontData* createFontData() const;
+    SkStream* openStream(int* ttcIndex) const;
 
     
 
@@ -297,13 +272,6 @@ public:
 
     SkScalerContext* createScalerContext(const SkDescriptor*,
                                          bool allowFailure = false) const;
-
-    
-
-
-
-
-    SkRect getBounds() const;
 
     
     void filterRec(SkScalerContextRec* rec) const {
@@ -316,18 +284,8 @@ public:
 
 protected:
     
-    enum PerGlyphInfo {
-        kNo_PerGlyphInfo         = 0x0, 
-        kHAdvance_PerGlyphInfo   = 0x1, 
-        kVAdvance_PerGlyphInfo   = 0x2, 
-        kGlyphNames_PerGlyphInfo = 0x4, 
-        kToUnicode_PerGlyphInfo  = 0x8  
-        
-    };
 
-    
-
-    SkTypeface(const SkFontStyle& style, SkFontID uniqueID, bool isFixedPitch = false);
+    SkTypeface(Style style, SkFontID uniqueID, bool isFixedPitch = false);
     virtual ~SkTypeface();
 
     
@@ -339,14 +297,11 @@ protected:
     virtual SkScalerContext* onCreateScalerContext(const SkDescriptor*) const = 0;
     virtual void onFilterRec(SkScalerContextRec*) const = 0;
     virtual SkAdvancedTypefaceMetrics* onGetAdvancedTypefaceMetrics(
-                        PerGlyphInfo,
+                        SkAdvancedTypefaceMetrics::PerGlyphInfo perGlyphInfo,
                         const uint32_t* glyphIDs,
                         uint32_t glyphIDsCount) const = 0;
 
-    virtual SkStreamAsset* onOpenStream(int* ttcIndex) const = 0;
-    
-    virtual SkFontData* onCreateFontData() const;
-
+    virtual SkStream* onOpenStream(int* ttcIndex) const = 0;
     virtual void onGetFontDescriptor(SkFontDescriptor*, bool* isLocal) const = 0;
 
     virtual int onCharsToGlyphs(const void* chars, Encoding, uint16_t glyphs[],
@@ -357,27 +312,16 @@ protected:
     virtual bool onGetKerningPairAdjustments(const uint16_t glyphs[], int count,
                                              int32_t adjustments[]) const;
 
-    
-
-
-    virtual void onGetFamilyName(SkString* familyName) const = 0;
-
-    
     virtual LocalizedStrings* onCreateFamilyNameIterator() const = 0;
 
     virtual int onGetTableTags(SkFontTableTag tags[]) const = 0;
     virtual size_t onGetTableData(SkFontTableTag, size_t offset,
                                   size_t length, void* data) const = 0;
 
-    virtual bool onComputeBounds(SkRect*) const;
-
 private:
     friend class SkGTypeface;
-    friend class SkRandomTypeface;
     friend class SkPDFFont;
     friend class SkPDFCIDFont;
-    friend class GrPathRendering;
-    friend class GrGLPathRendering;
 
     
 
@@ -390,7 +334,7 @@ private:
 
 
     SkAdvancedTypefaceMetrics* getAdvancedTypefaceMetrics(
-                          PerGlyphInfo,
+                          SkAdvancedTypefaceMetrics::PerGlyphInfo perGlyphInfo,
                           const uint32_t* glyphIDs = NULL,
                           uint32_t glyphIDsCount = 0) const;
 
@@ -398,13 +342,14 @@ private:
     static SkTypeface* CreateDefault(int style);  
     static void        DeleteDefault(SkTypeface*);
 
-    SkOncePtr<SkRect>   fLazyBounds;
-    SkFontID            fUniqueID;
-    SkFontStyle         fStyle;
-    bool                fIsFixedPitch;
+    SkFontID    fUniqueID;
+    Style       fStyle;
+    bool        fIsFixedPitch;
 
     friend class SkPaint;
     friend class SkGlyphCache;  
+    
+    friend class SkFontHost;
 
     typedef SkWeakRefCnt INHERITED;
 };

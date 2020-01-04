@@ -9,7 +9,8 @@
 #define GrConvolutionEffect_DEFINED
 
 #include "Gr1DKernelEffect.h"
-#include "GrInvariantOutput.h"
+
+class GrGLConvolutionEffect;
 
 
 
@@ -21,23 +22,33 @@ class GrConvolutionEffect : public Gr1DKernelEffect {
 public:
 
     
-    static GrFragmentProcessor* Create(GrTexture* tex,
-                                       Direction dir,
-                                       int halfWidth,
-                                       const float* kernel,
-                                       bool useBounds,
-                                       float bounds[2]) {
-        return new GrConvolutionEffect(tex, dir, halfWidth, kernel, useBounds, bounds);
+    static GrEffect* Create(GrTexture* tex,
+                            Direction dir,
+                            int halfWidth,
+                            const float* kernel,
+                            bool useBounds,
+                            float bounds[2]) {
+        return SkNEW_ARGS(GrConvolutionEffect, (tex,
+                                                dir,
+                                                halfWidth,
+                                                kernel,
+                                                useBounds,
+                                                bounds));
     }
 
     
-    static GrFragmentProcessor* CreateGaussian(GrTexture* tex,
-                                               Direction dir,
-                                               int halfWidth,
-                                               float gaussianSigma,
-                                               bool useBounds,
-                                               float bounds[2]) {
-        return new GrConvolutionEffect(tex, dir, halfWidth, gaussianSigma, useBounds, bounds);
+    static GrEffect* CreateGaussian(GrTexture* tex,
+                                    Direction dir,
+                                    int halfWidth,
+                                    float gaussianSigma,
+                                    bool useBounds,
+                                    float bounds[2]) {
+        return SkNEW_ARGS(GrConvolutionEffect, (tex,
+                                                dir,
+                                                halfWidth,
+                                                gaussianSigma,
+                                                useBounds,
+                                                bounds));
     }
 
     virtual ~GrConvolutionEffect();
@@ -47,7 +58,17 @@ public:
     const float* bounds() const { return fBounds; }
     bool useBounds() const { return fUseBounds; }
 
-    const char* name() const override { return "Convolution"; }
+    static const char* Name() { return "Convolution"; }
+
+    typedef GrGLConvolutionEffect GLEffect;
+
+    virtual const GrBackendEffectFactory& getFactory() const SK_OVERRIDE;
+
+    virtual void getConstantColorComponents(GrColor*, uint32_t* validFlags) const {
+        
+        
+        *validFlags = 0;
+    }
 
     enum {
         
@@ -80,19 +101,9 @@ private:
                         bool useBounds,
                         float bounds[2]);
 
-    GrGLSLFragmentProcessor* onCreateGLSLInstance() const override;
+    virtual bool onIsEqual(const GrEffect&) const SK_OVERRIDE;
 
-    void onGetGLSLProcessorKey(const GrGLSLCaps&, GrProcessorKeyBuilder*) const override;
-
-    bool onIsEqual(const GrFragmentProcessor&) const override;
-
-    void onComputeInvariantOutput(GrInvariantOutput* inout) const override {
-        
-        
-        inout->mulByUnknownFourComponents();
-    }
-
-    GR_DECLARE_FRAGMENT_PROCESSOR_TEST;
+    GR_DECLARE_EFFECT_TEST;
 
     typedef Gr1DKernelEffect INHERITED;
 };

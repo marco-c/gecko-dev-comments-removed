@@ -8,8 +8,6 @@
 
 #include "SkBitmap.h"
 #include "SkErrorInternals.h"
-#include "SkImage.h"
-#include "SkImageGenerator.h"
 #include "SkReadBuffer.h"
 #include "SkStream.h"
 #include "SkTypeface.h"
@@ -26,16 +24,16 @@ static uint32_t default_flags() {
 SkReadBuffer::SkReadBuffer() {
     fFlags = default_flags();
     fVersion = 0;
-    fMemoryPtr = nullptr;
+    fMemoryPtr = NULL;
 
-    fBitmapStorage = nullptr;
-    fTFArray = nullptr;
+    fBitmapStorage = NULL;
+    fTFArray = NULL;
     fTFCount = 0;
 
-    fFactoryTDArray = nullptr;
-    fFactoryArray = nullptr;
+    fFactoryTDArray = NULL;
+    fFactoryArray = NULL;
     fFactoryCount = 0;
-    fBitmapDecoder = nullptr;
+    fBitmapDecoder = NULL;
 #ifdef DEBUG_NON_DETERMINISTIC_ASSERT
     fDecodedBitmapIndex = -1;
 #endif 
@@ -45,16 +43,16 @@ SkReadBuffer::SkReadBuffer(const void* data, size_t size) {
     fFlags = default_flags();
     fVersion = 0;
     fReader.setMemory(data, size);
-    fMemoryPtr = nullptr;
+    fMemoryPtr = NULL;
 
-    fBitmapStorage = nullptr;
-    fTFArray = nullptr;
+    fBitmapStorage = NULL;
+    fTFArray = NULL;
     fTFCount = 0;
 
-    fFactoryTDArray = nullptr;
-    fFactoryArray = nullptr;
+    fFactoryTDArray = NULL;
+    fFactoryArray = NULL;
     fFactoryCount = 0;
-    fBitmapDecoder = nullptr;
+    fBitmapDecoder = NULL;
 #ifdef DEBUG_NON_DETERMINISTIC_ASSERT
     fDecodedBitmapIndex = -1;
 #endif 
@@ -68,14 +66,14 @@ SkReadBuffer::SkReadBuffer(SkStream* stream) {
     stream->read(fMemoryPtr, length);
     fReader.setMemory(fMemoryPtr, length);
 
-    fBitmapStorage = nullptr;
-    fTFArray = nullptr;
+    fBitmapStorage = NULL;
+    fTFArray = NULL;
     fTFCount = 0;
 
-    fFactoryTDArray = nullptr;
-    fFactoryArray = nullptr;
+    fFactoryTDArray = NULL;
+    fFactoryArray = NULL;
     fFactoryCount = 0;
-    fBitmapDecoder = nullptr;
+    fBitmapDecoder = NULL;
 #ifdef DEBUG_NON_DETERMINISTIC_ASSERT
     fDecodedBitmapIndex = -1;
 #endif 
@@ -225,7 +223,7 @@ bool SkReadBuffer::readBitmap(SkBitmap* bitmap) {
             const void* data = this->skip(length);
             const int32_t xOffset = this->readInt();
             const int32_t yOffset = this->readInt();
-            if (fBitmapDecoder != nullptr && fBitmapDecoder(data, length, bitmap)) {
+            if (fBitmapDecoder != NULL && fBitmapDecoder(data, length, bitmap)) {
                 if (bitmap->width() == width && bitmap->height() == height) {
 #ifdef DEBUG_NON_DETERMINISTIC_ASSERT
                     if (0 != xOffset || 0 != yOffset) {
@@ -261,14 +259,18 @@ bool SkReadBuffer::readBitmap(SkBitmap* bitmap) {
             
             
             SkErrorInternals::SetError(kParseError_SkError,
-                                       "Could not decode bitmap. Resulting bitmap will be empty.");
+                                       "Could not decode bitmap. Resulting bitmap will be red.");
+        } else {
             
-            
-            
-            bitmap->setInfo(SkImageInfo::MakeUnknown(width, height));
-            return true;
-        } else if (SkBitmap::ReadRawPixels(this, bitmap)) {
-            return true;
+            if (this->isVersionLT(kNoMoreBitmapFlatten_Version)) {
+                SkBitmap tmp;
+                tmp.legacyUnflatten(*this);
+                
+            } else {
+                if (SkBitmap::ReadRawPixels(this, bitmap)) {
+                    return true;
+                }
+            }
         }
     }
     
@@ -276,51 +278,14 @@ bool SkReadBuffer::readBitmap(SkBitmap* bitmap) {
     return false;
 }
 
-namespace {
-
-
-
-class EmptyImageGenerator final : public SkImageGenerator {
-public:
-    EmptyImageGenerator(const SkImageInfo& info) : INHERITED(info) { }
-
-private:
-    typedef SkImageGenerator INHERITED;
-};
-
-} 
-
-SkImage* SkReadBuffer::readImage() {
-    int width = this->read32();
-    int height = this->read32();
-    if (width <= 0 || height <= 0) {    
-        this->validate(false);
-        return nullptr;
-    }
-
-    SkAutoTUnref<SkData> encoded(this->readByteArrayAsData());
-    if (encoded->size() == 0) {
-        
-        return SkImage::NewFromGenerator(
-            new EmptyImageGenerator(SkImageInfo::MakeN32Premul(width, height)));
-    }
-
-    int originX = this->read32();
-    int originY = this->read32();
-    if (originX < 0 || originY < 0) {
-        this->validate(false);
-        return nullptr;
-    }
-
-    const SkIRect subset = SkIRect::MakeXYWH(originX, originY, width, height);
-    return SkImage::NewFromEncoded(encoded, &subset);
-}
-
 SkTypeface* SkReadBuffer::readTypeface() {
 
     uint32_t index = fReader.readU32();
     if (0 == index || index > (unsigned)fTFCount) {
-        return nullptr;
+        if (index) {
+            SkDebugf("====== typeface index %d\n", index);
+        }
+        return NULL;
     } else {
         SkASSERT(fTFArray);
         return fTFArray[index - 1];
@@ -332,12 +297,12 @@ SkFlattenable* SkReadBuffer::readFlattenable(SkFlattenable::Type ft) {
     
     
 
-    SkFlattenable::Factory factory = nullptr;
+    SkFlattenable::Factory factory = NULL;
 
     if (fFactoryCount > 0) {
         int32_t index = fReader.readU32();
         if (0 == index) {
-            return nullptr; 
+            return NULL; 
         }
         index -= 1;     
         SkASSERT(index < fFactoryCount);
@@ -345,20 +310,20 @@ SkFlattenable* SkReadBuffer::readFlattenable(SkFlattenable::Type ft) {
     } else if (fFactoryTDArray) {
         int32_t index = fReader.readU32();
         if (0 == index) {
-            return nullptr; 
+            return NULL; 
         }
         index -= 1;     
         factory = (*fFactoryTDArray)[index];
     } else {
         factory = (SkFlattenable::Factory)readFunctionPtr();
-        if (nullptr == factory) {
-            return nullptr; 
+        if (NULL == factory) {
+            return NULL; 
         }
     }
 
     
     
-    SkFlattenable* obj = nullptr;
+    SkFlattenable* obj = NULL;
     uint32_t sizeRecorded = fReader.readU32();
     if (factory) {
         size_t offset = fReader.offset();
@@ -390,7 +355,7 @@ void SkReadBuffer::skipFlattenable() {
             return;
         }
     } else {
-        if (nullptr == this->readFunctionPtr()) {
+        if (NULL == this->readFunctionPtr()) {
             return;
         }
     }

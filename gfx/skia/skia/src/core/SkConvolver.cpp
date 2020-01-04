@@ -3,7 +3,6 @@
 
 
 #include "SkConvolver.h"
-#include "SkMath.h"
 #include "SkSize.h"
 #include "SkTypes.h"
 
@@ -161,10 +160,7 @@ template<bool hasAlpha>
 
     
     
-    
-    
-    
-    #if SK_HAS_ATTRIBUTE(optimize) && defined(SK_RELEASE)
+    #if defined(__i386) && SK_HAS_ATTRIBUTE(optimize) && defined(SK_RELEASE)
         #define SK_MAYBE_DISABLE_VECTORIZATION __attribute__((optimize("O2"), noinline))
     #else
         #define SK_MAYBE_DISABLE_VECTORIZATION
@@ -353,13 +349,13 @@ const SkConvolutionFilter1D::ConvolutionFixed* SkConvolutionFilter1D::GetSingleF
     *filterLength = filter.fTrimmedLength;
     *specifiedFilterlength = filter.fLength;
     if (filter.fTrimmedLength == 0) {
-        return nullptr;
+        return NULL;
     }
 
     return &fFilterValues[filter.fDataLocation];
 }
 
-bool BGRAConvolve2D(const unsigned char* sourceData,
+void BGRAConvolve2D(const unsigned char* sourceData,
                     int sourceByteRowStride,
                     bool sourceHasAlpha,
                     const SkConvolutionFilter1D& filterX,
@@ -394,20 +390,6 @@ bool BGRAConvolve2D(const unsigned char* sourceData,
     int rowBufferWidth = (filterX.numValues() + 15) & ~0xF;
     int rowBufferHeight = maxYFilterSize +
                           (convolveProcs.fConvolve4RowsHorizontally ? 4 : 0);
-
-    
-    {
-        int64_t size = sk_64_mul(rowBufferWidth, rowBufferHeight);
-        
-        
-        
-        
-        if (size > 100 * 1024 * 1024) {
-
-            return false;
-        }
-    }
-
     CircularRowBuffer rowBuffer(rowBufferWidth,
                                 rowBufferHeight,
                                 filterOffset);
@@ -451,7 +433,7 @@ bool BGRAConvolve2D(const unsigned char* sourceData,
                     src[i] = &sourceData[(uint64_t)(nextXRow + i) * sourceByteRowStride];
                     outRow[i] = rowBuffer.advanceRow();
                 }
-                convolveProcs.fConvolve4RowsHorizontally(src, filterX, outRow, 4*rowBufferWidth);
+                convolveProcs.fConvolve4RowsHorizontally(src, filterX, outRow);
                 nextXRow += 4;
             } else {
                 
@@ -501,5 +483,4 @@ bool BGRAConvolve2D(const unsigned char* sourceData,
                                sourceHasAlpha);
         }
     }
-    return true;
 }

@@ -10,9 +10,10 @@
 #define GrGLPath_DEFINED
 
 #include "../GrPath.h"
-#include "gl/GrGLTypes.h"
+#include "gl/GrGLFunctions.h"
 
-class GrGLGpu;
+class GrGpuGL;
+struct GrGLInterface;
 
 
 
@@ -22,33 +23,24 @@ class GrGLGpu;
 
 class GrGLPath : public GrPath {
 public:
-    static bool InitPathObjectPathDataCheckingDegenerates(GrGLGpu*,
-                                                          GrGLuint pathID,
-                                                          const SkPath&);
-    static void InitPathObjectPathData(GrGLGpu*,
-                                       GrGLuint pathID,
-                                       const SkPath&);
-    static void InitPathObjectStroke(GrGLGpu* gpu, GrGLuint pathID, const GrStrokeInfo& stroke);
+    static void InitPathObject(const GrGLInterface*,
+                               GrGLuint pathID,
+                               const SkPath&,
+                               const SkStrokeRec&);
 
-    static void InitPathObjectEmptyPath(GrGLGpu*, GrGLuint pathID);
-
-
-    GrGLPath(GrGLGpu* gpu, const SkPath& path, const GrStrokeInfo& stroke);
+    GrGLPath(GrGpuGL* gpu, const SkPath& path, const SkStrokeRec& stroke);
+    virtual ~GrGLPath();
     GrGLuint pathID() const { return fPathID; }
+    
+    
+    virtual size_t gpuMemorySize() const SK_OVERRIDE { return 100; }
 
-    bool shouldStroke() const { return fShouldStroke; }
-    bool shouldFill() const { return fShouldFill; }
 protected:
-    void onRelease() override;
-    void onAbandon() override;
+    virtual void onRelease() SK_OVERRIDE;
+    virtual void onAbandon() SK_OVERRIDE;
 
 private:
-    
-    size_t onGpuMemorySize() const override { return 100; }
-
     GrGLuint fPathID;
-    bool fShouldStroke;
-    bool fShouldFill;
 
     typedef GrPath INHERITED;
 };

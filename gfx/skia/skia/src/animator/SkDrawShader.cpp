@@ -11,6 +11,7 @@
 #include "SkDrawBitmap.h"
 #include "SkDrawMatrix.h"
 #include "SkDrawPaint.h"
+#include "SkTemplates.h"
 
 #if SK_USE_CONDENSED_INFO == 0
 
@@ -23,7 +24,7 @@ const SkMemberInfo SkDrawShader::fInfo[] = {
 
 DEFINE_GET_MEMBER(SkDrawShader);
 
-SkDrawShader::SkDrawShader() : matrix(nullptr),
+SkDrawShader::SkDrawShader() : matrix(NULL),
     tileMode(SkShader::kClamp_TileMode) {
 }
 
@@ -36,7 +37,7 @@ bool SkDrawShader::add() {
 }
 
 SkMatrix* SkDrawShader::getMatrix() {
-    return matrix ? &matrix->getMatrix() : nullptr;
+    return matrix ? &matrix->getMatrix() : NULL;
 }
 
 #if SK_USE_CONDENSED_INFO == 0
@@ -51,7 +52,7 @@ const SkMemberInfo SkDrawBitmapShader::fInfo[] = {
 
 DEFINE_GET_MEMBER(SkDrawBitmapShader);
 
-SkDrawBitmapShader::SkDrawBitmapShader() : filterBitmap(-1), image(nullptr) {}
+SkDrawBitmapShader::SkDrawBitmapShader() : filterBitmap(-1), image(NULL) {}
 
 bool SkDrawBitmapShader::add() {
     if (fPaint->shader != (SkDrawShader*) -1)
@@ -62,8 +63,8 @@ bool SkDrawBitmapShader::add() {
 }
 
 SkShader* SkDrawBitmapShader::getShader() {
-    if (image == nullptr)
-        return nullptr;
+    if (image == NULL)
+        return NULL;
 
     
     
@@ -71,8 +72,11 @@ SkShader* SkDrawBitmapShader::getShader() {
     
     
     
-    return SkShader::CreateBitmapShader(image->fBitmap,
-                                        (SkShader::TileMode) tileMode,
-                                        (SkShader::TileMode) tileMode,
-                                        getMatrix());
+    SkShader* shader  = SkShader::CreateBitmapShader(image->fBitmap,
+                                                    (SkShader::TileMode) tileMode,
+                                                    (SkShader::TileMode) tileMode,
+                                                    getMatrix());
+    SkAutoTDelete<SkShader> autoDel(shader);
+    (void)autoDel.detach();
+    return shader;
 }

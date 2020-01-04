@@ -16,6 +16,7 @@
 
 class SK_API SkMallocPixelRef : public SkPixelRef {
 public:
+    SK_DECLARE_INST_COUNT(SkMallocPixelRef)
     
 
 
@@ -43,17 +44,6 @@ public:
                                          size_t rowBytes, SkColorTable*);
 
     
-
-
-    static SkMallocPixelRef* NewZeroed(const SkImageInfo& info,
-                                       size_t rowBytes, SkColorTable*);
-
-    
-
-
-
-
-
 
 
 
@@ -87,12 +77,9 @@ public:
 
     class PRFactory : public SkPixelRefFactory {
     public:
-        SkPixelRef* create(const SkImageInfo&, size_t rowBytes, SkColorTable*) override;
-    };
-
-    class ZeroedPRFactory : public SkPixelRefFactory {
-    public:
-        SkPixelRef* create(const SkImageInfo&, size_t rowBytes, SkColorTable*) override;
+        virtual SkPixelRef* create(const SkImageInfo&,
+                                   size_t rowBytes,
+                                   SkColorTable*) SK_OVERRIDE;
     };
 
 protected:
@@ -101,17 +88,11 @@ protected:
                      bool ownPixels);
     virtual ~SkMallocPixelRef();
 
-    bool onNewLockPixels(LockRec*) override;
-    void onUnlockPixels() override;
-    size_t getAllocatedSizeInBytes() const override;
+    virtual bool onNewLockPixels(LockRec*) SK_OVERRIDE;
+    virtual void onUnlockPixels() SK_OVERRIDE;
+    virtual size_t getAllocatedSizeInBytes() const SK_OVERRIDE;
 
 private:
-    
-    static SkMallocPixelRef* NewUsing(void*(*alloc)(size_t),
-                                      const SkImageInfo&,
-                                      size_t rowBytes,
-                                      SkColorTable*);
-
     void*           fStorage;
     SkColorTable*   fCTable;
     size_t          fRB;

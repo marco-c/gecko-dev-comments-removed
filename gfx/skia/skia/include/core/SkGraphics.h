@@ -5,14 +5,12 @@
 
 
 
+
+
 #ifndef SkGraphics_DEFINED
 #define SkGraphics_DEFINED
 
 #include "SkTypes.h"
-
-class SkData;
-class SkImageGenerator;
-class SkTraceMemoryDump;
 
 class SK_API SkGraphics {
 public:
@@ -24,7 +22,9 @@ public:
     static void Init();
 
     
-    static void Term() {}
+
+
+    static void Term();
 
     
 
@@ -86,38 +86,40 @@ public:
 
 
 
-    static size_t GetResourceCacheTotalBytesUsed();
+    static size_t GetImageCacheTotalBytesUsed();
+    
+
+
+
+
+    static size_t GetImageCacheTotalByteLimit();
+    static size_t SetImageCacheTotalByteLimit(size_t newLimit);
+
+    
+    static size_t GetImageCacheBytesUsed() {
+        return GetImageCacheTotalBytesUsed();
+    }
+    
+    static size_t GetImageCacheByteLimit() {
+        return GetImageCacheTotalByteLimit();
+    }
+    
+    static size_t SetImageCacheByteLimit(size_t newLimit) {
+        return SetImageCacheTotalByteLimit(newLimit);
+    }
 
     
 
 
 
 
-    static size_t GetResourceCacheTotalByteLimit();
-    static size_t SetResourceCacheTotalByteLimit(size_t newLimit);
-
-    
-
-
-
-    static void PurgeResourceCache();
-
-    
 
 
 
 
 
-
-
-    static size_t GetResourceCacheSingleAllocationByteLimit();
-    static size_t SetResourceCacheSingleAllocationByteLimit(size_t newLimit);
-
-    
-
-
-
-    static void DumpMemoryStatistics(SkTraceMemoryDump* dump);
+    static size_t GetImageCacheSingleAllocationByteLimit();
+    static size_t SetImageCacheSingleAllocationByteLimit(size_t newLimit);
 
     
 
@@ -149,23 +151,21 @@ public:
 
     static void SetTLSFontCacheLimit(size_t bytes);
 
-    typedef SkImageGenerator* (*ImageGeneratorFromEncodedFactory)(SkData*);
-
+private:
     
 
 
 
-
-
-
-    static ImageGeneratorFromEncodedFactory
-           SetImageGeneratorFromEncodedFactory(ImageGeneratorFromEncodedFactory);
+    static void InstallNewHandler();
 };
 
 class SkAutoGraphics {
 public:
     SkAutoGraphics() {
         SkGraphics::Init();
+    }
+    ~SkAutoGraphics() {
+        SkGraphics::Term();
     }
 };
 

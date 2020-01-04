@@ -36,7 +36,8 @@ struct SkEdge {
     uint8_t fCubicDShift;   
     int8_t  fWinding;       
 
-    int setLine(const SkPoint& p0, const SkPoint& p1, const SkIRect* clip, int shiftUp);
+    int setLine(const SkPoint& p0, const SkPoint& p1, const SkIRect* clip,
+                int shiftUp);
     
     inline int setLine(const SkPoint& p0, const SkPoint& p1, int shiftUp);
     inline int updateLine(SkFixed ax, SkFixed ay, SkFixed bx, SkFixed by);
@@ -80,7 +81,7 @@ struct SkCubicEdge : public SkEdge {
     SkFixed fCDDDx, fCDDDy;
     SkFixed fCLastX, fCLastY;
 
-    int setCubic(const SkPoint pts[4], int shiftUp);
+    int setCubic(const SkPoint pts[4], const SkIRect* clip, int shiftUp);
     int updateCubic();
 };
 
@@ -119,7 +120,7 @@ int SkEdge::setLine(const SkPoint& p0, const SkPoint& p1, int shift) {
     }
 
     SkFixed slope = SkFDot6Div(x1 - x0, y1 - y0);
-    const SkFDot6 dy  = SkEdge_Compute_DY(top, y0);
+    const int dy  = SkEdge_Compute_DY(top, y0);
 
     fX          = SkFDot6ToFixed(x0 + SkFixedMul(slope, dy));   
     fDX         = slope;

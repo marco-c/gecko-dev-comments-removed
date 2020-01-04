@@ -19,17 +19,16 @@ struct GrGLInterface;
 
 
 
-
 class SK_API GrGLExtensions {
 public:
-    GrGLExtensions() : fInitialized(false), fStrings(new SkTArray<SkString>) {}
+    GrGLExtensions() : fInitialized(false), fStrings(SkNEW(SkTArray<SkString>)) {}
 
     GrGLExtensions(const GrGLExtensions&);
 
     GrGLExtensions& operator=(const GrGLExtensions&);
 
     void swap(GrGLExtensions* that) {
-        fStrings.swap(that->fStrings);
+        fStrings.swap(&that->fStrings);
         SkTSwap(fInitialized, that->fInitialized);
     }
 
@@ -41,9 +40,7 @@ public:
     bool init(GrGLStandard standard,
               GrGLGetStringProc getString,
               GrGLGetStringiProc getStringi,
-              GrGLGetIntegervProc getIntegerv,
-              GrEGLQueryStringProc queryString = nullptr,
-              GrEGLDisplay eglDisplay = nullptr);
+              GrGLGetIntegervProc getIntegerv);
 
     bool isInitialized() const { return fInitialized; }
 

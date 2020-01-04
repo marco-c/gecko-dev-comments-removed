@@ -193,7 +193,7 @@ static inline unsigned Sk255To256(U8CPU value) {
 
 
 
-#define SkAlphaMul(value, alpha256)     (((value) * (alpha256)) >> 8)
+#define SkAlphaMul(value, alpha256)     (SkMulS16(value, alpha256) >> 8)
 
 
 
@@ -213,19 +213,9 @@ static inline int SkAlphaBlend255(S16CPU src, S16CPU dst, U8CPU alpha) {
     SkASSERT((int16_t)dst == dst);
     SkASSERT((uint8_t)alpha == alpha);
 
-    int prod = (src - dst) * alpha + 128;
+    int prod = SkMulS16(src - dst, alpha) + 128;
     prod = (prod + (prod >> 8)) >> 8;
     return dst + prod;
-}
-
-static inline U8CPU SkUnitScalarClampToByte(SkScalar x) {
-    if (x < 0) {
-        return 0;
-    }
-    if (x >= SK_Scalar1) {
-        return 255;
-    }
-    return SkScalarToFixed(x) >> 8;
 }
 
 #define SK_R16_BITS     5
@@ -296,16 +286,6 @@ static inline U16CPU SkAlphaMulRGB16(U16CPU c, unsigned scale) {
 
 
 
-static inline U16CPU SkBlend32_RGB16(uint32_t src_expand, uint16_t dst, unsigned scale) {
-    uint32_t dst_expand = SkExpand_rgb_16(dst) * scale;
-    return SkCompact_rgb_16((src_expand + dst_expand) >> 5);
-}
-
-
-
-
-
-
 static inline U16CPU SkBlendRGB16(U16CPU src, U16CPU dst, int srcScale) {
     SkASSERT((unsigned)srcScale <= 256);
 
@@ -326,8 +306,7 @@ static inline void SkBlendRGB16(const uint16_t src[], uint16_t dst[],
     do {
         uint32_t src32 = SkExpand_rgb_16(*src++);
         uint32_t dst32 = SkExpand_rgb_16(*dst);
-        *dst++ = static_cast<uint16_t>(
-            SkCompact_rgb_16(dst32 + ((src32 - dst32) * srcScale >> 5)));
+        *dst++ = SkCompact_rgb_16(dst32 + ((src32 - dst32) * srcScale >> 5));
     } while (--count > 0);
 }
 
@@ -366,30 +345,20 @@ static inline void SkBlendRGB16(const uint16_t src[], uint16_t dst[],
 #define SkB32Assert(b)  SkASSERT((unsigned)(b) <= SK_B32_MASK)
 
 #ifdef SK_DEBUG
-    #define SkPMColorAssert(color_value)                                    \
-        do {                                                                \
-            SkPMColor pm_color_value = (color_value);                       \
-            uint32_t alpha_color_value = SkGetPackedA32(pm_color_value);    \
-            SkA32Assert(alpha_color_value);                                 \
-            SkASSERT(SkGetPackedR32(pm_color_value) <= alpha_color_value);  \
-            SkASSERT(SkGetPackedG32(pm_color_value) <= alpha_color_value);  \
-            SkASSERT(SkGetPackedB32(pm_color_value) <= alpha_color_value);  \
-        } while (false)
+    static inline void SkPMColorAssert(SkPMColor c) {
+        unsigned a = SkGetPackedA32(c);
+        unsigned r = SkGetPackedR32(c);
+        unsigned g = SkGetPackedG32(c);
+        unsigned b = SkGetPackedB32(c);
+
+        SkA32Assert(a);
+        SkASSERT(r <= a);
+        SkASSERT(g <= a);
+        SkASSERT(b <= a);
+    }
 #else
     #define SkPMColorAssert(c)
 #endif
-
-static inline bool SkPMColorValid(SkPMColor c) {
-    auto a = SkGetPackedA32(c);
-    bool valid = a <= SK_A32_MASK
-              && SkGetPackedR32(c) <= a
-              && SkGetPackedG32(c) <= a
-              && SkGetPackedB32(c) <= a;
-    if (valid) {
-        SkPMColorAssert(c);  
-    }
-    return valid;
-}
 
 
 
@@ -818,7 +787,7 @@ static inline SkPMColor16 SkPackARGB4444(unsigned a, unsigned r,
                          (g << SK_G4444_SHIFT) | (b << SK_B4444_SHIFT));
 }
 
-static inline SkPMColor16 SkAlphaMulQ4(SkPMColor16 c, int scale) {
+static inline U16CPU SkAlphaMulQ4(U16CPU c, unsigned scale) {
     SkASSERT(scale <= 16);
 
     const unsigned mask = 0xF0F;    
@@ -828,9 +797,9 @@ static inline SkPMColor16 SkAlphaMulQ4(SkPMColor16 c, int scale) {
     unsigned ag = ((c >> 4) & mask) * scale;
     return (rb & mask) | (ag & ~mask);
 #else
-    unsigned expanded_c = (c & mask) | ((c & (mask << 4)) << 12);
-    unsigned scaled_c = (expanded_c * scale) >> 4;
-    return (scaled_c & mask) | ((scaled_c >> 12) & (mask << 4));
+    c = (c & mask) | ((c & (mask << 4)) << 12);
+    c = c * scale >> 4;
+    return (c & mask) | ((c >> 12) & (mask << 4));
 #endif
 }
 
@@ -842,6 +811,18 @@ static inline uint32_t SkExpand_4444(U16CPU c) {
 
     const unsigned mask = 0xF0F;    
     return (c & mask) | ((c & ~mask) << 12);
+}
+
+
+
+
+
+
+
+
+static inline U16CPU SkCompact_4444(uint32_t c) {
+    const unsigned mask = 0xF0F;    
+    return (c & mask) | ((c >> 12) & ~mask);
 }
 
 static inline uint16_t SkSrcOver4444To16(SkPMColor16 s, uint16_t d) {
@@ -873,6 +854,22 @@ static inline uint16_t SkBlend4444To16(SkPMColor16 src, uint16_t dst, int scale1
     SkASSERT((unsigned)scale16 <= 16);
 
     return SkSrcOver4444To16(SkAlphaMulQ4(src, scale16), dst);
+}
+
+static inline uint16_t SkBlend4444(SkPMColor16 src, SkPMColor16 dst, int scale16) {
+    SkASSERT((unsigned)scale16 <= 16);
+
+    uint32_t src32 = SkExpand_4444(src) * scale16;
+    
+#ifdef SK_DEBUG
+    {
+        unsigned srcA = SkGetPackedA4444(src) * scale16;
+        SkASSERT(srcA == (src32 & 0xFF));
+    }
+#endif
+    unsigned dstScale = SkAlpha255To256(255 - (src32 & 0xFF)) >> 4;
+    uint32_t dst32 = SkExpand_4444(dst) * dstScale;
+    return SkCompact_4444((src32 + dst32) >> 4);
 }
 
 static inline SkPMColor SkPixel4444ToPixel32(U16CPU c) {

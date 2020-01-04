@@ -43,7 +43,22 @@ public:
     
 
 
+    int preallocatedBuffersRemaining() const;
+
+    
+
+
+    int preallocatedBufferCount() const;
+
+    
+
+
     void putBack(size_t bytes);
+
+    
+
+
+    GrGpu* getGpu() { return fGpu; }
 
 protected:
     
@@ -65,11 +80,29 @@ protected:
 
 
 
+
+
+
+
+
+
+
      GrBufferAllocPool(GrGpu* gpu,
                        BufferType bufferType,
-                       size_t   bufferSize = 0);
+                       bool frequentResetHint,
+                       size_t   bufferSize = 0,
+                       int preallocBufferCnt = 0);
 
-     virtual ~GrBufferAllocPool();
+    virtual ~GrBufferAllocPool();
+
+    
+
+
+
+
+    size_t preallocatedBufferSize() const {
+        return fPreallocBuffers.count() ? fMinBlockSize : 0;
+    }
 
     
 
@@ -95,9 +128,26 @@ protected:
                     const GrGeometryBuffer** buffer,
                     size_t* offset);
 
-    GrGeometryBuffer* getBuffer(size_t size);
+    
+
+
+
+
+
+
+
+
+
+    int currentBufferItems(size_t itemSize) const;
+
+    GrGeometryBuffer* createBuffer(size_t size);
 
 private:
+
+    
+    friend class GrGpu;
+    void releaseGpuRef();
+
     struct BufferBlock {
         size_t              fBytesFree;
         GrGeometryBuffer*   fBuffer;
@@ -105,22 +155,27 @@ private:
 
     bool createBlock(size_t requestSize);
     void destroyBlock();
-    void deleteBlocks();
     void flushCpuData(const BufferBlock& block, size_t flushSize);
-    void* resetCpuData(size_t newSize);
 #ifdef SK_DEBUG
     void validate(bool unusedBlockAllowed = false) const;
 #endif
+
     size_t                          fBytesInUse;
 
     GrGpu*                          fGpu;
+    bool                            fGpuIsReffed;
+    bool                            fFrequentResetHint;
+    SkTDArray<GrGeometryBuffer*>    fPreallocBuffers;
     size_t                          fMinBlockSize;
     BufferType                      fBufferType;
 
     SkTArray<BufferBlock>           fBlocks;
-    void*                           fCpuData;
+    int                             fPreallocBuffersInUse;
+    
+    
+    int                             fPreallocBufferStartIdx;
+    SkAutoMalloc                    fCpuData;
     void*                           fBufferPtr;
-    size_t                          fGeometryBufferMapThreshold;
 };
 
 class GrVertexBuffer;
@@ -135,7 +190,19 @@ public:
 
 
 
-    GrVertexBufferAllocPool(GrGpu* gpu);
+
+
+
+
+
+
+
+
+
+    GrVertexBufferAllocPool(GrGpu* gpu,
+                            bool frequentResetHint,
+                            size_t bufferSize = 0,
+                            int preallocBufferCnt = 0);
 
     
 
@@ -163,6 +230,38 @@ public:
                     const GrVertexBuffer** buffer,
                     int* startVertex);
 
+    
+
+
+    bool appendVertices(size_t vertexSize,
+                        int vertexCount,
+                        const void* vertices,
+                        const GrVertexBuffer** buffer,
+                        int* startVertex);
+
+    
+
+
+
+
+
+
+
+
+
+    int currentBufferVertices(size_t vertexSize) const;
+
+    
+
+
+
+
+
+
+
+
+    int preallocatedBufferVertices(size_t vertexSize) const;
+
 private:
     typedef GrBufferAllocPool INHERITED;
 };
@@ -179,7 +278,19 @@ public:
 
 
 
-    GrIndexBufferAllocPool(GrGpu* gpu);
+
+
+
+
+
+
+
+
+
+    GrIndexBufferAllocPool(GrGpu* gpu,
+                           bool frequentResetHint,
+                           size_t bufferSize = 0,
+                           int preallocBufferCnt = 0);
 
     
 
@@ -202,6 +313,32 @@ public:
     void* makeSpace(int indexCount,
                     const GrIndexBuffer** buffer,
                     int* startIndex);
+
+    
+
+
+    bool appendIndices(int indexCount,
+                       const void* indices,
+                       const GrIndexBuffer** buffer,
+                       int* startIndex);
+
+    
+
+
+
+
+
+
+    int currentBufferIndices() const;
+
+    
+
+
+
+
+
+
+    int preallocatedBufferIndices() const;
 
 private:
     typedef GrBufferAllocPool INHERITED;

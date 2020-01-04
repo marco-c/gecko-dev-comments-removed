@@ -6,27 +6,153 @@
 
 
 
+
+
 #ifndef GrResourceCache_DEFINED
 #define GrResourceCache_DEFINED
 
-#include "GrGpuResource.h"
-#include "GrGpuResourceCacheAccess.h"
-#include "GrGpuResourcePriv.h"
-#include "GrResourceKey.h"
-#include "SkMessageBus.h"
-#include "SkRefCnt.h"
-#include "SkTArray.h"
-#include "SkTDPQueue.h"
-#include "SkTInternalLList.h"
+#include "GrConfig.h"
+#include "GrTypes.h"
 #include "SkTMultiMap.h"
+#include "GrBinHashKey.h"
+#include "SkMessageBus.h"
+#include "SkTInternalLList.h"
 
-class GrCaps;
-class SkString;
-class SkTraceMemoryDump;
+class GrGpuResource;
+class GrResourceCache;
+class GrResourceCacheEntry;
+
+class GrResourceKey {
+public:
+    static GrCacheID::Domain ScratchDomain() {
+        static const GrCacheID::Domain gDomain = GrCacheID::GenerateDomain();
+        return gDomain;
+    }
+
+    
+
+    typedef uint8_t ResourceType;
+
+    
+    typedef uint8_t ResourceFlags;
+
+    
+    static ResourceType GenerateResourceType();
+
+    
+    GrResourceKey(const GrCacheID& id, ResourceType type, ResourceFlags flags) {
+        this->init(id.getDomain(), id.getKey(), type, flags);
+    };
+
+    GrResourceKey(const GrResourceKey& src) {
+        fKey = src.fKey;
+    }
+
+    GrResourceKey() {
+        fKey.reset();
+    }
+
+    void reset(const GrCacheID& id, ResourceType type, ResourceFlags flags) {
+        this->init(id.getDomain(), id.getKey(), type, flags);
+    }
+
+    uint32_t getHash() const {
+        return fKey.getHash();
+    }
+
+    bool isScratch() const {
+        return ScratchDomain() ==
+            *reinterpret_cast<const GrCacheID::Domain*>(fKey.getData() +
+                                                        kCacheIDDomainOffset);
+    }
+
+    ResourceType getResourceType() const {
+        return *reinterpret_cast<const ResourceType*>(fKey.getData() +
+                                                      kResourceTypeOffset);
+    }
+
+    ResourceFlags getResourceFlags() const {
+        return *reinterpret_cast<const ResourceFlags*>(fKey.getData() +
+                                                       kResourceFlagsOffset);
+    }
+
+    bool operator==(const GrResourceKey& other) const { return fKey == other.fKey; }
+
+private:
+    enum {
+        kCacheIDKeyOffset = 0,
+        kCacheIDDomainOffset = kCacheIDKeyOffset + sizeof(GrCacheID::Key),
+        kResourceTypeOffset = kCacheIDDomainOffset + sizeof(GrCacheID::Domain),
+        kResourceFlagsOffset = kResourceTypeOffset + sizeof(ResourceType),
+        kPadOffset = kResourceFlagsOffset + sizeof(ResourceFlags),
+        kKeySize = SkAlign4(kPadOffset),
+        kPadSize = kKeySize - kPadOffset
+    };
+
+    void init(const GrCacheID::Domain domain,
+              const GrCacheID::Key& key,
+              ResourceType type,
+              ResourceFlags flags) {
+        union {
+            uint8_t  fKey8[kKeySize];
+            uint32_t fKey32[kKeySize / 4];
+        } keyData;
+
+        uint8_t* k = keyData.fKey8;
+        memcpy(k + kCacheIDKeyOffset, key.fData8, sizeof(GrCacheID::Key));
+        memcpy(k + kCacheIDDomainOffset, &domain, sizeof(GrCacheID::Domain));
+        memcpy(k + kResourceTypeOffset, &type, sizeof(ResourceType));
+        memcpy(k + kResourceFlagsOffset, &flags, sizeof(ResourceFlags));
+        memset(k + kPadOffset, 0, kPadSize);
+        fKey.setKeyData(keyData.fKey32);
+    }
+    GrBinHashKey<kKeySize> fKey;
+};
+
+
+struct GrResourceInvalidatedMessage {
+    GrResourceKey key;
+};
+
+
+
+class GrResourceCacheEntry {
+public:
+    GrGpuResource* resource() const { return fResource; }
+    const GrResourceKey& key() const { return fKey; }
+
+    static const GrResourceKey& GetKey(const GrResourceCacheEntry& e) { return e.key(); }
+    static uint32_t Hash(const GrResourceKey& key) { return key.getHash(); }
+#ifdef SK_DEBUG
+    void validate() const;
+#else
+    void validate() const {}
+#endif
+
+    
 
 
 
 
+    void didChangeResourceSize();
+
+private:
+    GrResourceCacheEntry(GrResourceCache* resourceCache,
+                         const GrResourceKey& key,
+                         GrGpuResource* resource);
+    ~GrResourceCacheEntry();
+
+    GrResourceCache* fResourceCache;
+    GrResourceKey    fKey;
+    GrGpuResource*   fResource;
+    size_t           fCachedSize;
+    bool             fIsExclusive;
+
+    
+    SK_DECLARE_INTERNAL_LLIST_INTERFACE(GrResourceCacheEntry);
+
+    friend class GrResourceCache;
+};
 
 
 
@@ -49,22 +175,18 @@ class SkTraceMemoryDump;
 
 class GrResourceCache {
 public:
-    GrResourceCache(const GrCaps* caps);
+    GrResourceCache(int maxCount, size_t maxBytes);
     ~GrResourceCache();
 
     
-    static const int    kDefaultMaxCount            = 2 * (1 << 12);
-    
-    static const size_t kDefaultMaxSize             = 96 * (1 << 20);
-    
-    
-    
-    
-    static const int    kDefaultMaxUnusedFlushes    = 1024;
 
-    
-    class ResourceAccess;
-    ResourceAccess resourceAccess();
+
+
+
+
+
+
+    void getLimits(int* maxResources, size_t* maxBytes) const;
 
     
 
@@ -72,369 +194,210 @@ public:
 
 
 
-    void setLimits(int count, size_t bytes, int maxUnusedFlushes = kDefaultMaxUnusedFlushes);
+
+
+
+    void setLimits(int maxResources, size_t maxResourceBytes);
 
     
 
 
-    int getResourceCount() const {
-        return fPurgeableQueue.count() + fNonpurgeableResources.count();
+
+
+
+    typedef bool (*PFOverbudgetCB)(void* data);
+
+    
+
+
+
+
+
+    void setOverbudgetCallback(PFOverbudgetCB overbudgetCB, void* data) {
+        fOverbudgetCB = overbudgetCB;
+        fOverbudgetData = data;
     }
 
     
 
 
-    int getBudgetedResourceCount() const { return fBudgetedCount; }
+    size_t getCachedResourceBytes() const { return fEntryBytes; }
 
     
 
 
-    size_t getResourceBytes() const { return fBytes; }
+    int getCachedResourceCount() const { return fEntryCount; }
 
     
-
-
-    size_t getBudgetedResourceBytes() const { return fBudgetedBytes; }
-
     
-
-
-    int getMaxResourceCount() const { return fMaxCount; }
-
-    
-
-
-    size_t getMaxResourceBytes() const { return fMaxBytes; }
-
-    
-
-
-
-    void abandonAll();
-
-    
-
-
-
-    void releaseAll();
-
-    enum {
-        
-        kPreferNoPendingIO_ScratchFlag = 0x1,
-        
-        kRequireNoPendingIO_ScratchFlag = 0x2,
+    enum OwnershipFlags {
+        kNoOtherOwners_OwnershipFlag = 0x1, 
+        kHide_OwnershipFlag = 0x2  
     };
 
     
 
 
-    GrGpuResource* findAndRefScratchResource(const GrScratchKey& scratchKey,
-                                             size_t resourceSize,
-                                             uint32_t flags);
-    
-#ifdef SK_DEBUG
-    
-    int countScratchEntriesForKey(const GrScratchKey& scratchKey) const {
-        return fScratchMap.countForKey(scratchKey);
-    }
-#endif
+
+
+
+
+
+
+
+
+    GrGpuResource* find(const GrResourceKey& key,
+                        uint32_t ownershipFlags = 0);
 
     
 
 
-    GrGpuResource* findAndRefUniqueResource(const GrUniqueKey& key) {
-        GrGpuResource* resource = fUniqueHash.find(key);
-        if (resource) {
-            this->refAndMakeResourceMRU(resource);
-        }
-        return resource;
-    }
+
+
+
+
+
+
+
+
+    void addResource(const GrResourceKey& key,
+                     GrGpuResource* resource,
+                     uint32_t ownershipFlags = 0);
 
     
 
 
-    bool hasUniqueKey(const GrUniqueKey& key) const {
-        return SkToBool(fUniqueHash.find(key));
-    }
+
+    bool hasKey(const GrResourceKey& key) const { return NULL != fCache.find(key); }
 
     
 
-    void purgeAsNeeded();
+
+
+
+
+    void makeExclusive(GrResourceCacheEntry* entry);
 
     
+
+
+
+    void makeNonExclusive(GrResourceCacheEntry* entry);
+
+    
+
+
+    void didIncreaseResourceSize(const GrResourceCacheEntry*, size_t amountInc);
+    void didDecreaseResourceSize(const GrResourceCacheEntry*, size_t amountDec);
+
+    
+
+
+    void deleteResource(GrResourceCacheEntry* entry);
+
+    
+
+
     void purgeAllUnlocked();
 
     
 
 
 
-    typedef void (*PFOverBudgetCB)(void* data);
-
-    
 
 
 
 
-    void setOverBudgetCallback(PFOverBudgetCB overBudgetCB, void* data) {
-        fOverBudgetCB = overBudgetCB;
-        fOverBudgetData = data;
-    }
 
-    void notifyFlushOccurred();
 
-#if GR_CACHE_STATS
-    struct Stats {
-        int fTotal;
-        int fNumPurgeable;
-        int fNumNonPurgeable;
 
-        int fScratch;
-        int fExternal;
-        int fBorrowed;
-        int fAdopted;
-        size_t fUnbudgetedSize;
-
-        Stats() { this->reset(); }
-
-        void reset() {
-            fTotal = 0;
-            fNumPurgeable = 0;
-            fNumNonPurgeable = 0;
-            fScratch = 0;
-            fExternal = 0;
-            fBorrowed = 0;
-            fAdopted = 0;
-            fUnbudgetedSize = 0;
-        }
-
-        void update(GrGpuResource* resource) {
-            if (resource->cacheAccess().isScratch()) {
-                ++fScratch;
-            }
-            if (resource->cacheAccess().isExternal()) {
-                ++fExternal;
-            }
-            if (resource->cacheAccess().isBorrowed()) {
-                ++fBorrowed;
-            }
-            if (resource->cacheAccess().isAdopted()) {
-                ++fAdopted;
-            }
-            if (!resource->resourcePriv().isBudgeted()) {
-                fUnbudgetedSize += resource->gpuMemorySize();
-            }
-        }
-    };
-
-    void getStats(Stats*) const;
-
-    void dumpStats(SkString*) const;
-
-    void dumpStatsKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* value) const;
-#endif
-
-    
-    void changeTimestamp(uint32_t newTimestamp);
-
-    
-    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
-
-private:
-    
-    
-    
-    void insertResource(GrGpuResource*);
-    void removeResource(GrGpuResource*);
-    void notifyCntReachedZero(GrGpuResource*, uint32_t flags);
-    void didChangeGpuMemorySize(const GrGpuResource*, size_t oldSize);
-    void changeUniqueKey(GrGpuResource*, const GrUniqueKey&);
-    void removeUniqueKey(GrGpuResource*);
-    void willRemoveScratchKey(const GrGpuResource*);
-    void didChangeBudgetStatus(GrGpuResource*);
-    void refAndMakeResourceMRU(GrGpuResource*);
-    
-
-    void resetFlushTimestamps();
-    void processInvalidUniqueKeys(const SkTArray<GrUniqueKeyInvalidatedMessage>&);
-    void addToNonpurgeableArray(GrGpuResource*);
-    void removeFromNonpurgeableArray(GrGpuResource*);
-    bool overBudget() const { return fBudgetedBytes > fMaxBytes || fBudgetedCount > fMaxCount; }
-
-    bool wouldFit(size_t bytes) {
-        return fBudgetedBytes+bytes <= fMaxBytes && fBudgetedCount+1 <= fMaxCount;    
-    }
-
-    uint32_t getNextTimestamp();
+    void purgeAsNeeded(int extraCount = 0, size_t extraBytes = 0);
 
 #ifdef SK_DEBUG
-    bool isInCache(const GrGpuResource* r) const;
     void validate() const;
 #else
     void validate() const {}
 #endif
 
-    class AutoValidate;
-
-    class AvailableForScratchUse;
-
-    struct ScratchMapTraits {
-        static const GrScratchKey& GetKey(const GrGpuResource& r) {
-            return r.resourcePriv().getScratchKey();
-        }
-
-        static uint32_t Hash(const GrScratchKey& key) { return key.hash(); }
-    };
-    typedef SkTMultiMap<GrGpuResource, GrScratchKey, ScratchMapTraits> ScratchMap;
-
-    struct UniqueHashTraits {
-        static const GrUniqueKey& GetKey(const GrGpuResource& r) { return r.getUniqueKey(); }
-
-        static uint32_t Hash(const GrUniqueKey& key) { return key.hash(); }
-    };
-    typedef SkTDynamicHash<GrGpuResource, GrUniqueKey, UniqueHashTraits> UniqueHash;
-
-    static bool CompareTimestamp(GrGpuResource* const& a, GrGpuResource* const& b) {
-        return a->cacheAccess().timestamp() < b->cacheAccess().timestamp();
-    }
-
-    static int* AccessResourceIndex(GrGpuResource* const& res) {
-        return res->cacheAccess().accessCacheIndex();
-    }
-
-    typedef SkMessageBus<GrUniqueKeyInvalidatedMessage>::Inbox InvalidUniqueKeyInbox;
-    typedef SkTDPQueue<GrGpuResource*, CompareTimestamp, AccessResourceIndex> PurgeableQueue;
-    typedef SkTDArray<GrGpuResource*> ResourceArray;
-
-    
-    
-    
-    uint32_t                            fTimestamp;
-    PurgeableQueue                      fPurgeableQueue;
-    ResourceArray                       fNonpurgeableResources;
-
-    
-    ScratchMap                          fScratchMap;
-    
-    UniqueHash                          fUniqueHash;
-
-    
-    int                                 fMaxCount;
-    size_t                              fMaxBytes;
-    int                                 fMaxUnusedFlushes;
-
 #if GR_CACHE_STATS
-    int                                 fHighWaterCount;
-    size_t                              fHighWaterBytes;
-    int                                 fBudgetedHighWaterCount;
-    size_t                              fBudgetedHighWaterBytes;
+    void printStats();
+#endif
+
+private:
+    enum BudgetBehaviors {
+        kAccountFor_BudgetBehavior,
+        kIgnore_BudgetBehavior
+    };
+
+    void internalDetach(GrResourceCacheEntry*, BudgetBehaviors behavior = kAccountFor_BudgetBehavior);
+    void attachToHead(GrResourceCacheEntry*, BudgetBehaviors behavior = kAccountFor_BudgetBehavior);
+
+    void removeInvalidResource(GrResourceCacheEntry* entry);
+
+    SkTMultiMap<GrResourceCacheEntry, GrResourceKey> fCache;
+
+    
+    typedef SkTInternalLList<GrResourceCacheEntry> EntryList;
+    EntryList      fList;
+
+#ifdef SK_DEBUG
+    
+    EntryList      fExclusiveList;
 #endif
 
     
-    SkDEBUGCODE(int                     fCount;)
-    size_t                              fBytes;
+    int            fMaxCount;
+    size_t         fMaxBytes;
 
     
-    int                                 fBudgetedCount;
-    size_t                              fBudgetedBytes;
+#if GR_CACHE_STATS
+    int            fHighWaterEntryCount;
+    size_t         fHighWaterEntryBytes;
+    int            fHighWaterClientDetachedCount;
+    size_t         fHighWaterClientDetachedBytes;
+#endif
 
-    PFOverBudgetCB                      fOverBudgetCB;
-    void*                               fOverBudgetData;
+    int            fEntryCount;
+    size_t         fEntryBytes;
+    int            fClientDetachedCount;
+    size_t         fClientDetachedBytes;
 
     
-    
-    uint32_t*                           fFlushTimestamps;
-    int                                 fLastFlushTimestampIndex;
+    bool           fPurging;
 
-    InvalidUniqueKeyInbox               fInvalidUniqueKeyInbox;
+    PFOverbudgetCB fOverbudgetCB;
+    void*          fOverbudgetData;
+
+    void internalPurge(int extraCount, size_t extraBytes);
 
     
-    
-    SkDEBUGCODE(GrGpuResource*          fNewlyPurgeableResourceForValidation;)
+    SkMessageBus<GrResourceInvalidatedMessage>::Inbox fInvalidationInbox;
+    void purgeInvalidated();
 
-    bool                                fPreferVRAMUseOverFlushes;
+#ifdef SK_DEBUG
+    static size_t countBytes(const SkTInternalLList<GrResourceCacheEntry>& list);
+#endif
 };
 
-class GrResourceCache::ResourceAccess {
-private:
-    ResourceAccess(GrResourceCache* cache) : fCache(cache) { }
-    ResourceAccess(const ResourceAccess& that) : fCache(that.fCache) { }
-    ResourceAccess& operator=(const ResourceAccess&); 
-
-    
 
 
-    void insertResource(GrGpuResource* resource) { fCache->insertResource(resource); }
-
-    
-
-
-    void removeResource(GrGpuResource* resource) { fCache->removeResource(resource); }
-
-    
-
-
-
-    enum RefNotificationFlags {
-        
-        kAllCntsReachedZero_RefNotificationFlag = 0x1,
-        
-        kRefCntReachedZero_RefNotificationFlag  = 0x2,
+#ifdef SK_DEBUG
+    class GrAutoResourceCacheValidate {
+    public:
+        GrAutoResourceCacheValidate(GrResourceCache* cache) : fCache(cache) {
+            cache->validate();
+        }
+        ~GrAutoResourceCacheValidate() {
+            fCache->validate();
+        }
+    private:
+        GrResourceCache* fCache;
     };
-    
-
-
-
-
-
-
-
-    void notifyCntReachedZero(GrGpuResource* resource, uint32_t flags) {
-        fCache->notifyCntReachedZero(resource, flags);
-    }
-
-    
-
-
-    void didChangeGpuMemorySize(const GrGpuResource* resource, size_t oldSize) {
-        fCache->didChangeGpuMemorySize(resource, oldSize);
-    }
-
-    
-
-
-    void changeUniqueKey(GrGpuResource* resource, const GrUniqueKey& newKey) {
-         fCache->changeUniqueKey(resource, newKey);
-    }
-
-    
-
-
-    void removeUniqueKey(GrGpuResource* resource) { fCache->removeUniqueKey(resource); }
-
-    
-
-
-    void willRemoveScratchKey(const GrGpuResource* resource) {
-        fCache->willRemoveScratchKey(resource);
-    }
-
-    
-
-
-    void didChangeBudgetStatus(GrGpuResource* resource) { fCache->didChangeBudgetStatus(resource); }
-
-    
-    const ResourceAccess* operator&() const;
-    ResourceAccess* operator&();
-
-    GrResourceCache* fCache;
-
-    friend class GrGpuResource; 
-    friend class GrResourceCache; 
-};
-
-inline GrResourceCache::ResourceAccess GrResourceCache::resourceAccess() {
-    return ResourceAccess(this);
-}
+#else
+    class GrAutoResourceCacheValidate {
+    public:
+        GrAutoResourceCacheValidate(GrResourceCache*) {}
+    };
+#endif
 
 #endif

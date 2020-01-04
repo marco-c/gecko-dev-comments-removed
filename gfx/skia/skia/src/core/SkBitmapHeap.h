@@ -8,12 +8,12 @@
 #ifndef SkBitmapHeap_DEFINED
 #define SkBitmapHeap_DEFINED
 
-#include "SkAtomics.h"
 #include "SkBitmap.h"
-#include "SkPoint.h"
+#include "SkFlattenable.h"
 #include "SkRefCnt.h"
 #include "SkTDArray.h"
-#include "SkTypes.h"
+#include "SkThread.h"
+#include "SkTRefArray.h"
 
 
 
@@ -53,7 +53,7 @@ private:
 
 class SkBitmapHeapReader : public SkRefCnt {
 public:
-
+    SK_DECLARE_INST_COUNT(SkBitmapHeapReader)
 
     SkBitmapHeapReader() : INHERITED() {}
     virtual SkBitmap* getBitmap(int32_t slot) const = 0;
@@ -70,7 +70,7 @@ class SkBitmapHeap : public SkBitmapHeapReader {
 public:
     class ExternalStorage : public SkRefCnt {
      public:
-
+        SK_DECLARE_INST_COUNT(ExternalStorage)
 
         virtual bool insert(const SkBitmap& bitmap, int32_t slot) = 0;
 
@@ -118,13 +118,21 @@ public:
 
 
 
-    SkBitmap* getBitmap(int32_t slot) const override {
-        SkASSERT(fExternalStorage == nullptr);
+
+    SkTRefArray<SkBitmap>* extractBitmaps() const;
+
+    
+
+
+
+
+    virtual SkBitmap* getBitmap(int32_t slot) const SK_OVERRIDE {
+        SkASSERT(fExternalStorage == NULL);
         SkBitmapHeapEntry* entry = getEntry(slot);
         if (entry) {
             return &entry->fBitmap;
         }
-        return nullptr;
+        return NULL;
     }
 
     
@@ -132,8 +140,8 @@ public:
 
 
 
-    void releaseRef(int32_t slot) override {
-        SkASSERT(fExternalStorage == nullptr);
+    virtual void releaseRef(int32_t slot) SK_OVERRIDE {
+        SkASSERT(fExternalStorage == NULL);
         if (fOwnerCount != IGNORE_OWNERS) {
             SkBitmapHeapEntry* entry = getEntry(slot);
             if (entry) {
@@ -162,8 +170,8 @@ public:
 
     SkBitmapHeapEntry* getEntry(int32_t slot) const {
         SkASSERT(slot <= fStorage.count());
-        if (fExternalStorage != nullptr) {
-            return nullptr;
+        if (fExternalStorage != NULL) {
+            return NULL;
         }
         return fStorage[slot];
     }
@@ -172,7 +180,7 @@ public:
 
 
     int count() const {
-        SkASSERT(fExternalStorage != nullptr ||
+        SkASSERT(fExternalStorage != NULL ||
                  fStorage.count() - fUnusedSlots.count() == fLookupTable.count());
         return fLookupTable.count();
     }
@@ -215,8 +223,8 @@ private:
         , fPixelOrigin(bm.pixelRefOrigin())
         , fWidth(bm.width())
         , fHeight(bm.height())
-        , fMoreRecentlyUsed(nullptr)
-        , fLessRecentlyUsed(nullptr){}
+        , fMoreRecentlyUsed(NULL)
+        , fLessRecentlyUsed(NULL){}
 
         const uint32_t fGenerationId; 
         const SkIPoint fPixelOrigin;

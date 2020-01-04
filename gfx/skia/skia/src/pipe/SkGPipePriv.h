@@ -39,17 +39,15 @@ enum DrawOps {
     kClipRect_DrawOp,
     kClipRRect_DrawOp,
     kConcat_DrawOp,
-    kDrawAtlas_DrawOp,
     kDrawBitmap_DrawOp,
+    kDrawBitmapMatrix_DrawOp,
     kDrawBitmapNine_DrawOp,
-    kDrawBitmapRect_DrawOp,
+    kDrawBitmapRectToRect_DrawOp,
+    kDrawClear_DrawOp,
+    kDrawData_DrawOp,
     kDrawDRRect_DrawOp,
-    kDrawImage_DrawOp,
-    kDrawImageRect_DrawOp,
-    kDrawImageNine_DrawOp,
     kDrawOval_DrawOp,
     kDrawPaint_DrawOp,
-    kDrawPatch_DrawOp,
     kDrawPath_DrawOp,
     kDrawPicture_DrawOp,
     kDrawPoints_DrawOp,
@@ -59,7 +57,6 @@ enum DrawOps {
     kDrawRRect_DrawOp,
     kDrawSprite_DrawOp,
     kDrawText_DrawOp,
-    kDrawTextBlob_DrawOp,
     kDrawTextOnPath_DrawOp,
     kDrawVertices_DrawOp,
     kRestore_DrawOp,
@@ -83,7 +80,6 @@ enum DrawOps {
     
     kReportFlags_DrawOp,
     kShareBitmapHeap_DrawOp,
-    kShareImageHeap_DrawOp,
     kDone_DrawOp,
 };
 
@@ -138,6 +134,9 @@ enum {
     kSaveLayer_HasPaint_DrawOpFlag = 1 << 1,
 };
 enum {
+    kClear_HasColor_DrawOpFlag  = 1 << 0
+};
+enum {
     kDrawTextOnPath_HasMatrix_DrawOpFlag = 1 << 0
 };
 enum {
@@ -146,12 +145,6 @@ enum {
     kDrawVertices_HasIndices_DrawOpFlag  = 1 << 2,
     kDrawVertices_HasXfermode_DrawOpFlag = 1 << 3,
 };
-enum {
-    kDrawAtlas_HasPaint_DrawOpFlag      = 1 << 0,
-    kDrawAtlas_HasColors_DrawOpFlag     = 1 << 1,
-    kDrawAtlas_HasCull_DrawOpFlag       = 1 << 2,
-};
-
 enum {
     kDrawBitmap_HasPaint_DrawOpFlag   = 1 << 0,
     
@@ -172,14 +165,14 @@ public:
         : fBitmap(bitmap)
         , fGenID(genID)
         , fBytesAllocated(0)
-        , fMoreRecentlyUsed(nullptr)
-        , fLessRecentlyUsed(nullptr)
+        , fMoreRecentlyUsed(NULL)
+        , fLessRecentlyUsed(NULL)
         , fToBeDrawnCount(toBeDrawnCount)
     {}
 
     ~BitmapInfo() {
         SkASSERT(0 == fToBeDrawnCount);
-        delete fBitmap;
+        SkDELETE(fBitmap);
     }
 
     void addDraws(int drawsToAdd) {
@@ -223,25 +216,6 @@ static inline bool shouldFlattenBitmaps(uint32_t flags) {
     return SkToBool(flags & SkGPipeWriter::kCrossProcess_Flag
             && !(flags & SkGPipeWriter::kSharedAddressSpace_Flag));
 }
-
-class SkImageHeap : public SkRefCnt {
-public:
-    SkImageHeap();
-    virtual ~SkImageHeap();
-
-    size_t bytesInCache() const { return fBytesInCache; }
-    void reset();
-    
-    const SkImage* get(int32_t slot) const;
-    
-    int32_t find(const SkImage*) const;
-    
-    int32_t insert(const SkImage*);
-
-private:
-    SkTDArray<const SkImage*> fArray;
-    size_t fBytesInCache;
-};
 
 
 

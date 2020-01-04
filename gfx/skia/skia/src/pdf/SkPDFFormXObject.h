@@ -14,11 +14,12 @@
 #include "SkPDFTypes.h"
 #include "SkRect.h"
 #include "SkRefCnt.h"
+#include "SkPDFResourceDict.h"
 #include "SkString.h"
 
 class SkMatrix;
 class SkPDFDevice;
-class SkPDFObjNumMap;
+class SkPDFCatalog;
 
 
 
@@ -30,7 +31,7 @@ class SkPDFObjNumMap;
 
 
 
-class SkPDFFormXObject final : public SkPDFStream {
+class SkPDFFormXObject : public SkPDFStream {
 public:
     
 
@@ -43,12 +44,18 @@ public:
 
     explicit SkPDFFormXObject(SkStream* content,
                               SkRect bbox,
-                              SkPDFDict* resourceDict);
+                              SkPDFResourceDict* resourceDict);
     virtual ~SkPDFFormXObject();
+
+    
+    virtual void getResources(const SkTSet<SkPDFObject*>& knownResourceObjects,
+                              SkTSet<SkPDFObject*>* newResourceObjects);
 
 private:
     void init(const char* colorSpace,
               SkPDFDict* resourceDict, SkPDFArray* bbox);
+
+    SkTSet<SkPDFObject*> fResources;
 };
 
 #endif

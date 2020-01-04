@@ -5,13 +5,13 @@
 
 
 
+
+
 #ifndef SkRect_DEFINED
 #define SkRect_DEFINED
 
 #include "SkPoint.h"
 #include "SkSize.h"
-
-struct SkRect;
 
 
 
@@ -76,8 +76,6 @@ struct SK_API SkIRect {
 
 
     int height() const { return fBottom - fTop; }
-
-    SkISize size() const { return SkISize::Make(this->width(), this->height()); }
 
     
 
@@ -162,22 +160,15 @@ struct SK_API SkIRect {
     
 
 
-    SkIRect makeOffset(int32_t dx, int32_t dy) const {
+    SkIRect makeOffset(int dx, int dy) const {
         return MakeLTRB(fLeft + dx, fTop + dy, fRight + dx, fBottom + dy);
     }
 
     
 
 
-    SkIRect makeInset(int32_t dx, int32_t dy) const {
+    SkIRect makeInset(int dx, int dy) const {
         return MakeLTRB(fLeft + dx, fTop + dy, fRight - dx, fBottom - dy);
-    }
-
-    
-
-
-    SkIRect makeOutset(int32_t dx, int32_t dy) const {
-        return MakeLTRB(fLeft - dx, fTop - dy, fRight + dx, fBottom + dy);
     }
 
     
@@ -255,10 +246,6 @@ struct SK_API SkIRect {
 
     
 
-    bool contains(const SkRect& r) const;
-
-    
-
 
 
 
@@ -280,7 +267,8 @@ struct SK_API SkIRect {
 
 
 
-    bool SK_WARN_UNUSED_RESULT intersect(const SkIRect& r) {
+    bool intersect(const SkIRect& r) {
+        SkASSERT(&r);
         return this->intersect(r.fLeft, r.fTop, r.fRight, r.fBottom);
     }
 
@@ -288,7 +276,7 @@ struct SK_API SkIRect {
 
 
 
-    bool SK_WARN_UNUSED_RESULT intersect(const SkIRect& a, const SkIRect& b) {
+    bool intersect(const SkIRect& a, const SkIRect& b) {
 
         if (!a.isEmpty() && !b.isEmpty() &&
                 a.fLeft < b.fRight && b.fLeft < a.fRight &&
@@ -308,7 +296,7 @@ struct SK_API SkIRect {
 
 
 
-    bool SK_WARN_UNUSED_RESULT intersectNoEmptyCheck(const SkIRect& a, const SkIRect& b) {
+    bool intersectNoEmptyCheck(const SkIRect& a, const SkIRect& b) {
         SkASSERT(!a.isEmpty() && !b.isEmpty());
 
         if (a.fLeft < b.fRight && b.fLeft < a.fRight &&
@@ -327,8 +315,7 @@ struct SK_API SkIRect {
 
 
 
-    bool SK_WARN_UNUSED_RESULT intersect(int32_t left, int32_t top, 
-                                         int32_t right, int32_t bottom) {
+    bool intersect(int32_t left, int32_t top, int32_t right, int32_t bottom) {
         if (left < right && top < bottom && !this->isEmpty() &&
                 fLeft < right && left < fRight && fTop < bottom && top < fBottom) {
             if (fLeft < left) fLeft = left;
@@ -344,8 +331,8 @@ struct SK_API SkIRect {
 
     static bool Intersects(const SkIRect& a, const SkIRect& b) {
         return  !a.isEmpty() && !b.isEmpty() &&              
-                a.fLeft < b.fRight && b.fLeft < a.fRight &&
-                a.fTop < b.fBottom && b.fTop < a.fBottom;
+        a.fLeft < b.fRight && b.fLeft < a.fRight &&
+        a.fTop < b.fBottom && b.fTop < a.fBottom;
     }
 
     
@@ -405,12 +392,6 @@ struct SK_API SkRect {
     static SkRect SK_WARN_UNUSED_RESULT MakeWH(SkScalar w, SkScalar h) {
         SkRect r;
         r.set(0, 0, w, h);
-        return r;
-    }
-
-    static SkRect SK_WARN_UNUSED_RESULT MakeIWH(int w, int h) {
-        SkRect r;
-        r.set(0, 0, SkIntToScalar(w), SkIntToScalar(h));
         return r;
     }
 
@@ -614,19 +595,12 @@ struct SK_API SkRect {
     SkRect makeOffset(SkScalar dx, SkScalar dy) const {
         return MakeLTRB(fLeft + dx, fTop + dy, fRight + dx, fBottom + dy);
     }
-    
+
     
 
 
     SkRect makeInset(SkScalar dx, SkScalar dy) const {
         return MakeLTRB(fLeft + dx, fTop + dy, fRight - dx, fBottom - dy);
-    }
-
-    
-
-
-    SkRect makeOutset(SkScalar dx, SkScalar dy) const {
-        return MakeLTRB(fLeft - dx, fTop - dy, fRight + dx, fBottom + dy);
     }
 
     
@@ -676,54 +650,42 @@ struct SK_API SkRect {
 
 
 
-    bool SK_WARN_UNUSED_RESULT intersect(const SkRect& r);
+    bool intersect(const SkRect& r);
+    bool intersect2(const SkRect& r);
 
     
 
 
 
 
-    bool SK_WARN_UNUSED_RESULT intersect(SkScalar left, SkScalar top, 
-                                         SkScalar right, SkScalar bottom);
+    bool intersect(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom);
 
-    
-
-
-
-
-    bool SK_WARN_UNUSED_RESULT intersect(const SkRect& a, const SkRect& b);
-
-
-private:
-    static bool Intersects(SkScalar al, SkScalar at, SkScalar ar, SkScalar ab,
-                           SkScalar bl, SkScalar bt, SkScalar br, SkScalar bb) {
-        SkScalar L = SkMaxScalar(al, bl);
-        SkScalar R = SkMinScalar(ar, br);
-        SkScalar T = SkMaxScalar(at, bt);
-        SkScalar B = SkMinScalar(ab, bb);
-        return L < R && T < B;
-    }
-
-public:
     
 
 
 
     bool intersects(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom) const {
-        return Intersects(fLeft, fTop, fRight, fBottom, left, top, right, bottom);
-    }
-
-    bool intersects(const SkRect& r) const {
-        return Intersects(fLeft, fTop, fRight, fBottom,
-                          r.fLeft, r.fTop, r.fRight, r.fBottom);
+        return 
+               left < right && top < bottom &&
+               fLeft < fRight && fTop < fBottom &&
+               
+               fLeft < right && left < fRight &&
+               fTop < bottom && top < fBottom;
     }
 
     
 
 
+
+    bool intersect(const SkRect& a, const SkRect& b);
+
+    
+
+
     static bool Intersects(const SkRect& a, const SkRect& b) {
-        return Intersects(a.fLeft, a.fTop, a.fRight, a.fBottom,
-                          b.fLeft, b.fTop, b.fRight, b.fBottom);
+        return  !a.isEmpty() && !b.isEmpty() &&
+                a.fLeft < b.fRight && b.fLeft < a.fRight &&
+                a.fTop < b.fBottom && b.fTop < a.fBottom;
     }
 
     
@@ -740,27 +702,8 @@ public:
     void join(const SkRect& r) {
         this->join(r.fLeft, r.fTop, r.fRight, r.fBottom);
     }
-
-    void joinNonEmptyArg(const SkRect& r) {
-        SkASSERT(!r.isEmpty());
-        
-        if (fLeft >= fRight || fTop >= fBottom) {
-            *this = r;
-        } else {
-            this->joinPossiblyEmptyRect(r);
-        }
-    }
-
     
-
-
-
-    void joinPossiblyEmptyRect(const SkRect& r) {
-        fLeft   = SkMinScalar(fLeft, r.left());
-        fTop    = SkMinScalar(fTop, r.top());
-        fRight  = SkMaxScalar(fRight, r.right());
-        fBottom = SkMaxScalar(fBottom, r.bottom());
-    }
+    void growToInclude(const SkRect& r) { this->join(r); }
 
     
 
@@ -807,16 +750,6 @@ public:
     
 
 
-    bool contains(const SkIRect& r) const {
-        
-        return  !r.isEmpty() && !this->isEmpty() &&
-                fLeft <= SkIntToScalar(r.fLeft) && fTop <= SkIntToScalar(r.fTop) &&
-                fRight >= SkIntToScalar(r.fRight) && fBottom >= SkIntToScalar(r.fBottom);
-    }
-
-    
-
-
 
     void round(SkIRect* dst) const {
         SkASSERT(dst);
@@ -857,12 +790,11 @@ public:
 
 
 
-
-    void roundOut(SkRect* dst) const {
-        dst->set(SkScalarFloorToScalar(fLeft),
-                 SkScalarFloorToScalar(fTop),
-                 SkScalarCeilToScalar(fRight),
-                 SkScalarCeilToScalar(fBottom));
+    void roundOut() {
+        this->set(SkScalarFloorToScalar(fLeft),
+                  SkScalarFloorToScalar(fTop),
+                  SkScalarCeilToScalar(fRight),
+                  SkScalarCeilToScalar(fBottom));
     }
 
     
@@ -878,49 +810,38 @@ public:
     }
 
     
+
+
+
     SkIRect round() const {
         SkIRect ir;
         this->round(&ir);
         return ir;
     }
-    
-    
-    SkIRect roundOut() const {
-        SkIRect ir;
-        this->roundOut(&ir);
-        return ir;
-    }
-    
+
     
 
 
 
 
 
-    void sort() {
-        if (fLeft > fRight) {
-            SkTSwap<SkScalar>(fLeft, fRight);
-        }
-
-        if (fTop > fBottom) {
-            SkTSwap<SkScalar>(fTop, fBottom);
-        }
-    }
+    void sort();
 
     
 
 
     const SkScalar* asScalars() const { return &fLeft; }
 
-    void dump(bool asHex) const;
-    void dump() const { this->dump(false); }
-    void dumpHex() const { this->dump(true); }
-};
+#ifdef SK_DEVELOPER
+    
 
-inline bool SkIRect::contains(const SkRect& r) const {
-    return  !r.isEmpty() && !this->isEmpty() &&     
-            (SkScalar)fLeft <= r.fLeft && (SkScalar)fTop <= r.fTop &&
-            (SkScalar)fRight >= r.fRight && (SkScalar)fBottom >= r.fBottom;
-}
+
+
+    void dump() const {
+        SkDebugf("{ l: %f, t: %f, r: %f, b: %f }", fLeft, fTop, fRight, fBottom);
+    }
+#endif
+
+};
 
 #endif

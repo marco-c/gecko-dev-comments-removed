@@ -111,7 +111,7 @@ void* SkValidatingReadBuffer::readEncodedString(size_t* length, SkPaint::TextEnc
     this->validate(encodingType == encoding);
     *length = this->readInt();
     const void* ptr = this->skip(SkAlign4(*length));
-    void* data = nullptr;
+    void* data = NULL;
     if (!fError) {
         data = sk_malloc_throw(*length);
         memcpy(data, ptr, *length);
@@ -175,9 +175,7 @@ bool SkValidatingReadBuffer::readArray(void* value, size_t size, size_t elementS
     const uint32_t count = this->getArrayCount();
     this->validate(size == count);
     (void)this->skip(sizeof(uint32_t)); 
-    const uint64_t byteLength64 = sk_64_mul(count, elementSize);
     const size_t byteLength = count * elementSize;
-    this->validate(byteLength == byteLength64);
     const void* ptr = this->skip(SkAlign4(byteLength));
     if (!fError) {
         memcpy(value, ptr, byteLength);
@@ -213,9 +211,8 @@ uint32_t SkValidatingReadBuffer::getArrayCount() {
 }
 
 SkTypeface* SkValidatingReadBuffer::readTypeface() {
-    SkASSERT(false);
     
-    return nullptr;
+    return NULL;
 }
 
 bool SkValidatingReadBuffer::validateAvailable(size_t size) {
@@ -226,24 +223,24 @@ SkFlattenable* SkValidatingReadBuffer::readFlattenable(SkFlattenable::Type type)
     SkString name;
     this->readString(&name);
     if (fError) {
-        return nullptr;
+        return NULL;
     }
 
     
     const char* cname = name.c_str();
     SkFlattenable::Type baseType;
     if (!SkFlattenable::NameToType(cname, &baseType) || (baseType != type)) {
-        return nullptr;
+        return NULL;
     }
 
     SkFlattenable::Factory factory = SkFlattenable::NameToFactory(cname);
-    if (nullptr == factory) {
-        return nullptr; 
+    if (NULL == factory) {
+        return NULL; 
     }
 
     
     
-    SkFlattenable* obj = nullptr;
+    SkFlattenable* obj = NULL;
     uint32_t sizeRecorded = this->readUInt();
     if (factory) {
         size_t offset = fReader.offset();
@@ -253,8 +250,8 @@ SkFlattenable* SkValidatingReadBuffer::readFlattenable(SkFlattenable::Type type)
         this->validate(sizeRecorded == sizeRead);
         if (fError) {
             
-            SkSafeUnref(obj);
-            obj = nullptr;
+            delete obj;
+            obj = NULL;
         }
     } else {
         

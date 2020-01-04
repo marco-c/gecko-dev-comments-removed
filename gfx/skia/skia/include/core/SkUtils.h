@@ -10,10 +10,6 @@
 
 #include "SkTypes.h"
 
-namespace SkOpts {
-    extern void (*memset16)(uint16_t[], uint16_t, int);
-    extern void (*memset32)(uint32_t[], uint32_t, int);
-}
 
 
 
@@ -21,46 +17,27 @@ namespace SkOpts {
 
 
 
-
-#define INLINE_IF(cond) if (cond) { while (count --> 0) { *buffer++ = value; } return; }
-
-
-
-
-
-
-static inline void sk_memset16(uint16_t buffer[], uint16_t value, int count) {
-#if defined(_MSC_VER)
-    INLINE_IF(count > 300)
-#elif defined(SK_BUILD_FOR_ANDROID) && defined(SK_CPU_X86)
-    INLINE_IF(count < 300)
-#elif defined(SK_ARM_HAS_NEON) || SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
-    INLINE_IF(true)
-#else
-    INLINE_IF(count <= 10)
-#endif
-    SkOpts::memset16(buffer, value, count);
-}
+void sk_memset16(uint16_t dst[], uint16_t value, int count);
+typedef void (*SkMemset16Proc)(uint16_t dst[], uint16_t value, int count);
+SkMemset16Proc SkMemset16GetPlatformProc();
 
 
 
 
 
 
-static inline void sk_memset32(uint32_t buffer[], uint32_t value, int count) {
-#if defined(_MSC_VER)
-    INLINE_IF(count > 300)
-#elif defined(SK_BUILD_FOR_ANDROID) && defined(SK_CPU_X86)
-    INLINE_IF(count < 300)
-#elif defined(SK_ARM_HAS_NEON) || SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
-    INLINE_IF(true)
-#else
-    INLINE_IF(count <= 10)
-#endif
-    SkOpts::memset32(buffer, value, count);
-}
+void sk_memset32(uint32_t dst[], uint32_t value, int count);
+typedef void (*SkMemset32Proc)(uint32_t dst[], uint32_t value, int count);
+SkMemset32Proc SkMemset32GetPlatformProc();
 
-#undef INLINE_IF
+
+
+
+
+
+void sk_memcpy32(uint32_t dst[], const uint32_t src[], int count);
+typedef void (*SkMemcpy32Proc)(uint32_t dst[], const uint32_t src[], int count);
+SkMemcpy32Proc SkMemcpy32GetPlatformProc();
 
 
 

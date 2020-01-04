@@ -197,10 +197,10 @@ protected:
 };
 
 
-class DWriteFontFallbackRenderer final : public IDWriteTextRenderer
+class FontFallbackRenderer final : public IDWriteTextRenderer
 {
 public:
-    DWriteFontFallbackRenderer(IDWriteFactory *aFactory)
+    FontFallbackRenderer(IDWriteFactory *aFactory)
         : mRefCount(0)
     {
         HRESULT hr = S_OK;
@@ -209,7 +209,7 @@ public:
         NS_ASSERTION(SUCCEEDED(hr), "GetSystemFontCollection failed!");
     }
 
-    ~DWriteFontFallbackRenderer()
+    ~FontFallbackRenderer()
     {}
 
     
@@ -421,7 +421,7 @@ private:
     bool mGDIFontTableAccess;
     RefPtr<IDWriteGdiInterop> mGDIInterop;
 
-    RefPtr<DWriteFontFallbackRenderer> mFallbackRenderer;
+    RefPtr<FontFallbackRenderer> mFallbackRenderer;
     RefPtr<IDWriteTextFormat>    mFallbackFormat;
 
     RefPtr<IDWriteFontCollection> mSystemFonts;

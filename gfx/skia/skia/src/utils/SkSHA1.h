@@ -24,12 +24,12 @@ public:
     
 
 
-    bool write(const void* buffer, size_t size) override {
+    virtual bool write(const void* buffer, size_t size) SK_OVERRIDE {
         update(reinterpret_cast<const uint8_t*>(buffer), size);
         return true;
     }
 
-    size_t bytesWritten() const override { return SkToSizeT(this->byteCount); }
+    virtual size_t bytesWritten() const SK_OVERRIDE { return SkToSizeT(this->byteCount); }
 
     
     void update(const uint8_t* input, size_t length);

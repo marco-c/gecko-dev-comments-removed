@@ -5,9 +5,12 @@
 
 
 
+
+
 #ifndef SkPath_DEFINED
 #define SkPath_DEFINED
 
+#include "SkInstCnt.h"
 #include "SkMatrix.h"
 #include "SkPathRef.h"
 #include "SkTDArray.h"
@@ -27,6 +30,8 @@ class SkWStream;
 
 class SK_API SkPath {
 public:
+    SK_DECLARE_INST_COUNT_ROOT(SkPath);
+
     SkPath();
     SkPath(const SkPath&);
     ~SkPath();
@@ -36,11 +41,6 @@ public:
     friend bool operator!=(const SkPath& a, const SkPath& b) {
         return !(a == b);
     }
-
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    
-    bool unique() const { return fPathRef->unique(); }
-#endif
 
     enum FillType {
         
@@ -158,17 +158,6 @@ public:
 
 
 
-
-
-
-
-
-    bool isRRect(SkRRect* rrect) const { return fPathRef->isRRect(rrect); }
-
-    
-
-
-
     void reset();
 
     
@@ -198,27 +187,10 @@ public:
 
     
 
-    bool isVolatile() const {
-        return SkToBool(fIsVolatile);
-    }
-
-    
 
 
-
-
-
-
-    void setIsVolatile(bool isVolatile) {
-        fIsVolatile = isVolatile;
-    }
-
-    
-
-
-
-    static bool IsLineDegenerate(const SkPoint& p1, const SkPoint& p2, bool exact) {
-        return exact ? p1 == p2 : p1.equalsWithinTolerance(p2);
+    static bool IsLineDegenerate(const SkPoint& p1, const SkPoint& p2) {
+        return p1.equalsWithinTolerance(p2);
     }
 
     
@@ -226,8 +198,8 @@ public:
 
 
     static bool IsQuadDegenerate(const SkPoint& p1, const SkPoint& p2,
-                                 const SkPoint& p3, bool exact) {
-        return exact ? p1 == p2 && p2 == p3 : p1.equalsWithinTolerance(p2) &&
+                                 const SkPoint& p3) {
+        return p1.equalsWithinTolerance(p2) &&
                p2.equalsWithinTolerance(p3);
     }
 
@@ -236,8 +208,8 @@ public:
 
 
     static bool IsCubicDegenerate(const SkPoint& p1, const SkPoint& p2,
-                                  const SkPoint& p3, const SkPoint& p4, bool exact) {
-        return exact ? p1 == p2 && p2 == p3 && p3 == p4 : p1.equalsWithinTolerance(p2) &&
+                                  const SkPoint& p3, const SkPoint& p4) {
+        return p1.equalsWithinTolerance(p2) &&
                p2.equalsWithinTolerance(p3) &&
                p3.equalsWithinTolerance(p4);
     }
@@ -249,6 +221,16 @@ public:
 
 
     bool isLine(SkPoint line[2]) const;
+
+    
+
+
+
+
+
+
+
+    bool isRect(SkRect* rect) const;
 
     
 
@@ -285,8 +267,6 @@ public:
     void swap(SkPath& other);
 
     
-
-
 
 
 
@@ -481,12 +461,15 @@ public:
 
 
 
-    void arcTo(const SkRect& oval, SkScalar startAngle, SkScalar sweepAngle, bool forceMoveTo);
+
+    void arcTo(const SkRect& oval, SkScalar startAngle, SkScalar sweepAngle,
+               bool forceMoveTo);
 
     
 
 
-    void arcTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2, SkScalar radius);
+    void arcTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2,
+               SkScalar radius);
 
     
 
@@ -502,10 +485,23 @@ public:
 
     enum Direction {
         
+        kUnknown_Direction,
+        
         kCW_Direction,
         
         kCCW_Direction,
     };
+
+    
+
+
+
+    static Direction OppositeDirection(Direction dir) {
+        static const Direction gOppositeDir[] = {
+            kUnknown_Direction, kCCW_Direction, kCW_Direction
+        };
+        return gOppositeDir[dir];
+    }
 
     
 
@@ -516,10 +512,10 @@ public:
 
 
     static bool IsInverseFillType(FillType fill) {
-        static_assert(0 == kWinding_FillType, "fill_type_mismatch");
-        static_assert(1 == kEvenOdd_FillType, "fill_type_mismatch");
-        static_assert(2 == kInverseWinding_FillType, "fill_type_mismatch");
-        static_assert(3 == kInverseEvenOdd_FillType, "fill_type_mismatch");
+        SK_COMPILE_ASSERT(0 == kWinding_FillType, fill_type_mismatch);
+        SK_COMPILE_ASSERT(1 == kEvenOdd_FillType, fill_type_mismatch);
+        SK_COMPILE_ASSERT(2 == kInverseWinding_FillType, fill_type_mismatch);
+        SK_COMPILE_ASSERT(3 == kInverseEvenOdd_FillType, fill_type_mismatch);
         return (fill & 2) != 0;
     }
 
@@ -532,10 +528,10 @@ public:
 
 
     static FillType ConvertToNonInverseFillType(FillType fill) {
-        static_assert(0 == kWinding_FillType, "fill_type_mismatch");
-        static_assert(1 == kEvenOdd_FillType, "fill_type_mismatch");
-        static_assert(2 == kInverseWinding_FillType, "fill_type_mismatch");
-        static_assert(3 == kInverseEvenOdd_FillType, "fill_type_mismatch");
+        SK_COMPILE_ASSERT(0 == kWinding_FillType, fill_type_mismatch);
+        SK_COMPILE_ASSERT(1 == kEvenOdd_FillType, fill_type_mismatch);
+        SK_COMPILE_ASSERT(2 == kInverseWinding_FillType, fill_type_mismatch);
+        SK_COMPILE_ASSERT(3 == kInverseEvenOdd_FillType, fill_type_mismatch);
         return (FillType)(fill & 1);
     }
 
@@ -543,8 +539,52 @@ public:
 
 
 
-    static int ConvertConicToQuads(const SkPoint& p0, const SkPoint& p1, const SkPoint& p2,
-                                   SkScalar w, SkPoint pts[], int pow2);
+
+
+
+    bool cheapComputeDirection(Direction* dir) const;
+
+    
+
+
+
+
+
+    bool cheapIsDirection(Direction dir) const {
+        Direction computedDir = kUnknown_Direction;
+        (void)this->cheapComputeDirection(&computedDir);
+        return computedDir == dir;
+    }
+
+    enum PathAsRect {
+        
+        kNone_PathAsRect,
+        
+        kFill_PathAsRect,
+        
+        kStroke_PathAsRect,
+    };
+
+    
+
+
+
+
+
+
+
+    PathAsRect asRect(Direction* direction = NULL) const;
+
+    
+
+
+
+
+
+
+
+
+    bool isRect(bool* isClosed, Direction* direction) const;
 
     
 
@@ -557,28 +597,9 @@ public:
 
 
 
-
-
-
-
-    bool isRect(SkRect* rect, bool* isClosed = NULL, Direction* direction = NULL) const;
+    bool isNestedRects(SkRect rect[2], Direction dirs[2] = NULL) const;
 
     
-
-
-
-
-
-
-
-
-
-
-
-    bool isNestedFillRects(SkRect rect[2], Direction dirs[2] = NULL) const;
-
-    
-
 
 
 
@@ -587,22 +608,6 @@ public:
     void addRect(const SkRect& rect, Direction dir = kCW_Direction);
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-    void addRect(const SkRect& rect, Direction dir, unsigned start);
-
-    
-
 
 
 
@@ -626,29 +631,10 @@ public:
 
 
 
-
     void addOval(const SkRect& oval, Direction dir = kCW_Direction);
 
     
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void addOval(const SkRect& oval, Direction dir, unsigned start);
-
-    
 
 
 
@@ -677,10 +663,12 @@ public:
 
 
 
+
     void addRoundRect(const SkRect& rect, SkScalar rx, SkScalar ry,
                       Direction dir = kCW_Direction);
 
     
+
 
 
 
@@ -700,27 +688,7 @@ public:
 
 
 
-
-
-
     void addRRect(const SkRRect& rrect, Direction dir = kCW_Direction);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void addRRect(const SkRRect& rrect, Direction dir, unsigned start);
 
     
 
@@ -882,13 +850,9 @@ public:
 
 
 
-
-
-
-
-        Verb next(SkPoint pts[4], bool doConsumeDegerates = true, bool exact = false) {
+        Verb next(SkPoint pts[4], bool doConsumeDegerates = true) {
             if (doConsumeDegerates) {
-                this->consumeDegenerateSegments(exact);
+                this->consumeDegenerateSegments();
             }
             return this->doNext(pts);
         }
@@ -928,7 +892,7 @@ public:
 
         inline const SkPoint& cons_moveTo();
         Verb autoClose(SkPoint pts[2]);
-        void consumeDegenerateSegments(bool exact);
+        void consumeDegenerateSegments();
         Verb doNext(SkPoint pts[4]);
     };
 
@@ -936,14 +900,10 @@ public:
 
     class SK_API RawIter {
     public:
-        RawIter() {}
-        RawIter(const SkPath& path) {
-            setPath(path);
-        }
+        RawIter();
+        RawIter(const SkPath&);
 
-        void setPath(const SkPath& path) {
-            fRawIter.setPathRef(*path.fPathRef.get());
-        }
+        void setPath(const SkPath&);
 
         
 
@@ -952,17 +912,17 @@ public:
 
 
 
-        Verb next(SkPoint pts[4]) {
-            return (Verb) fRawIter.next(pts);
-        }
+        Verb next(SkPoint pts[4]);
 
-        SkScalar conicWeight() const {
-            return fRawIter.conicWeight();
-        }
+        SkScalar conicWeight() const { return *fConicWeights; }
 
     private:
-        SkPathRef::Iter fRawIter;
-        friend class SkPath;
+        const SkPoint*  fPts;
+        const uint8_t*  fVerbs;
+        const uint8_t*  fVerbStop;
+        const SkScalar* fConicWeights;
+        SkPoint         fMoveTo;
+        SkPoint         fLastPt;
     };
 
     
@@ -971,9 +931,8 @@ public:
 
     bool contains(SkScalar x, SkScalar y) const;
 
-    void dump(SkWStream* , bool forceClose, bool dumpAsHex) const;
+    void dump(SkWStream* , bool forceClose) const;
     void dump() const;
-    void dumpHex() const;
 
     
 
@@ -996,39 +955,37 @@ public:
 
     uint32_t getGenerationID() const;
 
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
+#ifdef SK_BUILD_FOR_ANDROID
     static const int kPathRefGenIDBitCnt = 30; 
+    const SkPath* getSourcePath() const;
+    void setSourcePath(const SkPath* path);
 #else
     static const int kPathRefGenIDBitCnt = 32;
 #endif
 
     SkDEBUGCODE(void validate() const;)
-    SkDEBUGCODE(void experimentalValidateRef() const { fPathRef->validate(); } )
 
 private:
     enum SerializationOffsets {
         
         kUnused1_SerializationShift = 28,    
         kDirection_SerializationShift = 26, 
-        kIsVolatile_SerializationShift = 25, 
+        kUnused2_SerializationShift = 25,    
         
         kConvexity_SerializationShift = 16, 
         kFillType_SerializationShift = 8,   
         
     };
 
-    enum SerializationVersions {
-        kPathPrivFirstDirection_Version = 1,
+    SkAutoTUnref<SkPathRef> fPathRef;
 
-        kCurrent_Version = 1
-    };
-
-    SkAutoTUnref<SkPathRef>                            fPathRef;
-    int                                                fLastMoveToIndex;
-    uint8_t                                            fFillType;
-    mutable uint8_t                                    fConvexity;
-    mutable SkAtomic<uint8_t, sk_memory_order_relaxed> fFirstDirection;
-    mutable SkBool8                                    fIsVolatile;
+    int                 fLastMoveToIndex;
+    uint8_t             fFillType;
+    mutable uint8_t     fConvexity;
+    mutable uint8_t     fDirection;
+#ifdef SK_BUILD_FOR_ANDROID
+    const SkPath*       fSourcePath;
+#endif
 
     
 
@@ -1043,7 +1000,7 @@ private:
     void copyFields(const SkPath& that);
 
     friend class Iter;
-    friend class SkPathPriv;
+
     friend class SkPathStroker;
 
     
@@ -1083,14 +1040,11 @@ private:
         ed.setBounds(rect);
     }
 
-    void setPt(int index, SkScalar x, SkScalar y);
-
     friend class SkAutoPathBoundsUpdate;
     friend class SkAutoDisableOvalCheck;
     friend class SkAutoDisableDirectionCheck;
     friend class SkBench_AddPathTest; 
     friend class PathTest_Private; 
-    friend class ForceIsRRect_Private; 
 };
 
 #endif

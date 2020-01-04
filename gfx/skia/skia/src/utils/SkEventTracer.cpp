@@ -5,14 +5,11 @@
 
 
 
-#include "SkAtomics.h"
 #include "SkEventTracer.h"
-#include "SkOncePtr.h"
+#include "SkOnce.h"
 
-#include <stdlib.h>
-
-class SkDefaultEventTracer : public SkEventTracer {
-    SkEventTracer::Handle
+class SkDefaultEventTracer: public SkEventTracer {
+    virtual SkEventTracer::Handle
         addTraceEvent(char phase,
                       const uint8_t* categoryEnabledFlag,
                       const char* name,
@@ -21,38 +18,42 @@ class SkDefaultEventTracer : public SkEventTracer {
                       const char** argNames,
                       const uint8_t* argTypes,
                       const uint64_t* argValues,
-                      uint8_t flags) override { return 0; }
+                      uint8_t flags) SK_OVERRIDE { return 0; }
 
-    void
+    virtual void
         updateTraceEventDuration(const uint8_t* categoryEnabledFlag,
                                  const char* name,
-                                 SkEventTracer::Handle handle) override {}
+                                 SkEventTracer::Handle handle) SK_OVERRIDE {};
 
-    const uint8_t* getCategoryGroupEnabled(const char* name) override {
+    virtual const uint8_t* getCategoryGroupEnabled(const char* name) SK_OVERRIDE {
         static uint8_t no = 0;
         return &no;
-    }
-    const char* getCategoryGroupName(
-      const uint8_t* categoryEnabledFlag) override {
+    };
+    virtual const char* getCategoryGroupName(
+      const uint8_t* categoryEnabledFlag) SK_OVERRIDE {
         static const char* dummy = "dummy";
         return dummy;
-    }
+    };
 };
 
+SkEventTracer* SkEventTracer::gInstance;
 
-static SkEventTracer* gUserTracer = nullptr;
-SK_DECLARE_STATIC_ONCE_PTR(SkDefaultEventTracer, gDefaultTracer);
-
-void SkEventTracer::SetInstance(SkEventTracer* tracer) {
-    SkASSERT(nullptr == sk_atomic_load(&gUserTracer, sk_memory_order_acquire));
-    sk_atomic_store(&gUserTracer, tracer, sk_memory_order_release);
+static void cleanup_tracer() {
     
-    atexit([]() { delete sk_atomic_load(&gUserTracer, sk_memory_order_acquire); });
+    SkEventTracer::SetInstance(NULL);
 }
 
-SkEventTracer* SkEventTracer::GetInstance() {
-    if (SkEventTracer* tracer = sk_atomic_load(&gUserTracer, sk_memory_order_acquire)) {
-        return tracer;
+static void intialize_default_tracer(SkEventTracer* current_instance) {
+    if (NULL == current_instance) {
+        SkEventTracer::SetInstance(SkNEW(SkDefaultEventTracer));
     }
-    return gDefaultTracer.get([]{ return new SkDefaultEventTracer; });
+    atexit(cleanup_tracer);
+}
+
+
+SkEventTracer* SkEventTracer::GetInstance() {
+    SK_DECLARE_STATIC_ONCE(once);
+    SkOnce(&once, intialize_default_tracer, SkEventTracer::gInstance);
+    SkASSERT(NULL != SkEventTracer::gInstance);
+    return SkEventTracer::gInstance;
 }

@@ -10,6 +10,7 @@
 
 #include "SkPDFTypes.h"
 #include "SkTDArray.h"
+#include "SkTSet.h"
 #include "SkTypes.h"
 
 
@@ -18,9 +19,11 @@
 
 
 
-class SkPDFResourceDict {
+class SkPDFResourceDict : public SkPDFDict {
 public:
-    enum SkPDFResourceType {
+    SK_DECLARE_INST_COUNT(SkPDFResourceDict)
+
+     enum SkPDFResourceType{
         kExtGState_ResourceType,
         kPattern_ResourceType,
         kXObject_ResourceType,
@@ -28,7 +31,13 @@ public:
         
         
         kResourceTypeCount
-    };
+     };
+
+    
+
+
+
+    SkPDFResourceDict();
 
     
 
@@ -36,11 +45,28 @@ public:
 
 
 
-    static SkPDFDict* Create(
-        const SkTDArray<SkPDFObject*>* gStateResources,
-        const SkTDArray<SkPDFObject*>* patternResources,
-        const SkTDArray<SkPDFObject*>* xObjectResources,
-        const SkTDArray<SkPDFObject*>* fontResources);
+
+
+
+
+
+
+    SkPDFObject* insertResourceAsReference(SkPDFResourceType type, int key,
+                                           SkPDFObject* value);
+
+    
+
+
+
+
+
+
+
+
+    void getReferencedResources(
+            const SkTSet<SkPDFObject*>& knownResourceObjects,
+            SkTSet<SkPDFObject*>* newResourceObjects,
+            bool recursive) const;
 
     
 
@@ -51,6 +77,25 @@ public:
 
 
     static SkString getResourceName(SkPDFResourceType type, int key);
+
+private:
+    
+
+
+
+
+
+
+
+
+
+    SkPDFObject* insertResource(SkPDFResourceType type, int key,
+                                SkPDFObject* value);
+
+    SkTSet<SkPDFObject*> fResources;
+
+    SkTDArray<SkPDFDict*> fTypes;
+    typedef SkPDFDict INHERITED;
 };
 
 #endif

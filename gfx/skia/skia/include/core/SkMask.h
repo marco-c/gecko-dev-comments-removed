@@ -23,10 +23,11 @@ struct SkMask {
         k3D_Format, 
         kARGB32_Format,         
         kLCD16_Format,          
+        kLCD32_Format           
     };
 
     enum {
-        kCountMaskFormats = kLCD16_Format + 1
+        kCountMaskFormats = kLCD32_Format + 1
     };
 
     uint8_t*    fImage;
@@ -90,8 +91,21 @@ struct SkMask {
 
 
 
+    uint32_t* getAddrLCD32(int x, int y) const {
+        SkASSERT(kLCD32_Format == fFormat);
+        SkASSERT(fBounds.contains(x, y));
+        SkASSERT(fImage != NULL);
+        uint32_t* row = (uint32_t*)(fImage + (y - fBounds.fTop) * fRowBytes);
+        return row + (x - fBounds.fLeft);
+    }
+
+    
+
+
+
+
     uint32_t* getAddr32(int x, int y) const {
-        SkASSERT(kARGB32_Format == fFormat);
+        SkASSERT(kLCD32_Format == fFormat || kARGB32_Format == fFormat);
         SkASSERT(fBounds.contains(x, y));
         SkASSERT(fImage != NULL);
         uint32_t* row = (uint32_t*)(fImage + (y - fBounds.fTop) * fRowBytes);

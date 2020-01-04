@@ -12,9 +12,15 @@
 #ifndef SkOSFile_DEFINED
 #define SkOSFile_DEFINED
 
-#include <stdio.h>
-
 #include "SkString.h"
+
+#if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_UNIX) || defined(SK_BUILD_FOR_ANDROID) || defined(SK_BUILD_FOR_IOS)
+    #include <dirent.h>
+#endif
+
+#include <stddef.h> 
+
+struct SkFILE;
 
 enum SkFILE_Flags {
     kRead_SkFILE_Flag   = 0x01,
@@ -27,30 +33,30 @@ const static char SkPATH_SEPARATOR = '\\';
 const static char SkPATH_SEPARATOR = '/';
 #endif
 
-FILE* sk_fopen(const char path[], SkFILE_Flags);
-void    sk_fclose(FILE*);
+SkFILE* sk_fopen(const char path[], SkFILE_Flags);
+void    sk_fclose(SkFILE*);
 
-size_t  sk_fgetsize(FILE*);
-
-
-bool    sk_frewind(FILE*);
-
-size_t  sk_fread(void* buffer, size_t byteCount, FILE*);
-size_t  sk_fwrite(const void* buffer, size_t byteCount, FILE*);
-
-char*   sk_fgets(char* str, int size, FILE* f);
-
-void    sk_fflush(FILE*);
-
-bool    sk_fseek(FILE*, size_t);
-bool    sk_fmove(FILE*, long);
-size_t  sk_ftell(FILE*);
+size_t  sk_fgetsize(SkFILE*);
 
 
+bool    sk_frewind(SkFILE*);
+
+size_t  sk_fread(void* buffer, size_t byteCount, SkFILE*);
+size_t  sk_fwrite(const void* buffer, size_t byteCount, SkFILE*);
+
+char*   sk_fgets(char* str, int size, SkFILE* f);
+
+void    sk_fflush(SkFILE*);
+
+bool    sk_fseek(SkFILE*, size_t);
+bool    sk_fmove(SkFILE*, long);
+size_t  sk_ftell(SkFILE*);
 
 
 
-void*   sk_fmmap(FILE* f, size_t* length);
+
+
+void*   sk_fmmap(SkFILE* f, size_t* length);
 
 
 
@@ -64,12 +70,12 @@ void*   sk_fdmmap(int fd, size_t* length);
 void    sk_fmunmap(const void* addr, size_t length);
 
 
-bool    sk_fidentical(FILE* a, FILE* b);
+bool    sk_fidentical(SkFILE* a, SkFILE* b);
 
 
 
 
-int     sk_fileno(FILE* f);
+int     sk_fileno(SkFILE* f);
 
 
 
@@ -80,7 +86,7 @@ bool    sk_exists(const char *path, SkFILE_Flags = (SkFILE_Flags)0);
 bool    sk_isdir(const char *path);
 
 
-int sk_feof(FILE *);
+int sk_feof(SkFILE *);
 
 
 
@@ -103,16 +109,21 @@ public:
 
         bool next(SkString* name, bool getDir = false);
 
-        static const size_t kStorageSize = 40;
     private:
-        SkAlignedSStorage<kStorageSize> fSelf;
+#ifdef SK_BUILD_FOR_WIN
+        HANDLE      fHandle;
+        uint16_t*   fPath16;
+#elif defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_UNIX) || defined(SK_BUILD_FOR_ANDROID) || defined(SK_BUILD_FOR_IOS)
+        DIR*        fDIR;
+        SkString    fPath, fSuffix;
+#endif
     };
 };
 
 
 
 
-class SkOSPath   {
+class SkOSPath {
 public:
     
 
@@ -122,7 +133,7 @@ public:
 
 
 
-    static SkString Join(const char* rootPath, const char* relativePath);
+    static SkString SkPathJoin(const char *rootPath, const char *relativePath);
 
     
 
@@ -132,17 +143,6 @@ public:
 
 
 
-    static SkString Basename(const char* fullPath);
-
-    
-
-
-
-
-
-
-
-    static SkString Dirname(const char* fullPath);
+    static SkString SkBasename(const char* fullPath);
 };
-
 #endif

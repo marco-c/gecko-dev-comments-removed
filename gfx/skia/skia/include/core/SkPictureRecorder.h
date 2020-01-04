@@ -8,7 +8,6 @@
 #ifndef SkPictureRecorder_DEFINED
 #define SkPictureRecorder_DEFINED
 
-#include "../private/SkMiniRecorder.h"
 #include "SkBBHFactory.h"
 #include "SkPicture.h"
 #include "SkRefCnt.h"
@@ -20,7 +19,6 @@ namespace android {
 #endif
 
 class SkCanvas;
-class SkDrawable;
 class SkPictureRecord;
 class SkRecord;
 class SkRecorder;
@@ -30,16 +28,6 @@ public:
     SkPictureRecorder();
     ~SkPictureRecorder();
 
-    enum RecordFlags {
-        
-        
-        kComputeSaveLayerInfo_RecordFlag = 0x01,
-
-        
-        
-        kPlaybackDrawPicture_RecordFlag  = 0x02,
-    };
-
     
 
 
@@ -47,15 +35,15 @@ public:
 
 
 
-    SkCanvas* beginRecording(const SkRect& bounds,
+
+
+    SkCanvas* beginRecording(int width, int height,
                              SkBBHFactory* bbhFactory = NULL,
                              uint32_t recordFlags = 0);
 
-    SkCanvas* beginRecording(SkScalar width, SkScalar height,
-                             SkBBHFactory* bbhFactory = NULL,
-                             uint32_t recordFlags = 0) {
-        return this->beginRecording(SkRect::MakeWH(width, height), bbhFactory, recordFlags);
-    }
+    
+    SkCanvas* EXPERIMENTAL_beginRecording(int width, int height,
+                                          SkBBHFactory* bbhFactory = NULL);
 
     
 
@@ -67,12 +55,7 @@ public:
 
 
 
-
-
-
-
-
-    SkPicture* SK_WARN_UNUSED_RESULT endRecordingAsPicture();
+    SkPicture* endRecording();
 
     
 
@@ -80,25 +63,7 @@ public:
 
 
 
-
-
-
-    SkPicture* SK_WARN_UNUSED_RESULT endRecordingAsPicture(const SkRect& cullRect);
-
-    
-
-
-
-
-
-
-
-
-
-    SkDrawable* SK_WARN_UNUSED_RESULT endRecordingAsDrawable();
-
-    
-    SkPicture* SK_WARN_UNUSED_RESULT endRecording() { return this->endRecordingAsPicture(); }
+    void internalOnly_EnableOpts(bool enableOpts);
 
 private:
     void reset();
@@ -112,13 +77,15 @@ private:
     friend class SkPictureRecorderReplayTester; 
     void partialReplay(SkCanvas* canvas) const;
 
-    bool                          fActivelyRecording;
-    uint32_t                      fFlags;
-    SkRect                        fCullRect;
-    SkAutoTUnref<SkBBoxHierarchy> fBBH;
-    SkAutoTUnref<SkRecorder>      fRecorder;
-    SkAutoTUnref<SkRecord>        fRecord;
-    SkMiniRecorder                fMiniRecorder;
+    int fWidth;
+    int fHeight;
+
+    
+    SkAutoTUnref<SkPictureRecord> fPictureRecord;  
+    SkAutoTUnref<SkRecorder>      fRecorder;       
+
+    
+    SkAutoTDelete<SkRecord> fRecord;
 
     typedef SkNoncopyable INHERITED;
 };

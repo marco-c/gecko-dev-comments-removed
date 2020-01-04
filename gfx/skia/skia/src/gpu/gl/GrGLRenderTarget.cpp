@@ -7,119 +7,79 @@
 
 #include "GrGLRenderTarget.h"
 
-#include "GrRenderTargetPriv.h"
-#include "GrGLGpu.h"
-#include "GrGLUtil.h"
-#include "SkTraceMemoryDump.h"
+#include "GrGpuGL.h"
 
-#define GPUGL static_cast<GrGLGpu*>(this->getGpu())
+#define GPUGL static_cast<GrGpuGL*>(getGpu())
+
 #define GL_CALL(X) GR_GL_CALL(GPUGL->glInterface(), X)
 
-
-GrGLRenderTarget::GrGLRenderTarget(GrGLGpu* gpu,
-                                   const GrSurfaceDesc& desc,
-                                   const IDDesc& idDesc,
-                                   GrGLStencilAttachment* stencil)
-    : GrSurface(gpu, idDesc.fLifeCycle, desc)
-    , INHERITED(gpu, idDesc.fLifeCycle, desc, idDesc.fSampleConfig, stencil) {
-    this->init(desc, idDesc);
-    this->registerWithCache();
+void GrGLRenderTarget::init(const Desc& desc,
+                            const GrGLIRect& viewport,
+                            GrGLTexID* texID) {
+    fRTFBOID                = desc.fRTFBOID;
+    fTexFBOID               = desc.fTexFBOID;
+    fMSColorRenderbufferID  = desc.fMSColorRenderbufferID;
+    fViewport               = viewport;
+    fTexIDObj.reset(SkSafeRef(texID));
 }
 
-GrGLRenderTarget::GrGLRenderTarget(GrGLGpu* gpu, const GrSurfaceDesc& desc, const IDDesc& idDesc,
-                                   Derived)
-    : GrSurface(gpu, idDesc.fLifeCycle, desc)
-    , INHERITED(gpu, idDesc.fLifeCycle, desc, idDesc.fSampleConfig) {
-    this->init(desc, idDesc);
+namespace {
+GrTextureDesc MakeDesc(GrTextureFlags flags,
+                       int width, int height,
+                       GrPixelConfig config, int sampleCnt,
+                       GrSurfaceOrigin origin) {
+    GrTextureDesc temp;
+    temp.fFlags = flags;
+    temp.fWidth = width;
+    temp.fHeight = height;
+    temp.fConfig = config;
+    temp.fSampleCnt = sampleCnt;
+    temp.fOrigin = origin;
+    return temp;
 }
 
-void GrGLRenderTarget::init(const GrSurfaceDesc& desc, const IDDesc& idDesc) {
-    fRTFBOID                = idDesc.fRTFBOID;
-    fTexFBOID               = idDesc.fTexFBOID;
-    fMSColorRenderbufferID  = idDesc.fMSColorRenderbufferID;
-    fRTLifecycle            = idDesc.fLifeCycle;
+};
 
-    fViewport.fLeft   = 0;
-    fViewport.fBottom = 0;
-    fViewport.fWidth  = desc.fWidth;
-    fViewport.fHeight = desc.fHeight;
+GrGLRenderTarget::GrGLRenderTarget(GrGpuGL* gpu,
+                                   const Desc& desc,
+                                   const GrGLIRect& viewport,
+                                   GrGLTexID* texID,
+                                   GrGLTexture* texture)
+    : INHERITED(gpu,
+                desc.fIsWrapped,
+                texture,
+                MakeDesc(kNone_GrTextureFlags,
+                         viewport.fWidth, viewport.fHeight,
+                         desc.fConfig, desc.fSampleCnt,
+                         desc.fOrigin)) {
+    SkASSERT(NULL != texID);
+    SkASSERT(NULL != texture);
+    
+    SkASSERT(0 != desc.fRTFBOID);
+    SkASSERT(0 != desc.fTexFBOID);
 
-    fGpuMemorySize = this->totalSamples() * this->totalBytesPerSample();
+    
+    SkASSERT(viewport.fWidth == texture->width());
+    SkASSERT(viewport.fHeight == texture->height());
 
-    SkASSERT(fGpuMemorySize <= WorseCaseSize(desc));
+    this->init(desc, viewport, texID);
 }
 
-GrGLRenderTarget* GrGLRenderTarget::CreateWrapped(GrGLGpu* gpu,
-                                                  const GrSurfaceDesc& desc,
-                                                  const IDDesc& idDesc,
-                                                  int stencilBits) {
-    GrGLStencilAttachment* sb = nullptr;
-    if (stencilBits) {
-        GrGLStencilAttachment::IDDesc sbDesc;
-        GrGLStencilAttachment::Format format;
-        format.fInternalFormat = GrGLStencilAttachment::kUnknownInternalFormat;
-        format.fPacked = false;
-        format.fStencilBits = stencilBits;
-        format.fTotalBits = stencilBits;
-        
-        sb = new GrGLStencilAttachment(gpu, sbDesc, desc.fWidth, desc.fHeight,
-                                       desc.fSampleCnt, format);
-    }
-    return (new GrGLRenderTarget(gpu, desc, idDesc, sb));
-}
-
-size_t GrGLRenderTarget::onGpuMemorySize() const {
-    return fGpuMemorySize;
-}
-
-bool GrGLRenderTarget::completeStencilAttachment() {
-    GrGLGpu* gpu = this->getGLGpu();
-    const GrGLInterface* interface = gpu->glInterface();
-    GrStencilAttachment* stencil = this->renderTargetPriv().getStencilAttachment();
-    if (nullptr == stencil) {
-        GR_GL_CALL(interface, FramebufferRenderbuffer(GR_GL_FRAMEBUFFER,
-                                                      GR_GL_STENCIL_ATTACHMENT,
-                                                      GR_GL_RENDERBUFFER, 0));
-        GR_GL_CALL(interface, FramebufferRenderbuffer(GR_GL_FRAMEBUFFER,
-                                                      GR_GL_DEPTH_ATTACHMENT,
-                                                      GR_GL_RENDERBUFFER, 0));
-#ifdef SK_DEBUG
-        GrGLenum status;
-        GR_GL_CALL_RET(interface, status, CheckFramebufferStatus(GR_GL_FRAMEBUFFER));
-        SkASSERT(GR_GL_FRAMEBUFFER_COMPLETE == status);
-#endif
-        return true;
-    } else {
-        const GrGLStencilAttachment* glStencil = static_cast<const GrGLStencilAttachment*>(stencil);
-        GrGLuint rb = glStencil->renderbufferID();
-
-        gpu->invalidateBoundRenderTarget();
-        gpu->stats()->incRenderTargetBinds();
-        GR_GL_CALL(interface, BindFramebuffer(GR_GL_FRAMEBUFFER, this->renderFBOID()));
-        GR_GL_CALL(interface, FramebufferRenderbuffer(GR_GL_FRAMEBUFFER,
-                                                      GR_GL_STENCIL_ATTACHMENT,
-                                                      GR_GL_RENDERBUFFER, rb));
-        if (glStencil->format().fPacked) {
-            GR_GL_CALL(interface, FramebufferRenderbuffer(GR_GL_FRAMEBUFFER,
-                                                          GR_GL_DEPTH_ATTACHMENT,
-                                                          GR_GL_RENDERBUFFER, rb));
-        } else {
-            GR_GL_CALL(interface, FramebufferRenderbuffer(GR_GL_FRAMEBUFFER,
-                                                          GR_GL_DEPTH_ATTACHMENT,
-                                                          GR_GL_RENDERBUFFER, 0));
-        }
-
-#ifdef SK_DEBUG
-        GrGLenum status;
-        GR_GL_CALL_RET(interface, status, CheckFramebufferStatus(GR_GL_FRAMEBUFFER));
-        SkASSERT(GR_GL_FRAMEBUFFER_COMPLETE == status);
-#endif
-        return true;
-    }
+GrGLRenderTarget::GrGLRenderTarget(GrGpuGL* gpu,
+                                   const Desc& desc,
+                                   const GrGLIRect& viewport)
+    : INHERITED(gpu,
+                desc.fIsWrapped,
+                NULL,
+                MakeDesc(kNone_GrTextureFlags,
+                         viewport.fWidth, viewport.fHeight,
+                         desc.fConfig, desc.fSampleCnt,
+                         desc.fOrigin)) {
+    this->init(desc, viewport, NULL);
 }
 
 void GrGLRenderTarget::onRelease() {
-    if (kBorrowed_LifeCycle != fRTLifecycle) {
+    if (!this->isWrapped()) {
         if (fTexFBOID) {
             GL_CALL(DeleteFramebuffers(1, &fTexFBOID));
         }
@@ -133,6 +93,7 @@ void GrGLRenderTarget::onRelease() {
     fRTFBOID                = 0;
     fTexFBOID               = 0;
     fMSColorRenderbufferID  = 0;
+    fTexIDObj.reset(NULL);
     INHERITED::onRelease();
 }
 
@@ -140,70 +101,9 @@ void GrGLRenderTarget::onAbandon() {
     fRTFBOID                = 0;
     fTexFBOID               = 0;
     fMSColorRenderbufferID  = 0;
+    if (NULL != fTexIDObj.get()) {
+        fTexIDObj->abandon();
+        fTexIDObj.reset(NULL);
+    }
     INHERITED::onAbandon();
-}
-
-GrGLGpu* GrGLRenderTarget::getGLGpu() const {
-    SkASSERT(!this->wasDestroyed());
-    return static_cast<GrGLGpu*>(this->getGpu());
-}
-
-void GrGLRenderTarget::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
-    
-    
-
-    
-    
-    if (fMSColorRenderbufferID) {
-        size_t size = this->msaaSamples() * this->totalBytesPerSample();
-
-        
-        
-        SkString dumpName("skia/gpu_resources/resource_");
-        dumpName.appendS32(this->getUniqueID());
-        dumpName.append("/renderbuffer");
-
-        traceMemoryDump->dumpNumericValue(dumpName.c_str(), "size", "bytes", size);
-
-        if (this->isPurgeable()) {
-            traceMemoryDump->dumpNumericValue(dumpName.c_str(), "purgeable_size", "bytes", size);
-        }
-
-        SkString renderbuffer_id;
-        renderbuffer_id.appendU32(fMSColorRenderbufferID);
-        traceMemoryDump->setMemoryBacking(dumpName.c_str(), "gl_renderbuffer",
-                                          renderbuffer_id.c_str());
-    }
-}
-
-size_t GrGLRenderTarget::totalBytesPerSample() const {
-    SkASSERT(kUnknown_GrPixelConfig != fDesc.fConfig);
-    SkASSERT(!GrPixelConfigIsCompressed(fDesc.fConfig));
-    size_t colorBytes = GrBytesPerPixel(fDesc.fConfig);
-    SkASSERT(colorBytes > 0);
-
-    return fDesc.fWidth * fDesc.fHeight * colorBytes;
-}
-
-int GrGLRenderTarget::msaaSamples() const {
-    if (fTexFBOID == kUnresolvableFBOID || fTexFBOID != fRTFBOID) {
-        
-        
-        return SkTMax(1, fDesc.fSampleCnt);
-    }
-
-    
-    
-    return 0;
-}
-
-int GrGLRenderTarget::totalSamples() const {
-  int total_samples = this->msaaSamples();
-
-  if (fTexFBOID != kUnresolvableFBOID) {
-      
-      total_samples += 1;
-  }
-
-  return total_samples;
 }

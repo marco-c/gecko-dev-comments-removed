@@ -1,9 +1,0 @@
-
-
-
-
-
-
-#include "SkDocument.h"
-SkDocument* SkDocument::CreatePDF(SkWStream*, SkScalar) { return  nullptr; }
-SkDocument* SkDocument::CreatePDF(const char path[], SkScalar) { return nullptr; }

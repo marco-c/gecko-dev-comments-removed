@@ -16,69 +16,40 @@ public:
     
 
 
-    static SkImageFilter* Create(const SkPicture* picture) {
-        return new SkPictureImageFilter(picture);
+    static SkPictureImageFilter* Create(const SkPicture* picture) {
+        return SkNEW_ARGS(SkPictureImageFilter, (picture));
     }
 
     
 
 
 
-    static SkImageFilter* Create(const SkPicture* picture, const SkRect& cropRect) {
-        return new SkPictureImageFilter(picture, cropRect, kDeviceSpace_PictureResolution,
-                                        kLow_SkFilterQuality);
+    static SkPictureImageFilter* Create(const SkPicture* picture, const SkRect& cropRect) {
+        return SkNEW_ARGS(SkPictureImageFilter, (picture, cropRect));
     }
 
-    
-
-
-
-
-
-
-    static SkImageFilter* CreateForLocalSpace(const SkPicture* picture,
-                                                     const SkRect& cropRect,
-                                                     SkFilterQuality filterQuality) {
-        return new SkPictureImageFilter(picture, cropRect, kLocalSpace_PictureResolution,
-                                        filterQuality);
-    }
-
-    SK_TO_STRING_OVERRIDE()
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkPictureImageFilter)
 
 protected:
-    enum PictureResolution {
-        kDeviceSpace_PictureResolution,
-        kLocalSpace_PictureResolution
-    };
-
+    explicit SkPictureImageFilter(const SkPicture* picture);
+    SkPictureImageFilter(const SkPicture* picture, const SkRect& cropRect);
     virtual ~SkPictureImageFilter();
-
     
 
 
 
 
 
-    void flatten(SkWriteBuffer&) const override;
-    bool onFilterImage(Proxy*, const SkBitmap& src, const Context&, SkBitmap* result,
-                       SkIPoint* offset) const override;
+    explicit SkPictureImageFilter(SkReadBuffer&);
+    virtual void flatten(SkWriteBuffer&) const SK_OVERRIDE;
+    virtual bool onFilterImage(Proxy*, const SkBitmap& src, const Context&,
+                               SkBitmap* result, SkIPoint* offset) const SK_OVERRIDE;
+    virtual bool onFilterBounds(const SkIRect& src, const SkMatrix&,
+                                SkIRect* dst) const SK_OVERRIDE;
 
 private:
-    explicit SkPictureImageFilter(const SkPicture* picture);
-    SkPictureImageFilter(const SkPicture* picture, const SkRect& cropRect,
-                         PictureResolution, SkFilterQuality);
-
-    void drawPictureAtDeviceResolution(SkBaseDevice*, const SkIRect& deviceBounds,
-                                       const Context&) const;
-    void drawPictureAtLocalResolution(Proxy*, SkBaseDevice*, const SkIRect& deviceBounds,
-                                      const Context&) const;
-
-    const SkPicture*      fPicture;
-    SkRect                fCropRect;
-    PictureResolution     fPictureResolution;
-    SkFilterQuality       fFilterQuality;
-
+    const SkPicture* fPicture;
+    SkRect           fCropRect;
     typedef SkImageFilter INHERITED;
 };
 

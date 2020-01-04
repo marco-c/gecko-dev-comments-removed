@@ -9,6 +9,7 @@
 #define SkPictureFlat_DEFINED
 
 
+
 #include "SkBitmapHeap.h"
 #include "SkChecksum.h"
 #include "SkChunkAlloc.h"
@@ -18,6 +19,7 @@
 #include "SkPicture.h"
 #include "SkPtrRecorder.h"
 #include "SkTDynamicHash.h"
+#include "SkTRefArray.h"
 
 enum DrawType {
     UNUSED,
@@ -27,9 +29,9 @@ enum DrawType {
     CLIP_RRECT,
     CONCAT,
     DRAW_BITMAP,
-    DRAW_BITMAP_MATRIX, 
+    DRAW_BITMAP_MATRIX,
     DRAW_BITMAP_NINE,
-    DRAW_BITMAP_RECT,
+    DRAW_BITMAP_RECT_TO_RECT,
     DRAW_CLEAR,
     DRAW_DATA,
     DRAW_OVAL,
@@ -57,25 +59,16 @@ enum DrawType {
     SKEW,
     TRANSLATE,
     NOOP,
-    BEGIN_COMMENT_GROUP, 
-    COMMENT,             
-    END_COMMENT_GROUP,   
+    BEGIN_COMMENT_GROUP,
+    COMMENT,
+    END_COMMENT_GROUP,
 
     
     DRAW_DRRECT,
-    PUSH_CULL,  
-    POP_CULL,   
+    PUSH_CULL,
+    POP_CULL,
 
-    DRAW_PATCH, 
-    DRAW_PICTURE_MATRIX_PAINT,
-    DRAW_TEXT_BLOB,
-    DRAW_IMAGE,
-    DRAW_IMAGE_RECT_STRICT, 
-    DRAW_ATLAS,
-    DRAW_IMAGE_NINE,
-    DRAW_IMAGE_RECT,
-
-    LAST_DRAWTYPE_ENUM = DRAW_IMAGE_RECT
+    LAST_DRAWTYPE_ENUM = POP_CULL
 };
 
 
@@ -86,11 +79,6 @@ enum DrawVertexFlags {
     DRAW_VERTICES_HAS_COLORS  = 0x02,
     DRAW_VERTICES_HAS_INDICES = 0x04,
     DRAW_VERTICES_HAS_XFER    = 0x08,
-};
-
-enum DrawAtlasFlags {
-    DRAW_ATLAS_HAS_COLORS   = 1 << 0,
-    DRAW_ATLAS_HAS_CULL     = 1 << 1,
 };
 
 
@@ -135,9 +123,13 @@ protected:
 
 class SkFactoryPlayback {
 public:
-    SkFactoryPlayback(int count) : fCount(count) { fArray = new SkFlattenable::Factory[count]; }
+    SkFactoryPlayback(int count) : fCount(count) {
+        fArray = SkNEW_ARRAY(SkFlattenable::Factory, count);
+    }
 
-    ~SkFactoryPlayback() { delete[] fArray; }
+    ~SkFactoryPlayback() {
+        SkDELETE_ARRAY(fArray);
+    }
 
     SkFlattenable::Factory* base() const { return fArray; }
 
@@ -179,7 +171,7 @@ class SkFlatData;
 
 class SkFlatController : public SkRefCnt {
 public:
-
+    SK_DECLARE_INST_COUNT(SkFlatController)
 
     SkFlatController(uint32_t writeBufferFlags = 0);
     virtual ~SkFlatController();
@@ -296,8 +288,8 @@ public:
     
     template <typename Traits, typename T>
     void unflatten(T* result,
-                   SkBitmapHeap* bitmapHeap = nullptr,
-                   SkTypefacePlayback* facePlayback = nullptr) const {
+                   SkBitmapHeap* bitmapHeap = NULL,
+                   SkTypefacePlayback* facePlayback = NULL) const {
         SkReadBuffer buffer(this->data(), fFlatSize);
 
         if (bitmapHeap) {
@@ -357,7 +349,7 @@ private:
         fIndex     = index;
         fFlatSize  = size;
         fTopBot[0] = SK_ScalarNaN;  
-        fChecksum  = SkChecksum::Murmur3(this->data(), size);
+        fChecksum  = SkChecksum::Compute((uint32_t*)this->data(), size);
     }
 
     int fIndex;
@@ -418,21 +410,21 @@ public:
                                      const SkFlatData* toReplace,
                                      bool* added,
                                      bool* replaced) {
-        SkASSERT(added != nullptr && replaced != nullptr);
+        SkASSERT(added != NULL && replaced != NULL);
 
         const int oldCount = this->count();
         SkFlatData* flat = this->findAndReturnMutableFlat(element);
         *added = this->count() > oldCount;
 
         
-        if (!*added || toReplace == nullptr) {
+        if (!*added || toReplace == NULL) {
             *replaced = false;
             return flat;
         }
 
         
         const SkFlatData* found = fHash.find(*toReplace);
-        if (found == nullptr) {
+        if (found == NULL) {
             *replaced = false;
             return flat;
         }
@@ -451,6 +443,22 @@ public:
 
         *replaced = true;
         return flat;
+    }
+
+    
+
+
+
+    SkTRefArray<T>* unflattenToArray() const {
+        const int count = this->count();
+        if (count == 0) {
+            return NULL;
+        }
+        SkTRefArray<T>* array = SkTRefArray<T>::Create(count);
+        for (int i = 0; i < count; i++) {
+            this->unflatten(&array->writableAt(i), fIndexedData[i]);
+        }
+        return array;
     }
 
     
@@ -484,7 +492,7 @@ private:
         }
 
         
-        SkASSERT(fController->getBitmapHeap() != nullptr);
+        SkASSERT(fController->getBitmapHeap() != NULL);
         fScratch.setBitmapHeap(fController->getBitmapHeap());
         fScratch.setTypefaceRecorder(fController->getTypefaceSet());
         fScratch.setNamedFactoryRecorder(fController->getNamedFactorySet());
@@ -497,7 +505,7 @@ private:
         const SkFlatData& scratch = this->resetScratch(element, this->count()+1);
 
         SkFlatData* candidate = fHash.find(scratch);
-        if (candidate != nullptr) {
+        if (candidate != NULL) {
             return candidate;
         }
 
@@ -520,7 +528,7 @@ private:
 
         
         SkFlatData* scratch = (SkFlatData*)fScratch.getWriter32()->contiguousArray();
-        SkASSERT(scratch != nullptr);
+        SkASSERT(scratch != NULL);
         scratch->stampHeader(index, SkToS32(dataSize));
         return *scratch;
     }
@@ -534,7 +542,7 @@ private:
 
         
         SkFlatData* scratch = (SkFlatData*)fScratch.getWriter32()->contiguousArray();
-        SkASSERT(scratch != nullptr);
+        SkASSERT(scratch != NULL);
         memcpy(detached, scratch, fScratch.bytesWritten());
 
         
@@ -557,6 +565,44 @@ private:
 
     
     SkTDynamicHash<SkFlatData, SkFlatData, SkFlatData::HashTraits> fHash;
+};
+
+typedef SkFlatDictionary<SkPaint, SkPaint::FlatteningTraits> SkPaintDictionary;
+
+class SkChunkFlatController : public SkFlatController {
+public:
+    SkChunkFlatController(size_t minSize)
+    : fHeap(minSize)
+    , fTypefaceSet(SkNEW(SkRefCntSet))
+    , fLastAllocated(NULL) {
+        this->setTypefaceSet(fTypefaceSet);
+        this->setTypefacePlayback(&fTypefacePlayback);
+    }
+
+    virtual void* allocThrow(size_t bytes) SK_OVERRIDE {
+        fLastAllocated = fHeap.allocThrow(bytes);
+        return fLastAllocated;
+    }
+
+    virtual void unalloc(void* ptr) SK_OVERRIDE {
+        
+        
+        if (ptr == fLastAllocated) (void)fHeap.unalloc(ptr);
+    }
+
+    void setupPlaybacks() const {
+        fTypefacePlayback.reset(fTypefaceSet.get());
+    }
+
+    void setBitmapStorage(SkBitmapHeap* heap) {
+        this->setBitmapHeap(heap);
+    }
+
+private:
+    SkChunkAlloc               fHeap;
+    SkAutoTUnref<SkRefCntSet>  fTypefaceSet;
+    void*                      fLastAllocated;
+    mutable SkTypefacePlayback fTypefacePlayback;
 };
 
 #endif

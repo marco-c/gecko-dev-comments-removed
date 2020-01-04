@@ -9,24 +9,23 @@
 #ifndef GrGLCaps_DEFINED
 #define GrGLCaps_DEFINED
 
-#include "GrCaps.h"
-#include "glsl/GrGLSL.h"
-#include "GrGLStencilAttachment.h"
-#include "SkChecksum.h"
-#include "SkTHash.h"
+#include "GrDrawTargetCaps.h"
+#include "GrGLStencilBuffer.h"
 #include "SkTArray.h"
+#include "SkTDArray.h"
 
 class GrGLContextInfo;
-class GrGLSLCaps;
 
 
 
 
 
 
-class GrGLCaps : public GrCaps {
+class GrGLCaps : public GrDrawTargetCaps {
 public:
-    typedef GrGLStencilAttachment::Format StencilFormat;
+    SK_DECLARE_INST_COUNT(GrGLCaps)
+
+    typedef GrGLStencilBuffer::Format StencilFormat;
 
     
 
@@ -65,12 +64,18 @@ public:
 
 
         kES_EXT_MsToTexture_MSFBOType,
+
+        kLast_MSFBOType = kES_EXT_MsToTexture_MSFBOType
+    };
+
+    enum FBFetchType {
+        kNone_FBFetchType,
         
+        kEXT_FBFetchType,
+        
+        kNV_FBFetchType,
 
-
-        kMixedSamples_MSFBOType,
-
-        kLast_MSFBOType = kMixedSamples_MSFBOType
+        kLast_FBFetchType = kNV_FBFetchType
     };
 
     enum InvalidateFBType {
@@ -94,8 +99,22 @@ public:
 
 
 
-    GrGLCaps(const GrContextOptions& contextOptions, const GrGLContextInfo& ctxInfo,
-             const GrGLInterface* glInterface);
+    GrGLCaps();
+
+    GrGLCaps(const GrGLCaps& caps);
+
+    GrGLCaps& operator = (const GrGLCaps& caps);
+
+    
+
+
+    virtual void reset() SK_OVERRIDE;
+
+    
+
+
+
+    bool init(const GrGLContextInfo& ctxInfo, const GrGLInterface* glInterface);
 
     
 
@@ -117,6 +136,24 @@ public:
     
 
 
+
+
+
+    void markColorConfigAndStencilFormatAsVerified(
+                    GrPixelConfig config,
+                    const GrGLStencilBuffer::Format& format);
+
+    
+
+
+
+    bool isColorConfigAndStencilFormatVerified(
+                    GrPixelConfig config,
+                    const GrGLStencilBuffer::Format& format) const;
+
+    
+
+
     MSFBOType msFBOType() const { return fMSFBOType; }
 
     
@@ -125,8 +162,7 @@ public:
     bool usesMSAARenderBuffers() const {
         return kNone_MSFBOType != fMSFBOType &&
                kES_IMG_MsToTexture_MSFBOType != fMSFBOType &&
-               kES_EXT_MsToTexture_MSFBOType != fMSFBOType &&
-               kMixedSamples_MSFBOType != fMSFBOType;
+               kES_EXT_MsToTexture_MSFBOType != fMSFBOType;
     }
 
     
@@ -137,6 +173,8 @@ public:
         return kES_IMG_MsToTexture_MSFBOType == fMSFBOType ||
                kES_EXT_MsToTexture_MSFBOType == fMSFBOType;
     }
+
+    FBFetchType fbFetchType() const { return fFBFetchType; }
 
     InvalidateFBType invalidateFBType() const { return fInvalidateFBType; }
 
@@ -162,6 +200,9 @@ public:
     int maxFragmentTextureUnits() const { return fMaxFragmentTextureUnits; }
 
     
+    int maxFixedFunctionTextureCoords() const { return fMaxFixedFunctionTextureCoords; }
+
+    
     bool rgba8RenderbufferSupport() const { return fRGBA8RenderbufferSupport; }
 
     
@@ -170,6 +211,9 @@ public:
 
 
     bool bgraIsInternalFormat() const { return fBGRAIsInternalFormat; }
+
+    
+    bool textureSwizzleSupport() const { return fTextureSwizzleSupport; }
 
     
     bool unpackRowLengthSupport() const { return fUnpackRowLengthSupport; }
@@ -196,24 +240,10 @@ public:
     bool imagingSupport() const { return fImagingSupport; }
 
     
+    bool fragCoordConventionsSupport() const { return fFragCoordsConventionSupport; }
+
+    
     bool vertexArrayObjectSupport() const { return fVertexArrayObjectSupport; }
-
-    
-    bool instancedDrawingSupport() const { return fInstancedDrawingSupport; }
-
-    
-    bool directStateAccessSupport() const { return fDirectStateAccessSupport; }
-
-    
-    bool debugSupport() const { return fDebugSupport; }
-
-    
-    bool ES2CompatibilitySupport() const { return fES2CompatibilitySupport; }
-
-    
-    bool multisampleDisableSupport() const {
-        return fMultisampleDisableSupport;
-    }
 
     
     bool useNonVBOVertexAndIndexDynamicData() const {
@@ -223,29 +253,19 @@ public:
     
     bool readPixelsSupported(const GrGLInterface* intf,
                              GrGLenum format,
-                             GrGLenum type,
-                             GrGLenum currFboFormat) const;
+                             GrGLenum type) const;
 
     bool isCoreProfile() const { return fIsCoreProfile; }
 
-    bool bindFragDataLocationSupport() const { return fBindFragDataLocationSupport; }
 
-    bool bindUniformLocationSupport() const { return fBindUniformLocationSupport; }
+    bool fullClearIsFree() const { return fFullClearIsFree; }
 
-    
-    bool externalTextureSupport() const { return fExternalTextureSupport; }
+    bool dropsTileOnZeroDivide() const { return fDropsTileOnZeroDivide; }
 
     
 
 
-
-
-    bool srgbWriteControl() const { return fSRGBWriteControl; }
-
-    
-
-
-    SkString dump() const override;
+    virtual SkString dump() const SK_OVERRIDE;
 
     
 
@@ -260,18 +280,7 @@ public:
 
     LATCAlias latcAlias() const { return fLATCAlias; }
 
-    bool rgba8888PixelsOpsAreSlow() const { return fRGBA8888PixelsOpsAreSlow; }
-    bool partialFBOReadIsSlow() const { return fPartialFBOReadIsSlow; }
-
-    const GrGLSLCaps* glslCaps() const { return reinterpret_cast<GrGLSLCaps*>(fShaderCaps.get()); }
-
 private:
-    void init(const GrContextOptions&, const GrGLContextInfo&, const GrGLInterface*);
-    void initGLSL(const GrGLContextInfo&);
-    bool hasPathRenderingSupport(const GrGLContextInfo&, const GrGLInterface*);
-
-    void onApplyOptionsOverrides(const GrContextOptions& options) override;
-
     
 
 
@@ -310,37 +319,35 @@ private:
     };
 
     void initFSAASupport(const GrGLContextInfo&, const GrGLInterface*);
-    void initBlendEqationSupport(const GrGLContextInfo&);
     void initStencilFormats(const GrGLContextInfo&);
     
-    void initConfigRenderableTable(const GrGLContextInfo&, bool srgbSupport);
-    void initConfigTexturableTable(const GrGLContextInfo&, const GrGLInterface*, bool srgbSupport);
-
-    bool doReadPixelsSupported(const GrGLInterface* intf, GrGLenum format, GrGLenum type) const;
-
-    void initShaderPrecisionTable(const GrGLContextInfo& ctxInfo,
-                                  const GrGLInterface* intf,
-                                  GrGLSLCaps* glslCaps);
-
-    void initConfigSwizzleTable(const GrGLContextInfo& ctxInfo, GrGLSLCaps* glslCaps);
+    void initConfigRenderableTable(const GrGLContextInfo&);
+    void initConfigTexturableTable(const GrGLContextInfo&, const GrGLInterface*);
 
     
     
     VerifiedColorConfigs fVerifiedColorConfigs;
 
     SkTArray<StencilFormat, true> fStencilFormats;
+    
+    
+    
+    SkTArray<VerifiedColorConfigs, true> fStencilVerifiedColorConfigs;
 
     int fMaxFragmentUniformVectors;
     int fMaxVertexAttributes;
     int fMaxFragmentTextureUnits;
+    int fMaxFixedFunctionTextureCoords;
 
     MSFBOType           fMSFBOType;
+    FBFetchType         fFBFetchType;
     InvalidateFBType    fInvalidateFBType;
     MapBufferType       fMapBufferType;
     LATCAlias           fLATCAlias;
 
     bool fRGBA8RenderbufferSupport : 1;
     bool fBGRAIsInternalFormat : 1;
+    bool fTextureSwizzleSupport : 1;
     bool fUnpackRowLengthSupport : 1;
     bool fUnpackFlipYSupport : 1;
     bool fPackRowLengthSupport : 1;
@@ -350,35 +357,14 @@ private:
     bool fTextureRedSupport : 1;
     bool fImagingSupport  : 1;
     bool fTwoFormatLimit : 1;
+    bool fFragCoordsConventionSupport : 1;
     bool fVertexArrayObjectSupport : 1;
-    bool fInstancedDrawingSupport : 1;
-    bool fDirectStateAccessSupport : 1;
-    bool fDebugSupport : 1;
-    bool fES2CompatibilitySupport : 1;
-    bool fMultisampleDisableSupport : 1;
     bool fUseNonVBOVertexAndIndexDynamicData : 1;
     bool fIsCoreProfile : 1;
-    bool fBindFragDataLocationSupport : 1;
-    bool fSRGBWriteControl : 1;
-    bool fRGBA8888PixelsOpsAreSlow : 1;
-    bool fPartialFBOReadIsSlow : 1;
-    bool fBindUniformLocationSupport : 1;
-    bool fExternalTextureSupport : 1;
+    bool fFullClearIsFree : 1;
+    bool fDropsTileOnZeroDivide : 1;
 
-    struct ReadPixelsSupportedFormat {
-        GrGLenum fFormat;
-        GrGLenum fType;
-        GrGLenum fFboFormat;
-
-        bool operator==(const ReadPixelsSupportedFormat& rhs) const {
-            return fFormat    == rhs.fFormat
-                && fType      == rhs.fType
-                && fFboFormat == rhs.fFboFormat;
-        }
-    };
-    mutable SkTHashMap<ReadPixelsSupportedFormat, bool> fReadPixelsSupportedCache;
-
-    typedef GrCaps INHERITED;
+    typedef GrDrawTargetCaps INHERITED;
 };
 
 #endif

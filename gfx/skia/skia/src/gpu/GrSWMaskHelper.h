@@ -9,16 +9,15 @@
 #define GrSWMaskHelper_DEFINED
 
 #include "GrColor.h"
-#include "GrPipelineBuilder.h"
+#include "GrDrawState.h"
 #include "SkBitmap.h"
 #include "SkDraw.h"
 #include "SkMatrix.h"
 #include "SkRasterClip.h"
 #include "SkRegion.h"
-#include "SkTextureCompressor.h"
 #include "SkTypes.h"
 
-class GrClip;
+class GrAutoScratchTexture;
 class GrContext;
 class GrTexture;
 class SkPath;
@@ -42,16 +41,14 @@ class GrDrawTarget;
 class GrSWMaskHelper : SkNoncopyable {
 public:
     GrSWMaskHelper(GrContext* context)
-    : fContext(context)
-    , fCompressionMode(kNone_CompressionMode) {
+    : fContext(context) {
     }
 
     
     
     
     
-    
-    bool init(const SkIRect& resultBounds, const SkMatrix* matrix, bool allowCompression = true);
+    bool init(const SkIRect& resultBounds, const SkMatrix* matrix);
 
     
     void draw(const SkRect& rect, SkRegion::Op op,
@@ -62,14 +59,15 @@ public:
               bool antiAlias, uint8_t alpha);
 
     
+    
+    bool getTexture(GrAutoScratchTexture* texture);
+
+    
     void toTexture(GrTexture* texture);
 
     
-    void toSDF(unsigned char* sdf);
-    
-    
     void clear(uint8_t alpha) {
-        fPixels.erase(SkColorSetARGB(alpha, 0xFF, 0xFF, 0xFF));
+        fBM.eraseColor(SkColorSetARGB(alpha, alpha, alpha, alpha));
     }
 
     
@@ -79,7 +77,7 @@ public:
                                             const SkStrokeRec& stroke,
                                             const SkIRect& resultBounds,
                                             bool antiAlias,
-                                            const SkMatrix* matrix);
+                                            SkMatrix* matrix);
 
     
     
@@ -93,48 +91,24 @@ public:
     
     static void DrawToTargetWithPathMask(GrTexture* texture,
                                          GrDrawTarget* target,
-                                         GrPipelineBuilder* pipelineBuilder,
-                                         GrColor,
-                                         const SkMatrix& viewMatrix,
                                          const SkIRect& rect);
 
+protected:
 private:
-    
-    
-    GrTexture* createTexture();
-
     GrContext*      fContext;
     SkMatrix        fMatrix;
-    SkAutoPixmapStorage fPixels;
+    SkBitmap        fBM;
     SkDraw          fDraw;
     SkRasterClip    fRasterClip;
 
     
     
-    
-    
-    enum CompressionMode {
-        kNone_CompressionMode,
-        kCompress_CompressionMode,
-        kBlitter_CompressionMode,
-    } fCompressionMode;
+    void sendTextureData(GrTexture *texture, const GrTextureDesc& desc,
+                         const void *data, int rowbytes);
 
     
     
-    SkAutoMalloc fCompressedBuffer;
-
-    
-    
-    SkTextureCompressor::Format fCompressedFormat;
-
-    
-    
-    void sendTextureData(GrTexture *texture, const GrSurfaceDesc& desc,
-                         const void *data, size_t rowbytes);
-
-    
-    
-    void compressTextureData(GrTexture *texture, const GrSurfaceDesc& desc);
+    void compressTextureData(GrTexture *texture, const GrTextureDesc& desc);
 
     typedef SkNoncopyable INHERITED;
 };

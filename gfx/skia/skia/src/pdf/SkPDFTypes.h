@@ -6,25 +6,19 @@
 
 
 
+
 #ifndef SkPDFTypes_DEFINED
 #define SkPDFTypes_DEFINED
 
 #include "SkRefCnt.h"
 #include "SkScalar.h"
-#include "SkStream.h"
 #include "SkString.h"
 #include "SkTDArray.h"
-#include "SkTHash.h"
+#include "SkTSet.h"
 #include "SkTypes.h"
 
-class SkPDFObjNumMap;
-class SkPDFObject;
-class SkPDFSubstituteMap;
-
-#ifdef SK_PDF_IMAGE_STATS
-#include "SkAtomics.h"
-#endif
-
+class SkPDFCatalog;
+class SkWStream;
 
 
 
@@ -34,163 +28,261 @@ class SkPDFSubstituteMap;
 
 class SkPDFObject : public SkRefCnt {
 public:
-    
-
-
-
-
-    
-    virtual void emitObject(SkWStream* stream,
-                            const SkPDFObjNumMap& objNumMap,
-                            const SkPDFSubstituteMap& substitutes) const = 0;
+    SK_DECLARE_INST_COUNT(SkPDFObject)
 
     
 
 
 
 
-    virtual void addResources(SkPDFObjNumMap* catalog,
-                              const SkPDFSubstituteMap& substitutes) const {}
 
-private:
-    typedef SkRefCnt INHERITED;
+    virtual size_t getOutputSize(SkPDFCatalog* catalog, bool indirect);
+
+    
+
+
+
+
+
+
+
+
+    virtual void getResources(const SkTSet<SkPDFObject*>& knownResourceObjects,
+                              SkTSet<SkPDFObject*>* newResourceObjects);
+
+    
+
+
+
+    void emit(SkWStream* stream, SkPDFCatalog* catalog, bool indirect);
+
+    
+
+
+
+    void emitIndirectObject(SkWStream* stream, SkPDFCatalog* catalog);
+
+    
+
+
+    size_t getIndirectOutputSize(SkPDFCatalog* catalog);
+
+    
+
+
+
+
+    static void AddResourceHelper(SkPDFObject* resource,
+                                  SkTDArray<SkPDFObject*>* list);
+
+    
+
+
+
+
+
+
+
+
+    static void GetResourcesHelper(
+            const SkTDArray<SkPDFObject*>* resources,
+            const SkTSet<SkPDFObject*>& knownResourceObjects,
+            SkTSet<SkPDFObject*>* newResourceObjects);
+
+protected:
+    
+
+
+
+
+
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect) = 0;
+
+        typedef SkRefCnt INHERITED;
 };
 
 
 
 
 
-
-
-
-class SkPDFUnion {
+class SkPDFObjRef : public SkPDFObject {
 public:
-    
-    SkPDFUnion move() { return static_cast<SkPDFUnion&&>(*this); }
-    
-    
-    SkPDFUnion(SkPDFUnion&& other);
-    SkPDFUnion& operator=(SkPDFUnion&& other);
-
-    ~SkPDFUnion();
+    SK_DECLARE_INST_COUNT(SkPDFObjRef)
 
     
 
 
-    static SkPDFUnion Int(int32_t);
-
-    static SkPDFUnion Int(size_t v) { return SkPDFUnion::Int(SkToS32(v)); }
-
-    static SkPDFUnion Bool(bool);
-
-    static SkPDFUnion Scalar(SkScalar);
+    explicit SkPDFObjRef(SkPDFObject* obj);
+    virtual ~SkPDFObjRef();
 
     
-
-
-
-
-
-    
-
-
-    static SkPDFUnion Name(const char*);
-
-    
-
-    static SkPDFUnion String(const char*);
-
-    
-
-
-    static SkPDFUnion Name(const SkString&);
-
-    
-    static SkPDFUnion String(const SkString&);
-
-    
-
-
-
-    static SkPDFUnion Object(SkPDFObject*);
-
-    
-
-
-
-    static SkPDFUnion ObjRef(SkPDFObject*);
-
-    
-
-    void emitObject(SkWStream*,
-                    const SkPDFObjNumMap&,
-                    const SkPDFSubstituteMap&) const;
-    void addResources(SkPDFObjNumMap*, const SkPDFSubstituteMap&) const;
-
-    bool isName() const;
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+    virtual size_t getOutputSize(SkPDFCatalog* catalog, bool indirect);
 
 private:
-    union {
-        int32_t fIntValue;
-        bool fBoolValue;
-        SkScalar fScalarValue;
-        const char* fStaticString;
-        char fSkString[sizeof(SkString)];
-        SkPDFObject* fObject;
-    };
-    enum class Type : char {
-        
+    SkAutoTUnref<SkPDFObject> fObj;
 
-        kDestroyed = 0,
-        kInt,
-        kBool,
-        kScalar,
-        kName,
-        kString,
-        kNameSkS,
-        kStringSkS,
-        kObjRef,
-        kObject,
-    };
-    Type fType;
-
-    SkPDFUnion(Type);
-    
-    
-    SkPDFUnion& operator=(const SkPDFUnion&) = delete;
-    SkPDFUnion(const SkPDFUnion&) = delete;
-};
-static_assert(sizeof(SkString) == sizeof(void*), "SkString_size");
-
-
-
-#if 0  
-
-
-
-class SkPDFAtom final : public SkPDFObject {
-public:
-    void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap,
-                    const SkPDFSubstituteMap& substitutes) final;
-    void addResources(SkPDFObjNumMap*, const SkPDFSubstituteMap&) const final;
-    SkPDFAtom(SkPDFUnion&& v) : fValue(v.move()) {}
-
-private:
-    const SkPDFUnion fValue;
     typedef SkPDFObject INHERITED;
 };
-#endif  
 
 
 
 
 
-
-
-class SkPDFArray final : public SkPDFObject {
+class SkPDFInt : public SkPDFObject {
 public:
-    static const int kMaxLen = 8191;
+    SK_DECLARE_INST_COUNT(SkPDFInt)
+
+    
+
+
+    explicit SkPDFInt(int32_t value);
+    virtual ~SkPDFInt();
+
+    
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+
+private:
+    int32_t fValue;
+
+    typedef SkPDFObject INHERITED;
+};
+
+
+
+
+
+class SkPDFBool : public SkPDFObject {
+public:
+    SK_DECLARE_INST_COUNT(SkPDFBool)
+
+    
+
+
+    explicit SkPDFBool(bool value);
+    virtual ~SkPDFBool();
+
+    
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+    virtual size_t getOutputSize(SkPDFCatalog* catalog, bool indirect);
+
+private:
+    bool fValue;
+
+    typedef SkPDFObject INHERITED;
+};
+
+
+
+
+
+class SkPDFScalar : public SkPDFObject {
+public:
+    SK_DECLARE_INST_COUNT(SkPDFScalar)
+
+    
+
+
+    explicit SkPDFScalar(SkScalar value);
+    virtual ~SkPDFScalar();
+
+    static void Append(SkScalar value, SkWStream* stream);
+
+    
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+
+private:
+    SkScalar fValue;
+
+    typedef SkPDFObject INHERITED;
+};
+
+
+
+
+
+class SkPDFString : public SkPDFObject {
+public:
+    SK_DECLARE_INST_COUNT(SkPDFString)
+
+    
+
+
+    explicit SkPDFString(const char value[]);
+    explicit SkPDFString(const SkString& value);
+
+    
+
+
+
+
+
+    SkPDFString(const uint16_t* value, size_t len, bool wideChars);
+    virtual ~SkPDFString();
+
+    
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+    virtual size_t getOutputSize(SkPDFCatalog* catalog, bool indirect);
+
+    static SkString FormatString(const char* input, size_t len);
+    static SkString FormatString(const uint16_t* input, size_t len,
+                                 bool wideChars);
+private:
+    static const size_t kMaxLen = 65535;
+
+    const SkString fValue;
+
+    static SkString DoFormatString(const void* input, size_t len,
+                                 bool wideInput, bool wideOutput);
+
+    typedef SkPDFObject INHERITED;
+};
+
+
+
+
+
+class SkPDFName : public SkPDFObject {
+public:
+    SK_DECLARE_INST_COUNT(SkPDFName)
+
+    
+
+
+    explicit SkPDFName(const char name[]);
+    explicit SkPDFName(const SkString& name);
+    virtual ~SkPDFName();
+
+    bool operator==(const SkPDFName& b) const;
+
+    
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+    virtual size_t getOutputSize(SkPDFCatalog* catalog, bool indirect);
+
+private:
+    static const size_t kMaxLen = 127;
+
+    const SkString fValue;
+
+    static SkString FormatName(const SkString& input);
+
+    typedef SkPDFObject INHERITED;
+};
+
+
+
+
+
+class SkPDFArray : public SkPDFObject {
+public:
+    SK_DECLARE_INST_COUNT(SkPDFArray)
 
     
 
@@ -198,15 +290,13 @@ public:
     virtual ~SkPDFArray();
 
     
-    void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap,
-                    const SkPDFSubstituteMap& substitutes) const override;
-    void addResources(SkPDFObjNumMap*,
-                      const SkPDFSubstituteMap&) const override;
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+    virtual size_t getOutputSize(SkPDFCatalog* catalog, bool indirect);
 
     
 
-    int size() const;
+    int size() { return fValue.count(); }
 
     
 
@@ -216,20 +306,40 @@ public:
     
 
 
-    void appendInt(int32_t);
-    void appendBool(bool);
-    void appendScalar(SkScalar);
-    void appendName(const char[]);
-    void appendName(const SkString&);
-    void appendString(const char[]);
-    void appendString(const SkString&);
+    SkPDFObject* getAt(int index) { return fValue[index]; }
+
     
-    void appendObject(SkPDFObject*);
-    void appendObjRef(SkPDFObject*);
+
+
+
+
+    SkPDFObject* setAt(int index, SkPDFObject* value);
+
+    
+
+
+
+    SkPDFObject* append(SkPDFObject* value);
+
+    
+
+
+    void appendInt(int32_t value);
+
+    
+
+
+    void appendScalar(SkScalar value);
+
+    
+
+
+    void appendName(const char name[]);
 
 private:
-    SkTDArray<SkPDFUnion> fValues;
-    void append(SkPDFUnion&& value);
+    static const int kMaxLen = 8191;
+    SkTDArray<SkPDFObject*> fValue;
+
     typedef SkPDFObject INHERITED;
 };
 
@@ -239,6 +349,8 @@ private:
 
 class SkPDFDict : public SkPDFObject {
 public:
+    SK_DECLARE_INST_COUNT(SkPDFDict)
+
     
 
     SkPDFDict();
@@ -251,11 +363,9 @@ public:
     virtual ~SkPDFDict();
 
     
-    void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap,
-                    const SkPDFSubstituteMap& substitutes) const override;
-    void addResources(SkPDFObjNumMap*,
-                      const SkPDFSubstituteMap&) const override;
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+    virtual size_t getOutputSize(SkPDFCatalog* catalog, bool indirect);
 
     
 
@@ -266,137 +376,79 @@ public:
 
 
 
-    void insertObject(const char key[], SkPDFObject* value);
-    void insertObject(const SkString& key, SkPDFObject* value);
-    void insertObjRef(const char key[], SkPDFObject* value);
-    void insertObjRef(const SkString& key, SkPDFObject* value);
+    SkPDFObject* insert(SkPDFName* key, SkPDFObject* value);
 
     
 
 
 
-    void insertBool(const char key[], bool value);
+
+
+    SkPDFObject* insert(const char key[], SkPDFObject* value);
+
+    
+
+
+
     void insertInt(const char key[], int32_t value);
-    void insertInt(const char key[], size_t value);
+
+    
+
+
+
+    void insertInt(const char key[], size_t value) {
+        this->insertInt(key, SkToS32(value));
+    }
+
+    
+
+
+
     void insertScalar(const char key[], SkScalar value);
-    void insertName(const char key[], const char nameValue[]);
-    void insertName(const char key[], const SkString& nameValue);
-    void insertString(const char key[], const char value[]);
-    void insertString(const char key[], const SkString& value);
+
+    
+
+
+
+    void insertName(const char key[], const char name[]);
+
+    
+
+
+
+    void insertName(const char key[], const SkString& name) {
+        this->insertName(key, name.c_str());
+    }
 
     
 
     void clear();
 
+protected:
     
 
-    void emitAll(SkWStream* stream,
-                 const SkPDFObjNumMap& objNumMap,
-                 const SkPDFSubstituteMap& substitutes) const;
+    void remove(const char key[]);
+
+    
+
+
+    void mergeFrom(const SkPDFDict& other);
 
 private:
-    struct Record {
-        SkPDFUnion fKey;
-        SkPDFUnion fValue;
+    struct Rec {
+        SkPDFName* key;
+        SkPDFObject* value;
+        Rec(SkPDFName* k, SkPDFObject* v) : key(k), value(v) {}
     };
-    SkTDArray<Record> fRecords;
+
     static const int kMaxLen = 4095;
 
-    void set(SkPDFUnion&& name, SkPDFUnion&& value);
+    mutable SkMutex fMutex;  
+    SkTDArray<struct Rec> fValue;
+
+    SkPDFObject* append(SkPDFName* key, SkPDFObject* value);
 
     typedef SkPDFObject INHERITED;
 };
-
-
-
-
-
-
-
-
-class SkPDFSharedStream final : public SkPDFObject {
-public:
-    
-    SkPDFSharedStream(SkStreamAsset* data) : fAsset(data), fDict(new SkPDFDict) { SkASSERT(data); }
-    SkPDFDict* dict() { return fDict; }
-    void emitObject(SkWStream*,
-                    const SkPDFObjNumMap&,
-                    const SkPDFSubstituteMap&) const override;
-    void addResources(SkPDFObjNumMap*,
-                      const SkPDFSubstituteMap&) const override;
-
-private:
-    SkAutoTDelete<SkStreamAsset> fAsset;
-    SkAutoTUnref<SkPDFDict> fDict;
-    typedef SkPDFObject INHERITED;
-};
-
-
-
-
-
-
-
-
-class SkPDFObjNumMap : SkNoncopyable {
-public:
-    
-
-
-
-    bool addObject(SkPDFObject* obj);
-
-    
-
-
-
-    void addObjectRecursively(SkPDFObject* obj, const SkPDFSubstituteMap& subs);
-
-    
-
-
-    int32_t getObjectNumber(SkPDFObject* obj) const;
-
-    const SkTDArray<SkPDFObject*>& objects() const { return fObjects; }
-
-private:
-    SkTDArray<SkPDFObject*> fObjects;
-    SkTHashMap<SkPDFObject*, int32_t> fObjectNumbers;
-};
-
-
-
-
-
-
-
-
-class SkPDFSubstituteMap : SkNoncopyable {
-public:
-    ~SkPDFSubstituteMap();
-    
-
-
-    void setSubstitute(SkPDFObject* original, SkPDFObject* substitute);
-
-    
-
-
-    SkPDFObject* getSubstitute(SkPDFObject* object) const;
-
-    SkPDFObject* operator()(SkPDFObject* o) const {
-        return this->getSubstitute(o);
-    }
-
-private:
-    SkTHashMap<SkPDFObject*, SkPDFObject*> fSubstituteMap;
-};
-
-#ifdef SK_PDF_IMAGE_STATS
-extern SkAtomic<int> gDrawImageCalls;
-extern SkAtomic<int> gJpegImageObjects;
-extern SkAtomic<int> gRegularImageObjects;
-extern void SkPDFImageDumpStats();
-#endif 
 
 #endif

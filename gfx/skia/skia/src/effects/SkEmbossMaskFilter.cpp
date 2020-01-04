@@ -14,7 +14,7 @@
 #include "SkString.h"
 
 SkEmbossMaskFilter* SkEmbossMaskFilter::Create(SkScalar blurSigma, const Light& light) {
-    return new SkEmbossMaskFilter(blurSigma, light);
+    return SkNEW_ARGS(SkEmbossMaskFilter, (blurSigma, light));
 }
 
 static inline int pin2byte(int n) {
@@ -35,8 +35,8 @@ SkMaskFilter* SkBlurMaskFilter::CreateEmboss(const SkScalar direction[3],
 
 SkMaskFilter* SkBlurMaskFilter::CreateEmboss(SkScalar blurSigma, const SkScalar direction[3],
                                              SkScalar ambient, SkScalar specular) {
-    if (direction == nullptr) {
-        return nullptr;
+    if (direction == NULL) {
+        return NULL;
     }
 
     
@@ -61,7 +61,7 @@ static void normalize(SkScalar v[3]) {
     mag = SkScalarSqrt(mag);
 
     for (int i = 0; i < 3; i++) {
-        v[i] /= mag;
+        v[i] = SkScalarDiv(v[i], mag);
     }
 }
 
@@ -87,7 +87,7 @@ bool SkEmbossMaskFilter::filterMask(SkMask* dst, const SkMask& src,
         margin->set(SkScalarCeilToInt(3*sigma), SkScalarCeilToInt(3*sigma));
     }
 
-    if (src.fImage == nullptr) {
+    if (src.fImage == NULL) {
         return true;
     }
 
@@ -124,17 +124,17 @@ bool SkEmbossMaskFilter::filterMask(SkMask* dst, const SkMask& src,
     return true;
 }
 
-SkFlattenable* SkEmbossMaskFilter::CreateProc(SkReadBuffer& buffer) {
-    Light light;
-    if (buffer.readByteArray(&light, sizeof(Light))) {
-        light.fPad = 0; 
-        const SkScalar sigma = buffer.readScalar();
-        return Create(sigma, light);
-    }
-    return nullptr;
+SkEmbossMaskFilter::SkEmbossMaskFilter(SkReadBuffer& buffer)
+        : SkMaskFilter(buffer) {
+    SkASSERT(buffer.getArrayCount() == sizeof(Light));
+    buffer.readByteArray(&fLight, sizeof(Light));
+    SkASSERT(fLight.fPad == 0); 
+    fBlurSigma = buffer.readScalar();
 }
 
 void SkEmbossMaskFilter::flatten(SkWriteBuffer& buffer) const {
+    this->INHERITED::flatten(buffer);
+
     Light tmpLight = fLight;
     tmpLight.fPad = 0;    
     buffer.writeByteArray(&tmpLight, sizeof(tmpLight));

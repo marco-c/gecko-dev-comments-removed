@@ -35,6 +35,7 @@ void skjpeg_error_exit(j_common_ptr cinfo);
 
 struct skjpeg_source_mgr : jpeg_source_mgr {
     skjpeg_source_mgr(SkStream* stream, SkImageDecoder* decoder);
+    ~skjpeg_source_mgr();
 
     
     SkStream*       fStream;

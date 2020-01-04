@@ -12,8 +12,6 @@
 #include "SkPicture.h"
 #include "SkRect.h"
 #include "SkRefCnt.h"
-#include "SkString.h"
-#include "SkTime.h"
 
 class SkCanvas;
 class SkWStream;
@@ -32,8 +30,29 @@ class SkWStream;
 
 
 
-class SK_API SkDocument : public SkRefCnt {
+class SkDocument : public SkRefCnt {
 public:
+    SK_DECLARE_INST_COUNT(SkDocument)
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static SkDocument* CreatePDF(
+            const char filename[],
+            SkPicture::EncodeBitmap encoder = NULL,
+            SkScalar rasterDpi = SK_ScalarDefaultRasterDPI);
+
     
 
 
@@ -54,28 +73,13 @@ public:
 
 
 
-    static SkDocument* CreatePDF(SkWStream*,
-                                 SkScalar dpi = SK_ScalarDefaultRasterDPI);
-
-    
 
 
-    static SkDocument* CreatePDF(const char outputFilePath[],
-                                 SkScalar dpi = SK_ScalarDefaultRasterDPI);
+    static SkDocument* CreatePDF(
+            SkWStream*, void (*Done)(SkWStream*,bool aborted) = NULL,
+            SkPicture::EncodeBitmap encoder = NULL,
+            SkScalar rasterDpi = SK_ScalarDefaultRasterDPI);
 
-    
-
-
-
-    static SkDocument* CreateXPS(SkWStream* stream,
-                                 SkScalar dpi = SK_ScalarDefaultRasterDPI);
-
-    
-
-
-
-    static SkDocument* CreateXPS(const char path[],
-                                 SkScalar dpi = SK_ScalarDefaultRasterDPI);
     
 
 
@@ -106,36 +110,8 @@ public:
 
     void abort();
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    struct Attribute {
-        SkString fKey, fValue;
-        Attribute(const SkString& k, const SkString& v) : fKey(k), fValue(v) {}
-    };
-    virtual void setMetadata(const SkTArray<SkDocument::Attribute>&,
-                             const SkTime::DateTime* ,
-                             const SkTime::DateTime* ) {}
-
 protected:
     SkDocument(SkWStream*, void (*)(SkWStream*, bool aborted));
-
     
     
     virtual ~SkDocument();
@@ -145,9 +121,6 @@ protected:
     virtual void onEndPage() = 0;
     virtual bool onClose(SkWStream*) = 0;
     virtual void onAbort() = 0;
-
-    
-    SkWStream* getStream() { return fStream; }
 
     enum State {
         kBetweenPages_State,

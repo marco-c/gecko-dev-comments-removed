@@ -15,7 +15,7 @@
 #include "SkStream.h"
 #include "SkTemplates.h"
 
-class SkPDFObjNumMap;
+class SkPDFCatalog;
 
 
 
@@ -23,42 +23,83 @@ class SkPDFObjNumMap;
 
 
 class SkPDFStream : public SkPDFDict {
-    
+    SK_DECLARE_INST_COUNT(SkPDFStream)
 public:
     
 
 
 
-    explicit SkPDFStream(SkData* data) { this->setData(data); }
+    explicit SkPDFStream(SkData* data);
 
     
 
 
 
-    explicit SkPDFStream(SkStream* stream) { this->setData(stream); }
+    explicit SkPDFStream(SkStream* stream);
 
     virtual ~SkPDFStream();
 
     
-    void emitObject(SkWStream* stream,
-                    const SkPDFObjNumMap& objNumMap,
-                    const SkPDFSubstituteMap& substitutes) const override;
+    
+    virtual void emitObject(SkWStream* stream, SkPDFCatalog* catalog,
+                            bool indirect);
+    virtual size_t getOutputSize(SkPDFCatalog* catalog, bool indirect);
 
 protected:
+    enum State {
+        kUnused_State,         
+        kNoCompression_State,  
+                               
+        kCompressed_State,     
+    };
+
     
 
 
-    SkPDFStream() {}
+    explicit SkPDFStream(const SkPDFStream& pdfStream);
 
     
+
+
+    SkPDFStream();
+
+    
+    
+    virtual bool populate(SkPDFCatalog* catalog);
+
+    void setSubstitute(SkPDFStream* stream) {
+        fSubstitute.reset(stream);
+    }
+
+    SkPDFStream* getSubstitute() const {
+        return fSubstitute.get();
+    }
+
+    void setData(SkData* data);
     void setData(SkStream* stream);
-    void setData(SkData* data) {
-        SkMemoryStream memoryStream(data);
-        this->setData(&memoryStream);
+
+    size_t dataSize() const;
+
+    void setState(State state) {
+        fState = state;
+    }
+
+    State getState() const {
+        return fState;
     }
 
 private:
-    SkAutoTDelete<SkStreamRewindable> fCompressedData;
+    
+    State fState;
+
+    
+    SkMutex fMutex;
+
+    SkMemoryStream fMemoryStream;  
+                                   
+                                   
+    SkAutoTUnref<SkStreamRewindable> fDataStream;
+    SkAutoTUnref<SkPDFStream> fSubstitute;
 
     typedef SkPDFDict INHERITED;
 };

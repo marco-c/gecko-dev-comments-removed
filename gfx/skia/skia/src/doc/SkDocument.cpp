@@ -21,7 +21,7 @@ SkDocument::~SkDocument() {
 SkCanvas* SkDocument::beginPage(SkScalar width, SkScalar height,
                                 const SkRect* content) {
     if (width <= 0 || height <= 0) {
-        return nullptr;
+        return NULL;
     }
 
     SkRect outer = SkRect::MakeWH(width, height);
@@ -29,7 +29,7 @@ SkCanvas* SkDocument::beginPage(SkScalar width, SkScalar height,
     if (content) {
         inner = *content;
         if (!inner.intersect(outer)) {
-            return nullptr;
+            return NULL;
         }
     } else {
         inner = outer;
@@ -44,11 +44,11 @@ SkCanvas* SkDocument::beginPage(SkScalar width, SkScalar height,
                 this->endPage();
                 break;
             case kClosed_State:
-                return nullptr;
+                return NULL;
         }
     }
     SkDEBUGFAIL("never get here");
-    return nullptr;
+    return NULL;
 }
 
 void SkDocument::endPage() {
@@ -70,7 +70,7 @@ bool SkDocument::close() {
                 }
                 
                 
-                fStream = nullptr;
+                fStream = NULL;
                 return success;
             }
             case kInPage_State:
@@ -91,5 +91,5 @@ void SkDocument::abort() {
     }
     
     
-    fStream = nullptr;
+    fStream = NULL;
 }

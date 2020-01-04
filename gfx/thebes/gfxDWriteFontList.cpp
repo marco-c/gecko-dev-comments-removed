@@ -1357,7 +1357,7 @@ static HRESULT GetFamilyName(IDWriteFont *aFont, nsString& aFamilyName)
 
 
 
-IFACEMETHODIMP DWriteFontFallbackRenderer::DrawGlyphRun(
+IFACEMETHODIMP FontFallbackRenderer::DrawGlyphRun(
     void* clientDrawingContext,
     FLOAT baselineOriginX,
     FLOAT baselineOriginY,
@@ -1422,7 +1422,7 @@ gfxDWriteFontList::GlobalFontFallback(const uint32_t aCh,
 
     
     if (!mFallbackRenderer) {
-        mFallbackRenderer = new DWriteFontFallbackRenderer(dwFactory);
+        mFallbackRenderer = new FontFallbackRenderer(dwFactory);
     }
 
     

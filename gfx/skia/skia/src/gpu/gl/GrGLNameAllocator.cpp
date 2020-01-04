@@ -133,7 +133,7 @@ public:
         this->updateStats();
     }
 
-    SparseNameRange* SK_WARN_UNUSED_RESULT internalAllocate(GrGLuint* outName) override {
+    virtual SparseNameRange* SK_WARN_UNUSED_RESULT internalAllocate(GrGLuint* outName) SK_OVERRIDE {
         
         fLeft.reset(fLeft->internalAllocate(outName));
         if (0 != *outName) {
@@ -146,7 +146,7 @@ public:
             GrGLuint removedCount;
             fRight.reset(fRight->removeLeftmostContiguousRange(&removedCount));
             *outName = fLeft->appendNames(1 + removedCount);
-            if (nullptr == fRight.get()) {
+            if (NULL == fRight.get()) {
                 return fLeft.detach();
             }
             this->updateStats();
@@ -160,16 +160,16 @@ public:
         return this->takeRef();
     }
 
-    SparseNameRange* SK_WARN_UNUSED_RESULT removeLeftmostContiguousRange(GrGLuint* removedCount) override {
+    virtual SparseNameRange* SK_WARN_UNUSED_RESULT removeLeftmostContiguousRange(GrGLuint* removedCount) SK_OVERRIDE {
         fLeft.reset(fLeft->removeLeftmostContiguousRange(removedCount));
-        if (nullptr == fLeft) {
+        if (NULL == fLeft) {
             return fRight.detach();
         }
         this->updateStats();
         return this->rebalance();
     }
 
-    GrGLuint appendNames(GrGLuint count) override {
+    virtual GrGLuint appendNames(GrGLuint count) SK_OVERRIDE {
         SkASSERT(fEnd + count > fEnd); 
         GrGLuint name = fRight->appendNames(count);
         SkASSERT(fRight->end() == fEnd + count);
@@ -177,7 +177,7 @@ public:
         return name;
     }
 
-    GrGLuint prependNames(GrGLuint count) override {
+    virtual GrGLuint prependNames(GrGLuint count) SK_OVERRIDE {
         SkASSERT(fFirst > count); 
         GrGLuint name = fLeft->prependNames(count);
         SkASSERT(fLeft->first() == fFirst - count);
@@ -185,10 +185,10 @@ public:
         return name;
     }
 
-    SparseNameRange* SK_WARN_UNUSED_RESULT free(GrGLuint name) override {
+    virtual SparseNameRange* SK_WARN_UNUSED_RESULT free(GrGLuint name) SK_OVERRIDE {
         if (name < fLeft->end()) {
             fLeft.reset(fLeft->free(name));
-            if (nullptr == fLeft) {
+            if (NULL == fLeft) {
                 
                 return fRight.detach();
             }
@@ -196,7 +196,7 @@ public:
             return this->rebalance();
         } else {
             fRight.reset(fRight->free(name));
-            if (nullptr == fRight) {
+            if (NULL == fRight) {
                 
                 return fLeft.detach();
             }
@@ -280,30 +280,30 @@ public:
         fHeight = 0;
     }
 
-    SparseNameRange* SK_WARN_UNUSED_RESULT internalAllocate(GrGLuint* outName) override {
+    virtual SparseNameRange* SK_WARN_UNUSED_RESULT internalAllocate(GrGLuint* outName) SK_OVERRIDE {
         *outName = 0; 
         return this->takeRef();
     }
 
-    SparseNameRange* SK_WARN_UNUSED_RESULT removeLeftmostContiguousRange(GrGLuint* removedCount) override {
+    virtual SparseNameRange* SK_WARN_UNUSED_RESULT removeLeftmostContiguousRange(GrGLuint* removedCount) SK_OVERRIDE {
         *removedCount = fEnd - fFirst;
-        return nullptr;
+        return NULL;
     }
 
-    GrGLuint appendNames(GrGLuint count) override {
+    virtual GrGLuint appendNames(GrGLuint count) SK_OVERRIDE {
         SkASSERT(fEnd + count > fEnd); 
         GrGLuint name = fEnd;
         fEnd += count;
         return name;
     }
 
-    GrGLuint prependNames(GrGLuint count) override {
+    virtual GrGLuint prependNames(GrGLuint count) SK_OVERRIDE {
         SkASSERT(fFirst > count); 
         fFirst -= count;
         return fFirst;
     }
 
-    SparseNameRange* SK_WARN_UNUSED_RESULT free(GrGLuint name) override {
+    virtual SparseNameRange* SK_WARN_UNUSED_RESULT free(GrGLuint name) SK_OVERRIDE {
         if (name < fFirst || name >= fEnd) {
           
           return this->takeRef();
@@ -311,7 +311,7 @@ public:
 
         if (fFirst == name) {
             ++fFirst;
-            return (fEnd == fFirst) ? nullptr : this->takeRef();
+            return (fEnd == fFirst) ? NULL : this->takeRef();
         }
 
         if (fEnd == name + 1) {
@@ -319,10 +319,10 @@ public:
             return this->takeRef();
         }
 
-        SparseNameRange* left = new ContiguousNameRange(fFirst, name);
+        SparseNameRange* left = SkNEW_ARGS(ContiguousNameRange, (fFirst, name));
         SparseNameRange* right = this->takeRef();
         fFirst = name + 1;
-        return new SparseNameTree(left, right);
+        return SkNEW_ARGS(SparseNameTree, (left, right));
     }
 };
 
@@ -337,8 +337,8 @@ GrGLNameAllocator::~GrGLNameAllocator() {
 }
 
 GrGLuint GrGLNameAllocator::allocateName() {
-    if (nullptr == fAllocatedNames.get()) {
-        fAllocatedNames.reset(new ContiguousNameRange(fFirstName, fFirstName + 1));
+    if (NULL == fAllocatedNames.get()) {
+        fAllocatedNames.reset(SkNEW_ARGS(ContiguousNameRange, (fFirstName, fFirstName + 1)));
         return fFirstName;
     }
 

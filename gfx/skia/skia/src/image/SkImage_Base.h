@@ -8,72 +8,34 @@
 #ifndef SkImage_Base_DEFINED
 #define SkImage_Base_DEFINED
 
-#include "SkAtomics.h"
 #include "SkImage.h"
-#include "SkSurface.h"
-
-#include <new>
-
-class GrTextureParams;
-
-enum {
-    kNeedNewImageUniqueID = 0
-};
 
 class SkImage_Base : public SkImage {
 public:
-    SkImage_Base(int width, int height, uint32_t uniqueID);
-    virtual ~SkImage_Base();
+    SkImage_Base(int width, int height) : INHERITED(width, height) {}
 
-    virtual const void* onPeekPixels(SkImageInfo*, size_t* ) const { return nullptr; }
-
-    
-    virtual bool onReadPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
-                              int srcX, int srcY, CachingHint) const;
-
-    virtual GrTexture* peekTexture() const { return nullptr; }
+    virtual void onDraw(SkCanvas*, SkScalar x, SkScalar y, const SkPaint*) = 0;
+    virtual void onDrawRectToRect(SkCanvas*, const SkRect* src,
+                                  const SkRect& dst, const SkPaint*) = 0;
 
     
-    
-    virtual bool getROPixels(SkBitmap*, CachingHint = kAllow_CachingHint) const = 0;
+    virtual bool onReadPixels(SkBitmap*, const SkIRect& subset) const;
 
-    virtual SkImage* onApplyFilter(SkImageFilter*, SkIPoint* offset,
-                                   bool forceResultToOriginalSize) const;
-
-    virtual SkSurface* onNewSurface(const SkImageInfo& info) const {
-        return SkSurface::NewRaster(info);
+    virtual const void* onPeekPixels(SkImageInfo*, size_t* ) const {
+        return NULL;
     }
 
-    
-    virtual GrTexture* asTextureRef(GrContext*, const GrTextureParams&) const = 0;
-
-    virtual SkImage* onNewSubset(const SkIRect&) const = 0;
-
-    virtual SkData* onRefEncoded() const { return nullptr; }
-
-    virtual bool onAsLegacyBitmap(SkBitmap*, LegacyBitmapMode) const;
-
-    virtual bool onIsLazyGenerated() const { return false; }
+    virtual GrTexture* onGetTexture() { return NULL; }
 
     
     
-    void notifyAddedToCache() const {
-        fAddedToCache.store(true);
-    }
+    virtual bool getROPixels(SkBitmap*) const { return false; }
 
+    virtual SkShader* onNewShader(SkShader::TileMode,
+                                  SkShader::TileMode,
+                                  const SkMatrix* localMatrix) const { return NULL; };
 private:
-    
-    mutable SkAtomic<bool> fAddedToCache;
-
     typedef SkImage INHERITED;
 };
-
-static inline SkImage_Base* as_IB(SkImage* image) {
-    return static_cast<SkImage_Base*>(image);
-}
-
-static inline const SkImage_Base* as_IB(const SkImage* image) {
-    return static_cast<const SkImage_Base*>(image);
-}
 
 #endif

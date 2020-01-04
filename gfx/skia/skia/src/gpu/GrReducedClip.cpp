@@ -5,24 +5,155 @@
 
 
 
+
 #include "GrReducedClip.h"
 
 typedef SkClipStack::Element Element;
 
-static void reduced_stack_walker(const SkClipStack& stack,
-                                 const SkRect& queryBounds,
-                                 GrReducedClip::ElementList* result,
-                                 int32_t* resultGenID,
-                                 GrReducedClip::InitialState* initialState,
-                                 bool* requiresAA) {
+
+namespace GrReducedClip {
+
+
+void reduced_stack_walker(const SkClipStack& stack,
+                          const SkRect& queryBounds,
+                          ElementList* result,
+                          int32_t* resultGenID,
+                          InitialState* initialState,
+                          bool* requiresAA);
+
+
+
+
+
+
+
+
+void ReduceClipStack(const SkClipStack& stack,
+                     const SkIRect& queryBounds,
+                     ElementList* result,
+                     int32_t* resultGenID,
+                     InitialState* initialState,
+                     SkIRect* tighterBounds,
+                     bool* requiresAA) {
+    result->reset();
+
+    
+    
+    
+    *resultGenID = stack.getTopmostGenID();
+
+    if (stack.isWideOpen()) {
+        *initialState = kAllIn_InitialState;
+        return;
+    }
+
+
+    
+    
+
+    SkClipStack::BoundsType stackBoundsType;
+    SkRect stackBounds;
+    bool iior;
+    stack.getBounds(&stackBounds, &stackBoundsType, &iior);
+
+    const SkIRect* bounds = &queryBounds;
+
+    SkRect scalarQueryBounds = SkRect::Make(queryBounds);
+
+    if (iior) {
+        SkASSERT(SkClipStack::kNormal_BoundsType == stackBoundsType);
+        SkRect isectRect;
+        if (stackBounds.contains(scalarQueryBounds)) {
+            *initialState = kAllIn_InitialState;
+            if (NULL != tighterBounds) {
+                *tighterBounds = queryBounds;
+            }
+            if (NULL != requiresAA) {
+               *requiresAA = false;
+            }
+        } else if (isectRect.intersect(stackBounds, scalarQueryBounds)) {
+            
+            
+            if (NULL != tighterBounds) {
+                isectRect.roundOut(tighterBounds);
+                SkRect scalarTighterBounds = SkRect::Make(*tighterBounds);
+                if (scalarTighterBounds == isectRect) {
+                    
+                    if (NULL != requiresAA) {
+                        *requiresAA = false;
+                    }
+                    *initialState = kAllIn_InitialState;
+                    return;
+                }
+            }
+            *initialState = kAllOut_InitialState;
+            
+            SkClipStack::Iter iter(stack, SkClipStack::Iter::kTop_IterStart);
+            bool doAA = iter.prev()->isAA();
+            SkNEW_INSERT_AT_LLIST_HEAD(result, Element, (isectRect, SkRegion::kReplace_Op, doAA));
+            if (NULL != requiresAA) {
+                *requiresAA = doAA;
+            }
+        } else {
+            *initialState = kAllOut_InitialState;
+             if (NULL != requiresAA) {
+                *requiresAA = false;
+             }
+        }
+        return;
+    } else {
+        if (SkClipStack::kNormal_BoundsType == stackBoundsType) {
+            if (!SkRect::Intersects(stackBounds, scalarQueryBounds)) {
+                *initialState = kAllOut_InitialState;
+                if (NULL != requiresAA) {
+                   *requiresAA = false;
+                }
+                return;
+            }
+            if (NULL != tighterBounds) {
+                SkIRect stackIBounds;
+                stackBounds.roundOut(&stackIBounds);
+                tighterBounds->intersect(queryBounds, stackIBounds);
+                bounds = tighterBounds;
+            }
+        } else {
+            if (stackBounds.contains(scalarQueryBounds)) {
+                *initialState = kAllOut_InitialState;
+                if (NULL != requiresAA) {
+                   *requiresAA = false;
+                }
+                return;
+            }
+            if (NULL != tighterBounds) {
+                *tighterBounds = queryBounds;
+            }
+        }
+    }
+
+    SkRect scalarBounds = SkRect::Make(*bounds);
+
+    
+    
+    reduced_stack_walker(stack, scalarBounds, result, resultGenID, initialState, requiresAA);
+
+    
+    
+    SkASSERT(SkClipStack::kInvalidGenID != *resultGenID);
+}
+
+void reduced_stack_walker(const SkClipStack& stack,
+                          const SkRect& queryBounds,
+                          ElementList* result,
+                          int32_t* resultGenID,
+                          InitialState* initialState,
+                          bool* requiresAA) {
 
     
     
     
     
 
-    static const GrReducedClip::InitialState kUnknown_InitialState =
-        static_cast<GrReducedClip::InitialState>(-1);
+    static const InitialState kUnknown_InitialState = static_cast<InitialState>(-1);
     *initialState = kUnknown_InitialState;
 
     
@@ -34,16 +165,16 @@ static void reduced_stack_walker(const SkClipStack& stack,
     int numAAElements = 0;
     while ((kUnknown_InitialState == *initialState)) {
         const Element* element = iter.prev();
-        if (nullptr == element) {
-            *initialState = GrReducedClip::kAllIn_InitialState;
+        if (NULL == element) {
+            *initialState = kAllIn_InitialState;
             break;
         }
         if (SkClipStack::kEmptyGenID == element->getGenID()) {
-            *initialState = GrReducedClip::kAllOut_InitialState;
+            *initialState = kAllOut_InitialState;
             break;
         }
         if (SkClipStack::kWideOpenGenID == element->getGenID()) {
-            *initialState = GrReducedClip::kAllIn_InitialState;
+            *initialState = kAllIn_InitialState;
             break;
         }
 
@@ -58,12 +189,12 @@ static void reduced_stack_walker(const SkClipStack& stack,
                     if (element->contains(queryBounds)) {
                         skippable = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                         skippable = true;
                     }
                 } else {
                     if (element->contains(queryBounds)) {
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                         skippable = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
                         skippable = true;
@@ -79,7 +210,7 @@ static void reduced_stack_walker(const SkClipStack& stack,
                 
                 if (element->isInverseFilled()) {
                     if (element->contains(queryBounds)) {
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                         skippable = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
                         skippable = true;
@@ -88,7 +219,7 @@ static void reduced_stack_walker(const SkClipStack& stack,
                     if (element->contains(queryBounds)) {
                         skippable = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                         skippable = true;
                     }
                 }
@@ -104,12 +235,12 @@ static void reduced_stack_walker(const SkClipStack& stack,
                     if (element->contains(queryBounds)) {
                         skippable = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
-                        *initialState = GrReducedClip::kAllIn_InitialState;
+                        *initialState = kAllIn_InitialState;
                         skippable = true;
                     }
                 } else {
                     if (element->contains(queryBounds)) {
-                        *initialState = GrReducedClip::kAllIn_InitialState;
+                        *initialState = kAllIn_InitialState;
                         skippable = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
                         skippable = true;
@@ -148,7 +279,7 @@ static void reduced_stack_walker(const SkClipStack& stack,
                 
                 if (element->isInverseFilled()) {
                     if (element->contains(queryBounds)) {
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                         skippable = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
                         isFlip = true;
@@ -157,7 +288,7 @@ static void reduced_stack_walker(const SkClipStack& stack,
                     if (element->contains(queryBounds)) {
                         isFlip = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                         skippable = true;
                     }
                 }
@@ -172,23 +303,23 @@ static void reduced_stack_walker(const SkClipStack& stack,
                 
                 if (element->isInverseFilled()) {
                     if (element->contains(queryBounds)) {
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                         skippable = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
-                        *initialState = GrReducedClip::kAllIn_InitialState;
+                        *initialState = kAllIn_InitialState;
                         skippable = true;
                     }
                 } else {
                     if (element->contains(queryBounds)) {
-                        *initialState = GrReducedClip::kAllIn_InitialState;
+                        *initialState = kAllIn_InitialState;
                         skippable = true;
                     } else if (!SkRect::Intersects(element->getBounds(), queryBounds)) {
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                         skippable = true;
                     }
                 }
                 if (!skippable) {
-                    *initialState = GrReducedClip::kAllOut_InitialState;
+                    *initialState = kAllOut_InitialState;
                     embiggens = emsmallens = true;
                 }
                 break;
@@ -206,7 +337,9 @@ static void reduced_stack_walker(const SkClipStack& stack,
             if (isFlip) {
                 SkASSERT(SkRegion::kXOR_Op == element->getOp() ||
                          SkRegion::kReverseDifference_Op == element->getOp());
-                result->addToHead(queryBounds, SkRegion::kReverseDifference_Op, false);
+                SkNEW_INSERT_AT_LLIST_HEAD(result,
+                                           Element,
+                                           (queryBounds, SkRegion::kReverseDifference_Op, false));
             } else {
                 Element* newElement = result->addToHead(*element);
                 if (newElement->isAA()) {
@@ -221,38 +354,38 @@ static void reduced_stack_walker(const SkClipStack& stack,
                     newElement->invertShapeFillType();
                     newElement->setOp(SkRegion::kDifference_Op);
                     if (isReplace) {
-                        SkASSERT(GrReducedClip::kAllOut_InitialState == *initialState);
-                        *initialState = GrReducedClip::kAllIn_InitialState;
+                        SkASSERT(kAllOut_InitialState == *initialState);
+                        *initialState = kAllIn_InitialState;
                     }
                 }
             }
         }
     }
 
-    if ((GrReducedClip::kAllOut_InitialState == *initialState && !embiggens) ||
-        (GrReducedClip::kAllIn_InitialState == *initialState && !emsmallens)) {
+    if ((kAllOut_InitialState == *initialState && !embiggens) ||
+        (kAllIn_InitialState == *initialState && !emsmallens)) {
         result->reset();
     } else {
         Element* element = result->headIter().get();
-        while (element) {
+        while (NULL != element) {
             bool skippable = false;
             switch (element->getOp()) {
                 case SkRegion::kDifference_Op:
                     
-                    skippable = GrReducedClip::kAllOut_InitialState == *initialState;
+                    skippable = kAllOut_InitialState == *initialState;
                     break;
                 case SkRegion::kIntersect_Op:
                     
-                    if (GrReducedClip::kAllOut_InitialState == *initialState) {
+                    if (kAllOut_InitialState == *initialState) {
                         skippable = true;
                     } else {
                         
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                         element->setOp(SkRegion::kReplace_Op);
                     }
                     break;
                 case SkRegion::kUnion_Op:
-                    if (GrReducedClip::kAllIn_InitialState == *initialState) {
+                    if (kAllIn_InitialState == *initialState) {
                         
                         skippable = true;
                     } else {
@@ -261,23 +394,23 @@ static void reduced_stack_walker(const SkClipStack& stack,
                     }
                     break;
                 case SkRegion::kXOR_Op:
-                    if (GrReducedClip::kAllOut_InitialState == *initialState) {
+                    if (kAllOut_InitialState == *initialState) {
                         
                         element->setOp(SkRegion::kReplace_Op);
                     }
                     break;
                 case SkRegion::kReverseDifference_Op:
-                    if (GrReducedClip::kAllIn_InitialState == *initialState) {
+                    if (kAllIn_InitialState == *initialState) {
                         
                         skippable = true;
-                        *initialState = GrReducedClip::kAllOut_InitialState;
+                        *initialState = kAllOut_InitialState;
                     } else {
                         
                         skippable = element->isInverseFilled() ?
                             !SkRect::Intersects(element->getBounds(), queryBounds) :
                             element->contains(queryBounds);
                         if (skippable) {
-                            *initialState = GrReducedClip::kAllIn_InitialState;
+                            *initialState = kAllIn_InitialState;
                         } else {
                             element->setOp(SkRegion::kReplace_Op);
                         }
@@ -302,137 +435,16 @@ static void reduced_stack_walker(const SkClipStack& stack,
             }
         }
     }
-    if (requiresAA) {
+    if (NULL != requiresAA) {
         *requiresAA = numAAElements > 0;
     }
 
     if (0 == result->count()) {
-        if (*initialState == GrReducedClip::kAllIn_InitialState) {
+        if (*initialState == kAllIn_InitialState) {
             *resultGenID = SkClipStack::kWideOpenGenID;
         } else {
             *resultGenID = SkClipStack::kEmptyGenID;
         }
     }
 }
-
-
-
-
-
-
-
-
-void GrReducedClip::ReduceClipStack(const SkClipStack& stack,
-                                    const SkIRect& queryBounds,
-                                    ElementList* result,
-                                    int32_t* resultGenID,
-                                    InitialState* initialState,
-                                    SkIRect* tighterBounds,
-                                    bool* requiresAA) {
-    result->reset();
-
-    
-    
-    
-    *resultGenID = stack.getTopmostGenID();
-
-    if (stack.isWideOpen()) {
-        *initialState = kAllIn_InitialState;
-        return;
-    }
-
-
-    
-    
-
-    SkClipStack::BoundsType stackBoundsType;
-    SkRect stackBounds;
-    bool iior;
-    stack.getBounds(&stackBounds, &stackBoundsType, &iior);
-
-    const SkIRect* bounds = &queryBounds;
-
-    SkRect scalarQueryBounds = SkRect::Make(queryBounds);
-
-    if (iior) {
-        SkASSERT(SkClipStack::kNormal_BoundsType == stackBoundsType);
-        SkRect isectRect;
-        if (stackBounds.contains(scalarQueryBounds)) {
-            *initialState = GrReducedClip::kAllIn_InitialState;
-            if (tighterBounds) {
-                *tighterBounds = queryBounds;
-            }
-            if (requiresAA) {
-               *requiresAA = false;
-            }
-        } else if (isectRect.intersect(stackBounds, scalarQueryBounds)) {
-            
-            
-            if (tighterBounds) {
-                isectRect.roundOut(tighterBounds);
-                SkRect scalarTighterBounds = SkRect::Make(*tighterBounds);
-                if (scalarTighterBounds == isectRect) {
-                    
-                    if (requiresAA) {
-                        *requiresAA = false;
-                    }
-                    *initialState = GrReducedClip::kAllIn_InitialState;
-                    return;
-                }
-            }
-            *initialState = kAllOut_InitialState;
-            
-            SkClipStack::Iter iter(stack, SkClipStack::Iter::kTop_IterStart);
-            bool doAA = iter.prev()->isAA();
-            result->addToHead(isectRect, SkRegion::kReplace_Op, doAA);
-            if (requiresAA) {
-                *requiresAA = doAA;
-            }
-        } else {
-            *initialState = kAllOut_InitialState;
-             if (requiresAA) {
-                *requiresAA = false;
-             }
-        }
-        return;
-    } else {
-        if (SkClipStack::kNormal_BoundsType == stackBoundsType) {
-            if (!SkRect::Intersects(stackBounds, scalarQueryBounds)) {
-                *initialState = kAllOut_InitialState;
-                if (requiresAA) {
-                   *requiresAA = false;
-                }
-                return;
-            }
-            if (tighterBounds) {
-                SkIRect stackIBounds;
-                stackBounds.roundOut(&stackIBounds);
-                if (!tighterBounds->intersect(queryBounds, stackIBounds)) {
-                    SkASSERT(0);
-                    tighterBounds->setEmpty();
-                }
-                bounds = tighterBounds;
-            }
-        } else {
-            if (stackBounds.contains(scalarQueryBounds)) {
-                *initialState = kAllOut_InitialState;
-                
-                
-                
-            }
-            if (tighterBounds) {
-                *tighterBounds = queryBounds;
-            }
-        }
-    }
-
-    SkRect scalarBounds = SkRect::Make(*bounds);
-
-    
-    
-    reduced_stack_walker(stack, scalarBounds, result, resultGenID, initialState, requiresAA);
-
-    
-    
-    SkASSERT(SkClipStack::kInvalidGenID != *resultGenID);
-}
+} 

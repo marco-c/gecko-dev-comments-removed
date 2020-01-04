@@ -6,12 +6,18 @@
 
 
 #include "SkRasterClip.h"
-#include "SkPath.h"
+
+
+SkRasterClip::SkRasterClip() {
+    fIsBW = true;
+    fIsEmpty = true;
+    fIsRect = false;
+    SkDEBUGCODE(this->validate();)
+}
 
 SkRasterClip::SkRasterClip(const SkRasterClip& src) {
     AUTO_RASTERCLIP_VALIDATE(src);
 
-    fForceConservativeRects = src.fForceConservativeRects;
     fIsBW = src.fIsBW;
     if (fIsBW) {
         fBW = src.fBW;
@@ -24,19 +30,10 @@ SkRasterClip::SkRasterClip(const SkRasterClip& src) {
     SkDEBUGCODE(this->validate();)
 }
 
-SkRasterClip::SkRasterClip(const SkIRect& bounds, bool forceConservativeRects) : fBW(bounds) {
-    fForceConservativeRects = forceConservativeRects;
+SkRasterClip::SkRasterClip(const SkIRect& bounds) : fBW(bounds) {
     fIsBW = true;
     fIsEmpty = this->computeIsEmpty();  
     fIsRect = !fIsEmpty;
-    SkDEBUGCODE(this->validate();)
-}
-
-SkRasterClip::SkRasterClip(bool forceConservativeRects) {
-    fForceConservativeRects = forceConservativeRects;
-    fIsBW = true;
-    fIsEmpty = true;
-    fIsRect = false;
     SkDEBUGCODE(this->validate();)
 }
 
@@ -73,80 +70,8 @@ bool SkRasterClip::setRect(const SkIRect& rect) {
     return fIsRect;
 }
 
-
-
-bool SkRasterClip::setConservativeRect(const SkRect& r, const SkIRect& clipR, bool isInverse) {
-    SkRegion::Op op;
-    if (isInverse) {
-        op = SkRegion::kDifference_Op;
-    } else {
-        op = SkRegion::kIntersect_Op;
-    }
-    fBW.setRect(clipR);
-    fBW.op(r.roundOut(), op);
-    return this->updateCacheAndReturnNonEmpty();
-}
-
-
-
-enum MutateResult {
-    kDoNothing_MutateResult,
-    kReplaceClippedAgainstGlobalBounds_MutateResult,
-    kContinue_MutateResult,
-};
-
-static MutateResult mutate_conservative_op(SkRegion::Op* op, bool inverseFilled) {
-    if (inverseFilled) {
-        switch (*op) {
-            case SkRegion::kIntersect_Op:
-            case SkRegion::kDifference_Op:
-                
-                
-                return kDoNothing_MutateResult;
-            case SkRegion::kUnion_Op:
-            case SkRegion::kReplace_Op:
-            case SkRegion::kReverseDifference_Op:
-            case SkRegion::kXOR_Op: {
-                
-                
-                
-                *op = SkRegion::kReplace_Op;
-                return kReplaceClippedAgainstGlobalBounds_MutateResult;
-            }
-        }
-    } else {
-        
-        switch (*op) {
-            case SkRegion::kIntersect_Op:
-            case SkRegion::kUnion_Op:
-            case SkRegion::kReplace_Op:
-                return kContinue_MutateResult;
-            case SkRegion::kDifference_Op:
-                
-                
-                return kDoNothing_MutateResult;
-            case SkRegion::kReverseDifference_Op:
-                
-                
-                *op = SkRegion::kReplace_Op;
-                return kContinue_MutateResult;
-            case SkRegion::kXOR_Op:
-                
-                
-                *op = SkRegion::kUnion_Op;
-                return kContinue_MutateResult;
-        }
-    }
-    SkFAIL("should not get here");
-    return kDoNothing_MutateResult;
-}
-
 bool SkRasterClip::setPath(const SkPath& path, const SkRegion& clip, bool doAA) {
     AUTO_RASTERCLIP_VALIDATE(*this);
-
-    if (fForceConservativeRects) {
-        return this->setConservativeRect(path.getBounds(), clip.getBounds(), path.isInverseFillType());
-    }
 
     if (this->isBW() && !doAA) {
         (void)fBW.setPath(path, clip);
@@ -159,67 +84,6 @@ bool SkRasterClip::setPath(const SkPath& path, const SkRegion& clip, bool doAA) 
         (void)fAA.setPath(path, &clip, doAA);
     }
     return this->updateCacheAndReturnNonEmpty();
-}
-
-bool SkRasterClip::op(const SkRRect& rrect, const SkISize& size, SkRegion::Op op, bool doAA) {
-    if (fForceConservativeRects) {
-        return this->op(rrect.getBounds(), size, op, doAA);
-    }
-
-    SkPath path;
-    path.addRRect(rrect);
-
-    return this->op(path, size, op, doAA);
-}
-
-bool SkRasterClip::op(const SkPath& path, const SkISize& size, SkRegion::Op op, bool doAA) {
-    AUTO_RASTERCLIP_VALIDATE(*this);
-
-    if (fForceConservativeRects) {
-        SkIRect ir;
-        switch (mutate_conservative_op(&op, path.isInverseFillType())) {
-            case kDoNothing_MutateResult:
-                return !this->isEmpty();
-            case kReplaceClippedAgainstGlobalBounds_MutateResult:
-                ir = SkIRect::MakeSize(size);
-                break;
-            case kContinue_MutateResult:
-                ir = path.getBounds().roundOut();
-                break;
-        }
-        return this->op(ir, op);
-    }
-
-    
-    
-    SkRegion base;
-
-    if (SkRegion::kIntersect_Op == op) {
-        
-        
-        
-        if (this->isRect()) {
-            
-            
-            
-            return this->setPath(path, this->bwRgn(), doAA);
-        } else {
-            base.setRect(this->getBounds());
-            SkRasterClip clip(fForceConservativeRects);
-            clip.setPath(path, base, doAA);
-            return this->op(clip, op);
-        }
-    } else {
-        base.setRect(0, 0, size.width(), size.height());
-        
-        if (SkRegion::kReplace_Op == op) {
-            return this->setPath(path, base, doAA);
-        } else {
-            SkRasterClip clip(fForceConservativeRects);
-            clip.setPath(path, base, doAA);
-            return this->op(clip, op);
-        }
-    }
 }
 
 bool SkRasterClip::setPath(const SkPath& path, const SkIRect& clip, bool doAA) {
@@ -285,24 +149,9 @@ static bool nearly_integral(SkScalar x) {
     return x - SkScalarFloorToScalar(x) < domain;
 }
 
-bool SkRasterClip::op(const SkRect& r, const SkISize& size, SkRegion::Op op, bool doAA) {
+bool SkRasterClip::op(const SkRect& r, SkRegion::Op op, bool doAA) {
     AUTO_RASTERCLIP_VALIDATE(*this);
 
-    if (fForceConservativeRects) {
-        SkIRect ir;
-        switch (mutate_conservative_op(&op, false)) {
-            case kDoNothing_MutateResult:
-                return !this->isEmpty();
-            case kReplaceClippedAgainstGlobalBounds_MutateResult:
-                ir = SkIRect::MakeSize(size);
-                break;
-            case kContinue_MutateResult:
-                ir = r.roundOut();
-                break;
-        }
-        return this->op(ir, op);
-    }
-    
     if (fIsBW && doAA) {
         
         
@@ -326,7 +175,7 @@ bool SkRasterClip::op(const SkRect& r, const SkISize& size, SkRegion::Op op, boo
 }
 
 void SkRasterClip::translate(int dx, int dy, SkRasterClip* dst) const {
-    if (nullptr == dst) {
+    if (NULL == dst) {
         return;
     }
 
@@ -369,16 +218,11 @@ const SkRegion& SkRasterClip::forceGetBW() {
 
 void SkRasterClip::convertToAA() {
     AUTO_RASTERCLIP_VALIDATE(*this);
-    
-    SkASSERT(!fForceConservativeRects);
-    
+
     SkASSERT(fIsBW);
     fAA.setRegion(fBW);
     fIsBW = false;
-    
-    
-    
-    (void)this->updateCacheAndReturnNonEmpty(false);
+    (void)this->updateCacheAndReturnNonEmpty();
 }
 
 #ifdef SK_DEBUG
@@ -399,8 +243,8 @@ void SkRasterClip::validate() const {
 
 
 SkAAClipBlitterWrapper::SkAAClipBlitterWrapper() {
-    SkDEBUGCODE(fClipRgn = nullptr;)
-    SkDEBUGCODE(fBlitter = nullptr;)
+    SkDEBUGCODE(fClipRgn = NULL;)
+    SkDEBUGCODE(fBlitter = NULL;)
 }
 
 SkAAClipBlitterWrapper::SkAAClipBlitterWrapper(const SkRasterClip& clip,

@@ -27,8 +27,7 @@ class SkCanvasState;
 
 
 
-class SK_API SkCanvasStateUtils {
-public:
+namespace SkCanvasStateUtils {
     
 
 
@@ -48,7 +47,7 @@ public:
 
 
 
-    static SkCanvasState* CaptureCanvasState(SkCanvas* canvas);
+    SK_API SkCanvasState* CaptureCanvasState(SkCanvas* canvas);
 
     
 
@@ -62,7 +61,7 @@ public:
 
 
 
-    static SkCanvas* CreateFromCanvasState(const SkCanvasState* state);
+    SK_API SkCanvas* CreateFromCanvasState(const SkCanvasState* state);
 
     
 
@@ -72,7 +71,7 @@ public:
 
 
 
-    static void ReleaseCanvasState(SkCanvasState* state);
+    SK_API void ReleaseCanvasState(SkCanvasState* state);
 };
 
 #endif

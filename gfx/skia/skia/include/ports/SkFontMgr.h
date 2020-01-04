@@ -12,13 +12,14 @@
 #include "SkFontStyle.h"
 
 class SkData;
-class SkFontData;
-class SkStreamAsset;
+class SkStream;
 class SkString;
 class SkTypeface;
 
 class SK_API SkFontStyleSet : public SkRefCnt {
 public:
+    SK_DECLARE_INST_COUNT(SkFontStyleSet)
+
     virtual int count() = 0;
     virtual void getStyle(int index, SkFontStyle*, SkString* style) = 0;
     virtual SkTypeface* createTypeface(int index) = 0;
@@ -26,15 +27,16 @@ public:
 
     static SkFontStyleSet* CreateEmpty();
 
-protected:
-    SkTypeface* matchStyleCSS3(const SkFontStyle& pattern);
-
 private:
     typedef SkRefCnt INHERITED;
 };
 
+class SkTypeface;
+
 class SK_API SkFontMgr : public SkRefCnt {
 public:
+    SK_DECLARE_INST_COUNT(SkFontMgr)
+
     int countFamilies() const;
     void getFamilyName(int index, SkString* familyName) const;
     SkFontStyleSet* createStyleSet(int index) const;
@@ -68,13 +70,8 @@ public:
 
 
 
-
-
-
-
     SkTypeface* matchFamilyStyleCharacter(const char familyName[], const SkFontStyle&,
-                                          const char* bcp47[], int bcp47Count,
-                                          SkUnichar character) const;
+                                          const char bpc47[], uint32_t character) const;
 
     SkTypeface* matchFaceStyle(const SkTypeface*, const SkFontStyle&) const;
 
@@ -90,15 +87,7 @@ public:
 
 
 
-    SkTypeface* createFromStream(SkStreamAsset*, int ttcIndex = 0) const;
-
-    
-
-
-
-
-
-    SkTypeface* createFromFontData(SkFontData*) const;
+    SkTypeface* createFromStream(SkStream*, int ttcIndex = 0) const;
 
     
 
@@ -127,23 +116,22 @@ protected:
 
     virtual SkTypeface* onMatchFamilyStyle(const char familyName[],
                                            const SkFontStyle&) const = 0;
+    
     virtual SkTypeface* onMatchFamilyStyleCharacter(const char familyName[], const SkFontStyle&,
-                                                    const char* bcp47[], int bcp47Count,
-                                                    SkUnichar character) const = 0;
+                                                    const char bpc47[], uint32_t character) const
+    { return NULL; }
     virtual SkTypeface* onMatchFaceStyle(const SkTypeface*,
                                          const SkFontStyle&) const = 0;
 
     virtual SkTypeface* onCreateFromData(SkData*, int ttcIndex) const = 0;
-    virtual SkTypeface* onCreateFromStream(SkStreamAsset*, int ttcIndex) const = 0;
-    
-    virtual SkTypeface* onCreateFromFontData(SkFontData*) const;
+    virtual SkTypeface* onCreateFromStream(SkStream*, int ttcIndex) const = 0;
     virtual SkTypeface* onCreateFromFile(const char path[], int ttcIndex) const = 0;
 
     virtual SkTypeface* onLegacyCreateTypeface(const char familyName[],
                                                unsigned styleBits) const = 0;
 private:
     static SkFontMgr* Factory();    
-    friend SkFontMgr* sk_fontmgr_create_default();
+    static SkFontMgr* CreateDefault();
 
     typedef SkRefCnt INHERITED;
 };

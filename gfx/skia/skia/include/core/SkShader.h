@@ -5,6 +5,7 @@
 
 
 
+
 #ifndef SkShader_DEFINED
 #define SkShader_DEFINED
 
@@ -19,7 +20,7 @@ class SkPath;
 class SkPicture;
 class SkXfermode;
 class GrContext;
-class GrFragmentProcessor;
+class GrEffect;
 
 
 
@@ -33,6 +34,8 @@ class GrFragmentProcessor;
 
 class SK_API SkShader : public SkFlattenable {
 public:
+    SK_DECLARE_INST_COUNT(SkShader)
+
     SkShader(const SkMatrix* localMatrix = NULL);
     virtual ~SkShader();
 
@@ -43,6 +46,14 @@ public:
 
 
     const SkMatrix& getLocalMatrix() const { return fLocalMatrix; }
+
+    
+
+
+
+
+
+    bool hasLocalMatrix() const { return !fLocalMatrix.isIdentity(); }
 
     enum TileMode {
         
@@ -62,10 +73,8 @@ public:
         
         kDecal_TileMode,
 #endif
-    };
 
-    enum {
-        kTileModeCount = kMirror_TileMode + 1
+        kTileModeCount
     };
 
     
@@ -111,11 +120,14 @@ public:
 
 
     struct ContextRec {
-        ContextRec(const SkPaint& paint, const SkMatrix& matrix, const SkMatrix* localM)
-            : fPaint(&paint)
+        ContextRec() : fDevice(NULL), fPaint(NULL), fMatrix(NULL), fLocalMatrix(NULL) {}
+        ContextRec(const SkBitmap& device, const SkPaint& paint, const SkMatrix& matrix)
+            : fDevice(&device)
+            , fPaint(&paint)
             , fMatrix(&matrix)
-            , fLocalMatrix(localM) {}
+            , fLocalMatrix(NULL) {}
 
+        const SkBitmap* fDevice;        
         const SkPaint*  fPaint;         
         const SkMatrix* fMatrix;        
         const SkMatrix* fLocalMatrix;   
@@ -173,9 +185,6 @@ public:
             return SkShader::CanCallShadeSpan16(this->getFlags());
         }
 
-        
-        virtual void set3DMask(const SkMask*) {}
-
     protected:
         
         const SkShader& fShader;
@@ -227,13 +236,64 @@ public:
 
 
 
-    bool isABitmap(SkBitmap* outTexture, SkMatrix* outMatrix, TileMode xy[2]) const {
-        return this->onIsABitmap(outTexture, outMatrix, xy);
-    }
+    enum BitmapType {
+        kNone_BitmapType,   
+        kDefault_BitmapType,
+                            
+        kRadial_BitmapType, 
+                            
+                            
+                            
+        kSweep_BitmapType,  
+                            
+                            
+                            
+                            
+        kTwoPointRadial_BitmapType,
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+        kTwoPointConical_BitmapType,
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+        kLinear_BitmapType, 
+                            
 
-    bool isABitmap() const {
-        return this->isABitmap(nullptr, nullptr, nullptr);
-    }
+       kLast_BitmapType = kLinear_BitmapType
+    };
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual BitmapType asABitmap(SkBitmap* outTexture, SkMatrix* outMatrix,
+                         TileMode xy[2]) const;
 
     
 
@@ -269,6 +329,7 @@ public:
         kColor_GradientType,
         kLinear_GradientType,
         kRadial_GradientType,
+        kRadial2_GradientType,
         kSweep_GradientType,
         kConical_GradientType,
         kLast_GradientType = kConical_GradientType
@@ -302,7 +363,7 @@ public:
         const SkXfermode*   fMode;
     };
 
-    virtual bool asACompose(ComposeRec*) const { return false; }
+    virtual bool asACompose(ComposeRec* rec) const { return false; }
 
 
     
@@ -318,27 +379,19 @@ public:
 
 
 
-    virtual const GrFragmentProcessor* asFragmentProcessor(GrContext*,
-                                                           const SkMatrix& viewMatrix,
-                                                           const SkMatrix* localMatrix,
-                                                           SkFilterQuality) const;
-
-    
 
 
 
-
-
-
-
-    bool asLuminanceColor(SkColor*) const;
+    virtual bool asNewEffect(GrContext* context, const SkPaint& paint,
+                             const SkMatrix* localMatrixOrNull, GrColor* paintColor,
+                             GrEffect** effect) const;
 
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     
 
 
 
-    virtual bool asACustomShader(void** ) const { return false; }
+    virtual bool asACustomShader(void** customData) const { return false; }
 #endif
 
     
@@ -348,12 +401,6 @@ public:
 
 
     static SkShader* CreateEmptyShader();
-
-    
-
-
-
-    static SkShader* CreateColorShader(SkColor);
 
     
 
@@ -375,7 +422,6 @@ public:
 
     
 
-    
 
 
 
@@ -384,15 +430,8 @@ public:
 
 
 
-
-
-
-
-
-    static SkShader* CreatePictureShader(const SkPicture* src,
-                                         TileMode tmx, TileMode tmy,
-                                         const SkMatrix* localMatrix,
-                                         const SkRect* tile);
+    static SkShader* CreatePictureShader(SkPicture* src, TileMode tmx, TileMode tmy,
+                                         const SkMatrix* localMatrix = NULL);
 
     
 
@@ -415,7 +454,8 @@ public:
     SK_DEFINE_FLATTENABLE_TYPE(SkShader)
 
 protected:
-    void flatten(SkWriteBuffer&) const override;
+    SkShader(SkReadBuffer& );
+    virtual void flatten(SkWriteBuffer&) const SK_OVERRIDE;
 
     bool computeTotalInverse(const ContextRec&, SkMatrix* totalInverse) const;
 
@@ -425,14 +465,6 @@ protected:
 
     virtual Context* onCreateContext(const ContextRec&, void* storage) const;
 
-    virtual bool onAsLuminanceColor(SkColor*) const {
-        return false;
-    }
-
-    virtual bool onIsABitmap(SkBitmap*, SkMatrix*, TileMode[2]) const {
-        return false;
-    }
-
 private:
     
     
@@ -440,7 +472,6 @@ private:
 
     
     friend class SkLocalMatrixShader;
-    friend class SkBitmapProcShader;    
 
     typedef SkFlattenable INHERITED;
 };

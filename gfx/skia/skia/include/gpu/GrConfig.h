@@ -33,19 +33,7 @@
 
 
 #if !defined(GR_CACHE_STATS)
-  #if defined(SK_DEVELOPER) || defined(SK_DUMP_STATS)
-      #define GR_CACHE_STATS  1
-  #else
-      #define GR_CACHE_STATS  0
-  #endif
-#endif
-
-#if !defined(GR_GPU_STATS)
-  #if defined(SK_DEVELOPER) || defined(SK_DUMP_STATS)
-      #define GR_GPU_STATS    1
-  #else
-      #define GR_GPU_STATS    0
-  #endif
+    #define GR_CACHE_STATS      0
 #endif
 
 
@@ -80,6 +68,29 @@ typedef unsigned __int64 uint64_t;
 
 
 
+
+
+
+
+
+
+#if !defined(GR_USER_CONFIG_FILE)
+    #include "GrUserConfig.h"
+#else
+    #include GR_USER_CONFIG_FILE
+#endif
+
+
+
+
+
+
+
+
+
+
+
+#define GrPrintf SkDebugf
 
 
 
@@ -144,7 +155,7 @@ typedef unsigned __int64 uint64_t;
     #define GR_ALWAYSASSERT(COND)                                        \
         do {                                                             \
             if (!(COND)) {                                               \
-                SkDebugf("%s %s failed\n", GR_FILE_AND_LINE_STR, #COND); \
+                GrPrintf("%s %s failed\n", GR_FILE_AND_LINE_STR, #COND); \
                 GR_ALWAYSBREAK;                                          \
             }                                                            \
         } while (false)
@@ -189,8 +200,48 @@ typedef unsigned __int64 uint64_t;
 
 
 
-#if !defined(GR_FORCE_GPU_TRACE_DEBUGGING)
-    #define GR_FORCE_GPU_TRACE_DEBUGGING 0
+
+
+#if !defined(GR_GEOM_BUFFER_MAP_THRESHOLD)
+    #define GR_GEOM_BUFFER_MAP_THRESHOLD (1 << 15)
+#endif
+
+
+
+
+
+
+#if !defined(GR_DEFAULT_RESOURCE_CACHE_MB_LIMIT)
+    #define GR_DEFAULT_RESOURCE_CACHE_MB_LIMIT 96
+#endif
+
+
+
+
+
+
+#if !defined(GR_DEFAULT_RESOURCE_CACHE_COUNT_LIMIT)
+    #define GR_DEFAULT_RESOURCE_CACHE_COUNT_LIMIT 2048
+#endif
+
+
+
+
+
+#if !defined(GR_STROKE_PATH_RENDERING)
+    #define GR_STROKE_PATH_RENDERING                 0
+#endif
+
+
+
+
+
+
+
+
+
+#if !defined(GR_ALWAYS_ALLOCATE_ON_HEAP)
+    #define GR_ALWAYS_ALLOCATE_ON_HEAP 0
 #endif
 
 #endif

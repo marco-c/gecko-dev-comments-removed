@@ -210,7 +210,7 @@ public:
 
 
     bool        globalToLocal(SkPoint* pt) const {
-        if (pt) {
+        if (NULL != pt) {
             return this->globalToLocal(pt->fX, pt->fY, pt);
         }
         return true;  
@@ -258,7 +258,7 @@ public:
 
     class Artist : public SkRefCnt {
     public:
-        
+        SK_DECLARE_INST_COUNT(Artist)
 
         void draw(SkView*, SkCanvas*);
         void inflate(const SkDOM&, const SkDOM::Node*);
@@ -286,7 +286,7 @@ public:
 
     class Layout : public SkRefCnt {
     public:
-        
+        SK_DECLARE_INST_COUNT(Layout)
 
         void layoutChildren(SkView* parent);
         void inflate(const SkDOM&, const SkDOM::Node*);
@@ -337,12 +337,12 @@ protected:
     
     virtual SkCanvas* beforeChildren(SkCanvas* c) { return c; }
     
-    virtual void afterChildren(SkCanvas*) {}
+    virtual void afterChildren(SkCanvas* orig) {}
 
     
-    virtual void beforeChild(SkView* , SkCanvas*) {}
+    virtual void beforeChild(SkView* child, SkCanvas* canvas) {}
     
-    virtual void afterChild(SkView* , SkCanvas*) {}
+    virtual void afterChild(SkView* child, SkCanvas* canvas) {}
 
     
 

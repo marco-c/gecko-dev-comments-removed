@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 #ifndef SkRecordPattern_DEFINED
 #define SkRecordPattern_DEFINED
 
@@ -19,7 +12,7 @@ namespace SkRecords {
 template <typename T>
 class Is {
 public:
-    Is() : fPtr(nullptr) {}
+    Is() : fPtr(NULL) {}
 
     typedef T type;
     type* get() { return fPtr; }
@@ -31,7 +24,7 @@ public:
 
     template <typename U>
     bool operator()(U*) {
-        fPtr = nullptr;
+        fPtr = NULL;
         return false;
     }
 
@@ -41,27 +34,28 @@ private:
 
 
 class IsDraw {
+    SK_CREATE_MEMBER_DETECTOR(paint);
 public:
-    IsDraw() : fPaint(nullptr) {}
+    IsDraw() : fPaint(NULL) {}
 
     typedef SkPaint type;
     type* get() { return fPaint; }
 
     template <typename T>
-    SK_WHEN(T::kTags & kDraw_Tag, bool) operator()(T* draw) {
+    SK_WHEN(HasMember_paint<T>, bool) operator()(T* draw) {
         fPaint = AsPtr(draw->paint);
         return true;
     }
 
-    bool operator()(DrawDrawable*) {
-        static_assert(DrawDrawable::kTags & kDraw_Tag, "");
-        fPaint = nullptr;
-        return true;
+    template <typename T>
+    SK_WHEN(!HasMember_paint<T>, bool) operator()(T*) {
+        fPaint = NULL;
+        return false;
     }
 
-    template <typename T>
-    SK_WHEN(!(T::kTags & kDraw_Tag), bool) operator()(T* draw) {
-        fPaint = nullptr;
+    
+    bool operator()(SaveLayer*) {
+        fPaint = NULL;
         return false;
     }
 
@@ -81,21 +75,19 @@ struct Not {
 };
 
 
-template <typename First, typename... Rest>
+template <typename A, typename B>
 struct Or {
     template <typename T>
-    bool operator()(T* ptr) { return First()(ptr) || Or<Rest...>()(ptr); }
-};
-template <typename First>
-struct Or<First> {
-    template <typename T>
-    bool operator()(T* ptr) { return First()(ptr); }
+    bool operator()(T* ptr) { return A()(ptr) || B()(ptr); }
 };
 
+
+template <typename A, typename B, typename C>
+struct Or3 : Or<A, Or<B, C> > {};
 
 
 template <typename Matcher>
-struct Greedy {
+struct Star {
     template <typename T>
     bool operator()(T* ptr) { return Matcher()(ptr); }
 };
@@ -106,27 +98,21 @@ struct Greedy {
 
 
 
-template <typename... Matchers> class Pattern;
 
-template <> class Pattern<> {
-public:
-    
-    int match(SkRecord*, int i) { return i; }
-};
 
-template <typename First, typename... Rest>
-class Pattern<First, Rest...> {
+template <typename Matcher, typename Pattern>
+class Cons {
 public:
     
     
-    SK_ALWAYS_INLINE int match(SkRecord* record, int i) {
-        i = this->matchFirst(&fFirst, record, i);
-        return i > 0 ? fRest.match(record, i) : 0;
+    SK_ALWAYS_INLINE unsigned match(SkRecord* record, unsigned i) {
+        i = this->matchHead(&fHead, record, i);
+        return i == 0 ? 0 : fTail.match(record, i);
     }
 
     
     
-    SK_ALWAYS_INLINE bool search(SkRecord* record, int* begin, int* end) {
+    SK_ALWAYS_INLINE bool search(SkRecord* record, unsigned* begin, unsigned* end) {
         for (*begin = *end; *begin < record->count(); ++(*begin)) {
             *end = this->match(record, *begin);
             if (*end != 0) {
@@ -137,17 +123,18 @@ public:
     }
 
     
-    template <typename T> T* first()  { return fFirst.get();   }
-    template <typename T> T* second() { return fRest.template first<T>();  }
-    template <typename T> T* third()  { return fRest.template second<T>(); }
-    template <typename T> T* fourth() { return fRest.template third<T>();  }
+    
+    
+    template <typename T> T* first()  { return fHead.get(); }
+    template <typename T> T* second() { return fTail.fHead.get(); }
+    template <typename T> T* third()  { return fTail.fTail.fHead.get(); }
 
 private:
     
     template <typename T>
-    int matchFirst(T* first, SkRecord* record, int i) {
+    unsigned matchHead(T*, SkRecord* record, unsigned i) {
         if (i < record->count()) {
-            if (record->mutate<bool>(i, *first)) {
+            if (record->mutate<bool>(i, fHead)) {
                 return i+1;
             }
         }
@@ -156,9 +143,9 @@ private:
 
     
     template <typename T>
-    int matchFirst(Greedy<T>* first, SkRecord* record, int i) {
+    unsigned matchHead(Star<T>*, SkRecord* record, unsigned i) {
         while (i < record->count()) {
-            if (!record->mutate<bool>(i, *first)) {
+            if (!record->mutate<bool>(i, fHead)) {
                 return i;
             }
             i++;
@@ -166,9 +153,30 @@ private:
         return 0;
     }
 
-    First            fFirst;
-    Pattern<Rest...> fRest;
+    Matcher fHead;
+    Pattern fTail;
+
+    
+    template <typename, typename> friend class Cons;
 };
+
+
+struct Nil {
+    
+    unsigned match(SkRecord*, unsigned i) { return i; }
+};
+
+
+
+
+template <typename A>
+struct Pattern1 : Cons<A, Nil> {};
+
+template <typename A, typename B>
+struct Pattern2 : Cons<A, Pattern1<B> > {};
+
+template <typename A, typename B, typename C>
+struct Pattern3 : Cons<A, Pattern2<B, C> > {};
 
 }  
 
