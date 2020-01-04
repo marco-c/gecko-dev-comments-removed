@@ -5099,8 +5099,6 @@ ICSetProp_Unboxed::Compiler::generateStubCode(MacroAssembler& masm)
 
     if (needsUpdateStubs()) {
         
-        masm.push(object);
-        masm.push(ICStubReg);
         EmitStowICValues(masm, 2);
 
         
@@ -5112,8 +5110,9 @@ ICSetProp_Unboxed::Compiler::generateStubCode(MacroAssembler& masm)
 
         
         EmitUnstowICValues(masm, 2);
-        masm.pop(ICStubReg);
-        masm.pop(object);
+
+        
+        masm.unboxObject(R0, object);
 
         
         
@@ -5170,8 +5169,6 @@ ICSetProp_TypedObject::Compiler::generateStubCode(MacroAssembler& masm)
 
     if (needsUpdateStubs()) {
         
-        masm.push(object);
-        masm.push(ICStubReg);
         EmitStowICValues(masm, 2);
 
         
@@ -5183,8 +5180,9 @@ ICSetProp_TypedObject::Compiler::generateStubCode(MacroAssembler& masm)
 
         
         EmitUnstowICValues(masm, 2);
-        masm.pop(ICStubReg);
-        masm.pop(object);
+
+        
+        masm.unboxObject(R0, object);
 
         
         
