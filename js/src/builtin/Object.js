@@ -42,6 +42,32 @@ function ObjectStaticAssign(target, firstSource) {
 }
 
 
+function ObjectGetOwnPropertyDescriptors(O) {
+    
+    var obj = ToObject(O);
+
+    
+    var keys = OwnPropertyKeys(obj, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS);
+
+    
+    var descriptors = {};
+
+    
+    for (var index = 0, len = keys.length; index < len; index++) {
+        var key = keys[index];
+
+        
+        var desc = std_Object_getOwnPropertyDescriptor(obj, key);
+
+        
+        _DefineDataProperty(descriptors, key, desc);
+    }
+
+    
+    return descriptors;
+}
+
+
 function ObjectGetPrototypeOf(obj) {
     return std_Reflect_getPrototypeOf(ToObject(obj));
 }
