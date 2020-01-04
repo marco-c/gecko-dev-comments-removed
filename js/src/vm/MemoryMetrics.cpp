@@ -389,9 +389,10 @@ AddClassInfo(Granularity granularity, CompartmentStats* cStats, const char* clas
         CompartmentStats::ClassesHashMap::AddPtr p =
             cStats->allClasses->lookupForAdd(className);
         if (!p) {
+            bool ok = cStats->allClasses->add(p, className, info);
             
             
-            (void)cStats->allClasses->add(p, className, info);
+            (void)ok;
         } else {
             p->value().add(info);
         }
@@ -444,7 +445,8 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
         ScriptSource* ss = script->scriptSource();
         SourceSet::AddPtr entry = closure->seenSources.lookupForAdd(ss);
         if (!entry) {
-            (void)closure->seenSources.add(entry, ss); 
+            bool ok = closure->seenSources.add(entry, ss);
+            (void)ok; 
 
             JS::ScriptSourceInfo info;  
             ss->addSizeOfIncludingThis(rtStats->mallocSizeOf_, &info);
@@ -460,8 +462,9 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
                 JS::RuntimeSizes::ScriptSourcesHashMap::AddPtr p =
                     rtStats->runtime.allScriptSources->lookupForAdd(filename);
                 if (!p) {
+                    bool ok = rtStats->runtime.allScriptSources->add(p, filename, info);
                     
-                    (void)rtStats->runtime.allScriptSources->add(p, filename, info);
+                    (void)ok;
                 } else {
                     p->value().add(info);
                 }
@@ -492,8 +495,9 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
         if (granularity == FineGrained && !closure->anonymize) {
             ZoneStats::StringsHashMap::AddPtr p = zStats->allStrings->lookupForAdd(str);
             if (!p) {
+                bool ok = zStats->allStrings->add(p, str, info);
                 
-                (void)zStats->allStrings->add(p, str, info);
+                (void)ok;
             } else {
                 p->value().add(info);
             }

@@ -73,7 +73,7 @@ class HashMap
     
     
     explicit HashMap(AllocPolicy a = AllocPolicy()) : impl(a)  {}
-    bool init(uint32_t len = 16)                      { return impl.init(len); }
+    MOZ_WARN_UNUSED_RESULT bool init(uint32_t len = 16) { return impl.init(len); }
     bool initialized() const                          { return impl.initialized(); }
 
     
@@ -136,19 +136,19 @@ class HashMap
     }
 
     template<typename KeyInput, typename ValueInput>
-    bool add(AddPtr& p, KeyInput&& k, ValueInput&& v) {
+    MOZ_WARN_UNUSED_RESULT bool add(AddPtr& p, KeyInput&& k, ValueInput&& v) {
         return impl.add(p,
                         mozilla::Forward<KeyInput>(k),
                         mozilla::Forward<ValueInput>(v));
     }
 
     template<typename KeyInput>
-    bool add(AddPtr& p, KeyInput&& k) {
+    MOZ_WARN_UNUSED_RESULT bool add(AddPtr& p, KeyInput&& k) {
         return impl.add(p, mozilla::Forward<KeyInput>(k), Value());
     }
 
     template<typename KeyInput, typename ValueInput>
-    bool relookupOrAdd(AddPtr& p, KeyInput&& k, ValueInput&& v) {
+    MOZ_WARN_UNUSED_RESULT bool relookupOrAdd(AddPtr& p, KeyInput&& k, ValueInput&& v) {
         return impl.relookupOrAdd(p, k,
                                   mozilla::Forward<KeyInput>(k),
                                   mozilla::Forward<ValueInput>(v));
@@ -217,7 +217,7 @@ class HashMap
 
     
     template<typename KeyInput, typename ValueInput>
-    bool put(KeyInput&& k, ValueInput&& v) {
+    MOZ_WARN_UNUSED_RESULT bool put(KeyInput&& k, ValueInput&& v) {
         AddPtr p = lookupForAdd(k);
         if (p) {
             p->value() = mozilla::Forward<ValueInput>(v);
@@ -228,7 +228,7 @@ class HashMap
 
     
     template<typename KeyInput, typename ValueInput>
-    bool putNew(KeyInput&& k, ValueInput&& v) {
+    MOZ_WARN_UNUSED_RESULT bool putNew(KeyInput&& k, ValueInput&& v) {
         return impl.putNew(k, mozilla::Forward<KeyInput>(k), mozilla::Forward<ValueInput>(v));
     }
 
@@ -243,7 +243,9 @@ class HashMap
         AddPtr p = lookupForAdd(k);
         if (p)
             return p;
-        (void)add(p, k, defaultValue);  
+        bool ok = add(p, k, defaultValue);
+        MOZ_ASSERT_IF(!ok, !p); 
+        (void)ok;
         return p;
     }
 
@@ -323,7 +325,7 @@ class HashSet
     
     
     explicit HashSet(AllocPolicy a = AllocPolicy()) : impl(a)  {}
-    bool init(uint32_t len = 16)                      { return impl.init(len); }
+    MOZ_WARN_UNUSED_RESULT bool init(uint32_t len = 16) { return impl.init(len); }
     bool initialized() const                          { return impl.initialized(); }
 
     
@@ -381,12 +383,12 @@ class HashSet
     AddPtr lookupForAdd(const Lookup& l) const        { return impl.lookupForAdd(l); }
 
     template <typename U>
-    bool add(AddPtr& p, U&& u) {
+    MOZ_WARN_UNUSED_RESULT bool add(AddPtr& p, U&& u) {
         return impl.add(p, mozilla::Forward<U>(u));
     }
 
     template <typename U>
-    bool relookupOrAdd(AddPtr& p, const Lookup& l, U&& u) {
+    MOZ_WARN_UNUSED_RESULT bool relookupOrAdd(AddPtr& p, const Lookup& l, U&& u) {
         return impl.relookupOrAdd(p, l, mozilla::Forward<U>(u));
     }
 
@@ -453,19 +455,19 @@ class HashSet
 
     
     template <typename U>
-    bool put(U&& u) {
+    MOZ_WARN_UNUSED_RESULT bool put(U&& u) {
         AddPtr p = lookupForAdd(u);
         return p ? true : add(p, mozilla::Forward<U>(u));
     }
 
     
     template <typename U>
-    bool putNew(U&& u) {
+    MOZ_WARN_UNUSED_RESULT bool putNew(U&& u) {
         return impl.putNew(u, mozilla::Forward<U>(u));
     }
 
     template <typename U>
-    bool putNew(const Lookup& l, U&& u) {
+    MOZ_WARN_UNUSED_RESULT bool putNew(const Lookup& l, U&& u) {
         return impl.putNew(l, mozilla::Forward<U>(u));
     }
 
@@ -1635,7 +1637,7 @@ class HashTable : private AllocPolicy
     }
 
     template <typename... Args>
-    bool add(AddPtr& p, Args&&... args)
+    MOZ_WARN_UNUSED_RESULT bool add(AddPtr& p, Args&&... args)
     {
         mozilla::ReentrancyGuard g(*this);
         MOZ_ASSERT(table);
@@ -1698,7 +1700,7 @@ class HashTable : private AllocPolicy
     
     
     template <typename... Args>
-    bool putNew(const Lookup& l, Args&&... args)
+    MOZ_WARN_UNUSED_RESULT bool putNew(const Lookup& l, Args&&... args)
     {
         if (!this->checkSimulatedOOM())
             return false;
@@ -1713,7 +1715,7 @@ class HashTable : private AllocPolicy
     
     
     template <typename... Args>
-    bool relookupOrAdd(AddPtr& p, const Lookup& l, Args&&... args)
+    MOZ_WARN_UNUSED_RESULT bool relookupOrAdd(AddPtr& p, const Lookup& l, Args&&... args)
     {
 #ifdef JS_DEBUG
         p.generation = generation();
