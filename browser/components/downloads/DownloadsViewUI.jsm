@@ -133,6 +133,11 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
     }
 
     
+    
+    this.element.classList.toggle("temporary-block",
+                                  !!this.download.hasBlockedData);
+
+    
     if (this.download.hasProgress) {
       this.element.setAttribute("progressmode", "normal");
       this.element.setAttribute("progress", this.download.progress);
