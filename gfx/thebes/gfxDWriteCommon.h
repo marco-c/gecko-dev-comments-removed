@@ -115,12 +115,14 @@ public:
     
 
 
+
     virtual HRESULT STDMETHODCALLTYPE 
         CreateStreamFromKey(void const* fontFileReferenceKey,
                             UINT32 fontFileReferenceKeySize,
                             OUT IDWriteFontFileStream** fontFileStream);
 
     
+
 
 
 
@@ -134,6 +136,13 @@ public:
         return mInstance;
     }
 
+private:
+    static IDWriteFontFileLoader* mInstance;
+}; 
+
+class gfxDWriteFontFileStream final : public IDWriteFontFileStream
+{
+public:
     
 
 
@@ -142,13 +151,56 @@ public:
 
 
 
+    gfxDWriteFontFileStream(FallibleTArray<uint8_t> *aData);
+    ~gfxDWriteFontFileStream();
 
-    static HRESULT CreateCustomFontFile(FallibleTArray<uint8_t>& aFontData,
-                                        IDWriteFontFile** aFontFile,
-                                        IDWriteFontFileStream** aFontFileStream);
+    
+    IFACEMETHOD(QueryInterface)(IID const& iid, OUT void** ppObject)
+    {
+        if (iid == __uuidof(IDWriteFontFileStream)) {
+            *ppObject = static_cast<IDWriteFontFileStream*>(this);
+            return S_OK;
+        } else if (iid == __uuidof(IUnknown)) {
+            *ppObject = static_cast<IUnknown*>(this);
+            return S_OK;
+        } else {
+            return E_NOINTERFACE;
+        }
+    }
+
+    IFACEMETHOD_(ULONG, AddRef)()
+    {
+        NS_PRECONDITION(int32_t(mRefCnt) >= 0, "illegal refcnt");
+        ++mRefCnt;
+        return mRefCnt;
+    }
+
+    IFACEMETHOD_(ULONG, Release)()
+    {
+        NS_PRECONDITION(0 != mRefCnt, "dup release");
+        --mRefCnt;
+        if (mRefCnt == 0) {
+            delete this;
+            return 0;
+        }
+        return mRefCnt;
+    }
+
+    
+    virtual HRESULT STDMETHODCALLTYPE ReadFileFragment(void const** fragmentStart,
+                                                       UINT64 fileOffset,
+                                                       UINT64 fragmentSize,
+                                                       OUT void** fragmentContext);
+
+    virtual void STDMETHODCALLTYPE ReleaseFileFragment(void* fragmentContext);
+
+    virtual HRESULT STDMETHODCALLTYPE GetFileSize(OUT UINT64* fileSize);
+
+    virtual HRESULT STDMETHODCALLTYPE GetLastWriteTime(OUT UINT64* lastWriteTime);
 
 private:
-    static IDWriteFontFileLoader* mInstance;
+    FallibleTArray<uint8_t> mData;
+    nsAutoRefCnt mRefCnt;
 }; 
 
 #endif 

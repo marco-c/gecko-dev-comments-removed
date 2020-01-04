@@ -3,14 +3,11 @@
 
 
 
-#include "nsPrintOptionsImpl.h"
-
 #include "mozilla/embedding/PPrinting.h"
-#include "mozilla/layout/RemotePrintJobChild.h"
 #include "nsPrintingProxy.h"
+#include "nsPrintOptionsImpl.h"
 #include "nsReadableUtils.h"
 #include "nsPrintSettingsImpl.h"
-#include "nsIPrintSession.h"
 
 #include "nsIDOMWindow.h"
 #include "nsIServiceManager.h"
@@ -31,8 +28,6 @@
 
 using namespace mozilla;
 using namespace mozilla::embedding;
-
-typedef mozilla::layout::RemotePrintJobChild RemotePrintJobChild;
 
 NS_IMPL_ISUPPORTS(nsPrintOptions, nsIPrintOptions, nsIPrintSettingsService)
 
@@ -238,12 +233,6 @@ NS_IMETHODIMP
 nsPrintOptions::DeserializeToPrintSettings(const PrintData& data,
                                            nsIPrintSettings* settings)
 {
-  nsCOMPtr<nsIPrintSession> session;
-  nsresult rv = settings->GetPrintSession(getter_AddRefs(session));
-  if (NS_SUCCEEDED(rv) && session) {
-    session->SetRemotePrintJob(
-      static_cast<RemotePrintJobChild*>(data.remotePrintJobChild()));
-  }
   settings->SetStartPageRange(data.startPageRange());
   settings->SetEndPageRange(data.endPageRange());
 

@@ -130,15 +130,13 @@ public:
 
 
 
-
     gfxDWriteFontEntry(const nsAString& aFaceName,
                               IDWriteFontFile *aFontFile,
-                              IDWriteFontFileStream *aFontFileStream,
                               uint16_t aWeight,
                               int16_t aStretch,
                               uint8_t aStyle)
       : gfxFontEntry(aFaceName), mFont(nullptr), mFontFile(aFontFile),
-        mFontFileStream(aFontFileStream), mForceGDIClassic(false)
+        mForceGDIClassic(false)
     {
         mWeight = aWeight;
         mStretch = aStretch;
@@ -187,10 +185,6 @@ protected:
 
     RefPtr<IDWriteFont> mFont;
     RefPtr<IDWriteFontFile> mFontFile;
-
-    
-    
-    RefPtr<IDWriteFontFileStream> mFontFileStream;
 
     
     

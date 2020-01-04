@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef MOZILLA_GFX_DRAWTARGETRECORDING_H_
 #define MOZILLA_GFX_DRAWTARGETRECORDING_H_
 
@@ -18,22 +17,10 @@ class DrawTargetRecording : public DrawTarget
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawTargetRecording, override)
   DrawTargetRecording(DrawEventRecorder *aRecorder, DrawTarget *aDT, bool aHasData = false);
-
-  
-
-
-
-
-
-
-  DrawTargetRecording(const DrawTargetRecording *aDT, const IntSize &aSize,
-                      SurfaceFormat aFormat);
-
   ~DrawTargetRecording();
 
   virtual DrawTargetType GetType() const override { return mFinalDT->GetType(); }
   virtual BackendType GetBackendType() const override { return mFinalDT->GetBackendType(); }
-  virtual bool IsRecording() const override { return true; }
 
   virtual already_AddRefed<SourceSurface> Snapshot() override;
 
@@ -288,8 +275,7 @@ public:
 
 private:
   Path *GetPathForPathRecording(const Path *aPath) const;
-  already_AddRefed<PathRecording> EnsurePathStored(const Path *aPath);
-  void EnsurePatternDependenciesStored(const Pattern &aPattern);
+  void EnsureStored(const Path *aPath);
 
   RefPtr<DrawEventRecorderPrivate> mRecorder;
   RefPtr<DrawTarget> mFinalDT;
