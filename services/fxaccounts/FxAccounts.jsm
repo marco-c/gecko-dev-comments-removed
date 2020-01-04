@@ -352,6 +352,9 @@ FxAccountsInternal.prototype = {
   VERIFICATION_POLL_TIMEOUT_INITIAL: 15000, 
   
   VERIFICATION_POLL_TIMEOUT_SUBSEQUENT: 30000, 
+  
+  
+  DEVICE_REGISTRATION_VERSION: 1,
 
   _fxAccountsClient: null,
 
@@ -599,7 +602,8 @@ FxAccountsInternal.prototype = {
     return this.currentAccountState.getUserAccountData()
       .then(data => {
         if (data) {
-          if (data.isDeviceStale || !data.deviceId) {
+          if (!data.deviceId || !data.deviceRegistrationVersion ||
+              data.deviceRegistrationVersion < this.DEVICE_REGISTRATION_VERSION) {
             
             
             
@@ -1471,9 +1475,12 @@ FxAccountsInternal.prototype = {
       if (signedInUser) {
         return this._registerOrUpdateDevice(signedInUser);
       }
-    }).catch(error => this._logErrorAndSetStaleDeviceFlag(error));
+    }).catch(error => this._logErrorAndResetDeviceRegistrationVersion(error));
   },
 
+  
+  
+  
   _registerOrUpdateDevice(signedInUser) {
     try {
       
@@ -1511,7 +1518,7 @@ FxAccountsInternal.prototype = {
     }).then(device =>
       this.currentAccountState.updateUserAccountData({
         deviceId: device.id,
-        isDeviceStale: null
+        deviceRegistrationVersion: this.DEVICE_REGISTRATION_VERSION
       }).then(() => device.id)
     ).catch(error => this._handleDeviceError(error, signedInUser.sessionToken));
   },
@@ -1539,7 +1546,7 @@ FxAccountsInternal.prototype = {
       
       return this._handleTokenError(error);
     }).catch(error =>
-      this._logErrorAndSetStaleDeviceFlag(error)
+      this._logErrorAndResetDeviceRegistrationVersion(error)
     ).catch(() => {});
   },
 
@@ -1549,7 +1556,7 @@ FxAccountsInternal.prototype = {
     
     log.warn("unknown device id, clearing the local device data");
     return this.currentAccountState.updateUserAccountData({ deviceId: null })
-      .catch(error => this._logErrorAndSetStaleDeviceFlag(error));
+      .catch(error => this._logErrorAndResetDeviceRegistrationVersion(error));
   },
 
   _recoverFromDeviceSessionConflict(error, sessionToken) {
@@ -1570,30 +1577,30 @@ FxAccountsInternal.prototype = {
           const deviceId = matchingDevices[0].id;
           return this.currentAccountState.updateUserAccountData({
             deviceId,
-            isDeviceStale: true
+            deviceRegistrationVersion: null
           }).then(() => deviceId);
         }
         if (length > 1) {
           log.error("insane server state, " + length + " devices for this session");
         }
-        return this._logErrorAndSetStaleDeviceFlag(error);
+        return this._logErrorAndResetDeviceRegistrationVersion(error);
       }).catch(secondError => {
         log.error("failed to recover from device-session conflict", secondError);
-        this._logErrorAndSetStaleDeviceFlag(error)
+        this._logErrorAndResetDeviceRegistrationVersion(error)
       });
   },
 
-  _logErrorAndSetStaleDeviceFlag(error) {
+  _logErrorAndResetDeviceRegistrationVersion(error) {
     
     
     
     
     log.error("device registration failed", error);
     return this.currentAccountState.updateUserAccountData({
-      isDeviceStale: true
+      deviceRegistrationVersion: null
     }).catch(secondError => {
       log.error(
-        "failed to set stale device flag, device registration won't be retried",
+        "failed to reset the device registration version, device registration won't be retried",
         secondError);
     }).then(() => {});
   },

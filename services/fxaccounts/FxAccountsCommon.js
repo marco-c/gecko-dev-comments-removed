@@ -229,7 +229,7 @@ exports.ERROR_MSG_METHOD_NOT_ALLOWED         = "METHOD_NOT_ALLOWED";
 
 exports.FXA_PWDMGR_PLAINTEXT_FIELDS = new Set(
   ["email", "verified", "authAt", "sessionToken", "uid", "oauthTokens", "profile",
-  "deviceId", "isDeviceStale"]);
+  "deviceId", "deviceRegistrationVersion"]);
 
 
 exports.FXA_PWDMGR_SECURE_FIELDS = new Set(
@@ -242,7 +242,7 @@ exports.FXA_PWDMGR_MEMORY_FIELDS = new Set(
 
 
 exports.FXA_PWDMGR_REAUTH_WHITELIST = new Set(
-  ["email", "uid", "profile", "deviceId", "isDeviceStale", "verified"]);
+  ["email", "uid", "profile", "deviceId", "deviceRegistrationVersion", "verified"]);
 
 
 exports.FXA_PWDMGR_HOST = "chrome://FirefoxAccounts";

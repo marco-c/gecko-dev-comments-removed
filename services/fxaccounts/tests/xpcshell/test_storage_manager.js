@@ -14,6 +14,8 @@ Cu.import("resource://gre/modules/Log.jsm");
 initTestLogging("Trace");
 log.level = Log.Level.Trace;
 
+const DEVICE_REGISTRATION_VERSION = 42;
+
 
 function MockedPlainStorage(accountData) {
   let data = null;
@@ -128,7 +130,7 @@ add_storage_task(function* checkEverythingRead(sm) {
     uid: "uid",
     email: "someone@somewhere.com",
     deviceId: "wibble",
-    isDeviceStale: true
+    deviceRegistrationVersion: null
   });
   if (sm.secureStorage) {
     sm.secureStorage = new MockedSecureStorage(null);
@@ -139,26 +141,26 @@ add_storage_task(function* checkEverythingRead(sm) {
   Assert.equal(accountData.uid, "uid");
   Assert.equal(accountData.email, "someone@somewhere.com");
   Assert.equal(accountData.deviceId, "wibble");
-  Assert.equal(accountData.isDeviceStale, true);
+  Assert.equal(accountData.deviceRegistrationVersion, null);
   
   
   yield sm.updateAccountData({
     verified: true,
     kA: "kA",
     kB: "kB",
-    isDeviceStale: false
+    deviceRegistrationVersion: DEVICE_REGISTRATION_VERSION
   });
   accountData = yield sm.getAccountData();
   Assert.equal(accountData.kB, "kB");
   Assert.equal(accountData.kA, "kA");
   Assert.equal(accountData.deviceId, "wibble");
-  Assert.equal(accountData.isDeviceStale, false);
+  Assert.equal(accountData.deviceRegistrationVersion, DEVICE_REGISTRATION_VERSION);
   
   yield sm._promiseStorageComplete; 
   
   Assert.equal(sm.plainStorage.data.accountData.verified, true);
   Assert.equal(sm.plainStorage.data.accountData.deviceId, "wibble");
-  Assert.equal(sm.plainStorage.data.accountData.isDeviceStale, false);
+  Assert.equal(sm.plainStorage.data.accountData.deviceRegistrationVersion, DEVICE_REGISTRATION_VERSION);
   
   if (sm.secureStorage) {
     Assert.equal(sm.secureStorage.data.accountData.kA, "kA");
