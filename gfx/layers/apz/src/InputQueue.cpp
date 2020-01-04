@@ -323,22 +323,25 @@ InputQueue::ReceivePanGestureInput(const RefPtr<AsyncPanZoomController>& aTarget
     block = mInputBlockQueue.LastElement()->AsPanGestureBlock();
   }
 
+  PanGestureInput event = aEvent;
   nsEventStatus result = nsEventStatus_eConsumeDoDefault;
 
   if (!block || block->WasInterrupted()) {
-    if (aEvent.mType != PanGestureInput::PANGESTURE_START) {
+    if (event.mType != PanGestureInput::PANGESTURE_START) {
       
-      INPQ_LOG("pangesture block %p was interrupted %d\n", block,
-          block ? block->WasInterrupted() : 0);
-      return nsEventStatus_eConsumeDoDefault;
+      
+      
+      INPQ_LOG("transmogrifying pan input %d to PANGESTURE_START for new block\n",
+          event.mType);
+      event.mType = PanGestureInput::PANGESTURE_START;
     }
-    block = new PanGestureBlockState(aTarget, aTargetConfirmed, aEvent);
+    block = new PanGestureBlockState(aTarget, aTargetConfirmed, event);
     INPQ_LOG("started new pan gesture block %p id %" PRIu64 " for target %p\n",
         block, block->GetBlockId(), aTarget.get());
 
     if (aTargetConfirmed &&
-        aEvent.mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection &&
-        !CanScrollTargetHorizontally(aEvent, block)) {
+        event.mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection &&
+        !CanScrollTargetHorizontally(event, block)) {
       
       
       
@@ -368,8 +371,8 @@ InputQueue::ReceivePanGestureInput(const RefPtr<AsyncPanZoomController>& aTarget
   
   
   
-  if (!MaybeHandleCurrentBlock(block, aEvent)) {
-    block->AddEvent(aEvent.AsPanGestureInput());
+  if (!MaybeHandleCurrentBlock(block, event)) {
+    block->AddEvent(event.AsPanGestureInput());
   }
 
   return result;
