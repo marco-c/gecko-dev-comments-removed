@@ -23,6 +23,7 @@ class AsyncPanZoomController;
 class CancelableBlockState;
 class TouchBlockState;
 class WheelBlockState;
+class PanGestureBlockState;
 
 
 
@@ -83,12 +84,10 @@ public:
 
 
 
+
   TouchBlockState* CurrentTouchBlock() const;
-  
-
-
-
   WheelBlockState* CurrentWheelBlock() const;
+  PanGestureBlockState* CurrentPanGestureBlock() const;
   
 
 
@@ -130,6 +129,10 @@ private:
   nsEventStatus ReceiveScrollWheelInput(const nsRefPtr<AsyncPanZoomController>& aTarget,
                                         bool aTargetConfirmed,
                                         const ScrollWheelInput& aEvent,
+                                        uint64_t* aOutInputBlockId);
+  nsEventStatus ReceivePanGestureInput(const nsRefPtr<AsyncPanZoomController>& aTarget,
+                                        bool aTargetConfirmed,
+                                        const PanGestureInput& aEvent,
                                         uint64_t* aOutInputBlockId);
 
   

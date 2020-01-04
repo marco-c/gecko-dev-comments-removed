@@ -20,6 +20,7 @@ class OverscrollHandoffChain;
 class CancelableBlockState;
 class TouchBlockState;
 class WheelBlockState;
+class PanGestureBlockState;
 
 
 
@@ -83,6 +84,9 @@ public:
     return nullptr;
   }
   virtual WheelBlockState *AsWheelBlock() {
+    return nullptr;
+  }
+  virtual PanGestureBlockState *AsPanGestureBlock() {
     return nullptr;
   }
 
@@ -245,6 +249,42 @@ private:
   TimeStamp mLastEventTime;
   TimeStamp mLastMouseMove;
   bool mTransactionEnded;
+};
+
+
+
+
+class PanGestureBlockState : public CancelableBlockState
+{
+public:
+  PanGestureBlockState(const nsRefPtr<AsyncPanZoomController>& aTargetApzc,
+                       bool aTargetConfirmed,
+                       const PanGestureInput& aEvent);
+
+  bool SetContentResponse(bool aPreventDefault) override;
+  bool HasEvents() const override;
+  void DropEvents() override;
+  void HandleEvents() override;
+  bool MustStayActive() override;
+  const char* Type() override;
+  bool SetConfirmedTargetApzc(const nsRefPtr<AsyncPanZoomController>& aTargetApzc) override;
+
+  void AddEvent(const PanGestureInput& aEvent);
+
+  PanGestureBlockState *AsPanGestureBlock() override {
+    return this;
+  }
+
+  
+
+
+  bool AllowScrollHandoff() const;
+
+  bool WasInterrupted() const { return mInterrupted; }
+
+private:
+  nsTArray<PanGestureInput> mEvents;
+  bool mInterrupted;
 };
 
 
