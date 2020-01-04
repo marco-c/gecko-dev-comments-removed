@@ -3134,7 +3134,11 @@ GCRuntime::requestMajorGC(JS::gcreason::Reason reason)
         return;
 
     majorGCTriggerReason = reason;
-    rt->requestInterrupt(JSRuntime::RequestInterruptUrgent);
+
+    
+    
+    
+    rt->requestInterrupt(JSRuntime::RequestInterruptCanWait);
 }
 
 void
@@ -3145,7 +3149,9 @@ GCRuntime::requestMinorGC(JS::gcreason::Reason reason)
         return;
 
     minorGCTriggerReason = reason;
-    rt->requestInterrupt(JSRuntime::RequestInterruptUrgent);
+
+    
+    rt->requestInterrupt(JSRuntime::RequestInterruptCanWait);
 }
 
 bool

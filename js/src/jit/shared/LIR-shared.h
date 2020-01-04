@@ -1213,33 +1213,39 @@ class LAsmJSInterruptCheck : public LInstructionHelper<0, 0, 0>
 
 class LInterruptCheck : public LInstructionHelper<0, 0, 0>
 {
-  public:
-    LIR_HEADER(InterruptCheck)
-};
-
-
-
-
-class LInterruptCheckImplicit : public LInstructionHelper<0, 0, 0>
-{
     Label* oolEntry_;
 
-  public:
-    LIR_HEADER(InterruptCheckImplicit)
+    
+    
+    
+    bool implicit_;
 
-    LInterruptCheckImplicit()
-      : oolEntry_(nullptr)
+  public:
+    LIR_HEADER(InterruptCheck)
+
+    LInterruptCheck()
+      : oolEntry_(nullptr),
+        implicit_(false)
     {}
 
     Label* oolEntry() {
+        MOZ_ASSERT(implicit_);
         return oolEntry_;
     }
 
     void setOolEntry(Label* oolEntry) {
+        MOZ_ASSERT(implicit_);
         oolEntry_ = oolEntry;
     }
     MInterruptCheck* mir() const {
         return mir_->toInterruptCheck();
+    }
+
+    void setImplicit() {
+        implicit_ = true;
+    }
+    bool implicit() const {
+        return implicit_;
     }
 };
 

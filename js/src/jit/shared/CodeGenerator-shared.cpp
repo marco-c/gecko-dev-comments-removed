@@ -1559,12 +1559,12 @@ CodeGeneratorShared::labelForBackedgeWithImplicitCheck(MBasicBlock* mir)
         for (LInstructionIterator iter = mir->lir()->begin(); iter != mir->lir()->end(); iter++) {
             if (iter->isMoveGroup()) {
                 
-            } else if (iter->isInterruptCheckImplicit()) {
-                return iter->toInterruptCheckImplicit()->oolEntry();
             } else {
                 
                 
                 MOZ_ASSERT(iter->isInterruptCheck());
+                if (iter->toInterruptCheck()->implicit())
+                    return iter->toInterruptCheck()->oolEntry();
                 return nullptr;
             }
         }
