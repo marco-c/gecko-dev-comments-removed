@@ -237,6 +237,11 @@ private:
 
     void Reject(const RejectValueType& aRejectValue)
     {
+      if (!mPromise) {
+        
+        return;
+      }
+
       mPromise->Reject(aRejectValue, __func__);
       mPromise = nullptr;
       mResolveValues.Clear();
