@@ -1239,7 +1239,10 @@ SkiaGLGlue*
 gfxPlatform::GetSkiaGLGlue()
 {
 #ifdef USE_SKIA_GPU
-  if (!UseAcceleratedCanvas()) {
+  
+  
+  if (!mSkiaGlue &&
+      !UseAcceleratedCanvas()) {
     gfxCriticalNote << "Accelerated Skia canvas is disabled";
     return nullptr;
   }
