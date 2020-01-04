@@ -413,12 +413,6 @@ WheelTransaction::OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent)
     return DeltaValues(aEvent);
   }
 
-  
-  if (sTargetFrame !=
-        sTargetFrame->PresContext()->PresShell()->GetRootScrollFrame()) {
-    return DeltaValues(aEvent);
-  }
-
   return DeltaValues(aEvent->OverriddenDeltaX(),
                      aEvent->OverriddenDeltaY());
 }

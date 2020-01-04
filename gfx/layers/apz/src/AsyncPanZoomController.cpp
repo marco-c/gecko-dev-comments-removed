@@ -1497,14 +1497,12 @@ AsyncPanZoomController::GetScrollWheelDelta(const ScrollWheelInput& aEvent) cons
 {
   ParentLayerSize scrollAmount;
   ParentLayerSize pageScrollSize;
-  bool isRootContent = false;
 
   {
     
     ReentrantMonitorAutoEnter lock(mMonitor);
     LayoutDeviceIntSize scrollAmountLD = mScrollMetadata.GetLineScrollAmount();
     LayoutDeviceIntSize pageScrollSizeLD = mScrollMetadata.GetPageScrollAmount();
-    isRootContent = mFrameMetrics.IsRootContent();
     scrollAmount = scrollAmountLD /
       mFrameMetrics.GetDevPixelsPerCSSPixel() * mFrameMetrics.GetZoom();
     pageScrollSize = pageScrollSizeLD /
@@ -1538,8 +1536,8 @@ AsyncPanZoomController::GetScrollWheelDelta(const ScrollWheelInput& aEvent) cons
   
   
   
-  if (isRootContent &&
-      gfxPrefs::MouseWheelHasRootScrollDeltaOverride() &&
+  
+  if (gfxPrefs::MouseWheelHasRootScrollDeltaOverride() &&
       !aEvent.IsCustomizedByUserPrefs() &&
       aEvent.mDeltaType == ScrollWheelInput::SCROLLDELTA_LINE &&
       aEvent.mAllowToOverrideSystemScrollSpeed) {
