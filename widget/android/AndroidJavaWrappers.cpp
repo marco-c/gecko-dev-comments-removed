@@ -720,7 +720,7 @@ AndroidGeckoEvent::MakeTouchEvent(nsIWidget* widget)
         }
         case AndroidMotionEvent::ACTION_UP:
         case AndroidMotionEvent::ACTION_POINTER_UP: {
-            type = NS_TOUCH_END;
+            type = eTouchEnd;
             
             
             startIndex = PointerIndex();

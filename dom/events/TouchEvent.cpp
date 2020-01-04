@@ -122,7 +122,7 @@ TouchEvent::Touches()
 {
   if (!mTouches) {
     WidgetTouchEvent* touchEvent = mEvent->AsTouchEvent();
-    if (mEvent->mMessage == NS_TOUCH_END ||
+    if (mEvent->mMessage == eTouchEnd ||
         mEvent->mMessage == NS_TOUCH_CANCEL) {
       
       WidgetTouchEvent::AutoTouchArray unchangedTouches;
@@ -150,7 +150,7 @@ TouchEvent::TargetTouches()
     for (uint32_t i = 0; i < touches.Length(); ++i) {
       
       
-      if ((mEvent->mMessage != NS_TOUCH_END &&
+      if ((mEvent->mMessage != eTouchEnd &&
            mEvent->mMessage != NS_TOUCH_CANCEL) || !touches[i]->mChanged) {
         if (touches[i]->mTarget == mEvent->originalTarget) {
           targetTouches.AppendElement(touches[i]);

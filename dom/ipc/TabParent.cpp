@@ -1834,7 +1834,7 @@ bool TabParent::SendRealTouchEvent(WidgetTouchEvent& event)
   
   
   
-  if (event.mMessage == NS_TOUCH_END || event.mMessage == NS_TOUCH_CANCEL) {
+  if (event.mMessage == eTouchEnd || event.mMessage == NS_TOUCH_CANCEL) {
     for (int i = event.touches.Length() - 1; i >= 0; i--) {
       if (!event.touches[i]->mChanged) {
         event.touches.RemoveElementAt(i);
@@ -2990,7 +2990,7 @@ TabParent::InjectTouchEvent(const nsAString& aType,
   EventMessage msg;
   nsContentUtils::GetEventMessageAndAtom(aType, eTouchEventClass, &msg);
   if (msg != eTouchStart && msg != eTouchMove &&
-      msg != NS_TOUCH_END && msg != NS_TOUCH_CANCEL) {
+      msg != eTouchEnd && msg != NS_TOUCH_CANCEL) {
     return NS_ERROR_FAILURE;
   }
 
