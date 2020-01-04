@@ -1,5 +1,7 @@
 
 
+
+
 function test() {
   Harness.installConfirmCallback = confirm_install;
   Harness.installEndedCallback = install_ended;
@@ -10,8 +12,15 @@ function test() {
   var pm = Services.perms;
   pm.add(makeURI("http://example.com/"), "install", pm.ALLOW_ACTION);
 
+  var inner_url = encodeURIComponent(TESTROOT + "installtrigger.html?" + encodeURIComponent(JSON.stringify({
+    "Unsigned XPI": {
+      URL: TESTROOT + "amosigned.xpi",
+      IconURL: TESTROOT + "icon.png",
+      toString: function() { return this.URL; }
+    }
+  })));
   gBrowser.selectedTab = gBrowser.addTab();
-  gBrowser.loadURI(TESTROOT + "triggerredirect.html");
+  gBrowser.loadURI(TESTROOT + "installtrigger_frame.html?" + inner_url);
 }
 
 function confirm_install(window) {
@@ -33,8 +42,9 @@ function finish_test(count) {
 
   Services.perms.remove(makeURI("http://example.com"), "install");
 
-  var doc = gBrowser.contentDocument;
-  is(gBrowser.currentURI.spec, TESTROOT + "triggerredirect.html#foo", "Should have redirected");
+  var doc = gBrowser.contentWindow.frames[0].document; 
+  is(doc.getElementById("return").textContent, "true", "installTrigger in iframe should have claimed success");
+  is(doc.getElementById("status").textContent, "0", "Callback in iframe should have seen a success");
 
   gBrowser.removeCurrentTab();
   Harness.finish();

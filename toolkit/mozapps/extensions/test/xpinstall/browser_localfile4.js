@@ -20,7 +20,7 @@ function test() {
     
   }
   var triggers = encodeURIComponent(JSON.stringify({
-    "Unsigned XPI": TESTROOT + "unsigned.xpi"
+    "Unsigned XPI": TESTROOT + "amosigned.xpi"
   }));
   gBrowser.selectedTab = gBrowser.addTab();
   gBrowser.loadURI(xpipath + "installtrigger.html?" + triggers);

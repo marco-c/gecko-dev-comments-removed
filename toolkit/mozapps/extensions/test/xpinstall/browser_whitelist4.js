@@ -1,7 +1,7 @@
 
 
 
-var url = TESTROOT2 + "navigate.html?" + encodeURIComponent(TESTROOT + "unsigned.xpi");
+var url = TESTROOT2 + "navigate.html?" + encodeURIComponent(TESTROOT + "amosigned.xpi");
 
 function test() {
   Harness.installBlockedCallback = allow_blocked;
