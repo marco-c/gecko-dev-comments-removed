@@ -18,6 +18,9 @@ createEnum([
   "ADD_VIEWPORT",
 
   
+  "RESIZE_VIEWPORT",
+
+  
   "ROTATE_VIEWPORT",
 
 ], module.exports);
