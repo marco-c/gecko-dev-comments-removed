@@ -40,7 +40,7 @@ protected:
                  JS::MutableHandle<JS::Value> aVal);
 
   bool StringifyToJSON(JSContext* aCx,
-                       JS::MutableHandle<JS::Value> aValue,
+                       JS::Handle<JSObject*> aObj,
                        nsAString& aJSON) const;
 
   
