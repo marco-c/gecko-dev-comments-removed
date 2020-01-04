@@ -1176,9 +1176,39 @@ CycleCollectedJSRuntime::TraverseRoots(nsCycleCollectionNoteRootCallback& aCb)
   return NS_OK;
 }
 
+
+
+
+
+
 bool
 CycleCollectedJSRuntime::UsefulToMergeZones() const
 {
+  MOZ_ASSERT(mJSRuntime);
+
+  if (!NS_IsMainThread()) {
+    return false;
+  }
+
+  JSContext* iter = nullptr;
+  JSContext* cx;
+  JSAutoRequest ar(nsContentUtils::GetSafeJSContext());
+  while ((cx = JS_ContextIterator(mJSRuntime, &iter))) {
+    
+    nsIScriptContext* scx = GetScriptContextFromJSContext(cx);
+    JS::RootedObject obj(cx, scx ? scx->GetWindowProxyPreserveColor() : nullptr);
+    if (!obj) {
+      continue;
+    }
+    MOZ_ASSERT(js::IsWindowProxy(obj));
+    
+    obj = js::ToWindowIfWindowProxy(obj);
+    MOZ_ASSERT(JS_IsGlobalObject(obj));
+    if (JS::ObjectIsMarkedGray(obj) &&
+        !js::IsSystemCompartment(js::GetObjectCompartment(obj))) {
+      return true;
+    }
+  }
   return false;
 }
 
