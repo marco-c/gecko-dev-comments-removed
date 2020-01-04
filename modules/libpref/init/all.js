@@ -2007,6 +2007,9 @@ pref("middlemouse.scrollbarPosition", false);
 pref("clipboard.autocopy", false);
 
 
+pref("clipboard.plainTextOnly", false);
+
+
 pref("mousewheel.transaction.timeout", 1500);
 
 pref("mousewheel.transaction.ignoremovedelay", 100);
@@ -4896,7 +4899,6 @@ pref("dom.beforeAfterKeyboardEvent.enabled", false);
 pref("dom.presentation.enabled", false);
 pref("dom.presentation.tcp_server.debug", false);
 pref("dom.presentation.discovery.enabled", true);
-pref("dom.presentation.discovery.timeout_ms", 10000);
 pref("dom.presentation.discoverable", false);
 
 #ifdef XP_MACOSX
