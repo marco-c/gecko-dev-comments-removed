@@ -588,6 +588,19 @@ nsCORSListenerProxy::CheckRequestApproved(nsIRequest* aRequest)
     return rv;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mWithCredentials && allowedOriginHeader.EqualsLiteral("*")) {
+    LogBlockedRequest(aRequest, "CORSNotSupportingCredentials", nullptr);
+    return NS_ERROR_DOM_BAD_URI;
+  }
+
   if (mWithCredentials || !allowedOriginHeader.EqualsLiteral("*")) {
     nsAutoCString origin;
     nsContentUtils::GetASCIIOrigin(mOriginHeaderPrincipal, origin);
