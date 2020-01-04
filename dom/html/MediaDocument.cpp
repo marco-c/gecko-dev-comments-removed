@@ -192,14 +192,8 @@ MediaDocument::BecomeInteractive()
 {
   
   
-  bool restoring = false;
-  if (nsPIDOMWindowOuter* window = GetWindow()) {
-    nsIDocShell* docShell = window->GetDocShell();
-    if (docShell) {
-      docShell->GetRestoringDocument(&restoring);
-    }
-  }
-  if (!restoring) {
+  
+  if (GetReadyStateEnum() != nsIDocument::READYSTATE_COMPLETE) {
     MOZ_ASSERT(GetReadyStateEnum() == nsIDocument::READYSTATE_LOADING,
                "Bad readyState");
     SetReadyStateInternal(nsIDocument::READYSTATE_INTERACTIVE);
