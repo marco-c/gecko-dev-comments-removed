@@ -135,9 +135,9 @@ ProjectList.prototype = {
 
   _renderProjectItem: function(opts) {
     if (this._sidebarsEnabled && this._doc !== this._parentWindow.document) {
-      let span = this._doc.createElement("span");
+      let span = opts.panel.querySelector("span") || this._doc.createElement("span");
       span.textContent = opts.name;
-      let icon = this._doc.createElement("img");
+      let icon = opts.panel.querySelector("img") || this._doc.createElement("img");
       icon.className = "project-image";
       icon.setAttribute("src", opts.icon);
       opts.panel.appendChild(icon);
@@ -353,12 +353,7 @@ ProjectList.prototype = {
         let panelItemNode = doc.createElement(this._panelNodeEl);
         panelItemNode.className = "panel-item";
         projectsNode.appendChild(panelItemNode);
-        this._renderProjectItem({
-          panel: panelItemNode,
-          name: project.name || AppManager.DEFAULT_PROJECT_NAME,
-          icon: project.icon || AppManager.DEFAULT_PROJECT_ICON
-        });
-        if (!project.name || !project.icon) {
+        if (!project.validationStatus) {
           
           
           
@@ -368,6 +363,12 @@ ProjectList.prototype = {
               name: project.name,
               icon: project.icon
             });
+          });
+        } else {
+          this._renderProjectItem({
+            panel: panelItemNode,
+            name: project.name || AppManager.DEFAULT_PROJECT_NAME,
+            icon: project.icon || AppManager.DEFAULT_PROJECT_ICON
           });
         }
         panelItemNode.addEventListener("click", () => {
