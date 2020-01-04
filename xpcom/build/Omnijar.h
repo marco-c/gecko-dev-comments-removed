@@ -36,14 +36,18 @@ private:
   
 
 
+
+  static StaticRefPtr<nsZipArchive> sOuterReader[2];
+
+  
+
+
   static bool sInitialized;
 
   
 
 
   static bool sIsUnified;
-
-  static bool sIsNested[2];
 
 public:
   enum Type
@@ -52,6 +56,29 @@ public:
     APP = 1
   };
 
+private:
+  
+
+
+  static inline bool IsNested(Type aType)
+  {
+    MOZ_ASSERT(IsInitialized(), "Omnijar not initialized");
+    return !!sOuterReader[aType];
+  }
+
+  
+
+
+
+
+  static inline already_AddRefed<nsZipArchive> GetOuterReader(Type aType)
+  {
+    MOZ_ASSERT(IsInitialized(), "Omnijar not initialized");
+    RefPtr<nsZipArchive> reader = sOuterReader[aType].get();
+    return reader.forget();
+  }
+
+public:
   
 
 
