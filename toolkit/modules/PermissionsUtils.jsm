@@ -29,7 +29,7 @@ function importPrefBranch(aPrefBranch, aPermission, aAction) {
     for (let origin of origins) {
       let principals = [];
       try {
-        principals = [ BrowserUtils.principalFromOrigin(origin) ];
+        principals = [ Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin) ];
       } catch (e) {
         
         
