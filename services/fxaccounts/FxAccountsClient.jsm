@@ -520,8 +520,10 @@ this.FxAccountsClient.prototype = {
            );
         }
         if (isInvalidTokenError(error)) {
+          
+          
           Services.telemetry.getKeyedHistogramById(
-            "FXA_HAWK_ERRORS").add(path);
+            "FXA_HAWK_ERRORS").add(path.replace(/[?#].*/, ''));
         }
         deferred.reject(error);
       }
