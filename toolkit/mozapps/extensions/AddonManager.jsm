@@ -2322,6 +2322,27 @@ var AddonManagerInternal = {
 
 
 
+  installTemporaryAddon: function AMI_installTemporaryAddon(aFile) {
+    if (!gStarted)
+      throw Components.Exception("AddonManager is not initialized",
+                                 Cr.NS_ERROR_NOT_INITIALIZED);
+
+    if (!(aFile instanceof Ci.nsIFile))
+      throw Components.Exception("aFile must be a nsIFile",
+                                 Cr.NS_ERROR_INVALID_ARG);
+
+    return AddonManagerInternal._getProviderByName("XPIProvider")
+                               .installTemporaryAddon(aFile);
+  },
+
+
+  
+
+
+
+
+
+
 
 
 
@@ -3027,7 +3048,9 @@ this.AddonManager = {
   
   SCOPE_SYSTEM: 8,
   
-  SCOPE_ALL: 15,
+  SCOPE_TEMPORARY: 16,
+  
+  SCOPE_ALL: 31,
 
   
   VIEW_TYPE_LIST: "list",
@@ -3205,6 +3228,10 @@ this.AddonManager = {
     AddonManagerInternal.installAddonsFromWebpage(aType, aBrowser,
                                                   ensurePrincipal(aInstallingPrincipal),
                                                   aInstalls);
+  },
+
+  installTemporaryAddon: function AM_installTemporaryAddon(aDirectory) {
+    return AddonManagerInternal.installTemporaryAddon(aDirectory);
   },
 
   addManagerListener: function AM_addManagerListener(aListener) {
