@@ -27,6 +27,8 @@ const CommandType = Object.freeze({
   LAUNCH_ACK: "launch-ack", 
   TERMINATE: "terminate", 
   TERMINATE_ACK: "terminate-ack", 
+  RECONNECT: "reconnect", 
+  RECONNECT_ACK: "reconnect-ack", 
   
   OFFER: "offer", 
   ANSWER: "answer", 
