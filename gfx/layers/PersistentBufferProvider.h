@@ -96,6 +96,7 @@ private:
 
 
 class PersistentBufferProviderShared : public PersistentBufferProvider
+                                     , public ActiveResource
 {
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PersistentBufferProviderShared, override)
@@ -118,6 +119,8 @@ public:
     return mFront;
   }
 
+  virtual void NotifyInactive() override;
+
 protected:
   PersistentBufferProviderShared(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
                                  CompositableForwarder* aFwd,
@@ -128,8 +131,12 @@ protected:
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
   RefPtr<CompositableForwarder> mFwd;
+  
   RefPtr<TextureClient> mFront;
+  
   RefPtr<TextureClient> mBack;
+  
+  RefPtr<TextureClient> mBuffer;
   RefPtr<gfx::DrawTarget> mDrawTarget;
   RefPtr<gfx::SourceSurface > mSnapshot;
 };
