@@ -41,13 +41,9 @@ const APIBroker = {
           return;
         }
 
-        let { resolve, reject } = this._promises.get(payload.callbackID);
+        let resolve = this._promises.get(payload.callbackID);
         this._promises.delete(payload.callbackID);
-
-        if ("resolve" in payload)
-          resolve(payload.resolve);
-        else
-          reject(payload.reject);
+        resolve(payload);
         break;
       }
 
@@ -71,10 +67,10 @@ const APIBroker = {
   },
 
   sendRequest: function(type, ...args) {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       let callbackID = this._nextID++;
 
-      this._promises.set(callbackID, { resolve, reject });
+      this._promises.set(callbackID, resolve);
       Services.cpmm.sendAsyncMessage(MSG_PROMISE_REQUEST, { type, callbackID, args });
     });
   },
@@ -123,38 +119,56 @@ function AddonInstall(window, properties) {
 
 
 
-function WebAPITask(generator) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function WebAPITask(apiRequest, apiArgs, processor) {
   return function(...args) {
-    let task = Task.async(generator.bind(this));
-
     let win = this.window;
-
-    let wrapForContent = (obj) => {
-      if (obj instanceof Addon) {
-        return win.Addon._create(win, obj);
-      }
-      if (obj instanceof AddonInstall) {
-        return win.AddonInstall._create(win, obj);
-      }
-
-      return obj;
-    }
+    let boundApiArgs = apiArgs.bind(this);
+    let boundProcessor = processor ? processor.bind(this) : null;
 
     return new win.Promise((resolve, reject) => {
-      task(...args).then(wrapForContent)
-                   .then(resolve, reject);
+      Task.spawn(function* () {
+        let sendArgs = boundApiArgs(...args);
+        let result = yield APIBroker.sendRequest(apiRequest, ...sendArgs);
+        if ("reject" in result) {
+          let err = new win.Error(result.reject.message);
+          
+          
+          
+          reject(err);
+          return;
+        }
+
+        let obj = result.resolve;
+        if (boundProcessor) {
+          obj = boundProcessor(obj);
+        }
+        resolve(obj);
+      }).catch(err => {
+        Cu.reportError(err);
+        reject(new win.Error("Unexpected internal error"));
+      });
     });
   }
 }
 
 Addon.prototype = {
-  uninstall: WebAPITask(function*() {
-    return yield APIBroker.sendRequest("addonUninstall", this.id);
-  }),
-
-  setEnabled: WebAPITask(function* (value) {
-    return yield APIBroker.sendRequest("addonSetEnabled", this.id, value);
-  }),
+  uninstall: WebAPITask("addonUninstall", function() { return [this.id]; }),
+  setEnabled: WebAPITask("addonSetEnabled", function(value) {return [this.id, value]; }),
 };
 
 const INSTALL_EVENTS = [
@@ -181,13 +195,8 @@ AddonInstall.prototype = {
     this.__DOM_IMPL__.dispatchEvent(event);
   },
 
-  install: WebAPITask(function*() {
-    yield APIBroker.sendRequest("addonInstallDoInstall", this.id);
-  }),
-
-  cancel: WebAPITask(function*() {
-    yield APIBroker.sendRequest("addonInstallCancel", this.id);
-  }),
+  install: WebAPITask("addonInstallDoInstall", function() { return  [this.id]; }),
+  cancel: WebAPITask("addonInstallCancel", function() { return  [this.id]; }),
 };
 
 function WebAPI() {
@@ -204,19 +213,21 @@ WebAPI.prototype = {
     });
   },
 
-  getAddonByID: WebAPITask(function*(id) {
-    let addonInfo = yield APIBroker.sendRequest("getAddonByID", id);
-    return addonInfo ? new Addon(this.window, addonInfo) : null;
+  getAddonByID: WebAPITask("getAddonByID", id => [id], function(addonInfo) {
+    if (!addonInfo) {
+      return null;
+    }
+    let addon = new Addon(this.window, addonInfo);
+    return this.window.Addon._create(this.window, addon);
   }),
 
-  createInstall: WebAPITask(function*(options) {
-    let installInfo = yield APIBroker.sendRequest("createInstall", options);
+  createInstall: WebAPITask("createInstall", options => [options], function(installInfo) {
     if (!installInfo) {
       return null;
     }
     let install = new AddonInstall(this.window, installInfo);
     this.allInstalls.push(installInfo.id);
-    return install;
+    return this.window.AddonInstall._create(this.window, install);
   }),
 
   eventListenerWasAdded(type) {
