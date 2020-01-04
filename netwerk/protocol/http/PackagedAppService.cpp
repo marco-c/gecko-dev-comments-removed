@@ -479,6 +479,12 @@ PackagedAppService::PackagedAppDownloader::OnStartRequest(nsIRequest *aRequest,
   NS_WARN_IF(NS_FAILED(rv));
 
   EnsureVerifier(aRequest);
+
+  if (!mVerifier->WouldVerify()) {
+    
+    return NS_OK;
+  }
+
   mVerifier->OnStartRequest(nullptr, uri);
 
   
@@ -640,7 +646,7 @@ PackagedAppService::PackagedAppDownloader::OnStopRequest(nsIRequest *aRequest,
       
       
       
-      if (!mVerifier) {
+      if (!mVerifier || !mVerifier->WouldVerify()) {
         FinalizeDownload(aStatusCode);
       } else {
         
@@ -676,6 +682,12 @@ PackagedAppService::PackagedAppDownloader::OnStopRequest(nsIRequest *aRequest,
   nsRefPtr<ResourceCacheInfo> info =
     new ResourceCacheInfo(uri, entry, aStatusCode, lastPart);
 
+  if (!mVerifier->WouldVerify()) {
+    
+    OnResourceVerified(info, true);
+    return NS_OK;
+  }
+
   mVerifier->OnStopRequest(nullptr, info, aStatusCode);
 
   return NS_OK;
@@ -703,6 +715,11 @@ PackagedAppService::PackagedAppDownloader::ConsumeData(nsIInputStream *aStream,
   }
 
   self->mWriter->ConsumeData(aFromRawSegment, aCount, aWriteCount);
+
+  if (!self->mVerifier->WouldVerify()) {
+    
+    return NS_OK;
+  }
 
   if (self->mProcessingFirstRequest) {
     
