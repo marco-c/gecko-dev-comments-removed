@@ -4,16 +4,16 @@
 
 "use strict";
 
-const { Ci, Cr } = require("chrome");
 const promise = require("promise");
 const { Task } = require("resource://gre/modules/Task.jsm");
-const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { TouchEventSimulator } = require("devtools/shared/touch/simulator");
 const { getOwnerWindow } = require("sdk/tabs/utils");
 const { on, off } = require("sdk/event/core");
 const { startup } = require("sdk/window/helpers");
 const events = require("./events");
+const message = require("./utils/message");
+const { swapToInnerBrowser } = require("./browser/swap");
 
 const TOOL_URL = "chrome://devtools/content/responsive.html/index.xhtml";
 
@@ -59,6 +59,9 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
 
 
   openIfNeeded: Task.async(function* (window, tab) {
+    if (!tab.linkedBrowser.isRemoteBrowser) {
+      return promise.reject(new Error("RDM only available for remote tabs."));
+    }
     if (!this.isActiveForTab(tab)) {
       if (!this.activeTabs.size) {
         on(events.activate, "data", onActivate);
@@ -86,16 +89,17 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
   closeIfNeeded: Task.async(function* (window, tab) {
     if (this.isActiveForTab(tab)) {
       let ui = this.activeTabs.get(tab);
+      let destroyed = yield ui.destroy();
+      if (!destroyed) {
+        
+        return;
+      }
       this.activeTabs.delete(tab);
-
       if (!this.activeTabs.size) {
         off(events.activate, "data", onActivate);
         off(events.close, "data", onClose);
       }
-
-      yield ui.destroy();
       this.emit("off", { tab });
-
       yield setMenuCheckFor(tab, window);
     }
   }),
@@ -193,6 +197,11 @@ ResponsiveUI.prototype = {
   
 
 
+  destroying: false,
+
+  
+
+
 
 
 
@@ -211,49 +220,76 @@ ResponsiveUI.prototype = {
 
 
 
-
-
-
-
-
-
   init: Task.async(function* () {
-    let tabBrowser = this.tab.linkedBrowser;
-    let contentURI = tabBrowser.documentURI.spec;
-    tabBrowser.loadURI(TOOL_URL);
-    yield tabLoaded(this.tab);
-    let toolWindow = this.toolWindow = tabBrowser.contentWindow;
-    toolWindow.addEventListener("message", this);
-    yield waitForMessage(toolWindow, "init");
-    toolWindow.addInitialViewport(contentURI);
-    yield waitForMessage(toolWindow, "browser-mounted");
+    let ui = this;
+    let toolViewportContentBrowser;
 
-    let browser = toolWindow.document.querySelector("iframe.browser");
-    this.touchEventSimulator = new TouchEventSimulator(browser);
+    
+    this.swap = swapToInnerBrowser({
+      tab: this.tab,
+      containerURL: TOOL_URL,
+      getInnerBrowser: Task.async(function* (containerBrowser) {
+        let toolWindow = ui.toolWindow = containerBrowser.contentWindow;
+        toolWindow.addEventListener("message", ui);
+        yield message.request(toolWindow, "init");
+        toolWindow.addInitialViewport("about:blank");
+        yield message.wait(toolWindow, "browser-mounted");
+        toolViewportContentBrowser =
+          toolWindow.document.querySelector("iframe.browser");
+        return toolViewportContentBrowser;
+      })
+    });
+    yield this.swap.start();
+
+    
+    yield message.request(this.toolWindow, "start-frame-script");
+
+    this.touchEventSimulator =
+      new TouchEventSimulator(toolViewportContentBrowser);
+
+    
+    
   }),
 
-  destroy: Task.async(function* () {
-    let tabBrowser = this.tab.linkedBrowser;
-    let browserWindow = this.browserWindow;
+  
 
+
+
+
+
+
+  destroy: Task.async(function* () {
+    if (this.destroying) {
+      return false;
+    }
+    this.destroying = true;
+
+    
+    yield this.inited;
+
+    
+    yield this.touchEventSimulator.stop();
+
+    
+    yield message.request(this.toolWindow, "stop-frame-script");
+
+    
+    let swap = this.swap;
     this.browserWindow = null;
     this.tab = null;
     this.inited = null;
     this.toolWindow = null;
-
-    yield this.touchEventSimulator.stop();
     this.touchEventSimulator = null;
+    this.swap = null;
 
-    if (tabBrowser.goBack) {
-      let loaded = waitForDocLoadComplete(browserWindow.gBrowser);
-      tabBrowser.goBack();
-      yield loaded;
-    }
+    
+    swap.stop();
+
+    return true;
   }),
 
   handleEvent(event) {
-    let { tab, window } = this;
-    let toolWindow = tab.linkedBrowser.contentWindow;
+    let { tab, window, toolWindow } = this;
 
     if (event.origin !== "chrome://devtools") {
       return;
@@ -286,78 +322,31 @@ ResponsiveUI.prototype = {
     }
   }),
 
+  
+
+
   getViewportSize() {
     return this.toolWindow.getViewportSize();
   },
+
+  
+
 
   setViewportSize: Task.async(function* (width, height) {
     yield this.inited;
     this.toolWindow.setViewportSize(width, height);
   }),
 
-  getViewportMessageManager() {
-    return this.toolWindow.getViewportMessageManager();
+  
+
+
+  getViewportBrowser() {
+    return this.toolWindow.getViewportBrowser();
   },
 
 };
 
 EventEmitter.decorate(ResponsiveUI.prototype);
-
-function waitForMessage(win, type) {
-  let deferred = promise.defer();
-
-  let onMessage = event => {
-    if (event.data.type !== type) {
-      return;
-    }
-    win.removeEventListener("message", onMessage);
-    deferred.resolve();
-  };
-  win.addEventListener("message", onMessage);
-
-  return deferred.promise;
-}
-
-function tabLoaded(tab) {
-  let deferred = promise.defer();
-
-  function handle(event) {
-    if (event.originalTarget != tab.linkedBrowser.contentDocument ||
-        event.target.location.href == "about:blank") {
-      return;
-    }
-    tab.linkedBrowser.removeEventListener("load", handle, true);
-    deferred.resolve(event);
-  }
-
-  tab.linkedBrowser.addEventListener("load", handle, true);
-  return deferred.promise;
-}
-
-
-
-
-function waitForDocLoadComplete(gBrowser) {
-  let deferred = promise.defer();
-  let progressListener = {
-    onStateChange: function (webProgress, req, flags, status) {
-      let docStop = Ci.nsIWebProgressListener.STATE_IS_NETWORK |
-                    Ci.nsIWebProgressListener.STATE_STOP;
-
-      
-      
-      if ((flags & docStop) == docStop && status != Cr.NS_BINDING_ABORTED) {
-        gBrowser.removeProgressListener(progressListener);
-        deferred.resolve();
-      }
-    },
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
-                                           Ci.nsISupportsWeakReference])
-  };
-
-  gBrowser.addProgressListener(progressListener);
-  return deferred.promise;
-}
 
 const onActivate = (tab) => setMenuCheckFor(tab);
 

@@ -3,7 +3,7 @@
 
 "use strict";
 
-const TEST_URL = "about:logo";
+const TEST_URL = "data:text/html;charset=utf-8,";
 
 function getElRect(selector, win) {
   let el = win.document.querySelector(selector);
