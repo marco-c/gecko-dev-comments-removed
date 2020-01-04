@@ -115,6 +115,12 @@ SVGDocumentWrapper::FlushImageTransformInvalidation()
 bool
 SVGDocumentWrapper::IsAnimated()
 {
+  
+  
+  if (!mViewer) {
+    return false;
+  }
+
   nsIDocument* doc = mViewer->GetDocument();
   if (!doc) {
     return false;
