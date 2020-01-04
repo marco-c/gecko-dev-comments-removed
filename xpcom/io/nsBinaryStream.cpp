@@ -33,6 +33,7 @@
 #include "nsIClassInfo.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIURI.h" 
+#include "nsIX509Cert.h" 
 
 #include "jsfriendapi.h"
 
@@ -931,6 +932,23 @@ nsBinaryInputStream::ReadObject(bool aIsStrongRef, nsISupports** aObject)
       iid.Equals(oldURIiid4)) {
     const nsIID newURIiid = NS_IURI_IID;
     iid = newURIiid;
+  }
+  
+
+  
+  
+  
+  
+
+  
+  static const nsIID oldCertIID = {
+    0xf8ed8364, 0xced9, 0x4c6e,
+    { 0x86, 0xba, 0x48, 0xaf, 0x53, 0xc3, 0x93, 0xe6 }
+  };
+
+  if (iid.Equals(oldCertIID)) {
+    const nsIID newCertIID = NS_IX509CERT_IID;
+    iid = newCertIID;
   }
   
 
