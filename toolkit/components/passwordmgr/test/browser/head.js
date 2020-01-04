@@ -5,6 +5,7 @@ Cu.import("resource://testing-common/ContentTaskUtils.jsm", this);
 
 registerCleanupFunction(function* cleanup_removeAllLoginsAndResetRecipes() {
   Services.logins.removeAllLogins();
+
   let recipeParent = LoginTestUtils.recipes.getRecipeParent();
   if (!recipeParent) {
     
@@ -78,9 +79,10 @@ const DONT_CHANGE_BUTTON = 1;
 
 
 
-function getCaptureDoorhanger(aKind) {
+
+function getCaptureDoorhanger(aKind, popupNotifications = PopupNotifications) {
   ok(true, "Looking for " + aKind + " popup notification");
-  let notification = PopupNotifications.getNotification("password");
+  let notification = popupNotifications.getNotification("password");
   if (notification) {
     is(notification.options.passwordNotificationType, aKind, "Notification type matches.");
     if (aKind == "password-change") {
