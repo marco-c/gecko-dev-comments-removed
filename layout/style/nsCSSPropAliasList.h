@@ -328,10 +328,8 @@ CSS_PROP_ALIAS(-webkit-box-sizing,
 
 
 
-
-
 CSS_PROP_ALIAS(-webkit-box-flex,
-               flex_grow,
+               box_flex,
                WebkitBoxFlex,
                WEBKIT_PREFIX_PREF)
 CSS_PROP_ALIAS(-webkit-box-ordinal-group,
