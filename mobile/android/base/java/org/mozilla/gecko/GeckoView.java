@@ -171,7 +171,8 @@ public class GeckoView extends LayerView
             };
     }
 
-    private final Window window = new Window();
+    private Window window;
+    private boolean stateSaved;
 
     public GeckoView(Context context) {
         super(context);
@@ -265,6 +266,28 @@ public class GeckoView extends LayerView
     }
 
     @Override
+    protected Parcelable onSaveInstanceState()
+    {
+        final Parcelable superState = super.onSaveInstanceState();
+        stateSaved = true;
+        return new StateBinder(superState, this.window);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(final Parcelable state)
+    {
+        final StateBinder stateBinder = (StateBinder) state;
+        
+        
+        super.onRestoreInstanceState(stateBinder.superState);
+
+        if (stateBinder.window != null) {
+            this.window = stateBinder.window;
+        }
+        stateSaved = false;
+    }
+
+    @Override
     public void onAttachedToWindow()
     {
         final DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
@@ -290,22 +313,22 @@ public class GeckoView extends LayerView
     public void onDetachedFromWindow()
     {
         super.onDetachedFromWindow();
+        super.destroy();
 
-        
-        
-        
+        if (stateSaved) {
+            
+            return;
+        }
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            
+            window.close();
             window.disposeNative();
         } else {
-            
-            
+            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
+                    window, "close");
             GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
                     window, "disposeNative");
         }
-
-        super.destroy();
     }
 
      void setInputConnectionListener(final InputConnectionListener icl) {
