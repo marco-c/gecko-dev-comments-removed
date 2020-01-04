@@ -571,9 +571,9 @@ pref("layers.async-pan-zoom.enabled", true);
 
 pref("apz.allow_immediate_handoff", false);
 pref("apz.touch_start_tolerance", "0.06");
+pref("apz.axis_lock.breakout_angle", "0.7853982");    
 
-pref("apz.axis_lock.mode", 2); 
-
+pref("apz.axis_lock.mode", 1); 
 pref("apz.fling_curve_function_x1", "0.41");
 pref("apz.fling_curve_function_y1", "0.0");
 pref("apz.fling_curve_function_x2", "0.80");

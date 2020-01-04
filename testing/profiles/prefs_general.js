@@ -254,6 +254,9 @@ user_pref("identity.fxaccounts.settings.uri", "https://%(server)s/fxa-settings")
 user_pref('identity.fxaccounts.remote.webchannel.uri', 'https://%(server)s/');
 
 
+user_pref('identity.fxaccounts.skipDeviceRegistration', true);
+
+
 
 
 
@@ -262,7 +265,7 @@ user_pref('identity.fxaccounts.remote.webchannel.uri', 'https://%(server)s/');
 user_pref("apz.content_response_timeout", 60000);
 
 
-user_pref("security.ssl.errorReporting.url", "https://example.com/browser/browser/base/content/test/general/pinning_reports.sjs?succeed");
+user_pref("security.ssl.errorReporting.url", "https://example.com/browser/browser/base/content/test/general/ssl_error_reports.sjs?succeed");
 
 
 user_pref("browser.translation.bing.authURL", "http://%(server)s/browser/browser/components/translation/test/bing.sjs");

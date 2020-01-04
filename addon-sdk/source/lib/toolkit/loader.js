@@ -557,8 +557,24 @@ const resolveURI = iced(function resolveURI(id, mapping) {
 
   while (index < count) {
     let [ path, uri ] = mapping[index++];
-    if (id.indexOf(path) === 0)
+
+    
+    let stripped = path.endsWith('/') ? path.slice(0, -1) : path;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if(stripped === "" ||
+       (id.indexOf(stripped) === 0 &&
+        (id.length === path.length || id[stripped.length] === '/'))) {
       return normalizeExt(id.replace(path, uri));
+    }
   }
   return void 0; 
 });
