@@ -72,6 +72,8 @@ const LIVEMARK_CONTAINER = 2;
 const ACTION_EDIT = 0;
 const ACTION_ADD = 1;
 
+let elementsHeight = new Map();
+
 var BookmarkPropertiesPanel = {
 
   
@@ -271,6 +273,43 @@ var BookmarkPropertiesPanel = {
     var acceptButton = document.documentElement.getButton("accept");
     acceptButton.label = this._getAcceptLabel();
 
+    
+    
+    
+    
+    this._height = window.outerHeight;
+    this._mutationObserver = new MutationObserver(mutations => {
+      for (let mutation of mutations) {
+        let target = mutation.target;
+        let id = target.id;
+        if (!/^editBMPanel_.*(Row|Checkbox)$/.test(id))
+          continue;
+
+        let collapsed = target.getAttribute("collapsed") === "true";
+        let wasCollapsed = mutation.oldValue === "true";
+        if (collapsed == wasCollapsed)
+          continue;
+
+        if (collapsed) {
+          this._height -= elementsHeight.get(id);
+          elementsHeight.delete(id);
+        } else {
+          elementsHeight.set(id, target.boxObject.height);
+          this._height += elementsHeight.get(id);
+        }
+        window.resizeTo(window.outerWidth, this._height);
+      }
+    });
+
+    this._mutationObserver.observe(document,
+                                   { subtree: true,
+                                     attributeOldValue: true,
+                                     attributeFilter: ["collapsed"] });
+
+    
+    
+    window.addEventListener("resize", this);
+
     this._beginBatch();
 
     switch (this._action) {
@@ -300,25 +339,6 @@ var BookmarkPropertiesPanel = {
         break;
     }
 
-    
-    
-    
-    window.sizeToContent();
-
-    
-    
-    
-    
-    
-    if (!this._element("tagsRow").collapsed) {
-      this._element("tagsSelectorRow")
-          .addEventListener("DOMAttrModified", this, false);
-    }
-    if (!this._element("folderRow").collapsed) {
-      this._element("folderTreeRow")
-          .addEventListener("DOMAttrModified", this, false);
-    }
-
     if (!gEditItemOverlay.readOnly) {
       
       if (this._itemType == BOOKMARK_ITEM) {
@@ -330,12 +350,9 @@ var BookmarkPropertiesPanel = {
         }
       }
     }
-
-    window.sizeToContent();
   }),
 
   
-  _elementsHeight: [],
   handleEvent: function BPP_handleEvent(aEvent) {
     var target = aEvent.target;
     switch (aEvent.type) {
@@ -347,24 +364,11 @@ var BookmarkPropertiesPanel = {
                   .getButton("accept").disabled = !this._inputIsValid();
         }
         break;
-
-      case "DOMAttrModified":
-        
-        
-        if ((target.id == "editBMPanel_tagsSelectorRow" ||
-             target.id == "editBMPanel_folderTreeRow") &&
-            aEvent.attrName == "collapsed" &&
-            target == aEvent.originalTarget) {
-          var id = target.id;
-          var newHeight = window.outerHeight;
-          if (aEvent.newValue) 
-            newHeight -= this._elementsHeight[id];
-          else {
-            this._elementsHeight[id] = target.boxObject.height;
-            newHeight += this._elementsHeight[id];
-          }
-
-          window.resizeTo(window.outerWidth, newHeight);
+      case "resize":
+        for (let [id, oldHeight] of elementsHeight) {
+          let newHeight = document.getElementById(id).boxObject.height;
+          this._height += - oldHeight + newHeight;
+          elementsHeight.set(id, newHeight);
         }
         break;
     }
@@ -418,12 +422,13 @@ var BookmarkPropertiesPanel = {
 
   onDialogUnload() {
     
+    this._mutationObserver.disconnect();
+    delete this._mutationObserver;
+
+    window.removeEventListener("resize", this);
+
     
     
-    this._element("tagsSelectorRow")
-        .removeEventListener("DOMAttrModified", this, false);
-    this._element("folderTreeRow")
-        .removeEventListener("DOMAttrModified", this, false);
     this._element("locationField")
         .removeEventListener("input", this, false);
   },

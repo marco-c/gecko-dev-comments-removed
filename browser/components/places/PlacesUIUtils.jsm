@@ -463,19 +463,15 @@ this.PlacesUIUtils = {
     
     
     
-    
     let hasFolderPicker = !("hiddenRows" in aInfo) ||
                           aInfo.hiddenRows.indexOf("folderPicker") == -1;
-    
     
     let dialogURL = hasFolderPicker ?
                     "chrome://browser/content/places/bookmarkProperties2.xul" :
                     "chrome://browser/content/places/bookmarkProperties.xul";
 
-    let features =
-      "centerscreen,chrome,modal,resizable=" + (hasFolderPicker ? "yes" : "no");
-
-    aParentWindow.openDialog(dialogURL, "",  features, aInfo);
+    let features = "centerscreen,chrome,modal,resizable=yes";
+    aParentWindow.openDialog(dialogURL, "", features, aInfo);
     return ("performed" in aInfo && aInfo.performed);
   },
 
