@@ -107,6 +107,9 @@ this.PushService = {
   _updateQuotaTestCallback: null,
 
   
+  _updateQuotaTimeouts: new Set(),
+
+  
   
   _stateChangeProcessQueue: null,
   _stateChangeProcessEnqueue: function(op) {
@@ -239,7 +242,7 @@ this.PushService = {
 
 
 
-      case "xpcom-shutdown":
+      case "quit-application":
         this.uninit();
         break;
       case "network-active-changed":         
@@ -445,7 +448,7 @@ this.PushService = {
 
     this._setState(PUSH_SERVICE_ACTIVATING);
 
-    Services.obs.addObserver(this, "xpcom-shutdown", false);
+    Services.obs.addObserver(this, "quit-application", false);
 
     if (options.serverURI) {
       
@@ -557,6 +560,9 @@ this.PushService = {
     this._service.uninit();
     this._service = null;
 
+    this._updateQuotaTimeouts.forEach((timeoutID) => clearTimeout(timeoutID));
+    this._updateQuotaTimeouts.clear();
+
     if (!this._db) {
       return Promise.resolve();
     }
@@ -600,7 +606,7 @@ this.PushService = {
     }
 
     prefs.ignore("serverURL", this);
-    Services.obs.removeObserver(this, "xpcom-shutdown");
+    Services.obs.removeObserver(this, "quit-application");
 
     this._stateChangeProcessEnqueue(_ =>
       {
@@ -801,8 +807,14 @@ this.PushService = {
         }
         
         
-        setTimeout(() => this._updateQuota(keyID),
-          prefs.get("quotaUpdateDelay"));
+        let timeoutID = setTimeout(_ =>
+          {
+            this._updateQuota(keyID);
+            if (!this._updateQuotaTimeouts.delete(timeoutID)) {
+              console.debug("receivedPushMessage: quota update timeout missing?");
+            }
+          }, prefs.get("quotaUpdateDelay"));
+        this._updateQuotaTimeouts.add(timeoutID);
         return notified;
       }, error => {
         console.error("receivedPushMessage: Error decrypting message", error);
