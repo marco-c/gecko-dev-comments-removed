@@ -485,6 +485,32 @@ public class BrowserContract {
         public static final Uri CONTENT_URI = Uri.withAppendedPath(AUTHORITY_URI, "suggestedsites");
     }
 
+    public static final class UrlAnnotations implements CommonColumns, DateSyncColumns {
+        private UrlAnnotations() {}
+
+        public static final String TABLE_NAME = "urlannotations";
+
+        public static final String URL = "url";
+        public static final String KEY = "key";
+        public static final String VALUE = "value";
+        public static final String SYNC_STATUS = "sync_status";
+
+        public enum SyncStatus {
+            
+            
+            NEW (0);
+
+            
+            private final int dbValue;
+
+            SyncStatus(final int dbValue) {
+                this.dbValue = dbValue;
+            }
+
+            public int getDBValue() { return dbValue; }
+        }
+    }
+
     
     public static final String TAB_RECEIVED_SERVICE_CLASS_NAME = "org.mozilla.gecko.tabqueue.TabReceivedService";
 
