@@ -56,7 +56,9 @@ exports.LongStringActor = protocol.ActorClass({
 
 
 
-exports.SimpleStringFront = Class({
+
+
+exports.ShortLongString = Class({
   initialize: function (str) {
     this.str = str;
   },
@@ -139,7 +141,7 @@ protocol.types.addType("longstring", {
       throw Error("Passing a longstring as an argument isn't supported.");
     }
     if (typeof (value) === "string") {
-      return exports.SimpleStringFront(value);
+      return exports.ShortLongString(value);
     }
     return stringActorType.read(value, context, detail);
   }
