@@ -87,7 +87,9 @@ public:
 
   bool WantCopy() {
     
-    return mGLContext->Vendor() != GLVendor::Imagination;
+    
+    return mGLContext->Vendor() != GLVendor::Imagination &&
+           mGLContext->Renderer() != GLRenderer::AndroidEmulator;
   }
 
   EGLImage CopySurface(layers::Image* img) {
