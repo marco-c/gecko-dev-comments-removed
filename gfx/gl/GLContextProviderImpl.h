@@ -68,11 +68,11 @@ public:
     CreateOffscreen(const mozilla::gfx::IntSize& size,
                     const SurfaceCaps& minCaps,
                     CreateContextFlags flags,
-                    nsACString* const out_failureId);
+                    nsACString& failureId);
 
     
     static already_AddRefed<GLContext>
-    CreateHeadless(CreateContextFlags flags, nsACString* const out_failureId);
+    CreateHeadless(CreateContextFlags flags, nsACString& aFailureId);
 
     
 
