@@ -5093,14 +5093,94 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             templateBody += 'static_assert(IsRefcounted<%s>::value, "We can only store refcounted classes.");' % typeName
 
         if isPromise:
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if isCallbackReturnValue == "JSImpl":
+                
+                
+                
+                
+                assert exceptionCode == "aRv.Throw(NS_ERROR_UNEXPECTED);\nreturn nullptr;\n"
+                getPromiseGlobal = fill(
+                    """
+                    if (!$${val}.isObject()) {
+                      aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
+                      return nullptr;
+                    }
+                    JSObject* unwrappedVal = js::CheckedUnwrap(&$${val}.toObject());
+                    if (!unwrappedVal) {
+                      // A slight lie, but not much of one, for a dead object wrapper.
+                      aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
+                      return nullptr;
+                    }
+                    globalObj = js::GetGlobalForObjectCrossCompartment(unwrappedVal);
+                    """,
+                    sourceDescription=sourceDescription)
+            else:
+                getPromiseGlobal = ""
+
             templateBody = fill(
                 """
-                { // Scope for our GlobalObject and ErrorResult
+                { // Scope for our GlobalObject, ErrorResult, JSAutoCompartment,
+                  // etc.
 
-                  // Might as well use CurrentGlobalOrNull here; that will at
-                  // least give us the same behavior as if the caller just called
-                  // Promise.resolve() themselves.
                   JS::Rooted<JSObject*> globalObj(cx, JS::CurrentGlobalOrNull(cx));
+                  $*{getPromiseGlobal}
+                  JSAutoCompartment ac(cx, globalObj);
                   GlobalObject promiseGlobal(cx, globalObj);
                   if (promiseGlobal.Failed()) {
                     $*{exceptionCode}
@@ -5112,12 +5192,25 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
                     $*{exceptionCode}
                   }
                   JS::Rooted<JS::Value> resolveThisv(cx, JS::ObjectValue(*promiseCtor));
-                  $${declName} = Promise::Resolve(promiseGlobal, resolveThisv, $${val}, promiseRv);
+                  JS::Rooted<JS::Value> resolveResult(cx);
+                  JS::Rooted<JS::Value> valueToResolve(cx, $${val});
+                  if (!JS_WrapValue(cx, &valueToResolve)) {
+                    $*{exceptionCode}
+                  }
+                  Promise::Resolve(promiseGlobal, resolveThisv, valueToResolve,
+                                   &resolveResult, promiseRv);
                   if (promiseRv.MaybeSetPendingException(cx)) {
+                    $*{exceptionCode}
+                  }
+                  nsresult unwrapRv = UNWRAP_OBJECT(Promise, &resolveResult.toObject(), $${declName});
+                  if (NS_FAILED(unwrapRv)) { // Quite odd
+                    promiseRv.Throw(unwrapRv);
+                    promiseRv.MaybeSetPendingException(cx);
                     $*{exceptionCode}
                   }
                 }
                 """,
+                getPromiseGlobal=getPromiseGlobal,
                 exceptionCode=exceptionCode)
         elif not descriptor.skipGen and not descriptor.interface.isConsequential() and not descriptor.interface.isExternal():
             if failureCode is not None:
