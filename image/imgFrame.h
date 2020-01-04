@@ -77,32 +77,6 @@ struct AnimationData
   bool mHasAlpha;
 };
 
-
-
-
-
-
-
-
-
-struct ScalingData
-{
-  ScalingData(uint8_t* aRawData,
-              gfx::IntSize aSize,
-              uint32_t aBytesPerRow,
-              gfx::SurfaceFormat aFormat)
-    : mRawData(aRawData)
-    , mSize(aSize)
-    , mBytesPerRow(aBytesPerRow)
-    , mFormat(aFormat)
-  { }
-
-  uint8_t* mRawData;
-  gfx::IntSize mSize;
-  uint32_t mBytesPerRow;
-  gfx::SurfaceFormat mFormat;
-};
-
 class imgFrame
 {
   typedef gfx::Color Color;
@@ -257,7 +231,6 @@ public:
   SurfaceFormat GetFormat() const;
 
   AnimationData GetAnimationData() const;
-  ScalingData GetScalingData() const;
 
   bool GetCompositingFailed() const;
   void SetCompositingFailed(bool val);
