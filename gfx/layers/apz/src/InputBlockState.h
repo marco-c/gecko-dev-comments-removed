@@ -121,6 +121,12 @@ public:
 
 
 
+  virtual void DispatchEvent(const InputData& aEvent) const;
+
+  
+
+
+
   virtual bool IsReadyForHandling() const;
 
   
@@ -268,7 +274,7 @@ class TouchBlockState : public CancelableBlockState
 {
 public:
   explicit TouchBlockState(const nsRefPtr<AsyncPanZoomController>& aTargetApzc,
-                           bool aTargetConfirmed);
+                           bool aTargetConfirmed, TouchCounter& aTouchCounter);
 
   TouchBlockState *AsTouchBlock() override {
     return this;
@@ -344,6 +350,7 @@ public:
   bool HasEvents() const override;
   void DropEvents() override;
   void HandleEvents() override;
+  void DispatchEvent(const InputData& aEvent) const override;
   bool MustStayActive() override;
   const char* Type() override;
 
@@ -353,6 +360,8 @@ private:
   bool mDuringFastFling;
   bool mSingleTapOccurred;
   nsTArray<MultiTouchInput> mEvents;
+  
+  TouchCounter& mTouchCounter;
 };
 
 } 

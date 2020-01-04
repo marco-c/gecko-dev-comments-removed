@@ -147,11 +147,18 @@ private:
   void ScheduleMainThreadTimeout(const nsRefPtr<AsyncPanZoomController>& aTarget, uint64_t aInputBlockId);
   void MainThreadTimeout(const uint64_t& aInputBlockId);
   void ProcessInputBlocks();
+  void UpdateActiveApzc(const nsRefPtr<AsyncPanZoomController>& aNewActive);
 
 private:
   
   
   nsTArray<UniquePtr<CancelableBlockState>> mInputBlockQueue;
+
+  
+  nsRefPtr<AsyncPanZoomController> mLastActiveApzc;
+
+  
+  TouchCounter mTouchCounter;
 };
 
 } 
