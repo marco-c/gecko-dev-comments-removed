@@ -2,8 +2,6 @@
 
 
 
-#ifndef MERGED_COMPARTMENT
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
@@ -11,8 +9,6 @@ this.EXPORTED_SYMBOLS = [
 ];
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
-#endif
 
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
