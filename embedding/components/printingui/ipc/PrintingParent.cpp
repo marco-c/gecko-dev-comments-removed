@@ -19,6 +19,7 @@
 #include "PrintDataUtils.h"
 #include "PrintProgressDialogParent.h"
 #include "PrintSettingsDialogParent.h"
+#include "mozilla/layout/RemotePrintJobParent.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -178,6 +179,20 @@ PrintingParent::AllocPPrintSettingsDialogParent()
 
 bool
 PrintingParent::DeallocPPrintSettingsDialogParent(PPrintSettingsDialogParent* aDoomed)
+{
+  delete aDoomed;
+  return true;
+}
+
+PRemotePrintJobParent*
+PrintingParent::AllocPRemotePrintJobParent()
+{
+  MOZ_ASSERT_UNREACHABLE("No default constructors for implementations.");
+  return nullptr;
+}
+
+bool
+PrintingParent::DeallocPRemotePrintJobParent(PRemotePrintJobParent* aDoomed)
 {
   delete aDoomed;
   return true;
