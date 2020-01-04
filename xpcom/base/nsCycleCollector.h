@@ -51,7 +51,10 @@ void nsCycleCollector_collectSlice(js::SliceBudget& budget,
                                    bool aPreferShorterSlices = false);
 
 uint32_t nsCycleCollector_suspectedCount();
-void nsCycleCollector_shutdown();
+
+
+
+void nsCycleCollector_shutdown(bool aDoCollect = true);
 
 
 void nsCycleCollector_registerJSRuntime(mozilla::CycleCollectedJSRuntime* aRt);
