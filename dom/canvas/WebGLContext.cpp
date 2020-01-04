@@ -1626,6 +1626,13 @@ WebGLContext::DummyReadFramebufferOperation(const char* funcName)
     }
 }
 
+bool
+WebGLContext::HasTimestampBits() const
+{
+    
+    return gl->IsSupported(GLFeature::sync);
+}
+
 static bool
 CheckContextLost(GLContext* gl, bool* const out_isGuilty)
 {
