@@ -1,6 +1,8 @@
 
 
 
+
+
 const URL = "data:text/html;charset=utf8,test for textbox context menu";
 
 add_task(function*() {

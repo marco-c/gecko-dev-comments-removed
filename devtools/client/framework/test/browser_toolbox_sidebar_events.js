@@ -1,6 +1,8 @@
 
 
 
+
+
 function test() {
   const Cu = Components.utils;
   const { ToolSidebar } = require("devtools/client/framework/sidebar");

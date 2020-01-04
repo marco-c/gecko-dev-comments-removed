@@ -2,6 +2,7 @@
 
 
 
+
 var {Toolbox} = require("devtools/client/framework/toolbox");
 
 var toolbox, target, tab1, tab2;

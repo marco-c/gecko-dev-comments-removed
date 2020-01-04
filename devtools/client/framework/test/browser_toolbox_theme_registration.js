@@ -3,6 +3,7 @@
 
 
 
+
 const CHROME_URL = "chrome://mochitests/content/browser/devtools/client/framework/test/";
 
 var toolbox;

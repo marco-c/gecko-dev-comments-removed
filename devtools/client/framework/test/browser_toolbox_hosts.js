@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 var {Toolbox} = require("devtools/client/framework/toolbox");

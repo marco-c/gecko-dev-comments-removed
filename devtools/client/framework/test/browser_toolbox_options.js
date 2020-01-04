@@ -4,6 +4,8 @@
 
 
 
+
+
 var doc = null, toolbox = null, panelWin = null, modifiedPrefs = [];
 
 add_task(function*() {
