@@ -1469,6 +1469,13 @@ Declaration::ToString(nsAString& aString) const
  void
 Declaration::List(FILE* out, int32_t aIndent) const
 {
+  const Rule* owningRule = GetOwningRule();
+  if (owningRule) {
+    
+    owningRule->List(out, aIndent);
+    return;
+  }
+
   nsAutoCString str;
   for (int32_t index = aIndent; --index >= 0; ) {
     str.AppendLiteral("  ");
