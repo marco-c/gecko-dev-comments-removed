@@ -338,9 +338,6 @@ user_pref("network.proxy.pac_generator", false);
 user_pref("lightweightThemes.selectedThemeID", "");
 
 
-user_pref("dom.serviceWorkers.periodic-updates.enabled", false);
-
-
 user_pref("media.webspeech.synth.test", true);
 
 

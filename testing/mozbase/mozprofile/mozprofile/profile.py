@@ -388,8 +388,6 @@ class FirefoxProfile(Profile):
                    
                    
                    'toolkit.telemetry.unifiedIsOptIn': True,
-                   
-                   'dom.serviceWorkers.periodic-updates.enabled': False,
                    }
 
 class MetroFirefoxProfile(Profile):
@@ -436,8 +434,6 @@ class MetroFirefoxProfile(Profile):
                    
                    
                    'toolkit.telemetry.server' : 'http://%(server)s/telemetry-dummy/',
-                   
-                   'dom.serviceWorkers.periodic-updates.enabled': False,
                    }
 
 class ThunderbirdProfile(Profile):

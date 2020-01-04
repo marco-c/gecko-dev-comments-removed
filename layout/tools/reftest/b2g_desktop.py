@@ -137,8 +137,6 @@ class B2GDesktopReftest(RefTest):
         
         prefs["toolkit.telemetry.prompted"] = 999
         prefs["toolkit.telemetry.notifiedOptOut"] = 999
-        
-        prefs["dom.serviceWorkers.periodic-updates.enabled"] = False
 
         
         profile.set_preferences(prefs)

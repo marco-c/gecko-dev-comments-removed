@@ -529,17 +529,6 @@ SpecialPowersObserverAPI.prototype = {
         return undefined;	
       }
 
-      case "SPPeriodicServiceWorkerUpdates": {
-        
-        
-        
-        Cc["@mozilla.org/service-worker-periodic-updater;1"].
-          getService(Ci.nsIObserver).
-          observe(null, "idle-daily", "Caller:SpecialPowers");
-
-        return undefined;	
-      }
-
       case "SPCleanUpSTSData": {
         let origin = aMessage.data.origin;
         let flags = aMessage.data.flags;
