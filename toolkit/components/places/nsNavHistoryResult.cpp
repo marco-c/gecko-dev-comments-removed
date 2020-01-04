@@ -3014,7 +3014,8 @@ nsNavHistoryQueryResultNode::OnItemMoved(int64_t aFolder,
 
 NS_IMPL_ISUPPORTS_INHERITED(nsNavHistoryFolderResultNode,
                             nsNavHistoryContainerResultNode,
-                            nsINavHistoryQueryResultNode)
+                            nsINavHistoryQueryResultNode,
+                            mozIStorageStatementCallback)
 
 nsNavHistoryFolderResultNode::nsNavHistoryFolderResultNode(
     const nsACString& aTitle, nsNavHistoryQueryOptions* aOptions,
@@ -3965,12 +3966,12 @@ nsNavHistoryFolderResultNode::OnItemMoved(int64_t aItemId,
     }
     if (aOldParent == mTargetFolderItemId) {
       OnItemRemoved(aItemId, aOldParent, aOldIndex, aItemType, itemURI,
-                    aGUID, aOldParentGUID, aSource);
+                    aGUID, aOldParentGUID, nsINavBookmarksService::SOURCE_DEFAULT);
     }
     if (aNewParent == mTargetFolderItemId) {
       OnItemAdded(aItemId, aNewParent, aNewIndex, aItemType, itemURI, itemTitle,
                   RoundedPRNow(), 
-                  aGUID, aNewParentGUID, aSource);
+                  aGUID, aNewParentGUID, nsINavBookmarksService::SOURCE_DEFAULT);
     }
   }
   return NS_OK;
