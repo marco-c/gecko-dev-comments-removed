@@ -39,14 +39,25 @@ public:
   static const char* sColors[MAX_RendertraceProperty];
 
 public:
-  CheckerboardEvent();
+  explicit CheckerboardEvent(bool aRecordTrace);
 
   
 
 
 
 
-  uint64_t GetSeverity();
+  uint32_t GetSeverity();
+
+  
+
+
+
+  uint32_t GetPeak();
+
+  
+
+
+  TimeDuration GetDuration();
 
   
 
@@ -54,6 +65,12 @@ public:
 
 
   std::string GetLog();
+
+  
+
+
+
+  bool IsRecordingTrace();
 
   
 
@@ -137,6 +154,12 @@ private:
   };
 
 private:
+  
+
+
+
+
+  const bool mRecordTrace;
   
 
 
