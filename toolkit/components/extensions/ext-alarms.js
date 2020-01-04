@@ -91,7 +91,7 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-extensions.registerAPI((extension, context) => {
+extensions.registerPrivilegedAPI("alarms", (extension, context) => {
   return {
     alarms: {
       create: function(...args) {
