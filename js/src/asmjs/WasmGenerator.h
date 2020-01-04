@@ -201,9 +201,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     
     bool finish(HeapUsage heapUsage,
-                MutedErrorsBool mutedErrors,
                 CacheableChars filename,
-                CacheableTwoByteChars displayURL,
                 UniqueModuleData* module,
                 UniqueStaticLinkData* staticLinkData,
                 SlowFunctionVector* slowFuncs);
