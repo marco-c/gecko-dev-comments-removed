@@ -44,7 +44,7 @@ struct ScrollableLayerGuid;
 class CompositorParent;
 class GestureEventListener;
 class PCompositorParent;
-struct ViewTransform;
+struct AsyncTransform;
 class AsyncPanZoomAnimation;
 class FlingAnimation;
 class InputBlockState;
@@ -166,7 +166,7 @@ public:
 
 
 
-  void SampleContentTransformForFrame(ViewTransform* aOutTransform,
+  void SampleContentTransformForFrame(AsyncTransform* aOutTransform,
                                       ParentLayerPoint& aScrollOffset);
 
   
@@ -218,7 +218,7 @@ public:
 
 
 
-  ViewTransform GetCurrentAsyncTransform() const;
+  AsyncTransform GetCurrentAsyncTransform() const;
 
   
 

@@ -376,7 +376,7 @@ public:
   bool UpdateFromCompositorFrameMetrics(const LayerMetricsWrapper& aLayer,
                                         bool aHasPendingNewThebesContent,
                                         bool aLowPrecision,
-                                        ViewTransform& aViewTransform);
+                                        AsyncTransform& aViewTransform);
 
   
 

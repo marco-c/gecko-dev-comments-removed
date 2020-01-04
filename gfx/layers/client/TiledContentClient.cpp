@@ -146,7 +146,7 @@ FuzzyEquals(float a, float b) {
   return (fabsf(a - b) < 1e-6);
 }
 
-static ViewTransform
+static AsyncTransform
 ComputeViewTransform(const FrameMetrics& aContentMetrics, const FrameMetrics& aCompositorMetrics)
 {
   
@@ -155,7 +155,7 @@ ComputeViewTransform(const FrameMetrics& aContentMetrics, const FrameMetrics& aC
 
   ParentLayerPoint translation = (aCompositorMetrics.GetScrollOffset() - aContentMetrics.GetScrollOffset())
                                * aCompositorMetrics.GetZoom();
-  return ViewTransform(aCompositorMetrics.GetAsyncZoom(), -translation);
+  return AsyncTransform(aCompositorMetrics.GetAsyncZoom(), -translation);
 }
 
 bool
@@ -163,7 +163,7 @@ SharedFrameMetricsHelper::UpdateFromCompositorFrameMetrics(
     const LayerMetricsWrapper& aLayer,
     bool aHasPendingNewThebesContent,
     bool aLowPrecision,
-    ViewTransform& aViewTransform)
+    AsyncTransform& aViewTransform)
 {
   MOZ_ASSERT(aLayer);
 
@@ -1399,7 +1399,7 @@ ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
 static Maybe<LayerRect>
 GetCompositorSideCompositionBounds(const LayerMetricsWrapper& aScrollAncestor,
                                    const LayerToParentLayerMatrix4x4& aTransformToCompBounds,
-                                   const ViewTransform& aAPZTransform,
+                                   const AsyncTransform& aAPZTransform,
                                    const LayerRect& aClip)
 {
   LayerToParentLayerMatrix4x4 transform = aTransformToCompBounds *
@@ -1443,7 +1443,7 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   
   
   
-  ViewTransform viewTransform;
+  AsyncTransform viewTransform;
 #if defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_ANDROID_APZ)
   FrameMetrics contentMetrics = scrollAncestor.Metrics();
   bool abortPaint = false;
