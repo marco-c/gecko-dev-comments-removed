@@ -639,7 +639,8 @@ var SessionStoreInternal = {
         this.onClose(aSubject);
         break;
       case "quit-application-granted":
-        this.onQuitApplicationGranted();
+        let syncShutdown = aData == "syncShutdown";
+        this.onQuitApplicationGranted(syncShutdown);
         break;
       case "browser-lastwindow-close-granted":
         this.onLastWindowCloseGranted();
@@ -1422,7 +1423,7 @@ var SessionStoreInternal = {
   
 
 
-  onQuitApplicationGranted: function ssi_onQuitApplicationGranted() {
+  onQuitApplicationGranted: function ssi_onQuitApplicationGranted(syncShutdown=false) {
     
     this._forEachBrowserWindow((win) => {
       this._collectWindowData(win);
@@ -1440,10 +1441,16 @@ var SessionStoreInternal = {
     
     RunState.setQuitting();
 
-    AsyncShutdown.quitApplicationGranted.addBlocker(
-      "SessionStore: flushing all windows",
-      this.flushAllWindowsAsync(progress),
-      () => progress);
+    if (!syncShutdown) {
+      
+      AsyncShutdown.quitApplicationGranted.addBlocker(
+        "SessionStore: flushing all windows",
+        this.flushAllWindowsAsync(progress),
+        () => progress);
+    } else {
+      
+      
+    }
   },
 
   
