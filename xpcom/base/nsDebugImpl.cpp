@@ -17,7 +17,6 @@
 #include "nsString.h"
 #include "nsXULAppAPI.h"
 #include "prprf.h"
-#include "mozilla/Logging.h"
 #include "nsError.h"
 #include "prerror.h"
 #include "prerr.h"
@@ -217,16 +216,6 @@ nsDebugImpl::SetMultiprocessMode(const char* aDesc)
 
 
 
-static PRLogModuleInfo* gDebugLog;
-
-static void
-InitLog()
-{
-  if (0 == gDebugLog) {
-    gDebugLog = PR_NewLogModule("nsDebug");
-  }
-}
-
 enum nsAssertBehavior
 {
   NS_ASSERT_UNINITIALIZED,
@@ -317,26 +306,20 @@ EXPORT_XPCOM_API(void)
 NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
               const char* aFile, int32_t aLine)
 {
-  InitLog();
-
   FixedBuffer buf;
-  mozilla::LogLevel ll = LogLevel::Warning;
   const char* sevString = "WARNING";
 
   switch (aSeverity) {
     case NS_DEBUG_ASSERTION:
       sevString = "###!!! ASSERTION";
-      ll = LogLevel::Error;
       break;
 
     case NS_DEBUG_BREAK:
       sevString = "###!!! BREAK";
-      ll = LogLevel::Error;
       break;
 
     case NS_DEBUG_ABORT:
       sevString = "###!!! ABORT";
-      ll = LogLevel::Error;
       break;
 
     default:
@@ -372,12 +355,8 @@ NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
 #  undef PrintToBuffer
 
   
-  MOZ_LOG(gDebugLog, ll, ("%s", buf.buffer));
-  PR_LogFlush();
-
-  
 #if !defined(XP_WIN)
-  if (ll != LogLevel::Warning) {
+  if (aSeverity != NS_DEBUG_WARNING) {
     fprintf(stderr, "\07");
   }
 #endif
