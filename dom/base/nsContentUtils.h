@@ -2321,6 +2321,11 @@ public:
   
 
 
+  static bool DoNotTrackEnabled();
+
+  
+
+
 
 
   static mozilla::LogModule* DOMDumpLog();
@@ -2702,6 +2707,7 @@ private:
 #if !(defined(DEBUG) || defined(MOZ_ENABLE_JS_DUMP))
   static bool sDOMWindowDumpEnabled;
 #endif
+  static bool sDoNotTrackEnabled;
   static mozilla::LazyLogModule sDOMDumpLog;
 };
 
