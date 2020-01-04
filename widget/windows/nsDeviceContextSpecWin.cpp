@@ -444,7 +444,8 @@ nsPrinterEnumeratorWin::InitPrintSettingsFromPrinter(const char16_t *aPrinterNam
   aPrintSettings->SetPrinterName(aPrinterName);
 
   
-  HDC dc = ::CreateICW(kDriverName, aPrinterName, nullptr, devmode);
+  char16ptr_t printerName = aPrinterName;
+  HDC dc = ::CreateICW(kDriverName, printerName, nullptr, devmode);
   if (NS_WARN_IF(!dc)) {
     return NS_ERROR_FAILURE;
   }
