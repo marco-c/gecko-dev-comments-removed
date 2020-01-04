@@ -1,0 +1,8 @@
+
+
+
+if (!this.sharedMemoryEnabled)
+    quit(0);
+
+assertEq(sharedMemoryEnabled(), !!this.SharedArrayBuffer);
+assertEq(sharedMemoryEnabled(), !!this.Atomics);

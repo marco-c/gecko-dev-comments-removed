@@ -7,7 +7,9 @@
 
 
 
-if (!this.SharedArrayBuffer || !isAsmJSCompilationAvailable())
+
+
+if (!isAsmJSCompilationAvailable())
     quit(0);
 
 
