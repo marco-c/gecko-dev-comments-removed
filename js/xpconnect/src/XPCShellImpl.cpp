@@ -561,13 +561,13 @@ Btoa(JSContext* cx, unsigned argc, Value* vp)
   return xpc::Base64Encode(cx, args[0], args.rval());
 }
 
-static PersistentRootedValue sScriptedInterruptCallback;
+static PersistentRootedValue *sScriptedInterruptCallback = nullptr;
 
 static bool
 XPCShellInterruptCallback(JSContext* cx)
 {
-    MOZ_ASSERT(sScriptedInterruptCallback.initialized());
-    RootedValue callback(cx, sScriptedInterruptCallback);
+    MOZ_ASSERT(sScriptedInterruptCallback->initialized());
+    RootedValue callback(cx, *sScriptedInterruptCallback);
 
     
     if (callback.isUndefined())
@@ -589,7 +589,7 @@ XPCShellInterruptCallback(JSContext* cx)
 static bool
 SetInterruptCallback(JSContext* cx, unsigned argc, Value* vp)
 {
-    MOZ_ASSERT(sScriptedInterruptCallback.initialized());
+    MOZ_ASSERT(sScriptedInterruptCallback->initialized());
 
     
     JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
@@ -600,7 +600,7 @@ SetInterruptCallback(JSContext* cx, unsigned argc, Value* vp)
 
     
     if (args[0].isUndefined()) {
-        sScriptedInterruptCallback = UndefinedValue();
+        *sScriptedInterruptCallback = UndefinedValue();
         return true;
     }
 
@@ -610,7 +610,7 @@ SetInterruptCallback(JSContext* cx, unsigned argc, Value* vp)
         return false;
     }
 
-    sScriptedInterruptCallback = args[0];
+    *sScriptedInterruptCallback = args[0];
 
     return true;
 }
@@ -1433,7 +1433,8 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
         
         
         
-        sScriptedInterruptCallback.init(rt, UndefinedValue());
+        sScriptedInterruptCallback = new PersistentRootedValue;
+        sScriptedInterruptCallback->init(rt, UndefinedValue());
         JS_SetInterruptCallback(rt, XPCShellInterruptCallback);
 
         AutoJSAPI jsapi;
